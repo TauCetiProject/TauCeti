@@ -56,7 +56,7 @@ omit [IsTopologicalGroup F] in
 theorem orientationQuotient_isMulCommutative (χ : F →ₜ* ℤ_[p]ˣ) :
     IsMulCommutative (orientationQuotient χ) :=
   Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-    (Abelianization.commutator_le_ker χ.toMonoidHom)
+    (Group.Abelianization.commutator_le_ker χ.toMonoidHom)
 
 /-- Labute's conjugation gives an action by additive automorphisms. -/
 private theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotient χ)
@@ -106,7 +106,8 @@ theorem labuteAction_mk (χ : F →ₜ* ℤ_[p]ˣ) (y : F)
       (Additive.ofMul (x : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)) =
     Additive.ofMul
       ((⟨y⁻¹ * (x : F) * y,
-        (inferInstance : (χ : F →* ℤ_[p]ˣ).ker.Normal).conj_mem' x x.2 y⟩ : (χ : F →* ℤ_[p]ˣ).ker) :
+        (inferInstance : (χ : F →* ℤ_[p]ˣ).ker.Normal).conj_mem' x x.property y⟩ :
+            (χ : F →* ℤ_[p]ˣ).ker) :
         TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker) := by
   exact congrArg Additive.ofMul (TopologicalAbelianization.mk_inv_smul_mk _ y x)
 
@@ -156,7 +157,7 @@ theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
     (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) (r : R) :
     relationModuleToLabuteE χ R hR
       (Additive.ofMul (r : TopologicalAbelianization R)) =
-      labuteRelatorClass χ r (hR r.2) := by
+      labuteRelatorClass χ r (hR r.property) := by
   -- Unwrap the additive homomorphism so `map_mk` applies to the multiplicative quotient.
   change Additive.ofMul
       (TopologicalAbelianization.map (Subgroup.inclusion hR)
@@ -239,7 +240,9 @@ theorem labuteSMul_of (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
-  rw [labuteSMul, completedGroupAlgebra.map_of]
+  rw [labuteSMul]
+  dsimp only
+  rw [completedGroupAlgebra.map_of]
   exact (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule_of_smul
     (invMonoidHom γ) ξ
 

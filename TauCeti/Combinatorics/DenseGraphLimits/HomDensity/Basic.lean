@@ -51,10 +51,6 @@ here needs a nonempty-carrier hypothesis.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — `homDensity` and the
-  constant-graphon value. The counting lemmas, `cutNorm`, finite-graph compatibility with
-  `homDensityFin`, disjoint-union multiplicativity, and the catalogue of small-graph integrals are
-  separate targets and are not built here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.2.
 -/
 
@@ -70,8 +66,7 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-  {V : Type*} [Fintype V]
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {V : Type*}
 
 /-- The value of a graphon on a single edge, as a function of the vertex assignment.
 
@@ -80,22 +75,18 @@ orientation of the edge is chosen. -/
 def edgeFactor (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : ℝ :=
   Sym2.lift ⟨fun a b => W (x a) (x b), fun a b => W.symm (x a) (x b)⟩ e
 
-omit [Fintype V] in
 @[simp]
 theorem edgeFactor_mk (W : Graphon Ω μ) (x : V → Ω) (a b : V) :
     edgeFactor W x s(a, b) = W (x a) (x b) := (rfl)
 
-omit [Fintype V] in
 /-- Each edge factor is nonnegative, since a graphon is. -/
 theorem edgeFactor_nonneg (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : 0 ≤ edgeFactor W x e := by
   induction e using Sym2.ind with | _ a b => exact W.nonneg _ _
 
-omit [Fintype V] in
 /-- Each edge factor is at most `1`, since a graphon is. -/
 theorem edgeFactor_le_one (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : edgeFactor W x e ≤ 1 := by
   induction e using Sym2.ind with | _ a b => exact W.le_one _ _
 
-omit [Fintype V] in
 /-- Each edge factor depends measurably on the vertex assignment. -/
 theorem measurable_edgeFactor (W : Graphon Ω μ) (e : Sym2 V) :
     Measurable fun x : V → Ω => edgeFactor W x e := by
@@ -105,7 +96,6 @@ theorem measurable_edgeFactor (W : Graphon Ω μ) (e : Sym2 V) :
       (measurable_pi_apply a).prodMk (measurable_pi_apply b)
     exact W.measurable.comp h
 
-omit [Fintype V] in
 /-- The value of a graphon on an edge depends only on the vertex assignment along that edge.  This
 is what lets an edge factor be read off after the assignment has been altered away from the edge. -/
 theorem edgeFactor_congr (W : Graphon Ω μ) {x y : V → Ω} {e : Sym2 V}
@@ -113,7 +103,6 @@ theorem edgeFactor_congr (W : Graphon Ω μ) {x y : V → Ω} {e : Sym2 V}
   induction e using Sym2.ind with
   | _ a b => rw [edgeFactor_mk, edgeFactor_mk, h a (by simp), h b (by simp)]
 
-omit [Fintype V] in
 /-- Reading an edge after pushing it forward along a map of vertex sets is reading the original
 edge in the pulled-back assignment. -/
 @[simp]
@@ -121,25 +110,24 @@ theorem edgeFactor_map {V' : Type*} (W : Graphon Ω μ) (f : V → V') (x : V' �
     edgeFactor W x (Sym2.map f e) = edgeFactor W (x ∘ f) e := by
   induction e using Sym2.ind with | _ a b => simp
 
-omit [Fintype V] in
 /-- A finite product of edge factors, each edge read in its own graphon, depends measurably on the
 vertex assignment. -/
 theorem measurable_prod_edgeFactor (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) :
     Measurable fun x : V → Ω => ∏ e ∈ E, edgeFactor (G e) x e :=
   Finset.measurable_prod _ fun e _ => measurable_edgeFactor (G e) e
 
-omit [Fintype V] in
 /-- A finite product of edge factors is nonnegative. -/
 theorem prod_edgeFactor_nonneg (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) (x : V → Ω) :
     0 ≤ ∏ e ∈ E, edgeFactor (G e) x e :=
   Finset.prod_nonneg fun e _ => edgeFactor_nonneg (G e) x e
 
-omit [Fintype V] in
 /-- A finite product of edge factors is at most `1`: every factor lies in `[0, 1]`. -/
 theorem prod_edgeFactor_le_one (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) (x : V → Ω) :
     ∏ e ∈ E, edgeFactor (G e) x e ≤ 1 :=
   Finset.prod_le_one₀ (fun e _ => edgeFactor_nonneg (G e) x e)
     fun e _ => edgeFactor_le_one (G e) x e
+
+variable [Fintype V]
 
 /-- A finite product of edge factors is integrable against the product measure: it is measurable
 and `[0, 1]`-valued on a probability space. -/

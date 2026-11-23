@@ -65,7 +65,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace CategoryTheory
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -78,15 +79,16 @@ variable {K : Type*} [Field K] [NumberField K] {L : Type*} [Field L] [NumberFiel
 to `w'`, then the component at `w'` of `(id ⊗ σ) z` is the component of `z` at `w`, transported
 along the isomorphism of completions `L_w ≃ L_{w'}` induced by `σ`. -/
 theorem infiniteSemilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
-    {w w' : {w : InfinitePlace L // w.LiesOver v}} (h : w'.1 = σ • w.1)
+    {w w' : {w : InfinitePlace L // w.LiesOver v}} (h : w'.val = σ • w.val)
     (z : v.Completion ⊗[K] L) :
     infiniteSemilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom v.Completion L σ z) w' =
       completionCongr v σ h (infiniteSemilocalEquiv L v z w) := by
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
     rw [Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul,
-      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes, Completion.algebraMap_apply,
-      Completion.algebraMap_apply, completionCongr_algebraMap]
+      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
@@ -117,13 +119,13 @@ private def infiniteSemilocalUnitsComponent :
     Rep.res (MulAction.stabilizer (L ≃ₐ[K] L) w).subtype (infiniteSemilocalUnitsRep L v) ⟶
       infiniteDecompositionUnitsRep v w :=
   Rep.ofHom ⟨(Units.map ((Pi.evalMonoidHom
-      (fun w' : {w : InfinitePlace L // w.LiesOver v} ↦ w'.1.Completion) ⟨w, ‹_›⟩).comp
+      (fun w' : {w : InfinitePlace L // w.LiesOver v} ↦ w'.val.Completion) ⟨w, ‹_›⟩).comp
       (infiniteSemilocalEquiv L v : v.Completion ⊗[K] L →* _))).toAdditive.toIntLinearMap,
     fun d ↦ LinearMap.ext fun y : Additive (v.Completion ⊗[K] L)ˣ ↦
       Additive.toMul.injective <| Units.ext <|
         -- an element of the decomposition group fixes `w`, so it acts on the factor at `w`
         (infiniteSemilocalEquiv_baseChangeAutHom (w := ⟨w, ‹_›⟩) (w' := ⟨w, ‹_›⟩)
-          (d : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp d.2).symm _).trans
+          (d : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp d.property).symm _).trans
             (DFunLike.congr_fun (decompositionHom_apply d) _).symm⟩
 
 /-- The map `y ↦ (g ↦ ((id ⊗ g) y)_w)` from the semi-local units at an infinite place to the
@@ -139,7 +141,7 @@ def infiniteSemilocalUnitsToCoind :
 `(id ⊗ g) y`. -/
 theorem infiniteSemilocalUnitsToCoind_apply (y : (v.Completion ⊗[K] L)ˣ) (g : L ≃ₐ[K] L) :
     ((Additive.toMul (α := w.Completionˣ)
-      (((infiniteSemilocalUnitsToCoind v w).hom (Additive.ofMul y)).1 g) : w.Completionˣ) :
+      (((infiniteSemilocalUnitsToCoind v w).hom (Additive.ofMul y)).val g) : w.Completionˣ) :
         w.Completion) =
       infiniteSemilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom v.Completion L g y)
         ⟨w, ‹_›⟩ :=
@@ -148,16 +150,16 @@ theorem infiniteSemilocalUnitsToCoind_apply (y : (v.Completion ⊗[K] L)ˣ) (g :
 omit [NumberField K] [NumberField L] in
 /-- For `L/K` Galois, every place above `v` is carried to `w` by some automorphism. -/
 private theorem exists_eq_smul [IsGalois K L] (w' : {w' : InfinitePlace L // w'.LiesOver v}) :
-    ∃ g : L ≃ₐ[K] L, w = g • w'.1 := by
-  obtain ⟨g, hg⟩ := exists_smul_eq_of_comap_eq (k := K) (w := w'.1) (w' := w)
-    (by rw [LiesOver.comap_eq w'.1 v, LiesOver.comap_eq w v])
+    ∃ g : L ≃ₐ[K] L, w = g • w'.val := by
+  obtain ⟨g, hg⟩ := exists_smul_eq_of_comap_eq (k := K) (w := w'.val) (w' := w)
+    (by rw [LiesOver.comap_eq w'.val v, LiesOver.comap_eq w v])
   exact ⟨g, hg.symm⟩
 
 omit [NumberField K] [NumberField L] in
 /-- Every automorphism carries some place above `v` to `w`, namely the translate of `w` by its
 inverse. -/
 private theorem exists_place_eq_smul (g : L ≃ₐ[K] L) :
-    ∃ w' : {w' : InfinitePlace L // w'.LiesOver v}, w = g • w'.1 :=
+    ∃ w' : {w' : InfinitePlace L // w'.LiesOver v}, w = g • w'.val :=
   ⟨⟨g⁻¹ • w, inferInstance⟩, (smul_inv_smul g w).symm⟩
 
 /-- For `L/K` Galois, `infiniteSemilocalUnitsToCoind` is bijective: the semi-local units are the
@@ -165,18 +167,14 @@ product of the units of the completions above `v`, which `id ⊗ g` permutes thr
 `completionCongr`. -/
 private theorem infiniteSemilocalUnitsToCoind_bijective [IsGalois K L] :
     Function.Bijective (infiniteSemilocalUnitsToCoind v w).hom :=
-  resCoindToHom_bijective_of_transport (p := fun i : {w : InfinitePlace L // w.LiesOver v} ↦ i.1)
-    (w := ⟨w, ‹_›⟩) (M := fun i ↦ i.1.Completionˣ)
+  resCoindToHom_bijective_of_transport (p := fun i : {w : InfinitePlace L // w.LiesOver v} ↦ i.val)
+    (w := ⟨w, ‹_›⟩) (M := fun i ↦ i.val.Completionˣ)
     (T := fun g _ _ h ↦ (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv)
     (infiniteSemilocalUnitsComponent v w)
     (Additive.toMul.trans
       ((Units.mapEquiv (infiniteSemilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
     (fun g y _ _ h ↦ Units.ext (infiniteSemilocalEquiv_baseChangeAutHom g h
-      (Additive.toMul (α := (v.Completion ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
-    (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
-      (Additive.toMul (α := w.Completionˣ) a).1))
-    (fun g g' _ _ _ h h' a ↦
-      Units.ext (DFunLike.congr_fun (completionCongr_trans (v := v) g g' h h') a.1))
+      (Additive.toMul (α := (v.Completion ⊗[K] L)ˣ) y).val)) Additive.toMul (fun _ ↦ rfl)
     (exists_eq_smul v w) (exists_place_eq_smul v w)
 
 /-- **The semi-local units at an infinite place are coinduced.** For `L/K` Galois and `w` a

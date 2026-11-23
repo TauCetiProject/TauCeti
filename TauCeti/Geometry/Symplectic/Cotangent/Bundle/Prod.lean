@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
-public import TauCeti.Geometry.Symplectic.Manifold.Prod
+public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
 
 /-!
 # Canonical cotangent forms of a product
@@ -35,6 +35,10 @@ and `T*N`.
 
 Both identities equivalently hold along the inverse diffeomorphism, where they read
 `(Φ⁻¹)^* λ_(M × N) = pr₁^* λ_M + pr₂^* λ_N` and `(Φ⁻¹)^* ω_(M × N) = pr₁^* ω_M + pr₂^* ω_N`.
+
+Differences of the pulled-back forms play the same role for correspondences: the twisted product
+`pr₁^* ω_M - pr₂^* ω_N` on `T*M × T*N` is `-d(pr₁^* λ_M - pr₂^* λ_N)`
+(`TauCeti.CotangentBundle.twistedProd_symplecticForm`).
 
 ## References
 
@@ -188,6 +192,27 @@ theorem mpullback_prodDiffeomorph_symplecticForm :
     ((map_neg _ _).trans (congrArg Neg.neg ((SmoothForm.mextDerivₗ_mpullback _ _ 1 _).symm.trans
       (congrArg _ (mpullback_prodDiffeomorph_liouvilleForm (I := I) (J := J) (M := M)
         (N := N)))))) |>.trans symplecticForm_eq_neg_mextDerivₗ.symm
+
+variable (I M J N) in
+/-- **A primitive of the twisted product of cotangent bundles.** On `T*M × T*N`, the twisted
+product `pr₁^* ω_M - pr₂^* ω_N` of the canonical symplectic forms is `-dθ` for the one-form
+`θ = pr₁^* λ_M - pr₂^* λ_N`. -/
+theorem twistedProd_symplecticForm :
+    SmoothTwoForm.twistedProd (symplecticForm I M) (symplecticForm J N) =
+      -mextDerivₗ ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ))) 1
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (liouvilleForm I M) -
+          SmoothForm.mpullback Prod.snd contMDiff_snd (liouvilleForm J N)) := by
+  have hfst : ContMDiff ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
+      (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (Prod.fst : CotangentBundle I M × CotangentBundle J N → _) :=
+    contMDiff_fst
+  have hsnd : ContMDiff ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
+      (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ (Prod.snd : CotangentBundle I M × CotangentBundle J N → _) :=
+    contMDiff_snd
+  -- Term-mode steps: rewriting inside these large form types is expensive.
+  exact (SmoothTwoForm.twistedProd_def _ _).trans
+    ((congrArg₂ (· - ·) (mpullback_symplecticForm_eq_neg (I := I) (M := M) _ hfst)
+      (mpullback_symplecticForm_eq_neg (I := J) (M := N) _ hsnd)).trans
+    ((neg_sub_neg _ _).trans ((neg_sub _ _).symm.trans (congrArg Neg.neg (map_sub _ _ _).symm))))
 
 end Symplectic
 

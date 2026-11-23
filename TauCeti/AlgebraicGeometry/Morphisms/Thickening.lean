@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
@@ -38,10 +39,21 @@ module of homomorphisms into `I`.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_iff`: for a surjective ring map
   `φ : R ⟶ S`, `Spec S ⟶ Spec R` is a first-order thickening if and only if the kernel of `φ` has
   square zero.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_mk` and
+  `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.exists_iso_quotient`: `Spec (B ⧸ I) ⟶ Spec B`
+  is a first-order thickening when `I ^ 2 = ⊥`, and every first-order thickening of an affine
+  scheme is of this form up to isomorphism.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_iff` and
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_pow_succ`: for ideals
   `J ≤ I`, `Spec (R ⧸ I) ⟶ Spec (R ⧸ J)` is a first-order thickening if and only if `I ^ 2 ≤ J`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_iff` and
+  `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_pow_succ`: for ideal sheaves
+  `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
+  which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
+  ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
+  `X.nilradical.subscheme ⟶ X` is a thickening.
 * Thickenings contain the isomorphisms and are stable under composition and base change;
   first-order thickenings contain the isomorphisms, respect isomorphisms and are stable under base
   change.
@@ -131,6 +143,15 @@ instance (priority := 100) isUniversalHomeomorphism (i : Z ⟶ X) [IsThickening 
   (isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective i).2
     ⟨inferInstance, inferInstance, inferInstance⟩
 
+/-- The reduction `X.nilradical.subscheme ⟶ X` is a thickening. -/
+instance subschemeι_nilradical (X : Scheme.{u}) : IsThickening X.nilradical.subschemeι :=
+  (isThickening_iff_ker_le_nilradical _).2 (Scheme.IdealSheafData.ker_subschemeι _).le
+
+/-- A morphism from a reduced scheme kills the ideal sheaf of every thickening of its target, so it
+lifts along the thickening (`IsClosedImmersion.lift`). -/
+theorem ker_le_ker (i : Z ⟶ X) [IsThickening i] (f : Y ⟶ X) [IsReduced Y] : i.ker ≤ f.ker :=
+  ((isThickening_iff_ker_le_nilradical i).1 ‹_›).trans f.nilradical_le_ker
+
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a thickening
 if and only if the kernel of `φ` is a nil ideal. -/
 theorem SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) (hφ : Function.Surjective φ) :
@@ -216,6 +237,29 @@ theorem SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) (hφ : Function.Surje
         (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv).1]
   exact ⟨fun h ↦ hker.1 h.ker_mul_self, fun h ↦ ⟨hker.2 h⟩⟩
 
+/-- The closed immersion `Spec (B ⧸ I) ⟶ Spec B` of a square-zero ideal `I` is a first-order
+thickening. -/
+theorem SpecMap_quotient_mk {B : CommRingCat.{u}} {I : Ideal B}
+    (hI : I ^ 2 = ⊥) :
+    IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))) :=
+  (SpecMap_iff _ Ideal.Quotient.mk_surjective).2 <| by
+    rwa [CommRingCat.hom_ofHom, Ideal.mk_ker, ← pow_two]
+
+/-- A first-order thickening `i : T ⟶ T'` with `T'` affine is, up to isomorphisms of source and
+target, the closed immersion `Spec (B ⧸ I) ⟶ Spec B` for `B = Γ(T', ⊤)` and an ideal `I` of `B`
+with `I ^ 2 = ⊥`. -/
+theorem exists_iso_quotient {T T' : Scheme.{u}} [IsAffine T']
+    (i : T ⟶ T') [IsFirstOrderThickening i] :
+    ∃ (I : Ideal Γ(T', ⊤)) (e : T ≅ Spec (.of (Γ(T', ⊤) ⧸ I))), I ^ 2 = ⊥ ∧
+      i ≫ T'.isoSpec.hom = e.hom ≫ Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) := by
+  obtain ⟨I, e, he⟩ := (IsClosedImmersion.Spec_iff (f := i ≫ T'.isoSpec.hom)).1 inferInstance
+  refine ⟨I, e, ?_, he⟩
+  have : IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))) := by
+    rw [← (Iso.inv_comp_eq _).2 he]
+    infer_instance
+  have := (SpecMap_iff _ Ideal.Quotient.mk_surjective).1 this
+  rwa [CommRingCat.hom_ofHom, Ideal.mk_ker, ← pow_two] at this
+
 /-- For ideals `J ≤ I` of a commutative ring `R`, the closed immersion
 `Spec (R ⧸ I) ⟶ Spec (R ⧸ J)` induced by `Ideal.Quotient.factor h` is a first-order thickening if
 and only if `I ^ 2 ≤ J`. -/
@@ -235,6 +279,32 @@ theorem SpecMap_quotient_factor_pow_succ {R : Type u} [CommRing R] {I : Ideal R}
   (SpecMap_quotient_factor_iff h).mpr <| by
     rw [← pow_mul]
     exact Ideal.pow_le_pow_right (by omega)
+
+/-- For ideal sheaves `I ≤ J` on a scheme, the inclusion `V(J) ⟶ V(I)` of closed subschemes is a
+first-order thickening if and only if `J ^ 2 ≤ I`. -/
+theorem inclusion_iff {I J : X.IdealSheafData} (h : I ≤ J) :
+    IsFirstOrderThickening (Scheme.IdealSheafData.inclusion h) ↔ J ^ 2 ≤ I := by
+  -- The ideal sheaf of the inclusion is `J.comap I.subschemeι`, whose square is the inverse image
+  -- of `J ^ 2`; this vanishes exactly when `J ^ 2` lies in `I`, the ideal sheaf of `V(I) ⟶ X`.
+  have hker : (Scheme.IdealSheafData.inclusion h).ker * (Scheme.IdealSheafData.inclusion h).ker =
+      (J ^ 2).comap I.subschemeι := by
+    rw [Scheme.IdealSheafData.ker_inclusion, ← Scheme.IdealSheafData.comap_mul, pow_two]
+  refine ⟨fun hJ ↦ ?_, fun hJ ↦ ⟨?_⟩⟩
+  · have := congrArg (·.map I.subschemeι) (hker.symm.trans hJ.ker_mul_self)
+    simp only [Scheme.IdealSheafData.map_comap_of_isClosedImmersion,
+      Scheme.IdealSheafData.map_bot, Scheme.IdealSheafData.ker_subschemeι] at this
+    exact sup_eq_right.mp this
+  · rw [hker]
+    refine le_bot_iff.mp ((Scheme.IdealSheafData.comap_mono _ hJ).trans_eq ?_)
+    simpa using I.subschemeι.comap_ker_self
+
+/-- For any ideal sheaf `I` and any `n : ℕ`, the inclusion `V(I ^ (n + 1)) ⟶ V(I ^ (n + 2))`
+between successive positive infinitesimal neighbourhoods of `V(I)` is a first-order thickening. -/
+theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤ I ^ (n + 1)) :
+    IsFirstOrderThickening (Scheme.IdealSheafData.inclusion h) :=
+  (inclusion_iff h).mpr <| by
+    rw [← pow_mul]
+    exact pow_le_pow_of_le_one bot_le le_top (by omega)
 
 end IsFirstOrderThickening
 

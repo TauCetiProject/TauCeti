@@ -79,7 +79,7 @@ theorem generalizedParetoMap_apply_zero (s ξ : ℝ) : generalizedParetoMap s ξ
 
 /-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
 @[fun_prop]
-theorem measurable_generalizedParetoMap :
+theorem measurable_uncurry_generalizedParetoMap :
     Measurable fun p : (ℝ × ℝ) × ℝ => generalizedParetoMap p.1.1 p.1.2 p.2 := by
   simp only [generalizedParetoMap]
   exact Measurable.ite (measurableSet_eq_fun measurable_fst.snd measurable_const) (by fun_prop)
@@ -87,14 +87,14 @@ theorem measurable_generalizedParetoMap :
 
 /-- The generalized Pareto transformation is measurable in its exponential input. -/
 @[fun_prop]
-theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
+theorem measurable_generalizedParetoMap (s ξ : ℝ) :
     Measurable (generalizedParetoMap s ξ) :=
-  measurable_generalizedParetoMap.comp
+  measurable_uncurry_generalizedParetoMap.comp
     ((measurable_const.prodMk measurable_const).prodMk measurable_id)
 
 /-- The generalized Pareto transformation is continuous in its exponential input. -/
 @[fun_prop]
-theorem continuous_generalizedParetoMap_right (s ξ : ℝ) :
+theorem continuous_generalizedParetoMap (s ξ : ℝ) :
     Continuous (generalizedParetoMap s ξ) := by
   unfold generalizedParetoMap
   split_ifs <;> fun_prop
@@ -190,9 +190,9 @@ theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
             linarith)) hξ
       · exact generalizedParetoMap_log_div hs.ne' hξ hb
 
-/-- At nonzero scale and shape, the image of the whole line is the generalized Pareto domain
-where the affine support factor is positive. -/
-theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ ≠ 0) :
+/-- At nonzero scale, the image of the whole line is the generalized Pareto domain where the
+affine support factor is positive. At shape zero both sides are the whole line. -/
+theorem image_generalizedParetoMap_univ {s : ℝ} (hs : s ≠ 0) (ξ : ℝ) :
     generalizedParetoMap s ξ '' univ = {x | 0 < 1 + ξ * x / s} := by
   ext x
   constructor
@@ -200,12 +200,20 @@ theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ �
     rw [Set.mem_ofPred_eq, one_add_mul_generalizedParetoMap_div hs]
     exact Real.exp_pos _
   · intro hx
-    exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
+    by_cases hξ : ξ = 0
+    · subst ξ
+      exact ⟨x / s, mem_univ _, by rw [generalizedParetoMap_zero, mul_div_cancel₀ _ hs]⟩
+    · exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
 For positive scale this is the pushforward of a rate-one exponential law by
-`generalizedParetoMap`. For nonpositive scale it is the zero measure. -/
+`generalizedParetoMap`. For nonpositive scale it is the zero measure.
+
+At positive scale this is the textbook law with survival function `(1 + ξ * x / s) ^ (-1 / ξ)` on
+`{x | 0 < x ∧ 0 < 1 + ξ * x / s}` (`exp (-x / s)` at shape zero):
+`TauCeti.Probability.cdf_generalizedParetoMeasure_eq`, in
+`TauCeti.Probability.Distributions.GeneralizedPareto.Cdf`, proves it. -/
 def generalizedParetoMeasure (s ξ : ℝ) : Measure ℝ :=
   if 0 < s then (expMeasure 1).map (generalizedParetoMap s ξ) else 0
 
@@ -220,11 +228,15 @@ theorem generalizedParetoMeasure_of_nonpos {s : ℝ} (hs : s ≤ 0) (ξ : ℝ) :
     generalizedParetoMeasure s ξ = 0 := by
   simp [generalizedParetoMeasure, not_lt.mpr hs]
 
-/-- The zero-shape generalized Pareto law with positive scale is the exponential law with rate
-`s⁻¹`. -/
+/-- The zero-shape generalized Pareto law is the exponential law with rate `s⁻¹`. At nonpositive
+scale both sides are the zero measure. -/
 @[simp]
-theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
+theorem generalizedParetoMeasure_zero {s : ℝ} :
     generalizedParetoMeasure s 0 = expMeasure s⁻¹ := by
+  by_cases hs : 0 < s
+  swap
+  · rw [generalizedParetoMeasure_of_nonpos (not_lt.1 hs), expMeasure_of_nonpos]
+    exact inv_nonpos.2 (not_lt.1 hs)
   calc
     generalizedParetoMeasure s 0 = (expMeasure 1).map (s * ·) := by
       rw [generalizedParetoMeasure_of_pos hs]
@@ -232,7 +244,7 @@ theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
       funext e
       exact generalizedParetoMap_zero s e
     _ = expMeasure s⁻¹ := by
-      simpa only [expMeasure, one_div] using gammaMeasure_map_const_mul one_pos one_pos hs
+      simpa only [expMeasure, one_div] using gammaMeasure_map_const_mul (a := 1) (r := 1) hs
 
 /-- For nonzero shape and positive scale, the generalized Pareto law is the pushforward of a
 rate-one exponential law under `e ↦ s * (exp (ξ * e) - 1) / ξ`. -/
@@ -258,18 +270,21 @@ theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
   rcases le_or_gt s 0 with hs | hs
   · simp [generalizedParetoMeasure_of_nonpos hs]
   rw [generalizedParetoMeasure_of_pos hs,
-    ae_map_iff (measurable_generalizedParetoMap_right s ξ).aemeasurable (by measurability)]
+    ae_map_iff (measurable_generalizedParetoMap s ξ).aemeasurable (by measurability)]
   filter_upwards [ae_pos_expMeasure 1] with e he
   refine ⟨generalizedParetoMap_pos hs ξ he, ?_⟩
   rw [one_add_mul_generalizedParetoMap_div hs.ne']
   exact Real.exp_pos _
 
-/-- Every singleton has zero generalized Pareto measure at positive scale. -/
-theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+/-- Every singleton has zero generalized Pareto measure, for every scale and shape. -/
+instance nullSingletonClass_generalizedParetoMeasure (s ξ : ℝ) :
     NullSingletonClass (generalizedParetoMeasure s ξ) := by
+  rcases le_or_gt s 0 with hs | hs
+  · rw [generalizedParetoMeasure_of_nonpos hs]
+    exact ⟨fun _ ↦ by simp⟩
   rw [generalizedParetoMeasure_of_pos hs]
   exact Measure.nullSingletonClass_map_of_injective
-    (measurable_generalizedParetoMap_right s ξ) (strictMono_generalizedParetoMap hs ξ).injective
+    (measurable_generalizedParetoMap s ξ) (strictMono_generalizedParetoMap hs ξ).injective
 
 /-- A variable obtained from a rate-one exponential variable by the generalized Pareto
 transformation has the corresponding generalized Pareto law. -/
@@ -279,18 +294,7 @@ theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure
     HasLaw (fun ω => generalizedParetoMap s ξ (E ω))
       (generalizedParetoMeasure s ξ) P := by
   rw [generalizedParetoMeasure_of_pos hs]
-  exact (hasLaw_map (measurable_generalizedParetoMap_right s ξ).aemeasurable).comp hE
-
-/-- If `E` has the rate-one exponential law, then its nonzero-shape exponential transformation
-has the corresponding generalized Pareto law. -/
-theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure_of_shape_ne_zero
-    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {E : Ω → ℝ}
-    {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (hE : HasLaw E (expMeasure 1) P) :
-    HasLaw (fun ω => s * (Real.exp (ξ * E ω) - 1) / ξ)
-      (generalizedParetoMeasure s ξ) P := by
-  rw [generalizedParetoMeasure_of_shape_ne_zero hs hξ]
-  exact (hasLaw_map (by fun_prop : Measurable fun e : ℝ =>
-    s * (Real.exp (ξ * e) - 1) / ξ).aemeasurable).comp hE
+  exact (hasLaw_map (measurable_generalizedParetoMap s ξ).aemeasurable).comp hE
 
 /-- Multiplication by a positive constant rescales a generalized Pareto law and leaves its shape
 fixed. The equality also respects the nonpositive-scale zero branch. -/
@@ -302,7 +306,7 @@ theorem map_mul_generalizedParetoMeasure {c : ℝ} (hc : 0 < c) (s ξ : ℝ) :
       Measure.map_zero]
   · rw [generalizedParetoMeasure_of_pos hs,
       generalizedParetoMeasure_of_pos (mul_pos hc hs),
-      Measure.map_map (by fun_prop) (measurable_generalizedParetoMap_right s ξ)]
+      Measure.map_map (by fun_prop) (measurable_generalizedParetoMap s ξ)]
     congr 1
     funext e
     simp only [Function.comp_apply, generalizedParetoMap]
@@ -325,7 +329,7 @@ theorem measurable_generalizedParetoMeasure :
   apply Measurable.ite (measurableSet_lt measurable_const measurable_fst)
   · exact TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
       (ν := expMeasure 1) (f := fun p : ℝ × ℝ => generalizedParetoMap p.1 p.2)
-      measurable_generalizedParetoMap
+      measurable_uncurry_generalizedParetoMap
   · exact measurable_const
 
 end TauCeti.Probability

@@ -109,12 +109,7 @@ theorem star_mul_self (x : ℍ[R,c₁,c₂,c₃]) :
 @[simp]
 theorem mem_unitary_iff_normForm_eq_one (x : ℍ[R,c₁,c₂,c₃]) :
     x ∈ unitary ℍ[R,c₁,c₂,c₃] ↔ normForm c₁ c₂ c₃ x = 1 := by
-  rw [Unitary.mem_iff, star_mul_self, self_mul_star, and_self]
-  constructor
-  · intro h
-    simpa using congrArg (fun y : ℍ[R,c₁,c₂,c₃] => y.re) h
-  · intro h
-    simp [h]
+  rw [Unitary.mem_iff, star_mul_self, self_mul_star, and_self, ← coe_one, coe_inj]
 
 @[simp]
 theorem normForm_coe (r : R) : normForm c₁ c₂ c₃ (r : ℍ[R,c₁,c₂,c₃]) = r ^ 2 := by
@@ -129,20 +124,10 @@ theorem normForm_star (x : ℍ[R,c₁,c₂,c₃]) :
 @[simp]
 theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
     normForm c₁ c₂ c₃ (x * y) = normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y := by
-  -- This is Mathlib's multiplicativity argument for `Quaternion.normSq`, run for a general
-  -- `ℍ[R,c₁,c₂,c₃]`: the scalar `y * star y` commutes past `star x`.
-  have h : x * y * star (x * y) =
-      ((normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y : R) : ℍ[R,c₁,c₂,c₃]) :=
-    calc x * y * star (x * y)
-        _ = x * (y * star y) * star x := by rw [star_mul]; simp only [mul_assoc]
-        _ = x * star x * (normForm c₁ c₂ c₃ y : ℍ[R,c₁,c₂,c₃]) := by
-          rw [self_mul_star, mul_assoc, coe_commutes, mul_assoc]
-        _ = ((normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y : R) : ℍ[R,c₁,c₂,c₃]) := by
-          rw [self_mul_star, coe_mul]
-  rw [normForm_apply, h, re_coe]
+  simp only [normForm_apply_coordinates, re_mul, imI_mul, imJ_mul, imK_mul]
+  ring
 
-/-- **A quaternion is invertible exactly when its norm is.** The inverse of `x` is
-`N(x)⁻¹ star x`, and conversely the norm form is multiplicative. -/
+/-- **A quaternion is invertible exactly when its norm is.** -/
 theorem isUnit_iff_normForm_isUnit (x : ℍ[R,c₁,c₂,c₃]) :
     IsUnit x ↔ IsUnit (normForm c₁ c₂ c₃ x) := by
   refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨n, hn⟩ => ?_⟩
@@ -183,9 +168,8 @@ theorem pureNormForm_apply (x : LinearMap.ker (reₗ a (0 : R) b)) :
 theorem pureNormForm_apply_coordinates (x : LinearMap.ker (reₗ a (0 : R) b)) :
     pureNormForm a b x = -(a * (x : ℍ[R,a,b]).imI ^ 2) - b * (x : ℍ[R,a,b]).imJ ^ 2
       + a * b * (x : ℍ[R,a,b]).imK ^ 2 := by
-  have hx : (x : ℍ[R,a,b]).re = 0 := x.2
-  rw [pureNormForm_apply, normForm_apply_coordinates]
-  simp [hx]
+  have hx : (x : ℍ[R,a,b]).re = 0 := x.property
+  simp [normForm_apply_coordinates, hx]
 
 /-- The coordinates `1, i, j, k` are an isometry from the norm form of `ℍ[R,a,b]` to the diagonal
 form `⟨1, -a, -b, ab⟩`, the two-fold Pfister form `⟨⟨a,b⟩⟩`. -/
@@ -216,11 +200,11 @@ def pureNormFormIsometryEquivWeightedSumSquares :
   map_smul' _ _ := by ext i; fin_cases i <;> simp
   invFun v := ⟨⟨0, v 0, v 1, v 2⟩, by simp⟩
   left_inv x := by
-    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.property
     ext <;> simp [hx]
   right_inv _ := by ext i; fin_cases i <;> simp
   map_app' x := by
-    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.property
     simp [normForm_apply_coordinates, hx, Fin.sum_univ_three]
     ring
 
@@ -261,7 +245,7 @@ theorem mem_unitary_iff_normSq_eq_one (x : ℍ[R]) :
 /-- The quaternion underlying a unitary Hamilton quaternion has norm-square one. -/
 @[simp]
 theorem normSq_coe_unitary_eq_one (x : unitary ℍ[R]) : normSq (x : ℍ[R]) = 1 :=
-  (mem_unitary_iff_normSq_eq_one _).mp x.2
+  (mem_unitary_iff_normSq_eq_one _).mp x.property
 
 end Quaternion
 

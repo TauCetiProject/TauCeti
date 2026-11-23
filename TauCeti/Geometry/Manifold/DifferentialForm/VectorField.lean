@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Analysis.Calculus.DifferentialForm.VectorField
@@ -26,6 +27,14 @@ For vector fields `V` and `W` tangent to the kernel of a real one-form `α` near
 reduces to `α_x ([V, W]_x) = -dα_x (V_x, W_x)`
 (`TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv`), so the bracket stays in the kernel
 exactly when `dα` vanishes on the fields (`TauCeti.RoughForm.mlieBracket_mem_ker_iff`).
+
+On a boundaryless model, if one of the fields `V i₀` vanishes at `x`, the derivative at `x` of the
+evaluation of a form on the fields only differentiates `V i₀`, read in the preferred chart at `x`
+(`TauCeti.mvfderiv_apply_vectorField_of_eq_zero`; for a one-form, and for a two-form whose first
+field vanishes, `TauCeti.mvfderiv_apply_vectorField_fin_one_of_eq_zero` and
+`TauCeti.mvfderiv_apply_vectorField_fin_two_of_eq_zero` state this with explicit tuples). This
+computes linearizations of vector fields at their zeros, such as Hamiltonian vector fields at
+critical points.
 
 ## References
 
@@ -88,6 +97,75 @@ theorem fderivWithin_inChartAt_apply_mpullbackWithin
   simpa only [writtenInExtChartAt, extChartAt_self_eq, PartialEquiv.refl_coe,
     modelWithCornersSelf_coe, Function.id_comp] using heqs.fderivWithin_eq hpoint
 
+/-- **The derivative of a form on vector fields at a zero of one field.** On a boundaryless model,
+if the field `V i₀` vanishes at `x`, the derivative at `x` of `y ↦ φ_y(V_0 y, …, V_(k-1) y)` only
+differentiates `V i₀`: it is `φ_x` evaluated on the fields at `x`, with slot `i₀` replaced by the
+derivative of the coordinate expression of `V i₀` in the preferred chart at `x`. -/
+theorem mvfderiv_apply_vectorField_of_eq_zero [I.Boundaryless] {φ : RoughForm I M F k}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x)
+    {V : Fin k → (y : M) → TangentSpace I y}
+    (hV : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (V i y : TangentBundle I M)) x)
+    {i₀ : Fin k} (h₀ : V i₀ x = 0) (w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ φ y (V · y)) x w = φ x (Function.update (V · x) i₀
+      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm (V i₀) (range I))
+        (extChartAt I x x) w)) := by
+  let U : Fin k → E → E := fun i ↦
+    VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm (V i) (range I)
+  have hU : ∀ i, DifferentiableAt ℝ (U i) (extChartAt I x x) := fun i ↦
+    (hV i).differentiableAt_mpullbackWithin_extChartAt_symm
+  have hUx : ∀ i, U i (extChartAt I x x) = V i x := fun i ↦
+    VectorField.mpullbackWithin_extChartAt_symm_self _ _
+  have hφ' := φ.differentiableAt_inChartAt hφ
+  -- Read the function in the chart at `x`, where the derivative of the vanishing slot is the only
+  -- surviving term.
+  have h := fderivWithin_inChartAt_apply_mpullbackWithin (s := univ) φ V
+    hφ'.differentiableWithinAt (fun i ↦ (hU i).differentiableWithinAt)
+  rw [mvfderivWithin_univ, preimage_univ, univ_inter,
+    fderivWithin_of_mem_nhds (by rw [I.range_eq_univ]; exact univ_mem)] at h
+  have key := fderiv_continuousAlternatingMap_apply_apply_of_eq_zero (g := U) hφ' hU
+    ((hUx i₀).trans h₀) w
+  rw [h, RoughForm.inChartAt_extChartAt_self, funext hUx] at key
+  exact key
+
+/-- **The derivative of a one-form on a vector field at its zero.** On a boundaryless model, if
+`V` vanishes at `x`, the derivative at `x` of `y ↦ φ_y(V y)` is `φ_x` evaluated on the derivative
+of the coordinate expression of `V` in the preferred chart at `x`. -/
+theorem mvfderiv_apply_vectorField_fin_one_of_eq_zero [I.Boundaryless] {φ : RoughForm I M F 1}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    {V : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (h₀ : V x = 0) (w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ φ y ![V y]) x w = φ x ![fderiv ℝ
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I))
+        (extChartAt I x x) w] := by
+  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) hφ (V := ![V])
+    (fun i ↦ by fin_cases i; exact hV) h₀ w
+  have hV' : ∀ y, (![V] · y) = ![V y] := fun y ↦ by funext i; fin_cases i; rfl
+  simp only [hV', Matrix.cons_val_zero] at h
+  exact h.trans (congrArg (φ x) (Fin.update_cons_zero ..))
+
+/-- **The derivative of a two-form on vector fields at a zero of the first field.** On a
+boundaryless model, if `V` vanishes at `x`, the derivative at `x` of `y ↦ φ_y(V y, W y)` is
+`φ_x(L w, W x)`, where `L` is the derivative of the coordinate expression of `V` in the preferred
+chart at `x`. -/
+theorem mvfderiv_apply_vectorField_fin_two_of_eq_zero [I.Boundaryless] {φ : RoughForm I M F 2}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F) y (φ y)) x)
+    {V W : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (h₀ : V x = 0) (w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ φ y ![V y, W y]) x w = φ x ![fderiv ℝ
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I))
+        (extChartAt I x x) w, W x] := by
+  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) hφ (V := ![V, W])
+    (fun i ↦ by fin_cases i; exacts [hV, hW]) h₀ w
+  have hVW : ∀ y, (![V, W] · y) = ![V y, W y] := fun y ↦ by funext i; fin_cases i <;> rfl
+  simp only [hVW, Matrix.cons_val_zero] at h
+  exact h.trans (congrArg (φ x) (Fin.update_cons_zero ..))
+
 /-- The invariant exterior-derivative formula within a subset, in positive degree.
 The bracket sum uses pairs `(i.castSucc, j.succ)` with `i ≤ j`, so its sign is the negative
 of the usual sum indexed by strictly increasing pairs. -/
@@ -128,7 +206,7 @@ theorem mextDerivWithin_apply_vectorField {n : ℕ}
   refine hflat.trans ?_
   congr 1
   · apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     congr 1
     have hd := fderivWithin_inChartAt_apply_mpullbackWithin (s := s) φ
       (fun j ↦ V (i.succAbove j)) hφ' (fun j ↦ hV' (i.succAbove j))
@@ -322,11 +400,11 @@ theorem mextDeriv_apply_vectorField {n : ℕ} {φ : SmoothForm I M F (n + 1)}
     {V : Fin (n + 2) → (y : M) → TangentSpace I y}
     (hV : ∀ i, MDifferentiableAt I I.tangent
       (fun y ↦ (V i y : TangentBundle I M)) x) :
-    mextDeriv φ.1 x (V · x) =
+    mextDeriv φ.val x (V · x) =
       (∑ i, (-1) ^ i.val •
-        mvfderiv I (fun y ↦ φ.1 y (i.removeNth (V · y))) x (V i x)) -
+        mvfderiv I (fun y ↦ φ.val y (i.removeNth (V · y))) x (V i x)) -
       ∑ i : Fin (n + 1), ∑ j ≥ i, (-1) ^ (i + j : ℕ) •
-        φ.1 x (Matrix.vecCons (mlieBracket I (V i.castSucc) (V j.succ) x)
+        φ.val x (Matrix.vecCons (mlieBracket I (V i.castSucc) (V j.succ) x)
           (j.removeNth <| i.castSucc.removeNth (V · x))) := by
   exact TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x) hV
 
@@ -337,10 +415,10 @@ theorem mextDeriv_apply_one {φ : SmoothForm I M F 1}
       (fun y ↦ (V y : TangentBundle I M)) x)
     (hW : MDifferentiableAt I I.tangent
       (fun y ↦ (W y : TangentBundle I M)) x) :
-    mextDeriv φ.1 x ![V x, W x] =
-      mvfderiv I (fun y ↦ φ.1 y ![W y]) x (V x) -
-        mvfderiv I (fun y ↦ φ.1 y ![V y]) x (W x) -
-        φ.1 x ![mlieBracket I V W x] := by
+    mextDeriv φ.val x ![V x, W x] =
+      mvfderiv I (fun y ↦ φ.val y ![W y]) x (V x) -
+        mvfderiv I (fun y ↦ φ.val y ![V y]) x (W x) -
+        φ.val x ![mlieBracket I V W x] := by
   exact TauCeti.mextDeriv_apply_one (φ.mdifferentiableAt x) hV hW
 
 /-- The invariant formula for the exterior derivative of a bundled smooth two-form on three
@@ -351,12 +429,12 @@ theorem mextDeriv_apply_two {φ : SmoothForm I M F 2}
     (hU : MDifferentiableAt I I.tangent (fun y ↦ (U y : TangentBundle I M)) x)
     (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
     (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
-    mextDeriv φ.1 x ![U x, V x, W x] =
-      mvfderiv I (fun y ↦ φ.1 y ![V y, W y]) x (U x) -
-        mvfderiv I (fun y ↦ φ.1 y ![U y, W y]) x (V x) +
-        mvfderiv I (fun y ↦ φ.1 y ![U y, V y]) x (W x) -
-        φ.1 x ![mlieBracket I U V x, W x] + φ.1 x ![mlieBracket I U W x, V x] -
-        φ.1 x ![mlieBracket I V W x, U x] :=
+    mextDeriv φ.val x ![U x, V x, W x] =
+      mvfderiv I (fun y ↦ φ.val y ![V y, W y]) x (U x) -
+        mvfderiv I (fun y ↦ φ.val y ![U y, W y]) x (V x) +
+        mvfderiv I (fun y ↦ φ.val y ![U y, V y]) x (W x) -
+        φ.val x ![mlieBracket I U V x, W x] + φ.val x ![mlieBracket I U W x, V x] -
+        φ.val x ![mlieBracket I V W x, U x] :=
   TauCeti.mextDeriv_apply_two (φ.mdifferentiableAt x) hU hV hW
 
 end SmoothForm

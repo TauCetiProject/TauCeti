@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # The tangent representation of an isotropy group
@@ -20,7 +24,8 @@ acts by a map differentiable at `x`, the chain rule makes `g ↦ mfderiv I I (g 
 representation `TauCeti.tangentRepresentation` of the stabilizer on the tangent space `T_x M`.
 Moving `x` along its orbit by `h` conjugates this representation: the derivative of `h • ·` at `x`
 intertwines it with the tangent representation at `h • x`, along Mathlib's conjugation isomorphism
-`MulAction.stabilizerEquivStabilizer` of the two stabilizers.
+`MulAction.stabilizerEquivStabilizer` of the two stabilizers. When `G` is a manifold acting by a
+`C¹` map `G × M → M`, the tangent representation is continuous in the group element.
 
 For a finite stabilizer acting by `C¹` maps on a manifold without boundary over `ℝ` or `ℂ`,
 Bochner linearization identifies this representation with the linear action in an equivariant
@@ -37,11 +42,21 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
 
 * `TauCeti.tangentRepresentation`: the representation of the stabilizer of `x` on `T_x M` by
   derivatives at `x`.
+* `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
+  of `T_x M`.
+* `TauCeti.tangentRepresentationOfMemFixedPoints`: at a point fixed by the whole group, the
+  representation of the whole group on `T_x M`.
 
 ## Main results
 
+* `TauCeti.mem_invariants_tangentRepresentation_iff`: the invariant vectors are the tangent vectors
+  fixed by the differential of every element of the stabilizer.
+* `TauCeti.mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints`: at a point fixed by the
+  whole group, they are the tangent vectors fixed by the differential of every group element.
 * `TauCeti.mfderiv_smul_comp_tangentRepresentation`: the tangent representations at `x` and
   `h • x` are intertwined by the derivative of `h • ·`.
+* `TauCeti.continuous_tangentRepresentation`: for a jointly `C¹` action of a manifold group, the
+  tangent representation is continuous.
 * `TauCeti.tangentRepresentation_eq_one_iff`, `TauCeti.ker_tangentRepresentation`: the kernel of
   the tangent representation of a finite stabilizer acting by `C¹` maps is the germ kernel.
 * `TauCeti.tangentRepresentation_eq_one_iff_forall_smul_eq`: on a connected Hausdorff manifold, an
@@ -90,13 +105,71 @@ noncomputable def tangentRepresentation
           ext y
           simp [mul_smul]
         rw [hgh]
-        exact mfderiv_comp_of_apply_eq_self (hd g g.2) (hd h h.2) h.2 }
+        exact mfderiv_comp_of_apply_eq_self (hd g g.property) (hd h h.property) h.property }
 
 @[simp]
 theorem tangentRepresentation_apply
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
     (g : stabilizer G x) :
     tangentRepresentation hd g = mfderiv I I (fun y : M ↦ (g : G) • y) x :=
+  (rfl)
+
+/-- The tangent representation of the stabilizer of `x`, as a homomorphism to the group of linear
+automorphisms of `T_x M`. -/
+noncomputable def tangentAut
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    stabilizer G x →* TangentSpace I x ≃ₗ[𝕜] TangentSpace I x :=
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv 𝕜 (TangentSpace I x)).toMonoidHom.comp
+    (tangentRepresentation hd).toRepresentation.asGroupHom
+
+@[simp]
+theorem tangentAut_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentAut hd g v = tangentRepresentation hd g v :=
+  (rfl)
+
+@[simp]
+theorem tangentAut_symm_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    (tangentAut hd g).symm v = tangentRepresentation hd g⁻¹ v :=
+  (rfl)
+
+/-- The invariant vectors of the tangent representation at `x` are the tangent vectors fixed by
+the differential at `x` of every element of the stabilizer of `x`. -/
+theorem mem_invariants_tangentRepresentation_iff
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    {v : TangentSpace I x} :
+    v ∈ (tangentRepresentation hd).toRepresentation.invariants ↔
+      ∀ g ∈ stabilizer G x, mfderiv I I (fun y : M ↦ g • y) x v = v := by
+  simp only [Representation.mem_invariants, ContRepresentation.toRepresentation_apply,
+    tangentRepresentation_apply, Subtype.forall]
+  -- The two sides compare `d(g • ·)_x v` with `v` in the tangent spaces at `x` and at `g • x`.
+  rfl
+
+/-- At a point fixed by the whole group, the invariant vectors of the tangent representation are
+the tangent vectors fixed by the differential of every group element. -/
+theorem mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (hx : x ∈ fixedPoints G M) {v : TangentSpace I x} :
+    v ∈ (tangentRepresentation hd).toRepresentation.invariants ↔
+      ∀ g : G, mfderiv I I (fun y : M ↦ g • y) x v = v := by
+  rw [mem_invariants_tangentRepresentation_iff]
+  exact ⟨fun h g ↦ h g (hx g), fun h g _ ↦ h g⟩
+
+/-- The tangent representation of the whole group `G` on `T_x M` at a point `x` fixed by `G`,
+whose stabilizer is all of `G`: `g` acts by the derivative of `g • ·` at `x`. -/
+noncomputable def tangentRepresentationOfMemFixedPoints (hx : x ∈ fixedPoints G M)
+    (hd : ∀ g : G, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    Representation 𝕜 G (TangentSpace I x) :=
+  (tangentRepresentation fun g _ ↦ hd g).toRepresentation.comp
+    ((MonoidHom.id G).codRestrict (stabilizer G x) hx)
+
+@[simp]
+theorem tangentRepresentationOfMemFixedPoints_apply (hx : x ∈ fixedPoints G M)
+    (hd : ∀ g : G, MDifferentiableAt I I (fun y : M ↦ g • y) x) (g : G) (v : TangentSpace I x) :
+    tangentRepresentationOfMemFixedPoints hx hd g v = mfderiv I I (fun y : M ↦ g • y) x v :=
   (rfl)
 
 /-- **Conjugation of tangent representations along an orbit.** The derivative at `x` of the action
@@ -114,12 +187,46 @@ theorem mfderiv_smul_comp_tangentRepresentation {h : G}
       (fun y : M ↦ (g' : G) • y) ∘ fun y : M ↦ h • y := by
     ext y
     simp [g', stabilizerEquivStabilizer_apply, mul_smul]
-  have hl := mfderiv_comp_of_apply_eq_self hh (hd g g.2) g.2
-  rw [hcomm, mfderiv_comp x (hd' g' g'.2) hh] at hl
+  have hl := mfderiv_comp_of_apply_eq_self hh (hd g g.property) g.property
+  rw [hcomm, mfderiv_comp x (hd' g' g'.property) hh] at hl
   rw [tangentRepresentation_apply, tangentRepresentation_apply]
   exact hl.symm
 
 end Defs
+
+section Continuity
+
+variable {𝕜 E H M F HG G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace HG] [TopologicalSpace G] [ChartedSpace HG G] [Group G] [MulAction G M] {x : M}
+
+/-- **Continuity of the tangent representation.** If a group `G`, modelled on `IG`, acts on `M`
+by a map `G × M → M` that is jointly `C¹`, then the tangent representation of the stabilizer of
+`x` is continuous for the subspace topology of the stabilizer. -/
+theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsManifold IG 1 G]
+    [ContMDiffSMul IG I 1 G M]
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    Continuous (tangentRepresentation hd) := by
+  rw [continuous_iff_continuousAt]
+  intro g₀
+  -- The derivative of `g • ·` at `x`, read in the tangent coordinates of the base points `x`
+  -- and `g • x`, is continuous in `g` at `g₀`.
+  have hf : ContMDiffAt (IG.prod I) I 1 (Function.uncurry fun (g : G) (y : M) ↦ g • y)
+      ((g₀ : G), x) :=
+    (ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := 1) (G := G) (M := M)).contMDiffAt
+  have h := (ContMDiffAt.mfderiv (fun (g : G) (y : M) ↦ g • y) (fun _ ↦ x) hf
+    (contMDiffAt_const (n := 0)) (by simp)).continuousAt
+  -- On the stabilizer both base points are `x`, so the coordinate changes are the identity.
+  have hcomp : inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
+      (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val =
+        (tangentRepresentation hd : stabilizer G x → _) :=
+    funext fun g ↦ (Manifold.inTangentCoordinates_eq_self_of_eq (x₀ := (g₀ : G)) (x := g) _ _ _
+      rfl (g.property.trans g₀.property.symm)).trans (tangentRepresentation_apply hd g).symm
+  rw [← hcomp]
+  exact h.comp continuous_subtypeVal.continuousAt
+
+end Continuity
 
 section Detection
 
@@ -128,6 +235,7 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
   [TopologicalSpace M] [ChartedSpace H M] [Group G] [MulAction G M] [ContinuousConstSMul G M]
   {x : M} [Finite (stabilizer G x)]
 
+omit [CompleteSpace E] in
 /-- **The tangent representation detects the ineffective kernel.** Let the finite stabilizer of
 `x` act by maps that are `C¹` at `x` on a manifold without boundary. An element of the stabilizer
 has derivative the identity at `x` exactly when it acts as the identity near `x`, that is, lies in
@@ -153,15 +261,16 @@ theorem tangentRepresentation_eq_one_iff
   -- In the chart `χ`, each element of the stabilizer has strict derivative its image under `σ`.
   have hσ (k : stabilizer G x) :
       HasStrictFDerivAt (χ ∘ (k • ·) ∘ χ.symm) (σ k) (χ x) := by
-    have h := (hs k k.2).hasStrictFDerivAt_extChartAt_conj
-    rw [mem_stabilizer_iff.mp k.2] at h
-    rw [tangentRepresentation_apply, ((hs k k.2).mdifferentiableAt one_ne_zero
-      ).mfderiv_eq_fderiv_extChartAt_conj k.2, hχ, hχs]
+    have h := (hs k k.property).hasStrictFDerivAt_extChartAt_conj
+    rw [mem_stabilizer_iff.mp k.property] at h
+    rw [tangentRepresentation_apply, ((hs k k.property).mdifferentiableAt one_ne_zero
+      ).mfderiv_eq_fderiv_extChartAt_conj k.property, hχ, hχs]
     exact h
   -- `σ`, a representation on `T_x M`, is used as a representation on the model space `E`.
-  refine (χ.map_eq_one_iff_mem_germKernel hxχ (fun k ↦ k.2) σ hσ g).trans ?_
+  refine (χ.map_eq_one_iff_mem_germKernel hxχ (fun k ↦ k.property) σ hσ g).trans ?_
   simp only [mem_germKernel, Subgroup.smul_def]
 
+omit [CompleteSpace E] in
 /-- The kernel of the tangent representation of a finite stabilizer acting by maps that are `C¹`
 at `x` is the germ kernel at `x`, viewed as a subgroup of the stabilizer. -/
 theorem ker_tangentRepresentation
@@ -184,7 +293,7 @@ theorem tangentRepresentation_eq_one_iff_forall_smul_eq [T2Space M] [Preconnecte
   refine ⟨fun h y ↦ ?_, fun h ↦ ?_⟩
   · have hg : IsOfFinOrder (g : G) :=
       (stabilizer G x).subtype.isOfFinOrder (isOfFinOrder_of_finite g)
-    exact interior_subset (subset_interior_fixedBy_of_isPreconnected (g : G) hg (hs g g.2)
+    exact interior_subset (subset_interior_fixedBy_of_isPreconnected (g : G) hg (hs g g.property)
       isPreconnected_univ ⟨x, mem_univ x, h⟩ (mem_univ y))
   · rw [(Set.eq_univ_iff_forall (s := fixedBy M (g : G))).mpr h, interior_univ]
     exact mem_univ x

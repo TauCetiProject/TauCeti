@@ -122,7 +122,7 @@ def ringClassNormSubgroup : GlobalNormSubgroups K :=
 /-- The subgroup underlying `ringClassNormSubgroup O` is the kernel of the ring-class quotient. -/
 @[simp]
 theorem ringClassNormSubgroup_toSubgroup :
-    (ringClassNormSubgroup O).1.toSubgroup = (ringClassIdeleQuotient O).ker :=
+    (ringClassNormSubgroup O).val.toSubgroup = (ringClassIdeleQuotient O).ker :=
   (rfl)
 
 variable {O} in
@@ -139,12 +139,12 @@ kernel of the ring-class quotient `C_K → Pic O` under the global class-field c
 is, the unique finite abelian extension of `K` in `Kˢ` whose idele-class norm group is that kernel
 (`range_ideleClassNormMap_ringClassField`). -/
 def ringClassField : IntermediateField K (SeparableClosure K) :=
-  classField K (globalClassField (ringClassNormSubgroup O)).1
+  classField K (globalClassField (ringClassNormSubgroup O)).val
 
 /-- The ring class field of `O` is the class field of the value of the global correspondence at
 the kernel of the ring-class quotient. -/
 theorem ringClassField_def :
-    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).1 :=
+    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).val :=
   (rfl)
 
 /-- The ring class field of `O` is a finite extension of `K`. -/
@@ -157,7 +157,7 @@ instance numberField_ringClassField : NumberField (ringClassField O) :=
 
 /-- The ring class field of `O` is an abelian extension of `K`. -/
 instance isAbelianGalois_ringClassField : IsAbelianGalois K (ringClassField O) :=
-  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).2
+  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).property
 
 /-- **The norm group of the ring class field is the kernel of the ring-class quotient**: an idele
 class of `K` is a norm from the ring class field of `O` exactly when its ray class modulo the
@@ -255,7 +255,7 @@ theorem ringClassArtinEquiv_picClass (J : integralIdealsPrimeTo O.conductorModul
 conductor of `O`, the image under ring-class reciprocity of the Picard class of `𝔭 ∩ O` is an
 arithmetic Frobenius at every prime of the ring class field above `𝔭`. -/
 theorem isArithFrobAt_ringClassArtinEquiv_picClass
-    (J : integralIdealsPrimeTo O.conductorModulus) [(J : Ideal (𝓞 K)).IsMaximal]
+    (J : integralIdealsPrimeTo O.conductorModulus)
     (Q : Ideal (𝓞 (ringClassField O))) [Q.IsPrime] [Q.LiesOver (J : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (ringClassArtinEquiv O (O.picClass J)) Q := by
   rw [ringClassArtinEquiv_picClass]
@@ -277,8 +277,7 @@ theorem finrank_ringClassField :
 `𝔭` of `𝓞 K` prime to the conductor of `O` and a prime `Q` of the ring class field above it, the
 order of the Picard class of `𝔭 ∩ O` is the inertia degree `f(Q / 𝔭)`. -/
 theorem orderOf_picClass_eq_inertiaDeg (J : integralIdealsPrimeTo O.conductorModulus)
-    [(J : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 (ringClassField O))) [Q.IsPrime]
-    [Q.LiesOver (J : Ideal (𝓞 K))] :
+    (Q : Ideal (𝓞 (ringClassField O))) [Q.IsPrime] [Q.LiesOver (J : Ideal (𝓞 K))] :
     orderOf (O.picClass J) = Q.inertiaDeg (𝓞 K) := by
   rw [← (ringClassArtinEquiv O).orderOf_eq, ringClassArtinEquiv_picClass,
     orderOf_rayClassArtinMap_idealClass _ J Q]

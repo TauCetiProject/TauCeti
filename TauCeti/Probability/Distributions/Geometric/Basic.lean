@@ -66,7 +66,7 @@ theorem integrable_pow_geometricMeasure_iff (hp : p ≠ 0) (t : ℝ) :
       |(1 - (p : ℝ)) * t| < 1 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
   exact integrable_pow_negativeBinomialMeasure_iff one_pos
-    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2 t
 
 /-- The probability-generating function of a geometric distribution with nonzero parameter, on its
 exact integrability domain.  The boundary case `p = 1`, whose law is a Dirac mass at zero, is
@@ -76,7 +76,7 @@ theorem pgf_geometricMeasure (hp : p ≠ 0) {t : ℝ}
     pgf id (geometricMeasure p) t = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
     pgf_negativeBinomialMeasure one_pos
-      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 ht]
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2 ht]
   exact Real.rpow_one _
 
 /-- The exponential integrand for the cast geometric law is integrable exactly below the pole of
@@ -87,7 +87,7 @@ theorem integrable_exp_mul_id_map_cast_geometricMeasure_iff (hp : p ≠ 0) (t : 
       (1 - (p : ℝ)) * exp t < 1 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
   exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff one_pos
-    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) t
 
 /-- The exact moment-generating domain of the real cast of a nonzero-parameter geometric law. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
@@ -95,7 +95,7 @@ theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
       {t | (1 - (p : ℝ)) * exp t < 1} := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
   exact integrableExpSet_id_map_cast_negativeBinomialMeasure one_pos
-    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp))
 
 /-- The moment-generating function of the real cast of a nonzero-parameter geometric law. -/
 theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
@@ -104,7 +104,7 @@ theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
       (p : ℝ) / (1 - (1 - (p : ℝ)) * exp t) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
     mgf_id_map_cast_negativeBinomialMeasure zero_le_one
-      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 ht]
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2 ht]
   exact Real.rpow_one _
 
 /-- The cumulant-generating function of the real cast of a nonzero-parameter geometric law. -/
@@ -118,6 +118,14 @@ theorem cgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
 theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
   simp [geometricMeasure]
 
+/-- At success probability one, the geometric law is concentrated at zero. -/
+@[simp]
+theorem geometricMeasure_one : geometricMeasure (1 : unitInterval) = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  rw [geometricMeasure_singleton (by norm_num), Measure.dirac_apply]
+  cases n <;> simp
+
 /-- The real cast of a geometric random variable is integrable, including at the totalized
 zero parameter. -/
 theorem integrable_cast_geometricMeasure :
@@ -129,8 +137,8 @@ theorem integrable_cast_geometricMeasure :
   · have hgeom : Integrable id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
       rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
       have hp0 := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
-      let := isProbabilityMeasure_negativeBinomialMeasure zero_le_one hp0 p.2.2
-      exact (memLp_id_map_cast_negativeBinomialMeasure zero_le_one hp0 p.2.2 1).integrable le_rfl
+      let := isProbabilityMeasure_negativeBinomialMeasure zero_le_one hp0 p.property.2
+      exact (memLp_id_map_cast_negativeBinomialMeasure 1).integrable le_rfl
     exact (integrable_map_measure aestronglyMeasurable_id
       (Measurable.of_discrete (f := (Nat.cast : ℕ → ℝ))).aemeasurable).mp hgeom
 
@@ -143,7 +151,7 @@ theorem integral_id_map_cast_geometricMeasure :
     norm_num [geometricMeasure]
   · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
       integral_id_map_cast_negativeBinomialMeasure zero_le_one
-        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2, one_mul]
 
 /-- The variance of the real cast of a geometric law. -/
 theorem variance_id_map_cast_geometricMeasure :
@@ -154,7 +162,7 @@ theorem variance_id_map_cast_geometricMeasure :
     norm_num [geometricMeasure]
   · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
       variance_id_map_cast_negativeBinomialMeasure zero_le_one
-        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2, one_mul]
 
 /-- The characteristic function of the real cast of a nonzero-parameter geometric law. -/
 theorem charFun_map_cast_geometricMeasure (hp : p ≠ 0) (t : ℝ) :
@@ -162,7 +170,7 @@ theorem charFun_map_cast_geometricMeasure (hp : p ≠ 0) (t : ℝ) :
       (p : ℂ) / (1 - (1 - (p : ℂ)) * Complex.exp (Complex.I * t)) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
     charFun_map_cast_negativeBinomialMeasure zero_le_one
-      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2,
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.property.2,
     Complex.ofReal_one, Complex.cpow_one]
 
 /-- The cumulative mass of a nonzero-parameter geometric law on its native carrier. -/
@@ -173,7 +181,7 @@ theorem geometricMeasure_real_Iic (hp : p ≠ 0) (n : ℕ) :
   simp_rw [geometricMeasure_real_singleton hp]
   have hIic : Finset.Iic n = Finset.range (n + 1) := by ext k; simp
   rw [hIic, ← Finset.sum_mul]
-  have h := geom_sum_mul_of_le_one (sub_le_self 1 p.2.1) (n + 1)
+  have h := geom_sum_mul_of_le_one (sub_le_self 1 p.property.1) (n + 1)
   convert h using 1
   ring
 
@@ -192,7 +200,7 @@ theorem geometricMeasure_real_Ici (hp : p ≠ 0) (n : ℕ) :
         1 - (∑ i ∈ Finset.range n, (1 - (p : ℝ)) ^ i) *
           (1 - (1 - (p : ℝ))) := by ring
     _ = (1 - (p : ℝ)) ^ n := by
-      rw [geom_sum_mul_of_le_one (sub_le_self 1 p.2.1)]
+      rw [geom_sum_mul_of_le_one (sub_le_self 1 p.property.1)]
       ring
 
 /-- The geometric law is memoryless for every parameter: the mass of the tail beyond `n + m`

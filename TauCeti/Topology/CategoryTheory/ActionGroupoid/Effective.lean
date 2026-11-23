@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Quotient
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Effective
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
 
 /-!
 # The effective quotient of an action groupoid
@@ -32,6 +34,11 @@ nontrivially elsewhere. The two agree when every germ kernel is the kernel of th
 happens for actions by `C¹` maps with torsion stabilizers on a preconnected Hausdorff manifold
 without boundary (`TauCeti.germKernel_eq_ker`).
 
+For a discrete group, `G ⋉ X` is an étale topological groupoid, and these are its ineffective
+arrows and effective quotient in the sense of `TauCeti.ineffectiveArrows` and
+`TauCeti.EffectiveQuotient`: an arrow is ineffective exactly when its label lies in the germ kernel
+at its source, and the two germ relations agree (`TauCeti.germRel_actionCategory`).
+
 ## Main declarations
 
 * `TauCeti.ActionGroupoid.Effective G X`: the effective quotient of `G ⋉ X`, with its projection
@@ -47,9 +54,20 @@ without boundary (`TauCeti.germKernel_eq_ker`).
   classes of the effective quotient are the orbits of the action.
 * `TauCeti.ActionGroupoid.toEffective_faithful_iff`: the projection is faithful exactly when all
   germ kernels are trivial.
+* `TauCeti.germRel_actionCategory`: for a discrete group, the germ relation of the étale groupoid
+  `G ⋉ X` is the germ relation of the action.
 * `TauCeti.ActionGroupoid.Effective.toQuotientKer`: if every germ kernel is the kernel of the
   action, this equivalence identifies the effective quotient with the action groupoid of the
   faithful quotient action.
+* `TauCeti.mem_ineffectiveArrows_map_iff_mem_germKernel`,
+  `TauCeti.stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff`,
+  `TauCeti.map_stabilizerMulEquivAutOfFullyFaithful_germKernel`,
+  `TauCeti.card_ineffectiveKernel_eq_card_germKernel`,
+  `TauCeti.ineffectiveKernel_eq_top_iff_stabilizer_eq_germKernel`: in a local action chart
+  `G ⋉ X ⥤ C` of an étale groupoid, ineffective arrows of `C` are the arrows labelled by
+  germ-kernel elements, `ActionCategory.stabilizerMulEquivAutOfFullyFaithful` maps the germ kernel
+  onto the ineffective kernel of `C`, the ineffective kernel has the order of the germ kernel, and
+  it is the whole isotropy group precisely when the stabilizer equals the germ kernel.
 
 ## References
 
@@ -266,6 +284,161 @@ instance : (Effective.toQuotientKer hker).Faithful :=
 instance : (Effective.toQuotientKer hker).IsEquivalence where
 
 end Faithful
+
+section Etale
+
+variable [TopologicalSpace G] [DiscreteTopology G]
+
+/-- For a discrete group, an arrow of the étale groupoid `G ⋉ X` is ineffective exactly when its
+label lies in the germ kernel at its source. -/
+theorem _root_.TauCeti.mem_ineffectiveArrows_actionCategory_iff
+    {a : Quiver.Total (ActionCategory G X)} :
+    a ∈ ineffectiveArrows (ActionCategory G X) ↔ (a.hom.hom : G) ∈ germKernel G a.left.back := by
+  -- The arrows with the label of `a` form a local section of the source through `a`.
+  rw [mem_ineffectiveArrows_iff_eventually_right_eq (isLocalHomeomorph_source G X)
+    (σ := (sourceChart G X a.hom.hom).symm)
+    ((sourceChart G X a.hom.hom).continuousAt_symm (by simp))
+    (by simpa using (sourceChart G X a.hom.hom).left_inv (x := a) (by simp))
+    (.of_forall fun y ↦ by
+      rw [sourceChart_symm_apply, arrowHomeomorph_symm_apply,
+        ActionCategory.totalEquiv_symm_apply_left]
+      exact ActionCategory.back_coe y)]
+  refine Iff.trans ?_ mem_germKernel.symm
+  rw [← objectHomeomorph_apply, ← (objectHomeomorph G X).map_nhds_eq, eventually_map]
+  refine eventually_congr (.of_forall fun y ↦ ?_)
+  rw [sourceChart_symm_apply, arrowHomeomorph_symm_apply,
+    ActionCategory.totalEquiv_symm_apply_right, objectHomeomorph_apply]
+  -- The inverse of `objEquiv` is `back`.
+  exact (ActionCategory.objEquiv G X).eq_symm_apply.symm
+
+/-- For a discrete group, the germ relation of the étale groupoid `G ⋉ X` is the germ relation of
+the action. Hence `TauCeti.EffectiveQuotient (ActionCategory G X)` is
+`TauCeti.ActionGroupoid.Effective G X`. -/
+theorem _root_.TauCeti.germRel_actionCategory :
+    _root_.TauCeti.germRel (ActionCategory G X) = germRel G X := by
+  funext a b f f'
+  rw [eq_iff_iff, _root_.TauCeti.germRel_iff, mem_ineffectiveArrows_actionCategory_iff,
+    germRel_iff_mem_germKernel]
+  simp only [ActionCategory.comp_hom, ActionCategory.inv_hom]
+  rw [← inv_mem_iff, mul_inv_rev, inv_inv]
+
+end Etale
+
+section Chart
+
+variable {C : Type*} [Groupoid C] [TopologicalSpace (Quiver.Total C)] {ι : X → C}
+  {F : ActionCategory G X ⥤ C}
+
+/-- **Ineffective arrows in a local action chart.** Let `F : G ⋉ X ⥤ C` lie over an injective map
+`ι` of objects, and suppose that the arrows `F` assigns to the label `g` of an arrow `f` are
+parametrized by their sources through an open embedding, as in a local isotropy chart of an étale
+groupoid. Then the image of `f` is ineffective exactly when its label lies in the germ kernel at
+the source of `f`. -/
+theorem _root_.TauCeti.mem_ineffectiveArrows_map_iff_mem_germKernel (hι : Function.Injective ι)
+    (hobj : ∀ a, F.obj a = ι a.back) {a b : ActionCategory G X} (f : a ⟶ b)
+    (hσ : IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (f.hom, y)).hom⟩ : Quiver.Total C)) :
+    (⟨_, _, F.map f⟩ : Quiver.Total C) ∈ ineffectiveArrows C ↔
+      (f.hom : G) ∈ germKernel G a.back := by
+  have hf : (ActionCategory.totalEquiv G X).symm (f.hom, a.back) = ⟨a, b, f⟩ :=
+    (Equiv.symm_apply_eq _).mpr (ActionCategory.totalEquiv_apply (⟨a, b, f⟩ : Quiver.Total _)).symm
+  have hfσ : (⟨_, _, F.map f⟩ : Quiver.Total C) =
+      ⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (f.hom, a.back)).hom⟩ := by
+    rw [hf]
+  -- Near the arrow, ineffectiveness is read off along the open embedding of labelled arrows.
+  rw [hfσ, mem_ineffectiveArrows_iff, ← hσ.map_nhds_eq, eventually_map]
+  refine (eventually_congr (.of_forall fun y ↦ ?_)).trans mem_germKernel.symm
+  simp only [hobj, ActionCategory.totalEquiv_symm_apply_left,
+    ActionCategory.totalEquiv_symm_apply_right, hι.eq_iff]
+  exact eq_comm
+
+/-- **Ineffective kernel membership in a local action chart.** Let `F : G ⋉ X ⥤ C` be a fully
+faithful functor to an étale groupoid lying over an injective map `ι` of objects, such that the
+arrows `F` assigns to the label of `g : stabilizer G y` are parametrized by their sources through
+an open embedding. Then the automorphism of `z` induced by `g` along `F` lies in
+`ineffectiveKernel hs z` if and only if `g` lies in `germKernel G y`. -/
+theorem _root_.TauCeti.stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff
+    [TopologicalSpace C] [IsTopologicalGroupoid C]
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    {y : X} {z : C} (hz : F.obj (ActionCategory.objEquiv G X y) = z) {g : stabilizer G y}
+    (hσ : IsOpenEmbedding fun y' : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y')).hom⟩ : Quiver.Total C)) :
+    ActionCategory.stabilizerMulEquivAutOfFullyFaithful F hz g ∈
+      ineffectiveKernel hs z ↔ (g : G) ∈ germKernel G y := by
+  have key : ∀ {p q : C} (e : p = q) (k : p ⟶ p),
+      (⟨q, q, eqToHom e.symm ≫ k ≫ eqToHom e⟩ : Quiver.Total C) = ⟨p, p, k⟩ := by
+    rintro p _ rfl k
+    simp
+  have hσ' : IsOpenEmbedding fun y' : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm
+        ((ActionCategory.stabilizerMulEquivAut G y g).asIso.hom.hom, y')).hom⟩ :
+          Quiver.Total C) :=
+    (ActionCategory.stabilizerMulEquivAut_apply_hom_hom y g).symm ▸ hσ
+  rw [mem_ineffectiveKernel, ActionCategory.stabilizerMulEquivAutOfFullyFaithful_apply_asIso_hom,
+    key hz, mem_ineffectiveArrows_map_iff_mem_germKernel hι hobj _ hσ',
+    ActionCategory.stabilizerMulEquivAut_apply_hom_hom]
+  -- The source `(ActionCategory.objEquiv G X y).back` is `y`, as in Mathlib's
+  -- `ActionCategory.coe_back`, which is `rfl`.
+  rfl
+
+/-- **Stabilizer-isotropy transport of the germ kernel.** Let `F : G ⋉ X ⥤ C` be a fully faithful
+functor to an étale groupoid lying over an injective map `ι` of objects, such that for each label
+`g` the arrows `F` assigns to `g` are parametrized by their sources through an open embedding.
+Then `ActionCategory.stabilizerMulEquivAutOfFullyFaithful` maps the germ kernel at `y` onto
+`ineffectiveKernel hs z`. -/
+theorem _root_.TauCeti.map_stabilizerMulEquivAutOfFullyFaithful_germKernel [TopologicalSpace C]
+    [IsTopologicalGroupoid C] (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    {y : X} {z : C} (hz : F.obj (ActionCategory.objEquiv G X y) = z) :
+    ((germKernel G y).subgroupOf (stabilizer G y)).map
+      (ActionCategory.stabilizerMulEquivAutOfFullyFaithful F hz).toMonoidHom =
+      ineffectiveKernel hs z := by
+  ext e
+  rw [Subgroup.mem_map_equiv, Subgroup.mem_subgroupOf,
+    ← stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff hs hι hobj hz (hσ _),
+    MulEquiv.apply_symm_apply]
+
+/-- **Ineffective kernels in a local action chart.** Let `F : G ⋉ X ⥤ C` be a fully faithful
+functor to an étale groupoid lying over an injective map `ι` of objects, such that for each label
+`g` the arrows `F` assigns to `g` are parametrized by their sources through an open embedding, as
+in a local isotropy chart. Then the ineffective kernel of `C` at `ι y` has the order of the germ
+kernel of the action at `y`. -/
+theorem _root_.TauCeti.card_ineffectiveKernel_eq_card_germKernel [TopologicalSpace C]
+    [IsTopologicalGroupoid C] (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    (y : X) : Nat.card (ineffectiveKernel hs (ι y)) = Nat.card (germKernel G y) := by
+  have hy : F.obj (ActionCategory.objEquiv G X y) = ι y := hobj _
+  rw [← map_stabilizerMulEquivAutOfFullyFaithful_germKernel hs hι hobj hσ hy,
+    Subgroup.card_map_of_injective
+      (ActionCategory.stabilizerMulEquivAutOfFullyFaithful F hy).injective]
+  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe (germKernel_le_stabilizer y)).toEquiv
+
+/-- **Principal points in a local action chart.** Under the hypotheses of
+`TauCeti.card_ineffectiveKernel_eq_card_germKernel`, every automorphism of `ι y` in `C` is
+ineffective if and only if the stabilizer of `y` in `G` equals its germ kernel. -/
+theorem _root_.TauCeti.ineffectiveKernel_eq_top_iff_stabilizer_eq_germKernel [TopologicalSpace C]
+    [IsTopologicalGroupoid C] (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    (y : X) : ineffectiveKernel hs (ι y) = ⊤ ↔ stabilizer G y = germKernel G y := by
+  have hy : F.obj (ActionCategory.objEquiv G X y) = ι y := hobj _
+  let Φ := ActionCategory.stabilizerMulEquivAutOfFullyFaithful F hy
+  rw [Subgroup.eq_top_iff', Φ.surjective.forall,
+    le_antisymm_iff, and_iff_left (germKernel_le_stabilizer y)]
+  exact ⟨fun h g hg ↦
+    (stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff hs hι hobj hy (hσ _)).mp
+      (h ⟨g, hg⟩),
+    fun h g ↦
+      (stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff hs hι hobj hy (hσ _)).mpr
+        (h g.property)⟩
+
+end Chart
 
 variable [ContinuousConstSMul G X]
 

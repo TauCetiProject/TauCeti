@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Frattini
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
-import Mathlib.GroupTheory.GroupAction.Quotient
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Automorphisms acting trivially modulo the Frattini subgroup
@@ -74,7 +74,7 @@ private def liftsMod (s : ι → G) (N : Subgroup G) (H : Subgroup (MulAut G))
     (hH : ∀ α ∈ H, ∀ x : G, (α x : G ⧸ N) = x) : SubMulAction H (ι → G) where
   carrier := {y | ∀ i, (y i : G ⧸ N) = s i}
   smul_mem' α y hy i := by
-    rw [Pi.smul_apply, Subgroup.smul_def, MulAut.smul_def, hH α α.2, hy i]
+    rw [Pi.smul_apply, Subgroup.smul_def, MulAut.smul_def, hH α α.property, hy i]
 
 private theorem mem_liftsMod {s : ι → G} {hH : ∀ α ∈ H, ∀ x : G, (α x : G ⧸ N) = x}
     {y : ι → G} : y ∈ liftsMod s N H hH ↔ ∀ i, (y i : G ⧸ N) = s i :=
@@ -83,7 +83,7 @@ private theorem mem_liftsMod {s : ι → G} {hH : ∀ α ∈ H, ∀ x : G, (α x
 /-- The lifts of `s` modulo `N` are parametrized by the families of elements of `N`. -/
 private def liftsModEquiv (s : ι → G) (hH : ∀ α ∈ H, ∀ x : G, (α x : G ⧸ N) = x) :
     liftsMod s N H hH ≃ (ι → N) where
-  toFun y i := ⟨(y.1 i)⁻¹ * s i, QuotientGroup.eq.mp (mem_liftsMod.mp y.2 i)⟩
+  toFun y i := ⟨(y.val i)⁻¹ * s i, QuotientGroup.eq.mp (mem_liftsMod.mp y.property i)⟩
   invFun n := ⟨fun i ↦ s i * (n i : G)⁻¹, mem_liftsMod.mpr fun i ↦ QuotientGroup.eq.mpr (by simp)⟩
   left_inv y := by
     ext i
@@ -100,17 +100,14 @@ theorem card_dvd_card_pow_of_le_frattini [IsCoatomic (Subgroup G)] [Finite ι] {
     (hs : closure (Set.range s) = ⊤) (hN : N ≤ frattini G)
     (hH : ∀ α ∈ H, ∀ x : G, (α x : G ⧸ N) = x) :
     Nat.card H ∣ Nat.card N ^ Nat.card ι := by
-  -- `H` acts freely on the lifts of `s`: each lift generates, so its stabilizer is trivial.
-  have hfree (y : liftsMod s N H hH) : MulAction.stabilizer H y = ⊥ := by
-    refine eq_bot_iff.mpr fun α hα ↦ mem_bot.mpr (Subtype.ext (MulEquiv.toMonoidHom_injective ?_))
-    refine MonoidHom.eq_of_eqOn_dense
-      (closure_range_eq_top_of_le_frattini hs hN (mem_liftsMod.mp y.2)) ?_
-    rintro _ ⟨i, rfl⟩
-    simpa [Subgroup.smul_def, MulAut.smul_def] using
-      congrFun (congrArg Subtype.val (MulAction.mem_stabilizer_iff.mp hα)) i
-  have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
-  rw [Nat.card_prod, Nat.card_congr (liftsModEquiv s hH), Nat.card_fun] at hcard
-  exact Dvd.intro_left _ hcard.symm
+  -- `H` acts freely on the lifts of `s`: each lift generates, so only the identity fixes it.
+  have : IsCancelSMul H (liftsMod s N H hH) := isCancelSMul_iff_eq_one_of_smul_eq.mpr
+    fun α y hα ↦ Subtype.ext <| MulEquiv.toMonoidHom_injective <| MonoidHom.eq_of_eqOn_dense
+      (closure_range_eq_top_of_le_frattini hs hN (mem_liftsMod.mp y.property)) <| by
+        rintro _ ⟨i, rfl⟩
+        simpa [Subgroup.smul_def, MulAut.smul_def] using congrFun (congrArg Subtype.val hα) i
+  simpa [Nat.card_congr (liftsModEquiv s hH), Nat.card_fun] using
+    MulAction.natCard_dvd_natCard_of_isCancelSMul (G := H) (X := liftsMod s N H hH)
 
 /-- **Automorphisms acting trivially modulo a `p`-subgroup of the Frattini subgroup.** If `G` is
 finite and `N ≤ frattini G` is a `p`-group, then every group of automorphisms of `G` fixing each

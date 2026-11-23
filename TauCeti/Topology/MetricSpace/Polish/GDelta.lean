@@ -21,8 +21,9 @@ as comeagre Gδ sets and model classes cut out by countably many open conditions
 
 ## Main results
 
-* `TauCeti.isGδ_of_isCompletelyMetrizableSpace`: in a perfectly normal Hausdorff space (for
-  example a metrizable space), a completely metrizable subspace is Gδ.
+* `TauCeti.isGδ_of_isCompletelyMetrizableSpace`: in a Hausdorff space, a completely metrizable
+  subspace whose closure is Gδ is itself Gδ. The closure of every set is Gδ in a perfectly normal
+  space, for example in a metrizable space.
 * `TauCeti.isGδ_iff_isCompletelyMetrizableSpace`, `TauCeti.isGδ_iff_polishSpace`: the resulting
   characterizations of Gδ subsets of completely metrizable and of Polish spaces.
 
@@ -32,8 +33,8 @@ The forward direction uses Mathlib's `IsGδ.isCompletelyMetrizableSpace` and
 `IsGδ.polishSpace`. This file supplies the converse and combines it with those
 upstream results to obtain the iff characterizations.
 
-For the converse, the sets `U n` of points having a neighbourhood whose trace on `s` has
-diameter less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
+For the converse, the sets `U n` of points having a neighbourhood any two of whose points in `s`
+are at distance less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
 `s = closure s ∩ ⋂ n, U n`: at a point of the right-hand side, the trace on `s` of its
 neighbourhood filter is a Cauchy filter, whose limit in `s` must be the point itself.
 
@@ -50,12 +51,14 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- A subset of a perfectly normal Hausdorff space (for example of a metrizable space) which is
-completely metrizable in the subspace topology is a Gδ set. -/
-theorem isGδ_of_isCompletelyMetrizableSpace [PerfectlyNormalSpace X] [T2Space X] {s : Set X}
-    [IsCompletelyMetrizableSpace s] : IsGδ s := by
+/-- A subset of a Hausdorff space which is completely metrizable in the subspace topology and
+whose closure is a Gδ set is itself a Gδ set. The closure is Gδ for every subset of a perfectly
+normal space, for example of a metrizable space, where `isClosed_closure.isGδ` supplies the
+hypothesis. -/
+theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
+    [IsCompletelyMetrizableSpace s] (hclosure : IsGδ (closure s)) : IsGδ s := by
   let := upgradeIsCompletelyMetrizable s
-  -- `U n` consists of the points with an open neighbourhood whose trace on `s` has small diameter.
+  -- `U n` consists of the points with an open neighbourhood whose points of `s` are pairwise close.
   let U : ℕ → Set X := fun n ↦
     ⋃₀ {V | IsOpen V ∧ ∀ a b : s, (a : X) ∈ V → (b : X) ∈ V → dist a b < 1 / (n + 1)}
   have hUo (n : ℕ) : IsOpen (U n) := isOpen_sUnion fun V hV ↦ hV.1
@@ -64,15 +67,13 @@ theorem isGδ_of_isCompletelyMetrizableSpace [PerfectlyNormalSpace X] [T2Space X
     obtain ⟨V, hVo, hV⟩ :=
       isOpen_induced_iff.1 (isOpen_ball (x := (⟨x, hx⟩ : s)) (ε := 1 / (n + 1) / 2))
     refine ⟨V, ⟨hVo, fun a b ha hb ↦ ?_⟩, ?_⟩
-    · have ha' : a ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 ha
-      have hb' : b ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 hb
-      calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
-        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 := add_lt_add ha' hb'
+    · calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
+        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 :=
+          add_lt_add (mem_ball.1 (hV ▸ mem_preimage.2 ha)) (mem_ball.1 (hV ▸ mem_preimage.2 hb))
         _ = 1 / (n + 1) := add_halves _
-    · have : (⟨x, hx⟩ : s) ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := mem_ball_self (by positivity)
-      exact mem_preimage.1 (hV ▸ this)
+    · exact mem_preimage.1 (hV ▸ mem_ball_self (by positivity))
   suffices closure s ∩ ⋂ n, U n = s from
-    this ▸ isClosed_closure.isGδ.inter (.iInter_of_isOpen hUo)
+    this ▸ hclosure.inter (.iInter_of_isOpen hUo)
   refine Subset.antisymm (fun x ⟨hxc, hxU⟩ ↦ ?_) (subset_inter subset_closure (subset_iInter hsU))
   have := mem_closure_iff_comap_neBot.1 hxc
   -- The trace on `s` of the neighbourhood filter of `x` is Cauchy for the complete metric of `s`.
@@ -83,18 +84,19 @@ theorem isGδ_of_isCompletelyMetrizableSpace [PerfectlyNormalSpace X] [T2Space X
     exact ⟨_, preimage_mem_comap (hVo.mem_nhds hxV), fun a ha b hb ↦ (hV a b ha hb).trans hn⟩
   obtain ⟨y, hy⟩ := CompleteSpace.complete hF
   obtain rfl : x = y := tendsto_nhds_unique tendsto_comap
-    ((continuous_subtype_val.tendsto y).mono_left hy)
-  exact y.2
+    ((continuous_subtypeVal.tendsto y).mono_left hy)
+  exact y.property
 
 /-- **Alexandrov's theorem and its converse**: a subset of a completely metrizable space is
 completely metrizable in the subspace topology if and only if it is a Gδ set. -/
 theorem isGδ_iff_isCompletelyMetrizableSpace [IsCompletelyMetrizableSpace X] {s : Set X} :
     IsGδ s ↔ IsCompletelyMetrizableSpace s :=
-  ⟨IsGδ.isCompletelyMetrizableSpace, fun _ ↦ isGδ_of_isCompletelyMetrizableSpace⟩
+  ⟨IsGδ.isCompletelyMetrizableSpace,
+    fun _ ↦ isGδ_of_isCompletelyMetrizableSpace isClosed_closure.isGδ⟩
 
 /-- A subset of a Polish space is Polish in the subspace topology if and only if it is a Gδ
 set. -/
 theorem isGδ_iff_polishSpace [PolishSpace X] {s : Set X} : IsGδ s ↔ PolishSpace s :=
-  ⟨IsGδ.polishSpace, fun _ ↦ isGδ_of_isCompletelyMetrizableSpace⟩
+  ⟨IsGδ.polishSpace, fun _ ↦ isGδ_of_isCompletelyMetrizableSpace isClosed_closure.isGδ⟩
 
 end TauCeti

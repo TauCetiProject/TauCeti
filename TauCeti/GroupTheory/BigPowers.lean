@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # The big powers property
@@ -42,8 +43,12 @@ amalgamated products and HNN extensions along centralizers.
 * `Group.IsBP.of_injective`, `Group.IsBP.of_isDiscriminatedBy`: subgroups of BP groups, and groups
   discriminated by a BP group, are BP groups.
 * `Group.IsBP.isMulTorsionFree`: BP groups are torsion-free.
+* `Group.IsBP.exists_prod_map_pow_mul_ne_one`: in a CSA group with the big powers property, a
+  product of `k`-th powers of conjugates of nonzero powers of `u ≠ 1`, consecutive ones not
+  commuting, stays nontrivial after multiplying by a fixed element, for all large `k`.
 * `Group.isBP_iff_isMulTorsionFree`: a commutative group is a BP group exactly when it is
   torsion-free.
+* `Group.not_isBP_of_finite`: a nontrivial finite group, such as `ℤ/2`, is not a BP group.
 * `Group.IsBP.exists_forall_mul_prod_ne_one`: in a CSA group with the big powers property,
   alternating products of big powers of `u ≠ 1` are nontrivial.
 
@@ -128,6 +133,20 @@ theorem of_isDiscriminatedBy {C K H : Type*} [Group C] [Group K] [Group H] (hH :
     let ⟨φ, hφ⟩ := (TauCeti.GroupAlgGeom.isDiscriminatedBy_def ιK ιH).1 h s hs
     ⟨φ, hφ⟩
 
+/-- The big powers property for a list with a common exponent: if `l` is a nonempty list of
+nonidentity elements in which consecutive entries do not commute, then the product of the `k`-th
+powers of its entries is nontrivial for all large `k`. -/
+theorem exists_prod_map_pow_ne_one (hG : IsBP G) {l : List G} (hl : l ≠ [])
+    (h1 : ∀ x ∈ l, x ≠ 1) (hc : l.IsChain fun x y => ¬Commute x y) :
+    ∃ N : ℕ, ∀ k, N ≤ k → (l.map (· ^ k)).prod ≠ 1 := by
+  obtain ⟨a, l, rfl⟩ := List.exists_cons_of_ne_nil hl
+  obtain ⟨N, hN⟩ := hG (k := l.length) (fun i => (a :: l)[(i : ℕ)])
+    (fun i => h1 _ (List.getElem_mem _))
+    (fun i => List.isChain_iff_getElem.1 hc i (by simp))
+  refine ⟨N, fun k hk => ?_⟩
+  rw [← List.ofFn_getElem_eq_map]
+  exact hN (fun _ => k) (fun _ => hk)
+
 /-- A BP group is torsion-free: the condition for a singleton tuple `(g)` says that the powers
 `g ^ e` are nontrivial for all large `e`. -/
 theorem isMulTorsionFree (hG : IsBP G) : IsMulTorsionFree G := by
@@ -139,11 +158,108 @@ theorem isMulTorsionFree (hG : IsBP G) : IsMulTorsionFree G := by
   · exact le_trans (Nat.le_succ N) (Nat.le_mul_of_pos_left _ hn)
   · simp [pow_mul, hgn]
 
+/-- Consecutive entries of `Hs ++ Y :: (Hs⁻¹ reversed ++ [Z])` do not commute, provided this
+holds within `Hs`, at the junction of the last entry of `Hs` with `Y`, and at the junction of the
+first entry of `Hs` with `Z`. -/
+private theorem isChain_append_cons_reverse {H₁ : G} {Hs : List G} {Y Z : G}
+    (hc : (H₁ :: Hs).IsChain fun x y => ¬Commute x y)
+    (hY : ¬Commute ((H₁ :: Hs).getLast (List.cons_ne_nil _ _)) Y) (hZ : ¬Commute H₁ Z) :
+    ((H₁ :: Hs) ++ Y :: (((H₁ :: Hs).map (·⁻¹)).reverse ++ [Z])).IsChain
+      fun x y => ¬Commute x y := by
+  refine List.isChain_append.2 ⟨hc, List.isChain_cons.2 ⟨?_, List.isChain_append.2
+    ⟨?_, List.isChain_singleton _, ?_⟩⟩, ?_⟩
+  · intro x hx
+    rw [List.head?_append, List.head?_reverse, List.getLast?_map,
+      List.getLast?_eq_some_getLast (List.cons_ne_nil _ _)] at hx
+    simp only [Option.map_some, Option.some_or, Option.mem_def, Option.some.injEq] at hx
+    rw [← hx, Commute.inv_right_iff]
+    exact fun h => hY h.symm
+  · rw [List.isChain_reverse, List.isChain_map]
+    exact hc.imp fun x y h h' => h (Commute.inv_inv_iff.1 h').symm
+  · intro x hx y hy
+    simp only [List.getLast?_reverse, List.head?_map, List.head?_cons, Option.map_some,
+      Option.mem_def, Option.some.injEq] at hx
+    simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hy
+    rw [← hx, ← hy, Commute.inv_left_iff]
+    exact hZ
+  · intro x hx y hy
+    rw [List.getLast?_eq_some_getLast (List.cons_ne_nil _ _), Option.mem_def,
+      Option.some.injEq] at hx
+    simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hy
+    rw [← hx, ← hy]
+    exact hY
+
+/-- In a CSA group with the big powers property, if `H₁, …, Hₘ` (`m ≥ 1`) are conjugates of
+nonzero powers of `u ≠ 1`, consecutive ones not commuting, then `H₁ ^ k ⋯ Hₘ ^ k * z ≠ 1` for all
+large `k`. -/
+theorem exists_prod_map_pow_mul_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu : u ≠ 1)
+    {Hs : List G} (hne : Hs ≠ [])
+    (hconj : ∀ H ∈ Hs, ∃ y : G, ∃ e : ℤ, e ≠ 0 ∧ H = y * u ^ e * y⁻¹)
+    (hc : Hs.IsChain fun x y => ¬Commute x y) (z : G) :
+    ∃ N : ℕ, ∀ k, N ≤ k → (Hs.map (· ^ k)).prod * z ≠ 1 := by
+  have := hBP.isMulTorsionFree
+  have hconj1 : ∀ {y : G} {e : ℤ}, e ≠ 0 → y * u ^ e * y⁻¹ ≠ 1 := fun he h => he <|
+    (IsMulTorsionFree.zpow_eq_one_iff_right hu).1 (by simpa using h)
+  have hne1 : ∀ H ∈ Hs, H ≠ 1 := fun H hH => by
+    obtain ⟨y, e, he, rfl⟩ := hconj H hH
+    exact hconj1 he
+  rcases Hs with _ | ⟨H₁, _ | ⟨H₂, rest⟩⟩
+  · exact absurd rfl hne
+  · -- A single conjugate.
+    obtain ⟨N, hN⟩ := TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder
+      (not_isOfFinOrder_of_isMulTorsionFree (hne1 H₁ (by simp))) z⁻¹
+    exact ⟨N, fun k hk h ↦ hN k hk (by simpa [mul_eq_one_iff_eq_inv] using h)⟩
+  · -- Several conjugates: if `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then
+    -- `P * Y ^ k * P⁻¹ * Z ^ k = 1` for `Y = W * u * W⁻¹` and `Z = z⁻¹ * Y⁻¹ * z`, which the big
+    -- powers property excludes once `W` is chosen so that `Y` commutes with neither `Hₘ` nor
+    -- `z * H₁ * z⁻¹`.
+    set Hs := H₁ :: H₂ :: rest
+    obtain ⟨y₁, e₁, he₁, hH₁⟩ := hconj H₁ (by simp [Hs])
+    obtain ⟨y₂, e₂, -, hH₂⟩ := hconj H₂ (by simp [Hs])
+    obtain ⟨ym, em, hem, hHm⟩ := hconj (Hs.getLast (by simp [Hs])) (List.getLast_mem _)
+    have hg : y₁⁻¹ * y₂ ∉ Subgroup.centralizer {u} := fun h =>
+      (List.isChain_cons_cons.1 hc).1
+        (hH₁ ▸ hH₂ ▸ commute_conj_zpow_of_inv_mul_mem_centralizer e₁ e₂ h)
+    obtain ⟨W, hW₁, hW₂⟩ := hG.exists_inv_mul_notMem_centralizer hu hg ym (z * y₁)
+    set Y := W * u ^ (1 : ℤ) * W⁻¹
+    set Z := z⁻¹ * W * u ^ (-1 : ℤ) * (z⁻¹ * W)⁻¹
+    obtain ⟨N, hN⟩ := hBP.exists_prod_map_pow_ne_one
+      (l := Hs ++ Y :: ((Hs.map (·⁻¹)).reverse ++ [Z])) (by simp)
+      (by
+        simp only [List.mem_append, List.mem_cons, List.mem_reverse, List.mem_map,
+          List.not_mem_nil, or_false]
+        rintro x (hx | rfl | ⟨H, hH, rfl⟩ | rfl)
+        · exact hne1 x hx
+        · exact hconj1 one_ne_zero
+        · exact inv_ne_one.2 (hne1 H hH)
+        · exact hconj1 (by norm_num))
+      (isChain_append_cons_reverse hc
+        (by rw [hHm]; exact hG.not_commute_conj_zpow hem one_ne_zero hW₁)
+        (by
+          rw [hH₁]
+          exact hG.not_commute_conj_zpow he₁ (by norm_num) (by simpa [mul_assoc] using hW₂)))
+    refine ⟨N, fun k hk h => hN k hk ?_⟩
+    have hP : (Hs.map (· ^ k)).prod = z⁻¹ := eq_inv_of_mul_eq_one_left h
+    have hrev : ((Hs.map (·⁻¹)).reverse.map (· ^ k)).prod = (Hs.map (· ^ k)).prod⁻¹ := by
+      rw [List.prod_inv_reverse, List.map_reverse, List.map_map, List.map_map]
+      simp [Function.comp_def, inv_pow]
+    simp only [List.map_append, List.map_cons, List.prod_append, List.prod_cons,
+      List.map_nil, List.prod_nil, mul_one, hrev, hP, inv_inv, Y, Z, conj_pow, zpow_one,
+      zpow_neg_one, inv_pow]
+    group
+
 end IsBP
 
 /-- A trivial group is a BP group: it has no nonidentity elements. -/
 theorem isBP_of_subsingleton [Subsingleton G] : IsBP G :=
   fun _ _ hu _ => ((hu 0) (Subsingleton.elim _ _)).elim
+
+/-- A nontrivial finite group, such as `ℤ/2`, is not a BP group: a nonidentity element has finite
+order, so its powers are trivial for arbitrarily large exponents. -/
+theorem not_isBP_of_finite [Finite G] [Nontrivial G] : ¬IsBP G := fun h => by
+  have := h.isMulTorsionFree
+  obtain ⟨g, hg⟩ := exists_ne (1 : G)
+  exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
 
 /-- A commutative group is a BP group exactly when it is torsion-free: consecutive entries always
 commute, so only singleton tuples need to be checked. -/
@@ -177,15 +293,15 @@ private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u :
   obtain ⟨n, hn⟩ : ∃ n, L.length = n + 1 :=
     Nat.exists_eq_succ_of_ne_zero (by simpa using hL)
   let w : G × ℤ → G := fun p => p.1 * u ^ p.2 * p.1⁻¹
-  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.1]'(by omega)))
+  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.val]'(by omega)))
     (fun i => by
       simpa [w, conj_eq_one_iff, IsMulTorsionFree.zpow_eq_one_iff] using
         ⟨hu, he _ (List.getElem_mem _)⟩)
-    (fun i => hG.not_commute_conj_zpow hu (he _ (List.getElem_mem _))
-      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.1 (by omega)))
+    (fun i => hG.not_commute_conj_zpow (he _ (List.getElem_mem _))
+      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.val (by omega)))
   refine ⟨N, fun k hk => ?_⟩
   have h := hN (fun _ => k) (fun _ => hk)
-  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.1]'(by omega)) ^ k) =
+  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.val]'(by omega)) ^ k) =
       L.map fun p => p.1 * u ^ ((k : ℤ) * p.2) * p.1⁻¹ := by
     rw [List.ofFn_congr hn.symm]
     simp only [Fin.val_cast]
@@ -305,16 +421,15 @@ takes each value for at most one `k`. -/
 private theorem exists_forall_conjProd_singleton_ne [IsMulTorsionFree G] {u : G} (hu : u ≠ 1)
     {p : G × ℤ} (hp : p.2 ≠ 0) (a : G) :
     ∃ N : ℕ, ∀ k : ℕ, N ≤ k → conjProd u k [p] ≠ a := by
-  by_cases h : ∃ k₀, conjProd u k₀ [p] = a
-  · obtain ⟨k₀, hk₀⟩ := h
-    refine ⟨k₀ + 1, fun k hk hka => ?_⟩
-    rw [← hk₀] at hka
-    have h : (k : ℤ) * p.2 = k₀ * p.2 := by
-      simpa [conjProd, IsMulTorsionFree.zpow_right_inj hu] using hka
-    have := mul_right_cancel₀ hp h
-    omega
-  · push Not at h
-    exact ⟨0, fun k _ => h k⟩
+  have hH : p.1 * u ^ p.2 * p.1⁻¹ ≠ 1 := fun h => hp <|
+    (IsMulTorsionFree.zpow_eq_one_iff_right hu).1 (by simpa using h)
+  obtain ⟨N, hN⟩ := TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder
+    (not_isOfFinOrder_of_isMulTorsionFree hH) a
+  refine ⟨N, fun k hk h => hN k hk ?_⟩
+  have hk' : (p.1 * u ^ p.2 * p.1⁻¹) ^ k = conjProd u k [p] := by
+    simp only [conjProd, List.map_singleton, List.prod_singleton, ← zpow_natCast, conj_zpow]
+    group
+  rw [hk', h]
 
 /-- A product `∏ᵢ aᵢ * u ^ (k * eᵢ) * aᵢ⁻¹` in which factors with conjugators in one coset of
 `C_G(u)` have exponents of the same sign avoids any given element `a` for all large `k`. -/

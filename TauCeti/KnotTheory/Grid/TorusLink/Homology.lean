@@ -64,13 +64,13 @@ variable (p q : ℕ)
 /-- No power of a grid variable kills the class of the `X`-marking state in the unblocked grid
 homology of a torus link grid. -/
 theorem X_pow_smul_XMarkingClass_torusLink_ne_zero (R : Type*) [CommRing R] [CharP R 2]
-    [Nontrivial R] (i : Fin (p + 1 + (q + 1))) (k : ℕ) :
+    (i : Fin (p + 1 + (q + 1))) (k : ℕ) :
     (MvPolynomial.X i ^ k : MvPolynomial (Fin (p + 1 + (q + 1))) R) •
       (torusLink p q).XMarkingClass R ≠ 0 :=
   (torusLink p q).X_pow_smul_XMarkingClass_ne_zero R
     (even_card_unblockedRectangles_torusLink_X) i k
 
-variable {p q} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
+variable {p q} (h : (p + 1).Coprime (q + 1)) (K : Type*) [CommRing K] [CharP K 2]
 
 /-- On a torus knot grid the Alexander grading `p q / 2` of the `X`-marking state is a
 non-torsion degree of the `K[U]`-module `GH⁻`: the class of that state is a homogeneous element

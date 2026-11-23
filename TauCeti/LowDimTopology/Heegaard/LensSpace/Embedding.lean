@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Manifold.Instances.LensSpace
-public import TauCeti.LowDimTopology.SeifertFibration
+public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -123,31 +123,8 @@ end Descend
 /-! #### The two solid tori -/
 
 /-- The twist `(u, w) ↦ (u w ^ e, w)` of the solid torus. -/
-private def twist (e : ℤ) : SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 where
-  toFun x := (⟨x.1 * (x.2 ^ e : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 x.1.2⟩,
-    Circle.homeomorphSphere x.2)
-  invFun y := (⟨y.1 * (Circle.homeomorphSphere.symm y.2 ^ (-e) : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 y.1.2⟩,
-    Circle.homeomorphSphere.symm y.2)
-  left_inv x := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.symm_apply_apply x.2)
-    simp only [Homeomorph.symm_apply_apply, mul_assoc, ← Circle.coe_mul, ← zpow_add,
-      add_neg_cancel, zpow_zero, Circle.coe_one, mul_one]
-  right_inv y := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.apply_symm_apply y.2)
-    simp only [mul_assoc, ← Circle.coe_mul, ← zpow_add, neg_add_cancel, zpow_zero, Circle.coe_one,
-      mul_one]
-  continuous_toFun := by
-    refine .prodMk (.subtype_mk ?_ _) (Circle.homeomorphSphere.continuous.comp continuous_snd)
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) e).comp continuous_snd))
-  continuous_invFun := by
-    have h : Continuous fun y : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 ↦
-        Circle.homeomorphSphere.symm y.2 := by fun_prop
-    refine .prodMk (.subtype_mk ?_ _) h
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) (-e)).comp h))
+private def twist (e : ℤ) : SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 :=
+  (SolidTorus.twist e).trans (Homeomorph.prodCongr (Homeomorph.refl _) Circle.homeomorphSphere)
 
 /-- The solid torus `‖x 0‖ ≤ ‖x 1‖` of the unit sphere of `ℂ²`, parametrized so that `(u, w)` goes
 to the unit vector proportional to `(u w ^ e, w)`. -/
@@ -207,7 +184,7 @@ theorem range_leftCover (e : ℤ) :
   · rintro ⟨y, rfl⟩
     simp only [mem_ofPred_eq, coe_leftCover_apply_zero, coe_leftCover_apply_one, norm_smul,
       norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
+    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.property)
   · refine ⟨(twist e).symm (sphereProdFstLeHomeomorph ℂ ℂ
       ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩), ?_⟩
     ext1
@@ -223,7 +200,7 @@ theorem range_rightCover (e : ℤ) :
   · rintro ⟨y, rfl⟩
     simp only [mem_ofPred_eq, coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul,
       norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
+    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.property)
   · refine ⟨(twist e).symm (sphereProdSndLeHomeomorph ℂ ℂ
       ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩).swap, ?_⟩
     ext1
@@ -318,14 +295,14 @@ theorem norm_eq_one_of_leftEmbedding_eq_rightEmbedding {e e' : ℤ} (he : (e : Z
   simp only [norm_lensRotation_apply, coe_leftCover_apply_zero, coe_leftCover_apply_one,
     coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul, norm_inv, Real.norm_eq_abs,
     abs_of_nonneg (Real.sqrt_nonneg _), norm_mul, Circle.norm_coe, mul_one] at h0 h1
-  have hx : ‖(x.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.1.2
+  have hx : ‖(x.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.1.property
   have hsx : 0 < (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
   -- With `c u` the scale of `u`, `c u' = c u ‖u‖` and `c u' ‖u'‖ = c u`, so `‖u‖ ‖u'‖ = 1`.
   have huv : ‖(x.1 : ℂ)‖ * ‖(y.1 : ℂ)‖ = 1 := by
     rw [h0, mul_assoc] at h1
     exact (mul_eq_left₀ hsx.ne').1 h1
   rw [powCore_apply]
-  nlinarith [norm_nonneg (x.1 : ℂ), mem_closedBall_zero_iff.1 y.1.2]
+  nlinarith [norm_nonneg (x.1 : ℂ), mem_closedBall_zero_iff.1 y.1.property]
 
 end LensSpace
 

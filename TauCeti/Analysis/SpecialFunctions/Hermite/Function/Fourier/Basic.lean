@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+public import TauCeti.Analysis.Fourier.Continuous
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Ladder
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp
 
@@ -256,14 +257,6 @@ private theorem integrable_deriv_twoPiHermiteFunction_complex (n : ℕ) :
   rw [deriv_twoPiHermiteFunction_complex]
   exact (integrable_deriv_twoPiHermiteFunction n).ofReal
 
-private theorem fourier_const_smul (c : ℂ) (f : ℝ → ℂ) :
-    𝓕 (c • f) = c • 𝓕 f := by
-  funext w
-  simp only [Pi.smul_apply]
-  rw [Real.fourier_real_eq, Real.fourier_real_eq, ← integral_smul]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun v => ?_)
-  exact smul_comm (𝐞 (-(v * w))) c (f v)
-
 private theorem fourier_twoPiHermiteFunction_zero :
     𝓕 (fun x : ℝ => (twoPiHermiteFunction 0 x : ℂ)) =
       fun x : ℝ => (twoPiHermiteFunction 0 x : ℂ) := by
@@ -297,7 +290,7 @@ private theorem fourier_twoPiHermiteFunction_zero :
   let g : ℝ → ℂ := fun x => (Real.exp (-Real.pi * x ^ 2) : ℂ)
   calc
     𝓕 (fun x : ℝ => (twoPiHermiteFunction 0 x : ℂ)) = 𝓕 (c • g) := by rw [hfun]
-    _ = c • 𝓕 g := fourier_const_smul c g
+    _ = c • 𝓕 g := Real.fourier_const_smul c g
     _ = c • g := by rw [hgauss]
     _ = fun x : ℝ => (twoPiHermiteFunction 0 x : ℂ) := hfun.symm
 
@@ -354,7 +347,7 @@ private theorem fourier_mul_twoPiHermiteFunction_of_eigen (n : ℕ) (eigen : ℂ
     dsimp only [xf]
     simp only [Pi.smul_apply, Complex.real_smul, smul_eq_mul]
     ring
-  rw [hleft, hweighted, fourier_const_smul, Pi.smul_apply, smul_eq_mul] at hd
+  rw [hleft, hweighted, Real.fourier_const_smul, Pi.smul_apply, smul_eq_mul] at hd
   have hpi : (2 * (Real.pi : ℂ)) ≠ 0 :=
     mul_ne_zero (by norm_num) (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)
   rw [mul_assoc (Complex.I / (2 * Real.pi)) eigen, hd]
@@ -399,9 +392,9 @@ private theorem fourier_twoPiHermiteFunction_succ_eq (n : ℕ) (w : ℝ) :
     congrFun (VectorFourier.fourierIntegral_add
       (e := 𝐞) (L := innerₗ ℝ) (by fun_prop) (by fun_prop) hsxf hinvdf) w
   rw [congrArg (fun g : ℝ → ℂ => 𝓕 g w) (twoPiHermiteFunction_succ_complex n),
-    congrFun (fourier_const_smul _ (s • xf + (-s⁻¹) • df)) w, Pi.smul_apply, smul_eq_mul,
-    hadd, Pi.add_apply, fourier_const_smul, fourier_const_smul, Pi.smul_apply, Pi.smul_apply,
-    smul_eq_mul, smul_eq_mul]
+    congrFun (Real.fourier_const_smul _ (s • xf + (-s⁻¹) • df)) w, Pi.smul_apply, smul_eq_mul,
+    hadd, Pi.add_apply, Real.fourier_const_smul, Real.fourier_const_smul, Pi.smul_apply,
+    Pi.smul_apply, smul_eq_mul, smul_eq_mul]
 
 private theorem fourier_twoPiHermiteFunction_succ (n : ℕ) (eigen : ℂ) (hfourier :
       𝓕 (fun x : ℝ => (twoPiHermiteFunction n x : ℂ)) =

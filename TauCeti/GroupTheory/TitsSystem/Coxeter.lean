@@ -62,7 +62,7 @@ def coxeterMatrix : CoxeterMatrix T.simple where
     have h := orderOf_inv ((s : T.WeylGroup) * t)
     simpa only [mul_inv_rev, T.inv_simple s.property,
       T.inv_simple t.property] using h
-  diagonal s := by simp [T.simple_sq_eq_one s.property]
+  diagonal s := by simp [T.simple_mul_simple_self s.property]
   off_diagonal s t hst := by
     intro horder
     have h := orderOf_eq_one_iff.mp horder
@@ -109,7 +109,7 @@ theorem IsIrreducible.of_mulEquiv {T : TitsSystem G} (hirr : T.IsIrreducible) {H
     have ht' : (⟨e.symm t, (hmem _).mpr (by simp)⟩ : T'.simple) ∉ J :=
       fun h ↦ ht ⟨_, h, by simp⟩
     simpa [hs] using congrArg e (hJ s' hs' _ ht')
-  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.2⟩ : T.simple) ∈ J₀ := by
+  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.property⟩ : T.simple) ∈ J₀ := by
     refine fun s ↦ ⟨fun hs ↦ ⟨s, hs, rfl⟩, ?_⟩
     rintro ⟨t, ht, hts⟩
     rwa [← Subtype.ext (e.injective hts)]

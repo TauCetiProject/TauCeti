@@ -9,10 +9,11 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.Algebra.Group.Even
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -136,7 +137,7 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     simpa using isUnit_one_sub_self_of_mem_nonunits (-(2 * a * t))
       ((maximalIdeal R).neg_mem ((maximalIdeal R).mul_mem_left _ (by simpa using htm)))
   have h₂ : B f₀ e₀ = 1 := by rw [← hB.eq, h₁]
-  set s : R := ↑hs.unit⁻¹ with hs_def
+  set s : R := ↑hs.unit⁻¹
   have hss : s * (1 + 2 * a * t) = 1 := hs.val_inv_mul
   set u : M := t • e₀ + f₀ with hu_def
   set w : M := s • e₀ with hw_def
@@ -150,7 +151,7 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     linear_combination hss
   have hwu : B w u = 1 := by rw [← hB.eq, huw]
   -- Second, `B w w = 2d` with `d = a s²` a unit, and `D = 4d - 1` is a unit.
-  set d : R := a * s ^ 2 with hd_def
+  set d : R := a * s ^ 2
   have hww : B w w = 2 * d := by
     simp only [hw_def, map_smul, LinearMap.smul_apply, smul_eq_mul, ha]
     ring
@@ -220,6 +221,69 @@ section Classification
 
 variable {B : BilinForm R M} {C : BilinForm R N}
 
+/-- **Mixed binary blocks.** In rank two, let even unimodular forms `B` and `C` have pairs with
+Gram matrices `!![p, 1; 1, p]` and `!![q, 1; 1, q]` such that `(p * p - 1) * (q * q - 1) = -3`. If
+the product of their Gram determinants is a square, then `-3` is a square. -/
+private theorem isSquare_neg_three_of_apply_pair_eq (hR : Nat.card (ResidueField R) = 2)
+    (hB : B.IsSymm) (hC : C.IsSymm) (b : Basis (Fin 2) R M) (c : Basis (Fin 2) R N)
+    (hsq : IsSquare ((B.toMatrix b).det * (C.toMatrix c).det)) {p q : R}
+    (hpq : (p * p - 1) * (q * q - 1) = -3) {eB fB : M} {eC fC : N} (hB₁ : B eB fB = 1)
+    (hC₁ : C eC fC = 1) (heB : B eB eB = p) (hfB : B fB fB = p) (heC : C eC eC = q)
+    (hfC : C fC fC = q) : IsSquare (-3 : R) := by
+  have hGB := hB.apply_pair_eq heB hB₁ hfB
+  have hGC := hC.apply_pair_eq heC hC₁ hfC
+  have hunit : IsUnit ((p * p - 1) * (q * q - 1)) := by
+    rw [hpq]
+    exact (isUnit_three_of_card_residueField_eq_two hR).neg
+  obtain ⟨-, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (m := 0) (k := 2) b hGB
+    (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_left hunit)
+  obtain ⟨-, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (m := 0) (k := 2) c hGC
+    (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_right hunit)
+  rw [hdetB, hdetC] at hsq
+  refine (hwB.mul hwC).isSquare_sq_mul_iff.mp ?_
+  convert hsq using 1
+  simp [Matrix.det_fin_two_of, ← hpq]
+  ring
+
+/-- **Equal binary blocks.** Let `B` and `C` be symmetric forms with unit Gram determinants in
+bases of size `m + 2`, whose product of determinants is a square, having pairs with the same Gram
+matrix `!![p, 1; 1, p]`, where `p * p - 1` is a unit. If the restrictions to the orthogonal
+complements of the pairs are isometric whenever their Gram determinants in bases of size `m` are
+units with square product, then `B` and `C` are isometric. -/
+private theorem equivalent_of_apply_pair_eq (hB : B.IsSymm) (hC : C.IsSymm) {m : ℕ}
+    (b : Basis (Fin (m + 2)) R M) (c : Basis (Fin (m + 2)) R N) {p : R} (hp : IsUnit (p * p - 1))
+    (hBdet : IsUnit (B.toMatrix b).det) (hCdet : IsUnit (C.toMatrix c).det)
+    (hsq : IsSquare ((B.toMatrix b).det * (C.toMatrix c).det)) {eB fB : M} {eC fC : N}
+    (hB₁ : B eB fB = 1) (hC₁ : C eC fC = 1) (heB : B eB eB = p) (hfB : B fB fB = p)
+    (heC : C eC eC = p) (hfC : C fC fC = p)
+    (hind : ∀ (tB : Basis (Fin m) R (B.orthogonal (Submodule.span R (Set.range ![eB, fB]))))
+      (tC : Basis (Fin m) R (C.orthogonal (Submodule.span R (Set.range ![eC, fC])))),
+      IsUnit ((B.restrict (B.orthogonal (Submodule.span R (Set.range ![eB, fB])))).toMatrix
+        tB).det →
+      IsUnit ((C.restrict (C.orthogonal (Submodule.span R (Set.range ![eC, fC])))).toMatrix
+        tC).det →
+      IsSquare (((B.restrict (B.orthogonal (Submodule.span R (Set.range ![eB, fB])))).toMatrix
+        tB).det *
+        ((C.restrict (C.orthogonal (Submodule.span R (Set.range ![eC, fC])))).toMatrix tC).det) →
+      (B.restrict (B.orthogonal (Submodule.span R (Set.range ![eB, fB])))).Equivalent
+        (C.restrict (C.orthogonal (Submodule.span R (Set.range ![eC, fC]))))) : B.Equivalent C := by
+  have hGB := hB.apply_pair_eq heB hB₁ hfB
+  have hGC := hC.apply_pair_eq heC hC₁ hfC
+  have hGdet : IsUnit (!![p, 1; 1, p] : Matrix (Fin 2) (Fin 2) R).det := by
+    simpa [Matrix.det_fin_two_of] using hp
+  obtain ⟨hcB, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (k := 2) b hGB hGdet
+  obtain ⟨hcC, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (k := 2) c hGC hGdet
+  refine hB.equivalent_of_equivalent_restrict_orthogonal hC hGB hGC hGdet hcB hcC
+    (hind tB tC ?_ ?_ ?_)
+  · rw [hdetB] at hBdet
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hBdet)
+  · rw [hdetC] at hCdet
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hCdet)
+  · rw [hdetB, hdetC] at hsq
+    refine ((hwB.mul hwC).mul hGdet).isSquare_sq_mul_iff.mp ?_
+    convert hsq using 1
+    ring
+
 /-- **A binary block of an even unimodular form.** If `M` has a basis of size `m + 2` in which the
 Gram determinant of `B` is a unit, then `B` has a pair with Gram matrix `!![0, 1; 1, 0]`, or
 `m = 0` and `B` has a pair with Gram matrix `!![2, 1; 1, 2]`. -/
@@ -240,8 +304,8 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
   -- Split off the span of `e₁, f₁` and look for a second binary block in its complement.
   have hG := hB.apply_pair_eq hV.1 h₁ hV.2
   have hGdet : IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) R).det := by
-    rw [Matrix.det_fin_two_of, show (2 : R) * 2 - 1 * 1 = 1 - -2 by ring]
-    exact isUnit_one_sub_self_of_mem_nonunits _ ((maximalIdeal R).neg_mem h2)
+    simpa [Matrix.det_fin_two_of, show (2 : R) * 2 - 1 = 3 by norm_num] using
+      isUnit_three_of_card_residueField_eq_two hR
   obtain ⟨-, t, w, -, hdetT⟩ := hB.exists_basis_orthogonal (k := 2) b hG hGdet
   have hTdet : IsUnit ((B.restrict _).toMatrix t).det := by
     rw [hdetT] at hdet
@@ -258,7 +322,7 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
       B e₁ x = 0 ∧ B f₁ x = 0 :=
     ⟨hx e₁ (Submodule.subset_span ⟨0, rfl⟩), hx f₁ (Submodule.subset_span ⟨1, rfl⟩)⟩
   obtain ⟨e, f, h⟩ := hB.exists_hyperbolic_of_two_one_one_two h2 h₁ hV.1 hV.2 h₂ hV₂.1 hV₂.2
-    (hT _ e₂.2).1 (hT _ f₂.2).1 (hT _ e₂.2).2 (hT _ f₂.2).2
+    (hT _ e₂.property).1 (hT _ f₂.property).1 (hT _ e₂.property).2 (hT _ f₂.property).2
   exact ⟨e, f, h.1, Or.inl h.2⟩
 
 /-- Even forms with unit Gram determinant in rank below two are isometric to any form in the same
@@ -288,63 +352,29 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro P Q _ _ _ _ B C hB hC hBeven hCeven b c hBdet hCdet hsq
-  have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
-  -- Squares of units cancel from a square.
-  have hcancel {u x : R} (hu : IsUnit u) (h : IsSquare (u ^ 2 * x)) : IsSquare x := by
-    have := (IsSquare.sq (↑hu.unit⁻¹ : R)).mul h
-    rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
   obtain hn | hn := lt_or_ge n 2
   · exact equivalent_of_lt_two_of_even hR hn hBeven b c hBdet
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩
   obtain ⟨eB, fB, hB₁, hBp⟩ := hB.exists_pair_of_even hR hBeven b hBdet
   obtain ⟨eC, fC, hC₁, hCp⟩ := hC.exists_pair_of_even hR hCeven c hCdet
-  -- If the two binary blocks agree, split them off and use the inductive hypothesis.
   have key (p : R) (hp : IsUnit (p * p - 1)) (heB : B eB eB = p) (hfB : B fB fB = p)
-      (heC : C eC eC = p) (hfC : C fC fC = p) : B.Equivalent C := by
-    have hGB := hB.apply_pair_eq heB hB₁ hfB
-    have hGC := hC.apply_pair_eq heC hC₁ hfC
-    have hGdet : IsUnit (!![p, 1; 1, p] : Matrix (Fin 2) (Fin 2) R).det := by
-      simpa [Matrix.det_fin_two_of] using hp
-    obtain ⟨hcB, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (k := 2) b hGB hGdet
-    obtain ⟨hcC, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (k := 2) c hGC hGdet
-    refine hB.equivalent_of_equivalent_restrict_orthogonal hC hGB hGC hGdet hcB hcC
-      (ih m (by omega) (hB.restrict _) (hC.restrict _) (fun x ↦ hBeven x) (fun x ↦ hCeven x) tB tC
-        ?_ ?_ ?_)
-    · rw [hdetB] at hBdet
-      exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hBdet)
-    · rw [hdetC] at hCdet
-      exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hCdet)
-    · rw [hdetB, hdetC] at hsq
-      refine hcancel ((hwB.mul hwC).mul hGdet) ?_
-      convert hsq using 1
-      ring
+      (heC : C eC eC = p) (hfC : C fC fC = p) : B.Equivalent C :=
+    equivalent_of_apply_pair_eq hB hC b c hp hBdet hCdet hsq hB₁ hC₁ heB hfB heC hfC
+      fun tB tC ↦ ih m (by omega) (hB.restrict _) (hC.restrict _) (fun x ↦ hBeven x)
+        (fun x ↦ hCeven x) tB tC
   -- Blocks of different types occur only in rank two, where the determinants differ by `-3`.
-  have mixed (p q : R) (hpq : (p * p - 1) * (q * q - 1) = -3) (hm : m = 0)
-      (heB : B eB eB = p) (hfB : B fB fB = p) (heC : C eC eC = q) (hfC : C fC fC = q) :
-      B.Equivalent C := by
-    subst hm
-    have hGB := hB.apply_pair_eq heB hB₁ hfB
-    have hGC := hC.apply_pair_eq heC hC₁ hfC
-    have hunit : IsUnit ((p * p - 1) * (q * q - 1)) := by
-      rw [hpq, show (-3 : R) = -(1 - -2) by ring]
-      exact (isUnit_one_sub_self_of_mem_nonunits _ ((maximalIdeal R).neg_mem h2)).neg
-    obtain ⟨-, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (k := 2) b hGB
-      (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_left hunit)
-    obtain ⟨-, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (k := 2) c hGC
-      (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_right hunit)
-    rw [hdetB, hdetC] at hsq
-    refine absurd (hcancel (hwB.mul hwC) ?_) h3
-    convert hsq using 1
-    simp [Matrix.det_fin_two_of, ← hpq]
-    ring
   have h3u : IsUnit ((0 : R) * 0 - 1) := by simp
   have h3v : IsUnit ((2 : R) * 2 - 1) := by
-    rw [show (2 : R) * 2 - 1 = 1 - -2 by ring]
-    exact isUnit_one_sub_self_of_mem_nonunits _ ((maximalIdeal R).neg_mem h2)
+    rw [show (2 : R) * 2 - 1 = 3 by norm_num]
+    exact isUnit_three_of_card_residueField_eq_two hR
   rcases hBp with ⟨heB, hfB⟩ | ⟨hm, heB, hfB⟩ <;> rcases hCp with ⟨heC, hfC⟩ | ⟨hm', heC, hfC⟩
   · exact key 0 h3u heB hfB heC hfC
-  · exact mixed 0 2 (by ring) hm' heB hfB heC hfC
-  · exact mixed 2 0 (by ring) hm heB hfB heC hfC
+  · subst hm'
+    exact absurd (isSquare_neg_three_of_apply_pair_eq hR hB hC b c hsq
+      (p := 0) (q := 2) (by ring) hB₁ hC₁ heB hfB heC hfC) h3
+  · subst hm
+    exact absurd (isSquare_neg_three_of_apply_pair_eq hR hB hC b c hsq
+      (p := 2) (q := 0) (by ring) hB₁ hC₁ heB hfB heC hfC) h3
   · exact key 2 h3v heB hfB heC hfC
 
 /-- **Classification of even unimodular forms in residue characteristic two.** Let `R` be a
@@ -379,7 +409,7 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
   set W := Submodule.span R {e₀, f₀}
   have hu : IsUnit (B e₀ f₀) := by
     simpa using TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp h₁)
-  set v : R := ↑hu.unit⁻¹ with hv
+  set v : R := ↑hu.unit⁻¹
   have hvu : v * B e₀ f₀ = 1 := hu.val_inv_mul
   -- Work in `W`, with `e₀` and `v f₀`, which pair to `1`.
   let x : W := ⟨e₀, Submodule.subset_span (by simp)⟩
@@ -399,13 +429,15 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
   have hBW := hB.restrict W
   rcases hq with rfl | rfl
   · obtain ⟨e, f, h⟩ := hBW.exists_hyperbolic_of_mem_maximalIdeal hxy hxx hyy (by simpa using hm₁)
-    exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
+    exact ⟨e, e.property, f, f.property, by simpa using h.1, by simpa using h.2.1,
+        by simpa using h.2.2⟩
   · obtain ⟨e, f, h⟩ := hBW.exists_two_one_one_two_of_isUnit hR hxy hxx hyy
       (by simpa [add_comm] using
         TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₁))
       ((hu.unit⁻¹.isUnit.pow 2).mul (by simpa [add_comm] using
         TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₂)))
-    exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
+    exact ⟨e, e.property, f, f.property, by simpa using h.1, by simpa using h.2.1,
+        by simpa using h.2.2⟩
 
 /-- **Projecting away from a binary block.** Let `C` be symmetric, let `φ` carry a form `C'` to `C`
 modulo `𝔪`, and the self-pairings modulo `2𝔪`, and let `e, f` in the span of `φ e'` and `φ f'` have
@@ -430,25 +462,27 @@ private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ m
     -- `φ x` pairs into `𝔪` with the span of `φ e'` and `φ f'`, which contains `e` and `f`.
     have hpair (z : M) (hz : z ∈ Submodule.span R {φ e', φ f'})
         (hzS : z ∈ Submodule.span R {e, f}) : C (φ x - ψ x) z ∈ maximalIdeal R := by
-      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), hT (ψ x).2 z hzS, sub_zero]
+      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), hT (ψ x).property z hzS, sub_zero]
       obtain ⟨γ, δ, rfl⟩ := Submodule.mem_span_pair.mp hz
       have hx' (u : N) (hu : u ∈ ({e', f'} : Set N)) : C (φ x) (φ u) ∈ maximalIdeal R := by
-        have h0 : C' u x = 0 := hT' x.2 u (Submodule.subset_span hu)
+        have h0 : C' u x = 0 := hT' x.property u (Submodule.subset_span hu)
         have := hφ u x
         rw [h0, zero_sub, ← hC.eq] at this
         simpa using (maximalIdeal R).neg_mem this
       simp only [map_add, map_smul, smul_eq_mul]
       exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' (by simp)))
         ((maximalIdeal R).mul_mem_left δ (hx' f' (by simp)))
-    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
-      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2)
-      (hψ x) (hpair e he (Submodule.subset_span (by simp)))
+    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair
+      (h₁ ▸ isUnit_one) (hff ▸ (maximalIdeal R).mul_mem_right q h2) (hψ x)
+      (hpair e he (Submodule.subset_span (by simp)))
       (hpair f hf (Submodule.subset_span (by simp)))
     exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
   -- The discarded components change the pairings by multiples of their coordinates.
   have hfe : C f e = 1 := by rw [← hC.eq, h₁]
-  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (hT z.2 e (Submodule.subset_span (by simp)))
-  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (hT z.2 f (Submodule.subset_span (by simp)))
+  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (hT z.property e (Submodule.subset_span
+      (by simp)))
+  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (hT z.property f (Submodule.subset_span
+      (by simp)))
   have hdiff {x y : T'} {α β α' β' : R} (hx : φ x = α • e + β • f + ψ x)
       (hy : φ y = α' • e + β' • f + ψ y) : C (φ x) (φ y) - C (ψ x) (ψ y) =
         α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) := by
@@ -589,7 +623,7 @@ theorem IsJordanSplitting.equivalent_restrict_of_equivalent_of_even
       hCs.equivalent_of_sub_mem_maximalIdeal_of_even hR hC's (fun x ↦ ?_) b b' hdet hdet' φ
         (fun x y ↦ Ideal.mem_of_dvd _ (hφ x y) h2) fun x ↦ ?_
   · -- The unimodular rescaling of a constituent of type II is even.
-    obtain ⟨c, hc⟩ := hj x x.2
+    obtain ⟨c, hc⟩ := hj x x.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem (mem_nonZeroDivisors_of_ne_zero h20)
       j)).mp (by rw [hCapp, hc, pow_succ, mul_assoc])⟩
   · -- Between neighbours of type II, the self-pairings agree modulo `4`.

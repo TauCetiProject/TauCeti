@@ -20,13 +20,6 @@ and characteristic structures are the canonical Mathlib instances rather than pa
 ## Main definition
 
 * `TauCeti.ValidLieTypeIndex.Closure`: the algebraic closure of the index's prime field.
-
-## Roadmap
-
-This is the algebraic-closure part of item I0 in
-`TauCetiRoadmap/CFSGStatement/README.md`. Milestone L0 uses this carrier when it base-changes the
-pinned Chevalley--Demazure group scheme to the characteristic of a valid Lie-type index and takes
-its algebraic-closure-valued points.
 -/
 
 public section
@@ -55,7 +48,7 @@ end TauCeti.ValidLieTypeIndex
 namespace TauCeti.SuzukiLieIndex
 
 /-- The algebraic closure attached to a Suzuki index has characteristic two. -/
-instance charP_closure_two (d : SuzukiLieIndex) : CharP d.1.Closure 2 := by
+instance charP_closure_two (d : SuzukiLieIndex) : CharP d.val.Closure 2 := by
   rw [← d.characteristic_eq_two]
   infer_instance
 

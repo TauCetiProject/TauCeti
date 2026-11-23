@@ -51,8 +51,8 @@ arbitrary finite subgroup of points, no isogeny being needed to state or prove t
 
 * `WeierstrassCurve.Affine.translationMulEquiv`: the translations by `Φ` are a copy of `Φ`.
 * `WeierstrassCurve.Affine.finrank_translationFixedField` and
-  `WeierstrassCurve.Affine.isGalois_translationFixedField`: for a finite `Φ` the function field is
-  Galois of degree `#Φ` over the fixed field.
+  `WeierstrassCurve.Affine.isGalois_translationFixedField`: the function field has degree `#Φ` over
+  the fixed field, and for a finite `Φ` it is Galois.
 * `WeierstrassCurve.Affine.fixingSubgroup_translationFixedField`: the automorphisms fixing that
   field are exactly the translations by points of `Φ`, whence
   `WeierstrassCurve.Affine.translationFixingSubgroup_translationFixedField` and
@@ -157,13 +157,31 @@ instance isGalois_translationFixedField [Finite Φ] :
     IsGalois (translationFixedField W Φ) W.FunctionField :=
   IsGalois.of_fixed_field W.FunctionField (translationSubgroup W Φ)
 
-/-- **The function field has degree `#Φ` over the fixed field of a finite subgroup `Φ` of
-points.** -/
-theorem finrank_translationFixedField [Finite Φ] :
+/-- **A subgroup of points whose fixed field has finite degree is itself finite.** Its order is
+then that degree, by `WeierstrassCurve.Affine.finrank_translationFixedField`: a subgroup of
+translations is no larger than the extension it cuts out. -/
+theorem finite_of_finiteDimensional_translationFixedField
+    [FiniteDimensional (translationFixedField W Φ) W.FunctionField] : Finite Φ :=
+  letI : FiniteDimensional (IntermediateField.fixedField (translationSubgroup W Φ))
+      W.FunctionField := by
+    rw [← translationFixedField]
+    infer_instance
+  have : Finite (translationSubgroup W Φ) :=
+    IntermediateField.finite_of_finiteDimensional_fixedField (translationSubgroup W Φ)
+  .of_equiv _ (translationMulEquiv W Φ).symm.toEquiv
+
+/-- **The function field has degree `#Φ` over the fixed field of a subgroup `Φ` of points.** When
+`Φ` is infinite both sides are `0`: the extension is then not finite-dimensional, by
+`WeierstrassCurve.Affine.finite_of_finiteDimensional_translationFixedField`. -/
+theorem finrank_translationFixedField :
     Module.finrank (translationFixedField W Φ) W.FunctionField = Nat.card Φ := by
-  have : Fintype (translationSubgroup W Φ) := Fintype.ofFinite _
-  rw [← card_translationSubgroup W Φ, Nat.card_eq_fintype_card]
-  exact FixedPoints.finrank_eq_card (translationSubgroup W Φ) W.FunctionField
+  by_cases hΦ : Finite Φ
+  · have : Fintype (translationSubgroup W Φ) := Fintype.ofFinite _
+    rw [← card_translationSubgroup W Φ, Nat.card_eq_fintype_card]
+    exact FixedPoints.finrank_eq_card (translationSubgroup W Φ) W.FunctionField
+  · have := not_finite_iff_infinite.mp hΦ
+    rw [Nat.card_eq_zero_of_infinite, Module.finrank_of_not_finite]
+    exact fun _ ↦ hΦ (finite_of_finiteDimensional_translationFixedField W Φ)
 
 /-- **Every automorphism of the function field fixing the fixed field of a finite subgroup of
 points is a translation by a point of that subgroup.** This is the surjectivity half of the Galois
@@ -224,7 +242,7 @@ theorem translationFixingSubgroup_translationFixedField [Finite Φ] :
 private noncomputable def toFixingSubgroup (L : IntermediateField F W.FunctionField)
     (P : translationFixingSubgroup W L) : L.fixingSubgroup :=
   ⟨translation W (P : (W⁄F).toAffine.Point), (IntermediateField.mem_fixingSubgroup_iff L _).mpr
-    ((mem_translationFixingSubgroup_iff W).mp P.2)⟩
+    ((mem_translationFixingSubgroup_iff W).mp P.property)⟩
 
 private theorem toFixingSubgroup_injective (L : IntermediateField F W.FunctionField) :
     Function.Injective (toFixingSubgroup W L) := fun _ _ h ↦
@@ -242,19 +260,6 @@ theorem card_translationFixingSubgroup_le (L : IntermediateField F W.FunctionFie
     Nat.card (translationFixingSubgroup W L) ≤ Module.finrank L W.FunctionField :=
   (Nat.card_le_card_of_injective _ (toFixingSubgroup_injective W L)).trans
     (IntermediateField.card_fixingSubgroup_le L)
-
-/-- **A subgroup of points whose fixed field has finite degree is itself finite.** Its order is
-then that degree, by `WeierstrassCurve.Affine.finrank_translationFixedField`: a subgroup of
-translations is no larger than the extension it cuts out. -/
-theorem finite_of_finiteDimensional_translationFixedField
-    [FiniteDimensional (translationFixedField W Φ) W.FunctionField] : Finite Φ :=
-  letI : FiniteDimensional (IntermediateField.fixedField (translationSubgroup W Φ))
-      W.FunctionField := by
-    rw [← translationFixedField]
-    infer_instance
-  have : Finite (translationSubgroup W Φ) :=
-    IntermediateField.finite_of_finiteDimensional_fixedField (translationSubgroup W Φ)
-  .of_equiv _ (translationMulEquiv W Φ).symm.toEquiv
 
 /-- **Distinct finite subgroups of points have distinct fixed fields.** Only `Φ` need be assumed
 finite: a subgroup with the same fixed field as a finite one is finite by
@@ -317,9 +322,9 @@ theorem card_translationFixingSubgroup_eq_finrank_of_forall_exists_translation
     (h : ∀ σ ∈ L.fixingSubgroup, ∃ P : (W⁄F).toAffine.Point, translation W P = σ) :
     Nat.card (translationFixingSubgroup W L) = Module.finrank L W.FunctionField := by
   have hsurj : Function.Surjective (toFixingSubgroup W L) := fun σ ↦ by
-    obtain ⟨P, hP⟩ := h σ σ.2
+    obtain ⟨P, hP⟩ := h σ σ.property
     exact ⟨⟨P, (mem_translationFixingSubgroup_iff W).2 fun z hz ↦ by
-      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.2 z hz⟩,
+      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.property z hz⟩,
       Subtype.ext hP⟩
   -- `IsGalois.card_fixingSubgroup_eq_finrank` counts a fixing subgroup inside a Galois extension
   -- of the *base*; here `K(W)` is transcendental over `F` and only `K(W)/L` is Galois, so the count

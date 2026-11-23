@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Basis
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.HighestWeight
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit.Weight
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
@@ -22,7 +23,7 @@ integral matrix data, without an algebraically closed coefficient field or an as
 
 * `LieAlgebra.Basis.highestWeightLattice` is the specified integral orbit in the existing
   irreducible quotient of the Verma module.
-* `LieAlgebra.Basis.isLattice_highestWeightLattice` proves fullness and finite generation.
+* `LieAlgebra.Basis.isFullLattice_highestWeightLattice` proves fullness and finite generation.
 * `LieAlgebra.Basis.exists_weightBasis_highestWeightLattice` supplies a numbered integral
   weight basis.
 
@@ -134,13 +135,14 @@ theorem highestWeightLattice_eq_span_loweringWord
 
 /-- At a dominant integral weight, the integral orbit is a full lattice: it is finitely
 generated over `ℤ` and spans `L(λ)` over `ℚ`. -/
-theorem isLattice_highestWeightLattice (hlam : IsDominantIntegral b.base lam) :
-    Submodule.IsLattice ℚ (b.highestWeightLattice lam) := by
+theorem isFullLattice_highestWeightLattice (hlam : IsDominantIntegral b.base lam) :
+    Submodule.IsFullLattice ℚ (b.highestWeightLattice lam) := by
   let _ := b.isCartanSubalgebra
   let := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hlam
   obtain ⟨wt, hwt⟩ := b.exists_isCartanWeightVector_generator lam hlam.isIntegralWeight
-  exact ⟨b.fg_orbitOfRep_kostantForm_singleton _ hwt (b.representation_e_generator lam),
-    b.span_highestWeightLattice_eq_top lam⟩
+  have : Submodule.IsLattice ℚ (b.highestWeightLattice lam) := Submodule.IsLattice.of_fg ℚ
+    (b.fg_orbitOfRep_kostantForm_singleton _ hwt (b.representation_e_generator lam))
+  exact ⟨b.span_highestWeightLattice_eq_top lam⟩
 
 include hH in
 /-- At an integral highest weight, the integral form lies in the span of the integral joint
@@ -151,8 +153,7 @@ theorem mem_iSup_jointWeightSpace_of_mem_highestWeightLattice
     x ∈ ⨆ wt : ι → ℤ,
       jointWeightSpace b.h (representation ℚ L (irreducibleQuotient b.base lam)) wt := by
   obtain ⟨wt, hwt⟩ := b.exists_isCartanWeightVector_generator lam hlam
-  exact b.mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton _ hwt
-    (b.representation_e_generator lam) hx
+  exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hwt hx
 
 /-- Every dominant integral rational highest-weight module has a finite integral weight basis
 of its specified highest-weight lattice. -/
@@ -163,7 +164,8 @@ theorem exists_weightBasis_highestWeightLattice (hlam : IsDominantIntegral b.bas
         (representation ℚ L (irreducibleQuotient b.base lam)) (wt i)
         ((B i : b.highestWeightLattice lam) : irreducibleQuotient b.base lam) := by
   let _ := b.isCartanSubalgebra
-  let := b.isLattice_highestWeightLattice lam hlam
+  let := b.isFullLattice_highestWeightLattice lam hlam
+  have := Submodule.IsLattice.finite ℚ (b.highestWeightLattice lam)
   let M := (b.highestWeightLattice lam).toAddSubgroup
   let _ : Module.Finite ℤ M := inferInstanceAs (Module.Finite ℤ (b.highestWeightLattice lam))
   have hM : ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator b) b.h, ∀ v ∈ M,
@@ -173,9 +175,10 @@ theorem exists_weightBasis_highestWeightLattice (hlam : IsDominantIntegral b.bas
   have hV : ∀ x : M, (x : irreducibleQuotient b.base lam) ∈
       ⨆ wt : ι → ℤ,
         jointWeightSpace b.h (representation ℚ L (irreducibleQuotient b.base lam)) wt :=
-    fun x => b.mem_iSup_jointWeightSpace_of_mem_highestWeightLattice lam hlam.isIntegralWeight x.2
+    fun x => b.mem_iSup_jointWeightSpace_of_mem_highestWeightLattice lam hlam.isIntegralWeight
+        x.property
   exact ⟨_, kostantWeightBasisFin (rootGenerator b) b.h _ M hM hV,
-    kostantWeightFin (rootGenerator b) b.h _ M hM hV,
+    kostantWeightFin b.h _ M,
     isCartanWeightVector_kostantWeightBasisFin (rootGenerator b) b.h _ M hM hV⟩
 
 end

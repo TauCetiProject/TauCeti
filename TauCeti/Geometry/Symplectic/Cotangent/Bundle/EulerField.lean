@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Euler
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
-public import TauCeti.Geometry.Symplectic.Liouville.Flow
+public import TauCeti.Geometry.Symplectic.Liouville.Flow.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.VectorField
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -74,7 +74,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- The radial field `p ∂_p` is vertical, so the Liouville form vanishes on it: `ι_Z λ = 0`. -/
 @[simp]
 theorem liouvilleForm_interior_vectorBundleEulerField [IsManifold I 2 M] :
-    RoughForm.interior (vectorBundleEulerField I) (liouvilleForm I M).1 = 0 := by
+    RoughForm.interior (vectorBundleEulerField I) (liouvilleForm I M).val = 0 := by
   funext z
   ext v
   simp [RoughForm.interior_apply, liouvilleForm_apply]
@@ -85,8 +85,8 @@ variable [IsManifold I ∞ M]
 symplectic form `ω = -dλ` of the cotangent bundle with its Euler vector field gives minus the
 Liouville form: `ι_Z ω = -λ`. -/
 theorem symplecticForm_interior_vectorBundleEulerField :
-    RoughForm.interior (vectorBundleEulerField I) (symplecticForm I M).1 =
-      -(liouvilleForm I M).1 := by
+    RoughForm.interior (vectorBundleEulerField I) (symplecticForm I M).val =
+      -(liouvilleForm I M).val := by
   funext z
   ext v
   -- Read both sides in the chart at `z`, where the Euler field is `(0, p)`.
@@ -107,7 +107,7 @@ theorem symplecticForm_interior_vectorBundleEulerField :
 /-- **The radial field `p ∂_p` is a Liouville vector field** of the canonical symplectic form of
 the cotangent bundle: `L_Z ω = ω`, for the Euler vector field `Z` of `T*M`. -/
 theorem isLiouvilleVectorField_vectorBundleEulerField :
-    IsLiouvilleVectorField (symplecticForm I M).1 (vectorBundleEulerField I) := by
+    IsLiouvilleVectorField (symplecticForm I M).val (vectorBundleEulerField I) := by
   have h := isLiouvilleVectorField_mextDeriv_of_interior_eq
     ((liouvilleForm I M).isSmoothForm.neg.of_le (by simp))
     ((contMDiff_vectorBundleEulerField (m := 1)).mdifferentiable one_ne_zero)
@@ -137,7 +137,7 @@ theorem _root_.Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_lio
   have hω : SmoothForm.mpullback ψ ψ.contMDiff (symplecticForm J N) = symplecticForm I M := by
     rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
       ← SmoothForm.mextDerivₗ_mpullback, hψ]
-  have hliouville : mpullback _ _ ψ (-(liouvilleForm J N).1) = -(liouvilleForm I M).1 := by
+  have hliouville : mpullback _ _ ψ (-(liouvilleForm J N).val) = -(liouvilleForm I M).val := by
     rw [← NegMemClass.coe_neg, ← SmoothForm.coe_mpullback ψ ψ.contMDiff, map_neg, hψ,
       NegMemClass.coe_neg]
   exact ψ.mfderiv_apply_eq_of_interior_eq isSymplectic_symplecticForm.isNondegenerate hω hliouville
@@ -154,7 +154,7 @@ theorem _root_.Diffeomorph.apply_mk_smul_of_mpullback_liouvilleForm
       CotangentBundle J N)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff (liouvilleForm J N) = liouvilleForm I M)
     (z : CotangentBundle I M) {c : ℝ} (hc : 0 < c) :
-    ψ ⟨z.proj, c • z.2⟩ = ⟨(ψ z).proj, c • (ψ z).2⟩ := by
+    ψ ⟨z.proj, c • z.snd⟩ = ⟨(ψ z).proj, c • (ψ z).snd⟩ := by
   -- `ψ` maps the dilation curve `t ↦ e^t z` to an integral curve of the radial field of `T*N`
   -- through `ψ z`, which is the dilation curve `t ↦ e^t ψ z` by uniqueness.
   have hcurve := isMIntegralCurve_iff_isMIntegralCurveOn.2

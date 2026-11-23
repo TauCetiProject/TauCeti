@@ -37,10 +37,13 @@ does not require completeness.
 * `TauCeti.Huber.isSheafyRing_iff_isSheaf_rationalSubsetLimitPresheaf`: for any pair of
   definition `P` of `Â`, `A` is sheafy exactly when the presheaf `V ↦ lim_{U ⊆ V} Â⟨U⟩` of limits
   over rational subsets built from `P` is a sheaf for every ring of integral elements of `Â`.
-* `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation`: if `A` is sheafy, every ring of
-  integral elements `A⁺` of `A` satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`; the
-  intermediate step `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation_completionPlus` gives
-  the same for `Â⁺`, the closure of the image of `A⁺`.
+* `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation` and
+  `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafyRing`: if `A` is sheafy,
+  every ring of integral elements `A⁺` of `A` satisfies
+  `TauCeti.Huber.IsSheafyForEveryPresentation`, so the presentation-limit structure presheaf of
+  `Spa(A, A⁺)` is a sheaf; the intermediate step
+  `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation_completionPlus` gives the same for `Â⁺`,
+  the closure of the image of `A⁺`.
 * `TauCeti.Huber.isSheafyRing_iff_forall_isSheafyForEveryPresentation`: a complete Hausdorff
   Huber ring `B` is sheafy exactly when every ring of integral elements of `B` satisfies
   `TauCeti.Huber.IsSheafyForEveryPresentation`.
@@ -58,6 +61,8 @@ does not require completeness.
   on the completion, up to isomorphism of topological rings.
 * `TauCeti.Huber.isStablySheafyRing_iff_of_ringEquiv`: stable sheafiness is invariant under
   isomorphisms of topological rings.
+* `TauCeti.Huber.isStablySheafyRing_congr_topology`: stable sheafiness depends only on the topology
+  induced by the uniform additive group structure.
 
 ## References
 
@@ -121,6 +126,16 @@ theorem IsSheafyRing.isSheafyForEveryPresentation (h : IsSheafyRing A) {Aplus : 
     (hAplus : IsRingOfIntegralElements Aplus) : IsSheafyForEveryPresentation Aplus :=
   (isSheafyForEveryPresentation_completionPlus_iff hAplus).mp
     (h.isSheafyForEveryPresentation_completionPlus hAplus)
+
+/-- **The structure presheaf of `Spa(A, A⁺)` is a sheaf when `A` is a sheafy Huber ring** and `A⁺`
+is a ring of integral elements containing `P.ringOfDefinition`. Neither completeness nor a Tate
+hypothesis on `A` is required. -/
+theorem _root_.TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafyRing
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus) :=
+  (hA.isSheafyForEveryPresentation hAplus).isSheaf P hP
 
 /-- **Sheafiness of a complete Hausdorff Huber ring**: a complete Hausdorff Huber ring `B` is sheafy
 exactly when every ring of integral elements `B⁺` of `B` itself satisfies
@@ -235,6 +250,24 @@ theorem isStablySheafyRing_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e)
     (Completion.continuous_mapRingEquiv e he he') (Completion.continuous_mapRingEquiv_symm e he he')
 
 end StableRingEquiv
+
+/-- **Stable sheafiness depends only on the topology**: two uniform additive group structures on the
+same commutative ring with equal induced topologies are stably sheafy together. -/
+theorem isStablySheafyRing_congr_topology {R : Type u} [CommRing R]
+    {u₁ u₂ : UniformSpace R} [hg₁ : @IsUniformAddGroup R u₁ _]
+    [ht₁ : @IsTopologicalRing R u₁.toTopologicalSpace _]
+    [hh₁ : @IsHuberRing R _ u₁.toTopologicalSpace ht₁]
+    [hg₂ : @IsUniformAddGroup R u₂ _]
+    [ht₂ : @IsTopologicalRing R u₂.toTopologicalSpace _]
+    [hh₂ : @IsHuberRing R _ u₂.toTopologicalSpace ht₂]
+    (ht : u₁.toTopologicalSpace = u₂.toTopologicalSpace) :
+    @IsStablySheafyRing.{u, v} R _ u₁ hg₁ ht₁ hh₁ ↔
+      @IsStablySheafyRing.{u, v} R _ u₂ hg₂ ht₂ hh₂ :=
+  @isStablySheafyRing_iff_of_ringEquiv.{u, v, u} R _ u₁ hg₁ ht₁ hh₁ R _ u₂ hg₂ ht₂ hh₂
+    (RingEquiv.refl R)
+    (@continuous_def R R u₁.toTopologicalSpace u₂.toTopologicalSpace _ |>.mpr fun _ hs ↦ ht ▸ hs)
+    (@continuous_def R R u₂.toTopologicalSpace u₁.toTopologicalSpace _ |>.mpr fun _ hs ↦
+      ht.symm ▸ hs)
 
 end TauCeti.Huber
 

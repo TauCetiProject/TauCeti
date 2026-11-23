@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Density
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Weak continuity of Dirichlet laws
@@ -66,7 +66,7 @@ private theorem eventually_dirichletChartPDFReal_le [DecidableEq ι] (i₀ : ι)
     div_pos (Real.Gamma_pos_of_pos
       (Finset.sum_pos (fun i _ ↦ hb i) Finset.univ_nonempty))
       (Finset.prod_pos fun i _ ↦ Real.Gamma_pos_of_pos (hb i))
-  have hhalf : 0 < N (fun i ↦ (a i : ℝ) / 2) := hN _ fun i ↦ half_pos (a i).2
+  have hhalf : 0 < N (fun i ↦ (a i : ℝ) / 2) := hN _ fun i ↦ half_pos (a i).property
   refine ⟨(N (fun i ↦ a i) + 1) / N (fun i ↦ (a i : ℝ) / 2), ?_⟩
   have hupper : ∀ᶠ b in 𝓝 a, N (fun i ↦ b i) < N (fun i ↦ a i) + 1 :=
     continuous_Gamma_sum_div_prod.continuousAt (gt_mem_nhds (lt_add_one _))
@@ -74,7 +74,7 @@ private theorem eventually_dirichletChartPDFReal_le [DecidableEq ι] (i₀ : ι)
     rw [eventually_all]
     intro i
     exact (by fun_prop : Continuous (fun b : ι → Ioi (0 : ℝ) ↦ (b i : ℝ))).continuousAt
-      (lt_mem_nhds (half_lt_self (a i).2))
+      (lt_mem_nhds (half_lt_self (a i).property))
   filter_upwards [hupper, hlower] with b hb hba x
   by_cases hx : x ∈ dirichletChartRegion i₀
   · have hx' := mem_dirichletChartRegion_iff.mp hx
@@ -94,9 +94,9 @@ private theorem eventually_dirichletChartPDFReal_le [DecidableEq ι] (i₀ : ι)
           (1 - ∑ j, x j) ^ ((a i₀ : ℝ) / 2 - 1) :=
         mul_le_mul (mul_le_mul hb.le hprod
           (Finset.prod_nonneg fun j _ ↦ Real.rpow_nonneg (hx'.1 j).le _)
-          (add_nonneg (hN _ fun i ↦ (a i).2).le zero_le_one)) hrest
+          (add_nonneg (hN _ fun i ↦ (a i).property).le zero_le_one)) hrest
           (Real.rpow_nonneg (sub_pos.mpr hx'.2).le _)
-          (mul_nonneg (add_nonneg (hN _ fun i ↦ (a i).2).le zero_le_one)
+          (mul_nonneg (add_nonneg (hN _ fun i ↦ (a i).property).le zero_le_one)
             (Finset.prod_nonneg fun j _ ↦ Real.rpow_nonneg (hx'.1 j).le _))
       _ = _ := by
         dsimp only [N] at hhalf ⊢
@@ -108,7 +108,7 @@ parameter, including when there is just one category. -/
 theorem continuous_dirichletMeasure [Nonempty ι] :
     Continuous (Y := ProbabilityMeasure (EuclideanSpace ℝ ι)) (fun a : ι → Ioi (0 : ℝ) ↦
       (⟨dirichletMeasure (fun i ↦ a i),
-        isProbabilityMeasure_dirichletMeasure (fun i ↦ (a i).2)⟩ :
+        isProbabilityMeasure_dirichletMeasure (fun i ↦ (a i).property)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ ι))) := by
   classical
   obtain ⟨i₀⟩ := ‹Nonempty ι›
@@ -117,14 +117,15 @@ theorem continuous_dirichletMeasure [Nonempty ι] :
   have heq (a : ι → Ioi (0 : ℝ)) :
       ∫ x, f x ∂dirichletMeasure (fun i ↦ a i) =
         ∫ x, dirichletChartPDFReal (fun i ↦ a i) i₀ x * f (dirichletChart i₀ x) := by
-    rw [dirichletMeasure_eq_map_withDensity_dirichletChartPDF (fun i ↦ (a i).2) i₀,
+    rw [dirichletMeasure_eq_map_withDensity_dirichletChartPDF (fun i ↦ (a i).property) i₀,
       integral_map measurable_dirichletChart.aemeasurable f.continuous.aestronglyMeasurable,
       integral_withDensity_eq_integral_toReal_smul (measurable_dirichletChartPDF _ _)
         (ae_of_all _ fun _ ↦ by
           rw [dirichletChartPDF_eq_ofReal]
           exact ENNReal.ofReal_lt_top)]
     simp only [dirichletChartPDF_eq_ofReal,
-      ENNReal.toReal_ofReal (dirichletChartPDFReal_nonneg (fun i ↦ (a i).2) i₀ _), smul_eq_mul]
+      ENNReal.toReal_ofReal (dirichletChartPDFReal_nonneg (fun i ↦ (a i).property) i₀ _),
+          smul_eq_mul]
   simp only [ProbabilityMeasure.coe_mk, heq]
   refine continuous_iff_continuousAt.2 fun a ↦ ?_
   obtain ⟨C, hC⟩ := eventually_dirichletChartPDFReal_le i₀ a
@@ -135,10 +136,11 @@ theorem continuous_dirichletMeasure [Nonempty ι] :
   · filter_upwards [hC] with b hb
     exact ae_of_all _ fun x ↦ by
       rw [norm_mul, Real.norm_of_nonneg (dirichletChartPDFReal_nonneg
-        (fun i ↦ (b i).2) i₀ x)]
+        (fun i ↦ (b i).property) i₀ x)]
       exact mul_le_mul (hb x) (f.norm_coe_le_norm _) (norm_nonneg _)
-        ((dirichletChartPDFReal_nonneg (fun i ↦ (b i).2) i₀ x).trans (hb x))
-  · exact ((integrable_dirichletChartPDFReal (fun i ↦ half_pos (a i).2) i₀).const_mul C).mul_const _
+        ((dirichletChartPDFReal_nonneg (fun i ↦ (b i).property) i₀ x).trans (hb x))
+  · exact ((integrable_dirichletChartPDFReal (fun i ↦ half_pos (a i).property) i₀).const_mul
+      C).mul_const _
   · exact ae_of_all _ fun x ↦
       ((continuous_dirichletChartPDFReal i₀ x).mul continuous_const).continuousAt
 

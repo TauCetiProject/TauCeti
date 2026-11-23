@@ -255,7 +255,6 @@ theorem typeASpecialLinearFixedOffDiagonal_entry_neg
     X.val.val c.val.val.val.1 c.val.val.val.2 = 0 := by
   have h := (specialLinearOffDiagonalBasis (Fin (r + 1)) ℤ).fixedSignedFamily_repr_neg
     (typeAOffDiagonalCycleEquiv r) (typeAOffDiagonalCycleSign r)
-    (typeAOffDiagonalCycleSign_eq_one_or_neg_one r)
     (typeAOffDiagonalGraphEquiv r ℤ).toLinearMap (offDiagonalCycle_action r ℤ)
     (offDiagonalFixedRestrictEquiv r ℤ X) c
   simpa only [specialLinearOffDiagonalBasis_repr, offDiagonalFixedRestrictEquiv_apply,

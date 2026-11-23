@@ -6,22 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Smooth time maps into the unit interval
 
-The reflection `t ↦ 1 - t` is smooth for the manifold-with-boundary structure of the
-unit interval. The smooth transition function also gives smooth interval-valued
-maps. These support reversal and stationary-time concatenation of smooth isotopies.
+The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth for the
+manifold-with-boundary structure of the unit interval. The smooth transition function also gives
+smooth interval-valued maps: `unitInterval.smoothTransition` is the smooth transition function
+itself as a map into the unit interval, and the collared transition
+`TauCeti.collaredSmoothTransitionUnit`, which is `0` up to time `1 / 4` and `1` from time `3 / 4`
+on. Run at double speed on each half of the interval it gives the time maps
+`TauCeti.collaredFirstHalf` and `TauCeti.collaredSecondHalf` of a stationary-time concatenation,
+which glue two `C^n` maps on `M × [0, 1]` agreeing at the seam into a `C^n` map
+(`ContMDiff.glue_collaredHalves`). Convex combinations of smooth interval-valued maps are smooth
+(`ContMDiff.convexComb`). These support reversal, rescaling, straight-line homotopies and
+stationary-time concatenation of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
 within-range derivatives of the inclusion composed with their inverses. The derivative of the
-inclusion is invertible at every point, including both endpoints.
+inclusion is invertible at every point, including both endpoints. At interior points the projection
+`ℝ → [a, b]` is differentiable and sends the unit vector of `ℝ` to that of the interval, and the
+map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
 
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 -/
@@ -39,6 +51,43 @@ theorem contMDiff_symm {n : ℕ∞ω} : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n symm
   simpa only [Function.comp_def, coe_symm_eq] using
     (contMDiff_const.sub (contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := n)))
 
+/-- Multiplication `(s, t) ↦ s t` of the unit interval is analytic, including at the boundary, so
+it is `C^n` for every `n` (`contMDiff_mul`). -/
+instance : ContMDiffMul (𝓡∂ 1) ω I where
+  contMDiff_mul := by
+    apply contMDiff_iff_comp_subtypeVal_Icc.mpr
+    refine ⟨continuous_mul, ?_⟩
+    simpa only [Function.comp_def, Set.Icc.coe_mul, Pi.mul_def] using
+      ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
+        ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
+
+/-- `Real.smoothTransition` as a map into the unit interval. -/
+noncomputable def smoothTransition (s : ℝ) : I :=
+  ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
+
+@[simp]
+theorem coe_smoothTransition (s : ℝ) : (smoothTransition s : ℝ) = Real.smoothTransition s :=
+  (rfl)
+
+theorem continuous_smoothTransition : Continuous smoothTransition :=
+  Real.smoothTransition.continuous.subtype_mk _
+
+@[simp]
+theorem smoothTransition_zero : smoothTransition 0 = 0 :=
+  Subtype.ext Real.smoothTransition.zero
+
+@[simp]
+theorem smoothTransition_one : smoothTransition 1 = 1 :=
+  Subtype.ext Real.smoothTransition.one
+
+/-- The smooth transition rests at `0` for `s ≤ 0`. -/
+theorem smoothTransition_of_nonpos {s : ℝ} (h : s ≤ 0) : smoothTransition s = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos h)
+
+/-- The smooth transition rests at `1` for `1 ≤ s`. -/
+theorem smoothTransition_of_one_le {s : ℝ} (h : 1 ≤ s) : smoothTransition s = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le h)
+
 end unitInterval
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -53,6 +102,173 @@ theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ 
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf
+
+/-- A convex combination `(1 - h) f + h g` of `C^n` maps `f` and `g` into a closed interval, with a
+`C^n` weight `h` in the unit interval, is `C^n` (`Set.Icc.convexComb`). -/
+theorem ContMDiff.convexComb {a b : ℝ} [Fact (a < b)] {f g : M → Set.Icc a b} {h : M → unitInterval}
+    (hf : ContMDiff I (𝓡∂ 1) n f) (hg : ContMDiff I (𝓡∂ 1) n g) (hh : ContMDiff I (𝓡∂ 1) n h) :
+    ContMDiff I (𝓡∂ 1) n fun x ↦ Set.Icc.convexComb (f x) (g x) (h x) := by
+  have hval {c d : ℝ} [Fact (c < d)] {u : M → Set.Icc c d} (hu : ContMDiff I (𝓡∂ 1) n u) :
+      ContMDiff I 𝓘(ℝ) n fun x ↦ (u x : ℝ) :=
+    contMDiff_subtypeVal_Icc.comp hu
+  have hreal : ContMDiff I 𝓘(ℝ) n fun x ↦ (1 - (h x : ℝ)) * f x + h x * g x :=
+    ((contMDiff_const.sub (hval hh)).mul (hval hf)).add ((hval hh).mul (hval hg))
+  exact contMDiff_iff_comp_subtypeVal_Icc.mpr ⟨continuous_induced_rng.mpr hreal.continuous, hreal⟩
+
+namespace TauCeti
+
+/-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)`, as a map into the
+unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
+of the unit interval. -/
+noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+  unitInterval.smoothTransition (2 * t - 1 / 2)
+
+/-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
+@[simp]
+theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
+    (collaredSmoothTransitionUnit t : ℝ) = Real.smoothTransition (2 * t - 1 / 2) :=
+  (rfl)
+
+/-- The collared smooth transition is `C^n` for every `n ≤ ∞`. -/
+theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+  ContMDiff.smoothTransition (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff) hn
+
+/-- The collared smooth transition is smooth as a real-valued function. -/
+theorem contDiff_coe_collaredSmoothTransitionUnit {n : ℕ∞} :
+    ContDiff ℝ n fun t ↦ (collaredSmoothTransitionUnit t : ℝ) :=
+  Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
+
+/-- The collared smooth transition is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
+  (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
+
+/-- The collared smooth transition is `0` up to time `1 / 4`. -/
+theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
+    collaredSmoothTransitionUnit t = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+
+/-- The collared smooth transition is `1` from time `3 / 4` on. -/
+theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
+    collaredSmoothTransitionUnit t = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+
+/-- The first half of a stationary-time concatenation, `t ↦ collaredSmoothTransitionUnit (2 * t)`,
+as a `C^n` map of the unit interval: it is `0` up to time `1 / 8` and `1` from time `3 / 8` on. -/
+noncomputable def collaredFirstHalf (hn : n ≤ ∞) :
+    C^n⟮𝓡∂ 1, unitInterval; 𝓡∂ 1, unitInterval⟯ :=
+  ⟨fun t ↦ collaredSmoothTransitionUnit (2 * t),
+    (contMDiff_collaredSmoothTransitionUnit hn).comp
+      ((contDiff_const.mul contDiff_id).contMDiff.comp
+        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))⟩
+
+/-- The second half of a stationary-time concatenation,
+`t ↦ collaredSmoothTransitionUnit (2 * t - 1)`, as a `C^n` map of the unit interval: it is `0` up to
+time `5 / 8` and `1` from time `7 / 8` on. -/
+noncomputable def collaredSecondHalf (hn : n ≤ ∞) :
+    C^n⟮𝓡∂ 1, unitInterval; 𝓡∂ 1, unitInterval⟯ :=
+  ⟨fun t ↦ collaredSmoothTransitionUnit (2 * t - 1),
+    (contMDiff_collaredSmoothTransitionUnit hn).comp
+      (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff.comp
+        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))⟩
+
+/-- The first half time map at `t` is `collaredSmoothTransitionUnit (2 * t)`. -/
+@[simp]
+theorem collaredFirstHalf_apply (hn : n ≤ ∞) (t : unitInterval) :
+    collaredFirstHalf hn t = collaredSmoothTransitionUnit (2 * t) :=
+  (rfl)
+
+/-- The second half time map at `t` is `collaredSmoothTransitionUnit (2 * t - 1)`. -/
+@[simp]
+theorem collaredSecondHalf_apply (hn : n ≤ ∞) (t : unitInterval) :
+    collaredSecondHalf hn t = collaredSmoothTransitionUnit (2 * t - 1) :=
+  (rfl)
+
+/-- The first half time map is `0` up to time `1 / 8`. -/
+theorem collaredFirstHalf_eq_zero_of_le (hn : n ≤ ∞) {t : unitInterval} (ht : (t : ℝ) ≤ 1 / 8) :
+    collaredFirstHalf hn t = 0 :=
+  collaredSmoothTransitionUnit_eq_zero_of_le (by linarith)
+
+/-- The first half time map is `1` from time `3 / 8` on. -/
+theorem collaredFirstHalf_eq_one_of_ge (hn : n ≤ ∞) {t : unitInterval} (ht : 3 / 8 ≤ (t : ℝ)) :
+    collaredFirstHalf hn t = 1 :=
+  collaredSmoothTransitionUnit_eq_one_of_ge (by linarith)
+
+/-- The second half time map is `0` up to time `5 / 8`. -/
+theorem collaredSecondHalf_eq_zero_of_le (hn : n ≤ ∞) {t : unitInterval} (ht : (t : ℝ) ≤ 5 / 8) :
+    collaredSecondHalf hn t = 0 :=
+  collaredSmoothTransitionUnit_eq_zero_of_le (by linarith)
+
+/-- The second half time map is `1` from time `7 / 8` on. -/
+theorem collaredSecondHalf_eq_one_of_ge (hn : n ≤ ∞) {t : unitInterval} (ht : 7 / 8 ≤ (t : ℝ)) :
+    collaredSecondHalf hn t = 1 :=
+  collaredSmoothTransitionUnit_eq_one_of_ge (by linarith)
+
+/-- The first half time map fixes `0`. -/
+theorem collaredFirstHalf_zero (hn : n ≤ ∞) : collaredFirstHalf hn 0 = 0 :=
+  collaredFirstHalf_eq_zero_of_le hn (by norm_num)
+
+/-- The first half time map fixes `1`. -/
+theorem collaredFirstHalf_one (hn : n ≤ ∞) : collaredFirstHalf hn 1 = 1 :=
+  collaredFirstHalf_eq_one_of_ge hn (by norm_num)
+
+/-- The second half time map fixes `0`. -/
+theorem collaredSecondHalf_zero (hn : n ≤ ∞) : collaredSecondHalf hn 0 = 0 :=
+  collaredSecondHalf_eq_zero_of_le hn (by norm_num)
+
+/-- The second half time map fixes `1`. -/
+theorem collaredSecondHalf_one (hn : n ≤ ∞) : collaredSecondHalf hn 1 = 1 :=
+  collaredSecondHalf_eq_one_of_ge hn (by norm_num)
+
+end TauCeti
+
+section Glue
+
+open TauCeti Set Filter
+open scoped Topology
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- **Stationary-time gluing.** Two `C^n` maps `f g : M × [0, 1] → N` which agree at the seam,
+`f (x, 1) = g (x, 0)`, glue to a `C^n` map running through `f` reparametrized by
+`TauCeti.collaredFirstHalf` for `t ≤ 1 / 2` and through `g` reparametrized by
+`TauCeti.collaredSecondHalf` afterwards: near `t = 1 / 2` both pieces are stationary at the common
+value. -/
+theorem ContMDiff.glue_collaredHalves {f g : M × unitInterval → N}
+    (hf : ContMDiff (I.prod (𝓡∂ 1)) J n f) (hg : ContMDiff (I.prod (𝓡∂ 1)) J n g)
+    (hfg : ∀ x, f (x, 1) = g (x, 0)) (hn : n ≤ ∞) :
+    ContMDiff (I.prod (𝓡∂ 1)) J n fun q : M × unitInterval ↦
+      if (q.2 : ℝ) ≤ 1 / 2 then f (q.1, collaredFirstHalf hn q.2)
+      else g (q.1, collaredSecondHalf hn q.2) := by
+  classical
+  have hcoe : Continuous fun q : M × unitInterval ↦ (q.2 : ℝ) :=
+    continuous_subtypeVal.comp continuous_snd
+  have hpw : (fun q : M × unitInterval ↦
+      if (q.2 : ℝ) ≤ 1 / 2 then f (q.1, collaredFirstHalf hn q.2)
+      else g (q.1, collaredSecondHalf hn q.2)) =
+      Set.piecewise {q : M × unitInterval | (q.2 : ℝ) ≤ 1 / 2}
+        (fun q ↦ f (q.1, collaredFirstHalf hn q.2))
+        (fun q ↦ g (q.1, collaredSecondHalf hn q.2)) := by
+    funext q
+    by_cases hq : (q.2 : ℝ) ≤ 1 / 2
+    · rw [Set.piecewise_eq_of_mem _ _ _ (by exact hq), ite_eq_left hq]
+    · rw [Set.piecewise_eq_of_notMem _ _ _ (by exact hq), ite_eq_right hq]
+  rw [hpw]
+  refine (hf.comp (contMDiff_fst.prodMk
+    ((collaredFirstHalf hn).contMDiff.comp contMDiff_snd))).piecewise
+    (hg.comp (contMDiff_fst.prodMk
+      ((collaredSecondHalf hn).contMDiff.comp contMDiff_snd))) fun q hq ↦ ?_
+  have hq' : (q.2 : ℝ) = 1 / 2 := frontier_le_subset_eq hcoe continuous_const hq
+  have hnear : {r : M × unitInterval | 3 / 8 < (r.2 : ℝ) ∧ (r.2 : ℝ) < 5 / 8} ∈ 𝓝 q :=
+    (isOpen_Ioo.preimage hcoe).mem_nhds (by simp only [mem_preimage, mem_Ioo, hq']; norm_num)
+  filter_upwards [hnear] with r hr
+  simp only [Function.comp_apply]
+  rw [collaredFirstHalf_eq_one_of_ge hn hr.1.le, collaredSecondHalf_eq_zero_of_le hn hr.2.le, hfg]
+
+end Glue
 
 open Set Filter WithLp
 open scoped Topology
@@ -123,7 +339,7 @@ theorem mfderiv_subtypeVal_Icc (x : Icc a b) :
       (if (x : ℝ) < b then (1 : ℝ) else -1) •
         EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 := by
   apply HasMFDerivAt.mfderiv
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp]
   convert! hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm x (mem_extChartAt_target x) using 1
@@ -274,5 +490,29 @@ open Fact.Manifold in
 theorem extChartAt_Icc_top : extChartAt (𝓡∂ 1) (⊤ : Icc a b) ⊤ = 0 := by
   rw [extChartAt, Icc_chartedSpaceChartAt_of_top_le (by simp)]
   exact IccRightChart_extend_top
+
+/-- The projection of the real line onto `[a, b]` is differentiable at every interior point. -/
+theorem mdifferentiableAt_projIcc {t : ℝ} (ht : t ∈ Ioo a b) :
+    MDifferentiableAt 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t :=
+  ((contMDiffOn_projIcc (n := 1) t (Ioo_subset_Icc_self ht)).contMDiffAt
+    (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
+
+/-- At an interior point, the projection of the real line onto `[a, b]` sends the unit vector of
+`ℝ` to the unit vector `1` of the tangent space of the interval. -/
+theorem mfderiv_projIcc_one {t : ℝ} (ht : t ∈ Ioo a b) :
+    mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t 1 = 1 := by
+  rw [← mfderivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+  exact mfderivWithin_projIcc_one (Ioo_subset_Icc_self ht)
+
+/-- At an interior time, the derivative of the map `(s, t) ↦ (γ s, t)` from the plane to the
+product `M × [a, b]` is the product of the derivatives of `γ` and of the projection of the real
+line onto the interval. -/
+theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ s)
+    (ht : t ∈ Ioo a b) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc a b hab.out.le p.2))
+      (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ))) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
 
 end TauCeti

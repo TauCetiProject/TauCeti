@@ -41,13 +41,26 @@ variable {n : ℕ} (t : PermutationTriple n)
   rw [isBlockBool, decide_eq_true_eq, isBlock_iff_smul_eq_or_disjoint]
   constructor
   · intro h g
-    have hg := h g.1 ((t.mem_monodromyFinset).2 g.2)
+    have hg := h g.val ((t.mem_monodromyFinset).2 g.property)
     simpa only [Subgroup.smul_def, ← Finset.coe_smul_finset,
       ← Finset.disjoint_coe, Finset.coe_inj] using hg
   · intro h g hg
     have hg' := h ⟨g, (t.mem_monodromyFinset).1 hg⟩
     simpa only [Subgroup.smul_def, ← Finset.coe_smul_finset,
       ← Finset.disjoint_coe, Finset.coe_inj] using hg'
+
+/-- If every finite block containing `B` is `B` or all the sheets, then so is every block of the
+monodromy action containing `B`. -/
+theorem eq_or_eq_univ_of_forall_isBlockBool {B : Finset (Fin n)}
+    (hmax : ∀ D : Finset (Fin n), t.isBlockBool D = true → B ⊆ D → D = B ∨ D = Finset.univ)
+    (C : Set (Fin n)) (hC : IsBlock t.monodromyGroup C) (hsub : (B : Set (Fin n)) ⊆ C) :
+    C = B ∨ C = Set.univ := by
+  classical
+  rw [← Set.coe_toFinset C] at hC hsub ⊢
+  rcases hmax C.toFinset ((t.isBlockBool_eq_true_iff _).mpr hC) (Finset.coe_subset.mp hsub)
+    with h | h
+  · exact Or.inl (by rw [h])
+  · exact Or.inr (by rw [h, Finset.coe_univ])
 
 /-- Decide primitivity by checking transitivity and every subset of the sheets for a
 nontrivial block. -/

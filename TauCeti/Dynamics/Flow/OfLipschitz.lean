@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -35,6 +36,12 @@ the initial condition, and the joint continuity required by `Flow` is
   `y` when the fields agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
+* `TauCeti.flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero`: an orbit that meets a rest point
+  is constant.
+* `TauCeti.norm_flowOfLipschitz_sub_le`: a bound `M` on the vector field bounds the displacement
+  of the time-`t` map by `M |t|`.
+* `TauCeti.flowOfLipschitz_apply_eq_add_smul`: where the vector field is the constant `c` along the
+  segment from `x` to `x + t • c`, the time-`t` map translates `x` by `t • c`.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
@@ -150,6 +157,20 @@ theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
       simpa [h] using hasDerivAt_const s x
     simpa using (eq_flowOfLipschitz hv hconst t).symm
 
+/-- **An orbit through a rest point is constant.** If the flow carries `x` at some time `s` to a
+zero of the vector field, then the flow fixes `x` at every time. -/
+theorem flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero (hv : LipschitzWith K v) {x : E}
+    {s : ℝ} (hs : v (flowOfLipschitz v hv s x) = 0) (t : ℝ) : flowOfLipschitz v hv t x = x := by
+  have hrest := (forall_flowOfLipschitz_eq_self_iff hv _).2 hs
+  -- Flowing the rest point back for time `s` returns to `x`, so `x` is that rest point.
+  have hx : flowOfLipschitz v hv s x = x := by
+    have h := hrest (-s)
+    rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at h
+    exact h.symm
+  calc flowOfLipschitz v hv t x = flowOfLipschitz v hv t (flowOfLipschitz v hv s x) := by rw [hx]
+    _ = flowOfLipschitz v hv s x := hrest t
+    _ = x := hx
+
 
 /-- **Flows agree where the fields agree.** If the Lipschitz fields `v` and `w` coincide along the
 orbit segment `{ψ_τ y | τ ∈ [[0, t]]}` of the flow `ψ` of `w`, then the flow of `v` sends `y` at
@@ -166,6 +187,28 @@ theorem flowOfLipschitz_apply_eq_of_eqOn {w : E → E} {K' : ℝ≥0} (hv : Lips
   have := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
   rw [Flow.map_zero_apply] at this
   exact this.symm
+
+/-- **Displacement bound.** If the vector field is bounded by `M`, the time-`t` map moves no point
+by more than `M |t|`. -/
+theorem norm_flowOfLipschitz_sub_le (hv : LipschitzWith K v) {M : ℝ} (hM : ∀ z, ‖v z‖ ≤ M)
+    (t : ℝ) (x : E) : ‖flowOfLipschitz v hv t x - x‖ ≤ M * |t| := by
+  have h := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun s ↦ flowOfLipschitz v hv s x)
+    (fun s _ ↦ (hasDerivAt_flowOfLipschitz hv x s).hasDerivWithinAt) (fun s _ ↦ hM _)
+    (mem_univ 0) (mem_univ t)
+  simpa using h
+
+/-- **Flow along a constant field.** If the vector field equals `c` along the segment
+`{x + τ • c | τ ∈ [[0, t]]}`, then the time-`t` map sends `x` to `x + t • c`. -/
+theorem flowOfLipschitz_apply_eq_add_smul (hv : LipschitzWith K v) {x c : E} {t : ℝ}
+    (hc : ∀ τ ∈ uIcc 0 t, v (x + τ • c) = c) : flowOfLipschitz v hv t x = x + t • c := by
+  have hγ : IsIntegralCurveOn (fun τ : ℝ ↦ x + τ • c) (fun _ y ↦ v y) (uIcc 0 t) :=
+    fun τ hτ ↦ by
+      simp only [hc τ hτ]
+      exact (((hasDerivAt_id τ).smul_const c).const_add x).hasDerivWithinAt.congr_deriv (by simp)
+  have h := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
+  simp only [zero_smul, add_zero] at h
+  exact h.symm
 
 /-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
 theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :

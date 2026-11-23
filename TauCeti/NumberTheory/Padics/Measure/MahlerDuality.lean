@@ -22,7 +22,7 @@ moment sequences:
 
 * every integral is the convergent series `μ f = ∑ n, a_n(f) * b_n` in the Mahler coefficients
   `a_n(f) = Δ^n f (0)` of `f` (`AbstractMeasure.hasSum_mahlerEquiv_mul_coeff_amiceTransform`);
-* a bound `‖b_n‖ ≤ C` on the moments gives `‖μ f‖ ≤ C * ‖f‖`, and conversely
+* a bound `‖b_n‖ ≤ C` on the moments gives `‖μ f‖ ≤ C * ‖f‖`, and conversely when `‖1‖ = 1`
   (`AbstractMeasure.norm_apply_le_of_forall_norm_coeff_le`,
   `AbstractMeasure.norm_coeff_amiceTransform_le`).
 
@@ -68,13 +68,14 @@ No norm is installed on the measure carrier; norms are taken on its image under 
 * K. Mahler, *An interpolation series for continuous functions of a p-adic variable*,
   J. reine angew. Math. 199 (1958), 23–34.
 * Y. Amice, *Interpolation p-adique*, Bull. Soc. Math. France 92 (1964), 117–180.
-* P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.3 and §II.2.
+* P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.2 (Theorem I.2.3)
+  and §II.3 (Proposition II.3.1, §II.3.2).
 * J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, §3.
 -/
 
 public section
 
-open scoped AbstractMeasure ENNReal PowerSeries ZeroAtInfty
+open scoped AbstractMeasure ENNReal PowerSeries
 open PadicInt ZeroAtInftyContinuousMap
 
 variable {p : ℕ} [Fact p.Prime]
@@ -84,7 +85,16 @@ namespace AbstractMeasure
 section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
-  [IsUltrametricDist R] [CompleteSpace R]
+
+/-- A bound `‖μ f‖ ≤ C * ‖f‖` on a measure bounds its moments by `C`, since the Mahler basis
+functions have norm one. -/
+theorem norm_coeff_amiceTransform_le [NormOneClass R] (μ : D(ℤ_[p], R)) {C : ℝ}
+    (hμ : ∀ f, ‖μ f‖ ≤ C * ‖f‖) (n : ℕ) : ‖μ.amiceTransform.coeff n‖ ≤ C := by
+  have := hμ (mahlerTerm (1 : R) n)
+  rwa [norm_mahlerTerm, norm_one, mul_one, mahlerTerm_eq_smul, one_smul,
+    ← coeff_amiceTransform] at this
+
+variable [IsUltrametricDist R] [CompleteSpace R]
 
 /-- **Mahler expansion of an integral.** The integral of `f` against `μ` is the sum over `n` of
 the Mahler coefficients `Δ^n f (0)` of `f` times the moments `μ (x ↦ x choose n)`, the coefficients
@@ -105,15 +115,6 @@ theorem norm_apply_le_of_forall_norm_coeff_le (μ : D(ℤ_[p], R)) {C : ℝ}
   exact ((mahlerEquiv R f).norm_tsum_smul_le b).trans
     (mul_le_mul_of_nonneg_right (lp.norm_le_of_forall_le hC₀ hC) (norm_nonneg _))
 
-omit [CompleteSpace R] in
-/-- A bound `‖μ f‖ ≤ C * ‖f‖` on a measure bounds its moments by `C`, since the Mahler basis
-functions have norm one. -/
-theorem norm_coeff_amiceTransform_le [NormOneClass R] (μ : D(ℤ_[p], R)) {C : ℝ}
-    (hμ : ∀ f, ‖μ f‖ ≤ C * ‖f‖) (n : ℕ) : ‖μ.amiceTransform.coeff n‖ ≤ C := by
-  have := hμ (mahlerTerm (1 : R) n)
-  rwa [norm_mahlerTerm, norm_one, mul_one, mahlerTerm_eq_smul, one_smul,
-    ← coeff_amiceTransform] at this
-
 end NormedCommRing
 
 section IsTate
@@ -121,9 +122,8 @@ section IsTate
 open scoped TauCeti.RingOpNorm
 
 variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [Algebra ℤ_[p] R]
-  [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
+  [IsBoundedSMul ℤ_[p] R]
 
-omit [CompleteSpace R] in
 /-- Over a ring with a multiplicative pseudo-uniformiser, the moments of every measure on `ℤ_p`
 are bounded. -/
 theorem bddAbove_norm_coeff_amiceTransform (μ : D(ℤ_[p], R)) :
@@ -133,6 +133,8 @@ theorem bddAbove_norm_coeff_amiceTransform (μ : D(ℤ_[p], R)) :
   exact ⟨C, by
     rintro _ ⟨n, rfl⟩
     exact norm_coeff_amiceTransform_le μ (fun f ↦ by simpa using hC f) n⟩
+
+variable [IsUltrametricDist R] [CompleteSpace R]
 
 variable (p R) in
 /-- **Mahler duality.** Over a ring with a multiplicative pseudo-uniformiser, a measure on `ℤ_p`

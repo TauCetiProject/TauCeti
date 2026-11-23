@@ -85,7 +85,7 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
   -- `J` is stable under the inertia group: translating the image of `g` by `t` gives the image of
   -- `ρ t ∘ g ∘ ε`, where `ε` is the automorphism of `V` witnessing `{}^t V ≅ V`.
   have hstable (t : inertia V) {x : U} (hx : x ∈ J) : U.ρ t x ∈ J := by
-    obtain ⟨ε, hε⟩ := mem_inertia_iff_exists_linearEquiv.mp (inv_mem t.2)
+    obtain ⟨ε, hε⟩ := mem_inertia_iff_exists_linearEquiv.mp (inv_mem t.property)
     let g' (g : IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V)))) :
         IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V))) :=
       LinearMap.intertwiningMap_of_isIntertwiningMap _ _
@@ -142,8 +142,8 @@ theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {
     φ.hom.hom.hom (A.ρ (Subgroup.inclusion (le_inertia V) n) a) =
       B.ρ (Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n)) (φ.hom.hom.hom a) := by
   have hn : ((Subgroup.inclusion (le_inertia V) n : inertia V) : G) ∈ mackeySubgroup s _ _ :=
-    mem_mackeySubgroup_iff.mpr ⟨le_inertia V n.2, le_inertia V (by
-      simpa using (inferInstance : N.Normal).conj_mem' _ n.2 s)⟩
+    mem_mackeySubgroup_iff.mpr ⟨le_inertia V n.property, le_inertia V (by
+      simpa using (inferInstance : N.Normal).conj_mem' _ n.property s)⟩
   have hy : mackeyToH s _ _ ⟨_, Subgroup.mem_subgroupOf.mpr hn⟩ =
       Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n) :=
     Subtype.ext (by simp)
@@ -161,7 +161,7 @@ theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {
 /-- **A nonzero intertwiner into a conjugate of a representation lying over `V`.**  If `B` is an
 irreducible representation of the inertia group of `V` lying over `V`, and some intertwiner from
 `V` to the conjugate by `s⁻¹` of the restriction of `B` to `N` is nonzero, then `s ∈ inertia V`. -/
-private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [Finite N] [NeZero (Nat.card N : k)]
+private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [NeZero (Nat.card N : k)]
     {V : FDRep k N} [Simple V] {B : FDRep k (inertia V)} [Simple B]
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V) {s : G}
     (h : IntertwiningMap V.ρ ((B.ρ.comp (Subgroup.inclusion (le_inertia V))).comp
@@ -183,8 +183,8 @@ private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [Finite N] [NeZero (
 /-- **Off-inertia Mackey terms vanish.** If `A` and `B` are irreducible representations of the
 inertia group of `V`, both lying over `V`, then an intertwiner from the relevant restriction of
 `A` to the Mackey conjugate of `B` is zero whenever the representative is outside `inertia V`. -/
-theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite N]
-    [NeZero (Nat.card N : k)] (V : FDRep k N) [Simple V]
+theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [NeZero (Nat.card N : k)]
+    (V : FDRep k N) [Simple V]
     (A B : FDRep k (inertia V)) [Simple A] [Simple B]
     (hA : A.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)

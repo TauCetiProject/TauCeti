@@ -77,7 +77,7 @@ def directSumPiece : ℤ → Submodule R K.directSumModule :=
 
 /-- The homogeneous pieces decompose the total module as an internal direct sum. -/
 theorem isInternal_directSumPiece : DirectSum.IsInternal K.directSumPiece := by
-  apply TauCeti.Graded.isInternal_extendByZero
+  refine TauCeti.Graded.isInternal_extendByZero_iff.2 ?_
   refine TauCeti.DirectSum.isInternal_of_lof
     (e := fun n ↦ LinearEquiv.ofInjective
       (DirectSum.lof R ℕ (fun n ↦ K.X n) n) (DirectSum.of_injective n))
@@ -104,9 +104,9 @@ theorem lof_mem_directSumPiece [DecidableEq ℕ] (n : ℕ) (x : K.X n) :
 
 /-- The total differential is homogeneous of degree one. -/
 theorem isHomogeneous_directSumDifferential :
-    TauCeti.LinearMap.IsHomogeneous K.directSumDifferential K.directSumPiece
+    LinearMap.IsHomogeneous K.directSumDifferential K.directSumPiece
       K.directSumPiece 1 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rcases lt_or_ge p 0 with hp | hp
   · rw [K.directSumPiece_of_neg hp, Submodule.mem_bot] at hx
@@ -159,8 +159,8 @@ theorem directSumMap_differential (f : K ⟶ L) (x : K.directSumModule) :
 
 /-- A cochain morphism preserves the homogeneous pieces in the total module. -/
 theorem isHomogeneous_directSumMap (f : K ⟶ L) :
-    TauCeti.LinearMap.IsHomogeneous (directSumMap f) K.directSumPiece L.directSumPiece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    LinearMap.IsHomogeneous (directSumMap f) K.directSumPiece L.directSumPiece 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simp only [add_zero]
   rcases lt_or_ge p 0 with hp | hp
@@ -236,9 +236,9 @@ theorem directSumDifferential_directSumHomotopy_add (H : Homotopy f g) (x : K.di
 
 /-- The total map of a homotopy is homogeneous of degree minus one. -/
 theorem isHomogeneous_directSumHomotopy (H : Homotopy f g) :
-    TauCeti.LinearMap.IsHomogeneous (directSumHomotopy H) K.directSumPiece L.directSumPiece
+    LinearMap.IsHomogeneous (directSumHomotopy H) K.directSumPiece L.directSumPiece
       (-1) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rcases lt_or_ge p 0 with hp | hp
   · rw [K.directSumPiece_of_neg hp, Submodule.mem_bot] at hx

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
+public import TauCeti.Geometry.Manifold.Opens
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Pulling back homological orientations along open embeddings
@@ -39,6 +41,10 @@ reverses orientation.
 * `Topology.IsOpenEmbedding.localOrientationEquiv_id`,
   `Topology.IsOpenEmbedding.localOrientationEquiv_trans`: the correspondence of local
   orientations is functorial.
+* `Topology.IsOpenEmbedding.localHomologyMap_localOrientationEquiv_symm`: the map of local
+  homology induced by `j` carries the local orientation corresponding to `z` back to `z`.
+* `IsOpen.localHomologyMap_inclusion_localOrientationEquiv_symm`: the inclusion of open sets
+  `V ⊆ U` carries the local orientations of `V` to the corresponding ones of `U`.
 * `TauCeti.HomologicalOrientation.localOrientationEquiv_comap_apply`: the local
   orientation of the pullback at `x` corresponds to the local orientation at `j x`.
 * `TauCeti.HomologicalOrientation.comap_neg`, `TauCeti.HomologicalOrientation.comap_id`,
@@ -96,6 +102,16 @@ lemma coe_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv z.val :=
   (rfl)
 
+/-- The map of local homology induced by `j` carries the local orientation at `x` corresponding
+to a local orientation `z` at `j x` back to `z`. -/
+lemma localHomologyMap_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
+    (z : LocalOrientation N (j x) d) (h : j ⁻¹' {j x} ⊆ {x}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) ⟨j, hj.continuous⟩ h d
+      ((hj.localOrientationEquiv x d).symm z).val = z.val := by
+  have h' := (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv_hom_id_apply z.val
+  rwa [localHomologyIsoOfIsOpenEmbedding_hom, ← coe_localOrientationEquiv_symm] at h'
+
 /-- The correspondence of local orientations commutes with reversal. -/
 @[simp]
 lemma localOrientationEquiv_neg (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
@@ -123,6 +139,26 @@ lemma localOrientationEquiv_trans {P : Type w} [TopologicalSpace P] [T1Space P] 
     rw [Equiv.trans_apply, coe_localOrientationEquiv, coe_localOrientationEquiv,
       coe_localOrientationEquiv, ← ConcreteCategory.comp_apply, ← Iso.trans_hom,
       localHomologyIsoOfIsOpenEmbedding_trans]
+
+/-- The inclusion of open sets `V ⊆ U` carries the local orientation of `V` at `x` corresponding to
+a local orientation `z` of the ambient space at `x` to the local orientation of `U` at `x`
+corresponding to `z`. -/
+lemma _root_.IsOpen.localHomologyMap_inclusion_localOrientationEquiv_symm {U V : Set N}
+    (hU : IsOpen U) (hV : IsOpen V) (hVU : V ⊆ U) {x : N} (hx : x ∈ V) {d : ℕ}
+    (z : LocalOrientation N x d)
+    (h : ContinuousMap.inclusion hVU ⁻¹' {(⟨x, hVU hx⟩ : U)} ⊆ {(⟨x, hx⟩ : V)}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (ContinuousMap.inclusion hVU) h d
+        ((hV.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ d).symm z).val =
+      ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hVU hx⟩ d).symm z).val := by
+  -- Both sides map to `z` under the excision isomorphism of `U`, which is injective.
+  refine (ConcreteCategory.bijective_of_isIso (localHomologyIsoOfIsOpenEmbedding
+    (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) hU.isOpenEmbedding_subtypeVal
+    ⟨x, hVU hx⟩ d).hom).1 ?_
+  rw [localHomologyIsoOfIsOpenEmbedding_hom, ← ConcreteCategory.comp_apply, localHomologyMap_comp]
+  exact (hV.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm ⟨x, hx⟩ z
+    _).trans
+    (hU.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm ⟨x, hVU hx⟩ z
+      _).symm
 
 end Topology.IsOpenEmbedding
 
@@ -209,6 +245,22 @@ lemma comap_comap (o : HomologicalOrientation P E d) {j' : N → P} (hj' : IsOpe
   rw [localOrientationEquiv_comap_apply, ← IsOpenEmbedding.localOrientationEquiv_trans hj hj',
     Equiv.trans_apply, localOrientationEquiv_comap_apply, localOrientationEquiv_comap_apply]
   rfl
+
+/-- Pulling back along `j'` and then along `j` is pulling back along any open embedding `k` equal to
+`j' ∘ j`, for instance the inclusion of an open subset of an open subset. -/
+lemma comap_comap_of_comp_eq (o : HomologicalOrientation P E d) {j' : N → P} {k : M → P}
+    (hj' : IsOpenEmbedding j') (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k)
+    (hjk : j' ∘ j = k) : (o.comap hj').comap hj = o.comap hk := by
+  rw [comap_comap, o.comap_congr _ hk hjk]
+
+/-- Restricting an orientation of `M` to an open `W` and then to an open `V ⊆ W`, along the
+inclusion `V ⟶ W` in `Opens (TopCat.of M)`, is restricting it to `V`. -/
+@[simp]
+lemma comap_comap_toTopCat_map (o : HomologicalOrientation N E d)
+    {V W : TopologicalSpace.Opens (TopCat.of N)} (f : V ⟶ W) :
+    (o.comap W.isOpenEmbedding).comap (TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map f) =
+      o.comap V.isOpenEmbedding :=
+  o.comap_comap_of_comp_eq _ _ _ (funext fun _ ↦ rfl)
 
 /-- Pulling an orientation back along a homeomorphism and then along its inverse gives it back. -/
 @[simp]

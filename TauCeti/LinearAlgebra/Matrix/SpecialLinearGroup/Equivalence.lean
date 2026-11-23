@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 Matrices related by `L * A * R` with `L` and `R` in `SL`. Nothing here assumes a Smith normal
 form or a divisibility chain along a diagonal, so these facts sit below that theory rather
 than inside it, and hold over an arbitrary finite index type. The corresponding statement for
-merely invertible factors is `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq`, in
+merely invertible factors is `Matrix.GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq`, in
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence`.
 
 ## Main results
@@ -44,7 +44,7 @@ theorem prod_eq_det_of_mul_mul_eq_diagonal {S : Type*} [CommRing S]
     (h : (L : Matrix ι ι S) * A * (R : Matrix ι ι S) = Matrix.diagonal d) :
     ∏ i, d i = A.det := by
   have hdet := congrArg Matrix.det h
-  simp only [Matrix.det_mul, L.2, R.2, one_mul, mul_one, Matrix.det_diagonal] at hdet
+  simp only [Matrix.det_mul, L.property, R.property, one_mul, mul_one, Matrix.det_diagonal] at hdet
   exact hdet.symm
 
 /-- **Matrices sharing an `SL`-transform are `SL`-equivalent.** If `L_A A R_A = L_B B R_B`
@@ -64,7 +64,7 @@ theorem exists_SL_mul_mul_eq_of_mul_mul_eq {S : Type*} [CommRing S]
   -- `coe_GL_coe_matrix` drops back to matrices; both inverses then normalise the same way
   simpa [SpecialLinearGroup.coe_mul, Matrix.mul_assoc, ← map_inv,
     SpecialLinearGroup.coe_GL_coe_matrix] using
-    LB.toGL.inv_mul_mul_inv_of_mul_mul_eq RB.toGL h.symm
+    (LB.toGL.inv_mul_mul_inv_eq_iff_mul_mul_eq RB.toGL).2 h.symm
 
 /-- **Right `SL`-cosets of a diagonal matrix.** If `det A = ∏ i, d i` is a left non-zero-divisor,
 then `A = diagonal d * g` for some `g ∈ SL` exactly when `d i` divides every entry of the `i`-th

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
@@ -110,8 +110,8 @@ theorem eq_zero_of_forall_eval_eq_zero_of_mulVec_surjective_jacobiMatrixAt [IsDo
     (hq : ∀ x : σ → R, eval (fun i ↦ eval x (p i)) q = 0) : q = 0 := by
   refine (algebraicIndependent_of_mulVec_surjective_jacobiMatrixAt hJ).eq_zero_of_aeval_eq_zero q
     (MvPolynomial.funext fun x ↦ ?_)
-  rw [map_zero, aeval_eq_bind₁, ← hq x]
-  simpa only [aeval_eq_eval] using aeval_bind₁ x p q
+  rw [map_zero, ← hq x]
+  simpa only [aeval_eq_eval] using comp_aeval_apply (f := p) (aeval x) q
 
 end TauCeti
 

@@ -67,15 +67,15 @@ noncomputable def algebraicAnalyticConeOrbitHomeomorph :
 @[simp]
 theorem coe_algebraicAnalyticConeOrbitHomeomorph_apply
     (x : AlgebraicComplexPoint.coneOrbit Φ σ) :
-    (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).1 = algebraicAnalyticEquiv hΦ x.1 := by
+    (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).val = algebraicAnalyticEquiv hΦ x.val := by
   simp [algebraicAnalyticConeOrbitHomeomorph]
 
 /-- The inverse restricted comparison is the restriction of the inverse ambient comparison. -/
 @[simp]
 theorem coe_algebraicAnalyticConeOrbitHomeomorph_symm_apply
     (x : Φ.analyticConeOrbit hΦ σ) :
-    ((algebraicAnalyticConeOrbitHomeomorph hΦ σ).symm x).1 =
-      (algebraicAnalyticEquiv hΦ).symm x.1 := by
+    ((algebraicAnalyticConeOrbitHomeomorph hΦ σ).symm x).val =
+      (algebraicAnalyticEquiv hΦ).symm x.val := by
   simp [algebraicAnalyticConeOrbitHomeomorph]
 
 /-! ### The algebraic orbit as a quotient torus -/
@@ -84,7 +84,7 @@ theorem coe_algebraicAnalyticConeOrbitHomeomorph_symm_apply
 of the toric scheme of a regular fan, with the subspace topology, is homeomorphic to the torus of
 the quotient lattice `N ⧸ N_σ`. -/
 noncomputable def algebraicConeOrbitTorusHomeomorph :
-    AlgebraicComplexPoint.coneOrbit Φ σ ≃ₜ ComplexTorus (N ⧸ coneSublattice i σ.1) :=
+    AlgebraicComplexPoint.coneOrbit Φ σ ≃ₜ ComplexTorus (N ⧸ coneSublattice i σ.val) :=
   (algebraicAnalyticConeOrbitHomeomorph hΦ σ).trans (Φ.analyticConeOrbitTorusHomeomorph hΦ σ)
 
 /-- The algebraic quotient-torus identification factors through the analytic orbit. -/
@@ -113,13 +113,13 @@ translating by a torus point `t` multiplies by the image of `t` in the quotient 
 theorem algebraicConeOrbitTorusHomeomorph_smul (t : ComplexTorus N)
     (x : AlgebraicComplexPoint.coneOrbit Φ σ) :
     algebraicConeOrbitTorusHomeomorph hΦ σ
-        ⟨t • x.1, AlgebraicComplexPoint.smul_mem_coneOrbit t x.2⟩ =
-      complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ.1)) t *
+        ⟨t • x.val, AlgebraicComplexPoint.smul_mem_coneOrbit t x.property⟩ =
+      complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ.val)) t *
         algebraicConeOrbitTorusHomeomorph hΦ σ x := by
   have h : algebraicAnalyticConeOrbitHomeomorph hΦ σ
-      ⟨t • x.1, AlgebraicComplexPoint.smul_mem_coneOrbit t x.2⟩ =
-      ⟨t • (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).1,
-        Φ.smul_mem_analyticConeOrbit hΦ t (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).2⟩ :=
+      ⟨t • x.val, AlgebraicComplexPoint.smul_mem_coneOrbit t x.property⟩ =
+      ⟨t • (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).val,
+        Φ.smul_mem_analyticConeOrbit hΦ t (algebraicAnalyticConeOrbitHomeomorph hΦ σ x).property⟩ :=
     Subtype.ext (by simp)
   rw [algebraicConeOrbitTorusHomeomorph_apply, h, analyticConeOrbitTorusHomeomorph_smul,
     algebraicConeOrbitTorusHomeomorph_apply]
@@ -129,7 +129,7 @@ translate of the distinguished point of `σ` by `t`. -/
 @[simp]
 theorem coe_algebraicConeOrbitTorusHomeomorph_symm_complexTorusMap (t : ComplexTorus N) :
     ((algebraicConeOrbitTorusHomeomorph hΦ σ).symm
-        (complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ.1)) t) :
+        (complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ.val)) t) :
         Φ.AlgebraicComplexPoint) =
       t • AlgebraicComplexPoint.distinguishedPoint σ := by
   rw [algebraicConeOrbitTorusHomeomorph, Homeomorph.symm_trans_apply,
@@ -139,7 +139,7 @@ theorem coe_algebraicConeOrbitTorusHomeomorph_symm_complexTorusMap (t : ComplexT
 
 /-! ### The complex structure on the algebraic orbit -/
 
-variable {ι : Type*} [Fintype ι] (e : IntegralCharacter (N ⧸ coneSublattice i σ.1) ≃+ (ι →₀ ℤ))
+variable {ι : Type*} [Fintype ι] (e : IntegralCharacter (N ⧸ coneSublattice i σ.val) ≃+ (ι →₀ ℤ))
 
 /-- The complex structure on the algebraic orbit of `σ`, pulled back from the quotient-torus
 structure of the analytic orbit. The topology is the subspace topology of the algebraic complex
@@ -178,7 +178,7 @@ theorem coe_algebraicAnalyticConeOrbitDiffeomorph (n : ℕ∞ω) :
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     ⇑(algebraicAnalyticConeOrbitDiffeomorph hΦ σ e n) =
       algebraicAnalyticConeOrbitHomeomorph hΦ σ := by
-  simp only [algebraicAnalyticConeOrbitDiffeomorph, coe_diffeomorphOfBijective]
+  simp only [algebraicAnalyticConeOrbitDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
 
 /-- The inverse orbit diffeomorphism has the inverse restricted comparison as its map. -/
 @[simp]
@@ -200,7 +200,7 @@ noncomputable def algebraicConeOrbitTorusDiffeomorph (n : ℕ∞ω) :
     letI := algebraicConeOrbitChartedSpace hΦ σ e
     letI := complexTorusChartedSpace e
     AlgebraicComplexPoint.coneOrbit Φ σ ≃ₘ^n⟮𝓘(ℂ, ι → ℂ), 𝓘(ℂ, ι → ℂ)⟯
-      ComplexTorus (N ⧸ coneSublattice i σ.1) :=
+      ComplexTorus (N ⧸ coneSublattice i σ.val) :=
   letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
   letI := algebraicConeOrbitChartedSpace hΦ σ e
   letI := complexTorusChartedSpace e
@@ -258,7 +258,7 @@ theorem contMDiff_subtypeVal_coneOrbit_comp_iff
     {f : M → AlgebraicComplexPoint.coneOrbit Φ σ} {n : ℕ∞ω} :
     letI := algebraicConeOrbitChartedSpace hΦ σ e
     letI := algebraicComplexPointChartedSpace hΦ
-    ContMDiff I 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (fun x ↦ (f x).1) ↔
+    ContMDiff I 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (fun x ↦ (f x).val) ↔
       ContMDiff I 𝓘(ℂ, ι → ℂ) n f := by
   let := Φ.analyticChartedSpace hΦ
   let := Φ.analyticConeOrbitChartedSpace hΦ σ e
@@ -276,7 +276,7 @@ theorem contMDiff_subtypeVal_coneOrbit_comp_iff
 /-- Changing the presentation of the quotient character lattice preserves the complex structure
 on the algebraic orbit. -/
 theorem contMDiff_id_algebraicConeOrbitChartedSpace {ι' : Type*} [Fintype ι']
-    (e' : IntegralCharacter (N ⧸ coneSublattice i σ.1) ≃+ (ι' →₀ ℤ)) (n : ℕ∞ω) :
+    (e' : IntegralCharacter (N ⧸ coneSublattice i σ.val) ≃+ (ι' →₀ ℤ)) (n : ℕ∞ω) :
     @ContMDiff ℂ _ (ι → ℂ) _ _ (ι → ℂ) _ 𝓘(ℂ, ι → ℂ)
       (AlgebraicComplexPoint.coneOrbit Φ σ) _ (algebraicConeOrbitChartedSpace hΦ σ e)
       (ι' → ℂ) _ _ (ι' → ℂ) _ 𝓘(ℂ, ι' → ℂ)

@@ -105,7 +105,7 @@ theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
         (Submodule.span (PadicInt.subring p) (Set.range b)) ↔
       ∀ i j, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p := by
     rw [b.mapsTo_span_range_iff_forall_toMatrix_mem]
-    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   rw [mem_integralOrthogonalSubgroup_iff]
   exact and_congr (hmaps _).symm (hmaps _).symm
 
@@ -140,7 +140,7 @@ theorem isOpen_integralOrthogonalSubgroup :
       LinearMap.toMatrix b b (g : V ≃ₗ[ℚ_[p]] V).toLinearMap) :=
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   have ho : IsOpen (PadicInt.subring p : Set ℚ_[p]) := by
     simpa using PadicInt.isOpenEmbedding_coe.isOpen_range
   have hset : (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) =
@@ -171,7 +171,7 @@ theorem isCompact_integralOrthogonalSubgroup :
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap).comp
       (continuous_pi fun i ↦ continuous_pi fun j ↦
-        continuous_subtype_val.comp ((continuous_apply j).comp (continuous_apply i)))
+        continuous_subtypeVal.comp ((continuous_apply j).comp (continuous_apply i)))
   have hcompact : IsCompact ((MonoidHom.mrange f).units : Set (Module.End ℚ_[p] V)ˣ) :=
     Submonoid.units_isCompact (isCompact_range hf)
   let e := generalLinearContinuousMulEquiv (K := ℚ_[p]) (V := V)
@@ -254,12 +254,12 @@ theorem eventually_integralOrthogonalSubgroup_baseChange_eq {ι' : Type*} [Finty
     rw [eq_ratCast]
     exact ⟨⟨_, (PadicInt.mem_subring_iff (p := p)).mpr (Padic.norm_rat_le_one hq)⟩, rfl⟩
   refine integralOrthogonalSubgroup_eq_of_span_eq _ _ (le_antisymm ?_ ?_)
-  · refine (b₀'.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
-      (A := PadicInt.subring p) (b₀.baseChange ℚ_[p]) fun i j ↦ ?_
+  · refine ((b₀'.baseChange ℚ_[p]).span_range_le_span_range_iff_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀.baseChange ℚ_[p])).mpr fun i j ↦ ?_
     rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
     exact hmem _ (hp' i j)
-  · refine (b₀.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
-      (A := PadicInt.subring p) (b₀'.baseChange ℚ_[p]) fun i j ↦ ?_
+  · refine ((b₀.baseChange ℚ_[p]).span_range_le_span_range_iff_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀'.baseChange ℚ_[p])).mpr fun i j ↦ ?_
     rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
     exact hmem _ (hp i j)
 

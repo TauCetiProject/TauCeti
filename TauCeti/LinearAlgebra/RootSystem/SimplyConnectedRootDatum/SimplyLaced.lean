@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Gram
+public import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
@@ -27,6 +27,9 @@ The proof is uniform in the type: the identity holds at the simple roots by the 
 preserved by simple reflections because the Cartan matrix is symmetric, so Mathlib's
 `RootPairing.Base.induction_reflect` propagates it to every root.
 
+The resulting symmetry allows the general root-string results in
+`TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString` to be applied to this datum.
+
 ## Main results
 
 * `TauCeti.DynkinType.root_eq_coroot_vecMul_cartanMatrix`: the root with index `k` is
@@ -37,6 +40,7 @@ preserved by simple reflections because the Cartan matrix is symmetric, so Mathl
   coroot coordinates.
 * `TauCeti.DynkinType.coroot_reflectionPerm_simpleIndex`: simple reflections in coroot
   coordinates.
+* `TauCeti.DynkinType.pairing_simplyConnectedRootDatum_comm`: the Cartan pairing is symmetric.
 
 ## References
 
@@ -62,7 +66,7 @@ theorem root_eq_coroot_vecMul_cartanMatrix (k : Fin t.numRoots) :
   have := t.isReduced_simplyConnectedRootDatum ht
   set P := t.simplyConnectedRootDatum ht
   have hpairing (i j : Fin t.numRoots) : P.pairing i j = P.root i ⬝ᵥ P.coroot j := by
-    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum]
+    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply]
   have hsimple (s : Fin t.rank) :
       P.root (t.simpleIndex ht s) = P.coroot (t.simpleIndex ht s) ᵥ* t.cartanMatrix := by
     rw [root_simpleIndex, coroot_simpleIndex, single_one_vecMul]
@@ -74,10 +78,10 @@ theorem root_eq_coroot_vecMul_cartanMatrix (k : Fin t.numRoots) :
   · rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
       RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_self, hi, neg_vecMul]
   · obtain ⟨s, rfl⟩ : ∃ s, t.simpleIndex ht s = i :=
-      ⟨⟨i, (mem_support_simplyConnectedBase t ht).mp hi⟩, Fin.ext (simpleIndex_val t ht _)⟩
+      ⟨⟨i, (mem_support_simplyConnectedBase t ht).mp hi⟩, Fin.ext (val_simpleIndex t ht _)⟩
     exact hsimple s
   · obtain ⟨s, rfl⟩ : ∃ s, t.simpleIndex ht s = j :=
-      ⟨⟨j, (mem_support_simplyConnectedBase t ht).mp hj⟩, Fin.ext (simpleIndex_val t ht _)⟩
+      ⟨⟨j, (mem_support_simplyConnectedBase t ht).mp hj⟩, Fin.ext (val_simpleIndex t ht _)⟩
     rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root,
       RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_coroot, sub_vecMul,
       smul_vecMul, hpairing, hpairing, hi, hsimple, vecMul_dotProduct_comm hs.isSymm_cartanMatrix]
@@ -102,7 +106,7 @@ theorem pairing_eq_coroot_vecMul_dotProduct (k l : Fin t.numRoots) :
     (t.simplyConnectedRootDatum ht).pairing k l =
       ((t.simplyConnectedRootDatum ht).coroot k ᵥ* t.cartanMatrix) ⬝ᵥ
         (t.simplyConnectedRootDatum ht).coroot l := by
-  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
+  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply,
     t.root_eq_coroot_vecMul_cartanMatrix ht hs]
 
 include hs in
@@ -116,5 +120,16 @@ theorem coroot_reflectionPerm_simpleIndex (i : Fin t.rank) (k : Fin t.numRoots) 
   rw [RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_coroot,
     t.pairing_eq_coroot_vecMul_dotProduct ht hs, coroot_simpleIndex,
     vecMul_dotProduct_comm hs.isSymm_cartanMatrix, dotProduct_single, mul_one]
+
+/-! ## Symmetry of the Cartan pairing -/
+
+include hs in
+/-- The Cartan pairing of a simply-laced pinned datum is symmetric. -/
+theorem pairing_simplyConnectedRootDatum_comm (α β : Fin t.numRoots) :
+    (t.simplyConnectedRootDatum ht).pairing α β =
+      (t.simplyConnectedRootDatum ht).pairing β α := by
+  rw [t.pairing_eq_coroot_vecMul_dotProduct ht hs,
+    t.pairing_eq_coroot_vecMul_dotProduct ht hs,
+    vecMul_dotProduct_comm hs.isSymm_cartanMatrix]
 
 end TauCeti.DynkinType

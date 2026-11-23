@@ -50,6 +50,8 @@ slopes.
   `x₀² + x₁² ≤ x₂² + x₃²`.
 * `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`: on the boundary torus, the
   identification of the exterior with a solid torus exchanges meridian and longitude.
+* `TauCeti.unknotExteriorHomeomorph_exteriorBoundaryInclusion`: the boundary torus of the exterior
+  of the unknot is the boundary torus of `D² × S¹` with the circle factors exchanged.
 * `TauCeti.unknotExteriorHomeomorph_symm_notMem_range`: the exterior of the unknot misses the
   unknot.
 
@@ -97,7 +99,7 @@ private abbrev solidTorusSwap : SolidTorus ≃ₜ sphere (0 : ℂ) 1 × closedBa
 
 private theorem toComplexProd_unknotSolidTorus (p : SolidTorus) :
     toComplexProd (unknotSolidTorus p) =
-      ((sphereProdSndLeHomeomorph ℂ ℂ).symm (solidTorusSwap p)).1 := by
+      ((sphereProdSndLeHomeomorph ℂ ℂ).symm (solidTorusSwap p)).val := by
   ext1
   -- Keep `complexProdToEuclideanFour` folded so that it cancels against its inverse.
   simp [unknotSolidTorus, toComplexProd, -complexProdToEuclideanFour_apply]
@@ -232,7 +234,7 @@ theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle
 /-- The exterior of the unknot misses the unknot. -/
 theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
     (unknotExteriorHomeomorph.symm p : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∉ range unknot :=
-  fun hp ↦ (mem_knotExterior.mp (unknotExteriorHomeomorph.symm p).2)
+  fun hp ↦ (mem_knotExterior.mp (unknotExteriorHomeomorph.symm p).property)
     (isSolidTorusNeighborhood_unknotSolidTorus.range_subset_image hp)
 
 end TauCeti

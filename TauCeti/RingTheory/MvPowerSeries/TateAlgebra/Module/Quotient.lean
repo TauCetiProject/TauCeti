@@ -7,7 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 public import TauCeti.Analysis.Normed.Module.Quotient
-public import TauCeti.Analysis.Normed.Group.Submodule
+public import TauCeti.Analysis.Normed.Group.Quotient
+public import TauCeti.Topology.MetricSpace.Algebra
 import TauCeti.Analysis.Normed.Group.OpenMapping
 
 /-!
@@ -42,7 +43,7 @@ def restrictedFamilySubtype :
 
 @[simp]
 theorem restrictedFamilySubtype_apply (a : IsRestrictedFamily.addSubgroup N c) (t : σ →₀ ℕ) :
-    (restrictedFamilySubtype N a).1 t = (a.1 t : E) := by
+    (restrictedFamilySubtype N a).val t = (a.val t : E) := by
   exact congrFun (coe_mapLinearMap N.subtype (C := 1) (fun _ ↦ by simp) a) t
 
 /-- Apply the coefficient quotient map to a restricted family. -/
@@ -52,7 +53,7 @@ def restrictedFamilyMkQ :
 
 @[simp]
 theorem restrictedFamilyMkQ_apply (a : IsRestrictedFamily.addSubgroup E c) (t : σ →₀ ℕ) :
-    (restrictedFamilyMkQ N a).1 t = Submodule.Quotient.mk (a.1 t) := by
+    (restrictedFamilyMkQ N a).val t = Submodule.Quotient.mk (a.val t) := by
   simp [restrictedFamilyMkQ]
 
 /-- Inclusion of a coefficient submodule remains injective on restricted families. -/
@@ -70,13 +71,13 @@ theorem range_restrictedFamilySubtype :
     apply (mapLinearMap_eq_zero_iff _ _ _).mpr
     intro t
     simpa only [restrictedFamilySubtype_apply, Submodule.mkQ_apply]
-      using (Submodule.Quotient.mk_eq_zero N).mpr (a.1 t).2
+      using (Submodule.Quotient.mk_eq_zero N).mpr (a.val t).property
   · intro a ha
-    have hcoeff (t : σ →₀ ℕ) : a.1 t ∈ N :=
+    have hcoeff (t : σ →₀ ℕ) : a.val t ∈ N :=
       (Submodule.Quotient.mk_eq_zero N).mp
         ((mapLinearMap_eq_zero_iff _ _ _).mp ha t)
-    refine ⟨⟨fun t ↦ ⟨a.1 t, hcoeff t⟩, ?_⟩, IsRestrictedFamily.ext fun _ ↦ by simp⟩
-    exact mem_addSubgroup.mpr ((mem_addSubgroup.mp a.2).of_norm_le (C := 1) fun _ ↦ by simp)
+    refine ⟨⟨fun t ↦ ⟨a.val t, hcoeff t⟩, ?_⟩, IsRestrictedFamily.ext fun _ ↦ by simp⟩
+    exact mem_addSubgroup.mpr ((mem_addSubgroup.mp a.property).of_norm_le (C := 1) fun _ ↦ by simp)
 
 /-- A family with coefficients in the submodule maps to zero in the quotient. -/
 @[simp]
@@ -88,7 +89,7 @@ theorem restrictedFamilyMkQ_restrictedFamilySubtype (a : IsRestrictedFamily.addS
 coefficient bound greater than one, at every polyradius. -/
 theorem exists_restrictedFamilyMkQ_eq_and_norm_coeff_le [IsClosed (N : Set E)] {L : ℝ}
     (hL : 1 < L) (b : IsRestrictedFamily.addSubgroup (E ⧸ N) c) :
-    ∃ a, restrictedFamilyMkQ N a = b ∧ ∀ t, ‖a.1 t‖ ≤ L * ‖b.1 t‖ := by
+    ∃ a, restrictedFamilyMkQ N a = b ∧ ∀ t, ‖a.val t‖ ≤ L * ‖b.val t‖ := by
   apply exists_mapLinearMap_eq_and_norm_coeff_le N.mkQ _
   intro y
   by_cases hy : y = 0
@@ -179,7 +180,7 @@ theorem isometry_gaussFamilySubtype : Isometry (gaussFamilySubtype (c := c) N) :
 
 /-- The coefficient quotient map is contractive for the Gauss seminorm. -/
 theorem norm_gaussFamilyMkQ_le (a : Gauss c E) : ‖gaussFamilyMkQ N a‖ ≤ ‖a‖ := by
-  simpa [gaussFamilyMkQ] using Gauss.norm_mapLinearMap_le N.mkQ (C := 1) zero_le_one
+  simpa [gaussFamilyMkQ] using Gauss.norm_mapLinearMap_le N.mkQ (C := 1)
     (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e) a
 
 variable [IsClosed (N : Set E)]
@@ -192,7 +193,7 @@ theorem exists_gaussFamilyMkQ_eq_and_norm_le {L : ℝ} (hL : 1 < L)
   obtain ⟨a, ha, hcoeff⟩ :=
     exists_restrictedFamilyMkQ_eq_and_norm_coeff_le N hL b.toAddSubgroup
   refine ⟨Gauss.ofAddSubgroup a, Gauss.ext fun t ↦ ?_,
-    Gauss.norm_le_mul_of_norm_coeff_le (zero_lt_one.trans hL).le hcoeff⟩
+    Gauss.norm_le_mul_of_norm_coeff_le hcoeff⟩
   simpa only [gaussFamilyMkQ_apply, Gauss.ofAddSubgroup_apply,
     restrictedFamilyMkQ_apply]
     using congrFun (congrArg Subtype.val ha) t
@@ -206,11 +207,28 @@ theorem isOpenMap_gaussFamilyMkQ : IsOpenMap (gaussFamilyMkQ (c := c) N) :=
 theorem isQuotientMap_gaussFamilyMkQ :
     Topology.IsQuotientMap (gaussFamilyMkQ (c := c) N) :=
   (isOpenMap_gaussFamilyMkQ N).isQuotientMap
-    (Gauss.uniformContinuous_mapLinearMap N.mkQ zero_le_one
+    (Gauss.uniformContinuous_mapLinearMap N.mkQ
       (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e)).continuous
     (gaussFamilyMkQ_surjective N)
 
 end GaussFamilies
 end Quotient
+
+section Convolution
+
+variable {σ R E : Type*} [NormedRing R] [IsUltrametricDist R]
+  [SeminormedAddCommGroup E] [IsUltrametricDist E] [Module R E] [IsBoundedSMul R E]
+  {c : σ → ℝ} (N : Submodule R E)
+
+/-- Coefficient quotient maps commute with convolution by restricted scalar series. -/
+@[simp]
+theorem gaussFamilyMkQ_isRestrictedSubring_smul
+    (f : _root_.MvPowerSeries.IsRestricted.subring (R := R) c)
+    (a : Gauss c E) : gaussFamilyMkQ N (f • a) = f • gaussFamilyMkQ N a := by
+  simpa only [gaussFamilyMkQ] using
+    LinearMap.mapGaussFamily_isRestrictedSubring_smul N.mkQ
+      (C := 1) (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e) f a
+
+end Convolution
 
 end Submodule

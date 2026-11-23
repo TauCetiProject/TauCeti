@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.IID
 -- Public: `cylinder` appears in the hypothesis of `measure_eq_zero_or_one_of_exchangeableSigma`.
 public import Mathlib.MeasureTheory.Constructions.Cylinders
 -- Non-public: used only inside proofs.
-import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.MeasureTheory.Constructions.Cylinder.Approximation
 import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.ZeroOne
@@ -69,15 +69,14 @@ The independence step lives on the source space rather than on path space —
 transfers the resulting identity to `pathLaw μ X`. Stating it directly for a path-space measure
 would first need a lemma transferring `iIndepFun` to the coordinate projections.
 
-This discharges the Layer 2 target `hewittSavage_trivial_of_iIndep` of
-`TauCetiRoadmap/Exchangeability/README.md`, and supplies the Layer 2 input the roadmap records for
-the Layer 6 extreme-point corollary (the extreme exchangeable laws are exactly the i.i.d. laws).
+The zero-one law is also an input to the extreme-point corollary of de Finetti's theorem: the
+extreme exchangeable laws are exactly the i.i.d. laws.
 
 ## References
 
 * Edwin Hewitt and Leonard J. Savage, *Symmetric measures on Cartesian products*, Transactions of
   the American Mathematical Society **80** (1955), 470–501, <https://doi.org/10.2307/1992999> — the
-  original theorem, and the source the roadmap names for this target.
+  original theorem.
 * Olav Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1.
 
 No material is adapted from `cameronfreer/exchangeability`: that formalization does not carry this
@@ -105,12 +104,12 @@ variable {α : Type*}
 change of variables that turns a `π`-reindexed cylinder over `F` into a cylinder over `F.map π`. -/
 private def pullMoved (π : Equiv.Perm ℕ) (F : Finset ℕ) (α : Type*)
     (g : ∀ _j : F.map (Equiv.toEmbedding π), α) : ∀ _i : F, α :=
-  fun i => g ⟨π ↑i, Finset.mem_map_of_mem _ i.2⟩
+  fun i => g ⟨π ↑i, Finset.mem_map_of_mem _ i.property⟩
 
 @[simp]
 private theorem pullMoved_apply (π : Equiv.Perm ℕ) (F : Finset ℕ)
     (g : ∀ _j : F.map (Equiv.toEmbedding π), α) (i : F) :
-    pullMoved π F α g i = g ⟨π ↑i, Finset.mem_map_of_mem _ i.2⟩ :=
+    pullMoved π F α g i = g ⟨π ↑i, Finset.mem_map_of_mem _ i.property⟩ :=
   rfl
 
 /-- Reindexing a cylinder over `F` by `π` is a cylinder over the moved index set `F.map π`: both

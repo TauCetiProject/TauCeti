@@ -17,7 +17,8 @@ Permuting the tensor factors of `⨂[R]^d M` commutes with the diagonal action o
 intertwining map of `ρ.tensorPower d` with itself.  Its image is therefore a subrepresentation of
 the tensor power.  This file records that image and the elementary ways it depends on `a`: the
 identity cuts out the whole tensor power, the zero cuts out `⊥`, multiplying on the right shrinks
-the image, and conjugating by a permutation moves the image by that permutation of the factors.
+the image, and conjugating by a permutation moves the image by that permutation of the factors,
+which is then an isomorphism of representations between the two images.
 
 Nothing here is specific to Young symmetrizers; taking `a` to be one is the Weyl construction.
 
@@ -26,12 +27,8 @@ Nothing here is specific to Young symmetrizers; taking `a` to be one is the Weyl
 * `TauCeti.tensorPowerPermMap`: acting on `⨂[R]^d M` by an element of `R[S_d]`, as an
   intertwining map of the tensor power with itself.
 * `TauCeti.tensorPowerRange`: the image of that map, as a subrepresentation.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", whose Weyl-module target consumes this
-  construction.
+* `TauCeti.tensorPowerReindexEquiv`: a permutation of the tensor factors carrying one
+  subrepresentation of the tensor power onto another, as an isomorphism of representations.
 -/
 
 public section
@@ -113,5 +110,53 @@ theorem tensorPowerRange_conj (σ : Equiv.Perm (Fin d)) :
     Module.End.mul_eq_comp, Module.End.mul_eq_comp,
     LinearMap.range_comp_of_range_eq_top _ hsurj, LinearMap.range_comp,
     PiTensorProduct.reindexRepresentation_apply]
+
+variable {ρ d} in
+/-- **Permuting the tensor factors is an isomorphism between the subrepresentations it matches
+up.** If permuting the factors by `σ` carries the underlying submodule of `W` onto that of `W'`,
+then it is an isomorphism of representations from `W` to `W'`, because it commutes with the
+diagonal action. -/
+noncomputable def tensorPowerReindexEquiv (σ : Equiv.Perm (Fin d))
+    {W W' : Subrepresentation (ρ.tensorPower d)}
+    (h : W'.toSubmodule =
+      W.toSubmodule.map
+        (PiTensorProduct.reindex R (fun _ : Fin d => M) σ : (⨂[R]^d M) →ₗ[R] (⨂[R]^d M))) :
+    W.toRepresentation.Equiv W'.toRepresentation :=
+  Representation.Equiv.mk
+    ((PiTensorProduct.reindex R (fun _ : Fin d => M) σ).ofSubmodules _ _ h.symm) fun g => by
+      ext x
+      have h := LinearMap.congr_fun
+        (PiTensorProduct.commute_reindexRepresentation_map R M (Fin d) σ (ρ g)) (x : ⨂[R]^d M)
+      simpa only [mul_apply_eq_comp, LinearMap.coe_comp, Function.comp_apply,
+        LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_apply,
+        Subrepresentation.toRepresentation_apply, LinearMap.coe_restrict_apply,
+        Representation.tensorPower_apply,
+        PiTensorProduct.reindexRepresentation_apply, LinearEquiv.coe_toLinearMap] using h
+
+variable {ρ d} in
+/-- The isomorphism `TauCeti.tensorPowerReindexEquiv` permutes the tensor factors. -/
+@[simp]
+theorem tensorPowerReindexEquiv_apply_coe (σ : Equiv.Perm (Fin d))
+    {W W' : Subrepresentation (ρ.tensorPower d)}
+    (h : W'.toSubmodule =
+      W.toSubmodule.map
+        (PiTensorProduct.reindex R (fun _ : Fin d => M) σ : (⨂[R]^d M) →ₗ[R] (⨂[R]^d M)))
+    (x : W.toSubmodule) :
+    ((tensorPowerReindexEquiv σ h x : W'.toSubmodule) : ⨂[R]^d M) =
+      PiTensorProduct.reindex R (fun _ : Fin d => M) σ x :=
+  LinearEquiv.ofSubmodules_apply _ _ x
+
+variable {ρ d} in
+/-- The inverse of `TauCeti.tensorPowerReindexEquiv` permutes the tensor factors back. -/
+@[simp]
+theorem tensorPowerReindexEquiv_symm_apply_coe (σ : Equiv.Perm (Fin d))
+    {W W' : Subrepresentation (ρ.tensorPower d)}
+    (h : W'.toSubmodule =
+      W.toSubmodule.map
+        (PiTensorProduct.reindex R (fun _ : Fin d => M) σ : (⨂[R]^d M) →ₗ[R] (⨂[R]^d M)))
+    (y : W'.toSubmodule) :
+    (((tensorPowerReindexEquiv σ h).symm y : W.toSubmodule) : ⨂[R]^d M) =
+      (PiTensorProduct.reindex R (fun _ : Fin d => M) σ).symm y :=
+  LinearEquiv.ofSubmodules_symm_apply _ _ y
 
 end TauCeti

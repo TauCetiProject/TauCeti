@@ -10,16 +10,23 @@ public import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Global lower distance bounds on compact sets
+# Inverse-Lipschitz restrictions and global lower distance bounds
 
 For a continuous injection on a compact set, a uniform lower distance bound for nearby pairs
 extends to all pairs. Away from the diagonal, compactness and injectivity supply the missing
 positive lower bound. This lets local differential estimates give quantitative embeddings.
+
+We also show that a map `x ↦ (f x, g x)` is antilipschitz, and uniformly inducing when `f` and
+`g` are uniformly continuous, on a set where `dist x y` is bounded by a combination of
+`dist (f x) (f y)` and `dist (g x) (g y)`.
+
+`AntilipschitzWith.domRestrict_mono` restricts inverse-Lipschitz control on a set to any subset.
 -/
 
 public section
 
 open Set Metric
+open scoped NNReal
 
 namespace IsCompact
 
@@ -55,8 +62,8 @@ theorem exists_antilipschitzWith_of_locally
   -- separately can unfold NNReal to a subtype and invalidate the coercion's type.
   change dist (x : X) y ≤ (min c a)⁻¹ * dist (f x) (f y)
   rw [← div_eq_inv_mul, le_div_iff₀ hb, mul_comm]
-  have hx := x.2
-  have hy := y.2
+  have hx := x.property
+  have hy := y.property
   by_cases hxy : dist (x : X) y < δ
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) dist_nonneg).trans
       (hlocal x hx y hy hxy)
@@ -65,3 +72,28 @@ theorem exists_antilipschitzWith_of_locally
       ((le_div_iff₀ (hδ.trans_le (le_of_not_gt hxy))).mp h)
 
 end IsCompact
+
+namespace AntilipschitzWith
+
+/-- Inverse-Lipschitz control on a set restricts to any subset. -/
+theorem domRestrict_mono {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {L : ℝ≥0} {f : X → Y} {s t : Set X} (hi : AntilipschitzWith L (s.domRestrict f))
+    (ht : t ⊆ s) : AntilipschitzWith L (t.domRestrict f) := by
+  intro x y
+  simpa only [Set.domRestrict_apply, Subtype.edist_eq, Subtype.edist_mk_mk] using
+    hi ⟨x, ht x.property⟩ ⟨y, ht y.property⟩
+
+/-- If distances in `X` are controlled by the distances of the images under `f` and `g`, then
+`x ↦ (f x, g x)` is antilipschitz, with constant `A + B`. -/
+theorem prodMk_of_dist_le {X Y Z : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    [PseudoMetricSpace Z] {f : X → Y} {g : X → Z} {A B : ℝ≥0}
+    (h : ∀ x y, dist x y ≤ A * dist (f x) (f y) + B * dist (g x) (g y)) :
+    AntilipschitzWith (A + B) fun x => (f x, g x) := by
+  refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
+  have hf : dist (f x) (f y) ≤ dist (f x, g x) (f y, g y) := le_max_left _ _
+  have hg : dist (g x) (g y) ≤ dist (f x, g x) (f y, g y) := le_max_right _ _
+  rw [NNReal.coe_add]
+  nlinarith [h x y, mul_le_mul_of_nonneg_left hf A.coe_nonneg,
+    mul_le_mul_of_nonneg_left hg B.coe_nonneg]
+
+end AntilipschitzWith

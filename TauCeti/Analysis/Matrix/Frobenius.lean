@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
 # The Frobenius inner product on matrices
@@ -22,6 +23,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
+  squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
@@ -32,6 +35,11 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
+* `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
+  the squared norms of the entries.
+* `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
+* `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
+  absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
 -/
 
 public section
@@ -43,6 +51,12 @@ open scoped ComplexConjugate InnerProductSpace
 namespace Matrix
 
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+
+/-- The real part of the trace of `X * Xᴴ` is the sum of the squared entry norms. -/
+theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
+    RCLike.re (Matrix.trace (X * X.conjTranspose)) = ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, RCLike.mul_conj]
 
 section Def
 
@@ -92,6 +106,12 @@ end Def
 
 open scoped Matrix Matrix.Norms.Frobenius
 
+/-- The squared Frobenius norm is the sum of the squared entry norms. -/
+theorem frobenius_norm_sq_eq_sum_norm_sq [SeminormedAddCommGroup E] (A : Matrix m n E) :
+    ‖A‖ ^ 2 = ∑ i, ∑ j, ‖A i j‖ ^ 2 := by
+  simp only [frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
+  exact Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+
 /-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
 theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = ∑ i, ∑ j, conj (A i j) * B i j := by
@@ -109,5 +129,37 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     conjTranspose_apply,
     RCLike.star_def]
   exact Finset.sum_comm
+
+/-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
+theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
+    ‖A‖ ^ 2 = ∑ i, ∑ j, Complex.normSq (A i j) := by
+  simpa only [Complex.normSq_eq_norm_sq] using A.frobenius_norm_sq_eq_sum_norm_sq
+
+/-- Unitary conjugation preserves the squared Frobenius norm. -/
+theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (U A : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
+    ‖Uᴴ * A * U‖ ^ 2 = ‖A‖ ^ 2 := by
+  have hright : U * Uᴴ = 1 := by
+    simpa only [star_eq_conjTranspose] using (mem_unitaryGroup_iff.mp hU)
+  have hnorm (B : Matrix ι ι 𝕜) : ((‖B‖ ^ 2 : ℝ) : 𝕜) = (Bᴴ * B).trace := by
+    rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K]
+    push_cast
+    ring
+  apply RCLike.ofReal_injective (K := 𝕜)
+  rw [hnorm, hnorm]
+  have hmul : (Uᴴ * A * U)ᴴ * (Uᴴ * A * U) = Uᴴ * (Aᴴ * A) * U := by
+    simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
+      ← Matrix.mul_assoc U Uᴴ, hright, one_mul]
+  rw [hmul, trace_mul_cycle, hright, one_mul]
+
+open scoped Matrix.Norms.Frobenius in
+/-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of
+its Gram matrix `L * Lᵀ`. -/
+theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : n) :
+    |L i j| ≤ √(L * Lᵀ).trace := by
+  rw [← Real.norm_eq_abs]
+  refine (norm_apply_le_frobenius_norm L i j).trans (le_of_eq ?_)
+  rw [frobenius_norm_def, ← Real.sqrt_eq_rpow]
+  simp [trace, Matrix.mul_apply, sq]
 
 end Matrix

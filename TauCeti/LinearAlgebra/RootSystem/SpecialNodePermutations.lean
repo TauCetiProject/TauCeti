@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.RootLength
+import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Classical
+import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.NonSimplyLaced
 
 /-!
 # Special node permutations of a Dynkin type
 
 A *graph automorphism* of a Dynkin diagram is a permutation of its Bourbaki-numbered nodes
 preserving the standard Cartan matrix; those are pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`, and each of them lifts to an
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`, and each of them lifts to an
 automorphism of the pinned group scheme of the type. This file is about the other kind of node
 permutation, the one that *transposes* the Cartan matrix while exchanging the long and the short
 simple roots:
@@ -64,7 +66,7 @@ that construction, stated against the pinned Bourbaki numbering of
 
 * `TauCeti.DynkinType.isSpecialNodePerm_B2`, `TauCeti.DynkinType.isSpecialNodePerm_F4` and
   `TauCeti.DynkinType.isSpecialNodePerm_G2`: the three special node permutations, taken from the
-  pinned length permutations of `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`.
+  pinned length permutations of `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
 * `TauCeti.DynkinType.exists_isSpecialNodePerm_iff`: **a valid Dynkin type admits a special node
   permutation exactly when it is `B₂`, `F₄` or `G₂`.**
 * `TauCeti.DynkinType.IsSpecialNodePerm.unique` and
@@ -76,10 +78,9 @@ that construction, stated against the pinned Bourbaki numbering of
 
 ## References
 
-This is the root-level combinatorics underlying the "special isogenies in characteristics two and
-three" item of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. See R. Steinberg, *Lectures
-on Chevalley Groups*, §11, for the isogeny itself, and R. W. Carter, *Simple Groups of Lie Type*,
-§12.3-12.4, for the Suzuki and Ree groups it produces.
+This is the root-level combinatorics underlying the special isogenies in characteristics two and
+three. See R. Steinberg, *Lectures on Chevalley Groups*, §11, for the isogeny itself, and
+R. W. Carter, *Simple Groups of Lie Type*, §12.3-12.4, for the Suzuki and Ree groups it produces.
 -/
 
 public section
@@ -168,28 +169,6 @@ the two to be equinumerous. A valid simply-laced type is ruled out by
 `TauCeti.DynkinType.IsSpecialNodePerm.not_isSimplyLaced`, and each proof below exhibits two nodes
 of one kind whose images would have to be the single node of the other kind. -/
 
-/-- `Bₙ` has no special node permutation once `3 ≤ n`: its nodes `0` and `1` are then both long,
-while its only short node is the last one, so the two would have the same image. -/
-theorem not_isSpecialNodePerm_B {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (B n).rank)) :
-    ¬ (B n).IsSpecialNodePerm σ := by
-  intro h
-  have hrank : (B n).rank = n := rank_B n
-  -- A long node has a short image, and the only short node of `Bₙ` is the last one.
-  have key : ∀ (m : ℕ) (hm : m < (B n).rank), m + 1 < n → ((σ ⟨m, hm⟩ : ℕ)) + 1 = n := by
-    intro m hm hi
-    have hlong : (B n).IsLongSimpleRoot ⟨m, hm⟩ := by simpa using hi
-    have hshort : ¬ (B n).IsLongSimpleRoot (σ ⟨m, hm⟩) := fun hc =>
-      (h.isLongSimpleRoot_apply ⟨m, hm⟩).mp hc hlong
-    simp only [isLongSimpleRoot_B, not_lt] at hshort
-    have := (σ ⟨m, hm⟩).isLt
-    omega
-  have hpos₀ : 0 < (B n).rank := by omega
-  have hpos₁ : 1 < (B n).rank := by omega
-  have h₀ := key 0 hpos₀ (by omega)
-  have h₁ := key 1 hpos₁ (by omega)
-  have hσ : σ ⟨0, hpos₀⟩ = σ ⟨1, hpos₁⟩ := Fin.eq_of_val_eq (by omega)
-  simpa using congrArg Fin.val (σ.injective hσ)
-
 /-- `Cₙ` has no special node permutation once `3 ≤ n`: its nodes `0` and `1` are then both short,
 while its only long node is the last one, so the two would have the same image. -/
 theorem not_isSpecialNodePerm_C {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (C n).rank)) :
@@ -207,6 +186,23 @@ theorem not_isSpecialNodePerm_C {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (
   have h₁ := key 1 hpos₁ (by omega)
   have hσ : σ ⟨0, hpos₀⟩ = σ ⟨1, hpos₁⟩ := Fin.eq_of_val_eq (by omega)
   simpa using congrArg Fin.val (σ.injective hσ)
+
+/-- `Bₙ` has no special node permutation once `3 ≤ n`: a special node permutation of `Bₙ` is one of
+the dual diagram `Cₙ`, which has none. -/
+theorem not_isSpecialNodePerm_B {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (B n).rank)) :
+    ¬ (B n).IsSpecialNodePerm σ := fun h =>
+  not_isSpecialNodePerm_C hn σ
+    ⟨fun i =>
+      (isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B n (σ i)).trans
+        ((not_congr (h.isLongSimpleRoot_apply i)).trans
+          (not_congr (isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B n i)).symm),
+    fun i j => by
+      have hT (a b : Fin n) : CartanMatrix.C n a b = CartanMatrix.B n b a := by
+        rw [← CartanMatrix.B_transpose, Matrix.transpose_apply]
+      have e := h.cartanMatrix_apply j i
+      rw [cartanMatrix_B] at e
+      exact (congrFun₂ (cartanMatrix_C n) (σ i) (σ j)).trans
+        ((hT _ _).trans (e.trans ((hT j i).symm.trans (congrFun₂ (cartanMatrix_C n) j i).symm)))⟩
 
 /-- **A valid Dynkin type admits a special node permutation exactly when it is `B₂`, `F₄` or
 `G₂`.**
@@ -243,59 +239,6 @@ identity is the only permutation of its nodes preserving its standard Cartan mat
 composite of one special node permutation with the inverse of another preserves the Cartan matrix,
 uniqueness follows. -/
 
-/-- The identity is the only permutation of the two `B₂` nodes preserving its Cartan matrix, the
-`B₂` matrix being asymmetric. -/
-theorem eq_one_of_cartanMatrix_B2 {ρ : Equiv.Perm (Fin 2)}
-    (h : ∀ i j : Fin 2, (B 2).cartanMatrix (ρ i) (ρ j) = (B 2).cartanMatrix i j) : ρ = 1 := by
-  have key : ∀ f : Fin 2 → Fin 2,
-      (∀ p : Fin 2 × Fin 2, CartanMatrix.B 2 (f p.1) (f p.2) = CartanMatrix.B 2 p.1 p.2) →
-      ∀ i, f i = i := by decide
-  refine Equiv.ext fun i => ?_
-  rw [Equiv.Perm.one_apply]
-  exact key ρ (fun p => by simpa using h p.1 p.2) i
-
-/-- The identity is the only permutation of the two `G₂` nodes preserving its Cartan matrix, the
-`G₂` matrix being asymmetric. -/
-theorem eq_one_of_cartanMatrix_G2 {ρ : Equiv.Perm (Fin 2)}
-    (h : ∀ i j : Fin 2, G2.cartanMatrix (ρ i) (ρ j) = G2.cartanMatrix i j) : ρ = 1 := by
-  have key : ∀ f : Fin 2 → Fin 2,
-      (∀ p : Fin 2 × Fin 2, CartanMatrix.G₂.transpose (f p.1) (f p.2) =
-        CartanMatrix.G₂.transpose p.1 p.2) →
-      ∀ i, f i = i := by decide
-  refine Equiv.ext fun i => ?_
-  rw [Equiv.Perm.one_apply]
-  exact key ρ (fun p => by simpa using h p.1 p.2) i
-
-/-- The identity is the only permutation of the four `F₄` nodes preserving its Cartan matrix.
-
-The entry `-2` occurs once, at the double bond `(1, 2)`, so a Cartan-preserving permutation fixes
-both of those nodes; the two end nodes are then pinned by the entries `-1` beside them. -/
-theorem eq_one_of_cartanMatrix_F4 {ρ : Equiv.Perm (Fin 4)}
-    (h : ∀ i j : Fin 4, F4.cartanMatrix (ρ i) (ρ j) = F4.cartanMatrix i j) : ρ = 1 := by
-  have h' : ∀ i j : Fin 4, CartanMatrix.F₄ (ρ i) (ρ j) = CartanMatrix.F₄ i j := by
-    intro i j; simpa using h i j
-  have hneg : ∀ p : Fin 4 × Fin 4, CartanMatrix.F₄ p.1 p.2 = -2 → p.1 = 1 ∧ p.2 = 2 := by decide
-  have hneg' : ∀ x y : Fin 4, CartanMatrix.F₄ x y = -2 → x = 1 ∧ y = 2 := fun x y => hneg (x, y)
-  obtain ⟨hρ₁, hρ₂⟩ := hneg' (ρ 1) (ρ 2) (by rw [h' 1 2]; decide)
-  have hcol : ∀ x : Fin 4, CartanMatrix.F₄ x 1 = -1 → x = 0 ∨ x = 2 := by decide
-  have hrow : ∀ y : Fin 4, CartanMatrix.F₄ 2 y = -1 → y = 1 ∨ y = 3 := by decide
-  have hρ₀ : ρ 0 = 0 := by
-    have h01 := h' 0 1
-    rw [hρ₁] at h01
-    rcases hcol (ρ 0) (by rw [h01]; decide) with h0 | h0
-    · exact h0
-    · exact absurd (ρ.injective (h0.trans hρ₂.symm)) (by decide)
-  have hρ₃ : ρ 3 = 3 := by
-    have h23 := h' 2 3
-    rw [hρ₂] at h23
-    rcases hrow (ρ 3) (by rw [h23]; decide) with h3 | h3
-    · exact absurd (ρ.injective (h3.trans hρ₁.symm)) (by decide)
-    · exact h3
-  refine Equiv.ext fun i => ?_
-  simp only [Equiv.Perm.one_apply]
-  fin_cases i
-  exacts [hρ₀, hρ₁, hρ₂, hρ₃]
-
 /-- **A valid Dynkin type has at most one special node permutation.** Thus its numbered-node
 permutation, and hence its root-subgroup indexing datum, is canonical whenever it exists. -/
 theorem IsSpecialNodePerm.unique {t : DynkinType} (ht : t.Valid)
@@ -303,7 +246,7 @@ theorem IsSpecialNodePerm.unique {t : DynkinType} (ht : t.Valid)
     σ = τ := by
   have hmul : τ⁻¹ * σ = 1 := by
     rcases (exists_isSpecialNodePerm_iff ht).mp ⟨σ, hσ⟩ with rfl | rfl | rfl
-    · exact eq_one_of_cartanMatrix_B2 (hσ.cartanMatrix_apply_inv_mul hτ)
+    · exact eq_one_of_cartanMatrix_B (hσ.cartanMatrix_apply_inv_mul hτ)
     · exact eq_one_of_cartanMatrix_F4 (hσ.cartanMatrix_apply_inv_mul hτ)
     · exact eq_one_of_cartanMatrix_G2 (hσ.cartanMatrix_apply_inv_mul hτ)
   rw [← one_mul σ, ← mul_inv_cancel τ, mul_assoc, hmul, mul_one]

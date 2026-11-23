@@ -62,7 +62,7 @@ theorem memLp_id_generalizedParetoMeasure_iff (hs : 0 < s) (p : ℝ≥0) :
   by_cases hξ : ξ = 0
   · subst ξ
     simp only [mul_zero, zero_lt_one, iff_true]
-    rw [generalizedParetoMeasure_zero hs]
+    rw [generalizedParetoMeasure_zero]
     apply memLp_of_mem_interior_integrableExpSet
     rw [integrableExpSet_id_expMeasure (inv_pos.mpr hs), isOpen_Iio.interior_eq]
     exact inv_pos.mpr hs
@@ -162,7 +162,7 @@ theorem integral_pow_generalizedParetoMeasure (hs : 0 < s) (n : ℕ)
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
   by_cases hξ0 : ξ = 0
   · subst ξ
-    simp [generalizedParetoMeasure_zero hs, integral_pow_expMeasure (inv_pos.mpr hs),
+    simp [generalizedParetoMeasure_zero, integral_pow_expMeasure (inv_pos.mpr hs),
       div_eq_mul_inv, mul_comm]
   induction n with
   | zero => simp
@@ -201,15 +201,15 @@ theorem variance_id_generalizedParetoMeasure (hs : 0 < s) (hξ : 2 * ξ < 1) :
   have hξ1 : ξ < 1 := by linarith
   by_cases hξ0 : ξ = 0
   · subst ξ
-    simp [generalizedParetoMeasure_zero hs, variance_id_expMeasure (inv_pos.mpr hs)]
+    simp [generalizedParetoMeasure_zero, variance_id_expMeasure (inv_pos.mpr hs)]
   have he2 : Integrable (fun e => exp ((2 * ξ) * e)) (expMeasure 1) :=
     (integrable_exp_mul_expMeasure_iff one_pos).2 hξ
   have hLp : MemLp (fun e => exp (ξ * e)) 2 (expMeasure 1) := by
     apply (memLp_two_iff_integrable_sq (by fun_prop)).2
-    simpa only [← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc] using he2
+    simpa only [← exp_natCast_mul, Nat.cast_ofNat, ← mul_assoc] using he2
   rw [generalizedParetoMeasure_eq_map_affine hs hξ0, variance_id_map_affine,
     variance_id_map (by fun_prop), variance_eq_sub hLp]
-  simp only [Pi.pow_apply, ← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc]
+  simp only [Pi.pow_apply, ← exp_natCast_mul, Nat.cast_ofNat, ← mul_assoc]
   have hm1 : (∫ e, exp (ξ * e) ∂expMeasure 1) = 1 / (1 - ξ) := by
     simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ1
   have hm2 : (∫ e, exp ((2 * ξ) * e) ∂expMeasure 1) = 1 / (1 - 2 * ξ) := by

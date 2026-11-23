@@ -71,8 +71,17 @@ theorem mem_powerBoundedSubring_iff {ϖ : uniformTilt p B}
     rintro _ ⟨n, rfl⟩
     exact Set.mem_mul.mpr ⟨_, rfl, _, hpow n, (hϖ.isUnit.pow N).unit.inv_mul_cancel_left _⟩
   · intro hx
-    exact mem_powerBoundedSubring.mpr ((isBounded_plusSubring hB).isPowerBounded_of_mem
-      (mem_plusSubring_iff_coeff_zero.mpr hx))
+    exact plusSubring_le_powerBoundedSubring hB (mem_plusSubring_iff_coeff_zero.mpr hx)
+
+/-- If the tilt is Tate, its power-bounded elements lie in the integral tilt of `B°`. -/
+theorem powerBoundedSubring_le_plusSubring [IsTateRing (uniformTilt p B)] :
+    powerBoundedSubring (uniformTilt p B) ≤
+      plusSubring p (isRingOfIntegralElements_powerBoundedSubring B) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := uniformTilt p B)
+  have hsharp : IsPseudoUniformizer (coeff p B 0 ϖ) := isPseudoUniformizer_iff.mpr
+    ⟨isUnit_iff_coeff_zero.mp hϖ.isUnit,
+      isTopologicallyNilpotent_iff_coeff_zero.mp hϖ.isTopologicallyNilpotent⟩
+  exact fun _ hx ↦ mem_plusSubring_iff_coeff_zero.mpr ((mem_powerBoundedSubring_iff hsharp).mp hx)
 
 /-- A tilt containing a compatible pseudouniformiser is perfectoid, even if the original complete
 uniform Tate ring is not perfectoid. The zero ring is included. -/

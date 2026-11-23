@@ -330,7 +330,7 @@ private theorem exists_amicePolynomial_eq_C_mul (h n a : ℕ) :
   have hu : IsUnit (F.coeff N) := PadicInt.isUnit_iff.mpr hlead
   obtain ⟨c, hc⟩ : ∃ c : ℤ_[p], (n ! : ℤ_[p]) * c = ((n / p ^ h)! : ℤ_[p]) * K := by
     refine ⟨(amicePolynomial p h n a).coeff N * ↑hu.unit⁻¹, ?_⟩
-    have := congrArg (coeff · N) hA
+    have := congrArg (AddMonoidAlgebra.coeff · N) hA
     simp only [coeff_C_mul] at this
     rw [← mul_assoc, this, mul_assoc, IsUnit.mul_val_inv, mul_one]
   have hn : (n ! : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (factorial_ne_zero n)
@@ -459,7 +459,7 @@ variable [IsBoundedSMul ℤ_[p] E]
 theorem norm_amiceTerm_le (n : ℕ) (e : E) : ‖amiceTerm p h n e‖ ≤ ‖e‖ :=
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg e)).mpr fun i ↦ by
     rw [amiceTerm_apply]
-    exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg e) (PadicInt.norm_le_one _))
+    exact PadicInt.norm_smul_le_norm _ e
 
 variable [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]

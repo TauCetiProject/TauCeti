@@ -113,6 +113,20 @@ theorem analyticAt_of_eventually_isRoot [CompleteSpace 𝕜] [CompleteSpace E]
   filter_upwards [(tendsto_id.prodMk_nhds hr).eventually hg, hroot] with x hx hxr
   exact hx.1 hxr
 
+/-- **A continuous simple root of an analytic family of polynomials is analytic.** Let `Ω` be
+open and let `F` be a family with coefficients analytic on `Ω` and degree at most `d` on `Ω`. A
+function `r` that is continuous on `Ω` and picks, for every `x ∈ Ω`, a root of `F x` at which the
+derivative of `F x` does not vanish is analytic on `Ω`. Other roots of `F x` may be repeated. -/
+theorem analyticOnNhd_of_continuousOn_isRoot [CompleteSpace 𝕜] [CompleteSpace E] {Ω : Set E}
+    (hΩ : IsOpen Ω) (hF : ∀ i ≤ d, AnalyticOnNhd 𝕜 (fun x => (F x).coeff i) Ω)
+    (hdeg : ∀ x ∈ Ω, (F x).natDegree ≤ d) {r : E → 𝕜} (hrc : ContinuousOn r Ω)
+    (hroot : ∀ x ∈ Ω, (F x).IsRoot (r x))
+    (hsimple : ∀ x ∈ Ω, (derivative (F x)).eval (r x) ≠ 0) :
+    AnalyticOnNhd 𝕜 r Ω := fun x hx =>
+  analyticAt_of_eventually_isRoot (fun i hi => hF i hi x hx)
+    (Filter.mem_of_superset (hΩ.mem_nhds hx) hdeg) (hrc.continuousAt (hΩ.mem_nhds hx))
+    (Filter.mem_of_superset (hΩ.mem_nhds hx) hroot) (hsimple x hx)
+
 end Analytic
 
 /-! ### The root space of a separable family is a covering space -/
@@ -149,7 +163,7 @@ theorem exists_continuousOn_isRoot_iff (hF : ∀ i ≤ d, Continuous fun b => (F
   -- the normalized lower coefficients `c b`, continuous where the leading coefficient is nonzero
   let c : B → Fin d → 𝕜 := fun b i => ((F b).coeff d)⁻¹ * (F b).coeff i
   have hc : ContinuousOn c {b | (F b).coeff d ≠ 0} := continuousOn_pi.2 fun i =>
-    (ha.continuousOn.inv₀ fun _ hb => hb).mul (hF i i.2.le).continuousOn
+    (ha.continuousOn.inv₀ fun _ hb => hb).mul (hF i i.isLt.le).continuousOn
   have hroot : ∀ b, (F b).coeff d ≠ 0 → ∀ z, (F b).IsRoot z ↔ (monicOfCoeff (c b)).IsRoot z := by
     intro b hb z
     have hmonic : (C ((F b).coeff d)⁻¹ * F b).Monic :=
@@ -169,7 +183,7 @@ theorem exists_continuousOn_isRoot_iff (hF : ∀ i ≤ d, Continuous fun b => (F
   have hc₀ : monicOfCoeff (c b₀) = ∏ i, (X - C (z i)) := by
     refine (Sym.toMonic_ofFn_eq_of_forall_isRoot (monic_monicOfCoeff _)
       (natDegree_monicOfCoeff _) hz fun i => (hroot b₀ ha₀ _).1 ?_).symm.trans (Sym.toMonic_ofFn z)
-    exact (mem_roots hsep.ne_zero).1 (Multiset.mem_toFinset.1 (e.symm i).2)
+    exact (mem_roots hsep.ne_zero).1 (Multiset.mem_toFinset.1 (e.symm i).property)
   obtain ⟨Ψ, hW⟩ := exists_monicOfCoeff_eq_prod_X_sub_C_mem_nhds hz hc₀
   refine ⟨{b | (F b).coeff d ≠ 0} ∩ c ⁻¹' interior _, hc.isOpen_inter_preimage hopen
     isOpen_interior, ⟨ha₀, mem_interior_iff_mem_nhds.2 hW⟩, fun i b => Ψ (c b) i, ?_, ?_⟩
@@ -191,24 +205,24 @@ pairs with `z` a root of `F b` is evenly covered, with fibre `Fin d`, near every
 which `F b₀` is separable. -/
 theorem isEvenlyCovered_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).coeff i)
     (hdeg : ∀ b, (F b).natDegree = d) {b₀ : B} (hsep : (F b₀).Separable) :
-    IsEvenlyCovered (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.1.1) b₀ (Fin d) := by
+    IsEvenlyCovered (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1) b₀ (Fin d) := by
   obtain ⟨U, hU, hb₀, σ, hσc, hσ⟩ := exists_continuousOn_isRoot_iff hF hdeg hsep
-  set f := fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.1.1
+  set f := fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1
   -- the label of a point of the root space over `U`: the sheet it lies on
-  choose idx hidx using fun q : f ⁻¹' U => ((hσ _ q.2).2 q.1.1.2).1 q.1.2
-  have hidx_iff : ∀ q i, idx q = i ↔ σ i q.1.1.1 = q.1.1.2 := fun q i =>
-    ⟨fun h => h ▸ hidx q, fun h => (hσ _ q.2).1 ((hidx q).trans h.symm)⟩
-  have hσq : ∀ i, Continuous fun q : f ⁻¹' U => σ i q.1.1.1 := fun i =>
-    (hσc i).comp_continuous (by fun_prop) fun q => q.2
+  choose idx hidx using fun q : f ⁻¹' U => ((hσ _ q.property).2 q.val.val.2).1 q.val.property
+  have hidx_iff : ∀ q i, idx q = i ↔ σ i q.val.val.1 = q.val.val.2 := fun q i =>
+    ⟨fun h => h ▸ hidx q, fun h => (hσ _ q.property).1 ((hidx q).trans h.symm)⟩
+  have hσq : ∀ i, Continuous fun q : f ⁻¹' U => σ i q.val.val.1 := fun i =>
+    (hσc i).comp_continuous (by fun_prop) fun q => q.property
   -- the label is locally constant, since the sheets are pairwise disjoint and continuous
   have hidx_cont : Continuous idx := by
     refine continuous_discrete_rng.2 fun i => ?_
-    have h : idx ⁻¹' {i} = ⋂ j, {q | j ≠ i → σ j q.1.1.1 ≠ q.1.1.2} := by
+    have h : idx ⁻¹' {i} = ⋂ j, {q | j ≠ i → σ j q.val.val.1 ≠ q.val.val.2} := by
       ext q
       simp only [mem_preimage, mem_singleton_iff, mem_iInter, mem_ofPred_eq]
       constructor
       · rintro rfl j hj h
-        exact hj ((hσ _ q.2).1 (h.trans (hidx q).symm))
+        exact hj ((hσ _ q.property).1 (h.trans (hidx q).symm))
       · intro h
         by_contra hne
         exact h _ hne (hidx q)
@@ -218,16 +232,16 @@ theorem isEvenlyCovered_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).
     · simp [hj]
     · simpa [hj] using isOpen_ne_fun (hσq j) (by fun_prop)
   refine ⟨inferInstance, U, hb₀, hU, hU.preimage (by fun_prop),
-    { toFun q := (⟨q.1.1.1, q.2⟩, idx q)
-      invFun p := ⟨⟨(p.1.1, σ p.2 p.1.1), ((hσ _ p.1.2).2 _).2 ⟨p.2, rfl⟩⟩, p.1.2⟩
+    { toFun q := (⟨q.val.val.1, q.property⟩, idx q)
+      invFun p := ⟨⟨(p.1.val, σ p.2 p.1.val), ((hσ _ p.1.property).2 _).2 ⟨p.2, rfl⟩⟩, p.1.property⟩
       left_inv q := Subtype.ext (Subtype.ext (Prod.ext rfl (hidx q)))
       right_inv p := Prod.ext rfl ((hidx_iff _ _).2 rfl)
       continuous_toFun := by fun_prop
       continuous_invFun := by
         refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        refine (continuous_subtype_val.comp continuous_fst).prodMk ?_
+        refine (continuous_subtypeVal.comp continuous_fst).prodMk ?_
         exact continuous_prod_of_discrete_right.2 fun i =>
-          (hσc i).comp_continuous continuous_subtype_val fun x => x.2 }, fun _ => rfl⟩
+          (hσc i).comp_continuous continuous_subtypeVal fun x => x.property }, fun _ => rfl⟩
 
 /-- **The root space is a covering space over the separable members.** For a family of polynomials
 of constant degree with continuous coefficients, the projection `(b, z) ↦ b` from the space of
@@ -235,7 +249,7 @@ pairs with `z` a root of `F b` is a covering map over the set of parameters `b` 
 separable. -/
 theorem isCoveringMapOn_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).coeff i)
     (hdeg : ∀ b, (F b).natDegree = d) :
-    IsCoveringMapOn (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.1.1)
+    IsCoveringMapOn (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1)
       {b | (F b).Separable} :=
   fun _ hb => (isEvenlyCovered_fst_isRoot hF hdeg hb).to_isEvenlyCovered_preimage
 
@@ -245,7 +259,7 @@ polynomials whose discriminant vanishes nowhere, the projection `(b, z) ↦ b` f
 pairs with `z` a root of `F b` is a covering map. -/
 theorem isCoveringMap_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).coeff i)
     (hdeg : ∀ b, (F b).natDegree = d) (hsep : ∀ b, (F b).Separable) :
-    IsCoveringMap (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.1.1) :=
+    IsCoveringMap (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1) :=
   fun b => (isEvenlyCovered_fst_isRoot hF hdeg (hsep b)).to_isEvenlyCovered_preimage
 
 end Covering
@@ -259,27 +273,28 @@ variable {K : Type*} [Semiring K] {B : Type*}
 /-- The fibre of the root space over `b` is the set of roots of `F b`: a point `(b, z)` of the
 fibre corresponds to the root `z`. -/
 def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
-    (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b} ≃ {z // (F b).IsRoot z} where
-  toFun q := ⟨q.1.1.2, (mem_singleton_iff.1 q.2).subst (motive := fun b' => (F b').IsRoot q.1.1.2)
-    q.1.2⟩
-  invFun z := ⟨⟨(b, z.1), z.2⟩, rfl⟩
-  left_inv q := Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 q.2).symm rfl))
+    (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.val.1) ⁻¹' {b} ≃ {z // (F b).IsRoot z} where
+  toFun q := ⟨q.val.val.2, (mem_singleton_iff.1 q.property).subst (motive := fun b' =>
+      (F b').IsRoot q.val.val.2)
+    q.val.property⟩
+  invFun z := ⟨⟨(b, z.val), z.property⟩, rfl⟩
+  left_inv q := Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 q.property).symm rfl))
   right_inv _ := rfl
 
 @[simp]
 theorem preimageFstIsRootEquiv_apply_coe (F : B → K[X]) (b : B)
-    (q : (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :
-    (preimageFstIsRootEquiv F b q : K) = q.1.1.2 := (rfl)
+    (q : (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.val.1) ⁻¹' {b}) :
+    (preimageFstIsRootEquiv F b q : K) = q.val.val.2 := (rfl)
 
 @[simp]
 theorem preimageFstIsRootEquiv_symm_apply_coe_coe (F : B → K[X]) (b : B)
     (z : {z // (F b).IsRoot z}) :
-    ((preimageFstIsRootEquiv F b).symm z).1.1 = (b, z.1) := (rfl)
+    ((preimageFstIsRootEquiv F b).symm z).val.val = (b, z.val) := (rfl)
 
 /-- The fibre of the root space over a parameter `b` with `F b ≠ 0` is finite. -/
 theorem finite_preimage_fst_isRoot {K : Type*} [CommRing K] [IsDomain K]
     {F : B → K[X]} {b : B} (hb : F b ≠ 0) :
-    Finite ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :=
+    Finite ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.val.1) ⁻¹' {b}) :=
   have : Finite {z // (F b).IsRoot z} := (finite_setOfPred_isRoot hb).to_subtype
   .of_equiv _ (preimageFstIsRootEquiv F b).symm
 
@@ -287,7 +302,7 @@ theorem finite_preimage_fst_isRoot {K : Type*} [CommRing K] [IsDomain K]
 exactly `d` points, over an algebraically closed field. -/
 theorem natCard_preimage_fst_isRoot {K : Type*} [Field K] [IsAlgClosed K] {F : B → K[X]} {b : B}
     {d : ℕ} (hdeg : (F b).natDegree = d) (hsep : (F b).Separable) :
-    Nat.card ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) = d := by
+    Nat.card ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.val.1) ⁻¹' {b}) = d := by
   classical
   rw [Nat.card_congr ((preimageFstIsRootEquiv F b).trans
     (Equiv.subtypeEquivRight fun z => (Multiset.mem_toFinset.trans

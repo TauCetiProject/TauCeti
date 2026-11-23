@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
 # Real Euclidean coordinates of complex Euclidean space
@@ -15,8 +16,20 @@ as a real inner product space, with real Euclidean space of twice the dimension.
 is immediately followed by its imaginary part, including in dimension zero.
 
 The construction uses Mathlib's `Pi.orthonormalBasis` and `Complex.orthonormalBasisOneI`
-together with the norm-preserving reindexing `LinearIsometryEquiv.piLpCongrLeft`. The resulting
-isometry can transport real manifold models without changing their chart carriers.
+together with the norm-preserving reindexing `LinearIsometryEquiv.piLpCongrLeft`. Because this
+basis ordering agrees with `Module.Basis.complexToReal` reindexed by
+`TauCeti.complexRealIndexEquiv`, the coordinate equivalence carries the canonical real orientation
+`TauCeti.complexOrientation` of `EuclideanSpace ℂ (Fin n)` to the standard orientation of
+`EuclideanSpace ℝ (Fin (2 * n))`
+(`TauCeti.map_complexEuclideanRealLinearIsometryEquiv_complexOrientation`). The resulting isometry
+can transport real manifold models and orientations without changing their chart carriers.
+
+`TauCeti.complexEuclideanEquivRealProd` instead keeps the real and imaginary parts in separate
+blocks: it is the continuous real-linear equivalence `z ↦ (Re z, Im z)` of `EuclideanSpace ℂ ι`
+with the doubled real space `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, whose inverse
+`(x, y) ↦ x + i y` carries the sum of the real inner products of the two factors to
+`Re ⟪·, ·⟫_ℂ` (`TauCeti.real_inner_complexEuclideanEquivRealProd_symm`), and in particular
+`‖x‖² + ‖y‖²` to `‖x + i y‖²` (`TauCeti.norm_complexEuclideanEquivRealProd_symm_sq`).
 -/
 
 public section
@@ -98,5 +111,124 @@ theorem complexEuclideanRealLinearIsometryEquiv_symm_apply {n : ℕ}
       ((complexEuclideanRealLinearIsometryEquiv n).apply_symm_apply v)
     rw [complexEuclideanRealLinearIsometryEquiv_apply_im] at h
     simpa using h
+
+/-- Under `complexEuclideanRealLinearIsometryEquiv n`, the real basis `(e₀, I • e₀, e₁, I • e₁, …)`
+underlying the standard complex basis of `EuclideanSpace ℂ (Fin n)` maps to the standard real basis
+of `EuclideanSpace ℝ (Fin (2 * n))`. -/
+theorem basis_map_complexEuclideanRealLinearIsometryEquiv (n : ℕ) :
+    (((EuclideanSpace.basisFun (Fin n) ℂ).toBasis.complexToReal).reindex
+      (complexRealIndexEquiv n)).map (complexEuclideanRealLinearIsometryEquiv n).toLinearEquiv =
+      (EuclideanSpace.basisFun (Fin (2 * n)) ℝ).toBasis := by
+  refine Module.Basis.eq_of_apply_eq fun k ↦ ?_
+  obtain ⟨⟨j, a⟩, rfl⟩ := (complexRealIndexEquiv n).surjective k
+  ext m
+  obtain ⟨⟨j', a'⟩, rfl⟩ := (complexRealIndexEquiv n).surjective m
+  simp only [Module.Basis.map_apply, Module.Basis.reindex_apply, Equiv.symm_apply_apply,
+    LinearIsometryEquiv.coe_toLinearEquiv, Module.Basis.complexToReal_apply,
+    OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, EuclideanSpace.single,
+    PiLp.single_apply, (complexRealIndexEquiv n).injective.eq_iff, Prod.mk.injEq]
+  -- `complexRealIndexEquiv` is abstract across module boundaries, whereas
+  -- `complexEuclideanRealLinearIsometryEquiv_apply_finProdFinEquiv` uses the explicit
+  -- `Fin.cast`/`finProdFinEquiv` index; compare underlying `ℕ` values to bridge the two.
+  have hidx : complexRealIndexEquiv n (j', a') =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j', a')) :=
+    Fin.ext (by simp [Nat.add_comm])
+  rw [hidx, complexEuclideanRealLinearIsometryEquiv_apply_finProdFinEquiv]
+  by_cases hj : j' = j
+  · subst hj
+    fin_cases a <;> fin_cases a' <;> simp
+  · simp [hj]
+
+/-- `complexEuclideanRealLinearIsometryEquiv n` carries the canonical real orientation of
+`EuclideanSpace ℂ (Fin n)` to the standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`, up to
+the index cast from `finrank ℂ (EuclideanSpace ℂ (Fin n)) = n`. -/
+@[simp]
+theorem map_complexEuclideanRealLinearIsometryEquiv_complexOrientation (n : ℕ) :
+    Orientation.map _ (complexEuclideanRealLinearIsometryEquiv n).toLinearEquiv
+        (complexOrientation (EuclideanSpace ℂ (Fin n))) =
+      Orientation.reindex ℝ _ (finCongr (by rw [finrank_euclideanSpace_fin]))
+        (EuclideanSpace.basisFun (Fin (2 * n)) ℝ).toBasis.orientation := by
+  set b : Module.Basis (Fin (Module.finrank ℂ (EuclideanSpace ℂ (Fin n)))) ℂ
+      (EuclideanSpace ℂ (Fin n)) :=
+    (EuclideanSpace.basisFun (Fin n) ℂ).toBasis.reindex (finCongr finrank_euclideanSpace_fin.symm)
+  rw [b.complexOrientation_eq, ← Module.Basis.orientation_reindex, ← Module.Basis.orientation_map,
+    ← Module.Basis.orientation_reindex, ← basis_map_complexEuclideanRealLinearIsometryEquiv n]
+  congr 1
+  refine Module.Basis.eq_of_apply_eq fun k ↦ ?_
+  obtain ⟨⟨j, a⟩, rfl⟩ :=
+    ((complexRealIndexEquiv n).trans (finCongr (by rw [finrank_euclideanSpace_fin]))).surjective k
+  simp [b]
+
+/-- After reindexing the canonical real orientation of `EuclideanSpace ℂ (Fin n)` to `Fin (2 * n)`,
+`complexEuclideanRealLinearIsometryEquiv n` maps it directly to the standard orientation of
+`EuclideanSpace ℝ (Fin (2 * n))`. -/
+theorem map_complexEuclideanRealLinearIsometryEquiv_reindex_complexOrientation (n : ℕ) :
+    Orientation.map _ (complexEuclideanRealLinearIsometryEquiv n).toLinearEquiv
+        (Orientation.reindex ℝ _ (finCongr (by rw [finrank_euclideanSpace_fin]))
+          (complexOrientation (EuclideanSpace ℂ (Fin n)))) =
+      (EuclideanSpace.basisFun (Fin (2 * n)) ℝ).toBasis.orientation := by
+  rw [Orientation.map_reindex, map_complexEuclideanRealLinearIsometryEquiv_complexOrientation]
+  exact (Orientation.reindex ℝ _
+    (finCongr (by rw [finrank_euclideanSpace_fin]))).symm_apply_apply _
+
+/-! ### Real and imaginary parts -/
+
+section RealProd
+
+open scoped InnerProductSpace
+
+variable (ι : Type*) [Fintype ι]
+
+/-- The real and imaginary parts `z ↦ (Re z, Im z)` of complex Euclidean space, as a continuous
+real-linear equivalence with the doubled real Euclidean space. Its inverse is the identification
+`(x, y) ↦ x + i y`. -/
+noncomputable def complexEuclideanEquivRealProd :
+    EuclideanSpace ℂ ι ≃L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
+  LinearEquiv.toContinuousLinearEquiv
+    { toFun z := (WithLp.toLp 2 fun i ↦ (z i).re, WithLp.toLp 2 fun i ↦ (z i).im)
+      map_add' z w := by ext <;> simp
+      map_smul' c z := by ext <;> simp
+      invFun p := WithLp.toLp 2 fun i ↦ (p.1 i : ℂ) + p.2 i * Complex.I
+      left_inv z := by ext i; apply Complex.ext <;> simp
+      right_inv p := by ext <;> simp }
+
+variable {ι}
+
+/-- The first component of `TauCeti.complexEuclideanEquivRealProd` is the real part. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_apply_fst (z : EuclideanSpace ℂ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι z).1 i = (z i).re :=
+  (rfl)
+
+/-- The second component of `TauCeti.complexEuclideanEquivRealProd` is the imaginary part. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_apply_snd (z : EuclideanSpace ℂ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι z).2 i = (z i).im :=
+  (rfl)
+
+/-- The inverse of `TauCeti.complexEuclideanEquivRealProd` is `(x, y) ↦ x + i y`. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_symm_apply
+    (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι).symm p i = p.1 i + p.2 i * Complex.I :=
+  (rfl)
+
+/-- The identification `(x, y) ↦ x + i y` carries the sum of the real inner products of the two
+factors to the real inner product `Re ⟪·, ·⟫_ℂ`. -/
+theorem real_inner_complexEuclideanEquivRealProd_symm
+    (u w : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ⟪(complexEuclideanEquivRealProd ι).symm u, (complexEuclideanEquivRealProd ι).symm w⟫_ℝ =
+      ⟪u.1, w.1⟫_ℝ + ⟪u.2, w.2⟫_ℝ := by
+  simp only [PiLp.inner_apply, complexEuclideanEquivRealProd_symm_apply, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [Complex.inner, Complex.mul_re]
+
+/-- The identification `(x, y) ↦ x + i y` carries `‖x‖² + ‖y‖²` to `‖x + i y‖²`. -/
+theorem norm_complexEuclideanEquivRealProd_symm_sq (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ‖(complexEuclideanEquivRealProd ι).symm p‖ ^ 2 = ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, real_inner_complexEuclideanEquivRealProd_symm,
+    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq]
+
+end RealProd
 
 end TauCeti

@@ -22,6 +22,8 @@ The uniform checks establish total rank 24, the displayed root counts from the e
 `DynkinType.numRoots`, and the numerical identity `numRoots = rank * h` for every component.
 The displayed component multisets are pairwise distinct. These are facts about the finite
 root-system descriptions; no overlattices or classification of lattices are asserted here.
+The finite eliminator `RootfulNiemeierType.forall` splits a statement over the table into its 23
+rows.
 
 The data definitions are exposed to support proof-producing finite computation. In particular,
 the ordered lists must compute when used in the dependent carriers of the component alphabets
@@ -93,6 +95,20 @@ inductive RootfulNiemeierType where
 instance : Fintype RootfulNiemeierType := derive_fintype% _
 
 namespace RootfulNiemeierType
+
+/-- **Finite elimination over the table**: a statement holds for every row exactly when it holds
+for each of the 23 rows, in source order.  This specializes a theorem stated uniformly over the
+table to all rows at once, and conversely assembles a uniform theorem from row-by-row proofs. -/
+protected theorem «forall» {P : RootfulNiemeierType → Prop} :
+    (∀ r, P r) ↔
+      P d24 ∧ P d16e8 ∧ P e8Cubed ∧ P a24 ∧ P d12Squared ∧ P a17e7 ∧ P d10e7Squared ∧ P a15d9 ∧
+        P d8Cubed ∧ P a12Squared ∧ P a11d7e6 ∧ P e6Fourth ∧ P a9SquaredD6 ∧ P d6Fourth ∧
+        P a8Cubed ∧ P a7SquaredD5Squared ∧ P a6Fourth ∧ P a5FourthD4 ∧ P d4Sixth ∧ P a4Sixth ∧
+        P a3Eighth ∧ P a2Twelfth ∧ P a1TwentyFourth := by
+  refine ⟨fun h ↦ ⟨h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _,
+    h _, h _, h _, h _, h _, h _, h _⟩, fun h r ↦ ?_⟩
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := h
+  cases r <;> assumption
 
 /-- The zero-based source index. Adding one gives the printed row number, from 1 to 23. -/
 @[expose] def sourceIndex : RootfulNiemeierType → Fin 23
@@ -209,7 +225,7 @@ ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
 
 /-- Every component's root count is its rank times the displayed common Coxeter number. -/
 theorem numRoots_eq_rank_mul_coxeterNumber (r : RootfulNiemeierType) :
-    ∀ c ∈ r.components, c.1.numRoots = c.rank * r.coxeterNumber := by
+    ∀ c ∈ r.components, c.val.numRoots = c.rank * r.coxeterNumber := by
   cases r <;> decide
 
 /-- The 23 displayed root systems remain distinct after forgetting component order. -/
@@ -218,26 +234,26 @@ theorem components_multiset_injective :
       (r.components : Multiset DynkinType.Component)) := by
   -- Rank and root count together already distinguish these component multisets.
   have hinj : Function.Injective (fun r : RootfulNiemeierType ↦
-      (r.components.map fun c ↦ (c.rank, c.1.numRoots) : Multiset (ℕ × ℕ))) := by decide
+      (r.components.map fun c ↦ (c.rank, c.val.numRoots) : Multiset (ℕ × ℕ))) := by decide
   intro r s h
   exact hinj (by
     simpa only [Multiset.map_coe] using
-      congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.1.numRoots)) h)
+      congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.val.numRoots)) h)
 
 /-- The ADE components of a row as a family indexed by their positions. -/
 @[expose] def componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     DynkinType :=
-  r.components[i].1
+  r.components[i].val
 
 /-- The components of a row are simply laced. -/
 theorem isSimplyLaced_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     (r.componentType i).IsSimplyLaced :=
-  r.components[i].2.2
+  r.components[i].property.2
 
 /-- The components of a row are valid Dynkin types. -/
 theorem valid_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     (r.componentType i).Valid :=
-  r.components[i].2.1
+  r.components[i].property.1
 
 end RootfulNiemeierType
 

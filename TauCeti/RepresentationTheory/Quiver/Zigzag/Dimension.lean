@@ -62,9 +62,7 @@ noncomputable instance instFreeZigzagComponentAlgebra (C : G.ConnectedComponent)
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
     rw [zigzagComponentAlgebra_eq_nonisolated]
-    exact Module.Free.of_basis <| zigzagBasis k C.toSimpleGraph fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+    exact Module.Free.of_basis <| zigzagBasis k C.toSimpleGraph C.exists_adj_toSimpleGraph
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     rw [zigzagComponentAlgebra_eq_uliftDualNumber]
     -- Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`, and defines
@@ -84,9 +82,7 @@ noncomputable instance instFiniteZigzagComponentAlgebra (C : G.ConnectedComponen
     let _ : Fintype C := Fintype.ofFinite C
     let _ : DecidableRel C.toSimpleGraph.Adj := Classical.decRel _
     let _ : Fintype C.toSimpleGraph.Dart := Dart.fintype
-    exact Module.Finite.of_basis <| zigzagBasis k C.toSimpleGraph fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+    exact Module.Finite.of_basis <| zigzagBasis k C.toSimpleGraph C.exists_adj_toSimpleGraph
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     rw [zigzagComponentAlgebra_eq_uliftDualNumber]
     -- Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`, and defines
@@ -143,7 +139,11 @@ noncomputable instance instFreeZigzagAlgebra : Module.Free k (zigzagAlgebra k G)
 noncomputable instance instFiniteZigzagAlgebra : Module.Finite k (zigzagAlgebra k G) :=
   Module.Finite.equiv (zigzagAlgebraPiAlgEquiv k G).symm.toLinearEquiv
 
-variable [Nontrivial k] [Fintype V] [DecidableRel G.Adj]
+end FiniteGraph
+
+section Dimension
+
+variable [CommRing k] [Nontrivial k] [Fintype V] [DecidableRel G.Adj]
 
 /-- **Dimension of the public zigzag algebra.**  For every finite simple graph, including graphs
 with isolated vertices, `dim Z(G) = 2|V| + 2|E|`.  Every vertex contributes an idempotent and a
@@ -164,6 +164,6 @@ theorem finrank_zigzagAlgebra_A1 :
   rw [finrank_zigzagAlgebra]
   simp
 
-end FiniteGraph
+end Dimension
 
 end TauCeti

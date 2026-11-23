@@ -7,10 +7,10 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.Topology.Algebra.Polynomial.RootLocus
+public import TauCeti.Topology.Algebra.Polynomial.Root.Locus
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
@@ -51,7 +51,7 @@ theorem isClosed_setOf_exists_aeval_monicOfCoeff_eq_zero_le_addVal
     exact (((isAdic_maximalIdeal L).isClosed_pow r).preimage
       (continuous_id.sub continuous_const)).isCompact
   convert TauCeti.Polynomial.isClosed_setOf_exists_aeval_monicOfCoeff_eq_zero
-    (continuous_algebraMap_of_valuativeExtension K L) (hb.image continuous_subtype_val) n using 1
+    (continuous_algebraMap_of_valuativeExtension K L) (hb.image continuous_subtypeVal) n using 1
   ext a
   simp [and_comm]
 

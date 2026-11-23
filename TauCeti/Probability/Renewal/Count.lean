@@ -18,7 +18,9 @@ Zero increments are allowed, so genuine arrivals at zero are retained.
 
 On a nonexplosive path the natural count agrees with the extended count `renewalCount` and
 satisfies the inverse relations with `arrival`. In particular it can be used as an arrival
-index when defining the excess waiting time. For nondegenerate i.i.d. increments the two
+index when defining the excess waiting time. Increments that agree almost everywhere have natural
+counts that agree almost everywhere, simultaneously at all times, so the natural count is almost
+everywhere measurable when the increments are. For nondegenerate i.i.d. increments the two
 counts agree almost surely, simultaneously at all times. Whenever nonexplosion holds almost
 surely, any other natural-valued version agreeing on the nonexplosion event has the same
 process law. The process law also transfers to the canonical product realization of the increments.
@@ -123,6 +125,16 @@ lemma arrival_renewalCountNat_le {ω : Ω}
     arrival T (renewalCountNat T t ω) ω ≤ t :=
   (renewalCountNat_eq_iff hω |>.1 rfl).1
 
+/-- Larger increments give smaller counts when the process with smaller increments does not
+explode. This assumption is needed because the natural count is zero on explosive paths. -/
+lemma renewalCountNat_anti_of_tendsto {U : ℕ → Ω → ℝ≥0} {ω : Ω}
+    (hTU : ∀ n, T n ω ≤ U n ω)
+    (hT : Tendsto (fun n ↦ arrival T n ω) atTop atTop) (t : ℝ≥0) :
+    renewalCountNat U t ω ≤ renewalCountNat T t ω := by
+  have hU := tendsto_atTop_mono (arrival_mono T hTU) hT
+  exact (le_renewalCountNat_iff hT).2
+    ((arrival_mono T hTU _).trans (arrival_renewalCountNat_le hU t))
+
 /-- The arrival immediately after the count is strictly in the future. -/
 lemma lt_arrival_renewalCountNat_succ {ω : Ω}
     (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) (t : ℝ≥0) :
@@ -139,6 +151,27 @@ lemma monotone_renewalCountNat (ω : Ω) : Monotone fun t ↦ renewalCountNat T 
     exact (arrival_renewalCountNat_le hω s).trans hst
   · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω]
     exact monotone_const
+
+variable {T} in
+/-- Before the observation time, the natural count is the finite sum over the
+completed arrivals at that time. The artificial arrival at index zero is omitted.
+On explosive paths both sides are zero by the count's exceptional-path convention. -/
+theorem renewalCountNat_eq_sum_range_of_le {ω : Ω} {s t : ℝ≥0} (hst : s ≤ t) :
+    renewalCountNat T s ω = ∑ k ∈ Finset.range (renewalCountNat T t ω),
+      if arrival T (k + 1) ω ≤ s then 1 else 0 := by
+  classical
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  · have hsum (n : ℕ) :
+        (∑ k ∈ Finset.range n, if k + 1 ≤ renewalCountNat T s ω then 1 else 0) =
+          min n (renewalCountNat T s ω) := by
+      induction n with
+      | zero => simp
+      | succ n hn =>
+        rw [Finset.sum_range_succ, hn]
+        split_ifs with h <;> omega
+    simp_rw [← le_renewalCountNat_iff hω]
+    rw [hsum, min_eq_right (monotone_renewalCountNat T ω hst)]
+  · simp [hω]
 
 /-- The natural count is locally constant to the right, even on the exceptional event. -/
 lemma eventually_renewalCountNat_eq_nhdsGE (t : ℝ≥0) (ω : Ω) :
@@ -171,12 +204,28 @@ lemma measurable_renewalCountNat (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
 
 variable {P : Measure Ω}
 
+/-- If two increment sequences agree almost everywhere at each index, then almost everywhere their
+natural-valued counts agree at all times. -/
+theorem renewalCountNat_congr_ae {T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ t, renewalCountNat T t ω = renewalCountNat T' t ω := by
+  filter_upwards [arrival_congr_ae h] with ω harr t
+  classical
+  simp only [renewalCountNat_def, renewalCount_def, harr]
+
+/-- If every increment is almost-everywhere measurable, so is the natural-valued renewal count at
+every time `t`. -/
+@[fun_prop]
+theorem aemeasurable_renewalCountNat (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
+    AEMeasurable (renewalCountNat T t) P :=
+  (measurable_renewalCountNat (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr <|
+    all_ae_of (renewalCountNat_congr_ae fun n ↦ (hT n).ae_eq_mk.symm) t
+
 /-- For nondegenerate i.i.d. increments, the natural and extended counts agree almost surely
 on one event for all times. -/
-theorem ae_natCast_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem ae_natCast_renewalCountNat (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) :
     ∀ᵐ ω ∂P, ∀ t, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
-  filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
+  filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero] with ω hω
   exact natCast_renewalCountNat hω
 
 /-- Changing the natural-valued count on explosive paths does not change its process law
@@ -196,7 +245,7 @@ theorem map_renewalCountNat_eq_of_nonexplosion
 /-- The entire natural-count process has the same law in any i.i.d. realization as on the
 canonical product space. This includes its exceptional-path convention and all finite-time
 joint distributions. -/
-theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
+theorem map_renewalCountNat_eq_infinitePi_map
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     P.map (fun ω t ↦ renewalCountNat T t ω) =
       (Measure.infinitePi fun _ : ℕ ↦ P.map (T 0)).map
@@ -206,9 +255,11 @@ theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
         (fun ω n ↦ T n ω) := by
     funext ω t
     exact renewalCountNat_comp (fun n w ↦ w n) (fun ω n ↦ T n ω) t ω
-  rw [hcomp, ← Measure.map_map
-    (measurable_pi_iff.2 fun t ↦ measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t)
-    (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
+  have hT : ∀ n, AEMeasurable (T n) P := fun n ↦ (hid n).aemeasurable_fst
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
+    (measurable_pi_iff.2 fun t ↦
+      measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t).aemeasurable
+    (aemeasurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map₀' hT]
   simp_rw [fun n ↦ (hid n).map_eq]
 
 end TauCeti.Probability

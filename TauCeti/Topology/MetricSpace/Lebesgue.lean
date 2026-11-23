@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+
+import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # The Lebesgue number lemma for neighbourhood covers
@@ -13,30 +17,83 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 Mathlib's `lebesgue_number_lemma_of_metric` is stated for a cover of a compact set by open sets.
 This file records the variant for a family of sets such that every point of the compact set has
 some member of the family as a neighbourhood, as happens for the preimages of such a cover under
-a continuous map.
+a continuous map. It also records the consequence for an injective continuous map `f` from a
+compact space to a metric space: points with close images lie in a common member of any open
+cover of the domain. Finally, a neighbourhood of a compact set and the Heine–Cantor modulus of a
+map continuous at its points admit a common positive radius.
 
 ## Main declarations
 
 * `TauCeti.lebesgue_number_lemma_of_metric_of_mem_nhds`: a Lebesgue number for a family of sets
   one of which is a neighbourhood of each point of a compact set.
+* `TauCeti.exists_pos_forall_exists_forall_dist_lt_mem`: for an injective continuous map `f` from a
+  compact space to a metric space and an open cover of the domain, a positive `m` such that the
+  points whose images are at distance less than `m` from any given image `f z` lie in a common
+  member of the cover.
+* `TauCeti.exists_pos_forall_dist_lt_exists_mem`: the same for two points at a time.
+* `IsCompact.exists_pos_forall_mem_and_dist_lt`: for a compact set `L`, a neighbourhood `U` of
+  `L`, a map `h` continuous at the points of `L` and `ε > 0`, a positive `η` such that the points
+  within `η` of a point `y ∈ L` lie in `U` and are mapped within `ε` of `h y`.
 -/
 
 public section
 
-open Set Metric Topology
+open Function Set Metric Topology
 
 namespace TauCeti
 
 /-- A Lebesgue number for a family of sets `c` such that every point of the compact set `s` has
 some `c i` as a neighbourhood: there is `δ > 0` such that the ball of radius `δ` around any point
 of `s` is contained in some `c i`. -/
-theorem lebesgue_number_lemma_of_metric_of_mem_nhds {α ι : Type*} [PseudoMetricSpace α]
+theorem lebesgue_number_lemma_of_metric_of_mem_nhds {α : Type*} {ι : Sort*} [PseudoMetricSpace α]
     {s : Set α} {c : ι → Set α} (hs : IsCompact s) (hc : ∀ x ∈ s, ∃ i, c i ∈ 𝓝 x) :
     ∃ δ > 0, ∀ x ∈ s, ∃ i, ball x δ ⊆ c i := by
   obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric hs (c := fun i ↦ interior (c i))
-    (fun _ ↦ isOpen_interior) fun x hx ↦ by
-      obtain ⟨i, hi⟩ := hc x hx
-      exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.2 hi⟩
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 <| (hc x hx).imp fun _ ↦ mem_interior_iff_mem_nhds.2
   exact ⟨δ, hδ, fun x hx ↦ (h x hx).imp fun _ hi ↦ hi.trans interior_subset⟩
 
+/-- For an injective continuous map `f` from a compact space to a metric space, and an open cover
+`W` of the domain, there is `m > 0` such that for every point `z` some member of the cover contains
+every point whose image is at distance less than `m` from `f z`. -/
+theorem exists_pos_forall_exists_forall_dist_lt_mem {X Y : Type*} [TopologicalSpace X]
+    [CompactSpace X] [MetricSpace Y] {f : X → Y} (hf : Continuous f) (hinj : Injective f)
+    {ι : Sort*} {W : ι → Set X} (hWo : ∀ i, IsOpen (W i)) (ht : univ ⊆ ⋃ i, W i) :
+    ∃ m > 0, ∀ z : X, ∃ i, ∀ y : X, dist (f y) (f z) < m → y ∈ W i := by
+  have hemb := hf.isClosedEmbedding hinj
+  choose U hUo hU using fun i => hemb.isInducing.isOpen_iff.mp (hWo i)
+  obtain ⟨m, hm, hball⟩ := lebesgue_number_lemma_of_metric (isCompact_range hf) hUo
+    (c := U) (by
+      rintro _ ⟨y, rfl⟩
+      obtain ⟨i, hi⟩ := mem_iUnion.mp (ht (mem_univ y))
+      exact mem_iUnion.mpr ⟨i, by rw [← mem_preimage, hU]; exact hi⟩)
+  refine ⟨m, hm, fun z => (hball (f z) ⟨z, rfl⟩).imp fun i hi y hyz => ?_⟩
+  rw [← hU i]
+  exact hi hyz
+
+/-- For an injective continuous map `f` from a compact space to a metric space, and an open cover
+`W` of the domain, there is `m > 0` such that any two points whose images are at distance less
+than `m` lie in a common member of the cover. -/
+theorem exists_pos_forall_dist_lt_exists_mem {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [MetricSpace Y] {f : X → Y} (hf : Continuous f) (hinj : Injective f) {ι : Sort*}
+    {W : ι → Set X} (hWo : ∀ i, IsOpen (W i)) (ht : univ ⊆ ⋃ i, W i) :
+    ∃ m > 0, ∀ y z : X, dist (f y) (f z) < m → ∃ i, y ∈ W i ∧ z ∈ W i := by
+  obtain ⟨m, hm, h⟩ := exists_pos_forall_exists_forall_dist_lt_mem hf hinj hWo ht
+  exact ⟨m, hm, fun y z hyz => (h z).imp fun i hi => ⟨hi y hyz, hi z (by rwa [dist_self])⟩⟩
+
 end TauCeti
+
+/-- **A uniform radius at a compact set.** Let `L` be compact, `U` a neighbourhood of `L` and `h`
+a map continuous at the points of `L`. For every `ε > 0` there is `η > 0` such that every point
+`z` within `η` of a point `y ∈ L` lies in `U` and satisfies `dist (h z) (h y) < ε`. -/
+theorem IsCompact.exists_pos_forall_mem_and_dist_lt {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {L U : Set X} (hL : IsCompact L) (hU : U ∈ 𝓝ˢ L) {h : X → Y}
+    (hh : ∀ y ∈ L, ContinuousAt h y) {ε : ℝ} (hε : 0 < ε) :
+    ∃ η > 0, ∀ y ∈ L, ∀ z, dist z y < η → z ∈ U ∧ dist (h z) (h y) < ε := by
+  obtain ⟨r, hr, hrU⟩ := (hasBasis_nhdsSet_thickening hL).mem_iff.1 hU
+  obtain ⟨η, hη, H⟩ := mem_uniformity_dist.1 <|
+    hL.uniformContinuousAt_of_continuousAt h hh (dist_mem_uniformity hε)
+  refine ⟨min r η, lt_min hr hη, fun y hy z hzy ↦ ⟨?_, ?_⟩⟩
+  · exact hrU (mem_thickening_iff.2 ⟨y, hy, hzy.trans_le (min_le_left _ _)⟩)
+  · rw [dist_comm] at hzy ⊢
+    exact H (hzy.trans_le (min_le_right _ _)) hy

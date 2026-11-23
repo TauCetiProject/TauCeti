@@ -10,9 +10,10 @@ public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Integral.AddContent
+public import TauCeti.MeasureTheory.Measure.AddContent.Completion
 public import TauCeti.MeasureTheory.SetAlgebra
 import TauCeti.Algebra.Order.Group.MinMax
-import TauCeti.MeasureTheory.Measure.AddContent
+import TauCeti.MeasureTheory.Measure.AddContent.Basic
 
 /-!
 # Functionals on `L∞` and finitely additive set functions on measurable sets
@@ -42,6 +43,12 @@ Haar-null sets
 (`MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`, with
 `ℝ≥0∞`-valued probabilities as in the discrete `TauCeti.amenable_iff_exists_invariantContent`).
 
+A content on the measurable sets vanishing on `μ`-null sets extends uniquely to the
+`μ`-null-measurable sets (`MeasureTheory.AddContent.completion`). So positive functionals on
+`L∞(α, μ)` correspond equally to nonnegative contents on the measurable sets of the completion of
+`μ` vanishing on null sets (`PositiveLinearMap.addContentLpTopCompletionEquiv`), and invariance
+under left translation again matches invariance of the content.
+
 The construction follows the discrete case in
 `TauCeti/Topology/ContinuousMap/Bounded/AddContent.lean`, and shares its finite sums
 `MeasureTheory.AddContent.integralSimple`; the extension is `LinearMap.extendOfNorm`. The classes
@@ -56,6 +63,8 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   null sets, as a positive linear functional on `L∞`.
 * `PositiveLinearMap.addContentLpTopEquiv`: the two constructions as an equivalence onto the
   contents that also vanish on nonmeasurable sets.
+* `PositiveLinearMap.addContentLpTopCompletionEquiv`: the same correspondence with contents on
+  the null-measurable sets.
 
 ## Main results
 
@@ -69,6 +78,11 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   a left-invariant measure carries a left-invariant positive functional taking the value one at
   one exactly when the measurable sets carry a left-invariant finitely additive probability
   vanishing on null sets.
+
+* `PositiveLinearMap.forall_apply_leftTranslation_eq_iff` and
+  `PositiveLinearMap.forall_apply_leftTranslation_eq_iff_completion`: invariance of a functional
+  under left translation is invariance of its content, on the measurable or on the
+  null-measurable sets.
 
 ## References
 
@@ -204,9 +218,9 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
   have h₁ : integral μ ν 1 = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
+  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (integral μ ν) (fun ψ => ?_)
     (Lp.norm_norm_smul_one_sub_le_of_nonneg hφ)
-  rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
+  rw [h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in
@@ -265,13 +279,13 @@ def addContentLpTopEquiv :
   toFun M := ⟨M.toLinearMap.toAddContentLpTop, M.toAddContentLpTop_nonneg,
     fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h,
     fun _ hs => M.toLinearMap.toAddContentLpTop_of_not_measurableSet hs⟩
-  invFun ν := ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1
+  invFun ν := ofAddContentLpTop ν.val (fun s _ => ν.property.1 s) ν.property.2.1
   left_inv := ofAddContentLpTop_toAddContentLpTop
   right_inv ν := by
     ext s
     by_cases hs : MeasurableSet s
     · exact toAddContentLpTop_ofAddContentLpTop_apply _ _ hs
-    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.2.2.2 s hs]
+    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.property.2.2 s hs]
 
 /-- The content of `M` under `addContentLpTopEquiv` is `M.toLinearMap.toAddContentLpTop`. -/
 @[simp]
@@ -286,7 +300,55 @@ theorem addContentLpTopEquiv_symm_apply
     (ν : {ν : AddContent ℝ {s : Set α | MeasurableSet s} //
       (∀ s, 0 ≤ ν s) ∧ (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
         ∀ s, ¬MeasurableSet s → ν s = 0}) :
-    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1 :=
+    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.val
+        (fun s _ => ν.property.1 s) ν.property.2.1 :=
+  (rfl)
+
+/-! ### Contents on the null-measurable sets
+
+A content on the measurable sets vanishing on `μ`-null sets extends uniquely to the
+`μ`-null-measurable sets (`MeasureTheory.AddContent.completion`), so the correspondence holds
+equally for the measurable sets of the completion of `μ`. -/
+
+variable (μ) in
+/-- Positive linear functionals on `L∞(μ)` correspond to nonnegative real contents on the
+`μ`-null-measurable sets that vanish on `μ`-null sets and, by convention, on sets that are not
+null-measurable. The forward map extends the content `LinearMap.toAddContentLpTop` of a functional
+to the null-measurable sets; the inverse integrates against the restriction of a content to the
+measurable sets. -/
+def addContentLpTopCompletionEquiv :
+    (Lp ℝ ∞ μ →ₚ[ℝ] ℝ) ≃ {ν : AddContent ℝ {s : Set α | NullMeasurableSet s μ} //
+      (∀ s, 0 ≤ ν s) ∧ (∀ s, μ s = 0 → ν s = 0) ∧ ∀ s, ¬NullMeasurableSet s μ → ν s = 0} where
+  toFun M := ⟨M.toLinearMap.toAddContentLpTop.completion μ
+      (fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h),
+    AddContent.completion_nonneg _ (fun s _ => M.toAddContentLpTop_nonneg s),
+    fun _ => AddContent.completion_of_measure_eq_zero _,
+    fun _ => AddContent.completion_of_not_nullMeasurableSet _⟩
+  invFun ν := ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+    (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h
+  left_inv M := ext_linftyIndicator fun s hs => by simp [hs]
+  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.property.2.1 (fun u hu => by
+    rw [toAddContentLpTop_ofAddContentLpTop_apply _ _ hu, AddContent.map_apply, preimage_id])
+    ν.property.2.2
+
+/-- The content of `M` under `addContentLpTopCompletionEquiv` extends its content on the
+measurable sets. -/
+@[simp]
+theorem coe_addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
+    (addContentLpTopCompletionEquiv μ M : AddContent ℝ {s : Set α | NullMeasurableSet s μ}) =
+      M.toLinearMap.toAddContentLpTop.completion μ
+        (fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h) :=
+  (rfl)
+
+/-- The functional of a content under `addContentLpTopCompletionEquiv` integrates against its
+restriction to the measurable sets. -/
+@[simp]
+theorem addContentLpTopCompletionEquiv_symm_apply
+    (ν : {ν : AddContent ℝ {s : Set α | NullMeasurableSet s μ} //
+      (∀ s, 0 ≤ ν s) ∧ (∀ s, μ s = 0 → ν s = 0) ∧ ∀ s, ¬NullMeasurableSet s μ → ν s = 0}) :
+    (addContentLpTopCompletionEquiv μ).symm ν =
+      ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+        (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h :=
   (rfl)
 
 section Group
@@ -313,6 +375,15 @@ theorem forall_apply_leftTranslation_eq_iff (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) 
         rw [← LinearMap.toAddContentLpTop_apply _ hs, ← LinearMap.toAddContentLpTop_apply _ hs,
           LinearMap.toAddContentLpTop_comp_leftTranslation _ g hs, h g s hs]
     exact fun φ => LinearMap.congr_fun this φ
+
+/-- A positive functional on `L∞` of a left-invariant measure is invariant under left translation
+exactly when its content on the null-measurable sets is invariant under left translation. -/
+theorem forall_apply_leftTranslation_eq_iff_completion (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) :
+    (∀ (g : G) φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ) ↔
+      ∀ (g : G) s, (addContentLpTopCompletionEquiv ν M).val (g • s) =
+        (addContentLpTopCompletionEquiv ν M).val s := by
+  simp only [coe_addContentLpTopCompletionEquiv_apply, AddContent.forall_completion_smul_eq_iff,
+    forall_apply_leftTranslation_eq_iff]
 
 end Group
 

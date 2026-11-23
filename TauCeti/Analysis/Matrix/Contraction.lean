@@ -18,6 +18,9 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 
 ## Main declarations
 
+* `ContinuousLinearMap.abs_apply_single_single_le`, `ContinuousLinearMap.abs_apply_single_le`:
+  the entries of a bilinear form or a covector on `EuclideanSpace ℝ ι` at standard basis vectors
+  are bounded by its norm.
 * `Matrix.contraction`: the contraction with `A`, as a continuous linear functional.
 * `Matrix.contraction_add`, `Matrix.contraction_sub`, `Matrix.contraction_smul`: the
   contraction is linear in the matrix.
@@ -26,11 +29,31 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
   `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
+* `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
+  endomorphism `T` is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in absolute value.
 -/
 
 public section
 
 noncomputable section
+
+namespace ContinuousLinearMap
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- An entry `B eᵢ eⱼ` of a bilinear form on `EuclideanSpace ℝ ι` at two vectors of the standard
+basis is bounded by its norm. -/
+theorem abs_apply_single_single_le (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
+    (i j : ι) : |B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ ‖B‖ := by
+  simpa using B.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+
+/-- An entry `l eᵢ` of a covector on `EuclideanSpace ℝ ι` at a vector of the standard basis is
+bounded by its norm. -/
+theorem abs_apply_single_le (l : EuclideanSpace ℝ ι →L[ℝ] ℝ) (i : ι) :
+    |l (EuclideanSpace.single i 1)| ≤ ‖l‖ := by
+  simpa using l.le_opNorm (EuclideanSpace.single i (1 : ℝ))
+
+end ContinuousLinearMap
 
 namespace Matrix
 
@@ -118,10 +141,27 @@ theorem abs_sum_sum_mul_apply_single_single_le {ι : Type*} [Fintype ι] [Decida
         refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
         refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
         rw [abs_mul]
-        refine mul_le_mul (hM i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hM i j))
-        simpa using B.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+        exact mul_le_mul (hM i j) (B.abs_apply_single_single_le i j) (abs_nonneg _)
+          ((abs_nonneg _).trans (hM i j))
     _ = Fintype.card ι ^ 2 * ε * ‖B‖ := by
         simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring
+
+/-- For an endomorphism `T` of `EuclideanSpace ℝ ι`, the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, such as
+the principal part `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` with `T` a Hessian operator, is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in
+absolute value. -/
+theorem abs_sum_sum_mul_apply_single_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
+    |∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i| ≤ (∑ i, ∑ j, |A i j|) * ‖T‖ := by
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+  rw [abs_mul]
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  calc |T (EuclideanSpace.single j 1) i| ≤ ‖T (EuclideanSpace.single j 1)‖ := by
+        simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le (T (EuclideanSpace.single j 1)) i
+    _ ≤ ‖T‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := T.le_opNorm _
+    _ = ‖T‖ := by simp
 
 end Matrix

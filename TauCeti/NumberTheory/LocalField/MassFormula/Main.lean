@@ -70,8 +70,8 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 separable closure of `K` satisfy `∑_L q ^ (-c(L)) = n`, where `q` is the residue cardinality of
 `K` and `c(L)` is the wild exponent. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent :
-    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = n := by
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp [totallyRamifiedOfDegree_zero]
   -- Integrate against Haar measure on `Fin n → K` normalized on the integer box.
   let : MeasurableSpace (Fin n → K) := borel _
@@ -81,7 +81,7 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent :
       rw [isOpen_integerBox.interior_eq]
       exact ⟨0, by simp⟩⟩
   have hμ : Measure.addHaarMeasure B (integerBox K (Fin n)) = 1 := Measure.addHaarMeasure_self
-  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq hn _ hμ
+  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq _ hμ
     fun L hL ↦ L.lintegral_rootCount hL _ hμ
 
 /-- **Serre's second mass formula**: for `0 < n` and every set `R` of representatives of the
@@ -90,7 +90,7 @@ theorem IsRepresentativeSet.tsum_one_div_natCard_algEquiv_mul_natCard_residueFie
     {R : Set (IntermediateField K (SeparableClosure K))} (hR : IsRepresentativeSet n R)
     (hn : 0 < n) :
     ∑' M : R, 1 / ((Nat.card (M ≃ₐ[K] M) : ℝ≥0∞) *
-      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.1.wildExponent) = 1 :=
+      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.val.wildExponent) = 1 :=
   (tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_wildExponent_eq_one_iff hR
     hn).2 tsum_one_div_natCard_residueField_pow_wildExponent
 
@@ -108,7 +108,7 @@ theorem infinite_totallyRamifiedOfDegree_iff (hn : 0 < n) :
 `∑_{L ∈ σ_K(n)} q ^ (-c(L))` converges to `n`, also when `σ_K(n)` is infinite. -/
 theorem hasSum_one_div_natCard_residueField_pow_wildExponent :
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
-      1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) n := by
+      1 / (Nat.card 𝓀[K] : ℝ) ^ L.val.wildExponent) n := by
   have h := tsum_one_div_natCard_residueField_pow_wildExponent (K := K) (n := n)
   rw [← ENNReal.coe_natCast] at h
   simpa using (hasSum_one_div_natCard_residueField_pow_wildExponent_iff (s := n)).2 h
@@ -117,7 +117,7 @@ theorem hasSum_one_div_natCard_residueField_pow_wildExponent :
 `∑_{L ∈ σ_K(n)} q ^ (-c(L))` converges, also when `σ_K(n)` is infinite. -/
 theorem summable_one_div_natCard_residueField_pow_wildExponent :
     Summable fun L : totallyRamifiedOfDegree K n ↦
-      1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent :=
+      1 / (Nat.card 𝓀[K] : ℝ) ^ L.val.wildExponent :=
   hasSum_one_div_natCard_residueField_pow_wildExponent.summable
 
 /-- **The tame count**: if the residue characteristic of `K` does not divide `n`, then a

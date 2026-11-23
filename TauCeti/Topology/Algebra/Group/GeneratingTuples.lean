@@ -93,15 +93,15 @@ the group generates all of these quotients at once. -/
 theorem iInter_generatingTuples_nonempty [CompactSpace G] [SeparatelyContinuousMul G]
     (ι : Type*) [Finite ι] (N : Subgroup G)
     (h : ∀ U : OpenNormalSubgroup G, N ≤ U.toSubgroup → (generatingTuples ι U).Nonempty) :
-    (⋂ U : {U : OpenNormalSubgroup G // N ≤ U.toSubgroup}, generatingTuples ι U.1).Nonempty := by
+    (⋂ U : {U : OpenNormalSubgroup G // N ≤ U.toSubgroup}, generatingTuples ι U.val).Nonempty := by
   -- The admissible `U` are directed downwards, and `generatingTuples` is monotone in `U`.
   have : Nonempty {U : OpenNormalSubgroup G // N ≤ U.toSubgroup} :=
-    ⟨⟨openNormalSubgroupTop G,
-      (le_top (a := N)).trans_eq (openNormalSubgroupTop_toSubgroup G).symm⟩⟩
+    ⟨⟨⊤,
+      (le_top (a := N)).trans_eq OpenNormalSubgroup.toSubgroup_top.symm⟩⟩
   exact IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed _
-    (fun U V ↦ ⟨⟨U.1 ⊓ V.1, le_inf U.2 V.2⟩, generatingTuples_mono ι inf_le_left,
+    (fun U V ↦ ⟨⟨U.val ⊓ V.val, le_inf U.property V.property⟩, generatingTuples_mono ι inf_le_left,
       generatingTuples_mono ι inf_le_right⟩)
-    (fun U ↦ h U.1 U.2) (fun U ↦ (isClosed_generatingTuples ι U.1).isCompact)
-    (fun U ↦ isClosed_generatingTuples ι U.1)
+    (fun U ↦ h U.val U.property) (fun U ↦ (isClosed_generatingTuples ι U.val).isCompact)
+    (fun U ↦ isClosed_generatingTuples ι U.val)
 
 end TauCeti

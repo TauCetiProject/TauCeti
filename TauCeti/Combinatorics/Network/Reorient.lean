@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.Excess
+public import TauCeti.Combinatorics.Network.Flow
+public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Quiver.Reorient
 
 /-!
@@ -26,6 +27,9 @@ it as a loop.
 * `TauCeti.reorientAssignmentEquiv`: the additive equivalence which negates reversed values.
 * `TauCeti.reorientLower` and `TauCeti.reorientUpper`: the transported bounds.
 * `TauCeti.Network.reorient`: a network with selected arrows reversed.
+* `TauCeti.ExcessFlow.reorientEquiv` and `TauCeti.ExcessIntervalFlow.reorientEquiv`: reorientation
+  of assignments with prescribed excess, or with excess in prescribed vertex intervals.
+* `TauCeti.BoundedFlow.reorientEquiv`: reorientation of bounded terminal assignments.
 
 ## Main results
 
@@ -76,7 +80,7 @@ variable [Neg K]
 /-- Transport an assignment across a reorientation, negating the value on every reversed arrow. -/
 def reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (f : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ f e.1) (fun e ↦ -f e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ f e.val) (fun e ↦ -f e.val) e
 
 /-- Recover an assignment on the original arrows from an assignment on the reoriented arrows. -/
 def unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
@@ -111,12 +115,12 @@ theorem unreorientAssignment_flip (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
 /-- The lower bound after reorientation: a reversed interval `[l, u]` has lower endpoint `-u`. -/
 def reorientLower (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ lo e.1) (fun e ↦ -hi e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ lo e.val) (fun e ↦ -hi e.val) e
 
 /-- The upper bound after reorientation: a reversed interval `[l, u]` has upper endpoint `-l`. -/
 def reorientUpper (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ hi e.1) (fun e ↦ -lo e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ hi e.val) (fun e ↦ -lo e.val) e
 
 @[simp]
 theorem reorientLower_keep (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
@@ -164,8 +168,8 @@ theorem reorientAssignment_unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y �
     reorientAssignment σ (unreorientAssignment σ f) = f := by
   funext x y e
   obtain e | e := e
-  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
-  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.property]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.property]
 
 end InvolutiveNeg
 
@@ -226,11 +230,11 @@ theorem reorientAssignment_mem_Icc_iff (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
   · intro hf
     constructor <;> intro x y e
     · obtain e | e := e
-      · exact hf.1 _ _ e.1
-      · exact neg_le_neg_iff.mpr (hf.2 _ _ e.1)
+      · exact hf.1 _ _ e.val
+      · exact neg_le_neg_iff.mpr (hf.2 _ _ e.val)
     · obtain e | e := e
-      · exact hf.2 _ _ e.1
-      · exact neg_le_neg_iff.mpr (hf.1 _ _ e.1)
+      · exact hf.2 _ _ e.val
+      · exact neg_le_neg_iff.mpr (hf.1 _ _ e.val)
 
 end Order
 
@@ -243,15 +247,15 @@ variable [Fintype V] [∀ x y, Fintype (Q x y)]
 theorem excessAt_reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
     (f : Assignment Q K) (v : V) : excessAt (reorientAssignment σ f) v = excessAt f v := by
   have hin :
-      (∑ x, ∑ e : {e : Q x v // ¬ σ e}, f e.1) +
-          ∑ x, ∑ e : {e : Q x v // σ e}, f e.1 = ∑ x, ∑ e : Q x v, f e := by
+      (∑ x, ∑ e : {e : Q x v // ¬ σ e}, f e.val) +
+          ∑ x, ∑ e : {e : Q x v // σ e}, f e.val = ∑ x, ∑ e : Q x v, f e := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun x _ ↦ by
       rw [add_comm]
       exact Fintype.sum_subtype_add_sum_subtype _ _
   have hout :
-      (∑ y, ∑ e : {e : Q v y // ¬ σ e}, f e.1) +
-          ∑ y, ∑ e : {e : Q v y // σ e}, f e.1 = ∑ y, ∑ e : Q v y, f e := by
+      (∑ y, ∑ e : {e : Q v y // ¬ σ e}, f e.val) +
+          ∑ y, ∑ e : {e : Q v y // σ e}, f e.val = ∑ y, ∑ e : Q v y, f e := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun y _ ↦ by
       rw [add_comm]
@@ -261,7 +265,123 @@ theorem excessAt_reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
   rw [← hin, ← hout]
   abel
 
+variable [Preorder K] [AddLeftMono K]
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies the assignments with
+prescribed excess `b` for the bounds `lo` and `hi` with those for the reoriented bounds. -/
+def ExcessFlow.reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
+    (b : V → K) :
+    ExcessFlow lo hi b ≃ ExcessFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) b :=
+  (reorientAssignmentEquiv σ).toEquiv.subtypeEquiv fun f ↦ by
+    rw [AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe, reorientAssignmentEquiv_apply,
+      funext (excessAt_reorientAssignment σ f)]
+    exact and_congr_left' (reorientAssignment_mem_Icc_iff σ lo hi f).symm
+
+@[simp]
+theorem ExcessFlow.reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {b : V → K} (f : ExcessFlow lo hi b) :
+    (ExcessFlow.reorientEquiv σ lo hi b f).val = reorientAssignment σ f.val :=
+  (rfl)
+
+@[simp]
+theorem ExcessFlow.reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {b : V → K}
+    (g : ExcessFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) b) :
+    ((ExcessFlow.reorientEquiv σ lo hi b).symm g).val = unreorientAssignment σ g.val :=
+  (rfl)
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies the assignments with
+excess between `a` and `b` for the bounds `lo` and `hi` with those for the reoriented bounds. -/
+def ExcessIntervalFlow.reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
+    (a b : V → K) :
+    ExcessIntervalFlow lo hi a b ≃
+      ExcessIntervalFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) a b :=
+  (reorientAssignmentEquiv σ).toEquiv.subtypeEquiv fun f ↦ by
+    rw [AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe, reorientAssignmentEquiv_apply,
+      funext (excessAt_reorientAssignment σ f)]
+    exact and_congr_left' (reorientAssignment_mem_Icc_iff σ lo hi f).symm
+
+@[simp]
+theorem ExcessIntervalFlow.reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {a b : V → K} (f : ExcessIntervalFlow lo hi a b) :
+    (ExcessIntervalFlow.reorientEquiv σ lo hi a b f).val = reorientAssignment σ f.val :=
+  (rfl)
+
+@[simp]
+theorem ExcessIntervalFlow.reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {a b : V → K}
+    (g : ExcessIntervalFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) a b) :
+    ((ExcessIntervalFlow.reorientEquiv σ lo hi a b).symm g).val = unreorientAssignment σ g.val :=
+  (rfl)
+
 end Excess
+
+section BoundedFlow
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [Preorder K] [AddLeftMono K]
+
+namespace BoundedFlow
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies bounded terminal
+assignments for `lo` and `hi` with bounded terminal assignments for the reoriented bounds. The
+terminals, conservation equations, and terminal value are unchanged. -/
+def reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) (s t : V) :
+    BoundedFlow lo hi s t ≃
+      BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t where
+  toFun f :=
+    { toFun := reorientAssignment σ f.toFun
+      mem_Icc := (reorientAssignment_mem_Icc_iff σ lo hi f.toFun).2 f.mem_Icc
+      conserve := fun v hvs hvt ↦ by
+        rw [excessAt_reorientAssignment]
+        exact f.conserve v hvs hvt }
+  invFun f :=
+    { toFun := unreorientAssignment σ f.toFun
+      mem_Icc := by
+        rw [← reorientAssignment_mem_Icc_iff σ lo hi]
+        simpa using f.mem_Icc
+      conserve := fun v hvs hvt ↦ by
+        rw [← excessAt_reorientAssignment σ (unreorientAssignment σ f.toFun),
+          reorientAssignment_unreorientAssignment]
+        exact f.conserve v hvs hvt }
+  left_inv f := by
+    apply BoundedFlow.ext
+    exact unreorientAssignment_reorientAssignment σ f.toFun
+  right_inv f := by
+    apply BoundedFlow.ext
+    exact reorientAssignment_unreorientAssignment σ f.toFun
+
+@[simp]
+theorem reorientEquiv_apply_toFun (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t) :
+    (reorientEquiv σ lo hi s t f).toFun = reorientAssignment σ f.toFun :=
+  (rfl)
+
+@[simp]
+theorem reorientEquiv_symm_apply_toFun (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V}
+    (f : BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t) :
+    ((reorientEquiv σ lo hi s t).symm f).toFun = unreorientAssignment σ f.toFun :=
+  (rfl)
+
+/-- Reorienting selected arrows preserves the value of a bounded terminal assignment. -/
+@[simp]
+theorem reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t) :
+    (reorientEquiv σ lo hi s t f).val = f.val := by
+  rw [val_def, reorientEquiv_apply_toFun, excessAt_reorientAssignment, ← val_def]
+
+/-- Recovering a bounded terminal assignment from reoriented arrows preserves its value. -/
+@[simp]
+theorem reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V}
+    (f : BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t) :
+    ((reorientEquiv σ lo hi s t).symm f).val = f.val := by
+  rw [← reorientEquiv_apply_val σ ((reorientEquiv σ lo hi s t).symm f),
+    Equiv.apply_symm_apply]
+
+end BoundedFlow
+
+end BoundedFlow
 
 end AddCommGroup
 
@@ -283,8 +403,8 @@ def reorient (N : Network K V) (σ : ∀ ⦃x y : V⦄, N.Hom x y → Bool) : Ne
   upper := reorientUpper σ N.lower N.upper
   lower_le_upper e := by
     obtain e | e := e
-    · exact N.lower_le_upper e.1
-    · exact neg_le_neg_iff.mpr (N.lower_le_upper e.1)
+    · exact N.lower_le_upper e.val
+    · exact neg_le_neg_iff.mpr (N.lower_le_upper e.val)
 
 @[simp]
 theorem reorient_lower_keep (N : Network K V) (σ : ∀ ⦃x y : V⦄, N.Hom x y → Bool)

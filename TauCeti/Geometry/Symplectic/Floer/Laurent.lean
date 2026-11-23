@@ -25,6 +25,12 @@ Over a field the identification preserves convergence for the period and valuati
 The nonzero-Chern hypothesis is essential: the trivial period group has a constant coefficient
 model instead, and the Chern-zero branch has its separate completion.
 
+The cyclic specialization `T ↦ 1`, which keeps only the grading modulo twice the minimal Chern
+number, is a ring homomorphism on the finite model only: when the area is nonzero it extends to
+no ring homomorphism out of the completed ring
+(`TauCeti.Floer.NovikovRing.comp_ofLaurentPolynomial_ne_eval₂_one`), since a recapping class
+`B` of nonzero area makes `1 - e^B` or `1 - e^(-B)` a unit of the completion.
+
 The constructions reuse `AddMonoidAlgebra.mapDomainRingEquiv`,
 `NovikovSeries.domCongr`, and `NovikovSeries.toLaurentSeries`.
 
@@ -74,7 +80,7 @@ theorem ofLaurentPolynomial_C (r : R) :
 /-- A Laurent power represents the corresponding recapping class. -/
 @[simp]
 theorem ofLaurentPolynomial_T (k : ℤ) :
-    ofLaurentPolynomial hker hc (LaurentPolynomial.T k) =
+    ofLaurentPolynomial (R := R) hker hc (LaurentPolynomial.T k) =
       single ((laurentExponent hker hc).symm k) 1 := by
   rw [LaurentPolynomial.T]
   simp only [ofLaurentPolynomial, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
@@ -103,6 +109,30 @@ theorem mem_range_ofLaurentPolynomial_iff {a : NovikovRing R ω c} :
     simpa using congrArg (fun b => b.coeff γ) hp
 
 end Finite
+
+section Specialization
+
+variable [CommRing R] (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+
+/-- **The cyclic specialization does not extend to the completed coefficients.** On the finite
+Laurent model, `T ↦ 1` followed by a coefficient map `f` is a ring homomorphism
+`LaurentPolynomial.eval₂ f 1`, sending every recapping monomial to `1`. If the area does not
+vanish on spherical classes, no ring homomorphism from the whole Floer Novikov ring to a
+nontrivial ring restricts to it on the finite model: a recapping class `B` of nonzero area has
+`1 - e^B` or `1 - e^(-B)` a unit of the completion, which such a map would send to `0`. -/
+theorem comp_ofLaurentPolynomial_ne_eval₂_one {A : Type*} [CommRing A] [Nontrivial A]
+    (hω : ω ≠ 0) (f : R →+* A) (φ : NovikovRing R ω c →+* A) :
+    φ.comp (ofLaurentPolynomial hker hc) ≠ LaurentPolynomial.eval₂ f 1 := by
+  intro h
+  -- The class of a spherical class `s` of nonzero area is a Laurent monomial sent to `1`.
+  obtain ⟨s, hs⟩ := DFunLike.ne_iff.1 hω
+  refine NovikovSeries.map_single_one_ne_one φ (g := (s : PeriodGroup ω c))
+    (by simpa [area_mk] using hs) ?_
+  have hT := DFunLike.congr_fun h (LaurentPolynomial.T (laurentExponent hker hc s))
+  rwa [RingHom.comp_apply, ofLaurentPolynomial_T, AddEquiv.symm_apply_apply,
+    LaurentPolynomial.eval₂_T, one_zpow, Units.val_one] at hT
+
+end Specialization
 
 section Monotone
 
@@ -149,6 +179,16 @@ theorem toLaurentSeries_single (hτ : 0 < τ) (γ : PeriodGroup ω c) (r : R) :
     toLaurentSeries h hc hτ (single γ r) =
       HahnSeries.single (laurentExponent (ker_le_ker_of_area_eq_mul_chern h) hc γ) r := by
   simp [toLaurentSeries]
+
+/-- **The Laurent variable is the monomial of the negative of a generator.** If `σ` generates the
+period group and has positive first Chern number, the comparison sends the recapping monomial
+`e^(-k σ)` to `X^k`. -/
+theorem toLaurentSeries_single_neg_zsmul (hτ : 0 < τ) {σ : PeriodGroup ω c}
+    (hσ : AddSubgroup.zmultiples σ = ⊤) (hσc : 0 < chern ω c σ) (k : ℤ) (r : R) :
+    toLaurentSeries h hc hτ (single (-(k • σ)) r) = HahnSeries.single k r := by
+  rw [toLaurentSeries_single, map_neg, map_zsmul,
+    laurentExponent_eq_neg_one_of_zmultiples_eq_top _ hc hσ hσc]
+  simp
 
 /-- The finite Laurent model and its completion use the same variable and coefficients. -/
 @[simp]

@@ -129,6 +129,13 @@ private theorem IsEffective.forall_finiteDimensional_mul_toLineBundleClass_iff
     exact finiteDimensional_cohomology_congr k
       (e ≪≫ InvertibleSheaf.tensorProductObjIso M hI.toInvertibleSheaf ≪≫
         eqToIso (by rw [Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj])) i
+  -- Twisting a line bundle `M` by `𝒪_X(-D)` preserves finiteness of `H⁰` and `H¹`.
+  have hiff (M : InvertibleSheaf X) :
+      (∀ i < 2, FiniteDimensional k (Cohomology (M.obj ⊗ hD.sectionsIdealSheaf.sheaf) i)) ↔
+        ∀ i < 2, FiniteDimensional k (Cohomology M.obj i) := by
+    have h := Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff
+      hD.sectionsIdealSheaf (k := k) (E := (InvertibleSheaf.toFixedRankOne X).obj M)
+    rwa [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at h
   have hL (L : InvertibleSheaf X) :
       LineBundleClass.mk (InvertibleSheaf.tensorProduct L hI.toInvertibleSheaf) =
         LineBundleClass.mk L * D.toLineBundleClass⁻¹ := by
@@ -138,12 +145,10 @@ private theorem IsEffective.forall_finiteDimensional_mul_toLineBundleClass_iff
     intro h L hLa i hi
     obtain ⟨M, hM⟩ := LineBundleClass.mk_surjective (a * D.toLineBundleClass)
     refine (key L M (by rw [hM, hLa, mul_inv_cancel_right]) i).mpr ?_
-    exact (Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff
-      hD.sectionsIdealSheaf (k := k) (L := M)).mpr (h M hM) i hi
+    exact (hiff M).mpr (h M hM) i hi
   · -- For `L` of class `a [𝒪_X(D)]`, the twist `L ⊗ 𝒪_X(-D)` has class `a`.
     intro h L hLa i hi
-    refine (Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff
-      hD.sectionsIdealSheaf (k := k) (L := L)).mp (fun j hj ↦ ?_) i hi
+    refine (hiff L).mp (fun j hj ↦ ?_) i hi
     exact (key _ L (hL L) j).mp (h _ (by rw [hL, hLa, mul_inv_cancel_right]) j hj)
 
 end Scheme.CartierDivisor

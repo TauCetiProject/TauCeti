@@ -7,31 +7,31 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
+public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
+public import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 
 /-!
-# Complex values of characters of finite fields
+# Complex values of characters of finite fields and residue rings
 
 Mathlib's `AddChar.FiniteField.primitiveChar_to_Complex` is the canonical primitive additive
 character of a finite field `F` with values in `ℂ`, and
-`AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive` records its primitivity. Consumers
-that just need *some* nontrivial additive character of `F` — character sums over `F`, the
-cuspidal characters of `GL₂(F)` — want the weaker statement that it differs from the trivial
-character, which is primitivity read at the shift by `1`. Its values are roots of unity, hence
-algebraic integers, so `F` also has a primitive additive character with values in the ring
-`integralClosure ℤ ℂ` of algebraic integers of `ℂ`; Gauss sums of characters of residue fields of
-a number field can then be read in a domain containing its ring of integers.
+`AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive` records its primitivity. Its values are
+roots of unity, hence algebraic integers, so `F` also has a primitive additive character with
+values in the ring `integralClosure ℤ ℂ` of algebraic integers of `ℂ`; Gauss sums of characters of
+residue fields of a number field can then be read in a domain containing its ring of integers.
 
 A Legendre symbol `(θ/p) = ±1` is also an eighth root of unity, `e^{2πi · 2(1 - (θ/p))/8}`; this is
 the form in which it enters the Gauss-sum invariants of finite quadratic modules, which take values
-in `ℤ/8`.
+in `ℤ/8`. On `ZMod 8`, a sign times `stdAddChar` determines the sign and residue up to
+simultaneously changing the sign and adding `4`.
 
 ## Main results
 
-* `TauCeti.primitiveChar_to_Complex_ne_one`:
-  `AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1`.
+* `ZMod.χ₈_eq_and_eq_or_of_mul_stdAddChar_eq`: cancellation of sign times `stdAddChar` on `ZMod 8`.
+
 * `TauCeti.exists_primitive_addChar_integralClosure`: `F` has a primitive additive character with
   values in the algebraic integers of `ℂ`.
 * `TauCeti.legendreSym_eq_expCircle`: `(θ/p) = e^{2πi · 2(1 - (θ/p))/8}` for `θ` prime to `p`.
@@ -43,20 +43,13 @@ namespace TauCeti
 
 variable (F : Type*) [Field F] [Finite F]
 
-/-- Mathlib's canonical primitive complex additive character of a finite field is nontrivial. -/
-theorem primitiveChar_to_Complex_ne_one :
-    AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1 := by
-  simpa only [AddChar.mulShift_one] using
-    AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F (one_ne_zero : (1 : F) ≠ 0)
-
 /-- A finite field has a primitive additive character with values in the ring of algebraic
 integers of `ℂ`: the values of `AddChar.FiniteField.primitiveChar_to_Complex` are roots of unity. -/
 theorem exists_primitive_addChar_integralClosure :
     ∃ ψ : AddChar F (integralClosure ℤ ℂ), ψ.IsPrimitive := by
-  let _ := Fintype.ofFinite F
   let ψ₀ := AddChar.FiniteField.primitiveChar_to_Complex F
-  refine ⟨{ toFun t := ⟨ψ₀ t, IsIntegral.of_pow (Fintype.card_pos (α := F)) <| by
-              rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero, AddChar.map_zero_eq_one]
+  refine ⟨{ toFun t := ⟨ψ₀ t, IsIntegral.of_pow Nat.card_pos <| by
+              rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero', AddChar.map_zero_eq_one]
               exact isIntegral_one⟩
             map_zero_eq_one' := Subtype.ext ψ₀.map_zero_eq_one
             map_add_eq_mul' a b := Subtype.ext (ψ₀.map_add_eq_mul a b) }, fun a ha h => ?_⟩
@@ -69,8 +62,32 @@ theorem legendreSym_eq_expCircle {p : ℕ} [Fact p.Prime] {θ : ℤ} (hθ : (θ 
       expCircle (ZMod.toRatAddCircle 8 ((2 * (1 - legendreSym p θ) : ℤ) : ZMod 8)) := by
   rcases legendreSym.eq_one_or_neg_one p hθ with h | h <;> rw [h]
   · simp
-  · rw [show ((2 * (1 - -1) : ℤ) : ZMod 8) = ((4 : ℕ) : ZMod 8) by decide,
-      ZMod.toRatAddCircle_natCast, show ((4 : ℕ) : ℚ) / (8 : ℕ) = 1 / 2 by norm_num,
-      expCircle_one_div_two, Int.cast_neg, Int.cast_one]
+  · rw [ZMod.toRatAddCircle_intCast, show ((2 * (1 - -1) : ℤ) / (8 : ℕ) : ℚ) = 1 / 2 by norm_num,
+      expCircle_one_div_two]
+    simp
 
 end TauCeti
+
+namespace ZMod
+
+/-- If `ε · stdAddChar s = ε' · stdAddChar t` for signs of units `ε = χ₈ x`, `ε' = χ₈ y`, then the
+signs and the residues agree, or both differ, the residues by `4`. -/
+theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : IsUnit x)
+    (hy : IsUnit y)
+    (h : ((χ₈ x : ℤ) : ℂ) * stdAddChar s = ((χ₈ y : ℤ) : ℂ) * stdAddChar t) :
+    χ₈ x = χ₈ y ∧ s = t ∨ χ₈ x = -χ₈ y ∧ s = t + 4 := by
+  have h4 : (stdAddChar (4 : ZMod (2 ^ 3)) : ℂ) = -1 := by
+    simpa [stdAddChar_apply] using ZMod.coe_toCircle_natCast_self 4
+  have hχ : ∀ z : ZMod (2 ^ 3), IsUnit z → χ₈ z = 1 ∨ χ₈ z = -1 := fun z hz ↦
+    (isQuadratic_χ₈ z).resolve_left ((MulChar.apply_ne_zero_iff).mpr hz)
+  have hz (z : ZMod (2 ^ 3)) (hz : IsUnit z) :
+      ((χ₈ z : ℤ) : ℂ) = stdAddChar (if χ₈ z = 1 then 0 else 4 : ZMod (2 ^ 3)) := by
+    rcases hχ z hz with h | h <;> simp [h, h4]
+  rw [hz x hx, hz y hy, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul] at h
+  have h' := ZMod.injective_stdAddChar h
+  clear h
+  rcases hχ x hx with hx' | hx' <;> rcases hχ y hy with hy' | hy' <;>
+    simp only [hx', hy', ite_true, ite_false, show (-1 : ℤ) ≠ 1 by decide] at h' ⊢ <;>
+    revert s t <;> decide
+
+end ZMod

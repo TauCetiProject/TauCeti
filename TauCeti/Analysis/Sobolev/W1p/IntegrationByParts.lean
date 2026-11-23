@@ -79,11 +79,8 @@ theorem W1p.setIntegral_lineDeriv_mul_value_eq_neg (hp : p ≠ ⊤) (u : W1p mu 
   let _ : q.HolderConjugate p := ENNReal.HolderConjugate.symm
   let _ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   -- `∂_v g` and `g` are bounded with compact support, so they lie in the dual exponent space.
-  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
-    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
   have hdg : MemLp (fun x => lineDeriv ℝ g x v) q (mu.restrict Omega) :=
-    (hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous mu) (L * ‖v‖)
-      (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)).restrict _
+    (hg.memLp_lineDeriv_of_hasCompactSupport hgc v).restrict _
   have hg' : MemLp g q (mu.restrict Omega) :=
     (hg.continuous.memLp_of_hasCompactSupport hgc).restrict _
   -- The two sides, as a continuous linear functional on `W^{1,p}(Ω)`.
@@ -140,5 +137,27 @@ theorem W1p.setIntegral_lineDeriv_mul_value_eq_neg (hp : p ≠ ⊤) (u : W1p mu 
   have h := hΦ u
   have h0 : Φ u = 0 := hker
   linarith
+
+omit [FiniteDimensional ℝ E] in
+/-- The product of the directional derivative of a Lipschitz function `g` with compact support and
+an element of `W^{1,p}(Ω)` is integrable on `Ω`. -/
+theorem W1p.integrable_lineDeriv_mul_value (u : W1p mu Omega p)
+    (hg : LipschitzWith L g) (hgc : HasCompactSupport g) (v : E) :
+    Integrable (fun x => lineDeriv ℝ g x v * W1p.value u x) (mu.restrict Omega) := by
+  let q := ENNReal.conjExponent p
+  let _ : q.HolderConjugate p := ENNReal.HolderConjugate.symm
+  exact ((hg.memLp_lineDeriv_of_hasCompactSupport (q := q) hgc v).restrict _).integrable_mul
+    (Lp.memLp (W1p.value u))
+
+omit [FiniteDimensional ℝ E] in
+/-- The product of a continuous function `g` with compact support and the inner product of the
+weak gradient of an element of `W^{1,p}(Ω)` with a vector is integrable on `Ω`. -/
+theorem W1p.integrable_mul_inner_gradient (u : W1p mu Omega p)
+    (hg : Continuous g) (hgc : HasCompactSupport g) (v : E) :
+    Integrable (fun x => g x * ⟪W1p.gradient u x, v⟫_ℝ) (mu.restrict Omega) := by
+  let q := ENNReal.conjExponent p
+  let _ : q.HolderConjugate p := ENNReal.HolderConjugate.symm
+  exact ((hg.memLp_of_hasCompactSupport (p := q) hgc).restrict _).integrable_mul
+    ((Lp.memLp (W1p.gradient u)).inner_const v)
 
 end TauCeti

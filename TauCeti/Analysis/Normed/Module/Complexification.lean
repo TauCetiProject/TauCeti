@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.Tactic.Module
+public import TauCeti.LinearAlgebra.Complex.Conjugation
+
 
 /-!
 # The complexification of a real seminormed space
@@ -46,19 +51,30 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 ## Main declarations
 
 * `TauCeti.Complexification`: the complexification of a real vector space, with its complex
-  module structure.
+  module structure, conjugation `TauCeti.Complexification.conj`, and algebraic isomorphism
+  `TauCeti.tensorEquivComplexification` with `ℂ ⊗[ℝ] W`.
 * `TauCeti.Complexification.ofReal`, `TauCeti.Complexification.re_add_I_smul_im`: the real
   embedding, and the decomposition `z = re z + i im z`.
 * `TauCeti.Complexification.norm_le_iff`: the characterization of the Taylor seminorm by bounds
   on the real parts of rotations.
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
-  complex seminormed space structure, complete when `X` is.
-* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+  complex seminormed space structure, complete when `X` is, and continuous conjugation
+  `TauCeti.Complexification.conjCLE`, also as the real-linear map
+  `TauCeti.Complexification.conjCLM`.
+* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`, so
+  `X_ℂ` is finite-dimensional over `ℝ` when `X` is
+  (`TauCeti.Complexification.instFiniteReal`).
+* `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
+  complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
+  complex dimension the real dimension of the original space.
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
-* `ContinuousLinearMap.complexify`: the complex-linear extension of a bounded real operator, with
-  `ContinuousLinearMap.norm_complexify` and the bundled
-  `ContinuousLinearMap.complexifyAlgHom`.
+* `TauCeti.Complexification.continuousLinearMapEquiv`: complexification of real continuous Hom
+  agrees with complex Hom between complexifications.
+* `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
+  extension of bounded real operators and equivalences, with
+  `ContinuousLinearMap.norm_complexify` and the continuous algebra homomorphism
+  `ContinuousLinearMap.complexifyAlgHom` (`ContinuousLinearMap.continuous_complexifyAlgHom`).
 * `TauCeti.Complexification.ext_ofReal`: complex-linear maps out of `X_ℂ` are determined on `X`,
   so `T.complexify` is the unique complex-linear extension of `T`.
 
@@ -73,6 +89,7 @@ public section
 noncomputable section
 
 open Set
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -125,6 +142,9 @@ def ofReal [Zero X] (x : X) : Complexification X := ⟨x, 0⟩
 
 @[simp] theorem ofReal_re [Zero X] (x : X) : (ofReal x).re = x := (rfl)
 @[simp] theorem ofReal_im [Zero X] (x : X) : (ofReal x).im = 0 := (rfl)
+
+/-- The real embedding sends zero to zero. -/
+@[simp] theorem ofReal_zero [Zero X] : ofReal (0 : X) = 0 := (rfl)
 
 variable [AddCommGroup X] [Module ℝ X]
 
@@ -338,6 +358,11 @@ instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
 
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℝ`. -/
+instance instFiniteReal [Module.Finite ℝ X] :
+    Module.Finite ℝ (Complexification X) :=
+  Module.Finite.equiv (equivProd X).symm.toLinearEquiv
+
 end Norm
 
 /-- The Taylor seminorm is a norm when the original real seminorm is a norm. -/
@@ -432,6 +457,20 @@ theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
     T.complexify (ofReal x) = ofReal (T x) := by
   ext <;> simp
 
+/-- Complexification preserves finite rank. -/
+theorem hasFiniteRange_complexify (T : X →L[ℝ] Y) (hT : T.toLinearMap.HasFiniteRange) :
+    T.complexify.toLinearMap.HasFiniteRange := by
+  let i := (ofRealLI Y).toLinearMap
+  let J := (LinearMap.lsmul ℂ (Complexification Y) Complex.I).restrictScalars ℝ
+  have hreal : T.complexify.toLinearMap.restrictScalars ℝ =
+      (i.comp T.toLinearMap).comp (reCLM X).toLinearMap +
+        (J.comp (i.comp T.toLinearMap)).comp (imCLM X).toLinearMap := by
+    ext z <;> simp [i, J]
+  apply Submodule.FG.of_restrictScalars ℝ
+  rw [← LinearMap.range_restrictScalars, hreal]
+  exact ((hT.comp_left i).comp_right (reCLM X).toLinearMap).add
+    (((hT.comp_left i).comp_left J).comp_right (imCLM X).toLinearMap)
+
 /-- The complexification is the unique complex-linear extension of `T`. -/
 theorem eq_complexify_iff (T : X →L[ℝ] Y) (S : Complexification X →L[ℂ] Complexification Y) :
     S = T.complexify ↔ ∀ x, S (ofReal x) = ofReal (T x) := by
@@ -483,9 +522,242 @@ theorem complexifyₗᵢ_apply (T : X →L[ℝ] Y) : complexifyₗᵢ X Y T = T.
 @[simp]
 theorem complexifyAlgHom_apply (T : X →L[ℝ] X) : complexifyAlgHom X T = T.complexify := (rfl)
 
+/-- Complexification of bounded endomorphisms is continuous, being an isometry. -/
+theorem continuous_complexifyAlgHom : Continuous (complexifyAlgHom X) :=
+  (complexifyₗᵢ X X).continuous
+
 /-- Complexification preserves natural powers of bounded endomorphisms. -/
 @[simp]
 theorem complexify_pow (T : X →L[ℝ] X) (n : ℕ) : (T ^ n).complexify = T.complexify ^ n :=
   map_pow (complexifyAlgHom X) T n
 
 end ContinuousLinearMap
+
+namespace TauCeti.Complexification
+
+/-- Complex conjugation `x + i y ↦ x - i y` on `TauCeti.Complexification W`, as a
+`starRingEnd ℂ`-semilinear involution. -/
+def conj (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    Complexification W →ₛₗ[starRingEnd ℂ] Complexification W where
+  toFun z := ⟨z.re, -z.im⟩
+  map_add' _ _ := by ext <;> simp; abel
+  map_smul' _ _ := by
+    ext <;> simp only [smul_re, smul_im, Complex.conj_re, Complex.conj_im] <;> module
+
+section
+variable {W : Type*} [AddCommGroup W] [Module ℝ W]
+@[simp] theorem conj_re (z : Complexification W) : (conj W z).re = z.re := (rfl)
+@[simp] theorem conj_im (z : Complexification W) : (conj W z).im = -z.im := (rfl)
+@[simp] theorem conj_conj (z : Complexification W) : conj W (conj W z) = z := by ext <;> simp
+@[simp] theorem conj_ofReal (w : W) : conj W (ofReal w) = ofReal w := by ext <;> simp
+end
+
+variable {X Y : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
+
+/-- Complex conjugation on `TauCeti.Complexification X` as a continuous conjugate-linear
+equivalence. -/
+def conjCLE (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X] :
+    Complexification X ≃L⋆[ℂ] Complexification X :=
+  have hcont : Continuous (conj X) := ((equivProd X).symm.continuous.comp <|
+    (reCLM X).continuous.prodMk (continuous_neg.comp (imCLM X).continuous)).congr
+    fun _ ↦ by ext <;> simp
+  { toLinearEquiv := LinearEquiv.ofInvolutive (conj X) conj_conj
+    continuous_toFun := hcont, continuous_invFun := hcont }
+
+@[simp] theorem coe_conjCLE : ⇑(conjCLE X) = conj X := (rfl)
+@[simp] theorem conjCLE_symm : (conjCLE X).symm = conjCLE X := by ext <;> rfl
+
+/-- Complex conjugation on `TauCeti.Complexification X` as a continuous real-linear map. -/
+def conjCLM (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X] :
+    Complexification X →L[ℝ] Complexification X :=
+  ⟨{ toFun := conj X
+     map_add' := map_add (conj X)
+     map_smul' := fun r z ↦ by ext <;> simp },
+    (conjCLE X).continuous⟩
+
+@[simp] theorem coe_conjCLM : ⇑(conjCLM X) = conj X := (rfl)
+
+/-- Complexification of a bounded real operator commutes with complex conjugation. -/
+theorem conj_complexify (T : X →L[ℝ] Y) (z : Complexification X) :
+    conj Y (T.complexify z) = T.complexify (conj X z) := by ext <;> simp
+
+end TauCeti.Complexification
+
+namespace TauCeti
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W]
+
+/-- The canonical `ℂ`-linear isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] TauCeti.Complexification W` sending
+`u` to `⟨realPart W u, imaginaryPart W u⟩` and `⟨x, y⟩` to `1 ⊗ₜ x + I ⊗ₜ y`. -/
+def tensorEquivComplexification (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    ℂ ⊗[ℝ] W ≃ₗ[ℂ] Complexification W where
+  toFun u := ⟨realPart W u, imaginaryPart W u⟩
+  map_add' _ _ := by ext <;> simp
+  map_smul' _ _ := by ext <;> simp [realPart_smul, imaginaryPart_smul, add_comm]
+  invFun z := 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im
+  left_inv := one_tmul_realPart_add_I_tmul_imaginaryPart W
+  right_inv _ := by ext <;> simp
+
+@[simp] theorem tensorEquivComplexification_re (u : ℂ ⊗[ℝ] W) :
+    (tensorEquivComplexification W u).re = realPart W u := (rfl)
+@[simp] theorem tensorEquivComplexification_im (u : ℂ ⊗[ℝ] W) :
+    (tensorEquivComplexification W u).im = imaginaryPart W u := (rfl)
+@[simp] theorem tensorEquivComplexification_tmul (c : ℂ) (w : W) :
+    tensorEquivComplexification W (c ⊗ₜ[ℝ] w) = c • Complexification.ofReal w := by ext <;> simp
+@[simp] theorem tensorEquivComplexification_symm_apply (z : Complexification W) :
+    (tensorEquivComplexification W).symm z = 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im := (rfl)
+
+/-- `tensorEquivComplexification` intertwines `tmulConj` with `Complexification.conj`. -/
+theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :
+    tensorEquivComplexification W (tmulConj W u) =
+      Complexification.conj W (tensorEquivComplexification W u) := by ext <;> simp
+
+/-- `tensorEquivComplexification` intertwines `LinearMap.baseChange ℂ` with
+`ContinuousLinearMap.complexify`. -/
+theorem tensorEquivComplexification_baseChange {X Y : Type*}
+    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (T : X →L[ℝ] Y) (u : ℂ ⊗[ℝ] X) :
+    tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
+      T.complexify (tensorEquivComplexification X u) := by ext <;> simp
+
+/-- The complexification of a finite-dimensional real vector space is finite-dimensional over
+`ℂ`. -/
+instance Complexification.instFiniteComplex [Module.Finite ℝ W] :
+    Module.Finite ℂ (Complexification W) :=
+  .equiv (tensorEquivComplexification W)
+
+/-- The complexification of a real vector space has complex dimension its real dimension. -/
+@[simp] theorem Complexification.finrank_complex :
+    Module.finrank ℂ (Complexification W) = Module.finrank ℝ W :=
+  (tensorEquivComplexification W).finrank_eq.symm.trans Module.finrank_baseChange
+
+end TauCeti
+
+namespace ContinuousLinearEquiv
+
+open TauCeti
+
+variable {X Y Z : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  [SeminormedAddCommGroup Y] [NormedSpace ℝ Y] [SeminormedAddCommGroup Z] [NormedSpace ℝ Z]
+
+/-- Complexification of a continuous `ℝ`-linear equivalence between real seminormed spaces, as a
+continuous `ℂ`-linear equivalence between their Taylor-seminormed complexifications. -/
+def complexify (e : X ≃L[ℝ] Y) : Complexification X ≃L[ℂ] Complexification Y :=
+  ofContinuousLinearMap e.toContinuousLinearMap.complexify
+    e.symm.toContinuousLinearMap.complexify
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
+
+@[simp] theorem toContinuousLinearMap_complexify (e : X ≃L[ℝ] Y) :
+    e.complexify.toContinuousLinearMap = e.toContinuousLinearMap.complexify := (rfl)
+@[simp] theorem complexify_symm (e : X ≃L[ℝ] Y) : e.complexify.symm = e.symm.complexify := (rfl)
+@[simp] theorem complexify_apply_re (e : X ≃L[ℝ] Y) (z : Complexification X) :
+    (e.complexify z).re = e z.re := e.toContinuousLinearMap.complexify_apply_re z
+@[simp] theorem complexify_apply_im (e : X ≃L[ℝ] Y) (z : Complexification X) :
+    (e.complexify z).im = e z.im := e.toContinuousLinearMap.complexify_apply_im z
+@[simp] theorem complexify_refl :
+    (ContinuousLinearEquiv.refl ℝ X).complexify =
+      ContinuousLinearEquiv.refl ℂ (Complexification X) := by ext <;> simp
+@[simp] theorem complexify_trans (e : X ≃L[ℝ] Y) (e' : Y ≃L[ℝ] Z) :
+    (e.trans e').complexify = e.complexify.trans e'.complexify := by ext <;> simp
+
+end ContinuousLinearEquiv
+
+namespace TauCeti.Complexification
+
+variable {X Y : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
+
+private def homExtension (u : Complexification (X →L[ℝ] Y)) :
+    Complexification X →L[ℂ] Complexification Y :=
+  u.re.complexify + Complex.I • u.im.complexify
+
+private theorem homExtension_re (u : Complexification (X →L[ℝ] Y)) (v : Complexification X) :
+    (homExtension u v).re = u.re v.re - u.im v.im := by simp [homExtension, sub_eq_add_neg]
+private theorem homExtension_im (u : Complexification (X →L[ℝ] Y)) (v : Complexification X) :
+    (homExtension u v).im = u.im v.re + u.re v.im := by simp [homExtension, add_comm]
+
+private def homRestriction (T : Complexification X →L[ℂ] Complexification Y) :
+    Complexification (X →L[ℝ] Y) :=
+  ⟨(reCLM Y).comp ((T.restrictScalars ℝ).comp (ofRealLI X).toContinuousLinearMap),
+    (imCLM Y).comp ((T.restrictScalars ℝ).comp (ofRealLI X).toContinuousLinearMap)⟩
+
+private theorem homExtension_norm_le (u : Complexification (X →L[ℝ] Y)) :
+    ‖homExtension u‖ ≤ 2 * ‖u‖ := by
+  calc
+    ‖homExtension u‖ ≤ ‖u.re.complexify‖ + ‖Complex.I • u.im.complexify‖ := norm_add_le _ _
+    _ = ‖u.re‖ + ‖u.im‖ := by simp [norm_smul]
+    _ ≤ 2 * ‖u‖ := by linarith [norm_re_le u, norm_im_le u]
+
+private theorem homRestriction_norm_le (T : Complexification X →L[ℂ] Complexification Y) :
+    ‖homRestriction T‖ ≤ 2 * ‖T‖ := by
+  have hr : ‖(homRestriction T).re‖ ≤ ‖T‖ := by
+    apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+    intro x
+    exact (norm_re_le (T (ofReal x))).trans (by simpa using T.le_opNorm (ofReal x))
+  have hi : ‖(homRestriction T).im‖ ≤ ‖T‖ := by
+    apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+    intro x
+    exact (norm_im_le (T (ofReal x))).trans (by simpa using T.le_opNorm (ofReal x))
+  exact (norm_le_norm_re_add_norm_im _).trans (by linarith)
+
+/-- Complexification of real continuous Hom agrees with complex continuous Hom between
+complexifications. Both model spaces have their existing Taylor norms. -/
+def continuousLinearMapEquiv (X Y : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+    [SeminormedAddCommGroup Y] [NormedSpace ℝ Y] :
+    Complexification (X →L[ℝ] Y) ≃L[ℂ] (Complexification X →L[ℂ] Complexification Y) :=
+  LinearEquiv.toContinuousLinearEquivOfBounds
+    { toFun := homExtension
+      invFun := homRestriction
+      map_add' := fun u v ↦ by ext w <;> simp [homExtension_re, homExtension_im] <;> abel
+      map_smul' := fun c u ↦ by
+        ext v <;>
+          simp [homExtension_re, homExtension_im, smul_add, smul_sub] <;> module
+      left_inv := fun u ↦ by ext x <;> simp [homRestriction, homExtension_re, homExtension_im]
+      right_inv := fun T ↦ by
+        apply ContinuousLinearMap.coe_injective
+        apply ext_ofReal
+        intro x
+        apply Complexification.ext <;> simp [homExtension_re, homExtension_im, homRestriction] }
+    2 2 homExtension_norm_le homRestriction_norm_le
+
+@[simp] theorem continuousLinearMapEquiv_apply_re (u : Complexification (X →L[ℝ] Y))
+    (v : Complexification X) :
+    (continuousLinearMapEquiv X Y u v).re = u.re v.re - u.im v.im := homExtension_re u v
+@[simp] theorem continuousLinearMapEquiv_apply_im (u : Complexification (X →L[ℝ] Y))
+    (v : Complexification X) :
+    (continuousLinearMapEquiv X Y u v).im = u.im v.re + u.re v.im := homExtension_im u v
+
+/-- Real operators extend by the existing complexification map. -/
+@[simp] theorem continuousLinearMapEquiv_ofReal (T : X →L[ℝ] Y) :
+    continuousLinearMapEquiv X Y (ofReal T) = T.complexify := by
+  ext v <;> simp
+
+private theorem continuousLinearMapEquiv_symm_apply
+    (T : Complexification X →L[ℂ] Complexification Y) :
+    (continuousLinearMapEquiv X Y).symm T = homRestriction T := by rfl
+
+/-- Real coordinate of the inverse is restriction to included real vectors followed by Re. -/
+@[simp] theorem continuousLinearMapEquiv_symm_apply_re
+    (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
+    ((continuousLinearMapEquiv X Y).symm T).re x = (T (ofReal x)).re := by
+  simp [continuousLinearMapEquiv_symm_apply, homRestriction]
+
+/-- Imaginary coordinate of the inverse is restriction to included real vectors followed by Im. -/
+@[simp] theorem continuousLinearMapEquiv_symm_apply_im
+    (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
+    ((continuousLinearMapEquiv X Y).symm T).im x = (T (ofReal x)).im := by
+  simp [continuousLinearMapEquiv_symm_apply, homRestriction]
+
+/-- The model comparison increases norms by at most two. -/
+theorem norm_continuousLinearMapEquiv_apply_le (u : Complexification (X →L[ℝ] Y)) :
+    ‖continuousLinearMapEquiv X Y u‖ ≤ 2 * ‖u‖ := homExtension_norm_le u
+
+/-- The inverse comparison increases norms by at most two. -/
+theorem norm_continuousLinearMapEquiv_symm_apply_le
+    (T : Complexification X →L[ℂ] Complexification Y) :
+    ‖(continuousLinearMapEquiv X Y).symm T‖ ≤ 2 * ‖T‖ := by
+  simpa only [continuousLinearMapEquiv_symm_apply] using homRestriction_norm_le T
+
+end TauCeti.Complexification

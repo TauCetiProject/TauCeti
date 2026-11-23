@@ -8,21 +8,15 @@ module
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.KrullDimension.Polynomial
-public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Localization.InvSubmonoid
 public import Mathlib.RingTheory.NoetherNormalization
 public import Mathlib.RingTheory.Polynomial.RationalRoot
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
-public import TauCeti.Topology.KrullDimension.Local
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
+import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
-import TauCeti.RingTheory.KrullDimension.Fiber
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -74,8 +68,9 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
 * `RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
   `k[X₁, …, Xₛ] → A` with `s ≤ dim A` is injective.
-* `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
-  has finite Krull dimension.
+* `TauCeti.finiteRingKrullDim_of_finiteType` and `TauCeti.ringKrullDim_lt_top_of_finiteType`: a
+  nontrivial finitely generated algebra over a field has finite Krull dimension, and every finitely
+  generated algebra over a field has Krull dimension strictly below `⊤`.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
   `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
@@ -90,7 +85,7 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
   finite, has height the number of variables.
 * `Ideal.height_eq_height_under_of_isIntegral_of_finiteType`: an integral faithful extension of
-  domains preserves prime heights when the base is a finitely generated algebra over a field.
+  domains preserves ideal heights when the base is a finitely generated algebra over a field.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 * `Ideal.height_add_ringKrullDim_quotient_of_finiteType`: the dimension formula
@@ -98,9 +93,9 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated
   algebra `A` with irreducible spectrum over `k` has height `dim A`.
 * `Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`: `dim (A ⧸ p) = trdeg_k κ(p)`.
-* `TauCeti.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
-  `TauCeti.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_residueField`: the
-  local Krull dimension of `Spec A` at `p` is `ht p + dim (A ⧸ p) = dim A_p + trdeg_k κ(p)`.
+* `PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
+  `PrimeSpectrum.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_residueField`:
+  the local Krull dimension of `Spec A` at `p` is `ht p + dim (A ⧸ p) = dim A_p + trdeg_k κ(p)`.
 
 ## References
 
@@ -109,8 +104,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   transcendence degree)
 * R. Hartshorne, *Algebraic Geometry* (1977), Chapter I, Theorem 1.8A (heights of
   primes in finitely generated domains over a field, and the dimension formula)
-* [Stacks Project, Tags 00P0–00P4](https://stacks.math.columbia.edu/tag/00P4) (local dimension of
-  `Spec A` for `A` of finite type over a field)
+* [Stacks Project, Tag 00P1](https://stacks.math.columbia.edu/tag/00P1) (local dimension of
+  `Spec A` for `A` of finite type over a field: `dim_x X = dim A_p + trdeg_k κ(p)`)
 * The height theorem for integral extensions generalises, from finite to integral extensions,
   `Pcf.height_under_eq_of_finite_of_finiteType` in `lean/Pcf/Bounding/Divisors.lean`, ported from
   T. Dupuy, T. Tucker and Z. Wang,
@@ -161,12 +156,23 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
 
 variable (k) in
-/-- An integral faithful extension of domains preserves prime heights when the base is a finitely
+/-- Every finitely generated algebra over a field has Krull dimension strictly below `⊤` (including
+the zero ring, whose Krull dimension is `⊥`). -/
+theorem ringKrullDim_lt_top_of_finiteType (A : Type*) [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] : ringKrullDim A < ⊤ := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · rw [ringKrullDim_eq_bot_of_subsingleton]
+    exact WithBot.bot_lt_coe _
+  · have := finiteRingKrullDim_of_finiteType k A
+    exact ringKrullDim_lt_top
+
+variable (k) in
+/-- An integral faithful extension of domains preserves ideal heights when the base is a finitely
 generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : Type*}
     [CommRing R] [CommRing S] [IsDomain S] [Algebra k R]
     [Algebra.FiniteType k R] [Algebra R S] [Algebra.IsIntegral R S] [FaithfulSMul R S]
-    (prime : Ideal S) [prime.IsPrime] : prime.height = (prime.under R).height := by
+    (prime : Ideal S) : prime.height = (prime.under R).height := by
   have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain (algebraMap R S)
   obtain ⟨numVars, embedding, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k R
   let polynomial := MvPolynomial (Fin numVars) k
@@ -223,7 +229,7 @@ theorem ringKrullDim_tensorProduct_field_of_finiteType (K A : Type*) [Field K] [
 
 variable (k) in
 /-- A finitely generated domain over a field `k` has Krull dimension its transcendence degree over
-`k`. The transcendence degree is finite by `Algebra.trdeg_lt_aleph0_of_finiteType`. -/
+`k`. The transcendence degree is finite by `trdeg_lt_aleph0_of_finiteType`. -/
 theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algebra k A]
     [Algebra.FiniteType k A] : ringKrullDim A = (Algebra.trdeg k A).toNat := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`, and the variables form a
@@ -245,8 +251,6 @@ theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A]
     [Algebra.FiniteType k A] [Field K] [Algebra A K] [Algebra k K] [IsScalarTower k A K]
     [IsFractionRing A K] : ringKrullDim A = (Algebra.trdeg k K).toNat := by
   have : IsDomain A := (IsFractionRing.injective A K).isDomain (algebraMap A K)
-  have : FaithfulSMul A K :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective _ _)
   have := IsLocalization.isAlgebraic K (nonZeroDivisors A)
   have h := lift_trdeg_add_eq k A K
   rw [trdeg_eq_zero (R := A) (A := K), Cardinal.lift_zero, add_zero] at h
@@ -317,41 +321,23 @@ theorem topologicalKrullDim_inter_eq_of_finiteType {A : Type*} [CommRing A] [Alg
     topologicalKrullDim ↥(Z ∩ U) = topologicalKrullDim Z := by
   refine le_antisymm (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le
     ?_
-  -- `Z` is the zero locus of a prime `p`, so it is `Spec (A ⧸ p)`; and `Z ∩ U` contains the basic
-  -- open set of some `g ∉ p`, which is `Spec (A ⧸ p)[1/g']` for the image `g'` of `g`.
+  -- `Z` is the zero locus of a prime `p`, so it has the dimension of `A ⧸ p`; and `Z ∩ U` contains
+  -- `Z ∩ D(g)` for some `g ∉ p`, which contains a copy of `Spec (A ⧸ p)[1/g']` for the image `g'`
+  -- of `g`, of the same dimension.
   set p := vanishingIdeal Z
   have := isIrreducible_iff_vanishingIdeal_isPrime.mp hZ
   have hZp : zeroLocus p = Z := by rw [zeroLocus_vanishingIdeal_eq_closure, hZc.closure_eq]
   obtain ⟨x, hxZ, hxU⟩ := hZU
   obtain ⟨_, ⟨g, rfl⟩, hxg, hgU⟩ :=
     isTopologicalBasis_basic_opens.exists_subset_of_mem_open hxU hU
-  set g' := Ideal.Quotient.mk p g
-  have hg : g' ≠ 0 := by
-    rw [Ne, Ideal.Quotient.eq_zero_iff_mem]
-    exact fun h ↦ hxg ((hZp ▸ hxZ : x ∈ zeroLocus p) h)
-  let i := comap (Ideal.Quotient.mk p)
-  have hi : IsClosedEmbedding i :=
-    isClosedEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective
-  have hrange : Set.range i = Z := by
-    rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, hZp]
-  let j := comap (algebraMap (A ⧸ p) (Localization.Away g'))
-  have hj : IsOpenEmbedding j := localization_away_isOpenEmbedding _ g'
-  have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ Z ∩ U := by
-    refine ⟨hrange ▸ ⟨_, rfl⟩, hgU ?_⟩
-    have hy : j y ∈ (basicOpen g' : Set (PrimeSpectrum (A ⧸ p))) :=
-      localization_away_comap_range (Localization.Away g') g' ▸ ⟨y, rfl⟩
-    rw [SetLike.mem_coe, mem_basicOpen] at hy ⊢
-    simpa [i, comap_asIdeal] using hy
-  calc topologicalKrullDim Z = topologicalKrullDim (PrimeSpectrum (A ⧸ p)) :=
-        ((hi.isEmbedding.toHomeomorph).trans (Homeomorph.setCongr hrange)).symm.isHomeomorph
-          |>.topologicalKrullDim_eq
-    _ = topologicalKrullDim (PrimeSpectrum (Localization.Away g')) := by
-        rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-          PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-          ringKrullDim_localization_away k hg (Localization.Away g')]
+  have hg : Ideal.Quotient.mk p g ≠ 0 := fun h ↦
+    hxg ((hZp ▸ hxZ : x ∈ zeroLocus p) (Ideal.Quotient.eq_zero_iff_mem.mp h))
+  calc topologicalKrullDim Z = ringKrullDim (A ⧸ p) := by
+        rw [← Ideal.topologicalKrullDim_zeroLocus, hZp]
+    _ = ringKrullDim (Localization.Away (Ideal.Quotient.mk p g)) :=
+        (ringKrullDim_localization_away k hg _).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
-        ((hi.isEmbedding.comp hj.isEmbedding).isInducing.codRestrict hsub).topologicalKrullDim_le
-
+        p.ringKrullDim_localization_away_quotient_le g (Set.inter_subset_inter hZp.le hgU)
 
 variable (k) in
 /-- In a finitely generated domain over a field, quotienting by a prime of height one lowers the
@@ -391,6 +377,15 @@ private theorem ringKrullDim_quotient_add_one_of_height_eq_one {A : Type*} [Comm
     (mem_nonZeroDivisors_of_ne_zero hf0) hMR (hQM hfQ)
 
 variable (k) in
+/-- In a finitely generated domain of Krull dimension `n + 1` over a field, quotienting by a prime
+of height one gives Krull dimension `n`. -/
+private theorem ringKrullDim_quotient_eq_of_height_eq_one {A : Type*} [CommRing A] [IsDomain A]
+    [Algebra k A] [Algebra.FiniteType k A] (P : Ideal A) [P.IsPrime] (hP : P.height = 1) {n : ℕ}
+    (hn : ringKrullDim A = (n + 1 : ℕ)) : ringKrullDim (A ⧸ P) = n := by
+  have h := ringKrullDim_quotient_add_one_of_height_eq_one k P hP
+  rwa [hn, Nat.cast_succ, ENat.WithBot.add_one_cancel] at h
+
+variable (k) in
 /-- The dimension formula `ht p + dim (A ⧸ p) = dim A` for a finitely generated domain `A` over a
 field. -/
 private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRing A]
@@ -408,31 +403,20 @@ private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRi
     rcases eq_or_ne p ⊥ with rfl | hp
     · simp [ringKrullDim_eq_of_ringEquiv (RingEquiv.quotientBot A)]
     have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
-    obtain ⟨a, hap, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp
-    obtain ⟨P, hP, hPp⟩ :=
-      Ideal.exists_minimalPrimes_le ((Ideal.span_singleton_le_iff_mem p).mpr hap)
-    have := hP.1.1
-    have hP0 : P ≠ ⊥ := fun h ↦ ha (by simpa [h] using hP.1.2)
-    have hP1 : P.height = 1 := le_antisymm
-      (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ P hP)
-      (Order.one_le_iff_pos.mpr (pos_iff_ne_zero.mpr (Ideal.height_eq_zero_iff_eq_bot.not.mpr hP0)))
-    have hdimP : ringKrullDim (A ⧸ P) = n := by
-      have hdim := ringKrullDim_quotient_add_one_of_height_eq_one k P hP1
-      rw [hn, ringKrullDim_eq_toNat_trdeg k (A ⧸ P)] at hdim
-      rw [ringKrullDim_eq_toNat_trdeg k (A ⧸ P),
-        Nat.add_right_cancel (by exact_mod_cast hdim : (Algebra.trdeg k (A ⧸ P)).toNat + 1 = n + 1)]
+    obtain ⟨P, hPp, _, hP1⟩ := p.exists_le_isPrime_height_eq_one hp
+    have hdimP := ringKrullDim_quotient_eq_of_height_eq_one k P hP1 hn
     have : (p.map (Ideal.Quotient.mk P)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hPp
     have hIH := ih (p.map (Ideal.Quotient.mk P)) hdimP
     rw [ringKrullDim_eq_of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hPp), hdimP] at hIH
     have hht := Ideal.height_map_quotientMk_add_one_le hPp fun m hm hle ↦ by
       rw [IsDomain.minimalPrimes_eq_singleton_bot, Set.mem_singleton_iff] at hm
-      exact hP0 (le_bot_iff.mp (hm ▸ hle))
+      exact P.ne_bot_of_height_eq_one hP1 (le_bot_iff.mp (hm ▸ hle))
     calc ringKrullDim A = n + 1 := by rw [hn]; norm_cast
       _ ≤ (p.map (Ideal.Quotient.mk P)).height + ringKrullDim (A ⧸ p) + 1 := by gcongr
       _ = ((p.map (Ideal.Quotient.mk P)).height + 1 : ℕ∞) + ringKrullDim (A ⧸ p) := by
         push_cast
         exact add_right_comm _ _ _
-      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr; exact_mod_cast hht
+      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr
 
 variable (k) in
 /-- **The dimension formula.** In a finitely generated algebra `A` with irreducible spectrum over a
@@ -443,7 +427,6 @@ theorem _root_.Ideal.height_add_ringKrullDim_quotient_of_finiteType {A : Type*} 
   -- Pass to the domain `A ⧸ I`, for `I` the nilradical, which has the same primes.
   let I : Ideal A := nilradical A
   have : I.IsPrime := PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp inferInstance
-  have : IsDomain (A ⧸ I) := (Ideal.Quotient.isDomain_iff_prime I).mpr this
   have hIp : I ≤ p := nilradical_le_prime p
   have : (p.map (Ideal.Quotient.mk I)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hIp
   rw [← Ideal.height_map_quotientMk_nilradical p, ← ringKrullDim_quotient_nilradical A,
@@ -473,8 +456,8 @@ variable (k) in
 /-- **Local dimension of an affine scheme of finite type over a field.** For a finitely generated
 algebra `A` over a field `k`, the local Krull dimension of `Spec A` at a prime `p` is
 `ht p + dim (A ⧸ p)`. -/
-theorem topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient {A : Type*} [CommRing A]
-    [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
+theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient
+    {A : Type*} [CommRing A] [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
     topologicalKrullDimAt (PrimeSpectrum A) p =
       p.asIdeal.height + ringKrullDim (A ⧸ p.asIdeal) := by
   have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
@@ -505,11 +488,19 @@ theorem topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient {A : Type*} [C
     have hV : IsIrreducible (zeroLocus (q : Set A)) :=
       (isIrreducible_zeroLocus_iff q).2 (by rwa [this.radical])
     rw [← hht, hq q hq' hqp, ← Ideal.topologicalKrullDim_zeroLocus,
-      ← topologicalKrullDim_inter_eq_of_finiteType k hV (isClosed_zeroLocus _) U.2.1
-        ⟨p, (mem_zeroLocus _ _).2 hqp, U.2.2⟩]
-    calc _ = topologicalKrullDim ↥((Subtype.val : U.1 → _) ⁻¹' zeroLocus (q : Set A)) := by
+      ← topologicalKrullDim_inter_eq_of_finiteType k hV (isClosed_zeroLocus _) U.property.1
+        ⟨p, (mem_zeroLocus _ _).2 hqp, U.property.2⟩]
+    calc _ = topologicalKrullDim ↥((Subtype.val : U.val → _) ⁻¹' zeroLocus (q : Set A)) := by
           rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
       _ ≤ _ := topologicalKrullDim_subspace_le _ _
+
+end TauCeti
+
+namespace PrimeSpectrum
+
+open TauCeti Topology
+
+variable {k : Type*} [Field k]
 
 variable (k) in
 /-- **Local dimension of an affine scheme of finite type over a field, via the stalk.** For a
@@ -519,8 +510,8 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_resid
     {A : Type*} [CommRing A] [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
     topologicalKrullDimAt (PrimeSpectrum A) p = ringKrullDim (Localization.AtPrime p.asIdeal) +
       (Algebra.trdeg k p.asIdeal.ResidueField).toNat := by
-  rw [topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k,
+  rw [p.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k,
     IsLocalization.AtPrime.ringKrullDim_eq_height p.asIdeal (Localization.AtPrime p.asIdeal),
     Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
 
-end TauCeti
+end PrimeSpectrum

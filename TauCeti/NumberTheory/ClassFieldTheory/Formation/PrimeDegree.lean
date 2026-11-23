@@ -26,7 +26,7 @@ is the Galois group of the layer cut out by the preimages of `N` and `H`, and it
 invariants `(A^V)^N` is the coefficient module of that layer.
 
 For a cyclic layer the two statements are equivalent to numerical ones. If the Herbrand quotient
-`h(A^V)` of a cyclic layer is its degree `n`, then its norm quotient `A^U / N(A^V)` has at least
+`h(A^V)` of a layer is its degree `n`, then its norm quotient `A^U / N(A^V)` has at least
 `n` elements (`NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`); if moreover the
 order of the norm quotient divides `n`, then `H¹` vanishes and `H²` has exactly `n` elements
 (`NormalLayer.subsingleton_h1_of_herbrandQuotient_eq_of_natCard_normQuotient_dvd`,
@@ -46,7 +46,7 @@ cohomological form `#H²(Gal(L/K), C_L) ∣ [L : K]` for every finite Galois ext
 * `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_h1_of_prime_degree` and
   `natCard_H2_dvd_degree_of_prime_degree`: the reduction to layers of prime degree.
 * `TauCeti.ClassFieldTheory.NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`:
-  the first inequality for a cyclic layer from its Herbrand quotient.
+  the first inequality for a layer from its Herbrand quotient.
 * `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_h1_of_herbrandQuotient_of_prime_degree` and
   `natCard_H2_dvd_degree_of_herbrandQuotient_of_prime_degree`: the reduction in the numerical form
   of the two inequalities.
@@ -85,7 +85,7 @@ private def subquotientLayer : NormalLayer G where
   top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_mono (Subgroup.map_le_range f N))
   normal := ⟨fun v hv w ↦ by
     obtain ⟨hv', n, hn, hfn⟩ := (L.mem_subgroupGround _).1 (Subgroup.mem_subgroupOf.1 hv)
-    obtain ⟨hw', h, hfh⟩ := (L.mem_subgroupGround _).1 w.2
+    obtain ⟨hw', h, hfh⟩ := (L.mem_subgroupGround _).1 w.property
     refine Subgroup.mem_subgroupOf.2 ((L.mem_subgroupGround _).2
       ⟨L.ground.mul_mem (L.ground.mul_mem hw' hv') (L.ground.inv_mem hw'), h * n * h⁻¹,
         (inferInstance : N.Normal).conj_mem n hn h, ?_⟩)
@@ -117,7 +117,7 @@ private def subquotientGroundHom (hf : Function.Injective f) :
   (QuotientGroup.mk' N).comp <| (MonoidHom.ofInjective hf).symm.toMonoidHom.comp <|
     ((QuotientGroup.mk' L.relativeTop).comp
       (Subgroup.inclusion (L.subquotientLayer_ground_le f N))).codRestrict f.range
-      fun w ↦ ((L.mem_ground_subquotientLayer f N).1 w.2).2
+      fun w ↦ ((L.mem_ground_subquotientLayer f N).1 w.property).2
 
 private theorem f_subquotientGroundHom_spec (hf : Function.Injective f)
     (w : (L.subquotientLayer f N).ground) :
@@ -131,7 +131,7 @@ private theorem subquotientGroundHom_surjective (hf : Function.Injective f) :
   induction q using QuotientGroup.induction_on with | H h => ?_
   obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (f h)
   have hw : (u : G) ∈ (L.subquotientLayer f N).ground :=
-    (L.mem_ground_subquotientLayer f N).2 ⟨u.2, hu ▸ ⟨h, rfl⟩⟩
+    (L.mem_ground_subquotientLayer f N).2 ⟨u.property, hu ▸ ⟨h, rfl⟩⟩
   obtain ⟨h', hfh', hq⟩ := L.f_subquotientGroundHom_spec N hf ⟨u, hw⟩
   have hu' : Subgroup.inclusion (L.subquotientLayer_ground_le f N) ⟨u, hw⟩ = u := Subtype.ext rfl
   have hh : h' = h := hf (hfh'.trans ((congrArg QuotientGroup.mk hu').trans hu))
@@ -145,7 +145,7 @@ private theorem ker_subquotientGroundHom (hf : Function.Injective f) :
     OpenSubgroup.mem_toSubgroup, L.mem_top_subquotientLayer f N]
   constructor
   · intro hn
-    exact ⟨L.subquotientLayer_ground_le f N w.2, h, hn, hfh⟩
+    exact ⟨L.subquotientLayer_ground_le f N w.property, h, hn, hfh⟩
   · rintro ⟨_, n, hn, hfn⟩
     rwa [← hf (hfn.trans hfh.symm)]
 
@@ -172,21 +172,21 @@ both are the elements of the ambient module fixed by the preimage of `N` in `U`.
 private def subquotientCoeffEquiv :
     F.level (L.subquotientLayer f N).top ≃ₗ[ℤ]
       ((Rep.res f (L.rep F)).quotientToInvariants N).V where
-  toFun y := ⟨⟨y, F.level_antitone (L.le_subquotientLayer_top f N) y.2⟩, fun n ↦ by
+  toFun y := ⟨⟨y, F.level_antitone (L.le_subquotientLayer_top f N) y.property⟩, fun n ↦ by
     obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (f n)
     have hut : (u : G) ∈ (L.subquotientLayer f N).top :=
-      (L.mem_top_subquotientLayer f N).2 ⟨u.2, hu ▸ ⟨n, n.2, rfl⟩⟩
+      (L.mem_top_subquotientLayer f N).2 ⟨u.property, hu ▸ ⟨n, n.property, rfl⟩⟩
     refine Subtype.ext ?_
     -- `n` acts on `(A^V)^N` as `f n` acts on `A^V`, by definition of `Rep.res` and of
     -- `Representation.quotientToInvariants`
     change ((L.rep F).ρ (f n) _ : F.toRep.V) = y
     rw [← hu]
-    exact (F.mem_level.1 y.2) _ hut⟩
-  invFun x := ⟨x.1, F.mem_level.2 fun g hg ↦ by
+    exact (F.mem_level.1 y.property) _ hut⟩
+  invFun x := ⟨x.val, F.mem_level.2 fun g hg ↦ by
     obtain ⟨hg', n, hn, hfn⟩ := (L.mem_top_subquotientLayer f N).1 hg
-    have h := congrArg Subtype.val (x.2 ⟨n, hn⟩)
+    have h := congrArg Subtype.val (x.property ⟨n, hn⟩)
     -- the invariance of `x` under `n` is its invariance under `f n`, as above
-    change ((L.rep F).ρ (f n) x.1 : F.toRep.V) = x.1 at h
+    change ((L.rep F).ρ (f n) x.val : F.toRep.V) = x.val at h
     rw [hfn] at h
     exact h⟩
   map_add' _ _ := rfl
@@ -284,15 +284,24 @@ private theorem natCard_H2_eq_degree_mul_of_herbrandQuotient_eq
   rw [div_eq_iff (Nat.cast_ne_zero.2 h1)] at h'
   exact ⟨by exact_mod_cast h', h1⟩
 
+omit [IsCyclic L.Gal] in
 /-- **The first inequality from the Herbrand quotient.** If the Herbrand quotient `h(A^V)` of a
-cyclic layer is its degree, then its norm quotient `A^U / N(A^V)` has at least `[U : V]` elements.
+layer is its degree, then its norm quotient `A^U / N(A^V)` has at least `[U : V]` elements.
 -/
 theorem degree_le_natCard_normQuotient_of_herbrandQuotient_eq
     (h : TateCohomology.herbrandQuotient (L.rep F) = L.degree) :
     L.degree ≤ Nat.card (L.NormQuotient F) := by
-  obtain ⟨h2, h1⟩ := L.natCard_H2_eq_degree_mul_of_herbrandQuotient_eq F h
-  rw [L.natCard_normQuotient_eq_natCard_H2 F, h2]
-  exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero h1)
+  rw [TateCohomology.herbrandQuotient_def] at h
+  have h1 : Nat.card (L.TateH F (-1)) ≠ 0 := by
+    intro h0
+    rw [h0, Nat.cast_zero, div_zero] at h
+    exact L.degree_pos.ne' (by exact_mod_cast h.symm)
+  rw [div_eq_iff (Nat.cast_ne_zero.2 h1)] at h
+  rw [← Nat.card_congr (L.tateHZeroEquivNormQuotient F).toEquiv]
+  have h0 : Nat.card (L.TateH F 0) =
+      L.degree * Nat.card (L.TateH F (-1)) := by
+    exact_mod_cast h
+  exact h0 ▸ Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero h1)
 
 /-- **`H¹` of a cyclic layer from the two inequalities.** If the Herbrand quotient of a cyclic layer
 is its degree and the order of its norm quotient divides its degree, then `H¹(U/V, A^V) = 0`. -/

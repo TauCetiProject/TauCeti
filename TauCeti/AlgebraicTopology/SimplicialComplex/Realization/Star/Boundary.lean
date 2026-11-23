@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.HalfB
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Geometry.Manifold.Instances.Real
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Boundary vertex charts from combinatorial ball links
@@ -49,8 +50,8 @@ and the model is a half-interval. -/
 theorem IsCombinatorialBall.exists_homeomorph_openStar_halfBall
     (h : IsCombinatorialBall (link K.toPreAbstractSimplicialComplex {v}) n) :
     ∃ e : openStarRealization K v ≃ₜ
-        {z : EuclideanHalfSpace (n + 1) | ‖z.1‖ < 1},
-      ∀ x, ‖(e x).1.1‖ = 1 - x.1.1 v := by
+        {z : EuclideanHalfSpace (n + 1) | ‖z.val‖ < 1},
+      ∀ x, ‖(e x).val.val‖ = 1 - x.val.val v := by
   let E := EuclideanSpace ℝ (Fin (n + 1))
   let p : sphere (0 : E) 1 := ⟨EuclideanSpace.single 0 1,
     mem_sphere_zero_iff_norm.mpr (by
@@ -64,7 +65,7 @@ theorem IsCombinatorialBall.exists_homeomorph_openStar_halfBall
     b.toHomeomorph.subtype fun x => by simp
   obtain ⟨a⟩ := h.nonempty_homeomorph_closedBall link_le
   let r := Homeomorph.setCongr (s := K.geometricLink v)
-    (t := {x : Realization K | x.1.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
+    (t := {x : Realization K | x.val.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
   let l := r.trans (a.trans (d.trans (TauCeti.hemisphereHomeomorph p).symm))
   have hc := K.isCompact_closedStarRealization
     (finite_faces_closedStar_iff.mpr h.finite_faces)
@@ -72,17 +73,17 @@ theorem IsCombinatorialBall.exists_homeomorph_openStar_halfBall
   have hinner (z : E) : ⟪z, (p : E)⟫ = z 0 := by
     simp [p, E, EuclideanSpace.inner_single_right]
   let q : ↥(ball (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫}) ≃ₜ
-      {z : EuclideanHalfSpace (n + 1) | ‖z.1‖ < 1} := {
-    toFun z := ⟨⟨z.1, by
-      simpa only [Set.mem_ofPred_eq, hinner] using z.2.2⟩,
-      mem_ball_zero_iff.mp z.2.1⟩
-    invFun z := ⟨z.1.1, mem_ball_zero_iff.mpr z.2, by
-      simpa only [Set.mem_ofPred_eq, hinner] using z.1.2⟩
+      {z : EuclideanHalfSpace (n + 1) | ‖z.val‖ < 1} := {
+    toFun z := ⟨⟨z.val, by
+      simpa only [Set.mem_ofPred_eq, hinner] using z.property.2⟩,
+      mem_ball_zero_iff.mp z.property.1⟩
+    invFun z := ⟨z.val.val, mem_ball_zero_iff.mpr z.property, by
+      simpa only [Set.mem_ofPred_eq, hinner] using z.val.property⟩
     left_inv _ := rfl
     right_inv _ := rfl
     continuous_toFun := by fun_prop
     continuous_invFun := by fun_prop }
-  have hq (z) : (q z).1.1 = (z : E) := rfl
+  have hq (z) : (q z).val.val = (z : E) := rfl
   refine ⟨f.trans q, fun x => ?_⟩
   rw [Homeomorph.trans_apply, hq, coe_openStarHomeomorphHalfBall_apply,
     norm_closedStarHomeomorphHalfBall]
@@ -94,32 +95,18 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_halfBall
     (h : IsCombinatorialBall (link K.toPreAbstractSimplicialComplex {v}) n) :
     ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (n + 1)),
       c.source = openStarRealization K v ∧
-      c.target = {z | ‖z.1‖ < 1} ∧
+      c.target = {z | ‖z.val‖ < 1} ∧
       c (vertex K v) = 0 ∧
-      ∀ x : openStarRealization K v, ‖(c x.1).1‖ = 1 - x.1.1 v := by
+      ∀ x : openStarRealization K v, ‖(c x.val).val‖ = 1 - x.val.val v := by
   obtain ⟨e, he⟩ := h.exists_homeomorph_openStar_halfBall
-  let U : Set (EuclideanHalfSpace (n + 1)) := {z | ‖z.1‖ < 1}
-  have hU : IsOpen U := isOpen_lt continuous_subtype_val.norm continuous_const
-  let : Nonempty U := ⟨⟨⟨0, by simp⟩, by simp [U]⟩⟩
-  let j : OpenPartialHomeomorph U (EuclideanHalfSpace (n + 1)) :=
-    hU.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
-  let f := e.toOpenPartialHomeomorph.trans j
-  let c := f.lift_openEmbedding (K.isOpen_openStarRealization v).isOpenEmbedding_subtypeVal
-  have hradius (x : openStarRealization K v) : ‖(c x.1).1‖ = 1 - x.1.1 v := by
-    calc
-      ‖(c x.1).1‖ = ‖(f x).1‖ := by
-        rw [OpenPartialHomeomorph.lift_openEmbedding_apply]
-      _ = ‖(e x).1.1‖ := by
-        rw [OpenPartialHomeomorph.trans_apply,
-          Topology.IsOpenEmbedding.toOpenPartialHomeomorph_apply,
-          Homeomorph.toOpenPartialHomeomorph_apply]
-      _ = 1 - x.1.1 v := he x
-  refine ⟨c, ?_, ?_, ?_, hradius⟩
-  · simp only [c, f, j, OpenPartialHomeomorph.lift_openEmbedding_source,
-      OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Topology.IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_self,
-      Set.image_univ, Subtype.range_coe]
-  · simp [c, f, j, U]
+  have hU : IsOpen {z : EuclideanHalfSpace (n + 1) | ‖z.val‖ < 1} :=
+    isOpen_lt continuous_subtypeVal.norm continuous_const
+  obtain ⟨c, hs, ht, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
+    (K.isOpen_openStarRealization v) hU e ⟨vertex K v, by simp [mem_openStarRealization]⟩
+  have hradius (x : openStarRealization K v) : ‖(c x.val).val‖ = 1 - x.val.val v := by
+    rw [hc x]
+    exact he x
+  refine ⟨c, hs, ht, ?_, hradius⟩
   · apply Subtype.ext
     apply norm_eq_zero.mp
     simpa using hradius ⟨vertex K v, by simp [mem_openStarRealization]⟩

@@ -51,7 +51,7 @@ the other structure matrices act on the Perron eigenvector by scalars.
   eigenvector with positive eigenvalue.
 * `Matrix.norm_le_of_mulVec_le_smul`: if `A v ≤ r v` for a strictly positive vector `v` and a
   nonnegative real matrix `A`, then every complex eigenvalue has modulus at most `r`.
-* `Matrix.spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le`: a nonnegative eigenvalue of a
+* `Matrix.spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le`: an eigenvalue of a
   real eigenvector that bounds the modulus of every complex eigenvalue is the spectral radius.
 * `Matrix.spectralRadius_eq_of_mulVec_eq_smul`: the eigenvalue of a strictly positive eigenvector
   of a nonnegative real matrix is its spectral radius.
@@ -85,7 +85,7 @@ variable {K : Type*} [Semiring K] [PartialOrder K] [IsStrictOrderedRing K] {A : 
 positive. -/
 theorem pos_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hw : 0 ≤ w) (hw0 : w ≠ 0)
     (hAw : A *ᵥ w = μ • w) (i : n) : 0 < w i := by
-  have h : 0 < μ * w i := by simpa [hAw] using mulVec_pos hA hw hw0 i
+  have h : 0 < μ * w i := by simpa [hAw] using mulVec_pos (hA i) hw hw0
   exact (hw i).lt_of_ne' fun hi => by simp [hi] at h
 
 end StrictOrderedSemiring
@@ -123,7 +123,7 @@ theorem eq_of_mulVec_eq_smul_of_nonneg (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 
   have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
   refine le_antisymm (le_of_smul_le_mulVec hA' hv hAv.le hw hw0 hAw.ge) ?_
   have hv0 : v ≠ 0 := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
+    obtain ⟨j, _⟩ := Function.ne_iff.1 hw0
     exact fun h => (hv j).ne' (congrFun h j)
   exact le_of_smul_le_mulVec hA' (pos_of_mulVec_eq_smul hA hw hw0 hAw) hAw.le
     (fun i => (hv i).le) hv0 hAv.ge
@@ -182,11 +182,11 @@ private theorem exists_add_smul_le_mulVec {x : n → K} (hA : ∀ i j, 0 < A i j
     ∃ ε : K, 0 < ε ∧ ∃ y : n → K, 0 ≤ y ∧ ∑ i, y i = 1 ∧ (r + ε) • y ≤ A *ᵥ y := by
   obtain ⟨j₀, -⟩ := Function.ne_iff.1 hx0
   have : Nonempty n := ⟨j₀⟩
-  have hAx := mulVec_pos hA hx hx0
+  have hAx i := mulVec_pos (hA i) hx hx0
   -- The defect `z = A x - r x` is nonnegative and nonzero, so `A z` is strictly positive, and
   -- `A (A x) = A z + r (A x)` beats `r (A x)` by a uniform proportion `ε` of `A x`.
   set z := A *ᵥ x - r • x
-  have hAz := mulVec_pos hA (sub_nonneg.2 hxr) (sub_ne_zero.2 hne)
+  have hAz i := mulVec_pos (hA i) (sub_nonneg.2 hxr) (sub_ne_zero.2 hne)
   obtain ⟨i, hi⟩ := Finite.exists_min fun i => (A *ᵥ z) i / (A *ᵥ x) i
   have hy : (r + (A *ᵥ z) i / (A *ᵥ x) i) • (A *ᵥ x) ≤ A *ᵥ (A *ᵥ x) := fun j => by
     have h₁ := (le_div_iff₀ (hAx j)).1 (hi j)
@@ -231,16 +231,19 @@ private theorem isCompact_setOf_smul_le_mulVec (A : Matrix n n ℝ) (M : ℝ) :
 entries are all strictly positive has an eigenvector whose entries are all strictly positive, for a
 strictly positive eigenvalue.
 
-This eigenvalue is the spectral radius (`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), and the
-eigenvector is unique up to a scalar (`Matrix.exists_eq_smul_of_mulVec_eq_smul`). -/
-theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
+When `n` is nonempty, this eigenvalue is the spectral radius
+(`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), and the eigenvector is unique up to a scalar
+(`Matrix.exists_eq_smul_of_mulVec_eq_smul`).  For empty `n` the statement holds trivially, with
+the zero vector. -/
+theorem exists_mulVec_eq_smul_of_pos (hA : ∀ i j, 0 < A i j) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : n → ℝ, (∀ i, 0 < v i) ∧ A *ᵥ v = r • v := by
   classical
+  obtain hn | ⟨⟨i₀⟩⟩ := isEmpty_or_nonempty n
+  · exact ⟨1, one_pos, 0, fun i => isEmptyElim i, Subsingleton.elim _ _⟩
   have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
   have hmem (x : n → ℝ) :
       x ∈ (Set.range fun s : StdSimplex ℝ n => ⇑s.weights) ↔ 0 ≤ x ∧ ∑ i, x i = 1 := by
     simp [StdSimplex.range_toFun_comp_weights, Pi.le_def]
-  obtain ⟨i₀⟩ := ‹Nonempty n›
   -- Maximize `t` over the pairs `(x, t)` with `x` in the standard simplex and `t x ≤ A x`; the
   -- bound `t ≤ ∑ i, ∑ j, A i j` is automatic, and makes the set compact.
   have hne : ((Set.range fun s : StdSimplex ℝ n => ⇑s.weights) ×ˢ
@@ -263,7 +266,7 @@ theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
       ⟨⟨hys, by positivity, le_sum_of_smul_le_mulVec hA' hys hyr⟩, hyr⟩
     linarith
   refine ⟨r, ?_, x, pos_of_mulVec_eq_smul hA hx hx0 heig, heig⟩
-  have h := mulVec_pos hA hx hx0 i₀
+  have h := mulVec_pos (hA i₀) hx hx0
   rw [heig] at h
   exact pos_of_mul_pos_left h (hx i₀)
 
@@ -303,7 +306,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   -- `‖s‖ y - re (c z)` vanish. That vector is nonnegative, so it is zero, and `c z i₀` is real.
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.1 hz
   have hr : 0 < r := by
-    have h := mulVec_pos hA (fun i => (hv i).le) (fun h => (hv i₀).ne' (congrFun h i₀)) i₀
+    have h := mulVec_pos (hA i₀) (fun i => (hv i).le) (fun h => (hv i₀).ne' (congrFun h i₀))
     rw [hAv] at h
     exact pos_of_mul_pos_left h (hv i₀).le
   set s := (A.map (↑) *ᵥ z) i₀
@@ -323,7 +326,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
     ring
   have hx₀ : x i₀ = 0 := by
     by_contra h
-    exact (mulVec_pos hA hx (Function.ne_iff.2 ⟨i₀, h⟩) i₀).ne' hAx
+    exact (mulVec_pos (hA i₀) hx (Function.ne_iff.2 ⟨i₀, h⟩)).ne' hAx
   have hcz : c * z i₀ = (‖s‖ * y i₀ : ℝ) := by
     have hre : (c * z i₀).re = ‖s‖ * y i₀ := (sub_eq_zero.1 hx₀).symm
     have h0 := Complex.re_eq_norm.1 (hre.trans (hnorm i₀).symm)
@@ -336,26 +339,32 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   push_cast at hcz hcs ⊢
   linear_combination (-μ) * hcz - c * hs' + hcs + (‖s‖ : ℂ) * hs''
 
-/-- If a real square matrix `A` has a nonzero real eigenvector for an eigenvalue `r ≥ 0`, and `r`
+/-- If a real square matrix `A` has a nonzero real eigenvector for an eigenvalue `r`, and `r`
 bounds the modulus of every complex eigenvalue of `A`, then `r` is the spectral radius of `A`,
 viewed as a complex matrix. -/
-theorem spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le (hr : 0 ≤ r) (hv0 : v ≠ 0)
+theorem spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le (hv0 : v ≠ 0)
     (hAv : A *ᵥ v = r • v)
     (hμ : ∀ (μ : ℂ) (z : n → ℂ), z ≠ 0 → A.map (↑) *ᵥ z = μ • z → ‖μ‖ ≤ r) :
     spectralRadius ℂ (A.map (↑) : Matrix n n ℂ) = ENNReal.ofReal r := by
   classical
+  have hz : (fun i => (v i : ℂ)) ≠ 0 := by
+    obtain ⟨j, hj⟩ := Function.ne_iff.1 hv0
+    exact fun h => hj (by simpa using congrFun h j)
+  have hAz : A.map (↑) *ᵥ (fun i => (v i : ℂ)) = (r : ℂ) • fun i => (v i : ℂ) := by
+    ext i
+    simpa [mulVec, dotProduct] using congrArg Complex.ofReal (congrFun hAv i)
+  have hr : 0 ≤ r := by
+    have h := hμ (r : ℂ) _ hz hAz
+    rw [Complex.norm_real, Real.norm_eq_abs] at h
+    exact (abs_nonneg r).trans h
   rw [spectralRadius_eq_of_unital]
   refine le_antisymm (iSup₂_le fun μ hμ' => ?_) ?_
   · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ'
-    rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
+    rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hμ μ z hz hAz)
   · refine le_iSup₂_of_le (r : ℂ)
-      (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨fun i => v i, ?_, ?_⟩) ?_
-    · obtain ⟨j, hj⟩ := Function.ne_iff.1 hv0
-      exact fun h => hj (by simpa using congrFun h j)
-    · ext i
-      simpa [mulVec, dotProduct] using congrArg Complex.ofReal (congrFun hAv i)
-    · rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm, Complex.norm_real, Real.norm_of_nonneg hr]
+      (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨_, hz, hAz⟩) ?_
+    rw [← ofReal_norm, Complex.norm_real, Real.norm_of_nonneg hr]
 
 /-- **Perron–Frobenius**: the eigenvalue `r` of an eigenvector with strictly positive entries of an
 entrywise nonnegative real square matrix is the spectral radius of the matrix, viewed as a complex
@@ -365,11 +374,7 @@ theorem spectralRadius_eq_of_mulVec_eq_smul [Nonempty n] (hA : ∀ i j, 0 ≤ A 
     (hv : ∀ i, 0 < v i) (hAv : A *ᵥ v = r • v) :
     spectralRadius ℂ (A.map (↑) : Matrix n n ℂ) = ENNReal.ofReal r := by
   obtain ⟨i₀⟩ := ‹Nonempty n›
-  have hr : 0 ≤ r := by
-    have h := mulVec_nonneg hA (fun i => (hv i).le) i₀
-    rw [hAv] at h
-    exact nonneg_of_mul_nonneg_left h (hv i₀)
-  refine spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le hr
+  refine spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le
     (fun h => (hv i₀).ne' (by simpa using congrFun h i₀)) hAv
     fun μ z hz hAz => norm_le_of_mulVec_le_smul hA hv hAv.le hz hAz
 

@@ -59,6 +59,8 @@ isomorphism `Ω ≃ P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerEquivQ
 * `RootPairing.affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot`: `Ω ∩ W_aff` is
   trivial, and `RootPairing.fundamentalAlcoveStabilizerToQuotient_injective`: `Ω → P∨ / Q∨` is
   injective.
+* `RootPairing.fundamentalAlcoveStabilizer_apply_zero_injective`: an element of `Ω` is
+  determined by its translation part `ω 0`.
 
 ## References
 
@@ -109,6 +111,13 @@ theorem mem_fundamentalAlcoveStabilizer {f : N ≃ᵃ[R] N} :
 /-- The stabilizer of the fundamental alcove is a subgroup of the extended affine Weyl group. -/
 theorem fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup :
     P.fundamentalAlcoveStabilizer b ≤ P.extendedAffineWeylGroup := fun _ hf ↦ hf.1
+
+variable {P} in
+/-- The translation part `ω 0` of an element of `Ω` lies in the coweight lattice. -/
+theorem apply_zero_mem_coweightLattice (ω : P.fundamentalAlcoveStabilizer b) :
+    ω.val 0 ∈ P.coweightLattice :=
+  (P.mem_extendedAffineWeylGroup_iff.1
+    (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.property)).2
 
 end Definition
 
@@ -169,8 +178,8 @@ def fundamentalAlcoveStabilizerToQuotient :
 @[simp]
 lemma fundamentalAlcoveStabilizerToQuotient_apply (ω : P.fundamentalAlcoveStabilizer b) :
     P.fundamentalAlcoveStabilizerToQuotient b ω =
-      .ofAdd (Submodule.Quotient.mk ⟨ω.1 0, (P.mem_extendedAffineWeylGroup_iff.1
-        (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.2)).2⟩) :=
+      .ofAdd (Submodule.Quotient.mk ⟨ω.val 0, (P.mem_extendedAffineWeylGroup_iff.1
+        (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.property)).2⟩) :=
   P.extendedAffineWeylGroupToQuotient_apply _
 
 /-- The kernel of `Ω → P∨ / (P∨ ∩ Q∨)` is the part `Ω ∩ W_aff` of `Ω` lying in the affine Weyl
@@ -202,13 +211,23 @@ theorem affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot :
   refine (Subgroup.eq_bot_iff_forall _).mpr fun ω hω ↦ Subtype.ext ?_
   exact eq_one_of_mem_affineWeylGroup_of_mapsTo b (fundamentalAlcove_nonempty b)
     (Subgroup.mem_subgroupOf.mp hω) fun x hx ↦
-      ((P.mem_fundamentalAlcoveStabilizer b).mp ω.2).2 ▸ mem_image_of_mem _ hx
+      ((P.mem_fundamentalAlcoveStabilizer b).mp ω.property).2 ▸ mem_image_of_mem _ hx
 
 /-- **The homomorphism `Ω → P∨ / Q∨` is injective**: its kernel `Ω ∩ W_aff` is trivial. -/
 theorem fundamentalAlcoveStabilizerToQuotient_injective :
     Function.Injective (P.fundamentalAlcoveStabilizerToQuotient b) := by
   rw [← MonoidHom.ker_eq_bot_iff, ker_fundamentalAlcoveStabilizerToQuotient,
     affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot]
+
+/-- **An element of `Ω` is determined by its translation part** `ω 0`. -/
+theorem fundamentalAlcoveStabilizer_apply_zero_injective :
+    Function.Injective fun ω : P.fundamentalAlcoveStabilizer b ↦ ω.val 0 := by
+  -- Even the class of `ω 0` modulo the coroot lattice determines `ω`.
+  intro ω₁ ω₂ h
+  refine fundamentalAlcoveStabilizerToQuotient_injective b ?_
+  simp only [fundamentalAlcoveStabilizerToQuotient_apply]
+  congr 2
+  exact Subtype.ext h
 
 /-! ### `W_ext = W_aff ⊔ Ω`, and `Ω → P∨ / Q∨` is onto -/
 
@@ -244,7 +263,7 @@ theorem fundamentalAlcoveStabilizerToQuotient_surjective :
     Function.Surjective (P.fundamentalAlcoveStabilizerToQuotient b) := by
   intro q
   obtain ⟨f, rfl⟩ := P.extendedAffineWeylGroupToQuotient_surjective q
-  obtain ⟨g, hg, hgf⟩ := exists_mem_affineWeylGroup_mul_mem_fundamentalAlcoveStabilizer b f.2
+  obtain ⟨g, hg, hgf⟩ := exists_mem_affineWeylGroup_mul_mem_fundamentalAlcoveStabilizer b f.property
   refine ⟨⟨g * f, hgf⟩, ?_⟩
   -- `g` lies in the kernel `W_aff` of `W_ext → P∨ / Q∨`.
   have hg' : (⟨g, P.affineWeylGroup_le_extendedAffineWeylGroup hg⟩ : P.extendedAffineWeylGroup) ∈
@@ -266,7 +285,7 @@ theorem exists_mem_fundamentalAlcoveStabilizer_sub_mem_corootSpan {v : N}
     (.ofAdd (Submodule.Quotient.mk ⟨v, hv⟩))
   rw [fundamentalAlcoveStabilizerToQuotient_apply, Multiplicative.ofAdd.injective.eq_iff,
     Submodule.Quotient.eq, Submodule.mem_comap] at hω
-  exact ⟨ω, ω.2, by simpa using hω⟩
+  exact ⟨ω, ω.property, by simpa using hω⟩
 
 /-! ### `Ω ≃ P∨ / Q∨` -/
 
@@ -293,10 +312,10 @@ lemma ofAdd_mk_fundamentalAlcoveStabilizerEquivQuotient_symm_apply
     (q : Multiplicative
       (P.coweightLattice ⧸ (P.corootSpan ℤ).comap P.coweightLattice.subtype)) :
     Multiplicative.ofAdd (Submodule.Quotient.mk
-      ⟨((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).1 0,
+      ⟨((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).val 0,
         (P.mem_extendedAffineWeylGroup_iff.1
           (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b
-            ((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).2)).2⟩) = q := by
+            ((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).property)).2⟩) = q := by
   simpa only [fundamentalAlcoveStabilizerEquivQuotient_apply,
     fundamentalAlcoveStabilizerToQuotient_apply] using
     (P.fundamentalAlcoveStabilizerEquivQuotient b).apply_symm_apply q

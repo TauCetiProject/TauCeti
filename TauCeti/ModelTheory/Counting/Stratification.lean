@@ -36,13 +36,12 @@ classes.
 
 ## Main results
 
-* `TauCeti.IsIsolatingRank.mk_isoClasses_le_aleph_one`: the stratification bound for a given
-  isolating rank.
+* `TauCeti.mk_isoClasses_le_aleph_one`: the stratification bound, with no rank in the statement.
 * `TauCeti.IsIsolatingRank.exists_unbounded_of_not_countable`: an isolating rank can always be
   raised to one that is unbounded on a set meeting uncountably many classes.
-* `TauCeti.IsIsolatingRank.exists_comap_isoSetoid_eq_bfEquivSetoid`: on a set meeting countably
-  many isomorphism classes, isomorphism is back-and-forth equivalence at one countable level.
 * `TauCeti.isIsolatingRank_scottHeight`: the Scott height is an isolating rank.
+* `TauCeti.exists_comap_isoSetoid_eq_bfEquivSetoid`: on a set meeting countably
+  many isomorphism classes, isomorphism is back-and-forth equivalence at one countable level.
 * `TauCeti.mk_isoClasses_le_aleph_one_of_countable_levels`: countable levels give at most `ℵ₁`
   isomorphism classes, with no rank in the statement.
 * `TauCeti.BFSmall.mk_isoClasses_le_aleph_one`: level-by-level smallness of the decoded
@@ -141,12 +140,12 @@ theorem exists_unbounded_of_not_countable (h : IsIsolatingRank ρ)
   have hτ (c : K) : τ c = f (Quotient.mk _ c) :=
     congrArg (fun q => (f q : Ordinal.{0})) (Function.leftInverse_invFun hg (Quotient.mk _ c))
   refine ⟨ρ ⊔ τ, h.of_le le_sup_left (fun c d hcd => ?_)
-    (fun c => max_lt (h.lt_omega_one c) (f _).2), le_sup_left, fun β hβ => ?_⟩
+    (fun c => max_lt (h.lt_omega_one c) (f _).property), le_sup_left, fun β hβ => ?_⟩
   · simp only [Pi.sup_apply, τ, h.iso_invariant hcd, Quotient.sound hcd]
   · obtain ⟨q, hq⟩ := hf ⟨β, hβ⟩
     induction q using Quotient.inductionOn with
     | h c =>
-      refine ⟨c, c.2, le_sup_of_le_right ?_⟩
+      refine ⟨c, c.property, le_sup_of_le_right ?_⟩
       rw [hτ, hq]
 
 /-- On a set where the rank is bounded by `α`, isomorphism equals equivalence at level `α`.
@@ -158,7 +157,7 @@ theorem comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
       (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) := by
   ext c d
   exact ⟨fun hcd => isoSetoid_le_bfEquivSetoid α hcd,
-    fun hcd => h.isolates_of_le (hK c c.2) hcd⟩
+    fun hcd => h.isolates_of_le (hK c c.property) hcd⟩
 
 /-- A rank stratum of isomorphism classes injects into the quotient at that level.
 This is the step that makes it possible to count classes stratum by stratum. -/
@@ -168,41 +167,16 @@ theorem exists_injective_rank_fiber (h : IsIsolatingRank ρ)
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)), Function.Injective f := by
   let f : (rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) →
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) :=
-    fun q => Quotient.mk _ q.1.out
+    fun q => Quotient.mk _ q.val.out
   refine ⟨f, fun q r heq => Subtype.ext ?_⟩
-  have hq : ρ q.1.out.val = α := by
-    rw [← rankOnIsoClasses_mk h.iso_invariant K q.1.out, Quotient.out_eq]
-    exact q.2
+  have hq : ρ q.val.out.val = α := by
+    rw [← rankOnIsoClasses_mk h.iso_invariant K q.val.out, Quotient.out_eq]
+    exact q.property
   have hqr := Quotient.exact
     (s := (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) heq
   have hiso := h.isolates_of_le hq.le hqr
   have he := Quotient.sound (s := (isoSetoid L ℕ).comap (Subtype.val : K → _)) hiso
   simpa only [Quotient.out_eq] using he
-
-/-- If every countable level of `K` has at most `ℵ₁` classes, then `K` meets at most `ℵ₁`
-isomorphism classes. The set `K` need not be Borel or isomorphism invariant. -/
-theorem mk_isoClasses_le_aleph_one (h : IsIsolatingRank ρ)
-    (K : Set (RelationalConfiguration L ℕ))
-    (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
-      #(Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _))) ≤ ℵ₁) :
-    #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
-  have hfib (α : Ordinal.{0}) (hα : α < ω₁) :
-      #(rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) ≤ ℵ₁ := by
-    obtain ⟨f, hf⟩ := h.exists_injective_rank_fiber K α
-    exact (mk_le_of_injective hf).trans (hlevels α hα)
-  have hb := mk_le_aleph_one_mul_of_mk_preimage_le
-    (rankOnIsoClasses_lt_omega_one h.iso_invariant h.lt_omega_one K) hfib
-  rwa [mul_eq_self (aleph0_le_aleph 1)] at hb
-
-/-- Countably many classes at each countable back-and-forth level give at most `ℵ₁`
-isomorphism classes, for any isolating rank. -/
-theorem mk_isoClasses_le_aleph_one_of_countable_levels (h : IsIsolatingRank ρ)
-    (K : Set (RelationalConfiguration L ℕ))
-    (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
-      Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))) :
-    #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ :=
-  h.mk_isoClasses_le_aleph_one K fun α hα =>
-    (mk_le_aleph0_iff.mpr (hlevels α hα)).trans (aleph0_le_aleph 1)
 
 end IsIsolatingRank
 
@@ -218,16 +192,6 @@ theorem exists_rank_bound_of_countable_isoClasses
       (r := rankOnIsoClasses hinv K) (fun q _ => rankOnIsoClasses_lt_omega_one hinv hρ K q)
   refine ⟨β, hβ, fun c hc => ?_⟩
   simpa only [rankOnIsoClasses_mk] using hb (Quotient.mk _ ⟨c, hc⟩) (mem_univ _)
-
-/-- On a set meeting countably many isomorphism classes, isomorphism is back-and-forth equivalence
-at a single countable level. The set itself may be uncountable. -/
-theorem IsIsolatingRank.exists_comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
-    (K : Set (RelationalConfiguration L ℕ))
-    [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
-    ∃ γ : Ordinal.{0}, γ < ω₁ ∧ (isoSetoid L ℕ).comap (Subtype.val : K → _) =
-      (bfEquivSetoid L ℕ γ).comap (Subtype.val : K → _) := by
-  obtain ⟨γ, hγ, hb⟩ := exists_rank_bound_of_countable_isoClasses h.iso_invariant h.lt_omega_one K
-  exact ⟨γ, hγ, h.comap_isoSetoid_eq_bfEquivSetoid fun c hc => (hb c hc).le⟩
 
 /-! ### The Scott height as an isolating rank -/
 
@@ -251,6 +215,24 @@ theorem exists_isIsolatingRank :
     ∃ ρ : RelationalConfiguration L ℕ → Ordinal.{0}, IsIsolatingRank ρ :=
   ⟨_, isIsolatingRank_scottHeight L⟩
 
+/-- If every countable level of `K` has at most `ℵ₁` classes, then `K` meets at most `ℵ₁`
+isomorphism classes. The set `K` need not be Borel or isomorphism invariant, and the language need
+not be countable. -/
+theorem mk_isoClasses_le_aleph_one (K : Set (RelationalConfiguration L ℕ))
+    (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
+      #(Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _))) ≤ ℵ₁) :
+    #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
+  -- count the classes stratum by stratum for the Scott height, an isolating rank
+  -- (`TauCeti.isIsolatingRank_scottHeight`)
+  have h := isIsolatingRank_scottHeight L
+  have hfib (α : Ordinal.{0}) (hα : α < ω₁) :
+      #(rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) ≤ ℵ₁ := by
+    obtain ⟨f, hf⟩ := h.exists_injective_rank_fiber K α
+    exact (mk_le_of_injective hf).trans (hlevels α hα)
+  have hb := mk_le_aleph_one_mul_of_mk_preimage_le
+    (rankOnIsoClasses_lt_omega_one h.iso_invariant h.lt_omega_one K) hfib
+  rwa [mul_eq_self (aleph0_le_aleph 1)] at hb
+
 /-- **The stratification bound.** If every countable back-and-forth level of a set `K` of
 configurations on `ℕ` has countably many classes, then `K` meets at most `ℵ₁` isomorphism
 classes. The set `K` need not be Borel or isomorphism invariant, and the language need not be
@@ -259,26 +241,28 @@ theorem mk_isoClasses_le_aleph_one_of_countable_levels (K : Set (RelationalConfi
     (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
       Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))) :
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ :=
-  (isIsolatingRank_scottHeight L).mk_isoClasses_le_aleph_one_of_countable_levels K hlevels
+  mk_isoClasses_le_aleph_one K fun α hα =>
+    (mk_le_aleph0_iff.mpr (hlevels α hα)).trans (aleph0_le_aleph 1)
+
+/-- On a set meeting countably many isomorphism classes, isomorphism is back-and-forth equivalence
+at a single countable level. The set itself may be uncountable. -/
+theorem exists_comap_isoSetoid_eq_bfEquivSetoid (K : Set (RelationalConfiguration L ℕ))
+    [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
+    ∃ γ : Ordinal.{0}, γ < ω₁ ∧ (isoSetoid L ℕ).comap (Subtype.val : K → _) =
+      (bfEquivSetoid L ℕ γ).comap (Subtype.val : K → _) := by
+  have h := isIsolatingRank_scottHeight L
+  obtain ⟨γ, hγ, hb⟩ := exists_rank_bound_of_countable_isoClasses h.iso_invariant h.lt_omega_one K
+  exact ⟨γ, hγ, h.comap_isoSetoid_eq_bfEquivSetoid fun c hc => (hb c hc).le⟩
 
 /-- **Level-by-level smallness bounds the isomorphism classes.** If the structures decoded from a
 set `K` of configurations on `ℕ` are small level by level (`TauCeti.BFSmall`), then `K` meets at
 most `ℵ₁` isomorphism classes. -/
 theorem BFSmall.mk_isoClasses_le_aleph_one {K : Set (RelationalConfiguration L ℕ)}
-    (h : @BFSmall L _ K (fun _ => ℕ) fun c => c.1.toStructure) :
+    (h : @BFSmall L _ K (fun _ => ℕ) fun c => c.val.toStructure) :
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
   refine mk_isoClasses_le_aleph_one_of_countable_levels K fun α hα => ?_
-  have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.1.toStructure) h α hα 0
-  -- At arity `0` both relations compare the empty tuples of the decoded structures, so the
-  -- level-`α` relation on `K` is the pullback of the depth-`α` relation of the family.
-  have hcomap : (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) =
-      (@bfTupleSetoid L _ K (fun _ => ℕ) (fun c => c.1.toStructure) α 0).comap
-        fun c => ⟨c, Fin.elim0⟩ :=
-    Setoid.ext fun c d => by
-      simp only [Setoid.comap_rel]
-      exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ K (fun _ => ℕ)
-        (fun c => c.1.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
-  rw [hcomap]
+  have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.val.toStructure) h α hα 0
+  rw [comap_bfEquivSetoid_eq_comap_bfTupleSetoid]
   exact Countable.of_equiv _ (Setoid.comapQuotientEquiv _ _).symm
 
 end TauCeti

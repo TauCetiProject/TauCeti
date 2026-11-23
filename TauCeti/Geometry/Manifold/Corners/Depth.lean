@@ -244,7 +244,7 @@ theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
   have hcone : posTangentConeAt (range (I.prod I')) (y, y') =
       posTangentConeAt (range I) y ×ˢ posTangentConeAt (range I') y' := by
     rw [range_prod]
-    exact I.convex_range.posTangentConeAt_prod I'.convex_range hy hy'
+    exact I.convex_range.posTangentConeAt_prod I'.convex_range
   have hfin (V : Submodule ℝ E) (V' : Submodule ℝ E') :
       finrank ℝ (V.prod V') = finrank ℝ V + finrank ℝ V' := by
     rw [(Submodule.prodEquiv V V').finrank_eq, finrank_prod]
@@ -314,7 +314,7 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
     LinearMap.pi fun j ↦ (EuclideanSpace.proj (j : ι) : EuclideanSpace ℝ ι →L[ℝ] ℝ)
   have hπ : Surjective π := fun w ↦
     ⟨(EuclideanSpace.equiv ι ℝ).symm fun i ↦ if h : i ∈ S ∧ y i = 0 then w ⟨i, h⟩ else 0, by
-      ext j; simp [π, j.2]⟩
+      ext j; simp [π, j.property]⟩
   have hK : finrank ℝ (LinearMap.ker π) + Nat.card {i // i ∈ S ∧ y i = 0} =
       finrank ℝ (EuclideanSpace ℝ ι) := by
     rw [← LinearMap.finrank_range_add_finrank_ker π, LinearMap.range_eq_top.mpr hπ,
@@ -350,8 +350,8 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
   · -- A subspace in the cone contains `-v` with `v`, so it vanishes on those coordinates.
     have hVK : V ≤ LinearMap.ker π := fun v hv ↦ by
       refine LinearMap.mem_ker.mpr (funext fun j ↦ ?_)
-      have h₁ := hcone (hV hv) j.2.1 j.2.2
-      have h₂ := hcone (hV (V.neg_mem hv)) j.2.1 j.2.2
+      have h₁ := hcone (hV hv) j.property.1 j.property.2
+      have h₂ := hcone (hV (V.neg_mem hv)) j.property.1 j.property.2
       simp only [PiLp.neg_apply] at h₂
       simp [π]
       linarith
@@ -374,8 +374,9 @@ theorem depthAt_modelWithCornersEuclideanHalfSpace {n : ℕ} [NeZero n]
     (𝓡∂ n).depthAt y = if y 0 = 0 then 1 else 0 := by
   rw [depthAt_eq_natCard_of_range_eq (range_modelWithCornersEuclideanHalfSpace_eq n) hy]
   split_ifs with h
-  · exact Nat.card_eq_one_iff_exists.mpr ⟨⟨0, rfl, h⟩, fun j ↦ Subtype.ext j.2.1⟩
-  · have : IsEmpty {i // i ∈ ({0} : Set (Fin n)) ∧ y i = 0} := ⟨fun j ↦ h (j.2.1 ▸ j.2.2)⟩
+  · exact Nat.card_eq_one_iff_exists.mpr ⟨⟨0, rfl, h⟩, fun j ↦ Subtype.ext j.property.1⟩
+  · have : IsEmpty {i // i ∈ ({0} : Set (Fin n)) ∧ y i = 0} := ⟨fun j ↦ h
+      (j.property.1 ▸ j.property.2)⟩
     exact Nat.card_of_isEmpty
 
 end Coordinates

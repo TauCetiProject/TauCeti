@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Flags of upper-triangular comodules
@@ -80,34 +81,25 @@ theorem exists_flag_separating {R M ι : Type*} [CommRing R] [Nontrivial R]
   have hb : cb b ∉ bas.flag i.castSucc := fun h ↦ ha ((hsame _).mpr h)
   have har' : cb a ∈ bas.flag i.succ := by simpa only [hi] using har
   have hbr' : cb b ∈ bas.flag i.succ := (hsame _).mp har'
-  have hzero (j : ι) (hj : cb j ∉ bas.flag i.castSucc) {z : M}
-      (hz : z ∈ bas.flag i.castSucc) : cb.repr z j = 0 := by
-    have hker : bas.flag i.castSucc ≤ LinearMap.ker (cb.coord j) := by
-      rw [hcoord]
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨l, hl, rfl⟩
-      apply LinearMap.mem_ker.mpr
-      have hjl : j ≠ l := by
-        rintro rfl
-        exact hj hl
-      simp [Basis.coord_apply, hjl]
-    simpa only [Basis.coord_apply] using LinearMap.mem_ker.mp (hker hz)
+  have hzero {j : ι} (hj : cb j ∉ bas.flag i.castSucc) {z : M} (hz : z ∈ bas.flag i.castSucc) :
+      cb.repr z j = 0 :=
+    repr_eq_zero_of_mem_of_notMem cb (hcoord _) hj hz
   rw [bas.flag_succ] at har' hbr'
   obtain ⟨va, hva, ua, hua, hsum_a⟩ := Submodule.mem_sup.mp har'
   obtain ⟨vb, hvb, ub, hub, hsum_b⟩ := Submodule.mem_sup.mp hbr'
   obtain ⟨x, rfl⟩ := Submodule.mem_span_singleton.mp hva
   obtain ⟨y, rfl⟩ := Submodule.mem_span_singleton.mp hvb
   have hxa : x * cb.coord a (bas i) = 1 := by
-    simpa [Basis.coord_apply, hzero a ha hua] using
+    simpa [Basis.coord_apply, hzero ha hua] using
       congrArg (cb.coord a) hsum_a
   have hxb : x * cb.coord b (bas i) = 0 := by
-    simpa [Basis.coord_apply, hab, hab.symm, hzero b hb hua] using
+    simpa [Basis.coord_apply, hab, hab.symm, hzero hb hua] using
       congrArg (cb.coord b) hsum_a
   have hya : y * cb.coord a (bas i) = 0 := by
-    simpa [Basis.coord_apply, hab, hab.symm, hzero a ha hub] using
+    simpa [Basis.coord_apply, hab, hab.symm, hzero ha hub] using
       congrArg (cb.coord a) hsum_b
   have hyb : y * cb.coord b (bas i) = 1 := by
-    simpa [Basis.coord_apply, hzero b hb hub] using
+    simpa [Basis.coord_apply, hzero hb hub] using
       congrArg (cb.coord b) hsum_b
   apply one_ne_zero (α := R)
   calc
@@ -218,7 +210,7 @@ theorem mem_flagSubcomodule_iff (bas : Basis (Fin n) k M)
 
 /-- A coordinate flag separating two basis vectors forces the corresponding coefficient to
 vanish when every subcomodule containing the first vector contains the second. -/
-theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*} [Finite ι]
+theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*}
     (cb : Basis ι k M) (bas : Basis (Fin n) k M)
     (htri : (coefficientMatrix (C := H) bas).IsUpperTriangular)
     (hbas : ∀ r, bas.flag r = Submodule.span k (cb '' {i | cb i ∈ bas.flag r}))
@@ -231,6 +223,8 @@ theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*} [Finite ι]
       _ = (1 : k) • coefficientMatrix (C := H) cb a b := (one_smul k _).symm
       _ = 0 := by rw [Subsingleton.elim (1 : k) 0, zero_smul]
   have : Nontrivial k := h
+  have := Module.Finite.of_basis bas
+  have : Finite ι := Module.Finite.finite_basis cb
   classical
   let F := Comodule.flagSubcomodule bas htri
   have hcoord (r : Fin (n + 1)) :

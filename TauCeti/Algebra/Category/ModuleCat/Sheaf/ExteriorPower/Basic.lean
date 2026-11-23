@@ -89,10 +89,11 @@ theorem exteriorPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)} 
 
 /-- On sections over `X`, the exterior power of a morphism `φ` sends the sheafified wedge
 `m₁ ∧ ⋯ ∧ mₙ` to the sheafified wedge `φ m₁ ∧ ⋯ ∧ φ mₙ`. -/
-@[simp]
 theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
     (φ : M ⟶ N) (X : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) :
-    ((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      ObjectProperty.ι_obj, Functor.id_obj]
+    (((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X
       (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
         ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app X
           (ModuleCat.exteriorPower.mk
@@ -102,7 +103,7 @@ theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCa
         ((PresheafOfModulesOfCommRing.exteriorPower n).obj N.val)).app X
           (ModuleCat.exteriorPower.mk
             (M := PresheafOfModulesOfCommRing.obj (R := R.obj) N.val X)
-            (fun i ↦ φ.val.app X (m i)))) := by
+            (fun i ↦ φ.val.app X (m i))))) := by
   have hu := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app X)
     ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
       ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val)))
@@ -161,6 +162,18 @@ theorem exteriorPowerZeroIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
           ((PresheafOfModulesOfCommRing.exteriorPowerZeroIso R.obj).hom.app M.val) ≫
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
           (SheafOfModules.unit (ringCatSheaf R))).hom :=
+  (rfl)
+
+/-- The inverse zeroth-power identification is the sheafification of the sectionwise inverse,
+preceded by the inverse of the sheafified-unit identification. -/
+@[simp, reassoc]
+theorem exteriorPowerZeroIso_inv_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (exteriorPowerZeroIso R).inv.app M =
+      (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
+        (SheafOfModules.unit (ringCatSheaf R))).inv ≫
+      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+        ((PresheafOfModulesOfCommRing.exteriorPowerZeroIso R.obj).inv.app M.val) ≫
+      (exteriorPowerIso 0 M).inv :=
   (rfl)
 
 /-- On components, `exteriorPowerOneIso` is the sheafification of the presheaf-level

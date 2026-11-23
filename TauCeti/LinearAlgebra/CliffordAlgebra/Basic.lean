@@ -11,14 +11,17 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Tactic.NoncommRing
+import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
 linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
-factors of a product of vectors pulls the scalars out in front
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
+square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
+extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
@@ -68,6 +71,21 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
 
+/-- The square of an element `r + ι Q t` of the first filtration step: its vector part is
+`ι Q ((2 * r) • t)`. -/
+theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M) (r : R) (t : M) :
+    (algebraMap R (CliffordAlgebra Q) r + ι Q t) * (algebraMap R _ r + ι Q t) =
+      algebraMap R _ (r * r + Q t) + ι Q ((2 * r) • t) := by
+  rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
+    ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
+  abel
+
+/-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
+the equivalence form of `CliffordAlgebra.hom_ext`. -/
+theorem algEquiv_ext_ι {Q : QuadraticForm R M} {A : Type*} [Semiring A] [Algebra R A]
+    {φ ψ : CliffordAlgebra Q ≃ₐ[R] A} (h : ∀ v, φ (ι Q v) = ψ (ι Q v)) : φ = ψ :=
+  AlgEquiv.coe_toAlgHom_injective <| hom_ext <| LinearMap.ext h
+
 /-- Rescaling every factor of a product of vectors collects the product of the scalars in front
 of the product. -/
 theorem prod_map_ι_smul (Q : QuadraticForm R M) (c : M → R) (l : List M) :
@@ -99,28 +117,30 @@ private theorem two_smul_contractLeft_associated [Invertible (2 : R)]
 
 section Exterior
 
-private noncomputable def exteriorCoordProj {n : ℕ}
-    (b : Module.Basis (Fin n) R M) (i : Fin n) :
+variable {I : Type*} [LinearOrder I]
+
+private noncomputable def exteriorCoordProj
+    (b : Module.Basis I R M) (i : I) :
     ExteriorAlgebra R M →ₗ[R] ExteriorAlgebra R M :=
   (LinearMap.mulLeft R (ExteriorAlgebra.ι R (b i))).comp
     (contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i))
 
-private theorem exteriorCoordProj_basis_of_not_mem {n : ℕ}
-    (b : Module.Basis (Fin n) R M) (i : Fin n) (s : Finset (Fin n)) (hi : i ∉ s) :
+private theorem exteriorCoordProj_basis_of_not_mem
+    (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∉ s) :
     exteriorCoordProj b i (b.ExteriorAlgebra s) = 0 := by
   rw [exteriorCoordProj, LinearMap.comp_apply, LinearMap.mulLeft_apply,
     TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
   simp only [hi, ↓reduceIte]
 
-private theorem exteriorCoordProj_basis_of_mem {n : ℕ}
-    (b : Module.Basis (Fin n) R M) (i : Fin n) (s : Finset (Fin n)) (hi : i ∈ s) :
+private theorem exteriorCoordProj_basis_of_mem
+    (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∈ s) :
     exteriorCoordProj b i (b.ExteriorAlgebra s) = b.ExteriorAlgebra s := by
   rw [exteriorCoordProj, LinearMap.comp_apply, LinearMap.mulLeft_apply,
     TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
   simp only [hi, ↓reduceIte]
 
-private theorem exteriorCoordProj_repr_of_mem {n : ℕ}
-    (b : Module.Basis (Fin n) R M) (i : Fin n) (s : Finset (Fin n)) (hi : i ∈ s)
+private theorem exteriorCoordProj_repr_of_mem
+    (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∈ s)
     (x : ExteriorAlgebra R M) :
     b.ExteriorAlgebra.repr (exteriorCoordProj b i x) s =
       b.ExteriorAlgebra.repr x s := by
@@ -138,12 +158,12 @@ private theorem exteriorCoordProj_repr_of_mem {n : ℕ}
       · rfl
   exact LinearMap.congr_fun hmap x
 
-private theorem eq_algebraMap_of_all_contractLeft_eq_zero {n : ℕ}
-    (b : Module.Basis (Fin n) R M) (x : ExteriorAlgebra R M)
+private theorem eq_algebraMap_of_all_contractLeft_eq_zero
+    (b : Module.Basis I R M) (x : ExteriorAlgebra R M)
     (hx : ∀ d : Module.Dual R M,
       contractLeft (Q := (0 : QuadraticForm R M)) d x = 0) :
     x = algebraMap R (ExteriorAlgebra R M) (b.ExteriorAlgebra.repr x ∅) := by
-  have hbempty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
+  have hbempty : b.ExteriorAlgebra (∅ : Finset I) = 1 := by
     rw [ExteriorAlgebra.basis_apply]
     simp
   apply b.ExteriorAlgebra.repr.injective
@@ -153,7 +173,7 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero {n : ℕ}
   by_cases hs : s = ∅
   · subst s
     simp
-  · obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+  · obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.1 hs
     have hproject : exteriorCoordProj b i x = 0 := by
       rw [exteriorCoordProj, LinearMap.comp_apply, hx, LinearMap.mulLeft_apply, mul_zero]
     have hcoord := exteriorCoordProj_repr_of_mem b i s hi x
@@ -163,25 +183,31 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero {n : ℕ}
 
 end Exterior
 
-variable {K : Type u} [Field K] [Module K M] [FiniteDimensional K M]
-  [Invertible (2 : K)]
-
 /-- A Clifford element annihilated by every left contraction is a scalar. -/
-theorem exists_eq_algebraMap_of_contractLeft_eq_zero (Q : QuadraticForm K M)
-    (x : CliffordAlgebra Q) (hx : ∀ d : Module.Dual K M, contractLeft d x = 0) :
-    ∃ r : K, x = algebraMap K (CliffordAlgebra Q) r := by
-  let b := Module.finBasis K M
-  let y : ExteriorAlgebra K M := equivExterior Q x
-  have hycontract (d : Module.Dual K M) :
-      contractLeft (Q := (0 : QuadraticForm K M)) d y = 0 := by
-    dsimp only [y, equivExterior, changeFormEquiv_apply]
-    rw [changeFormEquiv_apply]
-    rw [← changeForm_contractLeft changeForm.associated_neg_proof d x, hx, map_zero]
+theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
+    (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
+    (hx : ∀ d : Module.Dual R M, contractLeft d x = 0) :
+    ∃ r : R, x = algebraMap R (CliffordAlgebra Q) r := by
+  -- the exterior basis needs a linear order on the index type; any classical one will do
+  classical
+  let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) :=
+    linearOrderOfSTO WellOrderingRel
+  let b := Module.Free.chooseBasis R M
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
+  have h : B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by rw [hB]; simp
+  let y : ExteriorAlgebra R M := changeForm h x
+  have hycontract (d : Module.Dual R M) :
+      contractLeft (Q := (0 : QuadraticForm R M)) d y = 0 := by
+    dsimp only [y]
+    rw [← changeForm_contractLeft h d x, hx, map_zero]
   let r := b.ExteriorAlgebra.repr y ∅
   refine ⟨r, ?_⟩
-  apply (equivExterior Q).injective
-  simpa only [y, r, equivExterior_algebraMap] using
+  apply (changeFormEquiv h).injective
+  simpa only [y, r, changeFormEquiv_apply, changeForm_algebraMap] using
     eq_algebraMap_of_all_contractLeft_eq_zero b y hycontract
+
+variable {K : Type u} [Field K] [Module K M] [FiniteDimensional K M]
+  [Invertible (2 : K)]
 
 /-- A Clifford element that graded-commutes with every generating vector is a scalar. Here
 `involute x * ι v = ι v * x` is the uniform equation combining commutation of the even part

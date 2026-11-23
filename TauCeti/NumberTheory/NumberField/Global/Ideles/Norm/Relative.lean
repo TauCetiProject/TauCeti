@@ -49,6 +49,8 @@ homomorphism to `ℝ≥0ˣ`.
   `TauCeti.GlobalNumberFields.ideleClassNormMap_ofCompletion`: the norm of an idele, or of an
   idele class, concentrated at one infinite place `w` is concentrated at the place below `w`,
   with the local norm as coordinate.
+* `TauCeti.GlobalNumberFields.ideleNormMap_ofAdicCompletion`,
+  `TauCeti.GlobalNumberFields.ideleClassNormMap_ofAdicCompletion`: the same at a finite place.
 * `TauCeti.GlobalNumberFields.ideleNormMap_unitEmbedding`: the norm of a principal idele is the
   principal idele of the global norm.
 * `TauCeti.GlobalNumberFields.ideleNormMap_ideleExtension`,
@@ -74,7 +76,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -106,7 +109,7 @@ variable {K L} in
 theorem ideleFiniteCoord_ideleNormMap (v : HeightOneSpectrum (𝓞 K)) (x : IdeleGroup (𝓞 L) L) :
     v.ideleFiniteCoord (ideleNormMap K L x) =
       ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.normUnits (v.adicCompletion K) (w.1.ideleFiniteCoord x) := by
+        Algebra.normUnits (v.adicCompletion K) (w.val.ideleFiniteCoord x) := by
   apply Units.ext
   rw [← Units.coeHom_apply, ← Units.coeHom_apply, map_finprod _ (Set.toFinite _)]
   simp
@@ -118,7 +121,7 @@ place `v` of `K` is the product over the places `w ∣ v` of `N_{L_w/K_v}(x_w)`.
 theorem ideleInfiniteCoord_ideleNormMap (v : InfinitePlace K) (x : IdeleGroup (𝓞 L) L) :
     v.ideleInfiniteCoord (ideleNormMap K L x) =
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
-        Algebra.normUnits v.Completion (w.1.ideleInfiniteCoord x) := by
+        Algebra.normUnits v.Completion (w.val.ideleInfiniteCoord x) := by
   apply Units.ext
   rw [← Units.coeHom_apply, ← Units.coeHom_apply, map_finprod _ (Set.toFinite _)]
   simp
@@ -143,13 +146,41 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
     · -- No place above `v'` is `w`, so every factor is trivial.
       rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne v' hv]
       refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
-      have hne : w'.1 ≠ w := by
+      have hne : w'.val ≠ w := by
         rintro h
         apply hv
-        rw [← LiesOver.comap_eq w'.1 v', ← LiesOver.comap_eq w v, h]
-      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.1 hne, map_one]
+        rw [← LiesOver.comap_eq w'.val v', ← LiesOver.comap_eq w v, h]
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.val hne, map_one]
   · simp only [ideleFiniteCoord_ideleNormMap,
       HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
+
+variable {K L} in
+/-- **The norm of an idele concentrated at one finite place.** If `w` lies over `v`, the norm of
+the idele that is `u` at `w` and `1` elsewhere is the idele that is `N_{L_w/K_v}(u)` at `v` and
+`1` elsewhere. -/
+theorem ideleNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleNormMap K L (IdeleGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  refine IdeleGroup.ext (fun v' ↦ ?_) (fun v' ↦ ?_)
+  · simp only [ideleInfiniteCoord_ideleNormMap,
+      InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, map_one, finprod_one]
+  · rw [ideleFiniteCoord_ideleNormMap]
+    by_cases hv : v' = v
+    · subst hv
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self, finprod_eq_single _ ⟨w, ‹_›⟩]
+      · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+      · rintro ⟨w', hw'⟩ hne
+        rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'
+          fun h ↦ hne (Subtype.ext h), map_one]
+    · -- No place above `v'` is `w`, so every factor is trivial.
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv]
+      refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
+      have hne : w'.val ≠ w := by
+        rintro rfl
+        exact hv (HeightOneSpectrum.ext
+          (w'.property.over.trans ‹w'.val.asIdeal.LiesOver v.asIdeal›.over.symm))
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'.val hne, map_one]
 
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]
@@ -235,6 +266,17 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
       IdeleClassGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
   rw [IdeleClassGroup.ofCompletion_apply, ideleClassNormMap_mk, ideleNormMap_ofCompletion v w,
     ← IdeleClassGroup.ofCompletion_apply]
+
+variable {K L} in
+/-- **The norm of an idele class concentrated at one finite place.** If `w` lies over `v`, the
+norm of the class of the idele that is `u` at `w` is the class of the idele that is
+`N_{L_w/K_v}(u)` at `v`. -/
+theorem ideleClassNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleClassNormMap K L (IdeleClassGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleClassGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  rw [IdeleClassGroup.ofAdicCompletion_apply, ideleClassNormMap_mk,
+    ideleNormMap_ofAdicCompletion v w, ← IdeleClassGroup.ofAdicCompletion_apply]
 
 /-- The idele-class norm group `N_{L/K}(C_L)` is normal in `C_K`, which is commutative, so the
 norm quotient `C_K / N_{L/K}(C_L)` is a group. -/

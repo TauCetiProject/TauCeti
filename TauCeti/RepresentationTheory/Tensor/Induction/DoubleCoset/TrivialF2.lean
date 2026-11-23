@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.DoubleCoset.Discrete
 public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
-public import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
+public import TauCeti.RingTheory.PiTensorProduct.Surjective
 
 /-!
 # Trivial F₂ coefficients in the tensor-induction Mackey formula
@@ -89,9 +89,11 @@ theorem smoothTensorInducedTrivialF2Iso_mackey :
         (smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom.toLinearMap ∘ₗ
           (Subgroup.tensorInducedMackey U V r hr t
             (DiscreteRep.trivialF2 U).ρ s).toLinearEquiv.toLinearMap =
-      (PiTensorProduct.zmodEquiv 2).toLinearMap ∘ₗ
+      (PiTensorProduct.constantAlgEquivOfSurjective
+          (ZMod.ringHom_surjective (algebraMap ℤ (ZMod 2)))).toLinearMap ∘ₗ
         PiTensorProduct.map (fun D ↦
-          (PiTensorProduct.zmodEquiv 2).toLinearMap ∘ₗ
+          (PiTensorProduct.constantAlgEquivOfSurjective
+              (ZMod.ringHom_surjective (algebraMap ℤ (ZMod 2)))).toLinearMap ∘ₗ
             PiTensorProduct.map (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦
               ((trivialF2Equiv U).toIntLinearEquiv
                 (modM := (DiscreteRep.trivialF2 U).module)).toLinearMap)) := by
@@ -100,7 +102,7 @@ theorem smoothTensorInducedTrivialF2Iso_mackey :
   apply PiTensorProduct.ext_sigma_tprod
   intro m
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, PiTensorProduct.map_tprod,
-    PiTensorProduct.zmodEquiv_tprod]
+    AlgEquiv.toLinearMap_apply, PiTensorProduct.constantAlgEquivOfSurjective_tprod]
   exact smoothTensorInducedTrivialF2Iso_mackey_tprod G U V hU r hr t s m
 
 end TauCeti

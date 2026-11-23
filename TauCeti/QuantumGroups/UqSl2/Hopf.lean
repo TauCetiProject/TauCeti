@@ -7,6 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.UqSl2.Basic
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
+public import Mathlib.RingTheory.Coalgebra.GroupLike
 import Mathlib.Tactic.Module
 
 /-!
@@ -226,6 +227,10 @@ noncomputable instance instHopfAlgebra : HopfAlgebra ℂ (UqSl2 q) := by
 @[simp] theorem antipode_kInv (q : ℂ) [Fact (q ≠ 0)] : HopfAlgebra.antipode ℂ (kInv q) =
     k q := by
   simp [HopfAlgebra.antipode]
+
+/-- The inverse weight generator is group-like. -/
+theorem isGroupLikeElem_kInv (q : ℂ) [Fact (q ≠ 0)] : IsGroupLikeElem ℂ (kInv q) :=
+  ⟨counit_kInv q, comul_kInv q⟩
 
 /-- The constructed coproduct agrees with the native coalgebra operation. -/
 @[simp] theorem comul_apply (x : UqSl2 q) : comul q x = Coalgebra.comul x := (rfl)

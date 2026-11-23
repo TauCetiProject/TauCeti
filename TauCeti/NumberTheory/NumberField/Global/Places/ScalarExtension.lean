@@ -46,7 +46,7 @@ abbrev FiniteScalarExtension [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :=
 
 /-- The finite rank of `V` is unchanged by extension to a finite-place completion. -/
 @[simp high]
-theorem finrank_FiniteScalarExtension [NumberField K] [FiniteDimensional K V]
+theorem finrank_FiniteScalarExtension [NumberField K]
     (v : HeightOneSpectrum (𝓞 K)) :
     Module.finrank (v.adicCompletion K) (v.FiniteScalarExtension (V := V)) =
       Module.finrank K V := by
@@ -61,7 +61,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- The scalar extension of `V` to `ℝ` through the embedding belonging to a real place. -/
 abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  letI : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   ℝ ⊗[K] V
 
 end TauCeti
@@ -78,7 +78,7 @@ abbrev ComplexScalarExtension (w : InfinitePlace K) :=
 
 /-- The finite rank of `V` is unchanged by extension through a complex embedding. -/
 @[simp]
-theorem finrank_ComplexScalarExtension [FiniteDimensional K V]
+theorem finrank_ComplexScalarExtension
     (w : InfinitePlace K) :
     Module.finrank ℂ (w.ComplexScalarExtension (V := V)) =
       Module.finrank K V := by
@@ -94,11 +94,11 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- The finite rank of `V` is unchanged by extension through a real place. -/
 @[simp]
-theorem finrank_atRealPlace [FiniteDimensional K V]
+theorem finrank_atRealPlace
     (w : {w : InfinitePlace K // w.IsReal}) :
     Module.finrank ℝ (RealScalarExtension (V := V) w) =
       Module.finrank K V := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   simp
 
 end TauCeti

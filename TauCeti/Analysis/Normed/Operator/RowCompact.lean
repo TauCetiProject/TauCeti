@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.InputFirst
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
@@ -99,6 +99,12 @@ theorem rowNorm_def (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
     u.rowNorm i = ⨆ j, ‖u.matrixCoeff i j‖ :=
   (rfl)
 
+/-- The output-first row norm is the column supremum in input-first coordinates. Use a
+bound on the entries (automatic over Tate scalars) when using this real supremum as a bound. -/
+theorem rowNorm_eq_iSup_norm_matrixCoeffInputFirst (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
+    u.rowNorm i = ⨆ j, ‖u.matrixCoeffInputFirst j i‖ := by
+  simp only [rowNorm_def, matrixCoeffInputFirst_apply]
+
 theorem rowNorm_nonneg (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) : 0 ≤ u.rowNorm i :=
   Real.iSup_nonneg fun _ ↦ norm_nonneg _
 
@@ -123,6 +129,23 @@ theorem isRowCompact_iff {u : C₀(J, R) →L[R] C₀(I, R)} :
     u.IsRowCompact ↔
       (∃ C, ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) ∧ Tendsto u.rowNorm cofinite (𝓝 0) :=
   Iff.rfl
+
+/-- Row compactness in output-first coordinates is boundedness of the input-first entries
+and decay of their column suprema. The boundedness clause makes the suprema meaningful.
+This differs from the automatic decay of each input-first row. -/
+theorem isRowCompact_iff_matrixCoeffInputFirst {u : C₀(J, R) →L[R] C₀(I, R)} :
+    u.IsRowCompact ↔ (∃ C, ∀ j i, ‖u.matrixCoeffInputFirst j i‖ ≤ C) ∧
+      Tendsto (fun i ↦ ⨆ j, ‖u.matrixCoeffInputFirst j i‖) cofinite (𝓝 0) := by
+  rw [isRowCompact_iff]
+  constructor
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun j i ↦ by simpa only [matrixCoeffInputFirst_apply] using hC i j⟩,
+      hdecay.congr fun i ↦ u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i⟩
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun i j ↦ by simpa only [matrixCoeffInputFirst_apply] using hC j i⟩,
+      hdecay.congr fun i ↦ (u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i).symm⟩
 
 theorem IsRowCompact.tendsto_rowNorm {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     Tendsto u.rowNorm cofinite (𝓝 0) :=
@@ -172,6 +195,13 @@ theorem IsRowCompact.add {u v : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowComp
   rw [matrixCoeff_add, Matrix.add_apply]
   exact (norm_add_le _ _).trans
     (add_le_add (hu.norm_matrixCoeff_le_rowNorm i j) (hv.norm_matrixCoeff_le_rowNorm i j))
+
+/-- A finite sum of row-compact maps is row compact. -/
+theorem IsRowCompact.sum {ι : Type*} {s : Finset ι}
+    {f : ι → C₀(J, R) →L[R] C₀(I, R)} (hf : ∀ i ∈ s, (f i).IsRowCompact) :
+    (∑ i ∈ s, f i).IsRowCompact :=
+  Finset.sum_induction f (fun w : C₀(J, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
+    (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero hf
 
 theorem IsRowCompact.neg {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     (-u).IsRowCompact :=
@@ -379,6 +409,28 @@ theorem IsRowCompact.isCompletelyContinuous {u : C₀(J, R) →L[R] C₀(I, R)}
   simpa using norm_sub_indicatorCLM_comp_apply_le hε.le (fun i hi j ↦
     (hu.norm_matrixCoeff_le_rowNorm i j).trans (not_le.1 (by simpa using hi)).le) x
 
+/-- Row-compact operators have output truncations `π_S ∘ u` converging to `u` in operator norm. -/
+theorem IsRowCompact.tendsto_ringOpNorm_sub_indicatorCLM_comp {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖u - (indicatorCLM R (S : Set I)).comp u‖) atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun _ ↦
+    ha.trans_le (ringOpNorm_nonneg _), fun ε hε ↦ ?_⟩
+  have hT : {i | ε / 2 ≤ u.rowNorm i}.Finite := by
+    simpa only [not_lt] using
+      eventually_cofinite.1 (hu.tendsto_rowNorm.eventually_lt_const (half_pos hε))
+  filter_upwards [eventually_ge_atTop hT.toFinset] with S hS
+  refine lt_of_le_of_lt (ringOpNorm_le_bound _ (half_pos hε).le
+    (norm_sub_indicatorCLM_comp_apply_le (half_pos hε).le fun i hi j ↦ ?_)) (half_lt_self hε)
+  exact (hu.norm_matrixCoeff_le_rowNorm i j).trans
+    (not_le.1 fun h ↦ hi (hS (by simpa using h))).le
+
+/-- The output truncations `π_S ∘ u` of a row-compact `u` converge to `u` in operator norm as the
+finite set `S` grows. -/
+theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
+  simpa only [← neg_sub u, ringOpNorm_neg] using hu.tendsto_ringOpNorm_sub_indicatorCLM_comp
+
 variable [TauCeti.NormedRing.IsTate R]
 
 /-- **Row compactness is norm convergence of output truncations**: over ultrametric Tate scalars,
@@ -388,34 +440,17 @@ theorem isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp
     {u : C₀(J, R) →L[R] C₀(I, R)} :
     u.IsRowCompact ↔
       Tendsto (fun S : Finset I ↦ ‖u - (indicatorCLM R (S : Set I)).comp u‖) atTop (𝓝 0) := by
-  refine ⟨fun hu ↦ ?_, fun h ↦ isRowCompact_iff_tendsto_rowNorm.2 ?_⟩
-  · refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun _ ↦
-      ha.trans_le (ringOpNorm_nonneg _), fun ε hε ↦ ?_⟩
-    have hT : {i | ε / 2 ≤ u.rowNorm i}.Finite := by
-      simpa only [not_lt] using
-        eventually_cofinite.1 (hu.tendsto_rowNorm.eventually_lt_const (half_pos hε))
-    filter_upwards [eventually_ge_atTop hT.toFinset] with S hS
-    refine lt_of_le_of_lt (ringOpNorm_le_bound _ (half_pos hε).le
-      (norm_sub_indicatorCLM_comp_apply_le (half_pos hε).le fun i hi j ↦ ?_)) (half_lt_self hε)
-    exact (hu.norm_matrixCoeff_le_rowNorm i j).trans
-      (not_le.1 fun h ↦ hi (hS (by simpa using h))).le
-  · refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun i ↦ ha.trans_le
-      (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩
-    obtain ⟨S, hS⟩ := (h.eventually_lt_const hε).exists
-    refine eventually_cofinite.2 (S.finite_toSet.subset fun i hi ↦ ?_)
-    by_contra hiS
-    refine hi (lt_of_le_of_lt ?_ hS)
-    have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
-    rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
-      ← sub_indicatorCLM_comp] at this
-
-/-- Over ultrametric Tate scalars, the output truncations `π_S ∘ u` of a row-compact `u` converge
-to `u` in operator norm as the finite set `S` grows. -/
-theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
-    (hu : u.IsRowCompact) :
-    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
-  simpa only [← neg_sub u, ringOpNorm_neg] using
-    isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
+  refine ⟨fun hu ↦ hu.tendsto_ringOpNorm_sub_indicatorCLM_comp, fun h ↦
+    isRowCompact_iff_tendsto_rowNorm.2 ?_⟩
+  refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun i ↦ ha.trans_le
+    (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩
+  obtain ⟨S, hS⟩ := (h.eventually_lt_const hε).exists
+  refine eventually_cofinite.2 (S.finite_toSet.subset fun i hi ↦ ?_)
+  by_contra hiS
+  refine hi (lt_of_le_of_lt ?_ hS)
+  have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
+  rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
+    ← sub_indicatorCLM_comp] at this
 
 end Truncation
 

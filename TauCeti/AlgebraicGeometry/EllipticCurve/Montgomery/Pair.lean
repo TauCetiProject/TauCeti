@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Projectivization.BaseChange
 public import Mathlib.Tactic.FinCases
 public import Mathlib.Tactic.LinearCombination
 
@@ -38,6 +38,11 @@ is why `(0, 0)` never denotes a point.
 
 * `TauCeti.Montgomery.Pair.cross_eq_zero_trans`: over a domain, vanishing of the cross difference
   is transitive through a nonzero middle pair.
+* `TauCeti.Montgomery.Pair.x_eq_zero_iff_of_cross_eq_zero`,
+  `TauCeti.Montgomery.Pair.z_eq_zero_iff_of_cross_eq_zero`, and
+  `TauCeti.Montgomery.Pair.cross_eq_zero_congr`: over a domain, nonzero pairs with vanishing cross
+  difference have simultaneously vanishing fields and induce the same vanishing-cross-difference
+  relation.
 * `TauCeti.Montgomery.Pair.cross_eq_zero_iff_exists_smul`: over a field, two nonzero pairs have
   vanishing cross difference exactly when one is a scalar multiple of the other.
 * `TauCeti.Montgomery.Pair.toProj_eq_toProj_iff`: two nonzero pairs define the same point of the
@@ -136,6 +141,18 @@ def map (f : R →+* S) (p : Pair R) : Pair S := ⟨f p.x, f p.z⟩
 @[simp] theorem map_x (f : R →+* S) (p : Pair R) : (p.map f).x = f p.x := (rfl)
 @[simp] theorem map_z (f : R →+* S) (p : Pair R) : (p.map f).z = f p.z := (rfl)
 
+/-- Taking the coordinate vector commutes with applying a ring homomorphism. -/
+@[simp]
+theorem vec_map (p : Pair R) (f : R →+* S) : (p.map f).vec = f ∘ p.vec := by
+  ext i
+  fin_cases i <;> simp
+
+/-- An injective change of ring preserves and reflects the zero pair. -/
+@[simp]
+theorem map_eq_zero_iff (p : Pair R) {f : R →+* S} (hf : Function.Injective f) :
+    p.map f = 0 ↔ p = 0 := by
+  simp only [eq_zero_iff, map_x, map_z, ← f.map_zero, hf.eq_iff]
+
 @[simp]
 theorem map_id (p : Pair R) : p.map (RingHom.id R) = p := (rfl)
 
@@ -226,6 +243,36 @@ protected theorem smul_eq_zero {c : R} {p : Pair R} : c • p = 0 ↔ c = 0 ∨ 
   simp only [eq_zero_iff, smul_x, smul_z, mul_eq_zero]
   tauto
 
+/-- Over a domain, two nonzero pairs with vanishing cross difference have vanishing first fields
+simultaneously. Both nonvanishing hypotheses are needed, since `(0, 0)` has vanishing cross
+difference with every pair. -/
+theorem x_eq_zero_iff_of_cross_eq_zero {p q : Pair R} (hp : p ≠ 0) (hq : q ≠ 0)
+    (h : p.cross q = 0) : p.x = 0 ↔ q.x = 0 := by
+  rw [ne_zero_iff] at hp hq
+  rw [cross_def, sub_eq_zero] at h
+  refine ⟨fun hpx ↦ ?_, fun hqx ↦ ?_⟩
+  · simpa [hpx, hp.resolve_left (not_not_intro hpx)] using h.symm
+  · simpa [hqx, hq.resolve_left (not_not_intro hqx)] using h
+
+/-- Over a domain, two nonzero pairs with vanishing cross difference have vanishing second fields
+simultaneously. Both nonvanishing hypotheses are needed, since `(0, 0)` has vanishing cross
+difference with every pair. -/
+theorem z_eq_zero_iff_of_cross_eq_zero {p q : Pair R} (hp : p ≠ 0) (hq : q ≠ 0)
+    (h : p.cross q = 0) : p.z = 0 ↔ q.z = 0 := by
+  rw [ne_zero_iff] at hp hq
+  rw [cross_def, sub_eq_zero] at h
+  refine ⟨fun hpz ↦ ?_, fun hqz ↦ ?_⟩
+  · simpa [hpz, hp.resolve_right (not_not_intro hpz)] using h
+  · simpa [hqz, hq.resolve_right (not_not_intro hqz)] using h.symm
+
+/-- Over a domain, vanishing of the cross difference is invariant under replacing each argument by
+a nonzero pair that has vanishing cross difference with it. -/
+theorem cross_eq_zero_congr {p₁ p₂ q₁ q₂ : Pair R} (hp₁ : p₁ ≠ 0) (hp₂ : p₂ ≠ 0)
+    (hq₁ : q₁ ≠ 0) (hq₂ : q₂ ≠ 0) (hp : p₁.cross p₂ = 0) (hq : q₁.cross q₂ = 0) :
+    p₁.cross q₁ = 0 ↔ p₂.cross q₂ = 0 :=
+  ⟨fun h ↦ cross_eq_zero_trans hq₁ (cross_eq_zero_trans hp₁ (cross_eq_zero_comm.mp hp) h) hq,
+    fun h ↦ cross_eq_zero_trans hq₂ (cross_eq_zero_trans hp₂ hp h) (cross_eq_zero_comm.mp hq)⟩
+
 end Domain
 
 section Field
@@ -252,6 +299,13 @@ def toProj (p : Pair K) (hp : p ≠ 0) : ℙ K (Fin 2 → K) :=
 
 theorem toProj_def (p : Pair K) (hp : p ≠ 0) :
     p.toProj hp = .mk K p.vec (vec_eq_zero_iff.not.mpr hp) := (rfl)
+
+/-- Passing from a raw pair to the projective line commutes with a field embedding. -/
+@[simp]
+theorem mapProjective_toProj {L : Type*} [Field L] (p : Pair K) (hp : p ≠ 0) (f : K →+* L) :
+    f.mapProjective (p.toProj hp) =
+      (p.map f).toProj ((p.map_eq_zero_iff f.injective).not.mpr hp) := by
+  simp [toProj_def]
 
 /-- **Two nonzero pairs define the same point of the projective line exactly when their cross
 difference vanishes.** -/

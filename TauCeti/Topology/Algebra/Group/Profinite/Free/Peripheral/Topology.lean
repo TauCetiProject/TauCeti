@@ -72,7 +72,7 @@ theorem isClosed_peripheralGraph (hfg : IsTopologicallyFinitelyGenerated F) :
         ((Units.continuous_val.comp continuous_snd).prodMk continuous_const)
     have heval : Continuous fun q : ContinuousAut F × ℤ_[p]ˣ ↦ q.1 y :=
       (ContinuousAut.continuous_eval hfg).comp (continuous_fst.prodMk continuous_const)
-    exact (isClosed_isConj_pair F).preimage (hpow.prodMk heval)
+    exact isClosed_isConj_prod.preimage (hpow.prodMk heval)
   simp only [isPeripheralAut_iff, Set.ofPred_and, Set.ofPred_forall]
   exact (isClosed_iInter fun i ↦ hclosed (x i)).inter (hclosed (cusp x))
 
@@ -144,7 +144,7 @@ theorem continuous_exponent : Continuous (exponent hF e hr) := by
   refine continuous_of_isClosed_graph ?_
   rw [graph_exponent]
   exact (isClosed_peripheralGraph hF (basis e) hfg).preimage
-    (continuous_subtype_val.prodMap continuous_id)
+    (continuous_subtypeVal.prodMap continuous_id)
 
 end Exponent
 

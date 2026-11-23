@@ -86,7 +86,7 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicOrthogonalDiagonal
     let : IsTopologicalGroup (ℝ ⊗[ℚ] V ≃ₗ[ℝ] ℝ ⊗[ℚ] V) := inferInstance
     exact (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv (b.baseChange ℝ)).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   -- Real isometries with small matrix entries, and finite adeles integral at every prime.
   let A : Set (orthogonalGroup (Q.baseChange ℝ)) := {g | ∀ i j, |M g i j| < 2}
   let B : Subgroup U.finiteAdelicOrthogonal := integralSubgroupOf U.orthogonal
@@ -97,9 +97,9 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicOrthogonalDiagonal
       isOpen_lt (continuous_abs.comp ((continuous_apply j).comp ((continuous_apply i).comp hM)))
         continuous_const
   have hB : IsOpen (B : Set U.finiteAdelicOrthogonal) :=
-    isOpen_forall_mem_of_eventually_eq _ _
+    isOpen_integralSubgroupOf_of_eventually_le _ _
       (fun p ↦ (U.isOpen_orthogonal p).inter (isOpen_integralOrthogonalSubgroup _ _))
-      (hU.mono fun p hp ↦ (inf_eq_left.mpr hp).symm)
+      (hU.mono fun _ ↦ le_inf le_rfl)
   have h1A : (1 : orthogonalGroup (Q.baseChange ℝ)) ∈ A := fun i j ↦ by
     simp only [M, OneMemClass.coe_one, LinearEquiv.coe_toLinearMap_one,
       LinearMap.toMatrix_id_eq_basis_toMatrix, Basis.toMatrix_self, Matrix.one_apply]

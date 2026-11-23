@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.LinearAlgebra.Dual.Contraction
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
+public import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # Invariants of the dual representation
@@ -21,10 +22,14 @@ invariant for it is exactly one that the action of `G` on the space leaves uncha
 `ψ (ρ g u) = ψ u`.  That characterization of membership in `ρ.dual.invariants` is all a
 construction out of an invariant functional, or of one, ever needs.
 
-Counting those invariants needs only an invertible `|G|`. An invariant functional factors through
-the averaging projection onto `ρ.invariants`, and every functional on `ρ.invariants` extends
-through it, so the invariant functionals are the `k`-dual of `ρ.invariants`: the dual has as many
-invariants as the representation itself.
+The invariant functionals are exactly the functionals killing the coinvariant kernel, so over a
+field and in finite dimensions they are the `k`-dual of the coinvariants `V ⧸ ⟨ρ g v - v⟩`;
+in particular there are as many of them as the dimension of the coinvariants, for every group.
+
+Counting those invariants against `ρ.invariants` needs only an invertible `|G|`. An invariant
+functional factors through the averaging projection onto `ρ.invariants`, and every functional on
+`ρ.invariants` extends through it, so the invariant functionals are the `k`-dual of
+`ρ.invariants`: the dual has as many invariants as the representation itself.
 
 For a one-dimensional representation the dual is the inverse character: `Dual V ⊗ V` is the trivial
 line.
@@ -34,36 +39,36 @@ every linear form by a multiple of `ℓ`, and conversely. This is the divisibili
 divided-difference operator of a pseudoreflection.
 
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
-`Dual Y ⊗ X`, this counts intertwiners in both directions alike.
+`Dual Y ⊗ X`, this counts intertwiners in both directions alike. The invariant bilinear forms of `ρ`
+are the intertwiners into `ρ.dual`, so counting them is counting invariants of a dual.
 
 ## Main results
 
 * `TauCeti.Representation.mem_invariants_dual_iff`: a functional is invariant for `ρ.dual` exactly
   when the action of `G` leaves it unchanged, with
   `TauCeti.Representation.apply_of_mem_invariants_dual` the elimination direction.
+* `Representation.dualAnnihilator_coinvariantsKer`,
+  `Representation.finrank_coinvariants_eq_finrank_invariants_dual`: the invariant
+  functionals are the annihilator of the coinvariant kernel, so **the coinvariants have as many
+  dimensions as the dual has invariants**, for any group.
 * `TauCeti.Representation.finrank_invariants_dual`: **the dual of a representation has as many
   invariants as the representation** whenever `|G|` is invertible in `k`.
 * `Representation.sub_dual_apply_mem_span_singleton`: if `g` fixes the hyperplane `ker ℓ`
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
+* `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
   faithful exactly when the representation is.
 * `Representation.dualTprodEquivDualDualTprod`: `Dual W ⊗ V` is the dual of `Dual V ⊗ W` as
   representations.
-* `Representation.dualTprodEquivTrivialOfFinrankEqOne`: for a line `V`, the contraction
-  `Dual V ⊗ V → k` is an equivalence onto the trivial representation.
+* `Representation.dualTprodEquivTrivial`: for an invertible module `V`, such as a line, the
+  contraction `Dual V ⊗ V → k` is an equivalence onto the trivial representation.
 * `FDRep.finrank_invariants_dual_tprod`: the intertwiners `X → Y` are as many as the invariants
   of `Dual X ⊗ Y`.
 * `FDRep.finrank_hom_comm`: when `|G|` is invertible in `k`, there are as many
   intertwiners `X → Y` as `Y → X`.
-
-## References
-
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7, “Invariant bilinear forms”: the invariant forms of `ρ` are the intertwiners into
-  `ρ.dual`, so counting them is counting invariants of a dual.
 -/
 
 public section
@@ -83,6 +88,23 @@ theorem generalLinearEquiv_dual_asGroupHom_symm
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     asGroupHom_apply, dual_apply, inv_inv, Module.Dual.transpose_apply,
     LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+
+/-- The dual of a representation restricted along `f` is the restriction of the dual along `f`. -/
+@[simp]
+theorem dual_comp {R G H V : Type*} [CommSemiring R] [Group G] [Group H] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) (f : H →* G) :
+    dual (ρ.comp f) = ρ.dual.comp f := by
+  ext
+  simp
+
+/-- An element acting trivially on a module also acts trivially on its dual. -/
+theorem ker_le_ker_dual {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) : ρ.ker ≤ ρ.dual.ker := by
+  intro g hg
+  rw [MonoidHom.mem_ker]
+  have hinv := MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg)
+  ext ℓ x
+  simp [dual_apply, hinv, Module.End.one_eq_id, Module.Dual.transpose_apply]
 
 section Field
 
@@ -130,6 +152,12 @@ theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
   simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
   rw [← h, LinearMap.ext_iff]
   exact forall_congr' fun φ ↦ eq_comm
+
+/-- A representation over a field and its dual have the same kernel. -/
+@[simp]
+theorem ker_dual : ρ.dual.ker = ρ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker, dual_apply_eq_one_iff]
 
 /-- Over a field, the dual representation is faithful exactly when the representation is. -/
 theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective ρ := by
@@ -190,7 +218,7 @@ end Averaging
 section Finite
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
-variable [Finite G] [Invertible (Nat.card G : k)]
+variable [Invertible (Nat.card G : k)]
 
 /-- **The dual of a representation has as many invariants as the representation**, whenever `|G|`
 is invertible in `k`. Restricting functionals to the invariants identifies the invariant functionals
@@ -199,9 +227,11 @@ projection onto `ρ.invariants` (`apply_averageMap_of_mem_invariants_dual`), and
 on `ρ.invariants` extends through that projection to an invariant one. -/
 theorem finrank_invariants_dual (ρ : Representation k G V) :
     finrank k ρ.dual.invariants = finrank k ρ.invariants := by
+  have hne : (Nat.card G : k) ≠ 0 := (isUnit_of_invertible _).ne_zero
+  have : Finite G := Nat.finite_of_card_ne_zero fun h => hne (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   let _ : Invertible (Fintype.card G : k) :=
-    invertibleOfNonzero (by rw [← Nat.card_eq_fintype_card]; exact (isUnit_of_invertible _).ne_zero)
+    invertibleOfNonzero (by rw [← Nat.card_eq_fintype_card]; exact hne)
   -- Restriction of an invariant functional to the invariants.
   let r : ρ.dual.invariants →ₗ[k] Module.Dual k ρ.invariants :=
     { toFun := fun ψ => (ψ : Module.Dual k V).comp ρ.invariants.subtype
@@ -211,12 +241,12 @@ theorem finrank_invariants_dual (ρ : Representation k G V) :
     ρ.averageMap.codRestrict ρ.invariants ρ.averageMap_invariant
   have hr : Function.Bijective r := by
     refine ⟨fun ψ φ h => Subtype.ext (LinearMap.ext fun u => ?_), fun χ => ?_⟩
-    · rw [← apply_averageMap_of_mem_invariants_dual ψ.2,
-        ← apply_averageMap_of_mem_invariants_dual φ.2]
+    · rw [← apply_averageMap_of_mem_invariants_dual ψ.property,
+        ← apply_averageMap_of_mem_invariants_dual φ.property]
       exact DFunLike.congr_fun h (avg u)
     · refine ⟨⟨χ.comp avg, mem_invariants_dual_iff.2 fun g u => ?_⟩, ?_⟩
       · exact congrArg χ (Subtype.ext (LinearMap.congr_fun (ρ.averageMap_comp_ρ g) u))
-      · exact LinearMap.ext fun v => congrArg χ (Subtype.ext (ρ.averageMap_id v v.2))
+      · exact LinearMap.ext fun v => congrArg χ (Subtype.ext (ρ.averageMap_id v v.property))
   rw [(LinearEquiv.ofBijective r hr).finrank_eq, Subspace.dual_finrank_eq]
 
 end Finite
@@ -224,6 +254,52 @@ end Finite
 end Representation
 
 end TauCeti
+
+/-! ### Coinvariants and invariant functionals -/
+
+namespace Representation
+
+open Module (finrank)
+
+section CommRing
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **The invariant functionals are the annihilator of the coinvariant kernel**: a functional is
+invariant for `ρ.dual` exactly when it kills every `ρ g v - v`. -/
+theorem dualAnnihilator_coinvariantsKer (ρ : Representation k G V) :
+    (Coinvariants.ker ρ).dualAnnihilator = ρ.dual.invariants := by
+  ext ψ
+  rw [Submodule.mem_dualAnnihilator, TauCeti.Representation.mem_invariants_dual_iff]
+  constructor
+  · intro h g u
+    have := h (ρ g u - u) (Coinvariants.sub_mem_ker g u)
+    rwa [map_sub, sub_eq_zero] at this
+  · intro h w hw
+    rw [Coinvariants.ker] at hw
+    induction hw using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨⟨g, u⟩, rfl⟩ := hx
+      simp [h]
+    | zero => simp
+    | add x y _ _ hx hy => simp [hx, hy]
+    | smul a x _ hx => simp [hx]
+
+end CommRing
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **The coinvariants are dual to the invariant functionals.** In finite dimensions over a field,
+the coinvariants `V ⧸ ⟨ρ g v - v⟩` have the dimension of the space of invariants of the dual
+representation, for any group `G`. -/
+theorem finrank_coinvariants_eq_finrank_invariants_dual [FiniteDimensional k V]
+    (ρ : Representation k G V) :
+    finrank k ρ.Coinvariants = finrank k ρ.dual.invariants := by
+  rw [← dualAnnihilator_coinvariantsKer]
+  -- `ρ.Coinvariants` is by definition the quotient `V ⧸ Coinvariants.ker ρ`.
+  exact (Subspace.quotEquivAnnihilator (Coinvariants.ker ρ)).finrank_eq
+
+end Representation
 
 /-! ### Intertwiners in both directions -/
 
@@ -258,29 +334,26 @@ end Representation
 
 namespace Representation
 
-open Module (finrank)
+variable {k G V : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V]
+  [Module.Invertible k V]
 
-variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
-
-/-- **The dual of a line tensored with the line is trivial.** For a one-dimensional
-representation, the contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v`
-(`TauCeti.contractLeftEquivOfFinrankEqOne`), is an equivalence onto the trivial
-representation. -/
-noncomputable def dualTprodEquivTrivialOfFinrankEqOne (ρ : Representation k G V)
-    (h : finrank k V = 1) :
+/-- **The dual of a line tensored with the line is trivial.** For a representation on an
+invertible module, such as a line over a field (`Module.Invertible.of_finrank_eq_one`), the
+contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v` (`Module.Invertible.linearEquiv`), is an equivalence
+onto the trivial representation. -/
+noncomputable def dualTprodEquivTrivial (ρ : Representation k G V) :
     (tprod (dual ρ) ρ).Equiv (trivial k G k) :=
-  .mk (TauCeti.contractLeftEquivOfFinrankEqOne h) fun g ↦
+  .mk (Module.Invertible.linearEquiv k V) fun g ↦
     _root_.TensorProduct.ext' fun f v ↦ by
       simp only [LinearMap.coe_comp, Function.comp_apply, tprod_apply, TensorProduct.map_tmul,
-        LinearEquiv.coe_coe, TauCeti.contractLeftEquivOfFinrankEqOne_tmul, dual_apply,
+        LinearEquiv.coe_coe, Module.Invertible.linearEquiv_tmul, dual_apply,
         Module.Dual.transpose_apply, trivial_apply]
       rw [inv_self_apply]
 
 @[simp]
-theorem dualTprodEquivTrivialOfFinrankEqOne_tmul (ρ : Representation k G V)
-    (h : finrank k V = 1) (f : Module.Dual k V) (v : V) :
-    dualTprodEquivTrivialOfFinrankEqOne ρ h (f ⊗ₜ v) = f v :=
-  TauCeti.contractLeftEquivOfFinrankEqOne_tmul h f v
+theorem dualTprodEquivTrivial_tmul (ρ : Representation k G V) (f : Module.Dual k V) (v : V) :
+    dualTprodEquivTrivial ρ (f ⊗ₜ v) = f v :=
+  Module.Invertible.linearEquiv_tmul f v
 
 end Representation
 
@@ -307,7 +380,7 @@ intertwiners `X → Y` are the invariants of `Dual X ⊗ Y`, and those `Y → X`
 dual `Dual Y ⊗ X` (`Representation.dualTprodEquivDualDualTprod`), which are as many
 (`TauCeti.Representation.finrank_invariants_dual`). Over a semisimple group algebra this is the
 symmetry of the multiplicity pairing of `X` and `Y`. -/
-theorem finrank_hom_comm [Finite G] [Invertible (Nat.card G : k)] (X Y : FDRep k G) :
+theorem finrank_hom_comm [Invertible (Nat.card G : k)] (X Y : FDRep k G) :
     finrank k (X ⟶ Y) = finrank k (Y ⟶ X) := by
   rw [← finrank_invariants_dual_tprod X Y, ← finrank_invariants_dual_tprod Y X,
     (Representation.Equiv.invariantsLinearEquiv (V := TensorProduct k (Module.Dual k Y) X)

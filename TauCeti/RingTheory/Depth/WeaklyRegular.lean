@@ -11,6 +11,7 @@ import Mathlib.RingTheory.KrullDimension.Regular
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!

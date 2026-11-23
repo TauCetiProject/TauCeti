@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Analysis.Normed.Group.Quotient
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 
 /-!
 # Maps tangent to a distribution
@@ -22,9 +26,17 @@ differentiable, so the predicate is meaningful for differentiable maps.
 
 * `TauCeti.IsHorizontalMap`: maps whose tangent images lie in a distribution.
 * `TauCeti.IsHorizontalMap.comp`: precomposing a horizontal map keeps it horizontal.
+* `TauCeti.IsHorizontalMap.eventually_sub_mem`: coordinates whose differential takes the
+  distribution into a closed subspace are locally constant modulo that subspace along
+  horizontal differentiable maps.
 * `TauCeti.isHorizontalMap_comp_diffeomorph_iff`, `TauCeti.isHorizontalMap_diffeomorph_comp_iff`:
   independence of the parametrization and transport by diffeomorphisms preserving the
   distributions.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Proposition 19.16, p. 500 (local containment in a slice).
 -/
 
 public section
@@ -32,6 +44,8 @@ public section
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+section General
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
@@ -108,15 +122,66 @@ theorem isHorizontalMap_diffeomorph_comp_iff {D' : Π z : P, Submodule 𝕜 (Tan
     (hψ : ∀ x (v : TangentSpace I x), v ∈ D x ↔ mfderiv I K ψ x v ∈ D' (ψ x)) :
     IsHorizontalMap J D' (ψ ∘ f) ↔ IsHorizontalMap J D f := by
   refine forall_congr' fun y ↦ ?_
-  have hcoe (v : TangentSpace I (f y)) :
-      (ψ.mfderivToContinuousLinearEquiv hn (f y)).toLinearEquiv.toLinearMap v =
-        mfderiv I K ψ (f y) v :=
-    congr($(ψ.mfderivToContinuousLinearEquiv_coe (x := f y) hn) v)
-  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap]
+  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap,
+    ψ.mfderivToContinuousLinearEquiv_toLinearMap hn]
   refine ⟨fun h v hv ↦ (hψ (f y) v).2 ?_, fun h v hv ↦ ?_⟩
-  · simpa only [Submodule.mem_comap, hcoe] using h hv
-  · simpa only [Submodule.mem_comap, hcoe] using (hψ (f y) v).1 (h hv)
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using h hv
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using (hψ (f y) v).1 (h hv)
 
 end Transport
+
+end General
+
+section Real
+
+open Set Filter
+open scoped Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+  {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M}
+
+/-- Along a horizontal differentiable map, coordinates are locally constant modulo any closed
+subspace containing the coordinate image of the distribution. -/
+theorem IsHorizontalMap.eventually_sub_mem {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (hf : IsHorizontalMap J D f) {s : Set N}
+    (hfd : MDifferentiableOn J I f s) (hs : IsOpen s)
+    {p : M → V} {U : Set M} (hp : MDifferentiableOn I 𝓘(ℝ, V) p U) (hU : IsOpen U)
+    {W : Submodule ℝ V} (hW : IsClosed (W : Set V))
+    (hDp : ∀ z ∈ U, (D z).map (mvfderiv I p z).toLinearMap ≤ W)
+    {x : N} (hxs : x ∈ s) (hx : f x ∈ U) : ∀ᶠ y in 𝓝 x, p (f y) - p (f x) ∈ W := by
+  let _ : IsClosed (W : Set V) := hW
+  let q : V →L[ℝ] V ⧸ W := W.mkQL
+  let g : N → V := p ∘ f
+  have hpre : IsOpen (s ∩ f ⁻¹' U) := hfd.continuousOn.isOpen_inter_preimage hs hU
+  have hgd (y : N) (hy : y ∈ s ∩ f ⁻¹' U) : MDifferentiableAt J 𝓘(ℝ, V) g y :=
+    ((hp (f y) hy.2).mdifferentiableAt (hU.mem_nhds hy.2)).comp y
+      ((hfd y hy.1).mdifferentiableAt (hs.mem_nhds hy.1))
+  have hzero (y : N) (hy : y ∈ s ∩ f ⁻¹' U) :
+      mfderiv J 𝓘(ℝ, V ⧸ W) (q ∘ g) y = 0 := by
+    rw [← mvfderiv_eq_zero_iff]
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt q.differentiableAt (hgd y hy),
+      q.fderiv, zero_apply]
+    apply (Submodule.Quotient.mk_eq_zero W).2
+    have hmem := hDp (f y) hy.2 (Submodule.mem_map_of_mem (hf.mfderiv_mem y v))
+    simpa only [g, mvfderiv_comp_apply y
+      ((hp (f y) hy.2).mdifferentiableAt (hU.mem_nhds hy.2))
+      ((hfd y hy.1).mdifferentiableAt (hs.mem_nhds hy.1)),
+      ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply] using hmem
+  have hconst := MDifferentiableOn.eventuallyEq_const_of_mfderiv_eq_zero
+    (fun y hy ↦ (q.differentiableAt.comp_mdifferentiableAt (hgd y hy)).mdifferentiableWithinAt)
+    hpre hzero ⟨hxs, hx⟩
+  filter_upwards [hconst] with y hy
+  simp only [Function.comp_apply] at hy
+  apply (Submodule.Quotient.mk_eq_zero W).1
+  rw [← Submodule.mkQ_apply, ← Submodule.mkQL_apply, map_sub, sub_eq_zero]
+  exact hy
+
+end Real
 
 end TauCeti

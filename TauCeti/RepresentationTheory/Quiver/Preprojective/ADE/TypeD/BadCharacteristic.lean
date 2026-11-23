@@ -23,7 +23,7 @@ These are statements about zeroth Hochschild homology, not intrinsic formality i
 
 Products are in later-factor-first order. The nonvanishing argument works over every nontrivial
 commutative ring with `2 = 0`, without a field hypothesis. As in the neighboring type-`D`
-modules, select `forkNeighborSetFintype` when writing signless quotient carriers.
+modules, select `SimpleGraph.neighborSetFintypeOfFinite` when writing signless quotient carriers.
 
 ## References
 
@@ -39,7 +39,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def d4ForkNodes {n : ℕ} (hn : 4 ≤ n) : Fin 4 ↪ Fin (DynkinType.D n).rank where
   toFun i := Fin.cast (DynkinType.rank_D n).symm ⟨n - 4 + i.val, by have := i.isLt; omega⟩
@@ -91,15 +91,9 @@ theorem exists_mem_preprojectiveGrade_D_four_notMem_commutatorSubmodule
     [Nontrivial k] (hn : 4 ≤ n) (h2 : (2 : k) = 0) (o : Orientation G) :
     ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
       z ∈ preprojectiveGrade k (OrientedQuiver G o) 4 ∧
-        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2
-  let C := dColoring n
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
-  intro h
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) :=
+  (dColoring n).exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k o
+    (exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2)
 
 end CommRing
 

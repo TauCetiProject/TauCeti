@@ -21,8 +21,9 @@ points of the monic Montgomery model `TauCeti.Montgomery.model A B` over `R` to 
 
 The coordinate pair of the image of a point is the image under `TauCeti.Montgomery.Pair.map f` of
 its coordinate pair, so Montgomery's `x`-only arithmetic over `R` may be carried out after base
-change. Over fields the map is additive, and the projective `x`-coordinates of two points agree
-after base change exactly when they agree before.
+change. Over fields the map is additive, and the projective `x`-coordinate commutes with the
+coordinatewise change of field `RingHom.mapProjective`. Thus both the coordinate pairs and their
+projective classes commute with base change.
 
 ## Main definitions
 
@@ -36,6 +37,8 @@ after base change exactly when they agree before.
 * `TauCeti.Montgomery.mapPoint_neg`, `TauCeti.Montgomery.mapPoint_injective` and, over fields,
   `TauCeti.Montgomery.mapPoint_add` and `TauCeti.Montgomery.mapPoint_zsmul`: the map commutes
   with negation, addition and integer multiples and is injective.
+* `TauCeti.Montgomery.projectiveX_mapPoint`: the projective `x`-coordinate of the image of a
+  point is the coordinatewise image of its projective `x`-coordinate.
 * `TauCeti.Montgomery.projectiveX_mapPoint_eq_projectiveX_mapPoint_iff`: along a field
   embedding, two native points have the same projective `x`-coordinate after base change exactly
   when they do before.
@@ -116,6 +119,13 @@ theorem mapPoint_zsmul (n : ℤ) (P : (model A B).toAffine.Point) :
     mapPoint f f.injective (n • P) = n • mapPoint f f.injective P :=
   map_zsmul (AddMonoidHom.mk' _ (mapPoint_add f)) n P
 
+/-- The projective `x`-coordinate commutes with a field embedding, including at infinity.
+This is equality of projective points, not just preservation of their fibres. -/
+theorem projectiveX_mapPoint (hB : B ≠ 0) (P : (model A B).toAffine.Point) :
+    projectiveX (f A) ((map_ne_zero f).mpr hB) (mapPoint f f.injective P) =
+      f.mapProjective (projectiveX A hB P) := by
+  simp only [projectiveX_def, coordinates_mapPoint, Pair.mapProjective_toProj]
+
 /-- **The projective `x`-coordinate is compatible with field embeddings**: two native points
 have the same projective `x`-coordinate after base change exactly when they do before. -/
 theorem projectiveX_mapPoint_eq_projectiveX_mapPoint_iff (hB : B ≠ 0)
@@ -123,7 +133,7 @@ theorem projectiveX_mapPoint_eq_projectiveX_mapPoint_iff (hB : B ≠ 0)
     projectiveX (f A) ((map_ne_zero f).mpr hB) (mapPoint f f.injective P) =
         projectiveX (f A) ((map_ne_zero f).mpr hB) (mapPoint f f.injective Q) ↔
       projectiveX A hB P = projectiveX A hB Q := by
-  simp only [projectiveX_eq_projectiveX_iff, ← mapPoint_neg, (mapPoint_injective _ _).eq_iff]
+  simp only [projectiveX_mapPoint f hB, (f.mapProjective_injective).eq_iff]
 
 end Field
 

@@ -39,8 +39,8 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.dual`: the dual crystal, exchanging `e` with `f`, `ε` with `φ` and
   negating the weight.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
-* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
-  composition and duals.
+* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals that are defined
+  everywhere (no element is sent to `0`), with identities, composition and duals.
 * `TauCeti.NormalCrystal.StrictIso`: strict isomorphisms of normal crystals, with inverses,
   composition and duals.
 * `TauCeti.NormalCrystal.transport`: the transport of a normal crystal along a bijection of the
@@ -131,11 +131,8 @@ theorem wt_of_f_eq_some (h : c.f i x = some y) : c.wt y = c.wt x - P.root i := b
   rw [c.wt_of_e_eq_some (c.f_eq_some_iff.1 h), add_sub_cancel_right]
 
 /-- No raising operator fixes an element, since it changes the weight by a simple root. -/
-theorem e_ne_some_self : c.e i x ≠ some x := by
-  intro h
-  have hwt := c.wt_of_e_eq_some h
-  have h0 : P.root i = 0 := by simpa using hwt
-  exact P.ne_zero i h0
+theorem e_ne_some_self : c.e i x ≠ some x :=
+  fun h => P.ne_zero i (by simpa using c.wt_of_e_eq_some h)
 
 /-- No lowering operator fixes an element. -/
 theorem f_ne_some_self : c.f i x ≠ some x :=
@@ -160,36 +157,33 @@ theorem φ_of_f_eq_some (h : c.f i x = some y) : c.φ i y + 1 = c.φ i x :=
 /-- A map commuting with the raising operators preserves the lengths of raising strings. -/
 theorem ε_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
     (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) : d.ε i (g x) = c.ε i x := by
-  suffices ∀ n x, c.ε i x = n → d.ε i (g x) = n from this _ x rfl
-  intro n
-  induction n with
-  | zero => intro x hn; rw [d.ε_eq_zero_iff, hg, c.ε_eq_zero_iff.1 hn, Option.map_none]
+  induction hn : c.ε i x generalizing x with
+  | zero => rw [d.ε_eq_zero_iff, hg, c.ε_eq_zero_iff.1 hn, Option.map_none]
   | succ n ih =>
-    intro x hn
     obtain ⟨y, hy⟩ :=
       Option.ne_none_iff_exists'.1 ((c.e_ne_none_iff (i := i) (x := x)).2 (by omega))
     have hdy : d.e i (g x) = some (g y) := by rw [hg, hy, Option.map_some]
     have := c.ε_of_e_eq_some hy
     rw [← d.ε_of_e_eq_some hdy, ih y (by omega)]
 
-/-- A weight-preserving map commuting with the raising operators preserves the lengths of
-lowering strings. -/
-theorem φ_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
-    (hwt : ∀ x, d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) :
+/-- A map commuting with the raising operators preserves the lengths of lowering strings at every
+point where it preserves the weight. -/
+theorem φ_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'} (x : B)
+    (hwt : d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) :
     d.φ i (g x) = c.φ i x := by
   have hd := d.φ_sub_ε i (g x)
   have hc := c.φ_sub_ε i x
   rw [hwt, c.ε_apply_eq_of_e_map d hg] at hd
   omega
 
-/-- A weight-preserving map commuting with the raising operators commutes with the lowering
-operators. -/
-theorem f_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
-    (hwt : ∀ x, d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) :
+/-- A map commuting with the raising operators commutes with the lowering operators at every
+point where it preserves the weight. -/
+theorem f_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'} (x : B)
+    (hwt : d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) :
     d.f i (g x) = (c.f i x).map g := by
   cases h : c.f i x with
   | none =>
-    rw [Option.map_none, ← d.φ_eq_zero_iff, c.φ_apply_eq_of_e_map d hwt hg, c.φ_eq_zero_iff, h]
+    rw [Option.map_none, ← d.φ_eq_zero_iff, c.φ_apply_eq_of_e_map d x hwt hg, c.φ_eq_zero_iff, h]
   | some y =>
     rw [Option.map_some, d.f_eq_some_iff, hg, c.f_eq_some_iff.1 h, Option.map_some]
 
@@ -199,9 +193,9 @@ theorem ext {c d : NormalCrystal P b B} (hwt : c.wt = d.wt) (he : c.e = d.e) : c
   have he' (i : b.support) (x : B) : d.e i (id x) = (c.e i x).map id := by simp [he]
   have hwt' (x : B) : d.wt (id x) = c.wt x := by simp [hwt]
   have hε : c.ε = d.ε := funext₂ fun i x => (c.ε_apply_eq_of_e_map d (he' i) x).symm
-  have hφ : c.φ = d.φ := funext₂ fun i x => (c.φ_apply_eq_of_e_map d hwt' (he' i) x).symm
+  have hφ : c.φ = d.φ := funext₂ fun i x => (c.φ_apply_eq_of_e_map d x (hwt' x) (he' i)).symm
   have hf : c.f = d.f := funext₂ fun i x => by
-    simpa using (c.f_apply_eq_of_e_map d hwt' (he' i) x).symm
+    simpa using (c.f_apply_eq_of_e_map d x (hwt' x) (he' i)).symm
   cases c; cases d
   simp_all
 
@@ -286,22 +280,29 @@ theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
 theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x :=
   Option.iterate_one (c.f i) x
 
+/-- Concatenating two runs of the raising operator `e i`. -/
+theorem eIter_add (m n : ℕ) (x : B) :
+    c.eIter i (m + n) x = (c.eIter i m x).bind (c.eIter i n) :=
+  Option.iterate_add (c.e i) m n x
+
+/-- Concatenating two runs of the lowering operator `f i`. -/
+theorem fIter_add (m n : ℕ) (x : B) :
+    c.fIter i (m + n) x = (c.fIter i m x).bind (c.fIter i n) :=
+  Option.iterate_add (c.f i) m n x
+
 theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) :=
   Option.iterate_succ' (c.e i) n x
 
-@[simp]
-theorem dual_eIter : c.dual.eIter = c.fIter := by
-  funext i n x
-  induction n generalizing x with
-  | zero => rfl
-  | succ n ih => simp only [eIter_succ, fIter_succ, dual_e, ih]
+theorem fIter_succ' (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.fIter i n x).bind (c.f i) :=
+  Option.iterate_succ' (c.f i) n x
 
 @[simp]
-theorem dual_fIter : c.dual.fIter = c.eIter := by
-  simpa using c.dual.dual_eIter.symm
+theorem dual_eIter : c.dual.eIter = c.fIter :=
+  funext fun i => by simp only [eIter, fIter, dual_e]
 
-theorem fIter_succ' (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.fIter i n x).bind (c.f i) := by
-  simpa using c.dual.eIter_succ' n x
+@[simp]
+theorem dual_fIter : c.dual.fIter = c.eIter :=
+  funext fun i => by simp only [eIter, fIter, dual_f]
 
 /-- Raising `n` times adds `n` copies of the simple root to the weight. -/
 theorem wt_of_eIter_eq_some (h : c.eIter i n x = some y) : c.wt y = c.wt x + n • P.root i := by
@@ -336,13 +337,6 @@ theorem isSome_eIter_iff : (c.eIter i n x).isSome ↔ n ≤ c.ε i x := by
 theorem eIter_eq_none_iff : c.eIter i n x = none ↔ c.ε i x < n := by
   rw [← Option.not_isSome_iff_eq_none, c.isSome_eIter_iff, not_le]
 
-/-- Lowering `n` times subtracts `n` copies of the simple root from the weight. -/
-theorem wt_of_fIter_eq_some (h : c.fIter i n x = some y) : c.wt y = c.wt x - n • P.root i := by
-  rw [← dual_eIter] at h
-  have := c.dual.wt_of_eIter_eq_some h
-  simp only [dual_wt] at this
-  rw [sub_eq_add_neg, ← neg_neg (c.wt y), this, neg_add, neg_neg]
-
 /-- Lowering `n` times shortens the lowering string by `n`. -/
 theorem φ_of_fIter_eq_some (h : c.fIter i n x = some y) : c.φ i y + n = c.φ i x := by
   rw [← dual_eIter] at h
@@ -365,14 +359,17 @@ theorem fIter_eq_some_iff : c.fIter i n x = some y ↔ c.eIter i n y = some x :=
     simp only [fIter_succ, eIter_succ', Option.bind_eq_some_iff, ih, c.f_eq_some_iff]
     exact ⟨fun ⟨z, hz, hy⟩ => ⟨z, hy, hz⟩, fun ⟨z, hy, hz⟩ => ⟨z, hz, hy⟩⟩
 
+/-- Lowering `n` times subtracts `n` copies of the simple root from the weight. -/
+theorem wt_of_fIter_eq_some (h : c.fIter i n x = some y) : c.wt y = c.wt x - n • P.root i :=
+  eq_sub_of_add_eq (c.wt_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
 /-- Lowering `n` times lengthens the raising string by `n`. -/
 theorem ε_of_fIter_eq_some (h : c.fIter i n x = some y) : c.ε i y = c.ε i x + n :=
   (c.ε_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
 
 /-- Raising `n` times lengthens the lowering string by `n`. -/
-theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n := by
-  have := c.dual.ε_of_fIter_eq_some (by simpa using h)
-  simpa using this
+theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n :=
+  (c.φ_of_fIter_eq_some (c.fIter_eq_some_iff.mpr h)).symm
 
 end Strings
 
@@ -381,7 +378,12 @@ end Strings
 /-- A **strict morphism** of normal crystals: a map of the underlying types preserving weights and
 commuting with the raising operators. It then also preserves the string lengths and commutes with
 the lowering operators (`TauCeti.NormalCrystal.StrictHom.ε_apply`,
-`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`). -/
+`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`).
+
+This is a total map `B → B'`. Kashiwara's strict morphisms are maps `B ⊔ {0} → B' ⊔ {0}` fixing `0`,
+which may also send elements, even whole connected components, to `0`; `StrictHom` is the case in
+which no element is sent to `0`. For isomorphisms (`TauCeti.NormalCrystal.StrictIso`) the two
+conventions agree. -/
 structure StrictHom (c : NormalCrystal P b B) (d : NormalCrystal P b B') where
   /-- The underlying map. -/
   toFun : B → B'
@@ -416,17 +418,20 @@ theorem wt_apply : d.wt (ψ x) = c.wt x := ψ.wt_toFun x
 @[simp]
 theorem e_apply : d.e i (ψ x) = (c.e i x).map ψ := ψ.e_toFun i x
 
+/-- A strict morphism preserves the string lengths `ε i`. -/
 @[simp]
 theorem ε_apply : d.ε i (ψ x) = c.ε i x :=
   c.ε_apply_eq_of_e_map d (ψ.e_apply i) x
 
+/-- A strict morphism preserves the string lengths `φ i`. -/
 @[simp]
 theorem φ_apply : d.φ i (ψ x) = c.φ i x :=
-  c.φ_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
+  c.φ_apply_eq_of_e_map d x (ψ.wt_apply x) (ψ.e_apply i)
 
+/-- A strict morphism commutes with the lowering operators. -/
 @[simp]
 theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ :=
-  c.f_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
+  c.f_apply_eq_of_e_map d x (ψ.wt_apply x) (ψ.e_apply i)
 
 @[simp]
 theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := by

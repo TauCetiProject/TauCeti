@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.CoordinateIso
 
 /-!
 # Chosen split maximal tori over a ring
@@ -29,15 +30,21 @@ a torus chosen over `ℤ` specializes to every commutative ring.
 ## Main declarations
 
 * `TauCeti.SplitMaximalTorus`: a chosen split maximal torus of an affine group over a ring.
+* `TauCeti.SplitMaximalTorus.ofSurjective`: construction from a surjective map in unlifted
+  finite-rank coordinates and geometric-fiber maximality of its kernel.
 * `TauCeti.SplitMaximalTorus.comapOfIso`: transport along an isomorphism of coordinate Hopf
   algebras.
 * `TauCeti.SplitMaximalTorus.baseChange`: base change along `R → S`.
+* `TauCeti.SplitMaximalTorus.baseChange_coordinateMap_hom_one_tmul`: the base-changed torus
+  restricts `1 ⊗ h` to the coefficient image of the restriction of `h`.
 * `TauCeti.SplitMaximalTorus.definingIdeal_baseChange`: the base-changed torus is cut out by the
   base change of the defining ideal.
 
 ## References
 
 * B. Conrad, *Reductive Group Schemes* (2014), Definition 3.2.1 and Example 3.2.3.
+* The unlifted-coordinate constructor abstracts the construction in
+  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus`.
 -/
 
 public section
@@ -115,6 +122,57 @@ theorem isMaximalTorus_geometricFiber (T : SplitMaximalTorus R H r)
     HopfIdeal.IsMaximalTorus k (CommHopfAlgCat.baseChange (K := k) H)
       (CommHopfAlgCat.baseChangeHopfIdeal (K := k) T.definingIdeal) :=
   T.maximal k
+
+section OfSurjective
+
+variable (π : H ⟶ (DiagonalizableGroup.coordinateRing R
+    (SplitTorus.characterGroup (Fin r))).obj) (hπ : Function.Surjective π.hom)
+
+omit [Algebra.FiniteType R H] in
+/-- Reindexing finite-rank coordinates by universe lifting preserves the kernel. -/
+private theorem kerOfSurjective_comp_uliftCoordinateRingIso
+    (hs : Function.Surjective (π ≫ (SplitTorus.uliftCoordinateRingIso R r).hom).hom) :
+    HopfIdeal.kerOfSurjective _ hs = HopfIdeal.kerOfSurjective π.hom hπ := by
+  ext x
+  simp only [HopfIdeal.mem_kerOfSurjective, CommHopfAlgCat.hom_comp,
+    BialgHom.coe_comp, Function.comp_apply]
+  exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+    (SplitTorus.uliftCoordinateRingIso R r).hom).1
+
+/-- Construct a chosen split maximal torus from a surjective coordinate map in unlifted
+finite-rank coordinates and maximality of its kernel on every geometric fiber. -/
+noncomputable def ofSurjective
+    (hmax : ∀ (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k],
+      HopfIdeal.IsMaximalTorus k (CommHopfAlgCat.baseChange (K := k) H)
+        (CommHopfAlgCat.baseChangeHopfIdeal (K := k) (HopfIdeal.kerOfSurjective π.hom hπ))) :
+    SplitMaximalTorus R H r where
+  coordinateMap := π ≫ (SplitTorus.uliftCoordinateRingIso R r).hom
+  surjective := by
+    rw [CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (ConcreteCategory.bijective_of_isIso _).2.comp hπ
+  maximal := by
+    intro k _ _ _
+    rw [kerOfSurjective_comp_uliftCoordinateRingIso π hπ]
+    exact hmax k
+
+variable (hmax : ∀ (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k],
+    HopfIdeal.IsMaximalTorus k (CommHopfAlgCat.baseChange (K := k) H)
+      (CommHopfAlgCat.baseChangeHopfIdeal (K := k) (HopfIdeal.kerOfSurjective π.hom hπ)))
+
+/-- The coordinate map of `ofSurjective` is the original map followed by universe lifting. -/
+@[simp]
+theorem ofSurjective_coordinateMap :
+    (ofSurjective π hπ hmax).coordinateMap =
+      π ≫ (SplitTorus.uliftCoordinateRingIso R r).hom :=
+  (rfl)
+
+/-- Reindexing the torus coordinates does not change the defining kernel. -/
+@[simp]
+theorem definingIdeal_ofSurjective :
+    (ofSurjective π hπ hmax).definingIdeal = HopfIdeal.kerOfSurjective π.hom hπ :=
+  kerOfSurjective_comp_uliftCoordinateRingIso π hπ (ofSurjective π hπ hmax).surjective
+
+end OfSurjective
 
 section ComapOfIso
 
@@ -214,6 +272,16 @@ theorem baseChange_coordinateMap (T : SplitMaximalTorus R H r) :
         (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
           (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom :=
   (rfl)
+
+/-- The base-changed torus restricts `1 ⊗ h` to the restriction of `h` to the original torus,
+with its coefficients mapped along `R → S`. -/
+theorem baseChange_coordinateMap_hom_one_tmul (T : SplitMaximalTorus R H r) (h : H) :
+    (T.baseChange S).coordinateMap.hom (1 ⊗ₜ h) =
+      MonoidAlgebra.mapAlgHom _ (Algebra.ofId R S) (T.coordinateMap.hom h) := by
+  rw [baseChange_coordinateMap, CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
+    MonoidAlgebra.scalarTensorBialgEquiv_tmul, one_smul]
 
 /-- The defining ideal of the base-changed torus is the base change of the defining ideal. -/
 @[simp]

@@ -85,13 +85,14 @@ theorem _root_.LieIdeal.nilradical_le_restrict_nilradical_of_forall [IsNoetheria
         exact LieSubmodule.coe_bracket _ x z }
   -- It is the image of the nilpotent Lie algebra `nilradical R I`, so it is nilpotent.
   let f : LieAlgebra.nilradical R I →ₗ⁅R⁆ N :=
-    { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
+    { toFun := fun z ↦ ⟨(z : I), z, z.property, rfl⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
       map_lie' := fun {y z} ↦ Subtype.ext <|
         (congrArg _ ((LieAlgebra.nilradical R I : LieSubalgebra R I).coe_bracket y z)).trans <|
           ((I : LieSubalgebra R M).coe_bracket _ _).trans
-            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
+            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.property, rfl⟩ : N) ⟨_, z, z.property,
+                rfl⟩).symm }
   have hf : Function.Surjective f := by
     rintro ⟨_, z, hz, rfl⟩
     exact ⟨⟨z, hz⟩, rfl⟩
@@ -105,32 +106,15 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 -- The field is used as a one-dimensional abelian Lie algebra.
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The derivation `D`, as the Lie homomorphism `a ↦ a • D` out of the one-dimensional abelian
-Lie algebra `K`; the semidirect sum it defines adjoins `D` to `L`. -/
-private def lineHom (D : LieDerivation K L L) : K →ₗ⁅K⁆ LieDerivation K L L where
-  toLinearMap := LinearMap.toSpanSingleton K _ D
-  map_lie' := fun {a b} ↦ by simp [Ring.lie_def, mul_comm, smul_lie, lie_smul]
-
-/-- `lineHom D` sends `a` to `a • D`. -/
-private theorem lineHom_apply (D : LieDerivation K L L) (a : K) : lineHom D a = a • D :=
-  LinearMap.toSpanSingleton_apply K _ D a
-
-/-- In the semidirect sum adjoining `D`, the value `D x` is the bracket of the adjoined
-generator with `x`. -/
-private theorem lie_inr_one_inl (D : LieDerivation K L L) (x : L) :
-    ⁅inr (lineHom D) (1 : K), inl (lineHom D) x⁆ = inl (lineHom D) (D x) := by
-  simp only [inl_eq_mk, inr_eq_mk, lie_eq_mk]
-  ext <;> simp [lineHom_apply, Ring.lie_def]
-
 /-- If a nilpotent ideal of the semidirect sum adjoining `D` contains the bracket of the adjoined
 generator with `x`, then `D x` lies in the nilradical. -/
 private theorem apply_mem_nilradical_of_lie_mem (D : LieDerivation K L L) (x : L)
-    (J : LieIdeal K (L ⋊⁅lineHom D⁆ K)) [LieRing.IsNilpotent J]
-    (hJ : ⁅inr (lineHom D) (1 : K), inl (lineHom D) x⁆ ∈ J) :
+    (J : LieIdeal K (L ⋊⁅D.lineHom⁆ K)) [LieRing.IsNilpotent J]
+    (hJ : ⁅inr D.lineHom (1 : K), inl D.lineHom x⁆ ∈ J) :
     D x ∈ LieAlgebra.nilradical K L := by
-  refine LieIdeal.le_nilradical K L (J.comap (inl (lineHom D)))
+  refine LieIdeal.le_nilradical K L (J.comap (inl D.lineHom))
     (J.isNilpotent_comap_of_injective _ (inl_injective _)) ?_
-  rwa [LieIdeal.mem_comap, ← lie_inr_one_inl]
+  rwa [LieIdeal.mem_comap, ← LieDerivation.lie_inr_lineHom_one_inl]
 
 variable [FiniteDimensional K L]
 
@@ -141,7 +125,7 @@ takes values in its nilradical. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_isSolvable [IsSolvable L]
     (D : LieDerivation K L L) (x : L) : D x ∈ LieAlgebra.nilradical K L := by
   have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
-  let E := L ⋊⁅lineHom D⁆ K
+  let E := L ⋊⁅D.lineHom⁆ K
   have : LieRing.IsNilpotent (derivedSeries K E 1) :=
     (LieIdeal.isNilpotent_iff_isNilpotent_ambient _).mpr
       (isNilpotent_derivedSeries_of_isSolvable (K := K) (L := E) E)
@@ -182,7 +166,7 @@ theorem mem_nilradical_of_mem_radical_of_isNilpotent_ad {x : L} (hx : x ∈ radi
     rw [LieAlgebra.isNilpotent_iff_forall (R := K)]
     intro z
     exact (J : LieSubalgebra K L).isNilpotent_ad_of_isNilpotent_ad (x := z)
-      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.2)
+      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.property)
   exact J.le_nilradical K L hJ (Submodule.mem_sup_left (Submodule.mem_span_singleton_self x))
 
 end LieAlgebra
@@ -193,14 +177,14 @@ in `nilradical K L`. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivation K L L)
     {x : L} (hx : x ∈ radical K L) : D x ∈ LieAlgebra.nilradical K L := by
   have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
-  let E := L ⋊⁅lineHom D⁆ K
+  let E := L ⋊⁅D.lineHom⁆ K
   let π := (radical K E).mkQ
   -- The quotient of `E` by its radical is perfect, by Cartan's criterion.
   have hperf : derivedSeries K (E ⧸ radical K E) 1 = ⊤ :=
     derivedSeries_one_eq_top_of_isKilling K _
   -- The derived algebra of `E` lies in `L`, since `E ⧸ L ≅ K` is abelian.
-  have hder (e : E) (he : e ∈ derivedSeries K E 1) : e = inl (lineHom D) e.left := by
-    have hle : derivedSeries K E 1 ≤ (projr (lineHom D)).ker := by
+  have hder (e : E) (he : e ∈ derivedSeries K E 1) : e = inl D.lineHom e.left := by
+    have hle : derivedSeries K E 1 ≤ (projr D.lineHom).ker := by
       rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero,
         LieSubmodule.lie_le_iff]
       intro a _ b _
@@ -209,7 +193,7 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivat
     rw [LieHom.mem_ker, projr_mk] at hright
     ext <;> simp [hright]
   -- Hence `L` surjects onto the quotient of `E` by its radical ...
-  have hsurj : Function.Surjective (π.comp (inl (lineHom D))) := by
+  have hsurj : Function.Surjective (π.comp (inl D.lineHom)) := by
     intro s
     have hs : s ∈ (derivedSeries K E 1).map π := by
       rw [LieIdeal.derivedSeries_map_eq 1 (radical K E).surjective_mkQ, hperf]
@@ -217,11 +201,11 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivat
     obtain ⟨⟨e, he⟩, rfl⟩ := LieIdeal.mem_map_of_surjective (radical K E).surjective_mkQ hs
     exact ⟨e.left, by rw [LieHom.comp_apply, ← hder e he]⟩
   -- ... which has trivial radical, so the radical of `L` lies in the radical of `E`.
-  have hrad : inl (lineHom D) x ∈ radical K E := by
-    have hbot : (radical K L).map (π.comp (inl (lineHom D))) = ⊥ :=
+  have hrad : inl D.lineHom x ∈ radical K E := by
+    have hbot : (radical K L).map (π.comp (inl D.lineHom)) = ⊥ :=
       have := LieIdeal.isSolvable_map _ (radical K L) hsurj
       HasTrivialRadical.eq_bot_of_isSolvable _
-    have hmem := LieIdeal.mem_map (f := π.comp (inl (lineHom D))) hx
+    have hmem := LieIdeal.mem_map (f := π.comp (inl D.lineHom)) hx
     rw [hbot, LieSubmodule.mem_bot, LieHom.comp_apply, ← LieHom.mem_ker,
       LieIdeal.mkQ_ker] at hmem
     exact hmem

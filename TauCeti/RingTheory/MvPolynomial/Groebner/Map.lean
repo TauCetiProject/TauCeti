@@ -64,7 +64,7 @@ theorem IsRemainder.map (hφ : Function.Injective φ) (h : m.IsRemainder f B r) 
   classical
   obtain ⟨g, hfg, hdeg⟩ := h.exists_linearCombination
   -- The quotient attached to `map φ b` is `map φ` of the quotient attached to `b`.
-  let e : B → MvPolynomial.map φ '' B := fun b ↦ ⟨_, Set.mem_image_of_mem _ b.2⟩
+  let e : B → MvPolynomial.map φ '' B := fun b ↦ ⟨_, Set.mem_image_of_mem _ b.property⟩
   have he : Function.Injective e := fun b c hbc ↦
     Subtype.ext (map_injective φ hφ (congrArg Subtype.val hbc))
   let g' : B →₀ MvPolynomial σ S := g.mapRange (MvPolynomial.map φ) (map_zero _)
@@ -142,14 +142,17 @@ theorem IsGroebnerBasis.span_leadingTerm_map (hφ : Function.Injective φ)
   simp_rw [m.leadingTerm_map_of_injective hφ]
 
 /-- **Leading terms under extension of a field of coefficients.** For a field `k` and a ring
-homomorphism `φ : k →+* S` to a nontrivial ring, for instance a field extension, the ideal of
+homomorphism `φ : k →+* S`, for instance a field extension, the ideal of
 leading terms of the extension of an ideal `I` of `k[σ]` is the extension of the ideal of leading
 terms of `I`. -/
-theorem span_leadingTerm_map {k : Type*} [Field k] [Nontrivial S] (φ : k →+* S)
+theorem span_leadingTerm_map {k : Type*} [Field k] (φ : k →+* S)
     (I : Ideal (MvPolynomial σ k)) :
     Ideal.span (m.leadingTerm '' (I.map (map φ) : Set (MvPolynomial σ S))) =
-      (Ideal.span (m.leadingTerm '' I)).map (map φ) :=
-  (isGroebnerBasis_self I).span_leadingTerm_map φ.injective fun _ _ ↦ m.isUnit_leadingCoeff.2
+      (Ideal.span (m.leadingTerm '' I)).map (map φ) := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · exact Subsingleton.elim _ _
+  · exact (isGroebnerBasis_self I).span_leadingTerm_map φ.injective
+      fun _ _ ↦ m.isUnit_leadingCoeff.2
 
 end CommRing
 

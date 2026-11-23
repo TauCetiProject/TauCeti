@@ -48,7 +48,7 @@ variable [Semifield k]
 noncomputable def characterPairing :
     LinearMap.BilinForm k (ClassFunction k G) :=
   LinearMap.mk₂ k
-    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹)
+    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹)
     (by
       intro f₁ f₂ f₃
       simp [add_mul, Finset.sum_add_distrib, mul_add])
@@ -67,7 +67,7 @@ noncomputable def characterPairing :
 /-- The defining formula for the character pairing. -/
 theorem characterPairing_apply (f₁ f₂ : ClassFunction k G) :
     characterPairing f₁ f₂ =
-      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹ :=
+      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹ :=
   (rfl)
 
 /-- The character pairing is symmetric. -/
@@ -104,7 +104,7 @@ of the class of `x⁻¹` returns the value of `f` at `x`, weighted by the size o
 the normalization `|G|⁻¹`. -/
 theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
     characterPairing f (classIndicator x⁻¹) =
-      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.1 x) := by
+      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.val x) := by
   classical
   let : Fintype (ConjClasses.mk x).carrier := Fintype.ofFinite _
   have hcarrier : (ConjClasses.mk x).carrier = {g | IsConj g x} := by
@@ -117,11 +117,11 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
   rw [characterPairing_apply]
   congr 1
   calc
-    _ = ∑ g : G, if IsConj g x then f.1 g else 0 := by
+    _ = ∑ g : G, if IsConj g x then f.val g else 0 := by
       simp [classIndicator_apply, hconj, mul_ite]
-    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 g := by
+    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.val g := by
       rw [Finset.sum_filter]
-    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 x := by
+    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.val x := by
       apply Finset.sum_congr rfl
       intro g hg
       exact ClassFunction.eq_of_isConj f (by simpa using Finset.mem_filter.mp hg |>.2)
@@ -219,9 +219,12 @@ Algebraic closure is not needed here: by Schur's lemma the intertwiners between 
 irreducibles already form a subsingleton over any field. -/
 @[simp]
 theorem characterPairing_ofCharacter_eq_zero {V W : Type*} [AddCommGroup V] [Module k V]
-    [AddCommGroup W] [Module k W] [Invertible (Nat.card G : k)] (ρ : Representation k G V)
+    [AddCommGroup W] [Module k W] (ρ : Representation k G V)
     (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible]
     (h : IsEmpty (σ.Equiv ρ)) : characterPairing (ofCharacter ρ) (ofCharacter σ) = 0 := by
+  by_cases hG : (Nat.card G : k) = 0
+  · rw [characterPairing_ofCharacter, hG, inv_zero, zero_mul]
+  have := invertibleOfNonzero hG
   have := ρ.asModuleEquiv.finiteDimensional
   have := σ.asModuleEquiv.finiteDimensional
   rw [characterPairing_ofCharacter_eq_finrank ρ σ, Module.finrank_zero_of_subsingleton,
@@ -256,9 +259,12 @@ theorem characterPairing_ofFDRep_self [Invertible (Nat.card G : k)] [IsAlgClosed
 Algebraic closure is not needed here: by Schur's lemma the morphism space between
 non-isomorphic simple objects is already zero-dimensional over any field. -/
 @[simp]
-theorem characterPairing_ofFDRep_eq_zero [Invertible (Nat.card G : k)]
+theorem characterPairing_ofFDRep_eq_zero
     (V W : FDRep k G) [CategoryTheory.Simple V] [CategoryTheory.Simple W] (h : IsEmpty (V ≅ W)) :
     characterPairing (ofFDRep V) (ofFDRep W) = 0 := by
+  by_cases hG : (Nat.card G : k) = 0
+  · rw [characterPairing_ofFDRep, hG, inv_zero, zero_mul]
+  have := invertibleOfNonzero hG
   rw [characterPairing_ofFDRep_eq_finrank V W,
     CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k fun i => h.elim i.symm,
     Nat.cast_zero]

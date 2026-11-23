@@ -61,9 +61,9 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
     (Valued.hasBasis_nhds_zero _ _)]
   intro γ _
   -- Transport a representative quotient for the target value-group radius back along `σ`.
-  have hγ : (WithVal.valueGroupOrderIso₀ w γ.1) ≠ 0 := by simp
+  have hγ : (WithVal.valueGroupOrderIso₀ w γ.val) ≠ 0 := by simp
   obtain ⟨a, b, ha, hb, hab⟩ :=
-    (WithVal.valueGroupOrderIso₀ w γ.1).zero_or_exists_mk.resolve_left hγ
+    (WithVal.valueGroupOrderIso₀ w γ.val).zero_or_exists_mk.resolve_left hγ
   have hva : v (σ.symm a) ≠ 0 := by simpa [← hσ]
   have hvb : v (σ.symm b) ≠ 0 := by simpa [← hσ]
   let δ : v.ValueGroup₀ := valueGroup.mk (v : K →*₀ Γ₀) (σ.symm a) (σ.symm b) hva hvb
@@ -83,9 +83,7 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
   change (WithVal.valueGroupOrderIso₀ v) ((WithVal.valuation v).restrict x) < _ at hx'
   rw [WithVal.valueGroupOrderIso₀_restrict, Units.val_mk0, OrderMonoidIso.apply_symm_apply,
     Valuation.restrict_lt_iff_lt_embedding] at hx'
-  have haeq : w a = v (σ.symm a) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  have hbeq : w b = v (σ.symm b) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  simpa [δ, embedding_valueGroup_mk, WithVal.congr_apply, hσ, haeq, hbeq] using hx'
+  simpa [δ, WithVal.congr_apply, hσ, Valuation.apply_symm_eq_of_apply_eq hσ] using hx'
 
 end WithVal
 
@@ -166,8 +164,7 @@ theorem congr_trans {τ : K' ≃+* K''} (hτ : ∀ y, u (τ y) = w y) :
 /-- The inverse of `Valuation.Completion.congr` is `Valuation.Completion.congr` of the inverse. -/
 @[simp]
 theorem congr_symm :
-    (congr σ hσ).symm = congr σ.symm
-      (fun y ↦ by rw [← hσ, RingEquiv.apply_symm_apply]) := by
+    (congr σ hσ).symm = congr σ.symm (Valuation.apply_symm_eq_of_apply_eq hσ) := by
   refine RingEquiv.toRingHom_injective <| eq_congr_of_continuous _
     (UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _) fun y ↦ ?_
   rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq, congr_coe,

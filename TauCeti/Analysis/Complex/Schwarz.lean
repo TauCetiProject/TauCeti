@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Analytic.ExtractZeros
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import Mathlib.Analysis.Complex.Schwarz
 
 /-!
 # Schwarz's lemma with prescribed zeros
@@ -22,16 +24,35 @@ factor is at most `3 * R / T`, so `‖f z‖ ≤ M * (3 * R / T) ^ ∑ x ∈ s, 
 analytic estimate of transcendence proofs: an auxiliary function with many zeros in a small disc
 is very small there.
 
+At a zero `a ∈ s` itself the same quotient controls the derivative of order `k a`: since
+`f = (z - a) ^ k a • h` with `h = (∏ x ∈ s \ {a}, (· - x) ^ k x) • g`, Leibniz's rule gives
+`f⁽ᵏ⁽ᵃ⁾⁾(a) = (k a)! • h a`. This bounds the first nonvanishing derivative of an auxiliary function
+at one of its zeros, as in Gelfond's proof of the Gelfond–Schneider theorem.
+
+At a single centre `c` on an open disc `ball c ρ`, no continuity up to the boundary circle is
+required: if `g` is holomorphic and bounded by `M` on `ball c ρ` and vanishes to order at least `T`
+at `c`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `ball c ρ`
+(`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`), deduced from Mathlib's higher-order Schwarz
+lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`.
+
 ## Main results
 
 * `TauCeti.norm_le_mul_prod_div_pow`: the bound by the product over the zeros.
 * `TauCeti.norm_le_mul_three_mul_div_pow`: the bound `M * (3 * R / T) ^ ∑ x ∈ s, k x`.
+* `TauCeti.norm_iteratedDeriv_le_mul_prod_div_pow`: the bound for the derivative of order `k a`
+  at a zero `a ∈ s`.
+* `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`: the bound `M * (‖w - c‖ / ρ) ^ T` on an
+  open disc for a zero of order at least `T` at the centre.
+* `TauCeti.norm_le_half_of_eq_zero_on_net`: a vector-valued sampling bound from zeros
+  on a metric net.
 
 ## References
 
 * J.-H. Evertse, *Diophantine approximation*, lecture notes (2019), ch. 4, §4.4, Lemma 4.26.
 * M. Waldschmidt, *Diophantine approximation on linear algebraic groups*, Springer (2000), §2.2,
-  Lemma 2.4.
+  Lemma 2.4, and §4.5, Lemma 4.13.
+* Michail Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
+  commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/Interpolation.lean`, Apache 2.0).
 -/
 
 public section
@@ -42,6 +63,82 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E} {c : ℂ} {T M : ℝ}
   {s : Finset ℂ} {k : ℂ → ℕ}
+
+/-- A vector-valued holomorphic function bounded by `C * M` on the radius-`2 * r` disc and
+vanishing on an `r / (4 * C)`-net of the closed radius-`r` disc has norm at most `M / 2` there.
+The sampling set may be infinite and the complex normed codomain need not be complete. -/
+theorem norm_le_half_of_eq_zero_on_net {r C : ℝ}
+    (hf : DifferentiableOn ℂ f (ball c (2 * r)))
+    (hb : ∀ z ∈ ball c (2 * r), ‖f z‖ ≤ C * M)
+    {P : Set ℂ} (hP : P ⊆ closedBall c r)
+    (hnet : closedBall c r ⊆ ⋃ w ∈ P, ball w (r / (4 * C)))
+    (hzero : ∀ w ∈ P, f w = 0) {z : ℂ} (hz : z ∈ closedBall c r) :
+    ‖f z‖ ≤ M / 2 := by
+  obtain ⟨w, hw, hzw⟩ := Set.mem_iUnion₂.mp (hnet hz)
+  have hr₀ : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp hz)
+  have hnet₀ : 0 < r / (4 * C) := dist_nonneg.trans_lt (mem_ball.mp hzw)
+  have hrC : 0 < r ∧ 0 < C := by
+    rcases div_pos_iff.mp hnet₀ with h | h
+    · exact ⟨h.1, by linarith [h.2]⟩
+    · exact (not_lt_of_ge hr₀ h.1).elim
+  obtain ⟨hr, hC⟩ := hrC
+  have hM : 0 ≤ M := nonneg_of_mul_nonneg_right
+    ((norm_nonneg (f c)).trans (hb c (mem_ball_self (by linarith)))) hC
+  by_cases hsmallC : C ≤ 1 / 2
+  · calc ‖f z‖ ≤ C * M := hb z (closedBall_subset_ball (by linarith) hz)
+         _ ≤ M / 2 := by nlinarith
+  have hwr : ∀ y ∈ ball w r, y ∈ ball c (2 * r) := by
+    intro y hy
+    have := (hP hw)
+    simp only [mem_ball, mem_closedBall] at *
+    calc dist y c ≤ dist y w + dist w c := dist_triangle _ _ _
+      _ < 2 * r := by linarith
+  have hε : r / (4 * C) ≤ r := by
+    apply (div_le_iff₀ (mul_pos (by norm_num) hC)).2
+    nlinarith
+  have hzw' : z ∈ ball w r := (ball_subset_ball hε) hzw
+  have hmaps : Set.MapsTo f (ball w r) (closedBall (f w) (C * M)) := by
+    intro y hy
+    simpa [hzero w hw, mem_closedBall, dist_zero_right] using hb y (hwr y hy)
+  have h := Complex.dist_le_div_mul_dist_of_mapsTo_ball (hf.mono hwr) hmaps hzw'
+  rw [hzero w hw, dist_zero_right] at h
+  have hdist : dist z w ≤ r / (4 * C) := (mem_ball.mp hzw).le
+  calc ‖f z‖ ≤ C * M / r * dist z w := h
+    _ ≤ C * M / r * (r / (4 * C)) := by gcongr
+    _ = M / 4 := by field_simp
+    _ ≤ M / 2 := by linarith
+
+/-- The norm of `f = (∏ x ∈ s, (· - x) ^ k x) • g` is the product of the distances to the zeros
+times the norm of the quotient. -/
+private theorem norm_eq_prod_mul_of_eq_prod_pow_smul {g : ℂ → E}
+    (hfg : ∀ z, f z = (∏ x ∈ s, (z - x) ^ k x) • g z) (w : ℂ) :
+    ‖f w‖ = (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ := by
+  rw [hfg, norm_smul, norm_prod]
+  simp [norm_pow]
+
+/-- The maximum modulus step of Schwarz's lemma: if `f = (∏ x ∈ s, (· - x) ^ k x) • g` with `g`
+analytic on a neighbourhood of `closedBall c T`, `f` is bounded by `M` on `sphere c T` and every
+`x ∈ s` satisfies `‖x - c‖ < T`, then `‖g z‖ ≤ M / ∏ x ∈ s, (T - ‖x - c‖) ^ k x` on the disc. -/
+private theorem norm_le_div_prod_of_eq_prod_pow_smul (hT : 0 < T) {g : ℂ → E}
+    (hg : AnalyticOnNhd ℂ g (closedBall c T)) (hfg : ∀ z, f z = (∏ x ∈ s, (z - x) ^ k x) • g z)
+    (hsT : ∀ x ∈ s, ‖x - c‖ < T) (hM : ∀ w ∈ sphere c T, ‖f w‖ ≤ M) {z : ℂ}
+    (hz : z ∈ closedBall c T) : ‖g z‖ ≤ M / ∏ x ∈ s, (T - ‖x - c‖) ^ k x := by
+  set Q : ℝ := ∏ x ∈ s, (T - ‖x - c‖) ^ k x
+  have hQ : 0 < Q := Finset.prod_pos fun x hx ↦ pow_pos (sub_pos.mpr (hsT x hx)) _
+  -- On the circle, each factor `‖w - x‖` is at least `T - ‖x - c‖`, so `‖g w‖ ≤ M / Q`.
+  have hgM (w : ℂ) (hw : w ∈ frontier (ball c T)) : ‖g w‖ ≤ M / Q := by
+    rw [frontier_ball c hT.ne', mem_sphere, dist_eq_norm] at hw
+    have hPQ : Q ≤ ∏ x ∈ s, ‖w - x‖ ^ k x :=
+      Finset.prod_le_prod₀ (fun x hx ↦ pow_nonneg (sub_pos.mpr (hsT x hx)).le _)
+        fun x _ ↦ pow_le_pow_left₀ (sub_pos.mpr (hsT x ‹_›)).le
+          (by linarith [norm_sub_le_norm_sub_add_norm_sub w x c]) _
+    rw [le_div_iff₀ hQ, mul_comm]
+    calc Q * ‖g w‖ ≤ (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ :=
+          mul_le_mul_of_nonneg_right hPQ (norm_nonneg _)
+      _ = ‖f w‖ := (norm_eq_prod_mul_of_eq_prod_pow_smul hfg w).symm
+      _ ≤ M := hM w (by rw [mem_sphere, dist_eq_norm, hw])
+  exact Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball
+    (hg.differentiableOn.diffContOnCl_ball subset_rfl) hgM (by rwa [closure_ball c hT.ne'])
 
 /-- **Schwarz's lemma with prescribed zeros.** If `f` is analytic on a neighbourhood of
 `closedBall c T`, bounded by `M` on `sphere c T`, and vanishes to order at least `k x` at each
@@ -62,32 +159,61 @@ theorem norm_le_mul_prod_div_pow (hf : AnalyticOnNhd ℂ f (closedBall c T))
     simpa using hM z (mem_sphere.mpr hzc)
   obtain ⟨g, hg, hfg⟩ := hf.exists_eq_prod_pow_smul s k hk
   set Q : ℝ := ∏ x ∈ s, (T - ‖x - c‖) ^ k x
-  have hQ : 0 < Q := Finset.prod_pos fun x hx ↦ pow_pos (sub_pos.mpr (hsT x hx)) _
-  have hnorm (w : ℂ) : ‖f w‖ = (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ := by
-    rw [hfg, norm_smul, norm_prod]
-    simp [norm_pow]
-  -- On the circle, each factor `‖w - x‖` is at least `T - ‖x - c‖`, so `‖g w‖ ≤ M / Q`.
-  have hgM (w : ℂ) (hw : w ∈ frontier (ball c T)) : ‖g w‖ ≤ M / Q := by
-    rw [frontier_ball c hT.ne', mem_sphere, dist_eq_norm] at hw
-    have hPQ : Q ≤ ∏ x ∈ s, ‖w - x‖ ^ k x :=
-      Finset.prod_le_prod₀ (fun x hx ↦ pow_nonneg (sub_pos.mpr (hsT x hx)).le _)
-        fun x _ ↦ pow_le_pow_left₀ (sub_pos.mpr (hsT x ‹_›)).le
-          (by linarith [norm_sub_le_norm_sub_add_norm_sub w x c]) _
-    rw [le_div_iff₀ hQ, mul_comm]
-    calc Q * ‖g w‖ ≤ (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ :=
-          mul_le_mul_of_nonneg_right hPQ (norm_nonneg _)
-      _ = ‖f w‖ := (hnorm w).symm
-      _ ≤ M := hM w (by rw [mem_sphere, dist_eq_norm, hw])
-  have hgz : ‖g z‖ ≤ M / Q :=
-    Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball
-      (hg.differentiableOn.diffContOnCl_ball subset_rfl) hgM
-      (by rwa [closure_ball c hT.ne'])
-  calc ‖f z‖ = (∏ x ∈ s, ‖z - x‖ ^ k x) * ‖g z‖ := hnorm z
+  have hgz : ‖g z‖ ≤ M / Q := norm_le_div_prod_of_eq_prod_pow_smul hT hg hfg hsT hM hz
+  calc ‖f z‖ = (∏ x ∈ s, ‖z - x‖ ^ k x) * ‖g z‖ := norm_eq_prod_mul_of_eq_prod_pow_smul hfg z
     _ ≤ (∏ x ∈ s, ‖z - x‖ ^ k x) * (M / Q) :=
         mul_le_mul_of_nonneg_left hgz (Finset.prod_nonneg fun _ _ ↦ by positivity)
     _ = M * ∏ x ∈ s, (‖z - x‖ / (T - ‖x - c‖)) ^ k x := by
         simp only [Q, div_pow, Finset.prod_div_distrib]
         ring
+
+/-- **Schwarz's lemma for the first nonvanishing derivative.** If `f` is analytic on a
+neighbourhood of `closedBall c T`, bounded by `M` on `sphere c T`, and vanishes to order at least
+`k x` at each point `x` of a finite set `s ⊆ ball c T`, then at every `a ∈ s`
+`‖f⁽ᵏ⁽ᵃ⁾⁾(a)‖ ≤ k(a)! M / (T - ‖a - c‖) ^ k(a) * ∏ x ∈ s \ {a}, (‖a - x‖ / (T - ‖x - c‖)) ^ k x`. -/
+theorem norm_iteratedDeriv_le_mul_prod_div_pow (hf : AnalyticOnNhd ℂ f (closedBall c T))
+    (hk : ∀ x ∈ s, (k x : ℕ∞) ≤ analyticOrderAt f x) (hs : (s : Set ℂ) ⊆ ball c T)
+    (hM : ∀ w ∈ sphere c T, ‖f w‖ ≤ M) {a : ℂ} (ha : a ∈ s) :
+    ‖iteratedDeriv (k a) f a‖ ≤ (k a).factorial * M / (T - ‖a - c‖) ^ k a *
+      ∏ x ∈ s.erase a, (‖a - x‖ / (T - ‖x - c‖)) ^ k x := by
+  have hsT (x : ℂ) (hx : x ∈ s) : ‖x - c‖ < T := by
+    simpa [dist_eq_norm] using hs hx
+  have hT : 0 < T := (norm_nonneg _).trans_lt (hsT a ha)
+  obtain ⟨g, hg, hfg⟩ := hf.exists_eq_prod_pow_smul s k hk
+  have hac : a ∈ closedBall c T := ball_subset_closedBall (hs ha)
+  have hgz : ‖g a‖ ≤ M / ∏ x ∈ s, (T - ‖x - c‖) ^ k x :=
+    norm_le_div_prod_of_eq_prod_pow_smul hT hg hfg hsT hM hac
+  -- Splitting off the factor `(z - a) ^ k a`, the derivative of order `k a` at `a` is
+  -- `(k a)!` times the value of the remaining product times `g` at `a`.
+  have hfa : f = fun z ↦ (z - a) ^ k a • ((∏ x ∈ s.erase a, (z - x) ^ k x) • g z) := by
+    funext z
+    rw [hfg, ← Finset.mul_prod_erase s _ ha, mul_smul]
+  have hder : iteratedDeriv (k a) f a =
+      (k a).factorial • ((∏ x ∈ s.erase a, (a - x) ^ k x) • g a) := by
+    have hh : AnalyticOnNhd ℂ (fun z ↦ (∏ x ∈ s.erase a, (z - x) ^ k x) • g z) (ball c T) :=
+      fun z hz ↦ ((s.erase a).analyticAt_fun_prod fun x _ ↦ by fun_prop).smul
+        (hg z (ball_subset_closedBall hz))
+    rw [hfa]
+    exact iteratedDeriv_pow_sub_smul_self ((hh.analyticOn.contDiffOn
+      isOpen_ball.uniqueDiffOn).contDiffAt (isOpen_ball.mem_nhds (hs ha)))
+  have hQ : ∏ x ∈ s, (T - ‖x - c‖) ^ k x =
+      (T - ‖a - c‖) ^ k a * ∏ x ∈ s.erase a, (T - ‖x - c‖) ^ k x :=
+    (Finset.mul_prod_erase s _ ha).symm
+  have hQ₀ : 0 < ∏ x ∈ s.erase a, (T - ‖x - c‖) ^ k x :=
+    Finset.prod_pos fun x hx ↦ pow_pos (sub_pos.mpr (hsT x (Finset.mem_of_mem_erase hx))) _
+  have hTa : 0 < (T - ‖a - c‖) ^ k a := pow_pos (sub_pos.mpr (hsT a ha)) _
+  calc ‖iteratedDeriv (k a) f a‖
+      = (k a).factorial * ((∏ x ∈ s.erase a, ‖a - x‖ ^ k x) * ‖g a‖) := by
+        rw [hder, ← Nat.cast_smul_eq_nsmul ℂ, norm_smul, norm_smul, norm_prod]
+        simp [norm_pow]
+    _ ≤ (k a).factorial * ((∏ x ∈ s.erase a, ‖a - x‖ ^ k x) *
+          (M / ((T - ‖a - c‖) ^ k a * ∏ x ∈ s.erase a, (T - ‖x - c‖) ^ k x))) := by
+        rw [← hQ]
+        gcongr
+    _ = (k a).factorial * M / (T - ‖a - c‖) ^ k a *
+          ∏ x ∈ s.erase a, (‖a - x‖ / (T - ‖x - c‖)) ^ k x := by
+        simp only [div_pow, Finset.prod_div_distrib]
+        field_simp
 
 /-- **Schwarz's lemma with prescribed zeros**, in the form `M * (3 * R / T) ^ ∑ x ∈ s, k x`. If
 `f` is analytic on a neighbourhood of `closedBall c T`, bounded by `M` on `sphere c T`, and
@@ -134,3 +260,22 @@ theorem norm_le_mul_three_mul_div_pow {R : ℝ} (hf : AnalyticOnNhd ℂ f (close
   nlinarith [norm_nonneg (x - c)]
 
 end TauCeti
+
+/-- **Schwarz's lemma for a zero of order `T` on an open disc.** If `g` is holomorphic and bounded
+by `M` on the open disc `Metric.ball c ρ` and vanishes to order at least `T` at the centre `c`,
+then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `Metric.ball c ρ`. Unlike
+`TauCeti.norm_le_mul_prod_div_pow`, no continuity up to the boundary circle is required. -/
+theorem Complex.norm_le_mul_div_pow_of_le_analyticOrderAt {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] {g : ℂ → V} {c : ℂ} {ρ M : ℝ}
+    (hd : DifferentiableOn ℂ g (Metric.ball c ρ)) (hM : ∀ w ∈ Metric.ball c ρ, ‖g w‖ ≤ M)
+    {T : ℕ} (hT : (T : ℕ∞) ≤ analyticOrderAt g c) {w : ℂ} (hw : w ∈ Metric.ball c ρ) :
+    ‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T := by
+  rcases Nat.eq_zero_or_pos T with rfl | hTpos
+  · simpa using hM w hw
+  have hgc : g c = 0 :=
+    apply_eq_zero_of_analyticOrderAt_ne_zero ((Nat.cast_pos.2 hTpos).trans_le hT).ne'
+  have hmaps : Set.MapsTo g (ball c ρ) (closedBall (g c) M) := fun z hz ↦ by
+    simpa [hgc] using hM z hz
+  have hlittle := TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt hTpos hT
+  have hest := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO hd hmaps hlittle hw
+  rwa [hgc, dist_zero_right, dist_eq_norm, Nat.sub_add_cancel hTpos] at hest

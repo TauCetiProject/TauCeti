@@ -12,10 +12,11 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 
-import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
+import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 import TauCeti.AlgebraicGeometry.Pullback.Carrier
 import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
+import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.TamelyRamified
 import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 
 /-!
@@ -56,14 +57,15 @@ valuation ring are carried by the statements that use them, not by the definitio
 * `AlgebraicGeometry.Scheme.Hom.isUnramifiedInCodimOne_of_isOpenImmersion`: if the codimension
   one points outside `U` have regular local rings, every open subscheme of `U`, for instance the
   trivial cover `𝟙 U`, is unramified over `X` in codimension one.
-* `AlgebraicGeometry.Scheme.Hom.IsUnramifiedInCodimOne.baseChange`: being unramified in
-  codimension one is stable under base change along `g : X' ⟶ X`, if `g` maps the
-  codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`, and the local
-  rings at these points are discrete valuation rings (Stacks, Lemma 58.31.1 (0EYD), the
-  unramified case).
+* `AlgebraicGeometry.Scheme.Hom.IsUnramifiedInCodimOne.baseChange` and
+  `AlgebraicGeometry.Scheme.Hom.IsTamelyRamifiedInCodimOne.baseChange`: being unramified, resp.
+  tamely ramified, in codimension one is stable under base change along `g : X' ⟶ X`, if `g` maps
+  the codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`, and the
+  local rings at these points are discrete valuation rings (Stacks, Lemma 58.31.1 (0EYD)).
 
-The base change theorem reduces to the base change of unramified extensions of discrete
-valuation rings, `TauCeti.Algebra.IsUnramifiedWRT.baseChange` (Stacks, Lemma 15.116.9 (0EXY)):
+The base change theorems reduce to the base change of unramified, resp. tamely ramified,
+extensions of discrete valuation rings, `TauCeti.Algebra.IsUnramifiedWRT.baseChange` and
+`TauCeti.Algebra.IsTamelyRamifiedWRT.baseChange` (Stacks, Lemma 15.116.9 (0EXY)):
 for a point `y'` of the base change over `y ∈ Y`, the residue field `κ(y')` is a quotient of
 `κ(x') ⊗[κ(x)] κ(y)`, where `x` and `x'` are the images of `y` and `y'` in `X` and `X'`
 (`AlgebraicGeometry.Scheme.Pullback.closure_range_residueFieldMap_eq_top`). Because the
@@ -147,7 +149,7 @@ theorem isUnramifiedInCodimOne_of_isOpenImmersion [IsOpenImmersion f]
     f.IsUnramifiedInCodimOne := by
   intro ξ hξ y h
   have := hX ξ hξ
-  have hne : (f ≫ U.ι) y ≠ ξ := fun he ↦ hξ (he ▸ (f y).2)
+  have hne : (f ≫ U.ι) y ≠ ξ := fun he ↦ hξ (he ▸ (f y).property)
   -- The residue field at the image of `y` is the fraction field of `𝒪_{X,ξ}`.
   let := (X.presheaf.stalkSpecializes h ≫ X.residue _).hom.toAlgebra
   have := Scheme.isFractionRing_residueField_of_specializes h hne
@@ -160,6 +162,135 @@ theorem isUnramifiedInCodimOne_of_isOpenImmersion [IsOpenImmersion f]
   exact TauCeti.Algebra.isUnramifiedWRT_of_isFractionRing _ _
 
 variable {X' : Scheme.{u}} (g : X' ⟶ X)
+
+/-- The fibre square of a base change commutes. -/
+private lemma fst_comp_comp_eq {X' : Scheme.{u}} (g : X' ⟶ X) :
+    pullback.fst f (g ∣_ U) ≫ f ≫ U.ι = pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι ≫ g := by
+  rw [pullback.condition_assoc, morphismRestrict_ι]
+
+/-- The fibre square of a base change commutes on points. -/
+private lemma fst_apply_eq_snd_apply {X' : Scheme.{u}} {g : X' ⟶ X}
+    (y' : (pullback f (g ∣_ U) : Scheme.{u})) :
+    (f ≫ U.ι) (pullback.fst f (g ∣_ U) y') = g ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y') := by
+  exact congr($(fst_comp_comp_eq (f := f) g) y')
+
+/-- The two ways around the residue fields of the fibre square of a base change agree. -/
+private lemma residueFieldMap_fst_comp_eq {X' : Scheme.{u}} {g : X' ⟶ X}
+    {y' : (pullback f (g ∣_ U) : Scheme.{u})}
+    (hx : (f ≫ U.ι) (pullback.fst f (g ∣_ U) y') =
+      g ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y')) :
+    (f ≫ U.ι).residueFieldMap (pullback.fst f (g ∣_ U) y') ≫
+        (pullback.fst f (g ∣_ U)).residueFieldMap y' =
+      ((X.residueFieldCongr hx).hom ≫ g.residueFieldMap _) ≫
+        (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y' := by
+  rw [← Scheme.residueFieldMap_comp, Category.assoc, ← Scheme.residueFieldMap_comp,
+    Scheme.Hom.residueFieldMap_congr (fst_comp_comp_eq (f := f) g)]
+  -- The two sides differ only by associativity of composition, which holds definitionally.
+  rfl
+
+/-- Let `P` be a property of algebras `L` over a discrete valuation ring `A` that passes to the
+factors of `K' ⊗[K] L`, in the form of `TauCeti.Algebra.IsUnramifiedWRT.baseChange`. If `P` holds
+of the residue field of every point of `Y` over a generization of a codimension-one point `ξ ∉ U`
+of `X`, as an algebra over `𝒪_{X,ξ}`, then the same holds for the base change of `f` along `g`,
+under the hypotheses of Stacks, Lemma 58.31.1. This is the common part of the unramified and tame
+cases of that lemma. -/
+private theorem forall_residueField_baseChange
+    (P : ∀ (A L : Type u) [CommRing A] [IsLocalRing A] [Field L] [Algebra A L], Prop)
+    (hP : ∀ {A K L A' K' L' : Type u}
+      [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] [Field K] [Algebra A K]
+      [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
+      [FiniteDimensional K L] [Algebra.IsSeparable K L]
+      [CommRing A'] [IsDomain A'] [IsDiscreteValuationRing A'] [Field K'] [Algebra A' K']
+      [IsFractionRing A' K'] [Algebra A A'] [Algebra A K'] [Algebra K K'] [IsScalarTower A A' K']
+      [IsScalarTower A K K'] [Field L'] [Algebra K' L'] [Algebra A' L'] [IsScalarTower A' K' L'],
+      P A L → ∀ φ : K' ⊗[K] L →ₐ[K'] L', Function.Surjective φ → P A' L')
+    [FormallyUnramified f] [LocallyOfFiniteType f]
+    (hf : ∀ ξ : CodimensionOnePoint X, (ξ : X) ∉ U → ∀ (y : Y) (h : (f ≫ U.ι) y ⤳ ξ),
+      letI := (X.presheaf.stalkSpecializes h ≫ X.residue _ ≫
+        (f ≫ U.ι).residueFieldMap y).hom.toAlgebra
+      P (X.presheaf.stalk ξ) (Y.residueField y))
+    (hg : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U → Order.coheight (g ξ') = 1)
+    (hX : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
+      IsRegularLocalRing (X.presheaf.stalk (g ξ')))
+    (hX' : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
+      IsRegularLocalRing (X'.presheaf.stalk ξ'))
+    (ξ' : CodimensionOnePoint X') (hξ' : (ξ' : X') ∉ g ⁻¹ᵁ U)
+    (y' : (pullback f (g ∣_ U) : Scheme.{u}))
+    (h' : (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y' ⤳ ξ') :
+    letI := (X'.presheaf.stalkSpecializes h' ≫ X'.residue _ ≫
+      (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
+    P (X'.presheaf.stalk ξ') ((pullback f (g ∣_ U) : Scheme.{u}).residueField y') := by
+  -- Let `y'` lie over `y ∈ Y`, with images `x ∈ X` and `x' ∈ X'`, and `x' ⤳ ξ'`. With
+  -- `A = 𝒪_{X,g ξ'}`, `K = κ(x)`, `L = κ(y)` and `A' = 𝒪_{X',ξ'}`, `K' = κ(x')`, `L' = κ(y')`,
+  -- the field `L` satisfies `P` over `A` by assumption, and `L'` is a quotient of `K' ⊗[K] L`,
+  -- so `hP` applies.
+  let ξ : CodimensionOnePoint X := ⟨g ξ', hg ξ' hξ'⟩
+  set y := pullback.fst f (g ∣_ U) y'
+  set x' := (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'
+  have hx : (f ≫ U.ι) y = g x' := fst_apply_eq_snd_apply y'
+  have h : (f ≫ U.ι) y ⤳ ξ := hx ▸ h'.map g.continuous
+  have := hX ξ' hξ'
+  have := hX' ξ' hξ'
+  have := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ
+  have := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ'
+  set K := X.residueField ((f ≫ U.ι) y)
+  set L := Y.residueField y
+  set K' := X'.residueField x'
+  set L' := (pullback f (g ∣_ U)).residueField y'
+  -- The fields `K ⊆ L` over `A`, with the algebra structure of `hf`.
+  let : Algebra (X.presheaf.stalk ξ) K :=
+    (X.presheaf.stalkSpecializes h ≫ X.residue _).hom.toAlgebra
+  let : Algebra K L := ((f ≫ U.ι).residueFieldMap y).hom.toAlgebra
+  let : Algebra (X.presheaf.stalk ξ) L :=
+    (X.presheaf.stalkSpecializes h ≫ X.residue _ ≫ (f ≫ U.ι).residueFieldMap y).hom.toAlgebra
+  have : IsScalarTower (X.presheaf.stalk ξ) K L := .of_algebraMap_eq fun _ ↦ rfl
+  have hξU : (ξ : X) ∉ U := by simpa [ξ] using hξ'
+  have hne : (f ≫ U.ι) y ≠ ξ := fun e ↦ hξU (e ▸ (f y).property)
+  have := Scheme.isFractionRing_residueField_of_specializes h hne
+  have : FormallyUnramified (f ≫ U.ι) := MorphismProperty.comp_mem _ _ _ ‹_› inferInstance
+  -- The fields `K' ⊆ L'` over `A'`, with the algebra structure of the conclusion.
+  let : Algebra (X'.presheaf.stalk ξ') K' :=
+    (X'.presheaf.stalkSpecializes h' ≫ X'.residue _).hom.toAlgebra
+  let : Algebra K' L' :=
+    ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
+  let : Algebra (X'.presheaf.stalk ξ') L' := (X'.presheaf.stalkSpecializes h' ≫ X'.residue _ ≫
+    (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
+  have : IsScalarTower (X'.presheaf.stalk ξ') K' L' := .of_algebraMap_eq fun _ ↦ rfl
+  have := Scheme.isFractionRing_residueField_of_specializes h'
+    (fun e ↦ hξ' (e ▸ (pullback.snd f (g ∣_ U) y').property) : x' ≠ ξ')
+  -- The maps `A ⟶ A'` and `K ⟶ K'` induced by `g`, and their compatibility.
+  let : Algebra (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') := (g.stalkMap ξ').hom.toAlgebra
+  let : Algebra (X.presheaf.stalk ξ) K' :=
+    (g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue _).hom.toAlgebra
+  let : Algebra K K' := ((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x').hom.toAlgebra
+  have : IsScalarTower (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') K' :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower (X.presheaf.stalk ξ) K K' :=
+    .of_algebraMap_eq' <| congrArg CommRingCat.Hom.hom <| Eq.symm <|
+      g.stalkSpecializes_residue_residueFieldCongr_residueFieldMap hx h h'
+  -- The map `K' ⊗[K] L ⟶ L'` given by the two projections of the fibre product.
+  let : Algebra K L' := (((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x') ≫
+    (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
+  have : IsScalarTower K K' L' := .of_algebraMap_eq fun _ ↦ rfl
+  let ψ : L →ₐ[K] L' :=
+    { ((pullback.fst f (g ∣_ U)).residueFieldMap y').hom with
+      commutes' := fun k ↦ ConcreteCategory.congr_hom (residueFieldMap_fst_comp_eq hx) k }
+  -- It is surjective: its range contains the images of `κ(y)` and of `κ(x')`.
+  have hφ : Function.Surjective (AlgHom.liftEquiv _ K' _ _ ψ) := by
+    refine Scheme.Pullback.surjective_liftEquiv_residueFieldMap y'
+      (RingHom.Finite.to_isIntegral (Scheme.Hom.finite_residueField f _)) ψ (fun _ ↦ rfl) ?_
+    rintro _ ⟨z, rfl⟩
+    -- Every residue field element of `g⁻¹ U` at `snd y'` comes from `κ(x')`, as `ι` is an open
+    -- immersion, and the residue field map of `snd ≫ ι` is that of `snd` after that of `ι`.
+    obtain ⟨k, rfl⟩ : ∃ k₀ : K', ((g ⁻¹ᵁ U).ι.residueFieldMap _) k₀ = z :=
+      (ConcreteCategory.bijective_of_isIso ((g ⁻¹ᵁ U).ι.residueFieldMap _)).2 z
+    have hk : (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y' k =
+        (pullback.snd f (g ∣_ U)).residueFieldMap y' ((g ⁻¹ᵁ U).ι.residueFieldMap _ k) := by
+      rw [Scheme.residueFieldMap_comp]
+      -- The point `(snd ≫ ι) y'` is `ι (snd y')` by definition, but `rw` cannot see it.
+      rfl
+    exact ⟨k, hk⟩
+  exact hP (hf ξ hξU y h) _ hφ
 
 /-- **Base change of covers unramified in codimension one.** Let `f : Y ⟶ U` be unramified over
 `X` in codimension one, formally unramified and locally of finite type (for instance finite
@@ -174,109 +305,26 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
       IsRegularLocalRing (X.presheaf.stalk (g ξ')))
     (hX' : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
       IsRegularLocalRing (X'.presheaf.stalk ξ')) :
-    (pullback.snd f (g ∣_ U)).IsUnramifiedInCodimOne := by
-  /- Let `y'` lie over `y ∈ Y`, with images `x ∈ X` and `x' ∈ X'`, and `x' ⤳ ξ'`. With
-  `A = 𝒪_{X,g ξ'}`, `K = κ(x)`, `L = κ(y)` and `A' = 𝒪_{X',ξ'}`, `K' = κ(x')`, `L' = κ(y')`, the
-  field `L` is unramified with respect to `A` by assumption, and `L'` is a quotient of
-  `K' ⊗[K] L`, so `IsUnramifiedWRT.baseChange` applies. -/
-  intro ξ' hξ' y' h'
-  set U' := g ⁻¹ᵁ U
-  have hsq : pullback.fst f (g ∣_ U) ≫ f ≫ U.ι = pullback.snd f (g ∣_ U) ≫ U'.ι ≫ g := by
-    rw [pullback.condition_assoc, morphismRestrict_ι]
-  let ξ : CodimensionOnePoint X := ⟨g ξ', hg ξ' hξ'⟩
-  have hξ : (ξ : X) ∉ U := hξ'
-  set y := pullback.fst f (g ∣_ U) y'
-  set x' := (pullback.snd f (g ∣_ U) ≫ U'.ι) y'
-  have hx : (f ≫ U.ι) y = g x' := congr($hsq y')
-  have h : (f ≫ U.ι) y ⤳ ξ := hx ▸ h'.map g.continuous
-  have hfy := hf ξ hξ y h
-  have := hX ξ' hξ'
-  have := hX' ξ' hξ'
-  have := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ
-  have := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ'
-  have hne : (f ≫ U.ι) y ≠ ξ := fun e ↦ hξ (e ▸ (f y).2)
-  have hne' : x' ≠ ξ' := fun e ↦ hξ' (e ▸ (pullback.snd f (g ∣_ U) y').2)
-  -- The fields `K ⊆ L` over `A`, with the algebra structure of `hfy`.
-  let : Algebra (X.presheaf.stalk ξ) (X.residueField ((f ≫ U.ι) y)) :=
-    (X.presheaf.stalkSpecializes h ≫ X.residue _).hom.toAlgebra
-  let : Algebra (X.residueField ((f ≫ U.ι) y)) (Y.residueField y) :=
-    ((f ≫ U.ι).residueFieldMap y).hom.toAlgebra
-  let : Algebra (X.presheaf.stalk ξ) (Y.residueField y) :=
-    (X.presheaf.stalkSpecializes h ≫ X.residue _ ≫ (f ≫ U.ι).residueFieldMap y).hom.toAlgebra
-  have : IsScalarTower (X.presheaf.stalk ξ) (X.residueField ((f ≫ U.ι) y)) (Y.residueField y) :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have := Scheme.isFractionRing_residueField_of_specializes h hne
-  have : FormallyUnramified (f ≫ U.ι) := MorphismProperty.comp_mem _ _ _ ‹_› inferInstance
-  -- The fields `K' ⊆ L'` over `A'`, with the algebra structure of the conclusion.
-  let : Algebra (X'.presheaf.stalk ξ') (X'.residueField x') :=
-    (X'.presheaf.stalkSpecializes h' ≫ X'.residue _).hom.toAlgebra
-  let : Algebra (X'.residueField x') ((pullback f (g ∣_ U)).residueField y') :=
-    ((pullback.snd f (g ∣_ U) ≫ U'.ι).residueFieldMap y').hom.toAlgebra
-  let : Algebra (X'.presheaf.stalk ξ') ((pullback f (g ∣_ U)).residueField y') :=
-    (X'.presheaf.stalkSpecializes h' ≫ X'.residue _ ≫
-      (pullback.snd f (g ∣_ U) ≫ U'.ι).residueFieldMap y').hom.toAlgebra
-  have : IsScalarTower (X'.presheaf.stalk ξ') (X'.residueField x')
-      ((pullback f (g ∣_ U)).residueField y') :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have := Scheme.isFractionRing_residueField_of_specializes h' hne'
-  -- The maps `A ⟶ A'` and `K ⟶ K'` induced by `g`, and their compatibility.
-  let : Algebra (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') := (g.stalkMap ξ').hom.toAlgebra
-  let : Algebra (X.presheaf.stalk ξ) (X'.residueField x') :=
-    (g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue _).hom.toAlgebra
-  let : Algebra (X.residueField ((f ≫ U.ι) y)) (X'.residueField x') :=
-    ((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x').hom.toAlgebra
-  have : IsScalarTower (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') (X'.residueField x') :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower (X.presheaf.stalk ξ) (X.residueField ((f ≫ U.ι) y))
-      (X'.residueField x') :=
-    .of_algebraMap_eq' <| congrArg CommRingCat.Hom.hom <| Eq.symm <| by
-      -- Generalize the point `x` to substitute `x = g x'`.
-      have key : ∀ {x : X} (hx : x = g x') (h : x ⤳ g ξ'), X.presheaf.stalkSpecializes h ≫
-          X.residue x ≫ (X.residueFieldCongr hx).hom ≫ g.residueFieldMap x' =
-          g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue x' := by
-        rintro _ rfl h
-        simp [Scheme.residue_residueFieldMap, ← Scheme.Hom.stalkSpecializes_stalkMap_assoc]
-      exact key hx h
-  -- The map `K' ⊗[K] L ⟶ L'` given by the two projections of the fibre product.
-  let : Algebra (X.residueField ((f ≫ U.ι) y)) ((pullback f (g ∣_ U)).residueField y') :=
-    (((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x') ≫
-      (pullback.snd f (g ∣_ U) ≫ U'.ι).residueFieldMap y').hom.toAlgebra
-  have : IsScalarTower (X.residueField ((f ≫ U.ι) y)) (X'.residueField x')
-      ((pullback f (g ∣_ U)).residueField y') :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have hcomm : (f ≫ U.ι).residueFieldMap y ≫ (pullback.fst f (g ∣_ U)).residueFieldMap y' =
-      ((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x') ≫
-        (pullback.snd f (g ∣_ U) ≫ U'.ι).residueFieldMap y' := by
-    rw [← Scheme.residueFieldMap_comp, Category.assoc, ← Scheme.residueFieldMap_comp,
-      Scheme.Hom.residueFieldMap_congr hsq]
-    -- The two sides differ only by associativity of composition, which holds definitionally.
-    rfl
-  let ψ : Y.residueField y →ₐ[X.residueField ((f ≫ U.ι) y)]
-      (pullback f (g ∣_ U)).residueField y' :=
-    { ((pullback.fst f (g ∣_ U)).residueFieldMap y').hom with
-      commutes' := fun k ↦ ConcreteCategory.congr_hom hcomm k }
-  -- It is surjective: its range contains the images of `κ(y)` and of `κ(x')`.
-  have hφ : Function.Surjective (AlgHom.liftEquiv _ (X'.residueField x') _ _ ψ) := by
-    set R := (AlgHom.liftEquiv _ (X'.residueField x') _ _ ψ).range
-    have h₁ (l : Y.residueField y) : (pullback.fst f (g ∣_ U)).residueFieldMap y' l ∈ R :=
-      (AlgHom.mem_range _).mpr ⟨1 ⊗ₜ l, by rw [AlgHom.liftEquiv_tmul, one_smul]; rfl⟩
-    have h₂ (k : U'.toScheme.residueField (pullback.snd f (g ∣_ U) y')) :
-        (pullback.snd f (g ∣_ U)).residueFieldMap y' k ∈ R := by
-      obtain ⟨k, rfl⟩ : ∃ k₀ : X'.residueField x', U'.ι.residueFieldMap _ k₀ = k :=
-        (ConcreteCategory.bijective_of_isIso (U'.ι.residueFieldMap _)).2 k
-      have hk : (pullback.snd f (g ∣_ U) ≫ U'.ι).residueFieldMap y' k =
-          (pullback.snd f (g ∣_ U)).residueFieldMap y' (U'.ι.residueFieldMap _ k) := by
-        rw [Scheme.residueFieldMap_comp]
-        -- The point `(snd ≫ U'.ι) y'` is `U'.ι (snd y')` by definition, but `rw` cannot see it.
-        rfl
-      refine (AlgHom.mem_range _).mpr ⟨k ⊗ₜ 1, ?_⟩
-      exact (AlgHom.liftEquiv_tmul _ _ _).trans <| ((congrArg (k • ·) (map_one ψ)).trans
-        (Algebra.algebraMap_eq_smul_one k).symm).trans hk
-    have hle := (Subring.closure_le (t := R.toSubring)).mpr
-      (Set.union_subset (Set.range_subset_iff.mpr h₁) (Set.range_subset_iff.mpr h₂))
-    rw [Scheme.Pullback.closure_range_residueFieldMap_eq_top y'
-      (RingHom.Finite.to_isIntegral (FormallyUnramified.finite_residueField f y))] at hle
-    exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
-  exact hfy.baseChange _ hφ
+    (pullback.snd f (g ∣_ U)).IsUnramifiedInCodimOne :=
+  forall_residueField_baseChange (f := f) g
+    (fun A L _ _ _ _ ↦ TauCeti.Algebra.IsUnramifiedWRT A L) (fun h ↦ h.baseChange) hf hg hX hX'
+
+/-- **Base change of covers tamely ramified in codimension one.** Let `f : Y ⟶ U` be tamely
+ramified over `X` in codimension one, formally unramified and locally of finite type (for instance
+finite étale), and let `g : X' ⟶ X` map each codimension-one point `ξ'` of `X'` outside `g⁻¹ U` to
+a codimension-one point of `X`, with `𝒪_{X,g ξ'}` and `𝒪_{X',ξ'}` regular, so discrete valuation
+rings. Then the base change `Y ×_U g⁻¹ U ⟶ g⁻¹ U` is tamely ramified over `X'` in codimension
+one. -/
+@[stacks 0EYD "tame case"]
+theorem IsTamelyRamifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFiniteType f]
+    (hf : f.IsTamelyRamifiedInCodimOne)
+    (hg : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U → Order.coheight (g ξ') = 1)
+    (hX : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
+      IsRegularLocalRing (X.presheaf.stalk (g ξ')))
+    (hX' : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
+      IsRegularLocalRing (X'.presheaf.stalk ξ')) :
+    (pullback.snd f (g ∣_ U)).IsTamelyRamifiedInCodimOne :=
+  forall_residueField_baseChange (f := f) g
+    (fun A L _ _ _ _ ↦ TauCeti.Algebra.IsTamelyRamifiedWRT A L) (fun h ↦ h.baseChange) hf hg hX hX'
 
 end AlgebraicGeometry.Scheme.Hom

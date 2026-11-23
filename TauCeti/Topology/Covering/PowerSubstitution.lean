@@ -81,12 +81,29 @@ theorem mapsTo_pow_ball_zero_diff_singleton (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     MapsTo (fun t : ℂ => t ^ n) (ball 0 R' \ {0}) (ball 0 R \ {0}) :=
   fun _ ht => ⟨mapsTo_pow_ball_zero hn hR ht.1, pow_ne_zero n ht.2⟩
 
+/-- A power-times-factor form `G b = b.2 ^ m * w b` for `G` off the hyperplane `t = 0`, on
+`V × (ball 0 R \ {0})`, pulls back along `(w, t) ↦ (w, t ^ n)` to the form
+`G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n)`, with the factor `w` pulled back along the
+same map and exponent `n * m`, in a neighbourhood of every point `(x, 0)` with `x ∈ V`. -/
+theorem eventually_comp_pow_eq_pow_mul {V : Set E} {G w : E × ℂ → ℂ} {m : ℕ} (hV : IsOpen V)
+    (hR : 0 < R) (hn : n ≠ 0)
+    (h : ∀ b ∈ V ×ˢ (ball 0 R \ {0}), G b = b.2 ^ m * w b) {x : E} (hx : x ∈ V) :
+    ∀ᶠ b in nhds (x, (0 : ℂ)), b.2 ≠ 0 →
+      G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n) := by
+  have hcont : Continuous fun b : E × ℂ ↦ (b.1, b.2 ^ n) := by fun_prop
+  have hx' : (fun b : E × ℂ ↦ (b.1, b.2 ^ n)) (x, (0 : ℂ)) ∈ V ×ˢ ball (0 : ℂ) R := by
+    rw [mem_prod]
+    exact ⟨hx, by simpa [zero_pow hn] using hR⟩
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds
+    ((hV.prod isOpen_ball).mem_nhds hx')] with b hb hb0
+  simpa only [← pow_mul] using h _ ⟨hb.1, hb.2, pow_ne_zero n hb0⟩
+
 /-- The **power substitution** `(w, s) ↦ (w, s ^ n)` from `U × (ball 0 R' \ {0})` to
 `U × (ball 0 R \ {0})`, for `n ≠ 0` and `R' ^ n ≤ R`. -/
 def powerSubstitution (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     C(U × ↥(ball (0 : ℂ) R' \ {0}), U × ↥(ball (0 : ℂ) R \ {0})) :=
   (ContinuousMap.id U).prodMap
-    ⟨fun s => ⟨(s : ℂ) ^ n, mapsTo_pow_ball_zero_diff_singleton hn hR s.2⟩,
+    ⟨fun s => ⟨(s : ℂ) ^ n, mapsTo_pow_ball_zero_diff_singleton hn hR s.property⟩,
       Continuous.subtype_mk (by fun_prop) _⟩
 
 @[simp]
@@ -125,7 +142,7 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
     (he : p e = powerSubstitution U hn hR a) :
     ∃! F : C(U × ↥(ball (0 : ℂ) R' \ {0}), E), F a = e ∧ p ∘ F = powerSubstitution U hn hR := by
   set q := powerSubstitution U hn hR
-  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
+  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.property.1)
   have := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
       (0 : ℂ) hR')
@@ -178,9 +195,9 @@ theorem _root_.IsCoveringMap.exists_continuousMap_lifts_powerSubstitution
     ∃ F : p ⁻¹' {powerSubstitution U hn hR a} → C(U × ↥(ball (0 : ℂ) R' \ {0}), E),
       (∀ e, F e a = e ∧ p ∘ F e = powerSubstitution U hn hR) ∧ ∀ b, Injective fun e ↦ F e b := by
   choose F hF using fun e : p ⁻¹' {powerSubstitution U hn hR a} ↦
-    (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.2).exists
+    (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.property).exists
   refine ⟨F, hF, fun b e e' h ↦ Subtype.ext ?_⟩
-  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
+  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.property.1)
   have := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
       (0 : ℂ) hR')

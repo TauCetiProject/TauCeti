@@ -52,6 +52,9 @@ for which both cancellation laws hold on either side.
 * `TauCeti.CayleyDickson.star_mem_of_one_mem`: a submodule containing `1` is closed under
   conjugation.
 * `TauCeti.CayleyDickson.normSq_mul`: the norm is **multiplicative**.
+* `TauCeti.CayleyDickson.trace_mul_comm`, `TauCeti.CayleyDickson.trace_mul_assoc` and
+  `TauCeti.CayleyDickson.trace_mul_cycle`: the trace of a product does not depend on the order of
+  two factors, nor on the bracketing or a cyclic rotation of three.
 * `TauCeti.CayleyDickson.star_mul_mul_left` and `TauCeti.CayleyDickson.mul_mul_star_right`: the
   inverse properties.
 * `TauCeti.CayleyDickson.left_alternative`, `TauCeti.CayleyDickson.right_alternative`,
@@ -164,11 +167,40 @@ theorem trace_surjective [Invertible (2 : R)] :
     Function.Surjective (trace : CayleyDickson ℍ[R] →ₗ[R] R) :=
   fun r => ⟨r • ⅟(2 : R) • (1 : CayleyDickson ℍ[R]), by simp⟩
 
+/-- **The trace is symmetric in a product**: `T (x * y) = T (y * x)`. -/
+theorem trace_mul_comm : trace (x * y) = trace (y * x) := by
+  simp
+  ring
+
+/-- **The trace is associative in a triple product**: `T ((x * y) * z) = T (x * (y * z))`, so the
+trace of a product of three octonions does not depend on how it is bracketed. -/
+theorem trace_mul_assoc : trace (x * y * z) = trace (x * (y * z)) := by
+  simp
+  ring
+
+/-- **The trace is invariant under cyclic permutation of a triple product.** -/
+theorem trace_mul_cycle : trace (x * y * z) = trace (z * x * y) := by
+  rw [trace_mul_comm, trace_mul_assoc]
+
+/-- Scalars pass through the involution of the double. This is the `StarModule` law, which cannot
+be an instance here because a general commutative ring carries no involution. -/
+theorem star_smul (r : R) : star (r • x) = r • star x := by
+  ext <;> simp [QuaternionAlgebra.star_smul]
+
 /-! ### The norm and the trace as products and sums with the involution -/
 
 /-- An element times its conjugate is its norm. -/
 theorem self_mul_star : x * star x = normSq x • 1 := by
   ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- **The trace pairing `T (x * star y)` is symmetric**, since conjugation reverses products and
+preserves the trace. -/
+theorem trace_mul_star_comm : trace (x * star y) = trace (y * star x) := by
+  rw [← trace_star, star_mul, star_star]
+
+/-- The trace of an element times its conjugate is twice its norm. -/
+theorem trace_mul_star_self : trace (x * star x) = 2 * normSq x := by
+  rw [self_mul_star, map_smul, trace_one, smul_eq_mul, mul_comm]
 
 /-- The conjugate of an element times the element is its norm. -/
 theorem star_mul_self : star x * x = normSq x • 1 := by

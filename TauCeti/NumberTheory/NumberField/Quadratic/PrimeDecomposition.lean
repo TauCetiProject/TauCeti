@@ -223,21 +223,21 @@ theorem span_natCast_integralSqrt_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - d) :
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
   rw [← span_natCast_integralSqrt_sub_eq_span_natCast_integralSqrt_add_iff hsf hd4 hr, sq,
     ← span_natCast_integralSqrt_sub_mul_span_natCast_integralSqrt_add hsf hd4 hr]
-  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
-  exact (isMaximal_span_natCast_integralSqrt_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+  exact mul_right_inj' (isMaximal_span_natCast_integralSqrt_sub hsf hd4 hr).ne_bot_of_isIntegral_int
 
 end ModFourNeOne
 
 /-- **The ramified prime above `2` for `d ≡ 3 (mod 4)`.** Then `2 𝓞 ℚ(√d) = (2, √d - 1) ^ 2`. -/
-theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hsf : Squarefree d) (hd : d % 4 = 3) :
+theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hd : d % 4 = 3) :
     Ideal.span {(2 : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - 1} ^ 2 = Ideal.span {2} := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h := (span_natCast_integralSqrt_sub_sq_eq_iff (p := 2) (r := 1) hsf (by omega)
-    (by norm_num; omega)).mpr (by
-      rw [discr_eq_four_mul_of_mod_four_ne_one hsf (by omega)]
-      exact Dvd.dvd.mul_right (by norm_num) _)
-  simpa using h
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, d = 4 * k + 3 := ⟨d / 4, by omega⟩
+  set s := integralSqrt (omega_sq_eq_algebraMap_int (d := d))
+  have hs : s ^ 2 = 4 * k + 3 := by
+    rw [integralSqrt_sq, eq_intCast]
+    simpa using congrArg (Int.cast : ℤ → 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) hk
+  exact Ideal.span_pair_sq_eq_span_singleton_of_isCoprime (m := 2 * k + 2 - s)
+    (by linear_combination hs) ⟨2 * k + 2 - (k + 1) * s, s, by linear_combination -hs⟩
 
 /-! ### The case `d ≡ 1 (mod 4)` -/
 
@@ -346,16 +346,16 @@ theorem span_natCast_halfGen_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
   rw [← span_natCast_halfGen_sub_eq_span_natCast_halfGen_sub_iff hsf hd4 hr, sq,
     ← span_natCast_halfGen_sub_mul_span_natCast_halfGen_sub hsf hd4 hr]
-  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
-  exact (isMaximal_span_natCast_halfGen_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+  exact mul_right_inj' (isMaximal_span_natCast_halfGen_sub hsf hd4 hr).ne_bot_of_isIntegral_int
 
 end ModFourEqOne
 
 /-! ### The ramified primes dividing `d` -/
 
-/-- **The ramified prime above a prime divisor of `d`.** For squarefree `d` and a prime `p ∣ d`,
-`p 𝓞 ℚ(√d) = (p, √d) ^ 2`, whatever the residue of `d` modulo `4`. -/
-theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hsf : Squarefree d)
+/-- **The ramified prime above a prime divisor of `d`.** For a prime `p ∣ d` with `p ^ 2 ∤ d`
+(in particular for squarefree `d`), `p 𝓞 ℚ(√d) = (p, √d) ^ 2`, whatever the residue of `d`
+modulo `4`. -/
+theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hp2 : ¬ (p : ℤ) ^ 2 ∣ d)
     (hp : (p : ℤ) ∣ d) :
     Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d))} ^ 2 =
@@ -364,7 +364,7 @@ theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hsf : Squar
   obtain ⟨m, hm⟩ := hp
   -- `p ∤ m`, since `p ^ 2 ∤ d`.
   have hpm : IsCoprime (p : ℤ) m := hp'.coprime_iff_not_dvd.mpr fun ⟨k, hk⟩ =>
-    hp'.not_isUnit (hsf p ⟨k, by rw [hm, hk]; ring⟩)
+    hp2 ⟨k, by rw [hm, hk]; ring⟩
   refine Ideal.span_pair_sq_eq_span_singleton_of_isCoprime (m := (m : 𝓞 _)) ?_
     (by simpa using hpm.intCast (R := 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)))
   rw [integralSqrt_sq]

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.CatCommSq
 public import Mathlib.CategoryTheory.EqToHom
-public import Mathlib.CategoryTheory.Equivalence
-public import Mathlib.Tactic.Ring
+public import Mathlib.Data.Int.Init
 
 /-!
 # Additivity of the integer powers of an autoequivalence
@@ -15,8 +15,8 @@ public import Mathlib.Tactic.Ring
 Mathlib defines the integer powers `e ^ j` of an autoequivalence `e : C ≌ C` by recursion and
 records `e ^ 0`, `e ^ 1` and `e ^ (-1)`, but leaves the comparison of `e ^ (a + b)` with the
 composite `e ^ a ⋙ e ^ b` as an explicit TODO.  This file supplies that comparison as an
-isomorphism of the underlying functors, together with the successor and predecessor forms which
-consume it.
+isomorphism of the underlying functors, together with the successor and predecessor isomorphisms
+from which it is built.
 
 Only the underlying functors are compared.  `e ^ (a + b)` and `(e ^ a).trans (e ^ b)` are not
 equal as equivalences — the recursion inserts unitors — so the isomorphism below, and not an
@@ -29,19 +29,27 @@ equation, is what downstream constructions use.
 * `CategoryTheory.Equivalence.powAddIso`: `e ^ (a + b) ≅ e ^ a ⋙ e ^ b`.
 * `CategoryTheory.Equivalence.powSuccRightIso`: `e ^ (j + 1) ≅ e ^ j ⋙ e`, the opposite-handed
   successor isomorphism, which the additivity isomorphism supplies but the recursion does not.
-* `CategoryTheory.Equivalence.inverseCommIso` and `CategoryTheory.Equivalence.powCommIso`: a
-  functor `F` with `e ⋙ F ≅ F ⋙ e'` also intertwines the inverses and all integer powers,
-  `e ^ j ⋙ F ≅ F ⋙ e' ^ j`.  This is how a functor between graded categories which commutes with
-  the grading shifts is compared on every internal degree.  Their components are computed by
-  `CategoryTheory.Equivalence.inverseCommIso_hom_app` and, from one power to the next, by
+* `CategoryTheory.Equivalence.powCommIso`: a functor `F` with `e ⋙ F ≅ F ⋙ e'` also intertwines
+  all integer powers, `e ^ j ⋙ F ≅ F ⋙ e' ^ j`; at negative powers it uses Mathlib's horizontal
+  inverse `CategoryTheory.CatCommSq.hInv` of the square given by `e ⋙ F ≅ F ⋙ e'`.  This is how a
+  functor between graded categories which commutes with the grading shifts is compared on every
+  internal degree.  Its components are computed, from one power to the next, by
   `CategoryTheory.Equivalence.powCommIso_succ_hom_app`.
+
+## Main statements
+
+The defining cases of these isomorphisms are recorded as equations, so that they can be used
+without unfolding: `CategoryTheory.Equivalence.powSuccIso_zero` and its siblings for the
+successor isomorphism, `CategoryTheory.Equivalence.powAddIso_zero_left`,
+`CategoryTheory.Equivalence.powAddIso_add_one_left` and
+`CategoryTheory.Equivalence.powAddIso_sub_one_left` for the additivity isomorphism, and
+`CategoryTheory.Equivalence.powPredIso_eq_inverseCompIso` and
+`CategoryTheory.Equivalence.powSuccRightIso_eq_powAddIso` for the derived ones.
 -/
 
 public section
 
-open CategoryTheory
-
-namespace TauCeti
+namespace CategoryTheory.Equivalence
 
 universe v u v' u'
 
@@ -53,7 +61,7 @@ remaining cases inserts exactly what the recursion leaves out there: a right uni
 where `e ^ 0` is the identity functor; the unit isomorphism at `j = -1`, where `e ⋙ e ^ (-1)` is
 `e ⋙ e.inverse`; and at every `j ≤ -2` a composite of a left unitor, the unit isomorphism and an
 associator, which grows a negative power by inserting `e ⋙ e.inverse` in front of it. -/
-def _root_.CategoryTheory.Equivalence.powSuccIso (e : C ≌ C) : ∀ j : ℤ,
+def powSuccIso (e : C ≌ C) : ∀ j : ℤ,
     (e ^ (j + 1)).functor ≅ e.functor ⋙ (e ^ j).functor
   | (0 : ℕ) => (Functor.rightUnitor e.functor).symm
   | ((_ + 1 : ℕ) : ℤ) => Iso.refl _
@@ -63,199 +71,253 @@ def _root_.CategoryTheory.Equivalence.powSuccIso (e : C ≌ C) : ∀ j : ℤ,
         Functor.isoWhiskerRight e.unitIso _ ≪≫
           Functor.associator e.functor e.inverse (e.symm.powNat (m + 1)).functor
 
-/-- **The predecessor isomorphism `e⁻¹ ⋙ e ^ j ≅ e ^ (j - 1)`.** -/
-def _root_.CategoryTheory.Equivalence.powPredIso (e : C ≌ C) (j : ℤ) :
+/-- At the exponent `0`, `CategoryTheory.Equivalence.powSuccIso` is the inverse right unitor
+`e ≅ e ⋙ 𝟭`. -/
+theorem powSuccIso_zero (e : C ≌ C) :
+    e.powSuccIso 0 = (Functor.rightUnitor e.functor).symm :=
+  powSuccIso.eq_1 e
+
+/-- At a positive exponent, `CategoryTheory.Equivalence.powSuccIso` is the identity. -/
+theorem powSuccIso_natCast_add_one (e : C ≌ C) (n : ℕ) :
+    e.powSuccIso (n + 1) = Iso.refl _ :=
+  powSuccIso.eq_2 e n
+
+/-- At the exponent `-1`, `CategoryTheory.Equivalence.powSuccIso` is the unit isomorphism
+`𝟭 ≅ e ⋙ e⁻¹` of `e`. -/
+theorem powSuccIso_neg_one (e : C ≌ C) :
+    e.powSuccIso (-1) = e.unitIso :=
+  powSuccIso.eq_3 e
+
+/-- At an exponent `j ≤ -2`, `CategoryTheory.Equivalence.powSuccIso` inserts the unit isomorphism
+of `e` in front of the negative power `e ^ (j + 1)`. -/
+theorem powSuccIso_negSucc_add_one (e : C ≌ C) (m : ℕ) :
+    e.powSuccIso (Int.negSucc (m + 1)) =
+      (Functor.leftUnitor (e ^ Int.negSucc m).functor).symm ≪≫
+        Functor.isoWhiskerRight e.unitIso _ ≪≫
+          Functor.associator e.functor e.inverse (e ^ Int.negSucc m).functor :=
+  powSuccIso.eq_4 e m
+
+@[simp]
+theorem powSuccIso_zero_hom_app (e : C ≌ C) (X : C) :
+    (e.powSuccIso 0).hom.app X = 𝟙 _ := by
+  simp [powSuccIso_zero]
+
+@[simp]
+theorem powSuccIso_zero_inv_app (e : C ≌ C) (X : C) :
+    (e.powSuccIso 0).inv.app X = 𝟙 _ := by
+  simp [powSuccIso_zero]
+
+@[simp]
+theorem powSuccIso_natCast_add_one_hom_app (e : C ≌ C) (n : ℕ) (X : C) :
+    (e.powSuccIso (n + 1)).hom.app X = 𝟙 _ := by
+  rw [powSuccIso_natCast_add_one]
+  -- The identity at `(e ^ (n + 2)).functor.obj X` is the identity at
+  -- `(e ^ (n + 1)).functor.obj (e.functor.obj X)` by the recursion defining `e ^ j`, which
+  -- `simp` does not unfold.
+  rfl
+
+@[simp]
+theorem powSuccIso_natCast_add_one_inv_app (e : C ≌ C) (n : ℕ) (X : C) :
+    (e.powSuccIso (n + 1)).inv.app X = 𝟙 _ := by
+  rw [powSuccIso_natCast_add_one]
+  -- The identity at `(e ^ (n + 2)).functor.obj X` is the identity at
+  -- `(e ^ (n + 1)).functor.obj (e.functor.obj X)` by the recursion defining `e ^ j`, which
+  -- `simp` does not unfold.
+  rfl
+
+@[simp]
+theorem powSuccIso_neg_one_hom_app (e : C ≌ C) (X : C) :
+    (e.powSuccIso (-1)).hom.app X = e.unitIso.hom.app X := by
+  rw [powSuccIso_neg_one]
+
+@[simp]
+theorem powSuccIso_neg_one_inv_app (e : C ≌ C) (X : C) :
+    (e.powSuccIso (-1)).inv.app X = e.unitIso.inv.app X := by
+  rw [powSuccIso_neg_one]
+
+/-- **The predecessor isomorphism `e⁻¹ ⋙ e ^ j ≅ e ^ (j - 1)`**: the transpose
+`CategoryTheory.Iso.inverseCompIso` of the successor isomorphism at `j - 1`. -/
+def powPredIso (e : C ≌ C) (j : ℤ) :
     e.inverse ⋙ (e ^ j).functor ≅ (e ^ (j - 1)).functor :=
-  Functor.isoWhiskerLeft e.inverse
-      (eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (by ring : j = j - 1 + 1)) ≪≫
-        e.powSuccIso (j - 1)) ≪≫
-    e.invFunIdAssoc _
+  Iso.inverseCompIso (G := e)
+    (eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.sub_add_cancel j 1).symm) ≪≫
+      e.powSuccIso (j - 1))
 
-/-- The inductive step of `CategoryTheory.Equivalence.powAddIso` which raises the first exponent
-by one. -/
-private def _root_.CategoryTheory.Equivalence.powAddIsoOfSucc (e : C ≌ C) (b a a' : ℤ)
-    (h : a' = a + 1)
-    (ih : (e ^ (a + b)).functor ≅ (e ^ a).functor ⋙ (e ^ b).functor) :
-    (e ^ (a' + b)).functor ≅ (e ^ a').functor ⋙ (e ^ b).functor :=
-  eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (by rw [h]; ring : a' + b = a + b + 1)) ≪≫
-    e.powSuccIso (a + b) ≪≫ Functor.isoWhiskerLeft e.functor ih ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight
-          ((e.powSuccIso a).symm ≪≫
-            eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (by rw [h] : a + 1 = a'))) _
+/-- `CategoryTheory.Equivalence.powPredIso` is the transpose `CategoryTheory.Iso.inverseCompIso`
+of the successor isomorphism `CategoryTheory.Equivalence.powSuccIso` at `j - 1`. -/
+theorem powPredIso_eq_inverseCompIso (e : C ≌ C) (j : ℤ) :
+    e.powPredIso j = Iso.inverseCompIso (G := e)
+      (eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.sub_add_cancel j 1).symm) ≪≫
+        e.powSuccIso (j - 1)) :=
+  powPredIso.eq_1 e j
 
-/-- The inductive step of `CategoryTheory.Equivalence.powAddIso` which lowers the first exponent
-by one. -/
-private def _root_.CategoryTheory.Equivalence.powAddIsoOfPred (e : C ≌ C) (b a a' : ℤ)
-    (h : a' = a - 1)
-    (ih : (e ^ (a + b)).functor ≅ (e ^ a).functor ⋙ (e ^ b).functor) :
-    (e ^ (a' + b)).functor ≅ (e ^ a').functor ⋙ (e ^ b).functor :=
-  (e.invFunIdAssoc _).symm ≪≫
-    Functor.isoWhiskerLeft e.inverse
-        ((e.powSuccIso (a' + b)).symm ≪≫
-          eqToIso (congrArg (fun i : ℤ => (e ^ i).functor)
-            (by rw [h]; ring : a' + b + 1 = a + b)) ≪≫ ih) ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight
-          (e.powPredIso a ≪≫
-            eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (by rw [h] : a - 1 = a'))) _
+/-- **Additivity of the integer powers of an autoequivalence**: `e ^ (a + b) ≅ e ^ a ⋙ e ^ b`.
+At `a = 0` it is, after identifying `0 + b` with `b`, the inverse left unitor; it is extended to
+every `a` by `Int.inductionOn'`, raising `a` through `CategoryTheory.Equivalence.powSuccIso` and
+lowering it through `CategoryTheory.Equivalence.powPredIso`. -/
+def powAddIso (e : C ≌ C) (a b : ℤ) :
+    (e ^ (a + b)).functor ≅ (e ^ a).functor ⋙ (e ^ b).functor :=
+  Int.inductionOn' (motive := fun a => (e ^ (a + b)).functor ≅ (e ^ a).functor ⋙ (e ^ b).functor)
+    a 0
+    (eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.zero_add b)) ≪≫
+      (Functor.leftUnitor _).symm)
+    (fun a _ ih =>
+      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.add_right_comm a 1 b)) ≪≫
+        e.powSuccIso (a + b) ≪≫ Functor.isoWhiskerLeft e.functor ih ≪≫
+          (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (e.powSuccIso a).symm _)
+    (fun a _ ih =>
+      have h : a - 1 + b = a + b - 1 := by omega
+      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) h) ≪≫ (e.powPredIso (a + b)).symm ≪≫
+        Functor.isoWhiskerLeft e.inverse ih ≪≫ (Functor.associator _ _ _).symm ≪≫
+          Functor.isoWhiskerRight (e.powPredIso a) _)
 
-/-- Additivity of the integer powers at a nonnegative first exponent. -/
-private def _root_.CategoryTheory.Equivalence.powAddNatIso (e : C ≌ C) (b : ℤ) : ∀ n : ℕ,
-    (e ^ ((n : ℤ) + b)).functor ≅ (e ^ (n : ℤ)).functor ⋙ (e ^ b).functor
-  | 0 =>
-      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor)
-          (by push_cast; ring : ((0 : ℕ) : ℤ) + b = b)) ≪≫
-        (Functor.leftUnitor _).symm
-  | n + 1 =>
-      e.powAddIsoOfSucc b (n : ℤ) (((n + 1 : ℕ) : ℤ)) (by push_cast; ring)
-        (CategoryTheory.Equivalence.powAddNatIso e b n)
+/-- At `a = 0`, `CategoryTheory.Equivalence.powAddIso` is the inverse left unitor of `e ^ b`, after
+identifying `0 + b` with `b`. -/
+theorem powAddIso_zero_left (e : C ≌ C) (b : ℤ) :
+    e.powAddIso 0 b =
+      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.zero_add b)) ≪≫
+        (Functor.leftUnitor _).symm :=
+  Int.inductionOn'_self
 
-/-- Additivity of the integer powers at a nonpositive first exponent. -/
-private def _root_.CategoryTheory.Equivalence.powSubNatIso (e : C ≌ C) (b : ℤ) : ∀ n : ℕ,
-    (e ^ (-(n : ℤ) + b)).functor ≅ (e ^ (-(n : ℤ))).functor ⋙ (e ^ b).functor
-  | 0 =>
-      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor)
-          (by push_cast; ring : -((0 : ℕ) : ℤ) + b = b)) ≪≫
-        (Functor.leftUnitor _).symm
-  | n + 1 =>
-      e.powAddIsoOfPred b (-(n : ℤ)) (-((n + 1 : ℕ) : ℤ)) (by push_cast; ring)
-        (CategoryTheory.Equivalence.powSubNatIso e b n)
+/-- At a nonnegative `a`, `CategoryTheory.Equivalence.powAddIso` at `a + 1` is obtained from its
+value at `a` through the successor isomorphisms `CategoryTheory.Equivalence.powSuccIso`. -/
+theorem powAddIso_add_one_left (e : C ≌ C) {a : ℤ} (ha : 0 ≤ a) (b : ℤ) :
+    e.powAddIso (a + 1) b =
+      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (Int.add_right_comm a 1 b)) ≪≫
+        e.powSuccIso (a + b) ≪≫ Functor.isoWhiskerLeft e.functor (e.powAddIso a b) ≪≫
+          (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (e.powSuccIso a).symm _ :=
+  Int.inductionOn'_add_one ha
 
-/-- **Additivity of the integer powers of an autoequivalence**: `e ^ (a + b) ≅ e ^ a ⋙ e ^ b`. -/
-def _root_.CategoryTheory.Equivalence.powAddIso (e : C ≌ C) : ∀ a b : ℤ,
-    (e ^ (a + b)).functor ≅ (e ^ a).functor ⋙ (e ^ b).functor
-  | Int.ofNat n, b => e.powAddNatIso b n
-  | Int.negSucc n, b => e.powSubNatIso b (n + 1)
+/-- At a nonpositive `a`, `CategoryTheory.Equivalence.powAddIso` at `a - 1` is obtained from its
+value at `a` through the predecessor isomorphisms `CategoryTheory.Equivalence.powPredIso`. -/
+theorem powAddIso_sub_one_left (e : C ≌ C) {a : ℤ} (ha : a ≤ 0) (b : ℤ) :
+    e.powAddIso (a - 1) b =
+      eqToIso (congrArg (fun i : ℤ => (e ^ i).functor) (by omega : a - 1 + b = a + b - 1)) ≪≫
+        (e.powPredIso (a + b)).symm ≪≫ Functor.isoWhiskerLeft e.inverse (e.powAddIso a b) ≪≫
+          (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (e.powPredIso a) _ :=
+  Int.inductionOn'_sub_one ha
+
+@[simp]
+theorem powAddIso_zero_left_hom_app (e : C ≌ C) (b : ℤ) (X : C) :
+    (e.powAddIso 0 b).hom.app X = eqToHom (by simp) := by
+  simp [powAddIso_zero_left]
+
+@[simp]
+theorem powAddIso_zero_left_inv_app (e : C ≌ C) (b : ℤ) (X : C) :
+    (e.powAddIso 0 b).inv.app X = eqToHom (by simp) := by
+  simp [powAddIso_zero_left]
 
 /-- **The opposite-handed successor isomorphism `e ^ (j + 1) ≅ e ^ j ⋙ e`.** -/
-def _root_.CategoryTheory.Equivalence.powSuccRightIso (e : C ≌ C) (j : ℤ) :
+def powSuccRightIso (e : C ≌ C) (j : ℤ) :
     (e ^ (j + 1)).functor ≅ (e ^ j).functor ⋙ e.functor :=
   e.powAddIso j 1
+
+/-- `CategoryTheory.Equivalence.powSuccRightIso` is the additivity isomorphism
+`CategoryTheory.Equivalence.powAddIso` at the second exponent `1`. -/
+theorem powSuccRightIso_eq_powAddIso (e : C ≌ C) (j : ℤ) :
+    e.powSuccRightIso j = e.powAddIso j 1 :=
+  powSuccRightIso.eq_1 e j
 
 section Comm
 
 variable {D : Type u'} [Category.{v'} D] {F : C ⥤ D} {e : C ≌ C} {e' : D ≌ D}
 
-/-- A functor intertwining two autoequivalences, `e ⋙ F ≅ F ⋙ e'`, also intertwines their
-inverses: `e⁻¹ ⋙ F ≅ F ⋙ e'⁻¹`. -/
-def _root_.CategoryTheory.Equivalence.inverseCommIso (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    e.inverse ⋙ F ≅ F ⋙ e'.inverse :=
-  Iso.isoCompInverse (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft e.inverse σ.symm ≪≫
-    Iso.inverseCompIso (Iso.refl _))
-
-@[simp]
-theorem _root_.CategoryTheory.Equivalence.inverseCommIso_hom_app
-    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (Y : C) :
-    (Equivalence.inverseCommIso σ).hom.app Y =
-      e'.unitIso.hom.app (F.obj (e.inverse.obj Y)) ≫
-        e'.inverse.map (σ.inv.app (e.inverse.obj Y)) ≫
-          e'.inverse.map (F.map (e.counitIso.hom.app Y)) := by
-  simp [Equivalence.inverseCommIso]
-
-@[simp]
-theorem _root_.CategoryTheory.Equivalence.inverseCommIso_inv_app
-    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (Y : C) :
-    (Equivalence.inverseCommIso σ).inv.app Y =
-      e'.inverse.map (F.map (e.counitIso.inv.app Y)) ≫
-        e'.inverse.map (σ.hom.app (e.inverse.obj Y)) ≫
-          e'.unitIso.inv.app (F.obj (e.inverse.obj Y)) := by
-  simp [Equivalence.inverseCommIso]
-
-/-- Precomposing `CategoryTheory.Equivalence.inverseCommIso σ` with the unit of `e` and
-postcomposing with `σ` and the inverse unit of `e'` gives the identity: this is the step from the
-power `-1` to the power `0` of `CategoryTheory.Equivalence.powCommIso_succ_hom_app`. -/
-theorem _root_.CategoryTheory.Equivalence.inverseCommIso_hom_app_unit
+/-- Precomposing the horizontal inverse `CategoryTheory.CatCommSq.hInv` of the square `σ` with the
+unit of `e` and postcomposing it with `σ` and the inverse unit of `e'` gives the identity: this is
+the step from the power `-1` to the power `0` of
+`CategoryTheory.Equivalence.powCommIso_succ_hom_app`. -/
+theorem hInv_iso_hom_app_unit
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
-    F.map (e.unitIso.hom.app X) ≫ (Equivalence.inverseCommIso σ).hom.app (e.functor.obj X) ≫
-      e'.inverse.map (σ.hom.app X) ≫ e'.unitIso.inv.app (F.obj X) = 𝟙 _ := by
+    F.map (e.unitIso.hom.app X) ≫
+      (CatCommSq.hInv e F F e' ⟨σ⟩).iso.hom.app (e.functor.obj X) ≫
+        e'.inverse.map (σ.hom.app X) ≫ e'.unitIso.inv.app (F.obj X) = 𝟙 _ := by
   have h1 := e'.unitIso.hom.naturality (F.map (e.unitIso.hom.app X))
   have h2 := σ.inv.naturality (e.unitIso.hom.app X)
   simp only [Functor.id_map, Functor.comp_map, Functor.comp_obj, Functor.id_obj] at h1 h2
-  rw [Equivalence.inverseCommIso_hom_app, Category.assoc, reassoc_of% h1]
+  rw [CatCommSq.hInv_iso_hom_app, Category.assoc, reassoc_of% h1]
   simp only [← Functor.map_comp_assoc, Category.assoc, reassoc_of% h2, ← F.map_comp_assoc,
     Equivalence.functor_unit_comp]
   simp
 
 /-- The natural-number powers of two autoequivalences intertwined by a functor are intertwined by
-it, following the recursion defining `CategoryTheory.Equivalence.powNat`. -/
-private def _root_.CategoryTheory.Equivalence.powNatCommIso (e : C ≌ C) (e' : D ≌ D) (F : C ⥤ D)
+it, following the recursion defining `CategoryTheory.Equivalence.powNat`: each step pastes one more
+copy of the square `σ` with `CategoryTheory.CatCommSq.hComp`. -/
+private def powNatCommIso (e : C ≌ C) (e' : D ≌ D) (F : C ⥤ D)
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) : ∀ n : ℕ,
     (e.powNat n).functor ⋙ F ≅ F ⋙ (e'.powNat n).functor
-  | 0 => Functor.leftUnitor F ≪≫ (Functor.rightUnitor F).symm
+  | 0 => (CatCommSq.hId F).iso
   | 1 => σ
-  | n + 2 => Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft e.functor
-        (CategoryTheory.Equivalence.powNatCommIso e e' F σ (n + 1)) ≪≫
-      (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight σ _ ≪≫ Functor.associator _ _ _
+  | n + 2 =>
+      (CatCommSq.hComp' ⟨σ⟩ ⟨CategoryTheory.Equivalence.powNatCommIso e e' F σ (n + 1)⟩).iso
 
 /-- **A functor intertwining two autoequivalences intertwines all their integer powers**:
-`e ⋙ F ≅ F ⋙ e'` gives `e ^ j ⋙ F ≅ F ⋙ e' ^ j` for every `j : ℤ`.  Negative powers use
-`CategoryTheory.Equivalence.inverseCommIso`. -/
-def _root_.CategoryTheory.Equivalence.powCommIso (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+`e ⋙ F ≅ F ⋙ e'` gives `e ^ j ⋙ F ≅ F ⋙ e' ^ j` for every `j : ℤ`.  Negative powers use the
+horizontal inverse `CategoryTheory.CatCommSq.hInv` of the square given by `σ`. -/
+def powCommIso (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
     ∀ j : ℤ, (e ^ j).functor ⋙ F ≅ F ⋙ (e' ^ j).functor
   | Int.ofNat n => e.powNatCommIso e' F σ n
-  | Int.negSucc n => e.symm.powNatCommIso e'.symm F (Equivalence.inverseCommIso σ) (n + 1)
+  | Int.negSucc n => e.symm.powNatCommIso e'.symm F (CatCommSq.hInv e F F e' ⟨σ⟩).iso (n + 1)
 
 /-- At the zeroth power, `CategoryTheory.Equivalence.powCommIso` is the comparison of unitors
 `𝟭 ⋙ F ≅ F ⋙ 𝟭`. -/
-theorem _root_.CategoryTheory.Equivalence.powCommIso_zero
+theorem powCommIso_zero
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    Equivalence.powCommIso σ 0 = Functor.leftUnitor F ≪≫ (Functor.rightUnitor F).symm := by
-  unfold Equivalence.powCommIso; rfl
+    Equivalence.powCommIso σ 0 = Functor.leftUnitor F ≪≫ (Functor.rightUnitor F).symm :=
+  (powCommIso.eq_1 σ 0).trans <| (powNatCommIso.eq_1 e e' F σ).trans <|
+    congrArg (fun S : CatCommSq (𝟭 C) F F (𝟭 D) => S.iso) (CatCommSq.hId.eq_1 F)
 
 /-- At the first power, `CategoryTheory.Equivalence.powCommIso` is the given intertwiner. -/
-theorem _root_.CategoryTheory.Equivalence.powCommIso_one (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    Equivalence.powCommIso σ 1 = σ := by
-  unfold Equivalence.powCommIso; rfl
+theorem powCommIso_one (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    Equivalence.powCommIso σ 1 = σ :=
+  (powCommIso.eq_1 σ 1).trans (powNatCommIso.eq_2 e e' F σ)
 
 /-- At the power `-1`, `CategoryTheory.Equivalence.powCommIso` is the intertwiner of the inverses
-given by `CategoryTheory.Equivalence.inverseCommIso`. -/
-theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one
+given by the horizontal inverse `CategoryTheory.CatCommSq.hInv` of the square `σ`. -/
+theorem powCommIso_neg_one
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    Equivalence.powCommIso σ (-1) = Equivalence.inverseCommIso σ := by
-  unfold Equivalence.powCommIso; rfl
+    Equivalence.powCommIso σ (-1) = (CatCommSq.hInv e F F e' ⟨σ⟩).iso :=
+  (powCommIso.eq_2 σ 0).trans (powNatCommIso.eq_2 e.symm e'.symm F _)
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_zero_hom_app
+theorem powCommIso_zero_hom_app
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
     (Equivalence.powCommIso σ 0).hom.app X = 𝟙 (F.obj X) := by
   simp [Equivalence.powCommIso_zero]
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_zero_inv_app
+theorem powCommIso_zero_inv_app
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
     (Equivalence.powCommIso σ 0).inv.app X = 𝟙 (F.obj X) := by
   simp [Equivalence.powCommIso_zero]
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_one_hom
+theorem powCommIso_one_hom
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
     (Equivalence.powCommIso σ 1).hom = σ.hom := by
   rw [Equivalence.powCommIso_one]
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_one_inv
+theorem powCommIso_one_inv
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
     (Equivalence.powCommIso σ 1).inv = σ.inv := by
   rw [Equivalence.powCommIso_one]
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one_hom
+theorem powCommIso_neg_one_hom
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    (Equivalence.powCommIso σ (-1)).hom = (Equivalence.inverseCommIso σ).hom := by
+    (Equivalence.powCommIso σ (-1)).hom = (CatCommSq.hInv e F F e' ⟨σ⟩).iso.hom := by
   rw [Equivalence.powCommIso_neg_one]
 
 @[simp]
-theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one_inv
+theorem powCommIso_neg_one_inv
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    (Equivalence.powCommIso σ (-1)).inv = (Equivalence.inverseCommIso σ).inv := by
+    (Equivalence.powCommIso σ (-1)).inv = (CatCommSq.hInv e F F e' ⟨σ⟩).iso.inv := by
   rw [Equivalence.powCommIso_neg_one]
 
 /-- **The successor step of `CategoryTheory.Equivalence.powCommIso`**: its component at the power
 `j + 1` is its component at the power `j`, followed by `σ`, conjugated by the successor
 isomorphisms `CategoryTheory.Equivalence.powSuccIso` of `e` and `e'`. -/
-theorem _root_.CategoryTheory.Equivalence.powCommIso_succ_hom_app
+theorem powCommIso_succ_hom_app
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (j : ℤ) (X : C) :
     (Equivalence.powCommIso σ (j + 1)).hom.app X =
       F.map ((e.powSuccIso j).hom.app X) ≫
@@ -273,23 +335,24 @@ theorem _root_.CategoryTheory.Equivalence.powCommIso_succ_hom_app
     dsimp only [Equivalence.powNat, Equivalence.powNatCommIso]
     simp
   · change (Equivalence.powCommIso σ 0).hom.app X = _
-    simpa [Equivalence.powSuccIso] using (Equivalence.inverseCommIso_hom_app_unit σ X).symm
+    simpa [Equivalence.powSuccIso] using (Equivalence.hInv_iso_hom_app_unit σ X).symm
   · change (Equivalence.powCommIso σ (Int.negSucc m)).hom.app X = _
     dsimp only [Equivalence.powSuccIso, Equivalence.powCommIso, HPow.hPow, Pow.pow,
       Equivalence.pow, Equivalence.powNat, Equivalence.powNatCommIso]
-    have h := (e.symm.powNatCommIso e'.symm F (Equivalence.inverseCommIso σ) (m + 1)).hom.naturality
-      (e.unitIso.hom.app X)
+    have h :=
+      (e.symm.powNatCommIso e'.symm F (CatCommSq.hInv e F F e' ⟨σ⟩).iso (m + 1)).hom.naturality
+        (e.unitIso.hom.app X)
     have k := congrArg (e'.symm.powNat (m + 1)).functor.map
-      (Equivalence.inverseCommIso_hom_app_unit σ X)
+      (Equivalence.hInv_iso_hom_app_unit σ X)
     simp only [Functor.comp_map, Functor.map_comp, Functor.map_id,
-      Equivalence.inverseCommIso_hom_app, Category.assoc] at h k
+      CatCommSq.hInv_iso_hom_app, Category.assoc] at h k
     simp only [Functor.comp_obj, Equivalence.trans_functor, Equivalence.symm_functor,
       Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.id_obj,
       Functor.leftUnitor_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app,
-      Category.comp_id, Functor.map_comp, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-      Functor.associator_inv_app, Equivalence.inverseCommIso_hom_app, Category.id_comp,
+      Category.comp_id, Functor.map_comp,
+      Functor.associator_inv_app, CatCommSq.hInv_iso_hom_app, Category.id_comp,
       Functor.comp_map, Iso.trans_inv, Functor.isoWhiskerRight_inv, Iso.symm_inv, Category.assoc,
-      Functor.leftUnitor_hom_app, reassoc_of% h, k]
+      Functor.leftUnitor_hom_app, CatCommSq.hComp_iso_hom_app, reassoc_of% h, k]
     -- The remaining `F.map (𝟙 _)` sits at the unreduced object
     -- `(e ^ (Int.negSucc (m + 1) + 1)).functor.obj X`, so `Functor.map_id` only applies up to
     -- definitional unfolding.
@@ -297,4 +360,4 @@ theorem _root_.CategoryTheory.Equivalence.powCommIso_succ_hom_app
 
 end Comm
 
-end TauCeti
+end CategoryTheory.Equivalence

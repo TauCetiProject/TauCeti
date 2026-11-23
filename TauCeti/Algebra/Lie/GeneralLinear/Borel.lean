@@ -297,7 +297,7 @@ def strictUpperTriangularIdeal : LieIdeal R (upperTriangular R n) where
   zero_mem' := (strictUpperTriangular R n).zero_mem
   smul_mem' c _ hA := (strictUpperTriangular R n).smul_mem c hA
   lie_mem {A _B} hB :=
-    lie_mem_strictUpperTriangular A.2 (strictUpperTriangular_le_upperTriangular hB)
+    lie_mem_strictUpperTriangular A.property (strictUpperTriangular_le_upperTriangular hB)
 
 variable {R n}
 
@@ -406,7 +406,7 @@ as with the coordinates on `sl n R` in `TauCeti/Algebra/Lie/GeneralLinear/Finran
 private: the two instances are the public content. -/
 private def strictUpperTriangularEquivFun :
     strictUpperTriangular R n ≃ₗ[R] ({p : n × n // p.1 < p.2} → R) where
-  toFun A p := (A : Matrix n n R) p.1.1 p.1.2
+  toFun A p := (A : Matrix n n R) p.val.1 p.val.2
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun g := ⟨of fun i j => if h : i < j then g ⟨(i, j), h⟩ else 0,
@@ -414,7 +414,7 @@ private def strictUpperTriangularEquivFun :
   left_inv A := Subtype.ext <| Matrix.ext fun i j => by
     by_cases hij : i < j
     · simp [hij]
-    · simp [hij, mem_strictUpperTriangular_iff.mp A.2 i j (not_lt.mp hij)]
+    · simp [hij, mem_strictUpperTriangular_iff.mp A.property i j (not_lt.mp hij)]
   right_inv g := funext fun _ => dite_eq_left _
 
 /-- **`𝔫⁺` is a free module**, on the raising matrix units `Eᵢⱼ` with `i < j`: the entries above
@@ -503,7 +503,7 @@ instance isNilpotent_strictUpperTriangular :
   -- The k-th filtration term vanishes at distances at most k above the diagonal.
   let F (k : ℕ) : Submodule R (strictUpperTriangular R n) :=
     { carrier := {A | ∀ i j, (e j : ℕ) < (e i : ℕ) + k + 1 → (A : Matrix n n R) i j = 0}
-      zero_mem' := by intro i j hij; rfl
+      zero_mem' := by intro i j _; rfl
       add_mem' := by intro A B hA hB i j hij; simp [hA i j hij, hB i j hij]
       smul_mem' := by intro c A hA i j hij; simp [hA i j hij] }
   have hbracket (k) (A B : strictUpperTriangular R n) (hB : B ∈ F k) :

@@ -33,6 +33,8 @@ Away from the origin the extension is `h × id` in the polar coordinates
   unit sphere.
 * `Homeomorph.norm_radialExtension`: the radial extension preserves norms.
 * `Homeomorph.radialExtension_symm`: its inverse is the radial extension of `h.symm`.
+* `Homeomorph.exists_norm_eq_of_closedBall_glue`: two closed balls glued along their boundary
+  spheres are compared by a norm-preserving homeomorphism, the radial extension of the gluing.
 -/
 
 public section
@@ -75,7 +77,7 @@ private theorem radialExtensionFun_of_ne_zero (h : sphere (0 : E) 1 ≃ₜ spher
     (x : ({0}ᶜ : Set E)) : radialExtensionFun h x = polarCongr h x := by
   unfold radialExtensionFun
   split_ifs with hx
-  · exact absurd hx x.2
+  · exact absurd hx x.property
   · rfl
 
 private theorem radialExtensionFun_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) :
@@ -111,7 +113,7 @@ private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ spher
       have hres : ({0}ᶜ : Set E).domRestrict (radialExtensionFun h) =
           Subtype.val ∘ polarCongr h := funext (radialExtensionFun_of_ne_zero h)
       rw [hres]
-      exact continuous_subtype_val.comp (polarCongr h).continuous
+      exact continuous_subtypeVal.comp (polarCongr h).continuous
     exact hon.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
 /-- The **radial extension** of a homeomorphism `h` from the unit sphere of a real normed space `E`
@@ -166,5 +168,34 @@ theorem radialExtension_smul (u : sphere (0 : E) 1) {t : ℝ} (ht : 0 ≤ t) :
 theorem radialExtension_coe_sphere (u : sphere (0 : E) 1) :
     radialExtension h (u : E) = h u := by
   simpa using radialExtension_smul h u zero_le_one
+
+/-- **Radial extension of the gluing of two closed balls.** If `A` and `B` in `X` are identified
+with the closed unit ball of `W` by `eA` and `eB`, each meeting the other exactly along its
+boundary sphere, there is a norm-preserving homeomorphism of `W` carrying `eB x` to `eA x` for
+`x ∈ A ∩ B`: the radial extension of the boundary gluing. -/
+theorem exists_norm_eq_of_closedBall_glue {X W : Type*} [TopologicalSpace X] {A B : Set X}
+    [NormedAddCommGroup W] [NormedSpace ℝ W] (eA : A ≃ₜ closedBall (0 : W) 1)
+    (eB : B ≃ₜ closedBall (0 : W) 1)
+    (hAe : ∀ x : A, (x : X) ∈ B ↔ ‖(eA x : W)‖ = 1)
+    (hBe : ∀ x : B, (x : X) ∈ A ↔ ‖(eB x : W)‖ = 1) :
+    ∃ H : W ≃ₜ W, (∀ v, ‖H v‖ = ‖v‖) ∧
+      ∀ (x : X) (hxA : x ∈ A) (hxB : x ∈ B), H (eB ⟨x, hxB⟩) = eA ⟨x, hxA⟩ := by
+  have memA (u : sphere (0 : W) 1) :
+      ((eB.symm ⟨u, sphere_subset_closedBall u.property⟩ : B) : X) ∈ A :=
+    (hBe _).2 (by simp [norm_eq_of_mem_sphere u])
+  have memB (v : sphere (0 : W) 1) :
+      ((eA.symm ⟨v, sphere_subset_closedBall v.property⟩ : A) : X) ∈ B :=
+    (hAe _).2 (by simp [norm_eq_of_mem_sphere v])
+  let t : sphere (0 : W) 1 ≃ₜ sphere (0 : W) 1 :=
+    { toFun u := ⟨eA ⟨_, memA u⟩, mem_sphere_zero_iff_norm.2 ((hAe _).1 (eB.symm _).property)⟩
+      invFun v := ⟨eB ⟨_, memB v⟩, mem_sphere_zero_iff_norm.2 ((hBe _).1 (eA.symm _).property)⟩
+      left_inv u := by ext; simp
+      right_inv v := by ext; simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  refine ⟨radialExtension t, norm_radialExtension t, fun x hxA hxB ↦ ?_⟩
+  have hn : (eB ⟨x, hxB⟩ : W) ∈ sphere (0 : W) 1 := mem_sphere_zero_iff_norm.2 ((hBe _).1 hxA)
+  refine (radialExtension_coe_sphere t ⟨_, hn⟩).trans ?_
+  simp [t]
 
 end Homeomorph

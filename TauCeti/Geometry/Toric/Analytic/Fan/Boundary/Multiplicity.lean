@@ -55,15 +55,14 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
       γ 0 = x ∧ (∀ t, γ t ∈ U) ∧
       (∀ y ∈ U, y ∈ Φ.analyticBoundaryComponent hΦ ρ ↔ F y = 0) ∧
       (∀ t, F (γ t) = t) := by
-  classical
   let := Φ.analyticChartedSpace hΦ
   obtain ⟨σ, x', rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   -- Read the bundled chart point as its affine algebra homomorphism before applying slice APIs.
-  let x0 : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) := x'
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  let x0 : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) := x'
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   have := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
+  let κ := Finite.equivFin (ToricRay σ.val)
   let g := (Φ.analyticChartGenerators σ).2
   let := affinePointTopology g
   let := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
@@ -73,16 +72,16 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
   -- Transport the dual coordinate and its slice through the biholomorphic chart inclusion.
   let m := dualSemigroupCoord Φ.lattice hσ.toIsToricCone hB (Sum.inl r)
   let P := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g ∞
-  let f : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) → ℂ :=
+  let f : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) → ℂ :=
     fun z ↦ z (MonoidAlgebra.single (Multiplicative.ofAdd m) 1)
   let F := f ∘ P.symm
   let γ := Φ.analyticAffineChartι hΦ σ ∘ coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r
-  have hP (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+  have hP (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
       P.symm (Φ.analyticAffineChartι hΦ σ z) = z :=
     Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g ∞ z
-  have hF (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+  have hF (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
       F (Φ.analyticAffineChartι hΦ σ z) = f z := congrArg f (hP z)
-  have hf : ContMDiff 𝓘(ℂ, (Fin (Nat.card (ToricRay σ.1)) → ℂ) × (Fin l → ℂ))
+  have hf : ContMDiff 𝓘(ℂ, (Fin (Nat.card (ToricRay σ.val)) → ℂ) × (Fin l → ℂ))
       𝓘(ℂ, ℂ) ∞ f := contMDiff_apply_single Φ.lattice hσ.toIsToricCone hB κ g m ∞
   -- The inverse-chart computation identifies the zero locus and gives the exact transverse value.
   refine ⟨P.target, F, γ, P.open_target, ?_,
@@ -91,10 +90,12 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
     exact mem_range_self x'
   · exact (Φ.contMDiff_analyticAffineChartι hΦ σ hB κ g ∞).comp
       (contMDiff_coneChartRaySlice Φ.lattice hσ.toIsToricCone hB κ g x' r ∞)
-  · have hx0 : (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 := hxρ
-    have hslice : coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r 0 = x0 := by
-      rw [← hx0, coneChartEquiv_fst_apply, coneChartRaySlice_self]
-    exact congrArg (Φ.analyticAffineChartι hΦ σ) hslice
+  · -- `hxρ` says that `x0` lies on the boundary component `ρ`, that is, its chart coordinate at `ρ`
+    -- is `0`; the `show` restates it in the form `coneChartEquiv_fst_apply` rewrites, since the
+    -- hypothesis is stated for the boundary coordinate rather than for the chart coordinate.
+    refine congrArg (Φ.analyticAffineChartι hΦ σ) ?_
+    rw [← show (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 from hxρ,
+      coneChartEquiv_fst_apply, coneChartRaySlice_self]
   · intro t
     rw [Φ.analyticAffineChartPartialDiffeomorph_target]
     exact mem_range_self _
@@ -106,8 +107,7 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
     exact (congrArg (fun c : ℂ ↦ c = 0)
       ((coneChartEquiv_fst_apply Φ.lattice hσ.toIsToricCone hB z r).trans (hF z).symm)).to_iff
   · intro t
-    have h := hF (coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r t)
-    refine h.trans ?_
+    refine (hF (coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r t)).trans ?_
     simp only [f, m, ← coneChartEquiv_fst_apply,
       coneChartEquiv_coneChartRaySlice, Function.update_self]
 

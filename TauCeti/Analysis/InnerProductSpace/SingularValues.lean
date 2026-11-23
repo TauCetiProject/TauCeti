@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
+public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
 /-!
@@ -184,18 +185,21 @@ theorem ncard_ofPred_singularValues_eq (T : E →ₗ[𝕜] F) {s : ℝ} (hs : 0 
   rw [hset, Set.ncard_image_of_injective _ Fin.val_injective, ← hT.card_filter_eigenvalues_eq rfl,
     ← Set.ncard_coe_finset, Finset.coe_filter_univ]
 
+/-- A value `s ≤ 0` occurs among the singular values of `T` either never (`s < 0`) or infinitely
+often (`s = 0`), so its `ncard` is `0`. -/
+@[simp]
+theorem ncard_ofPred_singularValues_eq_zero_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
+    {i | T.singularValues i = s}.ncard = 0 :=
+  Finsupp.ncard_ofPred_eq_zero_of_nonneg_of_not_pos T.singularValues_nonneg hs.not_gt
+
 /-- A linear map and its adjoint have the same singular values. -/
 @[simp]
 theorem singularValues_adjoint (A : E →ₗ[𝕜] F) :
     (adjoint A).singularValues = A.singularValues := by
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (singularValues_antitone _) fun s hs ↦ ?_
-  rcases hs.lt_or_gt with hs | hs
-  · have hempty (σ : ℕ →₀ ℝ) (hσ : ∀ i, 0 ≤ σ i) : {i | σ i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i hi ↦ (hσ i).not_gt (hi ▸ hs)
-    rw [hempty _ (singularValues_nonneg _), hempty _ (singularValues_nonneg _)]
-  · rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
-      finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
+  rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
+    finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
 
 /-- The singular values of `A : E →ₗ[𝕜] F` vanish from the dimension of the target on. -/
 theorem singularValues_of_finrank_le_right (A : E →ₗ[𝕜] F) {i : ℕ} (hi : finrank 𝕜 F ≤ i) :
@@ -325,7 +329,7 @@ least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
     (hx : x ∈ A.rightSingularBasis.spanIndices {i | (i : ℕ) ≤ n}) :
     A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
-  have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
+  have h := LinearMap.le_re_inner_of_eigenbasis _ A.rightSingularBasis
     A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
     (fun i hi ↦ A.sq_singularValues_antitone hi) hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
@@ -338,7 +342,7 @@ theorem norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     (he : ∀ i, (adjoint A ∘ₗ A) (e i) = (μ i : 𝕜) • e i)
     {s : Set (Fin m)} {c : ℝ} (hc : 0 ≤ c) (hμ : ∀ i ∈ s, μ i ≤ c ^ 2)
     {x : E} (hx : x ∈ e.spanIndices s) : ‖A x‖ ≤ c * ‖x‖ := by
-  have h := A.isSymmetric_adjoint_comp_self.re_inner_le_of_eigenbasis e he hμ hx
+  have h := LinearMap.re_inner_le_of_eigenbasis _ e he hμ hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _)
     (mul_nonneg hc (norm_nonneg x)) two_ne_zero).mp h
@@ -412,7 +416,7 @@ theorem orthonormal_leftSingularVector :
       A.leftSingularVector i := by
   classical
   refine orthonormal_iff_ite.mpr fun i j ↦ ?_
-  simp [inner_leftSingularVector, i.2, Subtype.ext_iff]
+  simp [inner_leftSingularVector, i.property, Subtype.ext_iff]
 
 /-- A left singular vector vanishes exactly when its singular value does. -/
 @[simp]
@@ -490,9 +494,9 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
     if h : (j : ℕ) < finrank 𝕜 E then A.leftSingularVector ⟨j, h⟩ else 0
   let s : Set (Fin (finrank 𝕜 F)) := {j | A.singularValues j ≠ 0}
   have hu : s.domRestrict u = (fun i : {i : Fin (finrank 𝕜 E) // A.singularValues i ≠ 0} ↦
-      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.1, hlt j.2⟩, j.2⟩ := by
+      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.val, hlt j.property⟩, j.property⟩ := by
     ext j
-    simp [u, hlt j.2]
+    simp [u, hlt j.property]
   have hs : Orthonormal 𝕜 (s.domRestrict u) := by
     rw [hu]
     exact A.orthonormal_leftSingularVector.comp _ fun j k h ↦ by
@@ -765,11 +769,11 @@ theorem exists_orthonormal_eq_sum_singularValues_smul_rankOne (A : E →ₗ[𝕜
   rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
   have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
   split_ifs with hk
-  · rw [Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
+  · rw [Finset.sum_eq_single ⟨k, lt_min k.isLt hk⟩
       (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
     simp [hiE, iF, f]
   · rw [Finset.sum_eq_zero fun i _ ↦ by
-      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.2.trans_le (min_le_right _ _))]]
+      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.isLt.trans_le (min_le_right _ _))]]
     simp
 
 end Diagonal
@@ -793,7 +797,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
       (T : E →ₗ[𝕜] F).singularValues n := by
   let A : E →ₗ[𝕜] F := T
   refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
-  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.2
+  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.property
   by_cases hn : n < m
   · exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis e he
       (A.singularValues_nonneg n) (fun i hi ↦ by
@@ -802,7 +806,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
   · have htail : {i : Fin m | n ≤ (i : ℕ)} = ∅ := by
       ext i
       simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      exact not_le.mpr (i.2.trans_le (le_of_not_gt hn))
+      exact not_le.mpr (i.isLt.trans_le (le_of_not_gt hn))
     have hx0 : (x : E) = 0 := by
       simpa only [htail, e.spanIndices_eq_span, Set.image_empty, Submodule.span_empty,
         Submodule.mem_bot] using hx
@@ -818,8 +822,8 @@ theorem singularValues_comp_starProjection_range {X : F →L[𝕜] E}
     (hX : Isometry X) (T : E →L[𝕜] G) :
     ((T ∘L X.range.starProjection : E →L[𝕜] G) : E →ₗ[𝕜] G).singularValues =
       ((T ∘L X : F →L[𝕜] G) : F →ₗ[𝕜] G).singularValues := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
   -- The linear map underlying `W` is `X` by construction.
   have hW : W.toLinearMap = X := rfl

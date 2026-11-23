@@ -58,7 +58,7 @@ section CommRing
 variable [CommRing k] [Algebra k A] [Module k N] [IsScalarTower k A N]
 
 private theorem translate_functional_mem_annihilator (f : P₁ →ₗ[A] P₀)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     (nakayamaHomEquiv k A P₁ N).symm ((auslanderReitenTranslateToNakayama f).comp g) ∈
       (range (f.lcomp k N)).dualAnnihilator := by
   rw [← ker_dualMap_eq_dualAnnihilator_range, mem_ker]
@@ -70,7 +70,7 @@ private theorem translate_functional_mem_annihilator (f : P₁ →ₗ[A] P₀)
 /-- The Auslander–Reiten pairing restricts a translate Hom functional to the Hom
 cocycles and descends it modulo the coboundaries. -/
 noncomputable def auslanderReitenCocyclePairing (f : P₁ →ₗ[A] P₀) :
-    (N →ₗ[A] AuslanderReitenTranslate k f) →ₗ[k]
+    (N →ₗ[A] AuslanderReitenTranslate k k f) →ₗ[k]
       Module.Dual k (HomCocycleQuotient (k := k) f N) := by
   let Z := ker ((ker f).subtype.lcomp k N)
   let B := (range (f.lcomp k N)).comap Z.subtype
@@ -88,7 +88,7 @@ noncomputable def auslanderReitenCocyclePairing (f : P₁ →ₗ[A] P₀) :
 Hom functional. This characterizes the pairing without unfolding its construction. -/
 @[simp]
 theorem auslanderReitenCocyclePairing_apply_mk (f : P₁ →ₗ[A] P₀)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f)
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f)
     (h : ker ((ker f).subtype.lcomp k N)) :
     auslanderReitenCocyclePairing f g (Submodule.Quotient.mk h) =
       (nakayamaHomEquiv k A P₁ N).symm
@@ -102,7 +102,7 @@ on the translate side of the Auslander–Reiten pairing. -/
 theorem auslanderReitenCocyclePairing_naturality
     {N' : Type*} [AddCommGroup N'] [Module A N'] [Module k N'] [IsScalarTower k A N']
     (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N')
-    (h : N' →ₗ[A] AuslanderReitenTranslate k f) :
+    (h : N' →ₗ[A] AuslanderReitenTranslate k k f) :
     (homCocycleQuotientMap (k := k) f g).dualMap (auslanderReitenCocyclePairing f h) =
       auslanderReitenCocyclePairing f (h.comp g) := by
   have hnat :
@@ -123,11 +123,6 @@ end CommRing
 section Field
 
 variable [Field k] [Algebra k A] [Module k N] [IsScalarTower k A N]
-
-/-- The additive group inherited from the dual, made available locally so that
-nested quotient instance synthesis can find it in the public quotient signatures. -/
-local instance (f : P₁ →ₗ[A] P₀) : AddCommGroup (AuslanderReitenTranslate k f) :=
-  inferInstanceAs (AddCommGroup (Module.Dual k (AuslanderReitenTranspose f)))
 
 /-- Every functional on Hom cocycles modulo coboundaries is obtained by pairing
 with a map into the Auslander–Reiten translate. -/
@@ -174,7 +169,7 @@ theorem auslanderReitenCocyclePairing_surjective (f : P₁ →ₗ[A] P₀) :
 /-- A map has zero cocycle pairing exactly when its Nakayama functional is in the
 image of dual restriction to the kernel of the presenting arrow. -/
 theorem auslanderReitenCocyclePairing_eq_zero_iff (f : P₁ →ₗ[A] P₀)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     auslanderReitenCocyclePairing f g = 0 ↔
       (nakayamaHomEquiv k A P₁ N).symm ((auslanderReitenTranslateToNakayama f).comp g) ∈
         range (((ker f).subtype.lcomp k N).dualMap) := by
@@ -192,12 +187,14 @@ theorem auslanderReitenCocyclePairing_eq_zero_iff (f : P₁ →ₗ[A] P₀)
 /-- The kernel of the Auslander–Reiten cocycle pairing consists exactly of maps
 extending across any fixed embedding into an injective module. -/
 theorem auslanderReitenCocyclePairing_eq_zero_iff_exists_extension
-    {I : Type s} [AddCommGroup I] [Module A I] [Module k I] [IsScalarTower k A I]
+    {I : Type s} [AddCommGroup I] [Module A I]
     [Small.{s} A] [Module.Injective A I]
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     auslanderReitenCocyclePairing f g = 0 ↔
-      ∃ h : I →ₗ[A] AuslanderReitenTranslate k f, h.comp j = g := by
+      ∃ h : I →ₗ[A] AuslanderReitenTranslate k k f, h.comp j = g := by
+  let : Module k I := Module.compHom I (algebraMap k A)
+  have : IsScalarTower k A I := IsScalarTower.of_compHom k A I
   rw [auslanderReitenCocyclePairing_eq_zero_iff,
     auslanderReitenTranslate_exists_extension_iff f j hj]
 
@@ -205,14 +202,14 @@ theorem auslanderReitenCocyclePairing_eq_zero_iff_exists_extension
 by injectively trivial maps. The cocycle pairing identifies this quotient with the
 dual of Hom cocycles modulo coboundaries. -/
 noncomputable def auslanderReitenCocycleQuotientEquiv
-    {I : Type s} [AddCommGroup I] [Module A I] [Module k I] [IsScalarTower k A I]
+    {I : Type s} [AddCommGroup I] [Module A I]
     [Small.{s} A] [Module.Injective A I]
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j) :
-    ((N →ₗ[A] AuslanderReitenTranslate k f) ⧸
-      range (j.lcomp k (AuslanderReitenTranslate k f))) ≃ₗ[k]
+    ((N →ₗ[A] AuslanderReitenTranslate k k f) ⧸
+      range (j.lcomp k (AuslanderReitenTranslate k k f))) ≃ₗ[k]
       Module.Dual k (HomCocycleQuotient (k := k) f N) := by
   have hker : ker (auslanderReitenCocyclePairing (k := k) (N := N) f) =
-      range (j.lcomp k (AuslanderReitenTranslate k f)) := by
+      range (j.lcomp k (AuslanderReitenTranslate k k f)) := by
     ext g
     rw [mem_ker, auslanderReitenCocyclePairing_eq_zero_iff_exists_extension f j hj,
       mem_range]
@@ -224,10 +221,10 @@ noncomputable def auslanderReitenCocycleQuotientEquiv
 /-- On a representative, quotient duality is the cocycle pairing. -/
 @[simp]
 theorem auslanderReitenCocycleQuotientEquiv_mk
-    {I : Type s} [AddCommGroup I] [Module A I] [Module k I] [IsScalarTower k A I]
+    {I : Type s} [AddCommGroup I] [Module A I]
     [Small.{s} A] [Module.Injective A I]
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     auslanderReitenCocycleQuotientEquiv f j hj (Submodule.Quotient.mk g) =
       auslanderReitenCocyclePairing f g := by
   simp [auslanderReitenCocycleQuotientEquiv]
@@ -235,10 +232,10 @@ theorem auslanderReitenCocycleQuotientEquiv_mk
 /-- Inverse quotient duality returns the class of any map giving the functional. -/
 @[simp]
 theorem auslanderReitenCocycleQuotientEquiv_symm_pairing
-    {I : Type s} [AddCommGroup I] [Module A I] [Module k I] [IsScalarTower k A I]
+    {I : Type s} [AddCommGroup I] [Module A I]
     [Small.{s} A] [Module.Injective A I]
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     (auslanderReitenCocycleQuotientEquiv f j hj).symm (auslanderReitenCocyclePairing f g) =
       Submodule.Quotient.mk g := by
   apply (auslanderReitenCocycleQuotientEquiv f j hj).injective

@@ -27,9 +27,9 @@ evaluation itself requires, and most results ask for it directly. `eq_formalWEva
 asks instead for an ideal `I` whose adic topology is the ambient one, together with a membership
 `t ∈ I` that supplies convergence. `formalUEval_sub_one_mem` is the one result asking for both.
 `isUnit_thirdRootDenom` asks for neither: it is a statement about the curve's coefficients and a
-topologically nilpotent element, so it takes `IsTopologicallyNilpotent` directly, and
-`[NonarchimedeanRing O]` in place of the ambient `[IsTopologicalRing O]`. `formalWEval_zero` asks
-for neither either, being an evaluation at a parameter that needs no convergence hypothesis.
+topologically nilpotent element, so it takes `IsTopologicallyNilpotent` directly.
+`formalWEval_zero` asks for neither either, being an evaluation at a parameter that needs no
+convergence hypothesis.
 
 Only two of the five values are confined to `I ^ k`: `w(t)` and `ι(t)`. The unit part `u(t)`,
 the denominator `d(t) = 1 - a₁ t - a₃ w(t)` and its series inverse are units whenever evaluation
@@ -66,6 +66,8 @@ docstring says where its conclusion comes from.
 * `WeierstrassCurve.formalInverseDenomEval_eq`, `WeierstrassCurve.formalInverseEval_eq` and
   `WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval` : the defining formulas for
   `d(t)` and `ι(t)`, the last in the form `ι(t) * d(t) = -t` that avoids the series inverse.
+* `WeierstrassCurve.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq` : any nonzero
+  fixed point `ι(t) = t` satisfies `a₁ t + a₃ w(t) = 2`.
 * `WeierstrassCurve.formalWEval_wEquation` : the `w`-equation at a parameter.
 * `WeierstrassCurve.eq_formalWEval_of_wEquation` : **`w(t)` is the only solution of the
   `w`-equation lying in the ideal**, the evaluated counterpart of `WExpansion.lean`'s
@@ -195,11 +197,13 @@ theorem formalWEval_mem {I : Ideal O} {k : ℕ} {t : O} (ht : PowerSeries.HasEva
   rw [W.formalWEval_eq_pow_mul_formalUEval ht]
   exact Ideal.mul_mem_right _ _ (by rw [pow_succ]; exact Ideal.mul_mem_left _ _ htk)
 
+omit [IsTopologicalRing O] in
 /-- The value of the unit part differs from `1` by an element of `I ^ k` when the parameter lies
 there: its constant coefficient is `1`, and every other monomial carries a factor of the
 parameter. -/
 theorem formalUEval_sub_one_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t : O}
     (ht : PowerSeries.HasEval t) (htk : t ∈ I ^ k) : W.formalUEval t - 1 ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
   have key := MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) (by simpa using continuous_id)
     (PowerSeries.hasEval ht) hI (fun _ ↦ htk) (W.formalU - 1) (by
       rw [← PowerSeries.constantCoeff_eq]
@@ -220,7 +224,6 @@ theorem isUnit_formalUEval {t : O} (ht : PowerSeries.HasEval t) :
     simp [W.constantCoeff_formalU])
   simpa only [coe_evalAt, ← W.formalUEval_def] using hU.map (evalAt ht)
 
-omit [IsTopologicalRing O] in
 /-- **The leading coefficient of the chord cubic is a unit** at any topologically nilpotent
 element. Substituting `w = λz + ν` into the Weierstrass equation produces a cubic in `z` whose
 leading coefficient is `1 + a₂λ + a₄λ² + a₆λ³`; Vieta's formula for its third root divides by that
@@ -228,18 +231,18 @@ coefficient, so dividing is legitimate exactly when this holds.
 
 Stated for an arbitrary topologically nilpotent element rather than for the evaluated slope, since
 that is all the statement needs; `IsAdic.isTopologicallyNilpotent_of_mem` supplies it from
-membership in an adic ideal when that is how a consumer holds it. `[NonarchimedeanRing O]` stands
-in for the ambient `[IsTopologicalRing O]`, which it implies.
+membership in an adic ideal when that is how a consumer holds it.
 
 Not the same fact as `Add/PairSubst.lean`'s `subst_pair_thirdRootDenom_ne_zero`, which says the
 corresponding multivariate *power series* is nonzero over a nontrivial base. That one lives in the
 series world and concludes nonvanishing; this one concludes invertibility, which is what dividing
 by it requires. -/
-theorem isUnit_thirdRootDenom [NonarchimedeanRing O] {l : O}
+theorem isUnit_thirdRootDenom {l : O}
     (hl : IsTopologicallyNilpotent l) :
     IsUnit (1 + W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3) := by
   -- the nonconstant part is a multiple of `l`, hence topologically nilpotent, so Wedhorn 5.38
   -- applies without a monomial estimate or an ideal
+  have := IsLinearTopology.nonarchimedeanAddGroup O (M := O)
   have hfac : W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3 =
       l * (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2) := by ring
   have h := (hl.mul_right (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2)).isUnit_one_add
@@ -323,6 +326,15 @@ theorem formalInverseEval_mul_formalInverseDenomEval {t : O} (ht : PowerSeries.H
     W.formalInverseEval t * W.formalInverseDenomEval t = -t := by
   rw [W.formalInverseEval_eq ht, neg_mul, mul_assoc, mul_comm (W.formalInverseDenomInvEval t),
     W.formalInverseDenomEval_mul_inv ht, mul_one]
+
+/-- **A nonzero fixed point of the formal inverse satisfies `a₁ t + a₃ w(t) = 2`.** -/
+theorem a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq [NoZeroDivisors O] {t : O}
+    (ht : PowerSeries.HasEval t) (ht0 : t ≠ 0) (hfix : W.formalInverseEval t = t) :
+    W.a₁ * t + W.a₃ * W.formalWEval t = 2 := by
+  have h := W.formalInverseEval_mul_formalInverseDenomEval ht
+  rw [hfix, W.formalInverseDenomEval_eq ht] at h
+  apply mul_left_cancel₀ ht0
+  linear_combination -h
 
 /-- The formal inverse maps a parameter of `I ^ k` back into `I ^ k`: it is `-t` times a value. -/
 theorem formalInverseEval_mem {I : Ideal O} {k : ℕ} {t : O} (ht : PowerSeries.HasEval t)

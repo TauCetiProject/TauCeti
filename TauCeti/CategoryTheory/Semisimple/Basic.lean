@@ -49,6 +49,8 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `CategoryTheory.Functor.hom_ext_of_simple`: a morphism out of the image of an object under an
   additive functor is determined by its composites with the images of morphisms from simple
   objects.
+* `TauCeti.exists_simple_isSplitMono_comp_of_ne_zero`: a nonzero morphism is a split
+  monomorphism after precomposition with some nonzero morphism from a simple object.
 * `TauCeti.natTrans_ext_of_simple`: a natural transformation out of an additive functor is
   determined by its components at the simple objects.
 -/
@@ -137,7 +139,7 @@ theorem exists_biproduct_simples_of_simple (X : C) [Simple X] :
 
 /-- Decompositions of `X` and `Y` into finite biproducts of simple objects combine to one of
 `X ⊞ Y`. -/
-theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBinaryBiproduct X Y]
+theorem exists_biproduct_simples_biprod {X Y : C} [HasBinaryBiproduct X Y]
     (hX : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f))
     (hY : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
@@ -146,7 +148,8 @@ theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBi
       Nonempty (X ⊞ Y ≅ ⨁ f) := by
   obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := hX
   obtain ⟨κ, hκ, g, hg, hbg, ⟨d⟩⟩ := hY
-  have := hasBinaryBiproducts_of_finite_biproducts C
+  have : HasBinaryBiproduct (⨁ f) (⨁ g) := hasBinaryBiproduct_of_iso e d
+  have : HasBiproduct (Sum.elim f g) := hasBiproduct_sum_elim f g
   refine ⟨ι ⊕ κ, inferInstance, Sum.elim f g, fun | .inl i => hf i | .inr j => hg j,
     inferInstance, ⟨biprod.mapIso e d ≪≫ (biproductSumIso f g).symm⟩⟩
 
@@ -159,7 +162,7 @@ monomorphism. -/
 theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {S Z : C} [Simple S] {f : S ⟶ Z} (hf : f ≠ 0) :
     IsSplitMono f := by
-  obtain ⟨ι, hι, g, hg, hbg, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Z
+  obtain ⟨ι, _, g, hg, hbg, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Z
   -- Some component of `f` in a decomposition of `Z` into simple objects is nonzero, hence an
   -- isomorphism by Schur's lemma.
   obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π g i ≠ 0 := by
@@ -174,7 +177,7 @@ epimorphism. -/
 theorem isSplitEpi_of_nonzero_to_simple {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {S Y : C} [Simple S] {g : Y ⟶ S} (hg : g ≠ 0) :
     IsSplitEpi g := by
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  obtain ⟨ι, _, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
   -- Some summand in a decomposition of `Y` into simple objects maps nontrivially to `S`, hence
   -- isomorphically by Schur's lemma.
   obtain ⟨i, hi⟩ : ∃ i, biproduct.ι a i ≫ e.inv ≫ g ≠ 0 := by
@@ -210,7 +213,7 @@ object: the inclusion of a summand of a decomposition into simple objects. -/
 theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {Y : C} (hY : ¬IsZero Y) :
     ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  obtain ⟨ι, _, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
   obtain ⟨i⟩ : Nonempty ι := by
     by_contra h
     have : IsEmpty ι := not_nonempty_iff.mp h
@@ -223,7 +226,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C
 
 /-- Every object of a finite semisimple category is injective. -/
 instance injective (X : C) : Injective X := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
+  obtain ⟨ι, _, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
   -- A monomorphism out of a simple object is nonzero, hence split.
   have (i : ι) : Injective (f i) := by
     have := hf i
@@ -255,6 +258,20 @@ theorem _root_.CategoryTheory.Functor.hom_ext_of_simple {C : Type u} [Category.{
     Preadditive.sum_comp, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [F.map_comp, Category.assoc, Category.assoc, h]
+
+/-- In a finite semisimple category, a nonzero morphism `f : X ⟶ Y` stays nonzero on some simple
+object mapping to `X`: there is a nonzero `a : S ⟶ X` with `S` simple and `a ≫ f` a split
+monomorphism. -/
+theorem exists_simple_isSplitMono_comp_of_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
+    ∃ (S : C) (_ : Simple S) (a : S ⟶ X), a ≠ 0 ∧ IsSplitMono (a ≫ f) := by
+  by_contra! h
+  -- Otherwise `f` vanishes on every morphism from a simple object, hence is zero.
+  refine hf <| (𝟭 C).hom_ext_of_simple fun S _ s ↦ ?_
+  rw [Functor.id_map, comp_zero]
+  by_contra hs
+  exact h S inferInstance s (by rintro rfl; exact hs (zero_comp))
+    (isSplitMono_of_nonzero_from_simple hs)
 
 /-- In a finite semisimple category, a natural transformation out of an additive functor is
 determined by its components at the simple objects. -/

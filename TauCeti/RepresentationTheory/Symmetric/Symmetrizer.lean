@@ -11,6 +11,8 @@ public import Mathlib.Combinatorics.Enumerative.Partition.YoungDiagram
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
+public import TauCeti.Algebra.MonoidAlgebra.Antipode
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.SubgroupCharSum
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
@@ -21,7 +23,7 @@ public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 
 For a Young tableau `t`, this file defines the row symmetrizer `a_t`, the column
 antisymmetrizer `b_t`, and the Young symmetrizer `c_t = a_t b_t` in the group algebra of the
-  symmetric group on the entries of `t` over any commutative ring.
+symmetric group on the entries of `t` over any commutative ring.
 
 The defining coefficient formulas are accompanied by the translation laws that characterize
 the two factors: the row group fixes `a_t`, while the column group acts on `b_t` through the
@@ -32,6 +34,9 @@ Both factors are instances of a single construction: the character sum
 the column antisymmetrizer is the sign character over the column group, so the coefficient
 formula, the two translation laws, the square, and the values on a trivial or full subgroup are
 read off from that shared API instead of being proved once for each factor.
+Both factors are also fixed by the antipode `σ ↦ σ⁻¹` of the group algebra, which therefore
+reverses the Young symmetrizer to `b_t a_t` (`TauCeti.YoungTableau.antipode_youngSymmetrizer`);
+this is the element by which `c_t` acts on a module made a right module through `σ ↦ σ⁻¹`.
 These are the elementary inputs to the essential-idempotence theorem for `c_t` and the
 construction of Specht modules.  The two extreme shapes are also evaluated here: a trivial row or
 column group collapses the corresponding factor to `1`, so on a shape with at most one row the
@@ -41,13 +46,14 @@ full symmetrization `∑_σ σ` and the full antisymmetrization `∑_σ sgn(σ) 
 Finally, `b_t` acting on an arbitrary representation is unfolded into the signed sum over the
 column group, which is how every downstream computation with the operator `b_t` begins.
 
-The file closes with a third signed sum at the sign character, `TauCeti.antisymmetrizerOn X`: the
-sum `∑ sgn(σ) σ` over the permutations of an arbitrary type fixing everything outside a finite set
-`X`.  It is `b_t` with the column group replaced by the pointwise fixing subgroup of the
-complement of `X`, so it shares the coefficient formula, the translation law and the vanishing
-criterion with `b_t`, and it is the element the Garnir relations of
-`TauCeti/RepresentationTheory/Symmetric/Specht/Garnir.lean` are stated for.  Nothing about it
-refers to a tableau, only to the sign character `TauCeti.signLinearCharacter`.
+The file closes with a third signed sum at the sign character,
+`TauCeti.antisymmetrizerOn R X`: the sum `∑ sgn(σ) σ`, over any commutative ring `R`, over the
+permutations of an arbitrary type fixing everything outside a finite set `X`.  It is `b_t` with
+the column group replaced by the pointwise fixing subgroup of the complement of `X`, so it shares
+the coefficient formula, the translation law and the vanishing criterion with `b_t`, and it is the
+element the Garnir relations of `TauCeti/RepresentationTheory/Symmetric/Specht/Garnir.lean` are
+stated for.  Nothing about it refers to a tableau, only to the sign character
+`TauCeti.signLinearCharacter`.
 
 For a partition `μ` of `d`, `Nat.Partition.youngSymmetrizer` is the transported Young symmetrizer
 of the row-superstandard tableau of the diagram of `μ`, with the labels of the diagram identified
@@ -77,7 +83,8 @@ variable {R : Type*} [CommRing R] {μ : YoungDiagram}
 noncomputable section
 
 /-- Classical decidability of membership in the row group, used to form its finite sum. -/
-local instance (t : YoungTableau μ) : DecidablePred (· ∈ rowSubgroup t) :=
+local instance decidablePredMemRowSubgroup (t : YoungTableau μ) :
+    DecidablePred (· ∈ rowSubgroup t) :=
   Classical.decPred _
 
 /-- Classical decidability of membership in the column group, used to form its finite sum. -/
@@ -86,13 +93,13 @@ local instance decidablePredMemColSubgroup (t : YoungTableau μ) :
   Classical.decPred _
 
 /-- The **row symmetrizer** `a_t`, the sum of the permutations preserving the rows of `t`. -/
-noncomputable def rowSymmetrizer (t : YoungTableau μ) :
+def rowSymmetrizer (t : YoungTableau μ) :
     MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
   ∑ p : rowSubgroup t, MonoidAlgebra.of R (Equiv.Perm (Fin μ.card)) p
 
 /-- The **column antisymmetrizer** `b_t`, the signed sum of the permutations preserving the
 columns of `t`. -/
-noncomputable def columnAntisymmetrizer (t : YoungTableau μ) :
+def columnAntisymmetrizer (t : YoungTableau μ) :
     MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
   ∑ q : colSubgroup t,
     ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
@@ -100,7 +107,7 @@ noncomputable def columnAntisymmetrizer (t : YoungTableau μ) :
 
 /-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`. On a left module it
 acts by column-antisymmetrization followed by row-symmetrization. -/
-noncomputable def youngSymmetrizer (t : YoungTableau μ) :
+def youngSymmetrizer (t : YoungTableau μ) :
     MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
   rowSymmetrizer (R := R) t * columnAntisymmetrizer (R := R) t
 
@@ -138,6 +145,32 @@ theorem columnAntisymmetrizer_eq_subgroupCharSum (t : YoungTableau μ) :
         (colSubgroup t) := by
   rw [columnAntisymmetrizer_def, subgroupCharSum_def]
   simp
+
+/-- The antipode `σ ↦ σ⁻¹` of the group algebra fixes the row symmetrizer, since the row group is
+closed under inversion. -/
+@[simp]
+theorem antipode_rowSymmetrizer (t : YoungTableau μ) :
+    HopfAlgebra.antipode R (rowSymmetrizer (R := R) t) = rowSymmetrizer t := by
+  rw [rowSymmetrizer_eq_subgroupCharSum]
+  exact antipode_subgroupCharSum _ _ fun _ _ => by simp
+
+/-- The antipode `σ ↦ σ⁻¹` of the group algebra fixes the column antisymmetrizer, since the
+column group is closed under inversion and `sgn(σ⁻¹) = sgn(σ)`. -/
+@[simp]
+theorem antipode_columnAntisymmetrizer (t : YoungTableau μ) :
+    HopfAlgebra.antipode R (columnAntisymmetrizer (R := R) t) = columnAntisymmetrizer t := by
+  rw [columnAntisymmetrizer_eq_subgroupCharSum]
+  exact antipode_subgroupCharSum _ _ fun _ _ => by
+    simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
+      coe_signLinearCharacter_apply, Equiv.Perm.sign_inv]
+
+/-- **The antipode reverses the Young symmetrizer**: `S(a_t b_t) = b_t a_t`. -/
+@[simp]
+theorem antipode_youngSymmetrizer (t : YoungTableau μ) :
+    HopfAlgebra.antipode R (youngSymmetrizer (R := R) t) =
+      columnAntisymmetrizer t * rowSymmetrizer t := by
+  rw [youngSymmetrizer_def, HopfAlgebra.antipode_mul_antidistrib, antipode_rowSymmetrizer,
+    antipode_columnAntisymmetrizer]
 
 /-- The coefficient of a permutation in the row symmetrizer is its row-group indicator. -/
 @[simp]
@@ -232,23 +265,15 @@ theorem youngSymmetrizer_coeff_one (t : YoungTableau μ) :
   simp only [Finsupp.finsetSum_apply, MonoidAlgebra.coeff_single_mul_apply,
     MonoidAlgebra.coeff_smul_apply, MonoidAlgebra.coeff_single,
     Finsupp.single_apply, one_mul]
-  have hmul (p : rowSubgroup t) (q : colSubgroup t) :
-      (p : Equiv.Perm (Fin μ.card)) * q = 1 ↔ p = 1 ∧ q = 1 := by
-    constructor
-    · intro hpq
-      have hpq' := Subgroup.disjoint_iff_mul_eq_one.mp
-        (disjoint_rowSubgroup_colSubgroup t) p.property q.property hpq
-      exact ⟨Subtype.ext hpq'.1, Subtype.ext hpq'.2⟩
-    · rintro ⟨rfl, rfl⟩
-      simp
   have heq (p : rowSubgroup t) (q : colSubgroup t) :
       (q : Equiv.Perm (Fin μ.card)) =
           (p : Equiv.Perm (Fin μ.card))⁻¹ * 1 ↔ p = 1 ∧ q = 1 := by
-    simpa only [mul_one] using
-      ((mul_eq_one_iff_eq_inv' :
-        (p : Equiv.Perm (Fin μ.card)) * q = 1 ↔
-          (q : Equiv.Perm (Fin μ.card)) =
-            (p : Equiv.Perm (Fin μ.card))⁻¹).symm.trans (hmul p q))
+    refine ⟨fun h ↦ ?_, ?_⟩
+    · have hpq := Subgroup.disjoint_iff_mul_eq_one.mp
+        (disjoint_rowSubgroup_colSubgroup t) p.property q.property (by simp [h])
+      exact ⟨Subtype.ext hpq.1, Subtype.ext hpq.2⟩
+    · rintro ⟨rfl, rfl⟩
+      simp
   simp_rw [heq]
   rw [Finset.sum_eq_single (1 : rowSubgroup t)]
   · rw [Finset.sum_eq_single (1 : colSubgroup t)]
@@ -338,7 +363,7 @@ variable (k : Type*) [Semiring k] [Algebra ℚ k]
 This transport uses the rational specialization as its source. The direct
 `youngSymmetrizer` construction is available over every commutative ring without an
 `ℚ`-algebra hypothesis. -/
-noncomputable def youngSymmetrizerOver (t : YoungTableau μ) :
+def youngSymmetrizerOver (t : YoungTableau μ) :
     MonoidAlgebra k (Equiv.Perm (Fin μ.card)) :=
   MonoidAlgebra.mapAlgHom _ (Algebra.ofId ℚ k) (youngSymmetrizer t)
 
@@ -417,7 +442,7 @@ tableau, only to `TauCeti.signLinearCharacter`. -/
 
 section AntisymmetrizerOn
 
-variable {α : Type*} [DecidableEq α] [Fintype α]
+variable (R : Type*) [CommRing R] {α : Type*} [DecidableEq α] [Fintype α]
 
 /-- Classical decidability of membership in the subgroup of permutations fixing everything outside
 a finite set, used to form its finite sum. -/
@@ -426,20 +451,25 @@ noncomputable local instance decidablePredMemFixingSubgroupCompl (X : Finset α)
   Classical.decPred _
 
 /-- The **antisymmetrizer** of a finite set `X` of points: the signed sum `∑ sgn(σ) σ`, in the
-rational group algebra of `Equiv.Perm α`, over the permutations `σ` fixing every point outside `X`.
+group algebra of `Equiv.Perm α` over a commutative ring `R`, over the permutations `σ` fixing every
+point outside `X`.
 
 For `X` the labels lying in one column of a Young tableau this is the factor of that tableau's
 column antisymmetrizer belonging to that column; the relations it satisfies on the polytabloids of
 a tableau are the Garnir relations. -/
-noncomputable def antisymmetrizerOn (X : Finset α) : MonoidAlgebra ℚ (Equiv.Perm α) :=
-  subgroupCharSum ((Units.coeHom ℚ).comp (signLinearCharacter ℚ α))
+noncomputable def antisymmetrizerOn (X : Finset α) : MonoidAlgebra R (Equiv.Perm α) :=
+  subgroupCharSum ((Units.coeHom R).comp (signLinearCharacter R α))
     (fixingSubgroup (Equiv.Perm α) ((X : Set α)ᶜ))
 
+/-- Unfolding `TauCeti.antisymmetrizerOn X`: the signed sum over the subgroup of permutations
+fixing every point outside `X`. -/
 theorem antisymmetrizerOn_def (X : Finset α) :
-    antisymmetrizerOn X =
-      subgroupCharSum ((Units.coeHom ℚ).comp (signLinearCharacter ℚ α))
+    antisymmetrizerOn R X =
+      subgroupCharSum ((Units.coeHom R).comp (signLinearCharacter R α))
         (fixingSubgroup (Equiv.Perm α) ((X : Set α)ᶜ)) :=
   (rfl)
+
+variable {R}
 
 omit [DecidableEq α] [Fintype α] in
 /-- A permutation fixing every point outside `X` belongs to the subgroup the antisymmetrizer of
@@ -452,13 +482,14 @@ private theorem mem_fixingSubgroup_compl_of_forall_notMem {X : Finset α} {σ : 
 supported in `X`, and zero otherwise. -/
 @[simp]
 theorem antisymmetrizerOn_coeff (X : Finset α) (σ : Equiv.Perm α) :
-    (antisymmetrizerOn X).coeff σ =
-      if ∀ k ∉ X, σ k = k then ((Equiv.Perm.sign σ : ℤ) : ℚ) else 0 := by
+    (antisymmetrizerOn R X).coeff σ =
+      if ∀ k ∉ X, σ k = k then ((Equiv.Perm.sign σ : ℤ) : R) else 0 := by
   classical
   rw [antisymmetrizerOn_def, subgroupCharSum_coeff]
   simp [mem_fixingSubgroup_iff]
 
-/-- The permutations summed over by `TauCeti.antisymmetrizerOn X`, as a `Finset`. -/
+/-- A permutation lies in the `Finset` of those fixing every point outside `X` iff it lies in the
+subgroup that `TauCeti.antisymmetrizerOn X` is summed over. -/
 private theorem mem_filter_forall_notMem_iff (X : Finset α)
     [DecidablePred fun σ : Equiv.Perm α => ∀ k ∉ X, σ k = k] (σ : Equiv.Perm α) :
     σ ∈ ({σ : Equiv.Perm α | ∀ k ∉ X, σ k = k} : Finset (Equiv.Perm α)) ↔
@@ -470,23 +501,23 @@ sum of the actions of the permutations fixing everything outside that set.
 
 The decidability of the summation range is an instance argument rather than a synthesized one, so
 that the equation rewrites a sum however its own filter was built. -/
-theorem asAlgebraHom_antisymmetrizerOn_apply {M : Type*} [AddCommGroup M] [Module ℚ M]
-    (V : Representation ℚ (Equiv.Perm α) M) (X : Finset α)
+theorem asAlgebraHom_antisymmetrizerOn_apply {M : Type*} [AddCommGroup M] [Module R M]
+    (V : Representation R (Equiv.Perm α) M) (X : Finset α)
     [DecidablePred fun σ : Equiv.Perm α => ∀ k ∉ X, σ k = k] (v : M) :
-    V.asAlgebraHom (antisymmetrizerOn X) v =
+    V.asAlgebraHom (antisymmetrizerOn R X) v =
       ∑ σ ∈ {σ : Equiv.Perm α | ∀ k ∉ X, σ k = k},
-        ((Equiv.Perm.sign σ : ℤ) : ℚ) • V σ v := by
+        ((Equiv.Perm.sign σ : ℤ) : R) • V σ v := by
   rw [antisymmetrizerOn_def, asAlgebraHom_subgroupCharSum_apply,
     ← Finset.sum_subtype _ (mem_filter_forall_notMem_iff X)
-      (fun σ => ((Units.coeHom ℚ).comp (signLinearCharacter ℚ α)) σ • V σ v)]
+      (fun σ => ((Units.coeHom R).comp (signLinearCharacter R α)) σ • V σ v)]
   simp
 
 /-- **Right multiplication by a permutation supported in `X` scales the antisymmetrizer of `X` by
 its sign**, since the antisymmetrizer absorbs it up to that sign. -/
 @[simp]
 theorem antisymmetrizerOn_mul_single {X : Finset α} {p : Equiv.Perm α} (hp : ∀ k ∉ X, p k = k) :
-    antisymmetrizerOn X * MonoidAlgebra.single p (1 : ℚ) =
-      ((Equiv.Perm.sign p : ℤ) : ℚ) • antisymmetrizerOn X := by
+    antisymmetrizerOn R X * MonoidAlgebra.single p (1 : R) =
+      ((Equiv.Perm.sign p : ℤ) : R) • antisymmetrizerOn R X := by
   rw [antisymmetrizerOn_def,
     subgroupCharSum_mul_single _ _ ⟨p, mem_fixingSubgroup_compl_of_forall_notMem hp⟩]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
@@ -494,16 +525,19 @@ theorem antisymmetrizerOn_mul_single {X : Finset α} {p : Equiv.Perm α} (hp : �
 
 /-- **A signed sum annihilates whatever an odd permutation in it fixes.**  If an odd permutation
 supported in `X` fixes `v`, then the antisymmetrizer of `X` kills `v`: absorbing that permutation
-negates the sum while leaving `v` alone. -/
-theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M] [Module ℚ M]
-    (V : Representation ℚ (Equiv.Perm α) M) {X : Finset α} {p : Equiv.Perm α}
+negates the sum while leaving `v` alone, so twice the result vanishes, and doubling is assumed
+injective on `M` (automatic over a `ℚ`-module). -/
+theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M] [Module R M]
+    (h2 : Function.Injective fun w : M => (2 : ℕ) • w)
+    (V : Representation R (Equiv.Perm α) M) {X : Finset α} {p : Equiv.Perm α}
     (hp : ∀ k ∉ X, p k = k) (hsign : Equiv.Perm.sign p = -1) {v : M} (hv : V p v = v) :
-    V.asAlgebraHom (antisymmetrizerOn X) v = 0 := by
-  have : HasUniqueDiv M := .of_module_rat _
+    V.asAlgebraHom (antisymmetrizerOn R X) v = 0 := by
   rw [antisymmetrizerOn_def]
-  refine asAlgebraHom_subgroupCharSum_apply_eq_zero _ _ (nsmul_right_injective two_ne_zero) V
+  refine asAlgebraHom_subgroupCharSum_apply_eq_zero _ _ h2 V
     (mem_fixingSubgroup_compl_of_forall_notMem hp) ?_ hv
-  simp [hsign]
+  simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
+    coe_signLinearCharacter_apply, Equiv.Perm.sign_inv, hsign, Units.val_neg, Units.val_one,
+    Int.cast_neg, Int.cast_one]
 
 end AntisymmetrizerOn
 

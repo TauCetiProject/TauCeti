@@ -32,17 +32,20 @@ half-step between two such relations.
 
 Beside them is the action of the odd power on a numbered family of one-parameter maps. A
 half-Frobenius exchanges the long and short simple root subgroups of its carrier, raising the
-parameter of the `i`-th one to the `e_i`-th power, while its square fixes each of them and raises
-the parameter to the `p`-th power. The odd power therefore moves the family exactly once, and
+parameter of the `i`-th one to the `e_i`-th power. Its square then fixes each of them and raises
+the parameter to the `p`-th power, which follows from the index data
+(`TauCeti.SuzukiReeIndex.lengthPerm_lengthPerm` and
+`TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm`) and need not be supplied. The odd power
+therefore moves the family exactly once, and
 
 ```text
 τ ^ (2m+1) (x_i(t)) = x_{σ i}(t ^ (p ^ m * e_i)),
 ```
 
 where `σ` and `e_i` are read off the index itself, as `TauCeti.SuzukiReeIndex.lengthPerm` and
-`TauCeti.SuzukiReeIndex.exponent`, and `p` is its defining characteristic. Only the two displayed
-hypotheses on `τ` are used, so a branch supplies its carrier's isogeny equations and reads the
-Steinberg equation off.
+`TauCeti.SuzukiReeIndex.exponent`, and `p` is its defining characteristic. The family equation
+needs only the half-Frobenius action on the family, so a branch supplies that action on its
+carrier's root subgroups and reads the Steinberg equation off.
 
 Nothing here constructs a half-Frobenius, and nothing asserts that one exists on a given carrier
 or that it is unique; `τ` is a bare endomorphism throughout.
@@ -76,14 +79,14 @@ then `τ ^ (2m+1)` composed with itself is `φ ^ (2m+1)`, which on a Suzuki--Ree
 `q`-power Frobenius. -/
 theorem pow_fieldExponent_pow_fieldExponent {τ φ : Monoid.End G} (hsq : ∀ g, τ (τ g) = φ g)
     (g : G) :
-    (τ ^ e.1.fieldExponent) ((τ ^ e.1.fieldExponent) g) = (φ ^ e.1.fieldExponent) g := by
+    (τ ^ e.val.fieldExponent) ((τ ^ e.val.fieldExponent) g) = (φ ^ e.val.fieldExponent) g := by
   rw [Monoid.End.coe_pow (M := G) τ, Monoid.End.coe_pow (M := G) φ]
-  exact iterate_iterate_apply hsq e.1.fieldExponent g
+  exact iterate_iterate_apply hsq e.val.fieldExponent g
 
 /-- **One further half-Frobenius after the odd power gives the `(m+1)`-st power of its square.**
 The exponent `2m+1` becomes the even number `2(m+1)`, which halves. -/
 theorem apply_pow_fieldExponent {τ φ : Monoid.End G} (hsq : ∀ g, τ (τ g) = φ g) (g : G) :
-    τ ((τ ^ e.1.fieldExponent) g) = (φ ^ (e.halfExponent + 1)) g := by
+    τ ((τ ^ e.val.fieldExponent) g) = (φ ^ (e.halfExponent + 1)) g := by
   rw [Monoid.End.coe_pow (M := G) τ, Monoid.End.coe_pow (M := G) φ,
     e.fieldExponent_eq_two_mul_halfExponent_add_one]
   exact apply_iterate_two_mul_add_one hsq e.halfExponent g
@@ -95,8 +98,8 @@ Then `τ ^ (2m+1)` carries `x` to `y` and raises the parameter to its `(p ^ m * 
 passage from `x` to `y` happens exactly once however large `m` is. -/
 theorem pow_fieldExponent_apply_pow {τ : Monoid.End G} {x y : A → G} {c : ℕ}
     (hxy : ∀ t, τ (x t) = y (t ^ c))
-    (hyy : ∀ t, τ (τ (y t)) = y (t ^ e.1.characteristic)) (t : A) :
-    (τ ^ e.1.fieldExponent) (x t) = y (t ^ (e.1.characteristic ^ e.halfExponent * c)) := by
+    (hyy : ∀ t, τ (τ (y t)) = y (t ^ e.val.characteristic)) (t : A) :
+    (τ ^ e.val.fieldExponent) (x t) = y (t ^ (e.val.characteristic ^ e.halfExponent * c)) := by
   rw [Monoid.End.coe_pow (M := G) τ, e.fieldExponent_eq_two_mul_halfExponent_add_one]
   exact iterate_two_mul_add_one_apply_pow hxy hyy e.halfExponent t
 
@@ -106,20 +109,20 @@ permutation of the index exchanges the numbers exactly as the half-Frobenius doe
 power multiplies the pinned exponent of the half-Frobenius by the remaining even power `p ^ m` of
 the characteristic. -/
 theorem pow_fieldExponent_apply_lengthPerm {τ : Monoid.End G}
-    {x : Fin e.1.rank → Multiplicative e.1.Closure → G}
+    {x : Fin e.val.rank → Multiplicative e.val.Closure → G}
     (hτ : ∀ i u, τ (x i u) =
       x (e.lengthPerm i) (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.exponent i)))
-    (hsq : ∀ i u, τ (τ (x i u)) =
-      x i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.1.characteristic)))
-    (i : Fin e.1.rank) (u : Multiplicative e.1.Closure) :
-    (τ ^ e.1.fieldExponent) (x i u) =
+    (i : Fin e.val.rank) (u : Multiplicative e.val.Closure) :
+    (τ ^ e.val.fieldExponent) (x i u) =
       x (e.lengthPerm i) (Multiplicative.ofAdd (Multiplicative.toAdd u ^
-        (e.1.characteristic ^ e.halfExponent * e.exponent i))) :=
+        (e.val.characteristic ^ e.halfExponent * e.exponent i))) :=
   e.pow_fieldExponent_apply_pow
     (x := fun a => x i (Multiplicative.ofAdd a))
     (y := fun a => x (e.lengthPerm i) (Multiplicative.ofAdd a))
     (fun a => hτ i (Multiplicative.ofAdd a))
-    (fun a => hsq (e.lengthPerm i) (Multiplicative.ofAdd a))
+    (fun a => by
+      simp only [hτ, toAdd_ofAdd, lengthPerm_lengthPerm, ← pow_mul]
+      rw [mul_comm, exponent_mul_exponent_lengthPerm])
     (Multiplicative.toAdd u)
 
 end TauCeti.SuzukiReeIndex

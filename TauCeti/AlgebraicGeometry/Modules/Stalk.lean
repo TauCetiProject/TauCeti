@@ -42,8 +42,7 @@ instance stalkModule : Module (X.presheaf.stalk x) (M.presheaf.stalk x) :=
 theorem germ_smul (U : X.Opens) (hx : x ∈ U) (r : Γ(X, U)) (m : Γ(M, U)) :
     M.presheaf.germ U x hx (r • m) =
       X.presheaf.germ U x hx r • M.presheaf.germ U x hx m :=
-  let Q : _root_.PresheafOfModules.{u} (X.presheaf ⋙ forget₂ CommRingCat RingCat.{u}) := M.val
-  _root_.PresheafOfModules.germ_smul (R := X.presheaf) Q x U hx r m
+  M.val.germ_smul (R := X.presheaf) x U hx r m
 
 section Section
 
@@ -62,19 +61,19 @@ instance isScalarTower_sectionStalk :
 
 /-- A function `r` on `U` acts on the stalk `M_x` through its germ at `x`. -/
 lemma section_smul_stalk_def (r : Γ(X, U)) (m : M.presheaf.stalk x) :
-    r • m = X.presheaf.germ U x x.2 r • m :=
+    r • m = X.presheaf.germ U x x.property r • m :=
   (rfl)
 
 /-- The germ map `Γ(M, U) → M_x` at a point `x` of `U`, as a `Γ(X, U)`-linear map. This is the
 linear form of `PresheafOfModules.germSemilinear`, which is semilinear along
 `Γ(X, U) ⟶ 𝒪_{X,x}`; localization of modules is phrased for linear maps. -/
 def germₗ : Γ(M, U) →ₗ[Γ(X, U)] M.presheaf.stalk x where
-  toFun := M.presheaf.germ U x x.2
+  toFun := M.presheaf.germ U x x.property
   map_add' := map_add _
-  map_smul' r m := M.germ_smul x U x.2 r m
+  map_smul' r m := M.germ_smul x U x.property r m
 
 @[simp]
-lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.2 m :=
+lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.property m :=
   (rfl)
 
 end Section

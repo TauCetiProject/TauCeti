@@ -127,7 +127,7 @@ theorem transvectionParameterEquiv_mk (e : Q₁.IsometryEquiv Q₂)
     e.transvectionParameterEquiv u (Submodule.Quotient.mk w) =
       Submodule.Quotient.mk ⟨e w, by
         rw [LinearMap.mem_ker, polarBilin_apply_apply, e.polar_apply]
-        exact LinearMap.mem_ker.mp w.2⟩ := by
+        exact LinearMap.mem_ker.mp w.property⟩ := by
   rw [transvectionParameterEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
   congr 1
   apply Subtype.ext
@@ -147,7 +147,7 @@ theorem transvectionParameterEquiv_symm_mk (e : Q₁.IsometryEquiv Q₂)
             (e.polar_apply u (e.symm (w : M₂))).symm
           _ = polar Q₂ (e u) w := congrArg (polar Q₂ (e u)) (e.apply_symm_apply w)
           _ = 0 := by
-            simpa only [polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2⟩ := by
+            simpa only [polarBilin_apply_apply] using LinearMap.mem_ker.mp w.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, transvectionParameterEquiv_mk]
   congr 1
   apply Subtype.ext
@@ -338,18 +338,18 @@ orthogonal to `u`. It descends to `u^⊥ / R ∙ u` as `transvectionHom`. -/
 private noncomputable def transvectionAddHom (hu : Q u = 0) :
     LinearMap.ker (Q.polarBilin u) →+ Additive (specialOrthogonalGroup Q) :=
   AddMonoidHom.mk' (fun w => Additive.ofMul
-      ⟨transvection Q hu (LinearMap.mem_ker.mp w.2),
-        transvection_mem_specialOrthogonalGroup hu (LinearMap.mem_ker.mp w.2)⟩)
+      ⟨transvection Q hu (LinearMap.mem_ker.mp w.property),
+        transvection_mem_specialOrthogonalGroup hu (LinearMap.mem_ker.mp w.property)⟩)
     fun w w' => by
       apply Additive.toMul.injective
       rw [toMul_add, toMul_ofMul, toMul_ofMul, toMul_ofMul]
       refine Subtype.ext ?_
       rw [Subgroup.coe_mul]
-      exact transvection_add hu (LinearMap.mem_ker.mp w.2) (LinearMap.mem_ker.mp w'.2)
+      exact transvection_add hu (LinearMap.mem_ker.mp w.property) (LinearMap.mem_ker.mp w'.property)
 
 private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (Q.polarBilin u)) :
     ((Additive.toMul (transvectionAddHom hu w) : specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
-      transvection Q hu (LinearMap.mem_ker.mp w.2) := by
+      transvection Q hu (LinearMap.mem_ker.mp w.property) := by
   rw [transvectionAddHom, AddMonoidHom.mk'_apply, toMul_ofMul]
 
 variable (Q) in
@@ -469,9 +469,10 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
 
 /-- In dimension at least three, a vector outside the polar radical has an orthogonal vector
 outside its span. For an isotropic vector, this gives a nontrivial transvection parameter. -/
-theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three [FiniteDimensional K V]
+theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three
     (Q : QuadraticForm K V) (hpolar : Q.polarBilin u ≠ 0)
     (hdim : 3 ≤ Module.finrank K V) : ∃ w : V, polar Q u w = 0 ∧ w ∉ K ∙ u := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have hu₀ : u ≠ 0 := by
     rintro rfl
     exact hpolar (by ext; simp)
@@ -507,16 +508,17 @@ theorem finrank_transvectionParameter [FiniteDimensional K V] (hu : Q u = 0)
 /-- In a binary quadratic space, the Eichler-transvection parameter space `u^⊥ / K ∙ u` of an
 isotropic vector outside the polar radical is trivial. This is the low-dimensional
 exception to the nontrivial transvection families available in dimension at least three. -/
-theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional K V]
+theorem subsingleton_transvectionParameter_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
       (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   apply (Module.finrank_zero_iff (R := K)).mp
   rw [finrank_transvectionParameter hu hpolar, hV]
 
 /-- Every Eichler transvection in a binary quadratic space whose isotropic direction is outside
 the polar radical is the identity. -/
-theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvection_eq_one_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (huw : polar Q u w = 0)
     (hpolar : Q.polarBilin u ≠ 0) : transvection Q hu huw = 1 := by
   apply (transvection_eq_one_iff hu huw hpolar).2
@@ -529,7 +531,7 @@ theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
 
 /-- The Eichler root-subgroup homomorphism is zero in a binary quadratic space when its isotropic
 direction is outside the polar radical. -/
-theorem transvectionHom_eq_zero_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvectionHom_eq_zero_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     transvectionHom Q hu = 0 := by
   have hsub := subsingleton_transvectionParameter_of_finrank_eq_two hV hu hpolar

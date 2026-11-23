@@ -61,21 +61,18 @@ private def abelClass {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     (relativePicardPresheaf f).obj T :=
   QuotientGroup.mk (LineBundleClass.mk ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
-    D.2).isEffectiveCartier.toInvertibleSheaf)⁻¹
+    D.property).isEffectiveCartier.toInvertibleSheaf)⁻¹
 
 /-- Pulling back a divisor along a morphism of base changes pulls back the class of `𝒪(D)`. -/
 private lemma relativePicardPresheaf_map_abelClass {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     (relativePicardPresheaf f).map φ (abelClass f D) =
       abelClass f ((relativeEffectiveCartierSubfunctor f).toFunctor.map φ D) := by
-  have hD := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2).isEffectiveCartier
+  have hD := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property).isEffectiveCartier
   have hD' := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
-    ((relativeEffectiveCartierSubfunctor f).toFunctor.map φ D).2).isEffectiveCartier
+    ((relativeEffectiveCartierSubfunctor f).toFunctor.map φ D).property).isEffectiveCartier
   rw [abelClass, abelClass, relativePicardPresheaf_map_mk, LineBundleClass.pullback_inv,
     Scheme.IdealSheafData.IsEffectiveCartier.pullback_mk_toInvertibleSheaf hD hD']
-  -- Both sides are the class of the ideal sheaf of the pulled-back divisor; they differ only in
-  -- the proof that this divisor is effective Cartier.
-  rfl
 
 /-- **The Abel map** `D ↦ 𝒪(D)` of a morphism of schemes `f : X ⟶ S`: the natural transformation
 from the functor of relative effective Cartier divisors on the base changes `X_T = T ×_S X` to the
@@ -100,7 +97,7 @@ lemma abelMap_app_apply {T : (Over S)ᵒᵖ}
       (X := ULift.{u + 1} ((relativeEffectiveCartierSubfunctor f).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelMap f).app T) (ULift.up D) =
       (QuotientGroup.mk (LineBundleClass.mk ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
-        D.2).isEffectiveCartier.toInvertibleSheaf)⁻¹ : (relativePicardPresheaf f).obj T) :=
+        D.property).isEffectiveCartier.toInvertibleSheaf)⁻¹ : (relativePicardPresheaf f).obj T) :=
   (rfl)
 
 /-- The Abel map sends the empty divisor to the identity: `𝒪(∅) = 𝒪`. -/

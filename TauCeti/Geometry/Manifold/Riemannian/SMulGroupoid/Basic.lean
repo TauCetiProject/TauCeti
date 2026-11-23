@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
@@ -217,8 +217,8 @@ private theorem mfderiv_restrict_of_mem_atlas {e : OpenPartialHomeomorph M X}
   letI := ChartedSpace.comp H X M
   mfderiv_comp (f := Subtype.val) y
     (((contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := 1) (Isom I X)
-      he).contMDiffAt (e.open_source.mem_nhds y.2)).mdifferentiableAt one_ne_zero)
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      he).contMDiffAt (e.open_source.mem_nhds y.property)).mdifferentiableAt one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
 
 variable [IsManifold I ∞ X] [IsContMDiffRiemannianBundle I ∞ E (fun x : X ↦ TangentSpace I x)]
 
@@ -241,18 +241,18 @@ theorem isLocalRiemannianIsometry_restrict_of_mem_atlas {e : OpenPartialHomeomor
   have hsmooth := contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := ∞)
     (Isom I X) he
   have hderiv := mfderiv_restrict_of_mem_atlas (I := I) he
-  refine ⟨fun y ↦ (hsmooth.contMDiffAt (e.open_source.mem_nhds y.2)).comp y
-    contMDiff_subtype_val.contMDiffAt, fun y ↦ ?_, fun y v w ↦ ?_⟩
+  refine ⟨fun y ↦ (hsmooth.contMDiffAt (e.open_source.mem_nhds y.property)).comp y
+    contMDiff_subtypeVal.contMDiffAt, fun y ↦ ?_, fun y v w ↦ ?_⟩
   · -- Near `y`, the chart `e` is the preferred chart at `y`, whose derivative at `y` is the
     -- identity, followed by an isometry `γ` of `X`, whose derivative is invertible.
-    obtain ⟨γ, hγ⟩ := exists_smul_eventuallyEq_chartAt (G := Isom I X) he y.2
+    obtain ⟨γ, hγ⟩ := exists_smul_eventuallyEq_chartAt (G := Isom I X) he y.property
     have hd := ((γ.mdifferentiableAt _).hasMFDerivAt.comp (y : M)
       (hasMFDerivAt_chartAt_comp (y : M))).congr_of_eventuallyEq hγ
     rw [hderiv, hd.mfderiv, TauCeti.Manifold.mfderiv_subtype_val]
     exact ((γ.toDiffeomorph.isInvertible_mfderiv (by simp)).comp
       ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩).comp ContinuousLinearMap.isInvertible_equiv
   · rw [hderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      inner_mfderiv_of_mem_atlas he y.2, ContMDiffRiemannianMetric.inner_riemannianBundle,
+      inner_mfderiv_of_mem_atlas he y.property, ContMDiffRiemannianMetric.inner_riemannianBundle,
       ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
       TauCeti.Manifold.mfderiv_subtype_val, contMDiffChartRiemannianMetric_inner,
       ContinuousLinearEquiv.coe_coe]

@@ -91,9 +91,9 @@ theorem pLowerCentralStep_proPKernel :
     refine IsPGroup.of_exponent_dvd_pow (n := 1) ?_
     rw [pow_one, Monoid.exponent_dvd_iff_forall_pow_eq_one]
     intro x
-    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.1
+    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.val
     have hgR : g ∈ R := by
-      have hx : f x.1 = 1 := x.2
+      have hx : f x.val = 1 := x.property
       rwa [← hg, QuotientGroup.map_mk, MonoidHom.id_apply, QuotientGroup.eq_one_iff] at hx
     apply Subtype.ext
     rw [SubgroupClass.coe_pow, OneMemClass.coe_one, ← hg, ← QuotientGroup.mk_pow,
@@ -119,13 +119,13 @@ theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
     Subsingleton (H1ConjInvariants G M (proPKernel p G)) := by
   -- `H¹(R, M)^G` is the group of continuous homomorphisms `R ⧸ Rᵖ[R, G] → M`, and the quotient
   -- is trivial by `pLowerCentralStep_proPKernel`.
-  let e := H1ConjInvariantsEquivOfSmulEqSelf htriv p (isClosed_proPKernel (p := p) (G := G)) hpM
+  let e := H1ConjInvariantsEquivOfSmulEqSelf (N := proPKernel p G) htriv p hpM
   refine ⟨fun x y ↦ e.injective (Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_))⟩
   obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective q
   have hr : (r : proPKernel p G ⧸ (pLowerCentralStep p (proPKernel p G)).subgroupOf
       (proPKernel p G)) = 1 := by
     rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, pLowerCentralStep_proPKernel]
-    exact r.2
+    exact r.property
   rw [hr, map_one, map_one]
 
 end MaximalKernel
@@ -148,7 +148,7 @@ theorem finite_H1ConjInvariants_iff :
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
-  rw [(H1ConjInvariantsEquivOfSmulEqSelf htriv p hN fun m ↦ by
+  rw [(H1ConjInvariantsEquivOfSmulEqSelf htriv p fun m ↦ by
     rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]).toEquiv.finite_iff,
     ← Module.finite_iff_finite (R := ZMod p), hQ.finite_continuousZModDual_iff]
 
@@ -164,7 +164,7 @@ theorem natCard_H1ConjInvariants
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
   have := finite_continuousZModDual (p := p) h
-  rw [Nat.card_congr (H1ConjInvariantsEquivOfSmulEqSelf htriv p hN fun m ↦ by
+  rw [Nat.card_congr (H1ConjInvariantsEquivOfSmulEqSelf htriv p fun m ↦ by
     rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]).toEquiv,
     Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
     hQ.finrank_continuousZModDual_eq_topologicalGeneratorRankNat h]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Symmetric
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -69,14 +70,11 @@ theorem convex_positiveDefiniteBilinearSections :
   rintro b hb c hc a d ha hd had
   refine ⟨(symmetricBilinearSections (IB := IB) (F := F) (V := V)
     (G := ℝ) (n := n)).add_mem
-      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x v hv ↦ ?_⟩
-  have heval : (a • b + d • c) x v v = a * b x v v + d * c x v v := by simp
-  rw [heval]
-  rcases ha.eq_or_lt with rfl | ha
-  · have hd1 : d = 1 := by simpa using had
-    simpa [hd1] using hc.2 x v hv
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha (hb.2 x v hv))
-      (mul_nonneg hd (hc.2 x v hv).le)
+      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x ↦ ?_⟩
+  have h := convex_setOfPred_symm_pos
+    ⟨(mem_symmetricBilinearSections b).1 hb.1 x, hb.2 x⟩
+    ⟨(mem_symmetricBilinearSections c).1 hc.1 x, hc.2 x⟩ ha hd had
+  simpa using h.2
 
 /-! ### The cone in the bundle of symmetric bilinear forms -/
 
@@ -103,7 +101,7 @@ theorem symmetricBilinearSectionEquiv_mem_positiveDefiniteBilinearSections_iff
     (symmetricBilinearSectionEquiv IB n σ : BilinearSection IB F V ℝ n) ∈
         positiveDefiniteBilinearSections IB n F V ↔
       σ ∈ positiveDefiniteSymmetricSections IB n F V := by
-  simp [(symmetricBilinearSectionEquiv IB n σ).2]
+  simp [(symmetricBilinearSectionEquiv IB n σ).property]
 
 /-- Positive-definite sections of the symmetric bundle are closed under convex combinations. -/
 theorem convex_positiveDefiniteSymmetricSections :
@@ -162,6 +160,14 @@ def toSymmetricSection (g : ContMDiffRiemannianMetric IB n F V) :
 theorem coe_toSymmetricSection_apply (g : ContMDiffRiemannianMetric IB n F V) (x : B) :
     (g.toSymmetricSection x : V x →L[ℝ] V x →L[ℝ] ℝ) = g.inner x :=
   coe_symmetricBilinearSectionEquiv_symm_apply _ x
+
+/-- Lowering the smoothness of a metric does not change its symmetric tensor at any point. -/
+@[simp]
+theorem toSymmetricSection_ofLE_apply (g : ContMDiffRiemannianMetric IB n F V)
+    {m : ℕ∞ω} (h : m ≤ n) (x : B) :
+    (g.ofLE h).toSymmetricSection x = g.toSymmetricSection x := by
+  apply Subtype.ext
+  simp only [coe_toSymmetricSection_apply, ofLE_inner]
 
 /-- Under the identification of sections of the symmetric bundle with symmetric bilinear
 sections, the section of a metric is its bilinear section. -/
@@ -231,19 +237,19 @@ theorem toBilinearSection_ofPositiveDefiniteSection (b : BilinearSection IB F V 
 def positiveDefiniteSectionEquiv : ContMDiffRiemannianMetric IB n F V ≃
     positiveDefiniteBilinearSections IB n F V where
   toFun g := ⟨g.toBilinearSection, g.toBilinearSection_mem⟩
-  invFun b := ofPositiveDefiniteSection b.1 b.2
+  invFun b := ofPositiveDefiniteSection b.val b.property
   left_inv := ofPositiveDefiniteSection_toBilinearSection
-  right_inv b := Subtype.ext (toBilinearSection_ofPositiveDefiniteSection b.1 b.2)
+  right_inv b := Subtype.ext (toBilinearSection_ofPositiveDefiniteSection b.val b.property)
 
 @[simp]
 theorem positiveDefiniteSectionEquiv_apply (g : ContMDiffRiemannianMetric IB n F V) :
-    (positiveDefiniteSectionEquiv g).1 = g.toBilinearSection :=
+    (positiveDefiniteSectionEquiv g).val = g.toBilinearSection :=
   (rfl)
 
 @[simp]
 theorem positiveDefiniteSectionEquiv_symm_apply
     (b : positiveDefiniteBilinearSections IB n F V) :
-    positiveDefiniteSectionEquiv.symm b = ofPositiveDefiniteSection b.1 b.2 :=
+    positiveDefiniteSectionEquiv.symm b = ofPositiveDefiniteSection b.val b.property :=
   (rfl)
 
 /-- The image of the native metric carrier in the space of sections is the metric cone. -/
@@ -299,19 +305,21 @@ bundle of symmetric bilinear forms. -/
 def positiveDefiniteSymmetricSectionEquiv : ContMDiffRiemannianMetric IB n F V ≃
     positiveDefiniteSymmetricSections IB n F V where
   toFun g := ⟨g.toSymmetricSection, g.toSymmetricSection_mem⟩
-  invFun σ := ofPositiveDefiniteSymmetricSection σ.1 σ.2
+  invFun σ := ofPositiveDefiniteSymmetricSection σ.val σ.property
   left_inv := ofPositiveDefiniteSymmetricSection_toSymmetricSection
-  right_inv σ := Subtype.ext (toSymmetricSection_ofPositiveDefiniteSymmetricSection σ.1 σ.2)
+  right_inv σ := Subtype.ext (toSymmetricSection_ofPositiveDefiniteSymmetricSection σ.val
+      σ.property)
 
 @[simp]
 theorem positiveDefiniteSymmetricSectionEquiv_apply (g : ContMDiffRiemannianMetric IB n F V) :
-    (positiveDefiniteSymmetricSectionEquiv g).1 = g.toSymmetricSection :=
+    (positiveDefiniteSymmetricSectionEquiv g).val = g.toSymmetricSection :=
   (rfl)
 
 @[simp]
 theorem positiveDefiniteSymmetricSectionEquiv_symm_apply
     (σ : positiveDefiniteSymmetricSections IB n F V) :
-    positiveDefiniteSymmetricSectionEquiv.symm σ = ofPositiveDefiniteSymmetricSection σ.1 σ.2 :=
+    positiveDefiniteSymmetricSectionEquiv.symm σ = ofPositiveDefiniteSymmetricSection σ.val
+        σ.property :=
   (rfl)
 
 /-- The image of the native metric carrier in the sections of the symmetric bundle is the

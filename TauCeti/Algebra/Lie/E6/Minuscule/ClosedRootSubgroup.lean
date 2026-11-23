@@ -23,9 +23,7 @@ Consequently each numbered root-subgroup morphism is a closed immersion. Its sch
 image is bundled below as a closed subgroup canonically isomorphic to `𝔾ₐ`.
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-type-`E₆` carrier in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is consumed
-by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`. No reductivity, Borel, finiteness, or
-simplicity statement is made here.
+type-`E₆` carrier. No reductivity, Borel, finiteness, or simplicity statement is made here.
 
 ## Main declarations
 
@@ -157,14 +155,14 @@ noncomputable def rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
 /-- The bundled closed root subgroup is represented by the numbered root-subgroup morphism. -/
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
-    (rootSubgroupClosedSubgroup k).1 =
+    (rootSubgroupClosedSubgroup k).val =
       letI := mono_rootSubgroup k
       Subobject.mk (rootSubgroup k) := by
   exact ClosedSubgroupScheme.coe_mk _
 
 /-- The bundled numbered root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def rootSubgroupClosedSubgroupIso (k : Fin 6 ⊕ Fin 6) :
-    ((rootSubgroupClosedSubgroup k).1 :
+    ((rootSubgroupClosedSubgroup k).val :
       Grp (Over (Spec (CommRingCat.of ℤ)))) ≅ AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (rootSubgroup k)
 
@@ -172,7 +170,7 @@ noncomputable def rootSubgroupClosedSubgroupIso (k : Fin 6 ⊕ Fin 6) :
 numbered type-`E₆` root-subgroup map. -/
 @[simp]
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 6 ⊕ Fin 6) :
-    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
+    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).val.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
 

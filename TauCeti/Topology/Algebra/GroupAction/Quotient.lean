@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Bundle
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Topology.Compactness.LocallyCompact
 
@@ -32,6 +33,9 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descent of a `G`-invariant section of
   the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
   exactly when the section upstairs is.
+* `MulActionHom.isEmbedding_orbitRelQuotientMap`: an equivariant embedding descends to an
+  embedding of orbit spaces when the acting-group map is surjective and the target action is by
+  homeomorphisms.
 * `SubMulAction.isOpenEmbedding_orbitRelQuotientMap`: for an open slice `S` for a subgroup `H`, an
   `H`-invariant open set moved into itself only by elements of `H`, the map `S / H → X / G` of
   orbit spaces is an open embedding. For `H = ⊥` this recovers
@@ -41,6 +45,9 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact`: for an action by
   homeomorphisms of a weakly locally compact space, the orbit space is compact exactly when some
   compact set meets every orbit.
+* `TauCeti.AddAction.orbitRelQuotientHomeomorphMultiplicative` and
+  `TauCeti.MulAction.orbitRelQuotientHomeomorphAdditive`: canonical homeomorphisms identifying the
+  orbit space of an action of `G` with that of `Multiplicative G` or `Additive G`.
 
 Both compactness statements have additive versions for `AddAction.orbitRel.Quotient`.
 -/
@@ -93,16 +100,32 @@ theorem _root_.SubMulAction.isOpenEmbedding_orbitRelQuotientMap {H : Subgroup G}
   -- Composed with the orbit projection of `S`, the map is the orbit projection of `X` on `S`.
   have hcont : Continuous S.orbitRelQuotientMap := by
     rw [isQuotientMap_quotient_mk'.continuous_iff]
-    exact S.orbitRelQuotientMap_comp_mk ▸ continuous_quot_mk.comp continuous_subtype_val
+    exact S.orbitRelQuotientMap_comp_mk ▸ continuous_quot_mk.comp continuous_subtypeVal
   refine .of_continuous_injective_isOpenMap hcont (S.orbitRelQuotientMap_injective hS)
     fun U hU ↦ ?_
   -- The image of `U` is the image in `X / G` of the open set of points of `S` lying over `U`.
   rw [← Quotient.mk_surjective.image_preimage U, ← image_comp, S.orbitRelQuotientMap_comp_mk,
     image_comp]
   exact isOpenMap_quotient_mk'_mul _
-    (hS_open.isOpenMap_subtype_val _ (hU.preimage continuous_quot_mk))
+    (hS_open.isOpenMap_subtypeVal _ (hU.preimage continuous_quot_mk))
 
 end Slice
+
+/-- An equivariant embedding descends to an embedding of orbit spaces when the map of acting
+groups is surjective and the target action is by homeomorphisms. -/
+theorem _root_.MulActionHom.isEmbedding_orbitRelQuotientMap
+    {G H X Y : Type*} [Group G] [Group H] [MulAction G X] [MulAction H Y]
+    [TopologicalSpace X] [TopologicalSpace Y] [ContinuousConstSMul H Y]
+    {σ : G → H} (φ : X →ₑ[σ] Y) (hφ : Topology.IsEmbedding φ)
+    (hσ : Function.Surjective σ) : Topology.IsEmbedding φ.orbitRelQuotientMap := by
+  refine isEmbedding_of_isOpenQuotientMap_of_isInducing φ φ.orbitRelQuotientMap
+    (Quotient.mk _) (Quotient.mk _) φ.orbitRelQuotientMap_comp_mk
+    hφ.isInducing isQuotientMap_quotient_mk'
+    MulAction.isOpenQuotientMap_quotientMk (φ.orbitRelQuotientMap_injective hφ.injective hσ) ?_
+  rintro y ⟨_, ⟨x, rfl⟩, hx⟩
+  obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hx)
+  obtain ⟨k, hk⟩ := hσ g⁻¹
+  exact ⟨k • x, by simpa [map_smulₛₗ, hk] using congrArg (fun z ↦ g⁻¹ • z) hg.symm⟩
 
 section Compact
 
@@ -136,13 +159,94 @@ theorem MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact [Continuous
   refine ⟨fun _ ↦ ?_, fun ⟨K, hK, hKG⟩ ↦ compactSpace_orbitRelQuotient_of_isCompact hK hKG⟩
   -- The orbit projection is open, so the compact orbit space is the image of a compact set.
   obtain ⟨K, hK, hsub⟩ := (MulAction.isOpenQuotientMap_quotientMk (Γ := G) (T := X)).isOpenMap
-    |>.exists_isCompact_subset_image Quotient.mk_surjective isCompact_univ
+    |>.exists_isCompact_subset_image isCompact_univ Quotient.mk_surjective.range_eq.ge
   refine ⟨K, hK, fun x ↦ ?_⟩
   obtain ⟨y, hy, hyx⟩ := hsub (mem_univ (Quotient.mk (MulAction.orbitRel G X) x))
   obtain ⟨g, rfl⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hyx)
   exact ⟨g, hy⟩
 
 end Compact
+
+section TypeTags
+
+/-- Canonical homeomorphism identifying the orbit space of an additive action of `G` on `X` with
+the orbit space of the corresponding multiplicative action of `Multiplicative G` on `X`. -/
+def AddAction.orbitRelQuotientHomeomorphMultiplicative {G X : Type*} [AddGroup G] [AddAction G X]
+    [TopologicalSpace X] :
+    _root_.AddAction.orbitRel.Quotient G X ≃ₜ MulAction.orbitRel.Quotient (Multiplicative G) X :=
+  Homeomorph.Quotient.congrRight fun _ _ ↦ by
+    simp [_root_.AddAction.orbitRel_apply, MulAction.orbitRel_apply]
+
+/-- `AddAction.orbitRelQuotientHomeomorphMultiplicative` preserves orbit representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientHomeomorphMultiplicative_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] [TopologicalSpace X] (x : X) :
+    AddAction.orbitRelQuotientHomeomorphMultiplicative
+      (Quotient.mk (_root_.AddAction.orbitRel G X) x) =
+      Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x :=
+  (rfl)
+
+/-- The inverse of `AddAction.orbitRelQuotientHomeomorphMultiplicative` preserves orbit
+representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientHomeomorphMultiplicative_symm_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] [TopologicalSpace X] (x : X) :
+    (AddAction.orbitRelQuotientHomeomorphMultiplicative (G := G) (X := X)).symm
+      (Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel G X) x :=
+  (rfl)
+
+/-- The underlying equivalence of `AddAction.orbitRelQuotientHomeomorphMultiplicative` is
+`AddAction.orbitRelQuotientEquivMultiplicative`. -/
+@[simp]
+theorem AddAction.orbitRelQuotientHomeomorphMultiplicative_toEquiv {G X : Type*} [AddGroup G]
+    [AddAction G X] [TopologicalSpace X] :
+    (AddAction.orbitRelQuotientHomeomorphMultiplicative (G := G) (X := X)).toEquiv =
+      AddAction.orbitRelQuotientEquivMultiplicative := by
+  apply Equiv.ext
+  intro q
+  induction q using Quotient.inductionOn with
+  | h x => simp
+
+/-- Canonical homeomorphism identifying the orbit space of a multiplicative action of `G` on `X`
+with the orbit space of the corresponding additive action of `Additive G` on `X`. -/
+def MulAction.orbitRelQuotientHomeomorphAdditive {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] :
+    MulAction.orbitRel.Quotient G X ≃ₜ _root_.AddAction.orbitRel.Quotient (Additive G) X :=
+  Homeomorph.Quotient.congrRight fun _ _ ↦ by
+    simp [MulAction.orbitRel_apply, _root_.AddAction.orbitRel_apply]
+
+/-- `MulAction.orbitRelQuotientHomeomorphAdditive` preserves orbit representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientHomeomorphAdditive_mk {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] (x : X) :
+    MulAction.orbitRelQuotientHomeomorphAdditive (Quotient.mk (MulAction.orbitRel G X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x :=
+  (rfl)
+
+/-- The inverse of `MulAction.orbitRelQuotientHomeomorphAdditive` preserves orbit
+representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientHomeomorphAdditive_symm_mk {G X : Type*} [Group G]
+    [MulAction G X] [TopologicalSpace X] (x : X) :
+    (MulAction.orbitRelQuotientHomeomorphAdditive (G := G) (X := X)).symm
+      (Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x) =
+      Quotient.mk (MulAction.orbitRel G X) x :=
+  (rfl)
+
+/-- The underlying equivalence of `MulAction.orbitRelQuotientHomeomorphAdditive` is
+`MulAction.orbitRelQuotientEquivAdditive`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientHomeomorphAdditive_toEquiv {G X : Type*} [Group G]
+    [MulAction G X] [TopologicalSpace X] :
+    (MulAction.orbitRelQuotientHomeomorphAdditive (G := G) (X := X)).toEquiv =
+      MulAction.orbitRelQuotientEquivAdditive := by
+  apply Equiv.ext
+  intro q
+  induction q using Quotient.inductionOn with
+  | h x => simp
+
+end TypeTags
 
 variable (G : Type*) {X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X]
   [MulAction G X]

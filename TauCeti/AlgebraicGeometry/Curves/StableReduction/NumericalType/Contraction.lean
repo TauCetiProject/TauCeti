@@ -126,6 +126,67 @@ private def contractGenusNumerator (e : T.Component) (i : {i // i ≠ e}) : ℤ 
   2 * T.weight i * ((T.genus i : ℤ) - 1) +
     T.intersection i e * (T.intersection i e / T.weight e - 1)
 
+/-- The halved-weight case of `contractGenusNumerator_spec`, with `aᵢₑ = wₑc = wᵢd`. Here `c` is
+even and `d` odd, so `c ≥ 2`, `d ≥ 1`, and the quotient `2(gᵢ - 1) + d(c - 1)` is at least `-1`. -/
+private lemma contractGenusNumerator_spec_of_halves {i : T.Component} (hi : i ≠ e) {c d : ℤ}
+    (hc : T.intersection i e = T.weight e * c) (hd : T.intersection i e = T.weight i * d)
+    (hc0 : 0 ≤ c) (hd0 : 0 ≤ d) (hcd : c = 0 → d = 0) (h : T.ContractHalvesWeight e ⟨i, hi⟩) :
+    2 * (T.contractWeight e ⟨i, hi⟩ : ℤ) ∣
+        2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) ∧
+      -(2 * (T.contractWeight e ⟨i, hi⟩ : ℤ)) ≤
+        2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) := by
+    have hwe := weight_pos e
+    have hw := two_mul_contractWeight h
+    set w' := (T.contractWeight e ⟨i, hi⟩ : ℤ)
+    have hdodd : ¬ 2 ∣ d := fun ⟨k, hk⟩ ↦ h.2 ⟨k, by rw [hd, hk]; ring⟩
+    have hceven : 2 ∣ c := by
+      obtain ⟨k, hk⟩ := h.1
+      exact ⟨k, by nlinarith⟩
+    have hc2 : 2 ≤ c := by
+      rcases eq_or_lt_of_le hc0 with h0 | h0
+      · exact absurd (by rw [hcd h0.symm]; exact dvd_zero 2) hdodd
+      · obtain ⟨k, hk⟩ := hceven
+        omega
+    have hd1 : 1 ≤ d := by
+      rcases eq_or_lt_of_le hd0 with h0 | h0
+      · exact absurd (by rw [← h0]; exact dvd_zero 2) hdodd
+      · exact h0
+    have hnum : 2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) =
+        2 * w' * (2 * ((T.genus i : ℤ) - 1) + d * (c - 1)) := by
+      rw [hd, ← hw]
+      ring
+    rw [hnum]
+    refine ⟨dvd_mul_right _ _, ?_⟩
+    have : 1 ≤ d * (c - 1) := by nlinarith
+    nlinarith [T.genus i]
+
+/-- The unchanged-weight case of `contractGenusNumerator_spec`, with `aᵢₑ = wₑc = wᵢd`. Here `c` is
+odd or `d` is even, so `d(c - 1) = 2k` with `k ≥ 0`, and the quotient is `gᵢ - 1 + k`. -/
+private lemma contractGenusNumerator_spec_of_not_halves {i : T.Component} (hi : i ≠ e) {c d : ℤ}
+    (hc : T.intersection i e = T.weight e * c) (hd : T.intersection i e = T.weight i * d)
+    (hcd' : 0 ≤ d * (c - 1)) (h : ¬ T.ContractHalvesWeight e ⟨i, hi⟩) :
+    2 * (T.contractWeight e ⟨i, hi⟩ : ℤ) ∣
+        2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) ∧
+      -(2 * (T.contractWeight e ⟨i, hi⟩ : ℤ)) ≤
+        2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) := by
+    have hwi := weight_pos i
+    rw [contractWeight_of_not h]
+    have heven : 2 ∣ d * (c - 1) := by
+      by_cases h2 : 2 ∣ d
+      · exact h2.mul_right _
+      · have hcodd : ¬ 2 ∣ c := fun ⟨k, hk⟩ ↦
+          h ⟨⟨k, by rw [hc, hk]; ring⟩, fun ⟨k, hk⟩ ↦ h2 ⟨k, by nlinarith⟩⟩
+        exact Dvd.dvd.mul_left (by omega) _
+    obtain ⟨k, hk⟩ := heven
+    have hnum : 2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) =
+        2 * T.weight i * (((T.genus i : ℤ) - 1) + k) := by
+      rw [hd, mul_assoc (T.weight i : ℤ), hk]
+      ring
+    rw [hnum]
+    refine ⟨dvd_mul_right _ _, ?_⟩
+    have : 0 ≤ k := by omega
+    nlinarith [T.genus i]
+
 /-- The genus numerator is divisible by `2w'ᵢ`, with quotient at least `-1`. This is the choice
 of `w'ᵢ` at work. -/
 private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
@@ -153,49 +214,8 @@ private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
   unfold contractGenusNumerator
   rw [hcb]
   by_cases h : T.ContractHalvesWeight e ⟨i, hi⟩
-  · -- Halved weight, `wᵢ = 2w'ᵢ`: here `c` is even and `d` odd, so `c ≥ 2`, `d ≥ 1`, and the
-    -- quotient `2(gᵢ - 1) + d(c - 1)` is at least `-1`.
-    have hw := two_mul_contractWeight h
-    set w' := (T.contractWeight e ⟨i, hi⟩ : ℤ)
-    have hdodd : ¬ 2 ∣ d := fun ⟨k, hk⟩ ↦ h.2 ⟨k, by rw [hd, hk]; ring⟩
-    have hceven : 2 ∣ c := by
-      obtain ⟨k, hk⟩ := h.1
-      exact ⟨k, by nlinarith⟩
-    have hc2 : 2 ≤ c := by
-      rcases eq_or_lt_of_le hc0 with h0 | h0
-      · exact absurd (by rw [hcd h0.symm]; exact dvd_zero 2) hdodd
-      · obtain ⟨k, hk⟩ := hceven
-        omega
-    have hd1 : 1 ≤ d := by
-      rcases eq_or_lt_of_le hd0 with h0 | h0
-      · exact absurd (by rw [← h0]; exact dvd_zero 2) hdodd
-      · exact h0
-    have hnum : 2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) =
-        2 * w' * (2 * ((T.genus i : ℤ) - 1) + d * (c - 1)) := by
-      rw [hd, ← hw]
-      ring
-    rw [hnum]
-    refine ⟨dvd_mul_right _ _, ?_⟩
-    have : 1 ≤ d * (c - 1) := by nlinarith
-    nlinarith [T.genus i]
-  · -- Unchanged weight: `c` is odd or `d` is even, so `d(c - 1) = 2k` with `k ≥ 0`, and the
-    -- quotient is `gᵢ - 1 + k`.
-    rw [contractWeight_of_not h]
-    have heven : 2 ∣ d * (c - 1) := by
-      by_cases h2 : 2 ∣ d
-      · exact h2.mul_right _
-      · have hcodd : ¬ 2 ∣ c := fun ⟨k, hk⟩ ↦
-          h ⟨⟨k, by rw [hc, hk]; ring⟩, fun ⟨k, hk⟩ ↦ h2 ⟨k, by nlinarith⟩⟩
-        exact Dvd.dvd.mul_left (by omega) _
-    obtain ⟨k, hk⟩ := heven
-    have hnum : 2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) =
-        2 * T.weight i * (((T.genus i : ℤ) - 1) + k) := by
-      rw [hd, mul_assoc (T.weight i : ℤ), hk]
-      ring
-    rw [hnum]
-    refine ⟨dvd_mul_right _ _, ?_⟩
-    have : 0 ≤ k := by omega
-    nlinarith [T.genus i]
+  · exact contractGenusNumerator_spec_of_halves hi hc hd hc0 hd0 hcd h
+  · exact contractGenusNumerator_spec_of_not_halves hi hc hd hcd' h
 
 /-- The genus `g'ᵢ` of a component `i` after contracting the `(-1)`-index `e`. -/
 def contractGenus (e : T.Component) (i : {i // i ≠ e}) : ℕ :=
@@ -206,7 +226,7 @@ def contractGenus (e : T.Component) (i : {i // i ≠ e}) : ℕ :=
 private lemma two_mul_contractWeight_mul_contractGenus_sub_one {i : {i // i ≠ e}} :
     2 * (T.contractWeight e i : ℤ) * ((T.contractGenus e i : ℤ) - 1) =
       T.contractGenusNumerator e i := by
-  obtain ⟨hdvd, hle⟩ := contractGenusNumerator_spec i.2
+  obtain ⟨hdvd, hle⟩ := contractGenusNumerator_spec i.property
   have hpos : (0 : ℤ) < 2 * T.contractWeight e i := by positivity
   have hq : -1 ≤ T.contractGenusNumerator e i / (2 * T.contractWeight e i) := by
     rw [Int.le_ediv_iff_mul_le hpos]
@@ -223,7 +243,7 @@ lemma contractGenus_eq {i : {i // i ≠ e}} :
         ((T.intersection i e : ℚ) ^ 2 - T.weight e * T.intersection i e) /
           (2 * T.contractWeight e i * T.weight e) := by
   have h := two_mul_contractWeight_mul_contractGenus_sub_one (T := T) (e := e) (i := i)
-  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.1
+  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.val
   rw [contractGenusNumerator, hc, Int.mul_ediv_cancel_left _ (weight_pos e).ne'] at h
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
@@ -253,7 +273,7 @@ lemma weight_mul_contractIntersection (i j : {i // i ≠ e}) :
     (T.weight e : ℤ) * T.contractIntersection e i j =
       T.weight e * T.intersection i j + T.intersection i e * T.intersection j e := by
   rw [contractIntersection_apply, mul_add,
-    Int.mul_ediv_cancel' ((weight_dvd_intersection_left j.1).mul_left _)]
+    Int.mul_ediv_cancel' ((weight_dvd_intersection_left j.val).mul_left _)]
 
 /-- The contracted intersection matrix is symmetric. -/
 lemma contractIntersection_isSymm : (T.contractIntersection e).IsSymm :=
@@ -263,14 +283,14 @@ lemma contractIntersection_isSymm : (T.contractIntersection e).IsSymm :=
 /-- Contracting `e` does not decrease the intersection number of two components other than `e`. -/
 lemma intersection_le_contractIntersection (i j : {i // i ≠ e}) :
     T.intersection i j ≤ T.contractIntersection e i j :=
-  le_add_of_nonneg_right (Int.ediv_nonneg (mul_nonneg (intersection_nonneg_of_ne i.2)
-    (intersection_nonneg_of_ne j.2)) (weight_pos e).le)
+  le_add_of_nonneg_right (Int.ediv_nonneg (mul_nonneg (intersection_nonneg_of_ne i.property)
+    (intersection_nonneg_of_ne j.property)) (weight_pos e).le)
 
 /-- Two distinct components both meeting `e` meet after contracting `e`. -/
 lemma contractIntersection_pos {i j : {i // i ≠ e}} (hij : i ≠ j) (hi : 0 < T.intersection i e)
     (hj : 0 < T.intersection j e) : 0 < T.contractIntersection e i j := by
   have := Int.ediv_pos_of_pos_of_dvd (mul_pos hi hj) (weight_pos e).le
-    ((weight_dvd_intersection_left j.1).mul_left _)
+    ((weight_dvd_intersection_left j.val).mul_left _)
   have := T.offDiagonal_nonneg i j fun h ↦ hij (Subtype.ext h)
   rw [contractIntersection_apply]
   omega
@@ -282,7 +302,7 @@ lemma exists_contractIntersection_pos (s : Set {i // i ≠ e}) (hne : s.Nonempty
   obtain ⟨j₀, hj₀⟩ : ∃ j, j ∉ s := by
     by_contra! h
     exact hs (Set.eq_univ_of_forall h)
-  have hmem {x : {i // i ≠ e}} : x.1 ∈ Subtype.val '' s ↔ x ∈ s :=
+  have hmem {x : {i // i ≠ e}} : x.val ∈ Subtype.val '' s ↔ x ∈ s :=
     Subtype.val_injective.mem_set_image
   -- A crossing edge of `T` between two components other than `e` survives the contraction.
   have hsurvive {x y : T.Component} (hx : x ∈ Subtype.val '' s) (hy : y ∉ Subtype.val '' s)
@@ -293,7 +313,7 @@ lemma exists_contractIntersection_pos (s : Set {i // i ≠ e}) (hne : s.Nonempty
     exact ⟨x, hxs, ⟨y, hye⟩, fun h ↦ hy ⟨_, h, rfl⟩, fun h ↦ hxy.1 (congrArg Subtype.val h),
       hxy.2.trans_le (intersection_le_contractIntersection x ⟨y, hye⟩)⟩
   obtain ⟨x, hx, y, hy, hxy⟩ := T.exists_mem_notMem_adj (Subtype.val '' s) (hne.image _)
-    fun h ↦ hj₀ (hmem.mp (h ▸ Set.mem_univ j₀.1))
+    fun h ↦ hj₀ (hmem.mp (h ▸ Set.mem_univ j₀.val))
   by_cases hye : y ≠ e
   · exact hsurvive hx hy hye hxy
   rw [not_not] at hye
@@ -302,8 +322,8 @@ lemma exists_contractIntersection_pos (s : Set {i // i ≠ e}) (hne : s.Nonempty
   -- `x` meets `e`; cut again along the set obtained by adding `e`.
   obtain ⟨x', hx', y', hy', hxy'⟩ := T.exists_mem_notMem_adj (insert y (Subtype.val '' s))
     (Set.insert_nonempty _ _) fun h ↦ by
-      rcases h ▸ Set.mem_univ j₀.1 with h' | h'
-      · exact j₀.2 h'
+      rcases h ▸ Set.mem_univ j₀.val with h' | h'
+      · exact j₀.property h'
       · exact hj₀ (hmem.mp h')
   have hy'e : y' ≠ y := fun h ↦ hy' (Or.inl h)
   have hy's : y' ∉ Subtype.val '' s := fun h ↦ hy' (Or.inr h)
@@ -397,7 +417,7 @@ lemma genusContribution_contract (i : {i // i ≠ e}) :
     (T.contract he).genusContribution i =
       T.genusContribution i - T.multiplicity i * T.intersection i e / 2 := by
   have h := two_mul_contractWeight_mul_contractGenus_sub_one (T := T) (e := e) (i := i)
-  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.1
+  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.val
   have hwe := (weight_pos e).ne'
   rw [contractGenusNumerator, hc, Int.mul_ediv_cancel_left _ hwe] at h
   have hself : T.contractIntersection e i i = T.intersection i i + T.weight e * c * c := by

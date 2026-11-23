@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Invariance
 
 /-!
 # Local Tamagawa numbers
@@ -53,16 +54,36 @@ elliptic curve over a field `F` that is complete with respect to `v`, or more ge
 with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
 index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
 completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
-noncomputable def tamagawaNumber (E : WeierstrassCurve F)
-    (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
+noncomputable def tamagawaNumber : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
 /-- The chosen minimal equation computes the Tamagawa number. -/
 theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
-  classical
   rfl
+
+/-- Equivalent valuations have the same valuation ring and hence define the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hmin : E.minimal v.valuationSubring = E.minimal v'.valuationSubring := by
+    suffices ∀ (A B : ValuationSubring F) [IsDiscreteValuationRing A] [IsDiscreteValuationRing B],
+        A = B → E.minimal A = E.minimal B from
+      this _ _ ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
+    rintro A B instA instB rfl
+    cases Subsingleton.elim instA instB
+    rfl
+  have : IsIntegral v'.valuationSubring (E.minimal v.valuationSubring) := hmin ▸ inferInstance
+  have hidx (W₁ W₂ : WeierstrassCurve F) [IsIntegral v'.valuationSubring W₁]
+      [IsIntegral v'.valuationSubring W₂] (hW : W₁ = W₂) :
+      (W₁.toAffine.nonsingularReduction v').index =
+        (W₂.toAffine.nonsingularReduction v').index := by
+    subst hW
+    rfl
+  rw [tamagawaNumber_def, tamagawaNumber_def, Affine.nonsingularReduction_congr _ h]
+  exact hidx _ _ hmin
 
 variable [E.IsElliptic]
 
@@ -112,7 +133,7 @@ theorem tamagawaNumber_eq_one_of_hasGoodReduction [E.HasGoodReduction v.valuatio
     (inferInstance : E.HasGoodReduction v.valuationSubring)
   rw [Affine.nonsingularReduction_eq_top_of_Δ_notMem v fun h ↦
     (IsLocalRing.notMem_maximalIdeal.mpr hΔ)
-      (Ideal.pow_le_self (by norm_num : 2 ≠ 0) h), AddSubgroup.index_top]
+      (Ideal.pow_le_self two_ne_zero h), AddSubgroup.index_top]
 
 /-- Over a Henselian DVR with perfect residue field the Tamagawa number is positive. -/
 theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]
@@ -121,15 +142,20 @@ theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]
   rw [tamagawaNumber_def]
   exact AddSubgroup.index_pos
 
-/-- Tate's algorithm on any minimal equation computes the local Tamagawa number. -/
+/-- If Tate's algorithm stops with symbol `s` on an integral equation for `E`, then
+`tateLocalIndex` at `s` is the local Tamagawa number. Minimality need not be assumed, since an
+equation on which the algorithm stops is minimal. -/
 theorem tamagawaNumber_eq_tateLocalIndex [HenselianLocalRing v.valuationSubring]
-    [Finite (IsLocalRing.ResidueField v.valuationSubring)] [IsMinimal v.valuationSubring E]
+    [Finite (IsLocalRing.ResidueField v.valuationSubring)] [IsIntegral v.valuationSubring E]
     {ϖ : v.valuationSubring}
     (hϖ : IsLocalRing.maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     {s : TauCeti.ReductionSymbol}
     (h : (integralModel v.valuationSubring E).IsTateTerminal ϖ s) :
     E.tamagawaNumber v = (integralModel v.valuationSubring E).tateLocalIndex ϖ s := by
   classical
+  have hirr : Irreducible ϖ := (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).2 hϖ
+  have : IsMinimal v.valuationSubring E := by
+    simpa only [baseChange_integralModel_eq] using h.isMinimal_baseChange (K := F) hirr
   rw [tamagawaNumber_eq_index]
   exact Affine.index_nonsingularReduction_eq_tateLocalIndex v hϖ h
 

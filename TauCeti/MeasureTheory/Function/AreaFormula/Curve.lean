@@ -6,37 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
+public import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.Analysis.InnerProductSpace.NormDet
-import TauCeti.Topology.EMetricSpace.CurveLength
-import TauCeti.Topology.MetricSpace.Arclength.Basic
+import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
 # The area formula for curves
 
 This file specializes the area formula with multiplicity to maps from a real interval. For a
-Lipschitz curve, its total variation is the one-dimensional Hausdorff integral of the extended
-cardinality of its fibers. Thus length counts repeated traversals, while the Hausdorff measure of
-the trace does not.
+curve Lipschitz on a compact interval, the integral of a weight against its speed is the
+one-dimensional Hausdorff integral of the weight summed over each fiber, including infinite
+fibers. For the constant weight one, the speed integrates to the length, and the formula becomes
+the Lipschitz case of the Banach indicatrix formula `ContinuousOn.eVariationOn_eq_lintegral_encard`,
+which holds for every continuous curve in an extended metric space.
 
-The curve need only be Lipschitz on the parameter interval. A finite-dimensional Lipschitz
-extension reduces the result to the global area formula; derivatives and fiber sums are then
-transported back to the original curve. The one-dimensional geometric Jacobian is identified
-with the norm of the velocity.
+When the curve is injective on the open interval `(a, b)` — covering both injective arcs and
+simple closed curves — pushing forward the speed-weighted interval measure `(‖deriv γ ·‖ₑ) dt` on
+`[a, b]` along `γ` yields `μHE[1].restrict (γ '' Icc a b)`
+(`LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict`). For a curve
+of constant speed `l`, this becomes
+`(l : ℝ≥0∞) • (volume.restrict (Icc a b)).map γ = μHE[1].restrict (γ '' Icc a b)`
+(`HasConstantSpeedOnWith.smul_map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict`). For a
+unit-speed curve `HasUnitSpeedOn γ (Icc a b)`, Lebesgue measure on `[a, b]` (or on `(a, b)` via
+`domRestrict`) pushes forward directly to `μHE[1]` on the trace
+(`HasUnitSpeedOn.map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict`,
+`HasUnitSpeedOn.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict`), identifying lower
+Lebesgue integrals (`HasUnitSpeedOn.setLIntegral_euclideanHausdorffMeasure_image_eq`), Bochner
+integrability (`HasUnitSpeedOn.integrableOn_image_euclideanHausdorffMeasure_iff`), and Bochner
+integrals (`HasUnitSpeedOn.setIntegral_euclideanHausdorffMeasure_image_eq`) over `γ '' Icc a b`
+with parameter integrals over `[a, b]`.
 
-The multiplicity formula then extends to every continuous curve on a compact interval, the
-Banach indicatrix formula `ContinuousOn.eVariationOn_eq_lintegral_encard`. A rectifiable curve
-factors through its arclength parametrization, which is 1-Lipschitz and has the same length.
-Its fibers have the same cardinality as those of the original curve except over the countably
-many values taken on pauses. For a curve of infinite length, the lower bound
-`ContinuousOn.eVariationOn_le_lintegral_encard` makes the multiplicity integral infinite too.
+The curve need only be Lipschitz on the parameter interval `[a, b]`; no global Lipschitz condition
+or injectivity at the endpoints is assumed.
 
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised
   edition, Section 3.3 (the area formula for Lipschitz maps).
-* H. Federer, *Geometric Measure Theory*, Theorem 2.10.13 (the Banach indicatrix formula for
-  continuous curves).
 -/
 
 public section
@@ -82,86 +90,172 @@ theorem lintegral_enorm_deriv_mul_eq_lintegral_tsum (hγ : LipschitzOnWith K γ 
     _ = ∫⁻ y, ∑' t : ↥(Icc a b ∩ f ⁻¹' {y}), g t ∂μHE[1] := harea
     _ = _ := lintegral_congr hfibers
 
-/-- The length of a curve Lipschitz on `[a, b]` is the one-dimensional Hausdorff integral of its
-fiber multiplicity. Infinite fibers have infinite multiplicity. -/
-theorem eVariationOn_eq_lintegral_encard (hγ : LipschitzOnWith K γ (Icc a b)) :
-    eVariationOn γ (Icc a b) =
-      ∫⁻ y, (((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞)) ∂μHE[1] := by
-  by_cases hab : a ≤ b
-  · have hγu : LipschitzOnWith K γ (uIcc a b) := by rwa [uIcc_of_le hab]
-    have hAC : AbsolutelyContinuousOnInterval γ a b := hγu.absolutelyContinuousOnInterval
-    calc
-      eVariationOn γ (Icc a b) = ∫⁻ t in uIoc a b, ‖deriv γ t‖ₑ := by
-        rw [← uIcc_of_le hab]
-        exact hAC.eVariationOn_eq_lintegral_enorm_deriv
-      _ = ∫⁻ t in Icc a b, ‖deriv γ t‖ₑ := by
-        rw [uIoc_of_le hab, restrict_Ioc_eq_restrict_Icc]
-      _ = _ := by
-        simpa only [mul_one, ENNReal.tsum_set_one] using
-          hγ.lintegral_enorm_deriv_mul_eq_lintegral_tsum (g := fun _ ↦ 1) measurable_const
-  · simp [Icc_eq_empty hab]
+omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- Away from the two endpoints `γ a` and `γ b`, injectivity on `(a, b)` collapses the fiber sum of
+the indicator of `Icc a b ∩ γ ⁻¹' S` to the indicator of `γ '' Icc a b ∩ S`. -/
+private theorem ae_tsum_fiber_indicator_eq (hinj : InjOn γ (Ioo a b)) (S : Set V) :
+    (fun y => ∑' t : ↥(Icc a b ∩ γ ⁻¹' {y}),
+      (Icc a b ∩ γ ⁻¹' S).indicator (1 : ℝ → ℝ≥0∞) t) =ᵐ[μHE[1]]
+      (γ '' Icc a b ∩ S).indicator (1 : V → ℝ≥0∞) := by
+  have := Measure.nullSingletonClass_hausdorff V zero_lt_one
+  have hnull : μHE[1] ({γ a, γ b} : Set V) = 0 := by
+    rw [Measure.euclideanHausdorffMeasure_one]
+    exact (toFinite {γ a, γ b}).measure_zero μH[1]
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hnull] with y hy
+  by_cases hyCS : y ∈ γ '' Icc a b ∩ S
+  · rw [indicator_of_mem hyCS]
+    rcases hyCS with ⟨⟨t₀, ht₀, rfl⟩, hyS⟩
+    have hIoo {t : ℝ} (ht : t ∈ Icc a b ∩ γ ⁻¹' {γ t₀}) : t ∈ Ioo a b := by
+      have hty : γ t = γ t₀ := ht.2
+      refine ⟨ht.1.1.lt_of_ne ?_, ht.1.2.lt_of_ne ?_⟩ <;> rintro rfl <;> simp [hty] at hy
+    let _ : Unique ↥(Icc a b ∩ γ ⁻¹' {γ t₀}) :=
+      { default := ⟨t₀, ht₀, rfl⟩
+        uniq := fun ⟨t, ht⟩ => Subtype.ext (hinj (hIoo ht) (hIoo ⟨ht₀, rfl⟩) ht.2) }
+    rw [tsum_fintype, Fintype.sum_unique]
+    exact indicator_of_mem (⟨ht₀, hyS⟩ : t₀ ∈ Icc a b ∩ γ ⁻¹' S) _
+  · rw [indicator_of_notMem hyCS]
+    exact tsum_eq_zero_iff.2 fun ⟨t, htIcc, hty⟩ =>
+      indicator_of_notMem (fun (htA : t ∈ Icc a b ∩ γ ⁻¹' S) =>
+        hyCS ⟨⟨t, htIcc, hty⟩, hty ▸ htA.2⟩) _
+
+/-- For a Lipschitz curve on `[a, b]` injective on `(a, b)` (such as an injective arc or a simple
+closed curve), pushing forward the speed-weighted measure `(‖deriv γ ·‖ₑ) dt` on `[a, b]` along `γ`
+yields `μHE[1]` restricted to `γ '' Icc a b`. -/
+theorem map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
+    (hγ : LipschitzOnWith K γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
+    ((volume.restrict (Icc a b)).withDensity fun t => ‖deriv γ t‖ₑ).map γ =
+      μHE[1].restrict (γ '' Icc a b) := by
+  have haem : AEMeasurable γ (volume.restrict (Icc a b)) :=
+    hγ.continuousOn.aemeasurable measurableSet_Icc
+  have haem' : AEMeasurable γ ((volume.restrict (Icc a b)).withDensity fun t => ‖deriv γ t‖ₑ) :=
+    haem.mono_ac (withDensity_absolutelyContinuous _ _)
+  refine Measure.ext fun S hS => ?_
+  set A : Set ℝ := Icc a b ∩ γ ⁻¹' S
+  have hAeq : A = ((↑) : Icc a b → ℝ) '' ((Icc a b).domRestrict γ ⁻¹' S) := by
+    ext t
+    exact ⟨fun ⟨ht, hS'⟩ => ⟨⟨t, ht⟩, hS', rfl⟩, by rintro ⟨⟨x, hx⟩, hxS, rfl⟩; exact ⟨hx, hxS⟩⟩
+  have hAm : MeasurableSet A := hAeq ▸ (MeasurableEmbedding.subtypeVal measurableSet_Icc
+    |>.measurableSet_image.2 ((continuousOn_iff_continuous_domRestrict.1 hγ.continuousOn).measurable
+      hS))
+  have harea := hγ.lintegral_enorm_deriv_mul_eq_lintegral_tsum
+    ((measurable_one : Measurable (1 : ℝ → ℝ≥0∞)).indicator hAm)
+  have hlhs : (((volume.restrict (Icc a b)).withDensity fun t => ‖deriv γ t‖ₑ).map γ) S =
+      ∫⁻ t in Icc a b, ‖deriv γ t‖ₑ * A.indicator (1 : ℝ → ℝ≥0∞) t := by
+    rw [Measure.map_apply_of_aemeasurable haem' hS,
+      withDensity_apply₀ _ (haem.nullMeasurable hS)]
+    have hres : (volume.restrict (Icc a b)).restrict (γ ⁻¹' S) =
+        (volume.restrict (Icc a b)).restrict A := by
+      rw [Measure.restrict_restrict₀ (haem.nullMeasurable hS), Measure.restrict_restrict hAm]
+      congr 1; ext t; simp only [A, mem_inter_iff]; tauto
+    rw [hres, ← lintegral_indicator hAm fun t => ‖deriv γ t‖ₑ]
+    exact setLIntegral_congr_fun measurableSet_Icc fun t _ => by
+      by_cases htS : t ∈ A <;> simp [htS]
+  have hrhs : (∫⁻ y, ∑' t : ↥(Icc a b ∩ γ ⁻¹' {y}), A.indicator (1 : ℝ → ℝ≥0∞) t ∂μHE[1]) =
+      (μHE[1].restrict (γ '' Icc a b)) S :=
+    (lintegral_congr_ae (ae_tsum_fiber_indicator_eq hinj S)).trans <| by
+      rw [lintegral_indicator_one
+        ((isCompact_Icc.image_of_continuousOn hγ.continuousOn).measurableSet.inter hS),
+        Measure.restrict_apply hS, inter_comm]
+  exact hlhs.trans (harea.trans hrhs)
 
 end LipschitzOnWith
 
-namespace ContinuousOn
+namespace HasConstantSpeedOnWith
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [MeasurableSpace V] [BorelSpace V] {γ : ℝ → V} {a b : ℝ}
+  [MeasurableSpace V] [BorelSpace V] {l : ℝ≥0} {γ : ℝ → V} {a b : ℝ}
 
-/-- **Banach indicatrix formula for curves.** The length of a continuous curve on `[a, b]` is the
-one-dimensional Hausdorff integral of the extended cardinality of its fibers. No Lipschitz or
-bounded-variation hypothesis is needed: both sides are infinite together. Pauses and repeated
-traversals are allowed, and infinite fibers have infinite multiplicity. -/
-theorem eVariationOn_eq_lintegral_encard (hγ : ContinuousOn γ (Icc a b)) :
-    eVariationOn γ (Icc a b) =
-      ∫⁻ y, (((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞)) ∂μHE[1] := by
-  refine le_antisymm (by
-    rw [Measure.euclideanHausdorffMeasure_one]
-    exact hγ.eVariationOn_le_lintegral_encard) ?_
-  by_cases hbv : BoundedVariationOn γ (Icc a b)
-  swap
-  · rw [BoundedVariationOn, not_ne_iff] at hbv
-    rw [hbv]
-    exact le_top
-  by_cases hab : a ≤ b
-  swap
-  · simp [Icc_eq_empty hab]
-  -- Factor `γ` through cumulative arclength and compare fibers with those of the factor.
-  obtain ⟨g, hg, hfac, hvar⟩ := hbv.exists_arclength_factorization hγ hab
-  set L := (eVariationOn γ (Icc a b)).toReal with hL
-  let s := variationOnFromTo γ (Icc a b) a
-  have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
-  have hm : MonotoneOn s (Icc a b) :=
-    variationOnFromTo.monotoneOn hbv.locallyBoundedVariationOn ha
-  have hsa : s a = 0 := variationOnFromTo.self _ _ _
-  have hsb : s b = L := by
-    simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have hs : MapsTo s (Icc a b) (Icc 0 L) := fun t ht ↦
-    ⟨hsa ▸ hm ha ht ht.1, hsb ▸ hm ht (right_mem_Icc.mpr hab) ht.2⟩
-  -- Two parameters in one fiber with the same arclength bound a pause of `γ`. The values
-  -- taken on pauses form a countable set, hence a null set.
-  let P := {y | ∃ t ∈ Icc a b, ∃ t' ∈ Icc a b, t < t' ∧ s t = s t' ∧ γ t = y}
-  have hPnull : μHE[1] P = 0 := by
-    rw [Measure.euclideanHausdorffMeasure_one]
-    have := Measure.nullSingletonClass_hausdorff V (show (0 : ℝ) < 1 by norm_num)
-    exact (hm.countable_setOf_eq_comp hfac).measure_zero _
-  have hfib : ∀ᵐ y ∂μHE[1], ((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞) ≤
-      ((Icc 0 L ∩ g ⁻¹' {y}).encard : ℝ≥0∞) := by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.mp hPnull] with y hy
-    rw [ENat.toENNReal_le]
-    refine encard_le_encard_of_injOn (f := s) (fun t ht ↦ ⟨hs ht.1, ?_⟩) ?_
-    · exact (hfac ht.1).trans ht.2
-    · intro t ht t' ht' hst
-      by_contra hne
-      rcases lt_or_gt_of_ne hne with h | h
-      · exact hy ⟨t, ht.1, t', ht'.1, h, hst, ht.2⟩
-      · exact hy ⟨t', ht'.1, t, ht.1, h, hst.symm, ht'.2⟩
-  have hL0 : 0 ≤ L := ENNReal.toReal_nonneg
-  calc
-    _ ≤ ∫⁻ y, ((Icc 0 L ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[1] := lintegral_mono_ae hfib
-    _ = eVariationOn g (Icc 0 L) := hg.eVariationOn_eq_lintegral_encard.symm
-    _ = eVariationOn γ (Icc a b) := by
-      rw [hvar 0 (left_mem_Icc.mpr hL0) L (right_mem_Icc.mpr hL0) hL0, sub_zero, hL,
-        ENNReal.ofReal_toReal hbv]
+/-- For a curve of constant speed `l` on `[a, b]` injective on `(a, b)`, `l` times the pushforward
+of Lebesgue measure on `[a, b]` equals `μHE[1]` restricted to `γ '' Icc a b`. -/
+theorem smul_map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hinj : InjOn γ (Ioo a b)) :
+    (l : ℝ≥0∞) • (volume.restrict (Icc a b)).map γ = μHE[1].restrict (γ '' Icc a b) := by
+  rcases lt_or_ge b a with hab | hab
+  · simp [Icc_eq_empty_of_lt hab]
+  have hγu : HasConstantSpeedOnWith γ (uIcc a b) l := by rwa [uIcc_of_le hab]
+  rw [← hγ.lipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict hinj,
+    ← Measure.map_smul _ (hγ.lipschitzOnWith.continuousOn.aemeasurable measurableSet_Icc)]
+  congr 1
+  have hae : (fun t => ‖deriv γ t‖ₑ) =ᵐ[volume.restrict (Icc a b)] fun _ => (l : ℝ≥0∞) := by
+    have hnorm := hγu.ae_norm_deriv_eq
+    rw [uIcc_of_le hab] at hnorm
+    filter_upwards [hnorm] with t ht
+    rw [← ofReal_norm, ht.2, ENNReal.ofReal_coe_nnreal]
+  rw [withDensity_congr_ae hae, withDensity_const]
 
-end ContinuousOn
+end HasConstantSpeedOnWith
+
+namespace HasUnitSpeedOn
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F]
+  {γ : ℝ → V} {a b : ℝ}
+
+/-- For a unit-speed curve on `[a, b]` injective on `(a, b)`, the pushforward of Lebesgue measure
+on `[a, b]` along `γ` is `μHE[1]` restricted to `γ '' Icc a b`. -/
+theorem map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
+    (volume.restrict (Icc a b)).map γ = μHE[1].restrict (γ '' Icc a b) := by
+  simpa using hγ.smul_map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict hinj
+
+/-- Pushing forward Lebesgue measure on `Ioo a b` along `(Ioo a b).domRestrict γ` recovers
+`μHE[1].restrict (γ '' Icc a b)` for a unit-speed curve injective on `(a, b)`. -/
+theorem map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
+    Measure.map ((Ioo a b).domRestrict γ) (volume.comap ((↑) : Ioo a b → ℝ)) =
+      μHE[1].restrict (γ '' Icc a b) := by
+  have haem : AEMeasurable γ (volume.restrict (Ioo a b)) :=
+    (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self).aemeasurable measurableSet_Ioo
+  have hmap : Measure.map ((Ioo a b).domRestrict γ) (volume.comap ((↑) : Ioo a b → ℝ)) =
+      (volume.restrict (Ioo a b)).map γ := by
+    rw [← map_comap_subtypeVal measurableSet_Ioo] at haem ⊢
+    rw [domRestrict_eq,
+      AEMeasurable.map_map_of_aemeasurable haem measurable_subtypeVal.aemeasurable]
+  rw [hmap, Measure.restrict_congr_set Ioo_ae_eq_Icc,
+    hγ.map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict hinj]
+
+/-- **Lebesgue line-integral transport along a unit-speed curve.** For a unit-speed curve on
+`[a, b]` injective on `(a, b)` and any function `f : V → ℝ≥0∞` (not assumed measurable), the lower
+Lebesgue `μHE[1]`-integral of `f` over `γ '' Icc a b` equals `∫⁻ t in Icc a b, f (γ t)`. -/
+theorem setLIntegral_euclideanHausdorffMeasure_image_eq
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) (f : V → ℝ≥0∞) :
+    ∫⁻ y in γ '' Icc a b, f y ∂μHE[1] = ∫⁻ t in Icc a b, f (γ t) := by
+  have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
+    (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
+  rw [← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj, he.lintegral_map]
+  simp only [domRestrict_apply, ← Function.comp_apply (f := f)]
+  rw [← hc.lintegral_map, map_comap_subtypeVal measurableSet_Ioo,
+    Measure.restrict_congr_set Ioo_ae_eq_Icc]
+
+/-- **Bochner line-integrability along a unit-speed curve.** For a unit-speed curve on `[a, b]`
+injective on `(a, b)` and any `f : V → F`, `f` is `μHE[1]`-integrable on `γ '' Icc a b` if and only
+if `t ↦ f (γ t)` is Lebesgue integrable on `Icc a b`. -/
+theorem integrableOn_image_euclideanHausdorffMeasure_iff
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) (f : V → F) :
+    IntegrableOn f (γ '' Icc a b) μHE[1] ↔ IntegrableOn (fun t => f (γ t)) (Icc a b) := by
+  have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
+    (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
+  rw [IntegrableOn, ← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj,
+    he.integrable_map_iff]
+  simp only [domRestrict_eq, ← Function.comp_assoc]
+  rw [← hc.integrable_map_iff, map_comap_subtypeVal measurableSet_Ioo,
+    Measure.restrict_congr_set Ioo_ae_eq_Icc]
+  rfl
+
+/-- **Bochner line-integral transport along a unit-speed curve.** For a unit-speed curve on `[a, b]`
+injective on `(a, b)` and any `f : V → F`, the `μHE[1]`-integral of `f` over `γ '' Icc a b` equals
+`∫ t in Icc a b, f (γ t)`. -/
+theorem setIntegral_euclideanHausdorffMeasure_image_eq [NormedSpace ℝ F]
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) (f : V → F) :
+    ∫ y in γ '' Icc a b, f y ∂μHE[1] = ∫ t in Icc a b, f (γ t) := by
+  have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
+    (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
+  rw [← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj, he.integral_map]
+  simp only [domRestrict_apply, ← Function.comp_apply (f := f)]
+  rw [← hc.integral_map, map_comap_subtypeVal measurableSet_Ioo,
+    integral_Icc_eq_integral_Ioo]
+
+end HasUnitSpeedOn

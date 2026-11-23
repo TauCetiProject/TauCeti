@@ -73,17 +73,13 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
         -(T.weight (c 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j := by
   classical
   have hcard : 6 < Fintype.card T.Component := by
-    have := Fintype.card_le_of_injective c hc
-    have hdim : Fintype.card (Fin 7) = 7 := Fintype.card_fin _
-    rw [hdim] at this
-    omega
+    exact Nat.lt_of_succ_le (by simpa using Fintype.card_le_of_injective c hc)
   have hne {i j : Fin 7} (h : i ≠ j) : c i ≠ c j := hc.ne h
   -- Each subdiagram omits the end of a different arm. Together they cover every pair.
   obtain ⟨w, hw2, hw1, hwcenter, hw3, hw4, hw5,
       ha21, ha10, ha03, ha34, ha05, hz20, hz23, hz24, hz25, hz13, hz14, hz15, hz04, hz35, hz45⟩ :=
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 2) (hself 1) (hself 0) (hself 3) (hself 4) (hself 5)
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 3 (by simp)) (hadj 3 4 (by simp))
       (hadj 0 5 (by simp))
@@ -94,7 +90,6 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 2) (hself 1) (hself 0) (hself 5) (hself 6) (hself 3)
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 5 (by simp)) (hadj 5 6 (by simp))
       (hadj 0 3 (by simp))
   have hbase' : (w' : ℤ) = T.weight (c 0) := hwcenter'.symm
@@ -104,32 +99,20 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 4) (hself 3) (hself 0) (hself 5) (hself 6) (hself 1)
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 4 3 (by simp)) (hadj 3 0 (by simp)) (hadj 0 5 (by simp)) (hadj 5 6 (by simp))
       (hadj 0 1 (by simp))
   have hw : ∀ i, T.weight (c i) = T.weight (c 0) := by
     intro i
-    fin_cases i
-    · rfl
-    · exact_mod_cast hw1
-    · exact_mod_cast hw2
-    · exact_mod_cast hw3
-    · exact_mod_cast hw4
-    · exact_mod_cast hw5
-    · exact_mod_cast hw6
+    fin_cases i <;> first
+      | rfl | exact_mod_cast hw1 | exact_mod_cast hw2 | exact_mod_cast hw3 | exact_mod_cast hw4
+      | exact_mod_cast hw5 | exact_mod_cast hw6
   refine ⟨hw, ?_⟩
   intro i j
-  -- Use `Fin 7` for the conditional as well as for `c`; the Cartan API is indexed by
-  -- `Fin E6.nodes`, whose implicit decidability instance is opaque outside its module.
-  have hC (i j : Fin 7) : AffineDynkinType.E6.cartanMatrix i j =
-      if i = j then 2 else if AffineDynkinType.E6.graph.Adj i j then -1 else 0 := by
-    convert AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E6 i j using 1
-    split_ifs <;> first | rfl | contradiction
   have hG (i j : Fin 7) : AffineDynkinType.E6.graph.Adj i j ↔
       (min (i : ℕ) (j : ℕ), max (i : ℕ) (j : ℕ)) ∈
         [((0 : ℕ), (1 : ℕ)), (1, 2), (0, 3), (3, 4), (0, 5), (5, 6)] :=
     AffineDynkinType.graph_E6_adj i j
-  rw [hC]
+  rw [AffineDynkinType.cartanMatrix_E6_apply]
   simp only [Fin.ext_iff, hG]
   clear hadj hc hne
   fin_cases i <;> fin_cases j <;> norm_num
@@ -150,9 +133,7 @@ private lemma card_eq_seven_of_affineE6 (c : Fin 7 → T.Component)
   have hz := T.intersection_eq_zero_of_branch_six (by omega)
     (hself 2) (hself 1) (hself 0) (hself 3) (hself 4) (hself 5) (hself 6)
     (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-    (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-    (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-    (hne (by decide))
+    (hne (by decide)) (hne (by decide))
     (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 3 (by simp))
     (hadj 3 4 (by simp)) (hadj 0 5 (by simp))
   exact (hadj 5 6 (by simp)).ne' hz

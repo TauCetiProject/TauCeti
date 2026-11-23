@@ -383,13 +383,13 @@ variable [NonUnitalNonAssocSemiring K]
 @[simp]
 theorem realizedFunctions_realize_depth_zero (A : ConvolutionSpec K 0) :
     realizedFunctions A.realize = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realize_depth_zero]
+  rw [realizedFunctions_unique, realize_depth_zero]
 
 /-- An empty bias-free convolutional network realizes only the identity function. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_zero (A : ConvolutionSpec K 0) :
     realizedFunctions A.realizeWeights = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realizeWeights_depth_zero]
+  rw [realizedFunctions_unique, realizeWeights_depth_zero]
 
 /-- The affine neuromanifold of `A : ConvolutionSpec K (L + 1)` consists of the composites
 `g ∘ Neuromanifold.activation (A.toMLPSpec.layerActivation 0) () ∘ f` with `f` realized by layer
@@ -418,7 +418,8 @@ theorem realizedFunctions_realize_depth_one (A : ConvolutionSpec K 1) :
     realizedFunctions A.realize = realizedFunctions (affineConvolution (A.length_eq 0)) := by
   let e : A.Parameters ≃ (Fin (A.filterLength 0) → K) × K := Equiv.piUnique _
   have h : A.realize = affineConvolution (A.length_eq 0) ∘ e := funext A.realize_depth_one
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  simpa only [realizedFunctions_def, h] using
+    e.surjective.range_comp (affineConvolution (A.length_eq 0))
 
 /-- A one-layer bias-free convolutional network has the same neuromanifold as its `convolution`
 layer. -/
@@ -427,7 +428,7 @@ theorem realizedFunctions_realizeWeights_depth_one (A : ConvolutionSpec K 1) :
     realizedFunctions A.realizeWeights = realizedFunctions (convolution (A.length_eq 0)) := by
   let e : A.Weights ≃ (Fin (A.filterLength 0) → K) := Equiv.piUnique _
   have h : A.realizeWeights = convolution (A.length_eq 0) ∘ e := funext A.realizeWeights_depth_one
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  simpa only [realizedFunctions_def, h] using e.surjective.range_comp (convolution (A.length_eq 0))
 
 /-- In depth at least two, the affine convolutional neuromanifold splits off the first hidden layer
 `Neuromanifold.activation (A.activation 0) () ∘ affineConvolution (A.length_eq 0)`. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.GroupTheory.Coxeter.ChainProperty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ChainBond
 
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+
 /-!
 # Reflecting saturated chains of `W / W_λ` in a simple root
 
@@ -95,7 +97,7 @@ namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
 variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : _root_.RootPairing ι R M N} {b : P.Base} [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  [P.IsCrystallographic] [P.IsReduced] {lam : M}
 
 /-- The **reflection** `sᵢ x₀ ⋗ sᵢ x₁ ⋗ ⋯ ⋗ sᵢ x_l` of a saturated chain `x₀ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` lying strictly on one side of the wall of the simple root `αᵢ`: either
@@ -104,11 +106,11 @@ by `TauCeti.minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos` and
 `TauCeti.minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg`. -/
 noncomputable def simpleMul (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) (i : b.support)
-    (hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0) :
+    (hC : (∀ k, 0 < P.coroot' i ((C k).val • lam)) ∨ ∀ k, P.coroot' i ((C k).val • lam) < 0) :
     (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam) where
   length := C.length
-  toFun k := ⟨(weylCoxeterSystem P b).simple i * (C k).1,
-    TauCeti.isMinimalCosetRep_simple_mul_of_coroot'_ne_zero (C k).2
+  toFun k := ⟨(weylCoxeterSystem P b).simple i * (C k).val,
+    TauCeti.isMinimalCosetRep_simple_mul_of_coroot'_ne_zero (C k).property
       (hC.elim (fun h ↦ (h k).ne') fun h ↦ (h k).ne)⟩
   step k := hC.elim
     (fun h ↦ TauCeti.minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos hlam
@@ -118,7 +120,7 @@ noncomputable def simpleMul (hlam : lam ∈ dominantChamber P b)
 
 variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
-  {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
+  {hC : (∀ k, 0 < P.coroot' i ((C k).val • lam)) ∨ ∀ k, P.coroot' i ((C k).val • lam) < 0}
 
 @[simp]
 theorem length_simpleMul : (simpleMul hlam C i hC).length = C.length :=
@@ -126,18 +128,18 @@ theorem length_simpleMul : (simpleMul hlam C i hC).length = C.length :=
 
 @[simp]
 theorem simpleMul_apply (k : Fin ((simpleMul hlam C i hC).length + 1)) :
-    ((simpleMul hlam C i hC) k).1 =
-      (weylCoxeterSystem P b).simple i * (C ⟨k, by simpa using k.2⟩).1 :=
+    ((simpleMul hlam C i hC) k).val =
+      (weylCoxeterSystem P b).simple i * (C ⟨k, by simpa using k.isLt⟩).val :=
   (rfl)
 
 @[simp]
 theorem head_simpleMul :
-    (simpleMul hlam C i hC).head.1 = (weylCoxeterSystem P b).simple i * C.head.1 :=
+    (simpleMul hlam C i hC).head.val = (weylCoxeterSystem P b).simple i * C.head.val :=
   (rfl)
 
 @[simp]
 theorem last_simpleMul :
-    (simpleMul hlam C i hC).last.1 = (weylCoxeterSystem P b).simple i * C.last.1 :=
+    (simpleMul hlam C i hC).last.val = (weylCoxeterSystem P b).simple i * C.last.val :=
   (rfl)
 
 end _root_.CoxeterSystem.MinimalCosetRepChain
@@ -147,13 +149,13 @@ end _root_.CoxeterSystem.MinimalCosetRepChain
 section RootDatum
 
 variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
-  [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} {a : ℚ}
+  [Finite ι] [P.IsReduced] {lam : M} {a : ℚ}
 
 namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
 variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
-  {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
+  {hC : (∀ k, 0 < P.coroot' i ((C k).val • lam)) ∨ ∀ k, P.coroot' i ((C k).val • lam) < 0}
 
 /-- **Reflecting a saturated chain in a simple root keeps its bonds**, hence its bond gcd. -/
 @[simp]
@@ -161,9 +163,9 @@ theorem bondGcd_simpleMul :
     TauCeti.bondGcd lam (simpleMul hlam C i hC) = TauCeti.bondGcd lam C := by
   -- The bonds of corresponding covers agree.
   have hbond (k : Fin C.length) :
-      P.reflectionBond b (((simpleMul hlam C i hC) k.castSucc).1 • lam)
-          (((simpleMul hlam C i hC) k.succ).1 • lam) =
-        P.reflectionBond b ((C k.castSucc).1 • lam) ((C k.succ).1 • lam) := by
+      P.reflectionBond b (((simpleMul hlam C i hC) k.castSucc).val • lam)
+          (((simpleMul hlam C i hC) k.succ).val • lam) =
+        P.reflectionBond b ((C k.castSucc).val • lam) ((C k.succ).val • lam) := by
     refine TauCeti.reflectionBond_simple_mul_smul_simple_mul_smul hlam (C.minimalCosetRepCovBy k)
       fun h ↦ ?_
     -- A cover on one side of the wall is not the simple reflection `sᵢ`.
@@ -196,7 +198,7 @@ theorem exists_isAChain_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChambe
     (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u) {i : b.support}
     (hi : 0 < P.coroot' i (u • lam)) (ha : ∃ z : ℤ, a * P.coroot' i (u • lam) = z) :
     ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      C.head.1 = (weylCoxeterSystem P b).simple i * u ∧ C.last.1 = u ∧ IsAChain a lam C := by
+      C.head.val = (weylCoxeterSystem P b).simple i * u ∧ C.last.val = u ∧ IsAChain a lam C := by
   have h := minimalCosetRepCovBy_simple_mul_of_coroot'_pos hlam hu hi
   refine ⟨(RelSeries.singleton _ ⟨_, h.isMinimalCosetRep_right⟩ :
     (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc ⟨u, hu⟩ h,
@@ -209,11 +211,11 @@ theorem exists_isAChain_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChambe
 image of `TauCeti.IsAChain.exists_mul_coroot'_eq_intCast`. -/
 theorem IsAChain.exists_mul_coroot'_last_eq_intCast (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) ≤ 0)
-    (hlast : 0 < P.coroot' i (C.last.1 • lam)) :
-    ∃ z : ℤ, a * P.coroot' i (C.last.1 • lam) = z := by
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.val • lam) ≤ 0)
+    (hlast : 0 < P.coroot' i (C.last.val • lam)) :
+    ∃ z : ℤ, a * P.coroot' i (C.last.val • lam) = z := by
   -- `a ⟨x₀ λ, αᵢ^∨⟩` is an integer: it vanishes, or the chain starts on the negative side.
-  obtain ⟨z₁, hz₁⟩ : ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  obtain ⟨z₁, hz₁⟩ : ∃ z : ℤ, a * P.coroot' i (C.head.val • lam) = z := by
     rcases hhead.lt_or_eq with hneg | hzero
     · exact hC.exists_mul_coroot'_eq_intCast hlam i hneg hlast.le
     · exact ⟨0, by simp [hzero]⟩
@@ -229,9 +231,9 @@ an integer, then `⟨x_k λ, αᵢ^∨⟩ > 0` for all `k`; so `C` reflects in `
 (`CoxeterSystem.MinimalCosetRepChain.simpleMul`). -/
 theorem IsAChain.coroot'_smul_pos (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hlast : 0 < P.coroot' i (C.last.1 • lam))
-    (hint : ¬∃ z : ℤ, a * P.coroot' i (C.last.1 • lam) = z) (k : Fin (C.length + 1)) :
-    0 < P.coroot' i ((C k).1 • lam) := by
+    (hC : IsAChain a lam C) (i : b.support) (hlast : 0 < P.coroot' i (C.last.val • lam))
+    (hint : ¬∃ z : ℤ, a * P.coroot' i (C.last.val • lam) = z) (k : Fin (C.length + 1)) :
+    0 < P.coroot' i ((C k).val • lam) := by
   refine lt_of_not_ge fun hk ↦ hint ?_
   simpa using (hC.drop k).exists_mul_coroot'_last_eq_intCast hlam i (by simpa using hk)
     (by simpa using hlast)
@@ -242,9 +244,9 @@ an integer, then `⟨x_k λ, αᵢ^∨⟩ < 0` for all `k`; so `C` reflects in `
 (`CoxeterSystem.MinimalCosetRepChain.simpleMul`). -/
 theorem IsAChain.coroot'_smul_neg (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
-    (hint : ¬∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z) (k : Fin (C.length + 1)) :
-    P.coroot' i ((C k).1 • lam) < 0 := by
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.val • lam) < 0)
+    (hint : ¬∃ z : ℤ, a * P.coroot' i (C.head.val • lam) = z) (k : Fin (C.length + 1)) :
+    P.coroot' i ((C k).val • lam) < 0 := by
   refine lt_of_not_ge fun hk ↦ hint ?_
   simpa using (hC.take k).exists_mul_coroot'_eq_intCast hlam i (by simpa using hhead)
     (by simpa using hk)
@@ -256,14 +258,15 @@ from `x` down to `sᵢ y`. If `x_{k+1} ⋖ x_k` is the last cover of `C` leaving
 `C` (all on the positive side) in `sᵢ`. -/
 theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) ≤ 0)
-    (hlast : 0 < P.coroot' i (C.last.1 • lam)) :
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.val • lam) ≤ 0)
+    (hlast : 0 < P.coroot' i (C.last.val • lam)) :
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      D.head = C.head ∧ D.last.1 = (weylCoxeterSystem P b).simple i * C.last.1 ∧
+      D.head = C.head ∧ D.last.val = (weylCoxeterSystem P b).simple i * C.last.val ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The least `k` from which on the chain stays on the positive side.
   have hex : ∃ k, ∀ j (hj : j ≤ C.length), k ≤ j →
-      0 < P.coroot' i ((C ⟨j, Nat.lt_succ_of_le hj⟩).1 • lam) :=
+      0 < P.coroot' i ((C ⟨j, Nat.lt_succ_of_le hj⟩).val • lam) :=
     ⟨C.length, fun j hj hkj ↦ by
       obtain rfl : j = C.length := le_antisymm hj hkj
       exact hlast⟩
@@ -278,7 +281,7 @@ theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber
     obtain rfl : j = C.length := by omega
     exact hlast
   -- The pairing at `x_k` is nonpositive, by minimality.
-  have hnonpos : P.coroot' i ((C ⟨k, by omega⟩).1 • lam) ≤ 0 := by
+  have hnonpos : P.coroot' i ((C ⟨k, by omega⟩).val • lam) ≤ 0 := by
     refine not_lt.mp fun hk' ↦ Nat.find_min hex (m := k) (by omega) fun j hj hkj ↦ ?_
     rcases hkj.eq_or_lt with rfl | hkj
     · exact hk'
@@ -289,9 +292,9 @@ theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber
     (hpos (k + 1) hkl le_rfl)
   -- Reflect the end `x_{k+1} ⋗ ⋯ ⋗ x_l` of the chain.
   set E := C.drop ⟨k + 1, by omega⟩
-  have hE : (∀ j, 0 < P.coroot' i ((E j).1 • lam)) ∨ ∀ j, P.coroot' i ((E j).1 • lam) < 0 :=
+  have hE : (∀ j, 0 < P.coroot' i ((E j).val • lam)) ∨ ∀ j, P.coroot' i ((E j).val • lam) < 0 :=
     Or.inl fun j ↦ by
-      have hj : (j : ℕ) < C.length - (k + 1) + 1 := j.2
+      have hj : (j : ℕ) < C.length - (k + 1) + 1 := j.isLt
       exact hpos (j + (k + 1)) (by omega) (Nat.le_add_left _ _)
   set D := _root_.CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
   have hjoin : (C.take ⟨k, by omega⟩).last = D.head :=
@@ -307,36 +310,37 @@ then `x_{k+1} = sᵢ x_k`, and the chain is `sᵢ x ⋗ ⋯ ⋗ sᵢ x_k = x_{k+
 start of `C` (all on the negative side) in `sᵢ`. -/
 theorem IsAChain.exists_isAChain_simple_mul_head (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
-    (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.val • lam) < 0)
+    (hlast : 0 ≤ P.coroot' i (C.last.val • lam)) :
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      D.head.1 = (weylCoxeterSystem P b).simple i * C.head.1 ∧ D.last = C.last ∧
+      D.head.val = (weylCoxeterSystem P b).simple i * C.head.val ∧ D.last = C.last ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The first index `k + 1` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
-      0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
+      0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).val • lam) := ⟨C.length, le_rfl, hlast⟩
   classical
   obtain ⟨hle, hnonneg⟩ := Nat.find_spec hex
   obtain ⟨k, hk⟩ : ∃ k, Nat.find hex = k + 1 := Nat.exists_eq_succ_of_ne_zero fun h0 ↦ by
     simp only [h0] at hnonneg
     exact (hhead.trans_le hnonneg).false
   simp only [hk] at hle hnonneg
-  have hneg (j : ℕ) (hj : j ≤ k) : P.coroot' i ((C ⟨j, by omega⟩).1 • lam) < 0 :=
+  have hneg (j : ℕ) (hj : j ≤ k) : P.coroot' i ((C ⟨j, by omega⟩).val • lam) < 0 :=
     lt_of_not_ge fun hj' ↦ Nat.find_min hex (by omega) ⟨by omega, hj'⟩
   -- The cover `x_{k+1} ⋖ x_k` is `sᵢ x_k ⋖ x_k`.
   have hcov := C.minimalCosetRepCovBy ⟨k, hle⟩
   simp only [Fin.castSucc_mk, Fin.succ_mk] at hcov
   have hrefl := reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg hlam hcov i
     (hneg k le_rfl) hnonneg
-  have heq : (C ⟨k + 1, by omega⟩).1 = (weylCoxeterSystem P b).simple i * (C ⟨k, by omega⟩).1 :=
+  have heq : (C ⟨k + 1, by omega⟩).val = (weylCoxeterSystem P b).simple i * (C ⟨k, by omega⟩).val :=
     eq_of_isMinimalCosetRep_of_smul_eq hlam hcov.isMinimalCosetRep_left
       (isMinimalCosetRep_simple_mul_of_coroot'_ne_zero hcov.isMinimalCosetRep_right
         (hneg k le_rfl).ne)
       (by rw [simple_mul_smul_eq_reflection, hrefl])
   -- Reflect the start `x₀ ⋗ ⋯ ⋗ x_k` of the chain.
   set E := C.take ⟨k, by omega⟩
-  have hE : (∀ j, 0 < P.coroot' i ((E j).1 • lam)) ∨ ∀ j, P.coroot' i ((E j).1 • lam) < 0 :=
-    Or.inr fun j ↦ hneg j (by have : (j : ℕ) < k + 1 := j.2; omega)
+  have hE : (∀ j, 0 < P.coroot' i ((E j).val • lam)) ∨ ∀ j, P.coroot' i ((E j).val • lam) < 0 :=
+    Or.inr fun j ↦ hneg j (by have : (j : ℕ) < k + 1 := j.isLt; omega)
   set D := _root_.CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
   have hjoin : D.last = (C.drop ⟨k + 1, by omega⟩).head :=
     Subtype.ext (by simpa [D, E] using heq.symm)

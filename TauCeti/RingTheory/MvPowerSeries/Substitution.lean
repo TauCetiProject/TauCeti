@@ -47,8 +47,12 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   univariate series viewed in several variables is evaluating it at the matching entry of the
   family — the case of `aeval_subst` at a single variable, which is how a one-variable series
   meets a two-variable evaluation.
-* `MvPowerSeries.hasSubst_pair` : a pair of series with vanishing constant coefficient is a
-  legitimate substitution family for the two variables indexed by `Unit ⊕ Unit`.
+* `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
+  sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
+  a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
+* `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
+  with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
+  two variables indexed by `Unit ⊕ Unit`.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
   `subst_coordSpecialize_X_*` lemmas : the substitution sending one coordinate variable to `X` and
   every other to `0`, for an index type of any size.
@@ -67,6 +71,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.finTwo_X_eq_X` : the pair `![X 0, X 1]` is the family of variables `X`.
 * `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
   `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
+* `MvPowerSeries.coeff_subst_X_smul_X` : the `n`-th coefficient of `f(X, t X)` is
+  `∑ b ∈ range (n + 1), coeff (n - b, b) f * t ^ b`.
 * `MvPowerSeries.coeff_subst_X_one_X_zero` : the coefficients of `f(Y, X)`.
 * `MvPowerSeries.coeff_subst_X_add_X_X`, `MvPowerSeries.coeff_subst_X_X_add_X`,
   `MvPowerSeries.coeff_subst_X_zero_X_one`, `MvPowerSeries.coeff_subst_X_one_X_two` : the
@@ -215,6 +221,14 @@ theorem hasSubst_pair (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂
     HasSubst (pairSubstitution q₁ q₂) :=
   hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simpa)
 
+/-- A pair of series that can each be substituted into a one-variable series forms a substitution
+family for the two variables indexed by `Unit ⊕ Unit`. -/
+theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
+    (hq₂ : PowerSeries.HasSubst q₂) :
+    HasSubst (pairSubstitution q₁ q₂) :=
+  hasSubst_of_constantCoeff_nilpotent fun i ↦ by
+    rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simpa [pairSubstitution]
+
 end HasSubstPair
 
 section CoordSpecialize
@@ -357,6 +371,53 @@ theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
     · have : n ≠ d 1 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
       simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
     · simp [Finsupp.prod_fintype, hd₀]
+
+private theorem coeff_prod_X_smul_X (t : O) (n : ℕ) (e : Fin 2 →₀ ℕ) :
+    coeff (Finsupp.single () n)
+        (e.prod fun i k ↦ (![(PowerSeries.X : PowerSeries O), t • PowerSeries.X] i) ^ k) =
+      if n = e 0 + e 1 then t ^ e 1 else 0 := by
+  have hfp : (e.prod fun i k ↦ (![(PowerSeries.X : PowerSeries O), t • PowerSeries.X] i) ^ k) =
+      t ^ e 1 • (PowerSeries.X : PowerSeries O) ^ (e 0 + e 1) := by
+    rw [Finsupp.prod_of_support_subset e (Finset.subset_univ _) _ (fun _ _ ↦ pow_zero _),
+      Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      Algebra.smul_def, mul_pow, ← map_pow, mul_left_comm, ← pow_add, ← Algebra.smul_def]
+  rw [← PowerSeries.coeff_def Finsupp.single_eq_same, hfp, PowerSeries.coeff_smul,
+    PowerSeries.coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero]
+
+/-- Substituting `(X, t X)` into a two-variable series `f(X₀, X₁)` collects each homogeneous
+diagonal of total degree `n` as a polynomial in `t`: the `n`-th coefficient of `f(X, t X)` is
+`∑ b ∈ Finset.range (n + 1), coeff (n - b, b) f * t ^ b`. -/
+theorem coeff_subst_X_smul_X (t : O) (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![PowerSeries.X, t • PowerSeries.X] f) =
+      ∑ b ∈ Finset.range (n + 1),
+        coeff (Finsupp.single 0 (n - b) + Finsupp.single 1 b) f * t ^ b := by
+  set s : Fin 2 → PowerSeries O := ![PowerSeries.X, t • PowerSeries.X]
+  have hc : constantCoeff (PowerSeries.X : PowerSeries O) = 0 := PowerSeries.constantCoeff_X
+  have hs : HasSubst s := hasSubst_of_constantCoeff_zero fun i ↦ by
+    fin_cases i <;> simp [s, hc]
+  rw [PowerSeries.coeff_def Finsupp.single_eq_same, coeff_subst hs]
+  let emb : ℕ ↪ (Fin 2 →₀ ℕ) :=
+    ⟨fun b ↦ Finsupp.single 0 (n - b) + Finsupp.single 1 b, fun b₁ b₂ hb ↦ by
+      simpa using DFunLike.congr_fun hb 1⟩
+  have hsupp : (Function.support fun e : Fin 2 →₀ ℕ ↦
+      coeff e f • coeff (Finsupp.single () n) (e.prod fun i k ↦ s i ^ k)) ⊆
+      (Finset.range (n + 1)).map emb := by
+    intro e he
+    rw [Function.mem_support, coeff_prod_X_smul_X] at he
+    split_ifs at he with hsum
+    · simp only [Finset.coe_map, Set.mem_image, Finset.mem_coe, Finset.mem_range]
+      have he₀ : n - e 1 = e 0 := by omega
+      refine ⟨e 1, by omega, ?_⟩
+      ext i
+      fin_cases i <;> simp [emb, he₀]
+    · exact absurd (smul_zero _) he
+  rw [finsum_eq_sum_of_support_subset _ hsupp, Finset.sum_map]
+  refine Finset.sum_congr rfl fun b hb ↦ ?_
+  rw [Finset.mem_range] at hb
+  have h0 : emb b 0 = n - b := by simp [emb]
+  have h1 : emb b 1 = b := by simp [emb]
+  have hemb : emb b = Finsupp.single 0 (n - b) + Finsupp.single 1 b := by simp [emb]
+  rw [coeff_prod_X_smul_X, h0, h1, ite_eq_left (by omega), smul_eq_mul, hemb]
 
 /-- Swapping the variables of a two-variable series `f(X, Y)`: the coefficient of `XⁱYʲ` in
 `f(Y, X)` is the coefficient of `XʲYⁱ` in `f`. -/
@@ -554,10 +615,29 @@ into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of 
 `u' + v' + G(u, v)`. -/
 theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
     (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ O}
-    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
+    (h : HasSubst ![u, v])
     (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
     (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
     (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
+  -- The ideal spanned by the coefficients of `G` squares to zero, so its elements are nilpotent.
+  have hsq : Ideal.span (Set.range fun d ↦ coeff d G) *
+      Ideal.span (Set.range fun d ↦ coeff d G) = ⊥ := by
+    rw [Ideal.span_mul_span, Ideal.span_eq_bot]
+    rintro _ ⟨_, ⟨d, rfl⟩, _, ⟨e, rfl⟩, rfl⟩
+    exact hG d e
+  have hnil {x : O} (hx : x ∈ Ideal.span (Set.range fun d ↦ coeff d G)) : IsNilpotent x :=
+    ⟨2, by
+      have := Ideal.mul_mem_mul hx hx
+      rwa [hsq, Ideal.mem_bot, ← pow_two] at this⟩
+  have hnil' {a b : MvPowerSeries τ O} (ha : IsNilpotent (constantCoeff a))
+      (hab : ∀ e, coeff e (b - a) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
+      IsNilpotent (constantCoeff b) := by
+    have := (Commute.all _ _).isNilpotent_add ha (hnil (by simpa using hab 0))
+    rwa [add_sub_cancel] at this
+  have h' : HasSubst ![u', v'] := hasSubst_of_constantCoeff_nilpotent fun s ↦ by
+    fin_cases s
+    · exact hnil' (h.const_coeff 0) hu
+    · exact hnil' (h.const_coeff 1) hv
   rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
     (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
       ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]

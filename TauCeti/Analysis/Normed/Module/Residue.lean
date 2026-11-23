@@ -72,7 +72,7 @@ of the scalars. -/
 def unitClosedBallSubmodule : Submodule (Subring.unitClosedBall R) M :=
   { (IsUltrametricDist.closedBall_openAddSubgroup M one_pos : AddSubgroup M) with
     smul_mem' a m hm := mem_closedBall_zero_iff.mpr <| (norm_smul_le (a : R) m).trans <|
-      (mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.2)).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.property)).trans
         (mem_closedBall_zero_iff.mp hm) }
 
 variable {R M} in
@@ -129,7 +129,7 @@ theorem norm_lt_one_of_mem_unitBallIdeal_smul_top {m : unitClosedBallSubmodule R
     ‖(m : M)‖ < 1 := by
   refine Submodule.smul_induction_on hm (fun a ha n _ ↦ ?_) fun m n hm hn ↦ ?_
   · exact (norm_smul_le (a : R) (n : M)).trans_lt <|
-      (mul_le_of_le_one_right (norm_nonneg _) (mem_unitClosedBallSubmodule.mp n.2)).trans_lt
+      (mul_le_of_le_one_right (norm_nonneg _) (mem_unitClosedBallSubmodule.mp n.property)).trans_lt
         (mem_unitBallIdeal.mp ha)
   · exact (IsUltrametricDist.norm_add_le_max (m : M) n).trans_lt (max_lt hm hn)
 
@@ -159,7 +159,7 @@ theorem mem_unitBallIdeal_smul_top_iff (ϖ : NormedRing.PseudoUniformizer R)
     m ∈ (unitBallIdeal R • ⊤ :
       Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) ↔ ‖(m : M)‖ < 1 :=
   ⟨norm_lt_one_of_mem_unitBallIdeal_smul_top, fun hm ↦ mem_unitBallIdeal_smul_top_of_norm_le ϖ
-    (le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos ϖ.norm_lt_one (hM _) hm)⟩
+    (le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos (hM _) hm)⟩
 
 namespace ResidueModule
 

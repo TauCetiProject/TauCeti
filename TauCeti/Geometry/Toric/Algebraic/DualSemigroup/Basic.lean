@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.Cone.Dual
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Convex.Cone.Saturation
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # Dual semigroups of toric cones
@@ -25,6 +26,8 @@ Maps of lattices carrying one cone into another induce contravariant maps of dua
 ## Main declarations
 
 * `TauCeti.Toric.dualSemigroup`: integral characters nonnegative on a cone.
+* `TauCeti.Toric.nsmulSaturated_dualSemigroup`: the dual semigroup of any cone is saturated under
+  positive natural multiples.
 * `TauCeti.Toric.dualSemigroupMap`: the contravariant map induced by a compatible map of
   lattices and cones.
 
@@ -49,16 +52,15 @@ variable {N N' N'' V V' V'' : Type*}
 
 /-- The dual semigroup of a cone consists of the integral characters whose real-linear
 extensions are nonnegative on the cone. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 noncomputable def dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     AddSubmonoid (N →+ ℤ) :=
-  (PointedCone.dual (Module.Dual.eval ℝ V) σ).toAddSubmonoid.comap hi.realCharacter
+  (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter
 
-/-- The dual semigroup is the inverse image of Mathlib's dual cone under real extension of
+/-- The dual semigroup is the lattice-point monoid of Mathlib's dual cone under real extension of
 integral characters. -/
 theorem dualSemigroup_def (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     dualSemigroup hi σ =
-      (PointedCone.dual (Module.Dual.eval ℝ V) σ).toAddSubmonoid.comap hi.realCharacter :=
+      (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter :=
   -- The parentheses matter: `(rfl)` elaborates against the definition, whereas a bare `rfl` in
   -- an exported theorem would require `dualSemigroup` to be `@[expose]`d.
   (rfl)
@@ -67,19 +69,28 @@ theorem dualSemigroup_def (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
 nonnegative at every point of the cone. -/
 @[simp]
 theorem mem_dualSemigroup (hi : IsIntegralLattice i) (m : N →+ ℤ) :
-    m ∈ dualSemigroup hi σ ↔ ∀ ⦃x⦄, x ∈ σ → 0 ≤ hi.realCharacter m x :=
-  Iff.rfl
+    m ∈ dualSemigroup hi σ ↔ ∀ ⦃x⦄, x ∈ σ → 0 ≤ hi.realCharacter m x := by
+  simp only [dualSemigroup_def, PointedCone.mem_latticePoints, PointedCone.mem_dual,
+    Module.Dual.eval_apply, SetLike.mem_coe]
 
 /-- Enlarging a cone shrinks its dual semigroup. -/
 @[gcongr]
 theorem dualSemigroup_anti (hi : IsIntegralLattice i) {σ τ : PointedCone ℝ V} (h : σ ≤ τ) :
     dualSemigroup hi τ ≤ dualSemigroup hi σ := by
-  intro m hm x hx
-  exact hm (h hx)
+  intro m hm
+  rw [mem_dualSemigroup] at hm ⊢
+  exact fun x hx ↦ hm (h hx)
 
 /-- Taking the dual semigroup reverses the order on pointed cones. -/
 theorem dualSemigroup_antitone (hi : IsIntegralLattice i) :
     Antitone (dualSemigroup hi) := fun _ _ h ↦ dualSemigroup_anti hi h
+
+/-- The dual semigroup of any cone is saturated under positive natural multiples: if a positive
+multiple of an integral character is nonnegative on `σ`, so is the character itself. -/
+@[simp]
+theorem nsmulSaturated_dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
+    (dualSemigroup hi σ).NSMulSaturated :=
+  PointedCone.nsmulSaturated_latticePoints _ _
 
 /-- The dual semigroup of the zero cone is the full character group. -/
 @[simp]
@@ -94,7 +105,8 @@ theorem dualSemigroup_bot (hi : IsIntegralLattice i) :
 theorem dualSemigroup_top (hi : IsIntegralLattice i) :
     dualSemigroup hi (⊤ : PointedCone ℝ V) = ⊥ := by
   refine eq_bot_iff.2 fun m hm ↦ AddSubmonoid.mem_bot.2 <| hi.realCharacter_injective ?_
-  have h : hi.realCharacter m ∈ PointedCone.dual (Module.Dual.eval ℝ V) Set.univ := hm
+  have h : hi.realCharacter m ∈ PointedCone.dual (Module.Dual.eval ℝ V) Set.univ := by
+    rwa [dualSemigroup_def, PointedCone.mem_latticePoints] at hm
   rwa [PointedCone.dual_univ (p := Module.Dual.eval ℝ V) fun f g hfg ↦
     LinearMap.ext fun x ↦ LinearMap.congr_fun hfg x, Submodule.zero_eq_bot,
     Submodule.mem_bot, ← map_zero hi.realCharacter] at h
@@ -105,17 +117,16 @@ is a point. -/
 instance subsingleton_dualSemigroup_top (hi : IsIntegralLattice i) :
     Subsingleton (dualSemigroup hi (⊤ : PointedCone ℝ V)) :=
   ⟨fun a b ↦ Subtype.ext <| by
-    have ha : (a : N →+ ℤ) = 0 := by simpa using a.2
-    have hb : (b : N →+ ℤ) = 0 := by simpa using b.2
+    have ha : (a : N →+ ℤ) = 0 := by simpa using a.property
+    have hb : (b : N →+ ℤ) = 0 := by simpa using b.property
     rw [ha, hb]⟩
 
 /-- The dual semigroup of a join is the intersection of the two dual semigroups. -/
 @[simp]
 theorem dualSemigroup_sup (hi : IsIntegralLattice i) (σ τ : PointedCone ℝ V) :
     dualSemigroup hi (σ ⊔ τ) = dualSemigroup hi σ ⊓ dualSemigroup hi τ := by
-  simp only [dualSemigroup_def, PointedCone.dual_sup, PointedCone.dual_union]
-  ext m
-  simp [AddSubmonoid.mem_inf]
+  simp only [dualSemigroup_def, PointedCone.dual_sup, PointedCone.dual_union,
+    PointedCone.latticePoints_inf]
 
 /-- On a cone generated by a set of lattice vectors, membership in the dual semigroup is
 equivalent to the corresponding family of integral inequalities. -/
@@ -123,7 +134,7 @@ theorem mem_dualSemigroup_hull_image (hi : IsIntegralLattice i) (s : Set N)
     (m : N →+ ℤ) :
     m ∈ dualSemigroup hi (PointedCone.hull ℝ (i '' s)) ↔
       ∀ n ∈ s, 0 ≤ m n := by
-  rw [dualSemigroup_def, AddSubmonoid.mem_comap, PointedCone.dual_hull]
+  rw [dualSemigroup_def, PointedCone.mem_latticePoints, PointedCone.dual_hull]
   simp
 
 /-! ### Functoriality -/

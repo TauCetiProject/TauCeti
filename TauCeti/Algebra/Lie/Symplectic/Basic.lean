@@ -35,10 +35,19 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
   symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
   ring.
+* `LieAlgebra.Symplectic.J_mul_mem_sp`: `J` times a symmetric matrix lies in `sp l R`.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
+* `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
+  `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`
+  (`LieAlgebra.Symplectic.mem_sp_iff_jConj_eq`), and the symmetrization `Z ↦ Z + J Zᵀ J`
+  into `sp l R`.
+* `LieAlgebra.Symplectic.lie_symmetrize_symmetrize`: the bracket of two symmetrizations is a
+  symmetrization.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
+* `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
+  scalar, over every commutative ring.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
@@ -121,11 +130,65 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
   rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
   noncomm_ring
 
+/-- **`J` times a symmetric matrix is a symplectic Lie matrix**: `(J S)ᵀ J = S (-J) J = S` and
+`-(J (J S)) = S`, both since `J * J = -1`. These are the Hamiltonian matrices of quadratic
+Hamiltonians. -/
+theorem J_mul_mem_sp {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) : J l R * S ∈ sp l R := by
+  simp [transpose_mul, hS.eq, Matrix.mul_assoc, ← Matrix.mul_assoc (J l R) (J l R), J_squared]
+
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     J l R * X * (J l R)⁻¹ = -Xᵀ := by
   rw [(mem_sp_iff_transpose_eq_J_conj_neg X).mp hX]
   simp
+
+/-- The linear involution `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`. -/
+noncomputable def jConj : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
+  LinearMap.mulLeft R (J l R) ∘ₗ LinearMap.mulRight R (J l R) ∘ₗ
+    (transposeLinearEquiv (l ⊕ l) (l ⊕ l) R R).toLinearMap
+
+theorem jConj_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj Z = J l R * Zᵀ * J l R := by
+  simp [jConj, mul_assoc]
+
+/-- `Z ↦ J Zᵀ J` is an involution. -/
+@[simp]
+theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := by
+  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg,
+    neg_neg, ← mul_assoc]
+  simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
+
+/-- The fixed points of `Z ↦ J Zᵀ J` are exactly the symplectic Lie algebra. -/
+theorem mem_sp_iff_jConj_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) : A ∈ sp l R ↔ jConj A = A := by
+  rw [jConj_apply, mem_sp_iff_J_mul_transpose_mul_J_eq]
+
+/-- `Z ↦ J Zᵀ J` reverses products up to sign. -/
+theorem jConj_mul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
+  simp only [jConj_apply]
+  calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
+        rw [J_squared, neg_neg, transpose_mul]
+        noncomm_ring
+    _ = _ := by noncomm_ring
+
+/-- The symmetrization `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on
+`sp l R`. -/
+noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
+  toFun Z := ⟨Z + jConj Z, by
+    rw [mem_sp_iff_jConj_eq, map_add, jConj_jConj, add_comm]⟩
+  map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
+  map_smul' c Z := by ext1; simp
+
+@[simp]
+theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
+  (rfl)
+
+/-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
+theorem lie_symmetrize_symmetrize (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
+    ⁅symmetrize X, symmetrize Y⁆ = symmetrize (⁅X, Y⁆ + ⁅X, jConj Y⁆) := by
+  ext1
+  rw [LieSubalgebra.coe_bracket, coe_symmetrize_apply, coe_symmetrize_apply, coe_symmetrize_apply]
+  simp only [Ring.lie_def, map_add, map_sub, jConj_mul, jConj_jConj]
+  noncomm_ring
 
 end LieAlgebra.Symplectic
 
@@ -153,6 +216,60 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
       fromBlocks_apply₁₂,
     fromBlocks_apply₂₁, fromBlocks_apply₂₂]
   grind
+
+/-- The long root vector `E_(i, n + i)` lies in `sp l R`. -/
+theorem single_inl_inr_mem_sp (i : l) :
+    single (Sum.inl i) (Sum.inr i) (1 : R) ∈ LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind
+
+/-- The long root vector `E_(n + i, i)` lies in `sp l R`. -/
+theorem single_inr_inl_mem_sp (i : l) :
+    single (Sum.inr i) (Sum.inl i) (1 : R) ∈ LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind
+
+/-- The Levi element `E_(i, j) - E_(n + j, n + i)` lies in `sp l R`. -/
+theorem single_inl_inl_sub_single_inr_inr_mem_sp (i j : l) :
+    single (Sum.inl i) (Sum.inl j) (1 : R) - single (Sum.inr j) (Sum.inr i) 1 ∈
+      LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind [Matrix.sub_apply]
+
+/-- **A matrix commuting with the symplectic Lie algebra is scalar**, over every commutative
+ring: commuting with the long root vectors `E_(i, n + i)` and `E_(n + i, i)` kills the
+off-diagonal entries and pairs `i` with `n + i`, and commuting with `E_(i, j) - E_(n + j, n + i)`
+compares the diagonal entries at `i` and `j`. -/
+theorem mem_range_scalar_of_commute_sp (M : Matrix (l ⊕ l) (l ⊕ l) R)
+    (hM : ∀ X ∈ LieAlgebra.Symplectic.sp l R, Commute M X) :
+    M ∈ Set.range (scalar (l ⊕ l)) := by
+  cases isEmpty_or_nonempty l with
+  | inl _ => exact ⟨0, by ext a; exact isEmptyElim a⟩
+  | inr h =>
+  obtain ⟨z⟩ := h
+  -- Commuting with the long root vectors makes `M` diagonal, with equal entries at `i` and
+  -- `n + i`.
+  have hp (i : l) := (hM _ (single_inl_inr_mem_sp (R := R) i)).symm
+  have hn (i : l) := (hM _ (single_inr_inl_mem_sp (R := R) i)).symm
+  have hoff (a b : l ⊕ l) (hab : a ≠ b) : M a b = 0 := by
+    cases b with
+    | inl i => exact col_eq_zero_of_commute_single (hp i) hab
+    | inr i => exact col_eq_zero_of_commute_single (hn i) hab
+  -- Commuting with a Levi element compares the diagonal entries at `i` and `j`.
+  have hd (i : l) : M (Sum.inl i) (Sum.inl i) = M (Sum.inl z) (Sum.inl z) := by
+    have he := congrArg (fun N : Matrix (l ⊕ l) (l ⊕ l) R ↦ N (Sum.inl i) (Sum.inl z))
+      (hM _ (single_inl_inl_sub_single_inr_inr_mem_sp (R := R) i z)).eq
+    simpa [mul_sub, sub_mul, mul_apply, single_apply, Finset.sum_ite_eq', Finset.sum_ite_eq]
+      using he
+  refine ⟨M (Sum.inl z) (Sum.inl z), ?_⟩
+  ext a b
+  by_cases hab : a = b
+  · subst b
+    rw [scalar_apply, diagonal_apply_eq]
+    cases a with
+    | inl i => exact (hd i).symm
+    | inr i => exact ((diag_eq_of_commute_single (hp i)).symm.trans (hd i)).symm
+  · simp [scalar_apply, diagonal_apply_ne _ hab, hoff a b hab]
 
 end Matrix
 

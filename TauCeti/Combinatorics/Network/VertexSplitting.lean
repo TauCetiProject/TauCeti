@@ -194,8 +194,8 @@ theorem splitLift_true {s t : V} (p : ArrowWalk Q s t) :
 /-- The projection of a walk in the split network to `Q`, which forgets its split arrows and keeps
 its original arrows. -/
 def splitProj {x : V × Bool} : ∀ {y : V × Bool}, ArrowWalk (SplitHom Q) x y → ArrowWalk Q x.1 y.1
-  | _, @Quiver.Path.nil _ .(_) _ => nil _
-  | _, @Quiver.Path.cons _ .(_) _ _ _ p e => (splitProj p).comp e.toWalk
+  | _, @Quiver.Path.nil _ .(_) .(x) => nil _
+  | _, @Quiver.Path.cons _ .(_) .(x) _ _ p e => (splitProj p).comp e.toWalk
 
 @[simp]
 theorem splitProj_nil (x : V × Bool) : (nil x : ArrowWalk (SplitHom Q) x x).splitProj = nil x.1 :=
@@ -226,7 +226,7 @@ theorem splitLift_splitProj {s : V} {y : V × Bool} (q : ArrowWalk (SplitHom Q) 
   | @cons z y q e ih =>
     rcases z with ⟨u, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
     · exact e.elim
-    · obtain rfl : u = w := e.2
+    · obtain rfl : u = w := e.property
       rw [SplitHom.eq_split e, splitProj_cons, SplitHom.toWalk_split, splitLift_true]
       simpa [comp] using ih
     · obtain ⟨e, rfl⟩ := SplitHom.exists_original e
@@ -428,12 +428,12 @@ starting at the exit of `s`: the lift of `p.cons e` with the split arrow of `s` 
 front. It ends at the entrance of `x` for `b = false` and at the exit of `x` for `b = true`. -/
 def splitLiftExit {s : V} : ∀ {t x : V} (b : Bool), ArrowWalk Q s t → Q t x →
     ArrowWalk (SplitHom Q) (s, true) (x, b)
-  | _, _, false, @Quiver.Path.nil _ .(_) _, e => (nil _).cons (SplitHom.original e)
-  | _, _, true, @Quiver.Path.nil _ .(_) _, e =>
+  | _, _, false, @Quiver.Path.nil _ .(_) .(s), e => (nil _).cons (SplitHom.original e)
+  | _, _, true, @Quiver.Path.nil _ .(_) .(s), e =>
     ((nil _).cons (SplitHom.original e)).cons (SplitHom.split _)
-  | _, _, false, @Quiver.Path.cons _ .(_) _ _ _ p e', e =>
+  | _, _, false, @Quiver.Path.cons _ .(_) .(s) _ _ p e', e =>
     (splitLiftExit true p e').cons (SplitHom.original e)
-  | _, _, true, @Quiver.Path.cons _ .(_) _ _ _ p e', e =>
+  | _, _, true, @Quiver.Path.cons _ .(_) .(s) _ _ p e', e =>
     ((splitLiftExit true p e').cons (SplitHom.original e)).cons (SplitHom.split _)
 
 @[simp]
@@ -628,7 +628,7 @@ theorem assignment_originalAssignment (g : Assignment (SplitHom Q) K) :
   funext x y e
   rcases x with ⟨v, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
   · exact e.elim
-  · obtain rfl : v = w := e.2
+  · obtain rfl : v = w := e.property
     rw [eq_split e, assignment_split]
   · obtain ⟨e, rfl⟩ := exists_original e
     rw [assignment_original, originalAssignment_apply]
@@ -738,9 +738,9 @@ private theorem sum_sum_split (v : V) :
     (∑ w, ∑ e : SplitHom Q (v, false) (w, true), g e = g (split v)) ∧
       ∑ w, ∑ e : SplitHom Q (w, false) (v, true), g e = g (split v) := by
   constructor
-  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.2.symm).elim]
+  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.property.symm).elim]
     exact Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim
-  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.2).elim]
+  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.property).elim]
     exact Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim
 
 variable [∀ v w, Fintype (Q v w)]
@@ -855,7 +855,7 @@ theorem arrowSum_assignment_compl [AddCommMonoid K] (f : Assignment Q K) (φ : V
       rw [Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim]
       simp
     · rw [ite_eq_right_of_eq_false _ _ (eq_false hvw)]
-      exact Finset.sum_eq_zero fun e _ ↦ (hvw e.2).elim
+      exact Finset.sum_eq_zero fun e _ ↦ (hvw e.property).elim
   have horiginal (v w : V) :
       ∑ e ∈ @univ _ (instFintype Q (v, true) (w, false)),
           (if (v, true) ∈ S ∧ (w, false) ∈ Sᶜ then assignment f φ e else 0) =

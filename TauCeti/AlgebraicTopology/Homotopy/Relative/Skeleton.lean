@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Compression
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
@@ -47,6 +48,7 @@ follow from the exact homotopy sequence of the pair `(C, Xⁿ)`.
   `k ≤ n`.
 * `TauCeti.injective_homotopyGroupMap_skeletonLT`: `π_k(Xⁿ, a) → π_k(C, a)` is injective for
   `k < n`.
+* `TauCeti.isNConnected_inclusion_skeletonLT`: the inclusion `Xⁿ ↪ C` is an `n`-connected map.
 
 ## References
 
@@ -84,16 +86,16 @@ theorem subsingleton_relHomotopyGroup_skeletonLT {N : Type v} [Finite N] (hN : N
     rw [finrank_fintype_fun_eq_card, Fintype.card_option, ← Nat.card_eq_fintype_card]
     omega
   let f : C(closedBall (0 : Option N → ℝ) 1, C) :=
-    (p.1 : C(I × (I^N), C)).comp (e.symm : C(closedBall (0 : Option N → ℝ) 1, I × (I^N)))
+    (p.val : C(I × (I^N), C)).comp (e.symm : C(closedBall (0 : Option N → ℝ) 1, I × (I^N)))
   obtain ⟨g, ⟨H⟩, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C)
     (isCompact_closedBall (0 : Option N → ℝ) 1) hdim f
-  have hfe (y : I × (I^N)) : f (e y) = p.1 y := congrArg p.1 (e.symm_apply_apply y)
+  have hfe (y : I × (I^N)) : f (e y) = p.val y := congrArg p.val (e.symm_apply_apply y)
   -- The boundary of the cube is sent into `A`, so the homotopy is relative to it.
   have hbd {y : I × (I^N)} (hy : y ∈ Cube.prodBoundary N) :
       ((f (e y) : C) : X) ∈ skeletonLT C (n + 1) := by
-    obtain ⟨b, hb⟩ := RelGenLoop.mapsTo_prodBoundary p.2 hy
+    obtain ⟨b, hb⟩ := RelGenLoop.mapsTo_prodBoundary p.property hy
     rw [hfe, ← SetLike.mem_coe, hA, ← hb]
-    exact b.2
+    exact b.property
   refine ⟨g.comp (e : C(I × (I^N), closedBall (0 : Option N → ℝ) 1)),
     ⟨{ toHomotopy := (H.toHomotopy.compContinuousMap
           (e : C(I × (I^N), closedBall (0 : Option N → ℝ) 1))).cast
@@ -112,14 +114,8 @@ theorem surjective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat
   classical
   rcases isEmpty_or_nonempty N with hN₀ | ⟨⟨i⟩⟩
   · -- In degree zero, homotopy classes are path components.
-    intro c
-    induction c using Quotient.inductionOn with | h γ => ?_
-    obtain ⟨b, hb⟩ := exists_joined_skeletonLT hA hAC (γ 0)
-    refine ⟨⟦(genLoopHomeoOfIsEmpty N a).symm b⟧,
-      (homotopyGroupEquivZerothHomotopyOfIsEmpty N _).injective ?_⟩
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
-    exact ZerothHomotopy.sound hb.somePath
+    exact HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined _ rfl
+      (exists_joined_skeletonLT hA hAC)
   · -- Split off a direction `i` and use exactness of the pair at `π_k(C, a)`.
     let e := Equiv.optionSubtypeNe i
     have hcard : Nat.card {j // j ≠ i} < n := by
@@ -145,17 +141,8 @@ theorem injective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat.
   classical
   rcases isEmpty_or_nonempty N with hN₀ | hN₀
   · -- In degree zero, homotopy classes are path components.
-    intro c d hcd
-    induction c using Quotient.inductionOn with | h γ => ?_
-    induction d using Quotient.inductionOn with | h δ => ?_
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty N a).injective
-    have := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty N _) hcd
-    rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, GenLoop.map_apply] at this
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
-    exact ZerothHomotopy.sound
-      ((joined_skeletonLT_iff (by omega) hA hAC).1 (Quotient.exact this)).somePath
+    exact HomotopyGroup.map_injective_of_isEmpty_of_joined _ rfl
+      fun _ _ ↦ (joined_skeletonLT_iff (by omega) hA hAC).1
   · -- In positive degrees the induced map is a homomorphism, and by exactness of the pair at
     -- `π_k(A, a)` its kernel consists of boundaries, which are trivial.
     have := subsingleton_relHomotopyGroup_skeletonLT hN hA hAC a
@@ -169,5 +156,14 @@ theorem injective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat.
     -- Both sides are the identity of `π_k(A, a)`, once read on the subspace of the pair and once
     -- on `A`; these are the same group.
     rfl
+
+/-- **The inclusion of the `n`-skeleton is an `n`-connected map** (Hatcher, Corollary 4.12). If `A`
+is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then the inclusion
+`A ↪ C` is `n`-connected. -/
+theorem isNConnected_inclusion_skeletonLT (hA : (skeletonLT C (n + 1) : Set X) = A)
+    (hAC : A ⊆ C) : (ContinuousMap.inclusion hAC).IsNConnected n where
+  exists_joined := exists_joined_skeletonLT hA hAC
+  injective k hk := injective_homotopyGroupMap_skeletonLT (by simpa using hk) hA hAC
+  surjective k hk := surjective_homotopyGroupMap_skeletonLT (by simpa using hk) hA hAC
 
 end TauCeti

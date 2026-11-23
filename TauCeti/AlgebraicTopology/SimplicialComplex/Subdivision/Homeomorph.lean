@@ -50,14 +50,14 @@ private abbrev VertexOrder {K : AbstractSimplicialComplex ι} (σ : Face K) :=
 
 /-- The closed chamber in which the coordinates occur in decreasing order along `e`. -/
 private def orderChamber {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) : Set (StandardSimplex σ.1) :=
-  {x | Antitone fun i => x.1 (e i).1}
+    (e : VertexOrder σ) : Set (StandardSimplex σ.val) :=
+  {x | Antitone fun i => x.val (e i).val}
 
 private theorem isClosed_orderChamber {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) : IsClosed (orderChamber σ e) := by
   -- Expand antitonicity as an intersection of closed coordinate inequalities.
   rw [show orderChamber σ e =
-      ⋂ i, ⋂ j, ⋂ (_ : i ≤ j), {x | x.1 (e j).1 ≤ x.1 (e i).1} by
+      ⋂ i, ⋂ j, ⋂ (_ : i ≤ j), {x | x.val (e j).val ≤ x.val (e i).val} by
     ext x
     simp [orderChamber, Antitone]]
   apply isClosed_iInter
@@ -67,22 +67,22 @@ private theorem isClosed_orderChamber {K : AbstractSimplicialComplex ι} (σ : F
   apply isClosed_iInter
   intro _
   exact isClosed_le
-    ((continuous_apply (e j).1).comp continuous_induced_dom)
-    ((continuous_apply (e i).1).comp continuous_induced_dom)
+    ((continuous_apply (e j).val).comp continuous_induced_dom)
+    ((continuous_apply (e i).val).comp continuous_induced_dom)
 
 /-- Order the vertices of a simplex by decreasing coordinate, breaking ties arbitrarily. -/
 private noncomputable def decreasingVertexOrder {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (x : StandardSimplex σ.1) : VertexOrder σ :=
+    (x : StandardSimplex σ.val) : VertexOrder σ :=
   let e : VertexOrder σ := (Fintype.equivFinOfCardEq (by simp)).symm
-  (Tuple.sort (fun i => OrderDual.toDual (x.1 (e i).1))).trans e
+  (Tuple.sort (fun i => OrderDual.toDual (x.val (e i).val))).trans e
 
 private theorem mem_orderChamber_decreasingVertexOrder {K : AbstractSimplicialComplex ι}
-    (σ : Face K) (x : StandardSimplex σ.1) :
+    (σ : Face K) (x : StandardSimplex σ.val) :
     x ∈ orderChamber σ (decreasingVertexOrder σ x) := by
   let e : VertexOrder σ := (Fintype.equivFinOfCardEq (by simp)).symm
   simpa only [orderChamber, Set.mem_ofPred_eq, decreasingVertexOrder, Equiv.trans_apply,
     Monotone, Antitone, Function.comp_apply, OrderDual.toDual_le_toDual, e] using
-    Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1))
+    Tuple.monotone_sort (fun i => OrderDual.toDual (x.val (e i).val))
 
 private theorem iUnion_orderChamber {K : AbstractSimplicialComplex ι} (σ : Face K) :
     ⋃ e : VertexOrder σ, orderChamber σ e = Set.univ := by
@@ -94,11 +94,11 @@ private theorem iUnion_orderChamber {K : AbstractSimplicialComplex ι} (σ : Fac
 /-- Extend the ordered coordinates by zero after the last vertex. -/
 private noncomputable def chamberOrderedCoord {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) (x : orderChamber σ e) (k : ℕ) : ℝ :=
-  if h : k < σ.1.card then x.1.1 (e ⟨k, h⟩).1 else 0
+  if h : k < σ.val.card then x.val.val (e ⟨k, h⟩).val else 0
 
 private theorem chamberOrderedCoord_of_lt {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (x : orderChamber σ e) {k : ℕ} (hk : k < σ.1.card) :
-    chamberOrderedCoord σ e x k = x.1.1 (e ⟨k, hk⟩).1 := by
+    (e : VertexOrder σ) (x : orderChamber σ e) {k : ℕ} (hk : k < σ.val.card) :
+    chamberOrderedCoord σ e x k = x.val.val (e ⟨k, hk⟩).val := by
   rw [chamberOrderedCoord]
   split
   · congr
@@ -106,7 +106,7 @@ private theorem chamberOrderedCoord_of_lt {K : AbstractSimplicialComplex ι} (σ
 
 private theorem chamberOrderedCoord_card {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) (x : orderChamber σ e) :
-    chamberOrderedCoord σ e x σ.1.card = 0 := by
+    chamberOrderedCoord σ e x σ.val.card = 0 := by
   simp [chamberOrderedCoord]
 
 private theorem continuous_chamberOrderedCoord {K : AbstractSimplicialComplex ι} (σ : Face K)
@@ -114,39 +114,39 @@ private theorem continuous_chamberOrderedCoord {K : AbstractSimplicialComplex ι
     Continuous (fun x : orderChamber σ e => chamberOrderedCoord σ e x k) := by
   unfold chamberOrderedCoord
   split
-  · have hcoe : Continuous (fun y : StandardSimplex σ.1 => (y.1 : ι → ℝ)) :=
+  · have hcoe : Continuous (fun y : StandardSimplex σ.val => (y.val : ι → ℝ)) :=
       continuous_induced_dom
-    exact ((continuous_apply _).comp hcoe).comp continuous_subtype_val
+    exact ((continuous_apply _).comp hcoe).comp continuous_subtypeVal
   · exact continuous_const
 
 private theorem chamberOrderedCoord_succ_le {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (x : orderChamber σ e) {k : ℕ} (hk : k < σ.1.card) :
+    (e : VertexOrder σ) (x : orderChamber σ e) {k : ℕ} (hk : k < σ.val.card) :
     chamberOrderedCoord σ e x (k + 1) ≤ chamberOrderedCoord σ e x k := by
   rw [chamberOrderedCoord_of_lt σ e x hk]
-  by_cases hks : k + 1 < σ.1.card
+  by_cases hks : k + 1 < σ.val.card
   · rw [chamberOrderedCoord_of_lt σ e x hks]
-    exact x.2 (Fin.mk_le_mk.mpr (Nat.le_succ k))
+    exact x.property (Fin.mk_le_mk.mpr (Nat.le_succ k))
   · rw [chamberOrderedCoord]
     simp only [hks, ↓reduceDIte]
-    exact StandardSimplex.nonneg x.1 _
+    exact StandardSimplex.nonneg x.val _
 
 private theorem sum_chamberOrderedCoord {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) (x : orderChamber σ e) :
-    ∑ k ∈ Finset.range σ.1.card, chamberOrderedCoord σ e x k = 1 := by
+    ∑ k ∈ Finset.range σ.val.card, chamberOrderedCoord σ e x k = 1 := by
   rw [← Fin.sum_univ_eq_sum_range]
   calc
-    ∑ i : Fin σ.1.card, chamberOrderedCoord σ e x i =
-        ∑ i : Fin σ.1.card, x.1.1 (e i).1 := by
+    ∑ i : Fin σ.val.card, chamberOrderedCoord σ e x i =
+        ∑ i : Fin σ.val.card, x.val.val (e i).val := by
       apply Finset.sum_congr rfl
       intro i _
-      exact chamberOrderedCoord_of_lt σ e x i.2
-    _ = ∑ v : {v // v ∈ σ.1}, x.1.1 v.1 := by
+      exact chamberOrderedCoord_of_lt σ e x i.isLt
+    _ = ∑ v : {v // v ∈ σ.val}, x.val.val v.val := by
       exact Fintype.sum_equiv e _ _ fun _ => rfl
-    _ = ∑ v ∈ σ.1, x.1.1 v := Finset.sum_attach _ _
+    _ = ∑ v ∈ σ.val, x.val.val v := Finset.sum_attach _ _
     _ = 1 := by
-      rw [← Finsupp.sum_of_support_subset x.1.1 (StandardSimplex.support_subset x.1)
+      rw [← Finsupp.sum_of_support_subset x.val.val (StandardSimplex.support_subset x.val)
         (fun _ r => r) (by simp)]
-      exact StandardSimplex.sum_eq_one x.1
+      exact StandardSimplex.sum_eq_one x.val
 
 /-- The chamber formula, included into the whole subdivision realization. -/
 private noncomputable def chamberMap {K : AbstractSimplicialComplex ι} (σ : Face K)
@@ -168,25 +168,11 @@ private theorem continuous_chamberMap {K : AbstractSimplicialComplex ι} (σ : F
 private theorem barycentricSubdivisionRealizationMap_chamberMap
     {K : AbstractSimplicialComplex ι} (σ : Face K) (e : VertexOrder σ)
     (x : orderChamber σ e) :
-    barycentricSubdivisionRealizationMap K (chamberMap σ e x) = faceInclusion K σ x.1 := by
+    barycentricSubdivisionRealizationMap K (chamberMap σ e x) = faceInclusion K σ x.val := by
   exact BarycentricSubdivision.barycentricSubdivisionRealizationMap_orderedSubdivisionPoint
     σ e (chamberOrderedCoord σ e x) (chamberOrderedCoord_succ_le σ e x)
-    (sum_chamberOrderedCoord σ e x) (chamberOrderedCoord_card σ e x) x.1
-    (fun i => chamberOrderedCoord_of_lt σ e x i.2)
-
-private theorem continuousOn_iUnion_finset_of_isClosed {α β κ : Type*}
-    [TopologicalSpace α] [TopologicalSpace β] {f : α → β} (s : Finset κ) (u : κ → Set α)
-    (hu : ∀ i ∈ s, IsClosed (u i)) (hf : ∀ i ∈ s, ContinuousOn f (u i)) :
-    ContinuousOn f (⋃ i ∈ s, u i) := by
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s _ ih =>
-      rw [Finset.set_biUnion_insert]
-      exact (hf i (Finset.mem_insert_self i s)).union_of_isClosed
-        (ih (fun j hj => hu j (Finset.mem_insert_of_mem hj))
-          (fun j hj => hf j (Finset.mem_insert_of_mem hj)))
-        (hu i (Finset.mem_insert_self i s))
-        (isClosed_biUnion_finset fun j hj => hu j (Finset.mem_insert_of_mem hj))
+    (sum_chamberOrderedCoord σ e x) (chamberOrderedCoord_card σ e x) x.val
+    (fun i => chamberOrderedCoord_of_lt σ e x i.isLt)
 
 private theorem continuous_inverse_barycentricSubdivisionRealizationMap
     (K : AbstractSimplicialComplex ι) :
@@ -210,11 +196,8 @@ private theorem continuous_inverse_barycentricSubdivisionRealizationMap
           (barycentricSubdivisionRealizationMap_chamberMap σ o x).symm)
     rw [heq]
     exact continuous_chamberMap σ o
-  let _ : Fintype (VertexOrder σ) := Fintype.ofFinite (VertexOrder σ)
-  simpa only [Finset.mem_univ, Set.iUnion_true] using
-    continuousOn_iUnion_finset_of_isClosed
-      (Finset.univ : Finset (VertexOrder σ)) (orderChamber σ)
-      (fun o _ => isClosed_orderChamber σ o) (fun o _ => hpiece o)
+  exact (locallyFinite_of_finite (orderChamber σ)).continuousOn_iUnion
+    (isClosed_orderChamber σ) hpiece
 
 /-- The canonical homeomorphism from the realization of the barycentric subdivision of `K` to
 the realization of `K`. It sends every face-vertex to the barycenter of that face. -/

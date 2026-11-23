@@ -67,6 +67,8 @@ characteristic is the absolute ramification index of `K`.
   condition of the deep-unit power lemmas holds at depth `v_K(p) + 1` for every prime.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
+* `TauCeti.natCard_quotient_span_natCast`: correspondingly, `𝒪[K] ⧸ n 𝒪[K]` has
+  `q ^ natCastValuation K n hn` elements.
 * `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
   discrete-valuation-ring convention.
 
@@ -261,6 +263,11 @@ theorem natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one
     exact Nat.mul_pos (Nat.sub_pos_of_lt hℓ.one_lt) (Nat.succ_pos _)
 
 variable (K) in
+/-- In characteristic zero, the residue characteristic of `K` is nonzero in `K`. -/
+theorem natCast_ringChar_residueField_ne_zero [CharZero K] : (ringChar 𝓀[K] : K) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (CharP.char_is_prime 𝓀[K] _).ne_zero
+
+variable (K) in
 /-- The normalized valuation of a power of a natural number. -/
 @[simp]
 theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) :
@@ -333,6 +340,15 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+variable (K) in
+/-- The quotient of `𝒪[K]` by a nonzero natural-number cast `n` has `q ^ v_K(n)` elements, where
+`q` is the order of the residue field: it is the inverse of the normalized absolute value of
+`n` (`TauCeti.normalizedAbsoluteValue_natCast`). -/
+theorem natCard_quotient_span_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) = Nat.card 𝓀[K] ^ natCastValuation K n hn := by
+  rw [span_natCast_eq_maximalIdeal_pow K n hn,
+    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 namespace IsDiscreteValuationRing
 

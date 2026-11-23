@@ -93,8 +93,8 @@ private theorem exists_conj_mem_diagonalTorus_apply_ne
       toGL g * diagGL t * (toGL g)⁻¹ ∈ TauCeti.diagonalTorus k n ∧ t i ≠ t j := by
   obtain ⟨t, htprod, htne⟩ := diagonalTorusSeparatesCoordinates_iff.mp hsep i j hij
   let d : SpecialLinearGroup (Fin n) k :=
-    ⟨(diagGL t : Matrix (Fin n) (Fin n) k), by
-      simpa only [diagGL_coe, det_diagonal] using htprod⟩
+    .mk (diagGL t : Matrix (Fin n) (Fin n) k) (by
+      simpa only [diagGL_coe, det_diagonal] using htprod)
   have hd : toGL d = diagGL t := Units.ext rfl
   have hs : d ∈ diagonalTorus k n := by
     rw [mem_diagonalTorus_iff_toGL_mem, hd]
@@ -228,8 +228,8 @@ def diagonalNormalizerQuotientMulEquivPerm
   constructor
   · exact (Subgroup.normalizerQuotientLift_injective_iff
       (diagonalTorus k n) φ hkill).mpr (diagonalNormalizerPerm_eq_one_iff hsep)
-  · exact Subgroup.normalizerQuotientLift_surjective_of_surjective
-      (diagonalTorus k n) φ hkill (diagonalNormalizerPerm_surjective hsep)
+  · exact (Subgroup.normalizerQuotientLift_surjective_iff
+      (diagonalTorus k n) φ hkill).mpr (diagonalNormalizerPerm_surjective hsep)
 
 /-- The quotient equivalence sends the class of a normalizer element to its coordinate
 permutation. -/

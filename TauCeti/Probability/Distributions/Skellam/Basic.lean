@@ -6,7 +6,6 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -61,6 +60,12 @@ theorem map_neg_skellamMeasure (r₁ r₂ : ℝ≥0) :
   congr 1
   funext z
   simp
+
+/-- Negating an integer-valued random variable with a Skellam law exchanges its rates. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_skellamMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℤ} {r₁ r₂ : ℝ≥0} (hX : HasLaw X (skellamMeasure r₁ r₂) P) :
+    HasLaw (fun ω ↦ -X ω) (skellamMeasure r₂ r₁) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_skellamMeasure r₁ r₂⟩ hX
 
 /-- The mass of a nonnegative integer is a sum over the possible subtracted counts. -/
 theorem skellamMeasure_singleton_natCast (r₁ r₂ : ℝ≥0) (k : ℕ) :
@@ -124,6 +129,20 @@ theorem skellamMeasure_real_singleton_eq_tsum (r₁ r₂ : ℝ≥0) (k : ℤ) :
     rw [hmass]
     simpa [mul_comm] using (hasSum_skellamMeasure_mass r₂ r₁ (n + 1)).tsum_eq.symm
 
+/-- The Skellam law as a weighted sum of Dirac measures, with every integer mass given by its
+absolutely convergent Poisson-product series. -/
+theorem skellamMeasure_eq_sum_dirac (r₁ r₂ : ℝ≥0) :
+    skellamMeasure r₁ r₂ = Measure.sum fun k : ℤ ↦
+      ENNReal.ofReal (∑' j : ℕ,
+        (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k.toNat) / (j + k.toNat).factorial) *
+        (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ (j + (-k).toNat) /
+          (j + (-k).toNat).factorial)) • Measure.dirac k := by
+  rw [← Measure.sum_smul_dirac (skellamMeasure r₁ r₂)]
+  congr 1
+  funext k
+  rw [← ENNReal.ofReal_toReal (measure_ne_top (skellamMeasure r₁ r₂) {k}),
+    ← measureReal_def, skellamMeasure_real_singleton_eq_tsum]
+
 /-- Every integer has positive mass when both rates are positive. -/
 theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h₂ : 0 < r₂)
     (k : ℤ) : 0 < skellamMeasure r₁ r₂ {k} := by
@@ -132,22 +151,12 @@ theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h�
     rw [skellamMeasure_singleton_natCast]
     apply lt_of_lt_of_le _ (_root_.le_tsum _ 0)
     simp only [zero_add, poissonMeasure_singleton, pow_zero, Nat.factorial_zero]
-    have hs : (0 : ℝ) < s₁ := h
     positivity
   cases k with
   | ofNat n => exact hnat r₁ r₂ h₁ n
   | negSucc n =>
     rw [Int.negSucc_eq, skellamMeasure_singleton_neg]
     exact hnat r₂ r₁ h₂ (n + 1)
-
-/-- Positive rates give full topological support on the integer carrier. -/
-theorem support_skellamMeasure {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h₂ : 0 < r₂) :
-    (skellamMeasure r₁ r₂).support = Set.univ := by
-  ext k
-  simp only [Set.mem_univ, iff_true, Measure.mem_support_iff_forall]
-  intro U hU
-  exact (skellamMeasure_singleton_pos h₁ h₂ k).trans_le
-    (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- With zero second rate the Skellam law is the natural Poisson law cast to integers. -/
 @[simp]

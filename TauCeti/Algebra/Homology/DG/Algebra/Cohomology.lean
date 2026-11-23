@@ -57,10 +57,7 @@ cycles; its underlying ideal is two-sided, so the cohomology algebra uses Mathli
   algebra carrying the zero differential with its own cohomology matches the two gradings
   degreewise.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 1, item "DG algebras, categories,
-modules, and bimodules", specifically its first request for "cycles, boundaries, and the induced
-graded cohomology algebra".  The induced grading reuses
-`TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece` from
+The induced grading reuses `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece` from
 `TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient`, whose construction follows Mathlib PR
 [#36501](https://github.com/leanprover-community/mathlib4/pull/36501) by Antoine Chambert-Loir.
 
@@ -151,14 +148,14 @@ def boundaries (h : IsDGAlgebra 𝒜 d) : TwoSidedIdeal h.cycles :=
     (fun {x y} hy => by
       obtain ⟨b, hb⟩ := hy
       simpa only [Set.mem_ofPred_eq, Subalgebra.coe_mul, ← hb, smul_eq_mul] using
-        h.isDGLeftModule.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp x.2)
+        h.isDGLeftModule.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp x.property)
           (LinearMap.mem_range_self d b))
     (fun {x y} hx => by
       obtain ⟨a, ha⟩ := hx
       simp only [Set.mem_ofPred_eq, Subalgebra.coe_mul]
       exact ⟨a * (y : A), by
         simpa only [smul_eq_mul, ha] using
-          h.isDGLeftModule.leibniz_of_map_eq_zero a (h.mem_cycles.mp y.2)⟩)
+          h.isDGLeftModule.leibniz_of_map_eq_zero a (h.mem_cycles.mp y.property)⟩)
 
 @[simp]
 lemma mem_boundaries (h : IsDGAlgebra 𝒜 d) {z : h.cycles} :

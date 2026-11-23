@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.HausdorffMeasure
 public import TauCeti.Analysis.ConstantSpeed
+import Mathlib.Order.Interval.Set.Union
 
 /-!
 # Hausdorff measure and the length of curves
@@ -21,10 +22,13 @@ The results include empty and singleton parameter intervals.
 Both raw Hausdorff measure `μH[1]` and Euclidean-normalized measure `μHE[1]` are supported.
 These results let one compute the length of such a curve from its trace using either convention.
 
-For an arbitrary continuous curve, a partition argument bounds the variation by the Hausdorff
-integral of the extended cardinality of the fibers. This is the lower half of the Banach
-indicatrix formula, which counts repeated traversals. For a curve injective on `(a, b)`, almost
-every fiber over the trace is a single point, which gives the bound by the trace measure.
+For an arbitrary continuous curve, the variation is the Hausdorff integral of the extended
+cardinality of the fibers: the Banach indicatrix formula, which counts repeated traversals. A
+partition argument bounds the variation by the integral. Conversely, along uniform partitions the
+number of subarcs through a point eventually reaches the number of parameters over it, and each
+such count has integral at most the variation, so Fatou's lemma gives the reverse bound. For a
+curve injective on `(a, b)`, almost every fiber over the trace is a single point, which gives the
+bound by the trace measure.
 
 ## References
 
@@ -34,8 +38,8 @@ every fiber over the trace is a single point, which gives the bound by the trace
 
 public section
 
-open MeasureTheory Set
-open scoped ENNReal
+open Filter MeasureTheory Set
+open scoped ENNReal Topology
 
 namespace ContinuousOn
 
@@ -122,6 +126,119 @@ theorem eVariationOn_le_lintegral_encard (hγ : ContinuousOn γ (Icc a b)) :
         rw [lintegral_indicator_one (hK i (Finset.mem_range.mp hi))]
       · exact fun i hi ↦ measurable_const.indicator (hK i (Finset.mem_range.mp hi))
     _ ≤ _ := lintegral_mono_ae hcount
+
+/-- For a partition `u` of `[u 0, u n]` into intervals with measurable images, the raw
+one-dimensional Hausdorff integral of the number of subarcs through each point is at most the
+variation. Each subarc has measure at most its variation, and variation adds over the partition. -/
+private theorem lintegral_sum_indicator_image_Icc_le {n : ℕ} {u : ℕ → ℝ} (hu : Monotone u)
+    (hK : ∀ i < n, MeasurableSet (γ '' Icc (u i) (u (i + 1)))) :
+    ∫⁻ y, ∑ i ∈ Finset.range n, (γ '' Icc (u i) (u (i + 1))).indicator 1 y ∂μH[1] ≤
+      eVariationOn γ (Icc (u 0) (u n)) := by
+  have hK' (i : ℕ) (hi : i ∈ Finset.range n) := hK i (Finset.mem_range.mp hi)
+  calc
+    _ = ∑ i ∈ Finset.range n, μH[1] (γ '' Icc (u i) (u (i + 1))) := by
+      rw [lintegral_finsetSum _ fun i hi ↦ measurable_one.indicator (hK' i hi)]
+      exact Finset.sum_congr rfl fun i hi ↦ lintegral_indicator_one (hK' i hi)
+    _ ≤ ∑ i ∈ Finset.range n, eVariationOn γ (Icc (u i) (u (i + 1))) :=
+      Finset.sum_le_sum fun i _ ↦ eVariationOn.hausdorffMeasure_image_le γ _
+    _ = _ := eVariationOn.sum' γ hu
+
+omit [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] in
+/-- Let `u` be a partition of `[u 0, u (n + 1)]` whose intervals have length at most `δ`. A finite
+set of parameters over `y` whose distinct points are more than `δ` apart has at most as many points
+as there are subarcs through `y`: each parameter lies in some partition interval, and no interval
+holds two of them. -/
+private theorem card_le_sum_indicator_image_Icc {n : ℕ} {u : ℕ → ℝ} (hu : Monotone u) {δ : ℝ}
+    (hmesh : ∀ i, u (i + 1) - u i ≤ δ) {y : X} {F : Finset ℝ}
+    (hF : (F : Set ℝ) ⊆ Icc (u 0) (u (n + 1)) ∩ γ ⁻¹' {y})
+    (hsep : ∀ s ∈ F, ∀ t ∈ F, s ≠ t → δ < |s - t|) :
+    (F.card : ℝ≥0∞) ≤ ∑ i ∈ Finset.range (n + 1), (γ '' Icc (u i) (u (i + 1))).indicator 1 y := by
+  classical
+  have hcov (t : ℝ) (ht : t ∈ Icc (u 0) (u (n + 1))) : ∃ i < n + 1, t ∈ Icc (u i) (u (i + 1)) := by
+    rcases ht.1.eq_or_lt with rfl | h
+    · exact ⟨0, n.succ_pos, le_rfl, hu (Nat.zero_le 1)⟩
+    · obtain ⟨i, hi, hti⟩ := mem_iUnion₂.mp (Ioc_subset_biUnion_Ioc (n + 1) u ⟨h, ht.2⟩)
+      exact ⟨i, Finset.mem_range.mp hi, Ioc_subset_Icc_self hti⟩
+  choose! idx hidx hmem using hcov
+  calc
+    (F.card : ℝ≥0∞) ≤
+        ((Finset.range (n + 1)).filter fun i ↦ y ∈ γ '' Icc (u i) (u (i + 1))).card := by
+      refine Nat.cast_le.mpr (Finset.card_le_card_of_injOn idx (fun t ht ↦ ?_) ?_)
+      · exact Finset.mem_filter.mpr
+          ⟨Finset.mem_range.mpr (hidx t (hF ht).1), t, hmem t (hF ht).1, (hF ht).2⟩
+      · intro s hs t ht hst
+        by_contra hne
+        have hs' := hmem s (hF hs).1
+        have ht' := hmem t (hF ht).1
+        rw [hst] at hs'
+        refine (hsep s hs t ht hne).not_ge ((abs_sub_le_iff.mpr ⟨?_, ?_⟩).trans (hmesh (idx t)))
+        · linarith [hs'.2, ht'.1]
+        · linarith [hs'.1, ht'.2]
+    _ = _ := by simp [Set.indicator_apply, Finset.sum_boole]
+
+omit [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] in
+/-- Along partitions of `[a, b]` into `n + 1` intervals whose meshes tend to zero, the number of
+parameters over `y`, finite or not, is at most the lower limit of the number of subarcs through
+`y`: a finite set of parameters is eventually separated by the mesh. -/
+private theorem encard_le_liminf_sum_indicator_image_Icc {u : ℕ → ℕ → ℝ}
+    (hu : ∀ n, Monotone (u n)) (hu0 : ∀ n, u n 0 = a) (hun : ∀ n, u n (n + 1) = b)
+    {δ : ℕ → ℝ} (hmesh : ∀ n i, u n (i + 1) - u n i ≤ δ n) (hδ : Tendsto δ atTop (𝓝 0))
+    (y : X) :
+    ((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞) ≤ liminf (fun n ↦
+      ∑ i ∈ Finset.range (n + 1), (γ '' Icc (u n i) (u n (i + 1))).indicator 1 y) atTop := by
+  have hfin (F : Finset ℝ) (hF : (F : Set ℝ) ⊆ Icc a b ∩ γ ⁻¹' {y}) : (F.card : ℝ≥0∞) ≤
+      liminf (fun n ↦ ∑ i ∈ Finset.range (n + 1),
+        (γ '' Icc (u n i) (u n (i + 1))).indicator 1 y) atTop := by
+    have hsep : ∀ᶠ n in atTop, ∀ s ∈ F, ∀ t ∈ F, s ≠ t → δ n < |s - t| := by
+      simp only [Finset.eventually_all]
+      intro s _ t _
+      by_cases hst : s = t
+      · exact .of_forall fun _ h ↦ absurd hst h
+      · exact (hδ.eventually (gt_mem_nhds (abs_pos.mpr (sub_ne_zero.mpr hst)))).mono
+          fun _ h _ ↦ h
+    refine le_liminf_of_le (by isBoundedDefault) (hsep.mono fun n hn ↦ ?_)
+    exact card_le_sum_indicator_image_Icc (hu n) (hmesh n) (by rwa [hu0, hun]) hn
+  rcases (Icc a b ∩ γ ⁻¹' {y}).finite_or_infinite with hS | hS
+  · simpa [hS.encard_eq_coe_toFinset_card] using hfin hS.toFinset (by simp)
+  · rw [hS.encard_eq, ENat.toENNReal_top, top_le_iff]
+    refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+    obtain ⟨k, hk⟩ := exists_nat_ge (r : ℝ)
+    obtain ⟨F, hF, rfl⟩ := hS.exists_subset_card_eq k
+    exact le_trans (by exact_mod_cast hk) (hfin F hF)
+
+/-- **Banach indicatrix formula.** The variation of a continuous curve on `[a, b]` is the raw
+one-dimensional Hausdorff integral of the extended cardinality of its fibers. No Lipschitz or
+bounded-variation hypothesis is needed: both sides are infinite together. Pauses and repeated
+traversals are allowed, and infinite fibers have infinite multiplicity. -/
+theorem eVariationOn_eq_lintegral_encard (hγ : ContinuousOn γ (Icc a b)) :
+    eVariationOn γ (Icc a b) = ∫⁻ y, ((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞) ∂μH[1] := by
+  refine le_antisymm hγ.eVariationOn_le_lintegral_encard ?_
+  rcases lt_or_ge b a with hab | hab
+  · simp [Icc_eq_empty_of_lt hab]
+  -- Count the subarcs through each point for the uniform partitions into `n + 1` intervals; the
+  -- count has integral at most the variation, and Fatou's lemma passes to the lower limit.
+  let δ (n : ℕ) : ℝ := (b - a) / (n + 1 : ℕ)
+  let u (n i : ℕ) : ℝ := a + i * δ n
+  have hu (n : ℕ) : Monotone (u n) :=
+    (Nat.mono_cast.mul_const (div_nonneg (sub_nonneg.mpr hab) (n + 1).cast_nonneg)).const_add a
+  have hu0 (n : ℕ) : u n 0 = a := by simp [u]
+  have hun (n : ℕ) : u n (n + 1) = b := by simp only [u, δ]; field_simp; ring
+  have hmesh (n i : ℕ) : u n (i + 1) - u n i ≤ δ n := by simp only [u]; push_cast; linarith
+  have hδ : Tendsto δ atTop (𝓝 0) :=
+    (tendsto_const_div_atTop_nhds_zero_nat (b - a)).comp (tendsto_add_atTop_nat 1)
+  have hK (n i : ℕ) (hi : i < n + 1) : MeasurableSet (γ '' Icc (u n i) (u n (i + 1))) :=
+    (isCompact_Icc.image_of_continuousOn (hγ.mono (Icc_subset_Icc
+      ((hu0 n).symm.le.trans (hu n i.zero_le)) ((hu n hi).trans (hun n).le)))).measurableSet
+  let N (n : ℕ) (y : X) : ℝ≥0∞ :=
+    ∑ i ∈ Finset.range (n + 1), (γ '' Icc (u n i) (u n (i + 1))).indicator 1 y
+  have hN (n : ℕ) : Measurable (N n) :=
+    Finset.measurable_sum _ fun i hi ↦ measurable_one.indicator (hK n i (Finset.mem_range.mp hi))
+  calc
+    _ ≤ ∫⁻ y, liminf (N · y) atTop ∂μH[1] :=
+      lintegral_mono (encard_le_liminf_sum_indicator_image_Icc hu hu0 hun hmesh hδ)
+    _ ≤ liminf (fun n ↦ ∫⁻ y, N n y ∂μH[1]) atTop := lintegral_liminf_le hN
+    _ ≤ _ := liminf_le_of_frequently_le' <| .of_forall fun n ↦ by
+      simpa only [hu0, hun] using lintegral_sum_indicator_image_Icc_le (hu n) (hK n)
 
 /-- The variation of a continuous curve on `[a, b]` that is injective on `(a, b)`, such as an
 injective arc or a simple closed curve, is at most the raw one-dimensional Hausdorff measure of

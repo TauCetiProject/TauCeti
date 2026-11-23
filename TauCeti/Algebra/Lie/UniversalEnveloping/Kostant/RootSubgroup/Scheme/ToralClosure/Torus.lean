@@ -51,19 +51,11 @@ universe u w
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {I : Type w} {κ : Type} [Finite κ]
-variable {V : Type} [AddCommGroup V] [Module ℚ V]
+section WeightTorusComparison
 
-variable (e : I → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
-variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
-variable (wt : Fin n → κ → ℤ)
+variable {κ : Type} {V : Type} [AddCommGroup V] (M : AddSubgroup V)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
 
-omit [Module ℚ V] in
 private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt =
       CommHopfAlgCat.ofHom (DiagonalizableGroup.diagonalCoordinateMap b
@@ -81,12 +73,6 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     let p : WithConv (H →ₐ[ℤ] H) := toConv (AlgHom.id ℤ H)
     have hmap := GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app wt
       (CommAlgCat.of ℤ H) p
-    have hweight (y : Fin n) :
-        (DiagonalizableGroup.charOfPoint p.ofConv
-          (SplitTorus.weightCharacter (wt y)) : H) =
-          MonoidAlgebra.single (SplitTorus.weightCharacter (wt y)) 1 := by
-      have hp : p.ofConv = AlgHom.id ℤ H := WithConv.ofConv_toConv _
-      rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
     have hleft := congrArg (fun q =>
         ((GeneralLinear.pointsMulEquiv n q : Matrix.GeneralLinearGroup (Fin n) H) :
           Matrix (Fin n) (Fin n) H) i j) hmap
@@ -108,28 +94,31 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     rw [DiagonalizableGroup.diagonalCoordinateMap_X]
     rcases eq_or_ne i j with rfl | hij
     · simp only [diagGL_apply, ↓reduceIte] at hleft
-      have hcoord :
-          (GeneralLinear.diagonalTorusCoordinates
-              (SplitTorus.pointsMulEquiv
-                (DiagonalizableGroup.pointsMap (GeneralLinear.weightCharacterMap wt) p)) i : H) =
-            MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
-        have hcoordUnits :=
-          GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-            (CommAlgCat.of ℤ H) p i
-        rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
-        exact (congrArg Units.val hcoordUnits).trans (hweight i)
-      rw [hcoord] at hleft
+      rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id wt i] at hleft
       simpa using hleft
     · simp only [diagGL_apply, hij, ↓reduceIte] at hleft
       simpa [Matrix.diagonal_apply_ne _ hij] using hleft
   exact DFunLike.congr_fun hAlg x
 
-omit [Module ℚ V] in
 private theorem weightTorusRepresentation_eq_weightTorus [Fintype κ] :
     weightTorusRepresentation b wt = GeneralLinear.weightTorus (R := ℤ) wt := by
   rw [weightTorusRepresentation_def, DiagonalizableGroup.diagonalGroupSchemeHom_def,
     GeneralLinear.weightTorus_def,
     weightTorusCoordinateMap_eq_diagonalCoordinateMap (M := M) b wt]
+
+end WeightTorusComparison
+
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
+variable {I : Type w} {κ : Type} [Finite κ]
+variable {V : Type} [AddCommGroup V] [Module ℚ V]
+
+variable (e : I → L) (h : κ → L)
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+variable (M : AddSubgroup V)
+variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
+variable (wt : Fin n → κ → ℤ)
 
 /-- **Spanning weights embed the represented split torus as a closed subgroup of the Kostant
 toral closure.** -/
@@ -163,7 +152,7 @@ the factored weight-torus morphism. -/
 theorem coe_kostantWeightTorusInToral
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_kostantWeightTorusToToral e h ρ M hM hnil b wt hwt
-    (kostantWeightTorusInToral e h ρ M hM hnil b wt hwt).1 =
+    (kostantWeightTorusInToral e h ρ M hM hnil b wt hwt).val =
       Subobject.mk (kostantWeightTorusToToral e h ρ M hM hnil b wt) := by
   have _ := isClosedImmersion_kostantWeightTorusToToral e h ρ M hM hnil b wt hwt
   rw [kostantWeightTorusInToral]

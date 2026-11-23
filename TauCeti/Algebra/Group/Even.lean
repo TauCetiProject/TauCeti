@@ -6,11 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
-public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Squares and finite products
+# Squares, powers and finite products
+
+For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and `r ^ m * r ^ n`
+is a square (`TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow`), since one of
+`m`, `n` and `m + n` is even.
+
+A unit square factor does not change whether an element is a square
+(`IsUnit.isSquare_sq_mul_iff`).
 
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
@@ -21,16 +29,35 @@ public section
 
 namespace TauCeti
 
-/-- Agreement modulo squares of two products, and of all their factors except the last,
-forces agreement of the last factors. -/
-theorem isSquare_div_last_of_isSquare_div_prod
-    {G : Type*} [CommGroup G] {n : ℕ} {a b : Fin (n + 1) → G}
-    (h : ∀ i : Fin n, IsSquare (a i.castSucc / b i.castSucc))
-    (hp : IsSquare ((∏ i, a i) / ∏ i, b i)) :
-    IsSquare (a (Fin.last n) / b (Fin.last n)) := by
-  have hh := Finset.isSquare_prod (s := Finset.univ) _ (fun i _ => h i)
-  convert hp.div hh using 1
-  rw [Fin.prod_univ_castSucc, Fin.prod_univ_castSucc, Finset.prod_div_distrib]
-  simp only [mul_div_mul_comm, mul_div_cancel_left]
+/-- For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and
+`r ^ m * r ^ n` is a square: one of `m`, `n` and `m + n` is even. -/
+theorem isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow {G : Type*} [Group G] (r : G)
+    (m n : ℤ) : IsSquare (r ^ m) ∨ IsSquare (r ^ n) ∨ IsSquare (r ^ m * r ^ n) := by
+  obtain hm | hm := Int.even_or_odd m
+  · exact .inl (hm.isSquare_zpow r)
+  obtain hn | hn := Int.even_or_odd n
+  · exact .inr (.inl (hn.isSquare_zpow r))
+  · exact .inr (.inr (by rw [← zpow_add]; exact (hm.add_odd hn).isSquare_zpow r))
+
+/-- Agreement modulo squares of two products over `s`, and of all their factors except the one
+at `j ∈ s`, forces agreement of the factors at `j`. -/
+theorem isSquare_div_of_isSquare_prod_div_prod
+    {G ι : Type*} [CommGroup G] {s : Finset ι} {a b : ι → G} {j : ι} (hj : j ∈ s)
+    (h : ∀ i ∈ s, i ≠ j → IsSquare (a i / b i))
+    (hp : IsSquare ((∏ i ∈ s, a i) / ∏ i ∈ s, b i)) :
+    IsSquare (a j / b j) := by
+  classical
+  rw [← s.mul_prod_erase a hj, ← s.mul_prod_erase b hj, mul_div_mul_comm,
+    ← Finset.prod_div_distrib] at hp
+  simpa using hp.div (Finset.isSquare_prod _ fun i hi ↦
+    h i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi))
 
 end TauCeti
+
+/-- Multiplying by the square of a unit does not change whether an element is a square. -/
+@[simp]
+theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : IsUnit u) :
+    IsSquare (u ^ 2 * x) ↔ IsSquare x := by
+  refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
+  have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
+  rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this

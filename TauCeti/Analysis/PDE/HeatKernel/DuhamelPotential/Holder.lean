@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 
 /-!
 # Parabolic Hölder continuity of the Duhamel potential
@@ -18,7 +19,8 @@ the bounded classical solution operator of the inhomogeneous heat equation.
 
 The estimate separates the common integration interval, where the Cauchy potential's parabolic
 Hölder estimate `TauCeti.holderWith_heatCauchyPotential` applies, from the remaining interval,
-whose length bounds its contribution.
+whose length bounds its contribution. For `0 < α < 1`, the spatial Hessian also satisfies a
+joint parabolic Hölder estimate, obtained from its separate spatial and temporal estimates.
 
 ## References
 
@@ -156,14 +158,15 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
       rw [abs_of_nonneg hdiff]
       nlinarith [dist_nonneg (x := x) (y := y), sqrt_nonneg ((t : ℝ) - s)]
     have htime := time_increment_le_max_mul_rpow hd hsq
-      ((sub_le_self _ s.2.1).trans t.2.2) hα₂
+      ((sub_le_self _ s.property.1).trans t.property.2) hα₂
     -- Bound the common integration interval by its maximal length `T`.
-    refine (norm_heatDuhamelPotential_sub_le_of_le hf hM hH hα s.2.1 hst t.2.2 x y).trans ?_
+    refine (norm_heatDuhamelPotential_sub_le_of_le hf hM hH hα s.property.1 hst t.property.2 x
+        y).trans ?_
     push_cast at htime ⊢
     dsimp only [d] at *
     have hnonneg : (0 : ℝ) ≤ H * (1 + heatKernelMoment E α) *
         (dist x y + √|(t : ℝ) - s|) ^ (α : ℝ) := by positivity
-    nlinarith [mul_le_mul_of_nonneg_right s.2.2 hnonneg,
+    nlinarith [mul_le_mul_of_nonneg_right s.property.2 hnonneg,
       mul_le_mul_of_nonneg_left htime M.coe_nonneg]
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun p _ q _ => ?_
@@ -174,5 +177,38 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
   rcases le_total (s : ℝ) t with hst | hts
   · exact hordered s t hst x y
   · simpa [norm_sub_rev, dist_comm, abs_sub_comm] using hordered t s hts y x
+
+/-- The Hessian of the Duhamel potential is jointly parabolically `α`-Hölder on the closed
+slab, for `0 < α < 1`. The constant is independent of the horizon and the bound on the forcing;
+only its uniform spatial Hölder constant enters. No temporal regularity is required. -/
+theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab
+    (hα : 0 < α) (hα₁ : α < 1) :
+    ∃ C : ℝ≥0, ∀ {f : ℝ → E → F} {M T : ℝ} {H : ℝ≥0},
+      StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 T), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 T), HolderWith H α (f s)) →
+      HolderWith (C * H) α (fun p : slab (E := E) 0 T =>
+        iteratedFDeriv ℝ 2 (heatDuhamelPotential f (p : ParabolicSpaceTime E).time)
+          (p : ParabolicSpaceTime E).space) := by
+  obtain ⟨Cs, hs⟩ :=
+    exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential (E := E) (F := F) hα hα₁
+  obtain ⟨Ct, ht⟩ := exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential
+    (E := E) (F := F) hα (hα₁.trans (by norm_num))
+  refine ⟨Cs + Ct, fun {f M T H} hf hM hH => ?_⟩
+  apply eHolderNorm_le_iff.1
+  refine (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α _).trans ?_
+  rw [add_mul, ENNReal.coe_add, ENNReal.coe_mul, ENNReal.coe_mul]
+  apply add_le_add
+  · apply spaceEHolderNorm_le_iff.2
+    intro t x y
+    rcases t.property.1.eq_or_lt with hzero | hpos
+    · simp [← hzero, heatDuhamelPotential_zero]
+    · simpa only [space_slabMk, time_slabMk, ENNReal.coe_mul] using (hs hf
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.property.2) hM)
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.property.2) hH) hpos) x y
+  · apply timeEHolderNorm_le_iff.2
+    intro x t s
+    simpa only [space_slabMk, time_slabMk, ENNReal.coe_mul, Set.domRestrict_apply] using
+      (ht hf hM hH x).holderWith t s
 
 end TauCeti

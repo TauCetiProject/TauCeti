@@ -171,7 +171,7 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : B ⊗[A] C} :
         (tensorIdeal A B C).map (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)) ^ n ↔
       x ∈ tensorIdeal A B C ^ n := by
   rw [← Ideal.map_pow]
-  exact AdicCompletion.algebraMap_mem_map_pow_iff (tensorIdeal_fg A B C) n
+  exact AdicCompletion.algebraMap_mem_map_pow_iff n
 
 /-- The image of `B ⊗[A] C` in the completed tensor product is dense. -/
 theorem denseRange_algebraMap :

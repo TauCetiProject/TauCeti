@@ -5,22 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Killing.Basic
 public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
 public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Projection
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
 /-!
 # Restricting polynomial functions on a Killing Lie algebra to a Cartan subalgebra
 
-Let `L` be a finite-dimensional Lie algebra over a field `K` whose Killing form `κ` is
-nondegenerate, and `H` a Cartan subalgebra. The Killing form stays nondegenerate on `H`, so every
-`x : L` has a unique **Killing-orthogonal projection** `π x ∈ H`, characterized by
-`κ(π x, h) = κ(x, h)` for all `h ∈ H`. It is the identity on `H` and, when `H` splits `L`,
-vanishes on every root space of a nonzero root, so it is the projection of `L` onto `H` along the
-sum of the nonzero root spaces (`TauCeti.coe_killingCartanProjection`).
+Let `L` be a Lie algebra over a field `K` whose Killing form `κ` is nondegenerate (so `L` is
+finite-dimensional, `TauCeti.finite_of_isKilling`), and `H` a Cartan subalgebra. The Killing form
+stays nondegenerate on `H`, so every `x : L` has a unique **Killing-orthogonal projection**
+`π x ∈ H`, characterized by `κ(π x, h) = κ(x, h)` for all `h ∈ H`. It is the identity on `H` and
+vanishes on every root space of a nonzero root, so when `H` splits `L` it is the projection of `L`
+onto `H` along the sum of the nonzero root spaces (`TauCeti.coe_killingCartanProjection`).
 
 Through the Killing identifications `S(L) ≃ S(L*)` (`TauCeti.killingSymmetricEquiv`) and
 `S(H) ≃ S(H*)` (induced by `LieAlgebra.IsKilling.cartanEquivDual`), the symmetric algebras `S(L)`
@@ -63,6 +65,8 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
   restriction on the `S(L)` side being `lieCartanRestriction H`.
 * `TauCeti.lift_lieCartanRestriction`: the value of `lieCartanRestriction H p` at a weight `λ` is
   the value of `p` at `TauCeti.killingExtend λ`.
+* `TauCeti.lift_eval_killingSymmetricEquiv_coe`: evaluating `killingSymmetricEquiv K L r` at a
+  Cartan element `z : H` agrees with evaluating `lieCartanRestriction H r` at `cartanEquivDual H z`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
 * `TauCeti.lieCartanRestriction_surjective`: the restriction is onto, split by the map induced by
   the inclusion `H → L`.
@@ -80,8 +84,12 @@ namespace TauCeti
 
 open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module
 
-variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [IsKilling K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
+  (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
+
+-- A Lie algebra with nondegenerate Killing form is finite-dimensional; this supplies the
+-- finiteness instance that Mathlib's Cartan-subalgebra and root-system API takes.
+attribute [local instance] finite_of_isKilling
 
 /-! ### The Killing-orthogonal projection onto a Cartan subalgebra -/
 
@@ -143,14 +151,14 @@ theorem killingExtend_eq_comp_killingCartanProjection (lam : Dual K H) :
 variable {H} in
 /-- **The projection vanishes on the nonzero root spaces**: a vector in the root space of a nonzero
 `χ` is Killing-orthogonal to `H`, the root space of `0`. -/
-theorem killingCartanProjection_eq_zero_of_mem_rootSpace [IsTriangularizable K H L] {χ : H → K}
+theorem killingCartanProjection_eq_zero_of_mem_rootSpace {χ : H → K}
     (hχ : χ ≠ 0) {x : L} (hx : x ∈ rootSpace H χ) : killingCartanProjection H x = 0 := by
+  have hmem : x ∈ posFittingComp K H L :=
+    LieModule.genWeightSpace_le_posFittingComp_of_ne_zero hχ hx
   refine ((eq_killingCartanProjection_iff H).mpr fun h ↦ ?_).symm
-  rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply]
-  refine (killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H (β := 0) hx ?_
-    (by rwa [add_zero])).symm
-  rw [rootSpace_zero_eq K L H]
-  exact h.2
+  rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply, traceForm_comm]
+  exact (killingForm_eq_zero_of_mem_zeroRoot_mem_posFitting K L H
+    (le_zeroRootSubalgebra K L H h.property) hmem).symm
 
 variable {H} in
 /-- **The projection is the root-space projection at the zero weight**: when `H` splits `L`, `π` is
@@ -171,13 +179,14 @@ section Nilradical
 variable [CharZero K] [IsTriangularizable K H L]
 
 variable {H} in
+omit [IsTriangularizable K H L] in
 /-- The Killing-orthogonal projection onto `H` vanishes on the span of any set of root spaces. -/
 theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x : L}
     (hx : x ∈ rootSpaceSpan H S) : killingCartanProjection H x = 0 := by
   have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
     rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
     exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
-      (Finset.mem_filter.mp (α : H.root).2).2 hy
+      (Finset.mem_filter.mp (α : H.root).property).2 hy
   exact hle hx
 
 variable {H} (b : (IsKilling.rootSystem H).Base)
@@ -217,7 +226,7 @@ theorem lieCartanRestriction_ι_cartan (h : H) :
 
 variable {H} in
 /-- The restriction kills the generators from the root spaces of nonzero roots. -/
-theorem lieCartanRestriction_ι_root [IsTriangularizable K H L] {χ : H → K} (hχ : χ ≠ 0) {x : L}
+theorem lieCartanRestriction_ι_root {χ : H → K} (hχ : χ ≠ 0) {x : L}
     (hx : x ∈ rootSpace H χ) : lieCartanRestriction H (SymmetricAlgebra.ι K L x) = 0 := by
   rw [lieCartanRestriction_ι, killingCartanProjection_eq_zero_of_mem_rootSpace hχ hx, map_zero]
 
@@ -263,5 +272,16 @@ theorem lift_lieCartanRestriction (lam : Dual K H) (p : SymmetricAlgebra K L) :
   congr 1
   refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
   simp [killingExtend_eq_comp_killingCartanProjection H]
+
+variable {H} in
+/-- Evaluating `killingSymmetricEquiv K L r` at `(z : L)` for `z : H` agrees with evaluating the
+Cartan restriction `lieCartanRestriction H r` at `cartanEquivDual H z`. -/
+theorem lift_eval_killingSymmetricEquiv_coe (z : H) (r : SymmetricAlgebra K L) :
+    SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L r) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H r) := by
+  rw [lift_lieCartanRestriction, killingSymmetricEquiv_apply, ← AlgHom.comp_apply]
+  congr 1
+  refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
+  simp [killingExtend_apply, traceForm_comm K L L x (z : L)]
 
 end TauCeti

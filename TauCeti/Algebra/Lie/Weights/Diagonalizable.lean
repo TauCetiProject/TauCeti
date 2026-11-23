@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
@@ -156,6 +157,8 @@ end Trivial
 
 /-! ### Semisimplicity of the Cartan action -/
 
+section CorootAction
+
 variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
@@ -188,6 +191,16 @@ private lemma mem_span_coroot_cartan (x : H) :
   rw [RootPairing.IsRootSystem.span_coroot_eq_top]
   trivial
 
+end CorootAction
+
+section CartanAction
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K]
+  [LieRing L] [LieAlgebra K L] [IsKilling K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [FiniteDimensional K M]
+
 /-- **The Cartan subalgebra acts semisimply.** Every element of a Cartan subalgebra of a
 Killing-semisimple Lie algebra split over the ground field acts on a finite-dimensional module
 by a semisimple endomorphism.
@@ -198,10 +211,11 @@ The coroots span the Cartan subalgebra (`RootPairing.IsRootSystem.span_coroot_eq
 give commute, and both a sum of commuting semisimple endomorphisms and a scalar multiple of one are
 again semisimple. -/
 theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
+  have := finite_of_isKilling (R := K) (L := L)
   induction mem_span_coroot_cartan x using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨α, rfl⟩ := hy
-    exact isSemisimple_toEnd_coroot α.1
+    exact isSemisimple_toEnd_coroot α.val
   | zero => simp
   | add y z _ _ hy hz =>
     rw [map_add]
@@ -214,10 +228,11 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
 /-- A split Cartan subalgebra acts triangularizably on every finite-dimensional module. -/
 instance instIsTriangularizableCartan : IsTriangularizable K H M where
   maxGenEigenspace_eq_top x := by
+    have := finite_of_isKilling (R := K) (L := L)
     let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
       exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
-    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
+    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.val).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
       commute_toEnd_of_isLieAbelian _ _
     -- First decompose into simultaneous eigenspaces of the coroots.
@@ -320,8 +335,10 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
   rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K H M) hmaps]
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
-    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
+    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.property)
   rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm,
     LieSubmodule.finrank_toSubmodule]
+
+end CartanAction
 
 end TauCeti

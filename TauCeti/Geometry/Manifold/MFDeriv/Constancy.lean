@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -14,8 +13,8 @@ public import Mathlib.Analysis.Calculus.MeanValue
 
 A differentiable map with zero differential on an open subset of a real manifold is locally
 constant there. Both manifolds may have boundary or corners, and neither needs to be finite
-dimensional. On a preconnected source the map is constant. Conversely, a locally constant map is
-smooth (`IsLocallyConstant.contMDiff`).
+dimensional. On a preconnected source, or on a preconnected open set, the map is constant.
+Conversely, a locally constant map is smooth (`IsLocallyConstant.contMDiff`).
 
 These results turn infinitesimal independence of a parameter into independence of that
 parameter itself, for example when separating the factors of a product isometry.
@@ -60,33 +59,11 @@ theorem eventuallyEq_const_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s)
     inter_mem (extChartAt_target_mem_nhdsWithin x)
       ((continuousAt_extChartAt_symm x).continuousWithinAt.preimage_mem_nhdsWithin
         (hVopen.mem_nhds hcx.2))
-  -- The chain rule transfers the vanishing differential to the coordinate expression,
-  -- computed within the model range.
   have hdiff : ∀ u ∈ U,
-      DifferentiableWithinAt ℝ g (range I) u ∧ fderivWithin ℝ g (range I) u = 0 := by
-    intro u hu
-    have hc : MDifferentiableWithinAt 𝓘(ℝ, E) I c.symm (range I) u :=
-      mdifferentiableWithinAt_extChartAt_symm hu.1
-    have hfu := (hf (c.symm u) hu.2.1).mdifferentiableAt (hs.mem_nhds hu.2.1)
-    have hd : MDifferentiableAt J 𝓘(ℝ, F) d (f (c.symm u)) :=
-      mdifferentiableAt_extChartAt (by
-        simpa only [mem_preimage, d, extChartAt_source] using hu.2.2)
-    have hg := (hd.comp _ hfu).comp_mdifferentiableWithinAt _ hc
-    refine ⟨hg.differentiableWithinAt, ?_⟩
-    have hderiv : mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, F) g (range I) u = 0 := by
-      dsimp only [g]
-      rw [← Function.comp_assoc, mfderiv_comp_mfderivWithin u (hd.comp _ hfu) hc
-        ((uniqueMDiffOn_iff_uniqueDiffOn.mpr I.uniqueDiffOn) u
-          (extChartAt_target_subset_range x hu.1)),
-        mfderiv_comp (c.symm u) hd hfu, hzero _ hu.2.1,
-        ContinuousLinearMap.comp_zero, ContinuousLinearMap.zero_comp]
-    have hz : mvfderivWithin 𝓘(ℝ, E) g (range I) u = 0 := by
-      rw [mvfderivWithin, hderiv, ContinuousLinearMap.comp_zero]
-    rw [mvfderivWithin_eq_fderivWithin] at hz
-    ext v
-    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
-      DFunLike.congr_fun hz ((NormedSpace.fromTangentSpace (𝕜 := ℝ) u).symm v)
+      DifferentiableWithinAt ℝ g (range I) u ∧ fderivWithin ℝ g (range I) u = 0 :=
+    fun u hu =>
+      MDifferentiableAt.differentiableWithinAt_and_fderivWithin_extChartAt_comp_eq_zero hu.1
+      ((hf _ hu.2.1).mdifferentiableAt (hs.mem_nhds hu.2.1)) (hzero _ hu.2.1) hu.2.2
   -- The mean value theorem on a convex neighbourhood in the model range makes the coordinate
   -- expression constant there; chart injectivity recovers `f`.
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhdsWithin_iff.mp hU
@@ -113,6 +90,19 @@ theorem eventuallyEq_const_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s)
   apply d.injOn hfy (mem_extChartAt_source (f x))
   simpa only [g, Function.comp_apply, c.left_inv hys, c.left_inv (mem_extChartAt_source x)]
     using hconst _ hyr
+
+/-- A differentiable map with zero differential on a preconnected open set takes the same value at
+any two points of that set. Both manifolds may have boundary or corners. -/
+theorem apply_eq_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s) (hs : IsOpen s)
+    (hs' : IsPreconnected s) (hzero : ∀ y ∈ s, mfderiv I J f y = 0) {x y : M} (hx : x ∈ s)
+    (hy : y ∈ s) : f x = f y := by
+  have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs'
+  -- The restriction of `f` to `s` is locally constant, hence constant on the preconnected `s`.
+  have hloc : IsLocallyConstant (s.domRestrict f) :=
+    (IsLocallyConstant.iff_eventually_eq _).mpr fun z ↦
+      (continuous_subtypeVal.tendsto z).eventually
+        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.property)
+  exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 end MDifferentiableOn
 

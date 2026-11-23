@@ -111,7 +111,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent (hp
     have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
     let ι : K →+[G] M :=
       { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
-    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.2)
+    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.property)
     obtain ⟨z, rfl⟩ := exists_coeffMap_ker_nsmul_eq M hK hk
     obtain ⟨y, rfl⟩ := h.exists_corestriction_eq hU K
       ⟨k, nsmul_continuousCohomology_eq_zero (X := ofDiscreteModule ℤ G K) hKk 0 z⟩
@@ -218,10 +218,9 @@ private theorem shapiroMap_coeffMap_traceKerCover (n : ℕ)
         rfl)
     have h₂ (x : G ⧸ U) : E (ev x ≫ cj x - ev x) =
         DiscreteCoind.conj U U M x.out⁻¹ (show U.map (MulAut.conj x.out⁻¹).toMonoidHom = U from
-          Subgroup.Normal.map_conj_eq U _).ge (φ x) - φ x := by
-      rw [_root_.map_sub]
+          Subgroup.Normal.map_conj_eq U _).ge (φ x) - φ x :=
       -- As above, `ev x` and `cj x` evaluate as evaluation at `x` and conjugation, by `rfl`.
-      exact congrArg₂ (· - ·) (TopRep.comp_apply (ev x) (cj x) φ) rfl
+      (map_sub E _ _).trans (congrArg₂ (· - ·) (TopRep.comp_apply (ev x) (cj x) φ) rfl)
     exact h₁.trans ((DiscreteCoind.traceKerCover_apply U M φ).trans
       ((Finset.sum_congr rfl fun x _ => (h₂ x).symm).trans (map_sum E _ Finset.univ).symm))
   have hcoeff : coeffMap π₂ n ≫ coeffMap ι₁ n =
@@ -230,22 +229,18 @@ private theorem shapiroMap_coeffMap_traceKerCover (n : ℕ)
     simp only [Functor.map_comp, Functor.map_sum, Functor.map_sub] at h
     simp only [continuousCohomologyFunctor_map] at h
     exact h
-  -- Read the two coefficient maps as one composite (`ConcreteCategory.comp_apply`, by `rfl`), so
-  -- that `hcoeff` rewrites it.
-  change shapiroMap U M n ((coeffMap π₂ n ≫ coeffMap ι₁ n) a) = _
-  rw [hcoeff]
   -- Evaluation at `a` is additive in the morphism.
   let E : (continuousCohomology n (ofDiscreteModule ℤ G (G ⧸ U → DiscreteCoind G U M)) ⟶
       continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U M))) →+
       continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U M)) :=
     AddMonoidHom.mk' (fun f => f a) fun _ _ => rfl
-  rw [show (∑ x : G ⧸ U, (coeffMap (ev x) n ≫ coeffMap (cj x) n - coeffMap (ev x) n)) a =
-    E (∑ x : G ⧸ U, (coeffMap (ev x) n ≫ coeffMap (cj x) n - coeffMap (ev x) n)) from rfl,
-    map_sum, _root_.map_sum]
+  -- Read the two coefficient maps as one composite evaluated at `a` (`ConcreteCategory.comp_apply`,
+  -- by `rfl`), so that `hcoeff` rewrites it and `E` distributes over the sum.
+  change shapiroMap U M n (E (coeffMap π₂ n ≫ coeffMap ι₁ n)) = _
+  rw [hcoeff, map_sum, _root_.map_sum]
   refine Finset.sum_congr rfl fun x _ => ?_
   rw [_root_.map_sub, _root_.map_sub]
-  congr 1
-  exact (ConcreteCategory.congr_hom (shapiroMap_comp_conjNormalMap U M x.out⁻¹ n)
+  exact congrArg (· - _) (ConcreteCategory.congr_hom (shapiroMap_comp_conjNormalMap U M x.out⁻¹ n)
     (coeffMap (ev x) n a)).symm
 
 /-- **The core of NSW (3.3.11), injectivity**, under the hypothesis that `p`-primary preimages
@@ -340,7 +335,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_ker_primaryComponent (hp : 
     have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
     let ι : K →+[G] M :=
       { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
-    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.2)
+    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.property)
     have hpk : 0 < p ^ k := pow_pos hp.pos k
     let ιV := coeffMap (ofDiscreteModuleMap (G := U) ι.toAddMonoidHom.toIntLinearMap
       fun v m ↦ _root_.map_smul ι (v : G) m) 0
@@ -354,7 +349,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_ker_primaryComponent (hp : 
     have hB : IsAddTorsion (continuousCohomology 0
         (ofDiscreteModule ℤ G (DiscreteCoind.traceKer G U K))) := fun x ↦
       isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, hpk, nsmul_continuousCohomology_eq_zero
-        (fun b : DiscreteCoind.traceKer G U K ↦ Subtype.ext (DiscreteCoind.nsmul_eq_zero hKk b.1))
+        (fun b : DiscreteCoind.traceKer G U K ↦ Subtype.ext (DiscreteCoind.nsmul_eq_zero hKk b.val))
         0 x⟩
     have hP : IsAddTorsion (continuousCohomology 0
         (ofDiscreteModule ℤ G (G ⧸ U → DiscreteCoind G U K))) := fun x ↦

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 

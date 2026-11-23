@@ -38,10 +38,9 @@ deletion condition enters the word property behind Tits' theorem.
 
 ## References
 
-This file continues the "inversion sets and the exchange step" item of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` towards the Coxeter presentation
-`weylCoxeterSystem` of Layer 2, whose completeness half is proved through the exchange condition at
-root level. The deletion condition and the subword property are the standard packaging of that
+This file carries the theory of inversion sets and the exchange step towards the Coxeter
+presentation `weylCoxeterSystem`, whose completeness half is proved through the exchange condition
+at root level. The deletion condition and the subword property are the standard packaging of that
 step; see J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), §1.7 and §5.8, and
 Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6, Ch. IV, §1.5.
 -/
@@ -99,9 +98,9 @@ theorem exists_wordProd_eraseIdx_eraseIdx_eq (l : List b.support)
       wordProd P b (l.take k) * RootPairing.weylGroup.ofIdx P (l[k] : ι) := by
     rw [hsucc, wordProd_append, wordProd_cons, wordProd_nil, mul_one]
   have hmem : (l[k] : ι) ∈ inversions P b (wordProd P b (l.take k)) := by
-    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].2), ← hword,
+    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].property), ← hword,
       hprefix]
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].property
     rw [← hword, hprefix] at hstep
     omega
   obtain ⟨hmempos, hmemneg⟩ := (mem_inversions P b _ _).mp hmem

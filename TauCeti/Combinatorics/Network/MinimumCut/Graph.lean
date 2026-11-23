@@ -129,9 +129,7 @@ theorem edgeReachability_eq_edgeCutCapacity_edgeSide
     G.edgeReachability s t =
       ((G.edgeCutCapacity (fun _ ↦ (1 : ℕ)) (T.edgeSide u v) : ℕ) : ℕ∞) := by
   have hcut := hT.isMinimum_edgeSide_of_mem_edges hp huv hmin hs
-  obtain ⟨hs', ht⟩ := TauCeti.TerminalCut.isAdmissible_singleton.mp hcut.admissible
-  have hst : s ≠ t := fun h ↦ ht (h ▸ hs')
-  rw [G.edgeReachability_eq_pairMinimumValue hst, hcut.pairMinimumValue_eq]
+  rw [G.edgeReachability_eq_pairMinimumValue hcut.admissible.ne, hcut.pairMinimumValue_eq]
 
 end TauCeti.TerminalCut.IsCutTree
 
@@ -143,16 +141,19 @@ variable {α β : Type*} {G : Graph α β} [Finite V(G)] [Fintype E(G)]
 variable {T : SimpleGraph V(G)} {w : Sym2 V(G) → ℕ}
 
 /-- The global edge connectivity of a finite multigraph with at least two actual vertices is the
-minimum weight of an edge in any unit-capacity flow-equivalent tree. -/
+minimum weight of an edge in any unit-capacity flow-equivalent tree. The witness includes the
+minimum-weight certificate, so the result identifies the minimum rather than merely an edge of
+the right weight. -/
 theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
-    ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
   have hTne : T ≠ ⊥ := by
     intro h
     rw [h] at hT
     exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
   obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, le_antisymm ?_ ?_⟩
+  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
   · calc
       G.edgeConnectivity ≤ G.edgeReachability u v :=
         G.edgeConnectivity_le_edgeReachability u.property v.property

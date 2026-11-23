@@ -168,7 +168,7 @@ theorem relIndex_range_powMonoidHom_sUnits [Finite (ClassGroup R)] [Monoid.FG R�
     (powMonoidHom n : Kˣ →* Kˣ).range.relIndex (S.unit K) =
       n ^ (Module.finrank ℤ (Additive Rˣ) + Nat.card S) * Nat.card (rootsOfUnity n K) := by
   rw [Subgroup.relIndex, Set.range_powMonoidHom_subgroupOf_unit,
-    Subgroup.index_range_powMonoidHom_of_fg _ (NeZero.ne n), finrank_sUnits,
+    Subgroup.index_range_powMonoidHom_of_fg _ _, finrank_sUnits,
     Set.natCard_ker_powMonoidHom_unit]
 
 /-- For a finite set `S` of primes, the `n`-th powers of `Kˣ` cut out of the `S`-units a subgroup

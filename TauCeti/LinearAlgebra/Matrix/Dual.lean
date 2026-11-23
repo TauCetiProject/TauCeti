@@ -25,6 +25,11 @@ contragredient `f.dotProductContragredient`, the equivalence `g` with `g y ⬝�
 matrix terms it is the inverse transpose of `f`. It describes how a linear change of coordinates
 acts on orthogonal complements for the dot product, for instance on the dual of a linear code.
 
+For general bases, a linear map `g` whose matrix is the transpose of the matrix of `f` is the dual
+map of `f` once the bases of the source and target of `g` are identified with the dual bases of
+those of `f` (`LinearMap.toMatrix_eq_transpose_iff`). This is the converse reading of Mathlib's
+`LinearMap.toMatrix_transpose`, and describes a based dual complex in coordinates.
+
 ## Main results
 
 * `TauCeti.dotProductBilin_isPerfPair`: the dot product `dotProductBilin R R` on `ι → R` is a
@@ -38,6 +43,8 @@ acts on orthogonal complements for the dot product, for instance on the dual of 
   compatible with composition and inversion. On invertible square matrices over a commutative
   ring it is `Matrix.GeneralLinearGroup.inverseTranspose`; here it acts on linear equivalences
   between possibly different coordinate spaces over a commutative semiring.
+* `LinearMap.toMatrix_eq_transpose_iff`: a map whose matrix is the transpose of the matrix of `f`
+  is the dual map of `f` under the identifications of the bases with dual bases.
 -/
 
 public section
@@ -68,24 +75,25 @@ theorem isSymm_dotProductBilin {R ι : Type*} [CommSemiring R] [Fintype ι] :
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
 vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are
-linearly independent. Over a ring without zero divisors, nonzero diagonal entries suffice; in
-particular, this applies over `ℤ` with diagonal `2`. The ring may have zero divisors away from
-the chosen diagonal entries.
+linearly independent. If right multiplication by every nonzero element is injective
+(`IsRightCancelMulZero R`, as over a ring without zero divisors or over `ℕ`), nonzero diagonal
+entries suffice; in particular, this applies over `ℤ` with diagonal `2`. Absence of zero divisors
+alone does not suffice over a semiring. The semiring may have zero divisors away from the chosen
+diagonal entries.
 The family index `κ` is arbitrary — neither finite nor decidable — and unrelated to the coordinate
-index `ι`; the scalars need not commute. -/
+index `ι`; the scalars need neither commute nor have additive inverses. -/
 theorem linearIndependent_of_dotProduct_diagonal {κ ι R : Type*}
-    [Fintype ι] [Ring R] {v w : κ → ι → R} {c : κ → R}
+    [Fintype ι] [Semiring R] {v w : κ → ι → R} {c : κ → R}
     (hc : ∀ i, IsRightRegular (c i)) (hdiag : ∀ i, v i ⬝ᵥ w i = c i)
     (hoff : ∀ i j, i ≠ j → v i ⬝ᵥ w j = 0) :
     LinearIndependent R v := by
-  rw [linearIndependent_iff']
-  intro s g hg j hj
-  -- pairing the relation with `w j` kills every term but the `j`-th, leaving `g j * c j = 0`
-  have hpair := congrArg (· ⬝ᵥ w j) hg
-  simp only [sum_dotProduct, smul_dotProduct, smul_eq_mul, zero_dotProduct] at hpair
-  rw [Finset.sum_eq_single j (fun i _ hij => by rw [hoff i j hij, mul_zero])
-      (fun hns => absurd hj hns), hdiag] at hpair
-  exact (hc j) (hpair.trans (zero_mul _).symm)
+  rw [linearIndependent_iff'ₛ]
+  intro s f g hfg j hj
+  -- pairing a combination with `w j` kills every term but the `j`-th
+  have hpair (f : κ → R) : (∑ i ∈ s, f i • v i) ⬝ᵥ w j = f j * c j := by
+    simp only [sum_dotProduct, smul_dotProduct, smul_eq_mul]
+    rw [Finset.sum_eq_single_of_mem j hj fun i _ hij ↦ by rw [hoff i j hij, mul_zero], hdiag]
+  exact hc j (by simpa only [hpair] using congrArg (· ⬝ᵥ w j) hfg)
 
 end TauCeti
 
@@ -174,3 +182,41 @@ theorem dotProductContragredient_dotProductContragredient (f : (ι → R) ≃ₗ
     apply_dotProduct_dotProductContragredient_apply ..).symm
 
 end LinearEquiv
+
+/-! ### Linear maps with transposed matrices -/
+
+namespace LinearMap
+
+open Matrix Module
+
+variable {R ι ι' V V' W W' : Type*} [CommSemiring R] [Fintype ι] [DecidableEq ι] [Fintype ι']
+  [DecidableEq ι'] [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
+  [AddCommMonoid W] [Module R W] [AddCommMonoid W'] [Module R W']
+
+/-- **Maps with transposed matrices are dual maps.** The matrix of `g : W' → W` in bases `e'`,
+`e` is the transpose of the matrix of `f : V → V'` in bases `c`, `c'` exactly when `g` is the
+dual map of `f` under the identifications of `W` and `W'` with the duals of `V` and `V'` that
+send `e` and `e'` to the dual bases of `c` and `c'`. This converts Mathlib's
+`LinearMap.toMatrix_transpose` into a statement about any map with the transposed matrix. -/
+theorem toMatrix_eq_transpose_iff (c : Basis ι R V) (c' : Basis ι' R V') (e : Basis ι R W)
+    (e' : Basis ι' R W') {f : V →ₗ[R] V'} {g : W' →ₗ[R] W} :
+    toMatrix e' e g = (toMatrix c c' f)ᵀ ↔
+      (e.equiv c.dualBasis (Equiv.refl ι)).toLinearMap ∘ₗ g =
+        f.dualMap ∘ₗ (e'.equiv c'.dualBasis (Equiv.refl ι')).toLinearMap := by
+  have key (g : W' →ₗ[R] W) (h : toMatrix e' e g = (toMatrix c c' f)ᵀ) :
+      (e.equiv c.dualBasis (Equiv.refl ι)).toLinearMap ∘ₗ g =
+        f.dualMap ∘ₗ (e'.equiv c'.dualBasis (Equiv.refl ι')).toLinearMap :=
+    e'.ext fun l ↦ c.ext fun k ↦ by
+      have hkl := _root_.congr_fun₂ h k l
+      rw [toMatrix_apply, transpose_apply, toMatrix_apply] at hkl
+      conv_lhs => rw [comp_apply, LinearEquiv.coe_coe, ← e.sum_repr (g (e' l)), map_sum]
+      simp [hkl, Finsupp.single_apply]
+  refine ⟨key g, fun hg ↦ ?_⟩
+  -- The map with the transposed matrix satisfies the same identity, so it is `g`.
+  have h₀ := key _ (toMatrix_toLin e' e (toMatrix c c' f)ᵀ)
+  rw [← h₀] at hg
+  rw [← toMatrix_toLin e' e (toMatrix c c' f)ᵀ]
+  exact congrArg (toMatrix e' e)
+    (ext fun y ↦ (e.equiv c.dualBasis (Equiv.refl ι)).injective (LinearMap.congr_fun hg y))
+
+end LinearMap

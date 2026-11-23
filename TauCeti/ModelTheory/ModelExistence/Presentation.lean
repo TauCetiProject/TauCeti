@@ -127,7 +127,7 @@ theorem morleyAxioms_iSup {n : ℕ} (φs : ℕ → L.BoundedFormulaω Empty n)
 
 /-- The first-order Morley theory of a component-closed infinitary fragment. -/
 def morleyTheory : (morleyize L A).Theory :=
-  ⋃ p : A, morleyAxioms A p.1.2 p.2
+  ⋃ p : A, morleyAxioms A p.val.2 p.property
 
 /-- A sentence belongs to the Morley theory iff it is an axiom of a fragment member. -/
 theorem mem_morleyTheory_iff {σ : (morleyize L A).Sentence} :
@@ -212,6 +212,41 @@ theorem model_morleyAxioms_iSup_iff {n : ℕ} (φs : ℕ → L.BoundedFormulaω 
         S.RelMap (morleyRel (.iSup φs) hφ) a := by
   simp [morleyAxioms, Sentence.realize_alls, Theory.model_iff]
 
+/-- Finitary names have their intended meaning in every model of the Morley theory,
+without any omission hypothesis. Only infinitary constructors need the obstruction types. -/
+theorem realize_morleyAtom_toOmega_of_model_morleyTheory [L.Structure M]
+    [(lhomMorleyize (A : Set (Σ n, L.BoundedFormulaω Empty n))).IsExpansionOn M]
+    (hT : M ⊨ morleyTheory A) :
+    ∀ {n : ℕ} (φ : L.BoundedFormula Empty n) (hφ : ⟨n, φ.toOmega⟩ ∈ A)
+      (a : Fin n → M),
+      (morleyAtom A φ.toOmega hφ).Realize Empty.elim a ↔ φ.Realize Empty.elim a := by
+  simp only [realize_morleyAtom]
+  intro n φ
+  induction φ with
+  | falsum =>
+    simp only [BoundedFormula.toOmega, BoundedFormula.toInf_falsum]
+    intro hφ a
+    simpa only [BoundedFormula.Realize, iff_false] using
+      (model_morleyAxioms_falsum_iff A hφ).1 (model_morleyAxioms A hT _ hφ) a
+  | equal t₁ t₂ | rel t₁ t₂ =>
+    simp only [BoundedFormula.toOmega, BoundedFormula.toInf_equal, BoundedFormula.toInf_rel]
+    intro hφ a
+    have h := model_morleyAxioms A hT _ hφ
+    simp only [model_morleyAxioms_equal_iff, model_morleyAxioms_rel_iff] at h
+    simpa only [BoundedFormula.Realize] using h a
+  | imp φ ψ ihφ ihψ =>
+    simp only [BoundedFormula.toOmega, BoundedFormula.toInf_imp]
+    intro hφ a
+    exact ((model_morleyAxioms_imp_iff A φ.toOmega ψ.toOmega hφ).1
+      (model_morleyAxioms A hT _ hφ) a).trans
+      (imp_congr (ihφ (A.imp_left_mem hφ) a) (ihψ (A.imp_right_mem hφ) a))
+  | all φ ih =>
+    simp only [BoundedFormula.toOmega, BoundedFormula.toInf_all]
+    intro hφ a
+    exact ((model_morleyAxioms_all_iff A φ.toOmega hφ).1
+      (model_morleyAxioms A hT _ hφ) a).trans
+      (forall_congr' fun b => ih (A.all_mem hφ) (Fin.snoc a b))
+
 end AxiomSemantics
 
 /-- The Morley theory of a countable fragment is countable, without a language-size assumption. -/
@@ -260,7 +295,7 @@ private def morleyObstruction : ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty n) 
 
 /-- The family of first-order partial types whose omission completes the Morley theory. -/
 def morleyTypes : Set (Σ n, Set ((morleyize L A).BoundedFormula Empty n)) :=
-  Option.some ⁻¹' Set.range fun p : A => morleyObstruction A p.1.2 p.2
+  Option.some ⁻¹' Set.range fun p : A => morleyObstruction A p.val.2 p.property
 
 /-- The omitted types are precisely the conjunction and disjunction obstruction types. -/
 theorem mem_morleyTypes_iff {p : Σ n, Set ((morleyize L A).BoundedFormula Empty n)} :

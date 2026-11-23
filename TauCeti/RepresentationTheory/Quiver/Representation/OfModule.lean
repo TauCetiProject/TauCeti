@@ -106,14 +106,11 @@ type `eᵥ M →ₗ[k] eᵥ N` once and for all, and everything about the gluing
 
 ## References
 
-This is the fully faithful half of `quiverRepEquivalence`, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the
-equivalence "sending a module `M` to the representation `v ↦ eᵥ M`, with an arrow acting by left
-multiplication, and inverting through the idempotent decomposition `M = ⨁ᵥ eᵥ M`". Full
-faithfulness is proved here; the essential surjectivity that completes the equivalence — a
-`kQ`-module structure on `⨁ᵥ Mᵥ` for a given representation — is
-`TauCeti.RepresentationTheory.Quiver.Representation.AsModule`, where the two halves are assembled
-into `TauCeti.quiverRepEquivalence`.
+This is the fully faithful half of the equivalence sending a module `M` to the representation
+`v ↦ eᵥ M`, with an arrow acting by left multiplication. Full faithfulness is proved here; the
+essential surjectivity that completes the equivalence — a `kQ`-module structure on `⨁ᵥ Mᵥ` for a
+given representation — is `TauCeti.RepresentationTheory.Quiver.Representation.AsModule`, where the
+two halves are assembled into `TauCeti.quiverRepEquivalence`.
 
 The equivalence itself is classical; see Assem--Simson--Skowroński, *Elements of the Representation
 Theory of Associative Algebras I*, Ch. III, or Schiffler, *Quiver Representations*, Ch. 5.
@@ -296,9 +293,9 @@ private theorem moduleHomAux_apply_of_mem [Fintype Q]
   -- the projection lemmas are stated on the ambient values in `M`, so `Subtype.ext` lifts them to
   -- the equalities in `eᵥ M` that the summands are built from
   have hfix : vertexProjection k M v (x : M) = x :=
-    Subtype.ext (coe_vertexProjection_apply_of_mem x.2)
+    Subtype.ext (coe_vertexProjection_apply_of_mem x.property)
   have hkill : ∀ u : Q, u ≠ v → vertexProjection k M u (x : M) = 0 := fun u hu ↦
-    Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu x.2)
+    Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu x.property)
   rw [moduleHomAux_apply, Finset.sum_eq_single v]
   · rw [hfix]
   · intro u _ hu
@@ -331,7 +328,7 @@ private theorem moduleHomAux_ofPath_smul [Fintype Q]
   rw [moduleHomAux_apply, Finset.smul_sum, Finset.sum_eq_single a]
   · intro u _ hu
     exact ofPath_smul_eq_zero_of_ne_of_mem_vertexComponent p hu
-      ((quiverRepHomComponent k Q φ u) (vertexProjection k M u x)).2
+      ((quiverRepHomComponent k Q φ u) (vertexProjection k M u x)).property
   · intro ha
     exact absurd (Finset.mem_univ a) ha
 
@@ -411,7 +408,7 @@ theorem exists_quiverRepHomOfModule_eq
 
 /-- **Full faithfulness on a `Hom`-set**: the `kQ`-linear maps `M → N` are exactly the morphisms
 `quiverRepOfModule k Q M ⟶ quiverRepOfModule k Q N`. With `TauCeti.quiverRepHomOfModule_id` and
-`TauCeti.quiverRepHomOfModule_comp` this is one half of the roadmap's `quiverRepEquivalence`; the
+`TauCeti.quiverRepHomOfModule_comp` this is one half of `TauCeti.quiverRepEquivalence`; the
 other half is essential surjectivity. -/
 theorem quiverRepHomOfModule_bijective :
     Function.Bijective (quiverRepHomOfModule (k := k) (Q := Q) (M := M) (N := N)) :=
@@ -430,7 +427,7 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
 /-- **The functor from `kQ`-modules to representations of `Q`**: it carries a module to
 `TauCeti.quiverRepOfModule` and a `kQ`-linear map to `TauCeti.quiverRepHomOfModule`, the
 functoriality being `TauCeti.quiverRepHomOfModule_id` and `TauCeti.quiverRepHomOfModule_comp`.
-This is the module-to-representation half of the roadmap's `quiverRepEquivalence`, and
+This is the module-to-representation half of `TauCeti.quiverRepEquivalence`, and
 `TauCeti.quiverRepFunctorFullyFaithful` is its full faithfulness.
 
 `@[expose]` here is load-bearing for the same reason as on `TauCeti.quiverRepOfModule`: the
@@ -456,7 +453,7 @@ theorem quiverRepFunctor_map {M N : ModuleCat.{t} (pathAlgebra k Q)} (f : M ⟶ 
 
 /-- **The functor from `kQ`-modules to representations of `Q` is fully faithful**: this is
 `TauCeti.quiverRepHomOfModule_bijective`, with `TauCeti.moduleHomOfQuiverRepHom` as the explicit
-preimage. It is one half of the roadmap's `quiverRepEquivalence`; the other half is essential
+preimage. It is one half of `TauCeti.quiverRepEquivalence`; the other half is essential
 surjectivity, proved in
 `TauCeti.RepresentationTheory.Quiver.Representation.AsModule`. -/
 noncomputable def quiverRepFunctorFullyFaithful :

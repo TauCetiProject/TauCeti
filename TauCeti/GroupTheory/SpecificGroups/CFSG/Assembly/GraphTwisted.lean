@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4.Basic
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE6
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD.Basic
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE6.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Unimodular
 
@@ -198,7 +198,7 @@ instance instGroupAmbientGroup : (d : GraphTwistedIndex) → Group d.AmbientGrou
 from the additive group of the algebraic closure. On each constructor it is the simple root
 subgroup of the family's carrier, by `simpleRootSubgroup_A` and its siblings. -/
 def simpleRootSubgroup :
-    (d : GraphTwistedIndex) → Fin d.1.rank → Multiplicative d.1.Closure →* d.AmbientGroup
+    (d : GraphTwistedIndex) → Fin d.val.rank → Multiplicative d.val.Closure →* d.AmbientGroup
   | ⟨⟨.A _ _, hv⟩, _⟩ | ⟨⟨.twistedA _ _, hv⟩, _⟩ =>
       TypeALieIndex.simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩
   | ⟨⟨.B _ _, hv⟩, _⟩ => TypeBLieIndex.simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩
@@ -617,10 +617,11 @@ end Branches
 `x_i(u ^ q)`, where `q` is the field order the index records. This is the defining equation of the
 `q`-power Frobenius, now stated once for all thirteen families. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
-      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder))
+          := by
   -- As for `steinberg_simpleRootSubgroup`: the branch equations turn the uniform maps into the
   -- family ones, whose pinned Frobenius equation closes the goal.
   -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
@@ -658,11 +659,11 @@ theorem frobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
 `x_i(u)` to `x_i(u ^ p)`, where `p` is the defining characteristic. This is the defining equation
 of the prime-field Frobenius, stated once for all thirteen families. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   -- As for `frobenius_simpleRootSubgroup`: the branch equations turn the uniform maps into the
   -- family ones, whose pinned prime-field Frobenius equation closes the goal.
   -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
@@ -706,7 +707,7 @@ theorem primeFrobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.r
 exponent the index records, stated once for all thirteen families. On an index of prime field
 order the exponent is one and the two maps agree. -/
 theorem frobenius_eq_primeFrobenius_pow (d : GraphTwistedIndex) :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   -- The family index is left as `_` for unification, not rebuilt with a `by simp` proof: a
   -- postponed tactic proof blocks unifying the family lemma with the goal, which then unfolds the
   -- family maps (up to 1 s a branch).
@@ -744,11 +745,11 @@ theorem frobenius_eq_primeFrobenius_pow (d : GraphTwistedIndex) :
 the nine untwisted families, and `q` is its recorded field order. This is the defining equation of
 an ordinary or graph-twisted Steinberg endomorphism, now stated once for all thirteen families. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.diagramPerm i)
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   -- On each constructor the branch equations turn the uniform maps into the family ones, and the
   -- family's pinned equation closes the goal; the group structure on the ambient group is, by
   -- definition of `instGroupAmbientGroup`, the family's own. The untwisted branches also unfold
@@ -969,8 +970,8 @@ nine untwisted families. The parameter is carried across unchanged, with neither
 a sign; on a general root the equation would acquire a sign forced by the Chevalley structure
 constants. -/
 @[simp]
-theorem graphAut_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem graphAut_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.graphAut (d.simpleRootSubgroup i u) = d.simpleRootSubgroup (d.diagramPerm i) u := by
   -- On each constructor the branch equations turn the uniform maps into the family ones, whose
   -- pinned equation closes the goal; the untwisted branches also unfold the trivial diagram

@@ -195,14 +195,14 @@ theorem continuous_evensExtend [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensExtend U α) := by
   -- on `U` the extension takes the first branch of its `dite`, so it restricts to `α` there
   have hres : (U : Set G).domRestrict (evensExtend U α) =
-      fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.2⟩) :=
-    funext fun v => dite_eq_left v.2
+      fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.property⟩) :=
+    funext fun v => dite_eq_left v.property
   -- off `U` it takes the second branch, so it restricts to the constant `0`
   have hresc : ((U : Set G)ᶜ).domRestrict (evensExtend U α) = fun _ => (0 : ZMod 2) :=
-    funext fun v => dite_eq_right v.2
+    funext fun v => dite_eq_right v.property
   have hon : ContinuousOn (evensExtend U α) (U : Set G) := by
     rw [continuousOn_iff_continuous_domRestrict, hres]
-    exact continuous_toAdd.comp (hα.comp (continuous_subtype_val.subtype_mk _))
+    exact continuous_toAdd.comp (hα.comp (continuous_subtypeVal.subtype_mk _))
   have hoff : ContinuousOn (evensExtend U α) ((U : Set G)ᶜ) := by
     rw [continuousOn_iff_continuous_domRestrict, hresc]
     exact continuous_const
@@ -258,12 +258,12 @@ theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExt
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
 
 /-- At the trivial coset, `α` read on the transversal word is the first Shapiro component. -/
-theorem evensExtend_lWord_mk_one (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
+theorem evensExtend_lWord_mk_one (γ : G) :
     evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ) =
       evensB1 U s α γ := by
   by_cases hγ : γ ∈ U
   · rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ, evensB1_of_mem hγ]
-  · rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ, evensB1_of_notMem hγ]
+  · rw [lWord_indexTwoTransversal_mk_one_of_notMem s hγ, evensB1_of_notMem hγ]
 
 /-- At the coset of `s`, `α` read on the transversal word is the second Shapiro component. -/
 theorem evensExtend_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
@@ -271,7 +271,7 @@ theorem evensExtend_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
       evensBs U s α γ := by
   by_cases hγ : γ ∈ U
   · have hsγ : s⁻¹ * γ ∉ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    rw [lWord_indexTwoTransversal_mk_of_mem hU hs hγ, evensBs_apply, evensB1_of_notMem hsγ]
+    rw [lWord_indexTwoTransversal_mk_of_mem hs hγ, evensBs_apply, evensB1_of_notMem hsγ]
   · have hsγ : s⁻¹ * γ ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
     rw [lWord_indexTwoTransversal_mk_of_notMem hU hs hγ, evensBs_apply, evensB1_of_mem hsγ]
 

@@ -265,12 +265,12 @@ theorem transition_mem_polynomialSubmodule {c : AnalyticStage p h E}
     (hc : c ∈ polynomialSubmodule S k) :
     transition S c ∈ polynomialSubmodule S k := by
   intro a j hj
-  rw [transition_apply]
+  rw [transition_apply, reexpand_def]
   trans ∑' _ : ℕ, (0 : E)
   · apply tsum_congr
     intro n
     by_cases hnj : n < j
-    · simp [Nat.choose_eq_zero_of_lt hnj]
+    · simp [reexpandScalar_of_lt _ _ hnj]
     · simp [hc _ n (hj.trans_le (Nat.le_of_not_gt hnj))]
   · exact tsum_zero
 
@@ -306,7 +306,7 @@ theorem eval_eq_discPolynomial
     by_contra hnk
     exact Finsupp.mem_support_iff.mp hn <| by
       rw [discPolynomial_coeff, c.property a n (by simpa using hnk)]
-  · intro n hn
+  · intro n _
     exact smul_zero _
 
 /-- Continuous functions represented by degree-at-most-`k` polynomials in the normalized

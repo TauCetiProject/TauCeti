@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -30,15 +33,29 @@ differentials commute with `J`, then `J` descends
 Tameness, invariance and compatibility with a two-form `σ` on `N` can all be checked upstairs,
 against the pullback `q^* σ`, because `q` is surjective and its differentials are bijective.
 
+Conversely, every smooth almost complex structure `K` on `N` pulls back along any smooth local
+diffeomorphism `q`, surjective or not, to the structure
+`(q^* K)_x = (dq_x)⁻¹ ∘ K_(q x) ∘ dq_x` on `M`
+(`TauCeti.SmoothAlmostComplexStructure.localPullback`). For a diffeomorphism this is the pullback
+`TauCeti.SmoothAlmostComplexStructure.pullback`. The pullback commutes with the differential of
+every map `g` with `q ∘ g = q`, so a deck transformation of `q` is pseudoholomorphic for it. For
+a surjective `q`, pulling back and descending are inverse to each other: the almost complex
+structures on `N` are exactly the descents of the `q`-compatible structures on `M`.
+
 ## Main definitions
 
 * `TauCeti.SmoothAlmostComplexStructure.descend`: the almost complex structure on `N` induced by
   a `q`-compatible almost complex structure on `M`.
 
+* `TauCeti.SmoothAlmostComplexStructure.localPullback`: the pullback of an almost complex
+  structure on `N` along a local diffeomorphism `q`.
+
 ## Main results
 
 * `TauCeti.SmoothAlmostComplexStructure.descend_apply_mfderiv`: every differential of `q` is
   complex linear for `J` and its descent.
+* `TauCeti.SmoothAlmostComplexStructure.contMDiff_descend_family`: a family of structures
+  depending smoothly on a parameter descends to a family depending smoothly on the parameter.
 * `TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`: the descent is the only almost complex
   structure with this property.
 * `TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_descend`,
@@ -52,6 +69,14 @@ against the pullback `q^* σ`, because `q` is surjective and its differentials a
   `TauCeti.SmoothAlmostComplexStructure.invariant_descend_iff`,
   `TauCeti.SmoothAlmostComplexStructure.compatible_descend_iff`: tameness, invariance and
   compatibility of the descent with `σ` are those of `J` with `q^* σ`.
+* `TauCeti.SmoothAlmostComplexStructure.mfderiv_localPullback_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.eq_localPullback_iff`: the pullback is the only almost
+  complex structure on `M` for which every differential of `q` is complex linear.
+* `TauCeti.SmoothAlmostComplexStructure.mfderiv_localPullback_apply_of_comp_eq`: maps `g` with
+  `q ∘ g = q` are complex linear for the pullback.
+* `TauCeti.SmoothAlmostComplexStructure.localPullback_descend`,
+  `TauCeti.SmoothAlmostComplexStructure.descend_localPullback`: pulling back and descending along a
+  surjective local diffeomorphism are inverse to each other.
 
 ## References
 
@@ -77,35 +102,38 @@ variable {E H M E' H' N : Type*}
   [TopologicalSpace N] [ChartedSpace H' N]
   {q : M → N}
 
+/-- An almost complex structure takes the same value at equal base points. Every tangent space of
+`M` is the model space `E`, so a tangent vector at `y` is also a tangent vector at any `y' = y`, and
+this statement typechecks. -/
+private theorem apply_of_eq (J : SmoothAlmostComplexStructure I M) {y y' : M} (h : y = y')
+    (w : TangentSpace I y) : J y w = J y' w := by
+  subst h
+  rfl
+
 section Deck
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
-if `q` is differentiable with injective differentials, `g` satisfies `q ∘ g = q`, sends `x` to
-`x'` and its differential at `x` commutes with `J`, then
+if `g` satisfies `q ∘ g = q`, sends `x` to `x'`, its differential at `x` commutes with `J`
+and `q` has injective differential at `x'`, then
 any two tangent vectors at `x` and `x'` with the same image under the differentials of `q` are sent
 by `J` to two vectors with the same image. -/
-theorem mfderiv_apply_eq_of_deck (hq : MDifferentiable I I' q)
-    (hinj : ∀ x : M, Injective (mfderiv I I' q x))
-    (J : SmoothAlmostComplexStructure I M) {g : M → M} {x x' : M} (hgx : g x = x')
+theorem mfderiv_apply_eq_of_deck
+    (J : SmoothAlmostComplexStructure I M) {g : M → M} {x x' : M}
+    (hinj : Injective (mfderiv I I' q x')) (hgx : g x = x')
     (hg : MDifferentiableAt I I g x) (hqg : q ∘ g = q)
     (hgJ : ∀ v, mfderiv I I g x (J x v) = J (g x) (mfderiv I I g x v))
     (v : TangentSpace I x) (v' : TangentSpace I x')
     (hvv' : mfderiv I I' q x v = mfderiv I I' q x' v') :
     mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v') := by
   subst hgx
+  have hq := mdifferentiableAt_of_mfderiv_injective hinj
   -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_{g x} ∘ dg_x`.
   have hchain (w : TangentSpace I x) :
-      mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) := by
-    have h := mfderiv_comp x (hq (g x)) hg
-    rw [hqg] at h
-    -- After rewriting, `ContinuousLinearMap.comp_apply` closes the goal definitionally; it
-    -- cannot be used by `rw` because the tangent spaces at `q x` and `q (g x)` differ
-    -- syntactically.
-    rw [h]
-    rfl
+      mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) :=
+    (mfderiv_apply_mfderiv_of_eventuallyEq_comp (.of_eq hqg) hq hg w).symm
   -- Injectivity of `dq_{g x}` identifies `v'` with `dg_x v`.
   have hv' : v' = mfderiv I I g x v :=
-    (hinj (g x)) (by rw [← hvv', hchain])
+    hinj (by rw [← hvv', hchain])
   rw [hv', hchain, hgJ]
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`
@@ -124,8 +152,8 @@ theorem mfderiv_apply_eq_of_eqvGen (hq : IsLocalDiffeomorph I I' ∞ q)
   induction hxx' with
   | rel x x' h =>
     obtain ⟨g, hgx, hg, hqg, hgJ⟩ := hR x x' h
-    exact mfderiv_apply_eq_of_deck (hq.mdifferentiable (by simp))
-      (fun y ↦ (hq.isInvertible_mfderiv (by simp) y).injective) J hgx hg hqg hgJ v v' hvv'
+    exact mfderiv_apply_eq_of_deck J ((hq x').isInvertible_mfderiv (by simp)).injective hgx hg
+      hqg hgJ v v' hvv'
   | refl x => rw [((hq x).isInvertible_mfderiv (by simp)).injective hvv']
   | symm x x' _ ih => exact (ih v' v hvv'.symm).symm
   | trans x x' x'' _ _ ih ih' =>
@@ -176,49 +204,69 @@ private theorem descendEndomorphism_comp_square (y : N) :
   simp only [ContinuousLinearMap.comp_apply, descendEndomorphism_apply_mfderiv hq hsurj J hJ,
     apply_apply, map_neg, _root_.neg_apply, ContinuousLinearMap.id_apply]
 
-variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N] [T2Space N]
+variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N]
+
+section Family
+
+variable {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
+  {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
+
+/-- For a family `K λ` of `q`-compatible structures depending smoothly on a parameter in `Λ`, the
+descended endomorphisms depend smoothly on the parameter and the point. -/
+private theorem contMDiff_descendEndomorphism_family {K : Λ → SmoothAlmostComplexStructure I M}
+    (hK : ∀ (l : Λ) ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+      mfderiv I I' q x v = mfderiv I I' q x' v' →
+        mfderiv I I' q x (K l x v) = mfderiv I I' q x' (K l x' v'))
+    (hKs : ContMDiff (IΛ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2
+        ((K r.1).toEndomorphism r.2))) :
+    ContMDiff (IΛ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun r : Λ × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) r.2
+        (descendEndomorphism hq hsurj (K r.1) r.2)) := by
+  refine (TauCeti.contMDiff_hom_bundle_prod_iff _).2 fun ⟨l₀, w₀⟩ ↦ ?_
+  obtain ⟨x₀, hx₀q⟩ := hsurj w₀.proj
+  have hx₀ := hq x₀
+  set s := hx₀.localInverse
+  -- Read near `w₀` through the local inverse `s`: `K' l w = dq (K l (ds w))`.
+  have hs : ContMDiffAt I' I ∞ s w₀.proj := hx₀q ▸ hx₀.contMDiffAt_localInverse
+  have hTs : ContMDiffAt I'.tangent I.tangent ∞ (tangentMap I' I s) w₀ :=
+    hs.contMDiffAt_tangentMap (by simp)
+  have hA : ContMDiffAt (IΛ.prod I'.tangent) (IΛ.prod I.tangent) ∞
+      (fun r : Λ × TangentBundle I' N ↦ (r.1, tangentMap I' I s r.2)) (l₀, w₀) :=
+    contMDiffAt_fst.prodMk (hTs.comp (l₀, w₀) contMDiffAt_snd)
+  have hK' : ContMDiff (IΛ.prod I.tangent) I.tangent ∞
+      (fun r : Λ × TangentBundle I M ↦ TotalSpace.mk' E r.2.proj (K r.1 r.2.proj r.2.snd)) :=
+    (hKs.comp (contMDiff_fst.prodMk ((contMDiff_proj (TangentSpace I)).comp
+      contMDiff_snd))).clm_bundle_apply contMDiff_snd
+  have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (l₀, w₀)
+    ((hK' _).comp (l₀, w₀) hA)
+  refine hC.congr_of_eventuallyEq ?_
+  have hev : ∀ᶠ r : Λ × TangentBundle I' N in 𝓝 (l₀, w₀), r.2.proj ∈ hx₀.localInverse.source :=
+    ((FiberBundle.continuous_proj E' (TangentSpace I')).comp
+      continuous_snd).continuousAt.preimage_mem_nhds (hx₀.localInverse_open_source.mem_nhds (by
+        simpa only [Function.comp_apply, ← hx₀q] using hx₀.localInverse_mem_source))
+  filter_upwards [hev] with ⟨l, z, V⟩ hz
+  have hqs : q (s z) = z := hx₀.localInverse_right_inv hz
+  have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V) :
+      (⟨z, descendEndomorphism hq hsurj (K l) z V⟩ : TangentBundle I' N) =
+        ⟨q y, mfderiv I I' q y (K l y v)⟩ := by
+    subst hy
+    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj (K l) (hK l)]
+  exact key (s z) _ hqs (hx₀.mfderiv_apply_mfderiv_localInverse_apply (by simp) hz V)
+
+end Family
 
 include hJ in
 private theorem contMDiff_descendEndomorphism :
     ContMDiff I' (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
       (fun y ↦ TotalSpace.mk' (E' →L[ℝ] E')
         (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) y
-        (descendEndomorphism hq hsurj J y)) := by
-  refine (Manifold.contMDiff_hom_iff _).2 fun V hV z₀ ↦ ?_
-  obtain ⟨x₀, rfl⟩ := hsurj z₀
-  have hx₀ := hq x₀
-  set s := hx₀.localInverse
-  have hs : ContMDiffAt I' I ∞ s (q x₀) := hx₀.contMDiffAt_localInverse
-  -- Read near `q x₀` through the local inverse `s`: `J' z (V z) = dq (J (ds (V z)))`.
-  have hA : ContMDiffAt I' I.tangent ∞ (fun z ↦ tangentMap I' I s ⟨z, V z⟩) (q x₀) :=
-    (hs.contMDiffAt_tangentMap (X := ⟨q x₀, V (q x₀)⟩) (by simp)).comp (q x₀) (hV (q x₀))
-  have hB : ContMDiffAt I' I.tangent ∞
-      (fun z ↦ TotalSpace.mk' E (s z) (J (s z) (mfderiv I' I s z (V z)))) (q x₀) :=
-    ((J.toEndomorphism.contMDiff (s (q x₀))).comp (q x₀) hs).clm_bundle_apply hA
-  have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (q x₀) hB
-  refine hC.congr_of_eventuallyEq ?_
-  have hev : ∀ᶠ z in 𝓝 (q x₀), z ∈ hx₀.localInverse.source :=
-    hx₀.localInverse_open_source.mem_nhds hx₀.localInverse_mem_source
-  filter_upwards [hev] with z hz
-  have hqs : q (s z) = z := hx₀.localInverse_right_inv hz
-  -- The chain rule for `q ∘ s = id` near `z`: `dq_(s z) (ds_z (V z)) = V z`.
-  have hchain : mfderiv I I' q (s z) (mfderiv I' I s z (V z)) = V z := by
-    have hid : q ∘ s =ᶠ[𝓝 z] id :=
-      eventuallyEq_of_mem (hx₀.localInverse_open_source.mem_nhds hz)
-        hx₀.localInverse_eqOn_right
-    have hsz : MDifferentiableAt I' I s z :=
-      (hx₀.contMDiffOn_localInverse.contMDiffAt
-        (hx₀.localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
-    have h := mfderiv_comp_apply z ((hq.contMDiff (s z)).mdifferentiableAt (by simp)) hsz (V z)
-    rw [hid.mfderiv_eq, mfderiv_id] at h
-    -- The base points `q (s z)` and `z` agree, so `h` is the claim.
-    exact h.symm
-  have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V z) :
-      (⟨z, descendEndomorphism hq hsurj J z (V z)⟩ : TangentBundle I' N) =
-        ⟨q y, mfderiv I I' q y (J y v)⟩ := by
-    subst hy
-    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj J hJ]
-  exact key (s z) _ hqs hchain
+        (descendEndomorphism hq hsurj J y)) :=
+  -- This is the case of the constant family, with parameter in `N` itself.
+  (contMDiff_descendEndomorphism_family hq hsurj (IΛ := I') (K := fun _ : N ↦ J) (fun _ ↦ hJ)
+    (J.toEndomorphism.contMDiff.comp contMDiff_snd)).comp (contMDiff_id.prodMk contMDiff_id)
 
 /-- The almost complex structure on `N` induced by a smooth almost complex structure `J` on `M`
 along a surjective smooth local diffeomorphism `q : M → N`, provided that `J` respects the
@@ -229,6 +277,26 @@ sent by `J` to vectors with the same image. It is characterized by `K (dq v) = d
 def descend : SmoothAlmostComplexStructure I' N where
   toEndomorphism := ⟨descendEndomorphism hq hsurj J, contMDiff_descendEndomorphism hq hsurj J hJ⟩
   square_neg := descendEndomorphism_comp_square hq hsurj J hJ
+
+/-- For a family `K λ` of `q`-compatible smooth almost complex structures depending smoothly on a
+parameter `λ` in a manifold `Λ`, the descended structures depend smoothly on the parameter:
+`(λ, y) ↦ (descend (K λ))_y` is a smooth section of the tangent endomorphism bundle along the
+projection `Λ × N → N`. -/
+theorem contMDiff_descend_family {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ]
+    [TopologicalSpace HΛ] {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ]
+    [ChartedSpace HΛ Λ] {K : Λ → SmoothAlmostComplexStructure I M}
+    (hK : ∀ (l : Λ) ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+      mfderiv I I' q x v = mfderiv I I' q x' v' →
+        mfderiv I I' q x (K l x v) = mfderiv I I' q x' (K l x' v'))
+    (hKs : ContMDiff (IΛ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2
+        ((K r.1).toEndomorphism r.2))) :
+    ContMDiff (IΛ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun r : Λ × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) r.2
+        ((descend hq hsurj (K r.1) (hK r.1)).toEndomorphism r.2)) :=
+  contMDiff_descendEndomorphism_family hq hsurj hK hKs
 
 /-- Every differential of `q` is complex linear for `J` and its descent:
 `K (dq v) = dq (J v)`. -/
@@ -298,5 +366,167 @@ theorem compatible_descend_iff :
       (tames_descend_iff hq hsurj J hJ σ).1 h.tames⟩,
     fun h ↦ ⟨(invariant_descend_iff hq hsurj J hJ σ).2 h.invariant,
       (tames_descend_iff hq hsurj J hJ σ).2 h.tames⟩⟩
+
+end TauCeti.SmoothAlmostComplexStructure
+
+/-! ### Pulling back along a local diffeomorphism -/
+
+namespace TauCeti.SmoothAlmostComplexStructure
+
+variable {E H M E' H' N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
+  {q : M → N} (hq : IsLocalDiffeomorph I I' ∞ q) (K : SmoothAlmostComplexStructure I' N)
+
+/-- The endomorphism `(dq_x)⁻¹ ∘ K_(q x) ∘ dq_x` of the tangent space at `x`. -/
+private def localPullbackEndomorphism (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x :=
+  (hq.mfderivToContinuousLinearEquiv (by simp) x).symm.toContinuousLinearMap ∘L
+    (K.toEndomorphism (q x) ∘L mfderiv I I' q x)
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
+private theorem mfderiv_localPullbackEndomorphism_apply (x : M) (v : TangentSpace I x) :
+    mfderiv I I' q x (localPullbackEndomorphism hq K x v) = K (q x) (mfderiv I I' q x v) := by
+  conv_lhs => rw [← IsLocalDiffeomorph.mfderivToContinuousLinearEquiv_coe hq (by simp) x]
+  exact (hq.mfderivToContinuousLinearEquiv (by simp) x).apply_symm_apply _
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
+private theorem localPullbackEndomorphism_comp_square (x : M) :
+    (localPullbackEndomorphism hq K x).comp (localPullbackEndomorphism hq K x) =
+      -ContinuousLinearMap.id ℝ _ := by
+  ext v
+  apply (hq.isInvertible_mfderiv (by simp) x).injective
+  simp only [ContinuousLinearMap.comp_apply, mfderiv_localPullbackEndomorphism_apply, apply_apply,
+    map_neg, _root_.neg_apply, ContinuousLinearMap.id_apply]
+
+private theorem contMDiff_localPullbackEndomorphism :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x
+        (localPullbackEndomorphism hq K x)) := by
+  intro x₀
+  refine (TauCeti.contMDiffAt_hom_bundle_iff _ x₀).2 fun v₀ ↦ ?_
+  have hx₀ := hq x₀
+  set s := hx₀.localInverse
+  -- Near `x₀`, read the pullback through the local inverse `s`: `v ↦ ds (K (dq v))`.
+  have hTq : ContMDiff I.tangent I'.tangent ∞ (tangentMap I I' q) :=
+    hq.contMDiff.contMDiff_tangentMap (by simp)
+  have hK' : ContMDiff I'.tangent I'.tangent ∞
+      (fun w : TangentBundle I' N ↦ TotalSpace.mk' E' w.proj (K w.proj w.snd)) :=
+    (K.toEndomorphism.contMDiff.comp (contMDiff_proj (TangentSpace I'))).clm_bundle_apply
+      contMDiff_id
+  have hTs : ContMDiffAt I'.tangent I.tangent ∞ (tangentMap I' I s)
+      (TotalSpace.mk' E' (q x₀) (K (q x₀) (mfderiv I I' q x₀ v₀))) :=
+    hx₀.contMDiffAt_localInverse.contMDiffAt_tangentMap (by simp)
+  have hC := hTs.comp (⟨x₀, v₀⟩ : TangentBundle I M) ((hK' _).comp _ (hTq _))
+  refine hC.congr_of_eventuallyEq ?_
+  -- Over the target of `s`, `s ∘ q` is the identity.
+  filter_upwards [(FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
+    (s.open_target.mem_nhds hx₀.localInverse_mem_target)] with ⟨x, v⟩ hx
+  have hsx : s (q x) = x := hx₀.localInverse_left_inv hx
+  have hv : mfderiv I' I s (q x) (K (q x) (mfderiv I I' q x v)) =
+      localPullbackEndomorphism hq K x v := by
+    rw [← mfderiv_localPullbackEndomorphism_apply,
+      hx₀.mfderiv_localInverse_apply_mfderiv_apply (by simp) hx]
+  -- Move the base point from `x` to `s (q x)`. The fibres over the two points are both the model
+  -- space `E`, so the second components agree as they stand.
+  exact TotalSpace.ext hsx.symm (heq_of_eq hv.symm)
+
+/-- The pullback `q^* K`, with `(q^* K)_x = (dq_x)⁻¹ ∘ K_(q x) ∘ dq_x`, of a smooth almost complex
+structure along a smooth local diffeomorphism `q : M → N`. It is the only almost complex structure
+on `M` for which every differential of `q` is complex linear
+(`TauCeti.SmoothAlmostComplexStructure.eq_localPullback_iff`). -/
+def localPullback : SmoothAlmostComplexStructure I M where
+  toEndomorphism := ⟨localPullbackEndomorphism hq K, contMDiff_localPullbackEndomorphism hq K⟩
+  square_neg := localPullbackEndomorphism_comp_square hq K
+
+/-- The pullback at `x` is `(dq_x)⁻¹ ∘ K_(q x) ∘ dq_x`. -/
+theorem localPullback_apply (x : M) (v : TangentSpace I x) :
+    localPullback hq K x v =
+      (hq.mfderivToContinuousLinearEquiv (by simp) x).symm (K (q x) (mfderiv I I' q x v)) :=
+  (rfl)
+
+/-- Every differential of `q` is complex linear for the pullback and `K`:
+`dq (q^* K v) = K (dq v)`. -/
+@[simp]
+theorem mfderiv_localPullback_apply (x : M) (v : TangentSpace I x) :
+    mfderiv I I' q x (localPullback hq K x v) = K (q x) (mfderiv I I' q x v) :=
+  mfderiv_localPullbackEndomorphism_apply hq K x v
+
+/-- The pullback is the only almost complex structure on `M` for which every differential of `q`
+is complex linear. -/
+theorem eq_localPullback_iff (J : SmoothAlmostComplexStructure I M) :
+    J = localPullback hq K ↔
+      ∀ (x : M) (v : TangentSpace I x),
+        mfderiv I I' q x (J x v) = K (q x) (mfderiv I I' q x v) := by
+  refine ⟨fun h x v ↦ by rw [h, mfderiv_localPullback_apply], fun h ↦ ext fun x v ↦ ?_⟩
+  apply (hq.isInvertible_mfderiv (by simp) x).injective
+  rw [h, mfderiv_localPullback_apply]
+
+/-- The map `q` is pseudoholomorphic from the pullback of `K` to `K`. -/
+theorem isPseudoholomorphic_localPullback : IsPseudoholomorphic (localPullback hq K) K q :=
+  isPseudoholomorphic_iff.2 fun x ↦ isPseudoholomorphicAt_iff_mfderiv.2
+    ⟨(hq x).mdifferentiableAt (by simp), fun v ↦ mfderiv_localPullback_apply hq K x v⟩
+
+/-- The pullback of `K` is the only almost complex structure on `M` from which `q` is
+pseudoholomorphic to `K`. -/
+theorem eq_localPullback_iff_isPseudoholomorphic (J : SmoothAlmostComplexStructure I M) :
+    J = localPullback hq K ↔ IsPseudoholomorphic J K q := by
+  refine ⟨fun h ↦ h ▸ isPseudoholomorphic_localPullback hq K, fun h ↦ ?_⟩
+  exact (eq_localPullback_iff hq K J).2 fun x v ↦
+    ((isPseudoholomorphic_iff.1 h x).mfderiv_apply_commute v)
+
+/-- Along a diffeomorphism, the pullback is `TauCeti.SmoothAlmostComplexStructure.pullback`. -/
+@[simp]
+theorem localPullback_eq_pullback [FiniteDimensional ℝ E'] (h : M ≃ₘ⟮I, I'⟯ N) :
+    localPullback h.isLocalDiffeomorph K = pullback h K :=
+  ((eq_localPullback_iff _ K _).2 fun x v ↦ mfderiv_pullback_apply h K x v).symm
+
+/-- A map `g` with `q ∘ g = q`, such as a deck transformation of a covering map `q`, is complex
+linear for the pullback of `K` at every point where it is differentiable. -/
+theorem mfderiv_localPullback_apply_of_comp_eq {g : M → M} {x : M}
+    (hg : MDifferentiableAt I I g x) (hqg : q ∘ g = q) (v : TangentSpace I x) :
+    mfderiv I I g x (localPullback hq K x v) = localPullback hq K (g x) (mfderiv I I g x v) := by
+  -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_(g x) ∘ dg_x`.
+  have hchain (w : TangentSpace I x) :
+      mfderiv I I' q (g x) (mfderiv I I g x w) = mfderiv I I' q x w :=
+    mfderiv_apply_mfderiv_of_eventuallyEq_comp (.of_eq hqg)
+      ((hq.contMDiff (g x)).mdifferentiableAt (by simp)) hg w
+  have hqx : q (g x) = q x := congrFun hqg x
+  apply (hq.isInvertible_mfderiv (by simp) (g x)).injective
+  rw [hchain, mfderiv_localPullback_apply, mfderiv_localPullback_apply, hchain]
+  -- The base points `q x` and `q (g x)` agree, so both sides are `K` at that point.
+  exact apply_of_eq K hqx.symm _
+
+/-- The pullback of `K` respects the identifications of `q`: tangent vectors with the same image
+under the differentials of `q` are sent by the pullback to vectors with the same image. This is
+the hypothesis of `TauCeti.SmoothAlmostComplexStructure.descend`. -/
+theorem mfderiv_localPullback_apply_eq {x x' : M} (v : TangentSpace I x)
+    (v' : TangentSpace I x') (hxx' : q x = q x')
+    (hvv' : mfderiv I I' q x v = mfderiv I I' q x' v') :
+    mfderiv I I' q x (localPullback hq K x v) = mfderiv I I' q x' (localPullback hq K x' v') := by
+  rw [mfderiv_localPullback_apply, mfderiv_localPullback_apply, ← hvv']
+  -- The base points `q x` and `q x'` agree, so both sides are `K` at that point.
+  exact apply_of_eq K hxx' _
+
+/-- Descending the pullback of `K` along a surjective local diffeomorphism recovers `K`. -/
+@[simp]
+theorem descend_localPullback [FiniteDimensional ℝ E'] (hsurj : Surjective q) :
+    descend hq hsurj (localPullback hq K)
+        (fun _ _ v v' hxx' hvv' ↦ mfderiv_localPullback_apply_eq hq K v v' hxx' hvv') = K :=
+  ((eq_descend_iff hq hsurj _ _ K).2 fun x v ↦ (mfderiv_localPullback_apply hq K x v).symm).symm
+
+/-- Pulling back the descent of a `q`-compatible structure `J` recovers `J`. -/
+@[simp]
+theorem localPullback_descend [FiniteDimensional ℝ E'] (hsurj : Surjective q)
+    (J : SmoothAlmostComplexStructure I M)
+    (hJ : ∀ ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+      mfderiv I I' q x v = mfderiv I I' q x' v' →
+        mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v')) :
+    localPullback hq (descend hq hsurj J hJ) = J :=
+  ((eq_localPullback_iff hq _ J).2 fun x v ↦ (descend_apply_mfderiv hq hsurj J hJ x v).symm).symm
 
 end TauCeti.SmoothAlmostComplexStructure

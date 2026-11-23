@@ -53,6 +53,10 @@ restricted to it. -/
 def smallSingularSubcomplex : (toSSetPair.obj P).right.Subcomplex :=
   P.fst.smallSingularSubcomplex U
 
+/-- The small subcomplex of a topological pair is the small subcomplex of its ambient space. -/
+lemma smallSingularSubcomplex_eq :
+    P.smallSingularSubcomplex U = P.fst.smallSingularSubcomplex U := (rfl)
+
 @[simp]
 lemma mem_smallSingularSubcomplex_iff {n : SimplexCategoryᵒᵖ}
     (σ : (toSSetPair.obj P).right.obj n) :
@@ -84,6 +88,16 @@ theorem isIso_homologyMap_restrictι_smallSingularSubcomplex (n : ℕ) :
         (fun i ↦ (hU i).preimage P.map.hom.continuous)
         (by rw [← Set.preimage_iUnion, hcov, Set.preimage_univ]))
   · exact TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι R U hU hcov
+
+/-- The relative small-chain isomorphism for the pair defined by a subset. -/
+lemma isIso_homologyMap_restrictι_smallSingularSubcomplex_ofSubset {X : TopCat.{w}}
+    (S : Set X) {κ : Type*} (F : κ → Set X) (hF : ∀ i, IsOpen (F i))
+    (hcov : ⋃ i, F i = Set.univ) (n : ℕ) :
+    IsIso (SSetPair.homologyMap ((toSSetPair.obj (ofSubset S)).restrictι
+      (X.smallSingularSubcomplex F)) R n) := by
+  have hi := isIso_homologyMap_restrictι_smallSingularSubcomplex R (ofSubset S) F hF hcov n
+  erw [smallSingularSubcomplex_eq (ofSubset S) F] at hi
+  exact hi
 
 variable {P} {P' : TopPair.{w}} (f : P ⟶ P') (U : ι → Set P'.fst)
 

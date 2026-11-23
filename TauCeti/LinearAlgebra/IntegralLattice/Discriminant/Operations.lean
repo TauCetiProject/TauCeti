@@ -45,7 +45,6 @@ group is unchanged, while both its bilinear and quadratic forms are negated.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 2 and 3.
 -/
 
 public section
@@ -85,7 +84,7 @@ theorem mem_dualCarrier_orthogonalSum (L : IntegralLattice V) (M : IntegralLatti
       simpa using h
   · rintro ⟨hx, hy⟩ z hz
     rw [orthogonalSum_carrier, Submodule.mem_prod] at hz
-    rw [orthogonalSum_form, orthogonalSumForm_apply]
+    rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
     exact Submodule.add_mem _ (hx z.1 hz.1) (hy z.2 hz.2)
 
 /-- The dual carrier of an orthogonal sum is the product of the two dual carriers. -/
@@ -99,10 +98,10 @@ theorem dualCarrier_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W
 def orthogonalSumDualCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).dualCarrier ≃ₗ[ℤ] L.dualCarrier × M.dualCarrier where
   toFun x :=
-    (⟨x.1.1, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.1⟩,
-      ⟨x.1.2, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.2⟩)
+    (⟨x.val.1, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.1⟩,
+      ⟨x.val.2, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.2⟩)
   invFun x :=
-    ⟨(x.1, x.2), (L.mem_dualCarrier_orthogonalSum M (x.1, x.2)).mpr ⟨x.1.2, x.2.2⟩⟩
+    ⟨(x.1, x.2), (L.mem_dualCarrier_orthogonalSum M (x.1, x.2)).mpr ⟨x.1.property, x.2.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -113,8 +112,8 @@ def orthogonalSumDualCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W
 theorem orthogonalSumDualCarrierEquiv_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (x : (L.orthogonalSum M).dualCarrier) :
     L.orthogonalSumDualCarrierEquiv M x =
-      (⟨x.1.1, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.1⟩,
-        ⟨x.1.2, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.2⟩) :=
+      (⟨x.val.1, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.1⟩,
+        ⟨x.val.2, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.2⟩) :=
   by
     apply Prod.ext <;> apply Subtype.ext <;> rfl
 
@@ -122,7 +121,7 @@ theorem orthogonalSumDualCarrierEquiv_apply (L : IntegralLattice V) (M : Integra
 @[simp]
 theorem coe_orthogonalSumDualCarrierEquiv_symm_apply
     (L : IntegralLattice V) (M : IntegralLattice W) (x : L.dualCarrier × M.dualCarrier) :
-    ((L.orthogonalSumDualCarrierEquiv M).symm x : V × W) = (x.1.1, x.2.1) :=
+    ((L.orthogonalSumDualCarrierEquiv M).symm x : V × W) = (x.1.val, x.2.val) :=
   by
     apply Prod.ext <;> rfl
 
@@ -191,7 +190,7 @@ noncomputable def discriminantBilinearIsometryOrthogonalSum
           (L.orthogonalSum M).discriminantPairing
             (Submodule.Quotient.mk x) (Submodule.Quotient.mk y)
         rw [discriminantPairing_mk, discriminantPairing_mk, discriminantPairing_mk,
-          orthogonalSum_form, orthogonalSumForm_apply,
+          orthogonalSum_form, LinearMap.BilinForm.prod_apply,
           orthogonalSumDualCarrierEquiv_apply]
         rw [L.orthogonalSumDualCarrierEquiv_apply M y, ← AddCircle.coe_add]
 
@@ -254,7 +253,7 @@ noncomputable def discriminantQuadraticIsometryOrthogonalSum
           (Submodule.Quotient.mk (L.orthogonalSumDualCarrierEquiv M x).2) =
         (L.orthogonalSum M).discriminantQuadraticMap _ (Submodule.Quotient.mk x)
       rw [discriminantQuadraticMap_mk, discriminantQuadraticMap_mk,
-        discriminantQuadraticMap_mk, orthogonalSum_form, orthogonalSumForm_apply,
+        discriminantQuadraticMap_mk, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
         orthogonalSumDualCarrierEquiv_apply]
       rw [← AddCircle.coe_add]
       congr 1
@@ -389,8 +388,8 @@ theorem dualCarrier_neg (L : IntegralLattice V) : (-L).dualCarrier = L.dualCarri
 carrier by the identity on ambient vectors. -/
 def negDualCarrierEquiv (L : IntegralLattice V) :
     (-L).dualCarrier ≃ₗ[ℤ] L.dualCarrier where
-  toFun x := ⟨x, by simpa using x.2⟩
-  invFun x := ⟨x, by simp only [dualCarrier_neg]; exact x.2⟩
+  toFun x := ⟨x, by simpa using x.property⟩
+  invFun x := ⟨x, by simp only [dualCarrier_neg]; exact x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

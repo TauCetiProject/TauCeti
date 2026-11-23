@@ -110,6 +110,14 @@ lemma fiberBundleCoreOfGroupCocycle_indexAt :
     (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).indexAt =
       indexAt := (rfl)
 
+/-- The trivialization of the glued bundle at a base point is the chart chosen there. -/
+@[simp]
+lemma trivializationAt_fiberBundleCoreOfGroupCocycle (b : B) :
+    trivializationAt F (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).Fiber
+        b =
+      (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).localTriv
+        (indexAt b) := (rfl)
+
 /-- The core's coordinate change is the given group action. -/
 @[simp]
 lemma fiberBundleCoreOfGroupCocycle_coordChange (i j : ι) (b : B) (v : F) :
@@ -181,7 +189,7 @@ private lemma continuous_of_localTriv_snd
       (FiberBundle.continuous_proj F _).continuousAt.preimage_mem_nhds
         ((hU i).mem_nhds (hindex _))
     rw [hproj]
-    refine ContinuousAt.congr ?_ (Filter.eventually_of_mem hU₀ fun p hp ↦ (hf i _ p.2 hp).symm)
+    refine ContinuousAt.congr ?_ (Filter.eventually_of_mem hU₀ fun p hp ↦ (hf i _ p.snd hp).symm)
     refine ContinuousAt.smul (((hk i).continuousAt ((hU i).mem_nhds (hindex _))).comp
       (FiberBundle.continuous_proj F _).continuousAt) ?_
     exact continuous_snd.continuousAt.comp
@@ -200,8 +208,8 @@ def homeomorphOfCohomologous :
       TotalSpace F (fiberBundleCoreOfGroupCocycle U c' hc' F hU indexAt hindex hcontinuous').Fiber
     where
   -- The fibres are type synonyms of `F`, so the action of `G` on `F` is supplied explicitly.
-  toFun p := ⟨p.proj, @HSMul.hSMul G F F _ (h (indexAt p.proj) p.proj)⁻¹ p.2⟩
-  invFun p := ⟨p.proj, @HSMul.hSMul G F F _ (h (indexAt p.proj) p.proj) p.2⟩
+  toFun p := ⟨p.proj, @HSMul.hSMul G F F _ (h (indexAt p.proj) p.proj)⁻¹ p.snd⟩
+  invFun p := ⟨p.proj, @HSMul.hSMul G F F _ (h (indexAt p.proj) p.proj) p.snd⟩
   left_inv := fun ⟨b, v⟩ ↦ congrArg (TotalSpace.mk b) (smul_inv_smul (α := F) _ v)
   right_inv := fun ⟨b, v⟩ ↦ congrArg (TotalSpace.mk b) (inv_smul_smul (α := F) _ v)
   continuous_toFun := by
@@ -310,12 +318,12 @@ lemma homeomorphOfCohomologous_mk_smul [IsTopologicalGroup G] (c' : ι → ι �
     (p : TotalSpace G (fiberBundleCoreOfGroupCocycle U c hc G hU indexAt hindex hcontinuous).Fiber)
     (g : G) :
     homeomorphOfCohomologous U c hc hU indexAt hindex hcontinuous c' hc' hcontinuous' h hh hcc'
-        ⟨p.proj, op g • p.2⟩ =
+        ⟨p.proj, op g • p.snd⟩ =
       ⟨(homeomorphOfCohomologous U c hc hU indexAt hindex hcontinuous c' hc' hcontinuous' h hh
           hcc' p).proj,
         op g • (homeomorphOfCohomologous U c hc hU indexAt hindex hcontinuous c' hc' hcontinuous' h
-          hh hcc' p).2⟩ :=
+          hh hcc' p).snd⟩ :=
   -- Left multiplication by `(h i b)⁻¹` commutes with right multiplication by `g`.
-  congrArg (TotalSpace.mk p.proj) (mul_assoc (h (indexAt p.proj) p.proj)⁻¹ (p.2 : G) g).symm
+  congrArg (TotalSpace.mk p.proj) (mul_assoc (h (indexAt p.proj) p.proj)⁻¹ (p.snd : G) g).symm
 
 end TauCeti

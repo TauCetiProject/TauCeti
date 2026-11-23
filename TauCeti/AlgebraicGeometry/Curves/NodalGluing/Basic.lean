@@ -259,11 +259,11 @@ theorem eq_of_flagRel_of_flagRel (d : FlagPairData ι Flag X) {x y z : Σ i, X i
   obtain ⟨f, hf⟩ := (flagRel_def d x y).mp h₁
   obtain ⟨g, hg⟩ := (flagRel_def d y z).mp h₂
   rcases hf with ⟨hxf, hyf⟩ | ⟨hxf, hyf⟩
-  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+  · rcases hg with ⟨hyg, _⟩ | ⟨hyg, hzg⟩
     · exact absurd (hyf.symm.trans hyg) (fun h => fstPoint_ne_sndPoint d g f h.symm)
     · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inr hyf) (Or.inr hyg)
       exact hxf.trans ((congrArg (fun f => fstPoint d f) hfg).trans hzg.symm)
-  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, _⟩
     · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inl hyf) (Or.inl hyg)
       exact hxf.trans ((congrArg (fun f => sndPoint d f) hfg).trans hzg.symm)
     · exact absurd (hyf.symm.trans hyg) (fstPoint_ne_sndPoint d f g)
@@ -432,6 +432,22 @@ variable {d} in
 theorem Marking.mem_specialPoints_iff {L : Type*} {m : Marking d L} {i : ι} {x : X i} :
     x ∈ m.specialPoints i ↔ (⟨i, x⟩ : Σ i, X i) ∈ flagPointSet d ∨ ∃ l, m.point l = ⟨i, x⟩ :=
   Iff.rfl
+
+variable {d} in
+/-- The marks of `m` relabelled along an embedding `e : L' ↪ L` of labels: the mark `l` is the
+mark `e l` of `m`. Forgetting the mark `none` of marks labelled by `Option L` is relabelling along
+`Function.Embedding.some`. -/
+def Marking.reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) : Marking d L' where
+  point l := m.point (e l)
+  point_injective := m.point_injective.comp e.injective
+  point_notMem_flagPointSet l := m.point_notMem_flagPointSet (e l)
+
+variable {d} in
+/-- The mark `l` of a relabelled marking is the mark `e l`. -/
+@[simp]
+theorem Marking.point_reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) (l : L') :
+    (m.reindex e).point l = m.point (e l) :=
+  (rfl)
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/

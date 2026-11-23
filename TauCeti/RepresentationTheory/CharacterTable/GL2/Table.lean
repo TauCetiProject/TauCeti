@@ -12,9 +12,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Specification
 -- Non-public: `FDRep.nonempty_iso_of_character_eq` recovers an isomorphism from a character
 -- identity.
 import TauCeti.RepresentationTheory.CharacterTable.Determined
--- Non-public: `TauCeti.primitiveChar_to_Complex_ne_one`, the canonical additive character is
--- nontrivial.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+-- Non-public: `AddChar.IsPrimitive.ne_one`, the canonical additive character is nontrivial.
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: the `q`-power map is an involution on the units of the quadratic extension.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: `TauCeti.card_conjClasses_GL2` counts the conjugacy classes of `GL₂(𝔽_q)`.
@@ -96,7 +95,7 @@ is an equivalence relation because the `q`-power map is an involution on `Eˣ`, 
 exactly the fibres of `θ ↦ χ_θ` (`TauCeti.GL2CuspidalVirtualCharacter_eq_iff`). -/
 def gl2CuspidalSetoid :
     Setoid {θ : Eˣ →* ℂˣ // θ.comp (powMonoidHom (Fintype.card F)) ≠ θ} where
-  r θ θ' := θ'.1 = θ.1 ∨ θ'.1 = θ.1.comp (powMonoidHom (Fintype.card F))
+  r θ θ' := θ'.val = θ.val ∨ θ'.val = θ.val.comp (powMonoidHom (Fintype.card F))
   iseqv := by
     -- the `q`-power map is an involution on `Eˣ`, hence so is precomposition with it
     have h (θ : Eˣ →* ℂˣ) :
@@ -120,7 +119,7 @@ lies in the orbit `{θ, θ^q}` of the first. -/
 theorem gl2CuspidalSetoid_apply
     {θ θ' : {θ : Eˣ →* ℂˣ // θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}} :
     (gl2CuspidalSetoid F E) θ θ' ↔
-      θ'.1 = θ.1 ∨ θ'.1 = θ.1.comp (powMonoidHom (Fintype.card F)) :=
+      θ'.val = θ.val ∨ θ'.val = θ.val.comp (powMonoidHom (Fintype.card F)) :=
   Iff.rfl
 
 /-- **The classical parameters of the irreducible characters of `GL₂(𝔽_q)`**, one constructor
@@ -157,8 +156,8 @@ constant on the orbits `{θ, θ^q}`, so it descends to cuspidal parameters. -/
 private theorem GL2CuspidalVirtualCharacter_eq_of_rel
     {θ θ' : {θ : Eˣ →* ℂˣ // θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}}
     (h : (gl2CuspidalSetoid F E) θ θ') :
-    GL2CuspidalVirtualCharacter F E θ.1 (AddChar.FiniteField.primitiveChar_to_Complex F) =
-      GL2CuspidalVirtualCharacter F E θ'.1 (AddChar.FiniteField.primitiveChar_to_Complex F) := by
+    GL2CuspidalVirtualCharacter F E θ.val (AddChar.FiniteField.primitiveChar_to_Complex F) =
+      GL2CuspidalVirtualCharacter F E θ'.val (AddChar.FiniteField.primitiveChar_to_Complex F) := by
   rcases h with h | h <;> rw [h]
   rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
 
@@ -173,7 +172,7 @@ noncomputable def classFunction : GL2CharacterParam F E → ClassFunction ℂ (G
         ofFDRep_GL2PrincipalSeries_comm⟩ s
   | cuspidal o => Quotient.lift
       (fun θ =>
-        GL2CuspidalVirtualCharacter F E θ.1 (AddChar.FiniteField.primitiveChar_to_Complex F))
+        GL2CuspidalVirtualCharacter F E θ.val (AddChar.FiniteField.primitiveChar_to_Complex F))
       (fun _ _ h => GL2CuspidalVirtualCharacter_eq_of_rel h) o
 
 /-- The row of a linear parameter, as a function, is the character of `α ∘ det`. -/
@@ -202,8 +201,8 @@ representation attached to `θ`. -/
 @[simp]
 theorem coe_classFunction_cuspidal_mk
     (θ : {θ : Eˣ →* ℂˣ // θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}) :
-    ((cuspidal ⟦θ⟧).classFunction : GL (Fin 2) F → ℂ) = (GL2Cuspidal θ.1 θ.2).character :=
-  (character_GL2Cuspidal θ.1 θ.2).symm
+    ((cuspidal ⟦θ⟧).classFunction : GL (Fin 2) F → ℂ) = (GL2Cuspidal θ.val θ.property).character :=
+  (character_GL2Cuspidal θ.val θ.property).symm
 
 /-- The row of a parameter is an irreducible character of `GL₂(F)`. -/
 theorem classFunction_mem_irreducibleCharacters (i : GL2CharacterParam F E) :
@@ -220,9 +219,9 @@ theorem classFunction_mem_irreducibleCharacters (i : GL2CharacterParam F E) :
         (Sym2.mk_isDiag_iff.not.mp hs)
   · induction o using Quotient.ind with
     | _ θ =>
-      have := simple_GL2Cuspidal θ.1 θ.2
+      have := simple_GL2Cuspidal θ.val θ.property
       rw [coe_classFunction_cuspidal_mk]
-      exact (GL2Cuspidal θ.1 θ.2).character_mem_irreducibleCharacters
+      exact (GL2Cuspidal θ.val θ.property).character_mem_irreducibleCharacters
 
 /-- **Distinct parameters have distinct characters.** Across families this is the disjointness of
 the four families; within a family it is the identification of the parameters: a character of
@@ -231,7 +230,7 @@ series (`TauCeti.nonempty_iso_GL2PrincipalSeries_iff`) and the orbit `{θ, θ^q}
 characters (`TauCeti.GL2CuspidalVirtualCharacter_eq_iff`). -/
 theorem coe_classFunction_injective :
     Function.Injective fun i : GL2CharacterParam F E => (i.classFunction : GL (Fin 2) F → ℂ) := by
-  have hψ := primitiveChar_to_Complex_ne_one F
+  have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
   intro i j hij
   simp only at hij
   rcases i with α | α | ⟨s, hs⟩ | o <;> rcases j with β | β | ⟨t, ht⟩ | o'
@@ -250,7 +249,7 @@ theorem coe_classFunction_injective :
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2SteinbergTwist β α)
   · exact congrArg steinbergTwist (GL2SteinbergTwist_character_injective hij)
   · exact absurd hij (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries α _ _)
-  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ hψ)
+  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2PrincipalSeries β _ _)
   · exact absurd hij.symm (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries β _ _)
   · obtain ⟨e⟩ := FDRep.nonempty_iso_of_character_eq _ _ hij
@@ -258,7 +257,7 @@ theorem coe_classFunction_injective :
     exact Sym2.eq_iff.mpr ((nonempty_iso_GL2PrincipalSeries_iff F).mp ⟨e⟩)
   · exact absurd hij (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_GL2CuspidalVirtualCharacter β _ hψ)
-  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ hψ)
+  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ _)
   · exact absurd hij.symm (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · simp only [cuspidal.injEq]
     exact Quotient.sound
@@ -269,7 +268,8 @@ theorem coe_classFunction_injective :
 theorem exists_coe_classFunction_eq {f : GL (Fin 2) F → ℂ}
     (hf : f ∈ irreducibleCharacters ℂ (GL (Fin 2) F)) :
     ∃ i : GL2CharacterParam F E, (i.classFunction : GL (Fin 2) F → ℂ) = f := by
-  rw [irreducibleCharacters_GL2_eq_union F E (primitiveChar_to_Complex_ne_one F)] at hf
+  rw [irreducibleCharacters_GL2_eq_union F E
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one] at hf
   rcases hf with (((⟨α, rfl⟩ | ⟨α, rfl⟩) | ⟨⟨α, β⟩, hαβ, rfl⟩) | ⟨θ, hθ, rfl⟩)
   · exact ⟨linear α, coe_classFunction_linear α⟩
   · exact ⟨steinbergTwist α, coe_classFunction_steinbergTwist α⟩
@@ -284,7 +284,7 @@ noncomputable def equivIrreducibleCharacters :
     GL2CharacterParam F E ≃ irreducibleCharacters ℂ (GL (Fin 2) F) :=
   Equiv.ofBijective (fun i => ⟨i.classFunction, i.classFunction_mem_irreducibleCharacters⟩)
     ⟨fun _ _ h => coe_classFunction_injective (by simpa using congrArg Subtype.val h),
-      fun f => (exists_coe_classFunction_eq f.2).imp fun _ h => Subtype.ext h⟩
+      fun f => (exists_coe_classFunction_eq f.property).imp fun _ h => Subtype.ext h⟩
 
 /-- The irreducible character a parameter is sent to is its row. -/
 @[simp]

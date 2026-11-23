@@ -11,7 +11,6 @@ public import Mathlib.Topology.LocallyClosed
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -115,14 +114,14 @@ theorem IsSemialgebraicStack.isSemialgebraic (hθ : IsSemialgebraicStack C θ)
 semialgebraic stack. -/
 theorem isSemialgebraicStack_eval (hC : IsSemialgebraic C) (p : Fin k → MvPolynomial (Fin n) ℝ)
     (hp : ∀ x ∈ C, StrictMono fun i ↦ eval x (p i)) :
-    IsSemialgebraicStack C fun i x ↦ eval x.1 (p i) := by
+    IsSemialgebraicStack C fun i x ↦ eval x.val (p i) := by
   -- In ambient coordinates, the value of the `i`-th function is a polynomial in the last `n`
   -- coordinates.
   have hq (i : Fin k) (y : Fin (n + 1) → ℝ) :
       eval y (rename Fin.succ (p i)) = eval (Fin.tail y) (p i) := by
     simp only [eval_rename, Fin.tail_def, comp_def]
-  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtype_val,
-    fun x ↦ hp x.1 x.2, fun i ↦ ?_, fun j ↦ ?_⟩
+  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtypeVal,
+    fun x ↦ hp x.val x.property, fun i ↦ ?_, fun j ↦ ?_⟩
   · convert hC.preimage_tail.inter (isSemialgebraic_eval_eq (rename Fin.succ (p i)) (X 0))
       using 1
     ext y
@@ -216,7 +215,7 @@ theorem isLocallyClosed (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE : E ∈
   | zero =>
     rw [mem_singleton_iff.1 hE]
     exact isClosed_univ.isLocallyClosed
-  | @succ n 𝒟 k θ h𝒟 hθ ih =>
+  | @succ n 𝒟 k θ _ hθ ih =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     -- The cylinder over the locally closed cell `C` is an embedding with locally closed range.
     have hrange : IsLocallyClosed (range (cylinder C)) := by
@@ -234,54 +233,30 @@ continuous function on that cell; a sector is open in the cylinder over its base
 projection also keeps the new coordinate `0`. -/
 theorem exists_injective_isOpenEmbedding_comp (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)}
     (hE : E ∈ 𝒞) :
-    ∃ d, ∃ ι : Fin d → Fin n, Injective ι ∧ IsOpenEmbedding fun x : E ↦ x.1 ∘ ι := by
+    ∃ d, ∃ ι : Fin d → Fin n, Injective ι ∧ IsOpenEmbedding fun x : E ↦ x.val ∘ ι := by
   induction h with
   | zero =>
     rw [mem_singleton_iff.1 hE]
     exact ⟨0, id, injective_id, isOpen_univ.isOpenEmbedding_subtypeVal⟩
-  | @succ n 𝒟 k θ h𝒟 hθ ih =>
+  | @succ n 𝒟 k θ _ hθ ih =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     obtain ⟨d, ι, hι, hf⟩ := ih hC
     rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · -- A section is homeomorphic to the graph of a continuous function on `C`, hence to `C`.
-      let e : C ≃ₜ cylinder C '' sectionSet (θ C) i :=
-        (isEmbedding_graph ((hθ C hC).continuous i)).toHomeomorph.trans <|
-          (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
-            isEmbedding_cylinder.homeomorphImage _
-      refine ⟨d, Fin.succ ∘ ι, (Fin.succ_injective _).comp hι, ?_⟩
-      convert hf.comp e.symm.isOpenEmbedding using 1
-      funext y
-      obtain ⟨c, rfl⟩ := e.surjective y
-      -- `e c` is the point of the cylinder over `c` at height `θ C i c`.
-      have hc : (e c : Fin (n + 1) → ℝ) = cylinder C (c, θ C i c) := rfl
-      funext l
-      simp [hc, cylinder_apply_succ]
-    · -- A sector is an open subset of `C × ℝ`, which embeds openly into `ℝ ^ d × ℝ = ℝ ^ (d + 1)`.
-      let e := isEmbedding_cylinder (S := C).homeomorphImage (sectorSet (θ C) j)
-      let g : C × ℝ → Fin (d + 1) → ℝ :=
-        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘
-          Prod.map (fun x : C ↦ x.1 ∘ ι) id
-      have hg : IsOpenEmbedding g :=
-        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
-          (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
-      refine ⟨d + 1, Fin.cons 0 (Fin.succ ∘ ι),
+    · refine ⟨d, Fin.succ ∘ ι, (Fin.succ_injective _).comp hι, ?_⟩
+      exact hf.comp (isOpenEmbedding_tail_image_cylinder_sectionSet i ((hθ C hC).continuous i))
+    · refine ⟨d + 1, Fin.cons 0 (Fin.succ ∘ ι),
         Fin.cons_injective_iff.2 ⟨fun ⟨l, hl⟩ ↦ Fin.succ_ne_zero _ hl,
           (Fin.succ_injective _).comp hι⟩, ?_⟩
-      convert hg.comp <| (isOpen_sectorSet (hθ C hC).continuous j).isOpenEmbedding_subtypeVal.comp
-        e.symm.isOpenEmbedding using 1
-      funext y
-      obtain ⟨z, rfl⟩ := e.surjective y
-      simp only [comp_apply, Homeomorph.symm_apply_apply]
-      have hz : (e z : Fin (n + 1) → ℝ) = cylinder C z := rfl
-      funext l
-      cases l using Fin.cases <;> simp [hz, g, cylinder_apply_zero, cylinder_apply_succ]
+      convert isOpenEmbedding_cons_image_cylinder_sectorSet hf (hθ C hC).continuous j using 1
+      funext y l
+      cases l using Fin.cases <;> simp [Fin.tail]
 
 /-- Every cell of a cylindrical algebraic decomposition of `ℝ ^ (n + 1)` contains the graph of a
 continuous function on its projection `Fin.tail '' E`: a section is such a graph, and a sector
 contains one. -/
 theorem exists_continuous_cons_mem {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞) :
-    ∃ g : Fin.tail '' E → ℝ, Continuous g ∧ ∀ x, Fin.cons (g x) x.1 ∈ E := by
+    ∃ g : Fin.tail '' E → ℝ, Continuous g ∧ ∀ x, Fin.cons (g x) x.val ∈ E := by
   cases h with
   | succ k θ h𝒟 hθ =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
@@ -316,15 +291,15 @@ theorem injOn_tail_of_finite {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
 there. The continuous section supplied by the stack is its inverse on the projected cell. -/
 theorem isEmbedding_tail_of_injOn {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
     (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞)
-    (hinj : InjOn Fin.tail E) : IsEmbedding fun x : E ↦ Fin.tail x.1 := by
+    (hinj : InjOn Fin.tail E) : IsEmbedding fun x : E ↦ Fin.tail x.val := by
   obtain ⟨g, hg, hgE⟩ := h.exists_continuous_cons_mem hE
-  let p : E → Fin.tail '' E := fun x ↦ ⟨Fin.tail x.1, mem_image_of_mem _ x.2⟩
-  let r : Fin.tail '' E → Fin (n + 1) → ℝ := fun x ↦ Fin.cons (g x) x.1
+  let p : E → Fin.tail '' E := fun x ↦ ⟨Fin.tail x.val, mem_image_of_mem _ x.property⟩
+  let r : Fin.tail '' E → Fin (n + 1) → ℝ := fun x ↦ Fin.cons (g x) x.val
   have hp : Continuous p := by fun_prop
   have hr : Continuous r := by fun_prop
   have hrp : r ∘ p = Subtype.val := by
     funext x
-    exact hinj (hgE (p x)) x.2 (by simp [p])
+    exact hinj (hgE (p x)) x.property (by simp [p])
   exact IsEmbedding.subtypeVal.comp
     (IsEmbedding.of_comp hp hr (hrp ▸ IsEmbedding.subtypeVal))
 
@@ -408,14 +383,14 @@ theorem exists_finite_image_sign_eval_eq (h : IsCAD n 𝒞) {ι : Type*}
     ∃ T : Set (Fin n → ℝ), T.Finite ∧ (∀ E ∈ 𝒞, ∃ x, E ∩ T = {x}) ∧
       (fun x i ↦ SignType.sign (eval x (p i))) '' T =
         range fun x i ↦ SignType.sign (eval x (p i)) := by
-  choose x hx using fun E : 𝒞 ↦ (h.isConnected E.2).nonempty
+  choose x hx using fun E : 𝒞 ↦ (h.isConnected E.property).nonempty
   have := h.finite.to_subtype
   refine ⟨range x, finite_range x, fun E hE ↦ ⟨x ⟨E, hE⟩, ?_⟩, ?_⟩
   · refine Subset.antisymm ?_ (singleton_subset_iff.2 ⟨hx ⟨E, hE⟩, mem_range_self _⟩)
     rintro _ ⟨hyE, E', rfl⟩
     -- the sample of `E'` lies in `E`, so the cells `E'` and `E` meet and are equal
     have hE' : E' = ⟨E, hE⟩ := Subtype.ext <|
-      h.isPartition.pairwiseDisjoint.elim E'.2 hE (not_disjoint_iff.2 ⟨_, hx E', hyE⟩)
+      h.isPartition.pairwiseDisjoint.elim E'.property hE (not_disjoint_iff.2 ⟨_, hx E', hyE⟩)
     rw [mem_singleton_iff, hE']
   · rw [← range_comp]
     exact range_sign_sample_eq h.isPartition.sUnion_eq_univ hp x hx
@@ -428,7 +403,7 @@ theorem isCAD_singleton_univ (n : ℕ) : IsCAD n {univ} := by
   | zero => exact .zero
   | succ n ih =>
     convert IsCAD.succ (fun _ ↦ 0)
-      (fun C i (x : C) ↦ eval x.1 (Fin.elim0 i : MvPolynomial (Fin n) ℝ)) ih fun C hC ↦ ?_
+      (fun C i (x : C) ↦ eval x.val (Fin.elim0 i : MvPolynomial (Fin n) ℝ)) ih fun C hC ↦ ?_
     · ext E
       simp [range_cylinder, eq_comm]
     · rw [mem_singleton_iff.1 hC]

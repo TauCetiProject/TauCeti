@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Group.End
 
 /-!
 # The Frobenius endomorphism of the points of a Kostant toral closure
@@ -55,6 +56,10 @@ algebraic closedness or field hypothesis is used.
   bundled root-subgroup and torus points.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_zero` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_add`: the iteration laws.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_pow`: powers multiply the iteration
+  index.
+* `TauCeti.UniversalEnvelopingAlgebra.map_kostantToralFrobenius`: scalar extension commutes with
+  Frobenius, including between value rings in different universes.
 * `TauCeti.UniversalEnvelopingAlgebra.map_subtype_fixedSubgroup_kostantToralFrobenius_eq`: the
   points fixed by the Frobenius are the points valued in the Frobenius-fixed subring.
 
@@ -70,10 +75,28 @@ open WithConv
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v w
+universe u v v' w
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
+
+/-! ## The Frobenius on the generating families -/
+
+section TorusGenerator
+
+variable {κ : Type} {V : Type} [AddCommGroup V] (M : AddSubgroup V)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ) (p k : ℕ)
+variable {A : Type v} [CommRing A] [ExpChar A p] [Fintype κ]
+
+/-- **The Frobenius raises a torus point to its `p ^ k`-th power.** In a weight basis the torus
+point is the diagonal matrix of its weight characters, and the Frobenius raises each of them to
+the `p ^ k`-th power. -/
+theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
+    Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
+      kostantTorusMatrix M b wt (s ^ p ^ k) := by
+  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
+
+end TorusGenerator
 
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {I : Type w} {κ : Type}
@@ -87,8 +110,6 @@ variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι �
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 variable (p k : ℕ)
-
-/-! ## The Frobenius on the generating families -/
 
 section Generators
 
@@ -109,17 +130,6 @@ theorem map_iterateFrobenius_kostantRootSubgroupMatrix (i : I) (t : Multiplicati
     rw [RingHom.toIntAlgHom_apply, iterateFrobenius_def]
   rw [map_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b (iterateFrobenius A p k),
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, hparam]
-
-variable [Fintype κ]
-
-omit [Module ℚ V] in
-/-- **The Frobenius raises a torus point to its `p ^ k`-th power.** In a weight basis the torus
-point is the diagonal matrix of its weight characters, and the Frobenius raises each of them to
-the `p ^ k`-th power. -/
-theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
-    Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
-      kostantTorusMatrix M b wt (s ^ p ^ k) := by
-  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
 
 end Generators
 
@@ -215,6 +225,33 @@ theorem kostantToralFrobenius_add (m : ℕ) :
   refine MonoidHom.ext fun g => Subtype.ext (Matrix.GeneralLinearGroup.ext fun r c => ?_)
   rw [coe_kostantToralFrobenius_apply, MonoidHom.comp_apply, coe_kostantToralFrobenius_apply,
     coe_kostantToralFrobenius_apply, ← pow_mul, ← pow_add, Nat.add_comm k m]
+
+/-- Powers of Frobenius multiply its iteration index on the points of a toral closure. -/
+-- `Monoid.End` selects composition, rather than pointwise multiplication, for the power.
+theorem kostantToralFrobenius_pow (m : ℕ) :
+    (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p k A) ^ m =
+      kostantToralFrobenius e h ρ M hM hnil b wt p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp
+    (fun j => kostantToralFrobenius e h ρ M hM hnil b wt p j A)
+    (kostantToralFrobenius_zero e h ρ M hM hnil b wt p A)
+    (fun a b' => kostantToralFrobenius_add e h ρ M hM hnil b wt p a A b') k m
+
+/-- Scalar extension commutes with Frobenius on toral-closure points, even between value rings
+in different universes. -/
+theorem map_kostantToralFrobenius [Fintype κ] {B : Type v'} [CommRing B] [ExpChar B p]
+    (f : A →+* B)
+    (g : kostantToralPointsSubgroup e h ρ M hM hnil b wt A) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralFrobenius e h ρ M hM hnil b wt p k A g) =
+      kostantToralFrobenius e h ρ M hM hnil b wt p k B
+        ((kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+          (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f g) := by
+  refine Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j => ?_)
+  simp only [GeneralLinear.IntegralPointsPresentation.coe_map
+      (kostantToralPointsPresentation e h ρ M hM hnil b wt A)
+      (kostantToralPointsPresentation e h ρ M hM hnil b wt B),
+    coe_kostantToralFrobenius, Matrix.GeneralLinearGroup.map_apply, iterateFrobenius_def, map_pow]
 
 /-- A point of a toral closure is fixed by the Frobenius endomorphism exactly when every one of
 its entries lies in the Frobenius-fixed subring. -/

@@ -110,7 +110,7 @@ theorem polarDeformation_one (A : GL n 𝕜) :
 theorem polarDeformation_toUnits (t : ℝ) (U : unitaryGroup n 𝕜) :
     polarDeformation (Unitary.toUnits U) t = Unitary.toUnits U := by
   apply Units.ext
-  simp [coe_polarDeformation, Unitary.mul_star_self_of_mem U.2]
+  simp [coe_polarDeformation, Unitary.mul_star_self_of_mem U.property]
 
 /-- The positive polar factor of the deformation is the corresponding power of the original
 positive polar factor. -/
@@ -135,8 +135,7 @@ theorem contMDiff_polarDeformation {k : ℕ∞ω} :
     ℝ).contMDiffOn
     |>.comp_contMDiff contMDiff_sqrt_mul_star (fun A ↦ posDef_sqrt_mul_star A)
   have hexp : ContDiff ℝ k (NormedSpace.exp : Matrix n n 𝕜 → Matrix n n 𝕜) :=
-    contDiff_iff_contDiffAt.2 fun X ↦
-      ((NormedSpace.exp_analytic (𝕂 := ℝ) X).contDiffAt).of_le le_top
+    NormedSpace.contDiff_exp ℝ
   apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
   have htime : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, Matrix n n 𝕜)) 𝓘(ℝ, ℝ) k
       (fun p : ℝ × GL n 𝕜 ↦ 1 - p.1) := contMDiff_const.sub contMDiff_fst
@@ -160,7 +159,12 @@ theorem polarDeformation_unitary_mul_mul_unitary (t : ℝ) (A : GL n 𝕜)
   calc
     _ = U * CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)) ^ (1 - t) *
         (star (U : Matrix n n 𝕜) * U) * A.polarUnitary * V := by noncomm_ring
-    _ = _ := by rw [Unitary.star_mul_self_of_mem U.2, mul_one]; simp only [mul_assoc]
+    _ = _ := by rw [Unitary.star_mul_self_of_mem U.property, mul_one]; simp only [mul_assoc]
+
+/-- The polar deformation is equivariant under right multiplication by unitary matrices. -/
+theorem polarDeformation_mul_toUnits (t : ℝ) (A : GL n 𝕜) (V : unitaryGroup n 𝕜) :
+    polarDeformation (A * Unitary.toUnits V) t = polarDeformation A t * Unitary.toUnits V := by
+  simpa using polarDeformation_unitary_mul_mul_unitary t A 1 V
 
 /-- The polar deformation preserves the determinant-one locus for every real time. -/
 theorem det_polarDeformation_of_det_eq_one {A : GL n 𝕜}
@@ -182,7 +186,7 @@ def polarHomotopy :
     have h : Continuous (fun p : ℝ × GL n 𝕜 ↦ polarDeformation p.2 p.1) :=
       (contMDiff_polarDeformation (k := ∞)).continuous
     have hinc : Continuous (fun p : unitInterval × GL n 𝕜 ↦ ((p.1 : ℝ), p.2)) :=
-      (continuous_subtype_val.comp continuous_fst).prodMk continuous_snd
+      (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
     simpa only [Function.comp_def] using h.comp hinc
   map_zero_left := polarDeformation_zero
   map_one_left := polarDeformation_one

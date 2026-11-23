@@ -85,13 +85,66 @@ open scoped ContDiff Manifold
 
 namespace Bundle.ContMDiffRiemannianMetric
 
+/-! ### The two regions and the neck -/
+
+section Neck
+
+variable {E : Type*} [NormedAddCommGroup E] {a b : ℝ}
+
+variable (E) in
+/-- The neck `a < ‖v‖ < b`. -/
+private def neck (a b : ℝ) : Opens E :=
+  ⟨{v | a < ‖v‖ ∧ ‖v‖ < b},
+    (isOpen_lt continuous_const continuous_norm).inter (isOpen_lt continuous_norm continuous_const)⟩
+
+private theorem mem_neck {v : E} : v ∈ neck E a b ↔ a < ‖v‖ ∧ ‖v‖ < b :=
+  Iff.rfl
+
+private theorem ne_zero_of_mem_neck (ha : 0 ≤ a) (w : neck E a b) : w.val ≠ 0 :=
+  norm_pos_iff.1 (ha.trans_lt (mem_neck.1 w.property).1)
+
+/-- The neck, mapped into the first punctured summand by `e₁`. -/
+private def neckPunctureInl {M : Type*} [TopologicalSpace M] [T1Space M] {e₁ : E → M}
+    (h₁ : IsOpenEmbedding e₁) (ha : 0 ≤ a) (w : neck E a b) : puncture e₁ :=
+  ⟨e₁ w.val, mem_puncture.2 (h₁.injective.ne (ne_zero_of_mem_neck ha w))⟩
+
+private theorem contMDiff_neckPunctureInl [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [T1Space M] [ChartedSpace H M]
+    {e₁ : E → M} (h₁ : IsOpenEmbedding e₁) (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₁) (ha : 0 ≤ a) :
+    ContMDiff 𝓘(ℝ, E) I ∞ (neckPunctureInl (b := b) h₁ ha) := fun w ↦
+  (ContMDiffAt.subtypeVal_comp_iff (puncture e₁) _ w).mp
+    ((d₁.contMDiff.comp contMDiff_subtypeVal) w)
+
+end Neck
+
+section NeckPuncture
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {N : Type*} [TopologicalSpace N] [T1Space N] {e₂ : E → N} {a b : ℝ}
+
+/-- The neck, mapped into the second punctured summand by `e₂ ∘ inversion 0 1`. -/
+private def neckPunctureInr (h₂ : IsOpenEmbedding e₂) (ha : 0 ≤ a) (w : neck E a b) :
+    puncture e₂ :=
+  ⟨e₂ (inversion 0 1 w.val), apply_inversion_mem_puncture h₂.injective (ne_zero_of_mem_neck ha w)⟩
+
+private theorem contMDiff_neckPunctureInr {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [ChartedSpace H N] (h₂ : IsOpenEmbedding e₂)
+    (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₂) (ha : 0 ≤ a) :
+    ContMDiff 𝓘(ℝ, E) I ∞ (neckPunctureInr (b := b) h₂ ha) := fun w ↦
+  (ContMDiffAt.subtypeVal_comp_iff (puncture e₂) _ w).mp
+    (d₂.contMDiff.contMDiffAt.comp w
+      ((contDiffAt_inversion (ne_zero_of_mem_neck ha w)).contMDiffAt.comp w
+        contMDiff_subtypeVal.contMDiffAt))
+
+end NeckPuncture
+
+section NeckMaps
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H N] [IsManifold I ∞ N]
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H N]
   {e₁ : E → M} {e₂ : E → N} {a b : ℝ}
-
-/-! ### The two regions and the neck -/
 
 /-- The points of the punctured summands outside the closed balls `e₁ (closedBall 0 a)` and
 `e₂ (closedBall 0 b⁻¹)`. -/
@@ -102,9 +155,9 @@ private def outer (e₁ : E → M) (e₂ : E → N) (a b : ℝ) : Set (puncture 
 private theorem isOpen_outer (h₁ : Continuous e₁) (h₂ : Continuous e₂) :
     IsOpen (outer e₁ e₂ a b) :=
   isOpen_sum_iff.2
-    ⟨((isCompact_closedBall 0 a).image h₁).isClosed.isOpen_compl.preimage continuous_subtype_val,
+    ⟨((isCompact_closedBall 0 a).image h₁).isClosed.isOpen_compl.preimage continuous_subtypeVal,
       ((isCompact_closedBall 0 b⁻¹).image h₂).isClosed.isOpen_compl.preimage
-        continuous_subtype_val⟩
+        continuous_subtypeVal⟩
 
 /-- The two regions, as an open subset of the disjoint union of the punctured summands. -/
 private def outerOpens (h₁ : Continuous e₁) (h₂ : Continuous e₂) :
@@ -119,25 +172,7 @@ private theorem inr_mem_outerOpens {h₁ : Continuous e₁} {h₂ : Continuous e
     .inr y ∈ outerOpens (a := a) (b := b) h₁ h₂ ↔ (y : N) ∉ e₂ '' closedBall 0 b⁻¹ :=
   Iff.rfl
 
-variable (E) in
-/-- The neck `a < ‖v‖ < b`. -/
-private def neck (a b : ℝ) : Opens E :=
-  ⟨{v | a < ‖v‖ ∧ ‖v‖ < b},
-    (isOpen_lt continuous_const continuous_norm).inter (isOpen_lt continuous_norm continuous_const)⟩
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-private theorem mem_neck {v : E} : v ∈ neck E a b ↔ a < ‖v‖ ∧ ‖v‖ < b :=
-  Iff.rfl
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-private theorem ne_zero_of_mem_neck (ha : 0 ≤ a) (w : neck E a b) : w.1 ≠ 0 :=
-  norm_pos_iff.1 (ha.trans_lt (mem_neck.1 w.2).1)
-
-section Gluing
-
-variable (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-  (g₂ : ContMDiffRiemannianMetric I ∞ E (fun y : N ↦ TangentSpace I y))
-  (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+variable (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
   (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₂)
 
 /-- The map onto the connected sum from the two regions. -/
@@ -146,16 +181,8 @@ private def outerMap : outerOpens (a := a) (b := b) h₁.continuous h₂.continu
   ConnectedSum.mk e₁ e₂ ∘ Subtype.val
 
 private theorem outerMap_apply (z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous) :
-    outerMap h₁ h₂ z = ConnectedSum.mk e₁ e₂ z.1 :=
+    outerMap h₁ h₂ z = ConnectedSum.mk e₁ e₂ z.val :=
   rfl
-
-include d₁ d₂ in
-private theorem isLocalDiffeomorph_outerMap :
-    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-    IsLocalDiffeomorph I I (∞ + 1) (outerMap (a := a) (b := b) h₁ h₂) :=
-  letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-  fun z ↦ (TauCeti.isLocalDiffeomorph_subtype_val z).comp
-    (hg := isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂ z.1)
 
 /-- The two regions cover the connected sum. -/
 private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
@@ -174,7 +201,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
           inv_lt_norm_inversion_iff (ha.trans_lt hab) hv0]
         exact (mem_closedBall_zero_iff.1 hv).trans_lt hab
       · rw [outerMap_apply, mk_inl, mk_inr]
-        exact (inl_eq_inr v hv0 hx hy).symm
+        exact (inl_eq_inr v hx hy).symm
     · exact ⟨⟨.inl ⟨x, hx⟩, hxa⟩, outerMap_apply h₁ h₂ _⟩
   · by_cases hyb : y ∈ e₂ '' closedBall 0 b⁻¹
     · -- `y = e₂ w` with `0 < ‖w‖ ≤ b⁻¹` is glued to `e₁ (inversion 0 1 w)`, which lies outside
@@ -190,36 +217,29 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
           exact mem_closedBall_zero_iff.1 hw
         exact hab.trans_le hb
       · rw [outerMap_apply, mk_inl, mk_inr]
-        exact inl_inversion_eq_inr hw0 hx hy
+        exact inl_inversion_eq_inr hx hy
     · exact ⟨⟨.inr ⟨y, hy⟩, hyb⟩, outerMap_apply h₁ h₂ _⟩
-
-/-- The neck, mapped into the first punctured summand by `e₁`. -/
-private def neckPunctureInl (ha : 0 ≤ a) (w : neck E a b) : puncture e₁ :=
-  ⟨e₁ w.1, mem_puncture.2 (h₁.injective.ne (ne_zero_of_mem_neck ha w))⟩
-
-/-- The neck, mapped into the second punctured summand by `e₂ ∘ inversion 0 1`. -/
-private def neckPunctureInr (ha : 0 ≤ a) (w : neck E a b) : puncture e₂ :=
-  ⟨e₂ (inversion 0 1 w.1), apply_inversion_mem_puncture h₂.injective (ne_zero_of_mem_neck ha w)⟩
 
 /-- The neck, mapped into the first region by `e₁`. -/
 private def neckInl (ha : 0 ≤ a) (w : neck E a b) :
     outerOpens (a := a) (b := b) h₁.continuous h₂.continuous :=
   ⟨.inl (neckPunctureInl h₁ ha w),
-    h₁.injective.apply_notMem_image_closedBall_zero_iff.2 (mem_neck.1 w.2).1⟩
+    h₁.injective.apply_notMem_image_closedBall_zero_iff.2 (mem_neck.1 w.property).1⟩
 
 /-- The neck, mapped into the second region by `e₂ ∘ inversion 0 1`. -/
 private def neckInr (ha : 0 ≤ a) (w : neck E a b) :
     outerOpens (a := a) (b := b) h₁.continuous h₂.continuous :=
   ⟨.inr (neckPunctureInr h₂ ha w), h₂.injective.apply_notMem_image_closedBall_zero_iff.2 <|
-    (inv_lt_norm_inversion_iff (ha.trans_lt ((mem_neck.1 w.2).1.trans (mem_neck.1 w.2).2))
-      (ne_zero_of_mem_neck ha w)).2 (mem_neck.1 w.2).2⟩
+    (inv_lt_norm_inversion_iff (ha.trans_lt ((mem_neck.1 w.property).1.trans
+        (mem_neck.1 w.property).2))
+      (ne_zero_of_mem_neck ha w)).2 (mem_neck.1 w.property).2⟩
 
 private theorem coe_neckInl (ha : 0 ≤ a) (w : neck E a b) :
-    (neckInl h₁ h₂ ha w).1 = .inl (neckPunctureInl h₁ ha w) :=
+    (neckInl h₁ h₂ ha w).val = .inl (neckPunctureInl h₁ ha w) :=
   rfl
 
 private theorem coe_neckInr (ha : 0 ≤ a) (w : neck E a b) :
-    (neckInr h₁ h₂ ha w).1 = .inr (neckPunctureInr h₂ ha w) :=
+    (neckInr h₁ h₂ ha w).val = .inr (neckPunctureInr h₂ ha w) :=
   rfl
 
 /-- The two maps of the neck into the regions agree in the connected sum. -/
@@ -228,77 +248,85 @@ private theorem outerMap_comp_neckInl (ha : 0 ≤ a) :
   funext fun w ↦ by
     rw [comp_apply, comp_apply, outerMap_apply, outerMap_apply, coe_neckInl, coe_neckInr, mk_inl,
       mk_inr]
-    exact inl_eq_inr w.1 (ne_zero_of_mem_neck ha w) _ _
+    exact inl_eq_inr w.val _ _
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-include d₁ in
-private theorem contMDiff_neckPunctureInl (ha : 0 ≤ a) :
-    ContMDiff 𝓘(ℝ, E) I ∞ (neckPunctureInl (b := b) h₁ ha) := fun w ↦
-  (ContMDiffAt.subtypeVal_comp_iff (puncture e₁) _ w).mp
-    ((d₁.contMDiff.comp contMDiff_subtype_val) w)
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ N] in
-include d₂ in
-private theorem contMDiff_neckPunctureInr (ha : 0 ≤ a) :
-    ContMDiff 𝓘(ℝ, E) I ∞ (neckPunctureInr (b := b) h₂ ha) := fun w ↦
-  (ContMDiffAt.subtypeVal_comp_iff (puncture e₂) _ w).mp
-    (d₂.contMDiff.contMDiffAt.comp w
-      ((contDiffAt_inversion (ne_zero_of_mem_neck ha w)).contMDiffAt.comp w
-        contMDiff_subtype_val.contMDiffAt))
-
-omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₁ in
 private theorem contMDiff_neckInl (ha : 0 ≤ a) :
     ContMDiff 𝓘(ℝ, E) I ∞ (neckInl (b := b) h₁ h₂ ha) := fun w ↦
   (ContMDiffAt.subtypeVal_comp_iff _ _ w).mp
     (ContMDiff.inl.contMDiffAt.comp w (contMDiff_neckPunctureInl h₁ d₁ ha w))
 
-omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₂ in
 private theorem contMDiff_neckInr (ha : 0 ≤ a) :
     ContMDiff 𝓘(ℝ, E) I ∞ (neckInr (b := b) h₁ h₂ ha) := fun w ↦
   (ContMDiffAt.subtypeVal_comp_iff _ _ w).mp
     (ContMDiff.inr.contMDiffAt.comp w (contMDiff_neckPunctureInr h₂ d₂ ha w))
 
-omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₁ in
 /-- Along the neck, the map into the first region has the differential of `e₁`. -/
 private theorem mfderiv_neckInl_apply (ha : 0 ≤ a) (w : neck E a b)
     (ξ : TangentSpace 𝓘(ℝ, E) w) :
-    mfderiv 𝓘(ℝ, E) I (neckInl h₁ h₂ ha) w ξ = mfderiv 𝓘(ℝ, E) I e₁ w.1 ξ := by
+    mfderiv 𝓘(ℝ, E) I (neckInl h₁ h₂ ha) w ξ = mfderiv 𝓘(ℝ, E) I e₁ w.val ξ := by
   have hP := (contMDiff_neckPunctureInl h₁ d₁ ha w).mdifferentiableAt (by simp)
   have hval : Subtype.val ∘ neckInl h₁ h₂ ha = Sum.inl ∘ neckPunctureInl (b := b) h₁ ha := rfl
   have hval' : Subtype.val ∘ neckPunctureInl (b := b) h₁ ha = e₁ ∘ Subtype.val := rfl
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
-    ((contMDiff_neckInl h₁ h₂ d₁ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
+  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ).symm.trans ?_
   rw [hval, TauCeti.mfderiv_sumInl_comp_apply hP,
-    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
-  exact TauCeti.Manifold.mfderiv_comp_subtype_val_apply ((d₁ w.1).mdifferentiableAt (by simp)) ξ
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ, hval']
+  exact TauCeti.Manifold.mfderiv_comp_subtype_val_apply ξ
 
-omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₂ in
 /-- Along the neck, the map into the second region has the differential of
 `e₂ ∘ inversion 0 1`. -/
 private theorem mfderiv_neckInr_apply (ha : 0 ≤ a) (w : neck E a b)
     (ξ : TangentSpace 𝓘(ℝ, E) w) :
     mfderiv 𝓘(ℝ, E) I (neckInr h₁ h₂ ha) w ξ =
-      mfderiv 𝓘(ℝ, E) I e₂ (inversion 0 1 w.1) (fderiv ℝ (inversion (0 : E) 1) w.1 ξ) := by
+      mfderiv 𝓘(ℝ, E) I e₂ (inversion 0 1 w.val) (fderiv ℝ (inversion (0 : E) 1) w.val ξ) := by
   have hP := (contMDiff_neckPunctureInr h₂ d₂ ha w).mdifferentiableAt (by simp)
-  have hinv : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (inversion (0 : E) 1) w.1 :=
+  have hinv : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (inversion (0 : E) 1) w.val :=
     (contDiffAt_inversion (n := 1) (ne_zero_of_mem_neck ha w)).contMDiffAt.mdifferentiableAt
       one_ne_zero
-  have he₂ : MDifferentiableAt 𝓘(ℝ, E) I e₂ (inversion 0 1 w.1) :=
+  have he₂ : MDifferentiableAt 𝓘(ℝ, E) I e₂ (inversion 0 1 w.val) :=
     (d₂ _).mdifferentiableAt (by simp)
   have hval : Subtype.val ∘ neckInr h₁ h₂ ha = Sum.inr ∘ neckPunctureInr (b := b) h₂ ha := rfl
   have hval' : Subtype.val ∘ neckPunctureInr (b := b) h₂ ha =
       (e₂ ∘ inversion 0 1) ∘ Subtype.val := rfl
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
-    ((contMDiff_neckInr h₁ h₂ d₂ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
+  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ).symm.trans ?_
   rw [hval, TauCeti.mfderiv_sumInr_comp_apply hP,
-    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
-  refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply (he₂.comp _ hinv) ξ).trans ?_
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ, hval']
+  refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply ξ).trans ?_
   rw [mfderiv_comp _ he₂ hinv, mfderiv_eq_fderiv]
   exact ContinuousLinearMap.comp_apply _ _ _
+
+/-- The differential of the map from the two regions is that of the quotient map. -/
+private theorem mfderiv_outerMap_apply
+    (z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous) (u : TangentSpace I z) :
+    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
+    mfderiv I I (outerMap h₁ h₂) z u = mfderiv I I (ConnectedSum.mk e₁ e₂) z.val u :=
+  letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
+  TauCeti.Manifold.mfderiv_comp_subtype_val_apply u
+
+end NeckMaps
+
+section Gluing
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H N] [IsManifold I ∞ N]
+  {e₁ : E → M} {e₂ : E → N} {a b : ℝ}
+  (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+  (g₂ : ContMDiffRiemannianMetric I ∞ E (fun y : N ↦ TangentSpace I y))
+  (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+  (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I ∞ e₂)
+
+include d₁ d₂ in
+private theorem isLocalDiffeomorph_outerMap :
+    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
+    IsLocalDiffeomorph I I (∞ + 1) (outerMap (a := a) (b := b) h₁ h₂) :=
+  letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
+  fun z ↦ (TauCeti.isLocalDiffeomorph_subtype_val z).comp
+    (hg := isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂ z.val)
 
 /-- The disjoint union of `g₁` and `g₂`, restricted to the two regions. -/
 private def outerMetric :
@@ -311,24 +339,24 @@ private theorem outerMetric_inner_inl (x : puncture e₁)
     (hx : (.inl x : puncture e₁ ⊕ puncture e₂) ∈ outerOpens (a := a) (b := b) h₁.continuous
       h₂.continuous) (u u' : TangentSpace I (⟨Sum.inl x, hx⟩ : outerOpens h₁.continuous
         h₂.continuous)) :
-    (outerMetric g₁ g₂ h₁ h₂).inner ⟨Sum.inl x, hx⟩ u u' = g₁.inner x.1 u u' := by
+    (outerMetric g₁ g₂ h₁ h₂).inner ⟨Sum.inl x, hx⟩ u u' = g₁.inner x.val u u' := by
   refine (restrictOpenTangentSpace_inner _ _ ⟨Sum.inl x, hx⟩ u u').trans ?_
   rw [TauCeti.Manifold.tangentSpaceOpenEquiv_apply, TauCeti.Manifold.tangentSpaceOpenEquiv_apply]
   refine (sumTangentSpace_inner_inl _ _ x u u').trans ?_
   refine (restrictOpenTangentSpace_inner _ _ x u u').trans ?_
-  exact congrArg₂ (fun s t ↦ g₁.inner x.1 s t) (TauCeti.Manifold.tangentSpaceOpenEquiv_apply x u)
+  exact congrArg₂ (fun s t ↦ g₁.inner x.val s t) (TauCeti.Manifold.tangentSpaceOpenEquiv_apply x u)
     (TauCeti.Manifold.tangentSpaceOpenEquiv_apply x u')
 
 private theorem outerMetric_inner_inr (y : puncture e₂)
     (hy : (.inr y : puncture e₁ ⊕ puncture e₂) ∈ outerOpens (a := a) (b := b) h₁.continuous
       h₂.continuous) (u u' : TangentSpace I (⟨Sum.inr y, hy⟩ : outerOpens h₁.continuous
         h₂.continuous)) :
-    (outerMetric g₁ g₂ h₁ h₂).inner ⟨Sum.inr y, hy⟩ u u' = g₂.inner y.1 u u' := by
+    (outerMetric g₁ g₂ h₁ h₂).inner ⟨Sum.inr y, hy⟩ u u' = g₂.inner y.val u u' := by
   refine (restrictOpenTangentSpace_inner _ _ ⟨Sum.inr y, hy⟩ u u').trans ?_
   rw [TauCeti.Manifold.tangentSpaceOpenEquiv_apply, TauCeti.Manifold.tangentSpaceOpenEquiv_apply]
   refine (sumTangentSpace_inner_inr _ _ y u u').trans ?_
   refine (restrictOpenTangentSpace_inner _ _ y u u').trans ?_
-  exact congrArg₂ (fun s t ↦ g₂.inner y.1 s t) (TauCeti.Manifold.tangentSpaceOpenEquiv_apply y u)
+  exact congrArg₂ (fun s t ↦ g₂.inner y.val s t) (TauCeti.Manifold.tangentSpaceOpenEquiv_apply y u)
     (TauCeti.Manifold.tangentSpaceOpenEquiv_apply y u')
 
 variable {g₁ g₂} (hg : ∀ v : E, a < ‖v‖ → ‖v‖ < b → ∀ ξ ζ : E,
@@ -364,11 +392,11 @@ private theorem outerMetric_inner_neckInl_eq (ha : 0 ≤ a) (w : neck E a b)
     rw [outerMap_comp_neckInl h₁ h₂ ha, h₂'] at h₁'
     exact (DFunLike.congr_fun h₁' ξ).symm
   -- Every tangent vector at `e₁ w` is the image of a vector of `E` under the differential of `e₁`.
-  obtain ⟨L, hL⟩ := d₁.isInvertible_mfderiv (by simp) w.1
-  have hL' (t : TangentSpace I (e₁ w.1)) : mfderiv 𝓘(ℝ, E) I e₁ w.1 (L.symm t) = t := by
+  obtain ⟨L, hL⟩ := d₁.isInvertible_mfderiv (by simp) w.val
+  have hL' (t : TangentSpace I (e₁ w.val)) : mfderiv 𝓘(ℝ, E) I e₁ w.val (L.symm t) = t := by
     rw [← hL]
     exact L.apply_symm_apply t
-  have hpre (t : TangentSpace I (e₁ w.1)) :
+  have hpre (t : TangentSpace I (e₁ w.val)) :
       mfderiv 𝓘(ℝ, E) I (neckInl h₁ h₂ ha) w (L.symm t) = t :=
     (mfderiv_neckInl_apply h₁ h₂ d₁ ha w _).trans (hL' t)
   have hinj := ((hf.isInvertible_mfderiv (by simp)) (neckInr h₁ h₂ ha w)).injective
@@ -377,15 +405,15 @@ private theorem outerMetric_inner_neckInl_eq (ha : 0 ≤ a) (w : neck E a b)
   have hv' : v' = mfderiv 𝓘(ℝ, E) I (neckInr h₁ h₂ ha) w (L.symm u') :=
     hinj ((hu'.symm.trans (congrArg _ (hpre u').symm)).trans (hcomp _))
   subst hv hv'
-  have hw := mem_neck.1 w.2
+  have hw := mem_neck.1 w.property
   calc (outerMetric g₁ g₂ h₁ h₂).inner (neckInl h₁ h₂ ha w) u u'
-      = g₁.inner (e₁ w.1) u u' := outerMetric_inner_inl g₁ g₂ h₁ h₂ _ _ u u'
-    _ = g₁.inner (e₁ w.1) (mfderiv 𝓘(ℝ, E) I e₁ w.1 (L.symm u))
-          (mfderiv 𝓘(ℝ, E) I e₁ w.1 (L.symm u')) :=
-        (congrArg₂ (fun s t ↦ g₁.inner (e₁ w.1) s t) (hL' u) (hL' u')).symm
-    _ = _ := hg w.1 hw.1 hw.2 _ _
+      = g₁.inner (e₁ w.val) u u' := outerMetric_inner_inl g₁ g₂ h₁ h₂ _ _ u u'
+    _ = g₁.inner (e₁ w.val) (mfderiv 𝓘(ℝ, E) I e₁ w.val (L.symm u))
+          (mfderiv 𝓘(ℝ, E) I e₁ w.val (L.symm u')) :=
+        (congrArg₂ (fun s t ↦ g₁.inner (e₁ w.val) s t) (hL' u) (hL' u')).symm
+    _ = _ := hg w.val hw.1 hw.2 _ _
     _ = _ := ((outerMetric_inner_inr g₁ g₂ h₁ h₂ _ _ _ _).trans
-        (congrArg₂ (fun s t ↦ g₂.inner (e₂ (inversion 0 1 w.1)) s t)
+        (congrArg₂ (fun s t ↦ g₂.inner (e₂ (inversion 0 1 w.val)) s t)
           (mfderiv_neckInr_apply h₁ h₂ d₂ ha w _) (mfderiv_neckInr_apply h₁ h₂ d₂ ha w _))).symm
 
 include d₁ d₂ hg in
@@ -445,17 +473,6 @@ def connectedSum (ha : 0 ≤ a) (hab : a < b) :
   (outerMetric g₁ g₂ h₁ h₂).descend (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂)
     (outerMap_surjective h₁ h₂ ha hab) (outerMetric_inner_eq h₁ h₂ d₁ d₂ hg ha hab)
 
-include d₁ d₂ in
-/-- The differential of the map from the two regions is that of the quotient map. -/
-private theorem mfderiv_outerMap_apply
-    (z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous) (u : TangentSpace I z) :
-    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-    mfderiv I I (outerMap h₁ h₂) z u = mfderiv I I (ConnectedSum.mk e₁ e₂) z.1 u :=
-  letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-  haveI := ConnectedSum.isManifold (n := ⊤) h₁ h₂ d₁ d₂
-  TauCeti.Manifold.mfderiv_comp_subtype_val_apply
-    ((isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂ z.1).mdifferentiableAt (by simp)) u
-
 /-- On `M` outside `e₁ (closedBall 0 a)`, the glued metric is `g₁`. -/
 theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : puncture e₁)
     (hx : (x : M) ∉ e₁ '' closedBall 0 a) (u u' : TangentSpace I x) :
@@ -468,7 +485,7 @@ theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inl x, hx⟩
   have hD (t : TangentSpace I x) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inl e₁ e₂) x t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+    (mfderiv_outerMap_apply h₁ h₂ z t).trans
       (mfderiv_inl_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) x t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)
@@ -489,7 +506,7 @@ theorem connectedSum_inner_mfderiv_inr (ha : 0 ≤ a) (hab : a < b) (y : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inr y, hy⟩
   have hD (t : TangentSpace I y) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inr e₁ e₂) y t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+    (mfderiv_outerMap_apply h₁ h₂ z t).trans
       (mfderiv_inr_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) y t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)
@@ -563,10 +580,16 @@ theorem range_scalarCurvature_connectedSum_subset (ha : 0 ≤ a) (hab : a < b) :
 
 end Gluing
 
-variable {g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+section CylinderNeck
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
+  {e₁ : E → M} {e₂ : E → N} {a b : ℝ}
+  {g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
   {g₂ : ContMDiffRiemannianMetric I ∞ E (fun y : N ↦ TangentSpace I y)}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [T2Space N] in
 /-- **Cylindrical necks agree.** Suppose that `g₁` read through `e₁` is the cylinder metric
 `⟪ξ, ζ⟫ / ‖v‖ ^ 2` for `a < ‖v‖ < b`, and that `g₂` read through `e₂` is the cylinder metric for
 `b⁻¹ < ‖w‖ < a⁻¹`. Since the inversion preserves the cylinder metric, the gluing map of the
@@ -590,5 +613,7 @@ theorem inner_mfderiv_inversion_eq_of_cylinder (ha : 0 < a)
     ((norm_inversion_lt_inv_iff ha hv).2 hav)]
   simpa only [dist_zero_right] using
     (inner_fderiv_inversion_div_dist_sq (0 : E) v one_ne_zero ξ ζ).symm
+
+end CylinderNeck
 
 end Bundle.ContMDiffRiemannianMetric

@@ -67,10 +67,12 @@ theorem denseTorusι_prod_comp_algebraicProdComparison (hΦ₀ : Nonempty Φ.con
       (isPullback_affineToricSchemeMap_fst_snd_bot Φ.lattice Ψ.lattice).isoPullback.hom ≫
         pullback.map _ _ _ _ (Φ.denseTorusι hΦ₀) (Ψ.denseTorusι hΨ₀) (𝟙 _)
           (by
-            rw [Category.comp_id, Φ.denseTorusι_eq_affineToricChartι hΦ₀ (Φ.bot_mem hΦ₀.some.2),
+            rw [Category.comp_id, Φ.denseTorusι_eq_affineToricChartι hΦ₀
+                (Φ.bot_mem hΦ₀.some.property),
               affineToricChartι_comp_algebraicRealizationStructureMap])
           (by
-            rw [Category.comp_id, Ψ.denseTorusι_eq_affineToricChartι hΨ₀ (Ψ.bot_mem hΨ₀.some.2),
+            rw [Category.comp_id, Ψ.denseTorusι_eq_affineToricChartι hΨ₀
+                (Ψ.bot_mem hΨ₀.some.property),
               affineToricChartι_comp_algebraicRealizationStructureMap]) := by
   apply pullback.hom_ext
   · simp only [Category.assoc, algebraicProdComparison_fst, pullback.lift_fst,
@@ -102,8 +104,6 @@ theorem isPullback_algebraicActionMap_fst_snd :
     (isPullback_affineToricSchemeMap_fst_snd_bot Φ.lattice Ψ.lattice)
     (Φ.isPullback_fst_snd_algebraicMap Ψ)
     (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
-    (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
-    (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
     (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
   convert h using 1 <;> apply pullback.hom_ext <;> simp
 

@@ -73,7 +73,8 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
   subrepresentations.
 * `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
-  equivariant endomorphisms has character zero.
+  equivariant endomorphisms has character zero (such a representation is the zero representation,
+  because the identity is a nonzero equivariant endomorphism of any nonzero one).
 * `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
@@ -89,12 +90,16 @@ of `Representation.Equiv` apply to isomorphic objects.
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
+* `FDRep.comp_hom_hom_hom_apply`: a composite of finite-representation morphisms evaluates
+  by successive application on the underlying vectors.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
 * `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
   product, read on the underlying linear maps.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
+* `FDRep.biprod_total_hom_hom_hom`: the identity of `X ⊞ Y` splits as the sum of the two
+  biproduct idempotents, read on the underlying linear maps.
 * `FDRep.char_biprod`: the character is additive on biproducts.
 * `FDRep.char_tensorUnit`: the character of the tensor unit is the constant function `1`.
 * `FDRep.char_mul_of_mem_ker_left`: the character is constant on the cosets of its kernel.
@@ -282,6 +287,37 @@ theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (
     (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
       (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
 
+/-- Forgetting finite generation gives the object bundled from the carried representation.
+This object equality is used through `eqToIso` to bridge categorical endpoints. Over a
+commutative ring the carried action on the right is `V.ρ`; the formula also applies over
+noncommutative rings. -/
+theorem forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G] (V : FDRep R G) :
+    (forget₂ (FDRep R G) (Rep R G)).obj V =
+      Rep.of ((ModuleCat.endRingEquiv V.V.obj).toMonoidHom.comp
+        (InducedCategory.endEquiv.toMonoidHom.comp (Action.ρ V))) := (rfl)
+
+open CategoryTheory.Limits in
+/-- Forgetting finite generation preserves binary biproducts. -/
+instance preservesBinaryBiproducts_forget₂ {R : Type u} {G : Type v} [Ring R] [Monoid G] :
+    PreservesBinaryBiproducts (forget₂ (FDRep R G) (Rep R G)) :=
+  preservesBinaryBiproducts_of_preservesBiproducts _
+
+/-- Under the named object comparisons, forgetting finite generation preserves the evaluation
+of a morphism on vectors. Use this equation at the categorical boundary, before evaluating
+the composite; both endpoints are transported to their carried representations. -/
+theorem eqToIso_inv_forget₂_map_hom_apply {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    {X Y : FDRep R G} (f : X ⟶ Y) (x : X.V) :
+    ((eqToIso (forget₂_obj X)).inv ≫ (forget₂ (FDRep R G) (Rep R G)).map f ≫
+      (eqToIso (forget₂_obj Y)).hom).hom x = f.hom.hom.hom x := (rfl)
+
+/-- A composite of finite-representation morphisms evaluates by successive application on
+the underlying vectors. -/
+@[simp]
+theorem comp_hom_hom_hom_apply {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    {X Y Z : FDRep R G} (f : X ⟶ Y) (g : Y ⟶ Z) (x : X.V) :
+    (f ≫ g).hom.hom.hom x = g.hom.hom.hom (f.hom.hom.hom x) := by
+  simp only [Action.comp_hom, FGModuleCat.hom_hom_comp, LinearMap.comp_apply]
+
 /-- **A morphism of `FDRep R G` intertwines the two actions**, read on the underlying linear maps:
 `CategoryTheory.Action.Hom.comm` with the two layers of bundling, by morphisms of `FGModuleCat R`
 and of `ModuleCat R`, stripped away. -/
@@ -376,30 +412,36 @@ private theorem trace_comp_of_retraction {X B : FDRep k G} (i : X ⟶ B) (p : B 
   rw [LinearMap.trace_comp_comm', ← hom_hom_hom_comm i g, ← LinearMap.comp_assoc, hpi]
   simp [FDRep.character]
 
+/-- On underlying linear maps, the identity of `X ⊞ Y` is the sum of the two idempotents
+`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd`: this is
+`CategoryTheory.Limits.biprod.total` read through the bundling of `FDRep`, the way
+`FDRep.hom_hom_hom_comm` reads equivariance. -/
+theorem biprod_total_hom_hom_hom (X Y : FDRep k G) :
+    (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
+      + (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom
+      = LinearMap.id := by
+  have h := congrArg (fun t : (X ⊞ Y) ⟶ (X ⊞ Y) => t.hom.hom.hom)
+    (biprod.total (X := X) (Y := Y))
+  simp only [Action.id_hom] at h
+  exact h
+
 /-- **The character is additive on biproducts.** Together with `FDRep.char_iso` and
 `FDRep.char_tensor` this is what makes the character a ring homomorphism out of the representation
 ring; see `TauCeti.repRingCharacter`.
 
 The proof splits the identity of `X ⊞ Y` as the sum of the two idempotents
-`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd` (`CategoryTheory.Limits.biprod.total`) and
+`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd` (`FDRep.biprod_total_hom_hom_hom`) and
 evaluates the trace of `ρ g` against each summand with `FDRep.trace_comp_of_retraction`. -/
 @[simp]
 theorem char_biprod (X Y : FDRep k G) : (X ⊞ Y).character = X.character + Y.character := by
   ext g
-  have htot : (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
-      + (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom
-      = LinearMap.id := by
-    have h := congrArg (fun t : (X ⊞ Y) ⟶ (X ⊞ Y) => t.hom.hom.hom)
-      (biprod.total (X := X) (Y := Y))
-    simp only [Action.id_hom] at h
-    exact h
   have hsplit : (X ⊞ Y).ρ g
       = ((X ⊞ Y).ρ g ∘ₗ (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom)
           ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
         + ((X ⊞ Y).ρ g ∘ₗ (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom)
           ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom := by
-    rw [LinearMap.comp_assoc, LinearMap.comp_assoc, ← LinearMap.comp_add, htot,
-      LinearMap.comp_id]
+    rw [LinearMap.comp_assoc, LinearMap.comp_assoc, ← LinearMap.comp_add,
+      biprod_total_hom_hom_hom, LinearMap.comp_id]
   rw [FDRep.character, hsplit, map_add,
     trace_comp_of_retraction biprod.inl biprod.fst biprod.inl_fst,
     trace_comp_of_retraction biprod.inr biprod.snd biprod.inr_snd, Pi.add_apply]
@@ -445,7 +487,11 @@ variable {k : Type u} {G : Type v} [Field k] [Monoid G]
 
 open _root_.Representation in
 /-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
-endomorphisms, has character zero. -/
+endomorphisms, has character zero.
+
+The hypothesis already forces the carrier to be zero, since the identity is a nonzero equivariant
+endomorphism of any nonzero representation: this lemma says that the zero representation has
+character zero. -/
 theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
     (hC : Module.finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
   have : Subsingleton C := by
@@ -488,6 +534,7 @@ noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Eq
   .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
     simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
 
+/-- The linear equivalence underlying `FDRep.isoToEquiv i` is `FDRep.isoToLinearEquiv i`. -/
 @[simp]
 theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
     (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=

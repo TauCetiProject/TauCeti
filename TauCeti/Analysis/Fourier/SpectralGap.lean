@@ -143,7 +143,7 @@ private theorem fourierCoeff_first_harmonics (a b : ℂ) (n : ℤ) :
     fourierCoeff (a • fourierLp 2 1 + b • fourierLp 2 (-1) : Lp ℂ 2 (@haarAddCircle T _)) n =
       (if n = 1 then a else 0) + (if n = -1 then b else 0) := by
   classical
-  rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply, coe_fourierBasis]
+  rw [← inner_fourierBasis_left, coe_fourierBasis]
   simp [inner_add_right, inner_smul_right,
     orthonormal_iff_ite.mp (orthonormal_fourier (T := T)), mul_ite]
 
@@ -191,3 +191,25 @@ theorem integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff
     simp [hc]
 
 end TauCeti
+
+namespace MeasureTheory.Lp
+
+open TauCeti
+
+variable {T : ℝ} [Fact (0 < T)]
+
+/-- If an `L²` class on the circle has vanishing zeroth Fourier coefficient, summable
+`n² ‖ĝ n‖²`, and squared norm equal to `∑ n² ‖ĝ n‖²`, then every Fourier coefficient of frequency
+other than `±1` vanishes. -/
+theorem fourierCoeff_eq_zero_of_integral_norm_sq_eq_tsum_frequency_sq
+    (f : Lp ℂ 2 (@haarAddCircle T _)) (hzero : fourierCoeff f 0 = 0)
+    (henergy : Summable (fun n : ℤ => (n : ℝ) ^ 2 * ‖fourierCoeff f n‖ ^ 2))
+    (heq : (∫ t, ‖f t‖ ^ 2 ∂haarAddCircle) =
+      ∑' n : ℤ, (n : ℝ) ^ 2 * ‖fourierCoeff f n‖ ^ 2) {n : ℤ} (hn₁ : n ≠ 1) (hn₂ : n ≠ -1) :
+    fourierCoeff f n = 0 := by
+  obtain ⟨a, b, hf⟩ := (integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff f hzero henergy).1
+    heq
+  rw [hf, fourierCoeff_first_harmonics]
+  simp [hn₁, hn₂]
+
+end MeasureTheory.Lp

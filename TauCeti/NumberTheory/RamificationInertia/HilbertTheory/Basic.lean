@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import Mathlib.FieldTheory.PurelyInseparable.Tower
 import Mathlib.RingTheory.Finiteness.Quotient
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Splitting of a prime in the inertia field
@@ -121,7 +122,7 @@ private lemma instances [IsGaloisGroup Gal(L/K) K L] :
   exact ⟨inferInstance, inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ E L⟩
 
-variable [FiniteDimensional K L] [P.IsMaximal]
+variable [P.IsMaximal]
 
 include K L E P in
 /-- Over the inertia field, the ramification index of `P` is unchanged, and the residue extension

@@ -10,10 +10,11 @@ public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Monic
 
 /-!
-# Monic polynomials of given degree under coefficient maps
+# Monic polynomials of given degree
 
 A ring homomorphism into a nontrivial semiring sends a monic polynomial of degree `n` to a
-monic polynomial of degree `n`.
+monic polynomial of degree `n`. Over a nontrivial ring, `X ^ n - a` is monic of degree `n` for
+every `n ≠ 0`.
 -/
 
 public section
@@ -26,5 +27,10 @@ variable {R S : Type*} [Semiring R] [Semiring S] [Nontrivial S]
 theorem IsMonicOfDegree.map {p : R[X]} {n : ℕ} (hp : p.IsMonicOfDegree n) (f : R →+* S) :
     (p.map f).IsMonicOfDegree n :=
   ⟨(hp.monic.natDegree_map f).trans hp.natDegree_eq, hp.monic.map f⟩
+
+/-- `X ^ n - a` is monic of degree `n` over a nontrivial ring, for every `n ≠ 0`. -/
+theorem isMonicOfDegree_X_pow_sub_C {R : Type*} [Ring R] [Nontrivial R] {n : ℕ} (hn : n ≠ 0)
+    (a : R) : (X ^ n - C a : R[X]).IsMonicOfDegree n :=
+  (isMonicOfDegree_X_pow R n).sub (by rwa [natDegree_C, Nat.pos_iff_ne_zero])
 
 end Polynomial

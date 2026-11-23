@@ -170,7 +170,9 @@ theorem charE1MFRaise_eq_zero (htuv : t * (u * v) ∣ N) (h : ψ (-1) * φ (-1) 
     charE1MFRaise ψ φ t htuv = 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charE1MFRaise, charE1MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
+  rw [charE1MFRaise]
+  dsimp only
+  rw [charE1MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
 
 /-- The `q`-expansion of `E₁^{ψ,φ,t}` is that of `E₁^{ψ,φ}` with `q ↦ q^t`. -/
 @[simp]
@@ -184,7 +186,6 @@ theorem qExpansion_charE1MFRaise (htuv : t * (u * v) ∣ N) :
   rw [charE1MFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The coefficients of `E₁^{ψ,φ,t}`: `a_n(E₁^{ψ,φ,t}) = a_{n/t}(E₁^{ψ,φ})` when `t ∣ n`, and
@@ -199,7 +200,6 @@ theorem qExpansion_charE1MFRaise_coeff (htuv : t * (u * v) ∣ N) (n : ℕ) :
   rw [charE1MFRaise]
   exact ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _ n
 
 /-- The `q`-expansion of `E₁^{ψ,φ,t}` is supported on the multiples of `t`. -/
@@ -211,7 +211,6 @@ theorem isSupportedOnDvd_qExpansion_charE1MFRaise (htuv : t * (u * v) ∣ N) :
   rw [charE1MFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 end TauCeti.EisensteinSeries

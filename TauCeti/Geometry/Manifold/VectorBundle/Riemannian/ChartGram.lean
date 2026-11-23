@@ -13,6 +13,9 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
@@ -44,6 +47,7 @@ API replace them.
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
   the frame is taking coordinate partial derivatives in the chart.
+* `Riemannian.Tensor.contMDiffAt_chartLocalFrame`: smoothness of the frame at its base point.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -54,6 +58,15 @@ API replace them.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
+* `Riemannian.Tensor.chartDualFrame`: the metric-dual chart frame, identified with the dual
+  basis on the chart domain by `Riemannian.Tensor.dualBasis_basisAt_eq_chartDualFrame`.
+* `Riemannian.Tensor.bilinFormTrace_eq_sum_chartInvGramMatrix`: on the chart domain, the metric
+  trace of a bilinear form is the contraction `gⁱʲ B(eᵢ, eⱼ)` in the chart-local frame.
+* `Riemannian.Tensor.inner_chartDualFrame` and
+  `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
+* `Riemannian.Tensor.sum_apply_chartDualFrame_eq_sum`: the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local
+  frame and its metric-dual frame is the metric trace of a vector-valued bilinear map `B`.
+* `Riemannian.Tensor.contMDiffAt_chartDualFrame`: regularity of the metric-dual frame.
 * `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
   `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
   determinant for a metric-compatible connection, `dG = Pᵀ G + G P` and
@@ -61,8 +74,6 @@ API replace them.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 2.
 * Poincare-Conjecture, `DoCarmoLib/Riemannian/TensorBundle/MusicalIso.lean`, stages 1--5,
   revision `24f32e4d600878bfaac6bc2f2f9324175571c321` (Apache-2.0).
@@ -163,6 +174,14 @@ theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     TangentBundle.contMDiffVectorBundle
   exact (trivializationAt E (TangentSpace I) α).contMDiffOn_localFrame_baseSet
     (n := n) (Module.finBasis ℝ E) i
+
+/-- Each member of `chartLocalFrame α` is `C^n` at the base point `α`. -/
+theorem contMDiffAt_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (α : M) (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun x ↦ TotalSpace.mk' E x (chartLocalFrame (I := I) α i x)) α :=
+  (contMDiffOn_chartLocalFrame α i).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds (by simp))
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -305,6 +324,32 @@ unfolds `Riemannian.Tensor.chartInvGramMatrix` outside the module where it is de
 theorem chartInvGramMatrix_def (α x : M) :
     chartInvGramMatrix (I := I) α x = (chartGramMatrix (I := I) α x)⁻¹ := (rfl)
 
+/-- The frame metric-dual to the chart-local frame at `α`: `Dᵢ = ∑ⱼ (G⁻¹)ᵢⱼ Fⱼ`, where `G` is the
+Gram matrix of the chart-local frame `Fᵢ`. -/
+def chartDualFrame (α : M) (i : Fin (Module.finrank ℝ E)) :
+    (y : M) → TangentSpace I y :=
+  fun y ↦ ∑ j, chartInvGramMatrix (I := I) α y i j • chartLocalFrame (I := I) α j y
+
+/-- A metric-dual chart vector is the inverse-Gram linear combination of chart-frame vectors. -/
+theorem chartDualFrame_apply (α : M) (i : Fin (Module.finrank ℝ E)) (y : M) :
+    chartDualFrame (I := I) α i y =
+      ∑ j, chartInvGramMatrix (I := I) α y i j • chartLocalFrame (I := I) α j y := (rfl)
+
+/-- On the tangent-trivialization base set, the metric dual basis is the metric-dual chart frame. -/
+theorem dualBasis_basisAt_eq_chartDualFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    LinearMap.BilinForm.dualBasis (innerₗ (TangentSpace I y)) TauCeti.nondegenerate_inner
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy) i =
+      chartDualFrame (I := I) α i y := by
+  have hgram : Matrix.gram ℝ
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy) =
+      chartGramMatrix (I := I) α y := by
+    simpa using gram_basisAt_finBasis_reindex (I := I) (Equiv.refl _) α hy
+  rw [Module.Basis.dualBasis_innerₗ_eq_sum, hgram, ← chartInvGramMatrix_def,
+    chartDualFrame_apply]
+  simp only [chartLocalFrame_eq_symmL, TauCeti.Manifold.basisAt_apply]
+
 /-- On the chart source, the inverse Gram matrix is a left inverse. -/
 @[simp]
 theorem chartInvGramMatrix_mul_chartGramMatrix (α : M) {x : M}
@@ -328,6 +373,81 @@ theorem chartGramMatrix_mul_chartInvGramMatrix (α : M) {x : M}
     isUnit_iff_ne_zero.mpr (ne_of_gt (chartGramMatrix_det_pos (I := I) α hx'))
   unfold chartInvGramMatrix
   exact Matrix.mul_nonsing_inv _ hdet_unit
+
+/-- On the chart domain, the metric trace of a bilinear form `B` is the contraction
+`gⁱʲ B(eᵢ, eⱼ)` of its coefficients in the chart-local frame `eᵢ` at `α` against the inverse Gram
+matrix. The frame need not be orthonormal. -/
+theorem bilinFormTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I x)) :
+    TauCeti.bilinFormTrace B = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j *
+      B (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
+  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
+  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) α i x :=
+    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
+  rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hb, ← chartGramMatrix, ← chartInvGramMatrix_def]
+
+/-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
+matrix. -/
+theorem inner_chartDualFrame (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    (i j : Fin (Module.finrank ℝ E)) :
+    inner ℝ (chartDualFrame (I := I) α i y) (chartLocalFrame (I := I) α j y) =
+      if i = j then 1 else 0 := by
+  have h := congrFun (congrFun (chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy) i) j
+  simp only [Matrix.mul_apply, chartGramMatrix_apply, Matrix.one_apply] at h
+  simp only [chartDualFrame_apply, sum_inner, real_inner_smul_left, h]
+
+/-- On the chart domain, every tangent vector expands in the chart-local frame with the dual
+frame giving its coefficients, and in the dual frame with the chart-local frame giving its
+coefficients. -/
+theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    (w : TangentSpace I y) :
+    ∑ j, inner ℝ (chartDualFrame (I := I) α j y) w • chartLocalFrame (I := I) α j y = w ∧
+      ∑ j, inner ℝ (chartLocalFrame (I := I) α j y) w • chartDualFrame (I := I) α j y = w := by
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
+  have hb (i : Fin (Module.finrank ℝ E)) : b i = chartLocalFrame (I := I) α i y :=
+    (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy i).symm
+  have hdual (i j : Fin (Module.finrank ℝ E)) :
+      inner ℝ (chartDualFrame (I := I) α i y) (b j) = if i = j then 1 else 0 := by
+    rw [hb]
+    exact inner_chartDualFrame α hy i j
+  constructor
+  · -- Both sides have the same coefficients in the basis `b`.
+    conv_rhs => rw [← b.sum_repr w]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← hb]
+    congr 1
+    conv_lhs => rw [← b.sum_repr w]
+    simp only [inner_sum, real_inner_smul_right, hdual, mul_ite, mul_one, mul_zero,
+      Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  · -- Both sides have the same inner products with the basis `b`.
+    refine InnerProductSpace.ext_inner_right_basis b fun k ↦ ?_
+    simp only [hb, sum_inner, real_inner_smul_left, inner_chartDualFrame α hy, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, real_inner_comm w]
+
+/-- On the chart domain, the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local frame `Fᵢ` at `α` and its
+metric-dual frame `Dᵢ` is the metric trace `∑ₖ B(eₖ, eₖ)` of `B` in any orthonormal basis `eₖ`. The
+bilinear map `B` takes values in any real topological vector space, such as a fibre of a vector
+bundle. -/
+theorem sum_apply_chartDualFrame_eq_sum (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+    [ContinuousSMul ℝ W] (B : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] W)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I y)) :
+    ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) =
+      ∑ k, B (e k) (e k) := by
+  set F := chartLocalFrame (I := I) α
+  set D := chartDualFrame (I := I) α
+  calc ∑ i, B (F i y) (D i y) = ∑ i, B (∑ k, inner ℝ (e k) (F i y) • e k) (D i y) := by
+        simp only [e.sum_repr']
+    _ = ∑ k, B (e k) (∑ i, inner ℝ (F i y) (e k) • D i y) := by
+        simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
+          Finset.sum_apply, Pi.smul_apply, real_inner_comm (e _)]
+        exact Finset.sum_comm
+    _ = ∑ k, B (e k) (e k) := by
+        simp only [F, D, (sum_inner_chartDualFrame_smul α hy _).2]
 
 section Smooth
 
@@ -355,11 +475,36 @@ theorem contMDiffOn_chartInvGramMatrix_entry
     exact ne_of_gt (chartGramMatrix_det_pos (I := I) α hx)
   · exact contMDiffOn_adjugate_chartGramMatrix_entry (I := I) α i j
 
+/-- Each metric-dual chart vector is `C^n` at every point of the tangent-trivialization base set. -/
+theorem contMDiffAt_chartDualFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun z ↦ TotalSpace.mk' E z (chartDualFrame (I := I) α i z)) y := by
+  have hU := (trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy
+  simp only [chartDualFrame_apply]
+  exact ContMDiffAt.sum_section fun j _ ↦
+    ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) α i j).contMDiffAt hU).smul_section
+      ((contMDiffOn_chartLocalFrame (I := I) (n := n) α j).contMDiffAt hU)
+
 end Smooth
+
+end Tensor
+end Riemannian
+
+namespace Riemannian
+namespace Tensor
 
 section Derivative
 
-variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+/-! The derivative formulas assume a `C²` manifold; the `C¹` structure that the chart frame and
+the Gram matrix ask for is derived from it. -/
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
 derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is

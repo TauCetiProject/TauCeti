@@ -66,14 +66,14 @@ def basedMapSphereHomeomorph :
 @[simp]
 theorem basedMapSphereHomeomorph_apply
     (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) (z : Fin k → I) :
-    basedMapSphereHomeomorph k x s₀ f z = f.1 (sphereCollapse k s₀ z) :=
+    basedMapSphereHomeomorph k x s₀ f z = f.val (sphereCollapse k s₀ z) :=
   BasedMap.homeomorphGenLoop_apply _ _ _ _ _ _ _
 
 /-- The inverse of `basedMapSphereHomeomorph` evaluates at `sphereCollapse z` to the value of the
 generalized loop at `z`. -/
 @[simp]
 theorem basedMapSphereHomeomorph_symm_apply (p : Ω^ (Fin k) X x) (z : Fin k → I) :
-    ((basedMapSphereHomeomorph k x s₀).symm p).1 (sphereCollapse k s₀ z) = p z :=
+    ((basedMapSphereHomeomorph k x s₀).symm p).val (sphereCollapse k s₀ z) = p z :=
   BasedMap.homeomorphGenLoop_symm_apply_comp _ _ _ _ _ _ _
 
 /-- The homeomorphism `basedMapSphereHomeomorph` is natural in `X`: it commutes with
@@ -84,6 +84,15 @@ theorem basedMapSphereHomeomorph_map {Y : Type*} [TopologicalSpace Y] {y : Y} (g
     basedMapSphereHomeomorph k y s₀ (BasedMap.map g hg f) =
       GenLoop.map g hg (basedMapSphereHomeomorph k x s₀ f) :=
   BasedMap.homeomorphGenLoop_map _ _ _ _ _ _ _ _
+
+/-- The homeomorphism `basedMapSphereHomeomorph` is based: it takes the constant map to the
+constant generalized loop. -/
+@[simp]
+theorem basedMapSphereHomeomorph_const :
+    basedMapSphereHomeomorph k x s₀
+        ⟨ContinuousMap.const _ x, ContinuousMap.const_apply x s₀⟩ = GenLoop.const :=
+  GenLoop.ext _ _ fun z ↦ by
+    rw [basedMapSphereHomeomorph_apply, ContinuousMap.const_apply, GenLoop.const_apply]
 
 end Maps
 
@@ -109,6 +118,17 @@ theorem iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace (k
     iteratedLoopSpaceHomeomorph k X (basedMapSphereHomeomorphIteratedLoopSpace k X s₀ φ) =
       basedMapSphereHomeomorph k X.basepoint s₀ φ :=
   (iteratedLoopSpaceHomeomorph k X).apply_symm_apply _
+
+/-- The homeomorphism `basedMapSphereHomeomorphIteratedLoopSpace` is based: it takes the constant
+map to the constant iterated loop. -/
+@[simp]
+theorem basedMapSphereHomeomorphIteratedLoopSpace_const (k : ℕ) [NeZero k]
+    (X : BasedTopologicalSpace.{u}) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
+    basedMapSphereHomeomorphIteratedLoopSpace k X s₀
+        ⟨ContinuousMap.const _ X.basepoint, ContinuousMap.const_apply X.basepoint s₀⟩ =
+      (X.iteratedLoopSpace k).basepoint := by
+  rw [basedMapSphereHomeomorphIteratedLoopSpace, Homeomorph.trans_apply,
+    basedMapSphereHomeomorph_const, iteratedLoopSpaceHomeomorph_symm_const]
 
 /-- The homeomorphism `basedMapSphereHomeomorphIteratedLoopSpace` is natural in `X`: it commutes
 with postcomposition by a based map and the induced map `Ω^[k] f` of iterated loop spaces. -/

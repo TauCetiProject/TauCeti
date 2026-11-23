@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The exterior derivative of differential forms on manifolds
@@ -160,6 +161,12 @@ theorem mextDeriv_def (φ : RoughForm I M F k) (x : M) :
     mextDeriv φ x = extDerivWithin (E := E) (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_def, preimage_univ, univ_inter]
 
+/-- For a boundaryless model, the exterior derivative of a rough form at `x` is the flat exterior
+derivative of its coordinate expression in the chart at `x`. -/
+theorem mextDeriv_eq_extDeriv_inChartAt [I.Boundaryless] (φ : RoughForm I M F k) (x : M) :
+    mextDeriv φ x = extDeriv (E := E) (φ.inChartAt x) (extChartAt I x x) := by
+  rw [mextDeriv_def, I.range_eq_univ, extDerivWithin_univ]
+
 /-! ### Locality -/
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
@@ -225,7 +232,7 @@ theorem mextDeriv_congr_of_eventuallyEq (h : ∀ᶠ y in 𝓝 x, φ y = η y) :
 theorem mextDerivWithin_zero (s : Set M) (x : M) :
     mextDerivWithin (0 : RoughForm I M F k) s x = 0 := by
   rw [mextDerivWithin_def, RoughForm.inChartAt_zero]
-  exact ContinuousAlternatingMap.extDerivWithin_const 0 _ _
+  exact congrFun (ContinuousAlternatingMap.extDerivWithin_const 0 _) _
 
 @[simp]
 theorem mextDeriv_zero : mextDeriv (0 : RoughForm I M F k) = 0 :=
@@ -293,8 +300,8 @@ theorem mextDerivWithin_sub (hs : UniqueMDiffWithinAt I s x)
 
 /-- Swapping two tangent vectors negates the exterior derivative of a one-form. -/
 theorem mextDeriv_apply_swap (φ : RoughForm I M F 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] := by
-  simpa using (mextDeriv φ x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] :=
+  (mextDeriv φ x).apply_vecCons_swap w v
 
 /-- The exterior derivative of a one-form, evaluated on two tangent vectors, is linear in the
 first vector. -/
@@ -342,7 +349,7 @@ theorem mextDeriv_const (ω : E [⋀^Fin k]→L[ℝ] F) :
         ((fun _ ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) = 0 := by
   funext x
   exact (mextDeriv_eq_extDeriv ((fun _ : E ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) x).trans
-    (ContinuousAlternatingMap.extDeriv_const ω x)
+    (congrFun (ContinuousAlternatingMap.extDeriv_const ω) x)
 
 /-! ### Functions -/
 
@@ -396,17 +403,36 @@ theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) 
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
 
-/-- A function which near `x` differs by a constant from a function `g` differentiable at `x` has
-the same exterior derivative at `x` as `g`. -/
+/-- The differential `dt` of the coordinate of `ℝ` sends a tangent vector to itself. -/
+theorem mextDeriv_ofFunction_id_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) z v = v 0 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, fderiv_id]
+  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
+  rfl
+
+/-- **The chain rule for the exterior derivative of a `0`-form.** If `f` is differentiable at `x`
+and `g` has derivative `g'` at `f x`, then `d (g ∘ f) = g' • df` at `x`. -/
+theorem mextDeriv_ofFunction_comp_of_hasDerivAt {f : M → ℝ} {g : ℝ → ℝ} {g' : ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x) (hg : HasDerivAt g g' (f x)) :
+    mextDeriv (RoughForm.ofFunction I fun y ↦ g (f y)) x =
+      g' • mextDeriv (RoughForm.ofFunction I f) x := by
+  ext v
+  have hcomp := mvfderiv_comp_apply_of_differentiableAt hg.differentiableAt hf (v 0)
+  simp only [Function.comp_def] at hcomp
+  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    ContinuousAlternatingMap.smul_apply, mvfderiv_apply_eq_mfderiv_apply, hcomp,
+    hg.hasFDerivAt.fderiv]
+  -- The derivative of a real function acts on a real number by multiplication.
+  exact (ContinuousLinearMap.toSpanSingleton_apply _ _ _).trans (mul_comm _ _)
+
+/-- A function which near `x` differs by a constant from a function `g` has the same exterior
+derivative at `x` as `g`. -/
 theorem mextDeriv_ofFunction_eq_of_eventuallyEq_add_const {f g : M → F} {x : M} {c : F}
-    (hg : MDifferentiableAt I 𝓘(ℝ, F) g x) (hfg : ∀ᶠ y in 𝓝 x, f y = g y + c) :
+    (hfg : ∀ᶠ y in 𝓝 x, f y = g y + c) :
     mextDeriv (RoughForm.ofFunction I f) x = mextDeriv (RoughForm.ofFunction I g) x := by
   rw [mextDeriv_ofFunction, mextDeriv_ofFunction,
-    Filter.EventuallyEq.mvfderiv_eq (f₁ := f) (f := (fun z ↦ z + c) ∘ g) hfg]
-  congr 1
-  ext v
-  rw [mvfderiv_comp_apply_of_differentiableAt (by fun_prop) hg, fderiv_add_const, fderiv_fun_id,
-    ContinuousLinearMap.id_apply]
+    Filter.EventuallyEq.mvfderiv_eq (f₁ := f) (f := fun y ↦ g y + c) hfg, mvfderiv_add_const]
 
 /-- The exterior derivative of the `0`-form of a function vanishes at a point exactly when the
 manifold derivative of the function does. -/

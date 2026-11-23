@@ -255,7 +255,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
-  let eMap := TauCeti.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
+  let eMap := LinearMap.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
   let eTrace := Submodule.quotEquivOfEq (R := 𝔽₂) (M := ↥B)
     f4ShortRootRepresentedIdeal (Submodule.comap B.subtype A) htrace.symm
   let eCarrier := f4ShortRootCarrierRangeEquivToSubmodule
@@ -340,10 +340,9 @@ noncomputable def f4ShortRootCarrierQuotientProjection :
     (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootCarrierMiddleEquivQuotient.symm (Submodule.Quotient.mk X) =
       Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X) := by
-  simp [f4ShortRootCarrierMiddleEquivQuotient, Submodule.quotEquivOfEq_mk,
-    Submodule.subquotientEquivOfEq_symm_mk,
-    f4ShortRootCarrierRepresentedMap, f4ShortRootCarrierRepresentedToSubmodule,
-    f4ShortRootCarrierRepresentedAmbientMap]
+  delta f4ShortRootCarrierMiddleEquivQuotient f4ShortRootCarrierRepresentedMap
+    f4ShortRootCarrierRepresentedToSubmodule f4ShortRootCarrierRepresentedAmbientMap
+  simp [Submodule.quotEquivOfEq_mk, Submodule.subquotientEquivOfEq_symm_mk]
   congr 2
 
 /-- Projecting a represented adjoint vector to the carrier middle block is its modular quotient

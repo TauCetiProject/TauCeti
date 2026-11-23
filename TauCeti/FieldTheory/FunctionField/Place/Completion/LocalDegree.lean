@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
+import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -53,6 +54,11 @@ completed extension.
   `e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.finiteDimensional_completion` and `TauCeti.Place.finrank_completion`: **the
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
+* `TauCeti.Place.isIntegralClosure_completionIntegers`,
+  `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
+  is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, separability of `F' / F` passes to
+  `F̂'_{P'} / F̂_P`, and over a common constant field `k` the completed upper place restricts to the
+  completed lower place.
 
 ## References
 
@@ -78,7 +84,7 @@ variable {ι : Type*}
 
 /-- A completed function regular at `P'` and vanishing there to order `e(P' ∣ P)` is a multiple of
 a uniformizer of `P`: it lies in `𝔪̂_P • 𝒪̂_{P'}`. -/
-private theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
+theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
     (hz : (z : P'.Completion) ∈ P'.completionPlace.filtration (ramificationIdx F P')) :
     letI := P.completionIntegersExtensionAlgebra P' hP
     z ∈ (maximalIdeal P.completionPlace.integers • ⊤ :
@@ -124,10 +130,6 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   have := Fintype.ofFinite ι
   subst hP
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-  have : IsLocalHom (algebraMap (P'.restrict k F).completionPlace.integers
-      P'.completionPlace.integers) := by
-    rw [algebraMap_completionIntegersExtensionAlgebra]
-    infer_instance
   have : IsHausdorff (maximalIdeal (P'.restrict k F).completionPlace.integers)
       P'.completionPlace.integers :=
     .of_map (map_maximalIdeal_le (algebraMap _ P'.completionPlace.integers))
@@ -135,11 +137,10 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   refine surjective_of_mkQ_comp_surjective
     (I := maximalIdeal (P'.restrict k F).completionPlace.integers) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem
-    (a := 0) (b := ramificationIdx F P') (by positivity)
-    ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
+  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem (ramificationIdx F P')
+    ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.property⟩
   obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration k F P' u hu (y := y₀) (by simpa using ht)
-    (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.2)
+    (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.property)
   refine ⟨fun p ↦ (P'.restrict k F).completionIntegersEmbedding (c p.2 p.1), ?_⟩
   rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
   refine mem_maximalIdeal_smul_top_of_mem_filtration (P'.restrict k F) P' rfl ?_
@@ -175,44 +176,23 @@ private theorem completionExtension_mem_filtration_one {x : P.Completion}
   have he : (1 : ℤ) ≤ ramificationIdx F P' := by exact_mod_cast ramificationIdx_pos F P'
   nlinarith
 
-/-- A nontrivial combination, with coefficients in the completion below, of functions `u i`
-regular at `P'` with independent residues is nonzero, and its order at `P'` is a multiple of
-`e(P' ∣ P)`. -/
-private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.integers)
-    (hu : LinearIndependent (P'.restrict k F).ResidueField fun i ↦ residue P'.integers (u i))
-    (c : ι → (P'.restrict k F).Completion) {i₁ : ι} (hi₁ : c i₁ ≠ 0) :
+/-- Second stage of `exists_ord_sum_completion_eq_mul`: if the normalized coefficients `c i / c i₀`
+are approximated modulo `filtration 1` by functions `d i` regular at the place below, whose
+combination `T` with the `u i` is nonzero of order `0`, then the combination with the `c i` is
+nonzero of order a multiple of `e(P' ∣ P)`. -/
+private theorem exists_ord_sum_completion_eq_mul_of_approx [Fintype ι] (u : ι → P'.integers)
+    (c : ι → (P'.restrict k F).Completion) {i₀ : ι} (hc₀ : c i₀ ≠ 0)
+    (d : ι → (P'.restrict k F).integers)
+    (hd : ∀ i, c i / c i₀ - (P'.restrict k F).completionEmbedding (d i) ∈
+      (P'.restrict k F).completionPlace.filtration 1)
+    (hT : P'.ord (∑ i, algebraMap F F' (d i : F) * (u i : F')) = 0)
+    (hT0 : (∑ i, algebraMap F F' (d i : F) * (u i : F')) ≠ 0) :
     (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) ≠
         0 ∧
       ∃ m : ℤ, P'.completionPlace.ord
         (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) =
           ramificationIdx F P' * m := by
-  obtain ⟨i₀, hc₀, hdiv⟩ :=
-    (P'.restrict k F).completionPlace.exists_ne_zero_forall_div_mem_integers c hi₁
-  -- Approximate the normalized coefficients `c i / c i₀` by functions regular at the place below.
-  have happrox : ∀ i, ∃ d : (P'.restrict k F).integers,
-      c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
-        (P'.restrict k F).completionPlace.filtration 1 := by
-    intro i
-    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem
-      (a := 0) (b := 1) zero_le_one
-      ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
-    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
-  choose d hd using happrox
-  have hunit : IsUnit (d i₀) := by
-    have h : ((d i₀ : (P'.restrict k F).integers) : F) - 1 ∈ (P'.restrict k F).filtration 1 := by
-      rw [← (P'.restrict k F).completionEmbedding_mem_filtration_iff, map_sub, map_one]
-      have := ((P'.restrict k F).completionPlace.filtration 1).neg_mem (hd i₀)
-      rwa [div_self hc₀, neg_sub] at this
-    have hres := ((P'.restrict k F).residue_eq_iff_sub_mem_filtration_one (z := 1)).mpr
-      (by simpa using h)
-    rw [map_one] at hres
-    by_contra hnu
-    rw [(residue_eq_zero_iff _).mpr hnu] at hres
-    exact zero_ne_one hres
   set T := ∑ i, algebraMap F F' (d i : F) * (u i : F')
-  have hT := ord_sum_eq_zero_of_isUnit k F P' u hu d hunit
-  have hT0 : T ≠ 0 := sum_ne_zero_of_linearIndependent_residue k F P' u hu (fun i ↦ (d i : F))
-    (i₁ := i₀) (by simpa using hunit.ne_zero)
   set S := ∑ i, (P'.restrict k F).completionExtension P' rfl (c i / c i₀) *
     P'.completionEmbedding (u i)
   have hS : S - P'.completionEmbedding T ∈ P'.completionPlace.filtration 1 := by
@@ -224,7 +204,8 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
     refine Submodule.sum_mem _ fun i _ ↦ ?_
     simpa using P'.completionPlace.mul_mem_filtration
       (completionExtension_mem_filtration_one (P'.restrict k F) P' rfl (hd i))
-      (P'.completionPlace.mem_filtration_zero_iff.mpr (P'.completionIntegersEmbedding (u i)).2)
+      (P'.completionPlace.mem_filtration_zero_iff.mpr (P'.completionIntegersEmbedding
+          (u i)).property)
   have hvT : Valued.v (P'.completionEmbedding T) = 1 := by
     rw [valuation_completionEmbedding, P'.valuation_eq_exp_neg_ord hT0, hT, neg_zero,
       WithZero.exp_zero]
@@ -249,6 +230,44 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
       rw [completionPlace_valuation, hvS, neg_zero, WithZero.exp_zero]
   refine ⟨hsum ▸ mul_ne_zero hE0 hS0, (P'.restrict k F).completionPlace.ord (c i₀), ?_⟩
   rw [hsum, P'.completionPlace.ord_mul hE0 hS0, ord_completionExtension, hordS, add_zero]
+
+/-- A nontrivial combination, with coefficients in the completion below, of functions `u i`
+regular at `P'` with independent residues is nonzero, and its order at `P'` is a multiple of
+`e(P' ∣ P)`. -/
+private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.integers)
+    (hu : LinearIndependent (P'.restrict k F).ResidueField fun i ↦ residue P'.integers (u i))
+    (c : ι → (P'.restrict k F).Completion) {i₁ : ι} (hi₁ : c i₁ ≠ 0) :
+    (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) ≠
+        0 ∧
+      ∃ m : ℤ, P'.completionPlace.ord
+        (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) =
+          ramificationIdx F P' * m := by
+  obtain ⟨i₀, hc₀, hdiv⟩ :=
+    (P'.restrict k F).completionPlace.exists_ne_zero_forall_div_mem_integers c hi₁
+  -- Approximate the normalized coefficients `c i / c i₀` by functions regular at the place below.
+  have happrox : ∀ i, ∃ d : (P'.restrict k F).integers,
+      c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
+        (P'.restrict k F).completionPlace.filtration 1 := by
+    intro i
+    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem 1
+      ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
+    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.property⟩, hd⟩
+  choose d hd using happrox
+  have hunit : IsUnit (d i₀) := by
+    have h : ((d i₀ : (P'.restrict k F).integers) : F) - 1 ∈ (P'.restrict k F).filtration 1 := by
+      rw [← (P'.restrict k F).completionEmbedding_mem_filtration_iff, map_sub, map_one]
+      have := ((P'.restrict k F).completionPlace.filtration 1).neg_mem (hd i₀)
+      rwa [div_self hc₀, neg_sub] at this
+    have hres := ((P'.restrict k F).residue_eq_iff_sub_mem_filtration_one (z := 1)).mpr
+      (by simpa using h)
+    rw [map_one] at hres
+    by_contra hnu
+    rw [(residue_eq_zero_iff _).mpr hnu] at hres
+    exact zero_ne_one hres
+  exact exists_ord_sum_completion_eq_mul_of_approx P' u c hc₀ d hd
+    (ord_sum_eq_zero_of_isUnit k F P' u hu d hunit)
+    (sum_ne_zero_of_linearIndependent_residue k F P' u hu (fun i ↦ (d i : F))
+      (i₁ := i₀) (by simpa using hunit.ne_zero))
 
 /-- The finite case of `TauCeti.Place.linearIndependent_completionEmbedding_mul_pow`. -/
 private theorem linearIndependent_completionEmbedding_mul_pow_of_finite [Finite ι]
@@ -318,9 +337,9 @@ theorem linearIndependent_completionEmbedding_mul_pow (u : ι → P'.integers)
   have hI := linearIndependent_completionEmbedding_mul_pow_of_finite P P' hP (fun i : I ↦ u i)
     (hu.comp Subtype.val Subtype.val_injective) ht
   let f : S → I × Fin (ramificationIdx F P') :=
-    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+    fun p ↦ (⟨p.val.1, Finset.mem_image_of_mem Prod.fst p.property⟩, p.val.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
-    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.val, x.2)) h
 
 /-- The expansion family spans the completion of `F'` at `P'` over the completion of `F` at
 `P`: a completed function becomes regular at `P'` after multiplication by a power of a
@@ -470,6 +489,72 @@ theorem finrank_completion :
   (Module.finrank_eq_card_basis (nonempty_basis_completion P P' hP).some).trans
     (by simp [mul_comm])
 
+/-- For an integral extension `F' / F` with finite residue extension, `𝒪̂_{P'}` is the integral
+closure of `𝒪̂_P` in `F̂'_{P'}` (with no separability hypothesis). -/
+theorem isIntegralClosure_completionIntegers :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsIntegralClosure P'.completionPlace.integers P.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  have := P.moduleFinite_completionIntegers P' hP
+  infer_instance
+
+/-- **Completion preserves separability**: for an integral separable extension `F' / F` with finite
+residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields). -/
+theorem isSeparable_completion [Algebra.IsSeparable F F'] :
+    letI := P.completionExtensionAlgebra P' hP
+    Algebra.IsSeparable P.Completion P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
+  have hcomp : (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
+      P'.completionEmbedding.toRingHom.comp (algebraMap F F') :=
+    RingHom.ext fun x ↦ by simp [P.algebraMap_completionExtensionAlgebra P' hP]
+  rw [← separableClosure.eq_top_iff, eq_top_iff]
+  have hsub : Submodule.span P.Completion (Set.range fun p :
+      Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
+        P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) ≤
+      (separableClosure P.Completion P'.Completion).toSubalgebra.toSubmodule := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨p, rfl⟩
+    dsimp only
+    set y : F' := (u p.1 : F') * (t : F') ^ (p.2 : ℕ)
+    have haeval : Polynomial.aeval (P'.completionEmbedding.toRingHom y)
+        ((minpoly F y).map P.completionEmbedding.toRingHom) = 0 := by
+      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
+        ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+    exact mem_separableClosure_iff.mpr <|
+      (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
+        (minpoly.dvd P.Completion _ haeval)
+  exact fun z _ ↦ hsub (span_completion_eq_top P P' hP u hsp ht ▸ Submodule.mem_top)
+
 end Degree
+
+section Constants
+
+variable {k F F' : Type*} [Field k] [Field F] [Field F']
+  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
+  [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k F') (hP : P'.restrict k F = P)
+  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- For an integral extension `F' / F` over `k` with finite residue extension at `P' ∣ P`, the
+completed upper place restricts to the completed lower place. -/
+@[simp]
+theorem restrict_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    haveI := P.isScalarTower_completionExtensionAlgebra P' hP
+    haveI : Algebra.IsIntegral P.Completion P'.Completion :=
+      haveI := P.finiteDimensional_completion P' hP; .of_finite _ _
+    P'.completionPlace.restrict k P.Completion = P.completionPlace := by
+  let _ := P.completionExtensionAlgebra P' hP
+  have := P.isScalarTower_completionExtensionAlgebra P' hP
+  have := P.finiteDimensional_completion P' hP
+  have : Algebra.IsIntegral P.Completion P'.Completion := .of_finite _ _
+  refine (restrict_eq_iff_integers_le k P.Completion P'.completionPlace P.completionPlace).mpr
+    fun x hx ↦ ?_
+  rw [P.algebraMap_completionExtensionAlgebra P' hP]
+  exact P.completionExtension_mem_integers P' hP hx
+
+end Constants
 
 end TauCeti.Place

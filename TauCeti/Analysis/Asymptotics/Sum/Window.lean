@@ -39,14 +39,14 @@ open Asymptotics Filter
 
 namespace TauCeti
 
-/-- **Summing windows.** If nonnegative terms `f n` have sums over the windows `q x < n ≤ x`
-bounded by `K x` for all large `x`, where `0 ≤ q < 1` is a fixed ratio, then their partial sums
-`∑_{1 ≤ n ≤ x} f n` are `O(x)`. -/
-theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) {q K : ℝ}
+/-- **Peeling windows.** If nonnegative terms `f n` have window sums over `q x < n ≤ x` bounded by
+`K x` for `x ≥ x₀`, where `0 ≤ q < 1`, then the partial sums `∑_{0 < n ≤ x} f n` are bounded by
+`max K 0 / (1 - q) * x` plus a constant, namely the partial sum up to `max x₀ (1 / (1 - q))`. -/
+private theorem sum_Ioc_floor_le_of_window {f : ℕ → ℝ} (hf : 0 ≤ f) {q K x₀ : ℝ}
     (hq0 : 0 ≤ q) (hq1 : q < 1)
-    (h : ∀ᶠ x : ℝ in atTop, ∑ n ∈ Finset.Ioc ⌊q * x⌋₊ ⌊x⌋₊, f n ≤ K * x) :
-    (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n) =O[atTop] fun x ↦ x := by
-  obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 h
+    (hx₀ : ∀ x ≥ x₀, ∑ n ∈ Finset.Ioc ⌊q * x⌋₊ ⌊x⌋₊, f n ≤ K * x) (x : ℝ) (hx : 0 ≤ x) :
+    ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n ≤ max K 0 / (1 - q) * x +
+      ∑ n ∈ Finset.Ioc 0 ⌊max x₀ (1 / (1 - q))⌋₊, f n := by
   set S : ℝ → ℝ := fun x ↦ ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n with hS
   have hSmono : Monotone S := fun x y hxy ↦
     Finset.sum_le_sum_of_subset_of_nonneg (Finset.Ioc_subset_Ioc_right (Nat.floor_mono hxy))
@@ -95,14 +95,36 @@ theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) 
       calc S x ≤ K' * (q * x) + S x₁ + max K 0 * x := by linarith
         _ = (K' * q + max K 0) * x + S x₁ := by ring
         _ = K' * x + S x₁ := by rw [hK'eq]
-  refine .of_bound (K' + S x₁) ?_
+  exact key _ x hx le_rfl
+
+
+/-- **Summing windows.** If nonnegative terms `f n` have sums over the windows `q x < n ≤ x`
+bounded by `K x` for all large `x`, where `q < 1` is a fixed ratio, then their partial sums
+`∑_{1 ≤ n ≤ x} f n` are `O(x)`. -/
+theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) {q K : ℝ}
+    (hq1 : q < 1)
+    (h : ∀ᶠ x : ℝ in atTop, ∑ n ∈ Finset.Ioc ⌊q * x⌋₊ ⌊x⌋₊, f n ≤ K * x) :
+    (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n) =O[atTop] fun x ↦ x := by
+  -- A negative ratio gives the same windows as `q = 0`, since `⌊q * x⌋₊ = 0` for `x ≥ 0`.
+  have hfloor (x : ℝ) (hx : 0 ≤ x) : ⌊max q 0 * x⌋₊ = ⌊q * x⌋₊ := by
+    rcases le_total 0 q with hq | hq
+    · rw [max_eq_left hq]
+    · rw [max_eq_right hq, zero_mul, Nat.floor_zero, Nat.floor_of_nonpos (by nlinarith)]
+  obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 h
+  have hx₀' : ∀ x ≥ max x₀ 0, ∑ n ∈ Finset.Ioc ⌊max q 0 * x⌋₊ ⌊x⌋₊, f n ≤ K * x := fun x hx ↦ by
+    rw [hfloor x (le_trans (le_max_right _ _) hx)]
+    exact hx₀ x (le_trans (le_max_left _ _) hx)
+  have hq1' : max q 0 < 1 := max_lt hq1 one_pos
+  set x₁ : ℝ := max (max x₀ 0) (1 / (1 - max q 0))
+  have hSnn (x : ℝ) : 0 ≤ ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n := Finset.sum_nonneg fun n _ ↦ hf n
+  have hSx₁ := hSnn x₁
+  refine .of_bound (max K 0 / (1 - max q 0) + ∑ n ∈ Finset.Ioc 0 ⌊(x₁ : ℝ)⌋₊, f n) ?_
   filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
   have hx0 : (0 : ℝ) ≤ x := by linarith
-  have hS' : ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n = S x := by
-    simp only [hS, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
+  have hS' : ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n = ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n := by
+    simp only [← Finset.Icc_add_one_left_eq_Ioc, zero_add]
   rw [hS', Real.norm_of_nonneg (hSnn x), Real.norm_of_nonneg hx0]
-  have := key ⌊x⌋₊ x hx0 le_rfl
-  have := hSnn x₁
+  have := sum_Ioc_floor_le_of_window hf (le_max_right _ _) hq1' hx₀' x hx0
   nlinarith
 
 /-- **A uniform linear bound from linear growth.** If the partial sums `∑_{1 ≤ n ≤ x} f n`

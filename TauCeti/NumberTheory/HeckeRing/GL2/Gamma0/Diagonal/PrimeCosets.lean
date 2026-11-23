@@ -71,13 +71,13 @@ lemma exists_mem_Gamma0_natDiagGL_mul_eq_mul_scaleRep_of_dvd (hp : 0 < p) {γ : 
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧ natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * scaleRep p := by
   obtain ⟨a', ha'⟩ := hpa
   have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  let δ : SL(2, ℤ) := ⟨!![a', γ 0 1; γ 1 0, (p : ℤ) * γ 1 1], by
+  let δ : SL(2, ℤ) := .mk !![a', γ 0 1; γ 1 0, (p : ℤ) * γ 1 1] (by
     rw [Matrix.det_fin_two_of]
-    linear_combination hdet - γ 1 1 * ha'⟩
-  have h00 : (δ 0 0 : ℤ) = a' := rfl
-  have h01 : (δ 0 1 : ℤ) = γ 0 1 := rfl
-  have h10 : (δ 1 0 : ℤ) = γ 1 0 := rfl
-  have h11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 := rfl
+    linear_combination hdet - γ 1 1 * ha')
+  have h00 : (δ 0 0 : ℤ) = a' := by simp [δ]
+  have h01 : (δ 0 1 : ℤ) = γ 0 1 := by simp [δ]
+  have h10 : (δ 1 0 : ℤ) = γ 1 0 := by simp [δ]
+  have h11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 := by simp [δ]
   refine ⟨δ, Gamma0_mem.mpr (by rw [h10]; exact Gamma0_mem.mp hγ), ?_⟩
   refine Units.ext ?_
   rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp, coe_mapGL_int_rat_fin_two γ,
@@ -115,7 +115,7 @@ lemma exists_mem_Gamma0_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = 
       rw [Gamma0_mem.mp hγ, mul_zero]
     obtain ⟨δ, hδ, -, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul_of_isUnit hA hpc
     refine ⟨some (upperTriShift p γ ⟨0, hp.pos⟩), δ, hδ, ?_⟩
-    rw [primeRep_some, ← hmul, ← natDiagGL_mul_mapGL_T_zpow hp.pos ⟨0, hp.pos⟩]
+    rw [primeRep_some, ← hmul, ← natDiagGL_mul_mapGL_T_zpow (⟨0, hp.pos⟩ : Fin _)]
     simp
 
 /-- **The `Γ₀(N)` double coset of `diag(1, p)` at a prime `p ∤ N` is the union of `p + 1` right
@@ -137,11 +137,11 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_prime (hp : p.Prim
     cases i with
     | none =>
       obtain ⟨γ, hγ, heq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none hp.pos hσ10 hσ11
-      exact ⟨mapGL ℚ γ, Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N hγ), heq⟩
+      exact ⟨mapGL ℚ γ, Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N hγ), heq⟩
     | some b =>
       exact ⟨mapGL ℚ (ModularGroup.T ^ (b : ℤ)),
-        Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)), by
-        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow hp.pos b]⟩
+        Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N _)), by
+        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow b]⟩
 
 /-- **At a prime dividing the level, the `Γ₀(N)` double coset of `diag(1, p)` is the union of the
 `p` upper-triangular right cosets**: the factorisation
@@ -158,12 +158,12 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_dvd (hp : p.Prime)
     obtain ⟨γ, hγ, rfl⟩ := Subgroup.mem_map.mp hg
     obtain ⟨δ, hδ, -, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 hpN hγ ⟨0, hp.pos⟩
     refine ⟨upperTriShift p γ ⟨0, hp.pos⟩, mapGL ℚ δ, Subgroup.mem_map_of_mem _ hδ, ?_⟩
-    rw [← hmul, ← natDiagGL_mul_mapGL_T_zpow hp.pos ⟨0, hp.pos⟩]
+    rw [← hmul, ← natDiagGL_mul_mapGL_T_zpow (⟨0, hp.pos⟩ : Fin _)]
     simp
   · intro j
     exact ⟨mapGL ℚ (ModularGroup.T ^ (j : ℤ)),
-      Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)),
-      natDiagGL_mul_mapGL_T_zpow hp.pos j⟩
+      Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N _)),
+      natDiagGL_mul_mapGL_T_zpow j⟩
 
 /-! ### The upper-left units of the representatives -/
 

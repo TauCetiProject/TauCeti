@@ -53,12 +53,12 @@ variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
 
 private theorem coneToJoin_coneMap_eq
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = (f y).val.val)
     (x : closedStarRealization K {v}) :
-    coneToJoin (Pi.single w 1) (coneMap F (starToCone v (x.1.1 : ι → ℝ))) =
-      ((closedStarMap f x).1.1 : κ → ℝ) := by
-  by_cases hx : x.1.1 v < 1
-  · rw [starToCone_of_lt x hx, coneMap_smul F _ (sub_pos.mpr hx).ne',
+    coneToJoin (Pi.single w 1) (coneMap ℝ F (starToCone v (x.val.val : ι → ℝ))) =
+      ((closedStarMap f x).val.val : κ → ℝ) := by
+  by_cases hx : x.val.val v < 1
+  · rw [starToCone_of_lt x hx, coneMap_smul F _ _,
       coneToJoin_apply, hF]
     ext j
     rw [closedStarMap_apply_of_lt f x hx j]
@@ -73,15 +73,15 @@ piecewise-affine formula for its radial map on the entire closed star. No finite
 compactness of either complex or vertex type is needed. -/
 theorem exists_isPiecewiseAffineOn_closedStarMap
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
-    (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = (f y).val.val)
+    (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → (κ → ℝ),
       IsPiecewiseAffineOn G
-        (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
-      ∀ x : closedStarRealization K {v}, G (x.1.1 : ι → ℝ) = (closedStarMap f x).1.1 := by
-  let S := range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))
+        (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
+      ∀ x : closedStarRealization K {v}, G (x.val.val : ι → ℝ) = (closedStarMap f x).val.val := by
+  let S := range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))
   have hin : MapsTo (starToCone v) S
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone := by
+      ((range (fun y : geometricLink K v => (y.val.val : ι → ℝ))).cone ℝ) := by
     rintro _ ⟨x, rfl⟩
     exact starToCone_mem x
   have hcone := hf.coneMap.comp
@@ -89,7 +89,7 @@ theorem exists_isPiecewiseAffineOn_closedStarMap
   have hout :=
     (isPiecewiseAffineOn_continuousAffineMap (coneToJoin (Pi.single w 1)) univ).comp
       hcone (mapsTo_univ _ _)
-  exact ⟨(coneToJoin (Pi.single w 1)) ∘ coneMap F ∘ (starToCone v), hout,
+  exact ⟨(coneToJoin (Pi.single w 1)) ∘ coneMap ℝ F ∘ (starToCone v), hout,
     coneToJoin_coneMap_eq f F hF⟩
 
 /-- A PL coordinate formula on a geometric link extends to a PL coordinate formula on
@@ -98,14 +98,14 @@ vertex type needs to be finite. Finiteness of the link's face collection supplie
 theorem exists_isPLOn_closedStarMap
     (hc : IsCompact (geometricLink K v))
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
-    (hf : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = (f y).val.val)
+    (hf : IsPLOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → (κ → ℝ),
-      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
-      ∀ x : closedStarRealization K {v}, G (x.1.1 : ι → ℝ) = (closedStarMap f x).1.1 := by
+      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
+      ∀ x : closedStarRealization K {v}, G (x.val.val : ι → ℝ) = (closedStarMap f x).val.val := by
   have : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hc
-  have hcoord : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) :=
-    isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+  have hcoord : IsCompact (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))) :=
+    isCompact_range ((continuous_realization_coe K).comp continuous_subtypeVal)
   obtain ⟨G, hG, heq⟩ := exists_isPiecewiseAffineOn_closedStarMap f F hF
     (hf.isPiecewiseAffineOn_of_isCompact hcoord)
   exact ⟨G, hG.isPLOn, heq⟩
@@ -123,17 +123,17 @@ theorem exists_isPLOn_closedStarMap_comp
     (f : geometricLink K v → geometricLink L w)
     (g : geometricLink L w → geometricLink N u)
     (F : (ι → ℝ) → (κ → ℝ))
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
-    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))))
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = (f y).val.val)
+    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))))
     (G : (κ → ℝ) → (ν → ℝ))
-    (hG : ∀ y : geometricLink L w, G (y.1.1 : κ → ℝ) = (g y).1.1)
-    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.1.1 : κ → ℝ)))) :
+    (hG : ∀ y : geometricLink L w, G (y.val.val : κ → ℝ) = (g y).val.val)
+    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.val.val : κ → ℝ)))) :
     ∃ H : (ι → ℝ) → (ν → ℝ),
-      IsPLOn H (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+      IsPLOn H (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
         ∀ x : closedStarRealization K {v},
-          H (x.1.1 : ι → ℝ) = (closedStarMap (g ∘ f) x).1.1 := by
+          H (x.val.val : ι → ℝ) = (closedStarMap (g ∘ f) x).val.val := by
   have hGF : IsPLOn (G ∘ F)
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
+      (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))) := by
     apply hGpl.comp hFpl
     rintro _ ⟨y, rfl⟩
     exact ⟨f y, (hF y).symm⟩

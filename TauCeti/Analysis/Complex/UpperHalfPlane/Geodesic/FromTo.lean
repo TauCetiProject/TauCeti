@@ -59,6 +59,9 @@ left half-plane up to that reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_rang
 * `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atTop_atImInfty`,
   `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atBot_atImInfty`: a vertical geodesic line goes to
   `i∞` along its end at `∞`.
+* `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atBot_coe`,
+  `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atTop_coe`: a geodesic line converges in `ℂ` to its
+  real backward or forward ideal endpoint.
 * `TauCeti.UpperHalfPlane.eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane`:
   all points high enough lie strictly to the left of such a line.
 
@@ -77,7 +80,7 @@ public section
 noncomputable section
 
 open UpperHalfPlane
-open scoped MatrixGroups Pointwise OnePoint
+open scoped MatrixGroups Pointwise OnePoint Topology
 
 namespace TauCeti.UpperHalfPlane
 
@@ -584,13 +587,47 @@ theorem IsGeodesicFromTo.infty_mem_boundaryLeftHalfPlane_iff_re_lt {g : PSL(2, �
       (by rw [mul_smul, pslS_smul_infty, he₀])).2 h
   exact (isGeodesicFromTo_mul_pslS_iff.2 hg |>.re_toComplex_lt hinf).not_gt hre
 
-/-- For a geodesic line running from `p` to `q` and from `p` to `r`, where `p` and `q` are not `∞`
-and have distinct real parts, the real part of `toComplex r` lies on the same side of `Re p` as
+/-! ### Geodesic lines with `∞` as an endpoint -/
+
+/-- A geodesic line running from `∞` to a point `q ≠ ∞` is the vertical line through `q`, with
+side form `Re q - Re z`. -/
+theorem IsGeodesicFromTo.sideForm_eq_of_inr_infty_left {g : PSL(2, ℝ)} {q : ℍ ⊕ OnePoint ℝ}
+    (hg : IsGeodesicFromTo g (.inr ∞) q) (z : ℂ) :
+    sideForm g z = (toComplex q).re - z.re := by
+  have h₀ : g • ((0 : ℝ) : OnePoint ℝ) = ∞ := hg.smul_zero_eq
+  have h₁ : g • (∞ : OnePoint ℝ) ≠ ∞ := fun h₁ ↦
+    OnePoint.coe_ne_infty 0 (MulAction.injective g (h₀.trans h₁.symm))
+  obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 h₁
+  have hq₀ := hg.sideForm_toComplex_right hg.ne.symm
+  rw [sideForm_eq_of_smul_zero_eq_infty h₀ he.symm] at hq₀ ⊢
+  rw [sub_eq_zero.1 hq₀]
+
+/-- A geodesic line running from a point `p ≠ ∞` to `∞` is the vertical line through `p`, with
+side form `Re z - Re p`. -/
+theorem IsGeodesicFromTo.sideForm_eq_of_inr_infty_right {g : PSL(2, ℝ)} {p : ℍ ⊕ OnePoint ℝ}
+    (hg : IsGeodesicFromTo g p (.inr ∞)) (z : ℂ) :
+    sideForm g z = z.re - (toComplex p).re := by
+  have h₁ : g • (∞ : OnePoint ℝ) = ∞ := hg.smul_infty_eq
+  have h₀ : g • ((0 : ℝ) : OnePoint ℝ) ≠ ∞ := fun h₀ ↦
+    OnePoint.coe_ne_infty 0 (MulAction.injective g (h₀.trans h₁.symm))
+  obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 h₀
+  have hp₀ := hg.sideForm_toComplex_left hg.ne
+  rw [sideForm_eq_of_smul_infty_eq_infty he.symm h₁] at hp₀ ⊢
+  rw [sub_eq_zero.1 hp₀]
+
+/-- For a geodesic line running from `p` to `q` and from `p` to `r`, where `q` is not `∞` and `p`
+and `q` have distinct real parts, the real part of `toComplex r` lies on the same side of `Re p` as
 `Re q`. -/
 theorem IsGeodesicFromTo.re_toComplex_lt_iff {g : PSL(2, ℝ)} {p q r : ℍ ⊕ OnePoint ℝ}
-    (hpq : IsGeodesicFromTo g p q) (hpr : IsGeodesicFromTo g p r) (hp : p ≠ .inr ∞)
-    (hq : q ≠ .inr ∞) (hre : (toComplex p).re ≠ (toComplex q).re) :
+    (hpq : IsGeodesicFromTo g p q) (hpr : IsGeodesicFromTo g p r) (hq : q ≠ .inr ∞)
+    (hre : (toComplex p).re ≠ (toComplex q).re) :
     (toComplex p).re < (toComplex r).re ↔ (toComplex p).re < (toComplex q).re := by
+  by_cases hp : p = .inr ∞
+  · -- the line is vertical, so `r` and `q` have the same real part
+    subst hp
+    have h := (hpq.sideForm_eq_of_inr_infty_left 0).symm.trans (hpr.sideForm_eq_of_inr_infty_left 0)
+    simp only [Complex.zero_re, sub_zero] at h
+    simp [h]
   -- `∞` lies strictly on the left of the line or of its reversal, whichever runs rightwards
   refine ⟨fun h ↦ hre.lt_or_gt.resolve_right fun hqp ↦ ?_, fun h ↦
     hpr.re_toComplex_lt ((hpq.infty_mem_boundaryLeftHalfPlane_iff_re_lt hp hq).2 h)⟩
@@ -598,33 +635,7 @@ theorem IsGeodesicFromTo.re_toComplex_lt_iff {g : PSL(2, ℝ)} {p q r : ℍ ⊕ 
     ((isGeodesicFromTo_mul_pslS_iff.2 hpq).infty_mem_boundaryLeftHalfPlane_iff_re_lt hq hp).2 hqp
   exact (isGeodesicFromTo_mul_pslS_iff.2 hpr |>.re_toComplex_lt hinf).not_gt h
 
-/-! ### Geodesic lines with `∞` as an endpoint or strictly on their left -/
-
-/-- A geodesic line running from `∞` to a point `q ≠ ∞` is the vertical line through `q`, with
-side form `Re q - Re z`. -/
-theorem IsGeodesicFromTo.sideForm_eq_of_inr_infty_left {g : PSL(2, ℝ)} {q : ℍ ⊕ OnePoint ℝ}
-    (hg : IsGeodesicFromTo g (.inr ∞) q) (hq : q ≠ .inr ∞) (z : ℂ) :
-    sideForm g z = (toComplex q).re - z.re := by
-  have h₀ : g • ((0 : ℝ) : OnePoint ℝ) = ∞ := hg.smul_zero_eq
-  have h₁ : g • (∞ : OnePoint ℝ) ≠ ∞ := fun h₁ ↦
-    OnePoint.coe_ne_infty 0 (MulAction.injective g (h₀.trans h₁.symm))
-  obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 h₁
-  have hq₀ := hg.sideForm_toComplex_right hq
-  rw [sideForm_eq_of_smul_zero_eq_infty h₀ he.symm] at hq₀ ⊢
-  rw [sub_eq_zero.1 hq₀]
-
-/-- A geodesic line running from a point `p ≠ ∞` to `∞` is the vertical line through `p`, with
-side form `Re z - Re p`. -/
-theorem IsGeodesicFromTo.sideForm_eq_of_inr_infty_right {g : PSL(2, ℝ)} {p : ℍ ⊕ OnePoint ℝ}
-    (hg : IsGeodesicFromTo g p (.inr ∞)) (hp : p ≠ .inr ∞) (z : ℂ) :
-    sideForm g z = z.re - (toComplex p).re := by
-  have h₁ : g • (∞ : OnePoint ℝ) = ∞ := hg.smul_infty_eq
-  have h₀ : g • ((0 : ℝ) : OnePoint ℝ) ≠ ∞ := fun h₀ ↦
-    OnePoint.coe_ne_infty 0 (MulAction.injective g (h₀.trans h₁.symm))
-  obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 h₀
-  have hp₀ := hg.sideForm_toComplex_left hp
-  rw [sideForm_eq_of_smul_infty_eq_infty he.symm h₁] at hp₀ ⊢
-  rw [sub_eq_zero.1 hp₀]
+/-! ### Geodesic lines with `∞` strictly on their left -/
 
 /-- A geodesic line with `∞` strictly on its left is a semicircle: its side form is a positive
 multiple of `ρ² - |z - m|²` for its centre `m` and radius `ρ > 0`. -/
@@ -660,6 +671,37 @@ theorem tendsto_geodesicLine_atBot_atImInfty {g : PSL(2, ℝ)}
     Filter.Tendsto (geodesicLine g) Filter.atBot atImInfty := by
   have h := (tendsto_geodesicLine_atTop_atImInfty (g := g * pslS)
     (by rw [mul_smul, pslS_smul_infty, hg])).comp Filter.tendsto_neg_atBot_atTop
+  refine h.congr fun t ↦ ?_
+  rw [Function.comp_apply, geodesicLine_mul_pslS, neg_neg]
+
+/-- Backwards along a geodesic line starting from a real ideal point `x`, the points converge in
+`ℂ` to `x`. -/
+theorem tendsto_geodesicLine_atBot_coe {g : PSL(2, ℝ)} {x : ℝ}
+    (hg : g • ((0 : ℝ) : OnePoint ℝ) = (x : OnePoint ℝ)) :
+    Filter.Tendsto (fun t : ℝ ↦ (geodesicLine g t : ℂ)) Filter.atBot (𝓝 (x : ℂ)) := by
+  induction g using QuotientGroup.induction_on with | H a =>
+  obtain ⟨hd, hb⟩ := Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_coe_iff.1 hg
+  have hexp : Filter.Tendsto (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) Filter.atBot (𝓝 0) := by
+    have h : (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) = fun t ↦ (Real.exp t : ℂ) * Complex.I :=
+      funext fun t ↦ by rw [Complex.mk_eq_add_mul_I, Complex.ofReal_zero, zero_add]
+    rw [h]
+    simpa using ((Complex.continuous_ofReal.tendsto 0).comp Real.tendsto_exp_atBot).mul_const
+      Complex.I
+  have hlin (c d : ℝ) :
+      Filter.Tendsto (fun t : ℝ ↦ (c : ℂ) * ⟨0, Real.exp t⟩ + d) Filter.atBot (𝓝 (d : ℂ)) := by
+    simpa using (tendsto_const_nhds.mul hexp).add tendsto_const_nhds
+  have hdiv := (hlin (a 0 0) (a 0 1)).div (hlin (a 1 0) (a 1 1)) (Complex.ofReal_ne_zero.2 hd)
+  rw [hb, Complex.ofReal_mul, mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.2 hd)] at hdiv
+  exact hdiv.congr fun t ↦ by
+    simp [geodesicLine_def, UpperHalfPlane.pslMk_smul,
+      UpperHalfPlane.coe_specialLinearGroup_apply, hb]
+
+/-- Along a geodesic line ending at a real ideal point `x`, the points converge in `ℂ` to `x`. -/
+theorem tendsto_geodesicLine_atTop_coe {g : PSL(2, ℝ)} {x : ℝ}
+    (hg : g • (∞ : OnePoint ℝ) = (x : OnePoint ℝ)) :
+    Filter.Tendsto (fun t : ℝ ↦ (geodesicLine g t : ℂ)) Filter.atTop (𝓝 (x : ℂ)) := by
+  have h := (tendsto_geodesicLine_atBot_coe (g := g * pslS)
+    (by rw [mul_smul, pslS_smul_zero, hg])).comp Filter.tendsto_neg_atTop_atBot
   refine h.congr fun t ↦ ?_
   rw [Function.comp_apply, geodesicLine_mul_pslS, neg_neg]
 

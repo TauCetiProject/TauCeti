@@ -51,30 +51,30 @@ theorem exists_isPiecewiseAffineOn_closedStarHomeomorphClosedBall
     (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
-  (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = e y)
+  (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → E,
-      IsPiecewiseAffineOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+      IsPiecewiseAffineOn G (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
-  let S := range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))
-  let T := range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))
-  have hmap : MapsTo (starToCone v) S T.cone := by
+        G (x.val.val : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
+  let S := range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))
+  let T := range (fun y : geometricLink K v => (y.val.val : ι → ℝ))
+  have hmap : MapsTo (starToCone v) S (T.cone ℝ) := by
     rintro _ ⟨x, rfl⟩
     exact starToCone_mem x
-  have hcone : IsPiecewiseAffineOn (coneMap F) T.cone := hf.coneMap
-  have hcom : IsPiecewiseAffineOn (coneMap F ∘ starToCone v) S :=
+  have hcone : IsPiecewiseAffineOn (coneMap ℝ F) (T.cone ℝ) := hf.coneMap
+  have hcom : IsPiecewiseAffineOn (coneMap ℝ F ∘ starToCone v) S :=
     hcone.comp (isPiecewiseAffineOn_continuousAffineMap (starToCone v) S) hmap
   let π : (E × ℝ) →ᴬ[ℝ] E :=
     (ContinuousLinearMap.fst ℝ E ℝ).toContinuousAffineMap
-  have hproj' : IsPiecewiseAffineOn (π ∘ (coneMap F ∘ starToCone v)) S :=
+  have hproj' : IsPiecewiseAffineOn (π ∘ (coneMap ℝ F ∘ starToCone v)) S :=
     (isPiecewiseAffineOn_continuousAffineMap π univ).comp hcom (subset_univ _)
-  refine ⟨π ∘ (coneMap F ∘ starToCone v), hproj', ?_⟩
+  refine ⟨π ∘ (coneMap ℝ F ∘ starToCone v), hproj', ?_⟩
   intro x
-  by_cases hx : x.1.1 v < 1
+  by_cases hx : x.val.val v < 1
   · rw [closedStarHomeomorphClosedBall_apply_of_lt hK e x hx]
     rw [Function.comp_apply, Function.comp_apply, starToCone_of_lt x hx,
-      coneMap_smul F _ (sub_pos.mpr hx).ne']
+      coneMap_smul F _ _]
     simp [π, hF]
   · rw [eq_starApex_of_not_lt K v hx]
     rw [Function.comp_apply, Function.comp_apply,
@@ -87,12 +87,12 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall
     (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
-    (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = e y)
+    (hf : IsPiecewiseAffineOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → E,
-      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
+        G (x.val.val : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
   obtain ⟨G, hG, hG_eq⟩ := exists_isPiecewiseAffineOn_closedStarHomeomorphClosedBall
     hK e F hF hf
   exact ⟨G, hG.isPLOn, hG_eq⟩
@@ -104,12 +104,12 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn
     (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
-    (hf : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = e y)
+    (hf : IsPLOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → E,
-      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+      IsPLOn G (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
+        G (x.val.val : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
   simpa only [hK] using exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
     (hf.isPiecewiseAffineOn_of_isCompact (K.isCompact_range_geometricLink v hK))
 

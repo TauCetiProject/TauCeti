@@ -155,10 +155,58 @@ theorem mem_facePair_idealOfDefinition (hf : Ideal.span (Set.range f) = ⊤) (p 
     (S : Finset ι) {x : letI := faceTopology f P hf p S; (facePair f P hf p S).ringOfDefinition} :
     letI := faceTopology f P hf p S
     x ∈ (facePair f P hf p S).idealOfDefinition ↔
-      (⟨x, by rw [← facePair_ringOfDefinition f P hf p S]; exact x.2⟩ :
+      (⟨x, by rw [← facePair_ringOfDefinition f P hf p S]; exact x.property⟩ :
         P.locSubring (numerators f p) (∏ i ∈ S, f i) (Localization.Away (∏ i ∈ S, f i))) ∈
         P.locIdeal (numerators f p) _ _ :=
   P.mem_localization_idealOfDefinition _ _ _ _
+
+/-- The deleted-face localization homomorphism preserves the rings of definition. -/
+theorem eraseRingHom_mem_ringOfDefinition (hf : Ideal.span (Set.range f) = ⊤)
+    [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
+    letI := faceTopology f P hf p (S.erase a.val)
+    letI := faceTopology f P hf (p + 1) S
+    ∀ {r}, r ∈ (facePair f P hf p (S.erase a.val)).ringOfDefinition →
+      cechLocalizationEraseRingHom f S a r ∈ (facePair f P hf (p + 1) S).ringOfDefinition := by
+  let _ := faceTopology f P hf p (S.erase a.val)
+  let _ := faceTopology f P hf (p + 1) S
+  intro r hr
+  simp only [facePair_ringOfDefinition] at hr ⊢
+  rw [cechLocalizationEraseRingHom_eq_awayLift]
+  exact P.awayLift_mem_locSubring _ _ _ _ _ _ (f a.val)
+    (Finset.prod_erase_mul S f a.property).symm (fun _ ht ↦ mul_mem_numerators f ht a.val) hr
+
+/-- The deleted-face localization homomorphism maps the ideal of definition into the
+ideal of definition of the full face. -/
+theorem map_eraseRingHom_idealOfDefinition_le (hf : Ideal.span (Set.range f) = ⊤)
+    [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
+    letI := faceTopology f P hf p (S.erase a.val)
+    letI := faceTopology f P hf (p + 1) S
+    (facePair f P hf p (S.erase a.val)).idealOfDefinition.map
+      ((cechLocalizationEraseRingHom f S a).restrict _ _
+        fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
+      (facePair f P hf (p + 1) S).idealOfDefinition := by
+  let R := Localization.Away (∏ j ∈ S.erase a.val, f j)
+  let T := Localization.Away (∏ j ∈ S, f j)
+  let _ := faceTopology f P hf p (S.erase a.val)
+  let _ := faceTopology f P hf (p + 1) S
+  let ψ := (cechLocalizationEraseRingHom f S a).restrict _ _
+    (fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr)
+  refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
+  rw [Ideal.mem_comap, mem_facePair_idealOfDefinition]
+  have hr' := (mem_facePair_idealOfDefinition f P hf p (S.erase a.val)).mp hr
+  have hr'' := (P.mem_locIdealImage_iff (numerators f p)
+    (∏ j ∈ S.erase a.val, f j) R 1).mpr
+    ⟨_, by simpa only [pow_one] using hr', rfl⟩
+  have h := P.awayLift_mem_locIdealImage (numerators f p) _ R (numerators f (p + 1)) _ T
+    (f a.val) (Finset.prod_erase_mul S f a.property).symm
+    (fun _ ht ↦ mul_mem_numerators f ht a.val) 1 hr''
+  obtain ⟨s, hs, heq⟩ := (P.mem_locIdealImage_iff _ _ T 1).mp h
+  have he : s = ⟨ψ r, by
+      simpa only [facePair_ringOfDefinition] using (ψ r).property⟩ :=
+    Subtype.val_injective (by
+      simpa only [ψ, RingHom.coe_restrict_apply, cechLocalizationEraseRingHom_eq_awayLift]
+        using heq)
+  simpa only [pow_one, he] using hs
 
 /-! ### The topology of the terms -/
 
@@ -216,24 +264,24 @@ uncompleted rational localisations `B(F_p / f_S)`. -/
 @[instance_reducible] noncomputable def termTopology (hf : Ideal.span (Set.range f) = ⊤)
     (p : ℕ) : TopologicalSpace (cechLocalizationTerm M f p) :=
   @Pi.topologicalSpace _
-    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M)
-    fun S ↦ faceModuleTopology f P M hf p S.1
+    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M)
+    fun S ↦ faceModuleTopology f P M hf p S.val
 
 /-- `termTopology` is the product of the natural module topologies of the factors. -/
 theorem termTopology_eq_pi (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
     termTopology f P M hf p =
       @Pi.topologicalSpace _
-        (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M)
-        fun S ↦ faceModuleTopology f P M hf p S.1 :=
+        (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M)
+        fun S ↦ faceModuleTopology f P M hf p S.val :=
   (rfl)
 
 /-- The term of degree `p` is a topological additive group. -/
 theorem isTopologicalAddGroup_termTopology (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
     @IsTopologicalAddGroup _ (termTopology f P M hf p) _ :=
   @Pi.isTopologicalAddGroup _
-    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M)
-    (fun S ↦ faceModuleTopology f P M hf p S.1) _
-    fun S ↦ isTopologicalAddGroup_faceModuleTopology f P M hf p S.1
+    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M)
+    (fun S ↦ faceModuleTopology f P M hf p S.val) _
+    fun S ↦ isTopologicalAddGroup_faceModuleTopology f P M hf p S.val
 
 /-- The additive uniformity of `termTopology`. -/
 @[instance_reducible] noncomputable def termUniformSpace (hf : Ideal.span (Set.range f) = ⊤)
@@ -315,14 +363,14 @@ theorem hasBasis_nhds_zero_faceFiltration (hf : Ideal.span (Set.range f) = ⊤) 
 the faces `S`, `|S| = p + 1`, of the subgroups `Iⁱ · C[F_p / f_S] · N` of `M_{f_S}`. -/
 noncomputable def filtration (hf : Ideal.span (Set.range f) = ⊤) (N : Set M) (p i : ℕ) :
     AddSubgroup (cechLocalizationTerm M f p) :=
-  AddSubgroup.pi Set.univ fun S ↦ faceFiltration f P M hf N p S.1 i
+  AddSubgroup.pi Set.univ fun S ↦ faceFiltration f P M hf N p S.val i
 
 /-- An element lies in the filtration exactly when each of its components lies in the face
 filtration. -/
 @[simp]
 theorem mem_filtration (hf : Ideal.span (Set.range f) = ⊤) (N : Set M) (p i : ℕ)
     (x : cechLocalizationTerm M f p) :
-    x ∈ filtration f P M hf N p i ↔ ∀ S, x S ∈ faceFiltration f P M hf N p S.1 i := by
+    x ∈ filtration f P M hf N p i ↔ ∀ S, x S ∈ faceFiltration f P M hf N p S.val i := by
   simp only [filtration, AddSubgroup.mem_pi, Set.mem_univ, forall_const]
 
 /-- The filtration of the empty set vanishes. -/
@@ -336,7 +384,7 @@ theorem filtration_empty (hf : Ideal.span (Set.range f) = ⊤) (p i : ℕ) :
 theorem filtration_antitone (hf : Ideal.span (Set.range f) = ⊤) (N : Set M) (p : ℕ) :
     Antitone (filtration f P M hf N p) := fun _ _ hij _ hx ↦
   (mem_filtration f P M hf N p _ _).mpr fun S ↦
-    faceFiltration_antitone f P M hf N p S.1 hij ((mem_filtration f P M hf N p _ _).mp hx S)
+    faceFiltration_antitone f P M hf N p S.val hij ((mem_filtration f P M hf N p _ _).mp hx S)
 
 /-- **The filtration is a basis of neighbourhoods of zero**: the case of nonnegative degree of
 Huber94 §2, (1.3.1)(ii), with the subgroups `K_i^p` read off the charts of (1.2)(ii). If `ι` is
@@ -347,16 +395,16 @@ theorem hasBasis_nhds_zero_filtration [Finite ι] (hf : Ideal.span (Set.range f)
     (@nhds _ (termTopology f P M hf p) 0).HasBasis (fun _ : ℕ ↦ True)
       fun i ↦ (filtration f P M hf N p i : Set (cechLocalizationTerm M f p)) := by
   have hfactor : ∀ S : {S : Finset ι // S.card = p + 1},
-      (@nhds _ (faceModuleTopology f P M hf p S.1)
+      (@nhds _ (faceModuleTopology f P M hf p S.val)
         ((0 : cechLocalizationTerm M f p) S)).HasBasis (fun _ : ℕ ↦ True)
-        fun i ↦ (faceFiltration f P M hf N p S.1 i : Set _) :=
-    fun S ↦ hasBasis_nhds_zero_faceFiltration f P M hf hN hspan p S.1
+        fun i ↦ (faceFiltration f P M hf N p S.val i : Set _) :=
+    fun S ↦ hasBasis_nhds_zero_faceFiltration f P M hf hN hspan p S.val
   have hpi := Filter.hasBasis_pi_same_index hfactor fun I k hI _ ↦
-    ⟨hI.toFinset.sup k, trivial, fun S hS ↦ faceFiltration_antitone f P M hf N p S.1
+    ⟨hI.toFinset.sup k, trivial, fun S hS ↦ faceFiltration_antitone f P M hf N p S.val
       (Finset.le_sup (hI.mem_toFinset.mpr hS))⟩
   rw [termTopology_eq_pi, @nhds_pi _
-    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M)
-    fun S ↦ faceModuleTopology f P M hf p S.1]
+    (fun S : {S : Finset ι // S.card = p + 1} ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M)
+    fun S ↦ faceModuleTopology f P M hf p S.val]
   refine hpi.to_hasBasis
     (fun Ik _ ↦ ⟨Ik.2, trivial, fun x hx S _ ↦ (mem_filtration f P M hf N p _ _).mp hx S⟩)
     fun i _ ↦ ⟨(Set.univ, i), ⟨Set.finite_univ, trivial⟩, fun x hx ↦

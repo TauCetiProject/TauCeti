@@ -5,11 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Shift.CommShift
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
-public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 public import Mathlib.CategoryTheory.Triangulated.Functor
 
 /-!
@@ -23,11 +18,11 @@ gives compatibility with negative integers.
 In a preadditive category with an additive shift by `ℤ`, each shift functor `⟦n⟧` commutes with
 the shifts through the isomorphisms `X⟦a⟧⟦n⟧ ≅ X⟦n⟧⟦a⟧` of `shiftFunctorComm` multiplied by the
 sign `(-1)^(a * n)` (`TauCeti.shiftFunctorCommShift`). The sign is a homomorphism in `a`, so the
-twisted isomorphisms still satisfy the coherence conditions of `Functor.CommShift`. With it, the
-shifted mapping cocone `(mappingCone φ)⟦-1⟧` of a morphism of cochain complexes commutes with
-the shifts so that its projection to the source of `φ` does. For this structure, the image of a
-triangle by `⟦n⟧` is isomorphic to its shift by `n` in the category of triangles
-(`TauCeti.shiftFunctorMapTriangleIso`).
+twisted isomorphisms still satisfy the coherence conditions of `Functor.CommShift`. For this
+structure, the image of a triangle by `⟦n⟧` is isomorphic to its shift by `n` in the category of
+triangles (`TauCeti.shiftFunctorMapTriangleIso`). With `n = -1`, these are used to make the
+shifted mapping cocone `(mappingCone φ)⟦-1⟧` of a morphism of cochain complexes commute with the
+shifts compatibly with its projection to the source of `φ`.
 -/
 
 public section
@@ -47,50 +42,28 @@ by `b` and `a`. It suffices that the target shift by `b` is faithful; in particu
 for group shifts. -/
 lemma natTrans_commShiftCore_add_right_iff {a b : A} [(shiftFunctor D b).Faithful] :
     CommShiftCore τ b ∧ CommShiftCore τ (a + b) ↔ CommShiftCore τ b ∧ CommShiftCore τ a := by
-  constructor
-  · rintro ⟨hb, hab⟩
-    refine ⟨hb, ?_⟩
-    constructor
-    ext X
-    apply (shiftFunctor D b).map_injective
-    have h := hab.shift_app_comm τ X
-    rw [F.commShiftIso_add, G.commShiftIso_add,
-      Functor.CommShift.isoAdd_hom_app, Functor.CommShift.isoAdd_hom_app] at h
-    rw [← τ.naturality_assoc ((shiftFunctorAdd C a b).hom.app X)] at h
-    have hn := (shiftFunctorAdd D a b).inv.naturality (τ.app X)
-    dsimp at hn
-    simp only [Category.assoc] at h
-    rw [← hn] at h
-    rw [cancel_epi (F.map ((shiftFunctorAdd C a b).hom.app X))] at h
-    simp only [← Category.assoc] at h
-    rw [cancel_mono ((shiftFunctorAdd D a b).inv.app (G.obj X))] at h
-    simp only [Category.assoc] at h
-    dsimp only [Functor.comp_obj] at h
-    rw [← hb.shift_app_comm_assoc τ (X⟦a⟧)] at h
-    rw [cancel_epi ((F.commShiftIso b).hom.app (X⟦a⟧))] at h
-    simpa only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      Functor.map_comp] using h
-  · rintro ⟨hb, ha⟩
-    exact ⟨hb, ha.add hb⟩
+  refine ⟨fun ⟨hb, hab⟩ ↦ ⟨hb, ⟨?_⟩⟩, fun ⟨hb, ha⟩ ↦ ⟨hb, ha.add hb⟩⟩
+  ext X
+  apply (shiftFunctor D b).map_injective
+  have h := hab.shift_app_comm τ X
+  have hn := (shiftFunctorAdd D a b).inv.naturality (τ.app X)
+  dsimp at h hn ⊢
+  simpa only [Functor.commShiftIso_add, Functor.CommShift.isoAdd_hom_app, Category.assoc, ← hn,
+    ← τ.naturality_assoc, ← hb.shift_app_comm_assoc, ← Functor.map_comp_assoc, cancel_epi,
+    cancel_mono, Functor.comp_obj] using h
 
 /-- A natural transformation is compatible with all integral shifts if and only if it is
 compatible with the shift by one. -/
 lemma natTrans_commShift_iff_one {F G : C ⥤ D} [HasShift C ℤ] [HasShift D ℤ]
     [F.CommShift ℤ] [G.CommShift ℤ] {τ : F ⟶ G} :
     CommShift τ ℤ ↔ CommShiftCore τ (1 : ℤ) := by
-  constructor
-  · intro h
-    exact ⟨h.shift_comm 1⟩
-  · intro h
-    apply CommShift.of_core
-    intro n
-    have hneg : CommShiftCore τ (-1 : ℤ) :=
-      (natTrans_commShiftCore_add_right_iff.mp
-        ⟨h, by simpa using (CommShiftCore.zero (τ := τ) ℤ)⟩).2
-    induction n using Int.induction_on with
-    | zero => exact CommShiftCore.zero (τ := τ) ℤ
-    | succ n ih => exact ih.add h
-    | pred n ih => simpa only [sub_eq_add_neg] using ih.add hneg
+  refine ⟨fun h ↦ ⟨h.shift_comm 1⟩, fun h ↦ CommShift.of_core fun n ↦ ?_⟩
+  have hneg : CommShiftCore τ (-1 : ℤ) :=
+    (natTrans_commShiftCore_add_right_iff.mp ⟨h, by simpa using CommShiftCore.zero (τ := τ) ℤ⟩).2
+  induction n using Int.induction_on with
+  | zero => exact CommShiftCore.zero ℤ
+  | succ n ih => exact ih.add h
+  | pred n ih => simpa only [sub_eq_add_neg] using ih.add hneg
 
 section ShiftFunctor
 
@@ -117,11 +90,7 @@ noncomputable def shiftFunctorCommShift (n : ℤ) : (shiftFunctor C n).CommShift
   commShiftIso a := (a * n).negOnePow • shiftFunctorComm C a n
   commShiftIso_zero := by
     ext X
-    simp only [Functor.CommShift.isoZero_hom_app, Preadditive.smul_iso_hom, zero_mul,
-      Int.negOnePow_zero, one_smul, ← shiftFunctorComm_symm C n 0, Iso.symm_hom]
-    rw [← cancel_epi ((shiftFunctorComm C n 0).hom.app X), Iso.hom_inv_id_app,
-      shiftFunctorComm_zero_hom_app]
-    simp [← Functor.map_comp_assoc]
+    simp [shiftFunctorZero_inv_app_shift, ← Functor.map_comp_assoc, ← shiftFunctorComm_symm C n 0]
   commShiftIso_add a b := by
     ext X
     simp [shiftFunctorComm_hom_app_add, mul_add, Int.negOnePow_add, smul_smul, mul_comm,

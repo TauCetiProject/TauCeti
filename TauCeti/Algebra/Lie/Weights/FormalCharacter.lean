@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Weights.Prod
 public import TauCeti.Algebra.Lie.Weights.TensorProduct
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
+public import TauCeti.LinearAlgebra.Dimension.TensorProduct
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- Non-public: this supplies the inputs of the direct-sum additivity proof, never the vocabulary of
 -- a statement.
@@ -350,7 +351,7 @@ variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁} {P : Type*}
   [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
   [LinearWeights K L M] [LinearWeights K L N] [LinearWeights K L P]
   [FiniteDimensional K M] [FiniteDimensional K N] [FiniteDimensional K P]
-  [IsTriangularizable K L N] [IsTriangularizable K L P]
+  [IsTriangularizable K L N]
 
 /-- **Formal characters are additive on short exact sequences.** If `M → N → P` is exact, the
 first map is injective and the second is surjective, then the character of `N` is the sum of the
@@ -358,6 +359,7 @@ characters of `M` and `P`. -/
 theorem formalCharacter_eq_add_of_exact (f : M →ₗ⁅K,L⁆ N) (g : N →ₗ⁅K,L⁆ P)
     (h : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     formalCharacter K L N = formalCharacter K L M + formalCharacter K L P := by
+  have : IsTriangularizable K L P := g.isTriangularizable_of_surjective hg
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
   simp only [formalCharacter_coeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   exact_mod_cast (finrank_genWeightSpace_add_finrank_genWeightSpace_eq f g h hf hg
@@ -401,35 +403,16 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
       (fun μ : Weight K L M ↦ (genWeightSpace M μ).toSubmodule)
       (fun ν : Weight K L N ↦ (genWeightSpace N ν).toSubmodule)
       (isInternal_genWeightSpace K L M) (isInternal_genWeightSpace K L N)
-  let S := {p : Weight K L M × Weight K L N //
-    (p.1 : Dual K L) + (p.2 : Dual K L) = χ}
+  let S := {p : Weight K L M × Weight K L N // (p.1 : L → K) + (p.2 : L → K) = χ}
   have hindep : iSupIndep fun p : S ↦ A p :=
     hint.submodule_iSupIndep.comp Subtype.val_injective
-  have hspace : (genWeightSpace (M ⊗[K] N) (χ : L → K)).toSubmodule = ⨆ p : S, A p := by
-    apply le_antisymm
-    · rw [genWeightSpace_tensorProduct_eq_iSup]
-      refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
-      by_cases hμ : genWeightSpace M μ = ⊥
-      · simp [hμ, A]
-      by_cases hν : genWeightSpace N ν = ⊥
-      · simp [hν, A]
-      let m : Weight K L M := ⟨μ, hμ⟩
-      let n : Weight K L N := ⟨ν, hν⟩
-      have hadd : (m : Dual K L) + (n : Dual K L) = χ := by
-        ext x
-        simpa [m, n] using congrFun hμν x
-      exact le_iSup (fun p : S ↦ A p) ⟨(m, n), hadd⟩
-    · refine iSup_le fun p ↦ ?_
-      have hp : (p.1.1 : L → K) + (p.1.2 : L → K) = (χ : L → K) := by
-        exact congrArg (fun f : Dual K L ↦ (f : L → K)) p.property
-      rw [← hp]
-      simpa only [A] using map₂_mk_genWeightSpace_le M N p.1.1 p.1.2
-  rw [← LieSubmodule.finrank_toSubmodule]
-  rw [hspace, finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
+  rw [← LieSubmodule.finrank_toSubmodule, genWeightSpace_tensorProduct_eq_iSup_weight,
+    finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
+  -- The weight pairs summing to `χ` as linear forms are those summing to `χ` as functions.
   rw [← Finset.sum_subtype
     (s := (Finset.univ : Finset (Weight K L M × Weight K L N)).filter fun p ↦
       (p.1 : Dual K L) + (p.2 : Dual K L) = χ)
-    (fun p ↦ by simp) (fun p ↦ finrank K (A p)), Finset.sum_filter]
+    (fun p ↦ by simp [← DFunLike.coe_fn_eq]) (fun p ↦ finrank K (A p)), Finset.sum_filter]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   by_cases hp : (p.1 : Dual K L) + (p.2 : Dual K L) = χ
   · simp only [hp, ite_true]
@@ -437,12 +420,8 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
     -- `finrank`; restating the goal makes those instances use the displayed `map₂` submodule.
     change finrank K (Submodule.map₂ (TensorProduct.mk K M N)
       (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule) = _
-    rw [← TensorProduct.range_mapIncl,
-      LinearMap.finrank_range_of_inj
-        (Module.Flat.tensorProduct_mapIncl_injective_of_right
-          (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule),
-      Module.finrank_tensorProduct]
-    rfl
+    rw [Submodule.finrank_map₂_tensorProductMk, LieSubmodule.finrank_toSubmodule,
+      LieSubmodule.finrank_toSubmodule]
   · simp only [hp, ite_false]
 
 /-- **Multiplicativity of formal characters.** The formal character of a tensor product is the

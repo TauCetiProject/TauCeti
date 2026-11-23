@@ -142,7 +142,7 @@ variable [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M] {e : I → M
 /-- The norm of a finite linear combination of an orthonormal family, as a real number. -/
 theorem norm_sum_smul (he : IsOrthonormalFamily R e) (s : Finset I) (a : I → R) :
     ‖∑ i ∈ s, a i • e i‖ = (s.sup fun i ↦ ‖a i‖₊ : ℝ≥0) := by
-  rw [← coe_nnnorm, he s a]
+  rw [← coe_nnNorm, he s a]
 
 /-- A coefficient of a finite linear combination of an orthonormal family has norm at most the
 norm of the combination. -/
@@ -167,7 +167,7 @@ theorem norm_apply_eq_one [NormOneClass R] (he : IsOrthonormalFamily R e) (i : I
 /-- The image of an orthonormal family under a linear isometry is orthonormal. -/
 theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsOrthonormalFamily R e)
     (u : M →ₗᵢ[R] N) : IsOrthonormalFamily R (u ∘ e) := fun s a ↦ by
-  simpa [map_sum, map_smul, he s a] using u.nnnorm_map (∑ i ∈ s, a i • e i)
+  simpa [map_sum, map_smul, he s a] using u.nnNorm_map (∑ i ∈ s, a i • e i)
 
 end Seminormed
 
@@ -188,7 +188,7 @@ theorem of_norm_sub_lt_one [SeminormedRing R] [SeminormedAddCommGroup M] [Module
     exact hzero ▸ NNReal.coe_injective (le_antisymm hsum (norm_nonneg _))
   · have hpos : 0 < s.sup (fun i ↦ ‖a i‖₊) := pos_iff_ne_zero.2 hzero
     have herr : ‖∑ i ∈ s, a i • (e i - v i)‖₊ < s.sup (fun i ↦ ‖a i‖₊) := by
-      refine (s.nnnorm_sum_le_sup_nnnorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
+      refine (s.nnNorm_sum_le_sup_nnNorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
       intro i hi
       have hb : ‖e i - v i‖₊ < 1 := by exact_mod_cast hv i
       have hsmul : ‖a i • (e i - v i)‖₊ ≤ ‖a i‖₊ * ‖e i - v i‖₊ := by
@@ -205,15 +205,15 @@ theorem of_norm_sub_lt_one [SeminormedRing R] [SeminormedAddCommGroup M] [Module
       exact_mod_cast (he s a).symm ▸ herr
     rw [← he s a]
     apply NNReal.coe_injective
-    simpa only [coe_nnnorm] using
+    simpa only [coe_nnNorm] using
       (IsUltrametricDist.norm_eq_of_norm_sub_lt_left herr').symm
 
 /-- An orthonormal family over a normed ring is linearly independent. -/
 theorem linearIndependent [NormedRing R] [SeminormedAddCommGroup M] [Module R M] {e : I → M}
     (he : IsOrthonormalFamily R e) : LinearIndependent R e := by
   refine linearIndependent_iff'.2 fun s a h i hi ↦ ?_
-  have : (s.sup fun i ↦ ‖a i‖₊) = 0 := by rw [← he s a, h, nnnorm_zero]
-  exact nnnorm_eq_zero.1 (nonpos_iff_eq_zero.1 (this ▸ Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi))
+  have : (s.sup fun i ↦ ‖a i‖₊) = 0 := by rw [← he s a, h, nnNorm_zero]
+  exact nnNorm_eq_zero.1 (nonpos_iff_eq_zero.1 (this ▸ Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi))
 
 /-- An orthonormal family in the target of a dense-range continuous linear map has
 cardinality at most that of any dense spanning family in the source. -/
@@ -268,7 +268,7 @@ theorem norm_tsum_smul (a : C₀(I, R)) : ‖∑' i, a i • e i‖ = ‖a‖ :=
       (hasSum_linearCombination (R := R) ⟨e, he.memℓp_infty⟩ a).norm
   refine le_antisymm (le_of_tendsto' hT fun s ↦ ?_)
     ((norm_le (norm_nonneg _)).2 fun j ↦ ge_of_tendsto hT ?_)
-  · rw [← coe_nnnorm a, NNReal.coe_le_coe]
+  · rw [← coe_nnNorm a, NNReal.coe_le_coe]
     exact Finset.sup_le fun i _ ↦ NNReal.coe_le_coe.1 (norm_coe_le_norm a i)
   · filter_upwards [eventually_ge_atTop {j}] with s hs
     exact NNReal.coe_le_coe.2 <|

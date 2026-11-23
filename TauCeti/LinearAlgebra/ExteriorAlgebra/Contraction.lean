@@ -10,7 +10,9 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -30,6 +32,13 @@ exterior basis vectors containing both coordinates.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
+Reversal is diagonal too, with the sign `(-1) ^ (s.card.choose 2)`
+(`ExteriorAlgebra.reverse_basis`). For a finite index set, the top-degree coefficient
+`b.ExteriorAlgebra.coord Finset.univ` therefore kills every contraction, and the grade involution
+and reversal multiply it by `(-1) ^ n` and `(-1) ^ (n.choose 2)` in rank `n`
+(`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
+`Module.Basis.exteriorAlgebra_coord_univ_involute`,
+`Module.Basis.exteriorAlgebra_coord_univ_reverse`).
 
 Every basis vector is the product of the exterior-algebra generators of its index set, in
 increasing order; for index sets with one or two elements this is also recorded in the explicit
@@ -144,104 +153,18 @@ private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
   -- which the shuffle crosses when it moves the singleton `{i}` to the front.
   let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
   let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i := by
-    exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  have hremove : k.removeNth (fun j ↦ e j) =
-      (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) := by
-    apply Finset.orderEmbOfFin_unique
-    · intro j
-      exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-        Finset.orderEmbOfFin_mem s hsCard _⟩
-    · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
   let t : Set.powersetCard I n := ⟨s.erase i, rfl⟩
   have hdisj : Disjoint u.val t.val := by simp [u, t]
-  have hsCard' : s.card = 1 + n := hsCard.trans (Nat.add_comm n 1)
-  have hunion : Set.powersetCard.disjUnion hdisj =
-      (Set.powersetCard.ofCard (s := s) hsCard' : Set.powersetCard I (1 + n)) := by
-    apply Subtype.ext
-    simp [u, t, hi]
   let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
-  let p' : Equiv.Perm (Fin (n + 1)) := c.symm.trans (p.trans c)
   -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
   -- which moves position `k` to the front and shifts the preceding positions one step right.
-  have hec : (fun q ↦ e (c q)) =
-      (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop := by
-    apply Finset.orderEmbOfFin_unique
-    · intro q
-      have hdval : (Set.powersetCard.disjUnion hdisj).val = s :=
-        congrArg Subtype.val hunion
-      rw [hdval]
-      exact Finset.orderEmbOfFin_mem s hsCard (c q)
-    · intro a b hab
-      apply e.strictMono
-      simpa [c, Fin.ext_iff] using hab
-  have hp : p' = k.cycleRange.symm := by
-    apply Equiv.ext
-    intro j
-    apply e.injective
-    -- Unfold the conjugated shuffle so both sides are compared in the increasing enumeration.
-    change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
-    have hrhs : e (k.cycleRange.symm j) =
-        (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
-      simpa only [Function.comp_apply] using
-        congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
-    rw [hrhs, hek]
-    -- The disjoint-union permutation enumerates the singleton first and the erased set second.
-    change e (c (p (c.symm j))) =
-      (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
-    rw [hremove]
-    -- Expose the function represented by the increasing enumeration before applying `hec`.
-    change (fun q ↦ e (c q)) (p (c.symm j)) = _
-    rw [hec]
-    let x : (Set.powersetCard.disjUnion hdisj).val :=
-      Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-        (((Set.powersetCard.orderIsoOfFin u).sumCongr
-          (Set.powersetCard.orderIsoOfFin t)) (finSumFinEquiv.symm (c.symm j)))
-    have hx : (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop (p (c.symm j)) = x := by
-      have hpApply : p (c.symm j) =
-          (Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).symm x := rfl
-      rw [hpApply]
-      exact congrArg Subtype.val
-        ((Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).apply_symm_apply x)
-    rw [hx]
-    cases j using Fin.cases with
-    | zero =>
-        have hzero : finSumFinEquiv.symm (c.symm 0) = Sum.inl (0 : Fin 1) := by
-          apply finSumFinEquiv.injective
-          apply Fin.ext
-          rfl
-        simp only [x, hzero, Fin.cons_zero]
-        -- Coercing the disjoint-union subtype reveals the singleton entry.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
-        rw [Equiv.Finset.disjUnionEquiv_inl]
-        dsimp only [Set.powersetCard.orderIsoOfFin, u]
-        -- The unique increasing enumeration of a singleton is constant at its element.
-        change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
-        exact Finset.orderEmbOfFin_singleton i 0
-    | succ q =>
-        have hsucc : finSumFinEquiv.symm (c.symm q.succ) = Sum.inr q := by
-          apply finSumFinEquiv.injective
-          rw [finSumFinEquiv.apply_symm_apply]
-          apply Fin.ext
-          simp [c]
-          omega
-        simp only [x, hsucc, Fin.cons_succ]
-        -- Coercing the right summand reveals the increasing enumeration of `s.erase i`.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
-            (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rw [Equiv.Finset.disjUnionEquiv_inr]
-        dsimp only [Set.powersetCard.orderIsoOfFin, t]
-        change (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q =
-          (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rfl
-  have hsign : Equiv.Perm.sign p' = Equiv.Perm.sign p := by
-    simp [p']
+  have hp := Set.powersetCard.conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
+  have hsign : Equiv.Perm.sign ((finCongr (Nat.add_comm 1 n)).symm.trans
+      (p.trans (finCongr (Nat.add_comm 1 n)))) = Equiv.Perm.sign p :=
+    Equiv.Perm.sign_symm_trans_trans p (finCongr (Nat.add_comm 1 n))
   rw [basisEraseSign]
   -- Unfolding the local permutation exposes the sign computed above.
   change Equiv.Perm.sign p = _
@@ -433,7 +356,7 @@ theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : 
   induction hx using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
   | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
       neg_one_smul]
@@ -523,6 +446,78 @@ theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx :
     (m : M) : ExteriorAlgebra.ι R m * x = (-1 : R) ^ n • (x * ExteriorAlgebra.ι R m) := by
   rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
     smul_mul_assoc]
+
+/-! ### Reversal and the top-degree coefficient of a basis -/
+
+section Basis
+
+open TauCeti.ExteriorAlgebra (contractLeft_coord_basis involute_basis)
+
+variable {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
+
+/-- **Reversal acts on an exterior-basis vector by the sign `(-1) ^ (k.choose 2)`** of reversing
+its `k` generators. -/
+@[simp]
+theorem reverse_basis (s : Finset I) :
+    reverse (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
+      (-1 : R) ^ s.card.choose 2 • b.ExteriorAlgebra s := by
+  -- For the zero form every pair of vectors is orthogonal.
+  rw [b.exteriorAlgebra_eq_prod_map_sort, CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho
+    (List.pairwise_of_forall fun _ _ ↦ QuadraticMap.IsOrtho.all _ _), List.length_map,
+    Finset.length_sort]
+
+variable [Fintype I]
+
+/-- **The top-degree coefficient kills every contraction**: contraction lowers the degree. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_contractLeft (d : Module.Dual R M)
+    (x : ExteriorAlgebra R M) : b.ExteriorAlgebra.coord Finset.univ (contractLeft d x) = 0 := by
+  classical
+  -- Contraction by a coordinate functional erases its coordinate, so the result has no
+  -- component on the full index set.
+  have key (i : I) :
+      b.ExteriorAlgebra.coord Finset.univ ∘ₗ contractLeft (b.coord i) = 0 := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, contractLeft_coord_basis, LinearMap.zero_apply]
+    split_ifs with hi
+    · have hs : s.erase i ≠ Finset.univ := fun h ↦ by
+        simpa using (h ▸ Finset.mem_univ i : i ∈ s.erase i)
+      rw [Units.smul_def, map_zsmul, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+      simp [hs]
+    · exact map_zero _
+  rw [← b.sum_dual_apply_smul_coord d]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul]
+  exact Finset.sum_eq_zero fun i _ ↦ by rw [← LinearMap.comp_apply, key, LinearMap.zero_apply,
+    mul_zero]
+
+/-- The grade involution multiplies the top-degree coefficient by `(-1) ^ n` in rank `n`. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_involute (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.coord Finset.univ (involute x) =
+      (-1 : R) ^ Fintype.card I * b.ExteriorAlgebra.coord Finset.univ x := by
+  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ involute.toLinearMap =
+      ((-1 : R) ^ Fintype.card I) • b.ExteriorAlgebra.coord Finset.univ := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis, map_smul,
+      LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+    split_ifs with hs
+    · rw [hs, Finset.card_univ]
+    · simp
+  simpa using LinearMap.congr_fun h x
+
+/-- Reversal multiplies the top-degree coefficient by `(-1) ^ (n.choose 2)` in rank `n`. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_reverse (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.coord Finset.univ (reverse x) =
+      (-1 : R) ^ (Fintype.card I).choose 2 * b.ExteriorAlgebra.coord Finset.univ x := by
+  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ reverse =
+      ((-1 : R) ^ (Fintype.card I).choose 2) • b.ExteriorAlgebra.coord Finset.univ := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, reverse_basis, map_smul, LinearMap.smul_apply,
+      Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+    split_ifs with hs
+    · rw [hs, Finset.card_univ]
+    · simp
+  simpa using LinearMap.congr_fun h x
+
+end Basis
 
 end ExteriorAlgebra
 

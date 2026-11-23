@@ -542,7 +542,7 @@ private theorem presentationLimitCompletionLeg_comp_restrictionHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_restrictionHom]
@@ -659,7 +659,7 @@ private theorem presentationLimitCompletionHom_comp_presentationLimitDescendHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
@@ -716,6 +716,7 @@ noncomputable def presentationLimitPresheafCompletionIso
         eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
       rw [presentationLimitMap_comp_presentationLimitDescendHom_assoc]
 
+omit [IsHuberRing A] in
 variable (P P') in
 /-- **Sheafhood of the presentation limit is invariant under completion.** If `A⁺` consists of
 power-bounded elements and `Â⁺` is the closure of its image in the completion `Â`, the
@@ -727,6 +728,7 @@ theorem isSheaf_presentationLimitPresheaf_completionPlus_iff
         (presentationLimitPresheaf P' (completionPlus Aplus)) ↔
       Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
         (presentationLimitPresheaf P Aplus) :=
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (completionPlus Aplus)))
     (F := presentationLimitPresheaf P Aplus)

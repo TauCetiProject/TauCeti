@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Maps.Strict.Group
 public import TauCeti.Geometry.Lie.Exponential.Generation
 public import TauCeti.Geometry.Lie.Exponential.Trotter
 public import Mathlib.Algebra.Module.ZLattice.Basic
@@ -29,6 +30,7 @@ its Lie algebra by a lattice.
 ## Main results
 
 * `TauCeti.lieExp_add`: the exponential of a commutative Lie group is a homomorphism.
+* `GroupLieAlgebra.mulInvariantExp_add`: so is its tangent-space exponential.
 * `TauCeti.lieExpAddMonoidHom`: that homomorphism, bundled.
 * `TauCeti.range_lieExp`: the exponential image is the identity component.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
@@ -80,6 +82,17 @@ theorem lieExp_add (X Y : LeftInvariantDerivation I G) :
     lieExp (X + Y) = lieExp X * lieExp Y :=
   lieExp_add_of_commute (I := I) (G := G) fun _ => mul_comm' _ _
 
+/-- **The tangent-space exponential of a commutative Lie group is a homomorphism** from the
+additive group of the tangent space at the identity. -/
+@[simp]
+theorem _root_.GroupLieAlgebra.mulInvariantExp_add (v w : GroupLieAlgebra I G) :
+    mulInvariantExp (v + w) = mulInvariantExp v * mulInvariantExp w := by
+  let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  have h (u : GroupLieAlgebra I G) : mulInvariantExp u = lieExp (e.symm u) := by
+    rw [lieExp_eq_mulInvariantExp, LinearEquiv.apply_symm_apply]
+  rw [h, h, h, map_add, lieExp_add]
+
 /-- The exponential of a commutative Lie group, as a homomorphism from the additive group of the
 Lie algebra to the group written additively. -/
 def lieExpAddMonoidHom : LeftInvariantDerivation I G →+ Additive G where
@@ -120,7 +133,7 @@ instance discreteTopology_ker_lieExpAddMonoidHom :
     simp only [mem_singleton_iff, mem_preimage, Subtype.ext_iff, ZeroMemClass.coe_zero]
     exact ⟨fun h => by rw [h]; exact h0, fun h => by rw [← hU X h, hX, lieLog_one]⟩
   rw [hsingleton]
-  exact hUopen.preimage continuous_subtype_val
+  exact hUopen.preimage continuous_subtypeVal
 
 /-- The exponential homomorphism is continuous. -/
 @[fun_prop]
@@ -147,8 +160,10 @@ theorem isOpenMap_lieExpAddMonoidHom : IsOpenMap (lieExpAddMonoidHom (I := I) (G
     at hg
   exact hg
 
+omit [IsTopologicalGroup G] in
 /-- **The exponential of a commutative Lie group is an open map.** -/
 theorem isOpenMap_lieExp : IsOpenMap (lieExp (I := I) (G := G)) := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have hopen := isOpenMap_lieExpAddMonoidHom (I := I) (G := G)
   rw [coe_lieExpAddMonoidHom] at hopen
   exact isOpenMap_toMul.comp hopen
@@ -170,9 +185,11 @@ theorem range_lieExp :
   rw [← closure_range_lieExp_eq_connectedComponentOfOne (I := I) (G := G), ← hrange,
     Subgroup.closure_eq]
 
+omit [IsTopologicalGroup G] in
 /-- **The exponential of a preconnected commutative Lie group is surjective.** -/
 theorem lieExp_surjective_of_preconnectedSpace [PreconnectedSpace G] :
     Function.Surjective (lieExp (I := I) (G := G)) := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   rw [← range_eq_univ, range_lieExp, Subgroup.connectedComponentOfOne_eq_top, Subgroup.coe_top]
 
 
@@ -187,6 +204,7 @@ section Preconnected
 
 variable [PreconnectedSpace G]
 
+omit [IsTopologicalGroup G] in
 /-- **The exponential homomorphism of a preconnected commutative Lie group is surjective.** -/
 theorem lieExpAddMonoidHom_surjective_of_preconnectedSpace :
     Function.Surjective (lieExpAddMonoidHom (I := I) (G := G)) := fun g =>
@@ -251,11 +269,13 @@ instance isZLattice_ker_lieExpAddMonoidHom :
     rw [AddSubgroup.coe_toIntSubmodule]
     exact span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G)
 
+omit [IsTopologicalGroup G] in
 /-- The rank of the kernel of the exponential is the dimension of the group. -/
 theorem finrank_ker_lieExpAddMonoidHom :
     Module.finrank ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule =
-      Module.finrank ℝ (LeftInvariantDerivation I G) :=
-  ZLattice.rank ℝ _
+      Module.finrank ℝ (LeftInvariantDerivation I G) := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  exact ZLattice.rank ℝ _
 
 end Compact
 

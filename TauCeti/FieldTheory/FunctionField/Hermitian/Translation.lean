@@ -182,15 +182,15 @@ variable {x y : F}
 
 section AdjoinRoot
 
-variable {q : ℕ} (h : IsHermitianCoordinates K q x y) (hq : 1 < q)
-include h hq
+variable {q : ℕ} (h : IsHermitianCoordinates K q x y)
+include h
 
 /-- The identification of `F` with `K(x)[T] / (T ^ q + T - x ^ (q + 1))`. -/
 private noncomputable def adjoinRootEquiv : AdjoinRoot (minpoly K⟮x⟯ y) ≃ₐ[K⟮x⟯] F :=
-  (IntermediateField.adjoinRootEquivAdjoin K⟮x⟯ (h.isIntegral_adjoin_x hq)).trans
+  (IntermediateField.adjoinRootEquivAdjoin K⟮x⟯ h.isIntegral_adjoin_x).trans
     ((IntermediateField.equivOfEq h.adjoin_adjoin_eq_top).trans IntermediateField.topEquiv)
 
-private theorem adjoinRootEquiv_root : h.adjoinRootEquiv hq (AdjoinRoot.root _) = y := by
+private theorem adjoinRootEquiv_root : h.adjoinRootEquiv (AdjoinRoot.root _) = y := by
   simp [adjoinRootEquiv, IntermediateField.adjoinRootEquivAdjoin_apply_root]
 
 end AdjoinRoot
@@ -226,13 +226,13 @@ substitution `x ↦ x + a` on `K(x)`, extended to `F = K(x)[T] / (minpoly)` by `
 private noncomputable def translationAlgHom {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) : F →ₐ[K] F :=
   (AdjoinRoot.liftAlgHom _ _ _ (h.eval₂_minpoly hq ha hb)).comp
-    ((h.adjoinRootEquiv hq).symm.restrictScalars K).toAlgHom
+    ((h.adjoinRootEquiv).symm.restrictScalars K).toAlgHom
 
 private theorem translationAlgHom_algebraMap {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (z : K⟮x⟯) :
     h.translationAlgHom hq ha hb (algebraMap K⟮x⟯ F z) =
       h.transcendental_x.algHomAdjoin (h.transcendental_x.add_algebraMap a) z := by
-  rw [← (h.adjoinRootEquiv hq).commutes z]
+  rw [← (h.adjoinRootEquiv).commutes z]
   simp [translationAlgHom, AdjoinRoot.algebraMap_eq]
 
 private theorem translationAlgHom_apply_x {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
@@ -244,10 +244,10 @@ private theorem translationAlgHom_apply_x {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
 private theorem translationAlgHom_apply_y {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) :
     h.translationAlgHom hq ha hb y = y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b := by
-  have : h.translationAlgHom hq ha hb (h.adjoinRootEquiv hq (AdjoinRoot.root _)) =
+  have : h.translationAlgHom hq ha hb (h.adjoinRootEquiv (AdjoinRoot.root _)) =
       y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b := by
     simp [translationAlgHom]
-  rwa [h.adjoinRootEquiv_root hq] at this
+  rwa [h.adjoinRootEquiv_root] at this
 
 /-- **The translation `σ_{a,b}` of the Hermitian function field**: the `K`-automorphism of `F`
 with `x ↦ x + a` and `y ↦ y + a ^ q x + b`, where `q = p ^ n`, for `a ^ (q ^ 2) = a` and
@@ -377,12 +377,12 @@ theorem natCard_hermitianTranslations [Finite K] (hK : Nat.card K = (p ^ n) ^ 2)
   -- The translations are in bijection with the pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`.
   let f : {ab : K × K // ab.2 ^ p ^ n + ab.2 = ab.1 ^ (p ^ n + 1)} →
       hermitianTranslations K p n x y := fun ab ↦
-    ⟨h.translation hq (hpow ab.1.1) ab.2, h.translation_mem_hermitianTranslations hq _ _⟩
+    ⟨h.translation hq (hpow ab.val.1) ab.property, h.translation_mem_hermitianTranslations hq _ _⟩
   have hf : Function.Bijective f := by
     refine ⟨fun ab ab' heq ↦ ?_, fun σ ↦ ?_⟩
     · obtain ⟨h1, h2⟩ := (h.translation_inj hq _ _ _ _).mp (congrArg Subtype.val heq)
       exact Subtype.ext (Prod.ext h1 h2)
-    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.2
+    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.property
       exact ⟨⟨(a, b), hb⟩, Subtype.ext hσ⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hf),
     Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype fun a b ↦ b ^ p ^ n + b = a ^ (p ^ n + 1)),

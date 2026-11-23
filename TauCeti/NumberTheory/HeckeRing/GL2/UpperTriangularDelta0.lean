@@ -13,8 +13,8 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.CosetDecomposition
 
 `GLn/CosetDecomposition.lean` constructs, from the bounded entry assignments
 `UpperTriEntries n a`, a family `upperTriGL B = diag(a) · U(B)` of upper-triangular elements of
-the double coset `SL_n(ℤ) · diag(a) · SL_n(ℤ)`, and shows that under positivity and a
-divisibility chain on `a` distinct assignments give distinct left cosets. It does **not** claim
+the double coset `SL_n(ℤ) · diag(a) · SL_n(ℤ)`, and shows that distinct assignments give distinct
+left cosets. It does **not** claim
 the family exhausts the left cosets, and neither does anything here. This file supplies what is
 missing for level `N`: those elements lie in the semigroup `Δ₀(N)` where the Hecke pairs of
 `Γ₀(N)` and `Γ₁(N)` take their elements.

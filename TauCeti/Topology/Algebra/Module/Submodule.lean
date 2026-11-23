@@ -8,38 +8,39 @@ module
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # A submodule of a topological module is a topological module
 
 A submodule carries the subspace topology. Of the three continuity classes that make that
-topology a module topology, Mathlib supplies **one outright** and **one under extra hypotheses**:
+topology a module topology, Mathlib supplies **two outright** and **one under extra hypotheses**:
 
 * `SMulMemClass.continuousSMul` gives the jointly continuous action `A × ↥p → ↥p` on any `SetLike`
-  subobject, with no side conditions beyond the ambient `ContinuousSMul A M`. This file adds
-  nothing there.
-* `Submodule.topologicalAddGroup` gives `ContinuousAdd ↥p`, but only for a `Ring A` acting on an
-  `AddCommGroup M` that is already a topological *group*.
+  subobject, with no side conditions beyond the ambient `ContinuousSMul A M`.
+* the unnamed `SetLike` instance `instContinuousConstSMulSubtypeMem` of
+  `Mathlib.Topology.Algebra.Module.Basic` gives `ContinuousConstSMul A ↥p` on any subobject
+  closed under the action, asking only `ContinuousConstSMul A M` and no topology on the scalars.
+* `Submodule.isTopologicalAddGroup` gives `ContinuousAdd ↥p`, but only for a `Ring A` acting on
+  an `AddCommGroup M` that is already a topological *group*.
 
-So there are exactly two gaps, and they are what this file fills:
-
-* **`ContinuousAdd` at the generality of its own class** — an `AddCommMonoid` ambient with
-  `ContinuousAdd` is outside `Submodule.topologicalAddGroup`'s hypotheses, and
-  `AddSubmonoid.continuousAdd`, which is at the right generality, is not keyed on `Submodule`.
-* **`ContinuousConstSMul` with no topology on the scalars** — `SMulMemClass.continuousSMul` needs
-  a topology on `A` and `ContinuousSMul A M`, whereas
-  `TauCeti.Huber.restrictedMvPowerSeriesSubmodule` asks only for `ContinuousConstSMul A M` with
-  `A` untopologised. That is the form this instance is for.
+The submodule continuity instance below fills the remaining gap: **`ContinuousAdd` at the
+generality of its own class**. An `AddCommMonoid` ambient with `ContinuousAdd` is outside
+`Submodule.isTopologicalAddGroup`'s hypotheses, and `AddSubmonoid.continuousAdd`, which is at the
+right generality, is not keyed on `Submodule`.
 
 ## Main results
 
 * `Submodule.continuousAdd`: addition on `↥p` is continuous, asking only `ContinuousAdd` of the
   ambient module rather than a topological group structure.
-* `Submodule.continuousConstSMul`: each scalar acts continuously on `↥p`, with no topology on the
-  scalars.
 * `AddSubgroup.discreteTopology_toIntSubmodule`: the `ℤ`-submodule of a discrete additive
   subgroup is discrete, so that a discrete subgroup can be fed to the `ℤ`-lattice API.
+* `Submodule.discreteTopology_toAddSubgroup`: conversely, the additive subgroup of a discrete
+  submodule is discrete, so that the quotient group by a lattice carries the manifold structure
+  of a quotient by a discrete subgroup.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
+* `Submodule.prodContEquiv`: a product submodule is continuously linearly equivalent to
+  the product of its submodules.
 -/
 
 public section
@@ -49,16 +50,36 @@ namespace Submodule
 variable {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpace M] [Module A M]
 
 /-- **Addition on a submodule is continuous.** Mathlib has this for an `AddSubmonoid`, and for a
-`Submodule` only through `Submodule.topologicalAddGroup`, which needs the ambient module to be a
+`Submodule` only through `Submodule.isTopologicalAddGroup`, which needs the ambient module to be a
 topological group. A `ContinuousAdd` ambient is enough. -/
 instance continuousAdd [ContinuousAdd M] (p : Submodule A M) : ContinuousAdd p :=
   inferInstanceAs (ContinuousAdd p.toAddSubmonoid)
 
-/-- **Each scalar acts continuously on a submodule**, since it does so on the ambient module and
-the action is the restriction of that one. -/
-instance continuousConstSMul [ContinuousConstSMul A M] (p : Submodule A M) :
-    ContinuousConstSMul A p :=
-  Topology.IsInducing.subtypeVal.continuousConstSMul id rfl
+variable {N : Type*} [AddCommMonoid N] [TopologicalSpace N] [Module A N]
+
+/-- The product submodule, with its subspace topology, is continuously linearly equivalent
+to the product of the two submodules. -/
+def prodContEquiv (p : Submodule A M) (q : Submodule A N) : p.prod q ≃L[A] p × q where
+  __ := p.prodEquiv q
+  continuous_toFun :=
+    (continuous_subtypeVal.fst.subtype_mk _).prodMk (continuous_subtypeVal.snd.subtype_mk _)
+  continuous_invFun :=
+    ((continuous_fst.subtypeVal).prodMk (continuous_snd.subtypeVal)).subtype_mk _
+
+/-- The first coordinate of the product-submodule comparison is the original first coordinate. -/
+@[simp]
+theorem coe_prodContEquiv_apply_fst (p : Submodule A M) (q : Submodule A N) (x : p.prod q) :
+    ((p.prodContEquiv q x).1 : M) = (x : M × N).1 := (rfl)
+
+/-- The second coordinate of the product-submodule comparison is the original second coordinate. -/
+@[simp]
+theorem coe_prodContEquiv_apply_snd (p : Submodule A M) (q : Submodule A N) (x : p.prod q) :
+    ((p.prodContEquiv q x).2 : N) = (x : M × N).2 := (rfl)
+
+/-- The inverse product-submodule comparison preserves the pair of underlying vectors. -/
+@[simp]
+theorem coe_prodContEquiv_symm_apply (p : Submodule A M) (q : Submodule A N) (x : p × q) :
+    ((p.prodContEquiv q).symm x : M × N) = ((x.1 : M), (x.2 : N)) := (rfl)
 
 end Submodule
 
@@ -69,11 +90,17 @@ instance AddSubgroup.discreteTopology_toIntSubmodule {M : Type*} [AddCommGroup M
     DiscreteTopology H.toIntSubmodule :=
   inferInstanceAs (DiscreteTopology H)
 
+/-- **The additive subgroup of a discrete submodule is discrete**: the two carry the same
+subspace topology. -/
+instance Submodule.discreteTopology_toAddSubgroup {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) [DiscreteTopology p] :
+    DiscreteTopology p.toAddSubgroup :=
+  inferInstanceAs (DiscreteTopology p)
+
 /-- The product of two discrete submodules is a discrete submodule of the product module. -/
 instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [TopologicalSpace M] [AddCommMonoid M₂] [Module R M₂] [TopologicalSpace M₂]
     (p : Submodule R M) (q : Submodule R M₂) [DiscreteTopology p] [DiscreteTopology q] :
     DiscreteTopology (p.prod q) :=
-  DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
-    ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
-    (p.prodEquiv q).injective
+  DiscreteTopology.of_continuous_injective (p.prodContEquiv q).continuous
+    (p.prodContEquiv q).injective

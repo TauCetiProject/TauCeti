@@ -119,3 +119,14 @@ theorem hasSheafify_right (e : A ≌ B) (J : GrothendieckTopology C) [HasSheafif
   HasSheafify.mk' J A (e.transportSheafificationAdjunctionRight J)
 
 end CategoryTheory.Equivalence
+
+namespace CategoryTheory
+
+/-- Postcomposition with an equivalence of coefficients is an equivalence of sheaf categories. -/
+instance isEquivalence_sheafCompose {C : Type u} [Category.{v} C]
+    {A : Type u₁} [Category.{v₁} A] {B : Type u₂} [Category.{v₂} B]
+    (J : GrothendieckTopology C) (F : A ⥤ B) [F.IsEquivalence] :
+    (sheafCompose J F).IsEquivalence :=
+  (F.asEquivalence.sheafCongrRight J).isEquivalence_functor
+
+end CategoryTheory

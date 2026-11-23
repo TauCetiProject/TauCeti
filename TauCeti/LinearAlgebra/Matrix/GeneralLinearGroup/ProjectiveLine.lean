@@ -80,11 +80,8 @@ hold there too.
 
 ## References
 
-This supplies the fixed-point counts on the projective line that the character-value formulas of
-Layer 9 ("the representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` need. See also W. Fulton and
-J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2, and C. Bonnafé,
-*Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
 public section
@@ -127,7 +124,7 @@ theorem natCard_fixedCosets_eq_zero {g : GL (Fin 2) R}
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def,
       MulAut.conj_apply] at hmem
     exact h y⁻¹ hmem
-  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.1 c.2⟩
+  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.val c.property⟩
   exact Nat.card_of_isEmpty
 
 end CommRing

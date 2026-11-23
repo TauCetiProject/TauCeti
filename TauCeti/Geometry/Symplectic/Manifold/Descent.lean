@@ -30,6 +30,10 @@ kernels of the derivative of the projection; its descent is the reduced symplect
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.isBasic_of_mpullback_eq_of_ker_mfderiv_le`: an invariant two-form whose
+  kernels contain the vertical vectors is basic.
+* `TauCeti.SmoothTwoForm.existsUnique_isSymplectic_mpullback_eq`: a closed basic two-form with
+  these kernels descends to a unique symplectic form.
 * `TauCeti.SmoothTwoForm.eval₂_descendedForm_mfderiv`: the descent evaluates on images under the
   derivative of `f` as the form.
 * `TauCeti.SmoothTwoForm.isNondegenerate_descendedForm_iff`: the descent of a basic two-form is
@@ -55,6 +59,40 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm
 
+section Basic
+
+variable {E H M E' H' M' : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
+  [IsManifold I ∞ M] {f : M → M'}
+
+/-- **Invariant two-forms with vertical null directions are basic.** Let `f` be differentiable and
+let `τ` be a family of differentiable self-maps of `M` over `f` (`f ∘ τ i = f`) that is transitive
+on the fibres of `f`. A two-form `σ` invariant under every `τ i` whose kernel at each point contains
+the kernel of the derivative of `f` is basic for `f`. -/
+theorem isBasic_of_mpullback_eq_of_ker_mfderiv_le {ι : Type*} {τ : ι → M → M}
+    (hf : MDifferentiable I I' f) (hτ : ∀ i, MDifferentiable I I (τ i)) (hfτ : ∀ i, f ∘ τ i = f)
+    (hτf : ∀ x y, f x = f y → x = y ∨ ∃ i, τ i x = y) {σ : SmoothTwoForm I M}
+    (hker : ∀ x, (mfderiv I I' f x).ker ≤ LinearMap.ker (σ.bilinFormAt x))
+    (hσ : ∀ i, TauCeti.mpullback I I (τ i) σ.val = σ.val) :
+    RoughForm.IsBasic (V := ℝ) I' f σ.val := by
+  refine RoughForm.isBasic_of_mpullback_eq hf hτ hfτ hτf (fun x v j hj ↦ ?_) hσ
+  -- A vertical vector is a null direction of `σ_x`, in either slot.
+  have hnull (u w : TangentSpace I x) (hu : mfderiv I I' f x u = 0) :
+      SmoothBundleForm.eval₂ σ x u w = 0 := by
+    rw [← SmoothForm.bilinFormAt_apply, LinearMap.mem_ker.1 (hker x hu), LinearMap.zero_apply]
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv, ← SmoothBundleForm.eval₂_apply]
+  obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
+  · exact hnull _ _ hj
+  · rw [SmoothBundleForm.eval₂_swap, hnull _ _ hj, neg_zero]
+
+end Basic
+
+section Descent
+
 variable {E H M E' H' M' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
@@ -62,7 +100,7 @@ variable {E H M E' H' M' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
   [IsManifold I ∞ M] [IsManifold I' ∞ M'] [I.Boundaryless]
   {f : M → M'} {hf : IsSubmersion I I' ∞ f} {hsurj : Surjective f} {σ : SmoothTwoForm I M}
-  {hσ : RoughForm.IsBasic (V := ℝ) I' f σ.1}
+  {hσ : RoughForm.IsBasic (V := ℝ) I' f σ.val}
 
 /-- The descent `β` of a basic two-form `σ` evaluates on images under the derivative of `f` as
 `σ`: `σ_x(u, w) = β_(f x)(df_x u, df_x w)`. -/
@@ -78,24 +116,10 @@ point `x`, the kernel of `σ_x` is the kernel of the derivative of `f` at `x`. -
 theorem isNondegenerate_descendedForm_iff :
     IsNondegenerate (SmoothForm.descendedForm hf hsurj σ hσ) ↔
       ∀ x, LinearMap.ker (σ.bilinFormAt x) = (mfderiv I I' f x).ker := by
-  have hdf (x : M) : Surjective (mfderiv I I' f x) := hf.surjective_mfderiv (by simp) x
-  have key := eval₂_descendedForm_mfderiv (hf := hf) (hsurj := hsurj) (hσ := hσ)
-  rw [isNondegenerate_iff_separatingLeft]
-  refine ⟨fun hβ x ↦ Submodule.ext fun v ↦ ?_, fun hker y v hv ↦ ?_⟩
-  · rw [LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine ⟨fun hv ↦ hβ (f x) _ fun u ↦ ?_, fun hv ↦ LinearMap.ext fun w ↦ ?_⟩
-    · obtain ⟨w, rfl⟩ := hdf x u
-      rw [key, ← SmoothForm.bilinFormAt_apply, hv, LinearMap.zero_apply]
-    · rw [SmoothForm.bilinFormAt_apply, ← key, hv,
-        ← SmoothForm.bilinFormAt_apply, map_zero, LinearMap.zero_apply, LinearMap.zero_apply]
-  · obtain ⟨x, rfl⟩ := hsurj y
-    obtain ⟨v, rfl⟩ := hdf x v
-    have hvσ : v ∈ LinearMap.ker (σ.bilinFormAt x) :=
-      LinearMap.ext fun w ↦ by
-        rw [SmoothForm.bilinFormAt_apply, ← key, LinearMap.zero_apply]
-        exact hv _
-    rw [hker x, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hvσ
-    exact hvσ
+  simpa only [SmoothForm.mpullback_descendedForm] using
+    (isNondegenerate_iff_forall_ker_bilinFormAt_mpullback
+      (η := SmoothForm.descendedForm hf hsurj σ hσ) hf.contMDiff hsurj
+      (hf.surjective_mfderiv (by simp)))
 
 /-- **Symplectic descent.** The descent of a two-form `σ` basic for a surjective smooth
 submersion `f` is symplectic exactly when `σ` is closed and, at every point `x`, the kernel of
@@ -103,9 +127,37 @@ submersion `f` is symplectic exactly when `σ` is closed and, at every point `x`
 theorem isSymplectic_descendedForm_iff :
     IsSymplectic (SmoothForm.descendedForm hf hsurj σ hσ) ↔
       SmoothForm.IsClosed σ ∧
-        ∀ x, LinearMap.ker (σ.bilinFormAt x) = (mfderiv I I' f x).ker := by
-  rw [← isNondegenerate_descendedForm_iff (hf := hf) (hsurj := hsurj) (hσ := hσ),
-    ← SmoothForm.isClosed_descendedForm_iff (hf := hf) (hsurj := hsurj) (hα := hσ)]
-  exact ⟨fun h ↦ ⟨h.isClosed, h.isNondegenerate⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+        ∀ x, LinearMap.ker (σ.bilinFormAt x) = (mfderiv I I' f x).ker :=
+  isSymplectic_iff_of_mpullback_eq hf.contMDiff hsurj (hf.surjective_mfderiv (by simp))
+    SmoothForm.mpullback_descendedForm
+
+end Descent
+
+section Existence
+
+variable {E H Z E' H' Q : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace Z] [ChartedSpace H Z] [IsManifold I ∞ Z]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
+  {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
+
+variable [I.Boundaryless]
+
+/-- **Existence and uniqueness of the descended symplectic form.** For a surjective smooth
+submersion `p` out of a manifold whose model has no boundary, and a closed basic two-form `σ`
+whose null space at every point is the kernel of the derivative of `p`, there is exactly one
+symplectic two-form `η` with `p^* η = σ`. -/
+theorem existsUnique_isSymplectic_mpullback_eq (hp : IsSubmersion I J ∞ p)
+    (hsurj : Surjective p) (hσ : σ.IsClosed)
+    (hbasic : RoughForm.IsBasic (V := ℝ) (k := 2) J p σ.val)
+    (hker : ∀ z, LinearMap.ker (σ.bilinFormAt z) = (mfderiv I J p z).ker) :
+    ∃! η : SmoothTwoForm J Q, η.IsSymplectic ∧ SmoothForm.mpullback p hp.contMDiff η = σ :=
+  ⟨SmoothForm.descendedForm hp hsurj σ hbasic,
+    ⟨(isSymplectic_descendedForm_iff (hf := hp) (hsurj := hsurj) (hσ := hbasic)).mpr ⟨hσ, hker⟩,
+      SmoothForm.mpullback_descendedForm⟩,
+    fun _ h ↦ SmoothForm.eq_descendedForm_iff.mpr h.2⟩
+
+end Existence
 
 end TauCeti.SmoothTwoForm

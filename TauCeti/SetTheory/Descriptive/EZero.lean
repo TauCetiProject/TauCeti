@@ -28,8 +28,8 @@ Mathlib's germ relation `Filter.germSetoid atTop Bool`, so its quotient is the t
 be separated by countably many invariant Borel sets. This file proves the facts about `E₀` that
 make this so and that Borel reducibility arguments use:
 
-* the graph of `E₀` is Borel, every class is countable and dense, and the graph is meagre in the
-  square;
+* the graph of `E₀` is Fσ (its complement is Gδ), hence Borel, every class is countable and
+  dense, and the graph is meagre in the square;
 * **generic ergodicity**: an `E₀`-invariant set with the Baire property is meagre or comeagre. If
   such a set is comeagre in the cylinder of a word `s ++ [b]`, the coordinate flip at `s.length`,
   which changes a point only at one coordinate and so preserves the set, shows that it is comeagre
@@ -59,6 +59,10 @@ make this so and that Borel reducibility arguments use:
   separates the classes of `E₀`.
 * `TauCeti.not_isSmooth_eZero`: `E₀` is not smooth, and
   `TauCeti.not_isSmooth_of_borelReducible_eZero`: nor is any relation above it.
+* `TauCeti.borelReducible_setOf_eZero_diagonal` and
+  `TauCeti.not_forall_borelReducible_of_borelReducible_setOf`: the graph of `E₀` is Borel reducible
+  to the diagonal of Cantor space, so Borel reducibility of graphs does not give Borel
+  reducibility of the relations.
 * `TauCeti.hasCantorAntichainOn_eZero` and `TauCeti.mk_quotient_eZero`: a continuous Cantor
   antichain, and continuum many classes.
 * `TauCeti.borelReducible_bot_eZero`: equality on Cantor space is Borel reducible to `E₀`.
@@ -102,13 +106,19 @@ theorem eZero_flipAt (n : ℕ) (x : ℕ → Bool) : eZero (flipAt n x) x :=
 
 /-! ### Borelness and the classes of `E₀` -/
 
+/-- The graph of `E₀` is Fσ, expressed as a Gδ complement: agreement from any fixed index
+on is a closed condition. -/
+theorem isGδ_compl_eZero :
+    IsGδ {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2}ᶜ := by
+  simp only [eZero_iff, eventually_atTop, ofPred_exists, ofPred_forall, compl_iUnion]
+  exact .iInter fun _ => (isClosed_iInter fun n => isClosed_iInter fun _ =>
+    isClosed_eq ((continuous_apply n).comp continuous_fst)
+      ((continuous_apply n).comp continuous_snd)).isOpen_compl.isGδ
+
 /-- The graph of `E₀` is Borel. -/
 theorem measurableSet_eZero :
     MeasurableSet {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2} := by
-  simp only [eZero_iff, eventually_atTop, ofPred_exists, ofPred_forall]
-  exact .iUnion fun _ => .iInter fun n => .iInter fun _ =>
-    measurableSet_eq_fun ((measurable_pi_apply n).comp measurable_fst)
-      ((measurable_pi_apply n).comp measurable_snd)
+  simpa only [compl_compl] using isGδ_compl_eZero.measurableSet.compl
 
 /-- Every class of `E₀` is countable: a point equivalent to `x` is `x` with the coordinates in a
 finite set negated. -/
@@ -202,6 +212,24 @@ Borel reducible is not smooth. -/
 theorem not_isSmooth_of_borelReducible_eZero {X : Type*} [MeasurableSpace X] {E : Setoid X}
     (h : eZero.BorelReducible E) : ¬ E.IsSmooth :=
   fun hE => not_isSmooth_eZero (h.isSmooth hE)
+
+/-! ### Borel reducibility of the graph -/
+
+/-- The graph of `E₀` is Borel reducible, as a set, to the diagonal of Cantor space. -/
+theorem borelReducible_setOf_eZero_diagonal :
+    {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2}.BorelReducible (diagonal (ℕ → Bool)) :=
+  -- The graph is Borel, and the diagonal contains `(0, 0)` but not `(0, 1)`.
+  measurableSet_eZero.borelReducible (y₁ := (fun _ => false, fun _ => false))
+    (y₀ := (fun _ => false, fun _ => true)) (mem_diagonal _)
+    fun h => Bool.false_ne_true (congrFun (mem_diagonal_iff.1 h) 0)
+
+/-- **Borel reducibility of graphs does not give Borel reducibility of relations.** The graph of
+`E₀` is Borel reducible to the graph of equality on Cantor space, but `E₀` is not smooth. -/
+theorem not_forall_borelReducible_of_borelReducible_setOf :
+    ¬ ∀ E F : Setoid (ℕ → Bool), {p : (ℕ → Bool) × (ℕ → Bool) | E p.1 p.2}.BorelReducible
+      {p : (ℕ → Bool) × (ℕ → Bool) | F p.1 p.2} → E.BorelReducible F :=
+  fun h => not_isSmooth_eZero <| Setoid.isSmooth_def.2 <| h eZero ⊥ <| by
+    simpa only [Setoid.bot_def, diagonal] using borelReducible_setOf_eZero_diagonal
 
 /-! ### A Cantor antichain -/
 

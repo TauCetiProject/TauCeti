@@ -42,7 +42,7 @@ connected covers of finite degree `e ≠ 0` are all isomorphic to `z ↦ z ^ e`.
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
   {p : E → X} {q : F → X} {x : X}
@@ -51,15 +51,15 @@ variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalS
 number of sheets.** If `π₁(X, x)` is cyclic and the fibres of `p` and `q` over `x` have the same
 cardinality, then there is a homeomorphism `E ≃ₜ F` over `X` carrying the chosen point `e₀` of
 the first fibre to the chosen point `f₀` of the second. -/
-theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_card_fiber_eq
+theorem exists_homeomorph_comp_eq_of_card_fiber_eq
     [IsCyclic (FundamentalGroup X x)]
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (e₀ : p ⁻¹' {x}) (f₀ : q ⁻¹' {x})
     (hcard : Nat.card (p ⁻¹' {x}) = Nat.card (q ⁻¹' {x})) :
     ∃ h : E ≃ₜ F, h e₀ = f₀ ∧ q ∘ h = p :=
-  hp.exists_homeomorph_comp_eq_of_range_eq hq e₀.2 f₀.2 <| by
+  hp.exists_homeomorph_comp_eq_of_range_eq hq e₀.property f₀.property <| by
     rw [IsCyclic.subgroup_eq_iff_index_eq, ← hp.card_fiber_eq_index e₀,
       ← hq.card_fiber_eq_index f₀, hcard]
 
-end TauCeti
+end IsCoveringMap

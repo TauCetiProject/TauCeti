@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.GeneralizedGamma.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -198,7 +198,7 @@ theorem generalizedGammaMeasure_eq_withDensity (a c s : ℝ) :
     intro x hx y hy hxy
     exact (rpow_left_inj hx.le hy.le (inv_ne_zero hc)).1 (mul_left_cancel₀ hs.ne' hxy)
   have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
-    (f := generalizedGammaPDF a c s) measurableSet_Ioi (by fun_prop)
+    (f := generalizedGammaPDF a c s) measurableSet_Ioi
     (fun x hx ↦ ((Real.hasDerivAt_rpow_const (Or.inl hx.ne')).const_mul s).hasDerivWithinAt) hinj
   have hweight := withDensity_congr_ae (μ := volume.restrict (Ioi (0 : ℝ)))
     ((ae_restrict_mem measurableSet_Ioi).mono fun x hx ↦

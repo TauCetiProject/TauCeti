@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 public import TauCeti.Algebra.Lie.Pi
 public import TauCeti.Algebra.Lie.BaseChange.Perfect
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Invariant forms on finite products of perfect Lie algebras
@@ -66,12 +67,9 @@ def invariantFormsPiRestrict [DecidableEq ι] (i : ι) :
     invariantForms R (∀ i, L i) (∀ i, L i) →ₗ[R] invariantForms R (L i) (L i) where
   toFun Φ := by
     let s := LieHom.single R L i
-    refine ⟨(Φ : LinearMap.BilinForm R _).compl₁₂ s.toLinearMap s.toLinearMap,
-      mem_invariantForms_iff.mpr ⟨?_, ?_⟩⟩
-    · intro x y z
-      simpa only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LieHom.map_lie] using
-        (mem_invariantForms_iff.mp Φ.2).1 (s x) (s y) (s z)
-    · exact ⟨fun x y ↦ (mem_invariantForms_iff.mp Φ.2).2.eq _ _⟩
+    exact ⟨(Φ : LinearMap.BilinForm R _).compl₁₂ s.toLinearMap s.toLinearMap,
+      mem_invariantForms_iff.mpr ⟨(mem_invariantForms_iff.mp Φ.property).1.compl₁₂ s,
+        (mem_invariantForms_iff.mp Φ.property).2.compl₁₂ s.toLinearMap⟩⟩
   map_add' Φ Ψ := by ext x y; rfl
   map_smul' r Φ := by ext x y; rfl
 
@@ -94,10 +92,10 @@ def invariantFormsPiSum :
       simp only [LinearMap.sum_apply, LinearMap.compl₁₂_apply, LinearMap.proj_apply,
         LieAlgebra.Pi.bracket_apply]
       rw [← Finset.sum_neg_distrib]
-      exact Finset.sum_congr rfl fun i _ ↦ (mem_invariantForms_iff.mp (Φ i).2).1 _ _ _),
+      exact Finset.sum_congr rfl fun i _ ↦ (mem_invariantForms_iff.mp (Φ i).property).1 _ _ _),
     ⟨fun x y ↦ by
       simp only [LinearMap.sum_apply, LinearMap.compl₁₂_apply, LinearMap.proj_apply]
-      exact Finset.sum_congr rfl fun i _ ↦ (mem_invariantForms_iff.mp (Φ i).2).2.eq _ _⟩⟩⟩
+      exact Finset.sum_congr rfl fun i _ ↦ (mem_invariantForms_iff.mp (Φ i).property).2.eq _ _⟩⟩⟩
   map_add' Φ Ψ := by ext x y; simp [Finset.sum_add_distrib]
   map_smul' r Φ := by ext x y; simp [Finset.mul_sum]
 
@@ -130,7 +128,7 @@ theorem invariantForms_apply_eq_sum
   simp only [map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   exact Fintype.sum_eq_single i fun j hji ↦
-    (mem_invariantForms_iff.mp Φ.2).1.apply_pi_single_eq_zero (hL j) hji _ _
+    (mem_invariantForms_iff.mp Φ.property).1.apply_pi_single_eq_zero (hL j) hji _ _
 
 /-- Summing the restrictions reconstructs a form on a finite product of perfect Lie algebras. -/
 -- State perfectness in bracket form because it is the simp normal form of `derivedSeries` at one.

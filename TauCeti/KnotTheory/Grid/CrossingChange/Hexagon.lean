@@ -230,33 +230,43 @@ variable (R : Type*) [CommSemiring R]
 variables of the `O`-markings it carries. -/
 noncomputable def crossingChangeHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.crossingCoveredSquares
+
+/-- The weight of a crossing-change hexagon turning on its terminal side is the monomial of the
+squares it crossing-covers. -/
+theorem crossingChangeHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridHexagonBetween a s s' x y) :
+    G.crossingChangeHexagonWeight R P = G.OMonomialOfSquares R P.crossingCoveredSquares :=
+  (rfl)
 
 /-- The weight of a crossing-change hexagon turning on its terminal side is the squarefree
 monomial of the `O`-markings it carries. -/
 theorem crossingChangeHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
     G.crossingChangeHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [crossingChangeHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a crossing-change hexagon turning on its initial side: the product of the
 variables of the `O`-markings it carries. -/
 noncomputable def crossingChangeInitialHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.crossingCoveredSquares
+
+/-- The weight of a crossing-change hexagon turning on its initial side is the monomial of the
+squares it crossing-covers. -/
+theorem crossingChangeInitialHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n}
+    {x y : GridState n} (P : GridInitialHexagonBetween a s s' x y) :
+    G.crossingChangeInitialHexagonWeight R P = G.OMonomialOfSquares R P.crossingCoveredSquares :=
+  (rfl)
 
 /-- The weight of a crossing-change hexagon turning on its initial side is the squarefree
 monomial of the `O`-markings it carries. -/
 theorem crossingChangeInitialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
     G.crossingChangeInitialHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [crossingChangeInitialHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The matrix coefficient from `x` to `y` of the crossing change homotopy: the sum of the
 weights of the counted hexagons of both shapes. -/
@@ -282,24 +292,21 @@ change maps `Φ` and `Ψ`, it is meant to be the homotopy between `Ψ ∘ Φ` an
 variable; only its bidegree is proved here. -/
 noncomputable def crossingChangeHomotopy (C : ColumnTurn n) (t : Fin n) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.crossingChangeHexagonCoefficient R C t x y
+  GridChain.matrixMap R (G.crossingChangeHexagonCoefficient R C t)
 
 /-- The matrix coefficients of the crossing change homotopy. -/
 theorem crossingChangeHomotopy_single_apply (C : ColumnTurn n) (t : Fin n) (x y : GridState n) :
     G.crossingChangeHomotopy R C t (Finsupp.single x 1) y =
       G.crossingChangeHexagonCoefficient R C t x y := by
-  rw [crossingChangeHomotopy, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [crossingChangeHomotopy, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the crossing change homotopy on an arbitrary chain. -/
 @[simp]
 theorem crossingChangeHomotopy_apply_apply (C : ColumnTurn n) (t : Fin n)
     (c : GridChainMinus R n) (y : GridState n) :
     G.crossingChangeHomotopy R C t c y =
-      c.sum fun x p => p * G.crossingChangeHexagonCoefficient R C t x y := by
-  rw [crossingChangeHomotopy, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+      c.sum fun x p => p * G.crossingChangeHexagonCoefficient R C t x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-! ### The markings of the rectangle under a hexagon -/
 
@@ -317,7 +324,6 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
   have ha : a ∈ Grid.cIco P.left (finRotate n a) := Grid.self_mem_cIco_finRotate P.left_ne
   have hb : finRotate n a ∉ Grid.cIco P.left (finRotate n a) := Grid.right_notMem_cIco _ _
   have hab : a ≠ finRotate n a := fun h => hb (h ▸ ha)
-  have hrows := P.insert_cIco_subset_cIco_bottom_top
   by_cases hOa : G.O a ∈ insert s' (Grid.cIco s s')
   · -- The hexagon trades the `O`-marking of column `a` for that of column `b`.
     have hOb := hO.mp hOa
@@ -333,8 +339,7 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
         fun h => hb ((P.mem_toGridRectangle_coveredSquares _).mp h).1
     rcases eq_or_ne c (finRotate n a) with rfl | hcb
     · rw [Equiv.swap_apply_right]
-      exact iff_of_true (Or.inr ⟨rfl, hOb⟩)
-        ((P.mem_toGridRectangle_coveredSquares _).mpr ⟨ha, hrows hOa⟩)
+      exact iff_of_true (Or.inr ⟨rfl, hOb⟩) (P.mk_mem_toGridRectangle_coveredSquares_of_mem hOa)
     · rw [Equiv.swap_apply_of_ne_of_ne hca hcb]
       exact ⟨fun h => h.elim And.left fun h => (hcb h.1).elim,
         fun h => Or.inl ⟨h, fun h' => hca h'.1⟩⟩
@@ -367,8 +372,7 @@ theorem XSet_inter_eq_of_hexagon {P : GridHexagonBetween a s s' x y}
     refine Finset.disjoint_left.mp hP ((P.mem_crossingCoveredSquares _).mpr
       (Or.inl ⟨hr, fun h => hca h.1⟩)) ((G.mk_mem_XSet c _).mpr rfl)
   · rintro ⟨rfl, rfl⟩
-    exact ⟨rfl, (P.mem_toGridRectangle_coveredSquares _).mpr
-      ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hX⟩⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem hX⟩
 
 /-- The rectangle under a crossing-change hexagon turning on its initial side carries as many
 `O`-markings as the hexagon, provided that the column-`b` `O`-marking lies in the cut rows exactly
@@ -381,7 +385,6 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
     Grid.left_mem_cIco P.right_ne.symm
   have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
   have hab : a ≠ finRotate n a := fun h => ha (h ▸ hb)
-  have hrows := P.insert_cIco_subset_cIco_bottom_top
   by_cases hOb : G.O (finRotate n a) ∈ insert s' (Grid.cIco s s')
   · -- The hexagon trades the `O`-marking of column `b` for that of column `a`.
     have hOa := hO.mp hOb
@@ -393,8 +396,7 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
       P.mem_crossingCoveredSquares]
     rcases eq_or_ne c a with rfl | hca
     · rw [Equiv.swap_apply_left]
-      exact iff_of_true (Or.inr ⟨rfl, hOa⟩)
-        ((P.mem_toGridRectangle_coveredSquares _).mpr ⟨hb, hrows hOb⟩)
+      exact iff_of_true (Or.inr ⟨rfl, hOa⟩) (P.mk_mem_toGridRectangle_coveredSquares_of_mem hOb)
     rcases eq_or_ne c (finRotate n a) with rfl | hcb
     · rw [Equiv.swap_apply_right]
       exact iff_of_false (fun h => h.elim (fun h => h.2 ⟨rfl, hOb⟩) fun h => hab h.1.symm)
@@ -432,8 +434,7 @@ theorem XSet_inter_eq_of_initialHexagon {P : GridInitialHexagonBetween a s s' x 
     refine Finset.disjoint_left.mp hP ((P.mem_crossingCoveredSquares _).mpr
       (Or.inl ⟨hr, fun h => hcb h.1⟩)) ((G.mk_mem_XSet c _).mpr rfl)
   · rintro ⟨rfl, rfl⟩
-    exact ⟨rfl, (P.mem_toGridRectangle_coveredSquares _).mpr ⟨Grid.left_mem_cIco P.right_ne.symm,
-      P.insert_cIco_subset_cIco_bottom_top hX⟩⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem hX⟩
 
 end Markings
 
@@ -556,37 +557,37 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnTurn n
 counted hexagon carry one `X`-marking fewer than its rectangle and as many `O`-markings. -/
 private theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_rows (R : Type*)
     [CommSemiring R]
-    (hX : G.1.X C.column ∈ insert C.turnRow (Grid.cIco t C.turnRow))
-    (hO : G.1.O C.column ∈ insert C.turnRow (Grid.cIco t C.turnRow) ↔
-      G.1.O (finRotate n C.column) ∈ Grid.cIoo t C.turnRow)
-    (hX' : G.1.X (finRotate n C.column) ∈ insert t (Grid.cIco C.turnRow t))
-    (hO' : G.1.O (finRotate n C.column) ∈ insert t (Grid.cIco C.turnRow t) ↔
-      G.1.O C.column ∈ Grid.cIoo C.turnRow t)
+    (hX : G.val.X C.column ∈ insert C.turnRow (Grid.cIco t C.turnRow))
+    (hO : G.val.O C.column ∈ insert C.turnRow (Grid.cIco t C.turnRow) ↔
+      G.val.O (finRotate n C.column) ∈ Grid.cIoo t C.turnRow)
+    (hX' : G.val.X (finRotate n C.column) ∈ insert t (Grid.cIco C.turnRow t))
+    (hO' : G.val.O (finRotate n C.column) ∈ insert t (Grid.cIco C.turnRow t) ↔
+      G.val.O C.column ∈ Grid.cIoo C.turnRow t)
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
+    G.val.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
   classical
   refine G.matrixMap_mem_bigradedChainMinusPiece_add R G (Equiv.refl _)
-    (fun x y => G.1.crossingChangeHexagonCoefficient R C t x y) _
-    (fun c y => by simp [G.1.crossingChangeHomotopy_apply_apply R C t]) (-1, -1)
+    (fun x y => G.val.crossingChangeHexagonCoefficient R C t x y) _
+    (fun c y => by simp [G.val.crossingChangeHomotopy_apply_apply R C t]) (-1, -1)
     (fun x y w hw e => ?_) hc
   rw [GridDiagram.crossingChangeHexagonCoefficient_def] at hw
   rcases Finset.mem_union.mp (MvPolynomial.support_add hw) with hw | hw
   · obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
     rw [GridDiagram.crossingChangeHexagonWeight_eq_monomial] at hwP
     obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-    obtain ⟨hPe, hPX⟩ := (G.1.mem_crossingChangeHexagons P).mp hP
-    have hA := G.1.alexanderTwoℤ_eq_of_hexagon hX hO hPX
+    obtain ⟨hPe, hPX⟩ := (G.val.mem_crossingChangeHexagons P).mp hP
+    have hA := G.val.alexanderTwoℤ_eq_of_hexagon hX hO hPX
     rw [← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at hA
     exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (-1, -1)
-      (G.1.maslovOℤ_eq_of_hexagon hO hPe) (by simp only; omega)
+      (G.val.maslovOℤ_eq_of_hexagon hO hPe) (by simp only; omega)
   · obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
     rw [GridDiagram.crossingChangeInitialHexagonWeight_eq_monomial] at hwP
     obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-    obtain ⟨hPe, hPX⟩ := (G.1.mem_crossingChangeInitialHexagons P).mp hP
-    have hA := G.1.alexanderTwoℤ_eq_of_initialHexagon hX' hO' hPX
+    obtain ⟨hPe, hPX⟩ := (G.val.mem_crossingChangeInitialHexagons P).mp hP
+    have hA := G.val.alexanderTwoℤ_eq_of_initialHexagon hX' hO' hPX
     rw [← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at hA
     exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (-1, -1)
-      (G.1.maslovOℤ_eq_of_initialHexagon hO' hPe) (by simp only; omega)
+      (G.val.maslovOℤ_eq_of_initialHexagon hO' hPe) (by simp only; omega)
 
 /-- **The crossing change homotopy has bidegree `(-1, -1)`**, for markings in the order
 `O_b, O_a, X_b, X_a`. If the segments of the columns `a = C.column` and `b = finRotate n a`
@@ -596,11 +597,11 @@ map `H` send a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneou
 `g + (-1, -1)`. This is the bidegree of a homotopy between multiplication by a variable and the
 composite of the crossing change maps, of bidegrees `(0, 0)` and `(-2, -1)`. -/
 theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_mem_columnArc (R : Type*)
-    [CommSemiring R] (h : G.1.ColumnsInterleaving C.column (finRotate n C.column))
-    (hO : G.1.O C.column ∈ G.1.columnArc (finRotate n C.column))
-    (hs : C.turnRow = G.1.O C.column) (ht : t = G.1.X (finRotate n C.column))
+    [CommSemiring R] (h : G.val.ColumnsInterleaving C.column (finRotate n C.column))
+    (hO : G.val.O C.column ∈ G.val.columnArc (finRotate n C.column))
+    (hs : C.turnRow = G.val.O C.column) (ht : t = G.val.X (finRotate n C.column))
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
+    G.val.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
   obtain ⟨⟨hX, hO₁⟩, ⟨hX', hO₂⟩⟩ := GridDiagram.rows_of_mem_columnArc h hO
   subst ht
   exact G.crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_rows C R (by rwa [hs])
@@ -614,11 +615,11 @@ map `H` send a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneou
 `g + (-1, -1)`. This is the bidegree of a homotopy between multiplication by a variable and the
 composite of the crossing change maps, of bidegrees `(-2, -1)` and `(0, 0)`. -/
 theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_notMem_columnArc (R : Type*)
-    [CommSemiring R] (h : G.1.ColumnsInterleaving C.column (finRotate n C.column))
-    (hO : G.1.O C.column ∉ G.1.columnArc (finRotate n C.column))
-    (hs : C.turnRow = G.1.X C.column) (ht : t = G.1.O (finRotate n C.column))
+    [CommSemiring R] (h : G.val.ColumnsInterleaving C.column (finRotate n C.column))
+    (hO : G.val.O C.column ∉ G.val.columnArc (finRotate n C.column))
+    (hs : C.turnRow = G.val.X C.column) (ht : t = G.val.O (finRotate n C.column))
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
+    G.val.crossingChangeHomotopy R C t c ∈ G.bigradedChainMinusPiece R (g + (-1, -1)) := by
   obtain ⟨⟨hX, hO₁⟩, ⟨hX', hO₂⟩⟩ := GridDiagram.rows_of_notMem_columnArc h hO
   subst ht
   exact G.crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_rows C R (by rwa [hs])

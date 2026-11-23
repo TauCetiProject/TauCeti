@@ -39,6 +39,8 @@ open scoped ENNReal NNReal Topology
 
 namespace MeasureTheory.Measure
 
+section FiniteDimensional
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -48,7 +50,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- On a zero-differential set, the fiber measures admit measurable majorants satisfying
 Eilenberg's bound at every positive Lipschitz scale. -/
 private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
-    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ} (ht : 0 ≤ t)
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ}
     (ε : ℝ≥0) (hε : ε ≠ 0) :
     ∃ G : F → ℝ≥0∞, Measurable G ∧
       (∀ y, μH[t] (s ∩ f ⁻¹' {y}) ≤ G y) ∧
@@ -60,11 +62,11 @@ private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
     exists_partition_approximatesLinearOn_of_hasFDerivWithinAt f s (fun _ ↦ 0) hf
       (fun _ ↦ ε) (fun _ ↦ hε)
   have hLip (n : ℕ) : LipschitzOnWith ε f (s ∩ u n) := by
-    obtain ⟨x, hx, hAx⟩ := hA hs n
+    obtain ⟨x, _, hAx⟩ := hA hs n
     have h := (happ n).lipschitzOnWith
     simpa [hAx] using h
   choose G hGm hGle hGint using fun n ↦
-    (hLip n).exists_measurable_hausdorffMeasure_inter_preimage_le μ ht
+    (hLip n).exists_measurable_hausdorffMeasure_inter_preimage_le μ
   have hsum : ∑' n, μH[finrank ℝ F + t] (s ∩ u n) = μH[finrank ℝ F + t] s := by
     calc
       _ = ∑' n, (μH[finrank ℝ F + t].restrict s) (u n) := by
@@ -94,13 +96,13 @@ private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
 measure, then almost every fiber has zero `t`-dimensional Hausdorff measure. Differentiability
 within the set suffices, and no measurability of the set is required. -/
 theorem ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_measure_ne_top
-    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ} (ht : 0 ≤ t)
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ}
     (hs : μH[finrank ℝ F + t] s ≠ ∞) :
     ∀ᵐ y ∂μ, μH[t] (s ∩ f ⁻¹' {y}) = 0 := by
   let ε : ℕ → ℝ≥0 := fun n ↦ 1 / ((n : ℝ≥0) + 1)
   have hε (n : ℕ) : ε n ≠ 0 := by positivity
   choose G hGm hGle hGint using fun n ↦
-    exists_measurable_majorant_of_hasFDerivWithinAt_zero μ hf ht (ε n) (hε n)
+    exists_measurable_majorant_of_hasFDerivWithinAt_zero μ hf (ε n) (hε n)
   have hlim : Tendsto (fun n ↦ (ε n : ℝ≥0∞)) atTop (𝓝 0) :=
     ENNReal.tendsto_coe.2 tendsto_one_div_add_atTop_nhds_zero_nat
   have hbound : Tendsto (fun n ↦ μ (Metric.ball (0 : F) 1) *
@@ -121,13 +123,25 @@ theorem ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_
   exact nonpos_iff_eq_zero.1 ((le_liminf_of_le (by isBoundedDefault)
     (Eventually.of_forall fun n ↦ hGle n y)).trans_eq hy)
 
-/-- The zero-differential part of almost every fiber is Hausdorff-null in the complementary
-dimension. This holds for any set, including nonmeasurable sets, on which the map has zero
-derivative within that set. -/
+end FiniteDimensional
+
+section FinrankLe
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] [Nontrivial F] {f : E → F}
+
+/-- For a map between finite-dimensional real normed spaces, where `F` is nontrivial and
+`finrank ℝ F ≤ finrank ℝ E` forces `E` to be finite-dimensional as well, the zero-differential
+part of almost every fiber is Hausdorff-null in the complementary dimension. This holds for any
+set, including nonmeasurable sets, on which the map has zero derivative within that set. -/
 theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero
+    (μ : Measure F) [μ.IsAddHaarMeasure] {s : Set E}
     (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x)
     (hdim : finrank ℝ F ≤ finrank ℝ E) :
     ∀ᵐ y ∂μ, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) = 0 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (finrank_pos.trans_le hdim)
   have hdim' : (finrank ℝ F : ℝ) + (finrank ℝ E - finrank ℝ F : ℕ) = finrank ℝ E := by
     exact_mod_cast Nat.add_sub_of_le hdim
   have hpiece (n : ℕ) : ∀ᵐ y ∂μ,
@@ -135,7 +149,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt
         ((s ∩ Metric.closedBall 0 n) ∩ f ⁻¹' {y}) = 0 := by
     apply ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_measure_ne_top μ
       (s := s ∩ Metric.closedBall 0 n)
-      (fun x hx ↦ (hf x hx.1).mono inter_subset_left) (Nat.cast_nonneg _)
+      (fun x hx ↦ (hf x hx.1).mono inter_subset_left)
     rw [hdim']
     exact ne_top_of_le_ne_top (isCompact_closedBall (0 : E) (n : ℝ)).measure_lt_top.ne
       (measure_mono inter_subset_right)
@@ -147,9 +161,10 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt
     exact mem_iUnion.2 ⟨n, ⟨hx.1, by simpa [Metric.mem_closedBall, dist_zero_right] using hn⟩, hx.2⟩
   · exact measure_iUnion_null hy
 
-/-- For a Lipschitz map, the zero set of its totalized Fréchet derivative meets almost every
-fiber in a Hausdorff-null set. The set includes nondifferentiability points, where the
-totalized derivative `fderiv ℝ f x` is `0`.
+/-- For a Lipschitz map between finite-dimensional real normed spaces, where `F` is nontrivial and
+`finrank ℝ F ≤ finrank ℝ E` forces `E` to be finite-dimensional as well, the zero set of its
+totalized Fréchet derivative meets almost every fiber in a Hausdorff-null set. The set includes
+nondifferentiability points, where the totalized derivative `fderiv ℝ f x` is `0`.
 For a real-valued function this is the nullity of the critical part of almost every level
 surface. -/
 theorem
@@ -158,6 +173,7 @@ theorem
     (hdim : finrank ℝ F ≤ finrank ℝ E) :
     ∀ᵐ y ∂μ, μHE[finrank ℝ E - finrank ℝ F]
       ({x | fderiv ℝ f x = 0} ∩ f ⁻¹' {y}) = 0 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (finrank_pos.trans_le hdim)
   have hcritical : ∀ᵐ y ∂μ, μHE[finrank ℝ E - finrank ℝ F]
       ({x | DifferentiableAt ℝ f x ∧ fderiv ℝ f x = 0} ∩ f ⁻¹' {y}) = 0 :=
     ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero μ
@@ -177,5 +193,7 @@ theorem
     · exact Or.inl ⟨⟨hd, hx.1⟩, hx.2⟩
     · exact Or.inr ⟨hd, hx.2⟩
   · exact measure_union_null hcrit hexc
+
+end FinrankLe
 
 end MeasureTheory.Measure

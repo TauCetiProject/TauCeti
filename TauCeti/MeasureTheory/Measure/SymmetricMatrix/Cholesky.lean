@@ -64,14 +64,14 @@ variable (p : ℕ)
 /-- Transposing a position matches the on-or-below-diagonal positions of a `p × p` matrix with
 the on-or-above-diagonal ones. -/
 def lowerTriangleEquivUpperTriangle : lowerTriangle p ≃ upperTriangle p where
-  toFun ij := ⟨ij.1.swap, ij.2⟩
-  invFun ij := ⟨ij.1.swap, ij.2⟩
+  toFun ij := ⟨ij.val.swap, ij.property⟩
+  invFun ij := ⟨ij.val.swap, ij.property⟩
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
 @[simp]
 theorem lowerTriangleEquivUpperTriangle_apply_coe (ij : lowerTriangle p) :
-    (lowerTriangleEquivUpperTriangle p ij : Fin p × Fin p) = ij.1.swap :=
+    (lowerTriangleEquivUpperTriangle p ij : Fin p × Fin p) = ij.val.swap :=
   (rfl)
 
 /-- The continuous linear equivalence reading off the on-or-below-diagonal entries of a symmetric
@@ -86,12 +86,12 @@ def symmetricLowerCoordinates :
 @[simp]
 theorem symmetricLowerCoordinates_apply
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ij : lowerTriangle p) :
-    symmetricLowerCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    symmetricLowerCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   simp only [symmetricLowerCoordinates, ContinuousLinearEquiv.trans_apply,
     LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply, symmetricCoordinates_apply,
     lowerTriangleEquivUpperTriangle_apply_coe, Prod.fst_swap, Prod.snd_swap]
-  exact selfAdjoint.coe_apply_comm A ij.1.2 ij.1.1
+  exact selfAdjoint.coe_apply_comm A ij.val.2 ij.val.1
 
 @[simp]
 theorem coe_symmetricLowerCoordinates_symm_apply_of_ge (x : lowerTriangle p → ℝ) {i j : Fin p}
@@ -229,12 +229,12 @@ private def posDiagOfMem {x : lowerTriangle p → ℝ} (hx : x ∈ posDiagLowerR
   (lowerTriangleCoordinatesHomeomorph p).symm ⟨x, hx⟩
 
 private theorem coe_posDiagOfMem {x : lowerTriangle p → ℝ} (hx : x ∈ posDiagLowerRegion p) :
-    (posDiagOfMem p hx).1 = lowerTriangleMatrix p x :=
+    (posDiagOfMem p hx).val = lowerTriangleMatrix p x :=
   lowerTriangleCoordinatesHomeomorph_symm_apply_coe p ⟨x, hx⟩
 
 private theorem coe_choleskyReconstruction_posDiagOfMem {x : lowerTriangle p → ℝ}
     (hx : x ∈ posDiagLowerRegion p) :
-    ((choleskyReconstruction (posDiagOfMem p hx)).1 :
+    ((choleskyReconstruction (posDiagOfMem p hx)).val :
         selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) = lowerTriangleGram p x :=
   Subtype.ext <| by
     rw [choleskyReconstruction_coe, coe_lowerTriangleGram, coe_posDiagOfMem]
@@ -251,11 +251,12 @@ theorem lowerTriangleGram_image_posDiagLowerRegion :
   constructor
   · rintro ⟨x, hx, rfl⟩
     rw [← coe_choleskyReconstruction_posDiagOfMem p hx]
-    exact (choleskyReconstruction (posDiagOfMem p hx)).2
+    exact (choleskyReconstruction (posDiagOfMem p hx)).property
   · intro hA
-    refine ⟨fun ij => (cholesky ⟨A, hA⟩).1 ij.1.1 ij.1.2, fun i => (cholesky ⟨A, hA⟩).2.2 i, ?_⟩
+    refine ⟨fun ij => (cholesky ⟨A, hA⟩).val ij.val.1 ij.val.2, fun i => (cholesky ⟨A,
+        hA⟩).property.2 i, ?_⟩
     refine Subtype.ext ?_
-    rw [coe_lowerTriangleGram, lowerTriangleMatrix_entries (cholesky ⟨A, hA⟩).2.1]
+    rw [coe_lowerTriangleGram, lowerTriangleMatrix_entries (cholesky ⟨A, hA⟩).property.1]
     exact cholesky_mul_transpose ⟨A, hA⟩
 
 /-- Cholesky factors are unique, so the Gram map is injective on the positive-diagonal region. -/
@@ -280,6 +281,17 @@ theorem injOn_choleskyReconstructionCoordinates :
   refine injOn_lowerTriangleGram p hx hy ?_
   rw [lowerTriangleGram_eq_symm_apply, lowerTriangleGram_eq_symm_apply, h]
 
+/-- Read through the chart, the coordinate form of Cholesky reconstruction sends the
+positive-diagonal region onto the positive-definite cone. -/
+theorem choleskyReconstructionCoordinates_image_posDiagLowerRegion :
+    choleskyReconstructionCoordinates p '' posDiagLowerRegion p =
+      (symmetricLowerCoordinates p).symm ⁻¹'
+        {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+          (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+  rw [← lowerTriangleGram_image_posDiagLowerRegion, funext (lowerTriangleGram_eq_symm_apply p),
+    ← Set.image_image (symmetricLowerCoordinates p).symm,
+    Set.preimage_image_eq _ (symmetricLowerCoordinates p).symm.injective]
+
 /-! ### Cholesky coordinates of a positive-definite matrix -/
 
 /-- The Gram map lands in the positive-definite cone on the positive-diagonal region. -/
@@ -297,11 +309,11 @@ def choleskyLowerCoordinates (A : PosDefMatrix p) : lowerTriangle p → ℝ :=
 
 @[simp]
 theorem choleskyLowerCoordinates_apply (A : PosDefMatrix p) (ij : lowerTriangle p) :
-    choleskyLowerCoordinates p A ij = (cholesky A).1 ij.1.1 ij.1.2 :=
+    choleskyLowerCoordinates p A ij = (cholesky A).val ij.val.1 ij.val.2 :=
   lowerTriangleCoordinatesHomeomorph_apply_coe p (cholesky A) ij
 
 theorem continuous_choleskyLowerCoordinates : Continuous (choleskyLowerCoordinates p) :=
-  continuous_subtype_val.comp
+  continuous_subtypeVal.comp
     ((lowerTriangleCoordinatesHomeomorph p).continuous.comp continuous_cholesky)
 
 @[fun_prop]
@@ -315,16 +327,16 @@ theorem choleskyLowerCoordinates_mem_posDiagLowerRegion (A : PosDefMatrix p) :
   rw [mem_posDiagLowerRegion]
   intro i
   rw [choleskyLowerCoordinates_apply]
-  exact (cholesky A).2.2 i
+  exact (cholesky A).property.2 i
 
 /-- **The Gram map inverts Cholesky factorization.** A positive-definite matrix is the Gram
 matrix built from the coordinates of its Cholesky factor. -/
 @[simp]
 theorem lowerTriangleGram_choleskyLowerCoordinates (A : PosDefMatrix p) :
-    lowerTriangleGram p (choleskyLowerCoordinates p A) = A.1 := by
+    lowerTriangleGram p (choleskyLowerCoordinates p A) = A.val := by
   refine Subtype.ext ?_
   rw [coe_lowerTriangleGram, funext (choleskyLowerCoordinates_apply p A),
-    lowerTriangleMatrix_entries (cholesky A).2.1]
+    lowerTriangleMatrix_entries (cholesky A).property.1]
   exact cholesky_mul_transpose A
 
 /-- **Cholesky factorization inverts the Gram map.** On the positive-diagonal region the
@@ -338,7 +350,7 @@ theorem choleskyLowerCoordinates_lowerTriangleGram {x : lowerTriangle p → ℝ}
     Subtype.ext (coe_choleskyReconstruction_posDiagOfMem p hx)
   funext ij
   rw [choleskyLowerCoordinates_apply, ← hrec, cholesky_choleskyReconstruction, coe_posDiagOfMem,
-    lowerTriangleMatrix_apply_of_le x ij.2]
+    lowerTriangleMatrix_apply_of_le x ij.property]
 
 /-! ### The change of variables -/
 
@@ -348,11 +360,11 @@ diagonal coordinates are positive, this is the absolute determinant of the deriv
 `L ↦ L * Lᵀ`; elsewhere the product can be negative, and the weight then truncates to `0`. The
 change of variables below uses the weight only on that region. -/
 def choleskyJacobianDensity (x : lowerTriangle p → ℝ) : ℝ≥0∞ :=
-  ENNReal.ofReal (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1))
+  ENNReal.ofReal (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val))
 
 theorem choleskyJacobianDensity_def (x : lowerTriangle p → ℝ) :
     choleskyJacobianDensity p x =
-      ENNReal.ofReal (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) :=
+      ENNReal.ofReal (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val)) :=
   (rfl)
 
 @[fun_prop]
@@ -387,21 +399,14 @@ theorem map_cholesky_symmetricLebesgue :
     (injOn_choleskyReconstructionCoordinates p)
   -- The chart reconstruction carries Lebesgue measure on the coordinates to `symmetricLebesgue`,
   -- so it is enough to run the change of variables in the coordinates.
-  have hmap : (volume : Measure (lowerTriangle p → ℝ)).map
-      ⇑(symmetricLowerCoordinatesMeasurableEquiv p).symm = symmetricLebesgue p := by
-    rw [symmetricLowerCoordinatesMeasurableEquiv_symm_coe]
-    exact (measurePreserving_symmetricLowerCoordinates_symm p).map_eq
   have hcomp : lowerTriangleGram p =
-      ⇑(symmetricLowerCoordinatesMeasurableEquiv p).symm ∘
-        choleskyReconstructionCoordinates p :=
+      ⇑(symmetricLowerCoordinates p).symm ∘ choleskyReconstructionCoordinates p :=
     funext (lowerTriangleGram_eq_symm_apply p)
-  rw [hdens, hcomp, ← Measure.map_map (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurable
+  rw [hdens, hcomp, ← Measure.map_map (symmetricLowerCoordinates p).symm.continuous.measurable
       (differentiable_choleskyReconstructionCoordinates (p := p)).continuous.measurable,
-    hjac, ← hmap,
-    (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurableEmbedding.restrict_map]
-  congr 1
-  rw [← lowerTriangleGram_image_posDiagLowerRegion p, hcomp, Set.image_comp,
-    Set.preimage_image_eq _ (symmetricLowerCoordinatesMeasurableEquiv p).symm.injective]
+    hjac, choleskyReconstructionCoordinates_image_posDiagLowerRegion]
+  exact ((measurePreserving_symmetricLowerCoordinates_symm p).restrict_preimage_emb
+    (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurableEmbedding _).map_eq
 
 /-- On the positive-diagonal region the Jacobian weight is nonnegative, so it agrees with the
 real number `2 ^ p * ∏ i, (L i i) ^ (p - i)` it truncates. -/
@@ -409,41 +414,47 @@ real number `2 ^ p * ∏ i, (L i i) ^ (p - i)` it truncates. -/
 theorem toReal_choleskyJacobianDensity {x : lowerTriangle p → ℝ}
     (hx : x ∈ posDiagLowerRegion p) :
     (choleskyJacobianDensity p x).toReal =
-      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1) :=
+      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val) :=
   ENNReal.toReal_ofReal <| mul_nonneg (by positivity) <|
     Finset.prod_nonneg fun i _ => pow_nonneg (hx i).le _
 
 /-- The integral form of the Cholesky change of variables: an integral over the positive-definite
-cone becomes a weighted integral over the positive-diagonal coordinate region. -/
+cone becomes a weighted integral over the positive-diagonal coordinate region. The Jacobian change
+of variables needs no measurability of `f`. -/
 theorem setLIntegral_posDef_symmetricLebesgue
-    {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞} (hf : Measurable f) :
+    (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞) :
     ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p =
       ∫⁻ x in posDiagLowerRegion p,
         choleskyJacobianDensity p x * f (lowerTriangleGram p x) := by
-  have hg : Measurable fun x => f (lowerTriangleGram p x) :=
-    hf.comp (measurable_lowerTriangleGram p)
-  rw [← map_cholesky_symmetricLebesgue, lintegral_map hf (measurable_lowerTriangleGram p),
-    lintegral_withDensity_eq_lintegral_mul _ (measurable_choleskyJacobianDensity p) hg]
-  rfl
+  rw [← (measurePreserving_symmetricLowerCoordinates_symm p).setLIntegral_comp_preimage_emb
+      (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurableEmbedding f,
+    ← choleskyReconstructionCoordinates_image_posDiagLowerRegion,
+    lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (measurableSet_posDiagLowerRegion p)
+      (fun x _ => (hasFDerivAt_choleskyReconstructionCoordinates x).hasFDerivWithinAt)
+      (injOn_choleskyReconstructionCoordinates p)]
+  refine setLIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => ?_
+  rw [choleskyJacobianDensity_def, ← fderiv_choleskyReconstructionCoordinates,
+    abs_det_fderiv_choleskyReconstructionCoordinates x hx, lowerTriangleGram_eq_symm_apply]
 
 /-- The Bochner-integral form of the Cholesky change of variables: an integral over the
-positive-definite cone becomes a weighted integral over the positive-diagonal coordinate region. -/
+positive-definite cone becomes a weighted integral over the positive-diagonal coordinate region.
+The Jacobian change of variables needs no measurability of `f`. -/
 theorem integral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E}
-    (hf : AEStronglyMeasurable f ((symmetricLebesgue p).restrict
-      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-        (A : Matrix (Fin p) (Fin p) ℝ).PosDef})) :
+    (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p =
       ∫ x in posDiagLowerRegion p,
-        ((2 : ℝ) ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) •
+        ((2 : ℝ) ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val)) •
           f (lowerTriangleGram p x) := by
-  rw [← map_cholesky_symmetricLebesgue] at hf ⊢
-  rw [integral_map (measurable_lowerTriangleGram p).aemeasurable hf,
-    integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
-      (.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  rw [← (measurePreserving_symmetricLowerCoordinates_symm p).setIntegral_preimage_emb
+      (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurableEmbedding f,
+    ← choleskyReconstructionCoordinates_image_posDiagLowerRegion,
+    integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_posDiagLowerRegion p)
+      (fun x _ => (hasFDerivAt_choleskyReconstructionCoordinates x).hasFDerivWithinAt)
+      (injOn_choleskyReconstructionCoordinates p)]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => ?_
-  rw [toReal_choleskyJacobianDensity p hx]
+  rw [← fderiv_choleskyReconstructionCoordinates,
+    abs_det_fderiv_choleskyReconstructionCoordinates x hx, lowerTriangleGram_eq_symm_apply]
 
 end TauCeti

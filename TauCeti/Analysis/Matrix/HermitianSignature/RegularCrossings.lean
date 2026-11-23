@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 public import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The negative index along a path with regular crossings
@@ -30,12 +31,25 @@ crossings the negative index is constant, because it is locally constant at nond
 (`ContinuousLinearMap.sigNeg_toBilinForm_eq_of_isPreconnected`), and nondegenerate forms are
 open (`ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`).
 
+The endpoints may also be regular crossings. Then the signature of `V t`, the difference of its
+positive and negative indices, changes from `a` to `b` by the signatures of the crossing forms,
+those at the endpoints counting once and those inside `(a, b)` twice: just after `a` the signature
+is that of `V a` plus the signature of the crossing form at `a`
+(`ContinuousLinearMap.eventually_sigPos_sub_sigNeg_eq_add_crossingForm`), just before `b` it is
+that of `V b` minus the signature of the crossing form at `b`, and in between the formula with
+nondegenerate endpoints applies. Half of this change is Robbin and Salamon's spectral flow of a
+path with possibly degenerate endpoints, in which an endpoint crossing contributes half its
+signature.
+
 ## Main results
 
 * `ContinuousLinearMap.finite_setOf_not_nondegenerate_toBilinForm`: a path with nondegenerate
   endpoints and only regular crossings has finitely many crossings.
 * `ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the negative
   index drops by the sum of the signatures of the crossing forms.
+* `ContinuousLinearMap.sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum`:
+  with crossings allowed at the endpoints, the signature changes by the signatures of the endpoint
+  crossing forms plus twice those of the interior ones.
 
 ## References
 
@@ -85,6 +99,23 @@ theorem finite_setOf_not_nondegenerate_toBilinForm (hc : ContinuousOn V (Icc a b
       with t ht htD
     exact htD.2 ht
 
+omit [FiniteDimensional ℝ E] in
+/-- The negative index of `V` is constant from a nondegenerate `s ∈ [a, b]` to `u ≤ b` when no
+crossing lies in `(s, u]`. -/
+private theorem sigNeg_toBilinForm_eq_of_forall_lt (hc : ContinuousOn V (Icc a b))
+    (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm) {S : Finset ℝ}
+    (hS : ∀ t, t ∈ S ↔ t ∈ Icc a b ∧ ¬(V t).toBilinForm.Nondegenerate)
+    {s u : ℝ} (hs : s ∈ Icc a b) (hns : (V s).toBilinForm.Nondegenerate) (hsu : s ≤ u)
+    (hu : u ≤ b) (hno : ∀ t ∈ S, s < t → u < t) :
+    sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V u).toBilinForm.toQuadraticMap := by
+  have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu
+  refine sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc (hc.mono hsub)
+    (fun t ht ↦ hsymm t (hsub ht)) (fun t ht ↦ ?_) ⟨le_rfl, hsu⟩ ⟨hsu, le_rfl⟩
+  by_contra hnt
+  have htS : t ∈ S := (hS t).2 ⟨hsub ht, hnt⟩
+  have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
+  exact (hno t htS hst).not_ge ht.2
+
 /-- Let `S` be the finite set of crossings in `[a, b]`. For every nondegenerate `s ∈ [a, b]`, the
 negative index drops from `s` to `b` by the sum of the signatures of the crossing forms at the
 crossings after `s`. -/
@@ -103,22 +134,11 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
   -- Induct on the number of crossings after `s`: the first crossing `c` after `s` is passed with
   -- `eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`, landing at a nondegenerate
   -- `t₂ > c` with no crossing in `(c, t₂]`.
-  -- Between a nondegenerate `s` and a later `u` with no crossing in between, the negative index
-  -- does not change.
-  have hconst {u : ℝ} (hsu : s ≤ u) (hu : u ≤ b)
-      (hnd : ∀ t ∈ Icc s u, (V t).toBilinForm.Nondegenerate) :
-      sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V u).toBilinForm.toQuadraticMap := by
-    have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu
-    exact sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc (hc.mono hsub)
-      (fun t ht ↦ hsymm t (hsub ht)) hnd ⟨le_rfl, hsu⟩ ⟨hsu, le_rfl⟩
   rcases Finset.eq_empty_or_nonempty {t ∈ S | s < t} with hempty | hne
   · -- No crossing after `s`.
     rw [hempty, Finset.sum_empty, sub_eq_zero, Nat.cast_inj]
-    refine hconst hs.2 le_rfl fun t ht ↦ ?_
-    by_contra hnt
-    have htS : t ∈ S := (hS t).2 ⟨⟨hs.1.trans ht.1, ht.2⟩, hnt⟩
-    have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
-    exact Finset.eq_empty_iff_forall_notMem.1 hempty t (Finset.mem_filter.2 ⟨htS, hst⟩)
+    exact sigNeg_toBilinForm_eq_of_forall_lt hc hsymm hS hs hns hs.2 le_rfl fun t ht hst ↦
+      (Finset.eq_empty_iff_forall_notMem.1 hempty t (Finset.mem_filter.2 ⟨ht, hst⟩)).elim
   · -- `c` is the first crossing after `s`.
     set c := Finset.min' _ hne
     have hcmem := Finset.mem_filter.1 (Finset.min'_mem _ hne)
@@ -140,33 +160,21 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
       ((eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm (hsymm c hcI)
         (hV c hc' hnc) (hreg c hc' hnc)).and (Ioo_mem_nhdsLT hsc)).exists
     obtain ⟨t₂, hjump, ht₂⟩ := (hjump.and (Ioo_mem_nhdsGT (lt_min hcu hcb))).exists
-    have ht₂b : t₂ < b := ht₂.2.trans_le (min_le_right _ _)
     have hnt₂ : (V t₂).toBilinForm.Nondegenerate := hu ⟨ht₂.1, ht₂.2.trans_le (min_le_left _ _)⟩
-    have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, ht₂b.le⟩
+    have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, (ht₂.2.trans_le (min_le_right _ _)).le⟩
     -- The crossings after `s` are `c` and the crossings after `t₂`.
-    have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
-      ext t
-      simp only [Finset.mem_filter, Finset.mem_insert]
-      constructor
-      · rintro ⟨htS, hst⟩
-        rcases (hcmin t htS hst).eq_or_lt with h | h
-        · exact Or.inl h.symm
-        · refine Or.inr ⟨htS, lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2 (hu ⟨h, ?_⟩)⟩
-          exact htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))
-      · rintro (rfl | ⟨htS, ht⟩)
-        · exact hcmem
-        · exact ⟨htS, hsc.trans (ht₂.1.trans ht)⟩
+    have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} :=
+      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin (hsc.trans ht₂.1).le fun t htS h ↦
+        lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2
+          (hu ⟨h, htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))⟩)
     have hcnot : c ∉ {t ∈ S | t₂ < t} := fun h ↦ (Finset.mem_filter.1 h).2.not_gt ht₂.1
     have hcard : #{t ∈ S | t₂ < t} < n := by
       rw [← hn, hsplit, Finset.card_insert_of_notMem hcnot]
       exact Nat.lt_succ_self _
     -- Assemble: no change on `[s, t₁]`, the jump at `c`, and the induction hypothesis at `t₂`.
     have h₁ : sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V t₁).toBilinForm.toQuadraticMap :=
-      hconst ht₁.1.le (ht₁.2.trans hcb).le fun t ht ↦ by
-        by_contra hnt
-        have htS : t ∈ S := (hS t).2 ⟨⟨hs.1.trans ht.1, (ht.2.trans (ht₁.2.trans hcb).le)⟩, hnt⟩
-        have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
-        exact (hcmin t htS hst).not_gt (ht.2.trans_lt ht₁.2)
+      sigNeg_toBilinForm_eq_of_forall_lt hc hsymm hS hs hns ht₁.1.le (ht₁.2.trans hcb).le
+        fun t htS hst ↦ ht₁.2.trans_le (hcmin t htS hst)
     rw [hsplit, Finset.sum_insert hcnot, ← hjump, ← ih _ hcard ht₂I hnt₂ rfl, h₁]
     ring
 
@@ -204,5 +212,160 @@ theorem sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ 
   refine ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩, fun ⟨ht, _⟩ ↦ ⟨?_, ?_⟩⟩
   · exact lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha)
   · exact lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)
+
+/-! ### Degenerate endpoints -/
+
+omit [FiniteDimensional ℝ E] in
+/-- Two nondegenerate symmetric forms with the same negative index have the same signature. -/
+private theorem sigPos_sub_sigNeg_eq_of_sigNeg_eq {B C : E →L[ℝ] E →L[ℝ] ℝ}
+    (hBs : B.toBilinForm.IsSymm) (hB : B.toBilinForm.Nondegenerate) (hCs : C.toBilinForm.IsSymm)
+    (hC : C.toBilinForm.Nondegenerate)
+    (h : sigNeg B.toBilinForm.toQuadraticMap = sigNeg C.toBilinForm.toQuadraticMap) :
+    (sigPos B.toBilinForm.toQuadraticMap : ℤ) - sigNeg B.toBilinForm.toQuadraticMap =
+      (sigPos C.toBilinForm.toQuadraticMap : ℤ) - sigNeg C.toBilinForm.toQuadraticMap := by
+  have hB' := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hBs).2 hB)
+  have hC' := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hCs).2 hC)
+  omega
+
+/-- Near a nondegenerate point `t₀` of a path continuous and symmetric on `s`, the path is
+nondegenerate, within `s`, and keeps the signature of `V t₀`. -/
+private theorem eventually_nhdsWithin_sigPos_sub_sigNeg_eq {s : Set ℝ} (hc : ContinuousOn V s)
+    (hsymm : ∀ t ∈ s, (V t).toBilinForm.IsSymm) (ht₀ : t₀ ∈ s)
+    (hnd : (V t₀).toBilinForm.Nondegenerate) :
+    ∀ᶠ t in 𝓝[s] t₀, (sigPos (V t).toBilinForm.toQuadraticMap : ℤ) -
+        sigNeg (V t).toBilinForm.toQuadraticMap =
+      (sigPos (V t₀).toBilinForm.toQuadraticMap : ℤ) - sigNeg (V t₀).toBilinForm.toQuadraticMap ∧
+        (V t).toBilinForm.Nondegenerate := by
+  have hnd' : ∀ᶠ t in 𝓝[s] t₀, (V t).toBilinForm.Nondegenerate :=
+    (hc t₀ ht₀).eventually (isOpen_setOf_nondegenerate_toBilinForm.mem_nhds hnd)
+  -- The negative index is locally constant at `t₀` along the subspace `s`.
+  have hneg : ∀ᶠ t in 𝓝[s] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
+      sigNeg (V t₀).toBilinForm.toQuadraticMap := by
+    rw [nhdsWithin_eq_map_subtypeVal ht₀, eventually_map]
+    exact eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t₀, ht₀⟩)
+      (hsymm t₀ ht₀) hc.domRestrict.continuousAt hnd
+  filter_upwards [hnd', hneg, self_mem_nhdsWithin] with t ht hnt hts
+  exact ⟨sigPos_sub_sigNeg_eq_of_sigNeg_eq (hsymm t hts) ht (hsymm t₀ ht₀) hnd hnt, ht⟩
+
+/-- Just after the left endpoint of `[a, b]`, a path with a regular crossing or no crossing at `a`
+is nondegenerate, and its signature is that of `V a` plus the signature of the crossing form. -/
+private theorem eventually_nhdsGT_sigPos_sub_sigNeg_eq_left (hab : a < b)
+    (hc : ContinuousOn V (Icc a b)) (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm)
+    (hV : ¬(V a).toBilinForm.Nondegenerate → HasDerivWithinAt V (V' a) (Icc a b) a)
+    (hreg : ¬(V a).toBilinForm.Nondegenerate → (crossingForm (V a) (V' a)).Nondegenerate) :
+    ∀ᶠ t in 𝓝[>] a, (sigPos (V t).toBilinForm.toQuadraticMap : ℤ) -
+        sigNeg (V t).toBilinForm.toQuadraticMap =
+      (sigPos (V a).toBilinForm.toQuadraticMap : ℤ) - sigNeg (V a).toBilinForm.toQuadraticMap +
+        ((sigPos (crossingForm (V a) (V' a)) : ℤ) - sigNeg (crossingForm (V a) (V' a))) ∧
+        (V t).toBilinForm.Nondegenerate := by
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab.le
+  by_cases hnd : (V a).toBilinForm.Nondegenerate
+  · rw [sigPos_sub_sigNeg_crossingForm_eq_zero hnd, add_zero]
+    exact (eventually_nhdsWithin_sigPos_sub_sigNeg_eq hc hsymm ha hnd).filter_mono
+      (nhdsWithin_le_of_mem (Icc_mem_nhdsGT hab))
+  · have hd := HasDerivWithinAt.mono_of_mem_nhdsWithin (f := V) (f' := V' a) (hV hnd)
+      (Icc_mem_nhdsGE hab)
+    exact (eventually_sigPos_sub_sigNeg_eq_add_crossingForm (hsymm a ha) hd (hreg hnd)).and
+      (eventually_nhdsGT_nondegenerate_of_crossingForm_nondegenerate
+        (eventually_of_mem (Icc_mem_nhdsGT hab) hsymm) (hsymm a ha) hd (hreg hnd))
+
+/-- Just before the right endpoint of `[a, b]`, a path with a regular crossing or no crossing at
+`b` is nondegenerate, and its signature is that of `V b` minus the signature of the crossing
+form. -/
+private theorem eventually_nhdsLT_sigPos_sub_sigNeg_eq_right (hab : a < b)
+    (hc : ContinuousOn V (Icc a b)) (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm)
+    (hV : ¬(V b).toBilinForm.Nondegenerate → HasDerivWithinAt V (V' b) (Icc a b) b)
+    (hreg : ¬(V b).toBilinForm.Nondegenerate → (crossingForm (V b) (V' b)).Nondegenerate) :
+    ∀ᶠ t in 𝓝[<] b, (sigPos (V t).toBilinForm.toQuadraticMap : ℤ) -
+        sigNeg (V t).toBilinForm.toQuadraticMap =
+      (sigPos (V b).toBilinForm.toQuadraticMap : ℤ) - sigNeg (V b).toBilinForm.toQuadraticMap -
+        ((sigPos (crossingForm (V b) (V' b)) : ℤ) - sigNeg (crossingForm (V b) (V' b))) ∧
+        (V t).toBilinForm.Nondegenerate := by
+  have hb : b ∈ Icc a b := right_mem_Icc.2 hab.le
+  by_cases hnd : (V b).toBilinForm.Nondegenerate
+  · rw [sigPos_sub_sigNeg_crossingForm_eq_zero hnd, sub_zero]
+    exact (eventually_nhdsWithin_sigPos_sub_sigNeg_eq hc hsymm hb hnd).filter_mono
+      (nhdsWithin_le_of_mem (Icc_mem_nhdsLT hab))
+  · have hd := HasDerivWithinAt.mono_of_mem_nhdsWithin (f := V) (f' := V' b) (hV hnd)
+      (Icc_mem_nhdsLE hab)
+    exact (eventually_sigPos_sub_sigNeg_eq_sub_crossingForm (hsymm b hb) hd (hreg hnd)).and
+      (eventually_nhdsLT_nondegenerate_of_crossingForm_nondegenerate
+        (eventually_of_mem (Icc_mem_nhdsLT hab) hsymm) (hsymm b hb) hd (hreg hnd))
+
+/-- **The regular-crossing formula for the signature, with endpoint crossings.** Let `V` be a path
+of symmetric continuous bilinear forms on a finite-dimensional real space, continuous on `[a, b]`
+with `a < b`. Suppose that at every crossing `t ∈ [a, b]`, where `V t` is degenerate, `V` has
+derivative `V' t` within `[a, b]` and the crossing form of `V t` and `V' t` is nondegenerate. Then
+the signature of `V` changes from `a` to `b` by the signatures of the crossing forms, the
+crossings inside `(a, b)` counting twice and those at the endpoints once. In the normalization of
+Robbin and Salamon, where the spectral flow is half the change of the signature, an endpoint
+crossing contributes half its signature. Parameters where `V t` is nondegenerate contribute zero. -/
+theorem sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum (hab : a < b)
+    (hc : ContinuousOn V (Icc a b)) (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm)
+    (hV : ∀ t ∈ Icc a b, ¬(V t).toBilinForm.Nondegenerate →
+      HasDerivWithinAt V (V' t) (Icc a b) t)
+    (hreg : ∀ t ∈ Icc a b, ¬(V t).toBilinForm.Nondegenerate →
+      (crossingForm (V t) (V' t)).Nondegenerate) :
+    (sigPos (V b).toBilinForm.toQuadraticMap : ℤ) - sigNeg (V b).toBilinForm.toQuadraticMap -
+        ((sigPos (V a).toBilinForm.toQuadraticMap : ℤ) -
+          sigNeg (V a).toBilinForm.toQuadraticMap) =
+      (sigPos (crossingForm (V a) (V' a)) : ℤ) - sigNeg (crossingForm (V a) (V' a)) +
+        2 * ∑ᶠ t ∈ Ioo a b,
+          ((sigPos (crossingForm (V t) (V' t)) : ℤ) - sigNeg (crossingForm (V t) (V' t))) +
+        ((sigPos (crossingForm (V b) (V' b)) : ℤ) - sigNeg (crossingForm (V b) (V' b))) := by
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab.le
+  have hb : b ∈ Icc a b := right_mem_Icc.2 hab.le
+  -- Nondegenerate intervals `(a, u)` and `(l, b)` on which the signature is that of the endpoint
+  -- corrected by its crossing form.
+  obtain ⟨u, hu, hau⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    (eventually_nhdsGT_sigPos_sub_sigNeg_eq_left hab hc hsymm (hV a ha) (hreg a ha))
+  obtain ⟨l, hl, hlb⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1
+    (eventually_nhdsLT_sigPos_sub_sigNeg_eq_right hab hc hsymm (hV b hb) (hreg b hb))
+  set m := (a + b) / 2
+  set t₁ := (a + min u m) / 2
+  set t₂ := (max l m + b) / 2
+  have hum : a < min u m := lt_min hu (by simp only [m]; linarith)
+  have hlm : max l m < b := max_lt hl (by simp only [m]; linarith)
+  have hat₁ : a < t₁ := by simp only [t₁]; linarith
+  have ht₁u : t₁ < min u m := by simp only [t₁]; linarith
+  have hlt₂ : max l m < t₂ := by simp only [t₂]; linarith
+  have ht₂b : t₂ < b := by simp only [t₂]; linarith
+  have ht₁₂ : t₁ < t₂ := ht₁u.trans_le ((min_le_right _ _).trans ((le_max_right _ _).trans
+    hlt₂.le))
+  obtain ⟨h₁, hnd₁⟩ : _ ∧ _ := hau ⟨hat₁, ht₁u.trans_le (min_le_left _ _)⟩
+  obtain ⟨h₂, hnd₂⟩ : _ ∧ _ := hlb ⟨(le_max_left _ _).trans_lt hlt₂, ht₂b⟩
+  have hsub : Icc t₁ t₂ ⊆ Icc a b := Icc_subset_Icc hat₁.le ht₂b.le
+  have hIoo {t : ℝ} (ht : t ∈ Ioo t₁ t₂) : t ∈ Ioo a b := ⟨hat₁.trans ht.1, ht.2.trans ht₂b⟩
+  -- The interior crossings are those of `[t₁, t₂]`, where the existing formula applies.
+  have hint := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm (V' := V') ht₁₂.le
+    (hc.mono hsub) (fun t ht ↦ hsymm t (hsub ht)) hnd₁ hnd₂
+    (fun t ht hnt ↦ HasDerivWithinAt.hasDerivAt (f := V) (f' := V' t)
+      (hV t (hsub (Ioo_subset_Icc_self ht)) hnt) (Icc_mem_nhds (hIoo ht).1 (hIoo ht).2))
+    (fun t ht hnt ↦ hreg t (hsub (Ioo_subset_Icc_self ht)) hnt)
+  have hsum : ∑ᶠ t ∈ Ioo a b,
+        ((sigPos (crossingForm (V t) (V' t)) : ℤ) - sigNeg (crossingForm (V t) (V' t))) =
+      ∑ᶠ t ∈ Ioo t₁ t₂,
+        ((sigPos (crossingForm (V t) (V' t)) : ℤ) - sigNeg (crossingForm (V t) (V' t))) := by
+    refine finsum_mem_inter_support_eq _ _ _ ?_
+    ext t
+    simp only [mem_inter_iff, Function.mem_support]
+    refine ⟨fun ⟨ht, hft⟩ ↦ ⟨⟨?_, ?_⟩, hft⟩, fun ⟨ht, hft⟩ ↦ ⟨hIoo ht, hft⟩⟩
+    all_goals
+      have hnt : ¬(V t).toBilinForm.Nondegenerate := fun hnt ↦
+        hft (sigPos_sub_sigNeg_crossingForm_eq_zero hnt (V' t))
+    · by_contra! h
+      exact hnt (hau ⟨ht.1, h.trans_lt (ht₁u.trans_le (min_le_left _ _))⟩).2
+    · by_contra! h
+      exact hnt (hlb ⟨(le_max_left _ _).trans_lt (hlt₂.trans_le h), ht.2⟩).2
+  have hd₁ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff
+      (hsymm t₁ (hsub (left_mem_Icc.2 ht₁₂.le)))).2 hnd₁)
+  have hd₂ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff
+      (hsymm t₂ (hsub (right_mem_Icc.2 ht₁₂.le)))).2 hnd₂)
+  rw [hsum]
+  omega
 
 end ContinuousLinearMap

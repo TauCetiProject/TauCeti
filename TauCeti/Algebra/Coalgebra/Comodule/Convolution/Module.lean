@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Hom
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
@@ -27,6 +27,8 @@ The module structure is named, rather than a global instance: install
 isomorphism `Subcomodule.convolutionSubmoduleOrderIso` transports simplicity to
 `IsSimpleModule`. This lets module-theoretic results, such as the Jacobson density
 theorem, apply to simple comodules and their matrix coefficients.
+`Subcomodule.isSimpleModule_convolution_iff_isAtom` also compares an atom with
+the convolution-dual module on its inherited comodule carrier.
 
 This is a fully faithful passage to modules, not an equivalence with all modules over
 the convolution dual of an infinite-dimensional coalgebra.
@@ -266,5 +268,28 @@ theorem isSimpleModule_convolution_iff :
   exact Subcomodule.convolutionSubmoduleOrderIso.symm.isSimpleOrder_iff
 
 end TauCeti.Comodule
+
+namespace TauCeti.Subcomodule
+
+/-- A subcomodule is an atom exactly when its inherited convolution-dual module is simple. -/
+theorem isSimpleModule_convolution_iff_isAtom (S : Subcomodule R C M) :
+    IsSimpleModule (WithConv (C →ₗ[R] R)) S ↔ IsAtom S := by
+  let f : S →ₗ[WithConv (C →ₗ[R] R)] M := S.subtype.toConvolutionLinearMap
+  have hf : Function.Injective f := by
+    intro x y h
+    exact Subtype.ext (by simpa [f] using h)
+  have hr : LinearMap.range f = S.toConvolutionSubmodule := by
+    ext m
+    constructor
+    · rintro ⟨x, rfl⟩
+      simp [f]
+    · intro hm
+      exact ⟨⟨m, hm⟩, by simp [f]⟩
+  rw [LinearEquiv.isSimpleModule_iff (R := WithConv (C →ₗ[R] R))
+      (M := S) (N := LinearMap.range f) (LinearEquiv.ofInjective f hf),
+    isSimpleModule_iff_isAtom, hr, ← convolutionSubmoduleOrderIso_apply,
+    OrderIso.isAtom_iff]
+
+end TauCeti.Subcomodule
 
 end Ring

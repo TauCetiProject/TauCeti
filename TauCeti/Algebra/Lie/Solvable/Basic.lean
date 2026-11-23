@@ -51,10 +51,11 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
+* `LieAlgebra.lie_mem_derivedSeries_one`: every bracket lies in the derived ideal.
 * `LieAlgebra.derivedAbelianOfIdeal_le`: Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`
   of an ideal (the last nonzero term of its derived series when the ideal is solvable, and `⊥`
   otherwise) lies inside the ideal.
-* `LieAlgebra.isSolvable_of_isSolvable_ker_of_surjective` and
+* `LieAlgebra.isSolvable_of_isSolvable_ker` and
   `LieAlgebra.isSolvable_iff_ideal_quotient`: solvability is an extension property.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
   onto the radical.
@@ -63,8 +64,8 @@ whole algebra.
   the two readings are trivial, respectively solvable, together, and
   `LieIdeal.eq_bot_of_le_of_isSolvable`: **a solvable ideal inside an ideal with trivial radical
   is trivial**.
-* `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
-  isomorphism of Lie algebras.
+* `LieAlgebra.hasTrivialRadical_of_equiv` and `LieAlgebra.hasCentralRadical_of_equiv`: triviality
+  of the radical, and its equality with the centre, transfer along an isomorphism of Lie algebras.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
@@ -121,7 +122,7 @@ is solvable and the part of it lying in the kernel is.
 
 Taking `f` to be the quotient map by a solvable ideal and `I` to be `⊤` recovers the statement
 that an extension of a solvable Lie algebra by a solvable ideal is solvable, which is
-`LieAlgebra.isSolvable_of_isSolvable_ker_of_surjective` below. -/
+`LieAlgebra.isSolvable_of_isSolvable_ker` below. -/
 theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
     (h₂ : IsSolvable ↥(I.map f)) : IsSolvable ↥I := by
   obtain ⟨k, hk⟩ := IsSolvable.solvable (R := R) (L := ↥(I.map f))
@@ -137,19 +138,23 @@ theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
 
 /-- A surjective Lie homomorphism with solvable kernel carries the solvable radical onto the
 solvable radical. -/
-theorem radical_map_eq [IsNoetherian R L] (h : Function.Surjective f)
+theorem radical_map_eq (h : Function.Surjective f)
     (hker : IsSolvable ↥f.ker) : (radical R L).map f = radical R L' := by
-  have hL' : IsNoetherian R L' :=
-    isNoetherian_of_surjective f.toLinearMap (LinearMap.range_eq_top.mpr h)
   have hmap : ∀ J : LieIdeal R L', (J.comap f).map f = J := fun J => by
     rw [map_comap_eq (f.isIdealMorphism_of_surjective h),
       f.idealRange_eq_top_of_surjective h, top_inf_eq]
-  refine le_antisymm ((LieIdeal.solvable_iff_le_radical R L' _).mp (isSolvable_map f _ h)) ?_
-  have hcomap : IsSolvable ↥((radical R L').comap f) :=
-    isSolvable_of_isSolvable_map f _ (le_solvable_ideal_solvable inf_le_right hker)
-      (by rw [hmap]; infer_instance)
-  calc radical R L' = ((radical R L').comap f).map f := (hmap _).symm
-    _ ≤ (radical R L).map f := map_mono ((LieIdeal.solvable_iff_le_radical R L _).mp hcomap)
+  refine le_antisymm ?_ ?_
+  · rw [LieIdeal.map_le_iff_le_comap]
+    refine sSup_le fun I hI ↦ ?_
+    have : IsSolvable ↥I := hI
+    exact (LieIdeal.map_le_iff_le_comap).mp (le_sSup (isSolvable_map f I h))
+  · refine sSup_le fun J hJ ↦ ?_
+    have hJ' : IsSolvable ↥J := hJ
+    have hcomap : IsSolvable ↥(J.comap f) :=
+      isSolvable_of_isSolvable_map f _ (le_solvable_ideal_solvable inf_le_right hker)
+        (by rw [hmap]; exact hJ')
+    calc J = (J.comap f).map f := (hmap J).symm
+      _ ≤ (radical R L).map f := map_mono (le_sSup hcomap)
 
 /-! ### Ideals inside an ideal -/
 
@@ -178,7 +183,7 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=
-  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
+  fun x => ⟨⟨⟨(x : L), h x.property⟩, x.property⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
 
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
@@ -218,6 +223,11 @@ namespace LieAlgebra
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
+/-- Every bracket lies in the derived ideal `⁅L, L⁆`, the first term of the derived series. -/
+theorem lie_mem_derivedSeries_one (x y : L) : ⁅x, y⁆ ∈ derivedSeries R L 1 := by
+  rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+  exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
+
 /-- The ideal `derivedAbelianOfIdeal I` is contained in `I`. When `I` is solvable this is the last
 nonzero term of its derived series; otherwise it is `⊥`. -/
 theorem derivedAbelianOfIdeal_le (I : LieIdeal R L) : derivedAbelianOfIdeal I ≤ I := by
@@ -226,14 +236,13 @@ theorem derivedAbelianOfIdeal_le (I : LieIdeal R L) : derivedAbelianOfIdeal I �
   · exact bot_le
   · exact derivedSeriesOfIdeal_le_self I _
 
-/-- **An extension of a solvable Lie algebra by a solvable ideal is solvable.** -/
-theorem isSolvable_of_isSolvable_ker_of_surjective {f : L →ₗ⁅R⁆ L'} (h : Function.Surjective f)
-    (h₁ : IsSolvable ↥f.ker) (h₂ : IsSolvable L') : IsSolvable L := by
-  have h₃ : IsSolvable ↥(⊤ : LieIdeal R L) := by
-    refine LieIdeal.isSolvable_of_isSolvable_map f ⊤
-      (le_solvable_ideal_solvable inf_le_right h₁) ?_
-    rw [← LieHom.idealRange_eq_map, f.idealRange_eq_top_of_surjective h]
-    exact (solvable_iff_equiv_solvable LieIdeal.topEquiv).mpr h₂
+/-- **An extension of a solvable Lie algebra by a solvable ideal is solvable.** The homomorphism
+need not be surjective: it suffices that its kernel and its target are solvable. -/
+theorem isSolvable_of_isSolvable_ker {f : L →ₗ⁅R⁆ L'} (h₁ : IsSolvable ↥f.ker)
+    (h₂ : IsSolvable L') : IsSolvable L := by
+  have h₃ : IsSolvable ↥(⊤ : LieIdeal R L) :=
+    LieIdeal.isSolvable_of_isSolvable_map f ⊤ (le_solvable_ideal_solvable inf_le_right h₁)
+      inferInstance
   exact (solvable_iff_equiv_solvable LieIdeal.topEquiv).mp h₃
 
 /-- **Solvability is an extension property**: a Lie algebra is solvable exactly when both an ideal
@@ -242,7 +251,7 @@ theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
     IsSolvable L ↔ IsSolvable ↥I ∧ IsSolvable (L ⧸ I) := by
   refine ⟨fun _ => ⟨inferInstance, I.surjective_mkQ.lieAlgebra_isSolvable⟩, fun h => ?_⟩
   obtain ⟨h₁, h₂⟩ := h
-  exact isSolvable_of_isSolvable_ker_of_surjective I.surjective_mkQ (by rwa [I.mkQ_ker]) h₂
+  exact isSolvable_of_isSolvable_ker (f := I.mkQ) (by rwa [I.mkQ_ker]) h₂
 
 /-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
 
@@ -257,6 +266,26 @@ theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ 
     have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
     rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
     exact hbot
+
+/-- **Reductivity transfers along an isomorphism of Lie algebras**: if the radical of `L` is its
+centre, then so is the radical of `L'`.
+
+No finiteness hypothesis is needed: neither Lie algebra has to be Noetherian or
+finite-dimensional. -/
+theorem hasCentralRadical_of_equiv [HasCentralRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasCentralRadical R L' :=
+  hasCentralRadical_of_radical_le R L' fun x hx => by
+    have hker : IsSolvable ↥(e.symm : L' →ₗ⁅R⁆ L).ker := by
+      rw [(LieHom.ker_eq_bot _).mpr e.symm.injective]
+      infer_instance
+    -- the inverse isomorphism carries the radical of `L'` onto the radical of `L`, its centre
+    have hx' : e.symm x ∈ center R L := by
+      rw [← radical_eq_center, ← LieIdeal.radical_map_eq _ e.symm.surjective hker]
+      exact LieIdeal.mem_map hx
+    rw [LieModule.mem_maxTrivSubmodule] at hx' ⊢
+    intro y
+    have h := congrArg e (hx' (e.symm y))
+    rwa [LieEquiv.map_lie, e.apply_symm_apply, e.apply_symm_apply, map_zero] at h
 
 variable (R L)
 
@@ -273,14 +302,17 @@ instance hasTrivialRadical_quotient_radical [IsNoetherian R L] :
 
 variable {R L}
 
-/-- **The radical is the smallest ideal whose quotient has trivial radical.**  Its image in such a
-quotient is a solvable ideal, hence trivial. -/
-theorem radical_le_of_hasTrivialRadical_quotient [IsNoetherian R L] (I : LieIdeal R L)
-    [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I := by
-  have hbot : (radical R L).map I.mkQ = ⊥ :=
-    HasTrivialRadical.eq_bot_of_isSolvable
-      (hI := LieIdeal.isSolvable_map I.mkQ _ I.surjective_mkQ) _
-  rwa [LieIdeal.map_eq_bot_iff, I.mkQ_ker] at hbot
+/-- **The radical is contained in every ideal whose quotient has trivial radical.** Every ideal
+`I` whose quotient `L ⧸ I` has trivial radical contains the radical of `L`; combined with
+`hasTrivialRadical_quotient_radical`, the radical is the smallest such ideal when `L` is
+Noetherian. -/
+theorem radical_le_of_hasTrivialRadical_quotient (I : LieIdeal R L)
+    [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I :=
+  sSup_le fun J (hJ : IsSolvable J) => by
+    have hbot : J.map I.mkQ = ⊥ :=
+      HasTrivialRadical.eq_bot_of_isSolvable
+        (hI := LieIdeal.isSolvable_map I.mkQ J I.surjective_mkQ) _
+    rwa [LieIdeal.map_eq_bot_iff, I.mkQ_ker] at hbot
 
 /-- **The radical is the unique solvable ideal whose quotient has trivial radical.** -/
 @[simp]

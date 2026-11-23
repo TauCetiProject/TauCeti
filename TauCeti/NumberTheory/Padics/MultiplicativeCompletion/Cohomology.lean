@@ -53,11 +53,12 @@ namespace TauCeti
 
 open CategoryTheory Limits ContCohomology
 
-variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
-  [FiniteDimensional K L] [IsGalois K L]
+variable (p : ℕ) [Fact p.Prime]
+
+section ClassModule
+
+variable (K L : Type) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
   [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
-  [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
-  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L]
 
 /-- Local reciprocity for `A(L)`, as an additive isomorphism from the class module `V^ab(p)`. -/
 private noncomputable def classModuleAddEquiv (ι : L →ₐ[K] SeparableClosure K) :
@@ -65,8 +66,6 @@ private noncomputable def classModuleAddEquiv (ι : L →ₐ[K] SeparableClosure
       Rep.of (padicCompletionUnitsRepresentation p L K) :=
   (padicCompletionUnitsEquivAbelianizationProP p K L ι).symm.toMulEquiv.toAdditive
 
-omit [IsGalois K L] [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
-  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] in
 /-- `classModuleAddEquiv` is the inverse of local reciprocity, read additively. -/
 private theorem classModuleAddEquiv_apply (ι : L →ₐ[K] SeparableClosure K)
     (m : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
@@ -75,6 +74,8 @@ private theorem classModuleAddEquiv_apply (ι : L →ₐ[K] SeparableClosure K)
       Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L ι).symm m.toMul) :=
   (rfl)
 
+variable [IsGalois K L] [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] in
 /-- `classModuleAddEquiv` intertwines the action of `G_K ⧸ V` on `V^ab(p)` with the action of
 `Gal(L/K)` on `A(L)`, along `G_K ⧸ V ≃ Gal(L/K)`. -/
 private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
@@ -92,9 +93,13 @@ private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
     simp [Additive.toMul_smul, ← padicCompletionUnitsEquivAbelianizationProP_smul, e,
       padicCompletionUnitsRepresentation_apply, padicCompletionUnitsLinearMap_apply]
 
-variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [CharZero K]
+end ClassModule
 
-omit [Algebra ℚ_[p] K] in
+section BaseField
+
+variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [CharZero K]
+
 /-- The low-degree cohomology of a representation `B` of a group `H`, matched with `V^ab(p)` on
 `W.map (mk' V) ≤ G_K ⧸ V` for an open `W ⊇ V` compatibly with the actions, read off from the class
 module of `G_K` (NSW (3.6.4)): `H¹(H, B) = 0`, and `H²(H, B)` is cyclic of order the `p`-part of
@@ -121,7 +126,6 @@ private theorem groupCohomology_of_le {V W : Subgroup (AbsoluteGaloisGroup K)} [
     exact this.symm
   · rw [← Nat.card_congr E.toEquiv, hcard, Nat.card_congr φ.toEquiv]
 
-omit [Algebra ℚ_[p] K] in
 /-- Transport the class-module generator once, retaining its compatibility with restriction. -/
 private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup K)} [V.Normal]
     (hV : IsOpen (V : Set (AbsoluteGaloisGroup K))) {H : Type} [Group H]
@@ -158,6 +162,16 @@ private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup 
   exact (congrArg AddSubgroup.zmultiples
     (explicitH2AddEquivGroupCohomology_explicitRes2 e ψ hψ T S eS heS c)).symm.trans h
 
+end BaseField
+
+section PadicCompletionUnits
+
+variable (K L : Type) [Field K] [Field L] [Algebra K L] [IsGalois K L]
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L]
+  [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+
 /-- Both statements on a subgroup `S`, through the pair `V ◁ W` with `W` the preimage of `S` in
 `G_K`. -/
 private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ[K] L)) :
@@ -169,6 +183,9 @@ private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ
           Nat.card (groupCohomology
             (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
             p ^ padicValNat p (Nat.card S) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let V := (galoisSubgroup K L ι).toSubgroup
   let e : AbsoluteGaloisGroup K ⧸ V ≃* (L ≃ₐ[K] L) :=
@@ -192,7 +209,6 @@ theorem isZero_groupCohomology_one_res_padicCompletionUnits (S : Subgroup (L ≃
   have := (groupCohomology_res_padicCompletionUnits p K L S).1
   ModuleCat.isZero_of_subsingleton _
 
-omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H²` of `A(L)` on a subgroup is cyclic of order the `p`-part of the subgroup** (NSW (3.6.4),
 read through local reciprocity): for every subgroup `S` of `Gal(L/K)`, some class `u` generates
 `H²(S, A(L))`, and this group has order `p ^ v_p(#S)`. -/
@@ -204,9 +220,6 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
         Nat.card (groupCohomology
           (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
           p ^ padicValNat p (Nat.card S) := by
-  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
-  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   exact (groupCohomology_res_padicCompletionUnits p K L S).2
 
 /-- **One class of `A(L)` generates after every restriction** (NSW (3.6.4)). Unlike choosing
@@ -220,12 +233,14 @@ theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletion
           (groupCohomology.map S.subtype
             (𝟙 (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))))
             2 u) = ⊤ := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   exact exists_restriction_generator p K (galoisSubgroup K L ι).isOpen
     (quotientGaloisSubgroupEquiv K L ι).toMulEquiv (classModuleAddEquiv p K L ι)
     (classModuleAddEquiv_smul p K L ι)
 
-omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H²` of `A(L)` on a `p`-subgroup has the order of the subgroup** (NSW (3.6.4), read through
 local reciprocity): `#H²(S, A(L)) = #S` for every `p`-subgroup `S` of `Gal(L/K)`. -/
 theorem natCard_groupCohomology_two_res_padicCompletionUnits
@@ -249,6 +264,9 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits :
       AddSubgroup.zmultiples u = ⊤ ∧
         Nat.card (groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2) =
           p ^ padicValNat p (Nat.card (L ≃ₐ[K] L)) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let V := (galoisSubgroup K L ι).toSubgroup
   have hmap : (⊤ : Subgroup (AbsoluteGaloisGroup K)).map (QuotientGroup.mk' V) = ⊤ :=
@@ -257,5 +275,7 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits :
     (((MulEquiv.subgroupCongr hmap).trans Subgroup.topEquiv).trans
       (quotientGaloisSubgroupEquiv K L ι).toMulEquiv)
     (classModuleAddEquiv p K L ι) fun t m ↦ classModuleAddEquiv_smul p K L ι t m).2
+
+end PadicCompletionUnits
 
 end TauCeti

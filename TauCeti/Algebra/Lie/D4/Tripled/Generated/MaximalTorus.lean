@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.WeightTorus
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.Lie.D4.Tripled.MaximalTorus
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # The maximal torus of the generated tripled D₄ group
@@ -73,15 +71,12 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
 
 private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClosed k] :
     HopfIdeal.IsMaximalTorus k (generatedCoordinateHopfAlgebra k)
-      (weightTorusDefiningIdeal k) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
-  refine ⟨(splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _, ?_⟩
-  intro I hI hIT
-  let _ : IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) :=
-    hI.geometricallyReduced.isReduced
-  let _ : Coalgebra.IsCocomm k
-      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) := hI.isCocomm k _
-  exact (eq_weightTorusDefiningIdeal_of_le_of_isCocomm k I hIT).ge
+      (weightTorusDefiningIdeal k) :=
+  HopfIdeal.isMaximalTorus_of_maximal_points (weightTorusDefiningIdeal k)
+    ((splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _)
+    (carrierPointsHom k (.of k k)) (carrierPointsHom_injective k (.of k k))
+    (map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal k (.of k k))
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP)
 
 /-- Over every field, the closed rank-four weight torus is a maximal torus of the generated
 tripled D₄ group. No assumption on the characteristic or on the integral carrier is needed. -/

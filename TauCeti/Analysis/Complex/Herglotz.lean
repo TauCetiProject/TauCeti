@@ -67,7 +67,7 @@ private lemma circleAverage_herglotzRieszKernel_smul_re_add_of_center_zero
       f w := by
   have hR : 0 < R := pos_of_mem_ball hw
   have hcont : ContinuousOn f (sphere 0 |R|) := by
-    refine hf.2.mono ?_
+    refine hf.continuousOn.mono ?_
     rw [abs_of_pos hR, closure_ball 0 hR.ne']
     exact sphere_subset_closedBall
   have hre : CircleIntegrable (fun ζ ↦ (f ζ).re) 0 R :=
@@ -83,7 +83,7 @@ private lemma circleAverage_herglotzRieszKernel_smul_re_add_of_center_zero
     circleAverage (fun ζ ↦ herglotzRieszKernel 0 z ζ • ((f ζ).re : ℂ)) 0 R with hG_def
   have hG : AnalyticOnNhd ℂ G (ball 0 R) :=
     (analyticOnNhd_circleAverage_herglotzRieszKernel_smul hreC).mono hball
-  have hF : AnalyticOnNhd ℂ f (ball 0 R) := hf.1.analyticOnNhd isOpen_ball
+  have hF : AnalyticOnNhd ℂ f (ball 0 R) := hf.differentiableOn.analyticOnNhd isOpen_ball
   -- By the Poisson formula, `G` and `f` have the same real part on the disc.
   have hreeq : ∀ z ∈ ball (0 : ℂ) R, ((G - f) z).re = 0 := by
     intro z hz
@@ -159,7 +159,7 @@ private lemma coe_sub_ne_zero (hw : w ∈ ball (0 : ℂ) 1) (z : Circle) : (z : 
 
 private lemma continuous_add_div_sub (hw : w ∈ ball (0 : ℂ) 1) :
     Continuous fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w) :=
-  (continuous_subtype_val.add continuous_const).div (continuous_subtype_val.sub continuous_const)
+  (continuous_subtypeVal.add continuous_const).div (continuous_subtypeVal.sub continuous_const)
     (coe_sub_ne_zero hw)
 
 /-- The Herglotz transform `w ↦ ∫ (z + w) / (z - w) dμ(z)` of a finite measure on the unit
@@ -191,8 +191,8 @@ theorem _root_.MeasureTheory.Measure.differentiableOn_herglotzTransform
     exact (((hasDerivAt_id' w).const_add (z : ℂ)).div
       ((hasDerivAt_id' w).const_sub (z : ℂ)) hne).congr_deriv (by ring)
   have hF' : Continuous fun z : Circle ↦ 2 * (z : ℂ) / ((z : ℂ) - w₀) ^ 2 :=
-    (continuous_const.mul continuous_subtype_val).div
-      ((continuous_subtype_val.sub continuous_const).pow 2)
+    (continuous_const.mul continuous_subtypeVal).div
+      ((continuous_subtypeVal.sub continuous_const).pow 2)
       fun z ↦ pow_ne_zero 2 (coe_sub_ne_zero hw₀ z)
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (bound := fun _ ↦ 2 / ε ^ 2)
     (ball_mem_nhds w₀ hε) ?_ ((continuous_add_div_sub hw₀).integrable_of_hasCompactSupport
@@ -237,22 +237,19 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
     nlinarith [norm_nonneg z]
   have hdiff : DifferentiableOn ℂ (fun z ↦ F (r * z)) (closedBall 0 1) :=
     hF.comp (by fun_prop) hmaps
-  have hφc : ContinuousOn (fun ζ ↦ (F (r * ζ)).re) (sphere 0 1) :=
-    continuous_re.comp_continuousOn (hdiff.continuousOn.mono sphere_subset_closedBall)
+  have hφi : CircleIntegrable (fun ζ ↦ (F (r * ζ)).re) 0 1 :=
+    (continuous_re.comp_continuousOn (hdiff.continuousOn.mono sphere_subset_closedBall)
+      ).circleIntegrable zero_le_one
   have hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ (F (r * z)).re := fun z hz ↦
     hre _ (hmaps (sphere_subset_closedBall hz))
   refine ⟨circleDensityMeasure fun ζ ↦ (F (r * ζ)).re,
-    isFiniteMeasure_circleDensityMeasure hφc, fun w hw ↦ ?_⟩
-  have hK : ContinuousOn (fun ζ : ℂ ↦ (ζ + w) / (ζ - w)) (sphere 0 1) := by
-    have hw' : w ∉ sphere (0 : ℂ) |1| := by
-      rw [abs_one, mem_sphere_zero_iff_norm]
-      exact (mem_ball_zero_iff.1 hw).ne
-    simpa [herglotzRieszKernel_fun_def] using continuousOn_herglotzRieszKernel_sphere hw'
+    isFiniteMeasure_circleDensityMeasure hφi, fun w hw ↦ ?_⟩
   have hcl : DiffContOnCl ℂ (fun z ↦ F (r * z)) (ball 0 1) :=
     DifferentiableOn.diffContOnCl (by rwa [closure_ball 0 one_ne_zero])
   have h := hcl.circleAverage_herglotzRieszKernel_smul_re_add hw
   rw [mul_zero] at h
-  rw [Measure.herglotzTransform_def, ← h, integral_circleDensityMeasure hφc hφ₀ hK]
+  rw [Measure.herglotzTransform_def, ← h,
+    integral_circleDensityMeasure hφi.1.aestronglyMeasurable hφ₀ fun ζ ↦ (ζ + w) / (ζ - w)]
   congr 2
   ext ζ
   simp [herglotzRieszKernel_def, Complex.real_smul, mul_comm]

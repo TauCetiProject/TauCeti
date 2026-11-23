@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Rational
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
@@ -111,11 +111,11 @@ theorem rep_serreRootGenerator_pow_two (k : B ⊕ B) :
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, T.rep_ι_apply,
         T.rationalSerreRepresentation_serreE, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (T.raisingMatrixQ_pow_two i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (T.raisingMatrixQ_pow_two i) v
   | inr i =>
       simpa only [TauCeti.serreRootGenerator_inr, T.rep_ι_apply,
         T.rationalSerreRepresentation_serreF, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (T.loweringMatrixQ_pow_two i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (T.loweringMatrixQ_pow_two i) v
 
 /-- Every represented positive or negative Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : B ⊕ B) :

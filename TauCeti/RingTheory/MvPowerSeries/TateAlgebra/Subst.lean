@@ -104,9 +104,9 @@ theorem norm_coeff_subst_coe_le [Finite σ] {a : σ → MvPolynomial τ R}
   rw [← MvPolynomial.coe_finsuppProd_pow, MvPolynomial.coeff_coe]
   by_cases hd : (d.prod fun s n ↦ a s ^ n).coeff e = 0
   · simp [hd, hr]
-  · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
-      (TauCeti.MvPolynomial.norm_coeff_prod_pow_le_one norm_one.le d
-        (fun s _ ↦ ha₁ s) e)).trans (h d hd)
+  · have hprod : ‖(d.prod fun s n ↦ a s ^ n).coeff e‖ ≤ 1 := by
+      simpa using MvPolynomial.norm_coeff_prod_pow_le (r := 1) norm_one.le d (fun s _ ↦ ha₁ s) e
+    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _) hprod).trans (h d hd)
 
 /-- **Isolating one term of a substitution.** Up to the contribution
 `coeff ν f * coeff e (∏ₛ (a s) ^ (ν s))` of a single exponent `ν`, a coefficient of a substitution
@@ -202,7 +202,7 @@ noncomputable def restrictedSubst :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) →ₐ[R]
       IsRestricted.subring (R := R) (fun _ : τ ↦ 1) where
   toFun f := ⟨(f : MvPowerSeries σ R).subst fun s ↦ (a s : MvPowerSeries τ R),
-    IsRestricted.subst ha₀ ha₁ f.2⟩
+    IsRestricted.subst ha₀ ha₁ f.property⟩
   map_one' := Subtype.ext <| by simpa using map_one (substAlgHom (hasSubst_coe ha₀))
   map_mul' f g := Subtype.ext <| by simp [subst_mul (hasSubst_coe ha₀)]
   map_zero' := Subtype.ext <| by simpa using map_zero (substAlgHom (hasSubst_coe ha₀))
@@ -218,7 +218,7 @@ theorem coe_restrictedSubst (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1
 /-- Substitution of unit-ball polynomials does not increase the Gauss norm. -/
 theorem norm_restrictedSubst_le (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ‖restrictedSubst a ha₀ ha₁ f‖ ≤ ‖f‖ := by
-  rw [norm_le_iff (norm_nonneg _)]
+  rw [norm_le_iff]
   intro e
   simp only [one_pow, Finsupp.prod_fun_one, mul_one, coe_restrictedSubst]
   refine norm_coeff_subst_coe_le ha₀ ha₁ _ e (norm_nonneg _) fun d _ ↦ ?_

@@ -231,7 +231,7 @@ theorem exists_lt_mk_mem_openCell (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 
 sup-norm ball through the radial homeomorphism. -/
 private def cellChart (i : Fin (n + 1)) (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     Fin i → ℝ :=
-  (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph ((y.1 i / |y.1 i|) • truncate i y.1)
+  (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph ((y.val i / |y.val i|) • truncate i y.val)
 
 private theorem cellChart_neg (i : Fin (n + 1))
     (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
@@ -246,7 +246,7 @@ private def cellMapInv (i : Fin (n + 1)) : RealProjectiveSpace n → (Fin i → 
 private theorem cellMapInv_mk (i : Fin (n + 1))
     (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     cellMapInv i (mk n y) = (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph
-      ((y.1 i / |y.1 i|) • truncate i y.1) :=
+      ((y.val i / |y.val i|) • truncate i y.val) :=
   RealProjectiveSpace.lift_mk n _ (cellChart_neg i) y
 
 /-- The point of `Sⁿ` over a point `x` of the closed sup-norm ball of `Fin i → ℝ`: the radial
@@ -256,7 +256,7 @@ private def cellSpherePoint (i : Fin (n + 1)) (x : closedBall (0 : Fin i → ℝ
   ⟨hemispherePoint n ((EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm x),
     mem_sphere_zero_iff_norm.2 (norm_hemispherePoint i.is_le
       ((EuclideanSpace.equiv (Fin i) ℝ).norm_unitBallHomeomorph_symm_le_one_iff.2
-        (mem_closedBall_zero_iff.1 x.2)))⟩
+        (mem_closedBall_zero_iff.1 x.property)))⟩
 
 open scoped Classical in
 /-- The characteristic map of the `i`-cell of `RPⁿ` (Hatcher, Example 0.4). On the closed unit
@@ -284,9 +284,9 @@ def cellMap (i : Fin (n + 1)) : PartialEquiv (Fin i → ℝ) (RealProjectiveSpac
     simp only [cellMapInv_mk, mem_ball_zero_iff,
       ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff, norm_smul, norm_div,
       Real.norm_eq_abs, abs_abs, div_self (abs_ne_zero.2 hyi), one_mul]
-    nlinarith [norm_nonneg (truncate i y.1), sq_pos_of_ne_zero hyi]
+    nlinarith [norm_nonneg (truncate i y.val), sq_pos_of_ne_zero hyi]
   left_inv' x hx := by
-    set v := (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm x with hv_def
+    set v := (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm x
     have hv : ‖v‖ < 1 := by simpa [v] using hx
     have hpos : 0 < hemispherePoint n v i := by
       rw [hemispherePoint_apply_of_eq _ rfl]
@@ -297,26 +297,26 @@ def cellMap (i : Fin (n + 1)) : PartialEquiv (Fin i → ℝ) (RealProjectiveSpac
   right_inv' p hp := by
     obtain ⟨y, rfl⟩ := mk_surjective n p
     obtain ⟨hyi, hy⟩ := mk_mem_openCell_iff.1 hp
-    set s := y.1 i / |y.1 i| with hs
+    set s := y.val i / |y.val i| with hs
     have habs : |s| = 1 := by rw [hs, abs_div, abs_abs, div_self (abs_ne_zero.2 hyi)]
-    have hsy : s * y.1 i = |y.1 i| := by
+    have hsy : s * y.val i = |y.val i| := by
       rw [hs, div_mul_eq_mul_div, ← sq, ← sq_abs, sq, mul_self_div_self]
     have hnorm := norm_truncate_sq_add_sq hy
     rw [norm_eq_of_mem_sphere y, one_pow] at hnorm
-    have hw : ‖s • truncate i y.1‖ = ‖truncate i y.1‖ := by
+    have hw : ‖s • truncate i y.val‖ = ‖truncate i y.val‖ := by
       rw [norm_smul, Real.norm_eq_abs, habs, one_mul]
     have hx : cellMapInv i (mk n y) ∈ closedBall 0 1 := by
       rw [cellMapInv_mk, mem_closedBall_zero_iff,
         ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff, hw]
-      nlinarith [norm_nonneg (truncate i y.1), sq_nonneg (y.1 i)]
-    have key : (cellSpherePoint i ⟨_, hx⟩ : EuclideanSpace ℝ (Fin (n + 1))) = s • y.1 := by
+      nlinarith [norm_nonneg (truncate i y.val), sq_nonneg (y.val i)]
+    have key : (cellSpherePoint i ⟨_, hx⟩ : EuclideanSpace ℝ (Fin (n + 1))) = s • y.val := by
       simp only [cellSpherePoint, cellMapInv_mk, Homeomorph.symm_apply_apply]
       ext j
       rcases lt_trichotomy (j : ℕ) i with h | h | h
       · rw [hemispherePoint_apply_of_lt _ h]
         simp [truncate, Fin.castLE, hs]
       · rw [hemispherePoint_apply_of_eq _ h, hw, show j = i from Fin.ext h, PiLp.smul_apply,
-          smul_eq_mul, hsy, show 1 - ‖truncate i y.1‖ ^ 2 = y.1 i ^ 2 by linarith,
+          smul_eq_mul, hsy, show 1 - ‖truncate i y.val‖ ^ 2 = y.val i ^ 2 by linarith,
           Real.sqrt_sq_eq_abs]
       · rw [hemispherePoint_apply_of_gt _ h, PiLp.smul_apply, hy j (Fin.lt_def.2 h), smul_zero]
     rw [dite_eq_left hx, mk_eq_mk_iff]
@@ -350,7 +350,7 @@ sup-norm ball through the radial homeomorphism. On the open cell, where `yᵢ �
 truncation of whichever of `±y` has positive coordinate `i`. -/
 theorem cellMap_symm_mk (i : Fin (n + 1)) (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     (cellMap i).symm (mk n y) = (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph
-      ((y.1 i / |y.1 i|) • WithLp.toLp 2 fun j => y.1 (Fin.castLE i.is_lt.le j)) :=
+      ((y.val i / |y.val i|) • WithLp.toLp 2 fun j => y.val (Fin.castLE i.is_lt.le j)) :=
   cellMapInv_mk i y
 
 /-- The characteristic map of the `i`-cell maps the open unit ball onto the open `i`-cell. -/
@@ -361,8 +361,8 @@ theorem image_cellMap_ball (i : Fin (n + 1)) : cellMap i '' ball 0 1 = openCell 
 theorem continuousOn_cellMap (i : Fin (n + 1)) : ContinuousOn (cellMap i) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (cellSpherePoint i) := (continuous_hemispherePoint.comp
-    ((Homeomorph.continuous _).comp continuous_subtype_val)).subtype_mk _
-  exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i x.2).symm
+    ((Homeomorph.continuous _).comp continuous_subtypeVal)).subtype_mk _
+  exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i x.property).symm
 
 /-- The inverse of the characteristic map of the `i`-cell is continuous on the open `i`-cell. -/
 theorem continuousOn_cellMap_symm (i : Fin (n + 1)) :
@@ -370,11 +370,11 @@ theorem continuousOn_cellMap_symm (i : Fin (n + 1)) :
   intro p hp
   obtain ⟨y, rfl⟩ := mk_surjective n p
   have hyi := (mk_mem_openCell_iff.1 hp).1
-  have hc : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 => y.1 i :=
-    (PiLp.continuous_apply _ _ _).comp continuous_subtype_val
+  have hc : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 => y.val i :=
+    (PiLp.continuous_apply _ _ _).comp continuous_subtypeVal
   refine (continuousAt_lift n (cellChart_neg i) ?_).continuousWithinAt
   exact (Homeomorph.continuous _).continuousAt.comp ((hc.continuousAt.div hc.continuousAt.abs
-    (abs_ne_zero.2 hyi)).smul ((continuous_truncate i).comp continuous_subtype_val).continuousAt)
+    (abs_ne_zero.2 hyi)).smul ((continuous_truncate i).comp continuous_subtypeVal).continuousAt)
 
 /-- The characteristic map of the `i`-cell sends the boundary sphere of the sup-norm ball into the
 open cells of dimension less than `i`. -/

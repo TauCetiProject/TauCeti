@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Probability.Distributions.Beta.PDF
 import TauCeti.Probability.Distributions.Gamma.PDF
 
@@ -29,6 +30,14 @@ Gamma-distributed, and the two are independent.
   product of a
   Beta law and a Gamma law.
 * `TauCeti.Probability.map_div_add_gammaMeasure` gives the Beta marginal.
+* `TauCeti.Probability.map_div_add_sum_pi_gammaMeasure`,
+  `TauCeti.Probability.map_div_add_pi_gammaMeasure`,
+  `TauCeti.Probability.map_div_add_sum_pi_gammaMeasure_fin_two`, and
+  `TauCeti.Probability.map_div_add_pi_gammaMeasure_fin_two` give the corresponding joint and
+  marginal Beta ratio laws for two distinct coordinates of a finite product `Measure.pi` of
+  common-rate Gamma laws (and their `Fin 2` specializations).
+* `MeasureTheory.Measure.map_prod_prod_gammaMeasure_div_add` carries the Beta marginal, for the
+  ratio `y / (y + x)`, along an independent factor.
 * `TauCeti.Probability.indepFun_div_add_gammaMeasure` proves independence under the product Gamma
   law.
 * `TauCeti.Probability.hasLaw_div_add_prod_gammaMeasure_of_indepFun`,
@@ -267,7 +276,7 @@ private theorem map_betaGammaMap_prod_beta_gamma {a b r : ℝ} (ha : 0 < a) (hb 
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   let _ := isProbabilityMeasure_gammaMeasure hb hr
   rw [← Measure.restrict_eq_self_of_ae_mem (ae_mem_gammaBetaTarget ha hb hr),
-    ← Measure.restrict_eq_self_of_ae_mem (ae_mem_prod_Ioi_gammaMeasure ha hb hr hr),
+    ← Measure.restrict_eq_self_of_ae_mem (ae_mem_prod_Ioi_gammaMeasure),
     prod_beta_gammaMeasure_eq_withDensity, prod_gammaMeasure_eq_withDensity]
   unfold gammaBetaTarget
   rw [restrict_withDensity (measurableSet_Ioo.prod measurableSet_Ioi),
@@ -334,6 +343,85 @@ theorem map_div_add_gammaMeasure {a b r : ℝ} (ha : 0 < a) (hb : 0 < b) (hr : 0
   have h := congrArg (Measure.map Prod.fst) (map_div_add_prod_gammaMeasure ha hb hr)
   rw [Measure.map_map measurable_fst (by fun_prop)] at h
   simpa only [Function.comp_def, Measure.map_fst_prod, measure_univ, one_smul] using h
+
+/-- For independent Gamma coordinates indexed by a finite type at a common positive rate, the
+ratio of one coordinate to the sum of two distinct coordinates and that sum have the product law
+`betaMeasure (a i) (a j) ⊗ gammaMeasure (a i + a j) r`. -/
+theorem map_div_add_sum_pi_gammaMeasure {ι : Type*} [Fintype ι] {a : ι → ℝ} {r : ℝ}
+    (ha : ∀ k, 0 < a k) (hr : 0 < r) {i j : ι} (hij : i ≠ j) :
+    (Measure.pi fun k ↦ gammaMeasure (a k) r).map
+        (fun x ↦ (x i / (x i + x j), x i + x j)) =
+      (betaMeasure (a i) (a j)).prod (gammaMeasure (a i + a j) r) := by
+  let _ k := isProbabilityMeasure_gammaMeasure (ha k) hr
+  have hmp := measurePreserving_eval_pair (fun k ↦ gammaMeasure (a k) r) hij
+  have h := congrArg (Measure.map gammaBetaMap) hmp.map_eq
+  rw [Measure.map_map measurable_gammaBetaMap hmp.measurable] at h
+  simpa only [Function.comp_def, gammaBetaMap] using
+    h.trans (map_div_add_prod_gammaMeasure (ha i) (ha j) hr)
+
+/-- For independent Gamma coordinates indexed by a finite type at a common positive rate, the
+ratio of one coordinate to the sum of two distinct coordinates has law
+`betaMeasure (a i) (a j)`. -/
+theorem map_div_add_pi_gammaMeasure {ι : Type*} [Fintype ι] {a : ι → ℝ} {r : ℝ}
+    (ha : ∀ k, 0 < a k) (hr : 0 < r) {i j : ι} (hij : i ≠ j) :
+    (Measure.pi fun k ↦ gammaMeasure (a k) r).map
+        (fun x ↦ x i / (x i + x j)) =
+      betaMeasure (a i) (a j) := by
+  let _ := isProbabilityMeasure_gammaMeasure (add_pos (ha i) (ha j)) hr
+  have h := congrArg (Measure.map Prod.fst) (map_div_add_sum_pi_gammaMeasure ha hr hij)
+  rw [Measure.map_map measurable_fst (by fun_prop)] at h
+  simpa only [Function.comp_def, Measure.map_fst_prod, measure_univ, one_smul] using h
+
+/-- For two independent Gamma coordinates on `Fin 2` with positive shapes and a common positive
+rate, the ratio of the first coordinate to their sum and the sum itself have the product law
+`betaMeasure (a 0) (a 1) ⊗ gammaMeasure (a 0 + a 1) r`. -/
+theorem map_div_add_sum_pi_gammaMeasure_fin_two {a : Fin 2 → ℝ} {r : ℝ}
+    (ha : ∀ i, 0 < a i) (hr : 0 < r) :
+    (Measure.pi fun i : Fin 2 ↦ gammaMeasure (a i) r).map
+        (fun x ↦ (x 0 / (x 0 + x 1), x 0 + x 1)) =
+      (betaMeasure (a 0) (a 1)).prod (gammaMeasure (a 0 + a 1) r) :=
+  map_div_add_sum_pi_gammaMeasure ha hr (by decide)
+
+/-- For two independent Gamma coordinates on `Fin 2` with positive shapes and a common positive
+rate, the ratio of the first coordinate to their sum has law `betaMeasure (a 0) (a 1)`. -/
+theorem map_div_add_pi_gammaMeasure_fin_two {a : Fin 2 → ℝ} {r : ℝ}
+    (ha : ∀ i, 0 < a i) (hr : 0 < r) :
+    (Measure.pi fun i : Fin 2 ↦ gammaMeasure (a i) r).map
+        (fun x ↦ x 0 / (x 0 + x 1)) =
+      betaMeasure (a 0) (a 1) :=
+  map_div_add_pi_gammaMeasure ha hr (by decide)
+
+/-- The Gamma–Beta ratio law, carried along an independent factor: for independent Gamma
+totals `t ~ Γ(q, r)` and `s ~ Γ(p, r)` and an independent `w ~ δ`, the pair `(s / (s + t), w)` has
+law `Beta(p, q) ⊗ δ`. -/
+theorem _root_.MeasureTheory.Measure.map_prod_prod_gammaMeasure_div_add {α : Type*}
+    [MeasurableSpace α]
+    (δ : Measure α) [SFinite δ] {p q r : ℝ} (hp : 0 < p) (hq : 0 < q) (hr : 0 < r) :
+    ((δ.prod (gammaMeasure q r)).prod (gammaMeasure p r)).map
+      (fun z ↦ (z.2 / (z.2 + z.1.2), z.1.1)) = (betaMeasure p q).prod δ := by
+  let _ := isProbabilityMeasure_gammaMeasure hp hr
+  let _ := isProbabilityMeasure_gammaMeasure hq hr
+  let _ := isProbabilityMeasureBeta hp hq
+  have hbeta : ((gammaMeasure q r).prod (gammaMeasure p r)).map (fun z ↦ z.2 / (z.2 + z.1)) =
+      betaMeasure p q := by
+    rw [← Measure.prod_swap (μ := gammaMeasure p r) (ν := gammaMeasure q r),
+      Measure.map_map (by fun_prop) measurable_swap]
+    exact map_div_add_gammaMeasure hp hq hr
+  calc
+    _ = (δ.prod ((gammaMeasure q r).prod (gammaMeasure p r))).map
+        (fun z ↦ (z.2.2 / (z.2.2 + z.2.1), z.1)) := by
+      rw [← Measure.prodAssoc_prod, Measure.map_map (by fun_prop) (by fun_prop)]
+      -- `MeasurableEquiv.prodAssoc` has no simp lemma for its coercion, so the composition of
+      -- the two maps is checked by unfolding it to `Equiv.prodAssoc`.
+      rfl
+    _ = ((δ.prod ((gammaMeasure q r).prod (gammaMeasure p r))).map
+        (Prod.map id (fun z : ℝ × ℝ ↦ z.2 / (z.2 + z.1)))).map Prod.swap := by
+      rw [Measure.map_map measurable_swap (by fun_prop)]
+      -- Both sides are the map `z ↦ (f z.2, z.1)`; `Prod.swap ∘ Prod.map id f` computes to it.
+      rfl
+    _ = _ := by
+      rw [← Measure.map_prod_map _ _ measurable_id (by fun_prop), Measure.map_id, hbeta,
+        Measure.prod_swap]
 
 /-- Under the product of two Gamma laws with a common positive rate, the ratio is independent of
 the sum. -/

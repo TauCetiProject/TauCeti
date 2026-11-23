@@ -30,12 +30,15 @@ Both statements are proved for every measure with the relevant regularity, in pa
 
 * `TauCeti.IsJordanCurve.measure_filledHull_sdiff_pos`: the inside of a Jordan curve has positive
   area.
+* `TauCeti.IsJordanCurve.measure_filledHull_sdiff_lt_top`: the inside of a Jordan curve has finite
+  area.
 * `TauCeti.IsJordanCurve.measureReal_filledHull_sdiff_pos`: the same for the real-valued area.
 -/
 
 public section
 
 open MeasureTheory Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -48,13 +51,20 @@ theorem IsJordanCurve.measure_filledHull_sdiff_pos (h : IsJordanCurve C)
     (μ : Measure ℂ := by volume_tac) [μ.IsOpenPosMeasure] : 0 < μ (filledHull C \ C) :=
   h.isClosed.isOpen_filledHull_sdiff.measure_pos μ h.nonempty_filledHull_sdiff
 
+/-- **The inside of a Jordan curve has finite area.** For a Jordan curve `C ⊆ ℂ` and a measure
+which is finite on compact sets, such as `volume`, the inside `filledHull C \ C` has finite
+measure. -/
+theorem IsJordanCurve.measure_filledHull_sdiff_lt_top (h : IsJordanCurve C)
+    (μ : Measure ℂ := by volume_tac) [IsFiniteMeasureOnCompacts μ] :
+    μ (filledHull C \ C) < ∞ :=
+  ((isBounded_filledHull.2 h.isCompact.isBounded).subset sdiff_subset).measure_lt_top
+
 /-- **The inside of a Jordan curve has positive finite area.** For a Jordan curve `C ⊆ ℂ` and a
 measure which is positive on nonempty open sets and finite on compact sets, such as `volume`, the
 real-valued measure of the inside `filledHull C \ C` is positive. -/
 theorem IsJordanCurve.measureReal_filledHull_sdiff_pos (h : IsJordanCurve C)
     (μ : Measure ℂ := by volume_tac) [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ] :
     0 < μ.real (filledHull C \ C) :=
-  ENNReal.toReal_pos (h.measure_filledHull_sdiff_pos μ).ne'
-    ((isBounded_filledHull.2 h.isCompact.isBounded).subset sdiff_subset).measure_lt_top.ne
+  ENNReal.toReal_pos (h.measure_filledHull_sdiff_pos μ).ne' (h.measure_filledHull_sdiff_lt_top μ).ne
 
 end TauCeti

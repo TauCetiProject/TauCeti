@@ -58,19 +58,17 @@ theorem batesMeasure_eq_map_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
   simp [batesMeasure_def, hn.ne']
 
 /-- Every positive-order Bates law is a probability measure. -/
-theorem isProbabilityMeasure_batesMeasure {n : ℕ} (hn : 0 < n) :
+instance isProbabilityMeasure_batesMeasure (n : ℕ) [NeZero n] :
     IsProbabilityMeasure (batesMeasure n) := by
-  rw [batesMeasure_eq_map_irwinHallMeasure hn]
+  rw [batesMeasure_eq_map_irwinHallMeasure (NeZero.pos n)]
   infer_instance
 
-/-- Every Bates law is finite, including the order-zero zero measure. -/
-instance isFiniteMeasure_batesMeasure (n : ℕ) : IsFiniteMeasure (batesMeasure n) := by
-  by_cases hn : n = 0
-  · subst n
-    simp only [batesMeasure_zero]
-    infer_instance
-  · have := isProbabilityMeasure_batesMeasure (Nat.pos_of_ne_zero hn)
-    infer_instance
+/-- Every Bates law is zero or a probability measure: zero at order zero, a probability measure
+otherwise. In particular every Bates law is finite. -/
+instance isZeroOrProbabilityMeasure_batesMeasure (n : ℕ) :
+    IsZeroOrProbabilityMeasure (batesMeasure n) := by
+  rw [batesMeasure_def]
+  split_ifs <;> infer_instance
 
 /-- A single-observation Bates law is unit uniform. -/
 @[simp]
@@ -131,6 +129,16 @@ theorem batesPDFReal_zero (x : ℝ) : batesPDFReal 0 x = 0 := by
 theorem batesPDFReal_one (x : ℝ) : batesPDFReal 1 x = uniformPDFReal 0 1 x := by
   simp [batesPDFReal]
 
+/-- The extended density vanishes at order zero. -/
+@[simp]
+theorem batesPDF_zero (x : ℝ) : batesPDF 0 x = 0 := by
+  simp [batesPDF_eq_ofReal]
+
+/-- The extended density at order one is Mathlib's unit-uniform density. -/
+@[simp]
+theorem batesPDF_one (x : ℝ) : batesPDF 1 x = pdf.uniformPDF (Ioc 0 1) x volume := by
+  rw [batesPDF_eq_ofReal, batesPDFReal_one, uniformPDF_eq_ofReal_uniformPDFReal]
+
 /-- From order two onward the Bates density is an alternating sum of truncated powers. -/
 theorem batesPDFReal_eq {n : ℕ} (hn : 2 ≤ n) (x : ℝ) :
     batesPDFReal n x = (n : ℝ) *
@@ -164,10 +172,7 @@ theorem batesMeasure_eq_withDensity (n : ℕ) :
     batesMeasure n = volume.withDensity (batesPDF n) := by
   by_cases hn : n = 0
   · subst n
-    have hzero : batesPDF 0 = 0 := by
-      ext x
-      simp [batesPDF_eq_ofReal]
-    rw [batesMeasure_zero, hzero, withDensity_zero]
+    simp [funext batesPDF_zero]
   have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
   have hmap := map_affine_withDensity_volume (a := 0) (b := (n : ℝ)⁻¹)
     (irwinHallPDF n) (inv_ne_zero hnR.ne')
@@ -297,7 +302,7 @@ theorem cgf_id_batesMeasure (n : ℕ) (t : ℝ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   rcases eq_or_ne t 0 with rfl | ht
-  · have := isProbabilityMeasure_batesMeasure hn
+  · have := NeZero.of_pos hn
     simp
   · rw [cgf, mgf_id_batesMeasure hn ht, log_pow]
 

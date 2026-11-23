@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 import TauCeti.Order.Interval.Set.Pi
 
@@ -145,7 +145,7 @@ private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
   refine ⟨fun x ↦ e.lift (g (lowerRetract a hT x)) (H x), ?_,
     fun x hx ↦ e.proj_lift (hab hx), fun x hx ↦ ?_⟩
   · rw [continuousOn_iff_continuous_domRestrict]
-    exact continuous_subtype_val.comp <| e.liftCM.continuous.comp <|
+    exact continuous_subtypeVal.comp <| e.liftCM.continuous.comp <|
       ((hg.comp (continuous_lowerRetract a hT).continuousOn hr).mapsToRestrict hsrc).prodMk
         (hH.continuousOn.mapsToRestrict hab)
   · have hpx : p (g x) ∈ e.baseSet := by
@@ -161,22 +161,23 @@ private lemma lowerFaces_insert [DecidableEq ι] (a b : ι → ℝ) (T : Finset 
     Finset.mem_erase]
   grind
 
-/-- Cutting a box along the coordinate `i` at `s`: a lifting problem relative to the lower faces
-in the directions `T` is solved on the lower half, then on the upper half relative to the lower
-faces in the directions `T` and `i`, and the two solutions glue. -/
-private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ} {T : Finset ι}
-    {i : ι} {s : ℝ} (has : a i ≤ s) (hsb : s ≤ b i)
-    (h₁ : BoxLifts p H a (Function.update b i s) T)
-    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) : BoxLifts p H a b T := by
+/-- The upper half of a cut box: given a lift `G₁` of `H` on the lower half that agrees with `g` on
+the lower faces, and assuming the lifting property of the upper box `h₂`, there is a lift `G₂` of
+`H` on the upper half that agrees with `G₁` on the cut and with `g` on the other lower faces. -/
+private lemma exists_lift_upper_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ}
+    {T : Finset ι} {i : ι} {s : ℝ} (has : a i ≤ s) {g G₁ : (ι → ℝ) → E}
+    (hg : ContinuousOn g (lowerFaces a b T)) (hgH : ∀ x ∈ lowerFaces a b T, p (g x) = H x)
+    (hG₁ : ContinuousOn G₁ (Icc a (Function.update b i s)))
+    (hpG₁ : ∀ x ∈ Icc a (Function.update b i s), p (G₁ x) = H x)
+    (hG₁g : ∀ x ∈ lowerFaces a (Function.update b i s) T, G₁ x = g x)
+    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) :
+    ∃ G₂ : (ι → ℝ) → E, ContinuousOn G₂ (Icc (Function.update a i s) b) ∧
+      (∀ x ∈ Icc (Function.update a i s) b, p (G₂ x) = H x) ∧
+      (∀ x ∈ lowerFaces (Function.update a i s) b {i}, G₂ x = G₁ x) ∧
+      ∀ x ∈ lowerFaces (Function.update a i s) b (T.erase i), G₂ x = g x := by
   set b₁ := Function.update b i s
   set a₂ := Function.update a i s
-  have hb₁ : b₁ ≤ b := update_le_iff.2 ⟨hsb, fun _ _ ↦ le_rfl⟩
   have ha₂ : a ≤ a₂ := le_update_iff.2 ⟨has, fun _ _ ↦ le_rfl⟩
-  have faces₁ : lowerFaces a b₁ T ⊆ lowerFaces a b T := fun x hx ↦
-    let ⟨hx, h⟩ := mem_lowerFaces.1 hx
-    mem_lowerFaces.2 ⟨⟨hx.1, hx.2.trans hb₁⟩, h⟩
-  intro g hg hgH
-  obtain ⟨G₁, hG₁, hpG₁, hG₁g⟩ := h₁ g (hg.mono faces₁) fun x hx ↦ hgH x (faces₁ hx)
   -- The lower faces of the upper half are the cut `P` and the faces `R` in the other directions
   -- of `T`.  The lift there is `G₁` on the cut and `g` on the other faces.
   let φ : (ι → ℝ) → E := fun x ↦ if x i ≤ s then G₁ x else g x
@@ -211,13 +212,29 @@ private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : �
     rw [hG₂φ x (lowerFaces_insert a₂ b T i ▸ Or.inl hx), hφP hx]
   have hG₂R : ∀ x ∈ R, G₂ x = g x := fun x hx ↦ by
     rw [hG₂φ x (lowerFaces_insert a₂ b T i ▸ Or.inr hx), hφR hx]
+  exact ⟨G₂, hG₂, hpG₂, hG₂P, hG₂R⟩
+
+/-- Cutting a box along the coordinate `i` at `s`: a lifting problem relative to the lower faces
+in the directions `T` is solved on the lower half, then on the upper half relative to the lower
+faces in the directions `T` and `i`, and the two solutions glue. -/
+private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ} {T : Finset ι}
+    {i : ι} {s : ℝ} (has : a i ≤ s) (hsb : s ≤ b i)
+    (h₁ : BoxLifts p H a (Function.update b i s) T)
+    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) : BoxLifts p H a b T := by
+  set b₁ := Function.update b i s
+  set a₂ := Function.update a i s
+  have hb₁ : b₁ ≤ b := update_le_iff.2 ⟨hsb, fun _ _ ↦ le_rfl⟩
+  have faces₁ : lowerFaces a b₁ T ⊆ lowerFaces a b T := fun x hx ↦
+    let ⟨hx, h⟩ := mem_lowerFaces.1 hx
+    mem_lowerFaces.2 ⟨⟨hx.1, hx.2.trans hb₁⟩, h⟩
+  intro g hg hgH
+  obtain ⟨G₁, hG₁, hpG₁, hG₁g⟩ := h₁ g (hg.mono faces₁) fun x hx ↦ hgH x (faces₁ hx)
+  obtain ⟨G₂, hG₂, hpG₂, hG₂P, hG₂R⟩ :=
+    exists_lift_upper_of_cut has hg hgH hG₁ hpG₁ hG₁g h₂
+  set P := lowerFaces a₂ b {i}
+  set R := lowerFaces a₂ b (T.erase i)
   -- glue the two solutions along the cut
-  have hIcc : Icc a b = Icc a b₁ ∪ Icc a₂ b := by
-    refine Subset.antisymm (fun x hx ↦ ?_) (union_subset (Icc_subset_Icc le_rfl hb₁)
-      (Icc_subset_Icc ha₂ le_rfl))
-    rcases le_total (x i) s with hxs | hxs
-    · exact Or.inl (mem_Icc_update_right hx hxs)
-    · exact Or.inr (mem_Icc_update_left hx hxs)
+  have hIcc : Icc a b = Icc a b₁ ∪ Icc a₂ b := (Icc_update_union_Icc_update a b i ⟨has, hsb⟩).symm
   refine ⟨fun x ↦ if x i ≤ s then G₁ x else G₂ x, ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
   · rw [hIcc]
     refine (hG₁.congr fun x hx ↦ ?_).union_of_isClosed (hG₂.congr fun x hx ↦ ?_) isClosed_Icc
@@ -348,8 +365,8 @@ theorem hasHomotopyLiftingProperty_cube_of_exists_trivialization [TopologicalSpa
     (Finset.singleton_nonempty none) g hg.continuousOn hgH
   have hemb : Continuous emb := continuous_pi fun o ↦ by
     cases o
-    · exact continuous_subtype_val.comp continuous_fst
-    · exact continuous_subtype_val.comp ((continuous_apply _).comp continuous_snd)
+    · exact continuous_subtypeVal.comp continuous_fst
+    · exact continuous_subtypeVal.comp ((continuous_apply _).comp continuous_snd)
   have hembI : ∀ y, emb y ∈ Icc (0 : Option κ → ℝ) 1 := fun y ↦
     ⟨fun o ↦ by cases o <;> simp [emb, unitInterval.nonneg],
       fun o ↦ by cases o <;> simp [emb, unitInterval.le_one]⟩
@@ -381,7 +398,7 @@ cube. -/
 theorem hasHomotopyLiftingProperty_proj_cube (κ : Type*) [Finite κ] :
     TauCeti.HasHomotopyLiftingProperty (TotalSpace.proj : TotalSpace F E → B) (κ → I) :=
   TauCeti.hasHomotopyLiftingProperty_cube_of_exists_trivialization
-    (fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩) κ
+    (exists_trivialization_mem_baseSet F E) κ
 
 end FiberBundle
 

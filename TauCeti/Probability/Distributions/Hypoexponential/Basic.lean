@@ -62,6 +62,14 @@ theorem isProbabilityMeasure_hypoexponentialMeasure {r : ι → ℝ} (hr : ∀ i
   rw [hypoexponentialMeasure_eq_map hr]
   infer_instance
 
+/-- Every hypoexponential measure is finite, including the zero measure at invalid rates. -/
+instance (r : ι → ℝ) : IsFiniteMeasure (hypoexponentialMeasure r) := by
+  by_cases hr : ∀ i, 0 < r i
+  · let _ := isProbabilityMeasure_hypoexponentialMeasure hr
+    infer_instance
+  · rw [hypoexponentialMeasure_eq_zero_of_invalid hr]
+    infer_instance
+
 /-- The hypoexponential law of an empty family is the point mass at zero. -/
 @[simp]
 theorem hypoexponentialMeasure_of_isEmpty [IsEmpty ι] (r : ι → ℝ) :
@@ -87,10 +95,14 @@ theorem hypoexponentialMeasure_const [Nonempty ι] {r : ℝ} (hr : 0 < r) :
   simpa only [expMeasure, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using
     map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) hr
 
-/-- A single positive-rate hypoexponential summand has the exponential law. -/
+/-- A single hypoexponential summand has the exponential law; for a nonpositive rate both
+sides are the zero measure. -/
 @[simp]
-theorem hypoexponentialMeasure_of_unique [Unique ι] (r : ι → ℝ) (hr : 0 < r default) :
+theorem hypoexponentialMeasure_of_unique [Unique ι] (r : ι → ℝ) :
     hypoexponentialMeasure r = expMeasure (r default) := by
+  rcases le_or_gt (r default) 0 with hr | hr
+  · rw [hypoexponentialMeasure_eq_zero_of_invalid
+      (fun h ↦ (h default).not_ge hr), expMeasure_of_nonpos hr]
   calc
     hypoexponentialMeasure r = hypoexponentialMeasure (fun _ : ι ↦ r default) :=
       congrArg hypoexponentialMeasure (funext fun i ↦ congrArg r (Unique.eq_default i))
@@ -122,9 +134,18 @@ open TauCeti.Probability
 their rates. This includes the empty sum under a probability measure. -/
 theorem iIndepFun.hasLaw_sum_hypoexponentialMeasure
     {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω] {P : Measure Ω}
-    {X : ι → Ω → ℝ} {r : ι → ℝ} (hindep : iIndepFun X P) (hr : ∀ i, 0 < r i)
+    {X : ι → Ω → ℝ} {r : ι → ℝ} (hindep : iIndepFun X P)
     (hX : ∀ i, HasLaw (X i) (expMeasure (r i)) P) :
     HasLaw (fun ω ↦ ∑ i, X i ω) (hypoexponentialMeasure r) P := by
+  by_cases hr : ∀ i, 0 < r i
+  swap
+  · obtain ⟨i, hi⟩ := not_forall.mp hr
+    have hP : P = 0 := by
+      rw [← Measure.map_eq_zero_iff (hX i).aemeasurable, (hX i).map_eq,
+        expMeasure_of_nonpos (not_lt.mp hi)]
+    subst hP
+    rw [hypoexponentialMeasure_eq_zero_of_invalid hr]
+    exact ⟨aemeasurable_zero_measure, Measure.map_zero _⟩
   rw [hypoexponentialMeasure_eq_map hr]
   exact (hasLaw_map (by fun_prop : Measurable fun x : ι → ℝ ↦ ∑ i, x i).aemeasurable).comp
     (hindep.hasLaw_pi hX)

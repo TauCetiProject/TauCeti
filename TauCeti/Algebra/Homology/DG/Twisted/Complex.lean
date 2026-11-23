@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Module.GradedModule.Trivial
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -46,6 +48,8 @@ Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is
 ## Main results
 
 * `TauCeti.twistedDifferential_single`: the formula on a homogeneous elementary tensor.
+* `TauCeti.twistedDifferential_trivialGrading_apply`: for coefficients concentrated in degree `0`,
+  `(D f) y = dM (f y) + Σ_x op (m x y) • f x`.
 * `TauCeti.twistedDifferential_mem_twistedTotalGrading`: `D` raises the total degree by one.
 * `TauCeti.twistedDifferential_sq_zero`: `D ∘ D = 0` under the twisting equation, and
   `TauCeti.TwistingCocycle.twistedDifferential_sq_zero` for a twisting cocycle.
@@ -81,6 +85,25 @@ theorem mem_twistedTotalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f :
     f ∈ twistedTotalGrading ℳ ind n ↔ ∀ x, f x ∈ ℳ (n + ind x) := by
   rw [twistedTotalGrading, Submodule.mem_pi]
   simp only [Set.mem_univ, true_implies]
+
+/-- Restriction from `P` to a set `S` of generators preserves the total degree. -/
+theorem domRestrict_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} (S : Set P)
+    {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
+    S.domRestrict f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n :=
+  mem_twistedTotalGrading_iff.mpr fun x ↦ mem_twistedTotalGrading_iff.mp hf x
+
+/-- A family of total degree `n` on a set `S` of generators, extended by zero, has total
+degree `n`. -/
+theorem extendByZero_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} {S : Set P}
+    {f : S → M} (hf : f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n) :
+    Function.ExtendByZero.linearMap R M (Subtype.val : S → P) f ∈ twistedTotalGrading ℳ ind n :=
+  mem_twistedTotalGrading_iff.2 fun x ↦ by
+    by_cases hx : x ∈ S
+    · rw [Function.ExtendByZero.linearMap_apply, Subtype.val_injective.extend_apply f 0 ⟨x, hx⟩]
+      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
+    · rw [Function.ExtendByZero.linearMap_apply,
+        Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)]
+      exact zero_mem _
 
 section GradedSMul
 
@@ -237,6 +260,12 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
   rw [twistedDifferential_single m dM x hα, Pi.add_apply, Finset.sum_apply]
   simp [Pi.single_apply]
 
+/-- **Coefficients in degree zero.** For coefficients concentrated in degree `0`, the Koszul twist
+is the identity, and the twisted differential is `(D f) y = dM (f y) + Σ_x op (m x y) • f x`. -/
+theorem twistedDifferential_trivialGrading_apply (f : P → M) (y : P) :
+    twistedDifferential m (trivialGrading R M) dM f y = dM (f y) + ∑ x, op (m x y) • f x := by
+  simp [twistedDifferential_apply]
+
 end Differential
 
 section Homogeneity
@@ -297,13 +326,9 @@ theorem twistedDifferential_sq_zero (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x
   -- Reduce to a homogeneous elementary tensor `α ⊗ x`.
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       twistedDifferential m ℳ dM (twistedDifferential m ℳ dM (Pi.single x α)) = 0 by
-    rw [← Finset.univ_sum_single f, map_sum, map_sum]
-    refine Finset.sum_eq_zero fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb => rw [Pi.single_add, map_add, map_add, ha, hb, add_zero]
+    have hlin : twistedDifferential m ℳ dM ∘ₗ twistedDifferential m ℳ dM = 0 :=
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ key x hα
+    simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext z
   -- The `z`-component of `D (D (α ⊗ x))`, through `twistedDifferential_single_apply` twice.
@@ -321,14 +346,8 @@ theorem twistedDifferential_sq_zero (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x
   -- What remains is the twisting equation for `m x z`, acting on `α`.
   rw [htw x z, Finset.op_sum, Finset.sum_smul, ← Finset.sum_add_distrib]
   refine Finset.sum_eq_zero fun y _ ↦ ?_
-  -- The sign of the `y`-term: the exponent is rearranged to isolate an even part.
-  have hexp : q + (ind y - ind x + 1) + q = (ind x - ind y + 1) + 2 * (q + ind y - ind x) := by
-    ring
-  have hsign : (q + (ind y - ind x + 1)).negOnePow * q.negOnePow = -(ind x - ind y).negOnePow := by
-    rw [← Int.negOnePow_add, ← Int.negOnePow_succ, hexp, Int.negOnePow_add,
-      Int.negOnePow_two_mul, mul_one]
-  rw [op_smul, smul_assoc, smul_comm (op (m y z)) q.negOnePow, smul_smul, smul_smul,
-    ← op_mul, hsign, Units.neg_smul, add_neg_cancel]
+  rw [op_smul, smul_assoc, negOnePow_smul_op_smul_negOnePow_smul_op_smul
+    (n := ind y - ind x + 1) (m := ind x - ind y) ⟨0, by ring⟩, add_neg_cancel]
 
 variable {m dM} (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
   (htw : ∀ x y, d (m x y) = ∑ z, (ind x - ind z).negOnePow • (m x z * m z y))

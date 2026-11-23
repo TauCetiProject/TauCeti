@@ -81,7 +81,7 @@ def closedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) :=
 /-- A smooth form is closed precisely when its exterior derivative vanishes. -/
 @[simp]
 theorem mem_closedForms {k : ℕ} (φ : SmoothForm I M ℝ k) :
-    φ ∈ closedForms I M k ↔ mextDeriv φ.1 = 0 := by
+    φ ∈ closedForms I M k ↔ mextDeriv φ.val = 0 := by
   simp only [closedForms, LinearMap.mem_ker, ← Subtype.val_inj, mextDerivₗ_apply,
     Submodule.coe_zero]
 
@@ -158,7 +158,7 @@ def mk (k : ℕ) : closedForms I M k →ₗ[ℝ] deRhamCohomology I M k :=
   (deRhamComplex I M).moduleCatHomologyClass (Z := closedForms I M k) (CochainComplex.next ℕ k)
     ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype) fun φ ↦ by
       rw [LinearMap.comp_apply]
-      exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2
+      exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.property
 
 /-- The class map is the homology class map of the inclusion of closed forms into the de Rham
 complex. -/
@@ -168,7 +168,7 @@ theorem mk_eq_moduleCatHomologyClass (k : ℕ) :
         (CochainComplex.next ℕ k) ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype)
         fun φ ↦ by
           rw [LinearMap.comp_apply]
-          exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2 :=
+          exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.property :=
   (rfl)
 
 /-- Every de Rham cohomology class is represented by a closed smooth form. -/
@@ -184,7 +184,7 @@ theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by
 /-- A closed form represents zero precisely when it is exact. -/
 @[simp]
 theorem mk_eq_zero_iff (k : ℕ) (φ : closedForms I M k) :
-    mk I k φ = 0 ↔ φ.1 ∈ exactForms I M k := by
+    mk I k φ = 0 ↔ φ.val ∈ exactForms I M k := by
   cases k with
   | zero =>
     rw [mk, (deRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _

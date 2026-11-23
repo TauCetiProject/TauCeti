@@ -31,6 +31,13 @@ conflation-exact induces an equivalence of stable categories.
 * `TauCeti.StableConflationExact.stableEquivalence`: the stable equivalence induced by an
   equivalence that is stable conflation-exact in both directions.
 
+## Main results
+
+* `TauCeti.StableConflationExact.map_isProjective`: a stable conflation-exact functor out of a
+  Frobenius exact category preserves projective objects.
+* `TauCeti.StableConflationExact.stableFunctor_map_projectiveStableFunctor_map_eq`: on the image
+  of a morphism of `C`, the stable functor is the image of `F`.
+
 ## References
 
 * Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
@@ -57,22 +64,21 @@ structure StableConflationExact {C : Type u₁} {D : Type u₂}
   map_projectiveInjective : ∀ {X : C}, E.projectiveInjective X →
     E'.projectiveInjective (F.obj X)
 
-/-- An exact additive equivalence into a Frobenius category preserves projective-injectives.
-Exactness of the inverse is sufficient for preservation of projectives; the target's
-Frobenius property then gives injectivity. The source need not be Frobenius. -/
+/-- An exact additive equivalence, whose inverse is also exact, preserves projective-injectives:
+conflation-exactness in both directions gives preservation of projectives and of injectives. -/
 theorem ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
     {C : Type u₁} {D : Type u₂}
     [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
     [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
     {E : ExactStructure C} {E' : ExactStructure D} {e : C ≌ D} [e.functor.Additive]
     (hF : E.IsConflationExact E' e.functor)
-    (hG : E'.IsConflationExact E e.inverse) (hE' : E'.IsFrobenius) :
+    (hG : E'.IsConflationExact E e.inverse) :
     StableConflationExact E E' e.functor where
   isConflationExact := hF
   map_projectiveInjective {X} hX := by
     rw [ExactStructure.projectiveInjective_iff] at hX ⊢
-    have hP := (E.isProjective_map_equivalence_iff E' e hF hG X).mpr hX.1
-    exact ⟨hP, (hE'.projective_iff_injective _).mp hP⟩
+    exact ⟨(E.isProjective_map_equivalence_iff E' e hF hG X).mpr hX.1,
+      (E.isInjective_map_equivalence_iff E' e hF hG X).mpr hX.2⟩
 
 namespace StableConflationExact
 
@@ -106,6 +112,13 @@ theorem of_iso {F G : Functor C D} [F.Additive] [G.Additive]
 theorem iff_of_iso {F G : Functor C D} [F.Additive] [G.Additive] (e : F ≅ G) :
     StableConflationExact E E' F ↔ StableConflationExact E E' G :=
   ⟨fun hF ↦ hF.of_iso e, fun hG ↦ hG.of_iso e.symm⟩
+
+/-- A stable conflation-exact functor out of a Frobenius exact category preserves projective
+objects. -/
+theorem map_isProjective {F : Functor C D} [F.Additive] (hF : StableConflationExact E E' F)
+    (hE : E.IsFrobenius) {X : C} (hX : E.isProjective X) : E'.isProjective (F.obj X) :=
+  ((E'.projectiveInjective_iff _).1 (hF.map_projectiveInjective
+    ((E.projectiveInjective_iff _).2 ⟨hX, (hE.projective_iff_injective X).1 hX⟩))).1
 
 /-- Between Frobenius exact categories, a stable conflation-exact functor carries the projective
 stable ideal of the source into the projective stable ideal of the target. -/
@@ -158,6 +171,17 @@ theorem stableFunctor_map_projectiveStableFunctor_map {F : Functor C D} [F.Addit
       eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X) ≫
         E'.projectiveStableFunctor.map (F.map f) :=
   MorphismIdeal.map_map_quotientFunctor_map _ _ _ _ _
+
+/-- On the image of a morphism of `C`, the stable functor is the image of `F`. -/
+theorem stableFunctor_map_projectiveStableFunctor_map_eq {F : Functor C D} [F.Additive]
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) {X Y : C} (f : X ⟶ Y) :
+    (hF.stableFunctor hE).map (E.projectiveStableFunctor.map f) =
+      eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X) ≫
+        E'.projectiveStableFunctor.map (F.map f) ≫
+          eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE Y).symm := by
+  rw [← cancel_mono (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE Y)),
+    hF.stableFunctor_map_projectiveStableFunctor_map hE f]
+  simp
 
 /-- Descent sends the identity stable conflation-exact functor to the identity functor. -/
 @[simp]

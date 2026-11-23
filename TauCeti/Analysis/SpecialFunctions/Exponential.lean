@@ -248,7 +248,7 @@ theorem summable_expFDerivTerm (x : R) : Summable (expFDerivTerm 𝕂 x) :=
       exact (expSeries 𝕂 R).radius_le_radius_derivSeries
     rw [hr]
     rw [Metric.mem_eball, edist_zero_right]
-    exact enorm_lt_top)).congr
+    exact eNorm_lt_top)).congr
       fun n ↦ (expFDerivTerm_eq_derivSeries (𝕂 := 𝕂) x n).symm
 
 /-- Applying the derivative terms to a fixed tangent vector gives a summable series. -/
@@ -268,7 +268,7 @@ theorem hasFDerivAt_exp (x : R) :
     HasFDerivAt exp (expFDeriv 𝕂 x) x := by
   have hx : ‖x‖ₑ < (expSeries 𝕂 R).radius := by
     rw [expSeries_radius_eq_top]
-    exact enorm_lt_top
+    exact eNorm_lt_top
   have h := (expSeries 𝕂 R).hasFDerivAt_sum hx
   have hderiv : (expSeries 𝕂 R).derivSeries.sum x = expFDeriv 𝕂 x := by
     rw [FormalMultilinearSeries.sum, expFDeriv]
@@ -376,10 +376,10 @@ private theorem expFDeriv_real_apply_eq_integral (x y : A) :
 /-- The Fréchet derivative of the noncommutative exponential, applied to `y`, is its Duhamel
 integral. -/
 theorem expFDeriv_apply_eq_integral {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-    [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 A]
-    [IsScalarTower ℝ 𝕂 A] (x y : A) :
+    [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 A] (x y : A) :
     expFDeriv 𝕂 x y =
       ∫ t in (0 : ℝ)..1, exp ((1 - t) • x) * y * exp (t • x) := by
+  -- The two real structures on `A` agree, by Mathlib's instance `Real.isScalarTower`.
   let _ : CharZero 𝕂 := Algebra.charZero_of_charZero ℝ 𝕂
   let _ : IsScalarTower ℚ ℝ 𝕂 := IsScalarTower.of_algebraMap_eq fun q ↦ by simp [map_ratCast]
   let _ : ContinuousSMul ℚ 𝕂 := IsScalarTower.continuousSMul ℝ

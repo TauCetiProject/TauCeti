@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
+
+import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
 # Circles as Eilenberg--Mac Lane spaces
@@ -19,13 +22,12 @@ These results package the existing circle calculations into the Eilenberg--Mac L
 fundamental-group witness is `AddCircle.fundamentalGroupMulEquiv`, and higher homotopy
 vanishing is supplied by `AddCircle.subsingleton_homotopyGroup`.
 
-This realizes `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13,
-"`K(G, 1)` spaces", for circles.
-
 ## Main declarations
 
 * `AddCircle.isAspherical`: every real additive circle is aspherical.
 * `AddCircle.isEilenbergMacLaneSpaceOne`: a nondegenerate real circle is a `K(ℤ, 1)`.
+* `Circle.isAspherical`: the unit circle of `ℂ` is aspherical, through its homeomorphism
+  `AddCircle.homeomorphCircle'` with the real circle of period `2π`.
 -/
 
 public section
@@ -51,5 +53,14 @@ theorem isEilenbergMacLaneSpaceOne (p : ℝ) (hp : p ≠ 0) (x : AddCircle p) :
     (isAspherical p _) ⟨fundamentalGroupMulEquiv p hp ⟨e, rfl⟩⟩
 
 end AddCircle
+
+namespace Circle
+
+/-- The unit circle of `ℂ` is aspherical: it is homeomorphic to the real circle of period `2π`
+(`AddCircle.homeomorphCircle'`). -/
+theorem isAspherical (x : Circle) : TauCeti.IsAspherical Circle x :=
+  (AddCircle.isAspherical _ 0).of_homotopyEquiv AddCircle.homeomorphCircle'.toHomotopyEquiv x
+
+end Circle
 
 end

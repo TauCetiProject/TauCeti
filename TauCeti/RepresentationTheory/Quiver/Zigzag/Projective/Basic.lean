@@ -57,7 +57,11 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) {V : Type u} (G : SimpleGraph V)
+
+section Finite
+
+variable [Finite V]
 
 section CommRing
 
@@ -71,16 +75,6 @@ noncomputable abbrev zigzagVertexIdempotent (i : V) : nonisolatedZigzagQuotient 
 theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
-
-/-- **The vertex idempotents of the zigzag relation quotient are a complete orthogonal family of
-idempotents**: they are idempotent, pairwise orthogonal, and sum to `1`. -/
-theorem completeOrthogonalIdempotents_zigzagVertexIdempotent [Fintype V] :
-    CompleteOrthogonalIdempotents (zigzagVertexIdempotent k G) := by
-  convert (CompleteOrthogonalIdempotents.equiv (vertexEquiv G)).2
-    ((completeOrthogonalIdempotents_vertexIdempotent k (DoubledQuiver G)).map
-      (zigzagMk k G).toRingHom) using 1
-  funext i
-  simp
 
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
@@ -238,10 +232,10 @@ noncomputable def zigzagProjectiveBasisFun (i : V) :
     ZigzagProjectiveBasisIndex G i → zigzagProjective k G i
   | .inl _ => zigzagProjectiveGenerator k G i
   | .inr (.inl d) =>
-      ⟨zigzagMk k G (ofArrow (arrow G d.1.adj)),
+      ⟨zigzagMk k G (ofArrow (arrow G d.val.adj)),
         (mem_zigzagProjective_iff k G).2 (by
-          simpa only [zigzagVertexIdempotent, d.2] using
-            zigzagMk_ofArrow_mul_vertexIdempotent k G d.1)⟩
+          simpa only [zigzagVertexIdempotent, d.property] using
+            zigzagMk_ofArrow_mul_vertexIdempotent k G d.val)⟩
   | .inr (.inr _) =>
       ⟨zigzagVolume k G i,
         (mem_zigzagProjective_iff k G).2
@@ -262,7 +256,7 @@ theorem coe_zigzagProjectiveBasisFun_inl (i : V) (a : Unit) :
 @[simp]
 theorem coe_zigzagProjectiveBasisFun_inr_inl (i : V) (d : {d : G.Dart // d.fst = i}) :
     (zigzagProjectiveBasisFun k G i (.inr (.inl d)) : nonisolatedZigzagQuotient k G) =
-      zigzagMk k G (ofArrow (arrow G d.1.adj)) :=
+      zigzagMk k G (ofArrow (arrow G d.val.adj)) :=
   (rfl)
 
 @[simp]
@@ -276,7 +270,7 @@ private def zigzagProjectiveBasisIndexEmbedding (i : V) :
     ZigzagProjectiveBasisIndex G i ↪ ZigzagBasisIndex G where
   toFun
     | .inl _ => .inl i
-    | .inr (.inl d) => .inr (.inl d.1)
+    | .inr (.inl d) => .inr (.inl d.val)
     | .inr (.inr _) => .inr (.inr i)
   inj' a b h := by
     rcases a with _ | d | _
@@ -298,7 +292,7 @@ private def zigzagProjectiveBasisIndexEmbedding (i : V) :
 theorem linearIndependent_zigzagProjectiveBasisFun (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
     LinearIndependent k (zigzagProjectiveBasisFun k G i) := by
   let val : zigzagProjective k G i →ₗ[k] nonisolatedZigzagQuotient k G :=
-    { toFun := fun x => x.1
+    { toFun := fun x => x.val
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
   refine LinearIndependent.of_comp val ?_
@@ -312,7 +306,7 @@ theorem linearIndependent_zigzagProjectiveBasisFun (hns : ∀ i : V, ∃ j, G.Ad
           nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inl i)
       rw [coe_zigzagProjectiveBasisFun_inl, zigzagBasisFun_inl]
     · change (zigzagProjectiveBasisFun k G i (.inr (.inl d)) :
-          nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inl d.1))
+          nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inl d.val))
       rw [coe_zigzagProjectiveBasisFun_inr_inl, zigzagBasisFun_inr_inl]
     · change (zigzagProjectiveBasisFun k G i (.inr (.inr ())) :
           nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inr i))
@@ -370,7 +364,7 @@ private theorem mul_zigzagVertexIdempotent_mem_span_range_zigzagProjectiveBasisF
 theorem span_range_zigzagProjectiveBasisFun_eq_top (i : V) :
     Submodule.span k (Set.range (zigzagProjectiveBasisFun k G i)) = ⊤ := by
   let val : zigzagProjective k G i →ₗ[k] nonisolatedZigzagQuotient k G :=
-    { toFun := fun x => x.1
+    { toFun := fun x => x.val
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
   let S : Submodule k (nonisolatedZigzagQuotient k G) :=
@@ -383,7 +377,7 @@ theorem span_range_zigzagProjectiveBasisFun_eq_top (i : V) :
     · rintro _ ⟨x, rfl⟩
       -- Expose the local inclusion so the fixed-point membership criterion applies.
       change (x : nonisolatedZigzagQuotient k G) ∈ S
-      rw [← (mem_zigzagProjective_iff k G).mp x.2]
+      rw [← (mem_zigzagProjective_iff k G).mp x.property]
       exact mul_zigzagVertexIdempotent_mem_span_range_zigzagProjectiveBasisFun k G i x
   apply Submodule.map_injective_of_injective (f := val) Subtype.val_injective
   rw [Submodule.map_top, ← hS, Submodule.map_span, ← Set.range_comp]
@@ -401,8 +395,20 @@ theorem zigzagProjectiveBasis_apply (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V)
     zigzagProjectiveBasis k G hns i b = zigzagProjectiveBasisFun k G i b :=
   Module.Basis.mk_apply _ _ _
 
+end Finite
+
+/-- **The vertex idempotents of the zigzag relation quotient are a complete orthogonal family of
+idempotents**: they are idempotent, pairwise orthogonal, and sum to `1`. -/
+theorem completeOrthogonalIdempotents_zigzagVertexIdempotent [CommRing k] [Fintype V] :
+    CompleteOrthogonalIdempotents (zigzagVertexIdempotent k G) := by
+  convert (CompleteOrthogonalIdempotents.equiv (vertexEquiv G)).2
+    ((completeOrthogonalIdempotents_vertexIdempotent k (DoubledQuiver G)).map
+      (zigzagMk k G).toRingHom) using 1
+  funext i
+  simp
+
 /-- The dimension of the vertex projective is two plus the degree of its vertex. -/
-theorem finrank_zigzagProjective [Fintype V] [DecidableRel G.Adj]
+theorem finrank_zigzagProjective [Field k] [Fintype V] [DecidableRel G.Adj]
     (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
     Module.finrank k (zigzagProjective k G i) = 2 + G.degree i := by
   classical

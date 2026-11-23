@@ -29,7 +29,8 @@ without boundary, the frontier of `W` is exactly the level
 hypersurfaces of contact type, and the ambient form `ω` is then symplectic
 (`TauCeti.IsLiouvilleDomain.isSymplectic`). Since `ω` is smooth and closed, the Liouville field
 of `α` is a Liouville vector field of `ω`, `L_Z ω = ω`
-(`TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`).
+(`TauCeti.IsLiouvilleDomain.isLiouvilleVectorField`, from
+`TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`).
 
 The boundary of a Liouville domain, with the atlas of a regular level, is a hypersurface of
 restricted contact type with primitive `α`
@@ -46,6 +47,8 @@ primitive `-λ` of the cotangent bundle
 ## Main results
 
 * `TauCeti.IsLiouvilleDomain.isSymplectic`: the ambient form is symplectic.
+* `TauCeti.IsLiouvilleDomain.isLiouvilleVectorField`: the Liouville field of `α` is a Liouville
+  vector field of `ω`.
 * `TauCeti.IsLiouvilleDomain.exists_sublevel_of_interior_eq`: every vector field `Z` with
   `ι_Z ω = α` points strictly out of a Liouville domain along its boundary.
 * `TauCeti.IsLiouvilleDomain.exists_isRestrictedContactType`: the boundary is a regular level of
@@ -85,7 +88,7 @@ structure IsLiouvilleDomain (ω : SmoothTwoForm I M) (α : SmoothForm I M ℝ 1)
   /-- The two-form of a Liouville domain is nondegenerate. -/
   isNondegenerate : ω.IsNondegenerate
   /-- The one-form of a Liouville domain is a primitive of its two-form. -/
-  mextDeriv_eq : mextDeriv α.1 = ω.1
+  mextDeriv_eq : mextDeriv α.val = ω.val
   /-- A Liouville domain is compact. -/
   isCompact : IsCompact W
   /-- A Liouville domain lies in the interior of the ambient manifold. -/
@@ -93,7 +96,7 @@ structure IsLiouvilleDomain (ω : SmoothTwoForm I M) (α : SmoothForm I M ℝ 1)
   /-- The Liouville field of the primitive points strictly outwards along the boundary, the level
   `f⁻¹(c)` of a continuous function `f` with `W = {f ≤ c}` that is smooth along the level. -/
   exists_liouville_outward : ∃ Z : (x : M) → TangentSpace I x,
-    ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) ∧ RoughForm.interior Z ω.1 = α.1 ∧
+    ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) ∧ RoughForm.interior Z ω.val = α.val ∧
       ∃ (f : M → ℝ) (c : ℝ), Continuous f ∧ W = {x | f x ≤ c} ∧
         ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f x ∧ 0 < mvfderiv I f x (Z x)
 
@@ -113,15 +116,23 @@ theorem isClosed (h : IsLiouvilleDomain ω α W) : IsClosed W := by
 /-- **The Liouville field of a Liouville domain is smooth**: the vector field `Z` with
 `ι_Z ω = α`, unique since `ω` is nondegenerate, is a smooth section of the tangent bundle. -/
 theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    (hZ : RoughForm.interior Z ω.val = α.val) :
     ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) := by
   obtain ⟨Z', hZ's, hZ', -⟩ := h.exists_liouville_outward
   rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
 
+/-- **The Liouville field of a Liouville domain is a Liouville vector field** of the ambient form,
+`L_Z ω = ω`: the form is exact, `ω = dα`, and `ι_Z dα = α`. -/
+theorem isLiouvilleVectorField (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) : IsLiouvilleVectorField ω.val Z := by
+  have := isLiouvilleVectorField_mextDeriv_of_interior_eq (α.isSmoothForm.of_le (by simp))
+    ((h.contMDiff_of_interior_eq hZ).mdifferentiable (by simp)) (by rw [h.mextDeriv_eq, hZ])
+  rwa [h.mextDeriv_eq] at this
+
 /-- **The Liouville field points out of a Liouville domain.** If `ι_Z ω = α`, then `W = {f ≤ c}`
 for a continuous function `f`, smooth along the level `f⁻¹(c)`, with `df(Z) > 0` there. -/
 theorem exists_sublevel_of_interior_eq (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    (hZ : RoughForm.interior Z ω.val = α.val) :
     ∃ (f : M → ℝ) (c : ℝ), Continuous f ∧ W = {x | f x ≤ c} ∧
       ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f x ∧ 0 < mvfderiv I f x (Z x) := by
   obtain ⟨Z', -, hZ', hout⟩ := h.exists_liouville_outward
@@ -137,7 +148,7 @@ theorem exists_isRestrictedContactType [I.Boundaryless] [FiniteDimensional ℝ E
     ∃ (f : M → ℝ) (c : ℝ) (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x)
       (hreg : IsRegularValue I 𝓘(ℝ) f c), W = {x | f x ≤ c} ∧ frontier W = {x | f x = c} ∧
         letI := regularLevelChartedSpace (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self])
-        IsRestrictedContactType 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) ω.1 α.1
+        IsRestrictedContactType 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) ω.val α.val
           (Subtype.val : {x : M // f x = c} → M) := by
   obtain ⟨Z, hZ, hZα, f, c, hfc, rfl, hf⟩ := h.exists_liouville_outward
   have hf1 : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hf x hx).1.of_le (by simp)

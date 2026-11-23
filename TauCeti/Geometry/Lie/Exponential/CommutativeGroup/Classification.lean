@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Topology.Circle.AddCircle
 
+import TauCeti.Analysis.Complex.Circle
+
 /-!
 # Compact connected commutative Lie groups are products of circles
 
@@ -19,6 +21,11 @@ groups, with one factor for each dimension of the manifold model.
 
 The basis-dependent equivalences include their values on exponentials, so that circle
 coordinates and their inverses can be computed without choosing a logarithm.
+
+The Lie hypothesis cannot be dropped: an infinite power `ι → S¹` of the circle is a compact
+connected commutative topological group that is not a finite power of the circle, so it carries no
+Lie group structure modelled on a finite-dimensional space (`TauCeti.not_lieGroup_pi_circle`).
+It is nevertheless aspherical, like every power of the circle (`Circle.isAspherical_pi`).
 
 ## References
 
@@ -120,13 +127,14 @@ end Module.Basis
 
 namespace TauCeti
 
-omit [IsTopologicalGroup G] in
+omit [T2Space G] [IsTopologicalGroup G] in
 include I in
 /-- A compact connected commutative finite-dimensional real Lie group is a product of circles,
 with one factor for every dimension of its manifold model. -/
 theorem nonempty_continuousMulEquiv_pi_circle :
     Nonempty (G ≃ₜ* (Fin (Module.finrank ℝ E) → Circle)) := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let L := (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
   let _ : Module.Free ℤ L := ZLattice.module_free ℝ L
   let _ : Module.Finite ℤ L := ZLattice.module_finite ℝ L
@@ -135,5 +143,16 @@ theorem nonempty_continuousMulEquiv_pi_circle :
       (finrank_leftInvariantDerivation_eq_modelVectorSpace
         (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))
   exact ⟨Module.Basis.lieGroupPiCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩
+
+/-- **An infinite power of the circle is not a finite-dimensional Lie group.** For `ι` infinite,
+`ι → S¹` has no `LieGroup` structure modelled on a finite-dimensional real space compatible with
+its topology and group law. It is nevertheless aspherical (`Circle.isAspherical_pi`). -/
+theorem not_lieGroup_pi_circle {ι : Type*} [Infinite ι] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [ChartedSpace H' (ι → Circle)] :
+    ¬ LieGroup I' ∞ (ι → Circle) := fun _ ↦ by
+  have : IsMulCommutative Circle := ⟨⟨mul_comm⟩⟩
+  obtain ⟨e⟩ := nonempty_continuousMulEquiv_pi_circle (I := I') (G := ι → Circle)
+  exact e.toMulEquiv.toMonoidHom.not_injective_pi_circle e.injective
 
 end TauCeti

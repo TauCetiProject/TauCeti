@@ -31,10 +31,6 @@ variable {N N' : Type} {V V' : Type*} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'} (f : FanHom Φ Ψ)
 
-private theorem mapsTo_bot :
-    Set.MapsTo f.realMap (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by
-  simp [Set.MapsTo]
-
 /-- The map between the action domains induced by a fan morphism: on the first factor it is the
 dense-torus map induced by the lattice map, and on the second it is the algebraic toric map. -/
 noncomputable def algebraicActionMap :
@@ -48,13 +44,13 @@ noncomputable def algebraicActionMap :
     Ψ.algebraicRealizationStructureMap :=
   pullback.map _ _ _ _
     (affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-      f.mapsTo_bot)
+      (f.realMap.mapsTo_bot_pointedCone))
     f.algebraicMap (𝟙 _)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
         (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-          f.mapsTo_bot).toRingHom)) (Spec (.of ℂ))).symm)
+          (f.realMap.mapsTo_bot_pointedCone)).toRingHom)) (Spec (.of ℂ))).symm)
     (by rw [Category.comp_id, FanHom.algebraicMap_comp_algebraicRealizationStructureMap])
 
 /-- On the torus factor, the map of action domains is the affine toric map of the zero cones. -/
@@ -77,10 +73,10 @@ target chart by the affine action-domain map. -/
 @[reassoc]
 theorem algebraicRealizationActionChartMap_comp_algebraicActionMap (σ : Φ.cones) :
     Fan.algebraicRealizationActionChartMap σ ≫ f.algebraicActionMap =
-      affineToricSchemeActionMap Φ.lattice σ.1 Ψ.lattice f.latticeMap f.realMap
-          f.map_lattice (f.mapsTo_leastCone σ.2) ≫
+      affineToricSchemeActionMap Φ.lattice σ.val Ψ.lattice f.latticeMap f.realMap
+          f.map_lattice (f.mapsTo_leastCone σ.property) ≫
         Fan.algebraicRealizationActionChartMap
-          ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := by
+          ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ := by
   apply pullback.hom_ext
   · simp
   · simp [affineToricChartMap_def]

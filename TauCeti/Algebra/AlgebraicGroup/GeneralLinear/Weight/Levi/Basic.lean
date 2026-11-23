@@ -64,11 +64,11 @@ theorem weightLeviDefiningHopfIdeal_def (w : Fin N → ℤ) :
 
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-Levi defining Hopf ideal
 as soon as it kills every matrix coordinate between distinct weight blocks. -/
-theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Algebra R A]
-    (w : Fin N → ℤ) (f : coordinateHopfAlgebra R N →ₐ[R] A)
+theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A]
+    (w : Fin N → ℤ) (f : coordinateHopfAlgebra R N →+* A)
     (hf : ∀ i j, w i ≠ w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
-    (weightLeviDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
+    (weightLeviDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f := by
   rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal]
   exact sup_le (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w f fun i j h ↦ hf i j h.ne)
     (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (-w) f fun i j h ↦
@@ -81,7 +81,7 @@ noncomputable abbrev weightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
     (weightLeviDefiningHopfIdeal R w)
 
 /-- The weight-Levi coordinate Hopf algebra with its finite-type property. -/
-noncomputable def weightLeviFiniteTypeCoordinateHopfAlgebra (w : Fin N → ℤ) :
+noncomputable abbrev weightLeviFiniteTypeCoordinateHopfAlgebra (w : Fin N → ℤ) :
     FiniteTypeCommHopfAlgCat R :=
   ⟨weightLeviCoordinateHopfAlgebra R w,
     inferInstanceAs (Algebra.FiniteType R (weightLeviCoordinateHopfAlgebra R w))⟩
@@ -91,7 +91,7 @@ noncomputable def weightLeviFiniteTypeCoordinateHopfAlgebra (w : Fin N → ℤ) 
 theorem weightLeviFiniteTypeCoordinateHopfAlgebra_obj (w : Fin N → ℤ) :
     (weightLeviFiniteTypeCoordinateHopfAlgebra R w).obj =
       weightLeviCoordinateHopfAlgebra R w :=
-  (rfl)
+  rfl
 
 /-- The affine group scheme represented by the weight-Levi coordinate Hopf algebra. -/
 noncomputable abbrev weightLeviGroupScheme (w : Fin N → ℤ) :=
@@ -150,15 +150,12 @@ theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
     Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
       (coordinateHopfAlgebraAlgEquiv R N
         (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0 := by
-  rw [← genericMatrix_apply, Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
+  rw [Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
     HopfIdeal.sup_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
     weightParabolicDefiningHopfIdeal_toIdeal]
   rcases lt_or_gt_of_ne hij with hij | hji
-  · apply Ideal.mem_sup_left
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
-  · apply Ideal.mem_sup_right
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
+  · exact Ideal.mem_sup_left <| Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
+  · exact Ideal.mem_sup_right <| Ideal.subset_span
+      (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
 
 end TauCeti.GeneralLinear

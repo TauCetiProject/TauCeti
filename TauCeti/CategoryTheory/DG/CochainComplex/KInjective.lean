@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
-public import TauCeti.AlgebraicTopology.DGNerve.HomotopyCategory
+public import TauCeti.Algebra.Homology.DerivedCategory.DerivedHom
+public import TauCeti.AlgebraicTopology.DGNerve.Equivalence
+public import TauCeti.AlgebraicTopology.DGNerve.HomotopyGroups
 public import TauCeti.CategoryTheory.DG.CochainComplex.HomotopyCategory
 public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 
@@ -31,6 +32,14 @@ has homotopy category `D(C)`
 enhancement of an unbounded derived category: its higher simplices record homotopies between
 chain maps and the coherences among them, which the derived category forgets.
 
+The mapping spaces of this enhancement compute derived Hom groups. For K-injective complexes `K`
+and `L`, the path components of the right mapping space from `K` to `L` are the morphisms
+`K ⟶ L` in `D(C)`, and its `(n + 1)`-st homotopy group at zero is `K ⟶ L⟦-(n + 1)⟧`, so
+`πᵢ Map(K, L) = H⁻ⁱ RHom(K, L)` for all `i ≥ 0`. This combines the Dold–Kan description of the
+mapping spaces of a differential graded nerve with the computation of morphisms into a K-injective
+complex (`TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`). It needs no K-injective
+resolutions of other complexes.
+
 ## Main definitions
 
 * `TauCeti.KInjectiveDGCategory C`: the full DG subcategory of K-injective cochain complexes.
@@ -46,10 +55,16 @@ chain maps and the coherences among them, which the derived category forgets.
   of a chain map `f` to `Qh` of its homotopy class.
 * The comparison functor is full and faithful, and, under `TauCeti.HasKInjectiveResolutions C`,
   essentially surjective, so it is an equivalence.
+* `TauCeti.KInjectiveDGCategory.isEquivalence_edgeMk_iff_quasiIso`: an edge represented by a
+  chain map is an equivalence precisely when that map is a quasi-isomorphism. Equivalently,
+  every integer cohomology map is invertible.
+* `TauCeti.KInjectiveDGCategory.rightMappingSpacePiZeroEquiv` and
+  `TauCeti.KInjectiveDGCategory.rightMappingSpacePiAddEquiv`: the homotopy groups of the mapping
+  spaces are the morphisms `K ⟶ L⟦-i⟧` in the derived category.
 
 ## References
 
-* J. Lurie, *Higher Algebra*, Definition 1.3.5.8 and Proposition 1.3.5.15.
+* J. Lurie, *Higher Algebra*, Definition 1.3.5.8, Remark 1.3.1.12 and Proposition 1.3.5.15.
 * N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154.
 * B. Keller, *Deriving DG categories*, Section 2.
 -/
@@ -74,6 +89,16 @@ abbrev KInjectiveDGCategory :=
 namespace KInjectiveDGCategory
 
 variable [Linear R C]
+
+/-- A chain map between K-injective complexes gives a closed degree-zero morphism in their
+full DG subcategory. -/
+theorem ofHom_mem_dgCycles {K L : CochainComplex C ℤ} [K.IsKInjective]
+    [L.IsKInjective] (f : K ⟶ L) :
+    CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
+  apply (mem_dgCycles R).2
+  rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
+  exact CochainComplex.HomComplex.δ_ofHom f
 
 variable [HasDerivedCategory.{w} C]
 
@@ -188,6 +213,112 @@ theorem dgNerveHomotopyCategoryEquiv_functor [HasKInjectiveResolutions C] :
     (dgNerveHomotopyCategoryEquiv R C).functor =
       dgNerve.fromHomotopyCategory R (KInjectiveDGCategory C) ⋙ toDerivedCategory R C := by
   simp [dgNerveHomotopyCategoryEquiv]
+
+omit [HasDerivedCategory C] in
+/-- An edge represented by a map of K-injective complexes is an equivalence in the dg nerve
+exactly when the map is a quasi-isomorphism. Existence of K-injective resolutions for other
+complexes is not required. -/
+theorem isEquivalence_edgeMk_iff_quasiIso {K L : CochainComplex C ℤ} [K.IsKInjective]
+    [L.IsKInjective] (f : K ⟶ L)
+    (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := ofHom_mem_dgCycles R C f) :
+    (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔ QuasiIso f := by
+  let := HasDerivedCategory.standard C
+  rw [dgNerve.isEquivalence_edgeMk_iff]
+  refine (isIso_iff_of_reflects_iso _ (toDerivedCategory R C)).symm.trans ?_
+  -- Rewriting the map leaves IsIso's implicit endpoints in the comparison functor's image.
+  -- Transport the predicate as a whole to avoid an ill-typed intermediate rewrite target.
+  have h := congrArg (fun g ↦ IsIso g) (toDerivedCategory_map_homOf R C f hf)
+  exact (Iff.of_eq h).trans ((DerivedCategory.isIso_Qh_map_iff _).trans
+    ((HomotopyCategory.quotient_map_mem_quasiIso_iff f).trans
+      (HomologicalComplex.mem_quasiIso_iff f)))
+
+omit [HasDerivedCategory C] in
+/-- Equivalences between K-injective models are detected by their maps on every integer
+cohomology object; there is no boundedness restriction. -/
+theorem isEquivalence_edgeMk_iff_isIso_homologyMap {K L : CochainComplex C ℤ}
+    [K.IsKInjective] [L.IsKInjective] (f : K ⟶ L)
+    (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := ofHom_mem_dgCycles R C f) :
+    (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔
+      ∀ n : ℤ, IsIso (HomologicalComplex.homologyMap f n) := by
+  rw [isEquivalence_edgeMk_iff_quasiIso R C f hf, quasiIso_iff]
+  exact forall_congr' fun n ↦ quasiIsoAt_iff_isIso_homologyMap f n
+
+/-! ### Mapping spaces -/
+
+variable {C}
+
+/-- **Higher homotopy groups of mapping spaces in the K-injective enhancement.** For K-injective
+complexes `K` and `L`, the `(n + 1)`-st homotopy group, based at zero, of the right mapping space
+from `K` to `L` in the differential graded nerve is the group of morphisms
+`K ⟶ L⟦-(n + 1)⟧` in the derived category. These groups are invisible in the derived category's
+morphisms `K ⟶ L` themselves. -/
+def rightMappingSpacePiAddEquiv (K L : KInjectiveDGCategory C) (n : ℕ) :
+    Additive (SSet.KanComplex.π (n + 1)
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L)) ≃+
+      (Q.obj K.obj ⟶ (Q.obj L.obj)⟦-((n + 1 : ℕ) : ℤ)⟧) :=
+  have := L.property
+  -- The Hom complex `dgHomComplex R K L` of the full DG subcategory is the ambient one
+  -- (`DGFullSubcategory.dgHomComplex_eq`), which is `linearHomComplex R K.obj L.obj` by the
+  -- definition of the enrichment of cochain complexes; both identifications hold by `rfl`.
+  (dgNerve.rightMappingSpacePiAddEquivHomology K L n).trans
+    (linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj _).toAddEquiv
+
+/-- `rightMappingSpacePiAddEquiv` is the Dold–Kan comparison
+`dgNerve.rightMappingSpacePiAddEquivHomology` followed by the K-injective cohomology comparison
+`linearHomComplexHomologyLinearEquivOfIsKInjective`. Together with
+`linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk`, this computes it on any element whose
+cohomology class is represented by a cocycle. -/
+theorem rightMappingSpacePiAddEquiv_apply (K L : KInjectiveDGCategory C) (n : ℕ)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L))) :
+    have := L.property
+    rightMappingSpacePiAddEquiv R K L n a =
+      linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj _
+        (dgNerve.rightMappingSpacePiAddEquivHomology K L n a) :=
+  (rfl)
+
+/-- **Path components of mapping spaces in the K-injective enhancement.** For K-injective
+complexes `K` and `L`, the path components of the right mapping space from `K` to `L` in the
+differential graded nerve are the morphisms `K ⟶ L` in the derived category. -/
+def rightMappingSpacePiZeroEquiv (K L : KInjectiveDGCategory C) :
+    SSet.KanComplex.π 0
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L) ≃
+      (Q.obj K.obj ⟶ Q.obj L.obj) :=
+  have := L.property
+  -- As for `rightMappingSpacePiAddEquiv`, `dgHomComplex R K L` is `linearHomComplex R K.obj L.obj`
+  -- by `rfl`.
+  (dgNerve.rightMappingSpacePiZeroEquivHomology K L).trans
+    ((linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj 0).toEquiv.trans
+      ((Iso.refl _).homCongr ((shiftFunctorZero (DerivedCategory C) ℤ).app _)))
+
+/-- `rightMappingSpacePiZeroEquiv` is the Dold–Kan comparison
+`dgNerve.rightMappingSpacePiZeroEquivHomology` followed by the K-injective cohomology comparison
+`linearHomComplexHomologyLinearEquivOfIsKInjective` in degree zero and the identification
+`L⟦0⟧ ≅ L`. Together with `linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk`, this
+computes it on any element whose cohomology class is represented by a cocycle. -/
+theorem rightMappingSpacePiZeroEquiv_apply (K L : KInjectiveDGCategory C)
+    (a : SSet.KanComplex.π 0
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L)) :
+    have := L.property
+    rightMappingSpacePiZeroEquiv R K L a =
+      linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj 0
+          (dgNerve.rightMappingSpacePiZeroEquivHomology K L a) ≫
+        (shiftFunctorZero (DerivedCategory C) ℤ).hom.app _ := by
+  simp [rightMappingSpacePiZeroEquiv, Iso.homCongr_apply]
 
 end KInjectiveDGCategory
 

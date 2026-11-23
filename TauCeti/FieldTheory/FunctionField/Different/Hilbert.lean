@@ -175,13 +175,13 @@ theorem differentExponent_eq_finsum_card_ramificationGroup_sub_one :
     rw [← TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
       P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
       P.mem_filtration_iff_le_ord (by simpa using hy), Nat.cast_le]
-    have := P.mem_integers_iff_ord_nonneg.mp y.2
+    have := P.mem_integers_iff_ord_nonneg.mp y.property
     omega
   -- The ramification groups of the inertia group acting on `𝒪_P` are those of `P`.
   have hcard (i : ℕ) : Nat.card (IsLocalRing.ramificationGroup (P.integers.inertiaSubgroup F)
       P.integers i) = Nat.card (ramificationGroup F P i) := by
     rw [← IsLocalRing.subgroupOf_ramificationGroup,
-      ← ramificationGroup_eq_isLocalRing_ramificationGroup]
+      ← ramificationGroup_def]
     exact Nat.card_congr
       (Subgroup.subgroupOfEquivOfLe (ramificationGroup_le_inertiaSubgroup F P i)).toEquiv
   have hterm (g : P.integers.inertiaSubgroup F) (hg : g ∈ Finset.univ.erase 1) :

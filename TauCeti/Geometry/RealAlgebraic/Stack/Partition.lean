@@ -117,15 +117,16 @@ theorem exists_eq_range_sectionSet_union_range_sectorSet [PreconnectedSpace X] [
   -- A cell that is not a graph is exactly one sector of the common stack.
   have hcellSector (B : Set (X × ℝ)) (hB : B ∈ 𝒜) (hBS : B ∉ range (sectionSet θ))
       (hBne : B.Nonempty) : ∃ j, sectorSet θ j = B := by
-    obtain ⟨hBo, hBc⟩ := hsector B hB hBS
+    obtain ⟨_, hBc⟩ := hsector B hB hBS
     obtain ⟨j, hj⟩ := hBc.exists_subset_sectorSet hc (fun x ↦ (hθ x).monotone) fun i ↦
       hdisj (hsection ▸ mem_range_self i).1 hB fun h ↦ hBS (h ▸ mem_range_self i)
     refine ⟨j, Subset.antisymm ?_ hj⟩
     -- The preconnected sector `j` is covered by the open cells that are not graphs.
     let 𝒪 := {C | C ∈ 𝒜 ∧ C ∉ range (sectionSet θ)}
     refine (isPreconnected_sectorSet hc hθ j).subset_of_subset_iUnion (u := ((↑) : 𝒪 → _))
-      (i := ⟨B, hB, hBS⟩) (fun C ↦ (hsector C C.2.1 C.2.2).1)
-      (fun C C' hCC' ↦ hdisj C.2.1 C'.2.1 (Subtype.coe_injective.ne hCC')) (fun w hw ↦ ?_)
+      (i := ⟨B, hB, hBS⟩) (fun C ↦ (hsector C C.property.1 C.property.2).1)
+      (fun C C' hCC' ↦ hdisj C.property.1 C'.property.1 (Subtype.coe_injective.ne hCC'))
+          (fun w hw ↦ ?_)
       (hBne.mono fun w hw ↦ ⟨hj hw, hw⟩)
     obtain ⟨C, hC, hCS, hwC⟩ := hmem hw
     exact mem_iUnion.2 ⟨⟨C, hC, hCS⟩, hwC⟩

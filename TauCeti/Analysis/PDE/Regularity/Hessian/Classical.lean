@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Holder
 import TauCeti.Analysis.PDE.Regularity.Classical
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.MeasureTheory.Function.LocalRepresentative
 
 /-!
@@ -79,17 +80,9 @@ theorem exists_contDiffOn_two_ae_eq_on_of_holderOnWith
       ContDiffOn ℝ 1 gi S ∧ HasWeakLineDerivOn volume S (W1p.value u) gi (b i) := by
     intro i
     obtain ⟨d, hd, hG⟩ := hsecond hf hu hV hVO hfK hR hSV (b i)
-    let G := preciseRepresentative volume
-      (W1p.gradient d : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
-    have hGc : ContinuousOn G S := hG.continuousOn hα
-    have hdG : (W1p.gradient d : EuclideanSpace ℝ (Fin (n + 1)) → _)
-        =ᵐ[volume.restrict S] G :=
-      ae_restrict_of_ae_restrict_of_subset hSV'
-        (ae_eq_restrict_preciseRepresentative V.isOpen (W1p.locallyIntegrableOn_gradient d))
-    have hweak : HasWeakFDerivOn volume S (W1p.value d) (fun x => innerSL ℝ (G x)) :=
-      ((W1p.hasWeakFDerivOn d).mono hSV').congr_ae_deriv (hdG.fun_comp (innerSL ℝ))
-    obtain ⟨gi, hgi, hdgi, -⟩ := hweak.exists_contDiffOn_one_ae_eq
-      ((innerSL ℝ).continuous.comp_continuousOn hGc)
+    obtain ⟨gi, hgi, hdgi, -⟩ :=
+      W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative d hSV'
+        (hG.continuousOn hα)
     exact ⟨gi, hgi, (hd.mono hSV').congr_ae_deriv hdgi⟩
   choose g hg hdg using hfirst
   -- Assemble the first derivatives into a `C¹` derivative field, then recover `u` itself.
@@ -134,7 +127,7 @@ theorem exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith
             one_ne_zero).differentiableAt (Omega.isOpen.mem_nhds hx))]
       simp [Matrix.one_apply]
     rw [hΔ, hpoint x hx, neg_neg]
-  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen fun x hx => ?_
+  refine exists_contDiffOn_ae_eq_of_locally fun x hx => ?_
   obtain ⟨T, hT, K, hfT⟩ := hfK x hx
   obtain ⟨r, hr, hrOT⟩ := nhds_basis_closedBall.mem_iff.1
     (Filter.inter_mem (Omega.isOpen.mem_nhds hx) hT)

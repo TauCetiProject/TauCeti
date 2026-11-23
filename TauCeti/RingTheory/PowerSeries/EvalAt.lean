@@ -14,6 +14,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Evaluation of power series as infinite sums
@@ -60,27 +62,37 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
   coefficient of its Taylor expansion at `a`.
 * `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
+* `PowerSeries.evalAt_iterate_derivative` and `PowerSeries.evalAt_iterate_derivative_eq_zero_iff`:
+  over a semifield, `(d⁄dX^[k] f)(b) = k! • (D⁽ᵏ⁾ f)(b)`, so in characteristic zero the two vanish
+  together.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
-* `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
+  the Gauss-norm bound in an ultrametric algebra, in particular for restricted series.
+* `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
+  bounded by `C` gives an evaluation bound by `C`, even without norm-one identity in the target;
+  `PowerSeries.norm_evalAt_le_gaussNorm_of_norm_algebraMap_le` is the contractive case.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
-* `PowerSeries.evalAt_add_of_summable_norm` and `PowerSeries.evalAt_mul_of_summable_norm`: in a
-  complete normed algebra, evaluation is additive and multiplicative on series whose terms at the
-  point are absolutely summable.
-* `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
-  `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
-  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
-  `PowerSeries.IsRestricted.evalAt_smul` and `PowerSeries.IsRestricted.evalAt_sum` record the
-  compatibility with scalars and finite sums.
+* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm` and
+  `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
+  addition, finite sums and multiplication on series whose terms at the point are absolutely
+  summable.
+* `PowerSeries.IsRestricted.summable_smul_pow`, `PowerSeries.IsRestricted.hasSum_evalAt`,
+  `PowerSeries.IsRestricted.evalAt_add` and `PowerSeries.IsRestricted.evalAt_mul`: a series
+  restricted at `c` converges at every `b` with `‖b‖ ≤ c` in a complete ultrametric algebra,
+  additively and multiplicatively in the series; `PowerSeries.IsRestricted.evalAt_smul` and
+  `PowerSeries.IsRestricted.evalAt_sum` record the compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
+* `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
+  series factored as `u * (X ^ a * ∏ᶠ m, g m)` with `u` a restricted unit.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
 * `PowerSeries.commute_evalScalar`: an element commuting with the coefficients of a series
   commutes with its value at a scalar.
-* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c ≥ 0` on
+* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c` on
   `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
 -/
 
@@ -206,6 +218,33 @@ theorem evalAt_hasseDeriv_X_sub_C_pow [TopologicalSpace R] (a : R) (i m : ℕ) :
 
 end Ring
 
+section Semifield
+
+variable {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] [TopologicalSpace A]
+  [ContinuousConstSMul K A] [T2Space A]
+
+/-- Over a semifield `K`, the `k`-th iterated formal derivative of a power series `f` evaluates at
+any point `b` of a Hausdorff topological `K`-algebra with continuous scalar multiplication to `k!`
+times the value of the `k`-th Hasse derivative `(D⁽ᵏ⁾ f)(b)`. No convergence hypothesis is needed:
+when `(k! : K) ≠ 0`, `d⁄dX^[k] f` and `D⁽ᵏ⁾ f` converge or diverge at `b` together (both taking the
+junk value `0` if they diverge), while when `(k! : K) = 0` both sides are `0`. -/
+theorem evalAt_iterate_derivative (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = k.factorial • (hasseDeriv k f).evalAt b := by
+  rw [← factorial_smul_hasseDeriv, ← Nat.cast_smul_eq_nsmul K, evalAt_def, evalAt_def,
+    ← Nat.cast_smul_eq_nsmul K]
+  simp_rw [coeff_smul, smul_assoc]
+  exact tsum_const_smul'' (k.factorial : K)
+
+/-- Over a semifield `K` of characteristic zero, the `k`-th iterated formal derivative of a power
+series vanishes at a point `b` of a Hausdorff topological `K`-algebra with continuous scalar
+multiplication if and only if the `k`-th Hasse derivative vanishes at `b`. -/
+theorem evalAt_iterate_derivative_eq_zero_iff [CharZero K] (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = 0 ↔ (hasseDeriv k f).evalAt b = 0 := by
+  rw [evalAt_iterate_derivative, ← Nat.cast_smul_eq_nsmul K,
+    ((Nat.cast_ne_zero.mpr k.factorial_ne_zero).isUnit).smul_eq_zero]
+
+end Semifield
+
 section Scalar
 
 variable {R A : Type*} [Monoid R] [Semiring A] [SMul R A] [TopologicalSpace A]
@@ -301,17 +340,60 @@ section Normed
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
   {f : R⟦X⟧}
 
+omit [IsBoundedSMul R A] in
+/-- A coefficient map bounded by `C` gives the same bound for evaluation in an
+ultrametric algebra, at every radius where the Gauss norm is defined and bounds the argument.
+Neither a norm-one identity nor completeness nor a bounded scalar action is required.
+For negative `C` the coefficient bound forces the series to be zero. -/
+theorem norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r C : ℝ}
+    (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ C * ‖a‖)
+    {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ C * gaussNorm norm r f := by
+  by_cases hf0 : f = 0
+  · simp [hf0, gaussNorm_zero (R := R) norm r norm_zero]
+  have hC : 0 ≤ C := by
+    by_contra hC
+    apply hf0
+    ext n
+    have h := (norm_nonneg (algebraMap R A (coeff n f))).trans (hφ (coeff n f))
+    have hn : ‖coeff n f‖ = 0 := by nlinarith [norm_nonneg (coeff n f), lt_of_not_ge hC]
+    simpa using norm_eq_zero.mp hn
+  apply IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hC (gaussNorm_nonneg _ _ _ norm_nonneg))
+  intro n
+  rw [Algebra.smul_def]
+  cases n with
+  | zero =>
+    simpa using (hφ (coeff 0 f)).trans
+      (mul_le_mul_of_nonneg_left (by simpa using le_gaussNorm norm r f hf 0) hC)
+  | succ n =>
+    calc
+      ‖algebraMap R A (coeff (n + 1) f) * b ^ (n + 1)‖ ≤
+          ‖algebraMap R A (coeff (n + 1) f)‖ * ‖b ^ (n + 1)‖ := norm_mul_le _ _
+      _ ≤ C * ‖coeff (n + 1) f‖ * ‖b‖ ^ (n + 1) := by
+        gcongr
+        exacts [hφ _, norm_pow_le' b n.succ_pos]
+      _ ≤ C * (‖coeff (n + 1) f‖ * r ^ (n + 1)) := by
+        rw [mul_assoc]
+        gcongr
+      _ ≤ C * gaussNorm norm r f := mul_le_mul_of_nonneg_left (le_gaussNorm norm r f hf _) hC
+
+omit [IsBoundedSMul R A] in
+/-- Contractive coefficient maps give a contractive evaluation estimate without requiring
+that the target algebra have norm-one identity. The target may be noncommutative. -/
+theorem norm_evalAt_le_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r : ℝ}
+    (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ ‖a‖)
+    {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ gaussNorm norm r f := by
+  simpa only [one_mul] using
+    norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le hf (C := 1) (by simpa using hφ) hb
+
 /-- In an ultrametric normed algebra with `‖1‖ = 1`, the value of a series at a point `b` with
 `‖b‖ ≤ r` is bounded by the Gauss norm of the series at the radius `r`, whenever the latter is
 defined. This needs no convergence: the junk value `0` satisfies the bound too. -/
 theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ}
     (hf : f.HasGaussNorm norm r) {b : A} (hb : ‖b‖ ≤ r) :
     ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (gaussNorm_nonneg _ _ _ norm_nonneg)
-    fun n ↦ (norm_smul_le _ _).trans <|
-      (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
-        (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
-      le_gaussNorm _ _ _ hf n
+  norm_evalAt_le_gaussNorm_of_norm_algebraMap_le hf
+    (fun a ↦ by simpa [Algebra.algebraMap_eq_smul_one] using norm_smul_le a (1 : A)) hb
 
 /-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ q * r`, where
 `0 ≤ q < 1`, is bounded by `(‖1‖ + 1) * (1 - q)⁻¹` times the Gauss norm of the series at the radius
@@ -346,13 +428,13 @@ theorem norm_evalAt_le_mul_gaussNorm {r q : ℝ} (hf : f.HasGaussNorm norm r) (h
         gcongr
         nlinarith [norm_nonneg (1 : A)]
 
-/-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
+/-- In an ultrametric normed ring, if `c` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
 bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the
 junk value `0` satisfies the bound too. -/
 theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A]
-    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ} (hc : 0 ≤ c)
+    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ}
     (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c := by
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ ?_
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le fun n ↦ ?_
   -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is treated separately
   cases n with
   | zero => simpa using h 0
@@ -363,16 +445,24 @@ end Normed
 
 section Summable
 
-/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable, then so
-are the norms of its terms `aₙ • bⁿ` at `b`, in any seminormed ring with a bounded scalar action. -/
-theorem summable_norm_smul_pow_of_summable_norm_mul_pow {R A : Type*} [NormedRing R]
-    [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {b : A}
+/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable and the
+scalar action satisfies `‖a • x‖ ≤ ‖a‖ * ‖x‖`, then the term norms `‖aₙ • bⁿ‖` at `b` are
+summable. -/
+theorem summable_norm_smul_pow_of_norm_smul_le {R A : Type*} [SeminormedRing R] [SeminormedRing A]
+    [SMul R A] (hsmul : ∀ (a : R) (x : A), ‖a • x‖ ≤ ‖a‖ * ‖x‖) {f : R⟦X⟧} {b : A}
     (h : Summable fun n ↦ ‖coeff n f‖ * ‖b‖ ^ n) : Summable fun n ↦ ‖coeff n f • b ^ n‖ := by
   -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
   rw [← summable_nat_add_iff 1]
   refine ((summable_nat_add_iff 1).mpr h).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  exact (norm_smul_le _ _).trans
+  exact (hsmul _ _).trans
     (mul_le_mul_of_nonneg_left (norm_pow_le' b n.succ_pos) (norm_nonneg _))
+
+/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable, then so
+are the norms of its terms `aₙ • bⁿ` at `b`, in any seminormed ring with a bounded scalar action. -/
+theorem summable_norm_smul_pow_of_summable_norm_mul_pow {R A : Type*} [SeminormedRing R]
+    [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {b : A}
+    (h : Summable fun n ↦ ‖coeff n f‖ * ‖b‖ ^ n) : Summable fun n ↦ ‖coeff n f • b ^ n‖ :=
+  summable_norm_smul_pow_of_norm_smul_le norm_smul_le h
 
 /-- In a complete seminormed algebra, if the terms `aₙ • bⁿ` of a series `f = ∑ aₙ Xⁿ` are
 absolutely summable, then they sum to `f(b)`. -/
@@ -394,6 +484,13 @@ theorem evalAt_add_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b 
   exact HasSum.tsum_eq (by simpa [add_smul] using
     (hasSum_evalAt_of_summable_norm hf).add (hasSum_evalAt_of_summable_norm hg))
 
+/-- Evaluation commutes with finite sums of series whose terms at `b` are absolutely summable. -/
+theorem evalAt_sum_of_summable_norm {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, Summable fun n ↦ ‖coeff n (f i) • b ^ n‖) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum (fun i hi ↦ hasSum_evalAt_of_summable_norm (hf i hi))
+  simpa only [evalAt_def, map_sum, Finset.sum_smul] using h.tsum_eq
+
 /-- Evaluation at `b` is multiplicative on series whose terms at `b` are absolutely summable: this
 is the Cauchy product formula for absolutely convergent series. -/
 theorem evalAt_mul_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b ^ n‖)
@@ -413,12 +510,11 @@ section Restricted
 open Filter
 open scoped Topology
 
-variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
-  {c : ℝ} {f g : R⟦X⟧} {b : A}
-
 /-- At a point `b` with `‖b‖ ≤ c`, the terms `aₙ • bⁿ` of a series restricted at the radius `c`
 tend to zero. -/
-theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+theorem IsRestricted.tendsto_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [SMulZeroClass R A] [IsBoundedSMul R A] {c : ℝ} {f : R⟦X⟧} {b : A}
+    (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
     Tendsto (fun n ↦ coeff n f • b ^ n) cofinite (𝓝 0) := by
   refine squeeze_zero_norm' ?_ ((isRestricted_iff c f).mp hf)
   -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
@@ -427,16 +523,35 @@ theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ 
     ((norm_pow_le' b (Nat.pos_of_ne_zero (Set.mem_compl_singleton_iff.mp hn))).trans
       (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)
 
-variable [IsUltrametricDist A] [CompleteSpace A]
+/-- In a complete ultrametric seminormed ring with bounded scalar action, a series restricted at `c`
+is summable at every point `b` with `‖b‖ ≤ c`. -/
+theorem IsRestricted.summable_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [SMulZeroClass R A] [IsBoundedSMul R A] [IsUltrametricDist A] [CompleteSpace A]
+    {c : ℝ} {f : R⟦X⟧} (hf : f.IsRestricted c) {b : A} (hb : ‖b‖ ≤ c) :
+    Summable fun n ↦ coeff n f • b ^ n :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (hf.tendsto_smul_pow hb)
 
-/-- **Evaluation of restricted series.** In a complete ultrametric normed algebra, for a series
+/-- **Evaluation of restricted series.** In a complete ultrametric seminormed algebra, for a series
 `f = ∑ aₙ Xⁿ` restricted at the radius `c` and a point `b` with `‖b‖ ≤ c`, the series
 `∑ aₙ • bⁿ` converges to `f(b)`. -/
-theorem IsRestricted.hasSum_evalAt (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+theorem IsRestricted.hasSum_evalAt {R A : Type*} [NormedCommRing R] [SeminormedRing A]
+    [Algebra R A] [IsBoundedSMul R A] [IsUltrametricDist A] [CompleteSpace A] {c : ℝ} {f : R⟦X⟧}
+    {b : A} (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
     HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
   rw [evalAt_def]
-  exact (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (hf.tendsto_smul_pow hb)).hasSum
+  exact (hf.summable_smul_pow hb).hasSum
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {c : ℝ} {f g : R⟦X⟧} {b : A}
+
+/-- In an ultrametric normed algebra with `‖1‖ = 1`, a series restricted at `c` satisfies the
+Gauss-norm bound `‖f(b)‖ ≤ gaussNorm norm c f` on the closed disc `‖b‖ ≤ c`. -/
+theorem IsRestricted.norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A]
+    (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    ‖f.evalAt b‖ ≤ gaussNorm norm c f :=
+  PowerSeries.norm_evalAt_le_gaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) hb
+
+variable [IsUltrametricDist A] [CompleteSpace A]
 
 /-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
 theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :
@@ -484,9 +599,9 @@ noncomputable def IsRestricted.evalAtHom (hb : ‖b‖ ≤ c) :
     IsRestricted.subring (R := R) c →+* A where
   toFun f := (f : R⟦X⟧).evalAt b
   map_one' := evalAt_one b
-  map_mul' f g := IsRestricted.evalAt_mul f.2 g.2 hb
+  map_mul' f g := IsRestricted.evalAt_mul f.property g.property hb
   map_zero' := evalAt_zero b
-  map_add' f g := IsRestricted.evalAt_add f.2 g.2 hb
+  map_add' f g := IsRestricted.evalAt_add f.property g.property hb
 
 /-- The evaluation homomorphism at `b` sends a restricted series `f` to `f(b)`. -/
 @[simp]
@@ -495,5 +610,29 @@ theorem IsRestricted.evalAtHom_apply (hb : ‖b‖ ≤ c) (f : IsRestricted.subr
   (rfl)
 
 end Restricted
+
+/-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
+the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in
+any complete ultrametric normed domain `A` over `R`, for every `x : A` with `‖x‖ ≤ r`,
+`f.evalAt x = 0` iff `(x = 0 ∧ 0 < a)` or `x` is a root of some factor `g m`
+(`m ∈ Function.mulSupport g`). -/
+theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {R A ι : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing A] [IsDomain A] [Algebra R A] [IsBoundedSMul R A]
+    [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {r : ℝ}
+    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
+    (hfin : (Function.mulSupport g).Finite)
+    (hmul : (u : R⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) : R⟦X⟧)) = f)
+    {x : A} (hx : ‖x‖ ≤ r) :
+    f.evalAt x = 0 ↔
+      (x = 0 ∧ 0 < a) ∨ ∃ m ∈ Function.mulSupport g, Polynomial.aeval x (g m) = 0 := by
+  have hu_eval : IsUnit ((u : R⟦X⟧).evalAt x) := by
+    simpa using hu.map (IsRestricted.evalAtHom R hx)
+  rw [← hmul, finprod_eq_prod g hfin,
+    IsRestricted.evalAt_mul u.property (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
+    evalAt_coe, hu_eval.mul_right_eq_zero, map_mul, map_pow, Polynomial.aeval_X,
+    map_prod (Polynomial.aeval (R := R) x), mul_eq_zero, pow_eq_zero_iff', Finset.prod_eq_zero_iff]
+  refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,
+    fun ⟨hx0, ha0⟩ => ⟨hx0, ha0.ne'⟩⟩ ?_
+  simp only [Set.Finite.mem_toFinset]
 
 end PowerSeries

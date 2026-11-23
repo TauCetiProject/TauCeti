@@ -11,7 +11,7 @@ public import Mathlib.Topology.DiscreteSubset
 /-!
 # The ramification divisor of a finite holomorphic map
 
-Let `f : X → Y` be a finite holomorphic map of Riemann surfaces with `X` connected. Its local
+Let `f : X → Y` be a finite holomorphic map of Riemann surfaces. Its local
 multiplicity `e_x = localMultiplicity f x` is at least `1` everywhere, and `x` is a
 *ramification point* when `e_x > 1`. Near every point of `X` the map has multiplicity `1` at all
 other points (`TauCeti.RiemannSurface.eventually_localMultiplicity_eq_one`), so the ramification
@@ -41,6 +41,8 @@ form of Riemann–Hurwitz. The ramification divisor of a composite satisfies the
 * `TauCeti.RiemannSurface.ramificationDegree`: the ramification degree, and
   `TauCeti.RiemannSurface.degree_ramificationDivisor`: it is the degree of the ramification
   divisor.
+* `TauCeti.RiemannSurface.ramificationDegree_eq_zero_iff`: the ramification degree vanishes
+  exactly when the map is unramified.
 * `TauCeti.RiemannSurface.card_fiber_add_sum_localMultiplicity_sub_one` and
   `TauCeti.RiemannSurface.coeff_pushforward_ramificationDivisor`: the fibre count.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.ncard_preimage_add_finsum_localMultiplicity_sub_one`:
@@ -72,7 +74,7 @@ variable {X Y Z : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [TopologicalS
 
 /-- The **ramification degree** of a map `f : X → Y` of Riemann surfaces: the sum of
 `localMultiplicity f x - 1` over all points `x`. For a finite holomorphic map from a compact
-connected Riemann surface the sum is finite and is the degree of the ramification divisor
+Riemann surface the sum is finite and is the degree of the ramification divisor
 (`TauCeti.RiemannSurface.degree_ramificationDivisor`); by the convention for `finsum`, it is `0`
 when infinitely many points have local multiplicity at least `2`. -/
 def ramificationDegree (f : X → Y) : ℕ := ∑ᶠ x, (localMultiplicity f x - 1)
@@ -81,9 +83,23 @@ theorem ramificationDegree_def (f : X → Y) :
     ramificationDegree f = ∑ᶠ x, (localMultiplicity f x - 1) :=
   (rfl)
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+/-- **A degree-one map is unramified.** A finite holomorphic map of degree `1` has ramification
+degree `0`. -/
+theorem FiniteHolomorphicMap.ramificationDegree_eq_zero_of_degree_eq_one
+    {f : FiniteHolomorphicMap X Y} (hf : degree f = 1) : ramificationDegree f = 0 := by
+  have hbdd : BddAbove (Set.range (fiberMultiplicitySum f)) := by
+    by_contra h
+    rw [degree_def, Nat.iSup_of_not_bddAbove h] at hf
+    exact zero_ne_one hf
+  rw [ramificationDegree_def]
+  refine finsum_eq_zero_of_forall_eq_zero fun x ↦ Nat.sub_eq_zero_of_le ?_
+  rw [← hf, degree_def]
+  exact (localMultiplicity_le_fiberMultiplicitySum (f.finite_fiber (f x)) rfl).trans
+    (le_ciSup hbdd (f x))
 
-/-- The ramification points of a finite holomorphic map from a connected Riemann surface are
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+
+/-- The ramification points of a finite holomorphic map from a Riemann surface are
 isolated: the local multiplicity is `1` away from a closed discrete set. -/
 theorem FiniteHolomorphicMap.eventually_codiscrete_localMultiplicity_eq_one
     (f : FiniteHolomorphicMap X Y) : ∀ᶠ x in codiscrete X, localMultiplicity f x = 1 :=
@@ -91,7 +107,7 @@ theorem FiniteHolomorphicMap.eventually_codiscrete_localMultiplicity_eq_one
     eventually_localMultiplicity_eq_one (.of_forall fun y ↦ f.holomorphic y)
       (f.not_eventuallyConst x)
 
-/-- A finite holomorphic map from a compact connected Riemann surface has only finitely many
+/-- A finite holomorphic map from a compact Riemann surface has only finitely many
 ramification points. -/
 theorem FiniteHolomorphicMap.finite_setOf_one_lt_localMultiplicity [CompactSpace X]
     (f : FiniteHolomorphicMap X Y) : {x | 1 < localMultiplicity f x}.Finite :=
@@ -99,7 +115,7 @@ theorem FiniteHolomorphicMap.finite_setOf_one_lt_localMultiplicity [CompactSpace
     (cofinite_le_codiscrete f.eventually_codiscrete_localMultiplicity_eq_one)).subset
     fun _ hx ↦ hx.ne'
 
-/-- For a finite holomorphic map from a connected Riemann surface, `e_x - 1` vanishes exactly at
+/-- For a finite holomorphic map of Riemann surfaces, `e_x - 1` vanishes exactly at
 the unramified points. -/
 private theorem intCast_localMultiplicity_sub_one_ne_zero_iff (f : FiniteHolomorphicMap X Y)
     (x : X) : (localMultiplicity f x : ℤ) - 1 ≠ 0 ↔ 1 < localMultiplicity f x := by
@@ -140,7 +156,7 @@ theorem cast_ramificationDegree {R : Type*} [Ring R] (f : FiniteHolomorphicMap X
   rw [Nat.cast_sub (localMultiplicity_pos f x), Nat.cast_one]
 
 /-- The **ramification divisor** `∑ₓ (e_x - 1) [x]` of a finite holomorphic map from a compact
-connected Riemann surface, where `e_x` is the local multiplicity at `x`. Its support is the finite
+Riemann surface, where `e_x` is the local multiplicity at `x`. Its support is the finite
 set of ramification points (`TauCeti.RiemannSurface.support_ramificationDivisor`). -/
 def ramificationDivisor (f : FiniteHolomorphicMap X Y) : WeilDivisor X :=
   Finsupp.ofSupportFinite (fun x ↦ (localMultiplicity f x : ℤ) - 1) <|
@@ -154,9 +170,9 @@ theorem coeff_ramificationDivisor (f : FiniteHolomorphicMap X Y) (x : X) :
   (rfl)
 
 /-- The ramification divisor is effective. -/
-theorem isEffective_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (ramificationDivisor f) := by
-  rw [WeilDivisor.isEffective_iff]
+theorem ramificationDivisor_nonneg (f : FiniteHolomorphicMap X Y) :
+    0 ≤ ramificationDivisor f := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [coeff_ramificationDivisor, sub_nonneg, Nat.one_le_cast]
   exact localMultiplicity_pos f x
@@ -179,7 +195,7 @@ theorem ramificationDivisor_eq_zero_iff (f : FiniteHolomorphicMap X Y) :
     exact hx
   · rw [coeff_ramificationDivisor, h, WeilDivisor.coeff_zero, Nat.cast_one, sub_self]
 
-/-- The ramification degree of a finite holomorphic map from a compact connected Riemann surface
+/-- The ramification degree of a finite holomorphic map from a compact Riemann surface
 is the degree of its ramification divisor. -/
 @[simp]
 theorem degree_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
@@ -194,13 +210,25 @@ theorem degree_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
     rw [support_ramificationDivisor]
     exact Nat.lt_of_sub_ne_zero hx
 
+/-- A finite holomorphic map from a compact Riemann surface has ramification degree `0` exactly
+when it is unramified, that is, has local multiplicity `1` everywhere. -/
+theorem ramificationDegree_eq_zero_iff (f : FiniteHolomorphicMap X Y) :
+    ramificationDegree f = 0 ↔ ∀ x, localMultiplicity f x = 1 := by
+  rw [ramificationDegree_def, finsum_eq_sum _ f.finite_support_localMultiplicity_sub_one,
+    Finset.sum_eq_zero_iff]
+  refine ⟨fun h x ↦ ?_, fun h x _ ↦ by simp [h x]⟩
+  have hpos := localMultiplicity_pos f x
+  by_contra hx
+  have := h x (by simp only [Set.Finite.mem_toFinset, mem_support]; omega)
+  omega
+
 section Fiber
 
 variable [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
 /-- **The fibre count.** Over every point `y` of a connected target, the number of points of the
 fibre plus the sum of `e_x - 1` over the fibre is the degree of a finite holomorphic map from a
-compact connected Riemann surface. -/
+compact Riemann surface. -/
 theorem card_fiber_add_sum_localMultiplicity_sub_one (f : FiniteHolomorphicMap X Y) (y : Y) :
     (f.finite_fiber y).toFinset.card +
         ∑ x ∈ (f.finite_fiber y).toFinset, (localMultiplicity f x - 1) = degree f := by
@@ -263,9 +291,10 @@ section Comp
 
 variable [IsManifold 𝓘(ℂ) 1 Z] [T2Space X] [T2Space Y] [PreconnectedSpace Y] [CompactSpace Y]
 
+omit [T2Space X] in
 /-- **The chain rule for ramification divisors.** The ramification divisor of a composite of
-finite holomorphic maps between compact connected Riemann surfaces is `R_{g ∘ f} = R_f + f^* R_g`:
-at `x` this is `e_g e_f - 1 = (e_f - 1) + e_f (e_g - 1)`. -/
+finite holomorphic maps between compact Riemann surfaces, with `Y` connected, is
+`R_{g ∘ f} = R_f + f^* R_g`: at `x` this is `e_g e_f - 1 = (e_f - 1) + e_f (e_g - 1)`. -/
 theorem ramificationDivisor_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDivisor (g.comp f) =
       ramificationDivisor f + divisorPullback f (ramificationDivisor g) := by
@@ -275,10 +304,12 @@ theorem ramificationDivisor_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolom
   push_cast
   ring
 
-/-- The ramification degree of a composite of finite holomorphic maps between compact connected
-Riemann surfaces is `deg R_f + deg f · deg R_g`. -/
+omit [CompactSpace Y] in
+/-- The ramification degree of a composite of finite holomorphic maps between compact Riemann
+surfaces, with `Y` connected, is `deg R_f + deg f · deg R_g`. -/
 theorem ramificationDegree_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDegree (g.comp f) = ramificationDegree f + degree f * ramificationDegree g := by
+  have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have h := congrArg WeilDivisor.degree (ramificationDivisor_comp g f)
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, degree_ramificationDivisor,
     degree_ramificationDivisor] at h

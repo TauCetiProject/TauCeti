@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Kolchin
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Nilpotent
 import Mathlib.RingTheory.Nilpotent.Lemmas
 import TauCeti.LinearAlgebra.ExtensionBasis
+import TauCeti.RepresentationTheory.Unipotent.Quotient
 
 /-!
-# Solvability of faithful unipotent representations
+# Nilpotence and solvability of faithful unipotent representations
 
 Kolchin's common fixed-vector theorem constructs a complete invariant flag for a
 finite-dimensional representation whose every operator is unipotent. Relative to a basis adapted
 to this flag, every representing matrix is upper unitriangular. Consequently a group admitting a
 faithful representation of this kind embeds in an upper-unitriangular matrix group and is
-solvable.
+nilpotent, hence solvable.
 
 The block-triangularity of the matrix of an endomorphism in a basis adapted to an invariant
 submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
@@ -25,10 +27,10 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 ## Main declarations
 
-* `Representation.isNilpotent_quotient_sub_one`: unipotent operators stay unipotent on the
-  quotient by an invariant submodule.
 * `Representation.exists_basis_isUpperUnitriangular_of_isUnipotent`: simultaneous
   upper-unitriangularization of a unipotent monoid representation.
+* `Representation.isNilpotent_of_injective_of_isUnipotent`: a group with a faithful
+  finite-dimensional unipotent representation is nilpotent.
 * `Representation.isSolvable_of_injective_of_isUnipotent`: a group with a faithful
   finite-dimensional unipotent representation is solvable.
 
@@ -36,37 +38,11 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 4.8.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-This supplies the Lie--Kolchin solvability step in Layer 5 of the ReductiveGroups roadmap.
 -/
 
 public section
 
 open Module
-
-namespace TauCeti
-
-section Quotient
-
-variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
-
-/-- If `rho g - 1` is nilpotent, then so is the operator `rho.quotient p hp g - 1` induced on the
-quotient of the representation `rho` by an invariant submodule `p`. -/
-theorem _root_.Representation.isNilpotent_quotient_sub_one (rho : Representation R G V)
-    (p : Submodule R V) (hp : ∀ g, p ≤ p.comap (rho g)) {g : G}
-    (hg : IsNilpotent (rho g - 1)) : IsNilpotent (rho.quotient p hp g - 1) := by
-  have hsub : p ≤ p.comap (rho g - 1) := fun x hx ↦ by
-    rw [Submodule.mem_comap, LinearMap.sub_apply, one_apply_eq_self]
-    exact p.sub_mem (Submodule.mem_comap.mp (hp g hx)) hx
-  have heq : rho.quotient p hp g - 1 = p.mapQ p (rho g - 1) hsub := by
-    ext x
-    simp [Representation.quotient_apply, Submodule.mapQ_apply]
-  rw [heq]
-  exact Module.End.IsNilpotent.mapQ hsub hg
-
-end Quotient
-
-end TauCeti
 
 namespace TauCeti.Representation
 
@@ -110,7 +86,7 @@ theorem _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent
       refine toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular p bp bq (hp g) ?_ ?_
       · have hone : (rho g).restrict (fun _ hx ↦ Submodule.mem_comap.mp (hp g hx)) = 1 := by
           ext x
-          simp [hfixed g x x.2]
+          simp [hfixed g x x.property]
         rw [hone, map_one]
         exact Matrix.isUpperUnitriangular_one
       · simpa only [Representation.quotient_apply] using hbq g
@@ -144,21 +120,33 @@ private def _root_.Representation.toUpperUnitriangularGroup {n : ℕ}
       map_mul' := fun g h ↦ Subtype.ext (map_mul f g h) }
 
 /-- A group admitting a faithful finite-dimensional representation by unipotent operators is
-solvable. -/
-theorem _root_.Representation.isSolvable_of_injective_of_isUnipotent
+nilpotent. -/
+theorem _root_.Representation.isNilpotent_of_injective_of_isUnipotent
     [FiniteDimensional K V]
     (rho : Representation K G V) (hinjective : Function.Injective rho.asGroupHom)
-    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsSolvable G := by
+    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsNilpotent G := by
   obtain ⟨n, b, hb⟩ :=
     _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent rho hunipotent
-  apply Group.isSolvable_of_isSolvable_injective
-    (f := _root_.Representation.toUpperUnitriangularGroup rho b hb)
+  let f := _root_.Representation.toUpperUnitriangularGroup rho b hb
+  refine Subgroup.isNilpotent_of_ker_le_center f ?_
+  suffices hinj : Function.Injective f by
+    rw [(MonoidHom.ker_eq_bot_iff f).mpr hinj]
+    exact bot_le
   intro g h hgh
   apply hinjective
   apply Units.ext
   apply (LinearMap.toMatrixAlgEquiv b).injective
   exact congrArg (fun x : TauCeti.upperUnitriangularGroup (Fin n) K ↦
     ((x : Matrix.GeneralLinearGroup (Fin n) K) : Matrix (Fin n) (Fin n) K)) hgh
+
+/-- A group admitting a faithful finite-dimensional representation by unipotent operators is
+solvable. -/
+theorem _root_.Representation.isSolvable_of_injective_of_isUnipotent
+    [FiniteDimensional K V]
+    (rho : Representation K G V) (hinjective : Function.Injective rho.asGroupHom)
+    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsSolvable G := by
+  have := rho.isNilpotent_of_injective_of_isUnipotent hinjective hunipotent
+  infer_instance
 
 end
 

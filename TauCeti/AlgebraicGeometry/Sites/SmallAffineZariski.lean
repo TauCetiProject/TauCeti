@@ -8,7 +8,13 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
 
 /-!
-# Transition maps of the pulled-back directed affine cover
+# The small affine Zariski site as an open cover
+
+This file records that the affine opens of a scheme `X`, indexed by its small affine Zariski site
+`X.AffineZariskiSite`, form an open cover of `X`, together with the transition maps of the
+pulled-back directed affine cover.
+
+## Transition maps of the pulled-back directed affine cover
 
 Let `q : T ⟶ X` be a morphism of schemes. Pulling back Mathlib's directed cover of `X` by its
 affine opens (`AlgebraicGeometry.Scheme.AffineZariskiSite.directedCover`) along `q` gives a
@@ -20,6 +26,8 @@ images. This is the compatibility needed to glue morphisms out of `T` along this
 
 ## Main results
 
+* `Scheme.AffineZariskiSite.isOpenCover_toOpens`: the affine opens of `X`, indexed by the small
+  affine Zariski site, form an open cover of `X`.
 * `Scheme.AffineZariskiSite.directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom`: the
   transition map of `(directedCover X).pullback₁ q` along `U ⟶ V` is the inclusion
   `q⁻¹ U ⟶ q⁻¹ V`.
@@ -32,12 +40,27 @@ open Scheme.AffineZariskiSite
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.AffineZariskiSite
+
+/-- The affine opens of `X` cover `X`, indexed by the small affine Zariski site. -/
+theorem isOpenCover_toOpens (X : Scheme.{u}) :
+    TopologicalSpace.IsOpenCover fun U : X.AffineZariskiSite ↦ U.toOpens := by
+  simpa only [directedCover_f, Scheme.Opens.opensRange_ι] using
+    (directedCover X).isOpenCover_opensRange
+
+end AlgebraicGeometry.Scheme.AffineZariskiSite
+
 namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
 
 variable {X T : Scheme.{u}} (q : T ⟶ X)
 
 /-- Under the identification of the members of the pulled-back directed affine cover with inverse
-images of affine opens, its transition map along `U ⟶ V` is the inclusion `q⁻¹ U ⟶ q⁻¹ V`. -/
+images of affine opens, its transition map along `U ⟶ V` is the inclusion `q⁻¹ U ⟶ q⁻¹ V`.
+
+Up to moving the isomorphism `pullbackRestrictIsoRestrict q U.toOpens` to the other side, this is
+the transition fact proved inline, in a `have`, in Mathlib's
+`AlgebraicGeometry.Scheme.Hom.toNormalization` (`Mathlib/AlgebraicGeometry/Normalization.lean`),
+stated here as a named lemma. -/
 @[reassoc]
 theorem directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom
     {U V : X.AffineZariskiSite} (i : U ⟶ V) :
@@ -45,13 +68,11 @@ theorem directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom
         (pullbackRestrictIsoRestrict q V.toOpens).hom =
       (pullbackRestrictIsoRestrict q U.toOpens).hom ≫
         T.homOfLE (q.preimage_mono (toOpens_mono i.le)) := by
-  have hUV : U.toOpens ≤ V.toOpens := toOpens_mono i.le
   -- The transition maps of the pulled-back cover are indexed by its own index type; `change`
   -- presents the transition as the underlying map of pullbacks so that rewriting is type-correct.
-  change pullback.map q U.toOpens.ι q V.toOpens.ι (𝟙 _) (X.homOfLE hUV) (𝟙 _)
-      (by simp) (by rw [Category.comp_id]; exact (Scheme.homOfLE_ι _ _).symm) ≫ _ = _
-  rw [← cancel_mono (q ⁻¹ᵁ V.toOpens).ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι T,
-    pullbackRestrictIsoRestrict_hom_ι, pullbackRestrictIsoRestrict_hom_ι]
-  exact (pullback.lift_fst _ _ _).trans (Category.comp_id _)
+  change pullback.map q U.toOpens.ι q V.toOpens.ι (𝟙 _) (X.homOfLE (toOpens_mono i.le)) (𝟙 _)
+    (by simp) (by simp) ≫ _ = _
+  rw [← cancel_mono (q ⁻¹ᵁ V.toOpens).ι]
+  simp
 
 end TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite

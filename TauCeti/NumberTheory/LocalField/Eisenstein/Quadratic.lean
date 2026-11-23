@@ -65,9 +65,8 @@ theorem adjoin_eq_top_of_sq_add_mul_add_eq_zero (ht : t ∈ 𝓂[K]) (hc : Irred
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ω := IsIntegral.of_finite 𝒪[K] ω
   -- The minimal polynomial of `ω` over `𝒪[K]` is the Eisenstein quadratic, up to a unit.
-  have hassoc := associated_minpoly_of_eisenstein_isRoot ω _
-    (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible ht hc le_rfl)
-    (by simp [hω])
+  have hf := isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible ht hc le_rfl
+  have hassoc := hf.associated_minpoly (ξ := ω) hf.isUnit_leadingCoeff (by simp [hω])
   have hnat : (minpoly 𝒪[K] ω).natDegree = 2 := by
     rw [natDegree_eq_of_degree_eq (degree_eq_degree_of_associated hassoc),
       natDegree_X_pow_add_C_mul_X_add_C t c le_rfl]
@@ -161,7 +160,7 @@ private theorem exists_sq_add_mul_add_eq_zero_of_sq_eq (hx2 : x ^ 2 = algebraMap
     (hs : s ≠ 0) (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) :
     ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
       ω ^ 2 + algebraMap 𝒪[K] 𝒪[L] t * ω + algebraMap 𝒪[K] 𝒪[L] c = 0 := by
-  set y := (x - algebraMap K L b) / algebraMap K L s with hy_def
+  set y := (x - algebraMap K L b) / algebraMap K L s
   have hsL : algebraMap K L s ≠ 0 := (_root_.map_ne_zero _).mpr hs
   have hsy : algebraMap K L s * y = x - algebraMap K L b := mul_div_cancel₀ _ hsL
   have hy : y ^ 2 + algebraMap K L t * y + algebraMap K L c = 0 := by

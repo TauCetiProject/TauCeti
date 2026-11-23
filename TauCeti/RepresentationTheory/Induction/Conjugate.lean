@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Skeletal
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Induction.Restriction
 
@@ -22,9 +23,9 @@ This is the representation occurring in the summands of the Mackey decomposition
 
 The conjugation convention itself, that `MulAut.conj s • H` is `sHs⁻¹` and so that the membership
 proof `conjRep` needs is `s⁻¹xs ∈ H`, is pinned in `TauCeti.Algebra.Group.Subgroup.Pointwise` as
-`TauCeti.mem_conj_smul`, together with the laws `TauCeti.conj_one_smul` and
-`TauCeti.conj_mul_smul` making conjugation an action of `G` on the subgroups of `G`; the coherence
-below transports the representations along them.
+`TauCeti.mem_conj_smul`.  The laws `TauCeti.conj_one_smul` and `TauCeti.conj_mul_smul` of
+`TauCeti.Algebra.Group.Action.End` make conjugation an action of `G` on the subgroups of `G`; the
+coherence below transports the representations along them.
 
 The file also records the coherence making `s ↦ {}^s(-)` an action: conjugating by `1` does
 nothing and `{}^{st} A = {}^s({}^t A)`.  Neither statement is literally an equation between
@@ -164,7 +165,7 @@ theorem conjRep_ρ_apply [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
 /-- The action of the conjugate representation, written directly in the ambient group. -/
 theorem conjRep_ρ_mk [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
-    (conjRep s A).ρ x = A.ρ ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.2⟩ := by
+    (conjRep s A).ρ x = A.ρ ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.property⟩ := by
   rw [conjRep_ρ]
   congr 1
 
@@ -491,7 +492,7 @@ theorem char_conjFDRep (s : G) {H : Subgroup G} (A : FDRep k H)
 /-- The conjugate-character formula `({}^s χ)(x) = χ(s⁻¹xs)`. -/
 theorem char_conjFDRep_mk (s : G) {H : Subgroup G} (A : FDRep k H)
     (x : (MulAut.conj s • H : Subgroup G)) : (conjFDRep s A).character x =
-      A.character ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.2⟩ := by
+      A.character ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.property⟩ := by
   rw [char_conjFDRep]
   congr 1
 
@@ -569,7 +570,7 @@ theorem conjNormalRep_ρ (g : G) (A : Rep k N) (x : N) :
 
 /-- The conjugate action on a normal subgroup, written in the ambient group. -/
 theorem conjNormalRep_ρ_mk (g : G) (A : Rep k N) (x : N) :
-    (conjNormalRep g A).ρ x = A.ρ ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ := by
+    (conjNormalRep g A).ρ x = A.ρ ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ := by
   rw [conjNormalRep_ρ]
   congr 1
   exact Subtype.ext (by simp)
@@ -839,7 +840,7 @@ theorem conjNormalFDRep_ρ (g : G) (A : FDRep k N) (x : N) :
 
 /-- The conjugate finite-dimensional action, written in the ambient group. -/
 theorem conjNormalFDRep_ρ_mk (g : G) (A : FDRep k N) (x : N) :
-    (conjNormalFDRep g A).ρ x = A.ρ ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ := by
+    (conjNormalFDRep g A).ρ x = A.ρ ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ := by
   rw [conjNormalFDRep_ρ]
   congr 1
   exact Subtype.ext (by simp)
@@ -871,7 +872,7 @@ theorem char_conjNormalFDRep (g : G) (A : FDRep k N) (x : N) :
 /-- The conjugate-character formula on a normal subgroup: `({}^g χ)(x) = χ(g⁻¹xg)`. -/
 theorem char_conjNormalFDRep_mk (g : G) (A : FDRep k N) (x : N) :
     (conjNormalFDRep g A).character x =
-      A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ := by
+      A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ := by
   rw [char_conjNormalFDRep]
   congr 1
   exact Subtype.ext (by simp)

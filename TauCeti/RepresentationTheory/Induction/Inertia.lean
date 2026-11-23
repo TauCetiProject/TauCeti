@@ -60,14 +60,6 @@ restriction with a single `G`-orbit.
 * `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
-
-## References
-
-This file builds the inertia group of Layer 5 (Clifford theory over a normal subgroup) of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks for
-"the **inertia (stabilizer) group** `inertia V ≤ G` of an irreducible `V : FDRep k N` is
-`{g : G | {}^g V ≅ V}`, a subgroup containing `N`", and pins `inertia`, `mem_inertia_iff` and
-`le_inertia` in the accompanying `Suggested.lean`.
 -/
 
 public section
@@ -138,7 +130,7 @@ variable [Field k]
 This is the character shadow of `mem_inertia_iff`, and the form in which Clifford's theorem uses
 the inertia group. -/
 theorem char_conj_eq_of_mem_inertia {A : FDRep k N} {g : G} (hg : g ∈ inertia A) (x : N) :
-    A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ = A.character x := by
+    A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ = A.character x := by
   obtain ⟨e⟩ := mem_inertia_iff.1 hg
   rw [← char_conjNormalFDRep_mk, FDRep.char_iso e]
 

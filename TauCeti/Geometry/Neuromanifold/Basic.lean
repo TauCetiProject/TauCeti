@@ -19,13 +19,14 @@ or manifold structure assumed.
 
 The fibres and the kernel setoid describe parameter redundancy. Their quotient is equivalent
 to the realized-function type, and maps constant on fibres factor uniquely through the
-parametrization. Reparametrization, restriction of parameters, and composition on inputs or
-outputs interact with these constructions through the ordinary set-image APIs.
-Use `realizedFunctions_def` with Mathlib's `Set.range_comp_subset_range`,
-`Function.Surjective.range_comp`, `Set.range_domRestrict`, `Set.range_eq_empty`,
-`Set.range_unique`, and `Set.range_comp` for these range computations.
-Likewise, `fiber_def` exposes the singleton preimage for `Set.preimage_singleton_nonempty`
-and `Set.preimage_comp`.
+parametrization. For reparametrization and restriction of parameters, see
+`TauCeti.Geometry.Neuromanifold.Reparametrization`. Composition on inputs or outputs
+interacts with these constructions through the ordinary set-image APIs.
+Use `realizedFunctions_def` with Mathlib's `Set.range_comp` for these image computations.
+Likewise, `fiber_def` exposes the singleton preimage for `Set.preimage_comp`.
+A fibre is nonempty exactly over a realized function. An empty parameter type realizes no
+function, and a single parameter realizes exactly one; these degenerate cases apply verbatim to
+models built by composing on inputs or outputs, so no nonemptiness assumption is needed there.
 For cancellation of output or input composition, first rewrite parameter equivalence with
 `parameterSetoid_iff`. For an injective output map `h` with proof `hh`, use
 `hh.comp_left.eq_iff`; for a surjective input map `a` with proof `ha`, use
@@ -70,6 +71,26 @@ theorem realizedFunctions_def (f : W → X → Y) : realizedFunctions f = Set.ra
 @[simp] theorem mem_realizedFunctions (f : W → X → Y) (g : X → Y) :
     g ∈ realizedFunctions f ↔ ∃ w, f w = g := Iff.rfl
 
+/-- Some function is realized exactly when there is a parameter. -/
+@[simp] theorem realizedFunctions_nonempty_iff (f : W → X → Y) :
+    (realizedFunctions f).Nonempty ↔ Nonempty W :=
+  Set.range_nonempty_iff_nonempty
+
+/-- No function is realized exactly when there are no parameters. -/
+@[simp] theorem realizedFunctions_eq_empty_iff (f : W → X → Y) :
+    realizedFunctions f = ∅ ↔ IsEmpty W :=
+  Set.range_eq_empty_iff
+
+/-- With no parameters the neuromanifold is empty. -/
+@[simp] theorem realizedFunctions_of_isEmpty [IsEmpty W] (f : W → X → Y) :
+    realizedFunctions f = ∅ :=
+  Set.range_eq_empty f
+
+/-- With a single parameter the neuromanifold consists of the one function it realizes. -/
+theorem realizedFunctions_unique [Unique W] (f : W → X → Y) :
+    realizedFunctions f = {f default} :=
+  Set.range_unique
+
 /-- The realization map with codomain restricted to its neuromanifold. -/
 def parametrization (f : W → X → Y) : W → realizedFunctions f :=
   Set.rangeFactorization f
@@ -96,6 +117,16 @@ theorem fiber_def (f : W → X → Y) (g : X → Y) : fiber f g = f ⁻¹' {g} :
 theorem disjoint_fiber (f : W → X → Y) {g h : X → Y} (hne : g ≠ h) :
     Disjoint (fiber f g) (fiber f h) :=
   (Set.disjoint_singleton.mpr hne).preimage f
+
+/-- A realization fibre is nonempty exactly over a realized function. -/
+@[simp] theorem fiber_nonempty_iff (f : W → X → Y) (g : X → Y) :
+    (fiber f g).Nonempty ↔ g ∈ realizedFunctions f :=
+  Set.preimage_singleton_nonempty
+
+/-- A realization fibre is empty exactly over a function that is not realized. -/
+@[simp] theorem fiber_eq_empty_iff (f : W → X → Y) (g : X → Y) :
+    fiber f g = ∅ ↔ g ∉ realizedFunctions f :=
+  Set.preimage_singleton_eq_empty
 
 /-- Two parameters are equivalent when they realize the same function. -/
 def parameterSetoid (f : W → X → Y) : Setoid W := Setoid.ker f

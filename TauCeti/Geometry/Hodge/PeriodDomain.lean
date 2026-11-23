@@ -28,9 +28,9 @@ genuine constraint on a `HodgeType`, since it rules out every type whose Hodge n
 up to the rank of the lattice one wants to carry it.
 
 The symmetry group `Aut(V, Qint)` of the pair — where the monodromy of a variation of Hodge
-structure lands — is not redefined here: it is `TauCeti.BilinForm.isometryGroup Qint`, the subgroup
-of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure on the set
-of period-domain points is out of scope; it needs flag-variety topology.
+structure lands — is not redefined here: it is `LinearMap.BilinForm.isometryGroup Qint`, the
+subgroup of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure
+on the set of period-domain points is out of scope; it needs flag-variety topology.
 
 ## Main declarations
 
@@ -41,10 +41,8 @@ of period-domain points is out of scope; it needs flag-variety topology.
   effective Hodge structure exactly when its prescribed Hodge type is effective.
 * `TauCeti.Hodge.tatePoint`: the Tate structure `ℤ(m)` as a point of its period domain.
 
-The signature of `PeriodDomain.Point` is adapted from the roadmap's formal companion
-`HodgeStructures/Suggested.lean`. The mathematics follows Griffiths, *Periods of integrals on
-algebraic manifolds II*, §1, and Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*,
-§4. This is Layer L3 of `TauCetiRoadmap/HodgeStructures/README.md`.
+The mathematics follows Griffiths, *Periods of integrals on algebraic manifolds II*, §1, and
+Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*, §4.
 -/
 
 public section

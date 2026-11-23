@@ -35,13 +35,13 @@ the law. The comparison is between limits of sums, not of their leading terms al
 may vanish while `Θ_L(a/c + i t)` does not.
 
 At `a = c = 1` the left side is `1`, and complex conjugation gives **Milgram's formula**
-`∑_{γ ∈ L^∨/L} e(‖γ‖² / 2) = √|L^∨/L| · e(n/8)` for a positive definite even lattice.
+`∑_{γ ∈ L^∨/L} e(‖γ‖² / 2) = √|L^∨/L| · e(n/8)` for a positive definite even lattice
+(`ZLattice.IsEven.sum_discriminantQuadraticChar`).
 
 ## Main statements
 
 * `ZLattice.IsEven.gaussSum_eq_mul_dualGaussSum`: the reciprocity law for the Gauss sums of an
   even lattice of even rank.
-* `ZLattice.IsEven.dualGaussSum_one_one`: Milgram's formula.
 
 ## References
 
@@ -202,33 +202,6 @@ theorem gaussSum_eq_mul_dualGaussSum (hk : finrank ℝ E = 2 * k) (a c : ℕ) [N
   ring
 
 end Covolume
-
-/-- **Milgram's formula.** If `L` is an even lattice and `dim E = 2k`, then
-`∑_{γ ∈ L^∨/L} e(‖γ‖² / 2) = √|L^∨/L| · i^k`, where `i^k = e(n/8)` for `n = 2k`. The left side
-is written as a sum over `L^∨ / 1L`; `ZLattice.dualGaussSum_one` rewrites it as a sum over the
-discriminant group `L^∨/L`. -/
-theorem dualGaussSum_one_one (hk : finrank ℝ E = 2 * k)
-    [Fintype (dual L ⧸ (((1 : ℕ) : ℝ) • L).submoduleOf (dual L))] :
-    dualGaussSum L hL 1 1 = √(Nat.card (DiscriminantGroup L) : ℝ) * I ^ k := by
-  -- The statement involves no measure; the reciprocity law uses the Borel volume.
-  borelize E
-  have h := gaussSum_eq_mul_dualGaussSum hL hk 1 1
-  rw [gaussSum_one] at h
-  have hcov : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_pos L).ne'
-  have hsqrt : covolume L = √(Nat.card (DiscriminantGroup L) : ℝ) :=
-    inv_injective (hL.isIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup)
-  -- At `a = c = 1` the law reads `1 = (covol L)⁻¹ i^k ∑_γ e(-‖γ‖² / 2)`; conjugate it.
-  have h' : dualGaussSum L hL (-1) 1 = covolume L * (-I) ^ k := by
-    rw [Nat.cast_one, div_one, one_pow, one_mul] at h
-    have hI : I ^ k * (-I) ^ k = 1 := by rw [← mul_pow]; simp
-    calc _ = (covolume L : ℂ) * (-I) ^ k * ((covolume L : ℂ)⁻¹ * I ^ k *
-          dualGaussSum L hL (-1) 1) := by
-          field_simp
-          linear_combination (-(dualGaussSum L hL (-1) 1)) * hI
-      _ = _ := by push_cast at h; rw [← h, mul_one]
-  have hconj := conj_dualGaussSum hL (-1) 1
-  rw [neg_neg, h', map_mul, conj_ofReal, map_pow, map_neg, conj_I, neg_neg] at hconj
-  rw [← hconj, hsqrt]
 
 end IsEven
 

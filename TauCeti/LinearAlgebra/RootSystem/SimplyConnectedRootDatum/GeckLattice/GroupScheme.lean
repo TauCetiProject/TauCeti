@@ -457,8 +457,10 @@ abbrev geckTorusMatrix {A : Type v} [CommRing A] :
     (t.geckWeightFin ht)
 
 /-- **The `A`-valued points of the Geck carrier of a valid Dynkin type**, as a subgroup of
-`GLₙ(A)` through the Hopf-ideal quotient presentation and the Geck coordinate basis. -/
-def geckPoints (A : Type v) [CommRing A] :
+`GLₙ(A)` through the Hopf-ideal quotient presentation and the Geck coordinate basis.
+This abbreviates the generic Kostant toral-closure points, so their endomorphisms specialize
+directly to the Geck carrier without transporting across an equality of subgroups. -/
+abbrev geckPoints (A : Type v) [CommRing A] :
     Subgroup (Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -485,17 +487,6 @@ theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := (rfl)
-
-/-- A matrix is a point of the Geck carrier exactly when the associated convolution point
-kills its defining Hopf ideal. -/
-@[simp]
-theorem mem_geckPoints_iff (A : Type v) [CommRing A]
-    (g : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) :
-    g ∈ t.geckPoints ht A ↔
-      ∀ x ∈ t.geckDefiningIdeal ht,
-        ((GeneralLinear.pointsMulEquiv (R := ℤ) (t.geckDim ht)).symm g).ofConv x = 0 :=
-  TauCeti.UniversalEnvelopingAlgebra.mem_kostantToralPointsSubgroup_iff
-    _ _ _ _ _ _ _ _ A g
 
 /-- Every matrix in a numbered Geck root subgroup is a point of the carrier. -/
 theorem geckRootSubgroupMatrix_mem_geckPoints (A : Type v) [CommRing A]

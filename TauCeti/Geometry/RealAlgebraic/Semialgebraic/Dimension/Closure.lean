@@ -49,11 +49,11 @@ theorem IsSemialgebraic.semialgebraicDim_closure (hs : IsSemialgebraic s) :
   refine le_antisymm ?_ (semialgebraicDim_mono subset_closure)
   rcases s.eq_empty_or_nonempty with rfl | hne
   · simp
-  obtain ⟨-, -, -, -, d, hd, -⟩ := hs.closure.exists_isOpenEmbedding_semialgebraicDim_eq hne.closure
+  obtain ⟨-, -, -, -, d, hd, -⟩ := exists_isOpenEmbedding_semialgebraicDim_eq hne.closure
   -- A projection onto `d` coordinates maps `closure s` onto a set with nonempty interior.
   obtain ⟨ι, hι, hint⟩ := hs.closure.natCast_le_semialgebraicDim_iff.1 hd.ge
   rw [hd, hs.natCast_le_semialgebraicDim_iff]
-  refine ⟨ι, hι, nonempty_iff_ne_empty.2 fun h0 ↦ hint.ne_empty ?_⟩
+  refine ⟨ι, hι, Set.ne_empty_iff_nonempty.1 fun h0 ↦ hint.ne_empty ?_⟩
   -- That image lies in the closure of the projection of `s`, which is nowhere dense if the
   -- projection of `s` has empty interior.
   have hnd := (hs.image_comp ι).isNowhereDense_iff.2 h0

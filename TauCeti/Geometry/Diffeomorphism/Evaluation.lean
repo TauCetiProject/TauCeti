@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 
 On a compact source manifold with locally compact model, the weak Whitney topology makes
 evaluation of `C^n` diffeomorphisms continuous in both the diffeomorphism and the point.
-For self-diffeomorphisms this gives continuity of the tautological action.
+For self-diffeomorphisms this gives continuity of the tautological action. The scoped
+`ContinuousEval` instance also lets `Path.evalHomotopy` (in
+`TauCeti.Topology.MappingSpace.Evaluation`) apply to diffeomorphisms.
 -/
 
 public section

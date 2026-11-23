@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Data.Fin.Basic
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Finite sums and finite types
@@ -18,45 +24,66 @@ type arises: one variable per named slot, or one variable per numeral. Translati
 is pure bookkeeping, needed wherever an object indexed by named slots must be presented against
 an API indexed by `Fin n`.
 
-More generally, an embedding of a type `α` into `Fin n` identifies `Fin n` with the sum of `α`
-and a finite complementary type.  This packages the standard splitting of a finite type along
-the range of an embedding.
+More generally, an embedding of a type `α` into a finite type `β` identifies `β` with the sum of
+`α` and a finite complementary type `Fin l`. This packages the standard splitting of a finite
+type along the range of an embedding. Likewise, a dependent sum of blocks `Fin (m i)` over a
+finite index type is equivalent to `Fin n` as soon as the block sizes add up to `n`.
+
+Two copies of a type `ι` are the pairs `(i, 0)` and `(i, 1)` of `ι × Fin 2`. For `ι = Fin n`,
+listing these pairs consecutively through `finProdFinEquiv` interleaves the two copies of `Fin n`
+into `Fin (n + n)`: the first copy goes to the even positions and the second to the odd ones.
 
 The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv` on each summand,
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
 two- or three-variable object can rewrite rather than unfold them.
 
-## Main definitions
+## Main declarations
 
-* `unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to
-  `0` and the right to `1`.
-* `unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`, sending the
-  outer left summand to `0` and the two inner ones to `1` and `2`.
-* `Function.Embedding.exists_equiv_sum_fin`: an embedding into `Fin n` extends to an equivalence
-  from the sum with a finite complement.
+* `TauCeti.unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left
+  summand to `0` and the right to `1`.
+* `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
+  sending the outer left summand to `0` and the two inner ones to `1` and `2`.
+* `TauCeti.sumEquivProdFinTwo`: the equivalence `ι ⊕ ι ≃ ι × Fin 2`, sending `Sum.inl i` to
+  `(i, 0)` and `Sum.inr i` to `(i, 1)`.
+* `TauCeti.finSumFinEquivInterleave`: the equivalence `Fin n ⊕ Fin n ≃ Fin (n + n)` sending
+  `Sum.inl i` to `2 i` and `Sum.inr i` to `2 i + 1`.
+* `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
+  equivalence from the sum with a finite complement.
+* `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
+  type equivalent to `Fin n`.
+* `TauCeti.interleaveIndex`: the embedding `Fin a ⊕ Fin b ↪ Fin (2 * max a b)` placing the left
+  summand in the even positions and the right summand in the odd positions.
+* `TauCeti.finSumFinInterleaveEquiv`: for `a = b = k` this embedding is the interleaving
+  `Fin k ⊕ Fin k ≃ Fin (2 * k)`, `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
+  `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
 
 ## Implementation notes
 
-The constructions are implementation details: `Mathlib.Data.Fintype.EquivFin` and
-`Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather than re-exported. Only the
-equivalence and embedding interfaces needed by the declaration types are public.
+The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
+`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
+than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
+`finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
+by the declaration types are public.
 -/
 
 public section
 
 namespace Function.Embedding
 
-/-- An embedding `s : α ↪ Fin n` extends to an equivalence from `α` together with a finite
-complement to `Fin n`. -/
-theorem exists_equiv_sum_fin {α : Type*} {n : ℕ} (s : α ↪ Fin n) :
-    ∃ (l : ℕ) (e : α ⊕ Fin l ≃ Fin n), ∀ a, e (Sum.inl a) = s a := by
+/-- An embedding `s : α ↪ β` into a finite type extends to an equivalence from `α` together with
+a finite complement to `β`. -/
+theorem exists_equiv_sum_fin {α β : Type*} [Finite β] (s : α ↪ β) :
+    ∃ (l : ℕ) (e : α ⊕ Fin l ≃ β), ∀ a, e (Sum.inl a) = s a := by
   classical
-  have _ : Fintype α := Fintype.ofInjective s s.injective
-  exact ⟨Fintype.card {j : Fin n // j ∉ Set.range s},
-    (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-      (Equiv.sumCompl fun j : Fin n ↦ j ∈ Set.range s), fun a ↦ by simp⟩
+  obtain ⟨l, ⟨f⟩⟩ := Finite.exists_equiv_fin {b : β // b ∉ Set.range s}
+  exact ⟨l, (Equiv.sumCongr (Equiv.ofInjective s s.injective) f.symm).trans
+    (Equiv.sumCompl (· ∈ Set.range s)), fun a ↦ by simp⟩
 
 end Function.Embedding
+
+namespace TauCeti
 
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to `0` and the right to `1`.
 
@@ -111,3 +138,115 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_one :
 @[simp]
 theorem unitSumUnitSumUnitEquivFinThree_symm_two :
     unitSumUnitSumUnitEquivFinThree.symm 2 = Sum.inr (Sum.inr ()) := by decide
+
+/-- The equivalence `ι ⊕ ι ≃ ι × Fin 2` identifying the left and right copies of `i` with the
+pairs `(i, 0)` and `(i, 1)`. -/
+def sumEquivProdFinTwo (ι : Type*) : ι ⊕ ι ≃ ι × Fin 2 where
+  toFun := Sum.elim (·, 0) (·, 1)
+  invFun p := if p.2 = 0 then .inl p.1 else .inr p.1
+  left_inv := by rintro (i | i) <;> simp
+  right_inv := by
+    rintro ⟨i, j⟩
+    fin_cases j <;> simp
+
+variable {ι : Type*}
+
+@[simp]
+theorem sumEquivProdFinTwo_inl (i : ι) : sumEquivProdFinTwo ι (.inl i) = (i, 0) := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_inr (i : ι) : sumEquivProdFinTwo ι (.inr i) = (i, 1) := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_symm_zero (i : ι) : (sumEquivProdFinTwo ι).symm (i, 0) = .inl i := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_symm_one (i : ι) : (sumEquivProdFinTwo ι).symm (i, 1) = .inr i := by
+  simp [sumEquivProdFinTwo]
+
+/-- The interleaving of two copies of `Fin n` into `Fin (n + n)`: the first copy goes to the even
+positions and the second copy to the odd positions, `Sum.inl i ↦ 2 i` and `Sum.inr i ↦ 2 i + 1`
+(`TauCeti.val_finSumFinEquivInterleave_inl`, `TauCeti.val_finSumFinEquivInterleave_inr`). It is
+`TauCeti.sumEquivProdFinTwo` followed by `finProdFinEquiv`, which lists the pairs `(i, 0)` and
+`(i, 1)` consecutively. -/
+def finSumFinEquivInterleave (n : ℕ) : Fin n ⊕ Fin n ≃ Fin (n + n) :=
+  (sumEquivProdFinTwo (Fin n)).trans (finProdFinEquiv.trans (finCongr (Nat.mul_two n)))
+
+@[simp]
+theorem val_finSumFinEquivInterleave_inl {n : ℕ} (i : Fin n) :
+    (finSumFinEquivInterleave n (.inl i) : ℕ) = 2 * i := by
+  simp [finSumFinEquivInterleave]
+
+@[simp]
+theorem val_finSumFinEquivInterleave_inr {n : ℕ} (i : Fin n) :
+    (finSumFinEquivInterleave n (.inr i) : ℕ) = 2 * i + 1 := by
+  simp [finSumFinEquivInterleave, Nat.add_comm]
+
+/-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
+theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
+    (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
+  ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
+
+/-- The disjoint even/odd positions for two finite coordinate blocks. -/
+def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
+  toFun := Sum.elim
+    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
+    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
+  inj' := by
+    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
+    · exact congrArg Sum.inl (Fin.ext (by omega))
+    · omega
+    · omega
+    · exact congrArg Sum.inr (Fin.ext (by omega))
+
+@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
+    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
+
+@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
+    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
+
+/-- The interleaving of two copies of `Fin k` into `Fin (2 * k)`: `inl t ↦ 2 * t` and
+`inr t ↦ 2 * t + 1`. It is the embedding `TauCeti.interleaveIndex k k`, which is onto. -/
+def finSumFinInterleaveEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
+  toFun t := Fin.cast (by rw [max_self]) (interleaveIndex k k t)
+  invFun s := if s.val % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩
+  left_inv := by
+    rintro (t | t)
+    · simp
+    · simp [Fin.ext_iff]
+      omega
+  right_inv s := by
+    by_cases h : s.val % 2 = 0 <;> simp [h, Fin.ext_iff] <;> omega
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inl t) : ℕ) = 2 * t :=
+  (rfl)
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inr t) : ℕ) = 2 * t + 1 :=
+  (rfl)
+
+/-- The step after the even position `2 * t` is the odd position `2 * t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inl t)) =
+      finSumFinInterleaveEquiv k (.inr t) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
+
+/-- The step after the odd position `2 * t + 1` is the even position of the cyclically next index
+`t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inr t)) =
+      finSumFinInterleaveEquiv k (.inl (finRotate k t)) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite, val_finSumFinInterleaveEquiv_inl,
+    Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
+
+end TauCeti

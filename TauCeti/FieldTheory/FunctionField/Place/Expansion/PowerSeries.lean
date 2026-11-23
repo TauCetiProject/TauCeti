@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Basic
 public import Mathlib.RingTheory.PowerSeries.Order
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Power-series expansions at rational places
@@ -170,7 +171,7 @@ power-series expansion. -/
 theorem order_powerSeriesExpansion (x : P.integers) (hx : x ≠ 0) :
     (P.powerSeriesExpansion hP ht x).order = ((P.ord (x : F)).toNat : ℕ∞) := by
   have hxF : (x : F) ≠ 0 := by simpa using hx
-  have ho : 0 ≤ P.ord (x : F) := P.mem_integers_iff_ord_nonneg.mp x.2
+  have ho : 0 ≤ P.ord (x : F) := P.mem_integers_iff_ord_nonneg.mp x.property
   have hlow := (P.mem_filtration_iff_coeff_powerSeriesExpansion_eq_zero hP ht
     (P.ord (x : F)).toNat x).mp
     ((P.mem_filtration_iff_le_ord hxF).mpr (by omega))

@@ -20,10 +20,10 @@ transverse vector field orients a hypersurface of an oriented manifold. Placing 
 multiplies the orientation by `(-1)ᵏ`, so for foliations of `3`-manifolds (`k = 2`) the two
 conventions agree.
 
-Over a compact manifold an oriented vector bundle has a Thom class
+An oriented vector bundle has a Thom class
 (`TauCeti.VectorBundleOrientation.exists_isThomClass`). So a transversely orientable
-codimension-one foliation of a closed orientable manifold has a Thom class with coefficients in
-any commutative ring `K` (`TauCeti.Foliation.exists_isThomClass_of_transverse`), and hence an
+codimension-one foliation of an orientable manifold has a Thom class with coefficients in any
+commutative ring `K` (`TauCeti.Foliation.exists_isThomClass_of_transverse`), and hence an
 Euler class (`TauCeti.Foliation.exists_isEulerClass_of_transverse`). In particular a transversely
 orientable codimension-one foliation of a closed orientable `3`-manifold has an Euler class in
 `H²(M; K)`, the kind of class that Thurston's Euler class inequality bounds.
@@ -43,7 +43,7 @@ The existence results take the manifold, its model space and the coefficient rin
 * `TauCeti.Foliation.transverseOrientation_apply`: on each tangent space of the foliation it is
   the orientation induced by the transverse vector (`Orientation.transverse`).
 * `TauCeti.Foliation.exists_isThomClass_of_transverse`: a transversely orientable
-  codimension-one foliation of a compact orientable manifold has a Thom class.
+  codimension-one foliation of an orientable manifold has a Thom class.
 * `TauCeti.Foliation.transverseOrientation_neg`: reversing the orientation of the manifold reverses
   it.
 * `TauCeti.Foliation.exists_isEulerClass_of_transverse`: such a foliation has an Euler class.
@@ -126,11 +126,11 @@ section Existence
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
-  {M : Type} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M] {k : ℕ}
+  {M : Type} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
   [IsManifold I (n + 1) M] [IsManifold I 1 M] [Orientable I M] (F : Foliation I n M k)
 
-/-- **A transversely orientable codimension-one foliation of a compact orientable manifold has a
-Thom class.** If `F` has rank `k` on a compact orientable manifold of dimension `k + 1` and some
+/-- **A transversely orientable codimension-one foliation of an orientable manifold has a Thom
+class.** If `F` has rank `k` on an orientable manifold of dimension `k + 1` and some
 continuous vector field is nowhere tangent to `F`, then the tangent field of `F` has a Thom class
 `u ∈ Hᵏ(TF, TF₀; K)` with coefficients in any commutative ring `K`. -/
 theorem exists_isThomClass_of_transverse (hE : finrank ℝ E = k + 1)
@@ -145,7 +145,7 @@ theorem exists_isThomClass_of_transverse (hE : finrank ℝ E = k + 1)
   obtain ⟨u, hu⟩ := (F.transverseOrientation hE o hν hνF).exists_isThomClass (by simp) K
   exact ⟨u, F.isThomClass_iff.2 hu⟩
 
-/-- **A transversely orientable codimension-one foliation of a compact orientable manifold has an
+/-- **A transversely orientable codimension-one foliation of an orientable manifold has an
 Euler class** `e ∈ Hᵏ(M; K)`, with coefficients in any commutative ring `K`: the Euler class of a
 Thom class of its tangent field. -/
 theorem exists_isEulerClass_of_transverse (hE : finrank ℝ E = k + 1)

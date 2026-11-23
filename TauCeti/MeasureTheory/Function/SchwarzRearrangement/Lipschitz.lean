@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
--- Proof-only: Lebesgue measure, uniqueness of Haar measure and the Brunn–Minkowski inequality.
+-- Proof-only: Lebesgue measure, uniqueness of Haar measure, the Brunn–Minkowski inequality and the
+-- extended Lipschitz bound for positive parts.
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Schwarz rearrangement of Lipschitz functions
@@ -39,7 +42,8 @@ nonnegative integrable Lipschitz function.
 ## Main results
 
 * `TauCeti.schwarzRearrangement_le_add_mul_edist`: Lipschitz bounds pass to the rearrangement.
-* `TauCeti.schwarzRearrangement_ne_top`: finiteness of the rearrangement.
+* `TauCeti.schwarzRearrangement_ne_top`, `LipschitzWith.schwarzRearrangement_ofReal_ne_top`:
+  finiteness of the rearrangement.
 * `TauCeti.lipschitzWith_toReal_schwarzRearrangement`: the real-valued form.
 
 ## References
@@ -90,8 +94,6 @@ private theorem schwarzRearrangement_volume_le_add (hf : ∀ x y, f x ≤ f y + 
   refine hct.trans ((ENNReal.add_lt_add_iff_right hKδ).2 ?_)
   rw [lt_schwarzRearrangement_iff] at ht ⊢
   set A := {z | s + K * ENNReal.ofReal δ < f z}
-  have hA : MeasurableSet A :=
-    (isOpen_lt continuous_const (continuous_of_le_add_edist K ENNReal.coe_ne_top hf)).measurableSet
   have hAn : A.Nonempty := nonempty_of_measure_ne_zero (zero_le.trans_lt ht).ne'
   -- The closed `δ`-neighbourhood of the level set `A` lies in the lower level set.
   have hsub : A + closedBall 0 δ ⊆ {z | s < f z} := by
@@ -111,8 +113,8 @@ private theorem schwarzRearrangement_volume_le_add (hf : ∀ x y, f x ≤ f y + 
         (ENNReal.add_lt_add_iff_right (ENNReal.rpow_ne_top_of_nonneg hp.le
           measure_closedBall_lt_top.ne)).2 (ENNReal.rpow_lt_rpow ht hp)
     _ ≤ volume (A + closedBall (0 : E) δ) ^ p :=
-        volume_rpow_add_volume_rpow_le Module.finrank_pos.ne' hAn hA.nullMeasurableSet
-          (nonempty_closedBall.2 hδ₀) measurableSet_closedBall.nullMeasurableSet
+        volume_rpow_add_volume_rpow_le Module.finrank_pos.ne' hAn (nonempty_closedBall.2 hδ₀)
+          measurableSet_closedBall.nullMeasurableSet
     _ ≤ volume {z | s < f z} ^ p := ENNReal.rpow_le_rpow (measure_mono hsub) hp.le
 
 variable (μ : Measure E) [μ.IsAddHaarMeasure]
@@ -150,19 +152,23 @@ theorem schwarzRearrangement_ne_top [Nontrivial E] (hf : ∀ x y, f x ≤ f y + 
   exact ENNReal.add_ne_top.2 ⟨ne_top_of_le_ne_top ht (not_lt.1 hy),
     ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)⟩
 
+/-- **Finiteness of the rearrangement of a real Lipschitz function.** If a real Lipschitz function
+`h` has some superlevel set `{h > t}` of finite measure, then the Schwarz rearrangement of its
+positive part is finite everywhere. -/
+theorem _root_.LipschitzWith.schwarzRearrangement_ofReal_ne_top [Nontrivial E] {h : E → ℝ}
+    (hh : LipschitzWith K h) {t : ℝ} (ht : μ {x | t < h x} ≠ ∞) (x : E) :
+    schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x ≠ ∞ :=
+  schwarzRearrangement_ne_top μ hh.ofReal_le_ofReal_add_mul_edist ENNReal.ofReal_ne_top
+    (ne_top_of_le_ne_top ht (measure_mono fun _ hy ↦ (ENNReal.ofReal_lt_ofReal_iff'.1 hy).1)) x
+
 /-- **Schwarz rearrangement of a real Lipschitz function.** For a real `K`-Lipschitz function `h`,
 the real value (`ENNReal.toReal`) of the Schwarz rearrangement of its positive part is
 `K`-Lipschitz. -/
 theorem lipschitzWith_toReal_schwarzRearrangement {h : E → ℝ} (hh : LipschitzWith K h) :
     LipschitzWith K fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x).toReal := by
   set g := schwarzRearrangement μ fun y ↦ ENNReal.ofReal (h y)
-  have hg : ∀ x y, g x ≤ g y + K * edist x y := by
-    refine schwarzRearrangement_le_add_mul_edist μ fun x y ↦ ?_
-    calc ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y + K * dist x y) :=
-          ENNReal.ofReal_le_ofReal (hh.le_add_mul x y)
-      _ ≤ ENNReal.ofReal (h y) + K * edist x y := by
-        rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg]
-        exact ENNReal.ofReal_add_le
+  have hg : ∀ x y, g x ≤ g y + K * edist x y :=
+    schwarzRearrangement_le_add_mul_edist μ hh.ofReal_le_ofReal_add_mul_edist
   refine LipschitzWith.of_le_add_mul K fun x y ↦ ?_
   have hxy : K * edist x y ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)
   rcases eq_or_ne (g y) ∞ with hgy | hgy

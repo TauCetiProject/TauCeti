@@ -67,12 +67,12 @@ modulo `𝔪`, and a unit at every finite place, is the norm of an idele of `L`.
 theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
     ∃ 𝔪 : Modulus K, ideleCongruenceSubgroup 𝔪 ≤ (ideleNormMap K L).toMonoidHom.range := by
   classical
-  set n := Module.finrank K L with hn_def
+  set n := Module.finrank K L
   have hn : n ≠ 0 := Module.finrank_pos.ne'
   -- The finite set `S` of finite places of `K` ramified in `L`.
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)), ∀ v ∉ S,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := by
     have hfin := Filter.eventually_cofinite.mp (eventually_isUnramifiedAt_liesOver K L)
     exact ⟨hfin.toFinset, fun v hv ↦ by simpa using hv⟩
   -- At each finite place, the `n`-th powers contain a step of the unit filtration.

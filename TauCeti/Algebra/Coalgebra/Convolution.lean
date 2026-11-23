@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RingTheory.Ideal.Operations
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Comultiplication as a convolution product
@@ -35,8 +36,14 @@ in ideals `I` and `J` of a commutative algebra has values in `I * J`, so the `n`
 power of a map with values in `I` has values in `I ^ n`. For a point `x = 1 + D` of an affine
 group with `D` valued in `I`, this controls the binomial expansion of the powers of `x`.
 
+For the convolution dual, the unit is the counit and multiplication is successive
+contraction of comultiplication.
+
 ## Main declarations
 
+* `LinearMap.ofConv_one_eq_counit`: the convolution-dual unit is the counit.
+* `LinearMap.convMul_eq_comp_tensorComponent`: convolution-dual multiplication as contraction.
+* `LinearMap.tensorComponent_lTensor_comul`: successive contractions on the right tensor factor.
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
   convolution product of the two tensor inclusions.
 * `TauCeti.Bialgebra.comulPoint_eq_include_mul`: the corresponding identity for the
@@ -44,6 +51,8 @@ group with `D` valued in `I`, this controls the binomial expansion of the powers
 * `TauCeti.Bialgebra.toConv_comp_comulAlgHom`: the functorial form of the previous identity,
   after post-composing with an arbitrary algebra map out of the tensor square.
 * `TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom`: the identity base-valued point is the counit.
+* `TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul`: an algebra map into a commutative bialgebra
+  respects the comultiplications when pre-composition with it is multiplicative on points.
 * `WithConv.mulTensor`: the exterior convolution product, with its
   normalization rules and `WithConv.mulTensor_convMul`.
 * `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
@@ -58,6 +67,37 @@ group with `D` valued in `I`, this controls the binomial expansion of the powers
 public section
 
 open TensorProduct WithConv
+
+namespace LinearMap
+
+variable {R C : Type*} [CommSemiring R]
+  [AddCommMonoid C] [Module R C] [Coalgebra R C]
+
+/-- The unit of the convolution dual is the coalgebra counit. -/
+@[simp]
+theorem ofConv_one_eq_counit :
+    (1 : WithConv (Module.Dual R C)).ofConv = Coalgebra.counit := by
+  simp [convOne_def]
+
+/-- Multiplication in the convolution dual is successive contraction of comultiplication. -/
+theorem convMul_eq_comp_tensorComponent (f g : WithConv (Module.Dual R C)) :
+    (f * g).ofConv = f.ofConv ∘ₗ tensorComponent g.ofConv ∘ₗ Coalgebra.comul := by
+  have hp : f.ofConv ∘ₗ tensorComponent g.ofConv =
+      LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
+    ext c d
+    simp [mul_comm]
+  rw [← comp_assoc, hp, convMul_def, comp_assoc]
+
+/-- Successive contractions of a comultiplication on the right tensor factor are
+contraction by the convolution product. -/
+theorem tensorComponent_lTensor_comul {M : Type*} [AddCommMonoid M] [Module R M]
+    (f g : WithConv (Module.Dual R C)) (x : M ⊗[R] C) :
+    tensorComponent f.ofConv
+        ((tensorComponent g.ofConv).lTensor M (Coalgebra.comul.lTensor M x)) =
+      tensorComponent (f * g).ofConv x := by
+  simp [lTensor_def, convMul_eq_comp_tensorComponent, comp_assoc]
+
+end LinearMap
 
 namespace TauCeti
 
@@ -152,6 +192,23 @@ theorem comulPoint_eq_include_mul :
         (R := R) (A := H) (B := H)) := by
   simpa only [AlgHom.id_comp] using
     toConv_comp_comulAlgHom (phi := AlgHom.id R (H ⊗[R] H))
+
+/-- **A criterion for respecting comultiplication.** An `R`-algebra map `φ : A →ₐ[R] B` of
+bialgebras, with `B` commutative, respects the comultiplications as soon as pre-composition with
+`φ` is multiplicative on the convolution monoid of points of `B` with values in `B ⊗[R] B`, where
+the comultiplication of `B` is the product of the two tensor inclusions
+(`TauCeti.Bialgebra.comulPoint_eq_include_mul`). In particular it suffices that pre-composition
+with `φ` is multiplicative on points with values in every commutative `R`-algebra. -/
+theorem map_comp_comulAlgHom_of_mul {A B : Type*} [Semiring A] [CommSemiring B]
+    [_root_.Bialgebra R A] [_root_.Bialgebra R B] (φ : A →ₐ[R] B)
+    (hmul : ∀ f g : WithConv (B →ₐ[R] B ⊗[R] B),
+      toConv ((f * g).ofConv.comp φ) = toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) :
+    (Algebra.TensorProduct.map φ φ).comp (Bialgebra.comulAlgHom R A) =
+      (Bialgebra.comulAlgHom R B).comp φ := by
+  refine WithConv.toConv_injective ?_
+  rw [toConv_comp_comulAlgHom, Algebra.TensorProduct.map_comp_includeLeft,
+    Algebra.TensorProduct.map_comp_includeRight, ← hmul, ← comulPoint_eq_include_mul,
+    ofConv_toConv]
 
 end Bialgebra
 

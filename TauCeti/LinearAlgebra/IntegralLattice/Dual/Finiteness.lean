@@ -30,14 +30,13 @@ gives nondegeneracy on both sides.
   finite `ℤ`-module exactly when the form is nondegenerate.
 * `TauCeti.IntegralLattice.fg_dualCarrier_iff_nondegenerate`: the equivalent finite-generation
   formulation.
-* `TauCeti.IntegralLattice.isLattice_dualCarrier_iff_nondegenerate`: the dual carrier is a full
+* `TauCeti.IntegralLattice.isFullLattice_dualCarrier_iff_nondegenerate`: the dual carrier is a full
   lattice exactly when the form is nondegenerate.
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 2.
 -/
 
 public section
@@ -55,7 +54,7 @@ hypothesis. -/
 theorem span_dualCarrier_eq_top (L : IntegralLattice V) :
     Submodule.span ℚ (L.dualCarrier : Set V) = ⊤ := by
   apply top_unique
-  rw [← Submodule.IsLattice.span_eq_top (M := L.carrier)]
+  rw [← Submodule.IsFullLattice.span_eq_top (M := L.carrier)]
   exact Submodule.span_mono L.le_dualCarrier
 
 /-- Every rational multiple of a vector in the left radical belongs to the dual carrier. -/
@@ -121,7 +120,7 @@ theorem moduleFinite_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
     exact L.nondegenerate_of_moduleFinite_dualCarrier
   · intro h
     let hnondegenerate : L.IsNondegenerate := ⟨h⟩
-    infer_instance
+    exact Submodule.IsLattice.finite ℚ L.dualCarrier
 
 /-- The dual carrier is finitely generated over `ℤ` exactly when the lattice form is
 nondegenerate. -/
@@ -132,11 +131,11 @@ theorem fg_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
 
 /-- The dual carrier is a full integral lattice exactly when the lattice form is
 nondegenerate. -/
-theorem isLattice_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
-    L.dualCarrier.IsLattice ℚ ↔ L.form.Nondegenerate := by
+theorem isFullLattice_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
+    L.dualCarrier.IsFullLattice ℚ ↔ L.form.Nondegenerate := by
   constructor
   · intro h
-    let hlattice : L.dualCarrier.IsLattice ℚ := h
+    have := Submodule.IsLattice.finite ℚ L.dualCarrier
     exact L.nondegenerate_of_moduleFinite_dualCarrier
   · intro h
     let hnondegenerate : L.IsNondegenerate := ⟨h⟩

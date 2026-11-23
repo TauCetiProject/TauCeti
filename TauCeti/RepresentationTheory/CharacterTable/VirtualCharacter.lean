@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.FDRep.Basic
 import Mathlib.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The virtual-character lattice
@@ -244,7 +245,7 @@ theorem virtualCharacters_le_classFunction :
   virtualCharacters_le fun V => by
     have h : (ClassFunction.ofCharacter V.ρ : G → k) = V.character :=
       funext fun g => ClassFunction.ofCharacter_apply V.ρ g
-    exact h ▸ (ClassFunction.ofCharacter V.ρ).2
+    exact h ▸ (ClassFunction.ofCharacter V.ρ).property
 
 end ClassFunctions
 
@@ -293,7 +294,7 @@ end Irreducible
 
 section Lattice
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A character is the sum of the irreducible characters weighted by their multiplicities.** The
@@ -303,6 +304,7 @@ natural numbers: the multiplicities with which the irreducibles occur in `V`. -/
 theorem character_eq_sum_nsmul_irreducibleCharacter (V : FDRep k G) :
     V.character = ∑ i, finrank k (Representation.IntertwiningMap V.ρ
       (irreducibleRepresentation k i)) • irreducibleCharacter k i := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   funext y
   have hy := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -368,15 +370,25 @@ theorem mem_virtualCharacters_iff {f : G → k} :
     Finset.sum_congr rfl fun i _ => Int.cast_smul_eq_zsmul k (c i) _
   rw [heq, eq_comm]
 
+omit [Invertible (Nat.card G : k)] in
 /-- **Virtual characters descend from `A`-coefficients to integer coefficients.** Let `A` be a
 subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`, such as `ℤ[ζ]` for a root of
 unity `ζ` in characteristic zero (`PowerBasis.exists_linearMap_apply_one`). If `V` is an additive
 subgroup of the virtual characters, then a virtual character that is an `A`-linear combination of
 elements of `V` already lies in `V`: `Submodule.span A V ∩ R(G) = V`. -/
-theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1)
+theorem mem_of_mem_span_of_mem_virtualCharacters [Finite G] (A : Subring k) (t : A →+ ℤ)
+    (ht : t 1 = 1)
     {V : AddSubgroup (G → k)} (hV : V ≤ virtualCharacters k G) {f : G → k}
     (hf : f ∈ virtualCharacters k G) (hfA : f ∈ Submodule.span A (V : Set (G → k))) :
     f ∈ V := by
+  -- the existence of `t` forces `|G|` to be nonzero in `k`
+  have hG : (Nat.card G : k) ≠ 0 := by
+    intro h0
+    have h1 : (Nat.card G) • (1 : A) = 0 := Subtype.ext (by simpa using h0)
+    have h2 := congrArg t h1
+    rw [map_nsmul, ht, map_zero] at h2
+    exact Nat.card_pos.ne' (by simpa using h2)
+  let : Invertible (Nat.card G : k) := invertibleOfNonzero hG
   have h := virtualCharacters_eq_closure_irreducibleCharacters (k := k) (G := G)
   rw [← range_irreducibleCharacter] at h
   rw [h] at hV hf
@@ -403,7 +415,7 @@ end Lattice
 
 section Subring
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A class function with values in a subring `A` is, once multiplied by `|G|`, an
@@ -417,6 +429,7 @@ theorem natCard_nsmul_mem_span_irreducibleCharacters (A : Subring k) {f : G → 
     (hf : f ∈ ClassFunction k G) (hfA : ∀ g, f g ∈ A)
     (hA : ∀ (i : Fin (Nat.card (ConjClasses G))) (g : G), irreducibleCharacter k i g ∈ A) :
     Nat.card G • f ∈ Submodule.span A (irreducibleCharacters k G) := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   have hexp : Nat.card G • f =
       ∑ i, (∑ g, irreducibleCharacter k i g * f g⁻¹) • irreducibleCharacter k i := by
@@ -459,13 +472,28 @@ theorem characterPairing_eq_intCast_sum {f₁ f₂ : ClassFunction k G}
   push_cast
   exact Finset.sum_congr rfl fun i _ => mul_comm _ _
 
-/-- **The character pairing is integer-valued on the virtual-character lattice.** -/
+omit [IsAlgClosed k] [Invertible (Nat.card G : k)] in
+/-- **The character pairing is integer-valued on the virtual-character lattice.** If `|G|` is
+zero in `k` the normalization `|G|⁻¹` of the pairing is `0`, so the pairing vanishes and the
+statement holds trivially; it is only meaningful when `|G|` is invertible in `k`. -/
 theorem exists_characterPairing_eq_intCast {f₁ f₂ : ClassFunction k G}
     (h₁ : (f₁ : G → k) ∈ virtualCharacters k G) (h₂ : (f₂ : G → k) ∈ virtualCharacters k G) :
     ∃ n : ℤ, ClassFunction.characterPairing f₁ f₂ = (n : k) := by
-  obtain ⟨c, hc⟩ := mem_virtualCharacters_iff.mp h₁
-  obtain ⟨d, hd⟩ := mem_virtualCharacters_iff.mp h₂
-  exact ⟨∑ i, c i * d i, characterPairing_eq_intCast_sum hc hd⟩
+  by_cases hG : (Nat.card G : k) = 0
+  · exact ⟨0, by rw [ClassFunction.characterPairing_apply, hG, inv_zero, zero_mul, Int.cast_zero]⟩
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero hG
+  obtain ⟨A, B, hAB⟩ := exists_eq_character_sub_character h₁
+  obtain ⟨C, D, hCD⟩ := exists_eq_character_sub_character h₂
+  have e₁ : f₁ = ClassFunction.ofFDRep A - ClassFunction.ofFDRep B :=
+    Subtype.ext (funext fun g => by simp [hAB])
+  have e₂ : f₂ = ClassFunction.ofFDRep C - ClassFunction.ofFDRep D :=
+    Subtype.ext (funext fun g => by simp [hCD])
+  refine ⟨(finrank k (C ⟶ A) : ℤ) - finrank k (D ⟶ A) - finrank k (C ⟶ B) + finrank k (D ⟶ B),
+    ?_⟩
+  rw [e₁, e₂]
+  simp only [map_sub, LinearMap.sub_apply, ClassFunction.characterPairing_ofFDRep_eq_finrank]
+  push_cast
+  ring
 
 end Pairing
 
@@ -518,6 +546,7 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   · exact Or.inl (by rw [hval, h]; simp)
   · exact Or.inr (by rw [hval, h]; simp)
 
+omit [Invertible (Nat.card G : k)] in
 /-- **A virtual character of norm `1` whose degree is a natural number is an irreducible
 character.** By `TauCeti.exists_eq_irreducibleCharacter_or_neg` it is `±χ`, and `-χ` is excluded:
 its degree `-χ(1)` is negative, so it is not the image of a natural number. -/
@@ -525,6 +554,8 @@ theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunc
     (hf : (f : G → k) ∈ virtualCharacters k G)
     (hnorm : ClassFunction.characterPairing f f = 1) {n : ℕ} (hn : (f : G → k) 1 = n) :
     (f : G → k) ∈ irreducibleCharacters k G := by
+  let : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   obtain ⟨i, hi | hi⟩ := exists_eq_irreducibleCharacter_or_neg hf hnorm
   · exact hi ▸ irreducibleCharacter_mem k i
   · -- the negative alternative would force a sum of a positive and a natural number to vanish
@@ -568,7 +599,7 @@ private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Mo
         Representation.IntertwiningMap.coe_toLinearMap, map_sub]
       exact sub_eq_zero.mpr (by simpa [ψ] using hxy)
     exact Subtype.ext (sub_eq_zero.mp (Submodule.disjoint_def.mp hC'.disjoint _ hker
-      (C.toSubmodule.sub_mem x.2 y.2)))
+      (C.toSubmodule.sub_mem x.property y.property)))
   obtain ⟨ρ', hρ'⟩ := exists_isCompl ψ.range
   refine ⟨ρ', φ.ker, ?_, ?_⟩
   · -- the image of `ψ` is nonzero, since otherwise `C` is zero and `φ` vanishes

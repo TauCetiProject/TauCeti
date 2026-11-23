@@ -60,9 +60,9 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
   minimality of `finrank K (ker (ad x))`.
 * `LieAlgebra.isCentralizerRegular_iff_forall_finrank_range_le`: in finite dimension, an element is
   regular exactly when `ad x` has maximal rank.
-* `LieEquiv.isCentralizerRegular_apply_iff` and
-  `LieAlgebra.isCentralizerRegular_smul_iff`: invariance under Lie algebra isomorphisms and
-  nonzero scalars.
+* `LieEquiv.isCentralizerRegular_apply_iff`, `LieAlgebra.isCentralizerRegular_smul_iff` and
+  `LieAlgebra.isCentralizerRegular_neg_iff`: invariance under Lie algebra isomorphisms, nonzero
+  scalars and negation.
 * `LieAlgebra.isCentralizerRegular_zero_iff`: in finite dimension, `0` is regular exactly when `L`
   is abelian.
 * `Module.Basis.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular
@@ -84,12 +84,9 @@ open LinearMap Module MvPolynomial
 
 namespace LieAlgebra
 
-universe u v
+universe u
 
-variable (K : Type*) {L : Type u} {L' : Type v} [Field K] [LieRing L] [LieAlgebra K L] [LieRing L']
-  [LieAlgebra K L']
-
-attribute [local instance 100] LieRing.ofAssociativeRing
+variable (K : Type*) {L : Type u} [Field K] [LieRing L] [LieAlgebra K L]
 
 /-- An element `x` of a Lie algebra is **regular** when its centralizer `ker (ad x)` has minimal
 dimension among the centralizers of all elements. The dimension is the cardinal `Module.rank`, so
@@ -154,10 +151,8 @@ exactly when `ad x` has rank at least that of `ad x₀`. -/
 theorem IsCentralizerRegular.isCentralizerRegular_iff_finrank_range_le [FiniteDimensional K L]
     {x₀ : L} (hx₀ : IsCentralizerRegular K x₀) {x : L} :
     IsCentralizerRegular K x ↔ finrank K (range (ad K L x₀)) ≤ finrank K (range (ad K L x)) := by
-  rw [hx₀.isCentralizerRegular_iff_rank_ker_le, ← finrank_eq_rank, ← finrank_eq_rank, Nat.cast_le]
-  have hx := (ad K L x).finrank_range_add_finrank_ker
-  have hx₀' := (ad K L x₀).finrank_range_add_finrank_ker
-  omega
+  rw [isCentralizerRegular_iff_forall_finrank_range_le] at hx₀ ⊢
+  exact ⟨fun h ↦ h x₀, fun h y ↦ (hx₀ y).trans h⟩
 
 /-- Regularity is invariant under multiplication by a nonzero scalar. -/
 @[simp]
@@ -165,6 +160,13 @@ theorem isCentralizerRegular_smul_iff {c : K} (hc : c ≠ 0) {x : L} :
     IsCentralizerRegular K (c • x) ↔ IsCentralizerRegular K x := by
   simp only [isCentralizerRegular_iff]
   rw [_root_.map_smul, ker_smul _ _ hc]
+
+/-- Regularity is invariant under negation. -/
+@[simp]
+theorem isCentralizerRegular_neg_iff {x : L} :
+    IsCentralizerRegular K (-x) ↔ IsCentralizerRegular K x := by
+  simpa only [neg_one_smul] using isCentralizerRegular_smul_iff (K := K) (x := x)
+    (neg_ne_zero.mpr (one_ne_zero : (1 : K) ≠ 0))
 
 /-- **In finite dimension, `0` is regular exactly in an abelian Lie algebra.** In a
 finite-dimensional Lie algebra the centralizer of `0` is everything, so `0` is regular exactly
@@ -181,6 +183,7 @@ theorem isCentralizerRegular_zero_iff [FiniteDimensional K L] :
   · rw [ad_eq_zero_of_isLieAbelian, ker_zero, finrank_top]
 
 /-- In an abelian Lie algebra every element is regular. -/
+@[simp]
 theorem isCentralizerRegular_of_isLieAbelian [IsLieAbelian L] (x : L) :
     IsCentralizerRegular K x := fun y ↦ by
   rw [ad_eq_zero_of_isLieAbelian, ad_eq_zero_of_isLieAbelian]
@@ -228,13 +231,7 @@ theorem vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot [Infinite K] :
     vanishingIdeal K (b.equivFun '' {x : L | IsCentralizerRegular K x}) = ⊥ := by
   have := Module.Finite.of_basis b
   obtain ⟨x₀, hx₀⟩ := exists_isCentralizerRegular K L
-  have hset : {x : L | IsCentralizerRegular K x} =
-      {x | finrank K (range ((ad K L).toLinearMap x₀)) ≤
-        finrank K (range ((ad K L).toLinearMap x))} := by
-    ext x
-    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq]
-    exact hx₀.isCentralizerRegular_iff_finrank_range_le
-  rw [hset]
+  simp_rw [hx₀.isCentralizerRegular_iff_finrank_range_le]
   exact (ad K L).toLinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot b le_rfl
 
 end Module.Basis
@@ -250,27 +247,13 @@ universe u v
 variable {K : Type*} {L : Type u} {L' : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieRing L'] [LieAlgebra K L']
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image. -/
-theorem ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    ker (ad K L' (e x)) = (ker (ad K L x)).map (e.toLinearEquiv : L →ₗ[K] L') := by
-  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
-
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
-so the two have the same dimension. -/
+/-- The adjoint endomorphisms of corresponding elements under a Lie algebra isomorphism
+have ranges of the same dimension, even for infinite-dimensional Lie algebras. -/
 @[simp]
-theorem finrank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    finrank K (ker (ad K L' (e x))) = finrank K (ker (ad K L x)) := by
-  rw [ker_ad_apply, LinearEquiv.finrank_map_eq]
-
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
-so the two have the same cardinal dimension, up to universe lifting. -/
-theorem lift_rank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    Cardinal.lift.{u} (Module.rank K (ker (ad K L' (e x)))) =
-      Cardinal.lift.{v} (Module.rank K (ker (ad K L x))) := by
-  rw [ker_ad_apply, LinearEquiv.lift_rank_map_eq]
+theorem finrank_range_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
+    finrank K (range (ad K L' (e x))) = finrank K (range (ad K L x)) := by
+  rw [← conj_ad_apply, LinearEquiv.conj_apply, LinearEquiv.range_comp,
+    LinearMap.range_comp, LinearEquiv.finrank_map_eq]
 
 /-- **Regularity is invariant under Lie algebra isomorphisms**, in particular under the adjoint
 action of a group acting by Lie algebra automorphisms. -/

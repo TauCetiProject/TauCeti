@@ -195,7 +195,7 @@ private theorem norm_yCoeff_le_one {q : Kˣ} (hq : ‖(q : K)‖ < 1) (k : ℤ) 
   · simp [yCoeff]
   rw [yCoeff, norm_div]
   exact div_le_one_of_le₀ ((IsUltrametricDist.norm_intCast_le_one K _).trans
-    (one_le_norm_one_sub_of_norm_ne_one (norm_zpow_ne_one hq hk))) (norm_nonneg _)
+    (one_le_norm_one_sub_of_norm_ne_one (norm_zpow_ne_one hq.ne hk))) (norm_nonneg _)
 
 variable [CompleteSpace K]
 
@@ -207,7 +207,7 @@ private theorem hasSum_yTildeCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ :
   -- The indices `k ≥ 1` give a Lambert series in `q u` and the indices `k ≤ 0` one in `q u⁻¹`;
   -- `Y(u) - s₁ - u² / (1 - u)³` is the sum of the two by `tateUniformizationY_eq_tsum_nat`.
   have hne (k : ℕ) : 1 - (q : K) ^ (k + 1) ≠ 0 := by
-    simpa only [zpow_natCast] using one_sub_zpow_ne_zero hq (k := ((k + 1 : ℕ) : ℤ)) (by omega)
+    simpa only [zpow_natCast] using one_sub_zpow_ne_zero hq.ne (k := ((k + 1 : ℕ) : ℤ)) (by omega)
   -- For `k ≥ 1`, `yCoeff q k = (k choose 2) / (1 - qᵏ)` and `nodeCoeff k = k choose 2`.
   have hnat : HasSum (fun n : ℕ ↦ yTildeCoeff q n * (u : K) ^ (n : ℤ))
       (∑' n : ℕ, ((q : K) ^ (n + 1) * u) ^ 2 / (1 - (q : K) ^ (n + 1) * u) ^ 3) := by
@@ -321,7 +321,7 @@ private theorem tateYCoeff_add_three (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ
   rw [show n + 3 - k = n - k + 3 by ring, tripleCoeff_one_add_three]
   rcases eq_or_ne k 0 with rfl | hk
   · simp [yCoeff]
-  have h₁ := one_sub_zpow_ne_zero hq hk
+  have h₁ := one_sub_zpow_ne_zero hq.ne hk
   simp only [yCoeff, zpow_sub₀ q.ne_zero, zpow_neg]
   field_simp
   ring
@@ -441,7 +441,7 @@ private theorem exists_norm_tateUniformization_mul_eq_one (q : Kˣ) (hq : ‖(q 
       (by exact_mod_cast IsUltrametricDist.norm_natCast_le_one K 2)).trans_lt hs
   have hpow (k : ℕ) (hk : k ≠ 0) : 1 < (‖z‖ ^ k)⁻¹ :=
     (one_lt_inv₀ (pow_pos hzr k)).mpr (pow_lt_one₀ hzr.le hz₁ hk)
-  refine ⟨u, notMem_zpowers_of_norm_eq_one hq hun (fun h ↦ hu₁ (by rw [h, Units.val_one])),
+  refine ⟨u, notMem_zpowers_of_norm_eq_one hq.ne hun (fun h ↦ hu₁ (by rw [h, Units.val_one])),
     ‖z‖, hzr, hm.trans_le' (by rw [hz, norm_pow]) |>.trans_le (min_le_left _ _), hz₁, ?_, ?_⟩
   · have hX := norm_tateUniformizationX_of_norm_one_sub_lt_one q u hq hu₁ (by rwa [hd])
     rw [hd] at hX
@@ -532,7 +532,7 @@ private theorem linearIndependent_of_hasSum (q : Kˣ) (hq : ‖(q : K)‖ < 1)
       ((hy u hu).mul_left (g 2))
     simp only [← mul_assoc, ← add_mul, hcoef, zero_mul] at h
     have hθ : tateTheta q u ^ 3 ≠ 0 :=
-      pow_ne_zero 3 fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+      pow_ne_zero 3 (tateTheta_ne_zero q hq hu)
     refine (mul_eq_zero.mp ?_).resolve_left hθ
     linear_combination -(hasSum_zero.unique h)
   intro i
@@ -600,8 +600,6 @@ theorem exists_tateTheta_mul_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : 
     ∃ α β γ : K, γ ≠ 0 ∧ ∀ u : Kˣ, u ∉ Subgroup.zpowers q →
       tateTheta q (a⁻¹ * u) * tateTheta q (b⁻¹ * u) * tateTheta q (a * b * u) =
         tateTheta q u ^ 3 * (α + β * tateUniformizationX q u + γ * tateUniformizationY q u) := by
-  have hθ {v : Kˣ} (hv : v ∉ Subgroup.zpowers q) : tateTheta q v ≠ 0 :=
-    fun h ↦ hv ((tateTheta_eq_zero_iff q v hq).mp h)
   -- The coefficients of `θ(a⁻¹ u) θ(b⁻¹ u) θ(a b u)` lie in the degree-three space.
   have hF := tripleCoeff_mem q a⁻¹ b⁻¹ (a * b)
   rw [show -a⁻¹ * (-b⁻¹ * -(a * b)) = -1 by
@@ -615,9 +613,9 @@ theorem exists_tateTheta_mul_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : 
     simp only [Units.val_one, one_zpow, mul_one] at h
     rcases mul_eq_zero.mp (h.unique (h₀ hγ)) with h' | h'
     · rcases mul_eq_zero.mp h' with h' | h'
-      · exact hθ (fun h ↦ ha (by simpa using inv_mem h)) h'
-      · exact hθ (fun h ↦ hb (by simpa using inv_mem h)) h'
-    · exact hθ hab h'
+      · exact tateTheta_ne_zero q hq (fun h ↦ ha (by simpa using inv_mem h)) h'
+      · exact tateTheta_ne_zero q hq (fun h ↦ hb (by simpa using inv_mem h)) h'
+    · exact tateTheta_ne_zero q hq hab h'
   · rw [(hasSum_tripleCoeff q a⁻¹ b⁻¹ (a * b) u hq).unique (hid u hu)]
     ring
 
@@ -633,7 +631,7 @@ theorem exists_tateUniformizationY_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
           a * b * u ∈ Subgroup.zpowers q) := by
   obtain ⟨α, β, γ, hγ, h⟩ := exists_tateTheta_mul_tateTheta_mul_tateTheta_eq q hq ha hb hab
   refine ⟨-β / γ, -α / γ, fun u hu ↦ ?_⟩
-  have hθ : tateTheta q u ≠ 0 := fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+  have hθ := tateTheta_ne_zero q hq hu
   rw [← tateTheta_eq_zero_iff q _ hq, ← tateTheta_eq_zero_iff q _ hq,
     ← tateTheta_eq_zero_iff q _ hq, ← or_assoc, ← mul_eq_zero, ← mul_eq_zero, h u hu,
     mul_eq_zero, or_iff_right (pow_ne_zero 3 hθ)]

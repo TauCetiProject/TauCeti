@@ -31,7 +31,7 @@ The proof inverts about `q`. Writing `w = (z - q)⁻¹`, the Borsuk map becomes 
 `w ↦ 1 + (q - p) * w`, whose only zero `(p - q)⁻¹` is the image of `p`. The image `A` of
 `closure C \ {q}` under the inversion is closed by
 `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`. The image of `C` is preconnected, unbounded
-by `TauCeti.not_isBounded_image_sub_inv_of_mem_closure`, and dense in `A`, so every connected
+by `TauCeti.isBounded_image_inv_sub_iff`, and dense in `A`, so every connected
 component of `A` is unbounded. Thus the complement of `A` has no holes, and the affine function
 has a holomorphic logarithm there by
 `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`.
@@ -68,7 +68,7 @@ theorem hasContinuousLogOn_sub_div_sub_compl_closure (hCc : IsPreconnected C)
     exact ⟨inv_ne_zero (hqz z hz), by simpa using subset_closure hz⟩
   have hDc : IsPreconnected D :=
     hCc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ hqz)
-  have hDb : ¬ IsBounded D := not_isBounded_image_sub_inv_of_mem_closure hqC hqC'
+  have hDb : ¬ IsBounded D := fun h => (isBounded_image_inv_sub_iff hqC').mp h hqC
   have hfill : filledHull Aᶜ ⊆ Aᶜ := by
     intro w hw hwA
     have hwD : w ∈ closure D := by
@@ -84,7 +84,6 @@ theorem hasContinuousLogOn_sub_div_sub_compl_closure (hCc : IsPreconnected C)
   -- after inversion the Borsuk map is affine, with its only zero in `A`
   have hzero : 0 ∉ (fun w => 1 + (q - p) * w) '' Aᶜ := by
     rintro ⟨w, hwA, hw0⟩
-    have hpq' : q - p ≠ 0 := sub_ne_zero.mpr hpq.symm
     have hw : w = (p - q)⁻¹ := eq_inv_of_mul_eq_one_left (by linear_combination -hw0)
     exact hwA ⟨by simpa [hw] using sub_ne_zero.mpr hpq, by simpa [hw] using hpC⟩
   obtain ⟨L, hLd, hL⟩ := Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset

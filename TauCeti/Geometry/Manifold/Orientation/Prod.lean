@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
@@ -16,6 +17,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 The preferred transition derivative of a product is block diagonal. Products of source signs
 therefore give an orientation lift of the product, including manifolds with boundary and corners.
+The ordered product of tangent bases of the factors is positive for the product orientation exactly
+when the two bases are both positive or both negative
+(`TauCeti.Manifold.Orientation.orientation_eq_orientationAt_prod_iff`).
 
 Exchanging the factors, `Prod.swap : M × M' → M' × M`, compares the product orientation of `M`
 and `M'` with that of `M'` and `M`. Its derivative exchanges the components of tangent vectors, so
@@ -24,6 +28,16 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 (`TauCeti.Manifold.Orientation.isOrientationPreservingAt_swap_prod`,
 `TauCeti.Manifold.Orientation.isOrientationReversingAt_swap_prod`). The two products are indexed by
 `Fin (m + n)` and `Fin (n + m)`, identified by `TauCeti.Manifold.Orientation.reindex`.
+
+When the factors are modelled on normed spaces `E` and `E'`, the same product charts with values in
+the normed space `E × E'` (`TauCeti.chartedSpaceProd`) make `M × M'` a manifold for the model
+`𝓘(ℝ, E × E')`, which is orientable as soon as the factors are
+(`TauCeti.orientable_chartedSpaceProd`).
+
+A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
+product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
+So does a product of maps reversing orientations at `p.1` and at `p.2`, since the two reversals
+cancel (`TauCeti.Manifold.Orientation.IsOrientationReversingAt.prodMap`).
 
 ## References
 
@@ -68,9 +82,9 @@ def prod (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n)) 
     compatible := ?_ }
   · intro α
     exact ((o.locallyConstant_sign α.1).comp_continuous
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _)).mul
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _)).mul
         ((o'.locallyConstant_sign α.2).comp_continuous
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))
   · intro α β x hα hβ
     have h₁ := o.compatible α.1 β.1 x.1 (left α ⟨x, hα⟩).property
       (left β ⟨x, hβ⟩).property
@@ -99,6 +113,31 @@ theorem prod_sign (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' 
     (o.prod o').sign α ⟨(x.val, x'.val), by
       simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
         And.intro x.property x'.property⟩ = o.sign α.1 x * o'.sign α.2 x' := (rfl)
+
+/-- On the source of a product chart, the total chart sign of a product lift is the product of the
+total chart signs of its factors. -/
+theorem prod_signAt_of_mem (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n))
+    {α p : M × M'} (hp₁ : p.1 ∈ (chartAt H α.1).source) (hp₂ : p.2 ∈ (chartAt H' α.2).source) :
+    (o.prod o').signAt α p = o.signAt α.1 p.1 * o'.signAt α.2 p.2 := by
+  rw [signAt_of_mem _ (by
+      simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
+        And.intro hp₁ hp₂), signAt_of_mem _ hp₁, signAt_of_mem _ hp₂]
+  exact prod_sign o o' α ⟨p.1, hp₁⟩ ⟨p.2, hp₂⟩
+
+/-- A product with the lift of a model space all of whose chart signs are `1` has the total chart
+signs of its first factor. -/
+@[simp]
+theorem prod_ofHasGroupoid_signAt (o : OrientationLift I M (Fin m))
+    (model : _root_.Orientation ℝ E' (Fin n)) (hn : Fintype.card (Fin n) = Module.finrank ℝ E')
+    (α p : M × E') :
+    (o.prod (ofHasGroupoid (I := 𝓘(ℝ, E')) (M := E') model hn)).signAt α p =
+      o.signAt α.1 p.1 := by
+  by_cases hp : p.1 ∈ (chartAt H α.1).source
+  · have hp₂ : p.2 ∈ (chartAt E' α.2).source := by simp
+    rw [prod_signAt_of_mem _ _ hp hp₂, signAt_of_mem _ hp₂, ofHasGroupoid_sign, mul_one]
+  · rw [signAt_of_notMem _ hp, signAt_of_notMem]
+    simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod,
+      chartAt_self_eq, OpenPartialHomeomorph.refl_source, mem_univ, and_true] using hp
 
 /-- Replacing the first factor lift by its diagonal flip flips the product lift. -/
 @[simp]
@@ -199,6 +238,74 @@ theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin 
     (-o).prod (-o') = o.prod o' := by
   rw [prod_neg_left, prod_neg_right, neg_neg]
 
+/-- The ordered product of tangent bases `b` at `x.1` and `c` at `x.2` is positive for the product
+orientation exactly when `b` and `c` are both positive or both negative. -/
+theorem orientation_eq_orientationAt_prod_iff (o : Orientation I M (Fin m))
+    (o' : Orientation I' M' (Fin n)) {x : M × M'}
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x.1))
+    (c : Module.Basis (Fin n) ℝ (TangentSpace I' x.2)) :
+    ((b.prod c).reindex finSumFinEquiv :
+        Module.Basis (Fin (m + n)) ℝ (TangentSpace (I.prod I') x)).orientation =
+        (o.prod o').orientationAt x ↔
+      (b.orientation = o.orientationAt x.1 ↔ c.orientation = o'.orientationAt x.2) := by
+  have hm : Module.finrank ℝ (TangentSpace I x.1) = m := by
+    simpa using o.finrank_tangentSpace_eq x.1
+  have hn : Module.finrank ℝ (TangentSpace I' x.2) = n := by
+    simpa using o'.finrank_tangentSpace_eq x.2
+  -- The tangent space of the product is the product of the tangent spaces.
+  change ((b.prod c).reindex finSumFinEquiv).orientation = _ ↔ _
+  rw [orientationAt_prod, ← _root_.Orientation.prod_basis_orientation b c hm hn]
+  have h₁ := Module.Ray.ne_neg_self (o.orientationAt x.1)
+  have h₂ := Module.Ray.ne_neg_self (o'.orientationAt x.2)
+  have h₃ := Module.Ray.ne_neg_self
+    (_root_.Orientation.prod (o.orientationAt x.1) (o'.orientationAt x.2) hm hn)
+  rcases b.orientation.eq_or_eq_neg (o.orientationAt x.1) (by simpa using hm.symm) with h | h <;>
+    rcases c.orientation.eq_or_eq_neg (o'.orientationAt x.2) (by simpa using hn.symm) with
+      h' | h' <;>
+    simp only [h, h', _root_.Orientation.prod_neg_left, _root_.Orientation.prod_neg_right,
+      h₁.symm, h₂.symm, h₃.symm, iff_true, iff_false, not_true_eq_false]
+  -- When both factors are negative, the two negations of the product orientation cancel.
+  exact neg_neg (G := _root_.Orientation ℝ (TangentSpace I x.1 × TangentSpace I' x.2)
+    (Fin (m + n))) _
+
+section ProdMap
+
+variable {F G N F' G' N' : Type*}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace G']
+  {J' : ModelWithCorners ℝ F' G'} [TopologicalSpace N'] [ChartedSpace G' N'] [IsManifold J' 1 N']
+
+/-- A product of maps preserving orientations at `p.1` and at `p.2` preserves the product
+orientations at `p`. -/
+theorem IsOrientationPreservingAt.prodMap {o : Orientation I M (Fin m)}
+    {o' : Orientation I' M' (Fin n)} {q : Orientation J N (Fin m)} {q' : Orientation J' N' (Fin n)}
+    {f : M → N} {g : M' → N'} {p : M × M'} (hf : IsOrientationPreservingAt o q f p.1)
+    (hg : IsOrientationPreservingAt o' q' g p.2) :
+    IsOrientationPreservingAt (o.prod o') (q.prod q') (Prod.map f g) p := by
+  obtain ⟨e, he, h⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hf
+  obtain ⟨e', he', h'⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hg
+  refine (isOrientationPreservingAt_iff _ _ _ _).mpr ⟨e.prodCongr e', ?_, ?_⟩
+  · rw [mfderiv_prodMap (mdifferentiableAt_of_isInvertible_mfderiv ⟨e, he⟩)
+      (mdifferentiableAt_of_isInvertible_mfderiv ⟨e', he'⟩), ← he, ← he']
+    -- Both sides are `(v, w) ↦ (e v, e' w)` on the product of the tangent spaces.
+    rfl
+  · rw [orientationAt_prod, orientationAt_prod, Prod.map_fst, Prod.map_snd, ← h, ← h']
+    exact _root_.Orientation.map_prod _ _ _ _ e.toLinearEquiv e'.toLinearEquiv
+
+/-- A product of maps reversing orientations at `p.1` and at `p.2` preserves the product
+orientations at `p`: the two reversals cancel. -/
+theorem IsOrientationReversingAt.prodMap {o : Orientation I M (Fin m)}
+    {o' : Orientation I' M' (Fin n)} {q : Orientation J N (Fin m)} {q' : Orientation J' N' (Fin n)}
+    {f : M → N} {g : M' → N'} {p : M × M'} (hf : IsOrientationReversingAt o q f p.1)
+    (hg : IsOrientationReversingAt o' q' g p.2) :
+    IsOrientationPreservingAt (o.prod o') (q.prod q') (Prod.map f g) p := by
+  rw [← prod_neg_neg q q']
+  exact ((isOrientationPreservingAt_neg_right _ _ _ _).2 hf).prodMap
+    ((isOrientationPreservingAt_neg_right _ _ _ _).2 hg)
+
+end ProdMap
+
 /-- The derivative of `Prod.swap : M × M' → M' × M` at `x`, as a continuous linear equivalence
 of tangent spaces. -/
 private def mfderivSwapEquiv (x : M × M') :
@@ -257,5 +364,23 @@ instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') 
   constructor
   rw [Module.finrank_prod]
   exact ⟨o.prod o'⟩
+
+section ChartedSpaceProd
+
+attribute [local instance low] chartedSpaceProd
+
+variable {N N' : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
+  [TopologicalSpace N'] [ChartedSpace E' N'] [IsManifold 𝓘(ℝ, E') 1 N']
+
+/-- A product of orientable manifolds modelled on normed spaces `E` and `E'` is orientable for the
+model `𝓘(ℝ, E × E')` of its product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`).
+These are the charts of the product model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`, read in the normed space
+`E × E'` rather than in the type synonym `ModelProd E E'`. -/
+theorem orientable_chartedSpaceProd [Orientable 𝓘(ℝ, E) N] [Orientable 𝓘(ℝ, E') N'] :
+    Orientable 𝓘(ℝ, E × E') (N × N') := by
+  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E).prod 𝓘(ℝ, E')) (M := N × N')
+  exact ⟨⟨o.congrModel modelWithCornersSelf_prod.symm⟩⟩
+
+end ChartedSpaceProd
 
 end TauCeti

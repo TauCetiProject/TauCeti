@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Finset.Sym
 public import TauCeti.Data.Sym.Crosses
 public import TauCeti.Order.Lattice.Submodular
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
 # Capacities of undirected cuts on unordered pairs
@@ -43,6 +44,13 @@ pairs. Each crossing pair is counted once; diagonal pairs never cross. -/
 noncomputable def pairCutCapacity [Fintype V] [AddCommMonoid K]
     (c : Sym2 V → K) (S : Finset V) : K :=
   ∑ p : Sym2 V, if p.Crosses (S : Set V) then c p else 0
+
+/-- The zero pair-capacity function assigns zero capacity to every cut. -/
+@[simp]
+theorem pairCutCapacity_zero [Fintype V] [AddCommMonoid K] :
+    pairCutCapacity (0 : Sym2 V → K) = 0 := by
+  funext S
+  simp [pairCutCapacity]
 
 /-- The defining finite-sum formula for `pairCutCapacity`. -/
 theorem pairCutCapacity_def [Fintype V] [AddCommMonoid K]
@@ -104,6 +112,29 @@ theorem pairCutCapacity_eq_of_offDiagonal_eq [Fintype V] [AddCommMonoid K]
       split_ifs with hxy
       · exact h x y fun hEq ↦ by subst y; simp at hxy
       · rfl
+
+/-- The sum of the two singleton cut capacities is the capacity of their union plus twice the
+capacity of the pair joining them. -/
+theorem pairCutCapacity_singleton_add_singleton [Fintype V] [DecidableEq V] [AddCommMonoid K]
+    (c : Sym2 V → K) {x y : V} (hxy : x ≠ y) :
+    pairCutCapacity c {x} + pairCutCapacity c {y} =
+      pairCutCapacity c {x, y} + c s(x, y) + c s(x, y) := by
+  classical
+  rw [pairCutCapacity_def, pairCutCapacity_def, pairCutCapacity_def, ← Finset.sum_add_distrib]
+  calc
+    (∑ p, ((if p.Crosses ({x} : Finset V) then c p else 0) +
+        if p.Crosses ({y} : Finset V) then c p else 0)) =
+        ∑ p, ((if p.Crosses ({x, y} : Finset V) then c p else 0) +
+          if p = s(x, y) then c p + c p else 0) := by
+      apply Finset.sum_congr rfl
+      intro p _
+      induction p using Sym2.inductionOn with
+      | _ a b =>
+        by_cases hax : a = x <;> by_cases hbx : b = x <;>
+          by_cases hay : a = y <;> by_cases hby : b = y <;> simp_all
+    _ = _ := by
+      rw [Finset.sum_add_distrib, Fintype.sum_ite_eq']
+      simp [add_assoc]
 
 /-- The simple support graph of a pair-capacity function. Diagonal capacities are ignored. -/
 def capacitySupport [Zero K] [LT K] (c : Sym2 V → K) : SimpleGraph V :=

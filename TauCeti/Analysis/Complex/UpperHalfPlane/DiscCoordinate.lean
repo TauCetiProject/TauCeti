@@ -21,7 +21,10 @@ half-plane onto the open unit disc sending `z` to `0`, with inverse
 `w ↦ (z - conj z * w) / (1 - w)`; its modulus is `tanh (d / 2)` for the
 hyperbolic distance `d` to `z`. In this coordinate every matrix of positive determinant fixing
 `z` is a rotation of the disc about `0`: if `g • z = z`, then
-`discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`.
+`discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`. This is the
+special case of the equivariance
+`discCoordinate (g • z) (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`, which holds
+for every matrix of positive determinant.
 
 This is the local linearizing coordinate at a point with nontrivial stabilizer: the multiplier
 `conj (denom g z) / denom g z` is a complex number of modulus one, and it is exactly the
@@ -40,12 +43,18 @@ hyperbolic discs about `z` are precisely the preimages of the Euclidean discs ab
 * `UpperHalfPlane.mdifferentiable_discCoordinate` and
   `UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`: the coordinate and its explicit
   inverse are holomorphic.
+* `UpperHalfPlane.hasDerivAt_discCoordinateHomeomorph_symm`: the derivative of the explicit
+  inverse.
 * `UpperHalfPlane.discCoordinateHomeomorph`: the disc coordinate as a homeomorphism `ℍ ≃ₜ 𝔻`,
   with explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit
   disc.
 * `UpperHalfPlane.mem_ball_iff_norm_discCoordinate_lt` and
   `UpperHalfPlane.image_discCoordinate_ball`: the hyperbolic disc of radius `ε` about `z` is
   carried onto the Euclidean disc of radius `tanh (ε / 2)` about `0`.
+* `UpperHalfPlane.discCoordinate_smul`: a matrix of positive determinant carries the disc
+  coordinate centred at `z` to the one centred at `g • z` up to the multiplier
+  `conj (denom g z) / denom g z`, by the displacement formulas
+  `UpperHalfPlane.coe_smul_sub_coe_smul` and `UpperHalfPlane.coe_smul_sub_conj_smul`.
 * `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: a matrix of positive determinant
   fixing `z` acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`,
   with the `SL(2, ℝ)` specialization
@@ -157,6 +166,16 @@ theorem analyticOnNhd_discCoordinateHomeomorph_symm (z : ℍ) :
     ((differentiableAt_const (1 : ℂ)).sub differentiableAt_id)
       (sub_ne_zero.mpr hw1.symm)).differentiableWithinAt
 
+/-- The explicit inverse `w ↦ (z - conj z * w) / (1 - w)` of the disc coordinate has derivative
+`(z - conj z) / (1 - w) ^ 2` at every `w ≠ 1`. -/
+theorem hasDerivAt_discCoordinateHomeomorph_symm (z : ℍ) {w : ℂ} (hw : w ≠ 1) :
+    HasDerivAt (fun w : ℂ ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w))
+      (((z : ℂ) - conj (z : ℂ)) / (1 - w) ^ 2) w := by
+  have h := (((hasDerivAt_id' w).const_mul (conj (z : ℂ))).const_sub (z : ℂ)).div
+    ((hasDerivAt_id' w).const_sub 1) (sub_ne_zero.mpr hw.symm)
+  convert h using 1
+  ring
+
 /-- The disc coordinate centred at `z` as a homeomorphism between the upper half-plane and the
 open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. Both directions are
 holomorphic, by `UpperHalfPlane.mdifferentiable_discCoordinate` and
@@ -237,6 +256,20 @@ theorem image_discCoordinate_ball (z : ℍ) (ε : ℝ) :
       exact mem_ball_zero_iff.mpr (hu.trans (Real.tanh_lt_one _))
     exact ⟨τ, mem_ball_iff_norm_discCoordinate_lt.mpr hu, rfl⟩
 
+/-- **A matrix of positive determinant is a rotation between disc coordinates**: the disc
+coordinate of `g • τ` centred at `g • z` is that of `τ` centred at `z`, multiplied by the
+unimodular multiplier `conj (denom g z) / denom g z`, independent of `τ`. -/
+theorem discCoordinate_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ : ℍ) :
+    discCoordinate (g • z) (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ := by
+  have hj := denom_ne_zero g z
+  have hjc : conj (denom g z) ≠ 0 := (map_ne_zero _).mpr hj
+  have hjτ := denom_ne_zero g τ
+  have hτ := coe_sub_conj_ne_zero z τ
+  have hD : ((g.det.val : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hdet.ne'
+  rw [discCoordinate_def, discCoordinate_def, coe_smul_sub_coe_smul hdet,
+    coe_smul_sub_conj_smul hdet]
+  field_simp
+
 /-- **The displacement from `conj z` under a matrix of positive determinant fixing `z`.** Such a
 matrix also fixes `conj z` as a Möbius transformation of `ℂ`, so the displacement of `g • τ` from
 `conj z` is that of `τ` scaled by `det g / (denom g τ * conj (denom g z))`. This is the factor by
@@ -246,22 +279,7 @@ theorem coe_smul_sub_conj_of_smul_eq_self {g : GL (Fin 2) ℝ} (hdet : 0 < g.det
     (hg : g • z = z) (τ : ℍ) :
     ((g • τ : ℍ) : ℂ) - conj (z : ℂ) =
       g.det.val * ((τ : ℂ) - conj (z : ℂ)) / (denom g τ * conj (denom g z)) := by
-  have hz := congrArg ((↑) : ℍ → ℂ) hg
-  have hj := denom_ne_zero g z
-  have hjτ := denom_ne_zero g τ
-  rw [coe_smul_of_det_pos hdet] at hz
-  simp only [num, denom] at hz hj hjτ ⊢
-  rw [div_eq_iff hj] at hz
-  have hjc : (g 1 0 : ℂ) * conj (z : ℂ) + g 1 1 ≠ 0 := by
-    simpa using (map_ne_zero (starRingEnd ℂ)).mpr hj
-  have hzc : (g 0 0 : ℂ) * conj (z : ℂ) + g 0 1 =
-      conj (z : ℂ) * ((g 1 0 : ℂ) * conj (z : ℂ) + g 1 1) := by
-    simpa using congrArg conj hz
-  rw [coe_smul_of_det_pos hdet]
-  simp only [num, denom]
-  rw [TauCeti.moebius_sub_of_fixed hzc hjc hjτ]
-  simp only [map_add, map_mul, Complex.conj_ofReal, Matrix.GeneralLinearGroup.val_det_apply,
-    Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
+  simpa only [hg] using coe_smul_sub_conj_smul hdet z τ
 
 /-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
 at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
@@ -271,21 +289,7 @@ itself cancels, since it scales the displacements from `z` and from `conj z` ali
 theorem discCoordinate_smul_of_smul_eq_self {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) {z : ℍ}
     (hg : g • z = z) (τ : ℍ) :
     discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ := by
-  have hz := congrArg ((↑) : ℍ → ℂ) hg
-  have hj := denom_ne_zero g z
-  have hjτ := denom_ne_zero g τ
-  have hτ := coe_sub_conj_ne_zero z τ
-  have hD : ((g.det.val : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hdet.ne'
-  rw [discCoordinate_def, discCoordinate_def, coe_smul_sub_conj_of_smul_eq_self hdet hg,
-    coe_smul_of_det_pos hdet]
-  rw [coe_smul_of_det_pos hdet] at hz
-  simp only [num, denom] at hz hj hjτ ⊢
-  rw [div_eq_iff hj] at hz
-  rw [TauCeti.moebius_sub_of_fixed hz hj hjτ]
-  simp only [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two, Complex.ofReal_sub,
-    Complex.ofReal_mul] at hD ⊢
-  have hjc : conj ((g 1 0 : ℂ) * z + g 1 1) ≠ 0 := (map_ne_zero _).mpr hj
-  field_simp
+  simpa only [hg] using discCoordinate_smul hdet z τ
 
 /-- **An element of `SL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at `z`**,
 by the unimodular multiplier `conj (denom g z) / denom g z`: the determinant-one case of

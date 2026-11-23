@@ -12,9 +12,13 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.Topology.Algebra.IsOpenUnits
+public import TauCeti.Topology.PiCurry
 
 /-!
 # Topological properties of matrices
@@ -24,7 +28,8 @@ pseudo-metrizable whenever `α` is. This makes metrizable-codomain results, such
 of pointwise limits of measurable maps, available for matrix-valued functions without choosing a
 matrix norm.
 
-Matrices with countably many rows and columns are second countable when their entries are.
+Matrices with countably many rows and columns are second countable when their entries are, and
+matrices with finitely many rows and columns are σ-compact when their entries are.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -32,7 +37,8 @@ Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, t
 
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
-(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`).
+(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`), and the product uniformity gives the
+uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_forall_abs_sub_le`).
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
@@ -52,7 +58,18 @@ Each characteristic coefficient is continuous over a commutative topological rin
 `Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
-In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
+In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
+both partial traces of a continuously varying matrix on a product index.
+
+A matrix-valued function converges exactly when each of its entries does
+(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
+(`Matrix.isClosed_setOfPred_nonneg_diag`).
+
+`Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
+Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
+homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
+`TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
+its inverse.
 
 ## References
 
@@ -78,10 +95,102 @@ instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
     [SecondCountableTopology α] : SecondCountableTopology (Matrix m n α) :=
   inferInstanceAs (SecondCountableTopology (m → n → α))
 
+/-- Matrices with finitely many rows and columns over a σ-compact space form a σ-compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
+    SigmaCompactSpace (Matrix m n α) :=
+  inferInstanceAs (SigmaCompactSpace (m → n → α))
+
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
     [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
   ⟨continuous_fst.matrix_mulVec continuous_snd⟩
+
+end TauCeti
+
+namespace Matrix
+
+/-- `Matrix.of` bundled as a homeomorphism between curried functions `m → n → α` and matrices
+`Matrix m n α` with the entrywise product topology. -/
+def ofHomeomorph {m n α : Type*} [TopologicalSpace α] : (m → n → α) ≃ₜ Matrix m n α where
+  toEquiv := of
+  continuous_toFun := continuous_id.matrixOf
+  continuous_invFun := continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_id.matrix_elem i j
+
+@[simp]
+theorem ofHomeomorph_toEquiv {m n α : Type*} [TopologicalSpace α] :
+    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of := (rfl)
+
+@[simp]
+theorem ofHomeomorph_apply {m n α : Type*} [TopologicalSpace α] (f : m → n → α) :
+    ofHomeomorph f = of f := (rfl)
+
+@[simp]
+theorem ofHomeomorph_symm_apply {m n α : Type*} [TopologicalSpace α] (A : Matrix m n α) :
+    ofHomeomorph.symm A = of.symm A := (rfl)
+
+end Matrix
+
+namespace TauCeti
+
+section MatrixCoordinates
+
+variable {ι : Type*} (κ μ : ι → Type*) (α : Type*) [TopologicalSpace α]
+
+/-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
+indexed by `Σ i, κ i × μ i`, as a homeomorphism for the entrywise product topologies. -/
+def piMatrixHomeomorph :
+    ((i : ι) → Matrix (κ i) (μ i) α) ≃ₜ ((p : Σ i, κ i × μ i) → α) :=
+  (Homeomorph.piCongrRight fun _ ↦
+      Matrix.ofHomeomorph.symm.trans Homeomorph.piCurry.symm).trans
+    (piCurryHomeomorph fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
+
+@[simp]
+theorem piMatrixHomeomorph_apply (A : (i : ι) → Matrix (κ i) (μ i) α) (p : Σ i, κ i × μ i) :
+    piMatrixHomeomorph κ μ α A p = A p.1 p.2.1 p.2.2 := by
+  simp [piMatrixHomeomorph, Function.uncurry]
+
+@[simp]
+theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α) (i : ι) (j : κ i) (k : μ i) :
+    (piMatrixHomeomorph κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
+  simp [piMatrixHomeomorph, Function.curry]
+
+/-- As an underlying equivalence, `TauCeti.piMatrixHomeomorph` agrees with
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem piMatrixHomeomorph_toEquiv (R : Type*) [Semiring R] [AddCommMonoid α] [Module R α] :
+    (piMatrixHomeomorph κ μ α).toEquiv = (piMatrixLinearEquiv R κ μ α).toEquiv := by
+  ext A p; simp
+
+/-- The forward map of `TauCeti.piMatrixHomeomorph` agrees with `TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α) = ⇑(piMatrixLinearEquiv R κ μ α) := by
+  ext A p; simp
+
+/-- The inverse map of `TauCeti.piMatrixHomeomorph` agrees with the inverse of
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α).symm = ⇑(piMatrixLinearEquiv R κ μ α).symm := by
+  ext a i j k; simp
+
+variable {κ μ α}
+
+/-- The linear equivalence `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv {R : Type*} [Semiring R] [AddCommMonoid α] [Module R α] :
+    Continuous (piMatrixLinearEquiv R κ μ α) :=
+  coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ μ α R ▸ (piMatrixHomeomorph κ μ α).continuous
+
+/-- The inverse of `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv_symm {R : Type*} [Semiring R]
+    [AddCommMonoid α] [Module R α] : Continuous (piMatrixLinearEquiv R κ μ α).symm :=
+  coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm κ μ α R ▸
+    (piMatrixHomeomorph κ μ α).symm.continuous
+
+end MatrixCoordinates
 
 end TauCeti
 
@@ -107,6 +216,28 @@ theorem exists_ball_subset_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace 
   exact ⟨r, hr, fun y hy => (hrx y hy).1, fun y hy => (hrx y hy).2⟩
 
 end ContinuousAt
+
+namespace UniformContinuous
+
+open Filter Metric
+open scoped Uniformity
+
+/-- If a real matrix-valued map `a` on a pseudo-metric space is uniformly continuous, then for every
+`ε > 0` there is `r > 0` such that every entry of `a` varies by at most `ε` between any two points
+at distance less than `r`. -/
+theorem exists_pos_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace X] [Finite m] [Finite n]
+    {a : X → Matrix m n ℝ} (ha : UniformContinuous a) {ε : ℝ} (hε : 0 < ε) :
+    ∃ r : ℝ, 0 < r ∧ ∀ x y, dist x y < r → ∀ i j, |a x i j - a y i j| ≤ ε := by
+  have hev : ∀ᶠ z : X × X in 𝓤 X, ∀ i j, |a z.1 i j - a z.2 i j| ≤ ε := by
+    refine eventually_all.2 fun i => eventually_all.2 fun j => ?_
+    have hij : UniformContinuous fun x => a x i j := (Matrix.uniformContinuous _ _ _).1 ha i j
+    filter_upwards [hij (dist_mem_uniformity hε)] with z hz
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, Real.dist_eq] at hz
+    exact hz.le
+  obtain ⟨r, hr, hrz⟩ := uniformity_basis_dist.mem_iff.1 hev
+  exact ⟨r, hr, fun x y hxy => @hrz (x, y) hxy⟩
+
+end UniformContinuous
 
 section Inverse
 
@@ -179,21 +310,63 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
   simp only [Matrix.kroneckerMap_apply]
   exact (hA.matrix_elem i.1 j.1).mul (hB.matrix_elem i.2 j.2)
 
+section PartialTrace
+
+variable {X R m n : Type*} [TopologicalSpace X] [TopologicalSpace R] [AddCommMonoid R]
+  [ContinuousAdd R] {A : X → Matrix (m × n) (m × n) R}
+
+/-- The partial trace over the second factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceRight [Fintype n] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceRight :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceRight_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (i, k) (j, k)
+
+/-- The partial trace over the first factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceLeft [Fintype m] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceLeft :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceLeft_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (k, i) (k, j)
+
+end PartialTrace
+
 namespace Matrix
 
-variable {R m n : Type*} [CommSemiring R] [StarRing R] [Fintype m] [DecidableEq m] [Fintype n]
-  [DecidableEq n] [TopologicalSpace R] [ContinuousMul R]
+variable {R α m n : Type*} [CommSemiring R] [Semiring α] [StarRing α] [Algebra R α]
+  [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [TopologicalSpace α]
 
 @[continuity, fun_prop]
 theorem continuous_kroneckerOneStarAlgHom :
-    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
-  (continuous_id.matrix_kronecker continuous_const).congr fun A ↦
-    (kroneckerOneStarAlgHom_apply A).symm
+    Continuous (kroneckerOneStarAlgHom R (α := α) (m := m) n) :=
+  (continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.congr fun A ↦
+    (kronecker_one A).symm.trans (kroneckerOneStarAlgHom_apply A).symm
 
 @[continuity, fun_prop]
 theorem continuous_oneKroneckerStarAlgHom :
-    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
-  (continuous_const.matrix_kronecker continuous_id).congr fun B ↦
-    (oneKroneckerStarAlgHom_apply B).symm
+    Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
+  ((continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.matrix_reindex _ _).congr fun B ↦
+    (one_kronecker B).symm.trans (oneKroneckerStarAlgHom_apply B).symm
+
+end Matrix
+
+namespace Matrix
+
+open Filter Topology in
+/-- Convergence of a matrix-valued function is entrywise convergence. -/
+theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : Filter α}
+    {M : α → Matrix m n R} {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
+  tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
+
+/-- The matrices with nonnegative diagonal form a closed set. -/
+theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
+    [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
+  simp only [Set.ofPred_forall]
+  exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix

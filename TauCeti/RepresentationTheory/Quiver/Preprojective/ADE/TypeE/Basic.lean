@@ -55,9 +55,12 @@ results are stated for the named Bourbaki-labelled graph `TauCeti.zigzagE8Graph`
 
 For `E₇`, the Bourbaki-labelled inclusion into `E₈`, recorded in
 `TauCeti.DynkinType.cartanMatrix_E7_eq_submatrix_E8`, identifies its signless algebra with an
-induced subgraph quotient. This transfers finite dimensionality from `E₈` to `E₇`. The signless
-`E₇` instance retains the caller's neighborhood `Fintype` instances as parameters, so its
-conclusion refers to the quotient carrier formed with those enumerations.
+induced subgraph quotient. This transfers finite dimensionality from `E₈` to `E₇`.
+
+None of the signless theorems and `FiniteDimensional` instances for `E₆`, `E₇` and `E₈` below
+takes neighborhood `Fintype` parameters: their statements refer to the quotient carrier formed
+with the enumeration `SimpleGraph.neighborSetFintypeOfFinite`, which is a local instance of this
+file.
 
 The signless algebra of a bipartite graph is the preprojective algebra of each of its
 orientations, by an explicit sign rescaling of the arrows. Thus the same bound holds in the
@@ -99,12 +102,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance eNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### The arms of the `Eₙ` diagram -/
 
@@ -200,21 +200,11 @@ private theorem signlessArrow_e_eq_zero {i j : ℕ} (h : ¬(i < n ∧ j < n ∧ 
   signlessArrow_eq_zero k fun hi hj hij => h ⟨hi, hj, (diagramGraph_E_adj _ _).1 hij⟩
 
 /-- The relation at a node `v`, summed over a set `S` of numbers containing its neighbours. -/
-private theorem sum_e_relation (v : ℕ) (hv : v < n) (S : Finset ℕ)
-    (hnbr : ∀ w < n, EAdj v w → w ∈ S) :
-    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
-  classical
-  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
-  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
-  calc ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w
-      = ∑ w ∈ S ∪ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine Finset.sum_subset Finset.subset_union_left fun w hw hwS => ?_
-        have hw' : w < n := by simp at hw; tauto
-        rw [signlessArrow_e_eq_zero k (j := w) fun h => hwS (hnbr w hw' h.2.2), mul_zero]
-    _ = ∑ w ∈ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine (Finset.sum_subset Finset.subset_union_right fun w _ hw => ?_).symm
-        rw [signlessArrow_e_eq_zero k (by simp at hw; omega), zero_mul]
-    _ = 0 := h
+private theorem sum_e_relation (v : ℕ) (S : Finset ℕ)
+    (hnbr : v < n → ∀ w < n, EAdj v w → w ∈ S) :
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
+  sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem k G v S fun hv w hw hadj =>
+    hnbr hv w hw ((diagramGraph_E_adj _ _).1 hadj)
 
 variable (hn : 4 ≤ n)
 include hn
@@ -224,7 +214,7 @@ branch node cancels the backtrack towards it; beyond the end of the arm both van
 private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
     eDown k n a (w + 1) * eUp k n a (w + 1) + eUp k n a w * eDown k n a w = 0 := by
   by_cases hp : eArm n a (w + 1) < n
-  · have h := sum_e_relation k _ hp {eArm n a w, eArm n a (w + 2)} fun j _ hj => by
+  · have h := sum_e_relation k (n := n) _ {eArm n a w, eArm n a (w + 2)} fun _ j _ hj => by
       rcases eq_eArm_of_eAdj (by omega) hp hj with rfl | rfl <;> simp
     have hne : eArm n a w ≠ eArm n a (w + 2) := by
       obtain _ | _ | w := w
@@ -238,19 +228,21 @@ private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
       signlessArrow_e_eq_zero k (by omega)
     simp only [eDown, eUp, h₁, h₂, zero_mul, add_zero]
 
+omit hn in
 /-- **The relation at the branch node**: the backtracks into the three arms sum to zero. -/
 private theorem eTurn_add_eTurn_add_eTurn : eTurn k n 0 + eTurn k n 1 + eTurn k n 2 = 0 := by
-  have h := sum_e_relation k (n := n) 3 (by omega) {1, 2, 4} fun j _ hj => by
+  have h := sum_e_relation k (n := n) 3 {1, 2, 4} fun _ j _ hj => by
     obtain ⟨a, rfl⟩ := exists_eq_eArm_of_eAdj n hj
     fin_cases a <;> simp [eArm]
   rw [Finset.sum_insert (by simp), Finset.sum_pair (by simp)] at h
   simpa [eTurn, eDown, eUp, eArm, add_assoc] using h
 
+omit hn in
 /-- The backtrack into the long arm is minus the sum of the other two; in particular every
 backtrack at the branch node lies in their span. -/
 private theorem eTurn_mem_eSpan (a : Fin 3) : eTurn k n a ∈ eSpan k n := by
   have h₂ : eTurn k n 2 ∈ eSpan k n := by
-    rw [eq_neg_of_add_eq_zero_right (eTurn_add_eTurn_add_eTurn k hn)]
+    rw [eq_neg_of_add_eq_zero_right (eTurn_add_eTurn_add_eTurn k)]
     exact neg_mem (add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp)))
   fin_cases a
   · exact Submodule.subset_span (by simp)
@@ -304,13 +296,6 @@ variable {n} (hn : 4 ≤ n)
 include hn
 
 omit hn in
-/-- A sign in the algebra is the integer sign acting by `zsmul`. -/
-private theorem neg_one_pow_mul_eq_zsmul (r : ℕ)
-    (z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
-    (-1) ^ r * z = ((-1 : ℤ) ^ r) • z := by
-  simp [zsmul_eq_mul]
-
-omit hn in
 /-- The empty word in the backtracks at the branch node. -/
 private theorem one_mem_eSpan_pow_zero : 1 ∈ eSpan k n ^ 0 := by
   rw [pow_zero]
@@ -340,7 +325,8 @@ private theorem eNormalForm_cons_valley {i₀ j j' L : ℕ}
         (ε • (ladderValley (eUp k n a) (eDown k n a) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (eUp k n a) (eDown k n a) m (s + 1) r * E) := by
       rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (eDown_mul_eUp_add k hn a),
-        mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
+        mul_assoc]
+      simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
     rw [hz, Nat.add_right_comm m 1 r, Nat.add_sub_cancel]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
@@ -377,12 +363,14 @@ private theorem eNormalForm_cons_climb {i₀ j j' L : ℕ}
     refine .inr ⟨a, c, h, t + 1, s₀, ε, ((-1 : ℤ) ^ h) • (eTurn k n a * w), ?_, hs₀,
       by rw [Nat.add_sub_cancel], by omega, ?_⟩
     · rw [pow_succ']
-      exact Submodule.smul_mem _ _ (Submodule.mul_mem_mul (eTurn_mem_eSpan k hn a) hw)
+      exact Submodule.smul_mem _ _ (Submodule.mul_mem_mul (eTurn_mem_eSpan k a) hw)
     · have harr : signlessArrow k G (eArm n a (h + 1)) (eArm n a h) = eDown k n a h := by
         rw [eDown]
       rw [Nat.add_sub_cancel, ← mul_assoc, ← mul_assoc, harr,
-        d_mul_ladderValley_zero_zero (eDown_mul_eUp_add k hn a), neg_one_pow_mul_eq_zsmul, eTurn]
-      simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
+        d_mul_ladderValley_zero_zero (eDown_mul_eUp_add k hn a), eTurn]
+      simp only [mul_assoc, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one,
+        Int.cast_comm]
+      exact ((Commute.neg_one_left _).pow_left h).left_comm _
 
 /-- **One more arrow keeps a normal form.** -/
 private theorem eNormalForm_cons {i₀ j j' L : ℕ}
@@ -411,7 +399,7 @@ private theorem eNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact eNormalForm_cons k hn ((vertexEquiv G).symm a).2 ((vertexEquiv G).symm b).2
+    exact eNormalForm_cons k hn ((vertexEquiv G).symm a).isLt ((vertexEquiv G).symm b).isLt
       ((diagramGraph_E_adj _ _).1 e.down) ih
 
 /-- **Long paths vanish once long words at the branch node do.** If every product of `M`
@@ -423,16 +411,16 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eSpan_pow {M : ℕ}
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have hb := ((vertexEquiv G).symm b).2
+  have hb := ((vertexEquiv G).symm b).isLt
   rcases eNormalForm_ofPath k hn p with ⟨c, m, s, r, ε, -, hL, hs, hr, -⟩ |
     ⟨c, c', h, t, s₀, ε, w, hw, hs₀, hh, hL, hz⟩
   · -- A valley word on an arm is too short.
-    have := lt_of_eArm_lt hn (hs ▸ ((vertexEquiv G).symm a).2)
+    have := lt_of_eArm_lt hn (hs ▸ ((vertexEquiv G).symm a).isLt)
     have := lt_of_eArm_lt hn (hr ▸ hb)
     omega
   · -- Otherwise the word at the branch node is long enough to vanish.
     have := lt_of_eArm_lt hn (hh ▸ hb)
-    have := lt_of_eArm_lt hn (hs₀ ▸ ((vertexEquiv G).symm a).2)
+    have := lt_of_eArm_lt hn (hs₀ ▸ ((vertexEquiv G).symm a).isLt)
     obtain ⟨e, rfl⟩ : ∃ e, t = M + e := ⟨t - M, by omega⟩
     rw [pow_add, hM, Submodule.bot_mul, Submodule.mem_bot] at hw
     rw [hz, hw, mul_zero, zero_mul]
@@ -465,7 +453,7 @@ private def e6Coloring : (diagramGraph DynkinType.E6.cartanMatrix).Coloring Bool
 /-- **Every product of six backtracks at the branch node of `E₆` vanishes.** -/
 private theorem eSpan_six_pow_six (k : Type*) [CommRing k] : eSpan k 6 ^ 6 = ⊥ := by
   have hsum : eTurn k 6 0 + eTurn k 6 1 = -eTurn k 6 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k (by norm_num))
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   refine span_pair_pow_six_eq_bot (eTurn_zero_sq k (by norm_num))
     (eTurn_one_pow_three k (by norm_num)) ?_
   rw [hsum, neg_pow, eTurn_two_pow k (n := 6) (by norm_num), mul_zero]
@@ -501,15 +489,9 @@ theorem preprojectiveMk_E6_ofPath_eq_zero_of_le
       (Symmetrify (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)))
     (hx : 24 ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)
-      (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `E₆` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o⦄, (i ⟶ j) →
-      e6Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        e6Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => e6Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+      (ofPath x) = 0 :=
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le e6Coloring.colorable k
+    (signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₆` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `24`. -/
@@ -551,7 +533,7 @@ end Field
 /-- **Every product of fifteen backtracks at the branch node of `E₈` vanishes.** -/
 private theorem eSpan_eight_pow_fifteen (k : Type*) [CommRing k] : eSpan k 8 ^ 15 = ⊥ := by
   have hsum : eTurn k 8 0 + eTurn k 8 1 = -eTurn k 8 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k (by norm_num))
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   refine span_pair_pow_fifteen_eq_bot (eTurn_zero_sq k (by norm_num))
     (eTurn_one_pow_three k (by norm_num)) ?_
   rw [hsum, neg_pow, eTurn_two_pow k (n := 8) (by norm_num), mul_zero]
@@ -582,15 +564,9 @@ every orientation of the `E₈` graph. -/
 theorem preprojectiveMk_E8_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagE8Graph o)))
     (hx : 46 ≤ x.2.2.length) :
-    preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `E₈` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver zigzagE8Graph o⦄, (i ⟶ j) →
-      zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => zigzagE8Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+    preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 :=
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le zigzagE8Coloring.colorable k
+    (signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₈` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `46`. -/
@@ -666,7 +642,7 @@ instance instFiniteDimensionalPreprojectiveAlgebraE7
       (preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
   let c := fun i : OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o =>
     e7Coloring ((OrientedQuiver.vertexEquiv _ o).symm i)
-  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
+  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.val
   exact ((orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)).toLinearEquiv.finiteDimensional
 

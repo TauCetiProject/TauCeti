@@ -184,14 +184,19 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
   simp only [newtonPolygon_def, coeff_X_pow_mul', apply_ite v, AddValuation.map_zero]
   exact lowerConvexEnvelope_shift (fun n => v (coeff n f)) k
 
+section CommRing
+
+variable {R : Type*} [CommRing R] (f : R⟦X⟧) (v : AddValuation R (WithTop ℝ))
+
 /-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
 that valuation is finite. -/
-theorem newtonPolygon_rescale {R : Type*} [CommRing R] (f : R⟦X⟧)
-    (v : AddValuation R (WithTop ℝ)) {c : R} (hc : v c ≠ ⊤) :
+theorem newtonPolygon_rescale {c : R} (hc : v c ≠ ⊤) :
     (rescale c f).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
   simp only [newtonPolygon_def, coeff_rescale, AddValuation.map_mul, AddValuation.map_pow,
     add_comm (_ • _)]
   exact lowerConvexEnvelope_add_nsmul _ hc
+
+end CommRing
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
@@ -255,6 +260,13 @@ theorem isConvexSeq_newtonPolygon : IsConvexSeq (f.newtonPolygon v) :=
 theorem newtonPolygon_le (n : ℕ) : f.newtonPolygon v n ≤ v (f.coeff n) :=
   lowerConvexEnvelope_le (isAdmissible_addValuation_coeff f v) n
 
+/-- At index zero the Newton polygon is the height of the constant coefficient, which may be
+infinite. -/
+@[simp]
+theorem newtonPolygon_apply_zero : f.newtonPolygon v 0 = v (f.coeff 0) :=
+  lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun _ h =>
+    absurd h (Nat.not_lt_zero _)
+
 variable {f v} in
 /-- A convex sequence lying below every coefficient height lies below the Newton polygon. -/
 theorem le_newtonPolygon {H : ℕ → WithTop ℝ} (hH : IsConvexSeq H)
@@ -290,7 +302,8 @@ theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :
     (c • f).newtonPolygon v = fun n => v c + f.newtonPolygon v n := by
-  simp only [newtonPolygon_def, coeff_smul, smul_eq_mul, AddValuation.map_mul]
+  simp only [newtonPolygon_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul,
+    AddValuation.map_mul]
   exact lowerConvexEnvelope_const_add _ _
 
 /-- Multiplying by a constant translates the Newton polygon by the valuation of the
@@ -329,12 +342,21 @@ theorem newtonPolygon_reverse :
       fun n => if n ≤ f.natDegree then f.newtonPolygon v (f.natDegree - n) else ⊤ :=
   f.newtonPolygon_reflect v le_rfl
 
-/-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
-that valuation is finite. -/
-theorem newtonPolygon_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
+/-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`. No finiteness
+is needed: when that valuation is infinite, the height at index `0` is unchanged and every later
+point becomes `⊤`. -/
+theorem newtonPolygon_comp_C_mul_X (c : R) :
     (f.comp (C c * X)).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
-  simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow]
-  exact lowerConvexEnvelope_add_nsmul _ hc
+  by_cases hc : v c = ⊤
+  · funext n
+    rcases n with _ | n
+    · simp [comp_C_mul_X_coeff]
+    · rw [hc, succ_nsmul, add_top, add_top]
+      refine lowerConvexEnvelope_eq_top_of_forall_ge fun k hk => ?_
+      obtain ⟨k, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+      simp [comp_C_mul_X_coeff, hc, succ_nsmul]
+  · simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow]
+    exact lowerConvexEnvelope_add_nsmul _ hc
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
@@ -372,6 +394,13 @@ theorem newtonPolygon_natTrailingDegree :
   lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun i hi => by
     rw [coeff_eq_zero_of_lt_natTrailingDegree hi, AddValuation.map_zero]
 
+variable {f v} in
+/-- If the trailing coefficient has finite valuation and the Newton polygon is infinite before
+`l`, then `l` is at most the order of vanishing at zero. -/
+theorem le_natTrailingDegree_of_forall_lt_newtonPolygon_eq_top (htr : v f.trailingCoeff ≠ ⊤)
+    {l : ℕ} (hl : ∀ n < l, f.newtonPolygon v n = ⊤) : l ≤ f.natTrailingDegree :=
+  le_of_not_gt fun hlt => htr (f.newtonPolygon_natTrailingDegree v ▸ hl _ hlt)
+
 /-- At any index `n` at least the degree, the Newton polygon is the height of the coefficient
 of `X ^ n`: the leading coefficient when `n` is the degree, and `⊤` beyond it. -/
 theorem newtonPolygon_eq_of_natDegree_le {n : ℕ} (hn : f.natDegree ≤ n) :
@@ -383,13 +412,6 @@ theorem newtonPolygon_eq_of_natDegree_le {n : ℕ} (hn : f.natDegree ≤ n) :
 @[simp]
 theorem newtonPolygon_natDegree : f.newtonPolygon v f.natDegree = v f.leadingCoeff :=
   newtonPolygon_eq_of_natDegree_le f v le_rfl
-
-/-- At index zero the Newton polygon is the height of the constant coefficient, which may be
-infinite. -/
-@[simp]
-theorem newtonPolygon_apply_zero : f.newtonPolygon v 0 = v (f.coeff 0) :=
-  lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun _ h =>
-    absurd h (Nat.not_lt_zero _)
 
 /-- If the trailing and leading coefficients of `f` have finite valuation, the finite domain of
 the Newton polygon of `f` runs from its order of vanishing at zero to its degree. -/

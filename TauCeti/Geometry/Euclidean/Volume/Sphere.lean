@@ -50,7 +50,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   spheres, with the integral and integrability forms
   `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
   `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
-  `TauCeti.integrableOn_sphere_iff`.
+  `TauCeti.integrableOn_sphere_iff`. For `r ≤ 0` the sphere contains at most its center
+  (`TauCeti.setIntegral_sphere_eq_zero_of_nonpos`).
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
@@ -65,7 +66,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
   real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
-  particular this measure is finite.
+  particular this measure is finite. The sphere of radius `r > 0` has measure `r ^ n |Sⁿ|`
+  (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
 
@@ -116,7 +118,7 @@ theorem euclideanHausdorffMeasure_restrict_sphere_eq_smul_map (d : ℕ) (c : E) 
       rw [hφ, ← image_smul, image_image]
     rw [this, (isometry_add_left c).euclideanHausdorffMeasure_image,
       euclideanHausdorffMeasure_smul₀ _ hr.ne']
-    simp [ENNReal.smul_def, ← enorm_eq_nnnorm, Real.enorm_eq_ofReal hr.le]
+    simp [ENNReal.smul_def, ← eNorm_eq_nnNorm, Real.eNorm_eq_ofReal hr.le]
   rw [← hφ]
   ext s hs
   rw [restrict_apply hs, _root_.smul_apply, φ.map_apply,
@@ -146,6 +148,15 @@ theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one {F : Type*}
     ENNReal.toReal_ofReal (pow_nonneg hr.le d)]
   simp only [addSMulEquiv_apply]
 
+omit [NormedSpace ℝ E] [BorelSpace E] in
+/-- A sphere of radius `r ≤ 0` contains at most its center, so the integral over it of a function
+vanishing at the center is zero, for every measure. -/
+theorem setIntegral_sphere_eq_zero_of_nonpos {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (μ : Measure E) (c : E) {r : ℝ} (hr : r ≤ 0) {f : E → F} (hf : f c = 0) :
+    ∫ y in sphere c r, f y ∂μ = 0 :=
+  setIntegral_eq_zero_of_forall_eq_zero fun _ hy ↦ by
+    rwa [dist_le_zero.1 ((mem_sphere.1 hy).le.trans hr)]
+
 /-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
 and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
 theorem integrableOn_sphere_iff {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] (d : ℕ)
@@ -166,6 +177,59 @@ variable {W E : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteD
   [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+omit [MeasurableSpace W] [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The derivative of the cone map `(t, w) ↦ t • ψ w` on the Euclidean product `ℝ × W` at a point
+where `ψ` is differentiable sends `(a, u)` to `a • ψ w + t • ψ' w u`. -/
+private theorem hasFDerivAt_smul_ofLp {ψ : W → E} {x : WithLp 2 (ℝ × W)}
+    (hx : DifferentiableAt ℝ ψ (WithLp.ofLp x).2) :
+    HasFDerivAt (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2)
+      ((LinearMap.toSpanSingleton ℝ E (ψ (WithLp.ofLp x).2)).coprod
+        ((WithLp.ofLp x).1 • (fderiv ℝ ψ (WithLp.ofLp x).2 : W →ₗ[ℝ] E)) ∘ₗ
+        (WithLp.linearEquiv 2 ℝ (ℝ × W)).toLinearMap).toContinuousLinearMap x := by
+  have h := ((WithLp.fstL 2 ℝ ℝ W).hasFDerivAt (x := x)).smul
+    (hx.hasFDerivAt.comp x (WithLp.sndL 2 ℝ ℝ W).hasFDerivAt)
+  refine h.congr_fderiv ?_
+  ext y
+  simp [add_comm]
+
+omit [MeasurableSpace W] [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The Jacobian of the cone map `(t, w) ↦ t • ψ w` at `(t, w)` with `t ≥ 0`, `‖ψ w‖ = 1` and
+`ψ' w` orthogonal to `ψ w` is `t ^ dim W` times the Jacobian of `ψ`. -/
+private theorem normDet_fderiv_smul_ofLp {ψ : W → E} {x : WithLp 2 (ℝ × W)}
+    (hd : DifferentiableAt ℝ ψ (WithLp.ofLp x).2) (ht : 0 ≤ (WithLp.ofLp x).1)
+    (hnorm : ‖ψ (WithLp.ofLp x).2‖ = 1) (horth : ∀ u, ⟪ψ (WithLp.ofLp x).2,
+      fderiv ℝ ψ (WithLp.ofLp x).2 u⟫ = 0) :
+    (fderiv ℝ (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2) x).normDet =
+      (WithLp.ofLp x).1 ^ finrank ℝ W * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := by
+  rw [(hasFDerivAt_smul_ofLp hd).fderiv, LinearMap.coe_toContinuousLinearMap,
+    LinearMap.normDet_toSpanSingleton_coprod hnorm, LinearMap.normDet_smul,
+    Real.norm_of_nonneg ht]
+  intro u
+  rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, inner_smul_right, horth u, mul_zero]
+
+omit [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W]
+  [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The cone map `(t, w) ↦ t • ψ w` is injective on `Ioo 0 1 × s` when `ψ` is injective on `s`
+and takes unit vectors there. -/
+private theorem injOn_smul_ofLp {ψ : W → E} {s : Set W} (hnorm : ∀ w ∈ s, ‖ψ w‖ = 1)
+    (hψs : InjOn ψ s) :
+    InjOn (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2)
+      (WithLp.ofLp ⁻¹' (Ioo 0 1 ×ˢ s)) := by
+  intro x hx x' hx' h
+  -- The radius is recovered as the norm, and then the point of `s` by injectivity of `ψ`.
+  have ht : (WithLp.ofLp x).1 = (WithLp.ofLp x').1 := by
+    have h' := congrArg norm h
+    simp only [norm_smul, Real.norm_eq_abs, hnorm _ hx.2, hnorm _ hx'.2, mul_one,
+      abs_of_pos hx.1.1, abs_of_pos hx'.1.1] at h'
+    exact h'
+  have hw : (WithLp.ofLp x).2 = (WithLp.ofLp x').2 := by
+    refine hψs hx.2 hx'.2 (smul_right_injective E hx.1.1.ne' ?_)
+    simpa only [← ht] using h
+  exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
+
+omit [FiniteDimensional ℝ W] in
 /-- **Cone formula.** Let `ψ : W → E` take values in the unit sphere near a measurable set `s`,
 where `dim W + 1 = dim E`, and let `ψ` be injective on `s` and differentiable on `s` with injective
 derivative. Then the `dim W`-dimensional Hausdorff measure of `ψ '' s` is `dim E` times the
@@ -175,37 +239,27 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (hψ : ∀ w ∈ s, ∀ᶠ y in 𝓝 w, ‖ψ y‖ = 1) (hd : ∀ w ∈ s, DifferentiableAt ℝ ψ w)
     (hinj : ∀ w ∈ s, Injective (fderiv ℝ ψ w)) (hψs : InjOn ψ s) :
     μHE[finrank ℝ W] (ψ '' s) = finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (ψ '' s)) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨w₀, hw₀⟩
+  · simp
+  -- A nonempty `s` forces `W` to be finite dimensional: `fderiv ℝ ψ w₀` is injective into `E`.
+  have : FiniteDimensional ℝ W :=
+    FiniteDimensional.of_injective (fderiv ℝ ψ w₀ : W →ₗ[ℝ] E) (hinj w₀ hw₀)
   -- We apply the area formula to the cone map `Φ (t, w) = t • ψ w` on `Ioo 0 1 × s`, which is
   -- injective with image the cone and has Jacobian `t ^ k` times that of `ψ`. Fubini–Tonelli then
   -- separates `∫ t ^ k = 1 / (k + 1)` from `∫ J ψ`, which is `μHE[k] (ψ '' s)` by the area formula.
   set k := finrank ℝ W
   have hnorm : ∀ w ∈ s, ‖ψ w‖ = 1 := fun w hw => (hψ w hw).self_of_nhds
   have horth : ∀ w ∈ s, ∀ u, ⟪ψ w, fderiv ℝ ψ w u⟫ = 0 := fun w hw =>
-    inner_fderiv_eq_zero_of_eventually_norm_eq ((hψ w hw).mono fun y hy => by rw [hy, hnorm w hw])
+    (isLocalExtr_const.congr ((hψ w hw).mono fun _ => Eq.symm)).inner_fderiv_eq_zero
   -- The cone map `(t, w) ↦ t • ψ w` on the Euclidean product `ℝ × W`.
   let Φ : WithLp 2 (ℝ × W) → E := fun x => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2
   let S : Set (WithLp 2 (ℝ × W)) := WithLp.ofLp ⁻¹' (Ioo 0 1 ×ˢ s)
   have hS : MeasurableSet S :=
     (measurableSet_Ioo.prod hs).preimage (WithLp.prod_continuous_ofLp 2 ℝ W).measurable
-  -- Its derivative at `(t, w)` sends `(a, u)` to `a • ψ w + t • ψ' w u`.
-  have hΦ : ∀ x ∈ S, HasFDerivAt Φ ((LinearMap.toSpanSingleton ℝ E (ψ (WithLp.ofLp x).2)).coprod
-      ((WithLp.ofLp x).1 • (fderiv ℝ ψ (WithLp.ofLp x).2 : W →ₗ[ℝ] E)) ∘ₗ
-      (WithLp.linearEquiv 2 ℝ (ℝ × W)).toLinearMap).toContinuousLinearMap x := by
-    intro x hx
-    have h := ((WithLp.fstL 2 ℝ ℝ W).hasFDerivAt (x := x)).smul
-      ((hd _ hx.2).hasFDerivAt.comp x (WithLp.sndL 2 ℝ ℝ W).hasFDerivAt)
-    refine h.congr_fderiv ?_
-    ext y
-    simp [add_comm]
+  have hΦ : ∀ x ∈ S, HasFDerivAt Φ _ x := fun x hx => hasFDerivAt_smul_ofLp (hd _ hx.2)
   have hJ : ∀ x ∈ S, (fderiv ℝ Φ x).normDet =
-      (WithLp.ofLp x).1 ^ k * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := by
-    intro x hx
-    rw [(hΦ x hx).fderiv, LinearMap.coe_toContinuousLinearMap,
-      LinearMap.normDet_toSpanSingleton_coprod (hnorm _ hx.2), LinearMap.normDet_smul,
-      Real.norm_of_nonneg hx.1.1.le]
-    intro u
-    rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, inner_smul_right, horth _ hx.2,
-      mul_zero]
+      (WithLp.ofLp x).1 ^ k * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := fun x hx =>
+    normDet_fderiv_smul_ofLp (hd _ hx.2) hx.1.1.le (hnorm _ hx.2) (horth _ hx.2)
   have hΦinj : ∀ x ∈ S, Injective (fderiv ℝ Φ x) := by
     intro x hx
     have hψ' : (fderiv ℝ ψ (WithLp.ofLp x).2).normDet ≠ 0 := fun h =>
@@ -214,18 +268,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
       rw [hJ x hx]
       exact mul_ne_zero (pow_ne_zero _ hx.1.1.ne') hψ'
     exact LinearMap.ker_eq_bot.1 (not_not.1 (mt LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 hne))
-  have hΦs : InjOn Φ S := by
-    intro x hx x' hx' h
-    -- The radius is recovered as the norm, and then the point of `s` by injectivity of `ψ`.
-    have ht : (WithLp.ofLp x).1 = (WithLp.ofLp x').1 := by
-      have h' := congrArg norm h
-      simp only [Φ, norm_smul, Real.norm_eq_abs, hnorm _ hx.2, hnorm _ hx'.2, mul_one,
-        abs_of_pos hx.1.1, abs_of_pos hx'.1.1] at h'
-      exact h'
-    have hw : (WithLp.ofLp x).2 = (WithLp.ofLp x').2 := by
-      refine hψs hx.2 hx'.2 (smul_right_injective E hx.1.1.ne' ?_)
-      simpa only [Φ, ← ht] using h
-    exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
+  have hΦs : InjOn Φ S := injOn_smul_ofLp hnorm hψs
   have himage : Φ '' S = Ioo (0 : ℝ) 1 • (ψ '' s) := by
     rw [show Φ = (fun p : ℝ × W => p.1 • ψ p.2) ∘ WithLp.ofLp from rfl, image_comp,
       image_preimage_eq _ (WithLp.ofLp_surjective 2), image_prod (f := fun t w => t • ψ w),
@@ -239,15 +282,13 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (ContinuousLinearMap.continuous_normDet.measurable.comp (measurable_fderiv ℝ ψ)).ennreal_ofReal
   have hpow : Measurable fun t : ℝ => ENNReal.ofReal (t ^ k) :=
     (measurable_id.pow_const k).ennreal_ofReal
-  have hrad : ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
-    have h := lintegral_ofReal_rpow_Ioo (s := k) (by linarith [k.cast_nonneg (α := ℝ)])
-      zero_le_one
-    simp_rw [Real.rpow_natCast] at h
-    rw [h, Real.one_rpow, one_div, ENNReal.ofReal_inv_of_pos (by positivity)]
-    norm_cast
   have hF : Measurable fun p : ℝ × W =>
       ENNReal.ofReal (p.1 ^ k) * ENNReal.ofReal (fderiv ℝ ψ p.2).normDet :=
     (hpow.comp measurable_fst).mul (hJψ.comp measurable_snd)
+  have hone : ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
+    rw [lintegral_ofReal_pow_Ioo k zero_le_one, one_pow, one_div,
+      ENNReal.ofReal_inv_of_pos (by positivity)]
+    norm_cast
   -- Separate the radial and spherical variables by Fubini–Tonelli, and apply the area formula
   -- to `ψ`.
   rw [hrank, InnerProductSpace.euclideanHausdorffMeasure_eq_volume, himage,
@@ -256,7 +297,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (WithLp.volume_preserving_ofLp ℝ W).setLIntegral_comp_preimage
       (measurableSet_Ioo.prod hs) hF,
     Measure.volume_eq_prod, ← Measure.prod_restrict, lintegral_prod_mul hpow.aemeasurable
-      hJψ.aemeasurable, hrad,
+      hJψ.aemeasurable, hone,
     lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs hd hinj hψs] at harea
   rw [← harea, ← hdim, ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
 
@@ -268,11 +309,12 @@ private theorem euclideanHausdorffMeasure_image_coe_of_forall_ne {v : E} (hv : �
       finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (((↑) : sphere (0 : E) 1 → E) '' s)) := by
   set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
   set A := ((↑) : sphere (0 : E) 1 → E) '' s
-  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1
+      (stereoInvFunAux_mem hv w.property)
   have hd : Differentiable ℝ ψ :=
     (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero
   have hA : MeasurableSet A :=
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).measurableSet_image.2 hs
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).measurableSet_image.2 hs
   have himage : ψ '' (ψ ⁻¹' A) = A := by
     refine image_preimage_eq_of_subset fun x hx => ?_
     obtain ⟨y, hy, rfl⟩ := hx
@@ -293,11 +335,11 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     (volume : Measure E).toSphere = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.2⟩
+      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.property⟩
     ext s
     simp [Set.eq_empty_of_isEmpty s]
   have hemb :=
-    MeasurableEmbedding.subtype_coe (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
+    MeasurableEmbedding.subtypeVal (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
   have key {v : E} (hv : ‖v‖ = 1) {s : Set (sphere (0 : E) 1)} (hs : MeasurableSet s)
       (hvs : ∀ x ∈ s, (x : E) ≠ v) :
       (volume : Measure E).toSphere s = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) s := by
@@ -311,7 +353,7 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     norm_num at h₂
   ext s hs
   set t : Set (sphere (0 : E) 1) := {x | (x : E) = v}
-  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtype_coe measurable_const
+  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtypeVal measurable_const
   rw [← measure_inter_add_sdiff s ht, ← measure_inter_add_sdiff s ht (μ := Measure.comap _ _)]
   congr 1
   · exact key (v := -v) (by simpa using hv) (hs.inter ht) fun x hx => hx.2.symm ▸ hvneg
@@ -324,14 +366,14 @@ theorem euclideanHausdorffMeasure_restrict_sphere :
     (μHE[finrank ℝ E - 1] : Measure E).restrict (sphere 0 1) =
       (volume : Measure E).toSphere.map (↑) := by
   rw [toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
 Hausdorff measure `n ω_n`, where `ω_n` is the volume of the unit ball. -/
 theorem euclideanHausdorffMeasure_sphere_zero_one :
     μHE[finrank ℝ E - 1] (sphere (0 : E) 1) = finrank ℝ E * volume (ball (0 : E) 1) := by
   rw [← toSphere_apply_univ, toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
@@ -413,5 +455,16 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
     μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
   rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+omit [FiniteDimensional ℝ E] in
+/-- A sphere of radius `r > 0` in a real inner product space of dimension `n + 1` has normalized
+`n`-dimensional Hausdorff measure `r ^ n |Sⁿ|`. -/
+theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[n] (sphere c r) = ENNReal.ofReal (r ^ n * roundSphereVolume n) := by
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
 
 end TauCeti

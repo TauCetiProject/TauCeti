@@ -5,6 +5,7 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 
 /-!
@@ -32,6 +33,8 @@ sequences split `k`-linearly (`TauCeti.TateCohomology.δ_cup_of_leftInverse`). T
 * `TauCeti.TateCohomology.cupH0_eq_flip_cup0H`: graded commutativity in bidegree `(p, 0)`.
 * `TauCeti.TateCohomology.cup0H_eq_flip_cupH0`: graded commutativity in bidegree `(0, q)`.
 * `TauCeti.TateCohomology.cup_gradedComm`: graded commutativity in all integer bidegrees.
+* `TauCeti.TateCohomology.cup_right_comm`: `(x ∪ y) ∪ z` and `(x ∪ z) ∪ y` agree up to the Koszul
+  sign `(-1) ^ (q * s)` and the structure isomorphisms of the coefficient modules.
 
 ## References
 
@@ -99,18 +102,19 @@ private theorem cup_gradedComm_add_one (M N : Rep k G) {p q r : ℤ} (hq : 0 ≤
   obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
     ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
   have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact :=
+    dimensionShiftUpSES_shortExact N
   -- The braiding commutes with the connecting maps of the tensor products of the shifting sequence
   -- with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact N M)
+    (dimensionShiftUpSES_tensorLeft_shortExact N M)
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M
       (leftInverse_coindBotUnit N))
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).hom) r)
     (cup M (dimensionShiftUp N) p q r h x y)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
-    BraidedCategory.tensorLeftIsoTensorRight_hom_app] at hδ
+    BraidedCategory.tensorLeftIsoTensorRight_hom_app, dimensionShiftUpSES_X₁,
+    dimensionShiftUpSES_X₃] at hδ
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom,
     ← hδ, ih, map_zsmul_unit, δ_cup_of_leftInverse hD (leftInverse_coindBotUnit N) M
       (by omega : q + p = r) y x, dimensionShiftUpIso_hom, smul_smul, ← Int.negOnePow_add]
@@ -130,8 +134,8 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
     (tateCohomologyFunctor r).map (β_ M N).hom (cup M N p q r h x y) =
       (p * q).negOnePow • cup N M q p r (by omega) y x := by
   have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact :=
+    dimensionShiftDownSES_shortExact N
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
   have hβ : ∀ {A B : Rep k G} (e : A ≅ B) (n : ℤ) (z : tateCohomology A n),
       (tateCohomologyFunctor n).map e.inv ((tateCohomologyFunctor n).map e.hom z) = z :=
@@ -140,8 +144,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   -- sequence with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M hρ)
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact N M)
+    (dimensionShiftDownSES_tensorLeft_shortExact N M)
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).inv) r)
     (cup N M q p r (by omega) y x)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
@@ -152,7 +155,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   congr 1
   refine (tensorDimensionShiftDownIso N M r (r + 1) rfl).toLinearEquiv.injective ?_
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, map_zsmul_unit,
-    ← negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
+    ← Int.negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
     ← cup_dimensionShiftDownIso_hom M N hq h rfl x y,
     ← hβ (β_ M (dimensionShiftDown N)) (r + 1) (cup M (dimensionShiftDown N) p (q + 1) (r + 1)
       (by omega) x ((dimensionShiftDownIso N q).hom y)), ih,
@@ -186,5 +189,23 @@ theorem cup_gradedComm (M N : Rep k G) {p q r : ℤ} (h : p + q = r) (x : tateCo
     | succ m ih =>
       exact cup_gradedComm_of_add_one M N (Int.negSucc_lt_zero _) h x
         (ih (dimensionShiftDown N) (by omega)) y
+
+/-- **Right commutativity of the iterated cup product.** Cupping `x ∪ y` with `z` and cupping
+`x ∪ z` with `y` agree up to the Koszul sign `(-1) ^ (q * s)` and the associators and braiding
+identifying the coefficient modules `(M ⊗ N) ⊗ P` and `(M ⊗ P) ⊗ N`. -/
+theorem cup_right_comm (M N P : Rep k G) {p q s r₁ r₁' r : ℤ} (h₁ : p + q = r₁)
+    (h₂ : p + s = r₁') (h : r₁ + s = r) (h' : r₁' + q = r)
+    (x : tateCohomology M p) (y : tateCohomology N q) (z : tateCohomology P s) :
+    (tateCohomologyFunctor r).map (α_ M P N).inv
+      ((tateCohomologyFunctor r).map (M ◁ (β_ N P).hom)
+        ((tateCohomologyFunctor r).map (α_ M N P).hom
+          (cup (M ⊗ N) P r₁ s r h (cup M N p q r₁ h₁ x y) z))) =
+      (q * s).negOnePow • cup (M ⊗ P) N r₁' q r h' (cup M P p s r₁' h₂ x z) y := by
+  -- Reassociate so that graded commutativity can exchange the last two factors.
+  have hA := cup_assoc M P N h₂ (add_comm s q) h' x z y
+  rw [cup_assoc M N P h₁ rfl h x y z, ← cup_map_right, cup_gradedComm, Units.smul_def,
+    map_zsmul, map_zsmul, ← Units.smul_def]
+  rw [← hA, ← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
+    (tateCohomologyFunctor r).map_id, ModuleCat.id_apply]
 
 end TauCeti.TateCohomology

@@ -28,10 +28,8 @@ already-defined point weights `χ_k` over these vertices.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose opening item asks for Némethi's lattice (co)homology from lattice
-points and weight functions. The cube weight is the standard maximum over vertices used in the
-lattice-homology cubical complex; see Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
+The cube weight is the standard maximum over vertices used in the lattice-homology cubical
+complex; see Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
 public section
@@ -83,6 +81,11 @@ theorem cubeVertex_add_single_eq_insert {T : Finset V} {v : V} (hv : v ∉ T) (x
     simp [cubeVertex_apply, hv]
   · simp [cubeVertex_apply, hw]
 
+/-- Translating the base point of a cube by `m` translates each of its vertices by `m`. -/
+theorem cubeVertex_add (x m : V → ℤ) (T : Finset V) :
+    cubeVertex (x + m) T = cubeVertex x T + m := by
+  rw [cubeVertex_def, cubeVertex_def, add_right_comm]
+
 variable [DecidableEq (V → ℤ)]
 
 omit [DecidableEq (V → ℤ)] in
@@ -117,6 +120,11 @@ theorem mem_cubeVertices (x : V → ℤ) (S : Finset V) (y : V → ℤ) :
     exact ⟨T, hTS, by rw [cubeVertex, Finset.sum_image single_one_injective.injOn]⟩
   · rintro ⟨T, hTS, rfl⟩
     exact ⟨∑ v ∈ T, Pi.single v (1 : ℤ), cubeVertex_sum_mem_subsetSum hTS, rfl⟩
+
+/-- Translating a cube by `m` translates its vertex set by `m`. -/
+theorem add_mem_cubeVertices_add_iff {x m y : V → ℤ} {S : Finset V} :
+    y + m ∈ cubeVertices (x + m) S ↔ y ∈ cubeVertices x S := by
+  simp only [mem_cubeVertices, cubeVertex_add, add_left_inj]
 
 /-- The base point is a vertex of every cube. -/
 @[simp]

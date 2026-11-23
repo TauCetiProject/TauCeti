@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import Mathlib.RepresentationTheory.Character
+public import TauCeti.RepresentationTheory.Character.Basic
 
 /-!
 # Class functions
@@ -72,40 +72,36 @@ theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ Class
 
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
-    f.1 g = f.1 h := by
+    f.val g = f.val h := by
   obtain ⟨x, rfl⟩ := isConj_iff.mp hgh
-  exact (f.2 g x).symm
+  exact (f.property g x).symm
 
 /-- Evaluate a class function on a conjugacy class. -/
 noncomputable def toConjClasses (f : ClassFunction k G) : ConjClasses G → k :=
-  Quotient.lift f.1 fun _ _ h => eq_of_isConj f h
+  Quotient.lift f.val fun _ _ h => eq_of_isConj f h
 
 /-- Evaluating the induced function on the class of `g` gives the value at `g`. -/
 @[simp]
 theorem toConjClasses_mk (f : ClassFunction k G) (g : G) :
-    toConjClasses f (ConjClasses.mk g) = f.1 g :=
+    toConjClasses f (ConjClasses.mk g) = f.val g :=
   (rfl)
 
 /-- Pull a function on conjugacy classes back to a class function on the group. -/
 def ofConjClasses (f : ConjClasses G → k) : ClassFunction k G :=
-  ⟨fun g => f (ConjClasses.mk g), fun g h => by
-    apply congrArg f
-    exact ConjClasses.mk_eq_mk_iff_isConj.mpr
-      (IsConj.symm (isConj_iff.mpr ⟨h, rfl⟩))⟩
+  ⟨fun g => f (ConjClasses.mk g), fun _ h =>
+    congrArg f (ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_iff.2 ⟨h, rfl⟩).symm)⟩
 
 /-- Pulling back a function on conjugacy classes evaluates it on the class of `g`. -/
 @[simp]
 theorem ofConjClasses_apply (f : ConjClasses G → k) (g : G) :
-    (ofConjClasses f).1 g = f (ConjClasses.mk g) :=
+    (ofConjClasses f).val g = f (ConjClasses.mk g) :=
   (rfl)
 
 /-- Pulling a function on conjugacy classes back and evaluating it again returns it. -/
 @[simp]
 theorem toConjClasses_ofConjClasses (f : ConjClasses G → k) :
     toConjClasses (ofConjClasses f) = f :=
-  funext fun C => by
-    obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
-    rw [toConjClasses_mk, ofConjClasses_apply]
+  funext <| ConjClasses.forall_isConj.2 fun _ => by simp
 
 /-- Evaluating a class function on conjugacy classes and pulling it back returns the original
 class function. -/
@@ -119,16 +115,16 @@ theorem ofConjClasses_toConjClasses (f : ClassFunction k G) :
 subgroup is the case `φ = S.subtype`. -/
 def comap {H : Type w} [Group H] (φ : H →* G) :
     ClassFunction k G →ₗ[k] ClassFunction k H where
-  toFun f := ⟨fun x => f.1 (φ x), fun g h => by
+  toFun f := ⟨fun x => f.val (φ x), fun g h => by
     simp only [map_mul, map_inv]
-    exact f.2 (φ g) (φ h)⟩
+    exact f.property (φ g) (φ h)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 /-- A pulled-back class function is the composite with the homomorphism. -/
 @[simp]
 theorem comap_apply {H : Type w} [Group H] (φ : H →* G) (f : ClassFunction k G) (x : H) :
-    (comap φ f).1 x = f.1 (φ x) :=
+    (comap φ f).val x = f.val (φ x) :=
   (rfl)
 
 /-- Pulling back along the identity homomorphism changes nothing. -/
@@ -146,14 +142,15 @@ theorem comap_comp {H : Type w} {J : Type w'} [Group H] [Group J] (φ : H →* G
 /-- The linear power-map twist `f ↦ (g ↦ f (g ^ j))` of a class function. For a finite group,
 powers coprime to its exponent describe the cyclotomic Galois action on character values. -/
 def powMap (j : ℕ) : ClassFunction k G →ₗ[k] ClassFunction k G where
-  toFun f := ⟨fun g => f.1 (g ^ j), fun g h => by simpa only [conj_pow] using f.2 (g ^ j) h⟩
+  toFun f := ⟨fun g => f.val (g ^ j),
+      fun g h => by simpa only [conj_pow] using f.property (g ^ j) h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 /-- The power-map twist evaluates the class function at the power of the group element. -/
 @[simp]
 theorem powMap_apply (j : ℕ) (f : ClassFunction k G) (g : G) :
-    (powMap j f).1 g = f.1 (g ^ j) :=
+    (powMap j f).val g = f.val (g ^ j) :=
   (rfl)
 
 /-- Twisting by the first power changes nothing. -/
@@ -173,34 +170,35 @@ theorem powMap_mul (i j : ℕ) :
 /-- The linear inversion twist `f ↦ (g ↦ f g⁻¹)` of a class function. On characters of
 finite-dimensional representations, this is passage to the dual representation. -/
 def invMap : ClassFunction k G →ₗ[k] ClassFunction k G where
-  toFun f := ⟨fun g => f.1 g⁻¹, fun g h => by
-    simpa only [mul_inv_rev, inv_inv, mul_assoc] using f.2 g⁻¹ h⟩
+  toFun f := ⟨fun g => f.val g⁻¹, fun g h => by
+    simpa only [mul_inv_rev, inv_inv, mul_assoc] using f.property g⁻¹ h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 /-- The inversion twist evaluates the class function at the inverse of the group element. -/
 @[simp]
-theorem invMap_apply (f : ClassFunction k G) (g : G) : (invMap f).1 g = f.1 g⁻¹ :=
+theorem invMap_apply (f : ClassFunction k G) (g : G) : (invMap f).val g = f.val g⁻¹ :=
   (rfl)
 
 /-- Inverting the group element twice changes nothing: `invMap` is an involution. -/
 @[simp]
-theorem invMap_invMap (f : ClassFunction k G) : invMap (invMap f) = f :=
-  Subtype.ext (funext fun g => by rw [invMap_apply, invMap_apply, inv_inv])
+theorem invMap_invMap (f : ClassFunction k G) : invMap (invMap f) = f := by
+  ext
+  simp
 
 /-- Change of coefficients along a ring homomorphism `σ : k →+* k'`: the class function
 `g ↦ σ (f g)`. Along `algebraMap K L` it carries the character of a representation over `K` to the
 character of its scalar extension to `L` (`TauCeti.ClassFunction.ofFDRep_baseChange`). -/
 def map {k' : Type w} [Semiring k'] (σ : k →+* k') :
     ClassFunction k G →ₛₗ[σ] ClassFunction k' G where
-  toFun f := ⟨fun g => σ (f.1 g), fun g h => congrArg σ (f.2 g h)⟩
+  toFun f := ⟨fun g => σ (f.val g), fun g h => congrArg σ (f.property g h)⟩
   map_add' _ _ := Subtype.ext (funext fun _ => map_add σ _ _)
   map_smul' _ _ := Subtype.ext (funext fun _ => map_mul σ _ _)
 
 /-- Changing coefficients applies the ring homomorphism to each value. -/
 @[simp]
 theorem map_apply {k' : Type w} [Semiring k'] (σ : k →+* k') (f : ClassFunction k G) (g : G) :
-    (map σ f).1 g = σ (f.1 g) :=
+    (map σ f).val g = σ (f.val g) :=
   (rfl)
 
 /-- Changing coefficients along the identity changes nothing. -/
@@ -218,14 +216,8 @@ theorem map_map {k' : Type w} {k'' : Type w'} [Semiring k'] [Semiring k''] (σ�
 noncomputable def equivConjClasses : ClassFunction k G ≃ₗ[k] (ConjClasses G → k) where
   toFun := toConjClasses
   invFun := ofConjClasses
-  map_add' f g := by
-    ext C
-    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep C
-    rfl
-  map_smul' c f := by
-    ext C
-    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep C
-    rfl
+  map_add' _ _ := funext <| ConjClasses.forall_isConj.2 fun _ => by simp
+  map_smul' _ _ := funext <| ConjClasses.forall_isConj.2 fun _ => by simp
   left_inv := ofConjClasses_toConjClasses
   right_inv := toConjClasses_ofConjClasses
 
@@ -253,7 +245,7 @@ noncomputable def classIndicator (x : G) : ClassFunction k G :=
 /-- The defining values of `TauCeti.ClassFunction.classIndicator`. -/
 @[simp]
 theorem classIndicator_apply [DecidableEq (ConjClasses G)] (x y : G) :
-    (classIndicator (k := k) x).1 y =
+    (classIndicator (k := k) x).val y =
       if ConjClasses.mk y = ConjClasses.mk x then 1 else 0 := by
   simp only [classIndicator, ofConjClasses_apply, Set.indicator_apply, Set.mem_singleton_iff]
 
@@ -261,19 +253,12 @@ theorem classIndicator_apply [DecidableEq (ConjClasses G)] (x y : G) :
 classes, weighted by the sizes of those classes. This converts group sums into sums over the
 columns of a character table. -/
 theorem sum_eq_sum_conjClasses [Fintype G] [Fintype (ConjClasses G)] (f : ClassFunction k G) :
-    ∑ g : G, f.1 g = ∑ C : ConjClasses G, (Nat.card C.carrier : k) * toConjClasses f C := by
+    ∑ g : G, f.val g = ∑ C : ConjClasses G, (Nat.card C.carrier : k) * toConjClasses f C := by
   classical
-  rw [← Fintype.sum_fiberwise (ConjClasses.mk (α := G)) fun g => f.1 g]
-  refine Finset.sum_congr rfl fun C _ => ?_
-  have hconst : ∀ x : {g : G // ConjClasses.mk g = C}, f.1 x.1 = toConjClasses f C := by
-    rintro ⟨x, rfl⟩
-    exact (toConjClasses_mk f x).symm
-  have hcard : Nat.card C.carrier = Fintype.card {g : G // ConjClasses.mk g = C} :=
-    (Nat.card_congr
-      (Equiv.subtypeEquivRight fun _ => ConjClasses.mem_carrier_iff_mk_eq)).trans
-      (Nat.card_eq_fintype_card)
-  rw [Finset.sum_congr rfl fun x _ => hconst x, Finset.sum_const, Finset.card_univ, hcard,
-    nsmul_eq_mul]
+  simp_rw [← toConjClasses_mk f, Finset.sum_comp,
+    Finset.image_univ_of_surjective ConjClasses.mk_surjective,
+    ConjClasses.carrier_eq_preimage_mk, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  simp
 
 end ClassFunction
 
@@ -303,16 +288,22 @@ noncomputable def ofCharacter {V : Type w} [AddCommGroup V] [Module k V]
 /-- The class function of a representation evaluates to its character. -/
 @[simp]
 theorem ofCharacter_apply {V : Type w} [AddCommGroup V] [Module k V]
-    (ρ : Representation k G V) (g : G) : (ofCharacter ρ).1 g = ρ.character g :=
+    (ρ : Representation k G V) (g : G) : (ofCharacter ρ).val g = ρ.character g :=
   (rfl)
 
 /-- Inverting the group element in a character gives the character of the dual
-representation: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. -/
+representation: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. For an infinite-dimensional space both sides are `0`, since
+the trace is `0` there. -/
 @[simp]
-theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V]
     (ρ : Representation k G V) : invMap (ofCharacter ρ) = ofCharacter ρ.dual :=
   Subtype.ext (funext fun g => by
-    rw [invMap_apply, ofCharacter_apply, ofCharacter_apply, Representation.char_dual])
+    rw [invMap_apply, ofCharacter_apply, ofCharacter_apply]
+    by_cases hV : FiniteDimensional k V
+    · exact (Representation.char_dual ρ g).symm
+    · have hVd : ¬ Module.Finite k (Module.Dual k V) := fun h =>
+        hV ((Module.finite_dual_iff k).mp h)
+      simp [ρ.character_eq_zero_of_not_finite hV, ρ.dual.character_eq_zero_of_not_finite hVd])
 
 /-- The character of a finite-dimensional bundled representation is a class function. -/
 noncomputable def ofFDRep (V : FDRep k G) : ClassFunction k G :=
@@ -320,7 +311,7 @@ noncomputable def ofFDRep (V : FDRep k G) : ClassFunction k G :=
 
 /-- The class function of a bundled finite-dimensional representation evaluates to its character. -/
 @[simp]
-theorem ofFDRep_apply (V : FDRep k G) (g : G) : (ofFDRep V).1 g = V.character g :=
+theorem ofFDRep_apply (V : FDRep k G) (g : G) : (ofFDRep V).val g = V.character g :=
   (rfl)
 
 /-- The class function of a bundled finite-dimensional representation is the class function of the
@@ -340,7 +331,7 @@ variable {k : Type*} {G : Type*} [Semiring k] [Group G]
 conjugation being invisible there; for instance a linear character `χ : G →* kˣ`, read in `k`. -/
 theorem comp_mem_classFunction {M : Type*} [CommMonoid M] (χ : G →* M) (f : M → k) :
     (fun g => f (χ g)) ∈ TauCeti.ClassFunction k G :=
-  TauCeti.ClassFunction.mem_iff.2 fun g h => by
-    rw [map_mul, map_mul, mul_right_comm, ← map_mul, mul_inv_cancel, map_one, one_mul]
+  TauCeti.ClassFunction.mem_iff.2 fun _ h =>
+    congrArg f (isConj_iff_eq.1 (χ.map_isConj (isConj_iff.2 ⟨h, rfl⟩))).symm
 
 end MonoidHom

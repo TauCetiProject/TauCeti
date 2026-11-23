@@ -26,6 +26,11 @@ particular for `r₁, …, rₙ ∈ 𝔪` over a local ring
 (`Module.supportDim_le_supportDim_quotient_add_length`). This is the inequality
 that the regular case `Module.supportDim_add_length_eq_supportDim_of_isRegular` turns into an
 equality.
+
+Over any commutative ring, an `M`-regular element lies outside every minimal prime of the
+annihilator of `M` and so lowers the dimension of the support by at least one; by induction, the
+length of an `M`-regular sequence on a finite module `M` is at most the dimension of its support
+(`RingTheory.Sequence.IsRegular.length_le_supportDim`).
 -/
 
 public section
@@ -120,3 +125,26 @@ theorem supportDim_le_supportDim_quotient_add_length {R M : Type*} [CommRing R]
     fun r hr ↦ maximalIdeal_le_jacobson _ (hrs r hr)
 
 end Module
+
+namespace RingTheory.Sequence
+
+/-- Over any commutative ring, the length of an `M`-regular sequence on a finite module `M` is at
+most the dimension of the support of `M`. -/
+theorem IsRegular.length_le_supportDim {R : Type*} [CommRing R]
+    {M : Type*} [AddCommGroup M] [Module R M] [Module.Finite R M]
+    {rs : List R} (reg : IsRegular M rs) :
+    (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
+  induction rs generalizing M with
+  | nil =>
+    have := reg.nontrivial
+    obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1 (Module.supportDim_ne_bot_of_nontrivial R M)
+    rw [← he]
+    simp
+  | cons r rs ih =>
+    obtain ⟨hr, hrs⟩ := (isRegular_cons_iff M r rs).1 reg
+    have h2 := Module.supportDim_quotSMulTop_succ_le_of_notMem_minimalPrimes (M := M)
+      (fun _ ↦ hr.notMem_of_mem_minimalPrimes)
+    simp only [List.length_cons, Nat.cast_add, Nat.cast_one]
+    exact (by gcongr; exact ih hrs : (rs.length : WithBot ℕ∞) + 1 ≤ _ + 1).trans h2
+
+end RingTheory.Sequence

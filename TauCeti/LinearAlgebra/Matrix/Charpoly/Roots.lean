@@ -8,8 +8,15 @@ module
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import TauCeti.RingTheory.Polynomial.RootEnumeration
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import Mathlib.RingTheory.Polynomial.Vieta
+import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Characteristic roots of matrices
@@ -25,6 +32,22 @@ It also records the determinant form of the spectral mapping theorem: for a poly
 determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
 with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is the case `p = X`.
 
+More generally, over an integral domain, when the characteristic polynomial of `A` splits, the
+characteristic roots of `p(A)` are the values `p(λ)` at the characteristic roots `λ` of `A`,
+counted with algebraic multiplicity. So the determinant of `p(A)` is the product of the `p(λ)`
+and its trace is their sum; Mathlib's `Matrix.det_eq_prod_roots_charpoly_of_splits` and
+`Matrix.trace_eq_sum_roots_charpoly_of_splits` are the case `p = X`. These are proved by
+evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
+`Matrix.charpoly_aeval_eq_resultant` over the split characteristic polynomial. In particular
+`det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
+
+Over a field, the characteristic roots of an invertible matrix `A⁻¹` are the inverses of those of
+`A`, counted with algebraic multiplicity.
+
+In any algebraically closed field `E`, the characteristic roots of a square matrix can be listed
+with multiplicity by the index type of the matrix, which factors its characteristic polynomial
+over `E` into linear factors.
+
 ## Main results
 
 * `Matrix.eval_ne_zero_of_det_aeval_ne_zero`: if `det (p(A)) ≠ 0`, then `p(λ) ≠ 0` for every
@@ -35,6 +58,22 @@ with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is th
   products `A * B` and `B * A` agree, counted with multiplicity.
 * `Matrix.det_aeval_eq_prod_roots_charpoly`: `det (p(A)) = ∏ p(λ)` over the characteristic roots
   `λ` of `A`.
+* `Matrix.det_aeval_eq_prod_roots_charpoly_of_splits`: the same when the characteristic
+  polynomial of `A` splits.
+* `Matrix.charpoly_aeval_eq_prod_roots_charpoly_of_splits`: the characteristic polynomial of
+  `p(A)` is `∏ (X - p(λ))`.
+* `Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`: `tr (p(A)) = ∑ p(λ)`; for `p = X ^ k` the
+  trace of `A ^ k` is the `k`-th power sum of the characteristic roots.
+* `Matrix.charpolyRev_eq_prod_roots_charpoly_of_splits`: `det (1 - X A) = ∏ (1 - λ X)`.
+* `Matrix.charpoly_inv_eq_prod_X_sub_C`: if `χ_A = ∏ (X - αᵢ)` for invertible `A`, then
+  `χ_{A⁻¹} = ∏ (X - αᵢ⁻¹)`.
+* `Matrix.exists_isRootEnumeration_charpoly`: the characteristic roots of `A` in an algebraically
+  closed field, listed by the index type of `A`.
+* `Matrix.exists_charpoly_map_eq_prod_X_sub_C`: over an algebraically closed field, `χ_A` is
+  `∏ (X - βᵢ)` for some family `β` indexed by the index type of `A`.
+* `Matrix.coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits`: Vieta's formula for
+  `det (1 - X A)`, whose `r`-th coefficient is `(-1) ^ r` times the `r`-th elementary symmetric
+  function of the characteristic roots.
 -/
 
 public section
@@ -83,6 +122,128 @@ theorem eval_ne_zero_of_det_aeval_ne_zero {n K : Type*} [Fintype n] [DecidableEq
   rw [hx0, spectrum.zero_mem_iff, isUnit_iff_isUnit_det] at hmem
   exact hmem (isUnit_iff_ne_zero.2 h)
 
+section Splits
+
+variable {n K : Type*} [Fintype n] [DecidableEq n] [CommRing K] [IsDomain K] {A : Matrix n n K}
+
+/-- **Spectral mapping for determinants.** If the characteristic polynomial of `A` splits, the
+determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
+with algebraic multiplicity. -/
+theorem det_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
+    (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
+  -- `det p(A) = Res(χ_A, p)`, which is `∏ p(λ)` as `χ_A` is monic and splits.
+  rw [det_aeval_eq_resultant A p le_rfl, ← charpoly_natDegree_eq_dim A,
+    resultant_eq_prod_eval _ _ _ le_rfl hA, (charpoly_monic A).leadingCoeff, one_pow, one_mul]
+
+/-- **Spectral mapping for characteristic polynomials.** If the characteristic polynomial of `A`
+splits, the characteristic polynomial of `p(A)` is `∏ (X - p(λ))` over the characteristic roots
+`λ` of `A`, counted with algebraic multiplicity. -/
+theorem charpoly_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
+    (aeval A p).charpoly = (A.charpoly.roots.map fun μ ↦ X - C (p.eval μ)).prod := by
+  -- `χ_{p(A)}(T) = Res_X(χ_A(X), T - p(X))`, which is `∏ (T - p(λ))` as `χ_A` splits.
+  have hm := (charpoly_monic A).map (C : K →+* K[X])
+  have hdeg : (C X - p.map C).natDegree ≤ p.natDegree :=
+    (natDegree_sub_le _ _).trans (max_le (by simp) natDegree_map_le)
+  rw [charpoly_aeval_eq_resultant A p le_rfl, ← charpoly_natDegree_eq_dim A,
+    ← (charpoly_monic A).natDegree_map C, resultant_eq_prod_eval _ _ _ hdeg (hA.map C),
+    hm.leadingCoeff, one_pow, one_mul, hA.roots_map_of_injective C_injective]
+  simp [Multiset.map_map, eval_map]
+
+/-- **Spectral mapping for traces.** If the characteristic polynomial of `A` splits, the trace of
+`p(A)` is the sum of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
+multiplicity. -/
+theorem trace_aeval_eq_sum_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
+    (aeval A p).trace = (A.charpoly.roots.map p.eval).sum := by
+  have hp := charpoly_aeval_eq_prod_roots_charpoly_of_splits hA p
+  have hs : (aeval A p).charpoly.Splits := hp ▸ Splits.multisetProd fun f hf ↦ by
+    obtain ⟨μ, -, rfl⟩ := Multiset.mem_map.1 hf
+    exact Splits.X_sub_C _
+  rw [trace_eq_sum_roots_charpoly_of_splits hs, hp]
+  simpa [Multiset.map_map, Function.comp_def] using
+    congrArg Multiset.sum (roots_multiset_prod_X_sub_C (A.charpoly.roots.map p.eval))
+
+/-- If the characteristic polynomial of `A` splits, `det (1 - X A)` is the product of the linear
+factors `1 - λ X` over the characteristic roots `λ` of `A`, counted with algebraic
+multiplicity. -/
+theorem charpolyRev_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) :
+    A.charpolyRev = (A.charpoly.roots.map fun μ ↦ 1 - C μ * X).prod := by
+  -- `det (1 - X A)` is the reverse of `χ_A = ∏ (X - λ)`, and reversal is multiplicative.
+  rw [← reverse_charpoly, hA.eq_prod_roots_of_monic A.charpoly_monic,
+    reverse_multiset_prod_of_monic fun q hq ↦ by
+      obtain ⟨μ, -, rfl⟩ := Multiset.mem_map.1 hq
+      exact monic_X_sub_C μ,
+    Multiset.map_map, roots_multiset_prod_X_sub_C]
+  simpa using congrArg Multiset.prod (Multiset.map_congr rfl fun μ _ ↦ by
+    simpa using reverse_X_pow_sub_C 1 μ)
+
+/-- **Vieta's formula for `det (1 - X A)`.** If the characteristic polynomial of `A` splits, the
+`r`-th coefficient of `det (1 - X A)` is `(-1) ^ r` times the `r`-th elementary symmetric function
+of the characteristic roots of `A`, counted with algebraic multiplicity. -/
+theorem coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits (hA : A.charpoly.Splits) (r : ℕ) :
+    A.charpolyRev.coeff r = (-1) ^ r * A.charpoly.roots.esymm r := by
+  have hcard : Multiset.card A.charpoly.roots = Fintype.card n := by
+    rw [← hA.natDegree_eq_card_roots, charpoly_natDegree_eq_dim]
+  rcases le_or_gt r (Fintype.card n) with hr | hr
+  · -- Vieta's formula for the coefficient of `X ^ (d - r)` in the monic `χ_A` of degree `d`.
+    have hvieta := coeff_eq_esymm_roots_of_card (hcard.trans (charpoly_natDegree_eq_dim A).symm)
+      (k := Fintype.card n - r) (by rw [charpoly_natDegree_eq_dim]; omega)
+    rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le hr, hvieta]
+    simp [charpoly_natDegree_eq_dim, Nat.sub_sub_self hr, A.charpoly_monic.leadingCoeff]
+  · rw [coeff_charpolyRev_eq_zero A hr, Multiset.esymm_of_card_lt (hcard ▸ hr), mul_zero]
+
+end Splits
+
+section Inverse
+
+variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
+
+/-- **Characteristic roots of the inverse.** If the characteristic polynomial of an invertible
+matrix `A` is `∏ (X - αᵢ)`, then that of `A⁻¹` is `∏ (X - αᵢ⁻¹)`. -/
+theorem charpoly_inv_eq_prod_X_sub_C {A : Matrix n n K} (hA : IsUnit A) {α : n → K}
+    (h : A.charpoly = ∏ i, (X - C (α i))) : A⁻¹.charpoly = ∏ i, (X - C (α i)⁻¹) := by
+  have hdet : A.det = ∏ i, α i := by
+    have hs : A.charpoly.Splits := h ▸ Splits.prod fun i _ ↦ Splits.X_sub_C (α i)
+    rw [det_eq_prod_roots_charpoly_of_splits hs, h, roots_prod_X_sub_C_map,
+      Finset.prod_eq_multiset_prod]
+  have hx : ∏ i, α i ≠ 0 := hdet ▸ ((isUnit_iff_isUnit_det A).1 hA).ne_zero
+  -- `A⁻¹` has characteristic polynomial `(-1)ⁿ det(A)⁻¹ · det(1 - X A)`, and `det(1 - X A)` is
+  -- the reverse `∏ (1 - αᵢ X) = (∏ -αᵢ) ∏ (X - αᵢ⁻¹)` of `∏ (X - αᵢ)`.
+  have hrev := reverse_C_mul_prod_X_sub_C Finset.univ α 1 fun i _ ↦
+    (Finset.prod_ne_zero_iff.1 hx) i (Finset.mem_univ i)
+  have hc : ((-1) ^ Fintype.card n : K) * (∏ i, α i)⁻¹ * ((-1) ^ Fintype.card n * ∏ i, α i) =
+      1 := by
+    simp [mul_mul_mul_comm _ (∏ i, α i)⁻¹, ← mul_pow, hx]
+  rw [C_1, one_mul, one_mul, Finset.prod_neg, Finset.card_univ] at hrev
+  rw [charpoly_inv A hA, ← reverse_charpoly, h, hrev, hdet, Ring.inverse_eq_inv', ← mul_assoc]
+  simp only [← map_neg, ← map_one C, ← map_pow, ← map_mul]
+  rw [hc, C_1, one_mul]
+
+end Inverse
+
+section RootEnumeration
+
+variable {n R E : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Nontrivial R] [Field E]
+  [IsAlgClosed E] [Algebra R E]
+
+/-- The characteristic roots of a square matrix in an algebraically closed field `E` can be listed
+with multiplicity by the index type of the matrix. -/
+theorem exists_isRootEnumeration_charpoly (A : Matrix n n R) :
+    ∃ β : n → E, A.charpoly.IsRootEnumeration β :=
+  (charpoly_monic A).exists_isRootEnumeration (charpoly_natDegree_eq_dim A)
+
+/-- Over an algebraically closed field `E`, the characteristic polynomial of a square matrix
+factors as `∏ (X - βᵢ)` for a family `β` indexed by the index type of the matrix. -/
+theorem exists_charpoly_map_eq_prod_X_sub_C (A : Matrix n n R) :
+    ∃ β : n → E, (A.map (algebraMap R E)).charpoly = ∏ i, (X - C (β i)) := by
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := E) A
+  refine ⟨β, ?_⟩
+  simpa [charpoly_map, ((charpoly_monic A).map _).leadingCoeff] using
+    hβ.eq_C_mul_prod_X_sub_C (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
+
+end RootEnumeration
+
+section IsAlgClosed
+
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [Field K] [IsAlgClosed K]
   [DecidableEq K]
 
@@ -98,28 +259,9 @@ omit [Nonempty n] [DecidableEq K] in
 `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
 multiplicity. -/
 theorem det_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
-    (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
-  have hcard : A.charpoly.roots.card = Fintype.card n := by
-    rw [IsAlgClosed.card_roots_eq_natDegree, charpoly_natDegree_eq_dim]
-  -- `q ↦ det (aeval A q)` is multiplicative, and its source `K[X]` is commutative.
-  let φ : K[X] →* K := detMonoidHom.comp (aeval (R := K) A).toMonoidHom
-  have hφ (q : K[X]) : φ q = (aeval A q).det := (rfl)
-  -- The linear factors: `det (A - μ) = ∏_λ (λ - μ)`.
-  have hlin (μ : K) : φ (X - C μ) = (A.charpoly.roots.map (· - μ)).prod := by
-    -- `X - C μ` evaluates at `A` to `-(μ - A)`, whose determinant is `(-1) ^ n χ_A(μ)`.
-    have hscalar : aeval A (X - C μ) = -(scalar n μ - A) := by
-      simp [Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal]
-    have hneg : (A.charpoly.roots.map (· - μ)).prod =
-        (-1) ^ A.charpoly.roots.card * (A.charpoly.roots.map (μ - ·)).prod := by
-      simpa [Function.comp_def] using Multiset.prod_map_neg (A.charpoly.roots.map (μ - ·))
-    rw [hφ, hscalar, det_neg, ← eval_charpoly,
-      (IsAlgClosed.splits _).eval_eq_prod_roots_of_monic (charpoly_monic A), hneg, hcard]
-  -- Factor `p = c ∏_μ (X - μ)` and compare both sides as `c ^ n ∏_λ ∏_μ (λ - μ)`.
-  conv_lhs => rw [← hφ, (IsAlgClosed.splits p).eq_prod_roots, map_mul, map_multiset_prod,
-    Multiset.map_map]
-  simp only [Function.comp_def, hlin, (IsAlgClosed.splits p).eval_eq_prod_roots,
-    Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate, hcard, hφ, aeval_C,
-    Algebra.algebraMap_eq_smul_one, det_smul, det_one, mul_one]
-  rw [Multiset.prod_map_prod_map]
+    (aeval A p).det = (A.charpoly.roots.map p.eval).prod :=
+  det_aeval_eq_prod_roots_charpoly_of_splits (IsAlgClosed.splits _) p
+
+end IsAlgClosed
 
 end Matrix

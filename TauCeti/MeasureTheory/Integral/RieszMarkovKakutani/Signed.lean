@@ -86,7 +86,7 @@ omit hΛ in
 private lemma posPartAux_le {f : C_c(X, ℝ≥0)} {c : ℝ} (h : ∀ g ≤ f, Λ g.toReal ≤ c) :
     posPartAux Λ f ≤ c :=
   have : Nonempty (Iic f) := ⟨⟨f, mem_Iic.2 le_rfl⟩⟩
-  ciSup_le fun g => h g g.2
+  ciSup_le fun g => h g g.property
 
 private lemma posPartAux_nonneg (f : C_c(X, ℝ≥0)) : 0 ≤ posPartAux Λ f := by
   simpa using apply_le_posPartAux hΛ (le_def.2 fun x => by simp : 0 ≤ f)
@@ -137,7 +137,7 @@ private lemma posPartAux_smul (c : ℝ≥0) (f : C_c(X, ℝ≥0)) :
     refine posPartAux_le fun g hg => ?_
     rw [le_div_iff₀' hc₀, ← apply_toReal_smul]
     refine apply_le_posPartAux hΛ (le_def.2 fun x => ?_)
-    simpa using mul_le_mul_of_nonneg_left (le_def.1 hg x) c.2
+    simpa using mul_le_mul_of_nonneg_left (le_def.1 hg x) c.property
 
 /-- The positive part of `Λ` as an `ℝ≥0`-linear functional on `C_c(X, ℝ≥0)`. -/
 private def posPartNNReal : C_c(X, ℝ≥0) →ₗ[ℝ≥0] ℝ≥0 where
@@ -189,7 +189,7 @@ theorem posPart_apply_of_nonneg {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
     posPart Λ hΛ f = ⨆ g : Icc 0 f, Λ g := by
   have : Nonempty (Icc 0 f) := ⟨⟨0, le_rfl, hf⟩⟩
   refine le_antisymm (posPart_apply_le hΛ hf fun g hg hgf => ?_)
-    (ciSup_le fun g => apply_le_posPart_apply hΛ g.2.1 g.2.2)
+    (ciSup_le fun g => apply_le_posPart_apply hΛ g.property.1 g.property.2)
   exact le_ciSup (f := fun g : Icc 0 f => Λ g) (by simpa [image_eq_range] using hΛ f) ⟨g, hg, hgf⟩
 
 /-- **Minimality of the positive part**: a positive functional dominating `Λ` on nonnegative
@@ -241,10 +241,10 @@ theorem negPart_apply_of_nonneg {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
   have hbdd : BddAbove (range fun g : Icc 0 f => -Λ g) :=
     ⟨negPart Λ hΛ f, by
       rintro _ ⟨g, rfl⟩
-      exact neg_apply_le_negPart_apply hΛ g.2.1 g.2.2⟩
+      exact neg_apply_le_negPart_apply hΛ g.property.1 g.property.2⟩
   exact le_antisymm (negPart_apply_le hΛ hf fun g hg hgf =>
       le_ciSup (f := fun g : Icc 0 f => -Λ g) hbdd ⟨g, hg, hgf⟩)
-    (ciSup_le fun g => neg_apply_le_negPart_apply hΛ g.2.1 g.2.2)
+    (ciSup_le fun g => neg_apply_le_negPart_apply hΛ g.property.1 g.property.2)
 
 /-- **Minimality of the negative part**: a positive functional dominating `-Λ` on nonnegative
 functions dominates the negative part of `Λ` there. -/
@@ -275,7 +275,7 @@ theorem forall_bddAbove_image_Icc_iff_exists_regular :
         ∀ f : C_c(X, ℝ), Λ f = ∫ x, f x ∂μ - ∫ x, f x ∂ν := by
   refine ⟨fun hΛ => ⟨_, _, inferInstance, inferInstance, fun f =>
     (integral_rieszMeasure_posPart_sub_integral_rieszMeasure_negPart hΛ f).symm⟩, ?_⟩
-  rintro ⟨μ, ν, hμ, hν, hΛ⟩ f
+  rintro ⟨μ, ν, hμ, _, hΛ⟩ f
   refine ⟨∫ x, f x ∂μ, ?_⟩
   rintro _ ⟨g, ⟨hg, hgf⟩, rfl⟩
   rw [hΛ, sub_le_iff_le_add]

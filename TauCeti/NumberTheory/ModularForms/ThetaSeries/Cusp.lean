@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 import Mathlib.Analysis.Normed.Group.Tannery
@@ -24,12 +25,16 @@ series are bounded at `i∞`; and as `im τ → ∞` every term tends to `0`, ex
 vector `v = -γ`, which is constantly `1` and exists only when `γ ∈ L`. By dominated convergence,
 `Θ_L(τ) → 1`, while `θ_{γ+L}(τ) → 0` for `γ ∉ L`. Together with holomorphy and periodicity this
 identifies the constant term of the `q`-expansion of `Θ_L`: it is `1`, in `q = exp (2 π i τ)` for
-an even lattice and in `exp (π i τ)` for an integral one.
+an even lattice and in `exp (π i τ)` for an integral one. It also shows that `Θ_L` is never a cusp
+form, for any group having `∞` as a cusp.
 
 On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
 `θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
 there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
-divisible by `8`.
+divisible by `8`. Splitting a discrete subgroup `L` into the cosets of `M ≤ L` further shows that
+`θ_{γ+M}(i y) ≤ θ_{γ+L}(i y)` and `Θ_M(i y) ≤ Θ_L(i y)` on real parts, with equality if and only
+if `M = L`. In particular the theta series `Θ_M` and `Θ_L` are equal as functions if and only if
+`M = L`.
 
 ## Main statements
 
@@ -39,6 +44,9 @@ divisible by `8`.
   series are bounded at `i∞`.
 * `ZLattice.tendsto_thetaSeries_atImInfty`, `ZLattice.valueAtInfty_thetaSeries`: `Θ_L(τ) → 1` as
   `im τ → ∞`.
+* `ZLattice.not_isZeroAtImInfty_thetaSeries`, `ZLattice.coe_ne_thetaSeries`,
+  `ZLattice.not_isCuspForm_of_coe_eq_thetaSeries`: `Θ_L` does not vanish at `∞`, so it is not a
+  cusp form on any group having `∞` as a cusp.
 * `ZLattice.isZeroAtImInfty_thetaCoset`: `θ_{γ+L}(τ) → 0` as `im τ → ∞` when `γ ∉ L`.
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
@@ -46,6 +54,13 @@ divisible by `8`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
   `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
   `Θ_L ≥ 1`.
+* `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaCoset_lt_of_lt`,
+  `ZLattice.re_thetaSeries_mono`, `ZLattice.re_thetaSeries_lt_of_lt`,
+  `ZLattice.thetaSeries_eq_iff_eq_of_le_of_re_eq_zero`: for a subgroup `M ≤ L` of a discrete `L`,
+  on the imaginary axis `θ_{γ+M} ≤ θ_{γ+L}` and `Θ_M ≤ Θ_L` on real parts, with equality if and
+  only if `M = L`.
+* `ZLattice.thetaSeries_eq_iff_of_le`, `ZLattice.thetaSeries_ne_of_lt`: for `M ≤ L` with `L`
+  discrete, `Θ_M = Θ_L` as functions on `ℍ` if and only if `M = L`.
 
 ## References
 
@@ -67,33 +82,45 @@ section Normed
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (L : Submodule ℤ E) [DiscreteTopology L]
 
-/-- On the half-plane `{τ | y ≤ im τ}`, `0 < y`, the theta series of `γ + L` is bounded in norm
-by `∑_{v ∈ L} exp (-π y ‖γ + v‖²)`, its value at `i y`. -/
-theorem norm_thetaCoset_le (γ : E) {y : ℝ} (hy : 0 < y) {τ : ℍ} (hτ : y ≤ τ.im) :
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- On the half-plane `{τ | y ≤ im τ}`, the theta series of `γ + L` is bounded in norm
+by `∑_{v ∈ L} exp (-π y ‖γ + v‖²)`, its value at `i y`, provided this Gaussian sum converges (it
+does for a discrete `L`, by `summable_exp_neg_mul_norm_add_sq`). -/
+theorem norm_thetaCoset_le (γ : E) {y : ℝ}
+    (hs : Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) {τ : ℍ}
+    (hτ : y ≤ τ.im) :
     ‖thetaCoset L γ τ‖ ≤ ∑' v : L, Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2) := by
   rw [thetaCoset_apply]
-  exact tsum_of_norm_bounded (summable_exp_neg_mul_norm_add_sq L (by positivity) γ).hasSum
+  exact tsum_of_norm_bounded hs.hasSum
     fun _ => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
 
-/-- The theta series of a translate of a discrete subgroup is bounded at `i∞`. -/
-theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) :=
-  UpperHalfPlane.isBoundedAtImInfty_iff.mpr
-    ⟨_, 1, fun _ hτ => norm_thetaCoset_le L γ one_pos hτ⟩
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- The theta series of a translate of a subgroup is bounded at `i∞`. -/
+theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) := by
+  by_cases h : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
+  · obtain ⟨y, _, hs⟩ := h
+    exact UpperHalfPlane.isBoundedAtImInfty_iff.mpr
+      ⟨_, y, fun _ hτ => norm_thetaCoset_le L γ hs hτ⟩
+  · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => h ⟨y, hy, hs⟩]
+    exact UpperHalfPlane.isBoundedAtImInfty_iff.mpr ⟨0, 0, fun _ _ => by simp⟩
 
-/-- The theta series of a discrete subgroup is bounded at `i∞`. -/
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- The theta series of a subgroup is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_thetaSeries : IsBoundedAtImInfty (thetaSeries L) := by
   simpa using isBoundedAtImInfty_thetaCoset L 0
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 open Classical in
 /-- **Weighted theta sums at `i∞`.** For weights `w v` of norm at most `1`, the weighted theta
 sum `∑_{v ∈ L} w v exp (π i ‖γ + v‖² τ)` tends at `i∞` to the sum of the weights of the vectors
 `v ∈ L` with `γ + v = 0`, by dominated convergence: the term of such a `v` is constantly `w v`,
-and every other term tends to `0`. -/
-theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ v, ‖w v‖ ≤ 1) :
+and every other term tends to `0`. The Gaussian sum `∑_{v ∈ L} exp (-π y ‖γ + v‖²)` has to
+converge for some `y`, as it does for a discrete `L`, by `summable_exp_neg_mul_norm_add_sq`. -/
+theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ v, ‖w v‖ ≤ 1)
+    {y : ℝ} (hs : Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
     Tendsto (fun τ : ℍ => ∑' v : L, w v * cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ))
       atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then w v else 0)) := by
-  refine tendsto_tsum_of_dominated_convergence
-    (summable_exp_neg_mul_norm_add_sq L (c := π * 1) (by positivity) γ) (fun v => ?_) ?_
+  refine tendsto_tsum_of_dominated_convergence hs (fun v => ?_) ?_
   · split_ifs with hv
     · simp [hv]
     rw [tendsto_zero_iff_norm_tendsto_zero]
@@ -103,23 +130,27 @@ theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ 
     exact Real.tendsto_exp_atBot.comp <|
       (tendsto_comap : Tendsto UpperHalfPlane.im atImInfty atTop).const_mul_atTop_of_neg
         (neg_lt_zero.mpr (mul_pos Real.pi_pos (pow_pos (norm_pos_iff.mpr hv) 2)))
-  · filter_upwards [(UpperHalfPlane.atImInfty_mem {τ : ℍ | 1 ≤ τ.im}).mpr ⟨1, fun _ h => h⟩]
+  · filter_upwards [(UpperHalfPlane.atImInfty_mem {τ : ℍ | y ≤ τ.im}).mpr ⟨y, fun _ h => h⟩]
       with τ hτ v
     exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_left (norm_nonneg _) (hw v)).trans <|
       norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 open Classical in
-/-- The theta series of `γ + L` tends at `i∞` to the number of vectors `v ∈ L` with `γ + v = 0`. -/
-private theorem tendsto_thetaCoset_atImInfty_tsum_ite (γ : E) :
+/-- The theta series of `γ + L` tends at `i∞` to the number of vectors `v ∈ L` with `γ + v = 0`,
+provided the Gaussian sum `∑_{v ∈ L} exp (-π y ‖γ + v‖²)` converges for some `y`. -/
+private theorem tendsto_thetaCoset_atImInfty_tsum_ite (γ : E) {y : ℝ}
+    (hs : Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
     Tendsto (thetaCoset L γ) atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then 1 else 0)) :=
-  (tendsto_tsum_mul_thetaTerm_atImInfty L γ (fun _ => 1) fun _ => norm_one.le).congr fun τ => by
-    simp [thetaCoset_apply]
+  (tendsto_tsum_mul_thetaTerm_atImInfty L γ (fun _ => 1) (fun _ => norm_one.le) hs).congr
+    fun τ => by simp [thetaCoset_apply]
 
 /-- The theta series of a discrete subgroup tends to `1` at `i∞`: every term except the term
 `exp 0 = 1` of the zero vector tends to `0`. -/
 theorem tendsto_thetaSeries_atImInfty : Tendsto (thetaSeries L) atImInfty (𝓝 1) := by
   classical
-  convert tendsto_thetaCoset_atImInfty_tsum_ite L 0 using 2
+  convert tendsto_thetaCoset_atImInfty_tsum_ite L 0
+    (summable_exp_neg_mul_norm_add_sq L (c := π * 1) (by positivity) 0) using 2
   · simp
   · rw [← tsum_ite_eq (0 : L) fun _ => (1 : ℂ)]
     exact tsum_congr fun v => by split_ifs <;> simp_all
@@ -129,15 +160,43 @@ theorem tendsto_thetaSeries_atImInfty : Tendsto (thetaSeries L) atImInfty (𝓝 
 theorem valueAtInfty_thetaSeries : valueAtInfty (thetaSeries L) = 1 :=
   (tendsto_thetaSeries_atImInfty L).limUnder_eq
 
+/-- The theta series of a discrete subgroup does not vanish at `i∞`, since it tends to `1`. -/
+@[simp]
+theorem not_isZeroAtImInfty_thetaSeries : ¬ IsZeroAtImInfty (thetaSeries L) := fun h =>
+  one_ne_zero <| tendsto_nhds_unique (tendsto_thetaSeries_atImInfty L) h
+
+/-- **The theta series is never a cusp form.** For a subgroup `Γ` of `GL(2, ℝ)` having `∞` as
+a cusp, no cusp form on `Γ`, of any weight, has `Θ_L` as its underlying function, because `Θ_L`
+does not vanish at `∞`. -/
+theorem coe_ne_thetaSeries {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+    [CuspFormClass F Γ k] [Fact (IsCusp OnePoint.infty Γ)] (f : F) :
+    ⇑f ≠ thetaSeries L := fun h =>
+  not_isZeroAtImInfty_thetaSeries L (h ▸ CuspFormClass.zero_at_infty f)
+
+/-- A modular form whose underlying function is `Θ_L`, on a subgroup `Γ` of `GL(2, ℝ)` having
+`∞` as a cusp, is not a cusp form. -/
+theorem not_isCuspForm_of_coe_eq_thetaSeries {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    [Fact (IsCusp OnePoint.infty Γ)] {k : ℤ} {f : ModularForm Γ k}
+    (hf : ⇑f = thetaSeries L) : ¬ ModularForm.IsCuspForm f := by
+  rintro ⟨g, rfl⟩
+  exact coe_ne_thetaSeries L g <| funext fun z =>
+    (CuspForm.toModularFormₗ_apply g z).symm.trans (congrFun hf z)
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- For `γ ∉ L` the theta series of the translate `γ + L` tends to `0` at `i∞`, since no vector
 of `γ + L` is zero. -/
 theorem isZeroAtImInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : IsZeroAtImInfty (thetaCoset L γ) := by
   have h (v : L) : γ + (v : E) ≠ 0 := fun h0 => hγ <| by
     rw [eq_neg_of_add_eq_zero_left h0]
-    exact neg_mem v.2
-  simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using
-    tendsto_thetaCoset_atImInfty_tsum_ite L γ
+    exact neg_mem v.property
+  by_cases hex : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
+  · obtain ⟨y, _, hs⟩ := hex
+    simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using
+      tendsto_thetaCoset_atImInfty_tsum_ite L γ hs
+  · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => hex ⟨y, hy, hs⟩]
+    exact tendsto_const_nhds
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- For `γ ∉ L` the value of the theta series of `γ + L` at the cusp `∞` is `0`. -/
 theorem valueAtInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : valueAtInfty (thetaCoset L γ) = 0 :=
   (isZeroAtImInfty_thetaCoset L hγ).valueAtInfty_eq_zero
@@ -153,11 +212,13 @@ theorem qExpansion_thetaSeries_coeff_zero {h : ℝ} (hh : 0 < h)
     valueAtInfty_thetaSeries]
 
 variable {L} in
+omit [DiscreteTopology L] in
 /-- For an even lattice, the constant term of the `q`-expansion of `Θ_L` in
 `q = exp (2 π i τ)` is `1`. -/
 theorem IsEven.qExpansion_thetaSeries_coeff_zero (hL : IsEven L) :
-    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
+    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
 
 end Normed
 
@@ -166,11 +227,13 @@ section InnerProduct
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L]
 
+omit [DiscreteTopology L] in
 /-- For an integral lattice, the constant term of the `q`-expansion of `Θ_L` with period `2`, in
 `exp (π i τ)`, is `1`. -/
 theorem IsIntegral.qExpansion_two_thetaSeries_coeff_zero (hL : IsIntegral L) :
-    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
+    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
 
 end InnerProduct
 
@@ -189,6 +252,32 @@ theorem thetaCoset_eq_ofReal_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0)
   congr 1
   push_cast
   linear_combination (π * ‖γ + (v : E)‖ ^ 2 * τ.im : ℂ) * I_sq
+
+/-- On the imaginary axis the theta series of `L` is real:
+`Θ_L(i y) = ∑_{v ∈ L} exp (-π y ‖v‖²)`. -/
+theorem thetaSeries_eq_ofReal_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries L τ = ((∑' v : L, Real.exp (-(π * τ.im) * ‖(v : E)‖ ^ 2) : ℝ) : ℂ) := by
+  simpa using thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ
+
+/-- On the imaginary axis the theta series of `γ + L` has zero imaginary part. -/
+theorem im_thetaCoset_eq_zero_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset L γ τ).im = 0 := by
+  rw [thetaCoset_eq_ofReal_of_re_eq_zero L γ hτ, ofReal_im]
+
+/-- On the imaginary axis the theta series of `L` has zero imaginary part. -/
+theorem im_thetaSeries_eq_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries L τ).im = 0 := by
+  simpa using im_thetaCoset_eq_zero_of_re_eq_zero L 0 hτ
+
+/-- On the imaginary axis `θ_{γ+L}(τ)` equals the coercion of its real part. -/
+theorem ofReal_re_thetaCoset_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    ((thetaCoset L γ τ).re : ℂ) = thetaCoset L γ τ :=
+  Complex.ext (ofReal_re _) ((ofReal_im _).trans (im_thetaCoset_eq_zero_of_re_eq_zero L γ hτ).symm)
+
+/-- On the imaginary axis `Θ_L(τ)` equals the coercion of its real part. -/
+theorem ofReal_re_thetaSeries_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    ((thetaSeries L τ).re : ℂ) = thetaSeries L τ := by
+  simpa using ofReal_re_thetaCoset_of_re_eq_zero L 0 hτ
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
@@ -210,6 +299,133 @@ theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries 
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
 
+section Sublattice
+
+variable {M : Submodule ℤ E} {L}
+
+/-- For a proper subgroup `M < L` of a discrete subgroup `L` in a finite-dimensional real normed
+space, on the imaginary axis `(thetaCoset M γ τ).re < (thetaCoset L γ τ).re`: every nontrivial
+coset of `M` in `L` contributes a strictly positive Gaussian sum. -/
+theorem re_thetaCoset_lt_of_lt (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re < (thetaCoset L γ τ).re := by
+  have : DiscreteTopology M := DiscreteTopology.of_subset ‹DiscreteTopology L› hML.le
+  have hsum : HasSum (fun y : L ⧸ M.submoduleOf L ↦
+      (thetaCoset M (γ + ((Quotient.out y : L) : E)) τ).re) (thetaCoset L γ τ).re :=
+    Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML.le γ τ)
+  have hzero : thetaCoset M (γ + ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E)) τ =
+      thetaCoset M γ τ := by
+    refine congrFun (thetaCoset_eq_of_sub_mem M ?_) τ
+    rw [add_sub_cancel_left]
+    have h0 : Submodule.Quotient.mk (Quotient.out (0 : L ⧸ M.submoduleOf L)) =
+        (0 : L ⧸ M.submoduleOf L) := Submodule.Quotient.mk_out 0
+    simpa [Submodule.submoduleOf] using (Submodule.Quotient.mk_eq_zero _).mp h0
+  obtain ⟨x, hxL, hxM⟩ := IsConcreteLE.exists_of_lt hML
+  let q : L ⧸ M.submoduleOf L := Submodule.Quotient.mk ⟨x, hxL⟩
+  have hq : q ≠ 0 := by
+    rw [Ne, Submodule.Quotient.mk_eq_zero, Submodule.submoduleOf, Submodule.mem_comap,
+      Submodule.subtype_apply]
+    exact hxM
+  rw [← hzero]
+  exact lt_hasSum hsum 0 (fun _ _ ↦ (re_thetaCoset_pos M _ hτ).le) q hq
+    (re_thetaCoset_pos M _ hτ)
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re`. -/
+theorem re_thetaCoset_mono (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
+  rcases hML.eq_or_lt with rfl | hlt
+  · exact le_rfl
+  · exact (re_thetaCoset_lt_of_lt hlt γ hτ).le
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaCoset M γ τ).re < (thetaCoset L γ τ).re` holds if and only if
+`M < L`. -/
+theorem re_thetaCoset_lt_iff_lt_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re < (thetaCoset L γ τ).re ↔ M < L := by
+  refine ⟨fun h ↦ hML.lt_of_ne ?_, fun h ↦ re_thetaCoset_lt_of_lt h γ hτ⟩
+  rintro rfl
+  exact lt_irrefl _ h
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaCoset M γ τ).re = (thetaCoset L γ τ).re` holds if and only if
+`M = L`. -/
+theorem re_thetaCoset_eq_iff_eq_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re = (thetaCoset L γ τ).re ↔ M = L := by
+  rw [← not_iff_not, ← ne_eq, (re_thetaCoset_mono hML γ hτ).lt_iff_ne.symm,
+    re_thetaCoset_lt_iff_lt_of_le hML γ hτ, hML.lt_iff_ne]
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `thetaCoset M γ τ = thetaCoset L γ τ` holds if and only if `M = L`. -/
+theorem thetaCoset_eq_iff_eq_of_le_of_re_eq_zero (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaCoset M γ τ = thetaCoset L γ τ ↔ M = L := by
+  refine ⟨fun h ↦ (re_thetaCoset_eq_iff_eq_of_le hML γ hτ).mp (congrArg Complex.re h), ?_⟩
+  rintro rfl
+  rfl
+
+/-- For a proper subgroup `M < L` of a discrete subgroup `L` in a finite-dimensional real normed
+space, on the imaginary axis `θ_{γ+M}(τ) ≠ θ_{γ+L}(τ)`. -/
+theorem thetaCoset_ne_of_lt_of_re_eq_zero (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaCoset M γ τ ≠ thetaCoset L γ τ :=
+  mt (thetaCoset_eq_iff_eq_of_le_of_re_eq_zero hML.le γ hτ).mp hML.ne
+
+/-- For a proper subgroup `M < L` of a discrete subgroup `L` in a finite-dimensional real normed
+space, on the imaginary axis `(thetaSeries M τ).re < (thetaSeries L τ).re`. -/
+theorem re_thetaSeries_lt_of_lt (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_lt_of_lt hML 0 hτ
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaSeries M τ).re ≤ (thetaSeries L τ).re`. -/
+theorem re_thetaSeries_mono (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_mono hML 0 hτ
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaSeries M τ).re < (thetaSeries L τ).re` holds if and only if
+`M < L`. -/
+theorem re_thetaSeries_lt_iff_lt_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re < (thetaSeries L τ).re ↔ M < L := by
+  simpa using re_thetaCoset_lt_iff_lt_of_le hML 0 hτ
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `(thetaSeries M τ).re = (thetaSeries L τ).re` holds if and only if
+`M = L`. -/
+theorem re_thetaSeries_eq_iff_eq_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re = (thetaSeries L τ).re ↔ M = L := by
+  simpa using re_thetaCoset_eq_iff_eq_of_le hML 0 hτ
+
+/-- For a subgroup `M ≤ L` of a discrete subgroup `L` in a finite-dimensional real normed space,
+on the imaginary axis `thetaSeries M τ = thetaSeries L τ` holds if and only if `M = L`. -/
+theorem thetaSeries_eq_iff_eq_of_le_of_re_eq_zero (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ = thetaSeries L τ ↔ M = L := by
+  simpa using thetaCoset_eq_iff_eq_of_le_of_re_eq_zero hML 0 hτ
+
+/-- For a proper subgroup `M < L` of a discrete subgroup `L` in a finite-dimensional real normed
+space, on the imaginary axis `Θ_M(τ) ≠ Θ_L(τ)`. -/
+theorem thetaSeries_ne_of_lt_of_re_eq_zero (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ ≠ thetaSeries L τ :=
+  mt (thetaSeries_eq_iff_eq_of_le_of_re_eq_zero hML.le hτ).mp hML.ne
+
+end Sublattice
+
 end ImaginaryAxis
+
+section SublatticeFunction
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M L : Submodule ℤ E} [DiscreteTopology L]
+
+/-- For `M ≤ L`, the theta series `Θ_M` and `Θ_L` are equal as functions on `ℍ` if and only if
+`M = L`. -/
+theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
+    thetaSeries M = thetaSeries L ↔ M = L :=
+  ⟨fun h => (thetaSeries_eq_iff_eq_of_le_of_re_eq_zero hML UpperHalfPlane.I_re).mp
+    (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
+
+/-- For a proper subgroup `M < L`, `Θ_M ≠ Θ_L`. -/
+theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L :=
+  mt (thetaSeries_eq_iff_of_le hML.le).mp hML.ne
+
+end SublatticeFunction
 
 end ZLattice

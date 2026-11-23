@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import Mathlib.Analysis.InnerProductSpace.Defs
--- Private: naturality of the Clifford/exterior equivalence is used only in the map proof.
-import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # The positive metric on real regular Clifford spinors
@@ -90,6 +88,13 @@ theorem regularBilinForm_ι_mul_left (v : M) (x y : CliffordAlgebra Q) :
     regularBilinForm Q (ι Q v * x) y = -regularBilinForm Q x (ι Q v * y) := by
   simp [regularBilinForm_mul_left]
 
+/-- Left multiplication by a vector scales squared lengths by the negative quadratic form. -/
+theorem regularBilinForm_ι_mul_self (v : M) (x : CliffordAlgebra Q) :
+    regularBilinForm Q (ι Q v * x) (ι Q v * x) =
+      -Q v * regularBilinForm Q x x := by
+  rw [regularBilinForm_ι_mul_left]
+  simp [← mul_assoc, ι_sq_scalar, Algebra.algebraMap_eq_smul_one]
+
 /-- The grade involution is an isometry of the regular form. -/
 @[simp]
 theorem regularBilinForm_involute (x y : CliffordAlgebra Q) :
@@ -119,13 +124,7 @@ variable {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
 finiteness or definiteness assumption. -/
 theorem regularBilinForm_map (f : Q →qᵢ Q') (x y : CliffordAlgebra Q) :
     regularBilinForm Q' (map f x) (map f y) = regularBilinForm Q x y := by
-  simp only [regularBilinForm_apply, ← map_star, ← map_mul, scalarTrace_apply,
-    equivExterior_map]
-  have h : ExteriorAlgebra.algebraMapInv.comp (ExteriorAlgebra.map f.toLinearMap) =
-      ExteriorAlgebra.algebraMapInv :=
-    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by
-      simp [ExteriorAlgebra.algebraMapInv]
-  exact AlgHom.congr_fun h _
+  simp [regularBilinForm_apply, ← map_star, ← map_mul]
 
 /-- Quadratic isometry equivalences preserve the regular scalar-part form. -/
 theorem regularBilinForm_equivOfIsometry (f : Q.IsometryEquiv Q')

@@ -11,7 +11,9 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import Mathlib.Analysis.Convex.Combination
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Spheres are simply connected above rank two
@@ -50,8 +52,18 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
   of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_of_lt_finrank`: the same under `2 < Module.finrank ℝ E`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `TauCeti.simplyConnectedSpace_onePoint_complex`: the Riemann sphere `OnePoint ℂ` is simply
+  connected.
+* `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`: nonemptiness of a space homotopy equivalent
+  to a sphere of nonnegative radius.
+* `ContinuousMap.HomotopyEquiv.pathConnectedSpace_of_sphere`,
+  `ContinuousMap.HomotopyEquiv.connectedSpace_of_sphere`,
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`, and
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_euclideanSpace`: path connectedness,
+  connectedness, and simple connectedness of a space homotopy equivalent to a sphere.
 
 ## References
 
@@ -141,65 +153,81 @@ private theorem eq_floor_or_of_hatFunction_ne_zero {N k : ℕ} {t : I}
   have hk2' : ⌊(N : ℝ) * (t : ℝ)⌋₊ < k + 1 := by exact_mod_cast hk2
   omega
 
-/-- The hat weights form a partition of unity on the unit interval. -/
-private theorem sum_hatFunction_eq_one (N : ℕ) (t : I) :
+/-- The floor of `N * t` is at most `N`. -/
+private theorem floor_mul_le_nat (N : ℕ) (t : I) : ⌊(N : ℝ) * (t : ℝ)⌋₊ ≤ N := by
+  have hrle : (N : ℝ) * (t : ℝ) ≤ N :=
+    mul_le_of_le_one_right (Nat.cast_nonneg N) (unitInterval.le_one t)
+  exact Nat.floor_le_of_le hrle
+
+/-- The partition of unity at a parameter whose floor is the last node. -/
+private theorem sum_hatFunction_eq_one_of_floor_eq (N : ℕ) (t : I)
+    (hmN : ⌊(N : ℝ) * (t : ℝ)⌋₊ = N) :
+    ∑ k ∈ Finset.range (N + 1), hatFunction N k t = 1 := by
+  set r : ℝ := (N : ℝ) * (t : ℝ) with hr
+  set m : ℕ := ⌊(N : ℝ) * (t : ℝ)⌋₊ with hm
+  obtain ⟨h1, -⟩ := floor_bounds N t
+  have hrle : r ≤ N := by
+    rw [hr]
+    exact mul_le_of_le_one_right (Nat.cast_nonneg N) (unitInterval.le_one t)
+  have hNr : (N : ℝ) ≤ r :=
+    calc
+      (N : ℝ) = (m : ℝ) := by rw [hmN]
+      _ = ((⌊(N : ℝ) * (t : ℝ)⌋₊ : ℕ) : ℝ) := by rw [hm]
+      _ ≤ (N : ℝ) * (t : ℝ) := h1
+      _ = r := hr.symm
+  have hrN : r = N := le_antisymm hrle hNr
+  have hhatm : hatFunction N m t = 1 := by
+    unfold hatFunction
+    have harg : (N : ℝ) * (t : ℝ) - (m : ℝ) = 0 := by
+      rw [← hr, hrN, hmN]
+      simp
+    rw [harg]
+    norm_num
+  rw [Finset.sum_eq_single m]
+  · exact hhatm
+  · intro k hk hkm
+    by_contra hk0
+    rcases eq_floor_or_of_hatFunction_ne_zero hk0 with h | h
+    · exact hkm (by simpa [hm] using h)
+    · have hklt := Finset.mem_range.mp hk
+      omega
+  · exact fun hm' => (hm' (Finset.mem_range.mpr (Nat.lt_succ_of_le (floor_mul_le_nat N t)))).elim
+
+/-- The partition of unity at a parameter whose floor is below the last node. -/
+private theorem sum_hatFunction_eq_one_of_floor_lt (N : ℕ) (t : I)
+    (hm_lt : ⌊(N : ℝ) * (t : ℝ)⌋₊ < N) :
     ∑ k ∈ Finset.range (N + 1), hatFunction N k t = 1 := by
   set r : ℝ := (N : ℝ) * (t : ℝ) with hr
   set m : ℕ := ⌊(N : ℝ) * (t : ℝ)⌋₊ with hm
   obtain ⟨h1, h2⟩ := floor_bounds N t
-  have hrle : r ≤ N := by
-    rw [hr]
-    exact mul_le_of_le_one_right (Nat.cast_nonneg N) (unitInterval.le_one t)
-  have hmle : m ≤ N := by
-    have : (m : ℝ) ≤ N := h1.trans hrle
-    exact_mod_cast this
-  by_cases hmN : m = N
-  · have hNr : (N : ℝ) ≤ r :=
-      calc
-        (N : ℝ) = (m : ℝ) := by rw [hmN]
-        _ = ((⌊(N : ℝ) * (t : ℝ)⌋₊ : ℕ) : ℝ) := by rw [hm]
-        _ ≤ (N : ℝ) * (t : ℝ) := h1
-        _ = r := hr.symm
-    have hrN : r = N := le_antisymm hrle hNr
-    have hhatm : hatFunction N m t = 1 := by
-      unfold hatFunction
-      have harg : (N : ℝ) * (t : ℝ) - (m : ℝ) = 0 := by
-        rw [← hr, hrN, hmN]
-        simp
-      rw [harg]
-      norm_num
-    rw [Finset.sum_eq_single m]
-    · exact hhatm
-    · intro k hk hkm
-      by_contra hk0
-      rcases eq_floor_or_of_hatFunction_ne_zero hk0 with h | h
-      · exact hkm (by simpa [hm] using h)
-      · have hklt := Finset.mem_range.mp hk
-        omega
-    · exact fun hm => (hm (Finset.mem_range.mpr (Nat.lt_succ_of_le hmle))).elim
-  · have hm_lt : m < N := lt_of_le_of_ne hmle hmN
-    have hsubset : ({m, m + 1} : Finset ℕ) ⊆ Finset.range (N + 1) := by
-      intro k hk
-      simp only [Finset.mem_insert, Finset.mem_singleton] at hk
-      rcases hk with rfl | rfl <;> exact Finset.mem_range.mpr (by omega)
-    have hzero : ∀ k ∈ Finset.range (N + 1), k ∉ ({m, m + 1} : Finset ℕ) →
-        hatFunction N k t = 0 := by
-      intro k _ hk
-      by_contra hk0
-      rcases eq_floor_or_of_hatFunction_ne_zero hk0 with h | h <;>
-        exact hk (by simp [hm, h])
-    have hrestrict := Finset.sum_subset hsubset hzero
-    have hhatm : hatFunction N m t = 1 - (r - m) := by
-      unfold hatFunction
-      rw [← hr,
-        abs_of_nonneg (by simpa [hr, hm] using h1), max_eq_right (by linarith [h2])]
-    have hhatnext : hatFunction N (m + 1) t = r - m := by
-      unfold hatFunction
-      rw [← hr, Nat.cast_add, Nat.cast_one]
-      rw [abs_of_nonpos (by simpa [hr, hm] using h2.le), max_eq_right (by linarith [h1])]
-      ring
-    rw [← hrestrict]
-    simp [hhatm, hhatnext]
+  have hsubset : ({m, m + 1} : Finset ℕ) ⊆ Finset.range (N + 1) := by
+    intro k hk
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hk
+    rcases hk with rfl | rfl <;> exact Finset.mem_range.mpr (by omega)
+  have hzero : ∀ k ∈ Finset.range (N + 1), k ∉ ({m, m + 1} : Finset ℕ) →
+      hatFunction N k t = 0 := by
+    intro k _ hk
+    by_contra hk0
+    rcases eq_floor_or_of_hatFunction_ne_zero hk0 with h | h <;>
+      exact hk (by simp [hm, h])
+  have hrestrict := Finset.sum_subset hsubset hzero
+  have hhatm : hatFunction N m t = 1 - (r - m) := by
+    unfold hatFunction
+    rw [← hr,
+      abs_of_nonneg (by simpa [hr, hm] using h1), max_eq_right (by linarith [h2])]
+  have hhatnext : hatFunction N (m + 1) t = r - m := by
+    unfold hatFunction
+    rw [← hr, Nat.cast_add, Nat.cast_one]
+    rw [abs_of_nonpos (by simpa [hr, hm] using h2.le), max_eq_right (by linarith [h1])]
+    ring
+  rw [← hrestrict]
+  simp [hhatm, hhatnext]
+
+/-- The hat weights form a partition of unity on the unit interval. -/
+private theorem sum_hatFunction_eq_one (N : ℕ) (t : I) :
+    ∑ k ∈ Finset.range (N + 1), hatFunction N k t = 1 :=
+  (floor_mul_le_nat N t).eq_or_lt.elim (sum_hatFunction_eq_one_of_floor_eq N t)
+    (sum_hatFunction_eq_one_of_floor_lt N t)
 
 private theorem hatFunction_zero_self (N : ℕ) : hatFunction N 0 (0 : I) = 1 := by
   simp [hatFunction]
@@ -281,30 +309,23 @@ end Interpolation
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Every path on the unit sphere of a real normed space of rank greater than two is
-homotopic, with fixed endpoints, to a path that omits a point of the sphere. -/
-theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
-    (γ : Path x y) (h : 2 < Module.rank ℝ E) :
-    ∃ γ' : Path x y, γ.Homotopic γ' ∧ ∃ p : sphere (0 : E) 1, p ∉ Set.range γ' := by
-  classical
-  have hγnorm : ∀ t, ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := fun t =>
-    mem_sphere_zero_iff_norm.mp (γ t).2
+/-- Every path on the unit sphere has a subdivision whose piecewise linear interpolation
+stays within distance one of the path and has the same endpoints. -/
+private theorem exists_nodeInterp_close {x y : sphere (0 : E) 1} (γ : Path x y) :
+    ∃ (N : ℕ) (node : ℕ → E),
+      (∀ t : I, ‖nodeInterp N node t - ((γ t : sphere (0 : E) 1) : E)‖ < 1) ∧
+      nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E) ∧
+      nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E) := by
   have hγcont : Continuous fun t : I => ((γ t : sphere (0 : E) 1) : E) :=
-    continuous_subtype_val.comp γ.continuous
+    continuous_subtypeVal.comp γ.continuous
   -- Choose a subdivision so fine that the path moves by less than `1` across each step.
   obtain ⟨δ, hδ, hδ'⟩ := Metric.uniformContinuous_iff.mp
     (CompactSpace.uniformContinuous_of_continuous hγcont) 1 one_pos
   obtain ⟨N₀, hN₀⟩ := exists_nat_one_div_lt hδ
   set N : ℕ := N₀ + 1 with hNdef
-  have hNR : (0 : ℝ) < (N : ℝ) := by positivity
   have hNδ : 1 / (N : ℝ) < δ := by rw [hNdef]; push_cast; exact hN₀
-  -- The nodes of the subdivision, and the piecewise linear interpolation through them.
+  -- The nodes of the subdivision.
   set node : ℕ → E := fun k => ((γ (nodeParam N k) : sphere (0 : E) 1) : E) with hnode
-  have hfloor_le : ∀ t : I, ⌊(N : ℝ) * (t : ℝ)⌋₊ ≤ N := by
-    intro t
-    calc ⌊(N : ℝ) * (t : ℝ)⌋₊ ≤ ⌊(N : ℝ)⌋₊ :=
-          Nat.floor_mono (mul_le_of_le_one_right hNR.le (unitInterval.le_one t))
-      _ = N := Nat.floor_natCast N
   -- Every node alive at `t` is close to `γ t`.
   have hclose : ∀ (t : I) (k : ℕ), hatFunction N k t ≠ 0 →
       ‖((γ t : sphere (0 : E) 1) : E) - node k‖ < 1 := by
@@ -312,26 +333,34 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
     have hdist := dist_nodeParam_lt_of_hatFunction_ne_zero (N := N) (Nat.succ_pos N₀) hk
     have := hδ' (hdist.trans hNδ)
     rwa [dist_eq_norm] at this
-  have hLclose : ∀ t : I,
-      ‖nodeInterp N node t - ((γ t : sphere (0 : E) 1) : E)‖ < 1 := fun t =>
-    norm_nodeInterp_sub_lt_one t (fun k hk => hclose t k hk)
+  -- The interpolation matches the path at both ends of the interval.
+  have hnodeParam0 : nodeParam N 0 = (0 : I) := Subtype.ext (by simp [nodeParam])
+  have hnodeParamN : nodeParam N N = (1 : I) :=
+    Subtype.ext (by simp [nodeParam])
+  refine ⟨N, node, fun t => norm_nodeInterp_sub_lt_one t (fun k hk => hclose t k hk), ?_, ?_⟩
+  · simp only [nodeInterp_zero, hnode, hnodeParam0, γ.source]
+  · simp only [nodeInterp_one, hnode, hnodeParamN, γ.target]
+
+/-- A path on the unit sphere is homotopic, with fixed endpoints, to the radial projection of
+any interpolation that stays within distance one of it and has the same endpoints. -/
+private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (γ : Path x y)
+    {N : ℕ} {node : ℕ → E}
+    (hLclose : ∀ t : I, ‖nodeInterp N node t - ((γ t : sphere (0 : E) 1) : E)‖ < 1)
+    (hL0 : nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E))
+    (hL1 : nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E)) :
+    ∃ γ' : Path x y, γ.Homotopic γ' ∧
+      ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := by
+  have hγnorm : ∀ t, ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := fun t =>
+    mem_sphere_zero_iff_norm.mp (γ t).property
   have hLne : ∀ t : I, nodeInterp N node t ≠ 0 := by
     intro t ht
     have hlt := hLclose t
     rw [ht, zero_sub, norm_neg, hγnorm t] at hlt
     exact lt_irrefl 1 hlt
-  -- The interpolation matches the path at both ends of the interval.
-  have hnodeParam0 : nodeParam N 0 = (0 : I) := Subtype.ext (by simp [nodeParam])
-  have hnodeParamN : nodeParam N N = (1 : I) :=
-    Subtype.ext (by simp [nodeParam])
-  have hL0 : nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E) := by
-    simp only [nodeInterp_zero, hnode, hnodeParam0, γ.source]
-  have hL1 : nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E) := by
-    simp only [nodeInterp_one, hnode, hnodeParamN, γ.target]
   -- The comparison path.
   have hcontL : Continuous (nodeInterp N node) := continuous_nodeInterp N node
   let Lsphere := normalizeToSphere (nodeInterp N node) hcontL hLne
-  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.2
+  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.property
   let γ' : Path x y :=
     { toFun := Lsphere
       continuous_toFun := Lsphere.continuous
@@ -339,7 +368,7 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
         rw [coe_normalizeToSphere_apply, hL0, normalize_eq_self_of_norm_eq_one hx1])
       target' := Subtype.ext (by
         rw [coe_normalizeToSphere_apply, hL1,
-          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.2)]) }
+          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.property)]) }
   -- The straight-line homotopy between the path and the comparison path misses the origin.
   have hGne : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) + (z.1 : ℝ) • nodeInterp N node z.2
@@ -351,10 +380,15 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
       (sub_nonneg.mpr (unitInterval.le_one z.1)) (unitInterval.nonneg z.1)
       (sub_add_cancel 1 (z.1 : ℝ))
     simp [hz, mem_ball, hγnorm] at hmem
-  have hsquare : γ.Homotopic γ' :=
-    γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL
-      (fun t => coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t) hGne
-  -- The comparison path lives in finitely many planes, which cannot cover `E`.
+  have hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := fun t =>
+    coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t
+  exact ⟨γ', γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hγ' hGne, hγ'⟩
+
+/-- In a real vector space of rank greater than two, finitely many two-vector spans do not
+cover: some nonzero vector lies in none of them. -/
+private theorem exists_ne_zero_notMem_span_pair (h : 2 < Module.rank ℝ E) (N : ℕ)
+    (node : ℕ → E) :
+    ∃ w : E, w ≠ 0 ∧ ∀ m ≤ N, w ∉ Submodule.span ℝ ({node m, node (m + 1)} : Set E) := by
   have hVne : ∀ m : Fin (N + 1),
       Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E) ≠ ⊤ := by
     intro m htop
@@ -367,12 +401,22 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
     exact h.not_ge hdim
   obtain ⟨w, hw⟩ := Submodule.exists_forall_notMem_of_forall_ne_top
     (fun m : Fin (N + 1) => Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E)) hVne
-  have hw0 : w ≠ 0 := fun h0 => hw ⟨0, Nat.succ_pos N⟩ (h0 ▸ Submodule.zero_mem _)
+  exact ⟨w, fun h0 => hw ⟨0, Nat.succ_pos N⟩ (h0 ▸ Submodule.zero_mem _),
+    fun m hm => hw ⟨m, Nat.lt_succ_of_le hm⟩⟩
+
+/-- Every path on the unit sphere of a real normed space of rank greater than two is
+homotopic, with fixed endpoints, to a path that omits a point of the sphere. -/
+theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
+    (γ : Path x y) (h : 2 < Module.rank ℝ E) :
+    ∃ γ' : Path x y, γ.Homotopic γ' ∧ ∃ p : sphere (0 : E) 1, p ∉ Set.range γ' := by
+  obtain ⟨N, node, hLclose, hL0, hL1⟩ := exists_nodeInterp_close γ
+  obtain ⟨γ', hsquare, hγ'⟩ := exists_homotopic_normalize_nodeInterp γ hLclose hL0 hL1
+  -- The comparison path lives in finitely many planes, which cannot cover `E`.
+  obtain ⟨w, hw0, hw⟩ := exists_ne_zero_notMem_span_pair h N node
   refine ⟨γ', hsquare, ⟨normalize w, mem_sphere_zero_iff_norm.mpr (norm_normalize hw0)⟩, ?_⟩
   rintro ⟨t, ht⟩
   have hteq : normalize (nodeInterp N node t) = normalize w :=
-    (coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t).symm.trans
-      (congrArg Subtype.val ht)
+    (hγ' t).symm.trans (congrArg Subtype.val ht)
   have hwmem : w ∈
       Submodule.span ℝ ({node ⌊(N : ℝ) * (t : ℝ)⌋₊, node (⌊(N : ℝ) * (t : ℝ)⌋₊ + 1)} : Set E) := by
     have hwrite : w = (‖w‖ * ‖nodeInterp N node t‖⁻¹) • nodeInterp N node t :=
@@ -382,7 +426,7 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
               rw [NormedSpace.normalize, smul_smul]
     rw [hwrite]
     exact Submodule.smul_mem _ _ (nodeInterp_mem_span N node t)
-  exact hw ⟨⌊(N : ℝ) * (t : ℝ)⌋₊, Nat.lt_succ_of_le (hfloor_le t)⟩ hwmem
+  exact hw _ (floor_mul_le_nat N t) hwmem
 
 /-- Every sphere of nonnegative radius in a real normed space of rank greater than two is
 simply connected. -/
@@ -413,6 +457,18 @@ theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
   rw [hrank]
   exact_mod_cast (by omega : 2 < n + 1)
 
+/-- The unit sphere `Sⁿ⁺²` of `ℝⁿ⁺³` is simply connected, as an instance; this covers the
+two-sphere. -/
+instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
+    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
+  simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+
+/-- Every sphere of nonnegative radius in a real normed space of finite rank greater than two is
+simply connected. -/
+theorem simplyConnectedSpace_sphere_of_lt_finrank (h : 2 < Module.finrank ℝ E) (c : E) {r : ℝ}
+    (hr : 0 ≤ r) : SimplyConnectedSpace (sphere c r) :=
+  simplyConnectedSpace_sphere (by exact_mod_cast Module.lt_rank_of_lt_finrank h) c hr
+
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
@@ -420,6 +476,66 @@ theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤
   rw [← Module.finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin,
     Nat.ofNat_lt_cast]
   omega
+
+end TauCeti
+
+namespace ContinuousMap.HomotopyEquiv
+
+open scoped ContinuousMap
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real seminormed space with
+nontrivial topology is nonempty. -/
+theorem nonempty_of_sphere {X : Type*} [TopologicalSpace X]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F] [NontrivialTopology F]
+    {c : F} {r : ℝ} (e : X ≃ₕ sphere c r) (hr : 0 ≤ r) :
+    Nonempty X := by
+  have : Nonempty (sphere c r) := (NormedSpace.sphere_nonempty.2 hr).to_subtype
+  exact e.symm.nonempty
+
+variable {M : Type*} [TopologicalSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than `1` is path connected. -/
+theorem pathConnectedSpace_of_sphere {c : F} {r : ℝ} (e : M ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) : PathConnectedSpace M := by
+  have : PathConnectedSpace (sphere c r) :=
+    isPathConnected_iff_pathConnectedSpace.mp (isPathConnected_sphere hF c hr)
+  exact e.symm.pathConnectedSpace
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than `1` is connected. -/
+theorem connectedSpace_of_sphere {c : F} {r : ℝ} (e : M ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) : ConnectedSpace M := by
+  have := e.pathConnectedSpace_of_sphere hF hr
+  infer_instance
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than `2` is simply connected. -/
+theorem simplyConnectedSpace_of_sphere {c : F} {r : ℝ} (e : M ≃ₕ sphere c r)
+    (hF : 2 < Module.rank ℝ F) (hr : 0 ≤ r) : SimplyConnectedSpace M := by
+  have := TauCeti.simplyConnectedSpace_sphere hF c hr
+  exact e.simplyConnectedSpace
+
+/-- A space homotopy equivalent to the Euclidean `n`-sphere with `2 ≤ n` is simply connected. -/
+theorem simplyConnectedSpace_of_sphere_euclideanSpace {n : ℕ}
+    (e : M ≃ₕ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (hn : 2 ≤ n) :
+    SimplyConnectedSpace M :=
+  e.simplyConnectedSpace_of_sphere
+    (by exact_mod_cast (Module.lt_rank_of_lt_finrank (n := 2)
+      (by rw [finrank_euclideanSpace_fin]; lia))) zero_le_one
+
+end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti
+
+/-- **The Riemann sphere is simply connected**: the one-point compactification `OnePoint ℂ` is
+homeomorphic to the unit sphere of `ℝ³` by inverse stereographic projection
+(`TauCeti.exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero`). -/
+instance simplyConnectedSpace_onePoint_complex : SimplyConnectedSpace (OnePoint ℂ) := by
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 3) := ⟨finrank_euclideanSpace_fin⟩
+  obtain ⟨K, -⟩ := exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero
+    (E := EuclideanSpace ℝ (Fin 3)) ⟨EuclideanSpace.single 0 1, by simp⟩
+  exact K.toHomotopyEquiv.simplyConnectedSpace_of_sphere_euclideanSpace (n := 2) le_rfl
 
 end TauCeti
 

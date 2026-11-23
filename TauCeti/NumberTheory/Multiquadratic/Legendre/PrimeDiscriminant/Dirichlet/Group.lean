@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Subgroup
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
 public import Mathlib.Data.Fintype.Sets
 public import Mathlib.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Basic
 
 /-!
@@ -98,7 +99,7 @@ theorem primeDiscriminantCharAtLevel_apply_int (P : s) (n : ℤ)
 /-- A lifted prime-discriminant character is quadratic. -/
 theorem isQuadratic_primeDiscriminantCharAtLevel (P : s) :
     (primeDiscriminantCharAtLevel s hs P).IsQuadratic :=
-  isQuadratic_changeLevel (isQuadratic_primeDiscriminantChar P (hs P P.property)) _
+  (isQuadratic_primeDiscriminantChar P (hs P P.property)).changeLevel _
 
 /-- A lifted prime-discriminant character squares to the trivial character. -/
 @[simp] theorem primeDiscriminantCharAtLevel_sq (P : s) :
@@ -181,7 +182,7 @@ theorem genusCharAtLevel_injective
   have hchar : genusCharAtLevel s hs (t ∆ u) = 1 := by
     rw [genusCharAtLevel_symmDiff, htu, ← pow_two,
       (isQuadratic_genusCharAtLevel s hs u).sq_eq_one]
-  obtain ⟨P, hP⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+  obtain ⟨P, hP⟩ := Finset.ne_empty_iff_nonempty.1 hne
   let ε : ℤ → ℤˣ := fun Q => if Q = P.val then -1 else 1
   obtain ⟨a, ha⟩ := exists_forall_primeDiscriminantCharFun_eq_of_not_all_three_even hs hnoall ε
   have hcop : ∀ Q ∈ s, IsCoprime (a : ℤ) Q := by

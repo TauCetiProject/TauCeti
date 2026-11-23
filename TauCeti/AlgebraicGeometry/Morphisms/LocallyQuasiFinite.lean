@@ -1,7 +1,8 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang,
+  Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -24,16 +25,30 @@ distinct points of one fibre never specialize to each other because the fibres a
 is incomparability for quasi-finite morphisms. Consequently the codimension of a point is at most
 the codimension of its image, and the dimension of the source is at most that of the target.
 
+A locally quasi-finite morphism `π : V ⟶ Spec R` from an integral affine scheme maps every proper
+closed subset of `V` into the zero locus of a single nonzero element of `R`. Étale morphisms are
+locally quasi-finite, so this applies to an étale chart `V ⟶ 𝔸ⁿ`: the boundary of a dense open
+of the chart is mapped into a hypersurface.
+
 ## Main results
 
 * `AlgebraicGeometry.LocallyQuasiFinite.of_formallyUnramified`: a formally unramified morphism
   locally of finite type is locally quasi-finite.
+* `AlgebraicGeometry.Scheme.Hom.QuasiFiniteAt.finite_residueField`: the residue field extension
+  at a point where a morphism is quasi-finite is finite;
+  `AlgebraicGeometry.Scheme.Hom.finite_residueField` is the instance for a locally
+  quasi-finite morphism.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`: under a locally quasi-finite morphism
   the coheight of a point is at most the coheight of its image.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
   morphism has dimension at most that of its target.
+* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
+  a closed, surjective, locally quasi-finite morphism preserves dimension.
+* `AlgebraicGeometry.Scheme.Hom.exists_ne_zero_image_subset_zeroLocus`: a locally quasi-finite
+  morphism from an integral affine scheme to `Spec R` maps a proper closed subset into the zero
+  locus of a nonzero element of `R`.
 * `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`: a dominant morphism of
   integral schemes, locally of finite type, which is quasi-finite at `x` with integrally closed
   local ring at `f x`, preserves the dimension of the local ring at `x`;
@@ -44,6 +59,7 @@ the codimension of its image, and the dimension of the source is at most that of
 
 ## References
 
+* The Stacks Project, Tag 00PK (a quasi-finite ring map has finite residue field extensions).
 * The strict monotonicity is a scheme form of `Pcf.height_eq_one_of_liesOver_heightOne` in
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -69,6 +85,43 @@ instance (priority := low) LocallyQuasiFinite.of_formallyUnramified {X Y : Schem
   have htype := htype.finiteType_appLE hU hV e
   algebraize [(f.appLE U V e).hom]
   exact RingHom.quasiFinite_algebraMap.mpr inferInstance
+
+/-- **Residue field extensions at a quasi-finite point are finite.** If `f` is quasi-finite at
+`x`, then `κ(x)` is a finite extension of `κ(f x)`. Stacks, Lemma 00PK. The proof is adapted from
+that of Mathlib's `Algebra.IsSeparable` instance for `f.residueFieldMap x` in
+`Mathlib/AlgebraicGeometry/Morphisms/FormallyUnramified.lean`. -/
+theorem Scheme.Hom.QuasiFiniteAt.finite_residueField {X Y : Scheme.{u}} {f : X ⟶ Y} {x : X}
+    (hx : f.QuasiFiniteAt x) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite (Y.residueField (f x)) (X.residueField x) := by
+  -- `κ(f x) ⟶ κ(x)` is the map of residue fields of the stalk map, a quasi-finite local
+  -- homomorphism of local rings, so `IsLocalRing.ResidueField.finite_of_quasiFinite` applies.
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  -- The scheme residue fields are the residue fields of the stalks, and the two algebra
+  -- structures agree on the surjection from the stalk, as in Mathlib.
+  suffices h : Module.Finite
+      (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
+      (IsLocalRing.ResidueField <| X.presheaf.stalk x) by
+    convert! h
+    congr 1
+    refine Algebra.algebra_ext _ _ fun r ↦ ?_
+    obtain ⟨r, rfl⟩ := IsLocalRing.residue_surjective r
+    rfl
+  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.quasiFinite_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact hx
+  infer_instance
+
+/-- **Residue field extensions of a locally quasi-finite morphism are finite.** If `f` is locally
+quasi-finite, then `κ(x)` is a finite extension of `κ(f x)` at every point `x`. Stacks,
+Lemma 00PK. -/
+instance Scheme.Hom.finite_residueField {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [LocallyQuasiFinite f] (x : X) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite (Y.residueField (f x)) (X.residueField x) :=
+  (f.quasiFiniteAt x).finite_residueField
 
 /-- A locally quasi-finite morphism is strictly monotone for the specialization order. -/
 theorem Scheme.Hom.strictMono {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -99,6 +152,15 @@ theorem Scheme.Hom.topologicalKrullDim_le {X Y : Scheme.{u}} (f : X ⟶ Y)
   rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, TauCeti.topologicalKrullDim_eq_iSup_coheight]
   exact iSup_le fun x ↦ (WithBot.coe_le_coe.mpr (f.coheight_le_coheight_apply x)).trans
     (le_iSup (fun y : Y ↦ (Order.coheight y : WithBot ℕ∞)) (f x))
+
+/-- A closed, surjective, locally quasi-finite morphism preserves Krull dimension.
+The two inequalities use incomparability of its fibers and lifting of specialization chains.
+Flatness is not required. -/
+theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [Surjective f]
+    (hf : IsClosedMap f) : topologicalKrullDim X = topologicalKrullDim Y :=
+  le_antisymm f.topologicalKrullDim_le
+    (hf.specializingMap.topologicalKrullDim_le_of_surjective f.surjective)
 
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is
@@ -136,13 +198,57 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f 
     IsLocalization.AtPrime.ringKrullDim_eq_height (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal,
     Ideal.height_eq_height_of_quasiFiniteAt (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal q]
 
-/-- A locally quasi-finite dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite
-type, onto a normal scheme preserves the dimension of every local ring:
-`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed. -/
+/-- A locally quasi-finite dominant morphism `f : X ⟶ Y`, locally of finite type, from an integral
+scheme onto a normal scheme preserves the dimension of every local ring:
+`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed, and `Y` is integral
+for free, being reduced and the dominant image of an irreducible scheme. -/
 theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
+    [IsIntegral X] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
     [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
-    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) :=
-  f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
+    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) := by
+  -- `Y` is reduced, being normal, and irreducible, being the dominant image of `X`.
+  have := f.irreducibleSpace_of_isDominant
+  have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
+  exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
+
+/-- **Proper closed subsets map into the zero locus of a nonzero element.** Let `π : V ⟶ Spec R`
+be a locally quasi-finite morphism from an integral affine scheme, for instance an étale morphism
+to an affine space. Then every closed subset `Z ≠ V` is mapped into the zero locus `V(h)` of some
+nonzero `h : R`. When `R` is a domain, such as `MvPolynomial (Fin m) k`, `V(h)` is a hypersurface.
+The element `h` need not generate the ideal of the closure of `π '' Z`. -/
+theorem Scheme.Hom.exists_ne_zero_image_subset_zeroLocus {R : Type u} [CommRing R]
+    {V : Scheme.{u}} [IsIntegral V] [IsAffine V] (π : V ⟶ Spec (.of R)) [LocallyQuasiFinite π]
+    {Z : Set V} (hZ : IsClosed Z) (hZV : Z ≠ Set.univ) :
+    ∃ h : R, h ≠ 0 ∧ π '' Z ⊆ PrimeSpectrum.zeroLocus {h} := by
+  -- Write `π` as `Spec` of `φ : R ⟶ Γ(V, ⊤)` up to the isomorphism `V ≅ Spec Γ(V, ⊤)`.
+  set φ : CommRingCat.of R ⟶ Γ(V, ⊤) := (Scheme.ΓSpecIso _).inv ≫ π.appTop
+  have hπ : V.isoSpec.inv ≫ π = Spec.map φ := by
+    rw [Iso.inv_comp_eq, Spec.map_comp, Scheme.isoSpec_hom_naturality_assoc]
+    simp [Scheme.isoSpec_hom]
+  have : LocallyQuasiFinite (Spec.map φ) := hπ ▸ inferInstance
+  have hφ : φ.hom.QuasiFinite := HasRingHomProperty.Spec_iff.mp this
+  algebraize [φ.hom]
+  -- The image `Z'` of `Z` in `Spec Γ(V, ⊤)` is a proper closed subset, so its vanishing ideal is
+  -- nonzero.
+  set Z' : Set (Spec Γ(V, ⊤)) := V.isoSpec.inv ⁻¹' Z
+  have hmem (v : V) : V.isoSpec.hom v ∈ Z' ↔ v ∈ Z := by
+    rw [Set.mem_preimage, Scheme.hom_inv_apply]
+  have hZ' : PrimeSpectrum.vanishingIdeal Z' ≠ ⊥ := by
+    intro h0
+    apply hZV
+    have hZ'c : IsClosed (X := PrimeSpectrum Γ(V, ⊤)) Z' := hZ.preimage V.isoSpec.inv.continuous
+    have h1 := PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure Z'
+    rw [h0, PrimeSpectrum.zeroLocus_bot, hZ'c.closure_eq] at h1
+    exact Set.eq_univ_iff_forall.mpr fun v ↦ (hmem v).mp (h1 ▸ Set.mem_univ _)
+  -- A nonzero element of its contraction to `R` vanishes on `π '' Z`.
+  obtain ⟨h, hh, hh0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Algebra.QuasiFinite.under_ne_bot R hZ')
+  refine ⟨h, hh0, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  have hπz : π z = Spec.map φ (V.isoSpec.hom z) := by
+    rw [← hπ, Scheme.Hom.comp_apply, Scheme.hom_inv_apply]
+  refine (PrimeSpectrum.mem_zeroLocus _ _).mpr (Set.singleton_subset_iff.mpr ?_)
+  rw [hπz]
+  exact (PrimeSpectrum.mem_vanishingIdeal _ _).mp hh _ ((hmem z).mpr hz)
 
 end AlgebraicGeometry

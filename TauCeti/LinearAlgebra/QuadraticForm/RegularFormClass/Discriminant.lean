@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Nat.Choose.Basic
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 
 /-!
 # The discriminant and the signed discriminant of a regular quadratic form
@@ -66,6 +66,9 @@ is killed by two.
 * `TauCeti.RegularFormClass.exists_eq_mk_neg_neg_mul`: a rank-three class with trivial
   discriminant has a presentation `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.signedDiscr_mk_rankOne`: `d±⟨a⟩ = squareClass a`.
+* `TauCeti.RegularFormClass.discr_natCast` and `TauCeti.RegularFormClass.signedDiscr_natCast`:
+  the sum of `n` squares `n⟨1⟩` has trivial discriminant and signed discriminant
+  `C(n,2) • squareClass (-1)`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
   is the class of `-1`, and its signed discriminant is trivial.
@@ -166,6 +169,16 @@ theorem discr_nsmul (n : ℕ) (x : RegularFormClass K) : discr (n • x) = n •
 theorem discr_one : discr (1 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.one_def, discr_mk]
   simp
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial discriminant. -/
+@[simp]
+theorem discr_natCast (n : ℕ) : discr (n : RegularFormClass K) = 0 := by
+  rw [← nsmul_one, discr_nsmul, discr_one, nsmul_zero]
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial discriminant, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem discr_ofNat (n : ℕ) [n.AtLeastTwo] : discr (ofNat(n) : RegularFormClass K) = 0 :=
+  discr_natCast n
 
 /-- **The discriminant of a tensor product**: `d(q ⊗ r) = n • d(q) + m • d(r)` for `q` of
 rank `m` and `r` of rank `n`, in the additively written square-class group. -/
@@ -302,6 +315,22 @@ theorem signedDiscr_mk_rankOne (a : Kˣ) :
     signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = squareClass a := by
   rw [signedDiscr_eq_discr_of_rank_le_one (by rw [rank_mk]), discr_mk, Fin.prod_univ_one]
 
+/-- The sum of `n` squares `n⟨1⟩` has signed discriminant `C(n,2) • squareClass (-1)`: only the
+sign correction survives. -/
+@[simp]
+theorem signedDiscr_natCast (n : ℕ) :
+    signedDiscr (n : RegularFormClass K) = n.choose 2 • squareClass (-1 : Kˣ) := by
+  rw [signedDiscr_eq_sign_add_discr, rank_natCast, discr_natCast]
+  exact add_zero (n.choose 2 • squareClass (-1 : Kˣ))
+
+/-- The sum of `n` squares `n⟨1⟩` has signed discriminant `C(n,2) • squareClass (-1)`, for a
+numeral `n ≥ 2`. -/
+@[simp]
+theorem signedDiscr_ofNat (n : ℕ) [n.AtLeastTwo] :
+    signedDiscr (ofNat(n) : RegularFormClass K) =
+      (ofNat(n) : ℕ).choose 2 • squareClass (-1 : Kˣ) :=
+  signedDiscr_natCast n
+
 /-- **The signed discriminant of an orthogonal sum**:
 `d±(q ⊥ r) = mn • squareClass (-1) + d±(q) + d±(r)` for `q` of rank `m` and `r` of rank
 `n`, in the additively written square-class group. The cross term is what the unsigned
@@ -387,6 +416,7 @@ theorem discr_formClass_eq_squareClass {V : Type v} [AddCommGroup V] [Module K V
     rw [hu, ← hre, hg, QuadraticForm.discr_comp (b := b.reindex e) (Pi.basisFun K (Fin n)),
       QuadraticForm.discr_eq_discr', presentedForm_eq_weightedSumSquares_coe,
       QuadraticForm.discr'_weightedSumSquares]
+    simp only [c, smul_eq_mul, mul_one]
   have hc : c * ∏ i, (w i : K) ≠ 0 := fun h => u.ne_zero (by rw [hdiscr, mul_assoc, h, mul_zero])
   refine ⟨Units.mk0 _ hc, Units.ext ?_⟩
   simp only [Units.val_mul, Units.coe_prod, Units.val_mk0, hdiscr]
@@ -460,3 +490,31 @@ theorem RegularFormClass.signedDiscr_nsmul_hyperbolicClass_add (m : ℕ) (x : Re
     rw [succ_nsmul, add_right_comm, RegularFormClass.signedDiscr_add_hyperbolicClass, ih]
 
 end TauCeti
+
+namespace RingHom
+
+variable {K L : Type*} [Field K] [Field L] [Invertible (2 : L)]
+
+/-- A regular form over an extension `L` of `K`, whose discriminant is induced by the square class
+of a unit `d` of `K`, is equivalent to a diagonal form whose coefficient product differs from the
+image of `d` by a square. -/
+theorem exists_equivalent_weightedSumSquares_isSquare_div_prod {n : ℕ} (φ : K →+* L) (d : Kˣ)
+    (Q : _root_.QuadraticForm L (Fin n → L)) (hQ : Q.Nondegenerate)
+    (hd : TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ) =
+      φ.squareClassMap (TauCeti.squareClass d)) :
+    ∃ a : Fin n → Lˣ, Q.Equivalent (weightedSumSquares L a) ∧
+      IsSquare (Units.map φ.toMonoidHom d / ∏ i, a i) := by
+  classical
+  obtain ⟨a, ha⟩ := by
+    have h := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
+      (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
+    rw [Module.finrank_fin_fun] at h
+    exact h
+  refine ⟨a, ha, ?_⟩
+  have h := TauCeti.discr_formClass Q hQ ⟨n, a⟩
+    (by simpa only [TauCeti.presentedForm_eq_weightedSumSquares] using ha)
+  rw [hd, RingHom.squareClassMap_apply] at h
+  have hs := (TauCeti.squareClass_eq_iff_isSquare_mul _ _).mp h
+  simpa only [pow_two, mul_div_mul_right_eq_div] using hs.div (IsSquare.sq (∏ i, a i))
+
+end RingHom

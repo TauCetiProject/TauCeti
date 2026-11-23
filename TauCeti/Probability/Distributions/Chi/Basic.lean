@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Sqrt
 public import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Chi distributions
@@ -18,9 +18,10 @@ degrees of freedom. Nonnegative degrees and positive scale give probability meas
 degrees give a point mass at zero; negative degrees or nonpositive scale give the zero measure.
 
 This file supplies the measure, its Lebesgue density at positive degrees, parameter
-measurability, the cumulative distribution function, and the squaring and scaling identities.
-The density is written in standardized coordinates `x / s`. The change of variables reuses
-`map_sqrt_chiSquaredMeasure` and `map_affine_withDensity_volume`.
+measurability, the cumulative distribution function, and the squaring and scaling identities,
+together with their random-variable forms. The density is written in standardized coordinates
+`x / s`. The change of variables reuses `map_sqrt_chiSquaredMeasure` and
+`map_affine_withDensity_volume`.
 
 ## References
 
@@ -171,9 +172,14 @@ theorem measurable_uncurry_chiPDF :
 theorem measurable_chiPDF (k s : ℝ) : Measurable (chiPDF k s) := by
   exact measurable_uncurry_chiPDF.comp (show Measurable fun x : ℝ ↦ ((k, s), x) by fun_prop)
 
-/-- At positive degrees and scale the chi law has its named Lebesgue density. -/
-theorem chiMeasure_eq_withDensity (hk : 0 < k) (hs : 0 < s) :
+/-- At positive degrees the chi law has its named Lebesgue density, at every scale (both sides
+vanish at nonpositive scale). -/
+theorem chiMeasure_eq_withDensity (hk : 0 < k) :
     chiMeasure k s = volume.withDensity (chiPDF k s) := by
+  by_cases hs : 0 < s
+  swap
+  · have hz : chiPDF k s = 0 := funext fun x ↦ chiPDF_of_not_pos (by tauto)
+    simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs), hz]
   have hstandard : (chiSquaredMeasure k).map Real.sqrt =
       volume.withDensity (chiPDF k 1) := by
     rw [map_sqrt_chiSquaredMeasure hk, ← withDensity_indicator measurableSet_Ioi]
@@ -215,7 +221,7 @@ theorem measurable_chiMeasure : Measurable fun p : ℝ × ℝ ↦ chiMeasure p.1
     · by_cases hk : p.1 = 0
       · simp [hs, hk, chiMeasure_zero hs]
       · by_cases hk' : 0 < p.1
-        · simp [hs, hk, chiMeasure_eq_withDensity hk' hs]
+        · simp [hs, hk, chiMeasure_eq_withDensity hk']
         · simp only [ite_eq_left hs, ite_eq_right hk,
             chiMeasure_of_neg (lt_of_le_of_ne (le_of_not_gt hk') hk)]
           have hz : chiPDF p.1 p.2 = 0 := by
@@ -232,21 +238,21 @@ theorem measurable_chiMeasure : Measurable fun p : ℝ × ℝ ↦ chiMeasure p.1
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with a positive-degree chi law has a density. -/
-theorem hasPDF_of_hasLaw_chiMeasure (hk : 0 < k) (hs : 0 < s)
+theorem hasPDF_of_hasLaw_chiMeasure (hk : 0 < k)
     (hX : HasLaw X (chiMeasure k s) P) : HasPDF X P := by
-  rw [chiMeasure_eq_withDensity hk hs] at hX
+  rw [chiMeasure_eq_withDensity hk] at hX
   exact hasPDF_of_hasLaw_withDensity (measurable_chiPDF k s).aemeasurable hX
 
 /-- The canonical density of a chi variable agrees almost everywhere with `chiPDF`. -/
-theorem pdf_eq_chiPDF_of_hasLaw_chiMeasure (hk : 0 < k) (hs : 0 < s)
+theorem pdf_eq_chiPDF_of_hasLaw_chiMeasure (hk : 0 < k)
     (hX : HasLaw X (chiMeasure k s) P) : pdf X P =ᵐ[volume] chiPDF k s := by
-  rw [chiMeasure_eq_withDensity hk hs] at hX
+  rw [chiMeasure_eq_withDensity hk] at hX
   exact pdf_eq_of_hasLaw_withDensity (measurable_chiPDF k s).aemeasurable hX
 
 /-- The Radon–Nikodym derivative of a positive-degree chi law is its named density. -/
-theorem rnDeriv_chiMeasure (hk : 0 < k) (hs : 0 < s) :
+theorem rnDeriv_chiMeasure (hk : 0 < k) :
     (chiMeasure k s).rnDeriv volume =ᵐ[volume] chiPDF k s := by
-  rw [chiMeasure_eq_withDensity hk hs]
+  rw [chiMeasure_eq_withDensity hk]
   exact Measure.rnDeriv_withDensity _ (measurable_chiPDF k s)
 
 /-- Positive-degree chi laws are carried by the positive half-line. -/
@@ -274,6 +280,13 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) :
   ext x
   exact (mul_assoc c s (√x)).symm
 
+/-- Multiplying a chi variable by a positive constant multiplies its scale by that constant. -/
+theorem hasLaw_chiMeasure_const_mul (hc : 0 < c)
+    (hX : HasLaw X (chiMeasure k s) P) :
+    HasLaw (fun ω ↦ c * X ω) (chiMeasure k (c * s)) P := by
+  rw [← chiMeasure_map_const_mul hc]
+  exact (hasLaw_map (X := fun x : ℝ ↦ c * x) (by fun_prop)).fun_comp hX
+
 /-- Taking a scaled square root of a chi-squared variable gives the chi law. -/
 theorem hasLaw_chiMeasure_of_hasLaw_chiSquaredMeasure (hs : 0 < s)
     (hX : HasLaw X (chiSquaredMeasure k) P) :
@@ -293,6 +306,14 @@ theorem chiMeasure_map_sq (hs : 0 < s) :
     apply Measure.map_congr
     filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
     simp [mul_pow, Real.sq_sqrt hx.le]
+
+/-- Squaring a chi variable gives a scaled chi-squared variable. -/
+theorem hasLaw_chiSquaredMeasure_of_hasLaw_chiMeasure (hs : 0 < s)
+    (hX : HasLaw X (chiMeasure k s) P) :
+    HasLaw (fun ω ↦ X ω ^ 2)
+      ((chiSquaredMeasure k).map (fun x ↦ s ^ 2 * x)) P := by
+  rw [← chiMeasure_map_sq hs]
+  exact (hasLaw_map (X := fun x : ℝ ↦ x ^ 2) (by fun_prop)).fun_comp hX
 
 /-- The chi cdf is the regularized lower incomplete Gamma function on the nonnegative half-line
 and zero below it. -/

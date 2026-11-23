@@ -101,9 +101,9 @@ private lemma exists_natDiagGL_mul_eq_mul_shiftPrimeRep (hp : p.Prime) (hpN : p.
   · obtain ⟨a, ha⟩ := hpa
     obtain ⟨ξ, e00, e01, e10, e11⟩ : ∃ ξ : SL(2, ℤ), ξ 0 0 = a ∧ ξ 0 1 = g 0 1 ∧
         ξ 1 0 = g 1 0 ∧ ξ 1 1 = p * g 1 1 :=
-      ⟨⟨!![a, g 0 1; g 1 0, p * g 1 1], by
+      ⟨.mk !![a, g 0 1; g 1 0, p * g 1 1] (by
         rw [Matrix.det_fin_two_of]
-        linear_combination hg - g 1 1 * ha⟩, rfl, rfl, rfl, rfl⟩
+        linear_combination hg - g 1 1 * ha), by simp, by simp, by simp, by simp⟩
     refine ⟨ξ, none, Units.ext ?_⟩
     have haQ : ((g 0 0 : ℤ) : ℚ) = p * a := by exact_mod_cast ha
     rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp.pos, coe_mapGL_int_rat_fin_two,
@@ -119,9 +119,9 @@ private lemma exists_natDiagGL_mul_eq_mul_shiftPrimeRep (hp : p.Prime) (hpN : p.
       exact ⟨⟨j.val, j.val_lt⟩, t, hj⟩
     obtain ⟨ξ, e00, e01, e10, e11⟩ : ∃ ξ : SL(2, ℤ), ξ 0 0 = g 0 0 ∧ ξ 0 1 = t ∧
         ξ 1 0 = p * g 1 0 ∧ ξ 1 1 = g 1 1 - g 1 0 * N * c :=
-      ⟨⟨!![g 0 0, t; p * g 1 0, g 1 1 - g 1 0 * N * c], by
+      ⟨.mk !![g 0 0, t; p * g 1 0, g 1 1 - g 1 0 * N * c] (by
         rw [Matrix.det_fin_two_of]
-        linear_combination hg + g 1 0 * ht⟩, rfl, rfl, rfl, rfl⟩
+        linear_combination hg + g 1 0 * ht), by simp, by simp, by simp, by simp⟩
     refine ⟨ξ, some c, Units.ext ?_⟩
     have htQ : ((g 0 1 : ℤ) : ℚ) - (c : ℚ) * ((g 0 0 : ℤ) * N) = p * t := by exact_mod_cast ht
     rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp.pos, coe_mapGL_int_rat_fin_two,
@@ -193,13 +193,13 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
     rw [coe_heckeTNat]
     exact heckeSlashSum_coe_eq_sum_of_rightCosets k (diagCosetGamma1 N p) _
       (doubleCoset_out_diagCosetGamma1_eq_iUnion_rightCosets_of_prime hp hσ10 hσ11)
-      (op_primeRep_smul_injective (G := Gamma1 N) hp.one_lt hσ11) f
+      (op_primeRep_smul_injective (G := Gamma1 N) hp.one_lt) f
   -- each representative of the double coset is `diag(1, p)` times an element of `Γ₁(N)`
   have hρ : ∀ i, ∃ ρ ∈ Gamma1 N, D * mapGL ℚ ρ = primeRep (gamma0Twist N p hpN) p i := by
     rintro (_ | b)
     · exact exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none hp.pos hσ10 hσ11
     · exact ⟨ModularGroup.T ^ (b : ℤ), T_zpow_mem_Gamma1 N _,
-        (natDiagGL_mul_mapGL_T_zpow hp.pos b).trans (primeRep_some _ _ _).symm⟩
+        (natDiagGL_mul_mapGL_T_zpow b).trans (primeRep_some _ _ _).symm⟩
   choose ρ hρmem hρ using hρ
   choose ξ j hξ using fun i ↦ exists_natDiagGL_mul_eq_mul_shiftPrimeRep (N := N) hp hpN (ρ i * γ)
   have hrep : ∀ i, primeRep (gamma0Twist N p hpN) p i * mapGL ℚ γ =
@@ -208,7 +208,7 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
   -- the translated representatives lie in distinct right cosets of `SL₂(ℤ)`
   have hj : Function.Bijective j := by
     refine Finite.injective_iff_bijective.mp fun i i' hii' ↦
-      op_primeRep_smul_injective (G := ⊤) hp.one_lt hσ11 ?_
+      op_primeRep_smul_injective (G := ⊤) (σ := gamma0Twist N p hpN) hp.one_lt ?_
     refine (rightCoset_eq_iff _).mpr ⟨ξ i' * (ξ i)⁻¹, Subgroup.mem_top _, ?_⟩
     rw [eq_mul_inv_iff_mul_eq.mpr (hrep i), eq_mul_inv_iff_mul_eq.mpr (hrep i'), hii',
       map_mul, map_inv]

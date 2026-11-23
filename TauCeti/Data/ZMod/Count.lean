@@ -6,8 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
+public import Mathlib.NumberTheory.Harmonic.Defs
+
+import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Counting residues by a condition on their reduction
@@ -27,10 +34,20 @@ product of the individual counts. This is the Chinese remainder theorem `ZMod.pr
 counting form. In particular the number of roots modulo `n` of an integer polynomial is the product
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
+Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
+over `range n`. Summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
+become sums over the residues modulo `m`. As a special case of the first identity, the reciprocals
+of the representatives sum to the harmonic number `H_{n-1}`.
+
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
+* `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
+* `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
+* `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
+* `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
 * `ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors`: the number of roots of an integer polynomial
   modulo `n` is multiplicative over the prime-power factorization of `n`.
@@ -50,30 +67,19 @@ namespace ZMod
 
 variable {m n : ℕ}
 
-/-- The residues modulo `n` satisfying a condition on their reduction modulo `m ∣ n` are as many
-as the residues modulo `m` satisfying it, times the common size of a fibre of the reduction. -/
-private theorem card_filter_natCast_val_eq_mul_card_fiber [NeZero m] [NeZero n] (hmn : m ∣ n)
-    (Q : ZMod m → Prop) [DecidablePred Q] :
-    #{x : ZMod n | Q (x.val : ZMod m)}
-      = #{y : ZMod m | Q y} * #{x : ZMod n | (x.val : ZMod m) = 0} := by
-  have hval : ∀ x : ZMod n, ((x.val : ZMod m)) = castHom hmn (ZMod m) x := fun x => by
-    rw [castHom_apply, natCast_val]
-  have hsurj : Function.Surjective (castHom hmn (ZMod m)) := castHom_surjective hmn
-  simp only [hval]
-  have hfib : ∀ y : ZMod m, #{x : ZMod n | castHom hmn (ZMod m) x = y}
-      = #{x : ZMod n | castHom hmn (ZMod m) x = 0} := fun y =>
-    AddMonoidHom.card_fiber_eq_of_mem_range (castHom hmn (ZMod m)) (hsurj y) (hsurj 0)
-  -- split the count into the fibres over the residues modulo `m` satisfying `Q`; the hole left
-  -- by `Finset.sum_congr` is the identification of each of those fibres with the fibre over `0`
-  rw [Finset.card_eq_sum_card_fiberwise (f := fun x : ZMod n => castHom hmn (ZMod m) x)
-      (t := {y : ZMod m | Q y})
-      (fun x hx => Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Finset.mem_filter.mp hx).2⟩),
-    Finset.sum_congr rfl fun y hy => ?_, Finset.sum_const, smul_eq_mul]
-  have hy' : Q y := (Finset.mem_filter.mp hy).2
-  rw [← hfib y]
-  refine congrArg Finset.card (Finset.ext fun x => ?_)
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-  exact ⟨fun h => h.2, fun h => ⟨h ▸ hy', h⟩⟩
+/-- **Summing a function of the reduction modulo a divisor.** For `m ∣ n`, a function of the
+reduction modulo `m` summed over the residues modulo `n` is `n / m` times its sum over the residues
+modulo `m`: every fibre of the reduction has `n / m` elements. -/
+theorem sum_comp_natCast_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n] (hmn : m ∣ n)
+    (f : ZMod m → M) : ∑ x : ZMod n, f (x.val : ZMod m) = (n / m) • ∑ y : ZMod m, f y := by
+  have hφ : Function.Surjective (castHom hmn (ZMod m) : ZMod n →+ ZMod m) :=
+    castHom_surjective hmn
+  -- summing `1` along the reduction shows that its kernel has `n / m` elements
+  have hker := AddMonoidHom.sum_comp_of_surjective _ hφ fun _ ↦ (1 : ℕ)
+  simp only [sum_const, card_univ, ZMod.card, smul_eq_mul, mul_one] at hker
+  simpa only [AddMonoidHom.coe_ofClass, castHom_apply, natCast_val,
+    Nat.eq_div_of_mul_eq_left (NeZero.ne m) hker.symm] using
+    AddMonoidHom.sum_comp_of_surjective _ hφ f
 
 /-- **Counting a condition on the reduction modulo a divisor.** For `m ∣ n`, the residues modulo
 `n` whose reduction modulo `m` satisfies `Q` are `n / m` times as many as the residues modulo `m`
@@ -81,41 +87,98 @@ satisfying `Q`, stated without the quotient. -/
 theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
     (Q : ZMod m → Prop) [DecidablePred Q] :
     m * #{x : ZMod n | Q (x.val : ZMod m)} = n * #{y : ZMod m | Q y} := by
-  have h2 := card_filter_natCast_val_eq_mul_card_fiber hmn (fun _ => True)
-  simp only [Finset.filter_true, Finset.card_univ, ZMod.card] at h2
-  rw [card_filter_natCast_val_eq_mul_card_fiber hmn Q]
-  calc m * (#{y : ZMod m | Q y} * #{x : ZMod n | (x.val : ZMod m) = 0})
-      = m * #{x : ZMod n | (x.val : ZMod m) = 0} * #{y : ZMod m | Q y} := by ring
-    _ = n * #{y : ZMod m | Q y} := by rw [← h2]
+  rw [card_filter, card_filter, sum_comp_natCast_val hmn fun y ↦ if Q y then 1 else 0,
+    smul_eq_mul, ← mul_assoc, Nat.mul_div_cancel' hmn]
 
-/-- **Summing a function of the reduction modulo a divisor.** For `m ∣ n`, a function of the
-reduction modulo `m` summed over the residues modulo `n` is `n / m` times its sum over the residues
-modulo `m`: every fibre of the reduction has `n / m` elements. -/
-theorem sum_comp_natCast_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n] (hmn : m ∣ n)
-    (f : ZMod m → M) : ∑ x : ZMod n, f (x.val : ZMod m) = (n / m) • ∑ y : ZMod m, f y := by
+/-- **Summing over the representatives.** A function of the least nonnegative representative
+summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M) :
+    ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
+  rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
+  simp
+
+/-- **Summing the reciprocals of the representatives.** The reciprocals of the least nonnegative
+representatives of the residues modulo `n` sum to the harmonic number `H_{n-1}`; the residue `0`
+contributes `0⁻¹ = 0`. -/
+theorem sum_inv_val_eq_harmonic {K : Type*} [DivisionRing K] [CharZero K] [NeZero n] :
+    ∑ x : ZMod n, ((x.val : ℕ) : K)⁻¹ = harmonic (n - 1) := by
+  rw [sum_val_eq_sum_range (fun i ↦ ((i : ℕ) : K)⁻¹)]
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
+  rw [sum_range_succ', harmonic]
+  push_cast
+  simp
+
+/-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
+bounded by one plus the logarithm of the modulus. -/
+theorem sum_inv_val_le_one_add_log {N : ℕ} [NeZero N] :
+    ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ ≤ 1 + Real.log N := by
+  have hh : ∑ j ∈ range N, (j : ℝ)⁻¹ ≤ (harmonic N : ℝ) := by
+    rw [sum_range_eq_add_Ico _ (NeZero.pos N), harmonic_eq_sum_Icc]
+    simp only [Nat.cast_zero, _root_.inv_zero, zero_add, Rat.cast_sum, Rat.cast_inv,
+      Rat.cast_natCast]
+    exact sum_le_sum_of_subset_of_nonneg Ico_subset_Icc_self fun j _ _ ↦ by positivity
+  have he : ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ =
+      ∑ k : ZMod N, (k.val : ℝ)⁻¹ := by
+    rw [← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
+    simp
+  rw [he, ZMod.sum_val_eq_sum_range (fun j ↦ (j : ℝ)⁻¹)]
+  exact hh.trans (harmonic_le_one_add_log N)
+
+/-- Split a sum over an integer interval with endpoints divisible by the modulus into
+complete residue blocks. The summand need not be periodic. -/
+theorem sum_Ico_mul {A : Type*} [AddCommMonoid A] [NeZero n] (l u : ℤ) (f : ℤ → A) :
+    ∑ z ∈ Ico l u, ∑ a : ZMod n, f ((a.val : ℤ) + n * z) =
+      ∑ k ∈ Ico (n * l) (n * u), f k := by
   classical
-  have hsurj : Function.Surjective fun x : ZMod n ↦ (x.val : ZMod m) := fun y ↦ by
-    obtain ⟨x, hx⟩ := castHom_surjective hmn y
-    exact ⟨x, by dsimp only; rwa [natCast_val, ← castHom_apply]⟩
-  have hfib (y : ZMod m) : #{x : ZMod n | (x.val : ZMod m) = y} = n / m := by
-    have h := mul_card_filter_natCast_val hmn (· = y)
-    simp only [Finset.filter_eq', Finset.mem_univ, ↓reduceIte, Finset.card_singleton,
-      mul_one] at h
-    exact Nat.eq_div_of_mul_eq_right (NeZero.ne m) h
-  rw [Finset.sum_comp, Finset.image_univ_of_surjective hsurj, Finset.smul_sum]
-  exact Finset.sum_congr rfl fun y _ ↦ by rw [hfib]
+  rw [← sum_product' (Ico l u) univ (fun z (a : ZMod n) ↦ f ((a.val : ℤ) + n * z))]
+  refine sum_bij (fun p _ ↦ (p.2.val : ℤ) + n * p.1) ?_ ?_ ?_ (by intros; rfl)
+  · rintro ⟨z, a⟩ hp
+    have hz := mem_Ico.mp (mem_product.mp hp).1
+    have ha := a.val_lt
+    simp only [mem_Ico]
+    constructor <;> nlinarith
+  · rintro ⟨z, a⟩ _ ⟨w, b⟩ hq hab
+    have hab' := congrArg (fun k : ℤ ↦ (k : ZMod n)) hab
+    simp only [Int.cast_add, Int.cast_natCast, ZMod.natCast_zmod_val, Int.cast_mul,
+      ZMod.natCast_self, zero_mul, add_zero] at hab'
+    subst b
+    have hn : (n : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+    have : z = w := mul_left_cancel₀ hn (add_left_cancel hab)
+    simp [this]
+  · intro k hk
+    obtain ⟨z, hz⟩ := (ZMod.intCast_eq_iff n k (k : ZMod n)).mp rfl
+    refine ⟨(z, k), mem_product.mpr ⟨?_, mem_univ _⟩, hz.symm⟩
+    have ha := (k : ZMod n).val_lt
+    have hk := mem_Ico.mp hk
+    simp only [mem_Ico]
+    constructor <;> nlinarith
+
+/-- **Summing over the multiples of `n / m`.** For `m ∣ n`, the representatives modulo `n` that
+are multiples of `n / m` are the `(n / m) y` with `y < m`, so a function of the quotient summed
+over them is its sum over the residues modulo `m`. -/
+theorem sum_ite_dvd_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n] (hmn : m ∣ n)
+    (f : ℕ → M) :
+    ∑ x : ZMod n, (if n / m ∣ x.val then f (x.val / (n / m)) else 0) = ∑ y : ZMod m, f y.val := by
+  obtain ⟨L, rfl⟩ := hmn
+  have hL : 0 < L := Nat.pos_of_mul_pos_left (NeZero.pos (m * L))
+  rw [Nat.mul_div_cancel_left _ (NeZero.pos m),
+    sum_val_eq_sum_range (fun i ↦ if L ∣ i then f (i / L) else 0), sum_val_eq_sum_range f,
+    ← sum_filter, eq_comm]
+  -- the multiples of `L` below `m * L` are the `q * L` with `q < m`
+  refine sum_nbij' (· * L) (· / L) (fun q hq ↦ ?_) (fun i hi ↦ ?_)
+    (fun q _ ↦ Nat.mul_div_cancel q hL) (fun i hi ↦ Nat.div_mul_cancel (mem_filter.mp hi).2)
+    fun q _ ↦ congrArg f (Nat.mul_div_cancel q hL).symm
+  · exact mem_filter.mpr
+      ⟨mem_range.mpr (Nat.mul_lt_mul_of_pos_right (mem_range.mp hq) hL), dvd_mul_left L q⟩
+  · exact mem_range.mpr (Nat.div_lt_of_lt_mul (mul_comm m L ▸ mem_range.mp (mem_filter.mp hi).1))
 
 /-- **All residues but zero have a representative the modulus does not divide.** A representative
 is smaller than the modulus, so the modulus divides it exactly when it vanishes. -/
 @[simp]
 theorem card_filter_not_self_dvd_val [NeZero m] : #{z : ZMod m | ¬m ∣ z.val} = m - 1 := by
-  have hzero : ∀ z : ZMod m, m ∣ z.val ↔ z = 0 := fun z =>
-    ⟨fun hdvd => (ZMod.val_eq_zero z).mp (Nat.eq_zero_of_dvd_of_lt hdvd z.val_lt),
-      fun h => by simp [h]⟩
-  have herase : ({z : ZMod m | ¬m ∣ z.val} : Finset (ZMod m)) = Finset.univ.erase 0 := by
-    ext z
-    simp [hzero, Finset.mem_erase]
-  rw [herase, Finset.card_erase_of_mem (Finset.mem_univ 0), Finset.card_univ, ZMod.card]
+  -- the modulus divides a representative exactly when the residue vanishes
+  simp only [← natCast_eq_zero_iff, natCast_zmod_val]
+  rw [filter_ne', card_erase_of_mem (mem_univ 0), card_univ, ZMod.card]
 
 /-- **Counting independent conditions on coprime factors.** If the moduli `a i` are pairwise
 coprime, the residues modulo `∏ i, a i` whose reduction modulo each `a i` satisfies `Q i` are

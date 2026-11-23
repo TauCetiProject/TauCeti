@@ -147,8 +147,8 @@ theorem exists_ringOfIntegers_equiv_integralPowerBasis (e : ℕ) [NeZero e] :
   have : IsCyclotomicExtension {e} ℚ (CyclotomicField e ℚ) :=
     CyclotomicField.isCyclotomicExtension e ℚ
   intro hζ
-  obtain ⟨ι, hι⟩ := hζ.exists_algHom_apply_eq (cyclotomic.irreducible_rat (NeZero.pos e))
-    (isPrimitiveRoot_complexRoot (e := e))
+  obtain ⟨ι, hι, -⟩ := hζ.existsUnique_algHom_apply_eq
+    (cyclotomic.irreducible_rat (NeZero.pos e)) (isPrimitiveRoot_complexRoot (e := e))
   exact ⟨hζ.cyclotomicEquivRingOfIntegers, ι, hι,
     by rw [hζ.cyclotomicEquivRingOfIntegers_zeta]; exact RingOfIntegers.map_mk _ _,
     hζ.map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding hι,
@@ -160,7 +160,7 @@ coordinates of `ζ₃²` in the integral power basis of `ℚ(ζ₃)` are `-1`. -
 example {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {3} ℚ K] {ζ : K}
     (hζ : IsPrimitiveRoot ζ 3) (j : Fin hζ.integralPowerBasis.dim) :
     hζ.integralPowerBasis.basis.repr (hζ.toInteger ^ 2) j = -1 := by
-  have hj : (j : ℕ) < 2 := by simpa [Nat.totient_prime Nat.prime_three] using j.2
+  have hj : (j : ℕ) < 2 := by simpa [Nat.totient_prime Nat.prime_three] using j.isLt
   rw [← hζ.cyclotomicEquivRingOfIntegers_zeta, ← map_pow, hζ.repr_cyclotomicEquivRingOfIntegers]
   interval_cases (j : ℕ) <;> decide
 

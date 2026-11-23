@@ -44,7 +44,7 @@ universe u
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular) (σ : Φ.cones)
   {ι : Type*} [Fintype ι]
-  (e : IntegralCharacter (N ⧸ coneSublattice i σ.1) ≃+ (ι →₀ ℤ))
+  (e : IntegralCharacter (N ⧸ coneSublattice i σ.val) ≃+ (ι →₀ ℤ))
 
 /-- The complex structure on the global orbit of `σ`, transported from its quotient torus.
 The topology is the subspace topology of the analytic realization. -/
@@ -67,7 +67,7 @@ noncomputable def analyticConeOrbitTorusDiffeomorph (n : ℕ∞ω) :
     let := Φ.analyticConeOrbitChartedSpace hΦ σ e
     let := complexTorusChartedSpace e
     (Φ.analyticConeOrbit hΦ σ) ≃ₘ^n⟮𝓘(ℂ, ι → ℂ), 𝓘(ℂ, ι → ℂ)⟯
-      ComplexTorus (N ⧸ coneSublattice i σ.1) := by
+      ComplexTorus (N ⧸ coneSublattice i σ.val) := by
   let := complexTorusChartedSpace e
   let := Φ.analyticConeOrbitChartedSpace hΦ σ e
   have h := (Φ.analyticConeOrbitTorusHomeomorph hΦ σ).isLocalHomeomorph
@@ -81,7 +81,7 @@ theorem coe_analyticConeOrbitTorusDiffeomorph (n : ℕ∞ω) :
     let := complexTorusChartedSpace e
     ⇑(Φ.analyticConeOrbitTorusDiffeomorph hΦ σ e n) =
       Φ.analyticConeOrbitTorusHomeomorph hΦ σ := by
-  simp only [analyticConeOrbitTorusDiffeomorph, coe_diffeomorphOfBijective]
+  simp only [analyticConeOrbitTorusDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
 
 /-- The inverse orbit biholomorphism has the inverse quotient-torus homeomorphism as its map. -/
 @[simp]
@@ -116,7 +116,7 @@ theorem contMDiff_subtypeVal_analyticConeOrbit (n : ℕ∞ω) :
   let := Φ.analyticChartedSpace hΦ
   have := Φ.contMDiffSMul_complexTorus_analyticRealization hΦ eN n
   obtain ⟨g, hg⟩ := exists_complexTorusMap_comp_complexTorusMap_eq_id
-    (QuotientAddGroup.mk'_surjective (coneSublattice i σ.1))
+    (QuotientAddGroup.mk'_surjective (coneSublattice i σ.val))
   have hc : ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n
       (fun t ↦ complexTorusMap g t • Φ.analyticDistinguishedPoint hΦ σ) :=
     (contMDiff_complexTorusMap e eN g n).smul
@@ -133,28 +133,28 @@ theorem contMDiff_subtypeVal_analyticConeOrbit (n : ℕ∞ω) :
 chart of the cone. Applying this to a coordinate character computes each quotient-torus
 coordinate. -/
 theorem val_analyticConeOrbitTorusHomeomorph_eq_monomial_symm
-    {k l s : ℕ} {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.1 ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s) (n : ℕ∞ω)
-    (x : Φ.analyticConeOrbit hΦ σ) (m : N ⧸ coneSublattice i σ.1 →+ ℤ) :
+    {k l s : ℕ} {B : Module.Basis (ToricRay σ.val ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.val ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.val) s) (n : ℕ∞ω)
+    (x : Φ.analyticConeOrbit hΦ σ) (m : N ⧸ coneSublattice i σ.val →+ ℤ) :
     let := affinePointTopology g
-    let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ g
     let := Φ.analyticChartedSpace hΦ
     ((Φ.analyticConeOrbitTorusHomeomorph hΦ σ x m : ℂˣ) : ℂ) =
-      (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.symm x.1
+      (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.symm x.val
         (MonoidAlgebra.single (ofAdd
-          ⟨m.comp (QuotientAddGroup.mk' (coneSublattice i σ.1)),
-            (Φ.isToricCone σ.2).rational.comp_mk'_mem_dualSemigroup Φ.lattice m⟩) 1) := by
+          ⟨m.comp (QuotientAddGroup.mk' (coneSublattice i σ.val)),
+            (Φ.isToricCone σ.property).rational.comp_mk'_mem_dualSemigroup Φ.lattice m⟩) 1) := by
   let := affinePointTopology g
-  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ g
   let := Φ.analyticChartedSpace hΦ
   obtain ⟨y, rfl⟩ := (Φ.analyticConeOrbitChartEquiv hΦ σ le_rfl).surjective x
   rw [Φ.analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit hΦ σ le_rfl hB κ g n,
     Equiv.symm_apply_apply]
-  have hy : y.1 ∈ affineConeOrbit Φ.lattice (⊤ : σ.1.Face) := by
-    simpa only [orbitFace_refl] using y.2
+  have hy : y.val ∈ affineConeOrbit Φ.lattice (⊤ : σ.val.Face) := by
+    simpa only [orbitFace_refl] using y.property
   have hx : Φ.analyticConeOrbitChartEquiv hΦ σ le_rfl y =
-      ⟨Φ.analyticAffineChartι hΦ σ y.1,
+      ⟨Φ.analyticAffineChartι hΦ σ y.val,
         (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).2 rfl⟩ :=
     Subtype.ext (Φ.coe_analyticConeOrbitChartEquiv_apply hΦ σ le_rfl y)
   rw [hx]
@@ -168,33 +168,33 @@ theorem contMDiff_subtypeVal_analyticConeOrbit_comp_iff
     {f : M → Φ.analyticConeOrbit hΦ σ} {n : ℕ∞ω} :
     let := Φ.analyticConeOrbitChartedSpace hΦ σ e
     let := Φ.analyticChartedSpace hΦ
-    ContMDiff I 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (fun x ↦ (f x).1) ↔
+    ContMDiff I 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (fun x ↦ (f x).val) ↔
       ContMDiff I 𝓘(ℂ, ι → ℂ) n f := by
   classical
   let := complexTorusChartedSpace e
   let := Φ.analyticConeOrbitChartedSpace hΦ σ e
   let := Φ.analyticChartedSpace hΦ
   refine ⟨fun hf ↦ ?_, (Φ.contMDiff_subtypeVal_analyticConeOrbit hΦ σ e n).comp⟩
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
   let g := (Φ.analyticChartGenerators σ).2
   let := affinePointTopology g
   let := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
   let P := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n
   have hp := P.contMDiffOn_invFun.comp_contMDiff hf fun x ↦
     Φ.mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
-      hΦ σ le_rfl hB κ g n (f x).2
+      hΦ σ le_rfl hB κ g n (f x).property
   have htorus : ContMDiff I 𝓘(ℂ, ι → ℂ) n
       (fun x ↦ Φ.analyticConeOrbitTorusHomeomorph hΦ σ (f x)) := by
     apply (contMDiff_complexTorusAmbient_comp_iff e).1
     rw [contMDiff_pi_module_iff]
     intro j
     let m := e.symm (Finsupp.single j 1)
-    let s : dualSemigroup Φ.lattice σ.1 :=
-      ⟨m.comp (QuotientAddGroup.mk' (coneSublattice i σ.1)),
-        (Φ.isToricCone σ.2).rational.comp_mk'_mem_dualSemigroup Φ.lattice m⟩
+    let s : dualSemigroup Φ.lattice σ.val :=
+      ⟨m.comp (QuotientAddGroup.mk' (coneSublattice i σ.val)),
+        (Φ.isToricCone σ.property).rational.comp_mk'_mem_dualSemigroup Φ.lattice m⟩
     exact ((contMDiff_apply_single Φ.lattice hσ.toIsToricCone hB κ g s n).comp hp).congr
       fun x ↦ by
         simpa only [Function.comp_apply, complexTorusAmbient_apply, PartialEquiv.invFun_as_coe,
@@ -206,7 +206,7 @@ theorem contMDiff_subtypeVal_analyticConeOrbit_comp_iff
 /-- Changing the presentation of the quotient character lattice preserves the complex structure
 on the global orbit. -/
 theorem contMDiff_id_analyticConeOrbitChartedSpace {ι' : Type*} [Fintype ι']
-    (e' : IntegralCharacter (N ⧸ coneSublattice i σ.1) ≃+ (ι' →₀ ℤ)) (n : ℕ∞ω) :
+    (e' : IntegralCharacter (N ⧸ coneSublattice i σ.val) ≃+ (ι' →₀ ℤ)) (n : ℕ∞ω) :
     @ContMDiff ℂ _ (ι → ℂ) _ _ (ι → ℂ) _ 𝓘(ℂ, ι → ℂ)
       (Φ.analyticConeOrbit hΦ σ) _ (Φ.analyticConeOrbitChartedSpace hΦ σ e)
       (ι' → ℂ) _ _ (ι' → ℂ) _ 𝓘(ℂ, ι' → ℂ)
@@ -218,56 +218,56 @@ theorem contMDiff_id_analyticConeOrbitChartedSpace {ι' : Type*} [Fintype ι']
 /-- The global quotient-torus structure agrees with the affine orbit structure for any
 containing cone, extending basis and finite monomial generating family. -/
 noncomputable def analyticConeOrbitChartDiffeomorph {υ : Φ.cones} (h : σ ≤ υ)
-    {l s : ℕ} {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    {l s : ℕ} {B : Module.Basis (ToricRay υ.val ⊕ Fin l) ℤ N}
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s)
-    [Fintype {ρ : ToricRay υ.1 // ρ ∉
-      ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.val) s)
+    [Fintype {ρ : ToricRay υ.val // ρ ∉
+      ((isRegular_iff.mp hΦ) υ.val υ.property).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
     (n : ℕ∞ω) :
     letI := affinePointTopology g
-    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
       hB (Φ.orbitFace h) g
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     (affineConeOrbit Φ.lattice (Φ.orbitFace h)) ≃ₘ^n⟮
-      𝓘(ℂ, (({ρ : ToricRay υ.1 // ρ ∉
-        ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace h)} → ℂ) ×
+      𝓘(ℂ, (({ρ : ToricRay υ.val // ρ ∉
+        ((isRegular_iff.mp hΦ) υ.val υ.property).faceOrderIso Φ.lattice (Φ.orbitFace h)} → ℂ) ×
           (Fin l → ℂ))), 𝓘(ℂ, ι → ℂ)⟯ Φ.analyticConeOrbit hΦ σ := by
-  have : Finite (ToricRay υ.1) :=
-    ToricRay.finite_of_fg ((isRegular_iff.mp hΦ) υ.1 υ.2).fg
-  let κ := Finite.equivFin (ToricRay υ.1)
+  have : Finite (ToricRay υ.val) :=
+    ToricRay.finite_of_fg ((isRegular_iff.mp hΦ) υ.val υ.property).fg
+  let κ := Finite.equivFin (ToricRay υ.val)
   letI := affinePointTopology g
-  letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+  letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
     hB (Φ.orbitFace h) g
-  letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
+  letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property).toIsToricCone hB κ g
   letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
   letI := Φ.analyticChartedSpace hΦ
   let d := Φ.analyticConeOrbitChartEquiv hΦ σ h
   refine { toEquiv := d, contMDiff_toFun := ?_, contMDiff_invFun := ?_ }
   · apply (Φ.contMDiff_subtypeVal_analyticConeOrbit_comp_iff hΦ σ e).1
     exact ((Φ.contMDiff_analyticAffineChartι hΦ υ hB κ g n).comp
-      (contMDiff_subtypeVal_affineConeOrbit Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+      (contMDiff_subtypeVal_affineConeOrbit Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
         hB κ (Φ.orbitFace h) g n)).congr fun x ↦
           Φ.coe_analyticConeOrbitChartEquiv_apply hΦ σ h x
   · apply contMDiff_of_contMDiff_subtypeVal_affineConeOrbit Φ.lattice
-      ((isRegular_iff.mp hΦ) υ.1 υ.2) hB κ (Φ.orbitFace h) g
+      ((isRegular_iff.mp hΦ) υ.val υ.property) hB κ (Φ.orbitFace h) g
     let P := Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n
     exact (P.contMDiffOn_invFun.comp_contMDiff
       (Φ.contMDiff_subtypeVal_analyticConeOrbit hΦ σ e n) (fun x ↦
         Φ.mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
-          hΦ σ h hB κ g n x.2)).congr fun x ↦
+          hΦ σ h hB κ g n x.property)).congr fun x ↦
       (Φ.analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit hΦ σ h hB κ g n x).symm
 
 /-- The affine orbit biholomorphism is the existing affine parametrization of the global orbit. -/
 @[simp]
 theorem coe_analyticConeOrbitChartDiffeomorph {υ : Φ.cones} (h : σ ≤ υ)
-    {l s : ℕ} {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    {l s : ℕ} {B : Module.Basis (ToricRay υ.val ⊕ Fin l) ℤ N}
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s)
-    [Fintype {ρ : ToricRay υ.1 // ρ ∉
-      ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.val) s)
+    [Fintype {ρ : ToricRay υ.val // ρ ∉
+      ((isRegular_iff.mp hΦ) υ.val υ.property).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
     (n : ℕ∞ω) :
     letI := affinePointTopology g
-    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
       hB (Φ.orbitFace h) g
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     ⇑(Φ.analyticConeOrbitChartDiffeomorph hΦ σ e h hB g n) =
@@ -277,14 +277,14 @@ theorem coe_analyticConeOrbitChartDiffeomorph {υ : Φ.cones} (h : σ ≤ υ)
 /-- The inverse affine orbit biholomorphism is the inverse affine parametrization. -/
 @[simp]
 theorem coe_analyticConeOrbitChartDiffeomorph_symm {υ : Φ.cones} (h : σ ≤ υ)
-    {l s : ℕ} {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    {l s : ℕ} {B : Module.Basis (ToricRay υ.val ⊕ Fin l) ℤ N}
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s)
-    [Fintype {ρ : ToricRay υ.1 // ρ ∉
-      ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.val) s)
+    [Fintype {ρ : ToricRay υ.val // ρ ∉
+      ((isRegular_iff.mp hΦ) υ.val υ.property).faceOrderIso Φ.lattice (Φ.orbitFace h)}]
     (n : ℕ∞ω) :
     letI := affinePointTopology g
-    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
       hB (Φ.orbitFace h) g
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     ⇑(Φ.analyticConeOrbitChartDiffeomorph hΦ σ e h hB g n).symm =
@@ -295,34 +295,34 @@ theorem coe_analyticConeOrbitChartDiffeomorph_symm {υ : Φ.cones} (h : σ ≤ �
 any two affine orbit charts. -/
 theorem analyticConeOrbitChartDiffeomorph_trans_symm {υ ν : Φ.cones}
     (hσυ : σ ≤ υ) (hσν : σ ≤ ν) {kυ lυ sυ kν lν sν : ℕ}
-    {Bυ : Module.Basis (ToricRay υ.1 ⊕ Fin lυ) ℤ N}
+    {Bυ : Module.Basis (ToricRay υ.val ⊕ Fin lυ) ℤ N}
     (hBυ : ∀ ρ, IsPrimitiveGenerator i ρ (Bυ (Sum.inl ρ)))
-    (κυ : ToricRay υ.1 ≃ Fin kυ)
-    (gυ : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) sυ)
-    {Bν : Module.Basis (ToricRay ν.1 ⊕ Fin lν) ℤ N}
+    (κυ : ToricRay υ.val ≃ Fin kυ)
+    (gυ : AddGeneratingFamily (dualSemigroup Φ.lattice υ.val) sυ)
+    {Bν : Module.Basis (ToricRay ν.val ⊕ Fin lν) ℤ N}
     (hBν : ∀ ρ, IsPrimitiveGenerator i ρ (Bν (Sum.inl ρ)))
-    (κν : ToricRay ν.1 ≃ Fin kν)
-    (gν : AddGeneratingFamily (dualSemigroup Φ.lattice ν.1) sν)
-    [Fintype {ρ : ToricRay υ.1 // ρ ∉
-      ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace hσυ)}]
-    [Fintype {ρ : ToricRay ν.1 // ρ ∉
-      ((isRegular_iff.mp hΦ) ν.1 ν.2).faceOrderIso Φ.lattice (Φ.orbitFace hσν)}]
+    (κν : ToricRay ν.val ≃ Fin kν)
+    (gν : AddGeneratingFamily (dualSemigroup Φ.lattice ν.val) sν)
+    [Fintype {ρ : ToricRay υ.val // ρ ∉
+      ((isRegular_iff.mp hΦ) υ.val υ.property).faceOrderIso Φ.lattice (Φ.orbitFace hσυ)}]
+    [Fintype {ρ : ToricRay ν.val // ρ ∉
+      ((isRegular_iff.mp hΦ) ν.val ν.property).faceOrderIso Φ.lattice (Φ.orbitFace hσν)}]
     (n : ℕ∞ω) :
     letI := affinePointTopology gυ
-    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
       hBυ (Φ.orbitFace hσυ) gυ
     letI := affinePointTopology gν
-    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.1 ν.2)
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.val ν.property)
       hBν (Φ.orbitFace hσν) gν
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     (Φ.analyticConeOrbitChartDiffeomorph hΦ σ e hσυ hBυ gυ n).trans
         (Φ.analyticConeOrbitChartDiffeomorph hΦ σ e hσν hBν gν n).symm =
       Φ.analyticConeOrbitDiffeomorph hΦ hσυ hσν hBυ κυ gυ hBν κν gν n := by
   let := affinePointTopology gυ
-  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.val υ.property)
     hBυ (Φ.orbitFace hσυ) gυ
   let := affinePointTopology gν
-  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.1 ν.2)
+  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.val ν.property)
     hBν (Φ.orbitFace hσν) gν
   let := Φ.analyticConeOrbitChartedSpace hΦ σ e
   apply Diffeomorph.ext

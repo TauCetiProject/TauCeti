@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Affine
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
@@ -57,10 +58,10 @@ variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
 -- monomial. The degree of a monomial in the image of a list map is not definitionally its length.
 private lemma tildeSymmetricPowerIso_hom_toOpen_of_eq_prod (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (l : List M) {n : ℕ} (hl : l.length = n) (x : M.symmetricPower n)
-    (hx : x.1 = (l.map (SymmetricAlgebra.ι R M)).prod)
+    (hx : x.val = (l.map (SymmetricAlgebra.ι R M)).prod)
     (y : (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val
       (.op U)).symmetricPower n)
-    (hy : y.1 = (l.map fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
+    (hy : y.val = (l.map fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
       (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
       (tilde.toOpen M U m)).prod) :
     (tildeSymmetricPowerIso n M).hom.val.app (.op U) (tilde.toOpen (M.symmetricPower n) U x) =
@@ -106,7 +107,7 @@ private lemma symmetricPower_map_pullbackSymmetricPowerComparison_app_val_app_un
               ((TopologicalSpace.Opens.map f.base).op.obj U))).symm
               (((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M ≫
                 (Scheme.Modules.pushforward f).map ψ).val.app U)) n x)) := by
-  have hw := TauCeti.SheafOfModules.pullbackSymmetricPowerComparison_app_val_app_unit
+  have hw := SheafOfModules.pullbackSymmetricPowerComparison_app_val_app_unit
     (Scheme.Modules.pullbackPushforwardAdjunction f) n M U x
   rw [← Scheme.Modules.pullbackSymmetricPowerComparison_eq] at hw
   refine (congrArg (((SheafOfModules.symmetricPower X.sheaf n).map ψ).val.app
@@ -149,8 +150,7 @@ theorem pullback_tildeSymmetricPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
   erw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit,
     Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
   apply ModuleCat.symmetricPower.hom_ext
-  intro l hl hx
-  subst hl
+  rintro l rfl hx
   let x : M.symmetricPower l.length := ⟨_, hx⟩
   -- Evaluate both adjunction transposes on the associated global section of `x`; the
   -- global-section functor and the pushforward retain the underlying functions.
@@ -166,16 +166,19 @@ theorem pullback_tildeSymmetricPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
         (((tildeFunctorCompPullbackIso φ).hom.app (M.symmetricPower l.length)).val.app (op ⊤)
           ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
             (tilde.toOpen (M.symmetricPower l.length) ⊤ x))))
-  have hunit := ConcreteCategory.congr_hom (congrArg (fun f ↦ f.val.app (op ⊤))
-    (adj.unit.naturality (tildeSymmetricPowerIso l.length M).hom))
-    (tilde.toOpen (M.symmetricPower l.length) ⊤ x)
-  -- Naturality is an equality of sheaf composites; display their values on this section.
-  change (adj.unit.app ((SheafOfModules.symmetricPower (Spec R).sheaf l.length).obj
-      (tilde M))).val.app (op ⊤) ((tildeSymmetricPowerIso l.length M).hom.val.app (op ⊤)
+  -- Naturality of the unit moves the affine comparison past it.
+  have hunit : (adj.unit.app ((SheafOfModules.symmetricPower (Spec R).sheaf l.length).obj
+      (tilde M))).val.app (op ⊤)
+      ((tildeSymmetricPowerIso l.length M).hom.val.app (op ⊤)
         (tilde.toOpen (M.symmetricPower l.length) ⊤ x)) =
-    (P.map (tildeSymmetricPowerIso l.length M).hom).val.app (op ⊤)
-      ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
-        (tilde.toOpen (M.symmetricPower l.length) ⊤ x)) at hunit
+      (P.map (tildeSymmetricPowerIso l.length M).hom).val.app (op ⊤)
+        ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
+          (tilde.toOpen (M.symmetricPower l.length) ⊤ x)) := by
+    have h := (Scheme.Hom.pullbackSections_naturality (Spec.map φ) _ ⊤
+      (tildeSymmetricPowerIso l.length M).hom
+      (tilde.toOpen (M.symmetricPower l.length) ⊤ x)).symm
+    erw [Scheme.Hom.pullbackSections_apply, Scheme.Hom.pullbackSections_apply] at h
+    exact h
   let C := ((SheafOfModules.symmetricPower (Spec S).sheaf l.length).map
     ((tildeFunctorCompPullbackIso φ).hom.app M)).val.app (op ⊤)
   let K := ((Scheme.Modules.pullbackSymmetricPowerComparison (Spec.map φ) l.length).app
@@ -191,13 +194,17 @@ theorem pullback_tildeSymmetricPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
   -- The right side: the affine pullback isomorphism and the scalar-extension isomorphism send the
   -- monomial to the monomial in the `1 ⊗ mᵢ`, which the affine comparison sheafifies.
   refine Eq.symm ?_
-  let e := (φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom
-  have hmap := ConcreteCategory.congr_hom (tilde.toOpen_map_app e ⊤) ((1 : S) ⊗ₜ[R,φ.hom] x)
-  refine (congrArg (fun t ↦ (tildeSymmetricPowerIso l.length
-      ((ModuleCat.extendScalars φ.hom).obj M)).hom.val.app (op ⊤) ((tilde.map e).val.app (op ⊤) t))
-    (tildeFunctorCompPullbackIso_hom_app_unit_toOpen φ (M.symmetricPower l.length) x)).trans ?_
   refine (congrArg ((tildeSymmetricPowerIso l.length
-      ((ModuleCat.extendScalars φ.hom).obj M)).hom.val.app (op ⊤)) hmap).trans ?_
+      ((ModuleCat.extendScalars φ.hom).obj M)).hom.val.app (op ⊤))
+    (by
+      rw [tildeFunctorCompPullbackIso_hom_app_unit_toOpen]
+      exact ConcreteCategory.congr_hom (tilde.toOpen_map_app _ ⊤) _ :
+      (tilde.map (φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom).val.app (op ⊤)
+        (((tildeFunctorCompPullbackIso φ).hom.app (M.symmetricPower l.length)).val.app (op ⊤)
+          ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
+            (tilde.toOpen (M.symmetricPower l.length) ⊤ x))) =
+        tilde.toOpen _ ⊤ ((φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom
+          ((1 : S) ⊗ₜ[R,φ.hom] x)))).trans ?_
   refine tildeSymmetricPowerIso_hom_toOpen_of_eq_prod _ ⊤
     (l.map fun m ↦ (1 : S) ⊗ₜ[R,φ.hom] m) (List.length_map _) _ ?_ _ ?_
   · exact (φ.hom.coe_extendScalarsSymmetricPowerIso_hom_one_tmul_prod M l hx).trans

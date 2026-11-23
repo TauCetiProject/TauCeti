@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
+public import Mathlib.CategoryTheory.Groupoid
+public import TauCeti.CategoryTheory.Category.Cat
 
 /-!
 # Whiskering strong transformations by a pseudofunctor
@@ -23,7 +25,10 @@ Whiskering preserves identities and composites up to the invertible modification
 `Pseudofunctor.whiskerLeftId` and `Pseudofunctor.whiskerLeftComp`, whose components are
 identities. The file also records `Pseudofunctor.StrongTrans.isoApp`, the component
 `η.app a ≅ θ.app a` of an invertible modification `η ≅ θ`, analogous to `Iso.app` for natural
-isomorphisms.
+isomorphisms. Conversely, `StrongTrans.isIso_of_isIso_app` proves that a modification is
+invertible whenever all its components are invertible. Consequently, strong transformations into
+a `Cat`-valued pseudofunctor whose fibres are groupoids form a groupoid
+(`Pseudofunctor.isGroupoid_hom`).
 
 The last section restates the unit and composition conditions of a strong transformation for the
 comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositionally identities
@@ -97,6 +102,31 @@ lemma StrongTrans.isoApp_inv {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ
     (isoApp e a).inv = e.inv.as.app a :=
   (rfl)
 
+/-- A modification of strong transformations is invertible if all its components are. -/
+lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : η ⟶ θ)
+    [∀ a, IsIso (Θ.as.app a)] : IsIso Θ := by
+  let e : η ≅ θ := isoMk (fun a => asIso (Θ.as.app a)) (fun f => Θ.as.naturality f)
+  have he : e.hom = Θ := homCategory.ext (fun a => by simp [e])
+  rw [← he]
+  infer_instance
+
+/-- Strong transformations into a `Cat`-valued pseudofunctor whose fibres are groupoids form a
+groupoid, with modifications as morphisms: the components of a modification are natural
+transformations between functors into groupoids, hence invertible. -/
+instance isGroupoid_hom {F G : B ⥤ᵖ Cat.{v₃, w₃}} [∀ a, IsGroupoid (G.obj a)] :
+    IsGroupoid (F ⟶ G) where
+  all_isIso Θ := by
+    have (a : B) : IsIso (Θ.as.app a) := Cat.Hom₂.isIso_of_isIso_app _
+    exact StrongTrans.isIso_of_isIso_app Θ
+
+/-- The components of the modification `eqToHom e` between equal strong transformations are the
+`eqToHom` of the equality of their components. -/
+@[simp]
+lemma StrongTrans.eqToHom_as_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η = θ) (a : B) :
+    (eqToHom e).as.app a = eqToHom (congrArg (fun η ↦ η.app a) e) := by
+  subst e
+  rfl
+
 variable (P : B ⥤ᵖ B')
 
 /-- Whiskering the identity strong transformation gives the identity, up to the invertible
@@ -156,6 +186,7 @@ variable {F G : B ⥤ᵖ C}
 /-- The unit condition of a strong transformation, for a `1`-morphism `f` equal to an identity:
 the inverse naturality isomorphism at `f` is determined by the comparisons `F.mapId' f` and
 `G.mapId' f`. This generalizes `StrongTrans.naturality_id_inv`. -/
+@[to_app]
 lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) :
     (η.naturality f).inv = η.app a ◁ (G.mapId' f hf).hom ≫ (ρ_ (η.app a)).hom ≫
       (λ_ (η.app a)).inv ≫ (F.mapId' f hf).inv ▷ η.app a := by
@@ -177,6 +208,7 @@ lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c
 
 /-- The inverse form of `StrongTrans.naturality_comp'_hom`, generalizing
 `StrongTrans.naturality_comp_inv`. -/
+@[to_app]
 lemma naturality_comp'_inv (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).inv =
@@ -192,6 +224,7 @@ naturality isomorphisms of `η` along the two sides of the square, composed with
 isomorphisms of `F` and of `G`, agree. The two sides are arranged as the naturality isomorphisms
 of the composites of `η` with strong transformations whose naturality isomorphisms are the square
 isomorphisms, as in `CategoryTheory.Pseudofunctor.mapNatTrans`. -/
+@[to_app]
 lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁}
     {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂} (sq : CommSq t l r b) :
     F.map t ◁ (η.naturality r).hom ≫ (α_ _ _ _).inv ≫ (η.naturality t).hom ▷ G.map r ≫
@@ -214,18 +247,41 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
   rw [key l b sq.w.symm, reassoc_of% h₁]
   simp
 
+/-- The inverse form of `StrongTrans.naturality_isoMapOfCommSq_app`, for pseudofunctors into `Cat`:
+the inverse naturality isomorphisms of `η` along the two sides of a commutative square, composed
+with the square isomorphisms of `F` and of `G`, agree on every object. -/
+@[reassoc]
+lemma naturality_inv_isoMapOfCommSq_app [Strict B] {F G : B ⥤ᵖ Cat.{v₃, u₃}} (η : F ⟶ G)
+    {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁} {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂}
+    (sq : CommSq t l r b) (X : F.obj X₁) :
+    (G.map r).toFunctor.map ((η.naturality t).inv.toNatTrans.app X) ≫
+      (η.naturality r).inv.toNatTrans.app ((F.map t).toFunctor.obj X) ≫
+        (η.app Y₂).toFunctor.map ((F.isoMapOfCommSq sq).hom.toNatTrans.app X) =
+      (G.isoMapOfCommSq sq).hom.toNatTrans.app ((η.app X₁).toFunctor.obj X) ≫
+        (G.map b).toFunctor.map ((η.naturality l).inv.toNatTrans.app X) ≫
+          (η.naturality b).inv.toNatTrans.app ((F.map l).toFunctor.obj X) := by
+  -- Precompose with the forward naturality isomorphisms along `t` and `r` and use the
+  -- forward form.
+  rw [← cancel_epi ((G.map r).toFunctor.map ((η.naturality t).hom.toNatTrans.app X)),
+    ← cancel_epi ((η.naturality r).hom.toNatTrans.app _)]
+  simp only [← Functor.map_comp_assoc, Cat.Hom.hom_inv_id_toNatTrans_app, Functor.map_id,
+    Category.id_comp]
+  rw [reassoc_of% (η.naturality_isoMapOfCommSq_app sq X)]
+  simp [← Functor.map_comp_assoc]
+
 end StrongTrans
 
 /-- Naturality with respect to `2`-cells is automatic for a family of naturality
-isomorphisms between pseudofunctors out of a locally discrete bicategory. -/
+isomorphisms between pseudofunctors out of a locally discrete bicategory, such as
+`LocallyDiscrete B₀` for a category `B₀`. -/
 lemma naturality_naturality_of_locallyDiscrete
-    {B₀ : Type*} [Category B₀] (F G : LocallyDiscrete B₀ ⥤ᵖ C)
+    [IsLocallyDiscrete B] (F G : B ⥤ᵖ C)
     (app : ∀ a, F.obj a ⟶ G.obj a)
     (naturality : ∀ {a b} (f : a ⟶ b), F.map f ≫ app b ≅ app a ≫ G.map f)
-    {a b : LocallyDiscrete B₀} {f g : a ⟶ b} (η : f ⟶ g) :
+    {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
     F.map₂ η ▷ app b ≫ (naturality g).hom =
       (naturality f).hom ≫ app a ◁ G.map₂ η := by
-  obtain rfl := LocallyDiscrete.eq_of_hom η
+  obtain rfl := obj_ext_of_isDiscrete η
   rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
   simp
 

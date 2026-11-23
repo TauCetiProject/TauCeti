@@ -36,7 +36,10 @@ imaginary part in `(-π, π]`.
 * `TauCeti.span_setOf_isAlgebraic_exp_eq`: `𝓛` is the `ℚ`-span of its defining set.
 * `TauCeti.mem_algebraicLogs_iff_exists_int`: `λ ∈ 𝓛` if and only if
   `λ = log α + 2πik` for a nonzero algebraic number `α` and an integer `k`.
-* `TauCeti.log_mem_algebraicLogs`: the principal logarithm of an algebraic number lies in `𝓛`.
+* `TauCeti.log_mem_algebraicLogs_iff`: the principal logarithm `log α` lies in `𝓛` if and only if
+  `α` is algebraic.
+* `TauCeti.ofReal_log_mem_algebraicLogs_iff`: the real logarithm `Real.log x` lies in `𝓛` if and
+  only if `x` is algebraic.
 * `TauCeti.intCast_mul_two_pi_I_mem_algebraicLogs`: `2πik ∈ 𝓛` for every integer `k`.
 * `TauCeti.conj_mem_algebraicLogs`: `𝓛` is stable under complex conjugation.
 
@@ -68,7 +71,7 @@ noncomputable def algebraicLogs : Submodule ℚ ℂ where
       rw [Rat.smul_def, ← mul_assoc]
       congr 1
       exact_mod_cast q.den_mul_eq_num
-    rw [← exp_nat_mul, h, exp_int_mul]
+    rw [← exp_natCast_mul, h, exp_intCast_mul]
     rcases Int.eq_nat_or_neg q.num with ⟨m, hm | hm⟩ <;> rw [hm]
     · simpa using hl.pow m
     · simpa using (hl.pow m).inv
@@ -88,11 +91,12 @@ theorem span_setOf_isAlgebraic_exp_eq :
     Submodule.span ℚ {l : ℂ | IsAlgebraic ℚ (exp l)} = algebraicLogs := by
   rw [← coe_algebraicLogs, Submodule.span_eq]
 
-/-- The principal logarithm of an algebraic number lies in `𝓛`. This includes `log 0 = 0`. -/
-theorem log_mem_algebraicLogs {α : ℂ} (hα : IsAlgebraic ℚ α) : log α ∈ algebraicLogs := by
+/-- The principal logarithm `log α` lies in `𝓛` if and only if `α` is algebraic. This includes
+`α = 0`, where `log 0 = 0 ∈ 𝓛` and `0` is algebraic. -/
+theorem log_mem_algebraicLogs_iff {α : ℂ} : log α ∈ algebraicLogs ↔ IsAlgebraic ℚ α := by
   rcases eq_or_ne α 0 with rfl | h0
-  · simp
-  · rwa [mem_algebraicLogs, exp_log h0]
+  · simpa using isAlgebraic_zero
+  · rw [mem_algebraicLogs, exp_log h0]
 
 /-- `2πik ∈ 𝓛` for every integer `k`, since `exp (2πik) = 1`. -/
 theorem intCast_mul_two_pi_I_mem_algebraicLogs (k : ℤ) :
@@ -112,18 +116,19 @@ theorem mem_algebraicLogs_iff_exists_int {l : ℂ} :
       ∃ α : ℂ, IsAlgebraic ℚ α ∧ α ≠ 0 ∧ ∃ k : ℤ, l = log α + k * (2 * Real.pi * I) := by
   refine ⟨fun hl ↦ ⟨exp l, hl, exp_ne_zero l, ?_⟩, ?_⟩
   · rw [← exp_eq_exp_iff_exists_int, exp_log (exp_ne_zero l)]
-  · rintro ⟨α, hα, h0, k, rfl⟩
-    exact add_mem (log_mem_algebraicLogs hα) (intCast_mul_two_pi_I_mem_algebraicLogs k)
+  · rintro ⟨α, hα, _, k, rfl⟩
+    exact add_mem (log_mem_algebraicLogs_iff.2 hα) (intCast_mul_two_pi_I_mem_algebraicLogs k)
 
-/-- The logarithm `log x` of a real algebraic number lies in `𝓛`; here `Real.log x = log |x|`,
-and `Real.log 0 = 0`. In particular `log q ∈ 𝓛` for every rational number `q`. -/
-theorem ofReal_log_mem_algebraicLogs {x : ℝ} (hx : IsAlgebraic ℚ x) :
-    (Real.log x : ℂ) ∈ algebraicLogs := by
-  have habs : IsAlgebraic ℚ |x| := by
-    rcases abs_choice x with h | h <;> rw [h]
-    exacts [hx, hx.neg]
-  rw [← Real.log_abs, ofReal_log (abs_nonneg x)]
-  exact log_mem_algebraicLogs (habs.algebraMap (A := ℂ))
+/-- The real logarithm `Real.log x` lies in `𝓛` if and only if `x` is algebraic; here
+`Real.log x = log |x|`, and `Real.log 0 = 0`. In particular `log q ∈ 𝓛` for every rational
+number `q`. -/
+theorem ofReal_log_mem_algebraicLogs_iff {x : ℝ} :
+    (Real.log x : ℂ) ∈ algebraicLogs ↔ IsAlgebraic ℚ x := by
+  rw [← Real.log_abs, ofReal_log (abs_nonneg x), log_mem_algebraicLogs_iff, ← coe_algebraMap,
+    isAlgebraic_algebraMap_iff (algebraMap ℝ ℂ).injective]
+  -- `|x|` is `x` or `-x`, and `-x` is algebraic if and only if `x` is.
+  rcases abs_choice x with h | h <;> rw [h]
+  exact ⟨fun hx ↦ by simpa using hx.neg, .neg⟩
 
 /-- `𝓛` is stable under complex conjugation: `exp (conj λ) = conj (exp λ)`, and the complex
 conjugate of an algebraic number is algebraic. -/
@@ -136,8 +141,6 @@ theorem conj_mem_algebraicLogs {l : ℂ} (hl : l ∈ algebraicLogs) :
 theorem conj_mem_algebraicLogs_iff {l : ℂ} : conj l ∈ algebraicLogs ↔ l ∈ algebraicLogs :=
   ⟨fun h ↦ by simpa using conj_mem_algebraicLogs h, conj_mem_algebraicLogs⟩
 
-example : (0 : ℂ) ∈ algebraicLogs := zero_mem _
-
 /-- `2πi ∈ 𝓛`, but `2πi` is not a value of the principal logarithm, whose imaginary part is at
 most `π`: a definition of `𝓛` through `Complex.log` alone would miss it. -/
 example : 2 * (Real.pi : ℂ) * I ∈ algebraicLogs ∧ 2 * (Real.pi : ℂ) * I ∉ Set.range log := by
@@ -149,7 +152,7 @@ example : 2 * (Real.pi : ℂ) * I ∈ algebraicLogs ∧ 2 * (Real.pi : ℂ) * I 
   linarith [Real.pi_pos]
 
 example : (Real.log 2 : ℂ) ∈ algebraicLogs ∧ (Real.log 2 : ℂ) = log 2 :=
-  ⟨by simpa using ofReal_log_mem_algebraicLogs (isAlgebraic_ratCast ℚ (2 : ℚ)),
+  ⟨by simpa using ofReal_log_mem_algebraicLogs_iff.2 (isAlgebraic_ratCast ℚ (2 : ℚ)),
     by simp⟩
 
 end TauCeti

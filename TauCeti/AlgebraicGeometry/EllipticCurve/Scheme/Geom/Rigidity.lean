@@ -101,6 +101,22 @@ private theorem comp_eq_of_modelPoint (c : PointedWeierstrassChart E.structureMa
     _ = (Spec.map (CommRingCat.ofHom ψ) ≫ c.baseIso.inv ≫ c.baseMap) ≫ Q := by
         rw [c.modelPoint_modelIso_inv_toTotal]; simp only [Category.assoc]
 
+-- Distinct elements of `A` give sections whose model points on a chart differ modulo every
+-- maximal ideal of its coefficient ring.
+private theorem false_of_modelPoint_sub_mem (hφ : E.IsFiberwiseInjective φ)
+    (c : PointedWeierstrassChart E.structureMap E.zero) {c₁ c₂ : A} (hc : c₁ ≠ c₂)
+    (hP₁ : (φ c₁).left ≫ E.structureMap = 𝟙 S) (hP₂ : (φ c₂).left ≫ E.structureMap = 𝟙 S)
+    {x y x' y' : c.ring} {h : c.equation.toAffine.Equation x y}
+    {h' : c.equation.toAffine.Equation x' y'}
+    (hPx : c.modelPoint hP₁ = c.equation.projModelAffinePoint h)
+    (hQx : c.modelPoint hP₂ = c.equation.projModelAffinePoint h') (m : Ideal c.ring)
+    [m.IsMaximal] (hx : x - x' ∈ m) (hy : y - y' ∈ m) : False := by
+  let _ := Ideal.Quotient.field m
+  refine hc (hφ.eq_of_comp_left_eq _ (comp_eq_of_modelPoint c hP₁ hP₂ hPx hQx
+    (Ideal.Quotient.mk m) ?_ ?_))
+  · rwa [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
+  · rwa [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
+
 /-- **Automorphisms fixing a full level structure are trivial.** Let `φ : A →* E(S)` be injective
 on every fibre, and let `a, b ∈ A` with `a² ≠ 1`, `b ≠ 1`, `b ≠ a` and `b ≠ a⁻¹`. An endomorphism
 `σ` of `E` over `S`, cartesian over the identity of `S` (so an automorphism), which fixes the zero
@@ -134,17 +150,6 @@ theorem IsFiberwiseInjective.eq_id_of_isPullback (hφ : E.IsFiberwiseInjective �
       c.equation.projModelAffinePoint ((c.equation.toAffine.equation_neg x₁ y₁).mpr h₁) := by
     simp only [map_inv, hom_inv_left, modelPoint_neg c (hP a), hP₁,
       WeierstrassCurve.projModelAffinePoint_projModelNeg]
-  -- distinct elements of `A` give points which differ modulo every maximal ideal
-  have hne {x y x' y' : c.ring} {h : c.equation.toAffine.Equation x y}
-      {h' : c.equation.toAffine.Equation x' y'} {c₁ c₂ : A} (hc : c₁ ≠ c₂)
-      (hPx : c.modelPoint (hP c₁) = c.equation.projModelAffinePoint h)
-      (hQx : c.modelPoint (hP c₂) = c.equation.projModelAffinePoint h') (m : Ideal c.ring)
-      [m.IsMaximal] (hx : x - x' ∈ m) (hy : y - y' ∈ m) : False := by
-    let _ := Ideal.Quotient.field m
-    refine hc (hφ.eq_of_comp_left_eq _ (comp_eq_of_modelPoint c (hP c₁) (hP c₂) hPx hQx
-      (Ideal.Quotient.mk m) ?_ ?_))
-    · rwa [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
-    · rwa [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
   refine WeierstrassCurve.eq_id_of_projModelAffinePoint_comp_eq
     (by simpa using PointedWeierstrassChart.isPullback_modelMap hσ hh)
     (by simpa using PointedWeierstrassChart.projModelZero_modelMap hσ hh (by simpa using h0))
@@ -158,15 +163,18 @@ theorem IsFiberwiseInjective.eq_id_of_isPullback (hφ : E.IsFiberwiseInjective �
       rw [eq_comm, ← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
       exact hxm
     rcases WeierstrassCurve.Affine.Y_eq_of_X_eq (h₂.map _) (h₁.map _) hX with hY | hY
-    · refine hne hba hP₂ hP₁ m (by rw [← neg_sub]; exact neg_mem hxm) ?_
+    · refine false_of_modelPoint_sub_mem hφ c hba (hP b) (hP a) hP₂ hP₁ m
+        (by rw [← neg_sub]; exact neg_mem hxm) ?_
       rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hY, sub_self]
-    · refine hne hba' hP₂ hP₁' m (by rw [← neg_sub]; exact neg_mem hxm) ?_
+    · refine false_of_modelPoint_sub_mem hφ c hba' (hP b) (hP a⁻¹) hP₂ hP₁' m
+        (by rw [← neg_sub]; exact neg_mem hxm) ?_
       rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hY,
         WeierstrassCurve.Affine.map_negY, sub_self]
   · -- modulo a maximal ideal containing `y₁ - negY x₁ y₁`, `φ a` would be `φ a⁻¹`
     by_contra hy
     obtain ⟨m, hm, hym⟩ := exists_max_ideal_of_mem_nonunits hy
-    refine hne (fun h ↦ ha ?_) hP₁ hP₁' m (by simp) hym
+    refine false_of_modelPoint_sub_mem hφ c (fun h ↦ ha ?_) (hP a)
+      (hP a⁻¹) hP₁ hP₁' m (by simp) hym
     calc a * a = a * a⁻¹ := by rw [← h]
       _ = 1 := mul_inv_cancel a
 

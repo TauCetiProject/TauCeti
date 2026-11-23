@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Dirichlet.Marginal
-import TauCeti.Probability.Distributions.Dirichlet.StickBreaking
+import TauCeti.Probability.Distributions.Dirichlet.StickBreaking.Basic
 
 /-!
 # Products of independent Beta variables

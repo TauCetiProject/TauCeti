@@ -56,8 +56,8 @@ theorem det_eq_of_joined_orthogonalToDiffSphere {A B : Matrix.orthogonalGroup (F
     (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).det =
       (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).det := by
   obtain ⟨γ⟩ := h
-  set eA := (orthogonalGroupToLinearIsometryEquiv A).toLinearIsometry
-  set eB := (orthogonalGroupToLinearIsometryEquiv B).toLinearIsometry
+  set eA := (Matrix.UnitaryGroup.toLinearIsometryEquiv A).toLinearIsometry
+  set eB := (Matrix.UnitaryGroup.toLinearIsometryEquiv B).toLinearIsometry
   -- Evaluation is continuous on `Diff(Sⁿ)`, so the path is a homotopy of maps of the sphere.
   let H : TopCat.Homotopy (TopCat.ofHom ⟨eA.unitSphereMap, eA.continuous_unitSphereMap⟩)
       (TopCat.ofHom ⟨eB.unitSphereMap, eB.continuous_unitSphereMap⟩) :=
@@ -69,7 +69,8 @@ theorem det_eq_of_joined_orthogonalToDiffSphere {A B : Matrix.orthogonalGroup (F
   have hH := reducedSingularHomologyFunctor_map_eq_of_homotopy (ModuleCat.of ℤ ℤ) H n
   rw [reducedSingularHomologyFunctor_map_unitSphereMap _ finrank_euclideanSpace_fin eA,
     reducedSingularHomologyFunctor_map_unitSphereMap _ finrank_euclideanSpace_fin eB,
-    det_orthogonalGroupToLinearIsometryEquiv, det_orthogonalGroupToLinearIsometryEquiv] at hH
+    Matrix.UnitaryGroup.det_toLinearIsometryEquiv,
+    Matrix.UnitaryGroup.det_toLinearIsometryEquiv] at hH
   -- Read both sides through the reduced-homology isomorphism `Hₙ(Sⁿ; ℤ) ≅ ℤ` and evaluate at `1`.
   let e := reducedSingularHomologySphereIso (ModuleCat.of ℤ ℤ)
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
@@ -77,8 +78,8 @@ theorem det_eq_of_joined_orthogonalToDiffSphere {A B : Matrix.orthogonalGroup (F
   simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
     Iso.inv_hom_id, ModuleCat.hom_zsmul, ModuleCat.hom_id, LinearMap.smul_apply,
     LinearMap.id_apply, smul_eq_mul, mul_one] at hsign
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;>
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.2 with hB | hB <;>
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
     simp_all
 
 /-- **The isotopy classes of orthogonal transformations of a sphere.** The restrictions of two

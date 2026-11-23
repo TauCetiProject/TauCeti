@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Half-space charts cut out by a sign condition
@@ -30,12 +34,24 @@ atlas and moved by `C^m` homeomorphisms with `C^m` inverses, are recorded by
 half-space restrictions of them is a `C^m` manifold with boundary
 (`TauCeti.isManifold_of_forall_mem_atlas_halfSpaceChart`).
 
+A chart with values in `EuclideanHalfSpace (n + 1) × F` similarly restricts to a chart
+`OpenPartialHomeomorph.hyperplaneChart` with values in `ℝⁿ × F` of a set `s` that it reads as the
+hyperplane where the zeroth coordinate vanishes. With a trivial factor `F` these are the charts of
+the boundary of a manifold modelled on the half-space (`TauCeti.boundaryChartedSpace`); in general
+they chart the boundary of a thickening of an implicit atlas with boundary in its local product
+model.
+
 ## Main declarations
 
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
+* `OpenPartialHomeomorph.hyperplaneChart`, with its source, target, apply and inverse laws.
 * `TauCeti.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
   restrictions of smoothly moved charts from the maximal atlas makes `s` a manifold with boundary.
+* `TauCeti.contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart` and
+  `TauCeti.isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart`: for such an atlas
+  the inclusion `s → M` is smooth, with invertible derivative also at the boundary points of `s`.
+  This is what transports orientations of `M` to `s`.
 
 ## References
 
@@ -60,7 +76,7 @@ variable {M : Type*} [TopologicalSpace M] {n : ℕ}
 private theorem symm_mem_of_halfSpace (he : ∀ w ∈ e.source, w ∈ s ↔ 0 ≤ e w 0)
     {z : EuclideanHalfSpace (n + 1)} (hz : (𝓡∂ (n + 1)) z ∈ e.target) :
     e.symm ((𝓡∂ (n + 1)) z) ∈ s :=
-  (he _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.2)
+  (he _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.property)
 
 /-- Points of `s` are read by `e` in the half-space. -/
 private theorem apply_symm_apply_halfSpace (he : ∀ w ∈ e.source, w ∈ s ↔ 0 ≤ e w 0) {w : M}
@@ -101,14 +117,14 @@ theorem halfSpaceChart_target (x : s) :
 
 /-- On its source, the half-space chart reads a point through `e`. -/
 theorem coe_halfSpaceChart_apply (x : s) {w : s} (hw : (w : M) ∈ e.source) :
-    (e.halfSpaceChart he x w).1 = e w := by
+    (e.halfSpaceChart he x w).val = e w := by
   unfold halfSpaceChart
   rw [OpenPartialHomeomorph.subtypeCoord_apply]
-  exact apply_symm_apply_halfSpace he hw w.2
+  exact apply_symm_apply_halfSpace he hw w.property
 
 /-- On its target, the inverse half-space chart is the inverse of `e`. -/
 theorem coe_halfSpaceChart_symm_apply (x : s) {z : EuclideanHalfSpace (n + 1)}
-    (hz : z.1 ∈ e.target) : ((e.halfSpaceChart he x).symm z : M) = e.symm z.1 := by
+    (hz : z.val ∈ e.target) : ((e.halfSpaceChart he x).symm z : M) = e.symm z.val := by
   unfold halfSpaceChart
   exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ (symm_mem_of_halfSpace he)
     (apply_symm_apply_halfSpace he) _ _ _ hz
@@ -129,7 +145,7 @@ theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
       v ∈ (e₁.symm ≫ₕ e₂).source ∧ ((𝓡∂ (n + 1)) ∘ (e₁.halfSpaceChart he₁ x₁).symm ≫ₕ
         e₂.halfSpaceChart he₂ x₂ ∘ (𝓡∂ (n + 1)).symm) v = (e₂ ∘ e₁.symm) v := by
     rintro v ⟨⟨hv₁, hv₂⟩, hv⟩
-    have hv' : ((𝓡∂ (n + 1)).symm v).1 = v := (𝓡∂ (n + 1)).right_inv hv
+    have hv' : ((𝓡∂ (n + 1)).symm v).val = v := (𝓡∂ (n + 1)).right_inv hv
     simp only [OpenPartialHomeomorph.symm_symm] at hv₁ hv₂
     rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun, hv'] at hv₁
     rw [mem_preimage, halfSpaceChart_source, mem_preimage,
@@ -143,6 +159,79 @@ theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
   exact (h.mono fun v hv ↦ (key v hv).1).congr fun v hv ↦ (key v hv).2
 
 end HalfSpaceChart
+
+section HyperplaneChart
+
+open TauCeti
+
+variable {M : Type*} [TopologicalSpace M] {n : ℕ} {F : Type*} [TopologicalSpace F]
+  {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1) × F)} {s : Set M}
+
+/-- Points of the target of `e` on the hyperplane `x₀ = 0` come from `s`. -/
+private theorem symm_boundaryParam_mem_of_hyperplane
+    (he : ∀ w ∈ e.source, w ∈ s ↔ (e w).1.val 0 = 0) {z : EuclideanSpace ℝ (Fin n) × F}
+    (hz : Prod.map (EuclideanHalfSpace.boundaryParam n) id z ∈ e.target) :
+    e.symm (Prod.map (EuclideanHalfSpace.boundaryParam n) id z) ∈ s :=
+  (he _ (e.map_target hz)).2 (by simp [e.right_inv hz])
+
+/-- Points of `s` are read by `e` on the hyperplane `x₀ = 0`. -/
+private theorem boundaryParam_boundaryProj_of_hyperplane
+    (he : ∀ w ∈ e.source, w ∈ s ↔ (e w).1.val 0 = 0) {w : M} (hw : w ∈ e.source) (hws : w ∈ s) :
+    Prod.map (EuclideanHalfSpace.boundaryParam n) id
+      (Prod.map (EuclideanHalfSpace.boundaryProj n) id (e w)) = e w := by
+  refine Prod.ext ?_ rfl
+  rw [Prod.map_fst, Prod.map_fst, EuclideanHalfSpace.boundaryProj_coe]
+  exact EuclideanHalfSpace.boundaryParam_boundaryProj ((he _ hw).1 hws)
+
+variable (e) in
+/-- A chart `e` with values in `EuclideanHalfSpace (n + 1) × F` restricts to a chart of a set `s`
+with values in `ℝⁿ × F` when, on the source of `e`, a point lies in `s` exactly when its zeroth
+half-space coordinate vanishes: read a point of `s` through `e` and delete that coordinate. The base
+point `x` only witnesses that `s` is nonempty. -/
+noncomputable def hyperplaneChart (he : ∀ w ∈ e.source, w ∈ s ↔ (e w).1.val 0 = 0) (x : s) :
+    OpenPartialHomeomorph s (EuclideanSpace ℝ (Fin n) × F) :=
+  e.subtypeCoord s ⟨x⟩ (Prod.map (EuclideanHalfSpace.boundaryParam n) id)
+    (Prod.map (EuclideanHalfSpace.boundaryProj n) id) (symm_boundaryParam_mem_of_hyperplane he)
+    (boundaryParam_boundaryProj_of_hyperplane he)
+    ((Function.LeftInverse.prodMap EuclideanHalfSpace.boundaryProj_boundaryParam
+      fun _ ↦ rfl).leftInvOn _)
+    (EuclideanHalfSpace.continuous_boundaryParam.prodMap continuous_id)
+    (EuclideanHalfSpace.continuous_boundaryProj.prodMap continuous_id).continuousOn
+
+variable (he : ∀ w ∈ e.source, w ∈ s ↔ (e w).1.val 0 = 0)
+
+/-- The source of the hyperplane chart is the part of `s` in the source of `e`. -/
+@[simp]
+theorem hyperplaneChart_source (x : s) :
+    (e.hyperplaneChart he x).source = Subtype.val ⁻¹' e.source := by
+  unfold hyperplaneChart
+  exact OpenPartialHomeomorph.subtypeCoord_source ..
+
+/-- The target of the hyperplane chart is the part of the hyperplane in the target of `e`. -/
+@[simp]
+theorem hyperplaneChart_target (x : s) :
+    (e.hyperplaneChart he x).target =
+      Prod.map (EuclideanHalfSpace.boundaryParam n) id ⁻¹' e.target := by
+  unfold hyperplaneChart
+  exact OpenPartialHomeomorph.subtypeCoord_target ..
+
+/-- The hyperplane chart reads a point through `e` and deletes the zeroth coordinate. -/
+@[simp]
+theorem hyperplaneChart_apply (x w : s) :
+    e.hyperplaneChart he x w = Prod.map (EuclideanHalfSpace.boundaryProj n) id (e w) := by
+  unfold hyperplaneChart
+  exact OpenPartialHomeomorph.subtypeCoord_apply ..
+
+/-- On its target, the inverse hyperplane chart is the inverse of `e` on the parametrized point. -/
+theorem coe_hyperplaneChart_symm_apply (x : s) {z : EuclideanSpace ℝ (Fin n) × F}
+    (hz : Prod.map (EuclideanHalfSpace.boundaryParam n) id z ∈ e.target) :
+    ((e.hyperplaneChart he x).symm z : M) =
+      e.symm (Prod.map (EuclideanHalfSpace.boundaryParam n) id z) := by
+  unfold hyperplaneChart
+  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _
+    (symm_boundaryParam_mem_of_hyperplane he) (boundaryParam_boundaryProj_of_hyperplane he) _ _ _ hz
+
+end HyperplaneChart
 
 end OpenPartialHomeomorph
 
@@ -170,6 +259,85 @@ theorem isManifold_of_forall_mem_atlas_halfSpaceChart {m : ℕ∞ω} {n : ℕ} {
   obtain ⟨_, he₁, x₁, hc₁, rfl⟩ := h e₁ h₁
   obtain ⟨_, he₂, x₂, hc₂, rfl⟩ := h e₂ h₂
   exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂ (hc₁.contDiffOn_comp_symm hc₂)
+
+variable {m : ℕ∞ω} {n : ℕ} {s : Set M} [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
+
+/-- Near a point `x` of `s`, the ambient chart `e` whose half-space restriction is the preferred
+chart at `x` reads the points of `s` through the extended preferred chart. -/
+private theorem exists_eventuallyEq_extChartAt_of_forall_mem_atlas_halfSpaceChart
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) (x : s) :
+    ∃ e : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))),
+      e.IsExtendTransChart I m ∧ (x : M) ∈ e.source ∧
+        (e ∘ Subtype.val : s → EuclideanSpace ℝ (Fin (n + 1))) =ᶠ[nhds x]
+          extChartAt (𝓡∂ (n + 1)) x := by
+  obtain ⟨e, he, y, hc, hx⟩ := h _ (chart_mem_atlas _ x)
+  have hsource (w : s) (hw : w ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source) :
+      (w : M) ∈ e.source := by
+    rw [hx, halfSpaceChart_source] at hw
+    exact hw
+  refine ⟨e, hc, hsource x (mem_chart_source _ x),
+    Filter.eventually_of_mem (chart_source_mem_nhds (EuclideanHalfSpace (n + 1)) x)
+      fun w hw ↦ ?_⟩
+  simp only [extChartAt_coe, Function.comp_apply, modelWithCornersEuclideanHalfSpace_toFun, hx]
+  rw [coe_halfSpaceChart_apply he y (hsource w hw)]
+
+/-- **The inclusion of a regular domain is smooth.** If every chart of a charted space on a subset
+`s` of `M`, modelled on the half-space `EuclideanHalfSpace (n + 1)`, is a half-space restriction of
+a chart satisfying `OpenPartialHomeomorph.IsExtendTransChart` for `C^m`, then the inclusion
+`s → M` is `C^m`, also at the boundary points of `s`. -/
+theorem contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) :
+    ContMDiff (𝓡∂ (n + 1)) I m (Subtype.val : s → M) := by
+  intro x
+  obtain ⟨e, hce, hx, heq⟩ := exists_eventuallyEq_extChartAt_of_forall_mem_atlas_halfSpaceChart h x
+  obtain ⟨c, Ψ, hc, -, hΨ, rfl⟩ := isExtendTransChart_iff.1 hce
+  -- Near `x`, the inclusion is the inverse of `e` after the extended chart.
+  have hval : (Subtype.val : s → M) =ᶠ[nhds x]
+      (c.extendTrans I Ψ).symm ∘ extChartAt (𝓡∂ (n + 1)) x := by
+    filter_upwards [heq, (continuous_subtypeVal.continuousAt (x := x)).preimage_mem_nhds
+      ((c.extendTrans I Ψ).open_source.mem_nhds hx)] with w hw hws
+    rw [Function.comp_apply, ← hw, Function.comp_apply, (c.extendTrans I Ψ).left_inv hws]
+  exact ((((contMDiffOn_extendTrans_symm c hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds ((c.extendTrans I Ψ).map_source hx))).comp_of_eq
+      contMDiffAt_extChartAt heq.eq_of_nhds.symm).congr_of_eventuallyEq hval)
+
+/-- **The inclusion of a regular domain has invertible derivative.** Under the hypotheses of
+`TauCeti.contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart` with `m ≠ 0`, and when `M` is
+modelled on a space of dimension `n + 1`, the manifold derivative of the inclusion `s → M` is
+invertible at every point of `s`, including the boundary points, where the inclusion is not a
+local diffeomorphism. -/
+theorem isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart
+    [FiniteDimensional ℝ E] (hn : Module.finrank ℝ E = n + 1) (hm : m ≠ 0)
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) (x : s) :
+    (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x).IsInvertible := by
+  obtain ⟨e, hce, hx, heq⟩ := exists_eventuallyEq_extChartAt_of_forall_mem_atlas_halfSpaceChart h x
+  obtain ⟨c, Ψ, hc, hΨ, -, rfl⟩ := isExtendTransChart_iff.1 hce
+  -- The ambient chart `e` composed with the inclusion is the extended chart of `s` near `x`,
+  -- whose derivative at `x` is the identity.
+  have he : MDifferentiableAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) (c.extendTrans I Ψ)
+      (x : M) :=
+    ((contMDiffOn_extendTrans c hc hΨ).contMDiffAt
+      ((c.extendTrans I Ψ).open_source.mem_nhds hx)).mdifferentiableAt hm
+  have hcomp : (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+      ((c.extendTrans I Ψ) ∘ Subtype.val) x).IsInvertible := by
+    have : IsManifold (𝓡∂ (n + 1)) 1 s :=
+      have := isManifold_of_forall_mem_atlas_halfSpaceChart h
+      IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hm)
+    rw [heq.mfderiv_eq, mfderiv_extChartAt_self]
+    exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
+  exact (isInvertible_mfderiv_of_isInvertible_mfderiv_comp
+    (by rw [finrank_euclideanSpace_fin, hn]) he
+    ((contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart h x).mdifferentiableAt hm)
+    hcomp).1
 
 end IsManifold
 

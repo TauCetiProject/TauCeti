@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Generalized Pareto densities
@@ -232,7 +233,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
     have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := generalizedParetoMap s ξ)
       (φ' := fun e ↦ s * Real.exp (ξ * e)) (f := generalizedParetoPDF s ξ)
-      measurableSet_Ioi (measurable_generalizedParetoMap_right s ξ)
+      measurableSet_Ioi
       (fun e _ ↦ (hasDerivAt_generalizedParetoMap s ξ e).hasDerivWithinAt)
       (strictMono_generalizedParetoMap hs ξ).injective.injOn
     have hw : (fun e ↦ ENNReal.ofReal |s * Real.exp (ξ * e)| *
@@ -288,7 +289,8 @@ theorem integrable_generalizedParetoMeasure_iff (s ξ : ℝ) {g : ℝ → E} :
     Integrable g (generalizedParetoMeasure s ξ) ↔
       Integrable fun y ↦ generalizedParetoPDFReal s ξ y • g y := by
   rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
-  exact integrable_withDensity_ofReal_iff (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_generalizedParetoPDFReal s ξ).aemeasurable
     (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ))
 
 /-- An integral against a generalized Pareto law equals the density-weighted Lebesgue integral,
@@ -296,7 +298,8 @@ at every scale and shape. -/
 theorem integral_generalizedParetoMeasure_eq (s ξ : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂generalizedParetoMeasure s ξ = ∫ y, generalizedParetoPDFReal s ξ y • g y := by
   rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
-  exact integral_withDensity_ofReal (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_generalizedParetoPDFReal s ξ).aemeasurable
     (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ)) g
 
 end Transfer

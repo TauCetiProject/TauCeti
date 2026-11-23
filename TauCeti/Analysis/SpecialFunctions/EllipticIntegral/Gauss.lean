@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Real.Sqrt
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM.Basic
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Trigonometric
 
@@ -87,7 +87,7 @@ theorem legendreK_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ : 
     legendreK (2 * √k / (1 + k)) = (1 + k) * legendreK k := by
   have hp : 0 < 1 + k := by linarith
   have hm : 0 < 1 - k := by linarith
-  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀ hk₁.ne
+  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₁.ne
   have hk : k ^ 2 < 1 := by nlinarith
   rw [legendreK_eq_agmIntegral hlt, legendreK_eq_agmIntegral hk,
     one_sub_sq_two_mul_sqrt_div_one_add hk₀,
@@ -115,6 +115,6 @@ theorem legendreK_eq_one_add_mul_legendreK {k : ℝ} (hk : k ^ 2 < 1) :
   rw [← legendreK_two_mul_sqrt_div_one_add h₀ h₁]
   -- The ascending transformation of `k₁` returns the modulus `|k|`, and `K` is even.
   rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
-  rcases abs_choice k with h | h <;> simp [h]
+  exact (legendreK_abs k).symm
 
 end TauCeti.Real

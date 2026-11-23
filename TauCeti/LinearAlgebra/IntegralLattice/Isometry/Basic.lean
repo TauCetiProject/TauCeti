@@ -40,6 +40,9 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## Main results
 
+* `TauCeti.IntegralLattice.Isometry.ambientEquiv_eq_of_forall_apply_eq` and
+  `TauCeti.IntegralLattice.Isometry.map_carrier_ambientEquiv`: ambient equivalences depend only on
+  pointwise action, and `ambientEquiv` maps the source carrier onto the target carrier.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_ofCarrierEquiv` and
   `TauCeti.IntegralLattice.Isometry.ofCarrierEquiv_carrierEquiv`: the two round trips between
   ambient isometries and form-preserving carrier equivalences.
@@ -53,7 +56,6 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## References
 
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1
 * W. Ebeling, *Lattices and Codes*, Chapter 1
 -/
 
@@ -123,6 +125,20 @@ def ambientEquiv (e : Isometry L M) : V ≃ₗ[ℤ] W :=
 
 @[simp]
 theorem ambientEquiv_apply (e : Isometry L M) (x : V) : e.ambientEquiv x = e x := (rfl)
+
+/-- Two integral-lattice isometries between the same ambient spaces that agree pointwise have the
+same ambient integral equivalence, even when their source or target lattices differ. -/
+theorem ambientEquiv_eq_of_forall_apply_eq {L' : IntegralLattice V} {M' : IntegralLattice W}
+    {f : Isometry L M} {e : Isometry L' M'} (h : ∀ x, f x = e x) :
+    f.ambientEquiv = e.ambientEquiv :=
+  LinearEquiv.ext fun x ↦ by rw [ambientEquiv_apply, ambientEquiv_apply, h x]
+
+/-- The ambient integral equivalence of an isometry maps the source carrier onto the target
+carrier. -/
+@[simp]
+theorem map_carrier_ambientEquiv (e : Isometry L M) :
+    L.carrier.map e.ambientEquiv.toLinearMap = M.carrier :=
+  e.map_carrier
 
 /-- An ambient vector's image belongs to the target carrier if and only if the vector belongs
 to the source carrier. -/
@@ -343,16 +359,16 @@ equivalence. -/
 private noncomputable def isometryEquivOfCarrierEquiv (e : L ≃ₗ[ℤ] M)
     (hform : ∀ x y, M.integralForm (e x) (e y) = L.integralForm x y) :
     L.form.IsometryEquiv M.form where
-  toLinearEquiv := LinearEquiv.extendOfIsLattice e
+  toLinearEquiv := LinearEquiv.extendOfIsFullLattice e
   map_app' x y := by
     have hforms :
-        M.form.comp (LinearEquiv.extendOfIsLattice e).toLinearMap
-          (LinearEquiv.extendOfIsLattice e).toLinearMap = L.form := by
+        M.form.comp (LinearEquiv.extendOfIsFullLattice (K := ℚ) e).toLinearMap
+          (LinearEquiv.extendOfIsFullLattice (K := ℚ) e).toLinearMap = L.form := by
       apply LinearMap.BilinForm.ext_basis L.rationalBasis
       intro i j
       rw [LinearMap.BilinForm.comp_apply, L.rationalBasis_apply, L.rationalBasis_apply,
-        LinearEquiv.coe_toLinearMap, LinearEquiv.extendOfIsLattice_apply,
-        LinearEquiv.extendOfIsLattice_apply,
+        LinearEquiv.coe_toLinearMap, LinearEquiv.extendOfIsFullLattice_apply,
+        LinearEquiv.extendOfIsFullLattice_apply,
         ← M.integralForm_cast, ← L.integralForm_cast]
       exact_mod_cast hform (Module.Free.chooseBasis ℤ L i) (Module.Free.chooseBasis ℤ L j)
     exact DFunLike.congr_fun (DFunLike.congr_fun hforms x) y
@@ -362,12 +378,12 @@ integral lattices. -/
 noncomputable def ofCarrierEquiv (e : L ≃ₗ[ℤ] M)
     (hform : ∀ x y, M.integralForm (e x) (e y) = L.integralForm x y) : Isometry L M where
   toIsometryEquiv := isometryEquivOfCarrierEquiv e hform
-  map_carrier := LinearEquiv.extendOfIsLattice_map e
+  map_carrier := LinearEquiv.extendOfIsFullLattice_map (K := ℚ) e
 
 @[simp]
 theorem ofCarrierEquiv_apply (e : L ≃ₗ[ℤ] M)
     (hform : ∀ x y, M.integralForm (e x) (e y) = L.integralForm x y) (x : V) :
-    ofCarrierEquiv e hform x = LinearEquiv.extendOfIsLattice e x := (rfl)
+    ofCarrierEquiv e hform x = LinearEquiv.extendOfIsFullLattice (K := ℚ) e x := (rfl)
 
 /-- Restricting the isometry constructed from a form-preserving carrier equivalence recovers the
 original carrier equivalence. -/
@@ -377,14 +393,14 @@ theorem carrierEquiv_ofCarrierEquiv (e : L ≃ₗ[ℤ] M)
     (ofCarrierEquiv e hform).carrierEquiv = e := by
   ext x
   simpa only [coe_carrierEquiv_apply, ofCarrierEquiv_apply] using
-    LinearEquiv.extendOfIsLattice_apply e x
+    LinearEquiv.extendOfIsFullLattice_apply (K := ℚ) e x
 
 /-- Extending the carrier restriction of an isometry recovers the original ambient isometry. -/
 @[simp]
 theorem ofCarrierEquiv_carrierEquiv (e : Isometry L M) :
     ofCarrierEquiv e.carrierEquiv e.carrierEquiv_map_integralForm = e := by
-  have hlinear : (e : V ≃ₗ[ℚ] W) = LinearEquiv.extendOfIsLattice e.carrierEquiv :=
-    LinearEquiv.eq_extendOfIsLattice e.carrierEquiv (e : V ≃ₗ[ℚ] W) e.coe_carrierEquiv_apply
+  have hlinear : (e : V ≃ₗ[ℚ] W) = LinearEquiv.extendOfIsFullLattice (K := ℚ) e.carrierEquiv :=
+    LinearEquiv.eq_extendOfIsFullLattice e.carrierEquiv (e : V ≃ₗ[ℚ] W) e.coe_carrierEquiv_apply
   ext x
   simpa only [ofCarrierEquiv_apply, coe_toLinearEquiv] using (LinearEquiv.congr_fun hlinear x).symm
 
@@ -404,7 +420,7 @@ equivalence. -/
 noncomputable def transport (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) : IntegralLattice W where
   carrier := L.carrier.map (e.restrictScalars ℤ).toLinearMap
   form := L.form.comp e.symm.toLinearMap e.symm.toLinearMap
-  isLattice := Submodule.isLattice_map L.carrier e.toLinearMap e.surjective
+  isFullLattice := Submodule.isFullLattice_map L.carrier e.toLinearMap e.surjective
   isSymm := ⟨fun x y ↦ L.isSymm.eq (e.symm x) (e.symm y)⟩
   le_dual := by
     rintro _ ⟨x, hx, rfl⟩

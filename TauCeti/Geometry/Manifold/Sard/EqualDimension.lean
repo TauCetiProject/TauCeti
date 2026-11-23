@@ -20,7 +20,9 @@ The manifolds may have boundary or corners.
 
 The proof reads `f` in pairs of extended charts and applies the flat equal-dimensional Sard lemma
 `TauCeti.addHaar_image_eq_zero_of_not_surjective_fderivWithin`, which only needs derivatives
-within the model range `range I`. Countably many charts cover `M` by the Lindelöf property.
+within the model range `range I`. Countably many charts cover `M` by the Lindelöf property
+(`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`). For models of different
+dimensions, see `TauCeti.Geometry.Manifold.Sard.Basic`.
 Only first derivatives enter: in equal dimensions no higher regularity is needed.
 
 ## Main results
@@ -52,37 +54,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   {f : M → N} {s : Set M}
 
-/-- The local form of Sard's theorem: the image of the non-regular points of `s` lying in one chart
-of `M` is null in `N`. -/
-private theorem isNullSet_image_inter_chartAt_source [MeasurableSpace E'] [BorelSpace E']
-    (hdim : finrank ℝ E = finrank ℝ E') (hf : ∀ x ∈ s, MDifferentiableAt I J f x)
-    (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) (x₀ : M) :
-    IsNullSet J (f '' (s ∩ (chartAt H x₀).source)) := by
-  borelize E
-  rw [isNullSet_iff]
-  intro y₀ μ _
-  -- Read `f` in the extended charts at `x₀` and `y₀`, on the points both charts see.
-  let g : E → E' := extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm
-  let u : Set M := s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source
-  have hu : extChartAt J y₀ '' (f '' (s ∩ (chartAt H x₀).source) ∩ (extChartAt J y₀).source) =
-      g '' (extChartAt I x₀ '' u) := by
-    rw [extChartAt_source, ← image_inter_preimage, image_image, image_image]
-    refine image_congr fun x hx ↦ ?_
-    have hx' : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
-    simp only [g, comp_apply, (extChartAt I x₀).left_inv hx']
-  rw [hu]
-  refine addHaar_image_eq_zero_of_not_surjective_fderivWithin μ hdim
-    (f' := fun z ↦ fderivWithin ℝ g (range I) z) ?_ ?_
-  · rintro _ ⟨x, hx, rfl⟩
-    have hg := (hf x hx.1.1).hasMFDerivAt.hasFDerivWithinAt_of_mem_source hx.1.2 hx.2
-    refine hg.differentiableWithinAt.hasFDerivWithinAt.mono ?_
-    rintro _ ⟨x', hx', rfl⟩
-    exact extChartAt_target_subset_range x₀
-      ((extChartAt I x₀).map_source (by rw [extChartAt_source]; exact hx'.1.2))
-  · rintro _ ⟨x, hx, rfl⟩
-    rw [← isRegularPoint_iff_surjective_fderivWithin (hf x hx.1.1) hx.1.2 hx.2]
-    exact hs x hx.1.1
-
 /-- **Sard's theorem in equal dimensions**, for a set of non-regular points. Let `M` and `N` be
 real manifolds whose finite-dimensional models have the same dimension, with `M` Lindelöf. If `f`
 is differentiable at every point of `s` and no point of `s` is regular, then `f '' s` is null in
@@ -91,13 +62,20 @@ theorem isNullSet_image_of_not_isRegularPoint [LindelofSpace M] [MeasurableSpace
     [BorelSpace E'] (hdim : finrank ℝ E = finrank ℝ E')
     (hf : ∀ x ∈ s, MDifferentiableAt I J f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
     IsNullSet J (f '' s) := by
-  obtain ⟨t, htc, -, hcover⟩ := isLindelof_univ.elim_nhds_subcover
-    (fun x : M ↦ (chartAt H x).source) fun x _ ↦ chart_source_mem_nhds H x
-  have hst : s = ⋃ x ∈ t, s ∩ (chartAt H x).source := by
-    rw [← inter_iUnion₂, eq_comm, inter_eq_left]
-    exact (subset_univ s).trans hcover
-  rw [hst, image_iUnion₂]
-  exact IsNullSet.biUnion htc fun x _ ↦ isNullSet_image_inter_chartAt_source hdim hf hs x
+  borelize E
+  refine isNullSet_image_of_forall_addHaar_image_extChartAt (I := I) fun x₀ y₀ μ _ ↦ ?_
+  refine addHaar_image_eq_zero_of_not_surjective_fderivWithin μ hdim
+    (f' := fun z ↦ fderivWithin ℝ (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (range I) z)
+    ?_ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    refine ((mdifferentiableAt_iff_of_mem_source hx.1.2 hx.2).1
+      (hf x hx.1.1)).2.hasFDerivWithinAt.mono ?_
+    rintro _ ⟨x', -, rfl⟩
+    rw [extChartAt_coe]
+    exact mem_range_self _
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [← isRegularPoint_iff_surjective_fderivWithin (hf x hx.1.1) hx.1.2 hx.2]
+    exact hs x hx.1.1
 
 /-- **Sard's theorem in equal dimensions.** The critical values of a differentiable map from a
 Lindelöf manifold to a manifold whose finite-dimensional model has the same dimension form a

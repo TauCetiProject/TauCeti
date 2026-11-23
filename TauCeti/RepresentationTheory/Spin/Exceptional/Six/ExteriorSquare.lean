@@ -145,13 +145,13 @@ theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
 /-- The exterior-square action of `SL₄(K)` lands in the isometry group of the wedge form. -/
 noncomputable def spinSixSpecialLinearToIsometryGroup :
     Matrix.SpecialLinearGroup (Fin 4) K →*
-      BilinForm.isometryGroup (spinSixWedgeForm K) :=
+      (spinSixWedgeForm K).isometryGroup :=
   ((LinearMap.GeneralLinearGroup.generalLinearEquiv K
       (⋀[K]^2 (Fin 4 → K))).toMonoidHom.comp
         ((stdSLRep K 4).exteriorPower 2).asGroupHom).codRestrict
-    (BilinForm.isometryGroup (spinSixWedgeForm K))
+    ((spinSixWedgeForm K).isometryGroup)
     (fun g ↦ by
-      rw [BilinForm.mem_isometryGroup]
+      rw [LinearMap.BilinForm.mem_isometryGroup]
       simpa only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
         Representation.asGroupHom_apply,
         LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap] using
@@ -161,7 +161,7 @@ noncomputable def spinSixSpecialLinearToIsometryGroup :
 @[simp]
 theorem spinSixSpecialLinearToIsometryGroup_apply
     (g : Matrix.SpecialLinearGroup (Fin 4) K) (x : ⋀[K]^2 (Fin 4 → K)) :
-    (spinSixSpecialLinearToIsometryGroup K g).1 x = (stdSLRep K 4).exteriorPower 2 g x := by
+    (spinSixSpecialLinearToIsometryGroup K g).val x = (stdSLRep K 4).exteriorPower 2 g x := by
   simp [spinSixSpecialLinearToIsometryGroup,
     LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Representation.asGroupHom_apply]
 
@@ -175,7 +175,7 @@ the same factorwise formula specializes to an elementary transvection.
 each vector. -/
 theorem spinSixSpecialLinearToIsometryGroup_comp_ιMulti
     (g : Matrix.SpecialLinearGroup (Fin 4) K) :
-    (spinSixSpecialLinearToIsometryGroup K g).1 ∘ exteriorPower.ιMulti K 2 =
+    (spinSixSpecialLinearToIsometryGroup K g).val ∘ exteriorPower.ιMulti K 2 =
       exteriorPower.ιMulti K 2 ∘
         ((g : Matrix (Fin 4) (Fin 4) K).mulVecLin ∘ ·) := by
   funext u
@@ -188,7 +188,7 @@ transvection to both factors. -/
 theorem spinSixSpecialLinearToIsometryGroup_transvection_ιMulti
     {i j : Fin 4} (hij : i ≠ j) (c : K) (u : Fin 2 → Fin 4 → K) :
     (spinSixSpecialLinearToIsometryGroup K
-      (Matrix.SpecialLinearGroup.transvection hij c)).1
+      (Matrix.SpecialLinearGroup.transvection hij c)).val
       (exteriorPower.ιMulti K 2 u) =
       exteriorPower.ιMulti K 2 ((Matrix.transvection i j c).mulVec ∘ u) := by
   exact congrFun (spinSixSpecialLinearToIsometryGroup_comp_ιMulti K

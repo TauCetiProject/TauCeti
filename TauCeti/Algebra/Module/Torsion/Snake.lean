@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.SnakeLemma
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.Algebra.Module.Torsion.Map
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The kernel–cokernel exact sequence of multiplication by a scalar
@@ -22,10 +23,10 @@ snake lemma, applied to multiplication by `r` on the three terms, gives the six-
 `0 → M₁[r] → M₂[r] → M₃[r] → M₁ ⧸ rM₁ → M₂ ⧸ rM₂ → M₃ ⧸ rM₃ → 0`.
 
 The functor `QuotSMulTop r` and the right-exact half of this sequence are Mathlib's
-(`QuotSMulTop.map`, `QuotSMulTop.map_exact`, `QuotSMulTop.map_surjective`). This file supplies the
-torsion functor `TauCeti.torsionByMap`, the left-exact half, the connecting map
-`TauCeti.torsionByδ` (Mathlib's `SnakeLemma.δ'` for this diagram), exactness at its two ends, and
-its naturality in morphisms of short exact sequences.
+(`QuotSMulTop.map`, `QuotSMulTop.map_exact`, `QuotSMulTop.map_surjective`); the torsion functor
+`TauCeti.torsionByMap` and the left-exact half are in `TauCeti.Algebra.Module.Torsion.Map`. This
+file supplies the connecting map `TauCeti.torsionByδ` (Mathlib's `SnakeLemma.δ'` for this diagram),
+exactness at its two ends, and its naturality in morphisms of short exact sequences.
 
 Naturality is what makes the connecting map compatible with extra structure. For `R = ℤ`, `r = ℓ`
 and a group `G` acting on the sequence by additive automorphisms, each `g : G` gives a morphism of
@@ -42,8 +43,8 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 
 ## Main definitions
 
-* `TauCeti.torsionByMap`: the restriction `M[r] →ₗ[R] N[r]` of a linear map.
 * `TauCeti.torsionByδ`: the connecting map `M₃[r] →ₗ[R] M₁ ⧸ rM₁` of a short exact sequence.
+* `TauCeti.torsionByδLinearMap`: `TauCeti.torsionByδ` promoted to an `R ⧸ (r)`-linear map.
 * `TauCeti.torsionByδEquiv`: the connecting map as an isomorphism, when multiplication by `r` is
   bijective on `M₂`.
 * `LinearMap.orbitRelQuotientTorsionByδ`: the connecting map `(E / f(Λ))[r] → Λ ⧸ rΛ` of the orbit
@@ -51,12 +52,11 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 
 ## Main results
 
-* `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
 * `TauCeti.torsionByδ_eq`: the connecting map sends `g y` to the class of `z` when `f z = r • y`.
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
-* `TauCeti.injective_torsionByδ`: the connecting map is injective when multiplication by `r` is
-  injective on `M₂`.
+* `TauCeti.injective_torsionByδ`, `TauCeti.surjective_torsionByδ`: the connecting map is injective
+  (resp. surjective) when multiplication by `r` is injective (resp. surjective) on `M₂`.
 * `TauCeti.torsionByδ_comp_torsionByMap`: naturality of the connecting map.
 * `TauCeti.finite_quotSMulTop_of_exact`: `M₁ ⧸ rM₁` is finite when `M₃[r]` and `M₂ ⧸ rM₂` are.
 * `LinearMap.orbitRelQuotientTorsionByδ_eq`, `LinearMap.quotSMulTop_mk_eq_mk_of_smul_eq`: the
@@ -71,69 +71,6 @@ open Function Submodule
 open scoped Pointwise
 
 namespace TauCeti
-
-section Map
-
-variable {R : Type*} [CommSemiring R] (r : R) {M N P : Type*} [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
-
-/-- A linear map carries `r`-torsion to `r`-torsion; this is its restriction `M[r] →ₗ[R] N[r]`,
-the action on morphisms of the functor `M ↦ M[r]` dual to `QuotSMulTop.map`. -/
-def torsionByMap (f : M →ₗ[R] N) : torsionBy R M r →ₗ[R] torsionBy R N r :=
-  f.restrict fun x hx ↦ by
-    rw [mem_torsionBy_iff] at hx ⊢
-    rw [← map_smul, hx, map_zero]
-
-@[simp]
-theorem coe_torsionByMap_apply (f : M →ₗ[R] N) (x : torsionBy R M r) :
-    (torsionByMap r f x : N) = f x :=
-  (rfl)
-
-@[simp]
-theorem torsionByMap_id : torsionByMap r (LinearMap.id : M →ₗ[R] M) = LinearMap.id := by
-  ext
-  rfl
-
-theorem torsionByMap_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
-    torsionByMap r (g ∘ₗ f) = torsionByMap r g ∘ₗ torsionByMap r f := by
-  ext
-  rfl
-
-/-- The inclusion of the `r`-torsion intertwines `torsionByMap` with the map itself. -/
-theorem subtype_comp_torsionByMap (f : M →ₗ[R] N) :
-    (torsionBy R N r).subtype ∘ₗ torsionByMap r f = f ∘ₗ (torsionBy R M r).subtype := by
-  ext
-  rfl
-
-variable (M) in
-/-- The `r`-torsion is the kernel of multiplication by `r`. -/
-theorem exact_subtype_torsionBy :
-    Exact (torsionBy R M r).subtype (DistribSMul.toLinearMap R M r) := fun x ↦
-  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.2⟩
-
-variable {r}
-
-/-- The restriction of an injective linear map to the `r`-torsion is injective. -/
-theorem injective_torsionByMap {f : M →ₗ[R] N} (hf : Injective f) :
-    Injective (torsionByMap r f) := fun _ _ h ↦
-  Subtype.ext <| hf <| congrArg Subtype.val h
-
-/-- **Left exactness of `r`-torsion**: if `f` is injective and `f`, `g` are exact, then so are
-`M[r] → N[r] → P[r]`. Only the injectivity of `f` is used, not the surjectivity of `g`. -/
-theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact f g) (hf : Injective f) :
-    Exact (torsionByMap r f) (torsionByMap r g) := by
-  intro y
-  constructor
-  · intro hy
-    obtain ⟨x, hx⟩ := (hfg y).1 (congrArg Subtype.val hy)
-    have hrx : r • x = 0 := hf <| by
-      rw [map_smul, hx, map_zero]
-      exact (mem_torsionBy_iff _ _).1 y.2
-    exact ⟨⟨x, (mem_torsionBy_iff _ _).2 hrx⟩, Subtype.ext hx⟩
-  · rintro ⟨x, rfl⟩
-    exact Subtype.ext <| hfg.apply_apply_eq_zero x
-
-end Map
 
 section Snake
 
@@ -180,14 +117,20 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
   SnakeLemma.exact_δ'_left _ _ _ _ _ hfg _ _ hfg _ _ _ _ _ _ _ (exact_toLinearMap_mkQ r M₂) hg hf
     _ (QuotSMulTop.map_comp_mkQ r f) (r • (⊤ : Submodule R M₁)).mkQ_surjective
 
-/-- **Finiteness of `M₁ ⧸ rM₁` along a short exact sequence**: if `M₃[r]` and `M₂ ⧸ rM₂` are finite,
-so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. -/
-theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+/-- **Finiteness of `M₁ ⧸ rM₁` along an exact sequence** `0 → M₁ → M₂ → M₃`: if `M₃[r]` and
+`M₂ ⧸ rM₂` are finite, so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. The map
+`g` need not be surjective: the sequence is read as a short exact sequence ending in the image of
+`g`. -/
+theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f)
     [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
-  let := Fintype.ofFinite (torsionBy R M₃ r)
+  have hfg' := hfg.rangeRestrict
+  have : Finite (torsionBy R (LinearMap.range g) r) := Finite.of_injective _
+    (injective_torsionByMap (r := r) (LinearMap.range g).injective_subtype)
+  let := Fintype.ofFinite (torsionBy R (LinearMap.range g) r)
   let := Fintype.ofFinite (QuotSMulTop r M₂)
-  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
-  exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
+  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg' hf g.surjective_rangeRestrict
+  exact (AddGroup.fintypeOfKerLeRange
+    (torsionByδ r hfg' hf g.surjective_rangeRestrict).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
 
 /-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
@@ -200,6 +143,17 @@ theorem injective_torsionByδ (hfg : Exact f g) (hf : Injective f) (hg : Surject
     have hy : y = 0 := Subtype.ext (hr (by simp))
     rw [hy, map_zero]
 
+/-- **Surjectivity of the connecting map**: when multiplication by `r` is surjective on `M₂`, the
+connecting map `M₃[r] → M₁ ⧸ rM₁` is surjective, since `M₂ ⧸ rM₂` vanishes. -/
+theorem surjective_torsionByδ (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    (hr : Surjective fun x : M₂ ↦ r • x) : Surjective (torsionByδ r hfg hf hg) :=
+  fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
+    -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
+    obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+    obtain ⟨w, hw⟩ := hr (f z)
+    rw [QuotSMulTop.map_apply_mk, Submodule.Quotient.mk_eq_zero, ← hw]
+    exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial
+
 variable (r) in
 /-- **The connecting isomorphism `M₃[r] ≃ M₁ ⧸ rM₁`.** When multiplication by `r` is bijective on
 `M₂`, both `M₂[r]` and `M₂ ⧸ rM₂` vanish, so the six-term sequence makes the connecting map an
@@ -208,13 +162,7 @@ torus `M₃`, this identifies the `r`-torsion points of the torus with `M₁ ⧸
 noncomputable def torsionByδEquiv (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
     (hr : Bijective fun x : M₂ ↦ r • x) : torsionBy R M₃ r ≃ₗ[R] QuotSMulTop r M₁ :=
   LinearEquiv.ofBijective (torsionByδ r hfg hf hg)
-    ⟨injective_torsionByδ hfg hf hg hr.1,
-    fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
-      -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
-      obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-      obtain ⟨w, hw⟩ := hr.2 (f z)
-      rw [QuotSMulTop.map_apply_mk, Submodule.Quotient.mk_eq_zero, ← hw]
-      exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial⟩
+    ⟨injective_torsionByδ hfg hf hg hr.1, surjective_torsionByδ hfg hf hg hr.2⟩
 
 /-- The connecting isomorphism is the connecting map. -/
 @[simp]
@@ -238,7 +186,7 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
   obtain ⟨y, hy⟩ := hg x
   obtain ⟨z, hz⟩ := (hfg (r • y)).1 <| by
     rw [map_smul, hy]
-    exact (mem_torsionBy_iff _ _).1 x.2
+    exact (mem_torsionBy_iff _ _).1 x.property
   have hy' : g' (β y) = torsionByMap r γ x := by
     simpa [hy] using (LinearMap.congr_fun hβγ y).symm
   have hz' : f' (α z) = r • β y := by
@@ -247,6 +195,25 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
     torsionByδ_eq hfg hf hg x hy hz, QuotSMulTop.map_apply_mk]
 
 end Snake
+
+section QuotientLinear
+
+variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+
+variable {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
+
+/-- `TauCeti.torsionByδ` promoted to an `R ⧸ (r)`-linear connecting map
+`M₃[r] →ₗ[R ⧸ (r)] M₁ ⧸ rM₁`. -/
+noncomputable def torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
+    torsionBy R M₃ r →ₗ[R ⧸ Ideal.span {r}] QuotSMulTop r M₁ :=
+  LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective (torsionByδ r hfg hf hg)
+
+@[simp]
+theorem coe_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
+    ⇑(torsionByδLinearMap r hfg hf hg) = ⇑(torsionByδ r hfg hf hg) := (rfl)
+
+end QuotientLinear
 
 end TauCeti
 

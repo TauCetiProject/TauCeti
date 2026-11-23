@@ -13,9 +13,10 @@ import Mathlib.Algebra.Module.LinearMap.Rat
 # Polynomial flows of locally nilpotent derivations
 
 Evaluating the Taylor expansion of a locally nilpotent derivation at a scalar gives an
-algebra endomorphism. These endomorphisms satisfy the additive parameter law, and hence
-are automorphisms, with inverse given by the negative parameter. No uniform nilpotence
-bound on the coordinate ring is required.
+algebra endomorphism. Over a commutative semiring of parameters, these endomorphisms satisfy
+the additive parameter law. Over a commutative ring of parameters, which has negative parameters,
+they are therefore automorphisms, with inverse given by the negative parameter. No uniform
+nilpotence bound on the coordinate ring is required.
 
 For invariant vector fields on affine groups this is the coordinate-ring flow used to
 construct algebraic one-parameter subgroups.
@@ -34,8 +35,11 @@ namespace Derivation
 
 open Polynomial Finset
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-  [Algebra ℚ A]
+variable {R A : Type*} [CommRing A] [Algebra ℚ A]
+
+section CommSemiring
+
+variable [CommSemiring R] [Algebra R A]
 variable (D : Derivation R A A) (hD : ∀ a, ∃ n, D^[n] a = 0)
 
 /-- The polynomial flow at parameter `r` of a locally nilpotent derivation. -/
@@ -124,6 +128,13 @@ theorem taylorExpAt_add (r s : R) :
   have hv := congrArg (fun k : Module.End ℚ K => (k x : A)) h
   simpa only [_root_.mul_apply_eq_comp, ← heq, AlgHom.comp_apply] using hv
 
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R] [Algebra R A]
+variable (D : Derivation R A A) (hD : ∀ a, ∃ n, D^[n] a = 0)
+
 /-- The flow at any parameter is an algebra automorphism; the inverse is the flow at
 its negative. -/
 noncomputable def taylorExpAtEquiv (r : R) : A ≃ₐ[R] A :=
@@ -140,5 +151,7 @@ theorem taylorExpAtEquiv_apply (r : R) (a : A) :
 @[simp]
 theorem taylorExpAtEquiv_symm_apply (r : R) (a : A) :
     (D.taylorExpAtEquiv hD r).symm a = D.taylorExpAt hD (-r) a := (rfl)
+
+end CommRing
 
 end Derivation

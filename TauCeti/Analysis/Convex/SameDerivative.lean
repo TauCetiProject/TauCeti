@@ -180,12 +180,13 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
     have hψ := hψ.subset (fun t ht => hvΩ _ (hIΩ ht)) hIc
     have hmid {a b c : ℝ} (ha : a ∈ I) (hc : c ∈ I) (hab : a < b) (hbc : b < c) : b ∈ I :=
       hIc.ordConnected.out ha hc ⟨hab.le, hbc.le⟩
-    have key := sub_eq_sub_of_slope_le hIo hφ hψ
+    have key := hφ.sub_eq_sub_of_slope_le hψ
       (fun a b c ha hc hab hbc => slope_le_slope_of_subset_closure hu hubot hv hvbot hΩ huΩ hvΩ
         huc hvc hD (hIΩ ha) (hIΩ (hmid ha hc hab hbc)) (hIΩ hc) hab hbc)
       (fun a b c ha hc hab hbc => slope_le_slope_of_subset_closure hv hvbot hu hubot hΩ hvΩ huΩ
         hvc huc hD' (hIΩ ha) (hIΩ (hmid ha hc hab hbc)) (hIΩ hc) hab hbc)
-      (s := 0) (t := 1) (by simpa [I] using hr) (by simpa [I, dist_eq_norm] using hy) zero_le_one
+      (s := 0) (t := 1) (by rw [hIo.interior_eq]; simpa [I] using hr)
+      (by rw [hIo.interior_eq]; simpa [I, dist_eq_norm] using hy)
     simpa using key
   -- A locally constant function on a preconnected set is constant.
   rcases Ω.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
@@ -193,7 +194,7 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
   have := isPreconnected_iff_preconnectedSpace.1 hΩc
   have hlc : IsLocallyConstant fun x : Ω => (u x).toReal - (v x).toReal :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun x =>
-      (continuous_subtype_val.tendsto x).eventually (hloc x x.2)
+      (continuous_subtypeVal.tendsto x).eventually (hloc x x.property)
   refine ⟨(u x₀).toReal - (v x₀).toReal, fun x hx => ?_⟩
   have hconst : (u x).toReal - (v x).toReal = (u x₀).toReal - (v x₀).toReal :=
     hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨x₀, hx₀⟩

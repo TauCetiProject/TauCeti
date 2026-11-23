@@ -107,8 +107,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
   simp only [coe_candidateGenusFieldConj_apply, candidateGenusFieldGen_val]
   split_ifs with hneg
   · have hrad : primeDiscriminantRadicand P.val < 0 :=
-      (primeDiscriminantRadicand_neg_iff
-        ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).2 hneg
+      (primeDiscriminantRadicand_neg_iff P.val).2 hneg
     have hsquare : genusFieldRoot hd P ^ 2 ≤ 0 := by
       rw [genusFieldRoot_sq]
       exact_mod_cast hrad.le
@@ -118,8 +117,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
     · simp
   · have hrad : 0 ≤ primeDiscriminantRadicand P.val := by
       have : ¬ primeDiscriminantRadicand P.val < 0 := fun hr => hneg <|
-        (primeDiscriminantRadicand_neg_iff
-          ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).1 hr
+        (primeDiscriminantRadicand_neg_iff P.val).1 hr
       omega
     have hsquare : 0 ≤ genusFieldRoot hd P ^ 2 := by
       rw [genusFieldRoot_sq]
@@ -193,7 +191,7 @@ theorem mem_map_candidateGenusFieldReal_iff (hd : Squarefree d) (x : ℂ) :
   rw [IntermediateField.mem_map]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2, (coe_candidateGenusFieldConj_apply hd y).symm.trans
+    exact ⟨y.property, (coe_candidateGenusFieldConj_apply hd y).symm.trans
       (congrArg Subtype.val ((candidateGenusFieldConj_apply_eq_self_iff hd y).2 hy))⟩
   · rintro ⟨hx, hstar⟩
     exact ⟨⟨x, hx⟩, (candidateGenusFieldConj_apply_eq_self_iff hd _).1

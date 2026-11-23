@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- `vecMul_dotProduct_comm` is used in the proof of `e6Root_dotProduct_e6Coroot_comm` below.
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 -- The `DynkinType` API, `dotProductEquiv` and `RootPairing.Base` come with
 -- `SimplyConnectedRootDatum.Basic`.
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
@@ -68,8 +68,7 @@ means here.
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate V, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `E₆` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+12.1.
 -/
 
 public section
@@ -548,7 +547,8 @@ private lemma linearIndepOn_e6Root :
   have hcomp : e6Root ∘ e6SimpleIndex = fun i => CartanMatrix.E 6 i :=
     funext root_e6SimpleIndex
   rw [hcomp]
-  exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.E₆_det]; norm_num)
+  exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 6)
+    (by rw [CartanMatrix.E₆_det]; norm_num)
 
 private lemma linearIndepOn_e6Coroot :
     LinearIndepOn ℤ e6Coroot (e6SimpleSupport : Set (Fin 72)) := by
@@ -586,7 +586,7 @@ theorem pairing_e6SimpleIndex (i j : Fin 6) :
 
 /-- Identify the support of the type-`E₆` base with its six Bourbaki-numbered nodes. -/
 private def e6BaseEquiv : e6SimplyConnectedBase.support ≃ Fin 6 where
-  toFun x := ⟨(x : Fin 72), mem_e6SimpleSupport.mp x.2⟩
+  toFun x := ⟨(x : Fin 72), mem_e6SimpleSupport.mp x.property⟩
   invFun i := ⟨e6SimpleIndex i, mem_e6SimpleSupport.mpr (by simp)⟩
   left_inv x := by
     apply Subtype.ext

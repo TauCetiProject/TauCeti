@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
@@ -34,7 +36,11 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 
 ## Main results
 
-* `PadicInt.val_toZModPow_eq_appr`: `appr` computes the `ZMod (p ^ n)`-value of `toZModPow`.
+* `PadicInt.val_toZModPow_eq_appr`, `PadicInt.toZModPow_eq_natCast_appr`: `appr` computes the
+  `ZMod (p ^ n)`-value of `toZModPow`, which is the class of the natural number `x.appr n`.
+* `PadicInt.isLocalHom_toZModPow`: for `n ≠ 0`, truncation modulo `p ^ n` is a local ring
+  homomorphism, so a `p`-adic integer is a unit exactly when its residue modulo `p ^ n` is
+  (`isUnit_map_iff`).
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
@@ -42,6 +48,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+* `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
+  `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
   whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
   square of a unit is `1` modulo `8`; `PadicInt.eight_dvd_sub_or_eight_dvd_sub_add_of_eq`: for
@@ -71,9 +79,10 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.continuous_appr`: the truncation modulo `p ^ n` is locally constant.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
-* `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
-  `ZMod (p ^ n)`.
+* `PadicInt.quotientSpanPowEquivZMod`, `PadicInt.quotientSpanPowEquivZMod_mk`: `toZModPow n`
+  identifies `ℤ_[p] ⧸ (p ^ n)` with `ZMod (p ^ n)`, sending the class of `x` to `toZModPow n x`.
 * `PadicInt.span_singleton_eq_span_pow_valuation`, `PadicInt.quotientSpanEquivZMod`,
+  `PadicInt.quotientSpanEquivZMod_mk`, `PadicInt.finite_quotient_span`,
   `PadicInt.natCard_quotient_span`, `PadicInt.isAddCyclic_quotient_span`: a nonzero `x` generates
   the same ideal as `p ^ v` for `v` its valuation, so `ℤ_[p] ⧸ (x)` is `ZMod (p ^ v)`, a finite
   ring of cardinality `p ^ v` whose additive group is cyclic.
@@ -83,9 +92,13 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
-  continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
+  continuous ring homomorphism out of `ℤ_[p] ⧸ (q)` (`PadicInt.continuous_quotientSpanToZMod`,
+  `PadicInt.continuous_quotientSpanToZModPow`), sending the class of `x` to `toZMod x`,
+  respectively `toZModPow n x` (`PadicInt.quotientSpanToZMod_mk`,
+  `PadicInt.quotientSpanToZModPow_mk`).
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
-  homomorphism to the units of `ZMod (p ^ n)`; it is surjective, that is, every unit of
+  homomorphism to the units of `ZMod (p ^ n)`, acting as `toZModPow n` on the underlying
+  elements (`PadicInt.coe_unitsToZModPow_apply`); it is surjective, that is, every unit of
   `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.unitsToZModPow_surjective`),
   compatible with the reductions `ZMod.unitsMap` between levels
   (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
@@ -101,6 +114,17 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
+instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
+  ⟨ZMod.ringHom_surjective _⟩
+
+/-- For `n ≠ 0`, truncation modulo `p ^ n` is a local ring homomorphism: a `p`-adic integer is a
+unit exactly when its residue modulo `p ^ n` is (`isUnit_map_iff`). At `n = 0` the target
+`ZMod (p ^ 0)` is the zero ring, where `p` maps to a unit, so `n ≠ 0` is needed. -/
+instance isLocalHom_toZModPow (n : ℕ) [NeZero n] : IsLocalHom (toZModPow (p := p) n) :=
+  have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (NeZero.ne n) hp.out.one_lt⟩
+  .of_surjective _ (ZMod.ringHom_surjective _)
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
@@ -173,6 +197,20 @@ theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
     toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
   rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
 
+/-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
+noncomputable def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : TopologicalSpace.Clopens ℤ_[p] :=
+  ⟨toZModPow n ⁻¹' {a}, (isClopen_discrete {a}).preimage (continuous_toZModPow n)⟩
+
+@[simp]
+theorem mem_residueClopen (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ toZModPow n x = a := Iff.rfl
+
+/-- A residue class is the coset of `p ^ n ℤ_p` represented by `a.val`. -/
+theorem mem_residueClopen_iff_dvd (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ (p : ℤ_[p]) ^ n ∣ x - (a.val : ℤ_[p]) := by
+  rw [mem_residueClopen, ← toZModPow_eq_iff_dvd_sub]
+  simp [eq_comm]
+
 /-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
 theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
     (8 : ℤ_[2]) ∣ c - a ↔ toZModPow 3 a = toZModPow 3 c := by
@@ -195,6 +233,17 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
 theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_[2]) ∣ z ^ 2 - 1 := by
   rw [eight_dvd_sub_iff_toZModPow_three_eq, map_one, map_pow, sq,
     isUnit_iff_toZModPow_three_mul_self.mp hz]
+
+/-- For a unit `a` of `ℤ_[2]`, a change by `5 a - a` is a change by `4` modulo `8`. -/
+theorem eight_dvd_sub_five_mul_sub_self_iff {a : ℤ_[2]} (ha : IsUnit a) {c : ℤ_[2]} :
+    (8 : ℤ_[2]) ∣ c - (5 * a - a) ↔ (8 : ℤ_[2]) ∣ c - 4 := by
+  have h4 : (8 : ℤ_[2]) ∣ 4 - 4 * a := by
+    rw [eight_dvd_sub_iff_toZModPow_three_eq, map_mul, map_ofNat]
+    have hA := isUnit_iff_toZModPow_three_mul_self.mp ha
+    generalize toZModPow 3 a = A at hA ⊢
+    revert A
+    decide
+  rw [show c - (5 * a - a) = c - 4 + (4 - 4 * a) by ring, dvd_add_left h4]
 
 /-- For `k ≥ 1`, a unit `c = a x² + 2ᵏ b y²` of `ℤ_[2]` is congruent to `a` or to `a + 2ᵏ b`
 modulo `8`: the values of the binary form `⟨a, 2ᵏ b⟩` that are units. -/
@@ -513,9 +562,9 @@ theorem unitsToZModPow_surjective (n : ℕ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
     exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+  · have : NeZero n := ⟨hn.ne'⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+      inferInstance
 
 /-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
 truncation modulo `p ^ m`. -/

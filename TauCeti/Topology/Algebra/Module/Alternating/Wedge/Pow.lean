@@ -37,8 +37,11 @@ Darboux basis this is the classical normalization of the symplectic volume form 
 
 * `ContinuousAlternatingMap.wedgePow_compContinuousLinearMap`: wedge powers commute with
   pullback along continuous linear maps.
+* `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
 * `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`: the power rule for inserting a vector
   into a wedge power of a two-form.
+* `ContinuousAlternatingMap.curryLeftTopological_wedgePow_succ_eq_zero`: a vector in the kernel
+  of a two-form lies in the kernel of each of its positive powers.
 * `ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`: the `m`-th power of a two-form takes
   the value `m!` on a family of `m` standard pairs.
 
@@ -90,6 +93,16 @@ theorem wedgePow_compContinuousLinearMap {E' : Type*} [AddCommGroup E'] [Module 
   | zero => ext v; rfl
   | succ m ih => rw [wedgePow_succ, wedgePow_succ, pairedWedge_compContinuousLinearMap, ih]
 
+/-- Scalars come out of a wedge power raised to the number of factors: `(c φ) ^ m = c ^ m φ ^ m`. -/
+@[simp]
+theorem wedgePow_smul (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
+    wedgePow (c • φ) m = (c ^ m) • wedgePow φ m := by
+  induction m with
+  | zero => rw [pow_zero, one_smul]; rfl
+  | succ m ih =>
+    rw [wedgePow_succ, wedgePow_succ, ih, pairedWedge_smul_left, pairedWedge_smul_right, smul_smul,
+      pow_succ]
+
 /-! ### The power rule for two-forms -/
 
 /-- **The power rule for interior products.** Inserting a vector `v` into the `(m + 1)`-th wedge
@@ -129,6 +142,22 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       push_cast
       ring
     exact key _ _ rfl
+
+/-- If `ω(v, w) = 0` for every `w`, then the interior product of `v` with every positive power of
+`ω` vanishes. -/
+theorem curryLeftTopological_wedgePow_succ_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) {v : E}
+    (hv : ∀ w, ω ![v, w] = 0) :
+    curryLeftTopological (n := 2 * m + 1) (ω.wedgePow (m + 1)) v = 0 := by
+  have h₀ : curryLeftTopological (n := 1) ω v = 0 := by
+    ext u
+    rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply, ← hv (u 0)]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  ext w
+  rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply]
+  refine (wedgePow_succ_apply_vecCons ω m v w).trans ?_
+  rw [h₀, pairedWedge_zero_left, coe_zero, Pi.zero_apply, mul_zero]
 
 /-! ### The value on standard pairs -/
 

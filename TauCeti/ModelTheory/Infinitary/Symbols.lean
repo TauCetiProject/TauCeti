@@ -16,10 +16,12 @@ public import Mathlib.Data.Set.Countable
 # Symbols occurring in infinitary formulas
 
 `BoundedFormulaInf.functionsIn` and `BoundedFormulaInf.relationsIn` record the symbols
-occurring in a formula, tagged by arity. Equality contributes only the function symbols of its
-terms: it is a logical symbol. At a countable branching carrier both sets are countable, with
-no restriction on the size of the language. This is the input for restricting a sentence to
-a countable sublanguage.
+occurring in a formula, tagged by arity, and `BoundedFormulaInf.functionsInSet` and
+`BoundedFormulaInf.relationsInSet` collect those occurring across a set of formulas. Equality
+contributes only the function symbols of its terms: it is a logical symbol. At a countable
+branching carrier the symbol sets of a formula and of any countable set of formulas are countable,
+with no restriction on the size of the language. This is the input for restricting formulas and
+theories to countable sublanguages.
 
 `BoundedFormulaInf.realize_congr_of_agreeOn` is symbol locality: two interpretations on one
 carrier which agree on the occurring symbols give the formula the same truth value. Language
@@ -235,11 +237,17 @@ theorem functionsIn_countable [Countable ι] (φ : L.BoundedFormulaInf ι α n) 
   | falsum => simp
   | equal t₁ t₂ =>
     exact t₁.functionsIn_finite.countable.union t₂.functionsIn_finite.countable
-  | rel R ts => exact Set.countable_iUnion fun i => (ts i).functionsIn_finite.countable
+  | rel _ ts => exact Set.countable_iUnion fun i => (ts i).functionsIn_finite.countable
   | imp φ ψ ihφ ihψ => exact ihφ.union ihψ
-  | all φ ih => exact ih
+  | all _ ih => exact ih
   | iSup φs ih => exact Set.countable_iUnion ih
   | iInf φs ih => exact Set.countable_iUnion ih
+
+/-- At a countable branching carrier, the subtype of function symbols occurring in a formula is
+countable. -/
+instance countable_functionsIn [Countable ι] (φ : L.BoundedFormulaInf ι α n) :
+    Countable φ.functionsIn :=
+  φ.functionsIn_countable.to_subtype
 
 /-- Relabelling bound positions preserves the occurring function symbols. -/
 @[simp]
@@ -295,9 +303,15 @@ theorem relationsIn_countable [Countable ι] (φ : L.BoundedFormulaInf ι α n) 
   | equal t₁ t₂ => simp
   | rel R ts => simp
   | imp φ ψ ihφ ihψ => exact ihφ.union ihψ
-  | all φ ih => exact ih
+  | all _ ih => exact ih
   | iSup φs ih => exact Set.countable_iUnion ih
   | iInf φs ih => exact Set.countable_iUnion ih
+
+/-- At a countable branching carrier, the subtype of relation symbols occurring in a formula is
+countable. -/
+instance countable_relationsIn [Countable ι] (φ : L.BoundedFormulaInf ι α n) :
+    Countable φ.relationsIn :=
+  φ.relationsIn_countable.to_subtype
 
 /-- Relabelling bound positions preserves the occurring relation symbols. -/
 @[simp]
@@ -390,6 +404,38 @@ theorem realize_congr_of_agreeOn {M : Type w} (φ : L.BoundedFormulaInf ι α n)
       (fun f hf => hF f (Set.mem_iUnion.mpr ⟨i, hf⟩))
       (fun R hR' => hR R (Set.mem_iUnion.mpr ⟨i, hR'⟩)) xs
 
+/-! ### Symbols occurring across a set of formulas -/
+
+/-- The arity-tagged function symbols occurring in at least one formula of `S`. -/
+abbrev functionsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Functions k) :=
+  ⋃ φ ∈ S, φ.functionsIn
+
+/-- The arity-tagged relation symbols occurring in at least one formula of `S`. -/
+abbrev relationsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Relations k) :=
+  ⋃ φ ∈ S, φ.relationsIn
+
+/-- At a countable branching carrier, a countable set of formulas mentions only countably many
+function symbols. -/
+theorem functionsInSet_countable [Countable ι] {S : Set (L.BoundedFormulaInf ι α n)}
+    (hS : S.Countable) : (functionsInSet S).Countable :=
+  hS.biUnion fun φ _ => φ.functionsIn_countable
+
+/-- At a countable branching carrier, a countable set of formulas mentions only countably many
+relation symbols. -/
+theorem relationsInSet_countable [Countable ι] {S : Set (L.BoundedFormulaInf ι α n)}
+    (hS : S.Countable) : (relationsInSet S).Countable :=
+  hS.biUnion fun φ _ => φ.relationsIn_countable
+
+/-- At a countable branching carrier, `functionsInSet S` is countable for any countable `S`. -/
+instance countable_functionsInSet [Countable ι] (S : Set (L.BoundedFormulaInf ι α n))
+    [Countable S] : Countable (functionsInSet S) :=
+  (functionsInSet_countable (Set.to_countable S)).to_subtype
+
+/-- At a countable branching carrier, `relationsInSet S` is countable for any countable `S`. -/
+instance countable_relationsInSet [Countable ι] (S : Set (L.BoundedFormulaInf ι α n))
+    [Countable S] : Countable (relationsInSet S) :=
+  (relationsInSet_countable (Set.to_countable S)).to_subtype
+
 end BoundedFormulaInf
 
 namespace LHom
@@ -423,6 +469,26 @@ theorem relationsIn_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormula
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih, Set.image_iUnion]
   | iInf φs ih => simp [ih, Set.image_iUnion]
+
+/-- Language translation takes the function symbols occurring across a set of formulas to their
+exact image. -/
+@[simp]
+theorem functionsInSet_image_onBoundedFormulaInf (g : L →ᴸ L')
+    (S : Set (L.BoundedFormulaInf ι α n)) :
+    BoundedFormulaInf.functionsInSet (g.onBoundedFormulaInf '' S) =
+      (fun s => ⟨s.1, g.onFunction s.2⟩) '' BoundedFormulaInf.functionsInSet S := by
+  simp only [BoundedFormulaInf.functionsInSet, Set.biUnion_image, Set.image_iUnion₂,
+    functionsIn_onBoundedFormulaInf]
+
+/-- Language translation takes the relation symbols occurring across a set of formulas to their
+exact image. -/
+@[simp]
+theorem relationsInSet_image_onBoundedFormulaInf (g : L →ᴸ L')
+    (S : Set (L.BoundedFormulaInf ι α n)) :
+    BoundedFormulaInf.relationsInSet (g.onBoundedFormulaInf '' S) =
+      (fun s => ⟨s.1, g.onRelation s.2⟩) '' BoundedFormulaInf.relationsInSet S := by
+  simp only [BoundedFormulaInf.relationsInSet, Set.biUnion_image, Set.image_iUnion₂,
+    relationsIn_onBoundedFormulaInf]
 
 end LHom
 

@@ -101,7 +101,7 @@ private theorem IsNoncrossing.mem_uIoc_of_mem_part (hP : P.IsNoncrossing) {x y k
   · -- `y ≤ x`: `x` and `y` are the last and first points of `s`, and `a ∈ (k, x]`.
     have hyk' : y ≤ k := (hyle hyx k hks).1
     have hkx : k ≤ x := (hyle hyx k hks).2
-    obtain ⟨hka, hax⟩ : k < a ∧ a ≤ x :=
+    obtain ⟨hka, _⟩ : k < a ∧ a ≤ x :=
       ha.resolve_left fun h => absurd (h.1.trans_le h.2) hkx.not_gt
     have hne : P.part a ≠ P.part k := fun h =>
       absurd (hkle hyk' a (h ▸ P.mem_part has)).2 (not_le.2 hka)
@@ -182,7 +182,7 @@ variable {n : ℕ}
 theorem formPerm_kreweras (π : NoncrossingPartition (univ : Finset (Fin n))) :
     (kreweras π : Finpartition (univ : Finset (Fin n))).formPerm =
       (π : Finpartition (univ : Finset (Fin n))).formPerm⁻¹ * finRotate n := by
-  rw [coe_kreweras, π.2.formPerm_kreweras, Finpartition.formPerm_top_eq_finRotate]
+  rw [coe_kreweras, π.property.formPerm_kreweras, Finpartition.formPerm_top_eq_finRotate]
 
 /-- **The geodesic condition for noncrossing partitions.** For a noncrossing partition `π` of
 `Fin n` with `n ≠ 0`, the permutations `p_π` and `p_π⁻¹ * finRotate n` have `n + 1` cycles in

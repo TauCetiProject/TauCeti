@@ -61,6 +61,51 @@ theorem isGenusOneAffineE7Shape_iff : T.IsGenusOneAffineE7Shape ↔
   (∀ i j, T.intersection (e i) (e j) =
     -(T.weight (e 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j) := Iff.rfl
 
+/-- The relabelling step of `affineE7_weights_intersections`: once the weights and intersections
+of the chain `c` and of the branch `l 1` are known, those of `l` follow in the canonical
+numbering. -/
+private lemma affineE7_weights_intersections_of_chain (l : Fin 8 → T.Component)
+    (c : ℕ → T.Component) (hc0 : l 4 = c 0) (hc1 : l 3 = c 1) (hc2 : l 2 = c 2)
+    (hc3 : l 0 = c 3) (hc4 : l 5 = c 4) (hc5 : l 6 = c 5) (hc6 : l 7 = c 6)
+    (hself1 : T.intersection (l 1) (l 1) = -(2 * (T.weight (l 1) : ℤ))) {w : ℕ+}
+    (hwb : (T.weight (l 1) : ℤ) = w) (hweight : ∀ i < 7, (T.weight (c i) : ℤ) = w)
+    (hentry : ∀ {i j : ℕ}, i < 7 → j < 7 → T.intersection (c i) (c j) =
+      if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then (w : ℤ) else 0)
+    (hbentry : ∀ {i : ℕ}, i < 7 → T.intersection (c i) (l 1) = if i = 3 then (w : ℤ) else 0) :
+    (∀ i, T.weight (l i) = T.weight (l 0)) ∧
+      (∀ i j, T.intersection (l i) (l j) =
+        -(T.weight (l 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j) := by
+  classical
+  -- Return to the canonical affine numbering. These identities name the relabelling,
+  -- so subsequent uses of the chain formulas need no unfolding of the component map.
+  have hw0 : (T.weight (l 0) : ℤ) = w := hc3 ▸ hweight 3 (by omega)
+  have hweights : ∀ i, T.weight (l i) = T.weight (l 0) := by
+    intro i
+    apply PNat.coe_injective
+    apply Int.natCast_inj.mp
+    rw [hw0]
+    fin_cases i <;> simp [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hwb, hweight]
+  have hmatrix : ∀ i j, T.intersection (l i) (l j) =
+      -(T.weight (l 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j := by
+    intro i j
+    -- The affine API is indexed by Fin E7.nodes; elaboration identifies it with Fin 8.
+    erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E7 i j]
+    rw [hw0]
+    fin_cases i <;> fin_cases j <;>
+      simp! only [Fin.zero_eta, Fin.isValue, hc3, Nat.reduceLT, hentry, ↓reduceIte,
+        AffineDynkinType.nodes_E7, neg_mul, neg_inj, Fin.mk_one, hbentry, zero_ne_one,
+        Int.reduceNeg, mul_ite, mul_neg, mul_one, neg_neg, mul_zero, left_eq_ite_iff,
+        Int.natCast_eq_zero, PNat.ne_zero, imp_false, Decidable.not_not, Fin.reduceFinMk, hc2,
+        Nat.succ_ne_self, Nat.reduceAdd, Nat.reduceEqDiff, or_true, Fin.reduceEq, hc1,
+        Nat.one_lt_ofNat, OfNat.ofNat_ne_one, or_self, right_eq_ite_iff, hc0, Nat.ofNat_pos,
+        OfNat.ofNat_ne_zero, zero_add, OfNat.one_ne_ofNat, hc4, or_false, hc5, hc6,
+        Nat.lt_add_one, T.intersection_comm (l 1), one_ne_zero, hself1, hwb,
+        OfNat.zero_ne_ofNat]
+    all_goals first
+      | (erw [AffineDynkinType.graph_E7_adj]; norm_num)
+      | ring
+  exact ⟨hweights, hmatrix⟩
+
 /-- The finite E₇ subdiagrams fix the whole affine E₇ intersection matrix. -/
 private lemma affineE7_weights_intersections (l : Fin 8 → T.Component)
     (hl : Function.Injective l)
@@ -99,82 +144,10 @@ private lemma affineE7_weights_intersections (l : Fin 8 → T.Component)
     by_contra h
     have hz := hc.intersection_branch_eq_zero T (by omega) hbne (hself 1)
     exact hbpos.ne' hz
-  -- The overlapping finite E₇ diagrams obtained by removing either long-arm endpoint
-  -- identify all weights and edges, including every intersection with the short branch.
-  obtain ⟨w, hw, hwb, hedge, hab, hbzero⟩ :=
-    T.exists_weight_intersection_branch_seven_eq (hc.mono (by omega))
-      (fun i hi ↦ hbne i (by omega)) (hself 1) hbpos
-  let r : ℕ → T.Component := fun i ↦ c (6 - i)
-  have hr : T.IsSelfIntersectionMinusTwoChain 6 r := by
-    simpa [r] using hc.reverse.mono (s := 6) (by omega)
-  obtain ⟨w', hwr, -, hredge, -, hrzero⟩ :=
-    T.exists_weight_intersection_branch_seven_eq hr
-      (fun i hi ↦ hbne (6 - i) (by omega)) (hself 1)
-      (by simpa [r] using hbpos)
-  have hww : (w' : ℤ) = w := (hwr 3 (by omega)).symm.trans (hw 3 (by omega))
-  have hweight (i : ℕ) (hi : i < 7) : (T.weight (c i) : ℤ) = w := by
-    obtain h | rfl : i < 6 ∨ i = 6 := by omega
-    · exact hw i h
-    · simpa [r, hww] using hwr 0 (by omega)
-  have hedge' (i : ℕ) (hi : i + 1 < 7) : T.intersection (c i) (c (i + 1)) = w := by
-    obtain h | rfl : i < 5 ∨ i = 5 := by omega
-    · exact hedge i (by omega)
-    · rw [T.intersection_comm]
-      simpa [r, hww] using hredge 0 (by omega)
-  have hentry {i j : ℕ} (hi : i < 7) (hj : j < 7) :=
-    hc.intersection_eq_ite (by omega) hweight hedge' hi hj
-  have hbentry {i : ℕ} (hi : i < 7) :
-      T.intersection (c i) (l 1) = if i = 3 then (w : ℤ) else 0 := by
-    split_ifs with h3
-    · subst h3
-      exact hab
-    · obtain h | rfl : i < 6 ∨ i = 6 := by omega
-      · exact hbzero i h h3
-      · simpa [r] using hrzero 0 (by omega) (by omega)
-  -- Return to the canonical affine numbering. These identities name the relabelling,
-  -- so subsequent uses of the chain formulas need no unfolding of the component map.
-  have hc0 : l 4 = c 0 := rfl
-  have hc1 : l 3 = c 1 := rfl
-  have hc2 : l 2 = c 2 := rfl
-  have hc3 : l 0 = c 3 := rfl
-  have hc4 : l 5 = c 4 := rfl
-  have hc5 : l 6 = c 5 := rfl
-  have hc6 : l 7 = c 6 := rfl
-  have hw0 : (T.weight (l 0) : ℤ) = w := hw 3 (by omega)
-  have hweights : ∀ i, T.weight (l i) = T.weight (l 0) := by
-    intro i
-    apply PNat.coe_injective
-    apply Int.natCast_inj.mp
-    rw [hw0]
-    fin_cases i <;> first
-      | exact hwb
-      | exact hweight 0 (by omega)
-      | exact hweight 1 (by omega)
-      | exact hweight 2 (by omega)
-      | exact hweight 3 (by omega)
-      | exact hweight 4 (by omega)
-      | exact hweight 5 (by omega)
-      | exact hweight 6 (by omega)
-  have hmatrix : ∀ i j, T.intersection (l i) (l j) =
-      -(T.weight (l 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j := by
-    intro i j
-    -- The affine API is indexed by Fin E7.nodes; elaboration identifies it with Fin 8.
-    erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E7 i j]
-    rw [hw0]
-    fin_cases i <;> fin_cases j <;>
-      simp! only [Fin.zero_eta, Fin.isValue, hc3, Nat.reduceLT, hentry, ↓reduceIte,
-        AffineDynkinType.nodes_E7, neg_mul, neg_inj, Fin.mk_one, hbentry, zero_ne_one,
-        Int.reduceNeg, mul_ite, mul_neg, mul_one, neg_neg, mul_zero, left_eq_ite_iff,
-        Int.natCast_eq_zero, PNat.ne_zero, imp_false, Decidable.not_not, Fin.reduceFinMk, hc2,
-        Nat.succ_ne_self, Nat.reduceAdd, Nat.reduceEqDiff, or_true, Fin.reduceEq, hc1,
-        Nat.one_lt_ofNat, OfNat.ofNat_ne_one, or_self, right_eq_ite_iff, hc0, Nat.ofNat_pos,
-        OfNat.ofNat_ne_zero, zero_add, OfNat.one_ne_ofNat, hc4, or_false, hc5, hc6,
-        Nat.lt_add_one, T.intersection_comm (l 1), one_ne_zero, hself 1, hwb,
-        OfNat.zero_ne_ofNat]
-    all_goals first
-      | (erw [AffineDynkinType.graph_E7_adj]; norm_num)
-      | ring
-  exact ⟨hcard, hweights, hmatrix⟩
+  obtain ⟨w, hwb, hweight, hentry, hbentry⟩ :=
+    T.exists_weight_intersection_branch_eight_eq hc hbne (hself 1) hbpos
+  exact ⟨hcard, T.affineE7_weights_intersections_of_chain l c rfl rfl rfl rfl rfl rfl rfl (hself 1)
+    hwb hweight hentry hbentry⟩
 
 /-- Eight distinct components of self-intersection `-2w` containing the affine E₇ edges
 are the entire numerical type. All weights agree, all intersections are determined, and

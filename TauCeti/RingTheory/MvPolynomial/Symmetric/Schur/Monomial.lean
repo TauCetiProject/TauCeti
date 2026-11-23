@@ -78,8 +78,6 @@ type.  It is the shape of the sorting argument in this file and has no other con
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2, where `s_λ = ∑_μ K_{λμ} m_μ` is read off
   the tableau definition.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "the `msymm`-to-`schurPoly` change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section
@@ -233,7 +231,8 @@ theorem coeff_msymm_eq_zero_of_degree_ne (ν : n.Partition) {d : σ →₀ ℕ} 
   refine Finset.sum_eq_zero fun s _ => ?_
   rw [prod_map_X_eq_monomial, coeff_monomial, ite_eq_right]
   rintro rfl
-  exact h (by rw [← Finsupp.card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact s.1.2)
+  exact h (by rw [← Finsupp.card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact
+      s.val.property)
 
 /-- **The coefficients of a monomial symmetric polynomial are `0` and `1`**: `m_ν` is the sum of
 the monomials of total degree `n` whose nonzero exponents are the parts of `ν`, each occurring
@@ -257,7 +256,7 @@ theorem coeff_msymm (ν : n.Partition) {d : σ →₀ ℕ} (h : d.degree = n) :
     -- `weightPartition d h` is `Nat.Partition.ofSym (weightSym d h)` by definition, and `s` ranges
     -- over the multisets of letters whose partition is `ν`.
     exact (congrArg (fun t : Sym σ n => Nat.Partition.ofSym t)
-      ((hinj s.1).mp hcoeff)).symm.trans s.2
+      ((hinj s.val).mp hcoeff)).symm.trans s.property
 
 /-- **A monomial symmetric polynomial vanishes when its partition has more parts than the alphabet
 has letters**: no monomial in that alphabet uses that many distinct letters. -/
@@ -293,8 +292,19 @@ theorem degree_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.ca
 exponents of `TauCeti.partWeight σ ν` is `ν` itself.  Together with `TauCeti.coeff_msymm` this
 says that the monomial symmetric polynomials take the value `1` at their own sorted monomial and
 `0` at every other one. -/
-theorem weightPartition_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.card σ)
+theorem weightPartition_partWeight (ν : n.Partition)
     (h : (partWeight σ ν).degree = n) : weightPartition (partWeight σ ν) h = ν := by
+  -- The degree of `partWeight σ ν` is `n` only if no part is truncated.
+  have hν : ν.parts.card ≤ Fintype.card σ := by
+    by_contra hlt
+    have hlt' := degree_rowLenWeight_lt (N := Fintype.card σ) (μ := YoungDiagram.ofPartition ν)
+      (by rwa [YoungDiagram.colLen_zero_ofPartition, ← not_le])
+    have hdeg : (partWeight σ ν).degree = (rowLenWeight (Fintype.card σ)
+        (YoungDiagram.ofPartition ν)).degree := by
+      simpa only [partWeight_eq_mapDomain] using Finsupp.degree_mapDomain (Fintype.equivFin σ).symm
+        (rowLenWeight (Fintype.card σ) (YoungDiagram.ofPartition ν))
+    rw [YoungDiagram.card_ofPartition, ← hdeg] at hlt'
+    exact hlt'.ne h
   refine Nat.Partition.ext ?_
   rw [weightPartition_parts]
   have hkey := (map_univ_val (partWeight σ ν)).symm.trans (map_univ_val_partWeight ν hν)
@@ -317,7 +327,7 @@ monomials, and the reason they are linearly independent. -/
 @[simp]
 theorem coeff_msymm_partWeight (ν ξ : n.Partition) (hξ : ξ.parts.card ≤ Fintype.card σ) :
     (msymm σ R ν).coeff (partWeight σ ξ) = if ξ = ν then 1 else 0 := by
-  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ hξ]
+  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ]
 
 /-! ### The monomial expansion -/
 
@@ -346,7 +356,7 @@ theorem schurPoly_eq_sum_kostkaNumber_smul_msymm :
     schurPoly σ R μ = ∑ ν : n.Partition, (kostkaNumber μ ν : R) • msymm σ R ν := by
   ext d
   rw [coeff_sum]
-  simp only [coeff_smul, smul_eq_mul]
+  simp only [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
   by_cases hd : d.degree = n
   · rw [coeff_schurPoly_eq_kostkaNumber R μ hd, Finset.sum_eq_single (weightPartition d hd)]
     · rw [coeff_msymm R _ hd, ite_eq_left rfl, mul_one]

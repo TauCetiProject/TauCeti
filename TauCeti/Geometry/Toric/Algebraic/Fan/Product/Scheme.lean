@@ -63,15 +63,15 @@ theorem affineToricChartι_prodCone_comp_fst_algebraicMap
     (sigma : Phi.cones) (tau : Psi.cones) :
     (Phi.prod Psi).affineToricChartι (Phi.prodCone Psi sigma tau) ≫
         (FanHom.fst Phi Psi).algebraicMap =
-      affineToricSchemeMap (σ := sigma.1.prod tau.1) (τ := sigma.1)
+      affineToricSchemeMap (σ := sigma.val.prod tau.val) (τ := sigma.val)
           (Phi.lattice.prod Psi.lattice) Phi.lattice
           (AddMonoidHom.fst N N') (LinearMap.fst ℝ V V') (fun _ ↦ by simp)
           (by
             simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
-              (Set.mapsTo_fst_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
+              (Set.mapsTo_fst_prod (s := (sigma.val : Set V)) (t := (tau.val : Set V')))) ≫
         Phi.affineToricChartι sigma := by
-  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.fst Phi Psi)
-    (Phi.prodCone Psi sigma tau) sigma (fst_leastCone_prodCone sigma tau)
+  convert affineToricChartι_comp_algebraicMap_of_mapsTo (FanHom.fst Phi Psi)
+    (Phi.prodCone Psi sigma tau) sigma
     (fun _ hx ↦ by simpa only [FanHom.fst_realMap, LinearMap.fst_apply] using hx.1) using 3
   simp only [FanHom.fst_latticeMap, FanHom.fst_realMap]
 
@@ -82,15 +82,15 @@ theorem affineToricChartι_prodCone_comp_snd_algebraicMap
     (sigma : Phi.cones) (tau : Psi.cones) :
     (Phi.prod Psi).affineToricChartι (Phi.prodCone Psi sigma tau) ≫
         (FanHom.snd Phi Psi).algebraicMap =
-      affineToricSchemeMap (σ := sigma.1.prod tau.1) (τ := tau.1)
+      affineToricSchemeMap (σ := sigma.val.prod tau.val) (τ := tau.val)
           (Phi.lattice.prod Psi.lattice) Psi.lattice
           (AddMonoidHom.snd N N') (LinearMap.snd ℝ V V') (fun _ ↦ by simp)
           (by
             simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
-              (Set.mapsTo_snd_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
+              (Set.mapsTo_snd_prod (s := (sigma.val : Set V)) (t := (tau.val : Set V')))) ≫
         Psi.affineToricChartι tau := by
-  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.snd Phi Psi)
-    (Phi.prodCone Psi sigma tau) tau (snd_leastCone_prodCone sigma tau)
+  convert affineToricChartι_comp_algebraicMap_of_mapsTo (FanHom.snd Phi Psi)
+    (Phi.prodCone Psi sigma tau) tau
     (fun _ hx ↦ by simpa only [FanHom.snd_realMap, LinearMap.snd_apply] using hx.2) using 3
   simp only [FanHom.snd_latticeMap, FanHom.snd_realMap]
 
@@ -130,12 +130,12 @@ theorem algebraicProdComparison_snd :
 affine charts to the fibre product of the two fan schemes. -/
 noncomputable def affineToricChartProdMap (sigma : Phi.cones) (tau : Psi.cones) :
     pullback
-        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.1))))
-        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.1)))) ⟶
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.val))))
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.val)))) ⟶
       pullback Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap :=
   pullback.map
-    (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.1))))
-    (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.1))))
+    (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.val))))
+    (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.val))))
     Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap
     (Phi.affineToricChartι sigma) (Psi.affineToricChartι tau) (𝟙 _) (by
       rw [Category.comp_id, affineToricChartι_comp_algebraicRealizationStructureMap]) (by
@@ -148,8 +148,8 @@ theorem affineToricChartProdMap_fst (sigma : Phi.cones) (tau : Psi.cones) :
     Phi.affineToricChartProdMap Psi sigma tau ≫
         pullback.fst Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap =
       pullback.fst
-          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.1))))
-          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.1)))) ≫
+          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.val))))
+          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.val)))) ≫
         Phi.affineToricChartι sigma := by
   simp [affineToricChartProdMap]
 
@@ -160,8 +160,8 @@ theorem affineToricChartProdMap_snd (sigma : Phi.cones) (tau : Psi.cones) :
     Phi.affineToricChartProdMap Psi sigma tau ≫
         pullback.snd Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap =
       pullback.snd
-          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.1))))
-          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.1)))) ≫
+          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Phi.lattice sigma.val))))
+          (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Psi.lattice tau.val)))) ≫
         Psi.affineToricChartι tau := by
   simp [affineToricChartProdMap]
 
@@ -172,7 +172,7 @@ theorem affineToricChartι_comp_algebraicProdComparison
     (sigma : Phi.cones) (tau : Psi.cones) :
     (Phi.prod Psi).affineToricChartι (Phi.prodCone Psi sigma tau) ≫
         Phi.algebraicProdComparison Psi =
-      (affineToricSchemeProdIso Phi.lattice Psi.lattice sigma.1 tau.1).hom ≫
+      (affineToricSchemeProdIso Phi.lattice Psi.lattice sigma.val tau.val).hom ≫
         Phi.affineToricChartProdMap Psi sigma tau := by
   apply pullback.hom_ext
   · simp only [Category.assoc, algebraicProdComparison_fst,
@@ -212,7 +212,6 @@ theorem exists_affineToricChartProdMap_apply_eq
   exact ⟨σ, τ, hx⟩
 
 /-- Intersections of product cone opens are computed in each factor. -/
-@[simp]
 theorem range_affineToricChartProdMap_inter_range_affineToricChartProdMap
     (σ σ' : Phi.cones) (τ τ' : Psi.cones) :
     Set.range (Phi.affineToricChartProdMap Psi σ τ) ∩
@@ -235,9 +234,9 @@ theorem range_affineToricChartι_comp_algebraicProdComparison (σ : Phi.cones) (
     Set.range ((Phi.prod Psi).affineToricChartι (Phi.prodCone Psi σ τ) ≫
         Phi.algebraicProdComparison Psi) = Set.range (Phi.affineToricChartProdMap Psi σ τ) := by
   have hs : Function.Surjective
-      (affineToricSchemeProdIso Phi.lattice Psi.lattice σ.1 τ.1).hom := by
+      (affineToricSchemeProdIso Phi.lattice Psi.lattice σ.val τ.val).hom := by
     simpa only [Scheme.coe_homeoOfIso] using
-      (Scheme.homeoOfIso (affineToricSchemeProdIso Phi.lattice Psi.lattice σ.1 τ.1)).surjective
+      (Scheme.homeoOfIso (affineToricSchemeProdIso Phi.lattice Psi.lattice σ.val τ.val)).surjective
   rw [affineToricChartι_comp_algebraicProdComparison, Scheme.Hom.comp_base,
     TopCat.coe_comp, hs.range_comp]
 

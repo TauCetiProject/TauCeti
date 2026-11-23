@@ -101,7 +101,7 @@ theorem fractionalIdeal_mk_mul_fractionalIdeal_mk
     have hβ := hτf ▸ idealGenerator_mem_fractionalIdeal f D hf
     have hβ' := hτg ▸ idealGenerator_mem_fractionalIdeal g D hg
     have hmul := fun {x y : QuadraticAlgebra ℚ (D : ℚ) 0} (hx : x ∈ f.fractionalIdeal D hf)
-        (hy : y ∈ g.fractionalIdeal D hg) ↦ mem_coe.mpr (mul_mem_mul hx hy)
+        (hy : y ∈ g.fractionalIdeal D hg) ↦ mem_coeToSubmodule.mpr (mul_mem_mul hx hy)
     have key : h.idealGenerator D =
         u • ((a : QuadraticAlgebra ℚ (D : ℚ) 0) * h.idealGenerator D) +
           (v * C) • (h.idealGenerator D * a') -
@@ -109,7 +109,7 @@ theorem fractionalIdeal_mk_mul_fractionalIdeal_mk
             C • ((a : QuadraticAlgebra ℚ (D : ℚ) 0) * a')) := by
       simp only [zsmul_eq_mul, Int.cast_mul]
       linear_combination -h.idealGenerator D * h1 + (w : QuadraticAlgebra ℚ (D : ℚ) 0) * hτ
-    rw [fractionalIdeal_le_iff, ← mem_coe, ← mem_coe, key]
+    rw [fractionalIdeal_le_iff, ← mem_coeToSubmodule, ← mem_coeToSubmodule, key]
     refine ⟨by simpa [f, g, h] using hmul hα hα', sub_mem
       (add_mem (zsmul_mem (hmul hα hβ') _) (zsmul_mem (hmul hβ hα') _))
       (zsmul_mem (add_mem (hmul hβ hβ') (zsmul_mem (hmul hα hα') _)) _)⟩
@@ -135,7 +135,7 @@ theorem picClass_mul_picClass_of_united {a a' B C : ℤ} {f g h : primitiveForms
   obtain ⟨h, hhm⟩ := h
   simp only at hf hg hh
   subst hf hg hh
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp hfm
+  obtain ⟨_, hfp⟩ := (mem_primitiveForms D _).mp hfm
   obtain ⟨hhD, -⟩ := (mem_primitiveForms D _).mp hhm
   simp only [picClass_def, ← map_mul]
   congr 1
@@ -154,8 +154,8 @@ theorem exists_picClass_mul_picClass_eq (f g : primitiveForms D) :
       ((δ • g : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
       (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧
       picClass D hD f * picClass D hD g = picClass D hD h := by
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
-  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g.2
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.property
+  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g.property
   obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
   have hγp := (isPrimitive_smul_iff _ γ).mpr hfp
   have hδp := (isPrimitive_smul_iff _ δ).mpr hgp
@@ -214,14 +214,14 @@ theorem exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq
   induction q₁ using Quotient.inductionOn with | h f₀ => ?_
   induction q₂ using Quotient.inductionOn with | h g₀ => ?_
   obtain ⟨γ, δ, a, a', B, C, ⟨h, hhm⟩, hf, hg, hh, hpic⟩ := exists_picClass_mul_picClass_eq (-n) hn
-    ⟨f₀, inf_le_right (a := posDef n) f₀.2⟩ ⟨g₀, inf_le_right (a := posDef n) g₀.2⟩
+    ⟨f₀, inf_le_right (a := posDef n) f₀.property⟩ ⟨g₀, inf_le_right (a := posDef n) g₀.property⟩
   -- Only positivity of the composed form is specific to the positive definite case.
   have hf' : ((γ • f₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
       ⟨a, B, a' * C⟩ := hf
   have hg' : ((δ • g₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
       ⟨a', B, a * C⟩ := hg
-  obtain ⟨-, ha, -⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).2
-  obtain ⟨-, ha', -⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).2
+  obtain ⟨-, ha, -⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).property
+  obtain ⟨-, ha', -⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).property
   simp only at hh
   subst hh
   obtain ⟨hhD, hhp⟩ := (mem_primitiveForms (-n) _).mp hhm

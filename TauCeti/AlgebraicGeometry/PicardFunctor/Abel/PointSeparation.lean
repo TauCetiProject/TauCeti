@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
-public import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Jacobi
 public import TauCeti.AlgebraicGeometry.RationalPoint.PointSeparation
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 
 /-!
 # The Abel–Jacobi map separates field-valued points in positive genus
@@ -99,16 +99,10 @@ theorem abelJacobiMap_app_injective_of_nontrivial_cohomology {K : Type u} [Field
     rw [Scheme.genus_def]
     exact Module.finrank_pos
   -- The divisor class only depends on the ideal sheaf, here the ideal sheaf of the graph.
-  have hmk {I J : (pullback ξ f).IdealSheafData} (hIJ : I = J) (hI : I.IsEffectiveCartier)
-      (hJ : J.IsEffectiveCartier) :
-      LineBundleClass.mk hI.toInvertibleSheaf = LineBundleClass.mk hJ.toInvertibleSheaf := by
-    subst hIJ
-    rfl
-  have hst := Scheme.Hom.eq_of_mk_toInvertibleSheaf_eq_of_genus_pos
-    (isIntegrallyClosedIn_functionField_of_geometricallyIntegral (k := K)) hpos
+  have hst := Scheme.Hom.eq_of_mk_toInvertibleSheaf_eq_of_genus_pos hpos
     (graphSection_fst x) (graphSection_fst y)
-    ((hmk (graphDivisor_app_apply_val x).symm _ _).trans
-      (hc.trans (hmk (graphDivisor_app_apply_val y) _ _)))
+    ((LineBundleClass.mk_toInvertibleSheaf_congr _ _ (graphDivisor_app_apply_val x).symm).trans
+      (hc.trans (LineBundleClass.mk_toInvertibleSheaf_congr _ _ (graphDivisor_app_apply_val y))))
   exact congrArg ULift.up (ker_graphSection_inj.mp (congrArg Scheme.Hom.ker hst))
 
 /-- **The Abel–Jacobi map of a curve of positive genus separates points over every field

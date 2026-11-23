@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
@@ -41,7 +41,7 @@ image of the corresponding relation on `σ` under the homomorphism
 
 The group of node permutations that the construction consumes is
 `TauCeti.DynkinType.diagramSymmetry`, pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`.
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
 
 ## Main definitions
 
@@ -67,11 +67,9 @@ The group of node permutations that the construction consumes is
 
 ## References
 
-The diagram automorphism attached to a symmetry of a pinned root datum is Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`: "Pinnings ... This is what makes 'the' graph
-automorphism well defined, so it is data, not a property", and it is the "isomorphism of root data"
-that the isomorphism theorem for pinned groups there lifts to a group scheme. Its consumer is
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, the graph-twisted Steinberg maps. See
+The pinning is what makes the graph automorphism attached to a diagram symmetry well defined, so
+it is data rather than a property. It is the isomorphism of root data that the isomorphism theorem
+for pinned groups lifts to a group scheme, and it enters the graph-twisted Steinberg maps. See
 R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15, and
 N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4.
 -/
@@ -236,7 +234,7 @@ private theorem funCongrLeft_dualMap_comp_toPerfPair :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.dualMap_apply,
     LinearMap.toPerfPair_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply, RootPairing.flip_toLinearMap, LinearMap.flip_apply,
-    toLinearMap_simplyConnectedRootDatum, dotProduct]
+    toLinearMap_simplyConnectedRootDatum_apply_apply, dotProduct]
   exact (Equiv.sum_comp σ fun i => x (σ.symm i) * y i).symm.trans
     (Finset.sum_congr rfl fun i _ => by rw [Equiv.symm_apply_apply])
 
@@ -371,7 +369,7 @@ particular, the construction is faithful on diagram symmetries. -/
       RootPairing.Equiv.toHom_one, RootPairing.Hom.indexEquiv_one, Equiv.refl_apply] at hindex
     have hval := congrArg Fin.val hindex
     apply Fin.ext
-    simpa only [simpleIndex_val, Equiv.Perm.one_def, Equiv.refl_apply] using hval
+    simpa only [val_simpleIndex, Equiv.Perm.one_def, Equiv.refl_apply] using hval
   · rintro rfl
     exact diagramAut_one ht
 
@@ -404,12 +402,12 @@ automorphism, so it inherits multiplicativity from `TauCeti.DynkinType.diagramAu
 of the Bourbaki-numbered Cartan matrix. This is what converts a relation satisfied by a node
 permutation into the same relation for the automorphism it induces. -/
 def diagramAutHom : t.diagramSymmetry →* (t.simplyConnectedRootDatum ht).Aut where
-  toFun g := diagramAut ht g.2
+  toFun g := diagramAut ht g.property
   map_one' := diagramAut_one ht
-  map_mul' g₁ g₂ := diagramAut_mul ht g₁.2 g₂.2
+  map_mul' g₁ g₂ := diagramAut_mul ht g₁.property g₂.property
 
 @[simp] theorem diagramAutHom_apply (g : t.diagramSymmetry) :
-    diagramAutHom ht g = diagramAut ht g.2 :=
+    diagramAutHom ht g = diagramAut ht g.property :=
   (rfl)
 
 /-- The diagram automorphism attached to the inverse node permutation is the inverse

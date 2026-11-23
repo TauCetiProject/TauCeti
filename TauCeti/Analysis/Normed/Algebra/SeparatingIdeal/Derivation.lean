@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Radical
 public import TauCeti.RingTheory.Jacobson.Basic
+public import TauCeti.RingTheory.Jacobson.NonUnital
+import TauCeti.Analysis.Normed.Algebra.Jacobson
 
 /-!
 # Automatic continuity of derivations on semisimple Banach algebras
@@ -26,6 +28,10 @@ finite-dimensional space `S(D)`, on which `D` is continuous, so
 product `b * s` with `s ∈ S(D)` is nilpotent, so `S(D)` lies in the Jacobson radical, which is
 zero.
 
+The algebra need not be unital. A derivation `D` of `B` extends to the derivation
+`(r, b) ↦ (0, D b)` of the ℓ¹ unitization `WithLp 1 (Unitization ℂ B)`, which is semisimple when
+`B` is, and `B` sits isometrically inside it.
+
 ## Main results
 
 * `LinearMap.isSeparatingIdeal_separatingSpace_of_derivation`: the separating space of a
@@ -34,6 +40,8 @@ zero.
   space of a derivation squares to zero.
 * `LinearMap.continuous_of_derivation_of_jacobson_eq_bot`: a derivation of a unital semisimple
   complex Banach algebra is continuous.
+* `LinearMap.continuous_of_derivation_of_nonUnitalJacobson_eq_bot`: a derivation of a semisimple
+  complex Banach algebra, possibly without unit, is continuous.
 
 ## References
 
@@ -106,5 +114,31 @@ theorem continuous_of_derivation_of_jacobson_eq_bot {B : Type*} [NormedRing B]
         D.mul_eq_zero_of_derivation_of_mem_separatingSpace hD hs (hJ.mul_mem_left y hs),
         mul_zero]⟩
   rwa [hB, Ideal.mem_bot] at hsJ
+
+/-- **Johnson–Sinclair theorem, nonunital form.** Let `B` be a complex Banach algebra, not
+necessarily unital, with zero Jacobson radical. Every linear map `D : B → B` satisfying the
+Leibniz rule `D (x * y) = x * D y + D x * y` is continuous. -/
+theorem continuous_of_derivation_of_nonUnitalJacobson_eq_bot {B : Type*}
+    [NonUnitalNormedRing B] [NormedSpace ℂ B] [IsScalarTower ℂ B B] [SMulCommClass ℂ B B]
+    [CompleteSpace B] (D : B →ₗ[ℂ] B) (hD : ∀ x y, D (x * y) = x * D y + D x * y)
+    (hB : TauCeti.nonUnitalJacobson ℂ B = ⊥) : Continuous D := by
+  -- Extend `D` to the ℓ¹ unitization by `(r, b) ↦ (0, D b)`. This is again a derivation, and the
+  -- unitization is semisimple, so the unital form applies.
+  let e := WithLp.linearEquiv 1 ℂ (Unitization ℂ B)
+  let D' : WithLp 1 (Unitization ℂ B) →ₗ[ℂ] WithLp 1 (Unitization ℂ B) :=
+    e.symm.toLinearMap ∘ₗ Unitization.inrHom ℂ ℂ B ∘ₗ D ∘ₗ Unitization.sndHom ℂ ℂ B ∘ₗ e.toLinearMap
+  have hD' (b : B) :
+      D' (WithLp.toLp 1 (b : Unitization ℂ B)) = WithLp.toLp 1 (D b : Unitization ℂ B) := by
+    simp [D', e]
+  have hc : Continuous D' := by
+    refine D'.continuous_of_derivation_of_jacobson_eq_bot (fun x y ↦ ?_)
+      ((TauCeti.jacobson_withLp_unitization_eq_bot_iff ℂ B).2 hB)
+    apply WithLp.ofLp_injective
+    ext
+    · simp [D', e]
+    · simp [D', e, Unitization.snd_mul, hD]
+      abel
+  refine (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).comp_continuous_iff.1 ?_
+  exact (hc.comp (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).continuous).congr hD'
 
 end LinearMap

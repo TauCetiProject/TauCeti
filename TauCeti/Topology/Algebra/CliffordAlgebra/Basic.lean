@@ -11,8 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
@@ -38,6 +36,8 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
   evaluated at a fixed module element.
 * `CliffordAlgebra.continuous_ιInv` proves continuity of the vector-part map under the same
   topology assumption when `2` is invertible.
+* `CliffordAlgebra.continuous_even_linearMap` proves continuity of every linear map out of the
+  even subalgebra, with its subspace topology, into a topological module.
 * `QuadraticMap.Isometry.continuous_cliffordAlgebraMap` proves continuity of maps induced by
   quadratic isometries.
 * `CliffordAlgebra.instIsTopologicalRingCliffordAlgebra` makes multiplication continuous.
@@ -47,7 +47,7 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
 * `CliffordAlgebra.instSigmaCompactSpaceCliffordAlgebra` proves the topology is σ-compact under
   the same hypotheses with σ-compact in place of locally compact.
 * `CliffordAlgebra.isClosedEmbedding_algebraMap` identifies the scalar field as a closed
-  subspace over a complete normed field.
+  subspace over a Hausdorff topological field in which `2` is invertible.
 * `CliffordAlgebra.continuous_reverse` and `CliffordAlgebra.continuous_involute` prove continuity
   of the two canonical Clifford involutions.
 * `CliffordAlgebra.instContinuousStarCliffordAlgebra` packages continuity of Clifford star.
@@ -98,6 +98,23 @@ theorem continuous_ιInv [Invertible (2 : R)] [TopologicalSpace V] [IsModuleTopo
     (Q : QuadraticForm R V) : Continuous (ιInv Q) := by
   let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd R V
   exact IsModuleTopology.continuous_of_linearMap (ιInv Q)
+
+/-- Every linear map out of the even Clifford subalgebra, with its subspace topology, into a
+topological module is continuous: it extends along the projection onto the degree-zero summand of
+the `ZMod 2`-grading `evenOdd Q`, a linear map of the whole Clifford algebra. -/
+@[fun_prop]
+theorem continuous_even_linearMap {Q : QuadraticForm R V} {N : Type*} [AddCommGroup N]
+    [Module R N] [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul R N]
+    (φ : even Q →ₗ[R] N) : Continuous φ := by
+  -- The projection onto the degree-zero summand of `evenOdd Q`, whose carrier is `even Q`.
+  let π : CliffordAlgebra Q →ₗ[R] even Q :=
+    DirectSum.component R (ZMod 2) (fun i ↦ evenOdd Q i) 0 ∘ₗ
+      (DirectSum.decomposeLinearEquiv (evenOdd Q)).toLinearMap
+  have hπ (x : even Q) : π x = x :=
+    Subtype.ext (DirectSum.decompose_of_mem_same (evenOdd Q) x.property)
+  refine ((IsModuleTopology.continuous_of_linearMap (φ ∘ₗ π)).comp
+    continuous_subtypeVal).congr fun x ↦ ?_
+  simp [hπ]
 
 /-- The Clifford-algebra map induced by an isometry of quadratic spaces is continuous for the
 canonical module topologies. -/
@@ -186,15 +203,19 @@ section ScalarEmbedding
 
 open Topology
 
-variable {K V : Type*} [NontriviallyNormedField K] [CompleteSpace K]
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V]
 
 /-- The scalar inclusion in a Clifford algebra is a closed embedding for its module topology. -/
 theorem isClosedEmbedding_algebraMap (Q : QuadraticForm K V) :
     IsClosedEmbedding (algebraMap K (CliffordAlgebra Q)) := by
-  exact LinearMap.isClosedEmbedding_of_injective
-    (f := Algebra.linearMap K (CliffordAlgebra Q))
-    (LinearMap.ker_eq_bot.mpr (algebraMap_injective Q))
+  -- the inclusion has a linear left inverse, which is continuous for the module topology, and the
+  -- Clifford algebra is Hausdorff
+  obtain ⟨p, hp⟩ := LinearMap.exists_leftInverse_of_injective
+    (Algebra.linearMap K (CliffordAlgebra Q)) (LinearMap.ker_eq_bot.mpr (algebraMap_injective Q))
+  exact Function.LeftInverse.isClosedEmbedding (f := p) (g := algebraMap K (CliffordAlgebra Q))
+    (fun x ↦ LinearMap.congr_fun hp x) (IsModuleTopology.continuous_of_linearMap p)
+    (IsModuleTopology.continuous_of_linearMap (Algebra.linearMap K (CliffordAlgebra Q)))
 
 end ScalarEmbedding
 

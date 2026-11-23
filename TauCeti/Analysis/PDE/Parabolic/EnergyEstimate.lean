@@ -10,6 +10,8 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The energy estimate and uniqueness for linear parabolic equations
@@ -47,11 +49,15 @@ No measurability of `t ↦ A(t)` is assumed: the equation and the integrability 
 
 ## Main declarations
 
+* `TauCeti.HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual`: the energy
+  identity `‖w t‖² + 2 ∫ₛᵗ A(r) u u = ‖w s‖² + 2 ∫ₛᵗ f(u)`, for the equation tested with `u`.
 * `TauCeti.HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual`: the energy estimate.
 * `TauCeti.HasWeakLineDerivOn.eqOn_of_gelfandDual`: two weak solutions with the same initial
   value have the same continuous representative.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`: two weak solutions with the same initial
   value agree almost everywhere.
+* `TauCeti.HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual`: the energy
+  estimate bounds the `L²` distance of a weak solution from an approximate solution.
 
 ## References
 
@@ -62,6 +68,7 @@ No measurability of `t ↦ A(t)` is assumed: the equation and the integrability 
 public section
 
 open MeasureTheory Filter Set Real
+open scoped Interval
 
 namespace TauCeti
 
@@ -83,7 +90,73 @@ private theorem two_mul_apply_le {B : V →L[ℝ] StrongDual ℝ V} {x : V} {d g
   rw [hdx]
   nlinarith [hB x, hgx, hyoung, hαα]
 
+omit [InnerProductSpace ℝ H] in
+/-- Integrating the pointwise energy balance `2 u'(u) ≤ α⁻¹ ‖f‖² - α ‖u‖² + 2 β ‖w‖²`, valid almost
+everywhere on `(a, b)`, over `(a, s)` with `s ∈ [a, b]`. -/
+private theorem integral_two_mul_apply_le_of_ae_le
+    (hp : IntegrableOn (fun r ↦ 2 * u' r (u r)) (Ioo a b))
+    (hu2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (Ioo a b))
+    (hf2 : IntegrableOn (fun r ↦ ‖f r‖ ^ 2) (Ioo a b))
+    (hφi : IntegrableOn (fun r ↦ ‖w r‖ ^ 2) (Ioo a b))
+    (hpt : ∀ᵐ r ∂volume.restrict (Ioo a b),
+      2 * u' r (u r) ≤ α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2)
+    {s : ℝ} (hs : s ∈ Icc a b) :
+    ∫ r in a..s, 2 * u' r (u r) ≤ α⁻¹ * (∫ r in a..s, ‖f r‖ ^ 2) -
+      α * (∫ r in a..s, ‖u r‖ ^ 2) + 2 * β * ∫ r in a..s, ‖w r‖ ^ 2 := by
+  have ha : a ∈ Icc a b := ⟨le_rfl, hs.1.trans hs.2⟩
+  have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hs.2
+  have hφs := hφi.intervalIntegrable_of_mem_Icc ha hs
+  have hfs := hf2.intervalIntegrable_of_mem_Icc ha hs
+  have hus := hu2.intervalIntegrable_of_mem_Icc ha hs
+  have hint : ∫ r in a..s, 2 * u' r (u r) ≤
+      ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) := by
+    rw [intervalIntegral.integral_of_le hs.1, intervalIntegral.integral_of_le hs.1,
+      integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo]
+    exact setIntegral_mono_ae_restrict (hp.mono_set hsub)
+      (IntegrableOn.mono_set (((hf2.const_mul α⁻¹).sub (hu2.const_mul α)).add
+        (hφi.const_mul (2 * β))) hsub)
+      (ae_restrict_of_ae_restrict_of_subset hsub hpt)
+  refine hint.trans_eq ?_
+  rw [intervalIntegral.integral_add ((hfs.const_mul α⁻¹).sub (hus.const_mul α))
+    (hφs.const_mul (2 * β)), intervalIntegral.integral_sub (hfs.const_mul α⁻¹)
+    (hus.const_mul α)]
+  simp only [intervalIntegral.integral_const_mul]
+
 variable [CompleteSpace V]
+
+/-- **The energy identity for linear parabolic equations.** Let `ι : V →L[ℝ] H` define a Gelfand
+triple, and let `u ∈ L²(a, b; V)` be such that `t ↦ ι.gelfandDual (ι (u t))` has weak derivative
+`u' ∈ L²(a, b; V*)`, with `w` continuous on `[a, b]` and equal to `ι ∘ u` almost everywhere on
+`(a, b)`. If `u'(t)(u(t)) + e(t) = g(t)` for almost every `t ∈ (a, b)`, with `g` integrable on
+`(a, b)`, then for all `s, t ∈ [a, b]`,
+
+`‖w t‖² + 2 ∫ₛᵗ e = ‖w s‖² + 2 ∫ₛᵗ g`.
+
+For a weak solution of `u' + A(t) u = f` this is the equation tested with `u(t)`:
+`e(t) = A(t) u(t) u(t)` and `g(t) = f(t)(u(t))`. No boundedness, measurability or Gårding
+inequality is needed for `e`, which need not come from a family of bounded operators. -/
+theorem HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual {e g : ℝ → ℝ}
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo a b))) (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
+    (hg : IntegrableOn g (Ioo a b))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t (u t) + e t = g t)
+    (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t, e r = ‖w s‖ ^ 2 + 2 * ∫ r in s..t, g r := by
+  have hid := h.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae hs ht
+  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
+  -- On the interval between `s` and `t`, which lies in `(a, b]`, `e = g - u'(u)` almost everywhere.
+  have hsub : Ι s t ⊆ Ioc a b := fun r hr ↦
+    ⟨lt_of_le_of_lt (le_min hs.1 ht.1) hr.1, hr.2.trans (max_le hs.2 ht.2)⟩
+  have he : ∀ᵐ r ∂volume, r ∈ Ι s t → e r = g r - u' r (u r) := by
+    rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc, ae_restrict_iff' measurableSet_Ioc] at heq
+    filter_upwards [heq] with r hr hrst
+    rw [← hr (hsub hrst)]
+    ring
+  rw [intervalIntegral.integral_congr_ae he, intervalIntegral.integral_sub
+    (hg.intervalIntegrable_of_mem_Icc hs ht) (hp.intervalIntegrable_of_mem_Icc hs ht)]
+  linarith
 
 /-- **The energy estimate for linear parabolic equations.** Let `ι : V →L[ℝ] H` define a Gelfand
 triple, and let `A(t)` satisfy Gårding's inequality `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0`
@@ -123,12 +196,8 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
   -- Integrating, `χ s = ‖w s‖² + α ∫ₐˢ ‖u‖²` satisfies `χ s ≤ ‖w a‖² + α⁻¹ ∫ₐᵗ ‖f‖² + 2 β ∫ₐˢ χ`
   -- on `[a, t]`.
   set χ : ℝ → ℝ := fun s ↦ ‖w s‖ ^ 2 + α * ∫ r in a..s, ‖u r‖ ^ 2 with hχ_def
-  have hU : ContinuousOn (fun s ↦ ∫ r in a..s, ‖u r‖ ^ 2) (Icc a b) := by
-    have hU2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (uIcc a b) := by
-      rw [uIcc_of_le hab]
-      exact (integrableOn_Icc_iff_integrableOn_Ioo (f := fun r ↦ ‖u r‖ ^ 2)).2 hu2
-    have := intervalIntegral.continuousOn_primitive_interval (μ := volume) hU2
-    rwa [uIcc_of_le hab] at this
+  have hU : ContinuousOn (fun s ↦ ∫ r in a..s, ‖u r‖ ^ 2) (Icc a b) :=
+    TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu2 ha
   have hχ : ContinuousOn χ (Icc a b) := hφ.add (hU.const_smul α)
   have hU0 (s : ℝ) (hs : a ≤ s) : 0 ≤ ∫ r in a..s, ‖u r‖ ^ 2 :=
     intervalIntegral.integral_nonneg hs fun _ _ ↦ by positivity
@@ -137,29 +206,12 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
       χ s ≤ (‖w a‖ ^ 2 + α⁻¹ * ∫ r in a..t, ‖f r‖ ^ 2) + 2 * β * ∫ r in a..s, χ r := by
     intro s hs
     have hsb : s ∈ Icc a b := htb hs
-    have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hsb.2
     have hφs := hφi.intervalIntegrable_of_mem_Icc ha hsb
-    have hfs := hf2.intervalIntegrable_of_mem_Icc ha hsb
-    have hus := hu2.intervalIntegrable_of_mem_Icc ha hsb
     -- the energy identity, then the pointwise bound integrated over `(a, s)`
     have hid : ‖w s‖ ^ 2 - ‖w a‖ ^ 2 = ∫ r in a..s, 2 * u' r (u r) := by
       rw [h.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae ha hsb,
         intervalIntegral.integral_const_mul]
-    have hint : ∫ r in a..s, 2 * u' r (u r) ≤
-        ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) := by
-      rw [intervalIntegral.integral_of_le hs.1, intervalIntegral.integral_of_le hs.1,
-        integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo]
-      exact setIntegral_mono_ae_restrict (hp.mono_set hsub)
-        (IntegrableOn.mono_set (((hf2.const_mul α⁻¹).sub (hu2.const_mul α)).add
-          (hφi.const_mul (2 * β))) hsub)
-        (ae_restrict_of_ae_restrict_of_subset hsub hpt)
-    have hsplit : ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) =
-        α⁻¹ * (∫ r in a..s, ‖f r‖ ^ 2) - α * (∫ r in a..s, ‖u r‖ ^ 2) +
-          2 * β * ∫ r in a..s, ‖w r‖ ^ 2 := by
-      rw [intervalIntegral.integral_add ((hfs.const_mul α⁻¹).sub (hus.const_mul α))
-        (hφs.const_mul (2 * β)), intervalIntegral.integral_sub (hfs.const_mul α⁻¹)
-        (hus.const_mul α)]
-      simp only [intervalIntegral.integral_const_mul]
+    have hsplit := integral_two_mul_apply_le_of_ae_le hp hu2 hf2 hφi hpt hsb
     -- `∫ₐˢ ‖f‖² ≤ ∫ₐᵗ ‖f‖²` and `∫ₐˢ ‖w‖² ≤ ∫ₐˢ χ`
     have hfmono : ∫ r in a..s, ‖f r‖ ^ 2 ≤ ∫ r in a..t, ‖f r‖ ^ 2 :=
       intervalIntegral.integral_mono_interval le_rfl hs.1 hs.2
@@ -173,9 +225,78 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     rw [hχs]
     nlinarith [mul_le_mul_of_nonneg_left hfmono hα', mul_le_mul_of_nonneg_left hχmono
       (by positivity : 0 ≤ 2 * β)]
-  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb) (by positivity) hbound t
-    (right_mem_Icc.2 ht.1)
+  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb).integrableOn_Icc (by positivity)
+    (ae_restrict_of_forall_mem measurableSet_Icc hbound) (right_mem_Icc.2 ht.1)
+    (hbound t (right_mem_Icc.2 ht.1))
   simpa only [hχ_def, mul_comm (exp _)] using this
+
+/-- **Comparison of a weak solution with an approximate solution.** Let `u` be a weak solution
+of `u' + A(t) u = ι* g`, `u(a) = v₀`, with `g ∈ L²(a, b; H)` and coercive `A(t)`,
+`α ‖v‖² ≤ A(t) v v`. Let `uh`, continuous on `[a, b]` with `uh(a) = v₀` and weak derivative
+`D ∈ L²(a, b; V)`, solve `ι* ι D + Ah(t) ub = ι* gh` for some `ub ∈ L²(a, b; V)`,
+`gh ∈ L²(a, b; H)` and operators `Ah(t)` with `‖A(t)‖ ≤ Λ` and `‖A(t) - Ah(t)‖ ≤ ε₁`. Then the
+energy estimate for `uh - u` gives
+`α² ∫ ‖uh - u‖² ≤ 3 (‖ι‖² ∫ ‖gh - g‖² + Λ² ∫ ‖uh - ub‖² + ε₁² ∫ ‖ub‖²)`. -/
+theorem HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual
+    {Ah : ℝ → V →L[ℝ] StrongDual ℝ V} {Λ ε₁ : ℝ} (hα : 0 < α) (hab : a ≤ b)
+    (hA : ∀ t ∈ Ioo a b, ∀ v, α * ‖v‖ ^ 2 ≤ A t v v)
+    (hAm : AEStronglyMeasurable A (volume.restrict (Ioo a b)))
+    (hAhm : AEStronglyMeasurable Ah (volume.restrict (Ioo a b)))
+    (hΛ : ∀ t ∈ Ioo a b, ‖A t‖ ≤ Λ) (hε : ∀ t ∈ Ioo a b, ‖A t - Ah t‖ ≤ ε₁)
+    {g gh : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b)))
+    (hgh : MemLp gh 2 (volume.restrict (Ioo a b)))
+    {v₀ : V}
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo a b))) (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + A t (u t) = ι.gelfandDual (g t))
+    (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
+    (h₀ : w a = ι v₀)
+    {uh ub D : ℝ → V} (hD : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ uh D 1)
+    (huh : MemLp uh 2 (volume.restrict (Ioo a b))) (hDm : MemLp D 2 (volume.restrict (Ioo a b)))
+    (hub : MemLp ub 2 (volume.restrict (Ioo a b))) (huhc : ContinuousOn uh (Icc a b))
+    (huh₀ : uh a = v₀)
+    (hscheme : ∀ t ∈ Ioo a b, ι.gelfandDual (ι (D t)) + Ah t (ub t) = ι.gelfandDual (gh t)) :
+    α ^ 2 * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
+      3 * ((‖ι‖ ^ 2 * ∫ t in Ioo a b, ‖gh t - g t‖ ^ 2) +
+        (Λ ^ 2 * ∫ t in Ioo a b, ‖uh t - ub t‖ ^ 2) + ε₁ ^ 2 * ∫ t in Ioo a b, ‖ub t‖ ^ 2) := by
+  set μ := volume.restrict (Ioo a b)
+  have hF₁ : MemLp (fun t ↦ ι.gelfandDual (gh t - g t)) 2 μ :=
+    ι.gelfandDual.comp_memLp' (hgh.sub hg)
+  obtain ⟨hF₂, h₂⟩ := memLp_clm_apply_and_integral_norm_sq_le hAm
+    ((ae_restrict_mem measurableSet_Ioo).mono hΛ) (huh.sub hub)
+  obtain ⟨hF₃, h₃⟩ := memLp_clm_apply_and_integral_norm_sq_le (hAm.sub hAhm)
+    ((ae_restrict_mem measurableSet_Ioo).mono hε) hub
+  simp only [Pi.sub_apply] at hF₂ h₂ hF₃ h₃
+  -- The error `uh - u` solves `e' + A(t) e = F₁ + F₂ + F₃`.
+  have he : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι (uh t - u t))) (fun t ↦ ι.gelfandDual (ι (D t)) - u' t) 1 := by
+    convert (hD.clm_comp (ι.gelfandDual ∘L ι)).sub h using 1 <;> ext t : 1 <;> simp
+  have heq' : ∀ᵐ t ∂μ, (ι.gelfandDual (ι (D t)) - u' t) + A t (uh t - u t) =
+      ι.gelfandDual (gh t - g t) + A t (uh t - ub t) + (A t - Ah t) (ub t) := by
+    filter_upwards [heq, ae_restrict_mem measurableSet_Ioo] with t ht ht'
+    rw [eq_sub_of_add_eq (hscheme t ht'), eq_sub_of_add_eq ht]
+    simp only [map_sub, sub_apply]
+    abel
+  have hest := he.norm_sq_add_mul_integral_le_of_gelfandDual (A := A) (β := 0) (huh.sub hu)
+    ((ι.gelfandDual.comp_memLp' (ι.comp_memLp' hDm)).sub hu') ((hF₁.add hF₂).add hF₃) hα le_rfl
+    (by filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht v; simpa using hA t ht v)
+    heq' (w := fun t ↦ ι (uh t) - w t) ((ι.continuous.comp_continuousOn huhc).sub hw)
+    (by filter_upwards [hae] with t ht; simp [← ht]) (right_mem_Icc.2 hab)
+  simp only [huh₀, h₀, sub_self, norm_zero, mul_zero, zero_mul, Real.exp_zero, one_mul,
+    ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add] at hest
+  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at hest
+  have hF := integral_norm_sq_le_three_mul (μ := μ) hF₁ hF₂ hF₃ (Eventually.of_forall fun _ ↦ rfl)
+  have h₁ := integral_norm_sq_le_sq_mul_of_norm_le hF₁ (hgh.sub hg)
+    (Eventually.of_forall fun t ↦ by
+      simpa using ι.gelfandDual.le_opNorm (gh t - g t))
+  simp only [Pi.add_apply] at hest
+  simp only [Pi.sub_apply] at h₁
+  have hnn : 0 ≤ ‖ι (uh b) - w b‖ ^ 2 := sq_nonneg _
+  have key : α * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
+      α⁻¹ * ∫ t in Ioo a b, ‖ι.gelfandDual (gh t - g t) + A t (uh t - ub t) +
+        (A t - Ah t) (ub t)‖ ^ 2 := by linarith
+  linarith [(le_inv_mul_iff₀ hα).1 key]
 
 /-- The energy estimate for the difference of two weak solutions with the same initial value and
 right-hand side: `‖w₁ t - w₂ t‖² + α ∫ₐᵗ ‖u₁ - u₂‖² ≤ 0` on `[a, b]`. -/

@@ -49,6 +49,9 @@ distinct relation symbols of opposite polarity.
 
 * `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_union_not`: occurrences at opposite
   polarities together recover `BoundedFormulaInf.relationsIn`.
+* `FirstOrder.Language.BoundedFormulaInf.relationsIn_subset_inter_of_relationsInSigned_subset`:
+  signed occurrence bounds at both polarities give the unsigned occurrence bound, which is how
+  Craig's relation bound follows from Lyndon's.
 * `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_countable`: at a countable branching
   carrier, each signed occurrence set is countable.
 * `FirstOrder.Language.BoundedFormulaInf.realize_mono_of_agreeOn_functionsIn` and
@@ -257,6 +260,21 @@ theorem relationsInSigned_union_not (s : Bool) (φ : L.BoundedFormulaInf ι α n
   | iInf φs ih =>
     simp only [relationsInSigned_iInf, relationsIn_iInf, ← Set.iUnion_union_distrib, ih]
 
+/-- If every positive occurrence in `θ` is a positive occurrence in both `φ` and `ψ`, and every
+negative occurrence in `θ` is a negative occurrence in both, then every relation symbol occurring in
+`θ` occurs in both `φ` and `ψ`. This recovers the unsigned relation bound of Craig interpolation
+from the two signed bounds of Lyndon interpolation. -/
+theorem relationsIn_subset_inter_of_relationsInSigned_subset {θ φ ψ : L.BoundedFormulaInf ι α n}
+    (hpos : θ.relationsInSigned true ⊆ φ.relationsInSigned true ∩ ψ.relationsInSigned true)
+    (hneg : θ.relationsInSigned false ⊆ φ.relationsInSigned false ∩ ψ.relationsInSigned false) :
+    θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn := by
+  rw [← relationsInSigned_union_not true θ]
+  exact Set.union_subset
+    (hpos.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn true φ)
+      (relationsInSigned_subset_relationsIn true ψ)))
+    (hneg.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn false φ)
+      (relationsInSigned_subset_relationsIn false ψ)))
+
 /-- A biconditional uses both arguments in both polarities, so its signed occurrences at either
 polarity are all relation symbols occurring in either side. -/
 @[simp]
@@ -392,6 +410,15 @@ theorem relationsInSigned_constantsVarsEquiv {γ : Type uγ} (s : Bool)
     rw [← constantsVarsEquiv.symm_apply_apply φ, relationsInSigned_constantsVarsEquiv_symm]
   exact ((Function.injective_id.sigma_map fun _ =>
     (L.lhomWithConstants_injective γ).onRelation).preimage_image _).symm
+
+/-- Abstracting one constant preserves each relation polarity exactly. -/
+@[simp]
+theorem relationsInSigned_abstractConst {γ : Type uγ} [DecidableEq γ] (s : Bool)
+    (c : γ) (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (abstractConst c φ).relationsInSigned s = φ.relationsInSigned s := by
+  rw [abstractConst_def, relationsInSigned_constantsVarsEquiv_symm, relationsInSigned_mapBound,
+    relationsInSigned_relabel, ← relationsInSigned_constantsVarsEquiv_symm s (constantsVarsEquiv φ),
+    constantsVarsEquiv.symm_apply_apply]
 
 /-! ### Polarity monotonicity of realization -/
 
@@ -548,6 +575,37 @@ theorem preimage_relationsInSigned_onBoundedFormulaInf {n : ℕ} (g : L →ᴸ L
   rw [relationsInSigned_onBoundedFormulaInf]
   exact (Function.injective_id.sigma_map hg).preimage_image _
 
+/-- The family step of signed pullback: if each member of a family of formulas of `L'` whose
+symbols lie in the images of `F`, `P`, and `N` under `g` is the image of a formula of `L` with
+symbols in `F`, `P`, and `N`, then the family is the image of a family of formulas of `L` whose
+combined symbols lie in `F`, `P`, and `N`. -/
+private theorem exists_family_eq_onBoundedFormulaInf {n : ℕ} (g : L →ᴸ L')
+    {F : Set (Σ k, L.Functions k)} {P N : Set (Σ k, L.Relations k)}
+    (φs : ι → L'.BoundedFormulaInf ι α n)
+    (ih : ∀ i {P N : Set (Σ k, L.Relations k)},
+      (φs i).functionsIn ⊆ (fun s : Σ k, L.Functions k => ⟨s.1, g.onFunction s.2⟩) '' F →
+      (φs i).positiveRelationsIn ⊆
+        (fun s : Σ k, L.Relations k => ⟨s.1, g.onRelation s.2⟩) '' P →
+      (φs i).negativeRelationsIn ⊆
+        (fun s : Σ k, L.Relations k => ⟨s.1, g.onRelation s.2⟩) '' N →
+      ∃ ψ : L.BoundedFormulaInf ι α n,
+        g.onBoundedFormulaInf ψ = φs i ∧ ψ.functionsIn ⊆ F ∧
+          ψ.positiveRelationsIn ⊆ P ∧ ψ.negativeRelationsIn ⊆ N)
+    (hF : ⋃ i, (φs i).functionsIn ⊆
+      (fun s : Σ k, L.Functions k => ⟨s.1, g.onFunction s.2⟩) '' F)
+    (hP : ⋃ i, (φs i).positiveRelationsIn ⊆
+      (fun s : Σ k, L.Relations k => ⟨s.1, g.onRelation s.2⟩) '' P)
+    (hN : ⋃ i, (φs i).negativeRelationsIn ⊆
+      (fun s : Σ k, L.Relations k => ⟨s.1, g.onRelation s.2⟩) '' N) :
+    ∃ ψs : ι → L.BoundedFormulaInf ι α n,
+      (∀ i, g.onBoundedFormulaInf (ψs i) = φs i) ∧ ⋃ i, (ψs i).functionsIn ⊆ F ∧
+        ⋃ i, (ψs i).positiveRelationsIn ⊆ P ∧ ⋃ i, (ψs i).negativeRelationsIn ⊆ N := by
+  have hbranch := fun i => ih i ((Set.subset_iUnion (fun j => (φs j).functionsIn) i).trans hF)
+    ((Set.subset_iUnion (fun j => (φs j).positiveRelationsIn) i).trans hP)
+    ((Set.subset_iUnion (fun j => (φs j).negativeRelationsIn) i).trans hN)
+  choose ψs hψs hψsF hψsP hψsN using hbranch
+  exact ⟨ψs, hψs, Set.iUnion_subset hψsF, Set.iUnion_subset hψsP, Set.iUnion_subset hψsN⟩
+
 /-- **Signed pullback along a language homomorphism.** An infinitary formula `φ` of `L'` whose
 occurring function symbols, positive relation symbols, and negative relation symbols lie in the
 images under `g : L →ᴸ L'` of `F`, `P`, and `N` is the image under `g` of a formula `ψ` of `L`
@@ -608,31 +666,15 @@ theorem exists_eq_onBoundedFormulaInf_of_relationsInSigned_subset {n : ℕ} (g :
     refine ⟨ψ.all, by simp [hψ], ?_, hψP, hψN⟩
     rwa [BoundedFormulaInf.functionsIn_all]
   | @iSup m φs ih =>
-    rw [BoundedFormulaInf.functionsIn_iSup] at hF
-    have hbranch : ∀ i, ∃ ψ : L.BoundedFormulaInf ι α m,
-        g.onBoundedFormulaInf ψ = φs i ∧ ψ.functionsIn ⊆ F ∧
-          ψ.positiveRelationsIn ⊆ P ∧ ψ.negativeRelationsIn ⊆ N := fun i =>
-      ih i ((Set.subset_iUnion (fun j => (φs j).functionsIn) i).trans hF)
-        ((Set.subset_iUnion (fun j => (φs j).positiveRelationsIn) i).trans hP)
-        ((Set.subset_iUnion (fun j => (φs j).negativeRelationsIn) i).trans hN)
-    choose ψs hψs hψsF hψsP hψsN using hbranch
-    refine ⟨.iSup ψs, by rw [onBoundedFormulaInf_iSup, funext hψs], ?_,
-      Set.iUnion_subset hψsP, Set.iUnion_subset hψsN⟩
-    rw [BoundedFormulaInf.functionsIn_iSup]
-    exact Set.iUnion_subset hψsF
+    obtain ⟨ψs, hψs, hψsF, hψsP, hψsN⟩ := exists_family_eq_onBoundedFormulaInf g φs ih
+      ((BoundedFormulaInf.functionsIn_iSup φs).symm.subset.trans hF) hP hN
+    exact ⟨.iSup ψs, by rw [onBoundedFormulaInf_iSup, funext hψs],
+      (BoundedFormulaInf.functionsIn_iSup ψs).subset.trans hψsF, hψsP, hψsN⟩
   | @iInf m φs ih =>
-    rw [BoundedFormulaInf.functionsIn_iInf] at hF
-    have hbranch : ∀ i, ∃ ψ : L.BoundedFormulaInf ι α m,
-        g.onBoundedFormulaInf ψ = φs i ∧ ψ.functionsIn ⊆ F ∧
-          ψ.positiveRelationsIn ⊆ P ∧ ψ.negativeRelationsIn ⊆ N := fun i =>
-      ih i ((Set.subset_iUnion (fun j => (φs j).functionsIn) i).trans hF)
-        ((Set.subset_iUnion (fun j => (φs j).positiveRelationsIn) i).trans hP)
-        ((Set.subset_iUnion (fun j => (φs j).negativeRelationsIn) i).trans hN)
-    choose ψs hψs hψsF hψsP hψsN using hbranch
-    refine ⟨.iInf ψs, by rw [onBoundedFormulaInf_iInf, funext hψs], ?_,
-      Set.iUnion_subset hψsP, Set.iUnion_subset hψsN⟩
-    rw [BoundedFormulaInf.functionsIn_iInf]
-    exact Set.iUnion_subset hψsF
+    obtain ⟨ψs, hψs, hψsF, hψsP, hψsN⟩ := exists_family_eq_onBoundedFormulaInf g φs ih
+      ((BoundedFormulaInf.functionsIn_iInf φs).symm.subset.trans hF) hP hN
+    exact ⟨.iInf ψs, by rw [onBoundedFormulaInf_iInf, funext hψs],
+      (BoundedFormulaInf.functionsIn_iInf ψs).subset.trans hψsF, hψsP, hψsN⟩
 
 end LHom
 
@@ -647,7 +689,7 @@ theorem relationsInSigned_restrictSymbols {F : Set (Σ k, L.Functions k)}
     {R : Set (Σ k, L.Relations k)} (s : Bool) (φ : L.BoundedFormulaInf ι α n)
     (hF : φ.functionsIn ⊆ F) (hR : φ.relationsIn ⊆ R) :
     (φ.restrictSymbols hF hR).relationsInSigned s =
-      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.1⟩ : Σ k, L.Relations k)) ⁻¹'
+      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.val⟩ : Σ k, L.Relations k)) ⁻¹'
         φ.relationsInSigned s := by
   have h := (symbSublangIncl F R).preimage_relationsInSigned_onBoundedFormulaInf
     (fun _ => (symbSublangIncl_injective F R).onRelation) s (φ.restrictSymbols hF hR)

@@ -8,9 +8,9 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Eigenvector
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 
 /-!
 # The grading automorphisms attached to an integral semisimple element
@@ -39,6 +39,10 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice.Bas
 * `TauCeti.gradingAut_apply_of_mem`: the characterizing property of `TauCeti.gradingAut`.
 * `TauCeti.gradingAut_mul_apply`, `TauCeti.gradingAut_one_apply` and `TauCeti.gradingAut_symm`:
   `s ↦ gradingAut hh s` is a group homomorphism from `Rˣ` to the automorphisms of `L`.
+* `TauCeti.map_gradingAut_apply`: Lie endomorphisms fixing `h` commute with the grading
+  automorphisms.
+* `TauCeti.subsingleton_of_isInternal_eigenspace_of_charP_pos`: in positive characteristic the
+  grading forces `L` to be trivial.
 -/
 
 public section
@@ -51,6 +55,25 @@ section Grading
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad R L h).eigenspace (j : R))
+
+include hh in
+/-- **In positive characteristic the grading forces `L` to be trivial.** In characteristic `q > 0`,
+the eigenspaces of `ad h` at the integers `j` and `j + q` coincide for every `j`, so independence of
+the integer eigenspaces makes them all trivial, and `L` is trivial. -/
+theorem subsingleton_of_isInternal_eigenspace_of_charP_pos {q : ℕ} [CharP R q] (hq : 0 < q) :
+    Subsingleton L := by
+  -- The eigenspaces at the integers `j` and `j + q` coincide, so independence kills them all.
+  have hbot (j : ℤ) : (ad R L h).eigenspace (j : R) = ⊥ := by
+    have hne : j ≠ j + q := by omega
+    have hcoe : (((j + q : ℤ)) : R) = (j : R) := by
+      push_cast
+      rw [CharP.cast_eq_zero, add_zero]
+    have hd := hh.submodule_iSupIndep.pairwiseDisjoint hne
+    simp only [Function.onFun, hcoe] at hd
+    exact disjoint_self.mp hd
+  have htop := hh.submodule_iSup_eq_top
+  simp only [hbot, iSup_bot] at htop
+  exact (Submodule.subsingleton_iff R).mp (subsingleton_of_bot_eq_top htop)
 
 /-- The linear endomorphism of `L` acting on the `j`-eigenspace of `ad h` by `s ^ j`: decompose,
 scale each component, and add the components back up. -/
@@ -162,6 +185,24 @@ theorem gradingAut_apply_self (s : Rˣ) : gradingAut hh s h = h := by
   have hh0 : h ∈ (ad R L h).eigenspace ((0 : ℤ) : R) := by
     simp
   rw [gradingAut_apply_of_mem hh s hh0, zpow_zero, Units.val_one, one_smul]
+
+/-- **Lie endomorphisms fixing `h` commute with the grading automorphisms.** Such a map carries
+each eigenspace `L(j)` of `ad h` into itself, where the grading automorphism at `s` is the scalar
+`s ^ j`. For an algebraic group, this says that the centralizer of `h` commutes with the adjoint
+action of the cocharacter attached to `h`. -/
+theorem map_gradingAut_apply (φ : L →ₗ⁅R⁆ L) (hφ : φ h = h) (s : Rˣ) (x : L) :
+    φ (gradingAut hh s x) = gradingAut hh s (φ x) := by
+  have hmem {j : ℤ} {y : L} (hy : y ∈ (ad R L h).eigenspace (j : R)) :
+      φ y ∈ (ad R L h).eigenspace (j : R) := by
+    rw [Module.End.mem_eigenspace_iff, ad_apply] at hy ⊢
+    rw [← hφ, ← LieHom.map_lie, hy, map_smul]
+  have hcomp : (φ : L →ₗ[R] L) ∘ₗ ((gradingAut hh s : L ≃ₗ[R] L) : L →ₗ[R] L) =
+      ((gradingAut hh s : L ≃ₗ[R] L) : L →ₗ[R] L) ∘ₗ (φ : L →ₗ[R] L) :=
+    LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top fun j y hy ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
+        LieHom.coe_toLinearMap, gradingAut_apply_of_mem hh s hy,
+        gradingAut_apply_of_mem hh s (hmem hy), map_smul]
+  exact LinearMap.congr_fun hcomp x
 
 end Grading
 

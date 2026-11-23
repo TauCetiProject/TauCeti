@@ -29,9 +29,6 @@ from the `BaseChange` section of `EllipticCurves/SelmerGroup.lean` in Michael St
 `EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0), together
 with the local `2`-descent condition of
 `TauCeti/AlgebraicGeometry/EllipticCurve/MordellWeil/LocalCondition.lean`.
-
-This is infrastructure for the base-change lane of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5.
 -/
 
 public section

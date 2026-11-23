@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Module
+public import Mathlib.Topology.Algebra.Monoid.Defs
+public import Mathlib.Topology.Algebra.ConstMulAction
 
 import TauCeti.LinearAlgebra.Complex.Orientation
 
@@ -35,6 +37,10 @@ structure induced from `ofComplexModule` recovers the original complex module st
 * `TauCeti.AlmostComplexStructure.complexModule_ofReal_smul`: the induced action restricts to the
   original real action.
 * `TauCeti.AlmostComplexStructure.complexModule_isScalarTower`: `ℝ`, `ℂ`, `V` form a scalar tower.
+* `TauCeti.AlmostComplexStructure.complexModule_continuousConstSMul`: for a continuous `J` on a
+  topological module, multiplication by each complex scalar is continuous.
+* `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical almost complex structure
+  on a complex module with scalars restricted to the reals, using `RestrictScalars.realModule`.
 * `TauCeti.AlmostComplexStructure.ofComplexModule`: the almost complex structure `v ↦ i • v` on a
   complex module.
 * `TauCeti.AlmostComplexStructure.ofComplexModule_complexModule`: the round trip recovers `J`.
@@ -102,6 +108,18 @@ lemma complexModule_isScalarTower (J : AlmostComplexStructure V) :
   let := J.complexModule
   exact IsScalarTower.of_algebraMap_smul fun r v => by
     simpa only [Complex.coe_algebraMap] using J.complexModule_ofReal_smul r v
+
+/-- For a continuous almost complex structure on a topological real module, multiplication by
+each complex scalar is continuous in the induced complex module structure: it is
+`v ↦ re z • v + im z • J v`. -/
+lemma complexModule_continuousConstSMul [TopologicalSpace V] [ContinuousAdd V]
+    [ContinuousConstSMul ℝ V] (J : AlmostComplexStructure V) (hJ : Continuous J) :
+    letI := J.complexModule
+    ContinuousConstSMul ℂ V := by
+  let := J.complexModule
+  exact ⟨fun z ↦ by
+    simp_rw [complexModule_smul_def]
+    exact (continuous_const_smul _).add ((continuous_const_smul _).comp hJ)⟩
 
 end ToComplex
 
@@ -186,3 +204,29 @@ end Basis
 end AlmostComplexStructure
 
 end TauCeti
+
+
+namespace TauCeti.AlmostComplexStructure
+
+/-- Multiplication by `I` is the canonical almost complex structure on a complex module
+with scalars restricted to the reals. -/
+noncomputable def ofRestrictScalars (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @AlmostComplexStructure (RestrictScalars ℝ ℂ M)
+      (instAddCommGroupRestrictScalars ℝ ℂ M) (RestrictScalars.realModule M) := by
+  letI := RestrictScalars.realModule M
+  letI : @Module ℂ (RestrictScalars ℝ ℂ M) Complex.instSemiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+    RestrictScalars.moduleOrig ℝ ℂ M
+  exact ofComplexModule (RestrictScalars ℝ ℂ M)
+
+/-- The scalar-restricted complex structure multiplies the original vector by `I`. -/
+@[simp]
+theorem ofRestrictScalars_apply (M : Type*) [AddCommGroup M] [Module ℂ M]
+    (x : RestrictScalars ℝ ℂ M) :
+    let := RestrictScalars.realModule M
+    (ofRestrictScalars M).toLinearMap x = (RestrictScalars.addEquiv ℝ ℂ M).symm
+      (Complex.I • RestrictScalars.addEquiv ℝ ℂ M x) := by
+  let := RestrictScalars.realModule M
+  rfl
+
+end TauCeti.AlmostComplexStructure

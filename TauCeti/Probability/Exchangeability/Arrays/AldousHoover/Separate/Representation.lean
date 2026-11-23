@@ -126,9 +126,9 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
   have hread : Measurable fun (z : (H → α) × (V → α)) (p : ℕ × ℕ) => z.2 (k p) :=
     Measurable.of_eval fun p => (measurable_pi_apply _).comp measurable_snd
   have hcode : Measurable fun q : (ℕ × ℕ → α) × (V → I) =>
-      (H.domRestrict q.1, fun p : V => G (cellContext e e p.1.1 p.1.2 q.1) (q.2 p)) :=
+      (H.domRestrict q.1, fun p : V => G (cellContext e e p.val.1 p.val.2 q.1) (q.2 p)) :=
     ((Set.measurable_restrict _).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-      hG.comp (((measurable_cellContext e e p.1.1 p.1.2).comp measurable_fst).prodMk
+      hG.comp (((measurable_cellContext e e p.val.1 p.val.2).comp measurable_fst).prodMk
         ((measurable_pi_apply p).comp measurable_snd)))
   have hHV : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, V.domRestrict x) :=
     (Set.measurable_restrict _).prodMk (Set.measurable_restrict _)
@@ -140,7 +140,7 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
           (fun q => x (e q.1, e q.2), fun i b => x (g i, e b), fun j a => x (e a, g j)))
           (fun w p => w (k p)) =
       (fun (z : (H → α) × (V → α)) p => z.2 (k p)) ∘ fun q : (ℕ × ℕ → α) × (V → I) =>
-        (H.domRestrict q.1, fun p : V => G (cellContext e e p.1.1 p.1.2 q.1) (q.2 p)) := by
+        (H.domRestrict q.1, fun p : V => G (cellContext e e p.val.1 p.val.2 q.1) (q.2 p)) := by
     funext q p
     simp only [Function.comp_apply, Prod.map]
     congr 1
@@ -151,6 +151,33 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
   rw [← hunif, Measure.map_prod_map _ _ hS hsel, Measure.map_map hΨ (hS.prodMap hsel), hfac,
     ← Measure.map_map hread hcode, hGcode, Measure.map_map hread hHV]
   rfl
+
+/-- **The separate coding is the cell coding after the strip coding.** If a measurable map `W`
+of the global, row and column noise sends the noise to a law `ν` on the hidden block and strips,
+and the cell coding `G` fed by `ν` and independent cell noise has law `κ`, then any separate
+coding `F` that sorts the four noise families into `G`'s arguments has law `κ`. -/
+private theorem map_separateArray_eq_of_cellCoding
+    {G : ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) → I → α} (hG : Measurable (Function.uncurry G))
+    {W : (I × (ℕ → I) × (ℕ → I)) → (ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)}
+    (hW : Measurable W) {ν : Measure ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α))}
+    {κ : Measure (ℕ × ℕ → α)}
+    (hWlaw : ((volume : Measure I).prod
+      ((Measure.infinitePi fun _ : ℕ => (volume : Measure I)).prod
+        (Measure.infinitePi fun _ : ℕ => (volume : Measure I)))).map W = ν)
+    (hGcode : (ν.prod (Measure.infinitePi fun _ : ℕ × ℕ => (volume : Measure I))).map
+      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) p =>
+        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) = κ)
+    {F : I × I × I × I → α}
+    (hcode : (fun (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) => separateArray F p u) =
+      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) (p : ℕ × ℕ) =>
+        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) ∘
+        Prod.map W id ∘ splitSeparateNoise) :
+    (noiseMeasure Axis (ℕ × ℕ)).map (fun u p => separateArray F p u) = κ := by
+  have hΨ := measurable_stripCellCoding hG
+  rw [hcode, ← Measure.map_map hΨ ((hW.prodMap measurable_id).comp measurable_splitSeparateNoise),
+    ← Measure.map_map (hW.prodMap measurable_id) measurable_splitSeparateNoise,
+    map_splitSeparateNoise_noiseMeasure, ← Measure.map_prod_map _ _ hW measurable_id,
+    Measure.map_id, hWlaw, hGcode]
 
 /-- **The Aldous--Hoover representation of a separately exchangeable array.** Every separately
 exchangeable probability law `ρ` on arrays with values in a standard Borel space is the law of a
@@ -208,22 +235,12 @@ theorem SeparatelyExchangeable.exists_map_separateArray_eq [StandardBorelSpace �
     rw [← Measure.map_map hVc (hφ.prodMap measurable_id),
       ← Measure.map_prod_map _ _ hφ measurable_id, Measure.map_id,
       hφB, hrc]
-  -- Sorting the noise into its four families, the separate coding is the cell coding after `W`.
-  have hΨ := measurable_stripCellCoding hG
-  have hcode : (fun (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) => separateArray
-      (fun t : I × I × I × I => G ((φ t.1, r (φ t.1) t.2.1), c (φ t.1) t.2.2.1) t.2.2.2) p u) =
-      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) (p : ℕ × ℕ) =>
-        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) ∘
-        Prod.map W id ∘ splitSeparateNoise := by
-    funext u p
-    simp [separateArray_apply, W]
-  rw [hcode, ← Measure.map_map hΨ ((hW.prodMap measurable_id).comp measurable_splitSeparateNoise),
-    ← Measure.map_map (hW.prodMap measurable_id) measurable_splitSeparateNoise,
-    map_splitSeparateNoise_noiseMeasure, ← Measure.map_prod_map _ _ hW measurable_id,
-    Measure.map_id, hWlaw, hGcode]
   -- The array read along the odd indices has the law of the whole array.
-  exact (hρ.map_arrayBlock_eq (fun p => (measurable_pi_apply p).aemeasurable) hg hg).trans
-    Measure.map_id'
+  refine (map_separateArray_eq_of_cellCoding hG hW hWlaw hGcode ?_).trans
+    ((hρ.map_arrayBlock_eq (fun p => (measurable_pi_apply p).aemeasurable) hg hg).trans
+      Measure.map_id')
+  funext u p
+  simp [separateArray_apply, W]
 
 /-- **Separately exchangeable arrays are exactly the Aldous--Hoover codings in law.** An array
 process with a.e.-measurable entries in a standard Borel space, on a probability space, is
@@ -246,7 +263,7 @@ theorem separatelyExchangeable_iff_exists_map_separateArray_eq [StandardBorelSpa
     fun p => (measurable_pi_apply p).aemeasurable, Measure.map_id']
   exact (separatelyExchangeable_iff_map_pairReindex (X := separateArray F)
     fun p => ((measurable_pi_apply p).comp (measurable_separateArray F hF)).aemeasurable).1
-      (separatelyExchangeable_separateArray F hF)
+      (separatelyExchangeable_separateArray F)
 
 end TauCeti.Probability
 

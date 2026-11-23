@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
@@ -30,7 +31,9 @@ zero. No new definition is introduced: this file computes the elementary theory 
   `TauCeti.Probability.support_uniformOn_Icc_int`: the native masses and the support.
 * `TauCeti.Probability.map_add_const_uniformOn_Icc_int` and
   `TauCeti.Probability.map_neg_uniformOn_Icc_int`: integer translations shift the endpoints and
-  reflection negates and exchanges them.
+  reflection negates and exchanges them, with corresponding random-variable laws
+  `ProbabilityTheory.HasLaw.add_const_uniformOn_Icc_int` and
+  `ProbabilityTheory.HasLaw.neg_uniformOn_Icc_int`.
 * `TauCeti.Probability.map_toNat_sub_uniformOn_Icc_int`: translating by `-a` gives the uniform
   law on `{0, …, N - 1} ⊆ ℕ`, whose probability generating function is
   `TauCeti.Probability.pgf_uniformOn_Iio`.
@@ -224,12 +227,12 @@ theorem mgf_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) {t : ℝ} (ht : t �
   have hexp : exp t ≠ 1 := fun h ↦ ht (Real.exp_eq_one_iff t |>.mp h)
   rw [mgf, integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : exp (t * ((a + j : ℤ) : ℝ)) = exp (t * a) * exp t ^ j := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     push_cast
     ring_nf
   simp only [hterm, ← Finset.mul_sum, smul_eq_mul]
   have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
-  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, hN,
+  rw [geom_sum_eq hexp, ← Real.exp_natCast_mul, hN,
     mul_comm (b - a + 1 : ℝ) t]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -282,13 +285,13 @@ theorem charFun_map_intCast_uniformOn_Icc_of_exp_ne_one {a b : ℤ} (h : a ≤ b
     integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : Complex.exp ((t : ℂ) * (((a + j : ℤ) : ℝ) : ℂ) * Complex.I) =
       Complex.exp ((t : ℂ) * a * Complex.I) * Complex.exp ((t : ℂ) * Complex.I) ^ j := by
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
     push_cast
     ring_nf
   have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by norm_cast; omega
   have hpow : Complex.exp ((t : ℂ) * Complex.I) ^ (b + 1 - a).toNat =
       Complex.exp ((t : ℂ) * (b - a + 1) * Complex.I) := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     rw [← Complex.ofReal_natCast, hN]
     ring
@@ -419,3 +422,23 @@ theorem tendsto_quantile_map_intCast_uniformOn_Icc_nhdsLT_one {a b : ℤ} (h : a
   ring_nf
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℤ} {a b : ℤ}
+
+/-- Translating an integer-valued random variable uniform on `Icc a b` shifts both endpoints. -/
+theorem HasLaw.add_const_uniformOn_Icc_int
+    (hX : HasLaw X (uniformOn (Icc a b : Set ℤ)) P) (c : ℤ) :
+    HasLaw (fun ω ↦ X ω + c) (uniformOn (Icc (a + c) (b + c) : Set ℤ)) P :=
+  HasLaw.comp ⟨by fun_prop, map_add_const_uniformOn_Icc_int a b c⟩ hX
+
+/-- Negating an integer-valued random variable uniform on `Icc a b` reflects its endpoints. -/
+theorem HasLaw.neg_uniformOn_Icc_int
+    (hX : HasLaw X (uniformOn (Icc a b : Set ℤ)) P) :
+    HasLaw (fun ω ↦ -X ω) (uniformOn (Icc (-b) (-a) : Set ℤ)) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_uniformOn_Icc_int a b⟩ hX
+
+end ProbabilityTheory

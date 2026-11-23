@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The phase form of a complex function
@@ -16,12 +17,16 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 For a differentiable function `α : E → ℂ` on a real normed space, the **phase form**
 `Im (α⁻¹ dα)` is a real one-form. Away from the zeros of `α` it is the differential of a local
 branch of `arg α`. This file proves that it is as regular as `dα` away from the zeros of `α`
-(`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), and
-that it is additive under products (`TauCeti.phaseForm_mul`).
+(`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), that it
+is natural under pullback (`TauCeti.phaseForm_comp`), and that it is additive under products
+(`TauCeti.phaseForm_mul`). For a function `u` with values in the unit circle, it
+recovers the derivative: `du = u · i Im (u⁻¹ du)` (`TauCeti.fderiv_apply_eq_mul_I_mul_phaseForm`).
 
 ## Main definitions
 
 * `TauCeti.phaseForm α`: the one-form `Im (α⁻¹ dα)`.
+* `TauCeti.imOneForm`: the continuous linear map `L ↦ Im ∘ L` from complex-valued functionals to
+  real one-forms, through which the phase form and its relatives are differentiated.
 -/
 
 public section
@@ -29,6 +34,7 @@ public section
 noncomputable section
 
 open ContinuousAlternatingMap Complex
+open scoped Topology
 
 namespace TauCeti
 
@@ -51,10 +57,16 @@ theorem phaseForm_of_eq_zero (h : α x = 0) : phaseForm α x = 0 := by
   ext v
   simp [h]
 
-/-- The continuous linear map `L ↦ Im ∘ L`, with values in one-forms. -/
-private def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
+/-- The continuous linear map `L ↦ Im ∘ L`, reading a complex-valued real-linear functional as
+the real one-form given by its imaginary part. -/
+def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
   (ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap ∘L
     ContinuousLinearMap.compL ℝ E ℂ ℝ imCLM
+
+/-- The one-form `imOneForm L` evaluated on a vector. -/
+@[simp]
+theorem imOneForm_apply (L : E →L[ℝ] ℂ) (v : Fin 1 → E) : imOneForm L v = (L (v 0)).im := by
+  simp [imOneForm]
 
 /-- The phase form is `imOneForm` applied to `α⁻¹ dα`. -/
 private theorem phaseForm_eq_imOneForm (α : E → ℂ) :
@@ -100,6 +112,15 @@ theorem extDeriv_phaseForm (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0) :
   convert zero_im using 2
   ring
 
+/-- The phase form is natural under pullback: the phase form of `α ∘ f` at `y` is the pullback by
+`f` of the phase form of `α` at `f y`. This holds also at the zeros of `α ∘ f`, where both sides
+vanish. -/
+theorem phaseForm_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : F → E} {y : F}
+    (hα : DifferentiableAt ℝ α (f y)) (hf : DifferentiableAt ℝ f y) :
+    phaseForm (α ∘ f) y = (phaseForm α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  ext v
+  simp [fderiv_comp y hα hf]
+
 /-- The phase form of a product of functions that do not vanish at `x` is the sum of their
 phase forms. -/
 theorem phaseForm_mul (hu : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x)
@@ -111,5 +132,19 @@ theorem phaseForm_mul (hu : DifferentiableAt ℝ u x) (hα : DifferentiableAt �
   congr 1
   field_simp
   ring
+
+/-- The derivative of a function `u` that is circle-valued near `x` is `du = u · i Im (u⁻¹ du)`:
+since `du` is orthogonal to `u`, `u⁻¹ du = conj u du` is imaginary. -/
+theorem fderiv_apply_eq_mul_I_mul_phaseForm (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1) (v : E) :
+    fderiv ℝ u x v = u x * (I * phaseForm u x (fun _ ↦ v)) := by
+  have hux : ‖u x‖ = 1 := hu.self_of_nhds
+  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
+    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
+    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
+      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
+  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
+  have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
+    Complex.ext (by simp [hre]) (by simp)
+  rw [phaseForm_apply, ← hw, mul_inv_cancel_left₀ hu0]
 
 end TauCeti

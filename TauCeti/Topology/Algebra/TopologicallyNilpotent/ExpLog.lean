@@ -65,10 +65,14 @@ logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (l
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
 * `IsTopologicallyNilpotent.hasSum_log_one_sub`: `log (1 - a) = -∑ aⁿ⁺¹ / (n + 1)`.
+* `IsTopologicallyNilpotent.hasSum_log_prod_one_sub`: for a finite product `∏_μ (1 - μ a)`, its
+  logarithm is `-∑ₖ (∑_μ μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
 * `HasSum.exp_of_mem_ideal`: inside an ideal of topologically nilpotent elements, the exponential
   turns convergent sums into convergent products.
 * `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
   `u * D (log u) = D u`.
+* `IsTopologicallyNilpotent.map_exp`, `IsTopologicallyNilpotent.map_log`: continuous ring
+  homomorphisms commute with the exponential and the logarithm.
 -/
 
 public section
@@ -78,15 +82,13 @@ noncomputable section
 open Filter Topology PowerSeries Nat
 
 variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S]
-  [IsTopologicalRing S] [IsLinearTopology S S] [T2Space S] [CompleteSpace S]
+  [IsTopologicalRing S] [IsLinearTopology S S]
 
 namespace IsTopologicallyNilpotent
 
-variable {a b u v : S}
-
 section Evaluation
 
-variable [Algebra ℚ S]
+variable [T2Space S] [CompleteSpace S] {a u : S} [Algebra ℚ S]
 
 private theorem hasSum_exp_aeval (ha : IsTopologicallyNilpotent a) :
     HasSum (fun n : ℕ => (n ! : ℚ)⁻¹ • a ^ n)
@@ -122,39 +124,59 @@ private theorem exists_log_eq_mul (hu : IsTopologicallyNilpotent (u - 1)) :
 
 end Evaluation
 
-variable [Algebra ℚ S]
+section Series
+
+variable [CompleteSpace S] {a u : S} [Algebra ℚ S]
 
 /-- For a topologically nilpotent `a`, the exponential series `∑ aⁿ / n!` converges to
 `exp a`. -/
 theorem hasSum_exp (ha : IsTopologicallyNilpotent a) :
     HasSum (fun n : ℕ => (n ! : ℚ)⁻¹ • a ^ n) (NormedSpace.exp a) := by
-  rw [exp_eq_aeval ha]
-  exact hasSum_exp_aeval ha
+  rw [NormedSpace.exp_eq_tsum_rat]
+  simpa only [Algebra.smul_def] using
+    (ha.summable_mul_pow fun n => algebraMap ℚ S (n ! : ℚ)⁻¹).hasSum
 
 /-- For a topologically nilpotent `u - 1`, the logarithm series `∑ (-1)ⁿ⁺¹ (u - 1)ⁿ / n`
 converges to `log u`. -/
 theorem hasSum_log (hu : IsTopologicallyNilpotent (u - 1)) :
     HasSum (fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n) (NormedSpace.log u) := by
-  rw [log_eq_aeval hu]
-  exact hasSum_log_aeval hu
+  rw [NormedSpace.log_eq_tsum ℚ]
+  simpa only [Algebra.smul_def] using
+    (hu.summable_mul_pow fun n => algebraMap ℚ S ((-1) ^ (n + 1) / n : ℚ)).hasSum
+
+end Series
+
+section Functional
+
+variable [T2Space S] [CompleteSpace S] {a b u v : S}
 
 /-- If `a` is topologically nilpotent, so is `exp a - 1`. -/
 theorem exp_sub_one (ha : IsTopologicallyNilpotent a) :
     IsTopologicallyNilpotent (NormedSpace.exp a - 1) := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simpa using IsTopologicallyNilpotent.zero
   obtain ⟨c, hc⟩ := exists_exp_sub_one_eq_mul ha
   exact hc ▸ ha.mul_right c
 
 /-- If `u - 1` is topologically nilpotent, so is `log u`. -/
 theorem log (hu : IsTopologicallyNilpotent (u - 1)) :
     IsTopologicallyNilpotent (NormedSpace.log u) := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simpa using IsTopologicallyNilpotent.zero
   obtain ⟨c, hc⟩ := exists_log_eq_mul hu
   exact hc ▸ hu.mul_right c
 
 /-- `exp a - 1` lies in every ideal containing the topologically nilpotent `a`. -/
 theorem exp_sub_one_mem (ha : IsTopologicallyNilpotent a) {I : Ideal S} (haI : a ∈ I) :
     NormedSpace.exp a - 1 ∈ I := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simp
   obtain ⟨c, hc⟩ := exists_exp_sub_one_eq_mul ha
   exact hc ▸ I.mul_mem_right c haI
+
+section Inverse
+
+variable [Algebra ℚ S]
 
 /-- `log u` lies in every ideal containing the topologically nilpotent `u - 1`. -/
 theorem log_mem (hu : IsTopologicallyNilpotent (u - 1)) {I : Ideal S} (huI : u - 1 ∈ I) :
@@ -183,9 +205,13 @@ theorem log_exp (ha : IsTopologicallyNilpotent a) : NormedSpace.log (NormedSpace
   convert h.symm using 3
   exact hg.symm
 
+end Inverse
+
 /-- The exponential turns sums of topologically nilpotent elements into products. -/
 theorem exp_add (ha : IsTopologicallyNilpotent a) (hb : IsTopologicallyNilpotent b) :
     NormedSpace.exp (a + b) = NormedSpace.exp a * NormedSpace.exp b := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simp
   have := IsLinearTopology.nonarchimedeanRing S
   have ha' := ha.hasSum_exp
   have hb' := hb.hasSum_exp
@@ -206,8 +232,13 @@ theorem exp_add (ha : IsTopologicallyNilpotent a) (hb : IsTopologicallyNilpotent
 `v - 1` are topologically nilpotent. -/
 theorem log_mul (hu : IsTopologicallyNilpotent (u - 1)) (hv : IsTopologicallyNilpotent (v - 1)) :
     NormedSpace.log (u * v) = NormedSpace.log u + NormedSpace.log v := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simp
   rw [← (hu.log.add hv.log).log_exp, hu.log.exp_add hv.log, hu.exp_log, hv.exp_log]
 
+end Functional
+
+variable [CompleteSpace S] {a : S} [Algebra ℚ S] in
 /-- For a topologically nilpotent `a`, the logarithm of `1 - a` is `-∑ₙ aⁿ⁺¹ / (n + 1)`. -/
 theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
     HasSum (fun n : ℕ => -(((n + 1 : ℕ) : ℚ)⁻¹ • a ^ (n + 1))) (NormedSpace.log (1 - a)) := by
@@ -223,6 +254,27 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
     rw [sub_sub_cancel_left, hneg]
     simp only [smul_smul, hsign, neg_smul]
   · simp
+
+section Applications
+
+variable [T2Space S] [CompleteSpace S] {a u : S} [Algebra ℚ S]
+
+/-- For a multiset `s` of scalars, the logarithm of `∏_{μ ∈ s} (1 - μ a)` is
+`-∑ₖ (∑_{μ ∈ s} μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`. -/
+theorem hasSum_log_prod_one_sub {K : Type*} [CommRing K] [Algebra K S]
+    (ha : IsTopologicallyNilpotent a) (s : Multiset K) :
+    HasSum (fun k : ℕ ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ • ((s.map (· ^ (k + 1))).sum • a ^ (k + 1))))
+      (NormedSpace.log (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) := by
+  induction s using Multiset.induction_on with
+  | empty => simp [NormedSpace.log_one]
+  | cons μ s ih =>
+    have hμ : IsTopologicallyNilpotent (algebraMap K S μ * a) := ha.mul_left _
+    have h1 : IsTopologicallyNilpotent ((1 - algebraMap K S μ * a) - 1) := by simpa using hμ.neg
+    rw [Multiset.map_cons, Multiset.prod_cons, h1.log_mul (ha.prod_one_sub_sub_one s)]
+    convert hμ.hasSum_log_one_sub.add ih using 1
+    funext k
+    simp only [Multiset.map_cons, Multiset.sum_cons, ← Algebra.smul_def, smul_pow,
+      add_smul, smul_add, neg_add]
 
 /-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the
 form `u * D (log u) = D u`, when `u - 1` is topologically nilpotent. -/
@@ -252,15 +304,42 @@ theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Deriv
   nth_rw 1 [show u = 1 - -(u - 1) by ring]
   rw [hgeom.one_sub_mul_tsum_pow, one_mul, map_sub, Derivation.map_one_eq_zero, sub_zero]
 
+end Applications
+
+variable [CompleteSpace S] {u : S} [Algebra ℚ S] in
+/-- A continuous ring homomorphism `ψ` commutes with the logarithm: `ψ (log u) = log (ψ u)` when
+`u - 1` is topologically nilpotent. -/
+theorem map_log {S' : Type*} [CommRing S'] [TopologicalSpace S'] [IsTopologicalRing S']
+    [T2Space S'] [Algebra ℚ S']
+    (hu : IsTopologicallyNilpotent (u - 1)) (ψ : S →+* S') (hψ : Continuous ψ) :
+    ψ (NormedSpace.log u) = NormedSpace.log (ψ u) := by
+  refine (hu.hasSum_log.map ψ hψ).tsum_eq.symm.trans ?_
+  rw [NormedSpace.log_eq_tsum ℚ]
+  exact tsum_congr fun k => by simp [map_rat_smul]
+
+variable [CompleteSpace S] {a : S} [Algebra ℚ S] in
+/-- A continuous ring homomorphism `ψ` commutes with the exponential: `ψ (exp a) = exp (ψ a)` when
+`a` is topologically nilpotent. -/
+theorem map_exp {S' : Type*} [CommRing S'] [TopologicalSpace S'] [IsTopologicalRing S']
+    [T2Space S'] [Algebra ℚ S'] (ha : IsTopologicallyNilpotent a) (ψ : S →+* S')
+    (hψ : Continuous ψ) : ψ (NormedSpace.exp a) = NormedSpace.exp (ψ a) := by
+  refine (ha.hasSum_exp.map ψ hψ).tsum_eq.symm.trans ?_
+  rw [NormedSpace.exp_eq_tsum_rat]
+  exact tsum_congr fun n => by simp [map_rat_smul]
+
 end IsTopologicallyNilpotent
+
+variable [T2Space S] [CompleteSpace S]
 
 /-- **The exponential of a sum is the product of the exponentials.** If `f` has sum `a`, with all
 `f i` and `a` in an ideal `I` of topologically nilpotent elements, then `exp ∘ f` has product
 `exp a`. -/
-theorem HasSum.exp_of_mem_ideal [Algebra ℚ S] {ι : Type*} {I : Ideal S}
+theorem HasSum.exp_of_mem_ideal {ι : Type*} {I : Ideal S}
     (hI : ∀ a ∈ I, IsTopologicallyNilpotent a) {f : ι → S} {a : S} (h : HasSum f a)
     (hf : ∀ i, f i ∈ I) (ha : a ∈ I) :
     HasProd (NormedSpace.exp ∘ f) (NormedSpace.exp a) := by
+  rcases isEmpty_or_nonempty (Algebra ℚ S) with _ | ⟨⟨_⟩⟩
+  · simp [Function.comp_def]
   have hs (s : Finset ι) : ∑ i ∈ s, f i ∈ I := I.sum_mem fun i _ => hf i
   have hprod (s : Finset ι) :
       ∏ i ∈ s, NormedSpace.exp (f i) = NormedSpace.exp (∑ i ∈ s, f i) := by
@@ -294,16 +373,16 @@ exponential is an isomorphism from the additive group of `I` onto its principal 
 inverse the logarithm. -/
 def expMulEquiv : Multiplicative I ≃* I.principalUnitGroup where
   toFun a := ⟨⟨NormedSpace.exp (a.toAdd : S), NormedSpace.exp (-a.toAdd : S),
-      by rw [← (hI _ a.toAdd.2).exp_add (hI _ (neg_mem a.toAdd.2)), add_neg_cancel,
+      by rw [← (hI _ a.toAdd.property).exp_add (hI _ (neg_mem a.toAdd.property)), add_neg_cancel,
         NormedSpace.exp_zero],
-      by rw [← (hI _ (neg_mem a.toAdd.2)).exp_add (hI _ a.toAdd.2), neg_add_cancel,
+      by rw [← (hI _ (neg_mem a.toAdd.property)).exp_add (hI _ a.toAdd.property), neg_add_cancel,
         NormedSpace.exp_zero]⟩,
-    mem_principalUnitGroup.2 ((hI _ a.toAdd.2).exp_sub_one_mem a.toAdd.2)⟩
+    mem_principalUnitGroup.2 ((hI _ a.toAdd.property).exp_sub_one_mem a.toAdd.property)⟩
   invFun u := .ofAdd ⟨NormedSpace.log ((u : Sˣ) : S),
-    (hI _ (mem_principalUnitGroup.1 u.2)).log_mem (mem_principalUnitGroup.1 u.2)⟩
-  left_inv a := Subtype.ext (hI _ a.toAdd.2).log_exp
-  right_inv u := Subtype.ext (Units.ext (hI _ (mem_principalUnitGroup.1 u.2)).exp_log)
-  map_mul' a b := Subtype.ext (Units.ext ((hI _ a.toAdd.2).exp_add (hI _ b.toAdd.2)))
+    (hI _ (mem_principalUnitGroup.1 u.property)).log_mem (mem_principalUnitGroup.1 u.property)⟩
+  left_inv a := Subtype.ext (hI _ a.toAdd.property).log_exp
+  right_inv u := Subtype.ext (Units.ext (hI _ (mem_principalUnitGroup.1 u.property)).exp_log)
+  map_mul' a b := Subtype.ext (Units.ext ((hI _ a.toAdd.property).exp_add (hI _ b.toAdd.property)))
 
 /-- `Ideal.expMulEquiv` sends `a` to the unit `exp a`. -/
 @[simp]

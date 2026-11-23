@@ -31,12 +31,11 @@ enter only where theorems need them — spectrality (Wedhorn Theorem 7.35) is th
 theorem, and it lives with the `Spv (A, I)` machinery it consumes, not in this file. This
 mirrors how `cont` itself is defined below its Wedhorn hypotheses.
 
-Following the roadmap's conventions, the plus ring is an explicit `Subring A` argument and the
-spectrum is a `Set (Spv A)`, so a point is a valuation up to equivalence with no chosen value
-group, and the subspace topology is the one the coercion `↥(spa Aplus)` carries. (Mathlib's
-in-flight `SpaPoint` of mathlib4#42315 instead bundles a representative valuation with a chosen
-value group — the representation the roadmap warns must be compared before later layers may use
-it; the subspace form here needs no such comparison.)
+The plus ring is an explicit `Subring A` argument and the spectrum is a `Set (Spv A)`, so a point
+is a valuation up to equivalence with no chosen value group, and the subspace topology is the one
+the coercion `↥(spa Aplus)` carries. (The `SpaPoint` of mathlib4#42315 instead bundles a
+representative valuation with a chosen value group; the subspace form here needs no choice of
+representative.)
 
 ## Main definitions
 
@@ -51,8 +50,9 @@ it; the subspace form here needs no such comparison.)
   valuation at most `1` on `A⁺`.
 * `TauCeti.ValuationSpectrum.valuation_units_eq_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
   valuation `1` on every unit `u` with `u, u⁻¹ ∈ A⁺`.
-* `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows. Its
-  inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
+* `TauCeti.ValuationSpectrum.spa_subset_cont` : every point of `Spa (A, A⁺)` is continuous
+  (`Spa (A, A⁺) ⊆ Cont A`).
+* `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
   closure leaves `Spa` unchanged.
 * `TauCeti.ValuationSpectrum.spa_topologicalClosure` : over a semitopological ring, replacing the
@@ -66,6 +66,8 @@ it; the subspace form here needs no such comparison.)
   ring `A⁺` (the `1 ∈ closure {0} → Spa(A, A⁺) = ∅` half of Wedhorn Proposition 7.49(1)).
 * `TauCeti.ValuationSpectrum.trivialSection_mem_spa_iff` : the trivial valuation of a prime is a
   point of the adic spectrum exactly when the prime is open, for any plus ring.
+* `TauCeti.ValuationSpectrum.isOpen_setOf_notMem_supp` : the points of `Spa (A, A⁺)` off the
+  support of an element form an open subset.
 * `TauCeti.ValuationSpectrum.eq_top_of_spa_eq_empty` : an empty adic spectrum forces every open
   ideal to be the unit ideal.
 The converse and the full separated-quotient criterion of Wedhorn Proposition 7.49(1) require
@@ -110,7 +112,7 @@ def spa (Aplus : Subring A) : Set (Spv A) :=
 /-- The set-level characterization of the adic spectrum: `spa` is the intersection of the
 continuous locus with the sub-unit locus of the plus ring. The definition is not exposed
 across the module boundary, so this equation is how consumers apply set-level results to
-`spa` — for instance `spa_def ▸ Set.inter_subset_left : spa Aplus ⊆ cont A`. -/
+`spa` — for instance `rw [spa_def, Set.preimage_inter]`. -/
 theorem spa_def (Aplus : Subring A) :
     spa Aplus = cont A ∩ {v : Spv A | ∀ a ∈ Aplus, v.toValuativeRel.vle a 1} := (rfl)
 
@@ -120,6 +122,10 @@ plus ring: `v ∈ Spa (A, A⁺)` iff `v` is continuous and `v(a) ≤ 1` for ever
 theorem mem_spa_iff (Aplus : Subring A) (v : Spv A) :
     v ∈ spa Aplus ↔ v.IsContinuous ∧ ∀ a ∈ Aplus, v.toValuativeRel.vle a 1 := by
   rw [spa_def, Set.mem_inter_iff, mem_cont_iff, Set.mem_ofPred_eq]
+
+/-- Every point of `Spa (A, A⁺)` is continuous: `Spa (A, A⁺) ⊆ Cont A`. -/
+theorem spa_subset_cont (Aplus : Subring A) : spa Aplus ⊆ cont A :=
+  fun v hv ↦ (mem_cont_iff v).mpr ((mem_spa_iff Aplus v).mp hv).1
 
 /-- At a point of `Spa (A, A⁺)`, every element of the plus ring has valuation at most `1`: the
 sub-unit condition of `mem_spa_iff`, read through the valuation `v.valuation`. -/
@@ -134,7 +140,7 @@ theorem valuation_units_eq_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : 
     v.valuation (u : A) = 1 :=
   Valuation.Integers.one_of_isUnit' (O := Aplus) (x := ⟨u, hu⟩)
     ⟨⟨⟨u, hu⟩, ⟨_, hu'⟩, by ext; simp, by ext; simp⟩, rfl⟩
-    fun x ↦ valuation_le_one_of_mem_spa hv x.2
+    fun x ↦ valuation_le_one_of_mem_spa hv x.property
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
@@ -180,7 +186,7 @@ theorem spa_topologicalClosure [IsSemitopologicalRing A] (S : Subring A) :
 at most `1` on the image of `ℤ`, the smallest subring, since its integer ring is a subring. -/
 @[simp]
 theorem spa_bot : spa (⊥ : Subring A) = cont A := by
-  refine Set.Subset.antisymm (fun v hv ↦ (mem_cont_iff v).mpr ((mem_spa_iff _ v).mp hv).1)
+  refine Set.Subset.antisymm (spa_subset_cont ⊥)
     fun v hv ↦ (mem_spa_iff _ v).mpr ⟨(mem_cont_iff v).mp hv, fun a ha ↦ ?_⟩
   have := (bot_le : (⊥ : Subring A) ≤ v.valuation.integer) ha
   rwa [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff] at this
@@ -194,7 +200,7 @@ theorem spa_eq_cont_of_denseRange_intCast [IsSemitopologicalRing A]
     refine eq_top_iff.mpr fun x _ ↦ closure_mono ?_ (h x)
     rintro _ ⟨n, rfl⟩
     exact intCast_mem _ n
-  refine Set.Subset.antisymm (fun v hv ↦ (mem_cont_iff v).mpr ((mem_spa_iff _ v).mp hv).1) ?_
+  refine Set.Subset.antisymm (spa_subset_cont Aplus) ?_
   rw [← spa_bot, ← spa_topologicalClosure, htop]
   exact spa_antitone le_top
 
@@ -208,6 +214,17 @@ theorem trivialSection_mem_spa_iff (Aplus : Subring A) (p : PrimeSpectrum A) :
     fun hp ↦ ⟨(isContinuous_trivialSection_iff p).mpr hp, fun a _ ↦ ?_⟩⟩
   exact (trivialSection_vle_iff p a 1).mpr
     (Or.inr ((Ideal.ne_top_iff_one _).mp p.isPrime.ne_top))
+
+/-- **Points off the support of an element.** The points of `Spa (A, A⁺)` at which `f` does not
+vanish, that is `f ∉ supp v`, form an open subset. -/
+theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
+    (Aplus : Subring A) (f : A) :
+    IsOpen {v : spa Aplus | f ∉ supp v.val} := by
+  have : {v : spa Aplus | f ∉ supp v.val} = Subtype.val ⁻¹' basicOpen f f := by
+    ext v
+    simp [ValuativeRel.vle_refl]
+  rw [this]
+  exact (isOpen_basicOpen f f).preimage continuous_subtypeVal
 
 section SeparatelyContinuousAdd
 

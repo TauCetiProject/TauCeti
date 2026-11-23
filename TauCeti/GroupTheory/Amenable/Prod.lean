@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Option
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.Topology.Algebra.Group.UCB.Prod
+import TauCeti.Algebra.Group.Equiv.Pi
 
 /-!
 # Products of amenable groups
@@ -115,8 +116,8 @@ instance Amenable.prod [Amenable G] [Amenable H] : Amenable (G × H) :=
 variable (G H) in
 /-- A product of two topological groups is amenable exactly when both factors are. -/
 theorem amenable_prod_iff : Amenable (G × H) ↔ Amenable G ∧ Amenable H :=
-  ⟨fun _ => ⟨.of_surjective (ContinuousMonoidHom.fst G H) Prod.fst_surjective,
-      .of_surjective (ContinuousMonoidHom.snd G H) Prod.snd_surjective⟩,
+  ⟨fun _ => ⟨.of_denseRange (ContinuousMonoidHom.fst G H) Prod.fst_surjective.denseRange,
+      .of_denseRange (ContinuousMonoidHom.snd G H) Prod.snd_surjective.denseRange⟩,
     fun ⟨_, _⟩ => inferInstance⟩
 
 /-- The product of a finite family of amenable topological groups is amenable. -/
@@ -130,15 +131,9 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
     intro α β e h G _ _ _ _
     have := h (fun a => G (e a))
     let φ : (∀ a, G (e a)) →ₜ* ∀ b, G b :=
-      { toFun := Equiv.piCongrLeft G e
-        map_one' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        map_mul' f f' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        continuous_toFun := (Homeomorph.piCongrLeft e).continuous }
-    exact .of_surjective φ (Equiv.piCongrLeft G e).surjective
+      { (MulEquiv.piCongrLeft G e).toMonoidHom with
+        continuous_toFun := by simpa using (Homeomorph.piCongrLeft e).continuous_toFun }
+    exact .of_denseRange φ (MulEquiv.piCongrLeft G e).surjective.denseRange
   · -- The empty product is the trivial group.
     intro G _ _ _ _
     infer_instance
@@ -156,15 +151,15 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
           exacts [continuous_fst,
             ((continuous_apply _).comp continuous_snd :
               Continuous fun p : G none × ∀ a, G (some a) => p.2 _)] }
-    exact .of_surjective φ Equiv.piOptionEquivProd.symm.surjective
+    exact .of_denseRange φ Equiv.piOptionEquivProd.symm.surjective.denseRange
 
 /-- A product of a finite family of topological groups is amenable exactly when every factor
 is. -/
 theorem amenable_pi_iff {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] :
     Amenable (∀ i, G i) ↔ ∀ i, Amenable (G i) :=
-  ⟨fun _ i => .of_surjective ⟨Pi.evalMonoidHom G i, continuous_apply i⟩
-      (Function.surjective_eval i),
+  ⟨fun _ i => .of_denseRange ⟨Pi.evalMonoidHom G i, continuous_apply i⟩
+      (Function.surjective_eval i).denseRange,
     fun _ => inferInstance⟩
 
 end TauCeti

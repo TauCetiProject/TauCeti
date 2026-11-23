@@ -89,11 +89,11 @@ def ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) : RelGen
   mk ((γ : C(I^(Option N), X.pair.fst)).comp
       ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm : C(I × (I^N), I^(Option N))))
     (fun _ => mem_range.2 ⟨X.basepoint, by
-      simpa using (γ.2 _ <| piOptionEquivProdHomeomorph_symm_mem_boundary <|
+      simpa using (γ.property _ <| piOptionEquivProdHomeomorph_symm_mem_boundary <|
         Cube.mk_zero_mem_prodBoundary _).symm⟩)
     (fun _ _ h => by
       simpa using
-        γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)))
+        γ.property _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)))
 
 @[simp]
 theorem ofGenLoop_apply (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) (y : I × (I^N)) :
@@ -112,7 +112,8 @@ theorem boundary_ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoi
     boundary (ofGenLoop γ) = GenLoop.const := by
   ext t
   rw [boundary_apply_eq_iff, ofGenLoop_apply, GenLoop.const_apply]
-  exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary _))
+  exact γ.property _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary
+      _))
 
 /-- Regarding absolute cubes as relative cubes commutes with the action of morphisms of based
 pairs. -/
@@ -134,10 +135,10 @@ theorem Homotopic.ofGenLoop {γ δ : Ω^ (Option N) X.pair.fst (X.pair.map X.bas
         have h₀ (t : I^N) :=
           piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary t)
         refine mem_iff.2
-          ⟨fun t => ⟨X.basepoint, ((F.eq_fst r (h₀ t)).trans (γ.2 _ (h₀ t))).symm⟩,
+          ⟨fun t => ⟨X.basepoint, ((F.eq_fst r (h₀ t)).trans (γ.property _ (h₀ t))).symm⟩,
             fun s t h => ?_⟩
         have hb := piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)
-        exact (F.eq_fst r hb).trans (γ.2 _ hb) }) h
+        exact (F.eq_fst r hb).trans (γ.property _ hb) }) h
 
 /-! ### Exactness at `π_n(A)` -/
 
@@ -160,7 +161,7 @@ theorem exists_boundary_eq {β : Ω^ N X.pair.snd X.basepoint}
   · rcases h with rfl | ht
     · simp
     · exact (F.eq_fst s ht).trans
-        ((GenLoop.map_apply _ _ β t).trans (congrArg X.pair.map.hom (β.2 t ht)))
+        ((GenLoop.map_apply _ _ β t).trans (congrArg X.pair.map.hom (β.property t ht)))
   · ext t
     rw [boundary_apply_eq_iff]
     simp
@@ -211,7 +212,7 @@ private theorem glue_mem_range {r : ℝ} (hr : r ≤ 0) (t : I^N) :
 private theorem glue_of_mem_boundary (r : ℝ) {t : I^N} (ht : t ∈ Cube.boundary N) :
     glue p G (r, t) = X.pair.map X.basepoint := by
   rcases le_or_gt r 0 with hr | hr
-  · rw [glue_of_nonpos p G hr, G.eq_fst _ ht, (boundary p).2 t ht]
+  · rw [glue_of_nonpos p G hr, G.eq_fst _ ht, (boundary p).property t ht]
   · rw [glue_of_pos p G hr, apply_of_mem_boundary p _ ht]
 
 private theorem glue_neg_one (t : I^N) : glue p G (-1, t) = X.pair.map X.basepoint := by
@@ -280,7 +281,7 @@ theorem exists_homotopic_map_of_homotopic_const
   refine ⟨⟨X.pair.liftSnd (q.comp e) fun y => hq _, fun y hy => ?_⟩, ⟨?_⟩⟩
   · rw [TopPair.liftSnd_apply_eq_iff, ContinuousMap.comp_apply, ← H.fst_eq_snd (hb hy), coe_coe,
       hγ]
-    exact γ.2 y hy
+    exact γ.property y hy
   · exact
       { toFun y := H (y.1, e y.2)
         continuous_toFun := by fun_prop
@@ -408,8 +409,8 @@ theorem subsingleton_of_injective_of_surjective
 
 /-- If `π_n(A, a₀)` and `π_{n+1}(X, a₀)` are trivial, then so is `π_{n+1}(X, A, a₀)`. -/
 theorem subsingleton_of_subsingleton_homotopyGroup
-    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint))
-    (hX : Subsingleton (HomotopyGroup (Option N) X.pair.fst (X.pair.map X.basepoint))) :
+    (_ : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint))
+    (_ : Subsingleton (HomotopyGroup (Option N) X.pair.fst (X.pair.map X.basepoint))) :
     Subsingleton (RelHomotopyGroup N X) :=
   subsingleton_of_injective_of_surjective (fun _ _ _ => Subsingleton.elim _ _)
     fun _ => ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
@@ -417,7 +418,7 @@ theorem subsingleton_of_subsingleton_homotopyGroup
 /-- If `π_n(A, a₀)` is trivial, then every class of `π_{n+1}(X, A, a₀)` comes from
 `π_{n+1}(X, a₀)`. -/
 theorem surjective_ofHomotopyGroup_of_subsingleton
-    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
+    (_ : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
     Function.Surjective (ofHomotopyGroup : _ → RelHomotopyGroup N X) :=
   fun _ => mem_range_ofHomotopyGroup_iff.2 (Subsingleton.elim _ _)
 

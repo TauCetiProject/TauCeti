@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Basic
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Schur
 public import Mathlib.LinearAlgebra.Lagrange
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 
@@ -17,9 +18,10 @@ signed ladder summand. Their composites are the spectral projections of the Casi
 the projection onto channel `j` is the Lagrange polynomial which is one at that channel's
 Casimir scalar and zero at the other channel scalars, evaluated on the Casimir action.
 Thus each channel is exactly a Casimir eigenspace, and these projections resolve the
-identity and commute with every module endomorphism. The projections extract components in
-the normalized highest-vector and lowering string bases, as needed when comparing iterated
-tensor decompositions.
+identity, commute with every module endomorphism, and are natural with respect to module
+maps on the two tensor factors via `LadderModule.schurScalar`. The projections extract
+components in the normalized highest-vector and lowering string bases, as needed when
+comparing iterated tensor decompositions.
 
 The inclusions and their normalization are those of `clebschGordanInclusion`; no choice of
 basis or normalization is made in defining the inverse maps.
@@ -81,6 +83,21 @@ theorem clebschGordanProjection_inclusion_of_ne (hq : IsGenericQuantumParameter 
     (x : LadderModule q (m + n - 2 * j) (ε * δ)) :
     clebschGordanProjection hq i (clebschGordanInclusion hq j x) = 0 := by
   simp [clebschGordanProjection_inclusion, hij.symm]
+
+/-- Composing a channel projection with its normalized inclusion gives the identity map. -/
+@[simp]
+theorem clebschGordanProjection_comp_inclusion_self (hq : IsGenericQuantumParameter q)
+    (j : Fin (min m n + 1)) :
+    (clebschGordanProjection (ε := ε) (δ := δ) hq j).comp (clebschGordanInclusion hq j) =
+      LinearMap.id :=
+  LinearMap.ext (clebschGordanProjection_inclusion_self hq j)
+
+/-- Composing a channel projection with a distinct channel inclusion gives the zero map. -/
+@[simp]
+theorem clebschGordanProjection_comp_inclusion_of_ne (hq : IsGenericQuantumParameter q)
+    {i j : Fin (min m n + 1)} (hij : i ≠ j) :
+    (clebschGordanProjection (ε := ε) (δ := δ) hq i).comp (clebschGordanInclusion hq j) = 0 :=
+  LinearMap.ext (clebschGordanProjection_inclusion_of_ne hq hij)
 
 /-- The normalized channel projections reconstruct every tensor vector. -/
 theorem sum_clebschGordanInclusion_projection (hq : IsGenericQuantumParameter q)
@@ -183,5 +200,86 @@ theorem clebschGordanInclusion_projection_naturality (hq : IsGenericQuantumParam
     simpa only [Polynomial.aeval_algHom, AlgHom.comp_apply, Algebra.lsmul_apply,
       LinearMap.restrictScalars_apply, LinearMap.comp_apply] using h
   rw [hp, hp, map_smul]
+
+/-- At a generic parameter, the tensor product of endomorphisms of two signed ladder modules acts
+by the product of their Schur scalars. -/
+theorem tensorMap_apply_eq_schurScalar_smul (hq : IsGenericQuantumParameter q)
+    (f : Module.End (UqSl2 q) (LadderModule q m ε))
+    (g : Module.End (UqSl2 q) (LadderModule q n δ))
+    (x : Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)) :
+    tensorMap ℂ (UqSl2 q) f g x = (schurScalar f * schurScalar g) • x := by
+  induction x using Tensor.inductionOn with
+  | htmul a b =>
+    rw [tensorMap_tmul, apply_eq_schurScalar_smul hq f a, apply_eq_schurScalar_smul hq g b,
+      ← smul_tmul', tmul_smul, smul_smul, mul_comm]
+  | hadd _ _ hx hy => rw [map_add, hx, hy, smul_add]
+
+/-- At a generic parameter, a tensor product `f ⊗ g` of ladder-module intertwiners either acts on
+matching modules (`m = m'`, `ε = ε'`, `n = n'`, `δ = δ'`) or vanishes together with
+`schurScalar f * schurScalar g`. -/
+private theorem eq_and_eq_or_tensorMap_eq_zero (hq : IsGenericQuantumParameter q)
+    {m' n' : ℕ} {ε' δ' : ℤˣ}
+    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m' ε')
+    (g : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q n' δ') :
+    ((m = m' ∧ ε = ε') ∧ (n = n' ∧ δ = δ')) ∨
+      (tensorMap ℂ (UqSl2 q) f g = 0 ∧ schurScalar f * schurScalar g = 0) := by
+  by_cases hm : m = m' ∧ ε = ε'
+  · by_cases hn : n = n' ∧ δ = δ'
+    · exact .inl ⟨hm, hn⟩
+    · have hg := hom_eq_zero_of_ne hq (by tauto) g
+      exact .inr ⟨by simp [hg], by simp [hg]⟩
+  · have hf := hom_eq_zero_of_ne hq (by tauto) f
+    exact .inr ⟨by simp [hf], by simp [hf]⟩
+
+/-- Naturality of the Clebsch–Gordan inclusions on the ladder vectors `v_l` across arbitrary
+`UqSl2 q`-intertwiners `f : L_m^ε → L_{m'}^{ε'}` and `g : L_n^δ → L_{n'}^{δ'}` at matching
+channel indices `(j : ℕ) = (j' : ℕ)`. -/
+theorem tensorMap_clebschGordanInclusion_vec (hq : IsGenericQuantumParameter q)
+    {m' n' : ℕ} {ε' δ' : ℤˣ}
+    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m' ε')
+    (g : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q n' δ')
+    {j : Fin (min m n + 1)} {j' : Fin (min m' n' + 1)} (hj : (j : ℕ) = (j' : ℕ)) (l : ℤ) :
+    tensorMap ℂ (UqSl2 q) f g (clebschGordanInclusion hq j (vec q _ _ l)) =
+      (schurScalar f * schurScalar g) • clebschGordanInclusion hq j' (vec q _ _ l) := by
+  rcases eq_and_eq_or_tensorMap_eq_zero hq f g with ⟨⟨rfl, rfl⟩, rfl, rfl⟩ | ⟨h0, hs0⟩
+  · obtain rfl := Fin.ext hj
+    exact tensorMap_apply_eq_schurScalar_smul hq f g _
+  · simp [h0, hs0]
+
+/-- Naturality of the channel spectral projections
+`clebschGordanInclusion ∘ clebschGordanProjection` across arbitrary `UqSl2 q`-intertwiners
+`f : L_m^ε → L_{m'}^{ε'}` and `g : L_n^δ → L_{n'}^{δ'}` at matching channel indices
+`(j : ℕ) = (j' : ℕ)`. -/
+theorem clebschGordanInclusion_projection_tensorMap (hq : IsGenericQuantumParameter q)
+    {m' n' : ℕ} {ε' δ' : ℤˣ}
+    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m' ε')
+    (g : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q n' δ')
+    {j : Fin (min m n + 1)} {j' : Fin (min m' n' + 1)} (hj : (j : ℕ) = (j' : ℕ))
+    (x : Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)) :
+    clebschGordanInclusion hq j'
+        (clebschGordanProjection hq j' (tensorMap ℂ (UqSl2 q) f g x)) =
+      tensorMap ℂ (UqSl2 q) f g
+        (clebschGordanInclusion hq j (clebschGordanProjection hq j x)) := by
+  rcases eq_and_eq_or_tensorMap_eq_zero hq f g with ⟨⟨rfl, rfl⟩, rfl, rfl⟩ | ⟨h0, _⟩
+  · obtain rfl := Fin.ext hj
+    exact clebschGordanInclusion_projection_naturality hq j (tensorMap ℂ (UqSl2 q) f g) x
+  · simp [h0]
+
+/-- Naturality of Clebsch–Gordan inclusions and projections across arbitrary factor intertwiners
+`f : L_m^ε → L_{m'}^{ε'}` and `g : L_n^δ → L_{n'}^{δ'}` on the ladder vectors `v_l`. -/
+theorem clebschGordanProjection_tensorMap_inclusion_vec (hq : IsGenericQuantumParameter q)
+    {m' n' : ℕ} {ε' δ' : ℤˣ}
+    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m' ε')
+    (g : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q n' δ')
+    (j : Fin (min m n + 1)) (j' : Fin (min m' n' + 1)) (l : ℤ) :
+    clebschGordanProjection hq j'
+        (tensorMap ℂ (UqSl2 q) f g (clebschGordanInclusion hq j (vec q _ _ l))) =
+      (if (j : ℕ) = (j' : ℕ) then schurScalar f * schurScalar g else 0) • vec q _ _ l := by
+  rcases eq_and_eq_or_tensorMap_eq_zero hq f g with ⟨⟨rfl, rfl⟩, rfl, rfl⟩ | ⟨h0, hs0⟩
+  · rw [tensorMap_apply_eq_schurScalar_smul hq f g, LinearMap.map_smul_of_tower]
+    by_cases hj : j = j'
+    · subst hj; simp
+    · simp [clebschGordanProjection_inclusion_of_ne hq (Ne.symm hj), Fin.val_ne_of_ne hj]
+  · simp [h0, hs0]
 
 end TauCeti.UqSl2

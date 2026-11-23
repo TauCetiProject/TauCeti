@@ -46,9 +46,9 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 
 ## References
 
-* J. Leech and N. J. A. Sloane, *Sphere packing and error-correcting codes*, Canadian Journal of
-  Mathematics 23 (1971), reprinted as Chapter 5 of J. H. Conway and N. J. A. Sloane,
-  *Sphere Packings, Lattices and Groups*.
+* J. Leech and N. J. A. Sloane, *Sphere Packings and Error-Correcting Codes*, Canadian Journal of
+  Mathematics 23 (1971), no. 4, 718-745, reprinted as Chapter 5 of J. H. Conway and N. J. A.
+  Sloane, *Sphere Packings, Lattices and Groups*.
 -/
 
 public section
@@ -129,7 +129,7 @@ theorem val_add_two_mul_mem_lattice_iff (hC : BinaryCode.IsDoublyEven C) {c : ι
 /-- Four times a Construction A vector lies in Construction B. -/
 private theorem four_smul_mem_lattice {x : ι → ℚ}
     (hx : x ∈ ConstructionA.lattice 2 C.toAddSubgroup) : (4 : ℤ) • x ∈ lattice C := by
-  obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
+  obtain ⟨z, _, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
   refine ⟨Submodule.smul_mem _ _ hx, ∑ i, z i, ?_⟩
   simp only [Pi.smul_apply, zsmul_eq_mul, ← Finset.mul_sum]
   push_cast
@@ -138,10 +138,11 @@ private theorem four_smul_mem_lattice {x : ι → ℚ}
 open scoped Pointwise in
 /-- The Construction B carrier is a full lattice: it lies in Construction A and contains four
 times every Construction A vector. -/
-instance isLattice : (lattice C).IsLattice ℚ := by
-  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ
+instance isFullLattice : (lattice C).IsFullLattice ℚ := by
+  refine Submodule.IsFullLattice.of_le_of_fg ℚ
     (M := Units.mk0 (4 : ℚ) (by norm_num) • ConstructionA.lattice 2 C.toAddSubgroup) ?_
-    (Submodule.FG.of_le Submodule.IsLattice.fg (lattice_le C))
+    (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ (ConstructionA.lattice 2 C.toAddSubgroup))
+      (lattice_le C))
   intro x hx
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
   simpa only [Units.smul_mk0, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat] using
@@ -156,8 +157,8 @@ noncomputable def sumHalf (hC : BinaryCode.IsEven C) :
   toFun x := ⌊(∑ i, (x : ι → ℚ) i) / 2⌋
   map_zero' := by simp
   map_add' x y := by
-    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
-    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.2
+    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
+    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.property
     simp only [Submodule.coe_add, Pi.add_apply, Finset.sum_add_distrib, hk, hl]
     rw [show ((2 : ℚ) * k + 2 * l) / 2 = ((k + l : ℤ) : ℚ) by push_cast; ring,
       show (2 : ℚ) * k / 2 = k by ring, show (2 : ℚ) * l / 2 = l by ring]
@@ -174,11 +175,11 @@ theorem sumHalf_apply_of_sum_eq (hC : BinaryCode.IsEven C)
 theorem sumHalf_eq_zero_iff (hC : BinaryCode.IsEven C)
     (x : ConstructionA.lattice 2 C.toAddSubgroup) :
     sumHalf C hC x = 0 ↔ (x : ι → ℚ) ∈ lattice C := by
-  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
+  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
   rw [sumHalf_apply_of_sum_eq C hC hk, ZMod.intCast_zmod_eq_zero_iff_dvd, mem_lattice]
   constructor
   · rintro ⟨l, rfl⟩
-    exact ⟨x.2, l, by rw [hk]; push_cast; ring⟩
+    exact ⟨x.property, l, by rw [hk]; push_cast; ring⟩
   · rintro ⟨-, l, hl⟩
     refine ⟨l, ?_⟩
     have : (k : ℚ) = 2 * l := by linarith

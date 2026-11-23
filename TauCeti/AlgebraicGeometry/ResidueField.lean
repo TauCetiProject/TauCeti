@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -28,10 +30,12 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.natCast_residueField_ne_zero`: if `N` is invertible in the residue
-  field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
-* `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
-  it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Scheme.Hom.natCast_residueField_ne_zero_iff`: `N` is invertible in the
+  residue field at `x` iff it is invertible in the residue field at `f x`, for any morphism `f`.
+* `AlgebraicGeometry.Spec.natCast_residueField_ne_zero_iff`: `N` is invertible in the residue field
+  of `Spec K` at any point iff it is invertible in the field `K`.
+* `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
+  separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -47,10 +51,15 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
   between schemes and rings, for instance for étale neighbourhoods built from algebras.
+* `AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_lift`: a lift along `f` of a morphism
+  `Spec A ⟶ X` from a local ring, inducing an isomorphism of residue fields, sends the closed point
+  to a preimage of `x` at which `f` induces an isomorphism of residue fields.
 * `AlgebraicGeometry.Scheme.residueField_hom_ext`: on a quasi-affine scheme, a ring map out of the
   residue field `κ(x)` is determined by its values on global functions evaluated at `x`.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal`: the point of `Spec Γ(X, ⊤)` under `x` is the
   prime ideal of global functions vanishing at `x`.
+* `AlgebraicGeometry.Spec.map_algebraMap_residueField_closedPoint`: the closed point of
+  `Spec κ(p)` lies over the prime `p` of `R`.
 
 The residue field map `f.residueFieldMap x` has source `κ(f x)`. When `f x` is known to equal a
 point `y` only propositionally, for instance when `f` is an automorphism fixing `x`, it is
@@ -67,7 +76,8 @@ The pullback arguments use Mathlib's `Scheme.Pullback.Triplet.tensor` descriptio
 over a pair as the spectrum of the tensor product of their residue fields.
 
 The two results on natural numbers only use that a ring homomorphism between fields, such as
-Mathlib's `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
+Mathlib's `Scheme.Hom.residueFieldMap` or `Scheme.Spec.residueFieldIsoOfField`, preserves natural
+number casts and is injective.
 -/
 
 public section
@@ -78,19 +88,24 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- If `N` is invertible in the residue field at `f x`, it is invertible in the residue field
-at `x`. -/
-theorem Scheme.Hom.natCast_residueField_ne_zero {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X} {N : ℕ}
-    (hN : (N : Y.residueField (f x)) ≠ 0) : (N : X.residueField x) ≠ 0 := by
+/-- `N` is invertible in the residue field at `x` iff it is invertible in the residue field at
+`f x`. -/
+theorem Scheme.Hom.natCast_residueField_ne_zero_iff {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X}
+    {N : ℕ} : (N : X.residueField x) ≠ 0 ↔ (N : Y.residueField (f x)) ≠ 0 := by
   rw [← map_natCast (f.residueFieldMap x).hom]
-  exact (map_ne_zero _).mpr hN
+  exact map_ne_zero _
 
-/-- If `N` is invertible in a field `K`, it is invertible in the residue field of `Spec K`. -/
-theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN : (N : K) ≠ 0)
-    (s : Spec (.of K)) : (N : (Spec (.of K)).residueField s) ≠ 0 := by
-  rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
-    (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
-  exact (map_ne_zero _).mpr hN
+/-- `N` is invertible in the residue field of `Spec K` iff it is invertible in the field `K`. -/
+theorem Spec.natCast_residueField_ne_zero_iff {K : Type u} [Field K] {N : ℕ}
+    (s : Spec (.of K)) : (N : (Spec (.of K)).residueField s) ≠ 0 ↔ (N : K) ≠ 0 := by
+  rw [← map_natCast (Scheme.Spec.residueFieldIsoOfField s).inv.hom]
+  exact map_ne_zero _
+
+/-- The residue field of the spectrum of a separably closed field is separably closed: it is the
+field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
+instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
+    (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
+  IsSepClosed.of_ringEquiv (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
 
 section residueFieldCongr
 
@@ -164,6 +179,17 @@ theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRi
     congr($(Scheme.Spec.algebraMap_residueFieldIso_inv R p).hom a)
   simpa [e] using congr($(h').hom a)
 
+/-- The closed point of `Spec κ(p)` lies over `p` in `Spec R`. -/
+@[simp]
+theorem Spec.map_algebraMap_residueField_closedPoint {R : Type u} [CommRing R]
+    (p : PrimeSpectrum R) :
+    Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))
+      (IsLocalRing.closedPoint p.asIdeal.ResidueField) = p :=
+  -- `p` is the only point of `Spec R` in the image of `Spec κ(p)`.
+  -- `Spec.map_apply` is applied as a term: `rw` cannot find it, since the closed point is typed
+  -- as a point of `PrimeSpectrum κ(p)` rather than of `Spec (.of κ(p))`.
+  (Spec.map_apply _ _).trans ((PrimeSpectrum.residueField_comap p).subset ⟨_, rfl⟩)
+
 /-- On a quasi-affine scheme, a ring map out of the residue field `κ(x)` is determined by its
 values on global functions evaluated at `x`. -/
 theorem Scheme.residueField_hom_ext {X : Scheme.{u}} [X.IsQuasiAffine] {x : X}
@@ -212,9 +238,9 @@ theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
 
 /-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
-    (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
-  exact (ConcreteCategory.isIso_iff_bijective _).mpr
-    ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
+    (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) :=
+  (ConcreteCategory.isIso_iff_bijective _).mpr
+    ((f.residueDegree_eq_one_iff x).mp
       (f.residueDegree_eq_one_of_surjectiveOnStalks x))
 
 /-- If a composite preserves the residue field at a point, the second morphism preserves
@@ -231,6 +257,46 @@ theorem Scheme.Hom.isIso_residueFieldMap_of_comp {X Y Z : Scheme.{u}}
   change Function.Surjective ((f.residueFieldMap x).hom ∘
     (g.residueFieldMap (f x)).hom) at h
   exact h.of_comp_left (f.residueFieldMap x).hom.injective
+
+open IsLocalRing in
+/-- A lift of a morphism `Spec A ⟶ X` inducing an isomorphism of residue fields passes through a
+point with unchanged residue field: if `A` is local, `φ : 𝒪_{X,x} → A` is a local homomorphism
+inducing an isomorphism of residue fields, and `s : Spec A ⟶ U` lifts the morphism
+`Spec A ⟶ X` given by `φ` along `f`, then `s` maps the closed point to a preimage of `x` at which
+`f` induces an isomorphism of residue fields. -/
+theorem Scheme.Hom.isIso_residueFieldMap_of_lift {X U : Scheme.{u}} (f : U ⟶ X) {x : X}
+    {A : Type u} [CommRing A] [IsLocalRing A] (φ : X.presheaf.stalk x ⟶ CommRingCat.of A)
+    [IsLocalHom φ.hom]
+    (hφ : Function.Bijective (ResidueField.map φ.hom)) (s : Spec (.of A) ⟶ U)
+    (hs : s ≫ f = Spec.map φ ≫ X.fromSpecStalk x) :
+    f (s (closedPoint A)) = x ∧ IsIso (f.residueFieldMap (s (closedPoint A))) := by
+  -- Read off the point and the local homomorphism of `s ≫ f` from `Spec A`.
+  have h : SpecToEquivOfLocalRing X (.of A) (s ≫ f) = ⟨x, φ, ‹_›⟩ := by
+    rw [← Equiv.eq_symm_apply, SpecToEquivOfLocalRing_symm_apply]
+    exact hs
+  obtain ⟨hx, hφ'⟩ := SpecToEquivOfLocalRing_eq_iff.mp h
+  -- The components of `SpecToEquivOfLocalRing` are by definition the image of the closed point
+  -- and `stalkClosedPointTo`; the identification of stalks is along `(s ≫ f) c = f (s c)`.
+  change f (s (closedPoint A)) = x at hx
+  subst hx
+  change Scheme.stalkClosedPointTo (s ≫ f) =
+    (X.presheaf.stalkCongr (.refl (f (s (closedPoint A))))).hom ≫ φ at hφ'
+  rw [Scheme.stalkClosedPointTo_comp, TopCat.Presheaf.stalkCongr_hom,
+    TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp] at hφ'
+  -- `κ(f (s c)) → κ(s c) → κ(A)` is the bijection induced by `φ`.
+  have key (y) : ResidueField.map (Scheme.stalkClosedPointTo s).hom
+      (f.residueFieldMap (s (closedPoint A)) y) = ResidueField.map φ.hom y := by
+    obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective y
+    -- `f.residueFieldMap` is by definition the map of residue fields induced by `f.stalkMap`.
+    change ResidueField.map _ (ResidueField.map _ (IsLocalRing.residue _ y)) =
+      ResidueField.map _ (IsLocalRing.residue _ y)
+    rw [ResidueField.map_residue, ResidueField.map_residue, ResidueField.map_residue,
+      ← CommRingCat.comp_apply, hφ']
+  refine ⟨rfl, (ConcreteCategory.isIso_iff_bijective _).mpr ⟨RingHom.injective _, ?_⟩⟩
+  refine Function.Surjective.of_comp_left (f := ResidueField.map
+    (Scheme.stalkClosedPointTo s).hom) (fun z ↦ ?_) (RingHom.injective _)
+  obtain ⟨y, rfl⟩ := hφ.2 z
+  exact ⟨y, key y⟩
 
 namespace Scheme.Pullback
 
@@ -253,8 +319,7 @@ theorem eq_of_fst_eq_snd_eq_of_isIso {z z' : ↑(pullback f g)}
     [IsIso (g.residueFieldMap (pullback.snd f g z'))] : z = z' := by
   let T := Triplet.ofPoint z'
   have : IsIso (g.residueFieldMap T.y) := by
-    have hy : T.y = pullback.snd f g z' := Triplet.ofPoint_y z'
-    rw [hy]
+    rw [show T.y = _ from Triplet.ofPoint_y z']
     infer_instance
   have : Subsingleton (Spec T.tensor) :=
     (Scheme.homeoOfIso (asIso (Spec.map T.tensorInl))).injective.subsingleton
@@ -273,8 +338,7 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
     IsIso ((pullback.fst f g).residueFieldMap z) := by
   let T := Triplet.ofPoint z
   have : IsIso (g.residueFieldMap T.y) := by
-    have hy : T.y = pullback.snd f g z := Triplet.ofPoint_y z
-    rw [hy]
+    rw [show T.y = _ from Triplet.ofPoint_y z]
     infer_instance
   have : SurjectiveOnStalks (T.SpecTensorTo ≫ pullback.fst f g) := by
     rw [T.specTensorTo_fst]
@@ -393,3 +457,31 @@ theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing 
   rfl
 
 end RingHom
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
+affine open `U` induces an isomorphism of residue fields at a point `u` as soon as the induced map
+`κ(p) → κ(u)` is bijective, where `u` lies over the prime `p` of `Γ(S, U)` corresponding to `s`. -/
+theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Scheme.{u}}
+    {U : S.Opens} (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R]
+    [Algebra Γ(S, U) R] (u : Spec ↧R)
+    [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal]
+    (hres : haveI := u.isPrime
+      Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
+        u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
+    IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
+      u) := by
+  have := u.isPrime
+  -- The residue field map of the open immersion `hU.fromSpec` is an isomorphism, and that of
+  -- `Spec R ⟶ Spec Γ(S, U)` is one by `hres`.
+  have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
+    (u.asIdeal.over_def _)).mpr hres
+  rw [Scheme.residueFieldMap_comp]
+  have h₁ : IsIso (hU.fromSpec.residueFieldMap
+    ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R))) u)) := inferInstance
+  exact IsIso.comp_isIso' h₁ this
+
+end AlgebraicGeometry

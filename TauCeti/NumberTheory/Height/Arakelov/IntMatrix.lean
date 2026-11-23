@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.LinearAlgebra.Matrix.MaximalMinor
-public import TauCeti.NumberTheory.Height.Arakelov.Covolume
-import TauCeti.LinearAlgebra.Matrix.Gram
+public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -46,9 +45,7 @@ The height of the row space is the Euclidean height of the Plücker coordinates 
 (`Submodule.subspaceHeight_span_range`). Dividing out the greatest common divisor
 (`TauCeti.gcd_mul_height2_intCast`) leaves the Euclidean norm of the maximal minors, whose square
 is `det (A Aᵀ)` by the Cauchy–Binet formula (`TauCeti.det_mul_transpose_eq_sum_plucker_mul`). The
-kernel is the orthogonal complement of the row space for the dot product
-(`Matrix.checkedBy_eq_euclideanDual_generatedBy`), which has the same height
-(`Submodule.subspaceHeight_euclideanDual`).
+kernel has the same height as the row space (`Matrix.subspaceHeight_ker_mulVecLin`).
 
 ## References
 
@@ -98,9 +95,9 @@ vanish. -/
 theorem minorGcd_mul_subspaceHeight_ker_mulVecLin (A : Matrix (Fin p) ι ℤ) :
     (A.minorGcd : ℝ) * (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).subspaceHeight =
       √((A * Aᵀ).det : ℝ) := by
-  rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy, subspaceHeight_euclideanDual,
-    generatedBy_eq_span_rows, minorGcd_mul_subspaceHeight_span_range_row]
+  rw [subspaceHeight_ker_mulVecLin, minorGcd_mul_subspaceHeight_span_range_row]
 
+omit [LinearOrder ι] in
 /-- **The covolume of the lattice of integral solutions of `A y = 0`.** For an integer matrix `A`
 with linearly independent rows, the lattice of integral solutions of `A y = 0` has covolume
 `√det (A Aᵀ)` divided by the greatest common divisor of the maximal minors of `A`. -/
@@ -108,6 +105,8 @@ theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     ZLattice.covolume (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intLattice =
       √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  -- The height of a subspace of `ℚ^ι` is defined through an ordering of `ι`; any one will do.
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   have hg : A.minorGcd ≠ 0 := minorGcd_ne_zero_iff.2 (linearIndependent_rat_row_iff.1 hA)
   rw [covolume_intLattice, ← minorGcd_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]

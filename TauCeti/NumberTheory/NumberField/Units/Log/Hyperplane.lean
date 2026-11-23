@@ -79,6 +79,20 @@ def fullUnitLattice : Submodule ℤ (singleParityCheckCode ℝ (InfinitePlace K)
     x ∈ fullUnitLattice K ↔ ∃ u, unitLogEmbedding K u = x :=
   (Iff.rfl)
 
+/-- The **unit logarithmic subgroup** `log |(𝓞 K)ˣ| ⊆ ℝ^{InfinitePlace K}`: the weighted logarithms
+`(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`, that is the image of `TauCeti.unitLogEmbedding`
+in the ambient space of functions on the infinite places. -/
+def unitLogSubgroup : AddSubgroup (InfinitePlace K → ℝ) :=
+  ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
+    (unitLogEmbedding K)).range
+
+variable {K} in
+/-- The unit logarithmic subgroup consists exactly of the weighted logarithms of units. -/
+@[simp] theorem mem_unitLogSubgroup {l : InfinitePlace K → ℝ} :
+    l ∈ unitLogSubgroup K ↔
+      ∃ u : (𝓞 K)ˣ, (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) = l :=
+  ⟨fun ⟨u, hu⟩ ↦ ⟨u.toMul, hu⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, hu⟩⟩
+
 /-! Comparison with Mathlib's coordinates transfers Dirichlet's lattice property and supplies
 the coordinate map used for the Euclidean covolume comparison in `Log.Covolume`.
 The distinguished place is not part of the full logarithmic embedding. -/
@@ -205,16 +219,16 @@ theorem unitLogRepresentation_mem_fullUnitLattice (σ : Gal(K/k))
 /-- The integral Galois representation on the full unit logarithmic lattice, obtained by
 restricting the permutation representation on the logarithmic hyperplane. -/
 def fullUnitLatticeRepresentation : Representation ℤ Gal(K/k) (fullUnitLattice K) :=
-  (unitLogRepresentation K k).restrictScalarsInt.subrepresentation (fullUnitLattice K)
+  ((unitLogRepresentation K k).restrictScalars ℤ).subrepresentation (fullUnitLattice K)
     fun σ _ hx => by
-      simpa only [Submodule.mem_comap, Representation.restrictScalarsInt_apply] using
+      simpa only [Submodule.mem_comap, Representation.restrictScalars_apply] using
         unitLogRepresentation_mem_fullUnitLattice K k σ hx
 
 /-- The integral action on the full unit lattice agrees with the ambient permutation action. -/
 @[simp] theorem fullUnitLatticeRepresentation_apply (σ : Gal(K/k)) (x : fullUnitLattice K) :
     (fullUnitLatticeRepresentation K k σ x).val = unitLogRepresentation K k σ x.val := by
   simp only [fullUnitLatticeRepresentation, Representation.subrepresentation_apply,
-    LinearMap.restrict_apply, Representation.restrictScalarsInt_apply]
+    LinearMap.restrict_apply, Representation.restrictScalars_apply]
 
 end GaloisAction
 

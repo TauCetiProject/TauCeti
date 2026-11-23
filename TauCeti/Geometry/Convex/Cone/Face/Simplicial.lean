@@ -22,7 +22,7 @@ Both halves of the correspondence use the description of the cone hull of a subf
 of conical combinations supported on that subfamily. That a face is spanned by the generators it
 contains holds for any generating set, and the family-indexed form
 `PointedCone.Face.eq_hull_image` is a reindexing of
-`PointedCone.Face.eq_hull_inter_of_eq_hull`. The converse, that every subfamily spans a face, is
+`PointedCone.IsFaceOf.eq_hull_inter_of_eq_hull`. The converse, that every subfamily spans a face, is
 where linear independence enters: if `a • x + y` has no `v j` component for `j` outside a subset
 `A`, then neither does `x`, because the two nonnegative contributions to the `j`-th coefficient
 cannot cancel.
@@ -76,7 +76,7 @@ theorem mem_hull_image_iff_linearCombination :
   · intro hx
     -- The nonnegative scalars are a semiring, so the span description applies verbatim to them.
     obtain ⟨c, hcA, rfl⟩ := (Finsupp.mem_span_image_iff_linearCombination _).1 hx
-    refine ⟨c.mapRange Subtype.val rfl, ?_, fun j ↦ (c j).2, ?_⟩
+    refine ⟨c.mapRange Subtype.val rfl, ?_, fun j ↦ (c j).property, ?_⟩
     · exact (Finsupp.mem_supported _ _).2 <| (Finset.coe_subset.2 Finsupp.support_mapRange).trans
         ((Finsupp.mem_supported _ _).1 hcA)
     · rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply,
@@ -150,8 +150,8 @@ theorem salient_hull_range (hv : LinearIndependent R v) :
 contains. -/
 theorem Face.eq_hull_image (F : C.Face) (hC : C = hull R (Set.range v)) :
     F.toPointedCone = hull R (v '' {j | v j ∈ F}) := by
-  rw [F.eq_hull_inter_of_eq_hull (Set.range v) hC]
-  refine congrArg (hull R) (Set.ext fun y ↦ ⟨?_, ?_⟩)
+  refine (F.isFaceOf.eq_hull_inter_of_eq_hull hC).trans
+    (congrArg (hull R) (Set.ext fun y ↦ ⟨?_, ?_⟩))
   · rintro ⟨⟨j, rfl⟩, hy⟩
     exact ⟨j, hy, rfl⟩
   · rintro ⟨j, hj, rfl⟩
@@ -202,11 +202,11 @@ theorem finrank_span_face_eq_card_faceOrderIsoSet
   let e := PointedCone.faceOrderIsoSet hv hcone
   have hface : G.toPointedCone = PointedCone.hull ℝ (v '' e G) := by
     simpa only [e, PointedCone.faceOrderIsoSet_apply] using G.eq_hull_image hcone
-  have hrange : Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1) = v '' e G := by
+  have hrange : Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.val) = v '' e G := by
     ext x
     simp [Set.mem_range, Set.mem_image]
   have hspan : Submodule.span ℝ (G.toPointedCone : Set V) =
-      Submodule.span ℝ (Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1)) := by
+      Submodule.span ℝ (Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.val)) := by
     rw [hrange, hface]
     apply le_antisymm
     · exact Submodule.span_le.mpr (PointedCone.hull_le_span ℝ _)

@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Algebra.Group.QuantifierFree
+public import TauCeti.ModelTheory.Algebra.Group.SystemFormula
 
 /-!
 # Existential and universal group formulas as solution statements
 
 An existential formula `∃ y₁ … ∃ y_k, φ` in the group language with named coefficients, with
-`φ` quantifier-free, holds exactly when one of finitely many systems of word equations and
-inequations has a solution in which the witnesses `y₁, …, y_k` are fresh variables. Dually, a
-universal formula `∀ y₁ … ∀ y_k, φ` holds exactly when none of the finitely many systems
-attached to `¬φ` has a solution. The finite family depends only on the formula, not on the
-group or on the interpretation of the coefficients.
+`φ` quantifier-free, holds exactly when one of its finitely many systems of word equations and
+inequations `FirstOrder.Language.BoundedFormula.eqIneqSystems` has a solution, the witnesses
+`y₁, …, y_k` being variables of the systems. Dually, a universal formula `∀ y₁ … ∀ y_k, φ` holds
+exactly when none of the finitely many systems of its negation has a solution. The systems depend
+only on the formula, not on the group or on the interpretation of the coefficients.
 
 For sentences this identifies the existential and universal theories of a group with
 coefficients with solvability statements for finite families of equation–inequation systems.
@@ -23,15 +24,21 @@ coefficients with solvability statements for finite families of equation–inequ
 ## Main results
 
 * `FirstOrder.Language.group.existential_iff_systems` and
-  `FirstOrder.Language.group.universal_iff_systems`: the reductions for bounded formulas,
-  keeping free variables and outer bound-variable slots as parameters.
+  `FirstOrder.Language.group.universal_iff_systems`: the reductions for bounded formulas, the
+  free variables and the values of the outer bound variables being parameters.
 * `FirstOrder.Language.group.existential_iff_solution`: an existential sentence holds exactly
-  when one system of a finite family has a solution.
+  when one of its systems has a solution.
 * `FirstOrder.Language.group.universal_iff_no_solution`: a universal sentence holds exactly
-  when no system of a finite family has a solution.
-* `FirstOrder.Language.group.noSolutionSentence`: conversely, for finite sets of words `E` and
-  `I` in `n` variables, a universal sentence of the group language without coefficients saying
-  that no `n`-tuple satisfies `e = 1` for `e ∈ E` and `i ≠ 1` for `i ∈ I`.
+  when no system of its negation has a solution.
+* `TauCeti.EqIneqSystem.noSolutionSentence`: conversely, for a system of equations and
+  inequations in `n` variables with coefficient names `A`, a universal sentence of the group
+  language with coefficient names `A` saying that the system has no solution.
+* `TauCeti.EqIneqSystem.exists_isSolution_of_forall_isUniversal`: if every universal sentence
+  true in `H` holds in `K`, every system solvable in `K` is solvable in `H`, whatever its type of
+  variables.
+* `FirstOrder.Language.group.noSolutionSentence`: the same sentence without coefficients, for
+  finite sets of words `E` and `I` in `n` variables: no `n`-tuple satisfies `e = 1` for `e ∈ E`
+  and `i ≠ 1` for `i ∈ I`.
 
 The reduction of existential and universal sentences to systems of equations and inequations
 follows Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3.
@@ -45,151 +52,89 @@ open FirstOrder TauCeti
 
 variable {X A : Type*} {n : ℕ}
 
-/-- Reindex the last bound slot of `Fin (n + 1)` as the first witness slot, shifting the
-other `k` witnesses up by one. -/
-private def snocWitness (n k : ℕ) : Fin (n + 1) ⊕ Fin k → Fin n ⊕ Fin (k + 1) :=
-  Sum.elim (Fin.lastCases (Sum.inr 0) Sum.inl) fun j => Sum.inr j.succ
-
-private theorem sumElim_cons_comp_snocWitness {G : Type*} {k : ℕ} (xs : Fin n → G) (x : G)
-    (ys : Fin k → G) :
-    Sum.elim xs (Fin.cons x ys) ∘ snocWitness n k = Sum.elim (Fin.snoc xs x) ys := by
-  funext i
-  rcases i with i | j
-  · induction i using Fin.lastCases <;> simp [snocWitness]
-  · simp [snocWitness]
-
-/-- With no witnesses, the relabelled quantifier-free family keeps its solutions. -/
-private theorem exists_solution_relabel_inl_iff {G : Type*} [Group G]
-    (systems : List (EqIneqSystem (X ⊕ Fin n) A)) (v : X → G) (c : A → G) (xs : Fin n → G) :
-    (∃ ys : Fin 0 → G, ∃ S ∈ systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)),
-        S.IsSolution (Sum.elim v (Sum.elim xs ys)) c) ↔
-      ∃ S ∈ systems, S.IsSolution (Sum.elim v xs) c := by
-  have hcomp (ys : Fin 0 → G) :
-      Sum.elim v (Sum.elim xs ys) ∘ Sum.map id Sum.inl = Sum.elim v xs := by
-    funext i
-    rcases i with x | i <;> rfl
-  simp [hcomp]
-
-/-- Existentially quantifying the last bound slot moves it into the witness block. -/
-private theorem exists_snoc_iff {G : Type*} [Group G] {k : ℕ}
-    (systems : List (EqIneqSystem (X ⊕ (Fin (n + 1) ⊕ Fin k)) A)) (v : X → G) (c : A → G)
-    (xs : Fin n → G) :
-    (∃ x : G, ∃ ys : Fin k → G, ∃ S ∈ systems,
-        S.IsSolution (Sum.elim v (Sum.elim (Fin.snoc xs x) ys)) c) ↔
-      ∃ ys : Fin (k + 1) → G,
-        ∃ S ∈ systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness n k))),
-          S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
-  have hcomp (x : G) (ys : Fin k → G) :
-      Sum.elim v (Sum.elim xs (Fin.cons x ys)) ∘ Sum.map id (snocWitness n k) =
-        Sum.elim v (Sum.elim (Fin.snoc xs x) ys) := by
-    rw [Sum.elim_comp_map, Function.comp_id, sumElim_cons_comp_snocWitness]
-  simp [Fin.exists_fin_succ_pi, hcomp]
-
-/-- An existential group formula is uniformly equivalent to the solvability of one of finitely
-many word systems whose variables are the free variables, the bound-variable slots and `k`
-fresh witnesses. The same family works for every group and coefficient map. -/
-theorem existential_iff_systems
-    {φ : Language.group[[A]].BoundedFormula X n} (hφ : φ.IsExistential) :
-    ∃ (k : ℕ) (systems : List (EqIneqSystem (X ⊕ (Fin n ⊕ Fin k)) A)),
-      ∀ (G : Type*) [Group G] (v : X → G) (c : A → G) (xs : Fin n → G),
-        letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-        letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-        φ.Realize v xs ↔
-          ∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
+/-- An existential group formula holds at the values `xs` of its bound variables exactly when
+some assignment `w` of the numbered variables that extends `xs` solves one of its finitely many
+systems `φ.eqIneqSystems`: the witnesses of the existential quantifiers are the further values of
+`w`. The systems depend only on the formula, so the equivalence holds uniformly in every group
+and every interpretation `c` of the coefficient names. -/
+theorem existential_iff_systems {φ : Language.group[[A]].BoundedFormula X n}
+    (hφ : φ.IsExistential) {G : Type*} [Group G] (v : X → G) (c : A → G) (xs : Fin n → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    φ.Realize v xs ↔
+      ∃ w : ℕ → G, (∀ i : Fin n, w i = xs i) ∧
+        ∃ S ∈ φ.eqIneqSystems, S.IsSolution (Sum.elim v w) c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
-    rw [exists_solution_relabel_inl_iff]
-    exact hsys G v c xs
+  | @of_isQF _ φ h =>
+    refine ⟨fun hr => ?_, fun ⟨w, hw, hS⟩ => funext hw ▸ (quantifierFree_iff_systems h v c w).2 hS⟩
+    -- Extend `xs` to an assignment of all numbered variables.
+    obtain ⟨w, hw⟩ : ∃ w : ℕ → G, ∀ i : Fin _, w i = xs i :=
+      ⟨_, Fin.val_injective.extend_apply xs 1⟩
+    exact ⟨w, hw, (quantifierFree_iff_systems h v c w).1 (funext hw ▸ hr)⟩
   | ex _ ih =>
-    obtain ⟨k, systems, hsys⟩ := ih
-    refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
-      fun G _ v c xs => ?_⟩
-    let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-    let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-    rw [BoundedFormula.realize_ex, ← exists_snoc_iff]
-    exact exists_congr fun x => hsys G v c (Fin.snoc xs x)
+    simp [ih, Fin.forall_fin_succ']
 
-/-- A universal group formula is uniformly equivalent to the unsolvability of every system in
-a finite family whose variables are the free variables, the bound-variable slots and `k`
-fresh witnesses; these systems describe the negated quantifier-free matrix. The same family
-works for every group and coefficient map. -/
-theorem universal_iff_systems
-    {φ : Language.group[[A]].BoundedFormula X n} (hφ : φ.IsUniversal) :
-    ∃ (k : ℕ) (systems : List (EqIneqSystem (X ⊕ (Fin n ⊕ Fin k)) A)),
-      ∀ (G : Type*) [Group G] (v : X → G) (c : A → G) (xs : Fin n → G),
-        letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-        letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-        φ.Realize v xs ↔
-          ¬∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
+/-- A universal group formula holds at the values `xs` of its bound variables exactly when no
+assignment `w` of the numbered variables that extends `xs` solves one of the finitely many
+systems `φ.not.eqIneqSystems` of its negation. The systems depend only on the formula, so the
+equivalence holds uniformly in every group and every interpretation `c` of the coefficient
+names. -/
+theorem universal_iff_systems {φ : Language.group[[A]].BoundedFormula X n}
+    (hφ : φ.IsUniversal) {G : Type*} [Group G] (v : X → G) (c : A → G) (xs : Fin n → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    φ.Realize v xs ↔
+      ¬∃ w : ℕ → G, (∀ i : Fin n, w i = xs i) ∧
+        ∃ S ∈ φ.not.eqIneqSystems, S.IsSolution (Sum.elim v w) c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h.not
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
-    let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-    let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-    rw [exists_solution_relabel_inl_iff, ← hsys G v c xs, BoundedFormula.realize_not, not_not]
+  | @of_isQF _ φ h =>
+    rw [← not_iff_not, not_not, ← BoundedFormula.realize_not]
+    exact existential_iff_systems h.not.isExistential v c xs
   | all _ ih =>
-    obtain ⟨k, systems, hsys⟩ := ih
-    refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
-      fun G _ v c xs => ?_⟩
-    let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-    let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-    rw [BoundedFormula.realize_all, ← exists_snoc_iff, not_exists]
-    exact forall_congr' fun x => hsys G v c (Fin.snoc xs x)
+    simp only [BoundedFormula.realize_all, ih, BoundedFormula.eqIneqSystems_not_all, ← not_exists]
+    exact not_congr (by simp [Fin.forall_fin_succ'])
 
-/-- The variables of a sentence's witness systems are exactly its witnesses. -/
-private def sentenceWitness (k : ℕ) : Empty ⊕ (Fin 0 ⊕ Fin k) → Fin k :=
-  Sum.elim Empty.elim (Sum.elim Fin.elim0 id)
+/-- For a sentence, an assignment of the numbered variables solving one of the systems `L` is the
+same as an assignment of all the variables `Empty ⊕ ℕ` solving one of them. -/
+private theorem exists_isSolution_sumElim_default_iff {G : Type*} [Group G]
+    (L : List (EqIneqSystem (Empty ⊕ ℕ) A)) (c : A → G) :
+    (∃ w : ℕ → G, (∀ i : Fin 0, w i = (default : Fin 0 → G) i) ∧
+        ∃ S ∈ L, S.IsSolution (Sum.elim default w) c) ↔
+      ∃ S ∈ L, ∃ v : Empty ⊕ ℕ → G, S.IsSolution v c := by
+  refine ⟨fun ⟨_, _, S, hS, h⟩ => ⟨S, hS, _, h⟩,
+    fun ⟨S, hS, v, h⟩ => ⟨v ∘ Sum.inr, nofun, S, hS, ?_⟩⟩
+  rwa [Subsingleton.elim default (v ∘ Sum.inl), Sum.elim_comp_inl_inr]
 
-/-- For a sentence, the witness systems can be read with the witnesses as their only
-variables. -/
-private theorem exists_solution_relabel_sentenceWitness_iff {G : Type*} [Group G] {k : ℕ}
-    (systems : List (EqIneqSystem (Empty ⊕ (Fin 0 ⊕ Fin k)) A)) (c : A → G) :
-    (∃ S ∈ systems.map (EqIneqSystem.relabel (sentenceWitness k)),
-        ∃ v : Fin k → G, S.IsSolution v c) ↔
-      ∃ ys : Fin k → G, ∃ S ∈ systems,
-        S.IsSolution (Sum.elim default (Sum.elim default ys)) c := by
-  have hcomp (ys : Fin k → G) :
-      ys ∘ sentenceWitness k = Sum.elim default (Sum.elim default ys) := by
-    funext i
-    rcases i with i | i | j
-    · exact i.elim
-    · exact i.elim0
-    · rfl
-  simp only [List.mem_map, exists_exists_and_eq_and, EqIneqSystem.isSolution_relabel, hcomp]
-  exact ⟨fun ⟨S, hS, ys, h⟩ => ⟨ys, S, hS, h⟩, fun ⟨ys, S, hS, h⟩ => ⟨S, hS, ys, h⟩⟩
-
-/-- An existential group sentence holds exactly when one system in a finite family of word
-equation–inequation systems has a solution. The family depends only on the sentence, not on
-the group or on the interpretation `c` of the coefficient names. -/
+/-- An existential group sentence holds exactly when one of its finitely many word
+equation–inequation systems `σ.eqIneqSystems` has a solution. The systems depend only on the
+sentence, not on the group or on the interpretation `c` of the coefficient names. -/
 theorem existential_iff_solution
-    {σ : Language.group[[A]].Sentence} (hσ : σ.IsExistential) :
-    ∃ (k : ℕ) (systems : List (EqIneqSystem (Fin k) A)),
-      ∀ (G : Type*) [Group G] (c : A → G),
-        letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-        letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-        G ⊨ σ ↔ ∃ S ∈ systems, ∃ v : Fin k → G, S.IsSolution v c := by
-  obtain ⟨k, systems, hsys⟩ := existential_iff_systems hσ
-  refine ⟨k, systems.map (EqIneqSystem.relabel (sentenceWitness k)), fun G _ c => ?_⟩
-  rw [exists_solution_relabel_sentenceWitness_iff]
-  exact hsys G default c default
+    {σ : Language.group[[A]].Sentence} (hσ : σ.IsExistential) {G : Type*} [Group G] (c : A → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    G ⊨ σ ↔ ∃ S ∈ σ.eqIneqSystems, ∃ v : Empty ⊕ ℕ → G, S.IsSolution v c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  rw [Sentence.Realize, Formula.Realize, existential_iff_systems hσ default c default,
+    exists_isSolution_sumElim_default_iff]
 
-/-- A universal group sentence holds exactly when no system in a finite family of word
-equation–inequation systems has a solution. The family depends only on the sentence, not on
-the group or on the interpretation `c` of the coefficient names. -/
+/-- A universal group sentence holds exactly when none of the finitely many word
+equation–inequation systems `σ.not.eqIneqSystems` of its negation has a solution. The systems
+depend only on the sentence, not on the group or on the interpretation `c` of the coefficient
+names. -/
 theorem universal_iff_no_solution
-    {σ : Language.group[[A]].Sentence} (hσ : σ.IsUniversal) :
-    ∃ (k : ℕ) (systems : List (EqIneqSystem (Fin k) A)),
-      ∀ (G : Type*) [Group G] (c : A → G),
-        letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-        letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-        G ⊨ σ ↔ ¬∃ S ∈ systems, ∃ v : Fin k → G, S.IsSolution v c := by
-  obtain ⟨k, systems, hsys⟩ := universal_iff_systems hσ
-  refine ⟨k, systems.map (EqIneqSystem.relabel (sentenceWitness k)), fun G _ c => ?_⟩
-  rw [exists_solution_relabel_sentenceWitness_iff]
-  exact hsys G default c default
+    {σ : Language.group[[A]].Sentence} (hσ : σ.IsUniversal) {G : Type*} [Group G] (c : A → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    G ⊨ σ ↔ ¬∃ S ∈ σ.not.eqIneqSystems, ∃ v : Empty ⊕ ℕ → G, S.IsSolution v c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  rw [Sentence.Realize, Formula.Realize, universal_iff_systems hσ default c default,
+    exists_isSolution_sumElim_default_iff]
 
 /-! ### The universal commutativity sentence -/
 
@@ -221,28 +166,110 @@ example :
     ne_eq, commutatorElement_eq_one_iff_commute, true_and]
   exact fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
 
+end FirstOrder.Language.group
+
+/-! ### Universal sentences forbidding solutions of systems with coefficients -/
+
+namespace TauCeti.EqIneqSystem
+
+open FirstOrder FirstOrder.Language
+
+variable {A : Type*} {n : ℕ}
+
+/-- The universal sentence of the group language with coefficient names `A` saying that the
+system `S` of equations and inequations in the variables `Fin n` has no solution: the negation
+of the formula of `S`, with its variables universally quantified. -/
+noncomputable def noSolutionSentence (S : EqIneqSystem (Fin n) A) : Language.group[[A]].Sentence :=
+  (BoundedFormula.relabel Sum.inr S.toFormula).not.alls
+
+/-- The sentence `S.noSolutionSentence` is the negation of the formula of `S`, with its variables
+universally quantified. -/
+theorem noSolutionSentence_def (S : EqIneqSystem (Fin n) A) :
+    S.noSolutionSentence = (BoundedFormula.relabel Sum.inr S.toFormula).not.alls := (rfl)
+
+/-- The sentence `S.noSolutionSentence` is universal. -/
+theorem isUniversal_noSolutionSentence (S : EqIneqSystem (Fin n) A) :
+    S.noSolutionSentence.IsUniversal :=
+  (S.isQF_toFormula.relabel Sum.inr).not.isUniversal.alls
+
+/-- A group, with the coefficient names `A` read through `c`, satisfies `S.noSolutionSentence`
+exactly when the system `S` has no solution in it. -/
+@[simp]
+theorem realize_noSolutionSentence {G : Type*} [Group G] (S : EqIneqSystem (Fin n) A) (c : A → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    G ⊨ S.noSolutionSentence ↔ ¬∃ v : Fin n → G, S.IsSolution v c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  simp [noSolutionSentence_def, Sentence.Realize, Formula.realize_relabel_sumInr,
+    -BoundedFormula.realize_relabel]
+
+/-- If every universal sentence of the group language with coefficient names `A` that holds in `H`
+also holds in `K`, then every system of equations and inequations with a solution in `K` has a
+solution in `H`. -/
+theorem exists_isSolution_of_forall_isUniversal {X K H : Type*} [Group K] [Group H] {cK : A → K}
+    {cH : A → H} (h : letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+      letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure cK
+      letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+      letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure cH
+      ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → H ⊨ σ → K ⊨ σ)
+    {S : EqIneqSystem X A} (hS : ∃ v : X → K, S.IsSolution v cK) :
+    ∃ v : X → H, S.IsSolution v cH := by
+  classical
+  obtain ⟨v, hv⟩ := hS
+  -- Only the finitely many variables `T` occurring in the words of `S` matter: relabel them by
+  -- `Fin n`, sending all other variables to one further index.
+  let T : Finset X :=
+    ((S.eqs ++ S.ineqs).flatMap fun w => w.toWord.filterMap (·.1.getLeft?)).toFinset
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin (Option T)
+  let g : X → Fin n := fun x => e (if hx : x ∈ T then some ⟨x, hx⟩ else none)
+  have hK : (S.relabel g).IsSolution (fun i => (e.symm i).elim 1 fun t => v t) cK := by
+    rw [isSolution_relabel]
+    rw [← ofWords_toWord S] at hv ⊢
+    refine (isSolution_ofWords_congr cK fun w hw x b hx => ?_).1 hv
+    have hxT : x ∈ T := by
+      simp only [List.mem_append, List.mem_map] at hw
+      simp only [T, List.mem_toFinset, List.mem_flatMap, List.mem_append, List.mem_filterMap]
+      obtain ⟨w', hw', rfl⟩ | ⟨w', hw', rfl⟩ := hw
+      exacts [⟨w', .inl hw', _, hx, rfl⟩, ⟨w', .inr hw', _, hx, rfl⟩]
+    simp [g, hxT]
+  by_contra hH
+  refine (realize_noSolutionSentence _ cK).1 (h _ (S.relabel g).isUniversal_noSolutionSentence
+    ((realize_noSolutionSentence _ cH).2 fun ⟨u, hu⟩ => hH ⟨u ∘ g, ?_⟩)) ⟨_, hK⟩
+  rwa [isSolution_relabel] at hu
+
+end TauCeti.EqIneqSystem
+
 /-! ### Universal sentences forbidding solutions of systems without coefficients -/
 
-/-- The equation `w = 1` for a word `w` in the bound variables `Fin n`, as an atomic formula of
-the group language without coefficients. -/
-private noncomputable def wordEqOne (w : FreeGroup (Fin n)) :
-    Language.group.BoundedFormula Empty n :=
-  Language.Term.bdEqual ((wordTerm w).relabel Sum.inr) 1
+namespace FirstOrder.Language.group
+
+open FirstOrder TauCeti
+
+variable {n : ℕ}
 
 /-- The universal sentence of the group language without coefficients saying that no `n`-tuple
 `x` of group elements satisfies the equations `e(x) = 1` for `e ∈ E` and the inequations
-`i(x) ≠ 1` for `i ∈ I`. -/
+`i(x) ≠ 1` for `i ∈ I`: the sentence `EqIneqSystem.noSolutionSentence` of this system with no
+coefficient names, read in the group language without constants. -/
 noncomputable def noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     Language.group.Sentence :=
-  (BoundedFormula.iInf (fun e : E => wordEqOne (e : FreeGroup (Fin n))) ⊓
-    BoundedFormula.iInf (fun i : I => (wordEqOne (i : FreeGroup (Fin n))).not)).not.alls
+  (LEquiv.addEmptyConstants Language.group Empty).invLHom.onSentence
+    (EqIneqSystem.noSolutionSentence
+      ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩)
+
+/-- The sentence `noSolutionSentence E I` is the sentence `EqIneqSystem.noSolutionSentence` of
+the system with equations `E` and inequations `I` and no coefficient names, read in the group
+language without constants. -/
+theorem noSolutionSentence_def (E I : Finset (FreeGroup (Fin n))) :
+    noSolutionSentence E I = (LEquiv.addEmptyConstants Language.group Empty).invLHom.onSentence
+      (EqIneqSystem.noSolutionSentence
+        ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩) := (rfl)
 
 /-- The sentence `noSolutionSentence E I` is universal. -/
 theorem isUniversal_noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     (noSolutionSentence E I).IsUniversal :=
-  ((BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF).inf
-    (BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF.not)).not
-    |>.isUniversal.alls
+  (EqIneqSystem.isUniversal_noSolutionSentence _).onBoundedFormula _
 
 section NoSolution
 
@@ -254,7 +281,35 @@ and the inequations `I`. -/
     (E I : Finset (FreeGroup (Fin n))) :
     G ⊨ noSolutionSentence E I ↔
       ¬∃ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) ∧ ∀ i ∈ I, FreeGroup.lift x i ≠ 1 := by
-  simp [noSolutionSentence, wordEqOne, Sentence.Realize]
+  let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
+  have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
+    LHom.sumElim_isExpansionOn _ _ _
+  have heval (x : Fin n → G) (w : FreeGroup (Fin n)) :
+      EqIneqSystem.eval x (isEmptyElim : Empty → G) (FreeGroup.map Sum.inl w) =
+        FreeGroup.lift x w := by
+    rw [← MonoidHom.comp_apply, EqIneqSystem.eval_eq_lift]
+    congr 1
+    ext
+    simp
+  rw [noSolutionSentence_def, LHom.realize_onSentence, EqIneqSystem.realize_noSolutionSentence]
+  simp [EqIneqSystem.isSolution_iff, heval]
+
+/-- With a single inequation `w ≠ 1`, the sentence `noSolutionSentence E {w}` is the universal
+implication `∀ x, (⋀ e ∈ E, e(x) = 1) → w(x) = 1`: a group satisfies it exactly when `w` vanishes
+at every tuple at which all words of `E` vanish. -/
+theorem realize_noSolutionSentence_singleton {G : Type*} [Group G]
+    (E : Finset (FreeGroup (Fin n))) (w : FreeGroup (Fin n)) : G ⊨ noSolutionSentence E {w} ↔
+      ∀ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) → FreeGroup.lift x w = 1 := by
+  simp
+
+/-- A consequence `w` of the relators `E`, that is an element of their normal closure, vanishes
+wherever `E` does, in every group: every group satisfies `∀ x, E(x) = 1 → w(x) = 1`. -/
+theorem realize_noSolutionSentence_singleton_of_mem_normalClosure {G : Type*} [Group G]
+    {E : Finset (FreeGroup (Fin n))} {w : FreeGroup (Fin n)}
+    (hw : w ∈ Subgroup.normalClosure (E : Set (FreeGroup (Fin n)))) :
+    G ⊨ noSolutionSentence E {w} :=
+  (realize_noSolutionSentence_singleton E w).2 fun x hx =>
+    Subgroup.normalClosure_le_normal (N := (FreeGroup.lift x).ker) hx hw
 
 end NoSolution
 

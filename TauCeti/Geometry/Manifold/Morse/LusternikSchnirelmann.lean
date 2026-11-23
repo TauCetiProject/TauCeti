@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.CupLength
 import TauCeti.Geometry.Manifold.LocallyContractible
 import TauCeti.Geometry.Manifold.Morse.Deformation
 
@@ -43,6 +43,10 @@ components recovers the bound for `M`. In dimension zero the bound is an equalit
 being the number of points of `M`
 (`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`).
 
+Combined with the cup-length lower bound for the Lusternik–Schnirelmann category, on a nonempty
+compact manifold every smooth function has at least `lsCupLength M R + 1` critical points, for any
+commutative ring `R` (`TauCeti.lsCupLength_add_one_le_totalCriticalCount`).
+
 ## Main declarations
 
 * `TauCeti.lsCategoryCount_sublevel_le_of_band`: the count of `{f ≤ b}` is at most that of
@@ -57,6 +61,7 @@ being the number of points of `M`
   part of `M`, such as a connected component of a compact manifold.
 * `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
   zero.
+* `TauCeti.lsCupLength_add_one_le_totalCriticalCount`: the cup-length bound on critical points.
 
 ## References
 
@@ -104,11 +109,7 @@ theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton
     lsCategoryCount M univ = totalCriticalCount I f := by
   have : Subsingleton H := I.injective.subsingleton
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-  -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
-  have hcrit : criticalPoints I f = univ := eq_univ_of_forall fun x ↦ by
-    have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
-    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0])
-  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, hcrit]
+  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]
 
@@ -165,7 +166,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
       by_contra hne
       obtain ⟨x, hx, hxt⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
         hf.continuous.continuousOn (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
-        (nonempty_iff_ne_empty.mpr hne)
+        (Set.ne_empty_iff_nonempty.mp hne)
       exact hC.subset ⟨hx, hxt⟩
     simp [hempty]
   -- Otherwise let `c = f p ≤ t` be the largest critical value in `{f ≤ t}`, and cross the level
@@ -188,7 +189,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
   have hbelow := ih _ hlt (by linarith) rfl
   -- Between `c + ε` and `t` there are no critical points.
   have habove : lsCategoryCount M {x | f x ≤ t} ≤ lsCategoryCount M {x | f x ≤ f p + ε} := by
-    rcases le_or_gt t (f p + ε) with h | h
+    rcases le_or_gt t (f p + ε) with h | _
     · exact lsCategoryCount_mono fun x (hx : f x ≤ t) ↦ hx.trans h
     · refine lsCategoryCount_sublevel_le_of_band hf (hcpt isClosed_Icc fun y hy ↦ hy.2.trans htb.le)
         fun x hx₁ hx₂ hx ↦ ?_
@@ -239,9 +240,17 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   let U : Opens M := ⟨C, hCo⟩
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
-    (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
+    (hf.comp_contMDiff contMDiff_subtypeVal Subtype.prop)
   rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h
+
+/-- **The cup-length bound on critical points.** On a nonempty compact boundaryless manifold `M`,
+every smooth function has at least `lsCupLength M R + 1` critical points, for every commutative
+ring `R` in the universe of `M`. The critical points may be degenerate; if there are infinitely
+many, their count is `⊤`. -/
+theorem lsCupLength_add_one_le_totalCriticalCount [CompactSpace M] [Nonempty M] (R : Type _)
+    [CommRing R] (hf : ContMDiff I 𝓘(ℝ) ∞ f) : lsCupLength M R + 1 ≤ totalCriticalCount I f :=
+  lsCupLength_add_one_le_lsCategoryCount_univ.trans (lsCategoryCount_univ_le_totalCriticalCount hf)
 
 end TauCeti

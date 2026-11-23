@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import TauCeti.RingTheory.Polynomial.Chebyshev.Divisibility
 
 /-!
@@ -41,10 +42,12 @@ computes the same values from the three-term recurrence.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
 * `TauCeti.qInt_dvd_qInt`: `[m] ∣ [n]` whenever `m ∣ n`.
+* `TauCeti.qInt_neg`: negating the loop parameter multiplies `[n]` by `(-1) ^ (n + 1)`.
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
 * `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
+* `IsSelfAdjoint.qInt`: the quantum integers at a self-adjoint loop parameter are self-adjoint.
 
 ## References
 
@@ -123,6 +126,26 @@ theorem qInt_dvd_qInt (δ : R) {m n : ℕ} (h : m ∣ n) : qInt R δ m ∣ qInt 
   obtain ⟨k, rfl⟩ := h
   exact Dvd.intro _ (qInt_mul δ m k).symm
 
+/-- Negating the loop parameter multiplies the quantum integer `[n]` by `(-1) ^ (n + 1)`. -/
+theorem qInt_neg (δ : R) (n : ℕ) : qInt R (-δ) n = (-1) ^ (n + 1) * qInt R δ n := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp
+  | one => simp
+  | more n ih1 ih2 =>
+    rw [qInt_add_two, qInt_add_two, ih1, ih2]
+    simp only [pow_succ]
+    ring
+
+/-- Vanishing of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
+theorem qInt_neg_eq_zero_iff {δ : R} {n : ℕ} : qInt R (-δ) n = 0 ↔ qInt R δ n = 0 := by
+  rw [qInt_neg, (isUnit_one.neg.pow (n + 1)).mul_right_eq_zero]
+
+/-- Invertibility of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
+theorem isUnit_qInt_neg_iff {δ : R} {n : ℕ} : IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
+  rw [qInt_neg, IsUnit.mul_iff, and_iff_right (isUnit_one.neg.pow (n + 1))]
+
 /-- At the loop parameter `δ = 2` the quantum integer `[n]` is the integer `n`. -/
 @[simp]
 theorem qInt_two_left (n : ℕ) : qInt R 2 n = n := by
@@ -150,6 +173,16 @@ theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) :
   rw [qInt_def, qInt_def, ← eval_map_apply, map_S]
 
 end RingHom
+
+namespace IsSelfAdjoint
+
+variable {R : Type*} [CommRing R] [StarRing R]
+
+/-- The quantum integers at a self-adjoint loop parameter are self-adjoint. -/
+theorem qInt {δ : R} (hδ : IsSelfAdjoint δ) (n : ℕ) : IsSelfAdjoint (TauCeti.qInt R δ n) := by
+  rw [IsSelfAdjoint, ← starRingEnd_apply, RingHom.map_qInt, starRingEnd_apply, hδ.star_eq]
+
+end IsSelfAdjoint
 
 namespace TauCeti
 

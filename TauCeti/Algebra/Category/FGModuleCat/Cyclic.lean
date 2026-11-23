@@ -151,7 +151,7 @@ noncomputable def cyclicModuleHomEquiv (a : A) :
     exact smul_cyclicModule_hom_mk_one_eq_zero f⟩
   invFun m := cyclicModuleLift a m <| by
     rw [← DistribSMul.toLinearMap_apply k M (op a), ← LinearMap.mem_ker]
-    exact m.2
+    exact m.property
   map_add' _ _ := rfl
   map_smul' c f := Subtype.ext (algebraMap_smul Aᵐᵒᵖ c _)
   left_inv f := cyclicModule_hom_ext <| by
@@ -170,7 +170,7 @@ theorem cyclicModuleHomEquiv_apply_coe (a : A) (f : cyclicModule a ⟶ FGModuleC
 theorem cyclicModuleHomEquiv_symm_apply (a : A)
     (m : LinearMap.ker (DistribSMul.toLinearMap k M (op a))) :
     (cyclicModuleHomEquiv k a).symm m = cyclicModuleLift a (m : M)
-      ((DistribSMul.toLinearMap_apply k M (op a) m).symm.trans (LinearMap.mem_ker.1 m.2)) :=
+      ((DistribSMul.toLinearMap_apply k M (op a) m).symm.trans (LinearMap.mem_ker.1 m.property)) :=
   (rfl)
 
 end Hom
@@ -216,8 +216,8 @@ theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
   omega
 
 /-- Over `K[X]/(X ^ n)`, with `x` the class of `X` and `M_j = A ⧸ (x ^ j)`, the image in `M_j` of
-the annihilator `x ^ (n - i) A` of `x ^ i` has dimension `j - min j (n - i)`, for `i, j ≤ n`. -/
-theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n) :
+the annihilator `x ^ (n - i) A` of `x ^ i` has dimension `j - min j (n - i)`, for `j ≤ n`. -/
+theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
     finrank K ((LinearMap.ker (DistribSMul.toLinearMap K (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
         (op (AdjoinRoot.root (X ^ n : K[X]) ^ i)))).map
       ((Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}).mkQ.restrictScalars K)) =
@@ -231,7 +231,7 @@ theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ 
       Submodule.restrictScalars_mem, Ideal.mem_span_singleton]
     rw [← RingEquiv.toOpposite_apply, ← RingEquiv.toOpposite_apply, ← map_mul,
       map_eq_zero_iff _ (RingEquiv.injective _), map_dvd_iff,
-      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi]
+      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff]
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   have h := Submodule.finrank_quotient_add_finrank ((Submodule.map (Ideal.span {op (x ^ j)}).mkQ
     (Ideal.span {op (x ^ (n - i))})).restrictScalars K)

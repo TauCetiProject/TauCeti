@@ -69,24 +69,17 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K` and `u` is a unit
-of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K`, `ϖ ≠ 0` and `u` is
+a unit of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
 theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul [NeZero (2 : K)] {ϖ : 𝒪[K]}
-    (hϖ : Irreducible ϖ) (u : 𝒪[K]ˣ) (hu : ¬ IsSquare ((u : 𝒪[K]) : K))
+    (hϖ : ϖ ≠ 0) (u : 𝒪[K]ˣ) (hu : ¬ IsSquare ((u : 𝒪[K]) : K))
     {x y : SeparableClosure K} (hx : x ^ 2 = algebraMap K (SeparableClosure K) ϖ)
     (hy : y ^ 2 = algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) :
     K⟮x⟯ ≠ K⟮y⟯ := by
   intro hxy
-  -- `x ∉ K`, since `K(x)` has degree two.
-  have hxb : x ∉ (⊥ : IntermediateField K (SeparableClosure K)) := by
-    rw [← IntermediateField.adjoin_simple_eq_bot_iff]
-    intro hbot
-    have h := (mem_totallyRamifiedOfDegree_iff.1
-      (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hϖ two_pos hx)).1
-    rw [hbot, IntermediateField.finrank_bot] at h
-    omega
-  obtain ⟨t, ht⟩ := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxb hxy
-  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  obtain ⟨t, ht⟩ := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxy
+  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ (Subtype.ext h)
   refine hu ⟨t / ϖ, ?_⟩
   field_simp
   push_cast at ht
@@ -164,13 +157,13 @@ theorem encard_totallyRamifiedOfDegree_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
   obtain ⟨y, hy⟩ := IsSepClosed.exists_pow_nat_eq
     (algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) 2
   rw [totallyRamifiedOfDegree_two_eq h2 hϖ u hu' hx hy,
-    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul hϖ u hu' hx hy)]
+    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul hϖ.ne_zero u hu' hx hy)]
 
 /-- **Serre's mass formula for quadratic extensions in odd residue characteristic**:
 `∑_{L ∈ σ_K(2)} q ^ (-c(L)) = 2`, where `q` is the cardinality of the residue field of `K`. Both
 members of `σ_K(2)` are tamely ramified, with weight `1`. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
-    ∑' L : totallyRamifiedOfDegree K 2, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree K 2, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   rw [tsum_one_div_natCard_residueField_pow_wildExponent_eq_encard h2,
     encard_totallyRamifiedOfDegree_two h2]
   norm_num
@@ -194,7 +187,7 @@ theorem totallyRamifiedOfDegree_two_eq (hp : p ≠ 2) (u : 𝒪[ℚ_[p]]ˣ)
 /-- **Serre's mass formula for quadratic extensions of `ℚ_p`** for an odd prime `p`:
 `∑_{L ∈ σ_{ℚ_p}(2)} p ^ (-c(L)) = 2`. -/
 theorem tsum_one_div_pow_wildExponent_two (hp : p ≠ 2) :
-    ∑' L : totallyRamifiedOfDegree ℚ_[p] 2, 1 / (p : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree ℚ_[p] 2, 1 / (p : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   have h2 : ¬ ringChar 𝓀[ℚ_[p]] ∣ 2 := IsLocalRing.isUnit_natCast_iff_not_dvd.1
     (by exact_mod_cast _root_.Padic.isUnit_two_integerRing hp)
   simpa using TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent_two h2

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Complex.Weierstrass
 
 /-!
@@ -27,7 +28,7 @@ file connects the local analytic Weierstrass preparation and division theorems o
 Mathlib's formal power series Weierstrass API (`PowerSeries.IsWeierstrassFactorization`,
 `PowerSeries.IsWeierstrassDivision`) and deduces uniqueness, polynomial divisibility reflection,
 polynomial quotient isomorphisms, and flatness and finiteness of local hypersurface quotients over
-the base stalk.
+the base stalk. The uniqueness statements are also restated for functions rather than germs.
 
 ## Main definitions
 
@@ -60,6 +61,12 @@ the base stalk.
   preparation and division in `𝒪_{E × ℂ, (x₀, w₀)}` (without `FiniteDimensional ℂ E`, deduced from
   maximal-ideal Hausdorffness via `PowerSeries.IsWeierstrassFactorization.elim` and
   `PowerSeries.IsWeierstrassDivision.elim`).
+* `TauCeti.eventuallyEq_of_weierstrassPreparation`, `TauCeti.eventuallyEq_of_weierstrassDivision`:
+  the same uniqueness for functions on any complex normed space `E : Type*`, stated without stalks:
+  two Weierstrass preparations of a holomorphic function near `(x₀, w₀)` have the same coefficient
+  and unit germs, and two divisions by the same Weierstrass polynomial have the same quotient and
+  remainder germs. They are reduced along complex lines to the `E = ℂ` case of
+  `weierstrassDivision_unique_of_isDistinguishedAt`.
 * `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: divisibility by a
   distinguished polynomial `P` in `(𝒪_{E, x₀})[X]` agrees with divisibility by
   `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
@@ -186,7 +193,7 @@ theorem isDistinguishedAt_monicOfCoeff_iff {x₀ : E} {d : ℕ}
         (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ↔
       ∀ i, eval 𝓘(ℂ, E) E x₀ (c i) = 0 := by
   refine ⟨fun h i ↦ ?_, fun hc ↦ ⟨⟨fun {n} hn ↦ ?_⟩, TauCeti.Polynomial.monic_monicOfCoeff c⟩⟩
-  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
+  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.isLt])
     rwa [TauCeti.Polynomial.coeff_monicOfCoeff, maximalIdeal_stalk, RingHom.mem_ker] at hmem
   · rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
     rw [maximalIdeal_stalk, RingHom.mem_ker, ← Fin.val_mk hn,
@@ -653,7 +660,6 @@ theorem existsUnique_weierstrassDivision_of_isDistinguishedAt {x₀ : E} {w₀ :
     TauCeti.Polynomial.monicOfCoeff_coeff hP.monic rfl
   have hc0_germ : ∀ i : Fin d, eval 𝓘(ℂ, E) E x₀ (c i) = 0 :=
     (isDistinguishedAt_monicOfCoeff_iff c).1 (hP_eq.symm ▸ hP)
-  let C : Fin d → E → ℂ := fun i ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   have hC_spec := fun i : Fin d ↦ Classical.choose_spec (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   obtain ⟨G, hG_an, hgG⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g
   obtain ⟨Q, R, hQ_an, hR_an, hdiv⟩ := hG_an.exists_weierstrassDivision_monicOfCoeff
@@ -906,3 +912,149 @@ theorem finite_quotientMk_comp_stalkPrecomp_fst {x₀ : E} {w₀ : ℂ}
 end FiniteDimensional
 
 end TauCeti.holomorphicStructureSheaf
+
+namespace TauCeti
+
+open holomorphicStructureSheaf
+
+/-- The coefficient germs of a function-level Weierstrass polynomial form a distinguished
+polynomial over the base stalk. -/
+private theorem isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq {E : Type}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {x₀ : E} {d : ℕ}
+    {c : Fin d → E → ℂ} (hc0 : ∀ i, c i x₀ = 0)
+    {s : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀}
+    (hs : ∀ i, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (s i) = c i) :
+    (Polynomial.monicOfCoeff s).IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) :=
+  (isDistinguishedAt_monicOfCoeff_iff s).2 fun i ↦
+    (eval_eq_of_toFilterGerm_eq (hs i)).trans (hc0 i)
+
+/-- Stalk-level specialization of `eventuallyEq_of_weierstrassDivision` on `ℂ × ℂ`, used as the
+1-dimensional base case for universe-polymorphic spaces `E : Type*`. -/
+private theorem eventuallyEq_of_weierstrassDivision_complex {x₀ w₀ : ℂ} {d : ℕ}
+    {c : Fin d → ℂ → ℂ} {q q' : ℂ × ℂ → ℂ} {r r' : Fin d → ℂ → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hq : AnalyticAt ℂ q (x₀, w₀)) (hr : ∀ i, AnalyticAt ℂ (r i) x₀)
+    (hq' : AnalyticAt ℂ q' (x₀, w₀)) (hr' : ∀ i, AnalyticAt ℂ (r' i) x₀)
+    (h : (fun p : ℂ × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q p +
+        ∑ i : Fin d, r i p.1 * (p.2 - w₀) ^ (i : ℕ)) =ᶠ[𝓝 (x₀, w₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q' p +
+        ∑ i : Fin d, r' i p.1 * (p.2 - w₀) ^ (i : ℕ)) :
+    q =ᶠ[𝓝 (x₀, w₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
+  choose s hs using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hc i)
+  obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_analyticAt hq
+  obtain ⟨v', hv'⟩ := exists_toFilterGerm_eq_of_analyticAt hq'
+  choose a ha using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hr i)
+  choose a' ha' using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hr' i)
+  have hdeg (a : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, ℂ) ℂ).presheaf.stalk x₀) :
+      (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a i)).degree <
+        (Polynomial.monicOfCoeff s).natDegree := by
+    rw [Polynomial.natDegree_monicOfCoeff]
+    simpa only [C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt a
+  have hdiv : evalVertical x₀ w₀ (Polynomial.monicOfCoeff s) * v +
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a i)) =
+      evalVertical x₀ w₀ (Polynomial.monicOfCoeff s) * v' +
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a' i)) :=
+    toFilterGerm_nhds_injective (x₀, w₀) <| by
+      rw [map_add, map_mul, map_add, map_mul,
+        toFilterGerm_evalVertical_monicOfCoeff fun i ↦ hs i _ le_rfl, hv _ le_rfl, hv' _ le_rfl,
+        toFilterGerm_evalVertical_sum_monomial fun i ↦ ha i _ le_rfl,
+        toFilterGerm_evalVertical_sum_monomial fun i ↦ ha' i _ le_rfl, ← Germ.coe_mul,
+        ← Germ.coe_add, ← Germ.coe_mul, ← Germ.coe_add, Germ.coe_eq]
+      exact h
+  obtain ⟨hvv', haa'⟩ := weierstrassDivision_unique_of_isDistinguishedAt
+    (isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq hc0 fun i ↦ hs i _ le_rfl) (hdeg a) rfl
+    (hdeg a') hdiv
+  refine ⟨Germ.coe_eq.1 ?_, fun i ↦ Germ.coe_eq.1 ?_⟩
+  · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
+  · have hai : a i = a' i := by
+      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
+        Fin.val_eq_val] using congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
+    rw [← ha i _ le_rfl, ← ha' i _ le_rfl, hai]
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Uniqueness of the local Weierstrass division of a holomorphic function.** Two divisions
+`P_c (w - w₀) * q + ∑ i, r i x * (w - w₀) ^ i = P_c (w - w₀) * q' + ∑ i, r' i x * (w - w₀) ^ i`
+near `(x₀, w₀)` by the Weierstrass polynomial `P_c = TauCeti.Polynomial.monicOfCoeff c`, with
+coefficients `c i x` vanishing at `x₀`, have the same quotient germ at `(x₀, w₀)` and the same
+remainder coefficient germs at `x₀`. -/
+theorem eventuallyEq_of_weierstrassDivision {x₀ : E} {w₀ : ℂ} {d : ℕ} {c : Fin d → E → ℂ}
+    {q q' : E × ℂ → ℂ} {r r' : Fin d → E → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hq : AnalyticAt ℂ q (x₀, w₀)) (hr : ∀ i, AnalyticAt ℂ (r i) x₀)
+    (hq' : AnalyticAt ℂ q' (x₀, w₀)) (hr' : ∀ i, AnalyticAt ℂ (r' i) x₀)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q p +
+        ∑ i : Fin d, r i p.1 * (p.2 - w₀) ^ (i : ℕ)) =ᶠ[𝓝 (x₀, w₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q' p +
+        ∑ i : Fin d, r' i p.1 * (p.2 - w₀) ^ (i : ℕ)) :
+    q =ᶠ[𝓝 (x₀, w₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
+  -- Pull back along every complex line `s ↦ x₀ + s • v` to reduce to the 1-dimensional base `ℂ`.
+  have hline (v : E) :
+      (fun p : ℂ × ℂ ↦ q (x₀ + p.1 • v, p.2)) =ᶠ[𝓝 (0, w₀)]
+        (fun p : ℂ × ℂ ↦ q' (x₀ + p.1 • v, p.2)) ∧
+      ∀ i, (fun s : ℂ ↦ r i (x₀ + s • v)) =ᶠ[𝓝 0] fun s ↦ r' i (x₀ + s • v) := by
+    have hφ : AnalyticAt ℂ (fun s : ℂ ↦ x₀ + s • v) 0 :=
+      analyticAt_const.add (analyticAt_id.smul analyticAt_const)
+    have hψ : AnalyticAt ℂ (fun p : ℂ × ℂ ↦ (x₀ + p.1 • v, p.2)) (0, w₀) :=
+      (analyticAt_const.add (analyticAt_fst.smul analyticAt_const)).prod analyticAt_snd
+    have hφ0 : x₀ + (0 : ℂ) • v = x₀ := by simp
+    have hψ0 : (x₀ + (0 : ℂ) • v, w₀) = (x₀, w₀) := by simp
+    have hpull := (hψ.continuousAt.tendsto.mono_right (by rw [hψ0])).eventually h
+    exact eventuallyEq_of_weierstrassDivision_complex
+      (fun i ↦ (hc i).comp_of_eq hφ hφ0) (fun i ↦ by simpa [hφ0] using hc0 i)
+      (hq.comp_of_eq hψ hψ0) (fun i ↦ (hr i).comp_of_eq hφ hφ0)
+      (hq'.comp_of_eq hψ hψ0) (fun i ↦ (hr' i).comp_of_eq hφ hφ0) hpull
+  refine ⟨?_, fun i ↦ ?_⟩
+  · have hsub : q - q' =ᶠ[𝓝 (x₀, w₀)] 0 :=
+      (hq.sub hq').eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 fun ⟨v, a⟩ ↦ by
+        have hγ : Tendsto (fun s : ℂ ↦ (s, w₀ + s * a)) (𝓝 0) (𝓝 (0, w₀)) := by
+          have hcont : Continuous fun s : ℂ ↦ (s, w₀ + s * a) := by fun_prop
+          simpa using hcont.tendsto 0
+        filter_upwards [hγ.eventually (hline v).1] with s hs
+        simpa [Pi.sub_apply, sub_eq_zero] using hs
+    exact hsub.mono fun p hp ↦ sub_eq_zero.1 hp
+  · have hsub : r i - r' i =ᶠ[𝓝 x₀] 0 :=
+      ((hr i).sub (hr' i)).eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 fun v ↦
+        ((hline v).2 i).mono fun s hs ↦ by simpa [Pi.sub_apply] using sub_eq_zero.2 hs
+    exact hsub.mono fun x hx ↦ sub_eq_zero.1 hx
+
+/-- **Uniqueness of the local Weierstrass preparation of a holomorphic function.** If two
+factorizations `P_c (w - w₀) * u = P_{c'} (w - w₀) * u'` of the same degree `d` agree near
+`(x₀, w₀)`, where `P_c = TauCeti.Polynomial.monicOfCoeff c` has lower coefficients vanishing at
+`x₀` and `u'` does not vanish at `(x₀, w₀)`, then they have the same coefficient germs at `x₀` and
+the same unit germ at `(x₀, w₀)`. -/
+theorem eventuallyEq_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ} {d : ℕ}
+    {c c' : Fin d → E → ℂ} {u u' : E × ℂ → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hu : AnalyticAt ℂ u (x₀, w₀))
+    (hc' : ∀ i, AnalyticAt ℂ (c' i) x₀)
+    (hu' : AnalyticAt ℂ u' (x₀, w₀)) (hu'0 : u' (x₀, w₀) ≠ 0)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * u p)
+      =ᶠ[𝓝 (x₀, w₀)]
+        fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - w₀) * u' p) :
+    (∀ i, c i =ᶠ[𝓝 x₀] c' i) ∧ u =ᶠ[𝓝 (x₀, w₀)] u' := by
+  have hu'_ne : ∀ᶠ p in 𝓝 (x₀, w₀), u' p ≠ 0 := hu'.continuousAt.eventually_ne hu'0
+  have hdiv :
+      (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) *
+          (u p / u' p) + ∑ i : Fin d, (0 : ℂ) * (p.2 - w₀) ^ (i : ℕ))
+        =ᶠ[𝓝 (x₀, w₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * (1 : ℂ) +
+        ∑ i : Fin d, (c' i p.1 - c i p.1) * (p.2 - w₀) ^ (i : ℕ) := by
+    filter_upwards [h, hu'_ne] with p hp hne
+    have hsub : (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - w₀) -
+        (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) =
+        ∑ i : Fin d, (c' i p.1 - c i p.1) * (p.2 - w₀) ^ (i : ℕ) := by
+      simp [Polynomial.eval_monicOfCoeff, sub_mul, Finset.sum_sub_distrib]
+    have hquot : (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * (u p / u' p) =
+        (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - w₀) := by
+      rw [← mul_div_assoc, hp, mul_div_cancel_right₀ _ hne]
+    simp only [zero_mul, Finset.sum_const_zero, add_zero, mul_one, ← hsub, hquot]
+    ring
+  obtain ⟨hdiv_q, hdiv_r⟩ := eventuallyEq_of_weierstrassDivision hc hc0
+    (hu.div hu' hu'0) (fun _ ↦ analyticAt_const) analyticAt_const (fun i ↦ (hc' i).sub (hc i)) hdiv
+  refine ⟨fun i ↦ (hdiv_r i).mono fun x hx ↦ (sub_eq_zero.1 (by simpa using hx.symm)).symm, ?_⟩
+  filter_upwards [hdiv_q, hu'_ne] with p hp hne
+  exact (div_eq_one_iff_eq hne).1 hp
+
+end TauCeti

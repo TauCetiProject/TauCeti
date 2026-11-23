@@ -210,7 +210,6 @@ theorem coe_closedBallHemisphereMap_apply (x : closedBall (0 : F) 1) :
       2 * ‖(x : F)‖ := by
     rw [← Submodule.norm_coe]
     simp [norm_smul, ι.norm_map]
-  have h1 : (0 : ℝ) < 1 + ‖(x : F)‖ ^ 2 := by positivity
   rw [closedBallHemisphereMap, stereoInvFun_apply, hw]
   simp only [smul_smul, smul_add]
   congr 1 <;> congr 1 <;> field_simp <;> ring
@@ -223,7 +222,7 @@ theorem closedBallHemisphereMap_apply_of_norm_eq_one {x : closedBall (0 : F) 1}
 
 theorem continuous_closedBallHemisphereMap : Continuous (ι.closedBallHemisphereMap v hv) :=
   (continuous_stereoInvFun _).comp <| Continuous.subtype_mk
-    (continuous_const.smul (ι.continuous.comp continuous_subtype_val)) _
+    (continuous_const.smul (ι.continuous.comp continuous_subtypeVal)) _
 
 theorem closedBallHemisphereMap_injective : Injective (ι.closedBallHemisphereMap v hv) := by
   intro x y h

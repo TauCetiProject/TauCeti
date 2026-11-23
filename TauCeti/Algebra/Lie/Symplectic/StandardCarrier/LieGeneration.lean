@@ -94,6 +94,30 @@ private theorem lie_upper_lower (i : Fin (n + 1)) :
     ⁅upper i, lower i⁆ = difference i i := by
   simp [upper, lower, difference, differenceRootMatrix_eq_single_sub_single, Ring.lie_def]
 
+/-- If every off-diagonal difference matrix and the terminal long roots lie in a Lie subalgebra,
+then every long root matrix does: the second bracket has coefficient two, which is invertible over
+the rationals. -/
+private theorem upper_lower_mem_of_difference_mem (S : LieSubalgebra ℚ (Mat n))
+    (hd : ∀ i j : Fin (n + 1), i ≠ j → difference i j ∈ S)
+    (hu : upper (Fin.last n) ∈ S) (hl : lower (Fin.last n) ∈ S) (i : Fin (n + 1)) :
+    upper i ∈ S ∧ lower i ∈ S := by
+  by_cases hi : i = Fin.last n
+  · subst i
+    exact ⟨hu, hl⟩
+  · have hdu := S.lie_mem (hd i (Fin.last n) hi) hu
+    rw [lie_difference_upper i (Fin.last n)] at hdu
+    have hdl := S.lie_mem hl (hd (Fin.last n) i (Ne.symm hi))
+    rw [lie_lower_difference i (Fin.last n)] at hdl
+    have hu' := S.smul_mem (1 / 2 : ℚ) (S.lie_mem (hd i (Fin.last n) hi) hdu)
+    have hl' := S.smul_mem (1 / 2 : ℚ) (S.lie_mem hdl (hd (Fin.last n) i (Ne.symm hi)))
+    rw [lie_difference_upperPair i (Fin.last n) hi, smul_smul] at hu'
+    rw [lie_lowerPair_difference i (Fin.last n) hi, smul_smul] at hl'
+    norm_num at hu' hl'
+    exact ⟨by simpa only [upper, GLSymplecticFin.RootSubgroupIndex.tangentMatrix_positiveLong]
+        using hu',
+      by simpa only [lower, GLSymplecticFin.RootSubgroupIndex.tangentMatrix_negativeLong]
+        using hl'⟩
+
 private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
     (hpos : ∀ i : Fin n, difference i.castSucc i.succ ∈ S)
     (hneg : ∀ i : Fin n, difference i.succ i.castSucc ∈ S)
@@ -103,24 +127,7 @@ private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
     rcases lt_or_gt_of_ne hij with h | h
     · exact (S.differenceRootMatrix_mem_of_lt hpos hneg i j h).1
     · exact (S.differenceRootMatrix_mem_of_lt hpos hneg j i h).2
-  -- The second bracket has coefficient two; over the rationals it recovers each long root.
-  have hul (i : Fin (n + 1)) : upper i ∈ S ∧ lower i ∈ S := by
-    by_cases hi : i = Fin.last n
-    · subst i
-      exact ⟨hu, hl⟩
-    · have hdu := S.lie_mem (hd i (Fin.last n) hi) hu
-      rw [lie_difference_upper i (Fin.last n)] at hdu
-      have hdl := S.lie_mem hl (hd (Fin.last n) i (Ne.symm hi))
-      rw [lie_lower_difference i (Fin.last n)] at hdl
-      have hu' := S.smul_mem (1 / 2 : ℚ) (S.lie_mem (hd i (Fin.last n) hi) hdu)
-      have hl' := S.smul_mem (1 / 2 : ℚ) (S.lie_mem hdl (hd (Fin.last n) i (Ne.symm hi)))
-      rw [lie_difference_upperPair i (Fin.last n) hi, smul_smul] at hu'
-      rw [lie_lowerPair_difference i (Fin.last n) hi, smul_smul] at hl'
-      norm_num at hu' hl'
-      exact ⟨by simpa only [upper, GLSymplecticFin.RootSubgroupIndex.tangentMatrix_positiveLong]
-          using hu',
-        by simpa only [lower, GLSymplecticFin.RootSubgroupIndex.tangentMatrix_negativeLong]
-          using hl'⟩
+  have hul := upper_lower_mem_of_difference_mem S hd hu hl
   have hdiag (i : Fin (n + 1)) : difference i i ∈ S := by
     rw [← lie_upper_lower]
     exact S.lie_mem (hul i).1 (hul i).2

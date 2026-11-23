@@ -22,6 +22,10 @@ the two opposite traversals of one nonloop edge cannot both follow the orientati
 parallel edges need no exceptions. These identifications allow directed ear and strong
 connectivity arguments to return native multigraph walk witnesses. The conversion interface
 parallels `Graph.Walk.bidirectedEquiv`, but restricts to walks following the chosen directions.
+
+Conversely, a trail determines an orientation, `Graph.Walk.orientation`, that directs each of
+its edges in the order traversed, and the trail follows that orientation. Edges off the trail
+keep an arbitrary direction; following an orientation depends only on the traversed edges.
 -/
 
 public section
@@ -72,6 +76,18 @@ theorem followsOrientation_append (p : G.Walk x y) (q : G.Walk y z) :
   | nil => simp
   | cons e h p ih => simp [ih, and_assoc]
 
+/-- Whether a walk follows an orientation depends only on the directions chosen for its own
+edges. -/
+theorem followsOrientation_congr {o' : G.Orientation} {p : G.Walk x y}
+    (h : ∀ e : G.edgeSet, e.val ∈ p.edges → o.head e = o'.head e) :
+    p.FollowsOrientation o ↔ p.FollowsOrientation o' := by
+  induction p with
+  | nil => simp
+  | cons e he p ih =>
+    have hhead := h ⟨e, he.edge_mem⟩ (by simp)
+    simp only [followsOrientation_cons, Orientation.tail_eq_of_head_eq hhead, hhead,
+      ih fun f hf ↦ h f (by simp [hf])]
+
 /-- Reversing both the walk and the orientation preserves following the chosen directions. -/
 @[simp]
 theorem followsOrientation_reverse (p : G.Walk x y) :
@@ -80,6 +96,71 @@ theorem followsOrientation_reverse (p : G.Walk x y) :
   | nil => simp
   | cons e h p ih =>
     simp [reverse_cons, IsLink.toWalk_eq_cons, ih, and_comm, and_left_comm]
+
+/-- Whether a walk follows an orientation depends only on the directions chosen for the edges
+traversed by that walk. -/
+theorem FollowsOrientation.congr {o' : G.Orientation} {p : G.Walk x y}
+    (hp : p.FollowsOrientation o)
+    (h : ∀ e : G.edgeSet, e.val ∈ p.edges → o.head e = o'.head e) :
+    p.FollowsOrientation o' := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      have hhead := h ⟨e, he.edge_mem⟩ (by simp)
+      have htail : o.tail ⟨e, he.edge_mem⟩ = o'.tail ⟨e, he.edge_mem⟩ :=
+        Orientation.tail_eq_of_head_eq hhead
+      rw [followsOrientation_cons] at hp ⊢
+      exact ⟨by simpa [htail] using hp.1, by simpa [hhead] using hp.2.1,
+        ih hp.2.2 fun f hf ↦ h f (by simp [hf])⟩
+
+/-- Orient a graph so that a trail is traversed from its start to its end. Edges outside the
+trail retain an arbitrary orientation. -/
+noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.IsTrail → G.Orientation
+  | _, _, .nil, _ => Orientation.ofEdgeEnds G
+  | _, _, .cons' x y z e h p, hp => by
+      classical
+      have hpTail : p.IsTrail := ((isTrail_cons e h p).1 hp).1
+      exact Orientation.ofHead
+        (fun f ↦ if _ : f.val = e then ⟨y, h.right_mem⟩ else (p.orientation hpTail).head f)
+        fun f ↦ by
+          split_ifs with hf
+          · subst hf
+            exact h.inc_right
+          · exact (p.orientation hpTail).head_inc f
+
+@[simp]
+theorem orientation_cons_head {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) :
+    ((Walk.cons e h p).orientation hp).head ⟨e, h.edge_mem⟩ = ⟨y, h.right_mem⟩ := by
+  simp [orientation]
+
+@[simp]
+theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) :
+    ((Walk.cons e h p).orientation hp).tail ⟨e, h.edge_mem⟩ = ⟨x, h.left_mem⟩ := by
+  apply Subtype.ext
+  apply (((Walk.cons e h p).orientation hp).isLink ⟨e, h.edge_mem⟩).left_unique
+  simpa using h
+
+/-- Away from the first edge of a trail, its orientation agrees with that of the remaining
+trail. -/
+@[simp]
+theorem orientation_cons_head_of_ne {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) {f : G.edgeSet} (hf : f.val ≠ e) :
+    ((Walk.cons e h p).orientation hp).head f =
+      (p.orientation ((isTrail_cons e h p).1 hp).1).head f := by
+  simp [orientation, hf]
+
+/-- A trail follows the orientation obtained by directing its successive edges forward. -/
+theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.IsTrail) :
+    p.FollowsOrientation (p.orientation hp) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      have hp' := (isTrail_cons e h p).1 hp
+      rw [followsOrientation_cons]
+      refine ⟨by simp, by simp, ih hp'.1 |>.congr fun f hf ↦ ?_⟩
+      exact (orientation_cons_head_of_ne e h p hp fun hfe ↦ hp'.2 (hfe ▸ hf)).symm
 
 /-- A walk following an orientation, viewed as a directed walk on the actual vertices. -/
 def toOriented : {x y : α} → (p : G.Walk x y) → (hp : p.FollowsOrientation o) →
@@ -154,7 +235,7 @@ variable (o : G.Orientation)
 /-- Include the chosen oriented arrows into the bidirected arrow family. The abbreviation keeps
 its identity vertex map reducible, so transported walks retain their endpoint types. -/
 abbrev toBidirected : @Prefunctor V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ :=
-  @Prefunctor.mk V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ id fun a ↦ ⟨a.edge.1, a.isLink⟩
+  @Prefunctor.mk V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ id fun a ↦ ⟨a.edge.val, a.isLink⟩
 
 @[simp]
 theorem toBidirected_obj (x : V(G)) :
@@ -163,7 +244,7 @@ theorem toBidirected_obj (x : V(G)) :
 @[simp]
 theorem toBidirected_map {x y : V(G)} (a : o.Hom x y) :
     @Prefunctor.map V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ o.toBidirected x y a =
-      ⟨a.edge.1, a.isLink⟩ := (rfl)
+      ⟨a.edge.val, a.isLink⟩ := (rfl)
 
 /-- A single oriented arrow follows the orientation as an undirected traversal. -/
 -- Prefer the arrow fact to expanding the endpoint equalities for an arbitrary traversal.
@@ -176,8 +257,9 @@ theorem Hom.followsOrientation_toWalk {o : G.Orientation} {x y : V(G)} (a : o.Ho
 -- Retain the original arrow rather than rebuilding it with the general single-edge lemma.
 @[simp high]
 theorem Hom.toOriented_toWalk {o : G.Orientation} {x y : V(G)} (a : o.Hom x y) :
-    a.isLink.toWalk.toOriented a.followsOrientation_toWalk x.2 = (ArrowWalk.nil _).cons a := by
-  refine (IsLink.toOriented_toWalk a.isLink a.followsOrientation_toWalk x.2).trans ?_
+    a.isLink.toWalk.toOriented a.followsOrientation_toWalk x.property = (ArrowWalk.nil _).cons a
+        := by
+  refine (IsLink.toOriented_toWalk a.isLink a.followsOrientation_toWalk x.property).trans ?_
   exact congrArg (fun a ↦ (ArrowWalk.nil _).cons a) (Hom.ext (Subtype.ext rfl))
 
 /-- Forget the directions of a directed walk, retaining each traversed edge identity. -/
@@ -227,7 +309,7 @@ theorem support_forgetWalk (p : ArrowWalk o.Hom x y) :
 /-- Forgetting directions retains the edge sequence. -/
 @[simp]
 theorem edges_forgetWalk (p : ArrowWalk o.Hom x y) :
-    (o.forgetWalk p).edges = p.arrows.map (fun a ↦ a.2.2.edge.1) := by
+    (o.forgetWalk p).edges = p.arrows.map (fun a ↦ a.2.2.edge.val) := by
   simp only [forgetWalk, ArrowWalk.edges_toGraphWalk]
   induction p with
   | nil => simp
@@ -273,7 +355,7 @@ theorem forgetWalk_toOriented (p : G.Walk x y) (hp : p.FollowsOrientation o)
 /-- Converting the underlying walk of a directed walk recovers the directed walk. -/
 @[simp]
 theorem toOriented_forgetWalk {x y : V(G)} (p : ArrowWalk o.Hom x y) :
-    (o.forgetWalk p).toOriented (o.followsOrientation_forgetWalk p) x.2 = p := by
+    (o.forgetWalk p).toOriented (o.followsOrientation_forgetWalk p) x.property = p := by
   induction p with
   | nil =>
     exact (toOriented_congr (o.forgetWalk_nil _) _ (followsOrientation_nil _) _).trans
@@ -301,7 +383,7 @@ theorem vertices_toOriented (p : G.Walk x y) (hp : p.FollowsOrientation o) (hx :
 /-- Conversion to a directed walk retains the edge sequence. -/
 @[simp]
 theorem edges_toOriented (p : G.Walk x y) (hp : p.FollowsOrientation o) (hx : x ∈ V(G)) :
-    (p.toOriented hp hx).arrows.map (fun a ↦ a.2.2.edge.1) = p.edges := by
+    (p.toOriented hp hx).arrows.map (fun a ↦ a.2.2.edge.val) = p.edges := by
   simpa only [forgetWalk_toOriented] using (o.edges_forgetWalk (p.toOriented hp hx)).symm
 
 /-- Conversion to a directed walk preserves and reflects paths. -/
@@ -323,19 +405,19 @@ namespace Orientation
 /-- Directed walks of an orientation are exactly the native walks following its directions. -/
 def walkEquiv (o : G.Orientation) (x y : V(G)) :
     {p : G.Walk x y // p.FollowsOrientation o} ≃ ArrowWalk o.Hom x y where
-  toFun p := p.1.toOriented p.2 x.2
+  toFun p := p.val.toOriented p.property x.property
   invFun p := ⟨o.forgetWalk p, o.followsOrientation_forgetWalk p⟩
-  left_inv p := Subtype.ext (Walk.forgetWalk_toOriented p.1 p.2 x.2)
+  left_inv p := Subtype.ext (Walk.forgetWalk_toOriented p.val p.property x.property)
   right_inv := Walk.toOriented_forgetWalk
 
 @[simp]
 theorem walkEquiv_apply (o : G.Orientation) {x y : V(G)}
     (p : {p : G.Walk x y // p.FollowsOrientation o}) :
-    o.walkEquiv x y p = p.1.toOriented p.2 x.2 := (rfl)
+    o.walkEquiv x y p = p.val.toOriented p.property x.property := (rfl)
 
 @[simp]
 theorem walkEquiv_symm_apply_val (o : G.Orientation) {x y : V(G)} (p : ArrowWalk o.Hom x y) :
-    ((o.walkEquiv x y).symm p).1 = o.forgetWalk p := (rfl)
+    ((o.walkEquiv x y).symm p).val = o.forgetWalk p := (rfl)
 
 /-- Directed reachability is witnessed by a native walk following the chosen directions. -/
 theorem nonempty_arrowWalk_iff (o : G.Orientation) (x y : V(G)) :

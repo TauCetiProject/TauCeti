@@ -24,7 +24,13 @@ it depends on them only as it should.
   (`Polygon.crossingTimes_map`), and `e` carries the over/under data and the oriented frames of
   the crossings along.
 * **The orientation.** Only the orientation `b.orientation` matters: two bases defining the same
-  orientation give the same Gauss code (`Polygon.gaussCode_eq_of_orientation_eq`).
+  orientation give the same Gauss code (`Polygon.gaussCode_eq_of_orientation_eq`), and two bases
+  defining opposite orientations give mirror Gauss codes, with every crossing sign negated
+  (`Polygon.gaussCode_eq_mirror_of_orientation_eq_neg`). Hence the image of a polygonal knot under
+  an orientation-reversing affine equivalence, such as its reflection in a plane containing the
+  direction of projection, has the mirror Gauss code (`Polygon.gaussCode_map_eq_mirror`). This is
+  the convention of Lickorish, Chapter 1: the mirror image of an oriented knot is its reflection,
+  and reflection negates every crossing sign.
 * **The direction.** Only the ray of `d` matters, and not the origin of the projection:
   projecting along `c • d`, for `c > 0`, from any origin, gives the same Gauss code
   (`Polygon.gaussCode_smul`).
@@ -48,6 +54,10 @@ in `Polygon.gaussCode_insertVertex`.
   space, moving the direction and the basis along.
 * `Polygon.gaussCode_eq_of_orientation_eq`: the Gauss code only depends on the orientation of the
   ambient space.
+* `Polygon.gaussCode_eq_mirror_of_orientation_eq_neg`: reversing the orientation of the ambient
+  space mirrors the Gauss code.
+* `Polygon.gaussCode_map_eq_mirror`: the image of a polygonal knot under an orientation-reversing
+  affine equivalence has the mirror Gauss code.
 * `Polygon.gaussCode_smul`: the Gauss code only depends on the ray of the direction of the
   projection, and not on its origin.
 
@@ -71,23 +81,28 @@ variable {V V' P P' : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] [Ad
 /-! ### Comparing two Gauss codes -/
 
 /-- **Comparison of Gauss codes.** Let `g` be an injective map carrying the traversal of `poly` to
-that of `poly'`, time by time. If `g` carries the fibres of the projection along `d` to those of
-the projection along `d'`, the relation "lies above, seen from `d`" to "lies above, seen from
-`d'`", and the orientation of the frames formed by two edge directions and `d` with respect to `b`
-to that with respect to `b'`, then the two Gauss codes agree. -/
+that of `poly'`, time by time. If `g` carries the relation "lies above, seen from `d`" to "lies
+above, seen from `d'`" (which makes it carry the fibres of the projection along `d` to those of the
+projection along `d'`), and the orientation of the frames formed by two edge directions and `d`
+with respect to `b` to that with respect to `b'`, then the two Gauss codes agree. -/
 private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q₀ : P'} {d' : V'}
     (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d))
     (hs' : poly'.IsSimple ℝ) (hπ' : poly'.IsRegularProjection ℝ (projAlong ℝ q₀ d'))
     (b : Basis (Fin 3) ℝ V) (b' : Basis (Fin 3) ℝ V') {g : P → P'} (hg : Injective g)
     (hbp : ∀ t, poly'.boundaryParam t = g (poly.boundaryParam t))
-    (hfib : ∀ x y, projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) ↔
-      projAlong ℝ p₀ d x = projAlong ℝ p₀ d y)
     (hover : ∀ x y, (∃ c : ℝ, 0 < c ∧ c • d' = g x -ᵥ g y) ↔ ∃ c : ℝ, 0 < c ∧ c • d = x -ᵥ y)
     (hsign : ∀ i j : Fin n,
       SignType.sign (b'.det ![poly' (finRotate n i) -ᵥ poly' i,
         poly' (finRotate n j) -ᵥ poly' j, d']) =
       SignType.sign (b.det ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d])) :
     (⟨_, gaussCode hs' hπ' b'⟩ : Σ m, BasedOrientedGaussCode m) = ⟨_, gaussCode hs hπ b⟩ := by
+  -- `g` preserves and reflects the fibres of the projections, as it preserves "lies above".
+  have hfib (x y) : projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) ↔
+      projAlong ℝ p₀ d x = projAlong ℝ p₀ d y :=
+    ⟨fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h hg.eq_iff.1 (hover x y).1
+        (hover y x).1,
+      fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h (congrArg g) (hover x y).2
+        (hover y x).2⟩
   -- `g` carries the boundary and the double points of `poly` onto those of `poly'`.
   have hbd : poly'.boundary ℝ = g '' poly.boundary ℝ := by
     rw [← range_boundaryParam, ← range_boundaryParam, ← range_comp]
@@ -101,7 +116,7 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
     ext t
     rw [mem_crossingTimes, mem_crossingTimes, hbp, hDP, hg.mem_set_image]
   exact gaussCode_eq_of_strictMonoOn b hs hπ b' hs' hπ' (φ := id) (strictMono_id.strictMonoOn _)
-    (by rw [hct, image_id]) (fun t _ ↦ hbp t) hg.injOn (fun x _ y _ ↦ (hfib x y).2)
+    (by rw [hct, image_id]) (fun t _ ↦ hbp t)
     (fun x _ y _ ↦ (hover x y).2) fun t _ t' _ _ ↦ hsign _ _
 
 /-! ### Affine maps -/
@@ -131,7 +146,6 @@ theorem gaussCode_map (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection �
     (e.toAffineMap.linear_apply_vsub x y).symm
   refine gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs' hπ' b _ e.injective
     (boundaryParam_map e.toAffineMap poly)
-    (fun x y ↦ projAlong_map_eq_projAlong_map_iff (f := e.toAffineMap) e.linear.injective q₀ p₀ d)
     (fun x y ↦ exists_congr fun c ↦ and_congr_right fun _ ↦ ?_) fun i j ↦ ?_
   · rw [hlin, ← LinearEquiv.map_smul, e.linear.injective.eq_iff]
   · simp only [map_apply, hlin, Basis.det_map]
@@ -148,9 +162,59 @@ theorem gaussCode_eq_of_orientation_eq (hs : poly.IsSimple ℝ)
     (h : b.orientation = b'.orientation) : gaussCode hs hπ b = gaussCode hs hπ b' := by
   have hpos : 0 < b'.det b := (b'.orientation_eq_iff_det_pos b).1 h.symm
   have := gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs hπ b' b injective_id (fun _ ↦ rfl)
-    (fun _ _ ↦ Iff.rfl) (fun _ _ ↦ Iff.rfl) fun i j ↦ by
+    (fun _ _ ↦ Iff.rfl) fun i j ↦ by
       rw [b'.det.eq_smul_basis_det b, smul_apply, smul_eq_mul, sign_mul, sign_pos hpos, one_mul]
   exact eq_of_heq (Sigma.mk.inj_iff.1 this).2
+
+/-- **Opposite orientations give mirror Gauss codes.** Two bases `b` and `b'` defining opposite
+orientations of the ambient space give Gauss codes that are mirror images of each other: the
+traversal and the over/under data agree, and every crossing sign is negated. -/
+theorem gaussCode_eq_mirror_of_orientation_eq_neg (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {b b' : Basis (Fin 3) ℝ V}
+    (h : b'.orientation = -b.orientation) : gaussCode hs hπ b' = (gaussCode hs hπ b).mirror := by
+  have hneg : b'.det b < 0 := by
+    refine lt_of_le_of_ne (not_lt.1 fun hpos ↦ ?_) (b'.isUnit_det b).ne_zero
+    exact Module.Ray.ne_neg_self b.orientation
+      (h.symm.trans ((b'.orientation_eq_iff_det_pos b).2 hpos)).symm
+  set D := gaussCode hs hπ b with hD
+  set D' := gaussCode hs hπ b'
+  -- The partner visits do not depend on the basis.
+  have hpartner (j) : D'.partner.val j = D.partner.val j := by
+    simpa only [Fin.cast_eq_self, Equiv.refl_symm, Equiv.refl_apply] using
+      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (g := id)
+        (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
+        (fun _ ↦ by simp only [Fin.cast_eq_self, Equiv.refl_apply, id_eq]) j
+  have hover (j) : D'.over j = D.over j := by
+    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner]
+  refine BasedOrientedGaussCode.ext_of_visit_lt_visit_iff (fun i j ↦ ?_)
+    (funext fun j ↦ by rw [hover, BasedOrientedGaussCode.over_mirror]) fun i hi ↦ ?_
+  · rw [BasedOrientedGaussCode.visit_mirror, gaussCode_visit_lt_visit_iff,
+      gaussCode_visit_lt_visit_iff, hpartner, hpartner]
+  · -- The determinant with respect to `b'` is a negative multiple of that with respect to `b`.
+    refine Units.ext ?_
+    rw [gaussCode_sign_visit b' hs hπ hi, BasedOrientedGaussCode.visit_mirror,
+      BasedOrientedGaussCode.sign_mirror, Units.val_neg,
+      gaussCode_sign_visit b hs hπ (by rwa [← hover]), hpartner, b'.det.eq_smul_basis_det b]
+    simp [← hD, sign_mul, sign_neg hneg]
+
+/-- **An orientation-reversing motion mirrors the Gauss code.** Let `e` be an affine equivalence
+of the ambient space whose linear part has negative determinant, such as the reflection in a plane
+containing `d`. Then the Gauss code of the image `poly.map e`, projected along `e.linear d` and
+oriented by the same basis `b`, is the mirror image of the Gauss code of `poly`. The numbers of
+crossings agree, and the codes are compared together with them. -/
+theorem gaussCode_map_eq_mirror (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (e : P ≃ᵃ[ℝ] P)
+    (he : LinearMap.det (e.linear : V →ₗ[ℝ] V) < 0) {q₀ : P} (hs' : (poly.map e).IsSimple ℝ)
+    (hπ' : (poly.map e).IsRegularProjection ℝ (projAlong ℝ q₀ (e.linear d)))
+    (b : Basis (Fin 3) ℝ V) :
+    (⟨_, gaussCode hs' hπ' b⟩ : Σ m, BasedOrientedGaussCode m) =
+      ⟨_, (gaussCode hs hπ b).mirror⟩ := by
+  have ho : b.orientation = -(b.map e.linear).orientation := by
+    rw [(b.orientation_comp_linearEquiv_eq_neg_iff_det_neg e.linear).2 he]
+    exact (neg_neg b.orientation).symm
+  rw [gaussCode_eq_mirror_of_orientation_eq_neg hs' hπ' ho]
+  exact congrArg (fun D : Σ m, BasedOrientedGaussCode m ↦
+    (⟨D.1, D.2.mirror⟩ : Σ m, BasedOrientedGaussCode m)) (gaussCode_map hs hπ e hs' hπ' b)
 
 /-! ### The direction of the projection -/
 
@@ -170,9 +234,7 @@ theorem gaussCode_smul (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection 
       fun ⟨a, ha, h⟩ ↦ ⟨a / c, (hp _).1 (by rwa [div_mul_cancel₀ a hc.ne']),
         by rwa [div_mul_cancel₀ a hc.ne']⟩⟩
   refine gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs hπ' b b injective_id (fun _ ↦ rfl)
-    (fun x y ↦ ?_) (fun x y ↦ hmul fun a ↦ mul_pos_iff_of_pos_right hc) fun i j ↦ ?_
-  · simpa only [projAlong_eq_projAlong_iff, true_and, id_eq] using
-      hmul (p := fun _ ↦ True) (v := x -ᵥ y) fun _ ↦ Iff.rfl
+    (fun x y ↦ hmul fun a ↦ mul_pos_iff_of_pos_right hc) fun i j ↦ ?_
   · have hv : ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, c • d] =
         update ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] 2
           (c • ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] 2) := by

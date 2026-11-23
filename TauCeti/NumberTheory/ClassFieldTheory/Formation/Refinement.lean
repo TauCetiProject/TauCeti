@@ -99,11 +99,6 @@ than a quotient map on one fixed group.
 * J.-P. Serre, *Local Fields*, Chapter VII, §5, and Chapter XI, §1.
 -/
 
--- The signatures of `LayerRefinement`, `relativeDegree`, `cohomologyInfl`, `tateInfl`,
--- `groundEquiv`, the tower lemmas and `exists_commonRefinement` below follow the Tau Ceti
--- `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which write down the refinement
--- relation between two normal layers formalised here.
-
 public noncomputable section
 
 open CategoryTheory
@@ -526,7 +521,7 @@ theorem exists_commonRefinement {L₁ L₂ : NormalLayer G} (h : L₁.ground = L
   have hv' : (v : G) ∈ L₁.top ∧ (v : G) ∈ L₂.top :=
     OpenSubgroup.mem_inf.1 (Subgroup.mem_subgroupOf.1 hv)
   exact OpenSubgroup.mem_inf.2
-    ⟨L₁.conj_mem_top u.2 hv'.1, L₂.conj_mem_top (h ▸ u.2) hv'.2⟩
+    ⟨L₁.conj_mem_top u.property hv'.1, L₂.conj_mem_top (h ▸ u.property) hv'.2⟩
 
 end LayerRefinement
 

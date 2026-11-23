@@ -61,7 +61,7 @@ noncomputable instance instChartedSpaceOfOpenSubsetsU (i : (ofOpenSubsets U).J) 
 noncomputable instance instChartedSpaceOfOpenSubsetsV (p : (ofOpenSubsets U).J ×
     (ofOpenSubsets U).J) : ChartedSpace H ((ofOpenSubsets U).V p) :=
   inferInstanceAs (ChartedSpace H (⟨Subtype.val ⁻¹' (U p.2 : Set X),
-    (U p.2).isOpen.preimage continuous_subtype_val⟩ : Opens (U p.1)))
+    (U p.2).isOpen.preimage continuous_subtypeVal⟩ : Opens (U p.1)))
 
 /-- Each piece of the gluing of open subsets of a `C^n` manifold is a `C^n` manifold. -/
 instance instIsManifoldOfOpenSubsetsU [IsManifold I n X] (i : (ofOpenSubsets U).J) :
@@ -113,7 +113,7 @@ theorem coe_openCoverGlueDiffeomorph (h : ⋃ i, (U i : Set X) = univ) :
     letI := (ofOpenSubsets U).chartedSpace H
     ⇑(openCoverGlueDiffeomorph (I := I) (n := n) U h) = fromOpenSubsetsGlue U :=
   letI := (ofOpenSubsets U).chartedSpace H
-  TauCeti.coe_diffeomorphOfBijective
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 /-- The diffeomorphism from the gluing of an open cover has Mathlib's homeomorphism
 `openCoverGlueHomeo` as its underlying homeomorphism. -/

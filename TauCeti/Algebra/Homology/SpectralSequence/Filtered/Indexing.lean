@@ -1,0 +1,558 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
+
+/-!
+# Classical indexing of the spectral sequence of a filtered complex
+
+The spectral sequence `CochainComplex.spectralSequence` of an increasing filtration `F` of a
+cochain complex `K` is Mathlib's spectral sequence of a spectral object for the recipe
+`coreE₂Cohomological`: its first page is numbered `2`, and the object at `(a, b)` on it is
+`H^{a+b}(F_{b+1}/F_b)`. This file writes it in the two classical `E₁` indexings, by reindexing
+(`CategoryTheory.SpectralSequence.reindex`) along a shift of the pages by `1` and an affine
+bijection of `ℤ × ℤ`.
+
+* **Decreasing filtrations of cochain complexes.** For a decreasing filtration `F^p` of `K`,
+  `CochainComplex.decreasingFiltrationSpectralSequence F hF` is a cohomological spectral sequence
+  (`CategoryTheory.CohomologicalSpectralSequence`) starting on page `1`, with differentials
+  `d_r : E_r^{p,q} ⟶ E_r^{p+r,q-r+1}`, and with
+  `E₁^{p,q} ≅ H^{p+q}(F^p/F^{p+1})`
+  (`CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso`). Its first differential is
+  the connecting map of the short exact sequence `F^{p+1}/F^{p+2} ⟶ F^p/F^{p+2} ⟶ F^p/F^{p+1}`
+  (`CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`). It is the spectral
+  sequence of the increasing filtration `G_t = F^{-t}`, whose page `r + 1` has at
+  `(2p + q + 1, -p - 1)` the object `E_r^{p,q}`. A morphism of complexes sending each `F^p` into
+  the stage `G^p` of a decreasing filtration of its target induces a morphism of spectral sequences
+  (`CochainComplex.decreasingFiltrationSpectralSequenceMap`), functorially, which on the first page
+  is the map in cohomology of the induced morphisms of graded pieces
+  (`CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso_hom_naturality`).
+* **Increasing filtrations of chain complexes.** A chain complex is regarded as a cochain complex
+  `K` with `K^{-n} = C_n`. For an increasing filtration `F_p` of `K`,
+  `CochainComplex.homologicalFiltrationSpectralSequence F hF` starts on page `1`, with
+  differentials `d_r : E^r_{p,q} ⟶ E^r_{p-r,q+r-1}` and
+  `E¹_{p,q} ≅ H_{p+q}(F_p/F_{p-1}) = H^{-(p+q)}(F_p/F_{p-1})`
+  (`CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso`), and its first differential
+  is the connecting map of `F_{p-1}/F_{p-2} ⟶ F_p/F_{p-2} ⟶ F_p/F_{p-1}`
+  (`CochainComplex.homologicalFiltrationSpectralSequence_first_page_d_eq`). Its page `r` has at
+  `(p, q)` the object of page `r + 1` of the spectral sequence of `F` at `(1 - 2p - q, p - 1)`.
+
+For finite filtrations both converge strongly, to the graded pieces of the induced filtration of
+the cohomology of `K`
+(`CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfFinite`,
+`CochainComplex.homologicalFiltrationSpectralSequencePageXIsoGradedOfFinite`): in the decreasing
+case `E_r^{p,q} ≅ F^p H^{p+q} / F^{p+1} H^{p+q}` and in the homological case
+`E^r_{p,q} ≅ F_p H_{p+q} / F_{p-1} H_{p+q}`, once `r` is large compared with the length of the
+filtration. For complexes of modules the same holds without a finite length, under the
+degreewise vanishing and exhaustiveness hypotheses of
+`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive`
+(`CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive`,
+`CochainComplex.homologicalFiltrationSpectralSequencePageXIsoGradedOfExhaustive`), which hold
+for instance for a first-quadrant decreasing filtration (`F^0 = K` and `F^{n+1} K^n = 0`) on every
+page `r` large compared with `p` and `q`.
+
+## References
+
+* C. A. Weibel, *An introduction to homological algebra*, Cambridge Studies in Advanced
+  Mathematics 38, Cambridge University Press, 1994, Sections 5.4 and 5.5.
+* J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge Studies in Advanced
+  Mathematics 58, Cambridge University Press, 2001, Section 2.2.
+-/
+
+public section
+
+open CategoryTheory Limits
+
+namespace CochainComplex
+
+variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ}
+
+/-! ### Decreasing filtrations -/
+
+section Decreasing
+
+/-- The bijection of `ℤ × ℤ` sending the bidegree `(p, q)` of the spectral sequence of a decreasing
+filtration `F^p` to the bidegree `(2p + q + 1, -p - 1)` of the spectral sequence of the increasing
+filtration `t ↦ F^{-t}`. -/
+def decreasingFiltrationBidegreeEquiv : ℤ × ℤ ≃ ℤ × ℤ where
+  toFun pq := (2 * pq.1 + pq.2 + 1, -pq.1 - 1)
+  invFun ab := (-ab.2 - 1, ab.1 + 2 * ab.2 + 1)
+  left_inv pq := by ext <;> dsimp <;> lia
+  right_inv ab := by ext <;> dsimp <;> lia
+
+@[simp]
+lemma decreasingFiltrationBidegreeEquiv_apply (pq : ℤ × ℤ) :
+    decreasingFiltrationBidegreeEquiv pq = (2 * pq.1 + pq.2 + 1, -pq.1 - 1) :=
+  (rfl)
+
+@[simp]
+lemma decreasingFiltrationBidegreeEquiv_symm_apply (ab : ℤ × ℤ) :
+    decreasingFiltrationBidegreeEquiv.symm ab = (-ab.2 - 1, ab.1 + 2 * ab.2 + 1) :=
+  (rfl)
+
+/-- The bijection `decreasingFiltrationBidegreeEquiv` carries the differentials `(r, 1 - r)` of the
+`r`th page of a cohomological spectral sequence to the differentials `(r + 1, -r)` of page `r + 1`
+of the spectral sequence of a filtered complex. -/
+lemma decreasingFiltrationBidegreeEquiv_rel_iff (r : ℤ) (i j : ℤ × ℤ) :
+    (ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)).Rel i j ↔
+      (ComplexShape.up' (⟨r + 1, 1 - (r + 1)⟩ : ℤ × ℤ)).Rel (decreasingFiltrationBidegreeEquiv i)
+        (decreasingFiltrationBidegreeEquiv j) := by
+  obtain ⟨p, q⟩ := i
+  obtain ⟨p', q'⟩ := j
+  simp only [ComplexShape.up', decreasingFiltrationBidegreeEquiv_apply, Prod.mk_add_mk,
+    Prod.mk.injEq]
+  lia
+
+variable (F : ℤ → Subobject K) (hF : Antitone F)
+
+/-- The **spectral sequence of a decreasing filtration** `F^p` of a cochain complex, in the
+classical cohomological indexing: it starts on page `1`, its differentials are
+`d_r : E_r^{p,q} ⟶ E_r^{p+r,q-r+1}`, and `E₁^{p,q} = H^{p+q}(F^p/F^{p+1})`. It is the spectral
+sequence of the increasing filtration `t ↦ F^{-t}`, reindexed. -/
+noncomputable def decreasingFiltrationSpectralSequence : CohomologicalSpectralSequence C 1 :=
+  (spectralSequence (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))).reindex 1
+    decreasingFiltrationBidegreeEquiv decreasingFiltrationBidegreeEquiv_rel_iff (by lia)
+
+/-- The object at `(p, q)` on page `r` of the spectral sequence of a decreasing filtration `F` is
+the object at `(2p + q + 1, -p - 1)` on page `r + 1` of the spectral sequence of the increasing
+filtration `t ↦ F^{-t}`. -/
+noncomputable def decreasingFiltrationSpectralSequencePageXIso (r r' : ℤ) (hr : 1 ≤ r)
+    (hr' : r + 1 = r') (p q a b : ℤ) (ha : a = 2 * p + q + 1) (hb : b = -p - 1) :
+    ((decreasingFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      ((spectralSequence (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))).page r'
+        (by lia)).X (a, b) :=
+  SpectralSequence.reindexPageXIso _ _ _ _ _ r r' hr hr' (p, q) (a, b) (by simp [ha, hb])
+
+/-- The graded piece of the increasing filtration `t ↦ F^{-t}` at `-(p + 1) ≤ -p`, the cokernel of a
+transition map of its functor, is the graded piece `F^p/F^{p+1}` of `F`. -/
+noncomputable def decreasingFiltrationGradedIso (p : ℤ) :
+    cokernel ((filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h)).map
+        (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
+          WithBotTop.coe_le_coe.mpr (by lia)))) ≅
+      cokernel (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia))) :=
+  cokernelFiltrationFunctorMapIso _ _ _ ≪≫ Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ _
+
+/-- The isomorphism `CochainComplex.decreasingFiltrationGradedIso` is induced by the identity of
+the stage `F^p`. -/
+@[reassoc (attr := simp)]
+lemma π_decreasingFiltrationGradedIso_hom (p : ℤ) :
+    cokernel.π _ ≫ (decreasingFiltrationGradedIso F hF p).hom =
+      (filtrationFunctorObjIso _ _ _).hom ≫ Subobject.ofLE _ (F p) (by simp) ≫ cokernel.π _ := by
+  simp [decreasingFiltrationGradedIso]
+
+/-- **The first page of the spectral sequence of a decreasing filtration.** The object at
+`(p, q)` is the cohomology `H^{p+q}(F^p/F^{p+1})` of the graded piece `F^p/F^{p+1}`. -/
+noncomputable def decreasingFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) :
+    ((decreasingFiltrationSpectralSequence F hF).page 1).X (p, q) ≅
+      (cokernel (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia)))).homology (p + q) :=
+  decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl ≪≫
+    spectralSequenceFirstPageXIsoCokernel _ (2 * p + q + 1, -p - 1) (-(p + 1)) (-p) (by dsimp; lia)
+      (by dsimp; lia) (p + q) (by dsimp; lia) ≪≫
+    (HomologicalComplex.homologyFunctor C _ (p + q)).mapIso (decreasingFiltrationGradedIso F hF p)
+
+/-- `CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso` is the identification
+`CochainComplex.decreasingFiltrationSpectralSequencePageXIso` with page `2` of the spectral sequence
+of the increasing filtration `t ↦ F^{-t}`, followed by the identification of that first page with
+the cohomology of its graded pieces. -/
+lemma decreasingFiltrationSpectralSequenceFirstPageXIso_hom (p q : ℤ) :
+    (decreasingFiltrationSpectralSequenceFirstPageXIso F hF p q).hom =
+      (decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
+        (spectralSequenceFirstPageXIsoCokernel _ (2 * p + q + 1, -p - 1) (-(p + 1)) (-p)
+          (by dsimp; lia) (by dsimp; lia) (p + q) (by dsimp; lia)).hom ≫
+        HomologicalComplex.homologyMap (decreasingFiltrationGradedIso F hF p).hom (p + q) :=
+  (rfl)
+
+/-- **The first differential of the spectral sequence of a decreasing filtration.** Under the
+identifications `CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso` of the first page
+with the cohomology of the graded pieces, the differential `d₁ : E₁^{p,q} ⟶ E₁^{p+1,q}` is the
+connecting map `H^{p+q}(F^p/F^{p+1}) ⟶ H^{p+q+1}(F^{p+1}/F^{p+2})` of the short exact sequence
+`F^{p+1}/F^{p+2} ⟶ F^p/F^{p+2} ⟶ F^p/F^{p+1}`. -/
+theorem decreasingFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
+    ((decreasingFiltrationSpectralSequence F hF).page 1).d (p, q) (p + 1, q) =
+      (decreasingFiltrationSpectralSequenceFirstPageXIso F hF p q).hom ≫
+        (TauCeti.cokernelCompSequence_shortExact
+          (Subobject.ofLE (F (p + 1 + 1)) (F (p + 1)) (hF (by lia)))
+          (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia)))).δ (p + q) (p + 1 + q)
+            (by simp only [ComplexShape.up_Rel]; lia) ≫
+        (decreasingFiltrationSpectralSequenceFirstPageXIso F hF (p + 1) q).inv := by
+  -- The first page is page `2` of the spectral sequence of the increasing filtration
+  -- `t ↦ F^{-t}`, whose first differential is the connecting map of its graded pieces at the
+  -- indices `-(p + 2) ≤ -(p + 1) ≤ -p`.
+  refine (SpectralSequence.reindex_page_d_eq _ _ _ _ _ 1 2 le_rfl rfl (p, q) (p + 1, q)
+    (2 * p + q + 1, -p - 1) (2 * (p + 1) + q + 1, -(p + 1) - 1) (by simp) (by simp)).trans ?_
+  rw [spectralSequence_first_page_d_eq_of_eq _ _ _ (by ext <;> dsimp <;> lia) (-(p + 1 + 1))
+    (-(p + 1)) (-p) (by dsimp; lia) (by dsimp; lia) (by dsimp; lia) (p + q) (p + 1 + q)
+    (by dsimp; lia) (by lia)]
+  -- The connecting maps of the graded pieces of `t ↦ F^{-t}` and of the quotients of the `F^p`.
+  have key := δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom _
+    (hF.comp fun _ _ h ↦ neg_le_neg h) (i := -(p + 1 + 1)) (j := -(p + 1)) (k := -p) (by lia)
+    (by lia) (A := F (p + 1 + 1)) (B := F (p + 1)) (D := F p) (by simp) (by simp) (by simp)
+    (hF (by lia)) (hF (by lia)) (p + q) (p + 1 + q) (by simp only [ComplexShape.up_Rel]; lia)
+  rw [decreasingFiltrationSpectralSequenceFirstPageXIso,
+    decreasingFiltrationSpectralSequenceFirstPageXIso, Iso.trans_hom, Iso.trans_hom,
+    Iso.trans_inv, Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv,
+    HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyFunctor_map,
+    (Iso.eq_comp_inv (HomologicalComplex.homologyMapIso _ (p + 1 + q))).2 key]
+  simp only [Category.assoc]
+  -- The remaining comparisons agree up to unfolding `homologyMapIso` and
+  -- `decreasingFiltrationSpectralSequencePageXIso`.
+  rfl
+
+/-- **Strong convergence of the spectral sequence of a finite decreasing filtration.** If
+`F^a = ⊥` and `F^b = ⊤`, then on every page `r ≥ 1` with `a ≤ p + r` and `p - r + 1 ≤ b`, the object
+at `(p, q)` is the graded piece `F^p H^{p+q} / F^{p+1} H^{p+q}` of the induced filtration of
+`H^{p+q}(K)`, whose `p`th piece is the image of `H^{p+q}(F^p) ⟶ H^{p+q}(K)`; in the indexing of the
+increasing filtration `t ↦ F^{-t}` this is the piece at `-p`. -/
+noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfFinite {a b : ℤ}
+    (ha : F a = ⊥) (hb : F b = ⊤) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hra : a ≤ p + r)
+    (hrb : p - r + 1 ≤ b) :
+    ((decreasingFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      cokernel (Abelian.SpectralObject.abutmentFiltrationMap
+        (spectralObject (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))) (-p - 1)
+        (p + q)) :=
+  decreasingFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p q _ _ rfl rfl ≪≫
+    filtrationSpectralSequencePageXIsoGradedOfFinite _ (hF.comp fun _ _ h ↦ neg_le_neg h)
+      (a := -a) (b := -b) (by simpa using ha) (by simpa using hb) (r + 1) (by lia)
+      (2 * p + q + 1, -p - 1) (by dsimp; lia) (by dsimp; lia) ≪≫
+    eqToIso (by dsimp only; rw [show 2 * p + q + 1 + (-p - 1) = p + q by lia])
+
+end Decreasing
+
+/-! ### Naturality for decreasing filtrations -/
+
+section DecreasingMap
+
+variable {L N : CochainComplex C ℤ} {F : ℤ → Subobject K} {hF : Antitone F}
+  {G : ℤ → Subobject L} {hG : Antitone G} {H : ℤ → Subobject N} {hH : Antitone H}
+
+variable (hF hG) in
+/-- **The morphism of spectral sequences induced by a morphism of decreasingly filtered
+complexes.** A morphism `f : K ⟶ L` sending each stage `F^p` into `G^p` induces a morphism from the
+spectral sequence of `F` to that of `G`: the morphism of spectral sequences of the increasing
+filtrations `t ↦ F^{-t}` and `t ↦ G^{-t}`, reindexed. On the first page it is the map in
+cohomology of the induced morphisms of graded pieces
+(`CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso_hom_naturality`). -/
+noncomputable def decreasingFiltrationSpectralSequenceMap (f : K ⟶ L)
+    (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f)) :
+    decreasingFiltrationSpectralSequence F hF ⟶ decreasingFiltrationSpectralSequence G hG :=
+  SpectralSequence.reindexMap 1 decreasingFiltrationBidegreeEquiv
+    decreasingFiltrationBidegreeEquiv_rel_iff (by lia)
+    (Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
+      (spectralObjectMap (filtrationFunctorMap _ _ f fun t ↦ hf (-t))))
+
+/-- `CochainComplex.decreasingFiltrationSpectralSequenceMap` only depends on the morphism of
+complexes. -/
+lemma decreasingFiltrationSpectralSequenceMap_congr {f f' : K ⟶ L} (e : f = f')
+    (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f)) :
+    decreasingFiltrationSpectralSequenceMap hF hG f hf =
+      decreasingFiltrationSpectralSequenceMap hF hG f' (e ▸ hf) := by
+  subst e
+  rfl
+
+/-- The identity of a decreasingly filtered complex induces the identity of its spectral
+sequence. -/
+@[simp]
+lemma decreasingFiltrationSpectralSequenceMap_id (hf : ∀ p, (F p).Factors ((F p).arrow ≫ 𝟙 K)) :
+    decreasingFiltrationSpectralSequenceMap hF hF (𝟙 K) hf = 𝟙 _ := by
+  rw [decreasingFiltrationSpectralSequenceMap, filtrationFunctorMap_id, spectralObjectMap_id,
+    Abelian.SpectralObject.spectralSequenceMap_id]
+  exact (SpectralSequence.reindexFunctor _ _ _ _ _ _ _).map_id _
+
+/-- A composite of morphisms of decreasingly filtered complexes induces the composite of the
+morphisms of spectral sequences. Not `@[simp]`: the intermediate filtration cannot be inferred
+from the left-hand side. -/
+lemma decreasingFiltrationSpectralSequenceMap_comp (f : K ⟶ L) (g : L ⟶ N)
+    (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f)) (hg : ∀ p, (H p).Factors ((G p).arrow ≫ g))
+    (hfg : ∀ p, (H p).Factors ((F p).arrow ≫ f ≫ g)) :
+    decreasingFiltrationSpectralSequenceMap hF hH (f ≫ g) hfg =
+      decreasingFiltrationSpectralSequenceMap hF hG f hf ≫
+        decreasingFiltrationSpectralSequenceMap hG hH g hg := by
+  rw [decreasingFiltrationSpectralSequenceMap, decreasingFiltrationSpectralSequenceMap,
+    decreasingFiltrationSpectralSequenceMap,
+    filtrationFunctorMap_comp f g (fun t ↦ hf (-t)) (fun t ↦ hg (-t)), spectralObjectMap_comp,
+    Abelian.SpectralObject.spectralSequenceMap_comp]
+  exact (SpectralSequence.reindexFunctor _ _ _ _ _ _ _).map_comp _ _
+
+variable (hF hG) in
+/-- The morphism of graded pieces `F^p/F^{p+1} ⟶ G^p/G^{p+1}` induced by a morphism `f : K ⟶ L`
+sending each stage `F^p` into `G^p`. -/
+noncomputable def decreasingFiltrationGradedMap (f : K ⟶ L)
+    (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f)) (p : ℤ) :
+    cokernel (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia))) ⟶
+      cokernel (Subobject.ofLE (G (p + 1)) (G p) (hG (by lia))) :=
+  cokernel.map _ _ ((G (p + 1)).factorThru _ (hf (p + 1))) ((G p).factorThru _ (hf p)) (by
+    rw [← cancel_mono (G p).arrow]
+    simp)
+
+/-- The morphism of graded pieces induced by `f` is induced by the restriction of `f` to
+`F^p ⟶ G^p`. -/
+@[reassoc (attr := simp)]
+lemma π_decreasingFiltrationGradedMap (f : K ⟶ L) (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f))
+    (p : ℤ) :
+    cokernel.π _ ≫ decreasingFiltrationGradedMap hF hG f hf p =
+      (G p).factorThru _ (hf p) ≫ cokernel.π _ :=
+  cokernel.π_desc _ _ _
+
+/-- **The morphism of spectral sequences of decreasing filtrations on the first page.** Under the
+identifications `E₁^{p,q} ≅ H^{p+q}(F^p/F^{p+1})` of
+`CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso`, the morphism of spectral
+sequences induced by a morphism `f` of filtered complexes is the map in cohomology of the induced
+morphism of graded pieces `F^p/F^{p+1} ⟶ G^p/G^{p+1}`. -/
+@[reassoc]
+theorem decreasingFiltrationSpectralSequenceFirstPageXIso_hom_naturality (f : K ⟶ L)
+    (hf : ∀ p, (G p).Factors ((F p).arrow ≫ f)) (p q : ℤ) :
+    ((decreasingFiltrationSpectralSequenceMap hF hG f hf).hom 1 le_rfl).f (p, q) ≫
+        (decreasingFiltrationSpectralSequenceFirstPageXIso G hG p q).hom =
+      (decreasingFiltrationSpectralSequenceFirstPageXIso F hF p q).hom ≫
+        HomologicalComplex.homologyMap (decreasingFiltrationGradedMap hF hG f hf p) (p + q) := by
+  let α := filtrationFunctorMap (hF.comp fun _ _ h ↦ neg_le_neg h)
+    (hG.comp fun _ _ h ↦ neg_le_neg h) f fun t ↦ hf (-t)
+  -- The square of graded pieces, compared with those of the functors of the filtrations.
+  have key : cokernel.map _ _ (α.app (-(p + 1) : ℤ)) (α.app (-p : ℤ)) (α.naturality _).symm ≫
+      (decreasingFiltrationGradedIso G hG p).hom =
+      (decreasingFiltrationGradedIso F hF p).hom ≫ decreasingFiltrationGradedMap hF hG f hf p := by
+    refine (cancel_epi (cokernel.π _)).1 ?_
+    simp only [cokernel.π_desc_assoc, Category.assoc, π_decreasingFiltrationGradedIso_hom,
+      π_decreasingFiltrationGradedIso_hom_assoc, π_decreasingFiltrationGradedMap]
+    simp only [← Category.assoc]
+    congr 1
+    rw [← cancel_mono (G p).arrow]
+    simp only [α, Category.assoc, Subobject.ofLE_arrow, Subobject.ofLE_arrow_assoc,
+      Subobject.factorThru_arrow, filtrationFunctorMap_app_comp]
+  have h₃ := congrArg (HomologicalComplex.homologyMap · (p + q)) key
+  simp only [HomologicalComplex.homologyMap_comp] at h₃
+  -- The first pages are reindexed first pages of the increasing filtrations `t ↦ F^{-t}` and
+  -- `t ↦ G^{-t}`: compose the naturality of the reindexing (`e`), of those first pages (`h₂`) and
+  -- of the graded pieces (`h₃`).
+  have e : ((decreasingFiltrationSpectralSequenceMap hF hG f hf).hom 1 le_rfl).f (p, q) ≫
+      (decreasingFiltrationSpectralSequencePageXIso G hG 1 2 le_rfl rfl p q _ _ rfl rfl).hom =
+        (decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
+          ((Abelian.SpectralObject.spectralSequenceMap
+            Abelian.SpectralObject.coreE₂Cohomological (spectralObjectMap α)).hom 2 (by lia)).f
+            (2 * p + q + 1, -p - 1) :=
+    SpectralSequence.reindexMap_hom_f_comp_reindexPageXIso_hom 1
+      decreasingFiltrationBidegreeEquiv decreasingFiltrationBidegreeEquiv_rel_iff (by lia) _ 1 2
+      le_rfl rfl (p, q) _ rfl
+  have h₂ := spectralSequenceFirstPageXIsoCokernel_hom_naturality α (2 * p + q + 1, -p - 1)
+    (-(p + 1)) (-p) (by dsimp; lia) (by dsimp; lia) (p + q) (by dsimp; lia)
+  rw [decreasingFiltrationSpectralSequenceFirstPageXIso_hom,
+    decreasingFiltrationSpectralSequenceFirstPageXIso_hom, reassoc_of% e, reassoc_of% h₂, h₃]
+  simp only [Category.assoc]
+
+end DecreasingMap
+
+/-! ### Homological indexing -/
+
+section Homological
+
+/-- The bijection of `ℤ × ℤ` sending the bidegree `(p, q)` of the homological spectral sequence of
+an increasing filtration `F_p` to the bidegree `(1 - 2p - q, p - 1)` of its spectral sequence in
+the indexing of `CochainComplex.spectralSequence`. -/
+def homologicalFiltrationBidegreeEquiv : ℤ × ℤ ≃ ℤ × ℤ where
+  toFun pq := (1 - 2 * pq.1 - pq.2, pq.1 - 1)
+  invFun ab := (ab.2 + 1, -ab.1 - 2 * ab.2 - 1)
+  left_inv pq := by ext <;> dsimp <;> lia
+  right_inv ab := by ext <;> dsimp <;> lia
+
+@[simp]
+lemma homologicalFiltrationBidegreeEquiv_apply (pq : ℤ × ℤ) :
+    homologicalFiltrationBidegreeEquiv pq = (1 - 2 * pq.1 - pq.2, pq.1 - 1) :=
+  (rfl)
+
+@[simp]
+lemma homologicalFiltrationBidegreeEquiv_symm_apply (ab : ℤ × ℤ) :
+    homologicalFiltrationBidegreeEquiv.symm ab = (ab.2 + 1, -ab.1 - 2 * ab.2 - 1) :=
+  (rfl)
+
+/-- The bijection `homologicalFiltrationBidegreeEquiv` carries the differentials `(-r, r - 1)` of
+the `r`th page of a homological spectral sequence to the differentials `(r + 1, -r)` of page
+`r + 1` of the spectral sequence of a filtered complex. -/
+lemma homologicalFiltrationBidegreeEquiv_rel_iff (r : ℤ) (i j : ℤ × ℤ) :
+    (ComplexShape.up' (⟨-r, r - 1⟩ : ℤ × ℤ)).Rel i j ↔
+      (ComplexShape.up' (⟨r + 1, 1 - (r + 1)⟩ : ℤ × ℤ)).Rel
+        (homologicalFiltrationBidegreeEquiv i) (homologicalFiltrationBidegreeEquiv j) := by
+  obtain ⟨p, q⟩ := i
+  obtain ⟨p', q'⟩ := j
+  simp only [ComplexShape.up', homologicalFiltrationBidegreeEquiv_apply, Prod.mk_add_mk,
+    Prod.mk.injEq]
+  lia
+
+variable (F : ℤ → Subobject K) (hF : Monotone F)
+
+/-- The **homological spectral sequence of an increasing filtration** `F_p` of a chain complex,
+regarded as a cochain complex `K` with `K^{-n} = C_n`: it starts on page `1`, its differentials
+are `d_r : E^r_{p,q} ⟶ E^r_{p-r,q+r-1}`, and `E¹_{p,q} = H_{p+q}(F_p/F_{p-1})`, the cohomology of
+`F_p/F_{p-1}` in degree `-(p+q)`. -/
+noncomputable def homologicalFiltrationSpectralSequence :
+    SpectralSequence C (fun r ↦ ComplexShape.up' (⟨-r, r - 1⟩ : ℤ × ℤ)) 1 :=
+  (spectralSequence (filtrationFunctor F hF)).reindex 1 homologicalFiltrationBidegreeEquiv
+    homologicalFiltrationBidegreeEquiv_rel_iff (by lia)
+
+/-- The object at `(p, q)` on page `r` of the homological spectral sequence of an increasing
+filtration `F` is the object at `(1 - 2p - q, p - 1)` on page `r + 1` of its spectral sequence in
+the indexing of `CochainComplex.spectralSequence`. -/
+noncomputable def homologicalFiltrationSpectralSequencePageXIso (r r' : ℤ) (hr : 1 ≤ r)
+    (hr' : r + 1 = r') (p q a b : ℤ) (ha : a = 1 - 2 * p - q) (hb : b = p - 1) :
+    ((homologicalFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      ((spectralSequence (filtrationFunctor F hF)).page r' (by lia)).X (a, b) :=
+  SpectralSequence.reindexPageXIso _ _ _ _ _ r r' hr hr' (p, q) (a, b) (by simp [ha, hb])
+
+/-- **The first page of the homological spectral sequence of an increasing filtration.** The
+object at `(p, q)` is the homology `H_{p+q}(F_p/F_{p-1})` of the graded piece `F_p/F_{p-1}`, that
+is its cohomology in degree `-(p+q)`. -/
+noncomputable def homologicalFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) :
+    ((homologicalFiltrationSpectralSequence F hF).page 1).X (p, q) ≅
+      (cokernel (Subobject.ofLE (F (p - 1)) (F p) (hF (by lia)))).homology (-(p + q)) :=
+  homologicalFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl ≪≫
+    spectralSequenceFirstPageXIsoCokernel _ (1 - 2 * p - q, p - 1) (p - 1) p rfl (by lia)
+      (-(p + q)) (by dsimp; lia) ≪≫
+    (HomologicalComplex.homologyFunctor C _ (-(p + q))).mapIso
+      (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
+        Subobject.cokernelOfLEIsoOfEq (filtrationEInt_coe F (p - 1)) (filtrationEInt_coe F p) _ _)
+
+/-- **The first differential of the homological spectral sequence of an increasing filtration.**
+Under the identifications `CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso` of the
+first page with the homology of the graded pieces, the differential `d¹ : E¹_{p,q} ⟶ E¹_{p-1,q}` is
+the connecting map `H_{p+q}(F_p/F_{p-1}) ⟶ H_{p+q-1}(F_{p-1}/F_{p-2})` of the short exact sequence
+`F_{p-1}/F_{p-2} ⟶ F_p/F_{p-2} ⟶ F_p/F_{p-1}`, in cohomological degrees
+`-(p + q) ⟶ -(p - 1 + q)`. -/
+theorem homologicalFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
+    ((homologicalFiltrationSpectralSequence F hF).page 1).d (p, q) (p - 1, q) =
+      (homologicalFiltrationSpectralSequenceFirstPageXIso F hF p q).hom ≫
+        (TauCeti.cokernelCompSequence_shortExact
+          (Subobject.ofLE (F (p - 1 - 1)) (F (p - 1)) (hF (by lia)))
+          (Subobject.ofLE (F (p - 1)) (F p) (hF (by lia)))).δ (-(p + q)) (-(p - 1 + q))
+            (by simp only [ComplexShape.up_Rel]; lia) ≫
+        (homologicalFiltrationSpectralSequenceFirstPageXIso F hF (p - 1) q).inv := by
+  -- The first page is page `2` of the spectral sequence of `F`, whose first differential is the
+  -- connecting map of its graded pieces at the indices `p - 2 ≤ p - 1 ≤ p`.
+  refine (SpectralSequence.reindex_page_d_eq _ _ _ _ _ 1 2 le_rfl rfl (p, q) (p - 1, q)
+    (1 - 2 * p - q, p - 1) (1 - 2 * (p - 1) - q, p - 1 - 1) (by simp) (by simp)).trans ?_
+  rw [spectralSequence_first_page_d_eq_of_eq _ (1 - 2 * p - q, p - 1)
+    (1 - 2 * (p - 1) - q, p - 1 - 1) (Prod.ext (by dsimp; lia) rfl) (p - 1 - 1) (p - 1) p rfl rfl
+    (by dsimp; lia) (-(p + q)) (-(p - 1 + q)) (by dsimp; lia) (by lia)]
+  -- The connecting maps of the graded pieces of the functor of `F` and of the quotients of the
+  -- `F_p`.
+  have key := δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom F hF
+    (i := p - 1 - 1) (j := p - 1) (k := p) (by lia) (by lia) rfl rfl rfl (hF (by lia))
+    (hF (by lia)) (-(p + q)) (-(p - 1 + q)) (by simp only [ComplexShape.up_Rel]; lia)
+  rw [homologicalFiltrationSpectralSequenceFirstPageXIso,
+    homologicalFiltrationSpectralSequenceFirstPageXIso, Iso.trans_hom, Iso.trans_hom,
+    Iso.trans_inv, Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv,
+    HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyFunctor_map,
+    (Iso.eq_comp_inv (HomologicalComplex.homologyMapIso _ (-(p - 1 + q)))).2 key]
+  simp only [Category.assoc]
+  -- As for `CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`, the remaining
+  -- comparisons agree up to unfolding.
+  rfl
+
+/-- **Strong convergence of the homological spectral sequence of a finite filtration.** If
+`F_a = ⊥` and `F_b = ⊤`, then on every page `r ≥ 1` with `p - r ≤ a` and `b ≤ p + r - 1`, the object
+at `(p, q)` is the graded piece `F_p H_{p+q} / F_{p-1} H_{p+q}` of the induced filtration of
+`H_{p+q}(K) = H^{-(p+q)}(K)`, whose `p`th piece is the image of
+`H^{-(p+q)}(F_p) ⟶ H^{-(p+q)}(K)`. -/
+noncomputable def homologicalFiltrationSpectralSequencePageXIsoGradedOfFinite {a b : ℤ}
+    (ha : F a = ⊥) (hb : F b = ⊤) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hra : p - r ≤ a)
+    (hrb : b ≤ p + r - 1) :
+    ((homologicalFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      cokernel ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationMap (p - 1)
+        (-(p + q))) :=
+  homologicalFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p q _ _ rfl rfl ≪≫
+    filtrationSpectralSequencePageXIsoGradedOfFinite F hF ha hb (r + 1) (by lia)
+      (1 - 2 * p - q, p - 1) (by dsimp; lia) (by dsimp; lia) ≪≫
+    eqToIso (by dsimp only; rw [show 1 - 2 * p - q + (p - 1) = -(p + q) by lia])
+
+end Homological
+
+/-! ### Exhaustive filtrations of complexes of modules -/
+
+section ModuleCat
+
+variable {R : Type*} [Ring R] {K : CochainComplex (ModuleCat.{v} R) ℤ}
+
+/-- **Strong convergence of the spectral sequence of a decreasing filtration**, without a finite
+length. Let `F` be a decreasing filtration of a complex of modules. Suppose that every element of
+`K^{p+q-1}` lies in some `F^j`, that `H^{p+q+1}(F^{p+r})` vanishes, and that the graded pieces
+`F^j/F^{j+1}` have vanishing `H^{p+q-1}` for all `j ≤ p - r`. Then the object at `(p, q)` on page
+`r ≥ 1` is the graded piece `F^p H^{p+q} / F^{p+1} H^{p+q}` of the induced filtration of
+`H^{p+q}(K)`. For a first-quadrant filtration, `F^0 = K` and `F^{n+1} K^n = 0`, the hypotheses hold
+for every `r` large compared with `p` and `q`. -/
+noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive
+    (F : ℤ → Subobject K) (hF : Antitone F) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ)
+    (hex : ∀ x : K.X (p + q - 1), ∃ j, x ∈ LinearMap.range ((F j).arrow.f (p + q - 1)).hom)
+    (h₀ : IsZero ((F (p + r) : CochainComplex (ModuleCat R) ℤ).homology (p + q + 1)))
+    (h₃ : ∀ j, j ≤ p - r →
+      IsZero ((cokernel (Subobject.ofLE (F (j + 1)) (F j) (hF (by lia)))).homology (p + q - 1))) :
+    ((decreasingFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      cokernel (Abelian.SpectralObject.abutmentFiltrationMap
+        (spectralObject (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))) (-p - 1)
+        (p + q)) :=
+  decreasingFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p q _ _ rfl rfl ≪≫
+    filtrationSpectralSequencePageXIsoGradedOfExhaustive _ (hF.comp fun _ _ h ↦ neg_le_neg h)
+      (r + 1) (by lia) (2 * p + q + 1, -p - 1)
+      (by
+        dsimp only
+        rw [show 2 * p + q + 1 + (-p - 1) - 1 = p + q - 1 by lia]
+        intro x
+        obtain ⟨j, hj⟩ := hex x
+        refine ⟨-j, ?_⟩
+        rw [Function.comp_apply, neg_neg]
+        exact hj)
+      (by
+        dsimp only
+        rw [show -p - 1 - (r + 1) + 2 = -(p + r) by lia,
+          show 2 * p + q + 1 + (-p - 1) + 1 = p + q + 1 by lia]
+        simpa using h₀)
+      (fun i hi ↦ by
+        dsimp only at hi ⊢
+        rw [show 2 * p + q + 1 + (-p - 1) - 1 = p + q - 1 by lia]
+        exact (h₃ (-i - 1) (by lia)).of_iso
+          ((HomologicalComplex.homologyFunctor _ _ (p + q - 1)).mapIso
+            (Subobject.cokernelOfLEIsoOfEq (by rw [Function.comp_apply]; congr 1; lia)
+              (by rw [Function.comp_apply]; congr 1; lia) _ _))) ≪≫
+    eqToIso (by dsimp only; rw [show 2 * p + q + 1 + (-p - 1) = p + q by lia])
+
+/-- **Strong convergence of the homological spectral sequence of an increasing filtration**,
+without a finite length. Let `F` be an increasing filtration of a complex of modules, read as a
+chain complex with `K^{-n} = C_n`. Suppose that every element of `C_{p+q+1}` lies in some `F_j`,
+that `H_{p+q-1}(F_{p-r})` vanishes, and that the graded pieces `F_{j+1}/F_j` have vanishing
+`H_{p+q+1}` for all `j ≥ p + r - 1`. Then the object at `(p, q)` on page `r ≥ 1` is the graded
+piece `F_p H_{p+q} / F_{p-1} H_{p+q}` of the induced filtration of `H_{p+q}(K)`. -/
+noncomputable def homologicalFiltrationSpectralSequencePageXIsoGradedOfExhaustive
+    (F : ℤ → Subobject K) (hF : Monotone F) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ)
+    (hex : ∀ x : K.X (-(p + q) - 1),
+      ∃ j, x ∈ LinearMap.range ((F j).arrow.f (-(p + q) - 1)).hom)
+    (h₀ : IsZero ((F (p - r) : CochainComplex (ModuleCat R) ℤ).homology (-(p + q) + 1)))
+    (h₃ : ∀ j, p + r - 1 ≤ j →
+      IsZero ((cokernel (Subobject.ofLE (F j) (F (j + 1)) (hF (by lia)))).homology
+        (-(p + q) - 1))) :
+    ((homologicalFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      cokernel ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationMap (p - 1)
+        (-(p + q))) :=
+  homologicalFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p q _ _ rfl rfl ≪≫
+    filtrationSpectralSequencePageXIsoGradedOfExhaustive F hF (r + 1) (by lia)
+      (1 - 2 * p - q, p - 1)
+      (by
+        dsimp only
+        rw [show 1 - 2 * p - q + (p - 1) - 1 = -(p + q) - 1 by lia]
+        exact hex)
+      (by
+        dsimp only
+        rw [show p - 1 - (r + 1) + 2 = p - r by lia,
+          show 1 - 2 * p - q + (p - 1) + 1 = -(p + q) + 1 by lia]
+        exact h₀)
+      (fun i hi ↦ by
+        dsimp only at hi ⊢
+        rw [show 1 - 2 * p - q + (p - 1) - 1 = -(p + q) - 1 by lia]
+        exact h₃ i (by lia)) ≪≫
+    eqToIso (by dsimp only; rw [show 1 - 2 * p - q + (p - 1) = -(p + q) by lia])
+
+end ModuleCat
+
+end CochainComplex

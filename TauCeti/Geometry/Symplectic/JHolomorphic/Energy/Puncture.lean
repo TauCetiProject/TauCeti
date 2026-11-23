@@ -8,8 +8,9 @@ module
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Finite-energy `J`-holomorphic curves near a puncture
@@ -53,7 +54,7 @@ public section
 namespace TauCeti
 
 open Complex Metric MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal Real
+open scoped Real
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V} {u : ℂ → V} {z₀ : ℂ} {R : ℝ}
@@ -118,15 +119,7 @@ theorem tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE
   -- The energy `ε ρ` of `u` in the disk of radius `ρ` about the puncture tends to zero with `ρ`.
   set ε : ℝ → ℝ := fun ρ ↦
     ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ∂(volume.restrict (ball z₀ R)) with hεdef
-  have hε : Tendsto ε (𝓝 0) (𝓝 0) := by
-    refine hE.tendsto_setIntegral_nhds_zero ?_
-    have hvol : Tendsto (fun ρ : ℝ ↦ volume (ball z₀ ρ)) (𝓝 0) (𝓝 0) := by
-      have hc : Continuous fun ρ : ℝ ↦ ENNReal.ofReal ρ ^ 2 * (NNReal.pi : ℝ≥0∞) :=
-        (ENNReal.continuous_mul_const ENNReal.coe_ne_top).comp
-          ((ENNReal.continuous_pow 2).comp ENNReal.continuous_ofReal)
-      simpa using hc.tendsto 0
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvol
-      (fun _ ↦ zero_le) fun _ ↦ Measure.restrict_apply_le _ _
+  have hε : Tendsto ε (𝓝 0) (𝓝 0) := hE.tendsto_setIntegral_ball_nhds_zero z₀
   have hεz : Tendsto (fun z ↦ ε (2 * ‖z - z₀‖)) (𝓝[≠] z₀) (𝓝 0) :=
     hε.comp ((((continuous_id.sub continuous_const).norm.const_mul 2).tendsto' z₀ 0
       (by simp)).mono_left nhdsWithin_le_nhds)
@@ -166,25 +159,19 @@ theorem tendsto_norm_sub_mul_norm_fderiv_nhdsNE
     (hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     Tendsto (fun z ↦ ‖z - z₀‖ * ‖fderiv ℝ u z‖) (𝓝[≠] z₀) (𝓝 0) := by
   obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  obtain ⟨C, -, hC⟩ := Complex.basisOneI.exists_opNorm_le (F := V)
   have h := (tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE hW hJ hK hKW hJsq hR hu hCR huK
-    hE).const_mul (C * (1 + max a 0))
+    hE).const_mul (1 + max a 0)
   rw [mul_zero] at h
   refine squeeze_zero' (Eventually.of_forall fun z ↦ by positivity) ?_ h
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds z₀ hR)] with z hz hzR
   have hz' : z ∈ ball z₀ R \ {z₀} := ⟨hzR, hz⟩
   -- The Cauchy--Riemann equation bounds `‖∂ₜu‖ = ‖J(u) ∂ₛu‖` by a multiple of `‖∂ₛu‖`.
-  have hI : ‖fderiv ℝ u z I‖ ≤ max a 0 * ‖fderiv ℝ u z 1‖ := by
-    rw [hCR z hz']
-    exact ((J (u z)).le_opNorm _).trans
-      (by gcongr; exact (ha _ (huK hz')).trans (le_max_left _ _))
-  have hop : ‖fderiv ℝ u z‖ ≤ C * ((1 + max a 0) * ‖fderiv ℝ u z 1‖) := by
-    refine hC (by positivity) fun i ↦ ?_
-    have h1 : 0 ≤ max a 0 * ‖fderiv ℝ u z 1‖ := by positivity
-    fin_cases i <;> simp [Complex.coe_basisOneI] <;> linarith [norm_nonneg (fderiv ℝ u z 1)]
-  calc ‖z - z₀‖ * ‖fderiv ℝ u z‖ ≤ ‖z - z₀‖ * (C * ((1 + max a 0) * ‖fderiv ℝ u z 1‖)) := by
+  have hop : ‖fderiv ℝ u z‖ ≤ (1 + max a 0) * ‖fderiv ℝ u z 1‖ :=
+    (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz') ((ha _ (huK hz')).trans (le_max_left _ _))
+      le_rfl
+  calc ‖z - z₀‖ * ‖fderiv ℝ u z‖ ≤ ‖z - z₀‖ * ((1 + max a 0) * ‖fderiv ℝ u z 1‖) := by
         gcongr
-    _ = C * (1 + max a 0) * (‖z - z₀‖ * ‖fderiv ℝ u z 1‖) := by ring
+    _ = (1 + max a 0) * (‖z - z₀‖ * ‖fderiv ℝ u z 1‖) := by ring
 
 /-- **Circles about a puncture have shrinking images.** Under the hypotheses of
 `TauCeti.tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE`, the image under a finite-energy solution

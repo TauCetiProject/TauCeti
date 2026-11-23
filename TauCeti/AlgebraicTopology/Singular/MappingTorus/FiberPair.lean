@@ -81,7 +81,7 @@ def fiberPairIncl : TopCat.of F ⟶ (fiberPair φ).snd :=
   TopCat.ofHom ⟨fun x ↦ ⟨incl φ x, incl_mem_fiber φ x⟩, (incl φ).continuous.subtype_mk _⟩
 
 @[simp]
-lemma fiberPairIncl_apply (x : F) : (fiberPairIncl φ x).1 = incl φ x := (rfl)
+lemma fiberPairIncl_apply (x : F) : (fiberPairIncl φ x).val = incl φ x := (rfl)
 
 /-- The fibre inclusion into the subspace, followed by its inclusion into the mapping torus, is
 the usual fibre inclusion. -/
@@ -128,7 +128,7 @@ lemma cylinderPairMap_fst_apply (p : F × I) :
 
 @[simp]
 lemma cylinderPairMap_snd_apply (p : (cylinderBoundaryPair (TopCat.of F)).snd) :
-    (TopPair.Hom.snd (cylinderPairMap φ) p).1 = mk φ (φ p.1.1) p.1.2 :=
+    (TopPair.Hom.snd (cylinderPairMap φ) p).val = mk φ (φ p.val.1) p.val.2 :=
   (TopPair.ofSubsetMap_snd_apply _ _ _).trans (cylinderMap_apply φ _)
 
 /-- On the bottom end of the cylinder, the cylinder map is the fibre inclusion after `φ`. -/
@@ -234,10 +234,9 @@ private lemma cylinderHomotopy_mem_cylinderBoundary (τ : I) (p : TopCat.of (X �
 
 private lemma cylinderHomotopy_mem_cylinderEnds (τ : I) (p : TopCat.of (X × I))
     (hp : p ∈ cylinderEnds X) : cylinderHomotopy X (τ, p) ∈ cylinderEnds X := by
-  have hτ₀ := τ.2.1
-  have hτ₁ := τ.2.2
-  have ht₀ := p.2.2.1
-  have ht₁ := p.2.2.2
+  have hτ₀ := τ.property.1
+  have ht₀ := p.2.property.1
+  have ht₁ := p.2.property.2
   have hval : ((cylinderHomotopy X (τ, p)).2 : ℝ) = (1 - τ) * p.2 + τ * collapse p.2 := by
     rw [cylinderHomotopy_apply_snd, Icc.coe_convexComb]
   rcases hp with h | h
@@ -315,8 +314,8 @@ private lemma norm_coe_sub_mul_heightShift_lt (s : I) {t : ℝ}
     (ht : ‖(t : UnitAddCircle)‖ < 1 / 3) :
     ‖((t - s * heightShift t : ℝ) : UnitAddCircle)‖ < 1 / 3 := by
   have hft := Int.floor_add_fract t
-  have hs₀ := s.2.1
-  have hs₁ := s.2.2
+  have hs₀ := s.property.1
+  have hs₁ := s.property.2
   have hf₀ := Int.fract_nonneg t
   have hf₁ := Int.fract_lt_one t
   rcases (norm_coe_lt_iff t).1 ht with h | h
@@ -431,8 +430,8 @@ an integer. -/
 private lemma mapsTo_cylinderEnds :
     MapsTo (TopCat.ofHom (cylinderMap φ)) (cylinderEnds (TopCat.of F)) (fiberNbhd φ) := by
   intro p hp
-  have ht₀ := p.2.2.1
-  have ht₁ := p.2.2.2
+  have ht₀ := p.2.property.1
+  have ht₁ := p.2.property.2
   rw [TopCat.ofHom_apply, cylinderMap_apply]
   refine (mk_mem_fiberNbhd_iff φ).2 ?_
   rcases hp with h | h
@@ -448,16 +447,16 @@ private abbrev openCylinderMap :
     TopPair.ofSubsetMap _ (mapsTo_cylinderEnds φ)
 
 private lemma openCylinderMap_fst_apply (p : openCylinder (TopCat.of F)) :
-    TopPair.Hom.fst (openCylinderMap φ) p = mk φ (φ p.1.1) p.1.2 := by
+    TopPair.Hom.fst (openCylinderMap φ) p = mk φ (φ p.val.1) p.val.2 := by
   -- The ambient map of a composite of pairs is the composite of the ambient maps.
   exact (congrArg (TopPair.Hom.fst (TopPair.ofSubsetMap _ (mapsTo_cylinderEnds φ)))
     (TopPair.excisionMap_fst_apply (X := TopCat.of (TopCat.of F × I)) _ _ p)).trans
-      ((TopPair.ofSubsetMap_fst_apply _ _ _).trans (cylinderMap_apply φ p.1))
+      ((TopPair.ofSubsetMap_fst_apply _ _ _).trans (cylinderMap_apply φ p.val))
 
 private lemma isEmbedding_openCylinderMap :
     IsEmbedding (TopPair.Hom.fst (openCylinderMap φ)) := by
   let e : openCylinder (TopCat.of F) → F × Ioo (0 : ℝ) (0 + 1) :=
-    fun p ↦ (φ p.1.1, ⟨p.1.2, p.2.1, by simpa using p.2.2⟩)
+    fun p ↦ (φ p.val.1, ⟨p.val.2, p.property.1, by simpa using p.property.2⟩)
   have he : IsEmbedding e :=
     (IsEmbedding.of_comp_iff (IsEmbedding.id.prodMap IsEmbedding.subtypeVal)).1
       ((φ.isEmbedding.prodMap IsEmbedding.subtypeVal).comp IsEmbedding.subtypeVal)
@@ -478,11 +477,12 @@ private lemma isIso_singularHomologyMap_openCylinderMap (n : ℕ) :
     (isEmbedding_openCylinderMap φ) ?_ (fun b : Bool ↦ bif b then fiberNbhd φ else (fiber φ)ᶜ)
     (fun b ↦ by cases b; exacts [(isClosed_fiber φ).isOpen_compl, isOpen_fiberNbhd φ]) ?_ ?_ n
   · rintro p ⟨y, hy⟩
-    have hp : mk φ (φ p.1.1) p.1.2 ∈ fiberNbhd φ := by
-      have hy' : y.1 = mk φ (φ p.1.1) p.1.2 :=
+    have hp : mk φ (φ p.val.1) p.val.2 ∈ fiberNbhd φ := by
+      have hy' : y.val = mk φ (φ p.val.1) p.val.2 :=
         hy.trans (openCylinderMap_fst_apply φ p)
-      exact hy' ▸ y.2
-    have hfract : Int.fract (p.1.2 : ℝ) = p.1.2 := Int.fract_eq_self.2 ⟨p.2.1.le, p.2.2⟩
+      exact hy' ▸ y.property
+    have hfract : Int.fract (p.val.2 : ℝ) = p.val.2 := Int.fract_eq_self.2 ⟨p.property.1.le,
+        p.property.2⟩
     have h := (norm_coe_lt_iff _).1 ((mk_mem_fiberNbhd_iff φ).1 hp)
     rw [hfract] at h
     exact ⟨⟨p, h⟩, rfl⟩
@@ -499,7 +499,8 @@ private lemma isIso_singularHomologyMap_openCylinderMap (n : ℕ) :
         exact fun h ↦ hz₀ ((mem_fiber_iff φ).2 ((mem_singleton_iff.1 (mem_preimage.1 h)).trans
           (AddCircle.coe_zero (p := (1 : ℝ)))))
       obtain ⟨⟨y, t⟩, rfl⟩ := hz'
-      refine ⟨⟨(φ.symm y, ⟨t, t.2.1.le, by linarith [t.2.2]⟩), t.2.1, by linarith [t.2.2]⟩, ?_⟩
+      refine ⟨⟨(φ.symm y, ⟨t, t.property.1.le, by linarith [t.property.2]⟩), t.property.1,
+          by linarith [t.property.2]⟩, ?_⟩
       exact (openCylinderMap_fst_apply φ _).trans
         (congrArg (fun a ↦ mk φ a (t : ℝ)) (φ.apply_symm_apply y))
     · exact Or.inl fun z hz ↦ ⟨⟨z, hz⟩, rfl⟩

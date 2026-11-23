@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Order
 
 /-!
-# Self-multiplication cancellation and orders under coefficient maps
+# Self-multiplication cancellation and orders of power series
 
 A formal power series fixed by multiplication with a series of zero constant coefficient is zero:
 if `f = g * f` in `R⟦X⟧` and `constantCoeff g = 0`, then `f = 0`.
@@ -26,6 +26,10 @@ nonzero coefficients to nonzero coefficients. Mathlib records only the inequalit
 Power series constructed degree by degree are limits of approximations whose consecutive terms
 agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` supplies the limit.
 
+A series `X ^ k * f` with `constantCoeff f ≠ 0` has order exactly `k`, over any semiring. If `f`
+has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th power of that
+of `X ^ n` in `f`.
+
 ## Main results
 
 * `PowerSeries.eq_zero_of_self_eq_mul_self`: `constantCoeff g = 0` and `f = g * f` give `f = 0`.
@@ -33,6 +37,13 @@ agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` sup
 * `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
 * `PowerSeries.exists_forall_le_order_sub`: a sequence whose consecutive terms agree below degree
   `n` has a limit agreeing with its `n`-th term below degree `n`.
+
+* `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
+  nonzero constant coefficient.
+* `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
+  `(coeff n f) ^ k` when `f` has order at least `n`.
+* `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
+  order `1` exactly when `coeff 1 f ≠ 0`.
 
 ## Provenance
 
@@ -117,5 +128,31 @@ theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
   rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
 
 end Ring
+
+/-- If `f` has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th
+power of the coefficient of `X ^ n` in `f`. -/
+theorem coeff_pow_mul_of_le_order {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) (k : ℕ) :
+    coeff (n * k) (f ^ k) = coeff n f ^ k := by
+  obtain ⟨u, rfl⟩ := X_pow_dvd_iff.mpr fun m hm ↦
+    coeff_of_lt_order m ((Nat.cast_lt.mpr hm).trans_le hn)
+  rw [(commute_X_pow u n).symm.mul_pow k, ← pow_mul]
+  simp [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply]
+
+/-- Multiplying a power series with nonzero constant coefficient by `X ^ k` gives a series of
+order exactly `k`. -/
+theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCoeff f ≠ 0) (k : ℕ) :
+    (X ^ k * f).order = (k : ℕ∞) := by
+  refine order_eq_nat.2 ⟨?_, fun i hi ↦ ?_⟩
+  · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
+  · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
+
+/-- For a power series with zero constant coefficient, the order is one if and only if the linear
+coefficient is nonzero. -/
+theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    f.order = 1 ↔ coeff 1 f ≠ 0 := by
+  rw [← Nat.cast_one, order_eq_nat]
+  refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun i hi ↦ ?_⟩⟩
+  rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
+  exact hf
 
 end PowerSeries

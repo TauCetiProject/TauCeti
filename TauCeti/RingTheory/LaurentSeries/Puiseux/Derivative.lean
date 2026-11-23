@@ -63,7 +63,7 @@ variable (K) in
 /-- The **derivative `d/dt` of Puiseux series**, `d/dt (t ^ q) = q t ^ (q - 1)`: the restriction of
 the derivative of rational-exponent Hahn series to the Puiseux field. -/
 noncomputable def derivation : Derivation K (puiseuxField K) (puiseuxField K) where
-  toFun x := ⟨ratHahnSeriesDerivation K x, ratHahnSeriesDerivation_mem_puiseuxField x.2⟩
+  toFun x := ⟨ratHahnSeriesDerivation K x, ratHahnSeriesDerivation_mem_puiseuxField x.property⟩
   map_add' x y := Subtype.ext ((ratHahnSeriesDerivation K).map_add x y)
   map_smul' r x := Subtype.ext <| by
     -- The scalar action of `K` on the Puiseux field is multiplication by the image of `K`.
@@ -136,6 +136,18 @@ theorem derivation_eq_zero_iff {x : puiseuxField K} :
   rw [← Subtype.coe_inj, coe_derivation, ZeroMemClass.coe_zero,
     ratHahnSeriesDerivation_eq_zero_iff]
   simp only [← Subtype.coe_inj, IntermediateField.coe_algebraMap_apply]
+
+/-- A coefficient-field algebra endomorphism sends the parameter to an element with nonzero
+derivative. No continuity assumption is needed. -/
+theorem derivation_map_single_one_ne_zero (ρ : puiseuxField K →ₐ[K] puiseuxField K) :
+    derivation K (ρ (single K 1 1)) ≠ 0 := by
+  intro hzero
+  obtain ⟨a, ha⟩ := derivation_eq_zero_iff.mp hzero
+  have ht : algebraMap K (puiseuxField K) a = single K 1 1 :=
+    ρ.injective ((ρ.commutes a).trans ha)
+  have hd := congrArg (derivation K) ht
+  rw [Derivation.map_algebraMap, derivation_single_one] at hd
+  exact zero_ne_one hd
 
 end puiseuxField
 

@@ -49,8 +49,6 @@ variable (n : ℕ)
 
 section Scalar
 
-variable [NeZero n]
-
 private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (b : Fin n → ℕ) (hb : ∀ i, 0 < b i)
     (p : DecompQuotient (SLnZ n) (SLnZ n)
         (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ)) ×
@@ -80,7 +78,7 @@ private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (b : Fin n → ℕ) (hb : �
   rw [diagCoset_def ((fun _ ↦ c) * b)]
   exact HeckeCoset.mulMap_eq_of_eq_mul_mul
     ((SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).mul_mem
-      ((SLnZ n).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂) hR₂ hprod
+      ((SLnZ n).mul_mem p.1.out.property hL₁) hR₁) p.2.out.property) hL₂) hR₂ hprod
 
 private lemma multiplicity_const_le_one (c : ℕ) (b : Fin n → ℕ)
     (A : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) :

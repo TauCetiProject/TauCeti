@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
@@ -216,6 +217,11 @@ abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
 def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
   QuotientGroup.mk' (inertiaSubgroup K)
 
+/-- The unramified degree map sends `σ` to its coset in `G_K ⧸ I_K`. -/
+theorem unramifiedDegree_apply (σ : Field.absoluteGaloisGroup K) :
+    unramifiedDegree K σ = (σ : unramifiedQuotient K) :=
+  (rfl)
+
 /-- The unramified degree map `G_K → G_K ⧸ I_K` is surjective. -/
 theorem unramifiedDegree_surjective : Function.Surjective (unramifiedDegree K) :=
   QuotientGroup.mk'_surjective _
@@ -320,7 +326,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_zero
   have hτxω : τ • (x - ω) ∈ 𝓂[L] := by
     have h : ((τ.maximalIdealEquiv ⟨x - ω, hxω⟩ : 𝓂[L]) : 𝒪[L]) = τ • (x - ω) :=
       Subtype.ext (by rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_smul_integerRing])
-    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).2
+    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).property
   rw [zero_add, Int.toNat_one, pow_one, show τ • x - x = τ • (x - ω) - (x - ω) by
     rw [smul_sub, hω]
     ring]
@@ -435,11 +441,11 @@ theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
   rw [← coe_maximalUnramifiedFrobenius_apply_of_mem hx, ← isArithFrobeniusLift_def.1 hσ,
     restrictMaximalUnramifiedHom_coe_apply]
 
-/-- **A Frobenius lift generates the Galois group of each finite unramified level.** For `f ≠ 0`,
-the restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
-inside `K^{alg}` generates `Gal(K_f/K)`. -/
-theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
-    (hf : f ≠ 0) :
+/-- **A Frobenius lift generates the Galois group of each finite unramified level.** The
+restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
+inside `K^{alg}` generates `Gal(K_f/K)`; for `f = 0` the extension is `K` itself and the group is
+trivial. -/
+theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ} :
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
@@ -447,7 +453,7 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
   let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
   have := algebraicExtension_valuativeExtension K F
-  have : IsUnramified K F := isUnramified_unramifiedExtension hf
+  have : IsUnramified K F := isUnramified_unramifiedExtension
   rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 
 /-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of

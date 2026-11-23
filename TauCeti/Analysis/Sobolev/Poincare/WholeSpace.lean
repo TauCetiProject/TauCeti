@@ -71,7 +71,8 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} {k : ℕ∞
   have h1 := hC (fun x => φ (r⁻¹ • x))
     (hφ.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.smul (Units.mk0 r⁻¹ (inv_ne_zero hr.ne'))))
-  rw [μ.eLpNorm_comp_inv_smul _ hr p, μ.eLpNorm_fderiv_comp_inv_smul _ hr p] at h1
+  rw [μ.eLpNorm_comp_inv_smul _ hr.ne' p, μ.eLpNorm_fderiv_comp_inv_smul _ hr.ne' p,
+    abs_of_pos hr] at h1
   set s := ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) with hs_def
   have hs0 : s ≠ 0 := by
     rw [hs_def, Ne, ENNReal.ofReal_eq_zero, not_le]
@@ -112,7 +113,7 @@ theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} {k : ℕ
     refine ge_of_tendsto hlim ?_
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr using
       eLpNorm_le_ofReal_inv_mul_of_forall μ φ hC hr
-  rw [zero_mul, le_zero_iff] at hle
+  rw [zero_mul, nonpos_iff_eq_zero] at hle
   -- A continuous function vanishing almost everywhere vanishes at the origin, where the bump is 1.
   have hzero : (φ : E → ℝ) = 0 :=
     (Continuous.ae_eq_iff_eq μ (φ.contDiff (n := 0)).continuous continuous_const).1

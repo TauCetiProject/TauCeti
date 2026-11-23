@@ -167,7 +167,7 @@ theorem span_image_riemannRochSpace_eq_span_range {D : Divisor k F} {ι : Type*}
         ← Algebra.smul_def]
       exact Submodule.smul_of_tower_mem _ a hx
   · rintro _ ⟨i, rfl⟩
-    exact Submodule.subset_span ⟨b i, (b i).2, rfl⟩
+    exact Submodule.subset_span ⟨b i, (b i).property, rfl⟩
 
 section FiniteFibres
 
@@ -321,13 +321,12 @@ theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
 
 omit [Algebra.IsSeparable k k'] in
 /-- **Under linear disjointness `ℓ(n (z)_∞)` can only grow**: if the image of `k'` in `F'` and `F`
-are linearly disjoint over `k` and both `k' / k` and `F' / F` are integral, then `n (z)_∞` has
+are linearly disjoint over `k` and `F' / F` is integral, then `n (z)_∞` has
 dimension in `F' / k'` at least its dimension in `F / k`, because a `k`-basis of `L(n (z)_∞)` stays
 linearly independent over `k'` inside `L(n (z)_∞)` of `F'`.  This is the inequality counterpart of
 `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`, with neither separability nor
 exactness assumed. -/
-theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
-    [Algebra.IsIntegral F F']
+theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) (n : ℕ) (z : Fˣ) :
     (n • Divisor.poles hF z).dim ≤
@@ -342,7 +341,8 @@ theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
       (b.linearIndependent.map' (riemannRochSpace D).subtype (Submodule.ker_subtype _))
   let v : Fin (Module.finrank k (riemannRochSpace D)) → riemannRochSpace D' :=
     fun i ↦
-      ⟨algebraMap F F' (b i), (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' n z _).2 (b i).2⟩
+      ⟨algebraMap F F' (b i), (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' n z _).2
+          (b i).property⟩
   have hv : LinearIndependent k' v := .of_comp (riemannRochSpace D').subtype hli
   simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
 

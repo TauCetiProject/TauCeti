@@ -40,8 +40,8 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
     obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
     have hnprod : (n : G) ∈ T.bruhatCell s * T.bruhatCell (s * w) := by
       rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs (s * w) with hmul | hmul
-      · simpa only [hmul, ← mul_assoc, T.simple_sq_eq_one hs, one_mul] using hn
-      · rw [hmul, ← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+      · simpa only [hmul, ← mul_assoc, T.simple_mul_simple_self hs, one_mul] using hn
+      · rw [hmul, ← mul_assoc, T.simple_mul_simple_self hs, one_mul]
         exact Or.inl hn
     rw [h] at hnprod
     have hnunion : (n : G) ∈ T.bruhatCell (s * v) ∪ T.bruhatCell v := by
@@ -51,7 +51,7 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
     rcases hnunion with hnv | hnv
     · have hw : w = s * v := ih _
         ((T.bruhatCell_eq_doubleCoset hn).trans (T.bruhatCell_eq_doubleCoset hnv).symm)
-      rw [hw, ← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+      rw [hw, ← mul_assoc, T.simple_mul_simple_self hs, one_mul]
     · have hw : w = v := ih _
         ((T.bruhatCell_eq_doubleCoset hn).trans (T.bruhatCell_eq_doubleCoset hnv).symm)
       have hsw : w = s * w := ih _ (h.trans (congrArg T.bruhatCell hw.symm)).symm
@@ -93,6 +93,14 @@ theorem eq_or_eq_of_bruhatCell_subset_union {w u v : T.WeylGroup}
     (h : T.bruhatCell w ⊆ T.bruhatCell u ∪ T.bruhatCell v) : w = u ∨ w = v := by
   obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
   exact (h hn).imp (T.eq_of_mem_bruhatCell_of_mem hn) (T.eq_of_mem_bruhatCell_of_mem hn)
+
+/-- Left-multiplying the Weyl index by a nonidentity element changes the cell, so `B (u w) B`
+never absorbs `B w B` in a union. -/
+theorem bruhatCell_mul_ne_union_of_ne_one {u : T.WeylGroup} (hu : u ≠ 1) (w : T.WeylGroup) :
+    T.bruhatCell (u * w) ≠ T.bruhatCell (u * w) ∪ T.bruhatCell w := by
+  intro h
+  have hsub : T.bruhatCell w ⊆ T.bruhatCell (u * w) := h ▸ Set.subset_union_right
+  exact hu (by simpa using (T.bruhatCell_subset_iff.mp hsub).symm)
 
 /-- Two Bruhat cells are disjoint exactly when their Weyl indices differ. -/
 @[simp]

@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent.Roots
 public import Mathlib.RingTheory.Algebraic.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
+
+import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
+import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
 # Detecting Laurent polynomials by evaluations
@@ -20,6 +25,16 @@ Laurent polynomials over a commutative ring.
 As a consequence, an endomorphism of a field that fixes infinitely many elements and agrees with a
 Laurent polynomial at every unit is the identity (`RingHom.eq_id_of_forall_eval₂_eq`). For
 instance complex conjugation is not a Laurent polynomial function on `ℂˣ`.
+
+Evaluation at the generic point of the fraction field of `ℤ[v, v⁻¹]` is injective, so an
+identity in `ℤ[v, v⁻¹]` holds as soon as it holds at every unit `q` with `q - q⁻¹ ≠ 0` of every
+field (`TauCeti.eq_of_forall_laurentEval_eq`). This transports identities of field-valued
+quantum numbers to their Laurent forms.
+
+For a finite sum of monomials `∑ i ∈ s, cᵢ tᵏⁱ` over a field, in which several indices may share
+an exponent, detection says: if the sum takes a constant value `d` at infinitely many `t`, then
+the coefficients with any given exponent `m` sum to `d` when `m = 0` and to `0` otherwise
+(`TauCeti.sum_filter_eq_ite_of_forall_sum_mul_zpow_eq`).
 -/
 
 public section
@@ -96,3 +111,47 @@ theorem laurent_eval₂_injective_of_transcendental (u : Sˣ)
   exact (transcendental_iff_injective.mp hu).eq_iff.symm
 
 end Units
+
+namespace TauCeti
+
+open LaurentPolynomial
+
+/-- **Identities of integral Laurent polynomials can be checked at generic parameters**: two
+elements of `ℤ[v, v⁻¹]` are equal as soon as their values agree at every unit `q` with
+`q - q⁻¹ ≠ 0` of every field. Indeed evaluation at the generic point `v` of the fraction field
+`ℚ(v)` of `ℤ[v, v⁻¹]` is injective, and `v - v⁻¹ ≠ 0` there. This transports identities between
+the field quantum integers to their Laurent forms. -/
+theorem eq_of_forall_laurentEval_eq {p p' : ℤ[T;T⁻¹]}
+    (h : ∀ (K : Type) [Field K] (u : Kˣ), (u : K) - (u : K)⁻¹ ≠ 0 →
+      laurentEval u p = laurentEval u p') :
+    p = p' := by
+  obtain ⟨K, _, f, hf⟩ : ∃ (K : Type) (_ : Field K) (f : ℤ[T;T⁻¹] →+* K), Function.Injective f :=
+    ⟨FractionRing ℤ[T;T⁻¹], inferInstance, algebraMap _ _, IsFractionRing.injective _ _⟩
+  let v : Kˣ := Units.map f.toMonoidHom (genericUnit ℤ)
+  have hinj : Function.Injective (laurentEval (R := ℤ) v) := by
+    rwa [← laurentEval_unique v { f with commutes' := fun c => by simp } (by simp [v])]
+  refine hinj (h K v ?_)
+  -- `v - v⁻¹` is the image of `T - T⁻¹`, which is nonzero.
+  have hT := T_sub_T_ne_zero (R := ℤ) (by decide : (1 : ℤ) ≠ -1)
+  simpa [Units.val_inv_eq_inv_val] using hinj.ne hT
+
+/-- **Monomial sums that are constant on an infinite set.** If `∑ i ∈ s, cᵢ tᵏⁱ = d` for
+infinitely many `t` in a field, then for every exponent `m` the coefficients `cᵢ` with `kᵢ = m`
+sum to `d` when `m = 0` and to `0` otherwise. Several indices may share an exponent, and `0`
+may belong to the set, where `0 ^ k` takes its junk values. -/
+theorem sum_filter_eq_ite_of_forall_sum_mul_zpow_eq {K ι : Type*} [Field K] {s : Finset ι}
+    {c : ι → K} {k : ι → ℤ} {d : K} {S : Set K} (hS : S.Infinite)
+    (h : ∀ t ∈ S, ∑ i ∈ s, c i * t ^ k i = d) (m : ℤ) :
+    ∑ i ∈ s with k i = m, c i = if m = 0 then d else 0 := by
+  classical
+  -- The Laurent polynomial `∑ cᵢ Tᵏⁱ - d` vanishes at the infinitely many nonzero points of `S`.
+  let p : K[T;T⁻¹] := ∑ i ∈ s, C (c i) * T (k i) - C d
+  have hp : p = 0 := by
+    refine eq_zero_of_infinite_smeval_eq_zero (S := K) p ?_
+    refine Set.Infinite.of_image Units.val ((hS.sdiff (Set.finite_singleton 0)).mono ?_)
+    rintro t ⟨ht, ht0 : t ≠ 0⟩
+    refine ⟨Units.mk0 t ht0, ?_, rfl⟩
+    simpa [← eval₂_eq_smeval, p, sub_eq_zero] using h t ht
+  simpa [p, coeff_C_mul, Finset.sum_filter, sub_eq_zero] using congr(($hp).coeff m)
+
+end TauCeti

@@ -58,7 +58,6 @@ strict is witnessed by the deterministic 3-cycle, in
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
 Markov exchangeable sequences.
@@ -135,29 +134,29 @@ This is the form used by finite last-exit reconstruction: the reconstruction giv
 between two collections of admissible prefixes, rather than a permutation of every finite path. -/
 theorem MarkovExchangeable.prefixLaw_apply_eq_of_equiv {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : MarkovExchangeable μ X) (n : ℕ) {s t : Set (Fin (n + 1) → α)} (e : s ≃ t)
-    (h0 : ∀ w, (e w).1 0 = w.1 0)
-    (hcount : ∀ w a b, transitionCount (e w).1 a b = transitionCount w.1 a b) :
+    (h0 : ∀ w, (e w).val 0 = w.val 0)
+    (hcount : ∀ w a b, transitionCount (e w).val a b = transitionCount w.val a b) :
     prefixLaw μ X (n + 1) s = prefixLaw μ X (n + 1) t := by
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   let θ := prefixLaw μ X (n + 1)
-  have hs : (∑' w : s, θ ({w.1} : Set (Fin (n + 1) → α))) = θ s := by
+  have hs : (∑' w : s, θ ({w.val} : Set (Fin (n + 1) → α))) = θ s := by
     simpa only [Set.preimage_id, id_eq] using
       tsum_measure_preimage_singleton (μ := θ) (s := s) (Set.to_countable s)
         (f := id) (fun w _ => measurableSet_singleton w)
-  have ht : (∑' w : t, θ ({w.1} : Set (Fin (n + 1) → α))) = θ t := by
+  have ht : (∑' w : t, θ ({w.val} : Set (Fin (n + 1) → α))) = θ t := by
     simpa only [Set.preimage_id, id_eq] using
       tsum_measure_preimage_singleton (μ := θ) (s := t) (Set.to_countable t)
         (f := id) (fun w _ => measurableSet_singleton w)
   calc
-    prefixLaw μ X (n + 1) s = ∑' w : s, θ ({w.1} : Set (Fin (n + 1) → α)) := hs.symm
-    _ = ∑' w : s, θ ({(e w).1} : Set (Fin (n + 1) → α)) := by
+    prefixLaw μ X (n + 1) s = ∑' w : s, θ ({w.val} : Set (Fin (n + 1) → α)) := hs.symm
+    _ = ∑' w : s, θ ({(e w).val} : Set (Fin (n + 1) → α)) := by
       apply tsum_congr
       intro w
-      exact h.prefixLaw_singleton_eq n w.1 (e w).1 (h0 w).symm fun a b =>
+      exact h.prefixLaw_singleton_eq n w.val (e w).val (h0 w).symm fun a b =>
         (hcount w a b).symm
-    _ = ∑' w : t, θ ({w.1} : Set (Fin (n + 1) → α)) :=
-      e.tsum_eq (fun w : t => θ ({w.1} : Set (Fin (n + 1) → α)))
+    _ = ∑' w : t, θ ({w.val} : Set (Fin (n + 1) → α)) :=
+      e.tsum_eq (fun w : t => θ ({w.val} : Set (Fin (n + 1) → α)))
     _ = prefixLaw μ X (n + 1) t := ht
 
 /-- **A transition-count-preserving permutation preserves a Markov-exchangeable prefix law.**
@@ -178,7 +177,7 @@ theorem MarkovExchangeable.prefixLaw_map_perm_eq {μ : Measure Ω} {X : ℕ → 
     (Measurable.of_discrete : Measurable (e : (Fin (n + 1) → α) → Fin (n + 1) → α)).aemeasurable
     hs]
   exact h.prefixLaw_apply_eq_of_equiv n e.subtypeEquivOfSubtype
-    (fun w => h0 w.1) (fun w => hcount w.1)
+    (fun w => h0 w.val) (fun w => hcount w.val)
 
 /-- Simp normal form for `MarkovExchangeable`. -/
 @[simp]
@@ -262,17 +261,21 @@ theorem markovExchangeable_of_prefixLaw_singleton_eq [Countable α] [MeasurableS
   rw [h n u, h n v, h0, prod_eq_of_transitionCount_eq hcount p]
 
 /-- **The process-level and path-law formulations of Markov exchangeability agree.** -/
-theorem markovExchangeable_pathLaw_iff [Countable α] [MeasurableSingletonClass α]
+theorem markovExchangeable_pathLaw_iff
     {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) :
     MarkovExchangeable (pathLaw μ X) (fun n (x : ℕ → α) => x n) ↔ MarkovExchangeable μ X := by
   constructor
   · intro h
+    let _ : Countable α := h.countable
+    have : MeasurableSingletonClass α := h.measurableSingletonClass
     refine MarkovExchangeable.intro hX ?_
     intro n u v h0 hcount
     rw [← prefixLaw_pathLaw hX]
     exact h.prefixLaw_singleton_eq n u v h0 hcount
   · intro h
+    let _ : Countable α := h.countable
+    have : MeasurableSingletonClass α := h.measurableSingletonClass
     refine MarkovExchangeable.intro (fun i => (measurable_pi_apply i).aemeasurable) ?_
     intro n u v h0 hcount
     rw [prefixLaw_pathLaw hX]

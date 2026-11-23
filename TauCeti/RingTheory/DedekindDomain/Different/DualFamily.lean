@@ -73,9 +73,8 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
     simpa only [← Set.range_comp, Function.comp_def, AlgHom.toLinearMap_apply,
       IsScalarTower.toAlgHom_apply, hb'] using
       b.mem_span (algebraMap B L x)
-  obtain ⟨a, ha, hax⟩ :=
-    (IsScalarTower.toAlgHom A B L).toLinearMap.exists_smul_mem_span_of_apply_mem_span_image
-      (IsIntegralClosure.algebraMap_injective B A L) A⁰ (Set.range b') x hspan
+  obtain ⟨a, ha, hax⟩ := (LinearMap.apply_mem_span_image_iff_exists_smul_mem_span
+    (IsIntegralClosure.algebraMap_injective B A L) A⁰).mp hspan
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
   rw [← algebraMap_smul K, ← algebraMap_smul K a (g₂ x)] at h

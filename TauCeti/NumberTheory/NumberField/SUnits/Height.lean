@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Height.FiniteOrder
 public import TauCeti.NumberTheory.Height.SInteger
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
 public import TauCeti.NumberTheory.NumberField.SUnits.LogEmbedding
+import TauCeti.Analysis.AbsoluteValue.FiniteOrder
 
 /-!
 # Heights of S-units and the kernel of the S-logarithmic embedding
@@ -43,6 +44,9 @@ of height zero is a root of unity. This is the `S`-analogue of Mathlib's
 * `TauCeti.NumberField.SUnit.logEmbedding_eq_zero_iff` and
   `TauCeti.NumberField.SUnit.logEmbedding_ker`: the kernel of the `S`-logarithmic embedding is
   the torsion subgroup of the `S`-units.
+* `TauCeti.NumberField.SUnit.mul_prod_zpow_ne_zero_and_adicAbv_eq_one`: a root of unity times a
+  product of integer powers of elements with absolute value `1` outside `S` is nonzero and has
+  absolute value `1` outside `S`.
 
 ## References
 
@@ -85,6 +89,20 @@ theorem logHeight₁_eq_zero_iff (x : S.unit K) :
 
 end Torsion
 
+/-! ### Closure under torsion and integer powers -/
+
+/-- A root of unity times a product of integer powers of nonzero elements `γ i` that have absolute
+value `1` at every finite place outside `S` is nonzero and has absolute value `1` at every finite
+place outside `S`. -/
+theorem mul_prod_zpow_ne_zero_and_adicAbv_eq_one {ι : Type*} [Fintype ι]
+    {S : Finset (HeightOneSpectrum (𝓞 K))} {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0)
+    (hγS : ∀ j, ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (γ j) = 1) {ζ : K}
+    (hζ : IsOfFinOrder ζ) (z : ι → ℤ) :
+    ζ * ∏ i, γ i ^ z i ≠ 0 ∧ ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (ζ * ∏ i, γ i ^ z i) = 1 := by
+  refine ⟨mul_ne_zero hζ.isUnit.ne_zero
+    (prod_ne_zero_iff.mpr fun i _ ↦ zpow_ne_zero _ (hγ0 i)), fun v hv ↦ ?_⟩
+  simp [map_zpow₀, hγS _ v hv, AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ]
+
 /-! ### The height in `S`-logarithmic coordinates -/
 
 section Height
@@ -103,7 +121,7 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding
   have hS (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S) :
       HeightOneSpectrum.adicAbv K v ((x : Kˣ) : K) = 1 := by
     rw [← FinitePlace.norm_embedding, ← FinitePlace.mk_apply]
-    exact (Set.mem_unit_iff_finitePlace _ _).mp x.2 v (by simpa using hv)
+    exact (Set.mem_unit_iff_finitePlace _ _).mp x.property v (by simpa using hv)
   rw [GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log S hS,
     sum_logEmbedding, Fintype.sum_sum_type,
     Fintype.sum_eq_add_sum_subtype_ne (fun w : InfinitePlace K ↦ w.mult * |Real.log (w _)|) w₀,
@@ -139,12 +157,11 @@ theorem norm_logEmbedding_le_logHeight₁ (x : (S : Set (HeightOneSpectrum (𝓞
   rw [Real.norm_eq_abs]
   cases i with
   | inl w =>
-    rw [logEmbedding_apply_inl, ← Real.log_pow, ← GlobalNumberFields.normalizedAbsValue_inr]
-    exact GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ _
+    rw [logEmbedding_apply_inl]
+    exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ _ _
   | inr v =>
-    rw [logEmbedding_apply_inr, FinitePlace.mk_apply, FinitePlace.norm_embedding,
-      ← GlobalNumberFields.normalizedAbsValue_inl]
-    exact GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ _
+    rw [logEmbedding_apply_inr]
+    exact FinitePlace.abs_log_le_logHeight₁ _ _
 
 open Classical in
 /-- The logarithmic height of an `S`-unit is at most `rank K + #S`, the dimension of the

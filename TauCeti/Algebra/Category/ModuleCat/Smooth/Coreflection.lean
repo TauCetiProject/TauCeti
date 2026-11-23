@@ -93,7 +93,7 @@ theorem exists_forall_smul_eq_zero_of_mem_smoothPart (hJ : Directed (· ≥ ·) 
     (hm : m ∈ smoothPart J M) : ∃ i, ∀ a ∈ J i, a • m = 0 := by
   rw [smoothPart, sSup_eq_iSup'] at hm
   refine Submodule.iSup_induction _ (motive := fun m => ∃ i, ∀ a ∈ J i, a • m = 0) hm
-    (fun p m hm => p.2 m hm) ⟨Classical.arbitrary ι, fun a _ => smul_zero a⟩ ?_
+    (fun p m hm => p.property m hm) ⟨Classical.arbitrary ι, fun a _ => smul_zero a⟩ ?_
   rintro x y ⟨i, hi⟩ ⟨j, hj⟩
   obtain ⟨k, hik, hjk⟩ := hJ i j
   exact ⟨k, fun a ha => by rw [smul_add, hi a (hik ha), hj a (hjk ha), add_zero]⟩
@@ -136,7 +136,7 @@ theorem smoothPart_eq_top_iff (hJ : Directed (· ≥ ·) J) :
 /-- For a directed family `J`, the smooth part of a module is a smooth module. -/
 theorem smoothModules_smoothPart (hJ : Directed (· ≥ ·) J) :
     smoothModules.{v} J (ModuleCat.of A (smoothPart J M)) := smoothModules_iff.2 fun m => by
-  obtain ⟨i, hi⟩ := exists_forall_smul_eq_zero_of_mem_smoothPart hJ m.2
+  obtain ⟨i, hi⟩ := exists_forall_smul_eq_zero_of_mem_smoothPart hJ m.property
   exact ⟨i, fun a ha => Subtype.ext (hi a ha)⟩
 
 end SmoothPart
@@ -159,10 +159,11 @@ theorem exists_forall_mul_mem_of_hasBasis
 
 /-- If the left ideals `J i` form a basis of neighborhoods of `0` and right multiplications are
 continuous, a vector lies in the smooth part exactly when it is killed by some `J i`. -/
-theorem mem_smoothPart_iff_of_hasBasis [Nonempty ι]
+theorem mem_smoothPart_iff_of_hasBasis
     (hJ : (𝓝 (0 : A)).HasBasis (fun _ => True) fun i => (J i : Set A)) {M : Type*}
     [AddCommGroup M] [Module A M] {m : M} :
     m ∈ smoothPart J M ↔ ∃ i, ∀ a ∈ J i, a • m = 0 := by
+  have : Nonempty ι := hJ.nonempty
   refine mem_smoothPart_iff_of_mul_mem (fun i j => ?_) (exists_forall_mul_mem_of_hasBasis hJ)
   obtain ⟨k, -, hk⟩ := hJ.mem_iff.1 (inter_mem (hJ.mem_of_mem (i := i) trivial)
     (hJ.mem_of_mem (i := j) trivial))

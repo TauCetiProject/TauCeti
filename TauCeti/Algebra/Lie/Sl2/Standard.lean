@@ -973,15 +973,14 @@ instance isIrreducible_toLieSubalgebra :
       (Sl2Std K n) :=
   (isIrreducible_iff_of_eq_top (toLieSubalgebra_isSl2Triple_single_eq_top _)).2 inferInstance
 
-/-- **The classification of the finite-dimensional irreducible `sl₂`-modules.** A Noetherian
-module over `sl (Fin 2) K` which is irreducible over the subalgebra of the standard triple and
-carries a primitive vector of weight `n` is equivalent to `V(n)`. Together with
+/-- **The classification of the finite-dimensional irreducible `sl₂`-modules.** A module over
+`sl (Fin 2) K` which is irreducible over the subalgebra of the standard triple and carries a
+primitive vector of weight `n` is equivalent to `V(n)`. Together with
 `TauCeti.Sl2Std.hasPrimitiveVectorWith` and `TauCeti.Sl2Std.isIrreducible_toLieSubalgebra` this
 exhibits `V(n)` as *the* irreducible of highest weight `n`: existence here, uniqueness in
 `TauCeti.lieModuleEquivOfHasPrimitiveVectorWith`. -/
 noncomputable def lieModuleEquiv {M : Type*} [AddCommGroup M] [Module K M]
     [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
-    [IsNoetherian K M]
     [LieModule.IsIrreducible K
       ((isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).toLieSubalgebra K) M]
     {m : M}
@@ -997,7 +996,6 @@ the coordinate basis of `V(n)`, position by position, scaled by the coefficients
 (`TauCeti.Sl2Std.lower_pow_basis_zero`). -/
 theorem lieModuleEquiv_apply_basis {M : Type*} [AddCommGroup M] [Module K M]
     [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
-    [IsNoetherian K M]
     [LieModule.IsIrreducible K
       ((isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).toLieSubalgebra K) M]
     {m : M}

@@ -76,8 +76,7 @@ such a family of affine pieces.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
-This is part of the structure-group track of layer 1 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`); the groupoid built from it lives in
+The piecewise-linear groupoid built from it lives in
 `TauCeti/Geometry/Manifold/PLGroupoid/Basic.lean`.
 -/
 
@@ -394,9 +393,9 @@ theorem isPLOn_of_locallyFinite {ι : Type*} {C : ι → Set E} {A : ι → (E �
   obtain ⟨U, hU, hfin⟩ := hlf x hx
   have : Finite {i // (C i ∩ U).Nonempty} := hfin.to_subtype
   refine ⟨s ∩ U, inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds hU),
-    isPiecewiseAffineOn_of_finite (ι := {i // (C i ∩ U).Nonempty}) (C := fun i => C i.1)
-      (A := fun i => A i.1) (fun i => hC _) ?_
-      (fun i => (heq i.1).mono (inter_subset_inter_left _ inter_subset_left))⟩
+    isPiecewiseAffineOn_of_finite (ι := {i // (C i ∩ U).Nonempty}) (C := fun i => C i.val)
+      (A := fun i => A i.val) (fun i => hC _) ?_
+      (fun i => (heq i.val).mono (inter_subset_inter_left _ inter_subset_left))⟩
   intro y hy
   obtain ⟨i, hi⟩ := mem_iUnion.1 (hcov hy.1)
   exact mem_iUnion.2 ⟨⟨i, ⟨y, hi, hy.2⟩⟩, hi⟩

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 
 /-!
 # Non-torsion classes in unblocked grid homology from rectangle parity
@@ -26,8 +27,8 @@ a boundary. Applied to `z = G.X`, no power of `U` kills `XMarkingClass`
 (`X_pow_smul_XMarkingClass_ne_zero`).
 
 For a knot grid the class is homogeneous of Alexander degree `A(G.X)`
-(`IsKnot.XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece`), so over a field of
-characteristic two the parity hypothesis makes `A(G.X)` a non-torsion degree of the `R[U]`-module
+(`IsKnot.XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece`), so over any commutative ring
+of characteristic two the parity hypothesis makes `A(G.X)` a non-torsion degree of the `R[U]`-module
 `GH⁻` (`IsKnot.alexanderℤ_X_mem_nonTorsionDegrees`); in particular `GH⁻` is not a torsion module.
 A degree bound on the grid states bounds the non-torsion degrees
 (`IsKnot.nonTorsionDegrees_subset_Iic`), so when `G.X` has the largest Alexander grading among
@@ -130,9 +131,10 @@ theorem eval_one_eq_zero_of_smul_single_mem_range {p : MvPolynomial (Fin n) R}
 
 /-- If every grid state has an even number of counted rectangles into `z`, then no monomial
 multiple of the generator `z` is a boundary. -/
-theorem monomial_smul_single_notMem_range [Nontrivial R] (e : Fin n →₀ ℕ) :
+theorem monomial_smul_single_notMem_range (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • (Finsupp.single z 1 : GridChainMinus R n) ∉
       LinearMap.range (G.unblockedDifferential R) := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
   intro h
   have h1 := G.eval_one_eq_zero_of_smul_single_mem_range R hz h
   rw [eval_monomial] at h1
@@ -168,7 +170,7 @@ theorem XMarkingClass_def : G.XMarkingClass R = G.unblockedHomologyClass R (G.XM
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no monomial in the grid variables kills its class in `GH⁻`. -/
-theorem monomial_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem monomial_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • G.XMarkingClass R ≠ 0 := by
   intro h
@@ -178,7 +180,7 @@ theorem monomial_smul_XMarkingClass_ne_zero [Nontrivial R]
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no power of a grid variable kills its class in `GH⁻`. -/
-theorem X_pow_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem X_pow_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (i : Fin n) (k : ℕ) :
     (MvPolynomial.X i ^ k : MvPolynomial (Fin n) R) • G.XMarkingClass R ≠ 0 := by
   have h := G.monomial_smul_XMarkingClass_ne_zero R hX (Finsupp.single i k)
@@ -193,7 +195,7 @@ include hG
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
 every grid state, no power of `U` kills the class of the `X`-marking state in `GH⁻`. -/
-theorem X_pow_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem X_pow_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (k : ℕ) :
     letI := hG.unblockedHomologyModule R
     (Polynomial.X ^ k : Polynomial R) • G.XMarkingClass R ≠ 0 := by
@@ -257,58 +259,74 @@ theorem nonTorsionDegrees_subset_Iic {a₀ : ℤ}
   exact (ModuleCat.mono_iff_injective (G.unblockedHomologyIso R).hom).mp inferInstance
     (hzy.symm.trans (map_zero _).symm)
 
-end IsKnot
-
-end Homology
-
-section Field
-
-variable {K : Type*} [Field K] [CharP K 2] {G : GridDiagram n} (hG : G.IsKnot)
-  (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card)
-include hG hX
-
-namespace IsKnot
+variable (R) in
+/-- The Alexander degrees containing a non-torsion class of `GH⁻` are bounded above. -/
+theorem bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading :
+    letI := hG.unblockedHomologyModule R
+    BddAbove (hG.alexanderUnblockedHomologyGrading R).nonTorsionDegrees := by
+  obtain ⟨a₀, ha₀⟩ := (Set.finite_range
+    (hG.toOddComponentGridDiagram.alexanderℤ : GridState n → ℤ)).bddAbove
+  exact ⟨a₀, hG.nonTorsionDegrees_subset_Iic (R := R)
+    fun x => ha₀ (Set.mem_range_self x)⟩
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
 every grid state, the Alexander grading of the `X`-marking state is a non-torsion degree of the
-`K[U]`-module `GH⁻`: the class of that state is homogeneous and not torsion. -/
-theorem alexanderℤ_X_mem_nonTorsionDegrees :
-    letI := hG.unblockedHomologyModule K
+`R[U]`-module `GH⁻`: the class of that state is homogeneous and not torsion. -/
+theorem alexanderℤ_X_mem_nonTorsionDegrees
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) :
+    letI := hG.unblockedHomologyModule R
     hG.toOddComponentGridDiagram.alexanderℤ G.X ∈
-      (hG.alexanderUnblockedHomologyGrading K).nonTorsionDegrees := by
-  let _ := hG.unblockedHomologyModule K
-  have := hG.isScalarTower_unblockedHomology (R := K)
-  rw [InternalGrading.mem_nonTorsionDegrees_iff_forall_X_pow_smul_ne_zero (d := 1) one_ne_zero
-    (fun p y hy => by simpa using hG.X_smul_mem_alexanderUnblockedHomologyGrading_piece K hy)]
-  exact ⟨G.XMarkingClass K, hG.XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece,
-    fun k => hG.X_pow_smul_XMarkingClass_ne_zero hX k⟩
+      (hG.alexanderUnblockedHomologyGrading R).nonTorsionDegrees := by
+  let _ := hG.unblockedHomologyModule R
+  have := hG.isScalarTower_unblockedHomology (R := R)
+  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
+  rw [InternalGrading.mem_nonTorsionDegrees]
+  refine ⟨G.XMarkingClass R, hG.XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece,
+    fun ht => ?_⟩
+  obtain ⟨⟨a, ha⟩, hax⟩ := (Submodule.mem_torsion_iff _).mp ht
+  rw [Submonoid.smul_def] at hax
+  refine nonZeroDivisors.ne_zero ha ?_
+  ext k
+  have hcomp := InternalGrading.coe_decompose_smul_of_mem (d := 1) one_ne_zero
+    (fun p y hy => by simpa using hG.X_smul_mem_alexanderUnblockedHomologyGrading_piece R hy)
+    hG.XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece a k
+  rw [hax, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero] at hcomp
+  let i : Fin n := ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩
+  have hsmul : (C (a.coeff k) * MvPolynomial.X i ^ k) • G.XMarkingClass R = 0 := by
+    rw [← hG.aeval_smul_unblockedHomology (R := R), map_mul, aeval_C, map_pow, aeval_X,
+      mul_smul, algebraMap_smul, ← hcomp]
+  rw [XMarkingClass_def, ← map_smul, unblockedHomologyClass_eq_zero_iff, Submodule.coe_smul,
+    coe_XMarkingCycle] at hsmul
+  simpa using G.eval_one_eq_zero_of_smul_single_mem_range R hX hsmul
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
-every grid state, `GH⁻` is not a torsion `K[U]`-module. -/
-theorem not_isTorsion_unblockedHomology :
-    letI := hG.unblockedHomologyModule K
-    ¬Module.IsTorsion (Polynomial K) (G.unblockedHomology K) := by
-  let _ := hG.unblockedHomologyModule K
+every grid state, `GH⁻` is not a torsion `R[U]`-module. -/
+theorem not_isTorsion_unblockedHomology
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) :
+    letI := hG.unblockedHomologyModule R
+    ¬Module.IsTorsion (Polynomial R) (G.unblockedHomology R) := by
+  let _ := hG.unblockedHomologyModule R
   exact (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp
     ⟨_, hG.alexanderℤ_X_mem_nonTorsionDegrees hX⟩
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
 every grid state and has the largest Alexander grading among the grid states, that grading is the
-maximal non-torsion degree of the `K[U]`-module `GH⁻`. -/
+maximal non-torsion degree of the `R[U]`-module `GH⁻`. -/
 theorem supNonTorsionDegree_alexanderUnblockedHomologyGrading_eq
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card)
     (h : ∀ x : GridState n, hG.toOddComponentGridDiagram.alexanderℤ x ≤
       hG.toOddComponentGridDiagram.alexanderℤ G.X) :
-    letI := hG.unblockedHomologyModule K
-    (hG.alexanderUnblockedHomologyGrading K).supNonTorsionDegree =
+    letI := hG.unblockedHomologyModule R
+    (hG.alexanderUnblockedHomologyGrading R).supNonTorsionDegree =
       hG.toOddComponentGridDiagram.alexanderℤ G.X := by
-  let _ := hG.unblockedHomologyModule K
+  let _ := hG.unblockedHomologyModule R
   rw [InternalGrading.supNonTorsionDegree_def]
   exact IsGreatest.csSup_eq ⟨hG.alexanderℤ_X_mem_nonTorsionDegrees hX,
-    fun a ha => hG.nonTorsionDegrees_subset_Iic (R := K) h ha⟩
+    fun a ha => hG.nonTorsionDegrees_subset_Iic (R := R) h ha⟩
 
 end IsKnot
 
-end Field
+end Homology
 
 end GridDiagram
 

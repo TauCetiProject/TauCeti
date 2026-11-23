@@ -41,6 +41,8 @@ leading examples are the Lie algebras `𝔲(n)` and `𝔰𝔲(n)` of skew-Hermit
 
 ## Main results
 
+* `LinearMap.liftBaseChange_complex_apply`: the canonical map `ℂ ⊗[ℝ] W → V` sends `u` to the image
+  of its real part plus `I` times the image of its imaginary part.
 * `LinearMap.mem_range_liftBaseChange_complex_iff`: the image of `ℂ ⊗[ℝ] W → V` consists of the
   vectors `f x + I • f y`.
 * `LinearMap.liftBaseChange_complex_injective_iff`: the map `ℂ ⊗[ℝ] W → V` is injective exactly
@@ -69,6 +71,14 @@ namespace LinearMap
 
 variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [Module ℝ V] [IsScalarTower ℝ ℂ V]
   [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] V)
+
+/-- The canonical extension to the complexification is the real-image plus `i` times the
+imaginary-image. This formula respects an independently given compatible real scalar action. -/
+theorem liftBaseChange_complex_apply (u : ℂ ⊗[ℝ] W) :
+    f.liftBaseChange ℂ u =
+      f (TauCeti.realPart W u) + Complex.I • f (TauCeti.imaginaryPart W u) := by
+  conv_lhs => rw [← TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart W u]
+  simp only [map_add, LinearMap.liftBaseChange_tmul, one_smul]
 
 /-- The image of the complexified map `ℂ ⊗[ℝ] W → V`, `c ⊗ₜ w ↦ c • f w`, consists of the
 vectors `f x + I • f y`. -/
@@ -157,7 +167,7 @@ theorem isBaseChange_complex_codRestrict_of_star_eq_neg {P : Submodule ℂ V}
     IsBaseChange ℂ (f.codRestrict (P.restrictScalars ℝ) hfP) := by
   -- The conjugation `v ↦ -v⋆` of `V`, restricted to `P`.
   let K : P.restrictScalars ℝ →ₛₗ[starRingEnd ℂ] P.restrictScalars ℝ :=
-    { toFun v := ⟨-star (v : V), P.neg_mem (hP _ v.2)⟩
+    { toFun v := ⟨-star (v : V), P.neg_mem (hP _ v.property)⟩
       map_add' v w := Subtype.ext (by simp [add_comm])
       -- The `ℂ`-action on `P.restrictScalars ℝ` is `P`'s action, transported by the instance
       -- `Submodule.restrictScalars.origModule`; no simp lemma moves the coercion through it,
@@ -169,7 +179,7 @@ theorem isBaseChange_complex_codRestrict_of_star_eq_neg {P : Submodule ℂ V}
     -- `hfP` lands in `P` rather than in `P.restrictScalars ℝ`, so `LinearMap.codRestrict_apply`
     -- does not match up to reducible unfolding; `show` unfolds `K` and the corestriction.
     (fun x ↦ Subtype.ext (show -star (f x) = f x by simp [hskew])) fun v hv ↦ ?_
-  obtain ⟨x, hx⟩ := hsurj v v.2 (by
+  obtain ⟨x, hx⟩ := hsurj v v.property (by
     simpa [K, neg_eq_iff_eq_neg] using congrArg Subtype.val hv)
   exact ⟨x, Subtype.ext hx⟩
 

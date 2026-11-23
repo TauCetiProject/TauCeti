@@ -39,7 +39,7 @@ than on a separately tabulated field order.
 
 ## The simple-root-subgroup action
 
-What is recorded of `τ` is its action on the numbered simple root subgroups:
+What is recorded of `τ` is its action on both signs of the numbered simple root subgroups:
 
 ```text
 τ (x_{α i}(t)) = x_{α (σ i)}(t ^ e i),
@@ -50,7 +50,10 @@ for `σ` the permutation exchanging the long and short simple roots and `e` the 
 `TauCeti.SuzukiReeIndex.lengthPerm` and `TauCeti.SuzukiReeIndex.exponent`. On the `B₂` diagram the
 long simple root is Bourbaki node zero, which `TauCeti.RankTwoBLieIndex.carrierNode` carries to the
 final carrier node, so the indexed equation is proved from the two equations at the carrier nodes
-and that numbering correspondence.
+and that numbering correspondence. The negative-root formulas use
+`TauCeti.RankTwoBLieIndex.negSimpleRootSubgroup`, the `.inr` summand of
+`TauCeti.SpStd.rootSubgroupPoints` transported through `carrierNode`. They complement the
+positive-root formulas for comparisons determined by both signs of the simple roots.
 
 ## Main definitions
 
@@ -66,6 +69,10 @@ and that numbering correspondence.
   `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the action formula at every numbered
   simple root, against the index's own length permutation and exponent.
+* `TauCeti.SuzukiLieIndex.halfFrobenius_negSimpleRootSubgroup` and
+  `TauCeti.SuzukiLieIndex.steinberg_negSimpleRootSubgroup`: the corresponding negative-root
+  formulas, with source-root exponents `1`, `2` for the half-Frobenius and `2^m`, `2^(m+1)`
+  for the Steinberg map on long and short roots, respectively.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the square of the half-Frobenius is the
   prime-field Frobenius.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
@@ -88,11 +95,11 @@ simple-root-subgroup action equations below are stated against it.
 
 ## References
 
-* R. W. Carter, *Simple Groups of Lie Type*, §13.
+* R. W. Carter, *Simple Groups of Lie Type*, §§12.3 and 13.4.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-* *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
-  [arXiv:2108.06291](https://arxiv.org/abs/2108.06291), for the formulation `τ ^ 2 = Frob_p` and
-  its odd powers.
+* A.-C. Radu, *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
+  [arXiv:2108.06291v2](https://arxiv.org/abs/2108.06291v2), §2.2, for the formulation
+  `τ ^ 2 = Frob_p` and its odd powers.
 -/
 
 -- Reinstates, unchanged, the half-Frobenius, its odd power and the two square relations first
@@ -104,18 +111,14 @@ namespace TauCeti.SuzukiLieIndex
 
 variable (d : SuzukiLieIndex)
 
--- The construction below follows the `SuzukiReeIndex.halfFrobenius` and
--- `ValidLieTypeIndex.steinberg` target signatures in
--- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
-
 /-- **The half-Frobenius of a Suzuki index**: the special isogeny of its ambient group. -/
 noncomputable def halfFrobenius :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
-  SpStd.specialIsogeny d.1.Closure
+  SpStd.specialIsogeny d.val.Closure
 
 /-- The half-Frobenius is the carrier's special isogeny. -/
 theorem halfFrobenius_def :
-    d.halfFrobenius = SpStd.specialIsogeny d.1.Closure :=
+    d.halfFrobenius = SpStd.specialIsogeny d.val.Closure :=
   (rfl)
 
 /-- **The square of the half-Frobenius is the prime-field Frobenius**, that is `τ ^ 2 = Frob_p` at
@@ -128,7 +131,7 @@ theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
   -- The carrier's square relation is stated at the literal `2`, the index's at its characteristic.
   -- Identifying the two is the one step that descends to matrix entries: the characteristic cannot
   -- be rewritten at the exponent of `SpStd.frobenius`, whose instances depend on it.
-  have hchar : (d.toRankTwoBLieIndex.1).characteristic = 2 := d.characteristic_eq_two
+  have hchar : (d.toRankTwoBLieIndex.val).characteristic = 2 := d.characteristic_eq_two
   rw [halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny,
     RankTwoBLieIndex.primeFrobenius_def]
   apply Subtype.ext
@@ -142,13 +145,13 @@ theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
 half-Frobenius, for `2m+1` the field exponent the index records. -/
 noncomputable def steinberg :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
-  HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
+  HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.val.fieldExponent
 
 /-- The Steinberg endomorphism is the `fieldExponent`-th power of the half-Frobenius. -/
 theorem steinberg_def :
     d.steinberg =
       HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius
-        d.1.fieldExponent :=
+        d.val.fieldExponent :=
   (rfl)
 
 /-- **The square of the Steinberg endomorphism is the `q`-power Frobenius**: squaring the odd
@@ -164,8 +167,8 @@ theorem steinberg_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
 @[simp]
 theorem halfFrobenius_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.halfFrobenius (d.steinberg g) =
-      SpStd.frobenius 1 d.1.characteristic
-        (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.1.Closure g := by
+      SpStd.frobenius 1 d.val.characteristic
+        (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.val.Closure g := by
   refine (d.toSuzukiReeIndex.apply_pow_fieldExponent d.halfFrobenius_halfFrobenius g).trans ?_
   rw [RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_pow, Nat.one_mul]
   -- `toRankTwoBLieIndex` is an abbreviation preserving `d.1`; reduce it here rather than
@@ -178,7 +181,7 @@ private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
 /-- **The half-Frobenius carries the long simple root subgroup to the short one and keeps the
 parameter.** The long simple root of `B₂` is the one whose carrier node is the final one, and the
 exponent `1` here is the one the isogeny takes on a long simple root. -/
-private theorem halfFrobenius_simpleRootSubgroup_long (u : Multiplicative d.1.Closure) :
+private theorem halfFrobenius_simpleRootSubgroup_long (u : Multiplicative d.val.Closure) :
     d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup
         (d.toRankTwoBLieIndex.carrierNode.symm 1) u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup (d.toRankTwoBLieIndex.carrierNode.symm 0) u := by
@@ -190,7 +193,7 @@ private theorem halfFrobenius_simpleRootSubgroup_long (u : Multiplicative d.1.Cl
 /-- **The half-Frobenius carries the short simple root subgroup to the long one and squares the
 parameter.** The exponent two here is the defining characteristic, which is the one the isogeny
 takes on a short simple root. -/
-private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) :
+private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.val.Closure) :
     d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup
         (d.toRankTwoBLieIndex.carrierNode.symm 0) u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup (d.toRankTwoBLieIndex.carrierNode.symm 1)
@@ -201,7 +204,7 @@ private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.C
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
 /-- The length permutation of the index exchanges the two carrier nodes. -/
-private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+private theorem carrierNode_lengthPerm (i : Fin d.val.rank) :
     d.toRankTwoBLieIndex.carrierNode (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) =
       Equiv.swap 0 1 (d.toRankTwoBLieIndex.carrierNode i) := by
   have hswap : d.toRankTwoBLieIndex.carrierNode
@@ -218,11 +221,11 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   decide
 
 /-- The exponent of the index is one at the final carrier node and two at the other. -/
-private theorem exponent_eq (i : Fin d.1.rank) :
+private theorem exponent_eq_ite_carrierNode (i : Fin d.val.rank) :
     SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
       if d.toRankTwoBLieIndex.carrierNode i = 1 then 1 else 2 := by
   have hnode := d.toRankTwoBLieIndex.carrierNode_eq_one_iff i
-  by_cases hi : d.1.dynkinType.IsLongSimpleRoot i
+  by_cases hi : d.val.dynkinType.IsLongSimpleRoot i
   · rw [SuzukiReeIndex.exponent_of_isLongSimpleRoot _ _ hi]
     simp [hnode.mpr hi]
   · rw [SuzukiReeIndex.exponent_of_not_isLongSimpleRoot _ _ hi, d.characteristic_eq_two]
@@ -240,7 +243,7 @@ The permutation exchanges the long and short simple roots and the exponent is `1
 and the defining characteristic `2` on the short one, so this is the two equations above read
 through the Bourbaki numbering the index carries. -/
 @[simp]
-theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem halfFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup i u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup
           (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
@@ -252,7 +255,7 @@ theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative 
         (d.toRankTwoBLieIndex.carrierNode.symm c) =
       d.toRankTwoBLieIndex.carrierNode.symm (Equiv.swap 0 1 c) := by
     rw [Equiv.eq_symm_apply, d.carrierNode_lengthPerm, Equiv.apply_symm_apply]
-  rw [hj, d.exponent_eq, Equiv.apply_symm_apply]
+  rw [hj, d.exponent_eq_ite_carrierNode, Equiv.apply_symm_apply]
   fin_cases c
   · simpa using d.halfFrobenius_simpleRootSubgroup_short u
   · simpa using d.halfFrobenius_simpleRootSubgroup_long u
@@ -266,20 +269,55 @@ steinberg (x_{α i}(t)) = x_{α (lengthPerm i)}(t ^ (p ^ m * exponent i)).
 ```
 -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.toRankTwoBLieIndex.simpleRootSubgroup i u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup
           (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
         (Multiplicative.ofAdd
           (Multiplicative.toAdd u ^
-            (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
+            (d.val.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
               SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) :=
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.toRankTwoBLieIndex.simpleRootSubgroup j t)
-    (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
-    (fun j t => (d.halfFrobenius_halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)).trans
-      (d.toRankTwoBLieIndex.primeFrobenius_simpleRootSubgroup j t))
-    i u
+    (fun j t => d.halfFrobenius_simpleRootSubgroup j t) i u
+
+-- Normalize subtype projections in the implicit carrier types before simp indexes these
+-- left-hand sides, as in TypeB2LieIndex.spinEquivCarrier_simpleRootSubgroup.
+/-- The half-Frobenius exchanges negative simple roots by the native length permutation;
+the parameter exponent is 1 on a long source root and 2 on a short source root. -/
+@[simp]
+theorem halfFrobenius_negSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
+    (dsimp% only (d.halfFrobenius (d.toRankTwoBLieIndex.negSimpleRootSubgroup i u))) =
+      d.toRankTwoBLieIndex.negSimpleRootSubgroup
+        (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd u ^ SuzukiReeIndex.exponent d.toSuzukiReeIndex i)) := by
+  rw [RankTwoBLieIndex.negSimpleRootSubgroup_def, RankTwoBLieIndex.negSimpleRootSubgroup_def,
+    d.carrierNode_lengthPerm, d.exponent_eq_ite_carrierNode, halfFrobenius_def]
+  generalize d.toRankTwoBLieIndex.carrierNode i = c
+  fin_cases c
+  · simpa using SpStd.specialIsogeny_rootSubgroupPoints_inr_zero d.val.Closure
+      (Multiplicative.toAdd u)
+  · simpa using SpStd.specialIsogeny_rootSubgroupPoints_inr_last d.val.Closure
+      (Multiplicative.toAdd u)
+
+/-- The Suzuki Steinberg map exchanges negative simple roots and raises their parameters to
+`p^m * aᵢ`, where `aᵢ` is the native source-root exponent of the half-Frobenius. -/
+@[simp]
+theorem steinberg_negSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
+    (dsimp% only (d.steinberg (d.toRankTwoBLieIndex.negSimpleRootSubgroup i u))) =
+      d.toRankTwoBLieIndex.negSimpleRootSubgroup
+        (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd u ^
+            (d.val.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
+              SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
+  rw [steinberg_def]
+  exact d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
+    (x := fun j t => d.toRankTwoBLieIndex.negSimpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_negSimpleRootSubgroup j t) i u
 
 /-! ## The finite-group candidate -/
 

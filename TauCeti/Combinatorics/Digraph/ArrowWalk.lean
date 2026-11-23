@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Combinatorics.Digraph.Orientation
 public import TauCeti.Combinatorics.Digraph.Basic
 public import TauCeti.Combinatorics.Network.Walk
@@ -33,6 +34,8 @@ which define the weakly connected components, are the walks of the simple graph
 ## Main definitions
 
 * `Digraph.AdjHom D`: the adjacency arrow family of `D`.
+* `Digraph.toNetwork`: `D` viewed as a `Unit`-capacitated `Network Unit V` with arrow family
+  `D.AdjHom`.
 * `Digraph.sigmaAdjHomEquiv`: the arrows of the family are the ordered pairs of adjacent vertices.
 * `Digraph.arrowWalkEquiv`: the walks from `s` to `t` are the lists of vertices from `s` to `t` in
   which consecutive vertices are adjacent.
@@ -66,6 +69,15 @@ variable {V : Type u} (D : Digraph V)
 abbrev AdjHom (v w : V) : Type :=
   PLift (D.Adj v w)
 
+/-- A digraph viewed as a `Unit`-capacitated directed network whose arrow family is `D.AdjHom`.
+
+This definition is exposed and reducible so that its arrow family reduces to `D.AdjHom`, inheriting
+`Network.ofCapacity`'s projection lemmas as well as the `Subsingleton` and `Finite` instances on
+`D.AdjHom`. -/
+@[expose, reducible]
+def toNetwork : Network Unit V :=
+  Network.ofCapacity D.AdjHom (fun _ _ _ ↦ ()) fun _ ↦ le_rfl
+
 variable {D} {s t v w : V}
 
 /-- Some arrow of the adjacency arrow family runs from `v` to `w` exactly when `D.Adj v w`. -/
@@ -83,7 +95,7 @@ variable (D) in
 of adjacent vertices. -/
 def sigmaAdjHomEquiv : (Σ v w, D.AdjHom v w) ≃ {p : V × V // D.Adj p.1 p.2} where
   toFun a := ⟨(a.1, a.2.1), a.2.2.down⟩
-  invFun p := ⟨p.1.1, p.1.2, ⟨p.2⟩⟩
+  invFun p := ⟨p.val.1, p.val.2, ⟨p.property⟩⟩
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
@@ -94,7 +106,7 @@ theorem sigmaAdjHomEquiv_apply_coe (a : Σ v w, D.AdjHom v w) :
 
 @[simp]
 theorem sigmaAdjHomEquiv_symm_apply (p : {p : V × V // D.Adj p.1 p.2}) :
-    (sigmaAdjHomEquiv D).symm p = ⟨p.1.1, p.1.2, ⟨p.2⟩⟩ :=
+    (sigmaAdjHomEquiv D).symm p = ⟨p.val.1, p.val.2, ⟨p.property⟩⟩ :=
   (rfl)
 
 /-- Consecutive vertices of a walk along the adjacency arrow family are adjacent. -/
@@ -111,7 +123,8 @@ noncomputable def arrowWalkEquiv (s t : V) :
   Equiv.ofBijective (fun p ↦ ⟨p.vertices, isChain_vertices p,
       @Quiver.Path.vertices_head? V ⟨D.AdjHom⟩ s t p, p.vertices_getLast?⟩)
     ⟨fun _ _ h ↦ ArrowWalk.vertices_injective (congrArg Subtype.val h), fun l ↦
-      (ArrowWalk.exists_vertices_eq_of_isChain (by simpa using l.2.1) l.2.2.1 l.2.2.2).imp
+      (ArrowWalk.exists_vertices_eq_of_isChain (by simpa using l.property.1) l.property.2.1
+          l.property.2.2).imp
         fun _ hp ↦ Subtype.ext hp⟩
 
 @[simp]
@@ -161,7 +174,7 @@ theorem reflTransGen_induce_iff {S : Set V} {s t : S} :
   · rintro ⟨p, hp⟩
     -- Generalize the target, a vertex of `S`, to an arbitrary vertex lying in `S`.
     suffices h : ∀ {x : V} (hx : x ∈ S) (p : ArrowWalk D.AdjHom s x),
-        (∀ v ∈ p.vertices, v ∈ S) → ReflTransGen (D.induce S).Adj s ⟨x, hx⟩ from h t.2 p hp
+        (∀ v ∈ p.vertices, v ∈ S) → ReflTransGen (D.induce S).Adj s ⟨x, hx⟩ from h t.property p hp
     intro x hx p hp
     induction p with
     | nil => rfl
@@ -179,6 +192,47 @@ theorem reflTransGen_induce_compl_iff {X : Set V} {s t : ↥Xᶜ} :
   simp only [reflTransGen_induce_iff, reachableAvoiding_def, Set.mem_compl_iff]
 
 /-! ### Deleting arrows -/
+
+variable (D) in
+/-- Delete a set of arrows from a digraph.  Each arrow retains its ordered endpoints and the
+adjacency proof witnessing that it belongs to `D`. -/
+def deleteArrows (F : Set (Σ v w, D.AdjHom v w)) : Digraph V :=
+  D \ { Adj := fun v w ↦ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∈ F }
+
+/-- An ordered pair is an arrow after deletion exactly when it was an arrow and was not selected.
+-/
+@[simp]
+theorem deleteArrows_adj {F : Set (Σ v w, D.AdjHom v w)} {v w : V} :
+    (D.deleteArrows F).Adj v w ↔ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∉ F := by
+  simp only [deleteArrows, sdiff_adj]
+  constructor
+  · rintro ⟨h, hF⟩
+    exact ⟨⟨h⟩, fun he ↦ hF ⟨⟨h⟩, he⟩⟩
+  · rintro ⟨e, hF⟩
+    refine ⟨e.down, ?_⟩
+    rintro ⟨e', he'⟩
+    apply hF
+    simpa only [Subsingleton.elim e' e] using he'
+
+/-- Deleting no arrows leaves a digraph unchanged. -/
+@[simp]
+theorem deleteArrows_empty : D.deleteArrows ∅ = D := by
+  ext v w
+  simp
+
+/-- Deleting every arrow leaves the empty digraph. -/
+@[simp]
+theorem deleteArrows_univ : D.deleteArrows Set.univ = ⊥ := by
+  ext v w
+  simp
+
+/-- Deleting a larger set of arrows gives a smaller digraph. -/
+theorem deleteArrows_anti {F F' : Set (Σ v w, D.AdjHom v w)} (hFF' : F ⊆ F') :
+    D.deleteArrows F' ≤ D.deleteArrows F := by
+  intro v w h
+  rw [deleteArrows_adj] at h ⊢
+  obtain ⟨e, he⟩ := h
+  exact ⟨e, fun hf ↦ he (hFF' hf)⟩
 
 /-- Reachability after deleting the arrows of a digraph `E` is reachability along the adjacency
 arrow family of `D` without the arrows joining pairs adjacent in `E`. -/
@@ -201,6 +255,17 @@ theorem underlyingGraph_adjHom :
     @TauCeti.Quiver.underlyingGraph V ⟨D.AdjHom⟩ = D.toSimpleGraphInclusive := by
   ext v w
   simp [toSimpleGraphInclusive, TauCeti.Quiver.underlyingGraph_adj]
+
+/-- Weak connectivity of the adjacency arrow family is preconnectivity of the simple graph
+obtained by forgetting the directions of the digraph. -/
+theorem isStronglyConnected_symmetrify_adjHom_iff :
+    @Quiver.IsStronglyConnected (Quiver.Symmetrify V)
+        (@Quiver.symmetrifyQuiver V ⟨D.AdjHom⟩) ↔
+      D.toSimpleGraphInclusive.Preconnected := by
+  rw [Quiver.isStronglyConnected_iff]
+  refine forall_congr' fun v ↦ forall_congr' fun w ↦ ?_
+  rw [@TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable V ⟨D.AdjHom⟩ v w,
+    underlyingGraph_adjHom]
 
 /-- Two vertices lie in the same weakly connected component of the adjacency arrow family exactly
 when they are reachable in the simple graph obtained from `D` by forgetting orientations. -/

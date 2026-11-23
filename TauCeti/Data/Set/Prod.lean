@@ -8,13 +8,14 @@ module
 public import Mathlib.Data.Set.Prod
 
 /-!
-# Fibre products of functions
+# Graphs and fibre products of functions
 
-This file adds to Mathlib's API for the fibre product `Function.Pullback f g` of two functions with
-a common codomain.
+This file adds to Mathlib's API for graphs of functions over a set and for the fibre product
+`Function.Pullback f g` of two functions with a common codomain.
 
 ## Main results
 
+* `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
   fibre of `g` over `f x`.
@@ -23,6 +24,13 @@ a common codomain.
 public section
 
 open Function
+
+/-- The graph of a constant function over a set `s` is the slice `s ×ˢ {b}`. -/
+@[simp]
+theorem Set.graphOn_const {α β : Type*} (s : Set α) (b : β) :
+    s.graphOn (Function.const α b) = s ×ˢ {b} := by
+  ext ⟨x, y⟩
+  simp [eq_comm]
 
 variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
 
@@ -36,15 +44,15 @@ theorem Function.Pullback.ext {p q : f.Pullback g} (h₁ : p.fst = q.fst) (h₂ 
 fibre of `g` over `f x`. -/
 def Function.Pullback.fstPreimageEquiv (x : X) :
     (Pullback.fst : f.Pullback g → X) ⁻¹' {x} ≃ g ⁻¹' {f x} where
-  toFun y := ⟨y.1.snd, y.1.2.symm.trans (congrArg f y.2)⟩
-  invFun z := ⟨⟨(x, z.1), z.2.symm⟩, rfl⟩
-  left_inv y := Subtype.ext (Pullback.ext y.2.symm rfl)
+  toFun y := ⟨y.val.snd, y.val.property.symm.trans (congrArg f y.property)⟩
+  invFun z := ⟨⟨(x, z.val), z.property.symm⟩, rfl⟩
+  left_inv y := Subtype.ext (Pullback.ext y.property.symm rfl)
   right_inv _ := rfl
 
 @[simp]
 theorem Function.Pullback.fstPreimageEquiv_apply_coe (x : X)
     (y : (Pullback.fst : f.Pullback g → X) ⁻¹' {x}) :
-    (Pullback.fstPreimageEquiv x y : Z) = y.1.snd :=
+    (Pullback.fstPreimageEquiv x y : Z) = y.val.snd :=
   (rfl)
 
 @[simp]

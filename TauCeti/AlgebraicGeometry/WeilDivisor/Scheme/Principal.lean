@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 
 /-!
 # Principal divisors on Noetherian integral schemes
@@ -15,29 +15,29 @@ import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 For a Noetherian integral scheme `X`, this file combines Mathlib's local orders of vanishing into
 the global order system on the codimension-one points of `X`. The only global issue is finite
 support. A nonzero rational function is a unit on some nonempty affine open `U`; its order
-therefore vanishes on `U`. The codimension-one points outside `U` are finite: each is the generic
-point of one of the finitely many irreducible pieces of the closed complement.
+therefore vanishes on `U`. The codimension-one points outside `U` are finite, by
+`CodimensionOnePoint.finite_setOfPred_notMem`.
 
 The main results are:
 
-* `SchemeWeilDivisor.finite_setOfPred_not_mem`: a nonempty open misses only finitely many
-  codimension-one points;
 * `SchemeWeilDivisor.finite_support_orderAt`: the orders of a nonzero rational function have
   finite support;
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
   `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor;
-* `SchemeWeilDivisor.isEffective_add_principalDivisor_iff`: the coefficientwise criterion for a
-  divisor plus a principal divisor to be effective.
+* `SchemeWeilDivisor.add_principalDivisor_nonneg_iff`: the coefficientwise criterion for a
+  divisor plus a principal divisor to be effective;
+* `AlgebraicGeometry.Scheme.Hom.pullback_principalDivisor_of_isOpenImmersion`: pulling back a
+  principal Weil divisor along a dominant open immersion corresponds to pulling back the defining
+  rational function along `functionFieldMap`.
 
 This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
-`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset of a
-Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
+`exists_isUnit_germ_eq` and `Scheme.ord_of_isUnit`. No formalization is vendored.
 -/
 
 public section
 
-open AlgebraicGeometry Order TopologicalSpace
+open CategoryTheory _root_.AlgebraicGeometry Order TopologicalSpace
 
 namespace TauCeti
 
@@ -51,38 +51,6 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- A codimension-one point lying in a set that avoids a nonempty open `U` equals that set's
-generic point. -/
-private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.Opens} [Nonempty U]
-    {T : Set X} (hTU : T ⊆ (U : Set X)ᶜ) {y : X} (hyGeneric : IsGenericPoint y T)
-    {x : CodimensionOnePoint X} (hxT : (x : X) ∈ T) : (x : X) = y :=
-  (Scheme.eq_of_specializes_of_notMem (Set.nonempty_coe_sort.mp ‹Nonempty U›) x.property
-    (hyGeneric.specializes hxT) (hTU hyGeneric.mem)).symm
-
-/-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
-but finitely many codimension-one points. -/
-lemma finite_setOfPred_not_mem [IrreducibleSpace X] [NoetherianSpace X]
-    (U : X.Opens) [Nonempty U] :
-    {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
-  obtain ⟨S, hSfinite, hSclosed, hSirreducible, hSunion⟩ :=
-    NoetherianSpace.exists_finite_set_isClosed_irreducible U.isOpen.isClosed_compl
-  let g : S → X := fun T ↦ (hSirreducible T T.property).genericPoint
-  have hfiniteRange : (Set.range g).Finite := by
-    let : Finite S := hSfinite.to_subtype
-    exact Set.finite_range g
-  apply Set.Finite.of_finite_image
-  · refine hfiniteRange.subset ?_
-    rintro _ ⟨x, hxU, rfl⟩
-    have hxUnion : (x : X) ∈ ⋃₀ S := by
-      rw [← hSunion]
-      exact hxU
-    obtain ⟨T, hTS, hxT⟩ := Set.mem_sUnion.mp hxUnion
-    have hyGeneric : IsGenericPoint (g ⟨T, hTS⟩) T :=
-      (hSirreducible T hTS).isGenericPoint_genericPoint (hSclosed T hTS)
-    have hTcompl : T ⊆ (U : Set X)ᶜ := hSunion ▸ Set.subset_sUnion_of_mem hTS
-    exact ⟨⟨T, hTS⟩, (eq_of_subset_compl_of_isGenericPoint hTcompl hyGeneric hxT).symm⟩
-  · exact Set.injOn_of_injective Subtype.val_injective
-
 variable [IsIntegral X] [IsNoetherian X]
 
 /-- The orders of a nonzero rational function on a Noetherian integral scheme are nonzero at only
@@ -93,7 +61,7 @@ lemma finite_support_orderAt (f : Additive X.functionFieldˣ) :
     exists_isUnit_germ_eq X ((Additive.toMul f : X.functionFieldˣ) : X.functionField)
       (Units.ne_zero _)
   let : Nonempty U := hU
-  refine (finite_setOfPred_not_mem U).subset ?_
+  refine (CodimensionOnePoint.finite_setOfPred_notMem U).subset ?_
   intro x hx
   simp only [Set.mem_ofPred_eq]
   intro hxU
@@ -129,22 +97,64 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 /-- A divisor plus a principal divisor is effective exactly when the corresponding rational
 function has order at least the negative of the divisor coefficient at every codimension-one
 point. -/
-lemma isEffective_add_principalDivisor_iff
+lemma add_principalDivisor_nonneg_iff
     (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ) :
-    WeilDivisor.IsEffective
-        (D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ↔
+    0 ≤ D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g ↔
       ∀ x : CodimensionOnePoint X,
         -WeilDivisor.coeff D x ≤
           X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
-  rw [WeilDivisor.isEffective_iff]
+  rw [WeilDivisor.nonneg_iff]
   apply forall_congr'
   intro x
   rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
     WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
   omega
 
+/-- Restricting a principal Weil divisor on `X` along a nonempty open immersion `j : U ⟶ X` gives
+the principal Weil divisor of the pulled-back rational function. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [Nonempty U] (f : Additive X.functionFieldˣ) :
+    letI : IsIntegral U := isIntegral_of_isOpenImmersion j
+    letI : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom f.toMul)) := by
+  have : IsIntegral U := isIntegral_of_isOpenImmersion j
+  have : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+  ext u
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply, orderAt_apply,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (Scheme.ord_functionFieldMap j _ u.val).symm
+
 end SchemeWeilDivisor
 
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open CategoryTheory TauCeti.AlgebraicGeometry
+
+/-- Pulling back a principal Weil divisor along a dominant open immersion `j : U ⟶ X`
+corresponds to pulling back the defining rational function along `j.functionFieldMap`. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U X : Scheme.{u}}
+    [IsIntegral U] [IsNoetherian U] [IsIntegral X] [IsNoetherian X]
+    (j : U ⟶ X) [IsOpenImmersion j] [IsDominant j] (g : Additive X.functionFieldˣ) :
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom g.toMul)) := by
+  refine WeilDivisor.ext fun y ↦ ?_
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, SchemeWeilDivisor.orderAt_apply,
+    SchemeWeilDivisor.orderAt_apply, toMul_ofMul, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (TauCeti.AlgebraicGeometry.Scheme.ord_functionFieldMap j _ ↑y).symm
+
+end AlgebraicGeometry.Scheme.Hom

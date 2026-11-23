@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-public import TauCeti.Data.Int.Quadratic
 import Mathlib.Data.Int.Interval
+import TauCeti.Algebra.Order.Ring.Quadratic
 
 /-!
 # Integral points of an integral Weierstrass equation
@@ -53,15 +53,13 @@ public section
 
 namespace WeierstrassCurve
 
-variable (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic]
+variable (W : WeierstrassCurve ℤ)
 
 -- The affine curve of the rational base change is the coefficientwise map of the integral curve.
-omit [(W.baseChange ℚ).IsElliptic] in
 private theorem integral_toAffine_baseChange :
     (W.baseChange ℚ).toAffine = W.toAffine.map (Int.castRingHom ℚ) := by
   rfl
 
-omit [(W.baseChange ℚ).IsElliptic] in
 /-- The rational base change satisfies the Weierstrass equation at integer-cast coordinates
 exactly when the integral model does. Not to be confused with
 `WeierstrassCurve.Affine.equation_baseChange_iff`, which expands the coefficients of a base
@@ -71,6 +69,10 @@ theorem equation_baseChange_iff_intCast {x y : ℤ} :
   rw [W.integral_toAffine_baseChange]
   simpa only [Int.coe_castRingHom] using
     Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
+
+section
+
+variable [(W.baseChange ℚ).IsElliptic]
 
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
 def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
@@ -145,12 +147,13 @@ theorem neg_mem_integralPoints_iff {P : (W.baseChange ℚ).toAffine.Point} :
     simpa only [neg_neg] using h
   · exact W.neg_mem_integralPoints
 
+end
+
 /-- A bound for the `yCoord` of an integral point with a fixed `xCoord`. -/
 def integralYCoordBound (x : ℤ) : ℕ :=
   (|W.a₁ * x + W.a₃| +
     |x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆| + 1).toNat
 
-omit [(W.baseChange ℚ).IsElliptic] in
 /-- The quadratic Weierstrass equation bounds the absolute `yCoord` by its linear and constant
 coefficients. This makes a search bounded only in `xCoord` finite. -/
 theorem abs_yCoord_le_integralYCoordBound {x y : ℤ}
@@ -161,11 +164,12 @@ theorem abs_yCoord_le_integralYCoordBound {x y : ℤ}
     have := (W.toAffine.equation_iff x y).mp h
     dsimp [b, c]
     nlinarith
-  have hbound := TauCeti.abs_le_of_quadratic_eq heq
   -- Unfold the natural bound as its nonnegative integer cast.
   change |y| ≤ ((|b| + |c| + 1).toNat : ℤ)
   rw [Int.toNat_of_nonneg (by positivity)]
-  exact hbound
+  refine (TauCeti.abs_lt_max_add_one_of_sq_add_mul_eq heq).le.trans ?_
+  gcongr
+  exact max_le_add_of_nonneg (abs_nonneg b) (abs_nonneg c)
 
 /-- Integer coordinate pairs with `|x| ≤ B` that solve the Weierstrass equation. This is a
 computable finite search: the ordinate bound makes each inner interval finite. -/
@@ -176,7 +180,6 @@ def boundedIntegralSolutions (B : ℕ) : Finset (ℤ × ℤ) :=
     (fun p => p.2 ^ 2 + W.a₁ * p.1 * p.2 + W.a₃ * p.2 =
       p.1 ^ 3 + W.a₂ * p.1 ^ 2 + W.a₄ * p.1 + W.a₆)
 
-omit [(W.baseChange ℚ).IsElliptic] in
 /-- The search contains exactly the integral solutions with bounded abscissa. -/
 @[simp]
 theorem mem_boundedIntegralSolutions_iff (B : ℕ) (p : ℤ × ℤ) :
@@ -196,11 +199,14 @@ theorem mem_boundedIntegralSolutions_iff (B : ℕ) (p : ℤ × ℤ) :
     exact ⟨⟨p.1, ⟨hx₁, hx₂⟩, p.2, hy', rfl⟩,
       (W.toAffine.equation_iff _ _).1 heq⟩
 
+variable [(W.baseChange ℚ).IsElliptic]
+
 /-- The finite set of rational integral points with `|x| ≤ B`, obtained by evaluating the
 bounded integer-coordinate search. -/
 def boundedIntegralPoints (B : ℕ) : Finset (W.baseChange ℚ).toAffine.Point :=
   (W.boundedIntegralSolutions B).attach.image fun p =>
-    W.pointOfIntegralSolution p.1.1 p.1.2 ((W.mem_boundedIntegralSolutions_iff B p.1).mp p.2).1
+    W.pointOfIntegralSolution p.val.1 p.val.2 ((W.mem_boundedIntegralSolutions_iff B p.val).mp
+        p.property).1
 
 /-- Membership in the finite search result is exactly integrality and the abscissa bound. -/
 @[simp]

@@ -33,13 +33,16 @@ namespace AlgebraicGeometry.PresheafedSpace.GlueData
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] (D : GlueData.{v, u} C) [HasLimits C]
+variable {C : Type u} [Category.{v} C] (D : GlueData.{v, u} C)
+    [HasMulticoequalizer D.toGlueData.diagram]
+    [PreservesColimit D.toGlueData.diagram.multispan (PresheafedSpace.forget C)]
 
 local notation "𝖣" => D.toGlueData
 
 /-- **Points with the same image in a glued presheafed space.** Points `x` of `U i` and `y` of
 `U j` have the same image in the glued space if and only if there is a point `z` of `V i j` with
-`f i j z = x` and `f j i (t i j z) = y`. -/
+`f i j z = x` and `f j i (t i j z) = y`. It suffices that this gluing colimit exists
+and is preserved by the forgetful functor to topological spaces. -/
 theorem ι_eq_iff_rel (i j : D.J) (x : D.U i) (y : D.U j) :
     (𝖣.ι i).base x = (𝖣.ι j).base y ↔ D.toTopGlueData.Rel ⟨i, x⟩ ⟨j, y⟩ := by
   -- the chart maps of the glued presheafed space are those of the glued topological space,

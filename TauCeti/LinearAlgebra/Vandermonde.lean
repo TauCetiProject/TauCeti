@@ -8,11 +8,12 @@ module
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Data.Pi.Interval
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Order.SuccPred.Int
-import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -48,10 +49,9 @@ sums, and clearing the denominators `1, 2, …, n` by a column scaling, produces
 differences `(descPochhammer ℤ (j+1)).eval (xᵢ₊₁) - (descPochhammer ℤ (j+1)).eval (xᵢ)`, whose
 determinant is `n !` times the sum.  *A row reduction*: that matrix of differences is what remains
 of the `(n+1) × (n+1)` matrix `(descPochhammer ℤ j).eval (xᵢ)` after subtracting each row from its
-successor and deleting the column `j = 0`, which is constant equal to `1`.  Multiplying on the
-left by the bidiagonal matrix performing the subtraction contributes a factor `(-1)^{n+1}` to the
-determinant, and expanding the product along its first column — where only the last entry
-survives — contributes the same sign, so the two determinants agree.
+successor and deleting the column `j = 0`, which is constant equal to `1`.  The subtraction does
+not change the determinant and leaves a single `1` in that column, in the first row, so expanding
+along it gives the two determinants equal (`Matrix.det_eq_det_of_col_zero_eq_one`).
 
 ## The lowering identity
 
@@ -128,6 +128,10 @@ groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even poly
 * `TauCeti.exists_lt_card_sum_mul_pow_ne_zero`: **nonvanishing power sums.** For pairwise
   distinct nodes `θᵢ` and weights `wᵢ`, not all zero, in a domain, one of the power sums
   `∑ᵢ wᵢ θᵢ ^ k` with `k` less than the number of nodes is nonzero.
+* `TauCeti.mul_pow_eq_sum_inv_vandermonde_mul_sum_mul_pow_add`: **moment recovery.** For
+  pairwise distinct nodes `βᵢ` of a field and arbitrary weights `cᵢ`, each weighted power
+  `c_k β_k ^ n` is a fixed linear combination, with coefficients the column `k` of the inverse
+  Vandermonde matrix, of the `d` consecutive moments `∑ᵢ cᵢ βᵢ ^ (n + j)`, `j < d`.
 -/
 
 public section
@@ -157,86 +161,9 @@ private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n 
         (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
           - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det
       = (Matrix.vandermonde x).det := by
-  classical
-  -- `N` is the Vandermonde matrix of `x` in the falling-factorial basis, and `E` is the bidiagonal
-  -- matrix subtracting each row of `N` from its predecessor.
-  let N : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
-    Matrix.of fun i j => (descPochhammer ℤ (j : ℕ)).eval (x i)
-  let E : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ := Matrix.of fun i k =>
-    (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0)
-  have hN : ∀ i j, N i j = (descPochhammer ℤ (j : ℕ)).eval (x i) := fun _ _ => rfl
-  have hE : ∀ i k, E i k
-      = (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0) :=
-    fun _ _ => rfl
-  have hEN : ∀ i j : Fin (n + 1),
-      (E * N) i j
-        = (∑ k : Fin (n + 1), if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - N i j := by
-    intro i j
-    rw [Matrix.mul_apply]
-    have hterm : ∀ k : Fin (n + 1), E i k * N k j
-        = (if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - (if k = i then N k j else 0) := by
-      intro k
-      rw [hE]
-      split_ifs <;> ring
-    rw [Finset.sum_congr rfl fun k _ => hterm k, Finset.sum_sub_distrib]
-    congr 1
-    simp
-  have hEupper : E.IsUpperTriangular := by
-    intro i k hki
-    have hk : (k : ℕ) < (i : ℕ) := hki
-    have h1 : ¬ ((k : ℕ) = (i : ℕ) + 1) := by omega
-    have h2 : ¬ (k = i) := by rintro rfl; omega
-    rw [hE]
-    simp [h1, h2]
-  have hEdet : E.det = (-1 : ℤ) ^ (n + 1) := by
-    rw [Matrix.det_of_isUpperTriangular hEupper]
-    have hdiag : ∀ i : Fin (n + 1), E i i = -1 := by
-      intro i
-      rw [hE]
-      simp
-    rw [Finset.prod_congr rfl fun i _ => hdiag i]
-    simp
-  -- The column `j = 0` of `N` is constant equal to `1`, so `E * N` has a single nonzero entry
-  -- there, in its last row.
-  have hcol : ∀ i : Fin (n + 1), N i 0 = 1 := by
-    intro i
-    rw [hN]
-    simp
-  have hcastSucc : ∀ (i : Fin n) (j : Fin (n + 1)),
-      (E * N) i.castSucc j = N i.succ j - N i.castSucc j := by
-    intro i j
-    rw [hEN]
-    simp only [Fin.val_castSucc, ← Fin.val_succ, Fin.val_inj, Finset.sum_ite_eq',
-      Finset.mem_univ, ↓reduceIte]
-  have hlast : (E * N) (Fin.last n) 0 = -1 := by
-    rw [hEN, hcol]
-    have hne : ∀ k : Fin (n + 1), ¬ ((k : ℕ) = n + 1) := fun k => by omega
-    simp [hne]
-  have hsubmat : (E * N).submatrix (Fin.last n).succAbove Fin.succ
-      = Matrix.of fun i j : Fin n =>
-          (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-            - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc) := by
-    ext i j
-    rw [Matrix.submatrix_apply, Fin.succAbove_last, hcastSucc, hN, hN]
-    simp
-  have hdetEN : (E * N).det = (-1 : ℤ) ^ (n + 1) *
-      (Matrix.of fun i j : Fin n =>
-        (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-          - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det := by
-    rw [Matrix.det_succ_column_zero, Finset.sum_eq_single (Fin.last n)]
-    · rw [hlast, hsubmat, Fin.val_last]
-      ring
-    · intro i _ hi
-      obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
-      rw [hcastSucc]
-      simp only [hcol]
-      ring
-    · simp
-  -- Both readings of `det (E * N)` carry the same sign, which therefore cancels.
-  have hdetN : N.det = (Matrix.vandermonde x).det :=
-    (det_vandermonde_eq_det_descPochhammer (n + 1) x).symm
-  rw [Matrix.det_mul, hEdet, hdetN] at hdetEN
-  exact (((isUnit_neg_one (α := ℤ)).pow (n + 1)).mul_right_inj.mp hdetEN).symm
+  rw [det_vandermonde_eq_det_descPochhammer (n + 1) x,
+    Matrix.det_eq_det_of_col_zero_eq_one _ fun _ => by simp]
+  simp
 
 /-- **Summing Vandermonde determinants over a box of nested intervals.**  For integers
 `x₀ ≤ x₁ ≤ ⋯ ≤ xₙ`, the Vandermonde determinant of `y`, summed over all integer vectors with
@@ -254,21 +181,8 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
   classical
   -- Multilinearity of the determinant in the rows, used in every row at once: a term of the
   -- expansion is a choice of one summand in each row, so the terms are indexed by the box.
-  have hbox : (Matrix.of fun i j : Fin n =>
-        ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t).det
-      = ∑ y ∈ Fintype.piFinset fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1),
-          (Matrix.of fun i j : Fin n => (descPochhammer ℤ (j : ℕ)).eval (y i)).det := by
-    have key := (Matrix.detRowAlternating (R := ℤ) (n := Fin n)).toMultilinearMap.map_sum_finset
-      (A := fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
-      (g := fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t)
-    have hrow : (fun i : Fin n => ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1),
-          fun j : Fin n => (descPochhammer ℤ (j : ℕ)).eval t)
-        = fun i j : Fin n =>
-          ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t := by
-      funext i j
-      exact Finset.sum_apply j _ _
-    rw [hrow] at key
-    exact key
+  have hbox := Matrix.det_of_sum_rows (fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
+    fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t
   have hsum : (∑ y ∈ Finset.Icc (fun i : Fin n => x i.castSucc) (fun i : Fin n => x i.succ - 1),
       (Matrix.vandermonde y).det)
       = (Matrix.of fun i j : Fin n =>
@@ -407,6 +321,15 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
   apply ((isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)).mul_right_inj.mp
   simpa only [Finset.mul_sum, mul_left_comm] using key
 
+/-- Over a domain, the matrix of falling factorials `(descPochhammer R i).eval (x j)` has nonzero
+determinant at pairwise distinct nodes. -/
+theorem det_descPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+    {x : Fin n → R} (hx : Function.Injective x) :
+    (Matrix.of fun i j : Fin n => (descPochhammer R (i : ℕ)).eval (x j)).det ≠ 0 := by
+  have hv := Matrix.det_vandermonde_ne_zero_iff.mpr hx
+  rw [det_vandermonde_eq_det_descPochhammer, ← Matrix.det_transpose] at hv
+  exact hv
+
 /-! ### Integrality of weighted Vandermonde determinants -/
 
 /-- **Integrality for a weighted Vandermonde determinant.**  Let `p j` be monic of degree `j` and
@@ -444,8 +367,8 @@ theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : �
     (∏ k ∈ Finset.range m, d k)
       ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
   have h := prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i)
-    (fun j => d j) (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
-    fun i j => hdvd i i.2 j j.2
+    (fun j => d j) (fun j => p j) (fun j => hdeg j j.isLt) (fun j => hmonic j j.isLt)
+    fun i j => hdvd i i.isLt j j.isLt
   rw [det_vandermonde_eq_prod_range m u, mul_left_comm] at h
   have hunit := (isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)
   simpa only [Fin.prod_univ_eq_prod_range, Finset.prod_mul_distrib] using hunit.dvd_mul_left.mp h
@@ -571,9 +494,27 @@ theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain
   let e := s.equivFin
   have hv := eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j ↦ θ (e.symm j))
     (v := fun j ↦ w (e.symm j))
-    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).2 (e.symm j').2 hj))) fun k ↦ by
+    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).property
+        (e.symm j').property hj))) fun k ↦ by
       rw [← h k k.isLt, ← s.sum_coe_sort]
       exact e.symm.sum_comp fun i : s ↦ w i * θ i ^ (k : ℕ)
   exact hw₀ (by simpa using congrFun hv (e ⟨i₀, hi₀⟩))
+
+/-! ### Moment recovery -/
+
+/-- **Recovering a weighted power from a window of moments.** Let `β` be pairwise distinct nodes
+of a field and `c` arbitrary weights. The `d` consecutive moments `∑ i, c i * β i ^ (n + j)`,
+`j < d`, form the row vector `(c i * β i ^ n)ᵢ` multiplied by the Vandermonde matrix of `β`, so
+pairing them with the column `k` of its inverse gives back the weighted power `c k * β k ^ n`.
+Zero nodes are allowed, and `n = 0` recovers the weight `c k` from the moments of order `< d`. -/
+theorem mul_pow_eq_sum_inv_vandermonde_mul_sum_mul_pow_add {K : Type*} [Field K] {d : ℕ}
+    {β : Fin d → K} (hβ : Function.Injective β) (c : Fin d → K) (n : ℕ) (k : Fin d) :
+    c k * β k ^ n = ∑ j, (vandermonde β)⁻¹ j k * ∑ i, c i * β i ^ (n + j) := by
+  have hdet : IsUnit (vandermonde β).det := (det_vandermonde_ne_zero_iff.2 hβ).isUnit
+  have h := congrFun (vecMul_vecMul (fun i ↦ c i * β i ^ n) (vandermonde β) (vandermonde β)⁻¹) k
+  rw [mul_nonsing_inv _ hdet, vecMul_one] at h
+  rw [← h]
+  simp only [vecMul, dotProduct, vandermonde_apply, pow_add, Finset.sum_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ by ring
 
 end TauCeti

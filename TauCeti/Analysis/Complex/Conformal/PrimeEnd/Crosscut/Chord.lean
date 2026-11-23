@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.ConnectedComponents
 import Mathlib.Analysis.InnerProductSpace.Continuous
 
@@ -70,17 +72,13 @@ private lemma mul_add_mul_I_mem_sphere (hζ : ‖ζ‖ = 1) (s : ℝ)
   rw [mem_sphere_zero_iff_norm, norm_mul, hζ, one_mul, norm_add_mul_I, hs]
   simp
 
-private lemma sq_sqrt_one_sub_sq (ht : |t| ≤ 1) : √(1 - t ^ 2) ^ 2 = 1 - t ^ 2 := by
-  have : t ^ 2 ≤ 1 := by nlinarith [abs_nonneg t, sq_abs t]
-  exact Real.sq_sqrt (by linarith)
-
 /-- The endpoints of a chord lie on the unit circle. -/
 private lemma chord_endpoints_mem_sphere (hζ : ‖ζ‖ = 1) (ht : |t| ≤ 1) :
     ζ * (t + √(1 - t ^ 2) * I) ∈ sphere (0 : ℂ) 1 ∧
       ζ * (t - √(1 - t ^ 2) * I) ∈ sphere (0 : ℂ) 1 := by
-  refine ⟨mul_add_mul_I_mem_sphere hζ _ (sq_sqrt_one_sub_sq ht), ?_⟩
+  refine ⟨mul_add_mul_I_mem_sphere hζ _ (Real.sq_sqrt_one_sub_sq ht), ?_⟩
   rw [show (t : ℂ) - √(1 - t ^ 2) * I = t + ((-√(1 - t ^ 2) : ℝ) : ℂ) * I by push_cast; ring]
-  exact mul_add_mul_I_mem_sphere hζ _ (by rw [neg_sq, sq_sqrt_one_sub_sq ht])
+  exact mul_add_mul_I_mem_sphere hζ _ (by rw [neg_sq, Real.sq_sqrt_one_sub_sq ht])
 
 private lemma chord_endpoints_ne (hζ : ‖ζ‖ = 1) (ht : |t| < 1) :
     ζ * (t + √(1 - t ^ 2) * I) ≠ ζ * (t - √(1 - t ^ 2) * I) := by
@@ -108,7 +106,7 @@ theorem unitDiscChord_subset_closedBall (hζ : ‖ζ‖ = 1) (ht : |t| ≤ 1) :
 private lemma mem_unitDiscChord_of_inner_eq (hζ : ‖ζ‖ = 1) (ht : |t| < 1) {z : ℂ}
     (hz : ‖z‖ ≤ 1) (hzt : inner ℝ ζ z = t) : z ∈ unitDiscChord ζ t := by
   set w := (starRingEnd ℂ) ζ * z with hw
-  have hzw : z = ζ * w := by rw [hw, ← mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, one_mul]
+  have hzw : z = ζ * w := by simp [hw, ← mul_assoc, RCLike.mul_conj_eq_one_iff.2 hζ]
   have hre : w.re = t := by rw [← hzt, hzw, inner_mul_left_of_norm_eq_one hζ]
   have hwn : ‖w‖ ≤ 1 := by rwa [hw, norm_mul, Complex.norm_conj, hζ, one_mul]
   have hwsq : w.re ^ 2 + w.im ^ 2 ≤ 1 := by

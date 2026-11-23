@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Finite
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 
@@ -28,7 +29,8 @@ has Euler-characteristic degree `-dim_k Γ(D, 𝒪_D)`
 (`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_toInvertibleSheaf`).
 
 Twisting the exact sequence by a line bundle `L` with finite-dimensional `H⁰` and `H¹` gives
-`χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`), so
+`χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)` (the rank-one case of
+`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`), so
 twisting by `𝒪_X(-D)` and by `𝒪_X(D)` is additive on degrees
 (`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_mk_mul_mk_toInvertibleSheaf` and
 `Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf`), without
@@ -43,6 +45,11 @@ divisors in families.
 The rank is Mathlib's `Scheme.Hom.finrank` of the finite morphism `D ⟶ Spec k`, evaluated at the
 unique point of `Spec k`; it is `dim_k Γ(D, 𝒪_D)` by
 `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`.
+
+The local-multiplicity version
+`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_eq_finsum`
+expresses this degree as `Σ_x [κ(x) : k] · ℓ(𝒪_{X,x} ⧸ I_x)`, summing over `X` with zero
+contribution outside `D`.
 
 ## References
 
@@ -98,11 +105,19 @@ theorem IsEffectiveCartier.eulerDegree_mk_mul_mk_toInvertibleSheaf (hI : I.IsEff
     LineBundleClass.eulerDegree k
         (LineBundleClass.mk L * LineBundleClass.mk hI.toInvertibleSheaf) =
       L.eulerDegree k + hI.toInvertibleSheaf.eulerDegree k := by
+  -- `L` is a vector bundle of rank one.
+  let E := (InvertibleSheaf.toFixedRankOne X).obj L
+  have hE : E.obj.obj = L.obj := by
+    rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj]
+  have : FiniteDimensional k (Cohomology E.obj.obj 0) := hE ▸ inferInstance
+  have : FiniteDimensional k (Cohomology E.obj.obj 1) := hE ▸ inferInstance
+  have h := eulerCharBelow_tensor_sheaf k I E default
+  rw [hE, Nat.cast_one, one_mul] at h
   rw [hI.eulerDegree_toInvertibleSheaf k I default, ← LineBundleClass.mk_tensorProduct,
     LineBundleClass.eulerDegree_mk, InvertibleSheaf.eulerDegree_def,
     InvertibleSheaf.eulerDegree_def,
     eulerCharBelow_congr k (InvertibleSheaf.tensorProductObjIso _ _) 2,
-    IsEffectiveCartier.toInvertibleSheaf_obj, eulerCharBelow_tensor_sheaf k I L default]
+    IsEffectiveCartier.toInvertibleSheaf_obj, h]
   ring
 
 /-- **Twisting by `𝒪_X(D)` raises the degree by `deg D`.** On a scheme over a field `k` with
@@ -127,7 +142,10 @@ theorem IsEffectiveCartier.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf
   let e' : M.obj ⊗ I.sheaf ≅ L.obj :=
     eqToIso (by rw [IsEffectiveCartier.toInvertibleSheaf_obj]) ≪≫
       (InvertibleSheaf.tensorProductObjIso M hI.toInvertibleSheaf).symm ≪≫ e
-  have hfin := (I.finiteDimensional_cohomology_tensor_sheaf_iff (k := k) (L := M)).mp fun i hi ↦
+  have hiff := I.finiteDimensional_cohomology_tensor_sheaf_iff (k := k)
+    (E := (InvertibleSheaf.toFixedRankOne X).obj M)
+  rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at hiff
+  have hfin := hiff.mp fun i hi ↦
     (finiteDimensional_cohomology_congr k e' i).mpr (by interval_cases i <;> infer_instance)
   have := hfin 0 (by omega)
   have := hfin 1 (by omega)
@@ -147,6 +165,19 @@ theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffect
   rw [LineBundleClass.mk_trivial, one_mul, InvertibleSheaf.eulerDegree_trivial,
     hI.eulerDegree_toInvertibleSheaf k I s, zero_sub, neg_neg] at h
   exact h
+
+/-- The Euler-characteristic degree of `𝒪_X(D)` for an effective Cartier divisor finite over
+`k` is the sum over `X` of the local quotient lengths weighted by residue degrees. Only points
+of `D` contribute; finite-dimensional `H⁰` and `H¹` of `𝒪_X` suffice. -/
+theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_eq_finsum
+    (hI : I.IsEffectiveCartier) :
+    LineBundleClass.eulerDegree k (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ x : X,
+      ((X ↘ Spec (.of k)).residueDegree x : ℤ) *
+        (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x ⧸ I.stalkIdeal x)).toNat := by
+  rw [hI.eulerDegree_inv_mk_toInvertibleSheaf k I default,
+    Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion, ker_subschemeι]
+  exact (Nat.castAddMonoidHom ℤ).map_finsum_of_injective Nat.cast_injective _ |>.trans
+    (finsum_congr fun x ↦ Nat.cast_mul _ _)
 
 end FiniteCohomology
 

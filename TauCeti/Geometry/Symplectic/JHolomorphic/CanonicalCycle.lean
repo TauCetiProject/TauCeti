@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Adjunction
 
 /-!
 # The intersection algebra of a pseudoholomorphic cycle in the canonical class
@@ -51,6 +52,13 @@ The last statement is the numerical input to the vanishing of the Seiberg–Witt
 of a class `e` that is not good, i.e. which pairs below `-1` with some `J`-holomorphic
 exceptional sphere.
 
+The second and third facts are consequences of adjunction and of the index bound of a regular
+almost complex structure, recorded for a single curve by `TauCeti.IsRegularSimpleCurve`: a
+positive cycle of such curves in the canonical class whose distinct images meet nonnegatively is a
+canonical cycle (`TauCeti.isCanonicalCycle_of_isRegularSimpleCurve`). Its curves are then
+embedded (`TauCeti.IsCanonicalCycle.singularity_eq_zero`), and those occurring more than once are
+tori (`TauCeti.IsCanonicalCycle.genus_eq_one_of_one_lt_mult`).
+
 The argument is local in each image: evaluating `κ = ∑ m_j C_j` on an image `C_i` of nonnegative
 square and comparing with `d(C_i) ≥ 0` forces `(m_i - 1) C_i · C_i` and every `C_j · C_i` with
 `j ≠ i` to vanish; an exceptional sphere then meets no other image, which fixes its multiplicity.
@@ -70,6 +78,11 @@ square and comparing with `d(C_i) ≥ 0` forces `(m_i - 1) C_i · C_i` and every
   dimension zero.
 * `TauCeti.IsCanonicalCycle.apply_sum_eq_zero_or_eq_neg_one`: every subcycle pairs to `0` or `-1`
   with every `J`-holomorphic exceptional sphere.
+* `TauCeti.isCanonicalCycle_of_isRegularSimpleCurve`: a positive cycle of regular simple curves
+  in the canonical class is a canonical cycle.
+* `TauCeti.IsCanonicalCycle.singularity_eq_zero`,
+  `TauCeti.IsCanonicalCycle.genus_eq_one_of_one_lt_mult`: its curves are embedded, and repeated
+  curves are tori.
 
 ## References
 
@@ -218,7 +231,6 @@ theorem apply_self_eq_zero_of_one_lt_mult (hB : B.IsSymm) (h : IsCanonicalCycle 
     (hi : 1 < m i) : B (C i) (C i) = 0 := by
   have hmul := h.apply_canonical_eq_mul hB i
   rw [h.apply_canonical_eq_apply_self] at hmul
-  have hm : (1 : ℤ) < m i := by exact_mod_cast hi
   have : ((m i : ℤ) - 1) * B (C i) (C i) = 0 := by linarith
   exact (mul_eq_zero.1 this).resolve_left (by linarith)
 
@@ -281,5 +293,49 @@ theorem apply_sum_eq_zero_or_eq_neg_one (hB : B.IsSymm) (h : IsCanonicalCycle B 
   · simp [ha1]
 
 end IsCanonicalCycle
+
+/-! ### Canonical cycles of regular simple curves -/
+
+section Regular
+
+variable {B : BilinForm ℤ H} {κ : H} {C : ι → H} {m g δ : ι → ℕ}
+
+/-- **Canonical cycles from adjunction.** A positive cycle `∑ m i • C i` of distinct simple
+curves which meet each other nonnegatively, represents the canonical class, and satisfy
+adjunction and the index bound of a regular almost complex structure, with genera `g i` and
+singularity numbers `δ i`, is a canonical cycle: the index bound gives the nonnegative virtual
+dimensions, and adjunction makes every curve of negative square an exceptional sphere. -/
+theorem isCanonicalCycle_of_isRegularSimpleCurve (hm : ∀ i, 0 < m i)
+    (hpos : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j))
+    (hreg : ∀ i, IsRegularSimpleCurve B κ (C i) (g i) (δ i)) (hsum : ∑ i, m i • C i = κ) :
+    IsCanonicalCycle B κ C m where
+  mult_pos := hm
+  apply_nonneg_of_ne := hpos
+  apply_canonical_le_apply_self i := (hreg i).apply_canonical_le_apply_self
+  apply_self_eq_neg_one_of_apply_self_neg i := (hreg i).apply_self_eq_neg_one_of_apply_self_neg
+  apply_canonical_eq_neg_one_of_apply_self_neg i :=
+    (hreg i).apply_canonical_eq_neg_one_of_apply_self_neg
+  sum_eq := hsum
+
+namespace IsCanonicalCycle
+
+/-- Every curve of a canonical cycle of regular simple curves is embedded. -/
+theorem singularity_eq_zero (h : IsCanonicalCycle B κ C m)
+    (hreg : ∀ i, IsRegularSimpleCurve B κ (C i) (g i) (δ i)) (i : ι) : δ i = 0 :=
+  (hreg i).singularity_eq_zero_of_apply_canonical_eq_apply_self (h.apply_canonical_eq_apply_self i)
+
+/-- A curve occurring with multiplicity at least two in a canonical cycle of regular simple
+curves is a torus. With `IsCanonicalCycle.singularity_eq_zero`,
+`IsCanonicalCycle.apply_self_eq_zero_of_one_lt_mult` and
+`IsCanonicalCycle.apply_canonical_eq_zero_of_one_lt_mult`, it is an embedded square-zero torus
+orthogonal to the canonical class. -/
+theorem genus_eq_one_of_one_lt_mult (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m)
+    (hreg : ∀ i, IsRegularSimpleCurve B κ (C i) (g i) (δ i)) {i : ι} (hi : 1 < m i) : g i = 1 :=
+  (hreg i).genus_eq_one_of_apply_self_eq_zero (h.apply_self_eq_zero_of_one_lt_mult hB hi)
+    (h.apply_canonical_eq_zero_of_one_lt_mult hB hi)
+
+end IsCanonicalCycle
+
+end Regular
 
 end TauCeti

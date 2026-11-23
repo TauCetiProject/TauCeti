@@ -42,7 +42,7 @@ of a meromorphic germ, its Laurent coefficient of order `-(k + 1)`, is the resid
 theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
     (hφ : (φ : Germ (𝓝[≠] a) ℂ) = f) (k : ℕ) :
     (principalPart φ).coeff (k + 1) = Contour.residue (fun z ↦ (z - a) ^ k * f z) a := by
-  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
+  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.property)
   -- Write `f` as `h(z) / (z - a)^(N + k + 1)` with `h` analytic at `a`; both sides are then the
   -- Taylor coefficient of `h` of order `N`. The principal part is computed by
   -- `principalPart_eq_sum_coeff` and the residue by `Contour.residue_eq_of_eventuallyEq_zpow_smul`,
@@ -60,8 +60,9 @@ theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : �
   rw [principalPart_eq_sum_coeff hh.hasFPowerSeriesAt hφh, finsetSum_coeff, Finset.sum_eq_single N,
     coeff_C_mul_X_pow, Nat.add_sub_cancel_left, FormalMultilinearSeries.coeff_ofScalars,
     Contour.residue_eq_of_eventuallyEq_zpow_smul (n := -((N + 1 : ℕ) : ℤ)) (by omega) hh]
-  · simp only [↓reduceIte]
-    congr <;> omega
+  · have hidx : (-1 - -((N + 1 : ℕ) : ℤ)).toNat = N := by omega
+    simp only [↓reduceIte]
+    rw [hidx, smul_eq_mul, inv_mul_eq_div]
   · filter_upwards [self_mem_nhdsWithin] with z hz
     have hza : z - a ≠ 0 := sub_ne_zero.2 hz
     rw [zpow_neg, zpow_natCast, smul_eq_mul, smul_eq_mul, pow_succ]
@@ -89,21 +90,14 @@ theorem coeff_principalPart_succ_eq_circleIntegral {φ : meromorphicGerms ℂ a}
       (2 * π * I)⁻¹ * ∮ z in C(a, ρ), (z - a) ^ k * f z := by
   have hF : MeromorphicAt (fun z ↦ (z - a) ^ k * f z) a :=
     ((analyticAt_id.sub analyticAt_const).pow k).meromorphicAt.mul
-      (coe_mem_meromorphicGerms.1 (hφ ▸ φ.2))
+      (coe_mem_meromorphicGerms.1 (hφ ▸ φ.property))
   obtain ⟨ε, hε, hεF⟩ :=
     Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hF.eventually_analyticAt)
   filter_upwards [Ioo_mem_nhdsGT hε] with ρ ⟨hρ, hρε⟩
   have han {z : ℂ} (hz : z ∈ Metric.closedBall a ρ) (hza : z ≠ a) :
       AnalyticAt ℂ (fun z ↦ (z - a) ^ k * f z) z :=
     hεF ((Metric.mem_closedBall.1 hz).trans_lt hρε) hza
-  rw [Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hρ {a} (fun z hz ↦ ?_)
-    (by simpa using Metric.mem_ball_self (x := a) hρ) (fun z hz hneg ↦ ?_), Finset.sum_singleton,
-    ← mul_assoc, inv_mul_cancel₀ two_pi_I_ne_zero, one_mul,
-    coeff_principalPart_succ_eq_residue hφ k]
-  · rcases eq_or_ne z a with rfl | hza
-    · exact hF
-    · exact (han hz hza).meromorphicAt
-  · by_contra hza
-    exact (han hz (by simpa using hza)).meromorphicOrderAt_nonneg.not_gt hneg
+  rw [Contour.circleIntegral_eq_residue (Metric.mem_ball_self hρ) hF fun _ ↦ han, ← mul_assoc,
+    inv_mul_cancel₀ two_pi_I_ne_zero, one_mul, coeff_principalPart_succ_eq_residue hφ k]
 
 end TauCeti.meromorphicGerms

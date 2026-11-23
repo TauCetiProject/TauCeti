@@ -40,7 +40,7 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsSeparable F F']
+variable [Algebra.IsIntegral F F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
@@ -56,8 +56,7 @@ private theorem ord_algebraMap_mul_pow_uniformizer {z : F'} (hz : P'.ord z = 1)
     intro h
     rw [h, P'.ord_zero] at hz
     omega
-  rw [P'.ord_mul ((map_ne_zero (algebraMap F F')).mpr hc) (pow_ne_zero _ hz0),
-    ord_algebraMap_restrict k F P', P'.ord_pow, hz, mul_one]
+  rw [ord_algebraMap_mul_pow k F P' hz0 hc, hz, mul_one]
 
 /-- If a sum of coefficient-weighted powers of a uniformizer is regular, then every coefficient
 is regular downstairs.  Distinct powers have distinct order residues modulo the ramification
@@ -98,7 +97,7 @@ private theorem coeff_mem_integers_of_ord_sum_nonneg {z : F'} (hz : P'.ord z = 1
   have he : (0 : ℤ) < ramificationIdx F P' := by
     exact_mod_cast ramificationIdx_pos F P'
   have hj : (j : ℤ) < ramificationIdx F P' := by
-    exact_mod_cast j.2
+    exact_mod_cast j.isLt
   by_contra hneg
   have hcneg : (P'.restrict k F).ord (c j) ≤ -1 := by omega
   have hmul : (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) ≤
@@ -132,10 +131,10 @@ theorem algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
   let y : F' := x
   have hymem : y ∈ P'.integers := by
     have hyint : IsIntegral (P'.restrict k F).integers y := by
-      simpa only [y] using (mem_integralClosure_iff (P'.restrict k F).integers F').mp x.2
+      simpa only [y] using (mem_integralClosure_iff (P'.restrict k F).integers F').mp x.property
     exact P'.mem_integers_of_isIntegral (fun a : (P'.restrict k F).integers ↦ by
       rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F']
-      exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2) hyint
+      exact (mem_integers_restrict_iff k F P' (a : F)).mp a.property) hyint
   have hyord : 0 ≤ P'.ord y := P'.mem_integers_iff_ord_nonneg.mp hymem
   let c : Fin (ramificationIdx F P') → F := fun j ↦ b.repr y j
   let T : Fin (ramificationIdx F P') → F' :=

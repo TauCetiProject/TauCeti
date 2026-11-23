@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.NonTorsion
+import TauCeti.KnotTheory.Grid.Homology.Transpose
 
 /-!
 # The invariant `τ` of a knot grid diagram
 
 For a knot grid `G` over a commutative ring `K` of characteristic two, the unblocked grid
 homology `GH⁻(G)` is a `K[U]`-module graded by the Alexander grading, on which `U` lowers the
-degree by one; it is finitely generated when `K` is Noetherian. Its invariant `τ(G)` is minus
+degree by one. Its invariant `τ(G)` is minus
 the largest Alexander degree of a homogeneous element that is not `K[U]`-torsion
 (`GridDiagram.IsKnot.tau`). This is the definition of the
 concordance invariant `τ` of Ozsváth--Stipsicz--Szabó, read on a single grid diagram. Its
@@ -20,7 +21,7 @@ independence of the diagram presenting a knot follows from the invariance of `GH
 (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_movesTo`), which is not part of this file.
 
 The definition is through `InternalGrading.supNonTorsionDegree`, the supremum of the non-torsion
-degrees. Over a Noetherian `K`, when `GH⁻(G)` is not a torsion module that supremum is attained
+degrees. When `GH⁻(G)` is not a torsion module that supremum is attained
 (`GridDiagram.IsKnot.isGreatest_nonTorsionDegrees_neg_tau`), so `-τ(G)` is the Alexander degree
 of a homogeneous non-torsion class and every such class has degree at most `-τ(G)`
 (`GridDiagram.IsKnot.le_neg_tau`). If `GH⁻(G)` were torsion the supremum would be that of the
@@ -29,10 +30,11 @@ empty set, which Mathlib takes to be `0` (`GridDiagram.IsKnot.tau_eq_zero_of_isT
 Two transfer principles are recorded, which are the algebraic content of the inequalities
 satisfied by `τ` under chain maps between grid complexes. Knot grids whose homologies are
 isomorphic as Alexander-graded `K[U]`-modules have the same invariant
-(`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`); this is how the invariance of `GH⁻`
+(`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`, specialized to diagonal reflection in
+`GridDiagram.IsKnot.tau_transpose`); this is how the invariance of `GH⁻`
 descends to `τ`. A homogeneous `K[U]`-linear map of Alexander degree `δ` from `GH⁻(G)` to
 `GH⁻(G')` with a left inverse up to multiplication by a power of `U` satisfies
-`τ(G') ≤ τ(G) - δ`, provided `K` is Noetherian and `GH⁻(G)` is not torsion
+`τ(G') ≤ τ(G) - δ`, provided `GH⁻(G)` is not torsion
 (`GridDiagram.IsKnot.tau_le_tau_sub_of_comp_eq_X_pow_smul`); the crossing change maps of
 Ozsváth--Stipsicz--Szabó, Chapter 6, supply such pairs of maps in degrees `0` and `-1`, and the
 resulting two inequalities bound the change of `τ` under a crossing change.
@@ -51,13 +53,17 @@ hypotheses; their values of `τ` are in `TorusLink/Tau.lean`.
 ## Main results
 
 * `TauCeti.GridDiagram.IsKnot.isGreatest_nonTorsionDegrees_neg_tau` and
-  `TauCeti.GridDiagram.IsKnot.le_neg_tau`: over a Noetherian `K`, `-τ(G)` is the greatest
+  `TauCeti.GridDiagram.IsKnot.le_neg_tau`: `-τ(G)` is the greatest
   non-torsion Alexander degree when `GH⁻(G)` is not torsion, and an upper bound for the
   non-torsion degrees without that hypothesis.
 * `TauCeti.GridDiagram.IsKnot.tau_eq_zero_of_isTorsion`: `τ(G) = 0` when `GH⁻(G)` is torsion.
-* `TauCeti.GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`: isomorphic Alexander-graded
-  unblocked homologies have the same invariant.
-* `TauCeti.GridDiagram.IsKnot.tau_le_tau_sub_of_comp_eq_X_pow_smul`: over a Noetherian `K`, a
+* `TauCeti.GridDiagram.IsKnot.tau_eq_of_eq`: equal knot grids have the same `τ`.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_swapColumns`: exchanging the same two columns twice
+  does not change `τ`.
+* `TauCeti.GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq` and
+  `TauCeti.GridDiagram.IsKnot.tau_transpose`: isomorphic Alexander-graded unblocked homologies have
+  the same invariant; in particular diagonal reflection preserves `τ`.
+* `TauCeti.GridDiagram.IsKnot.tau_le_tau_sub_of_comp_eq_X_pow_smul`: a
   homogeneous map of degree `δ` out of a non-torsion `GH⁻(G)` with a left inverse up to a power
   of `U` gives `τ(G') ≤ τ(G) - δ`.
 * `TauCeti.GridDiagram.IsKnot.tau_eq_neg_alexanderℤ_X`: `τ(G)` from the `X`-marking state when
@@ -88,7 +94,7 @@ variable (K : Type*) [CommRing K] [CharP K 2]
 /-- **The invariant `τ` of a knot grid diagram**: minus the largest Alexander degree of a
 homogeneous element of the unblocked grid homology `GH⁻(G)` that is not `K[U]`-torsion.
 
-Over a Noetherian `K`, the supremum is attained as soon as `GH⁻(G)` is not a torsion module
+The supremum is attained as soon as `GH⁻(G)` is not a torsion module
 (`isGreatest_nonTorsionDegrees_neg_tau`); if `GH⁻(G)` is torsion the value is `0`, the supremum
 of the empty set. It is an invariant of the presented knot: knot grids connected by grid moves
 have the same `τ` (`tau_eq_of_movesTo`, in `Homology/Invariance.lean`). This is the grid
@@ -115,6 +121,17 @@ theorem tau_eq_zero_of_isTorsion :
       (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp h hT,
     Int.csSup_empty, neg_zero]
 
+/-- Equal knot grids have the same `τ`, independently of their knot witnesses. -/
+theorem tau_eq_of_eq {G₁ : GridDiagram n} {hG₁ : G₁.IsKnot} (h : G₁ = G) :
+    hG₁.tau K = hG.tau K := by
+  subst h
+  rfl
+
+/-- Exchanging the same two columns twice returns the original knot grid, with the same `τ`. -/
+theorem tau_swapColumns_swapColumns (a b : Fin n) :
+    ((hG.swapColumns a b).swapColumns a b).tau K = hG.tau K :=
+  hG.tau_eq_of_eq K (G.swapColumns_swapColumns a b)
+
 section Transfer
 
 variable {m : ℕ} {G' : GridDiagram m} (hG' : G'.IsKnot)
@@ -128,8 +145,6 @@ theorem UnblockedHomologyIsomorphic.tau_eq (h : hG.UnblockedHomologyIsomorphic h
   let _ := hG'.unblockedHomologyModule K
   obtain ⟨e, he⟩ := unblockedHomologyIsomorphic_def.mp h
   rw [tau_def, tau_def, InternalGrading.supNonTorsionDegree_eq_of_linearEquiv e he]
-
-variable [IsNoetherianRing K]
 
 /-- **Comparison of `τ` along a map with a left inverse up to a power of `U`.** Let `f` be a
 `K[U]`-linear map from `GH⁻(G)` to `GH⁻(G')`, homogeneous of Alexander degree `δ`, and let `g`
@@ -152,13 +167,12 @@ theorem tau_le_tau_sub_of_comp_eq_X_pow_smul {δ : ℤ} (k : ℕ) :
   have h := InternalGrading.supNonTorsionDegree_add_le
     ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT)
     (hG'.bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading K) hf
-    (Submodule.comap_torsion_le_of_comp_eq_smul (pow_mem Polynomial.X_mem_nonZeroDivisors k) hgf)
+    (Submodule.comap_torsion_of_comp_eq_smul (f := f) (g := g)
+      (pow_mem Polynomial.X_mem_nonZeroDivisors k) hgf).le
   rw [tau_def, tau_def]
   omega
 
 end Transfer
-
-variable [IsNoetherianRing K]
 
 /-- Every Alexander degree of a homogeneous non-torsion class of `GH⁻(G)` is at most `-τ(G)`. -/
 theorem le_neg_tau {a : ℤ} :
@@ -183,6 +197,13 @@ theorem isGreatest_nonTorsionDegrees_neg_tau :
   exact InternalGrading.isGreatest_supNonTorsionDegree
     ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT)
     (hG.bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading K)
+
+omit hG in
+/-- Diagonal reflection of a knot grid preserves `τ`. -/
+@[simp]
+theorem tau_transpose (hGt : G.transpose.IsKnot) :
+    hGt.tau K = (G.isKnot_transpose.mp hGt).tau K :=
+  ((G.isKnot_transpose.mp hGt).unblockedHomologyIsomorphic_transpose K).symm.tau_eq
 
 end Ring
 

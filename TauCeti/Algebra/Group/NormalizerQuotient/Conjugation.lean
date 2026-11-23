@@ -10,9 +10,11 @@ public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 /-!
 # Transporting normalizer quotients along group isomorphisms
 
-The universal-covers roadmap uses the algebraic quotient `N(H) / H` as the deck group of the
-cover attached to a subgroup `H`. When subgroups are transported by a basepoint change or by
-an isomorphism of covers, the corresponding normalizer quotients have to be identified.
+In covering space theory, the deck group of the connected cover attached to a subgroup `H` of the
+fundamental group is the algebraic quotient `N(H) / H`. The unpointed correspondence between covers
+and subgroups identifies subgroups only up to conjugacy, so when subgroups are transported by a
+basepoint change or by an isomorphism of covers, the corresponding normalizer quotients have to be
+identified.
 
 This file records the generic group-theoretic transport: a multiplicative equivalence
 `e : G ≃* K` carries `N(H)` to `N(e(H))`, and therefore induces a multiplicative equivalence
@@ -26,13 +28,6 @@ This file records the generic group-theoretic transport: a multiplicative equiva
   quotients.
 * Representative formulas, including compatibility with composition, inverse, and identity
   equivalences on representatives.
-
-## References
-
-This is the algebraic conjugacy bookkeeping needed by
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8: the unpointed cover
-correspondence identifies subgroups only up to conjugacy, and the deck group of the cover
-attached to `H` is `N(H) / H`.
 -/
 
 public section
@@ -65,7 +60,7 @@ lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
 on underlying representatives. -/
 lemma normalizerEquivMap_refl (H : Subgroup G) (g : normalizer (H : Set G)) :
     H.normalizerEquivMap (MulEquiv.refl G) g =
-      ⟨(g : G), by simp [g.2]⟩ := by
+      ⟨(g : G), by simp [g.property]⟩ := by
   ext
   rfl
 
@@ -137,7 +132,7 @@ lemma normalizerQuotientEquivMap_refl_mk (H : Subgroup G)
     (g : normalizer (H : Set G)) :
     H.normalizerQuotientEquivMap (MulEquiv.refl G) (H.normalizerQuotientMk g) =
       (H.map ((MulEquiv.refl G : G ≃* G) : G →* G)).normalizerQuotientMk
-        ⟨(g : G), by simp [g.2]⟩ := by
+        ⟨(g : G), by simp [g.property]⟩ := by
   rw [normalizerQuotientEquivMap_mk]
   rfl
 
@@ -196,7 +191,7 @@ lemma normalizerQuotientEquivMap_mk_coe (H : Subgroup G) (e : G ≃* K)
       (H.map (e : G →* K)).normalizerQuotientMk
         ⟨e (g : G), by
           rw [← H.normalizerEquivMap_apply_coe e g]
-          exact (H.normalizerEquivMap e g).2⟩ := by
+          exact (H.normalizerEquivMap e g).property⟩ := by
   rw [normalizerQuotientEquivMap_mk]
   rfl
 

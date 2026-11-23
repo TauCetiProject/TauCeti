@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Annulus
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Annulus
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Pair
 
 /-!
 # The diagonal of the crossing change homotopy equation
@@ -136,7 +136,7 @@ private theorem sum_hexagonWeight_mul_unblockedCoefficient_self
       G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
     cases P.sigma_target_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · rw [← GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff C.column_ne_next]
+  · rw [← GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff]
     constructor
     · rintro ⟨⟨m, P, r⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
@@ -170,7 +170,7 @@ private theorem sum_initialHexagonWeight_mul_unblockedCoefficient_self
       G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
     cases P.sigma_target_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · rw [← GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff C.column_ne_next]
+  · rw [← GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff]
     constructor
     · rintro ⟨⟨m, P, r⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
@@ -203,7 +203,7 @@ private theorem sum_OMonomial_mul_hexagonWeight_self
       G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
     cases P.sigma_source_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · rw [← GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff C.column_ne_next]
+  · rw [← GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff]
     constructor
     · rintro ⟨⟨m, r, P⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
@@ -236,7 +236,7 @@ private theorem sum_OMonomial_mul_initialHexagonWeight_self
       G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
     cases P.sigma_source_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · rw [← GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff C.column_ne_next]
+  · rw [← GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff]
     constructor
     · rintro ⟨⟨m, r, P⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
@@ -309,7 +309,7 @@ private theorem sum_pentagonWeight_mul_pentagonWeight_self
     cases P.sigma_eq_of_left_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
       ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · rw [← GridPentagonBetween.exists_left_eq_iff C.column_ne_next rfl]
+  · rw [← GridPentagonBetween.exists_left_eq_iff rfl]
     constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
@@ -345,7 +345,7 @@ private theorem sum_initialPentagonWeight_mul_initialPentagonWeight_self
     cases P.sigma_eq_of_right_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
       ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · rw [← GridInitialPentagonBetween.exists_right_eq_iff C.column_ne_next rfl]
+  · rw [← GridInitialPentagonBetween.exists_right_eq_iff rfl]
     constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,

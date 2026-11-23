@@ -45,7 +45,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 ## Main results
 
 * `IsOpen.isOpen_constructibleTopology` — on a prespectral space the constructible
-  topology refines the given one; hence `IsClosed.isProConstructible`.
+  topology refines the given one; hence `IsClosed.isProConstructible`, and on a T₀ prespectral
+  space `TauCeti.isProConstructible_singleton`.
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
@@ -82,6 +83,9 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
+* `TauCeti.exists_disjoint_isOpen_of_isCompact_of_stableUnderGeneralization` — in a quasi-sober,
+  quasi-separated prespectral space, a compact subset and a disjoint closed subset stable under
+  generalization are separated by disjoint open subsets.
 
 ## References
 
@@ -163,7 +167,7 @@ theorem IsProConstructible.biInter {ι : Sort*} {p : ι → Prop} {f : ∀ i, p 
 theorem IsProConstructible.sInter {S : Set (Set X)} (hS : ∀ s ∈ S, IsProConstructible s) :
     IsProConstructible (⋂₀ S) := by
   rw [Set.sInter_eq_iInter]
-  exact IsProConstructible.iInter fun s ↦ hS s.1 s.2
+  exact IsProConstructible.iInter fun s ↦ hS s.val s.property
 
 /-- A quasi-compact open subset is pro-constructible: it is even clopen for the constructible
 topology, since it and its complement both belong to the defining subbasis. -/
@@ -187,6 +191,13 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, as the constructible topology
+is Hausdorff. -/
+@[simp]
+theorem isProConstructible_singleton [T0Space X] [PrespectralSpace X] (x : X) :
+    IsProConstructible ({x} : Set X) :=
+  (Set.subsingleton_singleton.preimage (WithTopology.ofTopology_injective _)).isClosed
 
 /-! ### Functoriality -/
 
@@ -250,7 +261,7 @@ theorem IsProConstructible.compactSpace [CompactSpace X] (hs : IsProConstructibl
 prespectral space is a spectral map. -/
 theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) :
     IsSpectralMap ((↑) : s → X) where
-  toContinuous := continuous_subtype_val
+  toContinuous := continuous_subtypeVal
   isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
     -- Restrict to the compact open `U`, where the constructible topology is compact.
     let : CompactSpace U := isCompact_iff_compactSpace.1 hUc
@@ -274,7 +285,7 @@ is quasi-separated. -/
 theorem IsProConstructible.quasiSeparatedSpace (hs : IsProConstructible s) :
     QuasiSeparatedSpace s := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
-    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.1) ?_ ?_
+    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.val) ?_ ?_
   · have h := Topology.IsInducing.isTopologicalBasis (f := ((↑) : s → X))
       IsEmbedding.subtypeVal.isInducing (PrespectralSpace.isTopologicalBasis (X := X))
     convert h using 1
@@ -299,7 +310,7 @@ theorem IsProConstructible.quasiSober [QuasiSober X] {s : Set X}
     -- An ambient generic point of `closure (Subtype.val '' Z)` lies in the constructible
     -- closure of the image, hence in the pro-constructible ambient subset `s`.
     obtain ⟨η, hη⟩ := QuasiSober.sober
-      (hZirr.image _ continuous_subtype_val.continuousOn).closure isClosed_closure
+      (hZirr.image _ continuous_subtypeVal.continuousOn).closure isClosed_closure
     have hηs : η ∈ s :=
       (@IsClosed.closure_subset X (constructibleTopology X) s
         (isProConstructible_iff_isClosed.1 hs)) <|
@@ -364,7 +375,7 @@ theorem IsProConstructible.closure_eq_setOfPred_specializes (hs : IsProConstruct
     by_contra! h
     -- Each `x ∈ s` lies outside some quasi-compact open neighbourhood `U x` of `y`.
     have hU (x : X) (hx : x ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U :=
-      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (h x hx)
+      PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (h x hx)
     choose! U hUo hUc hyU hxU using hU
     -- The complements of the `U x` are open for the constructible topology and cover `s`.
     obtain ⟨t, hts, htfin, hcover⟩ := (IsClosed.isCompact hs).elim_finite_subcover_image
@@ -417,6 +428,41 @@ theorem _root_.IsSpectralMap.isQuotientMap_of_generalizingMap [CompactSpace X] [
   convert hg.stableUnderGeneralization_image ht.isOpen_compl.stableUnderGeneralization
   rw [← Set.preimage_compl, Set.image_preimage_eq _ hsurj]
 
+/-- In a quasi-sober, quasi-separated prespectral space, a compact subset `K` and a disjoint closed
+subset `F` that is stable under generalization can be separated by disjoint open subsets. Ambient
+compactness and `T0Space` are not needed. -/
+theorem exists_disjoint_isOpen_of_isCompact_of_stableUnderGeneralization
+    [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {K F : Set X}
+    (hK : IsCompact K) (hFc : IsClosed F) (hFg : StableUnderGeneralization F)
+    (hd : Disjoint K F) :
+    ∃ U V : Set X, IsOpen U ∧ IsOpen V ∧ K ⊆ U ∧ F ⊆ V ∧ Disjoint U V := by
+  obtain ⟨U, hUc, hUo, hKU, hUFc⟩ :=
+    PrespectralSpace.exists_isCompact_and_isOpen_between hK hFc.isOpen_compl
+      (subset_compl_iff_disjoint_right.2 hd)
+  -- Check `Disjoint (closure U) F` locally on a compact open neighbourhood `W` of `y ∈ F`, where
+  -- `W ∩ U` is compact open (hence pro-constructible in `W`) so its closure consists of
+  -- specializations.
+  have hcl : Disjoint (closure U) F := by
+    refine disjoint_left.2 fun y hycl hyF ↦ ?_
+    obtain ⟨W, ⟨hWo, hWc⟩, hyW, -⟩ :=
+      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open (mem_univ y) isOpen_univ
+    have : CompactSpace W := isCompact_iff_compactSpace.1 hWc
+    have : QuasiSober W := hWo.isOpenEmbedding_subtypeVal.quasiSober
+    have : PrespectralSpace W := hWo.isOpenEmbedding_subtypeVal.prespectralSpace
+    have : QuasiSeparatedSpace W := hWo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace
+    have hUWc : IsCompact (((↑) : W → X) ⁻¹' U) := by
+      rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
+      exact QuasiSeparatedSpace.inter_isCompact W U hWo hWc hUo hUc
+    have hUWo : IsOpen (((↑) : W → X) ⁻¹' U) := hUo.preimage continuous_subtypeVal
+    have hyWcl : (⟨y, hyW⟩ : W) ∈ closure (((↑) : W → X) ⁻¹' U) :=
+      hWo.isOpenMap_subtypeVal.preimage_closure_subset_closure_preimage hycl
+    rw [(hUWc.isProConstructible hUWo).closure_eq_setOfPred_specializes] at hyWcl
+    obtain ⟨z, hzU, hzy⟩ := hyWcl
+    exact hUFc hzU (hFg (hzy.map continuous_subtypeVal) hyF)
+  exact ⟨U, (closure U)ᶜ, hUo, isClosed_closure.isOpen_compl, hKU,
+    subset_compl_iff_disjoint_left.2 hcl,
+    disjoint_compl_right.mono_left subset_closure⟩
+
 end TauCeti
 
 namespace IsSpectralMap
@@ -432,13 +478,13 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
     TauCeti.IsProConstructible {x | f x = g x} := by
   let B := {U : Set Y // IsOpen U ∧ IsCompact U}
   have heq : {x | f x = g x} = ⋂ U : B,
-      ((f ⁻¹' U.1) ∩ (g ⁻¹' U.1)) ∪ ((f ⁻¹' U.1)ᶜ ∩ (g ⁻¹' U.1)ᶜ) := by
+      ((f ⁻¹' U.val) ∩ (g ⁻¹' U.val)) ∪ ((f ⁻¹' U.val)ᶜ ∩ (g ⁻¹' U.val)ᶜ) := by
     ext x
     rw [Set.mem_ofPred_eq, PrespectralSpace.isTopologicalBasis.eq_iff]
     simp only [mem_iInter, mem_union, mem_inter_iff, mem_preimage, mem_compl_iff]
     constructor
     · intro h U
-      have := h U.1 U.2
+      have := h U.val U.property
       tauto
     · intro h U hU
       have := h ⟨U, hU⟩
@@ -446,12 +492,14 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
   rw [heq]
   refine TauCeti.IsProConstructible.iInter fun U ↦ ?_
   apply TauCeti.isProConstructible_iff_isClosed.mpr
-  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.1) :=
-    (hf.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hf.continuous)
-  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.1) :=
-    (hg.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hg.continuous)
+  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.val) :=
+    (hf.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hf.continuous)
+  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.val) :=
+    (hg.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hg.continuous)
   let : TopologicalSpace X := constructibleTopology X
   exact (hfc.isClosed.inter hgc.isClosed).union (hfc.compl.isClosed.inter hgc.compl.isClosed)
 

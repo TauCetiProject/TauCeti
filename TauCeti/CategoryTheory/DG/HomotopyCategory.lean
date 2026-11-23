@@ -36,6 +36,8 @@ preadditive and linear over the ground ring.
 
 ## Main results
 
+* `TauCeti.exactAt_iff_forall_exists_dgDifferential_eq`: a Hom complex is exact in a degree
+  exactly when every cycle of that degree is a boundary.
 * `TauCeti.dgHomotopyClass_eq_iff`: two cocycles have the same class exactly when their difference
   is a coboundary.
 * `TauCeti.dgHomotopyClass_eq_homologyπ`: a homotopy class is the image of any lifting cycle under
@@ -94,6 +96,16 @@ theorem dgBoundaries_le_dgCycles (X Y : C) :
     dgBoundaries R X Y ≤ dgCycles R X Y := by
   rintro _ ⟨h, rfl⟩
   exact dgDifferential_dgDifferential R h
+
+/-- A Hom complex is exact in degree `p + 1` exactly when every cycle of degree `p + 1` is a
+boundary. -/
+theorem exactAt_iff_forall_exists_dgDifferential_eq {X Y : C} {p : ℤ} :
+    (dgHomComplex R X Y).ExactAt (p + 1) ↔ ∀ z : DGHom R (p + 1) X Y,
+      dgDifferential R (p + 1) z = 0 → ∃ g : DGHom R p X Y, dgDifferential R p g = z := by
+  rw [HomologicalComplex.exactAt_iff' _ p (p + 1) (p + 1 + 1) (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff]
+  -- The maps of the short complex `sc'` are the differentials, by definition.
+  rfl
 
 private noncomputable def dgCyclesConcreteEquiv (X Y : C) :
     dgCycles R X Y ≃ₗ[R]
@@ -201,13 +213,13 @@ theorem exists_dgHomotopyClass_eq {X Y : C} (c : DGHomotopyClass R X Y) :
     induction e.hom c using Submodule.Quotient.induction_on with
     | H f => exact ⟨f, rfl⟩
   let g := (dgCyclesConcreteEquiv R X Y).symm f
-  refine ⟨g, g.2, ?_⟩
+  refine ⟨g, g.property, ?_⟩
   apply e.toLinearEquiv.injective
-  have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.2
+  have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.property
   -- The function underlying `e.toLinearEquiv` is `e.hom`; spelling that out lets the
   -- representative compatibility lemma rewrite the transported class.
-  change e.hom (dgHomotopyClass R g g.2) = e.hom c
-  rw [show e.hom (dgHomotopyClass R g g.2) =
+  change e.hom (dgHomotopyClass R g g.property) = e.hom c
+  rw [show e.hom (dgHomotopyClass R g g.property) =
     S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y g) by
       simpa only [e, S] using hclass]
   simpa only [g, LinearEquiv.apply_symm_apply] using hf
@@ -387,8 +399,8 @@ theorem dgCompZero_mem_dgBoundaries_of_left {X Y Z : C}
     dgCompZero R f g ∈ dgBoundaries R X Z := by
   obtain ⟨h, rfl⟩ := hf
   refine ⟨dgComp R h g (add_zero (-1)), ?_⟩
-  rw [dgDifferential_dgComp, (mem_dgCycles R).mp hg]
-  simp only [dgComp_zero, smul_zero, add_zero, dgCompZero_def]
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_right R h ((mem_dgCycles R).mp hg),
+    dgCompZero_def]
 
 /-- Composing a degree-zero cocycle on the left with a degree-zero boundary gives a boundary. -/
 theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
@@ -397,8 +409,8 @@ theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
     dgCompZero R f g ∈ dgBoundaries R X Z := by
   obtain ⟨h, rfl⟩ := hg
   refine ⟨dgComp R f h (zero_add (-1)), ?_⟩
-  rw [dgDifferential_dgComp, (mem_dgCycles R).mp hf]
-  simp only [zero_dgComp, zero_add, Int.negOnePow_zero, one_smul, dgCompZero_def]
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R ((mem_dgCycles R).mp hf) h,
+    dgCompZero_def]
 
 /-- Composition restricted to degree-zero cocycles. -/
 def dgCyclesComp (X Y Z : C) :
@@ -406,7 +418,7 @@ def dgCyclesComp (X Y Z : C) :
   LinearMap.mk₂ R
     (fun (f : dgCycles R X Y) (g : dgCycles R Y Z) ↦
       ⟨dgCompZero R (X := X) (Y := Y) (Z := Z)
-        (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z), dgCompZero_mem_dgCycles R f.2 g.2⟩)
+        (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z), dgCompZero_mem_dgCycles R f.property g.property⟩)
     (fun (f f' : dgCycles R X Y) (g : dgCycles R Y Z) ↦ by
       apply Subtype.ext
       simp only [Submodule.coe_add, add_dgCompZero])
@@ -461,14 +473,14 @@ private def dgConcreteHomotopyComp (X Y Z : C) :
           obtain ⟨h, hh⟩ := hf
           refine ⟨h, ?_⟩
           exact congrArg Subtype.val hh)
-        ((dgCyclesConcreteEquiv R Y Z).symm g).2)
+        ((dgCyclesConcreteEquiv R Y Z).symm g).property)
     (fun g hg ↦ LinearMap.ext fun f ↦ (moduleCatπ_eq_zero_iff R _).2 <| by
       apply (mem_moduleCatToCycles_range R
         ((dgCyclesConcreteEquiv R X Z).symm
           (dgConcreteCyclesComp R X Y Z f g))).2
       simp only [dgConcreteCyclesComp]
       exact dgCompZero_mem_dgBoundaries_of_right R
-        ((dgCyclesConcreteEquiv R X Y).symm f).2
+        ((dgCyclesConcreteEquiv R X Y).symm f).property
         (by
           obtain ⟨h, hh⟩ := hg
           refine ⟨h, ?_⟩

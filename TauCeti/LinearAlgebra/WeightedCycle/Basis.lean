@@ -47,7 +47,7 @@ theorem equivFun_comp_eq_linearMap_comp (b : Module.Basis ι A V) (e : Fin (n + 
     (a : Fin (n + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ i, f (b (e i)) = a i • b (e (finRotate (n + 1) i))) :
     (b.reindex e.symm).equivFun.toLinearMap ∘ₗ f =
-      linearMap a ∘ₗ (b.reindex e.symm).equivFun.toLinearMap := by
+      TauCeti.WeightedCycle.linearMap a ∘ₗ (b.reindex e.symm).equivFun.toLinearMap := by
   ext v i
   have hcoords (w : V) :
       LinearEquiv.piCurry A (fun (_ : Unit) (_ : Fin (n + 1)) ↦ A)
@@ -68,10 +68,11 @@ theorem equivFun_comp_eq_linearMap_comp (b : Module.Basis ι A V) (e : Fin (n + 
 noncomputable def fixedBasisEquiv (b : Module.Basis ι A V)
     (e : Fin (n + 1) ≃ ι) (a : Fin (n + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ i, f (b (e i)) = a i • b (e (finRotate (n + 1) i))) :
-    f.fixedSubmodule ≃ₗ[A] (linearMap a (M := A)).fixedSubmodule :=
+    f.fixedSubmodule ≃ₗ[A] (TauCeti.WeightedCycle.linearMap a (M := A)).fixedSubmodule :=
   (fixedFamilyEquiv b (singleCycleFamilyIndex e) (fun _ : Unit ↦ a) f
     (fun _ i ↦ by simpa using h i)).trans
-      (LinearEquiv.piUnique A fun _ : Unit ↦ (linearMap a (M := A)).fixedSubmodule)
+      (LinearEquiv.piUnique A fun _ : Unit ↦
+        (TauCeti.WeightedCycle.linearMap a (M := A)).fixedSubmodule)
 
 /-- The fixed-submodule equivalence reads coordinates in the original basis. -/
 @[simp]
@@ -89,7 +90,7 @@ theorem fixedBasisEquiv_apply (b : Module.Basis ι A V)
 theorem fixedBasisEquiv_symm_apply (b : Module.Basis ι A V)
     (e : Fin (n + 1) ≃ ι) (a : Fin (n + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ i, f (b (e i)) = a i • b (e (finRotate (n + 1) i)))
-    (w : (linearMap a (M := A)).fixedSubmodule) :
+    (w : (TauCeti.WeightedCycle.linearMap a (M := A)).fixedSubmodule) :
     ((fixedBasisEquiv b e a f h).symm w : V) = ∑ i, w.val i • b (e i) := by
   simp [fixedBasisEquiv, fixedFamilyEquiv_symm_apply]
 

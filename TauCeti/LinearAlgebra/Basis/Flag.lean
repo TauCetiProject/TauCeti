@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Basis.Basic
 
@@ -45,6 +46,7 @@ construct the Schubert cells or their closures as schemes.
 ## Main results
 
 * `Module.Basis.finrank_flag`: the flag subspace `F_k` has dimension `k`.
+* `Module.Basis.flag_baseChange`: the flag of a base-changed basis is the base change of the flag.
 * `Module.Basis.finrank_inf_flag`: `dim (W ⊓ F_j)` is the number of pivots of `W` below `j`.
 * `Module.Basis.card_flagPivots`: `W` has `dim W` pivots.
 * `Module.Basis.flagPivots_eq_iff`, `Module.Basis.flagPivots_eq_image_iff`: the pivot set is the
@@ -165,6 +167,35 @@ theorem mem_flagPivots {i : Fin n} :
   · rintro ⟨x, hxW, hxF, hx⟩
     exact ⟨x, ⟨hxW, hxF⟩, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h)⟩
 
+/-- The last index in the support of the coordinates of a vector of `W` is a pivot of `W`. -/
+theorem max'_support_mem_flagPivots {x : M} (hx : x ∈ W) (hs : (b.repr x).support.Nonempty) :
+    (b.repr x).support.max' hs ∈ b.flagPivots W := by
+  refine mem_flagPivots.mpr ⟨x, hx, ?_,
+    Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)⟩
+  rw [mem_flag_iff_repr_eq_zero]
+  intro j hj
+  by_contra hj'
+  exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
+    (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
+
+/-- A vector of `W` whose coordinates at the pivots `j` of `W` with `k ≤ j.castSucc` vanish lies in
+`b.flag k`. -/
+theorem mem_flag_of_repr_flagPivots_eq_zero {k : Fin (n + 1)} {x : M} (hx : x ∈ W)
+    (h : ∀ j ∈ b.flagPivots W, k ≤ j.castSucc → b.repr x j = 0) : x ∈ b.flag k := by
+  rw [mem_flag_iff_repr_eq_zero]
+  intro j hj
+  by_contra hj'
+  have hs : (b.repr x).support.Nonempty := ⟨j, by simpa using hj'⟩
+  have hjk : j ≤ (b.repr x).support.max' hs := (b.repr x).support.le_max' j (by simpa using hj')
+  exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs))
+    (h _ (max'_support_mem_flagPivots hx hs) (hj.trans (Fin.castSucc_le_castSucc_iff.mpr hjk)))
+
+variable (b) in
+/-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
+theorem eq_zero_of_repr_flagPivots_eq_zero {x : M} (hx : x ∈ W)
+    (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
+  simpa using mem_flag_of_repr_flagPivots_eq_zero (b := b) (k := 0) hx fun i hi _ ↦ h i hi
+
 /-- The `k`-th subspace of the flag of a basis indexed by `Fin n`, spanned by its first `k`
 vectors, has dimension `k`. -/
 @[simp]
@@ -175,7 +206,32 @@ theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n
   simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
   omega
 
+/-- If `x` lies in the span of basis vectors `b (e j)` whose indices `e j` are all below `k`, then
+every index in the support of `b.repr x` is below `k`. -/
+theorem lt_of_mem_support_repr_of_mem_span_range {k : ℕ} (b : Basis (Fin n) R M)
+    (e : Fin k → Fin n) (he : ∀ j, (e j).val < k) {x : M}
+    (hx : x ∈ Submodule.span R (Set.range fun j ↦ b (e j))) {i : Fin n}
+    (hi : i ∈ (b.repr x).support) : i.val < k := by
+  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
+    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact he i'
+
 end Semiring
+
+section CommSemiring
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
+
+/-- `flag` commutes with base change: the flag of the base change of `b` to an `R`-algebra `A`
+consists of the base changes of the subspaces of the flag of `b`. -/
+theorem flag_baseChange (A : Type*) [Semiring A] [Algebra R A] (b : Basis (Fin n) R M)
+    (k : Fin (n + 1)) : (b.baseChange A).flag k = (b.flag k).baseChange A := by
+  rw [flag, flag, Submodule.baseChange_span, Set.image_image]
+  simp
+
+end CommSemiring
 
 section DivisionRing
 
@@ -253,25 +309,11 @@ theorem flagPivots_eq_image_iff {r : ℕ} {p : Fin r → Fin n} (hp : StrictMono
   refine forall_congr' fun j ↦ ?_
   rw [filter_image, card_image_of_injective _ hp.injective]
 
-/-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
-theorem eq_zero_of_repr_flagPivots_eq_zero {x : V} (hx : x ∈ W)
-    (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
-  by_contra hx₀
-  have hs : (b.repr x).support.Nonempty := by
-    simpa [Finsupp.support_nonempty_iff] using hx₀
-  set i := (b.repr x).support.max' hs
-  have hi : b.repr x i ≠ 0 := Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)
-  refine hi (h i (mem_flagPivots.mpr ⟨x, hx, ?_, hi⟩))
-  rw [mem_flag_iff_repr_eq_zero]
-  intro j hj
-  by_contra hj'
-  exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
-    (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
-
-/-- For a pivot `i` of `W`, there is a unique vector of `W ⊓ b.flag i.succ` whose coordinates at
-the pivots of `W` are those of `b i`: the row with pivot `i` of the reduced echelon basis of `W`
-adapted to the flag. -/
-theorem existsUnique_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) :
+variable (b W) in
+/-- There is a unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are
+those of `b i`. For a pivot `i` of `W` it is the row with pivot `i` of the reduced echelon basis of
+`W` adapted to the flag; otherwise it is `0`. -/
+theorem existsUnique_flagEchelon (i : Fin n) :
     ∃! x, x ∈ W ⊓ b.flag i.succ ∧ ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j := by
   have := Module.Finite.of_basis b
   refine existsUnique_of_exists_of_unique ?_ fun x y hx hy ↦ ?_
@@ -285,26 +327,23 @@ theorem existsUnique_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) :
     have hφ : Function.Injective φ := by
       rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
       intro x hx
-      refine Subtype.ext (eq_zero_of_repr_flagPivots_eq_zero (b := b) x.2.1 fun j hj ↦ ?_)
+      refine Subtype.ext (b.eq_zero_of_repr_flagPivots_eq_zero x.property.1 fun j hj ↦ ?_)
       by_cases hji : j.castSucc < i.succ
       · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
-      · exact hlt x.2.2 hji
+      · exact hlt x.property.2 hji
     have hrank : finrank K ↥(W ⊓ b.flag i.succ) = finrank K (T → K) := by
       rw [finrank_inf_flag, finrank_fintype_fun_eq_card, Fintype.card_coe]
-    have hiT : i ∈ T := mem_filter.mpr ⟨hi, Fin.castSucc_lt_succ⟩
     obtain ⟨x, hx⟩ :=
       ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hφ)
-        (Pi.single ⟨i, hiT⟩ 1)
-    refine ⟨x, x.2, fun j hj ↦ ?_⟩
+        fun j : T ↦ Finsupp.single i 1 (j : Fin n)
+    refine ⟨x, x.property, fun j hj ↦ ?_⟩
     by_cases hji : j.castSucc < i.succ
-    · have := congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
-      simp only [LinearMap.pi_apply, LinearMap.comp_apply, coe_subtype, coord_apply, φ] at this
-      simp [this, Finsupp.single_apply, Pi.single_apply, eq_comm]
-    · rw [hlt x.2.2 hji, Finsupp.single_eq_of_ne]
+    · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
+    · rw [hlt x.property.2 hji, Finsupp.single_eq_of_ne]
       rintro rfl
       exact hji Fin.castSucc_lt_succ
   · rw [← sub_eq_zero]
-    refine eq_zero_of_repr_flagPivots_eq_zero (b := b) (W.sub_mem hx.1.1 hy.1.1) fun j hj ↦ ?_
+    refine b.eq_zero_of_repr_flagPivots_eq_zero (W.sub_mem hx.1.1 hy.1.1) fun j hj ↦ ?_
     rw [map_sub, Finsupp.sub_apply, hx.2 j hj, hy.2 j hj, sub_self]
 
 /-- The span of a family indexed by `S`, whose `s`-th member lies in `b.flag s.succ` and has the
@@ -321,52 +360,53 @@ theorem flagPivots_span_eq {S : Finset (Fin n)} {v : S → V}
       Fintype.card_coe]
 
 variable (b W) in
-/-- The reduced echelon basis of `W` adapted to the flag `b.flag`: for a pivot `i` of `W`, the
-unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are those of `b i`
-(see `Module.Basis.existsUnique_flagEchelon`); it is `0` at an index which is not a pivot. -/
+/-- The reduced echelon basis of `W` adapted to the flag `b.flag`: for each index `i`, the unique
+vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are those of `b i` (see
+`Module.Basis.existsUnique_flagEchelon`). For a pivot `i` of `W` this is the row with pivot `i`;
+at an index which is not a pivot it is `0` (`Module.Basis.flagEchelon_of_notMem`). -/
 noncomputable def flagEchelon (i : Fin n) : V :=
-  if hi : i ∈ b.flagPivots W then (existsUnique_flagEchelon hi).exists.choose else 0
+  (existsUnique_flagEchelon b W i).exists.choose
 
-private theorem flagEchelon_spec {i : Fin n} (hi : i ∈ b.flagPivots W) :
-    b.flagEchelon W i ∈ W ⊓ b.flag i.succ ∧
-      ∀ j ∈ b.flagPivots W, b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
-  rw [flagEchelon, dite_eq_left hi]
-  exact (existsUnique_flagEchelon hi).exists.choose_spec
+variable (b W) in
+@[simp]
+theorem flagEchelon_mem (i : Fin n) : b.flagEchelon W i ∈ W :=
+  (existsUnique_flagEchelon b W i).exists.choose_spec.1.1
 
-theorem flagEchelon_mem (i : Fin n) : b.flagEchelon W i ∈ W := by
-  by_cases hi : i ∈ b.flagPivots W
-  · exact (flagEchelon_spec hi).1.1
-  · simp [flagEchelon, hi]
-
-theorem flagEchelon_mem_flag {i : Fin n} (hi : i ∈ b.flagPivots W) :
-    b.flagEchelon W i ∈ b.flag i.succ :=
-  (flagEchelon_spec hi).1.2
+variable (b W) in
+@[simp]
+theorem flagEchelon_mem_flag (i : Fin n) : b.flagEchelon W i ∈ b.flag i.succ :=
+  (existsUnique_flagEchelon b W i).exists.choose_spec.1.2
 
 @[simp]
-theorem repr_flagEchelon {i j : Fin n} (hi : i ∈ b.flagPivots W) (hj : j ∈ b.flagPivots W) :
+theorem repr_flagEchelon (i : Fin n) {j : Fin n} (hj : j ∈ b.flagPivots W) :
     b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j :=
-  (flagEchelon_spec hi).2 j hj
+  (existsUnique_flagEchelon b W i).exists.choose_spec.2 j hj
+
+/-- A vector of `W` whose coordinates at the pivots of `W` are those of `b i` equals
+`b.flagEchelon W i`, for any index `i`. -/
+theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
+    (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) : x = b.flagEchelon W i :=
+  sub_eq_zero.mp <| b.eq_zero_of_repr_flagPivots_eq_zero (W.sub_mem hx (b.flagEchelon_mem W i))
+    fun j hj ↦ by simp [h j hj, repr_flagEchelon i hj]
 
 @[simp]
-theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 := by
-  simp [flagEchelon, hi]
+theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 :=
+  Eq.symm <| eq_flagEchelon (zero_mem W) fun _ hj ↦ by simp [hj.ne_of_notMem hi]
 
-/-- The characterization of the reduced echelon basis vectors. -/
-theorem eq_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) {x : V} (hx : x ∈ W)
-    (hxF : x ∈ b.flag i.succ) (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) :
-    x = b.flagEchelon W i :=
-  (existsUnique_flagEchelon hi).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
-
+variable (b W) in
 theorem linearIndependent_flagEchelon :
     LinearIndependent K fun i : b.flagPivots W ↦ b.flagEchelon W i :=
-  linearIndependent_of_repr_eq_single fun i _ hj ↦ repr_flagEchelon i.2 hj
+  linearIndependent_of_repr_eq_single fun _ _ hj ↦ repr_flagEchelon _ hj
 
+variable (b W) in
 /-- The reduced echelon basis vectors of `W` span `W`. -/
+@[simp]
 theorem span_flagEchelon : span K (Set.range fun i : b.flagPivots W ↦ b.flagEchelon W i) = W := by
   have := Module.Finite.of_basis b
-  refine eq_of_le_of_finrank_eq (span_le.mpr (Set.range_subset_iff.mpr fun i ↦ flagEchelon_mem _))
-    ?_
-  rw [finrank_span_eq_card linearIndependent_flagEchelon, Fintype.card_coe, card_flagPivots]
+  refine eq_of_le_of_finrank_eq
+    (span_le.mpr (Set.range_subset_iff.mpr fun i ↦ b.flagEchelon_mem W i)) ?_
+  rw [finrank_span_eq_card (b.linearIndependent_flagEchelon W), Fintype.card_coe,
+    card_flagPivots]
 
 end DivisionRing
 
@@ -426,38 +466,36 @@ with `b.flagPivots W = S`, is in bijection with the affine space `K ^ S.echelonF
 subspace corresponds to the free entries of its reduced echelon basis. -/
 noncomputable def flagCellEquiv (S : Finset (Fin n)) :
     {W : Submodule K V // b.flagPivots W = S} ≃ (S.echelonFreeEntries → K) where
-  toFun W x := b.repr (b.flagEchelon W x.1.1) x.1.2
+  toFun W x := b.repr (b.flagEchelon W x.val.1) x.val.2
   invFun a := ⟨span K (Set.range fun s : S ↦ b.echelonRow S a s), flagPivots_span_echelonRow S a⟩
   left_inv := by
     rintro ⟨W, rfl⟩
     refine Subtype.ext ((congrArg (span K) (congrArg Set.range (funext fun s ↦ ?_))).trans
-      span_flagEchelon)
+      (b.span_flagEchelon W))
     -- The row built from the free entries of the echelon basis vector is that vector.
     refine b.repr.injective (Finsupp.ext fun j ↦ ?_)
     by_cases hj : j ∈ b.flagPivots W
-    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon s.2 hj]
-    rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.2))]
+    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon _ hj]
+    rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.property))]
     split_ifs with h
     · rfl
     · have hsj : (s : Fin n) < j := lt_of_not_ge fun hjs ↦ h (mem_echelonFreeEntries.mpr
-        ⟨s.2, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.2), hj⟩)
-      exact ((b.mem_flag_iff_repr_eq_zero.mp (flagEchelon_mem_flag s.2)) j
+        ⟨s.property, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.property), hj⟩)
+      exact ((b.mem_flag_iff_repr_eq_zero.mp (b.flagEchelon_mem_flag W s)) j
         (Fin.succ_le_castSucc_iff.mpr hsj)).symm
   right_inv a := by
     funext ⟨⟨s, j⟩, hx⟩
     have hs : s ∈ S := (mem_echelonFreeEntries.mp hx).1
     have hS := flagPivots_span_echelonRow (b := b) S a
-    have hsU : s ∈ b.flagPivots (span K (Set.range fun s : S ↦ b.echelonRow S a s)) := by
-      rwa [hS]
-    have h := eq_flagEchelon hsU (subset_span ⟨⟨s, hs⟩, rfl⟩) (echelonRow_mem_flag S a s)
-      fun t ht ↦ repr_echelonRow_of_mem a s (by rwa [hS] at ht)
+    have h := eq_flagEchelon (W := span K (Set.range fun s : S ↦ b.echelonRow S a s))
+      (subset_span ⟨⟨s, hs⟩, rfl⟩) fun t ht ↦ repr_echelonRow_of_mem a s (by rwa [hS] at ht)
     dsimp only
     rw [← h, repr_echelonRow, ite_eq_right (mem_echelonFreeEntries.mp hx).2.1.ne,
       dite_eq_left hx]
 
 @[simp]
 theorem flagCellEquiv_apply (S : Finset (Fin n)) (W : {W : Submodule K V // b.flagPivots W = S})
-    (x : S.echelonFreeEntries) : b.flagCellEquiv S W x = b.repr (b.flagEchelon W x.1.1) x.1.2 :=
+    (x : S.echelonFreeEntries) : b.flagCellEquiv S W x = b.repr (b.flagEchelon W x.val.1) x.val.2 :=
   (rfl)
 
 @[simp]

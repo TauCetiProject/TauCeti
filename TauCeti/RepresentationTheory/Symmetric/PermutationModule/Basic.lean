@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.Induction.Permutation
-public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic
 
 /-!
 # Young permutation modules
@@ -35,8 +35,6 @@ computes its dimension and character. In particular, the dimension is the multin
 
 * G. D. James, *The Representation Theory of the Symmetric Groups*, for Young permutation
   modules and tabloids.
-* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 1, “The permutation module”.
 -/
 
 public section

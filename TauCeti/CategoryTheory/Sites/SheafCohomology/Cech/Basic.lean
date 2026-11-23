@@ -42,6 +42,8 @@ be added or removed.
 
 ## Main definitions
 
+* `TauCeti.CategoryTheory.cechXIso`: the canonical product coordinates on each Čech term.
+
 * `TauCeti.CategoryTheory.cechAugmentation U hT P`: the augmentation of the Čech complex of `P`
   for `U`; its degree `0` component restricts a section over `T` along each map to `T`
   (`TauCeti.CategoryTheory.cechAugmentation_f_zero_comp_π`).
@@ -66,6 +68,12 @@ be added or removed.
   (`SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv`).
 * `TauCeti.CategoryTheory.cechComplexMapHomotopy`: any two morphisms of families `U ⟶ V`
   induce homotopic maps of Čech complexes.
+* `TauCeti.CategoryTheory.cechComplexMapHomotopy_hom_π`: this homotopy is the prism homotopy:
+  its component `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` is minus the alternating sum over `k` of the restrictions
+  from the factors indexed by `(φ (a 0), …, φ (a k), ψ (a k), …, ψ (a n))`. It is natural in the
+  presheaf (`TauCeti.CategoryTheory.cechComplexMapHomotopy_hom_naturality`) and compatible with
+  further refinements of either family (`TauCeti.CategoryTheory.cechComplexMapHomotopy_precomp_hom`
+  and `TauCeti.CategoryTheory.cechComplexMapHomotopy_postcomp_hom`).
 * `TauCeti.CategoryTheory.cechComplexHomologyMap_eq`: hence any two morphisms of families induce
   the same map on Čech cohomology.
 * `TauCeti.CategoryTheory.cechComplexHomotopyEquiv`: families with morphisms `U ⟶ V` and
@@ -91,6 +99,8 @@ be added or removed.
 * R. Hartshorne, *Algebraic Geometry*, Graduate Texts in Mathematics 52, Springer, 1977,
   Exercise III.4.4, for the independence of the map induced by a refinement from the refinement
   map.
+* The Stacks Project, Cohomology of Sheaves, §20.15 (tag 09UY) for refinement maps, and the
+  computation following equation (20.25.0.2) in §20.25 for the prism homotopy and its sign.
 -/
 
 public section
@@ -108,20 +118,31 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type u'} [Cate
 
 variable [Preadditive A] [HasProducts.{w} A]
 
+/-! ### Product coordinates
+
+The Čech complex functor is a composite of several functors. Its native tuple objects and
+explicit section products agree after unfolding, but their dependent indices block rewriting
+across module boundaries. The canonical `cechXIso` and its component laws provide the common
+product-coordinate API for differentials, presheaf maps and refinements. -/
+
+/-- The degree `n` term of the Čech complex is, up to unfolding, the product of the values of `P`
+on the `(n + 1)`-fold products of members. -/
+def cechXIso (n : ℕ) :
+    ((cechComplexFunctor U).obj P).X n ≅
+      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
+  Iso.refl _
+
+/-- Product-coordinate readings agree with the native Čech term projections. -/
+@[reassoc]
+lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
+    (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
+  Category.id_comp _
+
 /-! ### The Čech complex in degrees `0` and `1`
 
-Mathlib's `cechComplexFunctor` is a composite of several functors, so its terms agree only up to
-unfolding with the products that define them. The identity isomorphisms `cechXIso₀` and
-`cechXIso₁` record these identifications once, so that every later statement composes maps
-between syntactically equal objects. A `0`-cochain is determined by its restrictions `restrict`
-to the members `U i`, and it is killed by the differential `Č⁰(U, P) ⟶ Č¹(U, P)` exactly when
-these restrictions agree on the products of pairs of members (`comp_d_eq_zero_iff`). -/
-
-private def cechXIso₀ : ((cechComplexFunctor U).obj P).X 0 ≅
-    ∏ᶜ fun a : Fin 1 → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) := Iso.refl _
-
-private def cechXIso₁ : ((cechComplexFunctor U).obj P).X 1 ≅
-    ∏ᶜ fun k : Fin 2 → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (k j))) := Iso.refl _
+A `0`-cochain is determined by its restrictions `restrict` to the members `U i`. It is killed by
+the differential exactly when these restrictions agree on pairwise products
+(`comp_d_eq_zero_iff`). -/
 
 private def cechδ (m : Fin 2) : ((cechComplexFunctor U).obj P).X 0 ⟶
     ((cechComplexFunctor U).obj P).X 1 :=
@@ -135,47 +156,49 @@ private lemma cechComplexFunctor_obj_d_zero_one :
     rfl
 
 private lemma cechδ_comp_π (m : Fin 2) (k : Fin 2 → ι) :
-    cechδ U P m ≫ (cechXIso₁ U P).hom ≫ Pi.π _ k =
-      (cechXIso₀ U P).hom ≫ Pi.π _ (fun x ↦ k (m.succAbove x)) ≫
+    cechδ U P m ≫ (cechXIso U P 1).hom ≫ Pi.π _ k =
+      (cechXIso U P 0).hom ≫ Pi.π _ (fun x ↦ k (m.succAbove x)) ≫
         P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op :=
-  -- `cechXIso₀` and `cechXIso₁` are identities, and `cechδ m` unfolds to a `Pi.lift`
+  -- `cechXIso` is the identity, and `cechδ m` unfolds to a `Pi.lift`
   (_ ≫= Category.id_comp _).trans <| (Pi.lift_comp_π _ _).trans (Category.id_comp _).symm
 
 private def restrict (a : Fin 1 → ι) :
     ((cechComplexFunctor U).obj P).X 0 ⟶ P.obj (op (U (a default))) :=
-  (cechXIso₀ U P).hom ≫ Pi.π _ a ≫ P.map (productUniqueIso _).inv.op
+  (cechXIso U P 0).hom ≫ Pi.π _ a ≫ P.map (productUniqueIso (fun j : Fin 1 ↦ U (a j))).inv.op
 
 private lemma restrict_eq_restrict_const (a : Fin 1 → ι) :
     restrict U P a = restrict U P (fun _ ↦ a default) :=
   eq_const_of_unique a ▸ rfl
 
 @[reassoc]
-private lemma cechXIso₀_hom_comp_π (a : Fin 1 → ι) : (cechXIso₀ U P).hom ≫ Pi.π _ a =
+private lemma cechXIso_zero_hom_comp_π (a : Fin 1 → ι) : (cechXIso U P 0).hom ≫ Pi.π _ a =
     restrict U P a ≫ P.map (productUniqueIso fun j ↦ U (a j)).hom.op :=
-  -- `restrict a` is the left-hand side followed by `P.map (productUniqueIso _).inv.op`
-  (P.mapIso (productUniqueIso _).op).comp_inv_eq.1 (Category.assoc _ _ _)
+  -- Restriction composes the native product reading with the inverse singleton comparison.
+  (P.mapIso (productUniqueIso (fun j : Fin 1 ↦ U (a j))).op).comp_inv_eq.1
+    (Category.assoc _ _ _)
 
 private lemma cechComplexFunctor_obj_X_zero_hom_ext {W : A}
     {y y' : W ⟶ ((cechComplexFunctor U).obj P).X 0}
     (h : ∀ i, y ≫ restrict U P (fun _ ↦ i) = y' ≫ restrict U P (fun _ ↦ i)) : y = y' :=
-  (cancel_mono (cechXIso₀ U P).hom).1 <| Pi.hom_ext _ _ fun a ↦ by
-    grind [cechXIso₀_hom_comp_π, restrict_eq_restrict_const]
+  (cancel_mono (cechXIso U P 0).hom).1 <| Pi.hom_ext _ _ fun a ↦ by
+    grind [cechXIso_zero_hom_comp_π, restrict_eq_restrict_const]
 
 private lemma comp_d_eq_zero_iff {W : A} (y : W ⟶ ((cechComplexFunctor U).obj P).X 0) :
     y ≫ ((cechComplexFunctor U).obj P).d 0 1 = 0 ↔ ∀ k : Fin 2 → ι,
       y ≫ restrict U P (fun _ ↦ k 1) ≫ P.map (Pi.π (fun j ↦ U (k j)) 1).op =
         y ≫ restrict U P (fun _ ↦ k 0) ≫ P.map (Pi.π (fun j ↦ U (k j)) 0).op := by
-  have key (m : Fin 2) (k : Fin 2 → ι) : cechδ U P m ≫ (cechXIso₁ U P).hom ≫ Pi.π _ k =
+  have key (m : Fin 2) (k : Fin 2 → ι) : cechδ U P m ≫ (cechXIso U P 1).hom ≫ Pi.π _ k =
       restrict U P (fun _ ↦ k (m.succAbove default)) ≫
         P.map (Pi.π (fun j ↦ U (k j)) (m.succAbove default)).op := by
-    rw [cechδ_comp_π, cechXIso₀_hom_comp_π_assoc, ← P.map_comp, ← op_comp, productUniqueIso_hom,
+    rw [cechδ_comp_π, cechXIso_zero_hom_comp_π_assoc, ← P.map_comp, ← op_comp, productUniqueIso_hom,
       Pi.lift_comp_π, restrict_eq_restrict_const]
-  rw [← cancel_mono (cechXIso₁ U P).hom, zero_comp, Pi.hom_ext_iff]
+  rw [← cancel_mono (cechXIso U P 1).hom, zero_comp, Pi.hom_ext_iff]
   simp [cechComplexFunctor_obj_d_zero_one, key, sub_eq_zero, Fin.one_succAbove_zero]
 
 private def lift₀ {W : A} (x : ∀ i, W ⟶ P.obj (op (U i))) :
     W ⟶ ((cechComplexFunctor U).obj P).X 0 :=
-  (Pi.lift fun a ↦ x (a default) ≫ P.map (productUniqueIso _).hom.op) ≫ (cechXIso₀ U P).inv
+  (Pi.lift fun a ↦ x (a default) ≫
+    P.map (productUniqueIso (fun j : Fin 1 ↦ U (a j))).hom.op) ≫ (cechXIso U P 0).inv
 
 @[reassoc]
 private lemma lift₀_comp_restrict {W : A} (x : ∀ i, W ⟶ P.obj (op (U i))) (a : Fin 1 → ι) :
@@ -241,6 +264,27 @@ theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
   Pi.map_π (fun _ ↦ α.app _) a
 
+/-- The native Čech differential in product coordinates is the alternating face sum. -/
+@[reassoc]
+lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ)
+    (k : Fin (n + 2) → ι) :
+    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
+  -- `cechXIso` is the identity
+  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
+    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
+
+/-- A presheaf morphism acts on the product coordinates by its component maps. -/
+@[reassoc]
+lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P' : Cᵒᵖ ⥤ A}
+    (α : P ⟶ P') (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((cechComplexFunctor V).map α).f n ≫ (cechXIso V P' n).hom ≫ Pi.π _ a =
+      (cechXIso V P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ V (a j))) :=
+  -- `cechXIso` is the identity
+  (_ ≫= Category.id_comp _).trans <|
+    (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
+
 /-- The degree `n` component of `(cechComplexFunctor U).map α` is the product of the components of
 `α` at the products `U (a 0) × ⋯ × U (a n)`. -/
 theorem cechComplexFunctor_map_f {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
@@ -289,6 +333,16 @@ theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk 
     (cechComplexMap P φ).f n ≫ Pi.π _ a =
       Pi.π _ (φ.f ∘ a) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
   Pi.lift_comp_π _ _
+
+/-- The component `(cechComplexMap P φ).f n` is `P` applied to the map of `(n + 1)`-fold powers of
+formal coproducts induced by `φ`. -/
+private lemma cechComplexMap_f_eq (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
+    (cechComplexMap P φ).f n =
+      ((FormalCoproduct.evalOp C A).obj P).map (FormalCoproduct.powerMap φ (Fin (n + 1))).op :=
+  -- the component of `alternatingCofaceMapComplex.map` is the component of the whiskered natural
+  -- transformation, whose component is `P` applied to the component `powerMap φ _` of
+  -- `cechFunctor.map φ`; the `simps` lemmas for these do not match the Čech-complex typing
+  rfl
 
 /-- The identity morphism of a family induces the identity of its Čech complex. -/
 @[simp]
@@ -350,7 +404,7 @@ formal coproducts. -/
 private abbrev cechArrowHom {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
     Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from X) ⟶
       Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from Y) :=
-  Arrow.homMk φ (𝟙 _) ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).hom_ext _ _)
+  Arrow.homMk' φ (𝟙 _)
 
 /-- Under the identification of the Čech object of a formal coproduct with the Čech nerve of its
 map to the terminal object, the map induced by `φ` is `Arrow.mapCechNerve`. -/
@@ -392,6 +446,186 @@ noncomputable def cechComplexMapHomotopy (φ ψ : FormalCoproduct.mk _ U ⟶ For
           Homotopy.ofEq (by
             rw [cechComplexMap_eq, cechFunctor_map_eq]
             exact Category.assoc _ _ _)
+
+/-! ### The prism homotopy
+
+The component `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` of `cechComplexMapHomotopy P φ ψ` is the alternating sum
+over `k` of the restrictions from the factors indexed by the prism tuples
+`(φ (a 0), …, φ (a k), ψ (a k), …, ψ (a n))`, with an overall minus sign
+(`cechComplexMapHomotopy_hom_π`). As a homotopy from `cechComplexMap P φ` to
+`cechComplexMap P ψ` in Mathlib's convention `f - g = d h + h d`, it says that the alternating sum
+`h` of these restrictions, listing `φ` before `ψ`, satisfies `T_ψ - T_φ = δ h + h δ` for the maps
+`T_φ` and `T_ψ` induced by the two refinement maps. The homotopy is natural in the presheaf
+(`cechComplexMapHomotopy_hom_naturality`) and compatible with further refinements on both sides
+(`cechComplexMapHomotopy_precomp_hom` and `cechComplexMapHomotopy_postcomp_hom`). -/
+
+/-- The morphism of formal coproducts underlying the `k`-th component of the homotopy
+`cechComplexMapHomotopy`: it sends a tuple `a` of indices of `U` to the tuple of indices of `V`
+listing `φ` applied to `a 0, …, a k` and then `ψ` applied to `a k, …, a n`. -/
+private def prismHom (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n : ℕ}
+    (k : Fin (n + 1)) :
+    (FormalCoproduct.mk _ U).power (Fin (n + 1)) ⟶ (FormalCoproduct.mk _ V).power (Fin (n + 2))
+    where
+  f a j := (if j ≤ k.castSucc then φ else ψ).f (a (k.predAbove j))
+  φ a := Pi.lift fun j ↦
+    Pi.π _ (k.predAbove j) ≫ (if j ≤ k.castSucc then φ else ψ).φ (a (k.predAbove j))
+
+@[reassoc]
+private lemma prismHom_powerπ (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n : ℕ}
+    (k : Fin (n + 1)) (j : Fin (n + 2)) :
+    prismHom φ ψ k ≫ (FormalCoproduct.mk _ V).powerπ j =
+      (FormalCoproduct.mk _ U).powerπ (k.predAbove j) ≫ if j ≤ k.castSucc then φ else ψ := by
+  refine FormalCoproduct.hom_ext rfl fun _ ↦ ?_
+  simp only [prismHom, FormalCoproduct.powerπ, FormalCoproduct.category_comp_φ]
+  exact (Pi.lift_comp_π _ _ =≫ _).trans (by simp)
+
+private lemma powerMap_prismHom {ι' : Type w} {W : ι' → C}
+    (χ : FormalCoproduct.mk _ W ⟶ FormalCoproduct.mk _ U)
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n : ℕ} (k : Fin (n + 1)) :
+    FormalCoproduct.powerMap χ _ ≫ prismHom φ ψ k = prismHom (χ ≫ φ) (χ ≫ ψ) k := by
+  refine ((FormalCoproduct.mk _ V).isLimitPowerFan _).hom_ext fun ⟨j⟩ ↦ ?_
+  simp only [Fan.mk_π_app, Category.assoc, prismHom_powerπ, FormalCoproduct.powerMap_π_assoc]
+  split_ifs <;> rfl
+
+private lemma prismHom_powerMap {κ' : Type w} {V' : κ' → C}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ω : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ V') {n : ℕ} (k : Fin (n + 1)) :
+    prismHom φ ψ k ≫ FormalCoproduct.powerMap ω _ = prismHom (φ ≫ ω) (ψ ≫ ω) k := by
+  refine ((FormalCoproduct.mk _ V').isLimitPowerFan _).hom_ext fun ⟨j⟩ ↦ ?_
+  simp only [Fan.mk_π_app, Category.assoc, prismHom_powerπ]
+  refine (_ ≫= FormalCoproduct.powerMap_π ω _ j).trans ?_
+  rw [prismHom_powerπ_assoc]
+  split_ifs <;> rfl
+
+/-- The `k`-th component of the simplicial homotopy underlying `cechComplexMapHomotopy`, read on
+Čech objects of formal coproducts, is `prismHom φ ψ k`. -/
+private lemma cechIsoCechNerve_hom_h_inv (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    {n : ℕ} (k : Fin (n + 1)) :
+    ((FormalCoproduct.mk _ U).cechIsoCechNerve terminalIsTerminal).hom.app (op ⦋n⦌) ≫
+        (Arrow.mapCechNerveHomotopy (cechArrowHom φ) (cechArrowHom ψ) rfl).h k ≫
+          ((FormalCoproduct.mk _ V).cechIsoCechNerve terminalIsTerminal).inv.app (op ⦋n + 1⦌) =
+      prismHom φ ψ k := by
+  refine ((FormalCoproduct.mk _ V).isLimitPowerFan _).hom_ext fun ⟨j⟩ ↦ ?_
+  simp only [Fan.mk_π_app, Category.assoc, FormalCoproduct.cechIsoCechNerve_inv_app,
+    prismHom_powerπ]
+  -- the projections are compared through the wide pullback factors of the Čech nerve
+  refine (_ ≫= _ ≫= FormalCoproduct.cechIsoCechNerveApp_inv_π _ _ _ j).trans ?_
+  refine (_ ≫= Arrow.mapCechNerveHomotopy_h_π _ _ _ k j).trans ?_
+  refine ((FormalCoproduct.cechIsoCechNerve_hom_app _ _ _ =≫ _).trans
+    (FormalCoproduct.cechIsoCechNerveApp_hom_π_assoc _ _ _ _ _)).trans ?_
+  split_ifs <;> rfl
+
+/-- The restriction `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` along `prismHom φ ψ k`, typed as a morphism between
+the terms of the Čech complexes so that it composes with their maps. -/
+private noncomputable def prismComponent (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    {n : ℕ} (k : Fin (n + 1)) :
+    ((cechComplexFunctor V).obj P).X (n + 1) ⟶ ((cechComplexFunctor U).obj P).X n :=
+  ((FormalCoproduct.evalOp C A).obj P).map (prismHom φ ψ k).op
+
+/-- The component `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` of `cechComplexMapHomotopy P φ ψ` is `P` applied to the
+alternating sum of the morphisms `prismHom φ ψ k`, with an overall minus sign. -/
+private lemma cechComplexMapHomotopy_hom_eq
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
+    (cechComplexMapHomotopy P φ ψ).hom (n + 1) n =
+      -∑ k : Fin (n + 1), ((-1 : ℤ) ^ (k : ℕ)) • prismComponent P φ ψ k := by
+  -- the homotopy is the chain homotopy of the simplicial homotopy, between two homotopies `0`
+  -- and two isomorphisms whose components are identities
+  have key : (cechComplexMapHomotopy P φ ψ).hom (n + 1) n =
+      (SimplicialObject.Homotopy.ToChainHomotopy.hom
+        ((((Arrow.mapCechNerveHomotopy (cechArrowHom φ) (cechArrowHom ψ) rfl).postcomp
+          ((FormalCoproduct.mk _ V).cechIsoCechNerve terminalIsTerminal).inv).precomp
+            ((FormalCoproduct.mk _ U).cechIsoCechNerve terminalIsTerminal).hom).whiskerRight
+              ((FormalCoproduct.evalOp C A).obj P).rightOp) n (n + 1)).unop := by
+    refine (Homotopy.trans_hom _ _ _ _).trans ?_
+    refine (congrArg (· + _) (Homotopy.ofEq_hom _ _ _)).trans ?_
+    refine (zero_add _).trans ?_
+    refine (Homotopy.trans_hom _ _ _ _).trans ?_
+    refine (congrArg (_ + ·) (Homotopy.ofEq_hom _ _ _)).trans ?_
+    refine (add_zero _).trans ?_
+    refine (Homotopy.compRight_hom _ _ _ _).trans ?_
+    refine (Homotopy.compLeft_hom _ _ _ _ =≫ _).trans ?_
+    exact (Category.id_comp (obj := A) _ =≫ _).trans (Category.comp_id (obj := A) _)
+  rw [key, SimplicialObject.Homotopy.ToChainHomotopy.hom_eq]
+  simp only [unop_neg, unop_sum, unop_zsmul]
+  refine congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦ congrArg (_ • ·) ?_)
+  dsimp only [SimplicialObject.Homotopy.whiskerRight, SimplicialObject.Homotopy.precomp,
+    SimplicialObject.Homotopy.postcomp]
+  rw [cechIsoCechNerve_hom_h_inv]
+  simp only [prismComponent, Functor.rightOp_map, Quiver.Hom.unop_op]
+
+/-- **The prism formula.** The factor indexed by `a : Fin (n + 1) → ι` of the component
+`Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` of the homotopy `cechComplexMapHomotopy P φ ψ` is minus the alternating
+sum over `k` of the factor of `Čⁿ⁺¹(V, P)` indexed by the prism tuple
+`(φ.f (a 0), …, φ.f (a k), ψ.f (a k), …, ψ.f (a n))`, restricted along the morphism of products
+given by `φ.φ` on its first `k + 1` factors and by `ψ.φ` on the others. -/
+@[reassoc]
+theorem cechComplexMapHomotopy_hom_π (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (n : ℕ) (a : Fin (n + 1) → ι) :
+    (cechComplexMapHomotopy P φ ψ).hom (n + 1) n ≫ Pi.π _ a =
+      -∑ k : Fin (n + 1), ((-1 : ℤ) ^ (k : ℕ)) •
+        (Pi.π _ (fun j : Fin (n + 2) ↦ (if j ≤ k.castSucc then φ else ψ).f (a (k.predAbove j))) ≫
+          P.map (Pi.lift fun j : Fin (n + 2) ↦ Pi.π (fun l ↦ U (a l)) (k.predAbove j) ≫
+            (if j ≤ k.castSucc then φ else ψ).φ (a (k.predAbove j))).op) := by
+  rw [cechComplexMapHomotopy_hom_eq]
+  -- the product is indexed by `Fin (n + 1) → ι` only up to unfolding, which blocks rewriting
+  -- with the preadditive lemmas, so they are applied by unification
+  refine (Preadditive.neg_comp _ _).trans (congrArg Neg.neg ?_)
+  refine (Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ ?_)
+  exact (Preadditive.zsmul_comp _ _ _).trans (congrArg _ (Pi.lift_comp_π _ _))
+
+/-- The homotopy `cechComplexMapHomotopy` is natural in the presheaf: its components commute with
+the maps of Čech complexes induced by a morphism of presheaves `α : P ⟶ Q`. -/
+@[reassoc]
+theorem cechComplexMapHomotopy_hom_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    ((cechComplexFunctor V).map α).f i ≫ (cechComplexMapHomotopy Q φ ψ).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ ((cechComplexFunctor U).map α).f j := by
+  obtain rfl | h := eq_or_ne i (j + 1)
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.comp_neg, Preadditive.neg_comp,
+      Preadditive.comp_sum, Preadditive.sum_comp, Preadditive.comp_zsmul, Preadditive.zsmul_comp]
+    exact congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦
+      congrArg _ (((FormalCoproduct.evalOp C A).map α).naturality _).symm)
+  · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
+    rw [(cechComplexMapHomotopy Q φ ψ).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
+      comp_zero, zero_comp]
+
+/-- **Compatibility of the homotopy with a further refinement of the source.** For a morphism of
+families `χ : W ⟶ U`, the homotopy between the maps induced by `χ ≫ φ` and `χ ≫ ψ` is the homotopy
+between the maps induced by `φ` and `ψ`, followed by the map induced by `χ`. -/
+@[simp]
+theorem cechComplexMapHomotopy_precomp_hom {ι' : Type w} {W : ι' → C}
+    (χ : FormalCoproduct.mk _ W ⟶ FormalCoproduct.mk _ U)
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    (cechComplexMapHomotopy P (χ ≫ φ) (χ ≫ ψ)).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexMap P χ).f j := by
+  obtain rfl | h := eq_or_ne i (j + 1)
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.neg_comp, Preadditive.sum_comp,
+      Preadditive.zsmul_comp]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_)
+    rw [prismComponent, prismComponent, ← powerMap_prismHom, op_comp, Functor.map_comp]
+    exact _ ≫= (cechComplexMap_f_eq P χ j).symm
+  · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
+    rw [(cechComplexMapHomotopy P _ _).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
+      zero_comp]
+
+/-- **Compatibility of the homotopy with a further refinement of the target.** For a morphism of
+families `ω : V ⟶ V'`, the homotopy between the maps induced by `φ ≫ ω` and `ψ ≫ ω` is the map
+induced by `ω` followed by the homotopy between the maps induced by `φ` and `ψ`. -/
+@[simp]
+theorem cechComplexMapHomotopy_postcomp_hom {κ' : Type w} {V' : κ' → C}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ω : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ V') (i j : ℕ) :
+    (cechComplexMapHomotopy P (φ ≫ ω) (ψ ≫ ω)).hom i j =
+      (cechComplexMap P ω).f i ≫ (cechComplexMapHomotopy P φ ψ).hom i j := by
+  obtain rfl | h := eq_or_ne i (j + 1)
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.comp_neg, Preadditive.comp_sum,
+      Preadditive.comp_zsmul]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_)
+    rw [prismComponent, prismComponent, ← prismHom_powerMap, op_comp, Functor.map_comp]
+    exact (cechComplexMap_f_eq P ω (j + 1)).symm =≫ _
+  · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
+    rw [(cechComplexMapHomotopy P _ _).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
+      comp_zero]
 
 section Homology
 
@@ -584,7 +818,7 @@ private def augmentation₀ : P.obj (op T) ⟶ ((cechComplexFunctor U).obj P).X 
 @[reassoc]
 private lemma augmentation₀_comp_restrict (a : Fin 1 → ι) :
     augmentation₀ U hT P ≫ restrict U P a = P.map (hT.from (U (a default))).op :=
-  -- `singleObjXSelf _ 0 _` and `cechXIso₀` are identities
+  -- `singleObjXSelf _ 0 _` and `cechXIso` are identities
   (Category.assoc _ _ _).trans <| (Category.id_comp _).trans <| (_ ≫= Category.id_comp _).trans <|
     (Category.assoc _ _ _).symm.trans <| (cechAugmentation_f_zero_comp_π U hT P a =≫ _).trans <|
       (P.map_comp _ _).symm.trans <| P.congr_map (congrArg Quiver.Hom.op (hT.hom_ext _ _))
@@ -697,7 +931,7 @@ theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
 Čech complex of `Q` for `U` is exact, then so is the one of `P`: by naturality, the augmentation of
 `P` is a retract of the augmentation of `Q`. -/
 theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P Q)
-    (hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
+    (_hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
   -- the augmentation is natural in the presheaf, so retracts of presheaves give retracts of arrows
   quasiIso_of_retractArrow (NatTrans.retractArrowApp
     (F := (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) (G := cechComplexFunctor U)

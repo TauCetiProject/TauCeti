@@ -19,10 +19,10 @@ import TauCeti.Topology.Homotopy.Path
 A topological space `X` is *semilocally simply connected* if every point `x` has a
 neighbourhood `U` such that every loop in `U` based at `x` is null-homotopic *in `X`*. This is
 the standing point-set hypothesis (alongside path-connectedness and local path-connectedness)
-under which the universal cover of a space exists; see the universal-covers roadmap. Mathlib
-master has `SimplyConnectedSpace` and the local notions `LocallyContractibleSpace` and
-`StronglyLocallyContractibleSpace`, but no semilocal simple connectivity; the predicate follows
-Kim Morrison's unmerged mathlib4#38292 (see the References below).
+under which the universal cover of a space exists. Mathlib master has `SimplyConnectedSpace` and
+the local notions `LocallyContractibleSpace` and `StronglyLocallyContractibleSpace`, but no
+semilocal simple connectivity; the predicate follows Kim Morrison's unmerged mathlib4#38292 (see
+the References below).
 
 The condition is genuinely *semi*local: the null-homotopy is allowed to leave `U` and use the
 whole of `X`. It is therefore weaker than asking each `U` to be simply connected on its own (the
@@ -53,15 +53,12 @@ Simple connectivity of nonempty star-convex and convex subsets is provided by
 
 ## References
 
-This file supplies the semilocal-simple-connectivity hypothesis required by the Tau Ceti
-universal-covers roadmap (`TauCetiRoadmap/UniversalCovers`); see the standing hypotheses there.
 The predicate follows the one Kim Morrison introduces (as `SemilocallySimplyConnectedSpace`, the
 classical based notion of Brazas, Definition 2.1, https://arxiv.org/abs/1102.0993) in mathlib4
 PRs [#31576](https://github.com/leanprover-community/mathlib4/pull/31576) and
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292), which state the
 universal-cover construction over `[SemilocallySimplyConnectedSpace X]`; neither has merged, so
-the predicate is not yet in Mathlib. The API here is a streamlined single-field restatement
-sufficient for the roadmap's Stage 0.2.
+the predicate is not yet in Mathlib. The API here is a streamlined single-field restatement.
 -/
 
 public section
@@ -133,9 +130,9 @@ theorem SemilocallySimplyConnectedSpace.of_locallyContractibleSpace
   semilocallySimplyConnectedAt x := by
     obtain ⟨V, hVU, hV, hnull⟩ := h x Set.univ Filter.univ_mem
     -- The inclusion `↥V → X` (factoring through `↥univ`) is null-homotopic.
-    let j : C(V, X) := ⟨Subtype.val, continuous_subtype_val⟩
+    let j : C(V, X) := ⟨Subtype.val, continuous_subtypeVal⟩
     have hnj : j.Nullhomotopic :=
-      hnull.comp_right (⟨Subtype.val, continuous_subtype_val⟩ : C((Set.univ : Set X), X))
+      hnull.comp_right (⟨Subtype.val, continuous_subtypeVal⟩ : C((Set.univ : Set X), X))
     refine semilocallySimplyConnectedAt_def.mpr ⟨V, hV, fun γ hγ => ?_⟩
     exact Path.Homotopic.refl_of_forall_mem_of_nullhomotopic hnj γ (Set.range_subset_iff.mp hγ)
 

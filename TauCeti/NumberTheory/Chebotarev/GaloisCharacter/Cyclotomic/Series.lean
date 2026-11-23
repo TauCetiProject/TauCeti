@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
+import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -118,20 +119,20 @@ private theorem exists_differentiableOn_eq_LSeries (m : ℕ) [NeZero m]
   set S := (cyclotomicModulus K m).support
   set w := χ.galoisCharacterUnitaryWeight
   have hcorr : Differentiable ℂ
-      fun s : ℂ ↦ ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :=
+      fun s : ℂ ↦ ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :=
     Differentiable.fun_finsetProd fun 𝔭 _ ↦ (differentiable_const 1).sub
       ((differentiable_const _).div (differentiable_id.const_cpow (.inl 𝔭.natCast_absNorm_ne_zero))
         fun s ↦ by simp [Complex.cpow_eq_zero_iff, 𝔭.natCast_absNorm_ne_zero])
   -- On `Re s > 0` each local factor `1 - w(𝔭) N(𝔭) ^ (-s)` is nonzero, since `‖w(𝔭)‖ ≤ 1`.
   have hne {s : ℂ} (hs : 0 < s.re) :
-      ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) ≠ 0 :=
+      ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) ≠ 0 :=
     Finset.prod_ne_zero_iff.mpr fun 𝔭 _ ↦ (isUnit_one_sub_of_norm_lt_one <| by
       rw [norm_div, div_lt_one (zero_lt_one.trans (𝔭.one_lt_norm_absNorm_cpow hs))]
       exact (w.norm_le_one _).trans_lt (𝔭.one_lt_norm_absNorm_cpow hs)).ne_zero
   -- The continued `L`-function with the Euler factors at the primes dividing `m` deleted has
   -- cancellation; dividing by those factors, which are nonzero on `Re s > 0`, restores them.
   refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrictAway (S : Set _) S.finite_toSet) s /
-      ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
+      ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
   · refine (differentiableOn_continuedLFunctionOfWeight
       (MonoidHom.hasCancellation_restrictAway_galoisCharacterUnitaryWeight χ hχ)).div
         hcorr.differentiableOn fun s hs ↦ hne ?_
@@ -148,10 +149,13 @@ variable (K F) in
 /-- **Holomorphy on `Re s > 1 - 1 / [K : ℚ]`.** For `F = K(μ_m)` and a nontrivial character `χ` of
 `Gal(F/K)`, the continued `L`-series of `χ` is holomorphic on the half-plane
 `Re s > 1 - 1 / [K : ℚ]`. -/
-theorem differentiableOn_cyclotomicCharacterSeriesC (m : ℕ) [NeZero m]
+theorem differentiableOn_cyclotomicCharacterSeriesC (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) :
     DifferentiableOn ℂ (cyclotomicCharacterSeriesC K F χ)
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   -- The Artin map is surjective, so `χ ∘ cyclotomicArtin K F m` is nontrivial.
   have h := exists_differentiableOn_eq_LSeries m χ <| by
     rwa [Ne, ← MonoidHom.one_comp (cyclotomicArtin K F m),
@@ -164,7 +168,7 @@ variable (K F) in
 /-- **Analyticity at `s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of `Gal(F/K)`,
 the continued `L`-series of `χ` is analytic at `s = 1`, which lies in the half-plane of
 `differentiableOn_cyclotomicCharacterSeriesC`. -/
-theorem analyticAt_cyclotomicCharacterSeriesC_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem analyticAt_cyclotomicCharacterSeriesC_one (m : ℕ) [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : AnalyticAt ℂ (cyclotomicCharacterSeriesC K F χ) 1 :=
   (differentiableOn_cyclotomicCharacterSeriesC K F m χ hχ).analyticAt <|
     (isOpen_lt continuous_const Complex.continuous_re).mem_nhds
@@ -256,14 +260,15 @@ private theorem tendsto_norm_prod_LSeries_atTop [IsMulCommutative (F ≃ₐ[K] F
   refine le_trans ?_ ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp _))
   refine le_of_eq_of_le (tsum_congr fun P ↦ ?_) (tsum_comp_le_tsum_of_inj
     (Complex.summable_ofReal.mp hsum.summable) (hρ0 σ)
-    (i := fun P : frobeniusPrimeSet K F 1 ↦ (P.1, 0)) fun P Q h ↦ Subtype.ext (congrArg Prod.fst h))
-  simp [hrn P.1 0 P.2 rfl, Real.rpow_neg, div_eq_mul_inv]
+    (i := fun P : frobeniusPrimeSet K F 1 ↦ (P.val, 0)) fun P Q h ↦ Subtype.ext
+        (congrArg Prod.fst h))
+  simp [hrn P.val 0 P.property rfl, Real.rpow_neg, div_eq_mul_inv]
 
 open scoped Classical in
 -- If the continued `L`-series of `χ ≠ 1` vanishes at `1`, then as `σ → 1⁺` the `L`-series of every
 -- character converges after renormalising: that of the trivial character multiplied by `σ - 1`,
 -- that of `χ` divided by `σ - 1`, and the others unchanged.
-private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ) [NeZero m]
+private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ)
     [IsCyclotomicExtension {m} K F] {χ : (F ≃ₐ[K] F) →* ℂˣ} (hχ : χ ≠ 1)
     (h0 : cyclotomicCharacterSeriesC K F χ 1 = 0) (ψ : (F ≃ₐ[K] F) →* ℂˣ) :
     ∃ z, Tendsto (fun σ : ℝ ↦ Pi.mulSingle (M := fun _ ↦ ℂ) 1 ((σ : ℂ) - 1) ψ *
@@ -298,9 +303,12 @@ private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ) [NeZero m]
 variable (K F) in
 /-- **Nonvanishing at `s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of `Gal(F/K)`,
 the continued `L`-series of `χ` does not vanish at `s = 1`. -/
-theorem cyclotomicCharacterSeriesC_ne_zero_at_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem cyclotomicCharacterSeriesC_ne_zero_at_one (m : ℕ) [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : cyclotomicCharacterSeriesC K F χ 1 ≠ 0 := by
   intro h0
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   have := IsCyclotomicExtension.isMulCommutative {m} K F
   -- The product of all the `L`-series is unbounded as `σ → 1⁺`. But the trivial character's
   -- series times `σ - 1` converges, the series of `χ` divided by `σ - 1` converges since it

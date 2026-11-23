@@ -8,12 +8,13 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 -- Proof-only: the quadratic formula, which solves the equation once the discriminant is a square.
 import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Separably closed fields
 
 Supplements to Mathlib's `IsSepClosed` and `IsSepClosure` for domain algebras, quadratics,
-and towers of field extensions.
+towers of field extensions, and transport along ring isomorphisms.
 
 ## Separable elements in domain algebras
 
@@ -50,7 +51,8 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
-* `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`
+* `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
+  and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
@@ -58,6 +60,15 @@ its conclusion, so instance search could not find it.
 -/
 
 public section
+
+/-- A separably closed field is infinite: over a finite field, the separable polynomial
+`X ^ q - X - 1` would have no root. -/
+instance IsSepClosed.infinite (K : Type*) [Field K] [IsSepClosed K] : Infinite K := by
+  refine Infinite.of_not_fintype fun _ ↦ ?_
+  obtain ⟨root, root_eq⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C
+    (1 : K) (-1) (-1) (FiniteField.cast_card_eq_zero K)
+    (Fintype.one_lt_card (α := K)) (by simp)
+  simp [FiniteField.pow_card] at root_eq
 
 /-- A separable element of a domain algebra over a separably closed field belongs to the image
 of the base field. -/
@@ -90,12 +101,12 @@ no solution over an imperfect separably closed field of characteristic `2`. -/
 theorem exists_quadratic_eq_zero_of_isSepClosed {K : Type*} [Field K] [IsSepClosed K] {a : K}
     (ha : a ≠ 0) (b c : K) (h : (2 : K) ≠ 0 ∨ b ≠ 0) :
     ∃ x : K, a * (x * x) + b * x + c = 0 := by
-  by_cases h2 : (2 : K) = 0
-  · obtain ⟨x, hx⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C (n := 2) a b c
-      (by exact_mod_cast h2) le_rfl (h.resolve_left (not_not_intro h2))
-    exact ⟨x, by linear_combination hx⟩
+  rcases ne_or_eq (2 : K) 0 with h2 | h2
   · have : NeZero (2 : K) := ⟨h2⟩
-    exact exists_quadratic_eq_zero ha (IsSepClosed.isSquare (discrim a b c))
+    exact exists_quadratic_eq_zero ha (IsSepClosed.isSquare _)
+  · obtain ⟨x, hx⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C (n := 2) a b c
+      (mod_cast h2) le_rfl (h.resolve_left (· h2))
+    exact ⟨x, by linear_combination hx⟩
 
 /-- **A separable closure of `K` is a separable closure of every intermediate extension `L`**:
 separable closedness is a property of the field alone, and separability over `K` implies

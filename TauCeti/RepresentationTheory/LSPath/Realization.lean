@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -35,7 +36,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
   {lam : M} {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 section Timed
@@ -47,6 +48,7 @@ realization separates orbit weights. No ray condition is needed for timed presen
 theorem timed_injective (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam)) :
     Function.Injective (fun π : LSPath P b lam ↦ π.timed 𝕜 f) := by
+  have := P.flip_isReduced
   intro π π' h
   have hlen : π.length = π'.length := by
     have := congrArg List.length h
@@ -78,11 +80,8 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
         have hseg := congrArg Prod.snd (congrFun hentry j)
         have hd : ((time j.succ - time j.castSucc : ℚ) : 𝕜) ≠ 0 := by
           exact Rat.cast_ne_zero.mpr (sub_pos.mpr (hmono j.castSucc_lt_succ)).ne'
-        have hweight : f ((dir j).1 • lam) = f ((dir' j).1 • lam) := by
-          rw [← htime] at hseg
-          exact (smul_right_injective _ hd) hseg
-        exact Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir j).2 (dir' j).2
-          (hf ⟨_, rfl⟩ ⟨_, rfl⟩ hweight))
+        rw [← htime] at hseg
+        exact eq_of_isMinimalCosetRep_of_smul_apply_smul_eq hlam hf hd hseg
       subst dir'
       subst time'
       rfl
@@ -98,6 +97,7 @@ theorem toPLPath_injective (hlam : lam ∈ dominantChamber P b)
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise
       fun u v ↦ ¬ SameRay 𝕜 u v) :
     Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
   intro π π' h
   apply timed_injective (𝕜 := 𝕜) hlam hf
   simp only [toPLPath_def] at h

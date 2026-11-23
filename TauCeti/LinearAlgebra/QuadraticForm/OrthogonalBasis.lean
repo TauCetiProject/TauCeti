@@ -34,6 +34,8 @@ pairwise orthogonal vectors that the Clifford-algebra API asks for.
   finite-dimensional space has an orthogonal basis none of whose members is isotropic.
 * `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the same basis read as a spanning list
   of pairwise orthogonal, non-isotropic vectors whose length is the dimension.
+* `QuadraticMap.Nondegenerate.exists_orthogonal_triple`: in dimension at least three, three
+  pairwise orthogonal, non-isotropic vectors.
 * `QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`: conversely, a spanning
   list of pairwise orthogonal, non-isotropic vectors is a basis, so the form is nondegenerate and
   the list has the length of the dimension.
@@ -102,6 +104,25 @@ theorem Nondegenerate.exists_list_pairwise_isOrtho (hQ : Q.Nondegenerate) :
     exact haniso i
 
 end FiniteDimensional
+
+section Triple
+
+variable [Invertible (2 : F)]
+
+/-- A nondegenerate quadratic form on a space of dimension at least three has three pairwise
+orthogonal anisotropic vectors, taken from an anisotropic orthogonal basis. -/
+theorem Nondegenerate.exists_orthogonal_triple (hQ : Q.Nondegenerate) (hV : 3 ≤ finrank F V) :
+    ∃ x y z : V, Q.IsOrtho x y ∧ Q.IsOrtho x z ∧ Q.IsOrtho y z ∧
+      Q x ≠ 0 ∧ Q y ≠ 0 ∧ Q z ≠ 0 := by
+  let _ : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨B, horth, haniso⟩ := hQ.exists_orthogonal_basis
+  let n0 : Fin (finrank F V) := ⟨0, by omega⟩
+  let n1 : Fin (finrank F V) := ⟨1, by omega⟩
+  let n2 : Fin (finrank F V) := ⟨2, by omega⟩
+  exact ⟨B n0, B n1, B n2, horth n0 n1 (by simp [n0, n1]), horth n0 n2 (by simp [n0, n2]),
+    horth n1 n2 (by simp [n1, n2]), haniso n0, haniso n1, haniso n2⟩
+
+end Triple
 
 /-- **An anisotropic orthogonal spanning list is a basis**, the converse of
 `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the form is nondegenerate and the list

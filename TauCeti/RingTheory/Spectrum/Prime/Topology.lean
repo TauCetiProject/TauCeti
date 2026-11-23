@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -27,6 +28,12 @@ A subset of the prime spectrum containing every minimal prime is dense. This is 
 generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
 turned into dense subsets of the spectrum. In particular the basic open set `D(a)` of a
 nonzerodivisor `a` is dense, since minimal primes consist of zero divisors.
+
+When there are finitely many minimal primes, every dense open contains them all and remains
+nonempty after any nontrivial localization.
+
+A bijection on minimal primes induces a bijection on irreducible components by taking closures
+of images under the spectral map.
 
 An open subset of the prime spectrum of a commutative ring containing the zero locus of an ideal
 contained in the Jacobson radical is the whole spectrum: every prime ideal is contained in a
@@ -74,9 +81,35 @@ theorem connectedSpace_primeSpectrum_of_injective [CommSemiring R] [CommSemiring
     rw [hf ((RingHom.mem_ker.mp hx).trans f.map_zero.symm)]
     exact zero_mem _
 
+open PrimeSpectrum in
+/-- A bijection on minimal primes gives a bijection on irreducible components, sending each
+component to the closure of its image under the spectral map. -/
+theorem bijOn_closure_image_comap_irreducibleComponents
+    {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (h : Set.BijOn (Ideal.comap f) (minimalPrimes S) (minimalPrimes R)) :
+    Set.BijOn (fun Z ↦ closure (comap f '' Z))
+      (irreducibleComponents (PrimeSpectrum S)) (irreducibleComponents (PrimeSpectrum R)) := by
+  rw [← zeroLocus_minimalPrimes, ← zeroLocus_minimalPrimes]
+  refine ⟨?_, ?_, ?_⟩
+  · rintro _ ⟨P, hP, rfl⟩
+    refine ⟨P.comap f, h.mapsTo hP, ?_⟩
+    exact (closure_image_comap_zeroLocus f P).symm
+  · rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ heq
+    have : P.IsPrime := hP.isPrime
+    have : Q.IsPrime := hQ.isPrime
+    simp only [Function.comp_apply, closure_image_comap_zeroLocus, zeroLocus_eq_iff,
+      Ideal.IsPrime.isRadical, Ideal.IsRadical.radical] at heq
+    rw [h.injOn hP hQ heq]
+  · rintro _ ⟨P, hP, rfl⟩
+    obtain ⟨Q, hQ, rfl⟩ := h.surjOn hP
+    refine ⟨zeroLocus Q, Set.mem_image_of_mem _ hQ, ?_⟩
+    exact closure_image_comap_zeroLocus f Q
+
 end RingHom
 
 namespace PrimeSpectrum
+
+open TopologicalSpace
 
 section Quotient
 
@@ -118,6 +151,27 @@ theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
   obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (J := x.asIdeal) bot_le
   have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
   exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
+
+/-- If there are finitely many minimal primes, a dense open contains each of them. -/
+theorem mem_of_isOpen_of_dense_of_mem_minimalPrimes
+    (hfin : (minimalPrimes R).Finite) {s : Set (PrimeSpectrum R)} (hs : IsOpen s)
+    (hdense : Dense s) {p : PrimeSpectrum R} (hp : p.asIdeal ∈ minimalPrimes R) : p ∈ s := by
+  obtain ⟨g, hgp, hg⟩ :=
+    Ideal.exists_notMem_forall_le_of_mem_minimalPrimes (⊥ : Ideal R) hfin hp
+  obtain ⟨q, hqs, hqg⟩ := hdense.exists_mem_open (basicOpen g).isOpen ⟨p, hgp⟩
+  exact ((le_iff_specializes p q).mp (hg q.asIdeal q.isPrime bot_le hqg)).mem_open hs hqs
+
+/-- If there are finitely many minimal primes, a dense open has nonempty preimage in every
+nontrivial localization. -/
+theorem preimage_comap_nonempty_of_isOpen_of_dense (hfin : (minimalPrimes R).Finite)
+    {s : Set (PrimeSpectrum R)} (hs : IsOpen s) (hdense : Dense s)
+    (M : Submonoid R) (S : Type*) [CommSemiring S] [Nontrivial S] [Algebra R S]
+    [IsLocalization M S] : (comap (algebraMap R S) ⁻¹' s).Nonempty := by
+  obtain ⟨⟨p, hp⟩⟩ := Ideal.nonempty_minimalPrimes (R := S) (I := ⊥) bot_ne_top
+  have hp' : p.under R ∈ minimalPrimes R := by
+    rw [← Set.mem_preimage, ← IsLocalization.minimalPrimes_map M S (⊥ : Ideal R)]
+    simpa only [Ideal.map_bot] using hp
+  exact ⟨⟨p, hp.isPrime⟩, mem_of_isOpen_of_dense_of_mem_minimalPrimes hfin hs hdense hp'⟩
 
 /-- The basic open set `D(a)` of a nonzerodivisor `a` is dense: it contains every minimal prime,
 since minimal primes consist of zero divisors. -/

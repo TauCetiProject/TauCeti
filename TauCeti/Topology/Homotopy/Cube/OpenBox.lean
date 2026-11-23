@@ -43,11 +43,11 @@ theorem cubeLiftDen_def (x : I × (N → I)) :
 
 theorem one_le_cubeLiftDen (x : I × (N → I)) : 1 ≤ cubeLiftDen x := by
   rw [cubeLiftDen_def]
-  exact le_max_of_le_left (by linarith [x.1.2.2])
+  exact le_max_of_le_left (by linarith [x.1.property.2])
 
 theorem cubeLiftDen_le_two (x : I × (N → I)) : cubeLiftDen x ≤ 2 := by
   rw [cubeLiftDen_def]
-  exact max_le (by linarith [x.1.2.1]) (by linarith [cubeRadius_le_one x.2])
+  exact max_le (by linarith [x.1.property.1]) (by linarith [cubeRadius_le_one x.2])
 
 /-- Time at which the radial deformation reaches `x`. -/
 def cubeLiftTime (x : I × (N → I)) : ℝ := 2 / cubeLiftDen x - 1
@@ -113,7 +113,7 @@ theorem cubeLiftDeform_one (x : I × (N → I)) : cubeLiftDeform 1 x = x := by
 @[simp]
 theorem cubeLiftDeform_of_mem (s : I) {x : I × (N → I)}
     (hx : x ∈ cylinderExtensionDomain (Cube.boundary N)) : cubeLiftDeform s x = x := by
-  simp [cubeLiftDeform, cubeLiftTime_eq_zero hx, min_eq_left s.2.1]
+  simp [cubeLiftDeform, cubeLiftTime_eq_zero hx, min_eq_left s.property.1]
 
 @[simp]
 theorem cubeLiftDeform_time (x : I × (N → I)) :
@@ -198,5 +198,22 @@ theorem cubeLiftDeform_zero_one_snd_mem_boundary {z : N → I} (hz : 1 / 2 < cub
   have hs : 0 ≤ 1 / cubeRadius z := le_of_lt (one_div_pos.2 (lt_trans (by norm_num) hz))
   apply (cubeRadius_eq_one_iff _).1
   rw [cubeRadius_cubeScale hs (by simp [hr]), one_div_mul_cancel hr]
+
+omit [Fintype N] in
+/-- For `x` in `{0} × I^(Option N) ∪ I × ∂I^(Option N)`, either `x.2 none ∈ {0, 1}`, or the point
+obtained from `x.2` by replacing its `none` coordinate with `x.1` (via
+`piOptionEquivProdHomeomorph`, after dropping `x.2 none`) lies in `∂I^(Option N)`. -/
+theorem eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain
+    {x : I × (Option N → I)} (hx : x ∈ cylinderExtensionDomain (Cube.boundary (Option N))) :
+    (x.2 none = 0 ∨ x.2 none = 1) ∨
+      (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (x.1, fun i => x.2 (some i)) ∈
+        Cube.boundary (Option N) := by
+  rcases mem_cylinderExtensionDomain_iff.1 hx with hx | hx
+  · exact .inr (piOptionEquivProdHomeomorph_symm_mem_boundary
+      (Cube.mem_prodBoundary_iff.2 (.inl (.inl hx))))
+  · rcases Cube.boundary_option_iff.1 hx with hx | hx
+    · exact .inl hx
+    · exact .inr (piOptionEquivProdHomeomorph_symm_mem_boundary
+        (Cube.mem_prodBoundary_iff.2 (.inr hx)))
 
 end TauCeti

@@ -8,22 +8,27 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Invariant.Galois
+import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # Galois groups of integral closures
 
-If `G` is a finite Galois group of a field extension `M / L` and `C` is an integrally closed
+If `G` is a Galois group of an algebraic field extension `M / L` and `C` is an integrally closed
 domain with fraction field `L`, then `G` is a Galois group of the integral closure `B` of `C` in
-`M` over `C`, for any action of `G` on `B` compatible with its action on `M`.
+`M` over `C`, for any action of `G` on `B` compatible with its action on `M`. The group `G` need
+not be finite.
 
 Mathlib's `IsGaloisGroup.of_isFractionRing` states this with `M` a fraction field of `B` and
 `B / C` integral; both follow from `B` being the integral closure of `C` in `M`, which is how the
 rings arise over a Dedekind base. The second statement is the form needed for a tower: for a
-domain `A` with fraction field `K`, a finite extension `L` of `K`, an extension `M` of `L`, and
-the integral closures `C` and `B` of `A` in `L` and in `M`, a Galois group of `M / L` is a Galois
-group of `B / C`. The third statement specializes the tower to a fixed field: for a finite
-extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closure of `A` in
-`M ^ H`, the subgroup `H` is a Galois group of `B / C`.
+domain `A` with fraction field `K`, an algebraic extension `L` of `K`, an algebraic extension `M`
+of `L`, and the integral closures `C` and `B` of `A` in `L` and in `M`, a Galois group of `M / L`
+is a Galois group of `B / C`. The third statement specializes the tower to a fixed field: for a
+finite extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closure of `A`
+in `M ^ H`, the subgroup `H` is a Galois group of `B / C`. The fourth statement records the
+analogous result for the image of `Gal(M/L)` inside `Gal(M/K)` under restriction of scalars.
 
 ## Main results
 
@@ -35,6 +40,12 @@ extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closur
   of the integral closures of a common base in `M ^ H` and in `M`.
 * `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
   the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
+* `IsGaloisGroup.of_isIntegralClosure_range_restrictScalarsHom`: the image of `Gal(M/L)` in
+  `Gal(M/K)` under restriction of scalars is a Galois group of the integral closure of `C` in `M`
+  over `C`.
+* `TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed`: conversely, starting from the
+  rings, a domain `B` with a finite Galois group over a Noetherian integrally closed domain `A`
+  embedding in `B` is a finite `A`-module.
 -/
 
 public section
@@ -55,20 +66,23 @@ namespace IsGaloisGroup
 
 section IntegrallyClosed
 
-variable (G C B L M : Type*) [Group G] [Finite G] [CommRing C] [CommRing B]
-  [Algebra C B] [Field L] [Field M] [Algebra C L] [Algebra L M] [Algebra C M] [Algebra B M]
-  [IsScalarTower C L M] [IsScalarTower C B M] [IsFractionRing C L] [IsIntegrallyClosed C]
-  [IsIntegralClosure B C M] [MulSemiringAction G M] [MulSemiringAction G B]
+variable (G C B L M : Type*) [Group G] [CommRing C] [CommRing B]
+  [Algebra C B] [Field L] [Field M] [Algebra C L] [Algebra L M] [Algebra.IsAlgebraic L M]
+  [Algebra C M] [Algebra B M] [IsScalarTower C L M] [IsScalarTower C B M] [IsFractionRing C L]
+  [IsIntegrallyClosed C] [IsIntegralClosure B C M] [MulSemiringAction G M] [MulSemiringAction G B]
   [SMulDistribClass G B M]
 
-/-- **A Galois group of fields is a Galois group of integral closures.** If `G` is a finite Galois
-group of `M / L`, where `L` is the fraction field of an integrally closed domain `C`, then `G`
-is a Galois group of the integral closure of `C` in `M` over `C`. -/
+/-- **A Galois group of fields is a Galois group of integral closures.** If `G` is a Galois group
+of an algebraic extension `M / L`, where `L` is the fraction field of an integrally closed domain
+`C`, then `G` is a Galois group of the integral closure of `C` in `M` over `C`. The group `G` need
+not be finite. -/
 theorem of_isIntegralClosure [IsGaloisGroup G L M] : IsGaloisGroup G C B :=
-  have : FiniteDimensional L M := IsGaloisGroup.finiteDimensional G L M
   have : IsDomain C := (IsFractionRing.injective C L).isDomain _
   have : IsDomain B := (IsIntegralClosure.algebraMap_injective B C M).isDomain _
-  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension C L M B
+  have : Algebra.IsAlgebraic C M := IsFractionRing.comap_isAlgebraic_iff.mpr ‹_›
+  have : FaithfulSMul C M := .trans C L M
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_algebraic C B
+    fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff C M).mp
   have : Algebra.IsIntegral C B := IsIntegralClosure.isIntegral_algebra C M
   of_isFractionRing G C B L M
 
@@ -76,9 +90,10 @@ end IntegrallyClosed
 
 section Tower
 
-variable (G A K L M C B : Type*) [Group G] [Finite G] [CommRing A] [IsDomain A] [Field K]
+variable (G A K L M C B : Type*) [Group G] [CommRing A] [IsDomain A] [Field K]
   [Algebra A K] [IsFractionRing A K] [Field L] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-  [FiniteDimensional K L] [Field M] [Algebra L M] [Algebra A M] [CommRing C] [Algebra A C]
+  [Algebra.IsAlgebraic K L] [Field M] [Algebra L M] [Algebra.IsAlgebraic L M] [Algebra A M]
+  [CommRing C] [Algebra A C]
   [Algebra C L] [IsScalarTower A C L] [IsIntegralClosure C A L] [CommRing B] [Algebra A B]
   [Algebra B M] [IsScalarTower A B M] [IsIntegralClosure B A M] [Algebra C B] [Algebra C M]
   [IsScalarTower A C B] [IsScalarTower C L M] [IsScalarTower C B M]
@@ -86,12 +101,15 @@ variable (G A K L M C B : Type*) [Group G] [Finite G] [CommRing A] [IsDomain A] 
 
 include A K in
 /-- **Galois groups in a tower of integral closures.** Let `A` be a domain with fraction field
-`K`, let `L` be a finite extension of `K` and `M` an extension of `L`, and let `C` and `B` be the
-integral closures of `A` in `L` and in `M`. A finite Galois group of `M / L` is then a Galois
-group of `B` over `C`. -/
+`K`, let `L` be an algebraic extension of `K` and `M` an algebraic extension of `L`, and let `C`
+and `B` be the integral closures of `A` in `L` and in `M`. A Galois group of `M / L` is then a
+Galois group of `B` over `C`. -/
 theorem of_isIntegralClosure_tower [IsGaloisGroup G L M] : IsGaloisGroup G C B :=
   have : IsDomain C := (IsIntegralClosure.algebraMap_injective C A L).isDomain _
-  have : IsFractionRing C L := IsIntegralClosure.isFractionRing_of_finite_extension A K L C
+  have : Algebra.IsAlgebraic A L := IsFractionRing.comap_isAlgebraic_iff.mpr ‹_›
+  have : FaithfulSMul A L := .trans A K L
+  have : IsFractionRing C L := IsIntegralClosure.isFractionRing_of_algebraic A C
+    fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A L).mp
   have : IsIntegrallyClosed C := (isIntegrallyClosed_iff_isIntegrallyClosedIn L).mpr
     (IsIntegrallyClosedIn.of_isIntegralClosure A)
   have : Algebra.IsIntegral A C := IsIntegralClosure.isIntegral_algebra A L
@@ -109,11 +127,14 @@ open IntermediateField
 
 variable (A : Type*) {K M : Type*} [CommRing A] [IsDomain A] [Field K] [Algebra A K]
   [IsFractionRing A K] [Field M] [Algebra K M] [FiniteDimensional K M] [Algebra A M]
-  (H : Subgroup Gal(M/K)) [Algebra A (fixedField H)] [IsScalarTower A K (fixedField H)]
-  (C B : Type*) [CommRing C] [Algebra A C] [Algebra C (fixedField H)]
-  [IsScalarTower A C (fixedField H)] [IsIntegralClosure C A (fixedField H)] [CommRing B]
+  (H : Subgroup Gal(M/K)) [Algebra A (IntermediateField.fixedField H)]
+  [IsScalarTower A K (IntermediateField.fixedField H)]
+  (C B : Type*) [CommRing C] [Algebra A C] [Algebra C (IntermediateField.fixedField H)]
+  [IsScalarTower A C (IntermediateField.fixedField H)]
+  [IsIntegralClosure C A (IntermediateField.fixedField H)] [CommRing B]
   [Algebra A B] [Algebra B M] [IsScalarTower A B M] [IsIntegralClosure B A M] [Algebra C B]
-  [Algebra C M] [IsScalarTower A C B] [IsScalarTower C (fixedField H) M] [IsScalarTower C B M]
+  [Algebra C M] [IsScalarTower A C B] [IsScalarTower C (IntermediateField.fixedField H) M]
+  [IsScalarTower C B M]
   [MulSemiringAction Gal(M/K) B] [SMulDistribClass Gal(M/K) B M]
 
 include A K in
@@ -122,19 +143,58 @@ fraction field `K`, let `M / K` be a finite extension, and let `H` be a subgroup
 `C` and `B` are the integral closures of `A` in the fixed field `M ^ H` and in `M`, then `H` is a
 Galois group of `B` over `C`. The extension `M / K` need not be Galois. -/
 theorem of_isIntegralClosure_fixedField : IsGaloisGroup H C B :=
-  have : IsGalois (fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup H (fixedField H) M :=
+  have : IsGalois (IntermediateField.fixedField H) M := IsGalois.of_fixed_field M H
+  have : IsGaloisGroup H (IntermediateField.fixedField H) M :=
     of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
-  of_isIntegralClosure_tower H A K (fixedField H) M C B
+  of_isIntegralClosure_tower H A K (IntermediateField.fixedField H) M C B
 
 include A in
 /-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
 theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul :
     IsGaloisGroup H C B ∧ FaithfulSMul C B := by
-  have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
-  have : FaithfulSMul C M := .trans C (fixedField H) M
+  have : FaithfulSMul C (IntermediateField.fixedField H) :=
+    IsIntegralClosure.faithfulSMul A C (IntermediateField.fixedField H)
+  have : FaithfulSMul C M := .trans C (IntermediateField.fixedField H) M
   exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
 
 end FixedField
 
+section RestrictScalars
+
+variable (K L M C B : Type*) [Field K] [Field L] [Field M]
+  [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M] [IsGalois L M]
+  [CommRing C] [CommRing B] [Algebra C B] [Algebra C L] [Algebra C M] [Algebra B M]
+  [IsScalarTower C L M] [IsScalarTower C B M] [IsFractionRing C L] [IsIntegrallyClosed C]
+  [IsIntegralClosure B C M] [MulSemiringAction Gal(M/K) B] [SMulDistribClass Gal(M/K) B M]
+
+/-- **Restricted-scalars subgroups as Galois groups of integral closures.** Let `K ⊆ L ⊆ M` be a
+tower of fields with `M / L` Galois, let `C` be an integrally closed domain with fraction field `L`,
+and let `B` be the integral closure of `C` in `M`. Then the image of `Gal(M/L)` in `Gal(M/K)` under
+restriction of scalars is a Galois group of `B` over `C`. -/
+theorem of_isIntegralClosure_range_restrictScalarsHom :
+    IsGaloisGroup (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range C B :=
+  have : IsGaloisGroup (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range L M :=
+    range_restrictScalarsHom K L M
+  of_isIntegralClosure _ C B L M
+
+end RestrictScalars
+
 end IsGaloisGroup
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
+/-- If a finite group `G` is a Galois group of a domain `B` over a Noetherian integrally closed
+domain `A` embedding in `B`, then `B` is a finite `A`-module. -/
+theorem TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed (G A B : Type*) [Group G]
+    [Finite G] [CommRing A] [IsIntegrallyClosed A] [IsNoetherianRing A] [CommRing B] [IsDomain B]
+    [Algebra A B] [FaithfulSMul A B] [MulSemiringAction G B] [IsGaloisGroup G A B] :
+    Module.Finite A B := by
+  have : IsDomain A := .of_faithfulSMul A B
+  let := IsFractionRing.mulSemiringAction G B (FractionRing B)
+  have := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
+  have := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
+  have := Algebra.IsInvariant.isIntegral A B G
+  -- `B` embeds `A`-linearly in the integral closure of `A` in `Frac B`, which is finite over `A`.
+  have := IsIntegralClosure.finite A (FractionRing A) (FractionRing B)
+    (integralClosure A (FractionRing B))
+  exact TauCeti.IsIntegralClosure.finite_of_injective (C' := integralClosure A (FractionRing B))
+    (IsScalarTower.toAlgHom A B (FractionRing B)) (IsFractionRing.injective B (FractionRing B))

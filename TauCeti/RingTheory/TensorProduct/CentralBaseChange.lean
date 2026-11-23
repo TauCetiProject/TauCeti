@@ -11,9 +11,12 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.IsBaseChange
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.RingTheory.Flat.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Central base change of modules over an algebra
@@ -31,6 +34,10 @@ projectivity of `S ⊗[A] M` over `S ⊗[A] Λ` descends to `M`, both along a si
 generated `A`-modules. Such families, for instance the completions of a Dedekind domain at its
 primes, are how lattices over orders are compared with their local completions.
 
+Faithfulness of the action also survives flat base change when `M` is finitely generated over
+`A`, as a consequence of the injectivity of `S ⊗[A] End_A(M) → End_S(S ⊗[A] M)`
+(`LinearMap.tensorProduct_injective`).
+
 The `S ⊗[A] Λ`-module structure on `S ⊗[A] M` is the definition `TauCeti.CentralBaseChange.module`,
 which is not an instance: for `M = Λ` it agrees with the multiplication of `S ⊗[A] Λ` only
 propositionally. Files that use it activate it with `attribute [local instance low]`, so that the
@@ -38,20 +45,30 @@ multiplication of `S ⊗[A] Λ` on itself is still found first. Mathlib's
 `TensorProduct.Algebra.module` builds the same kind of action from commuting `S`- and
 `Λ`-actions, but `S ⊗[A] M` carries no `Λ`-action instance, so the two actions are packaged
 together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
-`Module.End S (S ⊗[A] M)`.
+`Module.End S (S ⊗[A] M)`. The action and `TauCeti.CentralBaseChange.includeRight` need only
+commutative semirings `A` and `S`, a semiring `Λ`, and an additive monoid `M`.
 
 ## Main definitions
 
 * `TauCeti.CentralBaseChange.lsmul`: the action of `S ⊗[A] Λ` on `S ⊗[A] M`, as an `S`-algebra map.
 * `TauCeti.CentralBaseChange.module`: the resulting `S ⊗[A] Λ`-module structure on `S ⊗[A] M`.
+* `TauCeti.CentralBaseChange.includeRight`: the map `m ↦ 1 ⊗ m`, semilinear along
+  `Λ → S ⊗[A] Λ`.
 * `TauCeti.CentralBaseChange.map`: the `S ⊗[A] Λ`-linear map `S ⊗[A] M → S ⊗[A] N` induced by a
   `Λ`-linear map `M → N`, and `TauCeti.CentralBaseChange.mapHom`, the same as an `A`-linear map
   of `Hom` modules.
+* `TauCeti.CentralBaseChange.congr`: the `S ⊗[A] Λ`-linear equivalence induced by a `Λ`-linear
+  equivalence, and `TauCeti.CentralBaseChange.prodRight` and `TauCeti.CentralBaseChange.piRight`,
+  the compatibilities with binary products and with finite powers of `Λ`.
+* `TauCeti.CentralBaseChange.freeHomEquiv`: an `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is
+  the same as a family of values on the basis vectors `1 ⊗ Pi.single i 1`.
 * `TauCeti.CentralBaseChange.homEquiv`: for flat `S` and finitely presented `M`, the `S`-linear
   equivalence `S ⊗[A] (M →ₗ[Λ] N) ≃ₗ[S] (S ⊗[A] M →ₗ[S ⊗[A] Λ] S ⊗[A] N)`.
 
 ## Main results
 
+* The instance `Module.Free (S ⊗[A] Λ) (S ⊗[A] (ι → Λ))` for finite `ι`: the base change of a
+  finite free `Λ`-module is free.
 * `TauCeti.CentralBaseChange.isBaseChange_mapHom`: for flat `S` and finitely presented `M`,
   `mapHom` exhibits the `Hom` module over `S ⊗[A] Λ` as the base change of the `Hom` module
   over `Λ`.
@@ -63,6 +80,11 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 * `TauCeti.CentralBaseChange.projective_of_forall_projective_of_forall_subsingleton`: the same
   along a family that jointly detects the vanishing of all `A`-modules, with no finiteness over
   `A`.
+* `TauCeti.CentralBaseChange.lsmul_injective` and the corresponding `FaithfulSMul` instance:
+  for flat `S`, if `Λ` acts faithfully on `M` and `M` is finitely generated over `A`, then
+  `S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`. For an algebra of operators on a finite free module
+  over a domain, this makes the extended operator algebra act faithfully over the fraction field,
+  so that its characters can be realized on eigenvectors there.
 
 ## Implementation notes
 
@@ -75,6 +97,8 @@ of Mathlib's `Module.FinitePresentation.isBaseChange_map`, the case `Λ = A`, wh
 ## References
 
 * C. A. Weibel, *The K-book*, Chapter I, §2, Locally free modules 2.4 and its proof, pp. 10–11.
+* P. Deligne and J.-P. Serre, *Formes modulaires de poids 1*, Ann. Sci. ENS 7 (1974),
+  Lemme 6.11 and its proof, for the faithfulness of an operator algebra over the fraction field.
 -/
 
 public section
@@ -83,9 +107,11 @@ open scoped TensorProduct
 
 namespace TauCeti.CentralBaseChange
 
-variable (A : Type*) [CommRing A] (S : Type*) [CommRing S] [Algebra A S]
-  (Λ : Type*) [Ring Λ] [Algebra A Λ]
-  (M : Type*) [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M]
+section Semiring
+
+variable (A : Type*) [CommSemiring A] (S : Type*) [CommSemiring S] [Algebra A S]
+  (Λ : Type*) [Semiring Λ] [Algebra A Λ]
+  (M : Type*) [AddCommMonoid M] [Module A M] [Module Λ M] [IsScalarTower A Λ M]
 
 /-- The action of `S ⊗[A] Λ` on `S ⊗[A] M`, as an `S`-algebra map to the `S`-linear
 endomorphisms: `s ⊗ l` acts as `s` on the left factor and as `l` on the right factor. -/
@@ -130,6 +156,26 @@ instance : SMulCommClass (S ⊗[A] Λ) S (S ⊗[A] M) where
 /-- `A` acts centrally, so `S ⊗[A] Λ`-linear maps between such modules form an `A`-module. -/
 instance : SMulCommClass (S ⊗[A] Λ) A (S ⊗[A] M) where
   smul_comm t a x := by rw [← algebraMap_smul S a x, smul_comm, algebraMap_smul]
+
+variable (A S Λ M) in
+/-- The map `m ↦ 1 ⊗ m`, semilinear along the canonical algebra map `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
+noncomputable def includeRight :
+    M →ₛₗ[RingHomClass.toRingHom (Algebra.TensorProduct.includeRight : Λ →ₐ[A] S ⊗[A] Λ)]
+      S ⊗[A] M where
+  toFun m := 1 ⊗ₜ[A] m
+  map_add' := TensorProduct.tmul_add _
+  map_smul' l m := by simp
+
+@[simp]
+theorem includeRight_apply (m : M) : includeRight A S Λ M m = (1 : S) ⊗ₜ[A] m := (rfl)
+
+end Semiring
+
+variable {A : Type*} [CommRing A] {S : Type*} [CommRing S] [Algebra A S]
+  {Λ : Type*} [Ring Λ] [Algebra A Λ]
+  {M : Type*} [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M]
+
+attribute [local instance low] module
 
 /-- An `S ⊗[A] Λ`-linear map out of `S ⊗[A] M` is determined by its values on the tensors
 `1 ⊗ m`. -/
@@ -182,6 +228,46 @@ theorem map_surjective {φ : M →ₗ[Λ] N} (hφ : Function.Surjective φ) :
   rw [coe_map]
   exact LinearMap.lTensor_surjective S hφ
 
+variable (S) in
+/-- The `S ⊗[A] Λ`-linear equivalence `S ⊗[A] M ≃ S ⊗[A] N`, `s ⊗ m ↦ s ⊗ φ m`, induced by a
+`Λ`-linear equivalence `φ : M ≃ N`. -/
+noncomputable def congr (φ : M ≃ₗ[Λ] N) : S ⊗[A] M ≃ₗ[S ⊗[A] Λ] S ⊗[A] N :=
+  .ofLinearMap (map S φ.toLinearMap) (map S φ.symm.toLinearMap)
+    (by rw [← map_comp, φ.comp_symm, map_id]) (by rw [← map_comp, φ.symm_comp, map_id])
+
+@[simp]
+theorem congr_tmul (φ : M ≃ₗ[Λ] N) (s : S) (m : M) : congr S φ (s ⊗ₜ[A] m) = s ⊗ₜ φ m := (rfl)
+
+@[simp]
+theorem congr_symm_tmul (φ : M ≃ₗ[Λ] N) (s : S) (n : N) :
+    (congr S φ).symm (s ⊗ₜ[A] n) = s ⊗ₜ φ.symm n := (rfl)
+
+/-- `TensorProduct.prodRight` is `S ⊗[A] Λ`-linear. -/
+private theorem prodRight_smul (t : S ⊗[A] Λ) (x : S ⊗[A] (M × N)) :
+    TensorProduct.prodRight A S S M N (t • x) = t • TensorProduct.prodRight A S S M N x := by
+  induction t using TensorProduct.inductionOn with
+  | tmul s l =>
+    induction x using TensorProduct.inductionOn with
+    | tmul s' m => simp
+    | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+  | add t t' ht ht' => simp only [add_smul, map_add, ht, ht']
+
+variable (A S Λ M N) in
+/-- Central base change commutes with binary products: the `S ⊗[A] Λ`-linear equivalence
+`S ⊗[A] (M × N) ≃ (S ⊗[A] M) × (S ⊗[A] N)` of `TensorProduct.prodRight`. -/
+noncomputable def prodRight : S ⊗[A] (M × N) ≃ₗ[S ⊗[A] Λ] (S ⊗[A] M) × (S ⊗[A] N) where
+  __ := TensorProduct.prodRight A S S M N
+  map_smul' := prodRight_smul
+
+@[simp]
+theorem prodRight_tmul (s : S) (x : M × N) :
+    prodRight A S Λ M N (s ⊗ₜ[A] x) = (s ⊗ₜ x.1, s ⊗ₜ x.2) := (rfl)
+
+@[simp]
+theorem prodRight_symm_tmul (s : S) (m : M) (n : N) :
+    (prodRight A S Λ M N).symm (s ⊗ₜ[A] m, s ⊗ₜ[A] n) = s ⊗ₜ (m, n) := by
+  rw [LinearEquiv.symm_apply_eq, prodRight_tmul]
+
 variable (A S Λ M N) in
 /-- `TauCeti.CentralBaseChange.map` as an `A`-linear map
 `Hom_Λ(M, N) → Hom_{S ⊗[A] Λ}(S ⊗[A] M, S ⊗[A] N)`. For flat `S` and finitely presented `M` it
@@ -227,7 +313,7 @@ private theorem sum_piRightHom_smul (x : S ⊗[A] (ι → Λ)) :
 variable (A S Λ N ι) in
 /-- An `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is determined by its values on the basis
 vectors `1 ⊗ Pi.single i 1`, and these values are arbitrary. -/
-private noncomputable def freeHomEquiv :
+noncomputable def freeHomEquiv :
     (S ⊗[A] (ι → Λ) →ₗ[S ⊗[A] Λ] S ⊗[A] N) ≃ₗ[S] (ι → S ⊗[A] N) where
   toFun ψ i := ψ ((1 : S) ⊗ₜ Pi.single i 1)
   map_add' _ _ := rfl
@@ -246,6 +332,36 @@ private noncomputable def freeHomEquiv :
     rw [Finset.sum_eq_single j (fun i _ hij ↦ by simp [Pi.single_eq_of_ne hij]) (by simp),
       Pi.single_eq_same, ← Algebra.TensorProduct.one_def, one_smul]
 
+@[simp]
+theorem freeHomEquiv_apply (ψ : S ⊗[A] (ι → Λ) →ₗ[S ⊗[A] Λ] S ⊗[A] N) (i : ι) :
+    freeHomEquiv A S Λ N ι ψ i = ψ ((1 : S) ⊗ₜ Pi.single i 1) := (rfl)
+
+@[simp]
+theorem freeHomEquiv_symm_apply_tmul_single (v : ι → S ⊗[A] N) (i : ι) :
+    (freeHomEquiv A S Λ N ι).symm v ((1 : S) ⊗ₜ Pi.single i 1) = v i :=
+  congrFun ((freeHomEquiv A S Λ N ι).apply_symm_apply v) i
+
+variable (A S Λ ι) in
+/-- Central base change commutes with finite powers of `Λ`: the `S ⊗[A] Λ`-linear equivalence
+`S ⊗[A] (ι → Λ) ≃ (ι → S ⊗[A] Λ)` of `TensorProduct.piRight`. -/
+noncomputable def piRight : S ⊗[A] (ι → Λ) ≃ₗ[S ⊗[A] Λ] (ι → S ⊗[A] Λ) where
+  __ := TensorProduct.piRight A S S fun _ : ι ↦ Λ
+  map_smul' t x := funext (piRightHom_smul t x)
+
+@[simp]
+theorem piRight_tmul (s : S) (v : ι → Λ) : piRight A S Λ ι (s ⊗ₜ[A] v) = fun i ↦ s ⊗ₜ v i :=
+  (rfl)
+
+@[simp]
+theorem piRight_symm_tmul (s : S) (v : ι → Λ) :
+    (piRight A S Λ ι).symm (fun i ↦ s ⊗ₜ[A] v i) = s ⊗ₜ v :=
+  TensorProduct.piRight_symm_apply A S S (fun _ : ι ↦ Λ) s v
+
+@[simp]
+theorem piRight_symm_single (s : S) (i : ι) (l : Λ) :
+    (piRight A S Λ ι).symm (Pi.single i (s ⊗ₜ[A] l)) = s ⊗ₜ Pi.single i l :=
+  TensorProduct.piRight_symm_single A S S (fun _ : ι ↦ Λ) s i l
+
 omit [Fintype ι] [DecidableEq ι] in
 /-- The comparison map is a base change for a finite free module: under evaluation at the
 standard basis it is the base change `Nⁱ → (S ⊗[A] N)ⁱ`. -/
@@ -257,6 +373,12 @@ private theorem isBaseChange_mapHom_pi [Finite ι] : IsBaseChange S (mapHom A S 
     (IsBaseChange.pi (fun _ ↦ TensorProduct.mk A S N 1) fun _ ↦ TensorProduct.isBaseChange A N S)
   refine LinearMap.ext fun φ ↦ funext fun i ↦ ?_
   simp [e, freeHomEquiv]
+
+/-- `S ⊗[A] (ι → Λ)` is a free `S ⊗[A] Λ`-module, with basis `1 ⊗ Pi.single i 1`. -/
+instance {ι : Type*} [Finite ι] : Module.Free (S ⊗[A] Λ) (S ⊗[A] (ι → Λ)) := by
+  classical
+  cases nonempty_fintype ι
+  exact .of_equiv (piRight A S Λ ι).symm
 
 end Free
 
@@ -332,6 +454,36 @@ private theorem surjective_lTensor_compRight [Module.FinitePresentation Λ M]
     Module.projective_lifting_property (map S π) (homEquiv A S Λ M M y) (map_surjective S hπ)
   refine ⟨(homEquiv A S Λ M (Fin n → Λ)).symm χ, (homEquiv A S Λ M M).injective ?_⟩
   rw [homEquiv_lTensor_compRight, LinearEquiv.apply_symm_apply, hχ]
+
+section Faithful
+
+variable [Module.Finite A M] [FaithfulSMul Λ M]
+
+variable (A S Λ M) in
+/-- **Faithfulness survives flat base change.** If `Λ` acts faithfully on a finitely generated
+`A`-module `M` and `S` is a flat `A`-algebra, then `S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`:
+the action map `S ⊗[A] Λ → End_S(S ⊗[A] M)` is injective. -/
+theorem lsmul_injective : Function.Injective (lsmul A S Λ M) := by
+  have hρ : Function.Injective (Algebra.lsmul A A M : Λ →ₐ[A] Module.End A M) := fun _ _ h ↦
+    FaithfulSMul.eq_of_smul_eq_smul fun m ↦ LinearMap.congr_fun h m
+  -- The action map factors as the base change of `Λ → End_A(M)`, injective by flatness, followed
+  -- by the comparison `S ⊗[A] End_A(M) → End_S(S ⊗[A] M)`.
+  have h : ⇑(lsmul A S Λ M) =
+      LinearMap.tensorProduct A S M M ∘ (Algebra.lsmul A A M).toLinearMap.lTensor S := by
+    ext x
+    induction x using TensorProduct.inductionOn with
+    | tmul s l => simp [lsmul_tmul]
+    | add x y hx hy => simp_all
+  rw [h]
+  exact (LinearMap.tensorProduct_injective A S M M).comp
+    (Module.Flat.lTensor_preserves_injective_linearMap _ hρ)
+
+/-- If `Λ` acts faithfully on a finitely generated `A`-module `M` and `S` is flat over `A`, then
+`S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`. -/
+instance : FaithfulSMul (S ⊗[A] Λ) (S ⊗[A] M) where
+  eq_of_smul_eq_smul h := lsmul_injective A S Λ M (LinearMap.ext h)
+
+end Faithful
 
 end Flat
 

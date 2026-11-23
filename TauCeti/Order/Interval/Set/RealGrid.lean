@@ -21,7 +21,9 @@ from a point to the cell's left endpoint is bounded by the width.
 Pairwise disjointness follows from Mathlib's `Set.pairwise_disjoint_Ico_zsmul`.
 Coverage follows from Mathlib's `iUnion_Ico_zsmul`.
 The named grid-cell results provide a partition API for constructions that
-operate on this family. Borel measurability is developed in
+operate on this family. Finite grids are available too: a bounded interval `[a, b]` can be
+subdivided into `N` equal pieces of width below any positive bound
+(`Real.exists_nat_step_lt_of_lt`). Borel measurability is developed in
 `TauCeti.MeasureTheory.Constructions.BorelSpace.Real`.
 
 Adapted from the Kitware DKPS formalization,
@@ -108,5 +110,21 @@ theorem abs_le_of_mem_gridCell {ε : ℝ} {k : ℤ} {s : ℝ}
       exact add_le_add hdist (le_refl (|(k : ℝ)| * ε))
     _ = (|(k : ℝ)| + 1) * ε := by
       rw [add_mul, one_mul, add_comm]
+
+/-- A positive step `delta` and an interval `[a, b]` admit a subdivision of `[a, b]` into `N > 0`
+equal pieces of width `w < delta`. -/
+theorem exists_nat_step_lt_of_lt {a b delta : ℝ} (hab : a < b) (hdelta : 0 < delta) :
+    ∃ (N : ℕ) (w : ℝ), 0 < N ∧ 0 < w ∧ w < delta ∧ b = a + N * w := by
+  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / delta)
+  have hNpos : 0 < N := by
+    by_contra h
+    rw [Nat.pos_iff_ne_zero, not_not] at h
+    rw [h, Nat.cast_zero] at hN
+    exact absurd hN (not_lt.2 (div_nonneg (by linarith) hdelta.le))
+  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
+  refine ⟨N, (b - a) / N, hNpos, by have := sub_pos.2 hab; positivity, ?_, by field_simp; ring⟩
+  rw [div_lt_iff₀ hNposR]
+  rw [div_lt_iff₀ hdelta] at hN
+  linarith
 
 end Real

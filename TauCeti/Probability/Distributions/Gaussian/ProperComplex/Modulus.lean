@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
+public import TauCeti.Probability.Distributions.Gamma.Pi
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Exponential.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
@@ -23,6 +24,8 @@ identity.
 
 For a standard complex coordinate, the real variances are `1 / 2`, the squared modulus has
 rate-one exponential law, and the Rayleigh scale is `Real.sqrt (1 / 2)`.
+`map_re_im_properComplexGaussianScalar` gives the joint law of the real and imaginary parts
+of the standard scalar law.
 
 The proofs reuse real Gaussian coordinate independence, `map_sum_sq_pi_gaussianReal`, and
 `map_norm_pi_gaussianReal`.
@@ -83,6 +86,17 @@ theorem map_re_im_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   rw [properComplexGaussianMeasure_def, Measure.map_map (by fun_prop) (by fun_prop)]
   simpa [μ, Function.comp_def, Complex.sub_re, Complex.sub_im] using hprod.map_eq
 
+/-- A standard scalar proper complex Gaussian has independent real and imaginary parts, each
+`N(0, 1/2)`. -/
+theorem map_re_im_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (fun z ↦ (z.re, z.im)) =
+      (gaussianReal 0 (1 / 2)).prod (gaussianReal 0 (1 / 2)) := by
+  have h := map_re_im_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) (Matrix.PosSemidef.one : (1 : Matrix Unit Unit ℂ).PosSemidef) ()
+  rw [properComplexGaussianScalar_def,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simpa [Function.comp_def, Matrix.one_apply_eq, Real.toNNReal_inv] using h
+
 /-- The centered real and imaginary coordinates, indexed by `Fin 2`, have the product
 Gaussian law with variance half the complex variance, including zero variance. -/
 @[simp]
@@ -117,7 +131,7 @@ theorem map_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
       (expMeasure 1).map (fun x ↦ (C i i).re * x) := by
     simp only [Fin.sum_univ_two, Fintype.card_fin, Nat.cast_ofNat,
       chiSquaredMeasure_two] at hsum
-    rw [← expMeasure_map_const_mul (r := 1) zero_lt_one (c := 2) (by norm_num),
+    rw [← expMeasure_map_const_mul (r := 1) (c := 2) (by norm_num),
       Measure.map_map (by fun_prop) (by fun_prop)] at hsum
     convert hsum using 1
     congr 1
@@ -146,6 +160,32 @@ theorem map_norm_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   rw [Measure.map_map (by fun_prop) (by fun_prop), map_norm_pi_gaussianReal hvpos] at h
   simpa [Function.comp_def, EuclideanSpace.norm_eq, Fin.sum_univ_two,
     ← Complex.sub_re, ← Complex.sub_im, ← Complex.norm_eq_sqrt_sq_add_sq, hv] using h
+
+/-- The squared modulus of a standard proper complex Gaussian is a rate-one exponential. -/
+@[simp]
+theorem map_norm_sq_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (fun z ↦ ‖z‖ ^ 2) = expMeasure 1 := by
+  rw [properComplexGaussianScalar_def, Measure.map_map (by fun_prop) (by fun_prop)]
+  have h := map_norm_sq_sub_eval_properComplexGaussianMeasure
+    (0 : Unit → ℂ) Matrix.PosSemidef.one ()
+  simpa [Function.comp_def, Pi.zero_def] using h
+
+omit [DecidableEq ι] in
+/-- The sum of squared moduli of a nonempty family of independent standard proper complex
+Gaussians has gamma law with shape equal to the number of coordinates and rate one. -/
+theorem map_sum_norm_sq_pi_properComplexGaussianScalar [Nonempty ι] :
+    (Measure.pi fun _ : ι ↦ properComplexGaussianScalar).map (fun z ↦ ∑ i, ‖z i‖ ^ 2) =
+      gammaMeasure (Fintype.card ι) 1 := by
+  classical
+  have hmap : (Measure.pi fun _ : ι ↦ properComplexGaussianScalar).map
+      (fun z i ↦ ‖z i‖ ^ 2) = Measure.pi (fun _ : ι ↦ gammaMeasure 1 1) := by
+    rw [Measure.pi_map_pi (fun _ ↦ (by fun_prop :
+      Measurable (fun z : ℂ ↦ ‖z‖ ^ 2)).aemeasurable)]
+    simp only [map_norm_sq_properComplexGaussianScalar, expMeasure]
+  have h := map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) one_pos
+  rw [← hmap, Measure.map_map (by fun_prop) (by fun_prop)] at h
+  simpa only [Function.comp_def, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
+    using h
 
 end TauCeti.Probability
 

@@ -33,6 +33,12 @@ basic maps between such extensions, both instances of the morphisms of central e
   (`TauCeti.CurrentAlgebra.ofLoopExtension`), which sends the central element of the polynomial
   extension to `K` (`TauCeti.CurrentAlgebra.ofLoopExtension_centralElement`).
 
+It also identifies the negative currents `t⁻¹ L[t⁻¹]`, the elements `(u, 0)` with `u` a
+polynomial current of negative order, as a Lie subalgebra of the extension
+(`TauCeti.CurrentAlgebra.negativeLieSubalgebra`): the residue cocycle vanishes on them. Over a
+field the vacuum module is free of rank one over its enveloping algebra
+(`TauCeti.CurrentAlgebra.vacuumPBWEquiv`).
+
 The isomorphism `levelEquiv` for a unit `u` does not identify the representations on which the
 central elements act by `1`: pulling back along it a module on which `K` acts by `1` gives one on
 which `K` acts by `u`.
@@ -189,5 +195,48 @@ theorem ofLoopExtension_injective : Function.Injective (ofLoopExtension Φ hΦ h
     ((TrivialLieModule.equiv R C R).symm.injective.comp (TrivialLieModule.equiv R P R).injective)
 
 end Loop
+
+section Negative
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+
+/-- **The negative currents** `t⁻¹ L[t⁻¹]` as a Lie subalgebra of the residue central extension:
+the elements `(u, 0)` with `u` a polynomial current of negative order. They form a Lie subalgebra
+since the bracket of negative currents is negative and the residue cocycle vanishes on them. -/
+def negativeLieSubalgebra : LieSubalgebra R (ofTwoCocycle c) where
+  toSubmodule :=
+    (truncSubmodule R L 0).map ((ofProdLinearEquiv c).toLinearMap ∘ₗ LinearMap.inl R C Z)
+  lie_mem' := by
+    rintro _ _ ⟨u, hu, rfl⟩ ⟨v, hv, rfl⟩
+    refine ⟨⁅u, v⁆, truncSubmodule_mono R L (by omega) (lie_mem_truncSubmodule R L hu hv), ?_⟩
+    simp [bracket_ofTwoCocycle, coe_ofProdLinearEquiv, twoCochainOfBilinear_apply_apply,
+      residuePairing_eq_zero_of_mem_truncSubmodule R L Φ hu hv (by omega)]
+
+variable {Φ hΦ hΦs}
+
+/-- An element of the residue extension is a negative current exactly when its current
+coordinate is a polynomial current of negative order and its central coordinate vanishes. -/
+theorem mem_negativeLieSubalgebra {x : ofTwoCocycle c} :
+    x ∈ negativeLieSubalgebra Φ hΦ hΦs ↔
+      ((ofProd c).symm x).1 ∈ truncSubmodule R L 0 ∧ ((ofProd c).symm x).2 = 0 := by
+  rw [← LieSubalgebra.mem_toSubmodule]
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    simpa [coe_ofProdLinearEquiv] using hu
+  · rintro ⟨hu, hz⟩
+    refine ⟨_, hu, ?_⟩
+    rw [← (ofProd c).apply_symm_apply x]
+    simp [coe_ofProdLinearEquiv, ← hz]
+
+/-- The element `(u, z)` is a negative current exactly when `u` is a polynomial current of
+negative order and `z = 0`. -/
+@[simp]
+theorem ofProd_mem_negativeLieSubalgebra {u : C} {z : Z} :
+    ofProd c (u, z) ∈ negativeLieSubalgebra Φ hΦ hΦs ↔ u ∈ truncSubmodule R L 0 ∧ z = 0 := by
+  rw [mem_negativeLieSubalgebra, Equiv.symm_apply_apply]
+
+end Negative
 
 end TauCeti.CurrentAlgebra

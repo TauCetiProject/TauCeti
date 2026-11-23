@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
@@ -24,7 +25,8 @@ the construction below is the Frenkel--Kac construction of the corresponding sim
 algebra over `ℤ`; no comparison with other constructions of that Lie algebra is made here. Its
 carrier `ShellLieAlgebra B` is `Q × (Φ →₀ ℤ)`: a Cartan vector `H_h` for each
 `h : Q` (`ShellLieAlgebra.cartan`) and a root vector `x_a` for each `a ∈ Φ`
-(`ShellLieAlgebra.root`), which together give an integral basis (`ShellLieAlgebra.basis`). The
+(`ShellLieAlgebra.root`). The Cartan vectors `H_(αᵢ)` of the coordinate vectors `αᵢ = Pi.single i 1`
+together with the root vectors `x_a` give an integral basis (`ShellLieAlgebra.basis`). The
 bracket (`ShellLieAlgebra.bracketBilin`) is the bilinear map with
 `⁅H_h, H_k⁆ = 0`, `⁅H_h, x_a⁆ = ⟪h, a⟫ x_a`, and on root vectors
 (`ShellLieAlgebra.rootBracket`)
@@ -113,6 +115,10 @@ noncomputable def root (a : B.normTwoShell) : ShellLieAlgebra B :=
 theorem equivProd_cartan (h : I → ℤ) : equivProd B (cartan B h) = (h, 0) := by
   simp [cartan]
 
+/-- The Cartan embedding is injective. -/
+theorem cartan_injective : Function.Injective (cartan B) :=
+  (equivProd B).symm.injective.comp LinearMap.inl_injective
+
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
     equivProd B (root B a) = (0, Finsupp.single a 1) := by
@@ -153,13 +159,14 @@ instance [Finite B.normTwoShell] : Module.Finite ℤ (ShellLieAlgebra B) :=
   .of_basis (basis B)
 
 /-- Every element `x` of `ShellLieAlgebra B` is the sum `H_h + ∑_(a ∈ Φ) c_a x_a` of the Cartan
-vector of its Cartan part `h` and the root vectors weighted by its root coefficients `c`. -/
-theorem cartan_add_sum_root_eq [Fintype B.normTwoShell] (x : ShellLieAlgebra B) :
-    cartan B (equivProd B x).1 + ∑ a, (equivProd B x).2 a • root B a = x := by
+vector of its Cartan part `h` and the root vectors weighted by its finitely supported root
+coefficients `c`. -/
+theorem cartan_add_sum_root_eq (x : ShellLieAlgebra B) :
+    cartan B (equivProd B x).1 + ((equivProd B x).2).sum (fun a n ↦ n • root B a) = x := by
   apply (equivProd B).injective
-  ext
-  · simp [map_sum, Prod.fst_sum]
-  · simp [map_sum, Prod.snd_sum]
+  apply Prod.ext
+  · simp [Finsupp.sum, map_sum, Prod.fst_sum]
+  · simpa [Finsupp.sum, map_sum, Prod.snd_sum] using Finsupp.sum_single ((equivProd B x).2)
 
 /-- A Cartan vector has its original lattice coordinates in the Cartan part of the shell basis. -/
 @[simp]
@@ -250,9 +257,10 @@ the sum of the roots then has norm at least `4`. -/
 theorem rootBracket_eq_zero_of_nonneg (hB : B.IsSymm) {a b : B.normTwoShell}
     (h : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ b) : rootBracket B a b = 0 := by
   refine rootBracket_of_notMem_of_add_ne_zero (fun hm ↦ ?_) fun hz ↦ ?_
-  · have := (hB.add_mem_normTwoShell_iff a.2 b.2).1 hm
+  · have := (hB.add_mem_normTwoShell_iff a.property b.property).1 hm
     omega
-  · rw [eq_neg_of_add_eq_zero_right hz, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2] at h
+  · rw [eq_neg_of_add_eq_zero_right hz, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.property]
+      at h
     omega
 
 /-- The bracket on basis vectors. -/
@@ -400,7 +408,7 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
   rw [Int.even_iff] at hpar
   by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
   · have hm' : (b : I → ℤ) + a ∈ B.normTwoShell := by rwa [add_comm]
-    have hp := (hB.add_mem_normTwoShell_iff a.2 b.2).1 hm
+    have hp := (hB.add_mem_normTwoShell_iff a.property b.property).1 hm
     have hsign : (B.orderedSignForm b a).negOnePow = -(B.orderedSignForm a b).negOnePow := by
       rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff, Int.even_iff]
       omega
@@ -409,11 +417,8 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     rw [rootBracket_of_mem hm, rootBracket_of_mem hm', hsign, Units.neg_smul, hroot]
   by_cases hz : (a : I → ℤ) + b = 0
   · have hb : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right hz
-    have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -2 := by
-      rw [hb, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2]
     have hsign : (B.orderedSignForm b a).negOnePow = (B.orderedSignForm a b).negOnePow := by
-      rw [Int.negOnePow_eq_iff, Int.even_iff]
-      omega
+      simp only [hb, map_neg, LinearMap.neg_apply]
     have hcartan : cartan B b = -cartan B a := by rw [hb, map_neg]
     rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero (by rwa [add_comm]), hsign,
       hcartan, smul_neg]
@@ -437,12 +442,9 @@ protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : 
 /-- **The bracket is alternating**, for a symmetric `B` with even diagonal. -/
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x : ShellLieAlgebra B) :
     ⁅x, x⁆ = 0 := by
-  have h := ShellLieAlgebra.lie_skew hB hdiag x x
-  refine (basis B).repr.injective (Finsupp.ext fun i ↦ ?_)
-  have hi := congr((basis B).repr $h i)
-  simp only [map_neg, Finsupp.neg_apply] at hi
-  simp only [map_zero, Finsupp.coe_zero, Pi.zero_apply]
-  omega
+  have hz : (2 : ℤ) • ⁅x, x⁆ = 0 := by
+    simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp (ShellLieAlgebra.lie_skew hB hdiag x x)
+  exact ((basis B).smul_eq_zero.mp hz).resolve_left (by decide)
 
 /-! ### The Jacobi identity -/
 
@@ -453,7 +455,7 @@ private noncomputable def rootOf (B : Matrix I I ℤ) (v : I → ℤ) : ShellLie
 
 omit [LinearOrder I] in
 private theorem rootOf_coe (a : B.normTwoShell) : rootOf B a = root B a := by
-  rw [rootOf, dite_eq_left a.2]
+  rw [rootOf, dite_eq_left a.property]
 
 omit [LinearOrder I] in
 private theorem rootOf_of_notMem {v : I → ℤ} (h : v ∉ B.normTwoShell) : rootOf B v = 0 := by
@@ -489,49 +491,74 @@ private theorem root_lie_rootBracket {a b c : B.normTwoShell} (hbc : (b : I → 
     simp only [add_assoc]
   · rw [rootOf_of_notMem hm, ite_eq_right hm, ShellLieAlgebra.lie_zero, smul_zero]
 
-/-- The Jacobi identity for three root vectors, none two of which are equal or opposite. -/
+open scoped Classical in
+/-- The three double brackets of root vectors `a`, `b`, `c` summing to zero cancel: the terms are
+multiples of `H_a`, `H_b` and `H_c` by the same sign. -/
+private theorem jacobi_terms_of_add_add_eq_zero {a b c : B.normTwoShell}
+    (hd : (a : I → ℤ) + b + c = 0) :
+    (((if (b : I → ℤ) + c ∈ B.normTwoShell then
+          (((B.orderedSignForm b c).negOnePow *
+              (B.orderedSignForm a b + B.orderedSignForm a c).negOnePow) •
+            (rootOf B ((a : I → ℤ) + b + c) +
+              if (a : I → ℤ) + b + c = 0 then cartan B a else 0))
+        else 0) +
+        if (c : I → ℤ) + a ∈ B.normTwoShell then
+          (((B.orderedSignForm c a).negOnePow *
+              (B.orderedSignForm b c + B.orderedSignForm b a).negOnePow) •
+            (rootOf B ((a : I → ℤ) + b + c) +
+              if (a : I → ℤ) + b + c = 0 then cartan B b else 0))
+        else 0) +
+      if (a : I → ℤ) + b ∈ B.normTwoShell then
+        (((B.orderedSignForm a b).negOnePow *
+            (B.orderedSignForm c a + B.orderedSignForm c b).negOnePow) •
+          (rootOf B ((a : I → ℤ) + b + c) +
+            if (a : I → ℤ) + b + c = 0 then cartan B c else 0))
+      else 0) = 0 := by
+  have hc : (c : I → ℤ) = -(a + b) := eq_neg_of_add_eq_zero_right hd
+  have hab : (a : I → ℤ) + b ∈ B.normTwoShell := by
+    rw [← neg_mem_normTwoShell, ← hc]; exact c.property
+  have hbc_eq : (b : I → ℤ) + c = -a := by rw [hc]; abel
+  have hca_eq : (c : I → ℤ) + a = -b := by rw [hc]; abel
+  have hbc : (b : I → ℤ) + c ∈ B.normTwoShell := by
+    rw [hbc_eq, neg_mem_normTwoShell]; exact a.property
+  have hca : (c : I → ℤ) + a ∈ B.normTwoShell := by
+    rw [hca_eq, neg_mem_normTwoShell]; exact b.property
+  have e2 : B.orderedSignForm c a + (B.orderedSignForm b c + B.orderedSignForm b a) =
+      B.orderedSignForm b c + (B.orderedSignForm a b + B.orderedSignForm a c) := by
+    simp only [hc, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]; ring
+  have e3 : B.orderedSignForm a b + (B.orderedSignForm c a + B.orderedSignForm c b) =
+      B.orderedSignForm b c + (B.orderedSignForm a b + B.orderedSignForm a c) := by
+    simp only [hc, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]; ring
+  rw [ite_eq_left hbc, ite_eq_left hca, ite_eq_left hab, ← Int.negOnePow_add, ← Int.negOnePow_add,
+    ← Int.negOnePow_add, e2, e3]
+  simp only [hd, rootOf_zero, ↓reduceIte, zero_add]
+  rw [← smul_add, ← smul_add, ← map_add (cartan B), ← map_add (cartan B), hd, map_zero, smul_zero]
+
+/-- The Jacobi identity for three root vectors, none two of which are opposite. -/
 private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
-    {a b c : B.normTwoShell} (hab : a ≠ b) (hbc : b ≠ c) (hca : c ≠ a)
+    {a b c : B.normTwoShell}
     (hab' : (a : I → ℤ) + b ≠ 0) (hbc' : (b : I → ℤ) + c ≠ 0) (hca' : (c : I → ℤ) + a ≠ 0) :
     ⁅root B a, rootBracket B b c⁆ + ⁅root B b, rootBracket B c a⁆ +
       ⁅root B c, rootBracket B a b⁆ = 0 := by
   have hS := hB.isHermitian.isSymm
-  have ha := a.2
-  have hb := b.2
-  have hc := c.2
-  -- The three pairings lie in `{-1, 0, 1}`, and decide which pairwise sums are roots.
-  have bound {x y : B.normTwoShell} (hxy : x ≠ y) (hxy' : (x : I → ℤ) + y ≠ 0) :
-      -1 ≤ (x : I → ℤ) ⬝ᵥ B *ᵥ y ∧ (x : I → ℤ) ⬝ᵥ B *ᵥ y ≤ 1 :=
-    ⟨hB.neg_one_le_dotProduct_mulVec hdiag x.2 y.2 fun h ↦ hxy' (by rw [h, neg_add_cancel]),
-      hB.dotProduct_mulVec_le_one hdiag x.2 y.2 (Subtype.coe_injective.ne hxy)⟩
-  have hp := bound hab hab'
-  have hq := bound hbc hbc'
-  have hr := bound hca hca'
+  have ha := a.property
+  have hb := b.property
+  have hc := c.property
+  -- The three pairings are at least `-1` (equal roots pair to `2`), and a pairing is `-1` exactly
+  -- when the corresponding pairwise sum is a root.
+  have hp1 := hB.neg_one_le_dotProduct_mulVec ha hb fun h ↦ hab' (by rw [h, neg_add_cancel])
+  have hq1 := hB.neg_one_le_dotProduct_mulVec hb hc fun h ↦ hbc' (by rw [h, neg_add_cancel])
+  have hr1 := hB.neg_one_le_dotProduct_mulVec hc ha fun h ↦ hca' (by rw [h, neg_add_cancel])
   have hmab := hS.add_mem_normTwoShell_iff ha hb
   have hmbc := hS.add_mem_normTwoShell_iff hb hc
   have hmca := hS.add_mem_normTwoShell_iff hc ha
-  have hac : (a : I → ℤ) ⬝ᵥ B *ᵥ c = (c : I → ℤ) ⬝ᵥ B *ᵥ a := hS.dotProduct_mulVec_comm
   -- The parities of the ordered forms.
   have pab := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag a b
   have pbc := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag b c
   have pca := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag c a
   rw [Int.even_iff] at pab pbc pca
-  have sign_eq (w x y z : ℤ) (h : (w + x - (y + z)) % 2 = 0) :
-      w.negOnePow * x.negOnePow = y.negOnePow * z.negOnePow := by
-    rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff, Int.even_iff]
-    exact h
-  have sign_neg (w x y z : ℤ) (h : (w + x - (y + z + 1)) % 2 = 0) :
-      w.negOnePow * x.negOnePow = -(y.negOnePow * z.negOnePow) := by
-    rw [← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_succ, Int.negOnePow_eq_iff,
-      Int.even_iff]
-    exact h
   -- The norm of `a + b + c`.
-  have hnorm : ((a : I → ℤ) + (b : I → ℤ) + (c : I → ℤ)) ⬝ᵥ
-      B *ᵥ ((a : I → ℤ) + (b : I → ℤ) + (c : I → ℤ)) =
-      6 + 2 * ((a : I → ℤ) ⬝ᵥ B *ᵥ b + (b : I → ℤ) ⬝ᵥ B *ᵥ c + (c : I → ℤ) ⬝ᵥ B *ᵥ a) := by
-    rw [hS.add_dotProduct_mulVec_add, hS.add_dotProduct_mulVec_add, add_dotProduct,
-      mem_normTwoShell.mp ha, mem_normTwoShell.mp hb, mem_normTwoShell.mp hc, hac]
-    ring
+  have hnorm := hS.dotProduct_mulVec_add_add_of_mem_normTwoShell ha hb hc
   -- Each double bracket lands on the same lattice vector `a + b + c`, in a rotated order.
   have hbca : (b : I → ℤ) + c + a = (a : I → ℤ) + b + c := by abel
   have hcab : (c : I → ℤ) + a + b = (a : I → ℤ) + b + c := by abel
@@ -539,37 +566,36 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
     hbca, hcab]
   simp only [map_add]
   by_cases hd : (a : I → ℤ) + b + c = 0
-  · -- All three pairings are `-1`, and the terms are multiples of `H_a`, `H_b` and `H_c`.
-    rw [hd, mulVec_zero, dotProduct_zero] at hnorm
-    rw [ite_eq_left (hmbc.2 (by omega)), ite_eq_left (hmca.2 (by omega)),
-      ite_eq_left (hmab.2 (by omega)),
-      sign_eq (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a)
-        (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega),
-      sign_eq (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
-        (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
-    simp only [hd, rootOf_zero, ↓reduceIte, zero_add]
-    rw [← smul_add, ← smul_add, ← map_add (cartan B), ← map_add (cartan B), hd, map_zero,
-      smul_zero]
+  · exact jacobi_terms_of_add_add_eq_zero hd
   simp only [ite_eq_right hd, add_zero]
   by_cases hdm : (a : I → ℤ) + b + c ∈ B.normTwoShell
   · -- Exactly two pairings are `-1`, and the two surviving terms cancel.
+    set sab := B.orderedSignForm a b
+    set sba := B.orderedSignForm b a
+    set sbc := B.orderedSignForm b c
+    set scb := B.orderedSignForm c b
+    set sca := B.orderedSignForm c a
+    set sac := B.orderedSignForm a c
     rw [mem_normTwoShell, hnorm] at hdm
     rcases (by omega : (a : I → ℤ) ⬝ᵥ B *ᵥ b = 0 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧
         (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧ (c : I → ℤ) ⬝ᵥ B *ᵥ a = 0) with
-      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
+      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, _⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
-        sign_neg (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sca) (b := sbc + sba)
+          (c := sbc + (sab + sac) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
     · rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_left (hmca.2 h3), ite_eq_left (hmab.2 h1),
-        sign_neg (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sab) (b := sca + scb)
+          (c := sca + (sbc + sba) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_right (by rw [hmca]; omega), ite_eq_left (hmab.2 h1),
-        sign_neg (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sab) (b := sca + scb)
+          (c := sbc + (sab + sac) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
   · simp [rootOf_of_notMem hdm]
 
@@ -580,19 +606,19 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
       ⁅root B c, rootBracket B a b⁆ = 0 := by
   have hS := hB.isHermitian.isSymm
   have hbv : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right hab
-  have hc0 : (c : I → ℤ) ≠ 0 := ne_zero_of_mem_normTwoShell c.2
+  have hc0 : (c : I → ℤ) ≠ 0 := ne_zero_of_mem_normTwoShell c.property
   have hbc : (b : I → ℤ) + c ≠ 0 := fun h ↦
     hca (Subtype.ext (neg_add_eq_zero.mp (hbv ▸ h)).symm)
   have hca' : (c : I → ℤ) + a ≠ 0 := fun h ↦
     hcb (Subtype.ext ((eq_neg_of_add_eq_zero_left h).trans hbv.symm))
   -- The pairing `d = ⟪a, c⟫` lies in `{-1, 0, 1}` and decides which of the two sums is a root.
-  have hle := hB.dotProduct_mulVec_le_one hdiag a.2 c.2 (Subtype.coe_injective.ne hca.symm)
-  have hge := hB.neg_one_le_dotProduct_mulVec hdiag a.2 c.2 fun h ↦
+  have hle := hB.dotProduct_mulVec_le_one a.property c.property (Subtype.coe_injective.ne hca.symm)
+  have hge := hB.neg_one_le_dotProduct_mulVec a.property c.property fun h ↦
     hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
   have hmbc : (b : I → ℤ) + c ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1 := by
-    rw [hS.add_mem_normTwoShell_iff b.2 c.2, hbv, neg_dotProduct, neg_inj]
+    rw [hS.add_mem_normTwoShell_iff b.property c.property, hbv, neg_dotProduct, neg_inj]
   have hmca : (c : I → ℤ) + a ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 := by
-    rw [hS.add_mem_normTwoShell_iff c.2 a.2, hS.dotProduct_mulVec_comm]
+    rw [hS.add_mem_normTwoShell_iff c.property a.property, hS.dotProduct_mulVec_comm]
   have pca := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag c a
   rw [Int.even_iff, hS.dotProduct_mulVec_comm] at pca
   -- Since `a + b = 0`, both nonzero double brackets land on the root `c`.
@@ -651,7 +677,7 @@ private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i 
   by_cases hca' : (c : I → ℤ) + a = 0
   · rw [add_rotate, add_rotate]
     exact jacobi_root_root_root_of_add_eq_zero hB hdiag hca' hbc (Ne.symm hab)
-  exact jacobi_root_root_root_of_ne hB hdiag hab hbc hca hab' hbc' hca'
+  exact jacobi_root_root_root_of_ne hB hdiag hab' hbc' hca'
 
 /-- The Jacobi identity for two Cartan vectors and a root vector. -/
 private theorem jacobi_cartan_cartan_root (h k : I → ℤ) (c : B.normTwoShell) :

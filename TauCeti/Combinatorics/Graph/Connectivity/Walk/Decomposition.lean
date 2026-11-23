@@ -214,6 +214,55 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 end Split
 
+/-- A path to a vertex in a vertex set has an initial segment that is a path ending at a vertex `z`
+of the set, all of whose vertices other than its start `x` and `z` are outside the set. If the
+path starts outside the set, `z` is the first visited vertex in the set; the start is exempted
+from the interior condition, so no first-hit claim is made when it lies in the set. The segment
+uses only vertices and edge identities of the original path. -/
+theorem IsPath.exists_initialSegment_to_set {p : G.Walk x y} (hp : p.IsPath)
+    {S : Set α} (hy : y ∈ S) :
+    ∃ (z : α) (q : G.Walk x z), q.IsPath ∧ z ∈ S ∧
+      (∀ w ∈ q.support, w ≠ x → w ≠ z → w ∉ S) ∧
+      q.support ⊆ p.support ∧ q.edges ⊆ p.edges := by
+  by_cases hx : x ∈ S
+  · exact ⟨x, .nil, by simp, hx, by simp, by simp, by simp⟩
+  induction p with
+  | nil => exact (hx hy).elim
+  | @cons x y z e h p ih =>
+      have hp' := (isPath_cons e h p).mp hp
+      by_cases hyS : y ∈ S
+      · refine ⟨y, .cons e h .nil, ?_, hyS, ?_, ?_, ?_⟩
+        · have hxy : x ≠ y := by
+            intro hxy
+            subst y
+            exact hx hyS
+          exact (isPath_cons e h .nil).mpr
+            ⟨(isPath_def .nil).mpr (by simp),
+              by simpa only [support_nil, List.mem_singleton] using hxy⟩
+        · simp
+        · intro w hw
+          simp only [support_cons, support_nil, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+          rcases hw with rfl | rfl
+          · exact Or.inl rfl
+          · exact Or.inr p.start_mem_support
+        · simp
+      · obtain ⟨w, q, hq, hwS, hinter, hsupport, hedges⟩ := ih hp'.1 hy hyS
+        refine ⟨w, .cons e h q, (isPath_cons e h q).mpr ⟨hq, ?_⟩, hwS, ?_, ?_, ?_⟩
+        · exact fun hmem ↦ hp'.2 (hsupport hmem)
+        · intro a ha hax haw
+          simp only [support_cons, List.mem_cons] at ha
+          rcases ha with rfl | ha
+          · exact (hax rfl).elim
+          · by_cases hay : a = y
+            · exact hay ▸ hyS
+            · exact hinter a ha hay haw
+        · intro a ha
+          simp only [support_cons, List.mem_cons] at ha ⊢
+          exact ha.elim (fun h ↦ Or.inl h) fun h ↦ Or.inr (hsupport h)
+        · intro f hf
+          simp only [edges_cons, List.mem_cons] at hf ⊢
+          exact hf.elim (fun h ↦ Or.inl h) fun h ↦ Or.inr (hedges h)
+
 /-- An edge identity occurs on a walk exactly when the walk can be split around one traversal of
 that edge. -/
 theorem mem_edges_iff_exists_append {p : G.Walk x y} {e : β} :
@@ -248,6 +297,15 @@ theorem IsPath.eq_toWalk_of_isLink_mem_edges {p : G.Walk x y} (hp : p.IsPath)
   · subst u
     subst v
     exact absurd (hp.2.2 x q.start_mem_support x r.start_mem_support rfl) (by simp)
+
+/-- A path cannot traverse a loop edge. -/
+theorem IsPath.not_isLoopAt_of_mem_edges {p : G.Walk x y} (hp : p.IsPath)
+    (he : e ∈ p.edges) (a : α) : ¬G.IsLoopAt e a := by
+  intro hloop
+  obtain ⟨u, v, huv, q, r, rfl⟩ := mem_edges_iff_exists_append.1 he
+  rw [isPath_def, support_append, support_cons, List.tail_cons, List.nodup_append] at hp
+  rcases huv.eq_and_eq_or_eq_and_eq hloop with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  all_goals exact hp.2.2 _ q.end_mem_support _ r.start_mem_support rfl
 
 section Extraction
 

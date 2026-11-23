@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
+import Mathlib.RingTheory.MvPowerSeries.Inverse
 
 /-!
 # The `w`-expansion of a Weierstrass curve
@@ -51,9 +52,10 @@ equation at the substituted parameter rather than at `z`.
   that parameter are equal.
 * `WeierstrassCurve.eq_of_wEquation_mvPowerSeries`: that same uniqueness one index type up, for
   series in `MvPowerSeries σ S` over any `R`-algebra `S` — so it survives scalar extension. It is
-  a sibling of `eq_of_wEquation` and not a generalisation of it: filtering by total degree needs
-  subtraction, so this one asks for `[CommRing S]` on the *coefficient algebra*. The curve's base
-  ring `R` is a `CommSemiring` for both.
+  a sibling of `eq_of_wEquation` and not a generalisation of it: its proof needs subtraction, so
+  this one asks for `[CommRing S]` on the *coefficient algebra*, but nothing of the parameter,
+  whose constant coefficient the equation forces to be nilpotent. The curve's base ring `R` is a
+  `CommSemiring` for both.
 * `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
   algebra map, so a solution over a ring is a solution over any algebra over it.
 * `WeierstrassCurve.wEquation_of_equation`: the `w`-equation is the Weierstrass equation in the
@@ -81,15 +83,13 @@ The directory anticipates that later work.
 
 ## Provenance
 
-Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned
-by `TauCetiRoadmap/EllipticCurves/README.md` at `dev/hasse-weil @ 513e83879e2f`),
-`HasseWeil/FormalGroup.lean`, declarations `formalW_step`, `formalW_coeff`, `formalW`,
-`formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
+Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FormalGroup.lean`, declarations `formalW_step`,
+`formalW_coeff`, `formalW`, `formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
 
 The statement of uniqueness at an arbitrary parameter is adapted from Michael Stoll's
-`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
-`EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
+`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at
+`66889eada51a`), `EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
 `eq_of_wStepAt_fixed`. There the equation is a `def` used only internally; here it is the public
 `wEquationRHS`, so the existing statements in this file are phrased through it too. The univariate
 proof is not Stoll's: that argues by contraction for the `z`-adic filtration, which needs
@@ -97,15 +97,14 @@ subtraction, whereas the coefficient induction used for `eq_of_wEquation` works 
 `CommSemiring` generality of everything in this file except the substitution lemmas, which are
 `CommRing` for the projective-point identity and because Mathlib's `PowerSeries.subst` is.
 
-The multivariate uniqueness statement `eq_of_wEquation_mvPowerSeries` does take Stoll's
-contraction route, adapted from the same project's
-`EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`, declarations `mvWStepAt` and
+The multivariate uniqueness statement `eq_of_wEquation_mvPowerSeries` is adapted from the same
+project's `EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`, declarations `mvWStepAt` and
 `eq_of_mvWStepAt_fixed`. Two things there are deliberately not ported. Stoll's `mvWStepAt` is a
 second copy of the equation; `wEquationRHS` is stated over an arbitrary `R`-algebra, so reading it
-in `MvPowerSeries σ R` already *is* that definition. And Stoll's filtration is carried by a private
-predicate `LowVanish k f`, "every coefficient of total degree below `k` vanishes" — that is
-Mathlib's `MvPowerSeries.order`, so the estimates here are stated as `(k : ℕ∞) ≤ f.order` and the
-predicate and its nine lemmas are not ported either.
+in `MvPowerSeries σ R` already *is* that definition. And Stoll's contraction argument for the
+filtration by total degree, with its private predicate `LowVanish k f` and the lemmas around it,
+is replaced by a unit argument that also drops the hypothesis on the parameter: the difference of
+two solutions is killed by `1 - M`, for a series `M` with nilpotent constant coefficient.
 
 Changes from the AINTLIB source. Its convolution helpers `conv₂` and `conv₃`, and its
 coefficient and truncation lemmas for them, are stated only for `formalW`, although none of
@@ -280,6 +279,14 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
 
+/-- An algebra homomorphism carries the right-hand side of the `w`-equation to the same
+expression at the images of its parameter and unknown. -/
+@[simp]
+theorem _root_.AlgHom.map_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (W : WeierstrassCurve R) (q v : A) :
+    f (wEquationRHS W q v) = wEquationRHS W (f q) (f v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, AlgHom.commutes]
+
 /-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
 the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
 transports series along a ring homomorphism; here the coefficients stay put and only the two
@@ -288,8 +295,8 @@ arguments move up the tower. -/
 theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
     [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
     algebraMap A B (wEquationRHS W q v) =
-      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
-  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) :=
+  AlgHom.map_wEquationRHS (IsScalarTower.toAlgHom R A B) W q v
 
 section Equation
 
@@ -298,12 +305,15 @@ variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K]
 /-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
 `w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
 at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
-converse reading, from a point of the curve to a solution of the equation.
+converse reading, from a point of the curve to a solution of the equation. For `y = 0` both sides
+are `0`, by the convention `y⁻¹ = 0`.
 
 The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
 theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
-    (hxy : (W.baseChange K).toAffine.Equation x y) (hy : y ≠ 0) :
+    (hxy : (W.baseChange K).toAffine.Equation x y) :
     -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [wEquationRHS_def]
   rw [WeierstrassCurve.Affine.equation_iff] at hxy
   simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
   rw [wEquationRHS_def]
@@ -455,69 +465,22 @@ theorem eq_formalW_of_wEquation (w : PowerSeries R)
 /-! ### Uniqueness over a multivariate power series ring
 
 `eq_of_wEquation` argues by strong induction on the coefficient index, which needs that index to be
-linearly ordered. Over `MvPowerSeries σ S` no such order is available, so the induction runs on the
-total degree instead: `MvPowerSeries.order` is exactly the filtration by total degree, and the
-right-hand side of the `w`-equation is a contraction for it. That argument needs additive inverses
-in the *coefficient algebra* `S`, and only there, which is why `[CommRing S]` appears below while
-the curve's base ring `R` stays a `CommSemiring`; the two uniqueness statements are siblings and
+linearly ordered. Over `MvPowerSeries σ S` no such order is available, so the argument is a unit
+argument instead: the difference of two solutions is killed by `1 - M`, where `M` has nilpotent
+constant coefficient, hence `1 - M` is a unit. That argument needs additive inverses in the
+*coefficient algebra* `S`, and only there, which is why `[CommRing S]` appears below while the
+curve's base ring `R` stays a `CommSemiring`; the two uniqueness statements are siblings and
 neither subsumes the other.
 -/
 
-/-- **The right-hand side of the `w`-equation is a contraction for the total-degree filtration.**
-If two candidate solutions agree below total degree `k`, then the values of the equation at them
-agree below total degree `k + 1`. Every occurrence of the unknown is multiplied by the parameter,
-which has positive order, or sits in a square or a cube of a series of positive order, and that is
-where the extra degree comes from. -/
-private theorem le_order_wEquationRHS_sub {σ S : Type*} [CommRing S] [Algebra R S]
-    {q u v : MvPowerSeries σ S}
-    (hq : 1 ≤ q.order) (hu : 1 ≤ u.order) (hv : 1 ≤ v.order) {k : ℕ}
-    (h : (k : ℕ∞) ≤ (u - v).order) :
-    ((k + 1 : ℕ) : ℕ∞) ≤ (wEquationRHS W q u - wEquationRHS W q v).order := by
-  -- The order estimates used below, in the vocabulary of `MvPowerSeries.order`.
-  have hmono : ∀ {m n : ℕ} {f : MvPowerSeries σ S}, m ≤ n → (n : ℕ∞) ≤ f.order →
-      (m : ℕ∞) ≤ f.order := fun hmn hf => (Nat.cast_le.mpr hmn).trans hf
-  have hadd : ∀ {m : ℕ} {f g : MvPowerSeries σ S}, (m : ℕ∞) ≤ f.order → (m : ℕ∞) ≤ g.order →
-      (m : ℕ∞) ≤ (f + g).order :=
-    fun hf hg => (le_min hf hg).trans MvPowerSeries.min_order_le_add
-  have hmul : ∀ {m n : ℕ} {f g : MvPowerSeries σ S}, (m : ℕ∞) ≤ f.order → (n : ℕ∞) ≤ g.order →
-      ((m + n : ℕ) : ℕ∞) ≤ (f * g).order := by
-    intro m n f g hf hg
-    push_cast
-    exact (add_le_add hf hg).trans MvPowerSeries.le_order_mul
-  have hC : ∀ {m : ℕ} (a : R) {f : MvPowerSeries σ S}, (m : ℕ∞) ≤ f.order →
-      (m : ℕ∞) ≤ (algebraMap R (MvPowerSeries σ S) a * f).order := by
-    intro m a f hf
-    -- The scalar has to be read in the coefficient ring `S` for `le_order_smul` to apply.
-    rw [MvPowerSeries.algebraMap_apply, ← MvPowerSeries.smul_eq_C_mul]
-    exact hf.trans MvPowerSeries.le_order_smul
-  -- The three differences that carry the gain.
-  have hq2 : ((2 : ℕ) : ℕ∞) ≤ (q * q).order := hmul hq hq
-  have hlin : ((k + 1 : ℕ) : ℕ∞) ≤ (q * (u - v)).order := hmono (by omega) (hmul hq h)
-  have hsq : ((k + 1 : ℕ) : ℕ∞) ≤ (u ^ 2 - v ^ 2).order := by
-    have he : u ^ 2 - v ^ 2 = (u + v) * (u - v) := by ring
-    rw [he]
-    exact hmono (by omega) (hmul (hadd hu hv) h)
-  have hcb : ((k + 1 : ℕ) : ℕ∞) ≤ (u ^ 3 - v ^ 3).order := by
-    have he : u ^ 3 - v ^ 3 = (u * u + u * v + v * v) * (u - v) := by ring
-    rw [he]
-    exact hmono (by omega) (hmul (hadd (hadd (hmul hu hu) (hmul hu hv)) (hmul hv hv)) h)
-  -- Reassemble the difference and bound each summand.
-  have hstep : wEquationRHS W q u - wEquationRHS W q v =
-      algebraMap R (MvPowerSeries σ S) W.a₁ * (q * (u - v)) +
-        algebraMap R (MvPowerSeries σ S) W.a₂ * (q * q * (u - v)) +
-        algebraMap R (MvPowerSeries σ S) W.a₃ * (u ^ 2 - v ^ 2) +
-        algebraMap R (MvPowerSeries σ S) W.a₄ * (q * (u ^ 2 - v ^ 2)) +
-        algebraMap R (MvPowerSeries σ S) W.a₆ * (u ^ 3 - v ^ 3) := by
-    rw [wEquationRHS_def, wEquationRHS_def]
-    ring
-  rw [hstep]
-  refine hadd (hadd (hadd (hadd (hC _ hlin) (hC _ ?_)) (hC _ hsq)) (hC _ ?_)) (hC _ hcb)
-  · exact hmono (by omega) (hmul hq2 h)
-  · exact hmono (by omega) (hmul hq hsq)
-
 /-- **Uniqueness of the solution of the `w`-equation over a multivariate power series ring.** Two
 series with vanishing constant coefficient that satisfy the `w`-equation at the same parameter `q`
-are equal, provided `q` too has vanishing constant coefficient.
+are equal.
+
+No hypothesis on `q` is needed: the constant coefficient of the equation at a series `v` with
+vanishing constant coefficient reads `q₀ ^ 3 = 0`, so `q` has nilpotent constant coefficient. The
+difference of two solutions is then killed by `1 - M`, where `M` has nilpotent constant
+coefficient, and `1 - M` is a unit.
 
 The coefficients are taken in an arbitrary `R`-algebra `S`, matching `wEquationRHS` itself and the
 substitution lemmas, so the statement survives scalar extension of the curve's base ring.
@@ -527,22 +490,38 @@ subtracts, so it needs `[CommRing S]` on the coefficient algebra, whereas the un
 needs no inverses at all. The base ring `R` is a `CommSemiring` in both.
 -/
 theorem eq_of_wEquation_mvPowerSeries {σ S : Type*} [CommRing S] [Algebra R S]
-    {q v v' : MvPowerSeries σ S}
-    (hq : MvPowerSeries.constantCoeff q = 0) (hv : MvPowerSeries.constantCoeff v = 0)
+    {q v v' : MvPowerSeries σ S} (hv : MvPowerSeries.constantCoeff v = 0)
     (hv' : MvPowerSeries.constantCoeff v' = 0) (h : v = wEquationRHS W q v)
     (h' : v' = wEquationRHS W q v') : v = v' := by
-  rw [← MvPowerSeries.one_le_order_iff_constCoeff_eq_zero] at hq hv hv'
-  -- The difference vanishes below every total degree, so it is zero.
-  have key : ∀ k : ℕ, (k : ℕ∞) ≤ (v - v').order := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      have := le_order_wEquationRHS_sub W hq hv hv' ih
-      rwa [← h, ← h'] at this
-  have hzero : (v - v').order = ⊤ := ENat.eq_top_iff_forall_ge.mpr key
-  rw [MvPowerSeries.order_eq_top_iff] at hzero
-  exact sub_eq_zero.mp hzero
+  -- The constant coefficient of the equation forces `q₀ ^ 3 = 0`.
+  have hq : IsNilpotent (MvPowerSeries.constantCoeff q) := by
+    refine ⟨3, ?_⟩
+    have := congrArg MvPowerSeries.constantCoeff h
+    simpa [wEquationRHS_def, hv] using this.symm
+  -- The difference is `M * (v - v')`, for a series `M` with nilpotent constant coefficient.
+  set M : MvPowerSeries σ S :=
+    algebraMap R (MvPowerSeries σ S) W.a₁ * q + algebraMap R (MvPowerSeries σ S) W.a₂ * (q * q) +
+      algebraMap R (MvPowerSeries σ S) W.a₃ * (v + v') +
+      algebraMap R (MvPowerSeries σ S) W.a₄ * (q * (v + v')) +
+      algebraMap R (MvPowerSeries σ S) W.a₆ * (v * v + v * v' + v' * v') with hM
+  have hdiff : (1 - M) * (v - v') = 0 := by
+    have := congrArg₂ (· - ·) h h'
+    rw [wEquationRHS_def, wEquationRHS_def] at this
+    rw [hM]
+    linear_combination this
+  have hMnil : IsNilpotent (MvPowerSeries.constantCoeff M) := by
+    have : MvPowerSeries.constantCoeff M =
+        algebraMap R S W.a₁ * MvPowerSeries.constantCoeff q +
+          algebraMap R S W.a₂ *
+            (MvPowerSeries.constantCoeff q * MvPowerSeries.constantCoeff q) := by
+      simp [hM, hv, hv', MvPowerSeries.algebraMap_apply]
+    rw [this]
+    exact (Commute.all _ _).isNilpotent_add ((Commute.all _ _).isNilpotent_mul_left hq)
+      ((Commute.all _ _).isNilpotent_mul_left ((Commute.all _ _).isNilpotent_mul_left hq))
+  have hunit : IsUnit (1 - M) := by
+    rw [MvPowerSeries.isUnit_iff_constantCoeff, map_sub, map_one]
+    exact hMnil.isUnit_one_sub
+  exact sub_eq_zero.mp (hunit.mul_right_eq_zero.mp hdiff)
 
 /-! ### Substituting into the equation
 
@@ -566,8 +545,9 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 `[q : -1 : v]` is equivalent to the `w`-equation
 `v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
 `wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
-affine Weierstrass equation over a field with `y ≠ 0`, where
-`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+affine Weierstrass equation over a field, where for `y ≠ 0` we have
+`[x : y : 1] = [-x / y : -1 : -1 / y]`; for `y = 0` the implication holds only because
+`q = v = 0` under `y⁻¹ = 0`. -/
 theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
     [Algebra R S] (q v : S) :
     (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by

@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Basic
+public import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
 public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.Regular.IsSMulRegular
 public import TauCeti.RingTheory.Ideal.Colon
 
 /-!
@@ -38,6 +40,13 @@ and over `R`, using `Submodule.comap_colon_singleton` from `TauCeti.RingTheory.I
   prime over `R`.
 * `IsAssociatedPrime.exists_isAssociatedPrime_comap_eq`: if `S` is Noetherian, every maximal ideal
   of `R` that is an associated prime over `R` is such a contraction.
+
+Over a Noetherian ring, prime avoidance characterises the ideals containing a regular element:
+
+* `Ideal.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes`,
+  `Ideal.exists_mem_isSMulRegular_iff`: an ideal `I` contains an `M`-regular element if and only if
+  it lies in no associated prime of `M`, for `M` with finitely many associated primes, in
+  particular for `M` finite (Stacks, Tag 00LL).
 
 ## References
 
@@ -85,10 +94,11 @@ theorem ringKrullDim_quotient_le_supportDim (hp : IsAssociatedPrime p M) :
     ringKrullDim (R ⧸ p) ≤ Module.supportDim R M := by
   obtain ⟨-, z, rfl⟩ := hp
   rw [ringKrullDim_quotient, Module.supportDim]
-  refine Order.krullDim_le_of_strictMono (fun q ↦ ⟨q.1,
+  refine Order.krullDim_le_of_strictMono (fun q ↦ ⟨q.val,
     Module.mem_support_iff_exists_annihilator.2 ⟨z, ?_⟩⟩) fun _ _ h ↦ h
   rw [← Submodule.bot_colon']
-  exact Ideal.le_radical.trans (SetLike.coe_subset_coe.1 ((PrimeSpectrum.mem_zeroLocus _ _).1 q.2))
+  exact Ideal.le_radical.trans (SetLike.coe_subset_coe.1 ((PrimeSpectrum.mem_zeroLocus _ _).1
+      q.property))
 
 /-- Let `M` be a finite module over a Noetherian ring and `x` an `M`-regular element of the
 Jacobson radical of the annihilator of `M`. Every associated prime of `M` is contained in an
@@ -118,7 +128,7 @@ theorem exists_le_isAssociatedPrime_quotSMulTop [IsNoetherianRing R] [Module.Fin
       rintro rfl
       exact hp.isPrime.ne_top (by simp)
     refine hz <| (Submodule.mem_bot R).1 <| hN ▸ (Submodule.mem_torsionBySet_iff _ _).2 ?_
-    exact fun a ↦ Submodule.mem_colon_singleton.1 a.2
+    exact fun a ↦ Submodule.mem_colon_singleton.1 a.property
   have hw' : (Submodule.Quotient.mk w : QuotSMulTop x M) ≠ 0 :=
     (Submodule.Quotient.mk_eq_zero _).not.2 hw
   obtain ⟨q, hq, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R _ hw'
@@ -128,6 +138,40 @@ theorem exists_le_isAssociatedPrime_quotSMulTop [IsNoetherianRing R] [Module.Fin
   exact Submodule.zero_mem _
 
 end IsAssociatedPrime
+
+section RegularElements
+
+variable [IsNoetherianRing R]
+
+/-- **Prime avoidance for regular elements.** An ideal `I` of a Noetherian ring contains an
+element that is regular on a module `M` with finitely many associated primes if and only if `I`
+is contained in no associated prime of `M`. This generalises the finite-module case
+(Stacks, Tag 00LL). -/
+theorem Ideal.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes
+    (hfin : (associatedPrimes R M).Finite) (I : Ideal R) :
+    (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p := by
+  have hzd := biUnion_associatedPrimes_eq_compl_regular R M
+  refine ⟨fun ⟨a, ha, reg⟩ p hp hle ↦ ?_, fun h ↦ ?_⟩
+  · have hmem : a ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp (hle ha)
+    rw [hzd] at hmem
+    exact hmem reg
+  · by_contra! hreg
+    obtain ⟨p, hp, hle⟩ := (Ideal.subset_union_prime_finite hfin
+      (f := id) 0 0 fun _ hp _ _ ↦ hp.isPrime).1 <| by
+        simp_rw [id, hzd]
+        exact hreg
+    exact h p hp hle
+
+variable [Module.Finite R M]
+
+/-- **Prime avoidance for regular elements.** An ideal `I` of a Noetherian ring contains an
+element that is regular on a finite module `M` if and only if `I` is contained in no associated
+prime of `M`. -/
+theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
+    (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p :=
+  I.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes (associatedPrimes.finite R M)
+
+end RegularElements
 
 section Algebra
 

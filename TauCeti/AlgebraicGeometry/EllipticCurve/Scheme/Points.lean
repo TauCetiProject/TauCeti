@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableCha
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Unimodular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.ResidueField
 -- Proof-only: the body of the zero section `projModelZero` is not exposed.
 import all TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 
@@ -525,11 +526,8 @@ theorem projModelAffinePoint_apply_eq_iff {x' y' : R} (h' : W.toAffine.Equation 
   have := s.isPrime
   let g := algebraMap R s.asIdeal.ResidueField
   -- the closed point `t` of `Spec κ(s)` lies over `s`
-  let t : Spec (.of s.asIdeal.ResidueField) := ⟨⊥, Ideal.isPrime_bot⟩
-  have ht : Spec.map (CommRingCat.ofHom g) t = s := by
-    refine PrimeSpectrum.ext ?_
-    rw [Spec.map_apply, PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom,
-      ← RingHom.ker_eq_comap_bot, Ideal.ker_algebraMap_residueField]
+  let t : Spec (.of s.asIdeal.ResidueField) := IsLocalRing.closedPoint _
+  have ht : Spec.map (CommRingCat.ofHom g) t = s := Spec.map_algebraMap_residueField_closedPoint s
   -- two sections agree over `s` exactly when they agree as points with values in `κ(s)`
   conv_lhs => rw [← ht]
   rw [← TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section
@@ -602,11 +600,11 @@ private theorem repPoint_smul (P : Fin 3 → R) (u : Rˣ) :
 private noncomputable def sectionOfClass
     (P : {P : Projective.PointClass R // W.toProjective.UnimodularLift P}) :
     {g : Spec (CommRingCat.of R) ⟶ W.projModel // g ≫ W.projModelOver = 𝟙 _} :=
-  P.1.liftOn (fun Q ↦ ⟨W.repPoint Q, W.repPoint_projModelOver Q⟩) fun _ Q ⟨u, h⟩ ↦
+  P.val.liftOn (fun Q ↦ ⟨W.repPoint Q, W.repPoint_projModelOver Q⟩) fun _ Q ⟨u, h⟩ ↦
     Subtype.ext <| h ▸ W.repPoint_smul Q u
 
 private theorem sectionOfClass_mk {Q : Fin 3 → R}
-    (hQ : W.toProjective.UnimodularLift ⟦Q⟧) : (W.sectionOfClass ⟨⟦Q⟧, hQ⟩).1 = W.repPoint Q := by
+    (hQ : W.toProjective.UnimodularLift ⟦Q⟧) : (W.sectionOfClass ⟨⟦Q⟧, hQ⟩).val = W.repPoint Q := by
   rw [sectionOfClass, Quotient.liftOn_mk]
 
 -- A representative of a unimodular class over a local ring has a unit coordinate.
@@ -822,7 +820,7 @@ theorem projModelPointsEquivUnimodular_symm_mk {P : Fin 3 → R}
     (hP : W.toProjective.UnimodularLift ⟦P⟧) {i : Fin 3} (hi : IsUnit (P i))
     (α : W.toProjective.ChartRing i →ₐ[R] R)
     (hα : ∀ k, α (Ideal.Quotient.mk _ (X k)) = P k * ↑hi.unit⁻¹) :
-    (W.projModelPointsEquivUnimodular.symm ⟨⟦P⟧, hP⟩).1 =
+    (W.projModelPointsEquivUnimodular.symm ⟨⟦P⟧, hP⟩).val =
       Spec.map (CommRingCat.ofHom ((α : W.toProjective.ChartRing i →+* R).comp
         (W.toProjective.awayEquivChartRing i : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord i)
@@ -843,7 +841,7 @@ theorem projModelPointsEquivUnimodular_symm_mk {P : Fin 3 → R}
 inclusion of `D₊(Z)`. -/
 theorem projModelPointsEquivUnimodular_symm_mk_some {x y : R} (h : W.toAffine.Equation x y) :
     (W.projModelPointsEquivUnimodular.symm
-        ⟨⟦![x, y, 1]⟧, (W.toProjective.unimodularLift_some x y).mpr h⟩).1 =
+        ⟨⟦![x, y, 1]⟧, (W.toProjective.unimodularLift_some x y).mpr h⟩).val =
       Spec.map (CommRingCat.ofHom ((W.chartRingEval h : W.toProjective.ChartRing 2 →+* R).comp
         (W.toProjective.awayEquivChartRing 2 : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord 2)
@@ -895,7 +893,7 @@ theorem projModelPointsEquiv_projModelZero :
 `K[X, Y, Z] ⧸ (W, Z - 1)`, read on `A_(Z)` through `awayEquivChartRing`, followed by the
 inclusion of `D₊(Z)`. -/
 theorem projModelPointsEquiv_symm_some {x y : K} (h : W.toAffine.Nonsingular x y) :
-    (W.projModelPointsEquiv.symm (.some x y h)).1 =
+    (W.projModelPointsEquiv.symm (.some x y h)).val =
       Spec.map (CommRingCat.ofHom ((W.chartRingEval h.1 : W.toProjective.ChartRing 2 →+* K).comp
         (W.toProjective.awayEquivChartRing 2 : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord 2)

@@ -77,6 +77,21 @@ noncomputable def commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso
     ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso
       (CommRingCat.of R)).app H)
 
+/-- The forward functor of `commHopfAlgCatOpEquivAffineGroupSchemeCat` sends a Hopf algebra to the
+bundled Hopf spectrum, as an equality of objects. Unlike `functorObjIso`, this equality lets one
+transport an arbitrary object property, with no isomorphism invariance needed, so it can be used to
+rewrite `P ((commHopfAlgCatOpEquivAffineGroupSchemeCat _).functor.obj H)`. -/
+theorem commHopfAlgCatOpEquivAffineGroupSchemeCat.functor_obj
+    (R : Type u) [CommRing R] (H : (CommHopfAlgCat.{u} R)ᵒᵖ) :
+    (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor.obj H =
+      ⟨(hopfSpec (CommRingCat.of R)).obj H, by
+        rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
+        infer_instance⟩ := by
+  -- The equivalence is `toEssImage.asEquivalence` composed with `fullSubcategoryCongr`, whose
+  -- forward functor acts on objects as `toEssImage` followed by the inclusion of the full
+  -- subcategory; neither step changes the underlying scheme.
+  rfl
+
 /-- An affine group scheme is the Hopf spectrum of its coordinate Hopf algebra. -/
 noncomputable def AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso
     (R : Type u) [CommRing R] (G : AffineGroupSchemeCat (CommRingCat.of R)) :
@@ -87,27 +102,21 @@ noncomputable def AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso
     (affineGroupSchemeProperty (CommRingCat.of R)).ι.mapIso
       ((commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).counitIso.app G)
 
-/-- To identify the inverse image of an isomorphism-invariant property of affine group schemes
+/-- To identify the inverse image of a property of affine group schemes
 under the Hopf-algebra/group-scheme anti-equivalence, it suffices to identify that property on
 Hopf spectra. -/
 theorem objectProperty_inverseImage_commHopfAlgCatOpEquiv
     (R : Type u) [CommRing R]
     (P : ObjectProperty (AffineGroupSchemeCat (CommRingCat.of R)))
-    [P.IsClosedUnderIsomorphisms] (Q : ObjectProperty (CommHopfAlgCat.{u} R))
+    (Q : ObjectProperty (CommHopfAlgCat.{u} R))
     (h : ∀ H, P ⟨(hopfSpec (CommRingCat.of R)).obj (op H), by
       rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
       infer_instance⟩ ↔ Q H) :
     P.inverseImage
         (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor = Q.op := by
   ext H
-  let G : AffineGroupSchemeCat (CommRingCat.of R) :=
-    ⟨(hopfSpec (CommRingCat.of R)).obj H, by
-      rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
-      infer_instance⟩
-  let e : (commHopfAlgCatOpEquivAffineGroupSchemeCat
-      (CommRingCat.of R)).functor.obj H ≅ G :=
-    commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso R H
-  rw [ObjectProperty.prop_inverseImage_iff, ObjectProperty.op_iff]
-  exact (P.prop_iff_of_iso e).trans (h H.unop)
+  rw [ObjectProperty.prop_inverseImage_iff, ObjectProperty.op_iff,
+    commHopfAlgCatOpEquivAffineGroupSchemeCat.functor_obj]
+  exact h H.unop
 
 end TauCeti

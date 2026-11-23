@@ -28,6 +28,8 @@ The construction first uses hyperbolic Bott periodicity to identify `Cl(1,2)` wi
 * `TauCeti.realCliffordOneTwoEquivComplexMatrix_star` identifies Clifford conjugation with
   matrix adjugation.
 * `TauCeti.realCliffordThreeOneEvenEquivComplexMatrix` identifies `Cl⁺(3,1)` with `M₂(ℂ)`.
+* `TauCeti.realCliffordThreeOneEvenEquivComplexMatrix_ι_eq_neg_mul_adjugate` writes a product of
+  two generators through the Hermitian matrix model of the vectors.
 * `TauCeti.realCliffordThreeOneEvenEquivComplexMatrix_reverseEven` identifies reversal with
   matrix adjugation.
 * `TauCeti.realCliffordThreeOne_reverseEven_mul_self_eq_one_iff_det_eq_one` characterizes the
@@ -61,6 +63,17 @@ theorem realCliffordForm_three_one_apply (v : Fin 4 → ℝ) :
   simp only [one_mul, neg_one_mul]
   ring
 
+/-- The real Clifford form of signature `(1,3)`, the time-first Minkowski form, in coordinates. -/
+@[simp]
+theorem realCliffordForm_one_three_apply (x : Fin 4 → ℝ) :
+    realCliffordForm 1 3 x = x 0 ^ 2 - x 1 ^ 2 - x 2 ^ 2 - x 3 ^ 2 := by
+  rw [realCliffordForm_apply, Fin.sum_univ_four]
+  rw [realCliffordWeight_of_lt (p := 1) (q := 3) (i := (0 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 1) (q := 3) (i := (1 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 1) (q := 3) (i := (2 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 1) (q := 3) (i := (3 : Fin 4)) (by decide)]
+  ring
+
 private def realCliffordThreeOneVectorMatrix (v : Fin 4 → ℝ) :
     Matrix (Fin 2) (Fin 2) ℂ :=
   !![(v 3 : ℂ) + v 2, -(v 1 : ℂ) - (v 0 : ℂ) * Complex.I;
@@ -83,9 +96,9 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
     -- Restate subtype membership through the Hermitian predicate proved above.
     change IsSelfAdjoint (realCliffordThreeOneVectorMatrix v)
     exact (realCliffordThreeOneVectorMatrix_isHermitian v).isSelfAdjoint⟩
-  invFun A := ![-(A.1 0 1).im, -(A.1 0 1).re,
-    ((A.1 0 0).re - (A.1 1 1).re) / 2,
-    ((A.1 0 0).re + (A.1 1 1).re) / 2]
+  invFun A := ![-(A.val 0 1).im, -(A.val 0 1).re,
+    ((A.val 0 0).re - (A.val 1 1).re) / 2,
+    ((A.val 0 0).re + (A.val 1 1).re) / 2]
   map_add' v w := by
     apply Subtype.ext
     ext i j
@@ -100,14 +113,14 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
     funext i
     fin_cases i <;> simp [realCliffordThreeOneVectorMatrix]
   right_inv A := by
-    have h00 := Matrix.IsHermitian.apply A.2 0 0
-    have h01 := Matrix.IsHermitian.apply A.2 1 0
-    have h11 := Matrix.IsHermitian.apply A.2 1 1
-    have h00im : (A.1 0 0).im = 0 := by
+    have h00 := Matrix.IsHermitian.apply A.property 0 0
+    have h01 := Matrix.IsHermitian.apply A.property 1 0
+    have h11 := Matrix.IsHermitian.apply A.property 1 1
+    have h00im : (A.val 0 0).im = 0 := by
       have h := congrArg Complex.im h00
       simp at h
       linarith
-    have h11im : (A.1 1 1).im = 0 := by
+    have h11im : (A.val 1 1).im = 0 := by
       have h := congrArg Complex.im h11
       simp at h
       linarith
@@ -120,7 +133,7 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
       · simp [realCliffordThreeOneVectorMatrix, h00im]
     · apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
     · -- Expose the matrix entry before using Hermitian symmetry across the diagonal.
-      change realCliffordThreeOneVectorMatrix _ 1 0 = A.1 1 0
+      change realCliffordThreeOneVectorMatrix _ 1 0 = A.val 1 0
       rw [← h01]
       apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
     · apply Complex.ext
@@ -141,9 +154,9 @@ theorem coe_realCliffordThreeOneVectorEquivHermitian_apply (v : Fin 4 → ℝ) :
 theorem realCliffordThreeOneVectorEquivHermitian_symm_apply
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ)) :
     realCliffordThreeOneVectorEquivHermitian.symm A =
-      ![-(A.1 0 1).im, -(A.1 0 1).re,
-        ((A.1 0 0).re - (A.1 1 1).re) / 2,
-        ((A.1 0 0).re + (A.1 1 1).re) / 2] := by
+      ![-(A.val 0 1).im, -(A.val 0 1).re,
+        ((A.val 0 0).re - (A.val 1 1).re) / 2,
+        ((A.val 0 0).re + (A.val 1 1).re) / 2] := by
   funext i
   fin_cases i <;> rfl
 
@@ -302,6 +315,20 @@ theorem realCliffordThreeOneEvenEquivComplexMatrix_ι
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Algebra.algebraMap_eq_smul_one, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- A product of two generators of `Cl⁺(3,1)` is, in the complex matrix model, minus the product
+of the Hermitian matrix of the first vector with the adjugate Hermitian matrix of the second. -/
+theorem realCliffordThreeOneEvenEquivComplexMatrix_ι_eq_neg_mul_adjugate (m n : Fin 4 → ℝ) :
+    realCliffordThreeOneEvenEquivComplexMatrix
+        ((CliffordAlgebra.even.ι (realCliffordForm 3 1)).bilin m n) =
+      -((realCliffordThreeOneVectorEquivHermitian m : Matrix (Fin 2) (Fin 2) ℂ) *
+        Matrix.adjugate
+          (realCliffordThreeOneVectorEquivHermitian n : Matrix (Fin 2) (Fin 2) ℂ)) := by
+  rw [realCliffordThreeOneEvenEquivComplexMatrix_ι,
+    coe_realCliffordThreeOneVectorEquivHermitian_apply,
+    coe_realCliffordThreeOneVectorEquivHermitian_apply, Matrix.adjugate_fin_two]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp <;> ring
 
 /-- In the complex matrix model of `Cl⁺(3,1)`, Clifford reversal is matrix adjugation. -/
 @[simp]

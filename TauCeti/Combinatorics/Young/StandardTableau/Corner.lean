@@ -47,8 +47,6 @@ rather than reading them off its argument.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, where the corner recursion opens
   the proof of the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose `hookLengthFormula` milestone is the induction this recursion drives.
 -/
 
 public section
@@ -67,7 +65,7 @@ def maxCell (hμ : 0 < μ.card) (T : StandardYoungTableau μ) : ℕ × ℕ :=
   (T.toTableau.symm ⟨μ.card - 1, Nat.sub_lt hμ Nat.one_pos⟩ : ↥μ.cells)
 
 theorem maxCell_mem (hμ : 0 < μ.card) (T : StandardYoungTableau μ) : maxCell hμ T ∈ μ :=
-  (T.toTableau.symm ⟨μ.card - 1, Nat.sub_lt hμ Nat.one_pos⟩).2
+  (T.toTableau.symm ⟨μ.card - 1, Nat.sub_lt hμ Nat.one_pos⟩).property
 
 /-- The label at `TauCeti.StandardYoungTableau.maxCell` is the largest one. -/
 theorem apply_maxCell (hμ : 0 < μ.card) (T : StandardYoungTableau μ) :
@@ -112,27 +110,27 @@ theorem maxCell_eq_iff (hμ : 0 < μ.card) (T : StandardYoungTableau μ) (hc : c
 
 private theorem restrict_lt (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ)
     (hT : (T ⟨c, hc.mem⟩).val + 1 = μ.card) (d : ↥(YoungDiagram.erase μ c).cells) :
-    (T ⟨d.1, YoungDiagram.mem_of_mem_erase d.2⟩).val < (YoungDiagram.erase μ c).card := by
-  have hd : d.1 ∈ μ := YoungDiagram.mem_of_mem_erase d.2
+    (T ⟨d.val, YoungDiagram.mem_of_mem_erase d.property⟩).val < (YoungDiagram.erase μ c).card := by
+  have hd : d.val ∈ μ := YoungDiagram.mem_of_mem_erase d.property
   have hcard := hc.card_erase
-  have hlt := (T ⟨d.1, hd⟩).isLt
-  rcases Nat.lt_or_ge (T ⟨d.1, hd⟩).val (YoungDiagram.erase μ c).card with h | h
+  have hlt := (T ⟨d.val, hd⟩).isLt
+  rcases Nat.lt_or_ge (T ⟨d.val, hd⟩).val (YoungDiagram.erase μ c).card with h | h
   · exact h
-  · have hval : T ⟨d.1, hd⟩ = T ⟨c, hc.mem⟩ := Fin.ext (by omega)
-    have hdc : d.1 = c := congrArg Subtype.val (T.injective hval)
-    exact absurd hdc (hc.mem_erase_iff.mp d.2).2
+  · have hval : T ⟨d.val, hd⟩ = T ⟨c, hc.mem⟩ := Fin.ext (by omega)
+    have hdc : d.val = c := congrArg Subtype.val (T.injective hval)
+    exact absurd hdc (hc.mem_erase_iff.mp d.property).2
 
 private def restrictFun (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ)
     (hT : (T ⟨c, hc.mem⟩).val + 1 = μ.card) :
     ↥(YoungDiagram.erase μ c).cells → Fin (YoungDiagram.erase μ c).card :=
-  fun d => ⟨(T ⟨d.1, YoungDiagram.mem_of_mem_erase d.2⟩).val, restrict_lt hc T hT d⟩
+  fun d => ⟨(T ⟨d.val, YoungDiagram.mem_of_mem_erase d.property⟩).val, restrict_lt hc T hT d⟩
 
 private theorem restrictFun_bijective (hc : YoungDiagram.IsCorner μ c)
     (T : StandardYoungTableau μ) (hT : (T ⟨c, hc.mem⟩).val + 1 = μ.card) :
     Function.Bijective (restrictFun hc T hT) := by
   refine (Fintype.bijective_iff_injective_and_card _).mpr ⟨fun d e h => ?_, by simp⟩
-  have hv : (T ⟨d.1, YoungDiagram.mem_of_mem_erase d.2⟩).val
-      = (T ⟨e.1, YoungDiagram.mem_of_mem_erase e.2⟩).val := by
+  have hv : (T ⟨d.val, YoungDiagram.mem_of_mem_erase d.property⟩).val
+      = (T ⟨e.val, YoungDiagram.mem_of_mem_erase e.property⟩).val := by
     have hval := congrArg Fin.val h
     exact hval
   refine Subtype.ext ?_
@@ -151,7 +149,7 @@ noncomputable def restrict (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungT
 @[simp]
 theorem restrict_apply_val (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ)
     (hT : (T ⟨c, hc.mem⟩).val + 1 = μ.card) (d : ↥(YoungDiagram.erase μ c).cells) :
-    (restrict hc T hT d).val = (T ⟨d.1, YoungDiagram.mem_of_mem_erase d.2⟩).val :=
+    (restrict hc T hT d).val = (T ⟨d.val, YoungDiagram.mem_of_mem_erase d.property⟩).val :=
   (rfl)
 
 /-! ### Labelling a corner with the largest label -/
@@ -166,17 +164,17 @@ private theorem extend_lt (hc : YoungDiagram.IsCorner μ c)
 private def extendFun (hc : YoungDiagram.IsCorner μ c)
     (T : StandardYoungTableau (YoungDiagram.erase μ c)) : ↥μ.cells → Fin μ.card :=
   fun d =>
-    if h : d.1 = c then ⟨μ.card - 1, Nat.sub_lt hc.card_pos Nat.one_pos⟩
-    else ⟨(T ⟨d.1, hc.mem_erase_iff.mpr ⟨d.2, h⟩⟩).val, extend_lt hc T _⟩
+    if h : d.val = c then ⟨μ.card - 1, Nat.sub_lt hc.card_pos Nat.one_pos⟩
+    else ⟨(T ⟨d.val, hc.mem_erase_iff.mpr ⟨d.property, h⟩⟩).val, extend_lt hc T _⟩
 
 private theorem extendFun_apply_of_eq (hc : YoungDiagram.IsCorner μ c)
-    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.1 = c) :
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.val = c) :
     (extendFun hc T d).val = μ.card - 1 := by
   simp only [extendFun, dite_eq_left h]
 
 private theorem extendFun_apply_of_ne (hc : YoungDiagram.IsCorner μ c)
-    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.1 ≠ c) :
-    (extendFun hc T d).val = (T ⟨d.1, hc.mem_erase_iff.mpr ⟨d.2, h⟩⟩).val := by
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.val ≠ c) :
+    (extendFun hc T d).val = (T ⟨d.val, hc.mem_erase_iff.mpr ⟨d.property, h⟩⟩).val := by
   simp only [extendFun, dite_eq_right h]
 
 private theorem extendFun_bijective (hc : YoungDiagram.IsCorner μ c)
@@ -185,17 +183,17 @@ private theorem extendFun_bijective (hc : YoungDiagram.IsCorner μ c)
   refine (Fintype.bijective_iff_injective_and_card _).mpr ⟨fun d e h => ?_, by simp⟩
   have hval := congrArg Fin.val h
   have hcard := hc.card_erase
-  by_cases hd : d.1 = c <;> by_cases he : e.1 = c
+  by_cases hd : d.val = c <;> by_cases he : e.val = c
   · exact Subtype.ext (hd.trans he.symm)
   · rw [extendFun_apply_of_eq hc T d hd, extendFun_apply_of_ne hc T e he] at hval
-    have := (T ⟨e.1, hc.mem_erase_iff.mpr ⟨e.2, he⟩⟩).isLt
+    have := (T ⟨e.val, hc.mem_erase_iff.mpr ⟨e.property, he⟩⟩).isLt
     omega
   · rw [extendFun_apply_of_ne hc T d hd, extendFun_apply_of_eq hc T e he] at hval
-    have := (T ⟨d.1, hc.mem_erase_iff.mpr ⟨d.2, hd⟩⟩).isLt
+    have := (T ⟨d.val, hc.mem_erase_iff.mpr ⟨d.property, hd⟩⟩).isLt
     omega
   · rw [extendFun_apply_of_ne hc T d hd, extendFun_apply_of_ne hc T e he] at hval
-    have h' : T ⟨d.1, hc.mem_erase_iff.mpr ⟨d.2, hd⟩⟩
-        = T ⟨e.1, hc.mem_erase_iff.mpr ⟨e.2, he⟩⟩ := Fin.ext hval
+    have h' : T ⟨d.val, hc.mem_erase_iff.mpr ⟨d.property, hd⟩⟩
+        = T ⟨e.val, hc.mem_erase_iff.mpr ⟨e.property, he⟩⟩ := Fin.ext hval
     refine Subtype.ext ?_
     simpa using T.injective h'
 
@@ -251,14 +249,14 @@ noncomputable def extend (hc : YoungDiagram.IsCorner μ c)
 
 @[simp]
 theorem extend_apply_val_of_eq (hc : YoungDiagram.IsCorner μ c)
-    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.1 = c) :
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.val = c) :
     (extend hc T d).val = μ.card - 1 :=
   extendFun_apply_of_eq hc T d h
 
 @[simp]
 theorem extend_apply_val_of_ne (hc : YoungDiagram.IsCorner μ c)
-    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.1 ≠ c) :
-    (extend hc T d).val = (T ⟨d.1, hc.mem_erase_iff.mpr ⟨d.2, h⟩⟩).val :=
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (d : ↥μ.cells) (h : d.val ≠ c) :
+    (extend hc T d).val = (T ⟨d.val, hc.mem_erase_iff.mpr ⟨d.property, h⟩⟩).val :=
   extendFun_apply_of_ne hc T d h
 
 /-- The extended tableau does carry its largest label at the restored corner, so it lies in the
@@ -278,13 +276,13 @@ theorem restrict_extend (hc : YoungDiagram.IsCorner μ c)
     (T : StandardYoungTableau (YoungDiagram.erase μ c)) :
     restrict hc (extend hc T) (extend_apply_self hc T) = T := by
   refine DFunLike.ext _ _ fun d => Fin.ext ?_
-  rw [restrict_apply_val, extend_apply_val_of_ne hc T _ (hc.mem_erase_iff.mp d.2).2]
+  rw [restrict_apply_val, extend_apply_val_of_ne hc T _ (hc.mem_erase_iff.mp d.property).2]
 
 @[simp]
 theorem extend_restrict (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ)
     (hT : (T ⟨c, hc.mem⟩).val + 1 = μ.card) : extend hc (restrict hc T hT) = T := by
   refine DFunLike.ext _ _ fun d => Fin.ext ?_
-  by_cases h : d.1 = c
+  by_cases h : d.val = c
   · have hd : d = ⟨c, hc.mem⟩ := Subtype.ext h
     rw [extend_apply_val_of_eq hc _ d h, hd]
     omega
@@ -295,9 +293,9 @@ the corner `c` are the standard Young tableaux of shape `erase μ c`. -/
 noncomputable def cornerFiberEquiv (hc : YoungDiagram.IsCorner μ c) :
     {T : StandardYoungTableau μ // (T ⟨c, hc.mem⟩).val + 1 = μ.card} ≃
       StandardYoungTableau (YoungDiagram.erase μ c) where
-  toFun T := restrict hc T.1 T.2
+  toFun T := restrict hc T.val T.property
   invFun T := ⟨extend hc T, extend_apply_self hc T⟩
-  left_inv T := Subtype.ext (extend_restrict hc T.1 T.2)
+  left_inv T := Subtype.ext (extend_restrict hc T.val T.property)
   right_inv T := restrict_extend hc T
 
 private noncomputable def maxCorner (hμ : 0 < μ.card) (T : StandardYoungTableau μ) :
@@ -314,11 +312,11 @@ theorem standardCount_eq_sum_corners {μ : YoungDiagram} (hμ : 0 < μ.card) :
   classical
   have key : ∀ c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ},
       Fintype.card {T : StandardYoungTableau μ // StandardYoungTableau.maxCorner hμ T = c}
-        = standardCount (YoungDiagram.erase μ c.1) := by
+        = standardCount (YoungDiagram.erase μ c.val) := by
     intro c
-    have hc : YoungDiagram.IsCorner μ c.1 := YoungDiagram.mem_corners.mp c.2
+    have hc : YoungDiagram.IsCorner μ c.val := YoungDiagram.mem_corners.mp c.property
     have e : {T : StandardYoungTableau μ // StandardYoungTableau.maxCorner hμ T = c} ≃
-        StandardYoungTableau (YoungDiagram.erase μ c.1) :=
+        StandardYoungTableau (YoungDiagram.erase μ c.val) :=
       (Equiv.subtypeEquivRight fun T => by
         rw [Subtype.ext_iff]
         exact StandardYoungTableau.maxCell_eq_iff hμ T hc.mem).trans

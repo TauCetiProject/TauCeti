@@ -9,7 +9,6 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
--- `MvPolynomial.IsHomogeneous.eval_smul`, the scaling of a homogeneous component, and
 -- `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul`, the averaging over roots of unity.
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -215,10 +214,10 @@ private theorem toMatrix_apply_eq_sum_homogeneousComponent [NeZero n]
   refine eval_eq_sum_homogeneousComponent_of_eval_smul _ hζ a _ fun k => ?_
   -- The scalar matrix `ζ ^ k` has determinant one.
   let t : SpecialLinearGroup (Fin n) ℂ :=
-    ⟨_root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k), by
+    .mk (_root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k)) (by
       rw [← _root_.Matrix.GeneralLinearGroup.val_det_apply,
         _root_.Matrix.GeneralLinearGroup.det_scalar, Fintype.card_fin, ← pow_mul, mul_comm,
-        pow_mul, hu.pow_eq_one, one_pow, Units.val_one]⟩
+        pow_mul, hu.pow_eq_one, one_pow, Units.val_one])
   have ht : SpecialLinearGroup.toGL t = _root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k) :=
     Units.ext rfl
   have htm : (t : Matrix (Fin n) (Fin n) ℂ) = Matrix.scalar (Fin n) (ζ ^ k) := by
@@ -265,7 +264,7 @@ private theorem toMatrix_extendToGL_apply [NeZero n]
       Pi.smul_apply, smul_eq_mul]
     rw [mul_comm ((s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2), ← mul_assoc,
       inv_mul_cancel₀ z.ne_zero, one_mul]
-  rw [hent, (homogeneousComponent_isHomogeneous d _).eval_smul, smul_eq_mul, ← mul_assoc]
+  rw [hent, (homogeneousComponent_isHomogeneous d _).eval_smul, ← mul_assoc]
   congr 1
   -- `z ^ a * z ^ (-d) = (z ^ n) ^ ((a - d) / n)`, and `z ^ n = det (toGL s * scalar z)`.
   have hdvd : (n : ℤ) ∣ a - d := by

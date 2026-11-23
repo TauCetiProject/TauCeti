@@ -547,7 +547,7 @@ weight `TauCeti.glWeightEquiv R n μ` on it. -/
 theorem lie_eq_glWeightEquiv_smul (hv : IsGlHighestWeightVector mu v) (A : diagonalCartan R n) :
     ⁅(A : Matrix n n R), v⁆ = glWeightEquiv R n mu A • v := by
   rw [glWeightEquiv_apply]
-  exact hv.lie_eq_smul_of_mem_diagonalCartan A.2
+  exact hv.lie_eq_smul_of_mem_diagonalCartan A.property
 
 /-- **The whole positive nilpotent subalgebra `𝔫⁺` annihilates a highest weight vector**, not just
 the raising matrix units that span it. -/
@@ -628,7 +628,7 @@ end HighestWeight
 
 section Adjoint
 
-variable {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [DecidableEq n] [Fintype n]
+variable {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
   [LinearOrder n] [OrderBot n] [OrderTop n]
 
 /-- **The highest root vector is a highest weight vector**, for the adjoint action of `gl n R` on

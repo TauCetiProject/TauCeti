@@ -49,7 +49,7 @@ the infimum on the compact set of couplings.
 * `TauCeti.transportCost_eq_iSup_transportCost_lscApprox` — transport cost commutes with the
   canonical monotone approximation of a lower-semicontinuous cost;
 * `TauCeti.exists_isOptimalCoupling_edist` and `TauCeti.exists_isOptimalCoupling_edist_rpow` — the
-  acceptance instances: the Kantorovich–Rubinstein cost `edist`, and the `p`-Wasserstein cost
+  basic instances: the Kantorovich–Rubinstein cost `edist`, and the `p`-Wasserstein cost
   `edist ^ p`, admit optimal plans on a Polish space.
 
 ## References
@@ -94,7 +94,7 @@ theorem exists_isOptimalCoupling_of_isTightMeasureSet {μ : Measure X} [IsProbab
   let : PseudoMetricSpace (X × Y) :=
     TopologicalSpace.pseudoMetrizableSpacePseudoMetric (X × Y)
   have hKne : {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ ν}.Nonempty :=
-    ⟨(Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).1, (Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).2⟩
+    ⟨(Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).val, (Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).property⟩
   obtain ⟨π, hπK, hπmin⟩ := exists_isMinOn_lintegral hKne
     (isCompact_setOfPred_isCoupling (μ := ⟨μ, ‹_›⟩) (ν := ⟨ν, ‹_›⟩) hμ hν) hc
   refine ⟨π.toMeasure, isOptimalCoupling_iff.mpr ⟨hπK, fun σ hσ ↦ ?_⟩⟩
@@ -235,8 +235,8 @@ theorem exists_coupling_isOptimalCoupling (μ : ProbabilityMeasure X) (ν : Prob
     (hc : LowerSemicontinuous c) :
     ∃ π : Coupling μ ν,
       IsOptimalCoupling c (π : ProbabilityMeasure (X × Y)).toMeasure μ.toMeasure ν.toMeasure := by
-  have hμ : IsProbabilityMeasure μ.toMeasure := μ.2
-  have hν : IsProbabilityMeasure ν.toMeasure := ν.2
+  have hμ : IsProbabilityMeasure μ.toMeasure := μ.property
+  have hν : IsProbabilityMeasure ν.toMeasure := ν.property
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ.toMeasure ν.toMeasure hc
   have hπprob : IsProbabilityMeasure π := hπ.toIsCoupling.isProbabilityMeasure
   exact ⟨⟨⟨π, hπprob⟩, hπ.toIsCoupling⟩, hπ⟩

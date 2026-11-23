@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.CyclicQuotient
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # A positive-degree cyclic class in type `D₄` in characteristic two
@@ -37,7 +38,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*)
 
@@ -54,24 +55,8 @@ variable [CommRing k]
 to one, over every commutative coefficient ring. -/
 private theorem signlessPreprojectiveD4FrobeniusFunctional_cyclicWord :
     φ (W [1, 2, 1, 0, 1]) = 1 := by
-  rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _ (by decide) (by decide)]
+  rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _]
   norm_num [List.reverse_cons]
-
-/-- The detecting closed walk is homogeneous of path degree four. -/
-theorem signlessWord_D4_cyclicWord_mem_grade_four :
-    W [1, 2, 1, 0, 1] ∈ signlessPreprojectiveGrade k Q 4 := by
-  simp only [signlessWord_cons_cons, signlessWord_singleton]
-  have he : signlessPreprojectiveMk k Q (vertexIdempotent k (vertex zigzagD4Graph 1)) ∈
-      signlessPreprojectiveGrade k Q 0 :=
-    signlessPreprojectiveMk_mem_grade k Q (vertexIdempotent_mem_grade_zero _)
-  exact mul_mem_signlessPreprojectiveGrade k Q
-    (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-    (mul_mem_signlessPreprojectiveGrade k Q
-      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-      (mul_mem_signlessPreprojectiveGrade k Q
-        (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-        (mul_mem_signlessPreprojectiveGrade k Q
-          (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _) he)))
 
 /-- In characteristic two, the closed walk through leaves `0` and `2` is not a sum of
 commutators. This is stronger than its nonvanishing in the algebra itself. -/
@@ -101,7 +86,8 @@ private theorem d4Path_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
         0 < x.2.2.length → signlessPreprojectiveMk k _ (ofPath x) ∈
           commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
     rintro G rfl inst
-    have hi : inst = forkNeighborSetFintype (diagramGraph (DynkinType.D 4).cartanMatrix) :=
+    have hi : inst =
+        SimpleGraph.neighborSetFintypeOfFinite (diagramGraph (DynkinType.D 4).cartanMatrix) :=
       Subsingleton.elim _ _
     cases hi
     exact signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2
@@ -119,7 +105,7 @@ theorem signlessPreprojectiveGrade_D4_four_le_commutatorSubmodule_iff :
     signlessPreprojectiveGrade k Q 4 ≤ commutatorSubmodule k Π ↔ (2 : k) ≠ 0 := by
   refine ⟨fun h h2 => ?_, fun h2 => ?_⟩
   · exact signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
-      (h (signlessWord_D4_cyclicWord_mem_grade_four k))
+      (h (signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1]))
   · exact signlessPreprojectiveGrade_le_commutatorSubmodule k
       (d4Path_mem_commutatorSubmodule k (isUnit_iff_ne_zero.mpr h2)) (by decide)
 

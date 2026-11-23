@@ -154,6 +154,20 @@ theorem kostantWeylParam_def (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
         kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) :=
   (rfl)
 
+/-- A negative root element at a unit parameter factors through Steinberg's Weyl element:
+`xⱼ(t) = xᵢ(t⁻¹) n_α(-t⁻¹) xᵢ(t⁻¹)`. -/
+theorem kostantRootSubgroupParam_f_eq_mul_kostantWeylParam
+    (K : CommAlgCat.{w} ℤ) (t : Kˣ) :
+    kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd (t : K)) =
+      kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) *
+        kostantWeylParam e h ρ M hM hi hj K (-t⁻¹) *
+        kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) := by
+  have hn := kostantWeylParam_def e h ρ M hM hi hj K (-t⁻¹)
+  have hpar : -(((-t⁻¹)⁻¹ : Kˣ) : K) = (t : K) := by simp
+  rw [Units.val_neg, hpar, ofAdd_neg, map_inv] at hn
+  rw [hn]
+  group
+
 /-- At the parameter `1`, Steinberg's element is the Weyl representative `xᵢ(1) xⱼ(-1) xᵢ(1)`. -/
 @[simp]
 theorem kostantWeylParam_one (A : CommAlgCat.{w} ℤ) :

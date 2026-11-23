@@ -138,7 +138,6 @@ theorem eq_of_eventually_mem_of_inverted_coordinate_eq_zero
   have hnear {y : ℝ} (hy : g y = 0) (hfy : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (y : ℂ), f z ∈ E)
       {V : Set ℂ} (hV : IsOpen V) (hyV : (y : ℂ) ∈ V) :
       ∃ z ∈ V ∩ upperHalfPlaneSet, f z ∈ C := by
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot y
     obtain ⟨z, hzC, hzE, hzV, hzH⟩ :=
       ((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne hy).eventually
         hEC |>.and (hfy.and ((eventually_nhdsWithin_of_eventually_nhds
@@ -181,10 +180,11 @@ theorem exists_injective_end_of_inverted_coordinate_eq_zero {ι : Type*} {E : ι
     ∃ φ : {x : ℝ // g x = 0} → ι, Injective φ ∧
       ∀ x, ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ), f z ∈ E (φ x) := by
   choose φ hφ using fun x : {x : ℝ // g x = 0} =>
-    exists_eventually_mem_of_inverted_coordinate_eq_zero hgc hgf hgne x.2 hfU.mapsTo hEo hEd hEU
+    exists_eventually_mem_of_inverted_coordinate_eq_zero hgc hgf hgne x.property hfU.mapsTo hEo hEd
+        hEU
   refine ⟨φ, fun x x' h => Subtype.ext ?_, hφ⟩
   exact eq_of_eventually_mem_of_inverted_coordinate_eq_zero hgc hgd hgf hgne hfU.injOn
-    (hfU.image_eq ▸ hE (φ x)) x.2 x'.2 (hφ x) (h ▸ hφ x')
+    (hfU.image_eq ▸ hE (φ x)) x.property x'.property (hφ x) (h ▸ hφ x')
 
 /-- **Finitely many ends give finitely many accesses to infinity.**  Under the hypotheses of
 `TauCeti.exists_injective_end_of_inverted_coordinate_eq_zero`, if there are only finitely many
@@ -244,7 +244,6 @@ theorem surjective_of_eventually_mem_end {κ : Type*} {g : ℂ → ℂ} {q c₀ 
   obtain ⟨δ', hδ', hK⟩ := hKc.exists_forall_le' (hgc.norm.mono fun z hz => hz.1.2) hKg
   -- so on the preimage of `E k` the coordinate `g` is bounded away from `0`, and `E k` is bounded
   set δ := min (‖c₀‖ / 2) δ'
-  have hδ : 0 < δ := lt_min (half_pos (norm_pos_iff.mpr hc₀)) hδ'
   have hHc : ∀ z ∈ upperHalfPlaneSet, z ∈ {z : ℂ | 0 ≤ z.im} := fun z (hz : 0 < z.im) => hz.le
   have hgδ : ∀ z ∈ upperHalfPlaneSet, q + (g z)⁻¹ ∈ E k → δ ≤ ‖g z‖ := by
     intro z hz hzE

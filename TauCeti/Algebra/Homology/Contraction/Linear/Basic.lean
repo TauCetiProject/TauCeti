@@ -49,6 +49,9 @@ homotopy.
   in particular `dN` squares to zero when `dM` does.
 * `TauCeti.LinearContraction.isHomogeneous_dN`: `dN` has the degree of `dM` when the
   inclusion and projection have degree zero.
+* `TauCeti.LinearContraction.comp_dN_eq_dN_comp`: `dN` commutes with a family of endomorphisms
+  of `N` when `dM` commutes with a family of endomorphisms of `M` intertwined with it by the
+  inclusion and the projection.
 
 ## References
 
@@ -157,6 +160,36 @@ theorem isHomogeneous_dN {ι σM σN : Type*} [AddMonoid ι] [SetLike σM M] [Se
   rw [h]
   simpa only [zero_add, add_zero] using hproj.comp (hdM.comp hincl)
 
+/-! ### Components relative to families of endomorphisms -/
+
+section Components
+
+variable {I : Type*} {eM : I → Module.End R M} {eN : I → Module.End R N}
+  (hincl : ∀ k, c.incl ∘ₗ eN k = eM k ∘ₗ c.incl) (hproj : ∀ k, eN k ∘ₗ c.proj = c.proj ∘ₗ eM k)
+include hincl hproj
+
+/-- The components of the compression `p f i` of an endomorphism `f` of `M` are the compressions
+of the components of `f`, when the inclusion and the projection intertwine the two families. -/
+theorem comp_proj_comp_comp_incl_comp (f : Module.End R M) (i j : I) :
+    eN j ∘ₗ (c.proj ∘ₗ f ∘ₗ c.incl) ∘ₗ eN i = c.proj ∘ₗ (eM j * f * eM i) ∘ₗ c.incl := by
+  rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+  simp only [LinearMap.comp_assoc, hincl]
+  rw [← LinearMap.comp_assoc, hproj, LinearMap.comp_assoc]
+
+/-- If the differential `dM` is diagonal, so is the differential `dN = p dM i` of the retract. -/
+theorem comp_dN_eq_dN_comp (hdM : ∀ k, Commute (eM k) dM) (k : I) :
+    eN k ∘ₗ dN = dN ∘ₗ eN k := by
+  have hdN : dN = c.proj ∘ₗ dM ∘ₗ c.incl := by
+    rw [← LinearMap.comp_assoc, c.proj_comp_dM, LinearMap.comp_assoc, c.proj_comp_incl,
+      LinearMap.comp_id]
+  have hd : eM k ∘ₗ dM = dM ∘ₗ eM k := by
+    rw [← Module.End.mul_eq_comp, (hdM k).eq, Module.End.mul_eq_comp]
+  rw [hdN, ← LinearMap.comp_assoc, hproj, LinearMap.comp_assoc, LinearMap.comp_assoc,
+    LinearMap.comp_assoc, hincl, ← LinearMap.comp_assoc c.incl dM (eM k), hd,
+    LinearMap.comp_assoc]
+
+end Components
+
 end LinearContraction
 
 /-- A **special contraction** of `(M, dM)` onto `(N, dN)`: maps `incl`, `proj` commuting with
@@ -257,6 +290,37 @@ def refl (dM : Module.End R M) : LinearSpecialContraction dM dM where
 
 /-- The identity contraction has zero homotopy. -/
 @[simp] theorem refl_homotopy (dM : Module.End R M) : (refl dM).homotopy = 0 := (rfl)
+
+section Copy
+
+variable {dM' : Module.End R M} {dN' : Module.End R N}
+  (incl' : N →ₗ[R] M) (proj' : M →ₗ[R] N) (homotopy' : Module.End R M)
+  (hdM : dM = dM') (hdN : dN = dN')
+  (hi : c.incl = incl') (hp : c.proj = proj') (hh : c.homotopy = homotopy')
+
+/-- Rebuild a special contraction with definitionally replaced differentials and maps. -/
+def copy : LinearSpecialContraction dM' dN' where
+  incl := incl'; proj := proj'; homotopy := homotopy'
+  dM_comp_incl := by subst hdM hdN hi; exact c.dM_comp_incl
+  proj_comp_dM := by subst hdM hdN hp; exact c.proj_comp_dM
+  proj_comp_incl := by subst hi hp; exact c.proj_comp_incl
+  dM_comp_homotopy_add_homotopy_comp_dM := by
+    subst hdM hi hp hh; exact c.dM_comp_homotopy_add_homotopy_comp_dM
+  homotopy_comp_incl := by subst hi hh; exact c.homotopy_comp_incl
+  proj_comp_homotopy := by subst hp hh; exact c.proj_comp_homotopy
+  homotopy_comp_homotopy := by subst hh; exact c.homotopy_comp_homotopy
+
+/-- The inclusion of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_incl : (c.copy incl' proj' homotopy' hdM hdN hi hp hh).incl = incl' := (rfl)
+
+/-- The projection of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_proj : (c.copy incl' proj' homotopy' hdM hdN hi hp hh).proj = proj' := (rfl)
+
+/-- The homotopy of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_homotopy :
+    (c.copy incl' proj' homotopy' hdM hdN hi hp hh).homotopy = homotopy' := (rfl)
+
+end Copy
 
 end LinearSpecialContraction
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.UniformConvergence
@@ -97,20 +97,10 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
   -- The Cauchy--Riemann equation converts the real-direction estimate into an operator bound.
   have hop : ∀ z ∈ closedBall z₀ (r / 2), ‖fderiv ℝ u z‖ ≤ (C : ℝ) := by
     intro z hz
-    have hreal := hbound z hz
-    have himag : ‖fderiv ℝ u z I‖ ≤ max a 0 * B := by
-      rw [hCR z (hinner hz)]
-      exact ((J (u z)).le_opNorm _).trans (by
-        gcongr
-        exact (ha _ (huK (hinner hz))).trans (le_max_left _ _))
-    refine ContinuousLinearMap.opNorm_le_bound _ C.coe_nonneg fun w ↦ ?_
-    calc
-      ‖fderiv ℝ u z w‖ ≤ (‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖) * ‖w‖ :=
-        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
-      _ ≤ (B + max a 0 * B) * ‖w‖ := by
-        gcongr
-      _ = (C : ℝ) * ‖w‖ := by rw [hCcoe]; ring
-  exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le
+    rw [hCcoe]
+    exact (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z (hinner hz))
+      ((ha _ (huK (hinner hz))).trans (le_max_left _ _)) (hbound z hz)
+  exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnNorm_fderiv_le
     (fun z hz ↦ (hu.contDiffAt (isOpen_ball.mem_nhds (hinner hz))).differentiableAt
       (by norm_num))
     (fun z hz ↦ by exact_mod_cast hop z hz)
@@ -156,10 +146,10 @@ theorem exists_pos_forall_tendstoUniformlyOn_subseq_of_small_energy
     exact h₁.inter h₂
   have hcompact : IsCompact A := BoundedContinuousFunction.arzela_ascoli₂ K hK A hclosed
     (fun f z hf ↦ hf.2 z)
-    ((LipschitzWith.uniformEquicontinuous (fun f : A ↦ (f.1 : D → V)) C
-      (fun f ↦ f.2.1)).equicontinuous)
+    ((LipschitzWith.uniformEquicontinuous (fun f : A ↦ (f.val : D → V)) C
+      (fun f ↦ f.property.1)).equicontinuous)
   obtain ⟨v, hv, φ, hφ, hconv⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ ⟨(lipschitzOnWith_iff_restrict.mp (hL n)), fun z ↦ huK n (hD z.2)⟩)
+    (fun n ↦ ⟨(lipschitzOnWith_iff_restrict.mp (hL n)), fun z ↦ huK n (hD z.property)⟩)
   -- Extend the limit off the disk only to express uniform convergence on a subset of `ℂ`.
   let v' : ℂ → V := fun z ↦ if hz : z ∈ D then v ⟨z, hz⟩ else 0
   have hv' : D.domRestrict v' = v := by funext z; simp [v', Set.domRestrict]

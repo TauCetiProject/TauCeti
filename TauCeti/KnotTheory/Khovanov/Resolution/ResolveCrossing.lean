@@ -28,7 +28,7 @@ degree by one there: the `1`-face of `⟦D⟧` at `c` is `⟦D_B⟧⟨1⟩`, whi
 
 This is the comparison behind the skein exact sequence of the Khovanov complex, in which the
 complex of `D` is assembled from the complexes of its two resolutions at `c` and the saddle map
-between them (`CategoryTheory.Functor.cubeComplexMappingConeIso`).
+between them (`TauCeti.PDCode.khovanovBracketMappingConeIso`).
 
 ## Main definitions
 
@@ -222,6 +222,12 @@ theorem covBy_resolveCrossingVertex {S T : Finset (Fin n)} (h : S ⋖ T) :
   rw [resolveCrossingVertex_insert]
   exact covBy_insert (by simpa using ha)
 
+/-- The vertex over `S` on the `A`-face is contained in the vertex over `S` on the `B`-face, which
+also contains `c`: the edge between them is the edge of the cube of `D` in the direction of `c`. -/
+theorem resolveCrossingVertex_true_subset_false (S : Finset (Fin n)) :
+    resolveCrossingVertex c true S ⊆ resolveCrossingVertex c false S := by
+  simp [subset_insert]
+
 end Vertex
 
 /-! ### The circles of a face -/
@@ -353,7 +359,7 @@ private theorem resolveCrossingCubeLinearEquiv_naturality {S T : Finset (Fin n)}
   -- of the two cubes are saddle maps and the vertex identifications are reindexings.
   rw [Functor.comp_map, Subsingleton.elim ((monotone_resolveCrossingVertex c t).functor.map
       (homOfLE h.le)) (homOfLE h'.le), ← cancel_mono (D.resolutionCubeι hD R j _),
-    Category.assoc, Category.assoc, D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j haS'
+    Category.assoc, Category.assoc, D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j
       (resolveCrossingVertex_insert c t S a).symm _ hst hc
       (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc)]
   ext x

@@ -28,6 +28,8 @@ by `‖v‖`.
 
 * `CliffordAlgebra.map_ι_mul_map_ι`, `CliffordAlgebra.map_ι_apply_map_ι_apply`:
   `c(v) c(v) = Q v`, as operators and pointwise.
+* `CliffordAlgebra.map_ι_apply_map_ι_apply_comm_of_isOrtho`: `c(a) c(b) = -c(b) c(a)` pointwise
+  for `Q`-orthogonal `a` and `b`.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
@@ -35,6 +37,8 @@ by `‖v‖`.
   module.
 * `CliffordAlgebra.norm_map_ι_apply_sq`: `‖c(v) ψ‖² = -Q v ‖ψ‖²` on a Hermitian Clifford module,
   and `CliffordAlgebra.norm_map_ι_apply`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
+* `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: its polarization,
+  `Re ⟪c(v) ψ, c(w) ψ⟫ = -polar Q v w ‖ψ‖² / 2`.
 
 ## References
 
@@ -64,6 +68,13 @@ theorem map_ι_mul_map_ι (v : M) : ρ (ι Q v) * ρ (ι Q v) = ((Q v : ℝ) : �
 theorem map_ι_apply_map_ι_apply (v : M) (ψ : W) :
     ρ (ι Q v) (ρ (ι Q v) ψ) = ((Q v : ℝ) : ℂ) • ψ := by
   rw [← mul_apply_eq_comp, map_ι_mul_map_ι, LinearMap.smul_apply, one_apply_eq_self]
+
+/-- Clifford multiplications by `Q`-orthogonal vectors anticommute:
+`c(a) (c(b) ψ) = -c(b) (c(a) ψ)`. -/
+theorem map_ι_apply_map_ι_apply_comm_of_isOrtho {a b : M} (h : Q.IsOrtho a b) (ψ : W) :
+    ρ (ι Q a) (ρ (ι Q b) ψ) = -ρ (ι Q b) (ρ (ι Q a) ψ) := by
+  rw [← mul_apply_eq_comp, ← map_mul, ι_mul_ι_comm_of_isOrtho h, map_neg, map_mul,
+    LinearMap.neg_apply, mul_apply_eq_comp]
 
 /-- Clifford multiplication by a vector `v` with `Q v ≠ 0` is injective. -/
 theorem map_ι_injective {v : M} (hv : Q v ≠ 0) : Function.Injective (ρ (ι Q v)) := by
@@ -118,6 +129,17 @@ theorem norm_map_ι_apply_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ
   simp only [RCLike.ofReal_eq_complex_ofReal, Complex.conj_ofReal]
   push_cast
   ring
+
+/-- On a Hermitian Clifford module, the real part of `⟪c(v) ψ, c(w) ψ⟫` is
+`-polar Q v w ‖ψ‖² / 2`, the polarization of `‖c(v) ψ‖² = -Q v ‖ψ‖²`. -/
+theorem re_inner_map_ι_apply_map_ι_apply (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (v w : M) (ψ : W) :
+    (inner ℂ (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)).re = -QuadraticMap.polar Q v w / 2 * ‖ψ‖ ^ 2 := by
+  have h := norm_add_sq (𝕜 := ℂ) (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)
+  rw [← LinearMap.add_apply, ← map_add, ← map_add, norm_map_ι_apply_sq hρ,
+    norm_map_ι_apply_sq hρ, norm_map_ι_apply_sq hρ] at h
+  simp only [QuadraticMap.polar, RCLike.re_to_complex] at h ⊢
+  linarith
 
 end Module
 

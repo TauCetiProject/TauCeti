@@ -78,7 +78,7 @@ namespace TauCeti.ClassFieldTheory
 
 open GlobalNumberFields
 
-variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+variable {K : Type} [Field K] (L : Type) [Field L] [NumberField L] [Algebra K L]
   (S : Set (HeightOneSpectrum (𝓞 K)))
 
 /-! ### The representations -/
@@ -103,7 +103,6 @@ variable (K) in
 abbrev ideleClassRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L)
 
-omit [NumberField K] in
 /-- `σ ∈ Aut(L/K)` acts on the class of an idele `a` in `ideleClassRep K L` as the class of the
 image of `a` under the ring automorphism `adeleEquiv L L σ` of the adele ring of `L`. -/
 theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
@@ -118,7 +117,8 @@ theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
 
 /-- The principal `S`-idele of an `S`-unit, as a homomorphism `U_{L,S} → I_{L,S}`. -/
 private def sUnitsToSIdelesHom : (primesAbove (𝓞 K) (𝓞 L) S).unit L →* sIdeles L S where
-  toFun a := ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.1, (unitEmbedding_mem_sIdeles_iff S a.1).2 a.2⟩
+  toFun a := ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.val, (unitEmbedding_mem_sIdeles_iff S a.val).2
+      a.property⟩
   map_one' := Subtype.ext (map_one _)
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
 
@@ -126,7 +126,7 @@ private theorem sUnitsToSIdelesHom_smul (σ : L ≃ₐ[K] L) (a : (primesAbove (
     sUnitsToSIdelesHom L S (σ • a) = σ • sUnitsToSIdelesHom L S a :=
   Subtype.ext <| by
     rw [coe_smul_sIdeles]
-    exact (congrArg _ (coe_smul_unit_primesAbove σ a)).trans (smul_unitEmbedding σ a.1).symm
+    exact (congrArg _ (coe_smul_unit_primesAbove σ a)).trans (smul_unitEmbedding σ a.val).symm
 
 /-- The inclusion `U_{L,S} → I_{L,S}` of the `S`-units as principal `S`-ideles, as a morphism of
 representations of `Aut(L/K)`. -/
@@ -139,7 +139,7 @@ def sUnitsToSIdeles : sUnitsRep L S ⟶ sIdelesRep L S :=
 @[simp]
 theorem sUnitsToSIdeles_hom_apply (a : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L)) :
     (sUnitsToSIdeles L S).hom a = Additive.ofMul ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.toMul,
-      (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.2⟩ :=
+      (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.property⟩ :=
   (rfl)
 
 variable (K) in
@@ -150,7 +150,6 @@ def unitsToIdeles : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ idelesRep 
     (IdeleGroup.unitEmbedding (𝓞 L) L).toAdditive.toIntLinearMap fun σ a ↦
       congrArg Additive.ofMul (smul_unitEmbedding σ a.toMul).symm
 
-omit [NumberField K] in
 /-- `unitsToIdeles` sends a unit of `L` to its principal idele. -/
 @[simp]
 theorem unitsToIdeles_hom_apply (a : Additive Lˣ) :
@@ -183,7 +182,6 @@ def idelesToIdeleClass : idelesRep K L ⟶ ideleClassRep K L :=
       fun σ x ↦ congrArg Additive.ofMul <| by
         simp
 
-omit [NumberField K] in
 /-- `idelesToIdeleClass` sends an idele to its idele class. -/
 @[simp]
 theorem idelesToIdeleClass_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
@@ -210,7 +208,7 @@ principal ideles and the quotient map onto the idele classes. -/
 def sIdeleShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) :=
   ShortComplex.mk (sUnitsToSIdeles L S) (sIdelesToIdeleClass L S) <| by
     ext a
-    exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.1, rfl⟩)
+    exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.val, rfl⟩)
 
 variable {S} in
 /-- **The sequence `0 → U_{L,S} → I_{L,S} → C_L → 0` is exact** when the classes of the primes
@@ -226,10 +224,10 @@ theorem sIdeleShortComplex_shortExact
     · have hx : (x.toMul : IdeleGroup (𝓞 L) L) ∈ IdeleGroup.principalSubgroup (𝓞 L) L :=
         (QuotientGroup.eq_one_iff _).1 (congrArg Additive.toMul hx)
       obtain ⟨a, ha, hax⟩ :=
-        (mem_principalSubgroup_iff_exists_mem_unit_of_mem_sIdeles x.toMul.2).1 hx
+        (mem_principalSubgroup_iff_exists_mem_unit_of_mem_sIdeles x.toMul.property).1 hx
       exact ⟨Additive.ofMul ⟨a, ha⟩, congrArg Additive.ofMul (Subtype.ext hax)⟩
     · rintro ⟨a, rfl⟩
-      exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.1, rfl⟩)
+      exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.val, rfl⟩)
   mono_f := by
     rw [Rep.mono_iff_injective]
     intro (a : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L)) b hab
@@ -254,7 +252,6 @@ def principalIdeleShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) :=
     ext a
     exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul, rfl⟩)
 
-omit [NumberField K] in
 variable (K) in
 /-- **The sequence `0 → Lˣ → I_L → C_L → 0` is exact**: the idele classes are the quotient of the
 ideles by the principal ideles, and a unit of `L` is determined by its principal idele. -/
@@ -285,10 +282,9 @@ variable {S} in
 the Herbrand quotients of the `S`-ideles and of the `S`-units, when the classes of the primes above
 `S` generate the ideal class group of `L` and the relevant Tate groups are finite:
 `h(C_L) = h(I_{L,S}) / h(U_{L,S})`. -/
-theorem herbrandQuotient_ideleClassRep [IsCyclic (L ≃ₐ[K] L)]
+theorem herbrandQuotient_ideleClassRep [NumberField K] [IsCyclic (L ≃ₐ[K] L)]
     (hS : Subgroup.closure (classGroupMk '' (primesAbove (𝓞 K) (𝓞 L) S)) = ⊤)
-    [Finite (tateCohomology (sUnitsRep L S) 0)] [Finite (tateCohomology (sUnitsRep L S) (-1))]
-    [Finite (tateCohomology (sIdelesRep L S) (-1))] :
+    [Finite (tateCohomology (sUnitsRep L S) 0)] [Finite (tateCohomology (sUnitsRep L S) (-1))] :
     TateCohomology.herbrandQuotient (ideleClassRep K L) =
       TateCohomology.herbrandQuotient (sIdelesRep L S) /
         TateCohomology.herbrandQuotient (sUnitsRep L S) := by
@@ -298,8 +294,6 @@ theorem herbrandQuotient_ideleClassRep [IsCyclic (L ≃ₐ[K] L)]
     inferInstanceAs (Finite (tateCohomology (sUnitsRep L S) 0))
   have : Finite (tateCohomology (sIdeleShortComplex L S).X₁ (-1)) :=
     inferInstanceAs (Finite (tateCohomology (sUnitsRep L S) (-1)))
-  have : Finite (tateCohomology (sIdeleShortComplex L S).X₂ (-1)) :=
-    inferInstanceAs (Finite (tateCohomology (sIdelesRep L S) (-1)))
   exact TateCohomology.herbrandQuotient_eq_div_of_shortExact (sIdeleShortComplex_shortExact L hS)
 
 end TauCeti.ClassFieldTheory

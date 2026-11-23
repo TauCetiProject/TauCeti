@@ -36,8 +36,8 @@ single weight and `S⁻` carries none — which is why
 and its `S⁺` counterpart does not. Over a field, and for a polarization whose `W` is
 finite-dimensional and nonzero, `2 ^ (l - 1)` is also the dimension of each summand, computed
 independently in `TauCeti/RepresentationTheory/Spin/Dimension.lean` by a Clifford-algebraic
-argument (`TauCeti.finrank_spinPlus` and `TauCeti.finrank_spinMinus`, both of which exclude
-`W = ⊥`, the same degenerate case).
+argument (`TauCeti.finrank_spinPlus` and `TauCeti.finrank_spinMinus`, the latter of which
+excludes `W = ⊥`, the degenerate case).
 
 Nothing here needs a field, a nondegeneracy hypothesis, a finite dimension, or a polarization
 without a line summand: the parity grading of `⋀·W` and the diagonalization are both available
@@ -106,7 +106,11 @@ universe u v w
 
 section Parity
 
-variable {K : Type u} [CommRing K] [Nontrivial K] {V : Type v} [AddCommGroup V] [Module K V]
+variable {K : Type u} [CommRing K]
+
+section Nontrivial
+
+variable [Nontrivial K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W)
 
@@ -128,7 +132,14 @@ theorem basis_mem_spinMinus_iff (s : Finset ι) :
     b.ExteriorAlgebra s ∈ spinMinus Q P ↔ Odd s.card := by
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
 
-omit [Nontrivial K] in
+end Nontrivial
+
+section Flip
+
+variable {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W)
+
 /-- Over a trivial ring every spinor is `0`, so it lies in every submodule of the spinor module.
 This is the degenerate case of the two parity flips below, which is why neither of them needs a
 nontriviality hypothesis. -/
@@ -138,7 +149,6 @@ private theorem mem_of_subsingleton [Subsingleton K] (x : ExteriorAlgebra K P.W)
   rw [Subsingleton.elim x 0]
   exact N.zero_mem
 
-omit [Nontrivial K] in
 /-- **Erasing an occupied coordinate flips the summand.** A basis vector lies in `S⁺` exactly when
 the vector obtained from it by erasing one of its coordinates lies in `S⁻`, erasing a coordinate
 changing the parity of the number of coordinates. This is the equivalence of the two memberships
@@ -158,7 +168,6 @@ theorem basis_mem_spinPlus_iff_basis_erase_mem_spinMinus {s : Finset ι} {i : ι
     Nat.even_iff, Nat.odd_iff]
   omega
 
-omit [Nontrivial K] in
 /-- **Erasing an occupied coordinate flips the summand**, the other half of
 `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: a basis vector lies in `S⁻` exactly
 when the vector obtained from it by erasing one of its coordinates lies in `S⁺`. -/
@@ -171,11 +180,17 @@ theorem basis_mem_spinMinus_iff_basis_erase_mem_spinPlus {s : Finset ι} {i : ι
     Nat.even_iff, Nat.odd_iff]
   omega
 
+end Flip
+
 end Parity
 
 section WeightSpace
 
-variable {K : Type u} [CommRing K] [Invertible (2 : K)] [Nontrivial K] {V : Type v}
+variable {K : Type u} [CommRing K] [Invertible (2 : K)]
+
+section Line
+
+variable [Nontrivial K] {V : Type v}
   [AddCommGroup V] [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W)
 
@@ -191,7 +206,14 @@ theorem spinWeightSpace_le_spinMinus_iff (s : Finset ι) :
     spinWeightSpace Q P b (spinWeight K s) ≤ spinMinus Q P ↔ Odd s.card := by
   rw [spinWeightSpace_spinWeight, Submodule.span_singleton_le_iff_mem, basis_mem_spinMinus_iff]
 
-omit [Nontrivial K] in
+end Line
+
+section Sum
+
+variable {V : Type v}
+  [AddCommGroup V] [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W)
+
 /-- Splitting the exhaustion `TauCeti.iSup_spinWeightSpace_eq_top` by the parity of the index set:
 the two parities of weight line already span the whole spinor module. -/
 private theorem sup_iSup_spinWeightSpace_parity_eq_top :
@@ -203,7 +225,6 @@ private theorem sup_iSup_spinWeightSpace_parity_eq_top :
   · exact le_sup_of_le_left (le_iSup_of_le s (le_iSup_of_le hs le_rfl))
   · exact le_sup_of_le_right (le_iSup_of_le s (le_iSup_of_le hs le_rfl))
 
-omit [Nontrivial K] in
 /-- The sum of the weight lines of even parity is contained in `S⁺`. -/
 theorem iSup_spinWeightSpace_even_le_spinPlus :
     (⨆ (s : Finset ι) (_ : Even s.card), spinWeightSpace Q P b (spinWeight K s)) ≤
@@ -213,7 +234,6 @@ theorem iSup_spinWeightSpace_even_le_spinPlus :
   have hcard := b.exteriorAlgebra_mem_evenOdd_card s
   rwa [ZMod.natCast_eq_zero_iff_even.mpr hs] at hcard
 
-omit [Nontrivial K] in
 /-- The sum of the weight lines of odd parity is contained in `S⁻`. -/
 theorem iSup_spinWeightSpace_odd_le_spinMinus :
     (⨆ (s : Finset ι) (_ : Odd s.card), spinWeightSpace Q P b (spinWeight K s)) ≤
@@ -223,7 +243,6 @@ theorem iSup_spinWeightSpace_odd_le_spinMinus :
   have hcard := b.exteriorAlgebra_mem_evenOdd_card s
   rwa [ZMod.natCast_eq_one_iff_odd.mpr hs] at hcard
 
-omit [Nontrivial K] in
 /-- **`S⁺` is the sum of the weight lines of even parity.** -/
 theorem iSup_spinWeightSpace_even_eq_spinPlus :
     (⨆ (s : Finset ι) (_ : Even s.card), spinWeightSpace Q P b (spinWeight K s)) =
@@ -236,7 +255,6 @@ theorem iSup_spinWeightSpace_even_eq_spinPlus :
   · rw [sup_iSup_spinWeightSpace_parity_eq_top P b]
     exact le_top
 
-omit [Nontrivial K] in
 /-- **`S⁻` is the sum of the weight lines of odd parity**, the other half of
 `TauCeti.iSup_spinWeightSpace_even_eq_spinPlus`. -/
 theorem iSup_spinWeightSpace_odd_eq_spinMinus :
@@ -250,7 +268,13 @@ theorem iSup_spinWeightSpace_odd_eq_spinMinus :
   · rw [sup_comm, sup_iSup_spinWeightSpace_parity_eq_top P b]
     exact le_top
 
-variable [NoZeroDivisors K]
+end Sum
+
+section Weights
+
+variable [Nontrivial K] {V : Type v}
+  [AddCommGroup V] [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W) [NoZeroDivisors K]
 
 /-- **The weights of `S⁺` are exactly the sign vectors with an even number of `+` signs.** A tuple
 of eigenvalues counts as a weight of `S⁺` when its weight space is nonzero and contained in `S⁺`;
@@ -301,6 +325,8 @@ theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus [Finite ι] [Nonempt
         spinWeightSpace Q P b χ ≤ spinMinus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by
   rw [setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd P b,
     ncard_image_spinWeight_odd]
+
+end Weights
 
 end WeightSpace
 

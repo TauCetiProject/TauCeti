@@ -88,14 +88,15 @@ private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
 /-- **`Map(S², Q)` is the space of paths of free loops from a constant loop to a constant
 loop.** Precomposition with the suspension map `I × S¹ → S²`, followed by currying. -/
 def sphere2HomeomorphConstLoopPath : C(Sphere2, Q) ≃ₜ ConstLoopPath Q :=
-  (ContinuousMap.homeomorphFactorsThrough suspensionToSphere suspensionToSphere_surjective).trans
+  (ContinuousMap.homeomorphFactorsThrough suspensionToSphere
+      suspensionToSphere.continuous.isProperMap suspensionToSphere_surjective).trans
     (Homeomorph.subtype Homeomorph.curry factorsThrough_suspensionToSphere_iff)
 
 /-- The path of loops attached to `f : C(S², Q)` evaluates at `(t, z)` to the value of `f` at
 the image of `(t, z)` under the collapse of the suspension. -/
 @[simp]
 theorem sphere2HomeomorphConstLoopPath_apply (f : C(Sphere2, Q)) (t : I) (z : Circle) :
-    (sphere2HomeomorphConstLoopPath f).1 t z = f (suspensionToSphere (t, z)) := by
+    (sphere2HomeomorphConstLoopPath f).val t z = f (suspensionToSphere (t, z)) := by
   rw [sphere2HomeomorphConstLoopPath, Homeomorph.trans_apply]
   rw [Homeomorph.subtype_apply_coe, ContinuousMap.homeomorphFactorsThrough_apply]
   exact ContinuousMap.curry_apply (f.comp suspensionToSphere) t z
@@ -104,7 +105,7 @@ theorem sphere2HomeomorphConstLoopPath_apply (f : C(Sphere2, Q)) (t : I) (z : Ci
 suspension map, to the value of the path of loops at `t` and `z`. -/
 @[simp]
 theorem sphere2HomeomorphConstLoopPath_symm_apply (p : ConstLoopPath Q) (t : I) (z : Circle) :
-    sphere2HomeomorphConstLoopPath.symm p (suspensionToSphere (t, z)) = p.1 t z := by
+    sphere2HomeomorphConstLoopPath.symm p (suspensionToSphere (t, z)) = p.val t z := by
   have h := sphere2HomeomorphConstLoopPath_apply
     (sphere2HomeomorphConstLoopPath.symm p) t z
   rw [Homeomorph.apply_symm_apply] at h
@@ -130,17 +131,17 @@ the map at the image of `(t, z)` under the collapse of the suspension. -/
 @[simp]
 theorem basedMapSphere2HomeomorphBasedConstLoopPath_apply (x : Q)
     (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :
-    (basedMapSphere2HomeomorphBasedConstLoopPath x f).1.1 t z =
-      f.1 (suspensionToSphere (t, z)) :=
-  sphere2HomeomorphConstLoopPath_apply f.1 t z
+    (basedMapSphere2HomeomorphBasedConstLoopPath x f).val.val t z =
+      f.val (suspensionToSphere (t, z)) :=
+  sphere2HomeomorphConstLoopPath_apply f.val t z
 
 /-- The inverse of `basedMapSphere2HomeomorphBasedConstLoopPath` evaluates, at the image of
 `(t, z)` under the suspension map, to the value of the path of loops at `t` and `z`. -/
 @[simp]
 theorem basedMapSphere2HomeomorphBasedConstLoopPath_symm_apply (x : Q)
     (p : BasedConstLoopPath Q x) (t : I) (z : Circle) :
-    ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p).1 (suspensionToSphere (t, z)) =
-      p.1.1 t z := by
+    ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p).val (suspensionToSphere (t, z)) =
+      p.val.val t z := by
   have h := basedMapSphere2HomeomorphBasedConstLoopPath_apply x
     ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p) t z
   rw [Homeomorph.apply_symm_apply] at h
@@ -156,7 +157,7 @@ image of `(t, z)` under the suspension map. -/
 @[simp]
 theorem sphere2HomeomorphContractibleConstLoopPath_apply (f : C(Sphere2, Q)) (t : I)
     (z : Circle) :
-    ((sphere2HomeomorphContractibleConstLoopPath f).1 t : C(Circle, Q)) z =
+    ((sphere2HomeomorphContractibleConstLoopPath f).val t : C(Circle, Q)) z =
       f (suspensionToSphere (t, z)) := by
   rw [sphere2HomeomorphContractibleConstLoopPath, Homeomorph.trans_apply,
     coe_constLoopPathHomeomorph]
@@ -182,7 +183,7 @@ under the suspension map, to the value of the path of contractible loops at `t` 
 theorem sphere2HomeomorphContractibleConstLoopPath_symm_apply
     (r : ContractibleConstLoopPath Q) (t : I) (z : Circle) :
     sphere2HomeomorphContractibleConstLoopPath.symm r (suspensionToSphere (t, z)) =
-      (r.1 t : C(Circle, Q)) z := by
+      (r.val t : C(Circle, Q)) z := by
   have h := sphere2HomeomorphContractibleConstLoopPath_apply
     (sphere2HomeomorphContractibleConstLoopPath.symm r) t z
   rw [Homeomorph.apply_symm_apply] at h
@@ -193,8 +194,8 @@ the image of `(t, z)` under the suspension map. -/
 @[simp]
 theorem basedMapSphere2HomeomorphBasedContractibleConstLoopPath_apply (x : Q)
     (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :
-    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x f).1.1 t : C(Circle, Q)) z =
-      f.1 (suspensionToSphere (t, z)) := by
+    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x f).val.val t : C(Circle, Q)) z =
+      f.val (suspensionToSphere (t, z)) := by
   rw [basedMapSphere2HomeomorphBasedContractibleConstLoopPath, Homeomorph.trans_apply,
     Homeomorph.subtype_apply_coe, coe_constLoopPathHomeomorph]
   exact basedMapSphere2HomeomorphBasedConstLoopPath_apply x f t z
@@ -205,8 +206,8 @@ and `z`. -/
 @[simp]
 theorem basedMapSphere2HomeomorphBasedContractibleConstLoopPath_symm_apply (x : Q)
     (p : BasedContractibleConstLoopPath Q x) (t : I) (z : Circle) :
-    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).symm p).1
-        (suspensionToSphere (t, z)) = (p.1.1 t : C(Circle, Q)) z := by
+    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).symm p).val
+        (suspensionToSphere (t, z)) = (p.val.val t : C(Circle, Q)) z := by
   have h := basedMapSphere2HomeomorphBasedContractibleConstLoopPath_apply x
     ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).symm p) t z
   rw [Homeomorph.apply_symm_apply] at h

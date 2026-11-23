@@ -33,6 +33,12 @@ namespace TauCeti.F4ShortRoot
 @[expose] def isogenyExponent : Fin 4 ⊕ Fin 4 → ℕ :=
   Sum.elim ![1, 1, 2, 2] ![1, 1, 2, 2]
 
+/-- A negative simple root has the same special-isogeny parameter exponent as its positive
+counterpart. -/
+theorem isogenyExponent_inr (j : Fin 4) :
+    isogenyExponent (.inr j) = isogenyExponent (.inl j) :=
+  rfl
+
 /-- Each special-isogeny parameter exponent is one or two. -/
 theorem isogenyExponent_eq_one_or_two (k : Fin 4 ⊕ Fin 4) :
     isogenyExponent k = 1 ∨ isogenyExponent k = 2 := by
@@ -83,6 +89,14 @@ noncomputable def f4ShortRootQuotientLift (a : Fin 26) :
     f4ShortRootQuotientLift a =
       f4ModularChevalleyBasis (f4LongRootBasisCoordinate a) := by
   rfl
+
+/-- The canonical lift of a root coordinate of the quotient is the root vector of its preimage
+under the special root permutation. -/
+theorem f4ShortRootQuotientLift_symm_inl (i : F4ShortRootIndex) :
+    f4ShortRootQuotientLift (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
+      f4ModularRootVector (f4SpecialIsogenyIndexEquiv i) := by
+  rw [f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inl,
+    f4ModularChevalleyBasis_inl_eq_rootVector, f4PinnedRootIndex_f4KillingRootLabel]
 
 theorem f4ShortRootSubspace_mkQ_quotientLift (a : Fin 26) :
     f4ShortRootSubspace.mkQ (f4ShortRootQuotientLift a) =
@@ -183,6 +197,16 @@ noncomputable def f4ShortRootIdealDividedSquareColumn
       f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis a) := by
   rfl
 
+/-- The ideal divided-square column vanishes when the ambient divided square of the basis vector
+does. -/
+theorem f4ShortRootIdealDividedSquareColumn_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (a : Fin 26)
+    (h : f4ModularDividedAdjointSquare k
+      (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) = 0) :
+    f4ShortRootIdealDividedSquareColumn k a = 0 := by
+  simp only [f4ShortRootIdealDividedSquareColumn_apply]
+  exact Subtype.ext ((f4ModularDividedAdjointSquare_basis k a).symm.trans h)
+
 /-- The ideal's first-order canonical column is the corresponding sparse root-matrix column. -/
 theorem f4ShortRootIdealFirstColumn_eq
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :
@@ -220,36 +244,42 @@ theorem f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex
     (k : Fin 4 ⊕ Fin 4) :
     f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) =
       f4SignedSimpleRootIndex (isogenyReverse k) := by
-  rcases k with i | i
-  · simp [f4SignedSimpleRootIndex_inl, isogenyReverse,
-      f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
-  · have hleft : f4SignedSimpleRootIndex (.inr i) =
-        (Fin.castAdd 44 i : Fin 48) + 24 := by
-      simp only [f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd]
-      fin_cases i <;> decide +kernel
-    have hright : f4SignedSimpleRootIndex (isogenyReverse (.inr i)) =
-        (Fin.castAdd 44 i.rev : Fin 48) + 24 := by
-      simp only [isogenyReverse, Sum.map_inr, f4SignedSimpleRootIndex_inr,
-        f4OppositeRootIndex_castAdd]
-      fin_cases i <;> decide +kernel
-    rw [hleft, hright, f4SpecialIsogenyIndexEquiv_apply,
-      f4SpecialIsogenyIndex_add_twentyFour, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
+  have hpos (i : Fin 4) :
+      f4SpecialIsogenyIndexEquiv (Fin.castAdd 44 i) = Fin.castAdd 44 i.rev := by
+    simp [lengthPermF4_apply]
+  rcases k with i | i <;>
+    simp only [isogenyReverse, Sum.map_inl, Sum.map_inr, f4SignedSimpleRootIndex_inl,
+      f4SignedSimpleRootIndex_inr, Fin.revPerm_apply,
+      f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex, hpos]
+
+/-- If the special-isogeny images of three roots satisfy `γ' = β' + α'`, with `α'` the image of the
+signed simple root `k`, then the ideal first-order column of the reversed label sends the
+short-root basis vector at `β'` to the one at `γ'`. -/
+theorem f4ShortRootIdealFirstColumn_eq_basis_of_specialMap_add
+    (k : Fin 4 ⊕ Fin 4) (iβ iγ : F4ShortRootIndex)
+    (hadd : f4SimplyConnectedRootDatum.root iγ.val =
+      f4SimplyConnectedRootDatum.root iβ.val +
+        f4SimplyConnectedRootDatum.root
+          (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
+    f4ShortRootIdealFirstColumn (isogenyReverse k)
+        (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) =
+      f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)) := by
+  obtain ⟨β, hβ⟩ := iβ
+  obtain ⟨γ, hγ⟩ := iγ
+  have hsigned := congrArg (fun δ => f4ShortRootAdjoint (f4ModularRootVector δ)
+      (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl ⟨β, hβ⟩))))
+    (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k)
+  exact ((f4ShortRootIdealFirstColumn_apply _ _).trans
+    (f4ShortRootSignedSimpleAdjoint_apply _ _)).trans
+    (hsigned.symm.trans (f4ShortRootAdjoint_rootVector_of_add_eq_short _ β γ hβ hγ hadd))
 
 /-- The special root permutation also reverses the opposite signed-simple indices. -/
 theorem f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex
     (k : Fin 4 ⊕ Fin 4) :
     f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)) =
-      f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
-  rcases k with i | i
-  · simpa only [isogenyReverse, Sum.map_inl, Sum.map_inr,
-      f4SignedSimpleRootIndex_inl, f4SignedSimpleRootIndex_inr] using
-      f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex (.inr i)
-  · simp only [isogenyReverse, Sum.map_inr, f4SignedSimpleRootIndex_inr,
-      f4OppositeRootIndex_f4OppositeRootIndex]
-    simp [f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_castAdd,
-      lengthPermF4_apply]
+      f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) :=
+  (f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex _).trans
+    (congrArg f4OppositeRootIndex (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k))
 
 end
 

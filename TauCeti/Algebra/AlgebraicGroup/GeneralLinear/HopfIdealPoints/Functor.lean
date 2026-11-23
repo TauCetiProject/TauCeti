@@ -79,7 +79,7 @@ private theorem hopfIdealPointsSubgroupMulEquiv_apply_eq (A : CommAlgCat.{w} R)
 
 /-- A quotient point, viewed through `hopfIdealPointsSubgroupMulEquiv`, is its included ambient
 point read as an invertible matrix. -/
-@[simp]
+@[simp↓]
 theorem coe_hopfIdealPointsSubgroupMulEquiv_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -89,12 +89,13 @@ theorem coe_hopfIdealPointsSubgroupMulEquiv_apply (A : CommAlgCat.{w} R)
   rw [hopfIdealPointsSubgroupMulEquiv_apply_eq, Subgroup.coe_congrOfMapEq_apply,
     CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply]
 
-/-- An equivalence from quotient points to a matrix subgroup identifies membership in the
+/-- A surjection from quotient points onto a matrix subgroup identifies membership in the
 quotient-point subgroup whenever it preserves the ambient invertible matrix. -/
-theorem mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+theorem mem_quotientPointsSubgroup_iff_mem_of_surjective
     (B : CommAlgCat.{w} R) (P : Subgroup (Matrix.GeneralLinearGroup (Fin n) B))
     (E : HopfAlgebra.points (R := R)
-        (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) B ≃* P)
+        (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) B → P)
+    (hEs : Function.Surjective E)
     (hE : ∀ q,
       (E q : Matrix.GeneralLinearGroup (Fin n) B) =
         pointsMulEquiv n
@@ -111,17 +112,16 @@ theorem mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
     rw [CommHopfAlgCat.quotientPointsHom_liftQuotientPoint] at hq
     exact hq ▸ (E q).property
   · intro hg
-    let p : P := ⟨pointsMulEquiv n g, hg⟩
-    let q := E.symm p
+    obtain ⟨q, hqE⟩ := hEs ⟨pointsMulEquiv n g, hg⟩
     have hq : CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I B q = g := by
       apply (pointsMulEquiv n).injective
-      rw [← hE q, MulEquiv.apply_symm_apply]
+      rw [← hE q, hqE]
     rw [← hq]
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
 
 /-- Including the ambient Hopf-algebra point underlying the inverse matrix-subgroup equivalence
 recovers the point corresponding to the underlying matrix. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_hopfIdealPointsSubgroupMulEquiv_symm
     (A : CommAlgCat.{w} R) (g : hopfIdealPointsSubgroup n I A) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I A
@@ -181,7 +181,7 @@ theorem hopfIdealPointsSubgroupFunctor_map_apply {A B : CommAlgCat.{w} R} (f : A
   (rfl)
 
 /-- The matrix-subgroup equivalence is natural in the value algebra. -/
-@[simp]
+@[simp↓]
 theorem hopfIdealPointsSubgroupMulEquiv_mapPoints {A B : CommAlgCat.{w} R} (f : A ⟶ B)
     (q : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -213,7 +213,7 @@ def hopfIdealPointsSubgroupNatIso :
 
 /-- After transport along `hopfIdealPointsSubgroupFunctor_obj`, the forward component of the
 representing natural isomorphism is the pointwise matrix-subgroup equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem hopfIdealPointsSubgroupNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -224,7 +224,7 @@ theorem hopfIdealPointsSubgroupNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `hopfIdealPointsSubgroupFunctor_obj`, the inverse component of the
 representing natural isomorphism is the inverse pointwise matrix-subgroup equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem hopfIdealPointsSubgroupNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (hopfIdealPointsSubgroup n I A)) :
     (hopfIdealPointsSubgroupNatIso n I).inv.app A

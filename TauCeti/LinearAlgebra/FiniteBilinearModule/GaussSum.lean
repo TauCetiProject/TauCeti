@@ -295,7 +295,7 @@ theorem gaussSum_restrict_orthogonalComplement {H : AddSubgroup A} (hH : A.IsIso
         refine Finset.sum_congr rfl fun a _ ↦ ?_
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun h _ ↦ ?_
-        rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.2]
+        rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.property]
         congr 1
         abel
     _ = (Nat.card H : ℂ) * (A.restrict
@@ -330,7 +330,7 @@ theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagran
   have hq := (A.isIsotropic_def).mp (IsLagrangian.isIsotropic A hH)
   calc ∑ x : A.restrict H, expCircle ((A.restrict H).quadratic x)
       = ∑ _ : H, (1 : ℂ) := Fintype.sum_equiv (Equiv.refl _) _ _ fun x ↦ by
-        rw [A.restrict_quadratic H x, hq x.1 x.2, AddChar.map_zero_eq_one]
+        rw [A.restrict_quadratic H x, hq x.val x.property, AddChar.map_zero_eq_one]
     _ = Nat.card H := by simp [Nat.card_eq_fintype_card]
 
 end
@@ -369,7 +369,7 @@ theorem gaussSum_eq_card_mul_gaussSum_quotientOfLeQuadraticRadical
   have hvalue (x : {x : A // f x = q}) : expCircle (A.quadratic x) =
       expCircle (Q.quadratic q) := by
     exact congrArg expCircle ((A.quotientOfLeQuadraticRadical_quadratic_mk K hK x).symm.trans
-      (congrArg Q.quadratic x.2))
+      (congrArg Q.quadratic x.property))
   simp only [hvalue, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     ← Nat.card_eq_fintype_card, hcard]
   rfl
@@ -614,12 +614,20 @@ theorem gaussSign_eq_zero_of_subsingleton [Subsingleton A] : A.gaussSign = 0 := 
   simp
 
 variable {A} in
-/-- **The Gauss-sum invariant of a nondegenerate metabolic module vanishes.** -/
-theorem gaussSign_eq_zero_of_isMetabolic (hA : A.IsNondegenerate) (h : A.IsMetabolic) :
-    A.gaussSign = 0 := by
-  refine gaussSign_eq_of_gaussSum_eq A ?_
-  rw [map_zero, AddChar.map_zero_eq_one, mul_one]
-  exact gaussSum_eq_sqrt_natCard_of_isMetabolic hA h
+/-- **The Gauss-sum invariant of a metabolic module vanishes.** The Gauss sum of a module with a
+Lagrangian `H` is the positive real `#H`, so if it is `√#A` times a phase the phase is trivial;
+otherwise the invariant is `0` by definition. -/
+theorem gaussSign_eq_zero_of_isMetabolic (h : A.IsMetabolic) : A.gaussSign = 0 := by
+  obtain ⟨H, hH⟩ := (isMetabolic_def A).1 h
+  have hG := gaussSum_eq_natCard_of_isLagrangian hH
+  by_cases hex : ∃ k : ZMod 8, A.gaussSum = √(Nat.card A) * expCircle (ZMod.toRatAddCircle 8 k)
+  · obtain ⟨k, hk⟩ := hex
+    refine gaussSign_eq_of_gaussSum_eq A ?_
+    have hn := congrArg norm hk
+    rw [hG, norm_mul, Complex.norm_natCast, Complex.norm_real, norm_expCircle, mul_one,
+      Real.norm_of_nonneg (Real.sqrt_nonneg _)] at hn
+    rw [map_zero, AddChar.map_zero_eq_one, mul_one, hG, ← ofReal_natCast, hn]
+  · rw [gaussSign, dite_eq_right hex]
 
 /-- The discriminant form of `A₁`, the quadratic form `q(x) = x² / 4` on `ℤ/2`, has Gauss-sum
 invariant `1`, since `1 + i = √2 · e^{2πi/8}`. -/

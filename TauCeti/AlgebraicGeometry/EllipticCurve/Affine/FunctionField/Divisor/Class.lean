@@ -20,8 +20,6 @@ points with that ideal class group gives the points as degree-zero divisor class
 
 ## Main results
 
-* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
-  equality of sets, which is the shape `Divisor.degreeZeroClassGroupEquiv` consumes.
 * `WeierstrassCurve.Affine.pointEquivDegreeZeroDivisorClass`: **the points of `W` are the
   degree-zero divisor classes of `F(W)`.**
 * `WeierstrassCurve.Affine.val_pointEquivDegreeZeroDivisorClass_some`: that equivalence sends an
@@ -45,13 +43,6 @@ open TauCeti AlgebraicGeometry IsDedekindDomain Polynomial
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
   [IsDedekindDomain W.CoordinateRing]
-
-/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
-sets. -/
-theorem setOf_exists_notMem_integers_eq_singleton_infinity :
-    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
-        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
-  Set.ext fun _ ↦ by simp
 
 /-- **The ideal class of a point's place is the class Mathlib's `toClass` takes.** The place of a
 point has the point's ideal `⟨X - x, Y - y⟩` underneath it, and `XYIdeal'` is that ideal as an
@@ -103,7 +94,7 @@ theorem val_pointEquivDegreeZeroDivisorClass_some {x y : F} (h : W.Nonsingular x
   refine sub_eq_zero.mp (Divisor.eq_zero_of_classGroupHom_eq_zero_of_degreeClass_eq_zero
     W.CoordinateRing W.isFunctionField hsingle (Place.degree_infinity (W := W)) ?_ ?_)
   · rw [map_sub, W.degreeClass_divisorClass_pointPlace_sub_infinity h.left, sub_zero]
-    exact AddMonoidHom.mem_ker.mp (W.pointEquivDegreeZeroDivisorClass (Point.some x y h)).2
+    exact AddMonoidHom.mem_ker.mp (W.pointEquivDegreeZeroDivisorClass (Point.some x y h)).property
   · rw [map_sub, sub_eq_zero, ← Divisor.degreeZeroClassGroupEquiv_apply W.CoordinateRing
       W.isFunctionField hsingle (Place.degree_infinity (W := W))]
     simp only [pointEquivDegreeZeroDivisorClass, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
@@ -124,7 +115,7 @@ of a point is the class of its place minus the place at infinity. -/
 theorem val_pointEquivDegreeZeroDivisorClass (R : W.Point) :
     (W.pointEquivDegreeZeroDivisorClass R : (Place.orderSystem W.isFunctionField).ClassGroup) =
       (Place.orderSystem W.isFunctionField).divisorClass
-        (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).1 (Place.infinity W)) := by
+        (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).val (Place.infinity W)) := by
   cases R with
   | zero =>
     rw [coe_pointEquivDegreeOnePlace_zero, WeilDivisor.pointDifference_self, map_zero,
@@ -139,8 +130,8 @@ theorem val_pointEquivDegreeZeroDivisorClass_sub (R S : W.Point) :
     (W.pointEquivDegreeZeroDivisorClass (R - S) :
         (Place.orderSystem W.isFunctionField).ClassGroup) =
       (Place.orderSystem W.isFunctionField).divisorClass
-        (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).1
-          (W.pointEquivDegreeOnePlace S).1) := by
+        (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).val
+          (W.pointEquivDegreeOnePlace S).val) := by
   rw [map_sub, AddSubgroup.coe_sub, val_pointEquivDegreeZeroDivisorClass,
     val_pointEquivDegreeZeroDivisorClass, ← map_sub, sub_eq_add_neg,
     ← WeilDivisor.pointDifference_swap, WeilDivisor.pointDifference_add_pointDifference_cancel]

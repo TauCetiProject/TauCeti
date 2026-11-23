@@ -70,7 +70,7 @@ theorem isFreelyIndependentElements_iff_polynomial {a : ι → A} {φ : A →ₗ
     exact h w' (by simpa [w'] using hne) (hfst ▸ halt)
       (by
         simp only [w', List.mem_map]
-        rintro _ ⟨x, hx, rfl⟩
+        rintro _ ⟨x, _, rfl⟩
         exact Polynomial.aeval_mem_adjoin_singleton R (a x.1))
       (by
         simp only [w', List.mem_map]
@@ -244,5 +244,36 @@ theorem eq_of_adjoin_range_eq_top (hφ : φ 1 = 1) (hψ : ψ 1 = 1)
 end IsFreelyIndependentElements
 
 end Ring
+
+section SemiringAlgebra
+
+variable [CommRing R] [Semiring A] [Algebra R A]
+
+namespace IsFreelyIndependentElements
+
+variable {c : ι → A} {φ : A →ₗ[R] R}
+
+/-- *Factorisation of expectations along a duplicate-free product of free elements*: for a
+duplicate-free list `l` of indices of a freely independent family `c` under a normalised `φ`,
+`φ (l.map c).prod = (l.map fun i => φ (c i)).prod`. -/
+theorem apply_list_prod (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1)
+    {l : List ι} (hnodup : l.Nodup) :
+    φ (l.map c).prod = (l.map fun i => φ (c i)).prod := by
+  simpa [Function.comp_def] using
+    (isFreelyIndependentElements_iff.mp h).apply_list_prod hφ (l := l.map fun i => (i, c i))
+      (by simpa [Function.comp_def] using hnodup)
+      (by simp [Algebra.self_mem_adjoin_singleton])
+
+/-- For a normalised `φ`, a duplicate-free product of free elements of unit means has unit
+mean. -/
+theorem isUnit_apply_list_prod (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1)
+    {l : List ι} (hnodup : l.Nodup) (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
+    IsUnit (φ (l.map c).prod) := by
+  rw [h.apply_list_prod hφ hnodup]
+  exact List.prod_isUnit (l.forall_mem_map.mpr hu)
+
+end IsFreelyIndependentElements
+
+end SemiringAlgebra
 
 end TauCeti

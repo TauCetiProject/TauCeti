@@ -150,7 +150,7 @@ def quotientPiAddEquiv (hU : IsOpen (U : Set G)) (htriv : ∀ (u : U) (a : A), u
         filter_upwards [hg] with x hx
         exact QuotientGroup.eq.mpr (by simpa only [inv_inv] using hx)
       exact hlc.comp φ)
-    (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.2), htriv])
+    (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.property), htriv])
   left_inv f := ext fun g => by
     rw [mk_apply]
     exact congrArg f (inv_inv g)
@@ -255,6 +255,7 @@ theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteC
   simp only [apply_eq_apply_one_of_forall_smul_eq hf]
   exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU hfix
 
+omit [U.FiniteIndex] in
 /-- **The trace of an invariant vanishes once the relative index kills the module.** For
 finite-index subgroups `V ≤ U`, a `G`-invariant element `f` of `Coind_V^G M` whose constant value
 `f 1` is fixed by `U` has zero trace if `[U : V] • m = 0` for every `m : M`. -/
@@ -262,6 +263,7 @@ theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteCoind G V M
     (hfix : ∀ u ∈ U, u • f 1 = f 1) (hkill : ∀ m : M, V.relIndex U • m = 0)
     (hf : ∀ g : G, g • f = f) :
     trace G V M f = 0 := by
+  have : U.FiniteIndex := Subgroup.finiteIndex_of_le hVU
   rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU hfix hf, hkill]
 
 end TraceInvariants
@@ -271,8 +273,7 @@ end DiscreteCoind
 section DiscreteAlgebraicComparison
 
 variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
+  [AddCommGroup M] (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M]
 
 open Classical in
 /-- For a discrete group `G` and a finite-index subgroup `U`, the counit of

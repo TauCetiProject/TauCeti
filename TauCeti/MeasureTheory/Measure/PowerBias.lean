@@ -81,36 +81,59 @@ theorem lintegral_powerBiasWeight_eq_of_integrable {μ : Measure ℝ} {q : ℝ}
   rw [← ofReal_integral_eq_lintegral_ofReal hq
     (hμ.mono fun x hx => Real.rpow_nonneg hx q)]
 
-/-- A positive finite power moment makes the corresponding power bias a probability measure. -/
-theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
-    (hpos : 0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ)
-    (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
-    IsProbabilityMeasure (μ.powerBias q) := by
-  rw [powerBias_def]
-  exact Measure.isProbabilityMeasure_weighted hpos hfin
+/-- A power bias is a probability measure exactly when its normalizing power moment is positive
+and finite. -/
+theorem isProbabilityMeasure_powerBias_iff {μ : Measure ℝ} {q : ℝ} :
+    IsProbabilityMeasure (μ.powerBias q) ↔
+      0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ∧
+        ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞ := by
+  rw [powerBias_def, isProbabilityMeasure_weighted_iff]
 
-/-- Under a valid first bias, a further real power is integrable exactly when the power with the
-sum of the two exponents was integrable under the original law. -/
+/-- A law carried by `(0, ∞)` whose power moment `∫⁻ x ^ q` vanishes is the zero measure. -/
+theorem eq_zero_of_lintegral_powerBiasWeight_eq_zero {μ : Measure ℝ} {q : ℝ}
+    (hμ : ∀ᵐ x ∂μ, 0 < x) (hZ : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ = 0) : μ = 0 := by
+  rw [lintegral_eq_zero_iff (measurable_powerBiasWeight q).coe_nnreal_ennreal] at hZ
+  have h : ∀ᵐ _ ∂μ, False := by
+    filter_upwards [hμ, hZ] with x hx hz
+    simp only [Pi.zero_apply, ENNReal.coe_eq_zero, Real.toNNReal_eq_zero] at hz
+    exact (Real.rpow_pos_of_pos hx q).not_ge hz
+  simpa [ae_iff] using h
+
+/-- When the first bias has a finite normalizing constant, a further real power is integrable
+exactly when the power with the sum of the two exponents was integrable under the original law. -/
 theorem integrable_rpow_powerBias_iff {μ : Measure ℝ} {q r : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x)
-    (hpos : 0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ)
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     Integrable (fun x : ℝ => x ^ r) (μ.powerBias q) ↔
       Integrable (fun x : ℝ => x ^ (q + r)) μ := by
   rw [powerBias_def, Measure.integrable_weighted_iff
-    (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+    (measurable_powerBiasWeight q).aemeasurable hfin]
   apply integrable_congr
   filter_upwards [hμ] with x hx
   rw [NNReal.smul_def, Real.coe_toNNReal _ (Real.rpow_nonneg hx.le q),
     Real.rpow_add hx, smul_eq_mul]
 
-/-- The totalized power integral under a valid power bias is the ratio of two power integrals of
+/-- For a law carried by `[0, ∞)` under which `x ^ q` is not integrable, the normalizing power
+moment is infinite, so the totalized power bias is the zero measure. -/
+theorem powerBias_eq_zero_of_not_integrable {μ : Measure ℝ} {q : ℝ} (hμ : 0 ≤ᵐ[μ] id)
+    (hq : ¬Integrable (fun x : ℝ => x ^ q) μ) : μ.powerBias q = 0 := by
+  refine weighted_eq_zero_of_lintegral_eq_top ?_
+  simp_rw [ENNReal.ofNNReal_toNNReal]
+  by_contra h
+  exact hq ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal
+    (hμ.mono fun x hx => Real.rpow_nonneg hx q)).2 (lt_top_iff_ne_top.2 h)⟩
+
+/-- The totalized power integral under a power bias is the ratio of two power integrals of
 the original law. The preceding integrability criterion identifies when this is an expectation. -/
 theorem integral_rpow_powerBias {μ : Measure ℝ} {q r : ℝ}
-    (hμ : ∀ᵐ x ∂μ, 0 < x)
-    (hq : Integrable (fun x : ℝ => x ^ q) μ) :
+    (hμ : ∀ᵐ x ∂μ, 0 < x) :
     ∫ x, x ^ r ∂μ.powerBias q =
       (∫ x, x ^ (q + r) ∂μ) / ∫ x, x ^ q ∂μ := by
+  by_cases hq : Integrable (fun x : ℝ => x ^ q) μ
+  swap
+  · rw [powerBias_eq_zero_of_not_integrable (hμ.mono fun x hx => hx.le) hq,
+      integral_undef hq]
+    simp
   have hnonneg : 0 ≤ ∫ x, x ^ q ∂μ :=
     integral_nonneg_of_ae (hμ.mono fun x hx => Real.rpow_nonneg hx.le q)
   rw [powerBias_def, Measure.integral_weighted (measurable_powerBiasWeight q).aemeasurable,
@@ -123,14 +146,14 @@ theorem integral_rpow_powerBias {μ : Measure ℝ} {q r : ℝ}
   rw [NNReal.smul_def, Real.coe_toNNReal _ (Real.rpow_nonneg hx.le q),
     Real.rpow_add hx, smul_eq_mul]
 
-/-- After a valid first bias, applying another power bias adds the two exponents. -/
+/-- When the first bias has a finite normalizing constant, applying another power bias adds the
+two exponents. -/
 theorem powerBias_powerBias {μ : Measure ℝ} {q r : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x)
-    (hpos : 0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ)
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     (μ.powerBias q).powerBias r = μ.powerBias (q + r) := by
   simp only [powerBias_def]
-  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hfin]
   apply Measure.weighted_congr
   filter_upwards [hμ] with x hx
   apply NNReal.eq
@@ -155,16 +178,6 @@ theorem rnDeriv_powerBias (μ : Measure ℝ) [SigmaFinite μ] (q : ℝ) :
     (μ.powerBias q).rnDeriv μ =ᵐ[μ] fun x =>
       (∫⁻ y, ENNReal.ofReal (y ^ q) ∂μ)⁻¹ * ENNReal.ofReal (x ^ q) :=
   rnDeriv_weighted μ (measurable_powerBiasWeight q).aemeasurable
-
-/-- For a law carried by `[0, ∞)` under which `x ^ q` is not integrable, the normalizing power
-moment is infinite, so the totalized power bias is the zero measure. -/
-theorem powerBias_eq_zero_of_not_integrable {μ : Measure ℝ} {q : ℝ} (hμ : 0 ≤ᵐ[μ] id)
-    (hq : ¬Integrable (fun x : ℝ => x ^ q) μ) : μ.powerBias q = 0 := by
-  refine weighted_eq_zero_of_lintegral_eq_top ?_
-  simp_rw [ENNReal.ofNNReal_toNNReal]
-  by_contra h
-  exact hq ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal
-    (hμ.mono fun x hx => Real.rpow_nonneg hx q)).2 (lt_top_iff_ne_top.2 h)⟩
 
 /-- For a law carried by `(0, ∞)`, power biasing by `q` is exponential tilting by `q * log x`. -/
 theorem powerBias_eq_tilted {μ : Measure ℝ} (hpos : ∀ᵐ x ∂μ, 0 < x) (q : ℝ) :

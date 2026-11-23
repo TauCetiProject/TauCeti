@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.Homotopy.MappingPath.Fiber
 public import TauCeti.Topology.Homotopy.OpenBoxLifting
 
@@ -93,7 +93,7 @@ variable (p e₀)
 def loop : C(FiberInclusionPathFiber p e₀, Ω B (p e₀)) where
   toFun x := ⟨p.comp x.val.2, apply_path_zero x, congrArg p x.property.2⟩
   continuous_toFun := continuous_induced_rng.2 <|
-    (ContinuousMap.continuous_postcomp p).comp continuous_subtype_val.snd
+    (ContinuousMap.continuous_postcomp p).comp continuous_subtypeVal.snd
 
 @[simp]
 theorem loop_apply (x : FiberInclusionPathFiber p e₀) (t : I) :
@@ -207,7 +207,7 @@ theorem loopSection_comp_loop_homotopicWith (hp : IsHurewiczFibration.{v} p)
   let γ : C(FiberInclusionPathFiber p e₀ × I, B) := ⟨fun y ↦ p (y.1.val.2 (σ y.2)), by fun_prop⟩
   let α : C(FiberInclusionPathFiber p e₀ × I, E) :=
     ⟨fun y ↦ (loopSection e₀ hp (loop p e₀ y.1)).val.2 (σ y.2),
-      (continuous_subtype_val.comp ((loopSection e₀ hp).continuous.comp
+      (continuous_subtypeVal.comp ((loopSection e₀ hp).continuous.comp
         ((loop p e₀).continuous.comp continuous_fst))).snd.eval
         (continuous_symm.comp continuous_snd)⟩
   let α' : C(FiberInclusionPathFiber p e₀ × I, E) := ⟨fun y ↦ y.1.val.2 (σ y.2), by fun_prop⟩

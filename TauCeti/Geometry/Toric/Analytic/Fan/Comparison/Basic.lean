@@ -90,20 +90,20 @@ variable {Φ}
 /-- The complex point of the toric scheme given by a complex point of the affine chart of a cone,
 a `ℂ`-algebra homomorphism from its coordinate ring to `ℂ`. -/
 noncomputable def ofAffinePoint (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) : Φ.AlgebraicComplexPoint :=
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) : Φ.AlgebraicComplexPoint :=
   ⟨Spec.map (CommRingCat.ofHom x.toRingHom) ≫ Φ.affineToricChartι σ, inferInstance⟩
 
 /-- The complex point of a chart point is `Spec` of the point followed by the chart inclusion. -/
 theorem coe_ofAffinePoint (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
-    (ofAffinePoint σ x).1 = Spec.map (CommRingCat.ofHom x.toRingHom) ≫ Φ.affineToricChartι σ :=
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
+    (ofAffinePoint σ x).val = Spec.map (CommRingCat.ofHom x.toRingHom) ≫ Φ.affineToricChartι σ :=
   (rfl)
 
 /-- A point of the chart of a face `τ` of `σ` and its image under the face map give the same
 complex point of the toric scheme. -/
 @[simp]
-theorem ofAffinePoint_faceAffinePointMap {τ σ : Φ.cones} (h : τ.1.IsFaceOf σ.1)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.1)) :
+theorem ofAffinePoint_faceAffinePointMap {τ σ : Φ.cones} (h : τ.val.IsFaceOf σ.val)
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.val)) :
     ofAffinePoint σ (faceAffinePointMap Φ.lattice h x) = ofAffinePoint τ x := by
   ext1
   rw [coe_ofAffinePoint, coe_ofAffinePoint, spec_map_faceAffinePointMap, Category.assoc,
@@ -111,16 +111,16 @@ theorem ofAffinePoint_faceAffinePointMap {τ σ : Φ.cones} (h : τ.1.IsFaceOf �
 
 /-- Every complex point of the toric scheme of a finite fan lies in one of its affine charts. -/
 theorem exists_ofAffinePoint_eq (p : Φ.AlgebraicComplexPoint) :
-    ∃ (σ : Φ.cones) (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)),
+    ∃ (σ : Φ.cones) (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)),
       ofAffinePoint σ x = p := by
-  have := p.2
-  obtain ⟨σ, y, hy⟩ := Φ.exists_affineToricChartι_apply_eq (p.1 default)
+  have := p.property
+  obtain ⟨σ, y, hy⟩ := Φ.exists_affineToricChartι_apply_eq (p.val default)
   -- `Spec ℂ` has a single point, so the image of `p` is the image of that point.
-  have hrange : Set.range p.1 ⊆ Set.range (Φ.affineToricChartι σ) := by
+  have hrange : Set.range p.val ⊆ Set.range (Φ.affineToricChartι σ) := by
     rintro _ ⟨q, rfl⟩
     exact ⟨y, by rw [hy, Subsingleton.elim q default]⟩
-  obtain ⟨x, hx⟩ := exists_spec_map_comp_eq_of_range_subset (R := ℂ) (Φ.affineToricChartι σ) p.1
-    hrange
+  obtain ⟨x, hx, -⟩ := existsUnique_spec_map_comp_eq_of_range_subset (R := ℂ)
+    (Φ.affineToricChartι σ) p.val hrange
   exact ⟨σ, x, Subtype.ext hx⟩
 
 /-- A complex point of the affine chart of a cone is determined by its complex point of the toric
@@ -134,12 +134,12 @@ theorem ofAffinePoint_injective (σ : Φ.cones) : Function.Injective (ofAffinePo
 scheme exactly when they come from a common point of the chart of `σ ⊓ τ` under the two face
 maps. -/
 theorem ofAffinePoint_eq_ofAffinePoint_iff {σ τ : Φ.cones}
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
-    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
+    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.val)) :
     ofAffinePoint σ x = ofAffinePoint τ y ↔
-      ∃ z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice (σ.1 ⊓ τ.1)),
-        faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_left σ.2 τ.2) z = x ∧
-          faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_right σ.2 τ.2) z = y := by
+      ∃ z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice (σ.val ⊓ τ.val)),
+        faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_left σ.property τ.property) z = x ∧
+          faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_right σ.property τ.property) z = y := by
   refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
   · have h' := congrArg Subtype.val h
     rw [coe_ofAffinePoint, coe_ofAffinePoint] at h'
@@ -154,14 +154,14 @@ theorem ofAffinePoint_eq_ofAffinePoint_iff {σ τ : Φ.cones}
       exact ⟨w, by rw [hw, Subsingleton.elim q default]⟩
     have : IsOpenImmersion (Φ.affineToricOverlapLeft σ τ) := by
       rw [affineToricOverlapLeft_def]
-      exact (Φ.isToricCone σ.2).rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice _
+      exact (Φ.isToricCone σ.property).rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice _
     have : (Φ.affineToricOverlapLeft σ τ).IsOver (Spec (.of ℂ)) := by
       rw [affineToricOverlapLeft_def, faceAffineToricSchemeMap_def]
       infer_instance
-    obtain ⟨z, hz⟩ := exists_spec_map_comp_eq_of_range_subset (R := ℂ)
+    obtain ⟨z, hz, -⟩ := existsUnique_spec_map_comp_eq_of_range_subset (R := ℂ)
       (Φ.affineToricOverlapLeft σ τ) _ hrange
     rw [affineToricOverlapLeft_def, ← spec_map_faceAffinePointMap] at hz
-    have hzx : faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_left σ.2 τ.2) z = x := by
+    have hzx : faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_left σ.property τ.property) z = x := by
       refine ofAffinePoint_injective σ (Subtype.ext ?_)
       rw [coe_ofAffinePoint, coe_ofAffinePoint, hz]
     refine ⟨z, hzx, ofAffinePoint_injective τ ?_⟩
@@ -211,13 +211,13 @@ variable {N N' N'' V V' V'' : Type} [AddCommGroup N] [AddCommGroup N'] [AddCommG
 `Spec ℂ ⟶ X_Φ` over `Spec ℂ` with the toric morphism `X_Φ ⟶ X_Ψ`. -/
 noncomputable def algebraicComplexPointMap (p : Φ.AlgebraicComplexPoint) :
     Ψ.AlgebraicComplexPoint :=
-  letI := p.2
-  ⟨p.1 ≫ f.algebraicMap, inferInstance⟩
+  letI := p.property
+  ⟨p.val ≫ f.algebraicMap, inferInstance⟩
 
 /-- On scheme morphisms, the map of complex points is postcomposition by the algebraic map. -/
 @[simp]
 theorem coe_algebraicComplexPointMap (p : Φ.AlgebraicComplexPoint) :
-    (f.algebraicComplexPointMap p).1 = p.1 ≫ f.algebraicMap :=
+    (f.algebraicComplexPointMap p).val = p.val ≫ f.algebraicMap :=
   (rfl)
 
 /-- The identity fan morphism acts identically on algebraic complex points. -/

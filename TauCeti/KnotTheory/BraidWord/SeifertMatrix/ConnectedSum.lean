@@ -136,7 +136,7 @@ theorem isSeifertLoop_connectedSum_add_iff (p : ℕ × ℕ) :
   have hlen : List.length (w₁.connectedSum w₂) = w₁.length + w₂.length :=
     length_connectedSum w₁ w₂
   simp only [isSeifertLoop_iff, levelAt_connectedSum_add, hinj.eq_iff, hlen, add_lt_add_iff_left]
-  refine and_congr_right fun h12 ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ ⟨?_, ?_⟩
+  refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ ⟨?_, ?_⟩
   · intro h k hk hk'
     have := h (w₁.length + k) (by omega) (by omega)
     rwa [levelAt_connectedSum_add, hinj.ne_iff] at this
@@ -150,18 +150,18 @@ of the connected sum as it stands, and a loop of `w₂` is moved past the letter
 def seifertLoopsConnectedSumEquiv :
     w₁.seifertLoops ⊕ w₂.seifertLoops ≃ (w₁.connectedSum w₂).seifertLoops where
   toFun := Sum.elim
-    (fun a ↦ ⟨a.1, (mem_seifertLoops _).2 <|
+    (fun a ↦ ⟨a.val, (mem_seifertLoops _).2 <|
       (isSeifertLoop_connectedSum_iff_of_lt w₁ w₂
-        ((mem_seifertLoops _).1 a.2).fst_lt_length).2 ((mem_seifertLoops _).1 a.2)⟩)
-    (fun b ↦ ⟨(w₁.length + b.1.1, w₁.length + b.1.2), (mem_seifertLoops _).2 <|
-      (isSeifertLoop_connectedSum_add_iff w₁ w₂ b.1).2 ((mem_seifertLoops _).1 b.2)⟩)
+        ((mem_seifertLoops _).1 a.property).fst_lt_length).2 ((mem_seifertLoops _).1 a.property)⟩)
+    (fun b ↦ ⟨(w₁.length + b.val.1, w₁.length + b.val.2), (mem_seifertLoops _).2 <|
+      (isSeifertLoop_connectedSum_add_iff w₁ w₂ b.val).2 ((mem_seifertLoops _).1 b.property)⟩)
   invFun p :=
     if h : (p : ℕ × ℕ).1 < w₁.length then
       .inl ⟨p, (mem_seifertLoops _).2 <|
-        (isSeifertLoop_connectedSum_iff_of_lt w₁ w₂ h).1 ((mem_seifertLoops _).1 p.2)⟩
+        (isSeifertLoop_connectedSum_iff_of_lt w₁ w₂ h).1 ((mem_seifertLoops _).1 p.property)⟩
     else
       .inr ⟨((p : ℕ × ℕ).1 - w₁.length, (p : ℕ × ℕ).2 - w₁.length), (mem_seifertLoops _).2 <| by
-        have hp := (mem_seifertLoops _).1 p.2
+        have hp := (mem_seifertLoops _).1 p.property
         have h12 : (p : ℕ × ℕ).1 < (p : ℕ × ℕ).2 := hp.fst_lt_snd
         have e : (w₁.length + ((p : ℕ × ℕ).1 - w₁.length),
             w₁.length + ((p : ℕ × ℕ).2 - w₁.length)) = (p : ℕ × ℕ) :=
@@ -171,7 +171,7 @@ def seifertLoopsConnectedSumEquiv :
         rwa [e]⟩
   left_inv x := by
     rcases x with a | b
-    · simp [((mem_seifertLoops _).1 a.2).fst_lt_length]
+    · simp [((mem_seifertLoops _).1 a.property).fst_lt_length]
     · simp
   right_inv := by
     rintro ⟨⟨a, b⟩, hp⟩
@@ -191,10 +191,55 @@ theorem seifertLoopsConnectedSumEquiv_inl (a : w₁.seifertLoops) :
 @[simp]
 theorem seifertLoopsConnectedSumEquiv_inr (b : w₂.seifertLoops) :
     (seifertLoopsConnectedSumEquiv w₁ w₂ (.inr b) : ℕ × ℕ) =
-      (w₁.length + b.1.1, w₁.length + b.1.2) :=
+      (w₁.length + b.val.1, w₁.length + b.val.2) :=
   (rfl)
 
 /-! ### The Seifert matrix of a connected sum -/
+
+/-- A loop of `w₁` does not link a loop of `w₂` in the connected sum: it lies below every loop of
+`w₂`. -/
+private theorem seifertMatrix_connectedSum_inl_inr (a : w₁.seifertLoops) (b : w₂.seifertLoops) :
+    (w₁.connectedSum w₂).seifertMatrix (seifertLoopsConnectedSumEquiv w₁ w₂ (.inl a))
+      (seifertLoopsConnectedSumEquiv w₁ w₂ (.inr b)) = 0 := by
+  obtain ⟨ha₁, -⟩ : a.val.1 < w₁.length ∧ a.val.2 < w₁.length :=
+    ⟨((mem_seifertLoops _).1 a.property).fst_lt_length,
+        ((mem_seifertLoops _).1 a.property).snd_lt_length⟩
+  obtain ⟨l, hl, hal⟩ := exists_levelAt_eq_some_lt w₁ ha₁
+  obtain ⟨l', hbl⟩ : ∃ l, w₂.levelAt b.val.1 = some l :=
+    ⟨_, w₂.levelAt_of_lt ((mem_seifertLoops _).1 b.property).fst_lt_length⟩
+  have hab : ¬ (a : ℕ × ℕ) = (w₁.length + b.val.1, w₁.length + b.val.2) := fun h ↦ by
+    have := congrArg Prod.fst h
+    dsimp only at this
+    omega
+  have h₁ : ¬ l = n + l' := by omega
+  have h₂ : ¬ l = n + l' + 1 := by omega
+  simp only [seifertMatrix_apply, Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl,
+    seifertLoopsConnectedSumEquiv_inr, levelAt_connectedSum_of_lt w₁ w₂ ha₁,
+    levelAt_connectedSum_add, hal, hbl, hab, h₁, h₂, Option.map_some, Option.some_inj,
+    ite_false]
+
+/-- A loop of `w₂` does not link a loop of `w₁` in the connected sum: the bands of `w₁` all come
+first. -/
+private theorem seifertMatrix_connectedSum_inr_inl (a : w₂.seifertLoops) (b : w₁.seifertLoops) :
+    (w₁.connectedSum w₂).seifertMatrix (seifertLoopsConnectedSumEquiv w₁ w₂ (.inr a))
+      (seifertLoopsConnectedSumEquiv w₁ w₂ (.inl b)) = 0 := by
+  obtain ⟨hb₁, hb₂⟩ : b.val.1 < w₁.length ∧ b.val.2 < w₁.length :=
+    ⟨((mem_seifertLoops _).1 b.property).fst_lt_length,
+        ((mem_seifertLoops _).1 b.property).snd_lt_length⟩
+  obtain ⟨l, hl, hbl⟩ := exists_levelAt_eq_some_lt w₁ hb₁
+  obtain ⟨l', hal⟩ : ∃ l, w₂.levelAt a.val.1 = some l :=
+    ⟨_, w₂.levelAt_of_lt ((mem_seifertLoops _).1 a.property).fst_lt_length⟩
+  have hab : ¬ (w₁.length + a.val.1, w₁.length + a.val.2) = (b : ℕ × ℕ) := fun h ↦ by
+    have := congrArg Prod.fst h
+    dsimp only at this
+    omega
+  have h₁ : ¬ n + l' = l := by omega
+  have h₂ : ¬ w₁.length + a.val.1 < b.val.2 := by omega
+  have h₃ : ¬ w₁.length + a.val.1 < b.val.1 := by omega
+  simp only [seifertMatrix_apply, Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl,
+    seifertLoopsConnectedSumEquiv_inr, levelAt_connectedSum_of_lt w₁ w₂ hb₁,
+    levelAt_connectedSum_add, hal, hbl, hab, h₁, h₂, h₃, Option.map_some, Option.some_inj,
+    ite_false, false_and, and_false, ite_self]
 
 /-- **The Seifert matrix of a connected sum of closed braids is block diagonal**: in the basis of
 loops of the two summands, it is the block diagonal matrix of their Seifert matrices. Loops from
@@ -208,49 +253,23 @@ theorem submatrix_seifertMatrix_connectedSum :
   have hsucc (y : Option ℕ) :
       Option.map (· + 1) (Option.map (n + ·) y) = Option.map (n + ·) (Option.map (· + 1) y) := by
     cases y <;> simp [Nat.add_assoc]
-  have hlt₁ (a : w₁.seifertLoops) : a.1.1 < w₁.length ∧ a.1.2 < w₁.length :=
-    ⟨((mem_seifertLoops _).1 a.2).fst_lt_length, ((mem_seifertLoops _).1 a.2).snd_lt_length⟩
-  have hlevel₂ (b : w₂.seifertLoops) : ∃ l, w₂.levelAt b.1.1 = some l :=
-    ⟨_, w₂.levelAt_of_lt ((mem_seifertLoops _).1 b.2).fst_lt_length⟩
+  have hlt₁ (a : w₁.seifertLoops) : a.val.1 < w₁.length ∧ a.val.2 < w₁.length :=
+    ⟨((mem_seifertLoops _).1 a.property).fst_lt_length,
+        ((mem_seifertLoops _).1 a.property).snd_lt_length⟩
   ext (a | a) (b | b)
   · -- two loops of `w₁` keep their letters
     obtain ⟨ha₁, ha₂⟩ := hlt₁ a
-    obtain ⟨hb₁, hb₂⟩ := hlt₁ b
+    obtain ⟨hb₁, _⟩ := hlt₁ b
     simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₁, seifertMatrix_apply,
       Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl, levelAt_connectedSum_of_lt w₁ w₂ ha₁,
       levelAt_connectedSum_of_lt w₁ w₂ hb₁, signAt_connectedSum_of_lt w₁ w₂ ha₁,
       signAt_connectedSum_of_lt w₁ w₂ ha₂]
   · -- a loop of `w₁` lies below every loop of `w₂`
-    obtain ⟨ha₁, -⟩ := hlt₁ a
-    obtain ⟨l, hl, hal⟩ := exists_levelAt_eq_some_lt w₁ ha₁
-    obtain ⟨l', hbl⟩ := hlevel₂ b
-    have hab : ¬ (a : ℕ × ℕ) = (w₁.length + b.1.1, w₁.length + b.1.2) := fun h ↦ by
-      have := congrArg Prod.fst h
-      dsimp only at this
-      omega
-    have h₁ : ¬ l = n + l' := by omega
-    have h₂ : ¬ l = n + l' + 1 := by omega
-    simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.zero_apply,
-      seifertMatrix_apply, Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl,
-      seifertLoopsConnectedSumEquiv_inr, levelAt_connectedSum_of_lt w₁ w₂ ha₁,
-      levelAt_connectedSum_add, hal, hbl, hab, h₁, h₂, Option.map_some, Option.some_inj,
-      ite_false]
+    simpa only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.zero_apply] using
+      seifertMatrix_connectedSum_inl_inr w₁ w₂ a b
   · -- a loop of `w₂` meets no loop of `w₁`, whose bands all come first
-    obtain ⟨hb₁, hb₂⟩ := hlt₁ b
-    obtain ⟨l, hl, hbl⟩ := exists_levelAt_eq_some_lt w₁ hb₁
-    obtain ⟨l', hal⟩ := hlevel₂ a
-    have hab : ¬ (w₁.length + a.1.1, w₁.length + a.1.2) = (b : ℕ × ℕ) := fun h ↦ by
-      have := congrArg Prod.fst h
-      dsimp only at this
-      omega
-    have h₁ : ¬ n + l' = l := by omega
-    have h₂ : ¬ w₁.length + a.1.1 < b.1.2 := by omega
-    have h₃ : ¬ w₁.length + a.1.1 < b.1.1 := by omega
-    simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁, Matrix.zero_apply,
-      seifertMatrix_apply, Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl,
-      seifertLoopsConnectedSumEquiv_inr, levelAt_connectedSum_of_lt w₁ w₂ hb₁,
-      levelAt_connectedSum_add, hal, hbl, hab, h₁, h₂, h₃, Option.map_some, Option.some_inj,
-      ite_false, false_and, and_false, ite_self]
+    simpa only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁, Matrix.zero_apply] using
+      seifertMatrix_connectedSum_inr_inl w₁ w₂ a b
   · -- two loops of `w₂` are moved together
     simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₂, seifertMatrix_apply,
       Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inr, levelAt_connectedSum_add,

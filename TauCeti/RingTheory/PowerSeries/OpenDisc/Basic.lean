@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.Analysis.Normed.Ring.Finite
+import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Analysis.Normed.Field.NatCast
 
 /-!
@@ -51,7 +53,16 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 ## Main definitions
 
 * `PowerSeries.OnOpenDisc`: `f` is restricted at every radius `0 < r < R₀`.
-* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`.
+* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`, with
+  its coefficientwise module structures (`TauCeti.PowerSeries.OnOpenDisc.instModuleSubring`) for
+  any scalar action compatible with left multiplication on `R`, and its `S`-algebra structures.
+* `PowerSeries.OnOpenDisc.polynomialHom` and `TauCeti.PowerSeries.OnOpenDisc.polynomialAlgHom`:
+  the inclusion of polynomials into series on the open disc.
+* `TauCeti.PowerSeries.OnOpenDisc.radiusHom` and `TauCeti.PowerSeries.OnOpenDisc.radiusAlgHom`:
+  restriction from an open disc of radius `R₀` to a smaller open disc of radius `R₁ ≤ R₀`.
+* `TauCeti.PowerSeries.OnOpenDisc.ofIsRestricted` and
+  `TauCeti.PowerSeries.OnOpenDisc.ofIsRestrictedAlgHom`: inclusion of series restricted at `R₀`
+  into series on the open disc of radius `R₀`.
 
 ## Main results
 
@@ -61,7 +72,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   `PowerSeries.OnOpenDisc.summable_coeff_mul_pow`: absolute summability at points inside the
   disc, and summability when the coefficient ring is complete.
 * `PowerSeries.OnOpenDisc.isRestricted`: a series on the open disc of radius `R₀` is restricted
-  at every radius `r` with `|r| < R₀`.
+  at every radius `r` with `|r| < R₀`; `PowerSeries.OnOpenDisc.isRestricted_max` is the form for
+  the larger of two radii below `R₀`, one of them nonnegative.
 * `PowerSeries.onOpenDisc_iff_of_tendsto`: the condition can be tested along radii tending
   to `R₀` from below.
 * `PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`: the condition amounts to bounded weighted
@@ -73,9 +85,13 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   comparisons with restricted and entire series.
 * `PowerSeries.OnOpenDisc.add`, `PowerSeries.OnOpenDisc.mul`, `PowerSeries.onOpenDisc_coe` and
   their companions: these series form a subring containing the polynomials.
+* `PowerSeries.OnOpenDisc.smul_of_tower`: the condition is preserved by any scalar action on the
+  coefficients compatible with left multiplication.
 * `PowerSeries.OnOpenDisc.hasseDeriv`, `PowerSeries.OnOpenDisc.derivative` and
   `PowerSeries.OnOpenDisc.map`: the condition is preserved by Hasse derivatives and bounded
   coefficient maps.
+* `PowerSeries.OnOpenDisc.rescale`: if `f(X)` lies on the open disc of radius `‖a‖ * R₀`, then
+  `f(aX)` lies on the open disc of radius `R₀`.
 * `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
   the open unit disc.
 
@@ -112,6 +128,12 @@ theorem OnOpenDisc.isRestricted (hf : f.OnOpenDisc R₀) {r : ℝ} (hr : |r| < R
   have hs : 0 < s := (abs_nonneg r).trans_lt hrs
   exact TauCeti.PowerSeries.isRestricted_of_abs_le (hf s hs hsR)
     (hrs.le.trans_eq (abs_of_pos hs).symm)
+
+/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
+`s < R₀` and a radius `t < R₀`. -/
+theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
+    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
+  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
 
 /-- Inside its open disc, the weighted coefficient norms of a power series are summable.
 No completeness or ultrametric hypothesis is needed. -/
@@ -236,6 +258,15 @@ theorem OnOpenDisc.sub (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) : (f - 
 theorem OnOpenDisc.smul (a : R) (hf : f.OnOpenDisc R₀) : (a • f).OnOpenDisc R₀ :=
   fun r hr hrR ↦ (hf r hr hrR).smul a
 
+/-- A scalar action on the coefficients compatible with left multiplication preserves the
+open-disc condition. -/
+theorem OnOpenDisc.smul_of_tower {S : Type*} [Semiring S] [Module S R] [IsScalarTower S R R]
+    (s : S) (hf : f.OnOpenDisc R₀) : (s • f).OnOpenDisc R₀ := by
+  have heq : s • f = (s • (1 : R)) • f := by
+    ext n
+    simp
+  exact heq ▸ hf.smul (s • (1 : R))
+
 /-- A finite sum of series on an open disc lies on that disc. -/
 theorem OnOpenDisc.sum {ι : Type*} {s : Finset ι} {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, (f i).OnOpenDisc R₀) : (∑ i ∈ s, f i).OnOpenDisc R₀ :=
@@ -268,8 +299,10 @@ theorem OnOpenDisc.hasseDeriv (hf : f.OnOpenDisc R₀) (k : ℕ) :
 that disc coefficientwise. -/
 theorem OnOpenDisc.map {S : Type*} [NormedRing S] (hf : f.OnOpenDisc R₀) (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : (map φ f).OnOpenDisc R₀ :=
-  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`.
-  fun r hr hrR ↦ (hf r hr hrR).map φ hφ
+  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`, and
+  -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, the series that
+  -- `isRestricted_map` shows to be restricted.
+  fun r hr hrR ↦ MvPowerSeries.isRestricted_map _ φ hφ (hf r hr hrR)
 
 /-- The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻¹`: at a radius
 `r < ‖a‖⁻¹`, its weighted coefficient norms are bounded by `(‖a‖ r)ⁿ` from `n = 1` on. -/
@@ -316,6 +349,14 @@ theorem OnOpenDisc.coe_polynomialHom (p : Polynomial R) :
     (OnOpenDisc.polynomialHom (R₀ := R₀) p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
 
+/-- The inclusion of polynomials into series on an open disc is injective at every radius. -/
+theorem OnOpenDisc.polynomialHom_injective :
+    Function.Injective (OnOpenDisc.polynomialHom (R := R) (R₀ := R₀)) := by
+  intro p q h
+  apply Polynomial.coe_injective R
+  simpa only [OnOpenDisc.coe_polynomialHom] using
+    congrArg (fun f : OnOpenDisc.subring R R₀ ↦ (f : R⟦X⟧)) h
+
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/
 theorem OnOpenDisc.subring_antitone : Antitone (OnOpenDisc.subring R) :=
@@ -343,6 +384,18 @@ theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
 
+/-- **Rescaling changes the radius of the disc.** If `f(X)` lies on the open disc of radius
+`‖a‖ * R₀`, then `f(aX)` lies on the open disc of radius `R₀`. For `a = 0` the series `f(0 · X)`
+is the constant `f(0)`, which lies on every open disc. -/
+theorem OnOpenDisc.rescale {a : R} (hf : f.OnOpenDisc (‖a‖ * R₀)) :
+    (rescale a f).OnOpenDisc R₀ := by
+  intro r hr hrR
+  rcases (norm_nonneg a).eq_or_lt with ha | ha
+  · obtain rfl : a = 0 := norm_eq_zero.mp ha.symm
+    rw [rescale_zero_apply]
+    exact onOpenDisc_C _ r hr hrR
+  · exact (hf.isRestricted (by rw [abs_of_pos (by positivity)]; gcongr)).rescale
+
 end NormedCommRing
 
 section NormedField
@@ -355,15 +408,35 @@ theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹�
   · simp
   · simp [coeff_log, hn, div_eq_mul_inv]
 
+omit [CharZero K] in
 /-- A series whose coefficient norms are bounded by the norms of inverse natural numbers
 lies on the open unit disc. -/
 theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
     (h : ∀ n, ‖coeff n f‖ ≤ ‖(n : K)⁻¹‖) : f.OnOpenDisc 1 := by
-  refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
-  rw [isRestricted_iff']
-  exact squeeze_zero (fun n ↦ by positivity)
-    (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
-    (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
+  obtain ⟨p, hp⟩ := CharP.exists K
+  rcases CharP.char_is_prime_or_zero K p with hprime | rfl
+  · -- In positive characteristic every nonzero natural number has norm `1`.
+    have : Fact p.Prime := ⟨hprime⟩
+    refine onOpenDisc_of_bddAbove_norm_coeff ⟨1, ?_⟩
+    rintro _ ⟨n, rfl⟩
+    refine (h n).trans ?_
+    rw [norm_inv]
+    by_cases hn : (n : K) = 0
+    · simp [hn]
+    · have hn' : (n : ZMod p) ≠ 0 := fun h0 ↦ hn (by
+        rw [← map_natCast (ZMod.castHom (dvd_refl p) K) n, h0, map_zero])
+      have hpow : (n : K) ^ (p - 1) = 1 := by
+        simpa using congrArg (ZMod.castHom (dvd_refl p) K) (ZMod.pow_card_sub_one_eq_one hn')
+      have hnorm : ‖(n : K)‖ = 1 :=
+        (isOfFinOrder_iff_pow_eq_one.mpr
+          ⟨p - 1, Nat.sub_pos_of_lt hprime.one_lt, hpow⟩).norm_eq_one
+      simp [hnorm]
+  · have : CharZero K := (CharP.charP_zero_iff_charZero K).mp hp
+    refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
+    rw [isRestricted_iff']
+    exact squeeze_zero (fun n ↦ by positivity)
+      (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
+      (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
 
 /-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
 open unit disc. -/
@@ -373,3 +446,238 @@ theorem onOpenDisc_log : (log K).OnOpenDisc 1 :=
 end NormedField
 
 end PowerSeries
+
+open PowerSeries
+
+namespace TauCeti.PowerSeries.OnOpenDisc
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] {R₀ R₁ R₂ : ℝ}
+
+/-- Over any normed ring, a scalar action on the coefficients compatible with left
+multiplication (for instance `R` acting on itself) makes the series on the open disc of radius
+`R₀` a module under coefficientwise scalar multiplication. -/
+noncomputable instance instModuleSubring {S : Type*} [Semiring S] [Module S R]
+    [IsScalarTower S R R] : Module S (OnOpenDisc.subring R R₀) where
+  smul s f := ⟨s • (f : R⟦X⟧),
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.property).smul_of_tower s)⟩
+  one_smul f := Subtype.ext (one_smul S (f : R⟦X⟧))
+  mul_smul s t f := Subtype.ext (mul_smul s t (f : R⟦X⟧))
+  smul_zero s := Subtype.ext (smul_zero s)
+  smul_add s f g := Subtype.ext (smul_add s (f : R⟦X⟧) g)
+  add_smul s t f := Subtype.ext (add_smul s t (f : R⟦X⟧))
+  zero_smul f := Subtype.ext (zero_smul S (f : R⟦X⟧))
+
+/-- Scalars act on open-disc series as on their underlying formal power series. -/
+@[simp]
+theorem coe_smul {S : Type*} [Semiring S] [Module S R] [IsScalarTower S R R] (s : S)
+    (f : OnOpenDisc.subring R R₀) :
+    ((s • f : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (f : R⟦X⟧) := (rfl)
+
+/-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
+instance instIsScalarTowerSubring {S T : Type*} [Semiring S] [Semiring T] [Module S R]
+    [Module T R] [IsScalarTower S R R] [IsScalarTower T R R] [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (OnOpenDisc.subring R R₀) where
+  smul_assoc s t f := Subtype.ext (smul_assoc s t (f : R⟦X⟧))
+
+/-- An algebra structure on the coefficients induces one on series on an open disc through
+constant series. Scalars act through `instModuleSubring`, as on the ambient formal series, and
+neither commutativity nor an ultrametric norm on `R` is needed. -/
+noncomputable instance instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (OnOpenDisc.subring R R₀) where
+  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ OnOpenDisc.mem_subring.mpr <| by
+    rw [PowerSeries.algebraMap_apply]
+    exact onOpenDisc_C _
+  commutes' s f := Subtype.ext <| by
+    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
+      Algebra.commutes s (f : R⟦X⟧)
+  smul_def' s f := Subtype.ext <| by
+    rw [coe_smul, Subring.coe_mul, RingHom.codRestrict_apply]
+    convert Algebra.smul_def s (f : R⟦X⟧) using 1
+
+/-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
+@[simp]
+theorem coe_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) := by
+  calc
+    _ = algebraMap S R⟦X⟧ s := (rfl)
+    _ = _ := PowerSeries.algebraMap_apply
+
+/-- The algebra map into open-disc power series sends a scalar `s` to the constant polynomial
+`Polynomial.C (algebraMap S R s)`, over any (possibly noncommutative) normed ring `R`. -/
+theorem algebraMap_eq_polynomialHom_C {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    algebraMap S (OnOpenDisc.subring R R₀) s =
+      OnOpenDisc.polynomialHom (Polynomial.C (algebraMap S R s)) :=
+  Subtype.ext (by simp)
+
+/-- Coefficient scalar multiplication associates with multiplication of open-disc power series. -/
+instance instIsScalarTowerSelfSubring :
+    IsScalarTower R (OnOpenDisc.subring R R₀) (OnOpenDisc.subring R R₀) where
+  smul_assoc r f g := Subtype.ext (by simp [smul_eq_mul, PowerSeries.smul_eq_C_mul, mul_assoc])
+
+-- `instModuleSubring` and `instAlgebraSubring` introduce no diamond with `ℕ`, `ℤ`, or
+-- `Algebra.toModule`.
+example :
+    (AddCommMonoid.toNatModule : Module ℕ (OnOpenDisc.subring R R₀)) = instModuleSubring :=
+  rfl
+
+example : AddCommGroup.toIntModule (OnOpenDisc.subring R R₀) = instModuleSubring :=
+  rfl
+
+example {S : Type*} [CommSemiring S] [Algebra S R] :
+    (Algebra.toModule : Module S (OnOpenDisc.subring R R₀)) = instModuleSubring := by
+  with_reducible_and_instances rfl
+
+/-- Restriction of series from an open disc of radius `R₀` to a smaller open disc of radius
+`R₁ ≤ R₀`. -/
+noncomputable def radiusHom (h : R₁ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₁ :=
+  Subring.inclusion (OnOpenDisc.subring_antitone R h)
+
+/-- `radiusHom` leaves the underlying formal power series unchanged. -/
+@[simp]
+theorem coe_radiusHom (h : R₁ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    (radiusHom h f : R⟦X⟧) = f :=
+  Subring.coe_inclusion _ f
+
+/-- Radius restriction on open discs is injective. -/
+theorem radiusHom_injective (h : R₁ ≤ R₀) :
+    Function.Injective (radiusHom (R := R) h) :=
+  Subring.inclusion_injective _
+
+/-- Restricting an open disc to itself is the identity. -/
+@[simp]
+theorem radiusHom_self : radiusHom (R := R) (le_refl R₀) = RingHom.id _ :=
+  RingHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Radius restrictions compose transitively. -/
+theorem radiusHom_comp_radiusHom (h₁ : R₁ ≤ R₀) (h₂ : R₂ ≤ R₁) :
+    (radiusHom (R := R) h₂).comp (radiusHom h₁) = radiusHom (h₂.trans h₁) :=
+  RingHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Applying two open-disc radius restrictions in turn restricts directly. -/
+@[simp]
+theorem radiusHom_radiusHom (h₁ : R₁ ≤ R₀) (h₂ : R₂ ≤ R₁) (f : OnOpenDisc.subring R R₀) :
+    radiusHom h₂ (radiusHom h₁ f) = radiusHom (h₂.trans h₁) f :=
+  DFunLike.congr_fun (radiusHom_comp_radiusHom h₁ h₂) f
+
+/-- Radius restriction commutes with the inclusion of polynomials. -/
+@[simp]
+theorem radiusHom_polynomialHom (h : R₁ ≤ R₀) (p : Polynomial R) :
+    radiusHom h (OnOpenDisc.polynomialHom p) = OnOpenDisc.polynomialHom p :=
+  Subtype.ext (by simp)
+
+/-- Radius restriction fixes scalar constants from any base algebra. -/
+@[simp]
+theorem radiusHom_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) (s : S) :
+    radiusHom h (algebraMap S (OnOpenDisc.subring R R₀) s) =
+      algebraMap S (OnOpenDisc.subring R R₁) s :=
+  Subtype.ext (by simp)
+
+/-- Restriction of series from an open disc of radius `R₀` to a smaller open disc of radius
+`R₁ ≤ R₀`, bundled as an `S`-algebra homomorphism. -/
+noncomputable def radiusAlgHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →ₐ[S] OnOpenDisc.subring R R₁ where
+  __ := radiusHom h
+  commutes' := radiusHom_algebraMap h
+
+/-- `radiusAlgHom` agrees with `radiusHom` on each series. -/
+@[simp]
+theorem radiusAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    radiusAlgHom S h f = radiusHom h f := (rfl)
+
+/-- Forgetting `S`-linearity of `radiusAlgHom` gives `radiusHom`. -/
+@[simp]
+theorem toRingHom_radiusAlgHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
+    (radiusAlgHom (R := R) S h : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₁) =
+      radiusHom h := (rfl)
+
+section Ultrametric
+
+variable [IsUltrametricDist R]
+
+/-- Inclusion of series restricted at `R₀` into series on the open disc of radius `R₀`. -/
+noncomputable def ofIsRestricted :
+    IsRestricted.subring (R := R) R₀ →+* OnOpenDisc.subring R R₀ :=
+  Subring.inclusion (IsRestricted.subring_le_onOpenDiscSubring (R := R) R₀)
+
+/-- `ofIsRestricted` leaves the underlying formal power series unchanged. -/
+@[simp]
+theorem coe_ofIsRestricted (f : IsRestricted.subring (R := R) R₀) :
+    (ofIsRestricted f : R⟦X⟧) = f :=
+  Subring.coe_inclusion _ f
+
+/-- Inclusion of restricted series into the open-disc subring is injective. -/
+theorem ofIsRestricted_injective :
+    Function.Injective (ofIsRestricted (R := R) (R₀ := R₀)) :=
+  Subring.inclusion_injective _
+
+/-- `ofIsRestricted` fixes scalar constants from any base algebra. -/
+@[simp]
+theorem ofIsRestricted_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    ofIsRestricted (algebraMap S (IsRestricted.subring (R := R) R₀) s) =
+      algebraMap S (OnOpenDisc.subring R R₀) s :=
+  Subtype.ext (by simp)
+
+/-- Inclusion of series restricted at `R₀` into series on the open disc of radius `R₀`, bundled as
+an `S`-algebra homomorphism. -/
+noncomputable def ofIsRestrictedAlgHom (S : Type*) [CommSemiring S] [Algebra S R] :
+    IsRestricted.subring (R := R) R₀ →ₐ[S] OnOpenDisc.subring R R₀ where
+  __ := ofIsRestricted
+  commutes' := ofIsRestricted_algebraMap
+
+/-- `ofIsRestrictedAlgHom` agrees with `ofIsRestricted` on each series. -/
+@[simp]
+theorem ofIsRestrictedAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R]
+    (f : IsRestricted.subring (R := R) R₀) :
+    ofIsRestrictedAlgHom S f = ofIsRestricted f := (rfl)
+
+/-- Forgetting `S`-linearity of `ofIsRestrictedAlgHom` gives `ofIsRestricted`. -/
+@[simp]
+theorem toRingHom_ofIsRestrictedAlgHom (S : Type*) [CommSemiring S] [Algebra S R] :
+    (ofIsRestrictedAlgHom (R := R) (R₀ := R₀) S :
+      IsRestricted.subring (R := R) R₀ →+* OnOpenDisc.subring R R₀) = ofIsRestricted := (rfl)
+
+end Ultrametric
+
+end NormedRing
+
+section NormedCommRing
+
+variable {R : Type*} [NormedCommRing R] {R₀ : ℝ}
+
+/-- Polynomial inclusion sends constant polynomials to scalar constants. -/
+theorem polynomialHom_C (a : R) :
+    OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a) =
+      algebraMap R (OnOpenDisc.subring R R₀) a :=
+  Subtype.ext (by simp)
+
+/-- The inclusion of polynomials into the algebra of series on an open disc. -/
+noncomputable def polynomialAlgHom : Polynomial R →ₐ[R] OnOpenDisc.subring R R₀ where
+  __ := OnOpenDisc.polynomialHom
+  commutes' := polynomialHom_C
+
+/-- Polynomial algebra inclusion agrees with `OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem polynomialAlgHom_apply (p : Polynomial R) :
+    polynomialAlgHom (R₀ := R₀) p = OnOpenDisc.polynomialHom p := (rfl)
+
+/-- Forgetting the `R`-linearity of `polynomialAlgHom` gives `OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem toRingHom_polynomialAlgHom :
+    (polynomialAlgHom (R := R) (R₀ := R₀) :
+      Polynomial R →+* OnOpenDisc.subring R R₀) = OnOpenDisc.polynomialHom := (rfl)
+
+/-- Including a polynomial into the closed-disc algebra at `R₀` and then into the open-disc
+algebra agrees with `OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem ofIsRestricted_polynomialToRestricted [IsUltrametricDist R] (p : Polynomial R) :
+    ofIsRestricted (TauCeti.PowerSeries.polynomialToRestricted R₀ p) =
+      OnOpenDisc.polynomialHom p :=
+  Subtype.ext (by simp)
+
+end NormedCommRing
+
+end TauCeti.PowerSeries.OnOpenDisc

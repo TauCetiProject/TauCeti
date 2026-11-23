@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Obstruction
+public import TauCeti.RepresentationTheory.Induction.Clifford.Obstruction.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.RepresentationTheory.Irreducible
@@ -37,7 +37,8 @@ density theorem; if moreover `σ` is irreducible and lies over `A`, that is, adm
 irreducible representation of the inertia group lying over `A` is `A ⊗ U` for a projective
 representation `U` of `T/N` whose factor set is `β⁻¹`
 (`TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`); in this setting the class of `β` is the
-Clifford obstruction `TauCeti.cliffordObstruction A`.
+Clifford obstruction `TauCeti.cliffordObstruction A hScalar`, where Schur's lemma supplies
+`hScalar`.
 
 The converse, that `A ⊗ U` is irreducible exactly when `U` is and that `U` is recovered from
 `A ⊗ U`, is in `TauCeti/RepresentationTheory/Induction/Clifford/ProjectiveCorrespondence.lean`.

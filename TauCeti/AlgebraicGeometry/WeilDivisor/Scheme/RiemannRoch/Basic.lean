@@ -42,6 +42,9 @@ so they also apply without a rational point.
   Riemann–Roch theorem, for the Euler characteristic and in terms of the two dimensions;
 * `InvertibleSheaf.eulerCharBelow_eq_relativeDegree_add_one_sub_genus`: Riemann–Roch for a line
   bundle presented as `𝒪_X(D)`;
+* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_surjective`: Riemann–Roch
+  `χ(L) = deg L + 1 - g` for every line bundle, with the Euler-characteristic degree, when all
+  global functions are constants;
 * `SchemeWeilDivisor.relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf`:
   Riemann's inequality;
 * `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: a divisor of
@@ -106,9 +109,8 @@ theorem sections_top_eq_bot_of_relativeDegree_neg {D : SchemeWeilDivisor X}
       orderAt y f = X.ord (Scheme.rationalFunctionsEquiv (⊤ : X.Opens) s) (y : X) :=
     ⟨Additive.ofMul (Units.mk0 _ hc0), fun y ↦ by
       rw [orderAt_apply, toMul_ofMul, Units.val_mk0]⟩
-  have heff : WeilDivisor.IsEffective
-      ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D) :=
-    (WeilDivisor.isEffective_iff _).mpr fun y ↦ by
+  have heff : 0 ≤ (WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D :=
+    (WeilDivisor.nonneg_iff _).mpr fun y ↦ by
       have hy := hord y trivial
       rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
         WeilDivisor.OrderSystem.ofScheme_ord, hordf y]
@@ -168,9 +170,8 @@ theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have h := eulerCharBelow_sheaf_eq_relativeDegree_add k hX D
-  rw [Scheme.Modules.eulerCharBelow_two, Scheme.Modules.eulerCharBelow_two,
-    finrank_cohomology_zero_trivial_eq_one_of_surjective k hφ] at h
-  rw [Scheme.genus_def]
+  rw [eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ,
+    Scheme.Modules.eulerCharBelow_two] at h
   have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
   omega
 
@@ -250,6 +251,24 @@ end CompleteLinearSystem
 end SchemeWeilDivisor
 
 namespace InvertibleSheaf
+
+section Surjective
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- **The Riemann–Roch theorem for line bundles.** On a nonempty scheme over a field `k` all of
+whose global functions are constants, with finite-dimensional `H¹(X, 𝒪_X)`, every line bundle `L`
+satisfies `χ(L) = deg L + 1 - g`. Here `χ(L) = dim H⁰(X, L) - dim H¹(X, L)`,
+`deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g` is the genus. -/
+theorem eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_surjective [Nonempty X]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+    (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X))
+    (L : InvertibleSheaf X) :
+    Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
+  rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ]
+  ring
+
+end Surjective
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]

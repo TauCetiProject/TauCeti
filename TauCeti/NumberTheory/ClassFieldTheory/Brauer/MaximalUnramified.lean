@@ -95,7 +95,7 @@ private def layerInv (f : ℕ+) :
   letI := algebraicExtensionNormedFieldTopology K (𝓤 f)
   haveI := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   haveI := algebraicExtension_valuativeExtension K (𝓤 f)
-  haveI : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  haveI : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   unramifiedInv K (𝓤 f)
 
 /-- The unramified invariant of the degree-`f` unramified extension inside `Kˢ` does not depend on
@@ -130,12 +130,12 @@ private theorem exists_relBrInfl_eq_layerInv_eq (f g : ℕ+) (hfg : (f : ℕ) �
     let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
     have := algebraicExtension_valuativeExtension K (𝓤 f)
-    have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+    have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
     let _ := algebraicExtensionValuativeRel K (𝓤 g)
     let _ := algebraicExtensionNormedFieldTopology K (𝓤 g)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 g)
     have := algebraicExtension_valuativeExtension K (𝓤 g)
-    have : IsUnramified K (𝓤 g) := isUnramified_unramifiedExtension g.ne_zero
+    have : IsUnramified K (𝓤 g) := isUnramified_unramifiedExtension
     have : ValuativeExtension (𝓤 f) (𝓤 g) :=
       algebraicExtension_valuativeExtension_tower K (𝓤 f) (𝓤 g)
     exact unramifiedInv_map K (𝓤 f) (𝓤 g) y
@@ -188,7 +188,7 @@ private theorem rangeInv_compat (f g : ℕ+) (x : Br K)
 /-- Every class of the unramified Brauer group is inflated from some unramified layer. -/
 private theorem exists_mem_range_relBrInfl (x : unramifiedBr K) :
     ∃ f : ℕ+, (x : Br K) ∈ (relBrInfl K (𝓤 f) (𝓤 f).val).range :=
-  (AddSubgroup.mem_iSup_of_directed (directed_range_relBrInfl K)).1 x.2
+  (AddSubgroup.mem_iSup_of_directed (directed_range_relBrInfl K)).1 x.property
 
 /-- The invariant of the unramified Brauer group, glued from the invariants of the layers. -/
 private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) :=
@@ -198,7 +198,7 @@ private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) :=
   (Submodule.iSupLift (fun f : ℕ+ => (relBrInfl K (𝓤 f) (𝓤 f).val).range.toIntSubmodule)
     ((directed_range_relBrInfl K).mono_comp _ fun _ _ h => AddSubgroup.toIntSubmodule.monotone h)
     (fun f => (rangeInv K f).toIntLinearMap)
-    (fun f g h => LinearMap.ext fun x => rangeInv_compat K f g x x.2 (h x.2))
+    (fun f g h => LinearMap.ext fun x => rangeInv_compat K f g x x.property (h x.property))
     (unramifiedBr K).toIntSubmodule (AddSubgroup.toIntSubmodule.map_iSup _).le).toAddMonoidHom
 
 /-- The invariant of the unramified Brauer group may be read on any layer of a class. -/
@@ -216,7 +216,7 @@ private theorem layerInv_injective (f : ℕ+) : Function.Injective (layerInv K f
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   unramifiedInv_injective K (𝓤 f)
 
 /-- The invariant of the degree-`f` layer takes every value of order dividing `f`. -/
@@ -227,7 +227,7 @@ private theorem exists_layerInv_eq (f : ℕ+) {q : AddCircle (1 : ℚ)}
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   have h := range_unramifiedInv K (𝓤 f)
   rw [finrank_unramifiedExtension f.ne_zero] at h
   exact (Set.ext_iff.1 h q).2 hq

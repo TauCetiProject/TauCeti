@@ -39,7 +39,10 @@ the localization functor, for which sheafification is a braided monoidal functor
 * `SheafOfModules.tensorUnderlyingIso`: the identification of `M ⊗ N` with the sheafification of
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
   (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
-  the unitors.
+  the unitors; through it, transport of an isomorphism through one argument of
+  `SheafOfModules.tensorProduct` is whiskering
+  (`tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv` and
+  `tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv`).
 * `SheafOfModules.sheafificationForgetAdjunction`, `SheafOfModules.forgetLaxMonoidal`, and
   `SheafOfModules.forgetLaxBraided`:
   sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
@@ -141,16 +144,26 @@ instance sheafificationBraided :
 `sheafificationUnitIso`. -/
 @[simp]
 theorem sheafification_ε :
-    Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
-      (sheafificationUnitIso R).inv :=
+    dsimp% only [sheafCompose_obj_obj]
+    (Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
+      (sheafificationUnitIso R).inv) :=
   rfl
+
+/-- The inverse sheafification identification at the unit is the monoidal unit comparison. -/
+theorem sheafificationIso_unit_inv :
+    (sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit (ringCatSheaf R))).inv =
+      Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) := by
+  erw [sheafification_ε R]
+  exact (Iso.inv_eq_inv _ _).2 ((sheafificationIso_hom _ _).trans
+    (sheafificationUnitIso_hom R).symm)
 
 /-- The inverse unit comparison of the monoidal functor sheafification is
 `sheafificationUnitIso`. -/
 @[simp]
 theorem sheafification_η :
-    Functor.OplaxMonoidal.η (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
-      (sheafificationUnitIso R).hom :=
+    dsimp% only [sheafCompose_obj_obj]
+    (Functor.OplaxMonoidal.η (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
+      (sheafificationUnitIso R).hom) :=
   rfl
 
 variable {R}
@@ -208,6 +221,34 @@ theorem _root_.SheafOfModules.braiding_hom_tensorUnderlyingIso_hom
     Functor.Monoidal.μIso_hom, BraidedCategory.braiding_naturality_assoc,
     Functor.Braided.braided, assoc]
 
+/-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the first
+argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
+@[reassoc]
+theorem tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+    {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
+    (tensorProductCongrLeft R (N := N) e).hom ≫ (tensorProductIso R M' N).hom ≫
+        (M'.tensorUnderlyingIso N).inv =
+      (tensorProductIso R M N).hom ≫ (M.tensorUnderlyingIso N).inv ≫ e.hom ▷ N := by
+  rw [tensorProductCongrLeft_hom, assoc, assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  rw [Iso.comp_inv_eq, assoc, ← tensorHom_id e.hom N,
+    _root_.SheafOfModules.tensorUnderlyingIso_naturality, Iso.inv_hom_id_assoc,
+    _root_.SheafOfModules.id_val, tensorHom_id]
+
+/-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the second
+argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
+@[reassoc]
+theorem tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+    {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
+    (tensorProductCongrRight R (M := M) e).hom ≫ (tensorProductIso R M N').hom ≫
+        (M.tensorUnderlyingIso N').inv =
+      (tensorProductIso R M N).hom ≫ (M.tensorUnderlyingIso N).inv ≫ M ◁ e.hom := by
+  rw [tensorProductCongrRight_hom, assoc, assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  rw [Iso.comp_inv_eq, assoc, ← id_tensorHom M e.hom,
+    _root_.SheafOfModules.tensorUnderlyingIso_naturality, Iso.inv_hom_id_assoc,
+    _root_.SheafOfModules.id_val, id_tensorHom]
+
 /-- The left unitor of sheaves of modules is the sheafification of the left unitor of the
 sectionwise tensor product, read through the unit comparison `sheafificationUnitIso`. -/
 theorem _root_.SheafOfModules.leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -216,7 +257,8 @@ theorem _root_.SheafOfModules.leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCat
         (𝟙_ _) M.val ≫
       (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (λ_ M.val).hom ≫
         (sheafificationIso _ M).hom := by
-  rw [Functor.Monoidal.map_leftUnitor, sheafification_η]
+  rw [Functor.Monoidal.map_leftUnitor]
+  erw [sheafification_η R]
   simp only [assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_def', ← comp_whiskerRight_assoc,
     Iso.inv_hom_id, id_whiskerRight, id_comp]
   -- The unit `SheafOfModules.unit` produced by the unit comparison is `𝟙_` by `tensorUnit_eq`.
@@ -230,7 +272,8 @@ theorem _root_.SheafOfModules.rightUnitor_hom_eq (M : SheafOfModules.{u} (ringCa
         M.val (𝟙_ _) ≫
       (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (ρ_ M.val).hom ≫
         (sheafificationIso _ M).hom := by
-  rw [Functor.Monoidal.map_rightUnitor, sheafification_η]
+  rw [Functor.Monoidal.map_rightUnitor]
+  erw [sheafification_η R]
   simp only [assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_def, ← whiskerLeft_comp_assoc,
     Iso.inv_hom_id, whiskerLeft_id]
   -- The unit `SheafOfModules.unit` produced by the unit comparison is `𝟙_` by `tensorUnit_eq`.
@@ -266,10 +309,9 @@ instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).Lax
 right adjoint of braided monoidal sheafification. -/
 instance forgetLaxBraided : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxBraided where
   toLaxMonoidal := forgetLaxMonoidal R
-  braided M N := by
-    have h := ((sheafificationForgetAdjunction R).rightAdjointLaxBraided).braided M N
-    rw [Adjunction.rightAdjointLaxBraided_toLaxMonoidal] at h
-    exact h
+  braided := (sheafificationForgetAdjunction R).μ_comp_map_braiding_hom fun X Y ↦ by
+    rw [Functor.map_braiding (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)) X Y]
+    simp only [assoc, Functor.Monoidal.μ_δ, comp_id]
 
 /-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
 identity. -/
@@ -278,7 +320,8 @@ lemma forget_ε : Functor.LaxMonoidal.ε (_root_.SheafOfModules.forget (ringCatS
   have h : (sheafificationUnitIso R).hom =
       (sheafificationForgetAdjunction R).counit.app (𝟙_ _) :=
     sheafificationUnitIso_hom R
-  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε, sheafification_η, h]
+  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε]
+  erw [sheafification_η R, h]
   exact ((sheafificationForgetAdjunction R).homEquiv_unit _ _ _).trans
     ((sheafificationForgetAdjunction R).right_triangle_components (𝟙_ _))
 

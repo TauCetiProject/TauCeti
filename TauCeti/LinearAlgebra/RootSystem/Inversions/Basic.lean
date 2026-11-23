@@ -39,6 +39,11 @@ to be the set of roots of a subgroup of `U⁺` normalized by the torus.
   `TauCeti.neg_weylGroupToPerm_mem_inversions_inv_iff`: `w` carries the positive roots it keeps
   positive onto those that `w⁻¹` keeps positive, and, followed by negation, its inversions onto
   the inversions of `w⁻¹`.
+* `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_ofIdx_mul`: the inversion count is
+  invariant under inversion, and left multiplication by a reflection corresponds to right
+  multiplication on the inverse.
+* `TauCeti.ncard_setOf_isPos_and_coroot'_smul_ne_zero`: the number of positive roots not
+  orthogonal to a weight is invariant under the Weyl group.
 * `TauCeti.inversionsFinset`: the inversion set as a finset. Sums and products over it and over
   its complement in the positive roots are reindexed along `w` by
   `TauCeti.sum_inversionsFinset_comp_neg_weylGroupToPerm` and
@@ -49,9 +54,7 @@ to be the set of roots of a subgroup of `U⁺` normalized by the torus.
 
 ## References
 
-This file implements the inversion-set part of Layer 1 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The mathematical convention follows
-Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
+The mathematical convention follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
 public section
@@ -199,6 +202,54 @@ theorem neg_weylGroupToPerm_mem_inversions_inv_iff (i : ι) :
   rw [mem_inversions, mem_inversions, P.weylGroupToPerm_neg, map_inv, Equiv.Perm.inv_def,
     Equiv.symm_apply_apply, RootPairing.Base.IsPos.neg_iff_not,
     RootPairing.Base.IsPos.neg_iff_not, not_not, and_comm]
+
+/-- **The inversion count is invariant under inversion**: `w` followed by root negation is a
+bijection from the inversions of `w` onto those of `w⁻¹`. -/
+@[simp]
+theorem ncard_inversions_inv :
+    (inversions P b w⁻¹).ncard = (inversions P b w).ncard := by
+  let := P.indexNeg
+  let e := (P.weylGroupToPerm w).trans (Equiv.neg ι)
+  have hmem : ∀ i, e i ∈ inversions P b w⁻¹ ↔ i ∈ inversions P b w :=
+    neg_weylGroupToPerm_mem_inversions_inv_iff P b w
+  exact (Set.ncard_congr (fun i _ ↦ e i) (fun i hi ↦ (hmem i).mpr hi)
+    (fun _ _ _ _ h ↦ e.injective h)
+    (fun j hj ↦ ⟨e.symm j, (hmem _).mp (by simpa using hj), by simp⟩)).symm
+
+/-- Left multiplication by a reflection has the same inversion count as right multiplication by it
+on the inverse element; this is what turns the left criteria into the right ones. -/
+theorem ncard_inversions_ofIdx_mul (i : ι) :
+    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard =
+      (inversions P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i)).ncard := by
+  rw [← ncard_inversions_inv P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i), mul_inv_rev,
+    RootPairing.weylGroup.ofIdx_inv_eq, inv_inv]
+
+/-! ### Positive roots not orthogonal to a weight -/
+
+section NotOrthogonal
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι]
+
+/-- **The number of positive roots not orthogonal to a weight is invariant under the Weyl group.**
+For a dominant weight this is the number of positive roots outside the root subsystem of its
+stabilizer, and so it is the same at every point of its orbit. -/
+theorem ncard_setOf_isPos_and_coroot'_smul_ne_zero (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i (w • x) ≠ 0}.ncard =
+      {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard := by
+  rw [ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg,
+    ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg]
+  -- `w` carries the roots pairing negatively with `x` onto those pairing negatively with `w x`.
+  refine ncard_congr (fun i _ ↦ P.weylGroupToPerm w⁻¹ i) (fun i hi ↦ ?_)
+    (fun _ _ _ _ h ↦ (P.weylGroupToPerm w⁻¹).injective h) (fun j hj ↦ ?_)
+  · rw [mem_ofPred_eq, ← RootPairing.coroot'_weylGroupToPerm_smul P w⁻¹ i (w • x),
+      inv_smul_smul] at hi
+    exact hi
+  · refine ⟨P.weylGroupToPerm w j, ?_, ?_⟩
+    · rw [mem_ofPred_eq, RootPairing.coroot'_weylGroupToPerm_smul]
+      exact hj
+    · simp [map_inv]
+
+end NotOrthogonal
 
 /-! ### The inversion set as a finset -/
 

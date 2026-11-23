@@ -64,8 +64,9 @@ Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading o
 degrees add up to the given degree. Factorwise maps of degrees `a i` shift total degree by
 `∑ i, a i`, while the slot sum of a family `f i` of common degree `a` shifts total degree by `a`.
 When all the `h i` have the same degree, the slot homotopy shifts total degree by that degree.
-For a grading without negative pieces, the tensor product of retractions vanishing in positive
-degrees vanishes in positive total degree. The slot homotopy of homotopies vanishing in degree
+For a grading without negative pieces, the total-degree grading has no negative pieces either,
+and the tensor product of retractions vanishing in positive degrees vanishes in positive total
+degree. The slot homotopy of homotopies vanishing in degree
 zero vanishes in total degree zero.
 
 These are the data with which a tensor power of the total coinduced resolution, with its
@@ -99,6 +100,8 @@ representing cocycle in the tensor-induced resolution.
   `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
   `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
+* `TauCeti.PiTensorProduct.totalDegreePiece_eq_bot_of_neg`: gradings without negative pieces
+  induce a total-degree grading without negative pieces.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
   `TauCeti.PiTensorProduct.map_eq_zero_of_mem_totalDegreePiece_of_pos` and
   `TauCeti.PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero`: the tensor powers of
@@ -415,6 +418,18 @@ theorem map_eq_zero_of_mem_totalDegreePiece_of_pos [LinearOrder A] [IsOrderedAdd
     exact hn.not_ge (Finset.sum_nonpos fun i _ ↦ h i)
   rw [LinearMap.mem_ker, PiTensorProduct.map_tprod]
   exact (PiTensorProduct.tprod R).map_coord_zero i (hπ i _ hi _ (hm i))
+
+/-- For gradings without negative pieces, the total-degree grading has no negative pieces either:
+a pure tensor of homogeneous factors of negative total degree has a factor of negative degree. -/
+theorem totalDegreePiece_eq_bot_of_neg [LinearOrder A] [IsOrderedAddMonoid A]
+    (hneg : ∀ i p, p < 0 → ℳ i p = ⊥) {n : A} (hn : n < 0) : totalDegreePiece ι ℳ n = ⊥ := by
+  refine eq_bot_iff.2 (totalDegreePiece_le_iff.2 ?_)
+  rintro p m hm rfl
+  obtain ⟨i, hi⟩ : ∃ i, p i < 0 := by
+    by_contra! h
+    exact hn.not_ge (Finset.sum_nonneg fun i _ ↦ h i)
+  have hmi : m i = 0 := by simpa [hneg i _ hi] using hm i
+  rw [Submodule.mem_bot, (PiTensorProduct.tprod R).map_coord_zero i hmi]
 
 /-- On a tensor product with a single factor `i₀`, the identification
 `PiTensorProduct.subsingletonEquiv` with that factor preserves the degree. -/

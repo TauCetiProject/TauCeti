@@ -25,7 +25,9 @@ Complete coefficient groups give complete restricted families. The construction 
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm.
+with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
+coefficient maps induce continuous linear maps over the scalar restricted series, and
+coefficient equivalences bounded in both directions induce topological isomorphisms.
 
 ## References
 
@@ -73,7 +75,7 @@ theorem ofAddSubgroup_toAddSubgroup (a : Gauss c E) :
 
 @[simp]
 theorem ofAddSubgroup_apply (a : IsRestrictedFamily.addSubgroup E c)
-    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.1 t := (rfl)
+    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.val t := (rfl)
 
 instance : AddCommGroup (Gauss c E) :=
   Equiv.addCommGroup
@@ -143,7 +145,7 @@ theorem toAddSubgroupLinearEquiv_symm_apply
 theorem smul_apply (r : R) (a : Gauss c E) (t : σ →₀ ℕ) :
     (r • a) t = r • a t := by
   simpa only [toAddSubgroupLinearEquiv_apply, coe_smul, Pi.smul_apply] using
-    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.1 t)
+    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.val t)
       ((toAddSubgroupLinearEquiv R).map_smul r a)
 
 /-- Include finite-support coefficient families in the Gauss-topological carrier. -/
@@ -172,6 +174,17 @@ theorem mapLinearMap_apply {F : Type*} [SeminormedAddCommGroup F] [Module R F]
     (a : Gauss c E) (t : σ →₀ ℕ) : mapLinearMap φ hφ a t = φ (a t) := by
   simp [mapLinearMap, IsRestrictedFamily.coe_mapLinearMap]
 
+/-- Forgetting the Gauss topology commutes with a bounded coefficient map. -/
+theorem _root_.LinearMap.toAddSubgroup_mapGaussFamily
+    {F : Type*} [SeminormedAddCommGroup F] [Module R F]
+    [IsBoundedSMul R F] (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) :
+    (mapLinearMap φ hφ a).toAddSubgroup =
+      IsRestrictedFamily.mapLinearMap φ hφ a.toAddSubgroup := by
+  apply IsRestrictedFamily.ext
+  intro t
+  simp [mapLinearMap_apply]
+
 end Module
 
 variable [hc : ∀ i, Fact (0 < c i)]
@@ -192,10 +205,10 @@ instance instSeminormedAddCommGroup : SeminormedAddCommGroup (Gauss c E) :=
             exact add_le_add
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp b.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp b.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
       neg' a := by simp }
 
 /-- The norm is the supremum of the weighted coefficient norms. Restrictedness ensures that
@@ -207,7 +220,7 @@ theorem norm_eq_iSup (a : Gauss c E) :
 theorem norm_coeff_mul_prod_le (a : Gauss c E) (t : σ →₀ ℕ) :
     ‖(a : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) ≤ ‖a‖ :=
   le_ciSup (isRestrictedFamily_iff.mp
-    (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t
+    (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t
 
 /-- The Gauss seminorm is a norm when the coefficient seminorm is a norm. -/
 instance instNormedAddCommGroup {F : Type*} [NormedAddCommGroup F] :
@@ -225,16 +238,23 @@ theorem norm_le_iff {a : Gauss c E} {B : ℝ} :
     ‖a‖ ≤ B ↔ ∀ t, ‖(a : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) ≤ B :=
   ⟨fun h t ↦ (norm_coeff_mul_prod_le a t).trans h, fun h ↦ ciSup_le h⟩
 
-/-- A uniform coefficient norm bound gives the same bound for the Gauss seminorm. -/
+/-- A uniform coefficient norm bound gives the same bound for the Gauss seminorm. The constant
+`L` may be any real number: if it is negative, all coefficients vanish. -/
 theorem norm_le_mul_of_norm_coeff_le [SeminormedAddCommGroup F] {a : Gauss c E}
-    {b : Gauss c F} {L : ℝ} (hL : 0 ≤ L) (h : ∀ t, ‖a t‖ ≤ L * ‖b t‖) :
-    ‖a‖ ≤ L * ‖b‖ :=
-  norm_le_iff.mpr fun t ↦ calc
-    _ ≤ (L * ‖b t‖) * t.prod (c · ^ ·) :=
-      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
-    _ ≤ L * ‖b‖ := by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le b t) hL
+    {b : Gauss c F} {L : ℝ} (h : ∀ t, ‖a t‖ ≤ L * ‖b t‖) :
+    ‖a‖ ≤ L * ‖b‖ := by
+  rcases le_or_gt 0 L with hL | hL
+  · refine norm_le_iff.mpr fun t ↦ calc
+      _ ≤ (L * ‖b t‖) * t.prod (c · ^ ·) :=
+        mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+      _ ≤ L * ‖b‖ := by
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le b t) hL
+  · -- a negative constant forces every coefficient of `a` and `b` to vanish
+    have hb t : ‖b t‖ = 0 := by nlinarith [h t, norm_nonneg (a t), norm_nonneg (b t)]
+    have ha t : ‖a t‖ = 0 := le_antisymm (by simpa [hb t] using h t) (norm_nonneg _)
+    rw [le_antisymm (norm_le_iff.mpr fun t ↦ by simp [hb t]) (norm_nonneg b), mul_zero]
+    exact norm_le_iff.mpr fun t ↦ by simp [ha t]
 
 /-- Coefficient projections have bound the inverse of the monomial weight. -/
 theorem norm_coeff_le (a : Gauss c E) (t : σ →₀ ℕ) :
@@ -254,11 +274,9 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 /-- Complete coefficient groups give complete restricted families for the Gauss norm. -/
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ (A k : (σ →₀ ℕ) → E) t :=
-    (uniformContinuous_coeff t).comp_cauchySeq hA
   obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
-    (fun k ↦ (A k : (σ →₀ ℕ) → E)) hcoeff
-    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.2)) (by
+    (fun i ↦ (Fact.out : 0 < c i).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
+    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
       refine ⟨N, fun k hk l hl t ↦ ?_⟩
@@ -317,29 +335,29 @@ instance : IsBoundedSMul R (Gauss c E) :=
 variable [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
 
 /-- A coefficient map bounded by `C` induces a map of restricted families with the same bound. -/
-theorem norm_mapLinearMap_le (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 ≤ C)
+theorem norm_mapLinearMap_le (φ : E →ₗ[R] F) {C : ℝ}
     (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (a : Gauss c E) :
     ‖mapLinearMap φ hφ a‖ ≤ C * ‖a‖ :=
-  norm_le_mul_of_norm_coeff_le hC fun t ↦ by
+  norm_le_mul_of_norm_coeff_le fun t ↦ by
     rw [mapLinearMap_apply]
     exact hφ _
 
 /-- The map induced by a bounded coefficient linear map is uniformly continuous. -/
-theorem uniformContinuous_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 ≤ C)
+theorem uniformContinuous_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ}
     (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
     UniformContinuous (mapLinearMap (c := c) φ hφ) :=
   AddMonoidHomClass.uniformContinuous_of_bound (mapLinearMap (c := c) φ hφ) C
-    (norm_mapLinearMap_le φ hC hφ)
+    (norm_mapLinearMap_le φ hφ)
 
 variable (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
 
 /-- Bounded coefficient lifts give Gauss lifts with the same bound. -/
-theorem exists_mapLinearMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
+theorem exists_mapLinearMap_eq_and_norm_le {L : ℝ}
     (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) (b : Gauss c F) :
     ∃ a, mapLinearMap φ hφ a = b ∧ ‖a‖ ≤ L * ‖b‖ := by
   obtain ⟨a, ha, hcoeff⟩ :=
     IsRestrictedFamily.exists_mapLinearMap_eq_and_norm_coeff_le φ hφ hlift b.toAddSubgroup
-  refine ⟨ofAddSubgroup a, ?_, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
+  refine ⟨ofAddSubgroup a, ?_, norm_le_mul_of_norm_coeff_le hcoeff⟩
   · apply ext
     intro t
     simpa only [mapLinearMap_apply, ofAddSubgroup_apply,
@@ -350,24 +368,16 @@ theorem exists_mapLinearMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
 families, without completeness assumptions. -/
 theorem isOpenMap_mapLinearMap {L : ℝ}
     (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
-    IsOpenMap (mapLinearMap (c := c) φ hφ) := by
-  apply TauCeti.isOpenMap_of_exists_norm_le (mapLinearMap (c := c) φ hφ) (K := max L 0)
-  apply exists_mapLinearMap_eq_and_norm_le φ hφ (le_max_right L 0)
-  intro y
-  obtain ⟨x, hx, hnorm⟩ := hlift y
-  exact ⟨x, hx, hnorm.trans
-    (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg y))⟩
+    IsOpenMap (mapLinearMap (c := c) φ hφ) :=
+  TauCeti.isOpenMap_of_exists_norm_le _ (exists_mapLinearMap_eq_and_norm_le φ hφ hlift)
 
 /-- Bounded coefficient maps with uniformly bounded lifts induce quotient maps for the Gauss
 topologies at positive real polyradii. -/
 theorem isQuotientMap_mapLinearMap {L : ℝ}
     (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
     Topology.IsQuotientMap (mapLinearMap (c := c) φ hφ) := by
-  have hbound (e : E) : ‖φ e‖ ≤ max C 0 * ‖e‖ :=
-    (hφ e).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg e))
   have hcont : Continuous (mapLinearMap (c := c) φ hφ) :=
-    (uniformContinuous_mapLinearMap (c := c) φ (le_max_right C 0) hbound).continuous.congr
-      (fun a ↦ ext fun t ↦ by simp only [mapLinearMap_apply])
+    (uniformContinuous_mapLinearMap (c := c) φ hφ).continuous
   apply (isOpenMap_mapLinearMap φ hφ hlift).isQuotientMap hcont
   intro b
   obtain ⟨a, ha⟩ := IsRestrictedFamily.mapLinearMap_surjective φ hφ hlift b.toAddSubgroup
@@ -398,6 +408,20 @@ omit hc in
 @[simp]
 theorem toAddSubgroup_isRestrictedSubring_smul (f : IsRestricted.subring (R := R) c)
     (a : Gauss c E) : (f • a).toAddSubgroup = f • a.toAddSubgroup := (rfl)
+
+omit hc in
+/-- Bounded coefficient maps commute with convolution by scalar restricted series. -/
+@[simp]
+theorem _root_.LinearMap.mapGaussFamily_isRestrictedSubring_smul
+    {F : Type*} [SeminormedAddCommGroup F]
+    [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
+    (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (f : IsRestricted.subring (R := R) c) (a : Gauss c E) :
+    mapLinearMap φ hφ (f • a) = f • mapLinearMap φ hφ a := by
+  apply toAddSubgroupAddEquiv.injective
+  simpa only [toAddSubgroupAddEquiv_apply, LinearMap.toAddSubgroup_mapGaussFamily,
+    toAddSubgroup_isRestrictedSubring_smul] using
+      IsRestrictedFamily.mapLinearMap_isRestrictedSubring_smul φ hφ f a.toAddSubgroup
 
 /-- Convolution by a scalar restricted series satisfies the Gauss norm inequality. -/
 theorem norm_isRestrictedSubring_smul_le (f : IsRestricted.subring (R := R) c)
@@ -443,6 +467,133 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
     ‖ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)‖ = ‖f‖ := by
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
+
+variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
+
+/-- A coefficient map bounded by `C` induces a continuous linear map of Gauss families over the
+scalar restricted series. -/
+def mapContinuousLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    Gauss c E →L[IsRestricted.subring (R := R) c] Gauss c F where
+  toFun := mapLinearMap φ hφ
+  map_add' := map_add _
+  map_smul' := LinearMap.mapGaussFamily_isRestrictedSubring_smul φ hφ
+  cont := (uniformContinuous_mapLinearMap φ hφ).continuous
+
+/-- The induced continuous linear map applies the coefficient map coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearMap_apply (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearMap φ hφ a t = φ (a t) :=
+  mapLinearMap_apply φ hφ a t
+
+/-- The induced continuous linear map has the underlying function of `mapLinearMap`. -/
+theorem coe_mapContinuousLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    ⇑(mapContinuousLinearMap (c := c) φ hφ) = mapLinearMap φ hφ :=
+  (rfl)
+
+/-- The induced continuous linear map is bounded by the coefficient bound. -/
+theorem norm_mapContinuousLinearMap_le (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) : ‖mapContinuousLinearMap φ hφ a‖ ≤ C * ‖a‖ :=
+  norm_mapLinearMap_le φ hφ a
+
+/-- The identity coefficient map induces the identity. -/
+@[simp]
+theorem mapContinuousLinearMap_id {C : ℝ} (hφ : ∀ e : E, ‖LinearMap.id (R := R) e‖ ≤ C * ‖e‖) :
+    mapContinuousLinearMap (c := c) LinearMap.id hφ = .id _ _ := by
+  ext a t
+  simp
+
+/-- Composite coefficient maps induce the composite continuous linear maps. -/
+theorem mapContinuousLinearMap_comp {G : Type*} [SeminormedAddCommGroup G] [IsUltrametricDist G]
+    [Module R G] [IsBoundedSMul R G] (ψ : F →ₗ[R] G) (φ : E →ₗ[R] F) {B C D : ℝ}
+    (hψ : ∀ f, ‖ψ f‖ ≤ B * ‖f‖) (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (hψφ : ∀ e, ‖(ψ ∘ₗ φ) e‖ ≤ D * ‖e‖) :
+    mapContinuousLinearMap (c := c) (ψ ∘ₗ φ) hψφ =
+      (mapContinuousLinearMap ψ hψ).comp (mapContinuousLinearMap φ hφ) := by
+  ext a t
+  simp
+
+/-- The induced continuous linear map sends finitely supported families to finitely supported
+families. -/
+@[simp]
+theorem mapContinuousLinearMap_ofFinsupp (φ : E →ₗ[R] F) {C : ℝ}
+    (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (a : (σ →₀ ℕ) →₀ E) :
+    mapContinuousLinearMap φ hφ (ofFinsupp R c a) = ofFinsupp R c (a.mapRange φ φ.map_zero) := by
+  ext t
+  simp
+
+/-- A coefficient equivalence bounded in both directions induces a topological isomorphism of
+Gauss families over the scalar restricted series. -/
+def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
+    (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
+  .ofContinuousLinearMap (mapContinuousLinearMap e.toLinearMap he)
+    (mapContinuousLinearMap e.symm.toLinearMap he')
+    (ContinuousLinearMap.ext fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun a ↦ ext fun t ↦ by simp)
+
+/-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearEquiv e he he' a t = e (a t) :=
+  mapLinearMap_apply _ he a t
+
+/-- The inverse of the induced isomorphism applies the inverse equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_symm_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (b : Gauss c F) (t : σ →₀ ℕ) :
+    (mapContinuousLinearEquiv e he he').symm b t = e.symm (b t) :=
+  mapLinearMap_apply _ he' b t
+
+/-- The induced isomorphism, as a continuous linear map, is the induced continuous linear map. -/
+@[simp]
+theorem toContinuousLinearMap_mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    (mapContinuousLinearEquiv (c := c) e he he' : Gauss c E →L[IsRestricted.subring (R := R) c]
+      Gauss c F) = mapContinuousLinearMap e.toLinearMap he :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverse equivalence. -/
+theorem mapContinuousLinearEquiv_symm (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    (mapContinuousLinearEquiv (c := c) e he he').symm = mapContinuousLinearEquiv e.symm he' he :=
+  (rfl)
+
+/-- The induced isomorphism is bounded by the coefficient bound. -/
+theorem norm_mapContinuousLinearEquiv_le (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) (a : Gauss c E) :
+    ‖mapContinuousLinearEquiv e he he' a‖ ≤ C * ‖a‖ :=
+  norm_mapLinearMap_le _ he a
+
+/-- The identity coefficient equivalence induces the identity. -/
+@[simp]
+theorem mapContinuousLinearEquiv_refl {C D : ℝ}
+    (he : ∀ x : E, ‖LinearEquiv.refl R E x‖ ≤ C * ‖x‖)
+    (he' : ∀ y : E, ‖(LinearEquiv.refl R E).symm y‖ ≤ D * ‖y‖) :
+    mapContinuousLinearEquiv (c := c) (.refl R E) he he' = .refl _ _ := by
+  ext a t
+  simp
+
+/-- Composite coefficient equivalences induce the composite isomorphisms. -/
+theorem mapContinuousLinearEquiv_trans {G : Type*} [SeminormedAddCommGroup G]
+    [IsUltrametricDist G] [Module R G] [IsBoundedSMul R G] (e : E ≃ₗ[R] F) (f : F ≃ₗ[R] G)
+    {C D C' D' C'' D'' : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (hf : ∀ x, ‖f x‖ ≤ C' * ‖x‖) (hf' : ∀ y, ‖f.symm y‖ ≤ D' * ‖y‖)
+    (hef : ∀ x, ‖e.trans f x‖ ≤ C'' * ‖x‖) (hef' : ∀ y, ‖(e.trans f).symm y‖ ≤ D'' * ‖y‖) :
+    mapContinuousLinearEquiv (c := c) (e.trans f) hef hef' =
+      (mapContinuousLinearEquiv e he he').trans (mapContinuousLinearEquiv f hf hf') := by
+  ext a t
+  simp
+
+/-- The induced isomorphism sends finitely supported families to finitely supported families. -/
+@[simp]
+theorem mapContinuousLinearEquiv_ofFinsupp (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) (a : (σ →₀ ℕ) →₀ E) :
+    mapContinuousLinearEquiv e he he' (ofFinsupp R c a) =
+      ofFinsupp R c (a.mapRange e e.map_zero) := by
+  ext t
+  simp
 
 end Convolution
 

@@ -149,11 +149,11 @@ theorem isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual k A}
   constructor
   · intro a ha
     refine e.injective (LinearMap.ext fun b => ?_)
-    rw [map_zero, LinearMap.zero_apply, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+    rw [map_zero, LinearMap.zero_apply, apply_apply_eq_apply_one_mul he]
     simpa using ha b
   · intro b hb
     exact (Module.forall_dual_apply_eq_zero_iff k b).mp fun f => by
-      rw [← e.apply_symm_apply f, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+      rw [← e.apply_symm_apply f, apply_apply_eq_apply_one_mul he]
       simpa using hb _
 
 end Projective
@@ -245,7 +245,7 @@ theorem toDualEquiv_isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual
     (LinearMap.isFrobeniusFunctional_apply_one he).toDualEquiv = e :=
   LinearEquiv.ext fun a => LinearMap.ext fun b => by
     rw [LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply]
-    exact (dualLinearMap_apply_apply (e := e.toLinearMap) (fun x y => he x y) a b).symm
+    exact (apply_apply_eq_apply_one_mul he a b).symm
 
 variable (k A) in
 /-- **Frobenius functionals are the isomorphisms `A ≅ A⁺` of right modules.** The pointwise form of
@@ -255,21 +255,21 @@ isomorphism `e` goes back to the functional `e 1`, and these are inverse to each
 noncomputable def frobeniusFunctionalEquivDualEquiv :
     {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional} ≃
       {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a} where
-  toFun φ := ⟨φ.2.toDualEquiv, φ.2.toDualEquiv_mul⟩
-  invFun e := ⟨e.1 1, LinearMap.isFrobeniusFunctional_apply_one e.2⟩
-  left_inv φ := Subtype.ext φ.2.toDualEquiv_one
-  right_inv e := Subtype.ext (toDualEquiv_isFrobeniusFunctional_apply_one e.2)
+  toFun φ := ⟨φ.property.toDualEquiv, φ.property.toDualEquiv_mul⟩
+  invFun e := ⟨e.val 1, LinearMap.isFrobeniusFunctional_apply_one e.property⟩
+  left_inv φ := Subtype.ext φ.property.toDualEquiv_one
+  right_inv e := Subtype.ext (toDualEquiv_isFrobeniusFunctional_apply_one e.property)
 
 @[simp]
 theorem frobeniusFunctionalEquivDualEquiv_apply_coe
     (φ : {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional}) :
     (frobeniusFunctionalEquivDualEquiv k A φ : A ≃ₗ[k] Module.Dual k A) =
-      φ.2.toDualEquiv := (rfl)
+      φ.property.toDualEquiv := (rfl)
 
 @[simp]
 theorem frobeniusFunctionalEquivDualEquiv_symm_apply_coe
     (e : {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a}) :
-    ((frobeniusFunctionalEquivDualEquiv k A).symm e : A →ₗ[k] k) = e.1 1 := (rfl)
+    ((frobeniusFunctionalEquivDualEquiv k A).symm e : A →ₗ[k] k) = e.val 1 := (rfl)
 
 end TauCeti
 

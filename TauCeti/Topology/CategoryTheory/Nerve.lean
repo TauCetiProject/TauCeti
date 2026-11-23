@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import Mathlib.Combinatorics.Quiver.Subquiver
-public import TauCeti.AlgebraicTopology.FatRealization
-public import TauCeti.Combinatorics.Quiver.Prefunctor
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+public import TauCeti.AlgebraicTopology.FatRealization.Skeleton
 
 /-!
 # The topological nerve of a category and its fat classifying space
@@ -35,13 +33,24 @@ The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realizati
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
 degeneracies along `SemiSimplexCategory.toSimplexCategory`.
 
+When the total arrows form a regular, `T1`, second-countable space, so do the strings of
+composable arrows (the `T1Space`, `RegularSpace` and `SecondCountableTopology` instances on
+`ComposableArrows C n`). The levels of the topological nerve are then regular, `T1` and Lindelöf,
+so the fat classifying space is paracompact and `T4`
+(`TauCeti.fatClassifyingSpace.paracompactSpace`, `TauCeti.fatClassifyingSpace.t4Space`), by
+paracompactness of fat realizations (`TauCeti.fatRealization.paracompactSpace`).
+
 A functor `Φ : C ⥤ D` whose action on total arrows (`Prefunctor.mapTotal`) is continuous induces
 maps `TauCeti.topologicalNerveMap Φ` of topological nerves and `TauCeti.fatClassifyingSpaceMap Φ`
 of fat classifying spaces, by applying `Φ` to strings of composable arrows. A family of functors
 `Φ s`, `s ∈ [0, 1]`, depending continuously on `s` and the total arrow induces a homotopy
 `TauCeti.fatClassifyingSpaceHomotopy` from the map induced by `Φ 0` to that induced by `Φ 1`.
 If `Φ` is an embedding on total arrows, it induces levelwise embeddings
-(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
+(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`). Recording all arrows
+`i ⟶ j` (`i ≤ j`) embeds `ComposableArrows C n` into a finite product of copies of `Quiver.Total C`
+(`CategoryTheory.ComposableArrows.isEmbedding_totalArrowTuple`), so both `ComposableArrows C n` and
+`(topologicalNerve C).obj Δ` inherit separation, regularity, countability and metrizability from
+`Quiver.Total C`.
 
 ## References
 
@@ -58,84 +67,6 @@ universe v u
 namespace CategoryTheory.ComposableArrows
 
 variable {C : Type u} [Category.{v} C] {n : ℕ}
-
-/-- The arrow of a string of composable arrows from its `i`-th to its `j`-th object, as a total
-arrow of `C`. For `i = j` this is the identity arrow of the `i`-th object. -/
-def totalArrow (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) : Quiver.Total C :=
-  ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩
-
-@[simp]
-theorem totalArrow_left (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).left = F.obj i := (rfl)
-
-@[simp]
-theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).right = F.obj j := (rfl)
-
-theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
-
-/-- The first arrow of a string obtained by prepending an arrow is that arrow, including
-when its target is identified with the first vertex by an equality. -/
-@[simp]
-theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
-    (F : ComposableArrows C n) (h : a.right = F.left) :
-    (F.precomp (a.hom ≫ eqToHom h)).totalArrow 0 1 (Fin.zero_le _) = a := by
-  rcases a with ⟨x, z, f⟩
-  dsimp only at h
-  subst z
-  rw [totalArrow_def]
-  simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
-    eqToHom_refl, Category.comp_id]
-
-/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
-an arrow of the original string. -/
-@[simp]
-theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
-    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
-      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
-  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
-  rfl
-
-/-- Arrows between shifted vertices of a prepended string are the arrows of the original
-string. -/
-@[simp]
-theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
-      F.totalArrow i j hij := by
-  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
-  rfl
-
-/-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
-its arrows. -/
-@[simp]
-theorem totalArrow_whiskerLeft {m : ℕ} (F : ComposableArrows C m)
-    (Φ : Fin (n + 1) ⥤ Fin (m + 1)) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.whiskerLeft Φ).totalArrow i j hij = F.totalArrow (Φ.obj i) (Φ.obj j) (Φ.monotone hij) := by
-  -- Morphisms in the poset `Fin (m + 1)` are unique, so `Φ` sends `homOfLE hij` to `homOfLE _`.
-  have h : Φ.map (homOfLE hij) = homOfLE (Φ.monotone hij) := Subsingleton.elim _ _
-  simp only [totalArrow, whiskerLeft, Functor.comp_obj, Functor.comp_map, h]
-
-/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
-@[simp]
-theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
-    (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
-      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) :=
-  (rfl)
-
-/-- A string of composable arrows is determined by its arrows. -/
-theorem ext_of_totalArrow {F G : ComposableArrows C n}
-    (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
-  refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
-  -- Morphisms in the poset `Fin (n + 1)` are unique, so `g` is the morphism `homOfLE g.le` that
-  -- `totalArrow` uses, and the hypothesis `h i j g.le` applies to it.
-  rw [show g = homOfLE g.le from Subsingleton.elim _ _]
-  have := h i j g.le
-  simp only [totalArrow, Quiver.Total.mk.injEq] at this
-  exact this.2.2
 
 variable [TopologicalSpace (Quiver.Total C)]
 
@@ -156,6 +87,31 @@ theorem continuous_totalArrow (i j : Fin (n + 1)) (hij : i ≤ j) :
     Continuous fun F : ComposableArrows C n ↦ F.totalArrow i j hij :=
   continuous_iff.1 continuous_id i j hij
 
+/-- Strings of composable arrows form a `T1` space when the total arrows do. -/
+instance [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) where
+  t1 F := by
+    have : ({F} : Set (ComposableArrows C n)) =
+        ⋂ (i) (j) (hij : i ≤ j), (fun G ↦ G.totalArrow i j hij) ⁻¹' {F.totalArrow i j hij} := by
+      ext G
+      simp only [Set.mem_singleton_iff, Set.mem_iInter, Set.mem_preimage]
+      exact ⟨by rintro rfl _ _ _; rfl, fun h ↦ ext_of_totalArrow h⟩
+    rw [this]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun hij ↦
+      isClosed_singleton.preimage (continuous_totalArrow i j hij)
+
+/-- Strings of composable arrows form a regular space when the total arrows do. -/
+instance [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦
+    regularSpace_induced _
+
+/-- Strings of composable arrows form a second-countable space when the total arrows do. -/
+instance [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+    TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+      TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+        TopologicalSpace.secondCountableTopology_induced _ _ _
+
 /-- Reindexing strings of composable arrows along a functor of the indexing posets is
 continuous. -/
 @[fun_prop]
@@ -170,7 +126,9 @@ variable {D : Type*} [Category D] [TopologicalSpace (Quiver.Total D)]
 continuous. -/
 theorem continuous_mapComposableArrows_obj {Φ : C ⥤ D}
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) : Continuous (Φ.mapComposableArrows n).obj :=
-  continuous_iff.2 fun i j hij ↦ hΦ.comp (continuous_totalArrow i j hij)
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_totalArrow i j hij)
 
 /-- Applying a family of functors to strings of composable arrows is jointly continuous in the
 parameter and the string when it is so on total arrows. -/
@@ -178,8 +136,9 @@ theorem continuous_uncurry_mapComposableArrows_obj {T : Type*} [TopologicalSpace
     {Φ : T → C ⥤ D}
     (hΦ : Continuous fun p : T × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     Continuous fun p : T × ComposableArrows C n ↦ ((Φ p.1).mapComposableArrows n).obj p.2 :=
-  continuous_iff.2 fun i j hij ↦
-    hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
 
 /-- A functor that is an embedding on total arrows is an embedding on strings of composable
 arrows. -/
@@ -192,6 +151,36 @@ theorem isEmbedding_mapComposableArrows_obj {Φ : C ⥤ D} (hΦ : IsEmbedding Φ
     simp only [Function.comp_def, totalArrow_mapComposableArrows_obj]
   · simpa only [totalArrow_mapComposableArrows_obj] using
       congrArg (fun F ↦ totalArrow F i j hij) h
+
+/-- Recording all total arrows `F.totalArrow i j hij` (`i ≤ j`) embeds strings of `n` composable
+arrows into a finite product of copies of `Quiver.Total C`. No continuity of source, target,
+units or composition is needed. -/
+theorem isEmbedding_totalArrowTuple :
+    IsEmbedding fun (F : ComposableArrows C n)
+      (p : (i : Fin (n + 1)) × (j : Fin (n + 1)) × PLift (i ≤ j)) ↦
+        F.totalArrow p.1 p.2.1 p.2.2.down :=
+  ⟨⟨by
+    simp only [instTopologicalSpace, induced_to_pi, iInf_sigma]
+    exact iInf_congr fun _ ↦ iInf_congr fun _ ↦ (iInf_plift_down _).symm⟩,
+    fun _ _ h ↦ ext_of_totalArrow fun i j hij ↦ congrFun h ⟨i, j, ⟨hij⟩⟩⟩
+
+instance instT0Space [T0Space (Quiver.Total C)] : T0Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t0Space
+instance instT1Space [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t1Space
+instance instT2Space [T2Space (Quiver.Total C)] : T2Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t2Space
+instance instRegularSpace [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.isInducing.regularSpace
+instance instFirstCountableTopology [FirstCountableTopology (Quiver.Total C)] :
+    FirstCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.firstCountableTopology
+instance instSecondCountableTopology [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.secondCountableTopology
+instance instMetrizableSpace [TopologicalSpace.MetrizableSpace (Quiver.Total C)] :
+    TopologicalSpace.MetrizableSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.metrizableSpace
 
 end CategoryTheory.ComposableArrows
 
@@ -222,6 +211,33 @@ theorem topologicalNerve_map_apply {Δ Δ' : SimplexCategoryᵒᵖ} (f : Δ ⟶ 
 /-- The underlying simplicial set of the topological nerve is the nerve. -/
 theorem topologicalNerve_comp_forget : topologicalNerve C ⋙ forget TopCat = nerve C := (rfl)
 
+section TopologicalNerveInstances
+
+variable (C) (Δ : SimplexCategoryᵒᵖ)
+
+instance [T0Space (Quiver.Total C)] : T0Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T0Space (ComposableArrows C Δ.unop.len))
+instance [T1Space (Quiver.Total C)] : T1Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T1Space (ComposableArrows C Δ.unop.len))
+instance [T2Space (Quiver.Total C)] : T2Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T2Space (ComposableArrows C Δ.unop.len))
+instance [RegularSpace (Quiver.Total C)] : RegularSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (RegularSpace (ComposableArrows C Δ.unop.len))
+instance [CompactSpace (ComposableArrows C Δ.unop.len)] :
+    CompactSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (CompactSpace (ComposableArrows C Δ.unop.len))
+instance [FirstCountableTopology (Quiver.Total C)] :
+    FirstCountableTopology ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (FirstCountableTopology (ComposableArrows C Δ.unop.len))
+instance [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (SecondCountableTopology (ComposableArrows C Δ.unop.len))
+instance [TopologicalSpace.MetrizableSpace (Quiver.Total C)] :
+    TopologicalSpace.MetrizableSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (TopologicalSpace.MetrizableSpace (ComposableArrows C Δ.unop.len))
+
+end TopologicalNerveInstances
+
 variable (C)
 
 /-- The fat classifying space of a category whose total arrows carry a topology: the fat
@@ -230,6 +246,37 @@ realization of its topological nerve, with degeneracies forgotten. -/
   fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C)
 
 variable {C}
+
+section Paracompact
+
+variable [RegularSpace (Quiver.Total C)] [T1Space (Quiver.Total C)]
+  [SecondCountableTopology (Quiver.Total C)]
+
+-- The levels of the topological nerve are spaces of strings of composable arrows.
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    RegularSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (RegularSpace (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    T1Space ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (T1Space (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    LindelofSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (LindelofSpace (ComposableArrows C _))
+
+/-- **Paracompactness of fat classifying spaces.** The fat classifying space of a category whose
+total arrows form a regular, `T1`, second-countable space, such as a groupoid whose arrows form a
+second-countable Hausdorff manifold, is paracompact. -/
+instance fatClassifyingSpace.paracompactSpace : ParacompactSpace (fatClassifyingSpace C) :=
+  fatRealization.paracompactSpace
+
+/-- The fat classifying space of a category whose total arrows form a regular, `T1`,
+second-countable space is normal and `T1`, in particular Hausdorff. -/
+instance fatClassifyingSpace.t4Space : T4Space (fatClassifyingSpace C) :=
+  fatRealization.t4Space
+
+end Paracompact
 
 /-- Two maps out of the fat classifying space agree once they agree on every simplex. -/
 @[ext]

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Algebra.Ring.SpectralIdempotent
 public import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
@@ -55,7 +54,7 @@ namespace IsRieszProjection
 section Ring
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
-  [NormedCommRing R] [NormOneClass R] [TauCeti.NormedRing.IsTate R]
+  [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   [IsUltrametricDist R] [CompleteSpace R]
   {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h : ℕ}
 
@@ -97,48 +96,36 @@ private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszPro
   -- structure uses the same additive monoid as the submodule and its normed structure.
   let : AddCommGroup E.range := inferInstance
   have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
-  -- Restrict to the finite range, presented as a retract by the projector E.
-  let v : E.range →L[R] E.range := u.restrict hE.mapsTo_range
+  have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
   have hfix (x : E.range) : E x = x :=
     (LinearMap.IsIdempotentElem.mem_range_iff
       (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
-  have hri : E.rangeRestrict.comp E.range.subtypeL = .id R E.range := by
-    exact ContinuousLinearMap.ext fun x ↦ Subtype.ext (hfix x)
-  have hM : TauCeti.HasPr R E.range :=
-    (isPrCompact_iff_isRowCompact.2 hu).hasPr_source.of_retract
-      E.range.subtypeL E.rangeRestrict hri
-  have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
-  have hv := isPrCompact_of_finite (R := R) (M := E.range) (L := E.range) hM hM v
-  let f : Module.End R E.range := v.toLinearMap
-  refine ⟨inferInstance, inferInstance, f, ?_, ?_⟩
-  · -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
-    have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
-      refine ⟨h, ?_⟩
-      have hrestrict : (1 : Module.End R E.range) - a • f =
-          ((1 - a • u : C₀(I, R) →L[R] C₀(I, R)) : Module.End R C₀(I, R)).restrict
-            hE.mapsTo_range_one_sub_smul := by
-        ext x
-        rfl
-      rw [hrestrict]
-      refine (Module.End.pow_restrict h
-        (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
-      ext x : 1
-      apply Subtype.ext
-      have hx := congr($(hE.pow_mul_eq_zero) (x : C₀(I, R)))
-      simpa only [LinearMap.coe_restrict_apply, ← toLinearMap_pow, coe_coe,
-        mul_apply_eq_comp, hfix, zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] using hx
-    have hscale : f - μ • (1 : Module.End R E.range) =
-        (-μ) • ((1 : Module.End R E.range) - a • f) := by
-      rw [smul_sub, smul_smul, neg_mul, hμa]
-      module
-    rw [hscale]
-    exact hC.smul _
-  · have hext : E.range.subtypeL.comp (v.comp E.rangeRestrict) = u * E := by
+  let f : Module.End R E.range := (u.restrict hE.mapsTo_range).toLinearMap
+  refine ⟨inferInstance, inferInstance, f, ?_,
+    (hE.isRowCompact hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
+      hE.isIdempotentElem hE.mapsTo_range⟩
+  -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
+  have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
+    refine ⟨h, ?_⟩
+    have hrestrict : (1 : Module.End R E.range) - a • f =
+        ((1 - a • u : C₀(I, R) →L[R] C₀(I, R)) : Module.End R C₀(I, R)).restrict
+          hE.mapsTo_range_one_sub_smul := by
       ext x
       rfl
-    -- Presentation independence transports the finite characteristic-polynomial formula.
-    have hchar := charPowerSeries_eq_projectiveCharpolyRev (R := R) (M := E.range) hM v
-    rw [← hext, ← hv.charPowerSeries_eq hri, hchar]
+    rw [hrestrict]
+    refine (Module.End.pow_restrict h
+      (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
+    ext x : 1
+    apply Subtype.ext
+    have hx := congr($(hE.pow_mul_eq_zero) (x : C₀(I, R)))
+    simpa only [LinearMap.coe_restrict_apply, ← toLinearMap_pow, coe_coe,
+      mul_apply_eq_comp, hfix, zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] using hx
+  have hscale : f - μ • (1 : Module.End R E.range) =
+      (-μ) • ((1 : Module.End R E.range) - a • f) := by
+    rw [smul_sub, smul_smul, neg_mul, hμa]
+    module
+  rw [hscale]
+  exact hC.smul _
 
 /-- **Constant rank of the Riesz summand.** At a good zero of order `h` the range of a Riesz
 projection, a finitely generated projective module, has rank `h` at every point of `Spec R`.

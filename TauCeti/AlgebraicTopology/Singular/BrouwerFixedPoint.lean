@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Sphere
-public import TauCeti.Analysis.Convex.Intrinsic
-public import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
+import TauCeti.Analysis.Convex.Intrinsic
+import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
 import TauCeti.Topology.Homeomorph.FixedPoint
 
 /-!
@@ -28,7 +28,7 @@ followed by `r_*` through `H~ₘ(Dᵐ⁺¹; ℤ)`, which vanishes as the disk is
 (`TauCeti.isZero_reducedSingularHomologyFunctor_of_contractibleSpace`).
 
 A self-map `f` of the disk without fixed points gives a retraction of the boundary inclusion,
-sending `x` to the point where the ray from `f x` through `x` meets the boundary sphere
+sending `x` to the point where the ray from `f x` through `x` leaves the disk
 (`ContinuousMap.closedBallRayRetraction`), so no such `f` exists.
 
 A nonempty compact convex set `C` has a point `c` of its intrinsic interior, and is then
@@ -44,11 +44,11 @@ and the fixed-point property is invariant under homeomorphisms
   inclusion `∂Dⁿ ⟶ Dⁿ` has no retraction.
 * `TauCeti.brouwerFixedPoint_topCatDisk`: **Brouwer's fixed-point theorem** for `Dⁿ`.
 * `TauCeti.brouwerFixedPoint_compactConvex`: Brouwer's fixed-point theorem for a nonempty compact
-  convex subset of a finite-dimensional real normed space, and
-  `TauCeti.brouwerFixedPoint_compactConvex_continuousOn` for a function of the ambient space that
-  is continuous on the set and maps it into itself.
+  convex subset of a finite-dimensional real normed space.
 * `TauCeti.brouwerFixedPoint_compactConvex_finiteSpan`: the same for a compact convex set lying in
-  a finite-dimensional subspace of an arbitrary real normed space.
+  a finite-dimensional subspace of an arbitrary real normed space, and
+  `TauCeti.brouwerFixedPoint_compactConvex_continuousOn` for a function of the ambient space that
+  is continuous on a compact convex set with finite-dimensional span and maps it into itself.
 * `TauCeti.brouwerFixedPoint_closedBall`: closed balls of nonnegative radius.
 
 ## References
@@ -79,9 +79,7 @@ theorem noRetraction_diskBoundary (n : ℕ) :
     have hD : IsZero (F.obj (TopCat.disk.{w} (m + 1))) :=
       isZero_reducedSingularHomologyFunctor_of_contractibleSpace R _ m
     -- The identity of `H~ₘ(Sᵐ)` factors through `H~ₘ(Dᵐ⁺¹) = 0`.
-    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) := by
-      rw [IsZero.iff_id_eq_zero, ← F.map_id, ← ρ.retract, F.map_comp,
-        hD.eq_of_src (F.map ρ.r) 0, comp_zero]
+    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) := .of_epi (ρ.map F).r hD
     have : Subsingleton (ULift.{w} ℤ) := ModuleCat.isZero_iff_subsingleton.mp
       (hS.of_iso (reducedSingularHomologyTopCatSphereIso R m).symm)
     exact zero_ne_one (Subsingleton.elim (0 : ULift.{w} ℤ) 1)
@@ -97,7 +95,7 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
     Homeomorph.ulift
   let g : C(closedBall (0 : EuclideanSpace ℝ (Fin n)) 1,
       closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
-    ContinuousMap.comp ⟨e, e.continuous⟩ (f.hom.comp ⟨e.symm, e.symm.continuous⟩)
+    (e : C(_, _)).comp (f.hom.comp e.symm)
   have hg (x) : g x ≠ x := fun h ↦ hf (e.symm x) (e.injective (by simpa [g] using h))
   let r : C(TopCat.disk.{w} n, TopCat.diskBoundary.{w} n) :=
     (eS.symm : C(sphere (0 : EuclideanSpace ℝ (Fin n)) 1, TopCat.diskBoundary.{w} n)).comp
@@ -111,8 +109,10 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
   change eS.symm (g.closedBallRayRetraction hg (e (TopCat.diskBoundaryInclusion n s))) = s
   rw [eS.symm_apply_eq]
   -- The boundary inclusion keeps the underlying point of the sphere.
-  have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s := (rfl)
-  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸ (eS s).2)).trans hs)
+  have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s :=
+    TopCat.coe_diskBoundaryInclusion_apply_down n s
+  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸
+      (eS s).property)).trans hs)
 
 section CompactConvex
 
@@ -126,23 +126,14 @@ theorem brouwerFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ C
     (hne : C.Nonempty) (f : C(C, C)) : ∃ x, IsFixedPt f x := by
   obtain ⟨c, hc⟩ := hne.intrinsicInterior hconv
   let V := (affineSpan ℝ C).direction
-  -- `C` is a closed ball of `V` around `c`, and that ball is the disk of dimension `finrank ℝ V`.
+  -- `C` is homeomorphic to the closed unit ball of `V`, which is the disk of dimension
+  -- `finrank ℝ V`.
   let e : TopCat.disk.{0} (Module.finrank ℝ V) ≃ₜ C :=
     (Homeomorph.ulift.trans (closedBallHomeomorphOfFinrankEq (F := V) (by simp))).trans
       (convexClosedBallHomeomorph hconv hC.isClosed hC.isBounded hc)
   -- The morphism `TopCat.ofHom g` of `TopCat` has underlying map `g` by definition.
   exact e.forall_exists_isFixedPt_iff.1
     (fun g ↦ brouwerFixedPoint_topCatDisk _ (TopCat.ofHom g)) f
-
-/-- **Brouwer's fixed-point theorem for compact convex sets**, for a function on the ambient
-space: a function continuous on a nonempty compact convex subset `C` of a finite-dimensional real
-normed space and mapping `C` into itself has a fixed point in `C`. -/
-theorem brouwerFixedPoint_compactConvex_continuousOn (hC : IsCompact C) (hconv : Convex ℝ C)
-    (hne : C.Nonempty) {f : E → E} (hf : ContinuousOn f C) (hfC : MapsTo f C C) :
-    ∃ x ∈ C, IsFixedPt f x := by
-  obtain ⟨x, hx⟩ := brouwerFixedPoint_compactConvex hC hconv hne
-    ⟨hfC.restrict f C C, hf.mapsToRestrict hfC⟩
-  exact ⟨x, x.2, congrArg Subtype.val hx⟩
 
 /-- **Brouwer's fixed-point theorem for closed balls**: every continuous self-map of a closed
 ball of nonnegative radius in a finite-dimensional real normed space has a fixed point. -/
@@ -164,9 +155,19 @@ theorem brouwerFixedPoint_compactConvex_finiteSpan {E : Type*} [NormedAddCommGro
   have hCV' : C ⊆ range V.subtype := by simpa using hCV
   let e : (V.subtype ⁻¹' C : Set V) ≃ₜ C :=
     Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hCV'
-  obtain ⟨x, hx⟩ := hne
   exact e.forall_exists_isFixedPt_iff.1 (brouwerFixedPoint_compactConvex
     ((Topology.IsInducing.subtypeVal.isCompact_preimage_iff hCV').2 hC)
-    (hconv.linear_preimage V.subtype) ⟨⟨x, hCV hx⟩, hx⟩) f
+    (hconv.linear_preimage V.subtype) (hne.preimage' hCV')) f
+
+/-- **Brouwer's fixed-point theorem for compact convex sets**, for a function on the ambient
+space: a function continuous on a nonempty compact convex subset `C` of a real normed space, whose
+span is finite-dimensional, and mapping `C` into itself has a fixed point in `C`. -/
+theorem brouwerFixedPoint_compactConvex_continuousOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {C : Set E} [FiniteDimensional ℝ (Submodule.span ℝ C)] (hC : IsCompact C)
+    (hconv : Convex ℝ C) (hne : C.Nonempty) {f : E → E} (hf : ContinuousOn f C)
+    (hfC : MapsTo f C C) : ∃ x ∈ C, IsFixedPt f x := by
+  obtain ⟨x, hx⟩ := brouwerFixedPoint_compactConvex_finiteSpan (Submodule.span ℝ C)
+    Submodule.subset_span hC hconv hne ⟨hfC.restrict f C C, hf.mapsToRestrict hfC⟩
+  exact ⟨x, x.property, congrArg Subtype.val hx⟩
 
 end TauCeti

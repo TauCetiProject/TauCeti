@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Class
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
-import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -88,7 +87,7 @@ private theorem valuation_mul_inv_le_one (v : HeightOneSpectrum O) (C D : Variab
     v.valuation K (C * D⁻¹).r ≤ 1 ∧ v.valuation K (C * D⁻¹).s ≤ 1 ∧
       v.valuation K (C * D⁻¹).t ≤ 1 := by
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
     rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
   have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
@@ -114,7 +113,7 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     IsMinimal (Localization.AtPrime v.asIdeal) (C • W) := by
   have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
     rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
   obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
@@ -214,34 +213,26 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
       WithZero.exp (-obstructionExponentAt O v W) ^ m := by
   let S := (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W).toFinset
   have hloc (v : S) : ∃ b : O,
-      v.1.valuation K (algebraMap O K b - x v) ≤
-        WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)) := by
-    obtain ⟨b, hb⟩ := v.1.exists_valuation_sub_lt_of_integer (hx v)
-      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)))
+      v.val.valuation K (algebraMap O K b - x v) ≤
+        WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)) := by
+    obtain ⟨b, hb⟩ := v.val.exists_valuation_sub_lt_of_integer (hx v)
+      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)))
         WithZero.exp_ne_zero)
     exact ⟨b, hb.le⟩
   choose b hb using hloc
-  obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow
-    (fun v : S ↦ v.1) Subtype.val_injective
-    (fun v ↦ m * (obstructionExponentAt O v.1 W).toNat)
-    (fun v ↦ Ideal.Quotient.mk _
-      (algebraMap O (Localization.AtPrime v.1.asIdeal) (b v)))
+  obtain ⟨a, ha⟩ := IsDedekindDomain.exists_forall_sub_mem_ideal (s := S)
+    HeightOneSpectrum.asIdeal (fun v ↦ m * (obstructionExponentAt O v W).toNat)
+    (fun v _ ↦ v.prime) (fun _ _ _ _ h ↦ mt HeightOneSpectrum.ext h) b
   refine ⟨a, fun v ↦ ?_⟩
   have : IsIntegral (Localization.AtPrime v.asIdeal) W := IsIntegral.of_isScalarTower (R := O) W
   rw [← Int.toNat_of_nonneg (obstructionExponentAt_nonneg_of_isIntegral O v W),
     ← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, ← Nat.cast_mul]
   by_cases hv : v ∈ S
-  · have hab : a - b ⟨v, hv⟩ ∈ v.asIdeal ^
-        (m * (obstructionExponentAt O v W).toNat) := by
-      rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem]
-      apply (IsLocalization.AtPrime.equivQuotMaximalIdealPow v.asIdeal
-        (Localization.AtPrime v.asIdeal) _).injective
-      simpa only [IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk] using ha ⟨v, hv⟩
-    have hab' : v.valuation K (algebraMap O K (a - b ⟨v, hv⟩)) ≤
+  · have hab' : v.valuation K (algebraMap O K (a - b ⟨v, hv⟩)) ≤
         WithZero.exp (-(m * (obstructionExponentAt O v W).toNat : ℤ)) := by
       rw [← Nat.cast_mul, HeightOneSpectrum.valuation_of_algebraMap,
         HeightOneSpectrum.intValuation_le_pow_iff_mem]
-      exact hab
+      exact ha v hv
     rw [map_sub] at hab'
     have hsplit : algebraMap O K a - x v =
         (algebraMap O K a - algebraMap O K (b ⟨v, hv⟩)) +
@@ -331,7 +322,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
     have h := congrArg (FractionalIdeal.count K v) hu
-    rwa [FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+    rwa [FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       FractionalIdeal.count_mul K v (FractionalIdeal.spanSingleton_ne_zero_iff.2 hu₀)
         (FractionalIdeal.coeIdeal_ne_zero.2 v₀.ne_bot), FractionalIdeal.count_maximal,

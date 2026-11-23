@@ -60,7 +60,7 @@ theorem support_chiMeasure (k s : ℝ) :
     · simp [hk.ne, not_lt.mpr hk.le, chiMeasure_of_neg hk]
     · simp [chiMeasure_zero hs, Measure.support_dirac]
     · simp only [hk.ne', hk, ite_false, ite_true]
-      rw [chiMeasure_eq_withDensity hk hs,
+      rw [chiMeasure_eq_withDensity hk,
         Measure.support_withDensity_eq_closure (measurable_chiPDF k s) isOpen_Ioi
           (support_chiPDF hk hs), closure_Ioi]
   · simp [hs, chiMeasure_of_scale_nonpos (le_of_not_gt hs)]

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Union
 public import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
 /-!
 # Local homology of a compact subset of a manifold
@@ -28,11 +29,16 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
 ## Main results
 
+* `TauCeti.isZero_localHomology_of_isCompact_of_forall_mem_nhds`: in a Hausdorff space, with
+  coefficients in any abelian category with coproducts, vanishing of local homology along compact
+  sets above a degree is a local property.
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
 * `TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`: a class of `Hₙ(M, M ∖ A)` whose
   restriction to every point of `A` vanishes is zero.
 * `TauCeti.localHomology_ext_of_isCompact`: two classes of `Hₙ(M, M ∖ A)` with the same
   restrictions to the points of `A` are equal.
+* `TauCeti.localHomology_ext_of_isOpenEmbedding`: the same along a closed set with compact
+  preimage in the image of an open embedding of `M`.
 * `TauCeti.exists_localHomologyRestriction_eq_of_isCompact` and
   `TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`: a family of local classes at
   the points of `A` that is locally the family of restrictions of a single class is the family of
@@ -54,6 +60,34 @@ open CategoryTheory Limits Metric Module Set Topology
 universe w v u
 
 namespace TauCeti
+
+section Abelian
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {M : Type w}
+  [TopologicalSpace M] [T2Space M]
+
+/-- **Vanishing of local homology along compact sets is local.** In a Hausdorff space, suppose
+every point has a neighbourhood `U` such that local homology along every compact subset of `U`
+vanishes above degree `n`. Then local homology along every compact set vanishes above degree
+`n`: a compact set is a finite union of compact pieces, each in such a neighbourhood, and the
+intersection of two pieces again lies in one (`TauCeti.isZero_localHomology_biUnion`). -/
+theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds {n : ℕ}
+    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology R B k))
+    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology R A k) := by
+  choose U hU hUz using h
+  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover (fun x ↦ interior (U x))
+    fun x _ ↦ interior_mem_nhds.2 (hU x)
+  obtain ⟨K, hKc, hKU, rfl⟩ :=
+    hA.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hAt
+  refine isZero_localHomology_biUnion (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
+    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
+    (fun x _ ↦ ⟨hKc x, x, (hKU x).trans interior_subset⟩) hk
+  · obtain ⟨x, hx⟩ := hB.2
+    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
+  · obtain ⟨x, hx⟩ := hB.2
+    exact hUz x B hx hB.1
+
+end Abelian
 
 section Module
 
@@ -134,48 +168,59 @@ private lemma Detects.union {S T : Set M} (hS' : Detects N n S) (hT' : Detects N
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [T2Space M] {n}
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- A class along a compact subset `A` of the source of a chart is restricted from a finite union
+of closed balls of the chart centred at points of `A`. -/
+private lemma exists_finset_closedBall_restriction_eq (φ : OpenPartialHomeomorph M E)
+    {A : Set M} (hA : IsCompact A) (hAφ : A ⊆ φ.source) (k : ℕ)
+    (α : (localHomology N A k : ModuleCat.{w} Λ)) :
+    ∃ (t : Finset M) (r : M → ℝ), (∀ a ∈ t, a ∈ A ∧ 0 < r a ∧
+      closedBall (φ a) (r a) ⊆ φ.target) ∧
+      ∃ (hAK : A ⊆ φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a))
+        (β : (localHomology N (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) k :
+          ModuleCat.{w} Λ)), localHomologyRestriction N hAK k β = α := by
+  obtain ⟨U, hU, β, rfl⟩ := exists_mem_nhdsSet_localHomologyRestriction_eq N k α
+  obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
+  have hKU : φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a) ⊆ U := by
+    rw [image_iUnion₂]
+    exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
+  exact ⟨t, r, fun a ha ↦ ⟨(ht a ha).1, (ht a ha).2.1, (ht a ha).2.2.1⟩, hAt,
+    localHomologyRestriction N hKU k β, localHomologyRestriction_comp_apply N _ _ k β⟩
+
+/-- The conclusion holds for the image under the inverse of a chart of a finite union of closed
+balls lying in the target of the chart. -/
+private lemma detects_symm_image_biUnion_closedBall (hn : finrank ℝ E = n)
+    (φ : OpenPartialHomeomorph M E) (t : Finset M) (r : M → ℝ)
+    (ht : ∀ a ∈ t, closedBall (φ a) (r a) ⊆ φ.target) :
+    Detects N n (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) := by
+  rw [← iUnion_subtype (· ∈ t) fun a ↦ closedBall (φ a) (r a)]
+  have hconv (a : t) := convex_closedBall (φ a) (r a)
+  have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
+  have hφ (a : t) := ht a a.property
+  refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
+    fun α hα ↦ ?_⟩
+  have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ
+    (g₁ := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
+      (localHomology N (φ.symm '' ⋃ a : t, closedBall (φ a) (r a)) n : ModuleCat.{w} Λ) α))
+    (g₂ := 0) fun x hx ↦ ?_
+  · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
+  ext1
+  rw [zero_comp]
+  exact (LinearMap.comp_toSpanSingleton _ _).trans
+    ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 (hα x hx))
+
 /-- **The compactness step.** The conclusion holds for a compact subset of the source of a chart.
 A class along `A` is restricted from a finite union `K` of closed balls of the chart centred at
 points of `A`, and restriction from each ball to its centre is an isomorphism. -/
 private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartialHomeomorph M E)
     {A : Set M} (hA : IsCompact A) (hAφ : A ⊆ φ.source) : Detects N n A := by
-  have key (k : ℕ) (α : (localHomology N A k : ModuleCat.{w} Λ)) :
-      ∃ (t : Finset M) (r : M → ℝ), (∀ a ∈ t, a ∈ A ∧ 0 < r a ∧
-        closedBall (φ a) (r a) ⊆ φ.target) ∧
-        ∃ (hAK : A ⊆ φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a))
-          (β : (localHomology N (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) k :
-            ModuleCat.{w} Λ)), localHomologyRestriction N hAK k β = α := by
-    obtain ⟨U, hU, β, rfl⟩ := exists_mem_nhdsSet_localHomologyRestriction_eq N k α
-    obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
-    have hKU : φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a) ⊆ U := by
-      rw [image_iUnion₂]
-      exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
-    exact ⟨t, r, fun a ha ↦ ⟨(ht a ha).1, (ht a ha).2.1, (ht a ha).2.2.1⟩, hAt,
-      localHomologyRestriction N hKU k β, localHomologyRestriction_comp_apply N _ _ k β⟩
-  have hK (t : Finset M) (r : M → ℝ) (ht : ∀ a ∈ t, closedBall (φ a) (r a) ⊆ φ.target) :
-      Detects N n (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) := by
-    rw [← iUnion_subtype (· ∈ t) fun a ↦ closedBall (φ a) (r a)]
-    have hconv (a : t) := convex_closedBall (φ a) (r a)
-    have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
-    have hφ (a : t) := ht a a.2
-    refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
-      fun α hα ↦ ?_⟩
-    have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ
-      (g₁ := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
-        (localHomology N (φ.symm '' ⋃ a : t, closedBall (φ a) (r a)) n : ModuleCat.{w} Λ) α))
-      (g₂ := 0) fun x hx ↦ ?_
-    · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
-    ext1
-    rw [zero_comp]
-    exact (LinearMap.comp_toSpanSingleton _ _).trans
-      ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 (hα x hx))
-  refine ⟨fun k hk ↦ ?_, fun α hα ↦ ?_⟩
-  · have h (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
-      obtain ⟨t, r, ht, hAK, β, rfl⟩ := key k α
-      rw [(ModuleCat.subsingleton_of_isZero ((hK t r fun a ha ↦ (ht a ha).2.2).isZero k
-        hk)).elim β 0, map_zero]
-    rw [ModuleCat.isZero_iff_subsingleton]
-    exact ⟨fun α β ↦ (h α).trans (h β).symm⟩
+  have hK := detects_symm_image_biUnion_closedBall N hn φ
+  have key := exists_finset_closedBall_restriction_eq N φ hA hAφ
+  refine ⟨fun k hk ↦ isZero_localHomology_of_forall_mem_nhdsSet N fun U hU ↦ ?_, fun α hα ↦ ?_⟩
+  · obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
+    refine ⟨_, hAt, ?_, (hK t r fun a ha ↦ (ht a ha).2.2.1).isZero k hk⟩
+    rw [image_iUnion₂]
+    exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
   · obtain ⟨t, r, ht, hAK, β, rfl⟩ := key n α
     refine (congrArg _ ((hK t r fun a ha ↦ (ht a ha).2.2).eq_zero β fun y hy ↦ ?_)).trans
       (map_zero _)
@@ -205,7 +250,7 @@ private lemma detects_biUnion [ChartedSpace E M] (hn : finrank ℝ E = n) (t : F
   classical
   induction t using Finset.induction_on with
   | empty => simpa using detects_empty N n
-  | insert b t hb ih =>
+  | insert b t _ ih =>
     have hDt : IsCompact (⋃ a ∈ t, D a) :=
       t.finite_toSet.isCompact_biUnion fun a ha ↦ hD a (Finset.mem_insert_of_mem ha)
     have hb' := t.mem_insert_self b
@@ -241,7 +286,8 @@ a Hausdorff space modelled on a real normed space of dimension `n`, `Hₖ(M, M �
 `k > n`. This is Hatcher's Lemma 3.27(b). -/
 theorem isZero_localHomology_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact A) {k : ℕ}
     (hk : n < k) : IsZero (localHomology N A k) :=
-  (detects_of_isCompact N hn hA).isZero k hk
+  isZero_localHomology_of_isCompact_of_forall_mem_nhds N (fun x ↦ ⟨_, chart_source_mem_nhds E x,
+    fun _ hB hBc k hk ↦ (detects_of_subset_source N hn _ hBc hB).isZero k hk⟩) hA hk
 
 /-- **A local homology class of a compact set is detected at its points.** For a compact subset
 `A` of a Hausdorff space modelled on a real normed space of dimension `n`, a class of
@@ -263,6 +309,31 @@ theorem localHomology_ext_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact 
     α = β :=
   sub_eq_zero.1 (eq_zero_of_forall_localHomologyRestriction_eq_zero N hn hA _ fun x hx ↦ by
     rw [map_sub, h x hx, sub_self])
+
+/-- **Uniqueness of local homology classes along a compact set in an open embedded manifold.** Let
+`ι : M → X` be an open embedding into a `T₁` space and `T ⊆ ι(M)` a closed set with compact
+preimage. Two classes of `Hₙ(X, X ∖ T)` with the same restrictions to `Hₙ(X, X ∖ {ι x})` for every
+point `ι x` of `T` are equal: excision along `ι` reduces this to
+`TauCeti.localHomology_ext_of_isCompact` in `M`. -/
+theorem localHomology_ext_of_isOpenEmbedding {X : Type w} [TopologicalSpace X] [T1Space X]
+    {ι : M → X} (hn : finrank ℝ E = n) (hι : IsOpenEmbedding ι) {T : Set X} (hT : IsClosed T)
+    (hTι : T ⊆ range ι) (hK : IsCompact (ι ⁻¹' T)) {α β : (localHomology N T n : ModuleCat.{w} Λ)}
+    (h : ∀ x (hx : ι x ∈ T), localHomologyRestriction N (singleton_subset_iff.2 hx) n α =
+      localHomologyRestriction N (singleton_subset_iff.2 hx) n β) :
+    α = β := by
+  have := isIso_localHomologyMap N ⟨ι, hι.continuous⟩ hι rfl hT hTι n
+  set a := localHomologyMap N ⟨ι, hι.continuous⟩ (subset_refl (ι ⁻¹' T)) n
+  -- The local images of the preimage of a class under the excision isomorphism `a`.
+  have hloc (δ : (localHomology N T n : ModuleCat.{w} Λ)) (x : M) (hx : x ∈ ι ⁻¹' T) :
+      (localHomologyIsoOfIsOpenEmbedding N hι x n).hom
+          (localHomologyRestriction N (singleton_subset_iff.2 hx) n (inv a δ)) =
+        localHomologyRestriction N (singleton_subset_iff.2 (mem_preimage.1 hx)) n δ := by
+    rw [← localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι (subset_refl _) hx,
+      ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id, ModuleCat.id_apply]
+  have key : inv a α = inv a β := localHomology_ext_of_isCompact N hn hK fun x hx ↦
+    ConcreteCategory.injective_of_mono_of_preservesPullback
+      (localHomologyIsoOfIsOpenEmbedding N hι x n).hom (by rw [hloc _ _ hx, hloc _ _ hx, h x hx])
+  simpa using congrArg a key
 
 /-- A class of `Hₙ(M, M ∖ S)` restricting to `α x` at every point `x` of `S`. -/
 private def Glues (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ)) (S : Set M) : Prop :=
@@ -299,7 +370,7 @@ theorem exists_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ E = n)
       ∀ x (hx : x ∈ A), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x := by
   have := ChartedSpace.locallyCompactSpace E M
   -- Induct over `A`: the part of `A` in `t` lies in a compact `K ⊆ A` along which the family glues.
-  obtain ⟨K, hKc, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
+  obtain ⟨K, _, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
     refine hA.induction_on (p := fun t ↦ ∃ K, IsCompact K ∧ t ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K)
       ⟨∅, isCompact_empty, by simp, empty_subset _, 0, fun x hx ↦ hx.elim⟩
       (fun s t hst ⟨K, hKc, htK, hKA, hK⟩ ↦

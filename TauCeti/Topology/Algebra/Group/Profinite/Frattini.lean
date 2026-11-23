@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Frattini
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
-public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.Algebra.Group.Generation
 
@@ -54,7 +54,8 @@ this needs no finiteness of the family, and the lift is arbitrary.
   surjection with kernel in the Frattini subgroup, a set topologically generates the source exactly
   when its image topologically generates the target.
 * `TauCeti.topologicalClosure_closure_range_eq_top_of_ker_le_profiniteFrattini`: every lift of a
-  topologically generating family along such a map is topologically generating.
+  topologically generating family along a continuous homomorphism to a Hausdorff group with kernel
+  in the Frattini subgroup is topologically generating; surjectivity is automatic.
 * `TauCeti.topologicalClosure_closure_eq_top_iff_quotient_profiniteFrattini`: a set topologically
   generates a profinite group exactly when its image topologically generates the quotient by the
   Frattini subgroup.
@@ -174,6 +175,7 @@ theorem eq_top_of_sup_profiniteFrattini_eq_top {H : Subgroup G} (hH : IsClosed (
     exact hHtop (by
       rw [H.eq_iInf_sup_openNormalSubgroup hH]
       exact top_unique (le_iInf fun U ↦ (hall U).ge))
+  have : (H ⊔ U.toSubgroup).FiniteIndex := Subgroup.finiteIndex_of_le le_sup_right
   obtain ⟨M, hMo, hM, hHM⟩ :=
     Subgroup.exists_isOpen_isCoatom_le_of_isOpen (Subgroup.isOpen_mono le_sup_right U.isOpen) hU
   exact hM.1 (top_unique (hsup ▸ sup_le (le_sup_left.trans hHM) (profiniteFrattini_le hMo hM)))
@@ -206,15 +208,21 @@ theorem topologicalClosure_closure_eq_top_iff_of_ker_le_profiniteFrattini {f : G
   exact eq_top_of_sup_profiniteFrattini_eq_top hLc (top_unique (hLker ▸ sup_le_sup_left hker _))
 
 /-- **Every lift of a generating family along a Frattini cover generates.** Let `f : G →* K` be a
-continuous surjection from a profinite group onto a Hausdorff group with kernel in the Frattini
+continuous homomorphism from a profinite group to a Hausdorff group with kernel in the Frattini
 subgroup of `G`. A family `g` of elements of `G` whose image under `f` topologically generates `K`
-topologically generates `G`. No finiteness of the index type is needed. -/
+topologically generates `G`. No finiteness of the index type is needed, and `f` is automatically
+surjective: its range is compact, hence closed in `K`, and contains the generating family. -/
 theorem topologicalClosure_closure_range_eq_top_of_ker_le_profiniteFrattini {f : G →* K}
-    (hf : Continuous f) (hsurj : Function.Surjective f) (hker : f.ker ≤ profiniteFrattini G)
+    (hf : Continuous f) (hker : f.ker ≤ profiniteFrattini G)
     {ι : Type*} {g : ι → G} (hg : (Subgroup.closure (Set.range (f ∘ g))).topologicalClosure = ⊤) :
     (Subgroup.closure (Set.range g)).topologicalClosure = ⊤ := by
-  rw [topologicalClosure_closure_eq_top_iff_of_ker_le_profiniteFrattini hf hsurj hker,
-    ← Set.range_comp]
+  have hrange : f.range = ⊤ := by
+    rw [eq_top_iff, ← hg]
+    exact Subgroup.topologicalClosure_minimal _
+      ((Subgroup.closure_le _).mpr (Set.range_comp_subset_range g f))
+      (f.coe_range ▸ (isCompact_range hf).isClosed)
+  rw [topologicalClosure_closure_eq_top_iff_of_ker_le_profiniteFrattini hf
+    (MonoidHom.range_eq_top.mp hrange) hker, ← Set.range_comp]
   exact hg
 
 /-- **Generation modulo the Frattini subgroup.** A set topologically generates a profinite

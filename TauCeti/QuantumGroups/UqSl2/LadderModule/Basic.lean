@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
+public import TauCeti.QuantumGroups.QuantumInteger.Factorial
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 public import TauCeti.QuantumGroups.UqSl2.Weights
@@ -57,6 +58,8 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 * `TauCeti.UqSl2.LadderModule.isSimpleModule`: `L_m^ε` is simple at a generic parameter.
 * `TauCeti.UqSl2.LadderModule.hom_ext`: at a generic parameter, module maps out of `L_m^ε` are
   determined by their value at `v₀`.
+* `TauCeti.UqSl2.LadderModule.apply_eq_basis_repr_zero_smul`: at a generic parameter, an
+  invariant functional on `L_m^ε` is determined by its value at `v₀`.
 * `TauCeti.UqSl2.LadderModule.lift_vec_zero`: `lift` sends `v₀` to the given vector.
 * `TauCeti.UqSl2.LadderModule.lift_injective`: the map induced by a nonzero vector is injective.
 * `TauCeti.UqSl2.LadderModule.algebraMap_end_bijective`: Schur's lemma for `L_m^ε`.
@@ -429,7 +432,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 variable (q) in
 /-- The normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)` through a vector `v`. -/
 private def string (v : V) (j : ℕ) : V :=
-  (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v
+  (quantumFactorial q j)⁻¹ • f q ^ j • v
 
 section String
 
@@ -445,7 +448,7 @@ include hq in
 private theorem f_smul_string (j : ℕ) :
     f q • string q v j = quantumInteger q (j + 1) • string q v (j + 1) := by
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
-  rw [string, string, smul_smul, Finset.prod_range_succ, mul_inv, mul_left_comm,
+  rw [string, string, smul_smul, quantumFactorial_succ, mul_inv, mul_left_comm,
     mul_inv_cancel₀ hj, mul_one, smul_comm, pow_succ', mul_smul]
 
 omit [Fact (q ≠ 0)] in
@@ -472,20 +475,18 @@ private theorem e_smul_string (j : ℕ) :
   have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
   have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
-  have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
+  have h := congrArg (· • v) (e_mul_f_pow (q := q) (j + 1))
   simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
     Nat.add_sub_cancel, smul_sub, smul_comm (f q ^ j) (_ : ℂ)] at h
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
   rw [string, string, smul_comm, h]
   generalize f q ^ j • v = w
   match_scalars
-  have hP : ∏ i ∈ Finset.range j, quantumInteger q (i + 1) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun i _ => quantumInteger_ne_zero hq (by omega)
-  rw [Finset.prod_range_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
+  have hP := quantumFactorial_ne_zero hq j
+  rw [quantumFactorial_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
     zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
-  generalize ∏ i ∈ Finset.range j, quantumInteger q (i + 1) = P at hP ⊢
+  generalize quantumFactorial q j = P at hP ⊢
   generalize quantumInteger q (j + 1) = Q at hj ⊢
-  have hq1 := hq.sub_inv_ne_zero
   rw [inv_pow]
   rcases Int.units_eq_one_or ε with rfl | rfl
   · push_cast
@@ -561,7 +562,7 @@ variable (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V 
 /-- The map induced by `v` sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
 theorem lift_vec (j : ℕ) :
     lift hq hv he hf (vec q m ε j) =
-      (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v :=
+      (quantumFactorial q j)⁻¹ • f q ^ j • v :=
   constr_vec hf j
 
 /-- The map induced by `v` sends the highest vector `v₀` to `v`. -/
@@ -575,6 +576,25 @@ theorem lift_injective (hv0 : v ≠ 0) : Function.Injective (lift hq hv he hf) :
   have := isSimpleModule (m := m) (ε := ε) hq
   LinearMap.injective_of_ne_zero fun h0 => hv0 <| by
     rw [← lift_vec_zero hq hv he hf, h0, LinearMap.zero_apply]
+
+include hq in
+/-- An invariant functional on `L_m^ε`, that is a module map to the trivial module, is determined
+by its value on `v₀`: it kills every lower ladder vector, since `F` acts by `0` on the trivial
+module. -/
+theorem apply_eq_basis_repr_zero_smul
+    (g : LadderModule q m ε →ₗ[UqSl2 q] BialgebraModule.Trivial ℂ (UqSl2 q))
+    (x : LadderModule q m ε) : g x = (basis q m ε).repr x 0 • g (vec q m ε 0) := by
+  have hvec (l : ℕ) : g (vec q m ε ((l : ℤ) + 1)) = 0 := by
+    have h1 := congrArg (BialgebraModule.trivialEquiv ℂ (UqSl2 q)) (g.map_smul (f q) (vec q m ε l))
+    rw [f_smul_vec, LinearMapClass.map_smul_of_tower, map_smul,
+      BialgebraModule.trivialEquiv_smul, counit_f, zero_mul, smul_eq_mul] at h1
+    apply (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).injective
+    rw [map_zero]
+    exact (mul_eq_zero.mp h1).resolve_left (quantumInteger_ne_zero hq (by omega))
+  conv_lhs => rw [← (basis q m ε).sum_repr x]
+  rw [map_sum, Fin.sum_univ_succ, Finset.sum_eq_zero fun i _ => ?_, add_zero]
+  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_zero, Nat.cast_zero]
+  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_succ, Nat.cast_succ, hvec, smul_zero]
 
 /-! ### Schur's lemma and pairwise non-isomorphism -/
 
@@ -628,6 +648,22 @@ theorem nonempty_linearEquiv_iff (hq : IsGenericQuantumParameter q) {n : ℕ} {�
   rw [hconj, trace_rep_kInv hq.sub_inv_ne_zero, trace_rep_kInv hq.sub_inv_ne_zero] at htr
   have hδε : ((δ : ℤ) : ℂ) = ε := mul_right_cancel₀ (quantumInteger_ne_zero hq (by omega)) htr
   exact Units.ext (Int.cast_injective hδε).symm
+
+/-- At a generic parameter, signed ladder modules `L_m^ε` with distinct labels `(m, ε)` are not
+isomorphic. -/
+theorem eq_of_nonempty_linearEquiv (hq : IsGenericQuantumParameter q)
+    {p p' : ℕ × ℤˣ}
+    (h : Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] LadderModule q p'.1 p'.2)) : p = p' :=
+  Prod.ext_iff.mpr ((nonempty_linearEquiv_iff hq).mp h)
+
+/-- At a generic parameter, no module isomorphism exists between `L_m^ε` and `L_n^δ` when
+`m ≠ n` or `ε ≠ δ`. -/
+theorem isEmpty_linearEquiv_of_ne (hq : IsGenericQuantumParameter q) {n : ℕ} {δ : ℤˣ}
+    (h : m ≠ n ∨ ε ≠ δ) :
+    IsEmpty (LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ) := by
+  rw [← not_nonempty_iff, nonempty_linearEquiv_iff hq]
+  rintro ⟨rfl, rfl⟩
+  exact h.elim (· rfl) (· rfl)
 
 end LadderModule
 

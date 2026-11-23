@@ -48,7 +48,7 @@ lemma add_mem_completeLinearSystem {D D' E E' : WeilDivisor X}
     (hE : E ∈ S.completeLinearSystem D) (hE' : E' ∈ S.completeLinearSystem D') :
     E + E' ∈ S.completeLinearSystem (D + D') := by
   rw [mem_completeLinearSystem] at hE hE' ⊢
-  exact ⟨hE.1.add hE'.1, LinearlyEquivalent.add S hE.2 hE'.2⟩
+  exact ⟨add_nonneg hE.1 hE'.1, LinearlyEquivalent.add S hE.2 hE'.2⟩
 
 /-- Left addition by a fixed member of `|D|` sends `|D'|` into `|D + D'|`. -/
 lemma add_mem_completeLinearSystem_left {D D' E E' : WeilDivisor X}
@@ -72,19 +72,19 @@ lemma nonempty_completeLinearSystem_add {D D' : WeilDivisor X}
   exact ⟨E + E', S.add_mem_completeLinearSystem hE hE'⟩
 
 /-- Translating a member of `|D|` by an effective divisor `A` gives a member of `|D + A|`. -/
-lemma add_effective_mem_completeLinearSystem {D A E : WeilDivisor X} (hA : IsEffective A)
+lemma add_effective_mem_completeLinearSystem {D A E : WeilDivisor X} (hA : 0 ≤ A)
     (hE : E ∈ S.completeLinearSystem D) :
     E + A ∈ S.completeLinearSystem (D + A) :=
   S.add_mem_completeLinearSystem hE (S.self_mem_completeLinearSystem hA)
 
 /-- Translation by an effective divisor `A` sends `|D|` into `|D + A|`. -/
-lemma mapsTo_add_effective_completeLinearSystem {D A : WeilDivisor X} (hA : IsEffective A) :
+lemma mapsTo_add_effective_completeLinearSystem {D A : WeilDivisor X} (hA : 0 ≤ A) :
     Set.MapsTo (fun E => E + A) (S.completeLinearSystem D) (S.completeLinearSystem (D + A)) :=
   fun _ hE => S.add_effective_mem_completeLinearSystem hA hE
 
 /-- Adding an effective divisor to the indexing divisor preserves nonemptiness of complete
 linear systems. -/
-lemma nonempty_completeLinearSystem_add_effective {D A : WeilDivisor X} (hA : IsEffective A)
+lemma nonempty_completeLinearSystem_add_effective {D A : WeilDivisor X} (hA : 0 ≤ A)
     (hD : (S.completeLinearSystem D).Nonempty) : (S.completeLinearSystem (D + A)).Nonempty := by
   rcases hD with ⟨E, hE⟩
   exact ⟨E + A, S.add_effective_mem_completeLinearSystem hA hE⟩
@@ -97,11 +97,11 @@ lemma sum_mem_completeLinearSystem (s : Finset ι) {D E : ι → WeilDivisor X}
   classical
   rw [S.mem_completeLinearSystem_iff_divisorClass]
   refine ⟨?_, ?_⟩
-  · rw [isEffective_iff]
+  · rw [nonneg_iff]
     intro x
     rw [coeff, Finset.sum_apply']
     exact Finset.sum_nonneg fun i hi =>
-      (isEffective_iff (E i)).mp (S.isEffective_of_mem_completeLinearSystem (h i hi)) x
+      coeff_nonneg (S.nonneg_of_mem_completeLinearSystem (h i hi)) x
   · rw [map_sum, map_sum]
     exact Finset.sum_congr rfl fun i hi =>
       (S.mem_completeLinearSystem_iff_divisorClass.mp (h i hi)).2
@@ -124,7 +124,7 @@ lemma completeLinearSystem_sub_principalDivisor_eq (D : WeilDivisor X) (g : G) :
 
 /-- An effective principal translate of `D` is a member of the complete linear system `|D|`. -/
 lemma add_principalDivisor_mem_completeLinearSystem (D : WeilDivisor X) (g : G)
-    (hEff : IsEffective (D + S.principalDivisor g)) :
+    (hEff : 0 ≤ D + S.principalDivisor g) :
     D + S.principalDivisor g ∈ S.completeLinearSystem D := by
   rw [← S.completeLinearSystem_add_principalDivisor_eq D g]
   exact S.self_mem_completeLinearSystem hEff
@@ -132,7 +132,7 @@ lemma add_principalDivisor_mem_completeLinearSystem (D : WeilDivisor X) (g : G)
 /-- An effective negative principal translate of `D` is a member of the complete linear system
 `|D|`. -/
 lemma sub_principalDivisor_mem_completeLinearSystem (D : WeilDivisor X) (g : G)
-    (hEff : IsEffective (D - S.principalDivisor g)) :
+    (hEff : 0 ≤ D - S.principalDivisor g) :
     D - S.principalDivisor g ∈ S.completeLinearSystem D := by
   rw [← S.completeLinearSystem_sub_principalDivisor_eq D g]
   exact S.self_mem_completeLinearSystem hEff

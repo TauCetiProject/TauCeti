@@ -75,7 +75,7 @@ theorem qExpansion_coeff_prime_sq_of_factorization_eq_one (f : Newform N k) (hp 
     (DirichletCharacter.factorsThrough_div_iff_factorization_conductor_lt hp hpN _).mpr (by omega)
   -- the nebentypus is the pull-back of the lowered character `hfac.χ₀`
   have hcomp : f.χ = hfac.χ₀.toUnitHom.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)) := by
-    rw [← f.dirichletLift_equivToUnitHom, ← MulChar.toUnitHom_eq]
+    rw [← f.dirichletLift_toUnitHom]
     conv_lhs => rw [hfac.eq_changeLevel]
     rw [DirichletCharacter.changeLevel_toUnitHom]
   -- `p` is prime to `N / p`, so the lowered character and the primitive character agree at `p`
@@ -99,14 +99,8 @@ theorem norm_qExpansion_coeff_prime_of_factorization_conductor_eq (f : Newform N
     (hp : p.Prime) (hpN : p ∣ N)
     (hc : f.dirichletLift.conductor.factorization p = N.factorization p) :
     ‖(qExpansion 1 f.toCuspForm).coeff p‖ = Real.sqrt p ^ (k - 1) := by
-  refine f.norm_qExpansion_coeff_prime_of_not_exists_eq_comp hp hpN ?_
-  rintro ⟨χ₀, hχ₀⟩
-  -- a nebentypus pulled back from `N / p` is defined modulo `N / p`, so `c < v`
-  have hfac : f.dirichletLift.FactorsThrough (N / p) := by
-    refine (DirichletCharacter.factorsThrough_iff_ker_unitsMap
-      (Nat.div_dvd_of_dvd hpN)).mpr fun u hu ↦ ?_
-    rw [MonoidHom.mem_ker, MulChar.toUnitHom_eq, dirichletLift_equivToUnitHom, hχ₀,
-      MonoidHom.comp_apply, MonoidHom.mem_ker.mp hu, map_one]
+  refine f.norm_qExpansion_coeff_prime_of_not_factorsThrough hp hpN fun hfac ↦ ?_
+  -- a nebentypus defined modulo `N / p` has `c < v`
   exact ((DirichletCharacter.factorsThrough_div_iff_factorization_conductor_lt hp hpN _).mp
     hfac).ne hc
 

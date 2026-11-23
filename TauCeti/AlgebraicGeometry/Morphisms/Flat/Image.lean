@@ -39,49 +39,49 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
 /-- Let `R` be a Bezout domain with an injective map to a field `K`, let `g : X ⟶ Spec R`, and
 let `f : Y ⟶ X` be quasi-compact with `f ≫ g` factoring through `Spec K`. Then the
 scheme-theoretic image of `f` is flat over `R`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_imageι_comp {R K : Type u} [CommRing R]
+theorem flat_imageι_comp {R K : Type u} [CommRing R]
     [IsDomain R] [IsBezout R] [Field K] [Algebra R K] [FaithfulSMul R K]
     {X Y : Scheme.{u}} (f : Y ⟶ X) [QuasiCompact f] (g : X ⟶ Spec (.of R))
     (toK : Y ⟶ Spec (.of K))
     (h : f ≫ g = toK ≫ Spec.map (CommRingCat.ofHom (algebraMap R K))) :
     Flat (f.imageι ≫ g) := by
   -- The image is covered by the affine opens `imageι⁻¹ U` for `U` affine in `X`.
-  let U : X.affineOpens → f.image.affineOpens := fun U ↦ ⟨f.imageι ⁻¹ᵁ U, U.2.preimage _⟩
+  let U : X.affineOpens → f.image.affineOpens := fun U ↦ ⟨f.imageι ⁻¹ᵁ U, U.property.preimage _⟩
   have hU : ⨆ V, (U V : f.image.Opens) = ⊤ := by
     simp only [U]
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   refine HasRingHomProperty.of_iSup_eq_top U hU fun V ↦ ?_
   rw [← RingHom.Flat.comp_iff_of_bijective_right
     (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of R)).inv)]
-  set φ := ((f.imageι ≫ g).appLE ⊤ (U V).1 le_top).hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom
-  set ψ := (f.toImage.app (U V).1).hom
+  set φ := ((f.imageι ≫ g).appLE ⊤ (U V).val le_top).hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom
+  set ψ := (f.toImage.app (U V).val).hom
   have hψ : Function.Injective ψ := f.toImage_app_injective V
   -- Composed with the injection `ψ` into sections over `Y`, the map `φ` factors through `K`.
-  have key : ψ.comp φ = (toK.appLE ⊤ (f.toImage ⁻¹ᵁ (U V).1) le_top).hom.comp
+  have key : ψ.comp φ = (toK.appLE ⊤ (f.toImage ⁻¹ᵁ (U V).val) le_top).hom.comp
       ((Scheme.ΓSpecIso (.of K)).inv.hom.comp (algebraMap R K)) := by
     have hk : ∀ (k : Y ⟶ Spec (.of R)) (_ : k = toK ≫ Spec.map (CommRingCat.ofHom (algebraMap R K)))
-        (e : f.toImage ⁻¹ᵁ (U V).1 ≤ k ⁻¹ᵁ ⊤), k.appLE ⊤ _ e =
+        (e : f.toImage ⁻¹ᵁ (U V).val ≤ k ⁻¹ᵁ ⊤), k.appLE ⊤ _ e =
           (Spec.map (CommRingCat.ofHom (algebraMap R K))).appTop ≫ toK.appLE ⊤ _ le_top := by
       rintro _ rfl e
       rw [Scheme.Hom.comp_appLE]
       -- `app ⊤` is `appTop`, and the preimage of `⊤` is `⊤` by definition.
       rfl
-    have e1 : (f.imageι ≫ g).appLE ⊤ (U V).1 le_top ≫ f.toImage.app (U V).1 =
-        (f.toImage ≫ f.imageι ≫ g).appLE ⊤ (f.toImage ⁻¹ᵁ (U V).1) le_top := by
+    have e1 : (f.imageι ≫ g).appLE ⊤ (U V).val le_top ≫ f.toImage.app (U V).val =
+        (f.toImage ≫ f.imageι ≫ g).appLE ⊤ (f.toImage ⁻¹ᵁ (U V).val) le_top := by
       rw [Scheme.Hom.app_eq_appLE]
       exact Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _
     have e2 := Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R K))
     ext x
     have h1 := congrArg (fun k ↦ k.hom ((Scheme.ΓSpecIso (.of R)).inv.hom x))
       (e1.trans (hk _ (by rw [f.toImage_imageι_assoc, h]) le_top))
-    have h2 := congrArg (fun k ↦ (toK.appLE ⊤ (f.toImage ⁻¹ᵁ (U V).1) le_top).hom (k.hom x)) e2
+    have h2 := congrArg (fun k ↦ (toK.appLE ⊤ (f.toImage ⁻¹ᵁ (U V).val) le_top).hom (k.hom x)) e2
     simp only [CommRingCat.hom_comp, RingHom.comp_apply] at h1 h2 ⊢
     exact h1.trans h2.symm
   algebraize [φ]
@@ -97,4 +97,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_imageι_comp {R K : Type u} [Co
   rw [map_zero, ← hunit.mul_left_eq_zero, ← map_mul]
   exact (congrArg ψ ha).trans (map_zero ψ)
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

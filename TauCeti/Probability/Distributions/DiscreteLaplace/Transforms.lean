@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.DiscreteLaplace.Basic
 public import TauCeti.Probability.Distributions.Geometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.MulExpLtOne
 import TauCeti.Probability.Distributions.Sums
 import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
 
@@ -97,19 +98,26 @@ theorem integrableExpSet_intCast_discreteLaplaceMeasure (m : ℤ) {q : ℝ}
   ext t
   simp only [integrableExpSet, mem_ofPred_eq]
   rw [integrable_exp_mul_intCast_discreteLaplaceMeasure_iff m hq0.le hq1]
-  have h (s : ℝ) : q * exp s < 1 ↔ s < -log q := by
-    calc
-      q * exp s < 1 ↔ exp (log q + s) < exp 0 := by
-        rw [exp_add, exp_log hq0, exp_zero]
-      _ ↔ s < -log q := by rw [exp_lt_exp]; constructor <;> intro h <;> linarith
-  rw [h, h, abs_lt]
+  rw [mul_exp_lt_one_iff hq0, mul_exp_lt_one_iff hq0, abs_lt]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
+/-- The exact-domain condition `q * exp t < 1 ∧ q * exp (-t) < 1` forces `q < 1`, since the
+product of the two bounds is `q ^ 2 < 1`. -/
+private theorem lt_one_of_mul_exp_lt_one {q t : ℝ} (hq0 : 0 ≤ q)
+    (ht : q * exp t < 1 ∧ q * exp (-t) < 1) : q < 1 := by
+  have h : q ^ 2 < 1 := by
+    have := mul_nonneg hq0 (exp_pos (-t)).le
+    calc q ^ 2 = q * exp t * (q * exp (-t)) := by
+          rw [mul_mul_mul_comm, ← exp_add, add_neg_cancel, exp_zero]; ring
+      _ < 1 := by nlinarith [ht.1, ht.2]
+  nlinarith
+
 /-- The moment-generating function of the signed count, on its exact domain, including `q = 0`. -/
-theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
     (ht : q * exp t < 1 ∧ q * exp (-t) < 1) :
     mgf (Int.cast : ℤ → ℝ) (discreteLaplaceMeasure m q) t =
       exp (t * m) * (1 - q) ^ 2 / ((1 - q * exp t) * (1 - q * exp (-t))) := by
+  have hq1 := lt_one_of_mul_exp_lt_one hq0 ht
   let p : unitInterval := ⟨1 - q, by constructor <;> linarith⟩
   have hp : p ≠ 0 := ne_of_gt (unitInterval.coe_pos.mp (by dsimp [p]; linarith))
   have hq : 1 - (p : ℝ) = q := by simp [p]
@@ -122,11 +130,12 @@ theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
 
 /-- The cumulant-generating function on the exact domain, with the translation separated from
 the two geometric contributions. -/
-theorem cgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+theorem cgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
     (ht : q * exp t < 1 ∧ q * exp (-t) < 1) :
     cgf (Int.cast : ℤ → ℝ) (discreteLaplaceMeasure m q) t =
       t * m + 2 * log (1 - q) - log (1 - q * exp t) - log (1 - q * exp (-t)) := by
-  rw [cgf, mgf_intCast_discreteLaplaceMeasure m hq0 hq1 ht,
+  have hq1 := lt_one_of_mul_exp_lt_one hq0 ht
+  rw [cgf, mgf_intCast_discreteLaplaceMeasure m hq0 ht,
     log_div (mul_ne_zero (exp_ne_zero _) (pow_ne_zero _ (by linarith)))
       (mul_ne_zero (by linarith) (by linarith)),
     log_mul (exp_ne_zero _) (pow_ne_zero _ (by linarith)), log_exp,
@@ -179,8 +188,7 @@ theorem variance_intCast_discreteLaplaceMeasure (m : ℤ) {q : ℝ} (hq0 : 0 ≤
   have hq : 1 - (p : ℝ) = q := by simp [p]
   have hG : MemLp id 2 ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
     rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
-    exact memLp_id_map_cast_negativeBinomialMeasure zero_le_one
-      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 2
+    exact memLp_id_map_cast_negativeBinomialMeasure 2
   have hmap := map_intCast_discreteLaplaceMeasure m hp
   rw [hq] at hmap
   rw [← variance_id_map (by fun_prop), hmap, variance_map (by fun_prop) (by fun_prop)]

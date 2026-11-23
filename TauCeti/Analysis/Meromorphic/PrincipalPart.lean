@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Data.Multiset.Fintype
 public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 public import TauCeti.Analysis.Meromorphic.Germ
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # The principal part of a meromorphic germ
@@ -34,7 +36,7 @@ Uniqueness rests on the order computation `TauCeti.meromorphicOrderAt_eval_inv_s
 polynomial `P` in `(z - a)⁻¹` has order `-P.natDegree` at `a`, so when `P` has no constant term it
 has a pole at `a` and is not the germ of an analytic function. Hence the principal part depends
 only on the germ, not on the exponent `N`, the representative or the neighbourhood used to compute
-it, and it is additive.
+it, and it is linear over `𝕜`.
 
 Over `ℂ` the regular remainder is a germ of the holomorphic structure sheaf; that version of the
 splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
@@ -44,13 +46,26 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 
 * `Polynomial.meromorphicAt_eval_inv_sub`: a polynomial in `(z - a)⁻¹` is meromorphic at `a`.
 * `TauCeti.meromorphicOrderAt_eval_inv_sub`: the order at `a` of `z ↦ P((z - a)⁻¹)`.
+* `TauCeti.eq_zero_of_eval_inv_sub_eventuallyEq`: a polynomial without constant term in
+  `(z - a)⁻¹` that agrees near `a` with a function continuous at `a` is zero.
+* `TauCeti.eq_zero_of_sum_div_sub_pow_eq`: polar terms `c / (z - a) ^ (j + 1)` at the points of
+  a multiset whose sum agrees off those points with a function continuous there have zero
+  coefficients.
+* `TauCeti.multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul`: a polynomial that is
+  `∏_{a ∈ D} (X - a)` times a function continuous at the points of `D` is divisible by that
+  product.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
-* `TauCeti.meromorphicGerms.principalPart`: the principal part, an additive map to polynomials.
+* `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
 * `TauCeti.meromorphicGerms.principalPart_eq_iff`: its characterization: `principalPart φ = P`
   exactly when `P` has no constant term and `φ - P((z - a)⁻¹)` has an analytic representative.
-* `TauCeti.meromorphicGerms.principalPart_eq_zero_iff`: the principal part vanishes exactly on the
-  germs of analytic functions.
+* `TauCeti.meromorphicGerms.principalPart_eq_zero_iff`,
+  `TauCeti.meromorphicGerms.principalPart_eq_principalPart_iff`, and
+  `TauCeti.meromorphicGerms.principalPart_mk_eq_principalPart_mk_iff`: the principal part vanishes
+  exactly on the germs of analytic functions, so two meromorphic germs or functions have equal
+  principal parts exactly when their difference agrees on `𝓝[≠] a` with an analytic function.
+* `TauCeti.meromorphicGerms.natDegree_principalPart_mk_le`: a pole bound bounds the degree of the
+  principal part.
 * `TauCeti.meromorphicGerms.principalPart_eq_sum_coeff`: the principal part of
   `(z - a)⁻ᴺ h z` through the Taylor coefficients of `h`.
 
@@ -98,17 +113,94 @@ theorem meromorphicOrderAt_eval_inv_sub {P : 𝕜[X]} (hP : P ≠ 0) (a : 𝕜) 
     rw [← h, smul_eq_mul, zpow_neg, zpow_natCast, inv_pow, mul_comm]
 
 /-- A polynomial without constant term in the inverse coordinate `(z - a)⁻¹` agrees with a function
-analytic at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
-`a`. -/
+continuous at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
+`a`, so it tends to infinity there. -/
 theorem eq_zero_of_eval_inv_sub_eventuallyEq {P : 𝕜[X]} (hP : P.coeff 0 = 0) {g : 𝕜 → 𝕜}
-    (hg : AnalyticAt 𝕜 g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
+    (hg : ContinuousAt g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
   by_contra hP0
-  have hord := hg.meromorphicOrderAt_nonneg
-  rw [← meromorphicOrderAt_congr h, meromorphicOrderAt_eval_inv_sub hP0] at hord
-  have hd : P.natDegree = 0 := by
-    have : (0 : ℤ) ≤ -(P.natDegree : ℤ) := mod_cast hord
-    omega
-  exact hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hd : P.natDegree ≠ 0 := fun hd ↦ hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hord : meromorphicOrderAt (fun z ↦ P.eval (z - a)⁻¹) a < 0 := by
+    rw [meromorphicOrderAt_eval_inv_sub hP0]
+    exact_mod_cast (by omega : -(P.natDegree : ℤ) < 0)
+  exact ((tendsto_cobounded_of_meromorphicOrderAt_neg hord).congr' h).not_tendsto
+    (Metric.disjoint_cobounded_nhds (g a)) (hg.tendsto.mono_left nhdsWithin_le_nhds)
+
+/-- **Polar terms are independent modulo continuous functions.** Let `D` be a multiset of points of
+`𝕜` and let `c` assign a coefficient to each point `⟨a, j⟩` of `D`, `j` below the multiplicity of
+`a` in `D`. If the sum of the polar terms `c ⟨a, j⟩ / (z - a) ^ (j + 1)` agrees off the points of
+`D` with a function continuous at the points of `D`, then every coefficient vanishes. -/
+theorem eq_zero_of_sum_div_sub_pow_eq [DecidableEq 𝕜] {D : Multiset 𝕜} {c : D.ToType → 𝕜}
+    {g : 𝕜 → 𝕜} (hg : ∀ a ∈ D, ContinuousAt g a)
+    (h : ∀ z ∉ D, ∑ i : D.ToType, c i / (z - i.1) ^ ((i.2 : ℕ) + 1) = g z) : c = 0 := by
+  funext i₀
+  set a := i₀.1
+  -- The polar part at `a`, a polynomial in `(z - a)⁻¹` without constant term, agrees off `a`
+  -- with `g` minus the polar terms at the other points of `D`, which is continuous at `a`.
+  set P : 𝕜[X] := ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ i.1 = a),
+    C (c i) * X ^ ((i.2 : ℕ) + 1)
+  have hP₀ : P.coeff 0 = 0 := by
+    simp [P]
+  have hG : ContinuousAt (fun z ↦ g z - ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ ¬i.1 = a),
+      c i / (z - i.1) ^ ((i.2 : ℕ) + 1)) a := by
+    refine (hg a Multiset.coe_mem).sub (tendsto_finsetSum _ fun i hi ↦ ?_)
+    exact continuousAt_const.div ((continuousAt_id.sub continuousAt_const).pow _)
+      (pow_ne_zero _ (sub_ne_zero.2 fun h ↦ (Finset.mem_filter.1 hi).2 h.symm))
+  have hPG : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] fun z ↦ g z -
+      ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ ¬i.1 = a),
+        c i / (z - i.1) ^ ((i.2 : ℕ) + 1) := by
+    have hD : ((D.toFinset.erase a : Finset 𝕜) : Set 𝕜)ᶜ ∈ 𝓝 a :=
+      (D.toFinset.erase a).finite_toSet.isClosed.isOpen_compl.mem_nhds (by simp)
+    filter_upwards [nhdsWithin_le_nhds hD, self_mem_nhdsWithin] with z hz (hza : z ≠ a)
+    have hzD := h z fun hz' ↦ hz (by simp [hza, hz'])
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : D.ToType ↦ i.1 = a)] at hzD
+    rw [eq_sub_iff_add_eq, ← hzD, eval_finsetSum]
+    congr 1
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [show z - i.1 = z - a by rw [(Finset.mem_filter.1 hi).2], eval_mul, eval_C, eval_pow, eval_X,
+      inv_pow, div_eq_mul_inv]
+  -- Hence `P = 0`, and its coefficient of `X ^ (j + 1)` is `c ⟨a, j⟩`.
+  have hP := congrArg (·.coeff ((i₀.2 : ℕ) + 1)) (eq_zero_of_eval_inv_sub_eventuallyEq hP₀ hG hPG)
+  simp only [P, finsetSum_coeff, coeff_zero] at hP
+  rwa [Finset.sum_eq_single_of_mem (s := Finset.univ.filter fun i : D.ToType ↦ i.1 = a) i₀
+    (by simp [a]) fun i hi hne ↦ by
+      rw [coeff_C_mul_X_pow, ite_eq_right]
+      refine fun hk ↦ hne (D.coeEmbedding.injective ?_)
+      simp only [Multiset.coeEmbedding_apply, Prod.mk.injEq]
+      exact ⟨(Finset.mem_filter.1 hi).2, by simpa using hk.symm⟩,
+    coeff_C_mul_X_pow, ite_eq_left rfl] at hP
+
+/-! ### Divisibility by a split polynomial -/
+
+/-- **A continuous quotient by a split polynomial is a polynomial.** Let `P = ∏_{a ∈ D} (X - a)`
+for a multiset `D` of points of `𝕜`. If a polynomial `Q` equals `P g` on all of `𝕜`, for a function
+`g` continuous at the points of `D`, then `P` divides `Q`. -/
+theorem multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul {D : Multiset 𝕜} {Q : 𝕜[X]} {g : 𝕜 → 𝕜}
+    (hg : ∀ a ∈ D, ContinuousAt g a)
+    (h : ∀ z, Q.eval z = (D.map fun a ↦ X - C a).prod.eval z * g z) :
+    (D.map fun a ↦ X - C a).prod ∣ Q := by
+  induction D using Multiset.induction_on generalizing Q with
+  | empty => simp
+  | cons a D ih =>
+    simp only [Multiset.map_cons, Multiset.prod_cons, eval_mul, eval_sub, eval_X, eval_C] at h ⊢
+    have hQ : (X - C a) * (Q /ₘ (X - C a)) = Q :=
+      mul_divByMonic_eq_iff_isRoot.2 (by simpa using h a)
+    rw [← hQ]
+    refine mul_dvd_mul_left _ (ih (fun b hb ↦ hg b (Multiset.mem_cons_of_mem hb)) fun z ↦ ?_)
+    -- Off `a` the factor `z - a` cancels; at `a` both sides are continuous.
+    have hne (w : 𝕜) (hw : w ≠ a) :
+        (Q /ₘ (X - C a)).eval w = (D.map fun a ↦ X - C a).prod.eval w * g w := by
+      have hw' := h w
+      rw [← hQ, eval_mul, eval_sub, eval_X, eval_C, mul_assoc] at hw'
+      exact mul_left_cancel₀ (sub_ne_zero.2 hw) hw'
+    rcases eq_or_ne z a with rfl | hz
+    · have hQ' := (Polynomial.continuous (Q /ₘ (X - C z))).continuousAt (x := z)
+      have hP' := ((Polynomial.continuous (D.map fun a ↦ X - C a).prod).continuousAt (x := z)).mul
+        (hg z (Multiset.mem_cons_self z D))
+      exact tendsto_nhds_unique (hQ'.tendsto.mono_left nhdsWithin_le_nhds)
+        ((hP'.tendsto.mono_left nhdsWithin_le_nhds).congr'
+          (eventually_nhdsWithin_of_forall fun w hw ↦
+            (hne w (Set.mem_compl_singleton_iff.1 hw)).symm))
+    · exact hne z hz
 
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
 `(z - a)⁻ᴺ h z = P((z - a)⁻¹) + q z` with `P = Σ_{j<N} c_j X ^ (N - j)`, where
@@ -161,7 +253,7 @@ a function analytic at `a`. -/
 private theorem exists_principalPart (φ : meromorphicGerms 𝕜 a) :
     ∃ P : 𝕜[X], P.coeff 0 = 0 ∧ ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧
       ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   refine ⟨_, coeff_zero_sum_C_mul_X_pow_sub
     (fun j ↦ (swap dslope a)^[j] (fun z ↦ (z - a) ^ N • f z) a) N, _,
     hN.iterate_dslope (a := a) N, ?_⟩
@@ -177,20 +269,16 @@ private theorem eq_of_coe_sub_evalInvSub_eq {φ : meromorphicGerms 𝕜 a} {P Q 
     (hφP : ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g)
     (hφQ : ((φ - evalInvSub a Q : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g') : P = Q := by
   refine sub_eq_zero.1 <| eq_zero_of_eval_inv_sub_eventuallyEq (by rw [coeff_sub, hP, hQ, sub_zero])
-    (hg'.sub hg) (Germ.coe_eq.1 ?_)
+    (hg'.sub hg).continuousAt (Germ.coe_eq.1 ?_)
   rw [← coe_evalInvSub, Germ.coe_sub, ← hφP, ← hφQ, ← AddSubgroupClass.coe_sub, map_sub]
   congr 1
   abel
 
 /-- The principal part of a meromorphic germ `φ` at `a`: the unique polynomial `P` without
 constant term such that `φ - P((z - a)⁻¹)` is the germ of a function analytic at `a`. It is
-additive in `φ`. -/
-def principalPart : meromorphicGerms 𝕜 a →+ 𝕜[X] where
+linear over `𝕜`. -/
+def principalPart : meromorphicGerms 𝕜 a →ₗ[𝕜] 𝕜[X] where
   toFun φ := (exists_principalPart φ).choose
-  map_zero' := by
-    obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (0 : meromorphicGerms 𝕜 a)).choose_spec
-    exact eq_of_coe_sub_evalInvSub_eq hP (coeff_zero 0) hg analyticAt_const hgφ
-      (by rw [map_zero, sub_zero, ZeroMemClass.coe_zero]; rfl)
   map_add' φ ψ := by
     obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (φ + ψ)).choose_spec
     obtain ⟨hP₁, g₁, hg₁, hgφ₁⟩ := (exists_principalPart φ).choose_spec
@@ -199,6 +287,20 @@ def principalPart : meromorphicGerms 𝕜 a →+ 𝕜[X] where
       (hg₁.add hg₂) hgφ ?_
     rw [map_add, add_sub_add_comm, AddMemClass.coe_add, hgφ₁, hgφ₂]
     rfl
+  map_smul' c φ := by
+    obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (c • φ)).choose_spec
+    obtain ⟨hP₁, g₁, hg₁, hgφ₁⟩ := (exists_principalPart φ).choose_spec
+    refine eq_of_coe_sub_evalInvSub_eq (Q := c • (exists_principalPart φ).choose)
+      hP (by rw [AddMonoidAlgebra.coeff_smul_apply, hP₁, smul_zero]) hg (hg₁.const_smul (c := c))
+      hgφ ?_
+    have heval : evalInvSub a (c • (exists_principalPart φ).choose) =
+        c • evalInvSub a (exists_principalPart φ).choose := by
+      apply Subtype.ext
+      simp only [coe_evalInvSub, coe_smul, ← Germ.coe_smul]
+      congr 1
+      funext z
+      simp [Polynomial.smul_eq_C_mul]
+    rw [heval, ← smul_sub, coe_smul, hgφ₁, Germ.coe_smul]
 
 /-- The principal part has no constant term. -/
 @[simp]
@@ -243,12 +345,55 @@ theorem principalPart_eq_zero_iff {φ : meromorphicGerms 𝕜 a} :
     principalPart φ = 0 ↔ ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ (φ : Germ (𝓝[≠] a) 𝕜) = g := by
   simp [principalPart_eq_iff]
 
+/-- Two meromorphic germs at `a` have equal principal parts if and only if their difference is the
+germ of a function analytic at `a`. -/
+theorem principalPart_eq_principalPart_iff {φ ψ : meromorphicGerms 𝕜 a} :
+    principalPart φ = principalPart ψ ↔
+      ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ ((φ - ψ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g := by
+  rw [← sub_eq_zero, ← map_sub, principalPart_eq_zero_iff]
+
+/-- Two functions meromorphic at `a` have equal principal parts at `a` if and only if their
+difference agrees on `𝓝[≠] a` with a function analytic at `a`. -/
+theorem principalPart_mk_eq_principalPart_mk_iff {f₁ f₂ : 𝕜 → 𝕜}
+    (hf₁ : MeromorphicAt f₁ a) (hf₂ : MeromorphicAt f₂ a) :
+    principalPart (mk f₁ hf₁) = principalPart (mk f₂ hf₂) ↔
+      ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ f₁ - f₂ =ᶠ[𝓝[≠] a] g := by
+  simp_rw [principalPart_eq_principalPart_iff, AddSubgroupClass.coe_sub, coe_mk,
+    ← Germ.coe_sub, Germ.coe_eq]
+
 /-- The principal part of the germ of a function meromorphic at `a` vanishes exactly when the
 function has nonnegative order at `a`. -/
 theorem principalPart_mk_eq_zero_iff {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
-    principalPart (⟨f, coe_mem_meromorphicGerms.2 hf⟩ : meromorphicGerms 𝕜 a) = 0 ↔
+    principalPart (mk f hf) = 0 ↔
       0 ≤ meromorphicOrderAt f a := by
-  simp_rw [principalPart_eq_zero_iff, hf.meromorphicOrderAt_nonneg_iff, Germ.coe_eq]
+  simp_rw [principalPart_eq_zero_iff, coe_mk, hf.meromorphicOrderAt_nonneg_iff, Germ.coe_eq]
+
+/-- A pole bound bounds the degree of the principal part. The constant term of the principal
+part is zero, so a removable singularity contributes the zero polynomial. -/
+theorem natDegree_principalPart_mk_le {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) {N : ℕ}
+    (hN : ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f a) :
+    (principalPart (mk f hf)).natDegree ≤ N := by
+  let P := principalPart (mk f hf)
+  by_cases hP : P = 0
+  · simp [P, hP]
+  obtain ⟨g, hg, hfg⟩ := exists_analyticAt_coe_sub_evalInvSub_principalPart (mk f hf)
+  rw [AddSubgroupClass.coe_sub, coe_mk, coe_evalInvSub, ← Germ.coe_sub] at hfg
+  have hfg' : f =ᶠ[𝓝[≠] a] (fun z ↦ P.eval (z - a)⁻¹) + g := by
+    have := Germ.coe_eq.1 hfg
+    filter_upwards [this] with z hz
+    exact (sub_eq_iff_eq_add.mp hz).trans (add_comm _ _)
+  have hord : meromorphicOrderAt f a = ((-P.natDegree : ℤ) : WithTop ℤ) := by
+    rw [meromorphicOrderAt_congr hfg']
+    apply (meromorphicOrderAt_add_eq_left_of_lt hg.meromorphicAt ?_).trans
+      (meromorphicOrderAt_eval_inv_sub hP a)
+    rw [meromorphicOrderAt_eval_inv_sub hP a]
+    have hdeg : 0 < P.natDegree := Nat.pos_of_ne_zero fun h ↦ hP <| by
+      rw [Polynomial.eq_C_of_natDegree_eq_zero h]
+      simp [P]
+    exact lt_of_lt_of_le (by exact_mod_cast neg_neg_of_pos (Int.natCast_pos.mpr hdeg))
+      hg.meromorphicOrderAt_nonneg
+  rw [hord, WithTop.coe_le_coe] at hN
+  exact_mod_cast neg_le_neg_iff.mp hN
 
 /-- **The principal part through Taylor coefficients.** If `φ` is the germ of `(z - a)⁻ᴺ h z`,
 where `h` has the power series `p` at `a`, then the principal part of `φ` is

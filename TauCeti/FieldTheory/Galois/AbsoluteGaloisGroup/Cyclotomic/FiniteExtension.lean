@@ -8,6 +8,8 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -27,8 +29,8 @@ This is the comparison through which a statement about the cyclotomic character 
 its value on the image of a local Artin symbol, passes to finite extensions of `K` by norm
 functoriality.
 
-Since `G_L` is a subgroup of index `[L : K]` in `G_K`, the cyclotomic image of `G_L` is a subgroup
-of that of `G_K` whose relative index divides `[L : K]`. Over `ℚ_p` the cyclotomic character is
+When `L/K` is finite separable, `G_L` is a subgroup of index `[L : K]` in `G_K`, and the relative
+index of the two images divides `[L : K]`. Over `ℚ_p` the cyclotomic character is
 surjective, so the cyclotomic image of a finite extension `K` of `ℚ_p` has index dividing
 `[K : ℚ_p]` in `ℤ_pˣ`. For instance, when `[K : ℚ₂]` is odd the image is an open subgroup of the
 pro-`2` group `ℤ₂ˣ` of odd index, hence all of `ℤ₂ˣ`; while `ℚ₂(i)` has image `1 + 4ℤ₂`, of
@@ -49,13 +51,12 @@ involved are trivial.
 * `TauCeti.localCyclotomicCharacter_absoluteGaloisGroupExtend`,
   `TauCeti.localCyclotomicCharacter_comp_absoluteGaloisGroupExtend`: the cyclotomic character of
   `G_L` is that of `G_K` read through `absoluteGaloisGroupExtend K L σ`.
-* `TauCeti.range_localCyclotomicCharacter_le_range`,
-  `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a finite separable extension
-  `L/K`, the cyclotomic image of `G_L` lies in that of `G_K`, with relative index dividing
-  `[L : K]`.
+* `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a separable extension
+  `L/K`, the relative index of these images divides `[L : K]`.
 * `TauCeti.range_localCyclotomicCharacter_le_ratPadic`: the comparison with `ℚ_p`; the
   cyclotomic image of a finite extension `K` of `ℚ_p` has relative index dividing `[K : ℚ_p]`
   in the image of `G_{ℚ_p}`.
+* `TauCeti.isOpen_range_localCyclotomicCharacter`: that image is an open subgroup of `ℤ_pˣ`.
 
 ## References
 
@@ -80,7 +81,7 @@ theorem cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv (g : Field.absolute
   -- (`IntermediateField.algebraMap_apply`), so restriction intertwines the two automorphisms.
   exact (cyclotomicCharacter_eq_of_injective p
     (algebraMap (SeparableClosure K) (AlgebraicClosure K)).injective
-    (fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
+    (fun _ x _ ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
@@ -95,7 +96,7 @@ theorem localCyclotomicCharacter_absoluteGaloisGroupExtend (τ : Field.absoluteG
     ← cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv]
   exact cyclotomicCharacter_eq_of_injective p
     (f := (separableClosureRingEquiv K L σ).toRingHom) (separableClosureRingEquiv K L σ).injective
-    (absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ)
+    (fun _ x _ ↦ absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ x)
     fun H i ↦ let ⟨ζ, hζ⟩ := H i
       ⟨_, hζ.map_of_injective (separableClosureRingEquiv K L σ).symm.injective⟩
 
@@ -109,20 +110,17 @@ theorem localCyclotomicCharacter_comp_absoluteGaloisGroupExtend :
 
 /-! ### The cyclotomic image along a finite extension -/
 
-/-- **The cyclotomic image of `G_L` lies in that of `G_K`** for a finite separable extension
-`L/K`. -/
-theorem range_localCyclotomicCharacter_le_range [Algebra.IsSeparable K L] :
-    (localCyclotomicCharacter p L).range ≤ (localCyclotomicCharacter p K).range := by
-  rw [← localCyclotomicCharacter_comp_absoluteGaloisGroupExtend p K L IsSepClosed.lift,
-    MonoidHom.range_comp]
-  exact Subgroup.map_le_range _ _
-
-/-- **The cyclotomic image of `G_L` has index dividing `[L : K]` in that of `G_K`**, for a finite
-separable extension `L/K`: it is the image of the subgroup `G_L` of `G_K`, which has index
-`[L : K]`. -/
+omit [FiniteDimensional K L] in
+/-- **The cyclotomic image of `G_L` has index dividing `[L : K]` in that of `G_K`**, for a
+separable extension `L/K`: when it is finite, it is the image of the subgroup `G_L` of `G_K`, which
+has index `[L : K]`; otherwise `[L : K] = 0` by convention. -/
 theorem relIndex_range_localCyclotomicCharacter_dvd_finrank [Algebra.IsSeparable K L] :
     (localCyclotomicCharacter p L).range.relIndex (localCyclotomicCharacter p K).range ∣
       Module.finrank K L := by
+  by_cases hL : FiniteDimensional K L
+  swap
+  · rw [Module.finrank_of_not_finite hL]
+    exact dvd_zero _
   -- Both images are images under `χ_K`, of `G_L` and of `G_K`, so the relative index is that of
   -- `G_L ⊔ ker χ_K` in `G_K`, which divides the index `[L : K]` of `G_L`.
   rw [← localCyclotomicCharacter_comp_absoluteGaloisGroupExtend p K L IsSepClosed.lift,
@@ -144,5 +142,16 @@ theorem range_localCyclotomicCharacter_le_ratPadic :
         Module.finrank ℚ_[p] K :=
   ⟨range_localCyclotomicCharacter_le_range p ℚ_[p] K,
     relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K⟩
+
+/-- **The cyclotomic image of a finite extension `K` of `ℚ_p` is open in `ℤ_pˣ`**: it is closed,
+and its index divides `[K : ℚ_p]` since the cyclotomic character of `G_{ℚ_p}` is surjective. -/
+theorem isOpen_range_localCyclotomicCharacter :
+    IsOpen ((localCyclotomicCharacter p K).range : Set ℤ_[p]ˣ) := by
+  have hindex : (localCyclotomicCharacter p K).range.index ∣ Module.finrank ℚ_[p] K := by
+    simpa [range_localCyclotomicCharacter_ratPadic] using
+      (range_localCyclotomicCharacter_le_ratPadic p K).2
+  have : (localCyclotomicCharacter p K).range.FiniteIndex :=
+    ⟨ne_zero_of_dvd_ne_zero Module.finrank_pos.ne' hindex⟩
+  exact Subgroup.isOpen_of_isClosed_of_finiteIndex _ (isClosed_range_localCyclotomicCharacter p K)
 
 end TauCeti

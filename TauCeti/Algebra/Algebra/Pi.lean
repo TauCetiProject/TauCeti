@@ -25,6 +25,9 @@ Mathlib's `AlgHom.eq_piEvalAlgHom` says that every `R`-algebra homomorphism `(ι
 coordinate evaluation `Pi.evalAlgHom R _ s`. Distinct coordinates give distinct evaluations, since
 they disagree on `Pi.single s 1`, so the evaluations enumerate those homomorphisms **without
 repetition**: `Pi.evalAlgHomEquiv` packages that as an equivalence `ι ≃ ((ι → R) →ₐ[R] R)`.
+More generally, `AlgHom.sigmaEquivPi` identifies algebra maps from a finite product into a
+nontrivial semiring without zero divisors with maps from one factor, precomposed with its
+projection.
 
 The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record, and it is what
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
@@ -55,6 +58,10 @@ and `D` with function algebras, `Algebra.TensorProduct.eq_of_pi_bijective` says 
 `Algebra.TensorProduct.lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: they are the
 coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)`.
 
+The linear map `Pi.algebraMap ι R S : (ι → R) →ₗ[R] (ι → S)` applies `algebraMap R S` to each
+coordinate (`TauCeti.piAlgebraMap_apply`). Mathlib's `Pi.algebraMap_apply` is instead about the
+algebra map `R → (ι → A)` of the product algebra.
+
 ## Main definitions
 
 * `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
@@ -63,6 +70,8 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   entries are all `0` or `1` is induced by a map `κ → ι`.
 * `AlgHom.exists_eq_comp_piEvalAlgHom`: an algebra homomorphism from a finite product of algebras
   into a domain factors through one of the projections.
+* `AlgHom.sigmaEquivPi`: maps from a finite product into a nontrivial semiring without zero divisors
+  are precisely maps from one factor, precomposed with its projection.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -200,6 +209,38 @@ theorem exists_eq_comp_piEvalAlgHom {R ι : Type*} [CommSemiring R] [_root_.Fini
       commutes' r := by rw [← Pi.algebraMap_apply ι A r i, ← h4, AlgHom.commutes] },
     AlgHom.ext h4⟩
 
+/-- Maps from a finite product into a nontrivial domain are precisely maps from one factor,
+precomposed with the corresponding projection. This includes the empty product, which has no
+maps to a nontrivial domain. -/
+noncomputable def sigmaEquivPi {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B] :
+    (Σ i, A i →ₐ[R] B) ≃ ((Π i, A i) →ₐ[R] B) := by
+  classical
+  refine Equiv.ofBijective (fun f ↦ f.2.comp (Pi.evalAlgHom R A f.1)) ⟨?_, ?_⟩
+  · rintro ⟨i, φ⟩ ⟨j, ψ⟩ h
+    have hij : i = j := by
+      by_contra hne
+      have := DFunLike.congr_fun h (Pi.single i 1)
+      simp [Ne.symm hne] at this
+    subst j
+    congr 1
+    ext a
+    have := DFunLike.congr_fun h (Pi.single i a)
+    simpa using this
+  · intro φ
+    obtain ⟨i, ψ, rfl⟩ := φ.exists_eq_comp_piEvalAlgHom
+    exact ⟨⟨i, ψ⟩, rfl⟩
+
+/-- The factor-map equivalence is composition with coordinate evaluation. -/
+@[simp]
+theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B]
+    (i : ι) (φ : A i →ₐ[R] B) :
+    sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
+  (rfl)
+
 end AlgHom
 
 open scoped TensorProduct
@@ -236,6 +277,18 @@ theorem eq_of_pi_bijective {χ : ι → C →ₐ[R] R} {ψ : κ → D →ₐ[R] 
 end Algebra.TensorProduct
 
 namespace TauCeti
+
+section PiAlgebraMap
+
+variable {κ R : Type*} (S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- `Pi.algebraMap` applies `algebraMap` coordinatewise. -/
+@[simp]
+theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
+    Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
+  rfl
+
+end PiAlgebraMap
 
 variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
   [Module.Finite K A]

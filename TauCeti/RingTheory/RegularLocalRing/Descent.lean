@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Flat.Noetherian
 
 /-!
@@ -18,9 +19,17 @@ Noetherianity of the source is necessary: both descend by faithful flatness. The
 dimension of the source residue field is then bounded by the dimension of the target, so
 Serre's criterion proves regularity.
 
-In particular, regularity descends along any flat local homomorphism. The closed fibre need
-not be a field or be regular. This is the local input for descent of regularity of schemes
-along faithfully flat covers.
+In particular, regularity descends along any flat local homomorphism
+(`TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom`). The closed fibre need not be a field or be
+regular. This is the local input for descent of regularity of schemes along faithfully flat
+covers.
+
+Globally, a ring faithfully flat in a regular ring is a regular ring
+(`TauCeti.IsRegularRing.of_faithfullyFlat`), by passing to localizations at primes and a prime
+of the target above each. Consequently regularity of a base change `S ⊗[R] C` descends to
+`S ⊗[R] B` when `C` is faithfully flat over `B`
+(`TauCeti.IsRegularRing.tensorProduct_of_faithfullyFlat`); this is the input for descending
+regular ring maps along faithfully flat maps.
 
 ## References
 
@@ -31,7 +40,7 @@ along faithfully flat covers.
 
 public section
 
-open IsLocalRing CategoryTheory
+open IsLocalRing CategoryTheory TensorProduct
 
 universe u v
 
@@ -51,10 +60,37 @@ theorem of_faithfullyFlat [IsRegularLocalRing S]
       (ringKrullDim_lt_top (R := S))).ne
 
 /-- Regularity descends along a flat local homomorphism, without a hypothesis on the closed
-fibre or a Noetherianity assumption on the source. -/
-theorem of_flat_of_isLocalHom [IsLocalRing R] [IsRegularLocalRing S] [Module.Flat R S]
+fibre or a locality or Noetherianity assumption on the source. -/
+theorem of_flat_of_isLocalHom [IsRegularLocalRing S] [Module.Flat R S]
     [IsLocalHom (algebraMap R S)] : IsRegularLocalRing R := by
+  have := (algebraMap R S).domain_isLocalRing
   have : Module.FaithfullyFlat R S := Module.FaithfullyFlat.of_flat_of_isLocalHom
   exact of_faithfullyFlat (S := S)
 
 end TauCeti.IsRegularLocalRing
+
+/-- **Regularity descends along faithfully flat extensions by regular rings.** If a regular ring
+`S` is faithfully flat over a ring `R`, then `R` is a regular ring (in particular Noetherian). -/
+theorem TauCeti.IsRegularRing.of_faithfullyFlat {R : Type u} {S : Type v} [CommRing R] [CommRing S]
+    [Algebra R S] [IsRegularRing S] [Module.FaithfullyFlat R S] : IsRegularRing R := by
+  have : IsNoetherianRing R := .of_faithfullyFlat S
+  refine isRegularRing_iff.mpr fun p _ ↦ ?_
+  obtain ⟨q, _, _⟩ := Ideal.exists_isPrime_liesOver_of_faithfullyFlat (B := S) p
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  exact TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom (S := Localization.AtPrime q)
+
+/-- **Regularity descends along faithfully flat base changes.** If `C` is a faithfully flat
+`B`-algebra over `R` and `S ⊗[R] C` is a regular ring for an `R`-algebra `S`, then `S ⊗[R] B` is
+a regular ring. -/
+theorem TauCeti.IsRegularRing.tensorProduct_of_faithfullyFlat {R : Type*} (S : Type*)
+    {B : Type*} (C : Type*) [CommRing R] [CommRing S] [CommRing B] [CommRing C] [Algebra R S]
+    [Algebra R B] [Algebra R C] [Algebra B C] [IsScalarTower R B C] [Module.FaithfullyFlat B C]
+    [IsRegularRing (S ⊗[R] C)] : IsRegularRing (S ⊗[R] B) := by
+  -- `(B ⊗[R] S) ⊗[B] C ≃ C ⊗[B] (B ⊗[R] S) ≃ C ⊗[R] S ≃ S ⊗[R] C`
+  let e : (B ⊗[R] S) ⊗[B] C ≃+* S ⊗[R] C :=
+    ((Algebra.TensorProduct.comm B _ C).trans
+      (Algebra.TensorProduct.cancelBaseChange R B B C S)).toRingEquiv.trans
+        (Algebra.TensorProduct.comm R C S).toRingEquiv
+  have : IsRegularRing ((B ⊗[R] S) ⊗[B] C) := .of_ringEquiv e.symm
+  have : IsRegularRing (B ⊗[R] S) := of_faithfullyFlat (S := (B ⊗[R] S) ⊗[B] C)
+  exact .of_ringEquiv (Algebra.TensorProduct.comm R B S).toRingEquiv

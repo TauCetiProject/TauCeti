@@ -159,7 +159,7 @@ theorem properClass_discrimTwelvePositiveLeading_ne_negative :
       MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms 12)) ≠
         Quotient.mk'' discrimTwelveNegativeLeading := by
   intro h
-  have hc := congrArg (properClassToNarrowPic 12 (by norm_num) (by norm_num)) h
+  have hc := congrArg (properClassToNarrowPic 12 (by norm_num)) h
   rw [properClassToNarrowPic_mk, properClassToNarrowPic_mk] at hc
   exact narrowPicClass_discrimTwelvePositiveLeading_ne_negative hc
 

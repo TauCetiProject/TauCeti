@@ -206,7 +206,7 @@ restrictions to the Frobenius translates of `V`, which cover `q⁻¹(q V)`. -/
 private theorem isInducing_restrictTranslate (h : (spaYPresheaf P ϖ).IsSheaf)
     (V : Opens (spaY p ϖ)) :
     IsInducing fun (s : (spaYPresheaf P ϖ).obj (op (saturation hI V))) (k : ℤ) ↦
-      (restrictTranslate P hI V k).hom.1 s := by
+      (restrictTranslate P hI V k).hom.val s := by
   have hO : Presheaf.IsSheaf (Opens.grothendieckTopology _)
       (spaYPresheaf P ϖ ⋙ TopCommRingCat.isCompleteSeparated.ι) :=
     Presheaf.isSheaf_comp_of_isSheaf _ _ _ h
@@ -215,7 +215,7 @@ private theorem isInducing_restrictTranslate (h : (spaYPresheaf P ϖ).IsSheaf)
     obtain ⟨k, hk⟩ := Opens.mem_iSup.mp (saturation_le_iSup_translate hI V hv)
     exact ⟨_, homOfLE (translate_le_saturation hI V k), Sieve.ofArrows_mk _ _ k, hk⟩
   exact (TopCommRingCat.isInducing_restrictionMap_ofArrows_iff _ _ _).mp
-    (TopCommRingCat.isInducing_restrictionMap_of_isSheafFor _ S fun E ↦ hO E S hS)
+    (TopCommRingCat.isInducing_restrictionMap_of_isSheafFor _ S.arrows fun E ↦ hO E S hS)
 
 /-- **Gluing the Frobenius transports.** When `𝒪_𝒴` is a sheaf and `V` wanders, every section `y`
 over `V` is the restriction of a Frobenius-invariant section over `q⁻¹(q V)`: its Frobenius
@@ -226,7 +226,7 @@ private theorem exists_spaXPresheafι_app_comp_eq (h : (spaYPresheaf P ϖ).IsShe
     (hV : ∀ k : ℤ, k ≠ 0 → Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (V : Set (spaY p ϖ))) V)
     (y : (spaYPresheaf P ϖ).obj (op V)) :
     ∃ x, ((spaXPresheafι P hI).app (op (quotientImage hI V)) ≫
-      (spaYPresheaf P ϖ).map (homOfLE (le_saturation hI V)).op).hom.1 x = y := by
+      (spaYPresheaf P ϖ).map (homOfLE (le_saturation hI V)).op).hom.val x = y := by
   have hO : Presheaf.IsSheaf (Opens.grothendieckTopology _)
       (spaYPresheaf P ϖ ⋙ TopCommRingCat.isCompleteSeparated.ι) :=
     Presheaf.isSheaf_comp_of_isSheaf _ _ _ h
@@ -234,8 +234,8 @@ private theorem exists_spaXPresheafι_app_comp_eq (h : (spaYPresheaf P ϖ).IsShe
     ⟨_, Presheaf.isSheaf_comp_of_isSheaf _ _ (forget _root_.TopCommRingCat) hO⟩
   -- the transports of `y` to the translates of `V`
   let sf (k : ℤ) : (spaYPresheaf P ϖ).obj (op (translate hI V k)) :=
-    (translateIso P hI V k).hom.hom.1 y
-  have hcompat : TopCat.Presheaf.IsCompatible G.1 (translate hI V) sf := by
+    (translateIso P hI V k).hom.hom.val y
+  have hcompat : TopCat.Presheaf.IsCompatible G.obj (translate hI V) sf := by
     intro i j
     rcases eq_or_ne i j with rfl | hij
     · congr 3
@@ -250,19 +250,19 @@ private theorem exists_spaXPresheafι_app_comp_eq (h : (spaYPresheaf P ϖ).IsShe
     (fun k ↦ homOfLE (translate_le_saturation hI V k)) (saturation_le_iSup_translate hI V) sf
     hcompat
   -- `G` is the presheaf of sets underlying `𝒪_𝒴`, so its restriction maps are those of `𝒪_𝒴`
-  have hs' (k : ℤ) : (restrictTranslate P hI V k).hom.1 s = sf k := hs k
+  have hs' (k : ℤ) : (restrictTranslate P hI V k).hom.val s = sf k := hs k
   -- the glued section is Frobenius-invariant, as Frobenius shifts the transports
-  have hinv : ((pushforwardSpaYPresheafFrobenius P hI).app (op (quotientImage hI V))).hom.1 s =
+  have hinv : ((pushforwardSpaYPresheafFrobenius P hI).app (op (quotientImage hI V))).hom.val s =
       s := by
     refine G.eq_of_locally_eq' (translate hI V) (saturation hI V)
       (fun k ↦ homOfLE (translate_le_saturation hI V k)) (saturation_le_iSup_translate hI V) _ _
       fun l ↦ ?_
-    have hstep := congrArg (fun m ↦ m.hom.1 s)
+    have hstep := congrArg (fun m ↦ m.hom.val s)
       (pushforwardSpaYPresheafFrobenius_comp_restrictTranslate P hI V (l - 1) l (by omega))
-    have hτ := congrArg (fun e ↦ e.hom.hom.1 y) (translateIso_add_one P hI V (l - 1) l (by omega))
-    exact hstep.trans <| (congrArg (stepIso P hI V (l - 1) l (by omega)).hom.hom.1
+    have hτ := congrArg (fun e ↦ e.hom.hom.val y) (translateIso_add_one P hI V (l - 1) l (by omega))
+    exact hstep.trans <| (congrArg (stepIso P hI V (l - 1) l (by omega)).hom.hom.val
       (hs' (l - 1))).trans <| hτ.symm.trans (hs' l).symm
-  obtain ⟨x, hx⟩ : s ∈ Set.range ((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.1 := by
+  obtain ⟨x, hx⟩ : s ∈ Set.range ((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.val := by
     rw [range_spaXPresheafι_app]
     exact hinv
   refine ⟨x, ?_⟩
@@ -278,11 +278,11 @@ private theorem exists_spaXPresheafι_app_comp_eq (h : (spaYPresheaf P ϖ).IsShe
       CategoryTheory.Functor.map_id]
   rw [e₀, ← Category.assoc]
   -- the composite is evaluated one map at a time
-  calc ((spaYPresheaf P ϖ).map (eqToHom (congrArg op (translate_zero hI V)))).hom.1
-        ((restrictTranslate P hI V 0).hom.1
-          (((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.1 x)) = _ :=
+  calc ((spaYPresheaf P ϖ).map (eqToHom (congrArg op (translate_zero hI V)))).hom.val
+        ((restrictTranslate P hI V 0).hom.val
+          (((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.val x)) = _ :=
         by rw [hx, hs' 0]; dsimp only [sf]; rw [translateIso_zero]; rfl
-    _ = y := congrArg (fun m ↦ m.hom.1 y) e₁
+    _ = y := congrArg (fun m ↦ m.hom.val y) e₁
 
 /-- **Restriction from `𝒪_𝒳(q V)` to `𝒪_𝒴(V)`** for an open `V ⊆ 𝒴`: a section of `𝒪_𝒳` over
 the open image `q V` is a Frobenius-invariant section of `𝒪_𝒴` over `q⁻¹(q V) ⊇ V`, and this map
@@ -316,24 +316,24 @@ theorem isIso_spaXPresheafRestrict (h : (spaYPresheaf P ϖ).IsSheaf) {V : Opens 
     congr 3
   -- a section of `𝒪_𝒳(q V)` is determined, topologically too, by its restrictions to the
   -- translates of `V`, which are the Frobenius transports of its restriction to `V`
-  have hcomp : (fun y (k : ℤ) ↦ (translateIso P hI V k).hom.hom.1 y) ∘
-      (spaXPresheafRestrict P hI V).hom.1 =
-      (fun s (k : ℤ) ↦ (restrictTranslate P hI V k).hom.1 s) ∘
-        ((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.1 := by
+  have hcomp : (fun y (k : ℤ) ↦ (translateIso P hI V k).hom.hom.val y) ∘
+      (spaXPresheafRestrict P hI V).hom.val =
+      (fun s (k : ℤ) ↦ (restrictTranslate P hI V k).hom.val s) ∘
+        ((spaXPresheafι P hI).app (op (quotientImage hI V))).hom.val := by
     funext x k
     rw [hr]
-    exact congrArg (fun m ↦ m.hom.1 x) (spaXPresheafι_app_comp_restrictTranslate P hI V k).symm
-  have hind : IsInducing (spaXPresheafRestrict P hI V).hom.1 :=
-    .of_comp (spaXPresheafRestrict P hI V).hom.2
-      (continuous_pi fun k ↦ (translateIso P hI V k).hom.hom.2) <| hcomp ▸
+    exact congrArg (fun m ↦ m.hom.val x) (spaXPresheafι_app_comp_restrictTranslate P hI V k).symm
+  have hind : IsInducing (spaXPresheafRestrict P hI V).hom.val :=
+    .of_comp (spaXPresheafRestrict P hI V).hom.property
+      (continuous_pi fun k ↦ (translateIso P hI V k).hom.hom.property) <| hcomp ▸
       (isInducing_restrictTranslate P hI h V).comp
         (isClosedEmbedding_spaXPresheafι_app P hI _).isInducing
   have := ((TopCommRingCat.isCompleteSeparated_iff _).mp
     ((spaXPresheaf P hI).obj (op (quotientImage hI V))).property).t0Space
-  have hsurj : Function.Surjective (spaXPresheafRestrict P hI V).hom.1 := fun y ↦ by
+  have hsurj : Function.Surjective (spaXPresheafRestrict P hI V).hom.val := fun y ↦ by
     simpa only [hr] using exists_spaXPresheafι_app_comp_eq P hI h hV y
   -- a bijective inducing map is a homeomorphism, so `r` is an isomorphism of topological rings
-  have hhomeo : IsHomeomorph (spaXPresheafRestrict P hI V).hom.1 :=
+  have hhomeo : IsHomeomorph (spaXPresheafRestrict P hI V).hom.val :=
     isHomeomorph_iff_isEmbedding_surjective.mpr ⟨⟨hind, hind.injective⟩, hsurj⟩
   have : IsIso ((forget₂ _root_.TopCommRingCat TopCat).map (spaXPresheafRestrict P hI V).hom) :=
     (TopCat.isIso_iff_isHomeomorph _).mpr hhomeo

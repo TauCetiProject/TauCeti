@@ -56,7 +56,8 @@ private theorem simpleRootCharacter_height (i : Fin 2) :
       5 * simpleRootCharacter i (ULift.up 1) = 1 := by
   have hrow : (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
       fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
-    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
+    rw [← G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i,
+      G2.rootGeneratorWeight_inl_eq]
   simp only [simpleRootCharacter_apply, hrow]
   fin_cases i <;> norm_num
 
@@ -165,7 +166,6 @@ theorem height_pos_of_isPositiveRoot (α : ULift.{0} (Fin 2) →₀ ℤ)
   simp only [SplitTorus.toAdd_weightCharacter, toAdd_ofAdd] at hzero hone
   have hw (a : Fin 7) : 3 * weight a 0 + 5 * weight a 1 = 3 - (a : ℤ) := by
     fin_cases a <;> decide
-  have hlt : (i : ℤ) < j := by exact_mod_cast hijlt
   have hwi := hw i
   have hwj := hw j
   omega

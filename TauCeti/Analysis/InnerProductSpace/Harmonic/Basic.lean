@@ -8,38 +8,48 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 
 /-!
-# Finite sums of harmonic functions
+# Finite sums and differences of harmonic functions
 
 Mathlib's `InnerProductSpace.HarmonicAt.add` and `InnerProductSpace.HarmonicOnNhd.add` show that
-harmonic functions are closed under addition. This file extends this to finite sums.
+harmonic functions are closed under addition. This file extends this to finite sums, and shows
+that two `C²` functions with the same Laplacian near a point differ by a harmonic function there.
 
 ## Main declarations
 
 * `InnerProductSpace.HarmonicAt.sum`, `InnerProductSpace.HarmonicOnNhd.sum`: a finite sum of
   harmonic functions is harmonic.
+* `ContDiffAt.harmonicAt_sub_of_laplacian_eventuallyEq`: two `C²` functions whose Laplacians agree
+  near `x` differ by a function harmonic at `x`.
 -/
 
 public section
 
 namespace InnerProductSpace
 
+open Laplacian Filter Topology
+
 variable {E F ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ι → E → F} {x : E} {s : Set E}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ι → E → F} {u : Finset ι} {x : E}
+  {s : Set E}
 
 /-- A finite sum of functions harmonic at `x` is harmonic at `x`. -/
-theorem HarmonicAt.sum (u : Finset ι) (h : ∀ i ∈ u, HarmonicAt (f i) x) :
+theorem HarmonicAt.sum (h : ∀ i ∈ u, HarmonicAt (f i) x) :
     HarmonicAt (fun y => ∑ i ∈ u, f i y) x := by
-  classical
-  induction u using Finset.induction_on with
-  | empty => simp
-  | insert j u hj ih =>
-    simp only [Finset.sum_insert hj]
-    exact (h j (Finset.mem_insert_self j u)).add
-      (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+  rw [← Finset.sum_fn]
+  exact Finset.sum_induction _ (HarmonicAt · x) (fun _ _ => .add) (harmonicAt_const 0) h
 
 /-- A finite sum of functions harmonic on a neighborhood of `s` is harmonic there. -/
-theorem HarmonicOnNhd.sum (u : Finset ι) (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
+theorem HarmonicOnNhd.sum (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
     HarmonicOnNhd (fun y => ∑ i ∈ u, f i y) s :=
-  fun x hx => HarmonicAt.sum u fun i hi => h i hi x hx
+  fun x hx => HarmonicAt.sum fun i hi => h i hi x hx
+
+/-- Two functions of class `C²` at `x` whose Laplacians agree near `x` differ by a function
+harmonic at `x`. -/
+theorem _root_.ContDiffAt.harmonicAt_sub_of_laplacian_eventuallyEq {g h : E → F}
+    (hg : ContDiffAt ℝ 2 g x) (hh : ContDiffAt ℝ 2 h x) (hgh : Δ g =ᶠ[𝓝 x] Δ h) :
+    HarmonicAt (g - h) x := by
+  refine ⟨hg.sub hh, ?_⟩
+  filter_upwards [hg.laplacian_sub_nhds hh, hgh] with y hy hy'
+  rw [hy, Pi.sub_apply, hy', sub_self, Pi.zero_apply]
 
 end InnerProductSpace

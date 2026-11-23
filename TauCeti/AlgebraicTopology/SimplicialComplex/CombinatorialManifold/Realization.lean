@@ -50,18 +50,16 @@ variable {ι : Type*} {P : PreAbstractSimplicialComplex ι}
 theorem IsCombinatorialBall.exists_plHomeomorphic_simplex
     [DecidableEq ι] (h : IsCombinatorialBall P n) :
     ∃ V : Finset ι, V.card = n + 1 ∧ PLHomeomorphic P (simplex V) := by
-  have hfin := h.finite_faces
   obtain ⟨V, hV, hPV⟩ := isCombinatorialBall_iff.mp h
-  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+  exact ⟨V, hV, hPV.plHomeomorphic⟩
 
 /-- A combinatorial sphere is PL-homeomorphic to the boundary of a simplex of the prescribed
 dimension. -/
 theorem IsCombinatorialSphere.exists_plHomeomorphic_simplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n) :
     ∃ V : Finset ι, V.card = n + 2 ∧ PLHomeomorphic P (simplexBoundary V) := by
-  have hfin := h.finite_faces
   obtain ⟨V, hV, hPV⟩ := isCombinatorialSphere_iff.mp h
-  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+  exact ⟨V, hV, hPV.plHomeomorphic⟩
 
 /-- A combinatorial ball has the PL homeomorphism type of the simplex on a canonical finite
 vertex type. This removes the arbitrary labels from `exists_plHomeomorphic_simplex`, which is
@@ -70,25 +68,11 @@ theorem IsCombinatorialBall.plHomeomorphic_standardSimplex
     [DecidableEq ι] (h : IsCombinatorialBall P n) :
     PLHomeomorphic P (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
   obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplex
-  let e : V ≃ Fin (n + 1) := Finset.equivFinOfCardEq hV
-  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
-  let S : PreAbstractSimplicialComplex V := simplex Finset.univ
-  have hj : S.map j = simplex V := by
-    simp only [S, map_simplex]
-    congr 1
-    ext v
-    simp [j]
-  have he : S.map e.toEmbedding = simplex (Finset.univ : Finset (Fin (n + 1))) := by
-    simp only [S, map_simplex]
-    congr 1
-    exact Finset.image_univ_equiv e
-  have hleft : PLHomeomorphic (simplex V) S := by
-    rw [← hj]
-    exact (PLHomeomorphic.relabeling S j).symm
-  have hright : PLHomeomorphic S (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
-    rw [← he]
-    exact PLHomeomorphic.relabeling S e.toEmbedding
-  exact hP.trans (hleft.trans hright)
+  obtain ⟨j, hjV⟩ :=
+    Function.Embedding.exists_of_card_eq_finset ((Fintype.card_fin _).trans hV.symm)
+  have hj : (simplex Finset.univ).map j = simplex V := by
+    rw [map_simplex, ← Finset.map_eq_image, hjV]
+  exact hP.trans (hj ▸ (PLHomeomorphic.relabeling _ j).symm)
 
 /-- A combinatorial sphere has the PL homeomorphism type of the boundary of the simplex on a
 canonical finite vertex type. This is the standard link model used by PL vertex charts. -/
@@ -96,43 +80,27 @@ theorem IsCombinatorialSphere.plHomeomorphic_standardSimplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n) :
     PLHomeomorphic P (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
   obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplexBoundary
-  let e : V ≃ Fin (n + 2) := Finset.equivFinOfCardEq hV
-  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
-  let S : PreAbstractSimplicialComplex V := simplexBoundary Finset.univ
-  have hj : S.map j = simplexBoundary V := by
-    simp only [S, map_simplexBoundary]
-    congr 1
-    ext v
-    simp [j]
-  have he : S.map e.toEmbedding =
-      simplexBoundary (Finset.univ : Finset (Fin (n + 2))) := by
-    simp only [S, map_simplexBoundary]
-    congr 1
-    exact Finset.image_univ_equiv e
-  have hleft : PLHomeomorphic (simplexBoundary V) S := by
-    rw [← hj]
-    exact (PLHomeomorphic.relabeling S j).symm
-  have hright : PLHomeomorphic S
-      (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
-    rw [← he]
-    exact PLHomeomorphic.relabeling S e.toEmbedding
-  exact hP.trans (hleft.trans hright)
+  obtain ⟨j, hjV⟩ :=
+    Function.Embedding.exists_of_card_eq_finset ((Fintype.card_fin _).trans hV.symm)
+  have hj : (simplexBoundary Finset.univ).map j = simplexBoundary V := by
+    rw [map_simplexBoundary, ← Finset.map_eq_image, hjV]
+  exact hP.trans (hj ▸ (PLHomeomorphic.relabeling _ j).symm)
 
 /-- A combinatorial ball has a PL homeomorphism to the realization of the standard simplex,
 with ambient PL coordinate formulas in both directions. -/
 theorem IsCombinatorialBall.exists_homeomorph_standardSimplex
     [DecidableEq ι] (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+    ∃ e : {x : Realization A // x.val.support ∈ P} ≃ₜ
         Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))),
       ∃ f : (ι → ℝ) → (Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → (ι → ℝ),
-        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
-          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.val.support ∈ P} =>
+          (x.val.val : ι → ℝ)) ∧
         TauCeti.IsPLOn g (Set.range fun y :
           Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) =>
-            (y.1 : Fin (n + 1) → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
-        ∀ y, g (y.1 : Fin (n + 1) → ℝ) = (e.symm y).1.1 := by
+            (y.val : Fin (n + 1) → ℝ)) ∧
+        (∀ x, f (x.val.val : ι → ℝ) = (e x).val) ∧
+        ∀ y, g (y.val : Fin (n + 1) → ℝ) = (e.symm y).val.val := by
   have hPL := h.plHomeomorphic_standardSimplex
   rw [simplex_univ, ← top_toPreAbstractSimplicialComplex] at hPL
   exact hPL.exists_homeomorph_realization hA
@@ -142,15 +110,15 @@ boundary, with ambient PL coordinate formulas in both directions. -/
 theorem IsCombinatorialSphere.exists_homeomorph_standardSimplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+    ∃ e : {x : Realization A // x.val.support ∈ P} ≃ₜ
         Realization (standardSuccSimplexBoundary n),
       ∃ f : (ι → ℝ) → (Fin (n + 2) → ℝ), ∃ g : (Fin (n + 2) → ℝ) → (ι → ℝ),
-        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
-          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.val.support ∈ P} =>
+          (x.val.val : ι → ℝ)) ∧
         TauCeti.IsPLOn g (Set.range fun y : Realization (standardSuccSimplexBoundary n) =>
-          (y.1 : Fin (n + 2) → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
-        ∀ y, g (y.1 : Fin (n + 2) → ℝ) = (e.symm y).1.1 := by
+          (y.val : Fin (n + 2) → ℝ)) ∧
+        (∀ x, f (x.val.val : ι → ℝ) = (e x).val) ∧
+        ∀ y, g (y.val : Fin (n + 2) → ℝ) = (e.symm y).val.val := by
   have hPL := h.plHomeomorphic_standardSimplexBoundary
   rw [← standardSuccSimplexBoundary_toPreAbstractSimplicialComplex] at hPL
   exact hPL.exists_homeomorph_realization hA
@@ -163,11 +131,11 @@ The ambient complex may contain unused vertices. They are removed by the weak-po
 theorem IsCombinatorialBall.nonempty_homeomorph_closedBall
     [DecidableEq ι] (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ P} ≃ₜ
+    Nonempty ({x : Realization A // x.val.support ∈ P} ≃ₜ
       Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   classical
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
-  obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
+  obtain ⟨s⟩ := he.nonempty_homeomorph
   obtain ⟨t⟩ := nonempty_homeomorph_simplex_closedBall hV (le_top _)
   exact ⟨(topRealizationHomeomorph P hA).symm.trans (s.trans t)⟩
 
@@ -176,12 +144,12 @@ inside any ambient realization containing it. This includes the two-point zero-s
 theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
     (h : IsCombinatorialSphere P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ P} ≃ₜ
+    Nonempty ({x : Realization A // x.val.support ∈ P} ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   classical
   let r := topRealizationHomeomorph P hA
   obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp h
-  obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
+  obtain ⟨s⟩ := he.nonempty_homeomorph
   obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (le_top _)
   exact ⟨r.symm.trans (s.trans t)⟩
 
@@ -207,7 +175,7 @@ theorem IsCombinatorialManifold.nonempty_homeomorph_closedStar_closedBall
   obtain ⟨b⟩ := hball.nonempty_homeomorph_closedBall hP
   let r := P.relabelingHomeomorph e (PreAbstractSimplicialComplex.closedStar_le) hP
   have hset : (K.closedStarRealization {v} : Set (Realization K)) =
-      {x : Realization K | x.1.support ∈ P} := by
+      {x : Realization K | x.val.support ∈ P} := by
     ext x
     simp only [P, mem_closedStarRealization, Set.mem_ofPred_eq]
   exact ⟨(Homeomorph.setCongr hset).trans (r.trans b)⟩

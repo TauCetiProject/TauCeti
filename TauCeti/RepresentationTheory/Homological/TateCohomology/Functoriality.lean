@@ -193,7 +193,7 @@ theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
 @[simp] theorem complexMap_id :
-    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) =
+    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id =
       𝟙 (tateComplex M) := by
   rw [complexMap_refl]
   exact (tateComplexFunctor R G).map_id M
@@ -286,7 +286,7 @@ def mapInvariants {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     calc
       N.ρ h (φ x) = N.ρ (e (e.symm h)) (φ x) := by rw [e.apply_symm_apply]
       _ = φ (M.ρ (e.symm h) x) := (hφ.isIntertwining (e.symm h) x).symm
-      _ = φ x := congrArg φ (x.2 (e.symm h))
+      _ = φ x := congrArg φ (x.property (e.symm h))
 
 omit [Fintype G] [Fintype H] in
 @[simp]
@@ -373,7 +373,7 @@ def mapKerNorm {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
   (φ.comp (LinearMap.ker M.ρ.norm).subtype).codRestrict (LinearMap.ker N.ρ.norm) fun x ↦ by
     rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.subtype_apply, ← LinearMap.comp_apply,
       ← Representation.IsIntertwiningMap.comp_norm hφ, LinearMap.comp_apply,
-      LinearMap.mem_ker.1 x.2, map_zero]
+      LinearMap.mem_ker.1 x.property, map_zero]
 
 @[simp]
 theorem mapKerNorm_apply_coe {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
@@ -443,7 +443,7 @@ theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity in every degree. -/
 @[simp] theorem map_id (n : ℤ) :
-    map (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) n =
+    map (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id n =
       𝟙 (tateCohomology M n) := by
   rw [map_def, complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _

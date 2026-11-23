@@ -440,14 +440,14 @@ variable [NonUnitalNonAssocSemiring K]
 @[simp]
 theorem realizedFunctions_realize_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realize = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, funext (A.realize_depth_zero default)]
+  rw [realizedFunctions_unique, funext (A.realize_depth_zero default)]
   rfl
 
 /-- A depth-zero bias-free MLP realizes only the identity function. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realizeWeights = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, funext (A.realizeWeights_depth_zero default)]
+  rw [realizedFunctions_unique, funext (A.realizeWeights_depth_zero default)]
   rfl
 
 /-- The affine neuromanifold of `A : MLPSpec K (L + 1)` consists of the composites
@@ -475,7 +475,7 @@ theorem realizedFunctions_realize_depth_one (A : MLPSpec K 1) :
   let e : A.Parameters ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K × (Fin (A.width 1) → K) :=
     Equiv.piUnique _
   have h : A.realize = dense ∘ e := funext A.realize_depth_one_eq_dense
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  simpa only [realizedFunctions_def, h] using e.surjective.range_comp dense
 
 /-- A one-layer bias-free MLP has the same neuromanifold as `Matrix.mulVec`. -/
 @[simp]
@@ -484,7 +484,7 @@ theorem realizedFunctions_realizeWeights_depth_one (A : MLPSpec K 1) :
   let e : A.Weights ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K := Equiv.piUnique _
   have h : A.realizeWeights = Matrix.mulVec ∘ e :=
     funext fun w => funext (A.realizeWeights_depth_one w)
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  simpa only [realizedFunctions_def, h] using e.surjective.range_comp Matrix.mulVec
 
 /-- In depth at least two, the affine neuromanifold splits off the first hidden layer
 `Neuromanifold.activation (A.activation 0) () ∘ dense`. -/

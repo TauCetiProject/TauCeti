@@ -209,7 +209,7 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
   let Q : QuadraticForm ℝ P := B.toQuadraticMap.comp ι
   have hQJ : (Q + Q.comp J).PosDef := by
     intro v hv
-    have := hP v v.2 (by simpa using hv)
+    have := hP v v.property (by simpa using hv)
     rw [re_leviForm_apply] at this
     simpa [Q, J, ι] using (by linarith : 0 < B v v + B (I • (v : V)) (I • (v : V)))
   have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef (W := W.comap ι) J hQJ fun v hv ↦ by
@@ -218,7 +218,6 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
   have h₂ := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι W
   have h₃ : finrank ℝ P = 2 * finrank ℂ P := TauCeti.finrank_real_eq_two_mul_finrank_complex
   have h₄ : finrank ℝ V = 2 * finrank ℂ V := TauCeti.finrank_real_eq_two_mul_finrank_complex
-  have h₅ := Submodule.finrank_le P
   omega
 
 /-- **Negative inertia bound from a complex positive subspace.** If the Levi form of `B` is

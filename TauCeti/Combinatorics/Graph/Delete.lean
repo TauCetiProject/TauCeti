@@ -18,8 +18,10 @@ This file computes edge deletion `Graph.deleteEdges` in two families of multigra
 removes edges from `F`. These identities let deletion-based connectivity predicates be compared
 with their simple-graph versions and evaluated on explicit examples. It also records that
 deletion is antitone in the deleted set, `Graph.deleteEdges_anti_right`, complementing Mathlib's
-`Graph.deleteEdges_mono_left`. Vertex deletion commutes with simplification up to the canonical
-isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original point.
+`Graph.deleteEdges_mono_left`, and that it gives a spanning subgraph,
+`Graph.deleteEdges_isSpanningSubgraph`. Vertex deletion commutes with simplification up to the
+canonical isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original
+point.
 -/
 
 public section
@@ -36,6 +38,10 @@ theorem deleteEdges_anti_right (G : Graph α β) {F₁ F₂ : Set β} (h : F₁ 
     G.deleteEdges F₂ ≤ G.deleteEdges F₁ := by
   simpa [union_eq_right.mpr h] using (G.deleteEdges F₁).deleteEdges_le (F := F₂)
 
+/-- Deleting edges keeps every vertex, so it gives a spanning subgraph. -/
+theorem deleteEdges_isSpanningSubgraph (G : Graph α β) (F : Set β) : G.deleteEdges F ≤s G :=
+  ⟨deleteEdges_le, vertexSet_deleteEdges ..⟩
+
 /-- Deleting edges commutes with regarding a simple graph as a multigraph. -/
 @[simp]
 theorem ofSimpleGraph_deleteEdges (H : SimpleGraph α) (F : Set (Sym2 α)) :
@@ -47,6 +53,14 @@ theorem ofSimpleGraph_deleteEdges (H : SimpleGraph α) (F : Set (Sym2 α)) :
 theorem banana_deleteEdges (u w : α) (F D : Set β) :
     (banana u w F).deleteEdges D = banana u w (F \ D) :=
   Graph.ext (by simp) fun e x y ↦ by simp [and_assoc, and_comm (a := e ∉ D)]
+
+/-- Deleting vertices induces the graph on the remaining actual vertices. -/
+theorem deleteVerts_eq_induce (G : Graph α β) (X : Set α) :
+    G.deleteVerts X = G.induce (V(G) \ X) := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [deleteVerts_isLink, induce_isLink, mem_sdiff, and_congr_right_iff]
+  intro h
+  simp only [h.left_mem, h.right_mem, true_and]
 
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/

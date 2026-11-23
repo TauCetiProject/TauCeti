@@ -78,10 +78,9 @@ unital.
 
 ## References
 
-This implements the "admissible ideal" part of Layer 3A of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, the finite-dimensional
-algebra infrastructure that its `kQ/I` presentation theorem rests on. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. II.2.
+Admissible ideals are the finite-dimensional algebra infrastructure that the `kQ/I` presentation
+theorem rests on. See Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras I*, Ch. II.2.
 -/
 
 public section
@@ -222,14 +221,14 @@ individual nonmemberships `TauCeti.IsAdmissibleIdeal.vertexIdempotent_notMem` an
 distinct, and no nonzero combination of them is erased. -/
 theorem linearIndependent_mk_ofPath_of_length_lt_two (h : IsAdmissibleIdeal I) :
     LinearIndependent k fun x : {x : Quiver.TotalPath Q // x.2.2.length < 2} =>
-      Ideal.Quotient.mk I (ofPath x.1) := by
+      Ideal.Quotient.mk I (ofPath x.val) := by
   -- The short paths span a complement of `R ^ 2`, which already contains `I`.
   have hdisj : Disjoint
       (Submodule.span k (Set.range fun x : {x : Quiver.TotalPath Q // x.2.2.length < 2} =>
-        pathAlgebraBasis k Q x.1))
+        pathAlgebraBasis k Q x.val))
       (LinearMap.ker (Ideal.Quotient.mkₐ k I).toLinearMap) := by
     have hrange : (Set.range fun x : {x : Quiver.TotalPath Q // x.2.2.length < 2} =>
-        pathAlgebraBasis k Q x.1)
+        pathAlgebraBasis k Q x.val)
         = pathAlgebraBasis k Q '' {x : Quiver.TotalPath Q | x.2.2.length < 2} := by
       ext y
       simp [Set.mem_image, Subtype.exists]
@@ -250,7 +249,7 @@ theorem linearIndependent_mk_ofPath_of_length_lt_two (h : IsAdmissibleIdeal I) :
     have hxlong : 2 ≤ x.2.2.length := hle x hx
     omega
   have hli : LinearIndependent k fun x : {x : Quiver.TotalPath Q // x.2.2.length < 2} =>
-      (pathAlgebraBasis k Q x.1 : pathAlgebra k Q) := by
+      (pathAlgebraBasis k Q x.val : pathAlgebra k Q) := by
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using
       (linearIndependent_ofPath k Q).comp
         (Subtype.val : {x : Quiver.TotalPath Q // x.2.2.length < 2} → _) Subtype.val_injective

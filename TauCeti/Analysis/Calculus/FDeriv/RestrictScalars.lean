@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The derivative under restriction of scalars
@@ -14,14 +19,26 @@ For a map differentiable over a larger field `𝕜'`, the derivative over `𝕜`
 scalars of the derivative over `𝕜'`, so it is `𝕜'`-linear, the two derivatives have the same
 range, and one is injective exactly when the other is. For a holomorphic map, the real derivative
 commutes with multiplication by `I`, the real tangent space is the complex tangent space, and the
-map is a real immersion at a point exactly when it is a complex one.
+map is a real immersion at a point exactly when it is a complex one. For a holomorphic function
+of one variable, the real derivative is multiplication by the complex derivative, so the two have
+the same norm. An affine automorphism of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
+invertible derivative given by its linear part; for instance, the automorphism `z ↦ a z + b` of
+`ℂ` with `a ≠ 0` has an invertible real derivative.
 
 ## Main results
 
 * `DifferentiableAt.fderiv_restrictScalars_smul`: the derivative over `𝕜` is `𝕜'`-linear.
+* `DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv`: on the line `𝕜'`, it is
+  multiplication by the derivative.
+* `DifferentiableAt.norm_fderiv_restrictScalars_eq_norm_deriv`: on the line `𝕜'`, its norm is
+  the norm of the derivative.
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
+* `TauCeti.hasFDerivAtFilter_restrictScalars_iff`: a `𝕜'`-linear map is a derivative exactly when
+  its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
+* `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
+  `𝕜'` is its linear part.
 -/
 
 public section
@@ -39,6 +56,20 @@ theorem _root_.DifferentiableAt.fderiv_restrictScalars_smul (hi : Differentiable
     (c : 𝕜') (u : V) : fderiv 𝕜 i x (c • u) = c • fderiv 𝕜 i x u := by
   simp [hi.fderiv_restrictScalars 𝕜]
 
+/-- The derivative over `𝕜` of a map `f` on `𝕜'` which is differentiable over `𝕜'` sends `v` to
+`v • deriv f x`. For a holomorphic `f : ℂ → E`, the real derivative at `z` sends `1` to
+`deriv f z` and `I` to `I • deriv f z`. -/
+theorem _root_.DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv {f : 𝕜' → E} {x : 𝕜'}
+    (hf : DifferentiableAt 𝕜' f x) (v : 𝕜') : fderiv 𝕜 f x v = v • deriv f x := by
+  rw [hf.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars', fderiv_eq_smul_deriv]
+
+/-- The derivative over `𝕜` of a map on `𝕜'` which is differentiable over `𝕜'` has the norm of
+its derivative. For a holomorphic `f : ℂ → E`, `‖fderiv ℝ f z‖ = ‖deriv f z‖`. -/
+theorem _root_.DifferentiableAt.norm_fderiv_restrictScalars_eq_norm_deriv {f : 𝕜' → E}
+    {x : 𝕜'} (hf : DifferentiableAt 𝕜' f x) : ‖fderiv 𝕜 f x‖ = ‖deriv f x‖ := by
+  rw [hf.fderiv_restrictScalars 𝕜, ContinuousLinearMap.norm_restrictScalars,
+    norm_deriv_eq_norm_fderiv]
+
 /-- The tangent space of a map differentiable over a larger field `𝕜'` is the same over `𝕜`. For
 a holomorphic map, the real tangent space is the complex tangent space; in particular it is stable
 under multiplication by `I`. -/
@@ -54,5 +85,35 @@ theorem _root_.DifferentiableAt.injective_fderiv_restrictScalars_iff
     (hi : DifferentiableAt 𝕜' i x) :
     Function.Injective (fderiv 𝕜 i x) ↔ Function.Injective (fderiv 𝕜' i x) := by
   rw [hi.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars']
+
+/-- An affine automorphism `f` of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
+invertible derivative given by its linear part. For instance, an affine automorphism of `ℂ` has an
+invertible real derivative. -/
+theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [FiniteDimensional 𝕜' V]
+    (f : V ≃ᵃ[𝕜'] V) (x : V) :
+    HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars 𝕜 : V ≃L[𝕜] V) :
+      V →L[𝕜] V) x := by
+  have h := (ContinuousAffineMap.hasFDerivAt
+    (f := f.toContinuousAffineEquiv.toContinuousAffineMap) (x := x)).restrictScalars 𝕜
+  rw [ContinuousAffineEquiv.coe_toContinuousAffineMap, AffineEquiv.coe_toContinuousAffineEquiv]
+    at h
+  exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
+
+end TauCeti
+
+namespace TauCeti
+
+variable (𝕜 : Type*) {𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E] [SeminormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [LinearMap.CompatibleSMul E F 𝕜 𝕜']
+
+/-- A `𝕜'`-linear map is a derivative of `f` along a filter exactly when its scalar restriction to
+`𝕜` is: both are the same `o`-condition. Unlike `HasFDerivAtFilter.restrictScalars`, this needs
+only the scalar compatibility `LinearMap.CompatibleSMul` that `ContinuousLinearMap.restrictScalars`
+assumes, rather than a normed algebra with scalar towers, and the spaces need only be seminormed. -/
+theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] F}
+    {L : Filter (E × E)} :
+    HasFDerivAtFilter f (f'.restrictScalars 𝕜) L ↔ HasFDerivAtFilter f f' L := by
+  simp only [hasFDerivAtFilter_iff_isLittleO, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti

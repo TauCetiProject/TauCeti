@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Equalizers
 
 /-!
 # Colimits commute with cokernels
@@ -14,11 +16,15 @@ Let `α : F ⟶ G` and `π : G ⟶ H` be natural transformations of diagrams `J 
 component `π j` is a cokernel of `α j`.  If `F` and `G` have colimit cocones, then a cocone on `H`
 whose apex is the cokernel of the map induced by `α` on the colimits is itself a colimit cocone
 (`TauCeti.isColimitOfIsColimitCokernelCofork`).  No existence of colimits or cokernels in `D` is
-assumed: all the relevant cocones and coforks are given.
+assumed: all the relevant cocones and coforks are given.  This is the special case of
+`TauCeti.isColimitOfIsColimitCofork` for coequalizers with the zero morphism.
 
 This is how a quotient construction, such as relative chains as the quotient of the chains of a
 space by those of a subspace, inherits a colimit description from the two objects it is formed
 from.
+
+The file also records that the square of a cokernel against a zero object is a pushout
+(`CategoryTheory.IsPushout.of_isColimit_cokernelCofork`).
 -/
 
 public section
@@ -42,23 +48,25 @@ def isColimitOfIsColimitCokernelCofork (hπ : ∀ j, IsColimit (CokernelCofork.o
     (hf : ∀ j, cF.ι.app j ≫ f = α.app j ≫ cG.ι.app j)
     (hp : ∀ j, cG.ι.app j ≫ p = π.app j ≫ cH.ι.app j)
     (hcok : IsColimit (CokernelCofork.ofπ p wp)) : IsColimit cH :=
-  -- A cocone `s` on `H` gives a cocone on `G` by precomposition with `π`, whose descent `φ s`
-  -- kills `f` because each `π j` kills `α j`; so `φ s` descends to the cokernel of `f`.
-  let φ (s : Cocone H) : cG.pt ⟶ s.pt := hG.desc
-    { pt := s.pt
-      ι :=
-        { app j := π.app j ≫ s.ι.app j
-          naturality j j' u := by simp } }
-  have hφ (s : Cocone H) (j : J) : cG.ι.app j ≫ φ s = π.app j ≫ s.ι.app j := hG.fac _ j
-  have hφ₀ (s : Cocone H) : f ≫ φ s = 0 := hF.hom_ext fun j ↦ by
-    rw [reassoc_of% (hf j), hφ, reassoc_of% (w j), zero_comp, comp_zero]
-  let desc (s : Cocone H) : cH.pt ⟶ s.pt :=
-    Cofork.IsColimit.desc hcok (φ s) (by rw [hφ₀, zero_comp])
-  have hdesc (s : Cocone H) : p ≫ desc s = φ s := Cofork.IsColimit.π_desc' hcok _ _
-  { desc
-    fac s j := Cofork.IsColimit.hom_ext (hπ j) <| by
-      rw [CokernelCofork.π_ofπ, ← reassoc_of% (hp j), hdesc, hφ]
-    uniq s m hm := Cofork.IsColimit.hom_ext hcok <| hG.hom_ext fun j ↦ by
-      rw [CokernelCofork.π_ofπ, hdesc, reassoc_of% (hp j), hm, hφ] }
+  isColimitOfIsColimitCofork (β := 0) (g := 0) hπ hF hG hf (fun _ ↦ by simp) hp hcok
 
 end TauCeti
+
+namespace CategoryTheory.IsPushout
+
+open Limits
+
+/-- **The square of a cokernel against a zero object is a pushout**: if `g : X₂ ⟶ X₃` is a
+cokernel of `f : X₁ ⟶ X₂` and `Y` is a zero object, the square with `X₁ ⟶ Y ⟶ X₃` is a pushout
+square. -/
+theorem of_isColimit_cokernelCofork {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X₁ X₂ X₃ Y : C} {f : X₁ ⟶ X₂} {g : X₂ ⟶ X₃} {w : f ≫ g = 0}
+    (hg : IsColimit (CokernelCofork.ofπ g w)) (hY : IsZero Y) :
+    IsPushout f (0 : X₁ ⟶ Y) g (0 : Y ⟶ X₃) :=
+  of_isColimit' ⟨by simp [w]⟩ (PushoutCocone.IsColimit.mk _
+    (fun s ↦ (CokernelCofork.IsColimit.desc' hg s.inl (by simpa using s.condition)).val)
+    (fun _ ↦ (CokernelCofork.IsColimit.desc' hg _ _).property) (fun _ ↦ hY.eq_of_src _ _)
+    (fun _ _ hm _ ↦ Cofork.IsColimit.hom_ext hg
+      (hm.trans (CokernelCofork.IsColimit.desc' hg _ _).property.symm)))
+
+end CategoryTheory.IsPushout

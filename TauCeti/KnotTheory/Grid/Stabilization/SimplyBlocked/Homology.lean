@@ -5,111 +5,161 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+
 /-!
-# The stabilization map on simply blocked knot grid homology
+# Stabilization invariance of simply blocked grid homology
 
-The specialized `X`-stabilization chain map induces a specified semilinear map on `G-hat`.
-The blocked marking is an old `O`-marking carried into the stabilized diagram. On coefficients,
-the map merges the stabilization variables and kills the chosen variable. On homology, it
-takes a cycle class to the class of its stabilization image.
+Let `G` be a grid diagram of size `n`, let `s` and `i` be columns of `G`, and let
+`G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking of
+column `s`, with `j = s.castSucc.succAbove i` the column of `G'` carrying the old `O`-marking of
+column `i`. The specialized `X`-stabilization chain map `GridDiagram.simplyBlockedStabilizeXMap`
+merges the two variables of the stabilization block along `s.predAbove` and sets `V_i` to zero.
 
-This file constructs that comparison, including its action on cycles and boundaries; it does
-not assert invertibility or grading compatibility.
+This file descends that chain map to a specified semilinear map on the homology of the one-variable
+specialization for any grid diagram (`GridDiagram.oneVariableSpecializationStabilizeXHomologyMap`),
+sending each cycle class to the class of its stabilization image. For a knot grid (`G.IsKnot`), the
+one-variable specialization is simply blocked grid homology `G-hat`
+(`GridDiagram.IsKnot.simplyBlockedHomology`), so these declarations apply directly to `G-hat`.
+
+It then proves that this map is bijective
+(`oneVariableSpecializationStabilizeXHomologyMap_bijective`), establishing invariance of the
+one-variable specialization—and hence of `G-hat` for a knot grid—under this `X`-stabilization.
+Bijectivity is deduced from stabilization invariance of `GH⁻` via the morphism of short exact
+sequences `0 → GC⁻ --V--> GC⁻ → GC^ → 0`
+(`GridDiagram.exists_sub_simplyBlockedStabilizeXMap_mem_range` and
+`GridDiagram.mem_range_of_simplyBlockedStabilizeXMap_mem_range`). Since the coefficient homomorphism
+`simplyBlockedStabilizeXRingHom` fixes ground-ring scalars, restricting scalars along
+`MvPolynomial.C` packages the bijection as an `R`-linear equivalence
+(`oneVariableSpecializationStabilizeXHomologyEquiv`). Bigrading compatibility is treated in
+`TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Bigraded`.
+
+## Main definitions
+
+* `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXCyclesMap` and
+  `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyMap`: the stabilization
+  comparisons on cycles and homology of the one-variable specialization of an arbitrary grid.
+* `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv`: the homology comparison
+  as an `R`-linear equivalence after restricting scalars to the ground ring.
+
+## Main results
+
+* `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyMap_bijective`: **stabilization
+  invariance for the one-variable specialization** (and therefore of `G-hat` for a knot grid) under
+  the south-west corner `X`-stabilization.
 
 ## References
 
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.6 and 5.2;
-Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*,
-Section 3.2 (arXiv:math/0610559).
+* Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.6 and 5.2.
+* Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*,
+  Section 3.2 (arXiv:math/0610559).
 -/
 
 public section
 
 open CategoryTheory
 
-namespace TauCeti.GridDiagram.IsKnot
+namespace TauCeti.GridDiagram
 
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s i : Fin n)
+variable {n : ℕ} (G : GridDiagram n) (s i : Fin n)
   (R : Type*) [CommRing R] [CharP R 2]
 
-local notation "j" => s.castSucc.succAbove i
+local notation "j" => Fin.succAbove (Fin.castSucc s) i
 local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
   (Fin.castSucc (GridDiagram.X G s)) s
-local notation "hG'" => Iff.mpr
-  (GridDiagram.isKnot_stabilizeX G (Fin.castSucc s) (Fin.castSucc (GridDiagram.X G s)) s) hG
+local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
+local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 
-/-- The specialized stabilization map between the categorical chain carriers. -/
-private noncomputable def simplyBlockedStabilizeXChainMap :
-    ((G').simplyBlockedComplex R j).X () →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      (G.simplyBlockedComplex R i).X () :=
-  (G.simplyBlockedChainEquiv R i).symm.toLinearMap.comp
-    ((G.simplyBlockedStabilizeXMap s i R).comp
-      ((G').simplyBlockedChainEquiv R j).toLinearMap)
+/-- Stabilization on cycles of the one-variable specialization, with the chosen old `O`-marking
+blocked in each diagram. -/
+noncomputable def oneVariableSpecializationStabilizeXCyclesMap :
+    LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom
+      →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
+      LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom :=
+  oneVariableSpecializationCyclesMapOfIntertwining R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
 
-private theorem simplyBlockedStabilizeXChainMap_d
-    (z : ((G').simplyBlockedComplex R j).X ()) :
-    simplyBlockedStabilizeXChainMap s i R (((G').simplyBlockedComplex R j).d () () z) =
-      (G.simplyBlockedComplex R i).d () () (simplyBlockedStabilizeXChainMap s i R z) := by
-  apply (G.simplyBlockedChainEquiv R i).injective
-  simp only [simplyBlockedStabilizeXChainMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply, GridDiagram.simplyBlockedChainEquiv_d]
-  exact G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R _
-
-/-- Stabilization on simply blocked cycles, with the chosen old marking blocked in each grid. -/
-noncomputable def simplyBlockedStabilizeXCyclesMap :
-    (hG').simplyBlockedCycles R j →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      hG.simplyBlockedCycles R i :=
-  (simplyBlockedStabilizeXChainMap s i R).restrict fun z hz => by
-    rw [LinearMap.mem_ker] at hz ⊢
-    rw [← simplyBlockedStabilizeXChainMap_d, hz, map_zero]
-
-/-- Under the explicit chain identifications, the map on cycles is the specialized
-stabilization map. -/
+/-- Under the explicit chain identifications, the map on cycles of the one-variable specialization
+is `simplyBlockedStabilizeXMap`. -/
 @[simp]
-theorem simplyBlockedChainEquiv_simplyBlockedStabilizeXCyclesMap
-    (z : (hG').simplyBlockedCycles R j) :
-    G.simplyBlockedChainEquiv R i (hG.simplyBlockedStabilizeXCyclesMap s i R z) =
-      G.simplyBlockedStabilizeXMap s i R ((G').simplyBlockedChainEquiv R j z) := by
-  simp only [simplyBlockedStabilizeXCyclesMap, LinearMap.coe_restrict_apply,
-    simplyBlockedStabilizeXChainMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply]
+theorem simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap
+    (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
+    G.simplyBlockedChainEquiv R i (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) =
+      G.simplyBlockedStabilizeXMap s i R ((G').simplyBlockedChainEquiv R j z) :=
+  simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R) z
 
-private theorem simplyBlockedStabilizeXCyclesMap_mem_boundaries
-    {z : (hG').simplyBlockedCycles R j} (hz : z ∈ (hG').simplyBlockedBoundaries R j) :
-    hG.simplyBlockedStabilizeXCyclesMap s i R z ∈ hG.simplyBlockedBoundaries R i := by
-  obtain ⟨w, rfl⟩ := hz
-  refine ⟨simplyBlockedStabilizeXChainMap s i R w, ?_⟩
-  apply Subtype.ext
-  exact (simplyBlockedStabilizeXChainMap_d s i R w).symm
+/-- The specified semilinear stabilization comparison on the homology of the one-variable
+specialization, from the stabilized grid to the original grid. -/
+noncomputable def oneVariableSpecializationStabilizeXHomologyMap :
+    ((G').simplyBlockedComplex R j).homology () →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
+      (G.simplyBlockedComplex R i).homology () :=
+  oneVariableSpecializationHomologyMapOfIntertwining
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
 
-/-- The specified semilinear stabilization comparison on simply blocked knot grid homology,
-from the stabilized grid to the old grid. -/
-noncomputable def simplyBlockedStabilizeXHomologyMap :
-    (hG').simplyBlockedHomology R j →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      hG.simplyBlockedHomology R i :=
-  (hG.simplyBlockedHomologyIsoQuotient R i).toLinearEquiv.symm.toLinearMap.comp
-    ((Submodule.mapQ ((hG').simplyBlockedBoundaries R j)
-      (hG.simplyBlockedBoundaries R i) (hG.simplyBlockedStabilizeXCyclesMap s i R)
-      (fun _ hz => hG.simplyBlockedStabilizeXCyclesMap_mem_boundaries s i R hz)).comp
-        ((hG').simplyBlockedHomologyIsoQuotient R j).toLinearEquiv.toLinearMap)
-
-/-- The stabilization comparison takes a cycle class to the class of its specified
-stabilization image. -/
+/-- The stabilization comparison on the one-variable specialization sends a cycle class to the class
+of its stabilization image. -/
 @[simp]
-theorem simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
-    (z : (hG').simplyBlockedCycles R j) :
-    hG.simplyBlockedStabilizeXHomologyMap s i R
+theorem oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
+    (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
+    G.oneVariableSpecializationStabilizeXHomologyMap s i R
         ((G').oneVariableSpecializationHomologyClass R j z) =
       G.oneVariableSpecializationHomologyClass R i
-        (hG.simplyBlockedStabilizeXCyclesMap s i R z) := by
-  simp only [simplyBlockedStabilizeXHomologyMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_eq]
-  -- Pass through the categorical isomorphisms to the explicit quotient classes.
-  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-    simplyBlockedHomologyIsoQuotient_hom_class, simplyBlockedHomologyIsoQuotient_hom_class,
-    Submodule.mapQ_apply]
+        (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) :=
+  oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializationHomologyClass
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R) z
 
-end TauCeti.GridDiagram.IsKnot
+/-- **Stabilization invariance for the one-variable specialization.** For any grid diagram `G`, the
+stabilization map from the homology of the specialization `V_{s.castSucc.succAbove i} = 0` of `G'`
+to the homology of the specialization `V_i = 0` of `G` is bijective. -/
+theorem oneVariableSpecializationStabilizeXHomologyMap_bijective :
+    Function.Bijective (G.oneVariableSpecializationStabilizeXHomologyMap s i R) := by
+  apply oneVariableSpecializationHomologyMapOfIntertwining_bijective
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+  · intro x hx hfx
+    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R
+      (LinearMap.mem_ker.mpr hx) hfx
+  · intro y hy
+    simpa only [LinearMap.mem_ker] using
+      G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R (LinearMap.mem_ker.mpr hy)
+
+/-- The stabilization comparison on the homology of the one-variable specialization, packaged as an
+`R`-linear equivalence by restricting scalars along `MvPolynomial.C`. -/
+noncomputable def oneVariableSpecializationStabilizeXHomologyEquiv :
+    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
+        (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
+      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
+        ((G.simplyBlockedComplex R i).homology ()) :=
+  ModuleCat.restrictScalarsLinearEquivOfBijective
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXHomologyMap s i R)
+    (simplyBlockedStabilizeXRingHom_C s i R)
+    (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R)
+
+/-- On elements, `oneVariableSpecializationStabilizeXHomologyEquiv` is the semilinear stabilization
+comparison. -/
+theorem oneVariableSpecializationStabilizeXHomologyEquiv_apply
+    (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
+      (((G').simplyBlockedComplex R j).homology ())) :
+    G.oneVariableSpecializationStabilizeXHomologyEquiv s i R y =
+      G.oneVariableSpecializationStabilizeXHomologyMap s i R y :=
+  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
+    (MvPolynomial.C : R →+* S) (MvPolynomial.C : R →+* A)
+    (G.oneVariableSpecializationStabilizeXHomologyMap s i R)
+    (simplyBlockedStabilizeXRingHom_C s i R)
+    (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R) y
+
+end TauCeti.GridDiagram

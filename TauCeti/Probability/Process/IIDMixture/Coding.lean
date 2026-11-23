@@ -45,6 +45,32 @@ theorem measurable_unitIntervalCodingPath :
       fun i => unitIntervalCoding α p.1 (p.2 i) :=
   measurable_pi_uncurry_prod fun _ => measurable_uncurry_unitIntervalCoding α
 
+/-- Coding a family of noise coordinates by the parameter, keeping the parameter, is
+measurable. -/
+lemma measurable_coding_single {ι : Type*} :
+    Measurable fun p : ProbabilityMeasure α × (ι → I) =>
+      (p.1, fun a => unitIntervalCoding α p.1 (p.2 a)) :=
+  measurable_fst.prodMk
+    (measurable_pi_uncurry_prod fun _ => measurable_uncurry_unitIntervalCoding α)
+
+/-- Coding the noise coordinates by the parameter inside a pair, keeping the pair, is
+measurable. -/
+lemma measurable_prodMk_unitIntervalCoding {ι κ : Type*} :
+    Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
+      (q.1, fun b => unitIntervalCoding α q.1.1 (q.2 b)) :=
+  measurable_fst.prodMk (measurable_snd.comp (measurable_coding_single.comp
+    ((measurable_fst.comp measurable_fst).prodMk measurable_snd)))
+
+/-- Coding two noise families by a common parameter, keeping the parameter, is measurable. -/
+lemma measurable_coding_pair {ι κ : Type*} :
+    Measurable fun p : ProbabilityMeasure α × ((ι → I) × (κ → I)) =>
+      ((p.1, fun a => unitIntervalCoding α p.1 (p.2.1 a)),
+        fun b => unitIntervalCoding α p.1 (p.2.2 b)) :=
+  (measurable_coding_single.comp
+    (measurable_fst.prodMk (measurable_fst.comp measurable_snd))).prodMk
+    (measurable_snd.comp (measurable_coding_single.comp
+      (measurable_fst.prodMk (measurable_snd.comp measurable_snd))))
+
 /-- **Coding a mixing law, keeping the parameter.** Retaining the drawn probability measure as a
 coordinate, the same construction produces the canonical conditionally i.i.d. law `iidMixtureLaw`:
 the parameter is not merely a mixing representative of the coded sequence but its directing

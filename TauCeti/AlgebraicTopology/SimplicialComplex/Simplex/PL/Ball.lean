@@ -43,8 +43,8 @@ private def realizationTopHomeomorphOptionCoordinateSimplex (n : ℕ) :
 /-- The coordinate comparison reads the ambient barycentric linear map. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_apply (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))) (i : Option (Fin n)) :
-    (realizationTopHomeomorphOptionCoordinateSimplex n x).1 i =
-      simplexBoundaryCoordinateMap n x.1 i := by
+    (realizationTopHomeomorphOptionCoordinateSimplex n x).val i =
+      simplexBoundaryCoordinateMap n x.val i := by
   simp [realizationTopHomeomorphOptionCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, simplexBoundaryCoordinateMap_apply,
     simplexCoordinateReindex_apply]
@@ -52,26 +52,26 @@ private def realizationTopHomeomorphOptionCoordinateSimplex (n : ℕ) :
 /-- The inverse comparison restores every retained coordinate. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_symm_castSucc (n : ℕ)
     (y : coordinateSimplex (Option (Fin n))) (i : Fin (n + 1)) :
-    ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).1 i.castSucc =
-      y.1 (finSuccEquivLast i) := by
+    ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).val i.castSucc =
+      y.val (finSuccEquivLast i) := by
   simp only [realizationTopHomeomorphOptionCoordinateSimplex, Homeomorph.symm_trans_apply,
     realizationTopHomeomorphCoordinateSimplex_symm_castSucc]
   -- Expose the subtype inverse's ambient value to use the public reindexing equation.
-  change (simplexCoordinateReindex n).symm y.1 i = y.1 (finSuccEquivLast i)
+  change (simplexCoordinateReindex n).symm y.val i = y.val (finSuccEquivLast i)
   simpa only [Homeomorph.apply_symm_apply, Equiv.symm_apply_apply] using
-    (simplexCoordinateReindex_apply n ((simplexCoordinateReindex n).symm y.1)
+    (simplexCoordinateReindex_apply n ((simplexCoordinateReindex n).symm y.val)
       (finSuccEquivLast i)).symm
 
 /-- The omitted barycentric coordinate is the missing mass. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_symm_last (n : ℕ)
     (y : coordinateSimplex (Option (Fin n))) :
-    ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).1 (Fin.last (n + 1)) =
-      1 - ∑ i, y.1 i := by
+    ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).val (Fin.last (n + 1)) =
+      1 - ∑ i, y.val i := by
   simp only [realizationTopHomeomorphOptionCoordinateSimplex, Homeomorph.symm_trans_apply,
     realizationTopHomeomorphCoordinateSimplex_symm_last]
   -- Expose the subtype inverse's ambient value to reindex the sum with the public equation.
-  change 1 - ∑ i, (simplexCoordinateReindex n).symm y.1 i = 1 - ∑ i, y.1 i
-  have h := finSuccEquivLast.symm.sum_comp ((simplexCoordinateReindex n).symm y.1)
+  change 1 - ∑ i, (simplexCoordinateReindex n).symm y.val i = 1 - ∑ i, y.val i
+  have h := finSuccEquivLast.symm.sum_comp ((simplexCoordinateReindex n).symm y.val)
   simp only [← simplexCoordinateReindex_apply, Homeomorph.apply_symm_apply] at h
   exact congrArg (1 - ·) h.symm
 
@@ -95,11 +95,11 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
   | none =>
     simp only [coordinateSimplexHalfSpaceChartSource_none, mem_preimage, mem_ofPred_eq,
       Option.elim_none]
-    have hret : (∑ i, (realizationTopHomeomorphOptionCoordinateSimplex n x).1 i) =
-        ∑ j : Fin (n + 1), x.1 j.castSucc := by
+    have hret : (∑ i, (realizationTopHomeomorphOptionCoordinateSimplex n x).val i) =
+        ∑ j : Fin (n + 1), x.val j.castSucc := by
       simp only [realizationTopHomeomorphOptionCoordinateSimplex_apply,
         simplexBoundaryCoordinateMap_apply]
-      exact finSuccEquivLast.symm.sum_comp (fun j => x.1 j.castSucc)
+      exact finSuccEquivLast.symm.sum_comp (fun j => x.val j.castSucc)
     rw [hret]
     simpa only [realizationTopHomeomorphCoordinateSimplex_apply] using
       (mem_openStarRealization_top_last_iff_sum_lt_one (n + 1) x).symm
@@ -111,15 +111,15 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
 /-- All solid simplex vertex charts share the same open subset of the half-space model as target. -/
 @[simp] theorem simplexHalfSpacePLChart_target (n : ℕ) (v : Option (Option (Fin n))) :
     (simplexHalfSpacePLChart n v).target =
-      {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1} := by
+      {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1} := by
   rw [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_target,
     coordinateSimplexHalfSpaceChart_target]
 
 /-- The chart's ambient coordinates are given by the existing polyhedral flattening map. -/
 @[simp] theorem coe_simplexHalfSpacePLChart_apply (n : ℕ) (v : Option (Option (Fin n)))
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))) :
-    (simplexHalfSpacePLChart n v x).1 =
-      coordinateSimplexHalfSpaceMap v (simplexBoundaryCoordinateMap n x.1) := by
+    (simplexHalfSpacePLChart n v x).val =
+      coordinateSimplexHalfSpaceMap v (simplexBoundaryCoordinateMap n x.val) := by
   simp only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_apply,
     Function.comp_apply, coe_coordinateSimplexHalfSpaceChart_apply]
   congr 1
@@ -129,8 +129,8 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
 /-- The chart at the omitted vertex sends that vertex to the origin. -/
 theorem coe_simplexHalfSpacePLChart_none_eq_zero (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))))
-    (hx : (x.1 : Fin (n + 2) → ℝ) = Pi.single (Fin.last (n + 1)) 1) :
-    (simplexHalfSpacePLChart n none x).1 = 0 := by
+    (hx : (x.val : Fin (n + 2) → ℝ) = Pi.single (Fin.last (n + 1)) 1) :
+    (simplexHalfSpacePLChart n none x).val = 0 := by
   rw [coe_simplexHalfSpacePLChart_apply, hx]
   have hzero : simplexBoundaryCoordinateMap n (Pi.single (Fin.last (n + 1)) 1) = 0 := by
     ext i
@@ -146,8 +146,8 @@ recover every barycentric coordinate of the inverse chart. -/
 theorem coe_simplexHalfSpacePLChart_symm_apply (n : ℕ) (v : Option (Option (Fin n)))
     {q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
     (hq : q ∈ (simplexHalfSpacePLChart n v).target) :
-    (((simplexHalfSpacePLChart n v).symm q).1 : Fin (n + 2) → ℝ) =
-      simplexBoundaryCoordinateLift n ((coordinateSimplexHalfSpaceMap v).symm q.1) := by
+    (((simplexHalfSpacePLChart n v).symm q).val : Fin (n + 2) → ℝ) =
+      simplexBoundaryCoordinateLift n ((coordinateSimplexHalfSpaceMap v).symm q.val) := by
   simp only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_symm_apply,
     Function.comp_apply]
   funext i
@@ -162,7 +162,7 @@ theorem support_ne_univ_iff_simplexHalfSpacePLChart_snd_eq_zero (n : ℕ)
     (v : Option (Option (Fin n)))
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))))
     (hx : x ∈ (simplexHalfSpacePLChart n v).source) :
-    x.1.support ≠ Finset.univ ↔ (simplexHalfSpacePLChart n v x).1.2 = 0 := by
+    x.val.support ≠ Finset.univ ↔ (simplexHalfSpacePLChart n v x).val.2 = 0 := by
   let y := realizationTopHomeomorphOptionCoordinateSimplex n x
   have hy : y ∈ coordinateSimplexHalfSpaceChartSource v := by
     simpa only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_source,
@@ -172,14 +172,14 @@ theorem support_ne_univ_iff_simplexHalfSpacePLChart_snd_eq_zero (n : ℕ)
   rw [← mem_frontier_coordinateSimplex_iff_halfSpaceChart_snd_eq_zero v y hy,
     ← realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff (n + 1) x,
     mem_frontier_coordinateSimplex, mem_frontier_coordinateSimplex]
-  have hsum : (∑ i, y.1 i) =
-      ∑ j : Fin (n + 1), (realizationTopHomeomorphCoordinateSimplex (n + 1) x).1 j := by
+  have hsum : (∑ i, y.val i) =
+      ∑ j : Fin (n + 1), (realizationTopHomeomorphCoordinateSimplex (n + 1) x).val j := by
     simp only [y, realizationTopHomeomorphOptionCoordinateSimplex_apply,
       simplexBoundaryCoordinateMap_apply, realizationTopHomeomorphCoordinateSimplex_apply]
-    exact finSuccEquivLast.symm.sum_comp (fun j => x.1 j.castSucc)
+    exact finSuccEquivLast.symm.sum_comp (fun j => x.val j.castSucc)
   simp only [iff_true_intro ((mem_coordinateSimplex _ _).mp
-      (realizationTopHomeomorphCoordinateSimplex (n + 1) x).2),
-    iff_true_intro ((mem_coordinateSimplex _ _).mp y.2), true_and]
+      (realizationTopHomeomorphCoordinateSimplex (n + 1) x).property),
+    iff_true_intro ((mem_coordinateSimplex _ _).mp y.property), true_and]
   rw [hsum]
   exact or_congr (finSuccEquivLast.exists_congr fun i => by simp [y]) Iff.rfl
 
@@ -228,5 +228,45 @@ theorem realizationTopHalfSpace_hasGroupoid (n : ℕ) :
   · simpa only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
       OpenPartialHomeomorph.symm_symm, ← OpenPartialHomeomorph.symm_source] using
       (isPiecewiseAffineOn_simplexHalfSpacePLChart_transition n w v).isPLOn
+
+section PLOn
+
+variable {ι : Type*} {n : ℕ}
+
+/-- The inverse of the simplex half-space chart, followed by the coordinate lift and a PL map `G`
+on the standard simplex, is PL on the model coordinates of any set `T` of targets of the chart at
+the vertex `v`. -/
+theorem isPLOn_comp_simplexHalfSpace_symm
+    (v : Option (Option (Fin n))) {T : Set {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
+    {G : (Fin (n + 2) → ℝ) → (ι → ℝ)}
+    (hG : IsPLOn G (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
+      (y.val : Fin (n + 2) → ℝ)))
+    (hT : T ⊆ (simplexHalfSpacePLChart n v).target) :
+    IsPLOn (G ∘ simplexBoundaryCoordinateLift n ∘
+        (coordinateSimplexHalfSpaceMap (ι := Fin n) v).symm)
+      ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
+        range (modelWithCornersHalfSpace (Fin n → ℝ))) := by
+  let a := simplexHalfSpacePLChart n v
+  let R := simplexBoundaryCoordinateLift n
+  let A := coordinateSimplexHalfSpaceMap (ι := Fin n) v
+  let s := (modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
+    range (modelWithCornersHalfSpace (Fin n → ℝ))
+  have hmap : MapsTo (R ∘ A.symm) s
+      (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
+        (y.val : Fin (n + 2) → ℝ)) := by
+    intro z hz
+    have hnonneg : 0 ≤ z.2 := by simpa using hz.2
+    let y := (modelWithCornersHalfSpace (Fin n → ℝ)).symm z
+    have hy : y ∈ a.target := hT hz.1
+    refine ⟨a.symm y, ?_⟩
+    simpa only [a, R, A, y, Function.comp_apply,
+      coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
+        coe_simplexHalfSpacePLChart_symm_apply n v hy
+  exact hG.comp
+    (((isPLOn_continuousAffineMap R univ).comp
+      (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm v).isPLOn
+      (mapsTo_univ _ _)).mono (subset_univ _)) hmap
+
+end PLOn
 
 end AbstractSimplicialComplex

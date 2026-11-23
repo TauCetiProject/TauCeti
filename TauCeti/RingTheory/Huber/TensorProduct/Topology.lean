@@ -205,10 +205,9 @@ theorem idealOfDefinition_def :
 theorem fg_idealOfDefinition : D.idealOfDefinition.FG :=
   D.base.fg_idealOfDefinition.map _
 
-/-- **Induction on `Jᵏ`**: a property of elements of `F` that holds at zero, is closed under
-addition and under multiplication by elements of `F`, and holds on the image of `Iᵏ`, holds on
-`Jᵏ`. -/
-theorem idealOfDefinition_pow_induction {k : ℕ} {p : D.ringOfDefinition → Prop} (zero : p 0)
+/-- **Induction on `Jᵏ`**: a property of elements of `F` that is closed under addition and under
+multiplication by elements of `F`, and holds on the image of `Iᵏ`, holds on `Jᵏ`. -/
+theorem idealOfDefinition_pow_induction {k : ℕ} {p : D.ringOfDefinition → Prop}
     (add : ∀ y z, p y → p z → p (y + z)) (mul : ∀ r y, p y → p (r * y))
     (image : ∀ a ∈ D.base.idealOfDefinition ^ k, p (D.toRingOfDefinition a))
     {y : D.ringOfDefinition} (hy : y ∈ D.idealOfDefinition ^ k) : p y := by
@@ -217,7 +216,7 @@ theorem idealOfDefinition_pow_induction {k : ℕ} {p : D.ringOfDefinition → Pr
   | mem y hy =>
     obtain ⟨a, ha, rfl⟩ := hy
     exact image a ha
-  | zero => exact zero
+  | zero => simpa using image 0 (zero_mem _)
   | add y z _ _ hy hz => exact add y z hy hz
   | smul r y _ hy => exact mul r y hy
 
@@ -247,7 +246,7 @@ theorem idealImage_zero : D.idealImage 0 = D.ringOfDefinition.toAddSubgroup := b
   ext x
   simp only [mem_idealImage, pow_zero, Ideal.one_eq_top, Submodule.mem_top, true_and,
     Subring.mem_toAddSubgroup]
-  exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
 
 /-- The images of the powers of `J` are nested. -/
 theorem idealImage_antitone : Antitone D.idealImage :=
@@ -290,9 +289,9 @@ private theorem mul_mem_of_forall_algebraMap {x : B ⊗[A] C} {k : ℕ}
       x * algebraMap A (B ⊗[A] C) a ∈ D.ringOfDefinition)
     {y : D.ringOfDefinition} (hy : y ∈ D.idealOfDefinition ^ k) :
     x * y ∈ D.ringOfDefinition :=
-  D.idealOfDefinition_pow_induction (p := fun y ↦ x * y ∈ D.ringOfDefinition) (by simp)
+  D.idealOfDefinition_pow_induction (p := fun y ↦ x * y ∈ D.ringOfDefinition)
     (fun y z hy hz ↦ by simpa [mul_add] using add_mem hy hz)
-    (fun r y hy ↦ by simpa [mul_left_comm] using mul_mem r.2 hy) hx hy
+    (fun r y hy ↦ by simpa [mul_left_comm] using mul_mem r.property hy) hx hy
 
 /-- **Every element of `B ⊗[A] C` multiplies a power of `J` into `F`.** This is the
 left-multiplication condition making the images of the powers of `J` a `RingSubgroupsBasis`. -/
@@ -432,7 +431,7 @@ theorem mem_pairOfDefinition_idealOfDefinition
     {x : letI := D.topology; D.pairOfDefinition.ringOfDefinition} :
     letI := D.topology
     x ∈ D.pairOfDefinition.idealOfDefinition ↔
-      (⟨x, by rw [← D.pairOfDefinition_ringOfDefinition]; exact x.2⟩ : D.ringOfDefinition) ∈
+      (⟨x, by rw [← D.pairOfDefinition_ringOfDefinition]; exact x.property⟩ : D.ringOfDefinition) ∈
         D.idealOfDefinition :=
   (Iff.rfl)
 
@@ -503,8 +502,8 @@ private theorem exists_idealImage_le (D' : TensorDatum A B C) (n : ℕ) :
   obtain ⟨y, hy, rfl⟩ := D'.mem_idealImage.mp hx
   simpa using D'.idealOfDefinition_pow_induction
     (p := fun y ↦ ∀ r ∈ D'.ringOfDefinition, r * (y : B ⊗[A] C) ∈ D.idealImage n)
-    (fun r _ ↦ by simp) (fun y z hy hz r hr ↦ by simpa [mul_add] using add_mem (hy r hr) (hz r hr))
-    (fun s y hy r hr ↦ by simpa [mul_assoc] using hy (r * s) (mul_mem hr s.2))
+    (fun y z hy hz r hr ↦ by simpa [mul_add] using add_mem (hy r hr) (hz r hr))
+    (fun s y hy r hr ↦ by simpa [mul_assoc] using hy (r * s) (mul_mem hr s.property))
     (fun a ha r hr ↦ hVF ⟨_, hm ((D'.base.mem_idealImage m).mpr ⟨a, ha, rfl⟩), r, hr,
       mul_comm _ _⟩) hy 1 (one_mem _)
 

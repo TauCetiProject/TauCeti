@@ -21,7 +21,10 @@ trivialisation in a specified top degree gives the wedge pairing by composing th
 with that trivialisation; the degree transports disappear after identifying the degree with the
 finrank, and a wedge pairing is the trivialisation of the exterior-algebra product of its arguments.
 On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` and `e_t` is the
-shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise.
+shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise. For
+the basis-induced trivialisation `b.exteriorPowerFinrankEquiv`, the volume of `b.topVector` is `1`,
+so `e_s` and `e_t` pair to the shuffle sign of `s` when `s` and `t` are disjoint and zero otherwise
+(`exteriorPower.wedgePairing_exteriorPowerFinrankEquiv_apply`).
 The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the wedge of
 the basis vectors, and the shuffle signs of a set of `k` indices and of its complement of `l`
 indices multiply to `(-1) ^ (k * l)`. Composing a complementary-degree wedge pairing,
@@ -169,6 +172,39 @@ theorem _root_.Module.Basis.topVector_eq_ιMulti [Nontrivial R] {n : ℕ}
   rw [← b.topVector_eq_exteriorPower s, basis_apply, ιMulti_family, he]
   simp [Function.comp_def]
 
+/-- The top-degree trivialisation induced by a finite linearly ordered basis sends `b.topVector`
+to `1`. -/
+@[simp]
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_apply_topVector [Nontrivial R]
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M) :
+    b.exteriorPowerFinrankEquiv b.topVector = 1 := by
+  rw [← b.topVector_eq_exteriorPower ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩,
+    basis_apply, b.exteriorPowerFinrankEquiv_apply_ιMulti_family]
+
+/-- The inverse of `b.exteriorPowerFinrankEquiv` sends a scalar to that multiple of
+`b.topVector`. -/
+@[simp]
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_symm_apply [Nontrivial R]
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M) (r : R) :
+    b.exteriorPowerFinrankEquiv.symm r = r • b.topVector := by
+  rw [← b.topVector_eq_exteriorPower ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩]
+  exact b.exteriorPowerFinrankEquiv_symm_apply_eq_smul _ r
+
+/-- **The wedge pairing for a basis trivialisation on exterior-power basis vectors**:
+with `vol = b.exteriorPowerFinrankEquiv`, `e_s` and `e_t` pair to `sign s • 1` when `s` and `t`
+are disjoint, and to `0` otherwise. -/
+theorem wedgePairing_exteriorPowerFinrankEquiv_apply
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M)
+    (hkl : k + l = Module.finrank R M)
+    (s : Set.powersetCard ι k) (t : Set.powersetCard ι l) :
+    wedgePairing b.exteriorPowerFinrankEquiv hkl (b.exteriorPower k s) (b.exteriorPower l t) =
+      if Disjoint s.val t.val then Set.powersetCard.sign s • (1 : R) else 0 := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  · rw [wedgePairing_exteriorPower_apply _ hkl b s t,
+      b.exteriorPowerFinrankEquiv_apply_topVector, one_smul]
+    split_ifs <;> simp
+
 end exteriorPower
 
 namespace Set.powersetCard
@@ -187,13 +223,13 @@ theorem sign_mul_sign_compl {I : Type*} [LinearOrder I] [Fintype I] {k l : ℕ}
     (disjoint_iff_eq_compl h').2 ((compl h).symm_apply_apply s).symm
   set b := Pi.basisFun ℤ I
   -- Both products of `e_s` and `e_t` are signed copies of the top basis vector `e_univ`.
-  have hmul : ∀ {m n : ℕ} (hmn : m + n = Fintype.card I) (u : powersetCard I m)
-      (v : powersetCard I n) (huv : Disjoint u.val v.val),
+  have hmul : ∀ {m n : ℕ} (_ : m + n = Fintype.card I) (u : powersetCard I m)
+      (v : powersetCard I n) (_ : Disjoint u.val v.val),
       b.ExteriorAlgebra u * b.ExteriorAlgebra v =
         powersetCard.sign u • b.ExteriorAlgebra Finset.univ := fun hmn u v huv ↦ by
     have hunion : (disjUnion huv : Finset I) = Finset.univ :=
       Finset.eq_univ_of_card _ <| by
-        rw [coe_disjUnion, Finset.card_disjUnion, mem_iff.1 u.2, mem_iff.1 v.2, hmn]
+        rw [coe_disjUnion, Finset.card_disjUnion, mem_iff.1 u.property, mem_iff.1 v.property, hmn]
     rw [ExteriorAlgebra.basis_mul_of_disjoint b u v huv,
       ← sign_eq_permOfDisjoint_sign hmn u v huv, hunion]
   -- Exterior products of degrees `k` and `l` commute up to `(-1) ^ (l * k)`.

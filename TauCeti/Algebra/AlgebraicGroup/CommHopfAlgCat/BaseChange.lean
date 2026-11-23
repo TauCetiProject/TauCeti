@@ -236,6 +236,12 @@ lemma baseChangeTowerIso_inv_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (h 
     (baseChangeTowerIso k K H).inv.hom (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) :=
   TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul k E H K s h
 
+/-- The tower comparison sends `1 ⊗ x` to the base change of `x ∈ E ⊗[k] H` along `E → K`. -/
+lemma baseChangeTowerIso_hom_one_tmul (H : _root_.CommHopfAlgCat.{v} k) (x : E ⊗[k] H) :
+    (baseChangeTowerIso k K H).hom.hom ((1 : K) ⊗ₜ[E] x) =
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom k E K) (AlgHom.id k H) x :=
+  _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k E H K x
+
 end Tower
 
 variable (A : CommAlgCat.{x} K)

@@ -8,19 +8,27 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
+public import TauCeti.Topology.LocallyFinsupp.Finsupp
 
 /-!
 # Weil divisors on schemes
 
 This file specializes the combinatorial type `WeilDivisor` to schemes. A prime divisor is
 represented by its generic point, which is a point of codimension one, and a scheme-theoretic
-Weil divisor is a finite formal integer sum of such points.
+Weil divisor is a finite formal integer sum of such points. This is the usual group `Div X` of
+Hartshorne II.6 (the free abelian group on the prime divisors) for Noetherian `X`, and it agrees
+with Stacks 0BE2 when `X` is quasi-compact. In general the Stacks Project allows locally finite,
+possibly infinite, sums of prime divisors, and these finite sums form a subgroup of that group,
+which can be proper.
 
-Mathlib's `AlgebraicCycle X ℤ` allows locally finite support in every codimension. The map
+Mathlib's `AlgebraicCycle X ℤ` allows locally finite support in every codimension, and its
+Weil divisors `AlgebraicCycle.weilDivisors X ℤ` are the cycles supported in codimension one
+(`AlgebraicCycle.IsWeilDivisor`), with locally finite support. The map
 `SchemeWeilDivisor.toAlgebraicCycle` extends a Weil divisor by zero away from codimension one.
-Its image is characterized by `finiteCodimensionOneCycles`, the subgroup of algebraic cycles
-with finite support entirely in codimension one, and
-`SchemeWeilDivisor.equivFiniteCodimensionOneCycles` identifies the two descriptions.
+Its image is characterized by `finiteCodimensionOneCycles`, the subgroup of Weil divisors in
+Mathlib's sense with finite support, and `SchemeWeilDivisor.equivFiniteCodimensionOneCycles`
+identifies the two descriptions. On a quasi-compact scheme every cycle has finite support, so
+there `finiteCodimensionOneCycles X` is all of `AlgebraicCycle.weilDivisors X ℤ`.
 
 The coefficient, support, effectivity, and point-divisor API is inherited directly from
 `WeilDivisor`; no scheme-specific copies of those declarations are introduced. The
@@ -41,7 +49,10 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- A Weil divisor on a scheme is a finite formal integer sum of its codimension-one points. -/
+/-- A Weil divisor on a scheme is a finite formal integer sum of its codimension-one points.
+This is the standard group of divisors for a Noetherian scheme; for a scheme that is not
+quasi-compact it is the finitely supported subgroup of the locally finite divisors of the Stacks
+Project. -/
 abbrev SchemeWeilDivisor (X : Scheme.{u}) : Type u :=
   WeilDivisor (CodimensionOnePoint X)
 
@@ -51,43 +62,24 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- Regard a finitely supported function as an algebraic cycle. -/
-private def algebraicCycleOfFinsupp : (X →₀ ℤ) →+ AlgebraicCycle X ℤ where
-  toFun D :=
-    { toFun := D
-      supportWithinDomain' := Set.subset_univ _
-      supportLocallyFiniteWithinDomain' := fun _ _ ↦
-        ⟨Set.univ, Filter.univ_mem, by simp⟩ }
-  map_zero' := by
-    ext
-    simp
-  map_add' D E := by
-    ext
-    simp
-
-@[simp]
-private lemma algebraicCycleOfFinsupp_apply (D : X →₀ ℤ) (x : X) :
-    algebraicCycleOfFinsupp D x = D x :=
-  rfl
-
 /-- Extend a scheme-theoretic Weil divisor by zero away from codimension one, obtaining
 an algebraic cycle on the underlying scheme. -/
 def toAlgebraicCycle : SchemeWeilDivisor X →+ AlgebraicCycle X ℤ :=
-  algebraicCycleOfFinsupp.comp <|
+  Function.locallyFinsupp.ofFinsupp.comp <|
     Finsupp.embDomain.addMonoidHom (Function.Embedding.subtype fun x : X ↦ coheight x = 1)
 
 /-- Extension by zero preserves the coefficient at a codimension-one point. -/
 @[simp]
 lemma toAlgebraicCycle_apply (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
     toAlgebraicCycle D x = D x :=
-  Finsupp.embDomain_apply_self _ D x
+  (Function.locallyFinsupp.ofFinsupp_apply _ _).trans (Finsupp.embDomain_apply_self _ D x)
 
 /-- Extension by zero vanishes at points whose codimension is not one. -/
 @[simp]
 lemma toAlgebraicCycle_apply_of_coheight_ne_one (D : SchemeWeilDivisor X) (x : X)
     (hx : coheight x ≠ 1) :
     toAlgebraicCycle D x = 0 := by
-  rw [toAlgebraicCycle, AddMonoidHom.comp_apply, algebraicCycleOfFinsupp_apply]
+  rw [toAlgebraicCycle, AddMonoidHom.comp_apply, Function.locallyFinsupp.ofFinsupp_apply]
   exact Finsupp.embDomain_of_notMem_range _ _ _ (by simpa)
 
 /-- The support of a scheme-theoretic Weil divisor viewed as an algebraic cycle is the image of
@@ -111,12 +103,12 @@ lemma finite_support_toAlgebraicCycle (D : SchemeWeilDivisor X) :
   rw [support_toAlgebraicCycle]
   exact D.support.finite_toSet.image Subtype.val
 
-/-- The cycle associated to a scheme-theoretic Weil divisor is supported in codimension one. -/
-lemma coheight_eq_one_of_mem_support_toAlgebraicCycle (D : SchemeWeilDivisor X) {x : X}
-    (hx : x ∈ (toAlgebraicCycle D).support) :
-    coheight x = 1 := by
-  rw [support_toAlgebraicCycle] at hx
-  obtain ⟨x, _, rfl⟩ := hx
+/-- The cycle associated to a scheme-theoretic Weil divisor is a Weil divisor in Mathlib's sense:
+it is supported in codimension one. -/
+lemma isWeilDivisor_toAlgebraicCycle (D : SchemeWeilDivisor X) :
+    (toAlgebraicCycle D).IsWeilDivisor := by
+  rw [AlgebraicCycle.isWeilDivisor_iff, support_toAlgebraicCycle]
+  rintro _ ⟨x, _, rfl⟩
   exact x.property
 
 /-- Extension by zero embeds scheme-theoretic Weil divisors into algebraic cycles. -/
@@ -135,31 +127,22 @@ lemma toAlgebraicCycle_inj {D E : SchemeWeilDivisor X} :
     toAlgebraicCycle D = toAlgebraicCycle E ↔ D = E :=
   toAlgebraicCycle_injective.eq_iff
 
-/-- Algebraic cycles with finite support contained in codimension one. -/
+/-- Algebraic cycles with finite support contained in codimension one: the Weil divisors in
+Mathlib's sense (`AlgebraicCycle.IsWeilDivisor`) with finite support. -/
 def finiteCodimensionOneCycles (X : Scheme.{u}) : AddSubgroup (AlgebraicCycle X ℤ) where
-  carrier := {C | C.support.Finite ∧ ∀ x ∈ C.support, coheight x = 1}
+  carrier := {C | C.support.Finite ∧ C.IsWeilDivisor}
   zero_mem' :=
-    ⟨by simp [Function.locallyFinsuppWithin.support],
-      fun _ hx ↦ by simp at hx⟩
-  add_mem' {C D} hC hD := by
-    refine ⟨(hC.1.union hD.1).subset (Function.support_add (C : X → ℤ) D), ?_⟩
-    intro x hx
-    rcases Function.support_add (C : X → ℤ) D hx with hx | hx
-    · exact hC.2 x hx
-    · exact hD.2 x hx
-  neg_mem' {C} hC := by
-    constructor
-    · simpa only [Function.locallyFinsuppWithin.support_neg] using hC.1
-    · intro x hx
-      rw [Function.locallyFinsuppWithin.support_neg] at hx
-      exact hC.2 x hx
+    ⟨by simp [Function.locallyFinsuppWithin.support], AlgebraicCycle.isWeilDivisor_zero⟩
+  add_mem' {C D} hC hD :=
+    ⟨(hC.1.union hD.1).subset (Function.support_add (C : X → ℤ) D), hC.2.add hD.2⟩
+  neg_mem' {C} hC :=
+    ⟨by simpa only [Function.locallyFinsuppWithin.support_neg] using hC.1, hC.2.neg⟩
 
-/-- Membership in `finiteCodimensionOneCycles` means finite support contained in codimension
-one. -/
+/-- Membership in `finiteCodimensionOneCycles` means finite support and support contained in
+codimension one. -/
 @[simp]
 lemma mem_finiteCodimensionOneCycles_iff {C : AlgebraicCycle X ℤ} :
-    C ∈ finiteCodimensionOneCycles X ↔
-      C.support.Finite ∧ ∀ x ∈ C.support, coheight x = 1 :=
+    C ∈ finiteCodimensionOneCycles X ↔ C.support.Finite ∧ C.IsWeilDivisor :=
   Iff.rfl
 
 /-- Restrict a finite codimension-one cycle to its codimension-one points. -/
@@ -174,7 +157,7 @@ private def ofFiniteCodimensionOneCycle (C : finiteCodimensionOneCycles X) :
 @[simp]
 private lemma ofFiniteCodimensionOneCycle_apply
     (C : finiteCodimensionOneCycles X) (x : CodimensionOnePoint X) :
-    ofFiniteCodimensionOneCycle C x = C.1 x :=
+    ofFiniteCodimensionOneCycle C x = C.val x :=
   congrFun Finsupp.ofSupportFinite_coe x
 
 /-- Scheme-theoretic Weil divisors are additively equivalent to the finite algebraic cycles
@@ -182,9 +165,7 @@ supported entirely in codimension one. -/
 def equivFiniteCodimensionOneCycles :
     SchemeWeilDivisor X ≃+ finiteCodimensionOneCycles X where
   toFun D :=
-    ⟨toAlgebraicCycle D,
-      finite_support_toAlgebraicCycle D,
-      fun _ hx ↦ coheight_eq_one_of_mem_support_toAlgebraicCycle D hx⟩
+    ⟨toAlgebraicCycle D, finite_support_toAlgebraicCycle D, isWeilDivisor_toAlgebraicCycle D⟩
   invFun := ofFiniteCodimensionOneCycle
   left_inv D := by
     apply Finsupp.ext
@@ -192,7 +173,7 @@ def equivFiniteCodimensionOneCycles :
     calc
       ofFiniteCodimensionOneCycle
           ⟨toAlgebraicCycle D, finite_support_toAlgebraicCycle D,
-            fun _ hx ↦ coheight_eq_one_of_mem_support_toAlgebraicCycle D hx⟩ x =
+            isWeilDivisor_toAlgebraicCycle D⟩ x =
           toAlgebraicCycle D x :=
         ofFiniteCodimensionOneCycle_apply _ x
       _ = D x := toAlgebraicCycle_apply D x
@@ -205,9 +186,9 @@ def equivFiniteCodimensionOneCycles :
         toAlgebraicCycle (ofFiniteCodimensionOneCycle C) x =
             ofFiniteCodimensionOneCycle C ⟨x, hx⟩ :=
           toAlgebraicCycle_apply _ ⟨x, hx⟩
-        _ = C.1 x := ofFiniteCodimensionOneCycle_apply C ⟨x, hx⟩
+        _ = C.val x := ofFiniteCodimensionOneCycle_apply C ⟨x, hx⟩
     · rw [toAlgebraicCycle_apply_of_coheight_ne_one _ _ hx]
-      exact (Function.notMem_support.mp fun h ↦ hx (C.property.2 x h)).symm
+      exact (Function.notMem_support.mp fun h ↦ hx (C.property.2.coheight_eq_one h)).symm
   map_add' D E := by
     apply Subtype.ext
     exact (toAlgebraicCycle : SchemeWeilDivisor X →+ AlgebraicCycle X ℤ).map_add D E
@@ -225,7 +206,7 @@ codimension-one points. -/
 @[simp]
 lemma equivFiniteCodimensionOneCycles_symm_apply_apply
     (C : finiteCodimensionOneCycles X) (x : CodimensionOnePoint X) :
-    equivFiniteCodimensionOneCycles.symm C x = C.1 x :=
+    equivFiniteCodimensionOneCycles.symm C x = C.val x :=
   ofFiniteCodimensionOneCycle_apply C x
 
 end

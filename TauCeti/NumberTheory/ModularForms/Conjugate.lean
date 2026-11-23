@@ -142,7 +142,8 @@ lemma conjJ_mem_Gamma1 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : con
 
 /-- `conjJ` leaves the lower-right entry, hence the diamond label, alone. -/
 lemma Gamma0Map_conjJ {N : ℕ} (γ : ↥(Gamma0 N)) :
-    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.2⟩ = (Gamma0Map N).toHomUnits γ := by
+    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.property⟩ = (Gamma0Map N).toHomUnits γ
+        := by
   ext
   simp [Gamma0Map_apply]
 
@@ -178,7 +179,7 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
   rw [← SlashAction.slash_mul, J_mul_mapGL, SlashAction.slash_mul,
-    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
+    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.property⟩, ModularForm.smul_slash,
     Gamma0Map_conjJ, sigma_J]
   congr 1
   rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
@@ -378,11 +379,12 @@ variable (k χ) in
 /-- The conjugate cusp form as an antilinear equivalence `S_k(N, χ) ≃ S_k(N, χ⁻¹)`. Its inverse is
 again `f ↦ f_ρ`, now on `S_k(N, χ⁻¹)`. -/
 def conjCharSpace : cuspFormCharSpace k χ ≃ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ where
-  toFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, conj_mem_cuspFormCharSpace f.2⟩
+  toFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f,
+      conj_mem_cuspFormCharSpace f.property⟩
   map_add' f g := by ext1; simp
   map_smul' c f := by ext1; simp
   invFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, by
-    simpa using conj_mem_cuspFormCharSpace f.2⟩
+    simpa using conj_mem_cuspFormCharSpace f.property⟩
   left_inv f := by ext1; simp
   right_inv f := by ext1; simp
 
@@ -406,14 +408,16 @@ lemma coe_conjCharSpace_conjCharSpace (f : cuspFormCharSpace k χ) :
   simp
 
 open HeckeRing.GL2 in
-/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)` and `n ≠ 0`,
+/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)`,
 `T_n (f_ρ) = (T_n f)_ρ`, where on the left `T_n` acts on `S_k(N, χ⁻¹)`. Since the conjugation is
 antilinear, the conjugate of a `T_n`-eigenform with eigenvalue `λ` is a `T_n`-eigenform with
 eigenvalue `conj λ`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] (n : ℕ)
     (f : cuspFormCharSpace k χ) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       CuspForm.conjCharSpace k χ (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [heckeTCompositeGamma0_zero]
   have h1 := one_mem_strictPeriods_Gamma1_map N
   refine Subtype.ext <| _root_.CuspForm.qExpansion_injective one_pos h1 ?_
   ext m
@@ -425,13 +429,12 @@ theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠
 open HeckeRing.GL2 in
 /-- **The conjugate of a Hecke eigenform is an eigenform with the conjugate eigenvalue**: if
 `Tₙ f = λ f` on `S_k(N, χ)`, then `Tₙ f_ρ = conj λ • f_ρ` on `S_k(N, χ⁻¹)`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
-    (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] (n : ℕ)
     {f : cuspFormCharSpace k χ} {c : ℂ}
     (hf : heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f = c • f) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       starRingEnd ℂ c • CuspForm.conjCharSpace k χ f := by
-  rw [heckeRingHomCuspCharSpace_conjCharSpace hn, hf, map_smulₛₗ]
+  rw [heckeRingHomCuspCharSpace_conjCharSpace n, hf, map_smulₛₗ]
 
 end Nebentypus
 

@@ -97,7 +97,6 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hD
   have hfirst := ((G.mem_unblockedRectangles _).1 hR).1
   have hpentagon := ((G.mem_initialPentagons _).1 hP).1
-  have hone := D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_right hcommon hother
   have hturn' : C.turnRow ∉ Grid.cIco
       (D.leftRightRecut hcommon hother hfirst hpentagon).first.bottom
       (D.leftRightRecut hcommon hother hfirst hpentagon).first.top := fun h =>
@@ -108,9 +107,8 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
   have hrecut : D.toGridRectangleDecomposition.IsRecut E.toGridRectangleDecomposition := by
     rw [hErect]
     exact D.isRecut_leftRightRecut hcommon hother hfirst hpentagon
-  have hback := hrecut.symm hone hfirst (D.underlying_second_isEmpty hpentagon)
+  have hback := hrecut.symm hfirst (D.underlying_second_isEmpty hpentagon)
   have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (D.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   have hEfirst : E.first.IsEmpty := hrecut.isEmpty_first
   have hEpentagon : E.pentagon.IsEmpty := by
     simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
@@ -127,7 +125,7 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
   -- Recutting the recut returns `D`, which does not start on the replaced line; this fixes the
   -- column order of the recut.
   have hEcol : E.first.right ∈ Grid.cIoo E.second.left E.second.right := by
-    have hdata := hback.isRecutOfLeftEqLeft hEone hEcommon
+    have hdata := hback.isRecutOfLeftEqLeft hEcommon
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · rwa [← hEcommon]
     · exact absurd (hcommon.symm.trans (hleft.trans hEfirstLeft)) D.second.left_ne_right.symm
@@ -186,9 +184,8 @@ theorem mem_initialPentagonInitialSelfPairs_iff_sides
         (hcommon.symm.trans (hsecondLeft.symm.trans (h.symm.trans hfirstRight)))
     -- Otherwise the recut of `D`, which is `S`, would have the turn row in its rectangle.
     rintro ⟨E, hE, hs⟩
-    have hback := hrecut.symm hone hfirst hsecond
+    have hback := hrecut.symm hfirst hsecond
     have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (S.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
     have hES := (D.toGridRectangleDecomposition.existsUnique_isRecut hDone hrecut.isEmpty_first
       hrecut.isEmpty_second).unique hE hback
     rw [hES] at hs

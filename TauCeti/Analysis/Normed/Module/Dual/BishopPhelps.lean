@@ -24,7 +24,9 @@ of `C` is a nonzero continuous linear functional `g` whose real part attains its
 a point of `C` at which this happens is a *support point*. The **Bishop–Phelps theorem** says
 that there are many of both:
 
-* if `C` is moreover bounded and nonempty and `E` is nonzero, the support functionals of `C` are
+* if `C` is nonempty, every nonzero functional whose real part is bounded above on `C` is a norm
+  limit of support functionals of `C` (`Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove`);
+  in particular, if `C` is moreover bounded and `E` is nonzero, the support functionals of `C` are
   norm dense in the dual (`Convex.dense_setOf_ne_zero_isMaxOn_re`);
 * the support points of `C` are dense in its boundary
   (`Convex.frontier_subset_closure_setOf_isMaxOn_re`); conversely every support point lies on the
@@ -50,6 +52,8 @@ within `k * ‖f‖` of `f`.
 * `StrongDual.exists_pos_norm_sub_ofReal_smul_le`: the Bishop–Phelps lemma.
 * `StrongDual.convex_setOf_mul_norm_sub_lt_re`: the open Bishop–Phelps cones are convex.
 * `Convex.exists_isMaxOn_re_of_bddAbove`: support functionals at points reached through a cone.
+* `Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove`: support functionals of a nonempty
+  complete convex set are dense among the nonzero functionals bounded above on it.
 * `Convex.dense_setOf_ne_zero_isMaxOn_re`: support functionals of a bounded complete convex set are
   dense.
 * `Convex.frontier_subset_closure_setOf_isMaxOn_re`: support points are dense in the boundary.
@@ -118,7 +122,7 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
   let N : Submodule ℝ E := LinearMap.ker (H : E →ₗ[ℝ] ℝ)
   obtain ⟨F₁, hF₁, hF₁norm⟩ := exists_extension_norm_eq N (F.comp N.subtypeL)
   have hF₁le : ‖F₁‖ ≤ k * ‖f‖ := hF₁norm ▸ (F.comp N.subtypeL).opNorm_le_bound hkf fun y ↦ by
-    simpa [Real.norm_eq_abs] using hker y y.2
+    simpa [Real.norm_eq_abs] using hker y y.property
   -- `F - F₁` vanishes on `ker H`, so it is a real multiple of `H`.
   obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ x, F x - F₁ x = c * H x := by
     have hle : ⨅ _ : Unit, LinearMap.ker (H : E →ₗ[ℝ] ℝ) ≤
@@ -131,7 +135,8 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
     obtain ⟨c, hc⟩ := hmem
     exact ⟨c, fun x ↦ by simpa using (LinearMap.congr_fun hc x).symm⟩
   -- Testing at a point of the open cone shows `c > 0`.
-  obtain ⟨x₀, hx₀⟩ := f.exists_mul_norm_lt_re_apply hkf (by nlinarith [norm_pos_iff.2 hf])
+  obtain ⟨x₀, hx₀⟩ := (f.exists_mul_norm_lt_re_apply_iff hkf).2
+    (by nlinarith [norm_pos_iff.2 hf])
   have hc₀ : 0 < c := by
     have h₁ : F₁ x₀ ≤ k * ‖f‖ * ‖x₀‖ := (le_abs_self _).trans <|
       (F₁.le_opNorm x₀).trans (mul_le_mul_of_nonneg_right hF₁le (norm_nonneg _))
@@ -154,7 +159,7 @@ boundary of `C`. -/
 theorem mem_frontier_of_isMaxOn_re (g : StrongDual 𝕜 E) (hg : g ≠ 0) {C : Set E} {x : E}
     (hx : x ∈ C) (hmax : IsMaxOn (fun y ↦ re (g y)) C x) : x ∈ frontier C := by
   refine ⟨subset_closure hx, fun hint ↦ ?_⟩
-  obtain ⟨w, hw⟩ := g.exists_mul_norm_lt_re_apply le_rfl (norm_pos_iff.2 hg)
+  obtain ⟨w, hw⟩ := (g.exists_mul_norm_lt_re_apply_iff le_rfl).2 (norm_pos_iff.2 hg)
   rw [zero_mul] at hw
   -- Moving from `x` in the direction `w` stays in `C` for a while and increases `re ∘ g`.
   have hcont : Tendsto (fun t : ℝ ↦ x + (t : 𝕜) • w) (𝓝 0) (𝓝 x) := by
@@ -188,10 +193,10 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
   have : CompleteSpace C := hC.completeSpace_coe
   obtain ⟨M, hM⟩ := hbdd
   have hcont : Continuous fun y : C ↦ -re (f y) :=
-    (continuous_re.comp (f.continuous.comp continuous_subtype_val)).neg
+    (continuous_re.comp (f.continuous.comp continuous_subtypeVal)).neg
   obtain ⟨⟨x, hx⟩, hxz, hmin⟩ :=
     hcont.lowerSemicontinuous.exists_add_mul_dist_le_and_lt_add_mul_dist
-      ⟨-M, by rintro _ ⟨y, rfl⟩; exact neg_le_neg (hM (mem_image_of_mem _ y.2))⟩ hkf ⟨z, hz⟩
+      ⟨-M, by rintro _ ⟨y, rfl⟩; exact neg_le_neg (hM (mem_image_of_mem _ y.property))⟩ hkf ⟨z, hz⟩
   simp only [Subtype.dist_eq, dist_eq_norm] at hxz hmin
   refine ⟨x, hx, by simp only [map_sub]; linarith, ?_⟩
   -- The open cone `s` with vertex `x` is convex, open and disjoint from `C`.
@@ -217,7 +222,8 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
     rw [map_add, map_add] at this
     linarith [hgC x hx]
   -- Approaching `x` along a cone direction shows that `re ∘ g` is at most `u` at `x`.
-  obtain ⟨w₀, hw₀⟩ := f.exists_mul_norm_lt_re_apply hkf.le (by nlinarith [norm_pos_iff.2 hf])
+  obtain ⟨w₀, hw₀⟩ := (f.exists_mul_norm_lt_re_apply_iff hkf.le).2
+    (by nlinarith [norm_pos_iff.2 hf])
   have hgx : re (g x) ≤ u := by
     have hlim : Tendsto (fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀))) (𝓝[>] 0) (𝓝 (re (g x))) := by
       have : Continuous fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀)) :=
@@ -237,43 +243,48 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
     exact hgx.trans (hgC y hy)
   · simpa using hneg w hw
 
+/-- **The Bishop–Phelps theorem for support functionals**, in Phelps' general form. Let `C` be a
+nonempty complete convex subset of a normed space. Every nonzero functional whose real part is
+bounded above on `C` is a norm limit of support functionals of `C`, namely of nonzero functionals
+whose real part attains its supremum on `C`. No boundedness of `C` is assumed: the support
+functionals of `C` are norm dense among the nonzero functionals whose real part is bounded above
+on `C`. -/
+theorem Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C)
+    (hC : IsComplete C) (hne : C.Nonempty) {f : StrongDual 𝕜 E} (hf : f ≠ 0)
+    (hbdd : BddAbove ((fun y ↦ re (f y)) '' C)) :
+    f ∈ closure {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x} := by
+  obtain ⟨z, hz⟩ := hne
+  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
+  set k := min (1 / 2) (ε / (2 * ‖f‖))
+  have hk₀ : 0 < k := lt_min (by norm_num) (by positivity)
+  have hk₁ : k < 1 := (min_le_left _ _).trans_lt (by norm_num)
+  have hkε : k * ‖f‖ < ε := by
+    calc k * ‖f‖ ≤ ε / (2 * ‖f‖) * ‖f‖ := by gcongr; exact min_le_right _ _
+      _ = ε / 2 := by field_simp
+      _ < ε := half_lt_self hε
+  obtain ⟨x, hx, -, h, hh, hmax, hpos⟩ :=
+    hconv.exists_isMaxOn_re_of_bddAbove hC hf hbdd hk₀ hk₁ hz
+  obtain ⟨c, hc, hfc⟩ := f.exists_pos_norm_sub_ofReal_smul_le h hk₀.le hk₁ hf hpos
+  refine ⟨(c : 𝕜) • h, ⟨smul_ne_zero (ofReal_ne_zero.2 hc.ne') hh, x, hx, fun y hy ↦ ?_⟩, ?_⟩
+  · simp only [mem_ofPred_eq, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, re_ofReal_mul]
+    exact mul_le_mul_of_nonneg_left (hmax hy) hc.le
+  · rw [dist_eq_norm]
+    exact hfc.trans_lt hkε
+
 /-- **The Bishop–Phelps theorem for support functionals.** The support functionals of a nonempty
 bounded complete convex subset `C` of a nonzero normed space, namely the nonzero functionals whose
-real part attains its supremum on `C`, are norm dense in the dual. -/
+real part attains its supremum on `C`, are norm dense in the dual. This is the case of
+`Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove` in which every functional is bounded on
+`C`. -/
 theorem Convex.dense_setOf_ne_zero_isMaxOn_re [Nontrivial E] (hconv : Convex ℝ C)
     (hC : IsComplete C) (hb : Bornology.IsBounded C) (hne : C.Nonempty) :
     Dense {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x} := by
-  set S := {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x}
-  obtain ⟨z, hz⟩ := hne
   obtain ⟨R, hR⟩ := hb.exists_norm_le
-  -- Every nonzero functional is a limit of support functionals.
-  have hsub : ({0}ᶜ : Set (StrongDual 𝕜 E)) ⊆ closure S := by
-    intro f hf
-    rw [mem_compl_singleton_iff] at hf
-    have hfpos : 0 < ‖f‖ := norm_pos_iff.2 hf
-    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    set k := min (1 / 2) (ε / (2 * ‖f‖))
-    have hk₀ : 0 < k := lt_min (by norm_num) (by positivity)
-    have hk₁ : k < 1 := (min_le_left _ _).trans_lt (by norm_num)
-    have hkε : k * ‖f‖ < ε := by
-      calc k * ‖f‖ ≤ ε / (2 * ‖f‖) * ‖f‖ := by gcongr; exact min_le_right _ _
-        _ = ε / 2 := by field_simp
-        _ < ε := half_lt_self hε
-    have hbdd : BddAbove ((fun y ↦ re (f y)) '' C) := by
-      refine ⟨‖f‖ * R, ?_⟩
-      rintro _ ⟨y, hy, rfl⟩
-      exact (re_le_norm _).trans ((f.le_opNorm y).trans (by gcongr; exact hR y hy))
-    obtain ⟨x, hx, -, h, hh, hmax, hpos⟩ :=
-      hconv.exists_isMaxOn_re_of_bddAbove hC hf hbdd hk₀ hk₁ hz
-    obtain ⟨c, hc, hfc⟩ := f.exists_pos_norm_sub_ofReal_smul_le h hk₀.le hk₁ hf hpos
-    refine ⟨(c : 𝕜) • h, ⟨smul_ne_zero (ofReal_ne_zero.2 hc.ne') hh, x, hx, fun y hy ↦ ?_⟩, ?_⟩
-    · simp only [mem_ofPred_eq, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-        re_ofReal_mul]
-      exact mul_le_mul_of_nonneg_left (hmax hy) hc.le
-    · rw [dist_eq_norm]
-      exact hfc.trans_lt hkε
   have := Module.punctured_nhds_neBot 𝕜 (StrongDual 𝕜 E)
-  exact dense_closure.1 ((dense_compl_singleton 0).mono hsub)
+  refine dense_closure.1 ((dense_compl_singleton 0).mono fun f hf ↦ ?_)
+  refine hconv.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove hC hne hf ⟨‖f‖ * R, ?_⟩
+  rintro _ ⟨y, hy, rfl⟩
+  exact (re_le_norm _).trans ((f.le_opNorm y).trans (by gcongr; exact hR y hy))
 
 /-- **The Bishop–Phelps theorem for support points.** The support points of a complete convex
 subset `C` of a normed space, namely the points of `C` at which the real part of some nonzero
@@ -331,7 +342,8 @@ theorem dense_setOf_exists_norm_apply_eq_norm [CompleteSpace E] :
   rw [mem_closedBall_zero_iff] at hx
   refine ⟨x, hx, le_antisymm ((g.le_opNorm x).trans (mul_le_of_le_one_right (norm_nonneg _) hx))
     ?_⟩
-  have := StrongDual.re_apply_add_mul_norm_le (f := g) (x := 0) zero_le_one fun y hy ↦ hmax hy
+  have := (StrongDual.re_apply_add_mul_norm_le_iff (f := g) (x := 0) zero_le_one).2
+    fun y hy ↦ hmax hy
   rw [map_zero, zero_re, zero_add, one_mul] at this
   exact this.trans (re_le_norm _)
 

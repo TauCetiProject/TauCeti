@@ -69,8 +69,6 @@ regular one, are in `TauCeti.RepresentationTheory.Symmetric.PermutationModule.Ex
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles".
 -/
 
 public section
@@ -126,7 +124,7 @@ private theorem spechtIdealRep_ρ_apply (t : YoungTableau μ)
     (spechtIdealRep t).ρ g x = χ g • x := by
   have hx : (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) ∈ ℚ ∙ youngSymmetrizer (R := ℚ) t := by
     rw [← restrictScalars_spechtIdeal_eq_span t h, Submodule.restrictScalars_mem]
-    exact x.2
+    exact x.property
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
   refine Subtype.ext ?_
   calc ((spechtIdealRep t).ρ g x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))

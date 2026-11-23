@@ -97,15 +97,18 @@ theorem ge_of_laplacian_add_fderiv_le_mul_ge_frontier {K : Set E} (hK : IsCompac
   simpa using neg_le_neg h
 
 /-- A solution of `-Δ f - b·∇f + c f = 0` is bounded in absolute value by every
-nonnegative bound for its absolute value on the frontier. -/
+bound for its absolute value on the frontier. -/
 theorem abs_le_of_laplacian_add_fderiv_eq_mul_abs_le_frontier {K : Set E} (hK : IsCompact K)
-    {c f : E → ℝ} {b : E → E} {β M : ℝ} (hM : 0 ≤ M) (hcont : ContinuousOn f K)
+    {c f : E → ℝ} {b : E → E} {β M : ℝ} (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hsol : ∀ ⦃x⦄, x ∈ interior K →
       Δ f x + fderiv ℝ f x (b x) = c x * f x)
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
     ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := by
   intro x hx
+  have hM : 0 ≤ M := by
+    obtain ⟨z, hz⟩ := nonempty_frontier_iff.2 ⟨⟨x, hx⟩, hK.ne_univ⟩
+    exact (abs_nonneg _).trans (hbdry hz)
   refine abs_le.mpr ⟨ge_of_laplacian_add_fderiv_le_mul_ge_frontier hK (neg_nonpos.mpr hM) hcont
       hcd hc hb (fun y hy => (hsol hy).le) (fun y hy => (abs_le.mp (hbdry hy)).1) hx,
     le_of_mul_le_laplacian_add_fderiv_le_frontier hK hM hcont hcd hc hb

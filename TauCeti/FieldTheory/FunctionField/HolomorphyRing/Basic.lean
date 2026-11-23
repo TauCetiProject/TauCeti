@@ -154,7 +154,7 @@ over each `𝒪_P` with `P ∈ S`, and a valuation ring is integrally closed
 instance isIntegrallyClosedIn_holomorphyRing (S : Set (Place k F)) :
     IsIntegrallyClosedIn ↥(holomorphyRing S) F :=
   Subring.isIntegrallyClosedIn_iff.mpr fun {_} hz P hP ↦
-    P.mem_integers_of_isIntegral (fun r ↦ r.2 P hP) hz
+    P.mem_integers_of_isIntegral (fun r ↦ r.property P hP) hz
 
 /-! ### The field of fractions -/
 
@@ -208,7 +208,7 @@ theorem exists_ne_zero_mem_holomorphyRing_and_mul_mem (hF : IsFunctionField k F)
 theorem isFractionRing_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place k F)}
     (hS : Sᶜ.Nonempty) : IsFractionRing ↥(holomorphyRing S) F where
   map_units y :=
-    (Units.mk0 (y : F) fun h ↦ nonZeroDivisors.ne_zero y.2 (Subtype.ext h)).isUnit
+    (Units.mk0 (y : F) fun h ↦ nonZeroDivisors.ne_zero y.property (Subtype.ext h)).isUnit
   surj z := by
     obtain ⟨Q, hQ⟩ := hS
     obtain ⟨y, hy0, hyS, hyzS⟩ := exists_ne_zero_mem_holomorphyRing_and_mul_mem hF hQ z
@@ -298,7 +298,7 @@ theorem restrictScalars_integralClosure_eq_holomorphyRing (hF : IsFunctionField 
   congr 1
   ext P
   refine ⟨fun h z hz ↦ h ((integralClosure R F).algebraMap_mem ⟨z, hz⟩), fun h z hz ↦ ?_⟩
-  exact P.mem_integers_of_isIntegral (fun r ↦ h r.2) hz
+  exact P.mem_integers_of_isIntegral (fun r ↦ h r.property) hz
 
 /-! ### Recovering the set of places -/
 
@@ -347,7 +347,7 @@ variable {S : Set (Place k F)}
 /-- The functions of `𝒪_S` have nonnegative order at every place of `S`. -/
 theorem ord_nonneg_of_mem_holomorphyRing {P : Place k F} (hP : P ∈ S)
     (z : ↥(holomorphyRing S)) : 0 ≤ P.ord (z : F) :=
-  mem_holomorphyRing_iff_forall_ord_nonneg.mp z.2 P hP
+  mem_holomorphyRing_iff_forall_ord_nonneg.mp z.property P hP
 
 /-- **Divisibility in `𝒪_S` is a pointwise comparison of orders**: a nonzero function of `𝒪_S`
 divides another exactly when it vanishes to no greater order at every place of `S`.  The
@@ -402,16 +402,12 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
   have hz₀F : (z₀ : F) ≠ 0 := fun h ↦ hz₀ (Subtype.ext h)
   -- at each place of `S`, a function of `I` of least order there
   have key : ∀ P : Place k F, ∃ z : ↥(holomorphyRing S), z ∈ I ∧ (z : F) ≠ 0 ∧
-      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := by
-    intro P
-    by_cases hP : P ∈ S
-    · obtain ⟨z, hzI, hz, hzmin⟩ := exists_mem_ideal_ord_le hP hI
-      exact ⟨z, hzI, hz, fun _ ↦ hzmin⟩
-    · exact ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
+      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := fun P ↦
+    if hP : P ∈ S then (exists_mem_ideal_ord_le hP hI).imp fun _ h ↦ ⟨h.1, h.2.1, fun _ ↦ h.2.2⟩
+    else ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
   choose z hzI hz hzmin using key
   rcases hS.toFinset.eq_empty_or_nonempty with hempty | ⟨Q₀, hQ₀⟩
-  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦
-      absurd (hS.mem_toFinset.mpr hP) (by simp [hempty])⟩
+  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦ by simp [Set.Finite.toFinset_eq_empty.mp hempty] at hP⟩
   -- a damping factor: a unit at one place of `S`, a zero at each of the others
   have hdamp : ∀ P : Place k F, ∃ u : F, u ≠ 0 ∧ P.ord u = 0 ∧
       ∀ Q ∈ hS.toFinset, Q ≠ P → Q.ord u = 1 := by
@@ -425,8 +421,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
     mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun Q hQ ↦ by
       rcases eq_or_ne Q P with rfl | hQP
       · exact (huP Q).ge
-      · rw [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
-        norm_num
+      · simp [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
   have hf0 : ∀ P : Place k F, u P * (z P : F) ≠ 0 := fun P ↦ mul_ne_zero (hu0 P) (hz P)
   -- away from `Q`, every summand is damped below the one indexed by `Q`
   have hlt : ∀ Q ∈ hS.toFinset, ∀ P ∈ hS.toFinset, P ≠ Q →
@@ -443,8 +438,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
       Q.ord_mul (hu0 Q) (hz Q), huP Q, zero_add]
   have hsum : ((∑ P ∈ hS.toFinset, (⟨u P, huS P⟩ * z P : ↥(holomorphyRing S)) : _) : F) =
       ∑ P ∈ hS.toFinset, u P * (z P : F) := by
-    rw [AddSubmonoidClass.coe_finsetSum]
-    exact Finset.sum_congr rfl fun P _ ↦ Subalgebra.coe_mul _ _ _
+    simp
   refine ⟨∑ P ∈ hS.toFinset, ⟨u P, huS P⟩ * z P, Ideal.sum_mem _ fun P _ ↦
     Ideal.mul_mem_left _ _ (hzI P), ?_, ?_⟩
   · rw [hsum]
@@ -499,7 +493,7 @@ theorem forall_algebraMap_mem_integers_holomorphyRing_iff (hF : IsFunctionField 
     (∀ r : ↥(holomorphyRing S), algebraMap (↥(holomorphyRing S)) F r ∈ P.integers) ↔ P ∈ S := by
   refine ⟨fun h ↦ (coe_holomorphyRing_subset_integers_iff hF).mp fun z hz ↦ h ⟨z, hz⟩,
     fun h r ↦ ?_⟩
-  exact coe_holomorphyRing_subset_integers h r.2
+  exact coe_holomorphyRing_subset_integers h r.property
 
 end AffineModel
 

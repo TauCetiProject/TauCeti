@@ -38,8 +38,10 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.nonsingular_coords` and
   `WeierstrassCurve.Affine.Point.some_coords`: a nonzero point is `.some` of its accessors.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
-* `WeierstrassCurve.Affine.Point.eq_or_eq_neg_of_xCoord_eq`: nonzero points with equal
-  `x`-coordinates are equal or opposite.
+* `WeierstrassCurve.Affine.Point.xCoord_eq_xCoord_iff`: nonzero points have equal
+  `x`-coordinates exactly when they are equal or opposite.
+* `WeierstrassCurve.Affine.Point.card_filter_xRep_le_two`: at most two points of a `Finset`
+  share a value of Mathlib's `Point.xRep`.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
 * `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
@@ -49,6 +51,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
   transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
   point at infinity and keeps the coordinates of a point.
+* `WeierstrassCurve.Affine.Point.xCoord_cast` and `WeierstrassCurve.Affine.Point.yCoord_cast`:
+  the coordinate accessors are unchanged by that transport.
 
 The coordinate accessors let regular functions be evaluated at translates of the generic point.
 These evaluations define the pullback of translation on the curve's function field.
@@ -62,20 +66,6 @@ map to `ℙ¹`, but that object intentionally identifies `±P` and records no `y
 public section
 
 namespace WeierstrassCurve.Affine.Point
-
-variable {F : Type*} [CommRing F] {E : WeierstrassCurve F}
-
-/-- **A nonzero affine point is `.some`.** The case split on `Affine.Point`'s two constructors,
-packaged as an existential: one `obtain` yields the coordinates, the nonsingularity certificate,
-and the equation identifying the point with `.some` of them — the last being what consumers go on
-to rewrite with. -/
-theorem exists_eq_some_of_ne_zero {P : Affine.Point E.toAffine} (hP : P ≠ 0) :
-    ∃ x y, ∃ hns : E.toAffine.Nonsingular x y, P = .some _ _ hns := by
-  rcases P with _ | ⟨_, _, hns⟩
-  · exact absurd rfl hP
-  · exact ⟨_, _, hns, rfl⟩
-
-open WeierstrassCurve
 
 variable {R : Type*} [CommRing R] {W : _root_.WeierstrassCurve.Affine R}
 
@@ -115,6 +105,14 @@ theorem some_coords {P : W.Point} (hP : P ≠ 0) :
   | zero => exact absurd rfl hP
   | some x y h => (rfl)
 
+/-- **A nonzero affine point is `.some`.** The case split on `Affine.Point`'s two constructors,
+packaged as an existential: one `obtain` yields the coordinates, the nonsingularity certificate,
+and the equation identifying the point with `.some` of them — the last being what consumers go on
+to rewrite with. -/
+theorem exists_eq_some_of_ne_zero {P : W.Point} (hP : P ≠ 0) :
+    ∃ x y, ∃ hns : W.Nonsingular x y, P = .some _ _ hns :=
+  ⟨_, _, nonsingular_coords hP, (some_coords hP).symm⟩
+
 /-- **Two nonzero points with the same two affine coordinates are equal.** -/
 theorem eq_of_coords {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0)
     (hx : xCoord P = xCoord Q) (hy : yCoord P = yCoord Q) : P = Q := by
@@ -123,21 +121,34 @@ theorem eq_of_coords {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0)
 
 @[simp]
 theorem xCoord_neg (P : W.Point) : xCoord (-P) = xCoord P := by
-  cases P <;> (rfl)
+  cases P <;> simp [← Point.zero_def]
 
 /-- **The `y`-coordinate of the negation of a nonzero point.** -/
 @[simp]
 theorem yCoord_neg {P : W.Point} (hP : P ≠ 0) :
     yCoord (-P) = W.negY (xCoord P) (yCoord P) := by
-  cases P with
-  | zero => exact absurd rfl hP
-  | some x y h => rfl
+  obtain ⟨x, y, h, rfl⟩ := exists_eq_some_of_ne_zero hP
+  simp
 
-/-- **Two nonzero points with the same `x`-coordinate are equal or opposite**, over a field. -/
-theorem eq_or_eq_neg_of_xCoord_eq {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F}
-    {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0) (h : xCoord P = xCoord Q) : P = Q ∨ P = -Q := by
-  rw [← some_coords hP, ← some_coords hQ]
-  exact X_eq_iff.mp h
+/-- **Two nonzero points have the same `x`-coordinate exactly when they are equal or opposite**,
+over a field. -/
+theorem xCoord_eq_xCoord_iff {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F}
+    {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0) : xCoord P = xCoord Q ↔ P = Q ∨ P = -Q := by
+  conv_rhs => rw [← some_coords hP, ← some_coords hQ]
+  exact X_eq_iff
+
+open Finset in
+/-- **At most two points of a `Finset` share an abscissa**, over a field: Mathlib's `Point.xRep`
+determines a point up to sign. -/
+theorem card_filter_xRep_le_two {F : Type*} [Field F] [DecidableEq F]
+    {W : _root_.WeierstrassCurve.Affine F} (s : Finset W.Point) (b : Fin 2 → F) :
+    #{P ∈ s | P.xRep = b} ≤ 2 := by
+  rcases eq_empty_or_nonempty {P ∈ s | P.xRep = b} with h | ⟨Q, hQ⟩
+  · simp [h]
+  · -- every point of the fibre is `Q` or `-Q`
+    have hsub : {P ∈ s | P.xRep = b} ⊆ {Q, -Q} := fun P hP ↦ by
+      simpa using xRep_eq_xRep_iff.mp ((mem_filter.mp hP).2.trans (mem_filter.mp hQ).2.symm)
+    exact (card_le_card hsub).trans card_le_two
 
 variable {S F K : Type*} [CommRing S] [Field F] [Field K] [Algebra R S] [Algebra R F]
   [Algebra S F] [IsScalarTower R S F] [Algebra R K] [Algebra S K] [IsScalarTower R S K]
@@ -148,17 +159,13 @@ both sides are `0` there. -/
 @[simp]
 theorem xCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
     xCoord (Point.map f P) = f (xCoord P) := by
-  cases P with
-  | zero => exact f.toRingHom.map_zero.symm
-  | some x y h => (rfl)
+  cases P <;> simp [← Point.zero_def, Point.map_some]
 
 /-- **The `y`-coordinate commutes with `Point.map`.** -/
 @[simp]
 theorem yCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
     yCoord (Point.map f P) = f (yCoord P) := by
-  cases P with
-  | zero => exact f.toRingHom.map_zero.symm
-  | some x y h => (rfl)
+  cases P <;> simp [← Point.zero_def, Point.map_some]
 
 /-- **An endomorphism of the field fixes a point exactly when it fixes both coordinates.** The
 point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
@@ -189,8 +196,6 @@ theorem exists_map_eq_iff (P : (W⁄K).toAffine.Point) (f : F →ₐ[S] K) :
 
 section Cast
 
-variable {R : Type*} [CommRing R]
-
 /-- Transport of affine points along an equality of Weierstrass curves fixes the point at
 infinity. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this `cast`. -/
 lemma cast_zero {V V' : WeierstrassCurve R} (h : V = V') :
@@ -205,6 +210,20 @@ lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
     (hns : V.toAffine.Nonsingular x y) :
     cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (some x y hns)
       = some x y (h ▸ hns) := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `x`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma xCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    xCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = xCoord P := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `y`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma yCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    yCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = yCoord P := by
   subst h; rfl
 
 end Cast

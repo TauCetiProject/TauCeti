@@ -68,10 +68,10 @@ Serre's mass formula.
 public section
 noncomputable section
 
-open ValuativeRel Polynomial IsDiscreteValuationRing MeasureTheory
+open TauCeti ValuativeRel Polynomial IsDiscreteValuationRing MeasureTheory
 open scoped ENNReal
 
-namespace TauCeti
+namespace IntermediateField
 
 open TauCeti.Polynomial (monicOfCoeff)
 
@@ -81,7 +81,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- Integrate the root count in a counted extension by summing the measures of the coefficient
 fibres of any fixed finite disjoint ball cover of its uniformizers. The ball order must be
 larger than the discriminant exponent, so every occupied ball contains exactly one root. -/
-theorem _root_.IntermediateField.lintegral_rootCount_eq_sum_measure
+theorem lintegral_rootCount_eq_sum_measure
     {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
     (hL : L ∈ totallyRamifiedOfDegree K n) :
     letI := (mem_totallyRamifiedOfDegree_iff.1 hL).2.finite
@@ -141,7 +141,7 @@ balls `v_L(x - c) ≥ r` whose order `r` exceeds both `1` and the discriminant e
 Then the integral of `L.rootCount` over the Eisenstein region is the sum, over the balls, of the
 measures of the sets of coefficient vectors of monic polynomials over `𝒪[K]` having a root in
 the ball. The bound `1 < r` follows from `d(L) < r` unless `n = 1`, where `d(L) = 0`. -/
-theorem _root_.IntermediateField.lintegral_rootCount_eq_sum_measure_image
+theorem lintegral_rootCount_eq_sum_measure_image
     {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
     (hL : L ∈ totallyRamifiedOfDegree K n) :
     letI := (mem_totallyRamifiedOfDegree_iff.1 hL).2.finite
@@ -182,7 +182,7 @@ exponent `d`, and let `1 < r` and `d < r`. Suppose that for every uniformizer `c
 coefficient vectors in the Eisenstein region whose polynomial has a root in the ball
 `v_L(z - c) ≥ r` have measure `q ^ (-(r + d))`, where `q` is the residue cardinality of `K`. Then
 the root count of `L` integrates over the Eisenstein region to `q ^ (-(d + 1)) (1 - q⁻¹)`. -/
-theorem _root_.IntermediateField.lintegral_rootCount_eq_of_measure_eq
+theorem lintegral_rootCount_eq_of_measure_eq
     {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
     (hL : L ∈ totallyRamifiedOfDegree K n) :
     letI := (mem_totallyRamifiedOfDegree_iff.1 hL).2.finite
@@ -229,7 +229,7 @@ discriminant exponent `d`, and let `μ` be a left-invariant measure on the coeff
 `Fin n → K`, normalized so that the integer box has volume `1`. Then the root count of `L`
 integrates over the Eisenstein region to `q ^ (-(d + 1)) (1 - q⁻¹)`, where `q` is the residue
 cardinality of `K`. -/
-theorem _root_.IntermediateField.lintegral_rootCount
+theorem lintegral_rootCount
     {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
     (hL : L ∈ totallyRamifiedOfDegree K n)
     [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
@@ -254,4 +254,4 @@ theorem _root_.IntermediateField.lintegral_rootCount
   exact L.measure_image_setOf_exists_aeval_monicOfCoeff_eq_zero_le_addVal hL μ hμ
     (IsDiscreteValuationRing.addVal_eq_one_iff_irreducible.1 hc) (by omega)
 
-end TauCeti
+end IntermediateField

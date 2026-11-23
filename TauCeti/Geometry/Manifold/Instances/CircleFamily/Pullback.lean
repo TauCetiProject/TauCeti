@@ -301,21 +301,21 @@ theorem continuous_retraction (b : B) : Continuous (retraction p b) :=
 /-- The circle over a base point is homeomorphic to the subspace fiber of the base projection. -/
 def fiberHomeomorph (b : B) : AddCircle (p b : ℝ) ≃ₜ {z : Pullback p // z.base = b} where
   toFun x := ⟨mk b x, rfl⟩
-  invFun z := retraction p b z.1
+  invFun z := retraction p b z.val
   left_inv := retraction_mk p b
-  right_inv z := Subtype.ext (mk_retraction p z.2)
+  right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
-  continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
+  continuous_invFun := (continuous_retraction p b).comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the inclusion of the circle. -/
 @[simp]
 theorem coe_fiberHomeomorph (b : B) (x : AddCircle (p b : ℝ)) :
-    (fiberHomeomorph p b x).1 = mk b x := (rfl)
+    (fiberHomeomorph p b x).val = mk b x := (rfl)
 
 /-- The inverse fiber homeomorphism is the retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (b : B) (z : {z : Pullback p // z.base = b}) :
-    (fiberHomeomorph p b).symm z = retraction p b z.1 := (rfl)
+    (fiberHomeomorph p b).symm z = retraction p b z.val := (rfl)
 
 /-- The map to the total family is continuous when `p` is. -/
 theorem continuous_toCircleFamily (hp : Continuous p) : Continuous (toCircleFamily p) := by
@@ -329,11 +329,11 @@ base point and a point of the total family whose period is `p b`. -/
 def fiberProductHomeomorph (hp : Continuous p) :
     Pullback p ≃ₜ {w : B × CircleFamily // p w.1 = w.2.period} where
   toFun z := ⟨(z.base, toCircleFamily p z), rfl⟩
-  invFun w := ⟨w.1.1, CircleFamily.retraction (p w.1.1) w.1.2⟩
+  invFun w := ⟨w.val.1, CircleFamily.retraction (p w.val.1) w.val.2⟩
   left_inv z := by
     rcases z with ⟨b, x⟩
     exact congrArg (mk b) (CircleFamily.retraction_mk (p b) x)
-  right_inv w := Subtype.ext (Prod.ext rfl (CircleFamily.mk_retraction w.2.symm))
+  right_inv w := Subtype.ext (Prod.ext rfl (CircleFamily.mk_retraction w.property.symm))
   continuous_toFun := ((continuous_base p).prodMk (continuous_toCircleFamily p hp)).subtype_mk _
   continuous_invFun := by
     refine continuous_of_normalizationEquiv_comp p ?_
@@ -341,45 +341,57 @@ def fiberProductHomeomorph (hp : Continuous p) :
     -- point of the total family, which lies on the circle of period `p b`.
     have h : normalizationEquiv p ∘
         (fun w : {w : B × CircleFamily // p w.1 = w.2.period} ↦
-          (⟨w.1.1, CircleFamily.retraction (p w.1.1) w.1.2⟩ : Pullback p)) =
-        fun w ↦ (w.1.1, (CircleFamily.normalization ⊤ w.1.2).2) := by
+          (⟨w.val.1, CircleFamily.retraction (p w.val.1) w.val.2⟩ : Pullback p)) =
+        fun w ↦ (w.val.1, (CircleFamily.normalization ⊤ w.val.2).2) := by
       funext w
       refine Prod.ext rfl ?_
-      conv_rhs => rw [← CircleFamily.mk_retraction w.2.symm, CircleFamily.normalization_mk]
+      conv_rhs => rw [← CircleFamily.mk_retraction w.property.symm, CircleFamily.normalization_mk]
       rfl
     rw [h]
-    exact (continuous_fst.comp continuous_subtype_val).prodMk
+    exact (continuous_fst.comp continuous_subtypeVal).prodMk
       (continuous_snd.comp ((CircleFamily.normalization ⊤).continuous.comp
-        (continuous_snd.comp continuous_subtype_val)))
+        (continuous_snd.comp continuous_subtypeVal)))
 
 /-- The fiber-product homeomorphism records the base point and the image in the total family. -/
 @[simp]
 theorem coe_fiberProductHomeomorph (hp : Continuous p) (z : Pullback p) :
-    (fiberProductHomeomorph p hp z).1 = (z.base, toCircleFamily p z) := (rfl)
+    (fiberProductHomeomorph p hp z).val = (z.base, toCircleFamily p z) := (rfl)
+
+/-- Normalize real representatives by dividing the time coordinate by the period at the base
+point. For continuous periods this is a homeomorphism of `B × ℝ`. -/
+def realNormalizationHomeomorph (hp : Continuous p) : B × ℝ ≃ₜ B × ℝ where
+  toFun z := (z.1, z.2 / (p z.1 : ℝ))
+  invFun z := (z.1, z.2 * (p z.1 : ℝ))
+  left_inv z := by simp [(p z.1).property.ne']
+  right_inv z := by simp [(p z.1).property.ne']
+  continuous_toFun := continuous_fst.prodMk
+    (continuous_snd.div ((continuous_subtypeVal.comp hp).comp continuous_fst)
+      fun z ↦ (p z.1).property.ne')
+  continuous_invFun := continuous_fst.prodMk
+    (continuous_snd.mul ((continuous_subtypeVal.comp hp).comp continuous_fst))
+
+/-- Real normalization divides the time coordinate by the period. -/
+@[simp]
+theorem realNormalizationHomeomorph_apply (hp : Continuous p) (z : B × ℝ) :
+    realNormalizationHomeomorph p hp z = (z.1, z.2 / (p z.1 : ℝ)) := (rfl)
+
+/-- Inverse real normalization multiplies the normalized time by the period. -/
+@[simp]
+theorem realNormalizationHomeomorph_symm_apply (hp : Continuous p) (z : B × ℝ) :
+    (realNormalizationHomeomorph p hp).symm z = (z.1, z.2 * (p z.1 : ℝ)) := (rfl)
 
 /-- For continuous periods, the real representative map is a covering map. In normalized
 coordinates it is the quotient map of the unit circle after dividing the time by the period. -/
 theorem isCoveringMap_representative (hp : Continuous p) : IsCoveringMap (representative p) := by
-  have hpos : ∀ b, (p b : ℝ) ≠ 0 := fun b ↦ (p b).property.ne'
-  let g : B × ℝ ≃ₜ B × ℝ :=
-    { toFun z := (z.1, z.2 / (p z.1 : ℝ))
-      invFun z := (z.1, z.2 * (p z.1 : ℝ))
-      left_inv z := by simp [hpos]
-      right_inv z := by simp [hpos]
-      continuous_toFun := continuous_fst.prodMk
-        (continuous_snd.div ((continuous_subtype_val.comp hp).comp continuous_fst)
-          fun z ↦ hpos z.1)
-      continuous_invFun := continuous_fst.prodMk
-        (continuous_snd.mul ((continuous_subtype_val.comp hp).comp continuous_fst)) }
-  have h : representative p =
-      (normalizationHomeomorph p).symm ∘ Prod.map id ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ g := by
+  have h : representative p = (normalizationHomeomorph p).symm ∘
+      Prod.map id ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ realNormalizationHomeomorph p hp := by
     funext z
     rw [Function.comp_apply, Function.comp_apply, eq_comm, Homeomorph.symm_apply_eq,
       coe_normalizationHomeomorph, normalizationEquiv_representative]
     rfl
   rw [h]
   exact ((IsCoveringMap.id.prodMap (AddCircle.isCoveringMap_coe 1)).comp_homeomorph
-    g).homeomorph_comp (normalizationHomeomorph p).symm
+    (realNormalizationHomeomorph p hp)).homeomorph_comp (normalizationHomeomorph p).symm
 
 /-! ### Continuity of base change -/
 
@@ -611,17 +623,15 @@ theorem normalization_representative (n : ℕ∞ω) (z : B × ℝ) :
   rw [coe_normalization, normalizationEquiv_representative]
 
 /-- Normalize real representatives by dividing the time coordinate by the period at the base
-point. For `C^n` periods this is a `C^n` diffeomorphism of `B × ℝ`. -/
+point. For `C^n` periods this is a `C^n` diffeomorphism of `B × ℝ`, with the underlying
+equivalence of `realNormalizationHomeomorph`. -/
 def realNormalization (hp : ContMDiff IB 𝓘(ℝ) n p) :
     (B × ℝ) ≃ₘ^n⟮IB.prod 𝓘(ℝ), IB.prod 𝓘(ℝ)⟯ B × ℝ where
-  toFun z := (z.1, z.2 / (p z.1 : ℝ))
-  invFun z := (z.1, z.2 * (p z.1 : ℝ))
-  left_inv z := by simp [(p z.1).property.ne']
-  right_inv z := by simp [(p z.1).property.ne']
+  __ := (realNormalizationHomeomorph p hp.continuous).toEquiv
   contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_snd.div₀
-    ((contMDiff_subtype_val.comp hp).comp contMDiff_fst) fun z ↦ (p z.1).property.ne')
+    ((contMDiff_subtypeVal.comp hp).comp contMDiff_fst) fun z ↦ (p z.1).property.ne')
   contMDiff_invFun := contMDiff_fst.prodMk
-    (contMDiff_snd.mul ((contMDiff_subtype_val.comp hp).comp contMDiff_fst))
+    (contMDiff_snd.mul ((contMDiff_subtypeVal.comp hp).comp contMDiff_fst))
 
 /-- Real normalization divides the time coordinate by the period. -/
 @[simp]

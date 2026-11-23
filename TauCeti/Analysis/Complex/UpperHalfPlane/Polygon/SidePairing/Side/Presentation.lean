@@ -47,13 +47,31 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 /-- The smaller side in each pair, including every side paired with itself. -/
 abbrev SideRepresentative := {i : Fin n // i ≤ σ.pair i}
 
+/-- There is one representative for each pair of sides, so twice the number of representatives
+is the number of sides plus the number of self-paired sides. -/
+theorem two_mul_natCard_sideRepresentative :
+    2 * Nat.card σ.SideRepresentative = n + Nat.card {i : Fin n // σ.pair i = i} := by
+  classical
+  have hlt : Nat.card {i : Fin n // ¬ i ≤ σ.pair i} = Nat.card {i : Fin n // i < σ.pair i} :=
+    Nat.card_congr (σ.pair.subtypeEquiv fun i ↦ by rw [not_le, σ.pair_pair])
+  have hle : Nat.card σ.SideRepresentative =
+      Nat.card {i : Fin n // i < σ.pair i} + Nat.card {i : Fin n // σ.pair i = i} := by
+    simp only [Nat.card_eq_fintype_card]
+    rw [← Fintype.card_subtype_or_disjoint _ _ fun p hlt heq i hi ↦
+      (hlt i hi).ne (heq i hi).symm]
+    exact Fintype.card_congr (Equiv.subtypeEquivRight fun i ↦ by rw [le_iff_lt_or_eq, eq_comm])
+  have hsum : Nat.card σ.SideRepresentative + Nat.card {i : Fin n // ¬ i ≤ σ.pair i} = n := by
+    rw [← Nat.card_sum, Nat.card_congr (Equiv.sumCompl _), Nat.card_eq_fintype_card,
+      Fintype.card_fin]
+  omega
+
 private abbrev DiscardedSide := {i : Fin n // ¬ i ≤ σ.pair i}
 
 private def sideSplit : Fin n ≃ σ.SideRepresentative ⊕ σ.DiscardedSide :=
   (Equiv.sumCompl fun i : Fin n ↦ i ≤ σ.pair i).symm
 
 private def replacement (i : σ.DiscardedSide) : FreeGroup σ.SideRepresentative :=
-  (FreeGroup.of ⟨σ.pair i, by simpa using le_of_lt (lt_of_not_ge i.2)⟩)⁻¹
+  (FreeGroup.of ⟨σ.pair i, by simpa using le_of_lt (lt_of_not_ge i.property)⟩)⁻¹
 
 /-- Substitute the retained side generator or its inverse for each original side generator. -/
 def sideSubstitution : FreeGroup (Fin n) →* FreeGroup σ.SideRepresentative :=
@@ -149,10 +167,10 @@ private theorem split_relators_eq :
   rintro _ ⟨i, rfl⟩
   refine ⟨σ.sideRelator (σ.pair i), σ.sideRelator_mem_relators _, ?_⟩
   have hp : σ.pair i ≤ σ.pair (σ.pair i) := by
-    simpa using le_of_lt (lt_of_not_ge i.2)
+    simpa using le_of_lt (lt_of_not_ge i.property)
   simp [sideRelator_def, sideSplit, replacement,
     Equiv.sumCompl_symm_apply_of_pos (p := fun i : Fin n ↦ i ≤ σ.pair i) hp,
-    Equiv.sumCompl_symm_apply_of_neg (p := fun i : Fin n ↦ i ≤ σ.pair i) i.2]
+    Equiv.sumCompl_symm_apply_of_neg (p := fun i : Fin n ↦ i ≤ σ.pair i) i.property]
 
 private def splitEquiv : σ.RelatorQuotient ≃*
     PresentedGroup (range (fun i : σ.DiscardedSide ↦ FreeGroup.of (Sum.inr i) *
@@ -197,7 +215,7 @@ theorem sidePresentationEquiv_mk (w : FreeGroup (Fin n)) :
 @[simp]
 theorem sidePresentationEquiv_of (i : σ.SideRepresentative) :
     σ.sidePresentationEquiv (PresentedGroup.of (i : Fin n)) = PresentedGroup.of i := by
-  simpa only [PresentedGroup.of, σ.sideSubstitution_of_le i.2] using
+  simpa only [PresentedGroup.of, σ.sideSubstitution_of_le i.property] using
     σ.sidePresentationEquiv_mk (FreeGroup.of (i : Fin n))
 
 /-- The inverse equivalence includes every retained generator as its original side generator. -/

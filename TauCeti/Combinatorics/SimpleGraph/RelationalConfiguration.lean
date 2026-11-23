@@ -229,7 +229,7 @@ measurable equivalence. -/
 def relationalConfigurationEquiv :
     SimpleGraph V ≃ᵐ {c : RelationalConfiguration Language.graph V // IsSimpleGraph c} where
   toFun G := ⟨G.toRelationalConfiguration, G.isSimpleGraph_toRelationalConfiguration⟩
-  invFun c := toSimpleGraph c.1 c.2
+  invFun c := toSimpleGraph c.val c.property
   left_inv G := by
     classical
     ext u v
@@ -250,14 +250,14 @@ def relationalConfigurationEquiv :
   measurable_invFun :=
     measurable_iff_adj.2 fun u v =>
       (Measurable.of_discrete (f := fun b : Bool => b = true)).comp
-        ((measurable_eval (adjAtom u v)).comp measurable_subtype_coe)
+        ((measurable_eval (adjAtom u v)).comp measurable_subtypeVal)
 
 /-- Encoding a simple graph as a configuration is measurable. -/
 @[fun_prop]
 theorem measurable_toRelationalConfiguration :
     Measurable
       (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-  measurable_subtype_coe.comp relationalConfigurationEquiv.measurable
+  measurable_subtypeVal.comp relationalConfigurationEquiv.measurable
 
 @[simp]
 theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
@@ -267,7 +267,7 @@ theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
 @[simp]
 theorem relationalConfigurationEquiv_symm_apply
     (c : {c : RelationalConfiguration Language.graph V // IsSimpleGraph c}) :
-    relationalConfigurationEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
+    relationalConfigurationEquiv.symm c = toSimpleGraph c.val c.property := (rfl)
 
 /-- The configurations of simple graphs are exactly the simple-graph configurations. -/
 @[simp]
@@ -279,12 +279,18 @@ theorem range_toRelationalConfiguration :
     fun c hc => ⟨relationalConfigurationEquiv.symm ⟨c, hc⟩,
       congrArg Subtype.val (relationalConfigurationEquiv.apply_symm_apply ⟨c, hc⟩)⟩
 
+/-- Encoding simple graphs as configurations is injective. -/
+theorem toRelationalConfiguration_injective :
+    Function.Injective
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  fun _ _ h ↦ relationalConfigurationEquiv.injective (Subtype.ext h)
+
 /-- On a countable vertex type, encoding simple graphs as configurations is a measurable embedding,
 so laws on simple graphs are the laws on configurations concentrated on simple graphs. -/
 theorem measurableEmbedding_toRelationalConfiguration [Countable V] :
     MeasurableEmbedding
       (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-  (MeasurableEmbedding.subtype_coe measurableSet_setOf_isSimpleGraph).comp
+  (MeasurableEmbedding.subtypeVal measurableSet_setOf_isSimpleGraph).comp
     relationalConfigurationEquiv.measurableEmbedding
 
 /-- The encoding of a law on simple graphs is concentrated on simple graphs. -/
@@ -295,20 +301,34 @@ theorem ae_isSimpleGraph_map_toRelationalConfiguration [Countable V] (μ : Measu
 
 /-- A law on configurations concentrated on simple graphs is the encoding of its pullback to
 simple graphs. -/
-theorem map_comap_toRelationalConfiguration [Countable V]
+theorem map_comap_toRelationalConfiguration
     {μ : Measure (RelationalConfiguration Language.graph V)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     (μ.comap toRelationalConfiguration).map toRelationalConfiguration = μ := by
-  rw [measurableEmbedding_toRelationalConfiguration.map_comap, range_toRelationalConfiguration]
-  exact Measure.restrict_eq_self_of_ae_mem hμ
+  have hA : NullMeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} μ :=
+    MeasurableSet.univ.nullMeasurableSet.congr (ae_eq_univ.2 (ae_iff.1 hμ)).symm
+  have hnull : ∀ s : Set (SimpleGraph V), MeasurableSet s →
+      NullMeasurableSet (toRelationalConfiguration '' s) μ := by
+    intro s hs
+    simpa only [Set.image_image, coe_relationalConfigurationEquiv] using
+      Measure.MeasurableSet.nullMeasurableSet_subtypeVal hA
+        (relationalConfigurationEquiv.measurableSet_image.2 hs)
+  refine Measure.ext fun T hT ↦ ?_
+  rw [Measure.map_apply measurable_toRelationalConfiguration hT,
+    Measure.comap_preimage _ _ toRelationalConfiguration_injective
+      measurable_toRelationalConfiguration hnull hT,
+    range_toRelationalConfiguration, ← Measure.restrict_apply hT,
+    Measure.restrict_eq_self_of_ae_mem hμ]
 
 /-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
 probability law. -/
-theorem isProbabilityMeasure_comap_toRelationalConfiguration [Countable V]
+theorem isProbabilityMeasure_comap_toRelationalConfiguration
     {μ : Measure (RelationalConfiguration Language.graph V)} [IsProbabilityMeasure μ]
     (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     IsProbabilityMeasure (μ.comap toRelationalConfiguration) :=
-  measurableEmbedding_toRelationalConfiguration.isProbabilityMeasure_comap <| by
-    rwa [range_toRelationalConfiguration]
+  ⟨by
+    rw [← Set.preimage_univ (f := toRelationalConfiguration),
+      ← Measure.map_apply measurable_toRelationalConfiguration .univ,
+      map_comap_toRelationalConfiguration hμ, measure_univ]⟩
 
 /-- The array of the configuration of a simple graph is its adjacency array. -/
 @[simp]
@@ -337,7 +357,7 @@ theorem toRelationalConfiguration_comp_comap (f : V → W) :
 
 /-- For laws concentrated on simple graphs, pulling back to simple graphs commutes with
 restriction. -/
-theorem map_comap_comap_toRelationalConfiguration [Countable V] [Countable W] (f : V → W)
+theorem map_comap_comap_toRelationalConfiguration [Countable V] (f : V → W)
     {μ : Measure (RelationalConfiguration Language.graph W)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     (μ.comap toRelationalConfiguration).map (SimpleGraph.comap f) =
       (μ.map (restrict f)).comap toRelationalConfiguration := by
@@ -351,13 +371,13 @@ theorem map_comap_comap_toRelationalConfiguration [Countable V] [Countable W] (f
 theorem relationalConfigurationEquiv_comap (f : V → W) (G : SimpleGraph W) :
     relationalConfigurationEquiv (G.comap f) =
       ⟨(relationalConfigurationEquiv G : RelationalConfiguration Language.graph W).restrict f,
-        (relationalConfigurationEquiv G).2.restrict f⟩ :=
+        (relationalConfigurationEquiv G).property.restrict f⟩ :=
   Subtype.ext (toRelationalConfiguration_comap f G)
 
 /-- Decoding commutes with restriction. -/
 theorem relationalConfigurationEquiv_symm_restrict (f : V → W)
     (c : {c : RelationalConfiguration Language.graph W // IsSimpleGraph c}) :
-    relationalConfigurationEquiv.symm ⟨c.1.restrict f, c.2.restrict f⟩ =
+    relationalConfigurationEquiv.symm ⟨c.val.restrict f, c.property.restrict f⟩ =
       (relationalConfigurationEquiv.symm c).comap f := by
   ext u v
   simp

@@ -48,8 +48,6 @@ imports this file.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, the `permToBrauer` build item.
 -/
 
 public section
@@ -114,7 +112,7 @@ by `σ` and the top points by `τ` turns the strand `i ↦ ρ i` into the strand
 @[simp]
 theorem relabel_permToBrauer (ρ : Equiv.Perm (Fin k)) :
     (permToBrauer ρ).relabel σ τ = permToBrauer (τ * ρ * σ⁻¹) := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · simp [Equiv.Perm.mul_apply]
   · rw [relabel_val_inr, permToBrauer_val_inr, Sum.map_inl, permToBrauer_val_inr]

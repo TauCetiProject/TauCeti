@@ -211,10 +211,8 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
     congrArg R₁.homEquiv (EllObj.Hom.lift_comp _ _ _ _)
   have hσ₂ : R₂.homEquiv (σ₂ ≫ ey ≫ a₂) = R₂.homEquiv (ex ≫ a₂) :=
     congrArg R₂.homEquiv (EllObj.Hom.lift_comp _ _ _ _)
-  have hex : R.homEquiv ex = (P ⊗ (Q₁ ⊗ Q₂)).map ex.op (R.homEquiv (𝟙 V)) := by
-    rw [← R.homEquiv_comp, Category.comp_id]
-  have hey : R.homEquiv ey = (P ⊗ (Q₁ ⊗ Q₂)).map ey.op (R.homEquiv (𝟙 V)) := by
-    rw [← R.homEquiv_comp, Category.comp_id]
+  have hex := R.homEquiv_eq ex
+  have hey := R.homEquiv_eq ey
   rw [R₁.homEquiv_comp, R₁.homEquiv_comp, R₁.homEquiv_comp, ha₁] at hσ₁
   rw [R₂.homEquiv_comp, R₂.homEquiv_comp, R₂.homEquiv_comp, ha₂] at hσ₂
   generalize R.homEquiv (𝟙 V) = ξ at hσ₁ hσ₂ hex hey
@@ -223,17 +221,9 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
   simp only [Functor.Monoidal.tensorObj_map_apply_fst, Functor.Monoidal.tensorObj_map_apply_snd,
     Functor.Monoidal.whiskerLeft_app_apply_fst, Functor.Monoidal.whiskerLeft_app_apply_snd,
     Functor.Monoidal.fst_app_apply, Functor.Monoidal.snd_app_apply] at hp₁ hq₁ hp₂ hq₂
-  -- `σ₁` and `σ₂` are isomorphisms over `T`, and `σ₁ ≫ σ₂⁻¹` fixes the `𝒫`-structure
+  -- `σ₁` and `σ₂` are isomorphisms over `T` with the same effect on the `𝒫`-structures
   have : IsIso σ₂ := (EllObj.isIso_iff_isIso_base _ _).2 (by rw [hσ₂b]; exact IsIso.id T)
-  have hinvp : P.map (inv σ₂).op (P.map ex.op ξ.1) = P.map ey.op ξ.1 := by
-    rw [← hp₂, ← Functor.map_comp_apply, ← op_comp, IsIso.inv_hom_id, op_id, Functor.map_id_apply]
-  have hσ : σ₁ = σ₂ := by
-    rw [← comp_inv_eq_id σ₂]
-    refine P.isRigid_iff.1 hP _ ?_ (P.map ex.op ξ.1) ?_
-    · simp only [EllObj.comp_base, EllObj.inv_base, hσ₁b, hσ₂b]
-      exact (Category.id_comp _).trans IsIso.inv_id
-    · rw [op_comp, Functor.map_comp_apply, hinvp, hp₁]
-  rw [hσ] at hq₁
+  rw [hP.eq_of_base_eq_of_map_eq σ₁ σ₂ (hσ₁b.trans hσ₂b.symm) _ (hp₁.trans hp₂.symm)] at hq₁
   -- the common isomorphism carries the arrow `ey` to `ex`
   have hcomp : σ₂ ≫ ey = ex := by
     refine R.homEquiv.injective ?_

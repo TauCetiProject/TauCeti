@@ -54,21 +54,12 @@ specialisation below carries no arithmetic hypothesis at all.
 * `WeierstrassCurve.isInteger_four_mul_x_and_eight_mul_y_of_order_two`: the order-two bound on its
   own, from a Jacobian two-torsion hypothesis and needing no squarefreeness at all.
 
-## Roadmap
-
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**", route "division polynomials" (`:830`–`:831`). Lines `:823`–`:827` state this
-theorem for an integral **long** Weierstrass model: over `ℚ`, "a nonzero torsion point has
-`x, y ∈ ℤ` unless it has order exactly `2`, where the honest bound is `4x, 8y ∈ ℤ`". The
-discriminant companion and the short-model form (`:828`–`:830`) are separate targets.
-
 ## Provenance
 
 Ported from J. Xu and D. K. Angdinata's AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,
 `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`), from **two** files of
-`projects/NagellLutz/LutzNagell/LutzNagellTheorem/`, both byte-identical at `9fec8eba7652` — the
-revision the roadmap pins for this project (`README:1072`) — verified by blob hash, so the
-citations hold at either.
+`projects/NagellLutz/LutzNagell/LutzNagellTheorem/`, both byte-identical at
+`dev/modular-curves @ 9fec8eba7652`, verified by blob hash, so the citations hold at either.
 
 `PIDMain.lean` supplies the statement shape: `nsmul_eq_zero_affine_to_jac` (`:48`),
 `exists_some_of_ne_zero` (`:60`), `integrality_of_odd_prime_factor` (`:83`),
@@ -76,7 +67,7 @@ citations hold at either.
 already stated over a general base in `IsLocalization.IsInteger` terms.
 
 `GeneralMain.lean` supplies the order-two conclusion. Its `lutz_nagell_integrality_general`
-(`:112`) ends in `4x, 8y` integral, which is the form the roadmap asks for, where the `PID`
+(`:112`) ends in `4x, 8y` integral, which is the form proved here, where the `PID`
 theorem ends in the weaker denominator bound `den(x) ∣ 4`. That file states the theorem over `ℚ`
 only, so `isInteger_or_order_two_of_torsion_rat` is *its* statement and
 `isInteger_or_order_two_of_torsion` generalises it.
@@ -99,7 +90,7 @@ namespace WeierstrassCurve
 
 open WeierstrassCurve
 
-variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
+variable {R : Type*} [CommRing R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
 variable (W : WeierstrassCurve R)
 
@@ -117,6 +108,7 @@ private lemma isInteger_of_odd_prime_factor {x y : K}
     (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
     (hsf : Squarefree ((p : ℤ) : R)) :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y := by
+  have := IsDomain.of_faithfulSMul R K
   set P := Affine.Point.some _ _ hns
   -- `(m / p) • P` has order exactly `p`, by Mathlib's order-of-a-multiple lemma. Both facts the
   -- descent needs — nonvanishing, and being killed by `p` — read off that one equality.
@@ -146,6 +138,7 @@ private lemma isInteger_of_four_dvd_order {x y : K}
     (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
     (hsf : Squarefree (2 : R)) :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y := by
+  have := IsDomain.of_faithfulSMul R K
   set P := Affine.Point.some _ _ hns
   -- As in the odd branch, one order equality from Mathlib supplies everything: `(m / 4) • P` has
   -- order exactly `4`, hence is nonzero, is killed by `4`, and is *not* killed by `2`.
@@ -180,6 +173,7 @@ theorem isInteger_four_mul_x_and_eight_mul_y_of_order_two {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (h2 : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0) :
     IsLocalization.IsInteger R (4 * x) ∧ IsLocalization.IsInteger R (8 * y) := by
+  have := IsDomain.of_faithfulSMul R K
   have hx : IsLocalization.IsInteger R (4 * x) := by
     have := IsFractionRing.den_dvd_iff_isInteger_mul.mp (den_dvd_four_of_order_two W hns h2)
     rwa [map_ofNat] at this
@@ -189,7 +183,7 @@ theorem isInteger_four_mul_x_and_eight_mul_y_of_order_two {x y : K}
   have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns 2 h2
   rwa [WeierstrassCurve.ψ_two, WeierstrassCurve.ψ₂] at hψ
 
-omit [IsDomain R] [UniqueFactorizationMonoid R] [IsFractionRing R K] in
+omit [UniqueFactorizationMonoid R] [IsFractionRing R K] in
 /-- **A `.some` point of order other than two has order above two.** The arithmetic bridge from
 uniform to sharp squarefreeness is `Algebra/Squarefree.lean`'s
 `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`, which asks for `2 < n`; this supplies
@@ -260,7 +254,7 @@ theorem isInteger_or_order_two_of_torsion_of_squarefree {x y : K}
     Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree
       (two_lt_addOrderOf W hns htor hord2) (hsf hord2)
 
-/-- **Nagell–Lutz over `ℚ`**, the form the roadmap asks for: for an integral long Weierstrass
+/-- **Nagell–Lutz over `ℚ`**: for an integral long Weierstrass
 model, a nonzero torsion point has integral coordinates unless it has order exactly `2`, where the
 honest bound is `4x, 8y ∈ ℤ`.
 

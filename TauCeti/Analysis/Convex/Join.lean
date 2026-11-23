@@ -14,6 +14,10 @@ Mathlib's `convexHull_insert` writes the convex hull of `insert a s` as the conv
 with the convex hull of `s`, provided `s` is nonempty. This file states the membership form with
 no nonemptiness hypothesis: a point of the convex hull of `insert a s` is either `a` itself or
 lies on a segment from `a` to a point of the convex hull of `s` (`TauCeti.mem_convexHull_insert`).
+
+The convex join of a point `x` with any set is star-convex about `x`
+(`TauCeti.starConvex_convexJoin_singleton_left`), and it lies in every set star-convex about `x`
+that contains the set (`StarConvex.convexJoin_singleton_subset`).
 -/
 
 public section
@@ -21,6 +25,8 @@ public section
 open Set
 
 namespace TauCeti
+
+section LinearOrderedField
 
 variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
   [Module 𝕜 E] {s : Set E} {a x : E}
@@ -38,4 +44,34 @@ theorem mem_convexHull_insert :
     exact ⟨y, hy, left_mem_segment 𝕜 x y⟩
   · exact ⟨y, hy, hxy⟩
 
+end LinearOrderedField
+
+section OrderedSemiring
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜] [AddCommMonoid E]
+  [Module 𝕜 E]
+
+/-- The convex join of `{x}` with any set, the union of the segments from `x` to its points, is
+star-convex about `x`. -/
+theorem starConvex_convexJoin_singleton_left (x : E) (t : Set E) :
+    StarConvex 𝕜 x (convexJoin 𝕜 {x} t) := by
+  rw [convexJoin_singleton_left]
+  exact starConvex_iUnion₂ fun y _ ↦ (convex_segment x y).starConvex (left_mem_segment 𝕜 x y)
+
+end OrderedSemiring
+
 end TauCeti
+
+section OrderedSemiring
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+  {s t : Set E} {x : E}
+
+/-- The convex join of `{x}` with a subset `t` of a set `s` star-convex about `x`, the union of the
+segments from `x` to the points of `t`, lies in `s`. -/
+theorem StarConvex.convexJoin_singleton_subset (hs : StarConvex 𝕜 x s) (ht : t ⊆ s) :
+    convexJoin 𝕜 {x} t ⊆ s := by
+  rw [convexJoin_singleton_left]
+  exact iUnion₂_subset fun y hy ↦ hs.segment_subset (ht hy)
+
+end OrderedSemiring

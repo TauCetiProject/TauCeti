@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Central transport of Lakshmibai–Seshadri paths
@@ -81,7 +82,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
       P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
     (π : LSPath P b lam) : LSPath P b lam' where
   length := π.length
-  dir j := ⟨(π.dir j).1, hJ ▸ (π.dir j).2⟩
+  dir j := ⟨(π.dir j).val, hJ ▸ (π.dir j).property⟩
   time := π.time
   time_zero := π.time_zero
   time_last := π.time_last
@@ -95,7 +96,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
         (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
         (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam') y x :=
       hJ ▸ h
-    refine ⟨(C.map ⟨fun x ↦ ⟨x.1, hJ ▸ x.2⟩, fun h ↦ hcov _ _ h⟩ :
+    refine ⟨(C.map ⟨fun x ↦ ⟨x.val, hJ ▸ x.property⟩, fun h ↦ hcov _ _ h⟩ :
       (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam')),
       by rw [RelSeries.head_map, hhead]; rfl, by rw [RelSeries.last_map, hlast]; rfl, ?_⟩
     rw [isAChain_iff_den_dvd_bondGcd, dvd_bondGcd_iff] at hC ⊢
@@ -127,7 +128,8 @@ theorem length_centralTransport : (centralTransport χ hχ π).length = π.lengt
 /-- The central transport keeps the directions of an LS path. -/
 @[simp]
 theorem dir_centralTransport (j : Fin ((centralTransport χ hχ π).length + 1)) :
-    ((centralTransport χ hχ π).dir j).1 = (π.dir (j.cast (by rw [length_centralTransport]))).1 :=
+    ((centralTransport χ hχ π).dir j).val = (π.dir (j.cast (by rw [length_centralTransport]))).val
+        :=
   (rfl)
 
 /-- The central transport keeps the breaks of an LS path. -/
@@ -150,8 +152,8 @@ theorem length_centralTransport_symm (π : LSPath P b (lam + χ)) :
 @[simp]
 theorem dir_centralTransport_symm (π : LSPath P b (lam + χ))
     (j : Fin (((centralTransport χ hχ).symm π).length + 1)) :
-    (((centralTransport χ hχ).symm π).dir j).1 =
-      (π.dir (j.cast (by rw [length_centralTransport_symm]))).1 :=
+    (((centralTransport χ hχ).symm π).dir j).val =
+      (π.dir (j.cast (by rw [length_centralTransport_symm]))).val :=
   (rfl)
 
 @[simp]
@@ -226,12 +228,13 @@ theorem minHeight_toPLPath_centralTransport {g : Module.Dual 𝕜 V} (hg : g (f 
 realization `f` injective on `W λ` and a realized orbit with no two distinct points on a common ray,
 the path of the central transport of `π` is obtained from the path of `π` by adding `t ↦ t χ` to
 its distinguished presentation for the realized orbit `W λ`. -/
-theorem toPLPath_centralTransport [P.flip.IsReduced] (hlam : lam ∈ dominantChamber P b)
+theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) :
     (centralTransport χ hχ π).toPLPath 𝕜 f =
       PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
         (π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
   rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
     PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
 

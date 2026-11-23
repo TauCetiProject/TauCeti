@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Extreme
+public import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Extreme subsets and convex combinations
@@ -21,6 +22,16 @@ strictly positive weights that it meets, as long as the convex hull of the point
 `B` in the convex hull of `s` is already in the convex hull of `s ∩ B`
 (`IsExtreme.convexHull_inter_subset`). This is how a triangulation of a convex set restricts to
 each of its faces.
+
+An extreme subset meeting the intrinsic interior of its ambient set is the whole set
+(`IsExtreme.eq_of_mem_intrinsicInterior`); hence proper extreme subsets lie in the intrinsic
+frontier, without convexity or finite dimension.
+
+Every subfamily of an affinely independent family spans an extreme subset of its convex hull
+(`AffineIndependent.isExtreme_convexHull`). Thus the faces of a simplex are extreme, without
+any topological or finite-dimensional assumption. A point of `A` that strictly maximizes a linear
+functional on `A` is an extreme point of `convexHull 𝕜 A`
+(`TauCeti.mem_extremePoints_convexHull_of_strict_max`).
 -/
 
 public section
@@ -57,6 +68,45 @@ theorem mem_extremePoints_iff_linearMap_mem_extremePoints
     apply hf
     apply h (f x₁) ((hmem x₁).2 hx₁) (f x₂) ((hmem x₂).2 hx₂)
     exact ⟨a, b, ha, hb, hab, by simpa only [map_add, map_smul] using congrArg f hmix⟩
+
+/-- A point of `A` at which a linear functional takes a strict maximum on `A` is an extreme point
+of `convexHull 𝕜 A`, without any topological or finite-dimensional assumption. -/
+theorem mem_extremePoints_convexHull_of_strict_max
+    {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommMonoid E] [Module 𝕜 E] {A : Set E} {p : E} (hp : p ∈ A)
+    (f : E →ₗ[𝕜] 𝕜) (hf : ∀ q ∈ A, q ≠ p → f q < f p) :
+    p ∈ (convexHull 𝕜 A).extremePoints 𝕜 := by
+  let C : Set E := {q | f q < f p ∨ q = p}
+  have hcomb {u v : 𝕜} (hu : u < f p) (hv : v ≤ f p) {a b : 𝕜}
+      (ha : 0 < a) (hb : 0 ≤ b) (hab : a + b = 1) : a * u + b * v < f p :=
+    calc a * u + b * v
+      _ < a * f p + b * f p :=
+          add_lt_add_of_lt_of_le (mul_lt_mul_of_pos_left hu ha) (mul_le_mul_of_nonneg_left hv hb)
+      _ = (a + b) * f p := (add_mul a b (f p)).symm
+      _ = f p := by rw [hab, one_mul]
+  have hC_conv : Convex 𝕜 C := by
+    rintro x (hx | rfl) y (hy | rfl) a b ha hb hab
+    · rcases eq_or_lt_of_le ha with rfl | ha'
+      · have hb1 : b = 1 := by simpa using hab
+        exact Or.inl (by simpa [hb1] using hy)
+      · exact Or.inl (by simpa using hcomb hx hy.le ha' hb hab)
+    · rcases eq_or_lt_of_le ha with rfl | ha'
+      · have hb1 : b = 1 := by simpa using hab
+        exact Or.inr (by simp [hb1])
+      · exact Or.inl (by simpa using hcomb hx le_rfl ha' hb hab)
+    · rcases eq_or_lt_of_le hb with rfl | hb'
+      · have ha1 : a = 1 := by simpa using hab
+        exact Or.inr (by simp [ha1])
+      · exact Or.inl (by simpa [add_comm] using hcomb hy le_rfl hb' ha (add_comm a b ▸ hab))
+    · exact Or.inr (by rw [← add_smul, hab, one_smul])
+  have hHC : convexHull 𝕜 A ⊆ C :=
+    convexHull_min (fun q hq ↦ (eq_or_ne q p).symm.imp_left (hf q hq)) hC_conv
+  rw [mem_extremePoints_iff_left]
+  refine ⟨subset_convexHull 𝕜 A hp, fun x₁ hx₁ x₂ hx₂ ⟨a, b, ha, hb, hab, hmix⟩ ↦ ?_⟩
+  rcases hHC hx₁ with hx₁' | hx₁'
+  · have hx₂' : f x₂ ≤ f p := (hHC hx₂).elim le_of_lt (fun h ↦ le_of_eq (congrArg f h))
+    exact False.elim ((hcomb hx₁' hx₂' ha hb.le hab).ne (by simpa using congrArg f hmix))
+  · exact hx₁'
 
 end TauCeti
 
@@ -108,3 +158,78 @@ theorem IsExtreme.convexHull_inter_subset (hAB : IsExtreme 𝕜 A B) {s : Set E}
   · exact (convexHull_mono (Set.image_subset_iff.2 hzs')).trans hsA
 
 end LinearOrderedField
+
+section Simplex
+
+variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] {p : ι → E}
+
+/-- The convex hull of any subfamily of an affinely independent family is an extreme subset
+of the convex hull of the whole family. In particular, every face of a simplex is extreme. -/
+theorem AffineIndependent.isExtreme_convexHull (hp : AffineIndependent 𝕜 p) (s : Set ι) :
+    IsExtreme 𝕜 (convexHull 𝕜 (Set.range p)) (convexHull 𝕜 (p '' s)) := by
+  classical
+  obtain ⟨t, hpt, ht, hspan⟩ := exists_subset_affineIndependent_affineSpan_eq_top hp.range
+  let b : AffineBasis t 𝕜 E := ⟨Subtype.val, ht, by simpa using hspan⟩
+  let c (i : ι) := b.coord ⟨p i, hpt (Set.mem_range_self i)⟩
+  have hcp (i j : ι) : c i (p j) = if i = j then 1 else 0 := by
+    -- The chosen basis is the inclusion of `t`; expose its value to apply `coord_apply`.
+    rw [show p j = b ⟨p j, hpt (Set.mem_range_self j)⟩ from rfl, b.coord_apply]
+    simp [hp.injective.eq_iff]
+  have hnn (i : ι) : convexHull 𝕜 (Set.range p) ⊆ {x | 0 ≤ c i x} :=
+    convexHull_min (by rintro _ ⟨j, rfl⟩; rw [Set.mem_ofPred_eq, hcp]; split_ifs <;> simp)
+      ((convex_Ici 0).affine_preimage (c i))
+  have hzero (i : ι) (hi : i ∉ s) : convexHull 𝕜 (p '' s) ⊆ {x | c i x = 0} :=
+    convexHull_min (by rintro _ ⟨j, hj, rfl⟩; simp [hcp, ne_of_mem_of_not_mem hj hi |>.symm])
+      ((convex_singleton 0).affine_preimage (c i))
+  refine ⟨convexHull_mono (Set.image_subset_range _ _), ?_⟩
+  rintro x hx y hy z hz ⟨a, d, ha, hd, had, hmix⟩
+  have hcx (i : ι) (hi : i ∉ s) : c i x = 0 := by
+    have heq : a * c i x + d * c i y = 0 := by
+      simpa only [Convex.combo_affine_apply had, smul_eq_mul] using
+        (congrArg (c i) hmix).trans (hzero i hi hz)
+    exact (mul_eq_zero.mp ((add_eq_zero_iff_of_nonneg
+      (mul_nonneg ha.le (hnn i hx)) (mul_nonneg hd.le (hnn i hy))).mp heq).1).resolve_left
+        ha.ne'
+  rw [convexHull_range_eq_exists_affineCombination] at hx
+  obtain ⟨u, w, hw, hw₁, rfl⟩ := hx
+  have hws : ∀ i ∈ u, w i ≠ 0 → i ∈ s := by
+    intro i hi hwi
+    by_contra his
+    have := hcx i his
+    rw [Finset.map_affineCombination _ _ _ hw₁,
+      Finset.affineCombination_eq_linear_combination _ _ _ hw₁] at this
+    exact hwi (by simpa [hcp, hi] using this)
+  have hsum : ∑ i ∈ u.filter (· ∈ s), w i = 1 := by
+    rwa [Finset.sum_filter_of_ne hws]
+  rw [← u.affineCombination_filter_of_ne w p hws,
+    affineCombination_eq_centerMass hsum]
+  exact Finset.centerMass_mem_convexHull _ (fun i hi => hw i (Finset.mem_filter.mp hi).1)
+    (by rw [hsum]; exact zero_lt_one)
+    (fun i hi => Set.mem_image_of_mem p (Finset.mem_filter.mp hi).2)
+
+end Simplex
+
+section IntrinsicInterior
+
+open Filter Topology
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V]
+  [ContinuousSMul ℝ V] {P F : Set V}
+
+/-- An extreme subset meeting the intrinsic interior of its ambient set is that entire set.
+Neither convexity nor finite dimension is required. -/
+theorem IsExtreme.eq_of_mem_intrinsicInterior (hF : IsExtreme ℝ P F) {x : V} (hxF : x ∈ F)
+    (hx : x ∈ intrinsicInterior ℝ P) : F = P := by
+  refine hF.subset.antisymm fun y hy => ?_
+  obtain ⟨z, hz, hseg⟩ := TauCeti.exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hx hy
+  exact hF.left_mem_of_mem_openSegment hy hz hxF hseg
+
+/-- Every proper extreme subset lies in the intrinsic frontier of its ambient set. -/
+theorem IsExtreme.subset_intrinsicFrontier (hF : IsExtreme ℝ P F) (hne : F ≠ P) :
+    F ⊆ intrinsicFrontier ℝ P := by
+  rw [← intrinsicClosure_sdiff_intrinsicInterior]
+  exact fun _ hx => ⟨subset_intrinsicClosure (hF.subset hx),
+    fun hi => hne (hF.eq_of_mem_intrinsicInterior hx hi)⟩
+
+end IntrinsicInterior

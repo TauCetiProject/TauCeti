@@ -121,6 +121,22 @@ theorem tmul_add (m : M) (n n' : N) :
   simp only [tmul, map_add]
 
 @[simp]
+theorem neg_tmul (m : M) (n : N) : tmul k A (-m) n = -tmul k A m n := by
+  simp only [tmul, map_neg, LinearMap.neg_apply]
+
+@[simp]
+theorem tmul_neg (m : M) (n : N) : tmul k A m (-n) = -tmul k A m n := by
+  simp only [tmul, map_neg]
+
+theorem sub_tmul (m m' : M) (n : N) :
+    tmul k A (m - m') n = tmul k A m n - tmul k A m' n := by
+  simp only [tmul, map_sub, LinearMap.sub_apply]
+
+theorem tmul_sub (m : M) (n n' : N) :
+    tmul k A m (n - n') = tmul k A m n - tmul k A m n' := by
+  simp only [tmul, map_sub]
+
+@[simp]
 theorem smul_tmul (r : k) (m : M) (n : N) :
     tmul k A (r • m) n = r • tmul k A m n := by
   simp only [tmul, map_smul, LinearMap.smul_apply]
@@ -133,10 +149,8 @@ theorem tmul_smul (r : k) (m : M) (n : N) :
 /-- An `A` action can be moved from the right module to the left module. -/
 theorem balance (a : A) (m : M) (n : N) :
     tmul k A (op a • m) n = tmul k A m (a • n) := by
-  apply sub_eq_zero.mp
-  rw [← mkQ_tmul, ← mkQ_tmul, ← map_sub]
-  exact (Submodule.Quotient.mk_eq_zero _).mpr
-    (Submodule.subset_span ⟨a, m, n, rfl⟩)
+  rw [← mkQ_tmul, ← mkQ_tmul, ← sub_eq_zero, ← map_sub, mkQ_eq_zero_iff]
+  exact Submodule.subset_span ⟨a, m, n, rfl⟩
 
 /-- Every balanced tensor is represented by a ground-ring tensor. -/
 theorem mkQ_surjective : Function.Surjective (mkQ k A (M := M) (N := N)) :=
@@ -158,12 +172,8 @@ variable {k A} {P : Type*} [AddCommGroup P] [Module k P]
 /-- Linear maps out of a balanced tensor product agree if they agree on pure tensors. -/
 @[ext high]
 theorem hom_ext {f g : BalancedTensorProduct k A M N →ₗ[k] P}
-    (h : ∀ m n, f (tmul k A m n) = g (tmul k A m n)) : f = g := by
-  apply LinearMap.ext
-  intro x
-  induction x using induction_on with
-  | ht m n => exact h m n
-  | ha x y hx hy => simp [hx, hy]
+    (h : ∀ m n, f (tmul k A m n) = g (tmul k A m n)) : f = g :=
+  (balancedTensorRelations k A M N).linearMap_qext (TensorProduct.ext' h)
 
 /-- Lift a balanced bilinear map through the tensor product. -/
 def lift (f : M →ₗ[k] N →ₗ[k] P)
@@ -184,7 +194,7 @@ the balanced tensor product. -/
 def liftEquiv :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)} ≃
       (BalancedTensorProduct k A M N →ₗ[k] P) where
-  toFun f := lift f.1 f.2
+  toFun f := lift f.val f.property
   invFun g := ⟨(mk k A).compr₂ g, fun a m n ↦ congrArg g (balance k A a m n)⟩
   left_inv f := by ext m n; rfl
   right_inv g := hom_ext fun _ _ ↦ rfl
@@ -192,11 +202,11 @@ def liftEquiv :
 @[simp]
 theorem liftEquiv_apply (f :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)}) :
-    liftEquiv f = lift f.1 f.2 := (rfl)
+    liftEquiv f = lift f.val f.property := (rfl)
 
 @[simp]
 theorem liftEquiv_symm_apply (g : BalancedTensorProduct k A M N →ₗ[k] P) (m : M) (n : N) :
-    (liftEquiv.symm g).1 m n = g (tmul k A m n) := (rfl)
+    (liftEquiv.symm g).val m n = g (tmul k A m n) := (rfl)
 
 section Map
 
@@ -238,6 +248,16 @@ theorem map_comp (f : M →ₗ[k] M') (g : N →ₗ[k] N')
       (map f' g' hf' hg').comp (map f g hf hg) :=
   hom_ext fun _ _ ↦ rfl
 
+variable (k M) in
+/-- Tensoring an `A`-linear map `g` on the left with `M`: the map `1 ⊗ g`. -/
+def lTensor [Module k A] [IsScalarTower k A N] [IsScalarTower k A N'] (g : N →ₗ[A] N') :
+    BalancedTensorProduct k A M N →ₗ[k] BalancedTensorProduct k A M N' :=
+  map LinearMap.id (g.restrictScalars k) (fun _ _ ↦ rfl) g.map_smul
+
+@[simp]
+theorem lTensor_tmul [Module k A] [IsScalarTower k A N] [IsScalarTower k A N']
+    (g : N →ₗ[A] N') (m : M) (n : N) : lTensor k M g (tmul k A m n) = tmul k A m (g n) := (rfl)
+
 /-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
 def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
@@ -245,22 +265,9 @@ def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     BalancedTensorProduct k A M N ≃ₗ[k] BalancedTensorProduct k A M' N' :=
   LinearEquiv.ofLinearMap (map f.toLinearMap g.toLinearMap hf hg)
     (map f.symm.toLinearMap g.symm.toLinearMap
-      (fun a m ↦ by
-        apply f.injective
-        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-          (hf a (f.symm m)).symm)
-      (fun a n ↦ by
-        apply g.injective
-        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-          (hg a (g.symm n)).symm))
-    (by
-      apply hom_ext
-      intro m n
-      simp)
-    (by
-      apply hom_ext
-      intro m n
-      simp)
+      (fun a m ↦ f.injective (by simp [hf]))
+      (fun a n ↦ g.injective (by simp [hg])))
+    (hom_ext fun _ _ ↦ by simp) (hom_ext fun _ _ ↦ by simp)
 
 /-- The carrier map of tensor congruence is the balanced tensor of the two factor maps. -/
 theorem congr_apply (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')

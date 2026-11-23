@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 import TauCeti.RingTheory.Flat.Extensions
+import TauCeti.RingTheory.Flat.Pi
 
 /-!
 # The linear two-open computation of first cohomology

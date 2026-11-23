@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
-public import TauCeti.Probability.Density
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.Distributions.Affine
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The inverse Gaussian distribution
@@ -209,6 +209,15 @@ private def cdfFormula (μ lam x : ℝ) : ℝ :=
   cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
     exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1)))
 
+/-- The square root in the inverse Gaussian density splits as a quotient: writing the radicand as a
+quotient by the perfect square `(√(2 π) x) ^ 2`. -/
+private theorem sqrt_div_two_pi_mul_pow_three_eq (hx : 0 < x) :
+    √(lam / (2 * π * x ^ 3)) = √(lam / x) / (√(2 * π) * x) := by
+  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
+    rw [mul_pow, sq_sqrt (by positivity)]
+    field_simp
+  rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+
 /-- On the positive half-line, the closed-form cdf has the density as its derivative. The two
 Gaussian arguments `w₁ = √(lam / x) (x / μ - 1)` and `w₂ = √(lam / x) (x / μ + 1)` satisfy
 `w₂ ^ 2 - w₁ ^ 2 = 4 lam / μ`, so the factor `exp (2 lam / μ)` turns `φ(w₂)` into `φ(w₁)` and the
@@ -235,12 +244,8 @@ private theorem hasDerivAt_cdfFormula (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < 
     rw [neg_sq, mul_pow, mul_pow, hr2]
     field_simp
     ring
-  -- Write the radicand as a quotient by a perfect square, so that the square root splits.
-  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
-    rw [mul_pow, sq_sqrt (by positivity)]
-    field_simp
-  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) := by
-    rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) :=
+    sqrt_div_two_pi_mul_pow_three_eq hx
   have hE : -(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x) = -(r * (x / μ + -1)) ^ 2 / 2 := by
     rw [mul_pow, hr2]
     field_simp
@@ -454,7 +459,8 @@ theorem integrable_inverseGaussianMeasure_iff (μ lam : ℝ) {g : ℝ → E} :
     Integrable g (inverseGaussianMeasure μ lam) ↔
       Integrable (fun x ↦ inverseGaussianPDFReal μ lam x • g x) := by
   rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
-  exact integrable_withDensity_ofReal_iff (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_inverseGaussianPDFReal μ lam).aemeasurable
     (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
 
 /-- **Integral transfer.** An integral against an inverse Gaussian law is the density-weighted
@@ -462,7 +468,8 @@ Lebesgue integral, at every parameter. -/
 theorem integral_inverseGaussianMeasure_eq (μ lam : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂inverseGaussianMeasure μ lam = ∫ x, inverseGaussianPDFReal μ lam x • g x := by
   rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
-  exact integral_withDensity_ofReal (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_inverseGaussianPDFReal μ lam).aemeasurable
     (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam)) g
 
 end Transfer
@@ -505,12 +512,10 @@ theorem cdf_inverseGaussianMeasure_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 
       cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
         exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) := by
   have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
-  have hint : IntegrableOn (inverseGaussianPDFReal μ lam) (Ioi x) :=
-    (integrable_inverseGaussianPDFReal μ lam).integrableOn
   rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
     inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam),
-    measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
-      measurableSet_Ioi hint,
+    MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
+      nullMeasurableSet_Ioi (measurable_inverseGaussianPDFReal μ lam).aemeasurable,
     integral_Ioi_inverseGaussianPDFReal_of_pos hμ hlam hx, sub_sub_cancel, cdfFormula]
 
 /-- At positive parameters, the inverse Gaussian cdf vanishes on the nonpositive half-line. -/

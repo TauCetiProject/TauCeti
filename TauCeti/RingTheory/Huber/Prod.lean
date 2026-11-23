@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Divisibility.Prod
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Uniform
 
 /-!
@@ -31,10 +32,9 @@ product `K × K♭` is such a Tate ring: it contains no field, and `p = (p, 0)` 
 * `TauCeti.Huber.isUniform_prod_iff`: `A × B` is uniform exactly when `A` and `B` are, with the
   instance `TauCeti.Huber.IsUniform.instProd`.
 * `TauCeti.Huber.IsTateRing.instProd`: a product of Tate rings is a Tate ring.
-
-## References
-
-* P. Scholze, *Étale cohomology of diamonds*, Example 3.4.
+* `TauCeti.Huber.Pair.powerBoundedFst`, `TauCeti.Huber.Pair.powerBoundedSnd`: the coordinate
+  projections `(A × B, (A × B)°) → (A, A°)` and `(A × B, (A × B)°) → (B, B°)` of maximal Huber
+  pairs.
 -/
 
 public section
@@ -127,9 +127,9 @@ section Tate
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [CommRing B]
   [TopologicalSpace B] [IsTopologicalRing B]
 
-/-- **A product of Tate rings is a Tate ring**: if `A₀ ⊆ A` and `B₀ ⊆ B` are open bounded subrings
-and `ϖ_A`, `ϖ_B` are pseudouniformisers, then `A₀ × B₀` is an open bounded subring of `A × B` and
-`(ϖ_A, ϖ_B)` is a pseudouniformiser (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+/-- **A product of Tate rings is a Tate ring**, directly from the componentwise characterisations:
+if `A₀ ⊆ A` and `B₀ ⊆ B` are open bounded subrings and `ϖ_A`, `ϖ_B` are pseudouniformisers, then
+`A₀ × B₀` is an open bounded subring of `A × B` and `(ϖ_A, ϖ_B)` is a pseudouniformiser. -/
 instance IsTateRing.instProd [IsTateRing A] [IsTateRing B] : IsTateRing (A × B) := by
   obtain ⟨⟨A₀, hA₀, hbA⟩, ϖ, hϖ⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing A›
   obtain ⟨⟨B₀, hB₀, hbB⟩, ϖ', hϖ'⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing B›
@@ -141,5 +141,42 @@ instance IsTateRing.instProd [IsTateRing A] [IsTateRing B] : IsTateRing (A × B)
     exact hbA.prod hbB
 
 end Tate
+
+namespace Pair
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+
+variable (A B) in
+/-- The first projection `(A × B, (A × B)°) → (A, A°)` of maximal Huber pairs. -/
+def powerBoundedFst [IsHuberRing A] [IsHuberRing (A × B)] :
+    Hom (powerBounded (A × B)) (powerBounded A) where
+  toRingHom := RingHom.fst A B
+  continuous_toRingHom := continuous_fst
+  map_mem_plus _ hx := by
+    rw [powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
+    exact (isPowerBounded_prod_iff.mp hx).1
+
+/-- The underlying ring homomorphism of `Pair.powerBoundedFst A B` is `RingHom.fst A B`. -/
+@[simp]
+theorem Hom.toRingHom_powerBoundedFst [IsHuberRing A] [IsHuberRing (A × B)] :
+    (powerBoundedFst A B).toRingHom = RingHom.fst A B := (rfl)
+
+variable (A B) in
+/-- The second projection `(A × B, (A × B)°) → (B, B°)` of maximal Huber pairs. -/
+def powerBoundedSnd [IsHuberRing B] [IsHuberRing (A × B)] :
+    Hom (powerBounded (A × B)) (powerBounded B) where
+  toRingHom := RingHom.snd A B
+  continuous_toRingHom := continuous_snd
+  map_mem_plus _ hx := by
+    rw [powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
+    exact (isPowerBounded_prod_iff.mp hx).2
+
+/-- The underlying ring homomorphism of `Pair.powerBoundedSnd A B` is `RingHom.snd A B`. -/
+@[simp]
+theorem Hom.toRingHom_powerBoundedSnd [IsHuberRing B] [IsHuberRing (A × B)] :
+    (powerBoundedSnd A B).toRingHom = RingHom.snd A B := (rfl)
+
+end Pair
 
 end TauCeti.Huber

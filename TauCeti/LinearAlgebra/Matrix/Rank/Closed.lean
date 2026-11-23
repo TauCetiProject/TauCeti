@@ -60,13 +60,14 @@ section Zariski
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 
-omit [DecidableEq n] in
+omit [Fintype n] [DecidableEq n] in
 /-- **Rank bounds are Zariski closed.** If `rank Z ≤ r` for every matrix `Z` of a set `S`, then
 `rank Y ≤ r` for every `Y` on which all polynomials vanishing on `S` vanish. -/
-theorem rank_le_of_mem_zeroLocus_vanishingIdeal {m : Type*} [Finite m] {S : Set (Matrix m n K)}
-    {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
+theorem rank_le_of_mem_zeroLocus_vanishingIdeal [Finite n] {m : Type*} [Finite m]
+    {S : Set (Matrix m n K)} {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
     (hY : Function.uncurry Y ∈ zeroLocus K (vanishingIdeal k (Function.uncurry '' S))) :
     Y.rank ≤ r := by
+  have := Fintype.ofFinite n
   rw [rank_le_iff_forall_det_submatrix_eq_zero]
   intro a b
   -- The minor of `Y` at `(a, b)` is the value at `Y` of a polynomial vanishing on `S`.
@@ -99,10 +100,10 @@ section Topological
 
 variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T1Space K]
 
-omit [DecidableEq n] in
+omit [Fintype n] [DecidableEq n] in
 /-- Over a field with continuous ring operations and closed points, the matrices of rank at most
 `r` form a closed set. -/
-theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
+theorem isClosed_setOfPred_rank_le [Finite n] {m : Type*} [Finite m] (r : ℕ) :
     IsClosed {A : Matrix m n K | A.rank ≤ r} := by
   refine isClosed_of_closure_subset fun Y hY ↦ rank_le_of_mem_zeroLocus_vanishingIdeal
     (k := K) (S := {A : Matrix m n K | A.rank ≤ r}) (fun _ hA ↦ hA)
@@ -113,11 +114,16 @@ theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
 
 omit [DecidableEq n] in
 /-- Over a field with continuous ring operations and closed points, surjectivity of `A.mulVec` is
-an open condition on matrices `A` with finitely many rows. When `m` is nonempty, full row rank is
-the complement of the closed condition `rank A ≤ card m - 1`; when `m` is empty, `A.mulVec` is
-always surjective. -/
-theorem isOpen_setOfPred_mulVec_surjective {m : Type*} [Finite m] :
+an open condition on matrices `A`. When `m` is infinite the condition never holds
+(`Matrix.finite_of_mulVec_surjective`); when `m` is finite and nonempty, full row rank is the
+complement of the closed condition `rank A ≤ card m - 1`; when `m` is empty, `A.mulVec` is always
+surjective. -/
+theorem isOpen_setOfPred_mulVec_surjective {m : Type*} :
     IsOpen {A : Matrix m n K | Function.Surjective A.mulVec} := by
+  by_cases hm : Finite m
+  swap
+  · convert isOpen_empty using 1
+    exact Set.eq_empty_of_forall_notMem fun A hA ↦ hm (finite_of_mulVec_surjective A hA)
   cases nonempty_fintype m
   rcases isEmpty_or_nonempty m with hm | hm
   · convert isOpen_univ using 1

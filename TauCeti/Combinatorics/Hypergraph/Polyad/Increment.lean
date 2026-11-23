@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy
+public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Basic
 
 /-!
 # Energy gain from resolved polyad witnesses
@@ -62,7 +62,7 @@ theorem sum_relativeDensity_ofTriple_on (c : κ)
   have h := H.sum_relativeDensity_ofTriple_mul (S := T) c
     (fun x ↦ if x ∈ U then 1 else 0) (fun x y hxy ↦ by simp only [hU x y hxy])
   have hcount : ∑ x ∈ U, (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) =
-      #{x ∈ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
+      #{x ∈ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
     simpa [mul_ite, sum_ite_mem, inter_comm, inter_filter] using h
   rw [hcount, relDensityOn_def]
   push_cast
@@ -106,7 +106,7 @@ theorem polyadEnergy_increment_of_witnesses
       Polyad3.ofTriple S x = Polyad3.ofTriple S y)
     (B : Finset (Polyad3 S)) (c : Polyad3 S → κ)
     (U : Polyad3 S → Finset {x : Fin 3 → V // Function.Injective x})
-    {δ : ℝ} (hδ : 0 ≤ δ)
+    {δ : ℝ}
     (hsub : ∀ P ∈ B, U P ⊆ P.support)
     (hresolve : ∀ P ∈ B, ∀ x y, Polyad3.ofTriple T x = Polyad3.ofTriple T y →
       (x ∈ U P ↔ y ∈ U P))
@@ -115,6 +115,10 @@ theorem polyadEnergy_increment_of_witnesses
     δ ^ 3 * ((∑ P ∈ B, (#P.support : ℝ)) / (Fintype.card V).descFactorial 3) ≤
       H.polyadEnergy T - H.polyadEnergy S := by
   classical
+  rcases lt_or_ge δ 0 with hneg | hδ
+  · exact (mul_nonpos_of_nonpos_of_nonneg (Odd.pow_nonpos (by decide) hneg.le)
+      (div_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _) (Nat.cast_nonneg _))).trans
+      (sub_nonneg.2 (H.polyadEnergy_mono_of_refines h))
   let d := fun x k ↦ ((H.relativeDensity k (Polyad3.ofTriple T x) : ℝ) -
     H.relativeDensity k (Polyad3.ofTriple S x)) ^ 2
   have hlocal (P : Polyad3 S) (hP : P ∈ B) :

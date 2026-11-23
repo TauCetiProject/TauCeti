@@ -161,8 +161,8 @@ theorem coe_weilDifferentialRepresentation_apply (ω : ↥(weilDifferentialSpace
 theorem repartitionDualComponent_weilDifferentialRepresentation
     (ω : ↥(weilDifferentialSpace k F')) (P : Place k F') (x : F') :
     repartitionDualComponent (weilDifferentialRepresentation k F F' σ ω :
-      Module.Dual k ↥(repartitionSpace k F')) (σ • P) (σ x) = repartitionDualComponent ω.1 P x :=
-  repartitionDualComponent_repartitionRepresentation_dual σ ω.1 P x
+      Module.Dual k ↥(repartitionSpace k F')) (σ • P) (σ x) = repartitionDualComponent ω.val P x :=
+  repartitionDualComponent_repartitionRepresentation_dual σ ω.val P x
 
 /-- **The action on Weil differentials is `σ`-semilinear over `F'`**, for the multiplication
 `TauCeti.weilDifferentialSpaceMul` that makes `Ω_F` an `F'`-vector space. -/
@@ -214,7 +214,7 @@ nonzero Weil differential, whose divisor is the moved divisor. -/
 @[simp]
 theorem smul_canonicalClass (hF : IsFunctionField k F') (hex : IsIntegrallyClosedIn k F') :
     σ • canonicalClass hF hex = canonicalClass hF hex := by
-  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   conv_lhs => rw [← divisorClass_weilDifferentialDivisor hF hex hmem hω]
   rw [Divisor.smul_divisorClass,
     ← weilDifferentialDivisor_repartitionRepresentation_dual σ hF hex hmem hω,

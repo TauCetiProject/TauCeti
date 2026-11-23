@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Pullback and change of charts in the chart Cᵏ topologies
@@ -160,6 +160,71 @@ private local instance : NormedAddCommGroup (E →L[ℝ] F →L[ℝ] ℝ) :=
 private local instance : NormedSpace ℝ (E →L[ℝ] F →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedSpace
 
+omit [J.Boundaryless] in
+/-- The difference of the order-`m` derivatives of two chart metrics, each equal to `L y` applied
+to the chart metric at `x` along `τ` on an open set `W`, is the derivative within `W` of `L`
+applied to the difference of the chart metrics. -/
+private theorem iteratedFDeriv_chartMetric_pullback_sub_eq
+    {f : M → N} (hf : ContMDiff I J (∞ + 1) f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    {g₀ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)} {x' : M} {x : N}
+    {m : ℕ} {W : Set E} (hW : IsOpen W) (hWt : ∀ y ∈ W, y ∈ (extChartAt I x').target) {z : E}
+    (hz : z ∈ W) (L : E → (F →L[ℝ] F →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) (τ : E → F)
+    (h : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y))
+    (hh : ∀ y ∈ W, (h.pullback f hf hinj).toNondegenerateMetric.chartMetric x' y =
+      L y (h.toNondegenerateMetric.chartMetric x (τ y)))
+    (hg₀ : ∀ y ∈ W, (g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x' y =
+      L y (g₀.toNondegenerateMetric.chartMetric x (τ y))) :
+    iteratedFDeriv ℝ m ((h.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z -
+        iteratedFDeriv ℝ m ((g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z =
+      iteratedFDerivWithin ℝ m (fun y ↦ L y
+        ((h.toNondegenerateMetric.chartMetric x - g₀.toNondegenerateMetric.chartMetric x) (τ y)))
+        W z := by
+  have hnhds := (isOpen_extChartAt_target x').mem_nhds (hWt z hz)
+  have heq : (h.pullback f hf hinj).toNondegenerateMetric.chartMetric x' -
+      (g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x' =ᶠ[𝓝 z]
+      fun y ↦ L y ((h.toNondegenerateMetric.chartMetric x - g₀.toNondegenerateMetric.chartMetric x)
+        (τ y)) := by
+    filter_upwards [hW.mem_nhds hz] with y hy
+    simp only [Pi.sub_apply, hh y hy, hg₀ y hy, map_sub]
+  rw [← iteratedFDeriv_sub_apply
+      (contDiffAt_infty.mp (((h.pullback f hf hinj).toNondegenerateMetric.contDiffOn_chartMetric
+        x').contDiffAt hnhds) m)
+      (contDiffAt_infty.mp (((g₀.pullback f hf hinj).toNondegenerateMetric.contDiffOn_chartMetric
+        x').contDiffAt hnhds) m),
+    (heq.iteratedFDeriv ℝ m).self_of_nhds, iteratedFDerivWithin_of_isOpen m hW hz]
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- If the order-`j` derivatives of the chart metrics `g i` at `x` converge to those of `g₀`
+uniformly on the compact subsets of `V`, then those of their differences with `g₀`, read at the
+image under `τ`, converge uniformly to `0` on a compact set `B` that `τ` maps into `V` and into
+the chart target. -/
+private theorem tendstoUniformlyOn_iteratedFDerivWithin_chartMetric_sub
+    {ι : Type*} {l : Filter ι}
+    {g : ι → ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)}
+    {g₀ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)} {x : N} {m : ℕ}
+    {V : Set F} {τ : E → F} {B : Set E} (hBc : IsCompact B) (hτc : ContinuousOn τ B)
+    (hτV : MapsTo τ B V) (hτt : MapsTo τ B (extChartAt J x).target)
+    (hg : ∀ j ≤ m, ∀ K ⊆ V, IsCompact K → TendstoUniformlyOn
+      (fun i y ↦ iteratedFDeriv ℝ j ((g i).toNondegenerateMetric.chartMetric x) y)
+      (fun y ↦ iteratedFDeriv ℝ j (g₀.toNondegenerateMetric.chartMetric x) y) l K)
+    {j : ℕ} (hj : j ≤ m) : TendstoUniformlyOn
+      (fun i z ↦ iteratedFDerivWithin ℝ j
+        ((g i).toNondegenerateMetric.chartMetric x - g₀.toNondegenerateMetric.chartMetric x)
+        (extChartAt J x).target (τ z)) (fun _ ↦ 0) l B := by
+  refine Metric.tendstoUniformlyOn_iff.mpr fun δ hδ ↦ ?_
+  filter_upwards [Metric.tendstoUniformlyOn_iff.mp (hg j hj (τ '' B)
+    (image_subset_iff.mpr hτV) (hBc.image_of_continuousOn hτc)) δ hδ] with i hi z hz
+  have hτz := hτt hz
+  have hnhds := (isOpen_extChartAt_target x).mem_nhds hτz
+  rw [iteratedFDerivWithin_of_isOpen j (isOpen_extChartAt_target x) hτz,
+    iteratedFDeriv_sub_apply
+      (contDiffAt_infty.mp (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt
+        hnhds) j)
+      (contDiffAt_infty.mp ((g₀.toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt
+        hnhds) j),
+    dist_zero_left, ← dist_eq_norm, dist_comm]
+  exact hi (τ z) (mem_image_of_mem τ hz)
+
 /-- Near each point `z₀` of a chart target of `M`, the order-`m` coordinate derivatives of the
 pullbacks `f^* (g i)` converge uniformly to those of `f^* g₀`, provided the coordinate derivatives
 of order at most `m` of the metrics `g i`, read in some chart of `N` at `x` containing the image
@@ -216,42 +281,13 @@ theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pullback
     ext u w
     simp only [L, ContinuousLinearMap.pullbackBilinL_apply]
     rfl
-  have hdiff (h : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {z : E}
-      (hz : z ∈ W) :
-      iteratedFDeriv ℝ m ((h.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z -
-        iteratedFDeriv ℝ m ((g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z =
-      iteratedFDerivWithin ℝ m (fun y ↦ L y (φ h (τ y))) W z := by
-    have hnhds := (isOpen_extChartAt_target x').mem_nhds hz.1
-    have heq : (h.pullback f hf hinj).toNondegenerateMetric.chartMetric x' -
-        (g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x' =ᶠ[𝓝 z]
-        fun y ↦ L y (φ h (τ y)) := by
-      filter_upwards [hW.mem_nhds hz] with y hy
-      simp only [Pi.sub_apply, hpull h hy, hpull g₀ hy, φ, map_sub]
-    rw [← iteratedFDeriv_sub_apply
-        (contDiffAt_infty.mp (((h.pullback f hf hinj).toNondegenerateMetric.contDiffOn_chartMetric
-          x').contDiffAt hnhds) m)
-        (contDiffAt_infty.mp (((g₀.pullback f hf hinj).toNondegenerateMetric.contDiffOn_chartMetric
-          x').contDiffAt hnhds) m),
-      (heq.iteratedFDeriv ℝ m).self_of_nhds, iteratedFDerivWithin_of_isOpen m hW hz]
+  have hdiff := fun (h : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {z : E}
+      (hz : z ∈ W) ↦ iteratedFDeriv_chartMetric_pullback_sub_eq (m := m) hf hinj hW
+    (fun _ hy ↦ hy.1) hz L τ h (fun _ hy ↦ hpull h hy) fun _ hy ↦ hpull g₀ hy
   -- The chart derivatives of `g i` at `x` of order at most `m` converge to those of `g₀`
   -- uniformly on `τ '' B ⊆ V`.
-  have hφ₀ (j : ℕ) (hj : j ≤ m) : TendstoUniformlyOn
-      (fun i z ↦ iteratedFDerivWithin ℝ j (φ (g i)) (extChartAt J x).target (τ z)) (fun _ ↦ 0)
-      l B := by
-    refine Metric.tendstoUniformlyOn_iff.mpr fun δ hδ ↦ ?_
-    filter_upwards [Metric.tendstoUniformlyOn_iff.mp (hg j hj (τ '' B)
-      (image_subset_iff.mpr fun z hz ↦ (hBWV hz).2)
-      (hBc.image_of_continuousOn (hτ.continuousOn.mono hBW))) δ hδ] with i hi z hz
-    have hτz := hmaps (hBW hz)
-    have hnhds := (isOpen_extChartAt_target x).mem_nhds hτz
-    rw [iteratedFDerivWithin_of_isOpen j (isOpen_extChartAt_target x) hτz,
-      iteratedFDeriv_sub_apply
-        (contDiffAt_infty.mp (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt
-          hnhds) j)
-        (contDiffAt_infty.mp ((g₀.toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt
-          hnhds) j),
-      dist_zero_left, ← dist_eq_norm, dist_comm]
-    exact hi (τ z) (mem_image_of_mem τ hz)
+  have hφ₀ := fun (j : ℕ) (hj : j ≤ m) ↦ tendstoUniformlyOn_iteratedFDerivWithin_chartMetric_sub hBc
+    (hτ.continuousOn.mono hBW) (fun z hz ↦ (hBWV hz).2) (fun z hz ↦ hmaps (hBW hz)) hg hj
   have hlim := hL.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp
     (contDiffOn_infty.mp hτ m) hW.uniqueDiffOn (isOpen_extChartAt_target x).uniqueDiffOn hmaps
     hBc hBW (Eventually.of_forall fun i ↦ contDiffOn_infty.mp
@@ -348,11 +384,11 @@ theorem chartCkTopology_eq_induced (k : ℕ∞) {S : Set M}
   refine le_antisymm (continuous_iff_le_induced.mp ?_) (le_of_nhds_le_nhds fun g₀ ↦ ?_)
   · let _ := chartCkTopology (I := I) (M := M) k
     exact continuous_pi fun x ↦ continuous_pi fun m ↦
-      continuous_chartMetricDerivative k (x : M) m.2
+      continuous_chartMetricDerivative k (x : M) m.property
   -- Cover `M` by compact neighbourhoods in the charts at the points of `S`.
   let κ := {p : S × Set E // IsCompact p.2 ∧ p.2 ⊆ (extChartAt I (p.1 : M)).target}
-  have hcover (y : M) : ∃ i : κ, y ∈ (extChartAt I (i.1.1 : M)).source ∧
-      i.1.2 ∈ 𝓝 (extChartAt I (i.1.1 : M) y) := by
+  have hcover (y : M) : ∃ i : κ, y ∈ (extChartAt I (i.val.1 : M)).source ∧
+      i.val.2 ∈ 𝓝 (extChartAt I (i.val.1 : M) y) := by
     obtain ⟨x, hx, hy⟩ := hS y
     rw [← extChartAt_source (I := I)] at hy
     obtain ⟨V, hV, hVt, hVc⟩ := local_compact_nhds
@@ -360,13 +396,13 @@ theorem chartCkTopology_eq_induced (k : ℕ∞) {S : Set M}
     exact ⟨⟨(⟨x, hx⟩, V), hVc, hVt⟩, hy, hV⟩
   let _ := chartCkTopology (I := I) (M := M) k
   rw [nhds_induced]
-  refine tendsto_id'.mp ((tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : κ ↦ i.2.1)
-    (fun i ↦ i.2.2) hcover).mpr fun i m hm ↦
-      (tendsto_chartMetricDerivative_iff (i.1.1 : M) m).mp ?_ _ i.2.2 i.2.1)
+  refine tendsto_id'.mp ((tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : κ ↦ i.property.1)
+    (fun i ↦ i.property.2) hcover).mpr fun i m hm ↦
+      (tendsto_chartMetricDerivative_iff (i.val.1 : M) m).mp ?_ _ i.property.2 i.property.1)
   set F := fun (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : S)
     (m : {m : ℕ // (m : ℕ∞) ≤ k}) ↦ g.chartMetricDerivative x m
   have h : Tendsto F (comap F (𝓝 (F g₀))) (𝓝 (F g₀)) := tendsto_comap
-  exact tendsto_pi_nhds.mp (tendsto_pi_nhds.mp h i.1.1) ⟨m, hm⟩
+  exact tendsto_pi_nhds.mp (tendsto_pi_nhds.mp h i.val.1) ⟨m, hm⟩
 
 /-- **Finite-atlas description of the chart Cᵏ topology.** On a compact manifold there are
 finitely many points `x` and compact sets `K x` in their chart targets such that metrics converge
@@ -400,7 +436,7 @@ theorem exists_finset_tendsto_chartCk_iff [CompactSpace M] :
     obtain ⟨x, hx, hy⟩ := mem_iUnion₂.mp (hs (mem_univ y))
     exact ⟨⟨x, hx⟩, hy.1, mem_interior_iff_mem_nhds.mp hy.2⟩
   rw [tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : s ↦ hKc i) (fun i ↦ hKt i) hcover]
-  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h i ↦ h i i.2⟩
+  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h i ↦ h i i.property⟩
 
 end Topology
 

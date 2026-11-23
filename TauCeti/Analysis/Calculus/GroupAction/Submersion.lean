@@ -47,6 +47,40 @@ variable {𝕜 G E F : Type*} [RCLike 𝕜] [Group G] [Finite G]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
   {n : WithTop ℕ∞}
 
+omit [CompleteSpace E] in
+/-- The map `y ↦ y + s (r y - q y)` for an averaged right inverse `s` of `q` is `C^n` on `U`,
+fixes `0`, is tangent to the identity there, satisfies `q ∘ f = r`, and commutes with the group
+action wherever `r` is invariant. -/
+private theorem exists_map_straightening (ρ : ContRepresentation 𝕜 G E)
+    {r : E → F} {q : E →L[𝕜] F} {U : Set E}
+    (hr : ContDiffOn 𝕜 n r U) (hr0 : r 0 = 0) (hd : HasFDerivAt r q 0)
+    (hq : Function.Surjective q) (hinv : ∀ g : G, r ∘ ρ g =ᶠ[𝓝 0] r) :
+    ∃ f : E → E, ContDiffOn 𝕜 n f U ∧ f 0 = 0 ∧
+      HasFDerivAt f (ContinuousLinearMap.id 𝕜 E) 0 ∧ (∀ y, q (f y) = r y) ∧
+      ∀ (g : G) (y : E), r (ρ g y) = r y → f (ρ g y) = ρ g (f y) := by
+  classical
+  let : Fintype G := Fintype.ofFinite G
+  let : Invertible (Fintype.card G : 𝕜) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
+  have hqi (g : G) : q.comp (ρ g) = q :=
+    hd.comp_eq_of_eventuallyEq (ρ g).hasFDerivAt (map_zero _) (hinv g)
+  obtain ⟨s, hqs, hsfix⟩ := ρ.exists_fixed_rightInverse q hq hqi
+  refine ⟨fun y ↦ y + s (r y - q y),
+    contDiffOn_id.add (s.contDiff.comp_contDiffOn (hr.sub q.contDiff.contDiffOn)),
+    by simp [hr0], ?_, fun y ↦ ?_, fun g y hri ↦ ?_⟩
+  · have h : HasFDerivAt (fun y ↦ y + s (r y - q y))
+        (ContinuousLinearMap.id 𝕜 E + s.comp (q - q)) 0 :=
+      (hasFDerivAt_id (𝕜 := 𝕜) (0 : E)).add
+        (s.hasFDerivAt.comp (0 : E) (hd.sub q.hasFDerivAt))
+    simpa only [sub_self, ContinuousLinearMap.comp_zero, add_zero] using h
+  · have h := DFunLike.congr_fun hqs (r y - q y)
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h
+    simp only [map_add, h]
+    exact add_sub_cancel _ _
+  · have hqg := DFunLike.congr_fun (hqi g) y
+    simp only [ContinuousLinearMap.comp_apply] at hqg
+    simp [hri, hqg, map_add, hsfix]
+
 /-- **Equivariant submersion coordinates.** A locally invariant `C^n` map vanishing at zero,
 with surjective derivative `q`, can be straightened to `q` by an equivariant local coordinate
 change tangent to the identity. Its source lies in the prescribed open set `U`, both source
@@ -66,28 +100,7 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
         ρ g y ∈ e.source ∧ e (ρ g y) = ρ g (e y)) ∧
       ∀ (g : G) (z : E), z ∈ e.target →
         ρ g z ∈ e.target ∧ e.symm (ρ g z) = ρ g (e.symm z) := by
-  classical
-  let : Fintype G := Fintype.ofFinite G
-  let : Invertible (Fintype.card G : 𝕜) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  have hqi (g : G) : q.comp (ρ g) = q :=
-    hd.comp_eq_of_eventuallyEq (ρ g).hasFDerivAt (map_zero _) (hinv g)
-  obtain ⟨s, hqs, hsfix⟩ := ρ.exists_fixed_rightInverse q hq hqi
-  let f : E → E := fun y ↦ y + s (r y - q y)
-  have hf : ContDiffOn 𝕜 n f U :=
-    contDiffOn_id.add (s.contDiff.comp_contDiffOn (hr.sub q.contDiff.contDiffOn))
-  have hf0 : f 0 = 0 := by simp [f, hr0]
-  have hdf : HasFDerivAt f (ContinuousLinearMap.id 𝕜 E) 0 := by
-    have h : HasFDerivAt f
-        (ContinuousLinearMap.id 𝕜 E + s.comp (q - q)) 0 :=
-      (hasFDerivAt_id (𝕜 := 𝕜) (0 : E)).add
-        (s.hasFDerivAt.comp (0 : E) (hd.sub q.hasFDerivAt))
-    simpa only [sub_self, ContinuousLinearMap.comp_zero, add_zero] using h
-  have hqf (y : E) : q (f y) = r y := by
-    have h := DFunLike.congr_fun hqs (r y - q y)
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h
-    simp only [f, map_add, h]
-    exact add_sub_cancel _ _
+  obtain ⟨f, hf, hf0, hdf, hqf, hfinv⟩ := ρ.exists_map_straightening hr hr0 hd hq hinv
   -- Choose a neighborhood on which every local invariance equation holds simultaneously.
   have hnear : ∀ᶠ y in 𝓝 (0 : E), y ∈ U ∧ ∀ g : G, r (ρ g y) = r y := by
     filter_upwards [hU.mem_nhds h0U, eventually_all.mpr hinv] with y hy hyi
@@ -96,32 +109,31 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   obtain ⟨Θ, hΘ, h0Θ, hΘV, hΘsmooth⟩ :=
     TauCeti.ContDiffOn.exists_openPartialHomeomorph (hf.mono fun y hy ↦ (hVsub hy).1)
       hV h0V hn (e := ContinuousLinearEquiv.refl 𝕜 E) hdf.fderiv.symm
-  -- Use the existing invariant restriction for the action underlying the representation.
+  -- Restrict `Θ` to an invariant source, using the action underlying the representation.
   let : MulAction G E := MulAction.compHom E ρ.toRepresentation
   have hsmul (g : G) (y : E) : g • y = ρ g y := by
     simp [MulAction.compHom_smul_def, Module.End.smul_def, toMonoidHom_apply]
   let : ContinuousConstSMul G E := ⟨fun g ↦ by
     simpa only [hsmul] using (ρ g).continuous⟩
-  have hfeq (g : G) {y : E} (hy : y ∈ Θ.source) : f (ρ g y) = ρ g (f y) := by
-    have hri := (hVsub (hΘV hy)).2 g
-    have hqg := DFunLike.congr_fun (hqi g) y
-    simp only [ContinuousLinearMap.comp_apply] at hqg
-    simp [f, hri, hqg, map_add, hsfix]
   let e := Θ.restrInvariant G
   have he : (e : E → E) = f := by simpa [e] using hΘ
   have heinv : (e.symm : E → E) = Θ.symm := by simp [e]
-  have htarget : e.target ⊆ Θ.target := Θ.restrInvariant_target_subset
   have hsourceΘ : e.source ⊆ Θ.source := Θ.restrInvariant_source_subset
+  have htarget : e.target ⊆ Θ.target := Θ.restrInvariant_target_subset
   have h0e : (0 : E) ∈ e.source :=
     Θ.mem_restrInvariant_source_of_forall_smul_eq (fun g ↦ by simp [hsmul]) h0Θ
-  have hequiv (g : G) {y : E} (hy : y ∈ e.source) :
+  have hequiv (g : G) (y : E) (hy : y ∈ e.source) :
       ρ g y ∈ e.source ∧ e (ρ g y) = ρ g (e y) := by
-    refine ⟨?_, ?_⟩
-    · simpa only [hsmul] using Θ.smul_mem_restrInvariant_source hy g
-    · rw [he]
-      exact hfeq g (hsourceΘ hy)
+    simpa only [hsmul] using Θ.restrInvariant_map_smul (G := G)
+      (fun g y hy ↦ by
+        simp only [hsmul, hΘ]
+        exact hfinv g y ((hVsub (hΘV hy)).2 g)) hy g
+  have hequiv' (g : G) (z : E) (hz : z ∈ e.target) :
+      ρ g z ∈ e.target ∧ e.symm (ρ g z) = ρ g (e.symm z) := by
+    simpa only [hsmul] using e.symm_map_smul_of_map_smul
+      (fun g y hy ↦ by simpa only [hsmul] using hequiv g y hy) g z hz
   refine ⟨e, h0e, ?_, fun y hy ↦ (hVsub (hΘV (hsourceΘ hy))).1, ?_, ?_, ?_,
-    ?_, ?_, fun g y hy ↦ hequiv g hy, ?_⟩
+    ?_, ?_, hequiv, hequiv'⟩
   · rw [he, hf0]
   · rw [he]
     exact hdf
@@ -134,8 +146,5 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
     exact hqf y
   · intro z hz
     rw [← hqf (e.symm z), ← he, e.right_inv hz]
-  · intro g z hz
-    simpa only [hsmul] using e.symm_map_smul_of_map_smul
-      (fun g y hy ↦ by simpa only [hsmul] using hequiv g hy) g z hz
 
 end ContRepresentation

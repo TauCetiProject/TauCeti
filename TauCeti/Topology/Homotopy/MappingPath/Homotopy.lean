@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Subpath
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.Homotopy.MappingPath.Functoriality
 
 /-!
@@ -19,7 +19,10 @@ the whole mapping-path fibre, including its source point, and preserve that poin
 Thus the comparison also restricts to the path spaces over each source point.
 
 The inverse homotopies shrink a track followed by its reverse, then remove the constant-path
-delays. No connectedness, nonemptiness, separation or fibration hypothesis is needed.
+delays. A homotopy-commuting square `H : (p.comp α).Homotopy (h.comp p')` similarly induces a map
+on mapping-path fibres (`ContinuousMap.Homotopy.mappingPathFiberSqMap`), homotopic to
+`MappingPathFiber.map` when `H` is a constant homotopy. No connectedness, nonemptiness, separation
+or fibration hypothesis is needed.
 
 ## References
 
@@ -43,14 +46,14 @@ def mappingPathFiberMap : C(MappingPathFiber f k, MappingPathFiber g k) where
     ((H.evalAt p.val.1).symm.trans ⟨p.val.2, p.property.1, p.property.2⟩).toContinuousMap),
     Path.source _, Path.target _⟩
   continuous_toFun := by
-    refine (continuous_subtype_val.fst.prodMk ?_).subtype_mk _
+    refine (continuous_subtypeVal.fst.prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact Path.trans_continuous_family
       (fun p : MappingPathFiber f k ↦ (H.evalAt p.val.1).symm)
       (H.continuous.comp ((continuous_symm.comp continuous_snd).prodMk
-        (continuous_subtype_val.fst.comp continuous_fst)))
+        (continuous_subtypeVal.fst.comp continuous_fst)))
       (fun p ↦ ⟨p.val.2, p.property.1, p.property.2⟩)
-      (continuous_subtype_val.snd.comp continuous_fst |>.eval continuous_snd)
+      (continuous_subtypeVal.snd.comp continuous_fst |>.eval continuous_snd)
 
 @[simp]
 theorem mappingPathFiberMap_val_fst (p : MappingPathFiber f k) :
@@ -95,12 +98,12 @@ private def reflHomotopy :
     (Path.delayReflLeft q.1 ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩).toContinuousMap),
     Path.source _, Path.target _⟩
   continuous_toFun := by
-    refine ((continuous_subtype_val.fst.comp continuous_snd).prodMk ?_).subtype_mk _
+    refine ((continuous_subtypeVal.fst.comp continuous_snd).prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact Path.delayReflLeft_continuous_family
       (fun q : I × MappingPathFiber f k ↦
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩)
-      (((continuous_subtype_val.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
+      (((continuous_subtypeVal.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
       ContinuousMap.fst
   map_zero_left p := by
     apply Subtype.ext
@@ -134,17 +137,17 @@ private def backtrackHomotopy :
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩)).toContinuousMap),
       Path.source _, Path.target _⟩
     continuous_toFun := by
-      refine ((continuous_subtype_val.fst.comp continuous_snd).prodMk ?_).subtype_mk _
+      refine ((continuous_subtypeVal.fst.comp continuous_snd).prodMk ?_).subtype_mk _
       apply ContinuousMap.continuous_of_continuous_uncurry
       have hα : Continuous ↿fun q : I × MappingPathFiber f k ↦ α q.1 q.2.val.1 := by
         exact H.continuous.comp
           ((by fun_prop : Continuous (fun q : (I × MappingPathFiber f k) × I ↦
             Set.Icc.convexComb 0 q.1.1 q.2)).prodMk
-            (continuous_subtype_val.fst.comp (continuous_snd.comp continuous_fst)))
+            (continuous_subtypeVal.fst.comp (continuous_snd.comp continuous_fst)))
       let γ (q : I × MappingPathFiber f k) : Path (f q.2.val.1) k :=
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩
       have hγ : Continuous ↿γ :=
-        (((continuous_subtype_val.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
+        (((continuous_subtypeVal.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
       have hβ := Path.trans_continuous_family
         (fun q : I × MappingPathFiber f k ↦ (α q.1 q.2.val.1).symm)
         (Path.symm_continuous_family _ hα) γ hγ
@@ -163,7 +166,7 @@ private def backtrackHomotopy :
       apply Prod.ext
       · rfl
       · ext t
-        simp [α, Path.subpath_zero_one, Path.cast, Path.trans_apply]
+        simp [α, Path.subpath_zero_one, Path.cast, Path.trans_apply, -Path.coe_subpath]
     prop' _ := by ext; simp [proj_apply] }
 
 /-- Reversing the homotopy gives a left inverse up to a homotopy over the source. -/
@@ -217,5 +220,57 @@ theorem mappingPathFiberHomotopyEquiv_apply (p : MappingPathFiber f k) :
 theorem mappingPathFiberHomotopyEquiv_symm_apply (p : MappingPathFiber g k) :
     (mappingPathFiberHomotopyEquiv H k).symm p = mappingPathFiberMap H.symm k p :=
   FiberHomotopyEquiv.toHomotopyEquiv_symm_apply _ p
+
+section Square
+
+variable {E B' E' K' : Type*} [TopologicalSpace E] [TopologicalSpace B']
+  [TopologicalSpace E'] [TopologicalSpace K']
+  {α : C(E', E)} {p : C(E, K')} {p' : C(E', B')} {h : C(B', K')}
+
+/-- The map on mapping-path fibres over `b' : B'` induced by a homotopy-commutative square
+`H : (p.comp α).Homotopy (h.comp p')`, sending `(e', γ')` (`γ' : p' e' ⇝ b'`) to
+`(α e', (H.evalAt e').trans (γ'.map h))`. -/
+def mappingPathFiberSqMap (H : (p.comp α).Homotopy (h.comp p')) (b' : B') :
+    C(MappingPathFiber p' b', MappingPathFiber p (h b')) :=
+  (map α (.id K') (ContinuousMap.id_comp _) (ContinuousMap.id_apply (h b'))).comp
+    ((H.symm.mappingPathFiberMap (h b')).comp
+      (map (.id E') h (ContinuousMap.comp_id _).symm rfl))
+
+@[simp]
+theorem mappingPathFiberSqMap_val_fst (H : (p.comp α).Homotopy (h.comp p')) (b' : B')
+    (q : MappingPathFiber p' b') : (H.mappingPathFiberSqMap b' q).val.1 = α q.val.1 := by
+  simp [mappingPathFiberSqMap, ContinuousMap.comp_apply]
+
+@[simp]
+theorem mappingPathFiberSqMap_val_snd_apply (H : (p.comp α).Homotopy (h.comp p')) (b' : B')
+    (q : MappingPathFiber p' b') (t : I) :
+    (H.mappingPathFiberSqMap b' q).val.2 t =
+      ((H.evalAt q.val.1).trans
+        ((⟨q.val.2, q.property.1, q.property.2⟩ : Path (p' q.val.1) b').map h.continuous)) t := by
+  simp [mappingPathFiberSqMap, ContinuousMap.comp_apply, Path.trans_apply, Path.symm_apply]
+
+@[simp]
+theorem proj_comp_mappingPathFiberSqMap (H : (p.comp α).Homotopy (h.comp p')) (b' : B') :
+    (proj p (h b')).comp (H.mappingPathFiberSqMap b') = α.comp (proj p' b') := by
+  ext : 1; simp [ContinuousMap.comp_apply]
+
+/-- For a strictly commuting square `hcomm : p.comp α = h.comp p'`, `mappingPathFiberSqMap` differs
+from `MappingPathFiber.map α h hcomm.symm rfl` only by prepending a constant path, so the two maps
+are homotopic. -/
+theorem mappingPathFiberSqMap_refl_homotopic_map (hcomm : p.comp α = h.comp p') (b' : B') :
+    (((ContinuousMap.Homotopy.refl (p.comp α)).cast rfl hcomm).mappingPathFiberSqMap b').Homotopic
+      (MappingPathFiber.map α h hcomm.symm rfl) := by
+  have hfac :
+      ((ContinuousMap.Homotopy.refl (p.comp α)).cast rfl hcomm).mappingPathFiberSqMap b' =
+        ((ContinuousMap.Homotopy.refl p).mappingPathFiberMap (h b')).comp
+          (MappingPathFiber.map α h hcomm.symm rfl) := by
+    ext q : 1; apply Subtype.ext; refine Prod.ext (by simp) ?_; ext t : 1
+    simp [Path.trans_apply]
+  rw [hfac]
+  simpa using ContinuousMap.Homotopic.comp
+    ((mappingPathFiberMap_refl_homotopicWith (f := p) (h b')).map
+      ContinuousMap.HomotopyWith.toHomotopy) (.refl _)
+
+end Square
 
 end ContinuousMap.Homotopy

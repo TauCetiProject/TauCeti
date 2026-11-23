@@ -19,8 +19,8 @@ ideals, and consequently it leaves the transfer of `IsSemiprimaryRing` to the op
 `proof_wanted` in `Mathlib/RingTheory/SimpleModule/WedderburnArtin.lean`, annotated "Need
 left-right symmetry of Jacobson radical".
 
-This file supplies that symmetry and the two consequences it was wanted for. The route is the
-elementwise description of the radical proved in `TauCeti/RingTheory/Jacobson/Basic.lean`: `x`
+This file supplies that symmetry and the transfer of semiprimarity it was wanted for. The route is
+the elementwise description of the radical proved in `TauCeti/RingTheory/Jacobson/Basic.lean`: `x`
 lies in `Ring.jacobson R` exactly when `1 + y * x` is a unit for every `y`, and hence, by
 `TauCeti.isUnit_one_add_mul_comm`, exactly when `1 + x * y` is a unit for every `y`. The second
 description is the first one read in `Rᵐᵒᵖ`, so the radical of the opposite ring is the opposite
@@ -31,12 +31,17 @@ of the radical.
 * `TauCeti.Ring.op_mem_jacobson_mulOpposite_iff`: `MulOpposite.op x` lies in `Ring.jacobson Rᵐᵒᵖ`
   exactly when `x` lies in `Ring.jacobson R` -- the left-right symmetry, in membership form.
 * `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`: the resulting identification
-  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`.
+  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`, as an isomorphism of algebras
+  `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv`, and
+  `TauCeti.Ring.finrank_quotient_jacobson_mulOpposite`: the two residue rings have the same
+  dimension.
 * `TauCeti.isSemiprimaryRing_mulOpposite_iff` and `TauCeti.IsSemiprimaryRing.mulOpposite`:
   semiprimarity passes to the opposite ring.
-* `TauCeti.IsArtinianRing.isNoetherianRing_iff_isArtinianRing_mulOpposite`: a left
-  Artinian ring is right Noetherian exactly when it is right Artinian, the statement that
-  `WedderburnArtin.lean` records as waiting on the same symmetry.
+
+Hopkins-Levitzki, `IsSemiprimaryRing.isNoetherian_iff_isArtinian`, applies to `Rᵐᵒᵖ` through the
+instance `TauCeti.IsSemiprimaryRing.mulOpposite`. For a semiprimary ring `R` (for instance a left
+Artinian ring) this settles that `Rᵐᵒᵖ` is Noetherian exactly when it is Artinian, the statement
+that `WedderburnArtin.lean` records as waiting on the same symmetry.
 -/
 
 public section
@@ -185,6 +190,31 @@ theorem quotientJacobsonMulOppositeRingEquiv_symm_op_mk (x : R) :
       Ideal.Quotient.mk (Ring.jacobson Rᵐᵒᵖ) (op x) :=
   (RingEquiv.symm_apply_eq _).mpr (quotientJacobsonMulOppositeRingEquiv_mk R x).symm
 
+/-- `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv` as an isomorphism of `k`-algebras, for an
+algebra `R` over a commutative ring `k`. -/
+noncomputable def quotientJacobsonMulOppositeAlgEquiv (k : Type*) [CommRing k] [Algebra k R] :
+    (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) ≃ₐ[k] (R ⧸ Ring.jacobson R)ᵐᵒᵖ :=
+  .ofRingEquiv (f := quotientJacobsonMulOppositeRingEquiv R) fun c ↦ by
+    rw [← Ideal.Quotient.mk_algebraMap, MulOpposite.algebraMap_apply,
+      quotientJacobsonMulOppositeRingEquiv_mk, Ideal.Quotient.mk_algebraMap,
+      MulOpposite.algebraMap_apply]
+
+/-- `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv` is the ring isomorphism
+`TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`. -/
+@[simp]
+theorem quotientJacobsonMulOppositeAlgEquiv_apply (k : Type*) [CommRing k] [Algebra k R]
+    (x : Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) :
+    quotientJacobsonMulOppositeAlgEquiv R k x = quotientJacobsonMulOppositeRingEquiv R x :=
+  (rfl)
+
+/-- **The residue ring modulo the Jacobson radical has the same dimension for the opposite
+algebra**: over a commutative ring `k`, `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ` and `R ⧸ Ring.jacobson R` have
+the same `k`-dimension, through `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv`. -/
+theorem finrank_quotient_jacobson_mulOpposite (k : Type*) [CommRing k] [Algebra k R] :
+    Module.finrank k (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) = Module.finrank k (R ⧸ Ring.jacobson R) :=
+  (quotientJacobsonMulOppositeAlgEquiv R k).toLinearEquiv.finrank_eq.trans
+    (MulOpposite.opLinearEquiv k).symm.finrank_eq
+
 /-- Semisimplicity of the quotient by the Jacobson radical is left-right symmetric. -/
 theorem isSemisimpleRing_quotient_jacobson_mulOpposite_iff :
     IsSemisimpleRing (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) ↔ IsSemisimpleRing (R ⧸ Ring.jacobson R) :=
@@ -204,12 +234,5 @@ theorem isSemiprimaryRing_mulOpposite_iff : IsSemiprimaryRing Rᵐᵒᵖ ↔ IsS
 `IsSemiprimaryRing.mulOpposite`. -/
 instance IsSemiprimaryRing.mulOpposite [IsSemiprimaryRing R] : IsSemiprimaryRing Rᵐᵒᵖ :=
   (isSemiprimaryRing_mulOpposite_iff R).mpr ‹_›
-
-/-- For a left Artinian ring, being right Noetherian and being right Artinian coincide: the
-opposite ring is semiprimary, so Hopkins-Levitzki applies to it. This is the `example` that
-`Mathlib/RingTheory/SimpleModule/WedderburnArtin.lean` leaves open. -/
-theorem IsArtinianRing.isNoetherianRing_iff_isArtinianRing_mulOpposite
-    [IsArtinianRing R] : IsNoetherianRing Rᵐᵒᵖ ↔ IsArtinianRing Rᵐᵒᵖ :=
-  IsSemiprimaryRing.isNoetherian_iff_isArtinian
 
 end TauCeti

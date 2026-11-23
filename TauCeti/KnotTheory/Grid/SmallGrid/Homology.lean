@@ -58,10 +58,7 @@ diagram is the series `TauCeti.Bigraded.W` of the stabilization factor.
 
 ## References
 
-This advances the “Grid homology computes” acceptance criterion in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, specifically the computation of the
-two-by-two unknot grid with its bigradings and the visible rank-two stabilization factor. The
-fully blocked complex and its grading conventions follow Ozsváth--Stipsicz--Szabó,
+The fully blocked complex and its grading conventions follow Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Chapters 3 and 4.
 -/
 
@@ -168,7 +165,7 @@ blocked homology has one dimension for each grid state of bidegree `g`. -/
 theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : ℤ × ℤ) :
     Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) =
       (Finset.univ.filter fun x : GridState n => G.bidegree x = g).card := by
-  let e := G.1.fullyBlockedHomologyEquivChainOfLeTwo hn
+  let e := G.val.fullyBlockedHomologyEquivChainOfLeTwo hn
   have hmap : (G.bigradedFullyBlockedHomologyPiece g).map e.toLinearMap =
       LinearMap.range (G.bigradedChainInclusion F g) := by
     ext c
@@ -178,7 +175,7 @@ theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : 
       rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]
       exact ⟨d, hd⟩
     · rintro ⟨d, rfl⟩
-      refine ⟨Submodule.Quotient.mk ⟨_, G.1.mem_fullyBlockedCycles_of_le_two hn
+      refine ⟨Submodule.Quotient.mk ⟨_, G.val.mem_fullyBlockedCycles_of_le_two hn
         (G.bigradedChainInclusion F g d)⟩,
         (mem_bigradedFullyBlockedHomologyPiece_iff_exists G).mpr ⟨_, ⟨d, rfl⟩, rfl⟩, ?_⟩
       rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]

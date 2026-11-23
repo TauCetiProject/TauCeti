@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
+public import TauCeti.Analysis.Analytic.IteratedDeriv
+public import TauCeti.Analysis.Complex.Euclidean.Space
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 import TauCeti.ModelTheory.Order
 
 /-!
@@ -21,6 +23,13 @@ limit of difference quotients. Introducing the two function values as quantified
 variables makes this a formula of ordered rings. Tarski–Seidenberg then applies.
 This also supplies the semialgebraic graph needed to differentiate Nash germs.
 
+Applying the real directional-derivative theorem coordinatewise to the real and imaginary parts
+shows that complex directional derivatives of complex-differentiable functions with semialgebraic
+realified graph remain semialgebraic (`TauCeti.IsSemialgebraicOn.fderiv_complex_apply`), and by
+induction every iterated vertical derivative in the `Sum.inr` coordinate of a holomorphic function
+with semialgebraic realified graph remains semialgebraic
+(`TauCeti.IsSemialgebraicOn.iteratedDerivInr`, `TauCeti.IsSemialgebraicOn.iteratedDerivInr_scalar`).
+
 ## References
 
 * J. Bochnak, M. Coste, M.-F. Roy, *Real Algebraic Geometry*, Springer, 1998,
@@ -34,6 +43,53 @@ open Filter MvPolynomial Set Topology
 namespace TauCeti
 
 variable {σ : Type*} {f : (σ → ℝ) → ℝ} {s : Set (σ → ℝ)}
+
+/-- Quantifier elimination for the epsilon-delta estimate: if the condition on the coordinates
+(x, candidate derivative, epsilon, delta, increment, lower value, upper value) is semialgebraic,
+so is the estimate on `(x, candidate derivative)`. -/
+private theorem isSemialgebraic_setOf_derivative_estimate_of_matrix (v : σ → ℝ)
+    {R : Set ((((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ⊕ Fin 3 → ℝ)} (hR : IsSemialgebraic R)
+    (hRdef : ∀ z, z ∈ R ↔
+      (0 < z (.inr 0) ∧ z (.inr 0) < z (.inl (.inr ())) ∧
+        (fun i ↦ z (.inl (.inl (.inl (.inl i))))) ∈ s ∧
+        f (fun i ↦ z (.inl (.inl (.inl (.inl i))))) = z (.inr 1) ∧
+        (fun i ↦ z (.inl (.inl (.inl (.inl i)))) + z (.inr 0) * v i) ∈ s ∧
+        f (fun i ↦ z (.inl (.inl (.inl (.inl i)))) + z (.inr 0) * v i) = z (.inr 2)) →
+      -z (.inl (.inl (.inr ()))) * z (.inr 0) <
+          z (.inr 2) - z (.inr 1) - z (.inr 0) * z (.inl (.inl (.inl (.inr ())))) ∧
+        z (.inr 2) - z (.inr 1) - z (.inr 0) * z (.inl (.inl (.inl (.inr ())))) <
+          z (.inl (.inl (.inr ()))) * z (.inr 0)) :
+    IsSemialgebraic {z : σ ⊕ Unit → ℝ | ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
+      ∀ t a b : ℝ, 0 < t → t < δ → z ∘ Sum.inl ∈ s → f (z ∘ Sum.inl) = a →
+        (z ∘ Sum.inl) + t • v ∈ s → f ((z ∘ Sum.inl) + t • v) = b →
+          -ε * t < b - a - t * z (.inr ()) ∧ b - a - t * z (.inr ()) < ε * t} := by
+  -- Eliminate the value/increment triple, then delta, then epsilon.
+  let := FirstOrder.Ring.compatibleRingOfRing ℝ
+  let := FirstOrder.Language.orderStructure ℝ
+  have hAll := hR.definable.forall_of_finite.isSemialgebraic
+  have hDelta := ((isSemialgebraic_eval_pos
+    (X (.inr ()) : MvPolynomial (((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ℝ)).inter hAll).definable
+    |>.exists_of_finite.isSemialgebraic
+  have hEps := ((isSemialgebraic_eval_pos
+    (X (.inr ()) : MvPolynomial ((σ ⊕ Unit) ⊕ Unit) ℝ)).compl.union hDelta).definable
+    |>.forall_of_finite.isSemialgebraic
+  -- Convert finite coordinate blocks back to the scalar quantifiers of the estimate.
+  convert hEps using 1
+  ext z
+  simp only [hRdef, mem_ofPred_eq, mem_union, mem_compl_iff, eval_X, mem_inter_iff,
+    Sum.elim_inl, Sum.elim_inr]
+  constructor
+  · intro h ε
+    by_cases hε : 0 < ε ()
+    · obtain ⟨δ, hδ, hbound⟩ := h (ε ()) hε
+      refine Or.inr ⟨fun _ ↦ δ, hδ, fun w hw ↦ ?_⟩
+      obtain ⟨ht, htδ, hx, ha, hy, hb⟩ := hw
+      exact hbound (w 0) (w 1) (w 2) ht htδ hx ha hy hb
+    · exact Or.inl hε
+  · intro h ε hε
+    obtain ⟨δ, hδ, hbound⟩ := (h (fun _ ↦ ε)).resolve_left (not_not.mpr hε)
+    refine ⟨δ (), hδ, fun t a b ht htδ hx ha hy hb ↦ ?_⟩
+    exact hbound ![t, a, b] ⟨ht, htδ, hx, ha, hy, hb⟩
 
 -- The particular ordered-ring formula used below. Its auxiliary value variables
 -- let us substitute the graph of f without introducing function symbols.
@@ -81,34 +137,9 @@ private theorem isSemialgebraic_setOf_derivative_estimate
     ext z
     simp only [R, mem_ofPred_eq, mem_union, mem_compl_iff, mem_inter_iff]
     tauto
-  -- Eliminate the value/increment triple, then delta, then epsilon.
-  let := FirstOrder.Ring.compatibleRingOfRing ℝ
-  let := FirstOrder.Language.orderStructure ℝ
-  have hAll := hR.definable.forall_of_finite.isSemialgebraic
-  have hDelta := ((isSemialgebraic_eval_pos
-    (X (.inr ()) : MvPolynomial (((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ℝ)).inter hAll).definable
-    |>.exists_of_finite.isSemialgebraic
-  have hEps := ((isSemialgebraic_eval_pos
-    (X (.inr ()) : MvPolynomial ((σ ⊕ Unit) ⊕ Unit) ℝ)).compl.union hDelta).definable
-    |>.forall_of_finite.isSemialgebraic
-  -- Convert finite coordinate blocks back to the scalar quantifiers of the estimate.
-  convert hEps using 1
-  ext z
-  simp only [R, xP, yP, dP, eP, rP, tP, aP, bP, mem_ofPred_eq, mem_union,
-    mem_compl_iff, eval_X, mem_inter_iff, eval_add, eval_mul, eval_C, map_sub, map_neg,
-    Sum.elim_inl, Sum.elim_inr]
-  constructor
-  · intro h ε
-    by_cases hε : 0 < ε ()
-    · obtain ⟨δ, hδ, hbound⟩ := h (ε ()) hε
-      refine Or.inr ⟨fun _ ↦ δ, hδ, fun w hw ↦ ?_⟩
-      obtain ⟨ht, htδ, hx, ha, hy, hb⟩ := hw
-      exact hbound (w 0) (w 1) (w 2) ht htδ hx ha hy hb
-    · exact Or.inl hε
-  · intro h ε hε
-    obtain ⟨δ, hδ, hbound⟩ := (h (fun _ ↦ ε)).resolve_left (not_not.mpr hε)
-    refine ⟨δ (), hδ, fun t a b ht htδ hx ha hy hb ↦ ?_⟩
-    exact hbound ![t, a, b] ⟨ht, htδ, hx, ha, hy, hb⟩
+  refine isSemialgebraic_setOf_derivative_estimate_of_matrix v hR fun z ↦ ?_
+  simp only [R, xP, yP, dP, eP, rP, tP, aP, bP, mem_ofPred_eq, eval_X, eval_add, eval_mul,
+    eval_C, map_sub, map_neg]
 
 /-- A differentiable semialgebraic function on an open domain has a semialgebraic
 scalar directional derivative in each fixed direction. -/
@@ -163,5 +194,83 @@ theorem IsSemialgebraicOn.fderiv_apply [Finite σ]
         field_simp
       simpa [Real.dist_eq, smul_eq_mul, hid] using hquot
     exact tendsto_nhds_unique hder.tendsto_slope_zero_right hlim
+
+section ComplexDerivatives
+
+/-- A complex-differentiable map between finite complex coordinate spaces with semialgebraic
+realified graph on an open set `V` has semialgebraic realified directional derivative in every
+fixed direction `v`. -/
+theorem IsSemialgebraicOn.fderiv_complex_apply {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {V : Set (ι → ℂ)} {G : (ι → ℂ) → (κ → ℂ)}
+    (hGS : IsSemialgebraicOn (fun a ↦ complexToRealPi κ (G ((complexToRealPi ι).symm a)))
+      ((complexToRealPi ι).symm ⁻¹' V))
+    (hVo : IsOpen V) (hGd : DifferentiableOn ℂ G V) (v : ι → ℂ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi κ (fderiv ℂ G ((complexToRealPi ι).symm a) v))
+      ((complexToRealPi ι).symm ⁻¹' V) := by
+  let e := complexToRealPi ι
+  let e' := complexToRealPi κ
+  let S := e.symm ⁻¹' V
+  have hSo : IsOpen S := hVo.preimage e.symm.continuous
+  obtain ⟨hS, hcoords⟩ := isSemialgebraicOn_pi_iff.mp hGS
+  refine isSemialgebraicOn_pi_iff.mpr ⟨hS, fun j ↦ ?_⟩
+  let L : (κ → ℂ) →L[ℝ] ℝ :=
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ⊕ κ ↦ ℝ) j).comp e'.toContinuousLinearMap
+  let g : (ι ⊕ ι → ℝ) → ℝ := fun a ↦ L (G (e.symm a))
+  have hfd (a : ι ⊕ ι → ℝ) (ha : a ∈ S) :
+      HasFDerivAt g
+        (L.comp (((fderiv ℂ G (e.symm a)).restrictScalars ℝ).comp e.symm.toContinuousLinearMap))
+        a :=
+    L.hasFDerivAt.comp a
+      ((((hGd (e.symm a) ha).differentiableAt (hVo.mem_nhds ha)).hasFDerivAt.restrictScalars ℝ).comp
+        a e.symm.hasFDerivAt)
+  have hd : DifferentiableOn ℝ g S :=
+    fun a ha ↦ (hfd a ha).differentiableAt.differentiableWithinAt
+  have hgS : IsSemialgebraicOn (fun a (_ : Unit) ↦ g a) S := hcoords j
+  refine (hgS.fderiv_apply hSo hd (e v)).congr fun a ha ↦ funext fun _ ↦ ?_
+  dsimp only
+  rw [(hfd a ha).fderiv]
+  simp [L, e, e']
+
+/-- Every iterated derivative in the `Sum.inr` coordinate of a holomorphic map
+`F : (σ ⊕ τ → ℂ) → (κ → ℂ)` with semialgebraic realified graph on an open set `V` again has
+semialgebraic realified graph on `V`. -/
+theorem IsSemialgebraicOn.iteratedDerivInr {σ τ κ : Type*} [Fintype σ] [Unique τ] [Fintype κ]
+    {V : Set (σ ⊕ τ → ℂ)} {F : (σ ⊕ τ → ℂ) → (κ → ℂ)}
+    (hFS : IsSemialgebraicOn (fun a ↦ complexToRealPi κ (F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V))
+    (hVo : IsOpen V) (hFV : AnalyticOnNhd ℂ F V) (k : ℕ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi κ
+        (TauCeti.iteratedDerivInr k F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V) := by
+  induction k with
+  | zero => simpa only [iteratedDerivInr_zero] using hFS
+  | succ k ih =>
+    have hGa : AnalyticOnNhd ℂ (TauCeti.iteratedDerivInr k F) V := hFV.iteratedDerivInr k
+    refine (ih.fderiv_complex_apply hVo hGa.differentiableOn (Sum.elim 0 (fun _ ↦ 1))).congr
+      fun a ha ↦ ?_
+    rw [(hGa _ ha).differentiableAt.iteratedDerivInr_succ_eq_fderiv]
+
+/-- Scalar form of `TauCeti.IsSemialgebraicOn.iteratedDerivInr`: every iterated derivative in the
+`Sum.inr` coordinate of a holomorphic scalar function `F : (σ ⊕ τ → ℂ) → ℂ` with semialgebraic
+realified graph on an open set `V` again has semialgebraic realified graph on `V`. -/
+theorem IsSemialgebraicOn.iteratedDerivInr_scalar {σ τ : Type*} [Fintype σ] [Unique τ]
+    {V : Set (σ ⊕ τ → ℂ)} {F : (σ ⊕ τ → ℂ) → ℂ}
+    (hFS : IsSemialgebraicOn
+      (fun a ↦ complexToRealPi Unit (fun _ ↦ F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V))
+    (hVo : IsOpen V) (hFV : AnalyticOnNhd ℂ F V) (k : ℕ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi Unit
+        (fun _ ↦ TauCeti.iteratedDerivInr k F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V) := by
+  have hFpi : AnalyticOnNhd ℂ (fun z (_ : Unit) ↦ F z) V :=
+    fun z hz ↦ AnalyticAt.pi fun _ ↦ hFV z hz
+  refine (hFS.iteratedDerivInr hVo hFpi k).congr fun a _ ↦ ?_
+  dsimp only
+  rw [iteratedDerivInr_const_pi]
+
+end ComplexDerivatives
 
 end TauCeti

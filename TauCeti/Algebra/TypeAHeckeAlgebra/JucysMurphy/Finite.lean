@@ -110,6 +110,16 @@ theorem additiveJucysMurphy_succ (k : ℕ) (hk : k + 1 < n) :
   simp only [map_add, map_mul, map_smul, toInfinite_additiveJucysMurphy, toInfinite_T,
     InfiniteTypeAHeckeAlgebra.additiveJucysMurphy_succ]
 
+/-- The finite additive recursion in the normalization `g_k = q • T k`, `Q = q²`. -/
+theorem additiveJucysMurphy_succ_eq_smul (k : ℕ) (hk : k + 1 < n) :
+    additiveJucysMurphy q ⟨k + 1, hk⟩ =
+      ((↑q⁻¹ : R) ^ 2) •
+        (((q : R) • T q ⟨k, by omega⟩) * additiveJucysMurphy q ⟨k, by omega⟩ *
+          ((q : R) • T q ⟨k, by omega⟩) + (q : R) • T q ⟨k, by omega⟩) := by
+  apply toInfinite_injective R q n
+  simpa only [map_smul, map_add, map_mul, toInfinite_additiveJucysMurphy, toInfinite_T,
+    smul_add] using InfiniteTypeAHeckeAlgebra.additiveJucysMurphy_succ_eq_smul k
+
 /-- The normalized and additive finite elements satisfy `J_i = 1 + (q² - 1) L_i`. -/
 theorem jucysMurphy_eq_one_add_smul_additiveJucysMurphy (i : Fin n) :
     jucysMurphy q i = 1 + ((q : R) ^ 2 - 1) • additiveJucysMurphy q i := by
@@ -172,5 +182,23 @@ theorem commute_jucysMurphy_last_strandIncl (x : TypeAHeckeAlgebra R q n) :
   rw [jucysMurphy_eq_one_add_smul_additiveJucysMurphy]
   exact (Commute.one_left _).add_left
     ((commute_additiveJucysMurphy_last_strandIncl x).smul_left _)
+
+/-- A simple generator commutes with an additive element unless it crosses its strand. -/
+theorem commute_T_additiveJucysMurphy {i : Fin (n - 1)} {k : Fin n}
+    (h : (i : ℕ) + 1 < k ∨ (k : ℕ) < i) :
+    Commute (T q i) (additiveJucysMurphy q k) := by
+  apply (toInfinite_injective R q n)
+  simpa only [map_mul, toInfinite_T, toInfinite_additiveJucysMurphy] using
+    (InfiniteTypeAHeckeAlgebra.commute_T_additiveJucysMurphy (q := q) h).eq
+
+/-- A simple generator commutes with the sum of the additive elements of the two strands
+it crosses. -/
+theorem commute_T_additiveJucysMurphy_add (i : Fin n) :
+    Commute (T (n := n + 1) q i)
+      (additiveJucysMurphy q i.castSucc + additiveJucysMurphy q i.succ) := by
+  apply toInfinite_injective R q (n + 1)
+  simpa only [map_mul, map_add, toInfinite_T, toInfinite_additiveJucysMurphy,
+    Fin.val_castSucc, Fin.val_succ] using
+    (InfiniteTypeAHeckeAlgebra.commute_T_additiveJucysMurphy_add (q := q) i).eq
 
 end TauCeti.TypeAHeckeAlgebra

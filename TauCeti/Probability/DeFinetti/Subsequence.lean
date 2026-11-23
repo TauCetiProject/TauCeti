@@ -35,7 +35,7 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-  [StandardBorelSpace α] [Nonempty α]
+  [StandardBorelSpace α]
   {μ : Measure Ω} [IsFiniteMeasure μ] {X : ι → Ω → α}
   {ν : Ω → ProbabilityMeasure α}
 

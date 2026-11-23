@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.CliffordAlgebra.FiltrationGradedEquiv
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
@@ -22,10 +23,12 @@ with their compatibility with homogeneous multiplication.
 * `CliffordAlgebra.associatedGradedEquivExterior`: the algebra equivalence from
   the associated graded of the Clifford filtration to the exterior algebra.
 
-## Main result
+## Main results
 
 * `CliffordAlgebra.prod_map_ι_ofFn_ne_zero`: a linearly independent finite family has a nonzero
   ordered product of Clifford generators.
+* `CliffordAlgebra.gradedPieceEquivExteriorPower_symm_apply_ιMulti`: the inverse piece equivalence
+  sends an exterior product of `n` vectors to the class of the product of their `n` generators.
 
 ## References
 
@@ -61,58 +64,20 @@ theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
   induction n with
   | zero => simpa using hone
   | succ k ih =>
-      let w : Fin k → M := fun i => v i.succ
-      have hw : LinearIndependent K w := hv.comp Fin.succ (Fin.succ_injective k)
-      have hv0 : v 0 ∉ Submodule.span K (Set.range w) := by
-        have h := hv.notMem_span_image (s := Set.range (Fin.succ : Fin k → Fin (k + 1)))
-          (x := 0) (by simp)
-        have hrange : v '' Set.range (Fin.succ : Fin k → Fin (k + 1)) = Set.range w := by
-          ext x
-          constructor
-          · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-            exact ⟨i, rfl⟩
-          · rintro ⟨i, rfl⟩
-            exact ⟨i.succ, ⟨i, rfl⟩, rfl⟩
-        rw [hrange] at h
-        exact h
-      obtain ⟨d, hd, hd_zero⟩ :=
-        LinearMap.exists_extend_of_notMem
-          (0 : Submodule.span K (Set.range w) →ₗ[K] K) hv0 1
-      have hd_succ (i : Fin k) : d (w i) = 0 := by
-        have h := LinearMap.congr_fun hd
-          (⟨w i, Submodule.subset_span (Set.mem_range_self i)⟩ :
-            Submodule.span K (Set.range w))
-        rw [LinearMap.comp_apply, LinearMap.zero_apply] at h
-        -- Remove the span-subtype coercion from the extension equation.
-        change d (w i) = 0 at h
-        exact h
-      have hcontract (l : List M) (hl : ∀ x ∈ l, d x = 0) :
-          contractLeft d (l.map (ι Q)).prod = 0 := by
-        induction l with
-        | nil => simp
-        | cons x l ih =>
-            rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, hl x List.mem_cons_self,
-              zero_smul, zero_sub]
-            simp only [ih (fun y hy => hl y (List.mem_cons_of_mem x hy)), mul_zero, neg_zero]
+      obtain ⟨d, hd⟩ := hv.exists_dual_forall_apply_eq_ite (K := K)
       intro hzero
       rw [List.ofFn_succ, List.prod_cons] at hzero
       simp only [Function.comp_apply] at hzero
-      have hzero' := congrArg (contractLeft d) hzero
-      rw [map_zero, contractLeft_ι_mul, hd_zero, one_smul] at hzero'
-      have htail : contractLeft d (List.ofFn ((ι Q) ∘ w)).prod = 0 := by
-        rw [← List.map_ofFn]
-        apply hcontract
-        intro x hx
-        rw [List.mem_ofFn] at hx
-        obtain ⟨i, rfl⟩ := hx
-        exact hd_succ i
-      -- Normalize the local tail abbreviation to the `List.ofFn` shape produced above.
-      change contractLeft d (List.ofFn fun i => ι Q (v i.succ)).prod = 0 at htail
-      rw [htail, mul_zero, sub_zero] at hzero'
-      apply ih w hw
-      -- Normalize the induction hypothesis's composed family to the same tail expression.
-      change (List.ofFn fun i => ι Q (v i.succ)).prod = 0
-      exact hzero'
+      have hzero' := congrArg (contractLeft (d 0)) hzero
+      have htail : contractLeft (d 0) (List.ofFn fun i : Fin k => ι Q (v i.succ)).prod = 0 := by
+        have := contractLeft_prod_map_ι_eq_zero (Q := Q) (d 0)
+          (l := List.ofFn fun i : Fin k => v i.succ) fun x hx => by
+          obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
+          simp [hd, (Fin.succ_ne_zero i).symm]
+        rwa [List.map_ofFn] at this
+      simp only [map_zero, contractLeft_ι_mul, hd, ↓reduceIte, one_smul, htail, mul_zero,
+        sub_zero] at hzero'
+      exact ih (fun i => v i.succ) (hv.comp Fin.succ (Fin.succ_injective k)) hzero'
 
 private noncomputable def scalarEquivFiltrationZero :
     R ≃ₗ[R] filtration Q 0 :=
@@ -184,8 +149,11 @@ private def exteriorPowerGradedMul (i j : ℕ) (x : ⋀[R]^i M) (y : ⋀[R]^j M)
     ⋀[R]^(i + j) M :=
   @GradedMonoid.GMul.mul ℕ (fun n : ℕ => ⋀[R]^n M) _ inferInstance i j x y
 
-private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → M) :
-    filtrationLeadingTermAll Q n (exteriorPower.ιMulti R n v) =
+/-- The inverse piece equivalence sends an exterior product of `n` vectors to the class of the
+corresponding ordered product of `n` Clifford generators. -/
+@[simp]
+theorem gradedPieceEquivExteriorPower_symm_apply_ιMulti (n : ℕ) (v : Fin n → M) :
+    (gradedPieceEquivExteriorPower Q n).symm (exteriorPower.ιMulti R n v) =
       Submodule.Quotient.mk
         ⟨(List.ofFn ((ι Q) ∘ v)).prod, by
           rw [← List.map_ofFn]
@@ -193,12 +161,7 @@ private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → 
   cases n with
   | zero =>
       apply (gradedPieceEquivExteriorPower Q 0).injective
-      have hleft :
-          gradedPieceEquivExteriorPower Q 0
-              (filtrationLeadingTermAll Q 0 (exteriorPower.ιMulti R 0 v)) =
-            exteriorPower.ιMulti R 0 v :=
-        LinearEquiv.apply_symm_apply _ _
-      rw [hleft]
+      rw [LinearEquiv.apply_symm_apply]
       have hrep :
           (Submodule.Quotient.mk
             ⟨(List.ofFn ((ι Q) ∘ v)).prod, by
@@ -215,7 +178,7 @@ private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → 
       apply (exteriorPower.zeroEquiv R M).injective
       rw [LinearEquiv.apply_symm_apply, exteriorPower.zeroEquiv_ιMulti]
   | succ n =>
-      simpa only [filtrationLeadingTermAll, gradedPieceEquivExteriorPower,
+      simpa only [gradedPieceEquivExteriorPower, LinearEquiv.coe_coe,
         filtrationLeadingTerm_eq_filtrationGradedEquiv_symm Q n] using
         filtrationLeadingTerm_apply_ιMulti Q n v
 
@@ -244,9 +207,9 @@ private theorem filtrationLeadingTermAll_mul (i j : ℕ)
     intro b
     -- Extensionality leaves the two composed bilinear maps; expose their graded products.
     change gradedMul (ι Q) i j
-        (filtrationLeadingTermAll Q i (exteriorPower.ιMulti R i a))
-        (filtrationLeadingTermAll Q j (exteriorPower.ιMulti R j b)) =
-      filtrationLeadingTermAll Q (i + j)
+        ((gradedPieceEquivExteriorPower Q i).symm (exteriorPower.ιMulti R i a))
+        ((gradedPieceEquivExteriorPower Q j).symm (exteriorPower.ιMulti R j b)) =
+      (gradedPieceEquivExteriorPower Q (i + j)).symm
         (exteriorPowerGradedMul i j
           (exteriorPower.ιMulti R i a) (exteriorPower.ιMulti R j b))
     have hmul :
@@ -255,9 +218,9 @@ private theorem filtrationLeadingTermAll_mul (i j : ℕ)
           exteriorPower.ιMulti R (i + j) (Fin.append a b) := by
       apply Subtype.ext
       exact ExteriorAlgebra.ιMulti_mul_ιMulti a b
-    rw [filtrationLeadingTermAll_apply_ιMulti,
-      filtrationLeadingTermAll_apply_ιMulti, hmul,
-      filtrationLeadingTermAll_apply_ιMulti, gradedMul_apply_mk]
+    rw [gradedPieceEquivExteriorPower_symm_apply_ιMulti,
+      gradedPieceEquivExteriorPower_symm_apply_ιMulti, hmul,
+      gradedPieceEquivExteriorPower_symm_apply_ιMulti, gradedMul_apply_mk]
     apply congrArg Submodule.Quotient.mk
     apply Subtype.ext
     -- Quotient and subtype extensionality leave the ambient Clifford products.

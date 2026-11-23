@@ -52,9 +52,10 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
 * `TauCeti.IntegralLattice.evenIntermediateCarrierOrderIsoIsotropicSubgroup`: the restriction of
   the intermediate-carrier order isomorphism to even carriers of an even lattice.
 * `TauCeti.IntegralLattice.ofIsotropicSubgroup`: the even overlattice glued along a
-  quadratic-isotropic subgroup of the discriminant group, as an integral lattice. It keeps the
-  ambient form, so it inherits nondegeneracy and positive definiteness, and the isotropy
-  hypothesis makes it even.
+  quadratic-isotropic subgroup of the discriminant group, as an integral lattice, with
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup_inj` and
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup_eq_self_iff`. It keeps the ambient form, so it
+  inherits nondegeneracy and positive definiteness, and the isotropy hypothesis makes it even.
 
 ## References
 
@@ -62,9 +63,6 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   Proposition 1.4.1. The quadratic statement here is that proposition in the half-norm `ℚ/ℤ`
   convention; the bilinear statement is its elementary intermediate-lattice analogue.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean` (`integralOverlatticeEquivIsotropicSubgroup`,
-  `evenOverlatticeEquivIsotropicSubgroup`).
 -/
 
 public section
@@ -82,21 +80,21 @@ namespace IntermediateCarrier
 /-- An intermediate carrier is integral when it lies in its own dual submodule, the shape of
 `IntegralLattice.le_dual`. -/
 def IsIntegral (M : L.IntermediateCarrier) : Prop :=
-  M.1 ≤ L.form.dualSubmodule M.1
+  M.val ≤ L.form.dualSubmodule M.val
 
 /-- Integrality of an intermediate carrier, unfolded to elementwise integrality of the form. -/
 theorem isIntegral_def {M : L.IntermediateCarrier} :
-    IsIntegral M ↔ ∀ x ∈ M.1, ∀ y ∈ M.1, L.form x y ∈ (1 : Submodule ℤ ℚ) :=
+    IsIntegral M ↔ ∀ x ∈ M.val, ∀ y ∈ M.val, L.form x y ∈ (1 : Submodule ℤ ℚ) :=
   Iff.rfl
 
 /-- An intermediate carrier is even when every norm of its vectors is twice an integer, the
 normal form of `IntegralLattice.isEven_iff_forall_norm`. -/
 def IsEven (M : L.IntermediateCarrier) : Prop :=
-  ∀ x ∈ M.1, ∃ n : ℤ, L.norm x = 2 * n
+  ∀ x ∈ M.val, ∃ n : ℤ, L.norm x = 2 * n
 
 /-- Evenness of an intermediate carrier, unfolded to its defining property. -/
 theorem isEven_def {M : L.IntermediateCarrier} :
-    IsEven M ↔ ∀ x ∈ M.1, ∃ n : ℤ, L.norm x = 2 * n :=
+    IsEven M ↔ ∀ x ∈ M.val, ∃ n : ℤ, L.norm x = 2 * n :=
   Iff.rfl
 
 /-- The bottom intermediate carrier, the lattice itself, is integral. -/
@@ -111,7 +109,7 @@ theorem isEven_bot_iff : IsEven (⊥ : L.IntermediateCarrier) ↔ L.IsEven := by
   rw [L.isEven_iff_forall_norm]
   constructor
   · intro h x
-    exact h x (by rw [Set.Icc.coe_bot]; exact x.2)
+    exact h x (by rw [Set.Icc.coe_bot]; exact x.property)
   · intro h x hx
     rw [Set.Icc.coe_bot] at hx
     exact h ⟨x, hx⟩
@@ -119,7 +117,7 @@ theorem isEven_bot_iff : IsEven (⊥ : L.IntermediateCarrier) ↔ L.IsEven := by
 /-- Integrality descends along containment of intermediate carriers. -/
 theorem IsIntegral.mono {M N : L.IntermediateCarrier} (hN : IsIntegral N) (h : M ≤ N) :
     IsIntegral M := by
-  have h' : M.1 ≤ N.1 := Subtype.coe_le_coe.mpr h
+  have h' : M.val ≤ N.val := Subtype.coe_le_coe.mpr h
   rw [isIntegral_def] at hN ⊢
   intro x hx y hy
   exact hN x (h' hx) y (h' hy)
@@ -132,7 +130,7 @@ theorem IsEven.mono {M N : L.IntermediateCarrier} (hN : IsEven N) (h : M ≤ N) 
 theorem IsEven.isIntegral {M : L.IntermediateCarrier} (hM : IsEven M) : IsIntegral M := by
   rw [isIntegral_def]
   intro x hx y hy
-  obtain ⟨a, ha⟩ := hM (x + y) (M.1.add_mem hx hy)
+  obtain ⟨a, ha⟩ := hM (x + y) (M.val.add_mem hx hy)
   obtain ⟨b, hb⟩ := hM x hx
   obtain ⟨c, hc⟩ := hM y hy
   have hadd := L.norm_add x y
@@ -143,19 +141,19 @@ theorem IsEven.isIntegral {M : L.IntermediateCarrier} (hM : IsEven M) : IsIntegr
 
 section IsLattice
 
-variable {M : L.IntermediateCarrier} [M.1.IsLattice ℚ]
+variable {M : L.IntermediateCarrier} [M.val.IsFullLattice ℚ]
 
 /-- An integral intermediate carrier which is itself a full `ℤ`-lattice is an integral lattice,
 for the same ambient rational form. Over a nondegenerate lattice every intermediate carrier is
-such a lattice, by `TauCeti.IntegralLattice.instIsLatticeIntermediateCarrier`. -/
+such a lattice, by `TauCeti.IntegralLattice.instIsFullLatticeIntermediateCarrier`. -/
 def IsIntegral.toIntegralLattice (hM : IsIntegral M) : IntegralLattice V :=
-  IntegralLattice.ofSubmodule M.1 L.form L.isSymm fun _ hx ↦
+  IntegralLattice.ofSubmodule M.val L.form L.isSymm fun _ hx ↦
     L.form.mem_dualSubmodule.mpr fun _ hy ↦ isIntegral_def.mp hM _ hx _ hy
 
 /-- The carrier of the integral lattice attached to an integral intermediate carrier. -/
 @[simp]
 theorem IsIntegral.toIntegralLattice_carrier (hM : IsIntegral M) :
-    hM.toIntegralLattice.carrier = M.1 := by
+    hM.toIntegralLattice.carrier = M.val := by
   rw [toIntegralLattice, IntegralLattice.ofSubmodule_carrier]
 
 /-- The integral lattice attached to an integral intermediate carrier keeps the ambient form. -/
@@ -176,9 +174,9 @@ theorem IsEven.isEven_toIntegralLattice (hM : IsEven M) :
     hM.isIntegral.toIntegralLattice.IsEven := by
   rw [isEven_iff_forall_norm]
   intro x
-  have hx : (x : V) ∈ M.1 := by
+  have hx : (x : V) ∈ M.val := by
     rw [← hM.isIntegral.toIntegralLattice_carrier]
-    exact x.2
+    exact x.property
   obtain ⟨n, hn⟩ := isEven_def.mp hM (x : V) hx
   exact ⟨n, by rw [norm_apply, IsIntegral.toIntegralLattice_form, ← norm_apply]; exact hn⟩
 
@@ -211,8 +209,8 @@ theorem isIntegral_iff_forall_discriminantPairing_eq_zero (M : L.IntermediateCar
       (hM x ((L.mk_mem_discriminantSubgroup_iff M x).mp hx) y
         ((L.mk_mem_discriminantSubgroup_iff M y).mp hy))
   · intro hH x hx y hy
-    have hxd : x ∈ L.dualCarrier := M.2.2 hx
-    have hyd : y ∈ L.dualCarrier := M.2.2 hy
+    have hxd : x ∈ L.dualCarrier := M.property.2 hx
+    have hyd : y ∈ L.dualCarrier := M.property.2 hy
     exact (L.discriminantPairing_mk_eq_zero_iff ⟨x, hxd⟩ ⟨y, hyd⟩).mp
       (hH _ ((L.mk_mem_discriminantSubgroup_iff M ⟨x, hxd⟩).mpr hx)
         _ ((L.mk_mem_discriminantSubgroup_iff M ⟨y, hyd⟩).mpr hy))
@@ -232,7 +230,7 @@ theorem isEven_iff_forall_discriminantQuadraticMap_eq_zero (hL : L.IsEven)
     push_cast
     ring
   · intro hH x hx
-    have hxd : x ∈ L.dualCarrier := M.2.2 hx
+    have hxd : x ∈ L.dualCarrier := M.property.2 hx
     obtain ⟨n, hn⟩ := (L.discriminantQuadraticMap_mk_eq_zero_iff hL ⟨x, hxd⟩).mp
       (hH _ ((L.mk_mem_discriminantSubgroup_iff M ⟨x, hxd⟩).mpr hx))
     refine ⟨n, ?_⟩
@@ -296,7 +294,7 @@ theorem isEven_toIntermediateCarrier (hN : N.IsEven) :
 overlattice. -/
 @[simp]
 theorem toIntegralLattice_toIntermediateCarrier
-    [(N.toIntermediateCarrier hform hle).1.IsLattice ℚ]
+    [(N.toIntermediateCarrier hform hle).val.IsFullLattice ℚ]
     (h : IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle)) :
     h.toIntegralLattice = N :=
   IntegralLattice.ext (h.toIntegralLattice_carrier.trans (N.coe_toIntermediateCarrier hform hle))
@@ -314,14 +312,14 @@ private def restrictOrderIso {p : L.IntermediateCarrier → Prop}
     (h : ∀ M, p M ↔ q (L.discriminantSubgroup M)) :
     {M : L.IntermediateCarrier // p M} ≃o {H : AddSubgroup L.DiscriminantGroup // q H} where
   toEquiv :=
-    { toFun := fun M ↦ ⟨L.discriminantSubgroup M.1, (h M.1).mp M.2⟩
-      invFun := fun H ↦ ⟨L.intermediateCarrierOfDiscriminantSubgroup H.1, (h _).mpr (by
+    { toFun := fun M ↦ ⟨L.discriminantSubgroup M.val, (h M.val).mp M.property⟩
+      invFun := fun H ↦ ⟨L.intermediateCarrierOfDiscriminantSubgroup H.val, (h _).mpr (by
         rw [L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup]
-        exact H.2)⟩
+        exact H.property)⟩
       left_inv := fun M ↦ Subtype.ext
-        (L.intermediateCarrierOfDiscriminantSubgroup_discriminantSubgroup M.1)
+        (L.intermediateCarrierOfDiscriminantSubgroup_discriminantSubgroup M.val)
       right_inv := fun H ↦ Subtype.ext
-        (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup H.1) }
+        (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup H.val) }
   map_rel_iff' {M N} := by
     simp only [Equiv.coe_fn_mk, Subtype.mk_le_mk, L.discriminantSubgroup_le_iff]
     exact Subtype.coe_le_coe
@@ -361,7 +359,7 @@ construction. -/
 theorem integralIntermediateCarrierOrderIsoIsotropicSubgroup_apply_coe
     (M : {M : L.IntermediateCarrier // IsIntegral M}) :
     (L.integralIntermediateCarrierOrderIsoIsotropicSubgroup M :
-      AddSubgroup L.DiscriminantGroup) = L.discriminantSubgroup M.1 := by
+      AddSubgroup L.DiscriminantGroup) = L.discriminantSubgroup M.val := by
   simp only [integralIntermediateCarrierOrderIsoIsotropicSubgroup, restrictOrderIso,
     RelIso.coe_fn_mk, Equiv.coe_fn_mk]
 
@@ -371,7 +369,7 @@ construction. -/
 theorem integralIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe
     (H : {H : AddSubgroup L.DiscriminantGroup // L.discriminantBilinearModule.IsIsotropic H}) :
     (L.integralIntermediateCarrierOrderIsoIsotropicSubgroup.symm H : L.IntermediateCarrier) =
-      L.intermediateCarrierOfDiscriminantSubgroup H.1 := by
+      L.intermediateCarrierOfDiscriminantSubgroup H.val := by
   simp only [integralIntermediateCarrierOrderIsoIsotropicSubgroup, restrictOrderIso,
     OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk]
 
@@ -390,7 +388,7 @@ construction. -/
 theorem evenIntermediateCarrierOrderIsoIsotropicSubgroup_apply_coe (hL : L.IsEven)
     (M : {M : L.IntermediateCarrier // IntermediateCarrier.IsEven M}) :
     (L.evenIntermediateCarrierOrderIsoIsotropicSubgroup hL M :
-      AddSubgroup L.DiscriminantGroup) = L.discriminantSubgroup M.1 := by
+      AddSubgroup L.DiscriminantGroup) = L.discriminantSubgroup M.val := by
   simp only [evenIntermediateCarrierOrderIsoIsotropicSubgroup, restrictOrderIso,
     RelIso.coe_fn_mk, Equiv.coe_fn_mk]
 
@@ -401,7 +399,7 @@ theorem evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe (hL : L.
     (H : {H : AddSubgroup L.DiscriminantGroup //
       (L.discriminantQuadraticModule hL).IsIsotropic H}) :
     ((L.evenIntermediateCarrierOrderIsoIsotropicSubgroup hL).symm H : L.IntermediateCarrier) =
-      L.intermediateCarrierOfDiscriminantSubgroup H.1 := by
+      L.intermediateCarrierOfDiscriminantSubgroup H.val := by
   simp only [evenIntermediateCarrierOrderIsoIsotropicSubgroup, restrictOrderIso,
     OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk]
 
@@ -465,18 +463,50 @@ theorem ofIsotropicSubgroup_bot (hL : L.IsEven) :
       (FiniteQuadraticModule.isIsotropic_bot (L.discriminantQuadraticModule hL)),
     L.intermediateCarrierOfDiscriminantSubgroup_bot, Set.Icc.coe_bot]
 
+/-- Two quadratic-isotropic subgroups glue to the same overlattice if and only if they are
+equal. -/
+@[simp]
+theorem ofIsotropicSubgroup_inj (hL : L.IsEven)
+    (H K : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
+    (hK : (L.discriminantQuadraticModule hL).IsIsotropic K) :
+    L.ofIsotropicSubgroup hL H hH = L.ofIsotropicSubgroup hL K hK ↔ H = K := by
+  constructor
+  · intro h
+    have hcarrier : L.intermediateCarrierOfDiscriminantSubgroup H =
+        L.intermediateCarrierOfDiscriminantSubgroup K :=
+      Subtype.ext ((L.ofIsotropicSubgroup_carrier hL H hH).symm.trans
+        ((congrArg IntegralLattice.carrier h).trans (L.ofIsotropicSubgroup_carrier hL K hK)))
+    exact (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup H).symm.trans
+      ((congrArg L.discriminantSubgroup hcarrier).trans
+        (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup K))
+  · rintro rfl
+    rfl
+
+/-- Gluing along a quadratic-isotropic subgroup returns the base lattice itself if and only if
+the subgroup is trivial. -/
+@[simp]
+theorem ofIsotropicSubgroup_eq_self_iff (hL : L.IsEven)
+    (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    L.ofIsotropicSubgroup hL H hH = L ↔ H = ⊥ := by
+  refine ⟨fun h ↦ (L.ofIsotropicSubgroup_inj hL H ⊥ hH _).mp
+    (h.trans (L.ofIsotropicSubgroup_bot hL).symm), ?_⟩
+  rintro rfl
+  exact L.ofIsotropicSubgroup_bot hL
+
 /-- Gluing agrees with the even gluing correspondence: `ofIsotropicSubgroup` is the lattice
 carried by the correspondence's inverse image. -/
 theorem ofIsotropicSubgroup_eq_toIntegralLattice (hL : L.IsEven)
     (H : {H : AddSubgroup L.DiscriminantGroup //
       (L.discriminantQuadraticModule hL).IsIsotropic H}) :
-    L.ofIsotropicSubgroup hL H.1 H.2 =
+    L.ofIsotropicSubgroup hL H.val H.property =
       IntermediateCarrier.IsIntegral.toIntegralLattice
-        (((L.evenIntermediateCarrierOrderIsoIsotropicSubgroup hL).symm H).2).isIntegral := by
+        (((L.evenIntermediateCarrierOrderIsoIsotropicSubgroup hL).symm H).property).isIntegral := by
   refine IntegralLattice.ext ?_ (by
-    rw [L.ofIsotropicSubgroup_form hL H.1 H.2,
+    rw [L.ofIsotropicSubgroup_form hL H.val H.property,
       IntermediateCarrier.IsIntegral.toIntegralLattice_form])
-  rw [L.ofIsotropicSubgroup_carrier hL H.1 H.2,
+  rw [L.ofIsotropicSubgroup_carrier hL H.val H.property,
     IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
     L.evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe hL H]
 

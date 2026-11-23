@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Representation
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
 
 /-!
 # Equivariance of the differential for the adjoint action
@@ -21,7 +24,9 @@ dφ (Ad(g)(d)) = Ad(g ∘ φ)(dφ(d)).
 ```
 
 This file proves that identity directly from functoriality of convolution and packages it as an
-intertwining identity for the adjoint representations.
+intertwining identity for the adjoint representations. Over an algebraically closed field,
+a dominant morphism of finite-type affine groups maps rational adjoint orbits onto the
+corresponding orbits; an injective differential also reflects conjugacy.
 
 ## Main declarations
 
@@ -141,4 +146,75 @@ theorem lTensor_dualCotangentMap_adjointAction (φ : H →ₐc[R] K)
   simpa only [BialgHom.mapDomain_apply, toConv_ofConv] using
     (pointInCounitAlgebra_comp A φ g.ofConv).symm
 
+/-- The differential intertwines the adjoint representations on the original cotangent
+duals, without scalar extension, for base-valued points. -/
+theorem dualCotangentMap_basePointsRepresentation (φ : H →ₐc[R] K)
+    (g : WithConv (K →ₐ[R] R)) (x : Module.Dual R (Bialgebra.CotangentSpace R K)) :
+    letI := adjointComodule (R := R) (H := K)
+    letI := adjointComodule (R := R) (H := H)
+    dualCotangentMap φ (Comodule.basePointsRepresentation (H := K) _ g x) =
+      Comodule.basePointsRepresentation (H := H) _ (mapDomain φ g) (dualCotangentMap φ x) := by
+  let _ := adjointComodule (R := R) (H := K)
+  let _ := adjointComodule (R := R) (H := H)
+  have h := φ.lTensor_dualCotangentMap_adjointAction (CommAlgCat.of R R) g (1 ⊗ₜ[R] x)
+  rw [← adjointComodule_endOfPoint_eq_adjointAction,
+    ← adjointComodule_endOfPoint_eq_adjointAction, LinearMap.lTensor_tmul] at h
+  simp only [Comodule.endOfPoint_tmul, one_smul,
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
+    LinearMap.lTensor_tmul] at h
+  simpa only [TensorProduct.lid_tmul, one_smul] using
+    congrArg (TensorProduct.lid R (Module.Dual R (Bialgebra.CotangentSpace R H))) h
+
 end BialgHom
+
+namespace TauCeti.CommHopfAlgCat
+
+open Derivation
+
+universe u
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+  {H K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
+  [Algebra.FiniteType k K] {f : H ⟶ K}
+
+attribute [local instance] Derivation.adjointComodule
+
+/-- A dominant morphism of finite-type affine groups maps a rational adjoint orbit onto
+its corresponding orbit. This is a statement about sets of rational Lie algebra points,
+not about points over arbitrary coefficient algebras. -/
+theorem image_range_basePointsRepresentation (hf : Function.Injective f.hom)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    dualCotangentMap f.hom '' Set.range (fun g : WithConv (K →ₐ[k] k) =>
+      Comodule.basePointsRepresentation (H := K) _ g x) =
+    Set.range (fun g : WithConv (H →ₐ[k] k) =>
+      Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x)) := by
+  ext y
+  constructor
+  · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
+    exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
+  · rintro ⟨g, rfl⟩
+    obtain ⟨q, hq⟩ := mapDomain_surjective_of_injective k f hf g
+    exact ⟨_, ⟨q, rfl⟩, (f.hom.dualCotangentMap_basePointsRepresentation q x).trans
+      (congrArg (fun p => Comodule.basePointsRepresentation (H := H) _ p
+        (dualCotangentMap f.hom x)) hq)⟩
+
+/-- If a dominant morphism of finite-type affine groups has injective differential,
+two rational Lie algebra points are conjugate exactly when their images are conjugate. -/
+theorem exists_basePointsRepresentation_eq_iff_of_injective (hf : Function.Injective f.hom)
+    (hinj : Function.Injective (dualCotangentMap f.hom))
+    (x y : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    (∃ g : WithConv (H →ₐ[k] k),
+      Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x) =
+        dualCotangentMap f.hom y) ↔
+    ∃ g : WithConv (K →ₐ[k] k), Comodule.basePointsRepresentation (H := K) _ g x = y := by
+  constructor
+  · intro h
+    have hm : dualCotangentMap f.hom y ∈ Set.range (fun g : WithConv (H →ₐ[k] k) =>
+        Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x)) := h
+    rw [← image_range_basePointsRepresentation hf x] at hm
+    obtain ⟨_, ⟨g, rfl⟩, hg⟩ := hm
+    exact ⟨g, hinj hg⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
+
+end TauCeti.CommHopfAlgCat

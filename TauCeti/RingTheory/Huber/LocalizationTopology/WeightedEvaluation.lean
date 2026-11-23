@@ -347,7 +347,7 @@ theorem exists_weightedPolyEvalHom_eq_of_mem_locIdealImage (m : ℕ) {x : S}
         exact ⟨fa + fb, add_mem hfa hfb, by rw [map_add, ha, hb]; rfl⟩
       smul_mem' := by
         rintro c a ⟨fa, hfa, ha⟩
-        obtain ⟨g, hg, hgc⟩ := exists_weightedPolyEvalHom_eq_of_mem_locSubring P T s S hW c.2
+        obtain ⟨g, hg, hgc⟩ := exists_weightedPolyEvalHom_eq_of_mem_locSubring P T s S hW c.property
         refine ⟨g * fa, mem_weightedNhd.mpr fun ν ↦ ?_, by rw [map_mul, hgc, ha]; rfl⟩
         have hle : AddSubgroup.closure ((P.ringOfDefinition.toAddSubgroup : Set A) *
             (P.idealImage m : Set A)) ≤ P.idealImage m := by
@@ -401,7 +401,7 @@ theorem continuous_weightedPolyEvalHom :
     simp
   rw [h]
   exact (continuous_weightedRationalEvalHom P T s S hden hW).comp
-    ((Completion.continuous_coe _).comp continuous_subtype_val)
+    ((Completion.continuous_coe _).comp continuous_subtypeVal)
 
 /-- **The polynomial evaluation is an open quotient map onto `A[1/s]`**, with its localisation
 topology. -/
@@ -440,10 +440,8 @@ private theorem weightedRationalEvalHom_comp_completionMap :
     ((continuous_weightedRationalEvalHom P T s S hden hW).comp Completion.continuous_map)
     (AddMonoidHom.continuous_completion _ _) fun f ↦ ?_
   obtain ⟨p, rfl⟩ := (weightedPolynomialsEquiv hW).surjective f
-  rw [Completion.map_coe uniformContinuous_subtype_val, AddMonoidHom.completion_coe]
+  rw [Completion.map_coe uniformContinuous_subtypeVal, AddMonoidHom.completion_coe]
   simp
-
-variable [(nhds (0 : A)).IsCountablyGenerated]
 
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is surjective.** -/
 theorem weightedRationalEvalHom_surjective :
@@ -451,6 +449,7 @@ theorem weightedRationalEvalHom_surjective :
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     Function.Surjective (weightedRationalEvalHom P T s S hden hW) := by
+  have _ : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -470,6 +469,7 @@ theorem isOpenMap_weightedRationalEvalHom :
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     IsOpenMap (weightedRationalEvalHom P T s S hden hW) := by
+  have _ : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -486,7 +486,7 @@ theorem isOpenMap_weightedRationalEvalHom :
   have hpre : Completion.map (Subtype.val : weightedPolynomials (rationalWeight T s) hW → _) ⁻¹' V
       ∈ nhds 0 := by
     refine Completion.continuous_map.continuousAt.preimage_mem_nhds ?_
-    rwa [← Completion.coe_zero, Completion.map_coe uniformContinuous_subtype_val,
+    rwa [← Completion.coe_zero, Completion.map_coe uniformContinuous_subtypeVal,
       ZeroMemClass.coe_zero, Completion.coe_zero]
   refine Filter.mem_of_superset
     (Filter.le_map_iff.mp (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mp hcompl) _ hpre) ?_
@@ -495,7 +495,8 @@ theorem isOpenMap_weightedRationalEvalHom :
 
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is an open quotient map**: it presents the
 rational localisation of a Huber ring as a topological quotient of a weighted restricted
-power-series ring in one variable. -/
+power-series ring in one variable. The neighbourhood filter of zero in `A` is countably generated
+because `P` provides a countable neighbourhood basis. -/
 theorem isOpenQuotientMap_weightedRationalEvalHom :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden

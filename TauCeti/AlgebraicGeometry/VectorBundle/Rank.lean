@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 public import TauCeti.Topology.LocallyConstant.Fiber
 
@@ -34,6 +35,8 @@ components.
   `FiniteLocallyFreeSheaf.rank_pullback_apply` and `FiniteLocallyFreeSheaf.rank_pullback`: the
   rank is invariant under isomorphism, is `|I|` for the free sheaf on `I`, and is preserved by
   pullback;
+* `FiniteLocallyFreeSheaf.isZero_obj_iff_forall_rank_eq_zero`: the finite locally free sheaves
+  of rank zero at every point are exactly the zero sheaves;
 * `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
   is additive under direct sums and multiplicative under tensor products;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
@@ -63,22 +66,19 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
-/-- Two finite bases of an `𝒪_X`-module over open neighbourhoods of a common point have the same
-number of elements. -/
+/-- Two bases of an `𝒪_X`-module over open neighbourhoods of a common point have the same number of
+elements, as soon as the first is finite (the second is then finite too). -/
 theorem natCard_generatingSections_eq_of_mem
     {M : X.Modules} {U V : X.Opens} {x : X} (hU : x ∈ U) (hV : x ∈ V)
     (σ : (M.over U).GeneratingSections) (τ : (M.over V).GeneratingSections)
-    [IsIso σ.π] [IsIso τ.π] [Finite σ.I] [Finite τ.I] : Nat.card σ.I = Nat.card τ.I := by
+    [IsIso σ.π] [IsIso τ.π] [Finite σ.I] : Nat.card σ.I = Nat.card τ.I := by
   let W : X.Opens := U ⊓ V
   have : Nonempty W := ⟨⟨x, hU, hV⟩⟩
   let f : W ⟶ U := homOfLE inf_le_left
   let g : W ⟶ V := homOfLE inf_le_right
   have : σ.IsFiniteType := ⟨inferInstance⟩
-  have : τ.IsFiniteType := ⟨inferInstance⟩
   have : Finite (σ.restrict f).I :=
     (SheafOfModules.GeneratingSections.isFiniteType_restrict σ f).finite
-  have : Finite (τ.restrict g).I :=
-    (SheafOfModules.GeneratingSections.isFiniteType_restrict τ g).finite
   have := SheafOfModules.GeneratingSections.isIso_restrict_π σ f
   have := SheafOfModules.GeneratingSections.isIso_restrict_π τ g
   -- The ring of sections of the restricted structure sheaf over the terminal object of the slice
@@ -113,7 +113,7 @@ private def rankAt (E : FiniteLocallyFreeSheaf X) (x : X) : ℕ :=
   Nat.card (E.exists_generatingSections x).choose_spec.choose_spec.choose.I
 
 private theorem rankAt_eq (E : FiniteLocallyFreeSheaf X) {U : X.Opens} {x : X} (hx : x ∈ U)
-    (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] [Finite σ.I] :
+    (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] :
     E.rankAt x = Nat.card σ.I := by
   obtain ⟨_, _⟩ := (E.exists_generatingSections x).choose_spec.choose_spec.choose_spec
   exact natCard_generatingSections_eq_of_mem
@@ -132,7 +132,7 @@ def rank (E : FiniteLocallyFreeSheaf X) : LocallyConstant X ℕ where
 /-- The rank of `E` at `x` is the number of elements of any basis of `E` over an open
 neighbourhood of `x`. -/
 theorem rank_apply_eq_natCard (E : FiniteLocallyFreeSheaf X) {U : X.Opens} {x : X}
-    (hx : x ∈ U) (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] [Finite σ.I] :
+    (hx : x ∈ U) (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] :
     E.rank x = Nat.card σ.I :=
   E.rankAt_eq hx σ
 
@@ -142,7 +142,7 @@ propositionally equal to the module the basis is given on, or where instance sea
 recognize the hypotheses on the basis. -/
 private theorem rank_apply_eq_natCard_of_obj_eq (E : FiniteLocallyFreeSheaf X) {M : X.Modules}
     (h : E.obj = M) {U : X.Opens} {x : X} (hx : x ∈ U) (σ : (M.over U).GeneratingSections)
-    (hσ : IsIso σ.π) (hI : Finite σ.I) : E.rank x = Nat.card σ.I := by
+    (hσ : IsIso σ.π) : E.rank x = Nat.card σ.I := by
   subst h
   exact E.rank_apply_eq_natCard hx σ
 
@@ -150,10 +150,10 @@ private theorem rank_apply_eq_natCard_of_obj_eq (E : FiniteLocallyFreeSheaf X) {
 theorem rank_eq_of_iso {E F : FiniteLocallyFreeSheaf X} (e : E.obj ≅ F.obj) :
     E.rank = F.rank := by
   ext x
-  obtain ⟨U, hx, σ, hσ, hI⟩ := E.exists_generatingSections x
+  obtain ⟨U, hx, σ, hσ, -⟩ := E.exists_generatingSections x
   let p := ((SheafOfModules.overFunctor X.ringCatSheaf U).mapIso e).hom
   rw [E.rank_apply_eq_natCard hx σ, F.rank_apply_eq_natCard_of_obj_eq rfl hx (σ.ofEpi p)
-    (SheafOfModules.GeneratingSections.isIso_ofEpi_π σ p hσ) hI,
+    (SheafOfModules.GeneratingSections.isIso_ofEpi_π σ p hσ),
     SheafOfModules.GeneratingSections.ofEpi_I]
 
 /-- The free sheaf on a finite type `I` has rank `|I|` at every point. -/
@@ -165,14 +165,13 @@ theorem rank_free_apply (I : Type u) [Finite I] (x : X) :
   (free X I).rank_apply_eq_natCard_of_obj_eq (free_obj X I) (Opens.mem_top x)
     (σ.generators (⊤ : X.Opens))
     (SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isIso (q := σ) (⊤ : X.Opens))
-    ‹Finite I›
 
 /-- The rank of the pullback of a finite locally free sheaf `E` along `f : X ⟶ Y` at `x` is the
 rank of `E` at `f x`. -/
 @[simp]
 theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y)
     (x : X) : ((pullback f).obj E).rank x = E.rank (f x) := by
-  obtain ⟨U, hx, σ, hσ, hI⟩ := E.exists_generatingSections (f x)
+  obtain ⟨U, hx, σ, hσ, -⟩ := E.exists_generatingSections (f x)
   let τ := σ.mapIso (Scheme.Modules.pullbackOver f U) (Scheme.Modules.pullbackOverUnitIso f U)
     (Scheme.Modules.pullbackOverObjIso f U E.obj)
   have hτ : Nat.card τ.I = Nat.card σ.I :=
@@ -180,13 +179,32 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
   rw [E.rank_apply_eq_natCard hx σ, ← hτ]
   exact ((pullback f).obj E).rank_apply_eq_natCard_of_obj_eq (pullback_obj_obj f E)
     (U := f ⁻¹ᵁ U) hx τ (SheafOfModules.GeneratingSections.isIso_mapIso_π _ _ _ _)
-    (by rw [SheafOfModules.GeneratingSections.mapIso_I]; exact hI)
 
 /-- The rank of the pullback of a finite locally free sheaf `E` along `f : X ⟶ Y` is the rank of
 `E` composed with `f`. -/
 theorem rank_pullback {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
     ((pullback f).obj E).rank = E.rank.comap f.base.hom :=
   LocallyConstant.ext fun x ↦ by simp
+
+/-- A finite locally free sheaf is zero exactly when it has rank zero at every point: around each
+point it is then free on an empty basis, hence zero on the members of an open cover. -/
+theorem isZero_obj_iff_forall_rank_eq_zero (E : FiniteLocallyFreeSheaf X) :
+    IsZero E.obj ↔ ∀ x, E.rank x = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ ?_⟩
+  · have hP : IsZero (free X PEmpty).obj := TauCeti.SheafOfModules.isZero_free PEmpty
+    rw [rank_eq_of_iso (h.iso hP), rank_free_apply, Nat.card_of_isEmpty]
+  choose U hx σ hσ hI using E.exists_generatingSections
+  refine (Scheme.Modules.isZero_iff_of_iSup_eq_top U
+    (eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hx x⟩) E.obj).2 fun x ↦ ?_
+  have := hσ x
+  have := hI x
+  have : IsEmpty (σ x).I := by
+    rw [← Finite.card_eq_zero_iff, ← E.rank_apply_eq_natCard (hx x), h]
+  -- The restriction of `E` to `U x` is, up to the equivalence of the slice site over `U x` with
+  -- the open subscheme, the free sheaf on the empty basis `(σ x).I`.
+  exact ((Scheme.Modules.overEquiv (U x)).functor.map_isZero
+    ((TauCeti.SheafOfModules.isZero_free _).of_iso (asIso (σ x).π).symm)).of_iso
+      ((Scheme.Modules.overFunctorEquiv (U x)).app E.obj).symm
 
 /-- Two finite locally free sheaves are free on finite bases over a common open neighbourhood of
 each point: the intersection of neighbourhoods on which each of them is free. -/
@@ -270,7 +288,7 @@ theorem InvertibleSheaf.rank_toFiniteLocallyFree_apply (L : InvertibleSheaf X) (
   obtain ⟨i, hi⟩ := ((Opens.coversTop_iff _ _).1 q.coversTop).exists_mem x
   have := hq.basisSubsingleton i
   rw [FiniteLocallyFreeSheaf.rank_apply_eq_natCard_of_obj_eq _ rfl hi (q.generators i)
-    (hq.isLocallyFreeData.isIso i) Finite.of_subsingleton, Nat.card_eq_one_iff_unique]
+    (hq.isLocallyFreeData.isIso i), Nat.card_eq_one_iff_unique]
   exact ⟨inferInstance, hq.basisNonempty i⟩
 
 /-- A finite locally free sheaf is invertible if and only if it has rank one at every point. -/
@@ -283,10 +301,10 @@ theorem FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one
     exact InvertibleSheaf.rank_toFiniteLocallyFree_apply _ x
   -- Around each point `x`, a finite basis of `E` has `E.rank x = 1` elements, so it trivializes
   -- `E` by the structure sheaf.
-  choose U hU σ hσ hI using E.exists_generatingSections
+  choose U hU σ hσ _ using E.exists_generatingSections
   have hu (x : X) : Nonempty (Unique (σ x).I) :=
     (unique_iff_subsingleton_and_nonempty _).2 <| Nat.card_eq_one_iff_unique.1 <|
-      (E.rank_apply_eq_natCard_of_obj_eq rfl (hU x) (σ x) (hσ x) (hI x)).symm.trans (h x)
+      (E.rank_apply_eq_natCard_of_obj_eq rfl (hU x) (σ x) (hσ x)).symm.trans (h x)
   -- The free sheaf on the one-element basis is the coproduct of a single copy of the unit. The
   -- `IsIso` hypothesis is passed explicitly: against the expected type, phrased with the
   -- structure sheaf of the slice, instance search does not find it.

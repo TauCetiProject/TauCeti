@@ -22,9 +22,9 @@ double series `∑ₙ,ₘ (n + m).choose n • cₙ₊ₘ aᵐ bⁿ`: grouping i
 at `b`, and grouping them by `n + m` gives `f` at `b + a` by the binomial theorem
 (`PowerSeries.evalAt_taylor_of_summable`). Since Hasse derivatives commute with translation,
 translations compose, `taylor b (taylor a f) = taylor (b + a) f`, so translation by `-a` inverts
-translation by `a` and Taylor translation is injective on entire series. No factorial is inverted
-and no ultrametric hypothesis is used, so all of this holds in every characteristic and over `ℂ` as
-well as over nonarchimedean rings.
+translation by `a` and Taylor translation is injective on entire series. These entire-series
+results invert no factorial and use no ultrametric hypothesis, so they hold in every characteristic
+and over `ℂ` as well as over nonarchimedean rings.
 
 Injectivity is what controls the zeros of entire series over a field: a nonzero entire series has a
 nonvanishing Hasse derivative at every point, so each of its zeros has a finite order
@@ -90,10 +90,9 @@ variable [CompleteSpace R]
 
 /-- Taylor translation is additive on entire series. -/
 theorem IsEntire.taylor_add {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
-    taylor a (f + g) = taylor a f + taylor a g := by
-  ext n
-  rw [coeff_taylor, map_add, (hf.hasseDeriv n).evalAt_add (hg.hasseDeriv n), map_add,
-    coeff_taylor, coeff_taylor]
+    taylor a (f + g) = taylor a f + taylor a g :=
+  taylor_add_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow a)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow a)
 
 /-- Taylor translation commutes with scalar multiplication of entire series. -/
 theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
@@ -105,12 +104,9 @@ theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
 /-- Taylor translation is multiplicative on entire series, by the Leibniz rule for Hasse
 derivatives. -/
 theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
-    taylor a (f * g) = taylor a f * taylor a g := by
-  ext n
-  rw [coeff_taylor, hasseDeriv_mul,
-    IsEntire.evalAt_sum _ fun _ _ ↦ (hf.hasseDeriv _).mul (hg.hasseDeriv _), coeff_mul]
-  refine sum_congr rfl fun _ _ ↦ ?_
-  rw [(hf.hasseDeriv _).evalAt_mul (hg.hasseDeriv _), coeff_taylor, coeff_taylor]
+    taylor a (f * g) = taylor a f * taylor a g :=
+  taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow a)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow a)
 
 /-- **The Taylor identity.** For an entire series `f`, the Taylor translate at `a` evaluated at
 `b` is `f(b + a)`. -/

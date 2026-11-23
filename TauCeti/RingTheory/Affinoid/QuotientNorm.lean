@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Ring.Quotient.Basic
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Quotient norms and the topology of affinoid algebras
@@ -31,13 +30,13 @@ and the Banach open mapping theorem. Equivalent norms need not be equal or isome
   quotient map, so the target carries the quotient topology.
 * `TauCeti.IsAffinoidAlgebra.quotientKerContinuousAlgEquiv`: for such a surjection `f : A → B`,
   the first isomorphism theorem `A ⧸ ker f ≃ B` is a homeomorphism.
-* `TauCeti.IsAffinoidAlgebra.toContinuousAlgEquiv`: every algebra isomorphism between completely
-  normed affinoid algebras is a homeomorphism; in particular complete ultrametric algebra norms on
-  an affinoid algebra are equivalent.
 * `TauCeti.IsAffinoidAlgebra.presentationContinuousAlgEquiv`: two Tate presentations of the same
   algebra give homeomorphic residue algebras for their quotient Gauss norms.
 * `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`: every affinoid algebra carries a complete
   ultrametric algebra norm, transported from the residue algebra of a chosen Tate presentation.
+* `TauCeti.IsAffinoidAlgebra.algHom_ext_of_denseRange`: two `K`-algebra homomorphisms from a
+  noetherian ultrametric Banach algebra into an affinoid algebra (with no chosen norm) agreeing on
+  a map with dense range are equal.
 
 ## References
 
@@ -69,59 +68,29 @@ theorem isOpenQuotientMap (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
 
 /-- For a surjective algebra homomorphism `f` from a noetherian ultrametric Banach algebra onto a
 completely normed affinoid algebra, the algebraic first isomorphism theorem `A ⧸ ker f ≃ B` is a
-homeomorphism for the quotient topology on `A ⧸ ker f`. -/
+homeomorphism for the quotient topology on `A ⧸ ker f`. This is
+`ContinuousAlgHom.quotientKerEquivOfSurjective` applied to `f`, which is automatically
+continuous. -/
 noncomputable def quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : (A ⧸ RingHom.ker f) ≃A[K] B :=
-  let e := Ideal.quotientKerAlgEquivOfSurjective hf
-  have he : (e : A ⧸ RingHom.ker f → B) = RingHom.kerLift (f : A →+* B) := by
-    funext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
-    exact (RingHom.kerLift_mk (f : A →+* B) a).symm
-  have h : IsHomeomorph e := he ▸
-    RingHom.isHomeomorph_kerLift (hB.isOpenQuotientMap f hf).isQuotientMap
-  { e with
-    continuous_toFun := h.continuous
-    continuous_invFun :=
-      (e.toEquiv.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
+  ContinuousAlgHom.quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 /-- The first isomorphism theorem sends the class of `a` to `f a`. -/
 @[simp]
 theorem quotientKerContinuousAlgEquiv_mk (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) (a : A) :
-    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a := (rfl)
+    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a :=
+  ContinuousAlgHom.quotientKerEquivOfSurjective_mk ⟨f, hB.continuous_algHom f⟩ hf a
 
 /-- The underlying algebra isomorphism is the algebraic first isomorphism theorem. -/
 @[simp]
 theorem toAlgEquiv_quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) :
     (hB.quotientKerContinuousAlgEquiv f hf).toAlgEquiv =
-      Ideal.quotientKerAlgEquivOfSurjective hf := (rfl)
+      Ideal.quotientKerAlgEquivOfSurjective hf :=
+  ContinuousAlgHom.toAlgEquiv_quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 end Surjective
-
-/-- **Equivalence of complete affinoid norms.** An algebra isomorphism between completely normed
-affinoid algebras is a homeomorphism, whatever complete ultrametric algebra norms they carry.
-Applied to two such norms on one algebra, this says that they define the same topology. -/
-noncomputable def toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    A ≃A[K] B :=
-  have hA : IsAffinoidAlgebra K A := hB.of_surjective e.symm.toAlgHom e.symm.surjective
-  have := hA.isNoetherianRing
-  have := hB.isNoetherianRing
-  { e with
-    continuous_toFun := hB.continuous_algHom e.toAlgHom
-    continuous_invFun := hA.continuous_algHom e.symm.toAlgHom }
-
-/-- The homeomorphism attached to an algebra isomorphism has the same underlying function. -/
-@[simp]
-theorem coe_toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    ⇑(hB.toContinuousAlgEquiv e) = e := (rfl)
-
-/-- The homeomorphism attached to an algebra isomorphism has that isomorphism as its underlying
-algebra isomorphism. -/
-@[simp]
-theorem toAlgEquiv_toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    (hB.toContinuousAlgEquiv e).toAlgEquiv = e := (rfl)
 
 section Presentation
 
@@ -207,6 +176,19 @@ theorem completeSpace_residueNormedCommRing :
       isometry_toFun := AddMonoidHomClass.isometry_of_norm hD.residueAlgEquiv
         hD.norm_residueAlgEquiv }
   e.completeSpace_iff.mpr inferInstance
+
+include hD in
+/-- Two `K`-algebra homomorphisms from a noetherian ultrametric Banach algebra into an affinoid
+algebra (with no norm or continuity assumed on the target) that agree on a map with dense range are
+equal. -/
+theorem algHom_ext_of_denseRange [IsNoetherianRing A] {ι : Type*} {g : ι → A} (hg : DenseRange g)
+    {Φ₁ Φ₂ : A →ₐ[K] D} (h : ∀ i, Φ₁ (g i) = Φ₂ (g i)) : Φ₁ = Φ₂ := by
+  let := hD.residueNormedCommRing
+  let := hD.residueNormedAlgebra
+  have := hD.isUltrametricDist_residueNormedCommRing
+  have := hD.completeSpace_residueNormedCommRing
+  exact AlgHom.coe_fn_injective <|
+    hg.equalizer (hD.continuous_algHom Φ₁) (hD.continuous_algHom Φ₂) (funext h)
 
 end ResidueNorm
 

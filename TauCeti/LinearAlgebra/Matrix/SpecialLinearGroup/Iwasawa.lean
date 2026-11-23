@@ -86,23 +86,26 @@ private theorem det_eq_one_of_det_mul_mul_eq_one {k a u : GL (Fin n) ℝ}
 private def slFactors (g : SpecialLinearGroup (Fin n) ℝ) :
     unitarySubgroup (GL (Fin n) ℝ) × posDiagonalSubgroup (Fin n) ℝ ×
       upperUnitriangularGroup (Fin n) ℝ :=
-  (iwasawaHomeomorph n).symm (toGL g)
+  (iwasawaHomeomorph ℝ n).symm (toGL g)
 
 private theorem slFactors_mul (g : SpecialLinearGroup (Fin n) ℝ) :
     ((slFactors g).1 : GL (Fin n) ℝ) * (slFactors g).2.1 * (slFactors g).2.2 = toGL g := by
-  rw [← iwasawaHomeomorph_apply, slFactors, Homeomorph.apply_symm_apply]
+  have h := (iwasawaHomeomorph ℝ n).apply_symm_apply (toGL g)
+  rwa [iwasawaHomeomorph_apply, Algebra.algebraMap_self, GeneralLinearGroup.map_id,
+    MonoidHom.id_apply] at h
 
 private theorem det_slFactors (g : SpecialLinearGroup (Fin n) ℝ) :
     GeneralLinearGroup.det ((slFactors g).1 : GL (Fin n) ℝ) = 1 ∧
       GeneralLinearGroup.det ((slFactors g).2.1 : GL (Fin n) ℝ) = 1 :=
-  det_eq_one_of_det_mul_mul_eq_one (slFactors g).1.2 (slFactors g).2.1.2 (slFactors g).2.2.2
+  det_eq_one_of_det_mul_mul_eq_one (slFactors g).1.property (slFactors g).2.1.property
+      (slFactors g).2.2.property
     (by rw [slFactors_mul, coeToGL_det])
 
 private theorem det_slFactors_unitriangular (g : SpecialLinearGroup (Fin n) ℝ) :
     GeneralLinearGroup.det ((slFactors g).2.2 : GL (Fin n) ℝ) = 1 :=
   Units.ext <| by
     rw [GeneralLinearGroup.val_det_apply, Units.val_one,
-      (UpperUnitriangularGroup.mem_iff.1 (slFactors g).2.2.2).det_eq_one]
+      (UpperUnitriangularGroup.mem_iff.1 (slFactors g).2.2.property).det_eq_one]
 
 /-- The special orthogonal factor of the Iwasawa decomposition of `g`. -/
 private def slOrthogonal (g : SpecialLinearGroup (Fin n) ℝ) : SpecialLinearGroup (Fin n) ℝ :=
@@ -134,7 +137,9 @@ private theorem slFactors_mul_mul {k a u : SpecialLinearGroup (Fin n) ℝ}
     (hk : toGL k ∈ unitarySubgroup (GL (Fin n) ℝ)) (ha : toGL a ∈ posDiagonalSubgroup (Fin n) ℝ)
     (hu : toGL u ∈ upperUnitriangularGroup (Fin n) ℝ) :
     slFactors (k * a * u) = (⟨toGL k, hk⟩, ⟨toGL a, ha⟩, ⟨toGL u, hu⟩) :=
-  (iwasawaHomeomorph n).symm_apply_eq.2 <| by rw [iwasawaHomeomorph_apply, map_mul, map_mul]
+  (iwasawaHomeomorph ℝ n).symm_apply_eq.2 <| by
+    simp only [iwasawaHomeomorph_apply, Algebra.algebraMap_self, GeneralLinearGroup.map_id,
+      MonoidHom.id_apply, map_mul]
 
 variable (n) in
 /-- **The Iwasawa decomposition of `SL n ℝ`.** Multiplication `(k, a, u) ↦ k a u` is a
@@ -148,10 +153,11 @@ def iwasawaSLHomeomorph :
       SpecialLinearGroup (Fin n) ℝ where
   toFun x := x.1 * x.2.1 * x.2.2
   invFun g :=
-    (⟨slOrthogonal g, Subgroup.mem_comap.2 <| (toGL_slOrthogonal g).symm ▸ (slFactors g).1.2⟩,
-      ⟨slDiagonal g, Subgroup.mem_comap.2 <| (toGL_slDiagonal g).symm ▸ (slFactors g).2.1.2⟩,
+    (⟨slOrthogonal g, Subgroup.mem_comap.2 <| (toGL_slOrthogonal g).symm ▸
+        (slFactors g).1.property⟩,
+      ⟨slDiagonal g, Subgroup.mem_comap.2 <| (toGL_slDiagonal g).symm ▸ (slFactors g).2.1.property⟩,
       ⟨slUnitriangular g,
-        Subgroup.mem_comap.2 <| (toGL_slUnitriangular g).symm ▸ (slFactors g).2.2.2⟩)
+        Subgroup.mem_comap.2 <| (toGL_slUnitriangular g).symm ▸ (slFactors g).2.2.property⟩)
   left_inv := by
     rintro ⟨⟨k, hk⟩, ⟨a, ha⟩, ⟨u, hu⟩⟩
     have h := slFactors_mul_mul (Subgroup.mem_comap.1 hk) (Subgroup.mem_comap.1 ha)
@@ -169,16 +175,16 @@ def iwasawaSLHomeomorph :
   continuous_toFun := by fun_prop
   continuous_invFun := by
     have hF : Continuous (slFactors (n := n)) :=
-      (iwasawaHomeomorph n).symm.continuous.comp continuous_toGL
+      (iwasawaHomeomorph ℝ n).symm.continuous.comp continuous_toGL
     have hK : Continuous (slOrthogonal (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slOrthogonal] using
-        continuous_subtype_val.comp (continuous_fst.comp hF)
+        continuous_subtypeVal.comp (continuous_fst.comp hF)
     have hA : Continuous (slDiagonal (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slDiagonal] using
-        continuous_subtype_val.comp (continuous_fst.comp (continuous_snd.comp hF))
+        continuous_subtypeVal.comp (continuous_fst.comp (continuous_snd.comp hF))
     have hU : Continuous (slUnitriangular (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slUnitriangular] using
-        continuous_subtype_val.comp (continuous_snd.comp (continuous_snd.comp hF))
+        continuous_subtypeVal.comp (continuous_snd.comp (continuous_snd.comp hF))
     exact (hK.subtype_mk _).prodMk ((hA.subtype_mk _).prodMk (hU.subtype_mk _))
 
 /-- The Iwasawa decomposition of `SL n ℝ` multiplies its three factors. -/
@@ -193,13 +199,15 @@ theorem iwasawaSLHomeomorph_apply
 /-- **The Iwasawa decomposition of `GL n ℝ` restricts to `SL n ℝ`**: the factors in `GL n ℝ` of a
 matrix of determinant one are the images under `toGL` of its factors in `SL n ℝ`. -/
 theorem iwasawaHomeomorph_symm_toGL (g : SpecialLinearGroup (Fin n) ℝ) :
-    (iwasawaHomeomorph n).symm (toGL g) =
-      (⟨toGL ((iwasawaSLHomeomorph n).symm g).1, ((iwasawaSLHomeomorph n).symm g).1.2⟩,
-        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.1, ((iwasawaSLHomeomorph n).symm g).2.1.2⟩,
-        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.2, ((iwasawaSLHomeomorph n).symm g).2.2.2⟩) :=
-  (iwasawaHomeomorph n).symm_apply_eq.2 <| by
+    (iwasawaHomeomorph ℝ n).symm (toGL g) =
+      (⟨toGL ((iwasawaSLHomeomorph n).symm g).1, ((iwasawaSLHomeomorph n).symm g).1.property⟩,
+        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.1, ((iwasawaSLHomeomorph n).symm g).2.1.property⟩,
+        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.2, ((iwasawaSLHomeomorph n).symm g).2.2.property⟩)
+            :=
+  (iwasawaHomeomorph ℝ n).symm_apply_eq.2 <| by
     conv_lhs => rw [← (iwasawaSLHomeomorph n).apply_symm_apply g]
-    rw [iwasawaSLHomeomorph_apply, iwasawaHomeomorph_apply, map_mul, map_mul]
+    rw [iwasawaSLHomeomorph_apply, iwasawaHomeomorph_apply, Algebra.algebraMap_self,
+      GeneralLinearGroup.map_id, MonoidHom.id_apply, map_mul, map_mul]
 
 end TauCeti
 

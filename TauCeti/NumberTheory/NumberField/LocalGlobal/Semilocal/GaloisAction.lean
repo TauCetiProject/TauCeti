@@ -82,13 +82,14 @@ to `w'`, then the component at `w'` of `(id ⊗ σ) z` is the component of `z` a
 along the isomorphism of completions `L_w ≃ L_{w'}` induced by `σ`. -/
 theorem semilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
     {w w' : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}}
-    (h : w'.1.asIdeal = σ • w.1.asIdeal) (z : v.adicCompletion K ⊗[K] L) :
-    semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z) w' =
-      completionCongr v σ h (semilocalEquiv L v z w) := by
+    (h : w'.val.asIdeal = σ • w.val.asIdeal) (z : v.adicCompletion K ⊗[K] L) :
+    v.adicCompletionSemilocalEquiv K (𝒪 L) L
+        (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z) w' =
+      completionCongr v σ h (v.adicCompletionSemilocalEquiv K (𝒪 L) L z w) := by
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
-    rw [Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, semilocalEquiv_tmul,
-      map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
+    rw [Algebra.TensorProduct.baseChangeAutHom_tmul, adicCompletionSemilocalEquiv_tmul,
+      adicCompletionSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
@@ -121,13 +122,14 @@ private def semilocalUnitsComponent :
       decompositionUnitsRep v w :=
   Rep.ofHom ⟨(Units.map ((Pi.evalMonoidHom
       (fun w' : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-        w'.1.adicCompletion L) ⟨w, ‹_›⟩).comp
-      (semilocalEquiv L v : v.adicCompletion K ⊗[K] L →* _))).toAdditive.toIntLinearMap,
+        w'.val.adicCompletion L) ⟨w, ‹_›⟩).comp
+      (v.adicCompletionSemilocalEquiv K (𝒪 L) L :
+        v.adicCompletion K ⊗[K] L →* _))).toAdditive.toIntLinearMap,
     fun d ↦ LinearMap.ext fun y : Additive (v.adicCompletion K ⊗[K] L)ˣ ↦
       Additive.toMul.injective <| Units.ext <|
         -- an element of the decomposition group fixes `w`, so it acts on the factor at `w`
         (semilocalEquiv_baseChangeAutHom (w := ⟨w, ‹_›⟩) (w' := ⟨w, ‹_›⟩) (d : L ≃ₐ[K] L)
-          (MulAction.mem_stabilizer_iff.mp d.2).symm _).trans
+          (MulAction.mem_stabilizer_iff.mp d.property).symm _).trans
             (DFunLike.congr_fun (decompositionHom_apply d) _).symm⟩
 
 /-- The map `y ↦ (g ↦ ((id ⊗ g) y)_w)` from the semi-local units to the representation
@@ -141,26 +143,27 @@ def semilocalUnitsToCoind :
 /-- The value of `semilocalUnitsToCoind` at `g` is the component at `w` of `(id ⊗ g) y`. -/
 theorem semilocalUnitsToCoind_apply (y : (v.adicCompletion K ⊗[K] L)ˣ) (g : L ≃ₐ[K] L) :
     ((Additive.toMul (α := (w.adicCompletion L)ˣ)
-      (((semilocalUnitsToCoind v w).hom (Additive.ofMul y)).1 g) : (w.adicCompletion L)ˣ) :
+      (((semilocalUnitsToCoind v w).hom (Additive.ofMul y)).val g) : (w.adicCompletion L)ˣ) :
         w.adicCompletion L) =
-      semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y)
+      v.adicCompletionSemilocalEquiv K (𝒪 L) L
+        (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y)
         ⟨w, ‹_›⟩ :=
   (rfl)
 
 /-- For `L/K` Galois, every place above `v` is carried to `w` by some automorphism. -/
 private theorem exists_asIdeal_eq_smul [IsGalois K L]
     (w' : {w' : HeightOneSpectrum (𝒪 L) // w'.asIdeal.LiesOver v.asIdeal}) :
-    ∃ g : L ≃ₐ[K] L, w.asIdeal = g • w'.1.asIdeal := by
-  have := w'.2
+    ∃ g : L ≃ₐ[K] L, w.asIdeal = g • w'.val.asIdeal := by
+  have := w'.property
   obtain ⟨g, hg⟩ :=
-    Ideal.exists_smul_eq_of_isGaloisGroup v.asIdeal w'.1.asIdeal w.asIdeal (L ≃ₐ[K] L)
+    Ideal.exists_smul_eq_of_isGaloisGroup v.asIdeal w'.val.asIdeal w.asIdeal (L ≃ₐ[K] L)
   exact ⟨g, hg.symm⟩
 
 /-- Every automorphism carries some place above `v` to `w`, namely the translate of `w` by its
 inverse. -/
 private theorem exists_place_asIdeal_eq_smul (g : L ≃ₐ[K] L) :
     ∃ w' : {w' : HeightOneSpectrum (𝒪 L) // w'.asIdeal.LiesOver v.asIdeal},
-      w.asIdeal = g • w'.1.asIdeal :=
+      w.asIdeal = g • w'.val.asIdeal :=
   ⟨(liesOverEquivPrimesOver (𝒪 L) v).symm (g⁻¹ • liesOverEquivPrimesOver (𝒪 L) v ⟨w, ‹_›⟩), by
     rw [liesOverEquivPrimesOver_symm_apply, coe_smul_primesOver_ringOfIntegers,
       liesOverEquivPrimesOver_apply, smul_inv_smul]⟩
@@ -170,18 +173,15 @@ of the units of the completions above `v`, which `id ⊗ g` permutes through `co
 private theorem semilocalUnitsToCoind_bijective [IsGalois K L] :
     Function.Bijective (semilocalUnitsToCoind v w).hom :=
   resCoindToHom_bijective_of_transport
-    (p := fun i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ i.1.asIdeal)
-    (w := ⟨w, ‹_›⟩) (M := fun i ↦ (i.1.adicCompletion L)ˣ)
+    (p := fun i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ i.val.asIdeal)
+    (w := ⟨w, ‹_›⟩) (M := fun i ↦ (i.val.adicCompletion L)ˣ)
     (T := fun g _ _ h ↦ (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv)
     (semilocalUnitsComponent v w)
     (Additive.toMul.trans
-      ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
+      ((Units.mapEquiv (v.adicCompletionSemilocalEquiv K (𝒪 L) L).toMulEquiv).trans
+        MulEquiv.piUnits).toEquiv)
     (fun g y _ _ h ↦ Units.ext (semilocalEquiv_baseChangeAutHom g h
-      (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
-    (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
-      (Additive.toMul (α := (w.adicCompletion L)ˣ) a).1))
-    (fun g g' _ _ _ h h' a ↦
-      Units.ext (DFunLike.congr_fun (completionCongr_trans (v := v) g g' h h') a.1))
+      (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).val)) Additive.toMul (fun _ ↦ rfl)
     (exists_asIdeal_eq_smul v w) (exists_place_asIdeal_eq_smul v w)
 
 /-- **The semi-local units are coinduced.** For `L/K` Galois and `w` a place above `v`, the units

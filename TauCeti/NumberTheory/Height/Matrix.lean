@@ -58,8 +58,7 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
 The matrix-entry construction and product bound follow Ralf Stephan's CC0 development in
 [rwst/lean-code](https://github.com/rwst/lean-code), file
 `ForMathlib/NumberTheory/HeightTuple.lean` at commit
-`2eadabb0e181b894a4c49fb38b7e45daf6214b25`, recorded as implementation source by the
-Diophantine Approximation and Transcendence roadmap.
+`2eadabb0e181b894a4c49fb38b7e45daf6214b25`.
 The proofs here reduce to Mathlib's tuple-height bounds by Michael Stoll,
 `Height.mulHeight_linearMap_apply_le` and `Height.mulHeight_mul_le`.
 -/
@@ -70,7 +69,13 @@ open Height
 
 namespace Matrix
 
-variable {K : Type*} [Field K] [AdmissibleAbsValues K] {m n p m' n' : Type*}
+section Relative
+
+variable {K : Type*} [Field K] [AdmissibleAbsValues K]
+
+section Defs
+
+variable {m n m' n' : Type*}
 
 /-- The multiplicative entry height of a matrix: the projective multiplicative height of the
 finite tuple of its entries, indexed by pairs of a row and a column. The construction uses a
@@ -189,9 +194,12 @@ theorem logHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).logHeight = A.logHeight := by
   simp [logHeight_eq_log_mulHeight, hc]
 
+end Defs
+
 /-- The identity matrix has entry height one: its nonzero entries all equal `1`. -/
 @[simp]
-theorem mulHeight_one [DecidableEq n] : (1 : Matrix n n K).mulHeight = 1 := by
+theorem mulHeight_one {n : Type*} [Finite n] [DecidableEq n] :
+    (1 : Matrix n n K).mulHeight = 1 := by
   rw [mulHeight_def, Height.mulHeight_eq_mulHeight_restrict_support]
   convert Height.mulHeight_one with q
   obtain ⟨⟨i, j⟩, hq⟩ := q
@@ -199,8 +207,13 @@ theorem mulHeight_one [DecidableEq n] : (1 : Matrix n n K).mulHeight = 1 := by
   simpa [Matrix.one_apply] using hq
 
 @[simp]
-theorem logHeight_one [DecidableEq n] : (1 : Matrix n n K).logHeight = 0 := by
+theorem logHeight_one {n : Type*} [Finite n] [DecidableEq n] :
+    (1 : Matrix n n K).logHeight = 0 := by
   simp [logHeight_eq_log_mulHeight]
+
+section SubmatrixLe
+
+variable {m n m' n' : Type*} [Finite m] [Finite n]
 
 /-- The entry height of a submatrix is at most the entry height of the matrix. Rows and columns
 may be repeated or omitted. -/
@@ -215,24 +228,31 @@ theorem logHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m
     (g : n' → n) : (A.submatrix f g).logHeight ≤ A.logHeight :=
   Real.log_le_log (mulHeight_pos _) (A.mulHeight_submatrix_le f g)
 
+end SubmatrixLe
+
+end Relative
+
 /-! ### Products -/
 
-omit [AdmissibleAbsValues K] [Finite m] [Finite n] in
+section Products
+
 /-- The entries of `A * B` are the values at the all-ones vector of the linear map with
 coefficients `A i j * B j k`, the pointwise product of two subtuples of the entries of `A` and of
 `B`. -/
-private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
-    (B : Matrix n p K) :
+private theorem mul_entries_eq_linearMap_apply {K m n p : Type*} [MulOneClass K] [AddCommMonoid K]
+    [Fintype n] (A : Matrix m n K) (B : Matrix n p K) :
     (fun q : m × p ↦ (A * B) q.1 q.2) = fun q ↦ ∑ j,
       ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) (q, j) *
         (1 : n → K) j := by
   ext q
   simp [Matrix.mul_apply]
 
+variable {K : Type*} [Field K] [AdmissibleAbsValues K] {m n p : Type*}
+
 /-- The pointwise product of the subtuples of the entries of `A` and of `B` appearing in
 `mul_entries_eq_linearMap_apply` has height at most the product of the entry heights of `A` and
 `B`. -/
-private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
+private theorem mulHeight_mul_entries_le [Finite m] [Finite n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     Height.mulHeight ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) ≤
       A.mulHeight * B.mulHeight := by
@@ -245,7 +265,7 @@ private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
 /-- **The entry height of a matrix product.** For a nonempty inner index type `n`, the entry
 height of `A * B` is at most `(#n) ^ totalWeight K` times the product of the entry heights of `A`
 and `B`. -/
-theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
+theorem mulHeight_mul_le [Finite m] [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     (A * B).mulHeight ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
   have hpos : 0 ≤ (Nat.card n : ℝ) ^ totalWeight K := by positivity
@@ -262,7 +282,7 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
 
 /-- The logarithmic form of `Matrix.mulHeight_mul_le`. It needs no nonemptiness hypothesis,
 because `Real.log 0 = 0`. -/
-theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
+theorem logHeight_mul_le [Finite m] [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
     (A * B).logHeight ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
@@ -282,11 +302,13 @@ theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n
         rw [Height.logHeight_one, add_zero, add_assoc]
         exact add_le_add le_rfl hc
 
+end Products
+
 /-! ### Absolute entry heights -/
 
 section Absolute
 
-variable {F F' : Type*} [Field F] [CharZero F] [Field F'] [CharZero F']
+variable {m n : Type*} [Finite m] [Finite n] {F : Type*} [Field F] [CharZero F]
 
 /-- The absolute multiplicative entry height of a matrix in characteristic zero. It is the
 absolute projective height of the entry tuple, with value one when some entry is transcendental.
@@ -338,6 +360,12 @@ theorem absLogHeight_smul (A : Matrix m n F) {c : F} (hc : c ≠ 0)
     (hcalg : IsAlgebraic ℚ c) : (c • A).absLogHeight = A.absLogHeight := by
   simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_smul A hc hcalg]
 
+end Absolute
+
+section AbsoluteSubmatrixEquiv
+
+variable {m n m' n' : Type*} [Finite m] [Finite n] {F : Type*} [Field F] [CharZero F]
+
 /-- Equivalence reindexing preserves absolute multiplicative entry height. -/
 @[simp]
 theorem absMulHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n F)
@@ -355,6 +383,12 @@ theorem absLogHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n F)
     (A.submatrix e₁ e₂).absLogHeight = A.absLogHeight := by
   simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_submatrix_equiv]
 
+end AbsoluteSubmatrixEquiv
+
+section AbsoluteTranspose
+
+variable {m n : Type*} [Finite m] [Finite n] {F : Type*} [Field F] [CharZero F]
+
 /-- Transposition preserves absolute multiplicative entry height. -/
 @[simp]
 theorem absMulHeight_transpose (A : Matrix m n F) : Aᵀ.absMulHeight = A.absMulHeight := by
@@ -367,6 +401,12 @@ theorem absMulHeight_transpose (A : Matrix m n F) : Aᵀ.absMulHeight = A.absMul
 @[simp]
 theorem absLogHeight_transpose (A : Matrix m n F) : Aᵀ.absLogHeight = A.absLogHeight := by
   simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_transpose]
+
+end AbsoluteTranspose
+
+section AbsoluteSubmatrixLe
+
+variable {m n m' n' : Type*} [Finite m] [Finite n] {F : Type*} [Field F] [CharZero F]
 
 /-- Taking a submatrix does not increase absolute multiplicative entry height when all entries
 are algebraic. The hypothesis excludes the transcendental junk-height branch. -/
@@ -383,6 +423,12 @@ theorem absLogHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n F)
     (hA : ∀ i j, IsAlgebraic ℚ (A i j)) (f : m' → m) (g : n' → n) :
     (A.submatrix f g).absLogHeight ≤ A.absLogHeight :=
   Real.log_le_log (absMulHeight_pos _) (A.absMulHeight_submatrix_le hA f g)
+
+end AbsoluteSubmatrixLe
+
+section AbsoluteBasic
+
+variable {m n : Type*} [Finite m] [Finite n] {F : Type*} [Field F] [CharZero F]
 
 /-- Absolute multiplicative entry height is the absolute projective height of the entry tuple. -/
 theorem absMulHeight_def (A : Matrix m n F) :
@@ -417,6 +463,13 @@ theorem absLogHeight_eq_zero_of_subsingleton [Subsingleton (m × n)] (A : Matrix
     A.absLogHeight = 0 := by
   simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_eq_one_of_subsingleton, Real.log_one]
 
+end AbsoluteBasic
+
+section AbsoluteMap
+
+variable {m n : Type*} [Finite m] [Finite n]
+  {F F' : Type*} [Field F] [CharZero F] [Field F'] [CharZero F']
+
 /-- Absolute multiplicative entry height is invariant under field embeddings. -/
 @[simp]
 theorem absMulHeight_map (f : F →+* F') (A : Matrix m n F) :
@@ -430,25 +483,32 @@ theorem absLogHeight_map (f : F →+* F') (A : Matrix m n F) :
     (A.map f).absLogHeight = A.absLogHeight := by
   rw [absLogHeight, absMulHeight_map, absLogHeight]
 
+end AbsoluteMap
+
+section AbsoluteOne
+
+variable {n : Type*} [Finite n] {F : Type*} [Field F] [CharZero F] [DecidableEq n]
+
 /-- The identity matrix has absolute multiplicative entry height one. -/
 @[simp]
-theorem absMulHeight_one [DecidableEq n] : (1 : Matrix n n F).absMulHeight = 1 := by
+theorem absMulHeight_one : (1 : Matrix n n F).absMulHeight = 1 := by
   have h : (1 : Matrix n n F) = (1 : Matrix n n ℚ).map (algebraMap ℚ F) := by simp
   rw [h, absMulHeight_map, absMulHeight, TauCeti.absoluteProjectiveTupleHeight_eq,
     ← mulHeight_def, mulHeight_one, Real.one_rpow]
 
 /-- The identity matrix has absolute logarithmic entry height zero. -/
 @[simp]
-theorem absLogHeight_one [DecidableEq n] : (1 : Matrix n n F).absLogHeight = 0 := by
+theorem absLogHeight_one : (1 : Matrix n n F).absLogHeight = 0 := by
   simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_one, Real.log_one]
 
-end Absolute
+end AbsoluteOne
 
 /-! ### Extensions of number fields -/
 
 section NumberField
 
-variable {F L : Type*} [Field F] [Field L] [NumberField F] [NumberField L] [Algebra F L]
+variable {m n : Type*} [Finite m] [Finite n]
+  {F L : Type*} [Field F] [Field L] [NumberField F] [NumberField L] [Algebra F L]
 
 /-- In a number field, absolute multiplicative entry height is the degree root of the
 relative entry height. -/
@@ -483,9 +543,13 @@ end NumberField
 
 /-! ### Integer matrices over `ℚ` -/
 
+section IntCast
+
+variable {m n : Type*} [Fintype m] [Fintype n]
+
 /-- Over `ℚ`, the entry height of an integer matrix with coprime entries is the largest absolute
 value of its entries. -/
-theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
+theorem mulHeight_map_intCast_eq {A : Matrix m n ℤ}
     (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) :
     (A.map ((↑) : ℤ → ℚ)).mulHeight = ((⨆ q : m × n, |A q.1 q.2| : ℤ) : ℝ) := by
   -- The greatest common divisor of an empty tuple is `0`, so there is an entry.
@@ -500,10 +564,12 @@ theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
 
 /-- Over `ℚ`, the logarithmic entry height of an integer matrix with coprime entries is the
 logarithm of the largest absolute value of its entries. -/
-theorem logHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
+theorem logHeight_map_intCast_eq {A : Matrix m n ℤ}
     (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) :
     (A.map ((↑) : ℤ → ℚ)).logHeight = Real.log ((⨆ q : m × n, |A q.1 q.2| : ℤ) : ℝ) := by
   rw [logHeight_eq_log_mulHeight, mulHeight_map_intCast_eq hA]
+
+end IntCast
 
 /-! ### Examples -/
 

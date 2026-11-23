@@ -22,8 +22,8 @@ algebra-agnostic; that part lives in `TauCeti/Algebra/Lie/CompleteReducibility.l
 `TauCeti.HasInvariantOutsideIrreducible` is the single input it consumes. This file supplies that
 input for an `sl₂` triple, using the concrete Casimir operator of
 `TauCeti/Algebra/Lie/Sl2/Casimir.lean`, which is built from the triple alone and so needs neither
-the universal enveloping algebra nor the Killing form: this is Layer 0 of the roadmap, and the
-general Casimir argument for a semisimple Lie algebra is Layer 5.
+the universal enveloping algebra nor the Killing form; the general Casimir argument for a semisimple
+Lie algebra is in `TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean`.
 
 Concretely, if `L` carries `M` into an irreducible proper submodule `N` and acts nontrivially
 somewhere on `M`, then `L` acts nontrivially on `N` — otherwise the action would compose to zero,
@@ -44,9 +44,6 @@ surjective, hence not injective, and any nonzero kernel vector is invariant and 
   `LieAlgebra.SpecialLinear.sl (Fin 2) K`.
 
 ## References
-
-This is Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose `sl₂`
-complete reducibility is `TauCeti.exists_isCompl_of_toLieSubalgebra_eq_top`.
 
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §6.2 and §6.3.
@@ -84,8 +81,9 @@ theorem hasInvariantOutsideIrreducible_of_toLieSubalgebra_eq_top
     by_contra hcon
     push Not at hcon
     obtain ⟨x, m, hm⟩ := hact
-    refine hm (lie_eq_zero_of_lie_lie_eq_zero htop (fun y z w ↦ ?_) x m)
-    have hval := congrArg (Subtype.val : N → M) (hcon y ⟨⁅z, w⁆, htriv z w⟩)
+    have : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    refine hm (lie_eq_zero_of_lie_lie_eq_zero htop (m := m) (fun y z ↦ ?_) x)
+    have hval := congrArg (Subtype.val : N → M) (hcon y ⟨⁅z, m⁆, htriv z m⟩)
     rw [LieSubmodule.coe_bracket] at hval
     simpa using hval
   have hinjN := sl2Casimir_injective (M := N) (t := t) htop hactN

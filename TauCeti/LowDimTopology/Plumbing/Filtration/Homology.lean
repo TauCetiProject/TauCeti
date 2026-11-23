@@ -31,9 +31,9 @@ homology commute with the integer-indexed colimit.
 * `TauCeti.PlumbingGraph.latticeWeightSublevelHomologyCoconeIsColimit`: full lattice homology is
   the colimit of the sublevel homologies.
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology from lattice points and weight functions and for computations of
-concrete negative-definite plumbings. The weight-sublevel presentation follows A. Némethi,
+## References
+
+The weight-sublevel presentation follows A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
@@ -77,8 +77,6 @@ theorem latticeWeightSublevelHomologyFunctor_map (P : PlumbingGraph V)
     Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
   simp only [latticeWeightSublevelHomologyFunctor, Functor.comp_map,
     HomologicalComplex.homologyFunctor_map]
-  -- Both sides now differ only in the equality proofs carried by `eqToHom`.
-  rfl
 
 /-- The canonical cocone from weight-sublevel homology modules to the homology of the full lattice
 chain complex. Its legs are the maps on homology induced by inclusion of sublevel complexes. -/

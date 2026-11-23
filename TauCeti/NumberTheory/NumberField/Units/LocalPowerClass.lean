@@ -56,8 +56,8 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- The product of the local unit `n`-th power-class groups at the places of `T`. -/
 abbrev UnitLocalPowerClasses (n : ℕ) :=
-  (v : T) → unitFiltration (v.1.adicCompletion K) 0 ⧸
-    (powMonoidHom n : unitFiltration (v.1.adicCompletion K) 0 →* _).range
+  (v : T) → unitFiltration (v.val.adicCompletion K) 0 ⧸
+    (powMonoidHom n : unitFiltration (v.val.adicCompletion K) 0 →* _).range
 
 /-- The homomorphism taking an `S`-unit to its unit `n`-th power classes at the places of
 `T`. Disjointness ensures that every coordinate is a local unit. -/
@@ -68,32 +68,33 @@ def unitLocalPowerClassMap (n : ℕ) :
       (inferInstance : Group (S.unit K)).toMulOne
       (inferInstance : Group (UnitLocalPowerClasses T n)).toMulOne :=
   MonoidHom.pi fun v ↦ (QuotientGroup.mk' _).comp
-    (((Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom).comp
-      (S.unit K).subtype).codRestrict (unitFiltration (v.1.adicCompletion K) 0)
-      fun u ↦ (v.1.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.1).mpr
-        (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2))
+    (((Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom).comp
+      (S.unit K).subtype).codRestrict (unitFiltration (v.val.adicCompletion K) 0)
+      fun u ↦ (v.val.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.val).mpr
+        (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.property))
 
 /-- A coordinate of the local power-class map is the class of the corresponding local unit. -/
 @[simp]
 theorem unitLocalPowerClassMap_apply (n : ℕ) (u : S.unit K) (v : T) :
     unitLocalPowerClassMap S T hST n u v =
-      QuotientGroup.mk (⟨Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u.1,
-        (v.1.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.1).mpr
-          (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2)⟩ :
-        unitFiltration (v.1.adicCompletion K) 0) := (rfl)
+      QuotientGroup.mk (⟨Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom u.val,
+        (v.val.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.val).mpr
+          (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.property)⟩ :
+        unitFiltration (v.val.adicCompletion K) 0) := (rfl)
 
 /-- If the `S`-units surject onto the local unit `n`-th power classes at `T`, then every family
 of local units at the places of `T` agrees with a single `S`-unit up to `n`-th powers. -/
 theorem exists_mem_unit_of_unitLocalPowerClassMap_surjective
     {n : ℕ} (hsurj : Function.Surjective (unitLocalPowerClassMap S T hST n))
-    (y : (v : T) → (v.1.adicCompletion K)ˣ) (hy : ∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) :
+    (y : (v : T) → (v.val.adicCompletion K)ˣ) (hy : ∀ v, Valued.v (y v : v.val.adicCompletion K) =
+        1) :
     ∃ u ∈ S.unit K, ∀ v : T,
-      (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
+      (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
         (powMonoidHom n).range := by
   obtain ⟨u, hu⟩ := hsurj fun v ↦
     QuotientGroup.mk
-      ⟨y v, (HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff v.1).2 (hy v)⟩
-  refine ⟨u, u.2, fun v ↦ ?_⟩
+      ⟨y v, (HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff v.val).2 (hy v)⟩
+  refine ⟨u, u.property, fun v ↦ ?_⟩
   obtain ⟨b, hb⟩ := QuotientGroup.eq.1 ((unitLocalPowerClassMap_apply _ _ _ _ _ _).symm.trans
     (congrFun hu v))
   exact ⟨b, congrArg Subtype.val hb⟩
@@ -102,27 +103,27 @@ theorem exists_mem_unit_of_unitLocalPowerClassMap_surjective
 every completion indexed by `T`. -/
 theorem unitLocalPowerClassMap_eq_one_iff {n : ℕ} (hn : n ≠ 0) (u : S.unit K) :
     unitLocalPowerClassMap S T hST n u = 1 ↔
-      ∀ v : T, ∃ b : v.1.adicCompletion K,
-        b ^ n = algebraMap K (v.1.adicCompletion K) (u : Kˣ) := by
+      ∀ v : T, ∃ b : v.val.adicCompletion K,
+        b ^ n = algebraMap K (v.val.adicCompletion K) (u : Kˣ) := by
   have : NeZero n := ⟨hn⟩
   rw [funext_iff]
   refine forall_congr' fun v ↦ ?_
   rw [unitLocalPowerClassMap_apply, Pi.one_apply, QuotientGroup.eq_one_iff]
   constructor
   · rintro ⟨b, hb⟩
-    exact ⟨b.1, congrArg (fun x : unitFiltration (v.1.adicCompletion K) 0 ↦
-      ((x : (v.1.adicCompletion K)ˣ) : v.1.adicCompletion K)) hb⟩
+    exact ⟨b.val, congrArg (fun x : unitFiltration (v.val.adicCompletion K) 0 ↦
+      ((x : (v.val.adicCompletion K)ˣ) : v.val.adicCompletion K)) hb⟩
   · rintro ⟨b, hb⟩
     have hb0 : b ≠ 0 := ne_zero_of_pow_eq_algebraMap hb
-    let b' : (v.1.adicCompletion K)ˣ := Units.mk0 b hb0
-    have hpow : b' ^ n = Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u.1 :=
+    let b' : (v.val.adicCompletion K)ˣ := Units.mk0 b hb0
+    have hpow : b' ^ n = Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom u.val :=
       Units.ext hb
-    have hunit : b' ∈ unitFiltration (v.1.adicCompletion K) 0 := by
+    have hunit : b' ∈ unitFiltration (v.val.adicCompletion K) 0 := by
       rw [unitFiltration_zero]
-      apply ((ValuativeRel.valuation (v.1.adicCompletion K)).pow_mem_unitGroup_iff hn).mp
+      apply (ValuationSubring.pow_mem_unitGroup_iff _ hn).mp
       rw [← unitFiltration_zero, hpow]
-      exact (v.1.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.1).mpr
-        (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2)
+      exact (v.val.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.val).mpr
+        (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.property)
     exact ⟨⟨b', hunit⟩, Subtype.ext hpow⟩
 
 variable {M : Type*} [Field M] [Algebra K M] [IsGalois K M]
@@ -134,10 +135,10 @@ root of every `S`-unit, and Frobenius elements at the places of `T` generate
 an `n`-th power. Neither set of places is required to be finite. -/
 theorem ker_unitLocalPowerClassMap {n : ℕ} (hn : n ≠ 0)
     (L : IntermediateField K M) (σ : T → M ≃ₐ[K] M) (Q : T → Ideal (𝓞 M))
-    [∀ v, (Q v).IsPrime] [∀ v : T, (Q v).LiesOver v.1.asIdeal]
+    [∀ v, (Q v).IsPrime] [∀ v : T, (Q v).LiesOver v.val.asIdeal]
     (hσ : ∀ v, IsArithFrobAt (𝓞 K) (σ v) (Q v))
     (hL : L.fixingSubgroup = Subgroup.closure (Set.range σ))
-    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ n) (havoid : ∀ v : T, (n : 𝓞 K) ∉ v.1.asIdeal)
+    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ n) (havoid : ∀ v : T, (n : 𝓞 K) ∉ v.val.asIdeal)
     (hroots : ∀ a ∈ S.unit K, ∃ α : M, α ^ n = algebraMap K M (a : K)) :
     (unitLocalPowerClassMap S T hST n).ker =
       ((powMonoidHom n : Lˣ →* Lˣ).range.comap
@@ -146,10 +147,10 @@ theorem ker_unitLocalPowerClassMap {n : ℕ} (hn : n ≠ 0)
   ext u
   rw [MonoidHom.mem_ker, unitLocalPowerClassMap_eq_one_iff S T hST hn,
     Subgroup.mem_subgroupOf, Subgroup.mem_comap, MonoidHom.mem_range]
-  obtain ⟨α, hα⟩ := hroots u.1 u.2
+  obtain ⟨α, hα⟩ := hroots u.val u.property
   rw [← exists_mem_intermediateField_pow_eq_iff_forall_exists_pow_eq_adicCompletion
     hσ hL hζ havoid
-    (fun v ↦ Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2) hα]
+    (fun v ↦ Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.property) hα]
   constructor
   · rintro ⟨β, hβ, hpow⟩
     have hβ0 : β ≠ 0 := ne_zero_of_pow_eq_algebraMap hpow
@@ -158,7 +159,7 @@ theorem ker_unitLocalPowerClassMap {n : ℕ} (hn : n ≠ 0)
     apply Units.ext
     exact Subtype.ext hpow
   · rintro ⟨β, hβ⟩
-    exact ⟨β, (β : L).2, congrArg (fun x : Lˣ ↦ ((x : L) : M)) hβ⟩
+    exact ⟨β, (β : L).property, congrArg (fun x : Lˣ ↦ ((x : L) : M)) hβ⟩
 
 open TauCeti.NumberField ValuativeRel in
 /-- **The S-units surject onto the local unit power classes** (Milne VII, Lemma 6.9). Let `K`
@@ -169,10 +170,10 @@ places of `T` generate `Gal(M/L)` and `n ^ #T ≤ [M : L]`. Then every family of
 classes at the places of `T` is the family of classes of a single `S`-unit. -/
 theorem unitLocalPowerClassMap_surjective {n : ℕ} (hn : n ≠ 0) [Finite S] [Finite T]
     (L : IntermediateField K M) (σ : T → M ≃ₐ[K] M) (Q : T → Ideal (𝓞 M))
-    [∀ v, (Q v).IsPrime] [∀ v : T, (Q v).LiesOver v.1.asIdeal]
+    [∀ v, (Q v).IsPrime] [∀ v : T, (Q v).LiesOver v.val.asIdeal]
     (hσ : ∀ v, IsArithFrobAt (𝓞 K) (σ v) (Q v))
     (hL : L.fixingSubgroup = Subgroup.closure (Set.range σ))
-    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ n) (havoid : ∀ v : T, (n : 𝓞 K) ∉ v.1.asIdeal)
+    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ n) (havoid : ∀ v : T, (n : 𝓞 K) ∉ v.val.asIdeal)
     (hroots : ∀ a ∈ S.unit K, ∃ α : M, α ^ n = algebraMap K M (a : K))
     (hM : kummerField M n (S.unit K) = ⊤) (hT : n ^ Nat.card T ≤ Module.finrank L M) :
     Function.Surjective (unitLocalPowerClassMap S T hST n) := by
@@ -197,13 +198,13 @@ theorem unitLocalPowerClassMap_surjective {n : ℕ} (hn : n ≠ 0) [Finite S] [F
     rw [← Subgroup.index_ker,
       ker_unitLocalPowerClassMap S T hST hn L σ Q hσ hL hζ havoid hroots, Subgroup.relIndex]
   -- Each local factor `U_v ⧸ U_vⁿ` of the target has `n` elements, since `U(K_v, 0) ≃ 𝒪_vˣ`.
-  have hloc (v : T) : Nat.card (unitFiltration (v.1.adicCompletion K) 0 ⧸
-      (powMonoidHom n : unitFiltration (v.1.adicCompletion K) 0 →* _).range) =
-      Nat.card ((v.1.adicCompletionIntegers K)ˣ ⧸
-        (powMonoidHom n : (v.1.adicCompletionIntegers K)ˣ →* _).range) := by
+  have hloc (v : T) : Nat.card (unitFiltration (v.val.adicCompletion K) 0 ⧸
+      (powMonoidHom n : unitFiltration (v.val.adicCompletion K) 0 →* _).range) =
+      Nat.card ((v.val.adicCompletionIntegers K)ˣ ⧸
+        (powMonoidHom n : (v.val.adicCompletionIntegers K)ˣ →* _).range) := by
     rw [← Subgroup.index_eq_card, ← Subgroup.index_map_equiv _
       (unitFiltrationZeroEquivIntegerUnits.trans
-        (Units.mapEquiv (v.1.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv)),
+        (Units.mapEquiv (v.val.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv)),
       MulEquiv.map_range_powMonoidHom, Subgroup.index_eq_card]
   have := Fintype.ofFinite T
   have htarget : Nat.card (UnitLocalPowerClasses T n) = n ^ Nat.card T := by

@@ -67,10 +67,12 @@ order of vanishing.
   factor has the empty polygon, so does the product.
 * `Polynomial.supportingValue_addValuation_coeff_mul`: supporting values of coefficient heights
   add under multiplication of polynomials, at every slope.
-* `Polynomial.newtonSlopes_mul`: if both factors have nonempty Newton polygons, the finite
-  slope multiset of the product is the sum of the finite slope multisets of the factors.
-* `Polynomial.newtonSlopes_le_of_dvd`: if only zero has infinite valuation, the finite slopes of
-  a factor of a nonzero polynomial are among those of the polynomial, with multiplicity.
+* `Polynomial.newtonSlopes_mul`, `Polynomial.newtonSlopes_prod` and
+  `Polynomial.newtonSlopes_finprod`: when the factors have nonempty Newton polygons, the finite
+  slope multiset of a product of polynomials is the sum of the finite slope multisets of the
+  factors.
+* `Polynomial.newtonSlopes_le_of_dvd`: the finite slopes of a factor of a polynomial with a
+  nonempty Newton polygon are among those of the polynomial, with multiplicity.
 
 ## References
 
@@ -322,6 +324,8 @@ end PowerSeries
 
 namespace Polynomial
 
+section Ring
+
 variable {R : Type*} [Ring R] (f g : R[X]) (v : AddValuation R (WithTop ℝ))
 
 /-- A polynomial with a nonempty Newton polygon has coefficient heights touching a supporting
@@ -388,19 +392,59 @@ theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon 
     (by rw [FiniteSlopeData.heights_minkowskiSum, hd₁, hd₂, newtonPolygon_mul])
 
 variable {f g v} in
-/-- If only zero has infinite valuation, the finite slopes of a factor `g` of a nonzero
-polynomial `f` are among the finite slopes of `f`, counted with multiplicity. -/
-theorem newtonSlopes_le_of_dvd (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) (hgf : g ∣ f) :
+/-- If `f` has a nonempty Newton polygon, the finite slopes of a factor `g` of `f` are among the
+finite slopes of `f`, counted with multiplicity. This holds for every nonzero `f` when only zero
+has infinite valuation, by `Polynomial.newtonPolygon_ne_top_of_ne_zero`. -/
+theorem newtonSlopes_le_of_dvd (hf : f.newtonPolygon v ≠ ⊤) (hgf : g ∣ f) :
     g.newtonSlopes v ≤ f.newtonSlopes v := by
   obtain ⟨h, rfl⟩ := hgf
-  have hg : g ≠ 0 := by
-    rintro rfl
-    exact hf (zero_mul h)
-  have hh : h ≠ 0 := by
-    rintro rfl
-    exact hf (mul_zero g)
-  rw [newtonSlopes_mul _ _ v (newtonPolygon_ne_top_of_ne_zero hv hg)
-    (newtonPolygon_ne_top_of_ne_zero hv hh)]
+  have hg : g.newtonPolygon v ≠ ⊤ := fun hg => hf (by rw [newtonPolygon_mul, hg, top_minkowskiSum])
+  have hh : h.newtonPolygon v ≠ ⊤ := fun hh => hf (by rw [newtonPolygon_mul, hh, minkowskiSum_top])
+  rw [newtonSlopes_mul _ _ v hg hh]
   exact Multiset.le_add_right _ _
+
+end Ring
+
+section CommRing
+
+variable {ι R : Type*} [CommRing R] (v : AddValuation R (WithTop ℝ))
+
+/-- A finite product of polynomials with nonempty Newton polygons has a nonempty Newton polygon. -/
+theorem newtonPolygon_ne_top_prod (s : Finset ι) (g : ι → R[X])
+    (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) : (∏ i ∈ s, g i).newtonPolygon v ≠ ⊤ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using monic_one.newtonPolygon_ne_top v
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, newtonPolygon_mul]
+    obtain ⟨m, hm⟩ := Function.ne_iff.mp (hg a (Finset.mem_insert_self a s))
+    obtain ⟨n, hn⟩ := Function.ne_iff.mp (ih fun i hi => hg i (Finset.mem_insert_of_mem hi))
+    intro htop
+    exact (minkowskiSum_ne_top_iff.mpr ⟨m, n, rfl, hm, hn⟩) (congrFun htop (m + n))
+
+/-- The finite slope multiset of a finite product of polynomials with nonempty Newton polygons is
+the sum of the finite slope multisets of the factors. -/
+theorem newtonSlopes_prod (s : Finset ι) (g : ι → R[X])
+    (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) :
+    (∏ i ∈ s, g i).newtonSlopes v = ∑ i ∈ s, (g i).newtonSlopes v := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using newtonSlopes_C v (1 : R)
+  | insert a s ha ih =>
+    have hs : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤ := fun i hi => hg i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      newtonSlopes_mul _ _ v (hg a (Finset.mem_insert_self a s))
+        (newtonPolygon_ne_top_prod v s g hs),
+      ih hs]
+
+/-- The finite slope multiset of a finitely supported product `∏ᶠ i, g i`, whose nontrivial
+factors have nonempty Newton polygons, is the sum of their finite slope multisets. -/
+theorem newtonSlopes_finprod (g : ι → R[X]) (hfin : (Function.mulSupport g).Finite)
+    (hg : ∀ i ∈ Function.mulSupport g, (g i).newtonPolygon v ≠ ⊤) :
+    (∏ᶠ i, g i).newtonSlopes v = ∑ i ∈ hfin.toFinset, (g i).newtonSlopes v := by
+  rw [finprod_eq_prod g hfin]
+  exact newtonSlopes_prod v hfin.toFinset g fun i hi => hg i (hfin.mem_toFinset.mp hi)
+
+end CommRing
 
 end Polynomial

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 
 /-!
@@ -27,6 +28,8 @@ maximal ideal.
   and its complement in `L`.
 * `ValuationSubring.mem_decompositionSubgroup_iff`: an automorphism of `L` lies in the
   decomposition group exactly when it preserves `A` and its complement.
+* `ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff`: decomposition-group membership
+  is unchanged by restricting scalars along a tower of fields `K ⊆ E ⊆ L`.
 * `ValuationSubring.decompositionSubgroup.ext`: two elements of the decomposition group that agree
   on `A` are equal.
 * `ValuationSubring.instFaithfulSMulDecompositionSubgroup`: the decomposition group acts
@@ -35,10 +38,13 @@ maximal ideal.
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
   every element of `A` by an element of the maximal ideal.
+* `ValuationSubring.map_restrictScalarsHom_inertiaSubgroup`: the inertia group of `A` over an
+  intermediate field `E`, read as automorphisms over `K`, is the part of the inertia group over `K`
+  that fixes `E` pointwise.
 * `Valuation.mem_decompositionSubgroup_valuationSubring` and
   `Valuation.mem_inertiaSubgroup_valuationSubring_iff`: the same criteria for the valuation subring
   of a valuation `v`, stated through `v`: an automorphism preserving `v` lies in the decomposition
-  group, and it lies in the inertia group when `v (g x - x) < 1` whenever `v x ≤ 1`.
+  group, and it lies in the inertia group exactly when `v (g x - x) < 1` whenever `v x ≤ 1`.
 -/
 
 public section
@@ -47,17 +53,14 @@ open scoped Pointwise
 
 namespace ValuationSubring
 
-universe w w'
-
-variable {K : Type w} {L : Type w'} [Field K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- The action of a decomposition group on its valuation subring is the restriction of its
 action on the fraction field. -/
 @[simp]
 theorem coe_decompositionSubgroup_smul (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) (x : A) :
-    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) := by
-  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
+    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) :=
   rfl
 
 /-- An element of the decomposition group of a valuation subring `A` maps an element of the
@@ -65,11 +68,8 @@ ambient field into `A` exactly when that element lies in `A`. -/
 @[simp]
 theorem decompositionSubgroup_apply_mem_iff (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) {x : L} : (g : L ≃ₐ[K] L) x ∈ A ↔ x ∈ A := by
-  obtain ⟨σ, hσ⟩ := g
-  have h : σ • A = A := hσ
-  rw [Subgroup.coe_mk, ← AlgEquiv.smul_def]
-  calc σ • x ∈ A ↔ σ • x ∈ σ • A := by rw [h]
-    _ ↔ x ∈ A := smul_mem_pointwise_smul_iff
+  rw [← AlgEquiv.smul_def, ← smul_mem_pointwise_smul_iff (g := (g : L ≃ₐ[K] L)) (x := x),
+    MulAction.mem_stabilizer_iff.mp g.property]
 
 /-- **The decomposition group, elementwise**: an automorphism of `L` lies in the decomposition
 group of a valuation subring `A` exactly when it maps an element of `L` into `A` precisely when
@@ -80,6 +80,15 @@ theorem mem_decompositionSubgroup_iff (A : ValuationSubring L) (σ : L ≃ₐ[K]
   rw [← inv_mem_iff, MulAction.mem_stabilizer_iff]
   ext x
   rw [mem_inv_pointwise_smul_iff, AlgEquiv.smul_def, h]
+
+/-- **Decomposition-group membership is unchanged by restricting scalars**: for a tower of fields
+`K ⊆ E ⊆ L`, an automorphism of `L` over `E` lies in the decomposition group of `A` over `E`
+exactly when it lies in the decomposition group of `A` over `K`, read as an automorphism over
+`K`. -/
+theorem restrictScalars_mem_decompositionSubgroup_iff {E : Type*} [Field E] [Algebra K E]
+    [Algebra E L] [IsScalarTower K E L] (A : ValuationSubring L) (τ : L ≃ₐ[E] L) :
+    τ.restrictScalars K ∈ A.decompositionSubgroup K ↔ τ ∈ A.decompositionSubgroup E := by
+  simp only [mem_decompositionSubgroup_iff, AlgEquiv.restrictScalars_apply]
 
 /-- Two automorphisms in the decomposition group of a valuation subring that agree on the
 valuation subring are equal, because its ambient field is its field of fractions. -/
@@ -104,10 +113,7 @@ the residue of every element of `A`. -/
 theorem mem_inertiaSubgroup_iff (A : ValuationSubring L) (g : A.decompositionSubgroup K) :
     g ∈ A.inertiaSubgroup K ↔
       ∀ x : A, IsLocalRing.residue A (g • x) = IsLocalRing.residue A x := by
-  rw [inertiaSubgroup, MonoidHom.mem_ker, RingEquiv.ext_iff]
-  refine ⟨fun h x ↦ by simpa using h (IsLocalRing.residue A x), fun h z ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := A) z
-  simpa using h x
+  simp [inertiaSubgroup, RingEquiv.ext_iff, IsLocalRing.residue_surjective.forall]
 
 /-- An element of the decomposition group of `A` lies in the inertia group exactly when it moves
 every element of `A` by an element of the maximal ideal of `A`. -/
@@ -116,6 +122,40 @@ theorem mem_inertiaSubgroup_iff_sub_mem_maximalIdeal (A : ValuationSubring L)
     g ∈ A.inertiaSubgroup K ↔ ∀ x : A, g • x - x ∈ IsLocalRing.maximalIdeal A := by
   refine (mem_inertiaSubgroup_iff A g).trans <| forall_congr' fun x ↦ ?_
   rw [← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
+
+/-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
+field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over
+`K` that fixes `E` pointwise. -/
+theorem map_restrictScalarsHom_inertiaSubgroup (A : ValuationSubring L)
+    (E : IntermediateField K L) :
+    ((A.inertiaSubgroup E).map (A.decompositionSubgroup E).subtype).map
+        (AlgEquiv.restrictScalarsHom K) =
+      E.fixingSubgroup ⊓ (A.inertiaSubgroup K).map (A.decompositionSubgroup K).subtype := by
+  let f : (L ≃ₐ[E] L) →* (L ≃ₐ[K] L) := AlgEquiv.restrictScalarsHom K
+  -- Elements of the decomposition groups over `E` and over `K` acting alike on `L` are inertial
+  -- together, since inertia is read on residues.
+  have hiff {g₁ : A.decompositionSubgroup E} {g₂ : A.decompositionSubgroup K}
+      (h : ∀ x, (g₁ : L ≃ₐ[E] L) x = (g₂ : L ≃ₐ[K] L) x) :
+      g₁ ∈ A.inertiaSubgroup E ↔ g₂ ∈ A.inertiaSubgroup K := by
+    have hx (x : A) : g₁ • x = g₂ • x := Subtype.ext <| by
+      rw [coe_decompositionSubgroup_smul, coe_decompositionSubgroup_smul, h]
+    simp only [mem_inertiaSubgroup_iff, hx]
+  ext σ
+  rw [Subgroup.mem_inf]
+  constructor
+  · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
+    have hZ : f g ∈ A.decompositionSubgroup K :=
+      (restrictScalars_mem_decompositionSubgroup_iff A (g : L ≃ₐ[E] L)).mpr g.property
+    exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
+      fun x hx ↦ (g : L ≃ₐ[E] L).commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
+  · rintro ⟨hE, g, hg, rfl⟩
+    let τ := E.fixingSubgroupEquiv ⟨g, hE⟩
+    have hτ (x : L) : τ x = (g : L ≃ₐ[K] L) x :=
+      congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
+    have hτg : τ.restrictScalars K = g := AlgEquiv.ext hτ
+    have hZ : τ ∈ A.decompositionSubgroup E :=
+      (restrictScalars_mem_decompositionSubgroup_iff A τ).mp (hτg ▸ g.property)
+    exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
 
 end ValuationSubring
 

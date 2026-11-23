@@ -68,20 +68,20 @@ scale, and shape, including shape zero where the law is Gumbel. -/
 theorem continuous_generalizedExtremeValueMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p : (ℝ × Ioi (0 : ℝ)) × ℝ =>
       (⟨generalizedExtremeValueMeasure p.1.1 p.1.2 p.2,
-        isProbabilityMeasure_generalizedExtremeValueMeasure p.1.2.2 p.1.1 p.2⟩ :
+        isProbabilityMeasure_generalizedExtremeValueMeasure p.1.2.property p.1.1 p.2⟩ :
         ProbabilityMeasure ℝ)) := by
   let P : ProbabilityMeasure ℝ := ⟨expMeasure 1, isProbabilityMeasure_expMeasure one_pos⟩
-  have h := P.continuous_map_of_forall_continuous
+  have h := P.continuous_map_of_ae_continuous
     (f := fun p : (ℝ × Ioi (0 : ℝ)) × ℝ =>
       generalizedExtremeValueMap p.1.1 p.1.2 p.2)
     (fun p => (measurable_generalizedExtremeValueMap_right _ _ _).aemeasurable)
-    (fun e => (continuous_generalizedExtremeValueMap_left e).comp
+    (ae_of_all _ fun e => (continuous_generalizedExtremeValueMap_left e).comp
       ((continuous_fst.fst.prodMk
-        (continuous_subtype_val.comp continuous_fst.snd)).prodMk continuous_snd))
+        (continuous_subtypeVal.comp continuous_fst.snd)).prodMk continuous_snd))
   refine h.congr fun p => ?_
   apply ProbabilityMeasure.toMeasure_injective
   rw [ProbabilityMeasure.toMeasure_map]
-  exact (generalizedExtremeValueMeasure_of_pos p.1.2.2 p.1.1 p.2).symm
+  exact (generalizedExtremeValueMeasure_of_pos p.1.2.property p.1.1 p.2).symm
 
 /-- As the shape tends to zero from either side, a fixed-location, positive-scale generalized
 extreme-value law converges weakly to the Gumbel law with that location and scale. -/

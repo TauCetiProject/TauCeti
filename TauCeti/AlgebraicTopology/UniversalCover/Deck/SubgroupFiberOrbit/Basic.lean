@@ -129,18 +129,11 @@ lemma subgroupFiberOrbitMapOfLE_comp {H K L : Subgroup (deck p)} (hHK : H ≤ K)
   intro e
   rfl
 
-/-- A subgroup fibre-orbit quotient is subsingleton exactly when that subgroup acts
-transitively on the fibre. -/
-lemma subgroupFiberOrbitQuotient_subsingleton_iff (H : Subgroup (deck p)) :
-    Subsingleton (SubgroupFiberOrbitQuotient H b) ↔
-      MulAction.IsPretransitive H (p ⁻¹' {b}) := by
-  exact (MulAction.pretransitive_iff_subsingleton_quotient H (p ⁻¹' {b})).symm
-
 /-- If the full deck group acts transitively on a fibre, then the quotient of that fibre by
 the full deck subgroup is a subsingleton. -/
 lemma subsingleton_subgroupFiberOrbitQuotient_top [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] :
     Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (deck p)) b) := by
-  rw [subgroupFiberOrbitQuotient_subsingleton_iff]
+  rw [← MulAction.pretransitive_iff_subsingleton_quotient]
   refine MulAction.IsPretransitive.mk ?_
   intro e e'
   rcases MulAction.exists_smul_eq (deck p) e e' with ⟨φ, hφ⟩
@@ -161,9 +154,9 @@ lemma fiberMap_mem_orbit_subgroup_map (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
       MulAction.orbit (H.map ((conjMulEquiv h hpq : deck p ≃* deck q) : deck p →* deck q))
         (fiberMap h hpq b e') := by
   rcases hee' with ⟨φ, hφ⟩
-  refine ⟨⟨conjMulEquiv h hpq φ.1, ⟨φ.1, φ.2, rfl⟩⟩, ?_⟩
+  refine ⟨⟨conjMulEquiv h hpq φ.val, ⟨φ.val, φ.property, rfl⟩⟩, ?_⟩
   rw [← hφ]
-  exact (fiberMap_smul h hpq φ.1 e').symm
+  exact (fiberMap_smul h hpq φ.val e').symm
 
 /-- Membership in a subgroup fibre-orbit is preserved by an over-base homeomorphism, with the
 subgroup conjugated along the induced deck-group isomorphism. -/
@@ -175,10 +168,10 @@ lemma mem_orbit_fiberMap_subgroup_map_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
       e ∈ MulAction.orbit H e' := by
   constructor
   · rintro ⟨ψ, hψ⟩
-    rcases ψ.2 with ⟨φ, hφH, hφψ⟩
+    rcases ψ.property with ⟨φ, hφH, hφψ⟩
     refine ⟨⟨φ, hφH⟩, ?_⟩
     apply (fiberMap h hpq b).injective
-    have hψ' : (ψ.1 : deck q) • fiberMap h hpq b e' = fiberMap h hpq b e := by
+    have hψ' : (ψ.val : deck q) • fiberMap h hpq b e' = fiberMap h hpq b e := by
       simpa [Subgroup.smul_def] using hψ
     have hφ' : (conjMulEquiv h hpq φ) • fiberMap h hpq b e' =
         fiberMap h hpq b e := by
@@ -306,7 +299,7 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
   rfl
 
 /-- Quotienting a fibre by the trivial deck subgroup gives the fibre itself. -/
-noncomputable def subgroupFiberOrbitQuotientBotEquiv :
+def subgroupFiberOrbitQuotientBotEquiv :
     SubgroupFiberOrbitQuotient (⊥ : Subgroup (deck p)) b ≃ p ⁻¹' {b} :=
   TauCeti.MulAction.orbitRelQuotientBotEquiv (G := deck p) (X := p ⁻¹' {b})
 
@@ -373,7 +366,7 @@ lemma subgroupFiberOrbitMapOfLE_bot_eq_iff (H : Subgroup (deck p))
     rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply]
     constructor
     · rintro ⟨φ, hφ⟩
-      exact ⟨φ.1, hφ⟩
+      exact ⟨φ.val, hφ⟩
     · rintro ⟨φ, hφ⟩
       exact ⟨⟨φ, trivial⟩, hφ⟩
 

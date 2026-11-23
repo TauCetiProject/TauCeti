@@ -43,11 +43,9 @@ points, or a finite group.
   `TauCeti.ValidLieTypeIndex.datumFrobenius_exponent`: it multiplies both lattices by `q`, fixes
   the root enumeration, and rescales every root by `q`.
 
-## Roadmap
+## Related declarations and references
 
-This is the root-datum layer of the `Frob_q` of milestone L1, "ordinary and graph Steinberg maps",
-of `TauCetiRoadmap/CFSGStatement/README.md`, whose table sets the Steinberg map of the untwisted
-families to `Frob_q`. The field-level half is
+The Steinberg map of the untwisted families is `Frob_q`. The field-level half is
 `TauCeti.ValidLieTypeIndex.frobeniusEquiv` in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Frobenius.lean`. The corresponding endomorphism of points
 is `TauCeti.ValidLieTypeIndex.frobenius` in
@@ -77,14 +75,14 @@ here; the twisting of a family is carried entirely by the graph automorphism it 
 def datumFrobenius :
     RootPairingIsogeny (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid)
       (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid) :=
-  RootPairingIsogeny.smulId _ d.1.fieldOrderPNat
+  RootPairingIsogeny.smulId _ d.val.fieldOrderPNat
 
 /-- **The defining equation of the root-datum Frobenius.** The body of `datumFrobenius` is not
 exposed, so this is what lets a consumer rewrite it into `TauCeti.RootPairingIsogeny.smulId` and
 then apply the general lemmas about scaling at `c = d.fieldOrderPNat`. -/
 theorem datumFrobenius_def : d.datumFrobenius =
     RootPairingIsogeny.smulId (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid)
-      d.1.fieldOrderPNat := by
+      d.val.fieldOrderPNat := by
   rw [datumFrobenius]
 
 /-- The Frobenius shadow acts on the character lattice as multiplication by `q`. -/

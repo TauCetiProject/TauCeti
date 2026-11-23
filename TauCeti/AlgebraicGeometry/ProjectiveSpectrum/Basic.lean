@@ -50,6 +50,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_congr`: `Proj.map f` depends only on `f`.
 * `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_eq`: the point of `Proj A` defined by `φ` on the
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
+* `AlgebraicGeometry.Proj.pullback_fst_awayι_comp_eq_snd_comp`: morphisms out of two standard
+  charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
@@ -116,9 +118,9 @@ theorem map_toSpecZero (f : 𝒜 →+*ᵍ ℬ) (hf : HomogeneousIdeal.irrelevant
       toSpecZero ℬ ≫ Spec.map (CommRingCat.ofHom f.gradedZeroRingHom) := by
   refine (mapAffineOpenCover f hf).openCover.hom_ext _ _ fun ⟨i, x, hx⟩ ↦ ?_
   -- the chart of `mapAffineOpenCover` at `⟨i, x⟩` is `awayι ℬ (f x)`, by definition
-  have hpos : 0 < (i : ℕ) := i.2
-  have key : awayι ℬ (f x) (f.2 hx) hpos ≫ map f hf ≫ toSpecZero 𝒜 =
-      awayι ℬ (f x) (f.2 hx) hpos ≫ toSpecZero ℬ ≫
+  have hpos : 0 < (i : ℕ) := i.property
+  have key : awayι ℬ (f x) (f.map_mem hx) hpos ≫ map f hf ≫ toSpecZero 𝒜 =
+      awayι ℬ (f x) (f.map_mem hx) hpos ≫ toSpecZero ℬ ≫
         Spec.map (CommRingCat.ofHom f.gradedZeroRingHom) := by
     rw [awayι_comp_map_assoc f hf hpos x hx, awayι_toSpecZero, awayι_toSpecZero_assoc,
       ← Spec.map_comp, ← Spec.map_comp]
@@ -194,7 +196,7 @@ theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
     -- the sides differ only in typing `D(r / 1)` as an open of `Spec` or of the prime spectrum
     rfl
   -- On `D₊(f)`, the standard open `D₊(r) = D₊(r f)` is cut out by `(r f)ⁱ / fⁱ = (r / 1)ⁱ`.
-  have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.2 f_deg
+  have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.property f_deg
   have helem : Away.isLocalizationElem f_deg hrf = fromZeroRingHom 𝒜 _ r ^ i := by
     apply val_injective
     -- `fromZeroRingHom` sends `r` to the fraction `r / 1`
@@ -245,16 +247,17 @@ theorem toSpecZero_appLE_basicOpen {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m) (hm 
 degree-zero element `a` of `A₀` along `Proj A ⟶ Spec A₀` takes the value `a / 1` in the
 localization at every point. -/
 theorem val_toSpecZero_appTop_apply (a : 𝒜 0) (x : (⊤ : (Proj 𝒜).Opens)) :
-    (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = Localization.mk (a : A) 1 := by
+    (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).val x).val = Localization.mk (a : A) 1
+        := by
   -- `x` lies in a standard chart `D₊(f)`, on which the function is `a / 1`
-  obtain ⟨m, hm, f, f_deg, hfx⟩ : ∃ m > 0, ∃ f ∈ 𝒜 m, f ∉ x.1.asHomogeneousIdeal := by
+  obtain ⟨m, hm, f, f_deg, hfx⟩ : ∃ m > 0, ∃ f ∈ 𝒜 m, f ∉ x.val.asHomogeneousIdeal := by
     by_contra! h
-    exact x.1.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
+    exact x.val.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
   have h := ConcreteCategory.congr_hom (toSpecZero_appLE_basicOpen 𝒜 f_deg hm)
     ((Scheme.ΓSpecIso _).inv a)
   -- restriction to `D₊(f)` keeps the value at `x`
-  have e : (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = _ :=
-    congrArg (fun s : Γ(Proj 𝒜, basicOpen 𝒜 f) ↦ (s.1 ⟨x.1, hfx⟩).val) h
+  have e : (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).val x).val = _ :=
+    congrArg (fun s : Γ(Proj 𝒜, basicOpen 𝒜 f) ↦ (s.val ⟨x.val, hfx⟩).val) h
   refine e.trans ?_
   rw [CommRingCat.comp_apply, CommRingCat.comp_apply, Iso.inv_hom_id_apply]
   -- `awayToSection` sends `a / 1` to the function whose value at each point is the fraction
@@ -266,19 +269,33 @@ variable (𝒜) in
 opens `D₊(f)` of the elements `f ∈ A₁` cover `Proj A`. -/
 theorem iSup_basicOpen_eq_top_of_adjoin_eq_top (h : Algebra.adjoin (𝒜 0) (𝒜 1 : Set A) = ⊤) :
     ⨆ f : 𝒜 1, basicOpen 𝒜 (f : A) = ⊤ :=
-  iSup_basicOpen_eq_top' 𝒜 _ (fun f ↦ ⟨1, f.2⟩) (by rwa [Subtype.range_coe_subtype])
+  iSup_basicOpen_eq_top' 𝒜 _ (fun f ↦ ⟨1, f.property⟩) (by rwa [Subtype.range_coe_subtype])
 
 section
 
 variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
   {𝒜 : ℕ → σ} [GradedRing 𝒜]
 
+/-- Two morphisms out of the standard charts `D₊(f)` and `D₊(g)` of `Proj A` agree on the overlap
+`D₊(f) ×_{Proj A} D₊(g)` as soon as they agree on the chart `D₊(fg)`, embedded in both through the
+localization maps `A_{(f)} → A_{(fg)}` and `A_{(g)} → A_{(fg)}`. This is the compatibility
+condition for gluing morphisms along standard charts. -/
+theorem pullback_fst_awayι_comp_eq_snd_comp {Y : Scheme.{u}} {f g : A} {m m' : ℕ}
+    (f_deg : f ∈ 𝒜 m) (hm : 0 < m) (g_deg : g ∈ 𝒜 m') (hm' : 0 < m')
+    {u : Spec (.of (Away 𝒜 f)) ⟶ Y} {v : Spec (.of (Away 𝒜 g)) ⟶ Y}
+    (h : Spec.map (CommRingCat.ofHom (awayMap 𝒜 g_deg rfl)) ≫ u =
+      Spec.map (CommRingCat.ofHom (awayMap 𝒜 f_deg (mul_comm f g))) ≫ v) :
+    Limits.pullback.fst (awayι 𝒜 f f_deg hm) (awayι 𝒜 g g_deg hm') ≫ u =
+      Limits.pullback.snd _ _ ≫ v := by
+  rwa [← cancel_epi (pullbackAwayιIso 𝒜 f_deg hm g_deg hm' rfl).inv,
+    pullbackAwayιIso_inv_fst_assoc, pullbackAwayιIso_inv_snd_assoc]
+
 /-- On the standard chart `D₊(f)`, the function `g / fⁿ` takes the value `g / fⁿ` in the
 localization at each point. -/
 theorem val_awayToSection_mk_apply {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
     (hg : g ∈ 𝒜 (n • d)) (x : basicOpen 𝒜 f) :
-    ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).1 x).val =
-      Localization.mk g ⟨f ^ n, fun h ↦ x.2 (x.1.isPrime.mem_of_pow_mem n h)⟩ :=
+    ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).val x).val =
+      Localization.mk g ⟨f ^ n, fun h ↦ x.property (x.val.isPrime.mem_of_pow_mem n h)⟩ :=
   (rfl)
 
 /-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
@@ -385,19 +402,17 @@ theorem exists_pow_mul_eq_zero {g a : A} {k : ℕ} (hg : g ∈ HomogeneousIdeal.
   simpa [hc] using (DirectSum.coe_decompose_mul_add_of_right_mem 𝒜 (a := c) (i := i) ha).symm
 
 /-- **Gluing homogeneous fractions.** Let `f` be homogeneous of positive degree `d`, and let
-`r x / g x` be finitely many fractions of homogeneous elements of degrees `deg r x = deg g x + n`
+`r x / g x` be a family of fractions of homogeneous elements of degrees `deg r x = deg g x + n`
 whose standard opens `D₊(g x)` cover `D₊(f)`, and which are compatible in the strong sense
 `g x * r z = g z * r x`. Then there is a single fraction `R / fᵏ`, with `R` homogeneous of degree
 `k * d + n`, such that `g x * R = fᵏ * r x` for every `x`. -/
 theorem exists_mul_eq_pow_mul {n : ℤ} {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hd : 0 < d) {ι : Type*}
-    [Finite ι] {i j : ι → ℕ} (h : ∀ x, (j x : ℤ) = i x + n) {r g : ι → A}
+    {i j : ι → ℕ} (h : ∀ x, (j x : ℤ) = i x + n) {r g : ι → A}
     (hr : ∀ x, r x ∈ 𝒜 (j x)) (hg : ∀ x, g x ∈ 𝒜 (i x))
     (hcover : ∀ y : ProjectiveSpectrum 𝒜, f ∉ y.asHomogeneousIdeal →
       ∃ x, g x ∉ y.asHomogeneousIdeal)
     (hcompat : ∀ x z, g x * r z = g z * r x) :
     ∃ (k J : ℕ) (_ : (J : ℤ) = (k * d : ℕ) + n) (R : A), R ∈ 𝒜 J ∧ ∀ x, g x * R = f ^ k * r x := by
-  classical
-  have := Fintype.ofFinite ι
   -- `f` lies in the radical of the ideal generated by the `g x`
   obtain ⟨K, hK⟩ : f ∈ (Ideal.span (Set.range g)).radical := by
     refine mem_radical_of_zeroLocus_subset (Ideal.homogeneous_span _ _ ?_)
@@ -410,22 +425,27 @@ theorem exists_mul_eq_pow_mul {n : ℤ} {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (h
     exact hx (hy (Ideal.subset_span ⟨x, rfl⟩))
   -- raise the exponent so that the numerator has nonnegative degree `k * d + n`
   set k := K + n.natAbs
-  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.1
+  obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1
     (show f ^ k ∈ _ from pow_add f K n.natAbs ▸ Ideal.mul_mem_right _ _ hK)
   have hkd : k ≤ k * d := Nat.le_mul_of_pos_right k hd
   set J := ((k * d : ℕ) + n).toNat
   have hJ : (J : ℤ) = (k * d : ℕ) + n := by omega
-  -- the numerator is the degree-`J` part of `∑ x, c x * r x`
-  refine ⟨k, J, hJ, _, SetLike.coe_mem (DirectSum.decompose 𝒜 (∑ x, c x * r x) J), fun x ↦ ?_⟩
+  -- the numerator is the degree-`J` part of `∑ z, c z * r z`
+  refine ⟨k, J, hJ, _, SetLike.coe_mem (DirectSum.decompose 𝒜 (c.sum fun z a ↦ a * r z) J),
+    fun x ↦ ?_⟩
   have hmem : f ^ k * r x ∈ 𝒜 (J + i x) := by
     convert SetLike.mul_mem_graded (SetLike.pow_mem_graded k hf) (hr x) using 2
     have := h x
     simp only [smul_eq_mul]
     omega
-  have hsum : (∑ z, c z * r z) * g x = f ^ k * r x := by
-    rw [Finset.sum_mul, ← hc, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun z _ ↦ by
-      rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]
+  have hsum : (c.sum fun z a ↦ a * r z) * g x = f ^ k * r x := by
+    calc (c.sum fun z a ↦ a * r z) * g x = ∑ z ∈ c.support, c z * g z * r x := by
+          rw [Finsupp.sum, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun z _ ↦ by
+            rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]
+      _ = f ^ k * r x := by
+          rw [← hc, Finsupp.sum, Finset.sum_mul]
+          simp only [smul_eq_mul]
   rw [mul_comm (g x), ← DirectSum.coe_decompose_mul_add_of_right_mem 𝒜 (hg x), hsum,
     DirectSum.decompose_of_mem_same 𝒜 hmem]
 

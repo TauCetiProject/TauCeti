@@ -29,6 +29,8 @@ symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
   Lagrangian-correspondence principle needed by Lagrangian Floer homology: the boundary
   conditions of Floer strips between two Lagrangians are packaged as a single Lagrangian in the
   twisted product, and the diagonal is the model boundary condition for the identity continuation.
+  In the direct-sum product `(V × W, ω₁ ⊕ ω₂)` the graph of a linear map `f` is instead a
+  symplectic subspace exactly when `(v, w) ↦ ω₁(v, w) + ω₂(f v, f w)` is nondegenerate.
 
 ## Main declarations
 
@@ -40,10 +42,11 @@ symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
   `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`,
   `isSymplectic_map_transport_iff`, and the one-way `IsIsotropic.map_transport`,
   `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`, `IsSymplectic.map_transport`: the
-  transport API.
+  transport API, with `IsSymplectomorphism.isIsotropic_map_iff` and
+  `IsSymplectomorphism.isLagrangian_map_iff` for a given linear symplectomorphism.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`, `isIsotropic_linearEquiv_graph_iff`,
-  `IsSymplectomorphism.isLagrangian_graph`, `isLagrangian_graph_iff`, and `isLagrangian_diagonal`:
-  the graph API.
+  `IsSymplectomorphism.isLagrangian_graph`, `isLagrangian_graph_iff`, `isLagrangian_diagonal`,
+  and `isSymplectic_graph_iff`: the graph API.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.1 and 2.3. The twisted product form `ω₁ ⊖ ω₂` itself lives with the rest of the
@@ -229,6 +232,20 @@ lemma isSymplectic_map_transport_iff :
   rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, orthogonal_map_transport]
   exact disjoint_map_orderIso_iff (Submodule.orderIsoMapComap e)
 
+/-- A linear symplectomorphism carries a subspace to an isotropic subspace exactly when the subspace
+is isotropic. -/
+lemma IsSymplectomorphism.isIsotropic_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsIsotropic (L.map e.toLinearMap) ↔ ω.IsIsotropic L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isIsotropic_map_transport_iff]
+
+/-- A linear symplectomorphism carries a subspace to a Lagrangian subspace exactly when the subspace
+is Lagrangian. -/
+lemma IsSymplectomorphism.isLagrangian_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsLagrangian (L.map e.toLinearMap) ↔ ω.IsLagrangian L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isLagrangian_map_transport_iff]
+
 namespace IsIsotropic
 
 /-- Transport an isotropic subspace along a linear equivalence, together with the transported
@@ -346,6 +363,25 @@ lemma isLagrangian_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsLagrangian e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e :=
   ⟨fun h => isIsotropic_linearEquiv_graph_iff.1 h.isIsotropic,
     IsSymplectomorphism.isLagrangian_graph⟩
+
+/-- The graph of `f` is a symplectic subspace for the direct-sum form exactly when the form
+`(v, w) ↦ ω₁(v, w) + ω₂(f v, f w)` on `V` is nondegenerate: a vector pairing to zero with every
+vector under it is zero. -/
+lemma isSymplectic_graph_iff {f : V →ₗ[ℝ] W} :
+    (ω₁.prod ω₂).IsSymplectic f.graph ↔ ∀ v, (∀ w, ω₁ v w + ω₂ (f v) (f w) = 0) → v = 0 := by
+  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
+  constructor
+  · intro h v hv
+    have hmem : ((v, f v) : V × W) ∈ f.graph := by simp [LinearMap.mem_graph_iff]
+    refine congrArg Prod.fst (h _ hmem (mem_orthogonal_iff'.2 fun y hy ↦ ?_))
+    rw [LinearMap.mem_graph_iff] at hy
+    simpa only [prod_apply, hy] using hv y.1
+  · intro h x hx hxo
+    rw [LinearMap.mem_graph_iff] at hx
+    have hx₁ : x.1 = 0 := h x.1 fun w ↦ by
+      have hw := mem_orthogonal_iff'.1 hxo (w, f w) (by simp [LinearMap.mem_graph_iff])
+      simpa only [prod_apply, hx] using hw
+    exact Prod.ext hx₁ (by rw [hx, hx₁, map_zero, Prod.snd_zero])
 
 /-- The diagonal of `(V × V, ω ⊖ ω)`, realized as the graph of the identity equivalence, is
 Lagrangian. This is the boundary condition modeled by the identity continuation in Lagrangian

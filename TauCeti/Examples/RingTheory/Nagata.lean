@@ -8,6 +8,7 @@ module
 import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
+import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.RingTheory.Nagata
 
 /-!
@@ -17,7 +18,8 @@ Fields, the zero ring and Artinian rings such as `ZMod n` for `n ≠ 0` are Naga
 of Krull dimension zero. `ℤ`, `ℚ[X]` and Dedekind domains with perfect fraction field are
 Noetherian Japanese domains of dimension at most one, hence Nagata, and so are their quotients and
 their finite algebras, such as rings of integers of number fields. A discrete valuation ring is
-Nagata exactly when it is Japanese.
+Nagata exactly when it is Japanese. Over a Nagata ring, such as a field, integral closures in
+reduced algebras of finite type are finite.
 -/
 
 open TauCeti.Ring NumberField
@@ -55,3 +57,16 @@ example (R : Type*) [CommRing R] [IsDomain R] [IsNagata R] : IsJapanese R := inf
 example (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] :
     IsNagata R ↔ IsJapanese R :=
   isNagata_iff_isJapanese
+
+-- The integral closure of a field `k` in a reduced algebra of finite type over `k` is
+-- finite-dimensional over `k`.
+example (k S : Type*) [Field k] [CommRing S] [IsReduced S] [Algebra k S]
+    [Algebra.FiniteType k S] : Module.Finite k (integralClosure k S) :=
+  IsNagata.finite_integralClosure S
+
+-- The algebraic part of the finitely generated, transcendental field extension `ℚ(X, Y)` of `ℚ`
+-- is finite over `ℚ`.
+example : FiniteDimensional ℚ (algebraicClosure ℚ (FractionRing (MvPolynomial (Fin 2) ℚ))) :=
+  have : Algebra.EssFiniteType ℚ (FractionRing (MvPolynomial (Fin 2) ℚ)) :=
+    .comp ℚ (MvPolynomial (Fin 2) ℚ) _
+  inferInstance

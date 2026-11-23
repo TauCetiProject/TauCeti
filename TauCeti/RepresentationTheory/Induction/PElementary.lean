@@ -111,7 +111,7 @@ theorem pSectionIndicator_mem_classFunction :
   classical
   refine ClassFunction.mem_iff.mpr fun x c => ?_
   have hcom : (c : G) * s = s * (c : G) :=
-    mem_centralizer_singleton_iff.1 (pElementaryOfSylow_le_centralizer s P c.2)
+    mem_centralizer_singleton_iff.1 (pElementaryOfSylow_le_centralizer s P c.property)
   have hc : (c : G) * s * (c : G)⁻¹ = s := by rw [hcom, mul_inv_cancel_right]
   have hc' : (c : G)⁻¹ * s * (c : G) = s := by
     rw [mul_assoc, ← hcom, inv_mul_cancel_left]
@@ -233,7 +233,7 @@ theorem pSectionCosetCard_eq_zero_of_not_isConj {x : G}
   have : IsEmpty {t : G ⧸ pElementaryOfSylow s P //
       (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t = s ∧
         (Quotient.out t)⁻¹ * pPart p x * Quotient.out t ∈ pElementaryOfSylow s P} :=
-    ⟨fun t => hx (isConj_iff.2 ⟨(Quotient.out t)⁻¹, by simpa using t.2.1⟩)⟩
+    ⟨fun t => hx (isConj_iff.2 ⟨(Quotient.out t)⁻¹, by simpa using t.property.1⟩)⟩
   rw [pSectionCosetCard, Nat.card_of_isEmpty]
 
 /-- **The induced `p`-section indicator vanishes off the conjugates of the `p`-section.** -/
@@ -279,7 +279,7 @@ private theorem out_mk_conj_mem (a : G) {z : ↥(centralizer ({s} : Set G))}
     (QuotientGroup.out_eq' _).symm
   refine ⟨?_, ?_⟩
   · rw [mul_assoc, inv_mul_eq_iff_eq_mul, eq_comm]
-    exact mem_centralizer_singleton_iff.1 (mem_centralizer_of_mk_eq hmk z.2)
+    exact mem_centralizer_singleton_iff.1 (mem_centralizer_of_mk_eq hmk z.property)
   rw [← smul_quotientGroup_mk_eq_self_iff, ← hmk, smul_quotientGroup_mk_eq_self_iff]
   exact hz
 
@@ -294,14 +294,14 @@ private theorem card_cosets_eq (a : G) (ha : a ∈ centralizer ({s} : Set G)) :
           (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G)) //
         (⟨a, ha⟩ : ↥(centralizer ({s} : Set G))) • q = q} := by
   refine (Nat.card_eq_of_bijective
-    (fun q => ⟨(((Quotient.out q.1 : ↥(centralizer ({s} : Set G))) : G) :
+    (fun q => ⟨(((Quotient.out q.val : ↥(centralizer ({s} : Set G))) : G) :
         G ⧸ pElementaryOfSylow s P),
       out_mk_conj_mem a ((smul_mk_eq_self_iff a ha _).1
-        (by rw [QuotientGroup.out_eq']; exact q.2))⟩) ⟨?_, ?_⟩).symm
+        (by rw [QuotientGroup.out_eq']; exact q.property))⟩) ⟨?_, ?_⟩).symm
   · intro q₁ q₂ h
     have h' := QuotientGroup.eq.1 (congrArg Subtype.val h)
     refine Subtype.ext ?_
-    rw [← QuotientGroup.out_eq' q₁.1, ← QuotientGroup.out_eq' q₂.1]
+    rw [← QuotientGroup.out_eq' q₁.val, ← QuotientGroup.out_eq' q₂.val]
     exact QuotientGroup.eq.2 (mem_subgroupOf.2 (by simpa using h'))
   · rintro ⟨t, ht⟩
     have hZ : Quotient.out t ∈ centralizer ({s} : Set G) := by
@@ -370,7 +370,7 @@ theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] {x : G}
   rw [hx] at hu
   have hpg : IsPGroup p (zpowers (⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G)))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out (orderOf_pos x).ne']
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart]
   have hmem : ∀ q : ↥(centralizer ({s} : Set G)) ⧸
       (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G)),
       ((⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G))) • q = q) ↔

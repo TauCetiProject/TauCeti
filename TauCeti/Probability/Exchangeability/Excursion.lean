@@ -60,7 +60,6 @@ it.  Exhibiting the original process as a mixture of Markov chains
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
 Markov exchangeable sequences.
@@ -112,8 +111,8 @@ theorem MarkovExchangeable.measure_setOf_loopPathAt_eq_of_perm (h : MarkovExchan
   have := h.countable
   have := h.measurableSingletonClass
   have key := h.prefixLaw_loopPathAt_eq_of_perm a₀ hperm hn
-  rw [prefixLaw_singleton_eq_measure h.aemeasurable,
-    prefixLaw_singleton_eq_measure h.aemeasurable] at key
+  rw [prefixLaw_singleton_eq_measure fun i => h.aemeasurable i.val,
+    prefixLaw_singleton_eq_measure fun i => h.aemeasurable i.val] at key
   convert key using 2 <;>
     exact Set.ext fun ω => ⟨fun hω i => hω i.val (by omega), fun hω i hi => hω ⟨i, by omega⟩⟩
 

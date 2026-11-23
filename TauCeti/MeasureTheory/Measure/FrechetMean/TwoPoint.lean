@@ -276,7 +276,7 @@ private theorem isFrechetBarycenter_ofReal_smul_dirac_add_iff (hp₀ : p ≠ 0) 
     rw [h, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp₀ hp_top),
       frechetPower_ofReal_smul_dirac_add p ht] at this
     exact ENNReal.ofReal_ne_top this.symm
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top (hm z) hm, and_iff_right hR]
+  rw [isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top hm, and_iff_right hR]
   refine forall_congr' fun w ↦ ?_
   rw [frechetPower_ofReal_smul_dirac_add p ht, frechetPower_ofReal_smul_dirac_add p ht,
     ENNReal.ofReal_le_ofReal_iff (add_nonneg (mul_nonneg (sub_nonneg.2 ht.2) (by positivity))

@@ -52,22 +52,23 @@ private theorem exists_chart_of_closedStar
     (a : OpenPartialHomeomorph
       (Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))) H)
     (hs : ∀ x : closedStarRealization K {v},
-      φ x ∈ a.source ↔ x.1 ∈ openStarRealization K v) :
+      φ x ∈ a.source ↔ x.val ∈ openStarRealization K v) :
     ∃ c : OpenPartialHomeomorph (Realization K) H,
       c.source = openStarRealization K v ∧ c.target = a.target ∧
       (∀ x : openStarRealization K v,
-        c x.1 = a (φ ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩)) ∧
-      ∀ y ∈ a.target, c.symm y = (φ.symm (a.symm y)).1 := by
+        c x.val = a (φ ⟨x.val, K.openStarRealization_subset_closedStarRealization v x.property⟩)) ∧
+      ∀ y ∈ a.target, c.symm y = (φ.symm (a.symm y)).val := by
   let e : openStarRealization K v ≃ₜ a.source := {
-    toFun x := ⟨φ ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩,
-      (hs _).mpr x.2⟩
-    invFun y := ⟨(φ.symm y.1).1, (hs _).mp (by simpa only [φ.apply_symm_apply] using y.2)⟩
+    toFun x := ⟨φ ⟨x.val, K.openStarRealization_subset_closedStarRealization v x.property⟩,
+      (hs _).mpr x.property⟩
+    invFun y := ⟨(φ.symm y.val).val, (hs _).mp (by simpa only
+        [φ.apply_symm_apply] using y.property)⟩
     left_inv x := by simp
     right_inv y := by simp
     continuous_toFun := (φ.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_mk _
-    continuous_invFun := (continuous_subtype_val.comp
-      (φ.symm.continuous.comp continuous_subtype_val)).subtype_mk _ }
+      (continuous_subtypeVal.subtype_mk _)).subtype_mk _
+    continuous_invFun := (continuous_subtypeVal.comp
+      (φ.symm.continuous.comp continuous_subtypeVal)).subtype_mk _ }
   let b := e.trans a.toHomeomorphSourceTarget
   let : Nonempty a.target := ⟨b ⟨vertex K v, by simp [vertex_val]⟩⟩
   let t := a.open_target.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
@@ -100,21 +101,21 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
     ∃ c : OpenPartialHomeomorph (Realization K) {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2},
       c.source = openStarRealization K v ∧
       c.target = (simplexHalfSpacePLChart n none).target ∧
-      (c (vertex K v)).1 = 0 ∧
+      (c (vertex K v)).val = 0 ∧
       ∃ f : (ι → ℝ) → (Fin n → ℝ) × ℝ,
       ∃ g : ((Fin n → ℝ) × ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn f (range fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ)) ∧
         IsPLOn g ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
           range (modelWithCornersHalfSpace (Fin n → ℝ))) ∧
-        (∀ x ∈ c.source, f (x.1 : ι → ℝ) = (c x).1) ∧
-        ∀ y ∈ c.target, g y.1 = ((c.symm y).1 : ι → ℝ) := by
+        (∀ x ∈ c.source, f (x.val : ι → ℝ) = (c x).val) ∧
+        ∀ y ∈ c.target, g y.val = ((c.symm y).val : ι → ℝ) := by
   -- Restrict the closed-star simplex model to its last-vertex chart.
   let : Nonempty {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} := ⟨⟨0, by simp⟩⟩
   obtain ⟨φ, hapex, hheight, F, G, hF, hG, hFφ, hGφ⟩ :=
     h.exists_homeomorph_closedStarRealization_top
   let a := simplexHalfSpacePLChart n none
   have hs (x : closedStarRealization K {v}) :
-      φ x ∈ a.source ↔ x.1 ∈ openStarRealization K v := by
+      φ x ∈ a.source ↔ x.val ∈ openStarRealization K v := by
     simp only [a, simplexHalfSpacePLChart_source, Option.elim_none,
       mem_openStarRealization, hheight]
   obtain ⟨c, hcs, hct, hc, hci⟩ := exists_chart_of_closedStar φ a hs
@@ -125,7 +126,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
   let f := A ∘ P ∘ F
   let g := G ∘ R ∘ A.symm
   have hg_eq (y : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) (hy : y ∈ a.target) :
-      g y.1 = ((c.symm y).1 : ι → ℝ) := by
+      g y.val = ((c.symm y).val : ι → ℝ) := by
     rw [hci y hy]
     simp only [g, Function.comp_apply]
     rw [← coe_simplexHalfSpacePLChart_symm_apply n none hy]
@@ -141,24 +142,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
   · exact (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap none).isPLOn.comp
       ((isPLOn_continuousAffineMap P.toContinuousAffineMap univ).comp hF
         (mapsTo_univ _ _)) (mapsTo_univ _ _)
-  · -- Model points in the target are sent back into the actual standard simplex.
-    let s := (modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
-      range (modelWithCornersHalfSpace (Fin n → ℝ))
-    have hmap : MapsTo (R ∘ A.symm) s
-        (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
-          (y.1 : Fin (n + 2) → ℝ)) := by
-      intro z hz
-      have hnonneg : 0 ≤ z.2 := by simpa using hz.2
-      let y := (modelWithCornersHalfSpace (Fin n → ℝ)).symm z
-      have hy : y ∈ a.target := hct ▸ hz.1
-      refine ⟨a.symm y, ?_⟩
-      simpa only [a, R, A, y, Function.comp_apply,
-        coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
-          coe_simplexHalfSpacePLChart_symm_apply n none hy
-    exact hG.comp
-      (((isPLOn_continuousAffineMap R univ).comp
-        (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm none).isPLOn
-        (mapsTo_univ _ _)).mono (subset_univ _)) hmap
+  · exact isPLOn_comp_simplexHalfSpace_symm none hG hct.subset
   · intro x hx
     have hx' : x ∈ openStarRealization K v := hcs ▸ hx
     rw [hc ⟨x, hx'⟩, coe_simplexHalfSpacePLChart_apply]
@@ -176,14 +160,14 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_halfSpace_is
     (h : IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
     ∃ c : OpenPartialHomeomorph (Realization K) {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2},
       c.source = openStarRealization K v ∧
-      (∀ y ∈ c.target, 0 < y.1.2) ∧
+      (∀ y ∈ c.target, 0 < y.val.2) ∧
       ∃ f : (ι → ℝ) → (Fin n → ℝ) × ℝ,
       ∃ g : ((Fin n → ℝ) × ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn f (range fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ)) ∧
         IsPLOn g ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
           range (modelWithCornersHalfSpace (Fin n → ℝ))) ∧
-        (∀ x ∈ c.source, f (x.1 : ι → ℝ) = (c x).1) ∧
-        ∀ y ∈ c.target, g y.1 = ((c.symm y).1 : ι → ℝ) := by
+        (∀ x ∈ c.source, f (x.val : ι → ℝ) = (c x).val) ∧
+        ∀ y ∈ c.target, g y.val = ((c.symm y).val : ι → ℝ) := by
   obtain ⟨c, hcs, hct, -, F, G, hF, hG, hFc, hGc⟩ := h.exists_openPartialHomeomorph_openStar_isPL
   -- Split off the last coordinate as the height; `M` reassembles the coordinates.
   let N : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) × ℝ :=
@@ -197,7 +181,8 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_halfSpace_is
     refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [M, N]
   have hNM (q : (Fin n → ℝ) × ℝ) : N (M q) = q := by
     ext <;> simp [M, N]
-  let L := ContinuousLinearEquiv.equivOfInverse N M hMN hNM
+  let L := ContinuousLinearEquiv.ofContinuousLinearMap N M (ContinuousLinearMap.ext hNM)
+    (ContinuousLinearMap.ext hMN)
   -- The simplex interior has positive height, so it lies in the source of the interior chart.
   have hpos (y : Fin (n + 1) → ℝ) (hy : y ∈ c.target) : 0 < (N y).2 := by
     rw [hct, interior_coordinateSimplex] at hy
@@ -208,7 +193,7 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_halfSpace_is
     ext x
     simp only [d, L, mfld_simps]
     exact ⟨And.left, fun hx => ⟨hx, hpos _ (c.map_source hx)⟩⟩
-  have hdt (y) (hy : y ∈ d.target) : 0 < y.1.2 ∧ M y.1 ∈ c.target := by
+  have hdt (y) (hy : y ∈ d.target) : 0 < y.val.2 ∧ M y.val ∈ c.target := by
     simpa [d, L] using hy
   refine ⟨d, hds.trans hcs, fun y hy => (hdt y hy).1, N ∘ F, G ∘ M, ?_, ?_, ?_, ?_⟩
   · exact (isPLOn_continuousAffineMap N.toContinuousAffineMap univ).comp hF

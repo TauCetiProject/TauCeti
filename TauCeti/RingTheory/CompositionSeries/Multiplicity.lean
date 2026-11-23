@@ -66,12 +66,9 @@ definitional identity.
 
 ## References
 
-The Jordan-Hölder multiplicities `[Pᵢ : Sⱼ]` are what the Cartan matrix of a finite-dimensional
-algebra is defined by, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra", *"defined primarily by the Jordan-Hölder multiplicities `Cᵢⱼ = [Pᵢ : Sⱼ]` of `Sⱼ` in the
-projective cover `Pᵢ`, well-defined by Jordan-Hölder"*); this file supplies that multiplicity and
-its well-definedness.
+The Cartan matrix of a finite-dimensional algebra is defined by the Jordan-Hölder multiplicities
+`Cᵢⱼ = [Pᵢ : Sⱼ]` of the simple modules `Sⱼ` in the projective covers `Pᵢ`, well defined by the
+Jordan-Hölder theorem; this file supplies that multiplicity and its well-definedness.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
   §I.4 and §III.3.
@@ -167,7 +164,7 @@ theorem compositionMultiplicity_ne_zero_iff (s : CompositionSeries (Submodule R 
     (S : Type w) [AddCommGroup S] [Module R S] :
     compositionMultiplicity s S ≠ 0 ↔ ∃ i, IsCompositionFactorAt s i S := by
   rw [compositionMultiplicity_def, Nat.card_ne_zero]
-  exact ⟨fun h => h.1.elim fun i => ⟨i.1, i.2⟩, fun ⟨i, hi⟩ => ⟨⟨⟨i, hi⟩⟩, inferInstance⟩⟩
+  exact ⟨fun h => h.1.elim fun i => ⟨i.val, i.property⟩, fun ⟨i, hi⟩ => ⟨⟨⟨i, hi⟩⟩, inferInstance⟩⟩
 
 theorem compositionMultiplicity_le_length (s : CompositionSeries (Submodule R M))
     (S : Type w) [AddCommGroup S] [Module R S] : compositionMultiplicity s S ≤ s.length :=
@@ -179,7 +176,7 @@ theorem compositionMultiplicity_eq_zero_of_not_isSimpleModule
     (S : Type w) [AddCommGroup S] [Module R S] (hS : ¬ IsSimpleModule R S) :
     compositionMultiplicity s S = 0 := by
   have : IsEmpty {i : Fin s.length // IsCompositionFactorAt s i S} :=
-    ⟨fun i => hS i.2.isSimpleModule⟩
+    ⟨fun i => hS i.property.isSimpleModule⟩
   simp [compositionMultiplicity_def]
 
 /-- The multiplicity along a fixed composition series depends on `S` only through its isomorphism
@@ -264,8 +261,8 @@ theorem isCompositionFactorAt_mapCompositionSeriesOfInjective_iff (f : M →ₗ[
       IsCompositionFactorAt s (i.cast (mapCompositionSeriesOfInjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     mapCompositionSeriesOfInjective_apply, mapCompositionSeriesOfInjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).trans g⟩⟩
 
 /-- Transporting a composition series along a surjective linear map does not change which module
 sits at an index; the index is transported along
@@ -279,8 +276,8 @@ theorem isCompositionFactorAt_comapCompositionSeriesOfSurjective_iff (f : M →�
       IsCompositionFactorAt s (i.cast (comapCompositionSeriesOfSurjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     comapCompositionSeriesOfSurjective_apply, comapCompositionSeriesOfSurjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).trans g⟩⟩
 
 /-- **An injective map preserves multiplicities**: the image of a composition series counts every
 module the same number of times as the series itself. -/
@@ -392,7 +389,7 @@ theorem compositionMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule
     compositionMultiplicity s S = 0 := by
   have : IsEmpty {i : Fin s.length // IsCompositionFactorAt s i S} :=
     ⟨fun i => he.elim'
-      ((isCompositionFactorAt_iff_of_isSimpleModule hbot htop i.1 S).mp i.2).some⟩
+      ((isCompositionFactorAt_iff_of_isSimpleModule hbot htop i.val S).mp i.property).some⟩
   simp [compositionMultiplicity_def]
 
 /-- **A simple module contains exactly one copy of itself**: the multiplicity `[M : S]` of a simple

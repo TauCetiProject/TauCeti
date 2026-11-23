@@ -8,13 +8,17 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.Transpose
 public import TauCeti.KnotTheory.Grid.TorusLink.FullTwist
 public import TauCeti.KnotTheory.Grid.TorusLink.Move
+import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.Nat.GCD
 
 /-!
 # Unknotting numbers of torus link grids
 
 This file bounds the unknotting number (`GridLink.unknottingNumber`) of the grid links presented
-by the standard torus link grids. The Hopf link has unknotting number `⊤`, since it has two
-components. Removing a full twist on `P` strands costs at most `P choose 2` crossing changes
+by the standard torus link grids. When the winding numbers are not coprime the link has multiple
+components and unknotting number `⊤`
+(`GridLink.unknottingNumber_toGridLink_torusLink_of_not_coprime`), in particular for the Hopf link.
+Removing a full twist on `P` strands costs at most `P choose 2` crossing changes
 (`GridLink.crossingChangeGraph_edist_torusLink_add_le`), so the `(P, k P + 1)` torus knot is
 unknotted by `k (P choose 2) = (P - 1) ((k P + 1) - 1) / 2` crossing changes: the upper bound
 `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the Milnor conjecture for `Q ≡ 1 mod P`. This covers the
@@ -38,12 +42,14 @@ most `k`.
 The bound holds for every torus knot (`GridLink.unknottingNumber_toGridLink_torusLink_le`). Since
 `(P - 1) (Q + P - 1) / 2 = P choose 2 + (P - 1) (Q - 1) / 2`, removing full twists and exchanging
 the winding numbers, following Euclid's algorithm on coprime `P` and `Q`, reduces the bound to the
-`(1, 1)` torus knot, the unknot.
+`(1, 1)` torus knot, the unknot. In particular the unknotting number is infinite if and only if the
+winding numbers are not coprime (`GridLink.unknottingNumber_toGridLink_torusLink_eq_top_iff`).
 
 ## Main results
 
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_one`: the Hopf link has unknotting
-  number `⊤`.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_of_not_coprime` and
+  `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_one`: a non-coprime torus link (such
+  as the Hopf link) has unknotting number `⊤`.
 * `TauCeti.GridLink.isCrossingChange_toGridLink_torusLink_one_add_two`: the `(2, q + 3)` and
   `(2, q + 1)` torus links differ by one crossing change.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_add_le`: removing a full twist from a
@@ -52,8 +58,10 @@ the winding numbers, following Euclid's algorithm on coprime `P` and `Q`, reduce
   standard `(p + 1, q + 1)` torus link grid equals that of the `(q + 1, p + 1)` one.
 * `TauCeti.GridLink.isCrossingChange_toGridLink_torusLink_add_two_one`: the `(q + 3, 2)` and
   `(q + 1, 2)` torus links differ by one crossing change.
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_le`: **the upper bound of the Milnor
-  conjecture**, the `(P, Q)` torus knot has unknotting number at most `(P - 1) (Q - 1) / 2`.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_le` and
+  `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_top_iff`: **the upper bound of the
+  Milnor conjecture**, the `(P, Q)` torus knot has unknotting number at most `(P - 1) (Q - 1) / 2`,
+  so a standard torus link has infinite unknotting number iff `P` and `Q` are not coprime.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_mul_le`: the `(P, k P + 1)` torus knot
   has unknotting number at most `k (P choose 2)`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
@@ -150,7 +158,6 @@ private theorem stabilizeX_stabilizeX_torusLink_one :
       simp only [apply_ite Fin.val, Fin.ext_iff, Fin.val_last, h0, h1]
       split_ifs <;> first | omega | contradiction
     | cast j =>
-      have hj := j.isLt
       rw [← Fin.succAbove_last_apply, GridState.insertPoint_apply_succAbove,
         Fin.succAbove_last_apply, Fin.val_castSucc, stabilizeX_torusLink_one_O_val]
       simp only [apply_ite Fin.val, Fin.ext_iff, Fin.val_castSucc, Fin.succAbove_last_apply, h0,
@@ -218,15 +225,22 @@ end GridDiagram
 
 namespace GridLink
 
+/-- When `p + 1` and `q + 1` are not coprime, the `(p + 1, q + 1)` torus link has more than one
+component, so its unknotting number is `⊤`. -/
+theorem unknottingNumber_toGridLink_torusLink_of_not_coprime {p q : ℕ}
+    (h : ¬ (p + 1).Coprime (q + 1)) :
+    (GridDiagram.torusLink p q).toGridLink.unknottingNumber = ⊤ := by
+  by_contra hne
+  have hK : (GridDiagram.torusLink p q).IsKnot :=
+    (isKnot_toGridLink _).mp (isKnot_of_unknottingNumber_ne_top hne)
+  exact h ((GridDiagram.isKnot_torusLink_iff p q).mp hK)
+
 /-- The Hopf link, presented by the standard `4 × 4` grid of the `(2, 2)` torus link, has
 unknotting number `⊤`: it has two components, so no sequence of crossing changes reaches the
 unknot. -/
 theorem unknottingNumber_toGridLink_torusLink_one_one :
-    (GridDiagram.torusLink 1 1).toGridLink.unknottingNumber = ⊤ := by
-  by_contra h
-  have := isKnot_of_unknottingNumber_ne_top h
-  rw [isKnot_toGridLink] at this
-  exact GridDiagram.not_isKnot_torusLink_one_one this
+    (GridDiagram.torusLink 1 1).toGridLink.unknottingNumber = ⊤ :=
+  unknottingNumber_toGridLink_torusLink_of_not_coprime (by decide)
 
 /-- The `(2, q + 3)` and `(2, q + 1)` torus links differ by one crossing change: exchanging the
 first two columns of the standard grid of the former is a cross-commutation, and the result is a
@@ -284,18 +298,8 @@ theorem isCrossingChange_toGridLink_torusLink_add_two_one (q : ℕ) :
 private theorem unknottingNumber_toGridLink_torusLink_add_le_of_le {p q : ℕ}
     (h : (torusLink p q).toGridLink.unknottingNumber ≤ (p * q / 2 : ℕ)) :
     (torusLink p (q + (p + 1))).toGridLink.unknottingNumber ≤ (p * (q + (p + 1)) / 2 : ℕ) := by
-  obtain ⟨k, hk⟩ := (Nat.even_mul_succ_self p).two_dvd
-  have hc : (p + 1).choose 2 = k := by
-    rw [Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm, hk]
-    omega
-  have hs : p * (q + (p + 1)) / 2 = k + p * q / 2 := by
-    rw [Nat.mul_add, hk]
-    omega
-  calc (torusLink p (q + (p + 1))).toGridLink.unknottingNumber
-      ≤ (p + 1).choose 2 + (torusLink p q).toGridLink.unknottingNumber :=
-        unknottingNumber_toGridLink_torusLink_add_le p q
-    _ ≤ k + (p * q / 2 : ℕ) := by rw [hc]; gcongr
-    _ = (p * (q + (p + 1)) / 2 : ℕ) := by rw [hs, Nat.cast_add]
+  rw [Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add, Nat.cast_add]
+  exact (unknottingNumber_toGridLink_torusLink_add_le p q).trans (by gcongr)
 
 /-- **The upper bound of the Milnor conjecture.** If `P = p + 1` and `Q = q + 1` are coprime, the
 `(P, Q)` torus knot, presented by its standard grid, has unknotting number at most
@@ -312,14 +316,23 @@ theorem unknottingNumber_toGridLink_torusLink_le (p q : ℕ) (h : (p + 1).Coprim
     have key {a b : ℕ} (hab : a < b) (hs : a + b = s) (h : (a + 1).Coprime (b + 1)) :
         (torusLink a b).toGridLink.unknottingNumber ≤ (a * b / 2 : ℕ) := by
       obtain ⟨r, rfl⟩ : ∃ r, b = r + (a + 1) := ⟨b - (a + 1), by omega⟩
-      rw [Nat.add_right_comm r (a + 1) 1, Nat.coprime_add_self_right] at h
-      exact unknottingNumber_toGridLink_torusLink_add_le_of_le (ih (a + r) (by omega) a r h rfl)
+      exact unknottingNumber_toGridLink_torusLink_add_le_of_le
+        (ih (a + r) (by omega) a r (Nat.coprime_add_self_add_right.mp h) rfl)
     rcases Nat.lt_trichotomy p q with hpq | rfl | hpq
     · exact key hpq hs h
     · obtain rfl : p = 0 := by simpa using h
       simp [torusLink_zero_right]
     · rw [← unknottingNumber_toGridLink_torusLink_comm, Nat.mul_comm]
       exact key hpq (by omega) (Nat.Coprime.symm h)
+
+/-- The standard `(p + 1, q + 1)` torus link has infinite unknotting number if and only if `p + 1`
+and `q + 1` are not coprime. -/
+theorem unknottingNumber_toGridLink_torusLink_eq_top_iff {p q : ℕ} :
+    (torusLink p q).toGridLink.unknottingNumber = ⊤ ↔ ¬ (p + 1).Coprime (q + 1) :=
+  ⟨fun htop hcop =>
+    ne_top_of_le_ne_top (ENat.natCast_ne_top _)
+      (unknottingNumber_toGridLink_torusLink_le p q hcop) htop,
+    unknottingNumber_toGridLink_torusLink_of_not_coprime⟩
 
 /-- The `(p + 1, k (p + 1) + 1)` torus knot, presented by its standard grid, has unknotting number
 at most `k ((p + 1) choose 2)`. This is the upper bound `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the

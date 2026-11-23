@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Algebra.Rat
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
@@ -54,8 +54,15 @@ Young symmetrizer would let the construction run over any commutative ring, and 
 separate topic.  What the two halves of the criterion actually use of the hypothesis is much
 less.  Vanishing needs only that `2` is invertible, which a `ℚ`-algebra gives.  Nonvanishing needs
 characteristic zero, and a `ℚ`-algebra has characteristic zero as soon as it is nontrivial, so the
-nonvanishing statements carry a `Nontrivial` hypothesis instead.  This is the characteristic-zero
-setting the roadmap works in.
+nonvanishing statements carry a `Nontrivial` hypothesis instead.
+
+The construction is named `weylModule` because what is constructed is a module, not a functor:
+the Schur functor of `μ` is a functor in the underlying module, and only its value at `kⁿ` is built
+here.  Its value at `ℂⁿ`, bundled as an object of `FDRep`, is `TauCeti.schurFunctor`.  The two
+extreme cases `S^{(d)} V ≅ Symᵈ V` and `S^{(1ᵈ)} V ≅ ⋀ᵈ V` are proved in
+`TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
+`TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without unfolding
+anything built here.
 
 ## Main definitions
 
@@ -66,7 +73,7 @@ setting the roadmap works in.
   form in `FDRep`, over a Noetherian base ring.
 * `TauCeti.weylRepOfShapeProjection`: the surjective intertwining map from the tensor power onto
   the Weyl module of a shape, given by its Young symmetrizer.
-* `TauCeti.schurFunctor`: the roadmap-pinned name, `weylFDRepOfShape` at `k = ℂ`.
+* `TauCeti.schurFunctor`: the Schur functor `𝕊^μ(ℂⁿ)`, `weylFDRepOfShape` at `k = ℂ`.
 
 ## Main results
 
@@ -91,21 +98,6 @@ setting the roadmap works in.
 
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Lecture 6, "Weyl's construction".
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", where this object is pinned as
-  `schurFunctor`.  The construction itself is named `weylModule` here because what is constructed
-  is the module, not a functor: the Schur functor of `μ` is a functor in the underlying module,
-  and only its value at `kⁿ` is built.  The pinned name is supplied as `TauCeti.schurFunctor`,
-  the definitional re-export at `k = ℂ` of the bundled form, so that later roadmap layers can
-  consume it under the name they are written against.
-
-  Of that bullet, the `GLₙ`-subrepresentation, the fixed choice of tableau, the canonical
-  isomorphism between the images for different tableaux, and the vanishing criterion are built
-  here.  The bullet's two remaining deliverables, the extreme cases `S^{(d)} V ≅ Symᵈ V` and
-  `S^{(1ᵈ)} V ≅ ⋀ᵈ V`, are proved in
-  `TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
-  `TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without
-  unfolding anything built here.
 -/
 
 public section
@@ -153,7 +145,6 @@ noncomputable abbrev weylRep (t : YoungTableau μ) :
   (weylModule k n t).toRepresentation
 
 /-- The action on the Weyl module is the restriction of the action on the tensor power. -/
-@[simp]
 theorem weylRep_apply_coe (t : YoungTableau μ) (g : GL (Fin n) k)
     (x : (weylModule k n t).toSubmodule) :
     ((weylRep k n t g x : (weylModule k n t).toSubmodule) : ⨂[k]^μ.card (Fin n → k)) =
@@ -173,34 +164,20 @@ theorem weylModule_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
     tensorPowerRange_conj (stdRep k n) μ.card (youngSymmetrizerOver k t) σ,
     permTensorAction_apply]
 
-/-- Permuting the tensor factors by `σ` as a linear equivalence from the Weyl module of `t` to
-the Weyl module of the relabeled tableau `σt`. -/
-noncomputable def weylRelabelEquiv (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
-    (weylModule k n t).toSubmodule ≃ₗ[k] (weylModule k n (relabel σ t)).toSubmodule :=
-  (PiTensorProduct.reindex k (fun _ : Fin μ.card => Fin n → k) σ).ofSubmodules _ _
-    (by rw [weylModule_relabel σ t, permTensorAction_apply])
-
-/-- The relabeling equivalence is induced by permuting the tensor factors. -/
-@[simp]
-theorem weylRelabelEquiv_apply_coe (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
-    (x : (weylModule k n t).toSubmodule) :
-    ((weylRelabelEquiv σ t x : (weylModule k n (relabel σ t)).toSubmodule) :
-        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x := by
-  rw [permTensorAction_apply]
-  rfl
-
 /-- Permuting the tensor factors is `GL n k`-equivariant, so it is an isomorphism of
 representations from the Weyl module of `t` to the Weyl module of `σt`. -/
 noncomputable def weylRelabelRepEquiv (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
     (weylRep k n t).Equiv (weylRep k n (relabel σ t)) :=
-  Representation.Equiv.mk (weylRelabelEquiv σ t) fun g => by
-    ext x
-    have h := congrArg (fun f : Module.End k (⨂[k]^μ.card (Fin n → k)) =>
-        f (x : ⨂[k]^μ.card (Fin n → k)))
-      (commute_permTensorAction_tensorPowerRep k n μ.card σ g)
-    simp only [mul_apply_eq_comp] at h
-    simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      weylRelabelEquiv_apply_coe, weylRep_apply_coe] using h
+  tensorPowerReindexEquiv σ (by rw [weylModule_relabel σ t, permTensorAction_apply])
+
+/-- The relabeling isomorphism of representations is induced by permuting the tensor factors. -/
+@[simp]
+theorem weylRelabelRepEquiv_apply_coe (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
+    (x : (weylModule k n t).toSubmodule) :
+    ((weylRelabelRepEquiv σ t x : (weylModule k n (relabel σ t)).toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x := by
+  rw [weylRelabelRepEquiv, tensorPowerReindexEquiv_apply_coe, permTensorAction_apply,
+    LinearEquiv.coe_coe]
 
 /-- The Weyl modules of two tableaux of the same shape are isomorphic representations of
 `GL n k`: up to isomorphism the Weyl module depends only on the shape. -/
@@ -349,10 +326,7 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero
     (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
         (tensorPowerBasis k n μ.card p) = 0 := by
-  have : Invertible (2 : ℚ) := invertibleOfNonzero (by norm_num)
-  have : Invertible (2 : k) := by
-    have h := Invertible.map (algebraMap ℚ k) (2 : ℚ)
-    rwa [map_ofNat] at h
+  have : Invertible (2 : k) := invertibleTwoOfAlgebraRat k
   have hneg :=
     permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t hcol hab hpab
   have htwo : (2 : k) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
@@ -427,7 +401,7 @@ the canonical `μ`-tableau.  Since the Weyl modules of two `μ`-tableaux are iso
 representations, this is a legitimate shape-indexed representative of them all; the
 identification is `TauCeti.YoungTableau.weylRepEquivOfShape`.
 
-This is the object the classical-groups roadmap pins as `schurFunctor n μ`. -/
+Over `ℂ`, bundled as an object of `FDRep`, it is `TauCeti.schurFunctor n μ`. -/
 noncomputable def weylModuleOfShape (μ : YoungDiagram) :
     Subrepresentation (tensorPowerRep k n μ.card) :=
   YoungTableau.weylModule k n (StandardYoungTableau.rowSuperstandard μ).toTableau
@@ -456,7 +430,6 @@ theorem weylModuleOfShape_toSubmodule (μ : YoungDiagram) :
 
 /-- The action on the Weyl module of a shape is the restriction of the action on the tensor
 power. -/
-@[simp]
 theorem weylRepOfShape_apply_coe (μ : YoungDiagram) (g : GL (Fin n) k)
     (x : (weylModuleOfShape k n μ).toSubmodule) :
     ((weylRepOfShape k n μ g x : (weylModuleOfShape k n μ).toSubmodule) :
@@ -535,13 +508,12 @@ noncomputable abbrev weylFDRepOfShape (μ : YoungDiagram) : FDRep k (GL (Fin n) 
 
 end Bundled
 
-/-- **The Schur functor** `𝕊^μ(ℂⁿ)` in the roadmap's pinned form: the Weyl module of the shape
-`μ` over `ℂ`, bundled as an object of `FDRep ℂ (GL (Fin n) ℂ)`.
+/-- **The Schur functor** `𝕊^μ(ℂⁿ)`: the Weyl module of the shape `μ` over `ℂ`, bundled as an
+object of `FDRep ℂ (GL (Fin n) ℂ)`.
 
-This is a definitional re-export of `TauCeti.weylFDRepOfShape` at `k = ℂ`, under the name later
-roadmap layers are written against; the general form, over any Noetherian commutative ring that
-is a `ℚ`-algebra, is `TauCeti.weylFDRepOfShape`, and the unbundled construction is
-`TauCeti.weylModuleOfShape`. -/
+This is `TauCeti.weylFDRepOfShape` at `k = ℂ`, by definition, under its classical name; the
+general form, over any Noetherian commutative ring that is a `ℚ`-algebra, is
+`TauCeti.weylFDRepOfShape`, and the unbundled construction is `TauCeti.weylModuleOfShape`. -/
 noncomputable abbrev schurFunctor (n : ℕ) (μ : YoungDiagram) : FDRep ℂ (GL (Fin n) ℂ) :=
   weylFDRepOfShape ℂ n μ
 

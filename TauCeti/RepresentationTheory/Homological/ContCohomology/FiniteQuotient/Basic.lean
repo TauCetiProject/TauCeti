@@ -76,19 +76,17 @@ those quotients, not of this one only, and this file consumes it together with i
 and `_comp` lemmas.
 
 `invariantsInclusion`, `transitionPair` and `finiteLevelTransition` keep their bodies sealed:
-each is characterized by its `_apply_coe`, `_hom_toLinearMap` and functor-law lemmas, and those
-lemmas are proved as `(rfl)`, so no consumer unfolds a body. The three functors are `@[expose]`
-instead, because the *statement* of a functor's `map` lemma does not elaborate with the body
-sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand side in the type the
-`obj` field reduces to, so without the body the characteristic lemma cannot even be written
-down.
+each is characterized by its `_apply_coe`, `_hom_toLinearMap`, `_eq_map` and functor-law
+lemmas, and those lemmas are proved as `(rfl)`, so no consumer unfolds a body. The three functors
+are `@[expose]` instead, because the *statement* of a functor's `map` lemma does not elaborate
+with the body sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand side in
+the type the `obj` field reduces to, so without the body the characteristic lemma cannot even be
+written down.
 
-This implements the six milestones of the "The system" bullet of Layer 4 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, together with the functoriality of the
-whole system in the coefficients that the same bullet asks for. The colimit theorem of that same
-layer is separate, and stays out: it is stated on the explicit low-degree complex and compared
-with the canonical object, so it consumes the roadmap's Layers 2 and 3, neither of which the
-system built here uses — every ingredient below is Mathlib's.
+The colimit theorems are separate (`FiniteQuotient/Colimit.lean` for the explicit low-degree
+complex, `FiniteQuotient/AllDegreeColimit.lean` for the canonical object in every degree); the
+system built here uses neither the explicit complex nor its comparison with the canonical object,
+and every ingredient below is Mathlib's.
 
 ## References
 
@@ -115,7 +113,7 @@ variable {U V W : Subgroup G}
 /-- Invariants grow as the subgroup shrinks: a vector fixed by `U` is fixed by every `V ≤ U`. -/
 theorem invariants_le (hVU : V ≤ U) :
     invariants (A.ρ.comp U.subtype) ≤ invariants (A.ρ.comp V.subtype) :=
-  fun _ hm v => hm ⟨v.1, hVU v.2⟩
+  fun _ hm v => hm ⟨v.val, hVU v.property⟩
 
 /-- The coefficient half of a transition pair of the finite-quotient system: the inclusion
 `A^U ↪ A^V` for `V ≤ U`. -/
@@ -224,6 +222,12 @@ noncomputable def finiteLevelTransition (hVU : V ≤ U) (n : ℕ) :
     groupCohomology (A.quotientToInvariants U) n ⟶
       groupCohomology (A.quotientToInvariants V) n :=
   groupCohomology.map (QuotientGroup.mapOfLE hVU) (transitionPair A hVU) n
+
+/-- The transition map is `groupCohomology.map` along the transition pair. -/
+theorem finiteLevelTransition_eq_map (hVU : V ≤ U) (n : ℕ) :
+    finiteLevelTransition A hVU n =
+      groupCohomology.map (QuotientGroup.mapOfLE hVU) (transitionPair A hVU) n :=
+  (rfl)
 
 /-- The first functor law: the transition map from a level to itself is the identity. -/
 @[simp]

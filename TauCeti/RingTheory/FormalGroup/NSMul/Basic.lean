@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -55,6 +56,9 @@ off the invariant differential.
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
+* `FormalGroup.coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul`: if `[n](T)` agrees
+  with the inverse below degree `k`, adding `T` retains the coefficient of their difference
+  in degree `k`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
 * `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
@@ -62,10 +66,14 @@ off the invariant differential.
   `[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`.
 * `FormalGroup.nsmulSeries_𝔾ₐ` and `FormalGroup.nsmulSeries_𝔾ₘ`: `[n](T) = n T` on the additive
   formal group law and `[n](T) = (1 + T) ^ n - 1` on the multiplicative one.
+* `FormalGroup.nsmulSeries_𝔾ₐ_eq_zero`: `[n](T) = 0` on the additive formal group law when
+  `n = 0` in `R`.
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
 * `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
+* `FormalGroup.natCast_eq_zero_of_two_le_order_nsmulSeries`: if `[n]_F` has order at least two
+  then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
@@ -73,6 +81,8 @@ off the invariant differential.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential`: if `p` is not a zero
   divisor, the coefficient of `Tᵖ` in `[p]_F` is congruent modulo `p` to the coefficient of `Tᵖ⁻¹`
   in the invariant differential.
+* `FormalGroup.le_order_nsmulSeries_sub`: if two formal group laws agree below degree `M`, then
+  their multiplication-by-`m` series agree below degree `M`.
 * `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
   multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
 * `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order`: if `f = u T + ⋯` and
@@ -137,6 +147,17 @@ theorem hasSubst_nsmulSeries_X (n : ℕ) : HasSubst ![F.nsmulSeries n, PowerSeri
     fin_cases s
     · exact F.constantCoeff_nsmulSeries n
     · exact PowerSeries.constantCoeff_X
+
+/-- If `[n]_F(T) = i(T) + Tᵏ s(T)` with `k ≠ 0`, then `[n + 1]_F` vanishes below degree
+`k` and has coefficient `s(0)` in degree `k`. No commutativity hypothesis on `F` is needed. -/
+theorem coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul {n k m : ℕ}
+    {s : PowerSeries R} (h : F.nsmulSeries n = F.addInvX + PowerSeries.X ^ k * s)
+    (hk : k ≠ 0) (hm : m ≤ k) :
+    PowerSeries.coeff m (F.nsmulSeries (n + 1)) =
+      if m = k then PowerSeries.constantCoeff s else 0 := by
+  rw [nsmulSeries_succ, h,
+    F.coeff_subst_add_X_pow_mul_X F.constantCoeff_addInvX s hk hm,
+    F.subst_addInvX_X_eq_zero, map_zero, _root_.zero_add]
 
 /-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
 `m` and by `n`. -/
@@ -215,6 +236,10 @@ theorem nsmulSeries_𝔾ₐ (n : ℕ) :
     have ha := (𝔾ₐ (R := R)).hasSubst_nsmulSeries_X n
     rw [nsmulSeries_succ, 𝔾ₐ_toPowerSeries, subst_add ha, subst_X ha, subst_X ha]
     simp [ih, add_mul]
+
+/-- Multiplication by `n` on the additive formal group law vanishes when `n = 0` in `R`. -/
+theorem nsmulSeries_𝔾ₐ_eq_zero {n : ℕ} (hn : (n : R) = 0) : (𝔾ₐ (R := R)).nsmulSeries n = 0 := by
+  rw [nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hn, map_zero, zero_mul]
 
 /-- Multiplication by `n` on the multiplicative formal group law `X + Y + X Y` is
 `[n](T) = (1 + T) ^ n - 1`. -/
@@ -301,6 +326,13 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
 /-- If `[n]_F = 0` then `n = 0` in `R`, as `n` is the linear coefficient of `[n]_F`. -/
 theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
   simpa [h] using (F.coeff_one_nsmulSeries n).symm
+
+/-- If `[n]_F` has order at least two then `n = 0` in `R`, as `n` is the linear coefficient of
+`[n]_F`. -/
+theorem natCast_eq_zero_of_two_le_order_nsmulSeries {n : ℕ}
+    (h : 2 ≤ (F.nsmulSeries n).order) : (n : R) = 0 := by
+  rw [← F.coeff_one_nsmulSeries n]
+  exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr one_lt_two).trans_le h)
 
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :
@@ -410,6 +442,28 @@ theorem natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential [F.IsComm]
   refine ⟨-PowerSeries.coeff (p - 1) (a * S * E), ?_⟩
   rw [h₂', ← h₁', map_add, hcoeff]
   ring
+
+end FormalGroup
+
+namespace FormalGroup
+
+variable {R : Type*} [CommRing R]
+
+/-- If two formal group laws `F` and `G` agree below degree `M`, then their multiplication-by-`m`
+series `[m]_F` and `[m]_G` agree below degree `M`. -/
+theorem le_order_nsmulSeries_sub {F G : FormalGroup R} {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order) (m : ℕ) :
+    (M : ℕ∞) ≤ (F.nsmulSeries m - G.nsmulSeries m).order := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [F.nsmulSeries_succ, G.nsmulSeries_succ, PowerSeries.order_eq_order]
+    exact le_order_subst_pair_sub hFG
+      (by rw [← PowerSeries.constantCoeff_eq]; exact F.constantCoeff_nsmulSeries m)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact PowerSeries.constantCoeff_X)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact G.constantCoeff_nsmulSeries m)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact PowerSeries.constantCoeff_X)
+      (by rwa [← PowerSeries.order_eq_order]) (by simp)
 
 end FormalGroup
 

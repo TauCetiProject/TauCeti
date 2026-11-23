@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 -- `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow` is imported publicly: the finite-exponent
 -- estimates below are proved as bounds between `∫⁻ ‖·‖ₑ ^ p` integrals and converted by
@@ -16,6 +17,8 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The Poincaré inequality on a slab
@@ -58,6 +61,11 @@ the bound `‖Du x (eᵢ)‖ ≤ ‖Du x‖`; the endpoint uses the same bound p
   `EuclideanSpace ℝ (Fin (n + 1))` for a `C¹` function supported in a slab of width `b - a`.
 * `TauCeti.eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball`: the form for a support inside a
   ball, with twice the radius as the constant.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`: the `L²` form on the
+  plane `ℝ × ℝ`, `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`, for a compactly supported `C¹` map vanishing where
+  `r ≤ |t|`.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im`: the same inequality read
+  on `ℂ`, `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`, for a map vanishing where `r ≤ |Im z|`.
 
 The passage from a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals to one between the `Lᵖ` seminorms is
 generic measure theory and lives in `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow`.
@@ -106,13 +114,13 @@ private theorem enorm_le_lintegral_enorm_deriv
     (hg : ∀ t, HasDerivAt g (g' t) t) (hg' : Continuous g') (hga : g a = 0)
     {t : ℝ} (ht : t ∈ Icc a b) : ‖g t‖ₑ ≤ ∫⁻ s in Ioc a b, ‖g' s‖ₑ := by
   -- Completeness would only be needed for the fundamental theorem of calculus, and
-  -- `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` passes to the completion itself.
+  -- `eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` passes to the completion itself.
   have hderiv : deriv g = g' := funext fun x => (hg x).deriv
   have hC1 : ContDiff ℝ 1 g :=
     contDiff_one_iff_deriv.2 ⟨fun x => (hg x).differentiableAt, hderiv ▸ hg'⟩
   calc ‖g t‖ₑ = ‖g t - g a‖ₑ := by rw [hga, sub_zero]
     _ ≤ ∫⁻ s in Icc a t, ‖deriv g s‖ₑ :=
-        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hC1.contDiffOn ht.1
+        eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hC1.contDiffOn ht.1
     _ = ∫⁻ s in Ioc a t, ‖g' s‖ₑ := by rw [hderiv, setLIntegral_congr Ioc_ae_eq_Icc]
     _ ≤ ∫⁻ s in Ioc a b, ‖g' s‖ₑ := lintegral_mono_set (Ioc_subset_Ioc_right ht.2)
 
@@ -162,7 +170,7 @@ theorem lintegral_enorm_rpow_le_of_support_subset_Icc
         have hmu : (volume.restrict (Ioc a b)) Set.univ = ENNReal.ofReal (b - a) := by
           rw [Measure.restrict_apply_univ, Real.volume_Ioc]
         simpa only [hmu] using rpow_lintegral_le_measure_univ_rpow_mul
-          (μ := volume.restrict (Ioc a b)) hg'.enorm.measurable.aemeasurable hr
+          (μ := volume.restrict (Ioc a b)) hr
     _ = ENNReal.ofReal ((b - a) ^ r) * ∫⁻ s in Ioc a b, ‖g' s‖ₑ ^ r := by
         rw [mul_right_comm, hpow]
     _ ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖g' t‖ₑ ^ r :=
@@ -196,15 +204,15 @@ theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc
   have hgc : Continuous g := continuous_iff_continuousAt.2 fun t => (hg t).continuousAt
   obtain rfl | hp' := eq_or_ne p ∞
   · rw [eLpNorm_exponent_top hgc.aestronglyMeasurable]
-    refine eLpNormEssSup_le_of_ae_enorm_bound (.of_forall ?_)
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall ?_)
     exact enorm_le_mul_of_support_subset_Icc hg hg' hsupp
-      ((enorm_ae_le_eLpNormEssSup g' volume).mono fun _ ht =>
+      ((eNorm_ae_le_eLpNormEssSup g' volume).mono fun _ ht =>
         ht.trans eLpNormEssSup_le_eLpNorm_top)
   rcases lt_or_ge b a with hba | hab
   · rw [Icc_eq_empty_of_lt hba, subset_empty_iff, Function.support_eq_empty_iff] at hsupp
     simp [hsupp]
   exact eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
-    (zero_lt_one.trans_le hp).ne' hp' hgc.aestronglyMeasurable
+    hp' hgc.aestronglyMeasurable
     (lintegral_enorm_rpow_le_of_support_subset_Icc hg hg' hsupp
       (by simpa using ENNReal.toReal_mono hp' hp))
 
@@ -292,13 +300,13 @@ private theorem eLpNorm_top_le_eLpNorm_top_fderiv_of_support_subset_slab
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   have hbound : ∀ x, ‖fderiv ℝ u x‖ₑ ≤ eLpNorm (fderiv ℝ u) ∞ volume := by
     have hsub := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).support_subset_of_isClosed
-      (isClosed_le hfc.enorm continuous_const)
-      ((enorm_ae_le_eLpNormEssSup (fderiv ℝ u) volume).mono fun _ hx =>
+      (isClosed_le hfc.eNorm continuous_const)
+      ((eNorm_ae_le_eLpNormEssSup (fderiv ℝ u) volume).mono fun _ hx =>
         hx.trans eLpNormEssSup_le_eLpNorm_top)
     simpa only [Measure.support_eq_univ, subset_def, mem_univ, true_implies, mem_ofPred_eq]
       using hsub
   rw [eLpNorm_exponent_top hu.continuous.aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_enorm_bound (.of_forall fun x => ?_)
+  refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall fun x => ?_)
   let y := i.removeNth (WithLp.ofLp x)
   have hchart : slabChart i (x i, y) = x := by simp [slabChart, y]
   rw [← hchart]
@@ -337,12 +345,12 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
-    (zero_lt_one.trans_le hp).ne' hp' hu.continuous.aestronglyMeasurable ?_
+    hp' hu.continuous.aestronglyMeasurable ?_
   set r := p.toReal
   have hmu : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hu.continuous.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hu.continuous.eNorm).measurable
   have hmf : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖fderiv ℝ u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hfc.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hfc.eNorm).measurable
   have hline : ∀ y : Fin n → ℝ, ∫⁻ t, ‖u (slabChart i (t, y))‖ₑ ^ r
       ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖fderiv ℝ u (slabChart i (t, y))‖ₑ ^ r := fun y =>
     lintegral_enorm_rpow_comp_slabChart_le
@@ -381,5 +389,83 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
     eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu hslab hp
 
 end Slab
+
+section Strip
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **The Poincaré inequality on a strip, for maps vanishing outside it.** A compactly supported
+`C¹` map on the plane which vanishes wherever `r ≤ |t|` satisfies `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`.
+Only the derivative across the strip enters, and the constant depends only on its width. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd {u : ℝ × ℝ → V} {r : ℝ}
+    (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u)
+    (hr : ∀ z : ℝ × ℝ, r ≤ |z.2| → u z = 0) :
+    ∫ z, ‖u z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ u z (0, 1)‖ ^ 2 := by
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  -- Off the closed strip `|t| ≤ r` the map and its derivative vanish.
+  have hdu0 (z : ℝ × ℝ) (hz : r < |z.2|) : fderiv ℝ u z (0, 1) = 0 := by
+    have hopen : IsOpen {w : ℝ × ℝ | r < |w.2|} :=
+      isOpen_lt continuous_const (continuous_abs.comp continuous_snd)
+    have hev : u =ᶠ[nhds z] fun _ ↦ 0 :=
+      Filter.mem_of_superset (hopen.mem_nhds hz) fun w hw ↦ hr w (le_of_lt hw)
+    simp [hev.fderiv_eq]
+  -- On each vertical slice, the one-dimensional Poincaré inequality on `Icc (-r) r`.
+  have hline (s : ℝ) : (∫ t, ‖u (s, t)‖ ^ 2) ≤
+      (2 * r) ^ 2 * ∫ t, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 := by
+    have hd (t : ℝ) : HasDerivAt (fun r ↦ u (s, r)) (fderiv ℝ u (s, t) (0, 1)) t := by
+      have hp : HasDerivAt (fun r : ℝ ↦ ((s, r) : ℝ × ℝ)) (0, 1) t :=
+        (hasDerivAt_const t s).prodMk (hasDerivAt_id t)
+      exact (hu.differentiable one_ne_zero (s, t)).hasFDerivAt.comp_hasDerivAt t hp
+    have hd' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
+      (hdu.clm_apply continuous_const).comp (continuous_const.prodMk continuous_id)
+    have hsupp : Function.support (fun t ↦ u (s, t)) ⊆ Icc (-r) r := fun t ht ↦
+      abs_le.1 (not_le.1 fun h ↦ ht (hr (s, t) h)).le
+    have hsupp' : Function.support (fun t ↦ fderiv ℝ u (s, t) (0, 1)) ⊆ Icc (-r) r :=
+      fun t ht ↦ abs_le.1 (not_lt.1 fun h ↦ ht (hdu0 (s, t) h))
+    have h := lintegral_enorm_rpow_le_of_support_subset_Icc hd hd' hsupp one_le_two
+    rw [show (r - -r) ^ (2 : ℝ) = (2 * r) ^ 2 by rw [Real.rpow_two]; ring] at h
+    have hint {f : ℝ → V} (hf : Continuous f) (hfs : Function.support f ⊆ Icc (-r) r) :
+        ENNReal.ofReal (∫ t, ‖f t‖ ^ 2) = ∫⁻ t, ‖f t‖ₑ ^ (2 : ℝ) := by
+      rw [ofReal_integral_eq_lintegral_ofReal (hf.integrable_norm_sq_of_hasCompactSupport
+        (HasCompactSupport.intro isCompact_Icc fun t ht ↦
+          Function.notMem_support.1 fun h ↦ ht (hfs h))) (ae_of_all _ fun _ ↦ sq_nonneg _)]
+      simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, ENNReal.rpow_two]
+    rw [← ENNReal.ofReal_le_ofReal_iff (mul_nonneg (sq_nonneg _)
+      (integral_nonneg fun _ ↦ sq_nonneg _)), ENNReal.ofReal_mul (sq_nonneg _),
+      hint (f := fun t ↦ u (s, t)) (hu.continuous.comp (continuous_const.prodMk continuous_id))
+        hsupp, hint hd' hsupp']
+    exact h
+  have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) (volume.prod volume) :=
+    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
+  have hdi : Integrable (fun z ↦ ‖fderiv ℝ u z (0, 1)‖ ^ 2) (volume.prod volume) :=
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply (𝕜 := ℝ) (0, 1))
+  rw [Measure.volume_eq_prod, integral_prod _ hi, integral_prod _ hdi, ← integral_const_mul]
+  exact integral_mono hi.integral_prod_left (hdi.integral_prod_left.const_mul _) hline
+
+/-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
+`ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
+`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im {η : ℂ → V} {r : ℝ}
+    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) (hr : ∀ z : ℂ, r ≤ |z.im| → η z = 0) :
+    ∫ z, ‖η z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ η z Complex.I‖ ^ 2 := by
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
+    (hη.comp Complex.equivRealProdCLM.symm.contDiff)
+    (hc.comp_homeomorph Complex.equivRealProdCLM.symm.toHomeomorph) (r := r) fun p hp ↦
+      hr _ (by rwa [Complex.equivRealProdCLM_symm_apply_im])
+  have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ Complex.equivRealProdCLM.symm) p (0, 1) =
+      fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I := by
+    rw [Complex.equivRealProdCLM.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, Complex.equivRealProdCLM_symm_apply (0, 1)]
+    simp
+  simp only [hdη, Function.comp_apply] at hpoinc
+  rw [← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖η (Complex.equivRealProdCLM.symm p)‖ ^ 2,
+    ← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I‖ ^ 2] at hpoinc
+  simpa only [Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM,
+    ContinuousLinearEquiv.symm_apply_apply] using hpoinc
+
+end Strip
 
 end TauCeti

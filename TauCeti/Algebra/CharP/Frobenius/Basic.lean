@@ -43,14 +43,13 @@ instance isLocalHom_frobenius : IsLocalHom (frobenius A p) :=
 @[simp]
 theorem map_iterateFrobenius_unit_eq_pow (u : Aˣ) :
     Units.map (iterateFrobenius A p n : A →* A) u = u ^ p ^ n :=
-  Units.ext (by
-    rw [Units.coe_map, MonoidHom.coe_ofClass, iterateFrobenius_def, Units.val_pow_eq_pow_val])
+  Units.ext <| by simp [iterateFrobenius_def]
 
 /-- Applying the `p ^ n`-power Frobenius to each coordinate of a family of units raises the family
 to its `p ^ n`-th power. This is the coordinatewise form of
 `TauCeti.map_iterateFrobenius_unit_eq_pow`, which is the shape a torus calculation meets it in. -/
 theorem map_iterateFrobenius_units_eq_pow {ι : Type*} (s : ι → Aˣ) :
     (fun i => Units.map (iterateFrobenius A p n : A →* A) (s i)) = s ^ p ^ n :=
-  funext fun i => (map_iterateFrobenius_unit_eq_pow A p n (s i)).trans (Pi.pow_apply s _ i).symm
+  funext fun i => by simp
 
 end TauCeti

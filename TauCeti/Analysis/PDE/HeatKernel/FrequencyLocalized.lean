@@ -1,0 +1,659 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
+public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
+import Mathlib.Analysis.Fourier.Convolution
+import TauCeti.Analysis.Bochner.Fourier.Nonneg
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.PDE.HeatKernel.Derivatives
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
+
+/-!
+# The heat flow of frequency-localized functions
+
+On a finite-dimensional real inner product space `E` of dimension `n`, the heat semigroup
+`e^{tΔ}` is the Fourier multiplier with symbol `exp(-4π² t ‖ξ‖²)`. On a function whose Fourier
+transform lives in the annulus `ν r ≤ ‖ξ‖ ≤ ν R`, `r > 0`, this symbol is at most
+`exp(-4π² r² ν² t)`, and the heat flow decays exponentially in `ν² t` in every `Lᵖ` norm:
+
+`‖e^{tΔ} f‖_p ≤ C exp(-π² r² ν² t / 4) ‖f‖_p`,
+
+with `C` depending only on `r`, `R` and `E`. This is the heat estimate for the dyadic blocks of
+the Littlewood–Paley decomposition: for `j ≥ 1` the block `Δⱼ f` has frequencies of size `2^j`,
+so `‖e^{tΔ} Δⱼ f‖_p ≤ C exp(-c 4^j t) ‖Δⱼ f‖_p`. It is how the heat semigroup gains regularity
+on Besov and Hölder–Zygmund spaces, `‖e^{tΔ} f‖_{𝒞^{s + 2σ}} ≤ C t^{-σ} ‖f‖_{𝒞^s}` for
+`σ ≥ 0` and `0 < t ≤ 1`.
+
+The proof writes `e^{tΔ} f` as the convolution of `f` with the kernel `𝓕⁻ σ`, where
+`σ ξ = χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` and `χ` is a smooth cutoff equal to `1` on the annulus
+`r ≤ ‖ξ‖ ≤ R` and vanishing near the origin. The derivatives of `σ` of every order are
+`O(ν^{-k} exp(-π² r² ν² t / 4))`: on the support of `χ (ν⁻¹ ·)`, each derivative of the Gaussian
+costs a factor `√t (1 + √t ‖ξ‖)`, which the remaining Gaussian factor absorbs. The weighted
+Plancherel bound for kernels of band-limited symbols then gives
+`∫ ‖𝓕⁻ σ‖ ≤ C exp(-π² r² ν² t / 4)`, and Young's inequality finishes the estimate.
+
+On a function whose Fourier transform lives in a ball, the heat flow instead tends to the
+identity as `t → 0`, uniformly over all such functions and in every `Lᵖ` norm, `p = ∞` included:
+`‖e^{tΔ} f - f‖_p ≤ c(t) ‖f‖_p` with `c(t) → 0`. There `e^{tΔ} - 1` is the multiplier by the
+Schwartz symbol `χ (exp(-4π² t ‖ξ‖²) - 1)`, for a cutoff `χ` equal to `1` near the ball, and its
+kernel is `e^{tΔ} κ - κ` with `κ = 𝓕⁻ χ`, which tends to `0` in `L¹` by the strong continuity of
+the heat semigroup on `L¹`. This is the strong continuity of the heat semigroup on each
+Littlewood–Paley block, from which it follows on the Besov spaces `B^s_{p,q}`, `q < ∞`.
+
+## Main declarations
+
+* `TauCeti.exists_integral_norm_fourierInv_mul_exp_le`: the `L¹` norm of the kernel of the
+  frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` is
+  `O(exp(-π² r² ν² t))` when `χ` vanishes on the ball of radius `r`.
+* `TauCeti.exists_norm_heatSemigroup_toLp_le_of_support_fourier_subset`: the heat semigroup on
+  a Schwartz function with Fourier transform in the annulus `ν r ≤ ‖ξ‖ ≤ ν R` decays like
+  `exp(-π² r² ν² t / 4)` in `Lᵖ`.
+* `TauCeti.exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_le`:
+  the heat estimate for the Littlewood–Paley blocks `Δⱼ`, `j ≥ 1`.
+* `TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le`: the same estimate for
+  the heat semigroup on tempered distributions (`TemperedDistribution.heatSemigroup`), applied to
+  a block `Δⱼ u`, `j ≥ 1`, of a tempered distribution that is an `Lᵖ` function, for every
+  `1 ≤ p ≤ ∞`, including `p = ∞`.
+* `TemperedDistribution.littlewoodPaleyBlock_heatSemigroup_comm`: `Δⱼ e^{tΔ} = e^{tΔ} Δⱼ`.
+* `TauCeti.exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier`: the heat flow of a
+  function band-limited to a ball tends to the function in `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le`: the heat
+  estimate `‖Δⱼ e^{tΔ} u‖_p ≤ C exp(-c (4^j - 1) t) ‖Δⱼ u‖_p` for every block, `j = 0` included.
+
+## References
+
+* H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
+  Equations*, Lemma 2.4.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open MeasureTheory Metric Module Real Set Function FourierTransform SchwartzMap ContinuousLinearMap
+open scoped ContDiff Convolution SchwartzMap LineDeriv NNReal ENNReal ComplexConjugate Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-! ### The kernel of the frequency-localized heat multiplier -/
+
+section Kernel
+
+variable {χ : E → ℝ} {r : ℝ}
+
+/-- **Derivative bounds for the heat multiplier cut off away from the origin, at unit scale.**
+If `χ` is smooth, compactly supported and vanishes on the ball of radius `r > 0`, every
+derivative of `χ η exp(-4π² τ ‖η‖²)` is `O(exp(-π² r² τ))`, uniformly in `τ ≥ 0`. -/
+private theorem exists_norm_iteratedFDeriv_mul_exp_le (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hr : 0 < r) (hχr : ∀ ξ, ‖ξ‖ < r → χ ξ = 0) (k : ℕ) :
+    ∃ A, ∀ τ, 0 ≤ τ → ∀ η : E,
+      ‖iteratedFDeriv ℝ k (fun η ↦ χ η * rexp (-(4 * π ^ 2 * τ * ‖η‖ ^ 2))) η‖ ≤
+        A * rexp (-(π ^ 2 * r ^ 2 * τ)) := by
+  choose M hM using fun i ↦ ((hχ.continuous_iteratedFDeriv (m := i)
+    (by exact_mod_cast le_top)).bounded_above_of_compact_support (hχc.iteratedFDeriv i))
+  choose G hG using exists_norm_iteratedFDeriv_exp_neg_mul_norm_sq_le (E := E)
+  -- `√τ ^ j exp(-π² r² τ)` is bounded, by `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le` at `√τ`.
+  set B : ℕ → ℝ := fun j ↦ j.factorial / (π ^ 2 * r ^ 2 / 2) ^ j * rexp (π ^ 2 * r ^ 2)
+  have hB (j : ℕ) (τ : ℝ) (hτ : 0 ≤ τ) : √τ ^ j * rexp (-(π ^ 2 * r ^ 2 * τ)) ≤ B j := by
+    have h := one_add_pow_mul_exp_neg_mul_sq_le (by positivity : 0 < π ^ 2 * r ^ 2) j (r := √τ)
+    rw [sq_sqrt hτ, neg_mul] at h
+    exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (sqrt_nonneg τ)
+      (le_add_of_nonneg_left zero_le_one) j) (exp_pos _).le).trans h
+  have hM0 (i : ℕ) : 0 ≤ M i := (norm_nonneg _).trans (hM i 0)
+  have hG0 (j : ℕ) : 0 ≤ G j := by
+    have h := (norm_nonneg _).trans (hG j 1 zero_le_one 0)
+    simpa [(exp_pos _).ne', sqrt_one] using h
+  have hB0 (j : ℕ) : 0 ≤ B j := by positivity
+  set D : ℕ → ℝ := fun i ↦ k.choose i * M i * (G (k - i) * (2 * π) ^ (k - i) * B (k - i))
+  have hD0 (i : ℕ) : 0 ≤ D i := mul_nonneg (mul_nonneg (by positivity) (hM0 i))
+    (mul_nonneg (mul_nonneg (hG0 _) (by positivity)) (hB0 _))
+  refine ⟨∑ i ∈ Finset.range (k + 1), D i, fun τ hτ η ↦ ?_⟩
+  have hg : ContDiff ℝ ∞ fun η : E ↦ rexp (-(4 * π ^ 2 * τ * ‖η‖ ^ 2)) :=
+    (contDiff_const.mul (contDiff_norm_sq ℝ)).neg.exp
+  refine (norm_iteratedFDeriv_mul_le hχ hg η (by exact_mod_cast le_top)).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  rcases lt_or_ge ‖η‖ r with hη | hη
+  · -- `χ` vanishes near `η`, hence so do its derivatives.
+    have h0 : χ =ᶠ[𝓝 η] 0 :=
+      Filter.mem_of_superset ((isOpen_lt continuous_norm continuous_const).mem_nhds hη) hχr
+    rw [(h0.iteratedFDeriv ℝ i).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply, norm_zero,
+      mul_zero, zero_mul]
+    exact mul_nonneg (hD0 i) (exp_pos _).le
+  -- On `‖η‖ ≥ r` the Gaussian factor is at most `exp(-π² r² τ)²`, and one of the two factors
+  -- absorbs the power `√τ ^ (k - i)` produced by the derivatives of the Gaussian.
+  have hsq : √(4 * π ^ 2 * τ) = 2 * π * √τ := by
+    rw [sqrt_mul (by positivity), sqrt_mul' _ (by positivity), sqrt_sq pi_pos.le,
+      show (4 : ℝ) = 2 ^ 2 by norm_num, sqrt_sq zero_le_two]
+  have hexp : rexp (-(4 * π ^ 2 * τ * ‖η‖ ^ 2) / 2) ≤
+      rexp (-(π ^ 2 * r ^ 2 * τ)) * rexp (-(π ^ 2 * r ^ 2 * τ)) := by
+    rw [← exp_add, exp_le_exp]
+    have := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr.le hη 2)
+      (by positivity : 0 ≤ π ^ 2 * τ)
+    linarith
+  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ η‖ *
+        ‖iteratedFDeriv ℝ (k - i) (fun η ↦ rexp (-(4 * π ^ 2 * τ * ‖η‖ ^ 2))) η‖
+      ≤ k.choose i * M i * (G (k - i) * (2 * π * √τ) ^ (k - i) *
+          (rexp (-(π ^ 2 * r ^ 2 * τ)) * rexp (-(π ^ 2 * r ^ 2 * τ)))) := by
+        have h₂ := (hG (k - i) (4 * π ^ 2 * τ) (by positivity) η).trans
+          (mul_le_mul_of_nonneg_left hexp (mul_nonneg (hG0 _) (by positivity)))
+        rw [hsq] at h₂
+        exact mul_le_mul (mul_le_mul_of_nonneg_left (hM i η) (by positivity)) h₂
+          (norm_nonneg _) (mul_nonneg (by positivity) (hM0 i))
+    _ = k.choose i * M i * (G (k - i) * (2 * π) ^ (k - i) *
+          (√τ ^ (k - i) * rexp (-(π ^ 2 * r ^ 2 * τ)))) * rexp (-(π ^ 2 * r ^ 2 * τ)) := by
+        ring
+    _ ≤ D i * rexp (-(π ^ 2 * r ^ 2 * τ)) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
+          (hB _ τ hτ) (mul_nonneg (hG0 _) (by positivity))) (mul_nonneg (by positivity) (hM0 i)))
+          (exp_pos _).le
+
+/-- The frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` is the unit-scale one at
+time `ν² t`, evaluated at `ν⁻¹ ξ`. -/
+private theorem mul_exp_eq_comp_smul {ν : ℝ} (hν : 0 < ν) (t : ℝ) :
+    (fun ξ : E ↦ χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2))) =
+      fun ξ ↦ (fun η ↦ χ η * rexp (-(4 * π ^ 2 * (ν ^ 2 * t) * ‖η‖ ^ 2))) (ν⁻¹ • ξ) := by
+  funext ξ
+  simp only [norm_smul, norm_inv, norm_of_nonneg hν.le, mul_pow, inv_pow]
+  congr 3
+  field_simp
+
+/-- The frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)`, as a Schwartz function
+with complex values. -/
+private def cutoffHeatSymbol (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) {ν : ℝ}
+    (hν : ν ≠ 0) (t : ℝ) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap
+    (f := fun ξ : E ↦ ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ))
+    (((hχc.comp_smul (inv_ne_zero hν)).mul_right).comp_left Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp ((hχ.comp (contDiff_const_smul _)).mul
+      (contDiff_const.mul (contDiff_norm_sq ℝ)).neg.exp))
+
+/-- The values of `cutoffHeatSymbol`. -/
+private theorem cutoffHeatSymbol_apply (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    {ν : ℝ} (hν : ν ≠ 0) (t : ℝ) (ξ : E) :
+    cutoffHeatSymbol hχ hχc hν t ξ = ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) :=
+  HasCompactSupport.toSchwartzMap_toFun _ _ _
+
+/-- The derivatives of `cutoffHeatSymbol` are `ν⁻ᵏ` times those of the unit-scale symbol at time
+`ν² t`, evaluated at `ν⁻¹ ξ`. -/
+private theorem norm_iteratedFDeriv_cutoffHeatSymbol (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) {ν : ℝ} (hν : 0 < ν) (t : ℝ) (k : ℕ) (ξ : E) :
+    ‖iteratedFDeriv ℝ k (cutoffHeatSymbol hχ hχc hν.ne' t : E → ℂ) ξ‖ = ν⁻¹ ^ k *
+      ‖iteratedFDeriv ℝ k (fun η ↦ χ η * rexp (-(4 * π ^ 2 * (ν ^ 2 * t) * ‖η‖ ^ 2)))
+        (ν⁻¹ • ξ)‖ := by
+  set s₁ : E → ℝ := fun η ↦ χ η * rexp (-(4 * π ^ 2 * (ν ^ 2 * t) * ‖η‖ ^ 2))
+  have hs₁ : ContDiff ℝ ∞ s₁ := hχ.mul (contDiff_const.mul (contDiff_norm_sq ℝ)).neg.exp
+  have hσ : (cutoffHeatSymbol hχ hχc hν.ne' t : E → ℂ) =
+      Complex.ofRealLI ∘ fun ξ ↦ s₁ (ν⁻¹ • ξ) := by
+    funext ξ
+    rw [cutoffHeatSymbol_apply, comp_apply, Complex.ofRealLI_apply,
+      congrFun (mul_exp_eq_comp_smul hν t) ξ]
+  have hc : ContDiff ℝ ∞ fun ξ : E ↦ s₁ (ν⁻¹ • ξ) := hs₁.comp (contDiff_const_smul _)
+  rw [hσ, Complex.ofRealLI.norm_iteratedFDeriv_comp_left hc.contDiffAt
+    (by exact_mod_cast le_top),
+    iteratedFDeriv_comp_const_smul _ (hs₁.of_le (by exact_mod_cast le_top))]
+  beta_reduce
+  rw [norm_smul, norm_pow, norm_inv, norm_of_nonneg hν.le]
+
+/-- If `χ` vanishes outside `closedBall 0 R₀`, then `cutoffHeatSymbol` vanishes outside
+`closedBall 0 (ν R₀)`. -/
+private theorem support_cutoffHeatSymbol_subset (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) {R₀ : ℝ} (hR₀ : tsupport χ ⊆ closedBall 0 R₀) {ν : ℝ}
+    (hν : 0 < ν) (t : ℝ) :
+    support (cutoffHeatSymbol hχ hχc hν.ne' t) ⊆ closedBall (0 : E) (ν * R₀) := by
+  intro ξ hξ
+  have hχξ : χ (ν⁻¹ • ξ) ≠ 0 := fun h ↦ hξ (by simp [cutoffHeatSymbol_apply, h])
+  have := hR₀ (subset_tsupport _ hχξ)
+  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_of_nonneg hν.le,
+    inv_mul_le_iff₀ hν] at this
+  exact mem_closedBall_zero_iff.2 this
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- **The kernel of the frequency-localized heat multiplier.** Let `χ` be smooth and compactly
+supported, vanishing on the ball of radius `r > 0`. There is a constant `C`, depending only on
+`χ`, `r` and `E`, such that for every frequency scale `ν > 0` and time `t ≥ 0` the inverse
+Fourier transform of the symbol `σ ξ = χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` satisfies
+
+`∫ ‖𝓕⁻ σ x‖ dx ≤ C exp(-π² r² ν² t)`. -/
+theorem exists_integral_norm_fourierInv_mul_exp_le (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hr : 0 < r) (hχr : ∀ ξ, ‖ξ‖ < r → χ ξ = 0) :
+    ∃ C, ∀ ν, 0 < ν → ∀ t, 0 ≤ t →
+      ∫ x, ‖𝓕⁻ (fun ξ : E ↦ ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) x‖ ≤
+        C * rexp (-(π ^ 2 * r ^ 2 * (ν ^ 2 * t))) := by
+  set N : ℕ := finrank ℝ E + 1
+  set b := stdOrthonormalBasis ℝ E
+  obtain ⟨C₁, -, hC⟩ := SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset (H := ℂ)
+    b (by omega : finrank ℝ E < 2 * N)
+  obtain ⟨A₀, hA₀⟩ := exists_norm_iteratedFDeriv_mul_exp_le hχ hχc hr hχr 0
+  obtain ⟨A₁, hA₁⟩ := exists_norm_iteratedFDeriv_mul_exp_le hχ hχc hr hχr N
+  obtain ⟨R₀, hR₀⟩ := hχc.isCompact.isBounded.subset_closedBall 0
+  set R : ℝ := max R₀ 1
+  have hR : 0 < R := zero_lt_one.trans_le (le_max_right _ _)
+  set A : ℝ := max A₀ (A₁ * R ^ N)
+  refine ⟨C₁ * A, fun ν hν t ht ↦ ?_⟩
+  set e : ℝ := rexp (-(π ^ 2 * r ^ 2 * (ν ^ 2 * t)))
+  set σ : 𝓢(E, ℂ) := cutoffHeatSymbol hχ hχc hν.ne' t
+  have hσ : 𝓕⁻ (fun ξ : E ↦ ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
+      ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) := by
+    rw [fourierInv_coe, funext (cutoffHeatSymbol_apply hχ hχc hν.ne' t)]
+  rw [hσ]
+  -- `σ` vanishes outside the ball of radius `ν R`, is bounded by `A₀ e`, and its `N`-th
+  -- derivatives are bounded by `A₁ e ν⁻ᴺ = A₁ R^N e (ν R)⁻ᴺ`.
+  refine (hC σ (t := ν * R) (A := A * e) (mul_pos hν hR)
+    ((support_cutoffHeatSymbol_subset hχ hχc hR₀ hν t).trans
+      (closedBall_subset_closedBall (by gcongr; exact le_max_left _ _)))
+    (fun ξ ↦ ?_) (fun i ξ ↦ ?_)).trans (le_of_eq (mul_assoc _ _ _).symm)
+  · rw [← norm_iteratedFDeriv_zero (𝕜 := ℝ), norm_iteratedFDeriv_cutoffHeatSymbol hχ hχc hν,
+      pow_zero, one_mul]
+    exact (hA₀ (ν ^ 2 * t) (by positivity) (ν⁻¹ • ξ)).trans (by gcongr; exact le_max_left _ _)
+  · rw [← LineDeriv.iteratedLineDerivOp_const_eq_iter_lineDerivOp,
+      SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv]
+    refine ((iteratedFDeriv ℝ N (σ : E → ℂ) ξ).le_opNorm _).trans ?_
+    simp only [b.orthonormal.1 i, Finset.prod_const_one, mul_one]
+    rw [norm_iteratedFDeriv_cutoffHeatSymbol hχ hχc hν, mul_pow, div_eq_mul_inv, mul_inv,
+      ← inv_pow, ← inv_pow]
+    calc ν⁻¹ ^ N * ‖iteratedFDeriv ℝ N (fun η ↦ χ η *
+          rexp (-(4 * π ^ 2 * (ν ^ 2 * t) * ‖η‖ ^ 2))) (ν⁻¹ • ξ)‖ ≤ ν⁻¹ ^ N * (A₁ * e) :=
+          mul_le_mul_of_nonneg_left (hA₁ (ν ^ 2 * t) (by positivity) (ν⁻¹ • ξ)) (by positivity)
+      _ = A₁ * R ^ N * e * (ν⁻¹ ^ N * R⁻¹ ^ N) := by
+          rw [inv_pow R N]
+          field_simp
+      _ ≤ A * e * (ν⁻¹ ^ N * R⁻¹ ^ N) := by gcongr; exact le_max_right _ _
+
+end Kernel
+
+/-! ### The heat flow of a function with frequencies in an annulus -/
+
+section HeatFlow
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- If the symbol `σ` agrees with the heat multiplier `exp(-4π² t ‖ξ‖²)` wherever `𝓕 f ≠ 0`, then
+the heat flow of `f` is the convolution of `f` with the kernel `𝓕⁻ σ`. -/
+private theorem heatKernel_convolution_eq_fourierInv_convolution {σ : 𝓢(E, ℂ)} {t : ℝ}
+    (ht : 0 < t) {f : 𝓢(E, F)}
+    (hσ : ∀ ξ, 𝓕 (f : E → F) ξ ≠ 0 → σ ξ = rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2))) :
+    heatKernel t ⋆ (f : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F) := by
+  set w : 𝓢(E, F) := SchwartzMap.convolution (lsmul ℂ ℂ) (𝓕⁻ σ) f
+  have hw : (w : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F) :=
+    funext (convolution_apply _ _ f)
+  have hFw : 𝓕 (w : E → F) = fun ξ ↦ σ ξ • 𝓕 (f : E → F) ξ := by
+    funext ξ
+    rw [hw, Real.fourier_smul_convolution_eq (𝓕⁻ σ).integrable f.integrable, ← fourier_coe,
+      FourierTransform.fourier_fourierInv_eq]
+  have hFu : 𝓕 (heatKernel t ⋆ (f : E → F)) = 𝓕 (w : E → F) := by
+    rw [hFw]
+    funext ξ
+    rw [fourier_heatKernel_convolution ht f.integrable]
+    by_cases h : 𝓕 (f : E → F) ξ = 0
+    · simp [h]
+    · rw [hσ ξ h, Complex.coe_smul]
+  have hcont : Continuous (heatKernel t ⋆ (f : E → F)) :=
+    BddAbove.continuous_convolution_right_of_integrable (lsmul ℝ ℝ)
+      ⟨SchwartzMap.seminorm ℝ 0 0 f, fun _ ⟨y, hy⟩ ↦ hy ▸ norm_le_seminorm ℝ f y⟩
+      (integrable_heatKernel ht) f.continuous
+  have hint : Integrable (heatKernel t ⋆ (f : E → F)) :=
+    (integrable_heatKernel ht).integrable_convolution (lsmul ℝ ℝ) f.integrable
+  have hFint : Integrable (𝓕 (w : E → F)) := by
+    rw [← fourier_coe]
+    exact (𝓕 w).integrable
+  calc heatKernel t ⋆ (f : E → F) = 𝓕⁻ (𝓕 (heatKernel t ⋆ (f : E → F))) :=
+        (hcont.fourierInv_fourier_eq hint (hFu ▸ hFint)).symm
+    _ = 𝓕⁻ (𝓕 (w : E → F)) := by rw [hFu]
+    _ = w := w.continuous.fourierInv_fourier_eq w.integrable hFint
+    _ = _ := hw
+
+/-- For an even cutoff `χ`, the kernel `𝓕⁻ σ` of the frequency-localized heat multiplier is
+real-valued. -/
+private theorem fourierInv_cutoffHeatSymbol_eq_re {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hχe : ∀ ξ, χ (-ξ) = χ ξ) {ν : ℝ} (hν : ν ≠ 0) (t : ℝ) (x : E) :
+    (𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x =
+      (((𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x).re : ℂ) := by
+  rw [fourierInv_coe, fourierInv_eq_fourier_neg]
+  refine fourier_eq_re_of_map_neg_eq_conj _ (fun v ↦ ?_) (-x)
+  simp only [cutoffHeatSymbol_apply, smul_neg, hχe, norm_neg, Complex.conj_ofReal]
+
+/-- For an even cutoff `χ` equal to `1` on the frequencies of `f`, the heat semigroup acts on `f`
+as convolution with the real kernel `𝓕⁻ σ` of the frequency-localized heat multiplier. -/
+private theorem heatSemigroup_toLp_eq_convolutionLp {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hχe : ∀ ξ, χ (-ξ) = χ ξ) {ν : ℝ} (hν : ν ≠ 0) {t : ℝ≥0}
+    (ht : t ≠ 0) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ (∞ : ℝ≥0∞)) {f : 𝓢(E, F)}
+    (hσ : ∀ ξ, 𝓕 (f : E → F) ξ ≠ 0 →
+      cutoffHeatSymbol hχ hχc hν t ξ = rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2))) :
+    heatSemigroup hp t (f.toLp p) = convolutionLp hp
+      (fun x ↦ ((𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x).re) volume (f.toLp p) := by
+  set k : E → ℝ := fun x ↦ ((𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x).re
+  have hconv : heatKernel t ⋆ (f : E → F) = k ⋆ (f : E → F) := by
+    rw [heatKernel_convolution_eq_fourierInv_convolution (by positivity) hσ]
+    funext x
+    simp only [convolution_def, lsmul_apply, k]
+    congr 1
+    funext y
+    rw [fourierInv_cutoffHeatSymbol_eq_re hχ hχc hχe hν t y, Complex.coe_smul,
+      Complex.ofReal_re]
+  have h₁ := heatSemigroup_ae_eq_convolution hp ht (f.memLp p)
+  rw [hconv] at h₁
+  exact Lp.ext (h₁.trans (convolutionLp_ae_eq_convolution hp
+    (𝓕⁻ (cutoffHeatSymbol hχ hχc hν t)).integrable.re (f.memLp p)).symm)
+
+/-- **The heat flow of a function with frequencies in an annulus.** Let `0 < r` and `R` be real.
+There is a constant `C`, depending only on `r`, `R` and `E`, such that for every `1 ≤ p < ∞`,
+every frequency scale `ν > 0`, every time `t ≥ 0` and every Schwartz function `f` whose Fourier
+transform vanishes outside the annulus `ν r ≤ ‖ξ‖ ≤ ν R`,
+
+`‖e^{tΔ} f‖_p ≤ C exp(-π² r² ν² t / 4) ‖f‖_p`. -/
+theorem exists_norm_heatSemigroup_toLp_le_of_support_fourier_subset {r : ℝ} (hr : 0 < r)
+    (R : ℝ) :
+    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ (∞ : ℝ≥0∞)) {ν : ℝ}, 0 < ν →
+      ∀ (t : ℝ≥0) (f : 𝓢(E, F)),
+      support (𝓕 (f : E → F)) ⊆ closedBall 0 (ν * R) \ ball 0 (ν * r) →
+        ‖heatSemigroup hp t (f.toLp p)‖ ≤
+          C * rexp (-(π ^ 2 * r ^ 2 / 4 * (ν ^ 2 * t))) * ‖f.toLp p‖ := by
+  obtain ⟨χ, hχ, hχc, hχ0, hχe, hχ1⟩ := exists_contDiff_cutoff_annulus (E := E) hr R
+  obtain ⟨C₀, hC₀⟩ := exists_integral_norm_fourierInv_mul_exp_le hχ hχc (half_pos hr) hχ0
+  refine ⟨max C₀ 1, fun {p} _ hp ν hν t f hf ↦ ?_⟩
+  rcases eq_or_ne t 0 with rfl | ht
+  · simpa using le_mul_of_one_le_left (norm_nonneg _) (le_max_right _ _)
+  have ht' : (0 : ℝ) < t := by positivity
+  set σ := cutoffHeatSymbol hχ hχc hν.ne' t
+  set k : E → ℝ := fun x ↦ ((𝓕⁻ σ : 𝓢(E, ℂ)) x).re
+  -- `σ` is the heat multiplier on the frequencies of `f`.
+  have hσ : ∀ ξ, 𝓕 (f : E → F) ξ ≠ 0 → σ ξ = rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) := by
+    intro ξ hξ
+    obtain ⟨h₁, h₂⟩ := hf hξ
+    rw [mem_closedBall_zero_iff] at h₁
+    rw [mem_ball_zero_iff, not_lt] at h₂
+    have hn : ‖ν⁻¹ • ξ‖ = ν⁻¹ * ‖ξ‖ := by rw [norm_smul, norm_inv, norm_of_nonneg hν.le]
+    rw [cutoffHeatSymbol_apply, hχ1 _ (by rw [hn]; exact (le_inv_mul_iff₀ hν).2 h₂)
+      (by rw [hn]; exact (inv_mul_le_iff₀ hν).2 h₁), one_mul]
+  have heq := heatSemigroup_toLp_eq_convolutionLp hχ hχc hχe hν.ne' ht hp hσ
+  have hkn : ∫ y, ‖k y‖ ≤ C₀ * rexp (-(π ^ 2 * (r / 2) ^ 2 * (ν ^ 2 * t))) := by
+    have h := hC₀ ν hν t ht'.le
+    rw [← funext (cutoffHeatSymbol_apply hχ hχc hν.ne' t), ← fourierInv_coe] at h
+    refine le_of_eq_of_le (integral_congr_ae (.of_forall fun y ↦ ?_)) h
+    simp only [k]
+    rw [fourierInv_cutoffHeatSymbol_eq_re hχ hχc hχe hν.ne' t y, Complex.ofReal_re,
+      Complex.norm_real]
+  rw [heq]
+  have h₁ : ‖convolutionLp hp k volume (f.toLp p)‖ ≤
+      ‖convolutionLp (F := F) hp k volume‖ * ‖f.toLp p‖ :=
+    le_opNorm _ _
+  have h₂ : ‖convolutionLp (F := F) hp k volume‖ * ‖f.toLp p‖ ≤
+      (C₀ * rexp (-(π ^ 2 * (r / 2) ^ 2 * (ν ^ 2 * t)))) * ‖f.toLp p‖ :=
+    mul_le_mul_of_nonneg_right ((norm_convolutionLp_le hp k).trans hkn) (norm_nonneg _)
+  have h₃ : C₀ * rexp (-(π ^ 2 * (r / 2) ^ 2 * (ν ^ 2 * t))) ≤
+      max C₀ 1 * rexp (-(π ^ 2 * r ^ 2 / 4 * (ν ^ 2 * t))) := by
+    rw [show π ^ 2 * (r / 2) ^ 2 = π ^ 2 * r ^ 2 / 4 by ring]
+    gcongr
+    exact le_max_left _ _
+  exact h₁.trans (h₂.trans (mul_le_mul_of_nonneg_right h₃ (norm_nonneg _)))
+
+/-- **The heat flow of a Littlewood–Paley block.** Let `ψⱼ` be the inhomogeneous Littlewood–Paley
+partition built from the bump function `φ`. There is a constant `C`, depending only on `φ` and
+`E`, such that for every `1 ≤ p < ∞`, every `j`, every time `t ≥ 0` and every Schwartz function
+`f`, the block `Δ_{j+1} f = 𝓕⁻ (ψ_{j+1} 𝓕 f)`, whose frequencies have size `2^j`, satisfies
+
+`‖e^{tΔ} Δ_{j+1} f‖_p ≤ C exp(-π² φ.rIn² 4^j t / 4) ‖Δ_{j+1} f‖_p`. -/
+theorem exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_le
+    (φ : ContDiffBump (0 : E)) :
+    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ (∞ : ℝ≥0∞)) (j : ℕ) (t : ℝ≥0) (f : 𝓢(E, F)),
+      ‖heatSemigroup hp t ((fourierMultiplierCLM F
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) f).toLp p)‖ ≤
+        C * rexp (-(π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t))) *
+          ‖(fourierMultiplierCLM F
+            (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) f).toLp p‖ := by
+  obtain ⟨C, hC⟩ := exists_norm_heatSemigroup_toLp_le_of_support_fourier_subset (E := E)
+    (F := F) φ.rIn_pos (2 * φ.rOut)
+  refine ⟨C, fun {p} _ hp j t f ↦ ?_⟩
+  have h4 : ((2 : ℝ) ^ j) ^ 2 = 4 ^ j := by
+    rw [← pow_mul, mul_comm, pow_mul]
+    norm_num
+  refine h4 ▸ hC hp (ν := 2 ^ j) (by positivity) t _ fun ξ hξ ↦ ?_
+  -- The Fourier transform of the block is `ψ_{j+1} 𝓕 f`, supported in the annulus of `ψ_{j+1}`.
+  rw [← fourier_coe, fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq,
+    smulLeftCLM_apply (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley _),
+    mem_support] at hξ
+  have hψ : φ.inhomogeneousLittlewoodPaley (j + 1) ξ ≠ 0 := fun h ↦ hξ (by simp [h])
+  obtain ⟨h₁, h₂⟩ :=
+    φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j (subset_tsupport _ hψ)
+  refine ⟨mem_closedBall_zero_iff.2 (h₂.trans_eq (by ring)), ?_⟩
+  rw [mem_ball_zero_iff, not_lt]
+  exact h₁
+
+/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`,
+`E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
+distribution `u` whose block `Δ_{j+1} u`, with frequencies of size `2^j`, is an `Lᵖ` function `f`,
+the heat flow `e^{tΔ} Δ_{j+1} u` is an `Lᵖ` function `g` with
+
+`‖g‖_p ≤ C exp(-π² φ.rIn² 4^j t / 4) ‖f‖_p`. -/
+theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
+    (φ : ContDiffBump (0 : E)) :
+    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)),
+      TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u = f →
+      ∃ g : Lp F p (volume : Measure E), TemperedDistribution.heatSemigroup E F t
+          (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) = g ∧
+          ‖g‖ ≤ C * rexp (-(π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t))) * ‖f‖ := by
+  obtain ⟨χ, hχ, hχc, hχ0, -, hχ1⟩ := exists_contDiff_cutoff_annulus (E := E) φ.rIn_pos
+    (2 * φ.rOut)
+  obtain ⟨C, hC⟩ := exists_integral_norm_fourierInv_mul_exp_le hχ hχc (half_pos φ.rIn_pos) hχ0
+  refine ⟨C, fun {p} _ j t u f hf ↦ ?_⟩
+  have hν : (0 : ℝ) < 2 ^ j := by positivity
+  set σ : 𝓢(E, ℂ) := cutoffHeatSymbol hχ hχc hν.ne' t
+  set ψ : E → ℂ := fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)
+  have hψ : ψ.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley _
+  -- On the support of `ψ_{j+1}` the cutoff `χ (2^{-j} ·)` is one, so `σ` is the heat symbol there.
+  have hσψ : ψ * ⇑σ = ψ * fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) := by
+    funext ξ
+    simp only [Pi.mul_apply, σ, cutoffHeatSymbol_apply]
+    by_cases h : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0
+    · simp only [ψ, h, Complex.ofReal_zero, zero_mul]
+    obtain ⟨h₁, h₂⟩ := φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j (subset_tsupport _ h)
+    have hn : ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ = ((2 : ℝ) ^ j)⁻¹ * ‖ξ‖ := by
+      rw [norm_smul, norm_inv, norm_of_nonneg hν.le]
+    rw [hχ1 _ (by rw [hn]; exact (le_inv_mul_iff₀ hν).2 h₁)
+      (by rw [hn, inv_mul_le_iff₀ hν]; exact h₂.trans_eq (by ring)), one_mul]
+  -- So on the block `Δ_{j+1} u = ψ_{j+1}(D) u` the heat semigroup is the multiplier by `σ`.
+  have heq : TemperedDistribution.heatSemigroup E F t
+      (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) =
+      TemperedDistribution.fourierMultiplierCLM F ⇑σ
+        (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) := by
+    rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
+      TemperedDistribution.littlewoodPaleyBlock_apply,
+      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
+        (TemperedDistribution.hasTemperateGrowth_heatSymbol t),
+      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
+        σ.hasTemperateGrowth, hσψ]
+  obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
+  refine ⟨g, by rw [heq, hf, hg], hgn.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
+  have hσ : ⇑σ = fun ξ : E ↦ ((χ (((2 : ℝ) ^ j)⁻¹ • ξ) *
+      rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) :=
+    funext (cutoffHeatSymbol_apply hχ hχc hν.ne' t)
+  have h4 : ((2 : ℝ) ^ j) ^ 2 = 4 ^ j := by
+    rw [← pow_mul, mul_comm, pow_mul]
+    norm_num
+  have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
+  refine (hσ ▸ hC _ hν t t.property).trans_eq ?_
+  rw [h4, div_pow, h22]
+  ring_nf
+
+end HeatFlow
+
+end TauCeti
+
+/-! ### The heat flow of every Littlewood–Paley block of a tempered distribution -/
+
+namespace TemperedDistribution
+
+open MeasureTheory Real TauCeti
+open scoped NNReal ENNReal SchwartzMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  (φ : ContDiffBump (0 : E))
+
+/-- The Littlewood–Paley blocks commute with the heat semigroup. -/
+theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (heatSemigroup E F t u) =
+      heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
+  rw [heatSemigroup_eq_fourierMultiplierCLM]
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (hasTemperateGrowth_heatSymbol t) j u
+
+variable [CompleteSpace F]
+
+/-- **The heat flow of every Littlewood–Paley block.** There are constants `C ≥ 1` and `c > 0`,
+depending only on `φ`, `E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every `t ≥ 0`
+and every tempered distribution `u` whose block `Δⱼ u` is an `Lᵖ` function `f`, the block
+`Δⱼ e^{tΔ} u` is an `Lᵖ` function `g` with `‖g‖_p ≤ C exp(-c (4^j - 1) t) ‖f‖_p`. The factor
+`exp(-c (4^j - 1) t)` is `1` for the low-frequency block `j = 0`. -/
+theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le :
+    ∃ C c, 1 ≤ C ∧ 0 < c ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
+      ∃ g : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (heatSemigroup E F t u) = g ∧
+          ‖g‖ ≤ C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖ := by
+  obtain ⟨C, hC⟩ := TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le (F := F) φ
+  have hc : 0 < π ^ 2 * φ.rIn ^ 2 / 16 := by have := φ.rIn_pos; positivity
+  refine ⟨max C 1, π ^ 2 * φ.rIn ^ 2 / 16, le_max_right _ _, hc,
+    fun {p} _ j t u f hf ↦ ?_⟩
+  rw [littlewoodPaleyBlock_heatSemigroup_comm]
+  cases j with
+  | zero =>
+    obtain ⟨g, hg, hgn⟩ := exists_heatSemigroup_eq_and_norm_le t f
+    refine ⟨g, hf ▸ hg, hgn.trans ?_⟩
+    simp only [pow_zero, sub_self, zero_mul, mul_zero, neg_zero, Real.exp_zero, mul_one]
+    exact le_mul_of_one_le_left (norm_nonneg _) (le_max_right _ _)
+  | succ j =>
+    obtain ⟨g, hg, hgn⟩ := hC j t u f hf
+    refine ⟨g, hg, hgn.trans (mul_le_mul_of_nonneg_right
+      (mul_le_mul (le_max_left _ _) (exp_le_exp.2 ?_) (exp_pos _).le
+        ((le_max_right _ _).trans' zero_le_one)) (norm_nonneg _))⟩
+    -- `(4^{j+1} - 1) / 16 ≤ 4^j / 4`.
+    have h : π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t) =
+        π ^ 2 * φ.rIn ^ 2 / 16 * ((4 ^ (j + 1) - 1) * t) + π ^ 2 * φ.rIn ^ 2 / 16 * t := by
+      ring
+    linarith [mul_nonneg hc.le t.coe_nonneg]
+
+end TemperedDistribution
+
+/-! ### The heat flow of band-limited functions at small times -/
+
+namespace TauCeti
+
+open MeasureTheory Metric Real Filter Topology FourierTransform Distribution Semigroups
+open scoped NNReal ENNReal SchwartzMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- On a tempered distribution `u` whose Fourier transform vanishes off the closed ball of radius
+`R`, `e^{tΔ} u - u` is the Fourier multiplier by `χ (exp(-4π² t ‖ξ‖²) - 1)`, for every Schwartz
+`χ` equal to one near that ball. -/
+private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R : ℝ}
+    (hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ) {t : ℝ≥0} {u : 𝓢'(E, F)}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) (closedBall 0 R)ᶜ) :
+    TemperedDistribution.heatSemigroup E F t u - u =
+      TemperedDistribution.fourierMultiplierCLM F
+        ⇑(SchwartzMap.smulLeftCLM ℂ (fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) χ -
+          χ) u := by
+  set h : E → ℂ := fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
+  have hh : h.HasTemperateGrowth := TemperedDistribution.hasTemperateGrowth_heatSymbol t
+  have hσ : ⇑(SchwartzMap.smulLeftCLM ℂ h χ - χ) = ⇑χ * h - ⇑χ := by
+    funext ξ
+    simp [SchwartzMap.smulLeftCLM_apply_apply hh, mul_comm]
+  -- Since `u` is reproduced by `χ`, `χ(D) u = u` and `(χ e^{tΔ})(D) u = e^{tΔ} u`.
+  have hχu : TemperedDistribution.fourierMultiplierCLM F χ u = u :=
+    TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn hu χ.hasTemperateGrowth hχ1
+  have hχh : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u =
+      TemperedDistribution.heatSemigroup E F t u := by
+    rw [← TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply
+      χ.hasTemperateGrowth hh, hχu, TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM]
+  -- The multiplier is linear in its symbol.
+  have hsub : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h - ⇑χ) u =
+      TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u -
+        TemperedDistribution.fourierMultiplierCLM F χ u := by
+    simp only [TemperedDistribution.fourierMultiplierCLM_apply, TemperedDistribution.smulLeftCLM_sub
+      (χ.hasTemperateGrowth.mul hh) χ.hasTemperateGrowth, sub_apply,
+      FourierTransform.fourierInv_sub]
+  rw [hσ, hsub, hχh, hχu]
+
+variable [CompleteSpace F]
+
+/-- **The heat flow of band-limited functions tends to the identity, uniformly.** For every `R`
+there is a function `c` of time, depending on `R` but not on `p` or `f`, with `c t → 0` as
+`t → 0`, such that for every `1 ≤ p ≤ ∞`, every `t ≥ 0` and every `f ∈ Lᵖ` whose Fourier
+transform vanishes outside the closed ball of radius `R`, `e^{tΔ} f - f` is an `Lᵖ` function `g`
+with `‖g‖_p ≤ c t ‖f‖_p`. This includes `p = ∞`, where the heat semigroup is not strongly
+continuous on all of `L^∞`. -/
+theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : ℝ) :
+    ∃ c : ℝ≥0 → ℝ, Tendsto c (𝓝 0) (𝓝 0) ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (t : ℝ≥0)
+      (f : Lp F p (volume : Measure E)),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ∃ g : Lp F p (volume : Measure E),
+        TemperedDistribution.heatSemigroup E F t (f : 𝓢'(E, F)) - f = g ∧ ‖g‖ ≤ c t * ‖f‖ := by
+  -- A smooth cutoff `χ`, equal to one near the closed ball, reproduces `f`.
+  obtain ⟨χ, -, -, hχ⟩ :=
+    (isCompact_closedBall (0 : E) R).exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ _)
+  have hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ := fun ξ hξ hξR ↦
+    notMem_tsupport_iff_eventuallyEq.2
+      ((eventually_nhdsSet_iff_forall.1 hχ ξ hξR).mono fun η hη ↦ by simp [hη]) hξ
+  -- The heat symbol at time `t`.
+  set h : ℝ≥0 → E → ℂ := fun t ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
+  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth :=
+    TemperedDistribution.hasTemperateGrowth_heatSymbol t
+  -- The kernel `κ = 𝓕⁻ χ` of the reproducing multiplier, as an `L¹` function. The kernel of the
+  -- multiplier `χ e^{tΔ}` is its heat flow `e^{tΔ} κ`.
+  have hp1 : (1 : ℝ≥0∞) ≠ ∞ := ENNReal.one_ne_top
+  set κ : Lp ℂ 1 (volume : Measure E) := (𝓕⁻ χ).toLp 1
+  have hκ (t : ℝ≥0) : (𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ)).toLp 1 =
+      heatSemigroup (E := E) (F := ℂ) hp1 t κ := by
+    -- On Schwartz functions, the multiplier `e^{tΔ}` sends `𝓕⁻ χ` to `𝓕⁻ (χ e^{tΔ})`.
+    have hS : SchwartzMap.fourierMultiplierCLM ℂ (h t) (𝓕⁻ χ) =
+        𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) := by
+      rw [SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
+    have hT : TemperedDistribution.heatSemigroup E ℂ t ((𝓕⁻ χ : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) =
+        ((𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) := by
+      rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
+        TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq (hh t), hS]
+    refine Lp.toTemperedDistribution_injective ?_
+    dsimp only
+    rw [← TemperedDistribution.heatSemigroup_toTemperedDistribution hp1,
+      Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq, hT]
+  refine ⟨fun t ↦ ‖heatSemigroup (E := E) (F := ℂ) hp1 t κ - κ‖, ?_, fun {p} _ t f hf ↦ ?_⟩
+  · have h0 := (heatSemigroup (E := E) (F := ℂ) hp1).continuousAt_zero_tendsto κ
+    simpa using (tendsto_iff_norm_sub_tendsto_zero.1 h0)
+  -- The symbol `χ e^{tΔ} - χ`, whose multiplier is `e^{tΔ} - 1` on functions band-limited to the
+  -- ball.
+  set σ : 𝓢(E, ℂ) := SchwartzMap.smulLeftCLM ℂ (h t) χ - χ
+  obtain ⟨g, hg, -, hgn⟩ :=
+    TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p)
+      (r := 1) le_rfl (by rw [inv_one, add_comm])
+  refine ⟨g, ?_, hgn.trans_eq ?_⟩
+  · rw [← hg, heatSemigroup_sub_eq_fourierMultiplierCLM hχ1 hf]
+  · -- The kernel of `σ` is `e^{tΔ} κ - κ`.
+    have h𝓕σ : (𝓕⁻ σ).toLp 1 = heatSemigroup (E := E) (F := ℂ) hp1 t κ - κ := by
+      have hL := map_sub (SchwartzMap.toLpCLM ℂ ℂ 1 (volume : Measure E))
+        (𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ)) (𝓕⁻ χ)
+      simp only [SchwartzMap.toLpCLM_apply] at hL
+      rw [← hκ, FourierTransform.fourierInv_sub, hL]
+    dsimp only
+    rw [← h𝓕σ, SchwartzMap.norm_toLp, SchwartzMap.fourierInv_coe]
+
+end TauCeti

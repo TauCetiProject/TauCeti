@@ -11,6 +11,7 @@ public import TauCeti.Probability.Distributions.Gumbel.PDF
 public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Generalized extreme-value densities
@@ -218,7 +219,7 @@ private theorem one_add_mul_add_generalizedParetoMap_sub_div (hs : s ≠ 0) (m y
   convert one_add_mul_generalizedParetoMap_div hs ξ y using 1
   ring
 
-private theorem image_add_generalizedParetoMap_univ (hs : 0 < s) (hξ : ξ ≠ 0) (m : ℝ) :
+private theorem image_add_generalizedParetoMap_univ (hs : 0 < s) (m : ℝ) :
     (fun y ↦ m + generalizedParetoMap s ξ y) '' univ =
       {x | 0 < 1 + ξ * ((x - m) / s)} := by
   ext x
@@ -229,7 +230,7 @@ private theorem image_add_generalizedParetoMap_univ (hs : 0 < s) (hξ : ξ ≠ 0
       exact ⟨y, hy, by ring⟩
     · rintro ⟨y, hy, h⟩
       exact ⟨y, hy, by linarith⟩
-  rw [hshift, image_generalizedParetoMap_univ hs.ne' hξ, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+  rw [hshift, image_generalizedParetoMap_univ hs.ne' ξ, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
     mul_div_assoc]
 
 private theorem transform_weight (hs : 0 < s) (hξ : ξ ≠ 0) (m y : ℝ) :
@@ -238,8 +239,8 @@ private theorem transform_weight (hs : 0 < s) (hξ : ξ ≠ 0) (m y : ℝ) :
       gumbelPDF 0 1 y := by
   have ht := one_add_mul_add_generalizedParetoMap_sub_div (ξ := ξ) hs.ne' m y
   rw [generalizedExtremeValuePDF_of_shape_ne_zero hξ hs (ht ▸ Real.exp_pos _),
-    gumbelPDF_of_pos one_pos, sub_zero, div_one, abs_of_pos (mul_pos hs (Real.exp_pos _)),
-    ← ENNReal.ofReal_mul (by positivity)]
+    gumbelPDF_eq_ofReal_exp_mul_exp_div, sub_zero, div_one,
+    abs_of_pos (mul_pos hs (Real.exp_pos _)), ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   rw [ht, ← Real.exp_mul]
   have hexp : ξ * y * (-ξ⁻¹) = -y := by field_simp
@@ -267,7 +268,7 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
       -- Transport the candidate density through the generalized Pareto change of variables.
       have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
         (s := univ) (φ := φ) (φ' := fun y ↦ s * Real.exp (ξ * y))
-        (f := generalizedExtremeValuePDF m s ξ) MeasurableSet.univ (by fun_prop)
+        (f := generalizedExtremeValuePDF m s ξ) MeasurableSet.univ
         (fun y _ ↦ (hasDerivAt_generalizedParetoMap s ξ y).const_add m |>.hasDerivWithinAt)
         ((strictMono_generalizedParetoMap hs ξ).const_add m).injective.injOn
       have hw : (fun y ↦ ENNReal.ofReal |s * Real.exp (ξ * y)| *
@@ -275,7 +276,7 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
             gumbelPDF 0 1 := by
         filter_upwards with y
         exact transform_weight hs hξ m y
-      rw [withDensity_congr_ae hw, image_add_generalizedParetoMap_univ hs hξ m,
+      rw [withDensity_congr_ae hw, image_add_generalizedParetoMap_univ hs m,
         Measure.restrict_univ] at hmap
       -- Decompose the GEV transformation as the standard Gumbel transformation followed by `φ`.
       have hgev : generalizedExtremeValueMap m s ξ =
@@ -339,7 +340,7 @@ theorem integrable_generalizedExtremeValueMeasure_iff (m s ξ : ℝ) {g : ℝ �
       Integrable fun y ↦ generalizedExtremeValuePDFReal m s ξ y • g y := by
   rw [generalizedExtremeValueMeasure_eq_withDensity,
     funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
-  exact integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
     (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ))
 
@@ -350,7 +351,7 @@ theorem integral_generalizedExtremeValueMeasure_eq (m s ξ : ℝ) (g : ℝ → E
       ∫ y, generalizedExtremeValuePDFReal m s ξ y • g y := by
   rw [generalizedExtremeValueMeasure_eq_withDensity,
     funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
-  exact integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
     (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ)) g
 

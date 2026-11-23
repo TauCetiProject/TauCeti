@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
-# The algebra action, the product rule, and residues of `φⁿ dφ` for Laurent series
+# The algebra action, derivatives, and residues of `φⁿ dφ` for Laurent series
 
 For an `R`-algebra `A`, the `R`-algebra structure on `A⸨X⸩` is the one inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a
@@ -29,14 +29,13 @@ nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its 
 unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every coefficient, preserves
 valuations.
 
-The second part proves the product rule for the derivative of Laurent series,
-`(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
-the first Hasse derivative; the product rule is what makes it a derivation, so that composing it
-with a ring homomorphism into `R⸨X⸩` gives a derivation, as for Laurent expansions of functions.
-It is reduced to the product rule for power series by writing a Laurent series as a monomial
-times a power series.
+It also packages the variable `X` as a unit of `R⸨X⸩` over any semiring `R`, whose integer
+powers are the monomials `Xⁿ`.
 
-The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
+This file also records the compatibility of Laurent-series differentiation with power-series
+differentiation.
+
+Finally, this file computes the residue of the formal one-form `φ ^ n * φ' dX`
 for any power series `φ` over a field and every integer `n`:
 it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in characteristic zero,
 `φ ^ n * φ'` is the derivative of `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when
@@ -53,6 +52,10 @@ derivative `f' / f` is the order of `f`.
   structure acts coefficientwise.
 * `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
   are those with no negative exponents.
+* `TauCeti.LaurentSeries.ringHom_ext` and `TauCeti.LaurentSeries.algHom_ext`: homomorphisms out of
+  `R⸨X⸩` are determined by their values on power series.
+* `TauCeti.LaurentSeries.unitX` and `TauCeti.LaurentSeries.val_unitX_zpow`: the variable `X` is a
+  unit of `R⸨X⸩`, whose integer powers are the monomials `Xⁿ`.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -62,7 +65,6 @@ derivative `f' / f` is the order of `f`.
   preserves the valuation.
 * `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
   the order of a power series in `R⸨X⸩` agrees with its power series order.
-* `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
@@ -156,6 +158,44 @@ theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
   · exact (hf n hn).symm
   · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
 
+/-- Ring homomorphisms out of `R⸨X⸩` that agree on power series are equal, since `R⸨X⸩` is the
+localization of `R⟦X⟧` at the powers of `X`. -/
+theorem ringHom_ext {R A : Type*} [CommRing R] [Semiring A] {f g : R⸨X⸩ →+* A}
+    (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  IsLocalization.ringHom_ext (Submonoid.powers (PowerSeries.X : R⟦X⟧)) (RingHom.ext h)
+
+/-- `R`-algebra homomorphisms out of `R⸨X⸩` that agree on power series are equal. -/
+theorem algHom_ext {R A : Type*} [CommRing R] [Semiring A] [Algebra R A]
+    {f g : R⸨X⸩ →ₐ[R] A} (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  AlgHom.toRingHom_injective <| ringHom_ext h
+
+section UnitX
+
+variable {R : Type*} [Semiring R]
+
+/-- The variable `X` as a unit of `R⸨X⸩`, with inverse `X⁻¹`. -/
+noncomputable def unitX : R⸨X⸩ˣ :=
+  ⟨HahnSeries.single 1 1, HahnSeries.single (-1) 1, by simp [HahnSeries.single_mul_single],
+    by simp [HahnSeries.single_mul_single]⟩
+
+@[simp]
+theorem val_unitX : ((unitX : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single 1 1 :=
+  (rfl)
+
+@[simp]
+theorem val_inv_unitX : ((unitX⁻¹ : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single (-1) 1 :=
+  (rfl)
+
+/-- The integer powers of the unit `X` are the monomials `Xⁿ`. -/
+@[simp]
+theorem val_unitX_zpow (n : ℤ) :
+    ((unitX ^ n : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single n 1 := by
+  rcases n.eq_nat_or_neg with ⟨m, rfl | rfl⟩
+  · simp [unitX, HahnSeries.single_pow]
+  · simp [unitX, HahnSeries.single_pow, ← inv_pow]
+
+end UnitX
+
 section Valuation
 
 open HahnSeries PowerSeries WithZero
@@ -167,6 +207,21 @@ in `K⸨X⸩`. -/
 theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K⸨X⸩) = 1 :=
   Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
     ⟨g, rfl⟩
+
+/-- A power series has Laurent valuation strictly below one exactly when its constant
+coefficient vanishes. -/
+@[simp]
+theorem valuation_coe_lt_one_iff {g : K⟦X⟧} :
+    Valued.v (g : K⸨X⸩) < 1 ↔ PowerSeries.constantCoeff g = 0 := by
+  refine ⟨fun h ↦ ?_, fun hg ↦ ?_⟩
+  · by_contra hg
+    have hunit := PowerSeries.isUnit_iff_constantCoeff.mpr (isUnit_iff_ne_zero.mpr hg)
+    exact h.ne (valuation_coe_of_isUnit hunit)
+  · have hle : Valued.v (g : K⸨X⸩) ≤ exp (-1) := by
+      apply (_root_.LaurentSeries.intValuation_le_iff_coeff_lt_eq_zero K g).mpr
+      intro n hn
+      simpa only [Nat.lt_one_iff.mp hn, coeff_zero_eq_constantCoeff_apply] using hg
+    exact hle.trans_lt (by rw [← exp_zero]; exact exp_lt_exp.mpr (by norm_num))
 
 /-- The power series part of a nonzero Laurent series over a division ring is a unit: its constant
 coefficient is the leading coefficient. -/
@@ -295,34 +350,6 @@ theorem derivative_single_mul_coe (m : ℤ) (c : R) (φ : R⟦X⟧) :
     derivative R (single m c * (φ : R⸨X⸩)) =
       single (m - 1) (m * c) * φ + single m c * ((d⁄dX φ : R⟦X⟧) : R⸨X⸩) := by
   rw [derivative_single_mul, ← PowerSeries.coe_derivative]
-
-/-- **The product rule** for the derivative of Laurent series: `(f * g)' = f' * g + f * g'`. -/
-theorem derivative_mul (f g : R⸨X⸩) :
-    derivative R (f * g) = derivative R f * g + f * derivative R g := by
-  -- Write `f = X ^ a * φ` and `g = X ^ b * ψ` with power series `φ` and `ψ`, so that
-  -- `f * g = X ^ (a + b) * (φ * ψ)`, and use the product rule for power series.
-  rw [← single_order_mul_powerSeriesPart f, ← single_order_mul_powerSeriesPart g]
-  set a := f.order
-  set b := g.order
-  set φ := f.powerSeriesPart
-  set ψ := g.powerSeriesPart
-  have hab : (single (a + b) (1 : R) : R⸨X⸩) = single a 1 * single b 1 := by
-    rw [single_mul_single, one_mul]
-  have hfg : (single a (1 : R) * (φ : R⸨X⸩)) * (single b 1 * (ψ : R⸨X⸩)) =
-      single (a + b) 1 * ((φ * ψ : R⟦X⟧) : R⸨X⸩) := by
-    rw [PowerSeries.coe_mul, hab]
-    ring
-  -- The derivative of the monomial `X ^ (a + b)` splits as `(X ^ a)' X ^ b + X ^ a (X ^ b)'`.
-  have hd : (single (a + b - 1) (((a + b : ℤ) : R) * 1) : R⸨X⸩) =
-      single (a - 1) ((a : R) * 1) * single b 1 + single a 1 * single (b - 1) ((b : R) * 1) := by
-    rw [single_mul_single, single_mul_single, show a - 1 + b = a + b - 1 by ring,
-      show a + (b - 1) = a + b - 1 by ring, ← single_add]
-    push_cast
-    ring_nf
-  simp only [hfg, derivative_single_mul_coe]
-  simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
-  rw [hd, hab]
-  ring
 
 /-- **Differentiation lowers the order by at most one, with leading term `m X⁻¹ f`.** If `f` has
 valuation at most `exp (-m)`, that is, vanishes to order at least `m`, then `f' - m X⁻¹ f` again

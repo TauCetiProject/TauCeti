@@ -37,6 +37,8 @@ orbits inside a passport and is not an intrinsic invariant of the passport.
   label exactly when a conjugate of it is the canonical reference passport for that label.
 * `TauCeti.PassportSpec.hasLabel_conjugate_iff`: label semantics is independent of the chosen
   representative of the reference monodromy subgroup.
+* `TauCeti.PassportSpec.HasLabel.hasPassport_iff`: a label determines the passport it labels up
+  to conjugation.
 * `TauCeti.PassportSpec.hasLabel_iff_of_hasPassport`: a passport containing a connected triple
   has the label read directly from that triple's monodromy and cycle data.
 
@@ -180,23 +182,37 @@ theorem hasLabel_conjugate_iff (P : PassportSpec n) (L : PassportLabel n)
     (τ : Perm (Fin n)) : (P.conjugate τ).HasLabel L ↔ P.HasLabel L := by
   simp [HasLabel]
 
+/-- A label determines its passport up to conjugating the reference subgroup: a connected triple
+lies in a passport with label `L` exactly when its own passport has label `L`. -/
+theorem HasLabel.hasPassport_iff {P : PassportSpec n} {L : PassportLabel n} (hP : P.HasLabel L)
+    (t : ConnectedTriple n) : HasPassport t P ↔ t.passportOf.HasLabel L := by
+  constructor
+  · intro htP
+    obtain ⟨τ, rfl⟩ := (t.hasPassport_iff_exists_conjugate_passportOf P).mp htP
+    exact (hasLabel_conjugate_iff _ L τ).mp hP
+  · intro ht
+    obtain ⟨τ, hτ⟩ := (hasLabel_iff_exists_conjugate_eq_toPassportSpec P L).mp hP
+    obtain ⟨σ, hσ⟩ := (hasLabel_iff_exists_conjugate_eq_toPassportSpec _ L).mp ht
+    rw [← hasPassport_conjugate_iff t P τ, hτ, ← hσ, hasPassport_conjugate_iff]
+    exact t.hasPassport_passportOf
+
 /-- Read a label from any connected triple belonging to the passport: its group component is the
 transitive-group label of the monodromy group, and its partition components are the triple's
 ordered full cycle data. -/
 theorem hasLabel_iff_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
     (htP : HasPassport t P) (L : PassportLabel n) :
     P.HasLabel L ↔
-      TransitiveGroupLabel L.group t.1.monodromyGroup ∧
-        t.1.cycleData.1 = L.lam0 ∧
-        t.1.cycleData.2.1 = L.lam1 ∧ t.1.cycleData.2.2 = L.laminf := by
+      TransitiveGroupLabel L.group t.val.monodromyGroup ∧
+        t.val.cycleData.1 = L.lam0 ∧
+        t.val.cycleData.2.1 = L.lam1 ∧ t.val.cycleData.2.2 = L.laminf := by
   rw [hasPassport_iff] at htP
   rcases htP with ⟨⟨τ, hG⟩, h0, h1, hinf⟩
   have hlabel :
       TransitiveGroupLabel L.group
-          (t.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom) ↔
-        TransitiveGroupLabel L.group t.1.monodromyGroup := by
+          (t.val.monodromyGroup.map (MulAut.conj τ).toMonoidHom) ↔
+        TransitiveGroupLabel L.group t.val.monodromyGroup := by
     simpa only [MulEquiv.toMonoidHom_eq_coe] using
-      transitiveGroupLabel_map_conj_iff t.1.monodromyGroup τ (j := L.group)
+      transitiveGroupLabel_map_conj_iff t.val.monodromyGroup τ (j := L.group)
   rw [hasLabel_iff, ← hG, hlabel, ← h0, ← h1, ← hinf]
 
 end PassportSpec
@@ -210,9 +226,9 @@ group and ordered full cycle data. -/
 @[simp]
 theorem passportOf_hasLabel_iff (t : ConnectedTriple n) (L : PassportLabel n) :
     t.passportOf.HasLabel L ↔
-      TransitiveGroupLabel L.group t.1.monodromyGroup ∧
-        t.1.cycleData.1 = L.lam0 ∧
-        t.1.cycleData.2.1 = L.lam1 ∧ t.1.cycleData.2.2 = L.laminf :=
+      TransitiveGroupLabel L.group t.val.monodromyGroup ∧
+        t.val.cycleData.1 = L.lam0 ∧
+        t.val.cycleData.2.1 = L.lam1 ∧ t.val.cycleData.2.2 = L.laminf :=
   PassportSpec.hasLabel_iff_of_hasPassport t.hasPassport_passportOf L
 
 end ConnectedTriple

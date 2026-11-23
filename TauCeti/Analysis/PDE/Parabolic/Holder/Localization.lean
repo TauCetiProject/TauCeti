@@ -22,6 +22,9 @@ For `α < 1`, interpolation makes this error at most `η ‖u‖_{2+α,par} + K 
 on their derivative norms. This is the lower-order error estimate used when localizing a
 parabolic Schauder estimate; it does not assert the principal-part estimate itself.
 
+When the cutoff depends on time alone, its spatial derivatives vanish and the commutator is
+just `(∂ₜχ) u` (`parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero`); this localizes in time.
+
 The Hessian cross terms are kept separately, so the formula also applies to nonsymmetric
 second-order coefficients. Time derivatives include the one-sided derivatives at both endpoints
 of the closed slab.
@@ -68,17 +71,17 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
     (ContinuousLinearMap.mul ℝ ℝ).compHolder₂
         (timeDerivL χ - spatialOperatorL hα A B 0 χ) (valueHolderL hα u) -
       (ContinuousLinearMap.id ℝ _).compHolder₂ A
-        ((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
+        ((StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
             (spatialFDerivHolderL hα χ) (spatialFDerivHolderL hα u) +
-          (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
+          (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
             (spatialFDerivHolderL hα u) (spatialFDerivHolderL hα χ)) := by
   ext p
   have hH : spatialSecondFDerivL
       ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) p =
       χ p • spatialSecondFDerivL u p + u p • spatialSecondFDerivL χ p +
-        (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ))
+        (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ))
           (spatialFDerivL χ p) (spatialFDerivL u p) +
-        (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ))
+        (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ))
           (spatialFDerivL u p) (spatialFDerivL χ p) := by
     ext h k
     simp
@@ -101,6 +104,22 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
   rw [hc]
   ring
 
+/-- **Localization in time.** If the cutoff `χ` has vanishing spatial gradient, as for a function
+of time alone, then `P (χ u) = χ P u + (∂ₜχ) u`. -/
+theorem parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero (h₁ : spatialFDerivL χ = 0) :
+    parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) =
+      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+          (parabolicOperatorL hα A B C u) +
+        (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (timeDerivL χ) (valueHolderL hα u) := by
+  -- The Hessian is the spatial derivative of the gradient, so it vanishes as well.
+  have h₂ : spatialSecondFDerivL χ = 0 := HolderSpace.ext fun p ↦ by
+    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+    simp [← χ.fderiv_spatialFDeriv_eq, h₁]
+  have hD : spatialFDerivHolderL hα χ = 0 := HolderSpace.ext fun p ↦ by simp [h₁]
+  have hL : spatialOperatorL hα A B 0 χ = 0 := HolderSpace.ext fun p ↦ by simp [h₁, h₂]
+  rw [← sub_eq_iff_eq_add', parabolicOperatorL_mul_sub_mul_parabolicOperatorL, hD, hL, sub_zero]
+  simp
+
 /-- **The lower-order commutator bound.** Only the time derivative, spatial Hessian and
 spatial gradient of the cutoff enter the bound. In particular it is independent of `C` and
 of the second derivatives and time derivative of `u`. -/
@@ -113,7 +132,7 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
         (‖B‖ + 2 * ‖A‖) * ‖spatialFDerivHolderL hα χ‖) *
         (‖valueHolderL hα u‖ + ‖spatialFDerivHolderL hα u‖) := by
   -- The two cross terms are rank-one Hessians, each with the product bound.
-  let T := ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)
+  let T := StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)
   have hT : ‖T‖ ≤ 1 := by
     simpa only [T] using
       (ContinuousLinearMap.norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ))
@@ -126,22 +145,9 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
   have hZ : ‖timeDerivL χ - spatialOperatorL hα A B 0 χ‖ ≤
       ‖timeDerivL χ‖ + ‖A‖ * ‖spatialSecondFDerivL χ‖ +
         ‖B‖ * ‖spatialFDerivHolderL hα χ‖ := by
-    have hsp : spatialOperatorL hα A B 0 χ =
-        (ContinuousLinearMap.id ℝ _).compHolder₂ A (spatialSecondFDerivL χ) +
-          (ContinuousLinearMap.id ℝ _).compHolder₂ B (spatialFDerivHolderL hα χ) := by
-      ext p
-      simp
-    rw [hsp]
-    calc
-      _ ≤ ‖timeDerivL χ‖ + ‖(ContinuousLinearMap.id ℝ _).compHolder₂ A
-          (spatialSecondFDerivL χ) + (ContinuousLinearMap.id ℝ _).compHolder₂ B
-            (spatialFDerivHolderL hα χ)‖ := norm_sub_le _ _
-      _ ≤ ‖timeDerivL χ‖ + (‖A‖ * ‖spatialSecondFDerivL χ‖ +
-          ‖B‖ * ‖spatialFDerivHolderL hα χ‖) := by
-        exact add_le_add le_rfl ((norm_add_le _ _).trans
-          (add_le_add (ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL χ))
-            (ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα χ))))
-      _ = _ := by ring
+    have h := norm_spatialOperatorL_apply_le (A := A) (B := B) (C := 0) hα χ
+    rw [norm_zero, zero_mul, add_zero] at h
+    linarith [norm_sub_le (timeDerivL χ) (spatialOperatorL hα A B 0 χ)]
   -- Combine the three errors; every factor involving the solution has order at most one.
   rw [parabolicOperatorL_mul_sub_mul_parabolicOperatorL]
   have hvalue := (ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_apply_le

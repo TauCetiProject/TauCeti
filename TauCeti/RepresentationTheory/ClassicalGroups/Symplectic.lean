@@ -6,23 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
+import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 
 /-!
 # The standard representation of the symplectic group
 
 This file restricts the standard representation of the general linear group to the symplectic
 group. It defines the standard alternating form from `Matrix.J`, proves that the standard action
-preserves it, and packages the resulting equivariant self-duality.
+preserves it, and packages the resulting equivariant self-duality. It also shows that the
+symplectic group acts transitively on the isotropic subspaces of each dimension.
 
 ## Main definitions
 
 * `TauCeti.symplecticGroupToGL` is the canonical inclusion into the general linear group.
 * `TauCeti.stdSymplecticRep` is the standard representation of `Matrix.symplecticGroup`.
 * `TauCeti.stdSymplecticBilinForm` is the nondegenerate invariant alternating form; its value on
-  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`.
+  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`, and its value
+  against the all-ones vector is `TauCeti.stdSymplecticBilinForm_one_right`.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
+
+## Main results
+
+* `TauCeti.exists_map_stdSymplecticRep_eq`: `Sp₂ₙ(k)` acts transitively on the isotropic subspaces
+  of each dimension. It follows from the transitivity of isometries on isotropic subspaces,
+  `LinearMap.BilinForm.IsAlt.exists_isometryEquiv_map_eq`.
 
 ## References
 
@@ -48,7 +58,7 @@ variable [CommRing k]
 def symplecticGroupToGL :
     Matrix.symplecticGroup (Fin n) k →* GL (Fin n ⊕ Fin n) k where
   toFun g := Matrix.SpecialLinearGroup.toGL
-    ⟨g, SymplecticGroup.det_eq_one g.2⟩
+    ⟨g, SymplecticGroup.det_eq_one g.property⟩
   map_one' := by
     ext i j
     rfl
@@ -128,6 +138,14 @@ theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
       Matrix.J (Fin n) k x y := by
   simp [stdSymplecticBilinForm_apply]
 
+/-- The standard alternating form against the all-ones vector, in coordinates. -/
+theorem stdSymplecticBilinForm_one_right (w : (Fin n ⊕ Fin n) → k) :
+    stdSymplecticBilinForm k n w 1 =
+      ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, w a * Matrix.J (Fin n) k a b := by
+  rw [stdSymplecticBilinForm_apply, ← Matrix.toBilin'_apply' (Matrix.J (Fin n) k),
+    Matrix.toBilin'_apply]
+  simp
+
 /-- The standard symplectic form is alternating. -/
 theorem isAlt_stdSymplecticBilinForm : (stdSymplecticBilinForm k n).IsAlt := by
   intro v
@@ -147,7 +165,7 @@ theorem stdSymplecticBilinForm_comp_stdSymplecticRep (g : Matrix.symplecticGroup
         (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k).mulVecLin =
       stdSymplecticBilinForm k n := by
   rw [stdSymplecticBilinForm, ← Matrix.toLin'_apply', Matrix.toBilin'_comp]
-  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.2]
+  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.property]
 
 /-- The standard symplectic pairing is invariant under the standard action. -/
 @[simp]
@@ -283,6 +301,27 @@ theorem char_stdSymplecticDualFDRep (g : Matrix.symplecticGroup (Fin n) k) :
         Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) := by
   simpa only [FDRep.character, FDRep.of_ρ', Representation.character] using
     char_stdSymplecticDualRep k n g
+
+/-- **`Sp₂ₙ(k)` acts transitively on the isotropic subspaces of each dimension.** Two subspaces of
+`k^(2n)` that are isotropic for the standard alternating form and have the same dimension are
+related by the standard action of a symplectic matrix. This holds in every characteristic. -/
+theorem exists_map_stdSymplecticRep_eq {U₁ U₂ : Submodule k ((Fin n ⊕ Fin n) → k)}
+    (h₁ : U₁ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₁)
+    (h₂ : U₂ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₂)
+    (h : Module.finrank k U₁ = Module.finrank k U₂) :
+    ∃ g : Matrix.symplecticGroup (Fin n) k, U₁.map (stdSymplecticRep k n g) = U₂ := by
+  obtain ⟨g, hg⟩ := (isAlt_stdSymplecticBilinForm k n).exists_isometryEquiv_map_eq
+    (stdSymplecticBilinForm_nondegenerate k n) h₁ h₂ h
+  -- The matrix of an isometry of `vᵀ J w` is symplectic.
+  have hA : LinearMap.toMatrix' (g : ((Fin n ⊕ Fin n) → k) →ₗ[k] (Fin n ⊕ Fin n) → k) ∈
+      Matrix.symplecticGroup (Fin n) k := by
+    rw [SymplecticGroup.mem_iff']
+    apply Matrix.toBilin'.injective
+    rw [← Matrix.toBilin'_comp, Matrix.toLin'_toMatrix', ← stdSymplecticBilinForm]
+    ext x y
+    simp
+  refine ⟨⟨_, hA⟩, ?_⟩
+  rw [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix', hg]
 
 end Field
 

@@ -22,10 +22,6 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
--- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
--- bilinear form on an exterior power is private to its file, and the body of
--- `LinearMap.BilinForm.exteriorPower` is not exposed, so evaluating that form needs this import.
-import all Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 
 /-!
 # The Hodge star of an oriented real inner product space
@@ -68,6 +64,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
   `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
+* `Orientation.hodgeStar_smul_add_hodgeStar`, `Orientation.hodgeStar_smul_sub_hodgeStar`: in an
+  even middle degree, `(x + ⋆x) / 2` is self-dual and `(x - ⋆x) / 2` is anti-self-dual.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -190,10 +188,9 @@ theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : �
   -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
   refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
   rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv,
-    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
-    ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector]
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+    OrthonormalBasis.inner_toBasis_exteriorPower, smul_eq_mul]
   -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
   have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out]; omega
   rw [if_congr (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl hcard) |>.trans eq_comm)
@@ -244,6 +241,22 @@ theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finra
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
 
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x + ⋆x) / 2` of `x`
+is self-dual. -/
+theorem hodgeStar_smul_add_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x + o.hodgeStar hkk x)) =
+      (2⁻¹ : ℝ) • (x + o.hodgeStar hkk x) := by
+  rw [map_smul, map_add, o.hodgeStar_hodgeStar_of_even hk, add_comm]
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x - ⋆x) / 2` of `x`
+is anti-self-dual. -/
+theorem hodgeStar_smul_sub_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) =
+      -((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) := by
+  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk, ← smul_neg, neg_sub]
+
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of
 `e_{Iᶜ}`, and `Iᶜ ≠ I`. -/
@@ -257,7 +270,7 @@ theorem trace_hodgeStar {k : ℕ} (hk : 0 < k) (hkk : k + k = finrank ℝ V) :
   -- A `k`-element set with `0 < k` is not disjoint from itself, so it is not its own complement.
   have hne : powersetCard.compl hcard s ≠ s := fun h ↦ by
     have hs := disjoint_self.1 ((powersetCard.disjoint_iff_eq_compl hcard).2 h.symm)
-    have := powersetCard.mem_iff.1 s.2
+    have := powersetCard.mem_iff.1 s.property
     simp_all
   -- The diagonal entry is the `e_I` coordinate of `⋆ e_I = ±e_{Iᶜ}`, which vanishes.
   rw [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe, hodgeStar_orthonormalBasis]
@@ -310,7 +323,7 @@ theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk
 theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ V)
     (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
     o.hodgeStar hkk x = x := by
-  simpa using Module.End.mem_eigenspace_iff.1 x.2
+  simpa using Module.End.mem_eigenspace_iff.1 x.property
 
 /-! ### Two-forms split along a unit vector -/
 
@@ -334,7 +347,7 @@ theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank 
   have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) := by
     rw [ha, TauCeti.twoVectorContraction_apply]
     exact TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.2)
+      (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.property)
   -- In dimension four, `F ∧ F` is twice `F ∧ (s ∧ a)`.
   have hwedge : exteriorPower.wedge ℝ V 2 2 F F =
       2 • exteriorPower.wedge ℝ V 2 2 F (ιMulti ℝ 2 ![s, a]) := by
@@ -343,7 +356,8 @@ theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank 
       ExteriorAlgebra.ιMulti_apply, Submodule.coe_smul_of_tower]
     simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
       Matrix.cons_val_zero, Matrix.cons_val_succ, hιa]
-    exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss (by omega) F.2
+    exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss
+        (by omega) F.property
   rw [inner_add_right, real_inner_comm, ← TauCeti.inner_twoVectorContraction_apply, ← ha,
     real_inner_self_eq_norm_sq, real_inner_comm, inner_hodgeStar_apply]
   simp only [LinearMap.compr₂_apply, hwedge, map_nsmul, nsmul_eq_mul]

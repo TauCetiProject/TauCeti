@@ -39,9 +39,8 @@ The coordinates and node numbering follow Bourbaki, *Lie Groups and Lie Algebras
 Plate IV. The graph automorphism and its role in the twisted family `²Dₙ` follow R. W. Carter,
 *Simple Groups of Lie Type*, §12.2.
 
-This supplies the type-`D` root-datum input to the pinned-isomorphism target in Layer 9 of the
-ReductiveGroups roadmap. The pinned isomorphism theorem will lift it to the group-scheme
-automorphism used in the graph-twisted Steinberg endomorphism.
+By the isomorphism theorem for pinned reductive groups, this root-datum automorphism lifts to the
+group-scheme automorphism used in the graph-twisted Steinberg endomorphism.
 -/
 
 public section
@@ -81,11 +80,11 @@ coordinate. -/
 private def typeDClassicalGraphEquiv (n : ℕ) : TypeDRoot n ≃ TypeDRoot n where
   toFun x := ⟨typeDLastSign n x, by rw [typeDLastSign_dotProduct, x.property]⟩
   invFun x := ⟨typeDLastSign n x, by rw [typeDLastSign_dotProduct, x.property]⟩
-  left_inv x := Subtype.ext (typeDLastSign_involutive x.1)
-  right_inv x := Subtype.ext (typeDLastSign_involutive x.1)
+  left_inv x := Subtype.ext (typeDLastSign_involutive x.val)
+  right_inv x := Subtype.ext (typeDLastSign_involutive x.val)
 
 private lemma typeDClassicalGraphEquiv_val (x : TypeDRoot n) :
-    (typeDClassicalGraphEquiv n x).1 = typeDLastSign n x :=
+    (typeDClassicalGraphEquiv n x).val = typeDLastSign n x :=
   rfl
 
 private lemma typeDClassicalGraphEquiv_involutive :
@@ -113,9 +112,9 @@ private theorem typeDRootEquiv_typeDGraphIndexEquiv (hn : 4 ≤ n)
 final coordinate. -/
 theorem typeDRootEquiv_typeDGraphIndexEquiv_apply (hn : 4 ≤ n)
     (i : Fin (2 * n * (n - 1))) (j : Fin n) :
-    (typeDRootEquiv n hn (typeDGraphIndexEquiv n hn i)).1 j =
-      if (j : ℕ) = n - 1 then -(typeDRootEquiv n hn i).1 j
-      else (typeDRootEquiv n hn i).1 j := by
+    (typeDRootEquiv n hn (typeDGraphIndexEquiv n hn i)).val j =
+      if (j : ℕ) = n - 1 then -(typeDRootEquiv n hn i).val j
+      else (typeDRootEquiv n hn i).val j := by
   rw [typeDRootEquiv_typeDGraphIndexEquiv, typeDClassicalGraphEquiv_val]
   exact typeDLastSign_apply _ _
 
@@ -204,7 +203,7 @@ private lemma typeDGraphLatticeEquiv_root (hn : 4 ≤ n)
   rw [typeDGraphLatticeEquiv_apply, root_typeDSimplyConnectedRootDatum,
     root_typeDSimplyConnectedRootDatum, typeDRootEquiv_typeDGraphIndexEquiv,
     typeDClassicalGraphEquiv_val]
-  rw [← typeDLastSign_dotProduct (typeDRootEquiv n hn i).1
+  rw [← typeDLastSign_dotProduct (typeDRootEquiv n hn i).val
     (typeDSimpleRoot n hn (graphPermD n (by omega) j)),
     typeDLastSign_typeDSimpleRoot]
   rw [graphPermD_apply_apply n (by omega)]
@@ -229,7 +228,7 @@ private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n
       (graphPermD n (by omega) i) • typeDSimpleRoot n hn (graphPermD n (by omega) i)
     rw [typeDGraphLatticeEquiv_apply, graphPermD_apply_apply n (by omega)]
   have hsum : ∑ i : Fin n, c i • typeDSimpleRoot n hn i =
-      (typeDClassicalGraphEquiv n x).1 := by
+      (typeDClassicalGraphEquiv n x).val := by
     rw [typeDClassicalGraphEquiv_val]
     rw [← hreindex]
     simp_rw [← typeDLastSign_typeDSimpleRoot hn]

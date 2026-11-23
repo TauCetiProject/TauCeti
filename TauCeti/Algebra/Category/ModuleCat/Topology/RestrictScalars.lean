@@ -90,19 +90,19 @@ variable {M N : TopModuleCat.{v} R} (f : M ⟶ N)
 /-- The kernel of `f`, computed after forgetting the scalars, is the kernel of `f` computed before,
 as a topological `ℤ`-module. -/
 def kerEquiv : ker (restrictScalarsInt.map f) ≃L[ℤ] restrictScalarsInt.obj (ker f) where
-  toFun x := ⟨x.1, x.2⟩
-  invFun x := ⟨x.1, x.2⟩
+  toFun x := ⟨x.val, x.property⟩
+  invFun x := ⟨x.val, x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val
-  continuous_invFun := continuous_induced_rng.2 continuous_subtype_val
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 /-- `kerEquiv` is the identity on the underlying elements. -/
 @[simp]
 theorem coe_kerEquiv_apply (x : ker (restrictScalarsInt.map f)) :
-    (kerEquiv f x).1 = x.1 :=
+    (kerEquiv f x).val = x.val :=
   (rfl)
 
 /-- The kernel of `f`, computed after forgetting the scalars, is the kernel of `f` computed
@@ -130,13 +130,8 @@ before, as a topological `ℤ`-module. Both carry the quotient topology of `N`. 
 noncomputable def cokerEquiv :
     coker (restrictScalarsInt.map f) ≃L[ℤ] restrictScalarsInt.obj (coker f) :=
   { Submodule.Quotient.restrictScalarsEquiv ℤ (LinearMap.range (f.hom : M →ₗ[R] N)) with
-    continuous_toFun :=
-      (Submodule.isOpenQuotientMap_mkQ
-        ((LinearMap.range (f.hom : M →ₗ[R] N)).restrictScalars ℤ)).isQuotientMap.continuous_iff.2
-          continuous_quot_mk
-    continuous_invFun :=
-      (Submodule.isOpenQuotientMap_mkQ
-        (LinearMap.range (f.hom : M →ₗ[R] N))).isQuotientMap.continuous_iff.2 continuous_quot_mk }
+    continuous_toFun := (Submodule.isQuotientMap_mkQ _).continuous_iff.2 continuous_quot_mk
+    continuous_invFun := (Submodule.isQuotientMap_mkQ _).continuous_iff.2 continuous_quot_mk }
 
 /-- `cokerEquiv` sends the class of `x` to the class of `x`. -/
 @[simp]

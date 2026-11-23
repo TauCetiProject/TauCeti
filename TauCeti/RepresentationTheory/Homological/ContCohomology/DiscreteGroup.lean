@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionS
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Coinduced
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+public import TauCeti.Topology.Algebra.MulAction.Discrete
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 import TauCeti.RepresentationTheory.Coinduced
 
@@ -70,10 +71,6 @@ namespace TauCeti.ContCohomology
 variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
   (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
-/-- An action of a discrete group on a discrete module is continuous. -/
-local instance continuousSMul_of_discreteTopology : ContinuousSMul G M :=
-  ⟨continuous_of_discreteTopology⟩
-
 /-! ### The dimension-shifting sequence in `Rep ℤ G` -/
 
 section ShortComplex
@@ -86,7 +83,7 @@ private def coindBotToCoindQuotient :
   Rep.ofHom
     { toLinearMap := (CoindQuotient.mk G ⊥ M).toIntLinearMap ∘ₗ AddMonoidHom.toIntLinearMap
         { toFun := fun f : Rep.coindBot ℤ G M =>
-            DiscreteCoind.ofContinuousMap G M ⟨f.1, continuous_of_discreteTopology⟩
+            DiscreteCoind.ofContinuousMap G M ⟨f.val, continuous_of_discreteTopology⟩
           map_zero' := DiscreteCoind.ext fun _ => by simp
           map_add' := fun _ _ => DiscreteCoind.ext fun _ => by simp }
       isIntertwining' := fun g => LinearMap.ext fun f =>
@@ -98,7 +95,7 @@ private def coindBotToCoindQuotient :
 private theorem coindBotToCoindQuotient_hom_apply (f : Rep.coindBot ℤ G M) :
     (coindBotToCoindQuotient G M).hom f =
       CoindQuotient.mk G ⊥ M
-        (DiscreteCoind.ofContinuousMap G M ⟨f.1, continuous_of_discreteTopology⟩) :=
+        (DiscreteCoind.ofContinuousMap G M ⟨f.val, continuous_of_discreteTopology⟩) :=
   (rfl)
 
 /-- **The dimension-shifting sequence** `0 → M → Coind_⊥^G M → Coind_1^G M ⧸ M → 0` in `Rep ℤ G`,
@@ -125,7 +122,7 @@ private theorem coindBotShortComplex_shortExact : (coindBotShortComplex G M).Sho
     refine (Eq.congr_left (coindBotToCoindQuotient_hom_apply G M f)).trans <|
       (CoindQuotient.mk_eq_zero_iff (G := G) (U := ⊥) (M := M)).trans
         (exists_congr fun m => ⟨fun h => Subtype.ext (funext fun x => ?_), fun h => ?_⟩)
-    · have hx : x • m = f.1 x := by simpa using DFunLike.congr_fun h x
+    · have hx : x • m = f.val x := by simpa using DFunLike.congr_fun h x
       exact (Rep.coindBotUnit_hom_apply_coe (Rep.ofDistribMulAction ℤ G M) m x).trans hx
     · refine DiscreteCoind.ext fun x => ?_
       simp only [AddMonoidHom.coe_mk, MonoidHom.coe_id, DistribMulActionHom.toFun_eq_coe,

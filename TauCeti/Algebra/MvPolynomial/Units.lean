@@ -10,16 +10,23 @@ public import Mathlib.Algebra.MvPolynomial.Nilpotent
 /-!
 # Units of multivariate polynomials under a change of coefficients
 
-Over a field `k`, the units of `k[X_σ]` are the nonzero constants. Mapping the coefficients along a
-homomorphism of fields `f : k →+* L` therefore reflects units: if `map f p` is a unit of `L[X_σ]`,
-then `p` is a nonzero constant. In other words `map f` is a local homomorphism, so irreducibility of
-`map f p` implies irreducibility of `p` (`Irreducible.of_map`). This is how absolute irreducibility,
-over an algebraic closure, gives irreducibility over every intermediate field.
+Over a commutative ring, a polynomial is a unit exactly when its constant coefficient is a unit and
+its other coefficients are nilpotent. Mapping the coefficients along an injective local
+homomorphism `f : R →+* S` of commutative rings therefore reflects units: if `map f p` is a unit of
+`S[X_σ]`, then, since `f` is injective and reflects units, the same coefficient conditions hold
+for `p`. In other words `map f` is a local homomorphism, so irreducibility of `map f p` implies
+irreducibility of `p` (`Irreducible.of_map`). Every ring homomorphism from a field `k` into a
+nontrivial commutative ring is injective and local, so this holds for it with no hypothesis. This
+is how absolute irreducibility, over an algebraic closure, gives irreducibility over every
+intermediate field.
 
 ## Main results
 
-* `MvPolynomial.isLocalHom_map`: `map f` reflects units for a homomorphism of fields `f`. It is an
-  instance, so `Irreducible.of_map` applies to `map f` directly.
+* `MvPolynomial.isLocalHom_map_of_injective`: `map f` reflects units for an injective local
+  homomorphism `f` of commutative rings.
+* `MvPolynomial.isLocalHom_map`: its specialization to a ring homomorphism `f` out of a field into a
+  nontrivial commutative ring. It is an instance, so `Irreducible.of_map` applies to `map f`
+  directly.
 * `MvPolynomial.isUnit_iff_totalDegree_eq_zero`: a nonzero polynomial over a field is a unit
   exactly when its total degree is zero.
 -/
@@ -28,24 +35,33 @@ public section
 
 namespace MvPolynomial
 
-variable {σ k L : Type*} [Field k] [Field L]
+variable {σ k L : Type*} [Field k] [CommRing L]
 
 /-- Over a field, a nonzero polynomial is a unit exactly when its total degree is zero, that is,
 when it is a nonzero constant. -/
 theorem isUnit_iff_totalDegree_eq_zero {p : MvPolynomial σ k} (hp : p ≠ 0) :
     IsUnit p ↔ p.totalDegree = 0 := by
-  refine ⟨fun h ↦ (isUnit_iff_totalDegree_of_isReduced.mp h).2, fun h ↦ ?_⟩
-  rw [totalDegree_eq_zero_iff_eq_C] at h
-  rw [h] at hp ⊢
-  exact (Ne.isUnit (by simpa using hp)).map C
+  rw [isUnit_iff_totalDegree_of_isReduced, isUnit_iff_ne_zero, and_iff_right_iff_imp,
+    totalDegree_eq_zero_iff_eq_C]
+  exact fun h h0 ↦ hp (by rw [h, h0, C_0])
 
-/-- **Changing the coefficients along a homomorphism of fields reflects units**: units of `k[X_σ]`
-and `L[X_σ]` are the nonzero constants. -/
-instance isLocalHom_map (f : k →+* L) : IsLocalHom (map (σ := σ) f) where
+/-- **Changing the coefficients along an injective local homomorphism reflects units**: if
+`f : R →+* S` is an injective local homomorphism of commutative rings and `map f p` is a unit, so
+is `p`. -/
+theorem isLocalHom_map_of_injective {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    [IsLocalHom f] (hf : Function.Injective f) : IsLocalHom (map (σ := σ) f) where
   map_nonunit p hp := by
-    rw [isUnit_iff_totalDegree_of_isReduced] at hp ⊢
-    refine ⟨isUnit_iff_ne_zero.mpr fun h0 ↦ ?_, ?_⟩
-    · simp [coeff_map, h0] at hp
-    · simpa only [totalDegree, support_map_of_injective p f.injective] using hp.2
+    -- A polynomial is a unit exactly when its constant coefficient is a unit and its other
+    -- coefficients are nilpotent. Since `f` is injective and reflects units, both conditions
+    -- pull back from `map f p` to `p`.
+    simp only [isUnit_iff, coeff_map] at hp
+    exact isUnit_iff.mpr ⟨isUnit_of_map_unit f _ hp.1,
+      fun i hi ↦ (IsNilpotent.map_iff hf).mp (hp.2 i hi)⟩
+
+/-- **Changing the coefficients along a ring homomorphism from a field into a nontrivial
+commutative ring reflects units**: if `map f p` is a unit, so is `p`. Hence `Irreducible.of_map`
+applies to `map f`. -/
+instance isLocalHom_map [Nontrivial L] (f : k →+* L) : IsLocalHom (map (σ := σ) f) :=
+  isLocalHom_map_of_injective f f.injective
 
 end MvPolynomial

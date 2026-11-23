@@ -117,7 +117,7 @@ public theorem integrableTopForm_iff (φ : RoughForm I M ℝ k) :
 
 section RoughIntegrability
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M] {φ : RoughForm I M ℝ k}
+variable [IsManifold I 1 M] {φ : RoughForm I M ℝ k}
 
 /-- Integrability on an open chart cover introduces the intrinsic predicate for rough
 forms. One model basis suffices, and neither form continuity nor an orientation is required. -/
@@ -130,6 +130,8 @@ public theorem RoughForm.integrableTopForm_of_open_cover {J : Type*}
     (hlocal : ∀ i, IntegrableOn (φ.signedInChartAt b (β i) (fun _ ↦ 1))
       ((extChartAt I (β i)) '' u i) b.addHaar) : IntegrableTopForm φ := by
   classical
+  -- The basis of `Fin k` makes the model space finite-dimensional.
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   obtain ⟨t, ht⟩ := hc.elim_finite_subcover u hu hcover
   have hcover' : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ ⋃ i : t, u i := by
     intro x hx
@@ -261,7 +263,9 @@ private theorem coverIntegral_choose_eq [FiniteDimensional ℝ E]
   subst t
   rfl
 
-private theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
+/-- The signed coefficient of an integrable top form in a preferred chart is integrable for the
+Haar measure of any basis, when the chart sign is continuous. -/
+public theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
     (l : Manifold.OrientationLift I M (Fin k)) {φ : RoughForm I M ℝ k}
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) (α : M) :
     Integrable (φ.signedInChartAt b α (fun x ↦ l.signAt α x)) b.addHaar := by
@@ -688,6 +692,14 @@ public theorem integralTopForm_smul (o : Manifold.Orientation I M (Fin k))
   · have hi' : ¬IntegrableTopForm (c • φ) := fun h ↦ hi ((integrableTopForm_smul_iff c φ hc).mp h)
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi',
       integralTopForm_eq_zero_of_not_integrable _ _ hi, mul_zero]
+
+/-- The top-form integral respects subtraction of integrable rough forms. -/
+public theorem integralTopForm_sub_of_integrable [IsManifold I 1 M]
+    (o : Manifold.Orientation I M (Fin k)) {φ ψ : RoughForm I M ℝ k}
+    (hφ : IntegrableTopForm φ) (hψ : IntegrableTopForm ψ) :
+    integralTopForm o (φ - ψ) = integralTopForm o φ - integralTopForm o ψ := by
+  rw [sub_eq_add_neg, integralTopForm_add_of_integrable o hφ hψ.neg, ← neg_one_smul ℝ ψ,
+    integralTopForm_smul, neg_one_mul, ← sub_eq_add_neg]
 
 /-- A preferred chart computes the whole integral when the form vanishes outside that
 chart up to a chartwise null set. The premise uses the actual nonzero values, rather than

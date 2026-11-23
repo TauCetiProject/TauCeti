@@ -7,6 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
+import Mathlib.Algebra.CharZero.Infinite
+import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 
 /-!
 # The Weyl chambers of a base
@@ -20,7 +23,8 @@ nontrivial Weyl-group element, indeed out of the closed dominant chamber
 (`TauCeti.eq_one_of_smul_mem_dominantChamber`); and every weight is Weyl-conjugate into the closed
 dominant chamber (`RootPairing.exists_mem_dominantChamber`). The first says an open chamber meets
 the closed chamber of no other Weyl-group element, so the labelling `w ↦ w • openDominantChamber` is
-injective as soon as the open dominant chamber has a point to distinguish two labels by; the set of
+injective, a point of the open dominant chamber distinguishing two labels (such a point exists:
+`TauCeti.openDominantChamber_nonempty`, twice the Weyl vector); the set of
 open chambers is by definition the range of that labelling, so surjectivity is free, and the two
 together make it a bijection from the Weyl group onto the set of open chambers, which is what simple
 transitivity means here. The second fact is what covers the weights: it is how every *regular*
@@ -34,11 +38,9 @@ weights, and `TauCeti.existsUnique_mem_openWeylChamber` puts each regular weight
 them.
 
 Unlike the uniqueness statements, the bijection needs the open dominant chamber to be *nonempty*,
-which is a genuine hypothesis rather than a formality: the open chambers are cut out by strict
-inequalities, and over a coefficient ring where `2` is not invertible a base may have no strictly
-dominant weight to offer. So it is carried as an explicit argument, and
-`TauCeti.openDominantChamber_nonempty` discharges it whenever `2` is invertible, the Weyl vector
-`ρ` being strictly dominant there.
+because the open chambers are cut out by strict inequalities. Over a linearly ordered coefficient
+ring, for a reduced crystallographic pairing, this holds by
+`TauCeti.openDominantChamber_nonempty`: twice the Weyl vector is strictly dominant.
 
 ## Main definitions
 
@@ -60,6 +62,9 @@ dominant weight to offer. So it is carried as an explicit argument, and
   `TauCeti.openWeylChambers`: the Weyl group acts transitively on the open chambers.
 * `TauCeti.iUnion_openWeylChamber_eq_setOf_isRegularWeight` and
   `TauCeti.existsUnique_mem_openWeylChamber`: the open chambers partition the regular weights.
+* `RootPairing.eq_one_of_isRegularWeight_of_smul_eq`: over any field of characteristic zero (with
+  no ordering or spanning assumption), the Weyl group of a finite reduced crystallographic root
+  pairing with a base acts freely on regular weights.
 
 ## Implementation notes
 
@@ -77,7 +82,7 @@ group be finite, and the root-system forms are read off from those using
 
 Existence of a dominant representative is `RootPairing.exists_mem_dominantChamber`; for an
 interior dominant weight, `TauCeti.eq_one_of_smul_mem_dominantChamber` gives uniqueness and a
-trivial stabilizer. Together these yield simple transitivity on the nonempty open chambers.
+trivial stabilizer. Together these yield simple transitivity on the open chambers.
 
 ## References
 
@@ -193,7 +198,7 @@ theorem exists_smul_eq_of_mem_openWeylChambers {C D : Set M} (hC : C ∈ openWey
 the pointwise action on `Set M` restricts to `TauCeti.openWeylChambers`. -/
 noncomputable instance : SMul P.weylGroup (openWeylChambers P b) where
   smul v C := ⟨v • (C : Set M), by
-    obtain ⟨w, hw⟩ := C.2
+    obtain ⟨w, hw⟩ := C.property
     exact ⟨v * w, by rw [← smul_openWeylChamber, hw]⟩⟩
 
 /-- The action on the chambers is the pointwise action on the underlying set. -/
@@ -210,7 +215,7 @@ noncomputable instance : MulAction P.weylGroup (openWeylChambers P b) where
 themselves. -/
 instance : MulAction.IsPretransitive P.weylGroup (openWeylChambers P b) where
   exists_smul_eq C D := by
-    obtain ⟨u, hu⟩ := exists_smul_eq_of_mem_openWeylChambers P b C.2 D.2
+    obtain ⟨u, hu⟩ := exists_smul_eq_of_mem_openWeylChambers P b C.property D.property
     exact ⟨u, Subtype.ext ((openWeylChambers.coe_smul P b u C).trans hu)⟩
 
 /-! ### Simple transitivity -/
@@ -255,69 +260,66 @@ theorem pairwise_disjoint_openWeylChamber :
     Pairwise fun v w : P.weylGroup ↦ Disjoint (openWeylChamber P b v) (openWeylChamber P b w) :=
   fun _ _ h ↦ Set.disjoint_left.mpr fun _ hv hw ↦ h (eq_of_mem_openWeylChamber P b hv hw)
 
-/-- **Distinct Weyl-group elements give distinct open chambers**, provided the open dominant
-chamber has a point at all. -/
-theorem openWeylChamber_injective (hne : (openDominantChamber P b).Nonempty) :
+/-- **Distinct Weyl-group elements give distinct open chambers**: the point of the open dominant
+chamber supplied by `TauCeti.openDominantChamber_nonempty` separates the labels. -/
+theorem openWeylChamber_injective :
     Function.Injective (openWeylChamber P b) := by
   intro v w h
-  obtain ⟨x, hx⟩ := hne
+  obtain ⟨x, hx⟩ := openDominantChamber_nonempty P b
   have hv : v • x ∈ openWeylChamber P b v := ⟨x, hx, rfl⟩
   exact eq_of_mem_openWeylChamber P b hv (h ▸ hv)
 
 /-- Two open chambers agree exactly when their labels do. -/
-theorem openWeylChamber_inj (hne : (openDominantChamber P b).Nonempty) {v w : P.weylGroup} :
+theorem openWeylChamber_inj {v w : P.weylGroup} :
     openWeylChamber P b v = openWeylChamber P b w ↔ v = w :=
-  (openWeylChamber_injective P b hne).eq_iff
+  (openWeylChamber_injective P b).eq_iff
 
 /-- **The Weyl group acts freely on the open chambers**: only the identity fixes one. -/
-theorem eq_one_of_smul_openWeylChamber_eq (hne : (openDominantChamber P b).Nonempty)
-    {v w : P.weylGroup} (h : v • openWeylChamber P b w = openWeylChamber P b w) : v = 1 := by
+theorem eq_one_of_smul_openWeylChamber_eq {v w : P.weylGroup}
+    (h : v • openWeylChamber P b w = openWeylChamber P b w) : v = 1 := by
   rw [smul_openWeylChamber] at h
-  simpa using openWeylChamber_injective P b hne h
+  simpa using openWeylChamber_injective P b h
 
 /-- **The stabilizer of an open Weyl chamber is trivial.** -/
-theorem stabilizer_openWeylChamber_eq_bot (hne : (openDominantChamber P b).Nonempty)
-    (w : P.weylGroup) :
+theorem stabilizer_openWeylChamber_eq_bot (w : P.weylGroup) :
     MulAction.stabilizer P.weylGroup (openWeylChamber P b w) = ⊥ := by
   ext v
   rw [MulAction.mem_stabilizer_iff, Subgroup.mem_bot]
-  exact ⟨eq_one_of_smul_openWeylChamber_eq P b hne, fun h ↦ by rw [h, one_smul]⟩
+  exact ⟨eq_one_of_smul_openWeylChamber_eq P b, fun h ↦ by rw [h, one_smul]⟩
 
 /-- **The Weyl group acts freely on the open chambers**: the stabilizer of a chamber, as an element
 of `TauCeti.openWeylChambers`, is trivial. Together with the transitivity instance above this is
 simple transitivity of the action on the chambers. -/
-theorem openWeylChambers.stabilizer_eq_bot (hne : (openDominantChamber P b).Nonempty)
-    (C : openWeylChambers P b) : MulAction.stabilizer P.weylGroup C = ⊥ := by
-  obtain ⟨w, hw⟩ := C.2
+theorem openWeylChambers.stabilizer_eq_bot (C : openWeylChambers P b) :
+    MulAction.stabilizer P.weylGroup C = ⊥ := by
+  obtain ⟨w, hw⟩ := C.property
   ext v
   rw [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, openWeylChambers.coe_smul, ← hw,
     Subgroup.mem_bot]
-  exact ⟨eq_one_of_smul_openWeylChamber_eq P b hne, fun h ↦ by rw [h, one_smul]⟩
+  exact ⟨eq_one_of_smul_openWeylChamber_eq P b, fun h ↦ by rw [h, one_smul]⟩
 
 /-- **The Weyl group acts simply transitively on the open Weyl chambers**: labelling a chamber by
 the Weyl-group element carrying the dominant one to it is a bijection.
 
 Transitivity of the action is `TauCeti.exists_smul_eq_of_mem_openWeylChambers` and freeness is
 `TauCeti.stabilizer_openWeylChamber_eq_bot`; this packages the two as an equivalence. -/
-noncomputable def weylGroupEquivOpenWeylChambers (hne : (openDominantChamber P b).Nonempty) :
+noncomputable def weylGroupEquivOpenWeylChambers :
     P.weylGroup ≃ openWeylChambers P b :=
-  Equiv.ofInjective (openWeylChamber P b) (openWeylChamber_injective P b hne)
+  Equiv.ofInjective (openWeylChamber P b) (openWeylChamber_injective P b)
 
 @[simp]
-lemma weylGroupEquivOpenWeylChambers_apply (hne : (openDominantChamber P b).Nonempty)
-    (w : P.weylGroup) :
-    (weylGroupEquivOpenWeylChambers P b hne w : Set M) = openWeylChamber P b w := (rfl)
+lemma weylGroupEquivOpenWeylChambers_apply (w : P.weylGroup) :
+    (weylGroupEquivOpenWeylChambers P b w : Set M) = openWeylChamber P b w := (rfl)
 
 end Regular
 
-/-! ### Nonemptiness, from the Weyl vector -/
+/-! ### Nonemptiness, from twice the Weyl vector -/
 
 section Nonempty
 
-variable [IsStrictOrderedRing R] [Invertible (2 : R)] [Finite ι] [P.IsCrystallographic]
-  [P.IsReduced]
+variable [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
-/-- Every open Weyl chamber is nonempty once `2` is invertible. -/
+/-- Every open Weyl chamber is nonempty. -/
 theorem openWeylChamber_nonempty (w : P.weylGroup) : (openWeylChamber P b w).Nonempty :=
   (openDominantChamber_nonempty P b).image _
 
@@ -373,3 +375,66 @@ theorem existsUnique_mem_openWeylChamber [P.IsRootSystem] {x : M} (hx : IsRegula
 end Covering
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+section CharZero
+
+variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+  [AddCommGroup N] [Module K N] (P : RootPairing ι K M N)
+  [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+
+/-- For a regular weight `x` over a characteristic-zero field, some `ℚ`-linear functional `φ` and
+Weyl translate `v • x` make `φ (P.coroot' k (v • x)) > 0` for every positive root `k`. -/
+private theorem exists_weylGroup_forall_mem_posRoots_pos (b : P.Base) {x : M}
+    (hx : P.IsRegularWeight x) :
+    ∃ (φ : K →ₗ[ℚ] ℚ) (v : P.weylGroup), ∀ k ∈ posRoots P b, 0 < φ (P.coroot' k (v • x)) := by
+  classical
+  have : Finite P.weylGroup := P.finite_weylGroup_of_base b
+  obtain ⟨φ, hφ⟩ := Module.exists_dual_forall_apply_ne_zero (K := ℚ)
+    (fun i ↦ P.coroot' i x) ((P.isRegularWeight_iff x).mp hx)
+  have hφ_orb (v : P.weylGroup) (i : ι) : φ (P.coroot' i (v • x)) ≠ 0 := by
+    rw [Subgroup.smul_def, P.coroot'_smul v.val i x]; exact hφ _
+  obtain ⟨v, hv⟩ := Finite.exists_max fun v : P.weylGroup ↦ φ (posCorootSum P b (v • x))
+  have hpos_supp {i : ι} (hi : i ∈ b.support) : 0 < φ (P.coroot' i (v • x)) := by
+    have hle := hv (weylGroup.ofIdx P i * v)
+    have h2 : (2 : K) * P.coroot' i (v • x) = (2 : ℚ) • P.coroot' i (v • x) := by
+      simp [Rat.smul_def]
+    rw [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, posCorootSum_reflection P b hi,
+      map_sub, h2, map_smul, smul_eq_mul] at hle
+    exact lt_of_le_of_ne (by linarith) (hφ_orb v i).symm
+  refine ⟨φ, v, fun k hk ↦ lt_of_le_of_ne ?_ (hφ_orb v k).symm⟩
+  obtain ⟨c, -, hc⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hk
+  have happly := congr($hc (v • x))
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, Nat.cast_smul_eq_nsmul] at happly
+  rw [happly, map_sum]
+  exact Finset.sum_nonneg fun i hi ↦ by rw [map_nsmul]; exact nsmul_nonneg (hpos_supp hi).le (c i)
+
+/-- **The Weyl group acts freely on regular weights:** for a finite reduced crystallographic root
+pairing with a base `b` over any field of characteristic zero, if `x` lies on no root hyperplane and
+`w • x = x`, then `w = 1`. No ordering on `K` or spanning assumption on the roots is needed. -/
+theorem eq_one_of_isRegularWeight_of_smul_eq (b : P.Base) {x : M} (hx : P.IsRegularWeight x)
+    {w : P.weylGroup} (hw : w • x = x) : w = 1 := by
+  obtain ⟨φ, v, hpos_all⟩ := P.exists_weylGroup_forall_mem_posRoots_pos b hx
+  let u : P.weylGroup := v * w * v⁻¹
+  have hu_fix : u • (v • x) = v • x := by simp [u, mul_smul, hw]
+  have hinv_empty : inversions P b u⁻¹ = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun k hk ↦ by
+    let j := P.weylGroupToPerm u⁻¹ k
+    let j' := P.reflectionPerm j j
+    have hcor : P.coroot' k (v • x) = -P.coroot' j' (v • x) := by
+      conv_lhs => rw [← hu_fix]
+      rw [Subgroup.smul_def, P.coroot'_smul u.val k (v • x)]
+      simp [j', j, coroot'_reflectionPerm_self]
+    have h1 := hpos_all k (inversions_subset_posRoots P b u⁻¹ hk)
+    have h2 := hpos_all j' ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b j).2
+      (mapsTo_inversions_negRoots P b u⁻¹ hk))
+    rw [hcor, map_neg] at h1; linarith
+  have hu : v * w * v⁻¹ = 1 := inv_eq_one.mp (eq_one_of_inversions_eq_empty hinv_empty)
+  calc w = v⁻¹ * (v * w * v⁻¹) * v := by group
+    _ = 1 := by rw [hu]; group
+
+end CharZero
+
+end RootPairing

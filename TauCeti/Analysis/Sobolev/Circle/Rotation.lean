@@ -104,9 +104,9 @@ def rotate (θ : AddCircle T) : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s
   left_inv a := by rw [rotateFun_rotateFun, neg_add_cancel, rotateFun_zero]
   right_inv a := by rw [rotateFun_rotateFun, add_neg_cancel, rotateFun_zero]
   norm_map' a := by
-    have h₁ : ‖rotateFun θ a‖ ≤ 1 * ‖a‖ := norm_le_of_forall_le zero_le_one fun n ↦ by
+    have h₁ : ‖rotateFun θ a‖ ≤ 1 * ‖a‖ := norm_le_of_forall_le fun n ↦ by
       simp [coeff_rotateFun, norm_smul]
-    have h₂ : ‖a‖ ≤ 1 * ‖rotateFun θ a‖ := norm_le_of_forall_le zero_le_one fun n ↦ by
+    have h₂ : ‖a‖ ≤ 1 * ‖rotateFun θ a‖ := norm_le_of_forall_le fun n ↦ by
       simp [coeff_rotateFun, norm_smul]
     exact le_antisymm (by simpa using h₁) (by simpa using h₂)
 
@@ -206,7 +206,7 @@ theorem norm_rotate_sub_rotate_le (h : s + 1 ≤ t) (a : CircleSobolev t E) (φ 
     ‖(rotate (φ : AddCircle T) (inclusion (by linarith) a) -
         rotate (ψ : AddCircle T) (inclusion (by linarith) a) : CircleSobolev s E)‖ ≤
       |φ - ψ| * ‖derivative T h a‖ :=
-  norm_le_of_forall_le (abs_nonneg _) fun n ↦ by
+  norm_le_of_forall_le fun n ↦ by
     rw [coeff_sub, Pi.sub_apply, coeff_rotate, coeff_rotate, coeff_inclusion, mul_left_comm]
     exact mul_le_mul_of_nonneg_left (norm_coeff_rotate_sub_le h a φ ψ n) (weight_nonneg s n)
 
@@ -300,7 +300,7 @@ theorem contDiff_rotate (h : s + 1 ≤ t) :
   have df₂ (φ : ℝ) (b : CircleSobolev t E) : HasFDerivAt (f φ ·) (f₂ φ b) b :=
     (f₂ φ b).hasFDerivAt
   have cf₁ : Continuous ↿f₁ :=
-    (ContinuousLinearMap.smulRightL ℝ ℝ (CircleSobolev s E) 1).continuous.comp <|
+    (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ (CircleSobolev s E) 1).continuous.comp <|
       continuous_rotate.comp <| (continuous_quotient_mk'.comp continuous_fst).prodMk
         ((derivative T h).continuous.comp continuous_snd)
   -- The partial derivative in `a` is Lipschitz in `θ` for the operator norm, by the Lipschitz

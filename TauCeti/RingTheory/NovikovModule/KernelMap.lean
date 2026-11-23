@@ -52,6 +52,8 @@ the periods is assumed.
   constant of the potential bound.
 * `TauCeti.NovikovModule.potential_le_of_kernelComp_ne_zero`,
   `TauCeti.NovikovModule.kernelComp_mem`: the composite kernel is supported.
+* `TauCeti.NovikovModule.finite_support_kernelComp`: a composite of kernels with finite outputs
+  has finite outputs.
 * `TauCeti.NovikovModule.kernelMap_kernelMap`: composition of maps is composition of kernels.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
@@ -59,6 +61,7 @@ the periods is assumed.
   chain homotopy between their maps.
 * `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map, as the
   special case of a diagonal kernel (`TauCeti.NovikovModule.kernelMap_diagonal_apply_val`).
+* `TauCeti.NovikovModule.finite_support_diagonal`: a diagonal kernel has finite outputs.
 * `TauCeti.NovikovModule.kernelMap_inj`: a kernel map determines its kernel, through
   the images of point masses (`TauCeti.NovikovModule.kernelMap_single_apply_val`).
 * `TauCeti.NovikovModule.coordinates_kernelMap`: the matrix formula in lift coordinates.
@@ -160,6 +163,17 @@ theorem kernelMap_ofFinsupp_single_val (p₁ : S₁) :
     simp [Ne.symm hp]]
   simp
 
+/-- A kernel whose rows have finitely many nonzero entries maps finite combinations to finite
+combinations. -/
+theorem kernelMap_ofFinsupp_mem_range (hm' : ∀ p₁, (support (m p₁)).Finite) (a : S₁ →₀ R) :
+    kernelMap hm hmfin (ofFinsupp F₁ a) ∈ LinearMap.range (ofFinsupp F₀) := by
+  refine mem_range_ofFinsupp_iff.2 ((a.hasFiniteSupport.biUnion fun p₁ _ => hm' p₁).subset ?_)
+  intro p₀ hp₀
+  obtain ⟨p₁, hp⟩ : ∃ p₁, a p₁ * m p₁ p₀ ≠ 0 := by
+    by_contra! h
+    exact hp₀ (by simp [h])
+  exact Set.mem_biUnion (left_ne_zero_of_mul hp) (right_ne_zero_of_mul hp)
+
 /-- The map shifts potential cutoffs by the constant of the potential bound: if `a` vanishes
 above `D`, then its image vanishes above `D + C`. -/
 theorem kernelMap_apply_val_eq_zero {a : NovikovModule R F₁} {D : ℝ}
@@ -200,13 +214,19 @@ theorem potential_le_of_diagonal_ne_zero {S : Type*} [DecidableEq S] {F : S → 
   · simp [hpq]
   · simp [hpq] at h
 
-/-- A diagonal kernel has completed outputs. -/
-theorem diagonal_mem {S : Type*} [DecidableEq S] {F : S → ℝ} (s : S → R) (p : S) :
-    (fun q => if p = q then s p else 0) ∈ NovikovModule R F :=
-  mem_of_finite_support <| (Set.finite_singleton p).subset fun q hq => by
+/-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal, has
+finite outputs. -/
+theorem finite_support_diagonal {M S : Type*} [Zero M] [DecidableEq S] (s : S → M) (p : S) :
+    (support fun q => if p = q then s p else 0).Finite :=
+  (Set.finite_singleton p).subset fun q hq => by
     by_contra h
     have hpq : ¬p = q := fun e => h e.symm
     simp [hpq] at hq
+
+/-- A diagonal kernel has completed outputs. -/
+theorem diagonal_mem {S : Type*} [DecidableEq S] {F : S → ℝ} (s : S → R) (p : S) :
+    (fun q => if p = q then s p else 0) ∈ NovikovModule R F :=
+  mem_of_finite_support (finite_support_diagonal s p)
 
 /-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal,
 multiplies each coefficient by `s`. -/
@@ -306,10 +326,16 @@ most `D` and `m'` raises potentials by at most `C'`, then the outputs of the com
 theorem potential_le_of_kernelComp_ne_zero {D : ℝ} {p₁ : S₁} {p₂ : S₂}
     (hm : ∀ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ D) (hm' : ∀ p₀, m' p₀ p₂ ≠ 0 → F₂ p₂ ≤ F₀ p₀ + C')
     (h : kernelComp m m' p₁ p₂ ≠ 0) : F₂ p₂ ≤ D + C' := by
-  obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := by
-    by_contra! h'
-    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   linarith [hm p₀ (left_ne_zero_of_mul hp₀), hm' p₀ (right_ne_zero_of_mul hp₀)]
+
+/-- **Finite outputs of a composite kernel.** If the output of `m` at `p₁` and every output of
+`m'` are finite combinations, so is the output of the composite kernel at `p₁`. -/
+theorem finite_support_kernelComp {p₁ : S₁} (hm : (support (m p₁)).Finite)
+    (hm' : ∀ p₀, (support (m' p₀)).Finite) : (support (kernelComp m m' p₁)).Finite :=
+  (hm.biUnion fun p₀ _ => hm' p₀).subset fun p₂ h => by
+    obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
+    exact Set.mem_biUnion (left_ne_zero_of_mul hp₀) (right_ne_zero_of_mul hp₀)
 
 /-- **Completed outputs of a composite kernel.** If the output of `m` at `p₁` is a completed
 combination and `m'` is supported, then the output of the composite kernel at `p₁` is a completed

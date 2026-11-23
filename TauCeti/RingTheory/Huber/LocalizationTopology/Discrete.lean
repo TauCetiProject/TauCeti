@@ -97,7 +97,7 @@ theorem discreteUniformity_locUniformSpace (P : PairOfDefinition A) (T : Set A) 
   have _ : DiscreteTopology S := by
     rw [locUniformSpace_toTopologicalSpace]
     exact discreteTopology_locTopology P T s S hden
-  exact DiscreteUniformity.of_discreteTopology
+  exact IsRightUniformAddGroup.discreteUniformity
 
 /-- **The completed localisation `A⟨T/s⟩` of a discrete ring is discrete.** The uniformity of `Aₛ`
 is discrete, so this is an instance of

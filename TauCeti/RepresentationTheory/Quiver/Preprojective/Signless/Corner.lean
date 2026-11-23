@@ -58,18 +58,23 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
-variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R] [Finite R]
+variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
   [∀ x : R, Fintype (Quiver.Star x)]
 
 local notation "Π" => signlessPreprojectiveAlgebra k R
 local notation "σ" => signlessPreprojectiveMk k R
 
+variable [Finite R] in
 /-- **The graded corner `e_j Π_n e_i`** of the signless preprojective algebra: the span of the
 classes of the paths of length `n` from `i` to `j`. -/
 noncomputable def signlessPreprojectiveCorner (n : ℕ) (i j : R) : Submodule k Π :=
   (pathsBetween k n i j).map (σ).toLinearMap
 
 variable {k R}
+
+section Finite
+
+variable [Finite R]
 
 /-- The class of a vertex idempotent is idempotent. -/
 private theorem signlessPreprojectiveMk_vertexIdempotent_mul_self (i : R) :
@@ -129,7 +134,7 @@ variable (k) in
 between distinct vertices. -/
 theorem signlessPreprojectiveCorner_zero_eq_bot_of_ne {i j : R} (h : i ≠ j) :
     signlessPreprojectiveCorner k R 0 i j = ⊥ := by
-  have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+  have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.val p.property)⟩
   rw [signlessPreprojectiveCorner, pathsBetween_def, Set.range_eq_empty, Submodule.span_empty,
     Submodule.map_bot]
 
@@ -170,6 +175,8 @@ theorem disjoint_signlessPreprojectiveCorner {m n : ℕ} {i i' j j' : R}
   · rw [← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx,
       ← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx',
       ← mul_assoc, ← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne hj, map_zero, zero_mul]
+
+end Finite
 
 section Fintype
 

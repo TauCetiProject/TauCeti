@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PointwiseDecay
+public import Mathlib.Topology.Compactification.OnePoint.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Inv
+import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
+import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 
 /-!
@@ -18,9 +22,26 @@ The extension takes values in the same compact set and is continuous on the enti
 disc. The target structure may vary with the image point. The original value of the map at
 the puncture is unrestricted and is replaced by its limit using `Function.update`.
 
-This is the continuous part of removal of singularities for pseudoholomorphic curves.
-It does not assert differentiability at the puncture or the Cauchy--Riemann equation there;
-those require elliptic regularity for the extended map.
+The same holds at the end of a plane. A finite-energy solution on the exterior `‖z‖ > R` of a
+disc, with compact image, has a limit at infinity
+(`SymplecticForm.exists_tendsto_cocompact_of_finite_energy`). The inverted map `w ↦ u w⁻¹` again
+solves the Cauchy--Riemann equation on the punctured disc of radius `R⁻¹`, since the inversion is
+holomorphic, and it again has finite energy: the Jacobian `‖w‖⁻⁴` of the inversion cancels the
+square of its conformal factor `‖w‖⁻²`, up to a factor depending on the norm of the target
+structure, which is bounded on the compact set `K`. The factor is needed because the structure is
+only tamed, so it need not be an isometry (`TauCeti.fderiv_comp_inv_apply_I_eq`,
+`TauCeti.integrableOn_norm_fderiv_comp_inv_apply_one_sq`). A finite-energy solution on the whole
+plane therefore extends to a continuous map on the Riemann sphere `OnePoint ℂ`
+(`SymplecticForm.exists_continuous_onePoint_elim_of_finite_energy`). This identifies the end at
+infinity of a finite-energy plane with a point of a sphere, continuously only.
+
+This is the continuous part of removal of singularities for pseudoholomorphic curves. That the
+filling solves the Cauchy--Riemann equation weakly across the puncture, and the inverted filling
+weakly at infinity, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`,
+`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Differentiability
+of the filling and the classical equation at the puncture or at infinity still require elliptic
+regularity for the extended map.
 
 The analytic inputs are
 `SymplecticForm.exists_pos_integrableOn_deriv_radial` (finite radial length) and
@@ -91,5 +112,59 @@ theorem exists_continuousOn_update_of_finite_energy
     · subst z
       simpa using hqK
     · simpa [Function.update_of_ne hzz] using huK ⟨hz, hzz⟩
+
+/-- **A finite-energy plane has a limit at infinity.** A `C³` pseudoholomorphic curve on the
+exterior `‖z‖ > R` of a disc, with compact image, uniformly positive taming constant, `C²` target
+structure near its image and integrable energy density, converges as `z → ∞` to a point of the
+compact set `K` containing its image. -/
+theorem exists_tendsto_cocompact_of_finite_energy
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    (hu : ContDiffOn ℝ 3 u (closedBall 0 R)ᶜ)
+    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (huK : MapsTo u (closedBall 0 R)ᶜ K)
+    (htame : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
+    ∃ q ∈ K, Tendsto u (cocompact ℂ) (𝓝 q) := by
+  -- A radius `R ≤ 0` is replaced by `1`: the exterior of the unit disc is smaller.
+  wlog hR : 0 < R generalizing R
+  · have hS : (closedBall (0 : ℂ) 1)ᶜ ⊆ (closedBall (0 : ℂ) R)ᶜ :=
+      compl_subset_compl.2 (closedBall_subset_closedBall (by linarith [not_lt.1 hR]))
+    exact this (hu.mono hS) (fun z hz ↦ hCR z (hS hz)) (huK.mono_left hS)
+      (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
+  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
+  -- The inverted map `w ↦ u w⁻¹` is a finite-energy solution on the punctured disc of radius `R⁻¹`.
+  have hCRv (w : ℂ) (hw : w ∈ ball 0 R⁻¹ \ {0}) : fderiv ℝ (fun w ↦ u w⁻¹) w I =
+      J (u w⁻¹) (fderiv ℝ (fun w ↦ u w⁻¹) w 1) :=
+    fderiv_comp_inv_apply_I_eq hw.2 (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw)))
+  obtain ⟨q, hqK, hlim, -, -⟩ := ω.exists_continuousOn_update_of_finite_energy hg hc
+    (inv_pos.2 hR) hW hJ hK hKW hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
+    hCRv (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
+    (integrableOn_norm_fderiv_comp_inv_apply_one_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
+  refine ⟨q, hqK, ?_⟩
+  rw [← Metric.cobounded_eq_cocompact]
+  simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'
+
+/-- **A finite-energy plane extends to a sphere.** A `C³` pseudoholomorphic curve on the whole
+plane, with compact image, uniformly positive taming constant, `C²` target structure near its image
+and integrable energy density, extends continuously to the Riemann sphere `OnePoint ℂ`: sending
+the point at infinity to the limit of the curve gives a continuous map with image in the same
+compact set. -/
+theorem exists_continuous_onePoint_elim_of_finite_energy
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) (hu : ContDiff ℝ 3 u)
+    (hCR : ∀ z, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) (huK : ∀ z, u z ∈ K)
+    (htame : ∀ z v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
+    (henergy : Integrable (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)) :
+    ∃ q ∈ K, Continuous (fun x : OnePoint ℂ ↦ x.elim q u) := by
+  obtain ⟨q, hqK, hlim⟩ := ω.exists_tendsto_cocompact_of_finite_energy (R := 1) hg hc hW hJ hK
+    hKW hJsq hu.contDiffOn (fun z _ ↦ hCR z) (fun z _ ↦ huK z) (fun z _ ↦ htame z)
+    henergy.integrableOn
+  refine ⟨q, hqK, (OnePoint.continuous_iff _).2 ⟨?_, hu.continuous⟩⟩
+  rw [coclosedCompact_eq_cocompact]
+  exact hlim
 
 end TauCeti.SymplecticForm

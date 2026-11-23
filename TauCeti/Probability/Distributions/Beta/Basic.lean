@@ -10,10 +10,10 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Analysis.SpecialFunctions.Beta
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the beta distribution
@@ -26,9 +26,12 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 ## Main results
 
 * `TauCeti.Probability.betaPDFReal_nonneg` — nonnegativity of the density;
+* `TauCeti.Probability.betaPDF_nat_add_one_eq` — the factorial formula at positive integer shapes;
 * `TauCeti.Probability.integrable_betaMeasure_iff` and `TauCeti.Probability.integral_betaMeasure_eq`
   — integrability and
   integration against the beta law, transferred to the real density;
+* `TauCeti.Probability.integral_betaMeasure_eq_one_div_beta_smul` — the same integral as the
+  reciprocal beta value times the integral of the unnormalized kernel;
 * `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
   Lebesgue
   measure on the open unit interval;
@@ -48,11 +51,10 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 
 The moment calculation rewrites the density integral as Euler's beta integral — the real-valued
 `TauCeti.integral_rpow_mul_one_sub_rpow`, proved in
-`TauCeti/Analysis/SpecialFunctions/Beta.lean` — and then uses the Gamma quotient.
+`TauCeti/Analysis/SpecialFunctions/Beta/Basic.lean` — and then uses the Gamma quotient.
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Beta".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   2nd ed., Wiley, 1995.
 -/
@@ -74,6 +76,18 @@ theorem betaPDFReal_nonneg {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ)
       (Real.rpow_nonneg hx.1.le _))
       (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
   · exact le_rfl
+
+/-- On the open unit interval, the beta density with shapes `a + 1` and `b + 1` is
+`(a + b + 1)! / (a! b!)` times `x ^ a * (1 - x) ^ b`. -/
+theorem betaPDF_nat_add_one_eq {a b : ℕ} {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
+    betaPDF ((a : ℝ) + 1) ((b : ℝ) + 1) x =
+      ENNReal.ofReal (((a + b + 1).factorial : ℝ) / (a.factorial * b.factorial) *
+        x ^ a * (1 - x) ^ b) := by
+  have hsum : (a : ℝ) + 1 + ((b : ℝ) + 1) = ((a + b + 1 : ℕ) : ℝ) + 1 := by
+    push_cast
+    ring
+  simp only [betaPDF_of_pos_lt_one hx.1 hx.2, beta, hsum, Real.Gamma_nat_eq_factorial,
+    one_div_div, add_sub_cancel_right, Real.rpow_natCast]
 
 /-- The beta law presented by its real-valued density. -/
 theorem betaMeasure_eq_withDensity_ofReal (α β : ℝ) :
@@ -117,7 +131,7 @@ parameters exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_betaMeasure_iff {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) {g : ℝ → E} :
     Integrable g (betaMeasure α β) ↔ Integrable fun x ↦ betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ))
 
 /-- **Integral transfer.** An integral against a beta law with positive shape parameters is the
@@ -125,8 +139,25 @@ density-weighted Lebesgue integral. -/
 theorem integral_betaMeasure_eq {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (g : ℝ → E) :
     ∫ x, g x ∂betaMeasure α β = ∫ x, betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ)) g
+
+/-- **Integral transfer, kernel form.** An integral against a beta law with positive shape
+parameters is the reciprocal of the beta function times the integral of the unnormalized kernel
+over the open unit interval. -/
+theorem integral_betaMeasure_eq_one_div_beta_smul {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (f : ℝ → E) :
+    ∫ x, f x ∂betaMeasure a b =
+      (1 / beta a b) • ∫ x in Ioo (0 : ℝ) 1, (x ^ (a - 1) * (1 - x) ^ (b - 1)) • f x := by
+  rw [integral_betaMeasure_eq ha hb]
+  calc
+    _ = ∫ x, (Ioo (0 : ℝ) 1).indicator (fun x ↦
+        (1 / beta a b) • ((x ^ (a - 1) * (1 - x) ^ (b - 1)) • f x)) x := by
+      congr 1
+      funext x
+      by_cases hx : 0 < x ∧ x < 1 <;>
+        simp [betaPDFReal, mem_Ioo, hx, smul_smul, mul_assoc]
+    _ = _ := by rw [integral_indicator measurableSet_Ioo, integral_smul]
 
 end Transfer
 

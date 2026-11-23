@@ -1,0 +1,408 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Measure.Restrict
+import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
+
+/-!
+# Paths in `W^{1,p}(ℝ, F)` are continuous and vanish at infinity
+
+Let `F` be a real Banach space and `1 ≤ p < ∞`. A path `u` in the first-order weak-derivative
+graph over `Lᵖ(ℝ, F)` (the domain of the trajectory operator `d/ds + A(s)`) has a unique
+continuous representative, and this representative tends to zero at `±∞`. Every value is
+controlled by the `Lᵖ` norms of the path and of its weak derivative on the unit interval to its
+right:
+
+`‖u t‖ ≤ ‖u‖_{Lᵖ(t, t + 1)} + ‖u'‖_{Lᵖ(t, t + 1)}`,
+
+so `sup_t ‖u t‖ ≤ ‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ} ≤ √2 ‖u‖_{W^{1,p}}`. Hence `u ↦ u` is a bounded linear
+map `W^{1,p}(ℝ, F) →L[ℝ] C₀(ℝ, F)`. Its values satisfy the fundamental theorem of calculus
+`∫ r in s..t, u' r = u t - u s`, and when `u'` is integrable on `ℝ` its whole-line integral
+vanishes (`∫ r, u' r = 0`).
+
+The supremum bound is what makes nonlinear superposition operators `ξ ↦ V(γ + ξ)` on Sobolev
+paths tractable: a path `ξ` of small `W^{1,p}` norm stays uniformly close to zero, so `γ + ξ`
+stays in a fixed neighbourhood of the reference path `γ`, where `V` and its derivatives are
+uniformly controlled.
+
+## Proof
+
+On the line, the weak derivative identifies a path, almost everywhere, with a constant plus the
+primitive of its weak derivative
+(`TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`), which is continuous. On
+`(t, t + 1)` the `W^{1,1}` bound `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`
+controls the value at `t` by the `L¹` norms of the path and its derivative, and on an interval of
+length one the `L¹` norm is at most the `Lᵖ` norm. These local `Lᵖ` norms tend to zero as
+`t → ±∞` by dominated convergence, because `p < ∞`.
+
+## Main declarations
+
+* `TauCeti.WeakDerivStep.toZeroAtInfty`: the embedding `W^{1,p}(ℝ, F) →L[ℝ] C₀(ℝ, F)`.
+* `TauCeti.WeakDerivStep.prev_ae_eq_toZeroAtInfty`, `TauCeti.WeakDerivStep.toZeroAtInfty_eq_iff`:
+  it sends a path to its unique continuous representative.
+* `TauCeti.WeakDerivStep.toZeroAtInfty_injective`: the continuous representative determines the
+  path.
+* `TauCeti.WeakDerivStep.norm_toZeroAtInfty_apply_le_eLpNorm_Ioo`: the local bound on `(t, t + 1)`.
+* `TauCeti.WeakDerivStep.norm_toZeroAtInfty_le`,
+  `TauCeti.WeakDerivStep.norm_toZeroAtInfty_le_sqrt_two_mul_norm`: the supremum bounds
+  `‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ}` and `√2 ‖u‖_{W^{1,p}}`; `TauCeti.WeakDerivStep.opNorm_toZeroAtInfty_le`
+  bounds the norm of the embedding by `√2`.
+* `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_sub`,
+  `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_zero`: the fundamental theorem of
+  calculus `∫ r in s..t, u' r = u t - u s`, and `∫ r, u' r = 0` when `u'` is integrable.
+* `TauCeti.WeakDerivStep.forall_hasDerivAt_toZeroAtInfty_iff`: the continuous representative has
+  a continuous derivative `g` exactly when the weak derivative is `g` almost everywhere.
+* `TauCeti.WeakDerivStep.eq_zero_of_weakFDeriv_eq_zero`: a path in `W^{1,p}(ℝ, F)` (`p < ∞`) with
+  zero weak derivative vanishes.
+* `TauCeti.HasWeakLineDerivOn.integral_eq_zero_of_integrable`: for integrable `f, f' : ℝ → F` with
+  `f'` the weak derivative of `f` on `ℝ`, `∫ r, f' r = 0`.
+
+## References
+
+* H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Springer,
+  2011, Theorem 8.8 and Corollary 8.9 (`W^{1,p}(ℝ) ⊆ L^∞(ℝ)` with a continuous representative
+  vanishing at infinity, for `1 ≤ p < ∞`; stated there for scalar functions).
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti.WeakDerivStep
+
+open Filter _root_.MeasureTheory Set TopologicalSpace
+open scoped ENNReal Topology ZeroAtInfty
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-! ### The weak derivative of the value -/
+
+/-- The value of a path has weak derivative `s ↦ u' s 1` on the whole line. -/
+private theorem hasWeakLineDerivOn_prev
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    HasWeakLineDerivOn volume ⊤ ⇑(prev _ u) (fun s ↦ weakFDeriv _ u s 1) 1 := by
+  simpa only [ContinuousLinearMap.id_apply] using
+    (hasWeakFDerivOn_base_prev _ u).hasWeakLineDerivOn 1
+
+/-- The weak derivative `s ↦ u' s 1` of a path is in `Lᵖ`. -/
+private theorem memLp_weakFDeriv_apply_one
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    MemLp (fun s ↦ weakFDeriv _ u s 1) p volume := by
+  simpa using ((Lp.memLp (weakFDeriv _ u)).continuousLinearMap_comp
+    (ContinuousLinearMap.apply ℝ F (1 : ℝ))).mono_measure (Measure.restrict_coe_opens_top _).ge
+
+/-- The `Lᵖ` norm of `s ↦ u' s 1` is at most that of the weak Fréchet derivative. -/
+private theorem eLpNorm_weakFDeriv_apply_one_le
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    eLpNorm (fun s ↦ weakFDeriv _ u s 1) p volume ≤ ‖weakFDeriv _ u‖ₑ := by
+  rw [Lp.eNorm_def]
+  refine (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge).trans (eLpNorm_mono
+    ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure
+      (Measure.restrict_coe_opens_top _).le) fun s ↦ ?_)
+  simpa using (weakFDeriv _ u s).le_opNorm 1
+
+/-! ### The local bound -/
+
+variable {u : WeakDerivStep volume ⊤ p
+  (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {v : ℝ → F}
+
+/-- Each value of a continuous representative `v` of a path is bounded by the `Lᵖ` norms of the
+path and of its weak derivative on the unit interval to its right. -/
+private theorem norm_le_eLpNorm_Ioo_of_ae_eq (hv : Continuous v)
+    (hae : ⇑(prev _ u) =ᵐ[volume] v) (t : ℝ) :
+    ‖v t‖ ≤ (eLpNorm ⇑(prev _ u) p (volume.restrict (Ioo t (t + 1)))).toReal +
+      (eLpNorm (fun s ↦ weakFDeriv _ u s 1) p (volume.restrict (Ioo t (t + 1)))).toReal := by
+  have hx : MemLp ⇑(prev _ u) p volume :=
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
+  have hd := memLp_weakFDeriv_apply_one u
+  have hI : volume (Ioo t (t + 1)) ≤ 1 := by
+    rw [Real.volume_Ioo, add_sub_cancel_left, ENNReal.ofReal_one]
+  have hdI : IntegrableOn (fun s ↦ weakFDeriv _ u s 1) (Ioo t (t + 1)) :=
+    ((hd.locallyIntegrable Fact.out).integrableOn_isCompact isCompact_Icc).mono_set
+      Ioo_subset_Icc_self
+  have hb := ((hasWeakLineDerivOn_prev u).mono (Ω' := ⟨Ioo t (t + 1), isOpen_Ioo⟩)
+    le_top).norm_le_setAverage_add_integral (lt_add_one t) hdI hv.continuousOn
+    (ae_restrict_of_ae hae) (left_mem_Icc.2 (lt_add_one t).le)
+  have havg : ⨍ s in Ioo t (t + 1), ‖⇑(prev _ u) s‖ =
+      ∫ s in Ioo t (t + 1), ‖⇑(prev _ u) s‖ := by
+    simp [setAverage_eq]
+  rw [havg] at hb
+  exact hb.trans (add_le_add
+    (setIntegral_norm_le_toReal_eLpNorm_restrict Fact.out hI (hx.restrict _))
+    (setIntegral_norm_le_toReal_eLpNorm_restrict Fact.out hI (hd.restrict _)))
+
+/-- A continuous representative of a path is bounded by `‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ}`. -/
+private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[volume] v)
+    (t : ℝ) : ‖v t‖ ≤ ‖prev _ u‖ + ‖weakFDeriv _ u‖ := by
+  refine (norm_le_eLpNorm_Ioo_of_ae_eq hv hae t).trans (add_le_add ?_ ?_)
+  · rw [Lp.norm_def]
+    exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) <|
+      (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
+        (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge)
+  · rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono eNorm_ne_top <|
+      (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
+        (eLpNorm_weakFDeriv_apply_one_le u)
+
+/-- A continuous representative of a path tends to zero at infinity. -/
+private theorem tendsto_cocompact_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
+    (hae : ⇑(prev _ u) =ᵐ[volume] v) : Tendsto v (cocompact ℝ) (𝓝 0) := by
+  have hx : MemLp ⇑(prev _ u) p volume :=
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
+  have hd := memLp_weakFDeriv_apply_one u
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine squeeze_zero (fun t ↦ norm_nonneg _) (norm_le_eLpNorm_Ioo_of_ae_eq hv hae) ?_
+  simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_eLpNorm_restrict_Ioo hp hx)).add
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (tendsto_eLpNorm_restrict_Ioo hp hd))
+
+/-! ### The embedding into `C₀(ℝ, F)` -/
+
+variable (u) in
+/-- A path in `W^{1,p}(ℝ, F)`, `p < ∞`, agrees almost everywhere with a continuous function
+vanishing at infinity. -/
+private theorem exists_zeroAtInftyContinuousMap_ae_eq (hp : p ≠ ∞) :
+    ∃ g : C₀(ℝ, F), ⇑(prev _ u) =ᵐ[volume] g := by
+  obtain ⟨c, hc⟩ := (hasWeakLineDerivOn_prev u).exists_ae_eq_add_intervalIntegral_top 0
+  have hloc := (memLp_weakFDeriv_apply_one u).locallyIntegrable Fact.out
+  have hv : Continuous fun t ↦ c + ∫ s in (0 : ℝ)..t, weakFDeriv _ u s 1 :=
+    continuous_const.add <| intervalIntegral.continuous_primitive
+      (fun a b ↦ (hloc.integrableOn_isCompact isCompact_uIcc).intervalIntegrable) 0
+  exact ⟨⟨⟨_, hv⟩, tendsto_cocompact_of_ae_eq hp hv hc⟩, hc⟩
+
+/-- The continuous representative, as a linear map. -/
+private def toZeroAtInftyₗ (hp : p ≠ ∞) :
+    WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
+      →ₗ[ℝ] C₀(ℝ, F) :=
+  zeroAtInftyRepresentativeₗ (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp)
+    (fun u w ↦ by
+      rw [prev_add]
+      exact (Lp.coeFn_add (prev _ u) (prev _ w)).filter_mono
+        Measure.ae_le_ae_restrict_coe_opens_top)
+    (fun c u ↦ by
+      rw [prev_smul]
+      exact (Lp.coeFn_smul c (prev _ u)).filter_mono
+        Measure.ae_le_ae_restrict_coe_opens_top)
+
+private theorem prev_ae_eq_toZeroAtInftyₗ (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ⇑(prev _ u) =ᵐ[volume] toZeroAtInftyₗ hp u :=
+  ae_eq_zeroAtInftyRepresentativeₗ (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp) _ _ u
+
+/-- **The Sobolev embedding on the line.** For `1 ≤ p < ∞`, the map sending a path in
+`W^{1,p}(ℝ, F)` to its continuous representative is a bounded linear map into the space
+`C₀(ℝ, F)` of continuous functions vanishing at infinity, of norm at most `√2`
+(`TauCeti.WeakDerivStep.opNorm_toZeroAtInfty_le`). -/
+def toZeroAtInfty (hp : p ≠ ∞) :
+    WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
+      →L[ℝ] C₀(ℝ, F) :=
+  (toZeroAtInftyₗ hp).mkContinuous √2 fun u ↦ by
+    rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+    refine ((BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_).trans
+      (norm_prev_add_norm_weakFDeriv_le _ u)
+    exact norm_le_of_ae_eq (toZeroAtInftyₗ hp u).continuous (prev_ae_eq_toZeroAtInftyₗ hp u) t
+
+/-- The embedding sends a path to a representative of its value. -/
+theorem prev_ae_eq_toZeroAtInfty (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ⇑(prev _ u) =ᵐ[volume] toZeroAtInfty hp u :=
+  prev_ae_eq_toZeroAtInftyₗ hp u
+
+/-- The embedding sends a path to its unique continuous representative vanishing at infinity. -/
+theorem toZeroAtInfty_eq_iff (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    (g : C₀(ℝ, F)) :
+    toZeroAtInfty hp u = g ↔ ⇑(prev _ u) =ᵐ[volume] g :=
+  zeroAtInftyRepresentativeₗ_eq_iff (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp) _ _ u g
+
+/-- A continuous function agreeing almost everywhere with a path is the value of its embedding. -/
+theorem coe_toZeroAtInfty_eq_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
+    (hae : ⇑(prev _ u) =ᵐ[volume] v) : ⇑(toZeroAtInfty hp u) = v :=
+  (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hp u).continuous hv).mp
+    ((prev_ae_eq_toZeroAtInfty hp u).symm.trans hae)
+
+/-- The continuous representative determines the path. -/
+theorem toZeroAtInfty_injective (hp : p ≠ ∞) :
+    Function.Injective (toZeroAtInfty (F := F) hp) := by
+  intro u w huw
+  apply ext
+  apply Lp.ext
+  refine ((prev_ae_eq_toZeroAtInfty hp u).trans ?_).filter_mono
+    (ae_mono (Measure.restrict_coe_opens_top _).le)
+  rw [huw]
+  exact (prev_ae_eq_toZeroAtInfty hp w).symm
+
+/-- **The local bound.** The value at `t` of the continuous representative of a path is bounded by
+the `Lᵖ` norms of the path and of its weak derivative on `(t, t + 1)`. -/
+theorem norm_toZeroAtInfty_apply_le_eLpNorm_Ioo (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) (t : ℝ) :
+    ‖toZeroAtInfty hp u t‖ ≤ (eLpNorm ⇑(prev _ u) p (volume.restrict (Ioo t (t + 1)))).toReal +
+      (eLpNorm (fun s ↦ weakFDeriv _ u s 1) p (volume.restrict (Ioo t (t + 1)))).toReal :=
+  norm_le_eLpNorm_Ioo_of_ae_eq (toZeroAtInfty hp u).continuous (prev_ae_eq_toZeroAtInfty hp u) t
+
+/-- **The supremum bound.** The continuous representative of a path is bounded by the sum of the
+`Lᵖ` norms of the path and of its weak derivative. -/
+theorem norm_toZeroAtInfty_le (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖toZeroAtInfty hp u‖ ≤ ‖prev _ u‖ + ‖weakFDeriv _ u‖ := by
+  rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+  exact (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦
+    norm_le_of_ae_eq (toZeroAtInfty hp u).continuous (prev_ae_eq_toZeroAtInfty hp u) t
+
+/-- The supremum of the continuous representative of a path is at most `√2` times its graph
+norm. -/
+theorem norm_toZeroAtInfty_le_sqrt_two_mul_norm (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖toZeroAtInfty hp u‖ ≤ √2 * ‖u‖ :=
+  (norm_toZeroAtInfty_le hp u).trans (norm_prev_add_norm_weakFDeriv_le _ u)
+
+/-- The embedding `W^{1,p}(ℝ, F) →L[ℝ] C₀(ℝ, F)` has operator norm at most `√2`. -/
+theorem opNorm_toZeroAtInfty_le (hp : p ≠ ∞) : ‖toZeroAtInfty (F := F) hp‖ ≤ √2 :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+    (norm_toZeroAtInfty_le_sqrt_two_mul_norm hp)
+
+/-- **The fundamental theorem of calculus.** The integrals of the weak derivative of a path are
+the increments of its continuous representative. -/
+theorem integral_weakFDeriv_apply_one_eq_sub (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) (s t : ℝ) :
+    ∫ r in s..t, weakFDeriv _ u r 1 = toZeroAtInfty hp u t - toZeroAtInfty hp u s := by
+  obtain ⟨a, b, _, hs, ht⟩ : ∃ a b : ℝ, a < b ∧ s ∈ Icc a b ∧ t ∈ Icc a b :=
+    ⟨min s t - 1, max s t + 1, by linarith [min_le_max (a := s) (b := t)],
+      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩,
+      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩⟩
+  have hdI : IntegrableOn (fun r ↦ weakFDeriv _ u r 1) (Ioo a b) :=
+    (((memLp_weakFDeriv_apply_one u).locallyIntegrable Fact.out).integrableOn_isCompact
+      isCompact_Icc).mono_set Ioo_subset_Icc_self
+  exact (((hasWeakLineDerivOn_prev u).mono (Ω' := ⟨Ioo a b, isOpen_Ioo⟩) le_top).integral_eq_sub
+    hdI (toZeroAtInfty hp u).continuous.continuousOn
+    (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty hp u)) hs ht)
+
+/-- **The derivative of the continuous representative is the weak derivative.** For a continuous
+`g`, the continuous representative of a path `u` has derivative `g t` at every `t` exactly when the
+weak derivative of `u` agrees with `g` almost everywhere. -/
+theorem forall_hasDerivAt_toZeroAtInfty_iff (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    {g : ℝ → F} (hg : Continuous g) :
+    (∀ t, HasDerivAt (toZeroAtInfty hp u) (g t) t) ↔
+      (fun s ↦ weakFDeriv _ u s 1) =ᵐ[volume] g := by
+  constructor
+  · intro hu
+    have hweak : HasWeakFDerivOn volume ⊤ (toZeroAtInfty hp u) (weakFDeriv _ u) := by
+      have h := hasWeakFDerivOn_base_prev _ u
+      simp only [ContinuousLinearMap.id_apply] at h
+      exact h.congr_ae (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty hp u))
+    have hfd : fderiv ℝ (toZeroAtInfty hp u) =
+        fun t ↦ ContinuousLinearMap.toSpanSingleton ℝ (g t) :=
+      funext fun t ↦ (hu t).hasFDerivAt.fderiv
+    have hloc : LocallyIntegrableOn (fderiv ℝ (toZeroAtInfty hp u))
+        ((⊤ : Opens ℝ) : Set ℝ) volume := by
+      rw [hfd]
+      exact ((ContinuousLinearMap.toSpanSingletonCLE (𝕜 := ℝ) (E := F)).continuous.comp
+        hg).locallyIntegrable.locallyIntegrableOn _
+    have h := hweak.ae_eq_fderiv hloc fun t _ ↦ (hu t).differentiableAt
+    filter_upwards [(ae_restrict_iff' MeasurableSet.univ).1 h] with s hs
+    rw [hs (mem_univ s), hfd, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
+  · intro hu t
+    have heq : (toZeroAtInfty hp u : ℝ → F) =
+        fun r ↦ toZeroAtInfty hp u 0 + ∫ x in (0 : ℝ)..r, g x :=
+      funext fun r ↦ by
+        rw [← intervalIntegral.integral_congr_ae (hu.mono fun x hx _ ↦ hx),
+          integral_weakFDeriv_apply_one_eq_sub, add_sub_cancel]
+    rw [heq]
+    exact ((hg.integral_hasStrictDerivAt 0 t).hasDerivAt).const_add _
+
+/-- When the weak derivative of a path in `W^{1,p}(ℝ, F)` (`p < ∞`) is integrable on `ℝ`, its
+whole-line integral vanishes. -/
+theorem integral_weakFDeriv_apply_one_eq_zero (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    (hd : Integrable (fun r ↦ weakFDeriv _ u r 1) volume) :
+    ∫ r, weakFDeriv _ u r 1 = 0 := by
+  have h0 := ZeroAtInftyContinuousMapClass.zero_at_infty (toZeroAtInfty hp u)
+  have htop : Tendsto (fun R : ℝ ↦ toZeroAtInfty hp u R) atTop (𝓝 0) :=
+    h0.mono_left atTop_le_cocompact
+  have hbot : Tendsto (fun R : ℝ ↦ toZeroAtInfty hp u (-R)) atTop (𝓝 0) :=
+    (h0.mono_left atBot_le_cocompact).comp tendsto_neg_atTop_atBot
+  have hsub : Tendsto (fun R : ℝ ↦ ∫ r in (-R)..R, weakFDeriv _ u r 1) atTop (𝓝 0) := by
+    simpa only [integral_weakFDeriv_apply_one_eq_sub hp u (-_) _, sub_zero] using htop.sub hbot
+  exact tendsto_nhds_unique
+    (intervalIntegral_tendsto_integral hd tendsto_neg_atTop_atBot tendsto_id) hsub
+
+/-- A path in `W^{1,p}(ℝ, F)` (`p < ∞`) whose weak derivative vanishes is zero. -/
+theorem eq_zero_of_weakFDeriv_eq_zero (hp : p ≠ ∞)
+    {u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    (hu : weakFDeriv _ u = 0) : u = 0 := by
+  have hconst (t : ℝ) : toZeroAtInfty hp u t = toZeroAtInfty hp u 0 := by
+    have hsub := integral_weakFDeriv_apply_one_eq_sub hp u 0 t
+    have h0int : ∫ r in (0 : ℝ)..t, weakFDeriv _ u r 1 = 0 := by
+      rw [hu]
+      refine intervalIntegral.integral_congr_ae ?_ |>.trans intervalIntegral.integral_zero
+      filter_upwards [(Lp.coeFn_zero (ℝ →L[ℝ] F) p _).filter_mono
+        (ae_mono (Measure.restrict_coe_opens_top _).ge)] with r hr _
+      rw [hr, Pi.zero_apply, zero_apply]
+    rw [h0int] at hsub
+    exact sub_eq_zero.mp hsub.symm
+  have hu0 : toZeroAtInfty hp u 0 = 0 :=
+    tendsto_nhds_unique (tendsto_const_nhds.congr' (Eventually.of_forall fun t ↦ (hconst t).symm))
+      ((ZeroAtInftyContinuousMapClass.zero_at_infty
+        (toZeroAtInfty hp u)).mono_left atTop_le_cocompact)
+  refine toZeroAtInfty_injective hp (ZeroAtInftyContinuousMap.ext fun t ↦ ?_)
+  rw [hconst t, hu0, map_zero, FunLike.coe_zero, Pi.zero_apply]
+
+end TauCeti.WeakDerivStep
+
+namespace TauCeti
+
+open _root_.MeasureTheory TopologicalSpace
+open scoped ENNReal
+
+/-- **Whole-line integration by parts against `1`.** If an integrable function `f : ℝ → F` has an
+integrable weak derivative `f'` on `ℝ`, then `∫ r, f' r = 0`. -/
+theorem HasWeakLineDerivOn.integral_eq_zero_of_integrable {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f f' : ℝ → F}
+    (h : HasWeakLineDerivOn volume ⊤ f f' 1) (hf : Integrable f volume)
+    (hf' : Integrable f' volume) : ∫ r, f' r = 0 := by
+  have := h.completeSpace
+  have hfr : MemLp f 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    memLp_one_iff_integrable.2 (hf.mono_measure Measure.restrict_le_self)
+  have hf'r : MemLp f' 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    memLp_one_iff_integrable.2 (hf'.mono_measure Measure.restrict_le_self)
+  let u := WeakDerivStep.mkLine
+    (ContinuousLinearMap.id ℝ (Lp F 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
+    (hfr.toLp f) (hf'r.toLp f')
+    (by simpa using (h.congr_ae hfr.coeFn_toLp.symm).congr_ae_deriv hf'r.coeFn_toLp.symm)
+  have hae : (fun r ↦ WeakDerivStep.weakFDeriv _ u r 1) =ᵐ[volume] f' :=
+    ((WeakDerivStep.weakFDeriv_mkLine_apply_one_ae _ _ _ _).trans hf'r.coeFn_toLp).filter_mono
+      (ae_mono (Measure.restrict_coe_opens_top _).ge)
+  rw [← integral_congr_ae hae]
+  exact WeakDerivStep.integral_weakFDeriv_apply_one_eq_zero ENNReal.one_ne_top u
+    (hf'.congr hae.symm)
+
+end TauCeti
+

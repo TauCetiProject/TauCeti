@@ -114,7 +114,7 @@ theorem disjoint_unblockedRectangles_XHomotopyRectangles (k : Fin n) (x y : Grid
   have h₁ := G.disjoint_XSet_of_mem_unblockedRectangles hU
   have h₂ := ((G.mem_XHomotopyRectangles k r).mp hH).2
   rw [Finset.disjoint_iff_inter_eq_empty, h₂] at h₁
-  exact Finset.singleton_ne_empty _ h₁
+  exact (Finset.singleton_nonempty _).ne_empty h₁
 
 /-- A rectangle counted by `H_k` lowers the Alexander grading by one, once its weight `V^{O(r)}`
 is charged `-1` per variable, since it covers the single `X`-marking `X_k`: the term
@@ -168,26 +168,24 @@ polynomial ring: a generator `x` is sent to the sum of the generators `y` weight
 `XHomotopyCoefficient R k x y`. -/
 noncomputable def XHomotopy (k : Fin n) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y
-
-/-- The `X`-marking homotopy sends a generator to its row of matrix coefficients. -/
-theorem XHomotopy_single (k : Fin n) (x : GridState n) :
-    G.XHomotopy R k (Finsupp.single x 1) =
-      Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy, Finsupp.linearCombination_single, one_smul]
+  GridChain.matrixMap R (G.XHomotopyCoefficient R k)
 
 /-- The matrix coefficients of the `X`-marking homotopy. -/
 theorem XHomotopy_single_apply (k : Fin n) (x y : GridState n) :
     G.XHomotopy R k (Finsupp.single x 1) y = G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy_single, Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [XHomotopy, GridChain.matrixMap_single_apply, one_mul]
+
+/-- The `X`-marking homotopy sends a generator to its row of matrix coefficients. -/
+theorem XHomotopy_single (k : Fin n) (x : GridState n) :
+    G.XHomotopy R k (Finsupp.single x 1) =
+      Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y :=
+  Finsupp.ext fun y => by rw [XHomotopy_single_apply, Finsupp.equivFunOnFinite_symm_apply_apply]
 
 /-- The coefficient formula for the `X`-marking homotopy on an arbitrary chain. -/
 @[simp]
 theorem XHomotopy_apply_apply (k : Fin n) (c : GridChainMinus R n) (y : GridState n) :
-    G.XHomotopy R k c y = c.sum fun x a => a * G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.XHomotopy R k c y = c.sum fun x a => a * G.XHomotopyCoefficient R k x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-! ### The two-step decompositions of the anticommutator -/
 
@@ -260,7 +258,7 @@ theorem mem_XHomotopyDecompositions_iff_of_disjoint (k : Fin n) {x z : GridState
     · rcases hb with hb | hb
       · exact Or.inr ⟨⟨h₁, ha⟩, h₂, hb⟩
       · rw [ha, hb, Finset.disjoint_self_iff_empty] at hab
-        exact absurd hab (Finset.singleton_ne_empty _)
+        exact absurd hab ((Finset.singleton_nonempty _).ne_empty)
 
 /-- The matrix entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻`, written as the sum over intermediate states of
 the products of matrix coefficients, are the weighted sums over the decompositions counted by

@@ -101,35 +101,35 @@ strictly lower position it is the standard Gaussian law. The definition places n
 `i < p` under the nonzero-dimensional hypothesis `(p : ℝ) - 1 < n` of
 `TauCeti.Probability.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`. -/
 def bartlettCoordinateMeasure (n : ℝ) (ij : lowerTriangle p) : Measure ℝ :=
-  if ij.1.1 = ij.1.2 then
+  if ij.val.1 = ij.val.2 then
     (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
-      ((2 : ℝ) ^ (1 - (n - ij.1.1) / 2) / Real.Gamma ((n - ij.1.1) / 2) *
-        t ^ (n - ij.1.1 - 1) * exp (-t ^ 2 / 2))
+      ((2 : ℝ) ^ (1 - (n - ij.val.1) / 2) / Real.Gamma ((n - ij.val.1) / 2) *
+        t ^ (n - ij.val.1 - 1) * exp (-t ^ 2 / 2))
   else gaussianReal 0 1
 
 /-- At a diagonal position `(i, i)` the coordinate measure is Lebesgue measure on the positive
 half-line with the chi density formula for `n - i` degrees of freedom; it is the chi law when
 `0 < n - i`. -/
 @[simp]
-theorem bartlettCoordinateMeasure_of_eq (n : ℝ) {ij : lowerTriangle p} (h : ij.1.1 = ij.1.2) :
+theorem bartlettCoordinateMeasure_of_eq (n : ℝ) {ij : lowerTriangle p} (h : ij.val.1 = ij.val.2) :
     bartlettCoordinateMeasure n ij =
       (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
-        ((2 : ℝ) ^ (1 - (n - ij.1.1) / 2) / Real.Gamma ((n - ij.1.1) / 2) *
-          t ^ (n - ij.1.1 - 1) * exp (-t ^ 2 / 2)) :=
+        ((2 : ℝ) ^ (1 - (n - ij.val.1) / 2) / Real.Gamma ((n - ij.val.1) / 2) *
+          t ^ (n - ij.val.1 - 1) * exp (-t ^ 2 / 2)) :=
   ite_eq_left_iff.2 fun h' ↦ absurd h h'
 
 /-- A strictly lower Cholesky coordinate is standard Gaussian. -/
 @[simp]
-theorem bartlettCoordinateMeasure_of_ne (n : ℝ) {ij : lowerTriangle p} (h : ij.1.1 ≠ ij.1.2) :
+theorem bartlettCoordinateMeasure_of_ne (n : ℝ) {ij : lowerTriangle p} (h : ij.val.1 ≠ ij.val.2) :
     bartlettCoordinateMeasure n ij = gaussianReal 0 1 :=
   ite_eq_right_iff.2 fun h' ↦ absurd h' h
 
 /-- The real density of `TauCeti.Probability.bartlettCoordinateMeasure n ij` against Lebesgue
 measure. -/
 private def bartlettCoordinatePDFReal (n : ℝ) (ij : lowerTriangle p) (t : ℝ) : ℝ :=
-  if ij.1.1 = ij.1.2 then
-    (Ioi (0 : ℝ)).indicator (fun t ↦ (2 : ℝ) ^ (1 - (n - ij.1.1) / 2) /
-      Real.Gamma ((n - ij.1.1) / 2) * t ^ (n - ij.1.1 - 1) * exp (-t ^ 2 / 2)) t
+  if ij.val.1 = ij.val.2 then
+    (Ioi (0 : ℝ)).indicator (fun t ↦ (2 : ℝ) ^ (1 - (n - ij.val.1) / 2) /
+      Real.Gamma ((n - ij.val.1) / 2) * t ^ (n - ij.val.1 - 1) * exp (-t ^ 2 / 2)) t
   else gaussianPDFReal 0 1 t
 
 private theorem measurable_bartlettCoordinatePDFReal (n : ℝ) (ij : lowerTriangle p) :
@@ -190,7 +190,7 @@ Wishart density of `L * Lᵀ` times the Cholesky Jacobian. -/
 private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
     (hx : x ∈ posDiagLowerRegion p) :
     ∏ ij, bartlettCoordinatePDFReal n ij (x ij) =
-      (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) *
+      (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val)) *
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ ((n - p - 1) / 2) *
           exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace / 2) /
             (2 ^ (n * p / 2) * multivariateGamma p (n / 2))) := by
@@ -198,15 +198,15 @@ private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
   have hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ := (mem_posDiagLowerRegion p).1 hx
   -- Each coordinate density is a row-dependent constant times a Gaussian factor.
   have hfac : ∀ ij : lowerTriangle p, bartlettCoordinatePDFReal n ij (x ij) =
-      (if ij.1.1 = ij.1.2 then
-          (2 : ℝ) ^ (1 - (n - ij.1.1) / 2) / Real.Gamma ((n - ij.1.1) / 2) *
-            x ⟨(ij.1.1, ij.1.1), le_rfl⟩ ^ (n - ij.1.1 - 1)
+      (if ij.val.1 = ij.val.2 then
+          (2 : ℝ) ^ (1 - (n - ij.val.1) / 2) / Real.Gamma ((n - ij.val.1) / 2) *
+            x ⟨(ij.val.1, ij.val.1), le_rfl⟩ ^ (n - ij.val.1 - 1)
         else (√(2 * π))⁻¹) * exp (-x ij ^ 2 / 2) := by
     intro ij
     simp only [bartlettCoordinatePDFReal]
     split_ifs with h
-    · have hij : ij = ⟨(ij.1.1, ij.1.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
-      rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.1.1), ← hij]
+    · have hij : ij = ⟨(ij.val.1, ij.val.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
+      rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.val.1), ← hij]
     · simp [gaussianPDFReal_def]
   have htwo : (2 : ℝ) ^ (n * p / 2) = ∏ _i : Fin p, (2 : ℝ) ^ (n / 2) := by
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← Real.rpow_natCast,
@@ -214,10 +214,10 @@ private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
     ring_nf
   have hconst :
       (∏ i : Fin p,
-          ((2 : ℝ) ^ (1 - (n - i.1) / 2) / Real.Gamma ((n - i.1) / 2)) *
-            (√(2 * π))⁻¹ ^ i.1) =
+          ((2 : ℝ) ^ (1 - (n - i.val) / 2) / Real.Gamma ((n - i.val) / 2)) *
+            (√(2 * π))⁻¹ ^ i.val) =
         2 ^ p / (2 ^ (n * p / 2) * multivariateGamma p (n / 2)) := by
-    rw [Finset.prod_congr rfl fun i _ ↦ by simpa using bartlett_row_const n i.1]
+    rw [Finset.prod_congr rfl fun i _ ↦ by simpa using bartlett_row_const n i.val]
     simp only [Finset.prod_div_distrib, Finset.prod_mul_distrib, Finset.prod_const,
       Finset.card_univ, Fintype.card_fin]
     have htwo' : ((2 : ℝ) ^ (n / 2)) ^ p = 2 ^ (n * p / 2) := by
@@ -225,10 +225,10 @@ private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
     rw [htwo', multivariateGamma_eq_prod, Finset.prod_mul_distrib]
     ring
   have hcore := prod_lowerTriangle_diag_rpow_mul_exp_neg_sq x hpos ((n - p - 1) / 2)
-    (1 / 2) (fun i ↦ (2 : ℝ) ^ (1 - (n - i.1) / 2) /
-      Real.Gamma ((n - i.1) / 2)) (√(2 * π))⁻¹
+    (1 / 2) (fun i ↦ (2 : ℝ) ^ (1 - (n - i.val) / 2) /
+      Real.Gamma ((n - i.val) / 2)) (√(2 * π))⁻¹
   have hexponent : ∀ i : Fin p,
-      2 * ((n - p - 1) / 2) + p - ((i : ℕ) : ℝ) = n - i.1 - 1 := by
+      2 * ((n - p - 1) / 2) + p - ((i : ℕ) : ℝ) = n - i.val - 1 := by
     intro i
     ring
   have hexp (t : ℝ) : -(1 / 2 : ℝ) * t ^ 2 = -t ^ 2 / 2 := by ring
@@ -247,16 +247,17 @@ private theorem bartlettCoordinatePDFReal_nonneg (hn : (p : ℝ) - 1 < n) (ij : 
   unfold bartlettCoordinatePDFReal
   split_ifs
   · refine Set.indicator_nonneg (fun t (ht : 0 < t) ↦ ?_) t
-    have hi : ((ij.1.1 : ℕ) : ℝ) + 1 ≤ p := by exact_mod_cast ij.1.1.2
-    have hk : 0 < (n - ij.1.1) / 2 := by linarith
+    have hi : ((ij.val.1 : ℕ) : ℝ) + 1 ≤ p := by exact_mod_cast ij.val.1.isLt
+    have hk : 0 < (n - ij.val.1) / 2 := by linarith
     have := Real.Gamma_pos_of_pos hk
     positivity
   · exact (gaussianPDFReal_pos 0 1 t one_ne_zero).le
 
 /-- A coordinate vector off the positive-diagonal region has a nonpositive diagonal coordinate,
 where the chi density vanishes. -/
-private theorem prod_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
-    (hx : x ∉ posDiagLowerRegion p) : ∏ ij, bartlettCoordinatePDFReal n ij (x ij) = 0 := by
+private theorem prod_ofReal_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
+    (hx : x ∉ posDiagLowerRegion p) :
+    ∏ ij, ENNReal.ofReal (bartlettCoordinatePDFReal n ij (x ij)) = 0 := by
   obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
   refine Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p)) ?_
   have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
@@ -293,18 +294,13 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
     ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - p - 1) / 2) *
       exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace / 2) /
         (2 ^ (n * p / 2) * multivariateGamma p (n / 2))) with hw_def
-  have hcoe : Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (A : Matrix (Fin p) (Fin p) ℝ) := continuous_subtype_val
-  have hw : Measurable w :=
-    ENNReal.measurable_ofReal.comp <| (((hcoe.matrix_det.measurable.pow_const _).mul
-      (hcoe.matrix_trace.neg.div_const _).rexp.measurable)).div_const _
   have hpi := pi_bartlettCoordinateMeasure_eq_withDensity (p := p) n
   have hgram := measurable_lowerTriangleGram p
   -- Both sides are integrals over the coordinate space: the left by definition of the
   -- pushforward, the right by the Cholesky change of variables. Compare the integrands.
   ext s hs
   rw [Measure.map_apply hgram hs, hpi, withDensity_apply _ (hgram hs), withDensity_apply _ hs,
-    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (hw.indicator hs),
+    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (s.indicator w),
     ← lintegral_indicator (hgram hs), ← lintegral_indicator (measurableSet_posDiagLowerRegion p)]
   refine lintegral_congr fun x ↦ ?_
   by_cases hx : x ∈ posDiagLowerRegion p
@@ -321,35 +317,35 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
         Set.indicator_of_notMem hxs, mul_zero]
   · rw [Set.indicator_of_notMem hx, Set.indicator_apply_eq_zero]
     intro _
-    rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-      prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero]
+    exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The coordinate laws -/
 
 /-- Under `(p : ℝ) - 1 < n` the diagonal Cholesky coordinate in row `i` has positive degrees of
 freedom `n - i`, since `i` ranges only over `0, …, p - 1`. -/
-private theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
+private theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.val
+    := by
   have h : ((i : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast Nat.succ_le_of_lt i.isLt
   linarith
 
 /-- **The square of a diagonal Bartlett coordinate is chi-squared** with `n - i` degrees of
 freedom: squaring carries the chi density to the chi-squared density. -/
 theorem map_sq_bartlettCoordinateMeasure_of_eq (hn : (p : ℝ) - 1 < n) {ij : lowerTriangle p}
-    (h : ij.1.1 = ij.1.2) :
+    (h : ij.val.1 = ij.val.2) :
     (bartlettCoordinateMeasure n ij).map (fun t ↦ t ^ 2) =
-      Probability.chiSquaredMeasure (n - ij.1.1) := by
+      Probability.chiSquaredMeasure (n - ij.val.1) := by
   rw [bartlettCoordinateMeasure_of_eq n h]
   exact Probability.map_sq_withDensity_eq_chiSquaredMeasure
-    (bartlett_degreesOfFreedom_pos hn ij.1.1)
+    (bartlett_degreesOfFreedom_pos hn ij.val.1)
 
 /-- Every Bartlett coordinate law is a probability measure: the chi density is normalized at
 positive degrees of freedom, and the strictly lower coordinates are standard Gaussian. -/
 theorem isProbabilityMeasure_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n)
     (ij : lowerTriangle p) : IsProbabilityMeasure (bartlettCoordinateMeasure n ij) := by
-  by_cases h : ij.1.1 = ij.1.2
+  by_cases h : ij.val.1 = ij.val.2
   · rw [bartlettCoordinateMeasure_of_eq n h]
     exact Probability.isProbabilityMeasure_withDensity_chi
-      (bartlett_degreesOfFreedom_pos hn ij.1.1)
+      (bartlett_degreesOfFreedom_pos hn ij.val.1)
   · rw [bartlettCoordinateMeasure_of_ne n h]
     infer_instance
 
@@ -358,11 +354,11 @@ laws, with the degrees decreasing along the diagonal. -/
 theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
     (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
         (fun x i ↦ x ⟨(i, i), le_rfl⟩ ^ 2) =
-      Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)) := by
+      Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.val)) := by
   classical
   let _ := isProbabilityMeasure_bartlettCoordinateMeasure (p := p) hn
   let e : Fin p ↪ lowerTriangle p :=
-    ⟨fun i ↦ ⟨(i, i), le_rfl⟩, fun _ _ h ↦ congrArg (fun ij ↦ ij.1.1) h⟩
+    ⟨fun i ↦ ⟨(i, i), le_rfl⟩, fun _ _ h ↦ congrArg (fun ij ↦ ij.val.1) h⟩
   have hmap := (measurePreserving_pi_comp_embedding
     (bartlettCoordinateMeasure (p := p) n) e).map_eq
   calc
@@ -381,13 +377,12 @@ theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
       exact map_sq_bartlettCoordinateMeasure_of_eq hn rfl
 
 /-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
-theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
+theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion :
     Measure.pi (bartlettCoordinateMeasure (p := p) n) (posDiagLowerRegion p)ᶜ = 0 := by
   rw [pi_bartlettCoordinateMeasure_eq_withDensity,
     withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
   refine setLIntegral_eq_zero (measurableSet_posDiagLowerRegion p).compl fun x hx ↦ ?_
-  rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-    prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero, Pi.zero_apply]
+  exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The Bartlett decomposition -/
 
@@ -425,12 +420,12 @@ theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : 
         (choleskyLowerCoordinates p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) := by
   have hemb : MeasurableEmbedding
       (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
+    MeasurableEmbedding.subtypeVal (measurableSet_posDefMatrix p)
   have hres : (Measure.pi (bartlettCoordinateMeasure (p := p) n)).restrict
       (posDiagLowerRegion p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) :=
     Measure.restrict_eq_self_of_ae_mem <| by
       rw [ae_iff]
-      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn
+      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion
   ext s hs
   have hE : MeasurableSet (Subtype.val '' (choleskyLowerCoordinates p ⁻¹' s)) :=
     hemb.measurableSet_image.2 (measurable_choleskyLowerCoordinates p hs)
@@ -461,11 +456,11 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
     (hn : (p : ℝ) - 1 < n) {A : Ω → PosDefMatrix p}
     (hA : HasLaw A ((nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).comap
       Subtype.val) P) :
-    iIndepFun (fun (ij : lowerTriangle p) (ω : Ω) ↦ (cholesky (A ω)).1 ij.1.1 ij.1.2) P ∧
-      (∀ i : Fin p, HasLaw (fun ω ↦ (cholesky (A ω)).1 i i ^ 2)
-          (Probability.chiSquaredMeasure (n - i.1)) P) ∧
+    iIndepFun (fun (ij : lowerTriangle p) (ω : Ω) ↦ (cholesky (A ω)).val ij.val.1 ij.val.2) P ∧
+      (∀ i : Fin p, HasLaw (fun ω ↦ (cholesky (A ω)).val i i ^ 2)
+          (Probability.chiSquaredMeasure (n - i.val)) P) ∧
       (∀ i j : Fin p, j < i →
-        HasLaw (fun ω ↦ (cholesky (A ω)).1 i j) (gaussianReal 0 1) P) := by
+        HasLaw (fun ω ↦ (cholesky (A ω)).val i j) (gaussianReal 0 1) P) := by
   have hcoordprob := isProbabilityMeasure_bartlettCoordinateMeasure (p := p) hn
   have hL : HasLaw (fun ω ↦ choleskyLowerCoordinates p (A ω))
       (Measure.pi (bartlettCoordinateMeasure (p := p) n)) P :=
@@ -480,13 +475,13 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
   have hcoord : ∀ ij : lowerTriangle p,
       HasLaw (fun ω ↦ choleskyLowerCoordinates p (A ω) ij) (bartlettCoordinateMeasure n ij) P :=
     fun ij ↦ (heval ij).fun_comp hL
-  have hentry : ∀ ij : lowerTriangle p, (fun ω ↦ (cholesky (A ω)).1 ij.1.1 ij.1.2) =
+  have hentry : ∀ ij : lowerTriangle p, (fun ω ↦ (cholesky (A ω)).val ij.val.1 ij.val.2) =
       fun ω ↦ choleskyLowerCoordinates p (A ω) ij :=
     fun ij ↦ funext fun ω ↦ (choleskyLowerCoordinates_apply p (A ω) ij).symm
   refine ⟨?_, fun i ↦ ?_, fun i j hij ↦ ?_⟩
   · rw [funext hentry]
     exact (iIndepFun_iff_hasLaw_pi_pi hcoord).2 hL
-  · have hdiag : (fun ω ↦ (cholesky (A ω)).1 i i ^ 2) =
+  · have hdiag : (fun ω ↦ (cholesky (A ω)).val i i ^ 2) =
         fun ω ↦ choleskyLowerCoordinates p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p) ^ 2 :=
       funext fun ω ↦ congrArg (· ^ 2)
         (choleskyLowerCoordinates_apply p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p)).symm

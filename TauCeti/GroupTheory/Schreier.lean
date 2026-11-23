@@ -65,19 +65,18 @@ variable {G : Type*} [Group G]
 /-- The representative of an element of a right transversal is that element. -/
 @[simp]
 theorem _root_.Subgroup.IsComplement.coe_toRightFun_of_mem {H : Subgroup G} {R : Set G}
-    (hR : IsComplement (H : Set G) R) {r : G} (hr : r ∈ R) : (hR.toRightFun r : G) = r := by
-  have h := (isComplement_iff_existsUnique_mul_inv_mem.mp hR r).unique
+    (hR : IsComplement (H : Set G) R) {r : G} (hr : r ∈ R) : (hR.toRightFun r : G) = r :=
+  congrArg Subtype.val <| (isComplement_iff_existsUnique_mul_inv_mem.mp hR r).unique
     (hR.mul_inv_toRightFun_mem r) (y₂ := ⟨r, hr⟩) (by simp)
-  exact congrArg Subtype.val h
 
 /-- A **predecessor transversal** of a subgroup `H` with respect to a set `S`: a right
 transversal `R` of `H`, so that `H * R = G` with unique factorization, which contains `1` and
 satisfies the predecessor condition that every `r ≠ 1` in `R` is `r' * s` for some `r' ∈ R` and
 `s ∈ S`. This is a one-step condition: it does not require `r` to be reached from `1` by a chain
 of such steps, so it is weaker than a Schreier transversal in the usual prefix-closed sense, and
-it is all that the index formula uses. When `S` generates `G`, the Schreier generators of `H` at
-the pairs `(r', s)` with `r' * s ∈ R` are trivial, which is what sharpens Schreier's lemma to the
-index formula `Subgroup.exists_finset_card_le_one_add_index_mul`. -/
+it is all that the index formula uses. The Schreier generators of `H` at the pairs `(r', s)` with
+`r' * s ∈ R` are trivial, so when `S` generates `G` this sharpens Schreier's lemma to the index
+formula `Subgroup.exists_finset_card_le_one_add_index_mul`. -/
 structure _root_.Subgroup.IsPredecessorTransversal (H : Subgroup G) (S R : Set G) : Prop where
   /-- `R` is a right transversal of `H`. -/
   isComplement : IsComplement (H : Set G) R
@@ -105,7 +104,7 @@ private theorem IsPartialPredecessorTransversal.card_le_index [H.FiniteIndex] {R
   rw [← Nat.card_eq_finsetCard, index_eq_card]
   refine Nat.card_le_card_of_injective (fun r : R ↦ (((r : G)⁻¹ : G) : G ⧸ H)) fun r r' h ↦ ?_
   rw [QuotientGroup.eq, inv_inv] at h
-  exact Subtype.ext (hR.eq_of_mul_inv_mem r r.2 r' r'.2 h)
+  exact Subtype.ext (hR.eq_of_mul_inv_mem r r.property r' r'.property h)
 
 /-- If `S` generates `G` and some right coset of `H` is not represented by `R`, then some product
 `r * s` with `r ∈ R` and `s ∈ S` represents a coset that `R` misses. -/
@@ -121,16 +120,16 @@ private theorem IsPartialPredecessorTransversal.exists_mul_mem_forall_mul_inv_no
   -- set of cosets represented by `R`; surjectivity is stability under `s⁻¹`.
   have hinv : ∀ s ∈ S, ∀ r' ∈ R, ∃ r ∈ R, r * s * r'⁻¹ ∈ H := by
     intro s hs
-    choose σ hσR hσ using fun r : R ↦ hcon r r.2 s hs
+    choose σ hσR hσ using fun r : R ↦ hcon r r.property s hs
     have hτ : Function.Injective fun r : R ↦ (⟨σ r, hσR r⟩ : R) := by
       intro r₁ r₂ h
       have h' : σ r₁ = σ r₂ := congrArg Subtype.val h
-      refine Subtype.ext (hR.eq_of_mul_inv_mem r₁ r₁.2 r₂ r₂.2 ?_)
+      refine Subtype.ext (hR.eq_of_mul_inv_mem r₁ r₁.property r₂ r₂.property ?_)
       simpa [h', mul_assoc] using H.mul_mem (hσ r₁) (H.inv_mem (hσ r₂))
     intro r' hr'
     obtain ⟨r, hr⟩ := Finite.injective_iff_surjective.mp hτ ⟨r', hr'⟩
     have hr' : σ r = r' := congrArg Subtype.val hr
-    exact ⟨r, r.2, hr' ▸ hσ r⟩
+    exact ⟨r, r.property, hr' ▸ hσ r⟩
   -- Every element of `G = ⟨S⟩` lies in a coset represented by `R`.
   have key : ∀ x ∈ closure S, ∃ r ∈ R, x * r⁻¹ ∈ H := by
     intro x hx
@@ -174,7 +173,7 @@ private theorem IsPartialPredecessorTransversal.isPredecessorTransversal {R : Fi
     refine isComplement_iff_existsUnique_mul_inv_mem.mpr fun g ↦ ?_
     obtain ⟨r, hr, hgr⟩ := hcomp g
     refine ⟨⟨r, Finset.mem_coe.mpr hr⟩, hgr, fun t ht ↦ Subtype.ext ?_⟩
-    exact hR.eq_of_mul_inv_mem t (Finset.mem_coe.mp t.2) r hr
+    exact hR.eq_of_mul_inv_mem t (Finset.mem_coe.mp t.property) r hr
       (by simpa [mul_assoc] using H.mul_mem (H.inv_mem ht) hgr)
   one_mem := Finset.mem_coe.mpr hR.one_mem
   exists_mul_eq r hr := hR.exists_mul_eq r (Finset.mem_coe.mp hr)
@@ -184,35 +183,18 @@ predecessor transversal with respect to every generating set of the ambient grou
 theorem _root_.Subgroup.exists_finset_isPredecessorTransversal (H : Subgroup G) [H.FiniteIndex]
     (hS : closure S = ⊤) : ∃ R : Finset G, H.IsPredecessorTransversal S R := by
   classical
-  -- Enlarge a partial transversal one coset at a time; `m` bounds the number of missing cosets.
-  suffices h : ∀ (m : ℕ) (R : Finset G), IsPartialPredecessorTransversal H S R →
-      H.index ≤ R.card + m → ∃ R : Finset G, H.IsPredecessorTransversal S R from
-    h H.index {1} ⟨Finset.mem_singleton_self 1,
-      fun r hr hr1 ↦ (hr1 (Finset.mem_singleton.mp hr)).elim,
-      fun r hr r' hr' _ ↦ (Finset.mem_singleton.mp hr).trans (Finset.mem_singleton.mp hr').symm⟩
-      (by simp)
-  intro m
-  induction m with
-  | zero =>
-    intro R hR hle
-    by_cases hcomp : ∀ g : G, ∃ r ∈ R, g * r⁻¹ ∈ H
-    · exact ⟨R, hR.isPredecessorTransversal hcomp⟩
-    · push Not at hcomp
-      obtain ⟨g, hg⟩ := hcomp
-      obtain ⟨x, hx, hR'⟩ := hR.exists_insert hS hg
-      have := hR'.card_le_index
-      rw [Finset.card_insert_of_notMem hx] at this
-      omega
-  | succ m ih =>
-    intro R hR hle
-    by_cases hcomp : ∀ g : G, ∃ r ∈ R, g * r⁻¹ ∈ H
-    · exact ⟨R, hR.isPredecessorTransversal hcomp⟩
-    · push Not at hcomp
-      obtain ⟨g, hg⟩ := hcomp
-      obtain ⟨x, hx, hR'⟩ := hR.exists_insert hS hg
-      refine ih _ hR' ?_
-      rw [Finset.card_insert_of_notMem hx]
-      omega
+  -- Enlarge a partial transversal one coset at a time, by downward induction on its size: it
+  -- represents pairwise distinct cosets, so it has at most `[G : H]` elements.
+  have h1 : IsPartialPredecessorTransversal H S {1} := ⟨by simp, by simp, by simp⟩
+  refine Finset.strongDownwardInduction (n := H.index) (p := fun R ↦
+      IsPartialPredecessorTransversal H S R → ∃ R : Finset G, H.IsPredecessorTransversal S R)
+    (fun R ih _ hR ↦ ?_) {1} h1.card_le_index h1
+  by_cases hcomp : ∀ g : G, ∃ r ∈ R, g * r⁻¹ ∈ H
+  · exact ⟨R, hR.isPredecessorTransversal hcomp⟩
+  push Not at hcomp
+  obtain ⟨g, hg⟩ := hcomp
+  obtain ⟨x, hx, hR'⟩ := hR.exists_insert hS hg
+  exact ih hR'.card_le_index (Finset.ssubset_insert hx) hR'
 
 end Existence
 
@@ -234,9 +216,11 @@ theorem _root_.Subgroup.exists_finset_card_le_one_add_index_mul (H : Subgroup G)
   obtain ⟨R, hR⟩ := H.exists_finset_isPredecessorTransversal hS
   have hRcard : R.card = H.index := by
     rw [← hR.isComplement.card_right, ← Nat.card_eq_finsetCard, Finset.coe_sort_coe]
-  -- The Schreier generator attached to `g ∈ R * S`.
-  let f : G → H := fun g ↦ ⟨g * (hR.isComplement.toRightFun g : G)⁻¹,
-    hR.isComplement.mul_inv_toRightFun_mem g⟩
+  -- Schreier's lemma: the Schreier generators at all of `R * S` generate `H`.
+  have hgen := closure_mul_image_eq_top' hR.isComplement hR.one_mem hS
+  -- The Schreier generator attached to `g ∈ R * S`; `set` also folds it in `hgen`.
+  set f : G → H := fun g ↦ ⟨g * (hR.isComplement.toRightFun g : G)⁻¹,
+    hR.isComplement.mul_inv_toRightFun_mem g⟩ with hf
   refine ⟨((R * S) \ R).image f, ?_, ?_⟩
   · -- Count: `R * S` has at most `n * d` elements, and by the predecessor condition at least
     -- `n - 1` of them lie in `R`, namely every `r ≠ 1`.
@@ -253,21 +237,14 @@ theorem _root_.Subgroup.exists_finset_card_le_one_add_index_mul (H : Subgroup G)
       _ ≤ 1 + H.index * (S.card - 1) := by
         rw [Nat.mul_sub_one, ← hRcard]
         omega
-  · -- Generation: Schreier's lemma gives the generators at all of `R * S`, and the ones at
-    -- `R * S ∩ R` are trivial.
-    have hgen := closure_mul_image_eq_top' hR.isComplement hR.one_mem hS
+  · -- Generation: by `hgen` it suffices to see that the generators at `R * S ∩ R` are trivial.
     rw [eq_top_iff, ← hgen, closure_le]
     intro x hx
-    obtain ⟨g, hg, hfg⟩ := Finset.mem_coe.mp hx |> Finset.mem_image.mp
-    rw [← hfg]
+    obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp hx
     by_cases hgR : g ∈ R
-    · have h1 : (⟨g * (hR.isComplement.toRightFun g : G)⁻¹,
-          hR.isComplement.mul_inv_toRightFun_mem g⟩ : H) = 1 := Subtype.ext <| by
-        simp [hR.isComplement.coe_toRightFun_of_mem (Finset.mem_coe.mpr hgR)]
-      rw [h1]
+    · rw [show f g = 1 from Subtype.ext (by simp [hf, hgR])]
       exact one_mem _
-    · exact subset_closure (Finset.mem_coe.mpr
-        (Finset.mem_image.mpr ⟨g, Finset.mem_sdiff.mpr ⟨hg, hgR⟩, rfl⟩))
+    · exact subset_closure (Finset.mem_image_of_mem f (Finset.mem_sdiff.mpr ⟨hg, hgR⟩))
 
 /-- **Schreier's index formula for `Group.rank`:** `rank H ≤ 1 + [G : H] * (rank G - 1)` for a
 finite-index subgroup `H` of a finitely generated group `G`. This sharpens Mathlib's

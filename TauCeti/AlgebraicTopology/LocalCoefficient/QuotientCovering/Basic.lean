@@ -218,6 +218,15 @@ def permutationRepMap :
         ((congrArg (Finsupp.lmapDomain k k) hm).trans
           (Finsupp.lmapDomain_comp k k ((CommSq.mk hb.symm).fiberMap x.as) _))))
 
+/-- The map of permutation representations acts on formal sums of sheets by the linear
+extension of the induced map on fibres. -/
+-- Not a simp lemma: it would fire on the left-hand side of `permutationRepMap_app_hom_single`.
+theorem permutationRepMap_app_hom_apply (x : FundamentalGroupoid B)
+    (v : p ⁻¹' {x.as} →₀ k) :
+    ((hG.permutationRepMap k hH f hf b hb).app x).hom v =
+      Finsupp.lmapDomain k k ((CommSq.mk hb.symm).fiberMap x.as) v :=
+  (rfl)
+
 /-- The map of permutation representations sends the sheet `e` to the sheet `f e`. -/
 -- Match before simplification changes the presentation of the restricted representation.
 @[simp↓]
@@ -312,6 +321,15 @@ def associatedLocalSystemMapOver :
       ((hG.permutationRepFunctor k).map γ)
       ((hH.permutationRepFunctor k).map ((FundamentalGroupoid.map b.hom).map γ))
       ((hG.permutationRepMap k hH f hf b hb).naturality γ).symm
+
+/-- Over `x`, `associatedLocalSystemMapOver` is the change-of-groups map on tensor coinvariants
+induced by `ξ` and the fibre permutation map over `x`. -/
+-- Not a simp lemma: it would fire on the left-hand side of
+-- `associatedLocalSystemMapOver_app_mk_single`.
+theorem associatedLocalSystemMapOver_app (x : FundamentalGroupoid B) :
+    (hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x =
+      φ.coinvariantsTensorMap ξ ((hG.permutationRepMap k hH f hf b hb).app x) :=
+  (rfl)
 
 /-- On a tensor class at a sheet, the map of associated local systems applies `ξ` to the
 coefficient and `f` to the sheet. -/

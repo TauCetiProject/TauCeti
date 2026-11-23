@@ -60,6 +60,8 @@ formal group laws in `TauCeti/RingTheory/FormalGroup/CoordinateChange/HopfAlgebr
 * `TauCeti.WeierstrassHopfAlgebroid.arrowEquiv`: homomorphisms `Γ →+* R` classify pairs of a
   Weierstrass curve and a change of variables over `R`; `map_comp_rightUnit` identifies the
   target classified by `η_R`.
+* `WeierstrassCurve.map_specialize_comp_rightUnit`: extending coefficients along the classifying
+  map of `W` turns `η_R` into the classifying map of the universal change of variables of `W`.
 * `counit_comp_algebraMap`, `counit_comp_rightUnit`: `ε η_L = id = ε η_R`.
 * `coproduct_comp_algebraMap`, `coproduct_comp_rightUnit`: `Δ η_L = (η_L ⊗ 1) η_L` and
   `Δ η_R = (1 ⊗ η_R) η_R`.
@@ -318,6 +320,28 @@ theorem pushoutLift_id_counit_comp_coproduct :
   rw [universalChange_map_comp_coproduct]
   simp [← VariableChange.map_map]
 
+/-- The map `Δ ⊗ id` into the triple tensor product, composing the first two arrows. -/
+def coproductLeft : ChangeRing ArrowRing →+* ChangeRing (ChangeRing ArrowRing) :=
+  pushoutLift rightUnit
+    ⟨((algebraMap (ChangeRing ArrowRing) _).comp coproduct,
+      ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)), by
+      dsimp only
+      rw [RingHom.comp_assoc, coproduct_comp_rightUnit, map_comp_algebraMap]⟩
+
+/-- Restricting `Δ ⊗ id` to the first factor gives the coproduct. -/
+@[simp]
+theorem coproductLeft_comp_algebraMap :
+    coproductLeft.comp (algebraMap ArrowRing _) =
+      (algebraMap (ChangeRing ArrowRing) _).comp coproduct :=
+  pushoutLift_comp_algebraMap _ _
+
+/-- Restricting `Δ ⊗ id` to the second factor gives the last arrow. -/
+@[simp]
+theorem coproductLeft_comp_map :
+    coproductLeft.comp (ChangeRing.map rightUnit) =
+      ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit) :=
+  pushoutLift_comp_map _ _
+
 /-- **Coassociativity** `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ` of the coproduct: composition of changes of
 variables is associative. Both sides take values in the triple tensor product
 `Γ ⊗_A Γ ⊗_A Γ = (Γ ⊗_A Γ)[u, u⁻¹, r, s, t]`, the pushout of `Γ ⊗_A Γ` along the target
@@ -325,18 +349,14 @@ variables is associative. Both sides take values in the triple tensor product
 `pushoutLift (algebraMap ∘ Δ, map ρ)`, and `id ⊗ Δ` is `pushoutLift (algebraMap ∘ algebraMap,
 map (map η_R) ∘ Δ)`, where `map (map η_R)` is the inclusion of the last two factors. -/
 theorem coproduct_coassoc :
-    (pushoutLift rightUnit
-        ⟨((algebraMap (ChangeRing ArrowRing) _).comp coproduct,
-          ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)), by
-          dsimp only
-          rw [RingHom.comp_assoc, coproduct_comp_rightUnit, map_comp_algebraMap]⟩).comp
-        coproduct =
+    coproductLeft.comp coproduct =
       (pushoutLift rightUnit
         ⟨((algebraMap (ChangeRing ArrowRing) _).comp (algebraMap ArrowRing _),
           (ChangeRing.map (ChangeRing.map rightUnit)).comp coproduct),
           RingHom.ext fun x ↦ by
             simp only [RingHom.comp_apply, coproduct_algebraMap, map_algebraMap]⟩).comp
         coproduct := by
+  simp only [coproductLeft]
   refine ChangeRing.ringHom_ext ?_ ?_
   · exact RingHom.ext fun x ↦ by
       simp only [RingHom.comp_apply, coproduct_algebraMap, pushoutLift_algebraMap]
@@ -432,11 +452,25 @@ theorem pushoutLift_id_conjugation_comp_coproduct :
 
 end TauCeti.WeierstrassHopfAlgebroid
 
-/-! ### Integral modular forms as invariants -/
-
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassHopfAlgebroid TauCeti.WeierstrassChange.ChangeRing
+open TauCeti.WeierstrassChange TauCeti.WeierstrassHopfAlgebroid
+open TauCeti.WeierstrassChange.ChangeRing
+
+variable {R : Type*} [CommRing R]
+
+/-- **The right unit after base change along a curve.** Extending the coefficients of `Γ` along
+the classifying map of a Weierstrass curve `W` over `R` turns `η_R` into the classifying map of the
+target `C • W` of the universal change of variables `C` over `R[u, u⁻¹, r, s, t]`. Geometrically,
+this is the projection to the Weierstrass atlas of the scheme of changes of variables out of
+`W`. -/
+theorem map_specialize_comp_rightUnit (W : WeierstrassCurve R) :
+    (ChangeRing.map W.specialize).comp rightUnit =
+      (universalChange R • W.baseChange (ChangeRing R)).specialize := by
+  rw [comp_rightUnit, universalChange_map_map, map_comp_algebraMap, ← WeierstrassCurve.map_map]
+  simp only [map_specialize, baseChange]
+
+/-! ### Integral modular forms as invariants -/
 
 /-- **Integral modular forms are the invariants of the Weierstrass Hopf algebroid**: `f` is an
 integral modular form of weight `k` exactly when `η_R f = u⁻ᵏ η_L f` in `Γ`. -/

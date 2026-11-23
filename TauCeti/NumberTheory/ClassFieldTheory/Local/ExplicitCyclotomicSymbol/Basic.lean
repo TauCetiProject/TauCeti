@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.Padics.RingHoms
 import Mathlib.Analysis.Normed.Ring.Ultra
+import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -61,15 +62,6 @@ open scoped TauCeti.ExactDivisor
 
 namespace TauCeti
 
-private def padicPrimeUnit (p : ℕ) [Fact p.Prime] : ℚ_[p]ˣ :=
-  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-
-/-- `TauCeti.Padic.isUniformizer_natCast_self`, unfolded and restated for `padicPrimeUnit`. -/
-private theorem normalizedValuation_padicPrimeUnit (p : ℕ) [Fact p.Prime] :
-    normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 := by
-  rw [padicPrimeUnit]
-  exact (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
-
 private def padicUnitReduction (p j : ℕ) [Fact p.Prime] :
     unitFiltration ℚ_[p] 0 →* (ZMod (p ^ j))ˣ :=
   (PadicInt.unitsToZModPow j).toMonoidHom.comp
@@ -102,7 +94,7 @@ private theorem unitsEquivIntProd_eq_of_padic_decomposition (p : ℕ) [Fact p.Pr
         (.ofAdd k, padicIntegerUnitToFiltration p w) := by
   have hx_units : x = (padicPrimeUnit p) ^ k * padicIntegerUnitToFiltration p w := by
     apply Units.ext
-    simpa [padicPrimeUnit, coe_padicIntegerUnitToFiltration] using hx
+    simpa [coe_padicIntegerUnitToFiltration] using hx
   rw [hx_units]
   have h := (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
     (normalizedValuation_padicPrimeUnit p)).apply_symm_apply
@@ -239,6 +231,27 @@ theorem cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime
   obtain ⟨w, hw⟩ := Padic.exists_eq_zpow_valuation_mul x.ne_zero
   simpa [ZMod.unitsMap_self] using
     unitsMap_cyclotomicSymbol_of_coprime m p dvd_rfl hcop x _ w hw
+
+/-- If an element of `ℤ/(pⁿ N)ℤ` reduces modulo `pⁿ` to the inverse of `u` and modulo `N` to
+`p ^ k`, where `N` is coprime to `p`, then it is the explicit symbol of any `x = p ^ k u`. -/
+theorem eq_cyclotomicSymbol_of_cast_eq (p : ℕ) [Fact p.Prime] {k : ℤ} {u : ℤ_[p]ˣ}
+    {x : ℚ_[p]ˣ} (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((u : ℤ_[p]) : ℚ_[p])) {n N : ℕ}
+    (hpN : p.Coprime N) [NeZero (p ^ n * N)] {r : ZMod (p ^ n * N)}
+    (hrP : r.cast = PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
+    (hrN : r.cast = ((ZMod.unitOfCoprime p hpN ^ k : (ZMod N)ˣ) : ZMod N)) :
+    r = cyclotomicSymbol (p ^ n * N) p x := by
+  have hdN : N ∣ p ^ n * N := dvd_mul_left N _
+  have hdP : p ^ n ∣ p ^ n * N := dvd_mul_right _ N
+  have hsP : ZMod.unitsMap hdP (cyclotomicSymbol (p ^ n * N) p x) =
+      (Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom u)⁻¹ :=
+    unitsMap_cyclotomicSymbol_primePow _ p hdP x k u hx
+  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol (p ^ n * N) p x) =
+      ZMod.unitOfCoprime p hpN ^ k :=
+    unitsMap_cyclotomicSymbol_of_coprime _ p hdN hpN x k u hx
+  refine ZMod.eq_of_cast_eq_of_coprime (hpN.pow_left n) ?_ ?_
+  · rw [hrP, ← ZMod.unitsMap_val hdP, hsP]
+    simp
+  · rw [hrN, ← ZMod.unitsMap_val hdN, hsN]
 
 /-- **The explicit local cyclotomic symbol is trivial near `1`**: it kills every unit `x` with
 `‖x - 1‖ < ‖m‖`, that is, every unit congruent to `1` modulo a higher power of `p` than the one

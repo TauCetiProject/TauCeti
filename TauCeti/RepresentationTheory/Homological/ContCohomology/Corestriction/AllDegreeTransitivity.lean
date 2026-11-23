@@ -49,11 +49,12 @@ universe u
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
+section SubgroupOfMap
+
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
   (U V : Subgroup G) (hVU : V ≤ U)
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction G M] [ContinuousSMul G M]
+  [DistribMulAction G M]
 
 /-- Transport continuous cohomology from a subgroup `V` to its canonical copy
 `V.subgroupOf U` inside a larger subgroup `U`. -/
@@ -66,7 +67,6 @@ noncomputable def subgroupOfMap (n : ℕ) :
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
       (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)) n
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 /-- The defining equation for transport to the canonical copy `V.subgroupOf U`. -/
 theorem subgroupOfMap_def (n : ℕ) :
     subgroupOfMap U V hVU M n =
@@ -76,6 +76,16 @@ theorem subgroupOfMap_def (n : ℕ) :
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
           (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)) n := by
   rfl
+
+end SubgroupOfMap
+
+section CorestrictionLe
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+  (U V : Subgroup G) (hVU : V ≤ U)
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
 
 /-- **All-degree corestriction along an inclusion** `V ≤ U`: transport the cohomology of `V` to
 its canonical copy `V.subgroupOf U`, then apply corestriction inside `U`. The intermediate subgroup
@@ -101,16 +111,27 @@ theorem corestrictionLe_def (hU : IsClosed (U : Set G))
         corestriction (G := U) (V.subgroupOf U) M hV n := by
   rfl
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] [TopologicalSpace M]
-  [DiscreteTopology M] [ContinuousSMul G M] in
+end CorestrictionLe
+
+section TraceSmul
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (U V : Subgroup G) (M : Type u) [AddCommGroup M] [DistribMulAction G M]
+
 private theorem traceIntLinearMap_smul [(V.subgroupOf U).FiniteIndex]
     (u : U) (φ : DiscreteCoind U (V.subgroupOf U) M) :
     (DiscreteCoind.trace U (V.subgroupOf U) M).toIntLinearMap (u • φ) =
       u • (DiscreteCoind.trace U (V.subgroupOf U) M).toIntLinearMap φ := by
   exact _root_.map_smul (DiscreteCoind.trace U (V.subgroupOf U) M) u φ
 
-omit [TotallyDisconnectedSpace G] [TopologicalSpace M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+end TraceSmul
+
+section TransEquiv
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] (U V : Subgroup G) (hVU : V ≤ U)
+  (M : Type u) [AddCommGroup M] [DistribMulAction G M]
+
 private theorem trace_transEquiv_symm
     [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex]
     (f : DiscreteCoind G V M) :
@@ -150,68 +171,80 @@ private theorem trace_transEquiv_symm
   rw [mul_inv_rev]
   rfl
 
-omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
-/-- **Shapiro's map is transitive.** For subgroups `V ≤ U` of a compact group `G`, the Shapiro
-map of `V` followed by the transport to the copy `V.subgroupOf U` of `V` inside `U` is the
-identification `Coind_V^G M ≅ Coind_U^G (Coind_{V ⊓ U}^U M)` of coinduced modules followed by the
-Shapiro maps of `U` in `G` and of `V.subgroupOf U` in `U`. -/
-theorem shapiroMap_trans (n : ℕ) :
+/-- The transitivity equivalence `Coind_V^G M ≃ Coind_U^G (Coind_{V ⊓ U}^U M)` of coinduced
+modules, shared by the helpers of `shapiroMap_trans`. -/
+private noncomputable def shapiroTransEquiv :=
+  DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
+    isClosed_closure.isCompact
+
+/-- The compatible pair of the identity of `G` and the inverse of the transitivity
+equivalence. -/
+private noncomputable def shapiroTransPair :
+    TopRep.res (ContinuousMonoidHom.id G : G →* G) (ofDiscreteModule ℤ G (DiscreteCoind G V M)) ⟶
+      ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (V.subgroupOf U) M)) :=
+  ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+    (shapiroTransEquiv U V hVU M).symm.toAddMonoidHom.toIntLinearMap fun g φ =>
+      DiscreteCoind.transEquiv_symm_smul (Subgroup.map_subgroupOf_eq_of_le hVU)
+        (Subgroup.subgroupOf_smul_eq U V M) isClosed_closure.isCompact g φ
+
+/-- The coefficient map of the coinduction-transitivity isomorphism, in the direction
+`Coind_V^G M → Coind_U^G (Coind_{V ⊓ U}^U M)`, is induced by the compatible pair of the identity of
+`G` and the inverse of the transitivity equivalence. -/
+private theorem coeffMap_transIso_inv_eq_map (n : ℕ) :
     let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
       (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
       isClosed_closure.isCompact
-    coeffMap c.inv n ≫ shapiroMap U (DiscreteCoind U (V.subgroupOf U) M) n ≫
-        shapiroMap (V.subgroupOf U) M n =
-      shapiroMap V M n ≫ subgroupOfMap U V hVU M n := by
-  dsimp only
-  let e := DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
-    isClosed_closure.isCompact
-  have he_smul (g : G) (φ : DiscreteCoind G V M) :
-      e.symm.toAddMonoidHom.toIntLinearMap ((ContinuousMonoidHom.id G : G →* G) g • φ) =
-        g • e.symm.toAddMonoidHom.toIntLinearMap φ := by
-    exact DiscreteCoind.transEquiv_symm_smul (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (Subgroup.subgroupOf_smul_eq U V M)
-      isClosed_closure.isCompact g φ
-  let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
-    isClosed_closure.isCompact
-  let p := ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
-    e.symm.toAddMonoidHom.toIntLinearMap he_smul
-  have hp : _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n =
+    _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) (shapiroTransPair U V hVU M) n =
       coeffMap c.inv n := by
-    rw [coeffMap_def]
-    apply map_congr rfl
-    apply ofDiscreteModulePair_heq_of_hom_apply rfl
-    intro φ
-    exact (DiscreteCoind.transIso_inv_apply
-      (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
-      isClosed_closure.isCompact φ).trans rfl
-  rw [← hp]
-  -- Both routes are maps of compatible pairs whose underlying coefficient map evaluates an
-  -- element of `Coind_V^G M` at `1`; functoriality reduces the comparison to that observation.
-  let pU := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
-    (DiscreteCoind.eval G U (DiscreteCoind U (V.subgroupOf U) M)).toIntLinearMap
-      (fun u f => by exact TauCeti.ContCohomology.eval_subgroupSubtype_smul G U _ u f)
-  let pVU := ofDiscreteModulePair
-    (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U) : V.subgroupOf U →* U)
-    (DiscreteCoind.eval U (V.subgroupOf U) M).toIntLinearMap
-      (fun v f => by
-        exact TauCeti.ContCohomology.eval_subgroupSubtype_smul U (V.subgroupOf U) M v f)
-  let pV := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype V : V →* G)
-    (DiscreteCoind.eval G V M).toIntLinearMap
-      (fun v f => by exact TauCeti.ContCohomology.eval_subgroupSubtype_smul G V M v f)
-  let τ : V.subgroupOf U →ₜ* V :=
-    (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U ≃ₜ* V)
-  let pT := ofDiscreteModulePair (τ : V.subgroupOf U →* V)
-    (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)
-  simp only [shapiroMap_def, subgroupOfMap]
-  -- Expose the compatible-pair maps hidden by the Shapiro and coefficient-map wrappers.
-  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n ≫
+  intro c
+  rw [coeffMap_def]
+  apply map_congr rfl
+  apply ofDiscreteModulePair_heq_of_hom_apply rfl
+  intro φ
+  exact (DiscreteCoind.transIso_inv_apply
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
+    isClosed_closure.isCompact φ).trans rfl
+
+end TransEquiv
+
+section ShapiroPairsEq
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (U V : Subgroup G) (hVU : V ≤ U)
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+
+/-- The comparison of the two composites of compatible pairs in the proof of `shapiroMap_trans`
+reduces to their underlying homomorphisms, because both composites have the same group
+homomorphism `V.subgroupOf U → G`. -/
+private theorem shapiroMap_trans_pairs_eq
+    (p : TopRep.res (ContinuousMonoidHom.id G : G →* G)
+      (ofDiscreteModule ℤ G (DiscreteCoind G V M)) ⟶
+        ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (V.subgroupOf U) M)))
+    (pU : TopRep.res (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+      (ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (V.subgroupOf U) M))) ⟶
+        ofDiscreteModule ℤ U (DiscreteCoind U (V.subgroupOf U) M))
+    (pVU : TopRep.res
+      (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U) : V.subgroupOf U →* U)
+      (ofDiscreteModule ℤ U (DiscreteCoind U (V.subgroupOf U) M)) ⟶
+        ofDiscreteModule ℤ (V.subgroupOf U) M)
+    (pV : TopRep.res (ContinuousMonoidHom.subgroupSubtype V : V →* G)
+      (ofDiscreteModule ℤ G (DiscreteCoind G V M)) ⟶ ofDiscreteModule ℤ V M)
+    (pT : TopRep.res
+      ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
+        V.subgroupOf U →* V) (ofDiscreteModule ℤ V M) ⟶
+      ofDiscreteModule ℤ (V.subgroupOf U) M)
+    (hhom : ∀ f, pVU.hom (pU.hom (p.hom f)) = pT.hom (pV.hom f)) (n : ℕ) :
+    _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n ≫
         _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) pU n ≫
           _root_.ContinuousCohomology.map
             (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U)) pVU n =
       _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype V) pV n ≫
-        _root_.ContinuousCohomology.map τ pT n
+        _root_.ContinuousCohomology.map
+          (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) pT n := by
+  let τ : V.subgroupOf U →ₜ* V :=
+    (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U ≃ₜ* V)
   rw [← _root_.ContinuousCohomology.map_comp]
   conv_rhs => rw [← _root_.ContinuousCohomology.map_comp]
   rw [← _root_.ContinuousCohomology.map_comp]
@@ -234,32 +267,116 @@ theorem shapiroMap_trans (n : ℕ) :
   -- Fold the two expanded composites into the local compatible-pair abbreviations.
   change _root_.ContinuousCohomology.map φL qL n =
     _root_.ContinuousCohomology.map φR qR n
-  refine map_congr hφ ?_ n
-  subst φR
-  apply heq_of_eq
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun f => ?_)
-  let f' : DiscreteCoind G V M := f
-  -- Composition in `TopRep` evaluates by composing the underlying homomorphisms.
-  change pVU.hom (pU.hom (p.hom f)) = pT.hom (pV.hom f)
-  have hp_apply : p.hom f = e.symm f' := by
-    exact ofDiscreteModulePair_hom_apply _ _ _ f'
+  -- Composition in `TopRep` evaluates by composing the underlying homomorphisms, so `hhom`
+  -- compares `qL` and `qR` elementwise.
+  exact map_congr_of_hom_apply hφ qL qR hhom n
+
+end ShapiroPairsEq
+
+section ShapiroTrans
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] (U V : Subgroup G) (hVU : V ≤ U)
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+
+/-- The compatible pair of the inclusion `U ≤ G` and evaluation at `1` on
+`Coind_U^G (Coind_{V ⊓ U}^U M)`. -/
+private noncomputable def shapiroTransPairU :
+    TopRep.res (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+      (ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (V.subgroupOf U) M))) ⟶
+        ofDiscreteModule ℤ U (DiscreteCoind U (V.subgroupOf U) M) :=
+  ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+    (DiscreteCoind.eval G U (DiscreteCoind U (V.subgroupOf U) M)).toIntLinearMap
+      (fun u f => by exact TauCeti.ContCohomology.eval_subgroupSubtype_smul G U _ u f)
+
+/-- The compatible pair of the inclusion `V ⊓ U ≤ U` and evaluation at `1` on
+`Coind_{V ⊓ U}^U M`. -/
+private noncomputable def shapiroTransPairVU :
+    TopRep.res (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U) : V.subgroupOf U →* U)
+      (ofDiscreteModule ℤ U (DiscreteCoind U (V.subgroupOf U) M)) ⟶
+        ofDiscreteModule ℤ (V.subgroupOf U) M :=
+  ofDiscreteModulePair
+    (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U) : V.subgroupOf U →* U)
+    (DiscreteCoind.eval U (V.subgroupOf U) M).toIntLinearMap
+      (fun v f => by
+        exact TauCeti.ContCohomology.eval_subgroupSubtype_smul U (V.subgroupOf U) M v f)
+
+/-- The compatible pair of the inclusion `V ≤ G` and evaluation at `1` on `Coind_V^G M`. -/
+private noncomputable def shapiroTransPairV :
+    TopRep.res (ContinuousMonoidHom.subgroupSubtype V : V →* G)
+      (ofDiscreteModule ℤ G (DiscreteCoind G V M)) ⟶ ofDiscreteModule ℤ V M :=
+  ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype V : V →* G)
+    (DiscreteCoind.eval G V M).toIntLinearMap
+      (fun v f => by exact TauCeti.ContCohomology.eval_subgroupSubtype_smul G V M v f)
+
+/-- The compatible pair of the identification `V ⊓ U ≃ V` and the identity of `M`. -/
+private noncomputable def shapiroTransPairT :
+    TopRep.res
+      ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
+        V.subgroupOf U →* V) (ofDiscreteModule ℤ V M) ⟶
+      ofDiscreteModule ℤ (V.subgroupOf U) M :=
+  ofDiscreteModulePair
+    ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
+      V.subgroupOf U →* V)
+    (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)
+
+/-- The five compatible pairs of `shapiroMap_trans` agree on `f : Coind_V^G M`: both sides equal
+`f 1`, obtained on the left by evaluating `(shapiroTransEquiv U V hVU M).symm f` at `1 : G` and
+then at `1 : U`. -/
+private theorem shapiroMap_trans_hom_apply (f : DiscreteCoind G V M) :
+    (shapiroTransPairVU U V M).hom ((shapiroTransPairU U V M).hom
+      ((shapiroTransPair U V hVU M).hom f)) =
+      (shapiroTransPairT U V hVU M).hom ((shapiroTransPairV V M).hom f) := by
+  have hp_apply : (shapiroTransPair U V hVU M).hom f = (shapiroTransEquiv U V hVU M).symm f :=
+    ofDiscreteModulePair_hom_apply _ _ _ f
   have hpU_apply (x : DiscreteCoind G U (DiscreteCoind U (V.subgroupOf U) M)) :
-      pU.hom x = x 1 :=
+      (shapiroTransPairU U V M).hom x = x 1 :=
     (ofDiscreteModulePair_hom_apply _ _ _ x).trans (DiscreteCoind.eval_apply x)
-  have hpVU_apply (x : DiscreteCoind U (V.subgroupOf U) M) : pVU.hom x = x 1 :=
+  have hpVU_apply (x : DiscreteCoind U (V.subgroupOf U) M) :
+      (shapiroTransPairVU U V M).hom x = x 1 :=
     (ofDiscreteModulePair_hom_apply _ _ _ x).trans (DiscreteCoind.eval_apply x)
-  have hpV_apply (x : DiscreteCoind G V M) : pV.hom x = x 1 :=
+  have hpV_apply (x : DiscreteCoind G V M) : (shapiroTransPairV V M).hom x = x 1 :=
     (ofDiscreteModulePair_hom_apply _ _ _ x).trans (DiscreteCoind.eval_apply x)
-  have hpT_apply (x : M) : pT.hom x = x :=
+  have hpT_apply (x : M) : (shapiroTransPairT U V hVU M).hom x = x :=
     (ofDiscreteModulePair_hom_apply _ _ _ x).trans (LinearMap.id_apply x)
   rw [hp_apply, hpU_apply, hpVU_apply]
   -- The remaining coinduction evaluations are hidden behind function-like coercions.
-  change (e.symm f' (1 : G)) (1 : U) = pT.hom (pV.hom f')
-  rw [hpV_apply, hpT_apply]
-  rw [DiscreteCoind.transEquiv_symm_apply]
+  change ((shapiroTransEquiv U V hVU M).symm f (1 : G)) (1 : U) =
+    (shapiroTransPairT U V hVU M).hom ((shapiroTransPairV V M).hom f)
+  rw [hpV_apply, hpT_apply, shapiroTransEquiv, DiscreteCoind.transEquiv_symm_apply]
   simp
 
-omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
+/-- **Shapiro's map is transitive.** For subgroups `V ≤ U` of a compact group `G`, the Shapiro
+map of `V` followed by the transport to the copy `V.subgroupOf U` of `V` inside `U` is the
+identification `Coind_V^G M ≅ Coind_U^G (Coind_{V ⊓ U}^U M)` of coinduced modules followed by the
+Shapiro maps of `U` in `G` and of `V.subgroupOf U` in `U`. -/
+theorem shapiroMap_trans (n : ℕ) :
+    let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
+      (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
+      isClosed_closure.isCompact
+    coeffMap c.inv n ≫ shapiroMap U (DiscreteCoind U (V.subgroupOf U) M) n ≫
+        shapiroMap (V.subgroupOf U) M n =
+      shapiroMap V M n ≫ subgroupOfMap U V hVU M n := by
+  dsimp only
+  rw [← coeffMap_transIso_inv_eq_map U V hVU M n]
+  simp only [shapiroMap_def, subgroupOfMap]
+  -- Both routes are maps of compatible pairs whose underlying coefficient map evaluates an
+  -- element of `Coind_V^G M` at `1`; functoriality reduces the comparison to that observation.
+  -- Expose the compatible-pair maps hidden by the Shapiro and coefficient-map wrappers.
+  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) (shapiroTransPair U V hVU M)
+        n ≫
+        _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
+          (shapiroTransPairU U V M) n ≫
+          _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U))
+            (shapiroTransPairVU U V M) n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype V)
+          (shapiroTransPairV V M) n ≫
+        _root_.ContinuousCohomology.map
+          (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+          (shapiroTransPairT U V hVU M) n
+  exact shapiroMap_trans_pairs_eq U V hVU M _ _ _ _ _ (shapiroMap_trans_hom_apply U V hVU M) n
+
 private theorem transIso_inv_comp_trace
     [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
     haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
@@ -314,6 +431,16 @@ private theorem transIso_inv_comp_trace
     ofDiscreteModuleMap_hom_apply _ _ f
   exact h₁.trans (h₃.trans h₄.symm)
 
+end ShapiroTrans
+
+section CorestrictionTrans
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+  (U V : Subgroup G) (hVU : V ≤ U)
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
 /-- **Transitivity of corestriction in every degree.** For open finite-index subgroups
 `V ≤ U ≤ G`, direct corestriction from `V` to `G` equals corestriction from `V` to `U` followed by
 corestriction from `U` to `G`. -/
@@ -340,5 +467,7 @@ theorem corestriction_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G))
   simp only [shapiroMap_comp_corestriction]
   rw [← coeffMap_comp, ← coeffMap_comp]
   rw [transIso_inv_comp_trace U V hVU M]
+
+end CorestrictionTrans
 
 end TauCeti.ContinuousCohomology

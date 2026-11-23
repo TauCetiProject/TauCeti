@@ -128,7 +128,7 @@ noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMo
     (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
-private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
+theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
         (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -372,6 +372,20 @@ noncomputable def rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRin
     fun _ => TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_mem_generatedPointsSubgroup
       7 generator (.inl k) A _
 
+/-- The rank-one root word `x₋ᵢ(1) xᵢ(-1) x₋ᵢ(1)` inside the carrier's points. -/
+noncomputable def rankOneWord (i : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
+    points A :=
+  rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the indicated product of three numbered root-group elements. -/
+theorem rankOneWord_def (i : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
+    rankOneWord i A =
+      rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) *
+        rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (-1)) *
+          rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) := (rfl)
+
 /-- A numbered simple-root point of the carrier is the image of the corresponding point of `𝔾ₐ`
 under the generating coordinate map. -/
 theorem coe_rootSubgroupPoints_gaPointsMulEquiv (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
@@ -399,31 +413,9 @@ theorem coe_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
     (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) (A := A)).symm u with hqdef
   have hu : AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) (A := A) q = u := by
     rw [hqdef, MulEquiv.apply_symm_apply]
-  have hq := pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap rootGen cartanGen
-    rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
-    latticeBasis weight (ZMod 3) IntegralToralClosure.definingIdeal_def k
-    (CommAlgCat.of (ZMod 3) A) q
-  rw [hu] at hq
-  have hcomp :
-      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of (ZMod 3) A) q =
-        CommHopfAlgCat.quotientPointsHom
-          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-          (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
-            rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
-            (ZMod 3))
-          (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.Hom.mapPointsFunctor
-            (kostantRootSubgroupToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
-              lattice.toAddSubgroup rep_kostantForm_mem_lattice
-              isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3) k)).app
-            (CommAlgCat.of (ZMod 3) A) q) := by
-    apply CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    rw [generator_inl]
-    exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-      rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3) k
-  rw [IntegralToralClosure.coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix, ← hq, ← hcomp,
-    ← coe_rootSubgroupPoints_gaPointsMulEquiv k A q, hu]
+  rw [← hu, coe_rootSubgroupPoints_gaPointsMulEquiv, generator_inl,
+    pointsMulEquiv_mapPointsFunctor_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap,
+    IntegralToralClosure.coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix]
 
 /-- The split weight torus inside the points of the carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
@@ -578,31 +570,9 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 3) A] (s 
       (σ := Fin 2)).symm s with hqdef
   have hs : SplitTorus.pointsMulEquiv q = s := by
     rw [hqdef, MulEquiv.apply_symm_apply]
-  have hq := pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap rootGen cartanGen
-    rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
-    latticeBasis weight (ZMod 3) IntegralToralClosure.definingIdeal_def
-    (CommAlgCat.of (ZMod 3) A) q
-  rw [hs] at hq
-  have hcomp :
-      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of (ZMod 3) A) q =
-        CommHopfAlgCat.quotientPointsHom
-          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-          (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
-            rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
-            (ZMod 3))
-          (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.Hom.mapPointsFunctor
-            (kostantWeightTorusToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
-              lattice.toAddSubgroup rep_kostantForm_mem_lattice
-              isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3))).app
-            (CommAlgCat.of (ZMod 3) A) q) := by
-    apply CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    rw [generator_inr]
-    exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
-      rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3)
-  rw [IntegralToralClosure.coe_weightTorusPoints, ← hq, ← hcomp,
-    ← coe_weightTorusPoints_pointsMulEquiv A q, hs]
+  rw [← hs, coe_weightTorusPoints_pointsMulEquiv, generator_inr,
+    TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusBaseChangeCoordinateMap,
+    IntegralToralClosure.coe_weightTorusPoints, kostantTorusMatrix_apply]
 
 /-- **The pinning equation on matrix-valued points of the carrier**: conjugation by a point `s` of
 the weight torus rescales the parameter of each numbered simple root subgroup by the corresponding

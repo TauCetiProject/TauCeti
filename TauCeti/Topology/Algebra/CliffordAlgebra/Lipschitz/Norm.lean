@@ -12,7 +12,7 @@ import Mathlib.Topology.Algebra.Group.Units
 /-!
 # Continuity of the Clifford norm
 
-The reverse Clifford norm on the Lipschitz group is continuous over a complete normed field.
+The reverse Clifford norm on the Lipschitz group is continuous over a Hausdorff topological field.
 Its scalar value is recovered from `reverse x * x` through the closed embedding of the field
 into the finite-dimensional Clifford algebra. The inverse coordinate of the unit-valued norm
 is continuous by the homomorphism law. This is the local topological input for studying the
@@ -25,7 +25,7 @@ namespace CliffordAlgebra
 
 open TauCeti Topology
 
-variable {K V : Type*} [NontriviallyNormedField K] [CompleteSpace K]
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   (Q : QuadraticForm K V)
 
@@ -36,7 +36,7 @@ theorem continuous_cliffordNorm : Continuous (cliffordNorm Q) := by
     apply (isClosedEmbedding_algebraMap Q).isEmbedding.continuous_iff.mpr
     have hval : Continuous (fun x : lipschitzGroup Q =>
         (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))) :=
-      Units.continuous_val.comp continuous_subtype_val
+      Units.continuous_val.comp continuous_subtypeVal
     convert ((continuous_reverse Q).comp hval).mul hval using 1
     funext x
     exact (reverse_mul_self_eq_algebraMap_cliffordNorm x).symm

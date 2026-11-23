@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Profinite
+public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
@@ -66,32 +67,6 @@ namespace TauCeti.FiniteEtaleScheme
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
 
-/-- The lifts of `Spec Ω ⟶ Spec K` to the spectrum of a finite étale `K`-algebra `A` are the
-`K`-algebra maps `A →ₐ[K] Ω`, naturally in `A`. -/
-private noncomputable def algSpecCompCoyonedaIso :
-    (CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) ⋙
-        coyoneda.obj (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω))))) ≅
-      CommAlgCat.FiniteEtale.fiber K Ω ⋙ FintypeCat.incl :=
-  NatIso.ofComponents
-    (fun A ↦ (AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω)).toIso)
-    fun {A B} f ↦ by
-      ext g
-      suffices AlgebraicGeometry.algSpecHomEquivAlgHom B.unop.obj (.of K Ω)
-          (g ≫ (algSpec _).map f.unop.hom.op) =
-            (AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω) g).comp
-              f.unop.hom.hom by
-        simpa
-      exact AlgebraicGeometry.algSpecHomEquivAlgHom_comp (A := A.unop.obj) (B := .of K Ω)
-        f.unop.hom g
-
-private theorem algSpecCompCoyonedaIso_hom_app_apply
-    (A : (CommAlgCat.FiniteEtale.{u} (CommRingCat.of K))ᵒᵖ)
-    (g : ((CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) ⋙
-        coyoneda.obj (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))))).obj A) :
-    (algSpecCompCoyonedaIso K Ω).hom.app A g =
-      AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω) g :=
-  rfl
-
 /-- The forward functor of the finite étale anti-equivalence, followed by the inclusion, is
 Mathlib's `algSpec` on finite étale algebras. The definitions involved are not exposed, so this
 is an equation of functors obtained by rewriting with
@@ -115,7 +90,7 @@ private noncomputable def fiberCompInclIsoFiniteEtaleFiber :
       _ ≪≫
     Functor.isoWhiskerLeft (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).inverse
       (Functor.isoWhiskerRight (eqToIso (functor_comp_ι K)) _ ≪≫ Functor.associator _ _ _ ≪≫
-        algSpecCompCoyonedaIso K Ω)
+        algSpecCompCoyonedaIso (.of K) Ω)
 
 /-- **The geometric fibre of a finite étale scheme over a field is its set of `Ω`-points.**
 The geometric fibre functor of finite étale `K`-schemes at `Spec Ω ⟶ Spec K` is isomorphic to
@@ -137,8 +112,8 @@ private theorem fiberCompInclIsoFiniteEtaleFiber_hom_app_apply
       AlgebraicGeometry.algSpecHomEquivAlgHom _ (.of K Ω) ((fiberCompInclIso _).hom.app X y ≫
         ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).counitIso.inv.app X).hom ≫
           eqToHom (Functor.congr_obj (functor_comp_ι K) _)) := by
-  refine (?_ : _ = (algSpecCompCoyonedaIso K Ω).hom.app _ _).trans
-    (algSpecCompCoyonedaIso_hom_app_apply K Ω _ _)
+  refine (?_ : _ = (algSpecCompCoyonedaIso (.of K) Ω).hom.app _ _).trans
+    (algSpecCompCoyonedaIso_hom_app_apply (.of K) Ω _ _)
   simp [fiberCompInclIsoFiniteEtaleFiber]
   -- The two sides differ only in how the types of the morphisms of types are written: `simp`
   -- unfolds composites of functors on one side only.

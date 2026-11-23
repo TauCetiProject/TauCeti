@@ -265,7 +265,7 @@ theorem exists_klDiv_withDensity_exp_add_comp_eq_dynamicSchroedingerValue [IsFin
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hμν hg hgM hR
   -- The reference measure is finite, since its endpoint law has a bounded density.
-  have : IsFiniteMeasure (R.map e) := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+  have : IsFiniteMeasure (R.map e) := hR ▸ isFiniteMeasure_withDensity_ofReal_exp
     (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have : IsFiniteMeasure R := Measure.isFiniteMeasure_of_map he.aemeasurable
   have hφi : Integrable φ μ :=
@@ -274,8 +274,8 @@ theorem exists_klDiv_withDensity_exp_add_comp_eq_dynamicSchroedingerValue [IsFin
     Integrable.of_bound hψ.aestronglyMeasurable C (ae_of_all _ fun y ↦ hψC y)
   have hmap : (R.withDensity fun ω ↦ ENNReal.ofReal (Real.exp (φ (e ω).1 + ψ (e ω).2))).map e =
       (R.map e).withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)) :=
-    Measure.map_withDensity_eq_withDensity (jac := 1) he measurable_const (by fun_prop) (by simp)
-      (by simp)
+    Measure.map_withDensity_eq_withDensity (jac := 1) he.aemeasurable aemeasurable_const
+      (by fun_prop) (by simp) (by simp)
   exact ⟨φ, ψ, C, hφ, hψ, hφC, hψC, by rwa [hmap],
     klDiv_withDensity_exp_add_comp_eq_dynamicSchroedingerValue he hσ hφ hψ hφi hψi⟩
 

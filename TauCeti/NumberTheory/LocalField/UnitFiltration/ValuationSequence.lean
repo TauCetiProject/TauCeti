@@ -98,7 +98,7 @@ theorem unitFiltrationZeroIncl_comp_unitsValuationHom :
   simp only [Rep.hom_comp, Representation.IntertwiningMap.toLinearMap_apply,
     Representation.IntertwiningMap.comp_apply]
   rw [unitFiltrationZeroIncl_apply K L x]
-  exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.2
+  exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.property
 
 /-- The canonical valuation short complex of integral Galois representations. The last term
 has trivial action; the sequence need not split as Galois representations. The body is exposed
@@ -138,7 +138,7 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
         (unitFiltrationZeroIncl_apply K L _).trans (by rfl)⟩
     · rintro ⟨y, rfl⟩
       rw [unitFiltrationZeroIncl_apply K L y]
-      exact y.toMul.2
+      exact y.toMul.property
   · exact unitFiltrationZeroIncl_injective K L
   · intro n
     obtain ⟨x, hx⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd n)
@@ -160,10 +160,10 @@ instance finite_tateCohomology_negOne_unitFiltration_zero :
         (groupCohomology.H1 (Rep.ofAlgebraAutOnUnits K L))).of_iso
           (Rep.FiniteCyclicGroup.periodicIso (Rep.ofAlgebraAutOnUnits K L) (-1) 1 (by decide) ≪≫
             (_root_.TateCohomology.isoGroupCohomology 1).app _)
-  have hfinite : Finite (tateCohomology (Rep.trivial ℤ (L ≃ₐ[K] L) ℤ) (-2)) :=
+  have := ModuleCat.subsingleton_of_isZero hzero
+  have : Finite (tateCohomology (Rep.trivial ℤ (L ≃ₐ[K] L) ℤ) (-2)) :=
     Finite.of_equiv _ (TateCohomology.HNegTwoAddEquivAbelianization.toEquiv.symm)
-  apply TateCohomology.finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ hS (-2)
-  simpa only [Int.reduceNeg, Int.reduceAdd] using hzero
+  exact TateCohomology.finite_tateCohomology_X₁_of_shortExact hS (-2) (-1) rfl
 
 /-- The valuation sequence transfers the Herbrand quotient of the unit group to the
 multiplicative group, with factor the order of the automorphism group. -/

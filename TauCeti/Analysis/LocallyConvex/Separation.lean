@@ -5,60 +5,100 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.Separation
-public import Mathlib.Topology.Algebra.Affine
-import Mathlib.Tactic.Positivity
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.LinearAlgebra.Ray
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Convex.Topology
 
 /-!
-# Separating two directions by a functional
+# Functional separation in locally convex spaces
+
+Over `ℝ` or `ℂ` (`RCLike 𝕜`), local convexity with respect to the canonical partial order on `𝕜`
+agrees with real local convexity (`TauCeti.locallyConvexSpace_RCLike_iff`), and the geometric
+Hahn–Banach theorem supplies `SeparatingDual 𝕜 E` for every `T₁` locally convex space
+(`TauCeti.instSeparatingDualOfLocallyConvexSpace`).
 
 Two vectors `d₁` and `d₂` of a real locally convex Hausdorff space with `0 ∉ [-d₁, d₂]`, that is,
 both nonzero and not on a common ray from `0`, are separated by a continuous functional `ℓ` with
 `ℓ d₁ < 0 < ℓ d₂`. This is the geometric Hahn--Banach theorem
 `geometric_hahn_banach_point_closed` applied to the point `0` and the segment `[-d₁, d₂]`. Both
 strict inequalities are open conditions, so `ℓ` can moreover be perturbed to be nonzero at any
-prescribed vector on which some functional does not vanish.
+prescribed nonzero vector, along a functional not vanishing there. Equivalently, two nonzero
+vectors `u` and `v` that do not point in opposite directions are both positive for some
+continuous functional.
 
 ## Main results
 
+* `TauCeti.locallyConvexSpace_RCLike_iff`: local convexity over `𝕜` (`RCLike 𝕜`) agrees with local
+  convexity over `ℝ`.
+* `TauCeti.instSeparatingDualOfLocallyConvexSpace`: continuous `𝕜`-linear functionals separate
+  points of any `T₁` locally convex space over `ℝ` or `ℂ`.
 * `TauCeti.exists_strongDual_neg_pos_ne_zero`: a functional negative on `d₁`, positive on `d₂`,
   and nonzero at a prescribed vector `u`.
+* `TauCeti.exists_strongDual_pos_of_not_sameRay_neg`: two nonzero vectors that do not point in
+  opposite directions are both positive for some continuous functional.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
+
+section RCLike
+
+open scoped ComplexOrder
+
+/-- Over `ℝ` or `ℂ`, local convexity with respect to the canonical order on `𝕜` is equivalent to
+local convexity over `ℝ`. -/
+theorem locallyConvexSpace_RCLike_iff {𝕜 E : Type*} [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+    [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] :
+    LocallyConvexSpace 𝕜 E ↔ LocallyConvexSpace ℝ E := by
+  simp_rw [locallyConvexSpace_iff, convex_RCLike_iff_convex_real]
+
+/-- In a `T₁` locally convex topological vector space over `ℝ` or `ℂ`, continuous `𝕜`-linear
+functionals separate points. -/
+instance instSeparatingDualOfLocallyConvexSpace {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] [LocallyConvexSpace ℝ E] [T1Space E] : SeparatingDual 𝕜 E :=
+  ⟨fun x hx ↦
+    RCLike.geometric_hahn_banach_point_point hx |>.imp fun _ hf hf' ↦ by simp [hf'] at hf⟩
+
+end RCLike
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
 
 /-- Two vectors with `0 ∉ [-d₁, d₂]`, that is nonzero and not on a common ray from `0`, are
 separated by a continuous functional which is negative on `d₁` and positive on `d₂`; it can be
-chosen nonzero at any vector `u` on which some functional `ℓ₀` takes the value `1`. -/
+chosen nonzero at any prescribed nonzero vector `u`. -/
 theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : E} (h : (0 : E) ∉ segment ℝ (-d₁) d₂)
-    (ℓ₀ : StrongDual ℝ E) {u : E} (hu : ℓ₀ u = 1) :
+    {u : E} (hu : u ≠ 0) :
     ∃ ℓ : StrongDual ℝ E, ℓ d₁ < 0 ∧ 0 < ℓ d₂ ∧ ℓ u ≠ 0 := by
-  have hclosed : IsClosed (segment ℝ (-d₁) d₂) := by
-    rw [segment_eq_image_lineMap]
-    exact (isCompact_Icc.image AffineMap.lineMap_continuous).isClosed
-  obtain ⟨f, c, hf0, hfc⟩ := geometric_hahn_banach_point_closed (convex_segment _ _) hclosed h
-  have h₁ : c < -f d₁ := by simpa using hfc _ (left_mem_segment ℝ _ _)
-  have h₂ : c < f d₂ := hfc _ (right_mem_segment ℝ _ _)
-  rw [map_zero] at hf0
+  obtain ⟨f, c, hf0, hfc⟩ := geometric_hahn_banach_point_closed (convex_segment _ _)
+    (isCompact_segment ℝ _ _).isClosed h
+  have h₁ : f d₁ < 0 := by linarith [map_zero f, map_neg f d₁, hfc _ (left_mem_segment ℝ _ _)]
+  have h₂ : 0 < f d₂ := by linarith [map_zero f, hfc _ (right_mem_segment ℝ _ _)]
   by_cases hfu : f u = 0
-  · -- Perturb `f` by a small multiple of `ℓ₀`, small enough to keep both signs.
-    set ε := c / (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) with _
-    have hpos : 0 < |ℓ₀ d₁| + |ℓ₀ d₂| + 1 := by positivity
-    have hεpos : 0 < ε := div_pos hf0 hpos
-    have hεc : ε * (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) = c := div_mul_cancel₀ _ hpos.ne'
-    refine ⟨f + ε • ℓ₀, ?_, ?_, ?_⟩
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [le_abs_self (ℓ₀ d₁), abs_nonneg (ℓ₀ d₂)]
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [neg_abs_le (ℓ₀ d₂), abs_nonneg (ℓ₀ d₁)]
-    · simp [hfu, hu, hεpos.ne']
-  · exact ⟨f, by linarith, by linarith, hfu⟩
+  · -- Perturb `f` by a small nonzero multiple of a functional `ℓ₀` with `ℓ₀ u ≠ 0`.
+    obtain ⟨ℓ₀, hℓ₀⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hu
+    have hc (x : E) : ContinuousAt (fun ε : ℝ => (f + ε • ℓ₀) x) 0 := by fun_prop
+    have hev : ∀ᶠ ε : ℝ in 𝓝 0, (f + ε • ℓ₀) d₁ < 0 ∧ 0 < (f + ε • ℓ₀) d₂ :=
+      ((hc d₁).eventually_lt continuousAt_const (by simpa using h₁)).and
+        (continuousAt_const.eventually_lt (hc d₂) (by simpa using h₂))
+    obtain ⟨ε, ⟨hε₁, hε₂⟩, hε⟩ :=
+      ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists (f := 𝓝[≠] 0)
+    exact ⟨f + ε • ℓ₀, hε₁, hε₂, by simpa [hfu, hℓ₀] using hε⟩
+  · exact ⟨f, h₁, h₂, hfu⟩
+
+/-- Two nonzero vectors `u` and `v` that do not point in opposite directions,
+`¬SameRay ℝ u (-v)`, are both positive for some continuous linear functional. The hypothesis
+says exactly that `0` is not on the segment `[u, v]`. -/
+theorem exists_strongDual_pos_of_not_sameRay_neg {u v : E} (h : ¬SameRay ℝ u (-v)) :
+    ∃ L : StrongDual ℝ E, 0 < L u ∧ 0 < L v := by
+  obtain ⟨L, hu, hv, -⟩ := exists_strongDual_neg_pos_ne_zero (d₁ := -u) (d₂ := v)
+    (by rwa [neg_neg, mem_segment_iff_sameRay, zero_sub, sub_zero, sameRay_neg_swap])
+    (u := u) (by rintro rfl; exact h (SameRay.zero_left _))
+  exact ⟨L, by simpa using hu, hv⟩
 
 end TauCeti

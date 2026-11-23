@@ -26,6 +26,8 @@ facts the height-one generization of Wedhorn's Lemma 7.45 consumes.
 
 ## Main results
 
+* `TauCeti.coarsenMapOfValueGroup_le_iff` : two nonzero values compare after coarsening iff they
+  already compare or their quotient lies in `H`.
 * `Valuation.coarsenByUnits_supp` : coarsening preserves the support.
 * `Valuation.coarsenByUnits_lt_one_of_notMem` : the collapse detects non-membership — a value
   at most `1` whose unit avoids `H` drops strictly below `1`. (Bounds by `1` come from
@@ -86,6 +88,18 @@ theorem coarsenMapOfValueGroup_apply_coe (H : ConvexSubgroup Γ₀ˣ) (g : Γ₀
   have h : ((OrderMonoidIso.withZeroUnits (α := Γ₀)).symm.toMonoidWithZeroHom (g : Γ₀))
       = (g : WithZero Γ₀ˣ) := WithZero.withZeroUnitsEquiv_symm_apply_coe g
   rw [coarsenMapOfValueGroup, MonoidWithZeroHom.comp_apply, h, WithZero.map'_coe]
+
+open Classical in
+/-- **Comparison after coarsening.** Two nonzero values `a` and `b` compare after collapsing `H`
+exactly when `a ≤ b` already holds or the quotient `b⁻¹ * a` of their units lies in `H`. -/
+theorem coarsenMapOfValueGroup_le_iff (H : ConvexSubgroup Γ₀ˣ) {a b : Γ₀} (ha : a ≠ 0)
+    (hb : b ≠ 0) :
+    coarsenMapOfValueGroup H a ≤ coarsenMapOfValueGroup H b ↔
+      a ≤ b ∨ (Units.mk0 b hb)⁻¹ * Units.mk0 a ha ∈ H := by
+  conv_lhs => rw [← Units.val_mk0 ha, ← Units.val_mk0 hb]
+  rw [coarsenMapOfValueGroup_apply_coe, coarsenMapOfValueGroup_apply_coe, WithZero.coe_le_coe,
+    QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, quotient_le_iff, inv_mul_le_one_iff,
+    mem_toSubgroup, ← Units.val_le_val, Units.val_mk0, Units.val_mk0]
 
 end
 
@@ -165,7 +179,7 @@ theorem cofinalValue_coarsenByUnits_restrict {A : Type*} [Ring A] {v : Valuation
     have hcofg : TauCeti.IsCofinalElement (⊤ : Subgroup (v.ValueGroup₀)ˣ) g :=
       isCofinalElement_def.mpr fun h _ ↦ by
         obtain ⟨n, hn⟩ := cofinalValue_iff.mp hcof (h : v.ValueGroup₀)
-          (zero_lt_iff.mpr h.ne_zero)
+          (pos_iff_ne_zero.mpr h.ne_zero)
         exact ⟨n, by rwa [← Units.val_lt_val, Units.val_pow_eq_pow_val, hgdef, Units.val_mk0]⟩
     have hquot := hcofg.quotientMk hH
     rw [cofinalValue_iff]

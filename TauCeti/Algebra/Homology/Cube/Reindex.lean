@@ -105,6 +105,7 @@ theorem refl (F : Finset ι ⥤ C) :
     ← eqToHom_map F (by simp : insert a S = (insert a S).map _), ← F.map_comp, ← F.map_comp]
   exact congrArg F.map (Subsingleton.elim _ _)
 
+omit [LinearOrder μ] in
 /-- The composites `α₂ (e₁(S)) ∘ α₁ S`, followed by the identification `e₂(e₁(S)) = (e₂ ∘ e₁)(S)`,
 are compatible with the edge maps when `α₁` and `α₂` are. -/
 theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} {e₁ : ι ≃ κ}
@@ -113,6 +114,7 @@ theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} 
     (h₁ : IsCubeReindexCompatible F G e₁ α₁) (h₂ : IsCubeReindexCompatible G H e₂ α₂) :
     IsCubeReindexCompatible F H (e₁.trans e₂) fun S ↦
       α₁ S ≪≫ α₂ (S.map e₁.toEmbedding) ≪≫ eqToIso (congrArg H.obj (by simp [map_map])) := by
+  classical
   intro S a ha
   simp only [Iso.trans_hom, eqToIso.hom]
   rw [← Category.assoc, h₁ S a ha, Category.assoc, ← Category.assoc (G.map _),
@@ -143,29 +145,29 @@ variable (F : Finset ι ⥤ C) {G : Finset κ ⥤ C} (e : ι ≃ κ)
 /-- The vertex `e(S)` of the same height as the vertex `S`. -/
 private abbrev mapVertex {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     {T : Finset κ // (#T : ℤ) = r} :=
-  ⟨S.1.map e.toEmbedding, by rw [card_map]; exact S.2⟩
+  ⟨S.val.map e.toEmbedding, by rw [card_map]; exact S.property⟩
 
 /-- The degree `r` part of `Functor.cubeComplexReindexIso`: the vertex `F(S)` is sent to the
 vertex `G(e(S))` by `α S`, with the inversion sign of `e` on `S`. -/
 private def cubeComplexReindexXHom (r : ℤ) : F.cubeComplex.X r ⟶ G.cubeComplex.X r :=
   F.cubeComplexDesc fun S ↦
-    (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).hom ≫ G.cubeComplexι (mapVertex e S)
+    (-1 : ℤ) ^ #(S.val.inversions e) • (α S.val).hom ≫ G.cubeComplexι (mapVertex e S)
 
 /-- The inverse of `cubeComplexReindexXHom`. -/
 private def cubeComplexReindexXInv (r : ℤ) : G.cubeComplex.X r ⟶ F.cubeComplex.X r :=
   F.cubeComplexLift fun S ↦
-    (-1 : ℤ) ^ #(S.1.inversions e) • (G.cubeComplexπ (mapVertex e S) ≫ (α S.1).inv)
+    (-1 : ℤ) ^ #(S.val.inversions e) • (G.cubeComplexπ (mapVertex e S) ≫ (α S.val).inv)
 
 @[reassoc]
 private lemma ι_cubeComplexReindexXHom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexι S ≫ F.cubeComplexReindexXHom e α r =
-      (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).hom ≫ G.cubeComplexι (mapVertex e S) :=
+      (-1 : ℤ) ^ #(S.val.inversions e) • (α S.val).hom ≫ G.cubeComplexι (mapVertex e S) :=
   F.ι_cubeComplexDesc _ S
 
 @[reassoc]
 private lemma ι_cubeComplexReindexXInv {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     G.cubeComplexι (mapVertex e S) ≫ F.cubeComplexReindexXInv e α r =
-      (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).inv ≫ F.cubeComplexι S := by
+      (-1 : ℤ) ^ #(S.val.inversions e) • (α S.val).inv ≫ F.cubeComplexι S := by
   refine F.cubeComplex_hom_ext' fun T ↦ ?_
   simp only [cubeComplexReindexXInv, Category.assoc, cubeComplexLift_π, Preadditive.comp_zsmul,
     Preadditive.zsmul_comp]
@@ -202,10 +204,10 @@ private lemma cubeComplexReindexXIso_hom_comp_d (hα : IsCubeReindexCompatible F
     Finset.smul_sum]
   -- Match the edge `S ⟶ S ∪ {a}` of `F` with the edge `e(S) ⟶ e(S) ∪ {e a}` of `G`.
   refine (Fintype.sum_equiv (e.subtypeEquiv fun a ↦ by simp) _ _ fun a ↦ ?_).symm
-  have ha : a.1 ∉ S.1 := mem_compl.1 a.2
+  have ha : a.val ∉ S.val := mem_compl.1 a.property
   simp only [Equiv.subtypeEquiv_apply, F.ι_cubeComplexReindexXHom, Preadditive.comp_zsmul,
     smul_smul]
-  rw [← Category.assoc (F.map _), hα S.1 a.1 ha, Category.assoc]
+  rw [← Category.assoc (F.map _), hα S.val a.val ha, Category.assoc]
   congr 1
   · rw [filter_map, card_map]
     simpa [mul_comm] using neg_one_pow_card_inversions_insert (R := ℤ) e.injective ha
@@ -229,17 +231,17 @@ inversion sign of `e` on `S`. -/
 @[reassoc (attr := simp)]
 lemma ι_cubeComplexReindexIso_hom_f {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexι S ≫ (F.cubeComplexReindexIso e α hα).hom.f r =
-      (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).hom ≫
-        G.cubeComplexι ⟨S.1.map e.toEmbedding, by rw [card_map]; exact S.2⟩ :=
+      (-1 : ℤ) ^ #(S.val.inversions e) • (α S.val).hom ≫
+        G.cubeComplexι ⟨S.val.map e.toEmbedding, by rw [card_map]; exact S.property⟩ :=
   F.ι_cubeComplexReindexXHom e α S
 
 /-- The inverse of the reindexing isomorphism sends the vertex `G(e(S))` to the vertex `F(S)` by
 the inverse of `α S`, with the inversion sign of `e` on `S`. -/
 @[reassoc (attr := simp)]
 lemma ι_cubeComplexReindexIso_inv_f {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
-    G.cubeComplexι ⟨S.1.map e.toEmbedding, by rw [card_map]; exact S.2⟩ ≫
+    G.cubeComplexι ⟨S.val.map e.toEmbedding, by rw [card_map]; exact S.property⟩ ≫
         (F.cubeComplexReindexIso e α hα).inv.f r =
-      (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).inv ≫ F.cubeComplexι S :=
+      (-1 : ℤ) ^ #(S.val.inversions e) • (α S.val).inv ≫ F.cubeComplexι S :=
   F.ι_cubeComplexReindexXInv e α S
 
 /-- Reindexing along the identity, with the identifications `F(S) = F(S.map id)`, is the
@@ -266,7 +268,7 @@ lemma cubeComplexReindexIso_trans {H : Finset μ ⥤ C} (e₁ : ι ≃ κ) (e₂
       F.cubeComplexReindexIso e₁ α₁ h₁ ≪≫ G.cubeComplexReindexIso e₂ α₂ h₂ := by
   ext r : 2
   refine F.cubeComplex_hom_ext fun S ↦ ?_
-  have hsign := neg_one_pow_card_inversions_comp (R := ℤ) e₁.toEmbedding e₂.injective S.1
+  have hsign := neg_one_pow_card_inversions_comp (R := ℤ) e₁.toEmbedding e₂.injective S.val
   simp only [Equiv.coe_toEmbedding] at hsign
   simp only [Iso.trans_hom, HomologicalComplex.comp_f, ι_cubeComplexReindexIso_hom_f_assoc,
     ι_cubeComplexReindexIso_hom_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,

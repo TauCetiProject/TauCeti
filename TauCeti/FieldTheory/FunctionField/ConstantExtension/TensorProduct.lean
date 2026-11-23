@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
 public import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.TensorProduct.FractionRing
 
 /-!
 # A constant field extension as a tensor product
@@ -32,6 +33,7 @@ integral curve with the constant field extension of its function field.
   `F ⊗[k] k' → F · k'` is onto for algebraic `k' / k`.
 * `TauCeti.productMap_bijective_of_constantCompositum_eq_top`: multiplication
   `F ⊗[k] k' → F · k'` is bijective when `F ⊗[k] k'` is a domain and `k' / k` is algebraic.
+* `TauCeti.finrank_eq_finrank_of_constantCompositum_eq_top`: then `[F · k' : F] = [k' : k]`.
 * `TauCeti.isFractionRing_tensorProduct_of_constantCompositum_eq_top`: then `F · k'` is the
   fraction field of `A ⊗[k] k'` for every `A` with fraction field `F`.
 
@@ -75,6 +77,20 @@ theorem productMap_bijective_of_constantCompositum_eq_top [Algebra.IsAlgebraic k
       (IsScalarTower.toAlgHom k k' F') : F ⊗[k] k' →+* F'),
     productMap_surjective_of_constantCompositum_eq_top h⟩
 
+/-- **The degree of a constant field extension that is a tensor product.** If `k' / k` is
+algebraic and `F ⊗[k] k'` is a domain, then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_eq_finrank_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
+    [IsDomain (F ⊗[k] k')] (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank F F' = Module.finrank k k' := by
+  -- multiplication `F ⊗[k] k' → F'` is `F`-linear for the left `F`-module structure
+  let φ := Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId F F')
+    (IsScalarTower.toAlgHom k k' F')
+  have hφ : Function.Bijective φ := by
+    convert productMap_bijective_of_constantCompositum_eq_top (k := k) (F' := F') h using 1
+    exact congrArg DFunLike.coe (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [φ] :
+      φ.restrictScalars k = _)
+  rw [← (LinearEquiv.ofBijective φ.toLinearMap hφ).finrank_eq, Module.finrank_baseChange]
+
 /-- **The constant field extension is the fraction field of the base change.** Let `F` be the
 fraction field of a `k`-algebra `A`, let `k' / k` be algebraic with `F ⊗[k] k'` a domain, and let
 `F' = F · k'`. Then `F'` is the fraction field of `A ⊗[k] k'`, through the map
@@ -91,30 +107,13 @@ theorem isFractionRing_tensorProduct_of_constantCompositum_eq_top {A : Type*} [C
     (IsScalarTower.toAlgHom k k' F')
   set ρ := Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k k')
   let _ := ((π.comp ρ : A ⊗[k] k' →ₐ[k] F') : A ⊗[k] k' →+* F').toAlgebra
-  have hπ := productMap_bijective_of_constantCompositum_eq_top (k := k) (F' := F') h
-  -- `A ⊗[k] k' → F ⊗[k] k'` is injective, since `k'` is flat over the field `k`
-  have hρ : Function.Injective ρ :=
-    Module.Flat.rTensor_preserves_injective_linearMap (IsScalarTower.toAlgHom k A F).toLinearMap
-      (IsFractionRing.injective A F)
-  have hψ : Function.Injective (algebraMap (A ⊗[k] k') F') := hπ.injective.comp hρ
-  -- `F ⊗[k] k'` is the localization of `A ⊗[k] k'` at the nonzero elements of `A`
-  let _ : Algebra (A ⊗[k] k') (F ⊗[k] k') := (ρ : A ⊗[k] k' →+* F ⊗[k] k').toAlgebra
-  have : IsScalarTower A (A ⊗[k] k') (F ⊗[k] k') := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ρ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] k') (nonZeroDivisors A))
-      (F ⊗[k] k') :=
-    IsLocalization.tensorProduct_tensorProduct k k' (nonZeroDivisors A) F
-      (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  -- `F'` is the fraction field of the field `F ⊗[k] k'`, through the bijection `π`
   let _ : Field (F ⊗[k] k') :=
     (Algebra.TensorProduct.isField_of_isAlgebraic k F k' (.inr inferInstance)).toField
   let _ : Algebra (F ⊗[k] k') F' := (π : F ⊗[k] k' →+* F').toAlgebra
-  have : IsScalarTower (A ⊗[k] k') (F ⊗[k] k') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsFractionRing (F ⊗[k] k') F' :=
-    .of_algEquiv (AlgEquiv.ofBijective (Algebra.ofId (F ⊗[k] k') F') hπ)
-  have : NoZeroDivisors (A ⊗[k] k') := hψ.noZeroDivisors _ (map_zero _) (map_mul _)
-  exact IsFractionRing.of_isLocalization_of_isFractionRing
-    (Algebra.algebraMapSubmonoid (A ⊗[k] k') (nonZeroDivisors A)) (F ⊗[k] k') F'
-    (IsLocalization.le_nonZeroDivisors_of_nontrivial _ (F ⊗[k] k'))
+  have : IsFractionRing (F ⊗[k] k') F' := .of_algEquiv
+    (AlgEquiv.ofBijective (Algebra.ofId (F ⊗[k] k') F')
+      (productMap_bijective_of_constantCompositum_eq_top (k := k) (F' := F') h))
+  exact isFractionRing_base_tensorProduct_of_isFractionRing_tensorProduct
+    (k := k) (F := F) (K := k') fun _ _ ↦ by simp [RingHom.algebraMap_toAlgebra, ρ]
 
 end TauCeti

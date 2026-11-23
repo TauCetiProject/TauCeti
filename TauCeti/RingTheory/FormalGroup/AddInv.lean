@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -40,13 +41,16 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 
 ## Main results
 
+* `FormalGroup.coeff_subst_add_X_pow_mul_X`: perturbing the first entry of `F(f(X), X)`
+  by `X ^ m * r` changes its coefficient in degree `m` by `r(0)`.
 * `FormalGroup.hasSubst_subst_pair`: `F(x, y)` is substitutable for substitutable `x, y`.
 * `FormalGroup.subst_addInvX_X_eq_zero`: `F(i(X), X) = 0`.
 * `FormalGroup.val_neg_tautologicalPoint`: `-X = i(X)` in `F.Point Unit`.
 * `FormalGroup.subst_X_addInvX_eq_zero`: `F(X, i(X)) = 0`.
 * `FormalGroup.eq_addInvX_iff_subst_left_eq_zero`, `FormalGroup.eq_addInvX_iff_subst_right_eq_zero`:
   uniqueness of the inverse on either side.
-* `FormalGroup.coeff_one_addInvX`: `i(X) = -X + ⋯`.
+* `FormalGroup.coeff_one_addInvX`, `FormalGroup.order_addInvX`: `i(X) = -X + ⋯`, of order `1` over
+  a nontrivial ring.
 * `FormalGroup.subst_addInvX_addInvX`: `i(i(X)) = X`.
 * `FormalGroup.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
 * `FormalGroup.eq_subst_addInvX_iff_subst_left_eq_zero`,
@@ -86,7 +90,7 @@ theorem val_tautologicalPoint : F.tautologicalPoint.val = PowerSeries.X := (rfl)
 
 /-- Perturbing `f` by `X ^ m * r` in `F(f(X), X)` changes the coefficient of degree `m` by `r(0)`,
 and no coefficient of lower degree. -/
-private theorem coeff_subst_add_X_pow_mul_X {f : PowerSeries R}
+theorem coeff_subst_add_X_pow_mul_X {f : PowerSeries R}
     (hf : PowerSeries.constantCoeff f = 0) (r : PowerSeries R) {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≤ m) :
     PowerSeries.coeff n (F.toPowerSeries.subst ![f + PowerSeries.X ^ m * r, PowerSeries.X]) =
@@ -151,6 +155,11 @@ theorem constantCoeff_addInvX : PowerSeries.constantCoeff F.addInvX = 0 := by
 @[simp]
 theorem coeff_one_addInvX : PowerSeries.coeff 1 F.addInvX = -1 := by
   simp [addInvX, addInvApprox, F.zero_add PowerSeries.HasSubst.X']
+
+/-- Over a nontrivial ring, the formal inverse has order `1`. -/
+@[simp]
+theorem order_addInvX [Nontrivial R] : F.addInvX.order = 1 :=
+  (PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero F.constantCoeff_addInvX).mpr (by simp)
 
 /-- The formal inverse can be substituted into power series. -/
 theorem hasSubst_addInvX : PowerSeries.HasSubst F.addInvX :=

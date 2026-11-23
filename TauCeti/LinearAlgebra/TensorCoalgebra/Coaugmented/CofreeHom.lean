@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 
@@ -104,10 +104,9 @@ private theorem apply_tmul_subword
     (F : Comodule.Hom R (TensorWords R A) (M ⊗[R] TensorWords R A) (N ⊗[R] TensorWords R A))
     (x : M) {m : ℕ} (a : Fin m → A) (b l : ℕ) :
     F (x ⊗ₜ subword R a b l) = ∑ c ∈ Finset.range (l + 1),
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ F.toLinearMap)
+      (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ F.toLinearMap)
           (x ⊗ₜ subword R a b c) ⊗ₜ[R] subword R a (b + c) (l - c) := by
-  conv_lhs => rw [← Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp F]
+  conv_lhs => rw [← Comodule.Hom.cofreeLift_cofreeCounit_comp F]
   rw [Comodule.Hom.cofreeLift_apply, Comodule.cofree_coact_tmul, comul_eq_deconcatenation,
     deconcatenation_subword, TensorProduct.tmul_sum, map_sum, map_sum]
   simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul]
@@ -120,8 +119,7 @@ private theorem sub_mem_cofreeFiltration
     (hz : z ∈ cofreeFiltration R A M (n + 1)) : G z - z ∈ cofreeFiltration R A M n := by
   have key (x : M) {k : ℕ} (hk : k ≤ n) (a : Fin k → A) :
       G (x ⊗ₜ subword R a 0 k) - x ⊗ₜ subword R a 0 k ∈ cofreeFiltration R A M n := by
-    have hx : ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ G.toLinearMap)
+    have hx : (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ G.toLinearMap)
           (x ⊗ₜ 1) = x := by
       simp [hG]
     rw [apply_tmul_subword, Finset.sum_range_succ', subword_length_zero R a (Nat.zero_le k), hx,

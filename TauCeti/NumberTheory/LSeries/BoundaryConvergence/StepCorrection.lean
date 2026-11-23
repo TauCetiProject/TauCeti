@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-public import TauCeti.Analysis.Complex.LaplaceTransform
+public import TauCeti.Analysis.LaplaceTransform.Truncated
+import Mathlib.Analysis.Complex.LocallyUniformLimit
 
 /-!
 # The step correction of a bounded Dirichlet series
@@ -94,7 +95,7 @@ theorem differentiable_stepCorrectionTerm (a : ℕ → ℂ) (n : ℕ) :
     have hsubst := intervalIntegral_ofReal_cpow_neg_sub_one hn' (v := n + 1) (by positivity)
     simp_rw [hsubst]
     simpa using differentiable_intervalIntegral_mul_cexp_neg_mul (f := fun _ ↦ (1 : ℂ))
-      (a := Real.log n) (b := Real.log (n + 1)) intervalIntegrable_const
+      (a := Real.log n) (b := Real.log (n + 1))
   have hpow : Differentiable ℂ fun z : ℂ ↦ (n : ℂ) ^ (-z - 1) :=
     (differentiable_id.neg.sub_const 1).const_cpow (Or.inl (Nat.cast_ne_zero.mpr hn))
   have h : stepCorrectionTerm a n =
@@ -139,7 +140,6 @@ theorem norm_stepCorrectionTerm_le (a : ℕ → ℂ) (n : ℕ) (hz : -2 ≤ z.re
     intro x hx
     rw [uIoc_of_le (by linarith)] at hx
     have hx' : x ∈ Icc (n : ℝ) (n + 1) := Ioc_subset_Icc_self hx
-    have hC : 0 ≤ C := by positivity
     calc ‖(x : ℂ) ^ (-z - 1) - ((n : ℝ) : ℂ) ^ (-z - 1)‖ ≤ C * ‖x - n‖ :=
           Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
             (fun y hy ↦ (hderiv y hy).hasDerivWithinAt) hderiv_le (convex_Icc _ _)

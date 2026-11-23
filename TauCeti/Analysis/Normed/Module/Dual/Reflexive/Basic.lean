@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Normed.Module.Dual.Adjoint
+import TauCeti.Analysis.Normed.Module.Annihilator
 
 /-!
 # Reflexivity and the continuous dual
 
 A normed space is reflexive when its canonical map into the continuous bidual is
-surjective. This file proves that reflexivity passes to the continuous dual, that
-the converse holds for Banach spaces, and that bounded linear equivalences preserve
-reflexivity. Reflexivity is expressed directly as surjectivity of
+surjective. This file proves that finite-dimensional spaces are reflexive, that reflexivity
+passes to the continuous dual, that the converse holds for Banach spaces, and that bounded
+linear equivalences preserve reflexivity. Reflexivity is expressed directly as surjectivity of
 `NormedSpace.inclusionInDoubleDual`.
 
 The forward implication needs no completeness. Reflexivity itself implies completeness
@@ -24,6 +25,11 @@ a proper dense subspace of a Hilbert space can have a reflexive continuous dual.
 The converse uses `ContinuousLinearMap.surjective_of_norm_le_norm_comp`, the
 surjectivity criterion for an operator whose adjoint is bounded below. The bidual
 isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`.
+
+Finally, `LinearIsometry.surjective_of_surjective_inclusionInDoubleDual` is the standard
+surjectivity criterion for representing the dual of a reflexive space: a linear isometry from a
+Banach space into the continuous dual of a reflexive space is onto when its functionals separate
+points.
 
 ## References
 
@@ -53,6 +59,24 @@ theorem surjective_inclusionInDoubleDual_strongDual
   rfl
 
 end Dual
+
+section FiniteDimensional
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- A finite-dimensional normed space is reflexive: every functional on the continuous dual is a
+functional on the algebraic dual, which is evaluation at a point (`Module.bijective_dual_eval`). -/
+theorem surjective_inclusionInDoubleDual_of_finiteDimensional :
+    Surjective (inclusionInDoubleDual 𝕜 E) := by
+  intro χ
+  let e : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  obtain ⟨x, hx⟩ := (Module.bijective_dual_eval 𝕜 E).2 (χ.toLinearMap ∘ₗ e.toLinearMap)
+  refine ⟨x, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  have := LinearMap.congr_fun hx (e.symm f)
+  rwa [LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] at this
+
+end FiniteDimensional
 
 section Complete
 
@@ -121,3 +145,30 @@ theorem surjective_inclusionInDoubleDual_iff (e : E ≃L[𝕜] F) :
     Surjective.of_comp_iff _ e.surjective]
 
 end ContinuousLinearEquiv
+
+namespace LinearIsometry
+
+variable {𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- A linear isometry `T` from a Banach space into the continuous dual of a reflexive space `Y` is
+onto when the functionals `T x` separate the points of `Y`: a functional on `Y⋆` annihilating the
+closed range of `T` is evaluation at some `y ∈ Y`, which must vanish. -/
+theorem surjective_of_surjective_inclusionInDoubleDual (T : X →ₗᵢ[𝕜] StrongDual 𝕜 Y)
+    (hY : Surjective (inclusionInDoubleDual 𝕜 Y)) (h : ∀ y, (∀ x, T x y = 0) → y = 0) :
+    Surjective T := by
+  let S := T.toLinearMap.range
+  have hS : IsClosed (S : Set (StrongDual 𝕜 Y)) := T.isometry.isClosedEmbedding.isClosed_range
+  intro Λ
+  suffices Λ ∈ S.topologicalClosure by
+    rw [hS.submodule_topologicalClosure_eq] at this
+    exact this
+  apply (S.mem_topologicalClosure_iff_forall_dual_eq_zero Λ).2
+  intro Ψ hΨ
+  obtain ⟨y, rfl⟩ := hY Ψ
+  have hy : y = 0 := h y fun x ↦ by
+    rw [← dual_def]
+    exact hΨ (T x) (LinearMap.mem_range_self T.toLinearMap x)
+  simp [hy]
+
+end LinearIsometry
