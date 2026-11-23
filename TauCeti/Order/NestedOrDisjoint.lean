@@ -24,7 +24,8 @@ disjoint. For finite sets this is the classical notion of a laminar family.
 
 ## References
 
-* B. Korte and J. Vygen, *Combinatorial Optimization: Theory and Algorithms*, Section 8.6.
+* B. Korte and J. Vygen, *Combinatorial Optimization: Theory and Algorithms*, Section 2.2, for
+  laminar families of finite sets.
 -/
 
 public section
