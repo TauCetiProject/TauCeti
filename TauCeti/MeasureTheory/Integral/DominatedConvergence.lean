@@ -51,8 +51,10 @@ on the whole space.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
 * `TauCeti.integrable_tsum`, `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable
-  series of a.e.-strongly measurable functions with finite total `L¹` `eNorm` (or of integrable
-  functions into a complete normed group with summable `L¹` norms) has integrable pointwise `tsum`.
+  series of a.e.-strongly measurable functions into a completely pseudometrizable
+  `ESeminormedAddCommMonoid` with continuous addition and finite total `L¹` `eNorm` (or of
+  integrable functions into a complete normed group with summable `L¹` norms) has integrable
+  pointwise `tsum`.
 -/
 
 public section
@@ -298,9 +300,9 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
 
 /-- **Integrability of a series with finite total `L¹` `eNorm`.** If a countable family `F` of
-a.e.-strongly measurable functions into a complete pseudometrizable `ESeminormedAddCommMonoid`
-has `∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ ≠ ⊤`, then its pointwise `tsum` is integrable. This complements
-`MeasureTheory.integral_tsum`. -/
+a.e.-strongly measurable functions into a completely pseudometrizable `ESeminormedAddCommMonoid`
+with continuous addition has `∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ ≠ ⊤`, then its pointwise `tsum` is
+integrable. This complements `MeasureTheory.integral_tsum`. -/
 theorem integrable_tsum {ι E : Type*} [Countable ι] [TopologicalSpace E]
     [ESeminormedAddCommMonoid E] [ContinuousAdd E]
     [TopologicalSpace.IsCompletelyPseudoMetrizableSpace E] {F : ι → α → E}

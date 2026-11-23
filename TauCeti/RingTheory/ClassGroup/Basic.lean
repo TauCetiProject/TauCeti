@@ -37,8 +37,8 @@ trivial class, and the class `[v]` of a height one prime.
   quotients and a characteristic-zero fraction field `K`, every invertible fractional ideal `I` can
   be scaled by a nonzero natural number `m` into a nonzero integral ideal `J` with `J = (m) * I`.
 * `ClassGroup.isPrincipal_mul_iff_of_mk0_eq`: if a nonzero integral ideal `J` and an invertible
-  fractional ideal `I` share the same class in `ClassGroup R`, then `𝔟 * J` is principal if and
-  only if `𝔟 * I` is principal.
+  fractional ideal `I` share the same class in `ClassGroup R`, then for any nonzero integral ideal
+  `𝔟`, `𝔟 * J` is principal if and only if `𝔟 * I` is principal as an `R`-submodule of `K`.
 * `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
   ideal ring exactly when its class group is trivial, with no finiteness of the class group
   assumed.

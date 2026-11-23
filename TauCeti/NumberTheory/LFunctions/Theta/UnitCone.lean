@@ -37,8 +37,8 @@ multiplicity `w`:
   with `(2^r₂ / w) (V_L²)^(s/2)` times the integral of that weighted integrand over `unitCone D`.
 * `mellinKernelFEPair_Λ_eq_integral_unitCone`: for a unit fundamental domain `D`, equates
   `(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with `(2^r₂ / w) (V_L²)^s` times the
-  norm-weighted cone integral of `latticeTheta L - 1`, provided that cone integral is absolutely
-  integrable.
+  integral over `unitCone D` of `y ↦ (archNorm y : ℂ) ^ s * (latticeTheta L y - 1)` with respect to
+  `archHaar K`, provided that integrand is absolutely integrable on `unitCone D`.
 
 The unfolding of one unit orbit is recorded separately: for a point `x` of nonzero norm, the
 cone integrals of the Gaussians of the unit multiples `u x` against `N(y)^(s/2)` sum to `w` times
@@ -290,8 +290,9 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
 
 open scoped Classical in
 /-- For a unit fundamental domain `D`, on `Re s > 1 / 2` the completed function
-`(mellinKernelFEPair hD L).Λ s` equals `(2^r₂ / w) (V_L²)^s` times the norm-weighted cone integral
-of `θ_L - 1`, provided that cone integral is absolutely integrable. -/
+`(mellinKernelFEPair hD L).Λ s` equals `(2^r₂ / w) (V_L²)^s` times the integral over
+`unitCone D` of `y ↦ (archNorm y : ℂ) ^ s * (latticeTheta L y - 1)` with respect to `archHaar K`,
+provided that integrand is absolutely integrable on `unitCone D`. -/
 theorem mellinKernelFEPair_Λ_eq_integral_unitCone {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] {s : ℂ} (hs : 1 / 2 < s.re)
