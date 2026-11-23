@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Frame.Operators
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.InnerProductSpace.Projection.Family
 
 /-!
 # Finite frames: analysis, synthesis, frame and Gram operators
@@ -267,14 +268,47 @@ end Overlap
 
 /-! ### Parseval frames -/
 
+/-- A finite Parseval frame of unit vectors is an orthonormal basis with the same vectors. -/
+theorem exists_orthonormalBasis_of_frameOperator_eq_id {v : ι → E} (hv : ∀ i, ‖v i‖ = 1)
+    (hframe : frameOperator 𝕜 v = LinearMap.id) : ∃ b : OrthonormalBasis ι 𝕜 E, ⇑b = v := by
+  classical
+  let p : ι → E →ₗ[𝕜] E := fun i ↦ (InnerProductSpace.rankOne 𝕜 (v i) (v i)).toLinearMap
+  have hp : ∑ i, p i = 1 := by
+    ext x
+    simpa [p, LinearMap.sum_apply] using DFunLike.congr_fun hframe x
+  have horth := CompleteOrthogonalIdempotents.of_isSymmetricProjection
+    (P := p) (fun i ↦ InnerProductSpace.isSymmetricProjection_rankOne_self (hv i)) hp
+  have hon : Orthonormal 𝕜 v := by
+    refine ⟨hv, fun i j hij ↦ ?_⟩
+    have hfix : p j (v j) = v j := by
+      simp only [p, ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
+        inner_self_eq_one_of_norm_eq_one (hv j), one_smul]
+    have h := DFunLike.congr_fun (horth.ortho hij) (v j)
+    rw [mul_apply_eq_comp, hfix, LinearMap.zero_apply] at h
+    have hzero : ⟪v i, v j⟫_𝕜 • v i = 0 := by
+      simpa only [p, ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply] using h
+    simpa only [inner_smul_right, inner_zero_right, inner_self_eq_one_of_norm_eq_one (hv i),
+      mul_one] using congrArg (fun x ↦ ⟪v i, x⟫_𝕜) hzero
+  have hspan := LinearMap.range_comp_le_range (analysisMap 𝕜 v) (synthesisMap 𝕜 v)
+  rw [← frameOperator_def, hframe, LinearMap.range_id, range_synthesisMap] at hspan
+  exact ⟨OrthonormalBasis.mk hon hspan, OrthonormalBasis.coe_mk _ _⟩
+
 /-- A finite family of operators consists of the line projections of an orthonormal basis
 exactly when the operators are star projections of rank one and sum to the identity. -/
 theorem exists_orthonormalBasis_eq_rankOne_iff_isStarProjection [CompleteSpace E]
     {p : ι → E →L[𝕜] E} :
     (∃ b : OrthonormalBasis ι 𝕜 E, ∀ i, p i = InnerProductSpace.rankOne 𝕜 (b i) (b i)) ↔
       (∀ i, IsStarProjection (p i) ∧ finrank 𝕜 (p i).range = 1) ∧ ∑ i, p i = 1 := by
-  rw [exists_orthonormalBasis_eq_rankOne_iff]
   simp only [ContinuousLinearMap.isStarProjection_finrank_range_eq_one_iff]
+  refine ⟨exists_orthonormalBasis_eq_rankOne_iff.mp, ?_⟩
+  rintro ⟨hunit, hsum⟩
+  choose v hv hp using hunit
+  have hframe : frameOperator 𝕜 v = LinearMap.id := by
+    ext x
+    simpa only [frameOperator_apply, LinearMap.id_apply, sum_apply, hp,
+      InnerProductSpace.rankOne_apply, one_apply_eq_self] using DFunLike.congr_fun hsum x
+  obtain ⟨b, hb⟩ := exists_orthonormalBasis_of_frameOperator_eq_id hv hframe
+  exact ⟨b, fun i ↦ by simpa only [congrFun hb i] using hp i⟩
 
 /-- A family whose frame operator is the identity, a *Parseval frame*, has an isometric analysis
 map: `‖(⟪vᵢ, x⟫)ᵢ‖ = ‖x‖`. -/
