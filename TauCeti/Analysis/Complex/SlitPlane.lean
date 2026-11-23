@@ -74,7 +74,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
   `TauCeti.forall_natCast_add_mem_slitPlane_iff`,
   `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
-* `TauCeti.ne_neg_natCast_of_mem_slitPlane`
+* `TauCeti.ne_neg_natCast_of_mem_slitPlane`, `TauCeti.natCast_add_ne_zero_of_mem_slitPlane`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
   `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
@@ -261,6 +261,11 @@ theorem ne_neg_natCast_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) (n : �
   refine ne_of_mem_of_not_mem hz ?_
   rw [← ofReal_natCast, neg_ofReal_mem_slitPlane]
   exact (Nat.cast_nonneg n).not_gt
+
+/-- For `c ∈ slitPlane` and `n : ℕ`, `(n : ℂ) + c ≠ 0`. -/
+theorem natCast_add_ne_zero_of_mem_slitPlane {c : ℂ} (hc : c ∈ slitPlane) (n : ℕ) :
+    (n : ℂ) + c ≠ 0 :=
+  slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr hc n)
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/

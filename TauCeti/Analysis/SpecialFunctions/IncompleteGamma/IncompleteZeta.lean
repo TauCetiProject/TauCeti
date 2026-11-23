@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 
 /-!
 # The incomplete Riemann zeta function

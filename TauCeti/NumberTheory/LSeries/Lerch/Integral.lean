@@ -15,7 +15,6 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 
 /-!
 # Principal integral representation of the Lerch transcendent
@@ -323,9 +322,8 @@ theorem mul_deriv_lerchIntegral_middle_add_mul {s z c : ℂ} (hs : 1 < s.re)
       exact lerchIntegral_eq_lerchSeries hs0 (mem_ball_zero_iff.mp hu) hc
     rw [hloc.deriv_eq, lerchIntegral_eq_lerchSeries hs0 hw1 hc,
       lerchIntegral_eq_lerchSeries hs1 hw1 hc]
-    exact mul_deriv_lerchSeries_left_add_mul hw1 s fun n =>
-      Complex.slitPlane_ne_zero
-        (Complex.mem_slitPlane_iff.mpr (Or.inl (Complex.natCast_add_re_pos n hc)))
+    exact mul_deriv_lerchSeries_left_add_mul hw1 s
+      (natCast_add_ne_zero_of_mem_slitPlane (Complex.mem_slitPlane_iff.mpr (Or.inl hc)))
   exact han1.eqOn_of_preconnected_of_eventuallyEq han2
     Complex.isPreconnected_setOf_one_sub_mem_slitPlane (by simp [Ω]) hev hz
 

@@ -446,7 +446,7 @@ theorem hasDerivAt_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c :
     isCompact_singleton.prod (isCompact_singleton.prod (isCompact_closedBall c δ))
   obtain ⟨u, hu, hle⟩ := hK.exists_summable_norm_lerchSeries_term_le
     (fun p hp => by rw [hp.2.1]; exact hz)
-    (fun p hp n => slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr (hcb hp.2.2) n))
+    (fun p hp n => natCast_add_ne_zero_of_mem_slitPlane (hcb hp.2.2) n)
   let F : ℕ → ℂ → ℂ := fun n w => z ^ n * Complex.exp (-s * Complex.log (n + w))
   have hFo : ∀ n, DifferentiableOn ℂ (F n) (ball c δ) := fun n w hw => by
     simpa [F] using ((differentiableAt_log_pow_lerchSeries_term_right n 0 s
@@ -488,7 +488,7 @@ theorem analyticOnNhd_lerchSeries :
     (isOpen_lerchSeriesDomain.mem_nhds hp₀)
   obtain ⟨u, hu, hle⟩ := (isCompact_closedBall p₀ δ).exists_summable_norm_lerchSeries_term_le
     (fun q hq => (hcb hq).1)
-    (fun q hq n => slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr (hcb hq).2 n))
+    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (hcb hq).2 n)
   have hunif : TendstoUniformlyOn
       (fun N (p : ℂ × ℂ × ℂ) =>
         ∑ n ∈ Finset.range N, p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2)))
@@ -538,6 +538,14 @@ theorem differentiableOn_lerchZeta :
       {p | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} :=
   analyticOnNhd_lerchZeta.differentiableOn
 
+private theorem iteratedDeriv_middle_lerchSeries_term (n ds : ℕ) (z s₀ c : ℂ) :
+    iteratedDeriv ds (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) s₀ =
+      z ^ n * ((-Complex.log (n + c)) ^ ds * Complex.exp (-s₀ * Complex.log (n + c))) := by
+  have hfun : (fun s => Complex.exp (-s * Complex.log (n + c))) =
+      fun s => Complex.exp (-Complex.log (n + c) * s) := funext fun s => by ring_nf
+  rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) s₀]
+  simp [mul_comm s₀]
+
 private theorem iteratedDeriv_lerchSeries_term_eq (n dz ds dc : ℕ) (p : ℂ × ℂ × ℂ) :
     iteratedDeriv dc (fun c =>
       iteratedDeriv dz (fun z =>
@@ -546,19 +554,10 @@ private theorem iteratedDeriv_lerchSeries_term_eq (n dz ds dc : ℕ) (p : ℂ ×
       iteratedDeriv dz (fun z : ℂ =>
         z ^ n * iteratedDeriv dc (fun c : ℂ => (-Complex.log (n + c)) ^ ds *
           Complex.exp (-p.1 * Complex.log (n + c))) p.2.2) p.2.1 := by
-  let g : ℂ → ℂ := fun c => (-Complex.log (n + c)) ^ ds * Complex.exp (-p.1 * Complex.log (n + c))
-  have hs_eval (z c : ℂ) :
-      iteratedDeriv ds (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) p.1 =
-        z ^ n * g c := by
-    have hfun : (fun s => Complex.exp (-s * Complex.log (n + c))) =
-        fun s => Complex.exp (-Complex.log (n + c) * s) := funext fun s => by ring_nf
-    rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) p.1]
-    simp [g, mul_comm p.1]
   have hz_pull (a : ℂ) : iteratedDeriv dz (fun z : ℂ => z ^ n * a) p.2.1 =
       iteratedDeriv dz (fun z : ℂ => z ^ n) p.2.1 * a := by
     rw [iteratedDeriv_mul_const_field]
-  simp_rw [hs_eval, hz_pull (g _), iteratedDeriv_const_mul_field]
-  exact (hz_pull (iteratedDeriv dc g p.2.2)).symm
+  simp_rw [iteratedDeriv_middle_lerchSeries_term, hz_pull, iteratedDeriv_const_mul_field]
 
 private theorem norm_mul_iteratedDeriv_right_lerchSeries_term_le (n ds dc : ℕ) {s z' c₀ : ℂ}
     {R B : ℝ} (hR : 0 < R) (hcs : ∀ c' ∈ closedBall c₀ R, c' ∈ Complex.slitPlane)
@@ -598,7 +597,7 @@ theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
     exact ⟨hδ.le, (mem_closedBall.mp hz').trans hRδ, (mem_closedBall.mp hc').trans hRδ⟩
   obtain ⟨v, hv, hv_le⟩ := exists_summable_norm_log_pow_lerchSeries_term_le hK.cthickening
     (fun q hq => (hK'U hq).1)
-    (fun q hq n => slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr (hK'U hq).2 n)) ds
+    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (hK'U hq).2 n) ds
   refine ⟨fun n => (dz.factorial / R ^ dz) * (dc.factorial / R ^ dc) * v n,
     hv.mul_left _, fun n p hp => ?_⟩
   rw [iteratedDeriv_lerchSeries_term_eq]
@@ -642,17 +641,11 @@ private theorem iteratedDeriv_lerchSeries_middle_left_eq_tsum {s₀ z₀ : ℂ} 
   obtain ⟨u, hu, hle⟩ := exists_summable_norm_log_pow_lerchSeries_term_le_fixed_right
     (isCompact_singleton.prod (isCompact_closedBall (0 : ℂ) r))
     (fun q hq => (mem_closedBall_zero_iff.mp hq.2).trans_lt hr1) c ds
-  have hds_eval (n : ℕ) (z' : ℂ) :
-      iteratedDeriv ds (fun s => z' ^ n * Complex.exp (-s * Complex.log (n + c))) s₀ =
-        z' ^ n * ((-Complex.log (n + c)) ^ ds * Complex.exp (-s₀ * Complex.log (n + c))) := by
-    have hfun : (fun s => Complex.exp (-s * Complex.log (n + c))) =
-        fun s => Complex.exp (-Complex.log (n + c) * s) := funext fun s => by ring_nf
-    rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) s₀]
-    simp [mul_comm s₀]
   refine (Complex.hasSum_iteratedDeriv_of_summable_norm hu (fun n => ?_) isOpen_ball
     (fun n z' hz' => ?_) dz (mem_ball_zero_iff.mpr hzr)).tsum_eq.symm
-  · simp_rw [hds_eval]; fun_prop
-  · rw [hds_eval]; exact hle n (s₀, z') ⟨rfl, ball_subset_closedBall hz'⟩
+  · simp_rw [iteratedDeriv_middle_lerchSeries_term]; fun_prop
+  · rw [iteratedDeriv_middle_lerchSeries_term]
+    exact hle n (s₀, z') ⟨rfl, ball_subset_closedBall hz'⟩
 
 /-- At every `p` with `‖p.2.1‖ < 1` and `p.2.2 ∈ Complex.slitPlane`, the mixed `(dz, ds, dc)`
 iterated derivative of `lerchSeries` equals the term-by-term sum of the mixed derivatives. -/
@@ -675,10 +668,7 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
       (fun q hq => ⟨by rw [hq.2.1]; exact hz, hcb hq.2.2⟩) dz ds 0
   refine (Complex.hasSum_iteratedDeriv_of_summable_norm hu (fun n c' hc' => ?_) isOpen_ball
     (fun n c' hc' => ?_) dc (mem_ball_self hδ)).tsum_eq.symm
-  · have hfun (c'' : ℂ) : (fun s => Complex.exp (-s * Complex.log (n + c''))) =
-        fun s => Complex.exp (-Complex.log (n + c'') * s) := funext fun s => by ring_nf
-    simp_rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) p.1,
-      iteratedDeriv_mul_const_field, mul_comm (-Complex.log _) p.1, mul_neg, ← neg_mul]
+  · simp_rw [iteratedDeriv_middle_lerchSeries_term, iteratedDeriv_mul_const_field]
     exact ((differentiableAt_log_pow_lerchSeries_term_right n ds p.1
       (hcb (ball_subset_closedBall hc'))).const_mul _).differentiableWithinAt
   · simpa using hle n (p.1, p.2.1, c') ⟨rfl, rfl, ball_subset_closedBall hc'⟩

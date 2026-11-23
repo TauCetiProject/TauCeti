@@ -66,8 +66,8 @@ theorem mul_deriv_deriv_lerchSeries_right_add_mul {z : ℂ} (hz : ‖z‖ < 1) (
   rw [hloc.deriv_eq,
     deriv_const_mul _ (hasDerivAt_lerchSeries_left hz (s + 1) c).differentiableAt,
     deriv_lerchSeries_right hz s hc]
-  have hlow := mul_deriv_lerchSeries_left_add_mul hz (s + 1) fun n =>
-    Complex.slitPlane_ne_zero (ofReal_add_mem_slitPlane hc (Nat.cast_nonneg n))
+  have hlow := mul_deriv_lerchSeries_left_add_mul hz (s + 1)
+    (natCast_add_ne_zero_of_mem_slitPlane hc)
   rw [add_sub_cancel_right] at hlow
   linear_combination -s * hlow
 
