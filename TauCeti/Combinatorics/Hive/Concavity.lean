@@ -34,8 +34,7 @@ affine-envelope formula. Across every shared interior unit edge between `down s`
 ## Main results
 
 * `TauCeti.Hive.triangleAffine_adjacentUp_sub_down`, `TauCeti.Hive.concaveOn_adjacentCell_iff`.
-* `TauCeti.Hive.interpolate_eq_interpolation`,
-  `TauCeti.Hive.concaveOn_barycentricSimplex_interpolate_iff`,
+* `TauCeti.Hive.concaveOn_barycentricSimplex_interpolate_iff`,
   `TauCeti.Hive.concaveOn_planarSimplex_planarInterpolate_iff`.
 * `TauCeti.Hive.IsRhombusConcave.interpolate_eq_inf'_triangleAffine`.
 
@@ -64,8 +63,8 @@ private theorem rhombusSlack_nonneg_of_concaveOn {f : Vertex n → ℝ} {S : Set
     have hk := congrFun hr.midpoint_barycentric k
     simp [AffineMap.lineMap_apply_module] at hk ⊢; linarith
   have h := hconc.2 hb hd (by norm_num) (by norm_num) (by norm_num : (1 / 2 : ℝ) + 1 / 2 = 1)
-  rw [hmid, interpolate_lineMap_of_isUnitEdge f hr.isUnitEdge_short ⟨by norm_num, by norm_num⟩,
-    interpolate_barycentric, interpolate_barycentric] at h
+  rw [hmid, interpolate_lineMap_of_isUnitEdge f ((isUnitEdge_def _ _).mpr hr.short)
+    ⟨by norm_num, by norm_num⟩, interpolate_barycentric, interpolate_barycentric] at h
   simp only [smul_eq_mul, rhombusSlack_def] at h ⊢; linarith
 /-- Exact bending formula across the shared edge of `down s` and `adjacentUp s i` opposite
 `(down s).vertex i`: on the sum-`(m + 2)` hyperplane, the difference of their affine pieces equals
@@ -85,8 +84,16 @@ theorem triangleAffine_adjacentUp_sub_down (f : Vertex (m + 2) → ℝ) (s : Ver
         hj | hj | hj
       · rw [hj]; fin_cases i <;> simp [B, c, triangleAffine_apply, Fin.sum_univ_three,
           vertex_adjacentUp, rhombusSlack_def] <;> ring
-      · rw [hj, vertex_adjacentUp_add_one]; simp [B, show i ≠ i + 2 by fin_cases i <;> decide]
-      · rw [hj, vertex_adjacentUp_add_two]; simp [B, show i ≠ i + 1 by fin_cases i <;> decide]) hx
+      · rw [hj, vertex_adjacentUp_add_one]
+        simp only [B, ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.add_apply,
+          ContinuousAffineMap.smul_apply, smul_eq_mul, triangleAffine_vertex,
+          UnitTriangle.weight_vertex, show i ≠ i + 2 by fin_cases i <;> decide, ↓reduceIte,
+          mul_zero, add_zero]
+      · rw [hj, vertex_adjacentUp_add_two]
+        simp only [B, ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.add_apply,
+          ContinuousAffineMap.smul_apply, smul_eq_mul, triangleAffine_vertex,
+          UnitTriangle.weight_vertex, show i ≠ i + 1 by fin_cases i <;> decide, ↓reduceIte,
+          mul_zero, add_zero]) hx
   simp only [B, ContinuousAffineMap.add_apply, ContinuousAffineMap.smul_apply, smul_eq_mul,
     UnitTriangle.weight_down_apply] at hB
   linarith
@@ -126,81 +133,12 @@ theorem concaveOn_adjacentCell_iff (f : Vertex (m + 2) → ℝ) (s : Vertex m) (
 /-! ### Comparison with `(y, z)`-chart interpolation and global concavity criterion -/
 
 private def yzProj : (Fin 3 → ℝ) →ᵃ[ℝ] ℝ × ℝ :=
-  { toFun := fun x => (x 1, x 2)
-    linear :=
-      { toFun := fun x => (x 1, x 2)
-        map_add' := fun _ _ => rfl
-        map_smul' := fun _ _ => rfl }
-    map_vadd' := fun _ _ => rfl }
+  (AffineMap.proj 1).prod (AffineMap.proj 2)
 
 private noncomputable def yzLift (n : ℕ) : ℝ × ℝ →ᵃ[ℝ] (Fin 3 → ℝ) :=
-  { toFun := fun q => ![(n : ℝ) - q.1 - q.2, q.1, q.2]
-    linear :=
-      { toFun := fun q => ![-q.1 - q.2, q.1, q.2]
-        map_add' := fun _ _ => by ext i; fin_cases i <;> simp; ring
-        map_smul' := fun _ _ => by ext i; fin_cases i <;> simp; ring }
-    map_vadd' := fun _ _ => by ext i; fin_cases i <;> simp; ring }
-
-/-- On `barycentricSimplex n`, the simplicial interpolation `interpolate f` agrees with the
-`(y, z)`-chart interpolation `interpolation f` under the coordinate projection `x ↦ (x 1, x 2)`. -/
-theorem interpolate_eq_interpolation (f : Vertex n → ℝ) {x : Fin 3 → ℝ}
-    (hx : x ∈ barycentricSimplex n) :
-    interpolate f x = interpolation f (x 1, x 2) := by
-  symm
-  refine eqOn_interpolate_of_affineOn_cell (f := f)
-    (g := fun y : Fin 3 → ℝ => interpolation f (y 1, y 2))
-    (fun p => by simp) (fun T => ⟨(triangleAffine f T).toAffineMap, fun y hy => ?_⟩) hx
-  have hyS := (UnitTriangle.mem_cell_iff.mp hy).1
-  have hsum : y 0 + y 1 + y 2 = (n : ℝ) := by
-    simpa [Fin.sum_univ_three, add_assoc] using (mem_barycentricSimplex_iff.mp hyS).2
-  cases T with
-  | up b =>
-    have hq : ((UnitTriangle.up b).vertex 1).yz = ((UnitTriangle.up b).vertex 0).yz + (1, 0) := by
-      ext <;> simp
-    have hr : ((UnitTriangle.up b).vertex 2).yz = ((UnitTriangle.up b).vertex 0).yz + (0, 1) := by
-      ext <;> simp
-    have hy0 : 0 ≤ y 0 - (b.x : ℝ) := by simpa using (UnitTriangle.up b).weight_nonneg hy 0
-    have hy1 : 0 ≤ y 1 - (b.y : ℝ) := by simpa using (UnitTriangle.up b).weight_nonneg hy 1
-    have hy2 : 0 ≤ y 2 - (b.z : ℝ) := by simpa using (UnitTriangle.up b).weight_nonneg hy 2
-    have hb_sum := congrArg (Nat.cast (R := ℝ)) b.sum_eq
-    push_cast at hb_sum hsum
-    have hle : (y 1 - (b.y : ℝ)) + (y 2 - (b.z : ℝ)) ≤ 1 := by linarith
-    have hint := interpolation_up f hq hr hy1 hy2 hle
-    have hy_eq : ((((UnitTriangle.up b).vertex 0).y : ℝ) + (y 1 - (b.y : ℝ)),
-        (((UnitTriangle.up b).vertex 0).z : ℝ) + (y 2 - (b.z : ℝ))) = (y 1, y 2) := by
-      ext <;> simp
-    rw [hy_eq] at hint
-    dsimp only
-    rw [hint, ContinuousAffineMap.coe_toAffineMap, triangleAffine_apply, Fin.sum_univ_three]
-    simp only [UnitTriangle.weight_up_apply, Vertex.coord_zero, Vertex.coord_one,
-      Vertex.coord_two]
-    have hdiff : 1 - (y 1 - (b.y : ℝ)) - (y 2 - (b.z : ℝ)) = y 0 - (b.x : ℝ) := by linarith
-    rw [hdiff]; ring
-  | down b =>
-    have hq : ((UnitTriangle.down b).vertex 1).yz =
-        ((UnitTriangle.down b).vertex 0).yz + (-1, 0) := by
-      ext <;> simp
-    have hr : ((UnitTriangle.down b).vertex 2).yz =
-        ((UnitTriangle.down b).vertex 0).yz + (0, -1) := by
-      ext <;> simp
-    have hy0 : 0 ≤ (b.x : ℝ) + 1 - y 0 := by simpa using (UnitTriangle.down b).weight_nonneg hy 0
-    have hy1 : 0 ≤ (b.y : ℝ) + 1 - y 1 := by simpa using (UnitTriangle.down b).weight_nonneg hy 1
-    have hy2 : 0 ≤ (b.z : ℝ) + 1 - y 2 := by simpa using (UnitTriangle.down b).weight_nonneg hy 2
-    have hb_sum := congrArg (Nat.cast (R := ℝ)) b.sum_eq
-    push_cast at hb_sum hsum
-    have hle : ((b.y : ℝ) + 1 - y 1) + ((b.z : ℝ) + 1 - y 2) ≤ 1 := by linarith
-    have hint := interpolation_down f hq hr hy1 hy2 hle
-    have hy_eq : ((((UnitTriangle.down b).vertex 0).y : ℝ) - ((b.y : ℝ) + 1 - y 1),
-        (((UnitTriangle.down b).vertex 0).z : ℝ) - ((b.z : ℝ) + 1 - y 2)) = (y 1, y 2) := by
-      ext <;> simp
-    rw [hy_eq] at hint
-    dsimp only
-    rw [hint, ContinuousAffineMap.coe_toAffineMap, triangleAffine_apply, Fin.sum_univ_three]
-    simp only [UnitTriangle.weight_down_apply, Vertex.coord_zero, Vertex.coord_one,
-      Vertex.coord_two]
-    have hdiff : 1 - ((b.y : ℝ) + 1 - y 1) - ((b.z : ℝ) + 1 - y 2) = (b.x : ℝ) + 1 - y 0 := by
-      linarith
-    rw [hdiff]; ring
+  AffineMap.pi
+    ![AffineMap.const ℝ (ℝ × ℝ) (n : ℝ) - AffineMap.fst - AffineMap.snd,
+      AffineMap.fst, AffineMap.snd]
 
 /-- **Rhombus concavity criterion (barycentric chart)**: the simplicial piecewise-affine extension
 `interpolate f` is concave on `barycentricSimplex n` if and only if `f` satisfies all unit-rhombus
@@ -208,23 +146,18 @@ concavity inequalities. -/
 theorem concaveOn_barycentricSimplex_interpolate_iff (f : Vertex n → ℝ) :
     ConcaveOn ℝ (barycentricSimplex n) (interpolate f) ↔ IsRhombusConcave f := by
   refine Iff.trans ⟨fun h => ?_, fun h => ?_⟩ (concaveOn_interpolation_iff f)
-  · refine ((h.comp_affineMap (yzLift n)).subset (fun q hq => ?_) convex_yzTriangle).congr
-      fun q hq => ?_
-    · obtain ⟨hq1, hq2, hqsum⟩ := mem_yzTriangle.mp hq
+  · have hmaps : MapsTo (yzLift n) (yzTriangle ℝ n) (barycentricSimplex n) := fun q hq => by
+      obtain ⟨hq1, hq2, hqsum⟩ := mem_yzTriangle.mp hq
       refine mem_barycentricSimplex_iff.mpr ⟨fun i => ?_, ?_⟩
       · fin_cases i <;> simp [yzLift] <;> linarith
       · simp [yzLift, Fin.sum_univ_three]; ring
-    · obtain ⟨hq1, hq2, hqsum⟩ := mem_yzTriangle.mp hq
-      have hmem : yzLift n q ∈ barycentricSimplex n :=
-        mem_barycentricSimplex_iff.mpr ⟨fun i => by
-          fin_cases i <;> simp [yzLift] <;> linarith,
-          by simp [yzLift, Fin.sum_univ_three]; ring⟩
-      simpa [yzLift] using interpolate_eq_interpolation f hmem
+    refine ((h.comp_affineMap (yzLift n)).subset hmaps convex_yzTriangle).congr fun q hq => ?_
+    simpa [yzLift] using interpolate_eq_interpolation f (hmaps hq)
   · refine ((h.comp_affineMap yzProj).subset (fun x hx => ?_)
       (convex_barycentricSimplex n)).congr fun x hx => ?_
     · obtain ⟨hx_pos, hx_sum⟩ := mem_barycentricSimplex_iff.mp hx
-      dsimp [yzProj]
       refine mem_yzTriangle.mpr ⟨hx_pos 1, hx_pos 2, ?_⟩
+      change x 1 + x 2 ≤ (n : ℝ)
       have hsum : x 0 + x 1 + x 2 = (n : ℝ) := by simpa [Fin.sum_univ_three, add_assoc] using hx_sum
       linarith [hx_pos 0]
     · exact (interpolate_eq_interpolation f hx).symm

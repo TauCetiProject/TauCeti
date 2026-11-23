@@ -31,9 +31,9 @@ encodes the unit rhombi of `Vertex n`.
 Unit triangles `TauCeti.Hive.UnitTriangle n` have two orientations (`UnitTriangle 0` is empty and
 `UnitTriangle 1` has only `up (cornerA 0)`):
 - `n = m + 1`: upward triangles `up base` (`base : Vertex m`), `base.coord i ≤ x i`, vertices
-  `base + unitCorner i`;
+  `base.add (Vertex.edgePoint 1 i 0)`;
 - `n = m + 2`: downward triangles `down base` (`base : Vertex m`), `x i ≤ base.coord i + 1`,
-  vertices `base + oppUnitCorner i`.
+  vertices `base.add (Vertex.edgePoint 2 (i + 1) 1)`.
 
 ## Main definitions and results
 
@@ -124,33 +124,33 @@ theorem barycentricSimplex_eq_convexHull (n : ℕ) :
 /-- Continuous linear map extending `Vertex.plane` to all of `Fin 3 → ℝ`:
 `(x₀, x₁, x₂) ↦ (x₂ + x₁ / 2, √3 * x₁ / 2)`. -/
 noncomputable def planeLinear : (Fin 3 → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun x => !₂[x 2 + x 1 / 2, Real.sqrt 3 * x 1 / 2]
-      map_add' := fun x y => by ext i; fin_cases i <;> simp <;> ring
-      map_smul' := fun c x => by ext i; fin_cases i <;> simp <;> ring }
+  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi
+      ![ContinuousLinearMap.proj 2 + (1 / 2 : ℝ) • ContinuousLinearMap.proj 1,
+        (Real.sqrt 3 / 2 : ℝ) • ContinuousLinearMap.proj 1])
 
 @[simp] theorem planeLinear_zero_coord (x : Fin 3 → ℝ) :
-    planeLinear x 0 = x 2 + x 1 / 2 := by simp [planeLinear]
+    planeLinear x 0 = x 2 + x 1 / 2 := by simp [planeLinear]; ring
 @[simp] theorem planeLinear_one_coord (x : Fin 3 → ℝ) :
-    planeLinear x 1 = Real.sqrt 3 * x 1 / 2 := by simp [planeLinear]
+    planeLinear x 1 = Real.sqrt 3 * x 1 / 2 := by simp [planeLinear]; ring
 @[simp] theorem planeLinear_barycentric (p : Vertex n) : planeLinear p.barycentric = p.plane := by
   ext i; fin_cases i <;> simp
 
 /-- Continuous affine inverse of `planeLinear` onto the affine hyperplane `{x | ∑ i, x i = n}`. -/
 noncomputable def planeInvAffine (n : ℕ) : EuclideanSpace ℝ (Fin 2) →ᴬ[ℝ] (Fin 3 → ℝ) :=
-  (LinearMap.toContinuousLinearMap
-    { toFun := fun (u : EuclideanSpace ℝ (Fin 2)) =>
-        ![-u 0 - u 1 / Real.sqrt 3, 2 * u 1 / Real.sqrt 3, u 0 - u 1 / Real.sqrt 3]
-      map_add' := fun u v => by ext i; fin_cases i <;> simp <;> ring
-      map_smul' := fun c u => by ext i; fin_cases i <;> simp <;> ring }).toContinuousAffineMap +
+  let p₀ : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
+  let p₁ : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
+  (ContinuousLinearMap.pi
+    ![-p₀ - (1 / Real.sqrt 3) • p₁, (2 / Real.sqrt 3) • p₁,
+      p₀ - (1 / Real.sqrt 3) • p₁]).toContinuousAffineMap +
     ContinuousAffineMap.const ℝ (EuclideanSpace ℝ (Fin 2)) ![(n : ℝ), 0, 0]
 
 @[simp] theorem planeInvAffine_zero_coord (n : ℕ) (u : EuclideanSpace ℝ (Fin 2)) :
     planeInvAffine n u 0 = (n : ℝ) - u 0 - u 1 / Real.sqrt 3 := by simp [planeInvAffine]; ring
 @[simp] theorem planeInvAffine_one_coord (n : ℕ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planeInvAffine n u 1 = 2 * u 1 / Real.sqrt 3 := by simp [planeInvAffine]
+    planeInvAffine n u 1 = 2 * u 1 / Real.sqrt 3 := by simp [planeInvAffine]; ring
 @[simp] theorem planeInvAffine_two_coord (n : ℕ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planeInvAffine n u 2 = u 0 - u 1 / Real.sqrt 3 := by simp [planeInvAffine]
+    planeInvAffine n u 2 = u 0 - u 1 / Real.sqrt 3 := by simp [planeInvAffine]; ring
 @[simp] theorem sum_planeInvAffine (n : ℕ) (u : EuclideanSpace ℝ (Fin 2)) :
     ∑ i, planeInvAffine n u i = (n : ℝ) := by simp [Fin.sum_univ_three]; ring
 @[simp] theorem planeLinear_planeInvAffine (n : ℕ) (u : EuclideanSpace ℝ (Fin 2)) :
@@ -192,44 +192,7 @@ theorem planarSimplex_eq_convexHull (n : ℕ) :
 
 end
 
-/-! ### Standard corners and unit triangles -/
-
-/-- The `i`-th corner of `Δ₁`: `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`. -/
-def unitCorner : Fin 3 → Vertex 1
-  | ⟨0, _⟩ => ⟨1, 0, 0, rfl⟩ | ⟨1, _⟩ => ⟨0, 1, 0, rfl⟩ | ⟨2, _⟩ => ⟨0, 0, 1, rfl⟩
-
-@[simp] theorem coord_unitCorner (i j : Fin 3) : (unitCorner i).coord j = if i = j then 1 else 0 :=
-  by fin_cases i <;> fin_cases j <;> simp [unitCorner]
-@[simp] theorem unitCorner_x (i : Fin 3) : (unitCorner i).x = if i = 0 then 1 else 0 := by
-  fin_cases i <;> rfl
-@[simp] theorem unitCorner_y (i : Fin 3) : (unitCorner i).y = if i = 1 then 1 else 0 := by
-  fin_cases i <;> rfl
-@[simp] theorem unitCorner_z (i : Fin 3) : (unitCorner i).z = if i = 2 then 1 else 0 := by
-  fin_cases i <;> rfl
-@[simp] theorem rotate_unitCorner (i : Fin 3) : (unitCorner i).rotate = unitCorner (i + 1) := by
-  fin_cases i <;> ext <;> simp [unitCorner]
-@[simp] theorem reflect_unitCorner (i : Fin 3) : (unitCorner i).reflect = unitCorner (-i) := by
-  fin_cases i <;> ext <;> simp [unitCorner, Fin.neg_def]
-
-/-- Midpoint vertex of `Δ₂` opposite corner `i`: `(0, 1, 1)`, `(1, 0, 1)`, `(1, 1, 0)`. -/
-def oppUnitCorner : Fin 3 → Vertex 2
-  | ⟨0, _⟩ => ⟨0, 1, 1, rfl⟩ | ⟨1, _⟩ => ⟨1, 0, 1, rfl⟩ | ⟨2, _⟩ => ⟨1, 1, 0, rfl⟩
-
-@[simp] theorem coord_oppUnitCorner (i j : Fin 3) :
-    (oppUnitCorner i).coord j = if i = j then 0 else 1 := by
-  fin_cases i <;> fin_cases j <;> simp [oppUnitCorner]
-@[simp] theorem oppUnitCorner_x (i : Fin 3) : (oppUnitCorner i).x = if i = 0 then 0 else 1 := by
-  fin_cases i <;> rfl
-@[simp] theorem oppUnitCorner_y (i : Fin 3) : (oppUnitCorner i).y = if i = 1 then 0 else 1 := by
-  fin_cases i <;> rfl
-@[simp] theorem oppUnitCorner_z (i : Fin 3) : (oppUnitCorner i).z = if i = 2 then 0 else 1 := by
-  fin_cases i <;> rfl
-@[simp] theorem rotate_oppUnitCorner (i : Fin 3) :
-    (oppUnitCorner i).rotate = oppUnitCorner (i + 1) := by
-  fin_cases i <;> ext <;> simp [oppUnitCorner]
-@[simp] theorem reflect_oppUnitCorner (i : Fin 3) :
-    (oppUnitCorner i).reflect = oppUnitCorner (-i) := by
-  fin_cases i <;> ext <;> simp [oppUnitCorner, Fin.neg_def]
+/-! ### Unit triangles -/
 
 /-- A unit equilateral lattice triangle inside `Δₙ`: either an **upward** triangle `up base` for
 `n = m + 1` (`base : Vertex m`), or a **downward** triangle `down base` for `n = m + 2`
@@ -278,29 +241,32 @@ instance instFintype : (n : ℕ) → Fintype (UnitTriangle n)
   match n with
   | 0 => simp | 1 => rw [Fintype.card_congr equivOne, Vertex.card 0]; norm_num
   | m + 2 =>
-    rw [Fintype.card_congr (equivSuccSucc m), Fintype.card_sum]
-    exact Nat.mul_left_cancel Nat.zero_lt_two
-      (by linarith [Vertex.two_mul_card (m + 1), Vertex.two_mul_card m])
+    rw [Fintype.card_congr (equivSuccSucc m), Fintype.card_sum, Vertex.card, Vertex.card]
+    have h1 : 2 * ((m + 1 + 1) * (m + 1 + 2) / 2) = (m + 1 + 1) * (m + 1 + 2) :=
+      Nat.mul_div_cancel' (Nat.even_mul_succ_self (m + 2)).two_dvd
+    have h2 : 2 * ((m + 1) * (m + 2) / 2) = (m + 1) * (m + 2) :=
+      Nat.mul_div_cancel' (Nat.even_mul_succ_self (m + 1)).two_dvd
+    exact Nat.mul_left_cancel Nat.zero_lt_two (by linarith)
 
 /-- The `i`-th vertex of a unit triangle `T : UnitTriangle n`. -/
 def vertex : UnitTriangle n → Fin 3 → Vertex n
-  | up base, i => base.add (unitCorner i) | down base, i => base.add (oppUnitCorner i)
+  | up base, i => base.add (Vertex.edgePoint 1 i 0)
+  | down base, i => base.add (Vertex.edgePoint 2 (i + 1) 1)
 @[simp] theorem vertex_up (b : Vertex m) (i : Fin 3) :
-    (up b).vertex i = b.add (unitCorner i) := (rfl)
+    (up b).vertex i = b.add (Vertex.edgePoint 1 i 0) := (rfl)
 @[simp] theorem vertex_down (b : Vertex m) (i : Fin 3) :
-    (down b).vertex i = b.add (oppUnitCorner i) := (rfl)
+    (down b).vertex i = b.add (Vertex.edgePoint 2 (i + 1) 1) := (rfl)
 theorem coord_vertex_up (base : Vertex m) (i j : Fin 3) :
-    ((up base).vertex i).coord j = base.coord j + if i = j then 1 else 0 := by fin_cases j <;> simp
+    ((up base).vertex i).coord j = base.coord j + if i = j then 1 else 0 := by simp
 theorem coord_vertex_down (b : Vertex m) (i j : Fin 3) :
-    ((down b).vertex i).coord j = b.coord j + if i = j then 0 else 1 := by fin_cases j <;> simp
+    ((down b).vertex i).coord j = b.coord j + if i = j then 0 else 1 := by simp
 theorem vertex_injective (T : UnitTriangle n) : Function.Injective T.vertex := by
-  cases T <;> intro i j h <;> fin_cases i <;> fin_cases j <;>
-    simp_all [Vertex.ext_iff, unitCorner, oppUnitCorner]
+  cases T <;> intro i j h <;> fin_cases i <;> fin_cases j <;> simp_all [Vertex.ext_iff]
 /-- Any two distinct vertices of a unit triangle form a unit lattice edge. -/
 theorem isUnitEdge_vertex (T : UnitTriangle n) {i j : Fin 3} (hij : i ≠ j) :
     IsUnitEdge (T.vertex i) (T.vertex j) := by
   cases T <;> simp only [vertex_up, vertex_down, isUnitEdge_def] <;>
-    fin_cases i <;> fin_cases j <;> simp_all [unitCorner, oppUnitCorner, Vertex.sqDist_def]
+    fin_cases i <;> fin_cases j <;> simp_all [Vertex.sqDist_def]
 
 /-- Clockwise rotation of a unit triangle by one third of a turn. -/
 def rotate : UnitTriangle n → UnitTriangle n
@@ -324,7 +290,8 @@ theorem reflect_injective : Function.Injective (reflect (n := n)) :=
 @[simp] theorem reflect_rotate (T : UnitTriangle n) :
     T.rotate.reflect = T.reflect.rotate.rotate := by cases T <;> simp
 theorem vertex_reflect (T : UnitTriangle n) (i : Fin 3) :
-    T.reflect.vertex (-i) = (T.vertex i).reflect := by cases T <;> simp
+    T.reflect.vertex (-i) = (T.vertex i).reflect := by
+  cases T <;> fin_cases i <;> ext <;> simp [Fin.neg_def]
 /-- Translate a unit triangle of `Δₙ` into `Δ_{k + n}` by adding `p : Vertex k`. -/
 def addLeft (p : Vertex k) : UnitTriangle n → UnitTriangle (k + n)
   | up base => up (p.add base) | down base => down (p.add base)
@@ -336,7 +303,8 @@ def addLeft (p : Vertex k) : UnitTriangle n → UnitTriangle (k + n)
 @[simp] theorem reflect_addLeft (p : Vertex k) (T : UnitTriangle n) :
     (T.addLeft p).reflect = T.reflect.addLeft p.reflect := by cases T <;> simp
 @[simp] theorem vertex_addLeft (p : Vertex k) (T : UnitTriangle n) (i : Fin 3) :
-    (T.addLeft p).vertex i = p.add (T.vertex i) := by cases T <;> ext <;> simp [Nat.add_assoc]
+    (T.addLeft p).vertex i = p.add (T.vertex i) := by
+  cases T <;> exact Vertex.ext_coord fun j => by simp [Nat.add_assoc]
 
 /-! ### Continuous affine barycentric weights and polyhedral cells -/
 
@@ -355,14 +323,9 @@ def weight : UnitTriangle n → Fin 3 → (Fin 3 → ℝ) →ᴬ[ℝ] ℝ
     ((up base).weight i).contLinear v = v i := by simp [weight]
 @[simp] theorem weight_down_contLinear (base : Vertex m) (i : Fin 3) (v : Fin 3 → ℝ) :
     ((down base).weight i).contLinear v = -v i := by simp [weight]
-@[simp high] theorem weight_up_barycentric_add_unitCorner (b : Vertex m) (i j : Fin 3) :
-    (up b).weight i (b.add (unitCorner j)).barycentric = if i = j then 1 else 0 := by
-  fin_cases i <;> fin_cases j <;> simp [unitCorner]
-@[simp high] theorem weight_down_barycentric_add_oppUnitCorner (b : Vertex m) (i j : Fin 3) :
-    (down b).weight i (b.add (oppUnitCorner j)).barycentric = if i = j then 1 else 0 := by
-  fin_cases i <;> fin_cases j <;> simp [oppUnitCorner]
 @[simp high] theorem weight_vertex (T : UnitTriangle n) (i j : Fin 3) :
-    T.weight i (T.vertex j).barycentric = if i = j then 1 else 0 := by cases T <;> simp
+    T.weight i (T.vertex j).barycentric = if i = j then 1 else 0 := by
+  cases T <;> fin_cases i <;> fin_cases j <;> simp
 theorem sum_weight (T : UnitTriangle n) {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) :
     ∑ i, T.weight i x = 1 := by
   cases T <;> simp [Finset.sum_sub_distrib, Finset.sum_add_distrib, hx, ← Vertex.barycentric_apply,
@@ -372,7 +335,7 @@ theorem sum_weight_smul_vertex (T : UnitTriangle n) {x : Fin 3 → ℝ} (hx : �
   have hsw : T.weight 0 x + T.weight 1 x + T.weight 2 x = 1 := by
     simpa [Fin.sum_univ_three, add_assoc] using T.sum_weight hx
   ext j; cases T <;> fin_cases j <;>
-    simp [Fin.sum_univ_three, unitCorner, oppUnitCorner] at hsw ⊢ <;> nlinarith
+    simp [Fin.sum_univ_three] at hsw ⊢ <;> nlinarith
 theorem weight_rotate_apply (T : UnitTriangle n) (i : Fin 3) (x : Fin 3 → ℝ) :
     T.rotate.weight (i + 1) (fun k => x (k - 1)) = T.weight i x := by
   cases T <;> simp [Vertex.coord_rotate]
@@ -456,14 +419,14 @@ theorem mem_range_vertex_of_barycentric_mem_cell {T : UnitTriangle n} {p : Verte
     have h (i : Fin 3) : b.coord i ≤ p.coord i := by simpa [sub_nonneg] using hp.2 i
     have h0 := h 0; have h1 := h 1; have h2 := h 2; simp at h0 h1 h2
     rcases (by omega : p.x = b.x + 1 ∨ p.y = b.y + 1 ∨ p.z = b.z + 1) with h | h | h <;>
-      [refine ⟨0, ?_⟩; refine ⟨1, ?_⟩; refine ⟨2, ?_⟩] <;> ext <;> simp [unitCorner] <;> omega
+      [refine ⟨0, ?_⟩; refine ⟨1, ?_⟩; refine ⟨2, ?_⟩] <;> ext <;> simp <;> omega
   | down b =>
     have hb := b.sum_eq
     have h (i : Fin 3) : p.coord i ≤ b.coord i + 1 := Nat.cast_le.mp
       (by simpa [sub_nonneg] using hp.2 i : (p.coord i : ℝ) ≤ ((b.coord i + 1 : ℕ)))
     have h0 := h 0; have h1 := h 1; have h2 := h 2; simp at h0 h1 h2
     rcases (by omega : p.x = b.x ∨ p.y = b.y ∨ p.z = b.z) with h | h | h <;>
-      [refine ⟨0, ?_⟩; refine ⟨1, ?_⟩; refine ⟨2, ?_⟩] <;> ext <;> simp [oppUnitCorner] <;> omega
+      [refine ⟨0, ?_⟩; refine ⟨1, ?_⟩; refine ⟨2, ?_⟩] <;> ext <;> simp <;> omega
 /-- **Active-vertex overlap lemma**: if `x ∈ T₁.cell ∩ T₂.cell` and `T₁.weight i x > 0`, then
 `T₁.vertex i` is also a vertex of `T₂`. -/
 theorem mem_range_vertex_of_weight_pos {T₁ T₂ : UnitTriangle n} {x : Fin 3 → ℝ} (hx₁ : x ∈ T₁.cell)
@@ -509,37 +472,53 @@ variable {n m k : ℕ}
 theorem exists_cell_of_isUnitEdge {a c : Vertex n} (h : IsUnitEdge a c) :
     ∃ T : UnitTriangle n, a.barycentric ∈ T.cell ∧ c.barycentric ∈ T.cell := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp h.one_le)
-  have hsq : ((a.x : ℤ) - c.x) ^ 2 + ((a.y : ℤ) - c.y) ^ 2 + ((a.z : ℤ) - c.z) ^ 2 = 2 := by
-    rwa [isUnitEdge_def, Vertex.sqDist_def] at h
-  have hmin (u v : ℕ) (huv : ((u : ℤ) - v) ^ 2 ≤ 2) :
-      2 * ((min u v : ℕ) : ℤ) = (u : ℤ) + v - ((u : ℤ) - v) ^ 2 := by
-    have : -1 ≤ (u : ℤ) - v ∧ (u : ℤ) - v ≤ 1 := ⟨by nlinarith, by nlinarith⟩
-    rcases (by omega : (u : ℤ) - v = -1 ∨ (u : ℤ) - v = 0 ∨ (u : ℤ) - v = 1) with h1 | h1 | h1 <;>
-      { rw [h1]; norm_num; omega }
-  have hx := hmin a.x c.x (by nlinarith); have hy := hmin a.y c.y (by nlinarith)
-  have hz := hmin a.z c.z (by nlinarith); have ha := a.sum_eq; have hc := c.sum_eq
-  refine ⟨UnitTriangle.up ⟨min a.x c.x, min a.y c.y, min a.z c.z, by
-      zify at hx hy hz ha hc ⊢; linarith⟩,
-    ⟨barycentric_mem_barycentricSimplex a, fun i => by fin_cases i <;> simp [sub_nonneg]⟩,
-    ⟨barycentric_mem_barycentricSimplex c, fun i => by fin_cases i <;> simp [sub_nonneg]⟩⟩
+  obtain ⟨k, hk⟩ := Vertex.sqDist_eq_two_iff.mp ((isUnitEdge_def a c).mp h)
+  have hy : (c.y : ℤ) = a.y + (yzStep k).1 := by simpa using congrArg Prod.fst hk
+  have hz : (c.z : ℤ) = a.z + (yzStep k).2 := by simpa using congrArg Prod.snd hk
+  have ha := a.sum_eq; have hc := c.sum_eq
+  have mk_mem (b : Vertex m) (ha' : ∃ i, (UnitTriangle.up b).vertex i = a)
+      (hc' : ∃ j, (UnitTriangle.up b).vertex j = c) :
+      ∃ T : UnitTriangle (m + 1), a.barycentric ∈ T.cell ∧ c.barycentric ∈ T.cell :=
+    let ⟨i, hi⟩ := ha'; let ⟨j, hj⟩ := hc'
+    ⟨UnitTriangle.up b, hi ▸ (UnitTriangle.up b).barycentric_vertex_mem_cell i,
+      hj ▸ (UnitTriangle.up b).barycentric_vertex_mem_cell j⟩
+  fin_cases k <;> simp [yzStep_def] at hy hz
+  · exact mk_mem ⟨a.x - 1, a.y, a.z, by omega⟩
+      ⟨0, by ext <;> simp; omega⟩ ⟨1, by (ext <;> simp); all_goals omega⟩
+  · exact mk_mem ⟨a.x - 1, a.y, a.z, by omega⟩
+      ⟨0, by ext <;> simp; omega⟩ ⟨2, by (ext <;> simp); all_goals omega⟩
+  · exact mk_mem ⟨a.x, a.y - 1, a.z, by omega⟩
+      ⟨1, by ext <;> simp; omega⟩ ⟨2, by (ext <;> simp); all_goals omega⟩
+  · exact mk_mem ⟨a.x, a.y - 1, a.z, by omega⟩
+      ⟨1, by ext <;> simp; omega⟩ ⟨0, by (ext <;> simp); all_goals omega⟩
+  · exact mk_mem ⟨a.x, a.y, a.z - 1, by omega⟩
+      ⟨2, by ext <;> simp; omega⟩ ⟨0, by (ext <;> simp); all_goals omega⟩
+  · exact mk_mem ⟨a.x, a.y, a.z - 1, by omega⟩
+      ⟨2, by ext <;> simp; omega⟩ ⟨1, by (ext <;> simp); all_goals omega⟩
 
 /-! ### Adjacent unit triangles and union rhombus cells -/
 
 /-- The upward unit triangle sharing the edge of `down s` opposite `(down s).vertex i`
 (joining `(down s).vertex (i + 1)` and `(down s).vertex (i + 2)` along `x i = s.coord i + 1`). -/
 def adjacentUp (s : Vertex m) (i : Fin 3) : UnitTriangle (m + 2) :=
-  UnitTriangle.up (s.add (unitCorner i))
+  UnitTriangle.up (s.add (Vertex.edgePoint 1 i 0))
 theorem adjacentUp_def (s : Vertex m) (i : Fin 3) :
-    adjacentUp s i = UnitTriangle.up (s.add (unitCorner i)) := (rfl)
+    adjacentUp s i = UnitTriangle.up (s.add (Vertex.edgePoint 1 i 0)) := (rfl)
 theorem vertex_adjacentUp (s : Vertex m) (i j : Fin 3) :
-    (adjacentUp s i).vertex j = (s.add (unitCorner i)).add (unitCorner j) := (rfl)
+    (adjacentUp s i).vertex j = (s.add (Vertex.edgePoint 1 i 0)).add (Vertex.edgePoint 1 j 0) :=
+  (rfl)
 @[simp] theorem rotate_adjacentUp (s : Vertex m) (i : Fin 3) :
     (adjacentUp s i).rotate = adjacentUp s.rotate (i + 1) := by simp [adjacentUp]
 @[simp] theorem reflect_adjacentUp (s : Vertex m) (i : Fin 3) :
-    (adjacentUp s i).reflect = adjacentUp s.reflect (-i) := by simp [adjacentUp]
+    (adjacentUp s i).reflect = adjacentUp s.reflect (-i) := by
+  fin_cases i
+  · exact congrArg UnitTriangle.up (by ext <;> simp)
+  · exact congrArg UnitTriangle.up (by ext <;> simp [Fin.neg_def])
+  · exact congrArg UnitTriangle.up (by ext <;> simp [Fin.neg_def])
 @[simp] theorem addLeft_adjacentUp (p : Vertex k) (s : Vertex m) (i : Fin 3) :
     (adjacentUp s i).addLeft p = adjacentUp (p.add s) i := by
-  simp only [adjacentUp, UnitTriangle.addLeft_up]; congr 1; ext <;> simp [Nat.add_assoc]
+  simp only [adjacentUp, UnitTriangle.addLeft_up]
+  exact congrArg UnitTriangle.up (Vertex.ext_coord fun j => by simp [Nat.add_assoc])
 @[simp] theorem weight_adjacentUp_apply (s : Vertex m) (i j : Fin 3) (x : Fin 3 → ℝ) :
     (adjacentUp s i).weight j x = x j - ((s.coord j : ℝ) + if i = j then 1 else 0) := by
   simp [adjacentUp]
@@ -564,50 +543,6 @@ theorem isRhombus_adjacent (s : Vertex m) (i : Fin 3) :
   · convert isRhombus_at_cornerA.add s using 1 <;> exact hv _ _
   · convert isRhombus_at_cornerA.rotate.add s using 1 <;> exact hv _ _
   · convert isRhombus_at_cornerA.rotate.rotate.add s using 1 <;> exact hv _ _
-private abbrev IsAdjRhombus (s : Vertex m) (i : Fin 3) (a b c d : Vertex (m + 2)) : Prop :=
-  ((a = (UnitTriangle.down s).vertex (i + 2) ∧ c = (UnitTriangle.down s).vertex (i + 1)) ∨
-    (a = (UnitTriangle.down s).vertex (i + 1) ∧ c = (UnitTriangle.down s).vertex (i + 2))) ∧
-  ((b = (adjacentUp s i).vertex i ∧ d = (UnitTriangle.down s).vertex i) ∨
-    (b = (UnitTriangle.down s).vertex i ∧ d = (adjacentUp s i).vertex i))
-private theorem exists_adjacentUp_of_sub_x_eq_two {a b c d : Vertex (m + 2)}
-    (hr : IsRhombus a b c d) (hbd : (b.x : ℤ) - d.x = 2) :
-    ∃ s : Vertex m, ((a = (UnitTriangle.down s).vertex 2 ∧ c = (UnitTriangle.down s).vertex 1) ∨
-      (a = (UnitTriangle.down s).vertex 1 ∧ c = (UnitTriangle.down s).vertex 2)) ∧
-      b = (adjacentUp s 0).vertex 0 ∧ d = (UnitTriangle.down s).vertex 0 := by
-  have hsum (p : Vertex (m + 2)) : (p.x : ℤ) + p.y + p.z = m + 2 := by exact_mod_cast p.sum_eq
-  have hlong := hr.long; rw [Vertex.sqDist_def] at hlong
-  have hby : (d.y : ℤ) = b.y + 1 := by nlinarith [sq_nonneg ((b.y : ℤ) - d.y + 1), hsum b, hsum d]
-  have hbz : (d.z : ℤ) = b.z + 1 := by have := hsum b; have := hsum d; omega
-  have hbx : (b.x : ℤ) = d.x + 2 := by omega
-  let s : Vertex m := ⟨d.x, b.y, b.z, by have := d.sum_eq; omega⟩
-  have hab := hr.side_ab; have hda := hr.side_da
-  rw [Vertex.sqDist_def, hbx] at hab; rw [Vertex.sqDist_def, hby, hbz] at hda
-  have hax : (a.x : ℤ) = d.x + 1 := by nlinarith [hsum a, hsum d]
-  have haz : (a.z : ℤ) - b.z = 1 - ((a.y : ℤ) - b.y) := by have := hsum a; have := hsum d; omega
-  rw [hax, haz] at hab
-  have hay := mul_eq_zero.mp (by nlinarith [hab] : ((a.y : ℤ) - b.y) * ((a.y : ℤ) - b.y - 1) = 0)
-  have hmx := hr.midpoint_x; have hmy := hr.midpoint_y; have hmz := hr.midpoint_z
-  refine ⟨s, ?_, by ext <;> simp [s, adjacentUp]; omega, by ext <;> simp [s] <;> omega⟩
-  rcases hay with h | h <;> [right; left] <;>
-    exact ⟨by ext <;> simp [s] <;> omega, by ext <;> simp [s] <;> omega⟩
-private theorem exists_adjacentUp_of_rotate {a b c d : Vertex (m + 2)}
-    (h : ∃ (s : Vertex m) (i : Fin 3), IsAdjRhombus s i a.rotate b.rotate c.rotate d.rotate) :
-    ∃ (s : Vertex m) (i : Fin 3), IsAdjRhombus s i a b c d := by
-  obtain ⟨s, i, hac, hbd⟩ := h
-  have hd (j : Fin 3) : ((UnitTriangle.down s).vertex j).rotate.rotate =
-      (UnitTriangle.down s.rotate.rotate).vertex (j + 2) := by
-    rw [← UnitTriangle.vertex_rotate, ← UnitTriangle.vertex_rotate, add_assoc]; rfl
-  have hu : ((adjacentUp s i).vertex i).rotate.rotate =
-      (adjacentUp s.rotate.rotate (i + 2)).vertex (i + 2) := by
-    rw [← UnitTriangle.vertex_rotate, ← UnitTriangle.vertex_rotate, rotate_adjacentUp,
-      rotate_adjacentUp, add_assoc]; rfl
-  have inv {p q : Vertex (m + 2)} (hp : p.rotate = q) : p = q.rotate.rotate :=
-    hp ▸ p.rotate_rotate_rotate.symm
-  exact ⟨s.rotate.rotate, i + 2,
-    hac.imp (fun ⟨ha, hc⟩ => ⟨by rw [inv ha, hd], by rw [inv hc, hd, add_right_comm]⟩)
-      (fun ⟨ha, hc⟩ => ⟨by rw [inv ha, hd, add_right_comm], by rw [inv hc, hd]⟩),
-    hbd.imp (fun ⟨hb, hd'⟩ => ⟨by rw [inv hb, hu], by rw [inv hd', hd]⟩)
-      (fun ⟨hb, hd'⟩ => ⟨by rw [inv hb, hd], by rw [inv hd', hu]⟩)⟩
 /-- Every unit rhombus `(a, b, c, d)` in `Vertex (m + 2)` arises from a downward unit triangle
 `down s` and an adjacent upward triangle `adjacentUp s i` up to exchanging the obtuse corners
 `a, c` and exchanging the acute corners `b, d`. -/
@@ -617,28 +552,25 @@ theorem IsRhombus.exists_adjacentUp {a b c d : Vertex (m + 2)} (hr : IsRhombus a
         (a = (UnitTriangle.down s).vertex (i + 1) ∧ c = (UnitTriangle.down s).vertex (i + 2))) ∧
       ((b = (adjacentUp s i).vertex i ∧ d = (UnitTriangle.down s).vertex i) ∨
         (b = (UnitTriangle.down s).vertex i ∧ d = (adjacentUp s i).vertex i)) := by
-  have hx_case {a' b' c' d' : Vertex (m + 2)} (hr' : IsRhombus a' b' c' d')
-      (h : (b'.x : ℤ) - d'.x = 2 ∨ (b'.x : ℤ) - d'.x = -2) :
-      ∃ s i, IsAdjRhombus s i a' b' c' d' := by
-    rcases h with h2 | hm2
-    · obtain ⟨s, hac, hb, hd⟩ := exists_adjacentUp_of_sub_x_eq_two hr' h2
-      exact ⟨s, 0, hac, Or.inl ⟨hb, hd⟩⟩
-    · obtain ⟨s, hac, hd, hb⟩ := exists_adjacentUp_of_sub_x_eq_two hr'.reverse (by omega)
-      exact ⟨s, 0, hac, Or.inr ⟨hb, hd⟩⟩
-  have hlong := hr.long; rw [Vertex.sqDist_def] at hlong
-  have hsq_le {u : ℤ} (hu6 : u ^ 2 ≤ 6) (h2 : u ≠ 2) (hm2 : u ≠ -2) : u ^ 2 ≤ 1 := by
-    have : -1 ≤ u ∧ u ≤ 1 := by have : -2 ≤ u ∧ u ≤ 2 := ⟨by nlinarith, by nlinarith⟩; omega
-    nlinarith
-  by_cases hx : (b.x : ℤ) - d.x = 2 ∨ (b.x : ℤ) - d.x = -2
-  · exact hx_case hr hx
-  by_cases hz : (b.z : ℤ) - d.z = 2 ∨ (b.z : ℤ) - d.z = -2
-  · exact exists_adjacentUp_of_rotate (hx_case hr.rotate (by simpa using hz))
-  have hy : (b.y : ℤ) - d.y = 2 ∨ (b.y : ℤ) - d.y = -2 := by
-    by_contra! hny; push Not at hx hz
-    linarith [hsq_le (by nlinarith) hx.1 hx.2, hsq_le (by nlinarith) hny.1 hny.2,
-      hsq_le (by nlinarith) hz.1 hz.2]
-  exact exists_adjacentUp_of_rotate
-    (exists_adjacentUp_of_rotate (hx_case hr.rotate.rotate (by simpa using hy)))
+  refine IsRhombus.elim_ofChart (P := fun a b c d => ∃ (s : Vertex m) (i : Fin 3),
+    ((a = (UnitTriangle.down s).vertex (i + 2) ∧ c = (UnitTriangle.down s).vertex (i + 1)) ∨
+      (a = (UnitTriangle.down s).vertex (i + 1) ∧ c = (UnitTriangle.down s).vertex (i + 2))) ∧
+    ((b = (adjacentUp s i).vertex i ∧ d = (UnitTriangle.down s).vertex i) ∨
+      (b = (UnitTriangle.down s).vertex i ∧ d = (adjacentUp s i).vertex i)))
+    ?_ ?_ ?_ ?_ ?_ hr
+  · rintro _ _ _ _ ⟨s, i, hac, hbd⟩
+    exact ⟨s, i, hac.elim (fun h => Or.inr ⟨h.2, h.1⟩) (fun h => Or.inl ⟨h.2, h.1⟩), hbd⟩
+  · rintro _ _ _ _ ⟨s, i, hac, hbd⟩
+    exact ⟨s, i, hac, hbd.elim (fun h => Or.inr ⟨h.2, h.1⟩) (fun h => Or.inl ⟨h.2, h.1⟩)⟩
+  · intro i j hij hj
+    refine ⟨Vertex.ofChart m i (j - 1) (by omega) (by omega), 1, Or.inr ⟨?_, ?_⟩, Or.inr ⟨?_, ?_⟩⟩
+    all_goals (ext <;> simp [adjacentUp] <;> omega)
+  · intro i j hij hj
+    refine ⟨Vertex.ofChart m i (j - 1) (by omega) (by omega), 2, Or.inl ⟨?_, ?_⟩, Or.inr ⟨?_, ?_⟩⟩
+    all_goals (ext <;> simp [adjacentUp] <;> omega)
+  · intro i j hij hj
+    refine ⟨Vertex.ofChart m i j hij (by omega), 0, Or.inl ⟨?_, ?_⟩, Or.inl ⟨?_, ?_⟩⟩
+    all_goals (ext <;> simp [adjacentUp] <;> omega)
 
 /-- The union of the cells of `adjacentUp s i` and `down s`, a continuous unit rhombus inside
 `barycentricSimplex (m + 2)`. -/

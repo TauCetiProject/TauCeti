@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Fin.Tuple.NatAntidiagonal
+import Mathlib.Data.Finsupp.Multiset
+import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -323,6 +325,14 @@ def edgePoint (n : ℕ) (s : Fin 3) (k : Fin (n + 1)) : Vertex n :=
     (edgePoint n s k).reflect = edgePoint n s.rev k.rev := by
   fin_cases s <;> ext <;> simp [edgePoint, Fin.val_rev] <;> omega
 
+@[simp] theorem coord_edgePoint_one_zero (i j : Fin 3) :
+    (edgePoint 1 i 0).coord j = if i = j then 1 else 0 := by
+  fin_cases i <;> fin_cases j <;> rfl
+
+@[simp] theorem coord_edgePoint_two_add_one_one (i j : Fin 3) :
+    (edgePoint 2 (i + 1) 1).coord j = if i = j then 0 else 1 := by
+  fin_cases i <;> fin_cases j <;> rfl
+
 /-- Points along any single side of the perimeter are indexed injectively by `Fin (n + 1)`. -/
 theorem edgePoint_injective (n : ℕ) (s : Fin 3) : Function.Injective (edgePoint n s) := by
   intro j k h; fin_cases s
@@ -335,28 +345,14 @@ instance uniqueZero : Unique (Vertex 0) where
   default := cornerA 0
   uniq p := by have := p.sum_eq; ext <;> simp <;> omega
 
--- Splitting `Vertex (n + 1)` into side `B → C` (`x = 0`) and `(1, 0, 0) + Vertex n` (`x > 0`).
-private def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n where
-  toFun p := if hx : p.x = 0 then Sum.inl ⟨p.z, by have := p.sum_eq; omega⟩
-    else Sum.inr ⟨p.x - 1, p.y, p.z, by have := p.sum_eq; omega⟩
-  invFun | Sum.inl k => edgePoint (n + 1) 1 k
-         | Sum.inr q => ⟨q.x + 1, q.y, q.z, by have := q.sum_eq; omega⟩
-  left_inv p := by
-    by_cases hx : p.x = 0 <;> simp only [hx, ↓reduceDIte] <;>
-      ext <;> simp <;> have := p.sum_eq <;> omega
-  right_inv | Sum.inl _ => by simp | Sum.inr _ => by simp
-
-/-- Twice the number of vertices of `Vertex n` is `(n + 1) * (n + 2)`. -/
-theorem two_mul_card (n : ℕ) : 2 * Fintype.card (Vertex n) = (n + 1) * (n + 2) := by
-  induction n with
-  | zero => simp
-  | succ m ih =>
-    rw [Fintype.card_congr (equivFinSumSucc m), Fintype.card_sum, Fintype.card_fin]
-    linarith
-
 /-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
 @[simp] theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
-  rw [← two_mul_card n]; omega
+  rw [Fintype.card_congr (equivAntidiagonalTuple.trans
+    ((Equiv.subtypeEquivRight fun _ => Finset.Nat.mem_antidiagonalTuple).trans
+      (Sym.equivNatSumOfFintype (Fin 3) n).symm)),
+    Sym.card_sym_eq_choose, Fintype.card_fin,
+    show 3 + n - 1 = n + 2 by omega, ← Nat.choose_symm (by omega : n ≤ n + 2),
+    show n + 2 - n = 2 by omega, Nat.choose_two_right, show n + 2 - 1 = n + 1 by omega, mul_comm]
 
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
 def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
@@ -717,12 +713,6 @@ theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
   side_bc := by simpa using h.side_bc
   side_cd := by simpa using h.side_cd
   side_da := by simpa using h.side_da
-
-theorem isUnitEdge_short (h : IsRhombus a b c d) : IsUnitEdge a c := h.short
-theorem isUnitEdge_ab (h : IsRhombus a b c d) : IsUnitEdge a b := h.side_ab
-theorem isUnitEdge_bc (h : IsRhombus a b c d) : IsUnitEdge b c := h.side_bc
-theorem isUnitEdge_cd (h : IsRhombus a b c d) : IsUnitEdge c d := h.side_cd
-theorem isUnitEdge_da (h : IsRhombus a b c d) : IsUnitEdge d a := h.side_da
 
 /-- The long and short diagonals of a unit rhombus are orthogonal in barycentric coordinates. -/
 theorem diagonal_inner_eq_zero (h : IsRhombus a b c d) :
