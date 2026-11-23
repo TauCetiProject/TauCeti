@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinTransform
-import Mathlib.Analysis.MellinInversion
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import TauCeti.Analysis.MellinTransform
+public import TauCeti.Analysis.MellinTransform.CutoffKernel
 import TauCeti.Analysis.MellinTransform.Basic
-import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -45,6 +41,8 @@ how such sums are compared with zero-free regions of their Dirichlet series.
 * `TauCeti.norm_mellin_sub_one_le`: `‖mellin ν ε - 1‖ ≤ 2 log 2 · ε` for a bump and `0 ≤ ε ≤ 1`.
 * `TauCeti.smoothCutoff_eq_one`, `TauCeti.smoothCutoff_eq_zero`, `TauCeti.smoothCutoff_nonneg`,
   `TauCeti.smoothCutoff_le_one`: the shape of the cutoff.
+* `TauCeti.smoothCutoff_eq_mellinCutoffKernel`: the cutoff is the Mellin cutoff kernel
+  `TauCeti.mellinCutoffKernel` of the spike.
 * `TauCeti.smoothCutoff_eq_integral_mul_div`: the cutoff as the Mellin convolution
   `1_(0,1] ⋆ ν_ε`.
 * `TauCeti.continuousOn_smoothCutoff`: the cutoff is continuous on `(0, ∞)`.
@@ -247,47 +245,31 @@ theorem smoothCutoff_eq_zero (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hε
     (hx.trans_lt hz).not_ge (support_deltaSpike_subset hνs hε h).2
   rw [h0, zero_div]
 
+/-- For `x > 0` the smoothed cutoff is the Mellin cutoff kernel `∫_{(x,∞)} ν_ε(z) dz/z` of the
+delta spike. -/
+theorem smoothCutoff_eq_mellinCutoffKernel (ν : ℝ → ℝ) (ε : ℝ) (hx : 0 < x) :
+    smoothCutoff ν ε x = mellinCutoffKernel (deltaSpike ν ε) x := by
+  rw [smoothCutoff_of_pos hx, mellinCutoffKernel_def]
+  simp only [smul_eq_mul, inv_mul_eq_div]
+
 /-- If `x ↦ ν x / x` is integrable on `(0, ∞)` (as for a bump) and `ε > 0`, the smoothed cutoff
 is continuous on `(0, ∞)`. -/
 theorem continuousOn_smoothCutoff (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) :
     ContinuousOn (smoothCutoff ν ε) (Ioi 0) := by
-  set G : ℝ → ℝ := fun z ↦ deltaSpike ν ε z / z
-  have hG : IntegrableOn G (Ioi 0) := (mellinConvergent_ofReal_zero_iff _).mp
-    ((mellinConvergent_deltaSpike_iff hε).mpr
-      (by rw [mul_zero]; exact (mellinConvergent_ofReal_zero_iff ν).mpr hνi))
-  have hGi : Integrable G := by
-    rw [← integrableOn_univ]
-    refine hG.of_forall_sdiff_eq_zero MeasurableSet.univ fun z hz ↦ ?_
-    simp [G, deltaSpike_of_nonpos (not_lt.mp hz.2)]
-  have heq : EqOn (fun x ↦ (∫ z in Ioi 0, G z) - ∫ z in 0..x, G z) (smoothCutoff ν ε) (Ioi 0) :=
-    fun x hx ↦ by
-      have h := intervalIntegral.integral_Ioi_sub_Ioi hG (le_of_lt hx)
-      simp only [smoothCutoff_of_pos (mem_Ioi.mp hx), ← h, sub_sub_cancel, G]
-  exact (continuous_const.sub (intervalIntegral.continuous_primitive
-    (fun _ _ ↦ hGi.intervalIntegrable) 0)).continuousOn.congr heq.symm
+  have hG : IntegrableOn (fun z ↦ z⁻¹ • deltaSpike ν ε z) (Ioi 0) := by
+    simpa only [smul_eq_mul, inv_mul_eq_div] using (mellinConvergent_ofReal_zero_iff _).mp
+      ((mellinConvergent_deltaSpike_iff hε).mpr
+        (by rw [mul_zero]; exact (mellinConvergent_ofReal_zero_iff ν).mpr hνi))
+  exact (hG.continuousOn_mellinCutoffKernel.mono Ioi_subset_Ici_self).congr
+    fun x hx ↦ smoothCutoff_eq_mellinCutoffKernel ν ε hx
 
 /-- For `x > 0` the smoothed cutoff is the Mellin convolution
 `(1_(0,1] ⋆ ν_ε)(x) = ∫_{(0,∞)} 1_(0,1](y) ν_ε(x/y) dy/y`, by the substitution `z = x/y`. -/
 theorem smoothCutoff_eq_integral_mul_div (ν : ℝ → ℝ) (ε : ℝ) (hx : 0 < x) :
     (smoothCutoff ν ε x : ℂ) = ∫ y in Ioi 0,
-      (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * (deltaSpike ν ε (x / y) : ℂ) / y := by
-  set g : ℝ → ℂ := fun z ↦ (deltaSpike ν ε z : ℂ)
-  have hcongr : (∫ y in Ioi 0,
-      (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * (deltaSpike ν ε (x / y) : ℂ) / y) =
-      mellin (fun y ↦ (Ici x).indicator g (x * y⁻¹)) 0 := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
-    have hy0 : 0 < y := hy
-    have hiff : x ≤ x * y⁻¹ ↔ y ≤ 1 := by
-      rw [← div_eq_mul_inv, le_div_iff₀ hy0, mul_le_iff_le_one_right hx]
-    by_cases hy1 : y ≤ 1
-    · simp [indicator, hy0, hy1, hiff.mpr hy1, g, cpow_neg_one, div_eq_mul_inv, mul_comm]
-    · simp [indicator, hy1, mt hiff.mp hy1]
-  rw [hcongr, mellin_comp_inv (fun u ↦ (Ici x).indicator g (x * u)),
-    mellin_comp_mul_left _ _ hx, mellin_indicator_Ici g hx.le, smoothCutoff_of_pos hx,
-    ← integral_complex_ofReal]
-  simp only [neg_zero, cpow_zero, one_smul]
-  refine setIntegral_congr_fun measurableSet_Ioi fun z _ ↦ ?_
-  simp [g, cpow_neg_one, div_eq_inv_mul]
+      (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * (deltaSpike ν ε (x / y) : ℂ) / y :=
+  by rw [smoothCutoff_eq_mellinCutoffKernel ν ε hx, ← mellinCutoffKernel_ofReal,
+    mellinCutoffKernel_eq_integral_mul_div _ hx]
 
 /-- For `ν` supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)` (which a bump's
 mass condition forces), `ε > 0` and `Re s > 0`, the smoothed cutoff is Mellin convergent at `s`
@@ -295,12 +277,12 @@ with transform `mellin ν (εs) / s`. -/
 theorem hasMellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) {s : ℂ} (hs : 0 < s.re) :
     HasMellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s (mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s) := by
-  have h1 := hasMellin_one_Ioc hs
-  have h := hasMellin_integral_mul_div h1.1
-    ((mellinConvergent_deltaSpike_iff hε).mpr
-      (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _))
-  rw [h1.2, mellin_deltaSpike ν hε, one_div_mul_eq_div] at h
-  exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_integral_mul_div ν ε hx).mpr h
+  have hm := (mellinConvergent_deltaSpike_iff hε (s := s)).mpr
+    (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _)
+  have h := hm.hasMellin_mellinCutoffKernel hs
+  rw [mellin_deltaSpike ν hε] at h
+  exact (hasMellin_congr fun x hx ↦ by
+    rw [smoothCutoff_eq_mellinCutoffKernel ν ε hx, ← mellinCutoffKernel_ofReal]).mpr h
 
 /-- For `ν` supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)`, `ε > 0` and
 `Re s > 0`, the Mellin transform of the smoothed cutoff is `mellin χ_ε s = mellin ν (εs) / s`. -/
@@ -368,67 +350,25 @@ theorem exists_norm_mellin_smoothCutoff_le {k : ℕ} (hν : ContDiffOn ℝ k ν 
     _ ≤ ‖s‖ * ((1 + σ₂) ^ k * C) := by gcongr
     _ = (1 + σ₂) ^ k * C * ‖s‖ := by ring
 
-/-- On the line `Re s = σ > 0`, `|s| (1 + ε |Im s|) ≥ m (1 + (Im s)²)` with
-`m = min σ 1 · min ε 1 / 2`: the decay that makes `mellin χ_ε` integrable on the line. -/
-private lemma mul_one_add_sq_le_norm_mul {σ t : ℝ} (hσ : 0 < σ) (hε : 0 < ε) :
-    min σ 1 * min ε 1 / 2 * (1 + t ^ 2) ≤ ‖(σ + t * I : ℂ)‖ * (1 + ε * |t|) := by
-  have hre := re_le_norm (σ + t * I : ℂ)
-  have him := abs_im_le_norm (σ + t * I : ℂ)
-  simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-    add_zero, add_im, mul_im, zero_add] at hre him
-  have h1 : min σ 1 * (1 + |t|) ≤ 2 * ‖(σ + t * I : ℂ)‖ := by
-    nlinarith [min_le_left σ 1, min_le_right σ 1, abs_nonneg t]
-  have h2 : min ε 1 * (1 + |t|) ≤ 1 + ε * |t| := by
-    nlinarith [min_le_left ε 1, min_le_right ε 1, abs_nonneg t]
-  have h3 : 1 + t ^ 2 ≤ (1 + |t|) ^ 2 := by nlinarith [sq_abs t, abs_nonneg t]
-  have h4 := mul_le_mul h1 h2 (by positivity) (by positivity)
-  have hmin : 0 ≤ min σ 1 * min ε 1 := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left h3 hmin]
-
 /-- For `ν` of class `C¹` on `(0, ∞)` and supported in `[1/2, 2]`, `ε > 0` and `σ > 0`, the
 Mellin transform of the smoothed cutoff is integrable on the vertical line `Re s = σ`: on that line
-it is `mellin ν (εs) / s`, of size `O(1 / (|s| (1 + ε |Im s|)))`. -/
+it is `mellin ν (εs) / s = ε · mellin ν (εs) / (εs)`, the rescaling of the integrable
+`mellin ν w / w` on the line `Re w = εσ`. -/
 theorem verticalIntegrable_mellin_smoothCutoff (hν : ContDiffOn ℝ 1 ν (Ioi 0))
     (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hε : 0 < ε) {σ : ℝ} (hσ : 0 < σ) :
     VerticalIntegrable (mellin fun x ↦ (smoothCutoff ν ε x : ℂ)) σ := by
-  set s : ℝ → ℂ := fun t ↦ σ + t * I
-  have hsre (t : ℝ) : (s t).re = σ := by simp [s]
-  have hsim (t : ℝ) : (s t).im = t := by simp [s]
-  have hs0 (t : ℝ) : s t ≠ 0 := fun h ↦ hσ.ne' (by rw [← hsre t, h, zero_re])
-  have hline (t : ℝ) : mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) (s t) =
-      mellin (fun x ↦ (ν x : ℂ)) (ε * s t) / s t :=
-    mellin_smoothCutoff hνs (integrableOn_div_of_continuousOn hν.continuousOn hνs) hε
-      (by rw [hsre]; exact hσ)
-  -- `mellin ν` is entire, so the right side is continuous along the line
-  have hcont : Continuous fun t ↦ mellin (fun x ↦ (ν x : ℂ)) (ε * s t) / s t := by
-    have hd := differentiable_mellin_of_support_subset_Icc (f := fun x ↦ (ν x : ℂ))
-      (by norm_num : (0 : ℝ) < 1 / 2) (by simpa [Function.support] using hνs)
-      ((continuous_ofReal.comp_continuousOn hν.continuousOn).locallyIntegrableOn measurableSet_Ioi)
-    exact (hd.continuous.comp (by fun_prop)).div (by fun_prop) hs0
-  -- the decay of order one of `mellin ν` on the line `Re w = εσ`
-  obtain ⟨C, -, hC⟩ := exists_one_add_abs_im_pow_mul_norm_mellin_le (N := 1)
-    (ofRealCLM.contDiff.comp_contDiffOn hν) (isCompact_tsupport_ofReal_inter_Ioi hνs)
-    (isCompact_singleton (x := ε * σ))
-  simp only [Function.comp_def, ofRealCLM_apply, pow_one] at hC
-  set m : ℝ := min σ 1 * min ε 1 / 2
-  have hm : 0 < m := by positivity
-  refine Integrable.congr ?_ (Eventually.of_forall fun t ↦ (hline t).symm)
-  refine (integrable_inv_one_add_sq.const_mul (C / m)).mono' hcont.aestronglyMeasurable
-    (Eventually.of_forall fun t ↦ ?_)
-  have hst : m * (1 + t ^ 2) ≤ ‖s t‖ * (1 + ε * |t|) := mul_one_add_sq_le_norm_mul hσ hε
-  have hw := hC (ε * s t) (by simp [hsre])
-  have hwim : (ε * s t : ℂ).im = ε * t := by simp [hsim]
-  rw [hwim, abs_mul, abs_of_pos hε] at hw
-  rw [norm_div, div_le_iff₀ (norm_pos_iff.mpr (hs0 t))]
-  have hA : 0 < 1 + ε * |t| := by positivity
-  calc ‖mellin (fun x ↦ (ν x : ℂ)) (ε * s t)‖
-      ≤ C / (1 + ε * |t|) := by rw [le_div_iff₀ hA]; linarith
-    _ ≤ C / m * (1 + t ^ 2)⁻¹ * ‖s t‖ := by
-      rw [div_le_iff₀ hA]
-      have hC0 : 0 ≤ C := le_trans (by positivity) hw
-      calc C = C / m * (1 + t ^ 2)⁻¹ * (m * (1 + t ^ 2)) := by field_simp
-        _ ≤ C / m * (1 + t ^ 2)⁻¹ * (‖s t‖ * (1 + ε * |t|)) := by gcongr
-        _ = _ := by ring
+  have hνi := integrableOn_div_of_continuousOn hν.continuousOn hνs
+  have h := ((ofRealCLM.contDiff.comp_contDiffOn hν).verticalIntegrable_mellin_div
+    (isCompact_tsupport_ofReal_inter_Ioi hνs) (mul_pos hε hσ).ne').comp_mul_left' hε.ne'
+  simp only [Function.comp_def, ofRealCLM_apply] at h
+  refine (h.const_mul ε).congr (Eventually.of_forall fun t ↦ ?_)
+  have hw : (((ε * σ : ℝ) : ℂ) + ((ε * t : ℝ) : ℂ) * I) = ε * (σ + t * I) := by
+    push_cast
+    ring
+  have hε' : (ε : ℂ) ≠ 0 := ofReal_ne_zero.mpr hε.ne'
+  dsimp only
+  rw [mellin_smoothCutoff hνs hνi hε (by simpa using hσ), hw, mul_div_assoc',
+    mul_div_mul_left _ _ hε']
 
 /-- **Mellin inversion for the smoothed cutoff.** For `ν` of class `C¹` on `(0, ∞)` and supported
 in `[1/2, 2]`, `ε > 0`, `σ > 0` and `x > 0`, the inverse Mellin integral of `mellin χ_ε` on the

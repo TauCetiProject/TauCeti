@@ -22,7 +22,7 @@ have degree zero and whose homotopy has degree `-1`
 (`TauCeti.InternalGrading.homologyContraction`).
 
 The construction chooses two homogeneous splittings, which exist because every module over a
-division ring is projective (`TauCeti.LinearMap.IsHomogeneous.exists_rightInverse`): a section `s`
+division ring is projective (`LinearMap.IsHomogeneous.exists_rightInverse`): a section `s`
 of degree `-1` of the corestriction `M ⟶ im d` of `d`, and a section of degree zero of the
 quotient map `ker d ⟶ H`, choosing cycle representatives.  The endomorphism `q = 1 - s d` projects
 onto the cycles.  The inclusion `i` sends a class to its chosen representative, the projection `p`
@@ -66,7 +66,7 @@ universe uK uM
 
 variable {K : Type uK} {M : Type uM} [DivisionRing K] [AddCommGroup M] [Module K M]
   (G : InternalGrading K M ℤ) {d : Module.End K M}
-  (hhom : TauCeti.LinearMap.IsHomogeneous d G.piece G.piece 1) (hd : d ∘ₗ d = 0)
+  (hhom : LinearMap.IsHomogeneous d G.piece G.piece 1) (hd : d ∘ₗ d = 0)
 
 /-! ### A homogeneous section of the differential onto its image -/
 
@@ -85,7 +85,7 @@ private theorem rangeRestrict_comp_rangeSection :
     d.surjective_rangeRestrict)).1
 
 private theorem isHomogeneous_rangeSection :
-    TauCeti.LinearMap.IsHomogeneous (G.rangeSection hhom) (G.rangeGrading hhom).piece G.piece
+    LinearMap.IsHomogeneous (G.rangeSection hhom) (G.rangeGrading hhom).piece G.piece
       (-1) :=
   (Classical.choose_spec ((G.isHomogeneous_rangeRestrict hhom).exists_rightInverse
     d.surjective_rangeRestrict)).2
@@ -119,7 +119,7 @@ private theorem homologyπ_representative (y : d.homology hd) :
     ((G.isHomogeneous_homologyπ hhom hd).exists_rightInverse (d.homologyπ_surjective hd))).1 y
 
 private theorem isHomogeneous_representative :
-    TauCeti.LinearMap.IsHomogeneous (G.representative hhom hd) (G.homology hhom hd).piece
+    LinearMap.IsHomogeneous (G.representative hhom hd) (G.homology hhom hd).piece
       (G.ker hhom).piece 0 :=
   (Classical.choose_spec ((G.isHomogeneous_homologyπ hhom hd).exists_rightInverse
     (d.homologyπ_surjective hd))).2
@@ -158,8 +158,8 @@ private theorem cycleProjection_rangeSection (b : range d) :
   rw [coe_cycleProjection, rangeRestrict_rangeSection, sub_self, ZeroMemClass.coe_zero]
 
 private theorem isHomogeneous_cycleProjection :
-    TauCeti.LinearMap.IsHomogeneous (G.cycleProjection hhom) G.piece (G.ker hhom).piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    LinearMap.IsHomogeneous (G.cycleProjection hhom) G.piece (G.ker hhom).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
     rw [add_zero, mem_ker_piece, coe_cycleProjection]
     exact Submodule.sub_mem _ hx <| by
       simpa only [add_neg_cancel_right] using (G.isHomogeneous_rangeSection hhom).map_mem
@@ -284,14 +284,14 @@ private theorem homologyContraction_homotopy :
   rfl
 
 private theorem isHomogeneous_incl :
-    TauCeti.LinearMap.IsHomogeneous (G.incl hhom hd) (G.homology hhom hd).piece G.piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
+    LinearMap.IsHomogeneous (G.incl hhom hd) (G.homology hhom hd).piece G.piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
     rw [incl_apply]
     exact (G.mem_ker_piece hhom).1 ((G.isHomogeneous_representative hhom hd).map_mem hy)
 
 private theorem isHomogeneous_proj :
-    TauCeti.LinearMap.IsHomogeneous (G.proj hhom hd) G.piece (G.homology hhom hd).piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ x hx ↦ by
+    LinearMap.IsHomogeneous (G.proj hhom hd) G.piece (G.homology hhom hd).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ x hx ↦ by
     rw [proj_apply]
     simpa only [add_zero] using (G.isHomogeneous_homologyπ hhom hd).map_mem
       ((G.isHomogeneous_cycleProjection hhom).map_mem hx)
@@ -316,23 +316,23 @@ theorem homologyContraction_proj_of_mem_ker {x : M} (hx : x ∈ LinearMap.ker d)
 
 /-- The inclusion of the homology contraction has degree zero. -/
 theorem isHomogeneous_homologyContraction_incl :
-    TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).incl
+    LinearMap.IsHomogeneous (G.homologyContraction hhom hd).incl
       (G.homology hhom hd).piece G.piece 0 := by
   rw [homologyContraction_incl]
   exact G.isHomogeneous_incl hhom hd
 
 /-- The projection of the homology contraction has degree zero. -/
 theorem isHomogeneous_homologyContraction_proj :
-    TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).proj G.piece
+    LinearMap.IsHomogeneous (G.homologyContraction hhom hd).proj G.piece
       (G.homology hhom hd).piece 0 := by
   rw [homologyContraction_proj]
   exact G.isHomogeneous_proj hhom hd
 
 /-- The homotopy of the homology contraction has degree `-1`. -/
 theorem isHomogeneous_homologyContraction_homotopy :
-    TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).homotopy G.piece G.piece
+    LinearMap.IsHomogeneous (G.homologyContraction hhom hd).homotopy G.piece G.piece
       (-1) :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+  LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
     rw [homologyContraction_homotopy, homotopy_apply]
     refine (G.isHomogeneous_rangeSection hhom).map_mem ?_
     rw [rangeGrading, mem_submodule_piece, coe_residual]
