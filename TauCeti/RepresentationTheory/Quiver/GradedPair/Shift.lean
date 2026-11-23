@@ -21,6 +21,8 @@ lowering pair on `S` is a pair on `S(c)` with the same operator.
 * `TauCeti.GradedPair.shift`: the same operator on the shifted grading.
 * `TauCeti.GradedPairEquiv.shiftEquiv`: graded equivalences of pairs correspond to graded
   equivalences of their shifts.
+* `TauCeti.GradedPairEquiv.shiftZero`, `TauCeti.GradedPairEquiv.shiftShift`: the identity
+  map as a graded equivalence `P(0) ≃ P` and `P(c)(c') ≃ P(c + c')`.
 
 ## Main results
 
@@ -30,6 +32,8 @@ lowering pair on `S` is a pair on `S(c)` with the same operator.
   shift laws.
 * `TauCeti.GradedPair.isomorphic_shift_iff`: shifting by `c` preserves and reflects graded
   isomorphism of pairs.
+* `TauCeti.GradedPair.isomorphic_shift_zero`, `TauCeti.GradedPair.isomorphic_shift_shift`: the
+  additive shift laws for pairs, up to graded isomorphism.
 
 ## References
 
@@ -136,6 +140,41 @@ theorem shiftEquiv_symm_apply_apply (c : ℤ) (e : GradedPairEquiv (P.shift c) (
     (v : S.Carrier) : (shiftEquiv c).symm e v = e v :=
   (rfl)
 
+/-- The shift of a pair by `0` is graded-equivalent to the pair through the identity map. -/
+def shiftZero (P : GradedPair S d) : GradedPairEquiv (P.shift 0) P where
+  toLinearEquiv := LinearEquiv.refl ℂ S.Carrier
+  mem_grade_iff' a v := by
+    simp only [GradedCoordSpace.mem_grade_shift, sub_zero, LinearEquiv.refl_apply]
+  map_operator' _ := rfl
+
+@[simp]
+theorem shiftZero_apply (P : GradedPair S d) (v : S.Carrier) : shiftZero P v = v :=
+  (rfl)
+
+@[simp]
+theorem shiftZero_symm_apply (P : GradedPair S d) (v : S.Carrier) :
+    (shiftZero P).symm v = v := by
+  simpa using (shiftZero P).symm_apply_apply v
+
+/-- Shifting a pair by `c` and then by `c'` is graded-equivalent to shifting it by `c + c'`,
+through the identity map. -/
+def shiftShift (P : GradedPair S d) (c c' : ℤ) :
+    GradedPairEquiv ((P.shift c).shift c') (P.shift (c + c')) where
+  toLinearEquiv := LinearEquiv.refl ℂ S.Carrier
+  mem_grade_iff' a v := by
+    simp only [GradedCoordSpace.mem_grade_shift, sub_sub, add_comm c', LinearEquiv.refl_apply]
+  map_operator' _ := rfl
+
+@[simp]
+theorem shiftShift_apply (P : GradedPair S d) (c c' : ℤ) (v : S.Carrier) :
+    shiftShift P c c' v = v :=
+  (rfl)
+
+@[simp]
+theorem shiftShift_symm_apply (P : GradedPair S d) (c c' : ℤ) (v : S.Carrier) :
+    (shiftShift P c c').symm v = v := by
+  simpa using (shiftShift P c c').symm_apply_apply v
+
 end GradedPairEquiv
 
 namespace GradedPair
@@ -148,6 +187,16 @@ theorem isomorphic_shift_iff {P : GradedPair S d} {Q : GradedPair T d} (c : ℤ)
     (P.shift c).Isomorphic (Q.shift c) ↔ P.Isomorphic Q := by
   rw [isomorphic_iff, isomorphic_iff]
   exact (GradedPairEquiv.shiftEquiv c).nonempty_congr.symm
+
+/-- Shifting by `0` gives a pair isomorphic to the original one. -/
+theorem isomorphic_shift_zero (P : GradedPair S d) : (P.shift 0).Isomorphic P :=
+  (GradedPairEquiv.shiftZero P).isomorphic
+
+/-- Shifting by `c` and then by `c'` agrees with shifting by `c + c'`, up to graded
+isomorphism. -/
+theorem isomorphic_shift_shift (P : GradedPair S d) (c c' : ℤ) :
+    ((P.shift c).shift c').Isomorphic (P.shift (c + c')) :=
+  (GradedPairEquiv.shiftShift P c c').isomorphic
 
 end GradedPair
 
