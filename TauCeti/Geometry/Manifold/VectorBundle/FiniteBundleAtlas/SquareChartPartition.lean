@@ -154,6 +154,11 @@ theorem chartCutoff_apply_of_notMem {i : ι} {y : E} (hy : y ∉ (A.chartData i)
   rw [chartCutoff, TestFunction.coe_mk]
   simp [chartCutoffFun, hy]
 
+/-- The `i`-th cutoff read in the `i`-th chart is supported in `chartSupport i`. -/
+theorem tsupport_chartCutoff_subset (i : ι) :
+    tsupport (A.chartCutoff i) ⊆ A.chartSupport i :=
+  A.tsupport_chartCutoffFun_subset i
+
 end SquareChartPartition
 
 /-! ### Existence on compact manifolds -/
