@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Restriction
-import TauCeti.CategoryTheory.Sites.Spaces
+public import TauCeti.CategoryTheory.Sites.Spaces
 
 /-!
 # Pullback of quasi-coherent, finitely presented, and locally free sheaves on ringed spaces
@@ -65,6 +65,7 @@ variable {X Y : TopCat.{u}} {f : X ⟶ Y}
 /-- Local generators of an `S`-module sheaf `M` on an open cover `q.X` of `Y`, carried along a
 ringed-space morphism `(f, φ)` to local generators of `(pullback φ).obj M` on the preimage open
 cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. -/
+@[expose, simps I X generators]
 def LocalGeneratorsData.pullback {M : SheafOfModules.{u} S}
     (q : LocalGeneratorsData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -78,55 +79,15 @@ def LocalGeneratorsData.pullback {M : SheafOfModules.{u} S}
     (q.generators i).mapIso (pullbackOver φ (q.X i)) (pullbackOverUnitIso φ (q.X i))
       ((overFunctorCompPullbackOverIso φ (q.X i)).app M)
 
-/-- The index type of `q.pullback φ` is `q.I`. -/
-@[simp]
-theorem LocalGeneratorsData.pullback_I {M : SheafOfModules.{u} S}
-    (q : LocalGeneratorsData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] :
-    (q.pullback φ).I = q.I :=
-  (rfl)
-
-/-- The covering opens of `q.pullback φ` are the preimages of the covering opens of `q`. -/
-@[simp]
-theorem LocalGeneratorsData.pullback_X {M : SheafOfModules.{u} S}
-    (q : LocalGeneratorsData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] :
-    (q.pullback φ).X = fun i ↦
-      (Opens.map f).obj (q.X ((LocalGeneratorsData.pullback_I q φ).mp i)) :=
-  (rfl)
-
-/-- The generating sections of `q.pullback φ` are those of `q` transported along `pullbackOver`. -/
-theorem LocalGeneratorsData.pullback_generators {M : SheafOfModules.{u} S}
-    (q : LocalGeneratorsData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : (q.pullback φ).I) :
-    (q.pullback φ).generators i =
-      cast (by rw [LocalGeneratorsData.pullback_X]; rfl)
-        ((fun j : q.I ↦
-          (q.generators j).mapIso (pullbackOver φ (q.X j)) (pullbackOverUnitIso φ (q.X j))
-            ((overFunctorCompPullbackOverIso φ (q.X j)).app M))
-          ((LocalGeneratorsData.pullback_I q φ).mp i)) :=
-  (rfl)
-
 /-- Typed projection of the generator index type of `(q.pullback φ).generators i`. -/
-@[simp]
 theorem LocalGeneratorsData.pullback_generators_I {M : SheafOfModules.{u} S}
     (q : LocalGeneratorsData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : (q.pullback φ).I) :
-    ((q.pullback φ).generators i).I =
-      (q.generators ((LocalGeneratorsData.pullback_I q φ).mp i)).I := by
+    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : q.I) :
+    ((q.pullback φ).generators i).I = (q.generators i).I := by
   unfold LocalGeneratorsData.pullback
-  exact (fun j : q.I ↦ GeneratingSections.mapIso_I (q.generators j)
-    (pullbackOver φ (q.X j)) (pullbackOverUnitIso φ (q.X j))
-    ((overFunctorCompPullbackOverIso φ (q.X j)).app M))
-    ((LocalGeneratorsData.pullback_I q φ).mp i)
+  exact GeneratingSections.mapIso_I _ _ _ _
 
 /-- Carrying local generators along a morphism of ringed spaces preserves finite type. -/
 instance LocalGeneratorsData.isFiniteType_pullback {M : SheafOfModules.{u} S}
@@ -157,6 +118,7 @@ instance LocalGeneratorsData.isLocallyFreeData_pullback {M : SheafOfModules.{u} 
 /-- Quasi-coherent presentation data of an `S`-module sheaf `M` on an open cover `q.X` of `Y`,
 carried along a ringed-space morphism `(f, φ)` to quasi-coherent presentation data of
 `(pullback φ).obj M` on the preimage open cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. -/
+@[expose, simps I X presentation]
 def QuasicoherentData.pullback {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -170,69 +132,27 @@ def QuasicoherentData.pullback {M : SheafOfModules.{u} S}
     ((q.presentation i).map (pullbackOver φ (q.X i)) (pullbackOverUnitIso φ (q.X i))).ofIsIso
       ((overFunctorCompPullbackOverIso φ (q.X i)).app M).hom
 
-/-- The index type of `q.pullback φ` is `q.I`. -/
-@[simp]
-theorem QuasicoherentData.pullback_I {M : SheafOfModules.{u} S}
-    (q : QuasicoherentData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] :
-    (q.pullback φ).I = q.I :=
-  (rfl)
-
-/-- The covering opens of `q.pullback φ` are the preimages of the covering opens of `q`. -/
-@[simp]
-theorem QuasicoherentData.pullback_X {M : SheafOfModules.{u} S}
-    (q : QuasicoherentData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] :
-    (q.pullback φ).X = fun i ↦
-      (Opens.map f).obj (q.X ((QuasicoherentData.pullback_I q φ).mp i)) :=
-  (rfl)
-
-/-- The presentations of `q.pullback φ` are those of `q` transported along `pullbackOver`. -/
-theorem QuasicoherentData.pullback_presentation {M : SheafOfModules.{u} S}
-    (q : QuasicoherentData.{w} (R := S) M)
-    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : (q.pullback φ).I) :
-    (q.pullback φ).presentation i =
-      cast (by rw [QuasicoherentData.pullback_X]; rfl)
-        ((fun j : q.I ↦
-          ((q.presentation j).map (pullbackOver φ (q.X j))
-            (pullbackOverUnitIso φ (q.X j))).ofIsIso
-            ((overFunctorCompPullbackOverIso φ (q.X j)).app M).hom)
-          ((QuasicoherentData.pullback_I q φ).mp i)) :=
-  (rfl)
-
 /-- Typed projection of the generator index type of `(q.pullback φ).presentation i`. -/
-@[simp]
 theorem QuasicoherentData.pullback_presentation_generators_I {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : (q.pullback φ).I) :
-    ((q.pullback φ).presentation i).generators.I =
-      (q.presentation ((QuasicoherentData.pullback_I q φ).mp i)).generators.I := by
+    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : q.I) :
+    ((q.pullback φ).presentation i).generators.I = (q.presentation i).generators.I := by
   unfold QuasicoherentData.pullback
   simp only [Presentation.ofIsIso_generators, GeneratingSections.ofEpi_I,
     Presentation.map_generators_I]
-  rfl
 
 /-- Typed projection of the relation index type of `(q.pullback φ).presentation i`. -/
-@[simp]
 theorem QuasicoherentData.pullback_presentation_relations_I {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
-    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : (q.pullback φ).I) :
-    ((q.pullback φ).presentation i).relations.I =
-      (q.presentation ((QuasicoherentData.pullback_I q φ).mp i)).relations.I := by
+    [(SheafOfModules.pushforward.{u} φ).IsRightAdjoint] (i : q.I) :
+    ((q.pullback φ).presentation i).relations.I = (q.presentation i).relations.I := by
   unfold QuasicoherentData.pullback
   simp only [Presentation.ofIsIso_relations, GeneratingSections.ofEpi_I,
     Presentation.map_relations_I]
-  rfl
 
 /-- Carrying finite quasi-coherent presentation data along a morphism of ringed spaces preserves
 `IsFinitePresentation`. -/

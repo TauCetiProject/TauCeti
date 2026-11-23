@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Unit
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.OpenSubspace
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Free
 
 /-!
 # Restriction and slice-site pullback of sheaves of modules on ringed spaces
@@ -23,8 +22,6 @@ sheaf, `SheafOfModules.pullbackOverUnitIso_hom_comp_overFunctorCompPullbackOverI
 
 ## Main declarations
 
-* `SheafOfModules.overFunctorUnitIso`: identification of the unit sheaf on a slice site with the
-  slice restriction of the global unit sheaf;
 * `SheafOfModules.restrictPullbackIso` and `SheafOfModules.restrictPullbackIso_hom_app`:
   compatibility of module pullback with open-subspace restriction, and its component formula;
 * `SheafOfModules.pullbackOver`: the induced pullback functor between slice sites;
@@ -48,18 +45,6 @@ universe v u
 noncomputable section
 
 namespace SheafOfModules
-
-section OverUnit
-
-variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
-
-/-- Restricting the unit sheaf of modules to the slice site over `X` yields the unit sheaf of
-modules on the slice site. -/
-def overFunctorUnitIso (R : Sheaf J RingCat.{u}) (X : C) :
-    unit (R.over X) ≅ (overFunctor.{u} R X).obj (unit R) :=
-  Iso.refl _
-
-end OverUnit
 
 section RingedSpacePullback
 
@@ -193,144 +178,6 @@ def overFunctorCompPullbackOverIso [(pushforward.{u} φ).IsRightAdjoint] (V : Op
 
 end RingedSpacePullback
 
-private lemma unitToRestrict_comp_sheafOfModulesRestrictIsoPullback
-    {Z : TopCat.{u}} (U : Opens Z) (M : Z.Sheaf RingCat.{u}) :
-    ((U.sheafOfModulesEquivOverUnit M).inv ≫
-        (U.sheafOfModulesEquivOver M).functor.map (overFunctorUnitIso M U).hom ≫
-        (U.overFunctorCompSheafOfModulesEquivOver M).hom.app (unit M)) ≫
-      (U.sheafOfModulesRestrictIsoPullback.{u} M).hom.app (unit M) ≫
-      pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} M) = 𝟙 _ := by
-  have h1 : (U.sheafOfModulesRestrictAdj.{u} M).homEquiv _ _
-      ((U.sheafOfModulesRestrictIsoPullback.{u} M).hom.app (unit M) ≫
-        pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} M)) =
-      unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M) := by
-    refine (Adjunction.homEquiv_naturality_right _ _ _).trans ?_
-    rw [U.sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictIsoPullback_hom_app,
-      ← Adjunction.homEquiv_unit,
-      pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit]
-  have h2 := congrArg (fun k ↦ ((U.sheafOfModulesRestrictAdj.{u} M).homEquiv _ _).symm k) h1
-  rw [Equiv.symm_apply_apply] at h2
-  refine (congrArg
-    (((U.sheafOfModulesEquivOverUnit M).inv ≫
-        (U.sheafOfModulesEquivOver M).functor.map (overFunctorUnitIso M U).hom ≫
-        (U.overFunctorCompSheafOfModulesEquivOver M).hom.app (unit M)) ≫ ·) h2).trans ?_
-  rw [Adjunction.homEquiv_symm_apply]
-  ext W
-  let W' : (Opens ((Opens.toTopCat Z).obj U))ᵒᵖ := W
-  let y := ((U.overFunctorCompSheafOfModulesEquivOver M).hom.app (unit M)).val.app W'
-    (1 : M.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-  have hy :
-      (eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M (unit M) W') :
-          ((U.sheafOfModulesRestrict.{u} M).obj (unit M)).val.presheaf.obj W' ⟶
-            (unit M).val.presheaf.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-        y = (1 : M.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) :=
-    U.overFunctorCompSheafOfModulesEquivOver_hom_app_val_app M (unit M) W' _
-  have hstep1 :
-      (((U.sheafOfModulesEquivOverUnit M).inv ≫
-          (U.sheafOfModulesEquivOver M).functor.map (overFunctorUnitIso M U).hom ≫
-          (U.overFunctorCompSheafOfModulesEquivOver M).hom.app (unit M)).val.app W)
-        (1 : (U.sheafRestrict.obj M).obj.obj W) = y :=
-    rfl
-  have hmap :
-      (((U.sheafOfModulesRestrict.{u} M).map
-          (unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M))).val.app W') y =
-        (eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm :
-          (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M)).val.presheaf.obj
-              (Opposite.op ((Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W'.unop))) ⟶
-            ((U.sheafOfModulesRestrict.{u} M).obj
-              ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-                (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M)))).val.presheaf.obj W')
-          (((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-            (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-            (1 : M.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))) := by
-    have hmv := Opens.sheafOfModulesRestrict_map_val_app U M
-      (unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)) W'
-    have hm1 := congrArg (fun k ↦ ((forget₂ _ AddCommGrpCat).map k) y) hmv
-    have ha := congrArg (fun k ↦ k y)
-      (CategoryTheory.Functor.map_comp (forget₂ (ModuleCat _) AddCommGrpCat)
-        (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M (unit M) W'))
-        ((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-            (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)) ≫
-          eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm))
-    have hsplit := ha.trans (congrArg
-      (fun k ↦ k (((forget₂ _ AddCommGrpCat).map
-        (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M (unit M) W'))) y))
-      (CategoryTheory.Functor.map_comp (forget₂ (ModuleCat _) AddCommGrpCat)
-        ((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-          (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-        (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M
-          ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-            (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm)))
-    have h1 :
-        ((forget₂ (ModuleCat _) AddCommGrpCat).map
-          (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M (unit M) W'))) =
-        eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M (unit M) W') :=
-      eqToHom_map _ _
-    have h2 :
-        ((forget₂ (ModuleCat _) AddCommGrpCat).map
-          (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm)) =
-        eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm :=
-      eqToHom_map _ _
-    let f := (forget₂ (ModuleCat _) AddCommGrpCat).map
-      ((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-        (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-    let g2 := (forget₂ (ModuleCat _) AddCommGrpCat).map
-      (eqToHom (Opens.sheafOfModulesRestrict_obj_val_obj U M
-        ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-          (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm)
-    let q1 : ((U.sheafOfModulesRestrict.{u} M).obj (unit M)).val.presheaf.obj W' ⟶
-        (unit M).val.presheaf.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)) :=
-      eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M (unit M) W')
-    have h12 := (congrArg (fun k ↦ (f ≫ g2) (k y)) h1).trans
-      (congrArg (fun k ↦ (f ≫ k) (q1 y)) h2)
-    have hrhs :
-        (f ≫ eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm)
-          (q1 y) =
-        _ :=
-      congrArg (fun z ↦ (eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U M
-          ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-            (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M))) W').symm :
-        (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M)).val.presheaf.obj
-            (Opposite.op ((Opens.map U.inclusion').obj
-              (U.isOpenEmbedding.functor.obj W'.unop))) ⟶
-          ((U.sheafOfModulesRestrict.{u} M).obj
-            ((pushforward.{u} (U.sheafInclusionHom RingCat.{u} M)).obj
-              (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M)))).val.presheaf.obj
-            W')
-        (((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-          (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) z)) hy
-    exact hm1.trans (hsplit.trans (h12.trans hrhs))
-  have hcounit := Opens.sheafOfModulesRestrictAdj_counit_app_val_app U M
-    (unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M)) W'
-    (((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-      (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-      (1 : M.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))))
-  refine (congrArg (((U.sheafOfModulesRestrictAdj.{u} M).counit.app _).val.app W')
-    ((congrArg (((U.sheafOfModulesRestrict.{u} M).map _).val.app W') hstep1).trans hmap)).trans ?_
-  refine hcounit.trans ?_
-  have hunit :
-      ((unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} M)).val.app
-          (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-        (1 : M.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) =
-      (1 : ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M).obj.obj
-        (Opposite.op ((Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W'.unop)))) := by
-    rw [unitToPushforwardObjUnit_val_app_apply, map_one]
-    rfl
-  refine (congrArg (fun z ↦ (((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj M).obj.map
-      (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W'.unop).op) z) hunit).trans ?_
-  rw [map_one]
-  rfl
-
 private lemma restrictPullbackIso_inv_app_unit_square
     {X Y : TopCat.{u}} {f : X ⟶ Y}
     {S : Y.Sheaf RingCat.{u}} {R : X.Sheaf RingCat.{u}}
@@ -348,6 +195,15 @@ private lemma restrictPullbackIso_inv_app_unit_square
       ((U.sheafOfModulesEquivOverUnit R).inv ≫
         (U.sheafOfModulesEquivOver R).functor.map (overFunctorUnitIso R U).hom ≫
         (U.overFunctorCompSheafOfModulesEquivOver R).hom.app (unit R)) := by
+  have hunitComp {Z : TopCat.{u}} (W : Opens Z) (M : Z.Sheaf RingCat.{u}) :
+      ((W.sheafOfModulesEquivOverUnit M).inv ≫
+          (W.sheafOfModulesEquivOver M).functor.map (overFunctorUnitIso M W).hom ≫
+          (W.overFunctorCompSheafOfModulesEquivOver M).hom.app (unit M)) ≫
+        (W.sheafOfModulesRestrictIsoPullback.{u} M).hom.app (unit M) ≫
+        pullbackObjUnitToUnit (W.sheafInclusionHom RingCat.{u} M) = 𝟙 _ :=
+    (congrArg (_ ≫ ·) (Opens.sheafOfModulesRestrictUnitIso_hom W M).symm).trans
+      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+        (Opens.sheafOfModulesEquivOverUnit_inv_comp_sheafOfModulesRestrictUnitIso_hom W M)))
   have hm : Mono ((U.sheafOfModulesRestrictIsoPullback.{u} R).hom.app (unit R) ≫
       pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} R)) :=
     mono_comp _ _
@@ -362,8 +218,7 @@ private lemma restrictPullbackIso_inv_app_unit_square
           pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} R)) =
       pullbackObjUnitToUnit (Opens.sheafHomResLE φ V U e) :=
     (Category.assoc _ _ _).trans
-      ((congrArg (_ ≫ ·) (unitToRestrict_comp_sheafOfModulesRestrictIsoPullback U R)).trans
-        (Category.comp_id _))
+      ((congrArg (_ ≫ ·) (hunitComp U R)).trans (Category.comp_id _))
   refine .trans ?_ hRHS.symm
   have hnat : (U.sheafOfModulesRestrict.{u} R).map (pullbackObjUnitToUnit φ) ≫
       (U.sheafOfModulesRestrictIsoPullback.{u} R).hom.app (unit R) =
@@ -468,8 +323,7 @@ private lemma restrictPullbackIso_inv_app_unit_square
   refine (Category.assoc _ _ _).symm.trans ?_
   refine (congrArg (· ≫ _) ?_).trans (Category.id_comp _)
   refine (CategoryTheory.Functor.map_comp _ _ _).symm.trans ?_
-  exact (congrArg _ (unitToRestrict_comp_sheafOfModulesRestrictIsoPullback V S)).trans
-    (CategoryTheory.Functor.map_id _ _)
+  exact (congrArg _ (hunitComp V S)).trans (CategoryTheory.Functor.map_id _ _)
 
 private lemma pullbackOverUnitIso_inner
     {X Y : TopCat.{u}} {f : X ⟶ Y}
