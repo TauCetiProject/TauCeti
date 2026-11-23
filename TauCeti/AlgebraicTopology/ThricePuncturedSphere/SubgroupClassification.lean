@@ -47,11 +47,11 @@ noncomputable def subgroup (c : MarkedIsoClass n) :
     Subgroup (FundamentalGroup ThricePuncturedSphere basePt) :=
   lift
     (fun t i => (stabilizer (Perm (Fin n)) i).comap
-      (peripheralBasis.lift ![t.1.σ0, t.1.σ1]))
+      (peripheralBasis.lift ![t.val.σ0, t.val.σ1]))
     (by
       intro τ t i
-      have hρ : peripheralBasis.lift ![(τ • t).1.σ0, (τ • t).1.σ1] =
-          (MulAut.conj τ).toMonoidHom.comp (peripheralBasis.lift ![t.1.σ0, t.1.σ1]) := by
+      have hρ : peripheralBasis.lift ![(τ • t).val.σ0, (τ • t).val.σ1] =
+          (MulAut.conj τ).toMonoidHom.comp (peripheralBasis.lift ![t.val.σ0, t.val.σ1]) := by
         apply fundamentalGroup_hom_ext <;> simp
       ext γ
       simp only [Subgroup.mem_comap, mem_stabilizer_iff, Perm.smul_def]
@@ -62,13 +62,13 @@ noncomputable def subgroup (c : MarkedIsoClass n) :
 @[simp]
 theorem subgroup_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).subgroup = (stabilizer (Perm (Fin n)) i).comap
-      (peripheralBasis.lift ![t.1.σ0, t.1.σ1]) :=
+      (peripheralBasis.lift ![t.val.σ0, t.val.σ1]) :=
   lift_mk _ _ t i
 
 /-- Membership in the subgroup is the fixed-label equation in the peripheral representation. -/
 theorem mem_subgroup_mk_iff (t : ConnectedTriple n) (i : Fin n)
     (γ : FundamentalGroup ThricePuncturedSphere basePt) :
-    γ ∈ (mk t i).subgroup ↔ peripheralBasis.lift ![t.1.σ0, t.1.σ1] γ i = i := by
+    γ ∈ (mk t i).subgroup ↔ peripheralBasis.lift ![t.val.σ0, t.val.σ1] γ i = i := by
   simp [mem_stabilizer_iff, Perm.smul_def]
 
 end MarkedIsoClass
@@ -80,8 +80,9 @@ point of the cover carrying that label. -/
 theorem subgroup_mk_connectedTriple (c : ConnectedFiberNumberedCover
     (X := TopCat.of ThricePuncturedSphere) basePt n) (i : Fin n) :
     (MarkedIsoClass.mk c.connectedTriple i).subgroup =
-      (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).2).range := by
-  have hρ : peripheralBasis.lift ![c.connectedTriple.1.σ0, c.connectedTriple.1.σ1] =
+      (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).property).range
+          := by
+  have hρ : peripheralBasis.lift ![c.connectedTriple.val.σ0, c.connectedTriple.val.σ1] =
       c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm basePt) := by
     apply fundamentalGroup_hom_ext <;>
       simp [coe_connectedTriple, IsCoveringMap.monodromyTriple_σ0,
@@ -162,14 +163,14 @@ noncomputable def subgroupEquiv [NeZero n] :
 /-- The classification sends a marked class to its fixed-sheet subgroup. -/
 @[simp]
 theorem coe_subgroupEquiv_apply [NeZero n] (c : MarkedIsoClass n) :
-    (subgroupEquiv c).1 = c.subgroup :=
+    (subgroupEquiv c).val = c.subgroup :=
   (rfl)
 
 /-- The marked class assigned to an index-`n` subgroup recovers that subgroup. -/
 @[simp]
 theorem subgroup_subgroupEquiv_symm [NeZero n]
     (H : {H : Subgroup (FundamentalGroup ThricePuncturedSphere basePt) // H.index = n}) :
-    (subgroupEquiv.symm H).subgroup = H.1 :=
+    (subgroupEquiv.symm H).subgroup = H.val :=
   congrArg Subtype.val (subgroupEquiv.apply_symm_apply H)
 
 end MarkedIsoClass

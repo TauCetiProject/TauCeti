@@ -35,6 +35,14 @@ universe u
 namespace TauCeti
 
 variable {X : TopCat.{u}} {x : X} {n : ℕ}
+
+/-- The subgroup recovered using any point over `x` has index equal to the degree. -/
+theorem ConnectedCover.index_range_mapOfEq (c : ConnectedCover x n)
+    [PathConnectedSpace (c.cover : TopCat)] (e : ⇑c.cover.proj ⁻¹' {x}) :
+    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range.index = n := by
+  rw [← c.cover.isCoveringMap_proj.card_fiber_eq_index e]
+  exact Nat.card_eq_of_equiv_fin c.nonempty_equiv_fin.some
+
 variable [LocallyPathConnectedSpace X]
 
 /-- Two pointed covers become equal as unpointed classes exactly when the recovered subgroups
@@ -42,27 +50,20 @@ are conjugate. -/
 theorem ConnectedPointedCoverClass.forgetPoint_eq_iff_exists_range_eq_map_conj
     (c d : ConnectedPointedCover x n) :
     (mk c).forgetPoint = (mk d).forgetPoint ↔ ∃ γ : FundamentalGroup X x,
-      (mapOfEq ⟨d.cover.proj, d.cover.isCoveringMap_proj.continuous⟩ d.e.2).range =
-        (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ c.e.2).range.map
+      (mapOfEq ⟨d.cover.proj, d.cover.isCoveringMap_proj.continuous⟩ d.e.property).range =
+        (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ c.e.property).range.map
           (MulAut.conj γ).toMonoidHom := by
   rw [forgetPoint_mk, forgetPoint_mk, ConnectedCoverClass.mk_eq_mk_iff,
     ConnectedPointedCover.forgetPoint_cover, ConnectedPointedCover.forgetPoint_cover,
     CoveringSpace.FullSubcategory.isIsomorphic_iff_exists_homeomorph]
   exact IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
-    c.cover.isCoveringMap_proj d.cover.isCoveringMap_proj c.e.2 d.e.2
-
-/-- The subgroup recovered using any point over `x` has index equal to the degree. -/
-theorem ConnectedCover.index_range_mapOfEq (c : ConnectedCover x n)
-    (e : ⇑c.cover.proj ⁻¹' {x}) :
-    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range.index = n := by
-  rw [← c.cover.isCoveringMap_proj.card_fiber_eq_index e]
-  exact Nat.card_eq_of_equiv_fin c.nonempty_equiv_fin.some
+    c.cover.isCoveringMap_proj d.cover.isCoveringMap_proj c.e.property d.e.property
 
 namespace ConnectedCoverClass
 
 private noncomputable def subgroupAt (c : ConnectedCover x n) (e : ⇑c.cover.proj ⁻¹' {x}) :
     Subgroup.ofIndex (FundamentalGroup X x) n :=
-  ⟨(mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range,
+  ⟨(mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range,
     Subgroup.mem_ofIndex.mpr (c.index_range_mapOfEq e)⟩
 
 private theorem mk_eq_mk_iff_orbitRel (c d : ConnectedCover x n)
@@ -77,21 +78,21 @@ private theorem mk_eq_mk_iff_orbitRel (c d : ConnectedCover x n)
   have h := ConnectedPointedCoverClass.forgetPoint_eq_iff_exists_range_eq_map_conj c' d'
   rw [ConnectedPointedCoverClass.forgetPoint_mk, ConnectedPointedCoverClass.forgetPoint_mk,
     hc, hd] at h
-  exact h
+  simpa only [subgroupAt, c', d'] using h
 
 variable [SemilocallySimplyConnectedSpace X] [NeZero n]
 
 open UniversalCover in
 private noncomputable def coverOfSubgroup (H : Subgroup.ofIndex (FundamentalGroup X x) n) :
     ConnectedCover x n where
-  cover := subgroupCover x H.1
+  cover := subgroupCover x H.val
   nonempty_equiv_fin := by
-    have hcard := (natCard_fiber_subgroupCover x H.1).trans (Subgroup.mem_ofIndex.mp H.2)
+    have hcard := (natCard_fiber_subgroupCover x H.val).trans (Subgroup.mem_ofIndex.mp H.property)
     exact ⟨(Nat.equivFinOfCardPos (hcard.trans_ne (NeZero.ne n))).trans (finCongr hcard)⟩
 
 private theorem subgroupAt_coverOfSubgroup (H : Subgroup.ofIndex (FundamentalGroup X x) n) :
-    subgroupAt (coverOfSubgroup H) (UniversalCover.subgroupCoverBasepointFiber x H.1) = H :=
-  Subtype.ext (UniversalCover.range_mapOfEq_subgroupCover x H.1)
+    subgroupAt (coverOfSubgroup H) (UniversalCover.subgroupCoverBasepointFiber x H.val) = H :=
+  Subtype.ext (UniversalCover.range_mapOfEq_subgroupCover x H.val)
 
 /-- The connected cover class of the quotient of the universal cover by an index-`n` subgroup. -/
 noncomputable def ofSubgroup (H : Subgroup.ofIndex (FundamentalGroup X x) n) :
@@ -100,9 +101,9 @@ noncomputable def ofSubgroup (H : Subgroup.ofIndex (FundamentalGroup X x) n) :
 
 /-- Any representative built from the subgroup cover gives the class of that subgroup. -/
 theorem ofSubgroup_eq_mk (H : Subgroup.ofIndex (FundamentalGroup X x) n)
-    (c : ConnectedCover x n) (hc : c.cover = UniversalCover.subgroupCover x H.1) :
+    (c : ConnectedCover x n) (hc : c.cover = UniversalCover.subgroupCover x H.val) :
     ofSubgroup H = mk c := by
-  change mk (coverOfSubgroup H) = mk c
+  rw [ofSubgroup]
   exact congrArg mk (ConnectedCover.ext hc.symm)
 
 open UniversalCover in
@@ -111,13 +112,13 @@ private theorem ofSubgroup_eq_mk_iff (H : Subgroup.ofIndex (FundamentalGroup X x
     ofSubgroup H = mk c ↔
       orbitRel (ConjAct (FundamentalGroup X x)) (Subgroup.ofIndex _ n) H (subgroupAt c e) := by
   rw [ofSubgroup, mk_eq_mk_iff_orbitRel (coverOfSubgroup H) c
-    (subgroupCoverBasepointFiber x H.1) e, subgroupAt_coverOfSubgroup]
+    (subgroupCoverBasepointFiber x H.val) e, subgroupAt_coverOfSubgroup]
 
 private theorem ofSubgroup_eq_iff (H K : Subgroup.ofIndex (FundamentalGroup X x) n) :
     ofSubgroup H = ofSubgroup K ↔
       orbitRel (ConjAct (FundamentalGroup X x)) (Subgroup.ofIndex _ n) H K := by
-  rw [show ofSubgroup K = mk (coverOfSubgroup K) from rfl,
-    ofSubgroup_eq_mk_iff H (coverOfSubgroup K) (UniversalCover.subgroupCoverBasepointFiber x K.1),
+  rw [ofSubgroup_eq_mk K (coverOfSubgroup K) rfl,
+    ofSubgroup_eq_mk_iff H (coverOfSubgroup K) (UniversalCover.subgroupCoverBasepointFiber x K.val),
     subgroupAt_coverOfSubgroup]
 
 /-- Connected cover classes of positive degree are in bijection with conjugation orbits of
@@ -147,16 +148,20 @@ theorem subgroupConjugacyEquiv_ofSubgroup (H : Subgroup.ofIndex (FundamentalGrou
     subgroupConjugacyEquiv (ofSubgroup H) = Quotient.mk'' H := by
   rw [← subgroupConjugacyEquiv_symm_mk, Equiv.apply_symm_apply]
 
-/-- The orbit attached to a cover is represented by the subgroup recovered at any fibre point. -/
-theorem subgroupConjugacyEquiv_mk (c : ConnectedCover x n) (e : ⇑c.cover.proj ⁻¹' {x}) :
-    subgroupConjugacyEquiv (mk c) = Quotient.mk''
-      (⟨(mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range,
-        Subgroup.mem_ofIndex.mpr (c.index_range_mapOfEq e)⟩ :
-          Subgroup.ofIndex (FundamentalGroup X x) n) := by
-  change subgroupConjugacyEquiv (mk c) = Quotient.mk'' (subgroupAt c e)
+private theorem subgroupConjugacyEquiv_mk_subgroupAt (c : ConnectedCover x n)
+    (e : ⇑c.cover.proj ⁻¹' {x}) :
+    subgroupConjugacyEquiv (mk c) = Quotient.mk'' (subgroupAt c e) := by
   apply subgroupConjugacyEquiv.symm.injective
   rw [Equiv.symm_apply_apply, subgroupConjugacyEquiv_symm_mk, eq_comm,
     ofSubgroup_eq_mk_iff (subgroupAt c e) c e]
+
+/-- The orbit attached to a cover is represented by the subgroup recovered at any fibre point. -/
+theorem subgroupConjugacyEquiv_mk (c : ConnectedCover x n) (e : ⇑c.cover.proj ⁻¹' {x}) :
+    subgroupConjugacyEquiv (mk c) = Quotient.mk''
+      (⟨(mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range,
+        Subgroup.mem_ofIndex.mpr (c.index_range_mapOfEq e)⟩ :
+          Subgroup.ofIndex (FundamentalGroup X x) n) := by
+  simpa only [subgroupAt] using subgroupConjugacyEquiv_mk_subgroupAt c e
 
 end ConnectedCoverClass
 

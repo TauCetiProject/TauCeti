@@ -20,7 +20,7 @@ We use the existing conjugation action on `Subgroup`, restricted to `Subgroup.of
 than introducing another conjugacy predicate. The classification commutes with forgetting a
 mark and, through monodromy, with forgetting the point of a connected cover. The topological
 input is `ConnectedPointedCoverClass.forgetPoint_eq_iff_exists_range_eq_map_conj`, combined with
-`MarkedIsoClass.subgroupEquiv`; no covering space is reconstructed here.
+`ConnectedCoverClass.subgroupConjugacyEquiv`, transported to triples by monodromy.
 
 The nonzero degree condition is essential: the trivial subgroup of this infinite fundamental
 group has natural-number index zero, but there are no connected degree-zero triples.
@@ -32,7 +32,7 @@ group has natural-number index zero, but there are no connected degree-zero trip
 
 public section
 
-open Equiv MulAction
+open MulAction
 open scoped Pointwise
 
 namespace TauCeti
@@ -73,17 +73,54 @@ namespace ConnectedIsoClass
 
 variable [NeZero n]
 
+/-- Connected degree-`n` triple classes classify conjugation orbits of index-`n` subgroups of
+the fundamental group of the thrice-punctured sphere. -/
+noncomputable def subgroupConjugacyEquiv :
+    ConnectedIsoClass n ≃
+      orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
+        (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :=
+  ConnectedCoverClass.isoClassEquiv.symm.trans ConnectedCoverClass.subgroupConjugacyEquiv
+
+end ConnectedIsoClass
+
+/-- Over the thrice-punctured sphere, the cover and triple classifications assign the same
+conjugation orbit. -/
+theorem ConnectedCoverClass.subgroupConjugacyEquiv_apply [NeZero n]
+    (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    subgroupConjugacyEquiv C = ConnectedIsoClass.subgroupConjugacyEquiv C.isoClass := by
+  rw [ConnectedIsoClass.subgroupConjugacyEquiv, Equiv.trans_apply,
+    ← isoClassEquiv_apply, Equiv.symm_apply_apply]
+
+namespace ConnectedIsoClass
+
+variable [NeZero n]
+
+/-- The unpointed classification is the pointed classification followed by passage to the
+conjugation orbit of the subgroup. -/
+@[simp]
+theorem subgroupConjugacyEquiv_forget (c : MarkedIsoClass n) :
+    subgroupConjugacyEquiv c.forget =
+      Quotient.mk'' (⟨c.subgroup, Subgroup.mem_ofIndex.mpr c.index_subgroup⟩ :
+        Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) := by
+  obtain ⟨a, i, rfl⟩ := c.exists_eq_mk_connectedTriple
+  let C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n := ⟨a.cover, ⟨a.ν⟩⟩
+  rw [MarkedIsoClass.forget_mk, ← ConnectedCoverClass.isoClass_mk C a.ν,
+    ← ConnectedCoverClass.subgroupConjugacyEquiv_apply,
+    ConnectedCoverClass.subgroupConjugacyEquiv_mk C (a.ν.symm i)]
+  exact congrArg Quotient.mk'' (Subtype.ext (a.subgroup_mk_connectedTriple i).symm)
+
 /-- The unmarked triple class corresponding to a subgroup of index `n`. This forgets the mark
 in the pointed subgroup classification. -/
 noncomputable def ofSubgroup
     (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
     ConnectedIsoClass n :=
-  (MarkedIsoClass.subgroupEquiv.symm ⟨H.1, Subgroup.mem_ofIndex.mp H.2⟩).forget
+  (MarkedIsoClass.subgroupEquiv.symm ⟨H.val, Subgroup.mem_ofIndex.mp H.property⟩).forget
 
 /-- Construct the unmarked triple class by forgetting the mark in the pointed construction. -/
 theorem ofSubgroup_def
     (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
-    ofSubgroup H = (MarkedIsoClass.subgroupEquiv.symm ⟨H.1, Subgroup.mem_ofIndex.mp H.2⟩).forget :=
+    ofSubgroup H =
+      (MarkedIsoClass.subgroupEquiv.symm ⟨H.val, Subgroup.mem_ofIndex.mp H.property⟩).forget :=
   (rfl)
 
 /-- Applying `ofSubgroup` to a marked triple's fixed-sheet subgroup recovers its unmarked class. -/
@@ -101,16 +138,29 @@ theorem ofSubgroup_surjective : Function.Surjective (ofSubgroup (n := n)) := by
   obtain ⟨d, rfl⟩ := MarkedIsoClass.forget_surjective c
   exact ⟨⟨d.subgroup, Subgroup.mem_ofIndex.mpr d.index_subgroup⟩, ofSubgroup_subgroup d⟩
 
+/-- The triple constructed from a subgroup is classified by that subgroup's orbit. -/
+@[simp]
+theorem subgroupConjugacyEquiv_ofSubgroup
+    (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
+    subgroupConjugacyEquiv (ofSubgroup H) = Quotient.mk'' H := by
+  rw [ofSubgroup_def, subgroupConjugacyEquiv_forget]
+  exact congrArg Quotient.mk'' (Subtype.ext (MarkedIsoClass.subgroup_subgroupEquiv_symm _))
+
+/-- The inverse classification constructs the unmarked triple of an orbit representative. -/
+@[simp]
+theorem subgroupConjugacyEquiv_symm_mk
+    (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
+    subgroupConjugacyEquiv.symm (Quotient.mk'' H) = ofSubgroup H := by
+  rw [← subgroupConjugacyEquiv_ofSubgroup H, Equiv.symm_apply_apply]
+
 /-- Index-`n` subgroups give the same unmarked triple class exactly when they belong to one
 conjugation orbit. -/
 theorem ofSubgroup_eq_iff
     (H K : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
     ofSubgroup H = ofSubgroup K ↔
       orbitRel (ConjAct (FundamentalGroup ThricePuncturedSphere basePt)) _ H K := by
-  rw [ofSubgroup_def, ofSubgroup_def, MarkedIsoClass.forget_eq_iff_orbitRel_subgroup,
-    MarkedIsoClass.subgroup_subgroupEquiv_symm, MarkedIsoClass.subgroup_subgroupEquiv_symm,
-    SubMulAction.orbitRel_of_subMul]
-  exact Iff.rfl
+  rw [← subgroupConjugacyEquiv.injective.eq_iff, subgroupConjugacyEquiv_ofSubgroup,
+    subgroupConjugacyEquiv_ofSubgroup, Quotient.eq'']
 
 /-- Conjugating the subgroup does not change its unmarked triple class. -/
 @[simp]
@@ -118,73 +168,6 @@ theorem ofSubgroup_smul (g : ConjAct (FundamentalGroup ThricePuncturedSphere bas
     (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
     ofSubgroup (g • H) = ofSubgroup H :=
   (ofSubgroup_eq_iff _ _).2 ⟨g, rfl⟩
-
-/-- Construct a connected triple class from a conjugation orbit of index-`n` subgroups. -/
-noncomputable def ofSubgroupConjugacyClass :
-    orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
-      (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) →
-        ConnectedIsoClass n :=
-  Quotient.lift ofSubgroup fun H K h => (ofSubgroup_eq_iff H K).2 h
-
-/-- The class constructed from a subgroup orbit is the unmarked class of that subgroup. -/
-@[simp]
-theorem ofSubgroupConjugacyClass_mk
-    (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
-    ofSubgroupConjugacyClass (Quotient.mk'' H) = ofSubgroup H :=
-  (rfl)
-
-/-- Conjugacy classes of index-`n` subgroups classify connected triple classes. -/
-theorem ofSubgroupConjugacyClass_bijective :
-    Function.Bijective (ofSubgroupConjugacyClass (n := n)) :=
-  ⟨(Setoid.lift_injective_iff_ker_eq_of_le _).2 (Setoid.ext ofSubgroup_eq_iff),
-    Quotient.lift_surjective _ _ ofSubgroup_surjective⟩
-
-/-- Connected degree-`n` triple classes classify conjugation orbits of index-`n` subgroups of
-the fundamental group of the thrice-punctured sphere. -/
-noncomputable def subgroupConjugacyEquiv :
-    ConnectedIsoClass n ≃
-      orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
-        (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :=
-  (Equiv.ofBijective ofSubgroupConjugacyClass ofSubgroupConjugacyClass_bijective).symm
-
-/-- The inverse classification constructs the triple of the subgroup orbit. -/
-@[simp]
-theorem subgroupConjugacyEquiv_symm_apply
-    (H : orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
-      (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n)) :
-    subgroupConjugacyEquiv.symm H = ofSubgroupConjugacyClass H :=
-  (rfl)
-
-/-- Classifying a triple constructed from a subgroup orbit recovers that orbit. -/
-@[simp]
-theorem subgroupConjugacyEquiv_ofSubgroupConjugacyClass
-    (H : orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
-      (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n)) :
-    subgroupConjugacyEquiv (ofSubgroupConjugacyClass H) = H := by
-  rw [← subgroupConjugacyEquiv_symm_apply, Equiv.apply_symm_apply]
-
-/-- Constructing the triple of the orbit assigned to a triple class recovers that class. -/
-@[simp]
-theorem ofSubgroupConjugacyClass_subgroupConjugacyEquiv (c : ConnectedIsoClass n) :
-    ofSubgroupConjugacyClass (subgroupConjugacyEquiv c) = c := by
-  rw [← subgroupConjugacyEquiv_symm_apply, Equiv.symm_apply_apply]
-
-/-- The triple constructed from a subgroup is classified by that subgroup's orbit. -/
-@[simp]
-theorem subgroupConjugacyEquiv_ofSubgroup
-    (H : Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) :
-    subgroupConjugacyEquiv (ofSubgroup H) = Quotient.mk'' H := by
-  rw [← ofSubgroupConjugacyClass_mk, subgroupConjugacyEquiv_ofSubgroupConjugacyClass]
-
-/-- The unpointed classification is the pointed classification followed by passage to the
-conjugation orbit of the subgroup. -/
-@[simp]
-theorem subgroupConjugacyEquiv_forget (c : MarkedIsoClass n) :
-    subgroupConjugacyEquiv c.forget =
-      Quotient.mk'' (⟨c.subgroup, Subgroup.mem_ofIndex.mpr c.index_subgroup⟩ :
-        Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n) := by
-  apply subgroupConjugacyEquiv.symm.injective
-  simp
 
 /-- The orbit assigned to a triple is represented by the stabilizer of any sheet. -/
 theorem subgroupConjugacyEquiv_mk (t : ConnectedTriple n) (i : Fin n) :
@@ -197,20 +180,6 @@ theorem subgroupConjugacyEquiv_mk (t : ConnectedTriple n) (i : Fin n) :
 end ConnectedIsoClass
 
 namespace ConnectedCoverClass
-
-/-- Over the thrice-punctured sphere, the cover and triple classifications assign the same
-conjugation orbit. -/
-theorem subgroupConjugacyEquiv_apply [NeZero n]
-    (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
-    subgroupConjugacyEquiv C = ConnectedIsoClass.subgroupConjugacyEquiv C.isoClass := by
-  obtain ⟨c, rfl⟩ := mk_surjective C
-  obtain ⟨ν⟩ := c.nonempty_equiv_fin
-  let i : Fin n := ⟨0, Nat.pos_of_ne_zero (NeZero.ne n)⟩
-  rw [subgroupConjugacyEquiv_mk c (ν.symm i), isoClass_mk c ν,
-    ConnectedIsoClass.subgroupConjugacyEquiv_mk _ i]
-  apply congrArg Quotient.mk''
-  apply Subtype.ext
-  exact (ConnectedFiberNumberedCover.subgroup_mk_connectedTriple ⟨c.cover, ν⟩ i).symm
 
 /-- Forgetting the chosen fibre point takes the subgroup of the marked triple to its orbit. -/
 @[simp]
@@ -225,17 +194,16 @@ theorem subgroupConjugacyEquiv_forgetPoint [NeZero n]
 theorem isoClass_subgroupConjugacyEquiv_symm [NeZero n]
     (H : orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
       (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n)) :
-    (subgroupConjugacyEquiv.symm H).isoClass = ConnectedIsoClass.ofSubgroupConjugacyClass H := by
+    (subgroupConjugacyEquiv.symm H).isoClass = ConnectedIsoClass.subgroupConjugacyEquiv.symm H := by
   apply ConnectedIsoClass.subgroupConjugacyEquiv.injective
-  rw [← subgroupConjugacyEquiv_apply, Equiv.apply_symm_apply,
-    ConnectedIsoClass.subgroupConjugacyEquiv_ofSubgroupConjugacyClass]
+  rw [← subgroupConjugacyEquiv_apply, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 /-- Over the thrice-punctured sphere, the inverse classification can be computed via triples. -/
 theorem subgroupConjugacyEquiv_symm_apply [NeZero n]
     (H : orbitRel.Quotient (ConjAct (FundamentalGroup ThricePuncturedSphere basePt))
       (Subgroup.ofIndex (FundamentalGroup ThricePuncturedSphere basePt) n)) :
     subgroupConjugacyEquiv.symm H =
-      isoClassEquiv.symm (ConnectedIsoClass.ofSubgroupConjugacyClass H) := by
+      isoClassEquiv.symm (ConnectedIsoClass.subgroupConjugacyEquiv.symm H) := by
   apply isoClass_injective
   rw [isoClass_subgroupConjugacyEquiv_symm, isoClass_isoClassEquiv_symm]
 

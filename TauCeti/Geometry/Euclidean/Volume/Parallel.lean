@@ -118,7 +118,7 @@ theorem volume_add_smul_closedBall_le_euclideanHausdorffMeasure_inter_mul_volume
     rw [smul_unitClosedBall_of_nonneg ht]
     rintro _ ⟨k, hk, b, hb, rfl⟩
     obtain ⟨h₁, h₂⟩ := A.direction.norm_measurableEquivProd_le
-      (AffineSubspace.vsub_mem_direction (hKA hk) q.2) (k + b)
+      (AffineSubspace.vsub_mem_direction (hKA hk) q.property) (k + b)
     rw [add_sub_cancel_left] at h₁ h₂
     rw [mem_closedBall_zero_iff] at hb
     simp only [g, mem_preimage, mem_prod, AffineSubspace.coe_vadd, vadd_eq_add]

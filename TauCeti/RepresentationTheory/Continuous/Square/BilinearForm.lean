@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.BilinearForm
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.Basic
 public import TauCeti.RepresentationTheory.Continuous.Square.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 
@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 
 On an inner product space the inner product turns a tensor `t` of the tensor square `V ⊗[𝕜] V` into
 the bilinear form `B_t (v, w) = ⟪t, v ⊗ₜ w⟫`, `TauCeti.BilinForm.ofTensor`, built in
-`TauCeti/Analysis/InnerProductSpace/BilinearForm.lean` together with its injectivity, its
+`TauCeti/Analysis/InnerProductSpace/BilinearForm/Basic.lean` together with its injectivity, its
 surjectivity **in finite dimensions** -- only there is it an identification of the tensor square
 with all of `BilinForm 𝕜 V` -- and the fact that it carries the symmetric tensors to the symmetric
 forms and the antisymmetric tensors to the alternating ones.
@@ -175,7 +175,7 @@ private theorem map_ofTensor_map_subtype_invariants [FiniteDimensional 𝕜 V] (
         (Submodule.map W.subtype σ.invariants) = S := by
   refine Submodule.ext fun B => ⟨?_, fun hB => ?_⟩
   · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact (hS _).mpr ⟨(isInvariantForm_ofTensor_iff π hπ).mpr ((hσ x).mp hx), (hP _).mpr x.2⟩
+    exact (hS _).mpr ⟨(isInvariantForm_ofTensor_iff π hπ).mpr ((hσ x).mp hx), (hP _).mpr x.property⟩
   · obtain ⟨hBinv, hPB⟩ := (hS B).mp hB
     obtain ⟨t, rfl⟩ := BilinForm.ofTensor_surjective B
     exact ⟨t, ⟨⟨t, (hP t).mp hPB⟩,

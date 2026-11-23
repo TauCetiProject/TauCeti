@@ -90,9 +90,9 @@ variable {n : ℕ}
 
 /-- Relabeling a connected triple simultaneously conjugates its three permutations. -/
 instance : MulAction (Perm (Fin n)) (ConnectedTriple n) where
-  smul τ t := ⟨τ • t.1, (PermutationTriple.isConnected_smul_iff τ t.1).2 t.2⟩
-  one_smul t := Subtype.ext (one_smul _ t.1)
-  mul_smul τ υ t := Subtype.ext (mul_smul τ υ t.1)
+  smul τ t := ⟨τ • t.val, (PermutationTriple.isConnected_smul_iff τ t.val).2 t.property⟩
+  one_smul t := Subtype.ext (one_smul _ t.val)
+  mul_smul τ υ t := Subtype.ext (mul_smul τ υ t.val)
 
 instance : DecidableEq (ConnectedTriple n) := inferInstance
 
@@ -159,8 +159,8 @@ def equivSubtype (n : ℕ) :
 the induced connectedness proof. -/
 @[simp]
 theorem equivSubtype_mk (t : ConnectedTriple n) :
-    equivSubtype n (mk t) = ⟨PermutationTriple.IsoClass.mk t.1,
-      (PermutationTriple.IsoClass.isConnected_mk t.1).2 t.2⟩ := by
+    equivSubtype n (mk t) = ⟨PermutationTriple.IsoClass.mk t.val,
+      (PermutationTriple.IsoClass.isConnected_mk t.val).2 t.property⟩ := by
   apply Subtype.ext
   dsimp only
   rw [← PermutationTriple.IsoClass.quotient_mk]
@@ -171,12 +171,12 @@ theorem equivSubtype_mk (t : ConnectedTriple n) :
 
 /-- The isomorphism class of a connected triple, viewed among all permutation triples. -/
 def forget (c : ConnectedIsoClass n) : PermutationTriple.IsoClass n :=
-  (equivSubtype n c).1
+  (equivSubtype n c).val
 
 /-- Forgetting connectedness sends a connected representative to its ordinary triple class. -/
 @[simp]
 theorem forget_mk (t : ConnectedTriple n) :
-    (mk t).forget = PermutationTriple.IsoClass.mk t.1 :=
+    (mk t).forget = PermutationTriple.IsoClass.mk t.val :=
   congrArg Subtype.val (equivSubtype_mk t)
 
 /-- Recovering a connected quotient class from a connected representative of an ordinary class. -/
@@ -326,7 +326,7 @@ there are no connected classes. -/
 theorem forget_surjective : Function.Surjective (forget : MarkedIsoClass n → _) := by
   intro c
   obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
-  exact ⟨mk t ⟨0, Nat.pos_of_ne_zero t.2.ne_zero⟩, forget_mk _ _⟩
+  exact ⟨mk t ⟨0, Nat.pos_of_ne_zero t.property.ne_zero⟩, forget_mk _ _⟩
 
 /-- Relabeling acts freely on marked connected triples: a relabeling fixing a connected triple
 and one of its sheets is an automorphism of a transitive triple fixing a sheet, hence the
@@ -335,8 +335,8 @@ theorem stabilizer_eq_bot (x : ConnectedTriple n × Fin n) :
     stabilizer (Perm (Fin n)) x = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun τ hτ => ?_
   rw [mem_stabilizer_iff, Prod.smul_mk, Prod.mk.injEq] at hτ
-  have ht : τ • x.1.1 = x.1.1 := congrArg Subtype.val hτ.1
-  refine x.1.1.eq_one_of_mem_automorphismGroup_of_apply_eq x.1.2.isPretransitive ?_ hτ.2
+  have ht : τ • x.1.val = x.1.val := congrArg Subtype.val hτ.1
+  refine x.1.val.eq_one_of_mem_automorphismGroup_of_apply_eq x.1.property.isPretransitive ?_ hτ.2
   exact PermutationTriple.mem_automorphismGroup_iff.2
     ⟨by rw [← PermutationTriple.smul_σ0, ht], by rw [← PermutationTriple.smul_σ1, ht]⟩
 

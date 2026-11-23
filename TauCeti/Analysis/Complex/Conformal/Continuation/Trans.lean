@@ -191,7 +191,7 @@ private theorem isAnalyticContinuationAlong_transFamily_Iic {p : Path a b}
       {u : I | (u : ℝ) ≤ 2⁻¹} :=
     eqOn_trans_comp_projIcc
       (fun u hu => have hu' : (u : ℝ) ≤ 2⁻¹ := hu
-        ⟨by linarith [u.2.1], by linarith⟩)
+        ⟨by linarith [u.property.1], by linarith⟩)
       (fun u hu => have hu' : (u : ℝ) ≤ 2⁻¹ := hu
         Path.extend_trans_of_le_half p q (by rw [one_div]; exact hu'))
   exact (h₁.congr_path hpath₁).congr fun u hu => by
@@ -213,7 +213,7 @@ private theorem isAnalyticContinuationAlong_transFamily_Ici {p : Path a b}
       {u : I | 2⁻¹ ≤ (u : ℝ)} :=
     eqOn_trans_comp_projIcc
       (fun u hu => have hu' : 2⁻¹ ≤ (u : ℝ) := hu
-        ⟨by linarith, by linarith [u.2.2]⟩)
+        ⟨by linarith, by linarith [u.property.2]⟩)
       (fun u hu => have hu' : 2⁻¹ ≤ (u : ℝ) := hu
         Path.extend_trans_of_half_le p q (by rw [one_div]; exact hu'))
   refine (h₂.congr_path hpath₂).congr fun u hu => ?_
@@ -274,8 +274,8 @@ theorem IsAnalyticContinuationAlong.left_of_trans {H : I → ℂ → E} {p : Pat
     continuous_projIcc.comp (by fun_prop)
   refine (h.reparam (φ := fun t : I => projIcc (0 : ℝ) 1 zero_le_one ((t : ℝ) / 2))
     (s' := univ) hψ.continuousOn (mapsTo_univ _ _)).congr_path fun t _ => ?_
-  have ht : (t : ℝ) / 2 ≤ 1 / 2 := by linarith [t.2.2]
-  have hmem : (t : ℝ) / 2 ∈ Icc (0 : ℝ) 1 := ⟨by linarith [t.2.1], by linarith⟩
+  have ht : (t : ℝ) / 2 ≤ 1 / 2 := by linarith [t.property.2]
+  have hmem : (t : ℝ) / 2 ∈ Icc (0 : ℝ) 1 := ⟨by linarith [t.property.1], by linarith⟩
   calc (p : I → ℂ) t
       = p.extend (t : ℝ) := (p.extend_extends' t).symm
     _ = p.extend (2 * ((t : ℝ) / 2)) := by ring_nf
@@ -295,8 +295,8 @@ theorem IsAnalyticContinuationAlong.right_of_trans {H : I → ℂ → E} {p : Pa
     continuous_projIcc.comp (by fun_prop)
   refine (h.reparam (φ := fun t : I => projIcc (0 : ℝ) 1 zero_le_one (((t : ℝ) + 1) / 2))
     (s' := univ) hψ.continuousOn (mapsTo_univ _ _)).congr_path fun t _ => ?_
-  have ht : 1 / 2 ≤ ((t : ℝ) + 1) / 2 := by linarith [t.2.1]
-  have hmem : ((t : ℝ) + 1) / 2 ∈ Icc (0 : ℝ) 1 := ⟨by linarith, by linarith [t.2.2]⟩
+  have ht : 1 / 2 ≤ ((t : ℝ) + 1) / 2 := by linarith [t.property.1]
+  have hmem : ((t : ℝ) + 1) / 2 ∈ Icc (0 : ℝ) 1 := ⟨by linarith, by linarith [t.property.2]⟩
   calc (q : I → ℂ) t
       = q.extend (t : ℝ) := (q.extend_extends' t).symm
     _ = q.extend (2 * (((t : ℝ) + 1) / 2) - 1) := by ring_nf

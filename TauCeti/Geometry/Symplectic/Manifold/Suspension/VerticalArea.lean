@@ -100,7 +100,7 @@ theorem integralTopForm_mpullback_mpullback_snd_fiberForm_nonneg
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v)) :
     0 ≤ integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 :=
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val :=
   integralTopForm_nonneg o fun c b hb ↦
     mpullback_mpullback_snd_fiberForm_apply_basis_nonneg hu ho (hhol c) (hS c) (hV c) (htame c) b hb
 
@@ -122,7 +122,7 @@ theorem integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff [CompactSp
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v)) :
     integralTopForm o (SmoothForm.mpullback u hu
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 ↔
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0 ↔
       ∀ c (e : TangentSpace I' c),
         mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c) := by
   refine ⟨fun h0 ↦ ?_, fun hH ↦ ?_⟩
@@ -161,7 +161,7 @@ theorem range_mfderiv_eq_suspensionHorizontalSubspace [CompactSpace C]
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     {c : C} (hc : Function.Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c)) :
     (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c).range = suspensionHorizontalSubspace φ (u c) := by
   have hle : (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c).range ≤

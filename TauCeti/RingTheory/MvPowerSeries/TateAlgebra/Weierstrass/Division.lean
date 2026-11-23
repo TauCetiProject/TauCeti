@@ -103,7 +103,7 @@ theorem norm_mul_add_eq_max_of_isMulDistinguished {g : Flat}
   simp only [← norm_restrictedOptionEquiv (f := g * q + r), ← norm_restrictedOptionEquiv (f := g),
     ← norm_restrictedOptionEquiv (f := q), ← norm_restrictedOptionEquiv (f := r),
     PowerSeries.norm_eq_gaussNorm, coe_restrictedOptionEquiv_mul_add]
-  exact hg.gaussNorm_mul_add_eq_max Fact.out (restrictedOptionEquiv q).2
+  exact hg.gaussNorm_mul_add_eq_max Fact.out (restrictedOptionEquiv q).property
     ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr)
 
 /-- **Uniqueness in several-variable Weierstrass division.** Over an ultrametric normed
@@ -120,8 +120,9 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isMulDistinguished {g : Flat}
     q = q' ∧ r = r' := by
   have h' := congrArg (fun x : Flat ↦ (restrictedOptionEquiv x : PowerSeries Inner)) h
   simp only [coe_restrictedOptionEquiv_mul_add] at h'
-  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedOptionEquiv q).2
-    (restrictedOptionEquiv q').2 ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr)
+  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedOptionEquiv q).property
+    (restrictedOptionEquiv q').property ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr
+        hr)
     ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr') h'
   exact ⟨restrictedOptionEquiv.injective (Subtype.ext hq),
     restrictedOptionEquiv.injective (Subtype.ext hr)⟩
@@ -146,7 +147,8 @@ theorem exists_mul_add_eq_of_isMulDistinguished [CompleteSpace R] {g : Flat}
       (∀ t : Option σ →₀ ℕ, s ≤ t none → coeff t (r : MvPowerSeries (Option σ) R) = 0) ∧
       g * q + r = f ∧ ‖q‖ ≤ ‖f‖ / ‖g‖ ∧ ‖r‖ ≤ ‖f‖ := by
   obtain ⟨q', r', hq', hr', hqr⟩ :=
-    hg.exists_mul_add_eq Fact.out (restrictedOptionEquiv g).2 (restrictedOptionEquiv f).2
+    hg.exists_mul_add_eq Fact.out (restrictedOptionEquiv g).property
+        (restrictedOptionEquiv f).property
   set q : Flat := restrictedOptionEquiv.symm ⟨q', hq'⟩
   set r : Flat := restrictedOptionEquiv.symm
     ⟨r', TauCeti.PowerSeries.isRestricted_of_forall_coeff_eq_zero hr'⟩

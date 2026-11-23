@@ -120,7 +120,7 @@ theorem sum_subgroups_eq_sum_conjugacy {G M : Type*} [Group G] [Fintype G]
       rw [← MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
       exact MulAction.orbitRel.Quotient.mem_orbit.symm)
   rw [Finset.sum_congr rfl
-    (fun (H : {H : Subgroup G // Quotient.mk'' H = ω}) _ ↦ hvalue H.1 H.2),
+    (fun (H : {H : Subgroup G // Quotient.mk'' H = ω}) _ ↦ hvalue H.val H.property),
     Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, hcard]
 
 end TauCeti
@@ -165,9 +165,9 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
 @[simp]
 theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G) (J : MulAction.orbit (ConjAct G) H) :
-    ((conjugateSubgroupsEquiv e H) J).1 = J.1.map (e : G →* G') := by
+    ((conjugateSubgroupsEquiv e H) J).val = J.val.map (e : G →* G') := by
   -- The subtype equivalence applies `e.mapSubgroup`; its map is the underlying monoid hom.
-  change e.mapSubgroup J.1 = J.1.map e.toMonoidHom
+  change e.mapSubgroup J.val = J.val.map e.toMonoidHom
   rfl
 
 /-- The inverse equivalence maps a conjugate subgroup along the inverse isomorphism. -/
@@ -175,9 +175,9 @@ theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
 theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G)
     (J : MulAction.orbit (ConjAct G') (H.map (e : G →* G'))) :
-    (((conjugateSubgroupsEquiv e H).symm J).1) = J.1.map (e.symm : G' →* G) := by
+    (((conjugateSubgroupsEquiv e H).symm J).val) = J.val.map (e.symm : G' →* G) := by
   -- The inverse subtype equivalence applies `e.mapSubgroup.symm`.
-  change e.mapSubgroup.symm J.1 = J.1.map e.symm.toMonoidHom
+  change e.mapSubgroup.symm J.val = J.val.map e.symm.toMonoidHom
   rfl
 
 end MulEquiv

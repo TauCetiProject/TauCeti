@@ -80,6 +80,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
   log-concave.
 * `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`: the central slice of a
   symmetric convex set is the largest.
+* `Convex.measure_preimage_add_le`: a symmetric convex set has at least the measure of each
+  of its translates (Anderson's inequality).
 
 ## References
 
@@ -116,18 +118,18 @@ The pointwise bound is deliberately imposed on the supplied measurable represent
 the form which tensorizes without choosing new representatives on individual sections. -/
 def HasPrekopaLeindler (mu : Measure E) (theta : ℝ) : Prop :=
   ∀ {f g h : E → ENNReal}, Measurable f → Measurable g → Measurable h →
-    (∀ x y, (f x).rpow (1 - theta) * (g y).rpow theta ≤
+    (∀ x y, f x ^ (1 - theta) * g y ^ theta ≤
       h ((1 - theta) • x + theta • y)) →
-    (∫⁻ x, f x ∂mu).rpow (1 - theta) * (∫⁻ x, g x ∂mu).rpow theta ≤
+    (∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta ≤
       ∫⁻ x, h x ∂mu
 
 /-- The Prékopa–Leindler property unfolded into its measurable-function formulation. -/
 theorem hasPrekopaLeindler_def (mu : Measure E) (theta : ℝ) :
     mu.HasPrekopaLeindler theta ↔
       ∀ {f g h : E → ENNReal}, Measurable f → Measurable g → Measurable h →
-        (∀ x y, (f x).rpow (1 - theta) * (g y).rpow theta ≤
+        (∀ x y, f x ^ (1 - theta) * g y ^ theta ≤
           h ((1 - theta) • x + theta • y)) →
-        (∫⁻ x, f x ∂mu).rpow (1 - theta) * (∫⁻ x, g x ∂mu).rpow theta ≤
+        (∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta ≤
           ∫⁻ x, h x ∂mu :=
   Iff.rfl
 
@@ -181,7 +183,7 @@ theorem HasPrekopaLeindler.prod {mu : Measure E} {nu : Measure F} [SFinite nu]
   have hgMarginal : Measurable gMarginal := hg.lintegral_prod_right'
   have hhMarginal : Measurable hMarginal := hh.lintegral_prod_right'
   have hmarginal (x y : E) :
-      (fMarginal x).rpow (1 - theta) * (gMarginal y).rpow theta ≤
+      fMarginal x ^ (1 - theta) * gMarginal y ^ theta ≤
         hMarginal ((1 - theta) • x + theta • y) := by
     apply hnu (hf.comp (measurable_const.prodMk measurable_id))
       (hg.comp (measurable_const.prodMk measurable_id))
@@ -250,7 +252,7 @@ theorem HasPrekopaLeindler.withDensity {mu : Measure E} {theta : ℝ}
     lintegral_withDensity_eq_lintegral_mul _ hφ hg, lintegral_withDensity_eq_lintegral_mul _ hφ hh]
   refine hmu (hφ.mul hf) (hφ.mul hg) (hφ.mul hh) fun x y ↦ ?_
   have h1θ : 0 ≤ 1 - theta := by linarith
-  simp only [Pi.mul_apply, ENNReal.rpow_eq_pow] at hfg ⊢
+  simp only [Pi.mul_apply] at hfg ⊢
   rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ, ENNReal.mul_rpow_of_nonneg _ _ hθ₀]
   calc φ x ^ (1 - theta) * f x ^ (1 - theta) * (φ y ^ theta * g y ^ theta)
       = φ x ^ (1 - theta) * φ y ^ theta * (f x ^ (1 - theta) * g y ^ theta) := by ring
@@ -356,7 +358,6 @@ property at every weight `0 ≤ θ ≤ 1`. -/
 theorem hasPrekopaLeindler_volume {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
     (volume : Measure ℝ).HasPrekopaLeindler θ := by
   intro f g h hf hg hh hfgh
-  simp only [ENNReal.rpow_eq_pow] at hfgh ⊢
   rcases hθ₀.eq_or_lt with rfl | hθ₀
   · simpa using lintegral_mono fun x ↦ by simpa using hfgh x x
   rcases hθ₁.eq_or_lt with rfl | hθ₁
@@ -447,9 +448,9 @@ theorem LogConcave.lintegral_prod_right
   obtain rfl : a = 1 - b := by linarith
   have hPL := hν hb (by linarith) (hf.comp measurable_prodMk_left)
     (hf.comp measurable_prodMk_left) (hf.comp measurable_prodMk_left) fun y₁ y₂ ↦ by
-      simpa [ENNReal.rpow_eq_pow] using
+      simpa using
         hlc.rpow_mul_rpow_le (x := (x₁, y₁)) (y := (x₂, y₂)) ha hb hab
-  simpa [ENNReal.rpow_eq_pow] using hPL
+  simpa using hPL
 
 /-- **Marginals over a convex set of log-concave functions are log-concave** (Bombieri–Gubler,
 Lemma C.3.4). If `f : E × F → ℝ≥0∞` is measurable and log-concave, `s ⊆ F` is measurable and
@@ -496,5 +497,17 @@ theorem _root_.Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
     exact ⟨fun h ↦ by simpa using hneg _ h, fun h ↦ by simpa using hneg _ h⟩
   dsimp only
   rw [hslice, Measure.measure_neg]
+
+/-- **Anderson's inequality for Prékopa–Leindler measures.** For a measurable convex set
+`C ⊆ F` with `-C = C` and a negation-invariant measure `ν` with the Prékopa–Leindler property at
+every weight, no translate `(a + ·) ⁻¹' C` of `C` has larger measure than `C`. -/
+theorem _root_.Convex.measure_preimage_add_le [MeasurableAdd₂ F] [MeasurableNeg F]
+    [ν.IsNegInvariant] (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {C : Set F}
+    (hC : MeasurableSet C) (hCc : Convex ℝ C) (hneg : ∀ x ∈ C, -x ∈ C) (a : F) :
+    ν ((a + ·) ⁻¹' C) ≤ ν C := by
+  have h := (hCc.linear_preimage (LinearMap.fst ℝ F F + LinearMap.snd ℝ F F))
+    |>.measure_preimage_prodMk_le_measure_preimage_prodMk_zero hν
+      ((measurable_fst.add measurable_snd) hC) (fun p hp ↦ by simpa [add_comm] using hneg _ hp) a
+  simpa [Set.preimage, zero_add] using h
 
 end TauCeti

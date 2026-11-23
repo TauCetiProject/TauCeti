@@ -133,7 +133,7 @@ private theorem inv_transpose_sqrt_mul_map_star_polarUnitary :
   set U := Units.polarUnitary A
   have hPU : P * U = A := Units.sqrt_mul_star_mul_polarUnitary A
   have hU : (U : Matrix n n 𝕜)⁻¹ = star (U : Matrix n n 𝕜) :=
-    inv_eq_left_inv (Unitary.star_mul_self_of_mem U.2)
+    inv_eq_left_inv (Unitary.star_mul_self_of_mem U.property)
   -- `(A⁻¹)ᵀ = ((P U)⁻¹)ᵀ = (U⋆ P⁻¹)ᵀ = (P⁻¹)ᵀ (U⋆)ᵀ`, and `(U⋆)ᵀ` is the conjugate of `U`
   rw [coe_inverseTranspose, coe_units_inv, ← hPU, mul_inv_rev, hU, transpose_mul,
     star_eq_conjTranspose, conjTranspose_transpose, UnitaryGroup.map_star_coe]
@@ -190,7 +190,7 @@ theorem exists_scalar_mul_mul_toGL_eq :
     exact_mod_cast hrd
   refine ⟨(Units.mk0 (r : 𝕜) hr)⁻¹, U, ?_, ⟨_, hdet'⟩, ?_⟩
   · rw [mem_unitarySubgroup_iff, Units.unitary_eq]
-    exact (Units.polarUnitary A).2
+    exact (Units.polarUnitary A).property
   have htoGL : SpecialLinearGroup.toGL (⟨_, hdet'⟩ : SpecialLinearGroup n 𝕜) = s * (U⁻¹ * A) :=
     Units.ext (SpecialLinearGroup.coe_GL_coe_matrix _)
   -- The scalar `s` is central.

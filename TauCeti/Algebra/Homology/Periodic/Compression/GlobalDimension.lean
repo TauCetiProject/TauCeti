@@ -77,18 +77,18 @@ private abbrev BoundedProjective (C : Type u) [Category.{v} C] [Abelian C] :=
 /-- The class of a bounded complex of projective objects, as an object of `K^b(C)/[n]`. -/
 private abbrev orbitObj (K : BoundedProjective C) :
     OrbitCategory (HomotopyCategory.Bounded C) n :=
-  ⟨(HomotopyCategory.Bounded.quotient C).obj K.1⟩
+  ⟨(HomotopyCategory.Bounded.quotient C).obj K.val⟩
 
 /-- The compression of a bounded complex of projective objects is homotopically projective, in
 finite global dimension. -/
 private lemma leftOrthogonal_homotopyCompressionFunctor_obj [EnoughProjectives C] (d : ℕ)
     (hd : ∀ X : C, HasProjectiveDimensionLT X d) (K : BoundedProjective C) :
     (subcategoryAcyclic C n).leftOrthogonal
-      ((homotopyCompressionFunctor n).obj ((HomotopyCategory.Bounded.quotient C).obj K.1)) := by
-  have := K.2
-  have := isHomotopicallyProjective_of_projective d hd (compression n K.1.obj)
+      ((homotopyCompressionFunctor n).obj ((HomotopyCategory.Bounded.quotient C).obj K.val)) := by
+  have := K.property
+  have := isHomotopicallyProjective_of_projective d hd (compression n K.val.obj)
   refine (subcategoryAcyclic C n).leftOrthogonal.prop_of_iso
-    ((quotientCompHomotopyCompressionFunctorIso n).app K.1).symm ?_
+    ((quotientCompHomotopyCompressionFunctorIso n).app K.val).symm ?_
   rw [Functor.comp_obj, compressionFunctor_obj]
   exact IsHomotopicallyProjective.leftOrthogonal _
 
@@ -102,8 +102,8 @@ private lemma map_Qh_map_bijective (K L : BoundedProjective C) :
       (orbitObj n K ⟶ orbitObj n L) → _) := by
   rw [OrbitCategory.map_map_bijective_iff]
   intro j
-  have h := Qh_map_bijective_of_projective K.1 K.2
-    (((HomotopyCategory.Bounded.quotient C).obj L.1)⟦(n : ℤ) * j⟧)
+  have h := Qh_map_bijective_of_projective K.val K.property
+    (((HomotopyCategory.Bounded.quotient C).obj L.val)⟦(n : ℤ) * j⟧)
   refine ⟨fun f g hfg ↦ h.1 ((cancel_mono (((Qh C).commShiftIso _).hom.app _)).1
     (by simpa only [ShiftedHom.map] using hfg)), fun g ↦ ?_⟩
   obtain ⟨f, hf⟩ := h.2 (g ≫ ((Qh C).commShiftIso _).inv.app _)

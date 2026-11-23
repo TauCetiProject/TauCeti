@@ -12,8 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Normed.Field.AtInfinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
@@ -149,12 +150,7 @@ theorem tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv
     intro w hw
     have hw0 : w ≠ 0 := fun h0 => by simpa [h0] using hw.2
     have hz : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
-    have hderiv : (deriv fun w : ℂ => (f (-w⁻¹) - c) / b) =
-        fun w => deriv (fun w : ℂ => f (-w⁻¹)) w / b := by
-      ext w
-      simp only [deriv_div_const, deriv_sub_const]
-    rw [hderiv]
-    simp only [div_eq_mul_inv (deriv _ _), logDeriv_mul_const w b⁻¹ (inv_ne_zero hb)]
+    rw [logDeriv_deriv_sub_div_const (fun w => f (-w⁻¹)) c hb w]
     have hf : DifferentiableOn ℂ f upperHalfPlaneSet := fun z hz =>
       (differentiableAt_of_deriv_ne_zero (hfn z hz)).differentiableWithinAt
     exact logDeriv_deriv_comp_neg_inv (hf.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds hz))
