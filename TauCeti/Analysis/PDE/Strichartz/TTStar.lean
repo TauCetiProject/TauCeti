@@ -61,6 +61,8 @@ dual side.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_le`: the bilinear estimate
   `∫∫ |⟪F(s), T(s, t) G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}` for any two-time
   family `T(s, t)` decaying like `A |s - t| ^ (-2 / q)` from `L^{r'}` to `L^r`.
+* `TauCeti.enorm_inner_le_of_eLpNorm_le_rpow`: a single pairing of such a family,
+  `|⟪f, T(s, t) g⟫| ≤ A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
 * `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
@@ -100,9 +102,10 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-/-- A single pairing: Hölder's inequality in space and the decay of `T(s, t)` bound
-`|⟪f, T(s, t) g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_le {T : ℝ → ℝ → Lp E 2 μ → Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+/-- A single pairing of a decaying two-time family: Hölder's inequality in space and the decay
+`‖T(s, t) g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` bound `|⟪f, T(s, t) g⟫|` by
+`A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
+theorem enorm_inner_le_of_eLpNorm_le_rpow {T : ℝ → ℝ → Lp E 2 μ → Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
     (hT : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (T s t g) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
@@ -163,7 +166,7 @@ theorem exists_lintegral_lintegral_enorm_inner_le {p q : ℝ≥0} (hq : 2 < q)
           refine lintegral_mono_ae ?_
           filter_upwards [ae_iff.2 (by simp : volume {t : ℝ | ¬ t ≠ s} = 0)] with t ht
           calc _ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * a s * b t :=
-                enorm_inner_le hT (Ne.symm ht) _ _
+                enorm_inner_le_of_eLpNorm_le_rpow hT (Ne.symm ht) _ _
             _ = _ := by ring
       _ = A * a s * I s := by
           rw [lintegral_const_mul'' _ hk]
@@ -207,7 +210,7 @@ theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
     ‖⟪((U s)†) f, ((U t)†) g⟫_𝕜‖ₑ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm f r' μ * eLpNorm g r' μ := by
   rw [ContinuousLinearMap.adjoint_inner_left]
-  exact enorm_inner_le (T := fun s t g ↦ U s (((U t)†) g)) hU hst f g
+  exact enorm_inner_le_of_eLpNorm_le_rpow (T := fun s t g ↦ U s (((U t)†) g)) hU hst f g
 
 /-- **The `TT*` argument at a single time.** If `U : H → L²(X, μ)` is bounded and `U U*` maps
 `L^{r'}` to `L^r`, `‖U U* g‖_r ≤ A ‖g‖_{r'}` for every `g ∈ L²(X, μ)`, then `U*` maps `L^{r'}` to
