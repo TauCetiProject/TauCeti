@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Extend
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Order.Interval.Set.ProjIcc
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Continuous derivative jets on a closed interval
@@ -31,6 +36,24 @@ derivatives. No completeness assumption on the codomain is needed.
 
 `ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
 it agrees with the continuous within-interval derivative away from the two endpoints.
+`ContDiffOn.union_Icc_of_derivWithin_eq` glues `C¹` smoothness across an interior point when the
+two one-sided within-interval derivatives agree there.
+
+## `C²` extension from a closed interval
+
+Let `v : ℝ → F` be `C¹`, with values in a real Banach space, and suppose that on `(a, b)` its
+derivative has a derivative `h` that extends continuously to `[a, b]`. Then `v` is `C²` on the
+closed interval in the strongest sense (`TauCeti.exists_contDiff_two_eqOn_and_deriv_deriv_eq`): it
+agrees on `[a, b]`, together with its derivative, with a `C²` function `w` on `ℝ` whose second
+derivative is the constant extension `h ∘ projIcc a b` of `h`. So any modulus of continuity of `h`
+on `[a, b]`, such as a Hölder bound, is a global modulus of continuity of `w''`, since
+`projIcc a b` is `1`-Lipschitz.
+
+The function `w` is obtained by integrating `h ∘ projIcc a b` twice, starting from `v a` and
+`v' a`; the fundamental theorem of calculus on `[a, b]` identifies the integrals with `v` and `v'`
+there. The first integration is the `C¹` statement
+`ContinuousOn.contDiff_and_deriv_const_add_integral_comp_projIcc`: for `g` continuous on `[a, b]`,
+`t ↦ c + ∫ s in a..t, g (projIcc a b s)` is `C¹` with derivative `g ∘ projIcc a b`.
 -/
 
 public section
@@ -134,7 +157,113 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hzero hc hd
 
+/-- **`C¹` extension by integration.** For `g` continuous on `[a, b]`, the function
+`t ↦ c + ∫ s in a..t, g (projIcc a b s)` is `C¹` on `ℝ`, with derivative the constant extension
+`g ∘ projIcc a b` of `g`. -/
+theorem _root_.ContinuousOn.contDiff_and_deriv_const_add_integral_comp_projIcc [CompleteSpace F]
+    (hg : ContinuousOn g (Icc a b)) (hab : a ≤ b) (c : F) :
+    ContDiff ℝ 1 (fun t => c + ∫ s in a..t, g (projIcc a b hab s)) ∧
+      deriv (fun t => c + ∫ s in a..t, g (projIcc a b hab s)) =
+        fun t => g (projIcc a b hab t) := by
+  have hgₑ := hg.comp_projIcc hab
+  exact ⟨contDiff_const.add (by
+    simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hgₑ) a),
+    funext fun t => ((hgₑ.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv⟩
+
+/-- **`C²` extension from a closed interval.** Let `v : ℝ → F` be `C¹`, and let `h` be continuous
+on `[a, b]` with `h t` the derivative of `v'` at every `t ∈ (a, b)`. Then there is a `C²` function
+`w` on `ℝ` with `w = v` and `w' = v'` on `[a, b]`, whose second derivative is
+`w'' t = h (projIcc a b t)` everywhere. -/
+theorem exists_contDiff_two_eqOn_and_deriv_deriv_eq [CompleteSpace F] (hab : a ≤ b) {v h : ℝ → F}
+    (hv : ContDiff ℝ 1 v) (hd : ∀ t ∈ Ioo a b, HasDerivAt (deriv v) (h t) t)
+    (hh : ContinuousOn h (Icc a b)) :
+    ∃ w : ℝ → F, ContDiff ℝ 2 w ∧ EqOn v w (Icc a b) ∧ EqOn (deriv v) (deriv w) (Icc a b) ∧
+      deriv (deriv w) = fun t => h (projIcc a b hab t) := by
+  set hₑ : ℝ → F := fun t => h (projIcc a b hab t)
+  have hhₑ : Continuous hₑ := hh.comp_projIcc hab
+  -- `w₂ = v' a + ∫ hₑ` is `C¹`, and is `v'` on `[a, b]`.
+  set w₂ : ℝ → F := fun t => deriv v a + ∫ s in a..t, hₑ s with hw₂_def
+  obtain ⟨hw₂, hdw₂⟩ := hh.contDiff_and_deriv_const_add_integral_comp_projIcc hab (deriv v a)
+  have hw₂v : ∀ t ∈ Icc a b, w₂ t = deriv v t := fun t ht => by
+    have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (f' := hₑ) ht.1
+      (hv.continuous_deriv le_rfl).continuousOn (fun s hs =>
+        (hd s ⟨hs.1, hs.2.trans_le ht.2⟩).congr_deriv
+          (by simp [hₑ, projIcc_of_mem hab ⟨hs.1.le, hs.2.le.trans ht.2⟩]))
+      (hhₑ.intervalIntegrable _ _)
+    rw [hw₂_def]
+    beta_reduce
+    rw [hint, add_sub_cancel]
+  -- `w = v a + ∫ w₂` is `C²`, and is `v` on `[a, b]`.
+  set w : ℝ → F := fun t => v a + ∫ s in a..t, w₂ s with hw_def
+  have hw : ContDiff ℝ 2 w := contDiff_const.add (by
+    simpa [one_add_one_eq_two] using
+      intervalIntegral.contDiff_primitive_of_contDiff (n := 1) hw₂ a)
+  have hdw : deriv w = w₂ := funext fun t =>
+    ((hw₂.continuous.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv
+  refine ⟨w, hw, fun t ht => ?_, fun t ht => by rw [hdw, hw₂v t ht], by rw [hdw, hdw₂]⟩
+  have h₁ : ∫ s in a..t, w₂ s = ∫ s in a..t, deriv v s :=
+    intervalIntegral.integral_congr fun s hs => by
+      rw [uIcc_of_le ht.1] at hs
+      exact hw₂v s ⟨hs.1, hs.2.trans ht.2⟩
+  have h₂ : ∫ s in a..t, deriv v s = v t - v a :=
+    intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (fun s _ => (hv.differentiable one_ne_zero s).hasDerivAt)
+      ((hv.continuous_deriv le_rfl).intervalIntegrable _ _)
+  rw [hw_def]
+  beta_reduce
+  rw [h₁, h₂, add_sub_cancel]
+
 end TauCeti
+
+/-- If `f` is `C¹` on `[a, c]` and `[c, b]` with matching within-interval derivatives at `c` when
+`a < c < b`, then `f` is `C¹` on `[a, b]`. When `c ≤ a` or `b ≤ c`, one of `[a, c]`, `[c, b]`
+already covers `[a, b]`. -/
+theorem ContDiffOn.union_Icc_of_derivWithin_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : ℝ → F} {a c b : ℝ}
+    (hf₁ : ContDiffOn ℝ 1 f (Icc a c)) (hf₂ : ContDiffOn ℝ 1 f (Icc c b))
+    (hderiv : a < c → c < b → derivWithin f (Icc a c) c = derivWithin f (Icc c b) c) :
+    ContDiffOn ℝ 1 f (Icc a b) := by
+  rcases le_or_gt c a with hca | hac
+  · exact hf₂.mono (Icc_subset_Icc hca le_rfl)
+  rcases le_or_gt b c with hbc | hcb
+  · exact hf₁.mono (Icc_subset_Icc le_rfl hbc)
+  let g : ℝ → F := fun t ↦ if t ≤ c then derivWithin f (Icc a c) t else derivWithin f (Icc c b) t
+  have hg₁ : ContinuousOn g (Icc a c) :=
+    (hf₁.continuousOn_derivWithin (uniqueDiffOn_Icc hac) le_rfl).congr fun t ht ↦ by simp [g, ht.2]
+  have hg₂ : ContinuousOn g (Icc c b) :=
+    (hf₂.continuousOn_derivWithin (uniqueDiffOn_Icc hcb) le_rfl).congr fun t ht ↦ by
+      dsimp only [g]
+      split_ifs with htc
+      · obtain rfl : t = c := le_antisymm htc ht.1
+        exact hderiv hac hcb
+      · rfl
+  have hg : ContinuousOn g (Icc a b) :=
+    Icc_union_Icc_eq_Icc hac.le hcb.le ▸ hg₁.union_of_isClosed hg₂ isClosed_Icc isClosed_Icc
+  have hf : ContinuousOn f (Icc a b) :=
+    Icc_union_Icc_eq_Icc hac.le hcb.le ▸
+      hf₁.continuousOn.union_of_isClosed hf₂.continuousOn isClosed_Icc isClosed_Icc
+  refine TauCeti.contDiffOn_Icc_of_continuous_jet (n := 1)
+    (J := fun j ↦ if j = 0 then f else g) (eqOn_refl _ _)
+    (fun j hj ↦ by rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hj with rfl | rfl; exacts [hf, hg])
+    fun j hj t ht ↦ ?_
+  obtain rfl : j = 0 := by omega
+  simp only [↓reduceIte, Nat.zero_add, one_ne_zero]
+  rcases lt_trichotomy t c with htc | rfl | hct
+  · simpa only [g, htc.le, ↓reduceIte] using
+      (hf₁.differentiableOn one_ne_zero t ⟨ht.1.le, htc.le⟩).hasDerivWithinAt.hasDerivAt
+        (Icc_mem_nhds ht.1 htc)
+  · have hd₁ : HasDerivWithinAt f (g t) (Iic t) t := by
+      simpa only [g, le_rfl, ↓reduceIte] using
+        (hf₁.differentiableOn one_ne_zero t ⟨hac.le, le_rfl⟩).hasDerivWithinAt
+          |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsLE hac)
+    have hd₂ : HasDerivWithinAt f (g t) (Ici t) t := by
+      simpa only [g, le_rfl, ↓reduceIte, hderiv hac hcb] using
+        (hf₂.differentiableOn one_ne_zero t ⟨le_rfl, hcb.le⟩).hasDerivWithinAt
+          |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hcb)
+    simpa only [Iic_union_Ici, hasDerivWithinAt_univ] using hd₁.union hd₂
+  · simpa only [g, hct.not_ge, ↓reduceIte] using
+      (hf₂.differentiableOn one_ne_zero t ⟨hct.le, ht.2.le⟩).hasDerivWithinAt.hasDerivAt
+        (Icc_mem_nhds hct ht.2)
 
 /-- The derivative of a function that is `C¹` on a closed interval has bounded image on that
 interval. At the two endpoints `deriv f` may differ from the one-sided derivative, but these

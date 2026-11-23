@@ -27,7 +27,7 @@ on rational points is neither assumed nor needed. Restriction uses the existing
 
 public section
 
-open CategoryTheory AlgebraicGeometry LaurentPolynomial TauCeti.Comodule
+open LaurentPolynomial TauCeti.Comodule
 
 namespace TauCeti.MultiplicativeGroup
 
@@ -50,17 +50,7 @@ theorem range_projectiveOrbitMap_corestrict_power
       (AddMonoidHom.mulRight (n : ℤ))) :=
     AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ (by exact_mod_cast hn.ne'))
   have hsurj := (LaurentPolynomial.isIntegral_mapDomain_mulRight R hn).comap_surjective hinj
-  rw [BialgHom.projectiveOrbitMap_corestrict]
-  have hcomp : ⇑(Spec.map (CommRingCat.ofHom
-        (AddMonoidAlgebra.mapDomainBialgHom R
-          (AddMonoidHom.mulRight (n : ℤ))).toAlgHom.toRingHom) ≫
-        projectiveOrbitMap (H := R[T;T⁻¹]) m hm) =
-      (projectiveOrbitMap (H := R[T;T⁻¹]) m hm) ∘ PrimeSpectrum.comap
-        (AddMonoidAlgebra.mapDomainRingHom R (AddMonoidHom.mulRight (n : ℤ))) := by
-    funext x
-    rw [Scheme.Hom.comp_apply, Spec.map_apply]
-    rfl
-  rw [hcomp]
-  exact hsurj.range_comp _
+  exact BialgHom.range_projectiveOrbitMap_corestrict
+    (AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight (n : ℤ))) hsurj m hm
 
 end TauCeti.MultiplicativeGroup

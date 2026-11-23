@@ -56,12 +56,12 @@ point. -/
 private theorem isClosed_of_subset_range_of_mem_image_cell (n : ℕ)
     {A : Set (c.attachCells n (not_isMax n)).ι} (x : A → c.F.obj (Order.succ n))
     (hxO : ∀ i : A, x i ∈
-      (c.attachCells n (not_isMax n)).cell i.1 '' (Set.range (diskBoundaryInclusion n))ᶜ)
+      (c.attachCells n (not_isMax n)).cell i.val '' (Set.range (diskBoundaryInclusion n))ᶜ)
     (S : Set (c.F.obj (Order.succ n))) (hS : S ⊆ Set.range x) : IsClosed S := by
   classical
   let a := c.attachCells n (not_isMax n)
   have hxout (i : A) : x i ∉ Set.range (c.F.map (homOfLE (Order.le_succ n))) :=
-    a.compl_range_eq_iUnion_image_cell.symm.subset (Set.mem_iUnion_of_mem i.1 (hxO i))
+    a.compl_range_eq_iUnion_image_cell.symm.subset (Set.mem_iUnion_of_mem i.val (hxO i))
   have hpre (i : a.ι) : (a.cell i ⁻¹' S).Subsingleton := by
     intro z hz z' hz'
     obtain ⟨j, hj⟩ := hS hz
@@ -72,10 +72,10 @@ private theorem isClosed_of_subset_range_of_mem_image_cell (n : ℕ)
     have hz'i : z' ∈ (Set.range (diskBoundaryInclusion n))ᶜ := by
       intro h
       exact hxout j' (hj' ▸ c.cell_boundary_mem_range n i z' h)
-    have hij : i = j.1 := by
+    have hij : i = j.val := by
       by_contra h
       exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z, hzi, rfl⟩ (hj ▸ hxO j)
-    have hij' : i = j'.1 := by
+    have hij' : i = j'.val := by
       by_contra h
       exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z', hz'i, rfl⟩ (hj' ▸ hxO j')
     have hjj' : j = j' := Subtype.ext (hij.symm.trans hij')
@@ -105,9 +105,9 @@ private theorem finite_setOf_nonempty_inter_image_cell (n : ℕ)
   classical
   let a := c.attachCells n (not_isMax n)
   let A := {i : a.ι | (K ∩ a.cell i '' (Set.range (diskBoundaryInclusion n))ᶜ).Nonempty}
-  choose x hx using fun i : A ↦ i.2
+  choose x hx using fun i : A ↦ i.property
   have hxK (i : A) : x i ∈ K := (hx i).1
-  have hxO (i : A) : x i ∈ a.cell i.1 '' (Set.range (diskBoundaryInclusion n))ᶜ :=
+  have hxO (i : A) : x i ∈ a.cell i.val '' (Set.range (diskBoundaryInclusion n))ᶜ :=
     (hx i).2
   have hxinj : Function.Injective x := by
     intro i j hij

@@ -84,7 +84,7 @@ variable {R : Type u} [CommRing R] (F : Finset ι ⥤ ModuleCat.{u} R)
 
 /-- Two projections onto the same vertex, followed by edge maps to a common vertex, agree. -/
 private lemma cubeComplexπ_map_congr {r : ℤ} {V W : {S : Finset ι // (#S : ℤ) = r}}
-    (h : V.1 = W.1) {T : Finset ι} (hV : V.1 ⊆ T) (hW : W.1 ⊆ T) :
+    (h : V.val = W.val) {T : Finset ι} (hV : V.val ⊆ T) (hW : W.val ⊆ T) :
     F.cubeComplexπ V ≫ F.map (homOfLE hV) = F.cubeComplexπ W ≫ F.map (homOfLE hW) := by
   obtain ⟨V, _⟩ := V
   obtain ⟨W, _⟩ := W
@@ -95,20 +95,20 @@ private lemma cubeComplexπ_map_congr {r : ℤ} {V W : {S : Finset ι // (#S : �
 /-- The cube differential out of a vertex, into the term of any height `r'` with `r + 1 = r'`. -/
 private lemma ι_cubeComplex_d' {r r' : ℤ} (h : r + 1 = r') (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexι S ≫ F.cubeComplex.d r r' =
-      ∑ c : (S.1ᶜ : Finset ι), ((-1 : ℤ) ^ #{y ∈ S.1 | y < c.1}) •
-        F.map (homOfLE (S.1.subset_insert c.1)) ≫
-          F.cubeComplexι ⟨insert c.1 S.1, by
-            rw [card_insert_of_notMem (mem_compl.1 c.2), Nat.cast_succ, S.2, h]⟩ := by
+      ∑ c : (S.valᶜ : Finset ι), ((-1 : ℤ) ^ #{y ∈ S.val | y < c.val}) •
+        F.map (homOfLE (S.val.subset_insert c.val)) ≫
+          F.cubeComplexι ⟨insert c.val S.val, by
+            rw [card_insert_of_notMem (mem_compl.1 c.property), Nat.cast_succ, S.property, h]⟩ := by
   subst h
   exact F.ι_cubeComplex_d S
 
 /-- The cube differential into a vertex, out of the term of any height `r` with `r + 1 = r'`. -/
 private lemma cubeComplex_d_π' {r r' : ℤ} (h : r + 1 = r') (T : {T : Finset ι // (#T : ℤ) = r'}) :
     F.cubeComplex.d r r' ≫ F.cubeComplexπ T =
-      ∑ c : T.1, ((-1 : ℤ) ^ #{y ∈ T.1.erase c.1 | y < c.1}) •
+      ∑ c : T.val, ((-1 : ℤ) ^ #{y ∈ T.val.erase c.val | y < c.val}) •
         F.cubeComplexπ (r := r)
-          ⟨T.1.erase c.1, by have := card_erase_add_one c.2; have := T.2; omega⟩ ≫
-          F.map (homOfLE (T.1.erase_subset c.1)) := by
+          ⟨T.val.erase c.val, by have := card_erase_add_one c.property; have := T.property; omega⟩ ≫
+          F.map (homOfLE (T.val.erase_subset c.val)) := by
   subst h
   exact F.cubeComplex_d_π T
 
@@ -124,12 +124,13 @@ private lemma card_compl_eq {i : ℤ} {S : Finset ι} (hS : (#S : ℤ) = i + b) 
 /-- The vertex `S` of the comparison: a linear form `φ` on `F(Sᶜ)` goes to the signed cochain
 `C⁻ⁱ⁺ᵃ ⟶ F(Sᶜ) ⟶ R`. -/
 private def homVertex (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b}) :
-    F.dualCube.obj S.1 ⟶ ModuleCat.of R (Cochain (F.cubeComplex⟦a⟧)
+    F.dualCube.obj S.val ⟶ ModuleCat.of R (Cochain (F.cubeComplex⟦a⟧)
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i) :=
   ModuleCat.ofHom
-    { toFun φ := S.1.dualCubeSign a •
+    { toFun φ := S.val.dualCubeSign a •
         Cochain.toSingleMk (K := F.cubeComplex⟦a⟧) (p := -i)
-          (F.cubeComplexπ ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫ ModuleCat.ofHom φ) (neg_add_cancel i)
+          (F.cubeComplexπ ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫ ModuleCat.ofHom φ)
+              (neg_add_cancel i)
       map_add' φ ψ := by simp
       map_smul' r φ := by
         rw [RingHom.id_apply, show ModuleCat.ofHom (r • φ) = r • ModuleCat.ofHom φ from
@@ -141,10 +142,10 @@ private def homVertex (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b}) :
 form `F(Sᶜ) ⟶ C⁻ⁱ⁺ᵃ ⟶ R`. -/
 private def invVertex (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b}) :
     ModuleCat.of R (Cochain (F.cubeComplex⟦a⟧)
-      ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i) ⟶ F.dualCube.obj S.1 :=
+      ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i) ⟶ F.dualCube.obj S.val :=
   ModuleCat.ofHom
-    { toFun f := S.1.dualCubeSign a •
-        (F.cubeComplexι ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫
+    { toFun f := S.val.dualCubeSign a •
+        (F.cubeComplexι ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫
           Cochain.toSingleEquiv (neg_add_cancel i) f).hom
       map_add' f g := by simp
       map_smul' r f := by
@@ -153,27 +154,28 @@ private def invVertex (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b}) :
         exact smul_comm _ _ _ }
 
 private lemma homVertex_apply (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b})
-    (φ : F.dualCube.obj S.1) :
-    (homVertex F hab i S).hom φ = S.1.dualCubeSign a •
+    (φ : F.dualCube.obj S.val) :
+    (homVertex F hab i S).hom φ = S.val.dualCubeSign a •
       Cochain.toSingleMk (K := F.cubeComplex⟦a⟧) (p := -i)
-        (F.cubeComplexπ ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫ ModuleCat.ofHom φ) (neg_add_cancel i) :=
+        (F.cubeComplexπ ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫ ModuleCat.ofHom φ)
+            (neg_add_cancel i) :=
   rfl
 
 private lemma invVertex_apply (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b})
     (f : Cochain (F.cubeComplex⟦a⟧)
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i) :
-    (invVertex F hab i S).hom f = S.1.dualCubeSign a •
-      (F.cubeComplexι ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫
+    (invVertex F hab i S).hom f = S.val.dualCubeSign a •
+      (F.cubeComplexι ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫
         Cochain.toSingleEquiv (neg_add_cancel i) f).hom :=
   rfl
 
 /-- The complement bijection between the vertices of height `i + b` and of height `-i + a`. -/
 private def complEquiv (i : ℤ) :
     {S : Finset ι // (#S : ℤ) = i + b} ≃ {T : Finset ι // (#T : ℤ) = -i + a} where
-  toFun S := ⟨S.1ᶜ, card_compl_eq hab S.2⟩
-  invFun T := ⟨T.1ᶜ, by have := card_compl_add_card T.1; have := T.2; omega⟩
-  left_inv S := Subtype.ext (compl_compl S.1)
-  right_inv T := Subtype.ext (compl_compl T.1)
+  toFun S := ⟨S.valᶜ, card_compl_eq hab S.property⟩
+  invFun T := ⟨T.valᶜ, by have := card_compl_add_card T.val; have := T.property; omega⟩
+  left_inv S := Subtype.ext (compl_compl S.val)
+  right_inv T := Subtype.ext (compl_compl T.val)
 
 /-- The comparison in degree `i`. -/
 private def dualCubeComplexXIso (i : ℤ) :
@@ -194,14 +196,15 @@ private def dualCubeComplexXIso (i : ℤ) :
       zsmul_eq_mul, ModuleCat.hom_id, LinearMap.id_coe, id_eq]
     by_cases h : S = T
     · subst h
-      have e₁ := congrArg (fun f ↦ f.hom x) (F.cubeComplexι_π_self ⟨S.1ᶜ, card_compl_eq hab S.2⟩)
+      have e₁ := congrArg (fun f ↦ f.hom x) (F.cubeComplexι_π_self ⟨S.valᶜ,
+          card_compl_eq hab S.property⟩)
       have e₂ := congrArg (fun f ↦ f.hom φ x) (F.dualCube.cubeComplexι_π_self S)
       simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id,
         LinearMap.id_apply] at e₁ e₂
       rw [e₁, e₂, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
         Units.val_one, Int.cast_one, one_mul]
-    · have h' : (⟨T.1ᶜ, card_compl_eq hab T.2⟩ : {U : Finset ι // (#U : ℤ) = -i + a}) ≠
-          ⟨S.1ᶜ, card_compl_eq hab S.2⟩ :=
+    · have h' : (⟨T.valᶜ, card_compl_eq hab T.property⟩ : {U : Finset ι // (#U : ℤ) = -i + a}) ≠
+          ⟨S.valᶜ, card_compl_eq hab S.property⟩ :=
         fun e ↦ h (Subtype.ext (compl_injective (congrArg Subtype.val e).symm))
       have e₁ := congrArg (fun f ↦ f.hom x) (F.cubeComplexι_π_of_ne h')
       have e₂ := congrArg (fun f ↦ f.hom φ x) (F.dualCube.cubeComplexι_π_of_ne h)
@@ -221,16 +224,16 @@ private def dualCubeComplexXIso (i : ℤ) :
     have key (S : {S : Finset ι // (#S : ℤ) = i + b}) :
         Cochain.toSingleEquiv (neg_add_cancel i) ((homVertex F hab i S).hom
           ((invVertex F hab i S).hom z)) =
-        F.cubeComplexπ ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫
-          F.cubeComplexι ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫
+        F.cubeComplexπ ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫
+          F.cubeComplexι ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫
             Cochain.toSingleEquiv (neg_add_cancel i) z := by
       rw [homVertex_apply, invVertex_apply, ← ModuleCat.hom_smul, ModuleCat.ofHom_hom,
         Linear.comp_units_smul, Units.smul_def, _root_.map_zsmul, Cochain.toSingleEquiv_toSingleMk,
         ← Units.smul_def, smul_smul, Int.units_mul_self, one_smul]
     simp only [key, ← Category.assoc]
     rw [← Preadditive.sum_comp, Fintype.sum_equiv (complEquiv hab i)
-      (fun S ↦ F.cubeComplexπ ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫
-        F.cubeComplexι ⟨S.1ᶜ, card_compl_eq hab S.2⟩)
+      (fun S ↦ F.cubeComplexπ ⟨S.valᶜ, card_compl_eq hab S.property⟩ ≫
+        F.cubeComplexι ⟨S.valᶜ, card_compl_eq hab S.property⟩)
       (fun T ↦ F.cubeComplexπ T ≫ F.cubeComplexι T) (fun _ ↦ rfl), F.cubeComplex_total,
       Category.id_comp]
 
@@ -269,23 +272,23 @@ private lemma dualCubeComplexXIso_comm (i : ℤ) :
     Cochain.toSingleEquiv_toSingleMk]
   dsimp only
   have hd := F.cubeComplex_d_π' (r := -(i + 1) + a) (r' := -i + a) (by ring)
-    ⟨S.1ᶜ, card_compl_eq hab S.2⟩
+    ⟨S.valᶜ, card_compl_eq hab S.property⟩
   rw [Preadditive.zsmul_comp, reassoc_of% hd]
   simp only [Preadditive.sum_comp, Preadditive.zsmul_comp, Category.assoc, Finset.smul_sum,
     smul_smul]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
-  have hc : c.1 ∉ S.1 := mem_compl.1 c.2
+  have hc : c.val ∉ S.val := mem_compl.1 c.property
   rw [homVertex_apply, Units.smul_def, _root_.map_zsmul, Cochain.toSingleEquiv_toSingleMk,
     smul_smul]
   -- The transposed edge map of `F`, out of `(insert c S)ᶜ = Sᶜ \ {c}`.
-  have hm : F.cubeComplexπ (r := -(i + 1) + a) ⟨S.1ᶜ.erase c.1, by
-        have := card_erase_add_one c.2; have := card_compl_eq hab S.2; omega⟩ ≫
-      F.map (homOfLE (S.1ᶜ.erase_subset c.1)) ≫ ModuleCat.ofHom φ =
-      F.cubeComplexπ ⟨(insert c.1 S.1)ᶜ, card_compl_eq hab (i := i + 1) (by
-        rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]; ring)⟩ ≫ ModuleCat.ofHom
-        ((F.map (homOfLE (compl_subset_compl.2 (S.1.subset_insert c.1)))).hom.dualMap φ) :=
+  have hm : F.cubeComplexπ (r := -(i + 1) + a) ⟨S.valᶜ.erase c.val, by
+        have := card_erase_add_one c.property; have := card_compl_eq hab S.property; omega⟩ ≫
+      F.map (homOfLE (S.valᶜ.erase_subset c.val)) ≫ ModuleCat.ofHom φ =
+      F.cubeComplexπ ⟨(insert c.val S.val)ᶜ, card_compl_eq hab (i := i + 1) (by
+        rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]; ring)⟩ ≫ ModuleCat.ofHom
+        ((F.map (homOfLE (compl_subset_compl.2 (S.val.subset_insert c.val)))).hom.dualMap φ) :=
     (reassoc_of% (F.cubeComplexπ_map_congr compl_insert.symm _ _)) (ModuleCat.ofHom φ)
-  have hs := congrArg (fun u : ℤˣ ↦ (u : ℤ)) (dualCubeSign_edge (a := a) S.2 hc)
+  have hs := congrArg (fun u : ℤˣ ↦ (u : ℤ)) (dualCubeSign_edge (a := a) S.property hc)
   push_cast [Units.val_mul, Int.coe_negOnePow_natCast] at hs
   dsimp only
   rw [ModuleCat.hom_ofHom, hm, ← mul_assoc, ← mul_assoc, hs]
@@ -306,11 +309,11 @@ def dualCubeComplexIso :
 /-- The comparison sends a linear form `φ` on the vertex `F(Sᶜ)` to the cochain
 `C⁻ⁱ⁺ᵃ ⟶ F(Sᶜ) ⟶ R` of degree `i`, multiplied by the sign of `S`. -/
 theorem dualCubeComplexIso_hom_f_apply (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b})
-    (φ : Module.Dual R (F.obj S.1ᶜ)) :
+    (φ : Module.Dual R (F.obj S.valᶜ)) :
     ((F.dualCubeComplexIso hab).hom.f i).hom ((F.dualCube.cubeComplexι S).hom φ) =
-      S.1.dualCubeSign a • Cochain.toSingleMk (K := F.cubeComplex⟦a⟧) (p := -i)
-        (F.cubeComplexπ (r := -i + a) ⟨S.1ᶜ, by
-          have := card_compl_add_card S.1; have := S.2; have := hab; omega⟩ ≫
+      S.val.dualCubeSign a • Cochain.toSingleMk (K := F.cubeComplex⟦a⟧) (p := -i)
+        (F.cubeComplexπ (r := -i + a) ⟨S.valᶜ, by
+          have := card_compl_add_card S.val; have := S.property; have := hab; omega⟩ ≫
           ModuleCat.ofHom φ) (neg_add_cancel i) :=
   congrArg (fun g ↦ g.hom φ) (F.dualCube.ι_cubeComplexDesc (homVertex F hab i) S)
 
@@ -320,9 +323,9 @@ theorem dualCubeComplexIso_inv_f_apply (i : ℤ) (S : {S : Finset ι // (#S : �
     (f : Cochain (F.cubeComplex⟦a⟧)
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i) :
     (F.dualCube.cubeComplexπ S).hom (((F.dualCubeComplexIso hab).inv.f i).hom f) =
-      S.1.dualCubeSign a •
-        (F.cubeComplexι (r := -i + a) ⟨S.1ᶜ, by
-          have := card_compl_add_card S.1; have := S.2; have := hab; omega⟩ ≫
+      S.val.dualCubeSign a •
+        (F.cubeComplexι (r := -i + a) ⟨S.valᶜ, by
+          have := card_compl_add_card S.val; have := S.property; have := hab; omega⟩ ≫
           Cochain.toSingleEquiv (K := F.cubeComplex⟦a⟧) (p := -i) (neg_add_cancel i) f).hom :=
   congrArg (fun g ↦ g.hom f) (F.dualCube.cubeComplexLift_π (invVertex F hab i) S)
 

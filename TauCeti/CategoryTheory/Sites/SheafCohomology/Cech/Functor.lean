@@ -69,39 +69,6 @@ acts on the factor indexed by `a` through `Q` applied to the comparison isomorph
 `G(U (a 0) × ⋯ × U (a n)) ≅ G (U (a 0)) × ⋯ × G (U (a n))` (`prodIso`); it commutes with the
 differentials by the naturality of the product comparison maps. -/
 
-/-- The degree `n` term of the Čech complex is, up to unfolding, the product of the values of `P`
-on the `(n + 1)`-fold products of members. -/
-private def cechXIso (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    ((cechComplexFunctor U).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
-  Iso.refl _
-
-/-- `cechXIso` is the identity. -/
-private lemma cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
-  Category.id_comp _
-
-/-- `cechComplexFunctor_obj_d_comp_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ)
-    (k : Fin (n + 2) → ι) :
-    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
-    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
-
-/-- `cechComplexFunctor_map_f_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P' : Cᵒᵖ ⥤ A}
-    (α : P ⟶ P') (n : ℕ) (a : Fin (n + 1) → ι) :
-    ((cechComplexFunctor V).map α).f n ≫ (cechXIso V P' n).hom ≫ Pi.π _ a =
-      (cechXIso V P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ V (a j))) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <|
-    (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
-
 variable {D : Type u''} [Category.{v''} D] [HasFiniteProducts D]
   (G : C ⥤ D) (U : ι → C) (Q : Dᵒᵖ ⥤ A)
   (hG : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
@@ -166,8 +133,8 @@ canonical map `G(U (a 0) × ⋯ × U (a n)) ⟶ G (U (a 0)) × ⋯ × G (U (a n)
 theorem cechComplexCompIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechComplexCompIso G U Q hG).hom.f n ≫ Pi.π _ a =
       Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op :=
-  -- `cechXIso` is the identity
-  (_ ≫= (Category.id_comp _).symm).trans <| (compXIso_hom_π G U Q hG n a).trans (Category.id_comp _)
+  (_ ≫= (cechXIso_hom_π U (G.op ⋙ Q) n a).symm).trans <|
+    (compXIso_hom_π G U Q hG n a).trans (cechXIso_hom_π_assoc _ Q n a _)
 
 /-- The isomorphism of Čech complexes `cechComplexCompIso` is natural in the presheaf `Q`. -/
 @[reassoc]

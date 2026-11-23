@@ -103,8 +103,8 @@ noncomputable def subgroupContinuousLinearEquivModule (hA : IsProP p A) (H : Clo
       right_inv := fun y ↦ by rfl
       map_add' := fun x y ↦ by rfl }
   exact e.toPadicIntLinearEquiv p
-    ((continuous_ofMul.comp (continuous_subtype_val.comp continuous_toMul)).subtype_mk _)
-    (continuous_ofMul.comp ((continuous_toMul.comp continuous_subtype_val).subtype_mk _))
+    ((continuous_ofMul.comp (continuous_subtypeVal.comp continuous_toMul)).subtype_mk _)
+    (continuous_ofMul.comp ((continuous_toMul.comp continuous_subtypeVal).subtype_mk _))
 
 @[simp]
 theorem subgroupContinuousLinearEquivModule_apply (hA : IsProP p A) (H : ClosedSubgroup A)
