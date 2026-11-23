@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Divisor
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Polynomial
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Positivity
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
@@ -111,8 +112,8 @@ theorem pairedHadamard_factorization
     (fun z ↦ by simpa only [smul_eq_mul] using hparity z)
     hg_diff.continuous.continuousAt hg0
   have hg_prod (z : ℂ) : g z = g 0 * divisorProductOne g z := by
-    rw [hg_ord.eq_mul_cexp_logDeriv_mul_divisorProductOne hg_diff hg0 z,
-      logDeriv_apply, hg_even.deriv_zero, zero_div, zero_mul, exp_zero, mul_one]
+    simpa [logDeriv_apply, hg_even.deriv_zero] using
+      hg_ord.eq_mul_cexp_logDeriv_mul_divisorProductOne hg_diff hg0 z
   have hg_zeros (z : ℂ) (hgz : g z = 0) : z.re = 0 := hzeros z (by rw [hfg z, hgz, mul_zero])
   obtain ⟨γ, hγ_nonneg, hγ_sum, hdiv_eq⟩ := exists_paired_seq_divisorProductOne hg_diff hg0 hg_even
     hg_zeros (hg_ord.summable_divisor_toNat_mul_norm_inv_sq hg_diff (by norm_num))
@@ -161,9 +162,12 @@ theorem pairedHadamard_iteratedDeriv_zero_pos
     0 < (iteratedDeriv ((analyticOrderAt f 0).toNat + 2 * j) f 0).re := by
   obtain ⟨c, γ, hc, _, hsum, _, _, hprod_eq, _⟩ :=
     pairedHadamard_factorization hf hparity hzeros hpositive
+  have hinf : {n : ℕ | γ n ≠ 0}.Infinite := fun hfin ↦
+    hnonpoly (exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq hprod_eq hfin)
+  obtain ⟨t, ht_sub, ht_card⟩ := hinf.exists_subset_card_eq j
+  rw [← ht_card]
   exact re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
-    hc hsum hprod_eq (fun hfin ↦ hnonpoly
-      (exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq hprod_eq hfin)) j
+    hc hsum hprod_eq (fun _ hn ↦ ht_sub hn)
 
 /-- **Strict positivity of derivatives for nonpolynomial paired Hadamard products.** Under the
 paired Hadamard hypotheses, if `f` is not a polynomial, then `(iteratedDeriv k f x).re > 0` for

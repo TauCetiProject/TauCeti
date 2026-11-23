@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Complex.Positivity
 import Mathlib.Data.Finset.Interval
 import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Polynomial
 import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
@@ -25,8 +26,7 @@ import TauCeti.Analysis.Complex.IteratedDeriv
 Let `f : ℂ → ℂ` be given by a convergent paired quadratic canonical product
 `f z = c * z ^ m * ∏' n, (1 + z ^ 2 / (γ n) ^ 2)` with `c ≥ 0` and
 `∑' n, (γ n)⁻¹ ^ 2 < ∞`. Each finite partial product is the complexification of a real polynomial
-`P_s(X) = c * X ^ m * ∏_{n ∈ s} (1 + (γ n)⁻¹ ^ 2 * X ^ 2)` whose coefficients are nonnegative and
-monotone in `s`.
+`TauCeti.pairedPartialPoly c m γ s` whose coefficients are nonnegative and monotone in `s`.
 
 By compact uniform convergence of the partial products
 (`TauCeti.tendstoUniformlyOn_mul_pow_one_add_div_sq`)
@@ -35,20 +35,18 @@ this yields:
 
 * `TauCeti.iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq`: for `c ≥ 0`,
   every iterated derivative `iteratedDeriv k f x` at `x ≥ 0` is real and nonnegative.
-* `TauCeti.re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq`: if `c > 0` and infinitely
-  many `γ n` are nonzero, then every Taylor derivative of order `m + 2 * j` at `0` has strictly
-  positive real part.
-* `TauCeti.re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq`: under the same hypotheses,
-  `(iteratedDeriv k f x).re > 0` for every `k : ℕ` and every `x > 0`.
+* `TauCeti.re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq`: if `c > 0` and `t` is a
+  finite set of indices with `γ n ≠ 0`, then the Taylor derivative of order `m + 2 * t.card` at
+  `0` has strictly positive real part.
+* `TauCeti.re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq`: if `c > 0` and infinitely
+  many `γ n` are nonzero, then `(iteratedDeriv k f x).re > 0` for every `k : ℕ` and every `x > 0`.
 
 ## Main results
 
-* `TauCeti.exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq`: a paired quadratic product
-  with finitely many nonzero `γ n` is a complex polynomial.
 * `TauCeti.iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq`: reality and
   nonnegativity of all iterated derivatives on `[0, ∞)`.
 * `TauCeti.re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq`: strict positivity of
-  same-parity Taylor derivatives from order `m` upward.
+  same-parity Taylor derivatives from order `m` upward given a finite nonzero index witness.
 * `TauCeti.re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq`: strict positivity of all
   iterated derivatives on `(0, ∞)`.
 -/
@@ -59,40 +57,6 @@ open Complex Filter Metric Polynomial Topology
 open scoped BigOperators
 
 namespace TauCeti
-
-/-- The finite partial-product real polynomial
-`P_s(X) = c * X ^ m * ∏_{n ∈ s} (1 + (γ n)⁻¹ ^ 2 * X ^ 2)`. -/
-private noncomputable def pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ) (s : Finset ℕ) : ℝ[X] :=
-  C c * X ^ m * ∏ n ∈ s, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2)
-
-private theorem eval_map_pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ) (s : Finset ℕ) (z : ℂ) :
-    ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval z =
-      (c : ℂ) * z ^ m * ∏ n ∈ s, (1 + z ^ 2 / (γ n : ℂ) ^ 2) := by
-  rw [eval_map, ← aeval_def]
-  simp only [pairedPartialPoly, map_mul, map_pow, aeval_C, aeval_X, Complex.coe_algebraMap,
-    map_prod, map_add, map_one]
-  congr 1
-  refine Finset.prod_congr rfl fun n _ ↦ ?_
-  rw [one_add_div_sq_eq_one_add_inv_sq_mul]
-  push_cast
-  ring
-
-/-- A paired quadratic product with only finitely many nonzero entries `γ n` is the evaluation of a
-complex polynomial. -/
-theorem exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq
-    {f : ℂ → ℂ} {c : ℝ} {m : ℕ} {γ : ℕ → ℝ}
-    (hf_eq : ∀ z : ℂ, f z = (c : ℂ) * z ^ m * ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
-    (hfin : {n : ℕ | γ n ≠ 0}.Finite) :
-    ∃ P : Polynomial ℂ, ∀ z, f z = P.eval z := by
-  classical
-  refine ⟨(pairedPartialPoly c m γ hfin.toFinset).map (algebraMap ℝ ℂ), fun z ↦ ?_⟩
-  rw [eval_map_pairedPartialPoly, hf_eq z]
-  congr 1
-  rw [tprod_eq_prod (s := hfin.toFinset) fun n hn ↦ ?_]
-  have hγ0 : γ n = 0 := by
-    by_contra hne
-    exact hn (hfin.mem_toFinset.mpr hne)
-  simp [hγ0]
 
 /-- Every coefficient of `pairedPartialPoly c m γ s` is nonnegative when `0 ≤ c`. -/
 private theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
@@ -107,6 +71,7 @@ private theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ
     refine Finset.prod_induction _ (fun p : ℝ[X] ↦ ∀ d, 0 ≤ p.coeff d)
       (fun _ _ hp hq d ↦ coeff_mul_nonneg hp hq d) (fun d ↦ ?_) (fun n _ ↦ hfactor n)
     rw [coeff_one]; split_ifs <;> norm_num
+  rw [pairedPartialPoly_def]
   exact coeff_mul_nonneg (coeff_mul_nonneg hC hX) hprod
 
 /-- The coefficients of `pairedPartialPoly c m γ s` are monotone with respect to `s : Finset ℕ`. -/
@@ -118,7 +83,7 @@ private theorem coeff_pairedPartialPoly_mono {c : ℝ} (hc : 0 ≤ c) (m : ℕ) 
     Finset.monotone_iff_forall_le_insert.mpr fun u n hn ↦ by
       have hstep : pairedPartialPoly c m γ (insert n u) =
           pairedPartialPoly c m γ u * (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2) := by
-        simp only [pairedPartialPoly, Finset.prod_insert hn]; ring
+        simp only [pairedPartialPoly_def, Finset.prod_insert hn]; ring
       rw [hstep]
       exact coeff_le_coeff_mul_one_add_C_mul_X_pow (coeff_pairedPartialPoly_nonneg hc m γ u)
         (sq_nonneg _) 2 d
@@ -130,7 +95,7 @@ private theorem coeff_pairedPartialPoly_top_pos {c : ℝ} (hc : 0 < c) (m : ℕ)
     (t : Finset ℕ) (ht : ∀ n ∈ t, γ n ≠ 0) :
     0 < (pairedPartialPoly c m γ t).coeff (m + 2 * t.card) := by
   classical
-  unfold pairedPartialPoly
+  rw [pairedPartialPoly_def]
   rw [mul_assoc, coeff_C_mul, mul_comm (X ^ m), add_comm m, coeff_mul_X_pow]
   have hdeg : ∀ n ∈ t, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2 : ℝ[X]).natDegree ≤ 2 := fun n _ ↦ by
     compute_degree!
@@ -193,20 +158,19 @@ theorem iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_s
   open scoped ComplexOrder in
   exact ⟨(Complex.le_def.mp hle).2.symm, (Complex.le_def.mp hle).1⟩
 
-/-- If `c > 0` and infinitely many `γ n` are nonzero, then for every `j : ℕ` the derivative of
-order `m + 2 * j` at `0` of the paired quadratic canonical product has strictly positive real
+/-- If `c > 0` and `t : Finset ℕ` is a set of indices with `γ n ≠ 0`, then the derivative of order
+`m + 2 * t.card` at `0` of the paired quadratic canonical product has strictly positive real
 part. -/
 theorem re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
     {f : ℂ → ℂ} {c : ℝ} (hc : 0 < c) {m : ℕ} {γ : ℕ → ℝ}
     (hsum : Summable (fun n ↦ (γ n)⁻¹ ^ 2))
     (hf_eq : ∀ z : ℂ, f z = (c : ℂ) * z ^ m * ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
-    (hinf : {n : ℕ | γ n ≠ 0}.Infinite) (j : ℕ) :
-    0 < (iteratedDeriv (m + 2 * j) f 0).re := by
+    {t : Finset ℕ} (ht : ∀ n ∈ t, γ n ≠ 0) :
+    0 < (iteratedDeriv (m + 2 * t.card) f 0).re := by
   classical
-  obtain ⟨t, ht_sub, ht_card⟩ := hinf.exists_subset_card_eq j
-  set N : ℕ := m + 2 * j
-  have ht_pos : 0 < (pairedPartialPoly c m γ t).coeff N := by
-    simpa only [N, ht_card] using coeff_pairedPartialPoly_top_pos hc m γ t (fun n hn ↦ ht_sub hn)
+  set N : ℕ := m + 2 * t.card
+  have ht_pos : 0 < (pairedPartialPoly c m γ t).coeff N :=
+    coeff_pairedPartialPoly_top_pos hc m γ t ht
   have htend := tendsto_iteratedDeriv_pairedPartialPoly c m γ hsum hf_eq N 0
   have heval_zero (s : Finset ℕ) :
       (((N.factorial : ℝ) * (pairedPartialPoly c m γ s).coeff N : ℝ) : ℂ) =
@@ -239,34 +203,47 @@ theorem re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq
       (Eventually.of_forall fun s ↦
         ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).differentiableOn)
       isOpen_univ
-  have hk_entire : Differentiable ℂ (iteratedDeriv k f) := hf_diff.iteratedDeriv k
-  have hts := Complex.hasSum_taylorSeries_of_entire hk_entire 0 (x : ℂ)
-  have hre_sum : HasSum
-      (fun n : ℕ ↦ (n.factorial : ℝ)⁻¹ * x ^ n * (iteratedDeriv (n + k) f 0).re)
-      (iteratedDeriv k f (x : ℂ)).re := by
-    refine (Complex.reCLM.hasSum hts).congr_fun fun n ↦ ?_
-    dsimp only [Complex.reCLM_apply]
-    rw [sub_zero, iteratedDeriv_iteratedDeriv n k f, smul_eq_mul, smul_eq_mul]
-    have hcast : ((n.factorial : ℂ)⁻¹ * ((x : ℂ) ^ n * iteratedDeriv (n + k) f 0)) =
-        ((((n.factorial : ℝ)⁻¹ * x ^ n : ℝ) : ℂ)) * iteratedDeriv (n + k) f 0 := by
-      push_cast; ring
-    rw [hcast, re_ofReal_mul]
-  have hterm_nonneg (n : ℕ) :
-      0 ≤ (n.factorial : ℝ)⁻¹ * x ^ n * (iteratedDeriv (n + k) f 0).re :=
-    mul_nonneg (mul_nonneg (inv_nonneg.mpr (Nat.cast_nonneg _)) (pow_nonneg hx.le n))
-      (iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
-        hc.le hsum hf_eq (n + k) le_rfl).2
+  obtain ⟨t, ht_sub, ht_card⟩ := hinf.exists_subset_card_eq k
   set n₀ : ℕ := m + k
-  have hn₀_add : n₀ + k = m + 2 * k := by omega
+  have hn₀_add : n₀ + k = m + 2 * t.card := by omega
   have hpos_coeff : 0 < (iteratedDeriv (n₀ + k) f 0).re := by
     rw [hn₀_add]
-    exact re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq hc hsum hf_eq hinf k
-  have hterm_pos : 0 < (n₀.factorial : ℝ)⁻¹ * x ^ n₀ * (iteratedDeriv (n₀ + k) f 0).re :=
-    mul_pos (mul_pos (inv_pos.mpr (Nat.cast_pos.mpr n₀.factorial_pos)) (pow_pos hx n₀)) hpos_coeff
-  have hle : (n₀.factorial : ℝ)⁻¹ * x ^ n₀ * (iteratedDeriv (n₀ + k) f 0).re ≤
-      (iteratedDeriv k f (x : ℂ)).re := by
-    simpa only [Finset.sum_singleton] using
-      sum_le_hasSum ({n₀} : Finset ℕ) (fun n _ ↦ hterm_nonneg n) hre_sum
-  exact hterm_pos.trans_le hle
+    exact re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
+      hc hsum hf_eq (fun _ hn ↦ ht_sub hn)
+  have him_coeff : (iteratedDeriv (n₀ + k) f 0).im = 0 :=
+    (iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
+      hc.le hsum hf_eq (n₀ + k) le_rfl).1
+  set a₀ : ℝ := (iteratedDeriv (n₀ + k) f 0).re / (n₀.factorial : ℝ)
+  have ha₀_pos : 0 < a₀ := div_pos hpos_coeff (Nat.cast_pos.mpr n₀.factorial_pos)
+  set P : ℂ[X] := C (a₀ : ℂ) * X ^ n₀
+  have hrem_diff : Differentiable ℂ (fun z : ℂ ↦ iteratedDeriv k f z - P.eval z) :=
+    (hf_diff.iteratedDeriv k).sub P.differentiable
+  open scoped ComplexOrder in
+  have hrem_deriv (n : ℕ) :
+      0 ≤ iteratedDeriv n (fun z : ℂ ↦ iteratedDeriv k f z - P.eval z) 0 := by
+    rw [show (fun z : ℂ ↦ iteratedDeriv k f z - P.eval z) = iteratedDeriv k f - P.eval from rfl,
+      iteratedDeriv_sub ((hf_diff.iteratedDeriv k).contDiff.contDiffAt)
+        (P.differentiable.contDiff.contDiffAt), iteratedDeriv_iteratedDeriv,
+      Polynomial.iteratedDeriv_eval_zero, coeff_C_mul_X_pow]
+    split_ifs with hn
+    · subst hn
+      have hc_eq : iteratedDeriv (n₀ + k) f 0 = (((iteratedDeriv (n₀ + k) f 0).re : ℝ) : ℂ) :=
+        Complex.ext rfl him_coeff
+      have hfac : (n₀.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr n₀.factorial_ne_zero
+      rw [hc_eq, ← Complex.ofReal_natCast, ← Complex.ofReal_mul,
+        mul_div_cancel₀ _ hfac, sub_self]
+    · simp only [mul_zero, sub_zero]
+      have hnonneg := iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
+        hc.le hsum hf_eq (n + k) le_rfl
+      exact Complex.le_def.mpr ⟨hnonneg.2, hnonneg.1.symm⟩
+  open scoped ComplexOrder in
+  have hrem_nonneg : (0 : ℂ) ≤ iteratedDeriv k f (x : ℂ) - P.eval (x : ℂ) :=
+    hrem_diff.nonneg_of_iteratedDeriv_nonneg hrem_deriv (Complex.real_le_real.mpr hx.le)
+  open scoped ComplexOrder in
+  have hre := (Complex.le_def.mp hrem_nonneg).1
+  rw [Complex.zero_re, Complex.sub_re, sub_nonneg] at hre
+  have hP_re : (P.eval (x : ℂ)).re = a₀ * x ^ n₀ := by
+    simp [P, ← Complex.ofReal_pow, ← Complex.ofReal_mul]
+  exact (mul_pos ha₀_pos (pow_pos hx n₀)).trans_le (hP_re ▸ hre)
 
 end TauCeti

@@ -42,23 +42,30 @@ negation-invariant set `S ⊆ ℂ` with `ρ.im ≠ 0` on `S`, sending `(ρ, true
 `(ρ, false) ↦ -ρ`. -/
 private noncomputable def imagPairEquiv {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) :
-    (Σ _ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}, Bool) ≃ S :=
-  let posSub : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ {σ : S // 0 < (σ : ℂ).im} :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (fun z : ℂ ↦ 0 < z.im)).symm
-  let negOnS : S ≃ S :=
-    Equiv.subtypeEquiv (Equiv.neg ℂ) fun _ ↦
-      ⟨fun h ↦ hneg h, fun h ↦ by simpa using hneg h⟩
-  let posToCompl : {σ : S // 0 < (σ : ℂ).im} ≃ {σ : S // ¬ 0 < (σ : ℂ).im} :=
-    Equiv.subtypeEquiv negOnS fun σ ↦ by
-      simp only [negOnS, Equiv.subtypeEquiv_apply, Equiv.neg_apply, neg_im]
-      exact ⟨fun h ↦ not_lt.mpr (neg_nonpos.mpr h.le),
-        fun h ↦ lt_of_le_of_ne (neg_nonpos.mp (not_lt.mp h)) (him σ.property).symm⟩
-  (Equiv.sigmaEquivProd _ Bool).trans <|
-    (Equiv.prodComm _ Bool).trans <|
-      (Equiv.boolProdEquivSum _).trans <|
-        (Equiv.sumComm _ _).trans <|
-          (Equiv.sumCongr posSub (posSub.trans posToCompl)).trans
-            (Equiv.sumCompl (fun σ : S ↦ 0 < (σ : ℂ).im))
+    (Σ _ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}, Bool) ≃ S where
+  toFun
+    | ⟨ρ, true⟩ => ⟨ρ.val, ρ.property.1⟩
+    | ⟨ρ, false⟩ => ⟨-ρ.val, hneg ρ.property.1⟩
+  invFun σ :=
+    letI := Classical.propDecidable
+    if h : 0 < (σ : ℂ).im then ⟨⟨σ, σ.property, h⟩, true⟩
+    else ⟨⟨-σ, hneg σ.property, lt_of_le_of_ne (by simpa using not_lt.mp h)
+      (Ne.symm (by simpa using him σ.property))⟩, false⟩
+  left_inv
+    | ⟨ρ, true⟩ => by
+      dsimp only
+      split_ifs with h
+      · rfl
+      · exact absurd ρ.property.2 h
+    | ⟨ρ, false⟩ => by
+      dsimp only
+      split_ifs with h
+      · simp only [neg_im, Left.neg_pos_iff] at h
+        exact absurd h (not_lt.mpr ρ.property.2.le)
+      · simp
+  right_inv σ := by
+    dsimp only
+    split_ifs <;> simp
 
 private theorem imagPairEquiv_true {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :

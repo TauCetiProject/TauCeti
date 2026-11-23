@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CanonicalProduct.Convergence
+public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
+import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
+import Mathlib.Analysis.SpecialFunctions.Log.Summable
+import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -84,18 +89,19 @@ open scoped ComplexOrder
 theorem one_le_tprod_one_add_div_sq {γ : ℕ → ℝ}
     (hsum : Summable (fun n : ℕ ↦ (γ n)⁻¹ ^ 2)) (x : ℝ) :
     (1 : ℂ) ≤ ∏' n : ℕ, (1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2) := by
-  have hhp := hasProd_one_add_div_sq hsum (x : ℂ)
-  have hreal (s : Finset ℕ) :
-      (∏ n ∈ s, (1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2)) =
-        (((∏ n ∈ s, (1 + (γ n)⁻¹ ^ 2 * x ^ 2) : ℝ) : ℂ)) := by
-    rw [Complex.ofReal_prod]
-    refine Finset.prod_congr rfl fun n _ ↦ ?_
+  have hreal : (fun n : ℕ ↦ 1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2) =
+      fun n : ℕ ↦ Complex.ofRealHom (1 + (γ n)⁻¹ ^ 2 * x ^ 2) := by
+    ext n
     rw [one_add_div_sq_eq_one_add_inv_sq_mul]
-    push_cast
-    ring
-  refine ge_of_tendsto' (hhp.congr fun s ↦ hreal s) fun s ↦ ?_
-  simpa only [Complex.ofReal_one] using Complex.real_le_real.mpr
-    (Finset.one_le_prod₀ fun n _ ↦ le_add_of_nonneg_right (by positivity))
+    simp [Complex.ofRealHom_eq_coe, mul_comm]
+  rw [hreal, ← Complex.isometry_ofReal.isClosedEmbedding.map_tprod _ (g := Complex.ofRealHom)]
+  have hhp : HasProd (fun n : ℕ ↦ 1 + (γ n)⁻¹ ^ 2 * x ^ 2)
+      (∏' n : ℕ, (1 + (γ n)⁻¹ ^ 2 * x ^ 2)) :=
+    (Real.multipliable_one_add_of_summable (hsum.mul_right (x ^ 2))).hasProd
+  have hle : 1 ≤ ∏' n : ℕ, (1 + (γ n)⁻¹ ^ 2 * x ^ 2) := by
+    simpa using prod_le_hasProd_of_nonneg (s := ∅) (by simp)
+      (fun n _ ↦ le_add_of_nonneg_right (by positivity)) hhp
+  simpa only [Complex.ofRealHom_eq_coe, Complex.ofReal_one] using Complex.real_le_real.mpr hle
 
 end
 

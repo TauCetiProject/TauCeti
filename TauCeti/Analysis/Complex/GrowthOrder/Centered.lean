@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.GrowthOrder.Logarithmic
+public import TauCeti.Analysis.Complex.GrowthOrder
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 
 /-!
@@ -22,9 +22,7 @@ dominated at infinity by `exp (‖z‖ ^ A')`, while conversely the asymptotic b
 outside a closed ball on which continuity of `f` supplies a uniform bound absorbed into `exp C`.
 
 Consequently `IsCenteredOrderOne` is closed under ring operations, affine substitutions,
-polynomials, linear exponentials, and logarithmic-exponential bounds of the form
-`exp (C (1 + ‖s‖) log (2 + ‖s‖))` (such as `1 / Γ`), while excluding higher-order functions such
-as `exp (z ^ 2)`.
+polynomials, and linear exponentials, while excluding higher-order functions such as `exp (z ^ 2)`.
 
 ## Main results
 
@@ -34,7 +32,6 @@ as `exp (z ^ 2)`.
   `TauCeti.IsCenteredOrderOne.pow`, `TauCeti.IsCenteredOrderOne.comp_mul_add`,
   `Polynomial.isCenteredOrderOne_eval`, `TauCeti.isCenteredOrderOne_cexp_mul`: algebraic and
   analytic closure properties.
-* `TauCeti.IsCenteredOrderOne.of_norm_le_exp_mul_log`: transfer from logarithmic-exponential bounds.
 * `TauCeti.not_isCenteredOrderOne_cexp_sq`: `exp (z ^ 2)` does not satisfy `IsCenteredOrderOne`.
 
 ## References
@@ -113,13 +110,6 @@ namespace IsCenteredOrderOne
 theorem of_orderLE {A : ℝ} (hf : Differentiable ℂ f) (h : OrderLE f A) (hA : A ≤ 1) :
     IsCenteredOrderOne f :=
   (h.mono hA).isCenteredOrderOne hf
-
-/-- An entire function bounded by `exp (C (1 + ‖s‖) log (2 + ‖s‖))` satisfies
-`IsCenteredOrderOne`. -/
-theorem of_norm_le_exp_mul_log {C : ℝ} (hf : Differentiable ℂ f)
-    (hb : ∀ s, ‖f s‖ ≤ Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖))) :
-    IsCenteredOrderOne f :=
-  (orderLE_one_of_norm_le_exp_mul_log hb).isCenteredOrderOne hf
 
 /-- A sum of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
 theorem add (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
