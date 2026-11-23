@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.CategoryTheory.Sites.Adjunction
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
+public import TauCeti.CategoryTheory.Sites.ComposeAndSheafify
+public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 
 /-!
 # Change of coefficients for finite lisse étale sheaves
@@ -18,15 +19,13 @@ left adjoint to `sheafCompose J R`. This file shows that on the small étale sit
 locally constant sheaves, and deduces that change of coefficients preserves finite lisse étale
 sheaves of modules.
 
-* The sheafified composite with `G` sends the constant sheaf with value `M` to the constant sheaf
-  with value `G M` (`CategoryTheory.Sheaf.constantSheafCompComposeAndSheafifyIso`), on any site.
-* For a morphism of schemes `f`, it commutes with the étale inverse image `f^*`
-  (`AlgebraicGeometry.Scheme.Hom.composeAndSheafifyCompSmallEtalePullbackIso`): both composites
-  are left adjoint to the same functor, since the direct image `f_*` and `sheafCompose R` both act
-  by composition of presheaves.
-* Hence if `F` is étale locally constant with values in `P`, the sheafified composite of `F` with
-  `G` is étale locally constant with values in any `Q` containing every `G M` with `P M`
-  (`CategoryTheory.Sheaf.IsLocallyConstantIn.composeAndSheafify`).
+The sheafified composite with `G` sends the constant sheaf with value `M` to the constant sheaf
+with value `G M` (`CategoryTheory.Sheaf.constantSheafCompComposeAndSheafifyIso`), and commutes
+with the étale inverse image `f^*` along a morphism of schemes `f`, which is the sheaf pullback
+along `f.smallEtaleBaseChange` (`CategoryTheory.Functor.composeAndSheafifyCompSheafPullbackIso`).
+Hence if `F` is étale locally constant with values in `P`, the sheafified composite of `F` with
+`G` is étale locally constant with values in any `Q` containing every `G M` with `P M`
+(`CategoryTheory.Sheaf.IsLocallyConstantIn.composeAndSheafify`).
 
 For a ring homomorphism `φ : Λ →+* Λ'`, extension of scalars `Λ' ⊗_Λ -` is left adjoint to
 restriction of scalars, which is left adjoint to coextension of scalars. So extension of scalars
@@ -48,40 +47,6 @@ open CategoryTheory Limits AlgebraicGeometry Scheme
 
 namespace CategoryTheory.Sheaf
 
-variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {A B : Type*} [Category* A]
-  [Category* B] (G : A ⥤ B) [HasWeakSheafify J A] [HasWeakSheafify J B]
-  [J.PreservesSheafification G]
-
-/-- The sheafified composite with a functor `G` that preserves sheafification sends the constant
-sheaf with value `M` to the constant sheaf with value `G M`. -/
-noncomputable def constantSheafCompComposeAndSheafifyIso :
-    constantSheaf J A ⋙ composeAndSheafify J G ≅ G ⋙ constantSheaf J B :=
-  Functor.isoWhiskerLeft (Functor.const Cᵒᵖ) (presheafToSheafCompComposeAndSheafifyIso J G) ≪≫
-    Functor.isoWhiskerRight (Functor.compConstIso Cᵒᵖ G).symm (presheafToSheaf J B)
-
-end CategoryTheory.Sheaf
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-variable {X Y : Scheme.{u}} {A B : Type*} [Category* A] [Category* B] {G : A ⥤ B} {R : B ⥤ A}
-  (adj : G ⊣ R) [HasWeakSheafify (smallEtaleTopology X) B]
-  [HasWeakSheafify (smallEtaleTopology Y) B] [(smallEtaleTopology X).HasSheafCompose R]
-  [(smallEtaleTopology Y).HasSheafCompose R] (f : X ⟶ Y)
-  [(f.smallEtalePushforward A).IsRightAdjoint] [(f.smallEtalePushforward B).IsRightAdjoint]
-
-/-- The sheafified composite with a left adjoint `G` commutes with the étale inverse image along
-`f : X ⟶ Y`. Both composites are left adjoint to the composite of `sheafCompose R` and the direct
-image `f_*`, which act by composition of presheaves and so commute. -/
-noncomputable def composeAndSheafifyCompSmallEtalePullbackIso :
-    Sheaf.composeAndSheafify (smallEtaleTopology Y) G ⋙ f.smallEtalePullback B ≅
-      f.smallEtalePullback A ⋙ Sheaf.composeAndSheafify (smallEtaleTopology X) G :=
-  ((Sheaf.adjunction _ adj).comp (f.smallEtaleAdjunction B)).leftAdjointUniq
-    (((f.smallEtaleAdjunction A).comp (Sheaf.adjunction _ adj)).ofNatIsoRight (Iso.refl _))
-
-end AlgebraicGeometry.Scheme.Hom
-
-namespace CategoryTheory.Sheaf
-
 variable {S : Scheme.{u}} {A B : Type*} [Category* A] [Category* B] {G : A ⥤ B} {R : B ⥤ A}
   [∀ X : Scheme.{u}, HasWeakSheafify (smallEtaleTopology X) A]
   [∀ X : Scheme.{u}, HasWeakSheafify (smallEtaleTopology X) B]
@@ -99,7 +64,7 @@ theorem IsLocallyConstantIn.composeAndSheafify (adj : G ⊣ R) {P : ObjectProper
   obtain ⟨M, hM, ⟨e⟩⟩ := h i
   have := preservesSheafification_of_adjunction (smallEtaleTopology (U i)) adj
   exact ⟨G.obj M, hPQ M hM,
-    ⟨(Hom.composeAndSheafifyCompSmallEtalePullbackIso adj (u i)).app F ≪≫
+    ⟨((u i).smallEtaleBaseChange.composeAndSheafifyCompSheafPullbackIso adj).app F ≪≫
       (Sheaf.composeAndSheafify _ G).mapIso e ≪≫
       (constantSheafCompComposeAndSheafifyIso _ G).app M⟩⟩
 
@@ -112,7 +77,7 @@ theorem IsFiniteLisse.extendScalars {Λ Λ' : Type u} [CommRing Λ] [CommRing Λ
   hF.composeAndSheafify (ModuleCat.extendRestrictScalarsAdj.{u, u, u} φ)
     fun M (_ : Module.Finite Λ M) ↦
     letI := φ.toAlgebra
-    inferInstanceAs (Module.Finite Λ' (TensorProduct Λ Λ' M))
+    Module.Finite.equiv (ModuleCat.extendScalarsAlgebraMapIso M).toLinearEquiv.symm
 
 /-- **Restriction of scalars of finite lisse sheaves.** For a finite ring homomorphism
 `φ : Λ →+* Λ'`, a finite lisse étale sheaf of `Λ'`-modules, viewed as a sheaf of `Λ`-modules, is
@@ -124,12 +89,7 @@ theorem IsFiniteLisse.restrictScalars {Λ Λ' : Type u} [CommRing Λ] [CommRing 
   refine IsLocallyConstantIn.of_iso (asIso
     ((sheafificationAdjunction (smallEtaleTopology S) (ModuleCat.{u} Λ)).counit.app
       ((sheafCompose (smallEtaleTopology S) (ModuleCat.restrictScalars.{u, u, u} φ)).obj F))) ?_
-  refine hF.composeAndSheafify (ModuleCat.restrictCoextendScalarsAdj.{u, u, u} φ) fun M hM ↦ ?_
-  let := φ.toAlgebra
-  have : Module.Finite Λ Λ' := hφ
-  have : Module.Finite Λ' ((ModuleCat.restrictScalars.{u, u, u} φ).obj M) := hM
-  have : IsScalarTower Λ Λ' ((ModuleCat.restrictScalars.{u, u, u} φ).obj M) :=
-    ⟨fun a b m ↦ mul_smul (φ a) b (show M from m)⟩
-  exact Module.Finite.trans Λ' ((ModuleCat.restrictScalars.{u, u, u} φ).obj M)
+  exact hF.composeAndSheafify (ModuleCat.restrictCoextendScalarsAdj.{u, u, u} φ) fun M hM ↦
+    (ModuleCat.isFG_iff _).mp (φ.isFG_restrictScalars_of_finite hφ ((ModuleCat.isFG_iff M).mpr hM))
 
 end CategoryTheory.Sheaf
