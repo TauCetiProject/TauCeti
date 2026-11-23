@@ -8,18 +8,22 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Order.Filter.Extr
 
 /-!
 # Large deviation principles
 
 A family of measures `μ i` on a topological space `X`, indexed along a filter `l`, satisfies a
-*large deviation principle* (LDP) with speed `ε` and rate function `I : X → ℝ≥0∞` when
+*large deviation principle* (LDP) with inverse speed `ε` and rate function `I : X → ℝ≥0∞` when
 `ε i * log (μ i G)` has `liminf` at least `-inf_G I` for open `G`, and `limsup` at most
 `-inf_F I` for closed `F`.
 
-Logarithms are `ENNReal.log : ℝ≥0∞ → EReal`, so that `log 0 = ⊥`. The speed `ε` is a family of
-nonnegative reals (for example `1 / n`, normally positive and tending to `0`); the bounds are stated
-with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so a speed `ε i = 0` is degenerate.
+Logarithms are `ENNReal.log : ℝ≥0∞ → EReal`, so that `log 0 = ⊥`. The *inverse speed* `ε` is a
+family of nonnegative reals, normally positive and tending to `0`. It is the reciprocal of the
+speed `a` of Anderson–Guionnet–Zeitouni (Definition D.1), whose bounds are stated for
+`a(n)⁻¹ log μ n`: a principle at speed `n` is `HasLDP atTop (fun n => (n : ℝ≥0)⁻¹) μ I`. The
+bounds are stated with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so an inverse speed
+`ε i = 0` is degenerate.
 
 ## Main definitions
 
@@ -31,7 +35,7 @@ with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so a speed `ε i = 
 
 * `TauCeti.Probability.IsGoodRateFunction.exists_eq_biInf`: a good rate function attains its
   infimum over a closed set whenever that infimum is finite.
-* `TauCeti.Probability.HasLDP.eventually_pos`: the speed of a large deviation principle is
+* `TauCeti.Probability.HasLDP.eventually_pos`: the inverse speed of a large deviation principle is
   eventually positive.
 * `TauCeti.Probability.HasLDP.congr`: a large deviation principle depends only on the measures
   eventually along the filter.
@@ -71,18 +75,17 @@ theorem IsGoodRateFunction.exists_eq_biInf [TopologicalSpace X] {I : X → ℝ�
     ∃ x ∈ F, I x = ⨅ y ∈ F, I y := by
   obtain ⟨x₁, hx₁, hlt⟩ : ∃ x₁ ∈ F, I x₁ < ∞ := by
     simpa only [iInf_lt_iff, exists_prop] using lt_top_iff_ne_top.mpr hfin
-  have hK : IsCompact ({x | I x ≤ I x₁} ∩ F) :=
-    (hI.isCompact_sublevel _ hlt.ne).inter_right hF
-  have hne : ({x | I x ≤ I x₁} ∩ F).Nonempty := ⟨x₁, by simp, hx₁⟩
-  obtain ⟨x₀, ⟨hx₀I, hx₀F⟩, hmin⟩ := (hI.lowerSemicontinuous.lowerSemicontinuousOn
-    ({x | I x ≤ I x₁} ∩ F)).exists_isMinOn hne hK
-  refine ⟨x₀, hx₀F, le_antisymm (le_iInf₂ fun x hx => ?_) (biInf_le _ hx₀F)⟩
-  by_cases h : I x ≤ I x₁
-  · exact hmin ⟨h, hx⟩
-  · exact hx₀I.trans (not_le.mp h).le
+  -- Minimize `I` over the compact sublevel set `{x ∈ F | I x ≤ I x₁}`; the minimum is global.
+  have hK : IsCompact {x ∈ F | I x ≤ I x₁} :=
+    (hI.isCompact_sublevel _ hlt.ne).inter_left hF
+  have hne : {x ∈ F | I x ≤ I x₁}.Nonempty := ⟨x₁, hx₁, le_rfl⟩
+  obtain ⟨x₀, ⟨hx₀F, hx₀I⟩, hmin⟩ :=
+    (hI.lowerSemicontinuous.lowerSemicontinuousOn _).exists_isMinOn hne hK
+  have hmin' : IsMinOn I F x₀ := (isMinOn_sublevel_iff hx₀I).1 hmin
+  exact ⟨x₀, hx₀F, le_antisymm (le_iInf₂ fun _ hx => hmin' hx) (biInf_le _ hx₀F)⟩
 
-/-- The family `μ i`, `i` along the filter `l`, satisfies a large deviation principle with speed
-`ε` and rate function `I`. The rate function is lower semicontinuous, and the bounds are
+/-- The family `μ i`, `i` along the filter `l`, satisfies a large deviation principle with inverse
+speed `ε` and rate function `I`. The rate function is lower semicontinuous, and the bounds are
 `-inf_G I ≤ liminf ε i * log (μ i G)` for open `G` and
 `limsup ε i * log (μ i F) ≤ -inf_F I` for closed `F`. -/
 structure HasLDP [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : ι → ℝ≥0)
@@ -95,8 +98,8 @@ structure HasLDP [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : 
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l ≤
       -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal)
 
-/-- A large deviation principle forces the speed to be eventually positive: at a zero speed the
-empty set would have rate `0` instead of `⊥`. -/
+/-- A large deviation principle forces the inverse speed to be eventually positive: at a zero
+inverse speed the empty set would have rate `0` instead of `⊥`. -/
 theorem HasLDP.eventually_pos [TopologicalSpace X] [MeasurableSpace X] {l : Filter ι}
     {ε : ι → ℝ≥0} {μ : ι → Measure X} {I : X → ℝ≥0∞} (h : HasLDP l ε μ I) :
     ∀ᶠ i in l, 0 < ε i := by

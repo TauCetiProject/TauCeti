@@ -255,13 +255,15 @@ theorem neg_coe_ennreal_biInf_le_iff {α : Type*} {s : Set α} {f : α → ℝ�
 most `-d`. For `d = ∞` the hypothesis covers every real `s`, and the conclusion is `a = ⊥`. -/
 theorem le_neg_coe_ennreal_of_forall_ofReal_le {a : EReal} {d : ℝ≥0∞}
     (h : ∀ s : ℝ, ENNReal.ofReal s ≤ d → a ≤ -(s : EReal)) : a ≤ -(d : EReal) := by
-  rcases eq_top_or_lt_top d with rfl | hd
-  · have hbot : a = ⊥ := (eq_bot_iff_forall_lt a).2 fun y =>
-      (h (1 - y) le_top).trans_lt (by
-        rw [← coe_neg, EReal.coe_lt_coe_iff, _root_.neg_sub]
-        exact sub_lt_self y one_pos)
-    simp [hbot]
-  · simpa [← coe_ennreal_toReal hd.ne] using h d.toReal (ENNReal.ofReal_toReal hd.ne).le
+  refine le_of_forall_lt_iff_le.1 fun z hz => ?_
+  -- A real `z > -d` gives the threshold `-z < d`, and `ENNReal.ofReal (-z) = max (-z) 0 ≤ d`.
+  have hzd : ((-z : ℝ) : EReal) < d := by
+    rw [coe_neg]
+    exact EReal.neg_lt_comm.1 hz
+  have hle : ENNReal.ofReal (-z) ≤ d := by
+    rw [← coe_ennreal_le_coe_ennreal_iff, coe_ennreal_ofReal]
+    exact max_le hzd.le (coe_ennreal_nonneg d)
+  simpa using h (-z) hle
 
 /-- A combination `s a + t b` with positive real weights `s`, `t` is `⊤` when neither `a` nor `b`
 is `⊥` and one of them is `⊤`. -/

@@ -9,8 +9,11 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -67,6 +70,9 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   lower bound for the upper tail of the absolute value of a standard Gaussian.
 * `TauCeti.Probability.measureReal_gaussianReal_abs_sub_ge_le` — the two-sided tail bound
   `P(|X - m| ≥ t) ≤ exp (-t² / (2v))`, without the factor `2` of the sub-Gaussian bound.
+* `TauCeti.Probability.coe_mul_log_gaussianReal_le` — its scaled-logarithm form
+  `e * log (gaussianReal m (e * v) A) ≤ -s` on sets where the rate `(x - m)² / (2v)` is at least
+  `s`.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -386,10 +392,15 @@ theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ}
     rw [gaussianReal_zero_var, measureReal_def, Measure.dirac_apply, Set.indicator_of_notMem this]
     positivity
   have := nullSingletonClass_gaussianReal (μ := m) hv
-  have hsub : {x | t ≤ |x - m|} ⊆ Iic (m - t) ∪ Ici (m + t) := fun x hx => by
-    rcases le_abs'.1 (show t ≤ |x - m| from hx) with hx | hx
-    · exact Or.inl (show x ≤ m - t by linarith)
-    · exact Or.inr (show m + t ≤ x by linarith)
+  -- The tails `{t ≤ x - m}` and `{t ≤ -(x - m)}` of `|x - m|` are `Ici (m + t)` and `Iic (m - t)`.
+  have hup_eq : {x : ℝ | t ≤ x - m} = Ici (m + t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Ici]
+    constructor <;> intro h <;> linarith
+  have hlow_eq : {x : ℝ | t ≤ -(x - m)} = Iic (m - t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Iic]
+    constructor <;> intro h <;> linarith
   have hlow : (gaussianReal m v).real (Iic (m - t)) = Real.erfc (t / √(2 * (v : ℝ))) / 2 := by
     rw [← cdf_eq_real, cdf_gaussianReal_eq m hv, sub_sub_cancel_left, neg_div, Real.erf_neg,
       Real.erfc_def]
@@ -398,14 +409,55 @@ theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ}
     rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v)),
       measureReal_Ioi_gaussianReal m hv, add_sub_cancel_left]
   calc (gaussianReal m v).real {x | t ≤ |x - m|}
-      ≤ (gaussianReal m v).real (Iic (m - t)) + (gaussianReal m v).real (Ici (m + t)) :=
-        (measureReal_mono hsub).trans (measureReal_union_le _ _)
+      ≤ (gaussianReal m v).real {x | t ≤ x - m} + (gaussianReal m v).real {x | t ≤ -(x - m)} :=
+        TauCeti.measureReal_le_abs_le_add
     _ = Real.erfc (t / √(2 * (v : ℝ))) := by
-      rw [hlow, hup]
+      rw [hup_eq, hlow_eq, hup, hlow]
       ring
     _ ≤ Real.exp (-t ^ 2 / (2 * v)) := by
       refine (Real.erfc_le_exp_neg_sq (by positivity)).trans_eq ?_
       rw [div_pow, Real.sq_sqrt (by positivity), neg_div]
+
+/-- At a positive multiplier `e`, a set on which the Gaussian rate `(x - m)² / (2v)` is at least
+`s` has Gaussian measure decaying at rate `s`: `e * log (gaussianReal m (e * v) A) ≤ -s`. This is
+the scaled form of `measureReal_gaussianReal_abs_sub_ge_le` used for large deviations of Gaussian
+laws. -/
+theorem coe_mul_log_gaussianReal_le (m : ℝ) (v : ℝ≥0) {e : ℝ≥0} (he : 0 < e) {s : ℝ}
+    {A : Set ℝ} (hA : ∀ x ∈ A, s ≤ (x - m) ^ 2 / (2 * v)) :
+    ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A) ≤ ((-s : ℝ) : EReal) := by
+  rcases le_or_gt s 0 with hs | hs
+  · -- Probabilities have nonpositive logarithms.
+    refine (mul_nonpos_of_nonneg_of_nonpos (by exact_mod_cast e.coe_nonneg)
+      (ENNReal.log_le_zero_iff.2 prob_le_one)).trans ?_
+    exact_mod_cast neg_nonneg.2 hs
+  rcases eq_or_ne v 0 with rfl | hv
+  · -- At variance `0` the rate vanishes, so `A` is empty.
+    obtain rfl : A = ∅ := Set.eq_empty_of_forall_notMem fun x hx => by
+      simpa [hs.not_ge] using hA x hx
+    have he' : (0 : EReal) < ((e : ℝ) : EReal) := by exact_mod_cast he
+    rw [measure_empty, ENNReal.log_zero, EReal.mul_bot_of_pos he']
+    exact bot_le
+  -- Every point of `A` is at distance at least `√(2vs)` from the mean.
+  have hA' : A ⊆ {x | √(2 * v * s) ≤ |x - m|} := fun x hx => by
+    have hle := hA x hx
+    rw [le_div_iff₀ (by positivity)] at hle
+    exact Real.sqrt_le_sqrt (by linarith) |>.trans_eq (Real.sqrt_sq_eq_abs _)
+  have htail := measureReal_gaussianReal_abs_sub_ge_le m (e * v) (Real.sqrt_nonneg (2 * v * s))
+  have hexp : -√(2 * v * s) ^ 2 / (2 * ((e * v : ℝ≥0) : ℝ)) = -s / e := by
+    rw [Real.sq_sqrt (by positivity), NNReal.coe_mul]
+    field_simp
+  rw [hexp] at htail
+  have hμ : gaussianReal m (e * v) A ≤ ENNReal.ofReal (Real.exp (-s / e)) :=
+    (measure_mono hA').trans <| by
+      rw [← ofReal_measureReal]
+      exact ENNReal.ofReal_le_ofReal htail
+  calc ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A)
+      ≤ ((e : ℝ) : EReal) * ENNReal.log (ENNReal.ofReal (Real.exp (-s / e))) :=
+        ENNReal.coe_mul_log_monotone e hμ
+    _ = ((-s : ℝ) : EReal) := by
+      rw [ENNReal.log_ofReal_of_pos (Real.exp_pos _), Real.log_exp, ← EReal.coe_mul]
+      congr 1
+      field_simp
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

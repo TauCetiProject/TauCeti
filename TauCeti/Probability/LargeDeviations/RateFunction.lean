@@ -9,18 +9,18 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Probability.LargeDeviations.Basic
 import Mathlib.Data.EReal.Inv
 import Mathlib.Topology.Separation.Regular
-import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 
 /-!
 # The rate function of a large deviation principle
 
-Along a nontrivial filter, a large deviation principle at a given speed determines its rate
+Along a nontrivial filter, a large deviation principle at a given inverse speed determines its rate
 function: in a regular space two lower semicontinuous rate functions for the same family of
-measures at the same speed coincide. For probability measures along a nontrivial filter, a good
-rate function vanishes somewhere. For a good rate function, the measure of the complement of any
-open set containing all of its zeros is eventually bounded by `exp (-c / ε i)` for some `c > 0`.
-If moreover the speed tends to `0`, these masses tend to `0`, so the measures concentrate on the
-zero set. This is how a large deviation principle with a rate function having a unique zero
+measures at the same inverse speed coincide. For probability measures along a nontrivial filter, a
+good rate function vanishes somewhere. For a good rate function, the measure of the complement of
+any open set containing all of its zeros is eventually bounded by `exp (-c / ε i)` for some `c > 0`.
+If moreover the inverse speed tends to `0`, these masses tend to `0`, so the measures concentrate on
+the zero set. This is how a large deviation principle with a rate function having a unique zero
 yields a law of large numbers, for example convergence of empirical spectral measures to an
 equilibrium measure.
 
@@ -31,17 +31,17 @@ on a thickening of `F`, as produced by exponentially equivalent families, pass t
 ## Main results
 
 * `TauCeti.Probability.HasLDP.unique`: in a regular space, along a nontrivial filter, the rate
-  function at a fixed speed is unique.
+  function at a fixed inverse speed is unique.
 * `TauCeti.Probability.HasLDP.exists_eq_zero`: for probability measures along a nontrivial filter,
   a good rate function has a zero.
 * `TauCeti.Probability.HasLDP.exists_eventually_measure_compl_le`: for a good rate function, the
   measure off an open neighbourhood of the zero set is eventually at most `exp (-c / ε i)` for
   some `c > 0`.
-* `TauCeti.Probability.HasLDP.tendsto_measure_compl`: if moreover the speed tends to `0`, the
-  measures of the complement of such a neighbourhood tend to `0`.
-* `TauCeti.Probability.IsGoodRateFunction.iSup_iInf_cthickening`: the infima of a good rate
+* `TauCeti.Probability.HasLDP.tendsto_measure_compl`: if moreover the inverse speed tends to `0`,
+  the measures of the complement of such a neighbourhood tend to `0`.
+* `TauCeti.Probability.IsGoodRateFunction.biSup_biInf_cthickening`: the infima of a good rate
   function over the closed thickenings of a closed set increase to its infimum over the set.
-* `TauCeti.Probability.IsGoodRateFunction.exists_neg_coe_iInf_cthickening_lt`: every strict upper
+* `TauCeti.Probability.IsGoodRateFunction.exists_neg_coe_biInf_cthickening_lt`: every strict upper
   bound for `-inf_F I` is still a strict upper bound for `-inf I` over some closed thickening
   of `F`.
 
@@ -89,8 +89,8 @@ private theorem HasLDP.le_of_hasLDP [RegularSpace X] [l.NeBot] (hI : HasLDP l ε
     (EReal.coe_ennreal_le_coe_ennreal_iff.1 (EReal.neg_le_neg_iff.1 hrate))
 
 /-- **Uniqueness of the rate function.** In a regular space, a family of measures along a
-nontrivial filter satisfies a large deviation principle at a given speed with at most one rate
-function. -/
+nontrivial filter satisfies a large deviation principle at a given inverse speed with at most one
+rate function. -/
 theorem HasLDP.unique [RegularSpace X] [l.NeBot] (hI : HasLDP l ε μ I) (hJ : HasLDP l ε μ J) :
     I = J :=
   funext fun x => le_antisymm (hJ.le_of_hasLDP hI x) (hI.le_of_hasLDP hJ x)
@@ -127,7 +127,7 @@ theorem HasLDP.exists_eventually_measure_compl_le (h : HasLDP l ε μ I)
     exact EReal.coe_ennreal_lt_coe_ennreal_iff.2 hc'
   filter_upwards [eventually_lt_of_limsup_lt hlt, h.eventually_pos] with i hi hεi
   have hεi' : (0 : EReal) < ((ε i : ℝ) : EReal) := by exact_mod_cast hεi
-  -- Divide the exponent by the speed.
+  -- Divide the exponent by the inverse speed.
   have hlog : ENNReal.log (μ i Uᶜ) ≤
       ENNReal.log (ENNReal.ofReal (Real.exp (-c'.toReal / ε i))) := by
     rw [ENNReal.log_ofReal_of_pos (Real.exp_pos _), Real.log_exp, EReal.coe_div,
@@ -135,8 +135,8 @@ theorem HasLDP.exists_eventually_measure_compl_le (h : HasLDP l ε μ I)
     exact hi.le
   exact ENNReal.log_le_log_iff.1 hlog
 
-/-- For a large deviation principle with a good rate function at a speed tending to `0`, the
-measures of the complement of an open set containing every zero of the rate function tend
+/-- For a large deviation principle with a good rate function at an inverse speed tending to `0`,
+the measures of the complement of an open set containing every zero of the rate function tend
 to `0`. -/
 theorem HasLDP.tendsto_measure_compl (h : HasLDP l ε μ I) (hI : IsGoodRateFunction I)
     (hε : Tendsto ε l (𝓝 0)) {U : Set X} (hU : IsOpen U) (hzero : ∀ x, I x = 0 → x ∈ U) :
@@ -162,7 +162,7 @@ variable [PseudoEMetricSpace X] {I : X → ℝ≥0∞}
 
 /-- For a good rate function `I` and a closed set `F`, the infimum of `I` over the closed
 `δ`-thickening of `F` increases to the infimum of `I` over `F` as `δ` decreases to `0`. -/
-theorem IsGoodRateFunction.iSup_iInf_cthickening (hI : IsGoodRateFunction I)
+theorem IsGoodRateFunction.biSup_biInf_cthickening (hI : IsGoodRateFunction I)
     {F : Set X} (hF : IsClosed F) :
     ⨆ δ > (0 : ℝ), ⨅ x ∈ cthickening δ F, I x = ⨅ x ∈ F, I x := by
   refine le_antisymm (iSup₂_le fun δ _ => biInf_mono fun x hx => self_subset_cthickening F hx)
@@ -179,10 +179,10 @@ theorem IsGoodRateFunction.iSup_iInf_cthickening (hI : IsGoodRateFunction I)
 
 /-- For a good rate function `I` and a closed set `F`, every `c > -inf_F I` also satisfies
 `c > -inf I` over some closed thickening `cthickening δ F` with `δ > 0`. -/
-theorem IsGoodRateFunction.exists_neg_coe_iInf_cthickening_lt (hI : IsGoodRateFunction I)
+theorem IsGoodRateFunction.exists_neg_coe_biInf_cthickening_lt (hI : IsGoodRateFunction I)
     {F : Set X} (hF : IsClosed F) {c : EReal} (hc : -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal) < c) :
     ∃ δ > (0 : ℝ), -((⨅ x ∈ cthickening δ F, I x : ℝ≥0∞) : EReal) < c := by
-  rw [← hI.iSup_iInf_cthickening hF, EReal.neg_lt_comm] at hc
+  rw [← hI.biSup_biInf_cthickening hF, EReal.neg_lt_comm] at hc
   rcases lt_or_ge (-c) 0 with hc0 | hc0
   · exact ⟨1, one_pos, EReal.neg_lt_comm.1 (hc0.trans_le (EReal.coe_ennreal_nonneg _))⟩
   rw [← EReal.coe_toENNReal hc0, EReal.coe_ennreal_lt_coe_ennreal_iff] at hc

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.LargeDeviations.Basic
-import Mathlib.Data.EReal.Inv
-import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Data.EReal.Operations
-import TauCeti.Probability.LargeDeviations.LargestTerm
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.LargestTerm
 
 /-!
 # Weak large deviation principles and exponential tightness
@@ -17,11 +16,11 @@ import TauCeti.Probability.LargeDeviations.LargestTerm
 A *weak* large deviation principle asks for the upper bound only on compact sets. A family of
 measures is *exponentially tight* if, for every level `L`, there is a single compact set `K` whose
 complement has mass decaying at rate at least `L`: `limsup ε i * log (μ i Kᶜ) ≤ -L`. The two
-notions combine to the full principle: at a speed tending to `0`, an exponentially tight family
-satisfying a weak principle satisfies the full one. In an `R₁` space, along a nontrivial filter,
-the rate function of such a family is then good.
+notions combine to the full principle: at an inverse speed tending to `0`, an exponentially tight
+family satisfying a weak principle satisfies the full one. In an `R₁` space, along a nontrivial
+filter, the rate function of such a family is then good.
 
-Weak principles are usually obtained from local estimates. Suppose the speed is eventually
+Weak principles are usually obtained from local estimates. Suppose the inverse speed is eventually
 positive and tends to `0`, and `I` is lower semicontinuous. Suppose also that at each point `x`
 every neighbourhood has liminf rate at least `-I x`, and that for every `c > -I x` some
 neighbourhood has limsup rate below `c`. Then the weak principle holds with rate `I`. Together
@@ -40,14 +39,14 @@ measures and extreme eigenvalues of Gaussian ensembles are proved.
 * `TauCeti.Probability.HasLDP.hasWeakLDP`: in an `R₁` space a large deviation principle is a weak
   one.
 * `TauCeti.Probability.IsExponentiallyTight.limsup_le_of_isClosed`: under exponential tightness
-  at a speed tending to `0`, the compact-set upper bound extends to closed sets.
+  at an inverse speed tending to `0`, the compact-set upper bound extends to closed sets.
 * `TauCeti.Probability.IsExponentiallyTight.isGoodRateFunction`: under exponential tightness in an
   `R₁` space, along a nontrivial filter, the open-set lower bound forces a lower semicontinuous
   rate function to be good.
-* `TauCeti.Probability.HasWeakLDP.hasLDP`: at a speed tending to `0`, an exponentially tight
-  family satisfying a weak principle satisfies the full principle.
-* `TauCeti.Probability.hasWeakLDP_of_forall_nhds`: at an eventually positive speed tending to `0`,
-  local estimates at every point give the weak principle.
+* `TauCeti.Probability.HasWeakLDP.hasLDP`: at an inverse speed tending to `0`, an exponentially
+  tight family satisfying a weak principle satisfies the full principle.
+* `TauCeti.Probability.hasWeakLDP_of_forall_nhds`: at an eventually positive inverse speed tending
+  to `0`, local estimates at every point give the weak principle.
 
 ## References
 
@@ -67,8 +66,8 @@ namespace TauCeti.Probability
 variable {ι X : Type*} [TopologicalSpace X] [MeasurableSpace X]
 
 /-- The family `μ i`, `i` along the filter `l`, satisfies a *weak* large deviation principle with
-speed `ε` and rate function `I`. The rate function is lower semicontinuous, and the bounds are
-`-inf_G I ≤ liminf ε i * log (μ i G)` for open `G` and
+inverse speed `ε` and rate function `I`. The rate function is lower semicontinuous, and the bounds
+are `-inf_G I ≤ liminf ε i * log (μ i G)` for open `G` and
 `limsup ε i * log (μ i K) ≤ -inf_K I` for compact `K`. -/
 structure HasWeakLDP (l : Filter ι) (ε : ι → ℝ≥0) (μ : ι → Measure X) (I : X → ℝ≥0∞) :
     Prop where
@@ -80,8 +79,8 @@ structure HasWeakLDP (l : Filter ι) (ε : ι → ℝ≥0) (μ : ι → Measure 
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l ≤
       -((⨅ x ∈ K, I x : ℝ≥0∞) : EReal)
 
-/-- The family `μ i` is *exponentially tight* at speed `ε`: for every real `L` there is a compact
-set `K` with `limsup ε i * log (μ i Kᶜ) ≤ -L`. -/
+/-- The family `μ i` is *exponentially tight* at inverse speed `ε`: for every real `L` there is a
+compact set `K` with `limsup ε i * log (μ i Kᶜ) ≤ -L`. -/
 def IsExponentiallyTight (l : Filter ι) (ε : ι → ℝ≥0) (μ : ι → Measure X) : Prop :=
   ∀ L : ℝ, ∃ K : Set X, IsCompact K ∧
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l ≤ -(L : EReal)
@@ -112,8 +111,8 @@ theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε �
 
 namespace IsExponentiallyTight
 
-/-- Under exponential tightness at a speed tending to `0`, the large deviation upper bound on
-compact sets extends to closed sets. -/
+/-- Under exponential tightness at an inverse speed tending to `0`, the large deviation upper bound
+on compact sets extends to closed sets. -/
 theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto ε l (𝓝 0))
     (hK : ∀ K : Set X, IsCompact K →
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l ≤
@@ -139,7 +138,7 @@ theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto
         limsup_le_limsup (.of_forall hsplit)
     _ ≤ max (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K))) l)
           (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l) :=
-        (limsup_coe_mul_log_add _ _ hε).le
+        (ENNReal.limsup_coe_mul_log_add _ _ hε).le
     _ < c := max_lt (((hK _ (hKc.inter_left hF)).trans hFK).trans_lt hc) (hKL.trans_lt hL)
 
 /-- Under exponential tightness in an `R₁` space, for instance a Hausdorff space, along a
@@ -174,8 +173,8 @@ end IsExponentiallyTight
 
 namespace HasWeakLDP
 
-/-- An exponentially tight family satisfying a weak large deviation principle, at a speed tending
-to `0`, satisfies the full large deviation principle. -/
+/-- An exponentially tight family satisfying a weak large deviation principle, at an inverse speed
+tending to `0`, satisfies the full large deviation principle. -/
 theorem hasLDP (h : HasWeakLDP l ε μ I) (ht : IsExponentiallyTight l ε μ)
     (hε : Tendsto ε l (𝓝 0)) : HasLDP l ε μ I :=
   ⟨h.lowerSemicontinuous, h.lower_bound, fun _ hF => ht.limsup_le_of_isClosed hε h.upper_bound hF⟩
@@ -188,7 +187,7 @@ theorem isGoodRateFunction [R1Space X] [l.NeBot] (h : HasWeakLDP l ε μ I)
 
 end HasWeakLDP
 
-/-- **Local criterion for the weak large deviation principle.** Let the speed be eventually
+/-- **Local criterion for the weak large deviation principle.** Let the inverse speed be eventually
 positive and tend to `0`, and let `I` be lower semicontinuous. Suppose that at every point `x`,
 every neighbourhood of `x` has liminf rate at least `-I x`, and for every `c > -I x` some
 neighbourhood of `x` has limsup rate below `c`. Then `I` is the rate function of a weak large
@@ -217,7 +216,7 @@ theorem hasWeakLDP_of_forall_nhds
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x))) l :=
         limsup_le_limsup (.of_forall hcover)
     _ ≤ ⨆ x ∈ t, limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (U x))) l :=
-        (limsup_coe_mul_log_sum _ t hε hpos).le
+        (ENNReal.limsup_coe_mul_log_sum _ t hε hpos).le
     _ < c := by
       rw [← Finset.sup_eq_iSup]
       exact (Finset.sup_lt_iff (bot_le.trans_lt hc)).2 fun x hx => hUc x (htK x hx)
