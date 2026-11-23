@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Star.Rosati.Basic
 import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
-import TauCeti.Algebra.Star.SelfAdjoint
+import TauCeti.Algebra.Star.SelfAdjoint.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 

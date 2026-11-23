@@ -275,49 +275,54 @@ matrix blocks. `map_star` unfolds `AlgEquiv.trans`, `RingEquiv.piEquivPiSubtypeP
 `AlgEquiv.piCongrLeft`, and `AlgEquiv.piCongrRight` on each block component. -/
 private noncomputable def splitProductEquiv (nf : ∀ i, FactorNormalForm (A i) (t i) (d i)) :
     (∀ i, A i) ≃⋆ₐ[ℝ]
-      ((∀ i : {i // (nf i).tag = 0}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℝ) ×
-        (∀ i : {i // (nf i).tag = 1}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℂ) ×
-        (∀ i : {i // (nf i).tag = 2}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℍ[ℝ])) :=
+      ((∀ i : {i // (nf i).tag = 0}, Matrix (Fin (d i.val)) (Fin (d i.val)) ℝ) ×
+        (∀ i : {i // (nf i).tag = 1}, Matrix (Fin (d i.val)) (Fin (d i.val)) ℂ) ×
+        (∀ i : {i // (nf i).tag = 2}, Matrix (Fin (d i.val)) (Fin (d i.val)) ℍ[ℝ])) :=
   let s1 := AlgEquiv.ofRingEquiv
     (f := RingEquiv.piEquivPiSubtypeProd (fun i ↦ (nf i).tag = 0) A) fun _ ↦ rfl
   let s2 := AlgEquiv.ofRingEquiv
-    (f := RingEquiv.piEquivPiSubtypeProd (fun i : {i // (nf i).tag ≠ 0} ↦ (nf i.1).tag = 1)
-      (fun i ↦ A i.1)) fun _ ↦ rfl
-  let e1 : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag = 1} ≃ {i // (nf i).tag = 1} :=
-    ⟨fun x ↦ ⟨x.1.1, x.2⟩, fun x ↦ ⟨⟨x.1, by simp [x.2]⟩, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
-  let e2 : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag ≠ 1} ≃ {i // (nf i).tag = 2} :=
-    ⟨fun x ↦ ⟨x.1.1, by have := x.1.2; have := x.2; omega⟩,
-      fun x ↦ ⟨⟨x.1, by simp [x.2]⟩, by simp [x.2]⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+    (f := RingEquiv.piEquivPiSubtypeProd (fun i : {i // (nf i).tag ≠ 0} ↦ (nf i.val).tag = 1)
+      (fun i ↦ A i.val)) fun _ ↦ rfl
+  let e1 : {i : {i // (nf i).tag ≠ 0} // (nf i.val).tag = 1} ≃ {i // (nf i).tag = 1} :=
+    ⟨fun x ↦ ⟨x.val.val, x.property⟩, fun x ↦ ⟨⟨x.val, by simp [x.property]⟩, x.property⟩,
+      fun _ ↦ rfl, fun _ ↦ rfl⟩
+  let e2 : {i : {i // (nf i).tag ≠ 0} // (nf i.val).tag ≠ 1} ≃ {i // (nf i).tag = 2} :=
+    ⟨fun x ↦ ⟨x.val.val, by have := x.val.property; have := x.property; omega⟩,
+      fun x ↦ ⟨⟨x.val, by simp [x.property]⟩, by simp [x.property]⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
   let blocks := AlgEquiv.prodCongr
-    (AlgEquiv.piCongrRight fun i ↦ ((nf i.1).realEquiv i.2).toAlgEquiv)
+    (AlgEquiv.piCongrRight fun i ↦ ((nf i.val).realEquiv i.property).toAlgEquiv)
     (AlgEquiv.prodCongr
-      (AlgEquiv.piCongrRight fun i ↦ ((nf i.1).complexEquiv i.2).toAlgEquiv)
-      (AlgEquiv.piCongrRight fun i ↦ ((nf i.1).quatEquiv i.2).toAlgEquiv))
+      (AlgEquiv.piCongrRight fun i ↦ ((nf i.val).complexEquiv i.property).toAlgEquiv)
+      (AlgEquiv.piCongrRight fun i ↦ ((nf i.val).quatEquiv i.property).toAlgEquiv))
   let alg := (s1.trans (AlgEquiv.prodCongr AlgEquiv.refl (s2.trans (AlgEquiv.prodCongr
-    (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 1} ↦ A i.1) e1)
-    (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 2} ↦ A i.1) e2))))).trans blocks
+    (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 1} ↦ A i.val) e1)
+    (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 2} ↦ A i.val) e2))))).trans blocks
   StarAlgEquiv.ofAlgEquiv alg fun x ↦ Prod.ext
-    (funext fun i ↦ by dsimp [alg, blocks, s1]; exact map_star ((nf i.1).realEquiv i.2) (x i.1))
+    (funext fun i ↦ by
+      dsimp [alg, blocks, s1]; exact map_star ((nf i.val).realEquiv i.property) (x i.val))
     (Prod.ext
       (funext fun i ↦ by
-        dsimp [alg, blocks, s1, s2, e1]; exact map_star ((nf i.1).complexEquiv i.2) (x i.1))
+        dsimp [alg, blocks, s1, s2, e1]
+        exact map_star ((nf i.val).complexEquiv i.property) (x i.val))
       (funext fun i ↦ by
-        dsimp [alg, blocks, s1, s2, e2]; exact map_star ((nf i.1).quatEquiv i.2) (x i.1)))
+        dsimp [alg, blocks, s1, s2, e2]
+        exact map_star ((nf i.val).quatEquiv i.property) (x i.val)))
 
 /-- Real-block projection of `splitProductEquiv` (by definitional unfolding of the split). -/
 private theorem splitProductEquiv_fst (nf : ∀ i, FactorNormalForm (A i) (t i) (d i)) (x : ∀ i, A i)
-    (i : {i // (nf i).tag = 0}) : (splitProductEquiv nf x).1 i = (nf i.1).realEquiv i.2 (x i.1) :=
+    (i : {i // (nf i).tag = 0}) :
+    (splitProductEquiv nf x).1 i = (nf i.val).realEquiv i.property (x i.val) :=
   rfl
 
 /-- Complex-block projection of `splitProductEquiv` (by definitional unfolding of the split). -/
 private theorem splitProductEquiv_snd_fst (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
     (x : ∀ i, A i) (i : {i // (nf i).tag = 1}) :
-    (splitProductEquiv nf x).2.1 i = (nf i.1).complexEquiv i.2 (x i.1) := rfl
+    (splitProductEquiv nf x).2.1 i = (nf i.val).complexEquiv i.property (x i.val) := rfl
 
 /-- Quaternionic-block projection of `splitProductEquiv` (by definitional unfolding). -/
 private theorem splitProductEquiv_snd_snd (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
     (x : ∀ i, A i) (i : {i // (nf i).tag = 2}) :
-    (splitProductEquiv nf x).2.2 i = (nf i.1).quatEquiv i.2 (x i.1) := rfl
+    (splitProductEquiv nf x).2.2 i = (nf i.val).quatEquiv i.property (x i.val) := rfl
 
 private theorem splitProductEquiv_pos (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
     (x : ∀ i, A i) :
@@ -399,17 +404,18 @@ theorem realRosatiDecomposition {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E
         AlgEquiv.toRingEquiv_symm] using eW.toRingEquiv.apply_star_eq_coord hδ x i
   let eReindex := StarAlgEquiv.ofAlgEquiv (AlgEquiv.prodCongr
     (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 0} ↦
-      Matrix (Fin (d i.1)) (Fin (d i.1)) ℝ) eR)
+      Matrix (Fin (d i.val)) (Fin (d i.val)) ℝ) eR)
     (AlgEquiv.prodCongr
       (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 1} ↦
-        Matrix (Fin (d i.1)) (Fin (d i.1)) ℂ) eC)
+        Matrix (Fin (d i.val)) (Fin (d i.val)) ℂ) eC)
       (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 2} ↦
-        Matrix (Fin (d i.1)) (Fin (d i.1)) ℍ[ℝ]) eH))) fun _ ↦ rfl
+        Matrix (Fin (d i.val)) (Fin (d i.val)) ℍ[ℝ]) eH))) fun _ ↦ rfl
   let e : E ≃⋆ₐ[ℝ] _ := (eWrap.trans (splitProductEquiv nf)).trans eReindex
-  refine ⟨_, _, _, fun i ↦ d (eR.symm i).1, fun i ↦ d (eC.symm i).1, fun i ↦ d (eH.symm i).1,
-    fun i ↦ Nat.pos_of_ne_zero (hd (eR.symm i).1).out,
-    fun i ↦ Nat.pos_of_ne_zero (hd (eC.symm i).1).out,
-    fun i ↦ Nat.pos_of_ne_zero (hd (eH.symm i).1).out, e, fun s ↦ ?_⟩
+  refine ⟨_, _, _, fun i ↦ d (eR.symm i).val, fun i ↦ d (eC.symm i).val,
+    fun i ↦ d (eH.symm i).val,
+    fun i ↦ Nat.pos_of_ne_zero (hd (eR.symm i).val).out,
+    fun i ↦ Nat.pos_of_ne_zero (hd (eC.symm i).val).out,
+    fun i ↦ Nat.pos_of_ne_zero (hd (eH.symm i).val).out, e, fun s ↦ ?_⟩
   rw [isRosatiPositive_pi_iff eW hδ t s]
   exact (splitProductEquiv_pos nf (eWrap s)).trans (and_congr eR.symm.forall_congr_right.symm
     (and_congr eC.symm.forall_congr_right.symm eH.symm.forall_congr_right.symm))

@@ -22,6 +22,7 @@ import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.Algebra.Star.Rosati.MatrixTrace
 import TauCeti.Algebra.Star.Rosati.SquareRoot
 import TauCeti.Algebra.Star.SelfAdjoint
+import TauCeti.Algebra.Star.SelfAdjoint.LinearMap
 import TauCeti.LinearAlgebra.Matrix.Trace.Comp
 
 /-!

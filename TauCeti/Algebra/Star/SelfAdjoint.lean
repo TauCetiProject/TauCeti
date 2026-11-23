@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Invertible
-public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.SelfAdjoint
-public import Mathlib.Basic.Real.Star
-import Mathlib.Tactic.Linarith
 
 /-!
-# Nilpotent self-adjoint elements, anticommutation, star transposition, and symmetrization
+# Nilpotent self-adjoint elements, anticommutation and star transposition
 
 In a star monoid with zero whose star is proper (`IsProperStar`: `star x * x = 0` forces
 `x = 0`), such as a matrix ring over a star-ordered ring like `ℝ` or `ℂ`, a self-adjoint element
@@ -32,10 +28,6 @@ is self-adjoint. For a self-adjoint `x` in an additive group with a star-additiv
 Preservation of self-adjoint squares by an additive homomorphism also implies preservation
 of anticommutators on the self-adjoint part when the codomain has cancellative addition.
 
-For a real-linear functional `t : E →ₗ[ℝ] ℝ`, precomposing with `selfAdjointPart ℝ` yields its
-star-symmetrization `x ↦ (t x + t (star x)) / 2`, which preserves cyclicity and strict positivity on
-`x * star x`.
-
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
@@ -47,9 +39,6 @@ star-symmetrization `x ↦ (t x + t (star x)) / 2`, which preserves cyclicity an
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
-* `LinearMap.comp_selfAdjointPart_apply`, `LinearMap.comp_selfAdjointPart_star`,
-  `LinearMap.comp_selfAdjointPart_cyclic`, `LinearMap.comp_selfAdjointPart_mul_star_pos`:
-  evaluation, star-invariance, cyclicity, and positivity of star-symmetrized real linear maps.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
 * `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
@@ -111,49 +100,6 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   exact left_inv_eq_right_inv hstar hRRinv
-
-namespace LinearMap
-
-section
-
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] [StarAddMonoid E] [StarModule ℝ E]
-  (t : E →ₗ[ℝ] ℝ)
-
-/-- Evaluating `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)` gives
-`(t x + t (star x)) / 2`. -/
-theorem comp_selfAdjointPart_apply (x : E) :
-    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) x =
-      (t x + t (star x)) / 2 := by
-  -- Unfold `LinearMap.comp` and the `selfAdjoint.submodule` / `selfAdjoint E` subtype coercions.
-  change t (selfAdjointPart ℝ x : E) = (t x + t (star x)) / 2
-  rw [selfAdjointPart_apply_coe, map_smul, map_add, smul_eq_mul, invOf_eq_inv, div_eq_inv_mul]
-
-/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)` is
-star-invariant. -/
-theorem comp_selfAdjointPart_star (x : E) :
-    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (star x) =
-      ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) x := by
-  simp only [comp_selfAdjointPart_apply, star_star, add_comm]
-
-end
-
-/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)`
-inherits cyclicity from `t`. -/
-theorem comp_selfAdjointPart_cyclic {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E] [StarRing E]
-    [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ} (hcyclic : ∀ x y : E, t (x * y) = t (y * x)) (x y : E) :
-    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (x * y) =
-      ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (y * x) := by
-  simp only [comp_selfAdjointPart_apply, star_mul, hcyclic x y, hcyclic (star y) (star x)]
-
-/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)`
-inherits strict positivity on `x * star x` from `t`. -/
-theorem comp_selfAdjointPart_mul_star_pos {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E]
-    [StarRing E] [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ}
-    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {x : E} (hx : x ≠ 0) :
-    0 < ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (x * star x) := by
-  have h := hpos x hx; simp only [comp_selfAdjointPart_apply, star_mul, star_star]; linarith
-
-end LinearMap
 
 /-- The commutator `ξ H - H ξ` of a skew-adjoint `ξ` with a self-adjoint `H` is self-adjoint. -/
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]

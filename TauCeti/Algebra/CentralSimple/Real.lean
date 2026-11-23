@@ -459,7 +459,7 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
     right; left
     let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
     have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
-      (Subalgebra.mem_center_iff.mp (eZ.symm c).2 x).symm
+      (Subalgebra.mem_center_iff.mp (eZ.symm c).property x).symm
     let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
     have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
     have hst : IsScalarTower ℝ ℂ D := IsScalarTower.of_algebraMap_eq fun r ↦ by
