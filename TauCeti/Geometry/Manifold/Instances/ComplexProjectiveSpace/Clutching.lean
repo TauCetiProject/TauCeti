@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace
+public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Basic
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Clutching
 
 /-!
