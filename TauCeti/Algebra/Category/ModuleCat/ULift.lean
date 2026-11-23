@@ -22,7 +22,7 @@ identification needs no commutativity assumption on `R`.
 
 When `R` is small in the universe `w`, the universe lift functor `ModuleCat.uliftFunctor` from
 `ModuleCat.{w} R` to `ModuleCat.{max w w'} R` preserves and reflects projective and injective
-modules (`ModuleCat.projective_of_ulift_iff`, `ModuleCat.injective_of_ulift_iff`),
+modules (`ModuleCat.projective_ulift_iff`, `ModuleCat.injective_ulift_iff`),
 and every finitely generated module in the larger universe is, up to isomorphism, the lift of one
 in universe `w` (`ModuleCat.exists_uliftFunctor_obj_iso`).
 -/
@@ -64,7 +64,7 @@ theorem restrictScalarsUliftIso_inv_apply (M : Type w) [AddCommGroup M] [Module 
 ring is small in the universe of the module. The lift is stated in the form `simp` puts
 `(uliftFunctor R).obj M` in. -/
 @[simp]
-theorem projective_of_ulift_iff [Small.{w} R] (M : ModuleCat.{w} R) :
+theorem projective_ulift_iff [Small.{w} R] (M : ModuleCat.{w} R) :
     Projective (ModuleCat.of R (ULift.{w'} M)) ↔ Projective M :=
   ⟨fun h ↦ (uliftFunctor.{w'} R).projective_of_map_projective h,
     fun h ↦ (uliftFunctor.{w'} R).projective_obj_of_projective h⟩
@@ -73,7 +73,7 @@ theorem projective_of_ulift_iff [Small.{w} R] (M : ModuleCat.{w} R) :
 ring is small in the universe of the module. The lift is stated in the form `simp` puts
 `(uliftFunctor R).obj M` in. -/
 @[simp]
-theorem injective_of_ulift_iff [Small.{w} R] (M : ModuleCat.{w} R) :
+theorem injective_ulift_iff [Small.{w} R] (M : ModuleCat.{w} R) :
     Injective (ModuleCat.of R (ULift.{w'} M)) ↔ Injective M :=
   ⟨fun h ↦ (uliftFunctor.{w'} R).injective_of_map_injective h,
     fun h ↦ (uliftFunctor.{w'} R).injective_obj_of_injective h⟩
