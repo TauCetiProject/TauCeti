@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Center
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Centralizer
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
@@ -31,10 +32,11 @@ subgroup `D.elementarySubgroup k` — belongs to `T_D(k)`. Sharp Bruhat normal f
 index to be `1` via commutation with the `x_{αᵢ}(1)`, and commutation with a Weyl lift of the
 longest element `w₀` pushes the positive unipotent factor into the opposite subgroup, where
 `U(k) ∩ (U⁻(k) ⊔ T_D(k)) = 1` forces it to be trivial. Consequently, the centre of `E_D(k)`
-equals the toral centralizer of `D.rootTorusSubgroup k`, and when the root parametrizations are
-injective — in particular for `t.scChevalleyDatum ht` — this identifies `Subgroup.center (E_D(k))`
-with `AddChar ((Fin t.rank → ℤ) ⧸ Q_D) kˣ` (and `AddChar (P / Q) kˣ` in the simply connected
-case), and gives trivial centre when the coordinate roots span `Fin t.rank → ℤ`.
+equals the toral centralizer of `D.rootTorusSubgroup k`, and since every root parametrization is
+injective over a field (`ChevalleyDatum.rootSubgroupPoints_injective`), this identifies
+`Subgroup.center (E_D(k))` with `AddChar ((Fin t.rank → ℤ) ⧸ Q_D) kˣ` (and `AddChar (P / Q) kˣ`
+in the simply connected case), and gives trivial centre when the coordinate roots span
+`Fin t.rank → ℤ`.
 
 ## Main definitions and results
 
@@ -50,6 +52,8 @@ case), and gives trivial centre when the coordinate roots span `Fin t.rank → �
 * `ChevalleyDatum.extendedElementarySubgroup_inf_centralizer_elementarySubgroup`:
   over any field, the centralizer of `D.elementarySubgroup k` inside
   `D.extendedElementarySubgroup k` equals the toral centralizer of `D.rootTorusSubgroup k`.
+* `ChevalleyDatum.rootSubgroupPoints_injective`: over any field, every root subgroup
+  parametrization of a Chevalley datum is injective.
 * `ChevalleyDatum.map_center_extendedElementarySubgroup_subtype` and
   `ChevalleyDatum.centerExtendedElementarySubgroupEquiv`: identification of the full centre of
   `D.extendedElementarySubgroup k` over any field.
@@ -656,26 +660,52 @@ theorem center_elementarySubgroup_eq_subgroupOf :
   apply Subgroup.map_injective (D.elementarySubgroup k).subtype_injective
   rw [D.map_center_elementarySubgroup_subtype k, Subgroup.subgroupOf_map_subtype, inf_comm]
 
-section InjectiveRoots
+/-- Over any field, every root subgroup parametrization of a Chevalley datum is injective. -/
+theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) :
+    Function.Injective (D.rootSubgroupPoints γ k) := by
+  refine D.rootSubgroupPoints_injective_of_simple k (fun i => ?_) γ
+  rw [injective_iff_map_eq_one]
+  intro u hu
+  by_contra hu1
+  have hne : Multiplicative.toAdd u ≠ 0 := fun h => hu1 (toAdd_eq_zero.mp h)
+  let v : kˣ := Units.mk0 (Multiplicative.toAdd u) hne
+  have hv : D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (v : k)) = 1 := by
+    simpa [v] using hu
+  have hexch := D.weylElement_mul_rootSubgroup_mul_weylElement i k v
+  dsimp only at hexch
+  rw [hv, mul_one, D.weylElement_mul_self i k] at hexch
+  have hmem_one : D.simpleCorootPoints i k (-1) ∈ D.bruhatCell k 1 := by
+    rw [D.bruhatCell_one k, SetLike.mem_coe, D.simpleCorootPoints_eq_torusPoints]
+    exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
+  have hmem_si : D.simpleCorootPoints i k (-1) ∈
+      D.bruhatCell k
+        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) := by
+    rw [hexch, D.bruhatCell_ofIdx_simpleIndex k i]
+    have hy : D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((v⁻¹ : kˣ) : k))) ∈
+        D.borelSubgroup k :=
+      D.positivePoints_le_borelSubgroup k
+        (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _)
+    have hh : D.simpleCorootPoints i k (-v⁻¹) ∈ D.borelSubgroup k := by
+      rw [D.simpleCorootPoints_eq_torusPoints]
+      exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
+    exact DoubleCoset.mem_doubleCoset.mpr ⟨_, mul_mem hy hh, _, hy, by group⟩
+  exact RootPairing.weylGroup.ofIdx_ne_one (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)
+    (D.eq_of_mem_bruhatCell_of_mem k hmem_one hmem_si).symm
 
-/-- With injective root parametrizations over any field, a torus point belongs to the centre of
-`D.extendedElementarySubgroup k` if and only if every root character evaluates to `1` on it. -/
-theorem torusPoints_mem_center_extendedElementarySubgroup_iff
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k)) (s : Fin t.rank → kˣ) :
+/-- Over any field, a torus point belongs to the centre of `D.extendedElementarySubgroup k` if
+and only if every root character evaluates to `1` on it. -/
+theorem torusPoints_mem_center_extendedElementarySubgroup_iff (s : Fin t.rank → kˣ) :
     (⟨D.torusPoints k s, D.torusPoints_mem_extendedElementarySubgroup k s⟩ :
         D.extendedElementarySubgroup k) ∈
         Subgroup.center (D.extendedElementarySubgroup k) ↔
       ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 := by
   rw [D.center_extendedElementarySubgroup_eq_subgroupOf k, Subgroup.mem_subgroupOf,
     Subgroup.mem_inf, and_iff_right ⟨s, rfl⟩,
-    D.torusPoints_mem_centralizer_rootTorusSubgroup_iff hinj s]
+    D.torusPoints_mem_centralizer_rootTorusSubgroup_iff (D.rootSubgroupPoints_injective k) s]
 
-/-- With injective root parametrizations over any field, an element belongs to the centre of
-`D.extendedElementarySubgroup k` if and only if it is a torus point on which every root
-character is trivial. -/
-theorem mem_center_extendedElementarySubgroup_iff
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
-    (g : D.extendedElementarySubgroup k) :
+/-- Over any field, an element belongs to the centre of `D.extendedElementarySubgroup k` if and
+only if it is a torus point on which every root character is trivial. -/
+theorem mem_center_extendedElementarySubgroup_iff (g : D.extendedElementarySubgroup k) :
     g ∈ Subgroup.center (D.extendedElementarySubgroup k) ↔
       ∃ s : Fin t.rank → kˣ, (g : D.points k) = D.torusPoints k s ∧
         ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 := by
@@ -685,18 +715,17 @@ theorem mem_center_extendedElementarySubgroup_iff
   · rintro ⟨⟨s, hs⟩, hgc⟩
     refine ⟨s, hs.symm, ?_⟩
     rw [← hs] at hgc
-    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff hinj s).mp hgc
+    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff
+      (D.rootSubgroupPoints_injective k) s).mp hgc
   · rintro ⟨s, hs, hroot⟩
     refine ⟨⟨s, hs.symm⟩, ?_⟩
     rw [hs]
-    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff hinj s).mpr hroot
+    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff
+      (D.rootSubgroupPoints_injective k) s).mpr hroot
 
-/-- With injective root parametrizations over any field, an element belongs to the centre of
-`D.elementarySubgroup k` if and only if it is an elementary torus point on which every root
-character is trivial. -/
-theorem mem_center_elementarySubgroup_iff
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
-    (g : D.elementarySubgroup k) :
+/-- Over any field, an element belongs to the centre of `D.elementarySubgroup k` if and only if it
+is an elementary torus point on which every root character is trivial. -/
+theorem mem_center_elementarySubgroup_iff (g : D.elementarySubgroup k) :
     g ∈ Subgroup.center (D.elementarySubgroup k) ↔
       ∃ s : Fin t.rank → kˣ, (g : D.points k) = D.torusPoints k s ∧
         ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 := by
@@ -705,24 +734,24 @@ theorem mem_center_elementarySubgroup_iff
   · rintro ⟨⟨s, hs⟩, hgc⟩
     refine ⟨s, hs.symm, ?_⟩
     rw [← hs] at hgc
-    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff hinj s).mp hgc
+    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff
+      (D.rootSubgroupPoints_injective k) s).mp hgc
   · rintro ⟨s, hs, hroot⟩
     refine ⟨⟨s, hs.symm⟩, ?_⟩
     rw [hs]
-    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff hinj s).mpr hroot
+    exact (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff
+      (D.rootSubgroupPoints_injective k) s).mpr hroot
 
-/-- With injective root parametrizations over any field, the centre of
-`D.extendedElementarySubgroup k` is canonically isomorphic to `AddChar (Λ(D) / Q) kˣ`, with the
-lattices written in the chosen basis of `Λ(D)`. -/
-noncomputable def centerExtendedElementarySubgroupEquiv
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k)) :
+/-- Over any field, the centre of `D.extendedElementarySubgroup k` is canonically isomorphic to
+`AddChar (Λ(D) / Q) kˣ`, with the lattices written in the chosen basis of `Λ(D)`. -/
+noncomputable def centerExtendedElementarySubgroupEquiv :
     AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) kˣ ≃*
       Subgroup.center (D.extendedElementarySubgroup k) :=
   let hle : (D.torusPoints k).range ⊓
         Subgroup.centralizer (D.rootTorusSubgroup k : Set (D.points k)) ≤
       D.extendedElementarySubgroup k :=
     inf_le_left.trans (fun _ ⟨s, hs⟩ => hs ▸ D.torusPoints_mem_extendedElementarySubgroup k s)
-  (D.torusInfCentralizerRootTorusSubgroupEquiv k hinj).trans
+  (D.torusInfCentralizerRootTorusSubgroupEquiv k (D.rootSubgroupPoints_injective k)).trans
     ((Subgroup.subgroupOfEquivOfLe hle).symm.trans
       (MulEquiv.subgroupCongr (D.center_extendedElementarySubgroup_eq_subgroupOf k).symm))
 
@@ -730,9 +759,8 @@ noncomputable def centerExtendedElementarySubgroupEquiv
 `D.extendedElementarySubgroup k`. -/
 @[simp]
 theorem coe_centerExtendedElementarySubgroupEquiv
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (χ : AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) kˣ) :
-    ((D.centerExtendedElementarySubgroupEquiv k hinj χ : D.extendedElementarySubgroup k) :
+    ((D.centerExtendedElementarySubgroupEquiv k χ : D.extendedElementarySubgroup k) :
         D.points k) =
       D.torusPoints k (quotientCharTorusPoint _ χ) := by
   simp [centerExtendedElementarySubgroupEquiv]
@@ -741,46 +769,43 @@ theorem coe_centerExtendedElementarySubgroupEquiv
 central element. -/
 @[simp]
 theorem centerExtendedElementarySubgroupEquiv_symm_apply_mk
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (s : Fin t.rank → kˣ)
     (hg : (⟨D.torusPoints k s, D.torusPoints_mem_extendedElementarySubgroup k s⟩ :
         D.extendedElementarySubgroup k) ∈
         Subgroup.center (D.extendedElementarySubgroup k))
     (μ : Fin t.rank → ℤ) :
-    (D.centerExtendedElementarySubgroupEquiv k hinj).symm
+    (D.centerExtendedElementarySubgroupEquiv k).symm
         ⟨⟨D.torusPoints k s, D.torusPoints_mem_extendedElementarySubgroup k s⟩, hg⟩
         (Submodule.Quotient.mk μ) =
       torusCharacter s μ := by
   have hcoord : quotientCharTorusPoint _
-      ((D.centerExtendedElementarySubgroupEquiv k hinj).symm
+      ((D.centerExtendedElementarySubgroupEquiv k).symm
         ⟨⟨D.torusPoints k s, D.torusPoints_mem_extendedElementarySubgroup k s⟩, hg⟩) = s := by
     apply D.torusPoints_injective k
-    rw [← D.coe_centerExtendedElementarySubgroupEquiv k hinj, MulEquiv.apply_symm_apply]
+    rw [← D.coe_centerExtendedElementarySubgroupEquiv k, MulEquiv.apply_symm_apply]
   rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
-/-- When the toral centralizer of `D.rootTorusSubgroup k` lies inside `D.elementarySubgroup k`
-and the root parametrizations are injective, `AddChar (Λ(D) / Q) kˣ` identifies with
+/-- Over any field, when the toral centralizer of `D.rootTorusSubgroup k` lies inside
+`D.elementarySubgroup k`, `AddChar (Λ(D) / Q) kˣ` identifies with
 `Subgroup.center (D.elementarySubgroup k)`. -/
 noncomputable def centerElementarySubgroupEquivOfLe
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (hZ : (D.torusPoints k).range ⊓
         Subgroup.centralizer (D.rootTorusSubgroup k : Set (D.points k)) ≤
       D.elementarySubgroup k) :
     AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) kˣ ≃*
       Subgroup.center (D.elementarySubgroup k) :=
-  (D.torusInfCentralizerRootTorusSubgroupEquiv k hinj).trans
+  (D.torusInfCentralizerRootTorusSubgroupEquiv k (D.rootSubgroupPoints_injective k)).trans
     ((Subgroup.subgroupOfEquivOfLe hZ).symm.trans
       (MulEquiv.subgroupCongr (D.center_elementarySubgroup_eq_subgroupOf k).symm))
 
 /-- Evaluating `centerElementarySubgroupEquivOfLe` recovers the same torus coordinates. -/
 @[simp]
 theorem coe_centerElementarySubgroupEquivOfLe
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (hZ : (D.torusPoints k).range ⊓
         Subgroup.centralizer (D.rootTorusSubgroup k : Set (D.points k)) ≤
       D.elementarySubgroup k)
     (χ : AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) kˣ) :
-    ((D.centerElementarySubgroupEquivOfLe k hinj hZ χ : D.elementarySubgroup k) : D.points k) =
+    ((D.centerElementarySubgroupEquivOfLe k hZ χ : D.elementarySubgroup k) : D.points k) =
       D.torusPoints k (quotientCharTorusPoint _ χ) := by
   simp [centerElementarySubgroupEquivOfLe]
 
@@ -788,7 +813,6 @@ theorem coe_centerElementarySubgroupEquivOfLe
 torus parameter of the given central element. -/
 @[simp]
 theorem centerElementarySubgroupEquivOfLe_symm_apply_mk
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (hZ : (D.torusPoints k).range ⊓
         Subgroup.centralizer (D.rootTorusSubgroup k : Set (D.points k)) ≤
       D.elementarySubgroup k)
@@ -797,27 +821,25 @@ theorem centerElementarySubgroupEquivOfLe_symm_apply_mk
     (hg : (⟨D.torusPoints k s, hsE⟩ : D.elementarySubgroup k) ∈
         Subgroup.center (D.elementarySubgroup k))
     (μ : Fin t.rank → ℤ) :
-    (D.centerElementarySubgroupEquivOfLe k hinj hZ).symm
+    (D.centerElementarySubgroupEquivOfLe k hZ).symm
         ⟨⟨D.torusPoints k s, hsE⟩, hg⟩
         (Submodule.Quotient.mk μ) =
       torusCharacter s μ := by
   have hcoord : quotientCharTorusPoint _
-      ((D.centerElementarySubgroupEquivOfLe k hinj hZ).symm
+      ((D.centerElementarySubgroupEquivOfLe k hZ).symm
         ⟨⟨D.torusPoints k s, hsE⟩, hg⟩) = s := by
     apply D.torusPoints_injective k
-    rw [← D.coe_centerElementarySubgroupEquivOfLe k hinj hZ, MulEquiv.apply_symm_apply]
+    rw [← D.coe_centerElementarySubgroupEquivOfLe k hZ, MulEquiv.apply_symm_apply]
   rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
-/-- If the coordinate roots span `Fin t.rank → ℤ` (for instance, for an adjoint Chevalley datum)
-and the root parametrizations are injective, `D.extendedElementarySubgroup k` has trivial centre.
--/
+/-- Over any field, if the coordinate roots span `Fin t.rank → ℤ` (for instance, for an adjoint
+Chevalley datum), `D.extendedElementarySubgroup k` has trivial centre. -/
 theorem center_extendedElementarySubgroup_eq_bot
-    (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ k))
     (hspan : Submodule.span ℤ (Set.range D.coordinateRoot) = ⊤) :
     Subgroup.center (D.extendedElementarySubgroup k) = ⊥ := by
   rw [eq_bot_iff]
   intro g hg
-  rw [D.mem_center_extendedElementarySubgroup_iff k hinj] at hg
+  rw [D.mem_center_extendedElementarySubgroup_iff k] at hg
   obtain ⟨s, hgs, hroot⟩ := hg
   have hs_ann : s ∈ torusAnnihilator (R := k) (Submodule.span ℤ (Set.range D.coordinateRoot)) :=
     (mem_torusAnnihilator_span_iff D.coordinateRoot s).mpr hroot
@@ -829,8 +851,6 @@ theorem center_extendedElementarySubgroup_eq_bot
   apply Subgroup.mem_bot.mpr
   apply Subtype.ext
   rw [hgs, hs1, map_one, Subgroup.coe_one]
-
-end InjectiveRoots
 
 end Field
 
@@ -870,8 +890,9 @@ section Field
 
 variable (k : Type v) [Field k]
 
-/-- Over any field, the centralizer of the simply connected elementary Chevalley group in
-`(t.scChevalleyDatum ht).points k` is the toral centralizer of the generated group. -/
+/-- Over any field, the centralizer of the simply connected elementary Chevalley group inside
+itself, viewed as a subgroup of `(t.scChevalleyDatum ht).points k`, is the toral centralizer of
+`(t.scChevalleyDatum ht).rootTorusSubgroup k`. -/
 theorem scChevalleyDatum_elementarySubgroup_inf_centralizer :
     (t.scChevalleyDatum ht).elementarySubgroup k ⊓
         Subgroup.centralizer
@@ -907,8 +928,7 @@ theorem mem_center_scChevalleyDatum_elementarySubgroup_iff
           (t.scChevalleyDatum ht).torusPoints k s ∧
         ∀ γ, torusCharacter s ((t.simplyConnectedRootDatum ht).root γ) = 1 := by
   simpa only [scChevalleyDatum_coordinateRoot] using
-    (t.scChevalleyDatum ht).mem_center_elementarySubgroup_iff k
-      (fun γ => t.scChevalleyDatum_rootSubgroupPoints_injective ht γ k) g
+    (t.scChevalleyDatum ht).mem_center_elementarySubgroup_iff k g
 
 /-- Over any field, unit-valued characters of `P / Q` identify with the full centre of the simply
 connected elementary Chevalley group. -/
