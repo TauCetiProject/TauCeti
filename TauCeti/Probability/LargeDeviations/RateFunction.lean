@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Probability.LargeDeviations.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 import Mathlib.Data.EReal.Inv
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Data.EReal.Operations
@@ -19,7 +20,7 @@ function: in a regular space two lower semicontinuous rate functions for the sam
 measures at the same inverse speed coincide. For measures that eventually have total mass `1`,
 along a nontrivial filter, a good rate function vanishes somewhere.
 
-If the infimum of the rate function over a closed set `F` exceeds `ENNReal.ofReal c`, the measure
+If the infimum of the rate function over a closed set `F` exceeds a real number `c`, the measure
 of `F` is eventually at most `exp (-c / ε i)`. If that infimum is positive and the inverse speed
 tends to `0`, the measures of `F` tend to `0`. Neither statement needs a good rate function. A
 good rate function is bounded away from `0` on the complement of any open set containing all of
@@ -38,7 +39,7 @@ on a thickening of `F`, as produced by exponentially equivalent families, pass t
   function at a fixed inverse speed is unique.
 * `TauCeti.Probability.HasLDP.exists_eq_zero`: for measures that eventually have total mass `1`,
   along a nontrivial filter, a good rate function has a zero.
-* `TauCeti.Probability.HasLDP.eventually_measure_le_of_lt_biInf`: if `ENNReal.ofReal c` is below the
+* `TauCeti.Probability.HasLDP.eventually_measure_le_of_lt_biInf`: if a real `c` is below the
   infimum of the rate function over a closed set `F`, then `μ i F` is eventually at most
   `exp (-c / ε i)`.
 * `TauCeti.Probability.HasLDP.tendsto_measure_of_biInf_pos`: if that infimum is positive and the
@@ -93,7 +94,7 @@ private theorem HasLDP.le_of_hasLDP [RegularSpace X] [l.NeBot] (hI : HasLDP l ε
           (ENNReal.liminf_coe_mul_log_mono (.of_forall fun i => measure_mono interior_subset)).trans
             liminf_le_limsup
       _ ≤ _ := hJ.upper_bound _ hCc
-  exact (le_iInf₂ fun y hy => (hCJ hy).le).trans
+  exact (le_iInf₂ fun y hy => (Set.mem_Ioi.1 (Set.mem_preimage.1 (hCJ hy))).le).trans
     (EReal.coe_ennreal_le_coe_ennreal_iff.1 (EReal.neg_le_neg_iff.1 hrate))
 
 /-- **Uniqueness of the rate function.** In a regular space, a family of measures along a
@@ -119,23 +120,21 @@ theorem HasLDP.exists_eq_zero [l.NeBot] (h : HasLDP l ε μ I) (hI : IsGoodRateF
   obtain ⟨x, -, hx⟩ := hI.exists_eq_biInf isClosed_univ (hzero ▸ ENNReal.zero_ne_top)
   exact ⟨x, hx.trans hzero⟩
 
-/-- **Exponential decay on a closed set.** If `ENNReal.ofReal c` is below the infimum of the rate
-function over a closed set `F`, the measure of `F` is eventually at most `exp (-c / ε i)`. No
-goodness of the rate function is needed. -/
+/-- **Exponential decay on a closed set.** If a real number `c` is below the infimum of the rate
+function over a closed set `F`, the measure of `F` is eventually at most `exp (-c / ε i)`. The
+threshold `c` may be negative. No goodness of the rate function is needed. -/
 theorem HasLDP.eventually_measure_le_of_lt_biInf (h : HasLDP l ε μ I) {F : Set X}
-    (hF : IsClosed F) {c : ℝ} (hc : ENNReal.ofReal c < ⨅ x ∈ F, I x) :
+    (hF : IsClosed F) {c : ℝ} (hc : (c : EReal) < ((⨅ x ∈ F, I x : ℝ≥0∞) : EReal)) :
     ∀ᶠ i in l, μ i F ≤ ENNReal.ofReal (Real.exp (-c / ε i)) := by
   have hlt : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l <
       ((-c : ℝ) : EReal) := by
     refine (h.upper_bound _ hF).trans_lt ?_
-    rw [EReal.coe_neg, EReal.neg_lt_neg_iff]
-    exact (EReal.coe_le_coe_ennreal_of_ofReal_le le_rfl).trans_lt
-      (EReal.coe_ennreal_lt_coe_ennreal_iff.2 hc)
+    rwa [EReal.coe_neg, EReal.neg_lt_neg_iff]
   filter_upwards [eventually_lt_of_limsup_lt hlt, h.eventually_pos] with i hi hεi
   have hεi' : (0 : EReal) < ((ε i : ℝ) : EReal) := by exact_mod_cast hεi
   -- Divide the exponent by the inverse speed.
   have hlog : ENNReal.log (μ i F) ≤ ENNReal.log (ENNReal.ofReal (Real.exp (-c / ε i))) := by
-    rw [ENNReal.log_ofReal_of_pos (Real.exp_pos _), Real.log_exp, EReal.coe_div,
+    rw [← EReal.exp_coe, EReal.log_exp, EReal.coe_div,
       EReal.le_div_iff_mul_le hεi' (EReal.coe_ne_top _), mul_comm]
     exact hi.le
   exact ENNReal.log_le_log_iff.1 hlog
@@ -145,15 +144,16 @@ has a positive infimum tend to `0`. No goodness of the rate function is needed. 
 theorem HasLDP.tendsto_measure_of_biInf_pos (h : HasLDP l ε μ I) (hε : Tendsto ε l (𝓝 0))
     {F : Set X} (hF : IsClosed F) (hpos : 0 < ⨅ x ∈ F, I x) :
     Tendsto (fun i => μ i F) l (𝓝 0) := by
-  obtain ⟨c, -, hc0, hc⟩ := ENNReal.lt_iff_exists_real_btwn.1 hpos
+  obtain ⟨c, hc0, hc⟩ := EReal.exists_between_coe_real (EReal.coe_ennreal_pos.2 hpos)
   have hε' : Tendsto (fun i => (ε i : ℝ)) l (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.2 ⟨NNReal.tendsto_coe.2 hε, h.eventually_pos.mono fun i hi => hi⟩
+    tendsto_nhdsWithin_iff.2 ⟨NNReal.tendsto_coe.2 hε,
+      h.eventually_pos.mono fun i hi => Set.mem_Ioi.2 (NNReal.coe_pos.2 hi)⟩
   -- The bounds `exp (-c / ε i)` tend to `0`.
   have hexp : Tendsto (fun i => ENNReal.ofReal (Real.exp (-c / ε i))) l (𝓝 0) := by
     have hdiv : Tendsto (fun i => -c / (ε i : ℝ)) l atBot := by
       simpa only [div_eq_mul_inv, Function.comp_def] using
         (tendsto_inv_nhdsGT_zero.comp hε').const_mul_atTop_of_neg
-          (neg_neg_of_pos (ENNReal.ofReal_pos.1 hc0))
+          (neg_neg_of_pos (EReal.coe_pos.1 hc0))
     simpa using ENNReal.tendsto_ofReal (Real.tendsto_exp_atBot.comp hdiv)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hexp
     (.of_forall fun _ => bot_le) (h.eventually_measure_le_of_lt_biInf hF hc)
@@ -165,9 +165,9 @@ theorem HasLDP.exists_eventually_measure_compl_le (h : HasLDP l ε μ I)
     (hI : IsGoodRateFunction I) {U : Set X} (hU : IsOpen U) (hzero : ∀ x, I x = 0 → x ∈ U) :
     ∃ c : ℝ, 0 < c ∧ ∀ᶠ i in l, μ i Uᶜ ≤ ENNReal.ofReal (Real.exp (-c / ε i)) := by
   -- The rate is bounded away from `0` on the closed set `Uᶜ`.
-  obtain ⟨c, -, hc0, hc⟩ := ENNReal.lt_iff_exists_real_btwn.1
-    (hI.biInf_pos hU.isClosed_compl fun x hx h0 => hx (hzero x h0))
-  exact ⟨c, ENNReal.ofReal_pos.1 hc0, h.eventually_measure_le_of_lt_biInf hU.isClosed_compl hc⟩
+  obtain ⟨c, hc0, hc⟩ := EReal.exists_between_coe_real <| EReal.coe_ennreal_pos.2 <|
+    hI.biInf_pos hU.isClosed_compl fun x hx h0 => (Set.mem_compl_iff U x).1 hx (hzero x h0)
+  exact ⟨c, EReal.coe_pos.1 hc0, h.eventually_measure_le_of_lt_biInf hU.isClosed_compl hc⟩
 
 /-- For a large deviation principle with a good rate function at an inverse speed tending to `0`,
 the measures of the complement of an open set containing every zero of the rate function tend
@@ -176,7 +176,7 @@ theorem HasLDP.tendsto_measure_compl (h : HasLDP l ε μ I) (hI : IsGoodRateFunc
     (hε : Tendsto ε l (𝓝 0)) {U : Set X} (hU : IsOpen U) (hzero : ∀ x, I x = 0 → x ∈ U) :
     Tendsto (fun i => μ i Uᶜ) l (𝓝 0) :=
   h.tendsto_measure_of_biInf_pos hε hU.isClosed_compl
-    (hI.biInf_pos hU.isClosed_compl fun x hx h0 => hx (hzero x h0))
+    (hI.biInf_pos hU.isClosed_compl fun x hx h0 => (Set.mem_compl_iff U x).1 hx (hzero x h0))
 
 end LDP
 

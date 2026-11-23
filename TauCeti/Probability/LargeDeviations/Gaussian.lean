@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.LargeDeviations.Weak
+import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Data.EReal.Operations
@@ -32,6 +33,8 @@ is `x ↦ x² / 2`.
 
 ## Main results
 
+* `TauCeti.Probability.coe_mul_log_gaussianReal_le`: at a positive multiplier `e`, a set on which
+  the rate `(x - m)² / (2v)` is at least `s` satisfies `e * log (gaussianReal m (e * v) A) ≤ -s`.
 * `TauCeti.Probability.hasLDP_gaussianReal`: the large deviation principle for
   `gaussianReal m (ε i * v)`.
 * `TauCeti.Probability.limsup_coe_mul_log_gaussianReal_le`: the upper bound holds for every set,
@@ -56,6 +59,47 @@ open scoped ENNReal NNReal Real
 namespace TauCeti.Probability
 
 variable {ι : Type*} {l : Filter ι} {ε : ι → ℝ≥0}
+
+/-- At a positive multiplier `e`, a set on which the Gaussian rate `(x - m)² / (2v)` is at least
+`s` has Gaussian measure decaying at rate `s`: `e * log (gaussianReal m (e * v) A) ≤ -s`. This is
+the scaled form of `measureReal_gaussianReal_abs_sub_ge_le` used for large deviations of Gaussian
+laws. -/
+theorem coe_mul_log_gaussianReal_le (m : ℝ) (v : ℝ≥0) {e : ℝ≥0} (he : 0 < e) {s : ℝ}
+    {A : Set ℝ} (hA : ∀ x ∈ A, s ≤ (x - m) ^ 2 / (2 * v)) :
+    ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A) ≤ ((-s : ℝ) : EReal) := by
+  rcases le_or_gt s 0 with hs | hs
+  · -- Probabilities have nonpositive logarithms.
+    refine (mul_nonpos_of_nonneg_of_nonpos (by exact_mod_cast e.coe_nonneg)
+      (ENNReal.log_le_zero_iff.2 prob_le_one)).trans ?_
+    exact_mod_cast neg_nonneg.2 hs
+  rcases eq_or_ne v 0 with rfl | hv
+  · -- At variance `0` the rate vanishes, so `A` is empty.
+    obtain rfl : A = ∅ := Set.eq_empty_of_forall_notMem fun x hx => by
+      simpa [hs.not_ge] using hA x hx
+    have he' : (0 : EReal) < ((e : ℝ) : EReal) := by exact_mod_cast he
+    rw [measure_empty, ENNReal.log_zero, EReal.mul_bot_of_pos he']
+    exact bot_le
+  -- Every point of `A` is at distance at least `√(2vs)` from the mean.
+  have hA' : A ⊆ {x | √(2 * v * s) ≤ |x - m|} := fun x hx => by
+    have hle := hA x hx
+    rw [le_div_iff₀ (by positivity)] at hle
+    exact Real.sqrt_le_sqrt (by linarith) |>.trans_eq (Real.sqrt_sq_eq_abs _)
+  have htail := measureReal_gaussianReal_abs_sub_ge_le m (e * v) (Real.sqrt_nonneg (2 * v * s))
+  have hexp : -√(2 * v * s) ^ 2 / (2 * ((e * v : ℝ≥0) : ℝ)) = -s / e := by
+    rw [Real.sq_sqrt (by positivity), NNReal.coe_mul]
+    field_simp
+  rw [hexp] at htail
+  have hμ : gaussianReal m (e * v) A ≤ ENNReal.ofReal (Real.exp (-s / e)) :=
+    (measure_mono hA').trans <| by
+      rw [← ofReal_measureReal]
+      exact ENNReal.ofReal_le_ofReal htail
+  calc ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A)
+      ≤ ((e : ℝ) : EReal) * ENNReal.log (ENNReal.ofReal (Real.exp (-s / e))) :=
+        ENNReal.coe_mul_log_monotone e hμ
+    _ = ((-s : ℝ) : EReal) := by
+      rw [← EReal.exp_coe, EReal.log_exp, ← EReal.coe_mul]
+      congr 1
+      field_simp
 
 /-- The Gaussian upper bound at an eventually positive inverse speed `ε` holds for every set `A`,
 closed or not, and for every variance parameter `v`; it needs no vanishing inverse speed. -/
@@ -85,7 +129,7 @@ private theorem coe_le_liminf_coe_mul_log_gaussianReal [l.NeBot] (m : ℝ) {v : 
   have hlow : ∀ᶠ i in l, ((g (ε i) : ℝ) : EReal) ≤
       ((ε i : ℝ) : EReal) * ENNReal.log (gaussianReal m (ε i * v) U) := by
     filter_upwards [hpos] with i hi
-    have hi' : (0 : ℝ) < ε i := hi
+    have hi' : (0 : ℝ) < ε i := NNReal.coe_pos.2 hi
     have hvar : ε i * v ≠ 0 := mul_ne_zero hi.ne' hv
     have hpdf := gaussianPDFReal_pos 0 (ε i * v) (|x - m| + δ) hvar
     -- The variance `ε i * v` contributes `log (ε i)` to the logarithm of the density.

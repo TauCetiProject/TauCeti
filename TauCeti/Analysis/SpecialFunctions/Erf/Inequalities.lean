@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.Analysis.SpecialFunctions.Exp.Chord
 
 /-!
@@ -200,12 +199,6 @@ private theorem one_div_add_sqrt_two_lt_millsRatio {x : ℝ} (hx : 0 ≤ x) :
       nlinarith [sq_pos_of_pos (sub_pos.mpr hlt)]
   simpa only [one_mul] using this
 
-/-- The normalization `√(4/π) = 2/√π` relating the constant `4/π` of DLMF 7.8.2 to the prefactor
-`2/√π` of `erfc`. -/
-private theorem sqrt_four_div_pi : Real.sqrt (4 / π) = 2 / Real.sqrt π := by
-  rw [Real.sqrt_div' _ Real.pi_pos.le,
-    (Real.sqrt_eq_iff_mul_self_eq_of_pos two_pos).2 (by norm_num)]
-
 /-- The upper bound of DLMF 7.8.2: `M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`. -/
 private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     millsRatio x ≤ 1 / (x + Real.sqrt (x ^ 2 + 4 / π)) := by
@@ -226,7 +219,8 @@ private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     rwa [comparison_sqrt_candidate_eq hc y] at this
   have hE0 := le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos hx
     (fun y _ => (hEd y).continuousAt.continuousWithinAt) (fun y _ => hEd y)
-    (by norm_num [hcdef, sqrt_four_div_pi, TauCeti.Real.erfc_zero])
+    -- `Real.sqrt_div` would split `√(4/π)` before `sqrt_four_div_pi` applies.
+    (by norm_num [hcdef, sqrt_four_div_pi, TauCeti.Real.erfc_zero, -Real.sqrt_div])
     (tendsto_comparison (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 (by norm_num) c))
     fun y z hy hyz h => by
       have hNy : N y ≤ 0 := by

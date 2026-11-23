@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Order.Filter.Extr
 
 /-!
@@ -37,8 +38,6 @@ bounds are stated with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, s
   infimum over a closed set whenever that infimum is finite.
 * `TauCeti.Probability.IsGoodRateFunction.biInf_pos`: a good rate function has a positive infimum
   over a closed set containing none of its zeros.
-* `TauCeti.Probability.eventually_pos_of_limsup_coe_mul_log_empty_eq_bot`: an inverse speed at
-  which the empty set has rate `⊥` is eventually positive.
 * `TauCeti.Probability.HasLDP.eventually_pos`: the inverse speed of a large deviation principle is
   eventually positive.
 * `TauCeti.Probability.HasLDP.congr`: a large deviation principle depends only on the measures
@@ -82,9 +81,9 @@ theorem IsGoodRateFunction.exists_eq_biInf [TopologicalSpace X] {I : X → ℝ�
   -- Minimize `I` over the compact sublevel set `{x ∈ F | I x ≤ I x₁}`; the minimum is global.
   have hK : IsCompact {x ∈ F | I x ≤ I x₁} :=
     (hI.isCompact_sublevel _ hlt.ne).inter_left hF
-  have hne : {x ∈ F | I x ≤ I x₁}.Nonempty := ⟨x₁, hx₁, le_rfl⟩
-  obtain ⟨x₀, ⟨hx₀F, hx₀I⟩, hmin⟩ :=
-    (hI.lowerSemicontinuous.lowerSemicontinuousOn _).exists_isMinOn hne hK
+  have hne : {x ∈ F | I x ≤ I x₁}.Nonempty := ⟨x₁, Set.mem_sep_iff.2 ⟨hx₁, le_rfl⟩⟩
+  obtain ⟨x₀, hx₀, hmin⟩ := (hI.lowerSemicontinuous.lowerSemicontinuousOn _).exists_isMinOn hne hK
+  obtain ⟨hx₀F, hx₀I⟩ := Set.mem_sep_iff.1 hx₀
   have hmin' : IsMinOn I F x₀ := (isMinOn_sublevel_iff hx₀I).1 hmin
   exact ⟨x₀, hx₀F, (iInf_subtype'.trans (hmin'.iInf_eq hx₀F)).symm⟩
 
@@ -111,23 +110,13 @@ structure HasLDP [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : 
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l ≤
       -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal)
 
-/-- An inverse speed at which the empty set has limsup rate `⊥` is eventually positive: at a zero
-inverse speed the rate `ε i * log (μ i ∅)` of the empty set is `0 * ⊥ = 0`. -/
-theorem eventually_pos_of_limsup_coe_mul_log_empty_eq_bot [MeasurableSpace X] {l : Filter ι}
-    {ε : ι → ℝ≥0} {μ : ι → Measure X}
-    (h : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i ∅)) l = ⊥) :
-    ∀ᶠ i in l, 0 < ε i := by
-  filter_upwards [eventually_lt_of_limsup_lt (h.trans_lt EReal.bot_lt_zero)] with i hi
-  refine pos_iff_ne_zero.2 fun h0 => ?_
-  simp [h0] at hi
-
 /-- A large deviation principle forces the inverse speed to be eventually positive: at a zero
 inverse speed the empty set would have rate `0` instead of `⊥`. -/
 theorem HasLDP.eventually_pos [TopologicalSpace X] [MeasurableSpace X] {l : Filter ι}
     {ε : ι → ℝ≥0} {μ : ι → Measure X} {I : X → ℝ≥0∞} (h : HasLDP l ε μ I) :
     ∀ᶠ i in l, 0 < ε i :=
-  eventually_pos_of_limsup_coe_mul_log_empty_eq_bot <| le_bot_iff.1 <|
-    (h.upper_bound ∅ isClosed_empty).trans_eq (by simp)
+  ENNReal.eventually_pos_of_limsup_coe_mul_log_lt_zero <|
+    (h.upper_bound ∅ isClosed_empty).trans_lt (by simp)
 
 /-- A large deviation principle depends only on the measures eventually along `l`: it passes to
 every family `ν` with `μ i = ν i` eventually. -/

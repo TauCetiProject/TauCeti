@@ -21,7 +21,8 @@ that they are more than `δ` apart decays faster than every exponential:
 `limsup ε i * log (P i {ENNReal.ofReal δ < edist (Z i) (Z' i)}) = ⊥` for each real `δ > 0`.
 The relation is symmetric, reflexive at an eventually positive inverse speed and transitive at an
 eventually bounded inverse speed; so it is an equivalence relation at an eventually positive and
-eventually bounded inverse speed. At an inverse speed tending to `0`, exponentially equivalent
+eventually bounded inverse speed. Exponential equivalence itself forces an eventually positive
+inverse speed. At an inverse speed tending to `0`, exponentially equivalent
 families satisfy the same large deviation principles with good rate functions: the lower bound on
 open sets transfers without goodness, and the upper bound on closed sets transfers for a good rate
 function. This allows a principle to be transferred to truncated, rounded or slightly perturbed
@@ -39,14 +40,16 @@ random variables.
   `TauCeti.Probability.ExponentiallyEquivalent.trans`: exponential equivalence is reflexive at an
   eventually positive inverse speed, symmetric, and transitive at an eventually bounded inverse
   speed.
+* `TauCeti.Probability.ExponentiallyEquivalent.eventually_pos`: the inverse speed of an exponential
+  equivalence is eventually positive.
 * `TauCeti.Probability.ExponentiallyEquivalent.congr`: exponential equivalence passes to almost
   surely equal versions of the random variables.
-* `TauCeti.Probability.ExponentiallyEquivalent.le_liminf_map_of_isOpen`: at an inverse speed tending
-  to `0`, the large deviation lower bound on open sets passes to exponentially equivalent families,
-  for any rate function.
-* `TauCeti.Probability.ExponentiallyEquivalent.limsup_map_le_of_isClosed`: at an inverse speed
-  tending to `0`, the large deviation upper bound on closed sets passes to exponentially equivalent
-  families, for a good rate function.
+* `TauCeti.Probability.ExponentiallyEquivalent.le_liminf_coe_mul_log_map_of_isOpen`: at an inverse
+  speed tending to `0`, the large deviation lower bound on open sets passes to exponentially
+  equivalent families, for any rate function.
+* `TauCeti.Probability.ExponentiallyEquivalent.limsup_coe_mul_log_map_le_of_isClosed`: at an inverse
+  speed tending to `0`, the large deviation upper bound on closed sets passes to exponentially
+  equivalent families, for a good rate function.
 * `TauCeti.Probability.HasLDP.of_exponentiallyEquivalent`: at an inverse speed tending to `0`, a
   large deviation principle with a good rate function passes to exponentially equivalent families.
 
@@ -88,6 +91,12 @@ theorem ExponentiallyEquivalent.symm (h : ExponentiallyEquivalent l ε P Z Z') :
     ExponentiallyEquivalent l ε P Z' Z := by
   intro δ hδ
   simpa only [edist_comm] using h δ hδ
+
+/-- Exponential equivalence forces the inverse speed to be eventually positive: at a zero inverse
+speed the probability that the two families are apart would have rate `0` instead of `⊥`. -/
+theorem ExponentiallyEquivalent.eventually_pos (h : ExponentiallyEquivalent l ε P Z Z') :
+    ∀ᶠ i in l, 0 < ε i :=
+  ENNReal.eventually_pos_of_limsup_coe_mul_log_lt_zero ((h 1 one_pos).trans_lt EReal.bot_lt_zero)
 
 /-- Exponential equivalence depends on the random variables only almost surely and eventually
 along `l`: it passes to families `W` and `W'` with `Z i = W i` and `Z' i = W' i` almost everywhere
@@ -144,7 +153,8 @@ protected theorem ExponentiallyEquivalent.refl (Z : ∀ i, Ω i → X) (hpos : �
 variable [MeasurableSpace X] [OpensMeasurableSpace X] {I : X → ℝ≥0∞}
 
 /-- The lower bound for an exponentially equivalent family at a point of an open set. -/
-private theorem ExponentiallyEquivalent.neg_le_liminf_map (he : ExponentiallyEquivalent l ε P Z Z')
+private theorem ExponentiallyEquivalent.neg_le_liminf_coe_mul_log_map
+    (he : ExponentiallyEquivalent l ε P Z Z')
     (hZ : ∀ᶠ i in l, AEMeasurable (Z i) (P i))
     (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i))
     (hε : Tendsto ε l (𝓝 0))
@@ -190,7 +200,8 @@ private theorem ExponentiallyEquivalent.neg_le_liminf_map (he : ExponentiallyEqu
 /-- **Transfer of the lower bound.** At an inverse speed tending to `0`, the large deviation lower
 bound on open sets passes from the laws of `Z i` to the laws of every exponentially equivalent
 family `Z' i`, with the same function `I`. No goodness or semicontinuity of `I` is needed. -/
-theorem ExponentiallyEquivalent.le_liminf_map_of_isOpen (he : ExponentiallyEquivalent l ε P Z Z')
+theorem ExponentiallyEquivalent.le_liminf_coe_mul_log_map_of_isOpen
+    (he : ExponentiallyEquivalent l ε P Z Z')
     (hZ : ∀ᶠ i in l, AEMeasurable (Z i) (P i))
     (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i))
     (hε : Tendsto ε l (𝓝 0))
@@ -200,12 +211,12 @@ theorem ExponentiallyEquivalent.le_liminf_map_of_isOpen (he : ExponentiallyEquiv
     -((⨅ x ∈ G, I x : ℝ≥0∞) : EReal) ≤
       liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) G)) l :=
   TauCeti.EReal.neg_coe_ennreal_biInf_le_iff.2 fun _ hx =>
-    he.neg_le_liminf_map hZ hZ' hε hlower hG hx
+    he.neg_le_liminf_coe_mul_log_map hZ hZ' hε hlower hG hx
 
 /-- **Transfer of the upper bound.** At an inverse speed tending to `0`, the large deviation upper
 bound on closed sets passes from the laws of `Z i` to the laws of every exponentially equivalent
 family `Z' i`, with the same good rate function `I`. -/
-theorem ExponentiallyEquivalent.limsup_map_le_of_isClosed
+theorem ExponentiallyEquivalent.limsup_coe_mul_log_map_le_of_isClosed
     (he : ExponentiallyEquivalent l ε P Z Z') (hZ : ∀ᶠ i in l, AEMeasurable (Z i) (P i))
     (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i)) (hε : Tendsto ε l (𝓝 0))
     (hI : IsGoodRateFunction I)
@@ -246,7 +257,8 @@ theorem HasLDP.of_exponentiallyEquivalent (h : HasLDP l ε (fun i => (P i).map (
     (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i)) (he : ExponentiallyEquivalent l ε P Z Z')
     (hε : Tendsto ε l (𝓝 0)) :
     HasLDP l ε (fun i => (P i).map (Z' i)) I :=
-  ⟨h.lowerSemicontinuous, fun _ hG => he.le_liminf_map_of_isOpen hZ hZ' hε h.lower_bound hG,
-    fun _ hF => he.limsup_map_le_of_isClosed hZ hZ' hε hI h.upper_bound hF⟩
+  ⟨h.lowerSemicontinuous,
+    fun _ hG => he.le_liminf_coe_mul_log_map_of_isOpen hZ hZ' hε h.lower_bound hG,
+    fun _ hF => he.limsup_coe_mul_log_map_le_of_isClosed hZ hZ' hε hI h.upper_bound hF⟩
 
 end TauCeti.Probability

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
+public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
+public import Mathlib.Order.LiminfLimsup
+import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 
 /-!
 # Scaled logarithms of extended nonnegative reals
@@ -14,7 +16,9 @@ At a nonnegative multiplier `e`, the scaled logarithm `x ↦ e * log x` from `�
 monotone. Exponential rates `e * log (μ A)`, as in large deviations, are therefore monotone in the
 set `A`. Along a filter, with multipliers `ε i`, the upper and lower limits of the scaled
 logarithms `ε i * log (u i)` are the logarithms of the upper and lower limits of the powers
-`u i ^ ε i`; this turns estimates of exponential rates into estimates in `ℝ≥0∞`.
+`u i ^ ε i`; this turns estimates of exponential rates into estimates in `ℝ≥0∞`. Since
+`0 * log x = 0`, a negative limsup of `ε i * log (u i)` forces the multipliers `ε i` to be
+eventually positive.
 
 ## Main results
 
@@ -23,6 +27,8 @@ logarithms `ε i * log (u i)` are the logarithms of the upper and lower limits o
   limits of scaled logarithms as logarithms of upper and lower limits of powers.
 * `TauCeti.ENNReal.limsup_coe_mul_log_mono`, `TauCeti.ENNReal.liminf_coe_mul_log_mono`: the upper
   and lower limits of scaled logarithms are monotone in the sequence.
+* `TauCeti.ENNReal.eventually_pos_of_limsup_coe_mul_log_lt_zero`: a negative limsup of scaled
+  logarithms forces eventually positive multipliers.
 -/
 
 public section
@@ -66,5 +72,14 @@ theorem liminf_coe_mul_log_mono {u v : ι → ℝ≥0∞} (h : ∀ᶠ i in l, u 
     liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l ≤
       liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l :=
   liminf_le_liminf (h.mono fun i hi => coe_mul_log_monotone (ε i) hi)
+
+/-- If the scaled logarithms `ε i * log (u i)` have negative limsup, the multipliers `ε i` are
+eventually positive: at `ε i = 0` the scaled logarithm is `0 * log (u i) = 0`. -/
+theorem eventually_pos_of_limsup_coe_mul_log_lt_zero {u : ι → ℝ≥0∞}
+    (h : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l < 0) :
+    ∀ᶠ i in l, 0 < ε i := by
+  filter_upwards [eventually_lt_of_limsup_lt h] with i hi
+  refine pos_iff_ne_zero.2 fun h0 => ?_
+  simp [h0] at hi
 
 end TauCeti.ENNReal
