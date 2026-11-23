@@ -40,6 +40,11 @@ decreases by the multiplicity of the crossed eigenvalue
 `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`).
 The weights below the spectral gap of `TauCeti.Analysis.ODE.EnergyEstimate.Weighted` cross no
 eigenvalue, and leave the index unchanged.
+The limits may be degenerate, as for the linearization along a trajectory between critical
+manifolds of a Morse–Bott function, whose limits are Hessians with a kernel. A small decay weight,
+with slopes `δ⁻ < 0 < δ⁺` closer to zero than the nonzero eigenvalues on the relevant side, gives
+index `n_{< 0}(A⁻) - n_{≤ 0}(A⁺)`
+(`index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_Iio_sub_finrank_Iic`).
 
 For the symmetric weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bounded error, the slope
 is `δ tanh s` and the index is `n_{< -δ}(A⁻) - n_{< δ}(A⁺)`
@@ -61,6 +66,8 @@ In the namespace `TauCeti.WeakDerivStep`:
 * `index_trajectoryOperator_eq_add_finrank_eigenspace_atTop`,
   `index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`: crossing one eigenvalue
   at one end changes the index by its multiplicity.
+* `index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_Iio_sub_finrank_Iic`: the
+  index for a small decay weight at degenerate limits.
 * `index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`:
   the index for the symmetric weight `δ log (cosh s)`.
 * `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_zero_of_abs_lt_abs`,
@@ -281,6 +288,42 @@ theorem index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSu
     hsymplus hbot htop (c := fun s ↦ δ * Real.tanh s) (continuous_const.mul Real.continuous_tanh)
     (by simpa using Real.tendsto_tanh_atBot.const_mul δ)
     (by simpa using Real.tendsto_tanh_atTop.const_mul δ) hδminus hδplus BL hBL
+
+/-- **The index for a small decay weight at degenerate limits.** Let `A` be a continuous family
+with symmetric limits `A±`, possibly with a kernel, as for the linearization along a trajectory
+between critical manifolds of a Morse–Bott function. Let `c` be a continuous slope tending to
+`δ⁻ < 0` at `-∞` and to `δ⁺ > 0` at `+∞`, below the spectral gaps at zero: `A⁻` has no eigenvalue
+in `[δ⁻, 0)` and `A⁺` has none in `(0, δ⁺]`. Then the index of `u ↦ u' + (A - c) u` is
+`n_{< 0}(A⁻) - n_{≤ 0}(A⁺)`: the decay weight counts the kernel of `A⁺` with its negative
+eigenvalues, and not that of `A⁻`. -/
+theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_Iio_sub_finrank_Iic
+    (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : δminus < 0) (hδplus : 0 < δplus)
+    (hgapminus : ∀ μ ∈ Ico δminus 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
+    (hgapplus : ∀ μ ∈ Ioc 0 δplus, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iic 0)) := by
+  have hminus : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio δminus) =
+      Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0) := by
+    rw [← Iio_union_Ico_eq_Iio hδminus.le, Module.End.pointSpectralSubspace_union,
+      Module.End.pointSpectralSubspace_eq_bot_iff.2 hgapminus, sup_bot_eq]
+  have hplus : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus) =
+      Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iic 0) := by
+    rw [← Iic_union_Ioo_eq_Iio hδplus, Module.End.pointSpectralSubspace_union,
+      Module.End.pointSpectralSubspace_eq_bot_iff.2 fun μ hμ ↦ hgapplus μ (Ioo_subset_Ioc_self hμ),
+      sup_bot_eq]
+  rw [index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank hA hsymminus
+      hsymplus hbot htop hc hcbot hctop (hgapminus δminus ⟨le_rfl, hδminus⟩)
+      (hgapplus δplus ⟨hδplus, le_rfl⟩) BL hBL,
+    hminus, hplus]
 
 section Scalar
 
