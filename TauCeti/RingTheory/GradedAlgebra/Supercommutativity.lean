@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.CharP.Invertible
 public import TauCeti.LinearAlgebra.Graded.LinearMap
-import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 import TauCeti.Algebra.Group.Action.SemiconjBy
 import TauCeti.RingTheory.GradedAlgebra.Generators
 
