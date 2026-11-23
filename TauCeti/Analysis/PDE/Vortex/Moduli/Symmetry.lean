@@ -32,7 +32,12 @@ Both operations compose as the group of orientation-preserving isometries of the
 `rotateFramedVortex_translateFramedVortex`)
 and conjugate the smooth framed gauge group to itself (`translateFramedVortex_smul`,
 `rotateFramedVortex_smul`), with the gauge composed with the isometry
-(`TauCeti.Vortex.translateFramedGauge`, `TauCeti.Vortex.rotateFramedGauge`). They therefore descend
+(`TauCeti.Vortex.translateFramedGauge`, `TauCeti.Vortex.rotateFramedGauge`), which obey the same
+composition laws (`translateFramedGauge_translateFramedGauge`,
+`rotateFramedGauge_rotateFramedGauge`, `rotateFramedGauge_translateFramedGauge`). Two framed
+vortices are related by an isometry up to framed gauge exactly when their divisors are related by
+the same isometry (`exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff`,
+`exists_framedGaugeGroup_smul_rotateFramedVortex_eq_iff`). The operations therefore descend
 to the moduli space (`TauCeti.Vortex.translateFramedVortexModuli`,
 `TauCeti.Vortex.rotateFramedVortexModuli`), where the divisor intertwines them with the maps
 `D ↦ D - a` and `D ↦ u⁻¹ D` of `Sym ℂ m` (`framedVortexModuliEquiv_translateFramedVortexModuli`,
@@ -94,6 +99,33 @@ theorem coe_rotateFramedGauge (u : Circle) (g : framedGaugeGroup) :
     (rotateFramedGauge u g : ℂ → Circle) = fun w ↦ g.val (u * w) :=
   (rfl)
 
+@[simp]
+theorem translateFramedGauge_zero (g : framedGaugeGroup) : translateFramedGauge 0 g = g :=
+  Subtype.ext <| funext fun w ↦ by simp
+
+/-- Successive translations of smooth framed gauges add. -/
+@[simp]
+theorem translateFramedGauge_translateFramedGauge (a b : ℂ) (g : framedGaugeGroup) :
+    translateFramedGauge a (translateFramedGauge b g) = translateFramedGauge (a + b) g :=
+  Subtype.ext <| funext fun w ↦ by simp [add_assoc]
+
+@[simp]
+theorem rotateFramedGauge_one (g : framedGaugeGroup) : rotateFramedGauge 1 g = g :=
+  Subtype.ext <| funext fun w ↦ by simp
+
+/-- Successive rotations of smooth framed gauges multiply. -/
+@[simp]
+theorem rotateFramedGauge_rotateFramedGauge (u v : Circle) (g : framedGaugeGroup) :
+    rotateFramedGauge u (rotateFramedGauge v g) = rotateFramedGauge (u * v) g :=
+  Subtype.ext <| funext fun w ↦ by simp [mul_assoc, mul_left_comm (v : ℂ)]
+
+/-- **The semidirect product law for smooth framed gauges.** Rotating by `u` a gauge translated
+by `a` is translating by `u⁻¹ a` the rotated gauge. -/
+theorem rotateFramedGauge_translateFramedGauge (u : Circle) (a : ℂ) (g : framedGaugeGroup) :
+    rotateFramedGauge u (translateFramedGauge a g) =
+      translateFramedGauge ((u : ℂ)⁻¹ * a) (rotateFramedGauge u g) :=
+  Subtype.ext <| funext fun w ↦ by simp [mul_add]
+
 /-! ### Translations of framed vortices -/
 
 /-- Translating a smooth framed degree-`m` vortex gives a smooth framed degree-`m` vortex. -/
@@ -139,6 +171,15 @@ theorem framedVortexDivisor_translateFramedVortex (a : ℂ) (x : framedVortexSub
   rw [framedVortexDivisor_eq_iff, Sym.coe_map]
   exact isZeroMultiplicity_sectionValue_translateField
     (isZeroMultiplicity_sectionValue_framedVortexDivisor x) a
+
+/-- Two smooth framed vortices are related by the translation by `a` up to framed gauge exactly
+when their divisors differ by `-a`. -/
+theorem exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff (a : ℂ)
+    {x y : framedVortexSubMulAction 1 m} :
+    (∃ g : framedGaugeGroup, g • translateFramedVortex a y = x) ↔
+      framedVortexDivisor x = (framedVortexDivisor y).map (· - a) := by
+  rw [← framedVortexDivisor_translateFramedVortex,
+    framedVortexDivisor_eq_framedVortexDivisor_iff one_pos]
 
 /-! ### Rotations of framed vortices -/
 
@@ -224,6 +265,15 @@ theorem framedVortexDivisor_rotateFramedVortex (u : Circle) (x : framedVortexSub
   exact isZeroMultiplicity_sectionValue_gaugeTransform continuous_const
     (isZeroMultiplicity_sectionValue_rotateField
       (isZeroMultiplicity_sectionValue_framedVortexDivisor x) u)
+
+/-- Two smooth framed vortices are related by the rotation by `u`, followed by the line-frame
+gauge, up to framed gauge exactly when their divisors differ by the rotation `u⁻¹`. -/
+theorem exists_framedGaugeGroup_smul_rotateFramedVortex_eq_iff (u : Circle)
+    {x y : framedVortexSubMulAction 1 m} :
+    (∃ g : framedGaugeGroup, g • rotateFramedVortex u y = x) ↔
+      framedVortexDivisor x = (framedVortexDivisor y).map ((u : ℂ)⁻¹ * ·) := by
+  rw [← framedVortexDivisor_rotateFramedVortex,
+    framedVortexDivisor_eq_framedVortexDivisor_iff one_pos]
 
 /-! ### Isometries fixing a gauge orbit -/
 
