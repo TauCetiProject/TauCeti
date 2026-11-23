@@ -231,6 +231,24 @@ theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le {u
   simpa only [NNReal.coe_one, one_mul, Function.comp_def] using
     lipschitzWith_one_norm.norm_fderiv_comp_le hx
 
+/-- Shared extraction of Bochner integrability and integral comparison from the extended-integral
+Pólya–Szegő inequality. -/
+private theorem integrable_and_integral_comp_norm_fderiv_le_of_lintegral_le
+    {w h : E → ℝ} {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0))
+    (hΦ0 : Φ 0 = 0) (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) volume)
+    (hle : ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) ≤ ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) :
+    Integrable (fun x ↦ Φ ‖fderiv ℝ w x‖) volume ∧
+      ∫ x, Φ ‖fderiv ℝ w x‖ ≤ ∫ x, Φ ‖fderiv ℝ h x‖ := by
+  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
+  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
+  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = I :=
+    (ofReal_integral_eq_lintegral_ofReal hint
+      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
+  exact MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
+    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
+      _).aestronglyMeasurable
+    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I) (hle.trans_eq hI)
+
 /-- Integrability of `Φ ‖Dh*‖` when `Φ ‖Dh‖` is integrable. -/
 theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
@@ -238,18 +256,9 @@ theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) volume) :
     Integrable (fun x ↦ Φ ‖fderiv ℝ
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖)
-      volume := by
-  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = I :=
-    (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
-  exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
-      _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
-    ((hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ
-      hΦ0.le).trans_eq hI)).1
+      volume :=
+  (integrable_and_integral_comp_norm_fderiv_le_of_lintegral_le hΦ hΦm hΦ0 hint
+    (hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦ0.le)).1
 
 /-- **Bochner-integral Pólya–Szegő inequality** for the positive-part Schwarz rearrangement. -/
 theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_le
@@ -258,18 +267,9 @@ theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_le
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) volume) :
     ∫ x, Φ ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ≤
-      ∫ x, Φ ‖fderiv ℝ h x‖ := by
-  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = I :=
-    (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
-  exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
-      _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
-    ((hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ
-      hΦ0.le).trans_eq hI)).2
+      ∫ x, Φ ‖fderiv ℝ h x‖ :=
+  (integrable_and_integral_comp_norm_fderiv_le_of_lintegral_le hΦ hΦm hΦ0 hint
+    (hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦ0.le)).2
 
 /-- Integrability of `Φ ‖D(|u|*)‖` when `Φ ‖Du‖` is integrable. -/
 theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm {u : E → ℝ}
@@ -278,18 +278,10 @@ theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm {u : E → 
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) volume) :
     Integrable (fun x ↦ Φ ‖fderiv ℝ
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖)
-      volume := by
-  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = I :=
-    (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
-  exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
-      _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
-    ((hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
-      hΦ0.le).trans_eq hI)).1
+      volume :=
+  (integrable_and_integral_comp_norm_fderiv_le_of_lintegral_le hΦ hΦm hΦ0 hint
+    (hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
+      hΦ0.le)).1
 
 /-- **Signed Bochner-integral Pólya–Szegő inequality** for `‖u ·‖`. -/
 theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le {u : E → ℝ}
@@ -298,18 +290,10 @@ theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le {u : E →
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) volume) :
     ∫ x, Φ ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ≤
-      ∫ x, Φ ‖fderiv ℝ u x‖ := by
-  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = I :=
-    (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
-  exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
-      _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
-    ((hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
-      hΦ0.le).trans_eq hI)).2
+      ∫ x, Φ ‖fderiv ℝ u x‖ :=
+  (integrable_and_integral_comp_norm_fderiv_le_of_lintegral_le hΦ hΦm hΦ0 hint
+    (hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
+      hΦ0.le)).2
 
 /-- **`Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, `lintegral` form)** for the positive part. -/
 theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le

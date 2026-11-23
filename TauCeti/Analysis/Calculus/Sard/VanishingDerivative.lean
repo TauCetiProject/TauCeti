@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.Sard.Oscillation
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.MeasureTheory.Measure.LocallyNull
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Sard's theorem on the locus where the derivative vanishes
@@ -144,7 +144,7 @@ critical points of a map into such a space are the points where its derivative v
 @[simp] theorem setOf_not_surjective_fderiv_eq_setOf_fderiv_eq_zero_of_finrank_eq_one :
     {x | ¬ Surjective (fderiv ℝ f x)} = {x | fderiv ℝ f x = 0} := by
   ext x
-  simp [surjective_fderiv_iff_ne_zero_of_finrank_eq_one hF]
+  simp [ContinuousLinearMap.surjective_iff_ne_zero_of_finrank_eq_one hF]
 
 end OneDimensional
 
