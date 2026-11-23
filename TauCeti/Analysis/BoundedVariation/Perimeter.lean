@@ -46,6 +46,8 @@ the semicontinuity half of the direct method for perimeter problems.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
 * `TauCeti.perimeter_union_of_disjoint_closure`: additivity for sets with disjoint closures.
+* `TauCeti.lintegral_enorm_indicator_one_sub_le`: on `K`, the `L¹` distance between the indicators
+  of `s` and `t` is at most the measure of `(s ∆ t) ∩ K`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
 ## References
@@ -252,6 +254,16 @@ end Haar
 
 /-! ### Lower semicontinuity -/
 
+/-- On a measurable set `K`, the `L¹` distance between the indicators of `s` and `t` is at most
+the measure of `(s ∆ t) ∩ K`. -/
+theorem lintegral_enorm_indicator_one_sub_le {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    (s t : Set α) {K : Set α} (hK : MeasurableSet K) :
+    ∫⁻ x in K, ‖s.indicator (1 : α → ℝ) x - t.indicator 1 x‖ₑ ∂ν ≤ ν ((s ∆ t) ∩ K) := by
+  have hpt : ∀ x, ‖s.indicator (1 : α → ℝ) x - t.indicator 1 x‖ₑ = (s ∆ t).indicator 1 x :=
+    fun x => by by_cases h₁ : x ∈ s <;> by_cases h₂ : x ∈ t <;> simp [mem_symmDiff, h₁, h₂]
+  simp_rw [hpt]
+  exact (lintegral_indicator_one_le _).trans (Measure.restrict_apply' hK).le
+
 /-- **Lower semicontinuity of the perimeter.** If the sets `s i` converge to `s₀` locally in
 measure in `Ω`, that is `μ ((s i ∆ s₀) ∩ K) → 0` for every compact `K ⊆ Ω`, then
 `P(s₀; Ω) ≤ liminf P(s i; Ω)`. -/
@@ -266,12 +278,7 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
-    (fun _ => zero_le) fun i => ?_
-  have hpt : ∀ x, ‖(s i).indicator (1 : E → ℝ) x - s₀.indicator 1 x‖ₑ =
-      (s i ∆ s₀).indicator 1 x := fun x => by
-    by_cases h₁ : x ∈ s i <;> by_cases h₂ : x ∈ s₀ <;> simp [mem_symmDiff, h₁, h₂]
-  simp_rw [hpt]
-  exact (lintegral_indicator_one_le _).trans
-    (Measure.restrict_apply' hK.isClosed.measurableSet).le
+    (fun _ => zero_le) fun _ =>
+      lintegral_enorm_indicator_one_sub_le μ _ _ hK.isClosed.measurableSet
 
 end TauCeti
