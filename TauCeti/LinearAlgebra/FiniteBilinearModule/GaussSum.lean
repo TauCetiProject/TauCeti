@@ -295,7 +295,7 @@ theorem gaussSum_restrict_orthogonalComplement {H : AddSubgroup A} (hH : A.IsIso
         refine Finset.sum_congr rfl fun a _ ↦ ?_
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun h _ ↦ ?_
-        rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.2]
+        rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.property]
         congr 1
         abel
     _ = (Nat.card H : ℂ) * (A.restrict
@@ -330,7 +330,7 @@ theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagran
   have hq := (A.isIsotropic_def).mp (IsLagrangian.isIsotropic A hH)
   calc ∑ x : A.restrict H, expCircle ((A.restrict H).quadratic x)
       = ∑ _ : H, (1 : ℂ) := Fintype.sum_equiv (Equiv.refl _) _ _ fun x ↦ by
-        rw [A.restrict_quadratic H x, hq x.1 x.2, AddChar.map_zero_eq_one]
+        rw [A.restrict_quadratic H x, hq x.val x.property, AddChar.map_zero_eq_one]
     _ = Nat.card H := by simp [Nat.card_eq_fintype_card]
 
 end
@@ -369,7 +369,7 @@ theorem gaussSum_eq_card_mul_gaussSum_quotientOfLeQuadraticRadical
   have hvalue (x : {x : A // f x = q}) : expCircle (A.quadratic x) =
       expCircle (Q.quadratic q) := by
     exact congrArg expCircle ((A.quotientOfLeQuadraticRadical_quadratic_mk K hK x).symm.trans
-      (congrArg Q.quadratic x.2))
+      (congrArg Q.quadratic x.property))
   simp only [hvalue, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     ← Nat.card_eq_fintype_card, hcard]
   rfl

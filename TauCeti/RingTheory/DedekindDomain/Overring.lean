@@ -114,7 +114,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
     exact (inv_lt_one_of_one_lt₀ hb).le
   have hn : n ∈ v.asIdeal := by
     have hlt : v.valuation K (algebraMap A K n) < 1 := by
-      rw [← hnd, map_mul, v.valuation_eq_one_iff_notMem.mpr d.2, mul_one, map_inv₀]
+      rw [← hnd, map_mul, v.valuation_eq_one_iff_notMem.mpr d.property, mul_one, map_inv₀]
       exact inv_lt_one_of_one_lt₀ hb
     exact (v.valuation_lt_one_iff_mem (K := K) n).mp hlt
   have hd : algebraMap A B d = b * algebraMap A B n := by
@@ -122,7 +122,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
     rw [map_mul, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, ← hnd,
       ← mul_assoc, mul_inv_cancel₀ hb0, one_mul]
   -- Since `d ∉ 𝔭` and `𝔭` is maximal, its inverse modulo `𝔭` puts `1` in `𝔭B`.
-  obtain ⟨y, i, hi, hyi⟩ := v.isMaximal.exists_inv d.2
+  obtain ⟨y, i, hi, hyi⟩ := v.isMaximal.exists_inv d.property
   rw [Ideal.eq_top_iff_one, ← map_one (algebraMap A B), ← hyi, map_add, map_mul, hd]
   exact Ideal.add_mem _ (Ideal.mul_mem_left _ _ (Ideal.mul_mem_left _ _
     (Ideal.mem_map_of_mem _ hn))) (Ideal.mem_map_of_mem _ hi)

@@ -52,7 +52,7 @@ theorem eq_one_of_mem_centralizer_of_apply_eq
   refine Equiv.ext fun j => ?_
   obtain ⟨g, rfl⟩ := hG.exists_smul_eq i j
   simpa [smul_def, Equiv.Perm.smul_def, hi] using
-    congr($(mem_centralizer_iff.mp hτ g g.2) i).symm
+    congr($(mem_centralizer_iff.mp hτ g g.property) i).symm
 
 /-- The centralizer of a transitive group of permutations acts freely on the letters by
 evaluation. -/
@@ -60,7 +60,7 @@ theorem isCancelSMul_centralizer
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α) :
     IsCancelSMul (centralizer (G : Set (Equiv.Perm α))) α :=
   isCancelSMul_iff_eq_one_of_smul_eq.mpr fun τ i hi =>
-    OneMemClass.coe_eq_one.mp <| eq_one_of_mem_centralizer_of_apply_eq hG τ.2 <| by
+    OneMemClass.coe_eq_one.mp <| eq_one_of_mem_centralizer_of_apply_eq hG τ.property <| by
       rwa [smul_def, Equiv.Perm.smul_def] at hi
 
 /-- **The order of the centralizer of a transitive group of permutations divides the number of
