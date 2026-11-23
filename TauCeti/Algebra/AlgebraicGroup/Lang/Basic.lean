@@ -13,18 +13,18 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.FiniteStability
-import Mathlib.RingTheory.Ideal.Prime
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import TauCeti.Algebra.AlgebraicGroup.Connected.Irreducible
 import TauCeti.Algebra.AlgebraicGroup.Frobenius.Differential
 import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Reduction
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
-import TauCeti.Algebra.Bialgebra.Quotient
-import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Reduction
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 import TauCeti.GroupTheory.FixedSubgroup.Lang
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 import TauCeti.RingTheory.Ideal.Cotangent.Injectivity
 import TauCeti.RingTheory.Spectrum.Prime.Topology
@@ -183,8 +183,8 @@ private theorem counit_comp_twistedLangAtId (φ : H →ₐc[K] H) (a : WithConv 
   apply toConv_injective
   have hcomp := toConv_comp_twistedLangAtId φ a (toConv (_root_.Bialgebra.counitAlgHom K H))
   rw [ofConv_toConv] at hcomp
-  rw [hcomp, HopfAlgebra.comp_pointConjugationAlgHom, hone, map_one, inv_one, mul_one, mul_one,
-    mul_inv_cancel]
+  rw [hcomp, ← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom, BialgHom.counitAlgHom_comp,
+    hone, map_one, inv_one, mul_one]
 
 private theorem toConv_comp_twistedLangAtId_of_mapDomain_eq_one {A : Type w} [CommSemiring A]
     [Algebra K A] (φ : H →ₐc[K] H) (a : WithConv (H →ₐ[K] K))
@@ -289,15 +289,6 @@ theorem twistedLangAlgHom_injective [IsNoetherianRing H] [IsDomain H]
     simpa only [twistedLangAtId, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply] using hxy
   exact congrArg (HopfAlgebra.leftTranslationAlgEquiv a⁻¹) (hinj_atId hxy')
 
-/-- Each twisted Lang comorphism of a finite-type Hopf algebra is of finite type. -/
-private theorem twistedLangAlgHom_finiteType [Algebra.FiniteType K H]
-    (φ : H →ₐc[K] H) (a : WithConv (H →ₐ[K] K)) :
-    (twistedLangAlgHom φ a).FiniteType :=
-  RingHom.FiniteType.of_comp_finiteType (f := algebraMap K H)
-    (g := (twistedLangAlgHom φ a).toRingHom)
-    ((twistedLangAlgHom φ a).comp_algebraMap.symm ▸
-      RingHom.finiteType_algebraMap.mpr (inferInstance : Algebra.FiniteType K H))
-
 /-- For a zero-differential bialgebra endomorphism of a finite-type integral-domain Hopf algebra,
 the spectral image of each twisted Lang comorphism has dense interior. -/
 private theorem dense_interior_range_comap_twistedLangAlgHom
@@ -307,7 +298,7 @@ private theorem dense_interior_range_comap_twistedLangAlgHom
     Dense (interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom))) := by
   have : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing K H
   have hfp : (twistedLangAlgHom φ a).toRingHom.FinitePresentation :=
-    AlgHom.FinitePresentation.of_finiteType.mp (twistedLangAlgHom_finiteType φ a)
+    AlgHom.FinitePresentation.of_finiteType.mp (twistedLangAlgHom φ a).finiteType
   have hd : DenseRange (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom) :=
     RingHom.denseRange_comap_of_injective _ (twistedLangAlgHom_injective φ hφ a)
   exact (PrimeSpectrum.isConstructible_range_comap hfp).dense_interior hd
@@ -334,7 +325,7 @@ private theorem exists_toConv_eq_mul_mul_inv_mapDomain_of_mem_range_comap
     apply PrimeSpectrum.ext
     exact (congrArg PrimeSpectrum.asIdeal hP).trans (AlgHom.kernelPoint_asIdeal y)
   obtain ⟨x, hx⟩ := _root_.AlgHom.exists_comp_eq_of_comap_eq_ker (twistedLangAlgHom φ b)
-    (twistedLangAlgHom_finiteType φ b) y P hP'
+    (twistedLangAlgHom φ b).finiteType y P hP'
   refine ⟨toConv x, ?_⟩
   have h := toConv_comp_twistedLangAlgHom φ b (toConv x)
   rw [ofConv_toConv, hx, Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] at h
@@ -372,75 +363,6 @@ private theorem surjective_inv_mul_mapDomain_of_isDomain
     _ = x₂⁻¹ * (x₂ * a * (BialgHom.mapDomain φ x₂)⁻¹) * BialgHom.mapDomain φ x₂ := by rw [hrel]
     _ = a := by simp only [mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one]
 
-section Reduction
-
-variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
-
-/-- Every bialgebra endomorphism of `H` descends to the reduced quotient
-`H ⧸ (HopfIdeal.reduction K H).toIdeal`, because it maps nilpotent elements to nilpotent
-elements. -/
-private noncomputable def reductionBialgHom (φ : H →ₐc[K] H) :
-    H ⧸ (HopfIdeal.reduction K H).toIdeal →ₐc[K] H ⧸ (HopfIdeal.reduction K H).toIdeal :=
-  let I := HopfIdeal.reduction K H
-  let q := Bialgebra.Quotient.mkBialgHom I.toIdeal
-  Bialgebra.Quotient.liftBialgHom I.toIdeal (q.comp φ) fun x hx => by
-    have hnilx : IsNilpotent x := mem_nilradical.mp (HopfIdeal.reduction_toIdeal K H ▸ hx)
-    exact (hnilx.map (q.comp φ).toAlgHom.toRingHom).eq_zero
-
-private theorem reductionBialgHom_comp_mkBialgHom (φ : H →ₐc[K] H) :
-    (reductionBialgHom φ).comp (Bialgebra.Quotient.mkBialgHom (HopfIdeal.reduction K H).toIdeal) =
-      (Bialgebra.Quotient.mkBialgHom (HopfIdeal.reduction K H).toIdeal).comp φ :=
-  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom _ _ _
-
-/-- The reduced endomorphism inherits vanishing of the differential at the identity. -/
-private theorem derivationComp_reductionBialgHom_eq_zero (φ : H →ₐc[K] H)
-    (hφ : TauCeti.derivationComp (B := K) φ = 0) :
-    TauCeti.derivationComp (B := K) (reductionBialgHom φ) = 0 := by
-  let q : H →ₐc[K] H ⧸ (HopfIdeal.reduction K H).toIdeal :=
-    Bialgebra.Quotient.mkBialgHom (HopfIdeal.reduction K H).toIdeal
-  ext d : 1
-  apply TauCeti.derivationComp_injective_of_surjective q
-    (Bialgebra.Quotient.mkBialgHom_surjective (HopfIdeal.reduction K H).toIdeal)
-  rw [LinearMap.zero_apply, map_zero, ← LinearMap.comp_apply, ← TauCeti.derivationComp_comp,
-    reductionBialgHom_comp_mkBialgHom, TauCeti.derivationComp_comp, hφ, LinearMap.comp_apply,
-    LinearMap.zero_apply]
-
-variable (K H) in
-/-- Every point of `H` valued in a reduced `K`-algebra factors uniquely through the reduced
-quotient `H ⧸ (HopfIdeal.reduction K H).toIdeal`. -/
-private noncomputable def reductionPointsMulEquiv (A : Type*) [CommRing A] [IsReduced A]
-    [Algebra K A] :
-    WithConv ((H ⧸ (HopfIdeal.reduction K H).toIdeal) →ₐ[K] A) ≃* WithConv (H →ₐ[K] A) :=
-  let I := HopfIdeal.reduction K H
-  let q := Bialgebra.Quotient.mkBialgHom I.toIdeal
-  MulEquiv.ofBijective (BialgHom.mapDomain (A := A) q)
-    ⟨BialgHom.mapDomain_injective_of_surjective q (Bialgebra.Quotient.mkBialgHom_surjective _),
-      fun a => by
-        have ha_ker : ∀ x ∈ I.toIdeal, a.ofConv x = 0 := fun x hx =>
-          ((mem_nilradical.mp (HopfIdeal.reduction_toIdeal K H ▸ hx)).map
-            a.ofConv.toRingHom).eq_zero
-        refine ⟨toConv (Ideal.Quotient.liftₐ I.toIdeal a.ofConv ha_ker), ?_⟩
-        rw [BialgHom.mapDomain_apply, ofConv_toConv, Bialgebra.Quotient.mkBialgHom_toAlgHom,
-          Ideal.Quotient.liftₐ_comp, toConv_ofConv]⟩
-
-private theorem reductionPointsMulEquiv_apply {A : Type*} [CommRing A] [IsReduced A]
-    [Algebra K A] (g : WithConv ((H ⧸ (HopfIdeal.reduction K H).toIdeal) →ₐ[K] A)) :
-    reductionPointsMulEquiv K H A g =
-      BialgHom.mapDomain (A := A) (Bialgebra.Quotient.mkBialgHom (HopfIdeal.reduction K H).toIdeal)
-        g :=
-  rfl
-
-private theorem reductionPointsMulEquiv_mapDomain_reductionBialgHom {A : Type*} [CommRing A]
-    [IsReduced A] [Algebra K A] (φ : H →ₐc[K] H)
-    (g : WithConv ((H ⧸ (HopfIdeal.reduction K H).toIdeal) →ₐ[K] A)) :
-    reductionPointsMulEquiv K H A (BialgHom.mapDomain (reductionBialgHom φ) g) =
-      BialgHom.mapDomain φ (reductionPointsMulEquiv K H A g) := by
-  rw [reductionPointsMulEquiv_apply, reductionPointsMulEquiv_apply, ← MonoidHom.comp_apply,
-    ← BialgHom.mapDomain_comp, reductionBialgHom_comp_mkBialgHom, BialgHom.mapDomain_comp,
-    MonoidHom.comp_apply]
-
-end Reduction
-
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
   [Algebra.FiniteType K H] [ConnectedSpace (PrimeSpectrum H)]
 
@@ -460,15 +382,10 @@ theorem surjective_inv_mul_mapDomain (φ : H →ₐc[K] H)
       (_root_.CommHopfAlgCat.of K H)
   have : I.toIdeal.IsPrime :=
     HopfIdeal.reduction_toIdeal K H ▸ PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp hIrrH
-  have hsurj_red := surjective_inv_mul_mapDomain_of_isDomain (reductionBialgHom φ)
+  have hsurj_red := surjective_inv_mul_mapDomain_of_isDomain (HopfIdeal.reductionBialgHom φ)
     (derivationComp_reductionBialgHom_eq_zero φ hφ)
-  let e := reductionPointsMulEquiv K H K
-  intro a
-  obtain ⟨g_red, hg_red⟩ := hsurj_red (e.symm a)
-  refine ⟨e g_red, ?_⟩
-  have hcomm := (reductionPointsMulEquiv_mapDomain_reductionBialgHom φ g_red).symm
-  dsimp only at hg_red ⊢
-  rw [hcomm, ← map_inv, ← map_mul, hg_red, e.apply_symm_apply]
+  exact (HopfIdeal.reductionPointsMulEquiv K H K).surjective_inv_mul_of_semiconj
+    (HopfIdeal.reductionPointsMulEquiv_mapDomain_reductionBialgHom φ) hsurj_red
 
 /-- Commutator-map (`g ↦ g / F(g)`) form of `surjective_inv_mul_mapDomain`. -/
 theorem surjective_commutatorMap_mapDomain (φ : H →ₐc[K] H)
@@ -498,39 +415,13 @@ theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.Hop
   have : ConnectedSpace (PrimeSpectrum (K ⊗[F] H)) :=
     (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_baseChange F K
       (_root_.CommHopfAlgCat.of F H)).mp hconn
-  let ψ : K ⊗[F] H →ₐc[K] K ⊗[F] H := FiniteField.geometricFrobeniusBialgHom F K H
-  let iter : ℕ → (K ⊗[F] H →ₐc[K] K ⊗[F] H) :=
-    fun k => Nat.rec (BialgHom.id K _) (fun _ f => ψ.comp f) k
-  have iter_succ (k : ℕ) : iter (k + 1) = ψ.comp (iter k) := rfl
-  have hder : TauCeti.derivationComp (B := K) (iter n) = 0 := by
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-    rw [iter_succ, TauCeti.derivationComp_comp,
-      FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero, LinearMap.comp_zero]
-  have hsurj := surjective_inv_mul_mapDomain (iter n) hder
-  let e := AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)
-  have hcomm : ∀ (k : ℕ) (g' : WithConv (K ⊗[F] H →ₐ[K] K)),
-      e.symm (BialgHom.mapDomain (A := K) (iter k) g') =
-        FiniteField.frobeniusPoints F k (e.symm g') := by
-    intro k
-    induction k with
-    | zero =>
-      intro g'
-      simp [iter]
-    | succ k ih =>
-      intro g'
-      rw [iter_succ, BialgHom.mapDomain_comp, MonoidHom.comp_apply, ih]
-      have h1 : e.symm (BialgHom.mapDomain (A := K) ψ g') =
-          FiniteField.frobeniusPoints F 1 (e.symm g') :=
-        DFunLike.congr_fun
-          (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom
-            (K := F) (k := K) (H := H) (R := K)) g'
-      rw [h1, ← MonoidHom.comp_apply, ← FiniteField.frobeniusPoints_add]
-  intro a
-  obtain ⟨g', hg'⟩ := hsurj (e a)
-  refine ⟨e.symm g', ?_⟩
-  have hsymm := congrArg e.symm hg'
-  rw [map_mul, map_inv, e.symm_apply_apply] at hsymm
-  exact (congrArg ((e.symm g')⁻¹ * ·) (hcomm n g').symm).trans hsymm
+  have hsurj := surjective_inv_mul_mapDomain
+    (FiniteField.iterateGeometricFrobeniusBialgHom F K H n)
+    (FiniteField.derivationComp_iterateGeometricFrobeniusBialgHom_eq_zero F K H hn)
+  exact (AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)).symm
+    |>.surjective_inv_mul_of_semiconj (fun g' => DFunLike.congr_fun
+      (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_iterateGeometricFrobeniusBialgHom
+        (K := F) (k := K) (H := H) (R := K) n) g') hsurj
 
 /-- Commutator-map (`g ↦ g / F^n(g)`) form of Lang's theorem over a finite field. -/
 theorem surjective_commutatorMap_frobeniusPoints {H : Type v} [CommRing H] [_root_.HopfAlgebra F H]
@@ -561,33 +452,6 @@ end FiniteField
 
 section GaloisCohomology
 
-/-- Every 1-cocycle satisfies `c 1 = 1`. -/
-private theorem cocycle_one_eq_one {Γ M : Type*} [Group Γ] [Group M]
-    (act : Γ → M →* M) (hact1 : act 1 = MonoidHom.id M)
-    (c : Γ → M) (hc : ∀ γ δ, c (γ * δ) = c γ * act γ (c δ)) :
-    c 1 = 1 := by
-  have h1 := hc 1 1
-  rw [mul_one, hact1, MonoidHom.id_apply] at h1
-  exact mul_eq_left.mp h1.symm
-
-/-- If a 1-cocycle `c` agrees (after pushing along an intertwining homomorphism `j`) with a
-coboundary `b⁻¹ * F b` on an element `γ`, then it agrees with `b⁻¹ * F^[k] b` on every
-nonnegative power `γ ^ k`. -/
-private theorem map_cocycle_pow_eq_inv_mul_iterate
-    {Γ M G : Type*} [Group Γ] [Group M] [Group G]
-    (act : Γ → M →* M) (hact1 : act 1 = MonoidHom.id M)
-    (c : Γ → M) (hc : ∀ γ δ, c (γ * δ) = c γ * act γ (c δ))
-    (γ : Γ) (j : M →* G) (F : G →* G) (hj : ∀ m, j (act γ m) = F (j m))
-    {b : G} (hb : b⁻¹ * F b = j (c γ)) (k : ℕ) :
-    b⁻¹ * (⇑F)^[k] b = j (c (γ ^ k)) := by
-  induction k with
-  | zero =>
-    rw [Function.iterate_zero_apply, inv_mul_cancel, pow_zero,
-      cocycle_one_eq_one act hact1 c hc, map_one]
-  | succ k ih =>
-    rw [pow_succ', hc, map_mul, hj, ← ih, ← hb, Function.iterate_succ_apply']
-    simp only [map_mul, map_inv, mul_assoc, mul_inv_cancel_left]
-
 /-- **Vanishing of non-abelian Galois `H¹` over a finite field** (`H¹(F, H) = 1`, Lang's theorem):
 for a geometrically connected finite-type affine group scheme `Spec H` over a field `F` and a finite
 field extension `L / F`, every Galois 1-cocycle `c : (L ≃ₐ[F] L) → WithConv (H →ₐ[F] L)` is a
@@ -612,37 +476,20 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
     have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L := AlgHom.ext fun _ => rfl
     dsimp only [act]
     rw [h1id, AlgHom.mapValue_id]
-  have hc1 : c 1 = 1 := cocycle_one_eq_one act hact1 c hc
-  have hιφ : ∀ (k : ℕ) (x : WithConv (H →ₐ[F] L)),
+  have hc1 : c 1 = 1 := TauCeti.cocycle_one_eq_one act hact1 c hc
+  have hιφ (k : ℕ) (x : WithConv (H →ₐ[F] L)) :
       AlgHom.mapValue ι (AlgHom.mapValue (φ ^ k).toAlgHom x) =
         FiniteField.frobeniusPoints F k (AlgHom.mapValue ι x) := by
-    intro k x
-    have hφk : AlgHom.mapValue (φ ^ k).toAlgHom x = FiniteField.frobeniusPoints F k x := by
-      rw [AlgHom.mapValue_apply]
-      exact FiniteField.toConv_comp_eq_frobeniusPoints (φ ^ k).toAlgHom (fun z => by
-        have hit := congrFun (_root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate F L k) z
-        simpa [AlgEquiv.coe_pow] using hit) x
-    rw [hφk]
-    exact DFunLike.congr_fun (FiniteField.mapValue_comp_frobeniusPoints ι k) x
-  have hfrob_iter : ∀ k : ℕ,
-      (⇑(FiniteField.frobeniusPoints F 1 (H := H) (A := K)))^[k] =
-        FiniteField.frobeniusPoints F k := by
-    intro k
-    induction k with
-    | zero => ext g; simp [FiniteField.frobeniusPoints_zero]
-    | succ k ih =>
-      ext g
-      rw [Function.iterate_succ_apply', ih, ← MonoidHom.comp_apply,
-        ← FiniteField.frobeniusPoints_add, add_comm 1 k]
+    rw [FiniteField.mapValue_frobeniusAlgEquivOfAlgebraic_pow, ← MonoidHom.comp_apply,
+      FiniteField.mapValue_comp_frobeniusPoints, MonoidHom.comp_apply]
   obtain ⟨bK, hbK⟩ :=
     surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := H) one_ne_zero hconn
       (AlgHom.mapValue ι (c φ))
   dsimp only at hbK
-  have hiter : ∀ k : ℕ,
+  have hiter (k : ℕ) :
       bK⁻¹ * FiniteField.frobeniusPoints F k bK = AlgHom.mapValue ι (c (φ ^ k)) := by
-    intro k
-    rw [← hfrob_iter k]
-    exact map_cocycle_pow_eq_inv_mul_iterate act hact1 c hc φ
+    rw [← FiniteField.iterate_frobeniusPoints_one F k]
+    exact TauCeti.map_cocycle_pow_eq_inv_mul_iterate act hact1 c hc φ
       (AlgHom.mapValue (H := H) ι) (FiniteField.frobeniusPoints F 1)
       (fun m => by simpa only [pow_one, act] using hιφ 1 m) hbK k
   have hfix : FiniteField.frobeniusPoints F (Module.finrank F L) bK = bK := by

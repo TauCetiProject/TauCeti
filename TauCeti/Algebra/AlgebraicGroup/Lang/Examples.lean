@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.FieldTheory.Finite.Card
+import TauCeti.GroupTheory.FixedSubgroup.Lang
 
 /-!
 # Specializations and counterexamples for Lang's theorem
@@ -52,19 +53,12 @@ theorem surjective_inv_mul_generalLinearGroup_map_frobeniusAlgHom
     Function.Surjective fun g : Matrix.GeneralLinearGroup (Fin n) K =>
       g⁻¹ * Matrix.GeneralLinearGroup.map
         (_root_.FiniteField.frobeniusAlgHom F K : K →+* K) g := by
-  let e := GeneralLinear.pointsMulEquiv (R := F) (A := K) n
   have hsurj := surjective_inv_mul_frobeniusPoints (F := F) (K := K)
     (H := GeneralLinear.coordinateHopfAlgebra F n) one_ne_zero
     (GeneralLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra F n)
-  intro a
-  obtain ⟨f, hf⟩ := hsurj (e.symm a)
-  refine ⟨e f, ?_⟩
-  have hmap : Matrix.GeneralLinearGroup.map
-      (_root_.FiniteField.frobeniusAlgHom F K : K →+* K) (e f) =
-      e (FiniteField.frobeniusPoints F 1 f) := by
-    rw [FiniteField.frobeniusPoints_one, GeneralLinear.pointsMulEquiv_mapValue]
-  dsimp only at hf ⊢
-  rw [hmap, ← map_inv, ← map_mul, hf, e.apply_symm_apply]
+  refine (GeneralLinear.pointsMulEquiv (R := F) (A := K) n).surjective_inv_mul_of_semiconj
+    (fun f => ?_) hsurj
+  rw [FiniteField.frobeniusPoints_one, GeneralLinear.pointsMulEquiv_mapValue]
 
 /-- Over a finite field `F` of odd cardinality, every iterate of the `|F|`-Frobenius acts trivially
 on the points of `μ₂` in any commutative `F`-algebra, so the Lang map is identically `1`. -/

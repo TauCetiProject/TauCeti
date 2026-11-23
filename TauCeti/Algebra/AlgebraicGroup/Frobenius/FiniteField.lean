@@ -51,6 +51,8 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   the `K`-points.
 * `TauCeti.FiniteField.geometricFrobeniusBialgHom`: the geometric Frobenius `id ⊗ Frob` of a base
   change `k ⊗[K] H`.
+* `TauCeti.FiniteField.iterateGeometricFrobeniusBialgHom`: the `n`-th iterate of the geometric
+  Frobenius.
 * `TauCeti.FiniteField.rationalPointsMulEquivFixedSubgroupGeometricFrobenius`: `G₀(K) ≃ G^F` for
   the geometric Frobenius of the base change to a domain.
 
@@ -58,8 +60,10 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
 
 * `TauCeti.FiniteField.frobeniusPoints_apply_apply`: the Frobenius raises every value of a point
   to the `q ^ n`-th power.
-* `TauCeti.FiniteField.frobeniusPoints_one`, `TauCeti.FiniteField.toConv_comp_eq_frobeniusPoints`:
-  identifying post-composition with a `q ^ n`-power endomorphism as `frobeniusPoints K n`.
+* `TauCeti.FiniteField.frobeniusPoints_one`, `TauCeti.FiniteField.toConv_comp_eq_frobeniusPoints`,
+  `TauCeti.FiniteField.iterate_frobeniusPoints_one`,
+  `TauCeti.FiniteField.mapValue_frobeniusAlgEquivOfAlgebraic_pow`: identifying post-composition
+  with a `q ^ n`-power endomorphism or Galois Frobenius power and iterating `frobeniusPoints`.
 * `TauCeti.FiniteField.mapDomain_frobeniusBialgHom`: for commutative `H`, the `q`-Frobenius on
   points is pre-composition with the Frobenius endomorphism `TauCeti.frobeniusBialgHom K H`.
 * `TauCeti.FiniteField.mapDomain_comp_frobeniusPoints`: the Frobenius on points commutes with
@@ -70,8 +74,10 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   into a domain, the points coming from `L`-points are those fixed by the `q ^ [L : K]`-Frobenius.
 * `TauCeti.FiniteField.finite_fixedSubgroup_frobeniusPoints`: for `H` of finite type and `A` a
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
-* `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`:
-  base change identifies the geometric Frobenius with the `q`-Frobenius on points.
+* `baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`,
+  `baseChangePointsMulEquiv_symm_comp_mapDomain_iterateGeometricFrobeniusBialgHom` (in
+  `TauCeti.FiniteField`): base change identifies the geometric Frobenius and its iterates with
+  `frobeniusPoints` on points.
 * `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
   subgroup scheme are its points that are fixed in the ambient group.
 * `BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom`: the geometric Frobenius commutes
@@ -156,6 +162,32 @@ theorem frobeniusPoints_add (m n : ℕ) :
   MonoidHom.ext fun f => ofConv_injective (AlgHom.ext fun h => by
     simp only [frobeniusPoints_apply_apply, MonoidHom.comp_apply, ← pow_mul, ← pow_add,
       add_comm m n])
+
+variable (K) in
+/-- Iterating the `q`-Frobenius on points `n` times is the `q ^ n`-Frobenius on points. -/
+theorem iterate_frobeniusPoints_one (n : ℕ) :
+    (⇑(frobeniusPoints K 1 (H := H) (A := A)))^[n] = frobeniusPoints K n := by
+  induction n with
+  | zero =>
+    ext g
+    simp [frobeniusPoints_zero]
+  | succ n ih =>
+    ext g
+    rw [Function.iterate_succ_apply', ih, ← MonoidHom.comp_apply, ← frobeniusPoints_add,
+      add_comm 1 n]
+
+/-- Post-composing a point valued in an algebraic field extension `L / K` with the `n`-th power
+of the Galois Frobenius `_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L` coincides with
+`frobeniusPoints K n`. -/
+theorem mapValue_frobeniusAlgEquivOfAlgebraic_pow
+    {L : Type*} [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] (n : ℕ)
+    (g : WithConv (H →ₐ[K] L)) :
+    AlgHom.mapValue (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ n).toAlgHom g =
+      frobeniusPoints K n g := by
+  rw [AlgHom.mapValue_apply]
+  exact toConv_comp_eq_frobeniusPoints _ (fun z => by
+    have hit := congrFun (_root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate K L n) z
+    simpa [AlgEquiv.coe_pow] using hit) g
 
 /-- The Frobenius on points is natural in the coordinate bialgebra: it commutes with the map on
 points induced by any bialgebra morphism, that is, with every morphism of group schemes over
@@ -375,6 +407,26 @@ theorem geometricFrobeniusBialgHom_tmul (s : k) (h : H) :
     geometricFrobeniusBialgHom K k H (s ⊗ₜ h) = s ⊗ₜ (h ^ Fintype.card K) := by
   simp [geometricFrobeniusBialgHom]
 
+/-- The `n`-th iterate of the geometric Frobenius `id ⊗ Frob` of the base change `Spec (k ⊗[K] H)`
+of an affine monoid scheme over a finite field `K`. -/
+@[expose] noncomputable def iterateGeometricFrobeniusBialgHom (n : ℕ) :
+    k ⊗[K] H →ₐc[k] k ⊗[K] H :=
+  Nat.rec (BialgHom.id k _) (fun _ f => (geometricFrobeniusBialgHom K k H).comp f) n
+
+/-- The zeroth iterate of the geometric Frobenius is the identity bialgebra morphism. -/
+@[simp]
+theorem iterateGeometricFrobeniusBialgHom_zero :
+    iterateGeometricFrobeniusBialgHom K k H 0 = BialgHom.id k (k ⊗[K] H) :=
+  rfl
+
+/-- Each successor iterate of the geometric Frobenius composes the geometric Frobenius with the
+preceding iterate. -/
+@[simp]
+theorem iterateGeometricFrobeniusBialgHom_succ (n : ℕ) :
+    iterateGeometricFrobeniusBialgHom K k H (n + 1) =
+      (geometricFrobeniusBialgHom K k H).comp (iterateGeometricFrobeniusBialgHom K k H n) :=
+  rfl
+
 variable {K k H}
 variable {R : Type*} [CommRing R] [Algebra k R] [Algebra K R] [IsScalarTower K k R]
 
@@ -391,6 +443,32 @@ theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom 
   ext f : 1
   exact (BialgHom.baseChangePointsMulEquiv_symm_mapDomain (frobeniusBialgHom K H) f).trans
     (DFunLike.congr_fun mapDomain_frobeniusBialgHom _)
+
+/-- **Base change identifies iterates of the geometric Frobenius with `frobeniusPoints`.** Under
+`G(R) ≃ Hom_K(H, R)`, the map on points induced by `iterateGeometricFrobeniusBialgHom K k H n` is
+`frobeniusPoints K n`. -/
+theorem baseChangePointsMulEquiv_symm_comp_mapDomain_iterateGeometricFrobeniusBialgHom (n : ℕ) :
+    ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)).comp
+      (BialgHom.mapDomain (A := R) (iterateGeometricFrobeniusBialgHom K k H n)) =
+    (frobeniusPoints K n).comp
+      ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)) := by
+  induction n with
+  | zero =>
+    ext f : 1
+    simp
+  | succ n ih =>
+    ext f : 1
+    simp only [MonoidHom.comp_apply, iterateGeometricFrobeniusBialgHom_succ,
+      BialgHom.mapDomain_comp]
+    have hn := DFunLike.congr_fun ih
+      (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H) f)
+    have h1 := DFunLike.congr_fun
+      (baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom
+        (K := K) (k := k) (H := H) (R := R)) f
+    simp only [MonoidHom.comp_apply] at hn h1
+    rw [hn, h1, ← MonoidHom.comp_apply, ← frobeniusPoints_add]
 
 end Geometric
 

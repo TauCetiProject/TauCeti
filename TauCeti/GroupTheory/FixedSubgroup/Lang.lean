@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import TauCeti.GroupTheory.FixedSubgroup
+import Mathlib.Tactic.Group
 
 /-!
 # Surjective Lang maps and fixed lifts
@@ -23,6 +24,9 @@ surjective.
 Every fiber `{g | g⁻¹ * F g = a}` of the Lang map embeds into `TauCeti.fixedSubgroup F` via
 right multiplication by the inverse of a chosen fiber point, so finiteness of `fixedSubgroup F`
 makes every Lang fiber finite (`MonoidHom.finite_setOf_inv_mul_eq`).
+
+An isomorphism intertwining two maps transports surjectivity of the Lang map `g ↦ g⁻¹ * F g`
+(`MulEquiv.surjective_inv_mul_of_semiconj`).
 
 A surjective Lang map on an invariant subgroup corrects an element whose Frobenius defect lies in
 that subgroup to a fixed element in the same coset
@@ -110,10 +114,9 @@ theorem finite_setOf_inv_mul_eq (F : G →* G) [Finite (TauCeti.fixedSubgroup F)
     refine Finite.of_injective
       (fun g : {g : G | g⁻¹ * F g = a} ↦
         (⟨g.val * g₀⁻¹, by
-          rw [TauCeti.mem_fixedSubgroup, map_mul, map_inv]
-          have hgF : F g.val = g.val * a := eq_mul_of_inv_mul_eq g.property
-          have hg₀F : F g₀ = g₀ * a := eq_mul_of_inv_mul_eq hg₀
-          rw [hgF, hg₀F, mul_inv_rev, mul_assoc, mul_inv_cancel_left]⟩ :
+          rw [TauCeti.mem_fixedSubgroup, map_mul, map_inv,
+            eq_mul_of_inv_mul_eq g.property, eq_mul_of_inv_mul_eq hg₀]
+          group⟩ :
           TauCeti.fixedSubgroup F))
       fun g₁ g₂ h => Subtype.ext (mul_right_cancel (congrArg Subtype.val h))
   · have : IsEmpty {g : G | g⁻¹ * F g = a} := not_nonempty_iff.mp hne
@@ -128,7 +131,8 @@ theorem exists_fixed_mul_of_surjective_inv_mul (F : G →* G) (J : Subgroup G)
   obtain ⟨z, hzJ, hz⟩ := hJ _ hh
   refine ⟨z⁻¹, J.inv_mem hzJ, ?_⟩
   have hFh : F h = h * (z⁻¹ * F z) := eq_mul_of_inv_mul_eq hz.symm
-  rw [map_mul, map_inv, hFh, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
+  rw [map_mul, map_inv, hFh]
+  group
 
 /-- Correct an element to a fixed element by left multiplication from an invariant
 subgroup with surjective Lang map. The defect must lie in the subgroup's image. -/
@@ -170,3 +174,22 @@ theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
 end Group
 
 end MonoidHom
+
+namespace MulEquiv
+
+/-- An isomorphism intertwining two maps transports surjectivity of the Lang map
+`g ↦ g⁻¹ * F g`. -/
+theorem surjective_inv_mul_of_semiconj {G₁ G₂ : Type*} [Group G₁] [Group G₂]
+    (e : G₁ ≃* G₂) {F₁ : G₁ → G₁} {F₂ : G₂ → G₂} (he : Function.Semiconj e F₁ F₂)
+    (hsurj : Function.Surjective fun g : G₁ => g⁻¹ * F₁ g) :
+    Function.Surjective fun g : G₂ => g⁻¹ * F₂ g := by
+  intro a
+  obtain ⟨g, hg⟩ := hsurj (e.symm a)
+  refine ⟨e g, ?_⟩
+  dsimp only at hg
+  calc
+    (e g)⁻¹ * F₂ (e g) = e g⁻¹ * e (F₁ g) := by rw [map_inv, he g]
+    _ = e (g⁻¹ * F₁ g) := (map_mul e _ _).symm
+    _ = a := by rw [hg, e.apply_symm_apply]
+
+end MulEquiv

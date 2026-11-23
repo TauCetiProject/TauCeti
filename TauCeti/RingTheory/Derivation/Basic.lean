@@ -41,6 +41,8 @@ unit, without factoring it.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
+* `Derivation.pow_eq_zero`: a derivation over a base ring where `n = 0` annihilates all `n`-th
+  powers.
 -/
 
 public section
@@ -54,6 +56,10 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- A derivation over a base ring where `n = 0` annihilates all `n`-th powers. -/
+theorem pow_eq_zero {n : ℕ} (hn : (n : R) = 0) (a : A) : D (a ^ n) = 0 := by
+  rw [D.leibniz_pow, ← Nat.cast_smul_eq_nsmul R, hn, zero_smul]
 
 /-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
 `D (f j)` times the product of the other factors. -/

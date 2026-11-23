@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 
@@ -30,6 +31,8 @@ commutative-algebra input.
 * `TauCeti.HopfIdeal.isReduced_quotient_reduction`: the quotient is reduced.
 * `TauCeti.HopfIdeal.reduction_le_of_isReduced_quotient`: its minimality among Hopf ideals with
   reduced quotient.
+* `TauCeti.HopfIdeal.reductionBialgHom` and `TauCeti.HopfIdeal.reductionBialgHom_comp_mkBialgHom`:
+  functoriality of the reduced quotient for bialgebra morphisms.
 
 ## References
 
@@ -43,7 +46,7 @@ open scoped TensorProduct
 
 namespace TauCeti.HopfIdeal
 
-universe u v
+universe u v w
 
 variable (R : Type u) [CommRing R] [IsReduced R]
 variable (H : Type v) [CommRing H] [HopfAlgebra R H]
@@ -97,5 +100,31 @@ theorem reduction_le_of_isReduced_quotient
   rw [← toIdeal_le_toIdeal, reduction_toIdeal, nilradical]
   exact ((Ideal.isRadical_iff_quotient_reduced I.toIdeal).mpr inferInstance).radical_le_iff.mpr
     bot_le
+
+/-- A bialgebra morphism `φ : H →ₐc[R] H'` descends to a bialgebra morphism between the reduced
+quotients `H ⧸ (reduction R H).toIdeal` and `H' ⧸ (reduction R H').toIdeal`, because it maps
+nilpotent elements to nilpotent elements. -/
+noncomputable def reductionBialgHom {R : Type u} [CommRing R] [IsReduced R]
+    {H : Type v} [CommRing H] [HopfAlgebra R H]
+    [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))]
+    {H' : Type w} [CommRing H'] [HopfAlgebra R H']
+    [IsReduced ((H' ⧸ nilradical H') ⊗[R] (H' ⧸ nilradical H'))]
+    (φ : H →ₐc[R] H') :
+    H ⧸ (reduction R H).toIdeal →ₐc[R] H' ⧸ (reduction R H').toIdeal :=
+  let q := Bialgebra.Quotient.mkBialgHom (reduction R H').toIdeal
+  Bialgebra.Quotient.liftBialgHom (reduction R H).toIdeal (q.comp φ) fun _ hx =>
+    (((mem_reduction R H).mp (mem_toIdeal.mp hx)).map (q.comp φ).toAlgHom.toRingHom).eq_zero
+
+/-- The reduced morphism commutes with the quotient bialgebra homomorphisms. -/
+@[simp]
+theorem reductionBialgHom_comp_mkBialgHom {R : Type u} [CommRing R] [IsReduced R]
+    {H : Type v} [CommRing H] [HopfAlgebra R H]
+    [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))]
+    {H' : Type w} [CommRing H'] [HopfAlgebra R H']
+    [IsReduced ((H' ⧸ nilradical H') ⊗[R] (H' ⧸ nilradical H'))]
+    (φ : H →ₐc[R] H') :
+    (reductionBialgHom φ).comp (Bialgebra.Quotient.mkBialgHom (reduction R H).toIdeal) =
+      (Bialgebra.Quotient.mkBialgHom (reduction R H').toIdeal).comp φ :=
+  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom _ _ _
 
 end TauCeti.HopfIdeal

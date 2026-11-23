@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FixedSubgroup.Lang
-public import TauCeti.GroupTheory.FixedSubgroup
 
 /-!
 # Fixed points through a finite kernel

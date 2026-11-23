@@ -20,6 +20,7 @@ many points over any finite `𝔽_q`-algebra.
 
 * `Algebra.FiniteType.finite_algHom`: `A →ₐ[R] B` is finite when `A` is of finite type over `R`
   and `B` is finite.
+* `AlgHom.finiteType`: an algebra homomorphism into a finite-type `R`-algebra is of finite type.
 -/
 
 public section
@@ -32,3 +33,10 @@ instance Algebra.FiniteType.finite_algHom {R A B : Type*} [CommSemiring R] [Semi
   obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := R) (A := A)
   exact Finite.of_injective (fun φ : A →ₐ[R] B => fun x : (s : Set A) => φ x) fun φ ψ h =>
     AlgHom.ext_of_adjoin_eq_top hs fun x hx => congrFun h ⟨x, hx⟩
+
+/-- **An algebra homomorphism into a finite-type algebra is of finite type.** -/
+theorem AlgHom.finiteType {R A B : Type*} [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra R B] [Algebra.FiniteType R B] (f : A →ₐ[R] B) :
+    f.FiniteType :=
+  RingHom.FiniteType.of_comp_finiteType (f := algebraMap R A) (g := f.toRingHom)
+    (f.comp_algebraMap.symm ▸ RingHom.finiteType_algebraMap.mpr inferInstance)
