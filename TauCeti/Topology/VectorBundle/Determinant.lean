@@ -702,6 +702,120 @@ theorem ofBundleDetHomeomorph_apply
 
 end FiniteRank
 
+universe u v₁ v₂ w w₁ w₂ v₁' w₁'
+
+section ModelPresentations
+
+variable {K : Type u} {B : Type w}
+  [NontriviallyNormedField K] [TopologicalSpace B]
+  {F₁ : Type v₁} [NormedAddCommGroup F₁] [NormedSpace K F₁] [FiniteDimensional K F₁]
+  {E₁ : B → Type w₁} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module K (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle K F₁ E₁]
+
+/-- The determinant fibre identified with the top exterior power indexed by the actual
+fibre rank. -/
+def fiberDetLineEquiv (x : B) : DetBundle K F₁ E₁ x ≃ₗ[K] detLine K (E₁ x) :=
+  (linearEquiv K F₁ E₁ x).trans
+    (LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· (E₁ x))
+      (VectorBundle.finrank_eq K F₁ E₁ x).symm))
+
+omit [FiniteDimensional K F₁] in
+/-- The fibre-rank identification preserves the exterior-algebra image. -/
+theorem coe_fiberDetLineEquiv (x : B) (a : DetBundle K F₁ E₁ x) :
+    (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x a : ExteriorAlgebra K (E₁ x)) =
+      linearEquiv K F₁ E₁ x a := by
+  simp only [fiberDetLineEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+
+section ModelCongr
+
+variable {F' : Type v₁'} [NormedAddCommGroup F'] [NormedSpace K F'] [FiniteDimensional K F']
+  {E' : B → Type w₁'} [∀ x, AddCommGroup (E' x)] [∀ x, Module K (E' x)]
+  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F' E')]
+  [FiberBundle F' E'] [VectorBundle K F' E']
+
+private def modelCongrLinearEquiv (e : ∀ x, E₁ x ≃L[K] E' x) (x : B) :
+    DetBundle K F₁ E₁ x ≃ₗ[K] DetBundle K F' E' x := by
+  let : FiniteDimensional K (E₁ x) := VectorBundle.finiteDimensional K F₁ E₁ x
+  let : FiniteDimensional K (E' x) := VectorBundle.finiteDimensional K F' E' x
+  exact (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x).trans
+    ((e x).toLinearEquiv.detLineCongr.trans
+      (fiberDetLineEquiv (K := K) (F₁ := F') (E₁ := E') x).symm)
+
+/-- The determinant transport of a fibrewise family of continuous linear equivalences between
+independently presented finite-dimensional models. No continuity in the base is assumed. -/
+def congrModelEquiv (e : ∀ x, E₁ x ≃L[K] E' x) (x : B) :
+    DetBundle K F₁ E₁ x ≃L[K] DetBundle K F' E' x :=
+  LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
+    (modelCongrLinearEquiv (F₁ := F₁) (F' := F') e x)
+
+/-- The transport between model presentations induces the determinant action on each fibre. -/
+theorem fiberDetLineEquiv_congrModelEquiv (e : ∀ x, E₁ x ≃L[K] E' x) (x : B)
+    (a : DetBundle K F₁ E₁ x) :
+    fiberDetLineEquiv (K := K) (F₁ := F') (E₁ := E') x
+      (congrModelEquiv (F₁ := F₁) (F' := F') e x a) =
+      (e x).toLinearEquiv.detLineCongr
+        (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x a) := by
+  simp only [congrModelEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
+  simp only [modelCongrLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+
+/-- Independent model presentations do not change the exterior-algebra action of an isomorphism. -/
+theorem coe_congrModelEquiv (e : ∀ x, E₁ x ≃L[K] E' x) (x : B) (a : DetBundle K F₁ E₁ x) :
+    (linearEquiv K F' E' x (congrModelEquiv (F₁ := F₁) (F' := F') e x a) :
+      ExteriorAlgebra K (E' x)) =
+      ExteriorAlgebra.map (e x).toLinearMap (linearEquiv K F₁ E₁ x a) := by
+  let : FiniteDimensional K (E₁ x) := VectorBundle.finiteDimensional K F₁ E₁ x
+  let : FiniteDimensional K (E' x) := VectorBundle.finiteDimensional K F' E' x
+  have h := congrArg (fun v : detLine K (E' x) ↦ (v : ExteriorAlgebra K (E' x)))
+    (fiberDetLineEquiv_congrModelEquiv (F₁ := F₁) (F' := F') e x a)
+  simpa only [coe_fiberDetLineEquiv, LinearEquiv.coe_detLineCongr] using h
+
+end ModelCongr
+
+section SameModel
+
+variable {E₁' : B → Type w₁'} [∀ x, AddCommGroup (E₁' x)] [∀ x, Module K (E₁' x)]
+  [∀ x, TopologicalSpace (E₁' x)] [TopologicalSpace (TotalSpace F₁ E₁')]
+  [FiberBundle F₁ E₁'] [VectorBundle K F₁ E₁']
+
+/-- For the same model, the presentation-independent transport is the existing native map. -/
+theorem congrModelEquiv_eq_congrEquiv (e : ∀ x, E₁ x ≃L[K] E₁' x) (x : B) :
+    congrModelEquiv (F₁ := F₁) (F' := F₁) e x = congrEquiv (F := F₁) e x := by
+  ext a
+  apply (linearEquiv K F₁ E₁' x).injective
+  apply Subtype.ext
+  rw [coe_congrModelEquiv, congrEquiv_apply, LinearEquiv.apply_symm_apply,
+    TauCeti.ExteriorAlgebra.coe_exteriorPower_apply]
+
+end SameModel
+
+private def zeroLinearEquiv (h : finrank K F₁ = 0) (x : B) : DetBundle K F₁ E₁ x ≃ₗ[K] K :=
+  (linearEquiv K F₁ E₁ x).trans
+    ((LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· (E₁ x)) h)).trans
+      (exteriorPower.zeroEquiv K (E₁ x)))
+
+variable (K F₁ E₁) in
+/-- A rank-zero determinant fibre has its canonical empty-exterior-product coordinate. This
+unit coordinate uses no choice of a basis of a positive-rank determinant line. -/
+def zeroEquiv (h : finrank K F₁ = 0) (x : B) : DetBundle K F₁ E₁ x ≃L[K] K :=
+  LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
+    (zeroLinearEquiv (K := K) (F₁ := F₁) (E₁ := E₁) h x)
+
+omit [FiniteDimensional K F₁] [VectorBundle K F₁ E₁]
+  [TopologicalSpace B] [∀ x, TopologicalSpace (E₁ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [FiberBundle F₁ E₁] in
+/-- In rank zero, the native exterior-algebra image is the scalar empty product. -/
+theorem coe_linearEquiv_zeroEquiv (h : finrank K F₁ = 0) (x : B)
+    (a : DetBundle K F₁ E₁ x) :
+    (linearEquiv K F₁ E₁ x a : ExteriorAlgebra K (E₁ x)) =
+      algebraMap K (ExteriorAlgebra K (E₁ x)) (zeroEquiv K F₁ E₁ h x a) := by
+  simp only [zeroEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
+  have hz := TauCeti.ExteriorAlgebra.coe_degree_zero
+    ((LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· (E₁ x)) h)) (linearEquiv K F₁ E₁ x a))
+  simpa only [zeroLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply] using hz
+
+end ModelPresentations
+
 end DetBundle
 
 end TauCeti
