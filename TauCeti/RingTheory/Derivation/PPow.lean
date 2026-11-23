@@ -16,13 +16,13 @@ public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.Kaehler.DualDerivation
 -- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` into
 -- the associative algebra `Module.End R A`; `TauCeti.Algebra.CharP.Lemmas` and
--- `TauCeti.Algebra.Polynomial.Derivative` support Hochschild's formula.
-import Mathlib.Data.Rat.Init
+-- `TauCeti.RingTheory.Derivation.MapCoeffs` support Hochschild's formula.
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.CharP.LinearMaps
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Derivation.FirstOrder
 import TauCeti.RingTheory.Derivation.Lie
+import TauCeti.RingTheory.Derivation.MapCoeffs
 
 /-!
 # The `p`-th power of a derivation
@@ -40,8 +40,10 @@ the Leibniz rule would give `0`. (Exponential characteristic `1` is characterist
 `d/dx` but fixes `x • d/dx` (`pPow_derivative'` and `pPow_X_smul_derivative'`). More generally, in
 prime characteristic `p` over any commutative semiring `A` (no additive inverses are needed),
 multiplication by `a : A` satisfies **Hochschild's formula** (`Derivation.pPow_smul`):
-`(a • D).pPow p = a ^ p • D.pPow p + ((⇑(a • D))^[p - 1] a) • D`. When `D a = 0`, the correction
-term vanishes in any exponential characteristic (`Derivation.pPow_smul_of_apply_eq_zero`).
+`(a • D).pPow p = a ^ p • D.pPow p + ((⇑(a • D))^[p - 1] a) • D`. In prime characteristic `p`,
+the correction term vanishes whenever `D a = 0`; for `p = 1`, the scaling identity
+`(a • D).pPow 1 = a ^ 1 • D.pPow 1` follows directly from `pPow 1 = D`
+(`Derivation.pPow_smul_of_apply_eq_zero`).
 
 The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algebra in the sense of
 Jacobson (for additivity `pPow_add` and the restricted Lie algebra structure on derivations of a
@@ -49,10 +51,11 @@ ring, see `TauCeti.RingTheory.Derivation.Restricted`), and it is the correction 
 `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection (Katz). This file proves its homogeneity for
 scalars of `R`, Hochschild's formula for scalars of `A`, the identity `ad (D^[p]) = (ad D)^p` in
 the Lie algebra of derivations, its compatibility with scalar extension and with localization, its
-vanishing on the derivations dual to a basis of exact Kähler differentials, and its compatibility
-with conjugation by a unit `u`: the `p`-th power of the operator `D - u⁻¹ D(u)` is the operator
-`D^[p] - u⁻¹ D^[p](u)` built in the same way from `D^[p]`. In the language of connections, the
-rank-one connection `d - du/u` on `A`, whose horizontal section is `u`, has vanishing `p`-curvature.
+vanishing in prime characteristic `p` on the derivations dual to a basis of exact Kähler
+differentials, and its compatibility with conjugation by a unit `u`: the `p`-th power of the
+operator `D - u⁻¹ D(u)` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from
+`D^[p]`. In the language of connections, the rank-one connection `d - du/u` on `A`, whose
+horizontal section is `u`, has vanishing `p`-curvature.
 
 ## Main declarations
 
@@ -60,15 +63,15 @@ rank-one connection `d - du/u` on `A`, whose horizontal section is `u`, has vani
   derivation satisfies the Leibniz rule.
 * `Derivation.pPow`: the `p`-th power of a derivation, as a derivation.
 * `Derivation.pPow_const_smul`: `(c • D)^[p] = c ^ p • D^[p]` for `c : R`.
-* `Derivation.hochschildCoeff_prime_eq_zero`: intermediate Hochschild coefficients vanish in prime
-  characteristic `p`.
+* `Derivation.hochschildCoeff_eq_zero_of_two_le_of_lt`: intermediate Hochschild coefficients vanish
+  in prime characteristic `p`.
 * `Derivation.pPow_smul`: Hochschild's formula for `(a • D).pPow p`.
 * `Derivation.pPow_smul_of_apply_eq_zero`: `(a • D).pPow p = a ^ p • D.pPow p` when `D a = 0`.
 * `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A`.
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
-* `Derivation.pPow_dualDerivation_eq_zero`: the `p`-th powers of the derivations dual to a basis
-  `ds_i` of `Ω[A⁄R]` vanish.
+* `Derivation.pPow_dualDerivation_eq_zero`: in prime characteristic `p`, the `p`-th powers of the
+  derivations dual to a basis `ds_i` of `Ω[A⁄R]` vanish.
 * `Derivation.sub_mulLeft_inv_mul_pow_expChar`: `(D - u⁻¹ D(u)) ^ p = D^[p] - u⁻¹ D^[p](u)` in
   `Module.End R A`, for a unit `u`.
 
@@ -176,11 +179,11 @@ open scoped Nat
 
 /-- In prime characteristic `p`, all intermediate Hochschild coefficients
 `hochschildCoeff D a p m` (`2 ≤ m < p`) vanish, over any commutative semiring `A`. -/
-theorem hochschildCoeff_prime_eq_zero (D : Derivation R A A) (a : A) (p : ℕ)
+theorem hochschildCoeff_eq_zero_of_two_le_of_lt (D : Derivation R A A) (a : A) (p : ℕ)
     [Fact p.Prime] [CharP A p] {m : ℕ} (hm2 : 2 ≤ m) (hmp : m < p) :
     hochschildCoeff D a p m = 0 := by
   let D' : Derivation R A[X] A[X] :=
-    D.coeffDer + (Polynomial.derivative' (R := A)).restrictScalars R
+    D.mapCoeffsToPolynomial + (Polynomial.derivative' (R := A)).restrictScalars R
   have hD'C (b : A) : D' (Polynomial.C b) = Polynomial.C (D b) := by
     simp [D']
   have hD'X (k : ℕ) : (⇑D')^[k] (Polynomial.X ^ m : A[X]) =
@@ -189,9 +192,10 @@ theorem hochschildCoeff_prime_eq_zero (D : Derivation R A A) (a : A) (p : ℕ)
     | zero => rfl
     | succ k ih =>
       rw [Function.iterate_succ_apply', ih, Function.iterate_succ_apply']
-      have hcoeff : D.coeffDer (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])) = 0 := by
+      have hcoeff :
+          D.mapCoeffsToPolynomial (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])) = 0 := by
         ext n
-        rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_coeffDer,
+        rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_mapCoeffsToPolynomial,
           Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, Polynomial.coeff_zero]
         split_ifs <;> simp
       simp [D', hcoeff]
@@ -201,21 +205,21 @@ theorem hochschildCoeff_prime_eq_zero (D : Derivation R A A) (a : A) (p : ℕ)
     have hm1 : m - 1 = (m - 2) + 1 := by omega
     rw [hm1, pow_succ', mul_assoc, Polynomial.mul_coeff_zero, Polynomial.coeff_X_zero, zero_mul,
       mul_zero]
+  have hcoeff0 (b : A) (k : ℕ) :
+      (Polynomial.C b * Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])).coeff 0 =
+        if k = m then b * (m ! : A) else 0 := by
+    rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, ← mul_assoc, ← Polynomial.C_mul,
+      Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+    rcases lt_trichotomy k m with hlt | rfl | hgt
+    · have : 0 ≠ m - k := by omega
+      simp [this, hlt.ne]
+    · simp [Nat.descFactorial_self]
+    · simp [Nat.descFactorial_of_lt hgt, hgt.ne']
   have hrhs : (E (Polynomial.X ^ m : A[X])).coeff 0 = hochschildCoeff D a p m * (m ! : A) := by
     dsimp only [E]
     rw [pPow_apply, iterate_smul_eq_sum_hochschildCoeff D D' Polynomial.C hD'C a p,
-      Polynomial.finsetSum_coeff,
-      Finset.sum_eq_single_of_mem m (Finset.mem_range.mpr (Nat.lt_succ_of_lt hmp))]
-    · rw [hD'X, Polynomial.iterate_derivative_X_pow_eq_C_mul, Nat.descFactorial_self,
-        Nat.sub_self, pow_zero, mul_one, ← Polynomial.C_mul, Polynomial.coeff_C_zero]
-    · intro k _ hkm
-      rw [hD'X, Polynomial.iterate_derivative_X_pow_eq_C_mul, ← mul_assoc, ← Polynomial.C_mul,
-        Polynomial.coeff_C_mul]
-      rcases lt_or_gt_of_ne hkm with hlt | hgt
-      · have hpos : m - k ≠ 0 := by omega
-        rw [Polynomial.coeff_X_pow, ite_eq_right_iff.mpr (fun h => absurd h.symm hpos),
-          mul_zero]
-      · rw [Nat.descFactorial_of_lt hgt, Nat.cast_zero, mul_zero, zero_mul]
+      Polynomial.finsetSum_coeff]
+    simp [hD'X, hcoeff0, Finset.mem_range.mpr (Nat.lt_succ_of_lt hmp)]
   exact (TauCeti.isUnit_natCast_factorial_of_lt p hmp).mul_left_inj.mp
     (by rw [hrhs.symm.trans hlhs, zero_mul])
 
@@ -238,10 +242,11 @@ theorem pPow_smul (D : Derivation R A A) (p : ℕ) [Fact p.Prime] [CharP A p] (a
     rcases eq_or_ne k 0 with rfl | hk0
     · rw [hochschildCoeff_zero_of_pos D a hp.pos, zero_mul]
     · have hk2 : 2 ≤ k := by omega
-      rw [hochschildCoeff_prime_eq_zero D a p hk2 (Finset.mem_range.mp hk), zero_mul]
+      rw [hochschildCoeff_eq_zero_of_two_le_of_lt D a p hk2 (Finset.mem_range.mp hk), zero_mul]
 
-/-- In exponential characteristic `p`, if `D a = 0`, the correction term in Hochschild's formula
-vanishes and `(a • D).pPow p = a ^ p • D.pPow p`. -/
+/-- In exponential characteristic `p`, if `D a = 0`, then `(a • D).pPow p = a ^ p • D.pPow p`:
+in prime characteristic `p`, Hochschild's correction term vanishes; at `p = 1`, this follows from
+`pPow 1 = D`. -/
 theorem pPow_smul_of_apply_eq_zero (D : Derivation R A A) (p : ℕ) [hp : ExpChar A p]
     {a : A} (ha : D a = 0) :
     (a • D).pPow p = a ^ p • D.pPow p := by
@@ -253,10 +258,8 @@ theorem pPow_smul_of_apply_eq_zero (D : Derivation R A A) (p : ℕ) [hp : ExpCha
       have h1 : p - 1 = (p - 2) + 1 := by
         have := hp'.two_le
         omega
-      rw [h1, Function.iterate_succ_apply, smul_apply, ha, smul_zero]
-      induction (p - 2) with
-      | zero => rfl
-      | succ k ih => rw [Function.iterate_succ_apply', ih, map_zero]
+      rw [h1, Function.iterate_succ_apply, smul_apply, ha, smul_zero,
+        Function.iterate_fixed (map_zero (a • D))]
     rw [D.pPow_smul p a, hcorr, zero_smul, add_zero]
 
 end Hochschild
@@ -320,8 +323,8 @@ section Basis
 variable {R A ι : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 /-- **Coordinate derivations have vanishing `p`-th power.** If `b` is the basis `ds_i` of exact
-differentials of `Ω[A⁄R]` and `A` has characteristic `p`, the derivation `∂_i` dual to `ds_i`
-satisfies `∂_i^[p] = 0`. -/
+differentials of `Ω[A⁄R]` and `A` has prime characteristic `p`, the derivation `∂_i` dual to
+`ds_i` satisfies `∂_i^[p] = 0`. -/
 theorem pPow_dualDerivation_eq_zero {b : Module.Basis ι A Ω[A⁄R]} {s : ι → A}
     (hs : ∀ i, KaehlerDifferential.D R A (s i) = b i) (p : ℕ) [Fact p.Prime] [CharP A p] (i : ι) :
     (b.dualDerivation i).pPow p = 0 :=

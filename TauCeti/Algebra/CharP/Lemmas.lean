@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Choose.Dvd
-import Mathlib.Data.Nat.Prime.Factorial
 
 /-!
 # Natural casts and `p`-power maps in exponential characteristic `p`
@@ -117,13 +116,9 @@ theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] (p :
 
 /-- In characteristic `p`, any natural number coprime to `p` casts to a unit in a semiring. -/
 theorem isUnit_natCast_of_coprime {R : Type*} [Semiring R] (p : ℕ) [CharP R p] {m : ℕ}
-    (hm : m.Coprime p) : IsUnit (m : R) := by
-  have hr : (m : R) * ((m⁻¹ : ZMod p).val : R) = 1 :=
-    natCast_mul_natCast_val_inv_eq_one p hm
-  have hl : ((m⁻¹ : ZMod p).val : R) * (m : R) = 1 := by
-    rw [← Nat.cast_mul, mul_comm, Nat.cast_mul]
-    exact hr
-  exact ⟨⟨(m : R), ((m⁻¹ : ZMod p).val : R), hr, hl⟩, rfl⟩
+    (hm : m.Coprime p) : IsUnit (m : R) :=
+  ((Nat.cast_commute (α := R) m ((m⁻¹ : ZMod p).val)).isUnit_mul_iff.mp
+    (by rw [natCast_mul_natCast_val_inv_eq_one p hm]; exact isUnit_one)).1
 
 open scoped Nat in
 /-- In prime characteristic `p`, `(m ! : R)` is a unit in any semiring `R` for every `m < p`. -/

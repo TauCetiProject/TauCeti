@@ -41,7 +41,7 @@ along a non-torsion element; the exponential characteristic of a vector space ne
 The same holds for an `R`-algebra `A` acting on itself: left multiplication `Algebra.lmul` embeds
 `A` into `Module.End R A`, so the two have the same characteristic and exponential characteristic.
 Similarly, any nontrivial module annihilated pointwise by a prime `p` has endomorphism ring of
-characteristic `p` (`Module.End.charP_of_nontrivial`).
+characteristic `p` (`Module.End.charP_of_forall_nsmul_eq_zero`).
 
 ## Main results
 
@@ -49,8 +49,8 @@ characteristic `p` (`Module.End.charP_of_nontrivial`).
   characteristic of `A`.
 * `Module.End.instExpChar`: the endomorphisms `Module.End R A` of an `R`-algebra `A` have the
   exponential characteristic of `A`.
-* `Module.End.charP_of_nontrivial`: if a prime `p` annihilates a nontrivial `R`-module `M`
-  pointwise, then `Module.End R M` has characteristic `p`.
+* `Module.End.charP_of_forall_nsmul_eq_zero`: if a prime `p` annihilates a nontrivial `R`-module
+  `M` pointwise, then `Module.End R M` has characteristic `p`.
 * `Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one`: an endomorphism of `p`-power order of
   a vector space over a field of exponential characteristic `p` is unipotent.
 -/
@@ -73,7 +73,7 @@ instance instExpChar {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] (
 
 /-- If a prime `p` annihilates a nontrivial `R`-module `M` pointwise, then `Module.End R M` has
 characteristic `p`. -/
-theorem charP_of_nontrivial {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+theorem charP_of_forall_nsmul_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [Nontrivial M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
     CharP (Module.End R M) p := by
   have hp0 : (p : Module.End R M) = 0 := by

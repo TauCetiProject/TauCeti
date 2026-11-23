@@ -20,8 +20,8 @@ import TauCeti.Algebra.Polynomial.Derivative
 /-!
 # Jacobson's formula
 
-In an associative algebra of prime characteristic `p` the Frobenius `a ↦ a ^ p` is not additive,
-but its failure to be additive is a Lie polynomial: Jacobson's formula reads
+In an associative algebra of prime characteristic `p`, the Frobenius `a ↦ a ^ p` can fail to be
+additive, but its failure to be additive is a Lie polynomial: Jacobson's formula reads
 
 `(a + b) ^ p = a ^ p + b ^ p + Λ_p(a, b)`,
 
@@ -54,13 +54,14 @@ case, the Lie polynomial in the free Lie algebra on two generators over any comm
 * `TauCeti.LieAlgebra.jacobson_eq_zero_of_lie_eq_zero`: `Λ_p(x, y) = 0` when `⁅x, y⁆ = 0`.
 * `TauCeti.LieAlgebra.jacobson_smul_smul`: `p`-homogeneity `Λ_p(c • x, c • y) = c ^ p • Λ_p(x, y)`.
 * `TauCeti.LieAlgebra.jacobson_eq_ad_pow_of_lie_ad_pow_eq_zero`: rank-one collapse
-  `Λ_p(x, y) = (ad R L y ^ (p - 1)) x` when `⁅x, (ad R L y ^ k) x⁆ = 0` for all `k` (`1 < p`).
+  `Λ_p(x, y) = (ad R L y ^ (p - 1)) x` when `⁅x, (ad R L y ^ k) x⁆ = 0` for all `k < p - 1`
+  (`1 < p`).
 * `TauCeti.LieAlgebra.sum_nsmul_jacobsonCoeff_eq_jacobson`: when `p • z = 0` for every `z`, any
   choice of representatives of the inverses `(j + 1)⁻¹` modulo `p` gives the same value.
 * `TauCeti.LieAlgebra.jacobson_two`, `TauCeti.LieAlgebra.jacobson_three`:
   `Λ_2(x, y) = ⁅y, x⁆` and `Λ_3(x, y) = ⁅y, ⁅y, x⁆⁆ + 2 • ⁅x, ⁅y, x⁆⁆`.
-* `TauCeti.LieAlgebra.jacobson_single_single`: for `2 × 2` matrices over `ZMod p`, `p` odd,
-  `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀`, so the Lie term of Jacobson's formula does not vanish.
+* `TauCeti.LieAlgebra.jacobson_single_single`: for `2 × 2` matrices over `ZMod p` with `p` an odd
+  prime, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀`, giving a counterexample where the Lie term does not vanish.
 
 ## Implementation notes
 
@@ -245,30 +246,31 @@ theorem jacobsonCoeff_zero_eq_ad_pow (x y : L) (k : ℕ) :
   | succ k ih =>
     rw [jacobsonCoeff_succ_zero, ih, pow_succ', mul_apply_eq_comp, LieAlgebra.ad_apply]
 
-private theorem jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero {x y : L}
-    (h : ∀ k, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) (k j : ℕ) :
+private theorem jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero {x y : L} {n : ℕ}
+    (h : ∀ k < n, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) {k : ℕ} (hk : k ≤ n) (j : ℕ) :
     jacobsonCoeff x y k (j + 1) = 0 := by
   induction k generalizing j with
   | zero => simp
   | succ k ih =>
     cases j with
     | zero =>
-      rw [jacobsonCoeff_succ_succ, jacobsonCoeff_zero_eq_ad_pow (R := R), h k, ih 0, lie_zero,
-        add_zero]
+      rw [jacobsonCoeff_succ_succ, jacobsonCoeff_zero_eq_ad_pow (R := R), h k (by omega),
+        ih (by omega) 0, lie_zero, add_zero]
     | succ j =>
-      rw [jacobsonCoeff_succ_succ, ih j, ih (j + 1), lie_zero, lie_zero, add_zero]
+      rw [jacobsonCoeff_succ_succ, ih (by omega) j, ih (by omega) (j + 1), lie_zero, lie_zero,
+        add_zero]
 
 /-- **Rank-one collapse of Jacobson's Lie polynomial.** If `1 < p` and `x` commutes with
-`(ad R L y ^ k) x` for every `k : ℕ`, then only `jacobsonCoeff x y (p - 1) 0` survives in
+`(ad R L y ^ k) x` for every `k < p - 1`, then only `jacobsonCoeff x y (p - 1) 0` survives in
 `Λ_p(x, y)`, yielding `jacobson p x y = (LieAlgebra.ad R L y ^ (p - 1)) x`. -/
 theorem jacobson_eq_ad_pow_of_lie_ad_pow_eq_zero {p : ℕ} (hp : 1 < p) {x y : L}
-    (h : ∀ k, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) :
+    (h : ∀ k < p - 1, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) :
     jacobson p x y = (LieAlgebra.ad R L y ^ (p - 1)) x := by
   rw [jacobson_def, Finset.sum_eq_single 0]
   · simp [ZMod.val_one'' (by omega : p ≠ 1), jacobsonCoeff_zero_eq_ad_pow (R := R)]
   · intro j _ hj0
     obtain ⟨j', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj0
-    rw [jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero (R := R) h, smul_zero]
+    rw [jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero (R := R) h le_rfl, smul_zero]
   · intro hmem
     exact absurd (Finset.mem_range.mpr (by omega)) hmem
 
