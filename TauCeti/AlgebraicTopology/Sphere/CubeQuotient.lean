@@ -13,6 +13,7 @@ public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The cube modulo its boundary is a sphere
@@ -69,6 +70,9 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
   pole in every dimension, including `n = 0`.
+* `TauCeti.exists_genLoop_sphere`: in dimension `n + 1`, the unit sphere of any real inner product
+  space is the image of a generalized loop out of `I^n` at any of its points that covers it off the
+  base point and identifies only boundary points of the cube.
 * `TauCeti.diskBoundaryNorthPole` and `TauCeti.diskBoundaryGenLoop`: the universe-lifted north pole
   and tautological generalized loop on `TopCat.diskBoundary (n + 1)`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
@@ -387,6 +391,31 @@ theorem exists_cubeToSphere_eq_of_ne {s : sphere (0 : EuclideanSpace ℝ (Fin (n
     exact ⟨0, Subtype.ext ((key _ h0).trans (key _ hs).symm)⟩
   · have : NeZero n := ⟨hn.ne'⟩
     exact cubeToSphere_surjective n s
+
+/-- **The unit sphere is a sphere collapsed from a cube.** If `V` has dimension `n + 1`, then for
+every point `u₀` of its unit sphere there is a generalized loop of the sphere at `u₀`, out of the
+cube `I^n`, that covers the sphere off `u₀` and identifies only points of the boundary of the cube:
+the collapse `TauCeti.cubeToSphere` of the cube onto the unit sphere of `ℝⁿ⁺¹`, followed by a
+linear isometry of `ℝⁿ⁺¹` onto `V` sending the north pole to `u₀`. -/
+theorem exists_genLoop_sphere {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (hV : Module.finrank ℝ V = n + 1) (u₀ : sphere (0 : V) 1) :
+    ∃ c : Ω^ (Fin n) (sphere (0 : V) 1) u₀, (∀ q, q ≠ u₀ → ∃ y, c y = q) ∧
+      ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin n) ∧ z ∈ Cube.boundary (Fin n) := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
+  let e₀ : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] V :=
+    ((stdOrthonormalBasis ℝ V).reindex (finCongr hV)).repr.symm
+  -- Move the image of the north pole onto `u₀`: the unit sphere is homogeneous.
+  obtain ⟨r, hr⟩ := Sphere.exists_homeomorph_apply_eq
+    (e₀.unitSphereIsometryEquiv (sphereNorthPole n)) u₀
+  let F := e₀.unitSphereIsometryEquiv.toHomeomorph.trans r
+  -- `F` applies `e₀` and then `r`, so this is `hr` by unfolding `Homeomorph.trans`.
+  have he : F (sphereNorthPole n) = u₀ := hr
+  refine ⟨GenLoop.map F he (sphereGenLoop n), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := F.symm q) fun h ↦
+      hq (by rw [← F.apply_symm_apply q, h, he])
+    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy]; exact F.apply_symm_apply q⟩
+  · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
+    exact cubeToSphere_eq_cubeToSphere_iff.1 (F.injective h)
 
 variable (n) in
 /-- `TauCeti.cubeToSphere` is a quotient map in positive dimension: it is a continuous surjection

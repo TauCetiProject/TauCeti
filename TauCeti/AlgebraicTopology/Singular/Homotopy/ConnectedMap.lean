@@ -44,7 +44,10 @@ of the origin, and the swept cubes give the chain homotopy from the identity to 
 followed by the inclusion (`TauCeti.SubspaceCubeDeformation.twistedRetractChain`). In degrees where
 both are defined this makes the inclusion of the bottom face surjective on homology, and injective
 one degree lower (`TauCeti.epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup`,
-`TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`).
+`TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`). By the long exact
+sequence of the pair, the relative homology `H_m(M_f, X; L)` then vanishes for `m ≤ n`
+(`ContinuousMap.IsNConnected.isZero_twistedHomology_mappingCylinder`), which is the input of the
+cohomological statement with local coefficients.
 
 For a map of pairs `(X, A) → (Y, B)` which is `n`-connected on the ambient spaces and
 `(n - 1)`-connected on the subspaces, the five lemma in the long exact sequences of the two pairs
@@ -77,6 +80,8 @@ makes its relative homology with local coefficients vanish up to degree `n`.
 * `ContinuousMap.IsNConnected.isIso_twistedHomologyMap`,
   `ContinuousMap.IsNConnected.epi_twistedHomologyMap`: an `n`-connected map induces isomorphisms
   on homology with local coefficients below degree `n`, and surjections up to degree `n`.
+* `ContinuousMap.IsNConnected.isZero_twistedHomology_mappingCylinder`: the same vanishing of the
+  relative homology of the mapping cylinder, with local coefficients.
 * `TopPair.isIso_singularHomologyMap_of_isNConnected`,
   `TopPair.epi_singularHomologyMap_of_isNConnected`: a map of pairs which is `n`-connected on the
   ambient spaces and `(n - 1)`-connected on the subspaces induces isomorphisms on relative singular
@@ -246,6 +251,19 @@ private theorem twistedHomologyMap_mem (P : MorphismProperty (ModuleCat.{v} R)) 
   rw [P.cancel_left_of_respectsIso, P.cancel_left_of_respectsIso, P.cancel_left_of_respectsIso,
     P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
   exact hi
+
+/-- **The mapping cylinder of an `n`-connected map is `n`-connected relative to its bottom face for
+homology with local coefficients**: if `f : X → Y` is `n`-connected, then for every local
+coefficient system `L` on the mapping cylinder `M_f`, `H_m(M_f, X; L) = 0` for every `m ≤ n`, where
+`X` is identified with the bottom face of `M_f`. -/
+theorem isZero_twistedHomology_mappingCylinder (hf : f.IsNConnected n)
+    (L : LocalCoefficientSystem.{u, v, v} R (TopCat.of (MappingCylinder f))) {m : ℕ}
+    (hm : m ≤ n) :
+    IsZero ((TopPair.ofSubset (X := TopCat.of (MappingCylinder f))
+      (Set.range (MappingCylinder.incl f))).twistedHomology L m) :=
+  isZero_twistedHomology_ofSubset_of_relHomotopyGroup (n := n + 1)
+    (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin L (by lia)
 
 /-- **An `n`-connected map induces isomorphisms on homology with local coefficients below degree
 `n`**: if `f : X → Y` is `n`-connected, then for every local coefficient system `L` on `Y` the map

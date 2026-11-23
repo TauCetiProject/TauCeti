@@ -14,32 +14,43 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 Let `d : S → D` be a degree function on the generators of the completed module
 `NovikovModule R F`. Its homogeneous pieces `TauCeti.NovikovModule.gradeBy R F d k` are
-independent, and when `d` takes finitely many values the completion is their internal direct sum
-(`TauCeti.NovikovModule.isInternal_gradeBy`). In general it is not: a completed combination may
-meet infinitely many degrees, as an integer-graded capped Floer chain does when recapping changes
-the grading. This file shows that the completion is nevertheless recovered from the homogeneous
-pieces through the potential-cutoff topology of `TauCeti.RingTheory.NovikovModule.Topology`.
+independent (`TauCeti.NovikovModule.iSupIndep_gradeBy`), and when `d` takes finitely many values
+the completion is their internal direct sum (`TauCeti.NovikovModule.isInternal_gradeBy`). In
+general it is not: a completed combination may meet infinitely many degrees, as an
+integer-graded capped Floer chain does when recapping changes the grading. This file shows that
+the completion is nevertheless recovered from the homogeneous pieces through the potential-cutoff
+topology of `TauCeti.RingTheory.NovikovModule.Topology`, for every coefficient ring, every
+potential `F : S → ℝ` and every degree function.
 
-* Taking the homogeneous part of degree `k` (`TauCeti.NovikovModule.gradeProj`) is continuous
-  (`TauCeti.NovikovModule.continuous_gradeProj`), and every homogeneous piece is closed
-  (`TauCeti.NovikovModule.isClosed_gradeBy`).
-* Every completed combination is the sum, convergent in the potential-cutoff topology, of its
-  homogeneous parts (`TauCeti.NovikovModule.hasSum_gradeProj`), and this is its only decomposition
-  into a convergent sum of homogeneous combinations
-  (`TauCeti.NovikovModule.hasSum_iff_eq_gradeProj`). Hence the sum of the homogeneous pieces is
-  dense (`TauCeti.NovikovModule.dense_iSup_gradeBy`).
+* The homogeneous component `TauCeti.NovikovModule.homogeneousComponent R F d k`, defined in
+  `TauCeti.RingTheory.NovikovModule.Grading`, does not raise potentials, so it is continuous
+  (`TauCeti.NovikovModule.continuous_homogeneousComponent`), and every homogeneous piece is
+  closed (`TauCeti.NovikovModule.isClosed_gradeBy`).
+* Every completed combination is the sum, unconditionally convergent in the potential-cutoff
+  topology, of its homogeneous components
+  (`TauCeti.NovikovModule.hasSum_homogeneousComponent`), and this is its only decomposition into a
+  convergent sum of homogeneous combinations
+  (`TauCeti.NovikovModule.hasSum_iff_forall_homogeneousComponent_eq`). By
+  `TauCeti.NovikovModule.summable_iff_finite_setOf_notMem_potentialFiltration`, such a family is
+  summable exactly when only finitely many of its members have a nonzero coefficient above each
+  potential cutoff. Hence the sum of the homogeneous pieces is dense
+  (`TauCeti.NovikovModule.dense_iSup_gradeBy`).
 * A completed combination is a finite sum of homogeneous combinations exactly when it meets
   finitely many degrees (`TauCeti.NovikovModule.mem_iSup_gradeBy_iff_finite`). So the sum of the
   homogeneous pieces is closed exactly when it is everything, and the completion is the internal
   direct sum of its homogeneous pieces exactly when every completed combination meets finitely many
   degrees (`TauCeti.NovikovModule.isClosed_iSup_gradeBy_iff`,
   `TauCeti.NovikovModule.isInternal_gradeBy_iff`). Closedness of each piece does not give
-  closedness of their sum: for the degree `d(n) = n` on `S = ℕ` with potential `F(n) = -n`, the
-  pieces are the lines through the generators and their sum consists of the finite combinations.
+  closedness of their sum: on `S = ℕ` with potential `n ↦ -n` and degree `n ↦ n`, the pieces are
+  the lines through the generators, and the combination with every coefficient `1` is a limit of
+  finite combinations outside their span.
 
 These are the statements needed to work with homogeneous pieces of a completed graded module
-without asserting that it is the direct sum of its homogeneous pieces. The corresponding results
-for the Novikov series themselves are in `TauCeti.RingTheory.NovikovSeries.HomogeneousComponents`.
+without asserting that it is the direct sum of its homogeneous pieces: for graded Novikov modules
+of capped generators, with degree given by a Conley–Zehnder or Chern grading, a completed state
+module, or a completed Floer chain module, is the filtered completion of its homogeneous part, and
+the homogeneous parts of a limit can be read off coefficientwise. The corresponding results for the
+Novikov series themselves are in `TauCeti.RingTheory.NovikovSeries.HomogeneousComponents`.
 
 ## References
 
@@ -55,75 +66,79 @@ open Filter Function Set Topology
 
 namespace TauCeti.NovikovModule
 
-variable {R S D : Type*} [Ring R] {F : S → ℝ} {d : S → D}
+variable {R S D : Type*} [Ring R] {F : S → ℝ} {d : S → D} {a : NovikovModule R F}
 
-/-- Every homogeneous piece is closed in the potential-cutoff topology: it is cut out by the
-vanishing of the coefficients at the generators of other degrees, each of which is locally
-constant. -/
+/-- The component of degree `k` does not raise potentials: it maps `U_C` into `U_C`. -/
+theorem homogeneousComponent_mem_potentialFiltration {C : ℝ} (k : D)
+    (ha : a ∈ potentialFiltration R F C) :
+    homogeneousComponent R F d k a ∈ potentialFiltration R F C := by
+  classical
+  exact mem_potentialFiltration.2 fun s hs => by
+    simp [mem_potentialFiltration.1 ha s hs]
+
+/-- The homogeneous components are continuous for the potential-cutoff topology. -/
+theorem continuous_homogeneousComponent (d : S → D) (k : D) :
+    Continuous (homogeneousComponent R F d k) :=
+  continuous_of_forall_mem_potentialFiltration _ fun C =>
+    ⟨C, fun _ ha => homogeneousComponent_mem_potentialFiltration k ha⟩
+
+/-- Each homogeneous piece is closed in the potential-cutoff topology. -/
 theorem isClosed_gradeBy (d : S → D) (k : D) :
     IsClosed (gradeBy R F d k : Set (NovikovModule R F)) := by
-  have heq : (gradeBy R F d k : Set (NovikovModule R F)) =
-      ⋂ s ∈ (d ⁻¹' {k})ᶜ, {a | a.val s = 0} := by
-    ext a
-    simp only [SetLike.mem_coe, mem_gradeBy_iff, mem_iInter, mem_ofPred_eq]
-    exact ⟨fun ha s hs => by_contra fun hne => hs (ha s hne),
-      fun ha s hs => by_contra fun hne => hs (ha s hne)⟩
-  rw [heq]
-  exact isClosed_biInter fun s _ => (isLocallyConstant_apply_val s).isClosed_fiber 0
+  have h : (gradeBy R F d k : Set (NovikovModule R F)) =
+      {a | homogeneousComponent R F d k a = a} :=
+    Set.ext fun _ => mem_gradeBy_iff_homogeneousComponent_eq
+  rw [h]
+  exact isClosed_eq (continuous_homogeneousComponent d k) continuous_id
 
-section Proj
-
-variable [DecidableEq D]
-
-/-- Taking a homogeneous part preserves every subgroup `U_C` of the potential filtration. -/
-theorem gradeProj_mem_potentialFiltration (d : S → D) (k : D) {C : ℝ} {a : NovikovModule R F}
-    (ha : a ∈ potentialFiltration R F C) : gradeProj R F d k a ∈ potentialFiltration R F C :=
-  mem_potentialFiltration.2 fun s hs => by
-    rw [gradeProj_val, mem_potentialFiltration.1 ha s hs, ite_self]
-
-/-- Taking a homogeneous part is continuous in the potential-cutoff topology. -/
-theorem continuous_gradeProj (d : S → D) (k : D) : Continuous (gradeProj R F d k) :=
-  continuous_of_mem_potentialFiltration_add (C := 0) fun D a ha => by
-    simpa using gradeProj_mem_potentialFiltration d k ha
-
-/-- **Every completed combination is the sum of its homogeneous parts**, convergent in the
-potential-cutoff topology: above any potential cutoff only finitely many degrees occur among the
-nonzero coefficients. -/
-theorem hasSum_gradeProj (d : S → D) (a : NovikovModule R F) :
-    HasSum (fun k => gradeProj R F d k a) a := by
+/-- **Every completed combination is the sum of its homogeneous components**, unconditionally
+convergent in the potential-cutoff topology: above any potential cutoff only finitely many degrees
+occur among the nonzero coefficients. -/
+theorem hasSum_homogeneousComponent (d : S → D) (a : NovikovModule R F) :
+    HasSum (fun k => homogeneousComponent R F d k a) a := by
+  classical
   rw [HasSum, SummationFilter.unconditional_filter, tendsto_nhds_iff]
   intro C
-  filter_upwards [eventually_ge_atTop ((finite_gt a C).toFinset.image d)] with T hT s hs
-  rw [sum_gradeProj_val]
-  split_ifs with hsT
+  -- Above `C` the coefficients of `a` occur in the finitely many degrees of this set.
+  have hfin := (finite_gt a C).image d
+  filter_upwards [eventually_ge_atTop hfin.toFinset] with T hT s hs
+  rw [sum_homogeneousComponent_apply_val]
+  split_ifs with hdT
   · rfl
-  · by_contra hne
-    exact hsT (hT (Finset.mem_image_of_mem d ((finite_gt a C).mem_toFinset.2 ⟨Ne.symm hne, hs⟩)))
+  · by_contra h
+    exact hdT (hT (hfin.mem_toFinset.2 ⟨s, ⟨Ne.symm h, hs⟩, rfl⟩))
 
-/-- **Uniqueness of the homogeneous decomposition.** A family of completed combinations of the
-respective degrees sums to `a` exactly when it is the family of homogeneous parts of `a`. -/
-theorem hasSum_iff_eq_gradeProj {b : D → NovikovModule R F} (hb : ∀ k, b k ∈ gradeBy R F d k)
-    {a : NovikovModule R F} : HasSum b a ↔ ∀ k, b k = gradeProj R F d k a := by
-  refine ⟨fun h k => ?_, fun h => funext h ▸ hasSum_gradeProj d a⟩
-  -- The part of degree `k` of the sum is the sum of the parts of degree `k`, which is `b k`.
-  have hk : HasSum (fun j => gradeProj R F d k (b j)) (b k) := by
-    convert hasSum_ite_eq k (b k) using 2 with j
-    by_cases hj : j = k
-    · rw [ite_eq_left hj, hj, gradeProj_eq_self_of_mem_gradeBy (hb k)]
-    · rw [ite_eq_right hj, gradeProj_eq_zero_of_mem_gradeBy hj (hb j)]
-  exact hk.unique (h.map (gradeProj R F d k) (continuous_gradeProj d k))
-
-end Proj
-
-/-- The finite sums of homogeneous combinations are dense in the potential-cutoff topology. -/
-theorem dense_iSup_gradeBy (d : S → D) :
-    Dense ((⨆ k, gradeBy R F d k : Submodule R (NovikovModule R F)) :
-      Set (NovikovModule R F)) := fun a => by
+/-- If homogeneous combinations `b k` of degree `k` sum to `a`, then `b k` is the component of
+`a` of degree `k`. -/
+theorem homogeneousComponent_eq_of_hasSum {b : D → NovikovModule R F}
+    (hb : ∀ k, b k ∈ gradeBy R F d k) (h : HasSum b a) (k : D) :
+    homogeneousComponent R F d k a = b k := by
   classical
-  have ha := hasSum_gradeProj d a
-  rw [HasSum, SummationFilter.unconditional_filter] at ha
-  exact mem_closure_of_tendsto ha (Eventually.of_forall fun T =>
-    Submodule.sum_mem _ fun k _ => Submodule.mem_iSup_of_mem k (gradeProj_mem_gradeBy d k a))
+  have hk : (homogeneousComponent R F d k ∘ b) = fun j => if j = k then b k else 0 := by
+    funext j
+    split_ifs with hj
+    · exact hj ▸ homogeneousComponent_of_mem_gradeBy (hb j)
+    · exact homogeneousComponent_eq_zero_of_mem_gradeBy (hb j) hj
+  have h' := h.map (homogeneousComponent R F d k) (continuous_homogeneousComponent d k)
+  rw [hk] at h'
+  exact h'.unique (hasSum_ite_eq k (b k))
+
+/-- **Uniqueness of the homogeneous decomposition.** A family of combinations `b k`, homogeneous
+of degree `k`, sums to `a` exactly when each `b k` is the component of `a` of degree `k`. -/
+theorem hasSum_iff_forall_homogeneousComponent_eq {b : D → NovikovModule R F}
+    (hb : ∀ k, b k ∈ gradeBy R F d k) :
+    HasSum b a ↔ ∀ k, homogeneousComponent R F d k a = b k :=
+  ⟨fun h => homogeneousComponent_eq_of_hasSum hb h, fun h =>
+    (funext h : (fun k => homogeneousComponent R F d k a) = b) ▸ hasSum_homogeneousComponent d a⟩
+
+/-- The span of the homogeneous pieces is dense: it contains the finite combinations. -/
+theorem dense_iSup_gradeBy (d : S → D) :
+    Dense ((⨆ k, gradeBy R F d k : Submodule R (NovikovModule R F)) : Set (NovikovModule R F)) :=
+  denseRange_ofFinsupp.mono <| by
+    rintro _ ⟨x, rfl⟩
+    rw [SetLike.mem_coe, mem_iSup_gradeBy_iff_finite,
+      show (ofFinsupp F x).val = x from funext (ofFinsupp_apply_val x)]
+    exact x.hasFiniteSupport.image d
 
 /-- The sum of the homogeneous pieces is closed in the potential-cutoff topology exactly when it
 is everything, that is, when every completed combination meets only finitely many degrees. -/
@@ -132,7 +147,7 @@ theorem isClosed_iSup_gradeBy_iff :
       Set (NovikovModule R F)) ↔
       ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
   rw [← iSup_gradeBy_eq_top_iff]
-  refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  rw [← Submodule.coe_eq_univ, ← h.closure_eq, (dense_iSup_gradeBy d).closure_eq]
+  exact ⟨fun h => SetLike.coe_injective ((h.dense_iff.1 (dense_iSup_gradeBy d)).trans
+    Submodule.top_coe.symm), fun h => h ▸ isClosed_univ⟩
 
 end TauCeti.NovikovModule

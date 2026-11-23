@@ -22,7 +22,9 @@ still independent.
 
 **Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
 the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
-of the head and the tail.
+of the head and the tail. Read forwards, `Fin.cons` carries the product of a measure `μ` with
+the product measure `Measure.pi ν` on `Fin n → β` to the product measure `Fin.cons μ ν` on
+`Fin (n + 1) → β`.
 
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
@@ -66,6 +68,10 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Nonzero products.** A finite product of nonzero σ-finite measures is nonzero, since its total
+mass is the product of the nonzero total masses of the factors. Mathlib has no such `NeZero`
+instance for `Measure.pi`.
+
 **Extensionality from boxes.** A finite measure on a finite product space, which need not be a
 product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
 form a π-system generating the product σ-algebra and contain the whole space. The same holds on
@@ -78,10 +84,17 @@ where one side is a product measure.
 over the coordinates outside `p`, of the product measures of its fibres. This is the
 finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 
+**Sums and multiples of factors.** A product of finite sums of measures expands, as in
+`Finset.prod_univ_sum`, into the sum of the products of one summand from each factor, and scaling
+the factors by `c i` scales the product measure by `∏ i, c i`. Together they expand the `n`-fold
+product of a mixture of laws into products of its components.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
   embedding is measure preserving;
+* `MeasureTheory.Measure.measurePreserving_finCons` — prepending a coordinate with `Fin.cons` is
+  measure preserving;
 * `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
   preserving;
 * `TauCeti.measurePreserving_pi_fiberwise` — applying measure-preserving maps to disjoint fibres
@@ -100,10 +113,15 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.instNeZeroPi` — a finite product of nonzero σ-finite measures is
+  nonzero;
 * `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
   measurable boxes are equal;
 * `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
   on products of a measurable set and a measurable box are equal;
+* `MeasureTheory.Measure.pi_finsetSum` — a product of finite sums of measures is the sum of the
+  products of the summands;
+* `MeasureTheory.Measure.pi_smul` — scaling the factors scales the product measure;
 * `MeasureTheory.Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm` — the product measure
   of a set is the integral of the measures of its fibres over the coordinates satisfying a
   predicate.
@@ -124,7 +142,7 @@ public section
 
 open Function MeasureTheory ProbabilityTheory Set
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -159,6 +177,20 @@ theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintyp
   congr 1
   funext i
   exact (measurePreserving_eval μ (e i)).map_eq
+
+/-- **Prepending a coordinate.** `Fin.cons` carries the product of a measure `μ` with the product
+measure `Measure.pi ν` on `Fin n → β` to the product measure `Measure.pi (Fin.cons μ ν)` on
+`Fin (n + 1) → β`, whose first factor is `μ` and whose other factors are the `ν i`. -/
+theorem _root_.MeasureTheory.Measure.measurePreserving_finCons {β : Type*} [MeasurableSpace β]
+    {n : ℕ} (μ : Measure β) (ν : Fin n → Measure β) [SigmaFinite μ] [∀ i, SigmaFinite (ν i)] :
+    MeasurePreserving (fun p : β × (Fin n → β) ↦ (Fin.cons p.1 p.2 : Fin (n + 1) → β))
+      (μ.prod (Measure.pi ν)) (Measure.pi (Fin.cons μ ν)) := by
+  have (i : Fin (n + 1)) : SigmaFinite ((Fin.cons μ ν : Fin (n + 1) → Measure β) i) := by
+    cases i using Fin.cases <;> simp only [Fin.cons_zero, Fin.cons_succ] <;> infer_instance
+  have h := (measurePreserving_piFinSuccAbove (Fin.cons μ ν : Fin (n + 1) → Measure β) 0).symm
+  simp only [Fin.cons_zero, Fin.succAbove_zero, Fin.cons_succ] at h
+  convert h using 1
+  exact funext fun p ↦ (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons p.1 p.2).symm
 
 /-- **Currying a finite product measure.** A product measure indexed by the pairs `⟨i, j⟩` with
 `j : κ i` is carried by `MeasurableEquiv.piCurry` to the product over `i` of the product measures
@@ -449,6 +481,13 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
+/-- A finite product of nonzero σ-finite measures is nonzero: its total mass is the product of the
+total masses of the factors, none of which vanishes. -/
+instance instNeZeroPi {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    {μ : ∀ i, Measure (α i)} [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i)] :
+    NeZero (Measure.pi μ) :=
+  ⟨measure_univ_ne_zero.1 <| by simp [pi_univ, Finset.prod_ne_zero_iff, NeZero.ne]⟩
+
 variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
 /-- **Finite measures on a finite product are determined by boxes.** Two measures on
@@ -479,6 +518,29 @@ theorem ext_prod_pi {γ : Type*} [MeasurableSpace γ] {μ ν : Measure (γ × �
   · rintro _ ⟨S, hS, _, ⟨s, hs, rfl⟩, rfl⟩
     exact h S hS s fun i ↦ hs i (mem_univ i)
   · simpa using h univ .univ (fun _ ↦ univ) fun _ ↦ .univ
+
+/-- **Expanding a product of finite sums of measures.** The product of the finite sums
+`∑ j ∈ t i, μ i j` is the sum, over the choices `x ∈ Fintype.piFinset t` of one summand in each
+coordinate, of the product measures `Measure.pi fun i ↦ μ i (x i)`. This is the measure form of
+`Finset.prod_univ_sum`. -/
+theorem pi_finsetSum {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {κ : ι → Type*} (t : ∀ i, Finset (κ i))
+    (μ : ∀ i, κ i → Measure (α i)) [∀ i j, SigmaFinite (μ i j)] :
+    Measure.pi (fun i ↦ ∑ j ∈ t i, μ i j) =
+      ∑ x ∈ Fintype.piFinset t, Measure.pi fun i ↦ μ i (x i) := by
+  have (i : ι) : SigmaFinite (∑ j ∈ t i, μ i j) :=
+    Finset.sum_induction _ SigmaFinite (fun _ _ _ _ ↦ inferInstance) inferInstance
+      fun _ _ ↦ inferInstance
+  refine pi_eq fun s _ ↦ ?_
+  simp only [FunLike.coe_sum, Finset.sum_apply, pi_pi, Finset.prod_univ_sum]
+
+/-- **Scaling the factors of a product measure.** Multiplying each factor of a finite product
+measure by a scalar `c i` multiplies the product measure by `∏ i, c i`. -/
+theorem pi_smul {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    (c : ι → ℝ≥0) (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] :
+    Measure.pi (fun i ↦ c i • μ i) = (∏ i, c i) • Measure.pi μ := by
+  refine pi_eq fun s _ ↦ ?_
+  simp only [pi_pi, coe_nnreal_smul_apply, Finset.prod_mul_distrib, ENNReal.ofNNReal_finsetProd]
 
 /-- **Fibres over a set of coordinates.** The measure of a set under a finite product measure is
 the integral, over the coordinates outside `p`, of the product measures of its fibres over the

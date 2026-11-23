@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Manifold.Rectangle
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Topology.Separation.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -78,6 +79,9 @@ In the namespace `TauCeti.SmoothTwoForm`:
 * `IsNondegenerate.neg_sum_add_le_integral_add_of_puncturedSpherePerturbation_truncation`: for a
   solution of the Floer equation with tame almost complex structures, the area plus the Hamiltonian
   boundary terms is at least `-(∑ i, B i + Bout)`.
+* `IsNondegenerate.setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le`: for such a
+  solution, the energy over any part of `Σ_R` is at most the topological energy on `Σ_R` plus
+  `∑ i, B i + Bout`; this is the energy bound that compactness of the family consumes.
 * `integrableOn_hamiltonianCurvature_puncturedSpherePerturbation`: for bounded Hamiltonians, the
   curvature is integrable over the whole sphere minus its punctures along any map continuous there.
 * `IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation`: the energy identity on
@@ -534,14 +538,6 @@ private theorem iUnion_preimage_puncturedSphereTruncation [Finite ι] (ha : ∀ 
       {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
   rw [← preimage_iUnion, iUnion_puncturedSphereTruncation ha, preimage_ofPred_eq]
 
-omit [Fintype ι] in
-/-- The sphere minus its punctures, the points of the plane other than the finitely many centers of
-the input ends, is open. -/
-private theorem isOpen_setOf_forall_ne [Finite ι] :
-    IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-  simp only [ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
-
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
 /-- The energy identity over the image of a rectangle `[a₁, b₁] × [-1/2, 1/2)` under a change of
@@ -710,7 +706,8 @@ theorem
         v) ((V ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) ×ˢ univ) :=
     fun p hp ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hp.1.2
       p.2 v).contMDiffWithinAt
-  exact hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_setOf_forall_ne)
+  exact hω.integrableOn_floerEnergyDensity
+    (hVo.inter (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous))
     (hu.mono inter_subset_left) (hKP 1) (hKP Complex.I)
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_puncturedSphereTruncation c a R))
@@ -873,6 +870,61 @@ theorem IsNondegenerate.neg_sum_add_le_integral_add_of_puncturedSpherePerturbati
       (isCompact_puncturedSphereTruncation c a R)
   have hE := setIntegral_nonneg (μ := volume) hT.isClosed.measurableSet fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := (abs_le.1
+    (hω.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_sub_le hH hHs hHout
+      hHouts ha hsep hout hB hBout hVo hTV hu hR)).2
+  linarith
+
+/-- **The energy of a solution over part of the truncated sphere with moving input ends is
+bounded by its topological energy, for a manifold target.** Let `u` solve the Floer equation
+`(du - X_K)^{0,1} = 0` on the truncation `Σ_R` for almost complex structures `J z` on the tangent
+spaces `T_{u(z)} M` tamed by the two-form, under the hypotheses of
+`IsNondegenerate.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_sub_le`.
+Then the Floer energy of `u` over every subset `S ⊆ Σ_R` is at most its symplectic area over
+`Σ_R` plus the Hamiltonian terms of the boundary circles, plus `∑ i, B i + Bout`, whatever the
+configuration of the input ends. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ} {Bout : ℝ}
+    (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout) {u : ℝ × ℝ → M} {R : ℝ}
+    {V : Set (ℝ × ℝ)} (hVo : IsOpen V)
+    (hTV : Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆ V)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) (hR : 1 ≤ R)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R,
+      (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+            Complex.I) u z).toLinearMap)
+    {S : Set (ℝ × ℝ)}
+    (hST : S ⊆ Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :
+    ∫ z in S, ω.floerEnergyDensity
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) u z ≤
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        smoothTransition (R - 1) * ((∑ i, ∫ t in (0 : ℝ)..1, H i t (u (Complex.equivRealProdCLM
+            (c i + a i * zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
+          ∫ t in (0 : ℝ)..1, Hout t (u (Complex.equivRealProdCLM
+            (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) + (∑ i, B i + Bout) := by
+  have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+      (isCompact_puncturedSphereTruncation c a R)
+  -- The energy density is nonnegative on `Σ_R`, so the energy over `S` is at most that over `Σ_R`.
+  have hmono := setIntegral_mono_set
+    (hω.integrableOn_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs hHout hHouts
+      ha hsep hout hVo hTV hu)
+    (ae_restrict_of_forall_mem hT.isClosed.measurableSet fun z hz ↦
+      floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz))
+    (Eventually.of_forall hST)
   have h := (abs_le.1
     (hω.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_sub_le hH hHs hHout
       hHouts ha hsep hout hB hBout hVo hTV hu hR)).2
@@ -1043,7 +1095,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation
       hsep hout hB hBout hu.continuousOn)))
   filter_upwards [eventually_ge_atTop 1] with R hR
   exact hω.integral_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs hHout hHouts ha
-    hsep hout isOpen_setOf_forall_ne (hTsub R) hu hR
+    hsep hout (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous) (hTsub R) hu hR
 
 /-- **The energy bound on the whole sphere with moving input ends, for a manifold target.** Under
 the hypotheses of
@@ -1133,7 +1185,8 @@ theorem IsNondegenerate.neg_sum_add_le_integral_add_of_puncturedSpherePerturbati
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ((∑ i, ∫ t in (0 : ℝ)..1, H i t (x i t)) - ∫ t in (0 : ℝ)..1, Hout t (xout t)) := by
-  have hE₀ := setIntegral_nonneg (μ := volume) isOpen_setOf_forall_ne.measurableSet fun z hz ↦
+  have hE₀ := setIntegral_nonneg (μ := volume)
+    (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := (abs_le.1
     (hω.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_sub_le hH hHs hHout hHouts ha

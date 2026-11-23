@@ -25,9 +25,13 @@ The degree only sees `Γ` on the boundary (`TauCeti.squareBoundaryDegree_congr`)
 laws of a winding number:
 
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
-  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`);
+  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and hence
+  `deg (Γ ^ n) = n deg Γ` (`TauCeti.squareBoundaryDegree_pow`);
+* **inverses:** `deg Γ⁻¹ = -deg Γ` (`TauCeti.squareBoundaryDegree_inv`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
-  null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`);
+  null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`), and
+  multiplying any map by `Γ` does not change its degree
+  (`TauCeti.squareBoundaryDegree_mul_of_continuous`);
 * **homotopy:** a family `H (τ, ·)`, `τ ∈ I`, continuous on `I × ∂I²`, has constant degree
   (`TauCeti.squareBoundaryDegree_eq_of_homotopy`);
 * **subdivision:** if `Γ` is also continuous on the vertical segment `s = 1/2`, the degree of `Γ`
@@ -57,7 +61,9 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
+  `TauCeti.squareBoundaryDegree_pow`, `TauCeti.squareBoundaryDegree_inv`,
   `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
+  `TauCeti.squareBoundaryDegree_mul_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
@@ -186,6 +192,29 @@ theorem squareBoundaryDegree_mul (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
     squareBoundaryDegree_eq_degree hΓ', ← Circle.degree_mul]
   exact Circle.degree_congr _ _ fun _ ↦ rfl
 
+/-- **Powers.** The degree around the boundary of the square of the `n`-th power of a map
+continuous on the boundary is `n` times its degree. -/
+theorem squareBoundaryDegree_pow (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) (n : ℕ) :
+    squareBoundaryDegree (Γ ^ n) = n * squareBoundaryDegree Γ := by
+  induction n with
+  | zero => rw [pow_zero, Nat.cast_zero, zero_mul]; exact squareBoundaryDegree_const 1
+  | succ n ih =>
+    rw [pow_succ, squareBoundaryDegree_mul (hΓ.pow n) hΓ, ih]
+    push_cast
+    ring
+
+/-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
+is the negative of its degree. No continuity is assumed: if `Γ` is not continuous on the boundary,
+neither is `Γ⁻¹`, and both degrees are `0`. -/
+@[simp]
+theorem squareBoundaryDegree_inv : squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
+  by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
+  · have h := squareBoundaryDegree_mul hΓ hΓ.inv
+    rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
+    omega
+  · rw [squareBoundaryDegree_of_not_continuousOn hΓ,
+      squareBoundaryDegree_of_not_continuousOn fun h ↦ hΓ (by simpa using h.inv), neg_zero]
+
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and
 `H (1, ·)` have the same degree around the boundary of the square. -/
 theorem squareBoundaryDegree_eq_of_homotopy {H : I × (Fin 2 → I) → Circle}
@@ -211,6 +240,18 @@ theorem squareBoundaryDegree_eq_zero_of_continuous (h : Continuous Γ) :
   simp only [ContinuousMap.Homotopy.apply_zero, ContinuousMap.Homotopy.apply_one,
     ContinuousMap.const_apply, ContinuousMap.id_apply, squareBoundaryDegree_const] at hH
   exact hH.symm
+
+/-- **Factors defined on the whole square.** Multiplying by a map continuous on the whole square
+does not change the degree around the boundary. No continuity of `Γ` is assumed: if `Γ` is not
+continuous on the boundary, neither is the product, and both degrees are `0`. -/
+theorem squareBoundaryDegree_mul_of_continuous (hΓ' : Continuous Γ') :
+    squareBoundaryDegree (Γ * Γ') = squareBoundaryDegree Γ := by
+  by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
+  · rw [squareBoundaryDegree_mul hΓ hΓ'.continuousOn,
+      squareBoundaryDegree_eq_zero_of_continuous hΓ', add_zero]
+  · refine (squareBoundaryDegree_of_not_continuousOn fun h ↦ hΓ ?_).trans
+      (squareBoundaryDegree_of_not_continuousOn hΓ).symm
+    simpa using h.mul hΓ'.inv.continuousOn
 
 /-! ### Subdivision along the first coordinate -/
 

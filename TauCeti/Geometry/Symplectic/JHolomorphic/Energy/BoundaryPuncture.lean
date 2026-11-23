@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Bounded
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.BoundaryMeanValue
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Boundary.MeanValue
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
 
@@ -190,9 +191,8 @@ private theorem exists_pos_sq_norm_fderivWithin_one_le_energy_of_im_lt
   have hO : IsOpen O := isOpen_ball.sdiff isClosed_singleton
   -- Inside `O`, `∂ₛu` is continuous up to the edge.
   have hcont : ContinuousOn (fun y ↦ fderivWithin ℝ u H y 1) (H ∩ O) :=
-    ((hu.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im 0).inter hO)
-      (by norm_num)).clm_apply (continuousOn_const (c := (1 : ℂ)))).congr fun y hy ↦ by
-      simp only [fderivWithin_inter (hO.mem_nhds hy.2)]
+    (hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im _) hO
+      (by norm_num)).clm_apply continuousOn_const
   obtain ⟨δ, hδ, hbdry⟩ :=
     exists_pos_forall_pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
       hW hJ hK hKW hJsq hL hJL

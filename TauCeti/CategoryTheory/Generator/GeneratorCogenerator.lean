@@ -23,6 +23,8 @@ In any category, a separator passes to the source of every epimorphism onto it, 
 to the target of every monomorphism out of it. So separators, coseparators and
 generator-cogenerators are invariant under isomorphism and pass to every object having them as a
 retract, and an equivalence of categories carries generator-cogenerators to generator-cogenerators.
+A fully faithful functor reflects separators, coseparators and generator-cogenerators: it reaches
+every morphism out of or into the image of an object.
 Since separators of `Cᵒᵖ` are the coseparators of `C`, the notion is self-dual: `op M` is a
 generator-cogenerator of `Cᵒᵖ` exactly when `M` is one of `C`.
 
@@ -45,6 +47,9 @@ additive closures: if a separator `G` lies in `add M`, then `M` is a separator
   having a separator (coseparator) as a retract is one.
 * `TauCeti.IsGeneratorCogenerator.of_retract`: an object having a generator-cogenerator as a retract
   is one.
+* `CategoryTheory.IsSeparator.of_fullyFaithful`, `CategoryTheory.IsCoseparator.of_fullyFaithful`
+  and `TauCeti.IsGeneratorCogenerator.of_fullyFaithful`: fully faithful functors reflect
+  separators, coseparators and generator-cogenerators.
 * `CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff`: invariance under
   equivalences of categories.
 * `TauCeti.isGeneratorCogenerator_op_iff`: generator-cogenerators are self-dual.
@@ -93,6 +98,22 @@ of `N`, then `N` is a coseparator. -/
 theorem IsCoseparator.of_retract {M N : C} (hM : IsCoseparator M) (h : Retract M N) :
     IsCoseparator N :=
   hM.of_mono h.i
+
+/-- **Fully faithful functors reflect separators**: if `F` is fully faithful and `F.obj G` is a
+separator, then so is `G`. Every morphism out of `F.obj G` is the image of a morphism out of `G`. -/
+theorem IsSeparator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {G : C} (h : IsSeparator (F.obj G)) : IsSeparator G := by
+  rw [isSeparator_def] at h ⊢
+  exact fun X Y f g hfg ↦ hF.map_injective <| h _ _ fun a ↦ by
+    simpa using congr(F.map $(hfg (hF.preimage a)))
+
+/-- **Fully faithful functors reflect coseparators**: if `F` is fully faithful and `F.obj G` is a
+coseparator, then so is `G`. Every morphism into `F.obj G` is the image of a morphism into `G`. -/
+theorem IsCoseparator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {G : C} (h : IsCoseparator (F.obj G)) : IsCoseparator G := by
+  rw [isCoseparator_def] at h ⊢
+  exact fun X Y f g hfg ↦ hF.map_injective <| h _ _ fun a ↦ by
+    simpa using congr(F.map $(hfg (hF.preimage a)))
 
 section Preadditive
 
@@ -153,6 +174,13 @@ theorem IsGeneratorCogenerator.of_iso {M N : C} (hM : IsGeneratorCogenerator M) 
 theorem IsGeneratorCogenerator.of_equivalence {D : Type u'} [Category.{v'} D] {M : C}
     (hM : IsGeneratorCogenerator M) (e : C ≌ D) : IsGeneratorCogenerator (e.functor.obj M) :=
   ⟨hM.1.of_equivalence e, hM.2.of_equivalence e⟩
+
+/-- **Fully faithful functors reflect generator-cogenerators**: if `F` is fully faithful and
+`F.obj M` is a generator-cogenerator, then so is `M`. -/
+theorem IsGeneratorCogenerator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {M : C} (h : IsGeneratorCogenerator (F.obj M)) :
+    IsGeneratorCogenerator M :=
+  ⟨h.1.of_fullyFaithful hF, h.2.of_fullyFaithful hF⟩
 
 /-- **Generator-cogenerators are invariant under equivalences of categories.** -/
 theorem _root_.CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff {D : Type u'}
