@@ -18,8 +18,14 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+<<<<<<< HEAD
 Multiplication by a fixed `C^n` scalar function is likewise continuous in any smooth frame
 topology (`ContMDiffSection.continuous_smulLinearMap`).
+=======
+Restriction to an open subset and multiplication by a smooth scalar function are continuous
+(`ContMDiffSection.continuous_restrict_frameTopology`,
+`ContMDiffSection.continuous_smul_function_frameTopology`).
+>>>>>>> origin/main
 -/
 
 public noncomputable section
@@ -212,23 +218,17 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   rfl
 
 omit [LocallyCompactSpace E] in
-/-- Multiplication of sections by a fixed `C^n` scalar function is continuous for any smooth
-frame topology; neither local compactness nor a covering hypothesis on the frames is needed. -/
-theorem continuous_smulLinearMap (f : C^n⟮I, M; 𝕜⟯) :
-    letI := frameTopology (I := I) (n := n) e U hU
-    Continuous (smulLinearMap (F := F) (V := V) f) := by
-  let := frameTopology (I := I) (n := n) e U hU
-  refine (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦ ?_
-  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
-    ⟨fun x ↦ ContinuousLinearMap.lsmul 𝕜 𝕜 (f x),
-      (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F).contMDiff.comp
-        (f.contMDiff.comp contMDiff_subtypeVal)⟩
-  refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp
-    (continuous_frameCoordinates e U hU i)).congr fun s ↦ ?_
-  ext x
-  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply]
-  simp only [A, ContMDiffMap.coeFn_mk, ContinuousLinearMap.lsmul_apply,
-    Bundle.Trivialization.frameCoordinates_apply, smulLinearMap_eq_smul, smul_apply]
-  exact ((e i).linear 𝕜 (hU i x.property)).map_smul (f x) (s x) |>.symm
+/-- Multiplication of sections by a fixed smooth scalar function is continuous for the frame
+topology. In each frame it multiplies the coefficients by the restricted function. -/
+theorem continuous_smul_function_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ f • s) := by
+  let A (i : ι) : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtypeVal).smul contMDiff_const⟩
+  refine continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U hU e hU A
+    fun i s ↦ ContMDiffMap.ext fun x ↦ ?_
+  rw [ContMDiffMap.clmApplyLinearMap_apply]
+  simp [A, ← (e i).continuousLinearMapAt_apply_of_mem 𝕜 (hU i x.property)]
 
 end ContMDiffSection

@@ -213,7 +213,7 @@ theorem continuous_chartCutoffTestFunction
   let := frameTopology (I := I) (n := n) e U hU
   let Kρ : Compacts M := ⟨_root_.tsupport ρ, hρc⟩
   refine ((t.continuous_chartReadTestFunction c hc_symm hct e U hU (K := Kρ) hρs hcover).comp
-    ((continuous_smulLinearMap e U hU ρ).subtype_mk fun s ↦
+    ((continuous_smul_function_frameTopology e U hU ρ).subtype_mk fun s ↦
       mem_supportedIn.2 ((tsupport_smul_function_subset ρ s).trans inter_subset_left))).congr
     fun s ↦ ?_
   ext y
