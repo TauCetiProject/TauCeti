@@ -179,21 +179,15 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
 `p ∣ n`. -/
 theorem finite_mem_totallyRamifiedOfDegree_wildExponent_eq (n j : ℕ) :
     {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.Finite := by
-  let : MeasurableSpace (Fin n → K) := borel _
-  have : BorelSpace (Fin n → K) := ⟨rfl⟩
-  obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
-  have hid := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
-  have hw0 : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
-    one_div_natCard_residueField_pow_mul_one_sub_ne_zero
-  have hrhs_lt : (n : ℝ≥0∞) * μ (eisensteinBox K n j) < ∞ :=
-    ENNReal.mul_lt_top (ENNReal.natCast_lt_top n)
-      ((measure_mono (eisensteinBox_subset_eisensteinSet K n j)).trans_lt
-        (measure_eisensteinSet_lt_top μ))
-  have hencard_ne_top :
-      ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.encard : ℝ≥0∞) ≠ ∞ := fun htop ↦ by
-    rw [htop, ENNReal.top_mul hw0] at hid
-    exact hrhs_lt.ne hid.symm
-  exact Set.encard_ne_top_iff.mp (by simpa [ENat.toENNReal_eq_top] using hencard_ne_top)
+  have htsum : ∑' L : totallyRamifiedOfDegree K n,
+      (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent) ≠ ∞ := by
+    rw [tsum_one_div_natCard_residueField_pow_wildExponent]
+    exact ENNReal.natCast_ne_top n
+  have hpos : (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ j) ≠ 0 :=
+    (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
+  refine ((ENNReal.finite_const_le_of_tsum_ne_top htsum hpos).image Subtype.val).subset ?_
+  rintro E ⟨hE, rfl⟩
+  exact ⟨⟨E, hE⟩, by simp, rfl⟩
 
 /-- **Krasner's count in measure form**: for a left-invariant measure `μ` normalized on the integer
 box,
@@ -235,18 +229,24 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
   let : MeasurableSpace (Fin n → K) := borel _
   have : BorelSpace (Fin n → K) := ⟨rfl⟩
   obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
-  have hid := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
-  rw [← (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).cast_ncard_eq,
-    ENat.toENNReal_coe, measure_eisensteinBox hadm μ hμ, ← mul_assoc] at hid
+  have hid := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure (j := j) μ hμ
+  rw [measure_eisensteinBox hadm μ hμ] at hid
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-  have hrhs :
-      (n : ℝ≥0∞) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
-        (1 - 1 / q) * (if j % n = 0 then 1 else 1 - 1 / q)) =
-      (n : ℝ≥0∞) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
-        (if j % n = 0 then 1 else 1 - 1 / q) * (1 - 1 / q) := by ring
-  rw [hrhs] at hid
-  exact (ENNReal.mul_left_inj (one_sub_one_div_natCard_residueField_ne_zero (K := K))
-    (ENNReal.sub_ne_top ENNReal.one_ne_top)).mp hid
+  have hpow : q ^ (n + j) / q ^ (n + j) = 1 :=
+    ENNReal.div_self (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
+      (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))
+  have hsub : (1 - 1 / q) / (1 - 1 / q) = 1 :=
+    ENNReal.div_self (one_sub_one_div_natCard_residueField_ne_zero (K := K))
+      (ENNReal.sub_ne_top ENNReal.one_ne_top)
+  rw [hid]
+  calc
+    n * q ^ (n + j) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+        (1 - 1 / q) * (if j % n = 0 then 1 else 1 - 1 / q)) / (1 - 1 / q) * (1 / q ^ (n + j))
+      = n * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
+          (if j % n = 0 then 1 else 1 - 1 / q) * (q ^ (n + j) / q ^ (n + j)) *
+          ((1 - 1 / q) / (1 - 1 / q)) := by
+          simp only [div_eq_mul_inv]; ring
+    _ = _ := by rw [hpow, hsub, mul_one, mul_one]
 
 private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
     (hadm : IsOreAdmissible K n j) :

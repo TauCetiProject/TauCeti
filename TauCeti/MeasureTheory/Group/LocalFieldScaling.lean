@@ -125,11 +125,10 @@ theorem mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff {ι : Type*} [Decida
         (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k m i)) ↔
       (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) ∧
         a k ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m) := by
-  simp only [mem_sdiff, mem_univ_pi]
-  refine and_congr_right fun ha ↦ not_congr ⟨fun h ↦ by simpa using h k, fun hk i ↦ ?_⟩
-  rcases eq_or_ne i k with rfl | hik
-  · simpa using hk
-  · simpa [Function.update_of_ne hik] using ha i
+  rw [Set.univ_pi_update k d m fun _ n ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ n)]
+  simp only [mem_sdiff, mem_inter_iff, mem_ofPred_eq, mem_pi, mem_univ, forall_true_left,
+    mem_compl_iff, mem_singleton_iff]
+  exact and_congr_right fun ha ↦ not_congr <| and_iff_left fun i _ ↦ ha i
 
 /-- The scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`, an additive subgroup of
 `ι → K`. -/

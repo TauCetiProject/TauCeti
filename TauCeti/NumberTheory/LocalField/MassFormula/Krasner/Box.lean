@@ -148,13 +148,8 @@ theorem mem_eisensteinBox_iff_of_map_eq {n j : ℕ} {a : Fin n → K} {f : 𝒪[
     have hnb := hnot ⟨j % n, Nat.mod_lt j hn⟩ rfl hb
     rw [hai ⟨j % n, Nat.mod_lt j hn⟩, Subtype.coe_injective.mem_set_image, SetLike.mem_coe,
       TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal] at hnb
-    cases hv : addVal 𝒪[K] (f.coeff (j % n)) with
-    | top => exact absurd le_top (hv ▸ hnb)
-    | coe m =>
-      rw [hv] at hle hnb
-      dsimp only at hnb
-      norm_cast at hle hnb ⊢
-      omega
+    exact le_antisymm
+      (ENat.lt_natCast_add_one_iff.mp (Nat.cast_add_one (R := ℕ∞) _ ▸ lt_of_not_ge hnb)) hle
   · rw [hai i, hi, Subtype.coe_injective.mem_set_image, SetLike.mem_coe,
       TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, hcrit hb]
     norm_cast

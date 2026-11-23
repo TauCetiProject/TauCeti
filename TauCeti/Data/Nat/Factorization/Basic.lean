@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.Order.Interval.Finset.SuccPred
+import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 
 /-!
 # Removing prime-power factors
@@ -118,7 +118,7 @@ theorem Ico_filter_not_dvd_card_add_div_of_dvd {n d : ℕ} (h : d ∣ n) :
   rcases n with _ | m
   · simp
   · have hIco : Ico 1 (m + 1) = Ioc 0 m := by
-      simpa only [Order.succ_eq_add_one, Nat.zero_add] using Ico_succ_succ_eq_Ioc 0 m
+      simpa only [Nat.zero_add] using Ico_add_one_add_one_eq_Ioc 0 m
     rw [hIco, Nat.succ_div_of_dvd h, ← add_assoc, Ioc_filter_not_dvd_card_add_div]
 
 /-- If `¬ d ∣ n`, the number of naturals in `[1, n)` not divisible by `d` plus `n / d` equals
@@ -128,7 +128,7 @@ theorem Ico_filter_not_dvd_card_add_div_of_not_dvd {n d : ℕ} (h : ¬ d ∣ n) 
   rcases n with _ | m
   · exact absurd (dvd_zero d) h
   · have hIco : Ico 1 (m + 1) = Ioc 0 m := by
-      simpa only [Order.succ_eq_add_one, Nat.zero_add] using Ico_succ_succ_eq_Ioc 0 m
+      simpa only [Nat.zero_add] using Ico_add_one_add_one_eq_Ioc 0 m
     rw [hIco, Nat.succ_div_of_not_dvd h, Ioc_filter_not_dvd_card_add_div, Nat.add_sub_cancel]
 
 end DivisibilityCounting
