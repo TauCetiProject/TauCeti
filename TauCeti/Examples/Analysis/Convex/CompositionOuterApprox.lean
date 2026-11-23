@@ -79,7 +79,7 @@ section SquaredSum
 variable {ι : Type*}
 
 /-- The component rows of the squared coordinates: `G x = (2 a_j x_j - a_j ^ 2)_j`. -/
-theorem componentRow_square [Fintype ι] (a x : ι → ℝ) :
+theorem componentRow_sq [Fintype ι] (a x : ι → ℝ) :
     componentRow (fun x j ↦ x j ^ 2) a (mul ℝ _ (2 * a)) x = fun j ↦ 2 * a j * x j - a j ^ 2 := by
   ext j
   simp only [componentRow_def, Pi.add_apply, ContinuousLinearMap.mul_apply', Pi.mul_apply,
@@ -103,27 +103,27 @@ example [Fintype ι] (y : ι → ℝ) :
 
 /-- The direct rows of the squared coordinates with outer sum: `C x = ∑ j, (2 a_j x_j - a_j ^ 2)`.
 -/
-theorem directRow_square_sum [Fintype ι] (a x : ι → ℝ) :
+theorem directRow_sq_sum [Fintype ι] (a x : ι → ℝ) :
     directRow (fun x j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) a (mul ℝ _ (2 * a)) (∑ j, proj j) x =
       ∑ j, (2 * a j * x j - a j ^ 2) := by
-  simp only [directRow_sum_coord, componentRow_square]
+  simp only [directRow_sum_coord, componentRow_sq]
 
 end SquaredSum
 
 /-- At the anchor `(1, 1)` the component row of the squared coordinates is
 `G x = (2 x₀ - 1, 2 x₁ - 1)`. -/
-theorem componentRow_square_one (x : Fin 2 → ℝ) :
+theorem componentRow_sq_one (x : Fin 2 → ℝ) :
     componentRow (fun x j ↦ x j ^ 2) 1 (mul ℝ _ (2 * 1)) x = ![2 * x 0 - 1, 2 * x 1 - 1] := by
-  rw [componentRow_square]
+  rw [componentRow_sq]
   ext j
   fin_cases j <;> simp
 
 /-- At the anchor `(1, 1)` the direct row of the squared coordinates with outer sum is
 `C x = 2 x₀ + 2 x₁ - 2`. -/
-theorem directRow_square_sum_one (x : Fin 2 → ℝ) :
+theorem directRow_sq_sum_one (x : Fin 2 → ℝ) :
     directRow (fun x j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) 1 (mul ℝ _ (2 * 1)) (∑ j, proj j) x =
       2 * x 0 + 2 * x 1 - 2 := by
-  rw [directRow_square_sum, Fin.sum_univ_two]
+  rw [directRow_sq_sum, Fin.sum_univ_two]
   simp only [Pi.one_apply]
   ring
 
@@ -143,18 +143,18 @@ example :
 
 /-- At the origin, the component row of the squared coordinates at the anchor `(1, 1)` is
 `(-1, -1)`. -/
-theorem componentRow_square_one_zero :
+theorem componentRow_sq_one_zero :
     componentRow (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) 1 (mul ℝ _ (2 * 1)) 0 = ![-1, -1] := by
-  rw [componentRow_square_one]
+  rw [componentRow_sq_one]
   norm_num
 
 /-- At the origin, the direct row of the squared coordinates with outer sum at the anchor `(1, 1)`
 is `-2`, whereas the expression `h (g a) + Dh (Dg x)`, which measures from `0` instead of the
 anchor, is `2` there. -/
-theorem directRow_square_sum_one_zero :
+theorem directRow_sq_sum_one_zero :
     directRow (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) 1 (mul ℝ _ (2 * 1))
       (∑ j, proj j) 0 = -2 := by
-  rw [directRow_square_sum_one]
+  rw [directRow_sq_sum_one]
   norm_num
 
 /-! ### Outer approximations on the box -/
@@ -165,29 +165,28 @@ variable {κ : Type*}
 
 /-- On the box `[-1, 1]²` with budget one, any nonempty family of copies of the anchor `(1, 1)`
 gives the direct set `x₀ + x₁ ≤ 3/2` of the squared coordinates with outer sum. -/
-theorem directOuterApprox_square_sum_one [Nonempty κ] :
+theorem directOuterApprox_sq_sum_one [Nonempty κ] :
     directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j)
       (fun _ : κ ↦ 1) (fun _ ↦ mul ℝ _ (2 * 1)) (fun _ ↦ ∑ j, proj j) 1 =
       Icc (-1) 1 ∩ {x | x 0 + x 1 ≤ 3 / 2} := by
   ext x
-  simp only [mem_directOuterApprox, directRow_square_sum_one, forall_const, mem_inter_iff,
+  simp only [mem_directOuterApprox, directRow_sq_sum_one, forall_const, mem_inter_iff,
     mem_ofPred_eq]
   constructor <;> rintro ⟨hx, hb⟩ <;> exact ⟨hx, by linarith⟩
 
 /-- On the box `[-1, 1]²` with budget one and all heights admissible, any nonempty family of copies
 of the anchor `(1, 1)` gives the projected shared set `x₀ + x₁ ≤ 3/2` of the squared coordinates
 with outer sum, the same as the direct set. -/
-theorem fst_image_sharedOuterApprox_square_sum_one [Nonempty κ] :
+theorem fst_image_sharedOuterApprox_sq_sum_one [Nonempty κ] :
     Prod.fst '' sharedOuterApprox (Icc (-1) 1) univ (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
       (fun y ↦ ∑ j, y j) (fun _ : κ ↦ 1) (fun _ ↦ mul ℝ _ (2 * 1)) (fun _ ↦ ∑ j, proj j) 1 =
       Icc (-1) 1 ∩ {x | x 0 + x 1 ≤ 3 / 2} := by
-  rw [← directOuterApprox_square_sum_one (κ := κ)]
-  exact Subset.antisymm (fst_image_sharedOuterApprox_subset_directOuterApprox
-    fun _ _ _ hyz ↦ by simpa using Fintype.sum_mono hyz)
-      (directOuterApprox_subset_fst_image_sharedOuterApprox (mapsTo_univ _ _) fun _ _ _ ↦ rfl)
+  rw [← directOuterApprox_sq_sum_one (κ := κ)]
+  exact fst_image_sharedOuterApprox_eq_directOuterApprox
+    (fun _ _ _ hyz ↦ by simpa using Fintype.sum_mono hyz) (mapsTo_univ _ _) fun _ _ _ ↦ rfl
 
 /-- With no admissible heights the shared approximation is empty, whatever the anchors, rows and
-budget (`sharedOuterApprox_empty_heights`). Together with `directOuterApprox_square_sum_one`, whose
+budget (`sharedOuterApprox_empty_heights`). Together with `directOuterApprox_sq_sum_one`, whose
 direct set contains `0`, this shows that the height domain cannot be discarded. -/
 example (a : κ → Fin 2 → ℝ)
     (Dg : κ → (Fin 2 → ℝ) →L[ℝ] Fin 2 → ℝ) (Dh : κ → (Fin 2 → ℝ) →L[ℝ] ℝ) (b : ℝ) :
@@ -235,12 +234,10 @@ theorem fst_image_sharedOuterApprox_id_sum (a : κ → ι → ℝ) :
     Prod.fst '' sharedOuterApprox D univ id (fun y ↦ ∑ j, y j) a
       (fun _ ↦ ContinuousLinearMap.id ℝ _) (fun _ ↦ ∑ j, proj j) b = D ∩ {x | ∑ j, x j ≤ b} := by
   rw [← directOuterApprox_id_sum a]
-  exact Subset.antisymm (fst_image_sharedOuterApprox_subset_directOuterApprox
-    fun _ _ _ hyz ↦ by simpa using Fintype.sum_mono hyz)
-      (directOuterApprox_subset_fst_image_sharedOuterApprox (mapsTo_univ id _)
-        fun _ _ _ ↦ by
-          simpa only [ContinuousLinearMap.coe_id'] using
-            (ContinuousLinearMap.id ℝ (ι → ℝ)).componentRow_eq_apply)
+  exact fst_image_sharedOuterApprox_eq_directOuterApprox
+    (fun _ _ _ hyz ↦ by simpa using Fintype.sum_mono hyz) (mapsTo_univ id _) fun _ _ _ ↦ by
+      simpa only [ContinuousLinearMap.coe_id'] using
+        (ContinuousLinearMap.id ℝ (ι → ℝ)).componentRow_eq_apply
 
 end Affine
 
@@ -250,29 +247,29 @@ section TwoAnchors
 
 /-- The component rows of the squared coordinates at the anchors `(1, 1)` and `(-1, -1)`:
 `G x = (2 c x_j - 1)_j` for `c = ±1`. -/
-private theorem componentRow_square_one_neg_one (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
+private theorem componentRow_sq_one_neg_one (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
     componentRow (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (![1, -1] i) (mul ℝ _ (2 * ![1, -1] i)) x j =
       2 * ![1, -1] i * x j - 1 := by
-  rw [componentRow_square]
+  rw [componentRow_sq]
   fin_cases i <;> simp
 
 /-- The direct rows of the squared coordinates with outer sum at the anchors `(1, 1)` and
 `(-1, -1)`: `C x = 2 c (x₀ + x₁) - 2` for `c = ±1`. -/
-private theorem directRow_square_sum_one_neg_one (i : Fin 2) (x : Fin 2 → ℝ) :
+private theorem directRow_sq_sum_one_neg_one (i : Fin 2) (x : Fin 2 → ℝ) :
     directRow (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) (![1, -1] i)
       (mul ℝ _ (2 * ![1, -1] i)) (∑ j, proj j) x = 2 * ![1, -1] i * (x 0 + x 1) - 2 := by
-  rw [directRow_square_sum, Fin.sum_univ_two]
+  rw [directRow_sq_sum, Fin.sum_univ_two]
   fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.cons_val_fin_one, Pi.one_apply, Pi.neg_apply] <;> ring
 
 /-- At the anchors `(1, 1)` and `(-1, -1)` with budget `1/2`, the direct set of the squared
 coordinates with outer sum on the box `[-1, 1]²` is `|x₀ + x₁| ≤ 5/4`. -/
-theorem directOuterApprox_square_sum_one_neg_one :
+theorem directOuterApprox_sq_sum_one_neg_one :
     directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j)
       ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2) =
       Icc (-1) 1 ∩ {x | |x 0 + x 1| ≤ 5 / 4} := by
   ext x
-  simp only [mem_directOuterApprox, directRow_square_sum_one_neg_one, Fin.forall_fin_two,
+  simp only [mem_directOuterApprox, directRow_sq_sum_one_neg_one, Fin.forall_fin_two,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, mem_inter_iff,
     mem_ofPred_eq, abs_le]
   refine and_congr_right fun _ ↦ ⟨fun ⟨_, _⟩ ↦ ⟨?_, ?_⟩, fun ⟨_, _⟩ ↦ ⟨?_, ?_⟩⟩ <;> linarith
@@ -281,7 +278,7 @@ theorem directOuterApprox_square_sum_one_neg_one :
 projected shared set of the squared coordinates with outer sum on the box `[-1, 1]²` is
 `|x₀| + |x₁| ≤ 5/4`: one height vector must dominate the rows of both anchors, so each height is at
 least `2 |x_j| - 1`. -/
-theorem fst_image_sharedOuterApprox_square_sum_one_neg_one :
+theorem fst_image_sharedOuterApprox_sq_sum_one_neg_one :
     Prod.fst '' sharedOuterApprox (Icc (-1) 1) univ (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
       (fun y ↦ ∑ j, y j) ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j)
       (1 / 2) = Icc (-1) 1 ∩ {x | |x 0| + |x 1| ≤ 5 / 4} := by
@@ -294,7 +291,7 @@ theorem fst_image_sharedOuterApprox_square_sum_one_neg_one :
     have hy (j : Fin 2) : 2 * |x j| - 1 ≤ y j := by
       have h0 := (hrow 0).1 j
       have h1 := (hrow 1).1 j
-      rw [componentRow_square_one_neg_one] at h0 h1
+      rw [componentRow_sq_one_neg_one] at h0 h1
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h0 h1
       have h : |x j| ≤ (y j + 1) / 2 := abs_le.2 ⟨by linarith, by linarith⟩
       linarith
@@ -305,7 +302,7 @@ theorem fst_image_sharedOuterApprox_square_sum_one_neg_one :
     obtain ⟨hx, hb⟩ := mem_inter_iff _ _ _ |>.1 hx
     refine ⟨(x, fun j ↦ 2 * |x j| - 1), mem_sharedOuterApprox.2 ⟨hx, mem_univ _, fun i ↦
       ⟨fun j ↦ ?_, ?_⟩⟩, rfl⟩
-    · rw [componentRow_square_one_neg_one]
+    · rw [componentRow_sq_one_neg_one]
       fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero,
         Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
         linarith [le_abs_self (x j), neg_abs_le (x j)]
@@ -315,14 +312,14 @@ theorem fst_image_sharedOuterApprox_square_sum_one_neg_one :
 
 /-- The objective `-x₀ + x₁` attains its minimum `-2` on the direct set at the anchors `(1, 1)` and
 `(-1, -1)` with budget `1/2`, at the corner `(1, -1)`. -/
-theorem mem_and_isMinOn_directOuterApprox_square_sum_one_neg_one :
+theorem mem_and_isMinOn_directOuterApprox_sq_sum_one_neg_one :
     ![1, -1] ∈ directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
         (fun y ↦ ∑ j, y j) ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j)
         (1 / 2) ∧
       IsMinOn (fun x : Fin 2 → ℝ ↦ -x 0 + x 1) (directOuterApprox (Icc (-1) 1)
         (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) ![1, -1]
         (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2)) ![1, -1] := by
-  rw [directOuterApprox_square_sum_one_neg_one]
+  rw [directOuterApprox_sq_sum_one_neg_one]
   refine ⟨mem_inter_iff _ _ _ |>.2 ⟨mem_Icc.2 ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩,
     isMinOn_iff.2 fun x hx ↦ ?_⟩
   · fin_cases j <;> norm_num
@@ -337,14 +334,14 @@ theorem mem_and_isMinOn_directOuterApprox_square_sum_one_neg_one :
 
 /-- The objective `-x₀ + x₁` attains its minimum `-5/4` on the projected shared set at the anchors
 `(1, 1)` and `(-1, -1)` with budget `1/2`, at `(5/8, -5/8)`. -/
-theorem mem_and_isMinOn_fst_image_sharedOuterApprox_square_sum_one_neg_one :
+theorem mem_and_isMinOn_fst_image_sharedOuterApprox_sq_sum_one_neg_one :
     ![5 / 8, -5 / 8] ∈ Prod.fst '' sharedOuterApprox (Icc (-1) 1)
         univ (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) ![1, -1]
         (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2) ∧
       IsMinOn (fun x : Fin 2 → ℝ ↦ -x 0 + x 1) (Prod.fst '' sharedOuterApprox (Icc (-1) 1)
         univ (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) ![1, -1]
         (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2)) ![5 / 8, -5 / 8] := by
-  rw [fst_image_sharedOuterApprox_square_sum_one_neg_one]
+  rw [fst_image_sharedOuterApprox_sq_sum_one_neg_one]
   refine ⟨mem_inter_iff _ _ _ |>.2 ⟨mem_Icc.2 ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩,
     isMinOn_iff.2 fun x hx ↦ ?_⟩
   · fin_cases j <;> norm_num
@@ -357,7 +354,7 @@ theorem mem_and_isMinOn_fst_image_sharedOuterApprox_square_sum_one_neg_one :
 
 /-- The objective `-x₀ + x₁` attains its minimum `-1` on the original set `x₀ ^ 2 + x₁ ^ 2 ≤ 1/2`
 of the box `[-1, 1]²`, at `(1/2, -1/2)`. -/
-theorem mem_and_isMinOn_originalSet_square_sum_half :
+theorem mem_and_isMinOn_originalSet_sq_sum_half :
     ![1 / 2, -1 / 2] ∈ originalSet (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
         (fun y ↦ ∑ j, y j) (1 / 2) ∧
       IsMinOn (fun x : Fin 2 → ℝ ↦ -x 0 + x 1) (originalSet (Icc (-1) 1)
@@ -374,7 +371,7 @@ theorem mem_and_isMinOn_originalSet_square_sum_half :
 
 /-- The exact lift retains the minimum `-1` of `-x₀ + x₁`: with the monotone outer sum, the graph
 point `((1/2, -1/2), (1/4, 1/4))` minimises the objective on the lifted set. -/
-theorem mem_and_isMinOn_liftedSet_square_sum_half :
+theorem mem_and_isMinOn_liftedSet_sq_sum_half :
     (![1 / 2, -1 / 2], ![1 / 4, 1 / 4]) ∈ liftedSet (Icc (-1) 1) univ
         (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) (1 / 2) ∧
       IsMinOn ((fun x : Fin 2 → ℝ ↦ -x 0 + x 1) ∘ Prod.fst) (liftedSet (Icc (-1) 1) univ
@@ -383,7 +380,7 @@ theorem mem_and_isMinOn_liftedSet_square_sum_half :
   have hg : (fun j ↦ (![1 / 2, -1 / 2] : Fin 2 → ℝ) j ^ 2) = ![1 / 4, 1 / 4] := by
     ext j
     fin_cases j <;> norm_num
-  obtain ⟨hmem, hmin⟩ := mem_and_isMinOn_originalSet_square_sum_half
+  obtain ⟨hmem, hmin⟩ := mem_and_isMinOn_originalSet_sq_sum_half
   refine ⟨?_, (isMinOn_comp_fst_liftedSet_iff (mapsTo_univ _ _)
     (Fintype.sum_mono.monotoneOn univ) _ _).2 hmin⟩
   rw [← hg]
@@ -478,9 +475,8 @@ private theorem fst_image_sharedOuterApprox_exp_zero {D : Set ℝ} {E : Set (Fin
     Prod.fst '' sharedOuterApprox D E (fun x : ℝ ↦ fun _ : Fin 1 ↦ x) (fun y ↦ Real.exp (y 0))
       (fun _ : Fin 1 ↦ 0) (fun _ ↦ toSpanSingleton ℝ 1) (fun _ ↦ proj 0) 2 = D ∩ Iic 1 := by
   rw [← directOuterApprox_exp_zero D]
-  exact Subset.antisymm (fst_image_sharedOuterApprox_subset_directOuterApprox
-    fun _ _ _ h ↦ h 0) (directOuterApprox_subset_fst_image_sharedOuterApprox
-      (hDE.mono_left directOuterApprox_subset) fun _ _ _ ↦ by ext; simp [componentRow_def])
+  exact fst_image_sharedOuterApprox_eq_directOuterApprox (fun _ _ _ h ↦ h 0)
+    (hDE.mono_left directOuterApprox_subset) fun _ _ _ ↦ by ext; simp [componentRow_def]
 
 /-- For `exp x ≤ 2` on the line at the anchor `0`, the projected shared set is `x ≤ 1`. -/
 theorem fst_image_sharedOuterApprox_exp_zero_univ :
@@ -583,10 +579,9 @@ theorem fst_image_sharedOuterApproxOn_sq_neg_one :
       (fun y ↦ y 0 ^ 2) (fun _ : Fin 1 ↦ -1) (fun _ ↦ toSpanSingleton ℝ 1)
       (fun _ ↦ (-2 : ℝ) • proj 0) 1 = Ici (-1) := by
   rw [← directOuterApprox_sq_neg_one]
-  exact Subset.antisymm (fst_image_sharedOuterApproxOn_subset_directOuterApprox
-    fun _ v _ hv ↦ neg_two_smul_proj_nonneg_of_proj_zero_eq_zero v hv)
-      (directOuterApprox_subset_fst_image_sharedOuterApproxOn (r := fun x _ ↦ x)
-        (mapsTo_univ _ _) fun _ _ _ ↦ by ext; simp [componentRow_def])
+  exact fst_image_sharedOuterApproxOn_eq_directOuterApprox (r := fun x _ ↦ x)
+    (fun _ v _ hv ↦ neg_two_smul_proj_nonneg_of_proj_zero_eq_zero v hv) (mapsTo_univ _ _)
+    fun _ _ _ ↦ by ext; simp [componentRow_def]
 
 /-- The original set of `x ^ 2 ≤ 1` on the line is `[-1, 1]`. -/
 theorem originalSet_sq_one :
@@ -663,10 +658,9 @@ theorem fst_image_sharedOuterApproxOn_id_sq_neg_one :
       (fun y ↦ y 0 ^ 2 + y 1) (fun _ : Fin 1 ↦ -1) (fun _ ↦ toSpanSingleton ℝ ![1, -2])
       (fun _ ↦ (-2 : ℝ) • proj 0 + proj 1) 2 = Ici (-1) := by
   rw [← directOuterApprox_id_sq_neg_one]
-  exact Subset.antisymm (fst_image_sharedOuterApproxOn_subset_directOuterApprox
-    fun _ v hv hv0 ↦ neg_two_smul_proj_add_proj_nonneg_of_nonneg_of_proj_zero_eq_zero v hv hv0)
-      (directOuterApprox_subset_fst_image_sharedOuterApproxOn (mapsTo_univ _ _)
-        fun x _ _ ↦ componentRow_id_sq_neg_one x)
+  exact fst_image_sharedOuterApproxOn_eq_directOuterApprox
+    (fun _ v hv hv0 ↦ neg_two_smul_proj_add_proj_nonneg_of_nonneg_of_proj_zero_eq_zero v hv hv0)
+    (mapsTo_univ _ _) fun x _ _ ↦ componentRow_id_sq_neg_one x
 
 /-- The original set of `x ^ 2 + x ^ 2 ≤ 2` on the line is `[-1, 1]`. -/
 theorem originalSet_id_sq_two :

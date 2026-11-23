@@ -77,6 +77,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
   inclusion when, at every point of the direct approximation, all anchors share a common component
   row and that row is an admissible height.
+* `TauCeti.CompositionLift.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
+  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
+  combined into an equality.
 * `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
   `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
   `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
@@ -443,6 +446,19 @@ theorem directOuterApprox_subset_fst_image_sharedOuterApproxOn {r : X → ι →
   rw [← hrow x hx i, outerRow_componentRow]
   exact hxb i
 
+/-- **The projected shared approximation with exact rows on `J` is the direct one.** If every outer
+derivative `Dh i` is nonnegative on the nonnegative directions vanishing on `J`, and at every point
+`x` of the direct approximation all anchors share the component row `r x`, with `r` mapping the
+direct approximation into `E`, then the projection of the shared approximation with exact rows on
+`J` equals the direct approximation. -/
+theorem fst_image_sharedOuterApproxOn_eq_directOuterApprox {r : X → ι → ℝ}
+    (hD : ∀ i, ∀ v : ι → ℝ, 0 ≤ v → (∀ j ∈ J, v j = 0) → 0 ≤ Dh i v)
+    (hr : MapsTo r (directOuterApprox D g h a Dg Dh b) E)
+    (hrow : ∀ x ∈ directOuterApprox D g h a Dg Dh b, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    Prod.fst '' sharedOuterApproxOn J D E g h a Dg Dh b = directOuterApprox D g h a Dg Dh b :=
+  (fst_image_sharedOuterApproxOn_subset_directOuterApprox hD).antisymm
+    (directOuterApprox_subset_fst_image_sharedOuterApproxOn hr hrow)
+
 /-- **A common component row lifts the direct approximation.** If at every point `x` of the direct
 approximation all anchors share the component row `r x`, and `r` maps the direct approximation into
 `E`, then every point of the direct approximation lifts to the shared approximation, with height
@@ -485,6 +501,17 @@ theorem fst_image_sharedOuterApprox_subset_directOuterApprox (hD : ∀ i, Monoto
   simpa using fst_image_sharedOuterApproxOn_subset_directOuterApprox (J := ∅) (D := D) (E := E)
     (g := g) (h := h) (a := a) (Dg := Dg) (b := b)
     fun i v hv _ ↦ (monotone_iff_map_nonneg (Dh i)).1 (hD i) v hv
+
+/-- **The projected shared approximation is the direct one.** If every outer derivative `Dh i` is
+monotone, and at every point `x` of the direct approximation all anchors share the component row
+`r x`, with `r` mapping the direct approximation into `E`, then the projection of the shared
+approximation equals the direct approximation. -/
+theorem fst_image_sharedOuterApprox_eq_directOuterApprox {r : X → ι → ℝ}
+    (hD : ∀ i, Monotone (Dh i)) (hr : MapsTo r (directOuterApprox D g h a Dg Dh b) E)
+    (hrow : ∀ x ∈ directOuterApprox D g h a Dg Dh b, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = directOuterApprox D g h a Dg Dh b :=
+  (fst_image_sharedOuterApprox_subset_directOuterApprox hD).antisymm
+    (directOuterApprox_subset_fst_image_sharedOuterApprox hr hrow)
 
 /-- **The shared approximation lies in the direct one for a monotone outer function.** If `h` is
 monotone on the whole height space and has derivative `Dh i` at every `g (a i)`, then the
