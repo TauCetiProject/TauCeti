@@ -24,13 +24,12 @@ namespace TauCeti
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- A covering map with finite fibres over a space with finitely many connected components has
-finitely many connected components in its total space.
-
-This applies `IsOpenMap.finite_connectedComponents_of_finite_preimage_singleton`; properness
-of the covering map supplies its closed-map hypothesis. -/
+finitely many connected components in its total space. -/
 theorem _root_.IsCoveringMap.finite_connectedComponents [Finite (ConnectedComponents Y)]
     {p : X → Y} (hp : IsCoveringMap p) (hfin : ∀ y, Finite (p ⁻¹' {y})) :
     Finite (ConnectedComponents X) := by
+  -- Apply Mathlib's IsOpenMap.finite_connectedComponents_of_finite_preimage_singleton;
+  -- properness supplies its closed-map hypothesis.
   exact hp.isOpenMap.finite_connectedComponents_of_finite_preimage_singleton
     (hp.isProperMap hfin).isClosedMap hp.continuous
     (fun y ↦ Set.finite_coe_iff.mp (hfin y))

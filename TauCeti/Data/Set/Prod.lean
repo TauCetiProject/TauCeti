@@ -76,12 +76,9 @@ theorem Function.Pullback.snd_fstPreimageEquiv_symm_apply (x : X) (z : g ⁻¹' 
 /-- The first pullback projection is surjective exactly when the range of the base map is
 contained in the range of the other map. -/
 @[simp]
-theorem Function.Pullback.surjective_fst_iff :
+theorem Function.Pullback.fst_surjective_iff :
     Surjective (Pullback.fst : f.Pullback g → X) ↔ Set.range f ⊆ Set.range g := by
-  constructor
-  · rintro h _ ⟨x, rfl⟩
-    obtain ⟨w, hw⟩ := h x
-    exact ⟨w.snd, w.property.symm.trans (congrArg f hw)⟩
-  · intro h x
-    obtain ⟨z, hz⟩ := h (Set.mem_range_self x)
-    exact ⟨⟨(x, z), hz.symm⟩, rfl⟩
+  rw [Set.range_subset_iff]
+  apply forall_congr'
+  intro x
+  simpa [Set.mem_range] using (Pullback.fstPreimageEquiv (f := f) (g := g) x).nonempty_congr

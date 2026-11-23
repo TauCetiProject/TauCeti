@@ -28,7 +28,7 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 theorem IsFiniteCover.pullback_fst (hp : IsFiniteCover p) (hf : Continuous f) :
     IsFiniteCover (Pullback.fst : f.Pullback p → X) where
   isCoveringMap := hp.isCoveringMap.pullback_fst hf
-  surjective := Pullback.surjective_fst_iff.mpr (by simp [hp.surjective.range_eq])
+  surjective := Pullback.fst_surjective_iff.mpr (by simp [hp.surjective.range_eq])
   finite_fiber := fun x ↦ (Pullback.finite_preimage_fst_singleton_iff x).mpr
     (hp.finite_fiber (f x))
 
