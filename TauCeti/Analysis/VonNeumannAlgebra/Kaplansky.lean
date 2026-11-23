@@ -427,31 +427,6 @@ theorem closure_image_ofCLM_inter_closedBall
   exact ((S : Set (H →L[ℂ] H)).centralizer.isClosed_image_ofCLM_centralizer).inter
     (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
 
-/-- **Matrix amplification of Kaplansky's density theorem for closed balls.** On the finite Hilbert
-sum `PiLp 2 (fun _ : ι => H)`, for every radius `r : ℝ`, the strong operator closure of the closed
-ball of operators with matrix entries in `A` equals the closed ball of operators with matrix entries
-in `A''`. -/
-theorem closure_image_toPointwiseConvergenceCLM_piLpEntry_inter_closedBall
-    (A : StarSubalgebra ℂ (H →L[ℂ] H)) (ι : Type*) [Fintype ι] [DecidableEq ι] (r : ℝ) :
-    closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ)
-        (PiLp 2 (fun _ : ι => H)) (PiLp 2 (fun _ : ι => H)) ''
-        ({T | ∀ i j, T.piLpEntry i j ∈ A} ∩ closedBall 0 r)) =
-      ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ)
-        (PiLp 2 (fun _ : ι => H)) (PiLp 2 (fun _ : ι => H)) ''
-        ({T | ∀ i j, T.piLpEntry i j ∈ (A : Set (H →L[ℂ] H)).centralizer.centralizer} ∩
-          closedBall 0 r) := by
-  have h := (A.piLpMatrix ι).closure_image_toPointwiseConvergenceCLM_inter_closedBall r
-  have h1 : (A.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
-      {T | ∀ i j, T.piLpEntry i j ∈ A} := by
-    ext T
-    exact StarSubalgebra.mem_piLpMatrix
-  have h2 : (A.piLpMatrix ι :
-        Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))).centralizer.centralizer =
-      {T | ∀ i j, T.piLpEntry i j ∈ (A : Set (H →L[ℂ] H)).centralizer.centralizer} := by
-    ext T
-    simp only [A.mem_centralizer_centralizer_piLpMatrix_iff, Set.mem_ofPred_eq]
-  rwa [h2, h1] at h
-
 /-- **Finite-vector strong-star Kaplansky approximation.** Every `x ∈ S''` can be approximated
 simultaneously with its adjoint on finitely many vectors by `s ∈ S` satisfying `‖s‖ ≤ ‖x‖`. -/
 theorem exists_norm_le_forall_norm_sub_apply_lt_and_norm_star_sub_apply_lt
@@ -714,12 +689,8 @@ theorem double_commutant_iff_isClosed_image_ofCLM_inter_closedBall
     exact (S.double_commutant_iff_isClosed_image_ofCLM.mp hS).inter
       (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
   · rw [S.double_commutant_iff_isClosed_image_toPointwiseConvergenceCLM_inter_closedBall hr]
-    have hball : (S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ closedBall 0 r =
-        (S : Set (H →L[ℂ] H)) ∩ closedBall 0 r :=
-      Set.image_injective.mpr ContinuousLinearMapWOT.ofCLM_injective
-        (by rw [← S.closure_image_ofCLM_inter_closedBall r, hcl.closure_eq])
-    rw [← hball, ← S.closure_image_toPointwiseConvergenceCLM_inter_closedBall r]
-    exact isClosed_closure
+    exact ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
+      hcl
 
 /-- **Weak-compact closed-ball characterization of von Neumann algebras** (Jones, Corollary 5.2.2).
 For `r > 0`, a unital star subalgebra `S` equals its double commutant if and only if its closed

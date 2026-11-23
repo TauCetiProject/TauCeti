@@ -65,14 +65,12 @@ section Topology
 variable {ι : Type*} {p : ℝ≥0∞} {β : ι → Type*} [∀ i, TopologicalSpace (β i)]
 
 instance instIsTopologicalAddGroup [∀ i, AddCommGroup (β i)] [∀ i, IsTopologicalAddGroup (β i)] :
-    IsTopologicalAddGroup (PiLp p β) where
-  continuous_add := continuous_induced_rng.2
-    ((continuous_induced_dom.comp continuous_fst).add (continuous_induced_dom.comp continuous_snd))
-  continuous_neg := continuous_induced_rng.2 continuous_induced_dom.neg
+    IsTopologicalAddGroup (PiLp p β) :=
+  Topology.IsInducing.isTopologicalAddGroup (WithLp.addEquiv p (∀ i, β i)) ⟨rfl⟩
 
 instance instContinuousConstSMul {R : Type*} [∀ i, SMul R (β i)]
     [∀ i, ContinuousConstSMul R (β i)] : ContinuousConstSMul R (PiLp p β) :=
-  ⟨fun c ↦ continuous_induced_rng.2 ((continuous_const_smul c).comp continuous_induced_dom)⟩
+  Topology.IsInducing.continuousConstSMul (g := WithLp.ofLp) ⟨rfl⟩ id rfl
 
 end Topology
 

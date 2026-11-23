@@ -199,16 +199,17 @@ theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] 
       Metric.closedBall f₀ r) := by
   refine isClosed_iff_forall_filter.mpr fun T l hl hmem hlim => ?_
   have : l.NeBot := hl
-  have hmem' : ∀ᶠ S in l, ‖PointwiseConvergenceCLM.toCLM S - f₀‖ ≤ r := by
+  let toCLM := (UniformConvergenceCLM.ofFun σ F {s : Set E | Finite s}).symm
+  have hmem' : ∀ᶠ S in l, ‖toCLM S - f₀‖ ≤ r := by
     filter_upwards [le_principal_iff.mp hmem] with S ⟨S', hS', hS⟩
-    rw [← hS, PointwiseConvergenceCLM.toCLM_toPointwiseConvergenceCLM]
+    rw [← hS]
+    change ‖S' - f₀‖ ≤ r
     simpa [Metric.mem_closedBall, dist_eq_norm] using hS'
-  refine ⟨PointwiseConvergenceCLM.toCLM T, ?_,
-    PointwiseConvergenceCLM.toPointwiseConvergenceCLM_toCLM T⟩
+  refine ⟨toCLM T, ?_, rfl⟩
   rw [Metric.mem_closedBall, dist_eq_norm]
   exact ContinuousLinearMap.opNorm_le_of_tendsto_pointwise
-    (T := fun S : E →SLₚₜ[σ] F => PointwiseConvergenceCLM.toCLM S - f₀) hmem' fun x => by
-      simpa using ((tendsto_iff_forall_tendsto.mp hlim) x).sub_const (f₀ x)
+    (T := fun S : E →SLₚₜ[σ] F => toCLM S - f₀) hmem' fun x =>
+      ((tendsto_iff_forall_tendsto.mp hlim) x).sub_const (f₀ x)
 
 end ClosedBall
 
