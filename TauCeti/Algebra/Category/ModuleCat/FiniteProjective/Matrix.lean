@@ -96,13 +96,17 @@ instance : (finiteProjectiveModulesToMatrixFunctor R ι).IsEquivalence := by
       let M : ModuleCat.{max u v} R := E.inverse.obj Q
       have hfinM : Module.Finite R M := (E.symm.finite_functor_obj_iff Q).mpr hfinQ
       have : Module.Projective R M := (E.symm.projective_functor_obj_iff Q).mpr hprojQ
-      have : Small.{u} M := @Module.Finite.small.{u, u, max u v} R M _ _ _ (small_self R) hfinM
+      have : Small.{u} R := small_self R
+      have : Small.{u} M := Module.Finite.small R M
       let e := Shrink.linearEquiv.{u} R M; let P₀ : ModuleCat.{u} R := ModuleCat.of R (Shrink.{u} M)
       exact ⟨⟨P₀, finiteProjectiveModules_iff.mpr
         ⟨Module.Finite.equiv e.symm, Module.Projective.of_equiv e.symm⟩⟩,
         ⟨(toMatrixModCatUliftIso.{u, v, u} R ι).app P₀ ≪≫ E.functor.mapIso
           ((ULift.moduleEquiv (R := R) (M := P₀)).trans e).toModuleIso ≪≫ E.counitIso.app Q⟩⟩
-  exact { faithful := ObjectProperty.instFaithfulFullSubcategoryLift _ _ _,
-          full := ObjectProperty.instFullFullSubcategoryLift _ _ _ }
+  have : (finiteProjectiveModulesToMatrixFunctor R ι).Faithful :=
+    Functor.Faithful.of_comp_iso (ObjectProperty.liftCompιIso _ _ _)
+  have : (finiteProjectiveModulesToMatrixFunctor R ι).Full :=
+    Functor.Full.of_comp_faithful_iso (ObjectProperty.liftCompιIso _ _ _)
+  exact { }
 
 end TauCeti

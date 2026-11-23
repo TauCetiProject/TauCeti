@@ -45,9 +45,9 @@ noncomputable def finiteProjectiveModulesProdSplitK0Equiv :
     (SplitK0.map.{u, u} (RingHom.fst R S).finiteProjectiveModulesExtendScalars)
     (SplitK0.map.{u, u} (RingHom.snd R S).finiteProjectiveModulesExtendScalars)
     (SplitK0.map.{u, u} ((RingHom.fst R S).finiteProjectiveModulesRestrictScalars
-      (RingHom.finite_fst R S) (RingHom.projective_fst R S)))
+      (RingHom.finite_toModule_fst R S) (RingHom.projective_toModule_fst R S)))
     (SplitK0.map.{u, u} ((RingHom.snd R S).finiteProjectiveModulesRestrictScalars
-      (RingHom.finite_snd R S) (RingHom.projective_snd R S)))
+      (RingHom.finite_toModule_snd R S) (RingHom.projective_toModule_snd R S)))
     (SplitK0.hom_ext fun P ↦ by
       simp only [AddMonoidHom.comp_apply, AddMonoidHom.prod_apply, AddMonoidHom.coprod_apply,
         SplitK0.map_of, AddMonoidHom.id_apply]
@@ -74,9 +74,9 @@ noncomputable def finiteProjectiveModulesProdSplitK0Equiv :
 @[simp] theorem finiteProjectiveModulesProdSplitK0Equiv_symm_apply (x) :
     (finiteProjectiveModulesProdSplitK0Equiv R S).symm x =
       SplitK0.map.{u, u} ((RingHom.fst R S).finiteProjectiveModulesRestrictScalars
-          (RingHom.finite_fst R S) (RingHom.projective_fst R S)) x.1 +
+          (RingHom.finite_toModule_fst R S) (RingHom.projective_toModule_fst R S)) x.1 +
         SplitK0.map.{u, u} ((RingHom.snd R S).finiteProjectiveModulesRestrictScalars
-          (RingHom.finite_snd R S) (RingHom.projective_snd R S)) x.2 :=
+          (RingHom.finite_toModule_snd R S) (RingHom.projective_toModule_snd R S)) x.2 :=
   AddEquiv.ofProdCoprod_symm_apply _ _ _ _ _ _ _ _ _ x
 
 end TauCeti

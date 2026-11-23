@@ -19,8 +19,8 @@ For a possibly noncommutative ring `R`, this file develops the basic theory of `
 * normal form `[P] - n • [R]`
   (`TauCeti.SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular`),
 * Morita invariance (`CategoryTheory.Equivalence.finiteProjectiveModulesSplitK0Equiv`),
-* ring-isomorphism invariance (`RingEquiv.finiteProjectiveModulesSplitK0Equiv`), and its agreement
-  with restriction of scalars along the inverse ring isomorphism.
+* agreement of extension of scalars along a ring isomorphism with restriction of scalars along its
+  inverse (`RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars`).
 
 ## References
 
@@ -117,23 +117,7 @@ namespace RingEquiv
 
 open TauCeti
 
-variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
-
-/-- A ring isomorphism `e : R ≃+* S` induces an isomorphism on `SplitK0` by extension of scalars. -/
-noncomputable def finiteProjectiveModulesSplitK0Equiv (e : R ≃+* S) :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
-      SplitK0.{u} (finiteProjectiveModules S).FullSubcategory :=
-  AddMonoidHom.toAddEquiv
-    (SplitK0.map.{u, u} e.toRingHom.finiteProjectiveModulesExtendScalars)
-    (SplitK0.map.{u, u} e.symm.toRingHom.finiteProjectiveModulesExtendScalars)
-    (AddMonoidHom.ext fun _ ↦ by simp) (AddMonoidHom.ext fun _ ↦ by simp)
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_apply (e : R ≃+* S) (x) :
-    e.finiteProjectiveModulesSplitK0Equiv x =
-      SplitK0.map.{u, u} e.toRingHom.finiteProjectiveModulesExtendScalars x := (rfl)
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm (e : R ≃+* S) :
-    e.finiteProjectiveModulesSplitK0Equiv.symm = e.symm.finiteProjectiveModulesSplitK0Equiv := (rfl)
+variable {R S : Type u} [Ring R] [Ring S]
 
 /-- On `SplitK0`, extension of scalars along a ring isomorphism `e : R ≃+* S` agrees with
 restriction of scalars along `e.symm`. -/
@@ -148,21 +132,5 @@ theorem splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars (e : 
         (BalancedExtension.functorRingEquivIso.{u, u, u} e).app P.obj ≪≫
         eqToIso ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv
           e).symm.finiteProjectiveModulesEquivalence_functor_obj_obj P).symm
-
-/-- On `SplitK0`, the isomorphism induced by extension of scalars along a ring isomorphism
-`e : R ≃+* S` agrees with restriction of scalars along `e.symm`. -/
-theorem finiteProjectiveModulesSplitK0Equiv_eq_restrictScalars (e : R ≃+* S) :
-    e.finiteProjectiveModulesSplitK0Equiv =
-    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.finiteProjectiveModulesSplitK0Equiv :=
-  AddEquiv.toAddMonoidHom_injective
-    (splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars e)
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_refl (R : Type u) [Ring R] :
-    (RingEquiv.refl R).finiteProjectiveModulesSplitK0Equiv = AddEquiv.refl _ := by ext; simp
-
-theorem finiteProjectiveModulesSplitK0Equiv_trans (e : R ≃+* S) (e' : S ≃+* T) :
-    (e.trans e').finiteProjectiveModulesSplitK0Equiv =
-      e.finiteProjectiveModulesSplitK0Equiv.trans e'.finiteProjectiveModulesSplitK0Equiv := by
-  ext; simp [RingEquiv.toRingHom_trans]
 
 end RingEquiv

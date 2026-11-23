@@ -75,15 +75,20 @@ variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
 
 /-- A ring isomorphism `e : R ≃+* S` induces an isomorphism `KZero R ≃+ KZero S`. -/
 noncomputable def kZeroEquiv (e : R ≃+* S) : KZero R ≃+ KZero S :=
-  (RingEquiv.op e).finiteProjectiveModulesSplitK0Equiv
+  (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+    (RingEquiv.op e)).symm.finiteProjectiveModulesSplitK0Equiv
 
 @[simp] theorem kZeroEquiv_apply (e : R ≃+* S) (x : KZero R) :
     e.kZeroEquiv x = KZero.map e.toRingHom x :=
-  (RingEquiv.op e).finiteProjectiveModulesSplitK0Equiv_apply x
+  (DFunLike.congr_fun
+    (RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars
+      (RingEquiv.op e)) x).symm
 
 @[simp] theorem kZeroEquiv_symm (e : R ≃+* S) :
-    e.kZeroEquiv.symm = e.symm.kZeroEquiv :=
-  (RingEquiv.op e).finiteProjectiveModulesSplitK0Equiv_symm
+    e.kZeroEquiv.symm = e.symm.kZeroEquiv := by
+  ext x
+  apply e.kZeroEquiv.injective
+  simp [kZeroEquiv_apply, KZero.map_map]
 
 theorem kZeroEquiv_trans (e : R ≃+* S) (e' : S ≃+* T) :
     (e.trans e').kZeroEquiv = e.kZeroEquiv.trans e'.kZeroEquiv := by
@@ -103,15 +108,24 @@ variable (R : Type u) [CommRing R]
 left-module `SplitK0`. -/
 noncomputable def commRingLeftSplitK0Equiv :
     KZero R ≃+ SplitK0.{u} (finiteProjectiveModules R).FullSubcategory :=
-  (RingEquiv.toOpposite R).symm.finiteProjectiveModulesSplitK0Equiv
+  (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+    (RingEquiv.toOpposite R).symm).symm.finiteProjectiveModulesSplitK0Equiv
 
 theorem commRingLeftSplitK0Equiv_apply (x : KZero R) :
     commRingLeftSplitK0Equiv R x =
-      (RingEquiv.toOpposite R).symm.finiteProjectiveModulesSplitK0Equiv x := (rfl)
+      SplitK0.map.{u, u}
+        (RingEquiv.toOpposite R).symm.toRingHom.finiteProjectiveModulesExtendScalars x :=
+  (DFunLike.congr_fun
+    (RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars
+      (RingEquiv.toOpposite R).symm) x).symm
 
 theorem commRingLeftSplitK0Equiv_symm_apply (x) : (commRingLeftSplitK0Equiv R).symm x =
-    (RingEquiv.toOpposite R).finiteProjectiveModulesSplitK0Equiv x := by
-  simp [commRingLeftSplitK0Equiv]
+    SplitK0.map.{u, u}
+      (RingEquiv.toOpposite R).toRingHom.finiteProjectiveModulesExtendScalars x := by
+  apply (commRingLeftSplitK0Equiv R).injective
+  rw [AddEquiv.apply_symm_apply, commRingLeftSplitK0Equiv_apply,
+    SplitK0.map_finiteProjectiveModulesExtendScalars_apply_map]
+  simp [RingEquiv.toRingHom_eq_coe, ← RingEquiv.toRingHom_trans]
 
 @[simp] theorem commRingLeftSplitK0Equiv_of (P) :
     commRingLeftSplitK0Equiv R (SplitK0.of.{u} P) = SplitK0.of.{u}

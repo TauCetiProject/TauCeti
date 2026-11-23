@@ -35,8 +35,9 @@ module is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is 
 * `TauCeti.FiniteProjectiveModules.rankEquiv A h`: the isomorphism of the split `K₀` of finitely
   generated projective `A`-modules with `ℤ`, when `A` has invariant basis number and every such
   module is stably free.
-* `TauCeti.KZero.rankEquivPID`: explicit rank isomorphism `KZero R ≃+ ℤ` over a principal
-  right-ideal domain `R` (including commutative PIDs and division rings), sending `[R] ↦ 1`.
+* `TauCeti.KZero.rankEquivOfIsPrincipalIdealRing`: explicit rank isomorphism `KZero R ≃+ ℤ` over
+  a principal right-ideal domain `R` (including commutative PIDs and division rings), sending
+  `[R] ↦ 1`.
 
 ## Main results
 
@@ -176,30 +177,32 @@ instance FiniteProjectiveModules.subsingleton_splitK0 (A : Type u) [Ring A] [Sub
 
 namespace KZero
 
-section PID
+section IsPrincipalIdealRing
 variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing Rᵐᵒᵖ]
 
 /-- **Rank isomorphism `KZero R ≃+ ℤ` over a principal right-ideal domain `R`** (including any
 commutative PID and any division ring), sending the class of a finitely generated projective right
 module to its rank (`Module.finrank` over `Rᵐᵒᵖ`) and `[R] ↦ 1`. -/
-noncomputable def rankEquivPID : KZero R ≃+ ℤ :=
+noncomputable def rankEquivOfIsPrincipalIdealRing : KZero R ≃+ ℤ :=
   FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦
     Module.IsStablyFree.of_projective_of_isPrincipalIdealRing
 
-/-- Under `KZero.rankEquivPID`, the class of a finitely generated projective right `R`-module maps
-to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ`. -/
-@[simp] theorem rankEquivPID_of (P) :
-    rankEquivPID R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
+/-- Under `KZero.rankEquivOfIsPrincipalIdealRing`, the class of a finitely generated projective
+right `R`-module maps to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ`. -/
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_of (P) :
+    rankEquivOfIsPrincipalIdealRing R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
   have : Module.Free Rᵐᵒᵖ P.obj := Module.Free.of_projective_of_isPrincipalIdealRing
   FiniteProjectiveModules.rankEquiv_of Rᵐᵒᵖ _ P
 
-@[simp] theorem rankEquivPID_regular : rankEquivPID R (regular R) = 1 :=
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_regular :
+    rankEquivOfIsPrincipalIdealRing R (regular R) = 1 :=
   regular_def R ▸ FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular Rᵐᵒᵖ _
 
-@[simp] theorem rankEquivPID_symm_apply (n : ℤ) : (rankEquivPID R).symm n = n • regular R :=
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_symm_apply (n : ℤ) :
+    (rankEquivOfIsPrincipalIdealRing R).symm n = n • regular R :=
   regular_def R ▸ FiniteProjectiveModules.rankEquiv_symm_apply Rᵐᵒᵖ _ n
 
-end PID
+end IsPrincipalIdealRing
 
 end KZero
 

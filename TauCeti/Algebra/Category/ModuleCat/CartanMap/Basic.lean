@@ -34,9 +34,11 @@ structure is the split one, by
 `TauCeti.finiteProjectiveModulesExactStructure_eq_split`, because a short exact sequence of
 modules with projective quotient splits.
 
-The two subcategories are essentially small — every finitely generated module is a quotient of
-some `Rⁿ` — which is what makes their Grothendieck groups small types, and the Cartan map lives
-in the same universe as `R`.
+Both subcategories are essentially `u`-small (via the imported essential-smallness instances for
+`ModuleCat.isFG` in `TauCeti/Algebra/Category/FGModuleCat/Basic.lean` and
+`TauCeti.finiteProjectiveModules` in
+`TauCeti/Algebra/Category/ModuleCat/FiniteProjective/Basic.lean`), which makes their Grothendieck
+groups small types, and the Cartan map lives in the same universe as `R`.
 
 The main theorem is the module form of the resolution theorem: if every finitely generated
 `R`-module admits a finite resolution by finitely generated projectives, then `c_R` is an
@@ -52,7 +54,6 @@ Artinian ring, in the indecomposable-projective and simple bases.
 
 ## Main definitions
 
-* `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical
@@ -163,20 +164,23 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
       ExactStructure.split (finiteProjectiveModules R).FullSubcategory :=
   ExactStructure.fullSubcategory_eq_split (finiteProjectiveModules_le_isProjective R)
 
+private theorem finiteProjectiveModulesExactStructure_conflation_split
+    {S : ShortComplex (finiteProjectiveModules R).FullSubcategory}
+    (hS : (finiteProjectiveModulesExactStructure R).Conflation S) : Nonempty S.Splitting :=
+  (ExactStructure.split_conflation S).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
 /-- **Comparison between split and exact `K₀` of finitely generated projective modules.** Every
 short exact sequence splits (`TauCeti.finiteProjectiveModulesExactStructure_eq_split`). -/
 noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
       ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
-  ExactK0.fromSplitEquiv.{u} fun {S} hS ↦ (ExactStructure.split_conflation S).mp
-    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+  ExactK0.fromSplitEquiv.{u} (finiteProjectiveModulesExactStructure_conflation_split R)
 
 theorem finiteProjectiveModulesSplitK0EquivExactK0_apply (x) :
     finiteProjectiveModulesSplitK0EquivExactK0 R x =
       ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R) x := by
   rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u}]
-  exact fun hS ↦ (ExactStructure.split_conflation _).mp
-    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
 
 @[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (P) :
     finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
@@ -189,12 +193,9 @@ theorem finiteProjectiveModulesSplitK0EquivExactK0_apply (x) :
 /-- The comparison from split to exact `K₀` of the finitely generated projective modules is
 injective, because their exact structure is the split one. -/
 theorem fromSplit_finiteProjectiveModules_injective :
-    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) := by
-  intro x y h
-  apply (ExactK0.fromSplitEquiv.{u} (E := finiteProjectiveModulesExactStructure R)
-    (fun hS ↦ by simpa only [finiteProjectiveModulesExactStructure_eq_split,
-      ExactStructure.split_conflation] using hS)).injective
-  simpa only [ExactK0.fromSplitEquiv_apply] using h
+    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) :=
+  fun x y h ↦ (finiteProjectiveModulesSplitK0EquivExactK0 R).injective
+    (by simpa only [finiteProjectiveModulesSplitK0EquivExactK0_apply] using h)
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/

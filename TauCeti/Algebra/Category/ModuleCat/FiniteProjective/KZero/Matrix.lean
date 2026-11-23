@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.RingTheory.Morita.Matrix
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Matrix
+import TauCeti.Algebra.Category.ModuleCat.Equivalence
 import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
 /-!
@@ -38,8 +38,9 @@ module is not stably free, so in particular it is not free.
 
 For right-module algebraic `K₀` (`TauCeti.KZero`), `TauCeti.KZero.matrixEquiv R ι` provides the
 canonical universe-polymorphic isomorphism `KZero.{u} R ≃+ KZero.{max u v} (Matrix ι ι R)` sending
-`|ι| • [R]` to `[M_ι(R)]` and agreeing with `ModuleCat.matrixEquivalence Rᵐᵒᵖ i` composed with
-`RingEquiv.mopMatrix`.
+`|ι| • [R]` to `[M_ι(R)]`, and agreeing with `ModuleCat.matrixEquivalence Rᵐᵒᵖ i` composed with
+restriction of scalars along `(RingEquiv.mopMatrix (m := ι) (α := R)).symm` when `ι` lives in the
+universe of `R`.
 
 ## Main definitions
 
@@ -67,8 +68,9 @@ canonical universe-polymorphic isomorphism `KZero.{u} R ≃+ KZero.{max u v} (Ma
 * `TauCeti.FiniteProjectiveModules.not_isStablyFree_matrixColumn`: over a ring with invariant
   basis number and for `card ι ≥ 2`, the column module is not stably free.
 * `TauCeti.KZero.matrixEquiv_card_nsmul_regular` and `TauCeti.KZero.matrixEquiv_eq`:
-  `matrixEquiv` sends `|ι| • [R]` to `[Matrix ι ι R]` and agrees with `ModuleCat.matrixEquivalence`
-  composed with `RingEquiv.mopMatrix`.
+  `matrixEquiv` sends `|ι| • [R]` to `[Matrix ι ι R]` and, when `ι` lives in the universe of `R`,
+  agrees with `ModuleCat.matrixEquivalence` composed with restriction of scalars along
+  `(RingEquiv.mopMatrix (m := ι) (α := R)).symm`.
 
 ## References
 
@@ -251,11 +253,17 @@ variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι] [None
 `KZero.{u} R ≃+ KZero.{max u v} (Matrix ι ι R)` sending `|ι| • [R]` to `[M_ι(R)]`. -/
 noncomputable def matrixEquiv : KZero.{u} R ≃+ KZero.{max u v} (Matrix ι ι R) :=
   (finiteProjectiveModulesMatrixSplitK0Equiv Rᵐᵒᵖ ι).trans
-    (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv
+    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+      (RingEquiv.mopMatrix (m := ι) (α := R))).symm.finiteProjectiveModulesSplitK0Equiv
 
 theorem matrixEquiv_apply (x : KZero.{u} R) :
-    matrixEquiv R ι x = (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv
-      (finiteProjectiveModulesMatrixSplitK0Equiv Rᵐᵒᵖ ι x) := (rfl)
+    matrixEquiv R ι x =
+      SplitK0.map.{max u v, max u v}
+        (RingEquiv.mopMatrix (m := ι) (α := R)).toRingHom.finiteProjectiveModulesExtendScalars
+        (finiteProjectiveModulesMatrixSplitK0Equiv Rᵐᵒᵖ ι x) :=
+  (DFunLike.congr_fun
+    (RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars
+      (RingEquiv.mopMatrix (m := ι) (α := R))) _).symm
 
 @[simp] theorem matrixEquiv_of (P) : matrixEquiv R ι (SplitK0.of.{u} P) = SplitK0.of.{max u v}
     ((RingEquiv.mopMatrix (m := ι) (α := R)).toRingHom.finiteProjectiveModulesExtendScalars.obj
@@ -268,11 +276,12 @@ theorem matrixEquiv_apply (x : KZero.{u} R) :
 end Matrix
 
 /-- For every `i : ι`, `matrixEquiv` agrees with `ModuleCat.matrixEquivalence` composed with
-`RingEquiv.mopMatrix`. -/
+restriction of scalars along `(RingEquiv.mopMatrix (m := ι) (α := R)).symm`. -/
 theorem matrixEquiv_eq (R : Type u) [Ring R] (ι : Type u) [Fintype ι] [DecidableEq ι] [Nonempty ι]
     (i : ι) : matrixEquiv R ι =
       (ModuleCat.matrixEquivalence Rᵐᵒᵖ (ι := ι) i).finiteProjectiveModulesSplitK0Equiv.trans
-        (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv := by
+        (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+          (RingEquiv.mopMatrix (m := ι) (α := R))).symm.finiteProjectiveModulesSplitK0Equiv := by
   rw [matrixEquiv, finiteProjectiveModulesMatrixSplitK0Equiv_eq Rᵐᵒᵖ ι i]
 
 end KZero

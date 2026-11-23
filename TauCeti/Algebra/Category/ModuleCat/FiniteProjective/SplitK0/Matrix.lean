@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 For a ring `R : Type u` and a nonempty finite index type `ι : Type v` with decidable equality,
 `TauCeti.finiteProjectiveModulesMatrixSplitK0Equiv R ι` is the canonical universe-polymorphic
 isomorphism `K₀(proj R) ≃+ K₀(proj (Matrix ι ι R))` induced by `P ↦ (ι → P)`, sending `|ι| • [R]`
-to `[Matrix ι ι R]` and agreeing with `ModuleCat.matrixEquivalence R i` for every `i : ι`.
+to `[Matrix ι ι R]` and agreeing with `ModuleCat.matrixEquivalence R i` for every `i : ι` when
+`ι` lives in the universe of `R`.
 
 ## References
 

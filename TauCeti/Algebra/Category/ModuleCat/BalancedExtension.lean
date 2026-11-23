@@ -172,22 +172,6 @@ section Basic
 
 variable {R : Type u₁} {S : Type u₂} {T : Type u₃} [Ring R] [Ring S] [Ring T]
 
-/-- Morphisms out of `(functor f).obj M` agree once they agree on the pure tensors `1 ⊗ m`. -/
-theorem functor_hom_ext (f : R →+* S) {M : ModuleCat.{v} R} {N : ModuleCat.{max v u₂} S}
-    {φ ψ : (functor f).obj M ⟶ N} (h : ∀ m : M, φ (tmul f 1 m) = ψ (tmul f 1 m)) : φ = ψ :=
-  ModuleCat.hom_ext (hom_ext h)
-
-/-- Morphisms out of `(functor f ⋙ functor g).obj M` agree once they agree on `1 ⊗ (1 ⊗ m)`. -/
-theorem functor_comp_hom_ext (f : R →+* S) (g : S →+* T) {M : ModuleCat.{v} R}
-    {N : ModuleCat.{max v u₂ u₃} T} {φ ψ : (functor f ⋙ functor g).obj M ⟶ N}
-    (h : ∀ m : M, φ (tmul g 1 (tmul f 1 m)) = ψ (tmul g 1 (tmul f 1 m))) : φ = ψ := by
-  dsimp only [Functor.comp_obj, functor] at φ ψ h ⊢
-  exact ModuleCat.hom_ext <|
-    (LinearMap.cancel_right (cancelBaseChange f g (P := M)).symm.surjective).mp <|
-      hom_ext fun m ↦ by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, cancelBaseChange_symm_tmul]
-        exact h m
-
 /-- Equal ring homomorphisms induce naturally isomorphic balanced extension-of-scalars functors,
 sending `s ⊗ m` to `s ⊗ m`. -/
 noncomputable def functorCongr {f₁ f₂ : R →+* S} (h : f₁ = f₂) :
