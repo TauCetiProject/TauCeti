@@ -38,7 +38,7 @@ across local morphism properties:
   over `Spa(A, A⁺)` to the global ring homomorphism `φ : A →+* B`.
 
 For the `{1} / 1` completion package (`ofCompletion`, `ofCompletionMap`) see
-`TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart`.
+`TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Chart`.
 
 ## References
 
@@ -300,7 +300,6 @@ theorem pairComap_compOpenImmersion_right_eq_comp_iff {X X' Y Z : PreAdicSpace.{
 /-- An isomorphism `e : C₁.space ≅ C₂.space` between complete Hausdorff affinoid pre-adic spaces
 induces a ring isomorphism `C₂.Ring ≃+* C₁.Ring` on global sections via
 `presentationLimitHomPairHom`. -/
-@[expose]
 noncomputable def ringEquivOfIso {X Y : PreAdicSpace.{u}} (C₁ : CompleteAffinoidOpen X)
     (C₂ : CompleteAffinoidOpen Y) (e : C₁.space ≅ C₂.space) : C₂.Ring ≃+* C₁.Ring :=
   RingEquiv.ofRingHom (presentationLimitHomPairHom C₂.pairOfDefinition C₁.pairOfDefinition

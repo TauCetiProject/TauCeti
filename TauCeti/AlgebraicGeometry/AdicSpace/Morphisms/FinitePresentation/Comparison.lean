@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.AnalyticLocus
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.Cancel
 
 import Mathlib.RingTheory.RingHom.FinitePresentation
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Chart
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 
@@ -197,22 +197,6 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
   refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ hb₀ ?_
   rw [comapOfPresentation_hom]; exact pairComap_ofCompletionMap_comp_hom P _ _ P' _ _ φ
 
-/-- Comparing `LocallyOfFinitePresentation` on `comapOfPair` with `comapOfPresentation` via the
-canonical isomorphisms `ofPairIsoOfPresentation`. -/
-theorem locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation {A B : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] [IsHuberRing B] {S : Pair A} {T : Pair B}
-    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
-    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) (P' : PairOfDefinition B)
-    (hP' : P'.ringOfDefinition ≤ T.plus) (φ : Pair.Hom S T) :
-    LocallyOfFinitePresentation (comapOfPair hS hT φ) ↔
-      LocallyOfFinitePresentation
-        (comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ) := by
-  rw [← MorphismProperty.cancel_right_of_respectsIso (@LocallyOfFinitePresentation.{u}) _
-      (ofPairIsoOfPresentation S hS P hP).hom,
-    ← ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ,
-    MorphismProperty.cancel_left_of_respectsIso (@LocallyOfFinitePresentation.{u})]
-
 /-- **Affinoid sufficient condition**: if `φ : S → T` is a morphism of Huber pairs topologically of
 finite type between sheafy pairs with `IsHuberStandard A` and
 `DiscreteTopology A → φ.toRingHom.FinitePresentation`, then `comapOfPair hS hT φ` is locally of
@@ -226,7 +210,7 @@ theorem locallyOfFinitePresentation_comapOfPair {A B : Type u} [CommRing A] [Top
     LocallyOfFinitePresentation (comapOfPair hS hT φ) := by
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  exact (locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ).mpr
+  exact (comapOfPair_iff_comapOfPresentation LocallyOfFinitePresentation hS hT P hP P' hP' φ).mpr
     (locallyOfFinitePresentation_comapOfPresentation _ _ _ _ _ _ _ _ φ hφ hfp)
 
 /-- **Affinoid sufficient condition over a strongly noetherian Tate ring**: if `A` is a strongly
@@ -242,7 +226,7 @@ theorem locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian {A B : T
     LocallyOfFinitePresentation (comapOfPair hS hT φ) := by
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  rw [locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ]
+  rw [comapOfPair_iff_comapOfPresentation LocallyOfFinitePresentation hS hT P hP P' hP' φ]
   exact (locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ
     (IsLocallyHuberStandard.spa P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP
       (hS.isSheaf P hP))
@@ -264,7 +248,7 @@ theorem LocallyOfFinitePresentation.finitePresentation_of_discreteTopology {A B 
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
   have hsheafA := hS.isSheaf P hP
-  have hq := (locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP'
+  have hq := (comapOfPair_iff_comapOfPresentation LocallyOfFinitePresentation hS hT P hP P' hP'
     φ).mp hf
   let CA := ofDiscrete S P hP hsheafA
   refine PreAdicSpace.ringHom_prop_of_forall_rational_chart_discrete

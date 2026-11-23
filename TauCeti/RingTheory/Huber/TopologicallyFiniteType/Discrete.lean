@@ -231,12 +231,13 @@ private theorem integralClosure_map_weighted_plus_eq [DiscreteTopology B]
       exact hEU (eE j).property
 
 /-- **Over a discrete base, pair-level topological finite type coincides with `+`-weakly finite
-type**: given a finite set `E ⊆ U.plus` such that `U.plus` is the plus-closure of `f(S.plus) ∪ E`,
-a finite polynomial generating set for `B` over `A` can be adjoined with weight `∅` while `E` is
-adjoined with weight `{1}`, yielding a weighted quotient presentation of `f`. -/
+type**: over a discrete base, `f.IsTopologicallyFiniteType ↔ f.IsPlusWeaklyFiniteType`. -/
 theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology {f : Hom S U} :
     f.IsTopologicallyFiniteType ↔ f.IsPlusWeaklyFiniteType := by
   refine ⟨IsTopologicallyFiniteType.isPlusWeaklyFiniteType, fun hf ↦ ?_⟩
+  -- Given a finite set `E ⊆ U.plus` such that `U.plus` is the plus-closure of `f(S.plus) ∪ E`,
+  -- adjoin a finite polynomial generating set for `B` over `A` with weight `∅` and `E` with
+  -- weight `{1}`, yielding a weighted quotient presentation of `f`.
   classical
   obtain ⟨hft, E, hE⟩ := isPlusWeaklyFiniteType_iff.mp hf
   have : DiscreteTopology B := hft.discreteTopology

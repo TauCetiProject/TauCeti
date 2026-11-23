@@ -11,8 +11,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete
 
 import Mathlib.RingTheory.RingHom.FiniteType
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Chart
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
@@ -317,21 +317,6 @@ theorem locallyOfFiniteType_comapOfPresentation {A : Type u} [CommRing A] [Topol
   rw [comapOfPresentation_hom]
   exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
 
-/-- Comparing `LocallyOfFiniteType` on `comapOfPair` with `comapOfPresentation` via the canonical
-isomorphisms `ofPairIsoOfPresentation`. -/
-theorem locallyOfFiniteType_comapOfPair_iff_comapOfPresentation {A B : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] [IsHuberRing B] {S : Pair A} {T : Pair B}
-    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
-    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) (P' : PairOfDefinition B)
-    (hP' : P'.ringOfDefinition ≤ T.plus) (φ : Pair.Hom S T) :
-    LocallyOfFiniteType (comapOfPair hS hT φ) ↔ LocallyOfFiniteType
-        (comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ) := by
-  rw [← MorphismProperty.cancel_right_of_respectsIso (@LocallyOfFiniteType.{u}) _
-      (ofPairIsoOfPresentation S hS P hP).hom,
-    ← ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ,
-    MorphismProperty.cancel_left_of_respectsIso (@LocallyOfFiniteType.{u})]
-
 /-- **Affinoid morphisms**: if `φ : S → T` is a morphism of Huber pairs topologically of finite
 type between pairs whose adic spectra are sheafy for every presentation, then `comapOfPair hS hT φ`
 is locally of finite type. -/
@@ -343,7 +328,7 @@ theorem locallyOfFiniteType_comapOfPair {A B : Type u} [CommRing A] [Topological
     LocallyOfFiniteType (comapOfPair hS hT φ) := by
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  exact (locallyOfFiniteType_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ).mpr
+  exact (comapOfPair_iff_comapOfPresentation LocallyOfFiniteType hS hT P hP P' hP' φ).mpr
     (locallyOfFiniteType_comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP')
       φ hφ)
 
@@ -358,7 +343,7 @@ theorem LocallyOfFiniteType.finiteType_of_discreteTopology {A B : Type u} [CommR
     φ.toRingHom.FiniteType := by
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  have hq := (locallyOfFiniteType_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ).mp hf
+  have hq := (comapOfPair_iff_comapOfPresentation LocallyOfFiniteType hS hT P hP P' hP' φ).mp hf
   let CA := ofDiscrete S P hP (hS.isSheaf P hP)
   refine PreAdicSpace.ringHom_prop_of_forall_rational_chart_discrete
     RingHom.finiteType_stableUnderComposition RingHom.finiteType_respectsIso

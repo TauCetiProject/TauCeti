@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalProperties.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 
-import Mathlib.RingTheory.Localization.Away.AdjoinRoot
+import Mathlib.RingTheory.RingHom.FinitePresentation
 
 /-!
 # Completed localisations of a discrete ring
@@ -200,8 +200,8 @@ theorem completionLocEquivOfDiscreteTopology_symm_comp_toCompletionLoc (P : Pair
   let _ := locUniformSpace P T s S hden
   let _ := isUniformAddGroup_locUniformSpace P T s S hden
   let _ := isTopologicalRing_locUniformSpace P T s S hden
-  ext a
-  simp [toCompletionLoc_apply]
+  rw [← completionLocEquivOfDiscreteTopology_comp_algebraMap P T s S hden,
+    ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
 
 /-- Over a discrete ring `A`, any ring-homomorphism property `R` that respects isomorphisms and
 holds for localisations away from an element holds for `toCompletionLoc P T s S hden`, since
@@ -225,19 +225,14 @@ theorem ringHom_prop_toCompletionLoc_of_discreteTopology (P : PairOfDefinition A
 localization is algebraically of finite presentation (`RingHom.FinitePresentation`), since it is
 `algebraMap A Aₛ` followed by the ring isomorphism `completionLocEquivOfDiscreteTopology`. -/
 theorem finitePresentation_toCompletionLoc_of_discreteTopology (P : PairOfDefinition A)
-    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type u) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    (toCompletionLoc P T s S hden).FinitePresentation := by
-  let _ := locUniformSpace P T s S hden
-  let _ := isUniformAddGroup_locUniformSpace P T s S hden
-  let _ := isTopologicalRing_locUniformSpace P T s S hden
-  rw [← completionLocEquivOfDiscreteTopology_comp_algebraMap P T s S hden]
-  exact (RingHom.FinitePresentation.of_bijective
-    (completionLocEquivOfDiscreteTopology P T s S hden).bijective).comp
-    (RingHom.finitePresentation_algebraMap.mpr (IsLocalization.Away.finitePresentation s))
+    (toCompletionLoc P T s S hden).FinitePresentation :=
+  P.ringHom_prop_toCompletionLoc_of_discreteTopology RingHom.finitePresentation_respectsIso
+    RingHom.finitePresentation_holdsForLocalizationAway T s S hden
 
 end PairOfDefinition
 

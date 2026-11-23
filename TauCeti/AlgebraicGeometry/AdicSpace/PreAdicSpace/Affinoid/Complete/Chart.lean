@@ -56,7 +56,6 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 
 /-- Complete Hausdorff affinoid open `Spa(A⟨{1}/1⟩, A⟨{1}/1⟩⁺) ⟶ Spa(A, A⁺)` obtained by completing
 a sheafy presentation `(P, S)` via the trivial rational localisation `R({1} / 1)`. -/
-@[expose]
 noncomputable def ofCompletion :
     CompleteAffinoidOpen (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
@@ -64,7 +63,6 @@ noncomputable def ofCompletion :
 
 /-- Canonical Huber-pair morphism `S → (ofCompletion P hP hsheaf).pair` from a sheafy
 presentation into its `{1} / 1` completion. -/
-@[expose]
 noncomputable def toCompletionHom : Pair.Hom S (ofCompletion P hP hsheaf).pair :=
   toRationalLocalizationHom P hP hsheaf (𝟙 _) ({1} : Finset A) 1 (by simp)
 
@@ -110,7 +108,6 @@ variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] 
 /-- Canonical morphism of completed Huber pairs
 `(ofCompletion P hP hsheafA).pair → (ofCompletion P' hP' hsheafB).pair` induced by a Huber-pair
 morphism `φ : S → T` via `{1} / 1` rational base change. -/
-@[expose]
 noncomputable def ofCompletionMap (φ : Pair.Hom S T) :
     Pair.Hom (ofCompletion P hP hsheafA).pair (ofCompletion P' hP' hsheafB).pair :=
   P.completionLocPairMap S hP ({1} : Finset A) 1 (Localization.Away (1 : A))

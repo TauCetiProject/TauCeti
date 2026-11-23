@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
 public import TauCeti.RingTheory.Huber.Pair.Finite
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 
 /-!
 # Finite morphisms of adic spaces
