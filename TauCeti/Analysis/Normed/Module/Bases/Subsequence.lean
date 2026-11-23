@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Bases
+import TauCeti.Analysis.Normed.Module.Bases.Basic
 
 /-!
 # Subsequences of Schauder bases
@@ -87,18 +88,12 @@ theorem coe_subsequence_proj (n : ℕ)
 
 /-- Restricting an initial projection to the subsequence span cannot increase its norm. -/
 theorem norm_subsequence_proj_le (n : ℕ) :
-    ‖(b.subsequence u hu).proj n‖ ≤ ‖b.proj (u n)‖ := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-  intro x
-  simpa only [← Submodule.norm_coe, coe_subsequence_proj] using
-    (b.proj (u n)).le_opNorm (x : E)
+    ‖(b.subsequence u hu).proj n‖ ≤ ‖b.proj (u n)‖ :=
+  b.norm_proj_le_of_restrict (b.subsequence u hu) (b.coe_subsequence_proj u hu n)
 
 /-- The basis constant of a subsequence does not exceed the original basis constant. -/
 theorem subsequence_nnnormProjBound_le [CompleteSpace E] :
-    (b.subsequence u hu).nnNormProjBound ≤ b.nnNormProjBound := by
-  apply ciSup_le
-  intro n
-  exact_mod_cast (b.norm_subsequence_proj_le u hu n).trans
-    (b.norm_proj_le_nnNormProjBound (u n))
+    (b.subsequence u hu).nnNormProjBound ≤ b.nnNormProjBound :=
+  b.nnNormProjBound_le_of_restrict (b.subsequence u hu) (b.coe_subsequence_proj u hu)
 
 end SchauderBasis

@@ -116,6 +116,26 @@ theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (n : ℕ) :
     f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
   rw [proj, GeneralSchauderBasis.comp_proj_eq_sum]
 
+/-- An initial projection on a submodule has no larger norm than the ambient projection it
+restricts. -/
+theorem norm_proj_le_of_restrict {S : Submodule 𝕜 X} (c : SchauderBasis 𝕜 S) {n m : ℕ}
+    (h : ∀ x : S, (c.proj n x : X) = b.proj m (x : X)) : ‖c.proj n‖ ≤ ‖b.proj m‖ := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+  intro x
+  simpa only [← Submodule.norm_coe, h] using (b.proj m).le_opNorm (x : X)
+
+/-- The basis constant of a basis on a submodule cannot exceed the ambient basis constant if each
+of its initial projections is the restriction of an ambient initial projection. -/
+theorem nnNormProjBound_le_of_restrict [CompleteSpace X] {S : Submodule 𝕜 X}
+    (c : SchauderBasis 𝕜 S) {u : ℕ → ℕ}
+    (h : ∀ n (x : S), (c.proj n x : X) = b.proj (u n) (x : X)) :
+    c.nnNormProjBound ≤ b.nnNormProjBound := by
+  apply ciSup_le
+  intro n
+  have hle : ‖c.proj n‖₊ ≤ ‖b.proj (u n)‖₊ := by
+    exact_mod_cast b.norm_proj_le_of_restrict c (h n)
+  exact hle.trans (b.nnNorm_proj_le_nnNormProjBound (u n))
+
 end SchauderBasis
 
 namespace UnconditionalSchauderBasis

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Bases
+import TauCeti.Analysis.Normed.Module.Bases.Basic
 
 /-!
 # Block bases of Schauder bases
@@ -45,10 +46,16 @@ variable (𝕜) in
 private abbrev blockSpan := (Submodule.span 𝕜 (range v)).topologicalClosure
 
 include hs in
-private theorem coord_block_eq_zero (j : ℕ) {k : ℕ} (hk : k ∉ Ico (u j) (u (j + 1))) :
+private theorem coord_block_eq_zero_of_lt (j : ℕ) {k : ℕ} (hk : k < u j) :
     b.coord k (v j) = 0 := by
   by_contra h
-  exact hk (hs j h)
+  exact hk.not_ge (hs j h).1
+
+include hs in
+private theorem coord_block_eq_zero_of_ge (j : ℕ) {k : ℕ} (hk : u (j + 1) ≤ k) :
+    b.coord k (v j) = 0 := by
+  by_contra h
+  exact (hs j h).2.not_ge hk
 
 include hv in
 private theorem exists_ne_zero_coord_block (j : ℕ) : ∃ k, b.coord k (v j) ≠ 0 := by
@@ -73,17 +80,17 @@ private theorem proj_block (n j : ℕ) :
       symm
       apply Finset.sum_subset (Finset.range_mono hm)
       intro k _ hk
-      rw [b.coord_block_eq_zero v u hs j (fun h ↦ hk (Finset.mem_range.mpr
-        (h.2.trans_le (hu.monotone (Nat.succ_le_of_lt hj))))), zero_smul]
+      have hkn : u n ≤ k := le_of_not_gt (fun h ↦ hk (Finset.mem_range.mpr h))
+      rw [b.coord_block_eq_zero_of_ge v u hs j
+        ((hu.monotone (Nat.succ_le_of_lt hj)).trans hkn), zero_smul]
     have ht := tendsto_const_nhds.congr' <|
       (eventually_ge_atTop (u n)).mono fun m hm ↦ (heq m hm).symm
     exact (tendsto_nhds_unique (b.tendsto_proj (v j)) ht).symm
   · rw [proj_apply]
     apply Finset.sum_eq_zero
     intro k hk
-    rw [b.coord_block_eq_zero v u hs j (fun h ↦
-      (not_lt_of_ge ((hu.monotone (le_of_not_gt hj)).trans h.1)) (Finset.mem_range.mp hk)),
-      zero_smul]
+    rw [b.coord_block_eq_zero_of_lt v u hs j
+      ((Finset.mem_range.mp hk).trans_le (hu.monotone (le_of_not_gt hj))), zero_smul]
 
 private def blockFunctional (i : ℕ) : StrongDual 𝕜 E :=
   let k := (b.exists_ne_zero_coord_block v hv i).choose
@@ -100,12 +107,13 @@ private theorem blockFunctional_apply (i j : ℕ) :
   split_ifs with hij
   · subst j
     exact inv_mul_cancel₀ hk
-  · have hout : k ∉ Ico (u j) (u (j + 1)) := by
-      intro hj
+  · have hz : b.coord k (v j) = 0 := by
       rcases lt_or_gt_of_ne hij with h | h
-      · exact hi.2.not_ge ((hu.monotone (Nat.succ_le_of_lt h)).trans hj.1)
-      · exact hj.2.not_ge ((hu.monotone (Nat.succ_le_of_lt h)).trans hi.1)
-    rw [b.coord_block_eq_zero v u hs j hout, mul_zero]
+      · exact b.coord_block_eq_zero_of_lt v u hs j
+          (hi.2.trans_le (hu.monotone (Nat.succ_le_of_lt h)))
+      · exact b.coord_block_eq_zero_of_ge v u hs j
+          ((hu.monotone (Nat.succ_le_of_lt h)).trans hi.1)
+    rw [hz, mul_zero]
 
 private def blockVector (j : ℕ) : blockSpan 𝕜 v :=
   ⟨v j, Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self j))⟩
@@ -126,12 +134,17 @@ private def blockProj (n : ℕ) : blockSpan 𝕜 v →L[𝕜] blockSpan 𝕜 v :
     rw [b.proj_eq_sum_block v u hv hs n ⟨x, hx⟩]
     exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (blockVector v i).property
 
+@[simp]
+private theorem coe_blockProj_apply (n : ℕ) (x : blockSpan 𝕜 v) :
+    (b.blockProj v u hv hs n x : E) = b.proj (u n) (x : E) :=
+  ContinuousLinearMap.coe_restrict_apply _ x
+
 include hv hs in
 private theorem blockProj_apply_blockVector (n j : ℕ) :
     b.blockProj v u hv hs n (blockVector v j) = if j < n then blockVector v j else 0 := by
   apply Subtype.ext
-  simpa only [blockProj, ContinuousLinearMap.coe_restrict_apply, blockVector, apply_ite,
-    Submodule.coe_zero] using b.proj_block v u hv hs n j
+  simpa only [coe_blockProj_apply, blockVector, apply_ite, Submodule.coe_zero] using
+    b.proj_block v u hv hs n j
 
 include hv hs in
 private theorem finrank_blockProj (n : ℕ) :
@@ -143,8 +156,8 @@ private theorem finrank_blockProj (n : ℕ) :
       have heq : b.blockProj v u hv hs n x =
           ∑ i ∈ Finset.range n, b.blockFunctional v hv i (x : E) • blockVector v i := by
         apply Subtype.ext
-        simpa only [blockProj, ContinuousLinearMap.coe_restrict_apply, Submodule.coe_sum,
-          Submodule.coe_smul_of_tower, blockVector] using b.proj_eq_sum_block v u hv hs n x
+        simpa only [coe_blockProj_apply, Submodule.coe_sum, Submodule.coe_smul_of_tower,
+          blockVector] using b.proj_eq_sum_block v u hv hs n x
       rw [ContinuousLinearMap.coe_coe, heq]
       exact Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _
         (Submodule.subset_span (mem_range_self (⟨i, Finset.mem_range.mp hi⟩ : Fin n)))
@@ -167,17 +180,16 @@ private def blockDecomposition : RankOneDecomposition 𝕜 (blockSpan 𝕜 v) wh
   e := blockVector v
   proj_zero := by
     ext x
-    simpa only [blockProj, ContinuousLinearMap.coe_restrict_apply, zero_apply,
-      Submodule.coe_zero, Finset.range_zero, Finset.sum_empty] using
+    simpa only [coe_blockProj_apply, zero_apply, Submodule.coe_zero, Finset.range_zero,
+      Finset.sum_empty] using
       b.proj_eq_sum_block v u hv hs 0 x
   finrank_range := b.finrank_blockProj v u hv hs
   proj_comp n m x := by
     apply Subtype.ext
-    simpa only [blockProj, ContinuousLinearMap.coe_restrict_apply,
-      (b.strictMono_blockBoundaries v u hv hs).monotone.map_min] using
-      b.proj_comp (u n) (u m) (x : E)
+    simpa only [coe_blockProj_apply, (b.strictMono_blockBoundaries v u hv hs).monotone.map_min]
+      using b.proj_comp (u n) (u m) (x : E)
   proj_tendsto x := tendsto_subtype_rng.mpr <| by
-    simpa only [Function.comp_def, blockProj, ContinuousLinearMap.coe_restrict_apply] using
+    simpa only [Function.comp_def, coe_blockProj_apply] using
       (b.tendsto_proj (x : E)).comp (b.strictMono_blockBoundaries v u hv hs).tendsto_atTop
   e_mem_range n := ⟨blockVector v n, by
     simp [succSub, b.blockProj_apply_blockVector v u hv hs]⟩
@@ -199,7 +211,7 @@ theorem coe_blockBasis_proj (n : ℕ)
     (x : (Submodule.span 𝕜 (range v)).topologicalClosure) :
     ((b.blockBasis v u hv hs).proj n x : E) = b.proj (u n) (x : E) := by
   rw [blockBasis, RankOneDecomposition.basis_proj]
-  rfl
+  exact b.coe_blockProj_apply v u hv hs n x
 
 /-- A block coordinate times its block vector is the difference of the original
 projections at the two endpoints. -/
@@ -228,8 +240,7 @@ theorem coord_eq_zero_of_lt_block_start (x : (Submodule.span 𝕜 (range v)).top
   have hu := b.strictMono_blockBoundaries v u hv hs
   have h : EqOn (b.coord k) (0 : StrongDual 𝕜 E) (range v) := by
     rintro _ ⟨j, rfl⟩
-    exact b.coord_block_eq_zero v u hs j fun hj ↦
-      (not_lt_of_ge ((hu.monotone (Nat.zero_le j)).trans hj.1)) hk
+    exact b.coord_block_eq_zero_of_lt v u hs j (hk.trans_le (hu.monotone (Nat.zero_le j)))
   exact ContinuousLinearMap.eqOn_closure_span h x.property
 
 /-- A block coordinate can be recovered from any ambient coordinate on which its block vector
@@ -242,18 +253,12 @@ theorem blockBasis_coord_eq_inv_mul (n : ℕ)
 
 /-- Restricting an initial projection to the closed block span cannot increase its norm. -/
 theorem norm_blockBasis_proj_le (n : ℕ) :
-    ‖(b.blockBasis v u hv hs).proj n‖ ≤ ‖b.proj (u n)‖ := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-  intro x
-  simpa only [← Submodule.norm_coe, coe_blockBasis_proj] using
-    (b.proj (u n)).le_opNorm (x : E)
+    ‖(b.blockBasis v u hv hs).proj n‖ ≤ ‖b.proj (u n)‖ :=
+  b.norm_proj_le_of_restrict (b.blockBasis v u hv hs) (b.coe_blockBasis_proj v u hv hs n)
 
 /-- The basis constant of a block basis is at most the original basis constant. -/
 theorem blockBasis_nnNormProjBound_le [CompleteSpace E] :
-    (b.blockBasis v u hv hs).nnNormProjBound ≤ b.nnNormProjBound := by
-  apply ciSup_le
-  intro n
-  exact_mod_cast (b.norm_blockBasis_proj_le v u hv hs n).trans
-    (b.norm_proj_le_nnNormProjBound (u n))
+    (b.blockBasis v u hv hs).nnNormProjBound ≤ b.nnNormProjBound :=
+  b.nnNormProjBound_le_of_restrict (b.blockBasis v u hv hs) (b.coe_blockBasis_proj v u hv hs)
 
 end SchauderBasis
