@@ -144,12 +144,6 @@ private theorem norm_apply_le_sqrt_norm_sum_mul_self {x : ι → A} (hx : ∀ i,
   (norm_apply_le_norm_columnSquare x i).trans_eq <| by
     rw [norm_columnSquare, Finset.sum_congr rfl fun k _ => by rw [(hx k).star_eq]]
 
-private theorem norm_sum_conj_sum_sq_le {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) :
-    ‖∑ i, x i * (∑ j, x j * x j) * x i‖ ≤ ‖∑ i, x i * x i‖ ^ 2 := by
-  have h := Finset.norm_sum_star_mul_mul_le Finset.univ x (∑ j, x j * x j)
-  have hstar (i : ι) : star (x i) = x i := (hx i).star_eq
-  simpa only [hstar, sq] using h
-
 /-- **Pisier–Haagerup fourth-moment inequality**: for any finite family `x : ι → A` of self-adjoint
 elements in a non-unital C⋆-algebra,
 `‖|ι → ℤˣ|⁻¹ • ∑ ε, (∑ i, ε i • x i)^4‖ ≤ 3 * ‖∑ i, x i * x i‖ ^ 2`. -/
@@ -173,7 +167,7 @@ theorem norm_inv_card_smul_sum_units_smul_mul₄_le [DecidableEq ι] {x : ι →
     _ ≤ ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 :=
         add_le_add (add_le_add (by simpa only [sq] using norm_mul_le (∑ i, x i * x i) _)
           (Finset.norm_sum_alternating_four_le Finset.univ fun i _ => hx i))
-          (norm_sum_conj_sum_sq_le hx)
+          (Finset.norm_sum_mul_sum_mul_le_sq Finset.univ fun i _ => hx i)
     _ = 3 * ‖∑ i, x i * x i‖ ^ 2 := by ring
 
 end FourthMoment

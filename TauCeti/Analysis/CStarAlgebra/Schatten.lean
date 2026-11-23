@@ -92,7 +92,8 @@ theorem trace_nnrpow_sqrt_star_mul_self [DecidableEq n] {p : ℝ≥0} (hp : 0 < 
       NonUnitalStarAlgHomClass.map_cfcₙ (CStarMatrix.toEuclideanCLM (m := n)) _ (star x * x)
         (Real.continuous_rpow_const hp2.le).continuousOn hf0 (StarAlgEquiv.isometry _).continuous
         (IsSelfAdjoint.star_mul_self x) ((IsSelfAdjoint.star_mul_self x).map _),
-      map_mul, map_star, cfcₙ_eq_cfc]
+      cfcₙ_eq_cfc]
+    simp [T, map_star]
   rw [← CStarMatrix.trace_toEuclideanCLM, hmap, LinearMap.trace_eq_sum_inner _ A.rightSingularBasis,
     ← A.sum_fin_singularValues (· ^ (p : ℝ)) (Real.zero_rpow (NNReal.coe_pos.mpr hp).ne'),
     Complex.ofReal_sum]
@@ -521,12 +522,9 @@ theorem star_toEuclideanCLM_symm_rankOne_mul_self (η ξ : EuclideanSpace ℂ m)
       CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ) =
       (‖η‖ ^ 2) • CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ ξ ξ) := by
   refine EquivLike.injective CStarMatrix.toEuclideanCLM ?_
-  rw [← algebraMap_smul ℂ (‖η‖ ^ 2), map_mul, map_star, map_smul,
-    StarAlgEquiv.apply_symm_apply, StarAlgEquiv.apply_symm_apply,
-    ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
-    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne,
-    inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, Complex.coe_algebraMap,
-    Complex.ofReal_pow]
+  rw [map_mul, map_star, ← algebraMap_smul ℂ (‖η‖ ^ 2), map_smul]
+  simp [ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
+    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne]
 
 /-- For `0 < p`, the Schatten `p`-gauge of `columnSquare` of a family of rank-one operators with
 common unit source vector `ξ` is `√(∑ k, ‖η k‖ ^ 2)`. -/

@@ -432,10 +432,7 @@ theorem rowColumnSumGauge_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
   refine le_antisymm ?_ ?_
   · refine le_rowColumnSumGauge fun b c hbc => ?_
     have hext : Function.extend f a 0 = Function.extend f b 0 + Function.extend f c 0 := by
-      funext i
-      by_cases hi : ∃ k, f k = i
-      · rcases hi with ⟨k, rfl⟩; simp [hf.extend_apply, hbc]
-      · simp [Function.extend_apply' _ _ _ hi]
+      rw [hbc, ← Function.extend_add, add_zero]
     simpa only [columnSquare_extend_zero hf, rowSquare_extend_zero hf] using
       rowColumnSumGauge_le_of_eq_add p hext
   · refine le_rowColumnSumGauge fun b c hbc => ?_
@@ -608,11 +605,12 @@ theorem norm_rowSquare_le_of_forall_norm_sum_trace_mul_le
   have hpair : ∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * b k)) =
       ((‖R ξ‖ ^ 2 : ℝ) : ℂ) := by
     rw [hR_sq, Complex.ofReal_sum]
-    exact Finset.sum_congr rfl fun k _ => by
-      rw [← CStarMatrix.trace_toEuclideanCLM, map_mul, StarAlgEquiv.apply_symm_apply,
-        ContinuousLinearMap.toLinearMap_mul, InnerProductSpace.trace_mul_rankOne,
-        ← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint, ← map_star,
-        inner_self_eq_norm_sq_to_K]; norm_cast
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [← CStarMatrix.trace_toEuclideanCLM]
+    simp only [b, map_mul, StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.toLinearMap_mul,
+      InnerProductSpace.trace_mul_rankOne]
+    rw [← ContinuousLinearMap.adjoint_inner_left]
+    simp [η, ← ContinuousLinearMap.star_eq_adjoint, ← map_star]
   have hbound := h b
   rw [hpair, matrixLpGauge_columnSquare_rankOne zero_lt_one η hξ, ← hR_sq,
     Real.sqrt_sq (norm_nonneg _), Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _),

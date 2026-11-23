@@ -175,11 +175,9 @@ theorem rowSquare_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
     (hf : Function.Injective f) (a : κ → A) :
     rowSquare (Function.extend f a 0) = rowSquare a := by
   have hstar : (fun i => star (Function.extend f a 0 i)) =
-      Function.extend f (fun k => star (a k)) 0 := by
-    ext i
-    by_cases hi : ∃ k, f k = i
-    · rcases hi with ⟨k, rfl⟩; simp [hf.extend_apply]
-    · simp [Function.extend_apply' _ _ _ hi]
+      Function.extend f (fun k => star (a k)) 0 :=
+    funext fun i => by
+      simpa [Function.comp_def, ← Pi.zero_def] using Function.apply_extend star (g := a) f 0 i
   rw [rowSquare_eq_columnSquare_star, hstar, columnSquare_extend_zero hf,
     ← rowSquare_eq_columnSquare_star]
 

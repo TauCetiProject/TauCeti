@@ -30,6 +30,8 @@ is proved first.
 * `Finset.norm_sum_mul_mul_sq_le`: `‖∑ aₖ x bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖x‖² ‖∑ bₖ⋆ bₖ‖`.
 * `Finset.norm_sum_star_mul_mul_le`: `‖∑ aₖ⋆ b aₖ‖ ≤ ‖b‖ ‖∑ aₖ⋆ aₖ‖`.
 * `Finset.norm_sum_mul_mul_star_le`: `‖∑ aₖ b aₖ⋆‖ ≤ ‖b‖ ‖∑ aₖ aₖ⋆‖`.
+* `Finset.norm_sum_mul_sum_mul_le_sq`: `‖∑ i, xᵢ (∑ j, xⱼ²) xᵢ‖ ≤ ‖∑ i, xᵢ²‖²`
+  for self-adjoint `xᵢ`.
 * `Finset.norm_sum_alternating_four_le`: `‖∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ‖ ≤ ‖∑ i, xᵢ²‖²`
   for self-adjoint `xᵢ`.
 
@@ -101,6 +103,19 @@ theorem norm_sum_mul_mul_star_le (s : Finset ι) (a : ι → D) (b : D) :
     ‖∑ k ∈ s, a k * b * star (a k)‖ ≤ ‖b‖ * ‖∑ k ∈ s, a k * star (a k)‖ := by
   simpa only [star_star] using norm_sum_star_mul_mul_le s (fun k => star (a k)) b
 
+/-- Conjugating `∑ j ∈ s, x j * x j` by a self-adjoint family `x` satisfies
+`‖∑ i ∈ s, x i * (∑ j ∈ s, x j * x j) * x i‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2`. -/
+theorem norm_sum_mul_sum_mul_le_sq (s : Finset ι) {x : ι → D}
+    (hx : ∀ i ∈ s, IsSelfAdjoint (x i)) :
+    ‖∑ i ∈ s, x i * (∑ j ∈ s, x j * x j) * x i‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2 := by
+  have h := norm_sum_star_mul_mul_le s x (∑ j ∈ s, x j * x j)
+  have hsum : ∑ i ∈ s, star (x i) * x i = ∑ i ∈ s, x i * x i :=
+    Finset.sum_congr rfl fun i hi => by rw [(hx i hi).star_eq]
+  have hconj : ∑ i ∈ s, star (x i) * (∑ j ∈ s, x j * x j) * x i =
+      ∑ i ∈ s, x i * (∑ j ∈ s, x j * x j) * x i :=
+    Finset.sum_congr rfl fun i hi => by rw [(hx i hi).star_eq]
+  rwa [hconj, hsum, ← sq] at h
+
 /-- Alternating four-factor Cauchy–Schwarz bound for self-adjoint elements:
 `‖∑ i ∈ s, ∑ j ∈ s, x i * x j * x i * x j‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2`. -/
 theorem norm_sum_alternating_four_le (s : Finset ι) {x : ι → D}
@@ -112,29 +127,21 @@ theorem norm_sum_alternating_four_le (s : Finset ι) {x : ι → D}
     rw [Finset.sum_product]
     simp only [a, mul_assoc]
   have hrow_eq : ∑ p ∈ s ×ˢ s, a p * star (a p) =
-      ∑ i ∈ s, x i * (∑ j ∈ s, x j * x j) * star (x i) := by
+      ∑ i ∈ s, x i * (∑ j ∈ s, x j * x j) * x i := by
     rw [Finset.sum_product]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp only [a, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+    refine Finset.sum_congr rfl fun i hi => ?_
+    simp only [a, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc, (hx i hi).star_eq]
     exact Finset.sum_congr rfl fun j hj => by rw [(hx j hj).star_eq]
   have hcol_eq : ∑ p ∈ s ×ˢ s, star (a p) * a p =
-      ∑ j ∈ s, star (x j) * (∑ i ∈ s, x i * x i) * x j := by
+      ∑ j ∈ s, x j * (∑ i ∈ s, x i * x i) * x j := by
     rw [Finset.sum_product_right]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    simp only [a, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+    refine Finset.sum_congr rfl fun j hj => ?_
+    simp only [a, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc, (hx j hj).star_eq]
     exact Finset.sum_congr rfl fun i hi => by rw [(hx i hi).star_eq]
-  have hsum_r : ∑ k ∈ s, x k * star (x k) = ∑ i ∈ s, x i * x i :=
-    Finset.sum_congr rfl fun i hi => by rw [(hx i hi).star_eq]
-  have hsum_l : ∑ k ∈ s, star (x k) * x k = ∑ i ∈ s, x i * x i :=
-    Finset.sum_congr rfl fun i hi => by rw [(hx i hi).star_eq]
-  have hrow : ‖∑ p ∈ s ×ˢ s, a p * star (a p)‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2 := by
-    rw [hrow_eq]
-    have h := norm_sum_mul_mul_star_le s x (∑ j ∈ s, x j * x j)
-    rwa [hsum_r, ← sq] at h
-  have hcol : ‖∑ p ∈ s ×ˢ s, star (a p) * a p‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2 := by
-    rw [hcol_eq]
-    have h := norm_sum_star_mul_mul_le s x (∑ i ∈ s, x i * x i)
-    rwa [hsum_l, ← sq] at h
+  have hrow : ‖∑ p ∈ s ×ˢ s, a p * star (a p)‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2 :=
+    hrow_eq ▸ norm_sum_mul_sum_mul_le_sq s hx
+  have hcol : ‖∑ p ∈ s ×ˢ s, star (a p) * a p‖ ≤ ‖∑ i ∈ s, x i * x i‖ ^ 2 :=
+    hcol_eq ▸ norm_sum_mul_sum_mul_le_sq s hx
   rw [hprod]
   exact (norm_sum_mul_sq_le (s ×ˢ s) a a).trans <|
     (mul_le_mul hrow hcol (norm_nonneg _) (sq_nonneg _)).trans_eq (by ring)
