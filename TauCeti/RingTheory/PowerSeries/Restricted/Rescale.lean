@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.Analysis.Normed.Ring.Basic
-import TauCeti.RingTheory.MvPowerSeries.Rescale
 
 /-!
 # Rescaling restricted univariate power series
@@ -65,7 +64,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {r s t : ℝ} {u v
 bundled as an `R`-algebra homomorphism. -/
 noncomputable def restrictedRescaleAlgHom (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r) :
     IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s where
-  toFun f := ⟨PowerSeries.rescale u (f : R⟦X⟧), IsRestricted.rescale_of_le f.2 hs hsr⟩
+  toFun f := ⟨PowerSeries.rescale u (f : R⟦X⟧), IsRestricted.rescale_of_le f.property hs hsr⟩
   map_one' := Subtype.ext (map_one (PowerSeries.rescale u))
   map_mul' f g := Subtype.ext (map_mul (PowerSeries.rescale u) (f : R⟦X⟧) g)
   map_zero' := Subtype.ext (map_zero (PowerSeries.rescale u))
@@ -167,12 +166,8 @@ theorem norm_restrictedRescaleAlgHom (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * �
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, PowerSeries.gaussNorm_eq, PowerSeries.gaussNorm_eq]
   congr 1
   funext n
-  rw [coe_restrictedRescaleAlgHom, coeff_rescale]
-  simpa [Finsupp.prod_single_index] using
-    TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod (σ := Unit) (E := R)
-      (r := fun _ ↦ r) (s := fun _ ↦ s) (fun _ ↦ u)
-      (fun _ e ↦ by rw [smul_eq_mul, hu, mul_right_comm, hrs, mul_comm])
-      (Finsupp.single () n) (coeff n (f : R⟦X⟧))
+  rw [coe_restrictedRescaleAlgHom]
+  exact _root_.PowerSeries.norm_coeff_rescale_mul_pow (f : R⟦X⟧) hu hrs n
 
 /-- Rescaling between positive-radius closed-disc algebras with `‖u‖ * s ≤ r` is `1`-Lipschitz for
 the Gauss norms. -/

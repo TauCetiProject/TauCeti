@@ -109,12 +109,12 @@ def polarDiffeomorph : GL n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Matrix n n 𝕜),
   toFun A := (⟨⟨CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)),
     (CFC.sqrt_nonneg _).isSelfAdjoint⟩, (mem_posDefOpens _).2 (posDef_sqrt_mul_star A)⟩,
     A.polarUnitary)
-  invFun p := ((mem_posDefOpens _).1 p.1.2).isUnit.unit * Unitary.toUnits p.2
+  invFun p := ((mem_posDefOpens _).1 p.1.property).isUnit.unit * Unitary.toUnits p.2
   left_inv A := Units.ext (Units.sqrt_mul_star_mul_polarUnitary A)
   right_inv p := by
-    have hp := ((mem_posDefOpens _).1 p.1.2).posSemidef.nonneg
-    have h : ((((mem_posDefOpens _).1 p.1.2).isUnit.unit * Unitary.toUnits p.2 : GL n 𝕜) :
-        Matrix n n 𝕜) = (p.1.1 : Matrix n n 𝕜) * p.2 := by
+    have hp := ((mem_posDefOpens _).1 p.1.property).posSemidef.nonneg
+    have h : ((((mem_posDefOpens _).1 p.1.property).isUnit.unit * Unitary.toUnits p.2 : GL n 𝕜) :
+        Matrix n n 𝕜) = (p.1.val : Matrix n n 𝕜) * p.2 := by
       rw [Units.val_mul, IsUnit.unit_spec, Unitary.val_toUnits_apply]
     exact Prod.ext (Subtype.ext (Subtype.ext (Units.sqrt_mul_star_eq_of_mul_eq _ hp h.symm)))
       (Units.polarUnitary_eq_of_mul_eq _ hp h.symm)
@@ -320,12 +320,12 @@ def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
     {P : posDefOpens n 𝕜 // ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} ×
       specialUnitaryGroup n 𝕜 where
   toFun g :=
-    have h := (det_eq_one_iff_polarDiffeomorph (toGL g)).1 g.2
+    have h := (det_eq_one_iff_polarDiffeomorph (toGL g)).1 g.property
     (⟨(polarDiffeomorph n 𝕜 (toGL g)).1, h.1⟩,
       ⟨(polarDiffeomorph n 𝕜 (toGL g)).2,
-        mem_specialUnitaryGroup_iff.2 ⟨(polarDiffeomorph n 𝕜 (toGL g)).2.2, h.2⟩⟩)
+        mem_specialUnitaryGroup_iff.2 ⟨(polarDiffeomorph n 𝕜 (toGL g)).2.property, h.2⟩⟩)
   invFun p := ⟨((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) * (p.2 : Matrix n n 𝕜), by
-    rw [det_mul, p.1.2, (mem_specialUnitaryGroup_iff.1 p.2.2).2, mul_one]⟩
+    rw [det_mul, p.1.property, (mem_specialUnitaryGroup_iff.1 p.2.property).2, mul_one]⟩
   left_inv g := Subtype.ext (Units.sqrt_mul_star_mul_polarUnitary (toGL g))
   right_inv := by
     rintro ⟨⟨P, hP⟩, U, hU⟩
@@ -338,14 +338,14 @@ def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
   continuous_toFun := by
     have h := (polarDiffeomorph n 𝕜).continuous.comp continuous_toGL
     exact ((continuous_fst.comp h).subtype_mk _).prodMk
-      (((continuous_subtype_val.comp (continuous_snd.comp h))).subtype_mk _)
+      (((continuous_subtypeVal.comp (continuous_snd.comp h))).subtype_mk _)
   continuous_invFun := by
     have hP : Continuous fun p : {P : posDefOpens n 𝕜 //
         ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} × specialUnitaryGroup n 𝕜 ↦
         ((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :=
-      continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)
-    exact ((continuous_subtype_val.comp hP).mul
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+      continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)
+    exact ((continuous_subtypeVal.comp hP).mul
+      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 /-- The positive-definite coordinate of the polar coordinates on `SL(n, 𝕜)` is `√(A Aᴴ)`. -/
 @[simp]

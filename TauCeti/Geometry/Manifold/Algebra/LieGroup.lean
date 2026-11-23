@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Submersion
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Lie groups covered by local diffeomorphisms
@@ -16,10 +22,16 @@ Let `π : G →* G'` be a surjective group homomorphism out of a `C^n` Lie group
 local diffeomorphism onto a `C^n` manifold `G'`. Then `G'` is a `C^n` Lie group. Near a pair of
 points of `G'`, multiplication is the image under `π` of the product of two local inverses of `π`,
 which are `C^n`; inversion on `G'` is the descent of inversion on `G`. This covers quotients of Lie
-groups by discrete normal subgroups, such as tori `E ⧸ L` and circles `AddCircle p`.
+groups by discrete normal subgroups, such as tori `E ⧸ L` and circles `AddCircle p`. The same holds
+when `π` is only a `C^n` submersion and `G` has a boundaryless model: multiplication and inversion
+of `G'` then descend along the surjective submersions `π × π` and `π`. This covers quotients of Lie
+groups by closed normal subgroups.
 
 The charts of a Lie group can also be pulled back along a locally homeomorphic homomorphism
-from a topological group, giving the source a Lie-group structure over the same model.
+from a topological group, giving the source a Lie-group structure over the same model, or
+transported along a `C^n` diffeomorphism of model spaces via `Homeomorph.chartedSpaceComp` (in
+particular, re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on
+`EuclideanSpace 𝕜 (Fin d)`).
 
 This file also proves that the integer power maps of a `C^n` Lie group are `C^n`, and packages
 inversion as a `C^n` diffeomorphism.
@@ -28,10 +40,17 @@ inversion as a `C^n` diffeomorphism.
 
 * `IsLocalDiffeomorph.lieGroup`, `IsLocalDiffeomorph.lieAddGroup`: the image of a Lie group under
   a surjective homomorphism which is a local diffeomorphism is a Lie group.
+* `Manifold.IsSubmersion.lieGroup`, `Manifold.IsSubmersion.lieAddGroup`: the same for a surjective
+  homomorphism which is a submersion, out of a Lie group with boundaryless model.
 * `IsLocalHomeomorph.lieGroup_chartedSpaceComap`,
   `IsLocalHomeomorph.lieAddGroup_chartedSpaceComap`: Lie-group structures for pulled-back charts.
 * `ContinuousMulEquiv.lieGroup_pullbackChartedSpace` transfers the Lie-group structure
   to the charts pulled back along a continuous group isomorphism.
+* `Diffeomorph.lieGroup_chartedSpaceComp`, `Diffeomorph.lieAddGroup_chartedSpaceComp`:
+  transporting a Lie-group structure along a `C^n` diffeomorphism of models.
+* `TauCeti.exists_chartedSpace_euclideanSpace_lieGroup`,
+  `TauCeti.exists_chartedSpace_euclideanSpace_lieAddGroup`: re-modelling a finite-dimensional
+  `C^n` Lie group over `ℝ` or `ℂ` on `EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`.
 * `TauCeti.contMDiff_zpow`, `TauCeti.contMDiff_zsmul`: integer powers, and integer multiples, in
   a Lie group are `C^n`.
 * `TauCeti.Lie.invDiffeomorph`, `TauCeti.Lie.negDiffeomorph`: inversion, and negation, in a Lie
@@ -80,6 +99,26 @@ theorem IsLocalDiffeomorph.lieGroup (π : G →* G') (hπ : IsLocalDiffeomorph I
     rw [hz.1, hz.2]
   contMDiff_inv := by
     -- Inversion is the descent of inversion on `G`.
+    have h : (fun x : G' ↦ x⁻¹) ∘ π = π ∘ fun x : G ↦ x⁻¹ := funext fun x ↦ (map_inv π x).symm
+    rw [← hπ.contMDiff_comp_iff hsurj le_rfl, h]
+    exact hπ.contMDiff.comp (contMDiff_inv I n)
+
+/-- If a surjective group homomorphism `π : G →* G'` out of a `C^n` Lie group with boundaryless
+model is a `C^n` submersion, then `G'` is a `C^n` Lie group. Multiplication and inversion of `G'`
+descend along the surjective submersions `π × π` and `π`. -/
+@[to_additive /-- If a surjective additive group homomorphism `π : G →+ G'` out of a `C^n` additive
+Lie group with boundaryless model is a `C^n` submersion, then `G'` is a `C^n` additive Lie
+group. -/]
+theorem Manifold.IsSubmersion.lieGroup [I.Boundaryless] (π : G →* G')
+    (hπ : IsSubmersion I I' n π) (hsurj : Function.Surjective π) : LieGroup I' n G' where
+  contMDiff_mul := by
+    -- On representatives, multiplication is that of `G`.
+    have h : (fun p : G' × G' ↦ p.1 * p.2) ∘ Prod.map π π = π ∘ fun p : G × G ↦ p.1 * p.2 :=
+      funext fun p ↦ (map_mul π p.1 p.2).symm
+    rw [← (hπ.prodMap hπ).contMDiff_comp_iff (hsurj.prodMap hsurj) le_rfl, h]
+    exact hπ.contMDiff.comp (contMDiff_mul I n)
+  contMDiff_inv := by
+    -- On representatives, inversion is that of `G`.
     have h : (fun x : G' ↦ x⁻¹) ∘ π = π ∘ fun x : G ↦ x⁻¹ := funext fun x ↦ (map_inv π x).symm
     rw [← hπ.contMDiff_comp_iff hsurj le_rfl, h]
     exact hπ.contMDiff.comp (contMDiff_inv I n)
@@ -138,6 +177,56 @@ theorem ContinuousMulEquiv.lieGroup_pullbackChartedSpace (e : A ≃ₜ* B) :
     (hφ ▸ φ.symm.isLocalDiffeomorph) e.symm.surjective
 
 end Pullback
+
+section ModelTransport
+
+/-- Changing the model space of a `C^n` Lie group along a `C^n` diffeomorphism of models
+`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the charts
+`Φ.toHomeomorph.chartedSpaceComp G`. -/
+@[to_additive /-- Changing the model space of a `C^n` additive Lie group along a `C^n`
+diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` additive Lie group over `I'`
+for the charts `Φ.toHomeomorph.chartedSpaceComp G`. -/]
+theorem Diffeomorph.lieGroup_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (G : Type*)
+    [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G] :
+    letI := Φ.toHomeomorph.chartedSpaceComp G
+    LieGroup I' n G := by
+  let _ := Φ.toHomeomorph.chartedSpaceComp G
+  let _ : IsManifold I' n G := Φ.isManifold_chartedSpaceComp G
+  have hid : ContMDiff I' I n (id : G → G) :=
+    (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := (id : G → G))).mp (contMDiff_id (I := I'))
+  exact
+    { contMDiff_mul :=
+        (Φ.contMDiff_chartedSpaceComp_iff (I'' := I'.prod I')
+          (f := fun p : G × G ↦ p.1 * p.2)).mpr
+          ((hid.comp contMDiff_fst).mul (hid.comp contMDiff_snd))
+      contMDiff_inv :=
+        (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := fun g : G ↦ g⁻¹)).mpr
+          ((contMDiff_inv I n).comp hid) }
+
+/-- Every `C^n` Lie group modelled on a finite-dimensional normed space `E` over `𝕜` (`ℝ` or `ℂ`)
+carries a `C^n` Lie-group structure (for the same topology) modelled on
+`EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`. -/
+@[to_additive /-- Every `C^n` additive Lie group modelled on a finite-dimensional normed space `E`
+over `𝕜` (`ℝ` or `ℂ`) carries a `C^n` additive Lie-group structure (for the same topology)
+modelled on `EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`. -/]
+theorem TauCeti.exists_chartedSpace_euclideanSpace_lieGroup
+    {𝕜 : Type*} [RCLike 𝕜] {n : ℕ∞ω}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    (G : Type*) [TopologicalSpace G] [ChartedSpace E G] [Group G] [LieGroup 𝓘(𝕜, E) n G] :
+    ∃ atlas : ChartedSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) G,
+      letI := atlas
+      LieGroup 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) n G := by
+  let ψLin : E ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)) :=
+    (Module.finBasis 𝕜 E).equivFun.trans
+      (EuclideanSpace.equiv (Fin (Module.finrank 𝕜 E)) 𝕜).symm.toLinearEquiv
+  let Φ : Diffeomorph 𝓘(𝕜, E) 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E
+      (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) n :=
+    { toEquiv := ψLin.toContinuousLinearEquiv.toEquiv
+      contMDiff_toFun := ψLin.toContinuousLinearEquiv.contDiff.contMDiff
+      contMDiff_invFun := ψLin.toContinuousLinearEquiv.symm.contDiff.contMDiff }
+  exact ⟨Φ.toHomeomorph.chartedSpaceComp G, Φ.lieGroup_chartedSpaceComp G⟩
+
+end ModelTransport
 
 namespace TauCeti
 

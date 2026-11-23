@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+public import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Sharp and exponential bounds for products in normed rings
@@ -35,6 +36,12 @@ and Siegel functions on the upper half-plane, the exact zero-set characterizatio
 `(∏' i, (1 + f i)) = 0 ↔ ∃ i, 1 + f i = 0`, and the finite-head times cofinite-tail splitting
 `(∏ i ∈ t, (1 + f i)) * (∏' i : {i // i ∉ t}, (1 + f i)) = ∏' i, (1 + f i)`.
 
+In an ultrametric seminormed commutative ring, if every factor of a convergent product lies
+strictly within `ε ≤ 1` of `1`, then so does the product, and factors within `1` of `1` of a
+convergent product tend to `1` along the cofinite filter. In a complete ultrametric seminormed
+commutative ring, any family tending to `1` along the cofinite filter is unconditionally
+multipliable, even when its factors are not units.
+
 ## Main declarations
 
 * `Finset.norm_prod_one_add_sub_one_le_prod_one_add_norm_sub_one`: sharp finite-product majorant
@@ -57,6 +64,10 @@ and Siegel functions on the upper half-plane, the exact zero-set characterizatio
   convergent product `∏' i, (1 ± f i)` vanishes if and only if one factor vanishes.
 * `TauCeti.prod_mul_tprod_compl_one_add`: finite-head times cofinite-tail factorization of an
   absolutely convergent product `∏' i, (1 + f i)` in any complete normed commutative ring.
+* `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one` and `HasProd.norm_sub_one_lt`: strict
+  ultrametric perturbation bounds near `1` for a supplied convergent product.
+* `IsUltrametricDist.multipliable_of_tendsto_cofinite_one`: unconditional multipliability of
+  families tending to `1` cofinitely in complete ultrametric seminormed commutative rings.
 
 ## References
 
@@ -65,7 +76,8 @@ and Siegel functions on the upper half-plane, the exact zero-set characterizatio
 
 public section
 
-open scoped BigOperators
+open Filter
+open scoped BigOperators Topology
 
 namespace Finset
 
@@ -237,6 +249,69 @@ theorem prod_mul_tprod_compl_one_add [CompleteSpace R] {f : ι → R}
 end NormedCommRing
 
 end TauCeti
+
+section Ultrametric
+
+/-- In an ultrametric seminormed commutative ring, if `f` has a convergent infinite product and
+every factor satisfies `‖f i - 1‖ < 1`, then `f` tends to `1` along the cofinite filter. Unlike in
+a multiplicative group, this uses `‖f i - 1‖ < 1` so that finite partial products preserve the
+distances `‖f i - 1‖`. -/
+theorem HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] {f : ι → R} {a : R} (hf : HasProd f a)
+    (h : ∀ i, ‖f i - 1‖ < 1) : Tendsto f cofinite (𝓝 1) := by
+  classical
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hlim : ∀ᶠ s : Finset ι in atTop, dist (∏ j ∈ s, f j) a < ε :=
+    Metric.tendsto_nhds.mp hf ε hε
+  obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp hlim
+  refine Filter.eventually_cofinite.mpr (s₀.finite_toSet.subset fun i hi ↦ ?_)
+  by_contra his₀
+  rw [Finset.mem_coe] at his₀
+  let u : R := ∏ j ∈ s₀, f j
+  have hu : ‖u - 1‖ < 1 := TauCeti.norm_prod_sub_one_lt s₀ f zero_lt_one le_rfl fun j _ ↦ h j
+  have hmul : ‖u * (f i - 1)‖ = ‖f i - 1‖ := by
+    have h1 := TauCeti.norm_one_add_mul_of_norm_lt_one hu (f i - 1)
+    rwa [add_sub_cancel] at h1
+  have hprod : ∏ j ∈ insert i s₀, f j - u = u * (f i - 1) := by
+    rw [Finset.prod_insert his₀]
+    ring
+  have hdist : ‖f i - 1‖ < ε := calc
+    ‖f i - 1‖ = ‖∏ j ∈ insert i s₀, f j - u‖ := by rw [hprod, hmul]
+    _ = ‖(∏ j ∈ insert i s₀, f j - a) + -(u - a)‖ := by congr 1; abel
+    _ ≤ max ‖∏ j ∈ insert i s₀, f j - a‖ ‖u - a‖ := by
+      simpa only [norm_neg] using
+        IsUltrametricDist.norm_add_le_max (∏ j ∈ insert i s₀, f j - a) (-(u - a))
+    _ < ε := max_lt
+      (by simpa only [dist_eq_norm] using hs₀ (insert i s₀) (Finset.subset_insert i s₀))
+      (by simpa only [dist_eq_norm] using hs₀ s₀ Finset.Subset.rfl)
+  exact hi (by simpa only [dist_eq_norm] using hdist)
+
+/-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
+strictly within `ε ≤ 1` of `1`, then `‖a - 1‖ < ε`. This is the `HasProd` form of
+`TauCeti.norm_tprod_sub_one_lt`, which needs no Hausdorff hypothesis. -/
+theorem HasProd.norm_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
+    (h : ∀ i, ‖f i - 1‖ < ε) : ‖a - 1‖ < ε := by
+  obtain ⟨s₀, hs₀⟩ := (hf.eventually (Metric.ball_mem_nhds a hε0)).exists
+  have h1 : ‖a - ∏ i ∈ s₀, f i‖ < ε := by
+    rw [← dist_eq_norm, dist_comm]
+    exact Metric.mem_ball.mp hs₀
+  calc ‖a - 1‖ = ‖(a - ∏ i ∈ s₀, f i) + ((∏ i ∈ s₀, f i) - 1)‖ := by rw [sub_add_sub_cancel]
+    _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
+    _ < ε := max_lt h1 (TauCeti.norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ h i)
+
+/-- In a complete ultrametric seminormed commutative ring, any family tending to `1` along the
+cofinite filter is unconditionally multipliable, even when some factors are not units. -/
+theorem IsUltrametricDist.multipliable_of_tendsto_cofinite_one {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
+    (hf : Tendsto f cofinite (𝓝 1)) : Multipliable f := by
+  have h0 : Tendsto (fun i ↦ f i - 1) cofinite (𝓝 0) := by
+    simpa only [sub_self] using hf.sub_const 1
+  simpa only [add_sub_cancel] using
+    IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero h0
+
+end Ultrametric
 
 /-! ### Examples
 

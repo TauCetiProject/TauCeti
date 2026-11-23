@@ -127,7 +127,7 @@ private lemma exists_desc_skeletonObj_succ {Y : TopCat.{w}} (φ : skeletonObj C 
   refine ⟨TopCat.ofHom (F.comp ((ContinuousMap.const _ ()).prodMk (ContinuousMap.id _))), ?_,
     fun j ↦ ?_⟩
   · ext x
-    exact hF₀ () x.1 x.2
+    exact hF₀ () x.val x.property
   · ext z
     rw [ConcreteCategory.comp_apply]
     refine (congrArg (fun x ↦ F ((), x)) (Subtype.ext (coe_cellDiskHom_apply j z))).trans
@@ -218,12 +218,12 @@ variable {C}
 /-- The `n`-th space of `TauCeti.toRelativeCWComplex C` is the skeleton `skeletonLT C n`, included
 in `C`. -/
 lemma coe_toRelativeCWComplex_incl_app_apply (n : ℕ) (x : (toRelativeCWComplex C).F.obj n) :
-    ((toRelativeCWComplex C).incl.app n x).1 = x.1 :=
+    ((toRelativeCWComplex C).incl.app n x).val = x.val :=
   (rfl)
 
 /-- The image in `C` of the `n`-th space of `TauCeti.toRelativeCWComplex C` is `skeletonLT C n`. -/
 lemma range_toRelativeCWComplex_incl_app (n : ℕ) :
-    range (fun x : (toRelativeCWComplex C).F.obj n ↦ ((toRelativeCWComplex C).incl.app n x).1) =
+    range (fun x : (toRelativeCWComplex C).F.obj n ↦ ((toRelativeCWComplex C).incl.app n x).val) =
       skeletonLT C n :=
   Subtype.range_coe
 
@@ -272,11 +272,11 @@ variable (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)]
 def toTopCatCWComplex : TopCat.CWComplex Y where
   __ := (toRelativeCWComplex (univ : Set Y)).toTransfiniteCompositionOfShape.ofArrowIso
     (Arrow.isoMk
-      { hom := TopCat.ofHom ⟨fun x ↦ x.2.elim, continuous_of_discreteTopology⟩
+      { hom := TopCat.ofHom ⟨fun x ↦ x.property.elim, continuous_of_discreteTopology⟩
         inv := Limits.initial.to _
-        hom_inv_id := by ext x; exact x.2.elim
+        hom_inv_id := by ext x; exact x.property.elim
         inv_hom_id := Limits.initial.hom_ext _ _ }
-      (TopCat.isoOfHomeo (Homeomorph.Set.univ Y)) (by ext x; exact x.2.elim))
+      (TopCat.isoOfHomeo (Homeomorph.Set.univ Y)) (by ext x; exact x.property.elim))
   attachCells := (toRelativeCWComplex (univ : Set Y)).attachCells
 
 @[simp] lemma toTopCatCWComplex_F : (Y.toTopCatCWComplex).F = skeletonFunctor (univ : Set Y) := by

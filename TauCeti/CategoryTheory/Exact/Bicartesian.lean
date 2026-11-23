@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.CategoryTheory.Abelian.CommSq
 public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Opposite
@@ -154,28 +155,6 @@ private theorem isInflation_shortComplex_f (E : ExactStructure C)
   rw [← hfac]
   exact E.isInflation_comp _ _ hgraph hsum
 
-/-- The sign change on the second summand of a binary biproduct. -/
-private noncomputable def biprodSignIso (X Y : C) : X ⊞ Y ≅ X ⊞ Y where
-  hom := biprod.map (𝟙 X) (-𝟙 Y)
-  inv := biprod.map (𝟙 X) (-𝟙 Y)
-  hom_inv_id := by
-    apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
-  inv_hom_id := by
-    apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
-
-/-- Changing the sign of the lower-left map converts the cokernel convention for a square into
-the kernel convention. -/
-private noncomputable def shortComplexIso
-    {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
-    (sq : CommSq f g h i) : sq.shortComplex ≅ sq.shortComplex' :=
-  ShortComplex.isoMk (Iso.refl _) (biprodSignIso X Y) (Iso.refl _)
-    (by
-      dsimp [CommSq.shortComplex, CommSq.shortComplex', biprodSignIso]
-      apply biprod.hom_ext <;> simp [Category.assoc])
-    (by
-      dsimp [CommSq.shortComplex, CommSq.shortComplex', biprodSignIso]
-      apply biprod.hom_ext' <;> simp)
-
 /-- The biproduct short complex associated to a pushout square of an inflation is a
 conflation.
 
@@ -212,7 +191,7 @@ theorem isPullback_of_isPushout_of_isInflation (E : ExactStructure C)
   have hconflation := E.conflation_shortComplex_of_isPushout_of_isInflation hf hsq
   have hpair := E.isKernelCokernelPair sq.shortComplex hconflation
   have hpair' : IsKernelCokernelPair sq.shortComplex' :=
-    hpair.of_iso (shortComplexIso sq)
+    hpair.of_iso sq.shortComplexIsoShortComplex'
   exact IsPullback.of_isLimit' sq
     (sq.isLimitEquivIsLimitKernelFork.symm hpair'.fIsKernel)
 

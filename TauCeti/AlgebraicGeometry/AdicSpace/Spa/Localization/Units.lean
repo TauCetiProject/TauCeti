@@ -106,10 +106,10 @@ over `x` exactly when `f` does. -/
     letI := isUniformAddGroup_locUniformSpace P T' s' S' hden'
     letI := isTopologicalRing_locUniformSpace P T' s' S' hden'
     ∀ f : Completion S,
-      ((spaCompletedLocalizationHomeomorph P Aplus hP T' s' S' hden').symm x).1.toValuativeRel.vle
+      ((spaCompletedLocalizationHomeomorph P Aplus hP T' s' S' hden').symm x).val.toValuativeRel.vle
           (ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' hsub f) 0 ↔
         ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm
-          (Set.inclusion (Set.preimage_mono (f := Subtype.val) hsub) x)).1.toValuativeRel.vle
+          (Set.inclusion (Set.preimage_mono (f := Subtype.val) hsub) x)).val.toValuativeRel.vle
           f 0 := by
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -142,7 +142,7 @@ theorem notMem_supp_of_isUnit_ringHomOfRationalSubsetSubset
     ∀ f : Completion S,
       IsUnit (ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' hsub f) →
         f ∉ supp ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm
-          (Set.inclusion (Set.preimage_mono (f := Subtype.val) hsub) x)).1 := by
+          (Set.inclusion (Set.preimage_mono (f := Subtype.val) hsub) x)).val := by
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T' s' S' hden'
@@ -166,9 +166,9 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ f : Completion S,
-      f ∉ supp ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x).1 →
+      f ∉ supp ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x).val →
         ∃ q : Presentation P, IsOpen (Ideal.span (q.num : Set A) : Set A) ∧
-          x.1.1 ∈ rationalSubset Aplus q.num q.den ∧
+          x.val.val ∈ rationalSubset Aplus q.num q.den ∧
           ∃ hsub : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus T s,
             letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
             letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
@@ -182,7 +182,7 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
   set e := spaCompletedLocalizationHomeomorph P Aplus hP T s S hden
   -- the points of `Spa (A⟨T/s⟩, A_U⁺)` off the support of `f` form an open neighbourhood of the
   -- point over `x`, which therefore contains a rational neighbourhood `W`
-  have hN : IsOpen {w : spa (completedPlusSubring P Aplus T s S hden) | f ∉ supp w.1} :=
+  have hN : IsOpen {w : spa (completedPlusSubring P Aplus T s S hden) | f ∉ supp w.val} :=
     isOpen_setOf_notMem_supp _ f
   obtain ⟨W, hW, hxW, hWN⟩ :=
     (isTopologicalBasis_spaRationalFamily _).exists_subset_of_mem_open hf hN
@@ -194,10 +194,10 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
     have hmem : (⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩ : spa Aplus) ∈
         Subtype.val '' (e '' W) := hV ▸ hv
     obtain ⟨_, ⟨u, -, rfl⟩, hu⟩ := hmem
-    have h : ((e u : spa Aplus) : Spv A) ∈ rationalSubset Aplus T s := (e u).2
+    have h : ((e u : spa Aplus) : Spv A) ∈ rationalSubset Aplus T s := (e u).property
     rwa [hu] at h
   refine ⟨⟨T', s', P.hasDenominatorPower_of_isOpen_span T' s' _ hT'⟩, hT', ?_, hsub, ?_⟩
-  · have hmem : x.1 ∈ Subtype.val '' (e '' W) :=
+  · have hmem : x.val ∈ Subtype.val '' (e '' W) :=
       ⟨x, ⟨e.symm x, hxW, e.apply_symm_apply x⟩, rfl⟩
     rw [hV] at hmem
     exact hmem
@@ -210,7 +210,7 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
   set e' := spaCompletedLocalizationHomeomorph P Aplus hP T' s' _ hden'
   refine (isUnit_iff_forall_mem_spa_notMem_supp _ (isRingOfIntegralElements_completedPlusSubring
     P Aplus (fun j _ ↦ hP j.property) hAplus T' s' _ hden') _).mpr fun w hw ↦ ?_
-  have hmem : (e' ⟨w, hw⟩).1 ∈ Subtype.val '' (e '' W) := hV.symm ▸ (e' ⟨w, hw⟩).2
+  have hmem : (e' ⟨w, hw⟩).val ∈ Subtype.val '' (e '' W) := hV.symm ▸ (e' ⟨w, hw⟩).property
   obtain ⟨_, ⟨u, huW, rfl⟩, hu⟩ := hmem
   have hincl : e.symm (Set.inclusion (Set.preimage_mono (f := Subtype.val) hsub) (e' ⟨w, hw⟩)) =
       u := by
@@ -218,7 +218,8 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
     exact Subtype.ext hu.symm
   intro hsupp
   have hsupp' : ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' _ hden' hsub f ∈
-      supp ((spaCompletedLocalizationHomeomorph P Aplus hP T' s' _ hden').symm (e' ⟨w, hw⟩)).1 := by
+      supp ((spaCompletedLocalizationHomeomorph P Aplus hP T' s' _ hden').symm (e' ⟨w, hw⟩)).val
+          := by
     rwa [Homeomorph.symm_apply_apply]
   have hval := (mem_supp_iff _ _).mp hsupp'
   have hval' := (ringHomOfRationalSubsetSubset_mem_supp_iff P Aplus hP hAplus T s S hden T' s' _
@@ -243,9 +244,9 @@ theorem notMem_supp_iff_exists_isUnit_ringHomOfRationalSubsetSubset
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ f : Completion S,
-      f ∉ supp ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x).1 ↔
+      f ∉ supp ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x).val ↔
         ∃ q : Presentation P, IsOpen (Ideal.span (q.num : Set A) : Set A) ∧
-          x.1.1 ∈ rationalSubset Aplus q.num q.den ∧
+          x.val.val ∈ rationalSubset Aplus q.num q.den ∧
           ∃ hsub : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus T s,
             letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
             letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
@@ -258,7 +259,7 @@ theorem notMem_supp_iff_exists_isUnit_ringHomOfRationalSubsetSubset
     T s hT S hden x f, ?_⟩
   rintro ⟨q, -, hxq, hsub, hunit⟩
   exact notMem_supp_of_isUnit_ringHomOfRationalSubsetSubset P Aplus hP hAplus T s S hden q.num
-    q.den _ q.hasDenominatorPower hsub ⟨x.1, hxq⟩ f hunit
+    q.den _ q.hasDenominatorPower hsub ⟨x.val, hxq⟩ f hunit
 
 /-- An element of `A` is invertible on `R(T/s)` exactly when its support misses that rational
 subset. This transfers the unit criterion for the complete Huber pair `A⟨T/s⟩` across the
@@ -284,20 +285,20 @@ theorem isUnit_toCompletionLoc_iff_forall_notMem_supp
   · intro h v hv
     let w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm
       ⟨⟨v, rationalSubset_subset_spa Aplus T s hv⟩, hv⟩
-    have hw := h w.1 w.2
-    have he : (spaComapLoc P Aplus T s S hden w).1 = v := by
+    have hw := h w.val w.property
+    have he : (spaComapLoc P Aplus T s S hden w).val = v := by
       have he' := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).apply_symm_apply
         ⟨⟨v, rationalSubset_subset_spa Aplus T s hv⟩, hv⟩
       simpa only [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val]
-        using congrArg (fun x ↦ (x.1.1 : Spv A)) he'
+        using congrArg (fun x ↦ (x.val.val : Spv A)) he'
     rw [← he, spaComapLoc_val, mem_supp_iff, comap_vle, map_zero]
-    exact (mem_supp_iff w.1 _).not.mp hw
+    exact (mem_supp_iff w.val _).not.mp hw
   · intro h w hw
-    have hv : (spaComapLoc P Aplus T s S hden ⟨w, hw⟩).1 ∈
+    have hv : (spaComapLoc P Aplus T s S hden ⟨w, hw⟩).val ∈
         rationalSubset Aplus T s := by
       simpa only [Set.mem_preimage, spaCompletedLocalizationHomeomorph_apply,
         spaLocToRationalSubset_val] using
-        (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden ⟨w, hw⟩).2
+        (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden ⟨w, hw⟩).property
     have := h _ hv
     rw [mem_supp_iff, spaComapLoc_val, comap_vle, map_zero] at this
     exact (mem_supp_iff w _).not.mpr this

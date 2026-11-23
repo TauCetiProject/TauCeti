@@ -43,6 +43,10 @@ series on open discs:
   rescaling `f(X) ↦ f(u X)` on open discs, and the isomorphism for multiplicative units.
 * `TauCeti.PowerSeries.OnOpenDisc.affineAlgHom` and `TauCeti.PowerSeries.OnOpenDisc.affineEquiv`:
   affine pullbacks `f(X) ↦ f(a + u X)` as `R`-algebra homomorphisms and isomorphisms.
+* `TauCeti.PowerSeries.OnOpenDisc.rescaleUniformEquiv` and
+  `TauCeti.PowerSeries.OnOpenDisc.affineHomeomorph`: the uniform equivalence and homeomorphism
+  induced by multiplicative-unit rescalings out of nonempty open discs and by affine
+  automorphisms.
 
 ## Main results
 
@@ -51,7 +55,12 @@ series on open discs:
   `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_rescaleEquiv`, and
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_rescaleAlgHom`: Gauss bounds and uniform
   continuity of rescaling.
+* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_affineEquiv`: affine automorphisms identify
+  smaller closed-disc Gauss norms.
+* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_C_add_C_mul_X`: the smaller closed-disc Gauss norm
+  of the affine polynomial `a + u X` over any ultrametric normed ring.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_affineAlgHom`,
+  `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_affineAlgHom`,
   `TauCeti.PowerSeries.OnOpenDisc.affineAlgHom_comp_affineAlgHom`, and
   `TauCeti.PowerSeries.OnOpenDisc.affineEquiv_symm_apply`: point evaluation, composition, and
   inversion of affine coordinate changes.
@@ -84,7 +93,7 @@ homomorphism. -/
 noncomputable def rescaleAlgHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
     OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀ where
   toFun f := ⟨PowerSeries.rescale u (f : R⟦X⟧),
-    OnOpenDisc.mem_subring.mpr (((OnOpenDisc.mem_subring.mp f.2).mono hu).rescale)⟩
+    OnOpenDisc.mem_subring.mpr (((OnOpenDisc.mem_subring.mp f.property).mono hu).rescale)⟩
   map_one' := Subtype.ext (map_one (PowerSeries.rescale u))
   map_mul' f g := Subtype.ext (map_mul (PowerSeries.rescale u) (f : R⟦X⟧) g)
   map_zero' := Subtype.ext (map_zero (PowerSeries.rescale u))
@@ -109,6 +118,18 @@ theorem rescaleAlgHom_X {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
       algebraMap R _ u * OnOpenDisc.polynomialHom Polynomial.X :=
   Subtype.ext <| PowerSeries.ext fun n ↦ by simp [coeff_C_mul]
 
+/-- On polynomials, `rescaleAlgHom` substitutes `u * X` for `X`. -/
+@[simp low]
+theorem rescaleAlgHom_polynomialHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (p : Polynomial R) :
+    rescaleAlgHom hu (OnOpenDisc.polynomialHom p) =
+      OnOpenDisc.polynomialHom (p.comp (Polynomial.C u * Polynomial.X)) := by
+  have heq : (rescaleAlgHom hu : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀).comp
+      OnOpenDisc.polynomialHom =
+      OnOpenDisc.polynomialHom.comp (Polynomial.compRingHom (Polynomial.C u * Polynomial.X)) :=
+    Polynomial.ringHom_ext (fun a ↦ Subtype.ext (by simp)) (Subtype.ext (by simp))
+  simpa only [RingHom.comp_apply, RingHom.coe_coe, Polynomial.coe_compRingHom_apply] using
+    RingHom.congr_fun heq p
+
 /-- Rescaling by `1` at the same radius is the identity. -/
 @[simp]
 theorem rescaleAlgHom_one (h1 : ‖(1 : R)‖ * R₀ ≤ R₀) :
@@ -126,6 +147,12 @@ theorem rescaleAlgHom_comp_rescaleAlgHom {u v : R} (hu : ‖u‖ * S₀ ≤ R₀
     (huv : ‖u * v‖ * T₀ ≤ R₀) :
     (rescaleAlgHom hv).comp (rescaleAlgHom hu) = rescaleAlgHom huv :=
   AlgHom.ext fun f ↦ Subtype.ext (by simp [PowerSeries.rescale_rescale])
+
+/-- Applying two rescaling homomorphisms in turn rescales by the product of the scalars. -/
+theorem rescaleAlgHom_rescaleAlgHom {u v : R} (hu : ‖u‖ * S₀ ≤ R₀) (hv : ‖v‖ * T₀ ≤ S₀)
+    (huv : ‖u * v‖ * T₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    rescaleAlgHom hv (rescaleAlgHom hu f) = rescaleAlgHom huv f :=
+  AlgHom.congr_fun (rescaleAlgHom_comp_rescaleAlgHom hu hv huv) f
 
 /-- Open-disc radius restriction on the target commutes with `rescaleAlgHom`. -/
 @[simp]
@@ -170,7 +197,7 @@ noncomputable def rescaleEquiv (u : Rˣ) (hu : IsNormMulUnit (u : R))
   { rescaleAlgHom huS.le with
     invFun g := ⟨PowerSeries.rescale (((u⁻¹ : Rˣ) : R)) (g : R⟦X⟧),
       OnOpenDisc.mem_subring.mpr <|
-        onOpenDisc_rescale_units_inv u hu huS (OnOpenDisc.mem_subring.mp g.2)⟩
+        onOpenDisc_rescale_units_inv u hu huS (OnOpenDisc.mem_subring.mp g.property)⟩
     left_inv f := Subtype.ext (by simp [PowerSeries.rescale_rescale])
     right_inv g := Subtype.ext (by simp [PowerSeries.rescale_rescale]) }
 
@@ -217,7 +244,7 @@ theorem restrict_rescaleAlgHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
     (s : Set.Ioo (0 : ℝ) S₀) (r : Set.Ioo (0 : ℝ) R₀) (hsr : ‖u‖ * s ≤ r)
     (f : OnOpenDisc.subring R R₀) :
     restrict s (rescaleAlgHom hu f) =
-      TauCeti.PowerSeries.restrictedRescaleAlgHom s.2.1.le hsr (restrict r f) :=
+      TauCeti.PowerSeries.restrictedRescaleAlgHom s.property.1.le hsr (restrict r f) :=
   Subtype.ext (by simp)
 
 /-- On smaller closed discs with `‖u‖ * s ≤ r`, rescaling does not increase the Gauss norm.
@@ -227,7 +254,7 @@ theorem norm_restrict_rescaleAlgHom_le {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
     (f : OnOpenDisc.subring R R₀) :
     ‖restrict s (rescaleAlgHom hu f)‖ ≤ ‖restrict r f‖ := by
   rw [restrict_rescaleAlgHom hu s r hsr f]
-  exact TauCeti.PowerSeries.norm_restrictedRescaleAlgHom_le s.2.1.le hsr (restrict r f)
+  exact TauCeti.PowerSeries.norm_restrictedRescaleAlgHom_le s.property.1.le hsr (restrict r f)
 
 /-- Rescaling by a norm-multiplicative element `u` identifies the Gauss norm at a smaller radius
 `s < S₀` with the Gauss norm at `r = ‖u‖ * s < R₀`. -/
@@ -236,7 +263,7 @@ theorem norm_restrict_rescaleAlgHom {u : R} (hu : ∀ x : R, ‖u * x‖ = ‖u�
     (hr : (r : ℝ) = ‖u‖ * s) (f : OnOpenDisc.subring R R₀) :
     ‖restrict s (rescaleAlgHom huS f)‖ = ‖restrict r f‖ := by
   rw [restrict_rescaleAlgHom huS s r hr.symm.le f]
-  exact TauCeti.PowerSeries.norm_restrictedRescaleAlgHom hu s.2.1.le hr.symm (restrict r f)
+  exact TauCeti.PowerSeries.norm_restrictedRescaleAlgHom hu s.property.1.le hr.symm (restrict r f)
 
 /-- Rescaling by a multiplicative unit `u` identifies the Gauss norm at a smaller radius `s < S₀`
 with the Gauss norm at `r = ‖(u : R)‖ * s < R₀`. -/
@@ -253,11 +280,11 @@ theorem uniformContinuous_rescaleAlgHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ 
     UniformContinuous (rescaleAlgHom hu) := by
   refine uniformContinuous_iff.mpr fun s ↦ ?_
   obtain ⟨r, hsr, hrR⟩ :=
-    exists_between (mul_lt_of_lt_of_mul_le (norm_nonneg u) Fact.out s.2.2 hu)
-  let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, (mul_nonneg (norm_nonneg u) s.2.1.le).trans_lt hsr, hrR⟩
-  have : Fact (0 < r) := ⟨r'.2.1⟩
+    exists_between (mul_lt_of_lt_of_mul_le (norm_nonneg u) Fact.out s.property.2 hu)
+  let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, (mul_nonneg (norm_nonneg u) s.property.1.le).trans_lt hsr, hrR⟩
+  have : Fact (0 < r) := ⟨r'.property.1⟩
   simp_rw [restrict_rescaleAlgHom hu s r' hsr.le]
-  exact (TauCeti.PowerSeries.lipschitzWith_restrictedRescaleAlgHom s.2.1.le
+  exact (TauCeti.PowerSeries.lipschitzWith_restrictedRescaleAlgHom s.property.1.le
     hsr.le).uniformContinuous.comp (uniformContinuous_restrict r')
 
 /-- Rescaling out of a nonempty open disc (`0 < R₀`) is continuous for the Gauss topologies. -/
@@ -266,9 +293,60 @@ theorem continuous_rescaleAlgHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ 
     Continuous (rescaleAlgHom hu) :=
   (uniformContinuous_rescaleAlgHom hu).continuous
 
+/-- Out of a nonempty open disc (`0 < R₀`), rescaling by a multiplicative unit `u` with
+`‖(u : R)‖ * S₀ = R₀` is a uniform equivalence for the Gauss uniformities. -/
+noncomputable def rescaleUniformEquiv [Fact (0 < R₀)] (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    OnOpenDisc.subring R R₀ ≃ᵤ OnOpenDisc.subring R S₀ where
+  toEquiv := (rescaleEquiv u hu huS).toEquiv
+  uniformContinuous_toFun := uniformContinuous_rescaleAlgHom huS.le
+  uniformContinuous_invFun := by
+    have : Fact (0 < S₀) :=
+      ⟨pos_of_mul_pos_right (huS ▸ Fact.out : 0 < ‖(u : R)‖ * S₀) (norm_nonneg _)⟩
+    convert uniformContinuous_rescaleAlgHom
+      (hu.norm_units_inv_mul_eq (Fact.out : 0 < R₀).ne' huS).le using 1
+    funext g
+    exact rescaleEquiv_symm_apply u hu huS g
+
+/-- `rescaleUniformEquiv` acts as `rescaleEquiv`. -/
+@[simp]
+theorem rescaleUniformEquiv_apply [Fact (0 < R₀)] (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) (f : OnOpenDisc.subring R R₀) :
+    rescaleUniformEquiv u hu huS f = rescaleEquiv u hu huS f := (rfl)
+
+/-- The inverse of `rescaleUniformEquiv` acts as the inverse of `rescaleEquiv`. -/
+@[simp]
+theorem rescaleUniformEquiv_symm_apply [Fact (0 < R₀)] (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) (g : OnOpenDisc.subring R S₀) :
+    (rescaleUniformEquiv u hu huS).symm g = (rescaleEquiv u hu huS).symm g := (rfl)
+
 end UltrametricRescale
 
 end Rescale
+
+section PolynomialBounds
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {S₀ : ℝ}
+
+attribute [local instance] radius_pos
+
+/-- Over any ultrametric normed ring, the affine polynomial `a + u * X` has smaller-disc Gauss
+norm `max ‖a‖ (‖u‖ * s)`. -/
+theorem norm_restrict_C_add_C_mul_X (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ =
+      max ‖a‖ (‖u‖ * (s : ℝ)) := by
+  refine le_antisymm (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_) (max_le ?_ ?_)
+  · rcases n with _ | _ | n <;> simp
+  · convert TauCeti.PowerSeries.norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 0
+      using 1
+    simp
+  · convert TauCeti.PowerSeries.norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 1
+      using 1
+    simp
+
+end PolynomialBounds
 
 section Affine
 
@@ -304,6 +382,16 @@ theorem affineAlgHom_X {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ 
     affineAlgHom ha hu (OnOpenDisc.polynomialHom Polynomial.X) =
       algebraMap R _ a + algebraMap R _ u * OnOpenDisc.polynomialHom Polynomial.X := by
   simp [affineAlgHom_apply, polynomialHom_C, add_comm]
+
+/-- On polynomials, `affineAlgHom` substitutes `a + u * X` for `X`. -/
+@[simp low]
+theorem affineAlgHom_polynomialHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (p : Polynomial R) :
+    affineAlgHom ha hu (OnOpenDisc.polynomialHom p) =
+      OnOpenDisc.polynomialHom (p.comp (Polynomial.C a + Polynomial.C u * Polynomial.X)) := by
+  rw [affineAlgHom_apply, taylorHom_polynomialHom, rescaleAlgHom_polynomialHom,
+    Polynomial.taylor_apply, Polynomial.comp_assoc, Polynomial.add_comp, Polynomial.X_comp,
+    Polynomial.C_comp, add_comm]
 
 /-- At centre `a = 0`, `affineAlgHom` reduces to `rescaleAlgHom`. -/
 @[simp]
@@ -373,6 +461,23 @@ theorem continuous_affineAlgHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * 
   have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
   exact (continuous_rescaleAlgHom hu).comp (continuous_taylorHom ha)
 
+/-- Evaluating affine pullbacks `f(a + u X)` at an algebra point `b` with `‖b‖ < S₀` is evaluation
+of `f` at `u • b + algebraMap R A a`, as ring homomorphisms. Unlike `evalAt_affineAlgHom`, this
+needs neither `IsUltrametricDist A` nor `NormOneClass A`, taking the bound on the evaluation point
+as a hypothesis instead. -/
+theorem evalAtHom_comp_affineAlgHom {A : Type*} [NormedRing A] [Algebra R A]
+    [IsBoundedSMul R A] [CompleteSpace A] {a u : R} {b : A} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (hb : ‖b‖ < S₀) (hab : ‖u • b + algebraMap R A a‖ < R₀) :
+    (OnOpenDisc.evalAtHom R hb).comp
+        (affineAlgHom ha hu : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀) =
+      OnOpenDisc.evalAtHom R hab := by
+  refine ringHom_ext ((continuous_evalAtHom hb).comp (continuous_affineAlgHom ha hu))
+    (continuous_evalAtHom hab) (fun c ↦ ?_) ?_ <;>
+  simp only [RingHom.comp_apply, RingHom.coe_coe, affineAlgHom_polynomialHom,
+    OnOpenDisc.evalAtHom_apply, OnOpenDisc.coe_polynomialHom, evalAt_coe]
+  · simp
+  · simp [Algebra.smul_def, add_comm]
+
 /-- **Composition of affine pullbacks on open discs**: pulling back along `X ↦ a + u Y` and then
 along `Y ↦ b + v Z` pulls back along `X ↦ (a + u b) + (u v) Z`. -/
 theorem affineAlgHom_comp_affineAlgHom {a u b v : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
@@ -390,7 +495,7 @@ theorem affineAlgHom_comp_affineAlgHom {a u b v : R} (ha : ‖a‖ < R₀) (hu :
           simp [coe_affineAlgHom]
     _ = PowerSeries.rescale v (PowerSeries.rescale u
           (PowerSeries.taylor (u * b) (PowerSeries.taylor a (f : R⟦X⟧)))) := by
-          rw [((OnOpenDisc.mem_subring.mp f.2).taylor ha).taylor_rescale hub']
+          rw [((OnOpenDisc.mem_subring.mp f.property).taylor ha).taylor_rescale hub']
     _ = PowerSeries.rescale (u * v) (PowerSeries.taylor (a + u * b) (f : R⟦X⟧)) := by
           have h := congrArg Subtype.val (taylorHom_taylorHom ha hub' f)
           simp only [coe_taylorHom, add_comm (u * b) a] at h
@@ -436,6 +541,42 @@ theorem affineEquiv_symm_apply {a : R} (ha : ‖a‖ < R₀) (u : Rˣ)
   rw [AlgEquiv.symm_apply_eq, affineEquiv_apply, hcomp]
   exact Subtype.ext (by simp [neg_mul])
 
+/-- An affine automorphism `affineEquiv` identifies the Gauss norm at a smaller radius `s < S₀`
+with the Gauss norm at `r = ‖(u : R)‖ * s < R₀`, provided the closed disc of radius `r` contains
+the centre `a`. -/
+theorem norm_restrict_affineEquiv {a : R} (ha : ‖a‖ < R₀) (u : Rˣ) (hu : IsNormMulUnit (u : R))
+    (huS : ‖(u : R)‖ * S₀ = R₀) (s : Set.Ioo (0 : ℝ) S₀) (r : Set.Ioo (0 : ℝ) R₀)
+    (har : ‖a‖ ≤ r) (hr : (r : ℝ) = ‖(u : R)‖ * s) (f : OnOpenDisc.subring R R₀) :
+    ‖restrict s (affineEquiv ha u hu huS f)‖ = ‖restrict r f‖ := by
+  rw [affineEquiv_apply, affineAlgHom_apply]
+  exact (norm_restrict_rescaleAlgHom hu.norm_mul huS.le s r hr (taylorHom ha f)).trans
+    (norm_restrict_taylorHom ha r har f)
+
+/-- An affine automorphism `affineEquiv` is a homeomorphism for the Gauss topologies. -/
+noncomputable def affineHomeomorph {a : R} (ha : ‖a‖ < R₀) (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    OnOpenDisc.subring R R₀ ≃ₜ OnOpenDisc.subring R S₀ where
+  toEquiv := (affineEquiv ha u hu huS).toEquiv
+  continuous_toFun :=
+    (continuous_affineAlgHom ha huS.le).congr fun f ↦ (affineEquiv_apply ha u hu huS f).symm
+  continuous_invFun :=
+    (continuous_affineAlgHom (a := -((u⁻¹ : Rˣ) : R) * a)
+      (by rw [neg_mul, norm_neg]; exact hu.norm_units_inv_mul_lt ha huS)
+      (hu.norm_units_inv_mul_eq ((norm_nonneg a).trans_lt ha).ne' huS).le).congr
+      fun g ↦ (affineEquiv_symm_apply ha u hu huS g).symm
+
+/-- `affineHomeomorph` acts as `affineEquiv`. -/
+@[simp]
+theorem affineHomeomorph_apply {a : R} (ha : ‖a‖ < R₀) (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) (f : OnOpenDisc.subring R R₀) :
+    affineHomeomorph ha u hu huS f = affineEquiv ha u hu huS f := (rfl)
+
+/-- The inverse of `affineHomeomorph` acts as the inverse of `affineEquiv`. -/
+@[simp]
+theorem affineHomeomorph_symm_apply {a : R} (ha : ‖a‖ < R₀) (u : Rˣ)
+    (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀) (g : OnOpenDisc.subring R S₀) :
+    (affineHomeomorph ha u hu huS).symm g = (affineEquiv ha u hu huS).symm g := (rfl)
+
 section AnalyticSubstComparison
 
 omit [CompleteSpace R] in
@@ -446,7 +587,7 @@ theorem norm_restrict_algebraMap_add_algebraMap_mul_X_lt {a u : R} (ha : ‖a‖
     ‖restrict s (algebraMap R (OnOpenDisc.subring R S₀) a +
       algebraMap R (OnOpenDisc.subring R S₀) u * OnOpenDisc.polynomialHom Polynomial.X)‖ < R₀ := by
   have hus : ‖u‖ * s < R₀ :=
-    mul_lt_of_lt_of_mul_le (norm_nonneg u) ((norm_nonneg a).trans_lt ha) s.2.2 hu
+    mul_lt_of_lt_of_mul_le (norm_nonneg u) ((norm_nonneg a).trans_lt ha) s.property.2 hu
   refine (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_).trans_lt (max_lt ha hus)
   rcases n with _ | _ | n <;> simp
 

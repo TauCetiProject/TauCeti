@@ -276,7 +276,7 @@ private theorem exists_one_cohomologous_refine_of_inflateZ2_mem_B2 {c : TwoCocyc
     rw [AlgHom.ker_restrictNormalHom] at hker
     rw [← hbV, ← hbV]
     exact congrArg (fun q ↦ (bV q : UnitsCoeff K)) (QuotientGroup.eq.2 hker)
-  choose b' hb' using fun g ↦ mem_H0_fixingSubgroup_unitsCoeff_iff.1 (hbV g ▸ (bV g).2)
+  choose b' hb' using fun g ↦ mem_H0_fixingSubgroup_unitsCoeff_iff.1 (hbV g ▸ (bV g).property)
   have hsurj := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := M) (SeparableClosure K)
   let B : Gal(M/K) → Mˣ := fun σ ↦ b' (Function.surjInv hsurj σ)
   have hB (g : Gal(SeparableClosure K/K)) :
@@ -506,7 +506,7 @@ private def ofFiniteLevelZ2
     isMulCocycle₂ := fun g h j ↦ by
       apply Additive.ofMul.injective
       simpa only [ofMul_mul, ofMul_toMul, Additive.ofMul_smul] using
-        (mem_Z2_iff.1 z'.2).2 g h j }
+        (mem_Z2_iff.1 z'.property).2 g h j }
 
 /-- The crossed-product cocycle obtained from a finite-level cocycle evaluates by pulling the
 automorphisms back through the quotient identification and the coefficient through the invariant
@@ -544,7 +544,7 @@ value of the original cocycle into the separable closure. -/
 @[simp]
 theorem finiteLevelZ2_apply (c : TwoCocycle K L)
     (q r : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup) :
-    ((c.finiteLevelZ2 L).1 (q, r) : UnitsCoeff K) =
+    ((c.finiteLevelZ2 L).val (q, r) : UnitsCoeff K) =
       Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom
         (c.toFun (quotientFixingSubgroupFieldRangeEquiv K L L.val q)
           (quotientFixingSubgroupFieldRangeEquiv K L L.val r))) := by

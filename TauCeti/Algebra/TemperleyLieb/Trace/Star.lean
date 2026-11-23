@@ -98,4 +98,11 @@ theorem markovTrace_star (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) 
     (x : TemperleyLieb R δ n) : markovTrace q h (star x) = star (markovTrace q h x) :=
   (isMarkovTrace_markovTrace q h).map_star n x
 
+/-- At a self-adjoint loop parameter, the trace radical of the spin-model Markov trace is
+star-stable. -/
+instance instIsStarTraceRadicalMarkovTrace (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R)))
+    (n : ℕ) :
+    ((markovTrace (n := n) q h).traceRadical (markovTrace_mul_comm q h)).IsStar :=
+  (isMarkovTrace_markovTrace q h).isStar_traceRadical n
+
 end TauCeti.TemperleyLieb

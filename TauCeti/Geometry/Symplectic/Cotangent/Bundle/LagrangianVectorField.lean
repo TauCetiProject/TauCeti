@@ -30,8 +30,9 @@ component at a tangent vector `v` is `v` itself,
 where `π : TM → M` is the bundle projection
 (`TauCeti.IsRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy`). Hence every
 integral curve `γ` of `X_E` is the velocity lift `t ↦ (c t, c' t)` of its base curve
-`c = π ∘ γ` (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`): the
-Lagrangian equations of motion are a second-order equation on `M`.
+`c = π ∘ γ` (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`, and within
+parameter sets `TauCeti.IsRegularLagrangian.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`):
+the Lagrangian equations of motion are a second-order equation on `M`.
 
 The proof pairs `X_E(v)` with the vertical vector `u^v` at `v` in a direction `u ∈ T_x M`. Along
 the fibre `FL` is the fibre derivative of `L`, so its differential sends `u^v` to the vertical
@@ -39,10 +40,10 @@ covector `(Hess_v u)^v`, where `Hess_v` is the fibre Hessian (`TauCeti.fiberHess
 canonical form pairs a tangent vector `ξ` of `T*M` with a vertical covector `β^v` by
 `ω(ξ, β^v) = β(dπ ξ)`, so
 
-`ω_L(X_E(v), u^v) = Hess_v(u, dπ X_E(v))`,
+`ω_L(X_E(v), u^v) = Hess_v(u, dπ X_E(v))`
 
-while differentiating `E_L` along the fibre gives `dE_L(u^v) = Hess_v(u, v)`
-(`TauCeti.mvfderiv_lagrangianEnergy_vertical`). For a regular
+(`TauCeti.eval₂_cartanTwoForm_vertical`), while differentiating `E_L` along the fibre gives
+`dE_L(u^v) = Hess_v(u, v)` (`TauCeti.mvfderiv_lagrangianEnergy_vertical`). For a regular
 Lagrangian the fibre Hessian is a nondegenerate symmetric form
 (`TauCeti.fiberHessian_apply_comm`), so `dπ X_E(v) = v`. Only invertibility of the fibre Hessian
 at `v` itself is used (`TauCeti.mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm`).
@@ -72,8 +73,10 @@ vector field `X_H` of `H = E_L ∘ FL⁻¹` on `T*M`
 (`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`). So along every
 integral curve `δ` of `X_H` the momentum is the Legendre transform of the velocity of the base
 curve, `δ(t) = FL(c'(t))` for `c = π ∘ δ`
-(`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`): this is
-Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
+(`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`, and
+within parameter sets
+`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn`):
+this is Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
 
 ## Main results
 
@@ -83,11 +86,15 @@ Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
   Lagrangian vector field of a smooth regular Lagrangian is second order.
 * `TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`: its integral curves are
   velocity lifts of their base curves.
+* `TauCeti.IsRegularLagrangian.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`: the same within
+  parameter sets with unique derivatives.
 * `TauCeti.IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt`: local integral
   curves of the Lagrangian vector field solve the Euler–Lagrange equations in every chart.
 * `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`: along
   a Hamiltonian trajectory of a hyperregular Lagrangian, the momentum is the Legendre transform of
   the base velocity.
+* `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn`:
+  the same within parameter sets with unique derivatives.
 
 ## References
 
@@ -110,6 +117,41 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {L : TangentBundle I M → ℝ}
 
+/-- **The Cartan two-form on vertical vectors.** For a smooth Lagrangian `L`, the Cartan two-form
+pairs a tangent vector `X` of `TM` at `v` with the vertical vector `u^v` of direction `u` at `v`
+by the fibre Hessian: `ω_L(X, u^v) = Hess_v(u, dπ X)`. -/
+theorem eval₂_cartanTwoForm_vertical (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (v : TangentBundle I M) (X : TangentSpace I.tangent v) (u : TangentSpace I v.proj) :
+    SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X
+        ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u) =
+      fiberHessian L v u (mfderiv I.tangent I (π E (TangentSpace I)) v X) := by
+  -- Name the vertical vector, so that the rewrites below see a tangent vector of `TM`.
+  let Y : TangentSpace I.tangent v :=
+    ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u)
+  -- `dFL` sends the vertical vector `Y` to the vertical covector of `Hess_v u`.
+  have hY : mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v Y =
+      ((0 : E), (trivializationAt (E →L[ℝ] ℝ) (fun x ↦ TangentSpace I x →L[ℝ] ℝ) v.proj
+        ).continuousLinearMapAt ℝ v.proj (fiberHessian L v u)) :=
+    mfderiv_legendreMap_vertical hL (by simp) v rfl u
+  -- `FL` covers the identity of `M`, so `dFL` keeps the base component of `X`.
+  have hX1 : (mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v X).1 = X.1 :=
+    DFunLike.congr_fun (fst_comp_mfderiv_legendreMap hL (by simp) v) X
+  -- The canonical form pairs a tangent vector with a vertical covector by `β(dπ ξ)`.
+  have hω : ∀ a b : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v),
+      SmoothBundleForm.eval₂ (CotangentBundle.symplecticForm I M) (legendreMap L v) a b =
+        b.2 a.1 - a.2 b.1 := fun a b ↦
+    (CotangentBundle.eval₂_symplecticForm _ a b).trans
+      (strongDualCotangentSymplecticForm_apply a b)
+  have h : SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X Y =
+      fiberHessian L v u (mfderiv I.tangent I (π E (TangentSpace I)) v X) := by
+    rw [← mpullback_legendreMap_symplecticForm hL,
+      SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl), hω, hY,
+      CotangentBundle.continuousLinearMapAt_trivializationAt_self, Bundle.mfderiv_proj]
+    simp only [map_zero, sub_zero]
+    -- `fst X` is the base component `X.1` of `X`, viewed in the model `E × E` of `TM`.
+    exact congrArg (fiberHessian L v u) hX1
+  exact h
+
 /-- **The Lagrangian vector field is second order, pointwise.** At a tangent vector `v` where the
 fibre Hessian of a smooth Lagrangian `L` is invertible, a tangent vector `X` of `TM` at `v` with
 `ω_L(X, ·) = dE_L` satisfies `dπ X = v`: its base component is `v` itself. -/
@@ -117,37 +159,14 @@ theorem mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm (hL : ContMDiff I.tangent �
     {v : TangentBundle I M} (hv : (fiberHessian L v).IsInvertible) {X : TangentSpace I.tangent v}
     (hX : ∀ w, SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X w =
       mvfderiv I.tangent (lagrangianEnergy L) v w) :
-    mfderiv I.tangent I (π E (TangentSpace I)) v X = v.2 := by
+    mfderiv I.tangent I (π E (TangentSpace I)) v X = v.snd := by
   -- Pair `X` with the vertical vector of direction `u`: both sides of `ι_X ω_L = dE_L` give the
   -- fibre Hessian applied to `u`, on `dπ X` and on `v` respectively.
   have key : ∀ u : TangentSpace I v.proj,
       fiberHessian L v u (mfderiv I.tangent I (π E (TangentSpace I)) v X) =
-        fiberHessian L v u v.2 := by
-    intro u
-    let Y : TangentSpace I.tangent v :=
-      ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u)
-    -- `dFL` sends the vertical vector `Y` to the vertical covector of `Hess_v u`.
-    have hY : mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v Y =
-        ((0 : E), (trivializationAt (E →L[ℝ] ℝ) (fun x ↦ TangentSpace I x →L[ℝ] ℝ) v.proj
-          ).continuousLinearMapAt ℝ v.proj (fiberHessian L v u)) :=
-      mfderiv_legendreMap_vertical hL (by simp) v rfl u
-    -- `FL` covers the identity of `M`, so `dFL` keeps the base component of `X`.
-    have hX1 : (mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v X).1 = X.1 :=
-      DFunLike.congr_fun (fst_comp_mfderiv_legendreMap hL (by simp) v) X
-    -- The canonical form pairs a tangent vector with a vertical covector by `β(dπ ξ)`.
-    have hω : ∀ a b : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v),
-        SmoothBundleForm.eval₂ (CotangentBundle.symplecticForm I M) (legendreMap L v) a b =
-          b.2 a.1 - a.2 b.1 := fun a b ↦
-      (CotangentBundle.eval₂_symplecticForm _ a b).trans
-        (strongDualCotangentSymplecticForm_apply a b)
-    have h := hX Y
-    rw [mvfderiv_lagrangianEnergy_vertical hL (by simp) v u,
-      ← mpullback_legendreMap_symplecticForm hL,
-      SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl), hω, hY,
-      CotangentBundle.continuousLinearMapAt_trivializationAt_self, hX1] at h
-    simp only [map_zero, sub_zero] at h
-    rw [Bundle.mfderiv_proj]
-    exact h
+        fiberHessian L v u v.snd := fun u ↦
+    (eval₂_cartanTwoForm_vertical hL v X u).symm.trans
+      ((hX _).trans (mvfderiv_lagrangianEnergy_vertical hL (by simp) v u))
   -- The fibre Hessian is symmetric, so `Hess (dπ X) = Hess v`, and it is injective.
   obtain ⟨e, he⟩ := hv
   refine e.injective ?_
@@ -166,9 +185,21 @@ Hamiltonian vector field `X` of the energy for the Cartan two-form satisfies `d�
 theorem mfderiv_proj_eq_snd_of_isHamiltonianVectorField
     (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
     (v : TangentBundle I M) :
-    mfderiv I.tangent I (π E (TangentSpace I)) v (X v) = v.2 :=
+    mfderiv I.tangent I (π E (TangentSpace I)) v (X v) = v.snd :=
   mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm hL (isRegularLagrangian_iff.1 hreg v)
     (SmoothTwoForm.isHamiltonianVectorField_iff.1 hX v)
+
+/-- **Integral curves of the Lagrangian vector field are velocity lifts, within a parameter
+set.** For a smooth regular Lagrangian, an integral curve `γ` on `s` of a Hamiltonian vector field
+of the energy for the Cartan two-form is, at each `t ∈ s` where `s` has unique derivatives, the
+within-`s` velocity lift of its base curve `c = π ∘ γ`. -/
+theorem eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
+    {γ : ℝ → TangentBundle I M} {s : Set ℝ} {t : ℝ} (hs : UniqueDiffWithinAt ℝ s t)
+    (hγ : IsMIntegralCurveOn γ X s) (ht : t ∈ s) :
+    γ t = Manifold.curveVelocityLiftWithin I (fun r ↦ (γ r).proj) s t :=
+  Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (hγ t ht)
+    (hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t))
 
 /-- **Integral curves of the Lagrangian vector field are velocity lifts.** For a smooth regular
 Lagrangian, an integral curve `γ` of a Hamiltonian vector field of the energy for the Cartan
@@ -176,9 +207,10 @@ two-form is the velocity lift `t ↦ (c t, c' t)` of its base curve `c = π ∘ 
 theorem eq_curveVelocityLift_of_isMIntegralCurve
     (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
     {γ : ℝ → TangentBundle I M} (hγ : IsMIntegralCurve γ X) (t : ℝ) :
-    γ t = Manifold.curveVelocityLift I (fun s ↦ (γ s).proj) t :=
-  Manifold.eq_curveVelocityLift_of_hasMFDerivAt (hγ t)
-    (hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t))
+    γ t = Manifold.curveVelocityLift I (fun s ↦ (γ s).proj) t := by
+  rw [← Manifold.curveVelocityLiftWithin_univ]
+  exact hreg.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn hL hX uniqueDiffWithinAt_univ
+    (hγ.isMIntegralCurveOn _) (Set.mem_univ t)
 
 variable [FiniteDimensional ℝ E]
   [BoundarylessManifold I.tangent (TangentBundle I M)]
@@ -188,7 +220,7 @@ finite-dimensional boundaryless manifold, the Hamiltonian vector field `X_E` of 
 symplectic Cartan two-form satisfies `dπ (X_E v) = v`. -/
 theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy (v : TangentBundle I M) :
     mfderiv I.tangent I (π E (TangentSpace I)) v
-      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) = v.2 :=
+      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) = v.snd :=
   hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL
     ((hreg.isSymplectic_cartanTwoForm hL).isNondegenerate
       |>.isHamiltonianVectorField_hamiltonianVectorField _) v
@@ -202,6 +234,24 @@ variable [FiniteDimensional ℝ E]
   (h : IsHyperregularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
 include hL
 
+/-- **Hamilton's first equation for a hyperregular Lagrangian, within a parameter set.** Along an
+integral curve `δ` on `s` of the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, at each
+`t ∈ s` where `s` has unique derivatives, the covector `δ t` is the Legendre transform of the
+within-`s` velocity of the base curve `c = π ∘ δ`. -/
+theorem eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    {δ : ℝ → CotangentBundle I M} {s : Set ℝ} {t : ℝ} (hs : UniqueDiffWithinAt ℝ s t)
+    (hδ : IsMIntegralCurveOn δ
+      ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) s)
+    (ht : t ∈ s) :
+    δ t = legendreMap L (Manifold.curveVelocityLiftWithin I (fun r ↦ (δ r).proj) s t) := by
+  -- Pull `δ` back to an integral curve `FL⁻¹ ∘ δ` of the Lagrangian vector field.
+  have hγ := h.isMIntegralCurveOn_legendreDiffeomorph_symm_comp hL hδ
+  have hproj : (fun r ↦ (((h.legendreDiffeomorph hL).symm ∘ δ) r).proj) = fun r ↦ (δ r).proj :=
+    funext fun r ↦ h.proj_legendreDiffeomorph_symm_apply hL (δ r)
+  rw [← hproj, ← Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (hγ t ht)
+    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL _)]
+  exact (h.legendreMap_legendreDiffeomorph_symm_apply hL (δ t)).symm
+
 /-- **Hamilton's first equation for a hyperregular Lagrangian.** Along an integral curve `δ` of the
 Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, the covector `δ t` is the Legendre transform
 `FL(c'(t))` of the velocity of the base curve `c = π ∘ δ`. -/
@@ -210,18 +260,9 @@ theorem eq_legendreMap_curveVelocityLift_of_isMIntegralCurve {δ : ℝ → Cotan
       ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian))
     (t : ℝ) :
     δ t = legendreMap L (Manifold.curveVelocityLift I (fun s ↦ (δ s).proj) t) := by
-  -- Pull `δ` back to an integral curve of the Lagrangian vector field.
-  set γ : ℝ → TangentBundle I M := fun s ↦ (h.legendreDiffeomorph hL).symm (δ s)
-  have hFγ : legendreMap L ∘ γ = δ :=
-    funext fun s ↦ h.legendreMap_legendreDiffeomorph_symm_apply hL (δ s)
-  have hγ : IsMIntegralCurve γ
-      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) :=
-    (h.isMIntegralCurve_legendreMap_comp_iff hL).1 (hFγ ▸ hδ)
-  have hproj : (fun s ↦ (γ s).proj) = fun s ↦ (δ s).proj :=
-    funext fun s ↦ h.proj_legendreDiffeomorph_symm_apply hL (δ s)
-  rw [← hproj, ← Manifold.eq_curveVelocityLift_of_hasMFDerivAt (hγ t)
-    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL (γ t))]
-  exact (congrFun hFγ t).symm
+  rw [← Manifold.curveVelocityLiftWithin_univ]
+  exact h.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn hL uniqueDiffWithinAt_univ
+    (hδ.isMIntegralCurveOn _) (Set.mem_univ t)
 
 end IsHyperregularLagrangian
 

@@ -72,7 +72,7 @@ having the rank of `W` and the discriminant of `W_v`. Then `⟨α, -αβ⟩` is 
 `⟨1, -β⟩ ⊥ W` at every finite and real place. -/
 theorem locallyRepresents_weightedSumSquares_neg_self_mul_prod (hW : W.Nondegenerate)
     (a b : Kˣ)
-    (hb : ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.2 (b : K))
+    (hb : ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.property (b : K))
     {n : ℕ} (hn : Module.finrank K V = n)
     (U : ∀ v : HeightOneSpectrum (𝓞 K),
       _root_.QuadraticForm (v.adicCompletion K) (Fin n → v.adicCompletion K))
@@ -135,7 +135,7 @@ positive at the real place `w`, then `Q_w ≅ W_w`. -/
 theorem atRealPlace_equivalent_of_weightedSumSquares_neg_self_mul_prod_equivalent {a b : Kˣ}
     (h : ((weightedSumSquares K ![(a : K), -(a * b : K)]).prod Q).Equivalent
       ((weightedSumSquares K ![1, -(b : K)]).prod W))
-    {w : {w : InfinitePlace K // w.IsReal}} (hb : 0 < embedding_of_isReal w.2 (b : K)) :
+    {w : {w : InfinitePlace K // w.IsReal}} (hb : 0 < embedding_of_isReal w.property (b : K)) :
     (Q.atRealPlace w).Equivalent (W.atRealPlace w) :=
   atRealPlace_equivalent_of_prod_equivalent_prod_of_equivalent
     (nondegenerate_weightedSumSquares_neg_self_mul a b) h
@@ -167,7 +167,7 @@ finite place. If `⟨α, -αβ⟩` is represented by `⟨1, -β⟩ ⊥ W` over `
 form `Q` on `Fin n → K` with the discriminant of `W`, with `Q_v ≅ U_v` at every finite place and
 with `Q_w ≅ W_w` at every real place. -/
 theorem exists_discr_eq_equivalent_of_isRepresentedBy_prod (hW : W.Nondegenerate) (a b : Kˣ)
-    (hb : ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.2 (b : K))
+    (hb : ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.property (b : K))
     {n : ℕ} (hn : Module.finrank K V = n)
     (U : ∀ v : HeightOneSpectrum (𝓞 K),
       _root_.QuadraticForm (v.adicCompletion K) (Fin n → v.adicCompletion K))

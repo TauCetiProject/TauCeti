@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Torsion
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
+import TauCeti.LinearAlgebra.Determinant.IdSub
 
 /-!
 # The first cohomology of a mapping torus
@@ -48,12 +49,13 @@ torsion of `H₁(Y_φ; ℤ)` has order `|det (1 - φ_*)|`
 (`TauCeti.MappingTorus.card_torsion_homology_one_eq_natAbs_det`). By the splitting of the
 cohomology of a product with a circle (`TopCat.singularCohomologySphereProdEquiv`), this makes the
 summand `θ ⌣ pr₂^* H¹(Y_φ; ℤ)` of `H²(S¹ × Y_φ; ℤ)` a single copy of `ℤ`. The integral
-determinant is nonzero exactly when its rational counterpart is, which by
-`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff` over `ℚ` is the condition `b₁(Y_φ) = 1`;
-that base change from `ℤ` to `ℚ` is not made here.
+determinant is nonzero exactly when `b₁(Y_φ) = 1` over `ℚ`, or over any field of characteristic
+zero (`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`).
 
 ## Main results
 
+* `TauCeti.MappingTorus.det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff`: the
+  hypothesis `det (𝟙 - φ_*) ≠ 0` is the same for `φ` and `φ⁻¹`.
 * `TauCeti.MappingTorus.ker_wangδ_zero_eq_torsion`: the kernel of `δ : H₁(T_φ) ⟶ H₀(F)` is the
   torsion submodule.
 * `TauCeti.MappingTorus.homologyOneQuotTorsionEquiv`: `H₁(T_φ) ⧸ torsion ≃ H₀(F)`.
@@ -80,6 +82,18 @@ universe w
 namespace TauCeti.MappingTorus
 
 variable {k : Type w} [CommRing k] [IsDomain k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
+
+omit [IsDomain k] in
+/-- **The monodromy and its inverse.** On `Hₙ(F)`, `det (𝟙 - (φ⁻¹)_*) ≠ 0` exactly when
+`det (𝟙 - φ_*) ≠ 0`, since `(φ⁻¹)_*` and `φ_*` are mutually inverse
+(`LinearMap.det_id_sub_ne_zero_iff_of_comp_eq_id`). -/
+theorem det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff (n : ℕ) :
+    (LinearMap.id -
+      (homologyMap (monodromyChainMap φ.symm (ModuleCat.of k k)) n).hom).det ≠ 0 ↔
+      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det ≠ 0 := by
+  refine LinearMap.det_id_sub_ne_zero_iff_of_comp_eq_id ?_
+  rw [← ModuleCat.hom_comp, ← homologyMap_comp, monodromyChainMap_comp_monodromyChainMap_symm,
+    homologyMap_id, ModuleCat.hom_id]
 
 /-- **The kernel of the Wang connecting morphism is the torsion.** If `H₁(F)` is free of finite
 rank and `det (𝟙 - φ_*) ≠ 0` on it, the kernel of `δ : H₁(T_φ) ⟶ H₀(F)` is the torsion
@@ -198,8 +212,8 @@ finite rank and `det (𝟙 - φ_*) ≠ 0` on it, then for a torsion-free module 
 with `δ` the Wang connecting morphism and `ε` the augmentation of `H₀(F)`
 (`TauCeti.MappingTorus.singularKronecker_cohomologyOneEquiv_symm_apply`). With `k = M = ℤ` and a
 closed orientable surface `F`, this is `H¹(Y_φ; ℤ) ≅ ℤ` when the integral determinant
-`det (1 - φ_*)` is nonzero; that this matches `b₁(Y_φ) = 1`, through base change to `ℚ` and
-`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff`, is not made here. -/
+`det (1 - φ_*)` is nonzero, which is the condition `b₁(Y_φ) = 1` over `ℚ`
+(`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`). -/
 def cohomologyOneEquiv
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) 1).hom).det ≠ 0) :

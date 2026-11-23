@@ -27,9 +27,9 @@ variable {E : Type u} {E' : Type u'} {E'' : Type u''} {B : Type v} [TopologicalS
 /-- A map `f` over `B` restricts to a map between the preimages of a subset `S` of `B`. -/
 def restrictPreimageMap {p : C(E, B)} {q : C(E', B)} (S : Set B) {f : C(E, E')}
     (hf : q.comp f = p) : C(p ⁻¹' S, q ⁻¹' S) :=
-  ⟨fun e : p ⁻¹' S ↦ ⟨f e.1, by
+  ⟨fun e : p ⁻¹' S ↦ ⟨f e.val, by
     rw [Set.mem_preimage, ← ContinuousMap.comp_apply, hf]
-    exact e.2⟩, by fun_prop⟩
+    exact e.property⟩, by fun_prop⟩
 
 @[simp]
 theorem coe_restrictPreimageMap {p : C(E, B)} {q : C(E', B)} (S : Set B) {f : C(E, E')}

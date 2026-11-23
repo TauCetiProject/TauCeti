@@ -48,7 +48,7 @@ structure Hom (A D : FiniteRankAtlas 𝕜 X) where
   fiberMap (x : X) : A.Fiber x →ₗ[𝕜] D.Fiber x
   /-- Continuity is measured in the glued bundle topologies. -/
   continuous_totalSpaceMap : Continuous (fun p : TotalSpace Unit A.Fiber =>
-    (⟨p.proj, fiberMap p.proj p.2⟩ : TotalSpace Unit D.Fiber))
+    (⟨p.proj, fiberMap p.proj p.snd⟩ : TotalSpace Unit D.Fiber))
 
 namespace Hom
 
@@ -171,9 +171,9 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
 continuity of both induced total-space maps. -/
 def isoMk (e : ∀ x, A.Fiber x ≃ₗ[𝕜] D.Fiber x)
     (h : Continuous (fun p : TotalSpace Unit A.Fiber =>
-      (⟨p.proj, e p.proj p.2⟩ : TotalSpace Unit D.Fiber)))
+      (⟨p.proj, e p.proj p.snd⟩ : TotalSpace Unit D.Fiber)))
     (h' : Continuous (fun p : TotalSpace Unit D.Fiber =>
-      (⟨p.proj, (e p.proj).symm p.2⟩ : TotalSpace Unit A.Fiber))) : A ≅ D where
+      (⟨p.proj, (e p.proj).symm p.snd⟩ : TotalSpace Unit A.Fiber))) : A ≅ D where
   hom := ⟨fun x => (e x).toLinearMap, h⟩
   inv := ⟨fun x => (e x).symm.toLinearMap, h'⟩
   hom_inv_id := by

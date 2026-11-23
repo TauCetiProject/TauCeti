@@ -155,7 +155,7 @@ theorem eqToHom_comp_coinvariantsι {J : HopfIdeal R H}
 theorem kernelHopfIdeal_coinvariantsι_le (hI : I.IsNormal) :
     kernelHopfIdeal (coinvariantsι hI) ≤ I :=
   (HopfIdeal.forall_hom_mem_coinvariants_iff _).mp fun x ↦
-    (hopfSubalgebraι_apply hI.isHopfSubalgebra_coinvariants x).symm ▸ x.2
+    (hopfSubalgebraι_apply hI.isHopfSubalgebra_coinvariants x).symm ▸ x.property
 
 /-- A homomorphism out of `G` whose kernel contains `N` factors through `G → G ⧸ N`: in
 coordinates, a morphism `f : K ⟶ H` whose kernel Hopf ideal is contained in `I` factors through

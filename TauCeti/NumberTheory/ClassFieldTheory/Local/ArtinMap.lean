@@ -74,6 +74,9 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap`: for a
+  finite abelian Galois extension `L/K`, the restriction of an Artin representative of `x ∈ Kˣ` to
+  `L` is trivial exactly when `x ∈ N_{L/K}(Lˣ)`.
 * `TauCeti.ClassFieldTheory.abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap`:
   restricting `artinMap K x` from `K^{ab}` to a finite subextension `M` computes
   `normResidue K M x`.
@@ -167,6 +170,19 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     Group.abelianizationCongr_of, layerGalEquiv_mk]
+
+/-- **Artin-restriction norm criterion for finite abelian extensions.** If `L/K` is a finite
+abelian Galois extension embedded in the separable closure by `ι` and
+`σ ∈ Gal(AlgebraicClosure K/K)` represents `artinMap K x`, then the restriction of `σ` to `L` is
+trivial if and only if `x` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+    [IsMulCommutative Gal(L/K)] (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ)
+    (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
+    ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 ↔ x ∈ normGroup K L := by
+  rw [← localArtinMap_eq_zero_iff K L ι x, artinMap_restrict K L ι x σ hσ, ofMul_eq_zero,
+    ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
 
 /-- **Finite restrictions of `artinMap K` on `K^{ab}/K`.** Let `M` be a finite intermediate field
 of `maximalAbelianExtension K (AlgebraicClosure K) / K`. Reading `artinMap K x` as an automorphism

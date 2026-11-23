@@ -41,7 +41,7 @@ differential of the inclusion is not proved here.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal`: the smooth embedding of
   a subgroup with a finite-dimensional boundaryless ambient model.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.contMDiffSMul`: an embedded Lie subgroup acts smoothly on
-  the ambient group by left multiplication, and
+  every manifold on which the ambient group acts smoothly, such as the ambient group itself, and
   `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_mul_left_subtypeVal`: the differential of
   `k ↦ g k` is injective.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`: selected data for a closed subgroup.
@@ -123,10 +123,14 @@ theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G
   exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
     d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
 
-/-- An embedded Lie subgroup acts smoothly on the ambient group by left multiplication. -/
-theorem contMDiffSMul [ContMDiffMul I ∞ G] (d : EmbeddedLieSubgroupData I K E') :
+/-- An embedded Lie subgroup acts smoothly on every manifold on which the ambient group acts
+smoothly, for instance on the ambient group itself by left multiplication. -/
+theorem contMDiffSMul {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H'' M] [MulAction G M]
+    [ContMDiffSMul I I'' ∞ G M] (d : EmbeddedLieSubgroupData I K E') :
     let _ := d.chartedSpace
-    ContMDiffSMul 𝓘(ℝ, E') I ∞ K G := by
+    ContMDiffSMul 𝓘(ℝ, E') I'' ∞ K M := by
   let _ := d.chartedSpace
   exact MulAction.contMDiffSMul_compHom (f := K.subtype) d.contMDiff_subtypeVal
 

@@ -151,14 +151,14 @@ theorem completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply
 theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq :
     Continuous (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F p P hP) :=
   ((completionEquivAdicCompletionOfValuationEq k F p P hP).continuous.comp
-    continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal).subtype_mk _
 
 /-- The inverse of `completionIntegersRingEquivAdicCompletionIntegersOfValuationEq` is
 continuous. -/
 theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_symm :
     Continuous (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F p P hP).symm :=
   ((completionEquivAdicCompletionOfValuationEq k F p P hP).symm.continuous.comp
-    continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal).subtype_mk _
 
 end ValuationEq
 

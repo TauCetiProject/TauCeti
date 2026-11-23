@@ -101,7 +101,7 @@ noncomputable def upperUnitriangularToPoint
     WithConv (coordinateHopfAlgebra R m →ₐ[R] A) :=
   toConv ((MvPolynomial.aeval fun ij : Index m =>
     ((g : Matrix.GeneralLinearGroup m A) : Matrix m m A)
-      ij.1.1 ij.1.2).comp
+      ij.val.1 ij.val.2).comp
         (coordinateHopfAlgebraAlgEquiv R m).symm.toAlgHom)
 
 /-- The point associated to an upper-unitriangular matrix sends each strict-upper coordinate
@@ -112,7 +112,7 @@ theorem upperUnitriangularToPoint_apply_X
     (upperUnitriangularToPoint R m g).ofConv
         (coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
       ((g : Matrix.GeneralLinearGroup m A) : Matrix m m A)
-        ij.1.1 ij.1.2 := by
+        ij.val.1 ij.val.2 := by
   simp [upperUnitriangularToPoint]
 
 /-- Evaluating the point associated to an upper-unitriangular matrix on a polynomial in the
@@ -122,7 +122,7 @@ theorem upperUnitriangularToPoint_apply_eq_aeval
     (g : upperUnitriangularGroup m A) (p : MvPolynomial (Index m) R) :
     (upperUnitriangularToPoint R m g).ofConv (coordinateHopfAlgebraAlgEquiv R m p) =
       MvPolynomial.aeval (fun ij : Index m =>
-        ((g : Matrix.GeneralLinearGroup m A) : Matrix m m A) ij.1.1 ij.1.2) p := by
+        ((g : Matrix.GeneralLinearGroup m A) : Matrix m m A) ij.val.1 ij.val.2) p := by
   simp [upperUnitriangularToPoint]
 
 /-- Evaluating the point associated to an upper-unitriangular matrix recovers that matrix. -/
@@ -144,7 +144,7 @@ theorem upperUnitriangularToPoint_pointToUpperUnitriangular
   apply coordinateHopfAlgebra_algHom_ext R m
   intro ij
   rw [upperUnitriangularToPoint_apply_X, pointToUpperUnitriangular_apply,
-    genericMatrix_apply_of_lt R m ij.2]
+    genericMatrix_apply_of_lt R m ij.property]
 
 /-- Evaluation on the generic matrix carries convolution to matrix multiplication. -/
 @[simp]

@@ -54,6 +54,12 @@ volume of the cone spanned by the ball and the point
 (`Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`). This is the volume estimate behind the
 Aleksandrov maximum principle for the Monge–Ampère equation.
 
+A convex set containing a ball of radius `ρ > 0` has the **measure density property**: it fills at
+least the fraction `(ρ / R) ^ n` of every closed ball centred in its closure of radius at most `R`,
+for `R` at least the distance from the centre to the far side of the ball
+(`Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter`). This is the geometric
+input of estimates up to the boundary of a convex domain, such as Morrey's inequality.
+
 A convex set with nonempty interior in a finite-dimensional real normed space has finite
 Haar measure exactly when it is bounded. Consequently, a set of positive finite measure
 which agrees almost everywhere with a convex set has a compact convex representative
@@ -158,7 +164,7 @@ theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
 exactly when its interior is nonempty. -/
 theorem Convex.addHaar_pos_iff_interior_nonempty (hs : Convex ℝ s) :
     0 < μ s ↔ (interior s).Nonempty := by
-  simpa only [pos_iff_ne_zero, Set.nonempty_iff_ne_empty] using
+  simpa only [pos_iff_ne_zero, ← Set.ne_empty_iff_nonempty] using
     not_congr hs.addHaar_eq_zero_iff_interior_eq_empty
 
 /-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
@@ -226,6 +232,43 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
     _ ≤ 2 ^ (n + 1) * μ s := by
         gcongr
         exact iUnion₂_subset hsub
+
+/-- **The measure density property of a convex set.** In a finite-dimensional real normed space
+`E` of dimension `n`, let the convex set `s` contain the ball of radius `ρ > 0` about `z`, and let
+`x` lie in the closure of `s`. If `0 < r ≤ R` and `dist x z + ρ ≤ R`, then `s` fills at least the
+fraction `(ρ / R) ^ n` of `closedBall x r`, for every additive Haar measure `μ`: the closed ball
+contains the ball of radius `(r / R) ρ` about `x + (r / R) • (z - x)`, which lies in `s`. -/
+theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
+    (hs : Convex ℝ s) {x z : E} {ρ r R : ℝ} (hρ : 0 < ρ) (hball : ball z ρ ⊆ s)
+    (hx : x ∈ closure s) (hr : 0 < r) (hrR : r ≤ R) (hR : dist x z + ρ ≤ R) :
+    ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r) ≤ μ (closedBall x r ∩ s) := by
+  have hR₀ : 0 < R := hr.trans_le hrR
+  set t := r / R
+  have ht₀ : 0 < t := div_pos hr hR₀
+  have ht₁ : t ≤ 1 := (div_le_one hR₀).2 hrR
+  have hsub : ball (x + t • (z - x)) (t * ρ) ⊆ closedBall x r ∩ s := by
+    intro w hw
+    refine ⟨?_, ?_⟩
+    · have hc : dist (x + t • (z - x)) x = t * dist x z := by
+        simp [dist_eq_norm, norm_smul, abs_of_pos ht₀, norm_sub_rev]
+      rw [mem_closedBall]
+      calc dist w x ≤ dist w (x + t • (z - x)) + dist (x + t • (z - x)) x := dist_triangle _ _ _
+        _ ≤ t * ρ + t * dist x z := by rw [hc]; exact add_le_add (mem_ball.1 hw).le le_rfl
+        _ = t * (dist x z + ρ) := by ring
+        _ ≤ t * R := by gcongr
+        _ = r := div_mul_cancel₀ r hR₀.ne'
+    · have h := TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
+        (fun w hw ↦ hs.starConvex (hball hw)) hx (t := 1 - t) (by linarith) (by linarith)
+      have hc : z + (1 - t) • (x - z) = x + t • (z - x) := by module
+      rw [hc, sub_sub_cancel] at h
+      exact interior_subset (h hw)
+  have hscale : ρ / R * r = t * ρ := by simp only [t]; ring
+  calc ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r)
+      = μ (ball (x + t • (z - x)) (t * ρ)) := by
+        rw [Measure.addHaar_closedBall μ x hr.le,
+          Measure.addHaar_ball_of_pos μ _ (mul_pos ht₀ hρ), ← mul_assoc,
+          ← ENNReal.ofReal_mul (by positivity), ← mul_pow, hscale]
+    _ ≤ μ (closedBall x r ∩ s) := measure_mono hsub
 
 open Function
 open scoped Pointwise

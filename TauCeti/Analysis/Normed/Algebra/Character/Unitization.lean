@@ -156,7 +156,7 @@ theorem isOpen_singleton_augmentation_of_forall_mul_eq {e : A} (he : ∀ a : A, 
     simp [← not_iff_not, ne_augmentation_iff_apply_inr_eq_one he]
   rw [heq]
   exact isClosed_singleton.isOpen_compl.preimage
-    ((WeakDual.eval_continuous (e : Unitization 𝕜 A)).comp continuous_subtype_val)
+    ((WeakDual.eval_continuous (e : Unitization 𝕜 A)).comp continuous_subtypeVal)
 
 /-- When `A` is a subsingleton, the augmentation character is the unique character of
 `Unitization 𝕜 A`. -/
@@ -170,7 +170,7 @@ noncomputable instance instUniqueCharacterSpace [Subsingleton A] :
 augmentation character. -/
 instance instIsEmptyComplAugmentation [Subsingleton A] :
     IsEmpty {φ : characterSpace 𝕜 (Unitization 𝕜 A) // φ ≠ augmentation 𝕜 A} :=
-  ⟨fun φ ↦ φ.2 (Subsingleton.elim φ.1 _)⟩
+  ⟨fun φ ↦ φ.property (Subsingleton.elim φ.val _)⟩
 
 end NormedAlgebra
 
@@ -217,17 +217,17 @@ noncomputable def unitizationExtend (χ : characterSpace 𝕜 A) :
 /-- `unitizationExtend χ` evaluates on `u : Unitization 𝕜 A` as `u.fst + χ u.snd`. -/
 @[simp]
 theorem unitizationExtend_apply (χ : characterSpace 𝕜 A) (u : Unitization 𝕜 A) :
-    (unitizationExtend χ).1 u = u.fst + χ u.snd := (rfl)
+    (unitizationExtend χ).val u = u.fst + χ u.snd := (rfl)
 
 /-- On elements of `A` embedded in `Unitization 𝕜 A`, `unitizationExtend χ` agrees with `χ`. -/
 theorem unitizationExtend_apply_inr (χ : characterSpace 𝕜 A) (a : A) :
-    (unitizationExtend χ).1 (a : Unitization 𝕜 A) = χ a := by
+    (unitizationExtend χ).val (a : Unitization 𝕜 A) = χ a := by
   simp
 
 /-- Viewed as an `AlgHom`, `(unitizationExtend χ).1` is `Unitization.lift (toNonUnitalAlgHom χ)`. -/
 @[simp]
 theorem toAlgHom_unitizationExtend (χ : characterSpace 𝕜 A) :
-    toAlgHom (unitizationExtend χ).1 = Unitization.lift (toNonUnitalAlgHom χ) := (rfl)
+    toAlgHom (unitizationExtend χ).val = Unitization.lift (toNonUnitalAlgHom χ) := (rfl)
 
 /-- Restriction of a non-augmentation character of `Unitization 𝕜 A` along
 `Unitization.inr : A → Unitization 𝕜 A` to an element of `characterSpace 𝕜 A`. -/
@@ -235,13 +235,13 @@ noncomputable def unitizationRestrict
     (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 A) // φ ≠ Unitization.augmentation 𝕜 A}) :
     characterSpace 𝕜 A :=
   ⟨StrongDual.toWeakDual
-    ((toCLM φ.1).comp
+    ((toCLM φ.val).comp
       { Unitization.inrHom 𝕜 𝕜 A with
         cont := Unitization.isUniformEmbedding_addEquiv.isEmbedding.continuous_iff.2
           (continuous_const.prodMk continuous_id) }),
     by
       refine ⟨?_, fun x y ↦ ?_⟩
-      · obtain ⟨a, ha⟩ := Unitization.ne_augmentation_iff.mp φ.2
+      · obtain ⟨a, ha⟩ := Unitization.ne_augmentation_iff.mp φ.property
         exact fun h0 ↦ ha <| by
           simpa using DFunLike.congr_fun (StrongDual.toWeakDual.map_eq_zero_iff.mp h0) a
       · simp [Unitization.inr_mul]⟩
@@ -250,14 +250,14 @@ noncomputable def unitizationRestrict
 @[simp]
 theorem unitizationRestrict_apply
     (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 A) // φ ≠ Unitization.augmentation 𝕜 A}) (a : A) :
-    unitizationRestrict φ a = φ.1 (a : Unitization 𝕜 A) := (rfl)
+    unitizationRestrict φ a = φ.val (a : Unitization 𝕜 A) := (rfl)
 
 /-- Viewed as a `NonUnitalAlgHom`, `unitizationRestrict φ` is
 `Unitization.lift.symm (toAlgHom φ.1)`. -/
 @[simp]
 theorem toNonUnitalAlgHom_unitizationRestrict
     (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 A) // φ ≠ Unitization.augmentation 𝕜 A}) :
-    toNonUnitalAlgHom (unitizationRestrict φ) = Unitization.lift.symm (toAlgHom φ.1) := (rfl)
+    toNonUnitalAlgHom (unitizationRestrict φ) = Unitization.lift.symm (toAlgHom φ.val) := (rfl)
 
 /-- Restricting `unitizationExtend χ` recovers `χ`. -/
 @[simp]
@@ -288,14 +288,14 @@ noncomputable def unitizationComplAugmentationHomeomorph :
     Continuous.subtype_mk (Continuous.subtype_mk
       (WeakDual.continuous_of_continuous_eval
         (g := fun χ : characterSpace 𝕜 A ↦
-          ((unitizationExtend χ).1 : WeakDual 𝕜 (Unitization 𝕜 A)))
+          ((unitizationExtend χ).val : WeakDual 𝕜 (Unitization 𝕜 A)))
         fun u ↦ continuous_const.add
-          ((WeakDual.eval_continuous u.snd).comp continuous_subtype_val)) _) _
+          ((WeakDual.eval_continuous u.snd).comp continuous_subtypeVal)) _) _
   continuous_invFun := by
     rw [continuous_induced_rng]
     refine WeakDual.continuous_of_continuous_eval fun a ↦ ?_
     exact (WeakDual.eval_continuous (a : Unitization 𝕜 A)).comp
-      (continuous_subtype_val.comp continuous_subtype_val)
+      (continuous_subtypeVal.comp continuous_subtypeVal)
 
 /-- `unitizationComplAugmentationHomeomorph 𝕜 A` applies `unitizationExtend`. -/
 @[simp]
@@ -322,9 +322,9 @@ instance instCompactSpaceCharacterSpaceUnitization [ProperSpace 𝕜] [CompleteS
   have hg : Continuous g :=
     WeakDual.continuous_of_continuous_eval fun u ↦
       continuous_const.add (WeakDual.eval_continuous u.snd)
-  have hg0 : g 0 = (Unitization.augmentation 𝕜 A).1 :=
+  have hg0 : g 0 = (Unitization.augmentation 𝕜 A).val :=
     DFunLike.ext _ _ fun u ↦ by simp [g, sndCLM]
-  have hg_extend (χ : characterSpace 𝕜 A) : g χ.1 = (unitizationExtend χ).1.1 :=
+  have hg_extend (χ : characterSpace 𝕜 A) : g χ.val = (unitizationExtend χ).val.val :=
     DFunLike.ext _ _ fun u ↦ by
       rw [StrongDual.toWeakDual_apply, add_apply, ContinuousLinearMap.comp_apply,
         WeakDual.toStrongDual_apply, CharacterSpace.coe_coe, CharacterSpace.coe_coe,
@@ -335,13 +335,13 @@ instance instCompactSpaceCharacterSpaceUnitization [ProperSpace 𝕜] [CompleteS
     refine ⟨?_, fun hφ ↦ ?_⟩
     · rintro ⟨ψ, hψ | rfl, rfl⟩
       · rw [hg_extend ⟨ψ, hψ⟩]
-        exact (unitizationExtend ⟨ψ, hψ⟩).1.2
+        exact (unitizationExtend ⟨ψ, hψ⟩).val.property
       · rw [hg0]
-        exact (Unitization.augmentation 𝕜 A).2
+        exact (Unitization.augmentation 𝕜 A).property
     · by_cases haug : (⟨φ, hφ⟩ : characterSpace 𝕜 (Unitization 𝕜 A)) = Unitization.augmentation 𝕜 A
       · exact ⟨0, Or.inr rfl, hg0.trans (congrArg Subtype.val haug.symm)⟩
-      · refine ⟨(unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).1,
-          Or.inl (unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).2, ?_⟩
+      · refine ⟨(unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).val,
+          Or.inl (unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).property, ?_⟩
         rw [hg_extend]
         exact congrArg (Subtype.val ∘ Subtype.val)
           (unitizationExtend_unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩)
@@ -377,7 +377,7 @@ theorem onePointHomeomorphUnitization_apply_infty [ProperSpace 𝕜] [CompleteSp
 @[simp]
 theorem onePointHomeomorphUnitization_apply_coe [ProperSpace 𝕜] [CompleteSpace A]
     (χ : characterSpace 𝕜 A) :
-    onePointHomeomorphUnitization 𝕜 A χ = (unitizationExtend χ).1 := by
+    onePointHomeomorphUnitization 𝕜 A χ = (unitizationExtend χ).val := by
   simp [onePointHomeomorphUnitization]
 
 /-- `(onePointHomeomorphUnitization 𝕜 A).symm` sends `Unitization.augmentation 𝕜 A` to `∞`. -/
@@ -399,8 +399,8 @@ theorem onePointHomeomorphUnitization_symm_apply_of_ne [ProperSpace 𝕜] [Compl
 @[simp]
 theorem onePointHomeomorphUnitization_symm_apply_coe [ProperSpace 𝕜] [CompleteSpace A]
     (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 A) // φ ≠ Unitization.augmentation 𝕜 A}) :
-    (onePointHomeomorphUnitization 𝕜 A).symm φ.1 = unitizationRestrict φ :=
-  onePointHomeomorphUnitization_symm_apply_of_ne φ.2
+    (onePointHomeomorphUnitization 𝕜 A).symm φ.val = unitizationRestrict φ :=
+  onePointHomeomorphUnitization_symm_apply_of_ne φ.property
 
 end Extension
 

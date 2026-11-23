@@ -89,10 +89,10 @@ theorem annihilator_cokernel_unitToPushforwardObjUnit
       f.conductor := by
   apply Scheme.IdealSheafData.ext
   funext U
-  let := (f.app U.1).hom.toAlgebra
+  let := (f.app U.val).hom.toAlgebra
   rw [Scheme.Modules.annihilator_ideal, f.conductor_ideal U,
     TauCeti.Algebra.conductor_eq_annihilator]
-  exact (f.cokernelUnitToPushforwardSectionsEquiv U.2).annihilator_eq
+  exact (f.cokernelUnitToPushforwardSectionsEquiv U.property).annihilator_eq
 
 /-- If `i : Z ⟶ Y` is a closed immersion whose ideal sheaf is contained in `f.conductor`, then the
 adjunction unit on `coker(𝒪_Y ⟶ f_* 𝒪_X)` is an isomorphism, presenting the cokernel as a
@@ -108,7 +108,7 @@ theorem isIso_unit_app_cokernel_unitToPushforwardObjUnit_of_ker_le_conductor
     (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)) fun U ↦ ?_
   rw [← Scheme.Modules.annihilator_ideal
       (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom))
-      (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2) U,
+      (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property) U,
     f.annihilator_cokernel_unitToPushforwardObjUnit]
   exact Scheme.IdealSheafData.le_def.mp hi U
 
@@ -168,10 +168,10 @@ theorem support_conductor_eq_centre [IsSchemeTheoreticallyDominant f] :
   refine Set.Subset.antisymm f.support_conductor_subset_centre fun y hyc ↦ ?_
   by_contra hy
   obtain ⟨V, hyV, hsurj⟩ := f.notMem_support_conductor_iff.mp hy
-  have : IsIso (f.app V.1) := (ConcreteCategory.isIso_iff_bijective _).mpr
-    ⟨f.app_injective V.1, hsurj⟩
-  have : IsIso (f ∣_ V.1) := (isIso_morphismRestrict_iff_isIso_app f V.2).mpr inferInstance
-  exact (f.mem_centre_iff.mp hyc) V.1 hyV inferInstance
+  have : IsIso (f.app V.val) := (ConcreteCategory.isIso_iff_bijective _).mpr
+    ⟨f.app_injective V.val, hsurj⟩
+  have : IsIso (f ∣_ V.val) := (isIso_morphismRestrict_iff_isIso_app f V.property).mpr inferInstance
+  exact (f.mem_centre_iff.mp hyc) V.val hyV inferInstance
 
 /-- **The conductor detects isomorphisms among finite scheme-theoretically dominant morphisms.**
 A finite scheme-theoretically dominant morphism is an isomorphism if and only if its conductor is
@@ -277,9 +277,9 @@ theorem subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso
         f.cokernelUnitToPushforwardIsoPushforward
     refine f.conductor_eq_top_iff_isIso.mp ?_
     rw [← f.annihilator_cokernel_unitToPushforwardObjUnit
-      (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2)]
+      (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property)]
     exact Scheme.Modules.annihilator_eq_top_of_subsingleton_sections _ _ fun U ↦
-      ModuleCat.subsingleton_of_isZero ((Scheme.Modules.sectionsFunctor U.1).map_isZero hzeroQ)
+      ModuleCat.subsingleton_of_isZero ((Scheme.Modules.sectionsFunctor U.val).map_isZero hzeroQ)
   · have hker : i.ker = ⊤ := f.conductor.ker_subschemeι.trans f.conductor_eq_top
     have : IsEmpty f.conductor.subscheme := i.ker_eq_top_iff_isEmpty.mp hker
     have : IsEmpty (i ⁻¹ᵁ ⊤ : f.conductor.subscheme.Opens) := ⟨fun ⟨x, _⟩ ↦ IsEmpty.false x⟩

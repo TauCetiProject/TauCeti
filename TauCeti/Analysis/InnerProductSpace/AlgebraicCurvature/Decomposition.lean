@@ -517,7 +517,8 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_scalarPart
     {r₁ : FourTensor V} (hr₁ : IsAlgebraicCurvature r₁) (r₂ : FourTensor V) :
     LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism (FourTensor.weyl r₁) ∘ₗ curvatureEndomorphism (scalarPart r₂)) = 0 :=
-  trace_curvatureEndomorphism_weyl_comp_scalarPart_of_antisymm hr₁.1 hr₁.2 r₂
+  trace_curvatureEndomorphism_weyl_comp_scalarPart_of_antisymm hr₁.antisymm_first hr₁.antisymm_last
+      r₂
 
 /-- For pair-antisymmetric `r₁`, `weyl r₁` and `tracelessRicciPart r₂` are orthogonal under the
 trace pairing `(A, B) ↦ tr (A ∘ₗ B)` (which coincides with the Hilbert–Schmidt inner product
@@ -542,7 +543,8 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_tracelessRicc
     LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism (FourTensor.weyl r₁) ∘ₗ
           curvatureEndomorphism (FourTensor.tracelessRicciPart r₂)) = 0 :=
-  trace_curvatureEndomorphism_weyl_comp_tracelessRicciPart_of_antisymm hr₁.1 hr₁.2 r₂
+  trace_curvatureEndomorphism_weyl_comp_tracelessRicciPart_of_antisymm hr₁.antisymm_first
+      hr₁.antisymm_last r₂
 
 /-! ### Low dimensions and orthogonal equivariance -/
 
@@ -590,7 +592,8 @@ theorem eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three_of_antisymm {r 
 theorem IsAlgebraicCurvature.eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (hdim : Module.finrank ℝ V ≤ 3) :
     r = FourTensor.tracelessRicciPart r + scalarPart r :=
-  eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three_of_antisymm hdim hr.1 hr.2
+  eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three_of_antisymm hdim hr.antisymm_first
+      hr.antisymm_last
 
 end TauCeti.FourTensor
 

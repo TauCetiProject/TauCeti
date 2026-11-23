@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Kernel
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 
 /-!
 # The Sobolev embedding of Bessel-potential spaces

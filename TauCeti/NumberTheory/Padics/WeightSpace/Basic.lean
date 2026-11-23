@@ -169,7 +169,7 @@ theorem principalChar_one (κ : WeightSpace p R) :
     ContinuousMulEquiv.symm_apply_apply]
 
 theorem continuous_principalChar (κ : WeightSpace p R) : Continuous κ.principalChar :=
-  Units.continuous_val.comp <| κ.continuous.comp <| continuous_subtype_val.comp <|
+  Units.continuous_val.comp <| κ.continuous.comp <| continuous_subtypeVal.comp <|
     (unitsPrincipalLogEquiv p).symm.continuous.comp continuous_ofAdd
 
 /-- A weight is determined by its finite part and its principal part. -/
@@ -389,7 +389,8 @@ variable (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 algebraic weights `x ↦ x ^ k`. -/
 noncomputable def inclusion : WeightSpace p K where
   toMonoidHom := Units.map (padicIntAlgebraMap p K).toMonoidHom
-  continuous_toFun := Continuous.units_map _ continuous_padicIntAlgebraMap
+  continuous_toFun :=
+    Continuous.units_map _ (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))
 
 variable {K}
 
@@ -564,7 +565,7 @@ noncomputable def weightSpaceEquiv :
     WeightSpace p R ≃
       ((ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) × {t : R // Tendsto (t ^ ·) atTop (𝓝 0)} where
   toFun κ := (κ.finiteChar, ⟨κ.coord, κ.tendsto_coord_pow⟩)
-  invFun ηt := WeightSpace.ofCoord ηt.1 ηt.2 ηt.2.2
+  invFun ηt := WeightSpace.ofCoord ηt.1 ηt.2 ηt.2.property
   left_inv := WeightSpace.ofCoord_finiteChar_coord
   right_inv ηt := by ext <;> simp
 
@@ -576,7 +577,7 @@ theorem weightSpaceEquiv_apply (κ : WeightSpace p R) :
 @[simp]
 theorem weightSpaceEquiv_symm_apply
     (ηt : ((ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) × {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) :
-    (weightSpaceEquiv p R).symm ηt = WeightSpace.ofCoord ηt.1 ηt.2 ηt.2.2 :=
+    (weightSpaceEquiv p R).symm ηt = WeightSpace.ofCoord ηt.1 ηt.2 ηt.2.property :=
   (rfl)
 
 end Equiv
@@ -595,7 +596,7 @@ noncomputable def adicWeightSpaceEquiv :
     WeightSpace p S ≃
       ((ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) × {z : S // PowerSeries.HasEval z} where
   toFun κ := (κ.finiteChar, ⟨κ.coord, κ.hasEval_coord⟩)
-  invFun ηz := WeightSpace.ofHasEval ηz.1 ηz.2.2
+  invFun ηz := WeightSpace.ofHasEval ηz.1 ηz.2.property
   left_inv := WeightSpace.ofHasEval_finiteChar_coord
   right_inv ηz := by ext <;> simp
 
@@ -607,7 +608,7 @@ theorem adicWeightSpaceEquiv_apply (κ : WeightSpace p S) :
 @[simp]
 theorem adicWeightSpaceEquiv_symm_apply
     (ηz : ((ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) × {z : S // PowerSeries.HasEval z}) :
-    (adicWeightSpaceEquiv p S).symm ηz = WeightSpace.ofHasEval ηz.1 ηz.2.2 :=
+    (adicWeightSpaceEquiv p S).symm ηz = WeightSpace.ofHasEval ηz.1 ηz.2.property :=
   (rfl)
 
 end AdicEquiv

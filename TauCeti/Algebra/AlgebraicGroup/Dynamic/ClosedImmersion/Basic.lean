@@ -192,7 +192,7 @@ theorem quotientPointsHom_leviClosedSubgroupPointsIso_inv_app_apply (φ : H ⟶ 
       g ∈ CommHopfAlgCat.quotientPointsSubgroup H J A ↔ g ∈ levi A (l.comp φ.hom))
     (A : CommAlgCat.{w} R) (g : levi A l) :
     CommHopfAlgCat.quotientPointsHom K (J.map φ.hom) A
-      ((leviClosedSubgroupPointsIso φ hφ l J hJ).inv.app A g) = g.1 := by
+      ((leviClosedSubgroupPointsIso φ hφ l J hJ).inv.app A g) = g.val := by
   unfold leviClosedSubgroupPointsIso
   convert CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
     K (J.map φ.hom) (fun B ↦ levi B l)

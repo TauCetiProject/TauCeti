@@ -123,7 +123,7 @@ variable {α : ℝ≥0}
 
 /-- An element of `holderSubmodule 𝕜 α` satisfies the global `α`-Hölder condition. -/
 theorem memHolder (f : holderSubmodule (X := X) (Y := Y) 𝕜 α) :
-    MemHolder α (f : X → Y) := f.2
+    MemHolder α (f : X → Y) := f.property
 
 /-- An element of `holderSubmodule 𝕜 α` is `α`-Hölder with constant equal to its Hölder
 seminorm. -/

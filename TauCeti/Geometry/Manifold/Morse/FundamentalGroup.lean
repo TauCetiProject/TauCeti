@@ -98,12 +98,13 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
       hf.exists_relCWComplex_sublevel_deformation hδ hcompact
     refine ⟨ε, hε, hεδ, fun hs y ↦ ?_⟩
     have : IsEmpty (RelCWComplex.cell C 1) := (hcells 1).some.isEmpty_congr.2
-      ⟨fun q ↦ hd q.1 ⟨q.1.2.1, by
-        have : f q.1 = f p := q.1.2.2
-        constructor <;> linarith⟩ q.2⟩
+      ⟨fun q ↦ hd q.val ⟨q.val.property.1, by
+        have : f q.val = f p := q.val.property.2
+        constructor <;> linarith⟩ q.property⟩
     have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hs
     -- The complex is a strong deformation retract of the upper sublevel.
-    let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
+    let e := ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion hC) r hr
+      (ContinuousMap.HomotopicRel.homotopic ⟨G⟩)
     have := hCsub (e.symm y)
     exact e.symm.subsingleton_fundamentalGroup y
 
@@ -121,7 +122,7 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_manifoldMorseIndex_ne_
   refine hf.subsingleton_fundamentalGroup_sublevel_of_subsingleton hab
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc) fun y hy ↦ hy.2)
     (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp) hb
-    (fun p hp ↦ hd p hp.1 hp.2.2) (fun y ↦ ((ha y).not_ge y.2).elim) x
+    (fun p hp ↦ hd p hp.1 hp.2.2) (fun y ↦ ((ha y).not_ge y.property).elim) x
 
 /-- **A proper Morse function without critical points of index one leaves no loops.** Let `f` be a
 proper Morse function, bounded below, with no critical point of Morse index one. Then every loop
@@ -173,7 +174,7 @@ theorem IsMorse.criticalCount_one_ne_zero (hf : IsMorse I f) (hp : IsProperMap f
     criticalCount I f 1 ≠ 0 := by
   obtain ⟨p, hp, hp₁⟩ := hf.exists_manifoldMorseIndex_eq_one hp hbdd x
   rw [criticalCount_def, Ne, encard_eq_zero]
-  exact nonempty_iff_ne_empty.1 ⟨p, hp, hp₁⟩
+  exact ne_empty_iff_nonempty.2 ⟨p, hp, hp₁⟩
 
 /-- **The fundamental group obstructs perfection.** Let `f` be a Morse function on a compact
 manifold whose fundamental group is nontrivial at some basepoint, and let `k` be a division ring

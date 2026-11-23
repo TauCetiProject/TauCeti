@@ -37,6 +37,14 @@ continuous for the LF topology because one cutoff serves all test functions supp
 compact set. This uses the universal property of that topology and needs the values of `T` to lie
 in a locally convex space.
 
+For the density `f μ` of a function `f` locally integrable on `Ω`, the pushforward is the integral
+`⟨Φ_* (f μ), φ⟩ = ∫_Ω φ (Φ x) f x dμ`: off the support of the distribution `f` vanishes almost
+everywhere, and near it the cutoff is one. Along the first projection of `Ω × O` this is
+integration over the fibres, `pr₁_* (f (μ × ν))` being the density of `x ↦ ∫_O f (x, y) dν`, and
+along a constant map it is the point mass weighted by the total mass of `f`. The zero
+covectors in the wave front bound of a pushforward cannot be omitted: the pushforward of a
+smooth density of total mass one to a point is a point mass.
+
 ## Main declarations
 
 * `Distribution.IsProperOnSupport`: `Φ` is proper on the support of `T`, and
@@ -56,6 +64,16 @@ in a locally convex space.
 * `Distribution.pushforward_tensorProduct`: `(Φ × Ψ)_* (S ⊗ T) = Φ_* S ⊗ Ψ_* T`.
 * `Distribution.pushforward_fst_tensorProduct`: integration over the fibres of the first
   projection, `pr₁_* (S ⊗ T) = ⟨T, 1⟩ S` for `T` of compact support.
+* `Distribution.pushforward_ofFun_apply`: the pushforward of the density `f μ` of a locally
+  integrable function pairs a test function `φ` with `f` through `φ ∘ Φ`,
+  `⟨Φ_* (f μ), φ⟩ = ∫_Ω φ (Φ x) f x dμ`, with integrable integrand
+  (`Distribution.IsProperOnSupport.integrableOn_comp_smul`).
+* `Distribution.pushforward_fst_ofFun`: integration over the fibres of the first projection for
+  densities, `pr₁_* (f (μ × ν)) = (x ↦ ∫_O f (x, y) dν) μ`.
+* `Distribution.pushforward_const_ofFun`: along a constant map with value `c` the density `f μ` is
+  pushed forward to the point mass at `c` weighted by `∫_Ω f dμ`, and
+  `Distribution.not_isProperOnSupport_ofFun_const_const`: a nonzero constant density on a
+  nonempty open set is not proper over a point.
 
 ## References
 
@@ -430,7 +448,7 @@ variable {D D' : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimens
   [NormedAddCommGroup D'] [NormedSpace ℝ D'] {O : Opens D} {O' : Opens D'}
   {V : Opens (E × D)} {V' : Opens (E' × D')} {Ψ : D → D'} {S : 𝓓'(Ω, ℂ)} {T : 𝓓'(O, ℂ)}
 
-omit [NormedSpace ℝ E'] [NormedSpace ℝ D'] in
+omit [NormedSpace ℝ E'] [NormedSpace ℝ D'] [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- If `Φ` is proper on the support of `S` and `Ψ` on the support of `T`, then `Φ × Ψ` is proper on
 the support of `S ⊗ T`. -/
 theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
@@ -455,7 +473,7 @@ theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) 
   exact ⟨⟨⟨⟨hpΩO.1, hpST.1⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩,
     ⟨⟨hpΩO.2, hpST.2⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩⟩, hpK⟩
 
-variable [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ O}
+variable {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ O}
 
 /-- **The pushforward of a tensor product** along a product map is the tensor product of the
 pushforwards: `(Φ × Ψ)_* (S ⊗ T) = Φ_* S ⊗ Ψ_* T`. -/
@@ -482,7 +500,7 @@ theorem pushforward_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (
   simp only [mem_preimage, mem_ofPred_eq] at hq₁ hq₂
   simp [prodSMulCLM_apply, hq₁, hq₂]
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- The first projection is proper on the support of `S ⊗ T` when `T` has compact support. -/
 theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
     (hT : IsCompact (dsupport T)) (hTO : dsupport T ⊆ O) :
@@ -496,7 +514,6 @@ theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set
   have hpST := dsupport_tensorProduct_subset S T hV.subset hp
   exact ⟨⟨⟨hpK, hpST.1⟩, hpST.2⟩, hpK⟩
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
 /-- **Integration over the fibres of the first projection.** If `T` has compact support, pushing
 `S ⊗ T` forward along the first projection gives `S` times the total mass `⟨T, 1⟩` of `T`
 (`Distribution.augmentation`). -/
@@ -521,5 +538,133 @@ theorem pushforward_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×
   simp [prodSMulCLM_apply, hq]
 
 end TensorProduct
+
+/-! ### Densities -/
+
+section OfFun
+
+open MeasureTheory
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {f : E → G}
+
+/-- Near the support of the distribution of `f` over `supp φ`, the cutoff `χ` is one, and off
+that support `f` vanishes almost everywhere, so cutting off does not change `(φ ∘ Φ) • f` almost
+everywhere on `Ω`. -/
+private theorem ae_restrict_cutoffCompCLM_smul_eq (hf : LocallyIntegrableOn f Ω μ)
+    {φ : 𝓓(Ω', ℝ)} {χ : 𝓓(Ω, ℝ)}
+    (hχ : ∀ᶠ x in 𝓝ˢ ((Ω : Set E) ∩ dsupport (ofFun Ω f μ ⊤) ∩ Φ ⁻¹' tsupport φ), χ x = 1) :
+    (fun x ↦ cutoffCompCLM χ Φ hΦ φ x • f x) =ᵐ[μ.restrict Ω] fun x ↦ φ (Φ x) • f x := by
+  rw [EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
+  filter_upwards [ae_eq_zero_of_notMem_dsupport_ofFun (n := ⊤) hf] with x hx hxΩ
+  rw [cutoffCompCLM_apply, smul_eq_mul]
+  by_cases hxT : x ∈ dsupport (ofFun Ω f μ ⊤)
+  · by_cases hφx : Φ x ∈ tsupport φ
+    · rw [hχ.self_of_nhdsSet x ⟨⟨hxΩ, hxT⟩, hφx⟩, one_mul]
+    · simp [image_eq_zero_of_notMem_tsupport hφx]
+  · simp [hx hxΩ hxT]
+
+/-- If `Φ` is proper on the support of the density `f μ`, the integrand `x ↦ φ (Φ x) • f x` of its
+pushforward is integrable on `Ω` for every test function `φ` on `Ω'`, although `φ ∘ Φ` need not
+have compact support in `Ω`. -/
+theorem IsProperOnSupport.integrableOn_comp_smul
+    (hT : IsProperOnSupport (ofFun Ω f μ ⊤) Φ Ω') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
+    (hf : LocallyIntegrableOn f Ω μ) (φ : 𝓓(Ω', ℝ)) :
+    IntegrableOn (fun x ↦ φ (Φ x) • f x) Ω μ :=
+  let ⟨_, hχ⟩ := hT.exists_eventually_eq_one φ.hasCompactSupport φ.tsupport_subset
+  ((cutoffCompCLM _ Φ hΦ φ).integrable_smul hf).integrableOn.congr_fun_ae
+    (ae_restrict_cutoffCompCLM_smul_eq hf hχ)
+
+/-- **The pushforward of a density.** If `f` is locally integrable on `Ω` and `Φ` is proper on the
+support of its distribution, the pushforward of that distribution pairs a test function `φ` with
+`f` through `φ ∘ Φ`:
+
+`⟨Φ_* (f μ), φ⟩ = ∫_Ω φ (Φ x) f x dμ`.
+
+The integrand is integrable on `Ω` by `Distribution.IsProperOnSupport.integrableOn_comp_smul`. -/
+theorem pushforward_ofFun_apply (hf : LocallyIntegrableOn f Ω μ)
+    (hT : IsProperOnSupport (ofFun Ω f μ ⊤) Φ Ω') (φ : 𝓓(Ω', ℝ)) :
+    pushforward (ofFun Ω f μ ⊤) Φ hΦ hT φ = ∫ x in Ω, φ (Φ x) • f x ∂μ := by
+  obtain ⟨χ, hχ⟩ := hT.exists_eventually_eq_one φ.hasCompactSupport φ.tsupport_subset
+  rw [pushforward_apply_eq_cutoffCompCLM φ hχ, ofFun_apply hf,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+      simp [(cutoffCompCLM χ Φ hΦ φ).zero_on_compl hx]]
+  exact integral_congr_ae (ae_restrict_cutoffCompCLM_smul_eq hf hχ)
+
+/-- **Pushforward of a density along a constant map.** Pushing the density `f μ` forward along the
+constant map with value `c` gives the point mass at `c` weighted by the total mass `∫_Ω f dμ`.
+For instance a smooth compactly supported density of total mass one is pushed forward to the point
+mass `δ_c`, although its wave front set is empty. -/
+theorem pushforward_const_ofFun (hf : LocallyIntegrableOn f Ω μ) {c : E'}
+    (hT : IsProperOnSupport (ofFun Ω f μ ⊤) (fun _ ↦ c) Ω') :
+    pushforward (ofFun Ω f μ ⊤) (fun _ ↦ c) contDiffOn_const hT =
+      mapCLM (ContinuousLinearMap.toSpanSingleton ℝ (∫ x in Ω, f x ∂μ)) (delta c : 𝓓'(Ω', ℝ)) := by
+  ext φ
+  rw [pushforward_ofFun_apply hf hT, integral_smul]
+  simp
+
+omit [NormedSpace ℝ E'] in
+/-- A nonzero constant density on a nonempty open subset of a nontrivial space is not proper over
+a point: the constant map to a point of `Ω'` is not proper on its support, so the pushforward of a
+constant density to a point is not defined. -/
+theorem not_isProperOnSupport_ofFun_const_const [Nontrivial E] [μ.IsOpenPosMeasure]
+    [IsFiniteMeasureOnCompacts μ] {v : G}
+    (hv : v ≠ 0) (hΩ : (Ω : Set E).Nonempty) {c : E'} (hc : c ∈ Ω') :
+    ¬IsProperOnSupport (ofFun Ω (fun _ ↦ v) μ ⊤) (fun _ ↦ c) Ω' := by
+  intro h
+  -- Over the point `c` the support of the constant density is all of `Ω`, which would be compact.
+  have hcpt := h {c} isCompact_singleton (singleton_subset_iff.2 hc)
+  rw [preimage_const_of_mem rfl, inter_univ,
+    inter_eq_left.2 (subset_dsupport_ofFun_const (μ := μ) (n := ⊤) hv)] at hcpt
+  -- A nonempty compact open subset of the connected space `E` is all of `E`, which is not compact.
+  have huniv := IsClopen.eq_univ ⟨hcpt.isClosed, Ω.isOpen⟩ hΩ
+  exact noncompact_univ E (huniv ▸ hcpt)
+
+section Fibre
+
+variable {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D]
+  [MeasurableSpace D] [BorelSpace D] {ν : Measure D} [SFinite μ] [SFinite ν] {O : Opens D}
+  {V : Opens (E × D)} {f : E × D → G}
+
+/-- The fibre integral `x ↦ ∫_O f (x, y) dν` of a density proper over `Ω` is locally integrable on
+`Ω`. -/
+private theorem locallyIntegrableOn_setIntegral_fst
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    (hf : LocallyIntegrableOn f V (μ.prod ν))
+    (hT : IsProperOnSupport (ofFun V f (μ.prod ν) ⊤) Prod.fst Ω) :
+    LocallyIntegrableOn (fun x ↦ ∫ y in O, f (x, y) ∂ν) Ω μ := by
+  refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK ↦ ?_
+  -- Over a test function `ψ` equal to one near `K`, the density is integrable on `K × O`.
+  obtain ⟨ψ, hψ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hK hKΩ
+  have hKO : IntegrableOn f (K ×ˢ (O : Set D)) (μ.prod ν) := by
+    refine ((hT.integrableOn_comp_smul contDiffOn_fst hf ψ).mono_set ?_).congr_fun
+      (fun p hp ↦ ?_) (hK.measurableSet.prod O.isOpen.measurableSet)
+    · rw [hV]
+      exact prod_mono hKΩ subset_rfl
+    · simp [hψ.self_of_nhdsSet p.1 hp.1]
+  rw [IntegrableOn, ← Measure.prod_restrict] at hKO
+  exact hKO.integral_prod_left
+
+/-- **Integration over the fibres.** Pushing the density `f (μ × ν)` on `Ω × O` forward along the
+first projection gives the density of its fibre integral `x ↦ ∫_O f (x, y) dν`, provided the
+projection is proper on the support of `f`, for example when `f` has compact support in `Ω × O`. -/
+theorem pushforward_fst_ofFun (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    (hf : LocallyIntegrableOn f V (μ.prod ν))
+    (hT : IsProperOnSupport (ofFun V f (μ.prod ν) ⊤) Prod.fst Ω) :
+    pushforward (ofFun V f (μ.prod ν) ⊤) Prod.fst contDiffOn_fst hT =
+      ofFun Ω (fun x ↦ ∫ y in O, f (x, y) ∂ν) μ ⊤ := by
+  ext φ
+  have hint := hT.integrableOn_comp_smul contDiffOn_fst hf φ
+  rw [hV] at hint
+  rw [pushforward_ofFun_apply hf hT, ofFun_apply (locallyIntegrableOn_setIntegral_fst hV hf hT),
+    hV, setIntegral_prod _ hint,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := (Ω : Set E)) (μ := μ) fun x hx ↦ by
+      simp [φ.zero_on_compl hx]]
+  exact setIntegral_congr_fun Ω.isOpen.measurableSet fun x _ ↦
+    integral_smul (φ x) fun y ↦ f (x, y)
+
+end Fibre
+
+end OfFun
 
 end Distribution
