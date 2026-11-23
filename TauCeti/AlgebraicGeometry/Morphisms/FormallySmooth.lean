@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Etale.Basic
+public import Mathlib.RingTheory.RingHom.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Formally smooth and formally étale morphisms of schemes
@@ -32,6 +35,16 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
   smooth.
 * `TauCeti.AlgebraicGeometry.formallyEtale_iff`: `f` is formally étale exactly when it is formally
   smooth and lifts along affine first-order thickenings are unique.
+* `TauCeti.AlgebraicGeometry.formallySmooth_iff_exists_lift_quotient` and
+  `TauCeti.AlgebraicGeometry.formallyEtale_iff_existsUnique_lift_quotient`: it suffices to test
+  the lifting property on `Spec (B ⧸ I) ⟶ Spec B` for rings `B` and ideals `I` with `I ^ 2 = ⊥`.
+* `TauCeti.AlgebraicGeometry.formallySmooth_Spec_algebraMap_iff` and
+  `TauCeti.AlgebraicGeometry.formallyEtale_Spec_algebraMap_iff`, with the ring-map forms
+  `formallySmooth_SpecMap_iff` and `formallyEtale_SpecMap_iff`: `Spec A ⟶ Spec R` is formally
+  smooth (formally étale) exactly when `A` is, in the sense of Mathlib's `Algebra.FormallySmooth`
+  (`Algebra.FormallyEtale`).
+* `TauCeti.AlgebraicGeometry.FormallyEtale.of_isOpenImmersion`: open immersions are formally
+  étale, hence formally smooth.
 
 ## References
 
@@ -156,5 +169,121 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
   infer_instance
 
 end FormallyEtale
+
+/-- Formal smoothness can be tested on the first-order thickenings `Spec (B ⧸ I) ⟶ Spec B` with
+`I ^ 2 = ⊥`. -/
+theorem formallySmooth_iff_exists_lift_quotient (f : X ⟶ S) :
+    FormallySmooth f ↔ ∀ (B : CommRingCat.{u}) (I : Ideal B), I ^ 2 = ⊥ →
+      ∀ (g : Spec (.of (B ⧸ I)) ⟶ X) (h : Spec B ⟶ S),
+        g ≫ f = Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ h →
+        ∃ l : Spec B ⟶ X, Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ l = g ∧
+          l ≫ f = h := by
+  refine ⟨fun hf B I hI g h w ↦ ?_, fun H ↦ ⟨fun {T T'} _ i _ g h w ↦ ?_⟩⟩
+  · have := IsFirstOrderThickening.SpecMap_quotient_mk hI
+    exact hf.exists_lift _ g h w
+  · obtain ⟨I, e, hI, he⟩ := IsFirstOrderThickening.exists_iso_quotient i
+    have he' := (Iso.inv_comp_eq _).2 he
+    obtain ⟨l, hl, hl'⟩ := H _ I hI (e.inv ≫ g) (T'.isoSpec.inv ≫ h) (by simp [← he', w])
+    refine ⟨T'.isoSpec.hom ≫ l, ?_, by simp [hl']⟩
+    rw [reassoc_of% he, hl, Iso.hom_inv_id_assoc]
+
+/-- Formal étaleness can be tested on the first-order thickenings `Spec (B ⧸ I) ⟶ Spec B` with
+`I ^ 2 = ⊥`. -/
+theorem formallyEtale_iff_existsUnique_lift_quotient (f : X ⟶ S) :
+    FormallyEtale f ↔ ∀ (B : CommRingCat.{u}) (I : Ideal B), I ^ 2 = ⊥ →
+      ∀ (g : Spec (.of (B ⧸ I)) ⟶ X) (h : Spec B ⟶ S),
+        g ≫ f = Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ h →
+        ∃! l : Spec B ⟶ X, Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ l = g ∧
+          l ≫ f = h := by
+  refine ⟨fun hf B I hI g h w ↦ ?_, fun H ↦ ⟨fun {T T'} _ i _ g h w ↦ ?_⟩⟩
+  · have := IsFirstOrderThickening.SpecMap_quotient_mk hI
+    exact hf.existsUnique_lift _ g h w
+  · obtain ⟨I, e, hI, he⟩ := IsFirstOrderThickening.exists_iso_quotient i
+    have he' := (Iso.inv_comp_eq _).2 he
+    obtain ⟨l, ⟨hl, hl'⟩, hu⟩ := H _ I hI (e.inv ≫ g) (T'.isoSpec.inv ≫ h) (by simp [← he', w])
+    refine ⟨T'.isoSpec.hom ≫ l, ⟨?_, by simp [hl']⟩, fun l₁ ⟨h₁, h₂⟩ ↦ ?_⟩
+    · rw [reassoc_of% he, hl, Iso.hom_inv_id_assoc]
+    · rw [← hu (T'.isoSpec.inv ≫ l₁) ⟨by simp [← he', h₁], by simp [h₂]⟩, Iso.hom_inv_id_assoc]
+
+section Algebra
+
+variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+
+/-- For an `R`-algebra `A`, the morphism `Spec A ⟶ Spec R` is formally smooth if and only if `A` is
+formally smooth over `R` (Stacks, 00TI, for the ring-theoretic notion). -/
+theorem formallySmooth_Spec_algebraMap_iff :
+    FormallySmooth (Spec.algebraMap R A) ↔ Algebra.FormallySmooth R A := by
+  rw [formallySmooth_iff_exists_lift_quotient, Algebra.FormallySmooth.iff_comp_surjective]
+  refine ⟨fun H B _ _ I hI f ↦ ?_, fun H B I hI g h w ↦ ?_⟩
+  · obtain ⟨l, hl, hl'⟩ := H (.of B) I hI _ _ (SpecMap_algHom_comp_quotient I f)
+    obtain ⟨f', rfl⟩ := exists_algHom_SpecMap_eq l hl'
+    rw [SpecMap_quotient_mk_comp_SpecMap_algHom] at hl
+    exact ⟨f', AlgHom.ext fun a ↦ congr($(Spec.map_injective hl) a)⟩
+  · let := (Spec.preimage h).hom.toAlgebra
+    obtain ⟨f, rfl⟩ := exists_algHom_SpecMap_eq (R := R) (B := B ⧸ I) g (by
+      rw [w, ← Spec.map_preimage h, ← Spec.map_comp]
+      rfl)
+    obtain ⟨f', rfl⟩ := H (B := B) I hI f
+    refine ⟨_, SpecMap_quotient_mk_comp_SpecMap_algHom I f', ?_⟩
+    exact (Spec.homEquivAlgHom.symm f').property.trans (Spec.map_preimage h)
+
+/-- For an `R`-algebra `A`, the morphism `Spec A ⟶ Spec R` is formally étale if and only if `A` is
+formally étale over `R` (Stacks, 00UQ, for the ring-theoretic notion). -/
+theorem formallyEtale_Spec_algebraMap_iff :
+    FormallyEtale (Spec.algebraMap R A) ↔ Algebra.FormallyEtale R A := by
+  rw [Algebra.FormallyEtale.iff_comp_bijective]
+  refine ⟨fun hE B _ _ I hI ↦ ⟨fun f₁ f₂ hf ↦ ?_, ?_⟩, fun H ↦ ?_⟩
+  · have := (formallyEtale_iff_existsUnique_lift_quotient _).1 hE (.of B) I hI _ _
+      (SpecMap_algHom_comp_quotient I ((Ideal.Quotient.mkₐ R I).comp f₁))
+    have := this.unique
+      ⟨SpecMap_quotient_mk_comp_SpecMap_algHom I f₁, (Spec.homEquivAlgHom.symm f₁).property⟩
+      ⟨(SpecMap_quotient_mk_comp_SpecMap_algHom I f₂).trans (by rw [hf]),
+        (Spec.homEquivAlgHom.symm f₂).property⟩
+    exact AlgHom.ext fun a ↦ congr($(Spec.map_injective this) a)
+  · have : Algebra.FormallySmooth R A := formallySmooth_Spec_algebraMap_iff.1 inferInstance
+    exact Algebra.FormallySmooth.comp_surjective R A I hI
+  rw [formallyEtale_iff_existsUnique_lift_quotient]
+  intro B I hI g h w
+  let := (Spec.preimage h).hom.toAlgebra
+  have hh : Spec.algebraMap R B = h := Spec.map_preimage h
+  obtain ⟨f, rfl⟩ := exists_algHom_SpecMap_eq (R := R) (B := B ⧸ I) g (by
+    rw [w, ← hh, ← Spec.map_comp]
+    rfl)
+  obtain ⟨f', rfl⟩ := (H (B := B) I hI).2 f
+  refine ⟨_, ⟨SpecMap_quotient_mk_comp_SpecMap_algHom I f',
+    (Spec.homEquivAlgHom.symm f').property.trans hh⟩, fun l ⟨hl, hl'⟩ ↦ ?_⟩
+  obtain ⟨f'', rfl⟩ := exists_algHom_SpecMap_eq (R := R) (B := B) l (hl'.trans hh.symm)
+  rw [SpecMap_quotient_mk_comp_SpecMap_algHom] at hl
+  rw [(H (B := B) I hI).1 (AlgHom.ext fun a ↦ congr($(Spec.map_injective hl) a))]
+
+end Algebra
+
+/-- The morphism `Spec A ⟶ Spec R` induced by a ring map `φ : R ⟶ A` is formally smooth if and only
+if `φ` is formally smooth. -/
+theorem formallySmooth_SpecMap_iff {R A : CommRingCat.{u}} (φ : R ⟶ A) :
+    FormallySmooth (Spec.map φ) ↔ φ.hom.FormallySmooth :=
+  let := φ.hom.toAlgebra
+  formallySmooth_Spec_algebraMap_iff (R := R) (A := A)
+
+/-- The morphism `Spec A ⟶ Spec R` induced by a ring map `φ : R ⟶ A` is formally étale if and only
+if `φ` is formally étale. -/
+theorem formallyEtale_SpecMap_iff {R A : CommRingCat.{u}} (φ : R ⟶ A) :
+    FormallyEtale (Spec.map φ) ↔ φ.hom.FormallyEtale :=
+  let := φ.hom.toAlgebra
+  formallyEtale_Spec_algebraMap_iff (R := R) (A := A)
+
+/-- An open immersion `j : X ⟶ S` is formally étale. A thickening `i : T ⟶ T'` is surjective, so a
+morphism `h : T' ⟶ S` with `i ≫ h` factoring through `j` lands in the image of `j`, and then
+factors uniquely through `j`. -/
+instance (priority := 100) FormallyEtale.of_isOpenImmersion (j : X ⟶ S) [IsOpenImmersion j] :
+    FormallyEtale j where
+  existsUnique_lift {T T'} _ i _ g h w := by
+    have hr : Set.range h ⊆ Set.range j := by
+      rintro _ ⟨y, rfl⟩
+      obtain ⟨x, rfl⟩ := i.surjective y
+      exact ⟨g x, by rw [← Scheme.Hom.comp_apply, w, Scheme.Hom.comp_apply]⟩
+    refine ⟨IsOpenImmersion.lift j h hr, ⟨?_, IsOpenImmersion.lift_fac _ _ _⟩,
+      fun l ⟨_, hl⟩ ↦ IsOpenImmersion.lift_uniq _ _ _ l hl⟩
+    rw [← cancel_mono j, Category.assoc, IsOpenImmersion.lift_fac, w]
 
 end TauCeti.AlgebraicGeometry

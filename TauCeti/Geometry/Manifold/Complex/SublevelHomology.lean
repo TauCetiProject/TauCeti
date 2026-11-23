@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.TopHomology
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 public import TauCeti.Topology.Maps.Proper.Metric
+import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.Morse.Inequalities
 
 /-!
 # Homology and cohomology of pseudoconvex Morse functions and of affine complete intersections
@@ -28,8 +30,9 @@ compact because the squared distance is proper
 (`TauCeti.exists_isZero_singularHomology_sublevelPair_norm_sq_sub_toLp_affineZeroLocus`).
 
 Assembled across a compact band between regular values
-(`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isManifoldStronglyPseudoconvexAt`) and
-along a proper Morse exhaustion
+(`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isManifoldStronglyPseudoconvexAt`,
+`IsMorse.sum_range_neg_one_pow_mul_finrank_sublevelPair_eq_of_isManifoldStronglyPseudoconvexAt`)
+and along a proper Morse exhaustion
 (`TauCeti.IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le`), these single-level
 statements show that a manifold with a proper, bounded below, strongly `q`-pseudoconvex Morse
 function has no homology above degree `n + q`
@@ -67,6 +70,9 @@ dimension at most `n + q`.
 * `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isManifoldStronglyPseudoconvexAt`:
   across a compact band between regular values of a strongly `q`-pseudoconvex Morse function, the
   relative homology of the sublevel pair vanishes above degree `n + q`.
+* `IsMorse.sum_range_neg_one_pow_mul_finrank_sublevelPair_eq_of_isManifoldStronglyPseudoconvexAt`:
+  across a compact band between regular values of a strongly `q`-pseudoconvex Morse function,
+  Euler's alternating-sum equality holds in every degree `m ≥ n + q`.
 * `TauCeti.IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt`: a manifold with a
   proper, bounded below, strongly `q`-pseudoconvex Morse function has no homology above degree
   `n + q`.
@@ -104,6 +110,8 @@ open scoped ContDiff Manifold
 universe u v w
 
 namespace TauCeti
+
+section
 
 variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M] {c δ : ℝ}
@@ -371,5 +379,41 @@ theorem isZero_singularCohomology_affineZeroLocus {σ : Type u} {ι : Type*} [Fi
     ((EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
       (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal) V N
     (by rwa [Module.finrank_fin_fun])
+
+end
+
+section TruncatedEuler
+
+variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 1 M] [T2Space M]
+
+/-- **Truncated Euler equality for a strongly `q`-pseudoconvex regular band.** Across a compact
+band `f⁻¹[a, b]` between regular values of a Morse function `f` on a Hausdorff complex manifold
+`M` of complex dimension `n` which is strongly `q`-pseudoconvex at its critical points in
+`(a, b]`, Euler's alternating-sum identity holds in every degree `m ≥ n + q`. -/
+theorem
+    IsMorse.sum_range_neg_one_pow_mul_finrank_sublevelPair_eq_of_isManifoldStronglyPseudoconvexAt
+    {f : M → ℝ} {q : ℕ} (hf : IsMorse 𝓘(ℝ, E) f) {a b : ℝ} (hab : a ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) f a)
+    (hb : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) f b)
+    (hq : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioc a b,
+      IsManifoldStronglyPseudoconvexAt E q f x)
+    {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V] {m : ℕ}
+    (hm : finrank ℂ E + q ≤ m) :
+    ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ i *
+        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ i *
+        {x ∈ criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioc a b |
+          manifoldMorseIndex 𝓘(ℝ, E) f x = i}.ncard := by
+  have : FiniteDimensional ℝ E := .trans ℝ ℂ E
+  have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+  have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
+  exact
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq_of_manifoldMorseIndex_ne
+      V hab hcompact ha hb fun x hx ↦
+        (((hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx.1).trans_lt
+          (Nat.lt_succ_of_le hm)).ne
+
+end TruncatedEuler
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
+import TauCeti.Geometry.Manifold.Metrizable
 
 /-!
 # The Mayer–Vietoris sequence of compactly supported de Rham complexes
@@ -29,6 +30,15 @@ exact (`TauCeti.compactlySupportedMayerVietorisShortComplex_shortExact`), and Ma
 `CategoryTheory.ShortComplex.ShortExact.homology_exact₁`, `homology_exact₂` and `homology_exact₃`
 give the Mayer–Vietoris long exact sequence of compactly supported de Rham cohomology.
 
+Its connecting map `H^k_c(U ⊔ V) → H^{k+1}_c(U ⊓ V)`
+(`TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ`) is computed on representatives
+(`TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ_mk`): write a compactly supported
+closed form `τ` on `U ⊔ V` as `ext α + ext β` with `α` and `β` compactly supported on `U` and on
+`V`; then `dα` and `-dβ` are the extensions by zero of one compactly supported closed form `σ` on
+`U ⊓ V` (`TauCeti.compactlySupportedForms.exists_extendByZero_eq_mextDerivₗ`), and the class of
+`τ` goes to the class of `σ`. This is the compactly supported counterpart of
+`TauCeti.deRhamCohomology.mayerVietorisδ_mk`.
+
 ## Main definitions and results
 
 * `TauCeti.compactlySupportedForms.extendByZero_add_extendByZero_eq_zero_iff`: exactness in the
@@ -38,6 +48,9 @@ give the Mayer–Vietoris long exact sequence of compactly supported de Rham coh
 * `TauCeti.compactlySupportedMayerVietorisShortComplex`: the compactly supported Mayer–Vietoris
   short complex of compactly supported de Rham complexes.
 * `TauCeti.compactlySupportedMayerVietorisShortComplex_shortExact`: it is short exact.
+* `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ`: its connecting map
+  `H^k_c(U ⊔ V) → H^{k+1}_c(U ⊓ V)`, computed on classes by
+  `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ_mk`.
 
 ## References
 
@@ -106,11 +119,7 @@ theorem surjective_coprod_extendByZero [FiniteDimensional ℝ E] [IsManifold I �
         (extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V) k)) := by
   classical
   intro φ
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
+  have := Manifold.sigmaCompactSpace_opens I (U ⊔ V)
   let W : Bool → Opens M := fun b ↦ cond b V U
   have hW (b : Bool) : W b ≤ U ⊔ V := by
     cases b
@@ -242,6 +251,131 @@ theorem compactlySupportedMayerVietorisShortComplex_shortExact [FiniteDimensiona
     (fun k ↦ compactlySupportedDeRhamComplex.extendByZero_f _ k) hexact hinj
     fun _ ↦ compactlySupportedForms.surjective_coprod_extendByZero U V
 
+/-- Let `α` and `β` be compactly supported forms on `U` and on `V` whose extensions by zero to
+`U ⊔ V` have closed sum. Then `dα` and `-dβ` are the extensions by zero of one compactly supported
+closed form on `U ⊓ V`. This is the form that represents the image of the class of that sum under
+the compactly supported Mayer–Vietoris connecting map
+(`TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ_mk`). -/
+theorem compactlySupportedForms.exists_extendByZero_eq_mextDerivₗ {U V : Opens M}
+    (α : compactlySupportedForms I U k) (β : compactlySupportedForms I V k)
+    (hαβ : (compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) k α +
+      compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) k β).val ∈
+        closedForms I (U ⊔ V : Opens M) k) :
+    ∃ σ : compactlySupportedClosedForms I (U ⊓ V : Opens M) (k + 1),
+      compactlySupportedForms.extendByZero (inf_le_left : U ⊓ V ≤ U) (k + 1)
+          ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩ =
+        compactlySupportedForms.mextDerivₗ I U k α ∧
+      compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (k + 1)
+          ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩ =
+        -compactlySupportedForms.mextDerivₗ I V k β := by
+  -- The extensions by zero of `dα` and `dβ` sum to the exterior derivative of a closed form.
+  obtain ⟨σ, hσU, hσV⟩ := compactlySupportedForms.extendByZero_add_extendByZero_eq_zero_iff.mp
+    (by
+      rw [← compactlySupportedForms.mextDerivₗ_extendByZero,
+        ← compactlySupportedForms.mextDerivₗ_extendByZero, ← map_add]
+      exact Subtype.ext (by
+        rw [compactlySupportedForms.coe_mextDerivₗ]
+        exact (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mp hαβ) :
+      compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) (k + 1)
+          (compactlySupportedForms.mextDerivₗ I U k α) +
+        compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) (k + 1)
+          (compactlySupportedForms.mextDerivₗ I V k β) = 0)
+  -- It is closed, since its extension by zero to `U` is exact.
+  have hdσ : compactlySupportedForms.mextDerivₗ I (U ⊓ V : Opens M) (k + 1) σ = 0 :=
+    compactlySupportedForms.extendByZero_injective (inf_le_left : U ⊓ V ≤ U) (k + 1 + 1) <| by
+      rw [← compactlySupportedForms.mextDerivₗ_extendByZero, hσU, map_zero]
+      exact LinearMap.congr_fun (compactlySupportedForms.mextDerivₗ_comp_mextDerivₗ I k) α
+  refine ⟨⟨σ.val, (mem_compactlySupportedClosedForms I).mpr ⟨σ.property,
+    (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr ?_⟩⟩, hσU, hσV⟩
+  simpa using congrArg Subtype.val hdσ
+
 end Complex
+
+section Connecting
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [SigmaCompactSpace M]
+
+namespace compactlySupportedDeRhamCohomology
+
+variable (I) in
+/-- The **compactly supported Mayer–Vietoris connecting map** `H^k_c(U ⊔ V) → H^{k+1}_c(U ⊓ V)`:
+the connecting map of the long exact cohomology sequence of the compactly supported
+Mayer–Vietoris short exact sequence. -/
+def mayerVietorisδ (U V : Opens M) (k : ℕ) :
+    compactlySupportedDeRhamCohomology I (U ⊔ V : Opens M) k →ₗ[ℝ]
+      compactlySupportedDeRhamCohomology I (U ⊓ V : Opens M) (k + 1) :=
+  ((compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl).hom
+
+/-- The compactly supported Mayer–Vietoris connecting map is the connecting morphism of the
+homology sequence of the compactly supported Mayer–Vietoris short exact sequence, so Mathlib's
+exactness results for that sequence apply. -/
+theorem ofHom_mayerVietorisδ (U V : Opens M) (k : ℕ) :
+    ModuleCat.ofHom (mayerVietorisδ I U V k) =
+      (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl :=
+  (rfl)
+
+/-- **The compactly supported Mayer–Vietoris connecting map on classes.** Let `τ` be a compactly
+supported closed form on `U ⊔ V`, written as the sum of the extensions by zero of compactly
+supported forms `α` on `U` and `β` on `V`. If `σ` is a compactly supported closed form on
+`U ⊓ V` whose extensions by zero are `dα` on `U` and `-dβ` on `V`, then the connecting map sends
+the class of `τ` to the class of `σ`. -/
+theorem mayerVietorisδ_mk (U V : Opens M) (τ : compactlySupportedClosedForms I (U ⊔ V : Opens M) k)
+    (α : compactlySupportedForms I U k) (β : compactlySupportedForms I V k)
+    (hαβ : compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) k α +
+      compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) k β =
+        ⟨τ.val, compactlySupportedClosedForms_le_compactlySupportedForms I k τ.property⟩)
+    (σ : compactlySupportedClosedForms I (U ⊓ V : Opens M) (k + 1))
+    (hσU : compactlySupportedForms.extendByZero (inf_le_left : U ⊓ V ≤ U) (k + 1)
+      ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩ =
+        compactlySupportedForms.mextDerivₗ I U k α)
+    (hσV : compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (k + 1)
+      ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩ =
+        -compactlySupportedForms.mextDerivₗ I V k β) :
+    mayerVietorisδ I U V k (mk I k τ) = mk I (k + 1) σ := by
+  -- The lift of `τ` to `Ω_c^•(U) ⊞ Ω_c^•(V)` is the pair `(α, β)`.
+  let x₂ : (compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).X k :=
+    (biprod.inl : compactlySupportedDeRhamComplex I U ⟶ _).f k
+        ((compactlySupportedDeRhamComplexXIso I k).inv α) +
+      (biprod.inr : compactlySupportedDeRhamComplex I V ⟶ _).f k
+        ((compactlySupportedDeRhamComplexXIso I k).inv β)
+  have hx₂ : (biprod.desc
+      (compactlySupportedDeRhamComplex.extendByZero (I := I) (le_sup_left : U ≤ U ⊔ V))
+      (compactlySupportedDeRhamComplex.extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V))).f k x₂ =
+      (compactlySupportedDeRhamComplexXIso I k).inv
+        ⟨τ.val, compactlySupportedClosedForms_le_compactlySupportedForms I k τ.property⟩ := by
+    rw [← hαβ]
+    simp only [map_add]
+    rw [← compactlySupportedDeRhamComplex.extendByZero_f_inv_apply,
+      ← compactlySupportedDeRhamComplex.extendByZero_f_inv_apply]
+    simp [x₂, ← ModuleCat.comp_apply]
+  -- The image of `σ` in `Ω_c^•(U) ⊞ Ω_c^•(V)` is the differential of the lift.
+  have hσ : (biprod.lift
+      (compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_left : U ⊓ V ≤ U))
+      (-compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V))).f
+        (k + 1) ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
+          ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩) =
+      (compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).d k (k + 1)
+        x₂ := by
+    simp [x₂, biprod.lift_eq,
+      compactlySupportedDeRhamComplex.extendByZero_f_inv_apply _ (k + 1)
+        ⟨σ.val, compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1) σ.property⟩, hσU,
+            hσV,
+      HomologicalComplex.Hom.comm_apply, compactlySupportedDeRhamComplex_d_apply]
+    -- The identification of the objects is linear, so it commutes with negation.
+    have hneg := map_neg (compactlySupportedDeRhamComplexXIso I (M := V) (k + 1)).inv.hom
+      (compactlySupportedForms.mextDerivₗ I V k β)
+    simp only [hneg, map_neg, neg_neg]
+  rw [mayerVietorisδ, mk_eq_moduleCatHomologyClass, mk_eq_moduleCatHomologyClass,
+    HomologicalComplex.moduleCatHomologyClass_apply,
+    HomologicalComplex.moduleCatHomologyClass_apply]
+  -- The terms and maps of the compactly supported Mayer–Vietoris short complex are, by
+  -- definition, those above.
+  exact (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).moduleCat_δ_homologyπ
+    k (k + 1) rfl _ x₂ (hx₂.trans (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _).symm)
+    _ ((congrArg _ (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)).trans hσ)
+
+end compactlySupportedDeRhamCohomology
+
+end Connecting
 
 end TauCeti

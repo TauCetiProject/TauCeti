@@ -74,37 +74,37 @@ variable (I : X.IdealSheafData)
 nonzerodivisor generating the ideal of `I` on `W`. Then the sections of `I` over `V` are the
 multiples of `b`. -/
 theorem exists_mul_eq_of_forall_ideal_eq_span {V : X.Opens} {b : Γ(X, V)}
-    (hb : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V),
+    (hb : ∀ (W : X.affineOpens) (hWV : W.val ≤ V),
       IsSMulRegular Γ(X, W) (X.presheaf.map (homOfLE hWV).op b))
-    (hIb : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V),
+    (hIb : ∀ (W : X.affineOpens) (hWV : W.val ≤ V),
       I.ideal W = Ideal.span {X.presheaf.map (homOfLE hWV).op b})
     {s : Γ(X, V)} (hs : s ∈ I.sections V) :
     ∃ t : Γ(X, V), b * t = s := by
   -- The affine opens contained in `V`, which cover it.
-  let ι := {W : X.affineOpens // W.1 ≤ V}
-  have hcover : V ≤ ⨆ W : ι, W.1.1 := by
+  let ι := {W : X.affineOpens // W.val ≤ V}
+  have hcover : V ≤ ⨆ W : ι, W.val.val := by
     intro x hx
     obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWV⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open hx V.isOpen
     exact Opens.mem_iSup.mpr ⟨⟨⟨W, hW⟩, hWV⟩, hxW⟩
   -- On each affine open `W ⊆ V`, quasi-coherence gives `I(W) = b Γ(X, W)`, hence a quotient `t_W`.
-  have hloc (W : ι) : ∃ t : Γ(X, W.1),
-      X.presheaf.map (homOfLE W.2).op b * t = X.presheaf.map (homOfLE W.2).op s := by
-    have hsW : X.presheaf.map (homOfLE W.2).op s ∈ I.ideal W.1 := by
+  have hloc (W : ι) : ∃ t : Γ(X, W.val),
+      X.presheaf.map (homOfLE W.property).op b * t = X.presheaf.map (homOfLE W.property).op s := by
+    have hsW : X.presheaf.map (homOfLE W.property).op s ∈ I.ideal W.val := by
       rw [← I.sections_eq_ideal]
       exact I.map_mem_sections _ hs
-    rw [hIb W.1 W.2, Ideal.mem_span_singleton'] at hsW
+    rw [hIb W.val W.property, Ideal.mem_span_singleton'] at hsW
     obtain ⟨t, ht⟩ := hsW
     exact ⟨t, (mul_comm _ _).trans ht⟩
   choose t ht using hloc
   -- The local quotients agree on overlaps, since `b` is a nonzerodivisor on every open of `V`.
-  obtain ⟨t', ht', -⟩ : ∃! t' : Γ(X, V), ∀ W : ι, X.presheaf.map (homOfLE W.2).op t' = t W :=
-    X.sheaf.existsUnique_gluing' (fun W : ι ↦ W.1.1) V (fun W ↦ homOfLE W.2) hcover t
+  obtain ⟨t', ht', -⟩ : ∃! t' : Γ(X, V), ∀ W : ι, X.presheaf.map (homOfLE W.property).op t' = t W :=
+    X.sheaf.existsUnique_gluing' (fun W : ι ↦ W.val.val) V (fun W ↦ homOfLE W.property) hcover t
       fun W₁ W₂ ↦ by
-      refine Scheme.isSMulRegular_map_of_forall_affineOpens (inf_le_left.trans W₁.2) hb ?_
-      have h₁ := congrArg (X.presheaf.map (homOfLE (inf_le_left : W₁.1.1 ⊓ W₂.1.1 ≤ _)).op)
+      refine Scheme.isSMulRegular_map_of_forall_affineOpens (inf_le_left.trans W₁.property) hb ?_
+      have h₁ := congrArg (X.presheaf.map (homOfLE (inf_le_left : W₁.val.val ⊓ W₂.val.val ≤ _)).op)
         (ht W₁)
-      have h₂ := congrArg (X.presheaf.map (homOfLE (inf_le_right : W₁.1.1 ⊓ W₂.1.1 ≤ _)).op)
+      have h₂ := congrArg (X.presheaf.map (homOfLE (inf_le_right : W₁.val.val ⊓ W₂.val.val ≤ _)).op)
         (ht W₂)
       simp only [map_mul] at h₁ h₂
       simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
@@ -124,13 +124,13 @@ every open `V ⊆ U`, the restriction of `a|_V` to every affine open `W ⊆ V` i
 generating `I` on `W`. -/
 private lemma forall_isSMulRegular_and_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
-    (hVU : V ≤ U.1) :
-    (∀ (W : X.affineOpens) (hWV : W.1 ≤ V), IsSMulRegular Γ(X, W)
+    (hVU : V ≤ U.val) :
+    (∀ (W : X.affineOpens) (hWV : W.val ≤ V), IsSMulRegular Γ(X, W)
       (X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op a))) ∧
-    ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), I.ideal W =
+    ∀ (W : X.affineOpens) (hWV : W.val ≤ V), I.ideal W =
       Ideal.span {X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op a)} := by
   refine ⟨Scheme.forall_affineOpens_map_of_le hVU (P := fun W c ↦ IsSMulRegular Γ(X, W) c)
-    fun W hWU ↦ U.2.isSMulRegular_map hWU ha,
+    fun W hWU ↦ U.property.isSMulRegular_map hWU ha,
     Scheme.forall_affineOpens_map_of_le hVU (P := fun W c ↦ I.ideal W = Ideal.span {c})
     fun W hWU ↦ ?_⟩
   rw [← I.map_ideal (U := W) (V := U) hWU, hIa, Ideal.map_span, Set.image_singleton]
@@ -141,7 +141,7 @@ private lemma forall_isSMulRegular_and_ideal_eq_span {U : X.affineOpens} {a : Γ
 every open `V ⊆ U` the sections of `I` are the multiples of the restriction of `a`. -/
 theorem exists_mul_eq_of_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
-    (hVU : V ≤ U.1) {s : Γ(X, V)} (hs : s ∈ I.sections V) :
+    (hVU : V ≤ U.val) {s : Γ(X, V)} (hs : s ∈ I.sections V) :
     ∃ t : Γ(X, V), X.presheaf.map (homOfLE hVU).op a * t = s :=
   have h := I.forall_isSMulRegular_and_ideal_eq_span ha hIa hVU
   I.exists_mul_eq_of_forall_ideal_eq_span h.1 h.2 hs
@@ -149,14 +149,14 @@ theorem exists_mul_eq_of_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
 /-- If the ideal sheaf `I` is generated on an affine open `U` by `a`, then `a` is a section of `I`
 over `U`. -/
 lemma mem_sections_of_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
-    (hIa : I.ideal U = Ideal.span {a}) : a ∈ I.sections U.1 := by
+    (hIa : I.ideal U = Ideal.span {a}) : a ∈ I.sections U.val := by
   rw [I.sections_eq_ideal U, hIa]
   exact Ideal.mem_span_singleton_self a
 
 /-- If the restriction of a section `b` over `V` to every affine open `W ⊆ V` generates the ideal
 of `I` on `W`, then `b` is a section of `I` over `V`. -/
 lemma mem_sections_of_forall_ideal_eq_span {V : X.Opens} {b : Γ(X, V)}
-    (hIb : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V),
+    (hIb : ∀ (W : X.affineOpens) (hWV : W.val ≤ V),
       I.ideal W = Ideal.span {X.presheaf.map (homOfLE hWV).op b}) :
     b ∈ I.sections V :=
   I.mem_sections_of_forall_exists fun x hx ↦ by
@@ -168,9 +168,9 @@ lemma mem_sections_of_forall_ideal_eq_span {V : X.Opens} {b : Γ(X, V)}
 nonzerodivisor generating the ideal of `I` on `W`. Then multiplication by `b` is a bijection from
 `Γ(X, V)` onto the sections of `I` over `V`. -/
 theorem bijective_smul_sectionMk_of_forall_ideal_eq_span {V : X.Opens} {b : Γ(X, V)}
-    (hb : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V),
+    (hb : ∀ (W : X.affineOpens) (hWV : W.val ≤ V),
       IsSMulRegular Γ(X, W) (X.presheaf.map (homOfLE hWV).op b))
-    (hIb : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V),
+    (hIb : ∀ (W : X.affineOpens) (hWV : W.val ≤ V),
       I.ideal W = Ideal.span {X.presheaf.map (homOfLE hWV).op b}) :
     Function.Bijective fun r : Γ(X, V) ↦
       r • I.sectionMk b (I.mem_sections_of_forall_ideal_eq_span hIb) := by
@@ -195,7 +195,7 @@ every open `V ⊆ U`, multiplication by the restriction of `a` is a bijection fr
 the sections of `I` over `V`. -/
 theorem bijective_smul_map_sectionMk {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
-    (hVU : V ≤ U.1) :
+    (hVU : V ≤ U.val) :
     Function.Bijective fun r : Γ(X, V) ↦
       r • I.sheaf.presheaf.map (homOfLE hVU).op
         (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa)) := by
@@ -213,8 +213,8 @@ theorem bijective_smul_map_sectionMk {U : X.affineOpens} {a : Γ(X, U)}
 global basis of `I` over `U`: multiplication by `a` is an isomorphism `𝒪_U ≅ I|_U`. -/
 def unitOverIsoOfIdealEqSpan {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) :
-    SheafOfModules.unit (X.ringCatSheaf.over U.1) ≅ I.sheaf.over U.1 :=
-  have : IsIso ((I.sheaf.over U.1).unitHomEquiv.symm ((I.sheaf.overSectionsEquiv U.1).symm
+    SheafOfModules.unit (X.ringCatSheaf.over U.val) ≅ I.sheaf.over U.val :=
+  have : IsIso ((I.sheaf.over U.val).unitHomEquiv.symm ((I.sheaf.overSectionsEquiv U.val).symm
       (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa)))) :=
     TauCeti.SheafOfModules.isIso_unitHomEquiv_symm _ fun W ↦ by
       induction W using Opposite.rec with | op W => ?_
@@ -225,7 +225,7 @@ def unitOverIsoOfIdealEqSpan {U : X.affineOpens} {a : Γ(X, U)}
       -- syntactically.
       erw [SheafOfModules.overSectionsEquiv_symm_apply_eval]
       exact I.bijective_smul_map_sectionMk ha hIa W.hom.le
-  asIso ((I.sheaf.over U.1).unitHomEquiv.symm ((I.sheaf.overSectionsEquiv U.1).symm
+  asIso ((I.sheaf.over U.val).unitHomEquiv.symm ((I.sheaf.overSectionsEquiv U.val).symm
     (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa))))
 
 /-- Over an open `V ⊆ U`, the trivialization `unitOverIsoOfIdealEqSpan` is multiplication by the
@@ -233,7 +233,7 @@ local equation `a`: composed with the inclusion `I ⟶ 𝒪_X`, it sends a scala
 @[simp]
 lemma sheafι_app_unitOverIsoOfIdealEqSpan_hom {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
-    (hVU : V ≤ U.1) (r : Γ(X, V)) :
+    (hVU : V ≤ U.val) (r : Γ(X, V)) :
     Scheme.Modules.Hom.app I.sheafι V
       ((I.unitOverIsoOfIdealEqSpan ha hIa).hom.val.app (op (Over.mk (homOfLE hVU))) r) =
       X.presheaf.map (homOfLE hVU).op a * r := by
@@ -252,9 +252,9 @@ isomorphism `𝒪_X ≅ I` (`sheafι_app_unitIsoOfForallIdealEqSpan_hom`). In pa
 Cartier divisor cut out by `I` has trivial ideal sheaf. -/
 def unitIsoOfForallIdealEqSpan {a : Γ(X, ⊤)}
     (ha : ∀ U : X.affineOpens,
-      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a))
+      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op a))
     (hIa : ∀ U : X.affineOpens,
-      I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a}) :
+      I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op a}) :
     SheafOfModules.unit X.ringCatSheaf ≅ I.sheaf :=
   -- The restrictions of `a` to the opens of `X`, as a global section of `I`.
   have hb (V : X.Opens) := Scheme.forall_affineOpens_map_of_le (le_top : V ≤ ⊤)
@@ -277,15 +277,16 @@ def unitIsoOfForallIdealEqSpan {a : Γ(X, ⊤)}
 
 /-- The trivialization `unitIsoOfForallIdealEqSpan` is multiplication by `a`: composed with the
 inclusion `I ⟶ 𝒪_X`, it sends a function `r` over `V` to `a|_V * r`. -/
-@[simp]
 lemma sheafι_app_unitIsoOfForallIdealEqSpan_hom {a : Γ(X, ⊤)}
     (ha : ∀ U : X.affineOpens,
-      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a))
+      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op a))
     (hIa : ∀ U : X.affineOpens,
-      I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a})
+      I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op a})
     (V : X.Opens) (r : Γ(X, V)) :
-    Scheme.Modules.Hom.app I.sheafι V ((I.unitIsoOfForallIdealEqSpan ha hIa).hom.val.app (op V) r) =
-      X.presheaf.map (homOfLE (le_top : V ≤ ⊤)).op a * r := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    (Scheme.Modules.Hom.app I.sheafι V
+        ((I.unitIsoOfForallIdealEqSpan ha hIa).hom.val.app (op V) r) =
+      X.presheaf.map (homOfLE (le_top : V ≤ ⊤)).op a * r) := by
   dsimp only [unitIsoOfForallIdealEqSpan, asIso_hom]
   -- The section modules of `I.sheaf.val` are those of `I.sheaf.presheaf`, but `rw` does not see
   -- through the two presentations.
@@ -301,7 +302,7 @@ theorem IsEffectiveCartier.isInvertible_sheaf {I : X.IdealSheafData} (hI : I.IsE
     TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X I.sheaf := by
   choose U hxU a ha hIa using (isEffectiveCartier_iff I).mp hI
   exact (TauCeti.AlgebraicGeometry.SheafOfModules.LocalTrivializations.ofForallMem X
-    (fun x ↦ (U x).1) hxU fun x ↦ I.unitOverIsoOfIdealEqSpan (ha x) (hIa x)).isInvertible
+    (fun x ↦ (U x).val) hxU fun x ↦ I.unitOverIsoOfIdealEqSpan (ha x) (hIa x)).isInvertible
 
 /-- The ideal sheaf of an effective Cartier divisor, as an invertible sheaf. -/
 def IsEffectiveCartier.toInvertibleSheaf {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) :

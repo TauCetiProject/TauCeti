@@ -129,8 +129,8 @@ private theorem exists_equiv_linearEquiv_aux :
     (Submodule.quotientEquivOfIsCompl (P i₀) S hcomplP).symm ≪≫ₗ
       Submodule.quotientEquivOfIsCompl (P i₀) T hexch
   -- Read both decompositions inside `T`.
-  have hPle : ∀ i : s, P i ≤ S := fun i ↦ le_biSup P i.2
-  have hQle : ∀ j : t, Q j ≤ T := fun j ↦ le_biSup Q j.2
+  have hPle : ∀ i : s, P i ≤ S := fun i ↦ le_biSup P i.property
+  have hQle : ∀ j : t, Q j ≤ T := fun j ↦ le_biSup Q j.property
   obtain ⟨hPi, hPs⟩ := (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mp
     (DirectSum.isInternal_biSup_submodule_of_iSupIndep s (hP.comp Subtype.val_injective))
   obtain ⟨hQi, hQs⟩ := (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mp
@@ -220,7 +220,8 @@ theorem exists_equiv_linearEquiv_of_finset (hM : IsFiniteLength A M)
     ∃ e : s ≃ t, ∀ N : s, Nonempty ((N : Submodule A M) ≃ₗ[A] (e N : Submodule A M)) := by
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hM
   exact exists_equiv_linearEquiv_of_iSupIndep hsi.submodule_iSupIndep hsi.submodule_iSup_eq_top
-    (fun N ↦ hs N N.2) hti.submodule_iSupIndep hti.submodule_iSup_eq_top (fun N ↦ ht N N.2)
+    (fun N ↦ hs N N.property) hti.submodule_iSupIndep hti.submodule_iSup_eq_top
+        (fun N ↦ ht N N.property)
 
 /-- Two indecomposable decompositions of a module of finite length, in the `Finset` packaging
 `TauCeti.exists_indecomposable_decomposition` produces, consist of the same number of summands. -/

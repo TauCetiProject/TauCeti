@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
-public import TauCeti.Analysis.Fourier.ChangeOfVariables
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -100,7 +98,7 @@ private theorem toTorus_eq_toTorus_iff {x y : E} :
 
 private theorem toTorus_add (x : E) (ℓ : span ℤ (range o.toBasis)) :
     o.toTorus (x + ℓ) = o.toTorus x :=
-  o.toTorus_eq_toTorus_iff.2 (by rw [add_sub_cancel_left]; exact ℓ.2)
+  o.toTorus_eq_toTorus_iff.2 (by rw [add_sub_cancel_left]; exact ℓ.property)
 
 /-- The torus is the quotient of `E` by the lattice spanned by `o`. -/
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=

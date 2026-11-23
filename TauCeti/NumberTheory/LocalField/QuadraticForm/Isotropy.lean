@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.LowRank
+public import TauCeti.LinearAlgebra.QuadraticForm.UInvariant
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Binary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Realization
 import TauCeti.Algebra.Ring.Int.Units
@@ -24,9 +25,9 @@ its local Hasse invariant `s = ∏_{i<j} (aᵢ, aⱼ)_K`:
 * `n = 4`: isotropic exactly when `d ≠ [1]`, or `d = [1]` and `s = (-1, -1)_K`;
 * `n ≥ 5`: always isotropic.
 
-In particular the `u`-invariant of `K` is four: every regular form of rank at least five is
-isotropic, and there is an anisotropic form of rank four, namely any form with invariants
-`(4, [1], -(-1, -1)_K)`.
+In particular the `u`-invariant of `K` is four (`TauCeti.uInvariant_eq_four`): every regular form of
+rank at least five is isotropic, and there is an anisotropic form of rank four, namely any form with
+invariants `(4, [1], -(-1, -1)_K)`.
 
 The ternary and quaternary criteria reduce to the binary one, which says that a regular binary
 form `⟨a, b⟩` represents a unit `c` exactly when `(c, -ab)_K = (a, b)_K`. A ternary form
@@ -57,6 +58,7 @@ square classes, and a ternary form, which represents every unit outside one squa
   positive dimension whose dimensions sum to at least five represent a common nonzero value.
 * `QuadraticForm.exists_nondegenerate_and_anisotropic_fin_four`: an anisotropic regular form on
   `Fin 4 → K`.
+* `TauCeti.uInvariant_eq_four`: `u(K) = 4` (O'Meara 63:19).
 
 ## References
 
@@ -387,3 +389,15 @@ theorem exists_nondegenerate_and_anisotropic_fin_four :
       (RegularFormClass.anisotropic_mk _).mp hani⟩
 
 end QuadraticForm
+
+namespace TauCeti
+
+/-- **`u(K) = 4`** (O'Meara 63:19; Lam, Chapter VI, Corollary 2.15). Over a nonarchimedean local
+field `K` in which `2` is invertible, the `u`-invariant equals `4`. -/
+theorem uInvariant_eq_four (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] [Invertible (2 : K)] : uInvariant K = 4 := by
+  obtain ⟨Q, -, hQ⟩ := QuadraticForm.exists_nondegenerate_and_anisotropic_fin_four (K := K)
+  exact uInvariant_eq_natCast_of_anisotropic_of_forall hQ (by simp) fun R ↦
+    QuadraticForm.not_anisotropic_of_five_le_finrank R (by simp)
+
+end TauCeti

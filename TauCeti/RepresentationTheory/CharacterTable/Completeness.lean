@@ -159,7 +159,7 @@ theorem sum_characterPairing_smul_ofCharacter (f : ClassFunction k G) :
 
 /-- The pointwise form of the expansion of a class function in the irreducible characters. -/
 theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :
-    f.1 y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
+    f.val y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
   conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
   simp
 
@@ -215,7 +215,7 @@ theorem card_conjClass_mul_sum_char_mul_char_inv (g h : G) :
   have hiff : ConjClasses.mk h⁻¹ = ConjClasses.mk g⁻¹ ↔ IsConj g h := by
     rw [ConjClasses.mk_eq_mk_iff_isConj]
     exact ⟨fun hgh => (isConj_inv_iff.mp hgh).symm, fun hgh => isConj_inv_iff.mpr hgh.symm⟩
-  have hlhs : (classIndicator (k := k) g⁻¹).1 h⁻¹ = if IsConj g h then (1 : k) else 0 := by
+  have hlhs : (classIndicator (k := k) g⁻¹).val h⁻¹ = if IsConj g h then (1 : k) else 0 := by
     rw [classIndicator_apply]
     exact if_congr hiff rfl rfl
   rw [hlhs] at hval

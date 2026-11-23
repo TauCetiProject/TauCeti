@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Charpoly
+public import Mathlib.RingTheory.Etale.Basic
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus
+import TauCeti.RingTheory.Etale.Reduced
 
 /-!
 # The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over the character field
@@ -26,6 +28,11 @@ The values of the character of `f` lie in the coefficient field `K_f = ℚ(aₙ(
 contains `ℚ(χ)`. Hence the algebra embeds into the product of the coefficient fields `K_f` over
 the newforms of nebentypus `χ`, and it is a finite-dimensional commutative `ℚ(χ)`-algebra in
 weight at least two, where each `K_f` is a number field.
+
+The algebra is reduced, since its newform characters separate elements. In weight at least two
+it is consequently semisimple and finite étale over `ℚ(χ)`. In particular, after extension to
+`ℂ` it splits into one copy of `ℂ` for every algebra character. This does not identify those
+characters with the original newforms: that further identification requires Galois stability.
 
 Composing the character of `f`, viewed as valued in `K_f`, with an embedding `σ : K_f → ℂ`
 fixing `ℚ(χ)` produces another `ℚ(χ)`-algebra character of the same algebra, sending `Tₙ` to
@@ -57,6 +64,10 @@ the Galois stability of the newforms, which this file does not prove.
   characters.
 * `TauCeti.heckeTCuspNewCharFieldAlgebra_finite`: the algebra is finite-dimensional over `ℚ(χ)`
   in weight at least two.
+* `TauCeti.isSemisimpleRing_heckeTCuspNewCharFieldAlgebra`: the algebra is semisimple in
+  weight at least two.
+* `TauCeti.heckeTCuspNewCharFieldAlgebra_etale`: the algebra is étale over `ℚ(χ)` in weight at
+  least two.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd`: the conjugate
   character sends `Tₙ` to `σ(aₙ(f))`.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_injective`: distinct embeddings give distinct
@@ -133,15 +144,15 @@ private theorem basisCharSpace_repr_apply_of_eq_smul (f : {f : Newform N k // f.
 
 private theorem exists_apply_basisCharSpace_eq_smul (f : {f : Newform N k // f.χ = χ})
     (T : heckeTCuspNewCharFieldAlgebra k χ) :
-    ∃ c : ℂ, T.1 (basisCharSpace N k χ f) = c • basisCharSpace N k χ f :=
+    ∃ c : ℂ, T.val (basisCharSpace N k χ f) = c • basisCharSpace N k χ f :=
   exists_smul_eq_of_mem_adjoin (by
     rintro _ ⟨n, rfl⟩
-    exact ⟨_, heckeTCuspNewCharEnd_basisCharSpace n f⟩) T.2
+    exact ⟨_, heckeTCuspNewCharEnd_basisCharSpace n f⟩) T.property
 
 private theorem apply_basisCharSpace_eq_repr_smul (f : {f : Newform N k // f.χ = χ})
     (T : heckeTCuspNewCharFieldAlgebra k χ) :
-    T.1 (basisCharSpace N k χ f) =
-      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f • basisCharSpace N k χ f := by
+    T.val (basisCharSpace N k χ f) =
+      (basisCharSpace N k χ).repr (T.val (basisCharSpace N k χ f)) f • basisCharSpace N k χ f := by
   obtain ⟨c, hc⟩ := exists_apply_basisCharSpace_eq_smul f T
   rw [basisCharSpace_repr_apply_of_eq_smul f hc, hc]
 
@@ -158,7 +169,7 @@ def heckeTCuspNewCharFieldCharacter (f : {f : Newform N k // f.χ = χ}) :
       commutes' c := by
         ext v : 1
         exact algebraMap_smul ℂ c v }
-    (fun T ↦ (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f)
+    (fun T ↦ (basisCharSpace N k χ).repr (T.val (basisCharSpace N k χ f)) f)
     (basisCharSpace N k χ f) ((basisCharSpace N k χ).ne_zero f)
     (fun T ↦ Module.End.mem_eigenspace_iff.mpr (apply_basisCharSpace_eq_repr_smul f T))
 
@@ -167,7 +178,7 @@ operator applied to it. -/
 theorem heckeTCuspNewCharFieldCharacter_apply (f : {f : Newform N k // f.χ = χ})
     (T : heckeTCuspNewCharFieldAlgebra k χ) :
     heckeTCuspNewCharFieldCharacter f T =
-      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f := by
+      (basisCharSpace N k χ).repr (T.val (basisCharSpace N k χ f)) f := by
   rw [heckeTCuspNewCharFieldCharacter, AlgHom.eigenvalueHomOfJointEigenvector_apply]
 
 /-- Every operator in the Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` acts on a newform of
@@ -175,7 +186,7 @@ nebentypus `χ` by the value of its character. -/
 @[simp]
 theorem apply_basisCharSpace_eq_heckeTCuspNewCharFieldCharacter_smul
     (f : {f : Newform N k // f.χ = χ}) (T : heckeTCuspNewCharFieldAlgebra k χ) :
-    T.1 (basisCharSpace N k χ f) =
+    T.val (basisCharSpace N k χ f) =
       heckeTCuspNewCharFieldCharacter f T • basisCharSpace N k χ f := by
   rw [heckeTCuspNewCharFieldCharacter_apply]
   exact apply_basisCharSpace_eq_repr_smul f T
@@ -186,7 +197,7 @@ theorem heckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd
     (f : {f : Newform N k // f.χ = χ}) (n : ℕ+) :
     heckeTCuspNewCharFieldCharacter f ⟨heckeTCuspNewCharEnd k χ n,
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ =
-      (qExpansion 1 f.1.toCuspForm).coeff n := by
+      (qExpansion 1 f.val.toCuspForm).coeff n := by
   apply smul_left_injective ℂ ((basisCharSpace N k χ).ne_zero f)
   exact (apply_basisCharSpace_eq_heckeTCuspNewCharFieldCharacter_smul f _).symm.trans
     (heckeTCuspNewCharEnd_basisCharSpace n f)
@@ -216,18 +227,30 @@ theorem heckeTCuspNewCharFieldCharacter_injective :
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩
 
 /-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is commutative, with its existing
-operator semiring structure. -/
-instance instCommSemiringHeckeTCuspNewCharFieldAlgebra :
-    CommSemiring (heckeTCuspNewCharFieldAlgebra k χ) where
-  __ := (heckeTCuspNewCharFieldAlgebra k χ).toSemiring
+operator ring structure. -/
+instance instCommRingHeckeTCuspNewCharFieldAlgebra :
+    CommRing (heckeTCuspNewCharFieldAlgebra k χ) where
+  -- Specifying the ambient endomorphism ring avoids a typeclass-search timeout when Lean
+  -- reconstructs the scalar and module structures from the subalgebra subtype.
+  toRing := Subalgebra.toRing (R := CharacterField χ)
+    (A := Module.End ℂ ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype)) _
   mul_comm T S := eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun _ ↦
     (map_mul _ T S).trans ((mul_comm _ _).trans (map_mul _ S T).symm)
+
+/-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is reduced: it has no nonzero nilpotent
+elements. -/
+instance instIsReducedHeckeTCuspNewCharFieldAlgebra :
+    IsReduced (heckeTCuspNewCharFieldAlgebra k χ) :=
+  isReduced_of_injective
+    (AlgHom.pi (heckeTCuspNewCharFieldCharacter (k := k) (χ := χ)))
+    (fun _ _ h ↦ eq_of_forall_heckeTCuspNewCharFieldCharacter_eq (congrFun h))
 
 /-- Every value of the character of a newform lies in its coefficient field. -/
 theorem heckeTCuspNewCharFieldCharacter_mem_CoefficientField
     (f : {f : Newform N k // f.χ = χ}) (T : heckeTCuspNewCharFieldAlgebra k χ) :
-    heckeTCuspNewCharFieldCharacter f T ∈ CoefficientField f.1 := by
-  let F := IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+    heckeTCuspNewCharFieldCharacter f T ∈ CoefficientField f.val := by
+  let F := IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+      f.property)
   suffices h : Algebra.adjoin (CharacterField χ)
       (((↑) : heckeTCuspNewCharFieldAlgebra k χ → _) ⁻¹' Set.range (heckeTCuspNewCharEnd k χ)) ≤
         F.toSubalgebra.comap (heckeTCuspNewCharFieldCharacter f) from
@@ -238,13 +261,14 @@ theorem heckeTCuspNewCharFieldCharacter_mem_CoefficientField
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ := Subtype.ext hn.symm
   simp [F]
 
+variable (χ) in
 /-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is finite-dimensional in weight at least
 two: it embeds into the product of the coefficient fields of the newforms of nebentypus `χ`,
 each a number field. -/
 theorem heckeTCuspNewCharFieldAlgebra_finite (hk : 2 ≤ k) :
     Module.Finite (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ) := by
   let M : {f : Newform N k // f.χ = χ} → Submodule (CharacterField χ) ℂ := fun f ↦
-    Submodule.span (CharacterField χ) (CoefficientField f.1 : Set ℂ)
+    Submodule.span (CharacterField χ) (CoefficientField f.val : Set ℂ)
   -- The span over `ℚ(χ)` of a number field in `ℂ` is spanned by a `ℚ`-basis of it.
   have hfg : ∀ (E : IntermediateField ℚ ℂ) [FiniteDimensional ℚ E],
       (Submodule.span (CharacterField χ) (E : Set ℂ)).FG := fun E _ ↦ by
@@ -252,8 +276,8 @@ theorem heckeTCuspNewCharFieldAlgebra_finite (hk : 2 ≤ k) :
       Module.Finite.iff_fg.mp (inferInstanceAs (Module.Finite ℚ E))
     exact hE.span
   have hM : ∀ f, Module.Finite (CharacterField χ) (M f) := fun f ↦ by
-    have := numberField_CoefficientField f.1 hk
-    exact Module.Finite.iff_fg.mpr (hfg (CoefficientField f.1))
+    have := numberField_CoefficientField f.val hk
+    exact Module.Finite.iff_fg.mpr (hfg (CoefficientField f.val))
   let E : heckeTCuspNewCharFieldAlgebra k χ →ₗ[CharacterField χ] ∀ f, M f :=
     LinearMap.pi fun f ↦ (heckeTCuspNewCharFieldCharacter f).toLinearMap.codRestrict (M f)
       fun T ↦ Submodule.subset_span (heckeTCuspNewCharFieldCharacter_mem_CoefficientField f T)
@@ -261,11 +285,28 @@ theorem heckeTCuspNewCharFieldAlgebra_finite (hk : 2 ≤ k) :
     eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun f ↦ ?_
   simpa [E] using congrArg Subtype.val (congrFun h f)
 
+variable (χ) in
+/-- The newspace Hecke algebra over `ℚ(χ)` is semisimple in weight at least two. -/
+theorem isSemisimpleRing_heckeTCuspNewCharFieldAlgebra (hk : 2 ≤ k) :
+    IsSemisimpleRing (heckeTCuspNewCharFieldAlgebra k χ) := by
+  have := heckeTCuspNewCharFieldAlgebra_finite χ hk
+  have : IsArtinianRing (heckeTCuspNewCharFieldAlgebra k χ) :=
+    .of_finite (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ)
+  exact IsArtinianRing.isSemisimpleRing_of_isReduced _
+
+variable (χ) in
+/-- The newspace Hecke algebra over `ℚ(χ)` is étale in weight at least two. -/
+theorem heckeTCuspNewCharFieldAlgebra_etale (hk : 2 ≤ k) :
+    Algebra.Etale (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ) :=
+  algebraEtale_iff_finite_and_isReduced.mpr
+    ⟨heckeTCuspNewCharFieldAlgebra_finite χ hk, inferInstance⟩
+
 /-- The character of a newform of nebentypus `χ`, valued in its coefficient field viewed as an
 extension of `ℚ(χ)`. -/
 def heckeTCuspNewCharFieldCoefficientCharacter (f : {f : Newform N k // f.χ = χ}) :
     heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ]
-      IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2) :=
+      IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val f.property)
+          :=
   (heckeTCuspNewCharFieldCharacter f).codRestrict _
     (heckeTCuspNewCharFieldCharacter_mem_CoefficientField f)
 
@@ -281,21 +322,23 @@ theorem heckeTCuspNewCharFieldCoefficientCharacter_apply_heckeTCuspNewCharEnd
     (f : {f : Newform N k // f.χ = χ}) (n : ℕ+) :
     heckeTCuspNewCharFieldCoefficientCharacter f ⟨heckeTCuspNewCharEnd k χ n,
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ =
-      ⟨(qExpansion 1 f.1.toCuspForm).coeff n, coeff_mem_CoefficientField f.1 n⟩ :=
+      ⟨(qExpansion 1 f.val.toCuspForm).coeff n, coeff_mem_CoefficientField f.val n⟩ :=
   Subtype.ext (heckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd f n)
 
 /-- The conjugate of the character of a newform `f` of nebentypus `χ` by an embedding `σ` of
 its coefficient field fixing `ℚ(χ)`: another `ℚ(χ)`-algebra character of the Hecke algebra of
 `S_k(N, χ)ⁿᵉʷ`, sending `Tₙ` to `σ(aₙ(f))`. -/
 def conjHeckeTCuspNewCharFieldCharacter (f : {f : Newform N k // f.χ = χ})
-    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+        f.property)
       →ₐ[CharacterField χ] ℂ) :
     heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ] ℂ :=
   σ.comp (heckeTCuspNewCharFieldCoefficientCharacter f)
 
 @[simp]
 theorem conjHeckeTCuspNewCharFieldCharacter_apply (f : {f : Newform N k // f.χ = χ})
-    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+        f.property)
       →ₐ[CharacterField χ] ℂ) (T : heckeTCuspNewCharFieldAlgebra k χ) :
     conjHeckeTCuspNewCharFieldCharacter f σ T =
       σ (heckeTCuspNewCharFieldCoefficientCharacter f T) :=
@@ -305,11 +348,12 @@ theorem conjHeckeTCuspNewCharFieldCharacter_apply (f : {f : Newform N k // f.χ 
 coefficient. -/
 theorem conjHeckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd
     (f : {f : Newform N k // f.χ = χ})
-    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+    (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+        f.property)
       →ₐ[CharacterField χ] ℂ) (n : ℕ+) :
     conjHeckeTCuspNewCharFieldCharacter f σ ⟨heckeTCuspNewCharEnd k χ n,
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ =
-      σ ⟨(qExpansion 1 f.1.toCuspForm).coeff n, coeff_mem_CoefficientField f.1 n⟩ := by
+      σ ⟨(qExpansion 1 f.val.toCuspForm).coeff n, coeff_mem_CoefficientField f.val n⟩ := by
   rw [conjHeckeTCuspNewCharFieldCharacter_apply,
     heckeTCuspNewCharFieldCoefficientCharacter_apply_heckeTCuspNewCharEnd]
 
@@ -318,7 +362,8 @@ newform. -/
 @[simp]
 theorem conjHeckeTCuspNewCharFieldCharacter_val (f : {f : Newform N k // f.χ = χ}) :
     conjHeckeTCuspNewCharFieldCharacter f
-      (IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)).val =
+      (IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+          f.property)).val =
       heckeTCuspNewCharFieldCharacter f :=
   (rfl)
 
@@ -329,7 +374,7 @@ theorem conjHeckeTCuspNewCharFieldCharacter_injective (f : {f : Newform N k // f
     Function.Injective (conjHeckeTCuspNewCharFieldCharacter f) := by
   intro σ τ h
   refine IntermediateField.algHom_ext_of_eq_adjoin (CharacterField χ)
-    (extendScalars_CoefficientField_eq_adjoin f.1 f.2) ?_
+    (extendScalars_CoefficientField_eq_adjoin f.val f.property) ?_
   rintro _ ⟨n, rfl⟩
   have := DFunLike.congr_fun h ⟨heckeTCuspNewCharEnd k χ n,
     heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩
@@ -341,15 +386,15 @@ algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` onto the coefficient field of `f`
 theorem range_heckeTCuspNewCharFieldCharacter (hk : 2 ≤ k) (f : {f : Newform N k // f.χ = χ}) :
     (heckeTCuspNewCharFieldCharacter f).range =
       (IntermediateField.extendScalars
-        (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)).toSubalgebra := by
+        (CharacterField_le_CoefficientField_of_χ_eq f.val f.property)).toSubalgebra := by
   refine le_antisymm (fun _ ⟨T, hT⟩ ↦ hT ▸
     heckeTCuspNewCharFieldCharacter_mem_CoefficientField f T) ?_
-  rw [extendScalars_CoefficientField_eq_adjoin f.1 f.2,
+  rw [extendScalars_CoefficientField_eq_adjoin f.val f.property,
     IntermediateField.adjoin_toSubalgebra_of_isAlgebraic, Algebra.adjoin_le_iff]
   · rintro _ ⟨n, rfl⟩
     exact ⟨_, heckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd f n⟩
   · rintro _ ⟨n, rfl⟩
-    exact ((f.1.isIntegral_qExpansion_coeff hk n).tower_top).isAlgebraic
+    exact ((f.val.isIntegral_qExpansion_coeff hk n).tower_top).isAlgebraic
 
 /-- In weight at least two, the coefficient-field-valued character of a newform of
 nebentypus `χ` is surjective. -/
@@ -407,7 +452,8 @@ by an embedding of its coefficient field fixing `ℚ(χ)`. -/
 theorem exists_conjHeckeTCuspNewCharFieldCharacter_eq (hk : 2 ≤ k)
     (φ : heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ] ℂ) :
     ∃ (f : {f : Newform N k // f.χ = χ})
-      (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+      (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+          f.property)
         →ₐ[CharacterField χ] ℂ),
       conjHeckeTCuspNewCharFieldCharacter f σ = φ := by
   obtain ⟨f, hφ⟩ := exists_heckeTCuspNewCharFieldCharacter_ker_le φ
@@ -416,8 +462,7 @@ theorem exists_conjHeckeTCuspNewCharFieldCharacter_eq (hk : 2 ≤ k)
     apply_eq_of_heckeTCuspNewCharFieldCharacter_eq hφ
       ((coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _).symm.trans
         ((congrArg Subtype.val h).trans (coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _)))
-  -- `AlgHom.liftOfSurjective` would need a `CommRing` instance on the Hecke algebra, and
-  -- assembling one from `Subalgebra.toRing` times out, so `φ` descends along `χf` by its fibres.
+  -- Descend `φ` along the surjection `χf` using its constancy on the fibres.
   exact ⟨f, χf.descend (heckeTCuspNewCharFieldCoefficientCharacter_surjective hk f) φ hφ',
     χf.descend_comp _ φ hφ'⟩
 
@@ -429,7 +474,8 @@ theorem forall_exists_heckeTCuspNewCharFieldCharacter_eq_iff (hk : 2 ≤ k) :
     (∀ φ : heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ] ℂ,
         ∃ g, heckeTCuspNewCharFieldCharacter g = φ) ↔
       ∀ (f : {f : Newform N k // f.χ = χ})
-        (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
+        (σ : IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.val
+            f.property)
           →ₐ[CharacterField χ] ℂ),
         ∃ g, heckeTCuspNewCharFieldCharacter g = conjHeckeTCuspNewCharFieldCharacter f σ := by
   refine ⟨fun h f σ ↦ h _, fun h φ ↦ ?_⟩
