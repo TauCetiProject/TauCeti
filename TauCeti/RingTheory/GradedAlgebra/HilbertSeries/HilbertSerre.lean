@@ -110,29 +110,30 @@ theorem length_piece_eq_add_of_exact {A S ι M₁ M₂ M₃ : Type*} [Ring A] [S
     (ℳ₂ : ι → Submodule A M₂) [DirectSum.Decomposition ℳ₂]
     (ℳ₃ : ι → Submodule A M₃) [DirectSum.Decomposition ℳ₃]
     {f : M₁ →ₗ[S] M₂} {g : M₂ →ₗ[S] M₃} {r₁ r₂ : ι}
-    (hf_hom : TauCeti.LinearMap.IsHomogeneous f ℳ₁ ℳ₂ r₁)
-    (hg_hom : TauCeti.LinearMap.IsHomogeneous g ℳ₂ ℳ₃ r₂)
+    (hf_hom : LinearMap.IsHomogeneous f ℳ₁ ℳ₂ r₁)
+    (hg_hom : LinearMap.IsHomogeneous g ℳ₂ ℳ₃ r₂)
     (hf : Function.Injective f) (hg : Function.Surjective g) (hex : Function.Exact f g) (d : ι) :
     Module.length A (ℳ₂ (d + r₁)) =
       Module.length A (ℳ₁ d) + Module.length A (ℳ₃ (d + r₁ + r₂)) := by
   let fd : ℳ₁ d →ₗ[A] ℳ₂ (d + r₁) :=
-    ((f.restrictScalars A).domRestrict (ℳ₁ d)).codRestrict (ℳ₂ (d + r₁)) fun x ↦ hf_hom.map_mem x.2
+    ((f.restrictScalars A).domRestrict (ℳ₁ d)).codRestrict (ℳ₂ (d + r₁)) fun x ↦
+      hf_hom.map_mem x.property
   let gd : ℳ₂ (d + r₁) →ₗ[A] ℳ₃ (d + r₁ + r₂) :=
     ((g.restrictScalars A).domRestrict (ℳ₂ (d + r₁))).codRestrict (ℳ₃ (d + r₁ + r₂)) fun y ↦
-      hg_hom.map_mem y.2
+      hg_hom.map_mem y.property
   refine Module.length_eq_add_of_exact fd gd
     (fun x y h ↦ Subtype.ext (hf (congrArg Subtype.val h))) (fun z ↦ ?_) (fun y ↦ ?_)
   · obtain ⟨y, hy⟩ := hg z
     refine ⟨decompose ℳ₂ y (d + r₁), Subtype.ext ?_⟩
     have hdec := hg_hom.map_decompose (d + r₁) y
-    rw [hy, decompose_of_mem_same ℳ₃ z.2] at hdec
+    rw [hy, decompose_of_mem_same ℳ₃ z.property] at hdec
     exact hdec
   · constructor
     · intro hy
       obtain ⟨x, hx⟩ := (hex y).mp (congrArg Subtype.val hy)
       refine ⟨decompose ℳ₁ x d, Subtype.ext ?_⟩
       have hdec := hf_hom.map_decompose d x
-      rw [hx, decompose_of_mem_same ℳ₂ y.2] at hdec
+      rw [hx, decompose_of_mem_same ℳ₂ y.property] at hdec
       exact hdec
     · rintro ⟨x, rfl⟩
       exact Subtype.ext ((hex (f x)).mpr ⟨x, rfl⟩)
@@ -145,15 +146,15 @@ theorem length_piece_add_quotient_eq_add_ker {A S ι M : Type*} [Ring A] [Ring S
     [DecidableEq ι] [AddRightCancelMonoid ι]
     [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
     (G : InternalGrading A M ι) {μ : M →ₗ[S] M} {r : ι}
-    (hμ : TauCeti.LinearMap.IsHomogeneous μ G.piece G.piece r) (j : ι) :
+    (hμ : LinearMap.IsHomogeneous μ G.piece G.piece r) (j : ι) :
     Module.length A (G.piece j) +
         Module.length A ((G.quotient (LinearMap.range μ) hμ.isHomogeneous_range).piece (j + r)) =
       Module.length A (G.piece (j + r)) + Module.length A ((G.ker hμ).piece j) := by
   let I := G.submodule (LinearMap.range μ) hμ.isHomogeneous_range
   let K := G.ker hμ
   let Q := G.quotient (LinearMap.range μ) hμ.isHomogeneous_range
-  have hK_hom : TauCeti.LinearMap.IsHomogeneous (LinearMap.ker μ).subtype K.piece G.piece 0 :=
-    TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using (G.mem_ker_piece hμ).mp hx
+  have hK_hom : LinearMap.IsHomogeneous (LinearMap.ker μ).subtype K.piece G.piece 0 :=
+    LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using (G.mem_ker_piece hμ).mp hx
   have h1 := length_piece_eq_add_of_exact K.piece G.piece I.piece
     hK_hom (G.isHomogeneous_rangeRestrict hμ)
     (Submodule.subtype_injective _) (LinearMap.surjective_rangeRestrict μ)
@@ -180,7 +181,7 @@ section RationalSeries
 private theorem hilbertSeries_mul_one_sub_X {A S M : Type*} [Ring A] [Ring S] [SMul A S]
     [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
     (G : InternalGrading A M ℤ) {μ : M →ₗ[S] M}
-    (hμ : TauCeti.LinearMap.IsHomogeneous μ G.piece G.piece 1)
+    (hμ : LinearMap.IsHomogeneous μ G.piece G.piece 1)
     {d₀ : ℤ} (hd₀ : ∀ d < d₀, G.piece d = ⊥)
     (hfinM : ∀ d, Module.length A (G.piece d) ≠ ⊤) :
     let GK := G.ker hμ
@@ -193,7 +194,7 @@ private theorem hilbertSeries_mul_one_sub_X {A S M : Type*} [Ring A] [Ring S] [S
   intro GK GQ
   have hfinK (d : ℤ) : Module.length A (GK.piece d) ≠ ⊤ := by
     let fK : GK.piece d →ₗ[A] G.piece d :=
-      { toFun := fun x ↦ ⟨x.1.1, (G.mem_ker_piece hμ).mp x.2⟩
+      { toFun := fun x ↦ ⟨x.val.val, (G.mem_ker_piece hμ).mp x.property⟩
         map_add' := fun _ _ ↦ rfl
         map_smul' := fun _ _ ↦ rfl }
     have hle : Module.length A (GK.piece d) ≤ Module.length A (G.piece d) :=
@@ -226,7 +227,7 @@ private theorem hilbertSeries_mul_one_sub_X {A S M : Type*} [Ring A] [Ring S] [S
     rw [Nat.cast_zero, add_zero]
     have hbotM : G.piece (d₀ - 1) = ⊥ := hd₀ (d₀ - 1) (by omega)
     have hbotK : GK.piece (d₀ - 1) = ⊥ := (Submodule.eq_bot_iff _).mpr fun x hx ↦
-      Subtype.ext ((Submodule.eq_bot_iff _).mp hbotM x.1 ((G.mem_ker_piece hμ).mp hx))
+      Subtype.ext ((Submodule.eq_bot_iff _).mp hbotM x.val ((G.mem_ker_piece hμ).mp hx))
     have h0 := hstep (d₀ - 1)
     rw [sub_add_cancel, hbotM, hbotK, Module.length_bot] at h0
     simpa using h0
@@ -330,8 +331,8 @@ private theorem exists_hilbertSeries_step {A : Type u} [CommRing A] [IsArtinianR
   let μ : M →ₗ[R] M := LinearMap.lsmul R M x
   let G := InternalGrading.ofDecomposition ℳ
   have hGp : G.piece = ℳ := InternalGrading.ofDecomposition_piece ℳ
-  have hμ : TauCeti.LinearMap.IsHomogeneous μ G.piece G.piece (1 : ℤ) :=
-    TauCeti.LinearMap.isHomogeneous_def.mpr fun j m hm ↦ by
+  have hμ : LinearMap.IsHomogeneous μ G.piece G.piece (1 : ℤ) :=
+    LinearMap.isHomogeneous_def.mpr fun j m hm ↦ by
       rw [hGp] at hm ⊢
       exact hgraded 1 j x (MvPolynomial.isHomogeneous_X A (Fin.last e)) m hm
   let K := LinearMap.ker μ
@@ -346,10 +347,10 @@ private theorem exists_hilbertSeries_step {A : Type u} [CommRing A] [IsArtinianR
   obtain ⟨hK, hhK⟩ := exists_hilbertSeries_of_smul_last_eq_zero ih GK.piece
     (fun i j p hp k hk ↦ by
       rw [G.mem_ker_piece, hGp] at hk ⊢
-      exact hgraded i j p hp k.1 hk)
-    (fun k ↦ Subtype.ext k.2)
+      exact hgraded i j p hp k.val hk)
+    (fun k ↦ Subtype.ext k.property)
     (fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun k hk ↦
-      Subtype.ext ((Submodule.eq_bot_iff _).mp (hd₀ d hd) k.1 (hGp ▸ (G.mem_ker_piece hμ).mp hk)))
+      Subtype.ext ((Submodule.eq_bot_iff _).mp (hd₀ d hd) k.val (hGp ▸ (G.mem_ker_piece hμ).mp hk)))
   obtain ⟨hQ, hhQ⟩ := exists_hilbertSeries_of_smul_last_eq_zero ih GQ.piece
     (fun i j p hp q hq ↦ by
       obtain ⟨m, hm, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hq
@@ -501,9 +502,9 @@ private theorem tail_span_properties {A : Type u} [CommRing A] {σ : Type v} {M 
   · obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := A) (M := ℳ N₁)
     refine Module.Finite.of_fg ⟨T.image Subtype.val, le_antisymm
       (Submodule.span_le.mpr fun x hx ↦ by
-        rcases Finset.mem_image.mp hx with ⟨y, -, rfl⟩; exact Submodule.subset_span y.2)
+        rcases Finset.mem_image.mp hx with ⟨y, -, rfl⟩; exact Submodule.subset_span y.property)
       (Submodule.span_le.mpr fun x hx ↦ ?_)⟩
-    suffices ∀ y : ℳ N₁, y.1 ∈ Submodule.span R ((T.image Subtype.val) : Set M) from this ⟨x, hx⟩
+    suffices ∀ y : ℳ N₁, y.val ∈ Submodule.span R ((T.image Subtype.val) : Set M) from this ⟨x, hx⟩
     intro y
     have hyA : y ∈ Submodule.span A (T : Set (ℳ N₁)) := hT ▸ Submodule.mem_top
     induction hyA using Submodule.span_induction with
@@ -511,7 +512,7 @@ private theorem tail_span_properties {A : Type u} [CommRing A] {σ : Type v} {M 
     | zero => exact zero_mem _
     | add z w _ _ hz hw => exact add_mem hz hw
     | smul a z _ hz =>
-      rw [Submodule.coe_smul, ← algebraMap_smul R a z.1]
+      rw [Submodule.coe_smul, ← algebraMap_smul R a z.val]
       exact Submodule.smul_mem _ _ hz
   · intro x hx
     induction hx using Submodule.span_induction with
@@ -527,7 +528,7 @@ private theorem tail_span_properties {A : Type u} [CommRing A] {σ : Type v} {M 
         by_contra hlt
         exact DFinsupp.mem_support_iff.mp hj (Subtype.ext (hy j (by omega)))
       exact GradedModule.decompose_smul_eq_zero_of_lt (MvPolynomial.homogeneousSubmodule σ A) ℳ
-        hgraded (by omega) p (decompose ℳ y j).2
+        hgraded (by omega) p (decompose ℳ y j).property
   · rw [Module.isTorsionBySet_iff_subset_annihilator]
     intro a ha
     rw [SetLike.mem_coe, Module.mem_annihilator]
@@ -570,16 +571,16 @@ private theorem exists_hilbertSeries_of_tail_piece_length_ne_top {A : Type u} [C
     rw [InternalGrading.coe_decompose_ofDecomposition_piece_apply]
     by_cases hd : d < N₁
     · rw [hlt_zero x hx d hd]; exact zero_mem _
-    · exact htail d (by omega) (decompose ℳ x d).2
+    · exact htail d (by omega) (decompose ℳ x d).property
   let G' := G.submodule M' hM'_hom
   obtain ⟨h, hh⟩ := exists_hilbertSeries_of_isTorsionBySet (d₀ := N₁) (Module.annihilator A (ℳ N₁))
     hI_M' G'.piece
     (fun i j p hp x hx ↦ by
       rw [G.mem_submodule_piece, hGp] at hx ⊢
-      exact hgraded i j p hp x.1 hx)
+      exact hgraded i j p hp x.val hx)
     (fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext (by
       rw [G.mem_submodule_piece, hGp] at hx
-      rw [← decompose_of_mem_same ℳ hx, hlt_zero x.1 x.2 d hd, ZeroMemClass.coe_zero]))
+      rw [← decompose_of_mem_same ℳ hx, hlt_zero x.val x.property d hd, ZeroMemClass.coe_zero]))
   have hmap (n : ℕ) : (G'.piece (N₁ + n)).map (M'.subtype.restrictScalars A) = ℳ (N₁ + n) := by
     rw [G.submodule_piece, Submodule.map_comap_eq, LinearMap.range_restrictScalars,
       Submodule.range_subtype, hGp, inf_eq_right.mpr (htail (N₁ + n) (by omega))]
@@ -837,8 +838,8 @@ theorem hilbertPoly_add_of_exact {A S M₁ M₂ M₃ R : Type*} [Ring A] [Semiri
     (ℳ₂ : ℤ → Submodule A M₂) [DirectSum.Decomposition ℳ₂]
     (ℳ₃ : ℤ → Submodule A M₃) [DirectSum.Decomposition ℳ₃]
     {f : M₁ →ₗ[S] M₂} {g : M₂ →ₗ[S] M₃}
-    (hf_hom : TauCeti.LinearMap.IsHomogeneous f ℳ₁ ℳ₂ 0)
-    (hg_hom : TauCeti.LinearMap.IsHomogeneous g ℳ₂ ℳ₃ 0)
+    (hf_hom : LinearMap.IsHomogeneous f ℳ₁ ℳ₂ 0)
+    (hg_hom : LinearMap.IsHomogeneous g ℳ₂ ℳ₃ 0)
     (hf : Function.Injective f) (hg : Function.Surjective g) (hex : Function.Exact f g)
     [Ring R] [HasUniqueDiv R]
     {P₁ P₂ P₃ : Polynomial R} {N₀ N₁ N₂ N₃ : ℤ}

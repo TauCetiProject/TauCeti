@@ -177,7 +177,7 @@ private theorem span_weightedAntidiag_eq_gradedPiece {A B : Type*} [CommSemiring
     | add y z _ _ hy hz => exact add_mem hy hz
     | smul c y _ hy =>
       rw [Algebra.smul_def]
-      simpa using SetLike.GradedMul.mul_mem c.2 hy
+      simpa using SetLike.GradedMul.mul_mem c.property hy
   · have hrange : (MvPolynomial.aeval (R := ℬ 0) (Subtype.val : s → B)).range = ⊤ := by
       rw [← Algebra.adjoin_range_eq_range_aeval]
       simpa [Subtype.range_coe_subtype] using hs
@@ -190,7 +190,7 @@ private theorem span_weightedAntidiag_eq_gradedPiece {A B : Type*} [CommSemiring
     | monomial d c =>
       rw [MvPolynomial.aeval_monomial, SetLike.GradeZero.algebraMap_apply]
       have hmem : (c : B) * (d.prod fun y e ↦ (y : B) ^ e) ∈ ℬ (∑ y : s, (m y : ℕ) * d y) := by
-        simpa using SetLike.GradedMul.mul_mem c.2 (hprod_mem d)
+        simpa using SetLike.GradedMul.mul_mem c.property (hprod_mem d)
       by_cases hwt : ∑ y : s, (m y : ℕ) * d y = n
       · rw [decompose_of_mem_same ℬ (hwt ▸ hmem)]
         have hdT : (d.prod fun y e ↦ (y : B) ^ e) ∈ T :=
@@ -213,7 +213,7 @@ theorem moduleFinite_gradedPiece_of_finiteType {A B : Type*} [CommSemiring A] [C
     [Module.Finite A (ℬ 0)] (n : ℕ) : Module.Finite A (ℬ n) := by
   classical
   obtain ⟨s, hs, hdeg⟩ := exists_finset_adjoin_eq_top_and_mem_grade_ne_zero ℬ
-  choose deg hdeg_ne hdeg_mem using fun y : s ↦ hdeg y.1 y.2
+  choose deg hdeg_ne hdeg_mem using fun y : s ↦ hdeg y.val y.property
   let m : s → ℕ+ := fun y ↦ ⟨deg y, Nat.pos_of_ne_zero (hdeg_ne y)⟩
   let T : Finset B := ((Finset.univ : Finset s).weightedFinsuppAntidiag m n).image
     fun l ↦ l.prod fun y e ↦ (y : B) ^ e

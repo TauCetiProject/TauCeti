@@ -62,7 +62,7 @@ theorem exists_finset_homogeneous_span {A B M ι : Type*} [DecidableEq ι] [Semi
     [AddCommMonoid M] [Module A M] [Module B M] [Module.Finite B M]
     (ℳ : ι → Submodule A M) [DirectSum.Decomposition ℳ] :
     ∃ G : Finset (ι × M), (∀ p ∈ G, p.2 ∈ ℳ p.1) ∧
-      Submodule.span B (Set.range fun p : G ↦ p.1.2) = ⊤ := by
+      Submodule.span B (Set.range fun p : G ↦ p.val.2) = ⊤ := by
   classical
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := B) (M := M)
   let G : Finset (ι × M) :=
@@ -71,7 +71,7 @@ theorem exists_finset_homogeneous_span {A B M ι : Type*} [DecidableEq ι] [Semi
   · intro p hp
     simp only [G, Finset.mem_biUnion, Finset.mem_image] at hp
     rcases hp with ⟨s, -, j, -, rfl⟩
-    exact (decompose ℳ s j).2
+    exact (decompose ℳ s j).property
   · rw [← top_le_iff, ← hS, Submodule.span_le]
     intro s hs
     rw [← sum_support_decompose ℳ s]
@@ -90,7 +90,7 @@ theorem decompose_smul_eq_zero_of_lt {A B M : Type*} [Semiring A] [Semiring B]
     (decompose ℳ (b • m) d : M) = 0 := by
   induction b using Decomposition.inductionOn ℬ with
   | zero => simp
-  | @homogeneous i b => exact decompose_of_mem_ne ℳ (hgraded i j b b.2 m hm) (by omega)
+  | @homogeneous i b => exact decompose_of_mem_ne ℳ (hgraded i j b b.property m hm) (by omega)
   | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
 /-- The degree-`d` component of `b • m`, for `m ∈ ℳ j` with `j ≤ d`, equals the degree-`(d - j)`
@@ -105,13 +105,13 @@ theorem decompose_smul_of_le {A B M : Type*} [Semiring A] [Semiring B]
   induction b using Decomposition.inductionOn ℬ with
   | zero => simp
   | @homogeneous i b =>
-    have hmem : (b : B) • m ∈ ℳ (j + i) := hgraded i j b b.2 m hm
+    have hmem : (b : B) • m ∈ ℳ (j + i) := hgraded i j b b.property m hm
     by_cases hi : i = (d - j).toNat
     · subst hi
-      rw [decompose_of_mem_same ℬ b.2]
+      rw [decompose_of_mem_same ℬ b.property]
       rw [Int.toNat_of_nonneg (sub_nonneg.mpr hjd), add_sub_cancel] at hmem
       exact decompose_of_mem_same ℳ hmem
-    · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.2 hi, zero_smul]
+    · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.property hi, zero_smul]
   | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
 /-- **Vanishing in sufficiently negative degrees.** A finitely generated `ℤ`-graded module over an
@@ -126,17 +126,17 @@ theorem exists_forall_lt_piece_eq_bot {A B M : Type*} [Semiring A] [Semiring B] 
   obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := B) ℳ
   let d₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).min' (h.image _) else 0
   refine ⟨d₀, fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun m hm ↦ ?_⟩
-  have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.1.2) := hGspan ▸ Submodule.mem_top
+  have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.val.2) := hGspan ▸ Submodule.mem_top
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun B).mp hm_span
   rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
   refine Finset.sum_eq_zero fun p _ ↦ ?_
-  have hne : G.Nonempty := ⟨p.1, p.2⟩
-  have hd_lt : d < p.1.1 := by
-    have hle : d₀ ≤ p.1.1 := by
+  have hne : G.Nonempty := ⟨p.val, p.property⟩
+  have hd_lt : d < p.val.1 := by
+    have hle : d₀ ≤ p.val.1 := by
       simp only [d₀, hne, ↓reduceDIte]
-      exact Finset.min'_le _ _ (Finset.mem_image.mpr ⟨p.1, p.2, rfl⟩)
+      exact Finset.min'_le _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)
     exact hd.trans_le hle
-  exact decompose_smul_eq_zero_of_lt ℬ ℳ hgraded hd_lt (c p) (hGmem p.1 p.2)
+  exact decompose_smul_eq_zero_of_lt ℬ ℳ hgraded hd_lt (c p) (hGmem p.val p.property)
 
 /-- **Finiteness of graded pieces.** Every graded piece of a finitely generated `ℤ`-graded module
 over an `ℕ`-graded semiring whose graded pieces are finite `A`-modules is itself a finite
@@ -150,36 +150,36 @@ theorem moduleFinite_piece {A B M : Type*} [Semiring A] [Semiring B] [Module A B
   classical
   obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := B) ℳ
   -- For each generator `p ∈ G` with `p.1 ≤ d`, map `ℬ (d - p.1)` into `M` by `b ↦ b • p.2`.
-  let φ : ∀ p : G, ℬ (d - p.1.1).toNat →ₗ[A] M := fun p ↦
-    { toFun := fun b ↦ (b : B) • p.1.2
+  let φ : ∀ p : G, ℬ (d - p.val.1).toNat →ₗ[A] M := fun p ↦
+    { toFun := fun b ↦ (b : B) • p.val.2
       map_add' := fun b₁ b₂ ↦ add_smul _ _ _
       map_smul' := fun a b ↦ by simp [smul_assoc] }
   let U : Submodule A M :=
-    (Finset.univ.filter fun p : G ↦ p.1.1 ≤ d).sup fun p ↦ LinearMap.range (φ p)
+    (Finset.univ.filter fun p : G ↦ p.val.1 ≤ d).sup fun p ↦ LinearMap.range (φ p)
   have hU_fg : U.FG := Submodule.fg_finset_sup _ _ fun p _ ↦ by
-    have : Module.Finite A (ℬ (d - p.1.1).toNat) := hℬ _
+    have : Module.Finite A (ℬ (d - p.val.1).toNat) := hℬ _
     rw [LinearMap.range_eq_map]
     exact (Module.Finite.fg_top (R := A)).map (φ p)
   have hU_eq : U = ℳ d := by
     refine le_antisymm ?_ ?_
     · refine Finset.sup_le fun p hp ↦ ?_
-      have hle : p.1.1 ≤ d := (Finset.mem_filter.mp hp).2
+      have hle : p.val.1 ≤ d := (Finset.mem_filter.mp hp).2
       rintro _ ⟨b, rfl⟩
-      have h := hgraded (d - p.1.1).toNat p.1.1 b b.2 p.1.2 (hGmem p.1 p.2)
+      have h := hgraded (d - p.val.1).toNat p.val.1 b b.property p.val.2 (hGmem p.val p.property)
       rwa [Int.toNat_of_nonneg (sub_nonneg.mpr hle), add_sub_cancel] at h
     · intro m hm
-      have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.1.2) :=
+      have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.val.2) :=
         hGspan ▸ Submodule.mem_top
       obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun B).mp hm_span
       rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
       refine Submodule.sum_mem U fun p _ ↦ ?_
-      by_cases hle : p.1.1 ≤ d
-      · rw [decompose_smul_of_le ℬ ℳ hgraded hle (c p) (hGmem p.1 p.2)]
+      by_cases hle : p.val.1 ≤ d
+      · rw [decompose_smul_of_le ℬ ℳ hgraded hle (c p) (hGmem p.val p.property)]
         have hpU : LinearMap.range (φ p) ≤ U :=
           Finset.le_sup (f := fun q : G ↦ LinearMap.range (φ q))
             (Finset.mem_filter.mpr ⟨Finset.mem_univ p, hle⟩)
-        exact hpU ⟨decompose ℬ (c p) (d - p.1.1).toNat, rfl⟩
-      · rw [decompose_smul_eq_zero_of_lt ℬ ℳ hgraded (by omega) (c p) (hGmem p.1 p.2)]
+        exact hpU ⟨decompose ℬ (c p) (d - p.val.1).toNat, rfl⟩
+      · rw [decompose_smul_eq_zero_of_lt ℬ ℳ hgraded (by omega) (c p) (hGmem p.val p.property)]
         exact U.zero_mem
   exact Module.Finite.of_fg (hU_eq ▸ hU_fg)
 
@@ -211,35 +211,35 @@ theorem exists_degree_ge_le_span_piece {A σ M : Type*} [CommSemiring A]
   obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := MvPolynomial σ A) ℳ
   let N₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).max' (h.image _) else 0
   refine ⟨N₀, fun N₁ hN₁ d hd m hm ↦ ?_⟩
-  have hm_span : m ∈ Submodule.span (MvPolynomial σ A) (Set.range fun p : G ↦ p.1.2) :=
+  have hm_span : m ∈ Submodule.span (MvPolynomial σ A) (Set.range fun p : G ↦ p.val.2) :=
     hGspan ▸ Submodule.mem_top
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun (MvPolynomial σ A)).mp hm_span
   rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
   refine Submodule.sum_mem _ fun p _ ↦ ?_
-  have hp_le : p.1.1 ≤ N₁ := le_trans (by
-    have hne : G.Nonempty := ⟨p.1, p.2⟩
+  have hp_le : p.val.1 ≤ N₁ := le_trans (by
+    have hne : G.Nonempty := ⟨p.val, p.property⟩
     simp only [N₀, hne, ↓reduceDIte]
-    exact Finset.le_max' _ _ (Finset.mem_image.mpr ⟨p.1, p.2, rfl⟩)) hN₁
+    exact Finset.le_max' _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)) hN₁
   rw [decompose_smul_of_le (MvPolynomial.homogeneousSubmodule σ A) ℳ hgraded
-    (hp_le.trans hd) (c p) (hGmem p.1 p.2)]
-  set q := decompose (MvPolynomial.homogeneousSubmodule σ A) (c p) (d - p.1.1).toNat
-  have hdeg : (d - p.1.1).toNat = (d - N₁).toNat + (N₁ - p.1.1).toNat := by omega
+    (hp_le.trans hd) (c p) (hGmem p.val p.property)]
+  set q := decompose (MvPolynomial.homogeneousSubmodule σ A) (c p) (d - p.val.1).toNat
+  have hdeg : (d - p.val.1).toNat = (d - N₁).toNat + (N₁ - p.val.1).toNat := by omega
   have hq : (q : MvPolynomial σ A) ∈
       MvPolynomial.homogeneousSubmodule σ A (d - N₁).toNat *
-        MvPolynomial.homogeneousSubmodule σ A (N₁ - p.1.1).toNat := by
+        MvPolynomial.homogeneousSubmodule σ A (N₁ - p.val.1).toNat := by
     have hpow1 : MvPolynomial.homogeneousSubmodule σ A (d - N₁).toNat =
         MvPolynomial.homogeneousSubmodule σ A 1 ^ (d - N₁).toNat :=
       (MvPolynomial.homogeneousSubmodule_one_pow A _).symm
-    have hpow2 : MvPolynomial.homogeneousSubmodule σ A (N₁ - p.1.1).toNat =
-        MvPolynomial.homogeneousSubmodule σ A 1 ^ (N₁ - p.1.1).toNat :=
+    have hpow2 : MvPolynomial.homogeneousSubmodule σ A (N₁ - p.val.1).toNat =
+        MvPolynomial.homogeneousSubmodule σ A 1 ^ (N₁ - p.val.1).toNat :=
       (MvPolynomial.homogeneousSubmodule_one_pow A _).symm
     rw [hpow1, hpow2, ← pow_add, MvPolynomial.homogeneousSubmodule_one_pow, ← hdeg]
-    exact q.2
+    exact q.property
   refine Submodule.mul_induction_on hq (fun r₁ _ r₂ hr₂ ↦ ?_) (fun u v hu hv ↦ by
     rw [add_smul]; exact add_mem hu hv)
   rw [mul_smul]
-  have hr₂m : r₂ • p.1.2 ∈ ℳ N₁ := by
-    have h1 := hgraded (N₁ - p.1.1).toNat p.1.1 r₂ hr₂ p.1.2 (hGmem p.1 p.2)
+  have hr₂m : r₂ • p.val.2 ∈ ℳ N₁ := by
+    have h1 := hgraded (N₁ - p.val.1).toNat p.val.1 r₂ hr₂ p.val.2 (hGmem p.val p.property)
     rwa [Int.toNat_of_nonneg (sub_nonneg.mpr hp_le), add_sub_cancel] at h1
   exact Submodule.smul_mem _ r₁ (Submodule.subset_span hr₂m)
 

@@ -61,13 +61,13 @@ theorem isArtinianRing_quotient_annihilator {A N : Type*} [CommRing A] [AddCommG
   have : Module.Finite A N := Module.finite_def.mpr (IsNoetherian.noetherian ⊤)
   obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := A) (M := N)
   let φ : A →ₗ[A] (T → N) :=
-    { toFun := fun a t ↦ a • t.1
+    { toFun := fun a t ↦ a • t.val
       map_add' := fun a b ↦ funext fun _ ↦ add_smul a b _
       map_smul' := fun r a ↦ funext fun _ ↦ mul_smul r a _ }
   have hker : LinearMap.ker φ = Module.annihilator A N := by
     ext a
     rw [LinearMap.mem_ker, Module.mem_annihilator]
-    refine ⟨fun ha x ↦ ?_, fun ha ↦ funext fun t ↦ ha t.1⟩
+    refine ⟨fun ha x ↦ ?_, fun ha ↦ funext fun t ↦ ha t.val⟩
     have hx : x ∈ Submodule.span A (T : Set N) := hT ▸ Submodule.mem_top
     induction hx using Submodule.span_induction with
     | mem y hy => exact congrFun ha ⟨y, hy⟩
