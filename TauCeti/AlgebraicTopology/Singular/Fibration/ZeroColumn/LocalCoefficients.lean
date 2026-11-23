@@ -137,24 +137,6 @@ def serreZeroChainsIso (q : ℕ) :
         (serreFiberLocalSystemOn C R hp q))).ofIsoColimit
       (Cofan.ext (Iso.refl _) fun _ ↦ Category.comp_id _))
 
-/-- A fibre homology class over a point of `X⁻¹` vanishes in `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`. -/
-private lemma fiberHomologyToPreimageSkeletonZero_eq_zero (q : ℕ) {b : B}
-    (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B))
-    (hb' : b ∈ (skeletonLT C (0 : ℕ∞) : Set B)) :
-    fiberHomologyToPreimageSkeletonZero p C R q hb = 0 := by
-  let g : p.fiber b ⟶ (preimageSkeletonPair p C 0).snd :=
-    _root_.TopCat.ofHom ⟨fun e ↦ ⟨e.val, by
-      rw [mem_preimage, p.apply_coe_fiber b e]; exact hb'⟩, by fun_prop⟩
-  have hg : g ≫ (preimageSkeletonPair p C 0).map = fiberToPreimageSkeletonZero p C hb := by
-    ext e
-    exact Subtype.ext (coe_fiberToPreimageSkeletonZero_apply hb e).symm
-  rw [fiberHomologyToPreimageSkeletonZero_def, ← hg, Functor.map_comp]
-  -- The middle object is the ambient homology only up to unfolding `TopPair.toSSetPair`, so the
-  -- composite is reassociated by unification rather than by rewriting.
-  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-    ((preimageSkeletonPair p C 0).homologyMap_comp_singularHomologyπ (ModuleCat.of R R) q)).trans
-      comp_zero)
-
 /-- A fibre homology class over a point of `X⁻¹` has class zero in `H₀(X⁰, X⁻¹; Hq(F))`. -/
 lemma fiberHomologyToTwistedZeroChains_eq_zero (q : ℕ) (y : skeletonObj C 1)
     (hy : (y : B) ∈ (skeletonLT C (0 : ℕ∞) : Set B)) :
