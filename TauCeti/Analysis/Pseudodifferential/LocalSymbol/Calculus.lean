@@ -47,7 +47,8 @@ to such representatives agree near `x` with the local operations
 (`TauCeti.LocalSymbol.eventually_coefficient_comp_eq`,
 `TauCeti.LocalSymbol.eventually_coefficient_spatialDeriv_eq`,
 `TauCeti.LocalSymbol.eventually_coefficient_frequencyDeriv_eq`). The algebraic identities are proved
-the same way, by transferring the corresponding identities for `TauCeti.Symbol` at each position.
+the same way, by transferring the corresponding identities for `TauCeti.Symbol` at each position
+(`TauCeti.LocalSymbol.ext_of_symbol_eventually_eq`).
 
 ## References
 
@@ -74,6 +75,17 @@ variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W X : Type*}
   [NormedAddCommGroup X] [NormedSpace ℂ X] {m m' : ℝ} {x : CoordinateSpace n}
 
 section Representatives
+
+/-- Two local symbols are equal if near every position of `U` both agree with one symbol on `ℝⁿ`.
+This transfers identities between symbols on `ℝⁿ` to local symbols through representatives. -/
+theorem ext_of_symbol_eventually_eq {a b : LocalSymbol U V W m}
+    (h : ∀ x ∈ U, ∃ s : Symbol n V W m,
+      (∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) ∧
+        ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = b.coefficient (y, η)) :
+    a = b :=
+  ext_of_mem fun x hx ξ => by
+    obtain ⟨s, hsa, hsb⟩ := h x hx
+    exact (hsa.self_of_nhds ξ).symm.trans (hsb.self_of_nhds ξ)
 
 /-- If symbols `s` and `t` on `ℝⁿ` agree near `x` with local symbols `a` and `b`, then `s + t`
 agrees near `x` with `a + b`. -/
@@ -200,18 +212,23 @@ theorem extend_comp_extend {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff 
       extend (ψ' * ψ) (hψ'.mul hψ) (tsupport_mul_subset_right.trans hψU) (b.comp a) :=
   Symbol.ext (funext fun p => by simp [smul_smul, mul_comm])
 
+/-- Multiplying `g` by a function equal to `1` on the support of `g` does not change `g`. -/
+private theorem mul_eq_of_eqOn_one_support {α M : Type*} [MulZeroOneClass M] {f g : α → M}
+    (h : EqOn f 1 (Function.support g)) : f * g = g :=
+  funext fun y => by
+    by_cases hy : g y = 0
+    · simp [hy]
+    · simp [h hy]
+
 /-- For cutoffs `ψ` and `ψ'` with `ψ' = 1` on the support of `ψ`, the composition of the cut-off
 extensions `ψ' b` and `ψ a` is the cut-off extension `ψ (b ∘ a)`. -/
 theorem extend_comp_extend_of_eqOn_one {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (hψU : tsupport ψ ⊆ U) (hψ' : ContDiff ℝ ∞ ψ') (hψ'U : tsupport ψ' ⊆ U)
     (hψψ' : EqOn ψ' 1 (Function.support ψ)) (b : LocalSymbol U W X m')
     (a : LocalSymbol U V W m) :
-    (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ hψ hψU (b.comp a) := by
-  rw [extend_comp_extend]
-  refine extend_congr _ _ hψ hψU (fun y _ => ?_) _
-  by_cases hy : ψ y = 0
-  · simp [hy]
-  · simp [(hψψ' hy).trans (Pi.one_apply y)]
+    (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ hψ hψU (b.comp a) :=
+  (extend_comp_extend hψ hψU hψ' hψ'U b a).trans
+    (extend_congr _ _ hψ hψU (fun y _ => congrFun (mul_eq_of_eqOn_one_support hψψ') y) _)
 
 /-- For cutoffs `ψ` and `ψ'` with `ψ = 1` on the support of `ψ'`, the composition of the cut-off
 extensions `ψ' b` and `ψ a` is the cut-off extension `ψ' (b ∘ a)`. -/
@@ -219,12 +236,9 @@ theorem extend_comp_extend_of_eqOn_one' {ψ ψ' : CoordinateSpace n → ℝ} (h�
     (hψU : tsupport ψ ⊆ U) (hψ' : ContDiff ℝ ∞ ψ') (hψ'U : tsupport ψ' ⊆ U)
     (hψψ' : EqOn ψ 1 (Function.support ψ')) (b : LocalSymbol U W X m')
     (a : LocalSymbol U V W m) :
-    (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ' hψ' hψ'U (b.comp a) := by
-  rw [extend_comp_extend]
-  refine extend_congr _ _ hψ' hψ'U (fun y _ => ?_) _
-  by_cases hy : ψ' y = 0
-  · simp [hy]
-  · simp [(hψψ' hy).trans (Pi.one_apply y)]
+    (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ' hψ' hψ'U (b.comp a) :=
+  (extend_comp_extend hψ hψU hψ' hψ'U b a).trans (extend_congr _ _ hψ' hψ'U
+    (fun y _ => congrFun ((mul_comm ψ' ψ).trans (mul_eq_of_eqOn_one_support hψψ')) y) _)
 
 end Comp
 
@@ -259,30 +273,36 @@ private def spatialDerivAux (j : Fin n) (a : LocalSymbol U V W m) : LocalSymbol 
       obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
       exact ⟨Symbol.spatialDeriv j s, eventually_spatialDerivCoeff_eq j hy hs⟩
 
+private theorem coefficient_spatialDerivAux (j : Fin n) (a : LocalSymbol U V W m) :
+    (spatialDerivAux j a).coefficient = spatialDerivCoeff j a := by
+  rw [spatialDerivAux, coefficient_ofEventuallyEq]
+
 private theorem eventually_coefficient_spatialDerivAux_eq (j : Fin n) {a : LocalSymbol U V W m}
     {s : Symbol n V W m} (hx : x ∈ U)
     (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) :
     ∀ᶠ y in 𝓝 x, ∀ η,
       (Symbol.spatialDeriv j s).coefficient (y, η) = (spatialDerivAux j a).coefficient (y, η) := by
-  rw [spatialDerivAux, coefficient_ofEventuallyEq]
+  rw [coefficient_spatialDerivAux]
   exact eventually_spatialDerivCoeff_eq j hx hs
 
 /-- The position derivative `∂_{x_j} a` of a symbol of order `m` on `U`, again a symbol of order
 `m` on `U`. Its coefficient is `0` at positions outside `U`. -/
 def spatialDeriv (j : Fin n) : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U V W m where
   toFun := spatialDerivAux j
-  map_add' a b := ext_of_mem fun y hy η => by
+  map_add' a b := ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
     obtain ⟨t, ht⟩ := b.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_spatialDerivAux_eq j hy
-      (eventually_coefficient_add_eq hs ht)).self_of_nhds η]
-    simp [← (eventually_coefficient_spatialDerivAux_eq j hy hs).self_of_nhds η,
-      ← (eventually_coefficient_spatialDerivAux_eq j hy ht).self_of_nhds η]
-  map_smul' c a := ext_of_mem fun y hy η => by
+    refine ⟨_, eventually_coefficient_spatialDerivAux_eq j hy (eventually_coefficient_add_eq hs ht),
+      ?_⟩
+    rw [map_add]
+    exact eventually_coefficient_add_eq (eventually_coefficient_spatialDerivAux_eq j hy hs)
+      (eventually_coefficient_spatialDerivAux_eq j hy ht)
+  map_smul' c a := ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_spatialDerivAux_eq j hy
-      (eventually_coefficient_smul_eq c hs)).self_of_nhds η]
-    simp [← (eventually_coefficient_spatialDerivAux_eq j hy hs).self_of_nhds η]
+    refine ⟨_, eventually_coefficient_spatialDerivAux_eq j hy (eventually_coefficient_smul_eq c hs),
+      ?_⟩
+    rw [map_smul]
+    exact eventually_coefficient_smul_eq c (eventually_coefficient_spatialDerivAux_eq j hy hs)
 
 /-- If a symbol `s` on `ℝⁿ` agrees near `x ∈ U` with a local symbol `a`, then `∂_{x_j} s` agrees
 near `x` with `∂_{x_j} a`. -/
@@ -299,10 +319,8 @@ coefficient of `a`. -/
 theorem coefficient_spatialDeriv_of_mem (j : Fin n) (a : LocalSymbol U V W m) (hx : x ∈ U)
     (ξ : CoordinateSpace n) :
     (spatialDeriv j a).coefficient (x, ξ) =
-      coordinateDeriv [j] (fun y => a.coefficient (y, ξ)) x := by
-  obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hx
-  rw [← (eventually_coefficient_spatialDeriv_eq j hx hs).self_of_nhds ξ]
-  exact ((eventually_spatialDerivCoeff_eq j hx hs).self_of_nhds ξ).trans
+      coordinateDeriv [j] (fun y => a.coefficient (y, ξ)) x :=
+  (congrFun (coefficient_spatialDerivAux j a) (x, ξ)).trans
     (indicator_of_mem (mk_mem_prod hx (mem_univ ξ)) _)
 
 @[simp]
@@ -324,27 +342,26 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : LocalSymbol U V W m) (hx : x �
 /-- The Leibniz rule for a position derivative of a composition. -/
 theorem spatialDeriv_comp (j : Fin n) (b : LocalSymbol U W X m') (a : LocalSymbol U V W m) :
     spatialDeriv j (b.comp a) = (spatialDeriv j b).comp a + b.comp (spatialDeriv j a) :=
-  ext_of_mem fun y hy η => by
+  ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨t, ht⟩ := b.exists_symbol_eventually_eq hy
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    have hts := eventually_coefficient_spatialDeriv_eq j hy (eventually_coefficient_comp_eq ht hs)
-    rw [← hts.self_of_nhds η, Symbol.spatialDeriv_comp]
-    simp only [Symbol.coefficient_add, coefficient_add, Pi.add_apply]
-    rw [(eventually_coefficient_comp_eq (eventually_coefficient_spatialDeriv_eq j hy ht)
-        hs).self_of_nhds η,
-      (eventually_coefficient_comp_eq ht
-        (eventually_coefficient_spatialDeriv_eq j hy hs)).self_of_nhds η]
+    refine ⟨_, eventually_coefficient_spatialDeriv_eq j hy
+      (eventually_coefficient_comp_eq ht hs), ?_⟩
+    rw [Symbol.spatialDeriv_comp]
+    exact eventually_coefficient_add_eq
+      (eventually_coefficient_comp_eq (eventually_coefficient_spatialDeriv_eq j hy ht) hs)
+      (eventually_coefficient_comp_eq ht (eventually_coefficient_spatialDeriv_eq j hy hs))
 
 /-- Two position derivatives of a local symbol commute. -/
 theorem spatialDeriv_comm (j l : Fin n) (a : LocalSymbol U V W m) :
     spatialDeriv j (spatialDeriv l a) = spatialDeriv l (spatialDeriv j a) :=
-  ext_of_mem fun y hy η => by
+  ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_spatialDeriv_eq j hy
-        (eventually_coefficient_spatialDeriv_eq l hy hs)).self_of_nhds η,
-      ← (eventually_coefficient_spatialDeriv_eq l hy
-        (eventually_coefficient_spatialDeriv_eq j hy hs)).self_of_nhds η,
-      Symbol.spatialDeriv_comm]
+    refine ⟨_, eventually_coefficient_spatialDeriv_eq j hy
+      (eventually_coefficient_spatialDeriv_eq l hy hs), ?_⟩
+    rw [Symbol.spatialDeriv_comm]
+    exact eventually_coefficient_spatialDeriv_eq l hy
+      (eventually_coefficient_spatialDeriv_eq j hy hs)
 
 @[simp]
 theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : LocalSymbol U V W m) :
@@ -428,18 +445,20 @@ private theorem eventually_coefficient_frequencyDerivAux_eq (j : Fin n) {a : Loc
 `m - 1` on `U`. -/
 def frequencyDeriv (j : Fin n) : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U V W (m - 1) where
   toFun := frequencyDerivAux j
-  map_add' a b := ext_of_mem fun y hy η => by
+  map_add' a b := ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
     obtain ⟨t, ht⟩ := b.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_frequencyDerivAux_eq j
-      (eventually_coefficient_add_eq hs ht)).self_of_nhds η]
-    simp [← (eventually_coefficient_frequencyDerivAux_eq j hs).self_of_nhds η,
-      ← (eventually_coefficient_frequencyDerivAux_eq j ht).self_of_nhds η]
-  map_smul' c a := ext_of_mem fun y hy η => by
+    refine ⟨_, eventually_coefficient_frequencyDerivAux_eq j (eventually_coefficient_add_eq hs ht),
+      ?_⟩
+    rw [map_add]
+    exact eventually_coefficient_add_eq (eventually_coefficient_frequencyDerivAux_eq j hs)
+      (eventually_coefficient_frequencyDerivAux_eq j ht)
+  map_smul' c a := ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_frequencyDerivAux_eq j
-      (eventually_coefficient_smul_eq c hs)).self_of_nhds η]
-    simp [← (eventually_coefficient_frequencyDerivAux_eq j hs).self_of_nhds η]
+    refine ⟨_, eventually_coefficient_frequencyDerivAux_eq j (eventually_coefficient_smul_eq c hs),
+      ?_⟩
+    rw [map_smul]
+    exact eventually_coefficient_smul_eq c (eventually_coefficient_frequencyDerivAux_eq j hs)
 
 @[simp]
 theorem coefficient_frequencyDeriv (j : Fin n) (a : LocalSymbol U V W m)
@@ -474,39 +493,39 @@ theorem frequencyDeriv_comp (j : Fin n) (b : LocalSymbol U W X m') (a : LocalSym
     frequencyDeriv j (b.comp a) =
       inclusion (by linarith) ((frequencyDeriv j b).comp a) +
         inclusion (by linarith) (b.comp (frequencyDeriv j a)) :=
-  ext_of_mem fun y hy η => by
+  ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨t, ht⟩ := b.exists_symbol_eventually_eq hy
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    have hts := eventually_coefficient_frequencyDeriv_eq j (eventually_coefficient_comp_eq ht hs)
-    rw [← hts.self_of_nhds η, Symbol.frequencyDeriv_comp]
-    simp only [Symbol.coefficient_add, coefficient_add, Symbol.coefficient_inclusion,
-      coefficient_inclusion, Pi.add_apply]
-    rw [(eventually_coefficient_comp_eq (eventually_coefficient_frequencyDeriv_eq j ht)
-        hs).self_of_nhds η,
-      (eventually_coefficient_comp_eq ht
-        (eventually_coefficient_frequencyDeriv_eq j hs)).self_of_nhds η]
+    refine ⟨_, eventually_coefficient_frequencyDeriv_eq j
+      (eventually_coefficient_comp_eq ht hs), ?_⟩
+    rw [Symbol.frequencyDeriv_comp]
+    refine eventually_coefficient_add_eq ?_ ?_
+    · simpa only [Symbol.coefficient_inclusion, coefficient_inclusion] using
+        eventually_coefficient_comp_eq (eventually_coefficient_frequencyDeriv_eq j ht) hs
+    · simpa only [Symbol.coefficient_inclusion, coefficient_inclusion] using
+        eventually_coefficient_comp_eq ht (eventually_coefficient_frequencyDeriv_eq j hs)
 
 /-- Two frequency derivatives of a local symbol commute. -/
 theorem frequencyDeriv_comm (j l : Fin n) (a : LocalSymbol U V W m) :
     frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) :=
-  ext_of_mem fun y hy η => by
+  ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_frequencyDeriv_eq j
-        (eventually_coefficient_frequencyDeriv_eq l hs)).self_of_nhds η,
-      ← (eventually_coefficient_frequencyDeriv_eq l
-        (eventually_coefficient_frequencyDeriv_eq j hs)).self_of_nhds η,
-      Symbol.frequencyDeriv_comm]
+    refine ⟨_, eventually_coefficient_frequencyDeriv_eq j
+      (eventually_coefficient_frequencyDeriv_eq l hs), ?_⟩
+    rw [Symbol.frequencyDeriv_comm]
+    exact eventually_coefficient_frequencyDeriv_eq l
+      (eventually_coefficient_frequencyDeriv_eq j hs)
 
 /-- A position and a frequency derivative of a local symbol commute. -/
 theorem spatialDeriv_frequencyDeriv_comm (j l : Fin n) (a : LocalSymbol U V W m) :
     spatialDeriv j (frequencyDeriv l a) = frequencyDeriv l (spatialDeriv j a) :=
-  ext_of_mem fun y hy η => by
+  ext_of_symbol_eventually_eq fun y hy => by
     obtain ⟨s, hs⟩ := a.exists_symbol_eventually_eq hy
-    rw [← (eventually_coefficient_spatialDeriv_eq j hy
-        (eventually_coefficient_frequencyDeriv_eq l hs)).self_of_nhds η,
-      ← (eventually_coefficient_frequencyDeriv_eq l
-        (eventually_coefficient_spatialDeriv_eq j hy hs)).self_of_nhds η,
-      Symbol.spatialDeriv_frequencyDeriv_comm]
+    refine ⟨_, eventually_coefficient_spatialDeriv_eq j hy
+      (eventually_coefficient_frequencyDeriv_eq l hs), ?_⟩
+    rw [Symbol.spatialDeriv_frequencyDeriv_comm]
+    exact eventually_coefficient_frequencyDeriv_eq l
+      (eventually_coefficient_spatialDeriv_eq j hy hs)
 
 @[simp]
 theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : LocalSymbol U V W m) :
