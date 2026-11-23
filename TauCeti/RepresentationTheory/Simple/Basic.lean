@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Simple
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.CategoryTheory.Simple.Classes
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
+import TauCeti.CategoryTheory.Action.Restriction
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.FDRep.Basic
 import TauCeti.RepresentationTheory.Irreducible
@@ -78,8 +78,6 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
   theorem for `FDRep`.
 * `FDRep.isSimpleModule_asModule_of_simple`: the instance making Mathlib's simple-module API on
   `X.ρ.asModule` available from `Simple X` alone.
-* `FDRep.finrank_hom_tensor_self_eq_zero_of_central`: vanishing of `dim_k Hom_G(X, V ⊗ X)` for
-  simple `X` when a central group element has no eigenvalue `1` on `V`.
 * `TauCeti.SimpleFDRepClasses`: the isomorphism classes of simple objects of `FDRep k G`.
 * `TauCeti.SimpleFDRepClasses.mk_eq_mk_iff`: two simple objects have the same class exactly when
   they are isomorphic in `FDRep k G`.
@@ -210,57 +208,6 @@ instance FDRep.simple_tensorUnit : Simple (𝟙_ (FDRep k G)) :=
 
 end FDRep
 
-section FDRepCentral
-
-open MonoidalCategory
-open scoped TensorProduct
-
-variable {k : Type u} {G : Type v} [Field k] [Group G]
-
-/-- Over an algebraically closed field, if a central group element `g₀` has no eigenvalue `1` on
-`V`, then `dim_k Hom_G(X, V ⊗ X) = 0` for every simple object `X : FDRep k G`. -/
-theorem FDRep.finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k G}
-    {g₀ : G} (hcomm : ∀ h : G, g₀ * h = h * g₀) (hev : ¬ Module.End.HasEigenvalue (V.ρ g₀) 1)
-    (X : FDRep k G) [Simple X] :
-    Module.finrank k (X ⟶ V ⊗ X) = 0 := by
-  have hX : Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
-  obtain ⟨μ, hμ⟩ := hX.exists_forall_apply_eq_smul (X.ρ g₀) fun h x ↦ by
-    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hcomm h]
-  have hμ0 : μ ≠ 0 := by
-    have : Nontrivial X := hX.nontrivial
-    obtain ⟨x₀, hx₀⟩ := exists_ne (0 : X)
-    rintro rfl; apply hx₀
-    calc x₀ = X.ρ (g₀⁻¹ * g₀) x₀ := by simp
-      _ = X.ρ g₀⁻¹ (X.ρ g₀ x₀) := by rw [map_mul, mul_apply_eq_comp]
-      _ = 0 := by rw [hμ x₀, zero_smul, map_zero]
-  suffices Subsingleton (X ⟶ V ⊗ X) from Module.finrank_zero_of_subsingleton
-  refine ⟨fun φ ψ ↦ sub_eq_zero.mp ?_⟩
-  set f : X ⟶ V ⊗ X := φ - ψ
-  apply Action.hom_ext; apply FGModuleCat.hom_ext
-  refine LinearMap.ext fun x ↦ ?_
-  set z : V ⊗[k] X := f.hom.hom.hom x
-  have heq : (V ⊗ X : FDRep k G).ρ g₀ z = μ • z := by
-    simpa only [LinearMap.comp_apply, hμ x, map_smul] using
-      (LinearMap.congr_fun (FDRep.hom_hom_hom_comm f g₀) x).symm
-  have htens : (V ⊗ X : FDRep k G).ρ g₀ = μ • (V.ρ g₀).rTensor X := by
-    rw [FDRep.tensor_ρ, show X.ρ g₀ = μ • LinearMap.id from LinearMap.ext hμ]
-    exact TensorProduct.ext' fun v y ↦ by simp [TensorProduct.tmul_smul]
-  rw [htens, LinearMap.smul_apply] at heq
-  have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
-  have hker : LinearMap.ker (V.ρ g₀ - 1) = ⊥ := by
-    simpa [Module.End.hasEigenvalue_iff, Module.End.eigenspace_def] using hev
-  obtain ⟨L, hL⟩ := (V.ρ g₀ - 1).exists_leftInverse_of_injective hker
-  have hz0 : ((V.ρ g₀ - 1).rTensor X) z = 0 := by simp [hz, Module.End.one_eq_id]
-  change f.hom.hom.hom x = 0
-  calc
-    z = (LinearMap.id.rTensor X) z := by simp
-    _ = ((L ∘ₗ (V.ρ g₀ - 1)).rTensor X) z := by rw [hL]
-    _ = (L.rTensor X) (((V.ρ g₀ - 1).rTensor X) z) := by
-      rw [LinearMap.rTensor_comp, LinearMap.comp_apply]
-    _ = 0 := by rw [hz0, map_zero]
-
-end FDRepCentral
-
 namespace TauCeti
 
 attribute [local instance] isIsomorphicSetoid
@@ -358,7 +305,7 @@ variable {k : Type u} {G₁ : Type v} {G₂ : Type w} [Ring k] [Monoid G₁] [Mo
 
 /-- Restricting a simple object of `FDRep k G₂` along a monoid isomorphism yields a simple
 object of `FDRep k G₁`. -/
-instance FDRep.simple_res (φ : G₁ ≃* G₂) (X : FDRep k G₂) [Simple X] :
+instance _root_.FDRep.simple_res (φ : G₁ ≃* G₂) (X : FDRep k G₂) [Simple X] :
     Simple ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X) :=
   _root_.CategoryTheory.simple_obj (Action.resEquiv (FGModuleCat.{u} k) φ).functor X
 
@@ -526,7 +473,8 @@ theorem finrank_resEquiv (φ : G₁ ≃* G₂) (c : SimpleFDRepClasses k G₂) :
   induction c using ind with
   | h X hX =>
     rw [resEquiv_mk, finrank_mk, finrank_mk]
-    rfl
+    exact congrArg (fun M : FGModuleCat.{u} k ↦ Module.finrank k M)
+      (Action.res_obj_V (FGModuleCat.{u} k) (φ : G₁ →* G₂) X)
 
 /-- Restricting along a monoid isomorphism maps the trivial simple class to the trivial simple
 class. -/
@@ -544,21 +492,7 @@ theorem finrankHom_resEquiv (φ : G₁ ≃* G₂) (c : SimpleFDRepClasses k G₂
   induction c using ind with
   | h X hX =>
     rw [resEquiv_mk, finrankHom_mk, finrankHom_mk]
-    exact ({ toFun := fun f ↦
-               { hom := f.hom
-                 comm := fun g ↦ FGModuleCat.hom_ext <| by
-                   have h := FDRep.hom_hom_hom_comm f (φ.symm g)
-                   change f.hom.hom.hom ∘ₗ X.ρ (φ (φ.symm g)) =
-                     W.ρ (φ (φ.symm g)) ∘ₗ f.hom.hom.hom at h
-                   rw [φ.apply_symm_apply] at h
-                   exact h }
-             invFun := fun f ↦ (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).map f
-             left_inv := fun _ ↦ rfl
-             right_inv := fun _ ↦ rfl
-             map_add' := fun _ _ ↦ rfl
-             map_smul' := fun _ _ ↦ rfl } :
-      ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X ⟶
-          (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj W) ≃ₗ[k] (X ⟶ W)).finrank_eq
+    exact MonoidHom.finrank_hom_actionRes_of_surjective (φ : G₁ →* G₂) φ.surjective X W
 
 end ResEquivField
 

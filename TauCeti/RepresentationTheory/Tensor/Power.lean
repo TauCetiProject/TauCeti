@@ -176,6 +176,13 @@ noncomputable def tensorPowerEquiv (V : FDRep k G) (n : ℕ) :
     _root_.Representation.Equiv (V.tensorPower n).ρ (Representation.tensorPower V.ρ n) :=
   isoToEquiv (eqToIso (tensorPower_def V n))
 
+/-- The linear equivalence underlying `V.tensorPowerEquiv n` is `isoToLinearEquiv` of the
+defining equality. -/
+@[simp]
+theorem toLinearEquiv_tensorPowerEquiv (V : FDRep k G) (n : ℕ) :
+    (V.tensorPowerEquiv n).toLinearEquiv = isoToLinearEquiv (eqToIso (tensorPower_def V n)) :=
+  toLinearEquiv_isoToEquiv (eqToIso (tensorPower_def V n))
+
 /-- `V.tensorPower 0` is isomorphic in `FDRep k G` to the monoidal unit `𝟙_ (FDRep k G)`. -/
 noncomputable def tensorPowerZeroIsoTensorUnit (V : FDRep k G) :
     V.tensorPower 0 ≅ 𝟙_ (FDRep k G) :=
@@ -198,18 +205,9 @@ private theorem isoToLinearEquiv_tensorPowerZeroIsoTensorUnit (V : FDRep k G) :
 theorem isoToLinearEquiv_tensorPowerZeroIsoTensorUnit_tprod (V : FDRep k G) (f : Fin 0 → V) :
     isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit
         ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k f)) = (1 : k) := by
-  have h := DFunLike.congr_fun (isoToLinearEquiv_tensorPowerZeroIsoTensorUnit V)
-    ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k f))
-  refine h.trans ?_
-  have h0 : isoToLinearEquiv (eqToIso (tensorPower_def V 0))
-      ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k f)) =
-      PiTensorProduct.tprod k f := by
-    rw [← toLinearEquiv_isoToEquiv (eqToIso (tensorPower_def V 0))]
-    exact (V.tensorPowerEquiv 0).apply_symm_apply (PiTensorProduct.tprod k f)
-  change PiTensorProduct.isEmptyEquiv (Fin 0)
-    (isoToLinearEquiv (eqToIso (tensorPower_def V 0))
-      ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k f))) = 1
-  rw [h0, PiTensorProduct.isEmptyEquiv_apply_tprod]
+  rw [isoToLinearEquiv_tensorPowerZeroIsoTensorUnit, LinearEquiv.trans_apply,
+    ← toLinearEquiv_tensorPowerEquiv, ← _root_.Representation.Equiv.coe_symm,
+    LinearEquiv.apply_symm_apply, PiTensorProduct.isEmptyEquiv_apply_tprod]
 
 /-- The inverse of `tensorPowerZeroIsoTensorUnit` scales the empty pure tensor. -/
 -- Match before `Action.tensorUnit_V` rewrites `(𝟙_ (FDRep k G)).V`.
@@ -255,6 +253,16 @@ private theorem isoToLinearEquiv_tensorPowerSuccIso (V : FDRep k G) (n : ℕ) :
     (V.tensorEquivTprod (FDRep.of (Representation.tensorPower V.ρ n))).symm _).trans
     (FDRep.tensorEquivTprod_symm_apply V (FDRep.of (Representation.tensorPower V.ρ n)) _)
 
+/-- Evaluating `isoToLinearEquiv (whiskerLeftIso V e)` on a pure tensor acts on the right
+factor. -/
+private theorem isoToLinearEquiv_whiskerLeftIso_tmul {V W X : FDRep k G} (e : W ≅ X)
+    (v : V) (w : W) :
+    isoToLinearEquiv (whiskerLeftIso V e) (v ⊗ₜ[k] w) =
+      v ⊗ₜ[k] isoToLinearEquiv e w := by
+  have h := LinearMap.congr_fun (ModuleCat.hom_whiskerLeft V.V.obj e.hom.hom.hom) (v ⊗ₜ[k] w)
+  rw [LinearMap.lTensor_tmul] at h
+  exact h
+
 /-- Splitting off the first factor of a pure tensor via `tensorPowerSuccIso`. -/
 -- Match before `Action.tensorObj_V` rewrites `(V ⊗ V.tensorPower n).V`.
 @[simp↓]
@@ -263,26 +271,12 @@ theorem isoToLinearEquiv_tensorPowerSuccIso_tprod (V : FDRep k G) (n : ℕ)
     isoToLinearEquiv (V.tensorPowerSuccIso n)
         ((V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k f)) =
       f 0 ⊗ₜ[k] (V.tensorPowerEquiv n).symm (PiTensorProduct.tprod k (Fin.tail f)) := by
-  have h := DFunLike.congr_fun (isoToLinearEquiv_tensorPowerSuccIso V n)
-    ((V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k f))
-  refine h.trans ?_
-  have h0 : isoToLinearEquiv (eqToIso (tensorPower_def V (n + 1)))
-      ((V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k f)) =
-      PiTensorProduct.tprod k f := by
-    rw [← toLinearEquiv_isoToEquiv (eqToIso (tensorPower_def V (n + 1)))]
-    exact (V.tensorPowerEquiv (n + 1)).apply_symm_apply (PiTensorProduct.tprod k f)
-  change isoToLinearEquiv (whiskerLeftIso V (eqToIso (tensorPower_def V n)).symm)
-      (Representation.tensorPowerSuccEquiv V.ρ n
-        (isoToLinearEquiv (eqToIso (tensorPower_def V (n + 1)))
-          ((V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k f)))) = _
-  rw [h0, Representation.tensorPowerSuccEquiv_tprod]
-  have hn : isoToLinearEquiv (eqToIso (tensorPower_def V n)).symm
-      (PiTensorProduct.tprod k (Fin.tail f)) =
-      (V.tensorPowerEquiv n).symm (PiTensorProduct.tprod k (Fin.tail f)) := by
-    rw [isoToLinearEquiv_symm, ← toLinearEquiv_isoToEquiv (eqToIso (tensorPower_def V n))]
-    rfl
-  rw [← hn]
-  rfl
+  rw [isoToLinearEquiv_tensorPowerSuccIso, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    ← toLinearEquiv_tensorPowerEquiv, ← _root_.Representation.Equiv.coe_symm,
+    LinearEquiv.apply_symm_apply, Representation.toLinearEquiv_tensorPowerSuccEquiv,
+    PiTensorProduct.finConsEquiv_symm_tprod, isoToLinearEquiv_whiskerLeftIso_tmul,
+    isoToLinearEquiv_symm, ← toLinearEquiv_tensorPowerEquiv,
+    ← _root_.Representation.Equiv.coe_symm]
 
 /-- Prepending a factor to a pure tensor via the inverse of `tensorPowerSuccIso`. -/
 -- Match before `Action.tensorObj_V` rewrites `(V ⊗ V.tensorPower n).V`.
