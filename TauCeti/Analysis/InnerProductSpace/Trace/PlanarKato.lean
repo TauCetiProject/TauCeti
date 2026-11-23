@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Bilinear
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
-public import Mathlib.Analysis.InnerProductSpace.Trace
-public import Mathlib.LinearAlgebra.Trace
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Ring
 
 /-!
 # The planar Kato equality for trace-free Codazzi tensors
@@ -92,7 +90,7 @@ theorem planar_kato_identity_of_codazzi (b : OrthonormalBasis (Fin 2) ℝ V)
     (fun i j k ↦ (hD (b i) (b j) (b k)).trans (real_inner_comm _ _))
     (fun i j k ↦ congrArg (fun v ↦ inner ℝ v (b k)) (hCodazzi (b i) (b j)))
     (fun i ↦ (htrace (D (b i))).trans (hDtrace (b i)))
-  simpa only [ContinuousLinearMap.hilbertSchmidtInner_eq_sum_inner_mul _ _ b b,
+  simpa only [ContinuousLinearMap.hilbertSchmidtInner_eq_sum_sum_inner_mul_inner _ _ b b,
     ContinuousLinearMap.bilinearHilbertSchmidtEnergy_eq_sum b b,
     ← b.sum_sq_inner_left, pow_two] using h
 

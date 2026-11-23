@@ -26,8 +26,8 @@ and of the Hilbert–Schmidt norm `ContinuousLinearMap.hilbertSchmidtNorm`.
 
 * `ContinuousLinearMap.hilbertSchmidtInner_eq_sum`: `⟪A, B⟫_HS = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` in any
   orthonormal basis.
-* `ContinuousLinearMap.hilbertSchmidtInner_eq_sum_inner_mul`: the sum of products of matrix
-  coefficients in independently chosen source and target orthonormal bases.
+* `ContinuousLinearMap.hilbertSchmidtInner_eq_sum_sum_inner_mul_inner`: the sum of products of
+  matrix coefficients in independently chosen source and target orthonormal bases.
 * `ContinuousLinearMap.hilbertSchmidtInner_comm`: symmetry.
 * `ContinuousLinearMap.hilbertSchmidtInner_add_left`,
   `ContinuousLinearMap.hilbertSchmidtInner_smul_left` and their right-hand versions: bilinearity.
@@ -67,7 +67,7 @@ theorem hilbertSchmidtInner_eq_sum (A B : W →L[ℝ] V) {ι : Type*} [Fintype �
     innerₗ_apply_apply, coe_coe]
 
 /-- The Hilbert–Schmidt inner product is the sum of products of matrix coefficients. -/
-theorem hilbertSchmidtInner_eq_sum_inner_mul (A B : W →L[ℝ] V)
+theorem hilbertSchmidtInner_eq_sum_sum_inner_mul_inner (A B : W →L[ℝ] V)
     {ι κ : Type*} [Fintype ι] [Fintype κ]
     (b : OrthonormalBasis ι ℝ W) (c : OrthonormalBasis κ ℝ V) :
     A.hilbertSchmidtInner B =
