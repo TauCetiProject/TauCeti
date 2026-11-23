@@ -98,6 +98,10 @@ along `h ↦ 1 ⊗ h`.
   ideal is tested by applying `e.symm ⊗ id`.
 * `TauCeti.CommHopfAlgCat.mapBaseChangeHopfIdealOrderIso`: transport of Hopf ideals along a
   `k`-algebra equivalence as an order isomorphism.
+* `TauCeti.CommHopfAlgCat.isNormal_mapBaseChangeHopfIdeal_iff`: transport of Hopf ideals along a
+  `k`-algebra equivalence preserves and reflects normality.
+* `TauCeti.CommHopfAlgCat.isCentral_mapBaseChangeHopfIdeal_iff`: transport of Hopf ideals along a
+  `k`-algebra equivalence preserves and reflects centrality.
 
 ## References
 
@@ -301,7 +305,7 @@ theorem baseChangeHopfIdeal_injective :
 
 /-- Along a faithfully flat scalar extension, an element `x` lies in a Hopf ideal `J` if and
 only if `1 ⊗ x` lies in its base change. -/
-@[simp]
+@[simp↓ high]
 theorem one_tmul_mem_baseChangeHopfIdeal_iff (J : HopfIdeal k H) (x : H) :
     (1 : K) ⊗ₜ[k] x ∈ baseChangeHopfIdeal (K := K) J ↔ x ∈ J := by
   rw [mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul,
@@ -1146,32 +1150,19 @@ theorem mapBaseChangeHopfIdeal_mapBaseChangeHopfIdeal_symm
     mapBaseChangeHopfIdeal e (mapBaseChangeHopfIdeal e.symm I) = I := by
   rw [← mapBaseChangeHopfIdeal_trans, AlgEquiv.symm_trans_self, mapBaseChangeHopfIdeal_refl]
 
-/-- Transporting Hopf ideals along an algebra equivalence preserves and reflects containment. -/
-@[simp]
-theorem mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) (I₁ I₂ : HopfIdeal K₁ (baseChange (K := K₁) H)) :
-    mapBaseChangeHopfIdeal e I₁ ≤ mapBaseChangeHopfIdeal e I₂ ↔ I₁ ≤ I₂ :=
-  ⟨fun h ↦ by simpa using mapBaseChangeHopfIdeal_mono e.symm h, mapBaseChangeHopfIdeal_mono e⟩
-
-/-- Transporting Hopf ideals along an algebra equivalence is injective. -/
-theorem mapBaseChangeHopfIdeal_injective
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) :
-    Function.Injective (mapBaseChangeHopfIdeal (H := H) e) :=
-  Function.LeftInverse.injective (mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal e)
-
 /-- Transport of Hopf ideals along a `k`-algebra equivalence `e : K₁ ≃ₐ[k] K₂` as an order
 isomorphism. -/
 noncomputable def mapBaseChangeHopfIdealOrderIso
     {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
     (e : K₁ ≃ₐ[k] K₂) :
-    HopfIdeal K₁ (baseChange (K := K₁) H) ≃o HopfIdeal K₂ (baseChange (K := K₂) H) where
-  toFun := mapBaseChangeHopfIdeal e
-  invFun := mapBaseChangeHopfIdeal e.symm
-  left_inv := mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal e
-  right_inv := mapBaseChangeHopfIdeal_mapBaseChangeHopfIdeal_symm e
-  map_rel_iff' := mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff e _ _
+    HopfIdeal K₁ (baseChange (K := K₁) H) ≃o HopfIdeal K₂ (baseChange (K := K₂) H) :=
+  Equiv.toOrderIso
+    { toFun := mapBaseChangeHopfIdeal e
+      invFun := mapBaseChangeHopfIdeal e.symm
+      left_inv := mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal e
+      right_inv := mapBaseChangeHopfIdeal_mapBaseChangeHopfIdeal_symm e }
+    (fun _ _ h ↦ mapBaseChangeHopfIdeal_mono e h)
+    (fun _ _ h ↦ mapBaseChangeHopfIdeal_mono e.symm h)
 
 /-- Applying `mapBaseChangeHopfIdealOrderIso` is `mapBaseChangeHopfIdeal`. -/
 @[simp]
@@ -1188,14 +1179,6 @@ theorem mapBaseChangeHopfIdealOrderIso_symm
     (e : K₁ ≃ₐ[k] K₂) :
     (mapBaseChangeHopfIdealOrderIso (H := H) e).symm =
       mapBaseChangeHopfIdealOrderIso e.symm := by
-  rfl
-
-/-- Applying the inverse of `mapBaseChangeHopfIdealOrderIso` is `mapBaseChangeHopfIdeal e.symm`. -/
-@[simp]
-theorem mapBaseChangeHopfIdealOrderIso_symm_apply
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) (I : HopfIdeal K₂ (baseChange (K := K₂) H)) :
-    (mapBaseChangeHopfIdealOrderIso (H := H) e).symm I = mapBaseChangeHopfIdeal e.symm I := by
   rfl
 
 /-- The order isomorphism induced by `AlgEquiv.refl` is `OrderIso.refl`. -/
@@ -1221,38 +1204,17 @@ theorem mapBaseChangeHopfIdealOrderIso_trans
     mapBaseChangeHopfIdealOrderIso_apply, mapBaseChangeHopfIdealOrderIso_apply,
     mapBaseChangeHopfIdeal_trans]
 
-/-- Transporting Hopf ideals along an algebra equivalence commutes with binary joins. -/
-@[simp]
-theorem mapBaseChangeHopfIdeal_sup
+/-- Applying `e ⊗ id` after `e.symm ⊗ id` on `K₂ ⊗[k] H` is the identity. -/
+private theorem tensorProduct_map_apply_symm
     {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) (I₁ I₂ : HopfIdeal K₁ (baseChange (K := K₁) H)) :
-    mapBaseChangeHopfIdeal e (I₁ ⊔ I₂) =
-      mapBaseChangeHopfIdeal e I₁ ⊔ mapBaseChangeHopfIdeal e I₂ :=
-  map_sup (mapBaseChangeHopfIdealOrderIso (H := H) e) I₁ I₂
-
-/-- Transporting Hopf ideals along an algebra equivalence commutes with set-indexed joins. -/
-@[simp]
-theorem mapBaseChangeHopfIdeal_sSup
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) (S : Set (HopfIdeal K₁ (baseChange (K := K₁) H))) :
-    mapBaseChangeHopfIdeal e (sSup S) = sSup (mapBaseChangeHopfIdeal e '' S) := by
-  refine le_antisymm ?_ (sSup_le fun _ ⟨I, hI, hEq⟩ ↦
-    hEq ▸ mapBaseChangeHopfIdeal_mono e (le_sSup hI))
-  rw [← mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff e.symm,
-    mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal]
-  refine sSup_le fun I hI ↦ ?_
-  rw [← mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff e,
-    mapBaseChangeHopfIdeal_mapBaseChangeHopfIdeal_symm]
-  exact le_sSup ⟨I, hI, rfl⟩
-
-/-- Transporting Hopf ideals along an algebra equivalence commutes with indexed joins. -/
-@[simp]
-theorem mapBaseChangeHopfIdeal_iSup
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) {ι : Sort*} (I : ι → HopfIdeal K₁ (baseChange (K := K₁) H)) :
-    mapBaseChangeHopfIdeal e (⨆ i, I i) = ⨆ i, mapBaseChangeHopfIdeal e (I i) := by
-  rw [iSup, mapBaseChangeHopfIdeal_sSup, ← Set.range_comp]
-  rfl
+    (e : K₁ ≃ₐ[k] K₂) (y : K₂ ⊗[k] H) :
+    TensorProduct.map e.toLinearMap LinearMap.id
+        (TensorProduct.map e.symm.toLinearMap LinearMap.id y) =
+      y := by
+  rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.id_comp]
+  have hcomp : e.toLinearMap.comp e.symm.toLinearMap = LinearMap.id :=
+    LinearMap.ext fun s ↦ by simp
+  rw [hcomp, TensorProduct.map_id, LinearMap.id_apply]
 
 /-- Transport carries the base change of a Hopf ideal `J` of `H` to its base change in the
 target scalar ring. -/
@@ -1262,15 +1224,12 @@ theorem mapBaseChangeHopfIdeal_baseChangeHopfIdeal
     (e : K₁ ≃ₐ[k] K₂) (J : HopfIdeal k H) :
     mapBaseChangeHopfIdeal e (baseChangeHopfIdeal (K := K₁) J) =
       baseChangeHopfIdeal (K := K₂) J := by
-  have h : (mapBaseChangeHopfIdeal e (baseChangeHopfIdeal (K := K₁) J)).toIdeal =
-      (baseChangeHopfIdeal (K := K₂) J).toIdeal := by
-    rw [mapBaseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal,
-      baseChangeHopfIdeal_toIdeal, Ideal.map_mapₐ]
-    congr 1
-    change (Algebra.TensorProduct.map (e : K₁ →ₐ[k] K₂) (AlgHom.id k H)).comp
-        Algebra.TensorProduct.includeRight = Algebra.TensorProduct.includeRight
-    rw [Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
-  exact HopfIdeal.ext fun y ↦ by rw [← HopfIdeal.mem_toIdeal, h, HopfIdeal.mem_toIdeal]
+  ext y
+  rw [mem_mapBaseChangeHopfIdeal_iff]
+  refine ⟨fun hy ↦ ?_, fun hy ↦ map_mem_baseChangeHopfIdeal J e.symm.toAlgHom hy⟩
+  have h := map_mem_baseChangeHopfIdeal J e.toAlgHom hy
+  change TensorProduct.map e.toLinearMap LinearMap.id _ ∈ _ at h
+  rwa [tensorProduct_map_apply_symm] at h
 
 /-- Transport preserves the augmentation ideal. -/
 @[simp]
@@ -1282,14 +1241,151 @@ theorem mapBaseChangeHopfIdeal_augmentation
   rw [← baseChangeHopfIdeal_augmentation, mapBaseChangeHopfIdeal_baseChangeHopfIdeal,
     baseChangeHopfIdeal_augmentation]
 
-/-- Transport preserves the zero Hopf ideal. -/
-@[simp]
-theorem mapBaseChangeHopfIdeal_bot
+/-- Transport of points of `K₂ ⊗[k] H` to points of `K₁ ⊗[k] H` over a `K₂`-algebra `A`,
+viewing `A` as a `K₁`-algebra via `e : K₁ ≃ₐ[k] K₂`. -/
+private noncomputable def mapBaseChangePointsMulEquiv
     {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
-    (e : K₁ ≃ₐ[k] K₂) :
-    mapBaseChangeHopfIdeal e (⊥ : HopfIdeal K₁ (baseChange (K := K₁) H)) = ⊥ := by
-  rw [← baseChangeHopfIdeal_bot, mapBaseChangeHopfIdeal_baseChangeHopfIdeal,
-    baseChangeHopfIdeal_bot]
+    (e : K₁ ≃ₐ[k] K₂) (A : Type*) [CommRing A] [Algebra K₂ A] :
+    letI : Algebra K₁ A := Algebra.compHom A e.toRingHom
+    HopfAlgebra.points (R := K₂) (H := baseChange (K := K₂) H) (CommAlgCat.of K₂ A) ≃*
+      HopfAlgebra.points (R := K₁) (H := baseChange (K := K₁) H) (CommAlgCat.of K₁ A) :=
+  letI : Algebra K₁ A := Algebra.compHom A e.toRingHom
+  letI : Algebra k A := Algebra.compHom A ((algebraMap K₂ A).comp (algebraMap k K₂))
+  letI : IsScalarTower k K₂ A := IsScalarTower.of_algebraMap_eq' rfl
+  letI : IsScalarTower k K₁ A := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    change algebraMap K₂ A (algebraMap k K₂ c) = algebraMap K₂ A (e (algebraMap k K₁ c))
+    rw [e.commutes]
+  (AlgHom.baseChangePointsMulEquiv (k := k) (K := K₂) (A := H) (R := A)).symm.trans
+    (AlgHom.baseChangePointsMulEquiv (k := k) (K := K₁) (A := H) (R := A))
+
+private theorem mapBaseChangePointsMulEquiv_apply
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (A : Type*) [CommRing A] [Algebra K₂ A]
+    (g : HopfAlgebra.points (R := K₂) (H := baseChange (K := K₂) H) (CommAlgCat.of K₂ A))
+    (y : K₁ ⊗[k] H) :
+    (mapBaseChangePointsMulEquiv (H := H) e A g).ofConv y =
+      g.ofConv (TensorProduct.map e.toLinearMap LinearMap.id y) := by
+  let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+  let _ : Algebra k A := Algebra.compHom A ((algebraMap K₂ A).comp (algebraMap k K₂))
+  let _ : IsScalarTower k K₂ A := IsScalarTower.of_algebraMap_eq' rfl
+  let _ : IsScalarTower k K₁ A := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    change algebraMap K₂ A (algebraMap k K₂ c) = algebraMap K₂ A (e (algebraMap k K₁ c))
+    rw [e.commutes]
+  induction y using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | tmul s h =>
+    simp only [mapBaseChangePointsMulEquiv, MulEquiv.trans_apply,
+      AlgHom.baseChangePointsMulEquiv_apply_tmul, AlgHom.baseChangePointsMulEquiv_symm_apply,
+      TensorProduct.map_tmul, AlgEquiv.toLinearMap_apply, LinearMap.id_apply]
+    change s • g.ofConv (1 ⊗ₜ[k] h) = g.ofConv (e s ⊗ₜ[k] h)
+    rw [Algebra.smul_def]
+    change (algebraMap K₂ A (e s)) * g.ofConv (1 ⊗ₜ[k] h) = g.ofConv (e s ⊗ₜ[k] h)
+    rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+
+private theorem mem_quotientPointsSubgroup_mapBaseChangeHopfIdeal_iff
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (A : Type*) [CommRing A] [Algebra K₂ A]
+    (I : HopfIdeal K₁ (baseChange (K := K₁) H))
+    (g : HopfAlgebra.points (R := K₂) (H := baseChange (K := K₂) H) (CommAlgCat.of K₂ A)) :
+    let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+    mapBaseChangePointsMulEquiv (H := H) e A g ∈
+        quotientPointsSubgroup (baseChange (K := K₁) H) I (CommAlgCat.of K₁ A) ↔
+      g ∈ quotientPointsSubgroup (baseChange (K := K₂) H) (mapBaseChangeHopfIdeal e I)
+        (CommAlgCat.of K₂ A) := by
+  dsimp only
+  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  refine ⟨fun hg y hy ↦ ?_, fun hg x hx ↦ ?_⟩
+  · have hy' := (mem_mapBaseChangeHopfIdeal_iff e I y).mp hy
+    rw [← tensorProduct_map_apply_symm e y, ← mapBaseChangePointsMulEquiv_apply]
+    exact hg _ hy'
+  · rw [mapBaseChangePointsMulEquiv_apply]
+    exact hg _ ((mem_mapBaseChangeHopfIdeal_map_iff e I x).mpr hx)
+
+private theorem mapBaseChangePointsMulEquiv_mapValue
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (A B : Type*) [CommRing A] [Algebra K₂ A] [CommRing B] [Algebra K₂ B]
+    (φ : A →ₐ[K₂] B)
+    (g : HopfAlgebra.points (R := K₂) (H := baseChange (K := K₂) H) (CommAlgCat.of K₂ A)) :
+    let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+    let _ : Algebra K₁ B := Algebra.compHom B e.toRingHom
+    let φ₁ : A →ₐ[K₁] B := { φ.toRingHom with commutes' := fun s ↦ φ.commutes (e s) }
+    mapBaseChangePointsMulEquiv (H := H) e B (AlgHom.mapValue φ g) =
+      AlgHom.mapValue φ₁ (mapBaseChangePointsMulEquiv (H := H) e A g) := by
+  dsimp only
+  let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+  let _ : Algebra K₁ B := Algebra.compHom B e.toRingHom
+  apply WithConv.ext
+  apply AlgHom.ext
+  intro y
+  rw [mapBaseChangePointsMulEquiv_apply, AlgHom.mapValue_apply, AlgHom.mapValue_apply]
+  change φ (g.ofConv (TensorProduct.map e.toLinearMap LinearMap.id y)) =
+    ({ toRingHom := φ.toRingHom, commutes' := fun s ↦ φ.commutes (e s) } : A →ₐ[K₁] B)
+      ((mapBaseChangePointsMulEquiv (H := H) e A g).ofConv y)
+  rw [mapBaseChangePointsMulEquiv_apply]
+  rfl
+
+private theorem isNormal_mapBaseChangeHopfIdeal
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) {I : HopfIdeal K₁ (baseChange (K := K₁) H)} (hI : I.IsNormal) :
+    (mapBaseChangeHopfIdeal e I).IsNormal := by
+  rw [isNormal_iff_quotientPointsSubgroup_normal]
+  intro A
+  let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+  have hsub :
+      quotientPointsSubgroup (baseChange (K := K₂) H) (mapBaseChangeHopfIdeal e I) A =
+        (quotientPointsSubgroup (baseChange (K := K₁) H) I (CommAlgCat.of K₁ A)).comap
+          (mapBaseChangePointsMulEquiv (H := H) e A).toMonoidHom := by
+    ext g
+    exact (mem_quotientPointsSubgroup_mapBaseChangeHopfIdeal_iff e A I g).symm
+  rw [hsub]
+  exact (quotientPointsSubgroup_normal (baseChange (K := K₁) H) I hI
+    (CommAlgCat.of K₁ A)).comap _
+
+/-- Transport of Hopf ideals along a `k`-algebra equivalence preserves and reflects normality. -/
+@[simp]
+theorem isNormal_mapBaseChangeHopfIdeal_iff
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (I : HopfIdeal K₁ (baseChange (K := K₁) H)) :
+    (mapBaseChangeHopfIdeal e I).IsNormal ↔ I.IsNormal :=
+  ⟨fun h ↦ by simpa only [mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal] using
+    isNormal_mapBaseChangeHopfIdeal e.symm h, isNormal_mapBaseChangeHopfIdeal e⟩
+
+private theorem isCentral_mapBaseChangeHopfIdeal
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) {I : HopfIdeal K₁ (baseChange (K := K₁) H)} (hI : I.IsCentral) :
+    (mapBaseChangeHopfIdeal e I).IsCentral := by
+  rw [isCentral_iff_forall_isCentralPoint]
+  intro A g hg
+  let _ : Algebra K₁ A := Algebra.compHom A e.toRingHom
+  have hg₁ : mapBaseChangePointsMulEquiv (H := H) e A g ∈
+      quotientPointsSubgroup (baseChange (K := K₁) H) I (CommAlgCat.of K₁ A) :=
+    (mem_quotientPointsSubgroup_mapBaseChangeHopfIdeal_iff e A I g).mpr hg
+  have hc₁ := isCentralPoint_of_mem_quotientPointsSubgroup
+    (baseChange (K := K₁) H) I hI (CommAlgCat.of K₁ A) hg₁
+  rw [HopfAlgebra.isCentralPoint_def] at hc₁ ⊢
+  intro B _ _ φ h
+  let B' := ULift.{w} B
+  let φ' : A →ₐ[K₂] B' := ULift.algEquiv.symm.toAlgHom.comp φ
+  let _ : Algebra K₁ B' := Algebra.compHom B' e.toRingHom
+  let φ₁ : A →ₐ[K₁] B' := { φ'.toRingHom with commutes' := fun s ↦ φ'.commutes (e s) }
+  have hcomm := (hc₁ φ₁ (mapBaseChangePointsMulEquiv (H := H) e B'
+    (AlgHom.mapValue (ULift.algEquiv.symm.toAlgHom : B →ₐ[K₂] B') h))).map
+      (mapBaseChangePointsMulEquiv (H := H) e B').symm.toMonoidHom
+  rw [← mapBaseChangePointsMulEquiv_mapValue e A B' φ' g] at hcomm
+  simp only [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at hcomm
+  have hcomp := hcomm.map (AlgHom.mapValue (H := baseChange (K := K₂) H)
+    (ULift.algEquiv.toAlgHom : B' →ₐ[K₂] B))
+  simpa only [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, ← AlgHom.comp_assoc,
+    AlgEquiv.comp_symm, AlgHom.id_comp, AlgHom.mapValue_id, MonoidHom.id_apply, φ'] using hcomp
+
+/-- Transport of Hopf ideals along a `k`-algebra equivalence preserves and reflects centrality. -/
+@[simp]
+theorem isCentral_mapBaseChangeHopfIdeal_iff
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (I : HopfIdeal K₁ (baseChange (K := K₁) H)) :
+    (mapBaseChangeHopfIdeal e I).IsCentral ↔ I.IsCentral :=
+  ⟨fun h ↦ by simpa only [mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal] using
+    isCentral_mapBaseChangeHopfIdeal e.symm h, isCentral_mapBaseChangeHopfIdeal e⟩
 
 end Equiv
 
