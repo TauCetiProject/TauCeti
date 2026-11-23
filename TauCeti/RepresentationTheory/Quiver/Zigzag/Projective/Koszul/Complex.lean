@@ -125,7 +125,8 @@ signless arrow `w → j` moves `y ∈ e_w Π_n e_v` to `e_j Π_{n+1} e_v`, and r
 the zigzag arrow `w → j` moves the value from `Z e_j` back to `Z e_w`. -/
 noncomputable def zigzagKoszulDifferential (v : V) (n : ℕ) :
     ZigzagKoszulTerm k G v (n + 1) →ₗ[Z] ZigzagKoszulTerm k G v n where
-  toFun f w := ∑ j : G.neighborSet w, koszulSummand k G v n ((G.mem_neighborSet w j).1 j.2) (f j)
+  toFun f w := ∑ j : G.neighborSet w, koszulSummand k G v n ((G.mem_neighborSet w j).1 j.property)
+      (f j)
   map_add' f g := by
     funext w
     simp only [Pi.add_apply, ← Finset.sum_add_distrib]
@@ -144,12 +145,12 @@ theorem coe_zigzagKoszulDifferential_apply (v : V) (n : ℕ) (f : ZigzagKoszulTe
     (w : V) (y : C n (vertex G v) (vertex G w)) :
     (zigzagKoszulDifferential k G v n f w y : Z) =
       ∑ j : G.neighborSet w,
-        (f j ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) * y,
-          signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.2⟩ : Z) *
-          zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) := by
+        (f j ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) * y,
+          signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.property⟩ : Z) *
+          zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) := by
   -- unfold the bundled map to the sum of its summands
   change ((∑ j : G.neighborSet w,
-    koszulSummand k G v n ((G.mem_neighborSet w j).1 j.2) (f j)) y : Z) = _
+    koszulSummand k G v n ((G.mem_neighborSet w j).1 j.property) (f j)) y : Z) = _
   rw [LinearMap.sum_apply, Submodule.coe_sum]
   exact Finset.sum_congr rfl fun j _ => coe_koszulSummand_apply k G v n _ (f j) y
 
@@ -183,16 +184,18 @@ theorem zigzagKoszulDifferential_comp_zigzagKoszulDifferential (v : V) (n : ℕ)
   -- Only the returning paths `w → j → w` survive, and they all give `x_w`.
   have hj (j : G.neighborSet w) :
       (zigzagKoszulDifferential k G v (n + 1) f j
-          ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) * y,
-            signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.2⟩ : Z) *
-          zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) =
-        (f w ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2).symm)) *
-            (σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) * y),
+          ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) * y,
+            signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.property⟩ : Z) *
+          zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) =
+        (f w ⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property).symm)) *
+            (σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) * y),
           signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _
-            (signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.2)⟩ : Z) *
+            (signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.property)⟩ : Z)
+                *
           zigzagVolume k G w := by
     rw [coe_zigzagKoszulDifferential_apply, Finset.sum_mul,
-      Finset.sum_eq_single ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.2).symm⟩]
+      Finset.sum_eq_single ⟨w, (G.mem_neighborSet j w).2
+          ((G.mem_neighborSet w j).1 j.property).symm⟩]
     · rw [mul_assoc, zigzagMk_arrow_symm_mul_arrow]
     · intro l _ hl
       rw [mul_assoc, zigzagMk_arrow_mul_arrow_of_ne k G _ _ fun h => hl (Subtype.ext h),
@@ -202,10 +205,10 @@ theorem zigzagKoszulDifferential_comp_zigzagKoszulDifferential (v : V) (n : ℕ)
   rw [← Finset.sum_mul, ← Submodule.coe_sum, ← map_sum]
   -- The arguments sum to the signless relator at `w` applied to `y`, which vanishes.
   have hrel : ∑ j : G.neighborSet w,
-      (⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2).symm)) *
-          (σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) * y),
+      (⟨σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property).symm)) *
+          (σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) * y),
         signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _
-          (signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.2)⟩ :
+          (signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner _ y.property)⟩ :
         C (n + 2) (vertex G v) (vertex G w)) = 0 := by
     refine Subtype.ext ?_
     rw [Submodule.coe_sum, ZeroMemClass.coe_zero,
@@ -241,7 +244,7 @@ private theorem coe_projBasis_inl (u : V) (a : Unit) :
 omit [DecidableRel G.Adj] in
 private theorem coe_projBasis_inr_inl (u : V) (j : G.neighborSet u) :
     (projBasis k hns u (.inr (.inl j)) : Z) =
-      zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.2))) := by
+      zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.property))) := by
   simp only [projBasis, Module.Basis.reindex_apply, zigzagProjectiveBasis_apply,
     Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inr, Sum.map_inl,
     coe_zigzagProjectiveBasisFun_inr_inl]
@@ -256,7 +259,7 @@ private theorem coe_projBasis_inr_inr (u : V) (a : Unit) :
 private theorem coe_eq_projBasis_repr (u : V) (z : zigzagProjective k G u) :
     (z : Z) = (projBasis k hns u).repr z (.inl ()) • zigzagVertexIdempotent k G u +
       ∑ j : G.neighborSet u, (projBasis k hns u).repr z (.inr (.inl j)) •
-        zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.2))) +
+        zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.property))) +
       (projBasis k hns u).repr z (.inr (.inr ())) • zigzagVolume k G u := by
   conv_lhs => rw [← (projBasis k hns u).sum_repr z]
   simp only [Submodule.coe_add, Submodule.coe_sum, Submodule.coe_smul_of_tower,
@@ -269,7 +272,7 @@ private theorem projBasis_repr_eq_of_coe_eq (u : V) (z : zigzagProjective k G u)
     (α : G.neighborSet u → k)
     (h : (z : Z) = a • zigzagVertexIdempotent k G u +
       ∑ j : G.neighborSet u,
-        α j • zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.2))) +
+        α j • zigzagMk k G (ofArrow (arrow G ((G.mem_neighborSet u j).1 j.property))) +
       c • zigzagVolume k G u) :
     ⇑((projBasis k hns u).repr z) = Sum.elim (fun _ => a) (Sum.elim α fun _ => c) := by
   have hz : z = ∑ β, Sum.elim (fun _ => a) (Sum.elim α fun _ => c) β • projBasis k hns u β := by
@@ -308,10 +311,11 @@ private theorem projBasis_repr_zigzagKoszulDifferential (v : V) (n : ℕ)
     ⇑((projBasis k hns w).repr (zigzagKoszulDifferential k G v n f w y)) =
       Sum.elim (fun _ => 0) (Sum.elim
         (fun j : G.neighborSet w => (projBasis k hns j).repr (f j (cornerArrowMul k G v n
-          ((G.mem_neighborSet w j).1 j.2) y)) (.inl ()))
+          ((G.mem_neighborSet w j).1 j.property) y)) (.inl ()))
         fun _ => ∑ j : G.neighborSet w, (projBasis k hns j).repr
-          (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.2) y))
-            (.inr (.inl ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.2).symm⟩))) := by
+          (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.property) y))
+            (.inr (.inl ⟨w, (G.mem_neighborSet j w).2
+                ((G.mem_neighborSet w j).1 j.property).symm⟩))) := by
   refine projBasis_repr_eq_of_coe_eq k hns w _ _ _ _ ?_
   rw [coe_zigzagKoszulDifferential_apply, zero_smul, zero_add, Finset.sum_smul,
     ← Finset.sum_add_distrib]
@@ -330,7 +334,7 @@ private theorem exists_eq_sum_neighborSet {v u : V} {n : ℕ} {t : Π}
     (ht : t ∈ C (n + 1) (vertex G v) (vertex G u)) :
     ∃ z : G.neighborSet u → Π, (∀ l : G.neighborSet u, z l ∈ C n (vertex G v) (vertex G l)) ∧
       t = ∑ l : G.neighborSet u,
-        σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.2).symm)) * z l := by
+        σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.property).symm)) * z l := by
   obtain ⟨z, hz, rfl⟩ := exists_eq_sum_signlessPreprojectiveMk_ofArrow_mul ht
   exact ⟨fun l => z (vertex G l) (arrow G _), fun l => hz _ _,
     sum_sum_hom_eq_sum_neighborSet G u fun i b => σ (ofArrow b) * z i b⟩
@@ -339,9 +343,10 @@ private theorem exists_eq_sum_neighborSet {v u : V} {n : ℕ} {t : Π}
 private theorem exists_of_sum_neighborSet_eq_zero {v u : V} {n : ℕ} (z : G.neighborSet u → Π)
     (hz : ∀ l : G.neighborSet u, z l ∈ C n (vertex G v) (vertex G l))
     (h : ∑ l : G.neighborSet u,
-      σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.2).symm)) * z l = 0) :
+      σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.property).symm)) * z l = 0) :
     ∃ y ∈ C (n - 1) (vertex G v) (vertex G u),
-      ∀ l : G.neighborSet u, z l = σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.2))) * y := by
+      ∀ l : G.neighborSet u, z l = σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.property))) * y
+          := by
   -- Re-index the family by the arrows of the doubled quiver into `u`.
   let z' : ∀ i : DoubledQuiver G, (i ⟶ vertex G u) → Π := fun i b =>
     z ⟨(vertexEquiv G).symm i, (G.mem_neighborSet _ _).2 (by simpa using b.down.symm)⟩
@@ -356,15 +361,16 @@ private theorem exists_of_sum_neighborSet_eq_zero {v u : V} {n : ℕ} (z : G.nei
     rw [sum_sum_hom_eq_sum_neighborSet G u fun i b => σ (ofArrow b) * z' i b]
     simpa only [hz'l] using h)
   refine ⟨y, hy, fun l => ?_⟩
-  have hl := hyz (vertex G l) (arrow G ((G.mem_neighborSet u l).1 l.2).symm)
-  rwa [hz'l l (arrow G ((G.mem_neighborSet u l).1 l.2).symm), reverse_arrow] at hl
+  have hl := hyz (vertex G l) (arrow G ((G.mem_neighborSet u l).1 l.property).symm)
+  rwa [hz'l l (arrow G ((G.mem_neighborSet u l).1 l.property).symm), reverse_arrow] at hl
 
 /-- Exactness of the signless Koszul complex at its left end, indexed by the neighbours. -/
 private theorem eq_zero_of_forall_arrow_mul_eq_zero
     (hinj : ∀ (w : V) (y : Π), σ (vertexIdempotent k (vertex G w)) * y = y →
       (∀ (i : DoubledQuiver G) (b : i ⟶ vertex G w), σ (ofArrow (reverse b)) * y = 0) → y = 0)
     {w : V} {y : Π} (hy : σ (vertexIdempotent k (vertex G w)) * y = y)
-    (h : ∀ j : G.neighborSet w, σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.2))) * y = 0) :
+    (h : ∀ j : G.neighborSet w, σ (ofArrow (arrow G ((G.mem_neighborSet w j).1 j.property))) * y =
+        0) :
     y = 0 :=
   hinj w y hy fun i b => by
     obtain ⟨l, rfl⟩ := exists_eq_vertex G i
@@ -385,7 +391,7 @@ include hns in
 /-- On a cycle `f` of the Koszul complex, `f_j (a_{wj} y)` has no vertex coordinate. -/
 private theorem projBasis_repr_inl_of_mem_ker (hf : zigzagKoszulDifferential k G v n f = 0)
     {w : V} (j : G.neighborSet w) (y : C n (vertex G v) (vertex G w)) :
-    (projBasis k hns j).repr (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.2) y))
+    (projBasis k hns j).repr (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.property) y))
       (.inl ()) = 0 := by
   have h := congrFun (projBasis_repr_zigzagKoszulDifferential k hns v n f w y) (.inr (.inl j))
   rwa [hf, Pi.zero_apply, LinearMap.zero_apply, map_zero, Finsupp.coe_zero, Pi.zero_apply,
@@ -397,8 +403,9 @@ reverse arrows `j → w` sum to zero. -/
 private theorem sum_projBasis_repr_inr_of_mem_ker (hf : zigzagKoszulDifferential k G v n f = 0)
     (w : V) (y : C n (vertex G v) (vertex G w)) :
     ∑ j : G.neighborSet w, (projBasis k hns j).repr
-      (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.2) y))
-        (.inr (.inl ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.2).symm⟩)) = 0 := by
+      (f j (cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.property) y))
+        (.inr (.inl ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.property).symm⟩)) = 0
+            := by
   have h := congrFun (projBasis_repr_zigzagKoszulDifferential k hns v n f w y) (.inr (.inr ()))
   rwa [hf, Pi.zero_apply, LinearMap.zero_apply, map_zero, Finsupp.coe_zero, Pi.zero_apply,
     Sum.elim_inr, Sum.elim_inr, eq_comm] at h
@@ -409,25 +416,25 @@ of `e_u Π_{n+1} e_v` is a sum of arrows times elements of degree `n`. -/
 private theorem projBasis_repr_inl_eq_zero (hf : zigzagKoszulDifferential k G v n f = 0) (u : V)
     (t : C (n + 1) (vertex G v) (vertex G u)) :
     (projBasis k hns u).repr (f u t) (.inl ()) = 0 := by
-  obtain ⟨z, hz, ht⟩ := exists_eq_sum_neighborSet t.2
+  obtain ⟨z, hz, ht⟩ := exists_eq_sum_neighborSet t.property
   have ht' : t = ∑ l : G.neighborSet u,
-      cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2).symm ⟨z l, hz l⟩ :=
+      cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.property).symm ⟨z l, hz l⟩ :=
     Subtype.ext (by rw [ht, Submodule.coe_sum]; rfl)
   rw [ht', map_sum, map_sum, Finsupp.coe_finsetSum, Finset.sum_apply]
   exact Finset.sum_eq_zero fun l _ => projBasis_repr_inl_of_mem_ker hns hf
-    ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩ ⟨z l, hz l⟩
+    ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩ ⟨z l, hz l⟩
 
 /-- Left multiplication by the arrows into `u`, as a map out of the direct sum of the graded
 corners at the neighbours of `u`. -/
 private noncomputable def incomingArrowSum [DecidableEq V] (v : V) (n : ℕ) (u : V) :
     (∀ l : G.neighborSet u, C n (vertex G v) (vertex G l)) →ₗ[k]
       C (n + 1) (vertex G v) (vertex G u) :=
-  LinearMap.lsum k _ k fun l => cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2).symm
+  LinearMap.lsum k _ k fun l => cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.property).symm
 
 private theorem coe_incomingArrowSum_apply [DecidableEq V] (v : V) (n : ℕ) (u : V)
     (z : ∀ l : G.neighborSet u, C n (vertex G v) (vertex G l)) :
     (incomingArrowSum v n u z : Π) = ∑ l : G.neighborSet u,
-      σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.2).symm)) * z l := by
+      σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.property).symm)) * z l := by
   simp only [incomingArrowSum, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.proj_apply, Submodule.coe_sum, coe_cornerArrowMul_apply]
 
@@ -437,12 +444,12 @@ private noncomputable def arrowCoordSum [DecidableEq V] (f : ZigzagKoszulTerm k 
     (u : V) :
     (∀ l : G.neighborSet u, C (n + 1) (vertex G v) (vertex G l)) →ₗ[k] k :=
   LinearMap.lsum k _ k fun l => (projBasis k hns l).coord
-    (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) ∘ₗ f l
+    (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩)) ∘ₗ f l
 
 private theorem arrowCoordSum_apply [DecidableEq V] (u : V)
     (z : ∀ l : G.neighborSet u, C (n + 1) (vertex G v) (vertex G l)) :
     arrowCoordSum hns f u z = ∑ l : G.neighborSet u, (projBasis k hns l).repr (f l (z l))
-      (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) := by
+      (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩)) := by
   simp only [arrowCoordSum, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.proj_apply, Module.Basis.coord_apply]
 
@@ -452,19 +459,20 @@ signless Koszul complex at its middle term. -/
 private theorem exists_arrowLift (hf : zigzagKoszulDifferential k G v n f = 0) (u : V) :
     ∃ ψ : C (n + 2) (vertex G v) (vertex G u) →ₗ[k] k,
       ∀ (l : G.neighborSet u) (z : C (n + 1) (vertex G v) (vertex G l)),
-        ψ (cornerArrowMul k G v (n + 1) ((G.mem_neighborSet u l).1 l.2).symm z) =
+        ψ (cornerArrowMul k G v (n + 1) ((G.mem_neighborSet u l).1 l.property).symm z) =
           (projBasis k hns l).repr (f l z)
-            (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) := by
+            (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩))
+                := by
   classical
   have hM : Function.Surjective (incomingArrowSum (k := k) (G := G) v (n + 1) u) := fun t => by
-    obtain ⟨z, hz, ht⟩ := exists_eq_sum_neighborSet t.2
+    obtain ⟨z, hz, ht⟩ := exists_eq_sum_neighborSet t.property
     exact ⟨fun l => ⟨z l, hz l⟩, Subtype.ext (by rw [coe_incomingArrowSum_apply, ht])⟩
   have hker (z : ∀ l : G.neighborSet u, C (n + 1) (vertex G v) (vertex G l))
       (hz : incomingArrowSum v (n + 1) u z = 0) : arrowCoordSum hns f u z = 0 := by
     obtain ⟨y, hy, hyz⟩ := exists_of_sum_neighborSet_eq_zero (fun l => (z l : Π))
-      (fun l => (z l).2) (by rw [← coe_incomingArrowSum_apply, hz, ZeroMemClass.coe_zero])
+      (fun l => (z l).property) (by rw [← coe_incomingArrowSum_apply, hz, ZeroMemClass.coe_zero])
     have hzl (l : G.neighborSet u) :
-        z l = cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2) ⟨y, hy⟩ :=
+        z l = cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.property) ⟨y, hy⟩ :=
       Subtype.ext (hyz l)
     simp only [arrowCoordSum_apply, hzl]
     exact sum_projBasis_repr_inr_of_mem_ker hns hf u ⟨y, hy⟩
@@ -472,7 +480,7 @@ private theorem exists_arrowLift (hf : zigzagKoszulDifferential k G v n f = 0) (
     ⟨arrowCoordSum hns f u, fun z hz =>
       LinearMap.mem_ker.2 (hker z (LinearMap.mem_ker.1 hz))⟩, fun l z => ?_⟩
   have hl : incomingArrowSum v (n + 1) u (Pi.single l z) =
-      cornerArrowMul k G v (n + 1) ((G.mem_neighborSet u l).1 l.2).symm z :=
+      cornerArrowMul k G v (n + 1) ((G.mem_neighborSet u l).1 l.property).symm z :=
     by rw [incomingArrowSum, LinearMap.lsum_piSingle]
   rw [← hl, LinearMap.equivOfSurjective_apply, arrowCoordSum, LinearMap.lsum_piSingle,
     LinearMap.comp_apply, Module.Basis.coord_apply]
@@ -482,7 +490,7 @@ corners at the neighbours of `w`. -/
 private noncomputable def outgoingArrows (v : V) (n : ℕ) (w : V) :
     C n (vertex G v) (vertex G w) →ₗ[k]
       ∀ j : G.neighborSet w, C (n + 1) (vertex G v) (vertex G j) :=
-  LinearMap.pi fun j => cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.2)
+  LinearMap.pi fun j => cornerArrowMul k G v n ((G.mem_neighborSet w j).1 j.property)
 
 /-- **Step 3.** The volume coordinate of `f` at `w` extends along the map
 `e_w Π_{n+1} e_v → ⨁_{j ∼ w} e_j Π_{n+2} e_v`, which is injective when the signless Koszul
@@ -496,7 +504,7 @@ private theorem exists_volumeLift
         Ξ (outgoingArrows v (n + 1) w z) = (projBasis k hns w).repr (f w z) (.inr (.inr ())) := by
   obtain ⟨g, hg⟩ := (outgoingArrows (k := k) (G := G) v (n + 1) w).exists_leftInverse_of_injective
     (LinearMap.ker_eq_bot'.2 fun z hz => Subtype.ext (eq_zero_of_forall_arrow_mul_eq_zero hinj
-      (signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner z.2)
+      (signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner z.property)
       fun j => congrArg Subtype.val (congrFun hz j)))
   refine ⟨(projBasis k hns w).coord (.inr (.inr ())) ∘ₗ f w ∘ₗ g, fun z => ?_⟩
   rw [LinearMap.comp_apply, LinearMap.comp_apply, ← LinearMap.comp_apply g, hg,
@@ -513,7 +521,7 @@ private noncomputable def koszulLift (ψ : ∀ u : V, C (n + 2) (vertex G v) (ve
   (projBasis k hns u).equivFun.symm.toLinearMap ∘ₗ LinearMap.pi (Sum.elim (fun _ => ψ u)
     (Sum.elim (fun l : G.neighborSet u => Ξ l ∘ₗ
       LinearMap.single k (fun j : G.neighborSet l => C (n + 2) (vertex G v) (vertex G j))
-        ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩) fun _ => 0))
+        ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩) fun _ => 0))
 
 private theorem projBasis_repr_koszulLift
     (ψ : ∀ u : V, C (n + 2) (vertex G v) (vertex G u) →ₗ[k] k)
@@ -521,7 +529,8 @@ private theorem projBasis_repr_koszulLift
     (u : V) (t : C (n + 2) (vertex G v) (vertex G u)) :
     ⇑((projBasis k hns u).repr (koszulLift hns ψ Ξ u t)) = Sum.elim (fun _ => ψ u t)
       (Sum.elim (fun l : G.neighborSet u => Ξ l (Pi.single
-        ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩ t)) fun _ => 0) := by
+        ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.property).symm⟩ t)) fun _ => 0)
+            := by
   rw [← Module.Basis.equivFun_apply, koszulLift, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply]
   funext β
@@ -573,10 +582,10 @@ theorem range_zigzagKoszulDifferential_eq_ker
   rcases β with ⟨⟩ | j | ⟨⟩
   · exact (projBasis_repr_inl_eq_zero hns hf w z).symm
   · rw [Sum.elim_inr, Sum.elim_inl, projBasis_repr_koszulLift, Sum.elim_inl]
-    exact hψ j ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.2).symm⟩ z
+    exact hψ j ⟨w, (G.mem_neighborSet j w).2 ((G.mem_neighborSet w j).1 j.property).symm⟩ z
   · simp only [Sum.elim_inr, projBasis_repr_koszulLift, Sum.elim_inl]
     refine (map_sum (Ξ w) (fun j : G.neighborSet w => Pi.single j (cornerArrowMul k G v (n + 1)
-      ((G.mem_neighborSet w j).1 j.2) z)) Finset.univ).symm.trans ?_
+      ((G.mem_neighborSet w j).1 j.property) z)) Finset.univ).symm.trans ?_
     rw [Finset.univ_sum_single]
     exact hΞ w z
 

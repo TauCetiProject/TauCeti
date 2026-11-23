@@ -24,8 +24,9 @@ henselization of the pair `(R, 𝔪)` is the henselization of the local ring `R`
   henselian local ring, with maximal ideal `extended I` (`maximalIdeal_eq_extended`).
 * `TauCeti.Henselization.isLocalHom_algebraMap`: for a local ring `R`, the structure map to the
   henselization along the maximal ideal is local.
-* `TauCeti.Henselization.residueField_map_bijective`: it induces an isomorphism of residue
-  fields.
+* `TauCeti.Henselization.residueField_map_bijective`, `TauCeti.Henselization.residueFieldEquiv`,
+  `TauCeti.Henselization.toResidueField`: it induces an isomorphism of residue fields and a
+  canonical surjective `R`-algebra map onto `ResidueField R`.
 * `TauCeti.Henselization.existsUnique_isLocalHom`: every local homomorphism from `R` to a
   henselian local ring factors through a unique local homomorphism out of the henselization.
 
@@ -92,6 +93,65 @@ theorem residueField_map_bijective :
   rw [ResidueField.map_residue, eq_comm]
   exact (Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).mpr
     (maximalIdeal_eq_extended (maximalIdeal R) ▸ hr)
+
+/-- For a local ring `R`, the structure map of the henselization along `maximalIdeal R` induces an
+`R`-algebra isomorphism between `ResidueField R` and `ResidueField (algebra (maximalIdeal R))`. -/
+noncomputable def residueFieldEquiv :
+    ResidueField R ≃ₐ[R] ResidueField (algebra (maximalIdeal R)) :=
+  have he : ⇑(IsScalarTower.toAlgHom R (ResidueField R)
+      (ResidueField (algebra (maximalIdeal R)))) =
+      ResidueField.map (algebraMap R (algebra (maximalIdeal R))) := by
+    ext x
+    obtain ⟨r, rfl⟩ := residue_surjective x
+    simp
+  AlgEquiv.ofBijective
+    (IsScalarTower.toAlgHom R (ResidueField R) (ResidueField (algebra (maximalIdeal R))))
+    (he ▸ residueField_map_bijective R)
+
+/-- `residueFieldEquiv R` sends `residue R r` to the residue of `algebraMap R _ r`. -/
+@[simp]
+theorem residueFieldEquiv_residue (r : R) :
+    residueFieldEquiv R (residue R r) =
+      residue (algebra (maximalIdeal R)) (algebraMap R (algebra (maximalIdeal R)) r) := by
+  simp [← ResidueField.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+
+/-- The canonical `R`-algebra map from the henselization of a local ring `R` onto `ResidueField R`,
+obtained by composing the residue map of `algebra (maximalIdeal R)` with
+`(residueFieldEquiv R).symm`. -/
+noncomputable def toResidueField : algebra (maximalIdeal R) →ₐ[R] ResidueField R :=
+  (residueFieldEquiv R).symm.toAlgHom.comp
+    (IsScalarTower.toAlgHom R (algebra (maximalIdeal R))
+      (ResidueField (algebra (maximalIdeal R))))
+
+/-- The inverse of `residueFieldEquiv R` sends the residue of `x` to `toResidueField R x`. -/
+@[simp]
+theorem residueFieldEquiv_symm_residue (x : algebra (maximalIdeal R)) :
+    (residueFieldEquiv R).symm (residue (algebra (maximalIdeal R)) x) = toResidueField R x := by
+  simp [toResidueField]
+
+/-- Applying `residueFieldEquiv R` after `toResidueField R` recovers the residue map of
+`algebra (maximalIdeal R)`. -/
+@[simp]
+theorem residueFieldEquiv_toResidueField (x : algebra (maximalIdeal R)) :
+    residueFieldEquiv R (toResidueField R x) = residue (algebra (maximalIdeal R)) x :=
+  (residueFieldEquiv R).apply_symm_apply _
+
+/-- `toResidueField R` is surjective. -/
+theorem toResidueField_surjective : Function.Surjective (toResidueField R) :=
+  (residueFieldEquiv R).symm.surjective.comp residue_surjective
+
+/-- The kernel of `toResidueField R` is the maximal ideal of `algebra (maximalIdeal R)`. -/
+@[simp]
+theorem ker_toResidueField :
+    RingHom.ker (toResidueField R) = maximalIdeal (algebra (maximalIdeal R)) :=
+  IsLocalRing.ker_eq_maximalIdeal (toResidueField R).toRingHom (toResidueField_surjective R)
+
+/-- `toResidueField R` is the unique `R`-algebra map
+`algebra (maximalIdeal R) →ₐ[R] ResidueField R`. -/
+theorem eq_toResidueField (f : algebra (maximalIdeal R) →ₐ[R] ResidueField R) :
+    f = toResidueField R :=
+  algHom_ext_of_map_le_jacobson <| Ideal.map_le_iff_le_comap.mpr fun _ hr ↦ by
+    simp [ResidueField.algebraMap_eq, (residue_eq_zero_iff _).mpr hr]
 
 variable {R} {S : Type v} [CommRing S] [HenselianLocalRing S] [Algebra R S]
   [IsLocalHom (algebraMap R S)]

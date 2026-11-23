@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Existence
 /-!
 # Maps out of the presentation model of `K(A, n + 2)`
 
-Let `W = TauCeti.EilenbergMacLane.wedge A n` be the wedge of `(n + 2)`-spheres indexed by an
+Let `W = TauCeti.sphereWedge A (n + 2)` be the wedge of `(n + 2)`-spheres indexed by an
 abelian group `A`, let `ψ : Hₙ₊₂(W; ℤ) → A` be linear, and let
 `Y = TauCeti.EilenbergMacLane.presentation A n ψ` be the presentation complex, obtained by
 attaching an `(n + 3)`-cell along every map `g : Sⁿ⁺² → W` whose class `g_*[Sⁿ⁺²]` lies in the
@@ -21,13 +21,13 @@ This file proves the extension half of Hatcher's Lemma 4.31 and Proposition 4.30
 without assuming that `ψ` is surjective.
 
 * **Extension over the relation cells.** A map `f : W → Z` into a space whose homotopy groups
-  vanish below dimension `n + 2` at every point extends over `Y` exactly when the induced map
+  vanish below dimension `n + 2` extends over `Y` exactly when the induced map
   `f_* : Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` kills the kernel of `ψ`
-  (`TauCeti.EilenbergMacLane.exists_cellAttachmentIncl_comp_eq_iff`). Indeed, a relation `g`
-  is the attaching sphere of a generalized loop `p` of `W`, whose Hurewicz class is, up to sign,
-  `g_*[Sⁿ⁺²]`; so `f_*` kills it, and by the Hurewicz theorem in `Z` the class of `f ∘ p` is
-  trivial, that is, `f ∘ g` is null-homotopic and extends over the disk. Conversely the kernel of
-  `ψ` dies in `Hₙ₊₂(Y; ℤ)` (`TauCeti.EilenbergMacLane.ker_singularHomologyMap_presentation`).
+  (`TauCeti.EilenbergMacLane.exists_cellAttachmentIncl_comp_eq_iff`). Indeed, `f_*` then kills
+  the class `g_*[Sⁿ⁺²]` of every relation `g`, so `f ∘ g` is null-homologous, hence null-homotopic
+  (`TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero`), and extends over the disk.
+  Conversely the kernel of `ψ` dies in `Hₙ₊₂(Y; ℤ)`
+  (`TauCeti.EilenbergMacLane.ker_singularHomologyMap_presentation`).
 * **Extension to a weak equivalence.** If moreover `Z` is a `K(G, n + 2)` space and `f_*` is
   surjective with kernel exactly the kernel of `ψ`, then the extension induces a bijection on
   `πₙ₊₂`, by the Hurewicz theorem in `Y` and in `Z`. Since `Z` has no homotopy above dimension
@@ -37,8 +37,8 @@ without assuming that `ψ` is surjective.
   (`TauCeti.EilenbergMacLane.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence`).
 
 So every `K(G, n + 2)` space receiving such a map from the wedge is weakly equivalent to the
-model. What these statements leave to the caller is the map `f` itself, built sphere by sphere
-from representatives of the homotopy classes of `Z`.
+model. Unlike the uniqueness theorems of `TauCeti.AlgebraicTopology.EilenbergMacLane.Uniqueness`,
+which build a suitable map on the wedge themselves, these statements extend a prescribed map `f`.
 
 ## Main results
 
@@ -70,45 +70,28 @@ namespace EilenbergMacLane
 
 variable {A : Type} [AddCommGroup A] {n : ℕ}
   {ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
-    (wedge A n) →ₗ[ℤ] A}
+    (sphereWedge A (n + 2)) →ₗ[ℤ] A}
   {Z : TopCat.{0}}
 
-/-- **The relation spheres die under a map killing the kernel of `ψ`.** If the homotopy groups of
-`Z` vanish below dimension `n + 2` at every point and `f : W → Z` induces on `Hₙ₊₂(-; ℤ)` a map
-vanishing on the kernel of `ψ`, then `f` composed with the attaching map of every relation cell of
-the presentation complex is null-homotopic. -/
-theorem nullhomotopic_relationAttach_comp
-    (hZ : ∀ z : Z, ∀ k < n + 2, Subsingleton (π_ k Z z)) (f : wedge A n ⟶ Z)
+/-- **The relation spheres die under a map killing the kernel of `ψ`.** If the homotopy groups
+`πₖ(Z, z)` vanish for every `k < n + 2` and `f : W → Z` induces on `Hₙ₊₂(-; ℤ)` a map vanishing on
+the kernel of `ψ`, then `f` composed with the attaching map of every relation cell of the
+presentation complex is null-homotopic. -/
+theorem nullhomotopic_relationAttach_comp {z : Z}
+    (hZ : ∀ k < n + 2, Subsingleton (π_ k Z z)) (f : sphereWedge A (n + 2) ⟶ Z)
     (hf : ∀ h ∈ LinearMap.ker ψ, (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
       (ModuleCat.of ℤ ℤ)).map f).hom h = 0) (r : Relation A n ψ) :
-    (relationAttach A n ψ r ≫ f).hom.Nullhomotopic := by
-  -- Read the relation `g` as the attaching sphere of a generalized loop `p` of the wedge, based at
-  -- the image of the north pole.
-  obtain ⟨g, hr⟩ := r
-  -- The attaching map `relationAttach A n ψ ⟨g, hr⟩` is `g` by definition.
-  change (g ≫ f).hom.Nullhomotopic
-  let p : Ω^ (Fin (n + 2)) (wedge A n) (g ⟨sphereNorthPole (n + 2)⟩) :=
-    (GenLoop.sphereEquiv (n + 2) _ _).symm ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩
-  have hp : GenLoop.diskBoundaryMap p = g := GenLoop.diskBoundaryMap_sphereEquiv_symm g
-  -- The Hurewicz class of `p` is, up to sign, the class of the relation, so it lies in `ker ψ`.
-  have hker : (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ LinearMap.ker ψ := by
-    rw [← hp] at hr
-    exact (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p _).1 hr
-  -- So the class of `f ∘ p` has trivial Hurewicz class, and is trivial by the Hurewicz theorem.
-  rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl]
-  refine (HomotopyGroup.bijective_hurewicz (hZ _)).1 ?_
-  refine (congrArg (fun t ↦ ModuleCat.Hom.hom t (1 : ℤ)) (HomotopyGroup.hurewicz_map
-    (ModuleCat.of ℤ ℤ) (n + 1) f.hom rfl
-      (⟦p⟧ : HomotopyGroup (Fin (n + 2)) (wedge A n) _))).trans ?_
-  rw [HomotopyGroup.hurewicz_mk, ModuleCat.hom_comp, LinearMap.comp_apply]
-  simpa using hf _ hker
+    (relationAttach A n ψ r ≫ f).hom.Nullhomotopic :=
+  -- The relation sphere is null-homologous after `f`, hence null-homotopic.
+  (TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero hZ _).2 <| by
+    rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+    exact hf _ r.property
 
-/-- **Extension over the presentation complex.** If the homotopy groups of `Z` vanish below
-dimension `n + 2` at every point, a map `f : W → Z` from the wedge of spheres extends over the
-presentation complex exactly when the induced map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` vanishes on the kernel
-of `ψ`. -/
-theorem exists_cellAttachmentIncl_comp_eq_iff
-    (hZ : ∀ z : Z, ∀ k < n + 2, Subsingleton (π_ k Z z)) (f : wedge A n ⟶ Z) :
+/-- **Extension over the presentation complex.** If the homotopy groups `πₖ(Z, z)` vanish for every
+`k < n + 2`, a map `f : W → Z` from the wedge of spheres extends over the presentation complex
+exactly when the induced map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` vanishes on the kernel of `ψ`. -/
+theorem exists_cellAttachmentIncl_comp_eq_iff {z : Z}
+    (hZ : ∀ k < n + 2, Subsingleton (π_ k Z z)) (f : sphereWedge A (n + 2) ⟶ Z) :
     (∃ F : presentation A n ψ ⟶ Z, cellAttachmentIncl (relationAttach A n ψ) ≫ F = f) ↔
       ∀ h ∈ LinearMap.ker ψ, (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
         (ModuleCat.of ℤ ℤ)).map f).hom h = 0 := by
@@ -169,7 +152,8 @@ homotopy equivalence from the presentation complex with its homotopy groups abov
 killed. In general this source is a `K(im ψ, n + 2)`; it is the model `K(A, n + 2)` when `ψ` is
 surjective. -/
 theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G : Type*} [Group G]
-    (f : wedge A n ⟶ Z) (hZ : IsEilenbergMacLaneSpace G (n + 2) Z (f (wedgeBase A n)))
+    (f : sphereWedge A (n + 2) ⟶ Z)
+    (hZ : IsEilenbergMacLaneSpace G (n + 2) Z (f (sphereWedgeBase A (n + 2))))
     (hker : LinearMap.ker (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
       (ModuleCat.of ℤ ℤ)).map f).hom = LinearMap.ker ψ)
     (hsurj : Function.Surjective (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
@@ -181,9 +165,10 @@ theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G :
   have hZ' (z' : Z) (k : ℕ) (hk : k < n + 2) : Subsingleton (π_ k Z z') :=
     (hZ.of_basepoint z').subsingleton_homotopyGroup hk.ne
   -- First extend over the relation cells.
-  obtain ⟨F₁, hF₁⟩ := (exists_cellAttachmentIncl_comp_eq_iff hZ' f).2 fun h hh ↦ by
-    rw [← hker] at hh
-    exact hh
+  obtain ⟨F₁, hF₁⟩ :=
+    (exists_cellAttachmentIncl_comp_eq_iff (hZ' (f (sphereWedgeBase A (n + 2)))) f).2 fun h hh ↦ by
+      rw [← hker] at hh
+      exact hh
   -- The extension is bijective on `πₙ₊₂`, so it extends to a weak equivalence out of the model.
   have : PathConnectedSpace (presentation A n ψ) :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2

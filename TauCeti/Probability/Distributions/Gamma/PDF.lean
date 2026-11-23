@@ -82,4 +82,20 @@ theorem rnDeriv_gammaMeasure (a r : ℝ) :
   unfold gammaMeasure
   exact Measure.rnDeriv_withDensity volume (measurable_gammaPDF a r)
 
+/-- The Gamma density of shape `n + 1` and rate one, with its tilt `exp (-s)` removed, is the
+density `s^n / n!` on `[0, ∞)`. -/
+theorem gammaPDF_mul_ofReal_exp (n : ℕ) (s : ℝ) :
+    gammaPDF (n + 1) 1 s * ENNReal.ofReal (Real.exp s) =
+      (Set.Ici (0 : ℝ)).indicator (fun s ↦ ENNReal.ofReal (s ^ n / n.factorial)) s := by
+  by_cases hs : 0 ≤ s
+  · have h := gammaPDFReal_nat_eq (k := n + 1) (r := 1) (Nat.le_add_left 1 n) hs
+    push_cast at h
+    rw [gammaPDF, h, Set.indicator_of_mem (Set.mem_Ici.mpr hs), ← ENNReal.ofReal_mul
+      (by positivity)]
+    congr 1
+    rw [one_pow, one_mul, Real.exp_neg]
+    field_simp
+  · rw [gammaPDF_of_neg (not_le.mp hs), zero_mul,
+      Set.indicator_of_notMem (show s ∉ Set.Ici 0 by simpa using hs)]
+
 end TauCeti.Probability

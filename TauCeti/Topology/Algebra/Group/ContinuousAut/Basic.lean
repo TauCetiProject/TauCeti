@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
+public import TauCeti.GroupTheory.Automorphism.Outer
 public import TauCeti.Topology.Algebra.Group.Basic
 
 /-!
@@ -211,10 +212,8 @@ theorem toMulEquiv_conj (g : G) : (conj g : G ≃* G) = MulAut.conj g :=
 
 /-- The kernel of the inner-automorphism homomorphism is the centre. -/
 theorem ker_conj : (conj : G →* ContinuousAut G).ker = Subgroup.center G := by
-  ext g
-  simp only [MonoidHom.mem_ker, ContinuousMulEquiv.ext_iff, conj_apply, one_apply,
-    Subgroup.mem_center_iff, mul_inv_eq_iff_eq_mul]
-  exact forall_congr' fun _ ↦ eq_comm
+  rw [← MulAut.ker_conj, ← MonoidHom.ker_comp_of_injective _ _ toMulAut_injective]
+  exact congrArg MonoidHom.ker (MonoidHom.ext toMulAut_conj)
 
 /-- Conjugation is injective exactly when the centre is trivial. -/
 theorem conj_injective_iff :
@@ -262,10 +261,10 @@ def conjNormal : G →* ContinuousAut N where
   toFun g :=
     { MulAut.conjNormal g with
       continuous_toFun := continuous_induced_rng.mpr <|
-        ((continuous_subtype_val.const_mul g).mul_const g⁻¹).congr
+        ((continuous_subtypeVal.const_mul g).mul_const g⁻¹).congr
           fun n ↦ (MulAut.conjNormal_apply g n).symm
       continuous_invFun := continuous_induced_rng.mpr <|
-        ((continuous_subtype_val.const_mul g⁻¹).mul_const g).congr
+        ((continuous_subtypeVal.const_mul g⁻¹).mul_const g).congr
           fun n ↦ (MulAut.conjNormal_symm_apply g n).symm }
   map_one' := toMulAut_injective (map_one MulAut.conjNormal)
   map_mul' a b := toMulAut_injective (map_mul MulAut.conjNormal a b)

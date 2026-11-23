@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Ideal.IdempotentFG
 
@@ -28,6 +29,10 @@ element `a` is a Serre property exactly when `a` is zero or a unit. For `R = ℤ
 killed by a fixed integer `n` form a Serre class only for `n ∈ {0, 1, -1}`. In particular, for
 `d ≥ 2` and `m ≥ 1`, the groups killed by `dᵐ` are not closed under extensions (`ℤ/d²ᵐ` is an
 extension of `ℤ/dᵐ` by itself), whereas the groups killed by some power of `d` are a Serre class.
+
+A natural number `e` kills a module in the categorical sense of
+`CategoryTheory.ObjectProperty.isKilledBy`, `e • 𝟙 M = 0`, exactly when it annihilates every
+element (`ModuleCat.prop_isKilledBy_iff`).
 
 ## References
 
@@ -81,9 +86,9 @@ theorem isIdempotentElem_of_isClosedUnderExtensions_isTorsionBySet (I : Ideal R)
     obtain ⟨r, hr⟩ := Quotient.mk_surjective (x : R ⧸ (I * I))
     have hrI : r ∈ I := Quotient.eq_zero_iff_mem.mp (by
       rw [← hf, hr]
-      exact x.2)
+      exact x.property)
     simpa [← hr, Algebra.smul_def] using
-      (Quotient.eq_zero_iff_mem.mpr (mul_mem_mul a.2 hrI))
+      (Quotient.eq_zero_iff_mem.mpr (mul_mem_mul a.property hrI))
   have hquot : Module.IsTorsionBySet R (R ⧸ I) (I : Set R) :=
     (Module.isTorsionBySet_quotient_iff I (I : Set R)).mpr fun r a ha ↦ I.mul_mem_right r ha
   have hmid : Module.IsTorsionBySet R (R ⧸ (I * I)) (I : Set R) :=
@@ -104,6 +109,19 @@ theorem isSerreClass_isTorsionBySet_iff (I : Ideal R) :
     h.toIsClosedUnderExtensions, I.isSerreClass_isTorsionBySet⟩
 
 end Ideal
+
+namespace ModuleCat
+
+/-- A natural number `e` kills a module, as an object of `ModuleCat R`, exactly when it annihilates
+every element. -/
+theorem prop_isKilledBy_iff {R : Type u} [Ring R] (e : ℕ) (M : ModuleCat.{v} R) :
+    ObjectProperty.isKilledBy (ModuleCat.{v} R) e M ↔ ∀ x : M, e • x = 0 := by
+  rw [ObjectProperty.prop_isKilledBy_iff]
+  refine ⟨fun h x ↦ by simpa using congr(($h).hom x), fun h ↦ ?_⟩
+  ext x
+  simpa using h x
+
+end ModuleCat
 
 namespace TauCeti
 

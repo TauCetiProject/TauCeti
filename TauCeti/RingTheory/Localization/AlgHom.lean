@@ -41,7 +41,7 @@ theorem IsLocalization.range_comp_toAlgHom (M : Submonoid A) [IsLocalization M B
   · rintro ⟨y, rfl⟩ m hm
     exact (IsLocalization.map_units B ⟨m, hm⟩).map y
   · intro hx
-    exact ⟨IsLocalization.liftAlgHom (S := B) fun m : M ↦ hx m m.2,
+    exact ⟨IsLocalization.liftAlgHom (S := B) fun m : M ↦ hx m m.property,
       AlgHom.ext fun a ↦ IsLocalization.lift_eq _ a⟩
 
 /-- A `k`-algebra homomorphism out of `A` extends to the localization `B` of `A` away from `f`
