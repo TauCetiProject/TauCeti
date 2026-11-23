@@ -412,6 +412,7 @@ theorem traceForm_nondegenerate [NeZero (n : K)] : (traceForm K n).Nondegenerate
   apply ((traceBilinForm_isSymm K (Fin n)).restrict
     (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule).isRefl.nondegenerate_iff_separatingLeft.mpr
   intro X h
+  -- Name the restricted bilinear form in the radical hypothesis so traceForm_apply rewrites it.
   change ∀ Y, traceForm K n X Y = 0 at h
   exact eq_zero_of_forall_trace_mul_eq_zero K n X fun Y => by
     simpa only [traceForm_apply] using h Y

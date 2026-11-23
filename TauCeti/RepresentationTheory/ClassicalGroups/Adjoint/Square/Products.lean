@@ -40,8 +40,8 @@ noncomputable def alternatingProductMap :
   isIntertwining' g := by
     apply TensorProduct.ext'
     intro X Y
-    rw [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
-      TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul]
+    simp only [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+      TensorProduct.lift.tmul]
     apply Subtype.ext
     -- `LieAlgebra.ad` is the bracket, so `lift` on a pure tensor is definitionally `⁅·, ·⁆`.
     change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
@@ -87,8 +87,8 @@ noncomputable def symmetricProductMap :
   isIntertwining' g := by
     apply TensorProduct.ext'
     intro X Y
-    rw [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
-      TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul]
+    simp only [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+      TensorProduct.lift.tmul]
     apply Subtype.ext
     simp only [coe_symmetricProduct, coe_adjointRep_apply, SpecialLinearGroup.conj_eq_units_smul,
       tracelessAnticommutator_units_smul]
