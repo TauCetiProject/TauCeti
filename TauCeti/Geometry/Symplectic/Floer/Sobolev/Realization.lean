@@ -90,11 +90,12 @@ The Fredholm property and the index of `D_u` depend only on the asymptotic orbit
 data of the Floer data, and in a unitary trivialization, for Floer data with the data `(i, 0, H_t)`
 of a Hamiltonian `H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of
 index zero along maps `u` from `x` to itself; both are proved by deformation in
-`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
-(`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`, which proves
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`,
-`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`,
-`SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`).
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt` and
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`
+among others.
 
 The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`

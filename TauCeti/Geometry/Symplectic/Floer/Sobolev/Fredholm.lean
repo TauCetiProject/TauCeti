@@ -53,9 +53,12 @@ the Floer data beyond their end data.
   holds for any `C¹` map `u` whose loops converge uniformly to `x` at both ends, with slice defects
   tending uniformly to zero there; `u` need not solve the Floer equation (it may be, for instance,
   a pre-glued map). By the invariance under the data, the same holds for all Floer data with the
-  data `(i, 0, H_t)` at both ends, such as those of a continuation cylinder from `H` to itself
-  (`isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`,
-  `index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`).
+  data `(i, 0, H_t)` at both ends, such as those of a continuation cylinder from `H` to itself.
+  For such data, the Fredholm property and index zero are
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`
+  and
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`
+  respectively.
 
 The proof of the invariance under the map deforms `u` into `u'` along the segment
 `u_λ = u + λ (u' - u)`. Every `u_λ` has the same asymptotic orbits, so the semi-Fredholm estimate
