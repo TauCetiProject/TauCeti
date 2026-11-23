@@ -393,6 +393,16 @@ def dual (ψ : SimilarityHom n c d) : SimilarityHom n c.dual d.dual where
 @[simp]
 theorem dual_apply (ψ : SimilarityHom n c d) (x : B) : ψ.dual x = ψ x := (rfl)
 
+@[simp]
+theorem dual_comp (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
+    (χ.comp ψ).dual = χ.dual.comp ψ.dual :=
+  (rfl)
+
+@[simp]
+theorem dual_compStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) :
+    (ψ.compStrictHom φ).dual = ψ.dual.compStrictHom φ.dual :=
+  ext fun _ ↦ by simp
+
 /-- The map on connected components of the crystal graph induced by a similarity morphism. -/
 def mapConnectedComponent (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) :
     d.graph.ConnectedComponent :=
@@ -569,5 +579,12 @@ theorem SimilarityHom.toStrictHom_compSimilarityHom
     (φ : StrictHom d d') (ψ : SimilarityHom 1 c d) :
     (φ.compSimilarityHom ψ).toStrictHom = φ.comp ψ.toStrictHom :=
   StrictHom.ext fun _ ↦ by simp
+
+@[simp]
+theorem SimilarityHom.dual_compSimilarityHom
+    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
+    {n : ℕ} (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
+    (φ.compSimilarityHom ψ).dual = φ.dual.compSimilarityHom ψ.dual :=
+  SimilarityHom.ext fun _ ↦ by simp
 
 end TauCeti.NormalCrystal

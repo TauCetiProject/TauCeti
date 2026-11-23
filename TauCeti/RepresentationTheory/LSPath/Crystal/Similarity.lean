@@ -109,6 +109,7 @@ theorem dilationToNormalCrystalSimilarityHom_injective (hf : Function.Injective 
   dilationSimilarityHom_injective hf hF hS isCrystalSet_setOf_isIntegralPath hn hmap
 
 /-- Precomposing `dilationSimilarityHom` with `inclusionHom` restricts the source set. -/
+@[simp]
 theorem dilationSimilarityHom_compStrictHom_inclusionHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T U : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
@@ -120,6 +121,7 @@ theorem dilationSimilarityHom_compStrictHom_inclusionHom (hf : Function.Injectiv
   NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext (by simp)
 
 /-- Postcomposing `dilationSimilarityHom` with `inclusionHom` enlarges the target set. -/
+@[simp]
 theorem inclusionHom_compSimilarityHom_dilationSimilarityHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T U : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
@@ -132,6 +134,7 @@ theorem inclusionHom_compSimilarityHom_dilationSimilarityHom (hf : Function.Inje
 
 /-- Precomposing `dilationToNormalCrystalSimilarityHom` with `inclusionHom` restricts the source
 set. -/
+@[simp]
 theorem dilationToNormalCrystalSimilarityHom_compStrictHom_inclusionHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
@@ -145,6 +148,7 @@ theorem dilationToNormalCrystalSimilarityHom_compStrictHom_inclusionHom (hf : Fu
 
 /-- Postcomposing `dilationSimilarityHom` with `embedHom` gives
 `dilationToNormalCrystalSimilarityHom`. -/
+@[simp]
 theorem embedHom_compSimilarityHom_dilationSimilarityHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
@@ -178,6 +182,7 @@ theorem toStrictHom_dilationToNormalCrystalSimilarityHom_one (hf : Function.Inje
 
 /-- Composing a magnification-`m` dilation with a magnification-`n` dilation equals the
 magnification-`(m * n)` dilation. -/
+@[simp]
 theorem dilationSimilarityHom_comp (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T U : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)

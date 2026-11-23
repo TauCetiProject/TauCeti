@@ -121,6 +121,22 @@ theorem raiseIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
   funext q
   exact (map_reverse q (a • LinearMap.id)).symm
 
+/-- Positive-scalar dilation preserves and reflects iterated lowering via `(m : 𝕜) = a * n`. -/
+theorem lowerIter_map_smul_eq_some_iff (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
+    (hmn : (m : 𝕜) = a * n) {p q : PLPath 𝕜 V} :
+    lowerIter f x m (p.map (a • LinearMap.id)) = some (q.map (a • LinearMap.id)) ↔
+      lowerIter f x n p = some q := by
+  rw [lowerIter_map_smul hx ha hmn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) ha.ne').eq_iff]
+
+/-- Positive-scalar dilation preserves and reflects iterated raising via `(m : 𝕜) = a * n`. -/
+theorem raiseIter_map_smul_eq_some_iff (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
+    (hmn : (m : 𝕜) = a * n) {p q : PLPath 𝕜 V} :
+    raiseIter f x m (p.map (a • LinearMap.id)) = some (q.map (a • LinearMap.id)) ↔
+      raiseIter f x n p = some q := by
+  rw [raiseIter_map_smul hx ha hmn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) ha.ne').eq_iff]
+
 /-- Fractional contraction form of similarity (Littelmann, Lemma 2.1(d)): for `0 < n`, lowering
 once on `(n : 𝕜)⁻¹ • p` equals contracting `n`-fold lowering on `p`. -/
 theorem lower_map_inv_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
@@ -198,8 +214,8 @@ theorem lowerIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 
     lowerIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
         some (q.map ((n : 𝕜) • LinearMap.id)) ↔
       lower f x p = some q := by
-  rw [lowerIter_map_natCast_smul hx hn, Option.map_eq_some_iff]
-  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
+  simpa using lowerIter_map_smul_eq_some_iff hx (Nat.cast_pos.mpr hn)
+    (m := n) (n := 1) (by simp) (p := p) (q := q)
 
 /-- Positive-integer dilation preserves and reflects single-step raising via `raiseIter f x n`. -/
 theorem raiseIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 < n)
@@ -207,8 +223,8 @@ theorem raiseIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 
     raiseIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
         some (q.map ((n : 𝕜) • LinearMap.id)) ↔
       raise f x p = some q := by
-  rw [raiseIter_map_natCast_smul hx hn, Option.map_eq_some_iff]
-  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
+  simpa using raiseIter_map_smul_eq_some_iff hx (Nat.cast_pos.mpr hn)
+    (m := n) (n := 1) (by simp) (p := p) (q := q)
 
 /-- Lowering along a word commutes with positive-integer dilation upon repeating each letter `n`
 times. -/
@@ -235,26 +251,6 @@ theorem raiseWord_flatMap_replicate_map_natCast_smul {F : ι → Dual 𝕜 V} {x
     rw [List.flatMap_cons, raiseWord_append, raiseWord_replicate,
       raiseIter_map_natCast_smul (hx i) hn, raiseWord_cons]
     cases raise (F i) (x i) p <;> simp [ih]
-
-/-- Dilation by `n > 0` preserves and reflects lowering along any word via `n`-fold letter
-replication. -/
-theorem lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
-    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
-    lowerWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
-        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
-      lowerWord F x w p = some q := by
-  rw [lowerWord_flatMap_replicate_map_natCast_smul hx hn, Option.map_eq_some_iff]
-  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
-
-/-- Dilation by `n > 0` preserves and reflects raising along any word via `n`-fold letter
-replication. -/
-theorem raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
-    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
-    raiseWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
-        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
-      raiseWord F x w p = some q := by
-  rw [raiseWord_flatMap_replicate_map_natCast_smul hx hn, Option.map_eq_some_iff]
-  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
 
 /-- **Dilation similarity for lowering words**: for `F i (x i) = 2`, `0 < a`, and
 `(m : 𝕜) = a * n`, lowering along `w.flatMap fun i ↦ List.replicate m i` on the `a`-dilated path
@@ -288,6 +284,50 @@ theorem raiseWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι �
   congr 1
   funext ρ
   exact (map_reverse ρ (a • LinearMap.id)).symm
+
+/-- Positive-scalar dilation preserves and reflects lowering along replicated words via
+`(m : 𝕜) = a * n`. -/
+theorem lowerWord_flatMap_replicate_map_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ} (hmn : (m : 𝕜) = a * n)
+    (w : List ι) {π ρ : PLPath 𝕜 V} :
+    lowerWord F x (w.flatMap fun i ↦ List.replicate m i) (π.map (a • LinearMap.id)) =
+        some (ρ.map (a • LinearMap.id)) ↔
+      lowerWord F x (w.flatMap fun i ↦ List.replicate n i) π = some ρ := by
+  rw [lowerWord_flatMap_replicate_map_smul hx ha hmn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) ha.ne').eq_iff]
+
+/-- Positive-scalar dilation preserves and reflects raising along replicated words via
+`(m : 𝕜) = a * n`. -/
+theorem raiseWord_flatMap_replicate_map_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ} (hmn : (m : 𝕜) = a * n)
+    (w : List ι) {π ρ : PLPath 𝕜 V} :
+    raiseWord F x (w.flatMap fun i ↦ List.replicate m i) (π.map (a • LinearMap.id)) =
+        some (ρ.map (a • LinearMap.id)) ↔
+      raiseWord F x (w.flatMap fun i ↦ List.replicate n i) π = some ρ := by
+  rw [raiseWord_flatMap_replicate_map_smul hx ha hmn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) ha.ne').eq_iff]
+
+/-- Dilation by `n > 0` preserves and reflects lowering along any word via `n`-fold letter
+replication. -/
+theorem lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
+    lowerWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      lowerWord F x w p = some q := by
+  simpa [List.flatMap_singleton] using
+    lowerWord_flatMap_replicate_map_smul_eq_some_iff hx (Nat.cast_pos.mpr hn)
+      (m := n) (n := 1) (by simp) w (π := p) (ρ := q)
+
+/-- Dilation by `n > 0` preserves and reflects raising along any word via `n`-fold letter
+replication. -/
+theorem raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
+    raiseWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      raiseWord F x w p = some q := by
+  simpa [List.flatMap_singleton] using
+    raiseWord_flatMap_replicate_map_smul_eq_some_iff hx (Nat.cast_pos.mpr hn)
+      (m := n) (n := 1) (by simp) w (π := p) (ρ := q)
 
 /-- Lowering along `w` on the contracted path `(n : 𝕜)⁻¹ • π` equals contracting lowering along the
 `n`-fold letter-replicated word on `π`. -/
