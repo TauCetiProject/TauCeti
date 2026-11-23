@@ -202,7 +202,7 @@ theorem exists_compLpL_prev_eq_of_mem_orthogonal_range_familyDomainTrajectoryOpe
     at hg
   -- Solve the adjoint autonomous equation `D_{-B} w = g`.
   obtain ⟨w, hw⟩ := (bijective_domainTrajectoryOperator
-    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmB)
+    (fun x y ↦ ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply (hSymmB x y))
     (ContinuousLinearMap.isInvertible_neg_iff.2 hB)).2 g
   -- Then `⟪D_B u, η - ι ∘ w⟫ = 0` for every `u`, and `D_B` is onto, so `η = ι ∘ w`.
   refine ⟨w, (sub_eq_zero.1 (inner_self_eq_zero (𝕜 := ℝ) |>.1 ?_)).symm⟩
@@ -338,9 +338,11 @@ private theorem isClosed_range_familyDomainTrajectoryOperator_of_ae (hι : IsCom
     (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     IsClosed ((familyDomainTrajectoryOperator (p := 2) ι AL).range : Set (Lp H 2 μ₀)) :=
   isClosed_range_familyDomainTrajectoryOperator hι
-    (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (frequently_atBot_of_ae hSymm))
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
+      (frequently_atBot_of_ae (hSymm.mono fun _ hs ↦ hs x y)))
     hBbot
-    (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (frequently_atTop_of_ae hSymm))
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+      (frequently_atTop_of_ae (hSymm.mono fun _ hs ↦ hs x y)))
     hBtop hAL hbot htop
     fun _ ↦ ⟨c, hc.mono fun _ hs _ ↦ hs⟩
 
@@ -354,9 +356,9 @@ private theorem finiteDimensional_ker_familyDomainTrajectoryOperator_neg
     (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker := by
   refine finiteDimensional_ker_familyDomainTrajectoryOperator (A := -A) hι
-    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmbot)
+    (fun x y ↦ ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply (hSymmbot x y))
     (ContinuousLinearMap.isInvertible_neg_iff.2 hBbot)
-    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmtop)
+    (fun x y ↦ ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply (hSymmtop x y))
     (ContinuousLinearMap.isInvertible_neg_iff.2 hBtop)
     ((Lp.coeFn_neg AL).trans hAL.neg) hbot.neg htop.neg fun _ ↦ ⟨c, hc.mono fun s hs _ x ↦ ?_⟩
   -- `(-A s) - (-B₊) = -(A s - B₊)`.
@@ -391,8 +393,8 @@ private noncomputable def quotientRangeEquivMapKer (hι : IsCompactOperator ι)
     hc).completeSpace_coe
   (familyDomainTrajectoryOperator (p := 2) ι AL).range.quotientEquivOrthogonal.toLinearEquiv.trans
     (LinearEquiv.ofEq _ _ (orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto
-      hSymm (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
-        (frequently_atTop_of_ae hSymm)) hBtop hAL hc))
+      hSymm (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+        (frequently_atTop_of_ae (hSymm.mono fun _ hs ↦ hs x y))) hBtop hAL hc))
 
 /-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι : D →L[ℝ] H`
 be a compact operator, and let `A : ℝ → (D →L[ℝ] H)` be a family of operators, `ι`-symmetric for
@@ -407,10 +409,10 @@ theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
     (hc : ∃ c, ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm := by
   obtain ⟨c, hc⟩ := hc
-  have hSymmbot :=
-    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (frequently_atBot_of_ae hSymm)
-  have hSymmtop :=
-    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (frequently_atTop_of_ae hSymm)
+  have hSymmbot (x y : D) := ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
+    (frequently_atBot_of_ae (hSymm.mono fun _ hs ↦ hs x y))
+  have hSymmtop (x y : D) := ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+    (frequently_atTop_of_ae (hSymm.mono fun _ hs ↦ hs x y))
   have := finiteDimensional_ker_familyDomainTrajectoryOperator_neg hι hSymmbot hBbot hSymmtop hBtop
     hAL hbot htop hc
   refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Equivalence
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.RingTheory.Idempotents.Corner.Retract
-public import TauCeti.RingTheory.Morita.Corner
+public import TauCeti.RingTheory.Morita.Corner.Basic
 
 /-!
 # Morita equivalence through progenerators
