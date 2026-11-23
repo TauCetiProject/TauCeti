@@ -487,8 +487,10 @@ def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X �
 
 /-- Forward evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
 @[simp] theorem endStarAlgEquiv_apply (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
-    X.endStarAlgEquiv a = a.asHom.hom :=
-  ((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv_apply_asHom 𝕜 X a
+    X.endStarAlgEquiv a = a.asHom.hom := by
+  unfold endStarAlgEquiv
+  simp only [StarAlgEquiv.trans_apply, HilbertCat.endStarAlgEquiv_apply,
+    Functor.mapEndStarAlgEquiv_apply_asHom, ObjectProperty.ι_map]
 
 /-- Inverse evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
 @[simp] theorem endStarAlgEquiv_symm_apply (X : FDHilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
