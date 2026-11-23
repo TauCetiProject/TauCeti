@@ -10,23 +10,24 @@ public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
-public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
+public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Algebra.Star.Projection.Basic
 import TauCeti.Analysis.CStarAlgebra.Exponential
 import TauCeti.Data.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 
 /-!
 # Permanence, stabilized unitary conjugacy, and homotopy for Murray–von Neumann equivalence
 
-Building on `Matrix.IsMurrayVonNeumannEquivalent`
-(`TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann`) and the `2 × 2` block calculus
+Building on `CStarMatrix.MurrayVonNeumannEquiv`
+(`TauCeti.Analysis.CStarAlgebra.Projection.Equivalence`) and the `2 × 2` block calculus
 (`TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block`), this file develops unitization permanence,
 stabilized unitary conjugacy, and the explicit exponential rotation path between Murray–von Neumann
 equivalent projections in matrix C⋆-algebras:
 
 * Unitization unitary conjugacy permanence
-  (`CStarMatrix.isMurrayVonNeumannEquivalent_of_unitization_unitary_conj`) and the setoid
+  (`CStarMatrix.murrayVonNeumannEquiv_of_unitization_unitary_conj`) and the setoid
   `CStarMatrix.murrayVonNeumannSetoid` on `{p : CStarMatrix n n A // IsStarProjection p}`.
 * Stabilized unitary conjugacy and the explicit exponential rotation path: for unital `A`, the
   symmetry `stabilizedSymmetry p q v = fromBlocks (1 - p) v.conjTranspose v (1 - q)` conjugates
@@ -38,14 +39,14 @@ equivalent projections in matrix C⋆-algebras:
 
 ## Main declarations
 
-* `CStarMatrix.isMurrayVonNeumannEquivalent_of_unitization_unitary_conj`: unitary conjugacy in
+* `CStarMatrix.murrayVonNeumannEquiv_of_unitization_unitary_conj`: unitary conjugacy in
   `Unitization` implies Murray–von Neumann equivalence.
 * `CStarMatrix.murrayVonNeumannSetoid`: setoid of Murray–von Neumann equivalence on star projections
   of fixed finite size `n`.
 * `CStarMatrix.stabilizedSymmetry`, `CStarMatrix.rotationProjection`,
   `CStarMatrix.rotationUnitary`, `CStarMatrix.rotationPath`,
-  `Matrix.IsMurrayVonNeumannEquivalent.joined_inl_inr`,
-  `Matrix.IsMurrayVonNeumannEquivalent.joined_inl_inl`: stabilized unitary conjugacy and
+  `CStarMatrix.MurrayVonNeumannEquiv.joined_inl_inr`,
+  `CStarMatrix.MurrayVonNeumannEquiv.joined_inl_inl`: stabilized unitary conjugacy and
   projection homotopy.
 
 ## References
@@ -73,7 +74,7 @@ private theorem inr_snd_eq_of_fst_eq_zero {R A : Type*} [AddZeroClass R] [AddZer
 /-- If two matrix projections `p, q : CStarMatrix n n A` over a possibly non-unital `⋆`-algebra `A`
 become unitarily conjugate inside the unitization `Unitization R (CStarMatrix n n A)`, then `p` and
 `q` are Murray–von Neumann equivalent inside `CStarMatrix n n A`. -/
-theorem isMurrayVonNeumannEquivalent_of_unitization_unitary_conj [Fintype n]
+theorem murrayVonNeumannEquiv_of_unitization_unitary_conj [Fintype n]
     [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A]
     [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
     {p q : CStarMatrix n n A} (hp : IsStarProjection p)
@@ -81,7 +82,7 @@ theorem isMurrayVonNeumannEquivalent_of_unitization_unitary_conj [Fintype n]
     (hu : u ∈ unitary (Unitization R (CStarMatrix n n A)))
     (hconj : u * (p : Unitization R (CStarMatrix n n A)) * star u =
       (q : Unitization R (CStarMatrix n n A))) :
-    Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) := by
+    MurrayVonNeumannEquiv p q := by
   let M := CStarMatrix n n A
   let v : M := (u * (p : Unitization R M)).snd
   have hv_coe : (v : Unitization R M) = u * (p : Unitization R M) :=
@@ -92,31 +93,25 @@ theorem isMurrayVonNeumannEquivalent_of_unitization_unitary_conj [Fintype n]
     rw [Unitary.conjStarAlgAut_apply, hconj] at h
     exact h
   have hq : IsStarProjection q := hq_coe.of_inr
-  refine ⟨hp, hq, ofMatrix.symm v, ?_, ?_⟩
-  · rw [← ofMatrix_symm_conjTranspose, ← ofMatrix_symm_mul, ← star_eq_conjTranspose]
-    congr 1
-    apply Unitization.inr_injective (R := R)
-    rw [Unitization.inr_mul, Unitization.inr_star, hv_coe]
+  refine (murrayVonNeumannEquiv_iff hp hq).mpr ⟨v, Unitization.inr_injective (R := R) ?_,
+    Unitization.inr_injective (R := R) ?_⟩
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
     exact hp_coe.star_mul_mul_self_of_mem_unitary hu
-  · rw [← ofMatrix_symm_conjTranspose, ← ofMatrix_symm_mul, ← star_eq_conjTranspose]
-    congr 1
-    apply Unitization.inr_injective (R := R)
-    rw [Unitization.inr_mul, Unitization.inr_star, hv_coe]
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
     exact (hp_coe.mul_star_mul_eq_mul_mul_star u).trans hconj
 
 /-- Setoid of Murray–von Neumann equivalence on star projections of fixed size `n`. -/
 def murrayVonNeumannSetoid (n A : Type*) [Fintype n]
     [NonUnitalSemiring A] [StarRing A] :
     Setoid {p : CStarMatrix n n A // IsStarProjection p} where
-  r p q := Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p.val) (ofMatrix.symm q.val)
-  iseqv := ⟨fun p ↦ .refl p.property, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
+  r p q := MurrayVonNeumannEquiv p.val q.val
+  iseqv := ⟨fun p ↦ .refl p.property, .symm, .trans⟩
 
 /-- The relation of `murrayVonNeumannSetoid n A` is Murray–von Neumann equivalence on the underlying
 projections. -/
 @[simp] theorem murrayVonNeumannSetoid_r [Fintype n] [NonUnitalSemiring A] [StarRing A]
     (p q : {p : CStarMatrix n n A // IsStarProjection p}) :
-    (murrayVonNeumannSetoid n A).r p q ↔
-      Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p.val) (ofMatrix.symm q.val) :=
+    (murrayVonNeumannSetoid n A).r p q ↔ MurrayVonNeumannEquiv p.val q.val :=
   (Iff.rfl)
 
 end Permanence
@@ -157,10 +152,11 @@ section StabilizedUnitaryAndRotationPath
 section UnitalAlgebraic
 
 /-- The `2 × 2` block matrix `fromBlocks (1 - p) v.conjTranspose v (1 - q)` over a unital ring
-with `0`, `1`, subtraction, and `star`. Over a star-ordered ring with proper star
-(`IsProperStar A`), whenever `p` is idempotent, `v.conjTranspose * v = p`, and
-`v * v.conjTranspose = q`, it is a self-adjoint unitary (`stabilizedSymmetry_mem_unitary`)
-conjugating `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q` (`stabilizedSymmetry_conj_inl`). -/
+with `0`, `1`, subtraction, and `star`. Whenever `v.conjTranspose * v = p`,
+`v * v.conjTranspose = q`, and `v * p = v` (which holds automatically for idempotent `p` over a
+star-ordered ring with `IsProperStar A`), it is a self-adjoint unitary
+(`stabilizedSymmetry_mem_unitary`) conjugating `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q`
+(`stabilizedSymmetry_conj_inl`). -/
 def stabilizedSymmetry {m n A : Type*} [DecidableEq m] [DecidableEq n]
     [Zero A] [One A] [Sub A] [Star A] (p : CStarMatrix m m A) (q : CStarMatrix n n A)
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
@@ -172,55 +168,58 @@ theorem isSelfAdjoint_stabilizedSymmetry {m n A : Type*} [Fintype m] [Fintype n]
     {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
     (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
     IsSelfAdjoint (stabilizedSymmetry p q v) := by
-  have hp : IsSelfAdjoint p := by
-    rw [IsSelfAdjoint, star_eq_conjTranspose, ← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
-  have hq : IsSelfAdjoint q := by
-    rw [IsSelfAdjoint, star_eq_conjTranspose, ← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
-  have h1m : IsSelfAdjoint (1 : CStarMatrix m m A) := conjTranspose_one
-  have h1n : IsSelfAdjoint (1 : CStarMatrix n n A) := conjTranspose_one
-  rw [stabilizedSymmetry, isSelfAdjoint_fromBlocks_iff]
-  exact ⟨h1m.sub hp, conjTranspose_conjTranspose v, h1n.sub hq⟩
+  rw [IsSelfAdjoint]
+  apply ofMatrix.symm.injective
+  have h := (Matrix.isSelfAdjoint_fromBlocks_one_sub (p := ofMatrix.symm p)
+    (q := ofMatrix.symm q) (v := ofMatrix.symm v) hvp hvq).star_eq
+  simpa only [ofMatrix_symm_star, stabilizedSymmetry, ofMatrix_symm_fromBlocks,
+    ofMatrix_symm_sub, ofMatrix_symm_one, ofMatrix_symm_conjTranspose,
+    ← Matrix.star_eq_conjTranspose] using h
 
 variable {m n A : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
-  [Ring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+  [Ring A] [StarRing A]
 
-/-- `stabilizedSymmetry p q v` is an involution whenever `p` is idempotent, `vᴴ * v = p`, and
-`v * vᴴ = q`. -/
+/-- `stabilizedSymmetry p q v` is an involution whenever `vᴴ * v = p`, `v * vᴴ = q`, and
+`v * p = v`. -/
 theorem stabilizedSymmetry_mul_self {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p)
+    (hvq : v * v.conjTranspose = q) (hv : v * p = v) :
     stabilizedSymmetry p q v * stabilizedSymmetry p q v = 1 := by
   apply ofMatrix.symm.injective
-  rw [stabilizedSymmetry, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks]
-  exact Matrix.fromBlocks_one_sub_mul_self_of_mul_eq (a := ofMatrix.symm v.conjTranspose)
-    (b := ofMatrix.symm v) (e := ofMatrix.symm p) (f := ofMatrix.symm q) hvp hvq
-    (mul_conjTranspose_eq_self_of_conjTranspose_mul_self hp hvp)
-    (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+  simpa only [ofMatrix_symm_mul, stabilizedSymmetry, ofMatrix_symm_fromBlocks,
+    ofMatrix_symm_sub, ofMatrix_symm_one, ofMatrix_symm_conjTranspose] using
+    Matrix.fromBlocks_one_sub_mul_self (p := ofMatrix.symm p) (q := ofMatrix.symm q)
+      (v := ofMatrix.symm v) hvp hvq hv
 
-/-- `stabilizedSymmetry p q v` is unitary whenever `p` is idempotent, `vᴴ * v = p`, and
-`v * vᴴ = q`. -/
+/-- `stabilizedSymmetry p q v` is unitary whenever `vᴴ * v = p`, `v * vᴴ = q`, and
+`v * p = v`. -/
 theorem stabilizedSymmetry_mem_unitary {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p)
+    (hvq : v * v.conjTranspose = q) (hv : v * p = v) :
     stabilizedSymmetry p q v ∈ unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) := by
-  rw [Unitary.mem_iff, (isSelfAdjoint_stabilizedSymmetry hvp hvq).star_eq,
-    stabilizedSymmetry_mul_self hp hvp hvq]
-  exact ⟨rfl, rfl⟩
+  have h := Matrix.fromBlocks_one_sub_mem_unitary (p := ofMatrix.symm p)
+    (q := ofMatrix.symm q) (v := ofMatrix.symm v) hvp hvq hv
+  rw [Unitary.mem_iff] at h ⊢
+  refine ⟨ofMatrix.symm.injective ?_, ofMatrix.symm.injective ?_⟩
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, stabilizedSymmetry,
+      ofMatrix_symm_fromBlocks, ofMatrix_symm_sub, ofMatrix_symm_one,
+      ofMatrix_symm_conjTranspose, ← Matrix.star_eq_conjTranspose] using h.1
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, stabilizedSymmetry,
+      ofMatrix_symm_fromBlocks, ofMatrix_symm_sub, ofMatrix_symm_one,
+      ofMatrix_symm_conjTranspose, ← Matrix.star_eq_conjTranspose] using h.2
 
 /-- `stabilizedSymmetry p q v` conjugates `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q`. -/
 theorem stabilizedSymmetry_conj_inl {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p)
+    (hvq : v * v.conjTranspose = q) (hv : v * p = v) :
     stabilizedSymmetry p q v * fromBlocks p 0 0 0 * star (stabilizedSymmetry p q v) =
       fromBlocks 0 0 0 q := by
-  rw [(isSelfAdjoint_stabilizedSymmetry hvp hvq).star_eq]
   apply ofMatrix.symm.injective
-  rw [stabilizedSymmetry, ofMatrix_symm_mul, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks,
-    ofMatrix_symm_fromBlocks, ofMatrix_symm_fromBlocks]
-  exact Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq
-    (a := ofMatrix.symm v.conjTranspose) (b := ofMatrix.symm v)
-    (e := ofMatrix.symm p) (f := ofMatrix.symm q) hvp hvq
-    (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+  simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, stabilizedSymmetry,
+    ofMatrix_symm_fromBlocks, ofMatrix_symm_sub, ofMatrix_symm_one,
+    ofMatrix_symm_conjTranspose, ofMatrix_symm_zero, ← Matrix.star_eq_conjTranspose] using
+    Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_star (p := ofMatrix.symm p)
+      (q := ofMatrix.symm q) (v := ofMatrix.symm v) hvp hvq hv
 
 end UnitalAlgebraic
 
@@ -459,41 +458,32 @@ theorem inr_coe_rotationPath_apply {p : CStarMatrix m m A} {q : CStarMatrix n n 
           Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
   (rotationUnitary_conj_inl_snd_eq_and_isStarProjection hp hvp hvq t).1
 
+namespace MurrayVonNeumannEquiv
+
 /-- Murray–von Neumann equivalent projections `p : CStarMatrix m m A` and `q : CStarMatrix n n A`
 become path-connected inside the space of star projections of `CStarMatrix (m ⊕ n) (m ⊕ n) A` as
 `inl p` and `inr q`. -/
-theorem _root_.Matrix.IsMurrayVonNeumannEquivalent.joined_inl_inr
-    {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    (h : Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q)) :
+theorem joined_inl_inr {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    (h : MurrayVonNeumannEquiv p q) :
     Joined
-      (⟨inl (n := n) (R := ℂ) p,
-        (h.isStarProjection_left : IsStarProjection p).map (inl (n := n) (R := ℂ))⟩ :
+      (⟨inl (n := n) (R := ℂ) p, h.isStarProjection_left.map (inl (n := n) (R := ℂ))⟩ :
         {P : CStarMatrix (m ⊕ n) (m ⊕ n) A // IsStarProjection P})
-      ⟨inr (m := m) (R := ℂ) q,
-        (h.isStarProjection_right : IsStarProjection q).map (inr (m := m) (R := ℂ))⟩ := by
-  obtain ⟨v, hv₁, hv₂⟩ := h.exists_conjTranspose_mul_self_eq
-  have hp : IsStarProjection p := h.isStarProjection_left
-  have hq : IsStarProjection q := h.isStarProjection_right
-  exact ⟨rotationPath (p := p) (q := q) (v := ofMatrix v) hp hq
-    (ofMatrix.symm.injective (by simpa [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using hv₁))
-    (ofMatrix.symm.injective
-      (by simpa [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using hv₂))⟩
+      ⟨inr (m := m) (R := ℂ) q, h.isStarProjection_right.map (inr (m := m) (R := ℂ))⟩ := by
+  obtain ⟨v, hvp, hvq⟩ := h.exists_matrix
+  exact ⟨rotationPath h.isStarProjection_left h.isStarProjection_right hvp hvq⟩
 
 /-- Two Murray–von Neumann equivalent projections `p, q : CStarMatrix n n A` of the same matrix
 size become path-connected after `2 × 2` stabilization `P ↦ fromBlocks P 0 0 0` inside the space
 of star projections of `CStarMatrix (n ⊕ n) (n ⊕ n) A`. -/
-theorem _root_.Matrix.IsMurrayVonNeumannEquivalent.joined_inl_inl
-    {p q : CStarMatrix n n A}
-    (h : Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q)) :
+theorem joined_inl_inl {p q : CStarMatrix n n A}
+    (h : MurrayVonNeumannEquiv p q) :
     Joined
-      (⟨inl (n := n) (R := ℂ) p,
-        (h.isStarProjection_left : IsStarProjection p).map (inl (n := n) (R := ℂ))⟩ :
+      (⟨inl (n := n) (R := ℂ) p, h.isStarProjection_left.map (inl (n := n) (R := ℂ))⟩ :
         {P : CStarMatrix (n ⊕ n) (n ⊕ n) A // IsStarProjection P})
-      ⟨inl (n := n) (R := ℂ) q,
-        (h.isStarProjection_right : IsStarProjection q).map (inl (n := n) (R := ℂ))⟩ :=
-  h.joined_inl_inr.trans
-    (Matrix.IsMurrayVonNeumannEquivalent.refl (p := ofMatrix.symm q)
-      h.isStarProjection_right).joined_inl_inr.symm
+      ⟨inl (n := n) (R := ℂ) q, h.isStarProjection_right.map (inl (n := n) (R := ℂ))⟩ :=
+  h.joined_inl_inr.trans (MurrayVonNeumannEquiv.refl h.isStarProjection_right).joined_inl_inr.symm
+
+end MurrayVonNeumannEquiv
 
 end NonUnitalCStar
 
@@ -509,7 +499,8 @@ theorem expUnitary_pi_smul_rotationProjection
     (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
     selfAdjoint.expUnitary (Real.pi • ⟨rotationProjection p q v,
       (isStarProjection_rotationProjection hp hvp hvq).isSelfAdjoint⟩) =
-      ⟨stabilizedSymmetry p q v, stabilizedSymmetry_mem_unitary hp hvp hvq⟩ :=
+      ⟨stabilizedSymmetry p q v, stabilizedSymmetry_mem_unitary hvp hvq
+        (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)⟩ :=
   ((isStarProjection_rotationProjection hp hvp hvq).expUnitary_pi_smul).trans
     (Subtype.ext (one_sub_two_mul_rotationProjection p q v))
 
