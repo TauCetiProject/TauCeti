@@ -26,7 +26,7 @@ commutes with the action of `Aut Y` and is also simply transitive
 Both actions are free (`CategoryTheory.Aut.instIsCancelSMulIso`,
 `CategoryTheory.Aut.instIsCancelSMulOpIso`), and they are compatible with the groupoid
 operations: `Iso.refl`, `Iso.symm` and `Iso.trans` (`CategoryTheory.Aut.smul_iso_symm`,
-`CategoryTheory.Aut.trans_smul_iso`, and their precomposition counterparts).
+`CategoryTheory.Iso.trans_smul`, and their precomposition counterparts).
 
 Conjugation by an isomorphism `e : X ≅ Y`, which identifies `Aut X` with `Aut Y`, is compatible
 with these actions: `e.conjAut σ` acts on `e` as `σ` acts on `e` by precomposition
@@ -102,11 +102,6 @@ instance instIsCancelSMulIso : IsCancelSMul (Aut Y) (X ≅ Y) where
 theorem smul_iso_refl (σ : Aut Y) : σ • Iso.refl Y = σ.asIso := by
   ext; simp
 
-@[simp]
-theorem trans_smul_iso {Z : C} (e : X ≅ Y) (σ : Aut Z) (f : Y ≅ Z) :
-    e ≪≫ (σ • f) = σ • (e ≪≫ f) := by
-  ext; simp
-
 /-- The automorphism `e₁ /ₛ e₂` of `Y` carrying `e₂` to `e₁`, namely `e₂.symm ≪≫ e₁`. -/
 instance instSDivIso : SDiv (Aut Y) (X ≅ Y) where
   sdiv e₁ e₂ := .of (e₂.symm ≪≫ e₁)
@@ -114,6 +109,11 @@ instance instSDivIso : SDiv (Aut Y) (X ≅ Y) where
 end Aut
 
 namespace Iso
+
+@[simp]
+theorem trans_smul {Z : C} (e : X ≅ Y) (σ : Aut Z) (f : Y ≅ Z) :
+    e ≪≫ (σ • f) = σ • (e ≪≫ f) := by
+  ext; simp
 
 theorem sdiv_def (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y) = .of (e₂.symm ≪≫ e₁) :=
   rfl
