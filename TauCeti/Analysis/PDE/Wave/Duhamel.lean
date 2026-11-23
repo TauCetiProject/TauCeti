@@ -22,12 +22,12 @@ by d'Alembert's formula for the data and **Duhamel's formula** for the forcing,
 
 `u(t, x) = dAlembert f g t x + (1 / 2) ∫_0^t ∫_{x - (t - s)}^{x + (t - s)} G(s, y) dy ds`.
 
-The second term, `dAlembertDuhamel G`, superposes the free waves launched at each time `s` with
-zero displacement and velocity `G(s, ·)`
-(`TauCeti.PDE.dAlembertDuhamel_eq_integral_dAlembert`); it is the integral of `G / 2` over the
-backward characteristic triangle with apex `(t, x)`. The conventions are those of
-`TauCeti.Analysis.PDE.Wave.DAlembert`: functions take the time first, take values in a real
-Banach space, and classical solutions are `C²` on the whole space-time plane.
+The second term, `dAlembertDuhamel G`, superposes d'Alembert's formulas with zero displacement and
+velocity `G(s, ·)`, started at each time `s` (`TauCeti.PDE.dAlembertDuhamel_eq_integral_dAlembert`);
+it is the integral of `G / 2` over the characteristic triangle with apex `(t, x)` and base the
+interval between `x - t` and `x + t` at time `0`, for either sign of `t`. The conventions are
+those of `TauCeti.Analysis.PDE.Wave.DAlembert`: functions take the time first, take values in a
+real Banach space, and classical solutions are `C²` on the whole space-time plane.
 
 * **Existence.** For `G` continuous with a continuous spatial derivative, `dAlembertDuhamel G` is
   `C²`, solves `∂ₜ²u = ∂ₓ²u + G` and has zero initial data; together with d'Alembert's formula it
@@ -35,15 +35,17 @@ Banach space, and classical solutions are `C²` on the whole space-time plane.
 * **Representation, uniqueness and finite speed of propagation.** For `G` continuous with a
   continuous spatial derivative, every `C²` solution is the sum of d'Alembert's formula for its
   own data and Duhamel's formula for its forcing. Hence, for such forcings, `u(t, x)` depends only
-  on the data on `[x - |t|, x + |t|]` and on the forcing on the backward characteristic triangle
-  with apex `(t, x)`. Only uniqueness for the Cauchy problem needs no regularity of `G` at all.
+  on the data on `[x - |t|, x + |t|]` and on the forcing on the characteristic triangle between
+  `(t, x)` and time `0`. Only uniqueness for the Cauchy problem needs no regularity of `G` at all.
 * **Bound.** If `‖G‖ ≤ K` on that triangle, then `‖dAlembertDuhamel G t x‖ ≤ t² K / 2`. The
-  constant forcing `G = K`, with solution `u = t² K / 2`, attains it.
+  real-valued constant forcing `G = K`, with solution `u = t² K / 2`, attains it.
+* **Superposition.** Duhamel's formula is linear in the forcing: `dAlembertDuhamel_smul`, and
+  `dAlembertDuhamel_add` for continuous forcings.
 
 ## The argument
 
 Writing `P(s, z) = ∫_0^z G(s, y) dy`, Duhamel's formula is half the integral
-`∫_0^t (P(s, x + (t - s)) - P(s, x - (t - s))) ds` along the two backward characteristics through
+`∫_0^t (P(s, x + (t - s)) - P(s, x - (t - s))) ds` along the two characteristics through
 `(t, x)`. Both its integrand and its upper limit depend on `t`, and the Leibniz integral rule
 (`intervalIntegral.hasDerivAt_integral_of_hasDerivAt`) differentiates such integrals of the form
 `∫_0^t (k(s, x + (t - s)) + c k(s, x - (t - s))) ds`. The derivatives are integrals of the same
@@ -65,6 +67,7 @@ All declarations are in the `TauCeti.PDE` namespace.
 
 * `dAlembertDuhamel`: Duhamel's formula for the forcing, and
   `dAlembertDuhamel_eq_integral_dAlembert`, Duhamel's principle.
+* `dAlembertDuhamel_smul`, `dAlembertDuhamel_add`: superposition of forcings.
 * `hasDerivAt_dAlembertDuhamel_time`, `hasDerivAt_dAlembertDuhamel_space`: its first
   derivatives.
 * `contDiff_dAlembertDuhamel`, `deriv_deriv_dAlembertDuhamel`, `dAlembertDuhamel_time_zero`,
@@ -106,8 +109,9 @@ variable {G G' : ℝ → ℝ → F} {t x : ℝ}
 
 /-- **Duhamel's formula** for the one-dimensional wave equation with forcing `G`:
 `dAlembertDuhamel G t x = (1 / 2) ∫_0^t ∫_{x - (t - s)}^{x + (t - s)} G(s, y) dy ds`, the integral
-of `G / 2` over the backward characteristic triangle with apex `(t, x)`. It solves
-`∂ₜ²u = ∂ₓ²u + G` with zero initial data. -/
+of `G / 2` over the characteristic triangle with apex `(t, x)` and base at time `0`. For `G`
+continuous with a continuous spatial derivative, it is a `C²` solution of `∂ₜ²u = ∂ₓ²u + G` with
+zero initial data (`contDiff_dAlembertDuhamel`, `deriv_deriv_dAlembertDuhamel`). -/
 def dAlembertDuhamel (G : ℝ → ℝ → F) (t x : ℝ) : F :=
   (2 : ℝ)⁻¹ • ∫ s in 0..t, ∫ y in x - (t - s)..x + (t - s), G s y
 
@@ -116,8 +120,9 @@ theorem dAlembertDuhamel_def (G : ℝ → ℝ → F) (t x : ℝ) :
       (2 : ℝ)⁻¹ • ∫ s in 0..t, ∫ y in x - (t - s)..x + (t - s), G s y :=
   (rfl)
 
-/-- **Duhamel's principle.** Duhamel's formula superposes the solutions of the homogeneous wave
-equation started at each time `s` with zero displacement and velocity `G(s, ·)`. -/
+/-- **Duhamel's principle.** Duhamel's formula superposes d'Alembert's formulas with zero
+displacement and velocity `G(s, ·)`, evaluated at the elapsed time `t - s`. When every slice `G s`
+is `C¹`, these are classical solutions of the homogeneous wave equation started at time `s`. -/
 theorem dAlembertDuhamel_eq_integral_dAlembert (G : ℝ → ℝ → F) (t x : ℝ) :
     dAlembertDuhamel G t x = ∫ s in 0..t, dAlembert 0 (G s) (t - s) x := by
   simp [dAlembertDuhamel_def, dAlembert_def]
@@ -133,26 +138,25 @@ theorem dAlembertDuhamel_zero : dAlembertDuhamel (0 : ℝ → ℝ → F) = 0 := 
   ext t x
   simp [dAlembertDuhamel_def]
 
+/-- Duhamel's formula commutes with real scalar multiplication of the forcing. -/
+@[simp]
+theorem dAlembertDuhamel_smul (c : ℝ) (G : ℝ → ℝ → F) :
+    dAlembertDuhamel (c • G) = c • dAlembertDuhamel G := by
+  ext t x
+  simp [dAlembertDuhamel_def, intervalIntegral.integral_smul, smul_comm c]
+
 /-- **The domain of dependence.** Duhamel's formula at `(t, x)` only depends on the forcing on the
-backward characteristic triangle with apex `(t, x)`. -/
+characteristic triangle with apex `(t, x)` and base at time `0`: the points `(s, y)` with `s`
+between `0` and `t` and `y` between `x - (t - s)` and `x + (t - s)`. -/
 theorem dAlembertDuhamel_congr
     (hG : ∀ s ∈ uIcc 0 t, EqOn (G s) (G' s) (uIcc (x - (t - s)) (x + (t - s)))) :
     dAlembertDuhamel G t x = dAlembertDuhamel G' t x := by
   rw [dAlembertDuhamel_def, dAlembertDuhamel_def,
     integral_congr fun s hs ↦ integral_congr (hG s hs)]
 
-/-- `∫_0^t |t - s| ds` has absolute value `t² / 2`, for either sign of `t`. -/
-private theorem abs_integral_abs_sub (t : ℝ) : |(∫ s in (0 : ℝ)..t, |t - s|)| = t ^ 2 / 2 := by
-  rw [integral_comp_sub_left (fun u ↦ |u|), sub_self, sub_zero]
-  rcases le_total 0 t with ht | ht
-  · rw [integral_congr fun u hu ↦ abs_of_nonneg (uIcc_of_le ht ▸ hu).1, integral_id,
-      zero_pow two_ne_zero, sub_zero, abs_of_nonneg (by positivity)]
-  · rw [integral_congr fun u hu ↦ abs_of_nonpos (uIcc_of_ge ht ▸ hu).2,
-      intervalIntegral.integral_neg, integral_id, zero_pow two_ne_zero, sub_zero, abs_neg,
-      abs_of_nonneg (by positivity)]
-
-/-- **A priori bound.** If `‖G‖ ≤ K` on the backward characteristic triangle with apex `(t, x)`,
-then `‖dAlembertDuhamel G t x‖ ≤ t² K / 2`. The constant forcing `G = K` attains the bound. -/
+/-- **A priori bound.** If `‖G‖ ≤ K` on the characteristic triangle with apex `(t, x)` and base at
+time `0`, then `‖dAlembertDuhamel G t x‖ ≤ t² K / 2`. For real-valued forcing, the constant forcing
+`G = K` attains the bound. -/
 theorem norm_dAlembertDuhamel_le {K : ℝ}
     (hG : ∀ s ∈ uIcc 0 t, ∀ y ∈ uIcc (x - (t - s)) (x + (t - s)), ‖G s y‖ ≤ K) :
     ‖dAlembertDuhamel G t x‖ ≤ t ^ 2 / 2 * K := by
@@ -164,21 +168,29 @@ theorem norm_dAlembertDuhamel_le {K : ℝ}
       fun y hy ↦ hG s (uIoc_subset_uIcc hs) y (uIoc_subset_uIcc hy)
     rwa [show x + (t - s) - (x - (t - s)) = 2 * (t - s) by ring, abs_mul, abs_two,
       ← mul_assoc, mul_comm K] at h
+  have habs : |(∫ s in (0 : ℝ)..t, |t - s|)| = t ^ 2 / 2 := by
+    rw [integral_comp_sub_left (fun u ↦ |u|), sub_self, sub_zero]
+    rcases le_total 0 t with ht | ht
+    · rw [integral_congr fun u hu ↦ abs_of_nonneg (uIcc_of_le ht ▸ hu).1, integral_id,
+        zero_pow two_ne_zero, sub_zero, abs_of_nonneg (by positivity)]
+    · rw [integral_congr fun u hu ↦ abs_of_nonpos (uIcc_of_ge ht ▸ hu).2,
+        intervalIntegral.integral_neg, integral_id, zero_pow two_ne_zero, sub_zero, abs_neg,
+        abs_of_nonneg (by positivity)]
   have houter := norm_integral_le_abs_of_norm_le (μ := volume)
     ((ae_restrict_iff' measurableSet_uIoc).2 (ae_of_all _ hinner))
     ((by fun_prop : Continuous fun s : ℝ ↦ 2 * K * |t - s|).intervalIntegrable 0 t)
   rw [intervalIntegral.integral_const_mul, abs_mul, abs_of_nonneg (by positivity),
-    abs_integral_abs_sub] at houter
+    habs] at houter
   rw [dAlembertDuhamel_def, norm_smul, Real.norm_of_nonneg (by norm_num)]
   linarith
 
 end Duhamel
 
-/-! ### Integrals along the backward characteristics -/
+/-! ### Integrals along the characteristics -/
 
 section Characteristic
 
-/-- The integral `∫_0^t (k(s, x + (t - s)) + c k(s, x - (t - s))) ds` along the two backward
+/-- The integral `∫_0^t (k(s, x + (t - s)) + c k(s, x - (t - s))) ds` along the two
 characteristics through `(t, x)`. Duhamel's formula and its first derivatives are of this form. -/
 private def charIntegral (c : ℝ) (k : ℝ → ℝ → F) (t x : ℝ) : F :=
   ∫ s in 0..t, (k s (x + (t - s)) + c • k s (x - (t - s)))
@@ -300,11 +312,6 @@ section Solution
 
 variable {G : ℝ → ℝ → F}
 
-/-- The spatial primitive `(s, z) ↦ ∫_0^z G(s, y) dy` of a continuous forcing is continuous. -/
-private theorem continuous_primitive (hG : Continuous (uncurry G)) :
-    Continuous (uncurry fun s z ↦ ∫ y in 0..z, G s y) :=
-  continuous_parametric_primitive_of_continuous hG
-
 /-- Duhamel's formula is half the characteristic integral of the spatial primitive of `G`. -/
 private theorem dAlembertDuhamel_eq_charIntegral (hG : Continuous (uncurry G)) (t x : ℝ) :
     dAlembertDuhamel G t x =
@@ -315,12 +322,29 @@ private theorem dAlembertDuhamel_eq_charIntegral (hG : Continuous (uncurry G)) (
   exact integral_congr fun s _ ↦ (integral_interval_sub_left (a := 0)
     ((hGs s).intervalIntegrable _ _) ((hGs s).intervalIntegrable _ _)).symm
 
-variable [CompleteSpace F]
+/-- **Superposition.** For continuous forcings, Duhamel's formula is additive in the forcing. -/
+theorem dAlembertDuhamel_add {G' : ℝ → ℝ → F} (hG : Continuous (uncurry G))
+    (hG' : Continuous (uncurry G')) :
+    dAlembertDuhamel (G + G') = dAlembertDuhamel G + dAlembertDuhamel G' := by
+  have hint {H : ℝ → ℝ → F} (hH : Continuous (uncurry H)) (t x : ℝ) :
+      IntervalIntegrable (fun s ↦ ∫ y in x - (t - s)..x + (t - s), H s y) volume 0 t := by
+    have hc : Continuous fun s ↦
+        (∫ y in 0..x + (t - s), H s y) + (-1 : ℝ) • ∫ y in 0..x - (t - s), H s y :=
+      (continuous_charIntegrand (-1) (k := fun s z ↦ ∫ y in 0..z, H s y)
+        (continuous_parametric_primitive_of_continuous hH)).comp (Continuous.prodMk_right (t, x))
+    convert hc.intervalIntegrable (μ := volume) 0 t using 2 with s
+    have hi (a b : ℝ) : IntervalIntegrable (H s) volume a b :=
+      (hH.comp (Continuous.prodMk_right s)).intervalIntegrable a b
+    rw [neg_one_smul, ← sub_eq_add_neg]
+    exact (integral_interval_sub_left (hi _ _) (hi _ _)).symm
+  ext t x
+  simp only [dAlembertDuhamel_def, Pi.add_apply, ← smul_add]
+  rw [← integral_add (hint hG t x) (hint hG' t x)]
+  exact congrArg _ (integral_congr fun s _ ↦ integral_add
+    ((hG.comp (Continuous.prodMk_right s)).intervalIntegrable _ _)
+    ((hG'.comp (Continuous.prodMk_right s)).intervalIntegrable _ _))
 
-/-- The spatial primitive of a continuous forcing has spatial derivative `G`. -/
-private theorem hasDerivAt_primitive (hG : Continuous (uncurry G)) (s z : ℝ) :
-    HasDerivAt (fun z ↦ ∫ y in 0..z, G s y) (G s z) z :=
-  ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt
+variable [CompleteSpace F]
 
 /-- The time derivative of Duhamel's formula:
 `∂ₜw(t, x) = (1 / 2) ∫_0^t (G(s, x + (t - s)) + G(s, x - (t - s))) ds`. -/
@@ -328,8 +352,10 @@ theorem hasDerivAt_dAlembertDuhamel_time (hG : Continuous (uncurry G)) (t x : �
     HasDerivAt (fun s ↦ dAlembertDuhamel G s x)
       ((2 : ℝ)⁻¹ • ∫ s in 0..t, (G s (x + (t - s)) + G s (x - (t - s)))) t := by
   simp only [dAlembertDuhamel_eq_charIntegral hG]
-  refine ((hasDerivAt_charIntegral_time (-1) (continuous_primitive hG) hG
-    (hasDerivAt_primitive hG) t x).const_smul (2 : ℝ)⁻¹).congr_deriv ?_
+  refine ((hasDerivAt_charIntegral_time (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
+    (continuous_parametric_primitive_of_continuous hG) hG
+    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    t x).const_smul (2 : ℝ)⁻¹).congr_deriv ?_
   rw [neg_neg, charIntegral_one, add_neg_cancel, zero_smul, zero_add]
 
 /-- The space derivative of Duhamel's formula:
@@ -338,8 +364,10 @@ theorem hasDerivAt_dAlembertDuhamel_space (hG : Continuous (uncurry G)) (t x : �
     HasDerivAt (dAlembertDuhamel G t)
       ((2 : ℝ)⁻¹ • ∫ s in 0..t, (G s (x + (t - s)) - G s (x - (t - s)))) x := by
   rw [funext (dAlembertDuhamel_eq_charIntegral hG t), ← charIntegral_neg_one]
-  exact (hasDerivAt_charIntegral_space (-1) (continuous_primitive hG) hG
-    (hasDerivAt_primitive hG) t x).const_smul _
+  exact (hasDerivAt_charIntegral_space (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
+    (continuous_parametric_primitive_of_continuous hG) hG
+    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    t x).const_smul _
 
 /-- At time zero, the time derivative of Duhamel's formula vanishes. -/
 @[simp]
@@ -361,8 +389,10 @@ theorem contDiff_dAlembertDuhamel : ContDiff ℝ 2 (uncurry (dAlembertDuhamel G)
     (contDiff_const.smulRight ((contDiff_charIntegral 1 hG hGd' hd).const_smul _)).add
       (contDiff_const.smulRight ((contDiff_charIntegral (-1) hG hGd' hd).const_smul _)),
     fun p ↦ ?_⟩
-  have h := ((hasStrictFDerivAt_charIntegral (-1) (continuous_primitive hG) hG
-    (hasDerivAt_primitive hG) p).const_smul (2 : ℝ)⁻¹).hasFDerivAt
+  have h := ((hasStrictFDerivAt_charIntegral (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
+    (continuous_parametric_primitive_of_continuous hG) hG
+    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    p).const_smul (2 : ℝ)⁻¹).hasFDerivAt
   have heq : uncurry (dAlembertDuhamel G) = fun q ↦ (2 : ℝ)⁻¹ •
       uncurry (charIntegral (-1) fun s z ↦ ∫ y in 0..z, G s y) q :=
     funext fun q ↦ dAlembertDuhamel_eq_charIntegral hG q.1 q.2
@@ -396,16 +426,6 @@ section CauchyProblem
 
 variable {G G' : ℝ → ℝ → F} {u v : ℝ → ℝ → F}
 
-/-- The time slices `r ↦ u r x` of a `C²` function on space-time are `C²`. -/
-private theorem contDiff_slice_time (hu : ContDiff ℝ 2 (uncurry u)) (x : ℝ) :
-    ContDiff ℝ 2 fun r ↦ u r x :=
-  hu.comp (contDiff_id.prodMk contDiff_const)
-
-/-- The space slices `u t` of a `C²` function on space-time are `C²`. -/
-private theorem contDiff_slice_space (hu : ContDiff ℝ 2 (uncurry u)) (t : ℝ) :
-    ContDiff ℝ 2 (u t) :=
-  hu.comp (contDiff_const.prodMk contDiff_id)
-
 /-- The difference of two `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` with the same forcing solves the
 homogeneous wave equation. -/
 private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
@@ -415,9 +435,11 @@ private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) :
     deriv (fun s ↦ deriv (fun r ↦ u r x - v r x) s) t =
       deriv (deriv fun y ↦ u t y - v t y) x := by
-  rw [deriv_deriv_fun_sub (contDiff_slice_time hu x).contDiffAt
-    (contDiff_slice_time hv x).contDiffAt, deriv_deriv_fun_sub
-    (contDiff_slice_space hu t).contDiffAt (contDiff_slice_space hv t).contDiffAt, hwu, hwv]
+  have hut : ContDiffAt ℝ 2 (fun r ↦ u r x) t := (hu.comp (contDiff_prodMk_left x)).contDiffAt
+  have hvt : ContDiffAt ℝ 2 (fun r ↦ v r x) t := (hv.comp (contDiff_prodMk_left x)).contDiffAt
+  have hux : ContDiffAt ℝ 2 (u t) x := (hu.comp (contDiff_prodMk_right t)).contDiffAt
+  have hvx : ContDiffAt ℝ 2 (v t) x := (hv.comp (contDiff_prodMk_right t)).contDiffAt
+  rw [deriv_deriv_fun_sub hut hvt, deriv_deriv_fun_sub hux hvx, hwu, hwv]
   abel
 
 variable [CompleteSpace F]
@@ -434,8 +456,11 @@ theorem eq_of_deriv_deriv_eq_add_of_eq_initial (hu : ContDiff ℝ 2 (uncurry u))
     (v := fun _ _ ↦ (0 : F)) (hu.sub hv) contDiff_const (deriv_deriv_sub_eq hu hv hwu hwv)
     (fun _ _ ↦ by simp) (funext fun y ↦ by simp [h0])
     (fun y ↦ by
-      rw [deriv_fun_sub ((contDiff_slice_time hu y).differentiable two_ne_zero 0)
-        ((contDiff_slice_time hv y).differentiable two_ne_zero 0), h1, sub_self, deriv_const])
+      have hu0 : DifferentiableAt ℝ (fun s ↦ u s y) 0 :=
+        (hu.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
+      have hv0 : DifferentiableAt ℝ (fun s ↦ v s y) 0 :=
+        (hv.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
+      rw [deriv_fun_sub hu0 hv0, h1, sub_self, deriv_const])
   funext t x
   simpa [sub_eq_zero] using congrFun (congrFun h t) x
 
@@ -454,10 +479,15 @@ theorem deriv_deriv_dAlembert_add_dAlembertDuhamel {f g : ℝ → F} (hf : ContD
       deriv (deriv fun y ↦ dAlembert f g t y + dAlembertDuhamel G t y) x + G t x := by
   have hU := contDiff_dAlembert hf hg
   have hW := contDiff_dAlembertDuhamel hG hGd hGd'
-  rw [deriv_deriv_fun_add (contDiff_slice_time hU x).contDiffAt
-    (contDiff_slice_time hW x).contDiffAt, deriv_deriv_fun_add
-    (contDiff_slice_space hU t).contDiffAt (contDiff_slice_space hW t).contDiffAt,
-    deriv_deriv_dAlembert hf hg, deriv_deriv_dAlembertDuhamel hG hGd hGd']
+  have hUt : ContDiffAt ℝ 2 (fun r ↦ dAlembert f g r x) t :=
+    (hU.comp (contDiff_prodMk_left x)).contDiffAt
+  have hWt : ContDiffAt ℝ 2 (fun r ↦ dAlembertDuhamel G r x) t :=
+    (hW.comp (contDiff_prodMk_left x)).contDiffAt
+  have hUx : ContDiffAt ℝ 2 (dAlembert f g t) x := (hU.comp (contDiff_prodMk_right t)).contDiffAt
+  have hWx : ContDiffAt ℝ 2 (dAlembertDuhamel G t) x :=
+    (hW.comp (contDiff_prodMk_right t)).contDiffAt
+  rw [deriv_deriv_fun_add hUt hWt, deriv_deriv_fun_add hUx hWx, deriv_deriv_dAlembert hf hg,
+    deriv_deriv_dAlembertDuhamel hG hGd hGd']
   abel
 
 /-- **Representation of classical solutions.** For `G` continuous with a continuous spatial
@@ -473,17 +503,19 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
   have h := eq_dAlembert_of_deriv_deriv_eq (u := fun t x ↦ u t x - dAlembertDuhamel G t x)
     (hu.sub hW) (deriv_deriv_sub_eq hu hW hwave (deriv_deriv_dAlembertDuhamel hG hGd hGd')) t x
   have h1 (y : ℝ) : deriv (fun s ↦ u s y - dAlembertDuhamel G s y) 0 = deriv (fun s ↦ u s y) 0 := by
-    rw [deriv_fun_sub ((contDiff_slice_time hu y).differentiable two_ne_zero 0)
-      ((contDiff_slice_time hW y).differentiable two_ne_zero 0), deriv_dAlembertDuhamel_zero hG,
-      sub_zero]
+    have hu0 : DifferentiableAt ℝ (fun s ↦ u s y) 0 :=
+      (hu.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
+    have hW0 : DifferentiableAt ℝ (fun s ↦ dAlembertDuhamel G s y) 0 :=
+      (hW.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
+    rw [deriv_fun_sub hu0 hW0, deriv_dAlembertDuhamel_zero hG, sub_zero]
   simp only [dAlembertDuhamel_time_zero, sub_zero, h1] at h
   exact eq_add_of_sub_eq h
 
 /-- **The domain of dependence.** Let `u` and `v` be `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` and
 `∂ₜ²v = ∂ₓ²v + G'`, with `G` and `G'` continuous with continuous spatial derivatives. If their
 initial displacements and velocities agree on the interval between `x - t` and `x + t`, and the
-forcings agree on the backward characteristic triangle with apex `(t, x)`, then `u` and `v` agree
-at `(t, x)`: forced waves also propagate with speed at most one. -/
+forcings agree on the characteristic triangle with apex `(t, x)` and base at time `0`, then `u`
+and `v` agree at `(t, x)`: forced waves also propagate with speed at most one. -/
 theorem eq_of_deriv_deriv_eq_add_of_eqOn (hG' : Continuous (uncurry G'))
     (hG'd : ∀ s, Differentiable ℝ (G' s)) (hG'd' : Continuous (uncurry fun s ↦ deriv (G' s)))
     (hu : ContDiff ℝ 2 (uncurry u)) (hv : ContDiff ℝ 2 (uncurry v))
