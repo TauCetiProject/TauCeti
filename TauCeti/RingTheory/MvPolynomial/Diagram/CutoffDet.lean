@@ -275,6 +275,19 @@ theorem toMatrix_diagramDivisionEnd_symm_inl [Fintype {δ : σ →₀ ℕ // δ.
   rw [LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
     coeff_diagramDivisionEnd_symm_inl]
 
+/-- Matrix entry of `D.diagramDivisionEnd H hH ℓ` in the monomial basis at row `s` and any
+column `t` outside `D`: `1` if `t.val = s.val` and `0` otherwise. -/
+theorem toMatrix_diagramDivisionEnd_of_notMem [Fintype {δ : σ →₀ ℕ // δ.degree = ℓ}]
+    {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
+    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
+    (s t : {δ : σ →₀ ℕ // δ.degree = ℓ}) (ht : t.val ∉ D) :
+    LinearMap.toMatrix (TauCeti.homogeneousMonomialBasis ℓ)
+        (TauCeti.homogeneousMonomialBasis ℓ) (D.diagramDivisionEnd H hH ℓ) s t =
+      if t.val = s.val then 1 else 0 := by
+  rw [LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
+    diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH ht,
+    TauCeti.coe_homogeneousMonomialBasis, coeff_monomial]
+
 /-- Matrix entry of `D.diagramDivisionEnd H hH ℓ` in the monomial basis at row `s` and remainder
 column `γ ∉ D`: `1` if `γ = s` and `0` otherwise. -/
 theorem toMatrix_diagramDivisionEnd_symm_inr [Fintype {δ : σ →₀ ℕ // δ.degree = ℓ}]
@@ -535,25 +548,26 @@ variable {σ A : Type*} [Finite σ] [LinearOrder σ] [CommRing A]
 open scoped Classical in
 private noncomputable def degreeSplitEquiv (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
     {δ : σ →₀ ℕ // δ.degree = ℓ} ≃
-      {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} ⊕ {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} :=
-  (Equiv.sumCompl (fun s : {δ : σ →₀ ℕ // δ.degree = ℓ} ↦ s.val ∈ D)).symm.trans
-    (Equiv.sumCongr
-      ((Equiv.subtypeSubtypeEquivSubtypeInter (fun δ ↦ δ.degree = ℓ) (· ∈ D)).trans
-        (Equiv.subtypeEquivRight fun _ ↦ and_comm))
-      ((Equiv.subtypeSubtypeEquivSubtypeInter (fun δ ↦ δ.degree = ℓ) (· ∉ D)).trans
-        (Equiv.subtypeEquivRight fun _ ↦ and_comm)))
+      {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} ⊕ {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} where
+  toFun s :=
+    if hs : s.val ∈ D then Sum.inl ⟨s.val, hs, s.property⟩ else Sum.inr ⟨s.val, hs, s.property⟩
+  invFun
+    | Sum.inl s => ⟨s.val, s.property.2⟩
+    | Sum.inr γ => ⟨γ.val, γ.property.2⟩
+  left_inv s := by by_cases hs : s.val ∈ D <;> simp [hs]
+  right_inv
+    | Sum.inl s => by simp [s.property.1]
+    | Sum.inr γ => by simp [γ.property.1]
 
 omit [Finite σ] [LinearOrder σ] in
 private theorem degreeSplitEquiv_symm_inl (D : Set (σ →₀ ℕ)) (ℓ : ℕ)
     (s : {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}) :
-    (degreeSplitEquiv D ℓ).symm (Sum.inl s) = ⟨s.val, s.property.2⟩ := by
-  simp [degreeSplitEquiv]; rfl
+    (degreeSplitEquiv D ℓ).symm (Sum.inl s) = ⟨s.val, s.property.2⟩ := rfl
 
 omit [Finite σ] [LinearOrder σ] in
 private theorem degreeSplitEquiv_symm_inr (D : Set (σ →₀ ℕ)) (ℓ : ℕ)
     (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
-    (degreeSplitEquiv D ℓ).symm (Sum.inr γ) = ⟨γ.val, γ.property.2⟩ := by
-  simp [degreeSplitEquiv]; rfl
+    (degreeSplitEquiv D ℓ).symm (Sum.inr γ) = ⟨γ.val, γ.property.2⟩ := rfl
 
 /-- For an upward-closed diagram `D` over a commutative ring `A`, the determinant of the square
 restriction `D.diagramDivisionMatrix H hH ℓ` equals
@@ -578,17 +592,14 @@ theorem det_diagramDivisionMatrix {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet 
         TauCeti.homogeneousMonomialBasis_repr_apply]
     · have hne : t.val ≠ s.val := fun h ↦ t.property.1 (h ▸ s.property.1)
       simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂,
-        Matrix.zero_apply, M, b, e, degreeSplitEquiv_symm_inl, degreeSplitEquiv_symm_inr,
-        LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply]
-      rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH t.property.1,
-        TauCeti.coe_homogeneousMonomialBasis, coeff_monomial]
-      simp [hne]
-    · simp [e, degreeSplitEquiv_symm_inr, degreeSplitEquiv_symm_inl, C]; rfl
+        Matrix.zero_apply, M, b, e, degreeSplitEquiv_symm_inl, degreeSplitEquiv_symm_inr]
+      rw [toMatrix_diagramDivisionEnd_of_notMem hD_up hH _ _ t.property.1, ite_eq_right hne]
+    · simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁,
+        e, degreeSplitEquiv_symm_inr, degreeSplitEquiv_symm_inl]
+      dsimp only [C]
     · simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₂,
-        Matrix.one_apply, M, b, e, degreeSplitEquiv_symm_inr, LinearMap.toMatrix_apply,
-        TauCeti.homogeneousMonomialBasis_repr_apply]
-      rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH t.property.1,
-        TauCeti.coe_homogeneousMonomialBasis, coeff_monomial]
+        Matrix.one_apply, M, b, e, degreeSplitEquiv_symm_inr]
+      rw [toMatrix_diagramDivisionEnd_of_notMem hD_up hH _ _ t.property.1]
       simp [Subtype.ext_iff, eq_comm]
   rw [← LinearMap.det_toMatrix b, ← Matrix.det_reindex_self e M, hre,
     Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one]

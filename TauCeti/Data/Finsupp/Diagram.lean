@@ -17,6 +17,7 @@ import TauCeti.Data.Finsupp.Fin
 import TauCeti.Data.Finsupp.MapDomain
 import TauCeti.Data.Finsupp.MonomialOrder.DegLex
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.Order.UpperLower
 
 /-!
 # Exponent diagrams, monotone coordinate transfers, and Bierstone–Milman's diagram cutoff
@@ -238,14 +239,6 @@ theorem isMonotoneDiagram_preimage_equivMapDomain {τ : Type*} [Preorder σ] [Pr
   simpa [Finsupp.equivMapDomain_transferExp] using h hα (e.lt_iff_lt.mp hij)
 
 end MonotoneDiagram
-
-/-- An upward-closed set `D` in a preorder with well-founded `<` is the union of the cones
-`Set.Ici α` over its minimal elements `{α | Minimal (· ∈ D) α}`. -/
-theorem _root_.IsUpperSet.biUnion_Ici_minimal {α : Type*} [Preorder α] [WellFoundedLT α]
-    {D : Set α} (hD : IsUpperSet D) : ⋃ a ∈ {a | Minimal (· ∈ D) a}, Set.Ici a = D := by
-  ext c; simp only [mem_iUnion, mem_ofPred_eq, mem_Ici, exists_prop]
-  exact ⟨fun ⟨_, hmin, hle⟩ ↦ hD hle hmin.prop,
-    fun hc ↦ let ⟨a, hle, hmin⟩ := exists_minimal_le_of_wellFoundedLT (· ∈ D) c hc; ⟨a, hmin, hle⟩⟩
 
 section DiagramVertices
 

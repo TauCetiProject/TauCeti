@@ -94,7 +94,9 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
   have hren (s : τ →₀ ℕ) : renameEquiv A e.toEquiv (monomial s (1 : A)) =
       monomial (Finsupp.equivMapDomain e.toEquiv s) 1 := by
     rw [renameEquiv_apply, rename_monomial, Finsupp.equivMapDomain_eq_mapDomain]
-  have hsurj := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective
+  have hsurj (s : σ →₀ ℕ) : ∃ s₀, Finsupp.equivMapDomain e.toEquiv s₀ = s :=
+    ⟨Finsupp.equivMapDomain e.toEquiv.symm s, by
+      rw [← Finsupp.equivMapDomain_trans, Equiv.symm_trans_self, Finsupp.equivMapDomain_refl]⟩
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨q, (⟨v₀, β₀, hβ₀, hdeg₀, rfl⟩ | ⟨γ₀, hγ₀, hdeg₀, rfl⟩), rfl⟩
     · rw [map_mul, AlgEquiv.apply_symm_apply, hren]; exact monomial_mul_mem_diagramSpanSet ⟨_, _⟩
@@ -108,7 +110,7 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
         (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mpr hv⟩
         ((mem_diagramBox_preimage_equivMapDomain_iff e).mpr hβ)
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg),
-        by rw [map_mul, AlgEquiv.apply_symm_apply, hren]; rfl⟩
+        by rw [map_mul, AlgEquiv.apply_symm_apply, hren]⟩
     · obtain ⟨γ₀, rfl⟩ := hsurj γ; exact ⟨_, monomial_mem_diagramSpanSet hγ
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg), hren γ₀⟩
 
