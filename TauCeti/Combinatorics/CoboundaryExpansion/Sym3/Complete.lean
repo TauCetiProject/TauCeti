@@ -29,6 +29,9 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 * `h1Sym_complete`: the infimum `h1Sym (complete V)` of the constants over all permutation degrees
   `n ≥ 2` is also `card V / 3`, since degree `3` attains the star bound.
 
+Beasley, Corollary 7, the identity when `4 ∣ card V`, is the same statement as
+`h1_complete_movedNorm_fin_three`.
+
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.
 
@@ -156,26 +159,15 @@ theorem gaugeDist_replicatedSeed (q : ℕ) :
   rw [replicatedSeed, Cochain.gaugeDist_replicate, gaugeDist_seed, Fintype.card_fin]
   ring
 
-/-- The identity gauge costs `6 q ^ 2` against the replicated seed: edges inside a cluster carry
-`1`, and each edge of `seed` is copied `q ^ 2` times. -/
+/-- The identity gauge costs `6 q ^ 2` against the replicated seed. -/
 theorem cost_one_replicatedSeed (q : ℕ) :
     (replicatedSeed q).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 * (q : ℝ) ^ 2 := by
-  have h := cost_one_seed
-  rw [Cochain.cost_complete] at h
-  rw [Cochain.cost_complete, Fintype.sum_filter_lt_lex (V := Fin 4) (ι := Fin q)]
-  simp only [inv_one, one_mul, mul_one] at h ⊢
-  have hin : ∀ (v : Fin 4) (a b : Fin q),
-      movedNorm (Fin 3) (replicatedSeed q (toLex (v, a)) (toLex (v, b))) = 0 := by
-    intro v a b
-    simp [replicatedSeed, Cochain.replicate_apply, ofLex_toLex, map_one_eq_zero]
-  have hout : ∀ (e : Fin 4 × Fin 4) (a b : Fin q),
-      movedNorm (Fin 3) (replicatedSeed q (toLex (e.1, a)) (toLex (e.2, b))) =
-        movedNorm (Fin 3) ((Cochain.ofLt (complete (Fin 4)) seed) e.1 e.2) := by
-    intro e a b
-    simp [replicatedSeed, Cochain.replicate_apply, ofLex_toLex]
-  simp only [hin, hout, sum_const_zero, zero_add, sum_const, card_univ, Fintype.card_fin,
-    nsmul_eq_mul, ← Finset.mul_sum] at h ⊢
-  rw [h]
+  rw [replicatedSeed]
+  have hγ : (fun _ : Fin 4 => (1 : Perm (Fin 3))) ∘
+      (fun x : Fin 4 ×ₗ Fin q => (ofLex x).1) = fun _ => 1 := by
+    funext _
+    simp [Function.comp_apply]
+  rw [← hγ, Cochain.cost_replicate_comp, cost_one_seed, Fintype.card_fin]
   ring
 
 /-- The upper bound when `card V = 4 q`: replicate the seed, whose ratio is `8 / 6`. -/
@@ -253,31 +245,6 @@ theorem h1Sym_complete (hV : 3 ≤ Fintype.card V) :
 /-- On the complete complex with four vertices the `Sym(3)` coboundary constant is `4/3`. -/
 theorem h1_complete_fin_four : h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 4) (by simp)
-
-/-- `h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3` (Beasley, Theorem 4). -/
-theorem h1_complete_fin_five : h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3 := by
-  simpa using h1_complete_movedNorm_fin_three (V := Fin 5) (by simp)
-
-/-- `h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3` (Beasley, Theorem 4). -/
-theorem h1_complete_fin_six : h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3 := by
-  simpa using h1_complete_movedNorm_fin_three (V := Fin 6) (by simp)
-
-/-- `h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3` (Beasley, Theorem 4). -/
-theorem h1_complete_fin_seven : h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3 := by
-  simpa using h1_complete_movedNorm_fin_three (V := Fin 7) (by simp)
-
-/-- `h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3` (Beasley, Theorem 4). -/
-theorem h1_complete_fin_eight : h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3 := by
-  simpa using h1_complete_movedNorm_fin_three (V := Fin 8) (by simp)
-
-/-- Whenever `4 ∣ Fintype.card V` and `4 ≤ Fintype.card V`,
-`h1 (complete V) (movedNorm (Fin 3)) = card V / 3` (Beasley, Corollary 7). This is the
-`4 ∣ card V` case of `h1_complete_movedNorm_fin_three`. -/
-theorem h1_complete_movedNorm_fin_three_of_four_dvd (h4 : 4 ∣ Fintype.card V)
-    (hV : 4 ≤ Fintype.card V) :
-    h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
-  obtain ⟨q, hq⟩ := h4
-  rw [h1_complete_movedNorm_fin_three (by omega), hq]
 
 namespace Sym3
 

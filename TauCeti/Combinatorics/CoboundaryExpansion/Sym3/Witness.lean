@@ -14,10 +14,9 @@ import TauCeti.Algebra.BigOperators.Finset.Filter
 /-!
 # Explicit `Sym(3)` witnesses on five to eight vertices
 
-`h1_complete_movedNorm_fin_three` gives `h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for
-every `3 ≤ card V`. The special cases `h1_complete_fin_five` through `h1_complete_fin_eight` and
-`h1_complete_movedNorm_fin_three_of_four_dvd` (Beasley, Corollary 7) are in `Sym3/Complete.lean`,
-next to `h1_complete_fin_four`.
+`h1_complete_movedNorm_fin_three` in `Sym3/Complete.lean` gives
+`h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for every `3 ≤ card V`. Beasley, Corollary 7,
+the case `4 ∣ card V`, is that theorem.
 
 `Sym3.witness5`, `Sym3.witness6`, `Sym3.witness7` and `Sym3.witness8` are the Appendix A cochains,
 each `Cochain.ofLt` of `Sym3.edge5` through `Sym3.edge8`. `defect_witness*` is the moved-point
@@ -586,28 +585,32 @@ theorem gaugeDist_witness8 : witness8.gaugeDist (movedNorm (Fin 3)) = 27 := by
 theorem defect_div_gaugeDist_witness5 :
     witness5.defect (movedNorm (Fin 3)) / witness5.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 5)) (movedNorm (Fin 3)) := by
-  rw [defect_witness5, gaugeDist_witness5, h1_complete_fin_five]
+  rw [defect_witness5, gaugeDist_witness5,
+    h1_complete_movedNorm_fin_three (V := Fin 5) (by simp)]
   norm_num
 
 /-- `defect / gaugeDist` for `witness6` equals `h1 (complete (Fin 6)) (movedNorm (Fin 3))`. -/
 theorem defect_div_gaugeDist_witness6 :
     witness6.defect (movedNorm (Fin 3)) / witness6.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 6)) (movedNorm (Fin 3)) := by
-  rw [defect_witness6, gaugeDist_witness6, h1_complete_fin_six]
+  rw [defect_witness6, gaugeDist_witness6,
+    h1_complete_movedNorm_fin_three (V := Fin 6) (by simp)]
   norm_num
 
 /-- `defect / gaugeDist` for `witness7` equals `h1 (complete (Fin 7)) (movedNorm (Fin 3))`. -/
 theorem defect_div_gaugeDist_witness7 :
     witness7.defect (movedNorm (Fin 3)) / witness7.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 7)) (movedNorm (Fin 3)) := by
-  rw [defect_witness7, gaugeDist_witness7, h1_complete_fin_seven]
+  rw [defect_witness7, gaugeDist_witness7,
+    h1_complete_movedNorm_fin_three (V := Fin 7) (by simp)]
   norm_num
 
 /-- `defect / gaugeDist` for `witness8` equals `h1 (complete (Fin 8)) (movedNorm (Fin 3))`. -/
 theorem defect_div_gaugeDist_witness8 :
     witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 8)) (movedNorm (Fin 3)) := by
-  rw [defect_witness8, gaugeDist_witness8, h1_complete_fin_eight]
+  rw [defect_witness8, gaugeDist_witness8,
+    h1_complete_movedNorm_fin_three (V := Fin 8) (by simp)]
   norm_num
 
 end Sym3
