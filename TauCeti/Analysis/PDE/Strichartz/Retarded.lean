@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
@@ -46,10 +49,14 @@ The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 ## Main declarations
 
 * `TauCeti.enorm_setIntegral_adjoint_le`: a dual estimate restricted to a set of times.
+* `TauCeti.enorm_integral_adjoint_neg_le`: a dual estimate for the time-reversed operators
+  `U(-t)`.
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
 * `TauCeti.one_lt_inv_add_inv_of_holderConjugate`: two time exponents, at most one of them at
   the endpoint `2`, satisfy the Christ–Kiselev condition `q₁' < q`.
+* `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate`: the retarded
+  estimate for the Hölder conjugates of two such time exponents, with a finite constant.
 
 ## References
 
@@ -70,22 +77,27 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] [NormedSpace ℝ H]
 
-/-- Time exponents `2 < q` and `2 ≤ q₁`, at most one of them at the endpoint, satisfy the
-Christ–Kiselev condition of `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` for their
+/-- Time exponents `2 < q ≤ ∞` and `2 ≤ q₁ ≤ ∞`, at most one of them at the endpoint `2`, satisfy
+the Christ–Kiselev condition of `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` for their
 Hölder conjugates `p = q'` and `p₁ = q₁'`: `1 / p₁ + 1 / p > 1`, that is `q₁' < q`. -/
-theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p.HolderConjugate q)
-    (hpq₁ : p₁.HolderConjugate q₁) (hq : 2 < q) (hq₁ : 2 ≤ q₁) :
-    1 < (p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
-  have h := hpq.coe.inv_add_inv_eq_one
-  have h₁ := hpq₁.coe.inv_add_inv_eq_one
-  have hq' : (q : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq)
-  have hq₁' : (q₁ : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq₁)
-  have hlt : (1 : ℝ≥0) < p₁⁻¹ + p⁻¹ := by
-    rw [← NNReal.coe_lt_coe]
-    push_cast
-    linarith
-  simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
-  exact_mod_cast hlt
+theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0∞} [p.HolderConjugate q]
+    [p₁.HolderConjugate q₁] (hq : 2 < q) (hq₁ : 2 ≤ q₁) : 1 < p₁⁻¹ + p⁻¹ := by
+  have h := ENNReal.HolderConjugate.inv_add_inv_eq_one p q
+  have h₁ := ENNReal.HolderConjugate.inv_add_inv_eq_one p₁ q₁
+  -- Otherwise `2 = (p₁⁻¹ + p⁻¹) + (q₁⁻¹ + q⁻¹) < 1 + (2⁻¹ + 2⁻¹) = 2`.
+  by_contra hle
+  rw [not_lt] at hle
+  have hq' : q₁⁻¹ + q⁻¹ < 1 := by
+    rw [← ENNReal.inv_two_add_inv_two]
+    exact ENNReal.add_lt_add_of_le_of_lt (ENNReal.inv_ne_top.2 (by positivity))
+      (ENNReal.inv_le_inv.2 hq₁) (ENNReal.inv_lt_inv.2 hq)
+  have h2 : (2 : ℝ≥0∞) < 2 :=
+    calc (2 : ℝ≥0∞) = (p₁⁻¹ + p⁻¹) + (q₁⁻¹ + q⁻¹) := by
+          rw [add_add_add_comm, h₁, h, one_add_one_eq_two]
+      _ < 1 + 1 := ENNReal.add_lt_add_of_le_of_lt (ne_top_of_le_ne_top ENNReal.one_ne_top hle)
+          hle hq'
+      _ = 2 := one_add_one_eq_two
+  exact lt_irrefl _ h2
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
@@ -109,6 +121,24 @@ theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C
   rw [← integral_indicator hI, ← hnorm, ← hind]
   exact hC _ ((aestronglyMeasurable_indicator_iff hI).2 hF)
     (by rw [hind]; exact (integrable_indicator_iff hI).2 hUF)
+
+/-- **Reversing time in a dual estimate.** If the operators `U(t) : H → L²(X, μ)` satisfy the dual
+estimate `‖∫ U(s)* F(s) ds‖ ≤ C ‖F‖_{L^p_t L^a_x}` for every almost everywhere strongly measurable
+`F : ℝ → L²(X, μ)` with `s ↦ U(s)* F(s)` integrable, then so do the time-reversed operators
+`U(-t)`: `‖∫ U(-s)* F(s) ds‖ ≤ C ‖F‖_{L^p_t L^a_x}` whenever `s ↦ U(-s)* F(s)` is integrable. The
+substitution `s ↦ -s` preserves the integral and the mixed norm. -/
+theorem enorm_integral_adjoint_neg_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C : ℝ≥0∞}
+    (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+      ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
+    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)
+    (hUF : Integrable (fun s ↦ ((U (-s))†) (F s))) :
+    ‖∫ s, ((U (-s))†) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p := by
+  have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
+  have h := hC (fun s ↦ F (-s)) (hF.comp_measurePreserving hneg)
+    (by simpa only [neg_neg] using hUF.comp_neg)
+  have hint := integral_neg_eq_self (fun s ↦ ((U (-s))†) (F s)) volume
+  simp only [neg_neg] at hint
+  rwa [hF.eLpNorm_eLpNorm_comp_neg, hint] at h
 
 /-- **The retarded estimate from two dual estimates.** Let `U(t) : H → L²(X, μ)` be bounded
 operators satisfying the dual estimates
@@ -174,5 +204,30 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
         exacts [enorm_setIntegral_adjoint_le hC₁ hI.measurableSet hF.restrict hUF.integrableOn,
           enorm_setIntegral_adjoint_le hC hJ.measurableSet hG.restrict hUG.integrableOn]
     _ = _ := by ring
+
+/-- **The retarded estimate for time exponents above `2`.** Let `U(t) : H → L²(X, μ)` satisfy the
+dual estimates of `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` with time exponents
+`p₁ = q₁'` and `p = q'`, the Hölder conjugates of `2 ≤ q₁ ≤ ∞` and `2 < q ≤ ∞`. Then the
+Christ–Kiselev condition holds (`TauCeti.one_lt_inv_add_inv_of_holderConjugate`), the constant
+`K = (1 - 2^{-δ})⁻¹`, `δ = 1 / p₁ + 1 / p - 1`, is finite, and
+
+`|∫ ∫_{s < t} ⟪U(s)* F(s), U(t)* G(t)⟫ ds dt| ≤ K C₁ C ‖F‖_{L^{p₁} L^{a₁}} ‖G‖_{L^p L^a}`. -/
+theorem enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate
+    {p q p₁ q₁ a₁ a : ℝ≥0∞} [p.HolderConjugate q] [p₁.HolderConjugate q₁] (hq : 2 < q)
+    (hq₁ : 2 ≤ q₁) {U : ℝ → H →L[𝕜] Lp E 2 μ} {C₁ C : ℝ≥0∞}
+    (hC₁ : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+      ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C₁ * eLpNorm (fun s ↦ eLpNorm (F s) a₁ μ) p₁)
+    (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+      ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
+    {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G)
+    (hUF : Integrable (fun s ↦ ((U s)†) (F s))) (hUG : Integrable (fun t ↦ ((U t)†) (G t))) :
+    ‖∫ t, ∫ s in Set.Iio t, ⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
+      ((1 - (2 : ℝ≥0∞) ^ (-(p₁⁻¹ + p⁻¹ - 1).toReal))⁻¹).toNNReal * C₁ * C *
+        eLpNorm (fun s ↦ eLpNorm (F s) a₁ μ) p₁ * eLpNorm (fun t ↦ eLpNorm (G t) a μ) p := by
+  have hp : 1 ≤ p := ENNReal.HolderConjugate.one_le p q
+  have hpp := one_lt_inv_add_inv_of_holderConjugate (p := p) (p₁ := p₁) hq hq₁
+  rw [ENNReal.coe_toNNReal
+    (inv_one_sub_two_rpow_neg_ne_top (ENNReal.HolderConjugate.ne_zero p₁ q₁) hp hpp)]
+  exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp hC₁ hC hF hG hUF hUG
 
 end TauCeti
