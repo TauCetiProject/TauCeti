@@ -125,7 +125,8 @@ theorem IsThreefoldStable.four_le_card_quotient (h : IsThreefoldStable A) (m : I
     fun _ ↦ isCoprime_one_right
   obtain ⟨i, hi⟩ := hc (Ideal.Quotient.mk m t)
   have hmem : -c i + 1 * t ∈ m := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, map_add, map_neg, one_mul, hc', hi, neg_add_cancel]
+    rw [← Ideal.Quotient.eq_zero_iff_mem]
+    simp [hc', hi]
   exact Ideal.IsMaximal.ne_top ‹_› (Ideal.eq_top_of_isUnit_mem _ hmem (ht i))
 
 /-- **A field with at least four elements is threefold stable.** Each unimodular pair
@@ -146,8 +147,7 @@ theorem isThreefoldStable_of_four_le_card {K : Type*} [Field K] (hK : 4 ≤ ENat
     rcases mul_eq_zero.mp hmul with hb | hst'
     · have ha : a (g t) = 0 := by simpa [hb] using ht
       have := hab (g t)
-      rw [ha, hb, isCoprime_zero_left, isUnit_zero_iff] at this
-      exact absurd this zero_ne_one
+      simp [ha, hb] at this
     · exact sub_eq_zero.mp hst'
   have := ENat.card_le_card_of_injective hinj
   rw [ENat.card_eq_coe_fintype_card (α := Fin 3), Fintype.card_fin] at this
@@ -189,10 +189,9 @@ theorem isThreefoldStable_iff_forall_four_le_card [Finite (MaximalSpectrum A)] :
 elements. -/
 theorem isThreefoldStable_iff_four_le_card_residueField [IsLocalRing A] :
     IsThreefoldStable A ↔ 4 ≤ ENat.card (IsLocalRing.ResidueField A) := by
-  have e : A ⧸ IsLocalRing.maximalIdeal A ≃+* IsLocalRing.ResidueField A :=
-    (Ideal.quotEquivOfEq IsLocalRing.ker_residue.symm).trans
-      (RingHom.quotientKerEquivOfSurjective IsLocalRing.residue_surjective)
-  rw [isThreefoldStable_iff_forall_four_le_card, ← ENat.card_congr e.toEquiv]
+  rw [isThreefoldStable_iff_forall_four_le_card]
+  -- `ResidueField A` is by definition `A ⧸ maximalIdeal A`
+  change _ ↔ 4 ≤ ENat.card (A ⧸ IsLocalRing.maximalIdeal A)
   exact ⟨fun h ↦ h _ inferInstance,
     fun h m hm ↦ IsLocalRing.eq_maximalIdeal hm ▸ h⟩
 
