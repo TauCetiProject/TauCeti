@@ -322,8 +322,8 @@ private lemma pullbackRigidification_tensorProduct (w : s' ≫ h = g ≫ s)
           (Scheme.Modules.pullbackComp g s).inv.app Q.lineBundle.obj) ≫ k = k := by
     rw [tensorHom_comp_tensorHom_assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app,
       id_tensorHom_id, Category.id_comp]
-  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η, δ_comp_η_tensorHom_assoc,
-    leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η,
+    δ_comp_η_tensorHom_comp_leftUnitor_hom]
   have h₁ := (Scheme.Modules.pullbackComp s' h).hom.naturality
     (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle).hom
   have h₂ := (Scheme.Modules.pullbackCongr w).hom.naturality

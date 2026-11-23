@@ -129,7 +129,7 @@ private lemma reesPullbackComponent_reesMul (i j : ℕ) :
   rw [tensorHom_comp_tensorHom_assoc, reesPullbackComponent_sheafιUnit,
     reesPullbackComponent_sheafιUnit, ← tensorHom_comp_tensorHom_assoc]
   -- Naturality of `δ`, and compatibility of `η` with the multiplication of the unit.
-  rw [δ_natural_assoc, Functor.map_comp_assoc, δ_comp_η_tensorHom_η_comp_leftUnitor_hom]
+  rw [δ_natural_assoc, Functor.map_comp_assoc, δ_comp_η_tensorHom_comp_leftUnitor_hom]
 
 /-- The components of the pullback of the Rees algebra of `I` are the pullbacks `f^* Iⁿ`. -/
 theorem pullback_obj_reesAlgebra_obj_X :
