@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Map
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
 
@@ -45,27 +45,24 @@ variable {k H K M : Type u} [Field k] [CommRing H] [CommRing K]
 
 /-- Restriction along a morphism surjective on rational points identifies rational vector
 orbits. The equivalence does not require finite-dimensional representations. -/
-def vectorOrbitEquivCorestrict (f : H →ₐc[k] K)
+noncomputable def vectorOrbitEquivCorestrict (f : H →ₐc[k] K)
     (hf : Function.Surjective (mapDomain (A := k) f)) :
     (letI : Comodule k K M := Corestrict f.toCoalgHom
      VectorOrbit k K M) ≃ VectorOrbit k H M := by
   letI : Comodule k K M := Corestrict f.toCoalgHom
-  refine { toFun := ?_, invFun := ?_, left_inv := ?_, right_inv := ?_ }
-  · refine VectorOrbit.lift (H := K) (fun v : M => VectorOrbit.mk (H := H) v) ?_
-    intro g v
-    rw [basePointsRepresentation_corestrict]
-    exact VectorOrbit.mk_basePointsRepresentation _ _
-  · refine VectorOrbit.lift (H := H) (fun v : M => VectorOrbit.mk (H := K) v) ?_
-    intro g v
-    obtain ⟨q, rfl⟩ := hf g
-    rw [← basePointsRepresentation_corestrict f q]
-    exact VectorOrbit.mk_basePointsRepresentation _ _
-  · intro O
-    induction O using VectorOrbit.ind with | h v
-    simp only [VectorOrbit.lift_mk]
-  · intro O
-    induction O using VectorOrbit.ind with | h v
-    simp only [VectorOrbit.lift_mk]
+  exact
+    { toFun := VectorOrbit.map (mapDomain f) LinearMap.id
+        fun g v ↦ by simp only [LinearMap.id_apply, basePointsRepresentation_corestrict]
+      invFun := VectorOrbit.map (Function.surjInv hf) LinearMap.id
+        fun g v ↦ by
+          simp only [LinearMap.id_apply, basePointsRepresentation_corestrict,
+            Function.surjInv_eq hf]
+      left_inv O := by
+        induction O using VectorOrbit.ind with | h v
+        simp
+      right_inv O := by
+        induction O using VectorOrbit.ind with | h v
+        simp }
 
 /-- The rational-orbit comparison sends the orbit of a vector to its original orbit. -/
 @[simp]
