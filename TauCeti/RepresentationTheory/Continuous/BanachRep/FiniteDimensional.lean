@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.RepresentationTheory.Continuous.BanachRep.Exact
 public import TauCeti.RepresentationTheory.FDRep.Continuous
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Finite-dimensional Banach representations
@@ -19,7 +20,8 @@ strict exact structure to this subcategory using `isExtensionClosed_isFiniteDime
 Over a complete nontrivially normed field, forgetting the norm gives an equivalence with
 `TauCeti.ContFDRep`, the category defined by continuity of matrix coefficients. Thus a continuous
 finite-dimensional representation can be used in Banach extensions independently of a choice
-of norm, with all its equivariant linear maps as morphisms.
+of norm, with all its equivariant linear maps as morphisms. Under the inverse equivalence,
+algebraically short exact sequences give Banach conflations.
 
 ## References
 
@@ -33,9 +35,30 @@ universe w u v
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-namespace TauCeti.BanachRep
+namespace FDRep
+
+/-- On a finite-dimensional representation with its module topology, continuity of all
+matrix coefficients is equivalent to joint continuity of the action. -/
+theorem isContinuous_iff_continuous_action {k G : Type*} [Field k] [TopologicalSpace k]
+    [IsTopologicalRing k] [Monoid G] [TopologicalSpace G] (X : FDRep k G) [TopologicalSpace X]
+    [IsModuleTopology k X] :
+    isContinuous k G X ↔ Continuous fun p : G × X => X.ρ p.1 p.2 := by
+  rw [isContinuous_iff]
+  let b := Module.finBasis k X
+  refine ⟨fun h => ?_, fun h f x => ?_⟩
+  · apply (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b X.ρ).2
+    exact continuous_matrix fun i j => by
+      simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using h (b.coord i) (b j)
+  · exact (IsModuleTopology.continuous_of_linearMap f).comp
+      (h.comp (continuous_id.prodMk continuous_const))
+
+end FDRep
+
+namespace TauCeti
 
 variable (𝕜 : Type u) [NontriviallyNormedField 𝕜] (G : Type v) [Monoid G] [TopologicalSpace G]
+
+namespace BanachRep
 
 /-- The object property cutting out the finite-dimensional Banach representations. -/
 def isFiniteDimensional : ObjectProperty (BanachRep.{w} 𝕜 G) :=
@@ -53,7 +76,8 @@ instance (X : (isFiniteDimensional.{w} 𝕜 G).FullSubcategory) :
   X.property
 
 /-- An extension in Banach representations of two finite-dimensional representations is
-finite-dimensional. -/
+finite-dimensional. As in `TauCeti.isExtensionClosed_finiteModules`, exactness and surjectivity
+of the underlying linear maps give finite generation of the middle term. -/
 theorem isExtensionClosed_isFiniteDimensional :
     exactStructure.IsExtensionClosed (isFiniteDimensional.{w} 𝕜 G) where
   prop_X₂ {S} hS h₁ h₃ := by
@@ -73,17 +97,17 @@ instance : (isFiniteDimensional.{w} 𝕜 G).IsClosedUnderIsomorphisms :=
 instance : (isFiniteDimensional.{w} 𝕜 G).IsClosedUnderBinaryProducts :=
   isExtensionClosed_isFiniteDimensional.isClosedUnderBinaryProducts
 
-section Comparison
-
 variable (𝕜 G) [CompleteSpace 𝕜]
 
 /-- Forget the norm of a finite-dimensional Banach representation, retaining the representation
-with continuous matrix coefficients on the same vector space. The object map is transparent
-so its morphisms can be evaluated on vectors of the original Banach space. -/
-@[expose] noncomputable def toContFDRep :
+on its original vector space so that mapped morphisms act on the same vectors. The related
+constructor `ContFDRep.ofContRepresentation` uses `FDRep.ofShrink` to change carrier universes.
+The object map is transparent to `simp` when it identifies the carriers in morphism evaluations. -/
+@[expose, implicit_reducible] noncomputable def toContFDRep :
     (isFiniteDimensional.{u} 𝕜 G).FullSubcategory ⥤ ContFDRep 𝕜 G where
-  obj X := ⟨FDRep.of X.obj.ρ.toRepresentation, FDRep.isContinuous_iff.mpr fun f x =>
-    f.continuous_of_finiteDimensional.comp (X.obj.ρ.continuous_orbit x)⟩
+  obj X := ⟨FDRep.of X.obj.ρ.toRepresentation, by
+    have : IsModuleTopology 𝕜 X.obj := isModuleTopologyOfFiniteDimensional
+    exact (FDRep.isContinuous_iff_continuous_action _).2 X.obj.ρ.continuous_action⟩
   map f := ObjectProperty.homMk
     ⟨FGModuleCat.ofHom f.hom.hom.toLinearMap, fun g =>
       FGModuleCat.hom_ext (LinearMap.ext (f.hom.hom_comm_apply g))⟩
@@ -103,9 +127,11 @@ theorem toContFDRep_map_hom_hom_hom_hom {X Y : (isFiniteDimensional.{u} 𝕜 G).
 /-- Forgetting the norm is fully faithful since every linear map on a finite-dimensional space
 over a complete field is continuous. -/
 noncomputable def fullyFaithfulToContFDRep : (toContFDRep 𝕜 G).FullyFaithful where
-  preimage f := ObjectProperty.homMk
-    ⟨LinearMap.toContinuousLinearMap f.hom.hom.hom.hom,
-      fun g x => LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.hom g) x⟩
+  preimage {X Y} f :=
+    let φ : X.obj →ₗ[𝕜] Y.obj := f.hom.hom.hom.hom
+    ObjectProperty.homMk ⟨LinearMap.toContinuousLinearMap φ, fun g x => by
+      simp only [LinearMap.coe_toContinuousLinearMap']
+      exact LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.hom g) x⟩
   map_preimage {X Y} f := by
     ext x
     rw [toContFDRep_map_hom_hom_hom_hom, ObjectProperty.homMk_hom]
@@ -115,29 +141,74 @@ noncomputable def fullyFaithfulToContFDRep : (toContFDRep 𝕜 G).FullyFaithful 
     ext x
     simp
 
+@[simp]
+theorem fullyFaithfulToContFDRep_preimage_apply
+    {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory}
+    (f : (toContFDRep 𝕜 G).obj X ⟶ (toContFDRep 𝕜 G).obj Y) (x : X.obj) :
+    (fullyFaithfulToContFDRep.preimage f).hom.hom x = f.hom.hom.hom.hom x :=
+  (rfl)
+
+end BanachRep
+
+variable {𝕜 G} [CompleteSpace 𝕜]
+
+namespace ContFDRep
+
+open BanachRep
+
+/-- Equip the original carrier of a continuous finite-dimensional representation with the
+sup norm in finite-basis coordinates, giving a Banach realization of its action. -/
+@[expose] noncomputable def toBanachRep (X : ContFDRep 𝕜 G) :
+    (isFiniteDimensional.{u} 𝕜 G).FullSubcategory := by
+  let e := (Module.finBasis 𝕜 X.obj).equivFun
+  let := NormedAddCommGroup.induced _ _ e e.injective
+  let := NormedSpace.induced 𝕜 _ _ e
+  have := FiniteDimensional.completeSpace 𝕜 X.obj
+  have : IsModuleTopology 𝕜 X.obj := isModuleTopologyOfFiniteDimensional
+  let ρ : ContinuousRep G 𝕜 X.obj :=
+    ⟨X.obj.ρ, (FDRep.isContinuous_iff_continuous_action X.obj).1 X.property⟩
+  exact ⟨of ρ, (isFiniteDimensional_iff _).2 (inferInstanceAs (FiniteDimensional 𝕜 X.obj))⟩
+
+/-- The Banach realization has the original carrier and linear action. -/
+@[simp]
+theorem toBanachRep_ρ (X : ContFDRep 𝕜 G) : X.toBanachRep.obj.ρ.toRepresentation = X.obj.ρ :=
+  (rfl)
+
+@[simp]
+theorem toContFDRep_obj_toBanachRep (X : ContFDRep 𝕜 G) :
+    (toContFDRep 𝕜 G).obj X.toBanachRep = X := by
+  apply ObjectProperty.FullSubcategory.ext
+  rw [toContFDRep_obj_obj, toBanachRep_ρ]
+  exact FDRep.of_ρ_eq_self X.obj
+
+end ContFDRep
+
+namespace BanachRep
+
 /-- Every finite-dimensional representation with continuous matrix coefficients has a Banach
 realization, unique up to isomorphism. -/
 instance : (toContFDRep 𝕜 G).IsEquivalence where
   full := fullyFaithfulToContFDRep.full
   faithful := fullyFaithfulToContFDRep.faithful
-  essSurj := by
-    refine Functor.essSurj_of_surj fun X => ?_
-    -- Pull back the sup norm along the coordinate isomorphism.
-    let b := Module.finBasis 𝕜 X.obj
-    let e := b.equivFun
-    let := NormedAddCommGroup.induced _ _ e e.injective
-    let := NormedSpace.induced 𝕜 _ _ e
-    have := FiniteDimensional.completeSpace 𝕜 X.obj
-    have : IsModuleTopology 𝕜 X.obj := isModuleTopologyOfFiniteDimensional
-    let ρ : ContinuousRep G 𝕜 X.obj :=
-      { toRepresentation := X.obj.ρ
-        continuous_action := (ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix
-          b b X.obj.ρ).mpr (continuous_matrix fun i j => by
-            simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using
-              FDRep.isContinuous_iff.mp X.property (b.coord i) (b j)) }
-    refine ⟨⟨of ρ, inferInstanceAs (FiniteDimensional 𝕜 X.obj)⟩, ?_⟩
-    exact ObjectProperty.FullSubcategory.ext (FDRep.of_ρ_eq_self X.obj)
+  essSurj := Functor.essSurj_of_surj fun X => ⟨X.toBanachRep, X.toContFDRep_obj_toBanachRep⟩
 
-end Comparison
+/-- An algebraically short exact sequence of continuous finite-dimensional representations
+gives a conflation under the inverse comparison and inclusion into Banach representations. -/
+theorem _root_.CategoryTheory.ShortComplex.conflation_map_inv_toContFDRep
+    (S : ShortComplex (ContFDRep 𝕜 G))
+    (hf : Function.Injective S.f.hom.hom.hom.hom) (hg : Function.Surjective S.g.hom.hom.hom.hom)
+    (hex : Function.Exact S.f.hom.hom.hom.hom S.g.hom.hom.hom.hom) :
+    exactStructure.Conflation (S.map ((toContFDRep 𝕜 G).inv ⋙ (isFiniteDimensional 𝕜 G).ι)) := by
+  let U := (FDRep.isContinuous 𝕜 G).ι ⋙ Action.forget (FGModuleCat 𝕜) G ⋙
+    forget₂ (FGModuleCat 𝕜) (ModuleCat 𝕜)
+  have hS : (S.map U).ShortExact := ModuleCat.shortComplex_shortExact _ hex hf hg
+  -- The counit identifies the underlying complex of the Banach realization with the original.
+  have hBanach := ShortComplex.shortExact_of_iso
+    (U.mapShortComplex.mapIso (S.mapNatIso (toContFDRep 𝕜 G).asEquivalence.counitIso).symm) hS
+  exact (exactStructure_conflation_iff _).2 ⟨hBanach.moduleCat_injective_f,
+    hBanach.moduleCat_surjective_g,
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hBanach.exact⟩
 
-end TauCeti.BanachRep
+end BanachRep
+
+end TauCeti
