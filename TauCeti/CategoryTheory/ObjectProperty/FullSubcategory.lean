@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
-public import Mathlib.CategoryTheory.ObjectProperty.Small
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
@@ -35,8 +34,6 @@ in Mathlib's `Mathlib.CategoryTheory.ObjectProperty.FullSubcategory`.
   a monomorphism of the full subcategory.
 * `CategoryTheory.ObjectProperty.FullSubcategory.isGroupoid`: a full subcategory of a groupoid is a
   groupoid.
-* `CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`: every property in an essentially
-  small category is essentially small.
 * `CategoryTheory.ObjectProperty.ιOfLE_additive`: the inclusion of a smaller property into a
   larger one is additive.
 * `CategoryTheory.ObjectProperty.hasFiniteBiproducts_fullSubcategory`: a full subcategory closed
@@ -53,8 +50,6 @@ The construction uses Mathlib's `ObjectProperty.lift` and `ObjectProperty.ιOfLE
 -/
 
 public section
-
-universe w
 
 namespace CategoryTheory.ObjectProperty
 
@@ -111,13 +106,7 @@ variable {P} in
 /-- A morphism of a full subcategory is a monomorphism as soon as it is one in the ambient
 category. -/
 instance mono_homMk {X Y : P.FullSubcategory} (f : X.obj ⟶ Y.obj) [Mono f] : Mono (homMk f) :=
-  P.ι.mono_of_mono_map ‹_›
-
-/-- Every object property in an essentially small category is essentially small. This supplies
-the smallness instance for its full subcategory through Mathlib's object-property API. -/
-instance essentiallySmall_of_ambient [CategoryTheory.EssentiallySmall.{w} C] :
-    ObjectProperty.EssentiallySmall.{w} P :=
-  ObjectProperty.EssentiallySmall.of_le.{w} (Q := (⊤ : ObjectProperty C)) le_top
+  P.ι.mono_of_mono_map (by simpa only [ι_map, homMk_hom] using (inferInstance : Mono f))
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/
@@ -208,10 +197,12 @@ section Linear
 variable [Preadditive C]
 
 variable {P Q} in
-/-- The inclusion of a smaller object property into a larger one is an additive functor: both
-categories carry the addition of the ambient one. -/
-instance ιOfLE_additive (h : P ≤ Q) : (ιOfLE h).Additive where
-  map_add := rfl
+/-- The inclusion of a smaller object property into a larger one is an additive functor: followed
+by the faithful additive inclusion of the larger one, it is the additive inclusion of the smaller
+one. -/
+instance ιOfLE_additive (h : P ≤ Q) : (ιOfLE h).Additive :=
+  have := Functor.additive_of_iso (ιOfLECompιIso h).symm
+  Functor.additive_of_comp_faithful _ Q.ι
 
 /-- The comparison between successive restrictions and the intersection is additive. -/
 instance iteratedFullSubcategoryEquivalence_functor_additive :

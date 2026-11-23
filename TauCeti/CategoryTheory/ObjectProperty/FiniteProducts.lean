@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Preserves.Finite
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
-public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
@@ -22,9 +20,13 @@ isomorphisms (`CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerm
 particular one that holds for a zero object
 (`CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`).
 
-In a category with binary biproducts, closure under binary products can be checked on biproducts
-alone (`CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod`), and it gives
-the property at `X ⊞ Y` in that syntactic form
+For a property closed under isomorphisms, closure under binary products can be checked on the
+chosen binary products `X ⨯ Y`
+(`CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_prod`), and in a category with
+binary biproducts on the chosen biproducts `X ⊞ Y`
+(`CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod`). Conversely, a
+property closed under binary products holds on an existing biproduct `X ⊞ Y` whenever it holds on
+`X` and on `Y`, with the conclusion in that syntactic form
 (`CategoryTheory.ObjectProperty.prop_biprod_of_isClosedUnderBinaryProducts`).
 -/
 
@@ -69,19 +71,33 @@ theorem isClosedUnderIsomorphisms_of_containsZero {C : Type*} [Category* C]
   obtain ⟨Z, hZ, hZP⟩ := P.exists_prop_of_containsZero
   exact P.isClosedUnderIsomorphisms_of_isTerminal hZ.isTerminal hZP
 
-/-- **For a replete property, closure under binary products only has to be checked on
-biproducts**, since in a category with binary biproducts every binary product is one. -/
-theorem isClosedUnderBinaryProducts_of_prop_biprod {C : Type*} [Category* C]
-    [HasZeroMorphisms C] [HasBinaryBiproducts C] (P : ObjectProperty C)
-    [P.IsClosedUnderIsomorphisms] (h : ∀ X Y : C, P X → P Y → P (X ⊞ Y)) :
+/-- **For a replete property, closure under binary products only has to be checked on the chosen
+binary products** `X ⨯ Y`, for those pairs that have one: every limit of a pair diagram is
+isomorphic to the chosen product of its two objects. -/
+theorem isClosedUnderBinaryProducts_of_prop_prod {C : Type*} [Category* C]
+    (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
+    (h : ∀ (X Y : C) [HasBinaryProduct X Y], P X → P Y → P (X ⨯ Y)) :
     P.IsClosedUnderBinaryProducts := by
   refine IsClosedUnderLimitsOfShape.mk' ?_
   rintro _ ⟨F, hF⟩
-  refine P.prop_of_iso ?_ (h _ _ (hF ⟨WalkingPair.left⟩) (hF ⟨WalkingPair.right⟩))
-  exact (biprod.isoProd _ _).trans (HasLimit.isoOfNatIso (diagramIsoPair F)).symm
+  have : HasBinaryProduct (F.obj ⟨WalkingPair.left⟩) (F.obj ⟨WalkingPair.right⟩) :=
+    hasLimit_of_iso (diagramIsoPair F)
+  exact P.prop_of_iso (HasLimit.isoOfNatIso (diagramIsoPair F)).symm
+    (h _ _ (hF ⟨WalkingPair.left⟩) (hF ⟨WalkingPair.right⟩))
 
-/-- **A property closed under binary products holds for binary biproducts.** In a category with
-binary biproducts the biproduct is a binary product, so this is
+/-- **For a replete property, closure under binary products only has to be checked on
+biproducts**, since in a category with binary biproducts every binary product is isomorphic to
+one. This is `CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_prod` through
+`CategoryTheory.Limits.biprod.isoProd`. -/
+theorem isClosedUnderBinaryProducts_of_prop_biprod {C : Type*} [Category* C]
+    [HasZeroMorphisms C] [HasBinaryBiproducts C] (P : ObjectProperty C)
+    [P.IsClosedUnderIsomorphisms] (h : ∀ X Y : C, P X → P Y → P (X ⊞ Y)) :
+    P.IsClosedUnderBinaryProducts :=
+  P.isClosedUnderBinaryProducts_of_prop_prod fun X Y _ hX hY ↦
+    P.prop_of_iso (biprod.isoProd X Y) (h X Y hX hY)
+
+/-- **A property closed under binary products holds on an existing biproduct `X ⊞ Y` whenever it
+holds on `X` and on `Y`.** A binary biproduct is a binary product, so this is
 `CategoryTheory.ObjectProperty.prop_of_isLimit_binaryFan` applied to
 `CategoryTheory.Limits.BinaryBiproduct.isLimit`; naming it keeps the index of the conclusion
 syntactically `X ⊞ Y`, which matters when the conclusion is the type index of a dependent

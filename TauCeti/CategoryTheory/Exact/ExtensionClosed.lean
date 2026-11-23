@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 
