@@ -157,12 +157,24 @@ such `δ`-structure (`eq_localization`), and the unit condition is necessary for
 (`existsUnique_isDeltaMap_algebraMap_iff`). -/
 @[instance_reducible]
 noncomputable def localization : DeltaRing p B :=
-  (equivWittSection p B).symm
+  let d := (equivWittSection p B).symm
     ⟨localizationWittSection h, constantCoeff_comp_localizationWittSection h⟩
+  have hd (x : B) : d.delta x = (localizationWittSection h x).coeff 1 :=
+    delta_equivWittSection_symm p B _ x
+  { delta x := (localizationWittSection h x).coeff 1
+    delta_zero := by simpa only [hd] using d.delta_zero
+    delta_one := by simpa only [hd] using d.delta_one
+    delta_add x y := by simpa only [hd] using d.delta_add x y
+    delta_mul x y := by simpa only [hd] using d.delta_mul x y }
 
 private theorem wittSection_localization :
     @wittSection p B _ _ (localization h) = localizationWittSection h := by
-  rw [← equivWittSection_apply, localization, Equiv.apply_symm_apply]
+  let := localization h
+  ext x i
+  fin_cases i
+  · simpa [constantCoeff_apply] using
+      congr($(constantCoeff_comp_localizationWittSection h) x).symm
+  · exact wittSection_coeff_one p B x
 
 /-- The structure map of a localization is a `δ`-map for the localized `δ`-structure. -/
 theorem isDeltaMap_algebraMap_localization :
@@ -172,6 +184,7 @@ theorem isDeltaMap_algebraMap_localization :
   rw [isDeltaMap_iff_wittSection_comp, wittSection_localization, localizationWittSection_comp]
 
 /-- The localized `δ`-structure extends the `δ`-structure of `A`. -/
+@[simp]
 theorem delta_localization_algebraMap (a : A) :
     (localization h).delta (algebraMap A B a) = algebraMap A B (delta p a) := by
   let := localization h
