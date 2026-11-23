@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Category.TopCat.Lindelof
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Compactness.Paracompact
+import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 
 /-!
 # Paracompact sequential colimits
@@ -33,10 +34,8 @@ theorem paracompactSpace_of_isColimit {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
     (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE (Nat.le_succ n)))) (hc : IsColimit c)
     [∀ n, NormalSpace (F.obj n)] [∀ n, T1Space (F.obj n)] [∀ n, LindelofSpace (F.obj n)] :
     ParacompactSpace c.pt := by
-  have hmap {i j : ℕ} (hij : i ≤ j) : IsClosedEmbedding (F.map (homOfLE hij)) :=
-    isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij
-  let := t1Space_of_isColimit hc
-    (injective_ι_of_isColimit (fun _ _ f ↦ (hmap (leOfHom f)).injective) hc)
+  let := t1Space_of_isColimit hc fun k ↦
+    (isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).injective
   let := normalSpace_of_isColimit hF hc
   let := lindelofSpace_of_isColimit hc
   infer_instance
