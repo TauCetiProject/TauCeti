@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
 public import TauCeti.LinearAlgebra.Projectivization.Projector
-public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
 # Real projective space as a compact real algebraic set of matrices
@@ -17,15 +15,15 @@ public import TauCeti.Topology.Algebra.Projectivization
 The projector map `Projectivization.projector : ℙ K (ι → K) → Matrix ι ι K` sends a line spanned
 by `x` to the matrix `x xᵀ / (xᵀ x)`, and is a bijection onto the *projector locus*
 `TauCeti.projectorLocus ι K` of symmetric idempotent matrices of trace one
-(`Projectivization.range_projector`). Here we add its topological and semialgebraic properties.
+(`Projectivization.range_projector`). Its topological properties (continuity, closed embedding,
+closedness, and real compactness of the locus) live in
+`TauCeti.Topology.Algebra.Projectivization.Projector`. Here we add its semialgebraic and Nash
+properties.
 
-The projector map is continuous for the quotient topology on projective space. Over `ℝ`,
-projective space is compact and matrices form a Hausdorff space, so the projector map is a closed
-embedding: it is a homeomorphism from real projective space onto the projector locus, which is
-compact. The locus is cut out by polynomial equations in the matrix entries, hence is
-semialgebraic. Together these exhibit real projective space as a compact real algebraic subset of
-an affine space, which is the reduction used to transport triangulations of compact semialgebraic
-sets to real projective spaces.
+The locus is cut out by polynomial equations in the matrix entries, hence is semialgebraic.
+Together with real compactness from `TauCeti.Topology.Algebra.Projectivization.Projector`, this
+exhibits real projective space as a compact real algebraic subset of an affine space, which is the
+reduction used to transport triangulations of compact semialgebraic sets to real projective spaces.
 
 Over an ordered field the standard affine charts of projective space are semialgebraic in this
 model. The inverse chart at `i` followed by the projector map is a semialgebraic map from `Kⁿ`,
@@ -40,11 +38,6 @@ at `i` followed by the projector map are the rational functions `w a * w b / (w�
 
 ## Main results
 
-* `Projectivization.continuous_projector`: the projector map is continuous.
-* `Projectivization.isClosedEmbedding_projector`: over `ℝ` the projector map is a closed
-  embedding.
-* `TauCeti.isClosed_projectorLocus` and `TauCeti.isCompact_projectorLocus`: the projector locus
-  is closed, and compact over `ℝ`.
 * `TauCeti.isSemialgebraic_projectorLocus`: the projector locus is semialgebraic in the matrix
   entries.
 * `TauCeti.isSemialgebraicMap_projector_affineChart_symm`,
@@ -67,53 +60,12 @@ model in `TauCeti.Geometry.RealAlgebraic.HermitianProjectorEmbedding`.
 
 public section
 
-open Matrix MvPolynomial Set Topology
+open Matrix MvPolynomial Set
 open scoped LinearAlgebra.Projectivization
-
-namespace Projectivization
-
-open TauCeti
-
-variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [TopologicalSpace K] [IsTopologicalRing K] [ContinuousInv₀ K]
-
-/-- The projector map is continuous for the quotient topology on projective space. -/
-theorem continuous_projector : Continuous (projector : ℙ K (ι → K) → Matrix ι ι K) := by
-  rw [continuous_iff]
-  have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.1 :=
-    funext fun x ↦ by simp
-  simp only [hcomp, rankOneProjector_def]
-  exact ((continuous_subtype_val.dotProduct continuous_subtype_val).inv₀ fun x ↦
-    dotProduct_self_eq_zero.not.mpr x.2).smul
-    (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val)
-
-/-- Over `ℝ` the projector map is a closed embedding, hence a homeomorphism from real projective
-space onto the projector locus `TauCeti.projectorLocus ι ℝ`. -/
-theorem isClosedEmbedding_projector :
-    IsClosedEmbedding (projector : ℙ ℝ (ι → ℝ) → Matrix ι ι ℝ) :=
-  continuous_projector.isClosedEmbedding projector_injective
-
-end Projectivization
 
 namespace TauCeti
 
 variable {ι K : Type*} [Fintype ι] [Field K]
-
-/-- The projector locus is closed. -/
-theorem isClosed_projectorLocus [TopologicalSpace K] [IsTopologicalRing K] [T2Space K] :
-    IsClosed (projectorLocus ι K) := by
-  have h : projectorLocus ι K = {A | Aᵀ = A} ∩ {A | A * A = A} ∩ {A | A.trace = 1} := by
-    ext A
-    simp [IsSymm, IsIdempotentElem, and_assoc]
-  rw [h]
-  exact ((isClosed_eq continuous_id.matrix_transpose continuous_id).inter
-    (isClosed_eq (continuous_id.matrix_mul continuous_id) continuous_id)).inter
-    (isClosed_eq continuous_id.matrix_trace continuous_const)
-
-/-- The real projector locus is compact, being the image of compact real projective space. -/
-theorem isCompact_projectorLocus : IsCompact (projectorLocus ι ℝ) :=
-  Projectivization.range_projector (ι := ι) (K := ℝ) ▸
-    isCompact_range Projectivization.continuous_projector
 
 /-- The projector locus is semialgebraic: in the matrix entries `a (i, j)` it is cut out by the
 polynomial equations expressing symmetry, idempotence and trace one. -/

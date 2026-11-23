@@ -480,9 +480,9 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         U.toSubgroup.fixedPoints_subtype_quotientMk_smul c : G × G → M) := by
-    refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
+    refine (congrArg _ (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c)).trans ?_
     exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
-      (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
+      (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c).symm
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
     (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
@@ -503,8 +503,8 @@ normal subgroup: its zero set is open and contains `1`. -/
 theorem exists_openNormalSubgroup_apply_eq_zero (z : Z1 G M) :
     ∃ U : OpenNormalSubgroup G, ∀ g ∈ U, (z : G → M) g = 0 := by
   have hopen : IsOpen ((z : G → M) ⁻¹' {0}) :=
-    ((mem_Z1_iff.1 z.2).1).isOpen_preimage _ (isOpen_discrete _)
-  have hone : (1 : G) ∈ (z : G → M) ⁻¹' {0} := map_one_of_mem_Z1 z.2
+    ((mem_Z1_iff.1 z.property).1).isOpen_preimage _ (isOpen_discrete _)
+  have hone : (1 : G) ∈ (z : G → M) ⁻¹' {0} := map_one_of_mem_Z1 z.property
   obtain ⟨U, hU⟩ :=
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen hone
   exact ⟨U, fun g hg => hU hg⟩
@@ -523,7 +523,7 @@ theorem exists_explicitInfl1_eq (x : H1 G M) :
   induction x using QuotientAddGroup.induction_on with
   | _ z =>
     obtain ⟨U, hU⟩ := exists_openNormalSubgroup_apply_eq_zero G M z
-    exact ⟨U, descendZ1 z fun n => hU (n : G) n.2, explicitInfl1_descendZ1 z _⟩
+    exact ⟨U, descendZ1 z fun n => hU (n : G) n.property, explicitInfl1_descendZ1 z _⟩
 
 /-- The descent of a cocone to `H¹(G, M)`, as a bare function: a class is inflated from some
 finite level, and its value is the cocone leg applied to any such witness. -/

@@ -45,6 +45,8 @@ modulo `Q` once the residue of `x` generates `C ⧸ Q` over `A ⧸ p`, and `Q` i
 * `Ideal.exists_mem_adjoin_sub_mem`: `A[x]` meets every residue class modulo `Q` when the residue
   of `x` generates the residue extension.
 * `Ideal.le_map_comap_adjoin`: `Q = (g(x)) + p C` is extended from `Q ∩ A[x]`.
+* `Ideal.comap_inclusion_under`: pulling back `I.under B` along `Subalgebra.inclusion hAB` gives
+  `I.under A`.
 -/
 
 public section
@@ -52,6 +54,14 @@ public section
 open Ideal
 
 namespace Ideal
+
+/-- Pulling back the contraction `I.under B` to a smaller subalgebra `A ≤ B` recovers
+`I.under A`. -/
+@[simp]
+theorem comap_inclusion_under {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+    {A B : Subalgebra R S} (hAB : A ≤ B) (I : Ideal S) :
+    (I.under B).comap (Subalgebra.inclusion hAB) = I.under A :=
+  ext fun _ ↦ Iff.rfl
 
 /-- An ideal of an `R`-algebra lying over the principal ideal `(a)` meets `R` exactly in the
 multiples of `a`: `algebraMap R S m ∈ Q ↔ a ∣ m`. -/

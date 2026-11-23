@@ -155,7 +155,7 @@ theorem raiseLowerEnd_eq_zero {α : H → K} {x y : L} (hx : x ∈ rootSpace H �
     (hy : y ∈ rootSpace H (-α)) {χ : H → K} (hχ : genWeightSpace M χ = ⊥) :
     raiseLowerEnd M hx hy χ = 0 := by
   ext m
-  have hm : (m : M) = 0 := by simpa [hχ] using m.2
+  have hm : (m : M) = 0 := by simpa [hχ] using m.property
   simp [hm]
 
 end Defs

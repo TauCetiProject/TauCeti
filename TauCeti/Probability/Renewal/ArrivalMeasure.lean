@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Gap
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -94,6 +94,18 @@ theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
   rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure,
     occurrenceTime_occurrenceTimeMeasure (fun _ _ h => by
       exact_mod_cast monotone_arrival T ω (Nat.succ_le_succ h))]
+
+/-- Extracting interarrival gaps from the arrival measure recovers every renewal increment,
+including zero increments and explosive paths. -/
+@[simp]
+theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
+    (renewalArrivalMeasure T ω).occurrenceGap n = (T n ω : ℝ≥0∞) := by
+  cases n with
+  | zero => simp [arrival_succ]
+  | succ n =>
+    rw [Measure.occurrenceGap_succ_of_ne_top (by simp),
+      occurrenceTime_renewalArrivalMeasure, occurrenceTime_renewalArrivalMeasure,
+      arrival_succ, ENNReal.coe_add, ENNReal.add_sub_cancel_left ENNReal.coe_ne_top]
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
@@ -228,11 +240,11 @@ theorem ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure {r : ℝ≥0}
 /-- The natural counts of exponential renewal arrivals on `(0,t]` have the Poisson law.
 Taking the natural floor of the real mass only changes the count on a null set. -/
 theorem hasLaw_renewalArrivalMeasure_Ioc_poissonMeasure {r : ℝ≥0}
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω => (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     HasLaw (fun ω => ⌊(renewalArrivalMeasure T ω (Ioc 0 t)).toReal⌋₊)
       (poissonMeasure (r * t)) P := by
-  apply (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).congr
+  apply (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).congr
   filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
   simp [hω t]
 

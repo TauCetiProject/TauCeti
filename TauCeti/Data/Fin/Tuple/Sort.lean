@@ -46,9 +46,7 @@ theorem Monotone.eq_of_card_filter_eq (hf : Monotone f) (hg : Monotone g)
     (h : ∀ a, #{i | f i = a} = #{i | g i = a}) : f = g := by
   refine List.ofFn_injective ((List.perm_iff_count.2 fun a ↦ ?_).eq_of_sortedLE
     hf.sortedLE_ofFn hg.sortedLE_ofFn)
-  have hcount (u : Fin n → α) : #{i | u i = a} = (List.ofFn u).count a := by
-    simp
-  rw [← hcount, ← hcount, h]
+  rw [List.count_ofFn, List.count_ofFn, h]
 
 /-- Two antitone tuples in which every value occurs equally often are equal. -/
 theorem Antitone.eq_of_card_filter_eq (hf : Antitone f) (hg : Antitone g)
@@ -63,6 +61,14 @@ variable {β : Type*} [LinearOrder β] {m : ℕ}
 theorem strictMono_comp_sort {b : Fin m → β} (hb : Function.Injective b) :
     StrictMono (b ∘ sort b) :=
   (monotone_sort b).strictMono_of_injective (hb.comp (sort b).injective)
+
+/-- For a tuple with distinct entries, a permutation gives a strictly increasing rearrangement
+exactly when it is the sorting permutation. -/
+theorem strictMono_comp_perm_iff_sort_eq {b : Fin m → β} (hb : Function.Injective b)
+    (σ : Equiv.Perm (Fin m)) : StrictMono (b ∘ σ) ↔ sort b = σ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ strictMono_comp_sort hb⟩
+  have heq := unique_monotone (monotone_sort b) h.monotone
+  exact DFunLike.ext _ _ fun i ↦ hb (congrFun heq i)
 
 /-- Rearranging a tuple does not change its set of entries. -/
 theorem range_comp_sort (b : Fin m → β) : Set.range (b ∘ sort b) = Set.range b :=

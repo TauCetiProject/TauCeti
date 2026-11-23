@@ -123,7 +123,7 @@ and the evaluation pairing of `LieAlgebra.IsKilling.rootSystem H` (Mathlib state
 lemma unfolding either action). -/
 private theorem smul_apply_eq_apply_op_smul (w : (IsKilling.rootSystem H).weylGroup)
     (lam : Dual K H) (h : H) :
-    (w • lam) h = lam ((⟨MulOpposite.op (w : (IsKilling.rootSystem H).Aut), w.2⟩ :
+    (w • lam) h = lam ((⟨MulOpposite.op (w : (IsKilling.rootSystem H).Aut), w.property⟩ :
       (IsKilling.rootSystem H).weylGroup.op) • h) :=
   RootPairing.Equiv.toLinearMap_weightEquiv (w : (IsKilling.rootSystem H).Aut) lam h
 
@@ -139,7 +139,7 @@ theorem linearInvariants_eq_symmetricAlgebraInvariants :
       (p : _root_.SymmetricAlgebra K H) :
       _root_.SymmetricAlgebra.lift lam
           ((IsKilling.rootSystem H).weylGroupCorootRep.symmetricAlgebra
-            ⟨MulOpposite.op (w : (IsKilling.rootSystem H).Aut), w.2⟩ p) =
+            ⟨MulOpposite.op (w : (IsKilling.rootSystem H).Aut), w.property⟩ p) =
         _root_.SymmetricAlgebra.lift (w • lam) p := by
     rw [Representation.symmetricAlgebra_apply, ← AlgHom.comp_apply]
     congr 1

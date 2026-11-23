@@ -99,7 +99,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts
   [EssentiallySmall.{w} C]
 
 /-- The biproduct relation `[X ⊞ Y] - [X] - [Y]` imposed in split `K₀`. -/
-noncomputable def splitRelation (X Y : C) : FreeAbelianGroup (ObjectCode C) :=
+noncomputable def splitRelation (X Y : C) : FreeAddCommGroup (ObjectCode C) :=
   freeOf (X ⊞ Y) - freeOf X - freeOf Y
 
 /-- The defining equation of `TauCeti.splitRelation`. -/
@@ -108,12 +108,12 @@ lemma splitRelation_def (X Y : C) :
 
 variable (C) in
 /-- The family of biproduct relations presenting split `K₀`. -/
-def splitRelations : Set (FreeAbelianGroup (ObjectCode C)) :=
+def splitRelations : Set (FreeAddCommGroup (ObjectCode C)) :=
   {r | ∃ X Y : C, r = splitRelation X Y}
 
 /-- Membership in the family of biproduct relations. -/
 @[simp]
-lemma mem_splitRelations_iff {r : FreeAbelianGroup (ObjectCode C)} :
+lemma mem_splitRelations_iff {r : FreeAddCommGroup (ObjectCode C)} :
     r ∈ splitRelations C ↔ ∃ X Y : C, r = splitRelation X Y := (Iff.rfl)
 
 lemma splitRelation_mem_splitRelations (X Y : C) : splitRelation X Y ∈ splitRelations C :=
@@ -143,12 +143,12 @@ lemma of_congr {X Y : C} (e : X ≅ Y) : (of X : SplitK0 C) = of Y :=
   PresentedK0.of_congr e
 
 /-- The comparison from split `K₀` to a presentation imposing every split relation. -/
-noncomputable def ofLE {rels : Set (FreeAbelianGroup (ObjectCode C))}
+noncomputable def ofLE {rels : Set (FreeAddCommGroup (ObjectCode C))}
     (h : splitRelations C ⊆ AddSubgroup.closure rels) : SplitK0 C →+ PresentedK0 rels :=
   PresentedK0.ofLE h
 
 @[simp]
-lemma ofLE_of {rels : Set (FreeAbelianGroup (ObjectCode C))}
+lemma ofLE_of {rels : Set (FreeAddCommGroup (ObjectCode C))}
     (h : splitRelations C ⊆ AddSubgroup.closure rels) (X : C) :
     ofLE h (of X) = (PresentedK0.of X : PresentedK0 rels) :=
   PresentedK0.ofLE_of h X
@@ -643,12 +643,12 @@ variable (C) in
 /-- The biproduct relations `[X ⊞ Y] - [X] - [Y]` as integral combinations of objects of `C`,
 before passing to isomorphism classes. Their codes are the relations `TauCeti.splitRelations C`,
 so they present split `K₀` over every model of the isomorphism classes of `C`. -/
-def splitObjectRelations : Set (FreeAbelianGroup C) :=
+def splitObjectRelations : Set (FreeAddCommGroup C) :=
   {r | ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y}
 
 /-- Membership in the family of object-level biproduct relations. -/
 @[simp]
-lemma mem_splitObjectRelations_iff {r : FreeAbelianGroup C} :
+lemma mem_splitObjectRelations_iff {r : FreeAddCommGroup C} :
     r ∈ splitObjectRelations C ↔ ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y := (Iff.rfl)
 
 variable [EssentiallySmall.{w} C]
@@ -656,7 +656,7 @@ variable [EssentiallySmall.{w} C]
 /-- The codes of the object-level biproduct relations are the biproduct relations presenting
 split `K₀`. -/
 lemma image_splitObjectRelations :
-    FreeAbelianGroup.map objectCode '' splitObjectRelations C = splitRelations C := by
+    FreeAddCommGroup.map objectCode '' splitObjectRelations C = splitRelations C := by
   ext r
   simp [splitRelation_def, freeOf_def, eq_comm]
 

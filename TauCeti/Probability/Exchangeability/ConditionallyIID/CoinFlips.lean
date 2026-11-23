@@ -117,7 +117,7 @@ theorem exists_map_toNNReal_eq_dirac_of_iIndepFun_coinFlips [IsProbabilityMeasur
     (h : iIndepFun (fun n (ω : I × (ℕ → Bool)) => ω.2 n) (iidMixtureLaw π coinKernel)) :
     ∃ c : ℝ≥0∞, π.map (fun p : I => (toNNReal p : ℝ≥0∞)) = Measure.dirac c := by
   have hev : Measurable fun Q : ProbabilityMeasure Bool => (Q : Measure Bool) {true} :=
-    (Measure.measurable_coe (measurableSet_singleton true)).comp measurable_subtype_coe
+    (Measure.measurable_coe (measurableSet_singleton true)).comp measurable_subtypeVal
   -- degeneracy of the mixing law, transported along the bias readout `Q ↦ Q {true}`
   obtain ⟨Q, hQ⟩ := exists_map_eq_dirac_of_iIndepFun_iidMixtureLaw measurable_coinKernel h
   refine ⟨(Q : Measure Bool) {true}, ?_⟩
