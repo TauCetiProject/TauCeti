@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Sylow
 public import Mathlib.Order.Minimal
 public import TauCeti.RepresentationTheory.GroupAlgebra.BrauerProjection
 import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # Defect groups
@@ -21,10 +22,11 @@ of characteristic `p`. Any element fixed by conjugation by `g` has the conjugate
 `gPg⁻¹` (`TauCeti.IsDefectGroup.conj`), and every nonzero element of `R[G]` has a
 defect group (`TauCeti.exists_isDefectGroup`).
 
-Relative traces from a Sylow `p`-subgroup are onto the centre in characteristic `p`
-(`TauCeti.relTraceIdeal_sylow_eq_top`). Hence every `x ∈ R[G]^G` has subgroups `P` minimal with
-`x ∈ Tr_P^G(R[G]^P)` (`TauCeti.exists_minimal_mem_relTraceIdeal`), and each of them is a `p`-group
-(`TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`). For a block idempotent, these minimal subgroups
+For `G` finite, every `x ∈ R[G]^G` has subgroups `P` minimal with `x ∈ Tr_P^G(R[G]^P)`
+(`TauCeti.exists_minimal_mem_relTraceIdeal`), since `Tr_G^G(R[G]^G) = R[G]^G`. In characteristic
+`p` each of them is a `p`-group (`TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`), because
+relative traces from a Sylow `p`-subgroup are onto the centre
+(`TauCeti.relTraceIdeal_sylow_eq_top`). For a block idempotent, these minimal subgroups
 are its defect groups (Webb, Theorem 12.5.2, pp. 244–245), which needs Rosenberg's lemma and the
 Mackey formula.
 
@@ -113,52 +115,15 @@ end IsDefectGroup
 no finiteness of `G` is needed. -/
 theorem exists_isDefectGroup (p : ℕ) {e : MonoidAlgebra R G} (he : e ≠ 0) :
     ∃ P, IsDefectGroup R p e P := by
-  -- The trivial subgroup is a `p`-group with `Br_1(e) = e ≠ 0`. By Zorn's lemma it lies in a
-  -- maximal one: the union of a chain of such subgroups is a `p`-group, and the member of the
-  -- chain whose centralizer meets the finite support of `e` in the fewest points gives a point of
-  -- the support centralizing the whole chain.
-  classical
-  have h1 : brauerProjection (⊥ : Subgroup G) e ≠ 0 := by
-    rw [Ne, brauerProjection_eq_zero_iff]
-    intro h
-    apply he
-    ext c
-    simpa using h c (by simp [Subgroup.mem_centralizer_iff])
-  suffices hchain : ∀ c ⊆ {Q : Subgroup G | IsPGroup p Q ∧ brauerProjection Q e ≠ 0},
-      IsChain (· ≤ ·) c → ∀ Q ∈ c, ∃ U ∈ {Q : Subgroup G | IsPGroup p Q ∧
-        brauerProjection Q e ≠ 0}, ∀ T ∈ c, T ≤ U by
-    obtain ⟨P, -, hP⟩ := zorn_le_nonempty₀ _ hchain ⊥ ⟨IsPGroup.of_bot, h1⟩
-    exact ⟨P, hP⟩
-  intro c hcS hc Q hQ
-  have hdir := fun {g : G} => Subgroup.mem_sSup_of_directedOn (x := g) ⟨Q, hQ⟩ hc.directedOn
-  refine ⟨sSup c, ⟨fun g => ?_, ?_⟩, fun _ => le_sSup⟩
-  · obtain ⟨S, hS, hg⟩ := hdir.1 g.property
-    obtain ⟨k, hk⟩ := (hcS hS).1 ⟨g, hg⟩
-    exact ⟨k, Subtype.ext (by simpa using congrArg Subtype.val hk)⟩
-  -- The support points of `e` centralizing a subgroup `S`.
-  let F : Subgroup G → Finset G :=
-    fun S => e.coeff.support.filter (· ∈ Subgroup.centralizer (S : Set G))
-  have hF : ∀ {S T : Subgroup G}, S ≤ T → F T ⊆ F S := fun hST y hy => by
-    simp only [F, Finset.mem_filter] at hy ⊢
-    exact ⟨hy.1, Subgroup.centralizer_le (SetLike.coe_subset_coe.2 hST) hy.2⟩
-  obtain ⟨S, hS, hmin⟩ := exists_minimalFor_of_wellFoundedLT (· ∈ c) (fun S => (F S).card)
-    ⟨Q, hQ⟩
-  obtain ⟨x, hx, hxe⟩ : ∃ x ∈ Subgroup.centralizer (S : Set G), e.coeff x ≠ 0 := by
-    by_contra! h
-    exact (hcS hS).2 (brauerProjection_eq_zero_iff.2 h)
-  have hxS : x ∈ F S := Finset.mem_filter.2 ⟨Finsupp.mem_support_iff.2 hxe, hx⟩
-  -- `x` centralizes every member of the chain.
-  have hall : ∀ T ∈ c, x ∈ Subgroup.centralizer (T : Set G) := fun T hT => by
-    rcases hc.total hS hT with hST | hTS
-    · rw [← Finset.eq_of_subset_of_card_le (hF hST) (hmin hT (Finset.card_le_card (hF hST)))]
-        at hxS
-      exact (Finset.mem_filter.1 hxS).2
-    · exact Subgroup.centralizer_le (SetLike.coe_subset_coe.2 hTS) hx
-  rw [Ne, brauerProjection_eq_zero_iff]
-  push Not
-  refine ⟨x, Subgroup.mem_centralizer_iff.2 fun h hh => ?_, hxe⟩
-  obtain ⟨T, hT, hhT⟩ := hdir.1 hh
-  exact Subgroup.mem_centralizer_iff.1 (hall T hT) h hhT
+  -- Zorn's lemma, starting from `Br_1(e) = e ≠ 0`: the supremum of a chain of `p`-subgroups `Q`
+  -- with `Br_Q(e) ≠ 0` is another such subgroup.
+  obtain ⟨P, -, hP⟩ := zorn_le_nonempty₀ {Q : Subgroup G | IsPGroup p Q ∧ brauerProjection Q e ≠ 0}
+    (fun c hcS hc Q hQ => ⟨sSup c,
+      ⟨IsPGroup.sSup_of_directedOn hc.directedOn fun T hT => (hcS hT).1,
+        brauerProjection_sSup_ne_zero_of_directedOn ⟨Q, hQ⟩ hc.directedOn fun T hT => (hcS hT).2⟩,
+      fun _ => le_sSup⟩)
+    ⊥ ⟨IsPGroup.of_bot, mt brauerProjection_bot_eq_zero_iff.1 he⟩
+  exact ⟨P, hP⟩
 
 end DefectGroup
 

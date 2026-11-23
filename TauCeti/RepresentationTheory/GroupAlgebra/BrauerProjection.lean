@@ -19,7 +19,8 @@ coefficients of an element of `R[G]` on the centralizer `C_G(P)` and discards th
 (`TauCeti.brauerProjection`). It is `R`-linear on all of `R[G]` and is not multiplicative there:
 in `S₃` with `P = ⟨(12)⟩` and `r` a `3`-cycle, `Br_P(r · r²) = 1` while `Br_P(r) = Br_P(r²) = 0`.
 It vanishes exactly on the elements with no coefficient on `C_G(P)`, and conjugation by `g`
-carries its kernel at `P` to its kernel at `gPg⁻¹`.
+carries its kernel at `P` to its kernel at `gPg⁻¹`. Since `x` has finite support, `Br_Q(x) ≠ 0`
+for every `Q` in a nonempty directed family of subgroups implies the same at their supremum.
 
 When `P` is a `p`-group and `R` has characteristic `p`, `Br_P` is multiplicative on the fixed
 points `R[G]^P` of conjugation by `P` (`TauCeti.brauerProjection_mul`), and so restricts to an
@@ -45,6 +46,8 @@ idempotent is nonzero. Neither statement is formalized here.
 ## Main results
 
 * `TauCeti.brauerProjection_eq_zero_iff`: `Br_P(x) = 0` exactly when `x` vanishes on `C_G(P)`.
+* `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
+  nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
 
@@ -91,6 +94,44 @@ theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
   · intro h
     ext c
     simpa using h c c.property
+
+/-- `Br_1(x) = 0` exactly when `x = 0`, since the trivial subgroup is centralized by all of `G`. -/
+theorem brauerProjection_bot_eq_zero_iff {x : MonoidAlgebra R G} :
+    brauerProjection (⊥ : Subgroup G) x = 0 ↔ x = 0 := by
+  rw [brauerProjection_eq_zero_iff]
+  refine ⟨fun h => ?_, fun h c _ => by simp [h]⟩
+  ext c
+  simpa using h c (by simp [Subgroup.mem_centralizer_iff])
+
+/-- **The Brauer projection at a directed supremum.** If `Br_Q(x) ≠ 0` for every member `Q` of a
+nonempty directed family `c` of subgroups, for instance of a chain, then `Br_{sSup c}(x) ≠ 0`. -/
+theorem brauerProjection_sSup_ne_zero_of_directedOn {c : Set (Subgroup G)} (hne : c.Nonempty)
+    (hc : DirectedOn (· ≤ ·) c) {x : MonoidAlgebra R G}
+    (h : ∀ Q ∈ c, brauerProjection Q x ≠ 0) : brauerProjection (sSup c) x ≠ 0 := by
+  -- The member `S` of `c` whose centralizer meets the finite support of `x` in the fewest points
+  -- gives a point of the support centralizing every member of `c`.
+  classical
+  let F : Subgroup G → Finset G :=
+    fun S => x.coeff.support.filter (· ∈ Subgroup.centralizer (S : Set G))
+  have hF : ∀ {S T : Subgroup G}, S ≤ T → F T ⊆ F S := fun hST y hy => by
+    simp only [F, Finset.mem_filter] at hy ⊢
+    exact ⟨hy.1, Subgroup.centralizer_le (SetLike.coe_subset_coe.2 hST) hy.2⟩
+  obtain ⟨S, hS, hmin⟩ := exists_minimalFor_of_wellFoundedLT (· ∈ c) (fun S => (F S).card) hne
+  obtain ⟨y, hy, hyx⟩ : ∃ y ∈ Subgroup.centralizer (S : Set G), x.coeff y ≠ 0 := by
+    by_contra! hy
+    exact h S hS (brauerProjection_eq_zero_iff.2 hy)
+  have hyS : y ∈ F S := Finset.mem_filter.2 ⟨Finsupp.mem_support_iff.2 hyx, hy⟩
+  -- `y` centralizes every member of `c`.
+  have hall : ∀ T ∈ c, y ∈ Subgroup.centralizer (T : Set G) := fun T hT => by
+    obtain ⟨U, hU, hSU, hTU⟩ := hc S hS T hT
+    rw [← Finset.eq_of_subset_of_card_le (hF hSU) (hmin hU (Finset.card_le_card (hF hSU)))]
+      at hyS
+    exact Subgroup.centralizer_le (SetLike.coe_subset_coe.2 hTU) (Finset.mem_filter.1 hyS).2
+  rw [Ne, brauerProjection_eq_zero_iff]
+  push Not
+  refine ⟨y, Subgroup.mem_centralizer_iff.2 fun g hg => ?_, hyx⟩
+  obtain ⟨T, hT, hgT⟩ := (Subgroup.mem_sSup_of_directedOn hne hc).1 hg
+  exact Subgroup.mem_centralizer_iff.1 (hall T hT) g hgT
 
 /-- **Conjugation and the Brauer projection.** `Br_{gPg⁻¹}(g x g⁻¹) = 0` exactly when
 `Br_P(x) = 0`. -/
