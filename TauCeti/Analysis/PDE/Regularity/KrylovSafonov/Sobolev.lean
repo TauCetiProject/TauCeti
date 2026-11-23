@@ -61,8 +61,7 @@ closed ball `closedBall c R`, then for every `p > 0`, with `B = B(c, R)`,
 `ū x ≤ C (R^(-n/p) ‖ū⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)` for `x ∈ B(c, R / 2)`
 
 (`TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`), with `C` depending only on `n`,
-`κ` and `p`. Without naming a representative, `u` itself obeys the bound at almost every point of
-`B(c, R / 2)` (`TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`).
+`κ` and `p`.
 
 Together with the weak Harnack inequality for strong supersolutions
 (`TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart_of_wkp`) it gives the **Harnack
@@ -76,6 +75,9 @@ representative `ū` is continuous on `Ω` (`TauCeti.Wkp.continuousOn_preciseRepr
 
 (`TauCeti.PDE.exists_preciseRepresentative_le_mul_add_of_sum_mul_iteratedGradient_eq`), with `C`
 depending only on `n` and `κ`. In particular `sup_{B(x₀, r)} ū ≤ C (inf_{B(x₀, r)} ū + r ‖f‖ / λ)`.
+Without naming a representative, `u` itself satisfies `u(x) ≤ C (u(y) + r ‖f‖ / λ)` for almost
+every `x` and almost every `y` in `B(x₀, r)`
+(`TauCeti.PDE.exists_ae_value_le_mul_add_of_sum_mul_iteratedGradient_eq`).
 
 ## The argument
 
@@ -114,8 +116,6 @@ the segment joining them gives the estimate with `C = 10 C₀¹⁰`.
   `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for strong supersolutions.
 * `TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: the local maximum principle for
   strong subsolutions.
-* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: the same, at almost
-  every point, for `u` itself.
 * `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`:
   the interior Hölder estimate of Krylov and Safonov for `W^{2,n}` functions with
   `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
@@ -125,6 +125,9 @@ the segment joining them gives the estimate with `C = 10 C₀¹⁰`.
   inequality for nonnegative strong solutions, and
   `TauCeti.PDE.exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_le` under
   the bound `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
+* `TauCeti.PDE.exists_ae_value_le_mul_add_of_sum_mul_iteratedGradient_eq` and
+  `TauCeti.PDE.exists_ae_value_le_mul_add_of_abs_sum_mul_iteratedGradient_le`: the same Harnack
+  inequalities for `u` itself, at almost every pair of points.
 
 ## References
 
@@ -334,46 +337,6 @@ theorem exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
     _ = _ := by
         have hBε : B * (ε / B) = ε := mul_div_cancel₀ _ hB.ne'
         linear_combination hBε - ε / B * hBdef
-
-/-- **The local maximum principle for strong subsolutions, almost everywhere**
-(Gilbarg–Trudinger, Theorem 9.20). Let `p > 0` and `κ` be given. There is a constant `C`, depending
-only on the dimension `n ≥ 1`, on `κ` and on `p`, with the following property. Let the coefficient
-matrix `a` be uniformly elliptic on `B = B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, let `Ω` be an open
-set containing `closedBall c R`, and let `u ∈ W^{2,n}(Ω)` satisfy `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` almost
-everywhere in `B` for the weak Hessian, with `f⁻ ∈ Lⁿ(B)`. Then for almost every `x ∈ B(c, R / 2)`,
-
-`u x ≤ C (R^(-n/p) ‖u⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)`.
-
-The coefficients need not be measurable or symmetric. -/
-theorem exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
-    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ p : ℝ} (hp : 0 < p) :
-    ∃ C : ℝ, 0 < C ∧
-      ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
-        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
-        (u : Wkp volume Ω (Fintype.card ι) 2), closedBall c R ⊆ Ω →
-        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
-        (∀ᵐ x ∂volume.restrict (ball c R),
-          f x ≤ ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i) →
-        MemLp (fun x ↦ (f x)⁻) (Fintype.card ι) (volume.restrict (ball c R)) →
-        ∀ᵐ x ∂volume.restrict (ball c (R / 2)), Wkp.value 2 u x ≤
-          C * (R ^ (-(Fintype.card ι : ℝ) / p) * (eLpNorm (fun y ↦ (Wkp.value 2 u y)⁺)
-            (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal +
-          R / lam * (eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
-            (volume.restrict (ball c R))).toReal) := by
-  obtain ⟨C, hC, H⟩ := exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp (ι := ι) (κ := κ) hp
-  refine ⟨C, hC, fun lam Lam R c Ω a f u hRΩ ha hLam hsub hf ↦ ?_⟩
-  -- Apply the estimate to the precise representative, which is continuous on `Ω`.
-  have hcont := Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
-  have hū := Wkp.ae_eq_preciseRepresentative 2 u
-  have hB := ae_restrict_of_ae_restrict_of_subset (ball_subset_closedBall.trans hRΩ) hū
-  rw [eLpNorm_congr_ae (hB.mono fun y hy ↦ by rw [hy])]
-  have hhalf : ball c (R / 2) ⊆ ball c R := fun y hy ↦ by
-    have := mem_ball.1 hy
-    exact mem_ball.2 (by linarith [dist_nonneg (x := y) (y := c)])
-  filter_upwards [ae_restrict_mem measurableSet_ball, ae_restrict_of_ae_restrict_of_subset hhalf hB]
-    with x hx hxū
-  rw [hxū]
-  exact H u hRΩ ha hLam hcont hū hsub hf x hx
 
 /-- The interior Hölder estimate of Krylov and Safonov for a `W^{2,n}(Ω)` function with a
 continuous representative `ū`, on a ball whose closure lies in `Ω`, with `|ū| ≤ M` on the doubled
@@ -828,6 +791,77 @@ theorem exists_preciseRepresentative_le_mul_add_of_sum_mul_iteratedGradient_eq
             (eLpNorm f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r)))).toReal / lam) := by
   obtain ⟨C, hC, H⟩ :=
     exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_le (ι := ι) κ
+  refine ⟨C, hC, fun lam Lam r x₀ Ω a f u hΩ ha hLam hnonneg heq hf ↦ ?_⟩
+  rw [← eLpNorm_norm f hf.aestronglyMeasurable]
+  exact H u hΩ ha hLam hnonneg (heq.mono fun x hx ↦ hx ▸ (Real.norm_eq_abs _).ge) hf.norm
+
+/-- **The Harnack inequality of Krylov and Safonov, almost everywhere** (Gilbarg–Trudinger,
+Theorem 9.22). For every `κ` there is `C > 0`, depending only on the dimension `n ≥ 1` and on `κ`,
+with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let `a` be uniformly elliptic on
+`B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be nonnegative almost
+everywhere in `B(x₀, 2 r)`, with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere there for the weak
+Hessian, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then for almost every `x` and almost every `y` in `B(x₀, r)`,
+
+`u(x) ≤ C (u(y) + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_ae_value_le_mul_add_of_abs_sum_mul_iteratedGradient_le
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] (κ : ℝ) :
+    ∃ C : ℝ, 0 < C ∧
+      ∀ ⦃lam Lam r : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), 0 ≤ Wkp.value 2 u x) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        ∀ᵐ x ∂volume.restrict (ball x₀ r), ∀ᵐ y ∂volume.restrict (ball x₀ r),
+          Wkp.value 2 u x ≤ C * (Wkp.value 2 u y +
+            r * (eLpNorm f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r)))).toReal / lam) := by
+  obtain ⟨C, hC, H⟩ :=
+    exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_le (ι := ι) κ
+  refine ⟨C, hC, fun lam Lam r x₀ Ω a f u hΩ ha hLam hnonneg habs hf ↦ ?_⟩
+  -- On `B(x₀, r)`, `u` agrees almost everywhere with its precise representative, for which the
+  -- inequality holds at every pair of points.
+  have hr : ball x₀ r ⊆ ball x₀ (2 * r) := fun y hy ↦ by
+    have := mem_ball.1 hy
+    exact mem_ball.2 (by linarith [dist_nonneg (x := y) (y := x₀)])
+  have hū : ∀ᵐ x ∂volume.restrict (ball x₀ r),
+      x ∈ ball x₀ r ∧ Wkp.value 2 u x = preciseRepresentative volume (Wkp.value 2 u) x := by
+    filter_upwards [ae_restrict_mem measurableSet_ball, ae_restrict_of_ae_restrict_of_subset
+      (hr.trans hΩ) (Wkp.ae_eq_preciseRepresentative 2 u)] with x hx hxū
+    exact ⟨hx, hxū⟩
+  filter_upwards [hū] with x hx
+  filter_upwards [hū] with y hy
+  rw [hx.2, hy.2]
+  exact H u hΩ ha hLam hnonneg habs hf x hx.1 y hy.1
+
+/-- **The Harnack inequality of Krylov and Safonov for strong solutions, almost everywhere**
+(Gilbarg–Trudinger, Theorem 9.22). For every `κ` there is `C > 0`, depending only on the dimension
+`n ≥ 1` and on `κ`, with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let `a` be uniformly
+elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be a strong
+solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` in `B(x₀, 2 r)`, nonnegative almost everywhere there, where
+`f ∈ Lⁿ(B(x₀, 2 r))`. Then for almost every `x` and almost every `y` in `B(x₀, r)`,
+
+`u(x) ≤ C (u(y) + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_ae_value_le_mul_add_of_sum_mul_iteratedGradient_eq
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] (κ : ℝ) :
+    ∃ C : ℝ, 0 < C ∧
+      ∀ ⦃lam Lam r : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), 0 ≤ Wkp.value 2 u x) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i = f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        ∀ᵐ x ∂volume.restrict (ball x₀ r), ∀ᵐ y ∂volume.restrict (ball x₀ r),
+          Wkp.value 2 u x ≤ C * (Wkp.value 2 u y +
+            r * (eLpNorm f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r)))).toReal / lam) := by
+  obtain ⟨C, hC, H⟩ := exists_ae_value_le_mul_add_of_abs_sum_mul_iteratedGradient_le (ι := ι) κ
   refine ⟨C, hC, fun lam Lam r x₀ Ω a f u hΩ ha hLam hnonneg heq hf ↦ ?_⟩
   rw [← eLpNorm_norm f hf.aestronglyMeasurable]
   exact H u hΩ ha hLam hnonneg (heq.mono fun x hx ↦ hx ▸ (Real.norm_eq_abs _).ge) hf.norm
