@@ -266,8 +266,7 @@ integer kills all of `W(N)`. -/
 theorem exponentExists_ideal {N : Ideal A} {c : ℕ} (h : ∀ a ∈ N, a ^ p ^ c = 0) :
     AddMonoid.ExponentExists (ideal p N) := by
   refine ⟨p ^ c, pow_pos hp.out.pos c, fun x ↦ Subtype.ext ?_⟩
-  rw [Submodule.coe_smul_of_tower, nsmul_eq_mul, Nat.cast_pow, mul_comm, ZeroMemClass.coe_zero]
-  exact mul_p_pow_eq_zero_of_mem_ideal h x.property
+  simpa [← Nat.cast_pow, Nat.cast_comm] using mul_p_pow_eq_zero_of_mem_ideal h x.property
 
 end CharP
 
@@ -302,6 +301,21 @@ theorem ker_map (n : ℕ) (f : A →+* B) :
   ext x
   simp only [RingHom.mem_ker, TruncatedWittVector.ext_iff, map_coeff, coeff_zero, mem_ideal_iff]
 
+/-- Two truncated Witt vectors are congruent modulo `W_n(I)` exactly when they are
+coordinatewise congruent modulo `I`. -/
+theorem sub_mem_ideal_iff {n : ℕ} {I : Ideal A} {x y : TruncatedWittVector p n A} :
+    x - y ∈ ideal p n I ↔ ∀ i, x.coeff i - y.coeff i ∈ I := by
+  simp only [ideal, RingHom.mem_ker, map_sub, sub_eq_zero, TruncatedWittVector.ext_iff,
+    map_coeff, Ideal.Quotient.eq]
+
+/-- The preimage of a truncated Witt ideal under `W_n(f)` is the truncated Witt ideal of the
+preimage. -/
+@[simp]
+theorem comap_map_ideal (n : ℕ) (f : A →+* B) (J : Ideal B) :
+    (ideal p n J).comap (map n f) = ideal p n (J.comap f) := by
+  ext x
+  simp only [Ideal.mem_comap, mem_ideal_iff, map_coeff]
+
 variable (p) in
 /-- The truncated Witt vectors of a quotient: `W_n(A) ⧸ W_n(I) ≃+* W_n(A ⧸ I)`. -/
 def quotientIdealEquiv (n : ℕ) (I : Ideal A) :
@@ -322,13 +336,15 @@ theorem map_wittVector_truncate_ideal (n : ℕ) (I : Ideal A) :
   refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦ ?_
   · simp only [Ideal.mem_comap, mem_ideal_iff, WittVector.coeff_truncate]
     exact fun i ↦ WittVector.mem_ideal_iff.mp hx i
-  · have hy' : WittVector.truncate n y.out = y := truncateFun_out y
+  · have hy' : WittVector.truncate n y.out = y := by
+      ext i
+      rw [WittVector.coeff_truncate, coeff_out]
     rw [← hy']
     refine Ideal.mem_map_of_mem _ (WittVector.mem_ideal_iff.mpr fun k ↦ ?_)
-    rw [out, WittVector.coeff_mk]
-    split_ifs with hk
-    · exact mem_ideal_iff.mp hy _
-    · exact I.zero_mem
+    rcases lt_or_ge k n with hk | hk
+    · exact coeff_out y ⟨k, hk⟩ ▸ mem_ideal_iff.mp hy ⟨k, hk⟩
+    · rw [coeff_out_of_le y hk]
+      exact I.zero_mem
 
 /-- For `m ≤ n`, truncation `W_n(A) → W_m(A)` maps `W_n(I)` onto `W_m(I)`. -/
 @[simp]
@@ -336,6 +352,16 @@ theorem map_truncate_ideal {m n : ℕ} (hm : m ≤ n) (I : Ideal A) :
     (ideal p n I).map (truncate hm) = ideal p m I := by
   rw [← map_wittVector_truncate_ideal, Ideal.map_map, truncate_comp_wittVector_truncate,
     map_wittVector_truncate_ideal]
+
+/-- The image of a truncated Witt ideal under the map of truncated Witt vectors induced by a
+surjection `f` is the truncated Witt ideal of the image. -/
+theorem map_map_ideal_of_surjective (n : ℕ) (f : A →+* B) (hf : Function.Surjective f)
+    (I : Ideal A) : (ideal p n I).map (map n f) = ideal p n (I.map f) := by
+  have hcomp : (map n f).comp (WittVector.truncate n) =
+      (WittVector.truncate (p := p) n).comp (WittVector.map f) :=
+    RingHom.ext (map_wittVector_truncate n f)
+  rw [← map_wittVector_truncate_ideal, Ideal.map_map, hcomp, ← Ideal.map_map,
+    WittVector.map_map_ideal_of_surjective f hf, map_wittVector_truncate_ideal]
 
 /-- The truncated Witt ideal is monotone. -/
 theorem ideal_mono {n : ℕ} {I J : Ideal A} (h : I ≤ J) : ideal p n I ≤ ideal p n J :=
