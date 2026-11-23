@@ -80,6 +80,12 @@ theorem isSmooth_iff (X : Action (Type u) G) :
     isSmooth G X ↔ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G) :=
   Iff.rfl
 
+/-- For compact `G`, orbits in a smooth `G`-set are finite. -/
+theorem isSmooth.finite_orbit [SeparatelyContinuousMul G] [CompactSpace G]
+    {X : Action (Type u) G} (hX : isSmooth G X) (x : X.V) : Finite (MulAction.orbit G x) :=
+  have := Subgroup.quotient_finite_of_isOpen _ (hX x)
+  (MulAction.orbitEquivQuotientStabilizer G x).finite_iff.2 this
+
 end Action
 
 namespace ContAction
@@ -483,17 +489,11 @@ variable {G}
 
 variable [CompactSpace G]
 
-/-- For compact `G`, orbits in a smooth `G`-set are finite. -/
-theorem finite_orbit {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V) :
-    Finite (MulAction.orbit G x) :=
-  have := Subgroup.quotient_finite_of_isOpen _ (hX x)
-  (MulAction.orbitEquivQuotientStabilizer G x).finite_iff.2 this
-
 /-- The orbit of a point of a smooth `G`-set, as a finite continuous `G`-set. -/
 @[expose]
 noncomputable def orbitObj {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V) :
     ContAction FintypeCat.{u} G :=
-  have := finite_orbit hX x
+  have := hX.finite_orbit x
   have := Fintype.ofFinite (MulAction.orbit G x)
   ⟨Action.FintypeCat.ofMulAction G (FintypeCat.of (MulAction.orbit G x)),
     (Action.isContinuous_iff_isOpen_stabilizer _).2 fun y ↦ by
