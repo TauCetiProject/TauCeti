@@ -231,7 +231,7 @@ def seminormFamily :
     SeminormFamily ℂ (LocalSymbol U V W m)
       ({K : Compacts (CoordinateSpace n) // (K : Set (CoordinateSpace n)) ⊆ U} ×
         List (Fin n) × List (Fin n)) :=
-  fun i => LocalSymbol.seminorm i.1.1 i.1.2 i.2.1 i.2.2
+  fun i => LocalSymbol.seminorm i.1.val i.1.property i.2.1 i.2.2
 
 @[simp]
 theorem seminormFamily_apply (K : Compacts (CoordinateSpace n))
