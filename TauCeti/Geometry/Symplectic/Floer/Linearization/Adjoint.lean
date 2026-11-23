@@ -57,8 +57,8 @@ Integrating by parts against this pairing gives the **formal adjoint**
   rectangle, with regularity only on the rectangle, the same identity holds when `η(ξ)` takes
   equal values on the two vertical sides and `(η ∘ J)(ξ)` on the two horizontal sides
   (`setIntegral_apply_floerLinearization_eq_setIntegral_floerLinearizationAdjoint_apply`, by the
-  divergence theorem); on `[a, b] × [0, 1]` this covers maps of period one in `t` vanishing at
-  `s = a, b`.
+  divergence theorem); on `[a, b] × [0, 1]` this covers `ξ` vanishing at `s = a, b` with `η`, `ξ`
+  and `J(·, u ·)` of period one in `t`.
 * **Classical cokernel elements.** If `η` is `C¹` on an open set `U`, then it annihilates `D ξ` for
   every smooth `ξ` compactly supported in `U` exactly when `D^* η = 0` on `U`
   (`forall_integral_apply_floerLinearization_eq_zero_iff`). This is the fundamental lemma of
