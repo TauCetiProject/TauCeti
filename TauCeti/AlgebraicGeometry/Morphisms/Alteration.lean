@@ -1,0 +1,62 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
+
+/-!
+# Alterations
+
+A morphism of schemes `f : X ⟶ Y` is an *alteration* if it is proper, dominant, and finite over
+some nonempty open `U ⊆ Y` (Stacks, Definition 29.52.12 (0AB0), where `X` and `Y` are integral).
+For integral schemes this says that `f` is proper and surjective and that the function field of
+`X` is a finite extension of that of `Y`. Alterations generalize modifications, which are the
+alterations of generic degree one; de Jong's theorem resolves singularities up to alterations.
+
+## Main definitions
+
+* `TauCeti.AlgebraicGeometry.IsAlteration f`: `f` is proper, dominant, and finite over a nonempty
+  open of its target.
+
+## Main results
+
+* `TauCeti.AlgebraicGeometry.IsModification.isAlteration`: a modification of a nonempty scheme is
+  an alteration.
+
+## References
+
+* [Stacks Project, Definition 29.52.12](https://stacks.math.columbia.edu/tag/0AB0).
+* A. J. de Jong, *Smoothness, semi-stability and alterations*, Publ. Math. IHÉS 83 (1996),
+  2.20.
+-/
+
+public section
+
+open CategoryTheory AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+variable {X Y : Scheme.{u}}
+
+/-- A morphism of schemes `f : X ⟶ Y` is an *alteration* if it is proper, dominant, and finite
+over some nonempty open `U ⊆ Y`. Stacks, Definition 29.52.12 (0AB0), where `X` and `Y` are
+integral. -/
+@[stacks 0AB0]
+class IsAlteration (f : X ⟶ Y) : Prop extends IsProper f, IsDominant f where
+  exists_isFinite_morphismRestrict : ∃ U : Y.Opens, (U : Set Y).Nonempty ∧ IsFinite (f ∣_ U)
+
+/-- A modification of a nonempty scheme is an alteration: it is an isomorphism, hence finite,
+over a dense open, which is nonempty. -/
+instance (priority := 100) IsModification.isAlteration (f : X ⟶ Y) [IsModification f]
+    [Nonempty Y] : IsAlteration f where
+  exists_isFinite_morphismRestrict := by
+    obtain ⟨U, hU, -, _⟩ := IsModification.exists_isIso_morphismRestrict (f := f)
+    exact ⟨U, hU.nonempty, inferInstance⟩
+
+end TauCeti.AlgebraicGeometry
