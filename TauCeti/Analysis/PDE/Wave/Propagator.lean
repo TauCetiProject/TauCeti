@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Wave.HalfWave
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The wave propagators `cos(tD)` and `D⁻¹ sin(tD)` on `L²`
@@ -60,7 +61,8 @@ identity and Duhamel's formula.
 * `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`.
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
-  continuous.
+  continuous. Hence retarded Duhamel integrals are measurable in time
+  (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`).
 * `TauCeti.hasDerivAt_waveSinPropagator_apply`, `TauCeti.hasDerivAt_waveCosPropagator_apply`:
   the time derivatives.
 
@@ -326,6 +328,17 @@ theorem continuous_waveSinPropagator_uncurry :
   ((LipschitzWith.mk_one (f := waveSinPropagator (E := E) F) fun s t ↦
     (dist_eq_norm _ _).trans_le ((norm_waveSinPropagator_sub_le s t).trans_eq
       (Real.dist_eq s t).symm)).continuous.comp continuous_fst).clm_apply continuous_snd
+
+/-- The retarded Duhamel integral `t ↦ ∫_{s < t} D⁻¹ sin((t - s)D) G(s) ds` of an almost
+everywhere strongly measurable `G : ℝ → L²` is almost everywhere strongly measurable. Where the
+integral does not exist it takes the value `0`. -/
+theorem aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
+    AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s) :=
+  aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ s < t)
+    (continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
+      ((continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk hG.comp_snd))
+    (measurableSet_lt measurable_snd measurable_fst)
 
 /-- `cos(tD) = (W₊(t) + W₋(t)) / 2`, where `W₊(t) = exp(itD)` is the half-wave propagator and
 `W₋(t) = W₊(-t)`. -/
