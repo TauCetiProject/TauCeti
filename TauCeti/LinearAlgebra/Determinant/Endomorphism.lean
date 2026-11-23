@@ -212,6 +212,14 @@ theorem detLineEndEquiv_detLineEndGenerator :
     T.detLineEndEquiv T.detLineEndGenerator = (-1) ^ (finrank K (ker T) * (finrank K V + 1)) := by
   rw [detLineEndGenerator_def, map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one]
 
+/-- The identification `LinearMap.detLineCongrOfEq` of the determinant lines of equal
+endomorphisms carries normalized generator to normalized generator. -/
+@[simp]
+theorem detLineCongrOfEq_detLineEndGenerator {T' : V →ₗ[K] V} (h : T = T') :
+    detLineCongrOfEq h T.detLineEndGenerator = T'.detLineEndGenerator := by
+  subst h
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
+
 /-- The normalized generator is nonzero. -/
 theorem detLineEndGenerator_ne_zero : T.detLineEndGenerator ≠ 0 := fun h ↦ by
   have := T.detLineEndEquiv_detLineEndGenerator
@@ -274,9 +282,9 @@ theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay [LinearOrder K]
   obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := K) (M := f.detLine) hxy hx hy
   have hx' : x = r⁻¹ • (detLineCongrKerCoker e₁ e₂).symm T.detLineEndGenerator := by
     rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
-  rw [hx', detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul T hf, smul_smul, map_smul,
-    LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, sign_mul, sign_pos (inv_pos.2 hr),
-    one_mul]
+  rw [hx', detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul T hf, smul_smul,
+    LinearEquiv.map_smul, LinearEquiv.apply_symm_apply]
+  simp [sign_mul, inv_pos.2 hr]
 
 end CongrKerCoker
 

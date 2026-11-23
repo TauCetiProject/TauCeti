@@ -824,23 +824,14 @@ theorem isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm
       (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator)) := by
   set P := (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).complexOfMapISmul
     (one_sub_dysonSeriesLeft_I_smul hS)
-  -- The transport law for complex orientations, read through the equalities of the real maps
-  -- with the underlying maps of `P` and `A`.
-  have key (g : E →ₗ[ℝ] E) (hg : P.restrictScalars ℝ = g)
-      (g' : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) (hg' : g' = A.restrictScalars ℝ)
-      (eK : ker g ≃ₗ[ℝ] ker g') (eC : (E ⧸ range g) ≃ₗ[ℝ] CircleSobolev 0 E ⧸ range g')
-      (hK : ∀ x y : ker g, (y : E) = I • (x : E) →
-        (eK y : CircleSobolev 1 E) = I • (eK x : CircleSobolev 1 E))
-      (hC : ∀ (y : E) (y' : CircleSobolev 0 E), eC (Submodule.Quotient.mk y) =
-        Submodule.Quotient.mk y' →
-          eC (Submodule.Quotient.mk (I • y)) = Submodule.Quotient.mk (I • y')) :
-      A.IsComplexPositiveDetLine (LinearMap.detLineCongrOfEq hg'
-        (LinearMap.detLineCongrKerCoker eK eC g.detLineEndGenerator)) := by
-    subst hg hg'
-    simpa using (LinearMap.isComplexPositiveDetLine_detLineEndGenerator P).detLineCongrKerCoker
-      hK hC
   rw [detLineLoopOperatorEquiv_def, LinearMap.detLineCongrKerCoker_symm]
-  refine key _ (LinearMap.restrictScalars_complexOfMapISmul _ _) _ hA _ _
+  have hP := (LinearMap.restrictScalars_complexOfMapISmul _
+    (one_sub_dysonSeriesLeft_I_smul hS)).symm
+  have hy : P.IsComplexPositiveDetLine (LinearMap.detLineCongrOfEq hP
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator) := by
+    rw [LinearMap.detLineCongrOfEq_detLineEndGenerator]
+    exact LinearMap.isComplexPositiveDetLine_detLineEndGenerator P
+  refine hy.detLineCongrOfEq_detLineCongrKerCoker hP hA
     (fun x y h ↦ kerLoopOperatorEquiv_symm_I_smul hS x y h) fun y y' h ↦ ?_
   have h' : quotientRangeLoopOperatorEquiv T S (Submodule.Quotient.mk y') =
       Submodule.Quotient.mk y := by

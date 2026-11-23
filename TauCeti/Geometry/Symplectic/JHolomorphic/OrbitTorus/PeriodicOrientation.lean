@@ -301,29 +301,10 @@ theorem isComplexPositiveDetLine_detLineCongrOfEq_detLinePeriodicTorusOperatorEq
   have hA : (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) =
       A.restrictScalars ℝ := by
     rw [← restrictScalars_complexLoopOperator T hSI, ContinuousLinearMap.coe_restrictScalars]
-  -- The transport law for complex orientations, read through the equalities of the real maps
-  -- with the underlying maps of `A` and `f`.
-  have key (g : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) (hg : g = A.restrictScalars ℝ)
-      (g' : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
-        CircleSobolev 0 F × 𝕐[F]) (hg' : g' = f.restrictScalars ℝ)
-      (eK : ker g ≃ₗ[ℝ] ker g') (eC : (CircleSobolev 0 F ⧸ range g) ≃ₗ[ℝ]
-        (CircleSobolev 0 F × 𝕐[F]) ⧸ range g')
-      (hK : ∀ x y : ker g, (y : CircleSobolev 1 F) = I • (x : CircleSobolev 1 F) →
-        (eK y : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) =
-          I • (eK x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)))
-      (hC : ∀ (y : CircleSobolev 0 F) (y' : CircleSobolev 0 F × 𝕐[F]),
-        eC (Submodule.Quotient.mk y) = Submodule.Quotient.mk y' →
-          eC (Submodule.Quotient.mk (I • y)) = Submodule.Quotient.mk (I • y'))
-      (y : g.detLine) (hy : A.IsComplexPositiveDetLine (LinearMap.detLineCongrOfEq hg y)) :
-      f.IsComplexPositiveDetLine
-        (LinearMap.detLineCongrOfEq hg' (LinearMap.detLineCongrKerCoker eK eC y)) := by
-    subst hg hg'
-    rw [LinearMap.detLineCongrOfEq_rfl, LinearEquiv.refl_apply] at hy ⊢
-    exact hy.detLineCongrKerCoker hK hC
   rw [detLinePeriodicTorusOperatorEquiv_eq_trans, LinearEquiv.symm_trans_apply,
     LinearMap.detLineCongrKerCoker_symm]
-  refine key _ hA _ hf.symm _ _ (fun x y h ↦ ?_) (fun y y' h ↦ ?_) _
-    (isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm hSI hA)
+  refine (isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm hSI
+    hA).detLineCongrOfEq_detLineCongrKerCoker hA hf.symm (fun x y h ↦ ?_) fun y y' h ↦ ?_
   · simp [h]
   · -- The range of the complex-linear `L_S` is stable under `I`.
     rw [LinearEquiv.symm_apply_eq, quotientRangePeriodicTorusOperatorEquiv_mk,
