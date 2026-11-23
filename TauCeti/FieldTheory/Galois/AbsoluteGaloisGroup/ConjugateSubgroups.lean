@@ -136,7 +136,7 @@ theorem exists_absoluteGaloisGroupExtend_eq_conj [FiniteDimensional K L]
     -- `eL` is `e` as a function.
     exact Iff.rfl
   let eS : SeparableClosure L ≃+* SeparableClosure K :=
-    { toFun := fun y ↦ ⟨e y, (hmem y).2 y.2⟩
+    { toFun := fun y ↦ ⟨e y, (hmem y).2 y.property⟩
       invFun := fun z ↦ ⟨e.symm z, (hmem _).1 (by simp)⟩
       left_inv := fun y ↦ Subtype.ext (e.symm_apply_apply y)
       right_inv := fun z ↦ Subtype.ext (e.apply_symm_apply z)

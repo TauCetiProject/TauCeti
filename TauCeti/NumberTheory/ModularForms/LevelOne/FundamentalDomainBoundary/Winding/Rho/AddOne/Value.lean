@@ -229,7 +229,7 @@ private lemma telescope_rho_add_one_piece_ceiling (hH : Real.sqrt 3 / 2 < H) :
     funext fun s ↦ by rw [deriv_sub_const, deriv_fdBoundarySegment5]
   have him : ∀ t ∈ Icc (4 : ℝ) 5,
       (fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im = H - Real.sqrt 3 / 2 := fun t ht ↦ by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H ht, rho_add_one_im]
+    rw [Complex.sub_im, im_fdBoundary_of_four_le ht.1, rho_add_one_im]
   exact intervalIntegrable_deriv_div_and_integral_deriv_div_eq_log_sub_log_of_mem_slitPlane_of_le
     (g := fun s ↦ fdBoundary H s - ((UpperHalfPlane.ρ : ℂ) + 1))
     (h := fun s ↦ fdBoundarySegment5 H s - ((UpperHalfPlane.ρ : ℂ) + 1)) (by norm_num)
@@ -325,7 +325,7 @@ private lemma lt_norm_of_far_right_rho_add_one (hε₁ : ε < 1)
     · calc ε < H - Real.sqrt 3 / 2 := hεH
         _ ≤ ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ :=
           (le_abs_self _).trans
-            (norm_fdBoundary_sub_rho_add_one_segment5 (H := H) ⟨ht4.le, ht.2⟩)
+            (norm_fdBoundary_sub_rho_add_one_segment5 (H := H) ht4.le)
 
 /-- Over the excised corner, the contour stays within distance `ε` of `ρ + 1`. -/
 private lemma norm_le_of_near_rho_add_one {δL δR : ℝ} (hH : Real.sqrt 3 / 2 < H)

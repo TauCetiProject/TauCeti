@@ -23,7 +23,9 @@ distributed real random variables.
 ## Main results
 
 * `poissonBinomialMeasure` is the native law on `ℕ`;
-* `poissonBinomialMeasure_singleton` gives its singleton masses as a sum over subsets;
+* `poissonBinomialMeasure_singleton` gives its singleton masses as a sum over subsets, and
+  `poissonBinomialMeasure_real_Ioi_zero` and `poissonBinomialMeasure_real_Ioi_card_sub_one` give
+  the endpoint upper tails `1 - ∏ i, (1 - p i)` and `∏ i, p i`;
 * `integral_poissonBinomialMeasure` writes integration as a finite sum over success sets;
 * `poissonBinomialMeasure_singleton_ne_zero_iff` identifies the exact interval of possible counts;
 * `pgf_poissonBinomialMeasure` gives its probability-generating function;
@@ -222,6 +224,71 @@ theorem poissonBinomialMeasure_Iic_card (p : ι → unitInterval) :
     exact sum_poissonBinomialWeight p
   · intro s _
     exact s.card_le_univ
+
+/-- The weight of the empty success set is the product of the failure probabilities. -/
+@[simp]
+theorem poissonBinomialWeight_empty (p : ι → unitInterval) :
+    poissonBinomialWeight p ∅ = ∏ i, unitInterval.toNNReal (σ (p i)) := by
+  classical
+  simp [poissonBinomialWeight_def]
+
+/-- The weight of the full success set is the product of the success probabilities. -/
+@[simp]
+theorem poissonBinomialWeight_univ (p : ι → unitInterval) :
+    poissonBinomialWeight p Finset.univ = ∏ i, unitInterval.toNNReal (p i) := by
+  classical
+  simp [poissonBinomialWeight_def]
+
+/-- The mass of a Poisson-binomial law at zero is the product of the failure probabilities. -/
+theorem poissonBinomialMeasure_singleton_zero (p : ι → unitInterval) :
+    poissonBinomialMeasure p {0} = ∏ i, (unitInterval.toNNReal (σ (p i)) : ℝ≥0∞) := by
+  rw [poissonBinomialMeasure_singleton]
+  simp
+
+/-- The real singleton mass of a Poisson-binomial law at zero is `∏ i, (1 - p i)`. -/
+theorem poissonBinomialMeasure_real_singleton_zero (p : ι → unitInterval) :
+    (poissonBinomialMeasure p).real {0} = ∏ i, (1 - (p i : ℝ)) := by
+  rw [poissonBinomialMeasure_real_singleton]
+  simp [NNReal.coe_prod]
+
+/-- The mass of a Poisson-binomial law at `Fintype.card ι` is the product of the success
+probabilities. -/
+theorem poissonBinomialMeasure_singleton_card (p : ι → unitInterval) :
+    poissonBinomialMeasure p {Fintype.card ι} = ∏ i, (unitInterval.toNNReal (p i) : ℝ≥0∞) := by
+  rw [poissonBinomialMeasure_singleton, ← Finset.card_univ, Finset.powersetCard_self]
+  simp
+
+/-- The real singleton mass of a Poisson-binomial law at `Fintype.card ι` is `∏ i, p i`. -/
+theorem poissonBinomialMeasure_real_singleton_card (p : ι → unitInterval) :
+    (poissonBinomialMeasure p).real {Fintype.card ι} = ∏ i, (p i : ℝ) := by
+  rw [poissonBinomialMeasure_real_singleton, ← Finset.card_univ, Finset.powersetCard_self]
+  simp [NNReal.coe_prod]
+
+/-- The probability of at least one success in a Poisson-binomial family is one minus the product
+of the failure probabilities. This holds for empty index types as well, where both sides vanish. -/
+@[simp]
+theorem poissonBinomialMeasure_real_Ioi_zero (p : ι → unitInterval) :
+    (poissonBinomialMeasure p).real (Set.Ioi 0) = 1 - ∏ i, (1 - (p i : ℝ)) := by
+  have hcompl : (Set.Ioi 0 : Set ℕ) = ({0} : Set ℕ)ᶜ := by
+    ext k
+    simp [Nat.pos_iff_ne_zero]
+  rw [hcompl, measureReal_compl (measurableSet_singleton 0), probReal_univ,
+    poissonBinomialMeasure_real_singleton_zero]
+
+/-- For a nonempty index type, the probability that strictly more than `Fintype.card ι - 1` trials
+succeed is the product of all success probabilities. Nonemptiness is required because for an empty
+index type `Fintype.card ι - 1 = 0` in `ℕ` while `∏ i, p i = 1`. -/
+theorem poissonBinomialMeasure_real_Ioi_card_sub_one [Nonempty ι] (p : ι → unitInterval) :
+    (poissonBinomialMeasure p).real (Set.Ioi (Fintype.card ι - 1)) = ∏ i, (p i : ℝ) := by
+  rw [← poissonBinomialMeasure_real_singleton_card p]
+  apply measureReal_congr
+  have hpos : 0 < Fintype.card ι := Fintype.card_pos
+  have hae : Set.Iic (Fintype.card ι) ∈ ae (poissonBinomialMeasure p) :=
+    (mem_ae_iff_prob_eq_one MeasurableSet.of_discrete).mpr (poissonBinomialMeasure_Iic_card p)
+  filter_upwards [hae] with j hj
+  simp only [Set.mem_Iic] at hj
+  simp only [Set.mem_Ioi, Set.mem_singleton_iff]
+  omega
 
 /-- The probability-generating function of a Poisson-binomial law is the product of the
 Bernoulli probability-generating functions. -/

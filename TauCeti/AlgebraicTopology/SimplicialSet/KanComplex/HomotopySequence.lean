@@ -247,7 +247,7 @@ private lemma exists_lift_of_relStruct₀ {n : ℕ} {s : B.PtSimplex (n + 1) b}
   obtain ⟨Φ, hΦ, hΦp⟩ := hcompat.exists_lift p K.map fun j hj ↦ by
     by_cases hj₀ : j = 0
     · subst hj₀
-      rw [hf₀, Category.assoc, fiber_ι_comp, comp_const, K.δ_map_of_lt 0 (by simp)]
+      rw [hf₀, Category.assoc, fiber.ι_comp, comp_const, K.δ_map_of_lt 0 (by simp)]
     by_cases hj₁ : j = 1
     · subst hj₁
       simpa [hf₁] using K.δ_castSucc_map.symm
