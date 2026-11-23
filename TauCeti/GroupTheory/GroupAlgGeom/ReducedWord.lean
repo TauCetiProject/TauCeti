@@ -90,9 +90,11 @@ directly for words in letters.
   `G` of reduced words.
 * `TauCeti.GroupAlgGeom.GX.le_occurrences`,
   `TauCeti.GroupAlgGeom.GX.exists_occurrences_add_occurrences_eq_add_two_mul`,
-  `TauCeti.GroupAlgGeom.GX.occurrences_map_le`,
-  `TauCeti.GroupAlgGeom.GX.occurrences_map_eq_zero`: the extremal characterization, pair
-  cancellation, and homomorphism bounds for variable occurrences.
+* `TauCeti.GroupAlgGeom.GX.occurrences_map_le`,
+  `TauCeti.GroupAlgGeom.GX.occurrences_map_eq_zero`,
+  `TauCeti.GroupAlgGeom.GX.mem_avoiding_iff_occurrences_eq_zero`: the extremal characterization,
+  pair cancellation, homomorphism bounds, and `GX.avoiding` characterization for variable
+  occurrences.
 
 ## References
 
@@ -1287,6 +1289,34 @@ theorem occVars_eq_empty_iff {w : GX G X} :
 /-- Only finitely many variables occur in any word of `G[X]`. -/
 theorem finite_setOf_occurrences_ne_zero (w : GX G X) : {x | occurrences x w ≠ 0}.Finite :=
   coe_occVars w ▸ (occVars w).finite_toSet
+
+/-- The variable `x` does not occur in a word after the substitution `x ↦ 1`. -/
+@[simp]
+theorem occurrences_eval_update_one [DecidableEq X] (x : X) (w : GX G X) :
+    occurrences x (eval inl (Function.update (fun y => inr (FreeGroup.of y)) x 1) w) = 0 := by
+  refine occurrences_map_eq_zero _ x (by simp) (fun y => ?_) w
+  by_cases h : y = x
+  · subst h; simp
+  · simp [h]
+
+/-- The words of `GX.avoiding x` are the words in which `x` does not occur. -/
+theorem mem_avoiding_iff_occurrences_eq_zero [DecidableEq X] {x : X} {a : GX G X} :
+    a ∈ avoiding x ↔ occurrences x a = 0 := by
+  classical
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · rw [← mem_avoiding.1 ha, occurrences_eval_update_one]
+  · have h := le_occurrences x
+      (fun u => if u ∈ avoiding x then 0 else 1)
+      (fun u v => by
+        by_cases hu : u ∈ avoiding x
+        · by_cases hv : v ∈ avoiding x
+          · simp [hu, hv, mul_mem hu hv]
+          · simp only [hv, ite_false]; split_ifs <;> omega
+        · simp only [hu, ite_false]; split_ifs <;> omega)
+      (by simp) (by split_ifs <;> simp) (by split_ifs <;> simp)
+      (fun y hy => by simp [hy]) a
+    by_contra ha'
+    simp [ha, ha'] at h
 
 end Occurrences
 

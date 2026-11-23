@@ -469,7 +469,7 @@ theorem exists_standardForm {w : GX G X} (hw : IsStrictlyQuadratic {w}) :
   obtain ⟨f₂, hf₂, u, hf₂_fix, hstd⟩ := P.exists_standardForm hnd
   refine ⟨f₂ * f₁, mul_mem hf₂ hf₁, u, fun a ha => ?_, ?_⟩
   · have ha' : ∀ v ∈ GX.occVars w, a ∈ GX.avoiding v := fun v hv =>
-      mem_avoiding_iff_occurrences_eq_zero.2 (ha v (GX.mem_occVars_iff.1 hv))
+      GX.mem_avoiding_iff_occurrences_eq_zero.2 (ha v (GX.mem_occVars_iff.1 hv))
     rw [MulAut.mul_apply, hf₁_fix a ha',
       hf₂_fix a fun v hv => ha v (GX.mem_occVars_iff.1 (hsub v hv))]
   · rw [MulAut.mul_apply, hf₁_eq]

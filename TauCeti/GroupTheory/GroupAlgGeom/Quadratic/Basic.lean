@@ -307,9 +307,10 @@ theorem conjWord_def (p : X × G) :
 
 @[simp] theorem conjWord_one (z : X) : conjWord (z, (1 : G)) = 1 := by simp [conjWord_def]
 
-open Classical in @[simp]
-theorem occVars_conjWord (p : X × G) :
+@[simp]
+theorem occVars_conjWord [DecidableEq G] (p : X × G) :
     GX.occVars (conjWord p) = if p.2 = 1 then ∅ else {p.1} := by
+  classical
   by_cases hp : p.2 = 1
   · simp [conjWord_def, hp]
   · ext v; simp only [hp, ite_false, Finset.mem_singleton, GX.mem_occVars_iff,
@@ -937,11 +938,11 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
   have hc := isCyclicallyReduced_wordLetters S
   rwa [(GX.reducedWord_eq_iff hc.isReduced).2 (prod_wordLetters S)]
 
-open Classical in
 /-- Each variable occurs twice in a standard quadratic equation if it belongs to `S.vars`, and
 zero times otherwise. -/
-theorem occurrences_toWord (S : Standard G X) (x : X) :
+theorem occurrences_toWord (S : Standard G X) (x : X) [Decidable (x ∈ S.vars)] :
     GX.occurrences x S.toWord = if x ∈ S.vars then 2 else 0 := by
+  classical
   have hcomm (u v : X) : GX.countVar x (commLetters (G := G) u v) =
       (if u = x then 2 else 0) + (if v = x then 2 else 0) := by
     by_cases hu : u = x <;> by_cases hv : v = x <;> simp [commLetters, hu, hv]
@@ -959,7 +960,7 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
   | orientable _ _ a b inj =>
     simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten, List.map_ofFn,
       Fin.sum_ofFn, Function.comp_def, hcomm, Finset.sum_add_distrib, vars_orientable]
-    refine Eq.trans ?_ (sum_inj inj)
+    convert sum_inj inj using 1
     rw [Fintype.sum_sum_type]
     congr 1
   | orientableCoeff _ _ _ a b z inj _ _ _ _ =>
@@ -967,18 +968,18 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
       List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def,
       hcomm, hconj, GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib,
       vars_orientableCoeff, add_zero]
-    refine Eq.trans ?_ (sum_inj inj)
+    convert sum_inj inj using 1
     simp only [Fintype.sum_sum_type]
     congr 2
   | nonorientable _ _ a inj =>
     simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten, List.map_ofFn,
       Fin.sum_ofFn, Function.comp_def, hsq, vars_nonorientable]
-    exact sum_inj inj
+    convert sum_inj inj
   | nonorientableCoeff _ _ _ a z inj _ _ _ _ =>
     simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_append, List.flatten_append,
       List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq,
       hconj, GX.countVar_cons_inl, GX.countVar_nil, vars_nonorientableCoeff, add_zero]
-    refine Eq.trans ?_ (sum_inj inj)
+    convert sum_inj inj using 1
     rw [Fintype.sum_sum_type]
     congr 1
 
@@ -1224,15 +1225,7 @@ theorem isStandard_x2y2z2 : ∃ S : Standard G (Fin 3),
 theorem isStrictlyQuadratic_x2y2z2 :
     IsStrictlyQuadratic {(inr (.of 0) ^ 2 * inr (.of 1) ^ 2 * inr (.of 2) ^ 2 : GX G (Fin 3))} := by
   obtain ⟨S, hS, -⟩ := isStandard_x2y2z2 (G := G)
-  have hle := hS ▸ isQuadratic_singleton.1 S.isQuadratic
-  refine isStrictlyQuadratic_singleton.2 fun x => .inr <| (hle x).antisymm ?_
-  have h := GX.countP_toWord_snd_le_occurrences x
-    (inr (.of 0) ^ 2 * inr (.of 1) ^ 2 * inr (.of 2) ^ 2 : GX G (Fin 3))
-  simp only [_root_.map_mul, map_pow, snd_apply_inr] at h
-  have key : ∀ x : Fin 3, 2 ≤ ((FreeGroup.of 0 ^ 2 * FreeGroup.of 1 ^ 2 * FreeGroup.of 2 ^ 2 :
-      FreeGroup (Fin 3)).toWord.countP fun p => p.1 = x) := by
-    decide
-  exact (key x).trans h
+  exact hS ▸ S.isStrictlyQuadratic
 
 /-- `x y x⁻¹ y⁻¹ x` is not quadratic: the variable `x` occurs three times. -/
 theorem not_isQuadratic_cubic :

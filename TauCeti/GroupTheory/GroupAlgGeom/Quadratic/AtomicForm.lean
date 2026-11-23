@@ -419,7 +419,7 @@ theorem exists_mem_elementaryAut_apply_toWord_eq_squares (P : AtomicForm G X)
     hffix _ fun _ hv => mul_mem (conjsProd_mem_avoiding fun h => hdisj hv h)
       (GX.inl_mem_avoiding _ _)
   refine ⟨f, hf, ?_, fun a ha => hffix a fun v hv =>
-    mem_avoiding_iff_occurrences_eq_zero.2 (ha v (vars_def P ▸ List.mem_append_left _ hv))⟩
+    GX.mem_avoiding_iff_occurrences_eq_zero.2 (ha v (vars_def P ▸ List.mem_append_left _ hv))⟩
   rw [toWord_def, mul_assoc (P.commsProd * P.squaresProd), map_mul, hfe, hfix_tail, ← mul_assoc]
   simp only [toWord_def, commsProd_nil, one_mul, squaresProd_def, conjsProd_def]
 
@@ -458,7 +458,7 @@ theorem exists_mem_elementaryAut_conj_toWord_concat
       (⟨C, S, Z, 1⟩ : AtomicForm G X).toWord * conjWord (z, c) := by
     simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, mul_assoc]
   refine ⟨f, hf, ?_, fun a ha =>
-    hfw a fun v hv => mem_avoiding_iff_occurrences_eq_zero.2 (ha v (hsub.subset hv))⟩
+    hfw a fun v hv => GX.mem_avoiding_iff_occurrences_eq_zero.2 (ha v (hsub.subset hv))⟩
   rw [e, map_mul, hfP, hfw _ fun y hy => conjWord_mem_avoiding (p := (z, c))
     (fun (hzy' : z = y) => List.disjoint_of_nodup_append h (hzy' ▸ hy) (.head _))]
   simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, conjWord_def, mul_assoc]

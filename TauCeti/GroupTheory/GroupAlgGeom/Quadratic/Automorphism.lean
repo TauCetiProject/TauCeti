@@ -28,8 +28,6 @@ Klein bottle word `x y x y⁻¹` to the standard word `x² y²` of the same leng
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Quadratic.mem_avoiding_iff_occurrences_eq_zero`: `GX.avoiding x` consists
-  of the words with no occurrence of `x`.
 * `occurrences_renameEquiv`, `occurrences_invertVar`, `occurrences_transvection`: the occurrence
   counts preserved by the elementary automorphisms.
 * `isQuadratic_map_renameEquiv`, `isQuadratic_map_invertVar`, `isQuadratic_map_transvection` and
@@ -54,41 +52,14 @@ variable {G X Y : Type*} [Group G]
 
 section Avoiding
 
-variable [DecidableEq X] {x : X} {a b : GX G X}
-
-/-- The variable `x` does not occur in a word after the substitution `x ↦ 1`. -/
-@[simp]
-theorem occurrences_eval_update_one (x : X) (w : GX G X) :
-    GX.occurrences x (eval inl (update (fun y => inr (FreeGroup.of y)) x 1) w) = 0 := by
-  refine GX.occurrences_map_eq_zero _ x (by simp) (fun y => ?_) w
-  by_cases h : y = x
-  · subst h; simp
-  · simp [h]
-
-/-- The words of `GX.avoiding x` are the words in which `x` does not occur. -/
-theorem mem_avoiding_iff_occurrences_eq_zero : a ∈ GX.avoiding x ↔ GX.occurrences x a = 0 := by
-  classical
-  refine ⟨fun ha => ?_, fun ha => ?_⟩
-  · rw [← GX.mem_avoiding.1 ha, occurrences_eval_update_one]
-  · have h := GX.le_occurrences x
-      (fun u => if u ∈ GX.avoiding x then 0 else 1)
-      (fun u v => by
-        by_cases hu : u ∈ GX.avoiding x
-        · by_cases hv : v ∈ GX.avoiding x
-          · simp [hu, hv, mul_mem hu hv]
-          · simp only [hv, ite_false]; split_ifs <;> omega
-        · simp only [hu, ite_false]; split_ifs <;> omega)
-      (by simp) (by split_ifs <;> simp) (by split_ifs <;> simp)
-      (fun y hy => by simp [hy]) a
-    by_contra ha'
-    simp [ha, ha'] at h
+variable [DecidableEq X] {x : X}
 
 /-- A variable is avoided by the left side of a standard quadratic equation if and only if it is
 outside `S.vars`. -/
 @[simp]
 theorem Standard.toWord_mem_avoiding_iff {S : Standard G X} :
     S.toWord ∈ GX.avoiding x ↔ x ∉ S.vars := by
-  rw [mem_avoiding_iff_occurrences_eq_zero, ← not_iff_not, not_not,
+  rw [GX.mem_avoiding_iff_occurrences_eq_zero, ← not_iff_not, not_not,
     S.mem_vars_iff_occurrences_toWord_ne_zero]
 
 end Avoiding
@@ -161,8 +132,8 @@ theorem occurrences_transvection (ha : a ∈ GX.avoiding x) (hb : b ∈ GX.avoid
 @[simp]
 theorem occurrences_transvection_self (ha : a ∈ GX.avoiding x) (hb : b ∈ GX.avoiding x)
     (w : GX G X) : GX.occurrences x (GX.transvection x a b ha hb w) = GX.occurrences x w :=
-  occurrences_transvection ha hb (mem_avoiding_iff_occurrences_eq_zero.1 ha)
-    (mem_avoiding_iff_occurrences_eq_zero.1 hb) w
+  occurrences_transvection ha hb (GX.mem_avoiding_iff_occurrences_eq_zero.1 ha)
+    (GX.mem_avoiding_iff_occurrences_eq_zero.1 hb) w
 
 end Elementary
 
