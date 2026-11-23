@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Sequences
 import Mathlib.RingTheory.Finiteness.Cofinite
+import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.Topology.Sequences.Basic
 
 /-!
@@ -47,6 +48,14 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- For any map `f : E → F` and `s : Set E`, the pullback `z ↦ f ((toWeakSpace 𝕜 E).symm z)` maps
+`toWeakSpace 𝕜 E '' s` into `f '' s`. -/
+theorem mapsTo_comp_toWeakSpace_symm_image {F : Type*} (f : E → F) (s : Set E) :
+    MapsTo (fun z : WeakSpace 𝕜 E ↦ f ((toWeakSpace 𝕜 E).symm z))
+      (toWeakSpace 𝕜 E '' s) (f '' s) := by
+  rw [mapsTo_iff_image_subset]
+  simp [Set.image_image]
 
 /-- A family converges weakly exactly when its values under every continuous linear functional
 converge. -/
@@ -144,8 +153,7 @@ theorem exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds {𝕜 E : Typ
     {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
     ∃ v : E, v ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (x + c • v) ∈ U := by
   have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := E))) := by
-    rw [LinearMap.range_id]
-    exact fun h ↦ hE (Module.Finite.equiv Submodule.topEquiv)
+    simpa only [LinearMap.moduleFinite_range_id_iff] using hE
   simpa only [LinearMap.id_apply] using
     LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds
       (LinearMap.id (R := 𝕜) (M := E)) hid hU

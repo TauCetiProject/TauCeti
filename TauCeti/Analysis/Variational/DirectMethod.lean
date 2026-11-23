@@ -89,11 +89,6 @@ theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrd
 
 end WeakTopology
 
-private theorem sublevel_inter_eq {X β : Type*} [LE β] {E : X → β} {S T : Set X} {b : β}
-    (h : {u ∈ S | E u ≤ b} ⊆ T) :
-    {u ∈ S ∩ T | E u ≤ b} = {u ∈ S | E u ≤ b} :=
-  (inter_right_comm S T {u | E u ≤ b}).trans (inter_eq_left.2 h)
-
 section ClosedBallSublevel
 
 variable {𝕜 V : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]

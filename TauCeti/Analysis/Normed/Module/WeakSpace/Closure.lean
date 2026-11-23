@@ -11,6 +11,7 @@ public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -108,8 +109,7 @@ theorem interior_toWeakSpace_eq_empty_of_isBounded {𝕜 V : Type*} [Nontriviall
   refine eq_empty_iff_forall_notMem.2 fun w hw ↦ ?_
   obtain ⟨x, rfl⟩ := (toWeakSpace 𝕜 V).surjective w
   have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := V))) := by
-    rw [LinearMap.range_id]
-    exact fun h ↦ hV (Module.Finite.equiv Submodule.topEquiv)
+    simpa only [LinearMap.moduleFinite_range_id_iff] using hV
   refine not_isBounded_image_comp_toWeakSpace_symm_of_mem_nhds (j := LinearMap.id (R := 𝕜) (M := V))
     hid (mem_interior_iff_mem_nhds.1 hw) ?_
   simpa [image_image] using hs
@@ -221,8 +221,8 @@ weak closure of `Metric.sphere x r` is `Metric.closedBall x r` for every `x : V`
 theorem closure_toWeakSpace_sphere (hV : ¬ FiniteDimensional 𝕜 V) (x : V) (r : ℝ) :
     closure (toWeakSpace 𝕜 V '' sphere x r) = toWeakSpace 𝕜 V '' closedBall x r := by
   have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (ContinuousLinearMap.id 𝕜 V).toLinearMap) := by
-    rw [ContinuousLinearMap.coe_id, LinearMap.range_id]
-    exact fun h ↦ hV (Module.Finite.equiv Submodule.topEquiv)
+    dsimp only [FiniteDimensional]
+    rwa [ContinuousLinearMap.coe_id, LinearMap.moduleFinite_range_id_iff]
   simpa using (ContinuousLinearMap.id 𝕜 V).closure_toWeakSpace_preimage_sphere hid x r
 
 /-- In an infinite-dimensional normed space over `ℝ` or `ℂ`, a sphere of positive radius is not
@@ -231,8 +231,8 @@ theorem not_isClosed_toWeakSpace_sphere (hV : ¬ FiniteDimensional 𝕜 V) (x : 
     (hr : 0 < r) :
     ¬ IsClosed (toWeakSpace 𝕜 V '' sphere x r) := by
   have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (ContinuousLinearMap.id 𝕜 V).toLinearMap) := by
-    rw [ContinuousLinearMap.coe_id, LinearMap.range_id]
-    exact fun h ↦ hV (Module.Finite.equiv Submodule.topEquiv)
+    dsimp only [FiniteDimensional]
+    rwa [ContinuousLinearMap.coe_id, LinearMap.moduleFinite_range_id_iff]
   simpa using (ContinuousLinearMap.id 𝕜 V).not_isClosed_toWeakSpace_preimage_sphere hid
     ⟨x, by simpa using hr⟩
 

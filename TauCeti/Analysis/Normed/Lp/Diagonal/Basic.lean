@@ -202,6 +202,12 @@ theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
     (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
   simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
 
+/-- A finite diagonal truncation has finite-dimensional range. -/
+theorem finiteDimensional_range_diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
+    FiniteDimensional 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
+  Module.rank_lt_aleph0_iff.mp
+    ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
+
 /-- For finite exponent `1 ≤ p < ∞`, the finite coordinate truncations of any bounded diagonal
 operator converge to it pointwise along the filter of finite sets. -/
 theorem tendsto_diagonalTruncation_apply (hp : p ≠ ∞) (d : ℓ^∞(ι, 𝕜)) (x : ℓ^p(ι, 𝕜)) :
@@ -312,11 +318,6 @@ theorem tendsto_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
       (𝓝 (diagonalCLM (p := p) d)) :=
   (tendsto_diagonalTruncation d (Nat.cofinite_eq_atTop ▸ hd)).comp tendsto_finset_range
 
-private theorem finiteDimensional_range_diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
-    FiniteDimensional 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
-  Module.rank_lt_aleph0_iff.mp
-    ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
-
 omit [DecidableEq ι] in
 /-- A bounded diagonal operator on `ℓ^p(ι, 𝕜)` has finite-dimensional range if and only if only
 finitely many of its coefficients are nonzero. -/
@@ -386,36 +387,44 @@ open scoped ComplexOrder in
 theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
     0 ≤ ofAntitone 𝕜 hc n := by simp
 
+/-- The reciprocal sequence `n ↦ ((n : ℝ≥0) + 1)⁻¹` is antitone. -/
+theorem antitone_inv_natCast_add_one : Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ :=
+  fun _ _ h ↦ by simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h
+
 /-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
 noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=
-  ofAntitone 𝕜 (show Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ from fun _ _ h ↦ by
-    simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h)
+  ofAntitone 𝕜 antitone_inv_natCast_add_one
+
+/-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to `n ↦ ((n : ℝ≥0) + 1)⁻¹`. -/
+theorem invNatSucc_eq_ofAntitone (𝕜 : Type*) [RCLike 𝕜] :
+    invNatSucc 𝕜 = ofAntitone 𝕜 antitone_inv_natCast_add_one := (rfl)
 
 /-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
 @[simp]
 theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     invNatSucc 𝕜 n = ((n : 𝕜) + 1)⁻¹ := by
-  rw [invNatSucc, ofAntitone_apply]
+  rw [invNatSucc_eq_ofAntitone, ofAntitone_apply]
   push_cast
   rfl
 
 open scoped ComplexOrder in
 /-- Every entry of `lp.invNatSucc 𝕜` is nonnegative in the `RCLike` order. -/
 theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
-    0 ≤ invNatSucc 𝕜 n :=
-  ofAntitone_apply_nonneg 𝕜 _ n
+    0 ≤ invNatSucc 𝕜 n := by
+  rw [invNatSucc_eq_ofAntitone]
+  exact ofAntitone_apply_nonneg 𝕜 antitone_inv_natCast_add_one n
 
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by
-  rw [invNatSucc, norm_ofAntitone_apply]
+  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone_apply]
   push_cast
   rfl
 
 /-- The `ℓ^∞` norm of `lp.invNatSucc 𝕜` is `1`. -/
 @[simp]
 theorem norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ‖invNatSucc 𝕜‖ = 1 := by
-  rw [invNatSucc, norm_ofAntitone]
+  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone]
   simp
 
 /-- The norms of the entries of `lp.invNatSucc 𝕜` tend to `0`. -/

@@ -293,19 +293,13 @@ section DiagonalModels
 
 /-! #### 1. The harmonic diagonal model and non-normality -/
 
-private theorem singularValue_diagonalCLM_invNatSucc (j : ℕ) :
-    (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).singularValue j = ((j : ℝ≥0) + 1)⁻¹ := by
-  rw [lp.singularValue_diagonalCLM _ fun _ _ h ↦ by
-    simpa only [lp.norm_invNatSucc_apply, one_div] using Nat.one_div_le_one_div (α := ℝ) h]
-  exact NNReal.coe_inj.1 (by rw [coe_nnNorm, lp.norm_invNatSucc_apply]; push_cast; rfl)
-
 /-- The `k`-th Ky Fan prefix gauge of `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is
 `∑ j < k, (j + 1)⁻¹`. -/
 @[simp]
 theorem kyFanGauge_diagonalCLM_invNatSucc (k : ℕ) :
     (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).kyFanGauge k =
       ∑ j ∈ Finset.range k, ((j : ℝ≥0) + 1)⁻¹ := by
-  simp [ContinuousLinearMap.kyFanGauge_def, singularValue_diagonalCLM_invNatSucc]
+  simp [lp.invNatSucc_eq_ofAntitone]
 
 /-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is positive on
 `ℓ²(ℕ, ℂ)`. -/
@@ -317,7 +311,7 @@ theorem isPositive_diagonalCLM_invNatSucc :
 `1`. -/
 theorem tendsto_kyFanLogMean_diagonalCLM_invNatSucc :
     Tendsto (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).kyFanLogMean atTop (𝓝 1) :=
-  tendsto_kyFanLogMean_of_singularValue_eq singularValue_diagonalCLM_invNatSucc
+  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by simp [lp.invNatSucc_eq_ofAntitone]
 
 /-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is Dixmier
 measurable. -/
