@@ -48,6 +48,8 @@ of the augmentation ideal under `f`.
   `TauCeti.HopfIdeal.map_eq_bot_iff_le_ker`.
 * `TauCeti.HopfIdeal.comapOfSurjective_map_mkBialgHom`: pulling the image of `J` back from
   `H ⧸ I` along the quotient morphism recovers `J`, provided `I ≤ J`.
+* `BialgEquiv.exists_isHopfIdeal_map_iff`: a submodule underlies a two-sided Hopf ideal exactly
+  when its image under a bialgebra equivalence does.
 
 ## References
 
@@ -367,3 +369,44 @@ end Quotient
 end HopfIdeal
 
 end TauCeti
+
+namespace BialgEquiv
+
+variable {B K L : Type*} [CommRing B] [Ring K] [Ring L] [HopfAlgebra B K] [HopfAlgebra B L]
+
+/-- The image of a submodule underlying a two-sided Hopf ideal under a bialgebra equivalence
+again underlies a two-sided Hopf ideal. -/
+theorem exists_isHopfIdeal_map (e : K ≃ₐc[B] L) {P : Submodule B K}
+    (h : ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B) :
+    ∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
+      J.IsHopfIdeal B := by
+  obtain ⟨I, rfl, hI, hHopf⟩ := h
+  let := hI
+  let := hHopf
+  have : RingHomSurjective (e.toBialgHom : K →+* L) := ⟨e.surjective⟩
+  let J := (TauCeti.HopfIdeal.ofIsHopfIdeal B I).map e.toBialgHom
+  refine ⟨J.toIdeal, ?_, inferInstance, inferInstance⟩
+  dsimp only [J]
+  rw [TauCeti.HopfIdeal.map_toIdeal, TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
+  ext y
+  rw [Submodule.restrictScalars_mem,
+    Ideal.mem_map_iff_of_surjective (e.toBialgHom : K →+* L) e.surjective]
+  simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply, BialgEquiv.coe_toAlgEquiv,
+    RingHom.coe_coe, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
+    Submodule.restrictScalars_mem]
+
+/-- A bialgebra equivalence preserves and reflects the property that a submodule underlies a
+two-sided Hopf ideal. -/
+theorem exists_isHopfIdeal_map_iff (e : K ≃ₐc[B] L) {P : Submodule B K} :
+    (∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
+      J.IsHopfIdeal B) ↔
+      ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B := by
+  refine ⟨fun h ↦ ?_, e.exists_isHopfIdeal_map⟩
+  have hP : (P.map e.toAlgEquiv.toLinearMap).map e.symm.toAlgEquiv.toLinearMap = P := by
+    rw [← Submodule.map_comp]
+    convert Submodule.map_id P
+    ext
+    simp
+  simpa only [hP] using e.symm.exists_isHopfIdeal_map h
+
+end BialgEquiv

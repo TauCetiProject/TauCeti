@@ -209,7 +209,7 @@ private theorem exists_counit_eq_zero_ι_mul_eq (h : H) (f : U (negativeNilradic
     -- the negative nilradical is a sum of root spaces, so it is stable under `ad h`
     have hy : ⁅(h : L), (y : L)⁆ ∈ negativeNilradical H b :=
       (mem_negativeNilradical H b _).mpr <| LieSubmodule.lie_mem _ (x := h)
-        ((mem_negativeNilradical H b _).mp y.2)
+        ((mem_negativeNilradical H b _).mp y.property)
     refine ⟨_root_.UniversalEnvelopingAlgebra.ι K (⟨_, hy⟩ : negativeNilradical H b),
       UniversalEnvelopingAlgebra.counit_ι K _ _, ?_⟩
     rw [UniversalEnvelopingAlgebra.map_ι, UniversalEnvelopingAlgebra.map_ι]
@@ -322,7 +322,7 @@ private theorem lift_borelCharacter_map_cartan (h : U H) :
   induction h using UniversalEnvelopingAlgebra.induction_ι with
   | ι x =>
     rw [UniversalEnvelopingAlgebra.map_ι, _root_.UniversalEnvelopingAlgebra.lift_ι_apply,
-      cartanEval_ι, borelCharacter_apply_of_mem_cartan H b lam x.2]
+      cartanEval_ι, borelCharacter_apply_of_mem_cartan H b lam x.property]
     -- the element `⟨inclusion _ x, _⟩` of `H` is `x` itself, by eta for subtypes
     rfl
   | algebraMap r => simp only [AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply]
@@ -340,7 +340,7 @@ private theorem lift_borelCharacter_map_positiveNilradical (e : U (positiveNilra
   | ι x =>
     rw [UniversalEnvelopingAlgebra.map_ι, _root_.UniversalEnvelopingAlgebra.lift_ι_apply,
       UniversalEnvelopingAlgebra.counit_ι]
-    exact borelCharacter_apply_of_mem_positiveNilradical H b lam x.2
+    exact borelCharacter_apply_of_mem_positiveNilradical H b lam x.property
   | algebraMap r => simp only [AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
       ← Bialgebra.counitAlgHom_apply, AlgHom.commutes]
   | add e e' he he' => rw [map_add, map_add, he, he', map_add]

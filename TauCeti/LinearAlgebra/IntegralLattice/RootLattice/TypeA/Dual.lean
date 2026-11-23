@@ -95,7 +95,7 @@ theorem mem_dualCarrier_typeARootLattice_iff (x : Fin n → ℚ) :
     set y := (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ)
     choose m hm using fun j ↦ h j 0
     have hsum : ∑ j, y j = 0 :=
-      (mem_singleParityCheckCode _ _).mp (typeAIsometryZeroSumLattice n x).2
+      (mem_singleParityCheckCode _ _).mp (typeAIsometryZeroSumLattice n x).property
     have hs : ∑ j, (m j : ℚ) = -((n : ℚ) + 1) * y 0 := by
       simp_rw [← hm]
       rw [sum_sub_distrib, hsum]

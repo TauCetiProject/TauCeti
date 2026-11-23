@@ -74,8 +74,8 @@ def annihilator : X.IdealSheafData where
   ideal U := Module.annihilator Γ(X, U) Γ(M, U)
   map_ideal_basicOpen U f := by
     have := hM U
-    have := M.isLocalizedModule_basicOpenRestrict U.2 f
-    have := U.2.isLocalization_basicOpen f
+    have := M.isLocalizedModule_basicOpenRestrict U.property f
+    have := U.property.isLocalization_basicOpen f
     -- Sections over `D(f)` are the localization of `Γ(M, U)` at `f`.
     exact (IsLocalizedModule.annihilator_eq_map (.powers f) Γ(X, X.basicOpen f)
       (M.basicOpenRestrict f)).symm
@@ -86,6 +86,16 @@ module of sections `Γ(M, U)`. -/
 theorem annihilator_ideal (U : X.affineOpens) :
     (M.annihilator hM).ideal U = Module.annihilator Γ(X, U) Γ(M, U) :=
   (rfl)
+
+/-- If the sections of `M` over every affine open vanish, then `Ann(M) = ⊤`. -/
+theorem annihilator_eq_top_of_subsingleton_sections
+    (hsub : ∀ U : X.affineOpens, Subsingleton Γ(M, U)) : M.annihilator hM = ⊤ := by
+  apply Scheme.IdealSheafData.ext
+  funext U
+  have := hsub U
+  rw [Scheme.Modules.annihilator_ideal, Scheme.IdealSheafData.ideal_top, Pi.top_apply,
+    Ideal.eq_top_iff_one, Module.mem_annihilator]
+  exact fun _ ↦ Subsingleton.elim _ _
 
 /-- The annihilator ideal sheaf and the zeroth Fitting ideal sheaf have the same support, the set
 of points at which the fibre of `M` is nonzero. -/
@@ -112,7 +122,7 @@ theorem support_annihilator :
 /-- **The support of an annihilator ideal sheaf.** A point `x` of an affine open `U` lies in the
 support of `Ann(M)` exactly when the fibre `κ(x) ⊗ Γ(M, U)` of `M` at `x` is nonzero. -/
 theorem mem_support_annihilator_iff {x : X}
-    {U : X.affineOpens} (hx : x ∈ U.1) :
+    {U : X.affineOpens} (hx : x ∈ U.val) :
     x ∈ (M.annihilator hM).support ↔
       letI := (X.evaluation U x hx).hom.toAlgebra
       0 < Module.finrank (X.residueField x) (X.residueField x ⊗[Γ(X, U)] Γ(M, U)) := by

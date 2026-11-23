@@ -40,6 +40,8 @@ valued in the closed unit ball.
   statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `OpenPartialHomeomorph.univBall_apply` and `OpenPartialHomeomorph.univBall_symm_apply`: the
+  radial map onto a ball and its inverse, in explicit coordinates.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
   `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
@@ -63,13 +65,39 @@ variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The inverse of `unitBall` in explicit radial coordinates. -/
 theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
-    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
+    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val :=
   -- Compose the explicit formulas as terms: the intermediate subtypes are the source and target
   -- of the partial homeomorphism rather than `ball 0 1`, so `simp` cannot chain the rewrites.
   (Homeomorph.unitBall_symm_apply y).trans
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
-      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+      (OpenPartialHomeomorph.univUnitBall_symm_apply y.val))
+
+variable {P : Type*} [PseudoMetricSpace P] [NormedAddTorsor W P]
+
+/-- Mathlib's radial map `OpenPartialHomeomorph.univBall c r` of `W` onto the ball of radius
+`r > 0` about `c`, in explicit coordinates: `x ↦ r x / √(1 + ‖x‖²) +ᵥ c`. -/
+theorem OpenPartialHomeomorph.univBall_apply {r : ℝ} (hr : 0 < r) (c : P) (x : W) :
+    univBall c r x = (r / √(1 + ‖x‖ ^ 2)) • x +ᵥ c := by
+  rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
+  -- `trans'` has no `apply` lemma: by definition it applies `univUnitBall`, then `unitBallBall`.
+  change unitBallBall c r hr (univUnitBall x) = _
+  rw [unitBallBall_apply, univUnitBall_apply, smul_smul, div_eq_mul_inv]
+
+/-- The inverse of the radial map `OpenPartialHomeomorph.univBall c r` onto the ball of radius
+`r > 0` about `c`, in explicit coordinates: `y ↦ (y -ᵥ c) / √(r² - dist y c ²)`. -/
+theorem OpenPartialHomeomorph.univBall_symm_apply {r : ℝ} (hr : 0 < r) (c y : P) :
+    (univBall c r).symm y = (√(r ^ 2 - dist y c ^ 2))⁻¹ • (y -ᵥ c) := by
+  rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
+  -- `trans'` has no `symm_apply` lemma: by definition its inverse applies the inverse of
+  -- `unitBallBall`, then that of `univUnitBall`.
+  change univUnitBall.symm ((unitBallBall c r hr).symm y) = _
+  have hsq : √(r ^ 2 - dist y c ^ 2) = r * √(1 - ‖r⁻¹ • (y -ᵥ c)‖ ^ 2) := by
+    have h : r ^ 2 - dist y c ^ 2 = r ^ 2 * (1 - ‖r⁻¹ • (y -ᵥ c)‖ ^ 2) := by
+      simp [norm_smul, abs_of_pos hr, dist_eq_norm_vsub W]
+      field_simp
+    rw [h, Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
+  simp [unitBallBall_symm_apply, univUnitBall_symm_apply, smul_smul, hsq, mul_comm]
 
 namespace ContinuousLinearEquiv
 
@@ -181,7 +209,7 @@ closed unit ball. -/
 theorem isOpenEmbedding_inclusion_comp_unitBall :
     IsOpenEmbedding (inclusion (ball_subset_closedBall (x := (0 : E)) (ε := 1)) ∘
       Homeomorph.unitBall) :=
-  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
+  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtypeVal)).comp
     Homeomorph.unitBall.isOpenEmbedding
 
 section Cube
@@ -201,9 +229,9 @@ def cubeHomeomorphClosedBall : (N → I) ≃ₜ closedBall (0 : N → ℝ) 1 :=
   let b : (N → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) :=
     { toEquiv := (Equiv.Set.univPi _).symm
       continuous_toFun := (continuous_pi fun i ↦
-        continuous_subtype_val.comp (continuous_apply i)).subtype_mk _
+        continuous_subtypeVal.comp (continuous_apply i)).subtype_mk _
       continuous_invFun := continuous_pi fun i ↦
-        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
+        ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _ }
   have h : univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) = closedBall (0 : N → ℝ) 1 := by
     simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
   a.trans <| b.trans <| Homeomorph.setCongr h

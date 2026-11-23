@@ -94,8 +94,8 @@ differentials. -/
 @[simp]
 theorem curvedDifferential_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) (x : M) :
-    ((curvedDifferential (hM := hM) (hN := hN) p f).1 : M →ₗ[Aᵐᵒᵖ] N) x =
-      dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+    ((curvedDifferential (hM := hM) (hN := hN) p f).val : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (f.val x) - p.negOnePow • f.val (dM x) :=
   gradedCommutator_apply _ _ _ _ p f x
 
 /-- **The curved Hom differential squares to zero.** Both modules square to right
@@ -119,7 +119,7 @@ theorem curvedDifferential_curvedDifferential (p : ℤ)
 /-- A degree-zero cochain is closed exactly when it commutes with the module differentials. -/
 theorem curvedDifferential_zero_eq_zero_iff
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) 0) :
-    curvedDifferential (hM := hM) (hN := hN) 0 f = 0 ↔ ∀ x, dN (f.1 x) = f.1 (dM x) := by
+    curvedDifferential (hM := hM) (hN := hN) 0 f = 0 ↔ ∀ x, dN (f.val x) = f.val (dM x) := by
   simp only [Subtype.ext_iff, LinearMap.ext_iff, curvedDifferential_apply, Int.negOnePow_zero,
     one_smul, Submodule.coe_zero, LinearMap.zero_apply, sub_eq_zero]
 
@@ -128,8 +128,8 @@ boundary `dN ∘ k + k ∘ dM`: in the degree `-1` case of the graded commutator
 `(-1) ^ (-1) = -1` turns the subtraction into an addition. -/
 theorem curvedDifferential_neg_one_apply
     (k : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) (-1)) (x : M) :
-    ((curvedDifferential (hM := hM) (hN := hN) (-1) k).1 : M →ₗ[Aᵐᵒᵖ] N) x =
-      dN (k.1 x) + k.1 (dM x) := by
+    ((curvedDifferential (hM := hM) (hN := hN) (-1) k).val : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (k.val x) + k.val (dM x) := by
   rw [curvedDifferential_apply, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul,
     sub_neg_eq_add]
 

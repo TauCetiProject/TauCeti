@@ -34,7 +34,7 @@ public section
 
 namespace Matrix
 
-variable {𝕜 m n : Type*} [Field 𝕜] [Fintype n]
+variable {𝕜 m n : Type*} [Field 𝕜] [Finite n]
 
 section Uniqueness
 
@@ -49,6 +49,7 @@ theorem exists_unit_eq_mul_of_rank_factorization {ι : Type*} [Fintype ι] [Deci
       L' = L * (g : Matrix ι ι 𝕜) ∧
         R' = ((g⁻¹ : (Matrix ι ι 𝕜)ˣ) : Matrix ι ι 𝕜) * R := by
   classical
+  have := Fintype.ofFinite n
   have hrange : LinearMap.range L'.mulVecLin = LinearMap.range L.mulVecLin := by
     rw [range_left_factor_eq hM h', range_left_factor_eq hM h]
   have hcols : ∀ j : ι, L'.col j ∈ LinearMap.range L.mulVecLin := by
