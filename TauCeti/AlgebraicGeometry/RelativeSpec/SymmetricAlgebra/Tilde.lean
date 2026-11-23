@@ -25,7 +25,8 @@ Both schemes represent `R`-linear maps from `M` to global functions. For a schem
   `~` and global sections (`Scheme.Hom.tildeHomPushforwardEquiv`), naturally in `T`
   (`Scheme.Hom.tildeHomPushforwardEquiv_comp`). Combined with the universal property of
   `Spec_X (Sym F)`, the points `T ⟶ Spec_{Spec R} (Sym M~)` over `Spec R` are these linear maps
-  (`relativeSpecSymmetricAlgebraTildeHomEquiv`);
+  (`relativeSpecSymmetricAlgebraTildeHomEquiv`), and the morphism induced by `f : N ⟶ M`
+  precomposes them with `f` (`relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpec_map`);
 * morphisms `T ⟶ Spec (Sym_R M)` over `Spec R` are the `R`-algebra maps `Sym_R M → Γ(T, ⊤)`,
   hence again these linear maps, by the adjunction between `Spec` and global sections and the
   universal property of `Sym_R M`.
@@ -99,6 +100,23 @@ lemma relativeSpecSymmetricAlgebraTildeHomEquiv_comp {T' T : Over (Spec R)} (g :
       g.left.appTop (relativeSpecSymmetricAlgebraTildeHomEquiv M T t m) := by
   rw [relativeSpecSymmetricAlgebraTildeHomEquiv_apply, relativeSpecSymmetricAlgebraHomEquiv_comp]
   exact Scheme.Hom.tildeHomPushforwardEquiv_comp g.left (Over.w g) M _ m
+
+variable {M} in
+/-- The bijection `relativeSpecSymmetricAlgebraTildeHomEquiv` is natural in the module: composing
+a point with the morphism `Spec_{Spec R} (Sym M~) ⟶ Spec_{Spec R} (Sym N~)` induced by
+`f : N ⟶ M` precomposes its linear map with `f`. -/
+lemma relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpec_map {N : ModuleCat.{u} R}
+    (f : N ⟶ M) (T : Over (Spec R))
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
+      (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) (n : N) :
+    relativeSpecSymmetricAlgebraTildeHomEquiv N T (t ≫ (MorphismProperty.Over.forget _ _ _).map
+        ((relativeSpec (Spec R)).map
+          ((symmetricAlgebra (Spec R)).map ((tildeEquiv (R := R)).functor.map f)).op)) n =
+      relativeSpecSymmetricAlgebraTildeHomEquiv M T t (f n) := by
+  rw [relativeSpecSymmetricAlgebraTildeHomEquiv_apply,
+    relativeSpecSymmetricAlgebraTildeHomEquiv_apply,
+    relativeSpecSymmetricAlgebraHomEquiv_comp_relativeSpec_map]
+  exact T.hom.tildeHomPushforwardEquiv_tilde_map_comp f _ n
 
 -- The body is exposed so that the underlying scheme and structure morphism compute, as for
 -- `affineSpaceOver`.

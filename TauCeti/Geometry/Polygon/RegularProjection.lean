@@ -23,7 +23,10 @@ This file defines the regularity condition, `Polygon.IsRegularProjection R poly 
 arbitrary map `π` out of the ambient affine space of a polygon `poly : Polygon P n` (Mathlib's
 `Polygon`), and proves that regular projections are generic. Projecting along a direction
 `d : V`, `Polygon.projAlong R p₀ d`, is the quotient map `V → V ⧸ R ∙ d`, after choosing an origin
-`p₀ : P`; its fibres are the lines parallel to `d` (`Polygon.projAlong_eq_projAlong_iff`). For a
+`p₀ : P`; its fibres are the lines parallel to `d` (`Polygon.projAlong_eq_projAlong_iff`). A
+correspondence of points that carries "lies above, seen from `d`" to "lies above, seen from `d'`",
+and equal points to equal points, also carries the fibres of the projection along `d` into those of
+the projection along `d'` (`Polygon.projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub`). For a
 polygon in a three-dimensional real affine space, the directions `d` along which the projection is
 regular form a dense subset of `V` (`Polygon.dense_setOf_isRegularProjection`). In particular
 every polygon, and so every polygonal knot in `ℝ³`, has a regular projection along a nonzero
@@ -48,6 +51,8 @@ along `d` is (`Polygon.isRegularProjection_map_projAlong_iff`).
 
 ## Main results
 
+* `Polygon.projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub`: preserving "lies above, seen from
+  `d`" preserves the fibres of the projection along `d`.
 * `Polygon.isRegularProjection_congr`: regularity only depends on the fibres of the projection on
   the polygon.
 * `Polygon.isRegularProjection_rotate_iff`: regularity is unchanged by cyclically relabelling the
@@ -121,6 +126,32 @@ theorem projAlong_eq_projAlong_iff {p₀ : P} {d : V} {x y : P} :
     Submodule.mem_span_singleton]
 
 end ProjAlong
+
+section Fibres
+
+variable {V' P' : Type*} [Ring R] [LinearOrder R] [IsOrderedAddMonoid R] [AddCommGroup V]
+  [Module R V] [AddTorsor V P] [AddCommGroup V'] [Module R V'] [AddTorsor V' P']
+
+/-- **Fibres of the projection from "lies above".** If two points `x` and `y` lie in one fibre of
+the projection along `d`, so that `x -ᵥ y` is a multiple of `d`, and the points `x'` and `y'` are
+equal when `x` and `y` are and lie above one another, seen from `d'`, whenever `x` and `y` do, seen
+from `d`, then `x'` and `y'` lie in one fibre of the projection along `d'`. -/
+theorem projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub {x y : P} {x' y' : P'} {p₀ : P}
+    {q₀ : P'} {d : V} {d' : V'} (hxy : projAlong R p₀ d x = projAlong R p₀ d y)
+    (hxx : x = y → x' = y')
+    (h₁ : (∃ c : R, 0 < c ∧ c • d = x -ᵥ y) → ∃ c : R, 0 < c ∧ c • d' = x' -ᵥ y')
+    (h₂ : (∃ c : R, 0 < c ∧ c • d = y -ᵥ x) → ∃ c : R, 0 < c ∧ c • d' = y' -ᵥ x') :
+    projAlong R q₀ d' x' = projAlong R q₀ d' y' := by
+  obtain ⟨a, ha⟩ := projAlong_eq_projAlong_iff.1 hxy
+  rcases lt_trichotomy a 0 with h | rfl | h
+  · obtain ⟨c, -, hc⟩ := h₂ ⟨-a, neg_pos.2 h, by rw [neg_smul, ha, neg_vsub_eq_vsub_rev]⟩
+    exact projAlong_eq_projAlong_iff.2 ⟨-c, by rw [neg_smul, hc, neg_vsub_eq_vsub_rev]⟩
+  · rw [zero_smul, eq_comm, vsub_eq_zero_iff_eq] at ha
+    rw [hxx ha]
+  · obtain ⟨c, -, hc⟩ := h₁ ⟨a, h, ha⟩
+    exact projAlong_eq_projAlong_iff.2 ⟨c, hc⟩
+
+end Fibres
 
 section Defs
 

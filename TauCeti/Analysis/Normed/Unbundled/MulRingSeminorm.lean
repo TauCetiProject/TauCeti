@@ -299,21 +299,21 @@ private theorem powMulSeminormAt_iInf_of_chain {x₀ : R} {r : ℝ}
     (hc : IsChain (· ≥ ·) c) {y₀ : R → ℝ} (hy₀ : y₀ ∈ c) :
     ∃ lb ∈ {f | PowMulSeminormAt x₀ r f}, ∀ z ∈ c, lb ≤ z := by
   have : Nonempty c := ⟨⟨y₀, hy₀⟩⟩
-  have hmem (z : c) : PowMulSeminormAt x₀ r z.1 := hcs z.2
+  have hmem (z : c) : PowMulSeminormAt x₀ r z.val := hcs z.property
   let p : c → RingSeminorm R := fun z ↦ (hmem z).toRingSeminorm
   have hr : 0 ≤ r := (hmem ⟨y₀, hy₀⟩).apply_x₀ ▸ apply_nonneg (p ⟨y₀, hy₀⟩) x₀
   have hdir : Directed (· ≥ ·) (fun z : c ↦ (p z : R → ℝ)) := hc.directedOn.directed_val
   let lb : RingSeminorm R := iInfOfDirected p hdir
-  have hlb_apply (a : R) : lb a = ⨅ z : c, z.1 a := by
+  have hlb_apply (a : R) : lb a = ⨅ z : c, z.val a := by
     simp only [lb, iInfOfDirected_apply, p, PowMulSeminormAt.toRingSeminorm_apply]
-  have hlb_le (z : c) (a : R) : lb a ≤ z.1 a := iInfOfDirected_le p hdir z a
+  have hlb_le (z : c) (a : R) : lb a ≤ z.val a := iInfOfDirected_le p hdir z a
   have hlb_pm : IsPowMul lb := isPowMul_iInfOfDirected p hdir (fun z ↦ (hmem z).isPowMul)
   have hlb_one : lb 1 = 1 := by
     simp only [hlb_apply, fun z : c ↦ (hmem z).map_one, ciInf_const]
   have hlb_x₀ : lb x₀ = r := by
     simp only [hlb_apply, fun z : c ↦ (hmem z).apply_x₀, ciInf_const]
   have hlb_x₀_mul (y : R) : lb (x₀ * y) = lb x₀ * lb y := by
-    have hz_mul (z : c) : z.1 (x₀ * y) = r * z.1 y := by
+    have hz_mul (z : c) : z.val (x₀ * y) = r * z.val y := by
       rw [(hmem z).const_mul y, (hmem z).apply_x₀]
     simp only [hlb_x₀, hlb_apply, hz_mul]
     exact (Real.mul_iInf_of_nonneg hr _).symm
@@ -334,15 +334,15 @@ private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → 
   · have hν_mul : ν (c * y) = ν c * ν y :=
       le_antisymm ((map_mul_le_mul ν c y).trans (by simp [hc0])) (by simp [hc0])
     simpa only [hν_apply] using hν_mul
-  · let g : RingSeminorm R := seminormFromConst hc0 hν_pm
+  · let g : RingSeminorm R := seminormFromConst c ν
     have hg_le : (⇑g : R → ℝ) ≤ m := fun a ↦
-      (seminormFromConst_le_seminorm hc0 hν_pm a).trans_eq (hν_apply a)
+      (seminormFromConst_le_seminorm c ν a).trans_eq (hν_apply a)
     have hν_x₀_mul (a : R) : ν (x₀ * a) = ν x₀ * ν a := by
       simp only [hν_apply]
       exact hm.const_mul a
     have hg_mem : PowMulSeminormAt x₀ r g :=
       PowMulSeminormAt.of_ringSeminorm g
-        (seminormFromConst_isPowMul hc0 hν_pm)
+        (seminormFromConst_isPowMul hν_pm)
         (seminormFromConst_one hc0 hν_pm)
         ((seminormFromConst_apply_of_isMul hc0 hν_pm hν_x₀_mul).trans
           ((hν_apply x₀).trans hm.apply_x₀))
@@ -355,12 +355,12 @@ private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → 
 private theorem exists_mulRingSeminorm_le_of_apply_ne_zero {ρ : RingSeminorm R}
     (hpm : IsPowMul ρ) {x₀ : R} (hx₀ : ρ x₀ ≠ 0) :
     ∃ α : MulRingSeminorm R, (∀ x, α x ≤ ρ x) ∧ α x₀ = ρ x₀ := by
-  let μ₁ : RingSeminorm R := seminormFromConst hx₀ hpm
-  have hμ₁_le (x : R) : μ₁ x ≤ ρ x := seminormFromConst_le_seminorm hx₀ hpm x
+  let μ₁ : RingSeminorm R := seminormFromConst x₀ ρ
+  have hμ₁_le (x : R) : μ₁ x ≤ ρ x := seminormFromConst_le_seminorm x₀ ρ x
   have hμ₁_x₀ : μ₁ x₀ = ρ x₀ := seminormFromConst_apply_c hx₀ hpm
   have hμ₁_mem : PowMulSeminormAt x₀ (μ₁ x₀) μ₁ :=
     PowMulSeminormAt.of_ringSeminorm μ₁
-      (seminormFromConst_isPowMul hx₀ hpm)
+      (seminormFromConst_isPowMul hpm)
       (seminormFromConst_one hx₀ hpm)
       rfl
       (seminormFromConst_const_mul hx₀ hpm)

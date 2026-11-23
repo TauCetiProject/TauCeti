@@ -105,8 +105,8 @@ theorem posDefProperClassEquivGal_mk (f : ↥(posDef n ⊓ primitiveForms (-n)))
     posDefProperClassEquivGal n hn (Quotient.mk _ f) =
       ringClassArtinMap (QuadraticOrder.numberFieldOrder (-n) hn)
         ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal (-n)
-          ((mem_posDef_inf_primitiveForms n).mp f.2).1
-          ((mem_posDef_inf_primitiveForms n).mp f.2).2.2) := by
+          ((mem_posDef_inf_primitiveForms n).mp f.property).1
+          ((mem_posDef_inf_primitiveForms n).mp f.property).2.2) := by
   rw [posDefProperClassEquivGal_apply, posDefProperClassToPic_mk, picClass_def,
     ringClassArtinMap_apply]
 
@@ -176,9 +176,9 @@ theorem ringClassArtinMap_primitiveReducedForms_bijective :
       ringClassArtinMap (QuadraticOrder.numberFieldOrder (-n) hn)
         ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal (-n)
           ((mem_posDef_inf_primitiveForms n).mp
-            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2)).1
+            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property)).1
           ((mem_posDef_inf_primitiveForms n).mp
-            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2)).2.2) := by
+            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property)).2.2) := by
   simpa only [Function.comp_def, picClass_def, ringClassArtinMap_apply] using
     (ringClassArtinEquiv (QuadraticOrder.numberFieldOrder (-n) hn)).bijective.comp
       (picClass_primitiveReducedForms_bijective n hn)

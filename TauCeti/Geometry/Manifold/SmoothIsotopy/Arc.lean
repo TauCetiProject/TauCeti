@@ -252,8 +252,8 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   /- The constants: `‖g s - p‖ ≤ C` for `|s| ≤ R`, and `R < L` with `C ≤ L * ‖e‖`. -/
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hgc.continuous.sub continuous_const).continuousOn (s := Icc (-R) R))
-  obtain ⟨L, hL0, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
-  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id hL0 (lt_add_one L)
+  obtain ⟨L, -, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
+  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id (lt_add_one L)
   replace hk : ContDiff ℝ n k := hk.of_le hn
   /- The hyperplane component `H` of the motion. -/
   let H : ℝ → ℝ → V := fun u s => (1 - u) • (g s - p) + (u * s) • e
