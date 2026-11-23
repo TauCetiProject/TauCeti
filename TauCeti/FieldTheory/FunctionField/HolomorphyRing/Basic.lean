@@ -154,7 +154,7 @@ over each `𝒪_P` with `P ∈ S`, and a valuation ring is integrally closed
 instance isIntegrallyClosedIn_holomorphyRing (S : Set (Place k F)) :
     IsIntegrallyClosedIn ↥(holomorphyRing S) F :=
   Subring.isIntegrallyClosedIn_iff.mpr fun {_} hz P hP ↦
-    P.mem_integers_of_isIntegral (fun r ↦ r.2 P hP) hz
+    P.mem_integers_of_isIntegral (fun r ↦ r.property P hP) hz
 
 /-! ### The field of fractions -/
 
@@ -208,7 +208,7 @@ theorem exists_ne_zero_mem_holomorphyRing_and_mul_mem (hF : IsFunctionField k F)
 theorem isFractionRing_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place k F)}
     (hS : Sᶜ.Nonempty) : IsFractionRing ↥(holomorphyRing S) F where
   map_units y :=
-    (Units.mk0 (y : F) fun h ↦ nonZeroDivisors.ne_zero y.2 (Subtype.ext h)).isUnit
+    (Units.mk0 (y : F) fun h ↦ nonZeroDivisors.ne_zero y.property (Subtype.ext h)).isUnit
   surj z := by
     obtain ⟨Q, hQ⟩ := hS
     obtain ⟨y, hy0, hyS, hyzS⟩ := exists_ne_zero_mem_holomorphyRing_and_mul_mem hF hQ z
@@ -298,7 +298,7 @@ theorem restrictScalars_integralClosure_eq_holomorphyRing (hF : IsFunctionField 
   congr 1
   ext P
   refine ⟨fun h z hz ↦ h ((integralClosure R F).algebraMap_mem ⟨z, hz⟩), fun h z hz ↦ ?_⟩
-  exact P.mem_integers_of_isIntegral (fun r ↦ h r.2) hz
+  exact P.mem_integers_of_isIntegral (fun r ↦ h r.property) hz
 
 /-! ### Recovering the set of places -/
 
@@ -347,7 +347,7 @@ variable {S : Set (Place k F)}
 /-- The functions of `𝒪_S` have nonnegative order at every place of `S`. -/
 theorem ord_nonneg_of_mem_holomorphyRing {P : Place k F} (hP : P ∈ S)
     (z : ↥(holomorphyRing S)) : 0 ≤ P.ord (z : F) :=
-  mem_holomorphyRing_iff_forall_ord_nonneg.mp z.2 P hP
+  mem_holomorphyRing_iff_forall_ord_nonneg.mp z.property P hP
 
 /-- **Divisibility in `𝒪_S` is a pointwise comparison of orders**: a nonzero function of `𝒪_S`
 divides another exactly when it vanishes to no greater order at every place of `S`.  The
@@ -493,7 +493,7 @@ theorem forall_algebraMap_mem_integers_holomorphyRing_iff (hF : IsFunctionField 
     (∀ r : ↥(holomorphyRing S), algebraMap (↥(holomorphyRing S)) F r ∈ P.integers) ↔ P ∈ S := by
   refine ⟨fun h ↦ (coe_holomorphyRing_subset_integers_iff hF).mp fun z hz ↦ h ⟨z, hz⟩,
     fun h r ↦ ?_⟩
-  exact coe_holomorphyRing_subset_integers h r.2
+  exact coe_holomorphyRing_subset_integers h r.property
 
 end AffineModel
 

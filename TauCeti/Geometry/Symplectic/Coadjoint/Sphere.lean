@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
-public import TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.Sphere
+
+import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The two-sphere as a coadjoint orbit of `SO(3)`
@@ -16,15 +19,17 @@ public import TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic
 Identify `so(3)` with `ℝ³`, with the cross product as bracket, by the hat map `ξ ↦ ξ̂`
 (`TauCeti.soThreeEquiv`), and `so(3)*` with `ℝ³` by the dot product, `ν_n(ξ̂) = n ⬝ ξ`
 (`TauCeti.soThreeDualEquiv`). The coadjoint orbits of `SO(3)` are then the spheres about the
-origin (a fact about the group action, not treated here), and the orbit through `ν_n` with
-`‖n‖ = r > 0` carries the Kirillov–Kostant–Souriau form `ω_n(ξ̂, η̂) = n ⬝ (ξ × η)`
-(`TauCeti.kksForm_soThreeDualEquiv_mk`) on its tangent vectors `ξ × n`. This file builds this
+origin (`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`), and the orbit
+through `ν_n` with `√(n ⬝ n) = r > 0` carries the Kirillov–Kostant–Souriau form
+`ω_n(ξ̂, η̂) = n ⬝ (ξ × η)` (`TauCeti.kksForm_soThreeDualEquiv_mk`) on its tangent vectors `ξ × n`.
+This file builds this
 symplectic manifold on the unit sphere `S² ⊂ ℝ³`, parametrizing the orbit of radius `r` by
-`x ↦ r x`.
+`x ↦ r x`: the functionals `ν_(r x)` for `x ∈ S²` form exactly one coadjoint orbit of `SO(3)`
+(`TauCeti.range_soThreeDualEquiv_smul_sphere`).
 
 The **area form** of `S²` is `σ_x(v, w) = x ⬝ (v × w)` (`TauCeti.sphereAreaForm`), the symplectic
 volume form of the sphere with its outward-normal orientation, defined in
-`TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic`.
+`TauCeti.Geometry.Symplectic.Manifold.Sphere`.
 
 The infinitesimal rotation `A ∈ so(3)` moves `x ∈ S²` with velocity `A x = ξ × x`, where `A = ξ̂`.
 These rotation fields are the Hamiltonian vector fields of the height functions
@@ -62,6 +67,8 @@ integral is a signed value.
 * `TauCeti.isMomentMap_sphereRotationAction`: the inclusion `S² → so(3)*` is a moment map of the
   rotation action, and `TauCeti.momentCocycle_sphereRotationAction`: it is infinitesimally
   equivariant.
+* `TauCeti.range_soThreeDualEquiv_smul_sphere`: `x ↦ ν_(r x)` maps `S²` onto a coadjoint orbit
+  of `SO(3)`.
 * `TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`: `r σ` is the KKS form on generators.
 * `TauCeti.integralTopForm_smul_sphereAreaForm`: `r σ` integrates to `4π r` over `S²`, the KKS area
   of the coadjoint sphere of radius `r > 0`.
@@ -102,11 +109,9 @@ private theorem cross_mem_orthogonal (ξ : Fin 3 → ℝ) (x : S²) :
   exact dot_cross_self _ _
 
 private theorem exists_mvfderiv_eq_cross (ξ : Fin 3 → ℝ) (x : S²) :
-    ∃ v : TangentSpace (𝓡 2) x, mvfderiv (𝓡 2) ι x v = toLp 2 (ξ ⨯₃ ofLp (x : ℝ³)) := by
-  have h := cross_mem_orthogonal ξ x
-  rw [← range_mvfderiv_subtypeVal (n := 2)] at h
-  obtain ⟨v, hv⟩ := h
-  exact ⟨v, hv⟩
+    ∃ v : TangentSpace (𝓡 2) x, mvfderiv (𝓡 2) ι x v = toLp 2 (ξ ⨯₃ ofLp (x : ℝ³)) :=
+  exists_mvfderiv_coe_sphere_eq x
+    (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (cross_mem_orthogonal ξ x))
 
 /-- The tangent vector `ξ × x` at `x ∈ S²`. -/
 private def rotationTangent (ξ : Fin 3 → ℝ) (x : S²) : TangentSpace (𝓡 2) x :=
@@ -141,10 +146,8 @@ private theorem dotProduct_mvfderiv_eq_zero (x : S²) (v : TangentSpace (𝓡 2)
   rwa [EuclideanSpace.inner_eq_star_dotProduct, star_trivial] at h
 
 /-- `x ⬝ x = 1` on the unit sphere. -/
-private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp (x : ℝ³) = 1 := by
-  have h := real_inner_self_eq_norm_sq (x : ℝ³)
-  rw [norm_eq_of_mem_sphere, one_pow, EuclideanSpace.inner_eq_star_dotProduct, star_trivial] at h
-  exact h
+private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp (x : ℝ³) = 1 :=
+  EuclideanSpace.toLp_mem_sphere_zero_one_iff.1 (by rw [toLp_ofLp]; exact x.property)
 
 /-- The rotation field `x ↦ ξ × x` is a Hamiltonian vector field of the height `x ↦ x ⬝ ξ`. -/
 private theorem isHamiltonianVectorField_rotationTangent (ξ : Fin 3 → ℝ) :
@@ -261,6 +264,31 @@ theorem orbitTangent_sphereRotationAction (x : S²) : sphereRotationAction.orbit
     cross_cross_eq_smul_sub_smul, hxv]
   simp [dotProduct_self_eq_one]
 
+/-- **The scaled sphere is a coadjoint orbit of `SO(3)`.** For every `r` and every `x₀ ∈ S²`, the
+functionals `ν_(r x)` for `x ∈ S²` are exactly the coadjoint orbit of `SO(3)` through
+`ν_(r x₀)`. So `x ↦ ν_(r x)` parametrizes the coadjoint sphere of radius `|r|`, whose KKS form is
+transported to `r σ` by `TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`; for `r = 0` the
+orbit is the point `0`. -/
+theorem range_soThreeDualEquiv_smul_sphere (r : ℝ) (x₀ : S²) :
+    Set.range (fun x : S² ↦ soThreeDualEquiv ℝ (r • ofLp (x : ℝ³))) =
+      Set.range (fun g ↦ specialOrthogonalCoadjointRepresentation (Fin 3) ℝ g
+        (soThreeDualEquiv ℝ (r • ofLp (x₀ : ℝ³)))) := by
+  rw [range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv]
+  refine Set.ext fun ν ↦ ⟨?_, ?_⟩
+  · rintro ⟨x, rfl⟩
+    refine ⟨r • ofLp (x : ℝ³), ?_, rfl⟩
+    simp [dotProduct_self_eq_one]
+  · rintro ⟨p, hp, rfl⟩
+    simp only [Set.mem_ofPred_eq, smul_dotProduct, dotProduct_smul, dotProduct_self_eq_one,
+      smul_eq_mul, mul_one] at hp
+    rcases eq_or_ne r 0 with rfl | hr
+    · rw [mul_zero, dotProduct_self_eq_zero] at hp
+      exact ⟨x₀, by simp [hp]⟩
+    -- Otherwise `p = r x` for the unit vector `x = r⁻¹ p`.
+    have hx : toLp 2 (r⁻¹ • p) ∈ S² :=
+      EuclideanSpace.toLp_mem_sphere_zero_one_iff.2 (by simp [hp, hr])
+    exact ⟨⟨_, hx⟩, by simp [smul_smul, hr]⟩
+
 /-! ### The area -/
 
 /-- **The KKS area of the coadjoint sphere of radius `r > 0` is `4π r`.** For every real `r`, the
@@ -270,7 +298,7 @@ is the KKS form of the coadjoint sphere of radius `r` transported to `S²`
 is a signed integral. -/
 theorem integralTopForm_smul_sphereAreaForm (r : ℝ) :
     integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
-      (r • sphereAreaForm).1 = 4 * Real.pi * r := by
+      (r • sphereAreaForm).val = 4 * Real.pi * r := by
   rw [Submodule.coe_smul, integralTopForm_smul, sphereAreaForm_eq_sphereVolumeForm,
     Orientation.integralTopForm_sphereOrientation_sphereVolumeForm, mul_comm]
 

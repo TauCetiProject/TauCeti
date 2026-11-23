@@ -80,10 +80,10 @@ theorem unitsMap_even_mem_lipschitzGroup_of_finrank_eq_three (Q : QuadraticForm 
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   have hxe : ((x : even Q) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rw [← even_toSubmodule Q]
-    exact (x : even Q).2
+    exact (x : even Q).property
   have hxie : (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rw [← even_toSubmodule Q]
-    exact ((x⁻¹ : (even Q)ˣ) : even Q).2
+    exact ((x⁻¹ : (even Q)ˣ) : even Q).property
   -- The unit-map projection is the subalgebra inclusion, on values and inverses.
   change involute ((x : even Q) : CliffordAlgebra Q) * ι Q m *
     (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) ∈ LinearMap.range (ι Q)

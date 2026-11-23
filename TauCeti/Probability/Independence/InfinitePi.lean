@@ -121,4 +121,14 @@ theorem ae_eval_ne_eval_infinitePi {ι β : Type*} [MeasurableSpace β] [Measura
     Measure.prod_apply hdiag]
   simp
 
+/-- An atomless countable product sample has pairwise distinct coordinates almost surely. -/
+theorem ae_injective_infinitePi {ι β : Type*} [Countable ι] [MeasurableSpace β] [MeasurableEq β]
+    (P : ι → Measure β) [∀ i, IsProbabilityMeasure (P i)] [∀ i, NullSingletonClass (P i)] :
+    ∀ᵐ x ∂Measure.infinitePi P, Function.Injective x := by
+  simp only [Function.injective_iff_pairwise_ne, Pairwise]
+  refine ae_all_iff.2 fun i ↦ ae_all_iff.2 fun j ↦ ?_
+  by_cases hij : i = j
+  · exact Filter.Eventually.of_forall fun _ h ↦ (h hij).elim
+  · exact (ae_eval_ne_eval_infinitePi P hij).mono fun _ h _ ↦ h
+
 end TauCeti.Probability

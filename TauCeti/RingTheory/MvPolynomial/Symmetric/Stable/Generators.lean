@@ -28,12 +28,16 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 * `TauCeti.stableEsymm R n`, `TauCeti.stableHsymm R n`: the symmetric functions `e_n` and `h_n`.
 * `TauCeti.stablePsum R hn`: the power sum symmetric function `p_n`, for `hn : n ≠ 0`.
+* `TauCeti.stablePsumPart R μ`: the power-sum product symmetric function `p_μ` of a partition `μ`.
 * `TauCeti.SymmetricFunction.esymmAlgHom R`: the algebra homomorphism `R[X₀, X₁, …] → Λ_R` sending
   `X r` to `e_(r + 1)`.
 * `TauCeti.SymmetricFunction.esymmAlgEquiv R`: this homomorphism as an algebra equivalence.
 
 ## Main results
 
+* `TauCeti.stableSchur_ones`, `TauCeti.stableSchur_indiscrete`: `s_{(1ⁿ)} = e_n` and
+  `s_{(n)} = h_n`.
+* `TauCeti.SymmetricFunction.of_stablePsumPart`: `p_μ = p_(μ₁) p_(μ₂) ⋯` in `Λ_R`.
 * `TauCeti.SymmetricFunction.algHom_ext`: algebra homomorphisms out of `Λ_R` are determined by
   their values on the elementary symmetric functions.
 
@@ -41,7 +45,7 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 2: (2.4) for the free generation of `Λ` by the `e_r`, and the definitions of `h_r`
-  and `p_r`.
+  and `p_r`; Section 3 for `s_{(1ⁿ)} = e_n` and `s_{(n)} = h_n`.
 -/
 
 public section
@@ -71,6 +75,12 @@ theorem coe_stableSymmetricProj_stableEsymm (n d : ℕ) :
 theorem stableEsymm_zero : stableEsymm R 0 = stableSymmetricOne R :=
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
 
+/-- **The Schur function of the one-column partition `(1ⁿ)` is the elementary symmetric function
+`e_n`.** -/
+@[simp]
+theorem stableSchur_ones (n : ℕ) : stableSchur R (Nat.Partition.ones n) = stableEsymm R n :=
+  (rfl)
+
 /-- **The complete homogeneous symmetric function** `h_n`. -/
 noncomputable def stableHsymm (n : ℕ) : stableSymmetricSubmodule R n :=
   ⟨fun d => ⟨hsymm (Fin d) R n,
@@ -89,6 +99,13 @@ theorem coe_stableSymmetricProj_stableHsymm (n d : ℕ) :
 theorem stableHsymm_zero : stableHsymm R 0 = stableSymmetricOne R :=
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
 
+/-- **The Schur function of the one-row partition `(n)` is the complete homogeneous symmetric
+function `h_n`.** -/
+@[simp]
+theorem stableSchur_indiscrete (n : ℕ) :
+    stableSchur R (_root_.Nat.Partition.indiscrete n) = stableHsymm R n :=
+  stableSymmetricSubmodule_ext fun _ => Subtype.ext <| by simp
+
 /-- **The power sum symmetric function** `p_n`, for `n ≠ 0`. There is no stable `p_0`: the zeroth
 power sum in `d` variables is `d`. -/
 noncomputable def stablePsum {n : ℕ} (hn : n ≠ 0) : stableSymmetricSubmodule R n :=
@@ -102,7 +119,47 @@ theorem coe_stableSymmetricProj_stablePsum {n : ℕ} (hn : n ≠ 0) (d : ℕ) :
     (stableSymmetricProj R n d (stablePsum R hn) : MvPolynomial (Fin d) R) = psum (Fin d) R n := by
   rw [stablePsum, stableSymmetricProj_mk]
 
+/-- **The power-sum product symmetric function** `p_μ = p_(μ₁) p_(μ₂) ⋯` of a partition `μ` of
+`n`: the compatible family of the power-sum products `MvPolynomial.psumPart`. Unlike the zeroth
+power sum it is stable for every partition, since the parts of a partition are positive. -/
+noncomputable def stablePsumPart {n : ℕ} (μ : n.Partition) : stableSymmetricSubmodule R n :=
+  ⟨fun d => ⟨psumPart (Fin d) R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩,
+    mem_stableSymmetricSubmodule.mpr fun d => by
+      simp only [psumPart, map_multiset_prod, Multiset.map_map]
+      exact congrArg _ (Multiset.map_congr rfl fun i hi =>
+        aeval_snoc_zero_psum d (μ.parts_pos hi).ne')⟩
+
+/-- The power-sum product symmetric function `p_μ`, read in `d` variables, is the power-sum product
+polynomial. -/
+@[simp]
+theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d : ℕ) :
+    (stableSymmetricProj R n d (stablePsumPart R μ) : MvPolynomial (Fin d) R) =
+      psumPart (Fin d) R μ := by
+  rw [stablePsumPart, stableSymmetricProj_mk]
+
+/-- The power-sum product of the (unique, empty) partition of `0` is the unit of the symmetric
+functions. -/
+theorem stablePsumPart_zero (μ : Nat.Partition 0) : stablePsumPart R μ = stableSymmetricOne R := by
+  rw [Subsingleton.elim μ (.indiscrete 0)]
+  exact stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+
+/-- The power-sum product of the one-row partition `(n)` is the power sum `p_n`. -/
+theorem stablePsumPart_indiscrete {n : ℕ} (hn : n ≠ 0) :
+    stablePsumPart R (Nat.Partition.indiscrete n) = stablePsum R hn :=
+  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp [hn]
+
 namespace SymmetricFunction
+
+/-- **The power-sum product symmetric function is the product of the power sums of its parts**:
+`p_μ = p_(μ₁) p_(μ₂) ⋯` in the ring of symmetric functions. -/
+theorem of_stablePsumPart {n : ℕ} (μ : n.Partition) :
+    DirectSum.of _ n (stablePsumPart R μ) =
+      (μ.parts.pmap (fun i hi => DirectSum.of _ i (stablePsum R (Nat.pos_iff_ne_zero.mp hi)))
+        fun _ hi => μ.parts_pos hi).prod := by
+  refine ext_specialization fun d => ?_
+  rw [specialization_of, coe_stableSymmetricProj_stablePsumPart, map_multiset_prod,
+    Multiset.map_pmap]
+  simp only [specialization_of, coe_stableSymmetricProj_stablePsum, Multiset.pmap_eq_map, psumPart]
 
 /-- The algebra homomorphism from polynomials in countably many variables to the symmetric functions
 sending the variable `X r` to the elementary symmetric function `e_(r + 1)`. -/
@@ -156,9 +213,24 @@ end CommSemiring
 
 section CommRing
 
-namespace SymmetricFunction
-
 variable (R : Type*) [CommRing R]
+
+/-- The Schur coordinates of the elementary symmetric function: `e_n = s_(1ⁿ)` is the basis
+vector of index `(1ⁿ)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableEsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableEsymm R n) = Finsupp.single (Nat.Partition.ones n) 1 := by
+  rw [← stableSchur_ones, stableSchurBasis_repr_stableSchur]
+
+/-- The Schur coordinates of the complete homogeneous symmetric function: `h_n = s_(n)` is the
+basis vector of index `(n)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableHsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableHsymm R n) =
+      Finsupp.single (Nat.Partition.indiscrete n) 1 := by
+  rw [← stableSchur_indiscrete, stableSchurBasis_repr_stableSchur]
+
+namespace SymmetricFunction
 
 /-- **The elementary symmetric functions are algebraically independent.** -/
 theorem esymmAlgHom_injective : Function.Injective (esymmAlgHom R) := by
@@ -176,7 +248,7 @@ theorem esymmAlgHom_injective : Function.Injective (esymmAlgHom R) := by
 /-- A symmetric function of degree `n` is a polynomial in the elementary symmetric functions. -/
 private theorem of_mem_range_esymmAlgHom {n : ℕ} (f : stableSymmetricSubmodule R n) :
     DirectSum.of _ n f ∈ (esymmAlgHom R).range := by
-  have hf := mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n n f).2
+  have hf := mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n n f).property
   obtain ⟨q, hq⟩ :=
     MvPolynomial.esymmAlgHom_surjective R (σ := Fin n) (n := n) (by simp) ⟨_, hf.1⟩
   have hx :
