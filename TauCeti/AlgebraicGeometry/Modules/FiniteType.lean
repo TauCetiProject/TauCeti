@@ -6,16 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Generators
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
 
 /-!
-# Quotients and images of modules of finite type
+# Quotients, images, and tensor products of modules of finite type
 
 A quotient of an `𝒪_X`-module of finite type is of finite type, and so the image of a morphism
 out of a module of finite type is of finite type. Local generators of the source are carried to
 local generators of the quotient by Mathlib's `SheafOfModules.GeneratingSections.ofEpi`, after
-restriction to the slice site over each open, which preserves epimorphisms.
+restriction to the slice site over each open, which preserves epimorphisms. Likewise, the tensor
+product of two `𝒪_X`-modules of finite type is of finite type, by pairing local finite generators
+on a common refinement (`SheafOfModules.isFiniteType_tensorObj`).
 
 These closure properties produce the finite-type submodules of a quasi-coherent module: the image
 of `𝒪_X^n ⟶ N` for finitely many global sections of `N`.
@@ -26,6 +30,10 @@ of `𝒪_X^n ⟶ N` for finitely many global sections of `N`.
   is of finite type.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_image`: the image of a morphism out of a module
   of finite type is of finite type.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_cokernel`: the cokernel of a morphism into a
+  module of finite type is of finite type.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`: the tensor product of two modules of
+  finite type is of finite type.
 
 ## References
 
@@ -65,5 +73,16 @@ theorem isFiniteType_of_epi {M N : X.Modules} (p : M ⟶ N) [Epi p] [M.IsFiniteT
 instance isFiniteType_image {M N : X.Modules} (f : M ⟶ N) [M.IsFiniteType] :
     (image f).IsFiniteType :=
   isFiniteType_of_epi (factorThruImage f)
+
+/-- The cokernel of a morphism into a module of finite type is of finite type. -/
+instance isFiniteType_cokernel {M N : X.Modules} (f : M ⟶ N) [N.IsFiniteType] :
+    (cokernel f).IsFiniteType :=
+  isFiniteType_of_epi (cokernel.π f)
+
+open MonoidalCategory in
+/-- The tensor product of two `𝒪_X`-modules of finite type is of finite type. -/
+instance isFiniteType_tensorObj (M N : X.Modules) [M.IsFiniteType] [N.IsFiniteType] :
+    (M ⊗ N).IsFiniteType :=
+  SheafOfModules.isFiniteType_tensorObj (R := X.sheaf)
 
 end AlgebraicGeometry.Scheme.Modules

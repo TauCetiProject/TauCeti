@@ -57,9 +57,9 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- Exterior-derivative identity: if `dθ = -σ` at `x`, then
 `dθ(a • X_K, u) = -σ(a • X_K, u) = -a dK(u)`. -/
 private theorem mextDeriv_smul_hamiltonianVectorField (hσ : σ.IsNondegenerate)
-    {θ : SmoothForm I M ℝ 1} {K : M → ℝ} {x : M} (hdθ : mextDeriv θ.1 x = -σ.1 x) (a : ℝ)
+    {θ : SmoothForm I M ℝ 1} {K : M → ℝ} {x : M} (hdθ : mextDeriv θ.val x = -σ.val x) (a : ℝ)
     (u : TangentSpace I x) :
-    mextDeriv θ.1 x ![a • σ.hamiltonianVectorField K x, u] = -(a * mvfderiv I K x u) := by
+    mextDeriv θ.val x ![a • σ.hamiltonianVectorField K x, u] = -(a * mvfderiv I K x u) := by
   rw [hdθ, ContinuousAlternatingMap.neg_apply, ← SmoothBundleForm.eval₂_apply,
     SmoothBundleForm.eval₂_smul_left, hσ.eval₂_hamiltonianVectorField, smul_eq_mul]
 
@@ -78,9 +78,9 @@ two-form and `θ` a one-form with `dθ = -σ` at `ι s`, and suppose that the ta
 theorem IsNondegenerate.apply_hamiltonianVectorField_ne_zero (hσ : σ.IsNondegenerate)
     {θ : SmoothForm I M ℝ 1} {ι : S → M} (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm) {K : M → ℝ} {s : S}
-    (hdθ : mextDeriv θ.1 (ι s) = -σ.1 (ι s))
+    (hdθ : mextDeriv θ.val (ι s) = -σ.val (ι s))
     (hK : (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) :
-    θ.1 (ι s) ![σ.hamiltonianVectorField K (ι s)] ≠ 0 := by
+    θ.val (ι s) ![σ.hamiltonianVectorField K (ι s)] ≠ 0 := by
   have := SmoothForm.finiteDimensional_of_isContactForm_mpullback hι hα s
   have hdK (w : TangentSpace J s) : mvfderiv I K (ι s) (mfderiv J I ι s w) = 0 :=
     (LinearMap.exact_iff.2 hK.symm).apply_apply_eq_zero w
@@ -126,10 +126,10 @@ and the differential of `ι` sends the Reeb vector field of `ι^* θ` to `X_K / 
 theorem IsNondegenerate.mfderiv_reebVectorField_mpullback (hσ : σ.IsNondegenerate)
     {θ : SmoothForm I M ℝ 1} {ι : S → M} (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm) {K : M → ℝ} {s : S}
-    (hdθ : mextDeriv θ.1 (ι s) = -σ.1 (ι s))
+    (hdθ : mextDeriv θ.val (ι s) = -σ.val (ι s))
     (hK : (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) :
     mfderiv J I ι s ((SmoothForm.mpullback ι hι θ).reebVectorField s) =
-      (θ.1 (ι s) ![σ.hamiltonianVectorField K (ι s)])⁻¹ •
+      (θ.val (ι s) ![σ.hamiltonianVectorField K (ι s)])⁻¹ •
         σ.hamiltonianVectorField K (ι s) := by
   have := SmoothForm.finiteDimensional_of_isContactForm_mpullback hι hα s
   have hθK := hσ.apply_hamiltonianVectorField_ne_zero hι hα hdθ hK
@@ -137,12 +137,12 @@ theorem IsNondegenerate.mfderiv_reebVectorField_mpullback (hσ : σ.IsNondegener
     (LinearMap.exact_iff.2 hK.symm).apply_apply_eq_zero w
   -- Express `X_K / θ(X_K)` through a lift `v`.
   obtain ⟨v, hv⟩ := smul_hamiltonianVectorField_mem_range hσ hK
-    (θ.1 (ι s) ![σ.hamiltonianVectorField K (ι s)])⁻¹
+    (θ.val (ι s) ![σ.hamiltonianVectorField K (ι s)])⁻¹
   rw [ContinuousLinearMap.coe_coe] at hv
   set X := σ.hamiltonianVectorField K (ι s)
-  set c := θ.1 (ι s) ![X]
+  set c := θ.val (ι s) ![X]
   -- Scalar normalization: `θ(X_K / θ(X_K)) = 1`.
-  have hθv : θ.1 (ι s) ![c⁻¹ • X] = 1 := by
+  have hθv : θ.val (ι s) ![c⁻¹ • X] = 1 := by
     rw [← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
       smul_eq_mul, inv_mul_cancel₀ hθK]
   -- The lift `v` of `X_K / θ(X_K)` satisfies the two Reeb equations.

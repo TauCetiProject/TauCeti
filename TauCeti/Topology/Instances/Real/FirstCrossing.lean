@@ -58,7 +58,8 @@ theorem exists_eq_injOn_Ico_of_not_injOn [T2Space X] {σ : ℝ → X} {c d : ℝ
   have hnear {s t : ℝ} (hs : s ∈ Icc c d) (ht : t ∈ Icc c d) (hst : |t - s| < δ)
       (heq : σ s = σ t) : s = t := by
     obtain ⟨i, hi⟩ := hball s hs
-    exact hinj i i.2 ⟨hi (mem_ball_self hδ), hs⟩ ⟨hi (by rwa [mem_ball, Real.dist_eq]), ht⟩ heq
+    exact hinj i i.property ⟨hi (mem_ball_self hδ), hs⟩ ⟨hi (by rwa [mem_ball, Real.dist_eq]),
+        ht⟩ heq
   set K := (Icc c d ×ˢ Icc c d) ∩ {z : ℝ × ℝ | σ z.1 = σ z.2} ∩ {z | z.1 + δ ≤ z.2}
   have hmem {s t : ℝ} (hs : s ∈ Icc c d) (ht : t ∈ Icc c d) (hst : s < t) (heq : σ s = σ t) :
       (s, t) ∈ K := by

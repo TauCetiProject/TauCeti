@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
+public import TauCeti.Analysis.Analytic.IteratedDeriv
+public import TauCeti.Analysis.Complex.Euclidean.Space
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 import TauCeti.ModelTheory.Order
 
 /-!
@@ -20,6 +22,13 @@ The derivative graph is described by the epsilon-delta condition for the right-h
 limit of difference quotients. Introducing the two function values as quantified
 variables makes this a formula of ordered rings. Tarski–Seidenberg then applies.
 This also supplies the semialgebraic graph needed to differentiate Nash germs.
+
+Applying the real directional-derivative theorem coordinatewise to the real and imaginary parts
+shows that complex directional derivatives of complex-differentiable functions with semialgebraic
+realified graph remain semialgebraic (`TauCeti.IsSemialgebraicOn.fderiv_complex_apply`), and by
+induction every iterated vertical derivative in the `Sum.inr` coordinate of a holomorphic function
+with semialgebraic realified graph remains semialgebraic
+(`TauCeti.IsSemialgebraicOn.iteratedDerivInr`, `TauCeti.IsSemialgebraicOn.iteratedDerivInr_scalar`).
 
 ## References
 
@@ -185,5 +194,83 @@ theorem IsSemialgebraicOn.fderiv_apply [Finite σ]
         field_simp
       simpa [Real.dist_eq, smul_eq_mul, hid] using hquot
     exact tendsto_nhds_unique hder.tendsto_slope_zero_right hlim
+
+section ComplexDerivatives
+
+/-- A complex-differentiable map between finite complex coordinate spaces with semialgebraic
+realified graph on an open set `V` has semialgebraic realified directional derivative in every
+fixed direction `v`. -/
+theorem IsSemialgebraicOn.fderiv_complex_apply {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {V : Set (ι → ℂ)} {G : (ι → ℂ) → (κ → ℂ)}
+    (hGS : IsSemialgebraicOn (fun a ↦ complexToRealPi κ (G ((complexToRealPi ι).symm a)))
+      ((complexToRealPi ι).symm ⁻¹' V))
+    (hVo : IsOpen V) (hGd : DifferentiableOn ℂ G V) (v : ι → ℂ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi κ (fderiv ℂ G ((complexToRealPi ι).symm a) v))
+      ((complexToRealPi ι).symm ⁻¹' V) := by
+  let e := complexToRealPi ι
+  let e' := complexToRealPi κ
+  let S := e.symm ⁻¹' V
+  have hSo : IsOpen S := hVo.preimage e.symm.continuous
+  obtain ⟨hS, hcoords⟩ := isSemialgebraicOn_pi_iff.mp hGS
+  refine isSemialgebraicOn_pi_iff.mpr ⟨hS, fun j ↦ ?_⟩
+  let L : (κ → ℂ) →L[ℝ] ℝ :=
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ⊕ κ ↦ ℝ) j).comp e'.toContinuousLinearMap
+  let g : (ι ⊕ ι → ℝ) → ℝ := fun a ↦ L (G (e.symm a))
+  have hfd (a : ι ⊕ ι → ℝ) (ha : a ∈ S) :
+      HasFDerivAt g
+        (L.comp (((fderiv ℂ G (e.symm a)).restrictScalars ℝ).comp e.symm.toContinuousLinearMap))
+        a :=
+    L.hasFDerivAt.comp a
+      ((((hGd (e.symm a) ha).differentiableAt (hVo.mem_nhds ha)).hasFDerivAt.restrictScalars ℝ).comp
+        a e.symm.hasFDerivAt)
+  have hd : DifferentiableOn ℝ g S :=
+    fun a ha ↦ (hfd a ha).differentiableAt.differentiableWithinAt
+  have hgS : IsSemialgebraicOn (fun a (_ : Unit) ↦ g a) S := hcoords j
+  refine (hgS.fderiv_apply hSo hd (e v)).congr fun a ha ↦ funext fun _ ↦ ?_
+  dsimp only
+  rw [(hfd a ha).fderiv]
+  simp [L, e, e']
+
+/-- Every iterated derivative in the `Sum.inr` coordinate of a holomorphic map
+`F : (σ ⊕ τ → ℂ) → (κ → ℂ)` with semialgebraic realified graph on an open set `V` again has
+semialgebraic realified graph on `V`. -/
+theorem IsSemialgebraicOn.iteratedDerivInr {σ τ κ : Type*} [Fintype σ] [Unique τ] [Fintype κ]
+    {V : Set (σ ⊕ τ → ℂ)} {F : (σ ⊕ τ → ℂ) → (κ → ℂ)}
+    (hFS : IsSemialgebraicOn (fun a ↦ complexToRealPi κ (F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V))
+    (hVo : IsOpen V) (hFV : AnalyticOnNhd ℂ F V) (k : ℕ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi κ
+        (TauCeti.iteratedDerivInr k F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V) := by
+  induction k with
+  | zero => simpa only [iteratedDerivInr_zero] using hFS
+  | succ k ih =>
+    have hGa : AnalyticOnNhd ℂ (TauCeti.iteratedDerivInr k F) V := hFV.iteratedDerivInr k
+    refine (ih.fderiv_complex_apply hVo hGa.differentiableOn (Sum.elim 0 (fun _ ↦ 1))).congr
+      fun a ha ↦ ?_
+    rw [(hGa _ ha).differentiableAt.iteratedDerivInr_succ_eq_fderiv]
+
+/-- Scalar form of `TauCeti.IsSemialgebraicOn.iteratedDerivInr`: every iterated derivative in the
+`Sum.inr` coordinate of a holomorphic scalar function `F : (σ ⊕ τ → ℂ) → ℂ` with semialgebraic
+realified graph on an open set `V` again has semialgebraic realified graph on `V`. -/
+theorem IsSemialgebraicOn.iteratedDerivInr_scalar {σ τ : Type*} [Fintype σ] [Unique τ]
+    {V : Set (σ ⊕ τ → ℂ)} {F : (σ ⊕ τ → ℂ) → ℂ}
+    (hFS : IsSemialgebraicOn
+      (fun a ↦ complexToRealPi Unit (fun _ ↦ F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V))
+    (hVo : IsOpen V) (hFV : AnalyticOnNhd ℂ F V) (k : ℕ) :
+    IsSemialgebraicOn
+      (fun a ↦ complexToRealPi Unit
+        (fun _ ↦ TauCeti.iteratedDerivInr k F ((complexToRealPi (σ ⊕ τ)).symm a)))
+      ((complexToRealPi (σ ⊕ τ)).symm ⁻¹' V) := by
+  have hFpi : AnalyticOnNhd ℂ (fun z (_ : Unit) ↦ F z) V :=
+    fun z hz ↦ AnalyticAt.pi fun _ ↦ hFV z hz
+  refine (hFS.iteratedDerivInr hVo hFpi k).congr fun a _ ↦ ?_
+  dsimp only
+  rw [iteratedDerivInr_const_pi]
+
+end ComplexDerivatives
 
 end TauCeti

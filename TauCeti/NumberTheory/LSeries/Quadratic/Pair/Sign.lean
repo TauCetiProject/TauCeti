@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.Data.Nat.GCD
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The sign of the four-factor product to the left of `1`

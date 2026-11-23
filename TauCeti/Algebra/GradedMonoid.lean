@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Ring
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Dependent products over finite sets in graded commutative monoids
@@ -24,6 +25,11 @@ characterized by `GradedMonoid.mk_finset_dProd`, which identifies it with the pr
 element of `A (∑ a ∈ s, fι a)` be recognized as the product by that equation, so the cast never has
 to be unfolded.
 
+For a graded monoid given by a family of subobjects `𝒜 : ι → S`, Mathlib's
+`SetLike.list_prod_ofFn_mem_graded` places an ordered product of homogeneous elements in the piece
+of the total degree. Its form for the first `n` entries of a natural-indexed family, with the
+total degree written as a sum over `Finset.range n`, is `SetLike.list_prod_ofFn_val_mem_graded`.
+
 ## Main definitions
 
 * `Finset.dProd`: the dependent product over a finite set of homogeneous elements of a graded
@@ -38,43 +44,35 @@ to be unfolded.
 * `Finset.map_dProd`: degree-preserving maps respecting the unit and the multiplication commute
   with dependent products.
 * `DirectSum.of_finset_dProd`: in the direct sum, the dependent product is the ordinary product.
+* `SetLike.list_prod_ofFn_val_mem_graded`: for a graded monoid given by a family of subobjects, the
+  ordered product of the first `n` entries of a natural-indexed family of homogeneous elements is
+  homogeneous of the total degree.
 -/
 
 public section
 
 variable {ι α : Type*} {A : ι → Type*}
 
-namespace GradedMonoid
+section GCommMonoid
 
-variable [AddCommMonoid ι] [GCommMonoid A]
+variable [AddCommMonoid ι] [GradedMonoid.GCommMonoid A]
 
 /-- The degree of a finite product of homogeneous elements is the sum of their degrees. -/
 @[simp]
-theorem fst_prod (s : Finset α) (f : α → GradedMonoid A) :
+theorem GradedMonoid.fst_prod (s : Finset α) (f : α → GradedMonoid A) :
     (∏ a ∈ s, f a).fst = ∑ a ∈ s, (f a).fst := by
-  induction s using Finset.cons_induction with
-  | empty => rfl
-  | cons a s ha ih => rw [Finset.prod_cons, Finset.sum_cons, fst_mul, ih]
-
-end GradedMonoid
-
-namespace Finset
-
-variable [AddCommMonoid ι] [GradedMonoid.GCommMonoid A]
+  induction s using Finset.cons_induction <;> simp [*]
 
 /-- The **dependent product** over a finite set `s` of homogeneous elements `fA a : A (fι a)` of a
 graded commutative monoid, an element of degree `∑ a ∈ s, fι a`. This is the unordered counterpart
 of `List.dProd`; it is characterized by `GradedMonoid.mk_finset_dProd`. -/
-def dProd (s : Finset α) (fι : α → ι) (fA : ∀ a, A (fι a)) : A (∑ a ∈ s, fι a) :=
+def Finset.dProd (s : Finset α) (fι : α → ι) (fA : ∀ a, A (fι a)) : A (∑ a ∈ s, fι a) :=
   cast (congrArg A (GradedMonoid.fst_prod s fun a ↦ GradedMonoid.mk (fι a) (fA a)))
     (∏ a ∈ s, GradedMonoid.mk (fι a) (fA a)).snd
 
-end Finset
-
 /-- **The characteristic equation of `Finset.dProd`**: as an element of `GradedMonoid A`, the
 dependent product is the product of the homogeneous factors. -/
-theorem GradedMonoid.mk_finset_dProd [AddCommMonoid ι] [GCommMonoid A] (s : Finset α)
-    (fι : α → ι) (fA : ∀ a, A (fι a)) :
+theorem GradedMonoid.mk_finset_dProd (s : Finset α) (fι : α → ι) (fA : ∀ a, A (fι a)) :
     mk _ (s.dProd fι fA) = ∏ a ∈ s, mk (fι a) (fA a) :=
   -- the one place the cast in the definition is unfolded
   Sigma.ext (fst_prod s fun a ↦ mk (fι a) (fA a)).symm
@@ -82,15 +80,13 @@ theorem GradedMonoid.mk_finset_dProd [AddCommMonoid ι] [GCommMonoid A] (s : Fin
 
 namespace Finset
 
-variable [AddCommMonoid ι] [GradedMonoid.GCommMonoid A]
-
 /-- An element of degree `∑ a ∈ s, fι a` is the dependent product exactly when, as an element of
 `GradedMonoid A`, it is the product of the homogeneous factors. -/
 theorem eq_dProd_iff {s : Finset α} {fι : α → ι} {fA : ∀ a, A (fι a)}
     {x : A (∑ a ∈ s, fι a)} :
     x = s.dProd fι fA ↔ GradedMonoid.mk _ x = ∏ a ∈ s, GradedMonoid.mk (fι a) (fA a) := by
   rw [← GradedMonoid.mk_finset_dProd]
-  exact ⟨congrArg _, fun h ↦ sigma_mk_injective h⟩
+  exact sigma_mk_injective.eq_iff.symm
 
 /-- A degree-preserving map between graded commutative monoids that respects the unit and the
 multiplication commutes with dependent products over finite sets. -/
@@ -110,6 +106,8 @@ theorem map_dProd {B : ι → Type*} [GradedMonoid.GCommMonoid B] (F : ∀ {i}, 
 
 end Finset
 
+end GCommMonoid
+
 /-- In the direct sum of a graded commutative semiring, the dependent product over a finite set is
 the ordinary product of the homogeneous components. -/
 theorem DirectSum.of_finset_dProd [DecidableEq ι] [AddCommMonoid ι] [∀ i, AddCommMonoid (A i)]
@@ -121,3 +119,13 @@ theorem DirectSum.of_finset_dProd [DecidableEq ι] [AddCommMonoid ι] [∀ i, Ad
       map_one' := rfl
       map_mul' := fun x y ↦ (of_mul_of x.snd y.snd).symm }
   exact (congrArg Φ (GradedMonoid.mk_finset_dProd s fι fA)).trans (map_prod Φ _ s)
+
+/-- The product of the first `n` entries of a natural-indexed family of homogeneous elements is
+homogeneous of the sum of their degrees. -/
+theorem SetLike.list_prod_ofFn_val_mem_graded {S M : Type*} [AddCommMonoid ι] [Monoid M]
+    [SetLike S M] (𝒜 : ι → S) [SetLike.GradedMonoid 𝒜] {n : ℕ} (b : ℕ → M) (e : ℕ → ι)
+    (hb : ∀ i < n, b i ∈ 𝒜 (e i)) :
+    (List.ofFn fun j : Fin n ↦ b j).prod ∈ 𝒜 (∑ i ∈ Finset.range n, e i) := by
+  have h := SetLike.list_prod_ofFn_mem_graded (fun j : Fin n ↦ e j) (fun j : Fin n ↦ b j)
+    fun j ↦ hb j j.isLt
+  rwa [List.sum_ofFn, Fin.sum_univ_eq_sum_range (fun i ↦ e i)] at h
