@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.FormalCompletion
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
+public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
 # Coherent formal modules on adic thickening systems
@@ -34,9 +35,10 @@ formal completion of a Noetherian scheme the category is nevertheless abelian
 `Scheme.formalCompletion.completionFunctor X I`, from finitely presented `𝒪_X`-modules to
 coherent formal modules on `X.formalCompletion I`, sends `M` to the system of its restrictions
 `M / I ^ (n + 1) M` to the infinitesimal neighbourhoods `V(I ^ (n + 1))`, i.e. to the pullbacks of
-`M` along the closed immersions `V(I ^ (n + 1)) ⟶ X`; it is additive. Finite presentation is the
-condition preserved by pullback along arbitrary morphisms of schemes, which is why the levels are
-required to be finitely presented rather than merely coherent.
+`M` along the closed immersions `V(I ^ (n + 1)) ⟶ X`; it is additive, and restricts to finite
+locally free sheaves as `Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor X I`. Finite
+presentation is the condition preserved by pullback along arbitrary morphisms of schemes, which is
+why the levels are required to be finitely presented rather than merely coherent.
 
 Coherent formal modules pull back along morphisms `g : 𝔛 ⟶ 𝔜` of adic thickening systems, level by
 level. Pulling back along the morphism of formal completions induced by the inclusion of an open
@@ -65,12 +67,17 @@ scheme reduce to affine opens, where it is described by finite modules over the 
   preserving epimorphisms.
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
+* `AlgebraicGeometry.Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor`: its restriction
+  to `FiniteLocallyFreeSheaf X`.
 
 ## Main results
 
 * `CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange`: a morphism of coherent formal
   modules is an isomorphism if and only if its pullbacks along a family of morphisms of adic
   thickening systems that are levelwise open covers are.
+* `AlgebraicGeometry.Scheme.formalCompletion.hom_ext_of_isFiniteLocallyFree`: under faithfulness of
+  `finiteLocallyFreeCompletionFunctor X I`, morphisms of finite locally free `𝒪_X`-modules are
+  determined by their pullbacks to all levels of `X.formalCompletion I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.isIso_iff_of_isOpenCover`: a morphism of coherent
   formal modules on `X/V(I)` is an isomorphism if and only if its restrictions to the formal
   completions of the members of an open cover of `X` are.
@@ -502,6 +509,34 @@ theorem completionFunctor_map_app {M N : FinitelyPresentedSheaf X} (φ : M ⟶ N
 /-- The completion functor is additive, since pullback of modules is additive at every level. -/
 instance completionFunctor_additive : (completionFunctor X I).Additive where
   map_add := CoherentFormalModule.hom_ext fun _ ↦ (Modules.pullback _).map_add
+
+/-- The restriction of `completionFunctor X I` to finite locally free sheaves on `X`, sending `E`
+to the coherent formal module `(E / I ^ (n + 1) E)ₙ` on `X.formalCompletion I`. Because this is an
+abbreviation for `FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙ completionFunctor X I`, `Full`
+and `Faithful` instances on `completionFunctor X I` restrict automatically to
+`finiteLocallyFreeCompletionFunctor X I`. -/
+noncomputable abbrev finiteLocallyFreeCompletionFunctor :
+    FiniteLocallyFreeSheaf X ⥤ CoherentFormalModule (X.formalCompletion I) :=
+  FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙ completionFunctor X I
+
+/-- If `finiteLocallyFreeCompletionFunctor X I` is faithful, two morphisms between finite locally
+free `𝒪_X`-modules are equal as soon as their pullbacks to all levels `V(I ^ (n + 1))` of the
+formal completion agree. -/
+theorem hom_ext_of_isFiniteLocallyFree {X : Scheme.{u}} (I : X.IdealSheafData)
+    [(finiteLocallyFreeCompletionFunctor X I).Faithful]
+    {M N : X.Modules} (hM : Modules.isFiniteLocallyFree X M)
+    (hN : Modules.isFiniteLocallyFree X N) {f g : M ⟶ N}
+    (h : ∀ n, (Modules.pullback (toScheme X I n)).map f =
+      (Modules.pullback (toScheme X I n)).map g) :
+    f = g := by
+  let E : FiniteLocallyFreeSheaf X := ⟨M, hM⟩
+  let F : FiniteLocallyFreeSheaf X := ⟨N, hN⟩
+  let fE : E ⟶ F := ObjectProperty.homMk f
+  let gE : E ⟶ F := ObjectProperty.homMk g
+  have hfg : (finiteLocallyFreeCompletionFunctor X I).map fE =
+      (finiteLocallyFreeCompletionFunctor X I).map gE :=
+    CoherentFormalModule.hom_ext h
+  exact congrArg (·.hom) ((finiteLocallyFreeCompletionFunctor X I).map_injective hfg)
 
 /-- **Isomorphisms of coherent formal modules on a formal completion are local on the scheme.** For
 an open cover `U` of `X`, a morphism of coherent formal modules on `X/V(I)` is an isomorphism if

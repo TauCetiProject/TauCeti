@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -56,6 +56,8 @@ vanishes near it.
   connection.
 * `CovariantDerivative.cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero`: the Cotton
   tensor vanishes at a point near which the curvature vanishes.
+* `CovariantDerivative.cottonTensor_eq_zero_of_finrank_eq_two`: the Cotton tensor vanishes
+  identically in dimension `2` by the `(2 - 2)⁻¹ = 0` convention for `P`.
 * `CovariantDerivative.IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner`:
   the Cotton tensor vanishes when `P` is a constant multiple of the metric.
 * `IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub`, in the
@@ -205,15 +207,11 @@ theorem IsMetricCompatible.derivSchoutenTensor_eq
   ring
 
 omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
-/-- The covariant derivative of the Schouten tensor vanishes at a point near which the curvature
-vanishes, since the Schouten tensor then vanishes near that point. -/
-theorem derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
-    (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.derivSchoutenTensor x = 0 := by
+private theorem derivSchoutenTensor_eq_zero_of_eventually_schoutenTensor_eq_zero {x : M}
+    (hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0) : cov.derivSchoutenTensor x = 0 := by
   by_cases hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
       MDiffAt (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap (σ y) (τ y)) x
-  · have hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0 :=
-      h.mono fun y hy ↦ cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y hy
-    ext u v w
+  · ext u v w
     have hpair : (fun y ↦ cov.schoutenTensor y (FiberBundle.extend E u y)
         (FiberBundle.extend E v y)) =ᶠ[𝓝 x] fun _ ↦ 0 :=
       hP.mono fun y hy ↦ by simp [hy]
@@ -224,11 +222,30 @@ theorem derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M
   · rw [derivSchoutenTensor_def, cov.derivBilinearTensor_eq_zero_of_not hb]
 
 omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
+/-- The covariant derivative of the Schouten tensor vanishes at a point near which the curvature
+vanishes, since the Schouten tensor then vanishes near that point. -/
+theorem derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
+    (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.derivSchoutenTensor x = 0 :=
+  cov.derivSchoutenTensor_eq_zero_of_eventually_schoutenTensor_eq_zero <|
+    h.mono fun y hy ↦ cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y hy
+
+omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
 /-- The Cotton tensor vanishes at a point near which the curvature vanishes. -/
 theorem cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
     (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.cottonTensor x = 0 := by
   ext u v w
   simp [cov.derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero h]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
+/-- In dimension `2`, the Cotton tensor vanishes identically, since the Schouten tensor vanishes
+by the `(2 - 2)⁻¹ = 0` convention. -/
+theorem cottonTensor_eq_zero_of_finrank_eq_two (hn : Module.finrank ℝ E = 2) (x : M) :
+    cov.cottonTensor x = 0 := by
+  have hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0 := Eventually.of_forall fun y ↦ by
+    ext u v
+    simp [schoutenTensor_apply, TauCeti.finrank_tangentSpace, hn]
+  ext u v w
+  simp [cov.derivSchoutenTensor_eq_zero_of_eventually_schoutenTensor_eq_zero hP]
 
 end Smooth
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.Mixed.Strictness
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Sub-mixed Hodge structures

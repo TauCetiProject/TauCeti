@@ -41,19 +41,19 @@ theorem exists_uniform_repeated_representatives {α β : Type*} [Finite α] [Fin
   classical
   -- All finite fibres lie before one cutoff.
   let bad := {b : β // {n : ℕ | B n = b}.Finite}
-  have hbad : (⋃ b : bad, {n : ℕ | B n = b.1}).Finite :=
-    Set.finite_iUnion fun b ↦ b.2
+  have hbad : (⋃ b : bad, {n : ℕ | B n = b.val}).Finite :=
+    Set.finite_iUnion fun b ↦ b.property
   obtain ⟨M, hM⟩ := hbad.bddAbove
   have hinfinite (x : ℕ) (hx : M + 1 ≤ x) : {n : ℕ | B n = B x}.Infinite := by
     intro hfinite
-    have hmem : x ∈ ⋃ b : bad, {n : ℕ | B n = b.1} :=
+    have hmem : x ∈ ⋃ b : bad, {n : ℕ | B n = b.val} :=
       Set.mem_iUnion.mpr ⟨⟨B x, hfinite⟩, rfl⟩
     have := hM hmem
     omega
   -- Select a collision in each infinite fibre and bound all the selected points at once.
   let good := {b : β // {n : ℕ | B n = b}.Infinite}
-  have hpairs (b : good) : ∃ u, B u = b.1 ∧ ∃ v, B v = b.1 ∧ u ≠ v ∧ A u = A v :=
-    b.2.exists_ne_map_eq_of_mapsTo (fun _ _ ↦ Set.mem_univ _) (Set.finite_univ :
+  have hpairs (b : good) : ∃ u, B u = b.val ∧ ∃ v, B v = b.val ∧ u ≠ v ∧ A u = A v :=
+    b.property.exists_ne_map_eq_of_mapsTo (fun _ _ ↦ Set.mem_univ _) (Set.finite_univ :
       (Set.univ : Set α).Finite)
   choose u hu v hv hne hA using hpairs
   obtain ⟨K, hK⟩ := ((Set.finite_range u).union (Set.finite_range v)).bddAbove

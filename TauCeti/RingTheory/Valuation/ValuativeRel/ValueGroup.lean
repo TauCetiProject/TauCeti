@@ -112,7 +112,7 @@ theorem mapValueGroupWithZero_comp :
   congr 1
   · exact (IsScalarTower.algebraMap_apply A B C r).symm
   · ext
-    exact (IsScalarTower.algebraMap_apply A B C s.1).symm
+    exact (IsScalarTower.algebraMap_apply A B C s.val).symm
 
 /-- Applying `mapValueGroupWithZero` in two steps along a tower agrees with the composite map. -/
 @[simp]

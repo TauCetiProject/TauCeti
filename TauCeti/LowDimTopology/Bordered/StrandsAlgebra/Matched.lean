@@ -123,6 +123,10 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_apply_idOn`: the coefficient of `I(s)` at the identity
+  diagram of a set of points over `s` is `1`.
+* `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
+  value at the identity diagrams of any two sets of points over the same pairs.
 
 ## References
 
@@ -451,7 +455,7 @@ theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
 choosing one point over each element of `s` gives an identity diagram with coefficient `1`. -/
 theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
     (hs : (s : Set β) ⊆ Set.range M) : matchedIdem R M s ≠ 0 := by
-  choose f hf using fun b : s ↦ hs b.2
+  choose f hf using fun b : s ↦ hs b.property
   have hf' : Function.Injective f := fun b c h ↦ Subtype.ext (by simpa [hf] using congrArg M h)
   have hS : (s.attach.image f).image M = s := by
     ext b
@@ -587,6 +591,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   simp only [matchedChoices, mem_filter, mem_univ, true_and]
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
+
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+@[simp]
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
 
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
@@ -1256,6 +1273,32 @@ theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ ma
 
 end Span
 
+/-! ### The idempotents `I(s)` and the identity diagrams -/
+
+section IdemIdOn
+
+variable [DecidableEq β] {M : α → β} {s : Finset β}
+
+/-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
+@[simp]
+theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
+    (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
+  rw [mem_matchedChoices] at hS
+  have hcard : #S = #s := by rw [← hS.1, card_image_of_injOn hS.2]
+  simp [repr_matchedIdem_apply, hS.1, hcard]
+
+/-- An element of the matched subalgebra takes the same value at the identity diagrams of any two
+sets of points over the same pairs: they differ by moving horizontal strands within matched
+pairs. -/
+theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {S T : Finset α} (hS : S ∈ matchedChoices M s) (hT : T ∈ matchedChoices M s) :
+    (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
+  refine repr_eq_of_matchedSetoid hx ?_
+  simpa [idOn_addHorizontal] using
+    (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
+
+end IdemIdOn
+
 /-! ### The unit of the matched subalgebra -/
 
 section SubalgebraUnit
@@ -1339,8 +1382,8 @@ theorem coe_matchedSubalgebra_one :
 /-- The matched subalgebra is a unital algebra, with unit `TauCeti.StrandsAlgebra.matchedOne`. -/
 instance : Semiring (matchedSubalgebra R M) where
   __ := (matchedSubalgebra R M).toNonUnitalSemiring
-  one_mul x := Subtype.ext (matchedOne_mul_of_mem_matchedSubalgebra x.2)
-  mul_one x := Subtype.ext (mul_matchedOne_of_mem_matchedSubalgebra x.2)
+  one_mul x := Subtype.ext (matchedOne_mul_of_mem_matchedSubalgebra x.property)
+  mul_one x := Subtype.ext (mul_matchedOne_of_mem_matchedSubalgebra x.property)
 
 instance {R : Type*} [CommRing R] : Ring (matchedSubalgebra R M) where
   __ := (inferInstance : Semiring (matchedSubalgebra R M))

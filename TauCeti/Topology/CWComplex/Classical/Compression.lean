@@ -79,7 +79,7 @@ theorem exists_homotopicRel_range_subset
       ⟨fun x hx ↦ hgg'.fst_eq_snd hx ▸ hg hx, fun j y ↦ hg' j y ▸ hψB j ⟨y, rfl⟩⟩⟩
   obtain ⟨g, hg, hfg⟩ := exists_homotopicRel_forall_mapsTo_skeletonLT (fun _ ↦ B) step f hf
   refine ⟨g, hfg, range_subset_iff.2 fun x ↦ ?_⟩
-  obtain ⟨n, hn⟩ := exists_mem_skeletonLT_add 0 x.2
+  obtain ⟨n, hn⟩ := exists_mem_skeletonLT_add 0 x.property
   exact hg (0 + n) hn
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # Unramifiedness and separability at one prime
@@ -52,5 +53,41 @@ theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_quotient
   let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
   rw [isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField,
     Algebra.isSeparable_residueField_iff]
+
+/-- At a maximal ideal `q` of `S` lying over the maximal ideal of a local ring `R`, separability
+of `(S ⧸ q) / (R ⧸ maximalIdeal R)` is equivalent to separability of
+`ResidueField (Localization.AtPrime q) / ResidueField R`. -/
+theorem isSeparable_quotient_iff_residueField [IsLocalRing R] (q : Ideal S) [q.IsMaximal]
+    [q.LiesOver (IsLocalRing.maximalIdeal R)] :
+    letI := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
+    letI := Ideal.Quotient.field q
+    letI := Localization.AtPrime.isLocalHom_algebraMap_of_liesOver (R := R) q
+    Algebra.IsSeparable (R ⧸ IsLocalRing.maximalIdeal R) (S ⧸ q) ↔
+      Algebra.IsSeparable (IsLocalRing.ResidueField R)
+        (IsLocalRing.ResidueField (Localization.AtPrime q)) := by
+  have := Localization.AtPrime.isLocalHom_algebraMap_of_liesOver (R := R) q
+  let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
+  let := Ideal.Quotient.field q
+  let eR : (R ⧸ IsLocalRing.maximalIdeal R) ≃+* IsLocalRing.ResidueField R :=
+    (Ideal.quotEquivOfEq (IsLocalRing.ker_residue (R := R)).symm).trans
+      (RingHom.quotientKerEquivOfSurjective IsLocalRing.residue_surjective)
+  let eS : (S ⧸ q) ≃+* IsLocalRing.ResidueField (Localization.AtPrime q) :=
+    RingEquiv.ofBijective (algebraMap (S ⧸ q) q.ResidueField)
+      q.bijective_algebraMap_quotient_residueField
+  refine Algebra.IsSeparable.iff_of_equiv_equiv eR eS ?_
+  refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
+  have heR : eR (Ideal.Quotient.mk (IsLocalRing.maximalIdeal R) r) = IsLocalRing.residue R r := by
+    simp [eR]
+  have hquot : algebraMap (R ⧸ IsLocalRing.maximalIdeal R) (S ⧸ q)
+      (Ideal.Quotient.mk (IsLocalRing.maximalIdeal R) r) =
+      algebraMap S (S ⧸ q) (algebraMap R S r) := by
+    rw [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply R _ (S ⧸ q),
+      IsScalarTower.algebraMap_apply R S (S ⧸ q)]
+  simp only [RingHom.comp_apply, RingHom.coe_coe]
+  rw [heR, IsLocalRing.ResidueField.algebraMap_residue, hquot, RingEquiv.ofBijective_apply,
+    ← IsScalarTower.algebraMap_apply S (S ⧸ q) q.ResidueField,
+    IsScalarTower.algebraMap_apply S (Localization.AtPrime q) q.ResidueField,
+    IsLocalRing.ResidueField.algebraMap_eq,
+    ← IsScalarTower.algebraMap_apply R S (Localization.AtPrime q)]
 
 end Ideal

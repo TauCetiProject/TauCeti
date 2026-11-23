@@ -199,13 +199,13 @@ theorem mapDGNerve_comp_fromHomotopyCategory :
   have hx' := hmap x _ hx
   have hy' := hmap y _ hy
   have hl := dgNerve.fromHomotopyCategory_map_homMk_heq R D (e'.map F.mapDGNerve)
-    hx' hy' (F.dgMap 0 c.1) (F.dgMap_mem_dgCycles c.2) (by
+    hx' hy' (F.dgMap 0 c.val) (F.dgMap_mem_dgCycles c.property) (by
       rw [SSet.Edge.map_edge, mapDGNerve_app]
       exact heq_of_eq (F.mapDGNerveSimplex_coh e'.edge 0 1 ∅ 0
         (by decide) (empty_subset _) (by simp)))
   have hr := F.mapDGHomotopyCategory.map_heq
     (hfrom x _ hx) (hfrom y _ hy)
-    (dgNerve.fromHomotopyCategory_map_homMk_heq R C e' hx hy c.1 c.2 HEq.rfl)
+    (dgNerve.fromHomotopyCategory_map_homMk_heq R C e' hx hy c.val c.property HEq.rfl)
   rw [mapDGHomotopyCategory_map_homOf] at hr
   exact (conj_eqToHom_iff_heq' _ _ _ _).2 (hl.trans hr.symm)
 

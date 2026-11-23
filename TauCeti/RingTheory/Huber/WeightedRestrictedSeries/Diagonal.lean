@@ -213,7 +213,7 @@ theorem exists_eq_weightedRename_add_weightedX_mul_weightedRename_add_one_sub_mu
           (1 - weightedX _ isWeightFamily_one_weight 0 * weightedX _ isWeightFamily_one_weight 1) *
             w := by
   obtain ⟨a, b, w, ha, hb, hw, h⟩ := exists_eq_rename_add_X_mul_rename_add_one_sub_mul
-    (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp u.2))
+    (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp u.property))
   refine ⟨⟨a, ?_⟩, ⟨b, ?_⟩, ⟨w, ?_⟩, Subtype.ext <| by simpa using h⟩ <;>
     simpa [isWeightedRestricted_one_weight_iff]
 
@@ -234,7 +234,7 @@ theorem exists_eq_weightedC_of_weightedRename_sub_weightedRename_eq_one_sub_mul 
     ∃ c : A, a = weightedC _ isWeightFamily_one_weight c ∧
       b = weightedC _ isWeightFamily_one_weight c := by
   obtain ⟨c, ha, hb⟩ := exists_eq_C_of_rename_sub_rename_eq_one_sub_mul (a := a) (b := b)
-    (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp w.2))
+    (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp w.property))
     (by simpa using congrArg Subtype.val h)
   exact ⟨c, Subtype.ext (by simp [ha]), Subtype.ext (by simp [hb])⟩
 

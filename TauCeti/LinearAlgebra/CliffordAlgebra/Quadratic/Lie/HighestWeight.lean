@@ -249,7 +249,7 @@ theorem exists_isHighestWeightVector_weylVector_kostant :
     ∃ c : CliffordAlgebra (killingQuadraticForm K L),
       IsHighestWeightVector base (weylVector (IsKilling.rootSystem H) base) c := by
   classical
-  choose e he he0 using fun α : H.root ↦ Weight.exists_ne_zero (R := K) (L := H) (M := L) α.1
+  choose e he he0 using fun α : H.root ↦ Weight.exists_ne_zero (R := K) (L := H) (M := L) α.val
   exact ⟨_, isHighestWeightVector_weylVector_prod_map_ι_rootVector (l :=
     (posRootsFinset (IsKilling.rootSystem H) base).toList) e (fun α _ ↦ he α) (fun α _ ↦ he0 α)
     (fun α ↦ by rw [Finset.mem_toList, mem_posRootsFinset])

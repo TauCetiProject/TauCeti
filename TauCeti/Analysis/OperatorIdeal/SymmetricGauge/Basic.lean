@@ -397,7 +397,8 @@ theorem apply_le_apply_of_forall_sum_le {a b : ℕ →₀ ℝ≥0} (ha : Antiton
     rw [← (Finsupp.eq_indicator_self_iff _).mpr hc]
   have hle := (Φ.isSymmetricGauge_finSeminorm N).apply_le_of_prefixSum_le
     (y := fun i => b i) (z := fun i => a i)
-    (fun i j hij => NNReal.coe_le_coe.2 (ha (Fin.le_def.1 hij))) (fun i => (a i).2) fun k => by
+    (fun i j hij => NNReal.coe_le_coe.2 (ha (Fin.le_def.1 hij))) (fun i =>
+        (a i).property) fun k => by
       rw [prefixSum_eq_sum_range k fun n => (a n : ℝ), prefixSum_eq_sum_range k fun n => (b n : ℝ)]
       exact_mod_cast h (min k N)
   rwa [hrestrict a (subset_union_left.trans hN), hrestrict b (subset_union_right.trans hN),
