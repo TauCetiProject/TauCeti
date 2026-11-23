@@ -147,6 +147,7 @@ variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j} [DecidableEq m]
 
 local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- **Higher Hochschild classes of a zigzag algebra from a matrix representation of a bipartite
 subgraph.** Let `f` be a copy of a bipartite graph `H` in `G`, not necessarily induced, and let
 `β` be a family of matrices on `H` satisfying the signless relations
@@ -157,7 +158,7 @@ coefficient one on that walk, is a Hochschild cocycle of the strict zigzag algeb
 (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`) which is not the
 Hochschild differential of any suspended cochain of degree zero. -/
 theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero
-    (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
+    [H.LocallyFinite] (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {n : ℕ} (hn : 1 ≤ n)
     {w : Fin (n + 2) → H.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod ≠ 0) :
@@ -241,9 +242,11 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
   exact one_ne_zero
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- A detected loop gives a nonzero higher Hochschild class. -/
 theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
-    (β : W → W → Matrix m m k) (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
+    [H.LocallyFinite] (β : W → W → Matrix m m k)
+    (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
     (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n) {u : Fin (n + 2) → H.Dart}
     (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod ≠ 0) :

@@ -279,6 +279,7 @@ section CyclicClass
 variable [Fintype V] [DecidableRel G.Adj] [Fintype m] [DecidableEq m]
   {W : Type*} [Fintype W] {H : SimpleGraph W} [DecidableRel H.Adj]
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- **Nonzero cyclic classes from a matrix representation of a subgraph.** Let `f` be a copy of a
 graph `H` in `G`, not necessarily induced, and let `β` be a family of matrices on `H` satisfying
 the signless relations. If a product of backtracks `c → a → c` at a vertex `c` of `H`
@@ -286,7 +287,7 @@ acts at `c` by a matrix of nonzero trace, then the corresponding product of back
 `f c` is an element of path degree `2 * l.length` of `Π⁺(G)` which does not lie in the commutator
 submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic quotient is nonzero. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero
-    (f : H.Copy G) (β : W → W → Matrix m m k)
+    [H.LocallyFinite] (f : H.Copy G) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
     (l : List {a // H.Adj c a})
     (htr : trace (l.map fun a => β a.val c * β c a.val).prod ≠ 0) :
