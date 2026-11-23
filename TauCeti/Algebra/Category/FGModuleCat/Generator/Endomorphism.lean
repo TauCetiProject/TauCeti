@@ -75,7 +75,7 @@ theorem _root_.CategoryTheory.IsCoseparator.injective_end {A : Type v} [Ring A] 
   -- right module over `End M` (a left module over its opposite).
   have := (FGModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure (R := C) M
     (hM.additiveClosure_of_injective X) e).2
-  exact moduleInjective_of_projective_op_matlisDual hf.length_quotient_linearMap_eq_one
-    (isFiniteLength_of_finite_trans C A M.obj)
+  exact moduleInjective_of_projective_op_matlisDual (MatlisDual.bijective_evalₗ
+    hf.length_quotient_linearMap_eq_one (isFiniteLength_of_finite_trans C A M.obj))
 
 end TauCeti

@@ -48,9 +48,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
   finite length over `R`, dualizing is a bijection on morphisms.
 * `TauCeti.moduleInjective_of_projective_op_matlisDual` and
-  `TauCeti.moduleInjective_op_of_projective_matlisDual`: for an injective `E` such that
-  `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` of `R`, a left or right module of
-  finite length over `R` whose dual is projective is injective.
+  `TauCeti.moduleInjective_op_of_projective_matlisDual`: for an injective `E`, a left or right
+  module with bijective evaluation into its double dual and projective dual is injective.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -532,26 +531,24 @@ theorem MatlisDual.exists_retract_of_retract [Module Aᵐᵒᵖ N] [IsScalarTowe
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   rw [← LinearMap.comp_apply (map s), ← map_comp, hrs, map_id, LinearMap.id_apply]
 
-/-- **A module with projective dual is injective.** If `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has
-length one for every maximal ideal `𝔪` of `R`, then a left `A`-module `N` of finite length over `R`
-whose dual `D_R N` is a projective right `A`-module is an injective `A`-module. The ring `R` must be
-small in the universe of `E`. -/
+/-- **A module with projective dual is injective.** If `E` is injective and `R` is small in its
+universe, then a left `A`-module `N` for which evaluation `N → D_R (D_R N)` is bijective, and whose
+dual `D_R N` is a projective right `A`-module, is an injective `A`-module. Evaluation is bijective
+for `N` of finite length over `R` when each `Hom_R(R ⧸ 𝔪, E)` has length one
+(`TauCeti.MatlisDual.bijective_evalₗ`). -/
 theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower R A N]
-    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) [Module.Projective Aᵐᵒᵖ (MatlisDual R E N)] :
+    (hN : Function.Bijective (evalₗ R E N)) [Module.Projective Aᵐᵒᵖ (MatlisDual R E N)] :
     Module.Injective A N :=
-  -- By biduality `N` is the dual of the projective right module `D_R N`.
-  (((MatlisDual.evalEquiv (A := A) hE hN).restrictScalars R).trans
+  -- Through evaluation, `N` is the dual of the projective right module `D_R N`.
+  ((LinearEquiv.ofBijective (evalₗ R E N) hN).trans
     (equivLinearMap R E _)).moduleInjective_of_dual_projective fun a x φ ↦ by simp
 
 attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- **A right module with projective dual is injective.** If `E` is injective and
-`Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` of `R`, then a right `A`-module `N`
-of finite length over `R` whose dual `D_R N` is a projective left `A`-module is an injective right
-`A`-module. The ring `R` must be small in the universe of `E`. -/
+/-- **A right module with projective dual is injective.** If `E` is injective and `R` is small in
+its universe, then a right `A`-module `N` for which evaluation `N → D_R (D_R N)` is bijective, and
+whose dual `D_R N` is a projective left `A`-module, is an injective right `A`-module. -/
 theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
-    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) [Module.Projective A (MatlisDual R E N)] :
+    (hN : Function.Bijective (evalₗ R E N)) [Module.Projective A (MatlisDual R E N)] :
     Module.Injective Aᵐᵒᵖ N :=
   -- This is the left-module case over `Aᵐᵒᵖ`: the action of `Aᵐᵒᵖᵐᵒᵖ` on `D_R N` is that of `A`
   -- through `RingEquiv.opOp A`.
@@ -560,7 +557,7 @@ theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsSca
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ MatlisDual.ext fun _ ↦ by simp }
   have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv e
-  moduleInjective_of_projective_op_matlisDual (A := Aᵐᵒᵖ) hE hN
+  moduleInjective_of_projective_op_matlisDual (A := Aᵐᵒᵖ) hN
 
 end Biduality
 
