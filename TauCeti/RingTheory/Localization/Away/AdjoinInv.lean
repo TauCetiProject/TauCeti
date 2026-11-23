@@ -58,7 +58,7 @@ public section
 
 namespace Units
 
-open Algebra
+open Algebra Pointwise
 
 variable {B : Type*} [CommRing B] (u : Bˣ)
 
@@ -78,28 +78,13 @@ theorem adjoin_singleton_le_adjoin_insert_inv :
 theorem exists_pow_mul_mem_adjoin_singleton {x : B}
     (hx : x ∈ adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) :
     ∃ n : ℕ, (u : B) ^ n * x ∈ adjoin R {(u : B)} := by
-  induction hx using adjoin_induction with
-  | mem x hx =>
-    rcases hx with rfl | rfl
-    · exact ⟨0, by simp⟩
-    · exact ⟨1, by simp⟩
-  | algebraMap r => exact ⟨0, by simp⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨n, hn⟩ := hy
-    refine ⟨m + n, ?_⟩
-    have : (u : B) ^ (m + n) * (x + y) =
-        (u : B) ^ n * ((u : B) ^ m * x) + (u : B) ^ m * ((u : B) ^ n * y) := by ring
-    rw [this]
-    exact add_mem (mul_mem (pow_mem (self_mem_adjoin_singleton R _) n) hm)
-      (mul_mem (pow_mem (self_mem_adjoin_singleton R _) m) hn)
-  | mul x y _ _ hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨n, hn⟩ := hy
-    refine ⟨m + n, ?_⟩
-    have : (u : B) ^ (m + n) * (x * y) = ((u : B) ^ m * x) * ((u : B) ^ n * y) := by ring
-    rw [this]
-    exact mul_mem hm hn
+  have hs : (u : B) • ({(u : B), ((u⁻¹ : Bˣ) : B)} : Set B) ⊆ (adjoin R {(u : B)} : Set B) := by
+    rintro _ ⟨_, (rfl | rfl), rfl⟩
+    · simpa [smul_eq_mul, ← sq] using pow_mem (self_mem_adjoin_singleton R (u : B)) 2
+    · simp [smul_eq_mul]
+  obtain ⟨n, hn⟩ := pow_smul_mem_of_smul_subset_of_mem_adjoin (u : B) _ _ hs hx
+    (self_mem_adjoin_singleton R _)
+  exact ⟨n, by simpa [smul_eq_mul] using hn n le_rfl⟩
 
 /-- **`R[u, u⁻¹]` is the localization of `R[u]` away from `u`**, for any algebra structure of
 `R[u, u⁻¹]` over `R[u]` compatible with their inclusions into `B`. -/
