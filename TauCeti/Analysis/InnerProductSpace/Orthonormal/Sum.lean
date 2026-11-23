@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
+import TauCeti.Analysis.InnerProductSpace.Frame.Operators
+
 /-!
 # Expansions and contractions against orthonormal bases
 
@@ -139,7 +141,7 @@ theorem Complex.isometryOfOrthonormal_symm_apply_eq_mk {V : Type*} [NormedAddCom
   apply Complex.ext <;> simp [b.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_comm]
 
 open InnerProductSpace
-open scoped InnerProductSpace ComplexConjugate
+open scoped InnerProductSpace
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -187,27 +189,12 @@ theorem exists_orthonormalBasis_eq_rankOne_iff [Fintype ι] {p : ι → E →L[�
     exact ⟨fun i ↦ ⟨b i, b.norm_eq_one i, hb i⟩,
       (Finset.sum_congr rfl fun i _ ↦ hb i).trans b.sum_rankOne_eq_id⟩
   · rintro ⟨hunit, hsum⟩
-    classical
     choose v hv hp using hunit
-    have hsum_apply (x : E) : ∑ i, ⟪v i, x⟫_𝕜 • v i = x := by
-      simpa only [sum_apply, hp, rankOne_apply, one_apply_eq_self] using
-        DFunLike.congr_fun hsum x
-    have hon : Orthonormal 𝕜 v := by
-      refine ⟨hv, fun i j hij ↦ ?_⟩
-      -- The inner product with `v j` leaves no contribution outside the diagonal term.
-      have hsq := congrArg (fun x ↦ RCLike.re ⟪x, v j⟫_𝕜) (hsum_apply (v j))
-      simp only [sum_inner, inner_smul_left, RCLike.conj_mul, map_sum, ← RCLike.ofReal_pow,
-        RCLike.ofReal_re, inner_self_eq_norm_sq, hv j, one_pow] at hsq
-      have hdiag : ‖⟪v j, v j⟫_𝕜‖ ^ 2 = 1 := by
-        rw [inner_self_eq_one_of_norm_eq_one (hv j), norm_one, one_pow]
-      rw [← Finset.sum_erase_add _ _ (Finset.mem_univ j), hdiag, add_eq_right] at hsq
-      have hi := (Finset.sum_sq_eq_zero_iff _ _).mp hsq i
-        (Finset.mem_erase.mpr ⟨hij, Finset.mem_univ i⟩)
-      exact norm_eq_zero.mp hi
-    have hspan : ⊤ ≤ Submodule.span 𝕜 (Set.range v) := by
-      intro x _
-      exact (Submodule.mem_span_range_iff_exists_fun 𝕜).mpr ⟨_, hsum_apply x⟩
-    refine ⟨OrthonormalBasis.mk hon hspan, fun i ↦ ?_⟩
-    simpa only [OrthonormalBasis.coe_mk] using hp i
+    have hframe : frameOperator 𝕜 v = LinearMap.id := by
+      ext x
+      simpa only [frameOperator_apply, LinearMap.id_apply, sum_apply, hp,
+        rankOne_apply, one_apply_eq_self] using DFunLike.congr_fun hsum x
+    obtain ⟨b, hb⟩ := exists_orthonormalBasis_of_frameOperator_eq_id hv hframe
+    exact ⟨b, fun i ↦ by simpa only [congrFun hb i] using hp i⟩
 
 end TauCeti
