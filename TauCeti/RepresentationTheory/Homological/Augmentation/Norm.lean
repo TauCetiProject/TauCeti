@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.GroupTheory.FiniteAbelian.Generators
-import TauCeti.RepresentationTheory.Intertwining
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RingTheory.Finiteness.Nakayama
 
 /-!
@@ -78,11 +78,10 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   -- `π m` is a combination of the `[σ i] - 1`, since these generate `I_Q`.
   have hmem : (augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m)) ∈
       RingHom.ker (MonoidAlgebra.augmentation ℤ Q) := by
-    have h := sum_coeff_augmentationι ℤ Q (π.hom (B.ρ.asModuleEquiv m))
-    rw [RingHom.mem_ker,
-      ← sum_coeff_single ((augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m))),
-      map_finsuppSum]
-    simpa using h
+    rw [RingHom.mem_ker, ← augmentation_hom_apply, ← CategoryTheory.ConcreteCategory.comp_apply,
+      augmentationι_comp_augmentation]
+    -- The zero morphism of representations evaluates to `0`.
+    rfl
   rw [TauCeti.MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top ℤ hσ, ← Set.range_comp]
     at hmem
   obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hmem
@@ -167,9 +166,9 @@ private theorem norm_eq_zero_of_smul_eq_zero [Fintype Q] (B : Rep ℤ Q) {γ : M
     (IsSMulRegular.of_ne_zero Fintype.card_ne_zero) hinv hεγ
   ext v
   have h := congrArg B.ρ.asModuleEquiv (hγ (B.ρ.asModuleEquiv.symm v))
-  rw [Representation.asModuleEquiv_map_smul, hγnorm] at h
-  simpa only [LinearEquiv.apply_symm_apply, map_zero, map_sum, LinearMap.sum_apply,
-    Representation.asAlgebraHom_single_one, Representation.norm, LinearMap.zero_apply] using h
+  rw [Representation.asModuleEquiv_map_smul, hγnorm, Representation.asAlgebraHom_sum_single_one]
+    at h
+  simpa only [LinearEquiv.apply_symm_apply, map_zero, LinearMap.zero_apply] using h
 
 end Group
 
