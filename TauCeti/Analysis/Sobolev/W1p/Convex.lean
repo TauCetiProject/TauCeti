@@ -44,10 +44,10 @@ everywhere with an `M`-Lipschitz function, and hence equals it. Every segment of
 `V` has an open convex neighborhood in `V`, which gives the general case. This is how a weak
 solution of an elliptic equation whose gradient is known to be locally bounded, for instance Hölder
 continuous, is shown to be locally Lipschitz. If the precise representative of the gradient is
-bounded on the `ρ`-thickening of a set `S` inside the domain, then, as the value lies in `Lᵖ`, the
-precise representative of the value is bounded and Hölder on the `ρ / 2`-thickening with every
-exponent at most one
-(`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`).
+bounded on the `ρ`-thickening of a set `S` inside the domain, then the precise representative of
+the value is Hölder on the `ρ / 2`-thickening with every exponent at most one
+(`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`). Boundedness on the
+`ρ / 2`-thickening is derived in the proof from `u ∈ Lᵖ` and the local Lipschitz estimate.
 
 For `p` above the dimension `n`, **Morrey's inequality holds up to the boundary of a bounded
 convex domain** `Ω`: the precise representative of `u ∈ W^{1,p}(Ω)` is Hölder continuous
@@ -250,9 +250,8 @@ theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
   exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
 /-- A Sobolev function the precise representative of whose gradient is bounded on the
-`ρ`-thickening of a set `S` inside its domain has a precise representative that is bounded on the
-`ρ / 2`-thickening and Lipschitz on the balls of radius `ρ / 2` about its points, hence Hölder on
-the `ρ / 2`-thickening with every exponent at most one. -/
+`ρ`-thickening of a set `S` inside its domain has a precise representative that is Hölder on the
+`ρ / 2`-thickening with every exponent `γ ≤ 1`. -/
 theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (u : W1p μ Ω p) {S : Set E} {ρ : ℝ} (hρS : thickening ρ S ⊆ Ω) {M : ℝ}
     (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.gradient u) x‖ ≤ M)
