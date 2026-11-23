@@ -19,25 +19,17 @@ public section
 
 namespace TwoSidedIdeal
 
-section Annihilator
-
-variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
-  [T1Space A]
+variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A]
 
 /-- The annihilator of a two-sided ideal of a `T₁` ring with separately continuous multiplication
 is closed. -/
-instance isClosed_annihilator (I : TwoSidedIdeal A) : IsClosed (I.annihilator : Set A) := by
+instance isClosed_annihilator [SeparatelyContinuousMul A] [T1Space A] (I : TwoSidedIdeal A) :
+    IsClosed (I.annihilator : Set A) := by
   have hset : (I.annihilator : Set A) = ⋂ x ∈ I, (· * x) ⁻¹' {0} := by
     ext a
     simp
   rw [hset]
   exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage (continuous_mul_const x)
-
-end Annihilator
-
-section ClosedAnnihilator
-
-variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A]
 
 /-- In a `T₁` space with separately continuous multiplication, the right annihilator of any
 two-sided ideal is closed. -/
@@ -84,7 +76,5 @@ instance isClosed_moduleAnnihilator {R : Type*} [Ring R] [TopologicalSpace R]
     [SeparatelyContinuousMul R] [T1Space R] (I : TwoSidedIdeal R) :
     IsClosed (Module.annihilator R I : Set R) := by
   simpa only [Ideal.coe_toTwoSided] using isClosed_moduleAnnihilator_toTwoSided I
-
-end ClosedAnnihilator
 
 end TwoSidedIdeal

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.Basic
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.Normed.Group.Star
 
@@ -41,12 +41,6 @@ section NormedStarAlgebra
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
   [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
   [StarRing A] (I : NonUnitalStarSubalgebra 𝕜 A)
-
-private theorem doubleCentralizer_ext {B : Type*} [NonUnitalNormedRing B] [NormedSpace 𝕜 B]
-    [SMulCommClass 𝕜 B B] [IsScalarTower 𝕜 B B] {m n : 𝓜(𝕜, B)}
-    (h₁ : ∀ b, m.fst b = n.fst b) (h₂ : ∀ b, m.snd b = n.snd b) : m = n :=
-  DoubleCentralizer.ext _ _ _ _ <|
-    Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
 
 omit [IsScalarTower 𝕜 A A] in
 /-- Left multiplication by `a : A` as a continuous linear endomorphism of a star ideal `I`. -/
@@ -90,19 +84,19 @@ variable [StarRing 𝕜] [StarModule 𝕜 A] [NormedStarGroup A]
 right multiplication of `A` on a star ideal `I`. -/
 def multiplierHom (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) : A →⋆ₙₐ[𝕜] 𝓜(𝕜, I) where
   toFun := I.idealMultiplier hmul
-  map_smul' c a := doubleCentralizer_ext
+  map_smul' c a := DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext (smul_mul_assoc c a x))
     (fun x => Subtype.ext (mul_smul_comm c (x : A) a))
-  map_zero' := doubleCentralizer_ext
+  map_zero' := DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext (zero_mul (x : A)))
     (fun x => Subtype.ext (mul_zero (x : A)))
-  map_add' a b := doubleCentralizer_ext
+  map_add' a b := DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext (add_mul a b x))
     (fun x => Subtype.ext (mul_add (x : A) a b))
-  map_mul' a b := doubleCentralizer_ext
+  map_mul' a b := DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext (mul_assoc a b x))
     (fun x => Subtype.ext (mul_assoc (x : A) a b).symm)
-  map_star' a := doubleCentralizer_ext
+  map_star' a := DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext <| by simp [idealMultiplier, DoubleCentralizer.star_fst])
     (fun x => Subtype.ext <| by simp [idealMultiplier, DoubleCentralizer.star_snd])
 
@@ -136,7 +130,7 @@ theorem coe_multiplierHom_snd_apply (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I)
 @[simp]
 theorem multiplierHom_coe (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (x : I) :
     I.multiplierHom hmul (x : A) = (x : 𝓜(𝕜, I)) :=
-  doubleCentralizer_ext (fun _ => Subtype.ext rfl) (fun _ => Subtype.ext rfl)
+  DoubleCentralizer.ext_fst_snd (fun _ => Subtype.ext rfl) (fun _ => Subtype.ext rfl)
 
 /-- Composing `I.multiplierHom hmul` with the subtype inclusion of `I` recovers
 `DoubleCentralizer.coeHom`. -/
@@ -166,7 +160,7 @@ theorem continuous_multiplierHom (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
 left-annihilates `I`. -/
 theorem multiplierHom_eq_zero_iff [IsProperStar A] (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) {a : A} :
     I.multiplierHom hmul a = 0 ↔ ∀ x ∈ I, a * x = 0 := by
-  refine ⟨fun h x hx => ?_, fun h => doubleCentralizer_ext
+  refine ⟨fun h x hx => ?_, fun h => DoubleCentralizer.ext_fst_snd
     (fun x => Subtype.ext (h x x.property)) fun x => Subtype.ext ?_⟩
   · have := congrArg (fun m : 𝓜(𝕜, I) => ((m.fst ⟨x, hx⟩ : I) : A)) h
     simpa using this

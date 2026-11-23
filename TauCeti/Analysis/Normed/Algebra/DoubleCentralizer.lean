@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.Basic
 public import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 public import TauCeti.Topology.ApproximateUnit
 import TauCeti.Analysis.Normed.Operator.Dense
@@ -108,12 +108,6 @@ section NontriviallyNormed
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
-
-/-- Two multipliers are equal if their left and right centralizers agree pointwise. -/
-theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
-    (h₂ : ∀ a, m.snd a = n.snd a) : m = n :=
-  DoubleCentralizer.ext _ _ _ _ <|
-    Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
 
 /-- Projection from a multiplier to its pair of left and right centralizers is norm continuous. -/
 @[fun_prop]

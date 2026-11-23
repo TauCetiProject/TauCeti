@@ -19,8 +19,6 @@ public section
 
 namespace TwoSidedIdeal
 
-section Unitization
-
 variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
 
 /-- The left `Unitization ℂ A`-module structure on a closed two-sided ideal `I` is compatible with
@@ -29,7 +27,5 @@ theorem isScalarTower_unitizationModule :
     letI := I.unitizationModuleOfSMulMem I.smul_mem_of_isClosed
     IsScalarTower ℂ (Unitization ℂ A) I :=
   I.isScalarTower_unitizationModuleOfSMulMem I.smul_mem_of_isClosed I.coe_smul_complex
-
-end Unitization
 
 end TwoSidedIdeal

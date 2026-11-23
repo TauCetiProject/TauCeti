@@ -29,10 +29,6 @@ open scoped MultiplierAlgebra
 
 namespace TwoSidedIdeal
 
-section MultiplierHom
-
-section
-
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
 /-- The annihilator of a closed two-sided ideal `I` is the kernel of the canonical homomorphism
@@ -135,14 +131,10 @@ theorem IsClosedEssential.isometry_multiplierHom (hI : I.IsClosedEssential) :
 
 end
 
-end
-
 /-- In a unital C⋆-algebra, `I.multiplierHom` sends `1` to `1`. -/
 @[simp]
 theorem multiplierHom_one {A : Type*} [CStarAlgebra A] (I : TwoSidedIdeal A)
     [IsClosed (I : Set A)] : I.multiplierHom 1 = 1 :=
   DoubleCentralizer.ext_fst_snd (fun _ => Subtype.ext (by simp)) (fun _ => Subtype.ext (by simp))
-
-end MultiplierHom
 
 end TwoSidedIdeal

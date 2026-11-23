@@ -20,8 +20,6 @@ public section
 
 namespace TwoSidedIdeal
 
-section Unitization
-
 variable {R A : Type*} [CommRing R] [NonUnitalRing A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A]
   [TopologicalSpace A] [SeparatelyContinuousMul A] [T1Space A]
@@ -38,7 +36,5 @@ theorem isClosed_comap_toTwoSided_annihilator (I : TwoSidedIdeal A)
   let _ : Module (Unitization R A) I := I.unitizationModuleOfSMulMem hsmul
   rw [← I.annihilator_eq_comap_annihilator_unitization_of_smul_mem hsmul]
   exact I.isClosed_annihilator
-
-end Unitization
 
 end TwoSidedIdeal

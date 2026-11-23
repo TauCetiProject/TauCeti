@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
 public import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.Analysis.CStarAlgebra.Multiplier.Deriv
 import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!

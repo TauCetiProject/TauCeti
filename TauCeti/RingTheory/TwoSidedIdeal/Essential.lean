@@ -27,8 +27,6 @@ public section
 
 namespace TwoSidedIdeal
 
-section Essential
-
 variable {A : Type*} [NonUnitalNonAssocRing A] {I J : TwoSidedIdeal A}
 
 /-- A two-sided ideal is *essential* when it meets every nonzero two-sided ideal. -/
@@ -94,8 +92,6 @@ theorem isEssential_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
   rw [← map_inf, map_eq_bot_iff] at hIK
   rw [h (φ.symm K) hIK, map_bot]
 
-end Essential
-
 section Ring
 
 variable {R : Type*} [Ring R]
@@ -126,8 +122,6 @@ theorem isEssential_of_isEssential_asIdealOpposite {I : TwoSidedIdeal R}
 
 end Ring
 
-section CommRing
-
 /-- In a commutative ring, a two-sided ideal is essential if and only if its underlying ideal is
 essential as an `R`-submodule. -/
 theorem isEssential_iff_isEssential_asIdeal {R : Type*} [CommRing R] {I : TwoSidedIdeal R} :
@@ -138,7 +132,5 @@ theorem isEssential_iff_isEssential_asIdeal {R : Type*} [CommRing R] {I : TwoSid
           simp [gc.u_inf, hIK]
       simpa using congrArg asIdeal hK,
    isEssential_of_isEssential_asIdeal⟩
-
-end CommRing
 
 end TwoSidedIdeal
