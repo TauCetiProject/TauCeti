@@ -351,18 +351,6 @@ theorem isComplexLinearMap_perturbedFDeriv_cappedExchange_one (h₀ : ω.Compati
     apply Complex.ext <;> simp [e]
   -- The structure at `z` is the exchanged capping structure at `σ(z)`.
   rw [cappedExchangeAlmostComplex_one h₀ hJp hJ', ← hσ]
-  -- The perturbation is the pullback along `σ` of the exchanged capping perturbation.
-  have hpull (v : ℝ × ℝ) : (fun z x ↦ cappedExchangePerturbation H L 1 (e z) x (e v)) =
-      perturbationPullback (fun z ↦ (1, 0) - z)
-        (fun z x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
-          (e z) x 1)
-        (fun z x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
-          (e z) x Complex.I) v := by
-    funext z' x
-    rw [perturbationPullback_one_sub, cappedExchangePerturbation_one (hH inf) (by linarith),
-      neg_apply]
-  rw [← equivRealProdCLM_symm_stdComplexLineReal, ← equivRealProdCLM_symm_stdComplexLineImag,
-    hpull, hpull]
   -- The exchanged capping perturbation is differentiable in the target point at `σ(z)`, which is
   -- the capped puncture `1` or a point of `ℂ ∖ {0, 1}`.
   have hS : e ((1, 0) - z) = one.endCenter ∨ e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
@@ -378,16 +366,8 @@ theorem isComplexLinearMap_perturbedFDeriv_cappedExchange_one (h₀ : ω.Compati
       (u ((1, 0) - z)) v).differentiableAt one_ne_zero
     rw [exchangeEndData_one] at hd
     exact hd.comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
-  -- The exchange is holomorphic: its derivative is `-1`.
-  have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
-    (differentiableAt_const _).sub differentiableAt_id
-  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
-    simp
-  exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  exact ω.isComplexLinearMap_perturbedFDeriv_comp_one_sub
+    (cappedExchangePerturbation_one (hH inf) (by linarith)) hu hK h
 
 end Solutions
 
