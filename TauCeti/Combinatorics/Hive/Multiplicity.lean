@@ -172,21 +172,6 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
         rw [h, DominantWeight.detShift_shift]; omega
     dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
 
-/-- Unbundled direct-sum decomposition of `rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ`. -/
-private theorem nonempty_equiv_fdrep_tensor_rationalWeyl {n : ℕ} (lam μ : DominantWeight n) :
-    Nonempty (Representation.Equiv
-      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
-      (Representation.directSum fun p :
-          Σ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
-              (ofPartition ν).colLen 0 ≤ n},
-            {T : BoundedSSYT n μ.detShiftShape //
-              T.val.IsYamanouchi lam.detShiftShape ∧
-                ∀ i, lam.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i} =>
-        (rationalWeylFDRep ℂ n
-          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift))).ρ)) :=
-  let ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
-  ⟨(FDRep.tprodEquiv _ _).trans e⟩
-
 /-- **The hive model of tensor-product multiplicities for `GL n ℂ`**: for all dominant weights
 `λ, μ, γ` of `GL n ℂ`, the complex dimension of the space of intertwiners from `V_γ` to
 `V_λ ⊗ V_μ` in `FDRep ℂ (GL (Fin n) ℂ)` is `hiveCount (productBoundary λ μ γ)`. -/

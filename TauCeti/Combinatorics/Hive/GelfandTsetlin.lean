@@ -656,6 +656,28 @@ theorem hiveCount_productBoundary_shift (lam μ γ : DominantWeight n) (a b : �
   simp only [← natCard_fixedIntegerHive]
   exact (Nat.card_congr (fixedIntegerHiveShiftEquiv lam μ γ a b)).symm
 
+/-- Signed rank-`2` check: `λ = (1, 0), μ = (0, -1), γ = (0, 0)` has `hiveCount = 1`
+(the trivial invariant in `V ⊗ V*`), whereas truncating negative entries to `0` would give
+`((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
+theorem hiveCount_two_std_dual_triv :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1
+      ∧ hiveCount
+        (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
+  let lam : DominantWeight 2 := ⟨![1, 0], by decide⟩
+  let μ : DominantWeight 2 := ⟨![0, -1], by decide⟩
+  let γ : DominantWeight 2 := ⟨![0, 0], by decide⟩
+  constructor
+  · have hsh : productBoundary (lam.shift 0) (μ.shift 1) (γ.shift (0 + 1)) =
+        productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
+      ext s i
+      fin_cases s <;> fin_cases i <;>
+        simp [productBoundary_zero, productBoundary_one, productBoundary_two, lam, μ, γ]
+    rw [← hiveCount_productBoundary_shift lam μ γ 0 1, hsh]
+    exact hiveCount_two_std_std_det
+  · refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
+    have hsum := sum_eq_of_productBoundary hb
+    simp [Fin.sum_univ_two] at hsum
+
 /-- **Gelfand–Tsetlin reconstruction criterion**: a pattern `P` with top row `μ` and weight
 `γ - λ` is the difference pattern of a hive with boundary `productBoundary lam μ γ` (realized via
 `gtCompletion lam P`) if and only if the remaining rhombus family holds on `gtCompletion lam P`. -/
