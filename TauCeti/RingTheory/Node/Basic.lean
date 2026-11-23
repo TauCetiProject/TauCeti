@@ -146,6 +146,23 @@ lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
   · exact h₀
   · exact h₁
 
+/-- Ring homomorphisms out of the nodal algebra are determined by `R` and the two coordinates. -/
+lemma ringHom_ext {A : Type*} [Semiring A] {q : R} {f g : NodeAlgebra R q →+* A}
+    (hR : ∀ r : R, f (algebraMap R (NodeAlgebra R q) r) = g (algebraMap R (NodeAlgebra R q) r))
+    (h₀ : f (coord q 0) = g (coord q 0)) (h₁ : f (coord q 1) = g (coord q 1)) : f = g := by
+  apply Ideal.Quotient.ringHom_ext
+  apply MvPolynomial.ringHom_ext
+  · intro r
+    -- Unfold `NodeAlgebra` and `mk` to bridge `Ideal.Quotient.mk` with `(mk q).commutes`.
+    change f (mk q (algebraMap R (MvPolynomial (Fin 2) R) r)) =
+      g (mk q (algebraMap R (MvPolynomial (Fin 2) R) r))
+    rw [(mk q).commutes r]
+    exact hR r
+  · intro i
+    fin_cases i
+    · exact h₀
+    · exact h₁
+
 /-- The two coordinates generate the nodal algebra as an `R`-algebra. -/
 lemma adjoin_range_coord : Algebra.adjoin R (Set.range (coord a)) = ⊤ := by
   have h : Set.range (coord a) = mk a '' Set.range X := by

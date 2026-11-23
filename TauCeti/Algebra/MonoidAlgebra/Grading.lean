@@ -32,8 +32,8 @@ infinite fibre, as is the rank of a free module of infinite rank.
   `single m 1` with `f m = i`.
 * `AddMonoidAlgebra.finrank_gradeBy`: the rank of the piece of grade `i` is the number of
   elements of `M` of grade `i`.
-* `AddMonoidAlgebra.single_coeff_of_mem_grade`: an element of `grade R m` is recovered from its
-  `m`-th coefficient as `single m (x.coeff m) = x`.
+* `AddMonoidAlgebra.coeff_mul_of_mem_grade`: the `(m₁ + m₂)`-th coefficient of a product of
+  homogeneous elements in `grade R m₁` and `grade R m₂` is the product of their coefficients.
 * `AddMonoidAlgebra.map_mem_gradeBy`, `AddMonoidAlgebra.mapAlgHom_mem_gradeBy`,
   `AddMonoidAlgebra.mapAlgHom_mem_grade`: coefficient homomorphisms preserve graded pieces.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
@@ -80,12 +80,19 @@ end GradeBy
 
 variable {M ι : Type*}
 
-/-- An element of the degree-`m` piece `grade R m` is uniquely recovered from its `m`-th
-coefficient: `single m (x.coeff m) = x`. -/
-theorem single_coeff_of_mem_grade {R : Type*} [CommSemiring R] {m : M} {x : R[M]}
-    (hx : x ∈ grade R m) : single m (x.coeff m) = x := by
-  obtain ⟨r, rfl⟩ := (mem_grade_iff' R m x).mp hx
-  simp [lsingle_apply]
+/-- In an additive monoid algebra, the `(m₁ + m₂)`-th coefficient of a product of homogeneous
+elements of degrees `m₁` and `m₂` is the product of their respective coefficients. -/
+theorem coeff_mul_of_mem_grade {R : Type*} [CommSemiring R] [Add M] {m₁ m₂ : M}
+    {a₁ a₂ : R[M]} (ha₁ : a₁ ∈ grade R m₁) (ha₂ : a₂ ∈ grade R m₂) :
+    (a₁ * a₂).coeff (m₁ + m₂) = a₁.coeff m₁ * a₂.coeff m₂ := by
+  have h₁ : single m₁ (a₁.coeff m₁) = a₁ := coeff_injective <|
+    (coeff_single m₁ (a₁.coeff m₁)).trans
+      (Finsupp.support_subset_singleton.mp ((mem_grade_iff R m₁ a₁).mp ha₁)).symm
+  have h₂ : single m₂ (a₂.coeff m₂) = a₂ := coeff_injective <|
+    (coeff_single m₂ (a₂.coeff m₂)).trans
+      (Finsupp.support_subset_singleton.mp ((mem_grade_iff R m₂ a₂).mp ha₂)).symm
+  conv_lhs => rw [← h₁, ← h₂]
+  rw [single_mul_single, coeff_single, Finsupp.single_eq_same]
 
 /-- Mapping coefficients along an additive monoid homomorphism preserves every graded piece of
 `gradeBy`. -/

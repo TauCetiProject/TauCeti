@@ -51,6 +51,8 @@ none of the further theory built on it.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
+* `MonoidAlgebra.coeff_curryAlgEquiv_symm` and `AddMonoidAlgebra.coeff_curryAlgEquiv_symm`:
+  reading coefficients of an uncurried nested monoid algebra element.
 
 ## References
 
@@ -317,6 +319,26 @@ theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
     have h : single m c = c • of ℤ M m := by rw [of_apply, smul_single, smul_eq_mul, mul_one]
     rw [h]
     exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
+
+/-- The `(m, n)`-coefficient of `(MonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/
+@[to_additive (attr := simp) (dont_translate := R A)
+/-- The `(m, n)`-coefficient of `(AddMonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/]
+theorem coeff_curryAlgEquiv_symm {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Monoid M] [Monoid N] (x : A[N][M]) (m : M) (n : N) :
+    ((curryAlgEquiv R).symm x).coeff (m, n) = (x.coeff m).coeff n := by
+  classical
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single m' a =>
+    induction a using induction_linear with
+    | zero => simp
+    | add a b ha hb => simp [single_add, ha, hb]
+    | single n' r =>
+      rw [curryAlgEquiv_symm_single, coeff_single, coeff_single, Finsupp.single_apply]
+      rcases eq_or_ne m' m with rfl | hm <;> rcases eq_or_ne n' n with rfl | hn <;> simp [*]
 
 end MonoidAlgebra
 

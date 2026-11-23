@@ -69,22 +69,6 @@ namespace NodeAlgebra
 
 variable {B B' B'' C R : Type*} [CommRing B] [CommRing B'] [CommRing B'']
 
-/-- Two ring homomorphisms out of `NodeAlgebra B q` agree when they agree on `B`, `coord q 0`,
-and `coord q 1`. -/
-theorem ringHom_ext [Semiring C] {q : B} {f g : NodeAlgebra B q →+* C}
-    (hB : ∀ b : B, f (algebraMap B (NodeAlgebra B q) b) = g (algebraMap B (NodeAlgebra B q) b))
-    (h0 : f (coord q 0) = g (coord q 0)) (h1 : f (coord q 1) = g (coord q 1)) : f = g := by
-  ext u
-  obtain ⟨p, rfl⟩ := mk_surjective q u
-  induction p using MvPolynomial.induction_on with
-  | C b =>
-    have hb := hB b
-    rwa [← (mk q).commutes b] at hb
-  | add p₁ p₂ hp₁ hp₂ => simp only [map_add, hp₁, hp₂]
-  | mul_X p i hp =>
-    simp only [map_mul, mk_X, hp]
-    fin_cases i <;> simp [h0, h1]
-
 /-- Two `R`-algebra homomorphisms out of `NodeAlgebra B q` agree when they agree on `B`,
 `coord q 0`, and `coord q 1`. -/
 theorem algHom_ext_of_algebra [CommSemiring R] [CommSemiring C] [Algebra R B] [Algebra R C]
@@ -112,14 +96,6 @@ def liftRingHom [CommSemiring C] {q : B} (φ : B →+* C) (x y : C) (hxy : x * y
     liftRingHom φ x y hxy (coord q i) = ![x, y] i := by
   let _ : Algebra B C := φ.toAlgebra
   exact lift_coord q x y hxy i
-
-theorem liftRingHom_coord_zero [CommSemiring C] {q : B} (φ : B →+* C) (x y : C)
-    (hxy : x * y = φ q) : liftRingHom φ x y hxy (coord q 0) = x := by
-  simp
-
-theorem liftRingHom_coord_one [CommSemiring C] {q : B} (φ : B →+* C) (x y : C)
-    (hxy : x * y = φ q) : liftRingHom φ x y hxy (coord q 1) = y := by
-  simp
 
 /-- Equivalence between `B`-algebra homomorphisms `NodeAlgebra B q →ₐ[B] C` and pairs `(x, y)`
 in `C` with `x * y = algebraMap B C q`. -/
@@ -233,6 +209,21 @@ private theorem reducePoly_monomial (q : B) (d : Fin 2 →₀ ℕ) (b : B) :
       Finsupp.single ((d 1 : ℤ) - (d 0 : ℤ)) (b * q ^ min (d 0) (d 1)) := by
   simp [reducePoly, ← MvPolynomial.single_eq_monomial]
 
+private theorem reducePoly_X_mul_X_mul_monomial (q : B) (d : Fin 2 →₀ ℕ) (b : B) :
+    reducePoly q (MvPolynomial.X (0 : Fin 2) * MvPolynomial.X 1 * MvPolynomial.monomial d b) =
+      reducePoly q (MvPolynomial.C q * MvPolynomial.monomial d b) := by
+  have hX : MvPolynomial.X (0 : Fin 2) * MvPolynomial.X 1 =
+      MvPolynomial.monomial (Finsupp.single 0 1 + Finsupp.single 1 1) (1 : B) := by
+    rw [MvPolynomial.X, MvPolynomial.X, MvPolynomial.monomial_mul_monomial, mul_one]
+  rw [hX, MvPolynomial.monomial_mul_monomial, one_mul, MvPolynomial.C_mul_monomial,
+    reducePoly_monomial, reducePoly_monomial]
+  have h0 : (Finsupp.single (0 : Fin 2) 1 + Finsupp.single (1 : Fin 2) 1 + d : Fin 2 →₀ ℕ) 0 =
+      d 0 + 1 := by simp [add_comm]
+  have h1 : (Finsupp.single (0 : Fin 2) 1 + Finsupp.single (1 : Fin 2) 1 + d : Fin 2 →₀ ℕ) 1 =
+      d 1 + 1 := by simp [add_comm]
+  rw [h0, h1, Nat.cast_succ, Nat.cast_succ, add_sub_add_right_eq_sub, Nat.succ_min_succ,
+    pow_succ', ← mul_assoc, mul_comm b q]
+
 private theorem reducePoly_eq_zero_of_mem_ideal (q : B) {p : MvPolynomial (Fin 2) B}
     (hp : p ∈ Ideal.span {MvPolynomial.X (0 : Fin 2) * MvPolynomial.X 1 - MvPolynomial.C q}) :
     reducePoly q p = 0 := by
@@ -240,39 +231,22 @@ private theorem reducePoly_eq_zero_of_mem_ideal (q : B) {p : MvPolynomial (Fin 2
   rcases hp with ⟨r, rfl⟩
   induction r using MvPolynomial.induction_on' with
   | monomial d b =>
-    rw [sub_mul, ← pow_one (MvPolynomial.X (0 : Fin 2)),
-      ← pow_one (MvPolynomial.X (1 : Fin 2)), MvPolynomial.X_pow_eq_monomial,
-      MvPolynomial.X_pow_eq_monomial, MvPolynomial.monomial_mul_monomial,
-      MvPolynomial.monomial_mul_monomial, MvPolynomial.C_mul_monomial, map_sub,
-      reducePoly_monomial, reducePoly_monomial]
-    have h0 : (Finsupp.single (0 : Fin 2) 1 + Finsupp.single (1 : Fin 2) 1 + d : Fin 2 →₀ ℕ) 0 =
-        d 0 + 1 := by simp [add_comm]
-    have h1 : (Finsupp.single (0 : Fin 2) 1 + Finsupp.single (1 : Fin 2) 1 + d : Fin 2 →₀ ℕ) 1 =
-        d 1 + 1 := by simp [add_comm]
-    rw [h0, h1, Nat.cast_succ, Nat.cast_succ, add_sub_add_right_eq_sub, Nat.succ_min_succ,
-      pow_succ', one_mul, one_mul, ← mul_assoc, mul_comm b q, mul_assoc, sub_self]
+    rw [sub_mul, map_sub, reducePoly_X_mul_X_mul_monomial, sub_self]
   | add f g hf hg => rw [mul_add, map_add, hf, hg, add_zero]
 
 private theorem ker_mk_toLinearMap_le (q : B) :
     LinearMap.ker (mk q).toLinearMap ≤ LinearMap.ker (reducePoly q) := by
   intro p hp
-  rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply] at hp
-  have hp' : p ∈ RingHom.ker (mk q : MvPolynomial (Fin 2) B →+* NodeAlgebra B q) := hp
-  rw [ker_mk] at hp'
-  exact LinearMap.mem_ker.mpr (reducePoly_eq_zero_of_mem_ideal q hp')
+  rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply, ← AlgHom.coe_toRingHom,
+    ← RingHom.mem_ker, ker_mk] at hp
+  exact LinearMap.mem_ker.mpr (reducePoly_eq_zero_of_mem_ideal q hp)
+
+private theorem mk_toLinearMap_surjective (q : B) : Function.Surjective (mk q).toLinearMap :=
+  fun u => let ⟨p, hp⟩ := mk_surjective q u; ⟨p, by simpa only [AlgHom.toLinearMap_apply] using hp⟩
 
 private def reduceQuot (q : B) : NodeAlgebra B q →ₗ[B] (ℤ →₀ B) :=
-  ((LinearMap.ker (mk q).toLinearMap).liftQ (reducePoly q) (ker_mk_toLinearMap_le q)).comp
-    ((mk q).toLinearMap.quotKerEquivOfSurjective (mk_surjective q)).symm.toLinearMap
-
-private theorem reduceQuot_mk (q : B) (p : MvPolynomial (Fin 2) B) :
-    reduceQuot q (mk q p) = reducePoly q p := by
-  rw [reduceQuot, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-  have h : ((mk q).toLinearMap.quotKerEquivOfSurjective (mk_surjective q)).symm (mk q p) =
-      Submodule.Quotient.mk p := by
-    apply ((mk q).toLinearMap.quotKerEquivOfSurjective (mk_surjective q)).injective
-    simp [LinearMap.quotKerEquivOfSurjective]
-  rw [h, Submodule.liftQ_apply]
+  (mk q).toLinearMap.liftOfSurjective (mk_toLinearMap_surjective q)
+    ⟨reducePoly q, ker_mk_toLinearMap_le q⟩
 
 /-- Coordinate equivalence `NodeAlgebra B q ≃ₗ[B] (ℤ →₀ B)` sending `Z q n` to
 `Finsupp.single n 1`. -/
@@ -284,10 +258,12 @@ private def slabReprEquiv (q : B) : NodeAlgebra B q ≃ₗ[B] (ℤ →₀ B) :=
         Finsupp.linearCombination_single, one_smul]
       rcases lt_or_ge n 0 with hn | hn
       · rw [Z_of_lt_zero q hn, ← mk_X q 0, ← map_pow, MvPolynomial.X_pow_eq_monomial,
-          reduceQuot_mk, reducePoly_monomial]
+          reduceQuot, ← AlgHom.toLinearMap_apply (mk q), LinearMap.equivOfSurjective_apply,
+          reducePoly_monomial]
         simp [abs_of_neg hn]
       · rw [Z_of_nonneg q hn, ← mk_X q 1, ← map_pow, MvPolynomial.X_pow_eq_monomial,
-          reduceQuot_mk, reducePoly_monomial]
+          reduceQuot, ← AlgHom.toLinearMap_apply (mk q), LinearMap.equivOfSurjective_apply,
+          reducePoly_monomial]
         simp [abs_of_nonneg hn])
     (by
       refine LinearMap.ext fun u => ?_
@@ -304,7 +280,8 @@ private def slabReprEquiv (q : B) : NodeAlgebra B q ≃ₗ[B] (ℤ →₀ B) :=
         have hmk : mk q (MvPolynomial.monomial d b) = b • (coord q 0 ^ d 0 * coord q 1 ^ d 1) := by
           rw [hpoly, map_mul, map_mul, map_pow, map_pow, mk_X, mk_X,
             ← MvPolynomial.algebraMap_eq, AlgHom.commutes, ← Algebra.smul_def]
-        rw [reduceQuot_mk, reducePoly_monomial, Finsupp.linearCombination_single, hmk,
+        rw [reduceQuot, ← AlgHom.toLinearMap_apply (mk q), LinearMap.equivOfSurjective_apply,
+          reducePoly_monomial, Finsupp.linearCombination_single, AlgHom.toLinearMap_apply, hmk,
           coord_zero_pow_mul_coord_one_pow, ← Algebra.smul_def, smul_smul]
       | add f g hf hg => rw [map_add]; simpa only [map_add] using congrArg₂ (· + ·) hf hg)
 
@@ -331,18 +308,11 @@ private theorem slabBasis_repr_apply (q : B) (u : NodeAlgebra B q) :
   rw [← mul_one (algebraMap B (NodeAlgebra B q) b), ← Algebra.smul_def, ← Z_zero q,
     map_smul, slabBasis_repr_Z, Finsupp.smul_single, smul_eq_mul, mul_one]
 
-@[simp] theorem slabBasis_repr_coord_zero (q : B) :
-    (slabBasis q).repr (coord q 0) = Finsupp.single (-1) 1 := by
-  rw [← Z_neg_one q, slabBasis_repr_Z]
-
-@[simp] theorem slabBasis_repr_coord_one (q : B) :
-    (slabBasis q).repr (coord q 1) = Finsupp.single 1 1 := by
-  rw [← Z_one q, slabBasis_repr_Z]
-
 theorem slabBasis_repr_mk_monomial (q : B) (d : Fin 2 →₀ ℕ) (b : B) :
     (slabBasis q).repr (mk q (MvPolynomial.monomial d b)) =
       Finsupp.single ((d 1 : ℤ) - (d 0 : ℤ)) (b * q ^ min (d 0) (d 1)) := by
-  rw [slabBasis_repr_apply, reduceQuot_mk, reducePoly_monomial]
+  rw [slabBasis_repr_apply, reduceQuot, ← AlgHom.toLinearMap_apply (mk q),
+    LinearMap.equivOfSurjective_apply, reducePoly_monomial]
 
 /-- Linear induction principle on `NodeAlgebra B q` along its normal-form basis `n ↦ Z q n`. -/
 theorem induction_linear {q : B} {P : NodeAlgebra B q → Prop}
@@ -473,10 +443,6 @@ def mapAlgHom [CommSemiring R] [Algebra R B] [Algebra R B']
 @[simp] theorem coe_mapAlgHom [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q') :
     (mapAlgHom φ hq : NodeAlgebra B q →+* NodeAlgebra B' q') = mapRingHom φ.toRingHom hq := (rfl)
-
-theorem mapAlgHom_apply [CommSemiring R] [Algebra R B] [Algebra R B']
-    (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q') (u : NodeAlgebra B q) :
-    mapAlgHom φ hq u = mapRingHom φ.toRingHom hq u := (rfl)
 
 @[simp] theorem mapAlgHom_algebraMap [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q') (b : B) :

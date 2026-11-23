@@ -10,7 +10,9 @@ public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Geometry.ScatteringDiagram.SlabAlgebra.Basic
 public import TauCeti.LinearAlgebra.GradedCorrespondence.Hom
 public import TauCeti.LinearAlgebra.GradedCorrespondence.RestrictScalars
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.Grading
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Chamber Laurent maps and graded correspondences for nodal slab algebras
@@ -53,14 +55,17 @@ coefficients in terms of the tangential expansion of `q^a`, and naturality in `(
   chamber Laurent homomorphisms `NodeAlgebra B q →ₐ[B] B[T;T⁻¹]`.
 * `TauCeti.NodeAlgebra.coeff_leftChamberMap`, `TauCeti.NodeAlgebra.coeff_rightChamberMap`,
   `TauCeti.NodeAlgebra.chamberProd_injective`: Laurent coefficient formulas and joint injectivity.
-* `TauCeti.NodeAlgebra.slabCorrespondence`, `TauCeti.NodeAlgebra.slabCorrespondenceHom`: the
-  `B`-linear graded correspondence across a slab and its functoriality.
+* `TauCeti.NodeAlgebra.slabCorrespondence`, `TauCeti.NodeAlgebra.slabCorrespondenceHom`,
+  `TauCeti.NodeAlgebra.slabCorrespondence_transfer_C_mul_T`,
+  `TauCeti.NodeAlgebra.slabCorrespondence_symm_transfer_C_mul_T`: the `B`-linear graded
+  correspondence across a slab, its functoriality, and forward/reverse transfers.
 * `TauCeti.NodeAlgebra.leftTangentialMap`, `TauCeti.NodeAlgebra.rightTangentialMap`,
   `TauCeti.NodeAlgebra.mapAlgHom_comp_leftTangentialMap`,
   `TauCeti.NodeAlgebra.mapAlgHom_comp_rightTangentialMap`,
   `TauCeti.NodeAlgebra.tangentialSlabCorrespondence`,
-  `TauCeti.NodeAlgebra.tangentialSlabCorrespondence_transfer_single`: full-exponent chamber maps,
-  their naturality, graded correspondence on `S[ℤ × Λ]`, and tangential expansion of homogeneous
+  `TauCeti.NodeAlgebra.tangentialSlabCorrespondence_transfer_single`,
+  `TauCeti.NodeAlgebra.tangentialSlabCorrespondence_symm_transfer_single`: full-exponent chamber
+  maps, their naturality, graded correspondence on `S[ℤ × Λ]`, and forward/reverse tangential
   transfers.
 
 ## References
@@ -129,31 +134,35 @@ def rightChamberMap (q : B) : NodeAlgebra B q →ₐ[B] B[T;T⁻¹] :=
   · rw [T_pow, mul_one, Int.natAbs_of_nonneg (not_lt.mp hn),
       Int.toNat_of_nonpos (by omega), pow_zero, map_one, one_mul]
 
-/-- The `k`-th Laurent coefficient of `leftChamberMap q u` is the `(-k)`-th slab basis coordinate
-multiplied by `q ^ (-k).toNat`. -/
-theorem coeff_leftChamberMap (q : B) (u : NodeAlgebra B q) (k : ℤ) :
-    (leftChamberMap q u).coeff k = ((slabBasis q).repr u (-k)) * q ^ (-k).toNat := by
+private theorem coeff_chamberMap_aux (q : B) (f : NodeAlgebra B q →ₗ[B] B[T;T⁻¹])
+    (e : ℤ ≃ ℤ) (c : ℤ → B) (hf : ∀ n : ℤ, f (Z q n) = C (c n) * T (e n))
+    (u : NodeAlgebra B q) (k : ℤ) :
+    (f u).coeff k = ((slabBasis q).repr u (e.symm k)) * c (e.symm k) := by
   induction u using induction_linear with
   | zero => simp
   | add x y hx hy => simp [hx, hy, add_mul]
   | smul_Z b m =>
-    rw [map_smul, map_smul, leftChamberMap_Z, slabBasis_repr_Z, ← single_eq_C_mul_T,
+    rw [map_smul, map_smul, hf, slabBasis_repr_Z, ← single_eq_C_mul_T,
       AddMonoidAlgebra.smul_single, smul_eq_mul, AddMonoidAlgebra.coeff_single,
       Finsupp.smul_single', mul_one, Finsupp.single_apply, Finsupp.single_apply]
-    rcases eq_or_ne m (-k) with rfl | h <;> simp [neg_eq_iff_eq_neg, *]
+    rcases eq_or_ne (e m) k with rfl | h
+    · simp
+    · have hm : m ≠ e.symm k := fun h' => h (by simp [h'])
+      simp [h, hm]
+
+/-- The `k`-th Laurent coefficient of `leftChamberMap q u` is the `(-k)`-th slab basis coordinate
+multiplied by `q ^ (-k).toNat`. -/
+theorem coeff_leftChamberMap (q : B) (u : NodeAlgebra B q) (k : ℤ) :
+    (leftChamberMap q u).coeff k = ((slabBasis q).repr u (-k)) * q ^ (-k).toNat :=
+  coeff_chamberMap_aux q (leftChamberMap q).toLinearMap (Equiv.neg ℤ)
+    (fun n => q ^ n.toNat) (leftChamberMap_Z q) u k
 
 /-- The `k`-th Laurent coefficient of `rightChamberMap q u` is the `k`-th slab basis coordinate
 multiplied by `q ^ (-k).toNat`. -/
 theorem coeff_rightChamberMap (q : B) (u : NodeAlgebra B q) (k : ℤ) :
-    (rightChamberMap q u).coeff k = ((slabBasis q).repr u k) * q ^ (-k).toNat := by
-  induction u using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy, add_mul]
-  | smul_Z b m =>
-    rw [map_smul, map_smul, rightChamberMap_Z, slabBasis_repr_Z, ← single_eq_C_mul_T,
-      AddMonoidAlgebra.smul_single, smul_eq_mul, AddMonoidAlgebra.coeff_single,
-      Finsupp.smul_single', mul_one, Finsupp.single_apply, Finsupp.single_apply]
-    rcases eq_or_ne m k with rfl | h <;> simp [*]
+    (rightChamberMap q u).coeff k = ((slabBasis q).repr u k) * q ^ (-k).toNat :=
+  coeff_chamberMap_aux q (rightChamberMap q).toLinearMap (Equiv.refl ℤ)
+    (fun n => q ^ (-n).toNat) (rightChamberMap_Z q) u k
 
 @[simp] theorem coeff_leftChamberMap_natCast (q : B) (u : NodeAlgebra B q) (a : ℕ) :
     (leftChamberMap q u).coeff (a : ℤ) = (slabBasis q).repr u (-(a : ℤ)) := by
@@ -241,14 +250,18 @@ def slabCorrespondence (q : B) {I J : Set ℤ}
     rw [map_smul, leftChamberMap_Z, neg_neg,
       Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.property)), pow_zero, map_one, one_mul,
       Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact AddMonoidAlgebra.single_coeff_of_mem_grade a.property
+    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
+      (Finsupp.support_subset_singleton.mp
+        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
   right_liftRight j := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, coeffLiftLinearMap_apply,
       Submodule.subtype_apply]
     rw [map_smul, rightChamberMap_Z,
       Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.property)), pow_zero, map_one, one_mul,
       Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact AddMonoidAlgebra.single_coeff_of_mem_grade a.property
+    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
+      (Finsupp.support_subset_singleton.mp
+        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
 
 @[simp] theorem slabCorrespondence_left (q : B) {I J : Set ℤ}
     (hI : I ⊆ Set.Ici 0) (hJ : J ⊆ Set.Ici 0) :
@@ -281,15 +294,6 @@ theorem slabCorrespondence_injective (q : B) {I J : Set ℤ}
       ((slabCorrespondence q hI hJ).left.prod (slabCorrespondence q hI hJ).right) :=
   chamberProd_injective q
 
-private theorem coeff_mul_of_mem_grade {k₁ k₂ : ℤ}
-    (a₁ : AddMonoidAlgebra.grade B k₁) (a₂ : AddMonoidAlgebra.grade B k₂) :
-    ((a₁ : B[T;T⁻¹]) * (a₂ : B[T;T⁻¹])).coeff (k₁ + k₂) =
-      (a₁ : B[T;T⁻¹]).coeff k₁ * (a₂ : B[T;T⁻¹]).coeff k₂ := by
-  conv_lhs =>
-    rw [← AddMonoidAlgebra.single_coeff_of_mem_grade a₁.property,
-      ← AddMonoidAlgebra.single_coeff_of_mem_grade a₂.property]
-  rw [AddMonoidAlgebra.single_mul_single, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
-
 /-- Admissible left lifts of `slabCorrespondence` preserve products, supplying the multiplicativity
 hypothesis of `GradedCorrespondence.transfer_mul`. -/
 theorem slabCorrespondence_liftLeft_mul (q : B) {I J : Set ℤ}
@@ -302,7 +306,8 @@ theorem slabCorrespondence_liftLeft_mul (q : B) {I J : Set ℤ}
       (slabCorrespondence q hI hJ).liftLeft i₁ a₁ *
         (slabCorrespondence q hI hJ).liftLeft i₂ a₂ := by
   rw [slabCorrespondence_liftLeft_apply, slabCorrespondence_liftLeft_apply,
-    slabCorrespondence_liftLeft_apply, coeff_mul_of_mem_grade a₁ a₂,
+    slabCorrespondence_liftLeft_apply,
+    AddMonoidAlgebra.coeff_mul_of_mem_grade a₁.property a₂.property,
     Int.natAbs_add_of_nonneg (hI i₁.property) (hI i₂.property), pow_add, smul_mul_smul_comm]
 
 /-- Admissible right lifts of `slabCorrespondence` preserve products, supplying the parallel
@@ -317,8 +322,16 @@ theorem slabCorrespondence_liftRight_mul (q : B) {I J : Set ℤ}
       (slabCorrespondence q hI hJ).liftRight j₁ a₁ *
         (slabCorrespondence q hI hJ).liftRight j₂ a₂ := by
   rw [slabCorrespondence_liftRight_apply, slabCorrespondence_liftRight_apply,
-    slabCorrespondence_liftRight_apply, coeff_mul_of_mem_grade a₁ a₂,
+    slabCorrespondence_liftRight_apply,
+    AddMonoidAlgebra.coeff_mul_of_mem_grade a₁.property a₂.property,
     Int.natAbs_add_of_nonneg (hJ j₁.property) (hJ j₂.property), pow_add, smul_mul_smul_comm]
+
+private theorem decompose_grade_C_mul_T (k m : ℤ) (r : B) :
+    (DirectSum.decompose (AddMonoidAlgebra.grade B) (C r * T m) k : B[T;T⁻¹]) =
+      if m = k then C r * T m else 0 := by
+  rw [AddMonoidAlgebra.grade.decompose_apply, ← single_eq_C_mul_T,
+    AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+  split_ifs with h <;> [rw [← h]; simp]
 
 /-- Explicit right-chamber transfer of an incoming left monomial `C b * T i` across
 `slabCorrespondence`. -/
@@ -341,9 +354,31 @@ theorem slabCorrespondence_transfer_C_mul_T (q : B) {I J : Set ℤ}
     rw [slabCorrespondence_liftLeft_apply, hc, slabCorrespondence_right, AlgHom.toLinearMap_apply,
       map_smul, map_pow, rightChamberMap_coord_zero, mul_pow, ← map_pow, T_pow, mul_neg_one,
       Int.natAbs_of_nonneg hi, Algebra.smul_def, ← C_eq_algebraMap, ← mul_assoc, ← map_mul]
-  rw [GradedCorrespondence.transfer_apply, himg, AddMonoidAlgebra.grade.decompose_apply,
-    ← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
-  split_ifs with h <;> [rw [← h]; simp]
+  rw [GradedCorrespondence.transfer_apply, himg, decompose_grade_C_mul_T]
+
+/-- Explicit left-chamber reverse transfer of an incoming right monomial `C b * T j` across
+`(slabCorrespondence q hI hJ).symm`. -/
+theorem slabCorrespondence_symm_transfer_C_mul_T (q : B) {I J : Set ℤ}
+    (hI : I ⊆ Set.Ici 0) (hJ : J ⊆ Set.Ici 0)
+    (j : J) (b : B) (k : ℤ) :
+    ((slabCorrespondence q hI hJ).symm.transfer j k
+        ⟨C b * T (j : ℤ), by
+          rw [← single_eq_C_mul_T]
+          exact AddMonoidAlgebra.single_mem_grade (j : ℤ) b⟩ : B[T;T⁻¹]) =
+      if -(j : ℤ) = k then C (b * q ^ (j : ℤ).natAbs) * T (-(j : ℤ)) else 0 := by
+  have hj : 0 ≤ (j : ℤ) := hJ j.property
+  have hc : (C b * T (j : ℤ)).coeff (j : ℤ) = b := by simp [← single_eq_C_mul_T]
+  have himg : (slabCorrespondence q hI hJ).symm.right
+      ((slabCorrespondence q hI hJ).symm.liftLeft j
+        ⟨C b * T (j : ℤ), by
+          rw [← single_eq_C_mul_T]
+          exact AddMonoidAlgebra.single_mem_grade (j : ℤ) b⟩) =
+      C (b * q ^ (j : ℤ).natAbs) * T (-(j : ℤ)) := by
+    rw [GradedCorrespondence.symm_right, GradedCorrespondence.symm_liftLeft,
+      slabCorrespondence_liftRight_apply, hc, slabCorrespondence_left, AlgHom.toLinearMap_apply,
+      map_smul, map_pow, leftChamberMap_coord_one, mul_pow, ← map_pow, T_pow, mul_neg_one,
+      Int.natAbs_of_nonneg hj, Algebra.smul_def, ← C_eq_algebraMap, ← mul_assoc, ← map_mul]
+  rw [GradedCorrespondence.transfer_apply, himg, decompose_grade_C_mul_T]
 
 private theorem mapAlgHom_coeffLiftLinearMap [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q')
@@ -485,16 +520,6 @@ theorem tangentialChamberProd_injective (q : AddMonoidAlgebra S Λ) :
     ((AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.fst huv))
     ((AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.snd huv))
 
-private theorem mapAlgHom_mapDomain_mk [CommSemiring R] [Algebra R S] [Algebra R S']
-    (φ : S →ₐ[R] S') (k : ℤ) (q : AddMonoidAlgebra S Λ) :
-    AddMonoidAlgebra.mapAlgHom (ℤ × Λ) φ (AddMonoidAlgebra.mapDomain (Prod.mk k) q) =
-      AddMonoidAlgebra.mapDomain (Prod.mk k) (AddMonoidAlgebra.mapAlgHom Λ φ q) := by
-  ext p
-  simp only [AddMonoidAlgebra.coeff_mapAlgHom, AddMonoidAlgebra.mapDomain,
-    AddMonoidAlgebra.coeff_ofCoeff]
-  exact congrArg (fun g : ℤ × Λ →₀ S' => g p)
-    (Finsupp.mapDomain_mapRange (Prod.mk k) q.coeff φ (map_zero φ) (map_add φ)).symm
-
 /-- Naturality of `leftTangentialMap` along a coefficient `R`-algebra homomorphism
 `φ : S →ₐ[R] S'` sending `q` to `q'`. -/
 theorem mapAlgHom_comp_leftTangentialMap [CommSemiring R] [Algebra R S] [Algebra R S']
@@ -508,7 +533,7 @@ theorem mapAlgHom_comp_leftTangentialMap [CommSemiring R] [Algebra R S] [Algebra
   refine algHom_ext_of_algebra (fun b => ?_) (by simp) ?_
   · induction b using AddMonoidAlgebra.induction_linear with
     | zero => simp | add x y hx hy => simp [map_add, hx, hy] | single m s => simp
-  · subst hq; simp [mapAlgHom_mapDomain_mk]
+  · subst hq; simp [AddMonoidAlgebra.mapAlgHom_mapDomain]
 
 /-- Naturality of `rightTangentialMap` along a coefficient `R`-algebra homomorphism
 `φ : S →ₐ[R] S'` sending `q` to `q'`. -/
@@ -523,7 +548,7 @@ theorem mapAlgHom_comp_rightTangentialMap [CommSemiring R] [Algebra R S] [Algebr
   refine algHom_ext_of_algebra (fun b => ?_) ?_ (by simp)
   · induction b using AddMonoidAlgebra.induction_linear with
     | zero => simp | add x y hx hy => simp [map_add, hx, hy] | single m s => simp
-  · subst hq; simp [mapAlgHom_mapDomain_mk]
+  · subst hq; simp [AddMonoidAlgebra.mapAlgHom_mapDomain]
 
 /-- Auxiliary `S`-linear lift reading the `p`-th coefficient in `S[ℤ × Λ]` and scaling a
 tangential monomial times a slab basis element. -/
@@ -566,13 +591,17 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
       tangentialLiftLinearMap_apply, leftTangentialMap_algebraMap_single_mul_Z,
       neg_neg, Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.val i.property)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact AddMonoidAlgebra.single_coeff_of_mem_grade a.property
+    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
+      (Finsupp.support_subset_singleton.mp
+        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
   right_liftRight j := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
       tangentialLiftLinearMap_apply, rightTangentialMap_algebraMap_single_mul_Z,
       Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.val j.property)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact AddMonoidAlgebra.single_coeff_of_mem_grade a.property
+    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
+      (Finsupp.support_subset_singleton.mp
+        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
 
 @[simp] theorem tangentialSlabCorrespondence_left (q : AddMonoidAlgebra S Λ)
     {I J : Set (ℤ × Λ)} (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) :
@@ -600,7 +629,17 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
         Z q (j : ℤ × Λ).1 :=
   tangentialLiftLinearMap_apply q j (Z q (j : ℤ × Λ).1) a
 
-/-- Explicit homogeneous transfer of an incoming monomial `single (d, m) s` across
+private theorem decompose_grade_curryAlgEquiv_symm_single [DecidableEq Λ]
+    (d : ℤ) (f : AddMonoidAlgebra S Λ) (k : ℤ) (m' : Λ) :
+    (DirectSum.decompose (AddMonoidAlgebra.grade S)
+        ((AddMonoidAlgebra.curryAlgEquiv S).symm (AddMonoidAlgebra.single d f)) (k, m') :
+        AddMonoidAlgebra S (ℤ × Λ)) =
+      if d = k then AddMonoidAlgebra.single (d, m') (f.coeff m') else 0 := by
+  rw [AddMonoidAlgebra.grade.decompose_apply, AddMonoidAlgebra.coeff_curryAlgEquiv_symm,
+    AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+  split_ifs with h <;> [rw [h]; simp]
+
+/-- Explicit homogeneous transfer of an incoming left monomial `single (d, m) s` across
 `tangentialSlabCorrespondence`, expressed in terms of the tangential expansion of `q ^ d.natAbs`:
 when `Λ` is an additive commutative group, the `(k, m')`-transfer is
 `single (-d, m') (s * (q ^ d.natAbs).coeff (m' - m))` for `k = -d` and `0` otherwise. -/
@@ -621,7 +660,6 @@ theorem tangentialSlabCorrespondence_transfer_single
   have hto : (i : ℤ × G).1.toNat = (i : ℤ × G).1.natAbs := by omega
   let f : AddMonoidAlgebra S G :=
     AddMonoidAlgebra.single (i : ℤ × G).2 s * q ^ (i : ℤ × G).1.natAbs
-  -- Lift the incoming monomial and push it to the right chamber.
   have himg : (tangentialSlabCorrespondence q hI hJ).right
       ((tangentialSlabCorrespondence q hI hJ).liftLeft i
         ⟨AddMonoidAlgebra.single (i : ℤ × G) s,
@@ -631,18 +669,40 @@ theorem tangentialSlabCorrespondence_transfer_single
     rw [tangentialSlabCorrespondence_liftLeft_apply, AddMonoidAlgebra.coeff_single,
       Finsupp.single_eq_same, tangentialSlabCorrespondence_right, AlgHom.toLinearMap_apply,
       rightTangentialMap_algebraMap_single_mul_Z, neg_neg, hto]
-  -- Read off the `(k, m')`-coefficient of the uncurried image.
-  have hcoeff : ((AddMonoidAlgebra.curryAlgEquiv S).symm
-      (AddMonoidAlgebra.single (-(i : ℤ × G).1) f)).coeff (k, m') =
-      if -(i : ℤ × G).1 = k then f.coeff m' else 0 := by
-    change (Finsupp.uncurry ((AddMonoidAlgebra.single (-(i : ℤ × G).1) f).coeff.mapRange
-      AddMonoidAlgebra.coeff AddMonoidAlgebra.coeff_zero)) (k, m') = _
-    rw [Finsupp.uncurry_apply_pair, Finsupp.mapRange_apply, AddMonoidAlgebra.coeff_single,
-      Finsupp.single_apply]
-    split_ifs <;> simp
-  -- Project to the `(k, m')` graded piece via `AddMonoidAlgebra.grade.decompose_apply`.
-  rw [GradedCorrespondence.transfer_apply, himg, AddMonoidAlgebra.grade.decompose_apply, hcoeff]
-  split_ifs with hk <;> [(subst hk; simp [f, sub_eq_neg_add]); simp]
+  rw [GradedCorrespondence.transfer_apply, himg, decompose_grade_curryAlgEquiv_symm_single]
+  split_ifs with hk <;> [simp [f, sub_eq_neg_add]; rfl]
+
+/-- Explicit left-chamber reverse transfer of an incoming right monomial `single (d, m) s` across
+`(tangentialSlabCorrespondence q hI hJ).symm`. -/
+theorem tangentialSlabCorrespondence_symm_transfer_single
+    {G : Type*} [AddCommGroup G] [DecidableEq G]
+    (q : AddMonoidAlgebra S G)
+    {I J : Set (ℤ × G)} (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1)
+    (j : J) (s : S) (k : ℤ) (m' : G) :
+    ((tangentialSlabCorrespondence q hI hJ).symm.transfer j (k, m')
+        ⟨AddMonoidAlgebra.single (j : ℤ × G) s,
+          AddMonoidAlgebra.single_mem_grade (j : ℤ × G) s⟩ :
+        AddMonoidAlgebra S (ℤ × G)) =
+      if -(j : ℤ × G).1 = k then
+        AddMonoidAlgebra.single (-(j : ℤ × G).1, m')
+          (s * (q ^ (j : ℤ × G).1.natAbs).coeff (m' - (j : ℤ × G).2))
+      else 0 := by
+  have hj : 0 ≤ (j : ℤ × G).1 := hJ j.val j.property
+  have hto : (j : ℤ × G).1.toNat = (j : ℤ × G).1.natAbs := by omega
+  let f : AddMonoidAlgebra S G :=
+    AddMonoidAlgebra.single (j : ℤ × G).2 s * q ^ (j : ℤ × G).1.natAbs
+  have himg : (tangentialSlabCorrespondence q hI hJ).symm.right
+      ((tangentialSlabCorrespondence q hI hJ).symm.liftLeft j
+        ⟨AddMonoidAlgebra.single (j : ℤ × G) s,
+          AddMonoidAlgebra.single_mem_grade (j : ℤ × G) s⟩) =
+      (AddMonoidAlgebra.curryAlgEquiv S).symm
+        (AddMonoidAlgebra.single (-(j : ℤ × G).1) f) := by
+    rw [GradedCorrespondence.symm_right, GradedCorrespondence.symm_liftLeft,
+      tangentialSlabCorrespondence_liftRight_apply, AddMonoidAlgebra.coeff_single,
+      Finsupp.single_eq_same, tangentialSlabCorrespondence_left, AlgHom.toLinearMap_apply,
+      leftTangentialMap_algebraMap_single_mul_Z, hto]
+  rw [GradedCorrespondence.transfer_apply, himg, decompose_grade_curryAlgEquiv_symm_single]
+  split_ifs with hk <;> [simp [f, sub_eq_neg_add]; rfl]
 
 private theorem mapAlgHom_tangentialLiftLinearMap [CommSemiring R] [Algebra R S] [Algebra R S']
     (φ : S →ₐ[R] S') {q : AddMonoidAlgebra S Λ} {q' : AddMonoidAlgebra S' Λ}
