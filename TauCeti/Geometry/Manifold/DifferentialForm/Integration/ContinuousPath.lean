@@ -33,8 +33,10 @@ additive under concatenation (`TauCeti.continuousPathIntegral_trans`), negated u
 (`TauCeti.continuousPathIntegral_mpullback`), and covariant under continuous real-linear maps of
 coefficients (`TauCeti.continuousPathIntegral_mapCoeff`).
 
-Comparison with `TauCeti.pathIntegral` and Mathlib's `curveIntegral` lives in
-`TauCeti.Geometry.Manifold.DifferentialForm.Integration.Comparison`. Finally,
+Comparison with `TauCeti.pathIntegral` lives in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.Comparison`, and comparison with Mathlib's
+`curveIntegral` lives in `TauCeti.Geometry.Manifold.DifferentialForm.Integration.CurveIntegral`.
+Finally,
 `φ` admits a global primitive if and only if its integral along every continuous loop vanishes
 (`TauCeti.exists_isPrimitiveOn_univ_iff_forall_continuousPathIntegral_loop_eq_zero`), and on a
 preconnected manifold vanishing of loops at a single base point suffices, with integration from the

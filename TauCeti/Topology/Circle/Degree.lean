@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Lifting
-public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Topology.Circle.Loop
 
 import TauCeti.Analysis.Normed.Module.Normalize
