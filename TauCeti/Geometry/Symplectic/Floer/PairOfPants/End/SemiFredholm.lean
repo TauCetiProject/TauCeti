@@ -467,6 +467,46 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
     rw [fst_positiveEndCoord_positiveEndChart] at hζR
     exact hR.trans_lt hζR
 
+omit [FiniteDimensional ℝ V] in
+/-- The form `η (φ'_q ·) ∘ (a + b J)` vanishes off a band `(a, b) × ℝ` when `η ∘ φ'_q` does. -/
+private theorem covectorPullback_positiveEndChart_eq_zero {q : Puncture}
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {a b : ℝ}
+    (hη : ∀ s t, s ∉ Ioo a b → (η ∘ positiveEndChart q) (s, t) = 0) (s t : ℝ)
+    (hs : s ∉ Ioo a b) : covectorPullback (positiveEndChart q) J u η (s, t) = 0 := by
+  have h₀ : η (positiveEndChart q (s, t)) = 0 := hη s t hs
+  simp only [covectorPullback_apply, h₀, ContinuousLinearMap.zero_comp]
+
+omit [FiniteDimensional ℝ V] in
+/-- The form `η (φ'_q ·) ∘ (a + b J)` has period one in `t`, since the end chart does. -/
+private theorem covectorPullback_positiveEndChart_add_one {q : Puncture}
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (s t : ℝ) :
+    covectorPullback (positiveEndChart q) J u η (s, t + 1) =
+      covectorPullback (positiveEndChart q) J u η (s, t) := by
+  simp only [covectorPullback_apply, positiveEndChart_add_one,
+    fderiv_add_snd_of_periodic_snd (positiveEndChart_add_one q)]
+
+omit [FiniteDimensional ℝ V] in
+/-- An end structure `J_q(t)` that agrees with `J` far out on the end `q` has period one, since the
+end chart does. -/
+private theorem apply_one_eq_apply_zero_of_comp_positiveEndChart {q : Puncture}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) : Je 1 = Je 0 := by
+  rw [← hJeq (R₁, 1) le_rfl, ← hJeq (R₁, 0) le_rfl]
+  exact congrArg J (by simpa using positiveEndChart_add_one q R₁ 0)
+
+omit [FiniteDimensional ℝ V] in
+/-- An end structure `J_q(t)` that agrees with `J` far out on the end `q` is compatible along
+`u ∘ φ'_q` there when `J` is compatible along `u` on `S`. -/
+private theorem eventually_compatible_comp_positiveEndChart (ω : SymplecticForm V) {q : Puncture}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z))) :
+    ∀ᶠ s in atTop, ∀ t, ω.Compatible (Je t (u (positiveEndChart q (s, t)))) := by
+  refine (eventually_ge_atTop (max R₁ 1)).mono fun s hs t ↦ ?_
+  rw [← hJeq (s, t) ((le_max_left _ _).trans hs)]
+  exact hc _ (positiveEndChart_mem_thricePuncturedSphereReal (z := (s, t))
+    (show 0 < s by linarith [le_max_right R₁ 1]))
+
 /-- Beyond `R₁`, where `J` is the end structure `J_q(t)` and `ζ.1 ≥ 2`, the formal adjoint of the
 end data `(J_q(t), 0, H'_q(t))` along `u ∘ φ'_q` on the pulled-back form `η (φ'_q ·) ∘ (a + b J)` is
 the Jacobian of `φ'_q` times `D_u^* η` at `φ'_q(ζ)`. -/
@@ -546,7 +586,8 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
   set D := ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u η
-  have hDc : Continuous D := continuous_floerLinearizationAdjoint_of_tsupport_subset hJ
+  have hDc : Continuous D := continuous_floerLinearizationAdjoint_of_tsupport_subset
+    (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ z hz)
     (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hη hηS
   set g : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 * ‖D z‖ ^ 2
@@ -631,24 +672,17 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             u η z‖ ^ 2 := by
-  have hH' := contDiff_uncurry_positiveEndHamiltonian (hHs q)
   set φ := positiveEndChart q
-  have hφS {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) : φ ζ ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal hζ
-  -- The end structure has period one, since the end chart does, and it is compatible along `u`.
-  have hJe1 : Je 1 = Je 0 := by
-    rw [← hJeq (R₁, 1) le_rfl, ← hJeq (R₁, 0) le_rfl]
-    exact congrArg J (by simpa using positiveEndChart_add_one q R₁ 0)
-  have hJeu {ζ : ℝ × ℝ} (hζ : max R₁ 1 ≤ ζ.1) : ω.Compatible (Je ζ.2 ((u ∘ φ) ζ)) := by
-    rw [← hJeq ζ ((le_max_left _ _).trans hζ)]
-    exact hc _ (hφS (by linarith [le_max_right R₁ 1]))
-  -- The end estimate of the adjoint on the half-cylinder of the end data.
+  -- The end estimate of the adjoint on the half-cylinder of the end data, whose structure has
+  -- period one and is compatible along `u ∘ φ'_q`.
   obtain ⟨C₁, -, R₂, hest⟩ :=
-    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX hH' hx hnd
-    (hJe.of_le one_le_two) hJe1 hJex (u := u ∘ φ)
-    ((eventually_gt_atTop 0).mono fun s hs t ↦ (hu _ (hφS (ζ := (s, t)) hs)).comp _
-      (contDiff_positiveEndChart q 1).contDiffAt)
-    ((eventually_ge_atTop (max R₁ 1)).mono fun s hs t ↦ hJeu (ζ := (s, t)) hs) hux hδ
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX
+    (contDiff_uncurry_positiveEndHamiltonian (hHs q)) hx hnd (hJe.of_le one_le_two)
+    (apply_one_eq_apply_zero_of_comp_positiveEndChart hJeq) hJex (u := u ∘ φ)
+    ((eventually_gt_atTop 0).mono fun s hs t ↦
+      (hu _ (positiveEndChart_mem_thricePuncturedSphereReal (z := (s, t)) hs)).comp _
+        (contDiff_positiveEndChart q 1).contDiffAt)
+    (eventually_compatible_comp_positiveEndChart ω hJeq hc) hux hδ
   set R := max (max R₂ (R₁ + 1)) 2
   have hR : R₂ ≤ R ∧ R₁ + 1 ≤ R ∧ 2 ≤ R :=
     ⟨(le_max_left _ _).trans (le_max_left _ _), (le_max_right _ _).trans (le_max_left _ _),
@@ -658,14 +692,10 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
   -- `η` vanishes in the end chart outside a finite band `(R, b) × ℝ`, and so does `η'`, which
   -- is `C²` and has period one in `t`.
   obtain ⟨b, hRb, hvan⟩ := exists_forall_comp_positiveEndChart_eq_zero hηc hηR
-  have hvan' (s t : ℝ) (hs : s ∉ Ioo R b) : η' (s, t) = 0 := by
-    have h₀ : η (φ (s, t)) = 0 := hvan s t hs
-    simp only [η', covectorPullback_apply, h₀, ContinuousLinearMap.zero_comp]
+  have hvan' := covectorPullback_positiveEndChart_eq_zero
+    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u hvan
   have hη' : ContDiff ℝ 2 η' := contDiff_covectorPullback_positiveEndChart hJe hJeq hu₂
     (max_le (by linarith) (by linarith)) hη hηR
-  have hper (s t : ℝ) : η' (s, t + 1) = η' (s, t) := by
-    simp only [η', covectorPullback_apply, φ, positiveEndChart_add_one,
-      fderiv_add_snd_of_periodic_snd (positiveEndChart_add_one q)]
   calc _ = ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, sobolevDensity η' ζ := by
         refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
           (measurableSet_Ioi.prod measurableSet_Icc)
@@ -677,8 +707,9 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) η' ζ‖ ^ 2 := by
         simp only [funext (sobolevDensity_apply η')]
-        exact (hest hη' hper hRb hR.1 hvan').trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
-          (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _))
+        exact (hest hη' (covectorPullback_positiveEndChart_add_one _ u η) hRb hR.1 hvan').trans
+          (mul_le_mul_of_nonneg_right (le_max_left _ _) (setIntegral_nonneg
+            (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _))
     _ ≤ _ := by
         rw [mul_assoc]
         exact mul_le_mul_of_nonneg_left

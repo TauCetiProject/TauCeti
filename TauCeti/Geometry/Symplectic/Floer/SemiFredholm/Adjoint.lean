@@ -775,7 +775,8 @@ private theorem exists_continuous_reflectL_coeff (ω : SymplecticForm V) {H : �
       TendstoUniformlyOn (fun s t ↦ Ar (s, t))
         (fun t ↦ -((J t (x t)).toLinearMap.toContinuousLinearMap ∘L rotatedField ω J H x t))
         atBot (Icc 0 1) := by
-  have hJu' : ContDiff ℝ 1 (uncurry fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) := hJ
+  have hJu' : ContDiff ℝ 1 (uncurry fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) := by
+    simpa only [uncurry_def] using hJ
   -- The reflected point, pushed into the end `s ≥ s₀` where `u` is `C¹`.
   set g : ℝ × ℝ → ℝ × ℝ := fun z ↦ (max (-z.1) s₀, z.2)
   have hg : Continuous g := (continuous_fst.neg.max continuous_const).prodMk continuous_snd
