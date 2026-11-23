@@ -29,6 +29,13 @@ so it is a special case; that case permits changing the quotient model in profin
 * `ContinuousMonoidHom.quotientKerEquivOfSurjective`: the case of a continuous surjection from a
   compact group to a Hausdorff group.
 
+## Main statements
+
+* `TauCeti.QuotientGroup.continuous_rangeKerLift` and
+  `TauCeti.QuotientAddGroup.continuous_rangeKerLift`: the kernel lift `G ⧸ f.ker →* f.range` of a
+  continuous homomorphism is continuous, for the quotient topology on the source and the subspace
+  topology on the range.
+
 ## References
 
 * N. Bourbaki, *General Topology*, Chapters 1–4, Springer (1989), Chapter III (Topological
@@ -107,3 +114,18 @@ theorem quotientKerEquivOfSurjective_symm_apply (x : G) :
       (f.continuous.isClosedMap.isStrictMap f.continuous) hf x
 
 end ContinuousMonoidHom
+
+namespace TauCeti.QuotientGroup
+
+variable {G H : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
+
+/-- The kernel lift `G ⧸ f.ker →* f.range` of a continuous homomorphism `f` is continuous, for the
+quotient topology on the source and the subspace topology on the range. -/
+@[to_additive TauCeti.QuotientAddGroup.continuous_rangeKerLift
+  /-- The kernel lift `G ⧸ f.ker →+ f.range` of a continuous additive homomorphism `f` is
+  continuous, for the quotient topology on the source and the subspace topology on the range. -/]
+theorem continuous_rangeKerLift {f : G →* H} (hf : Continuous f) :
+    Continuous (QuotientGroup.rangeKerLift f) :=
+  (QuotientGroup.isQuotientMap_mk f.ker).continuous_iff.2 (hf.subtype_mk _)
+
+end TauCeti.QuotientGroup
