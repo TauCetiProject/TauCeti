@@ -21,13 +21,16 @@ simplicial identifications `(X(f) x, t) ∼ (x, f_* t)` along morphisms `f : ⦋
 reindexing quotient comparison map `X.fatToGeometricRealization` from the fat realization of `X`.
 
 This file specializes `TauCeti.functorTensor` to `SimplexCategory.toTop` with `ℕ`-indexed
-characteristic maps (`geometricRealization.ι`), universal property (`geometricRealization.desc`),
-functoriality (`TauCeti.functorTensorFunctor SimplexCategory.toTop`), augmentations
-(`geometricRealization.augment`), `[0, 1]`-homotopies (`geometricRealization.homotopy`), Lindelöf
-and compactly-generated instances, and open restriction (`geometricRealization.isOpenEmbedding_map`,
-`geometricRealization.isOpenEmbedding_map_of_range_eq_preimage`). Unconditional injectivity and
-closed embeddings are proved via normal forms in
-`TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton`.
+characteristic maps (`geometricRealization.ι`), `ℕ`-indexed `ι`-evaluation `simp` lemmas
+(`geometricRealization.lift_ι`, `geometricRealization.desc_ι`, `geometricRealization.map_ι`,
+`geometricRealization.augment_ι`, `geometricRealization.homotopy_apply_ι`), `LindelofSpace` and
+`UCompactlyGeneratedSpace` instances, and the fat-to-thin quotient comparison
+(`fatToGeometricRealization`). Functoriality (`TauCeti.functorTensor.map`,
+`TauCeti.functorTensorFunctor`), universal property (`TauCeti.functorTensor.desc`), augmentations
+(`TauCeti.functorTensor.augment`), `[0, 1]`-homotopies (`TauCeti.functorTensor.homotopy`), and
+open/closed restriction (`TauCeti.functorTensor.isOpenEmbedding_map`) are provided directly by
+`TauCeti.functorTensor`. Unconditional injectivity and closed embeddings are proved via normal forms
+in `TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton`.
 
 ## References
 
@@ -58,8 +61,11 @@ abbrev geometricRealization : TopCat.{u} :=
 namespace geometricRealization
 
 /-- The characteristic map `X _⦋n⦌ × Δⁿ → |X|` in degree `n`. -/
-@[expose] def ι (n : ℕ) : C(X _⦋n⦌ × toTop.{u}.obj ⦋n⦌, X.geometricRealization) :=
+def ι (n : ℕ) : C(X _⦋n⦌ × toTop.{u}.obj ⦋n⦌, X.geometricRealization) :=
   TauCeti.functorTensor.ι toTop X ⦋n⦌
+
+/-- `geometricRealization.ι X n` is the `⦋n⦌`-characteristic map of `functorTensor toTop X`. -/
+theorem ι_eq (n : ℕ) : ι X n = TauCeti.functorTensor.ι toTop X ⦋n⦌ := (rfl)
 
 @[simp] theorem ι_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌) :
     ι X m (X.map f.op x, t) = ι X n (x, toTop.map f t) :=
@@ -126,61 +132,44 @@ instance [h : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}
     fun ⟨n⟩ ↦ h n
   TauCeti.functorTensor.instUCompactlyGeneratedSpace toTop X
 
-section Desc
+section FunctorTensorSimp
 
 variable {X}
 
-section DescFun
+@[simp] theorem lift_ι {Z : Sort*} (g : ∀ d : SimplexCategory, X.obj (op d) × toTop.{u}.obj d → Z)
+    (hg : ∀ ⦃c d : SimplexCategory⦄ (f : c ⟶ d) (x : X.obj (op d)) (t : toTop.{u}.obj c),
+      g c (X.map f.op x, t) = g d (x, toTop.map f t))
+    (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
+    TauCeti.functorTensor.lift g hg (ι X n p) = g ⦋n⦌ p :=
+  TauCeti.functorTensor.lift_ι g hg ⦋n⦌ p
 
-variable {Z : Sort*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
-  (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
-    g m (X.map f.op x, t) = g n (x, toTop.map f t))
+@[simp] theorem desc_ι {Z : Type*} [TopologicalSpace Z]
+    (g : ∀ d : SimplexCategory, C(X.obj (op d) × toTop.{u}.obj d, Z))
+    (hg : ∀ ⦃c d : SimplexCategory⦄ (f : c ⟶ d) (x : X.obj (op d)) (t : toTop.{u}.obj c),
+      g c (X.map f.op x, t) = g d (x, toTop.map f t))
+    (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
+    TauCeti.functorTensor.desc g hg (ι X n p) = g ⦋n⦌ p :=
+  TauCeti.functorTensor.desc_ι g hg ⦋n⦌ p
 
-/-- Set-level universal property of the geometric realization. -/
-def descFun : X.geometricRealization → Z :=
-  TauCeti.functorTensor.lift (fun d ↦ g d.len) fun _ _ f x t ↦ hg f x t
-
-@[simp] theorem descFun_ι (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
-    descFun g hg (ι X n p) = g n p :=
-  TauCeti.functorTensor.lift_ι _ _ ⦋n⦌ p
-
-end DescFun
-
-variable {Z : Type*} [TopologicalSpace Z] (g : ∀ n : ℕ, C(X _⦋n⦌ × toTop.{u}.obj ⦋n⦌, Z))
-  (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
-    g m (X.map f.op x, t) = g n (x, toTop.map f t))
-
-/-- Universal property of the geometric realization: continuous maps `X _⦋n⦌ × Δⁿ → Z` compatible
-with all simplicial operators descend to a continuous map `|X| → Z`. -/
-def desc : C(X.geometricRealization, Z) :=
-  TauCeti.functorTensor.desc (fun d ↦ g d.len) fun _ _ f x t ↦ hg f x t
-
-@[simp] theorem desc_ι (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
-    desc g hg (ι X n p) = g n p :=
-  TauCeti.functorTensor.desc_ι _ _ ⦋n⦌ p
-
-end Desc
-
-section Map
-
-variable {X} {Y : SimplicialObject TopCat.{u}}
-
-/-- The map of geometric realizations induced by a morphism of simplicial spaces. -/
-def map (φ : X ⟶ Y) : X.geometricRealization ⟶ Y.geometricRealization :=
-  TauCeti.functorTensor.map toTop φ
-
-@[simp] theorem map_ι (φ : X ⟶ Y) (n : ℕ) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
-    map φ (ι X n (x, t)) = ι Y n (φ.app (op ⦋n⦌) x, t) :=
+@[simp] theorem map_ι {Y : SimplicialObject TopCat.{u}} (φ : X ⟶ Y) (n : ℕ) (x : X _⦋n⦌)
+    (t : toTop.{u}.obj ⦋n⦌) :
+    TauCeti.functorTensor.map toTop φ (ι X n (x, t)) = ι Y n (φ.app (op ⦋n⦌) x, t) :=
   TauCeti.functorTensor.map_ι toTop φ ⦋n⦌ x t
 
-@[simp] theorem map_id : map (𝟙 X) = 𝟙 X.geometricRealization :=
-  TauCeti.functorTensor.map_id toTop X
+@[simp] theorem augment_ι {Z : TopCat.{u}} (ε : X ⟶ (Functor.const _).obj Z) (n : ℕ) (x : X _⦋n⦌)
+    (t : toTop.{u}.obj ⦋n⦌) :
+    TauCeti.functorTensor.augment toTop ε (ι X n (x, t)) = ε.app (op ⦋n⦌) x :=
+  TauCeti.functorTensor.augment_ι toTop ε ⦋n⦌ x t
 
-@[simp] theorem map_comp {W : SimplicialObject TopCat.{u}} (φ : X ⟶ Y) (ψ : Y ⟶ W) :
-    map (φ ≫ ψ) = map φ ≫ map ψ :=
-  TauCeti.functorTensor.map_comp toTop φ ψ
+@[simp] theorem homotopy_apply_ι {Y : SimplicialObject TopCat.{u}} (φ : unitInterval → (X ⟶ Y))
+    (hφ : ∀ d : SimplexCategory,
+      Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.fst).app (op d) p.snd)
+    (s : unitInterval) (n : ℕ) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
+    TauCeti.functorTensor.homotopy toTop φ hφ (s, ι X n (x, t)) =
+      ι Y n ((φ s).app (op ⦋n⦌) x, t) :=
+  TauCeti.functorTensor.homotopy_apply_ι toTop φ hφ s ⦋n⦌ x t
 
-end Map
+end FunctorTensorSimp
 
 end geometricRealization
 
@@ -191,6 +180,11 @@ semi-simplicial space to the thin geometric realization, collapsing degenerate s
 def fatToGeometricRealization :
     TauCeti.fatRealization (toSimplexCategory.op ⋙ X) ⟶ X.geometricRealization :=
   TauCeti.functorTensor.reindex toSimplexCategory toTop X
+
+/-- `X.fatToGeometricRealization` is the reindexing morphism along
+`SemiSimplexCategory.toSimplexCategory`. -/
+theorem fatToGeometricRealization_eq :
+    X.fatToGeometricRealization = TauCeti.functorTensor.reindex toSimplexCategory toTop X := (rfl)
 
 @[simp↓] theorem fatToGeometricRealization_ι (m : SemiSimplexCategory)
     (x : (toSimplexCategory.op ⋙ X).obj (op m)) (t : SemiSimplexCategory.toTop.{u}.obj m) :
@@ -212,97 +206,8 @@ theorem fatToGeometricRealization_surjective : Function.Surjective X.fatToGeomet
     {X Y : SimplicialObject TopCat.{u}} (φ : X ⟶ Y) :
     TauCeti.functorTensor.map SemiSimplexCategory.toTop
         (Functor.whiskerLeft toSimplexCategory.op φ) ≫
-      Y.fatToGeometricRealization = X.fatToGeometricRealization ≫ geometricRealization.map φ :=
+      Y.fatToGeometricRealization =
+        X.fatToGeometricRealization ≫ TauCeti.functorTensor.map toTop φ :=
   TauCeti.functorTensor.map_comp_reindex toSimplexCategory toTop φ
-
-namespace geometricRealization
-
-section Augment
-
-variable {X} {Z : TopCat.{u}}
-
-/-- The map `|X| ⟶ Z` induced by an augmentation `ε : X ⟶ const Z`, sending `[x, t]` to `ε x`. -/
-def augment (ε : X ⟶ (Functor.const _).obj Z) : X.geometricRealization ⟶ Z :=
-  TauCeti.functorTensor.augment toTop ε
-
-@[simp] theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : ℕ) (x : X _⦋n⦌)
-    (t : toTop.{u}.obj ⦋n⦌) : augment ε (ι X n (x, t)) = ε.app (op ⦋n⦌) x :=
-  TauCeti.functorTensor.augment_ι toTop ε ⦋n⦌ x t
-
-/-- If an augmentation is a quotient map in one degree, its thin realization is a quotient map. -/
-theorem isQuotientMap_augment (ε : X ⟶ (Functor.const _).obj Z) {n : ℕ}
-    (hε : IsQuotientMap (ε.app (op ⦋n⦌))) : IsQuotientMap (augment ε) :=
-  TauCeti.functorTensor.isQuotientMap_augment ε ⦋n⦌ hε
-
-@[reassoc (attr := simp)] theorem map_comp_augment {Y : SimplicialObject TopCat.{u}} (φ : Y ⟶ X)
-    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) :=
-  TauCeti.functorTensor.map_comp_augment toTop φ ε
-
-/-- The fat augmentation factors through the thin augmentation along `fatToGeometricRealization`. -/
-@[reassoc (attr := simp)] theorem fatToGeometricRealization_comp_augment
-    (ε : X ⟶ (Functor.const _).obj Z) :
-    X.fatToGeometricRealization ≫ augment ε =
-      TauCeti.functorTensor.augment SemiSimplexCategory.toTop
-        (Functor.whiskerLeft toSimplexCategory.op ε) :=
-  TauCeti.functorTensor.reindex_comp_augment toSimplexCategory toTop ε
-
-end Augment
-
-section Homotopy
-
-variable {X} {Y : SimplicialObject TopCat.{u}} (φ : unitInterval → (X ⟶ Y))
-  (hφ : ∀ n : ℕ, Continuous fun p : unitInterval × X _⦋n⦌ ↦ (φ p.1).app (op ⦋n⦌) p.2)
-
-/-- A `[0, 1]`-family `φ s : X ⟶ Y` jointly continuous in `s` and the simplex in each degree
-induces a homotopy `(s, [x, t]) ↦ [φ s x, t]` from `|φ 0|` to `|φ 1|`. -/
-def homotopy : ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom :=
-  TauCeti.functorTensor.homotopy toTop φ fun ⟨n⟩ ↦ hφ n
-
-@[simp] theorem homotopy_apply_ι (s : unitInterval) (n : ℕ) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
-    homotopy φ hφ (s, ι X n (x, t)) = ι Y n ((φ s).app (op ⦋n⦌) x, t) :=
-  TauCeti.functorTensor.homotopy_apply_ι toTop φ _ s ⦋n⦌ x t
-
-end Homotopy
-
-section Restriction
-
-variable {X} {Y : SimplicialObject TopCat.{u}} {φ : Y ⟶ X}
-
-variable (φ) in
-/-- The image of `|φ|` consists of the points of `|X|` of the form `[φ y, t]`. -/
-theorem range_map : range (map φ) = {p | ∃ n y t, ι X n (φ.app (op ⦋n⦌) y, t) = p} :=
-  (TauCeti.functorTensor.range_map toTop φ).trans <| Set.ext fun _ ↦
-    ⟨fun ⟨⟨n⟩, y, t, h⟩ ↦ ⟨n, y, t, h⟩, fun ⟨n, y, t, h⟩ ↦ ⟨⦋n⦌, y, t, h⟩⟩
-
-/-- **Open restriction for thin geometric realization.** If `φ : Y ⟶ X` is levelwise an open
-embedding and backwards-closed along simplicial operators, then `|φ| : |Y| ⟶ |X|` is an open
-embedding. -/
-theorem isOpenEmbedding_map (hφ : ∀ n : ℕ, IsOpenEmbedding (φ.app (op ⦋n⦌)))
-    (hsat : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌),
-      X.map f.op x ∈ range (φ.app (op ⦋m⦌)) → x ∈ range (φ.app (op ⦋n⦌))) :
-    IsOpenEmbedding (map φ) :=
-  TauCeti.functorTensor.isOpenEmbedding_map (φ := φ) (fun ⟨⟨n⟩⟩ ↦ hφ n) fun _ _ f x hx ↦
-    hsat f.unop x hx
-
-variable {Z : TopCat.{u}} {ε : X ⟶ (Functor.const _).obj Z} {V : Set Z}
-
-/-- If the image of `φ` in every degree is the preimage of `V ⊆ Z` under an augmentation `ε`, then
-the preimage of `V` in `|X|` is the image of `|Y|`. -/
-theorem preimage_augment_eq_range_map
-    (hrange : ∀ n : ℕ, range (φ.app (op ⦋n⦌)) = ε.app (op ⦋n⦌) ⁻¹' V) :
-    augment ε ⁻¹' V = range (map φ) :=
-  TauCeti.functorTensor.preimage_augment_eq_range_map ε fun ⟨⟨n⟩⟩ ↦ hrange n
-
-/-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
-`ε`, then `|φ|` is an open embedding. -/
-theorem isOpenEmbedding_map_of_range_eq_preimage (hφ : ∀ n : ℕ, IsOpenEmbedding (φ.app (op ⦋n⦌)))
-    (hrange : ∀ n : ℕ, range (φ.app (op ⦋n⦌)) = ε.app (op ⦋n⦌) ⁻¹' V) :
-    IsOpenEmbedding (map φ) :=
-  TauCeti.functorTensor.isOpenEmbedding_map_of_range_eq_preimage (ε := ε)
-    (fun ⟨⟨n⟩⟩ ↦ hφ n) fun ⟨⟨n⟩⟩ ↦ hrange n
-
-end Restriction
-
-end geometricRealization
 
 end CategoryTheory.SimplicialObject

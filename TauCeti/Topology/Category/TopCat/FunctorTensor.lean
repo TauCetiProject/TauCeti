@@ -290,27 +290,11 @@ end Map
 end functorTensor
 
 /-- The functor tensor product with `K` as a functor `(Dᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u}`. -/
+@[expose, simps]
 def functorTensorFunctor (K : D ⥤ TopCat.{u}) [Small.{u} D] :
     (Dᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u} where
   obj X := functorTensor K X
   map φ := functorTensor.map K φ
-
-@[simp]
-theorem functorTensorFunctor_obj (K : D ⥤ TopCat.{u}) [Small.{u} D] (X : Dᵒᵖ ⥤ TopCat.{u}) :
-    (functorTensorFunctor K).obj X = functorTensor K X :=
-  -- `(rfl)`, not `rfl`: the body of `functorTensorFunctor` is not `@[expose]`d.
-  (rfl)
-
-@[simp]
-theorem functorTensorFunctor_map (K : D ⥤ TopCat.{u}) [Small.{u} D]
-    {X Y : Dᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) :
-    (functorTensorFunctor K).map φ =
-      eqToHom (functorTensorFunctor_obj K X) ≫
-        functorTensor.map K φ ≫
-          eqToHom (functorTensorFunctor_obj K Y).symm := by
-  apply (conj_eqToHom_iff_heq _ _ (functorTensorFunctor_obj K X)
-    (functorTensorFunctor_obj K Y)).2
-  rw [functorTensorFunctor.eq_def]
 
 namespace functorTensor
 

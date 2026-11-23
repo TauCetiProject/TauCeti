@@ -127,13 +127,14 @@ private theorem IsNormalForm.of_map {X : SimplicialObject TopCat.{u}} {m n : ℕ
 
 /-- The canonical normal form associated to a point of `X.geometricRealization`. -/
 def normalForm : X.geometricRealization → NormalForm X :=
-  descFun (fun _ p ↦ (exists_isNormalForm X p.1 p.2).choose) fun _ _ f x t ↦
-    (exists_isNormalForm X (X.map f.op x) t).choose_spec.unique
-      (IsNormalForm.of_map f x t (exists_isNormalForm X x (toTop.map f t)).choose_spec)
+  TauCeti.functorTensor.lift (fun _ p ↦ (exists_isNormalForm X p.1 p.2).choose)
+    fun _ _ f x t ↦
+      (exists_isNormalForm X (X.map f.op x) t).choose_spec.unique
+        (IsNormalForm.of_map f x t (exists_isNormalForm X x (toTop.map f t)).choose_spec)
 
 private theorem isNormalForm_normalForm_ι {n : ℕ} (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
     IsNormalForm X x t (normalForm X (ι X n (x, t))) := by
-  rw [normalForm, descFun_ι]; exact (exists_isNormalForm X x t).choose_spec
+  rw [normalForm, lift_ι]; exact (exists_isNormalForm X x t).choose_spec
 
 @[simp] theorem normalForm_toRealization (c : NormalForm X) :
     normalForm X (c.toRealization X) = c :=
@@ -175,7 +176,7 @@ private abbrev mapNormalForm (hinj : ∀ n : ℕ, Function.Injective (φ.app (op
 
 private theorem normalForm_map (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
     (q : Y.geometricRealization) :
-    normalForm X (map φ q) = mapNormalForm hinj (normalForm Y q) := by
+    normalForm X (TauCeti.functorTensor.map toTop φ q) = mapNormalForm hinj (normalForm Y q) := by
   conv_lhs => rw [← toRealization_normalForm Y q]
   exact (map_ι φ _ _ _) ▸ normalForm_toRealization X (mapNormalForm hinj (normalForm Y q))
 
@@ -183,7 +184,7 @@ private theorem normalForm_map (hinj : ∀ n : ℕ, Function.Injective (φ.app (
 of simplicial spaces induces an injective map `|φ| : |Y| ⟶ |X|`, with no backwards-closure
 hypothesis. -/
 theorem map_injective (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌))) :
-    Function.Injective (map φ) := fun q₁ q₂ h ↦ by
+    Function.Injective (TauCeti.functorTensor.map toTop φ) := fun q₁ q₂ h ↦ by
   have hc := (normalForm_map hinj q₁).symm.trans ((congrArg (normalForm X) h).trans
     (normalForm_map hinj q₂))
   rcases h₁ : normalForm Y q₁ with ⟨d₁, y₁, p₁⟩; rcases h₂ : normalForm Y q₂ with ⟨d₂, y₂, p₂⟩
@@ -197,7 +198,7 @@ theorem map_injective (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n�
 private theorem preimage_ι_image_map_eq_iUnion
     (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
     (W : Set Y.geometricRealization) (n : ℕ) :
-    ι X n ⁻¹' (map φ '' W) =
+    ι X n ⁻¹' (TauCeti.functorTensor.map toTop φ '' W) =
       ⋃ (m : Fin (n + 1)) (μ : ⦋m.val⦌ ⟶ ⦋n⦌) (_ : Mono μ),
         Prod.map id (toTop.map μ) '' (Prod.map (X.map μ.op) id ⁻¹'
           (Prod.map (φ.app (op ⦋m.val⦌)) id '' (ι Y m.val ⁻¹' W))) := by
@@ -220,9 +221,10 @@ private theorem preimage_ι_image_map_eq_iUnion
 `φ : Y ⟶ X` of simplicial spaces induces a closed embedding `|φ| : |Y| ⟶ |X|`, with no
 backwards-closure hypothesis. -/
 theorem isClosedEmbedding_map (hφ : ∀ n : ℕ, IsClosedEmbedding (φ.app (op ⦋n⦌))) :
-    IsClosedEmbedding (map φ) := by
+    IsClosedEmbedding (TauCeti.functorTensor.map toTop φ) := by
   have hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isClosedMap (map φ).hom.continuous (map_injective hinj)
+  refine .of_continuous_injective_isClosedMap
+    (TauCeti.functorTensor.map toTop φ).hom.continuous (map_injective hinj)
     fun W hW ↦ (isClosed_iff X).mpr fun n ↦ ?_
   rw [preimage_ι_image_map_eq_iUnion hinj W n]
   refine isClosed_iUnion_of_finite fun m ↦ isClosed_iUnion_of_finite fun μ ↦
@@ -365,6 +367,7 @@ def skeleton.toRealization (n : ℕ) : (skeleton X).obj n ⟶ X.geometricRealiza
 @[simp] theorem skeleton.toRealization_ι (n : ℕ) {k : ℕ} (hk : k ≤ n)
     (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
     skeleton.toRealization X n (skeleton.ι X n hk p) = geometricRealization.ι X k p := by
+  rw [ι_eq]
   exact TauCeti.functorTensor.reindex_ι (SimplexCategory.Truncated.inclusion n) toTop X
     ⟨⦋k⦌, hk⟩ p.1 p.2
 
@@ -389,16 +392,19 @@ instance (n : ℕ) [h : ∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val
          naturality _ _ f := (skeleton_map_comp_toRealization X f).trans (Category.comp_id _).symm }
 
 private def skeletonCoconeDesc (s : Cocone (skeleton X)) : X.geometricRealization ⟶ s.pt :=
+  let g (n : ℕ) : C(X _⦋n⦌ × toTop.{u}.obj ⦋n⦌, s.pt) :=
+    (s.ι.app n).hom.comp (skeleton.ι X n le_rfl)
   ConcreteCategory.ofHom (C := TopCat) <|
-    desc (Z := s.pt) (fun n ↦ (s.ι.app n).hom.comp (skeleton.ι X n le_rfl))
-      fun m n f x t ↦ by
-        have hm := ConcreteCategory.congr_hom (s.w (homOfLE (le_max_left m n)))
-          (skeleton.ι X m le_rfl (X.map f.op x, t))
-        have hn := ConcreteCategory.congr_hom (s.w (homOfLE (le_max_right m n)))
-          (skeleton.ι X n le_rfl (x, toTop.map f t))
+    TauCeti.functorTensor.desc (K := toTop) (X := X) (Z := s.pt)
+      (fun d ↦ g d.len) fun c d f x t ↦ by
+        have hm := ConcreteCategory.congr_hom (s.w (homOfLE (le_max_left c.len d.len)))
+          (skeleton.ι X c.len le_rfl (X.map f.op x, t))
+        have hn := ConcreteCategory.congr_hom (s.w (homOfLE (le_max_right c.len d.len)))
+          (skeleton.ι X d.len le_rfl (x, toTop.map f t))
         simp only [TopCat.coe_comp, Function.comp_apply, skeleton.map_ι] at hm hn
-        simp only [ContinuousMap.coe_comp, Function.comp_apply, ← hm, ← hn,
-          skeleton.ι_map X (max m n) (le_max_left m n) (le_max_right m n) f x t]
+        simp only [g, ContinuousMap.coe_comp, Function.comp_apply, ← hm, ← hn,
+          skeleton.ι_map X (max c.len d.len) (le_max_left c.len d.len)
+            (le_max_right c.len d.len) f x t]
 
 @[simp] private theorem skeletonCoconeDesc_ι (s : Cocone (skeleton X)) (n : ℕ)
     (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
