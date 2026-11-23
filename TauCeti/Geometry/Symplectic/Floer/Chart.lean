@@ -39,6 +39,10 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   family of smooth structures `J z`, such as a domain-independent one, it is
   `SmoothAlmostComplexStructure.inChart` of `J z`
   (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`).
+* For a nondegenerate `ω` and Hamiltonians `K(z)` which are jointly `C^(n+1)` in `z` and the
+  target point, the Hamiltonian vector field in the chart is `C^n` on the chart target
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`): it is
+  the coordinate expression of the `C^n` section `(z, x) ↦ X_{K(z)}(x)` of the tangent bundle.
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -161,6 +165,11 @@ theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α)
     Trivialization.symmL_continuousLinearMapAt _ hx, AlmostComplexStructure.apply_apply, map_neg,
     Trivialization.continuousLinearMapAt_symmL _ hx]
 
+/-- Reparametrizing a family of structures reparametrizes the family read in the chart. -/
+theorem almostComplexInChartAt_comp {Q : Type*} (f : Q → P) (p : Q × E) :
+    almostComplexInChartAt I α (fun z ↦ J (f z)) p = almostComplexInChartAt I α J (f p.1, p.2) :=
+  (rfl)
+
 /-- For a jointly regular family of structures over the domain `ℝ × ℝ`, the structure in the chart
 is the coordinate expression of the family in the product chart at `(p, α)`, whatever `p`. In
 particular it is `Cⁿ` on the chart target for a `Cⁿ` family
@@ -219,6 +228,72 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
 
+omit [FiniteDimensional ℝ E] in
+/-- **The coordinate expression of `ω` on two vectors.** At a coordinate `y` in the target of the
+chart at `α`, the coordinate expression of `ω` on vectors `a` and `b` is `ω_x(a', b')` at the point
+`x = (extChartAt I α).symm y`, for the tangent vectors `a'` and `b'` at `x` with tangent coordinates
+`a` and `b`. -/
+theorem inChartAt_apply_eq_eval₂ (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (a b : E) :
+    RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y ![a, b] =
+      SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b) := by
+  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
+  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
+    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
+  rw [(extChartAt I α).right_inv hy] at hS
+  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
+  congr 1
+  funext i
+  -- Each entry is `extChartAt_coe_symm` unfolded; the trivialization occurs in an instance
+  -- argument of `symmL`, so it cannot be rewritten and `rfl` closes both goals.
+  fin_cases i <;> rfl
+
+/-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
+family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
+`U` of the domain, the Hamiltonian vector field of `K` read in the chart at `α` is `C^n` on
+`U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed by the
+compactness theorems for Floer solutions in a manifold. -/
+theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsNondegenerate)
+    {U : Set (ℝ × ℝ)} {K : ℝ × ℝ → M → ℝ} {n : ℕ∞}
+    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
+    (α : M) :
+    ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
+  set T := trivializationAt E (TangentSpace I) α
+  set φ := extChartAt I α
+  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `(ℝ × ℝ) × M`.
+  set ψ : (ℝ × ℝ) × E → (ℝ × ℝ) × M := fun p ↦ (p.1, φ.symm p.2)
+  rintro ⟨z, y⟩ ⟨hz, hy⟩
+  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
+    simpa [T, φ] using (extChartAt I α).map_target hw
+  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` at
+  -- `(z, φ⁻¹ y)`, so its coordinates in the trivialization at `α` are `C^n` there.
+  have hX := hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
+    (hK z hz (φ.symm y))
+  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
+    (by simpa [T] using hbase hy)).1 hX).2
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, (ℝ × ℝ) × E) (𝓘(ℝ, ℝ × ℝ).prod I) n ψ
+      (U ×ˢ φ.target) (z, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (z, y) hψ)).congr
+    (fun p hp ↦ ?_) ?_
+  · rw [hamiltonianVectorFieldInChartAt_apply]
+    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hp.2) _
+  · rw [hamiltonianVectorFieldInChartAt_apply]
+    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, vanishes. -/
+@[simp]
+theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) :
+    ω.hamiltonianVectorFieldInChartAt α (fun _ _ ↦ 0) = 0 := by
+  funext ⟨z, y⟩
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
+  exact map_zero _
+
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
 coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
@@ -253,26 +328,12 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M) {P : Type*}
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
           ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b)) := by
-  set T := trivializationAt E (TangentSpace I) α
-  have hx : (extChartAt I α).symm y ∈ T.baseSet :=
+  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
-  rw [associatedBilinFormInChartAt_apply_eq_inChartAt]
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ ((extChartAt I α).symm y))
-      (Floer.almostComplexInChartAt_apply z y b)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hx _)
+  rw [associatedBilinFormInChartAt_apply_eq_inChartAt, ω.inChartAt_apply_eq_eval₂ hy]
+  -- The second vector is rotated by the structure read in the chart.
+  exact congrArg _ ((congrArg _ (Floer.almostComplexInChartAt_apply z y b)).trans
+    (Trivialization.symmL_continuousLinearMapAt _ hx _))
 
 /-- At the chart image of a point `x` of the chart source, the form `ω(·, J ·)` in the chart,
 evaluated on the chart coordinates of tangent vectors `v` and `w` at `x`, is `ω_x(v, J(z, x) w)`. -/
