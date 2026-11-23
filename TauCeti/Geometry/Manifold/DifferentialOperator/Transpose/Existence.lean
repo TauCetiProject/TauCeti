@@ -73,12 +73,6 @@ section Partition
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
-/-- A product of smooth functions is supported in the support of its left factor. -/
-private theorem _root_.ContMDiffMap.tsupport_mul_subset_left {f g : C^∞⟮I, M; ℝ⟯} :
-    tsupport (f * g : C^∞⟮I, M; ℝ⟯) ⊆ tsupport f := by
-  rw [ContMDiffMap.coe_mul]
-  exact _root_.tsupport_mul_subset_left
-
 variable {ι : Type*} (ρ : SmoothPartitionOfUnity ι I M univ)
   (T : ι → C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) (hT : ∀ i g, tsupport (T i g) ⊆ tsupport g)
 
