@@ -46,14 +46,15 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 ## Main declarations
 
 * `TauCeti.SmoothForm.reebVectorField`: the Reeb vector field of a one-form.
+* `TauCeti.SmoothForm.reebVectorField_congr`: the Reeb vector at a point only depends on the values
+  of the form and of its exterior derivative there.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField`,
   `TauCeti.SmoothForm.IsContactForm.mextDeriv_reebVectorField_left`: the Reeb equations, with
   pointwise versions `TauCeti.SmoothForm.apply_reebVectorField_of_isContactFormAt` and
   `TauCeti.SmoothForm.mextDeriv_reebVectorField_left_of_isContactFormAt` at a single contact point.
 * `TauCeti.SmoothForm.IsContactForm.interior_mextDeriv_reebVectorField`: the second Reeb
   equation `ι_(R_α) dα = 0` as an identity of one-forms.
-* `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness, with pointwise version
-  `TauCeti.SmoothForm.eq_reebVectorField_iff_of_isContactFormAt`.
+* `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
 * `TauCeti.SmoothForm.IsContactForm.kerSectionEquivKerDistribution`: projection along `R_α(x)` from
@@ -98,6 +99,20 @@ theorem characteristicVectorField_mextDerivₗ (α : SmoothForm I M ℝ 1) :
     α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField :=
   (rfl)
 
+/-- The Reeb vector of a one-form at a point only depends on the values at that point of the form
+and of its exterior derivative. -/
+theorem reebVectorField_congr {α β : SmoothForm I M ℝ 1} {x : M} (h : α.val x = β.val x)
+    (hd : mextDeriv α.val x = mextDeriv β.val x) :
+    α.reebVectorField x = β.reebVectorField x := by
+  rw [reebVectorField, reebVectorField, characteristicVectorField_def,
+    characteristicVectorField_def]
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, h]
+  · ext v w
+    rw [bilinFormAt_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+      SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, mextDerivₗ_apply, hd]
+
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 
 /-- **Characterization of the Reeb vector field**, tested on the contact distribution: `R_α(x)` is
@@ -130,15 +145,6 @@ theorem mextDeriv_reebVectorField_right_of_isContactFormAt {x : M} (h : IsContac
   rw [← characteristicVectorField_mextDerivₗ, ← mextDerivₗ_apply]
   exact apply_characteristicVectorField_right (isContactFormAt_iff_isContact.1 h) w
 
-/-- **Characterization of the Reeb vector at a contact point**: if `α` is a contact form at `x`,
-then `R_α(x)` is the unique tangent vector `v` with `α_x(v) = 1` and `ι_v dα_x = 0`. -/
-theorem eq_reebVectorField_iff_of_isContactFormAt {x : M} (h : IsContactFormAt α.val x)
-    {v : TangentSpace I x} :
-    v = α.reebVectorField x ↔
-      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.val x ![v, w] = 0 := by
-  rw [reebVectorField, eq_characteristicVectorField_iff (isContactFormAt_iff_isContact.1 h),
-    mextDerivₗ_apply]
-
 /-- A contact form takes the value `1` on its Reeb vector field. -/
 @[simp]
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
@@ -170,8 +176,9 @@ theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm
 theorem IsContactForm.eq_reebVectorField_iff (hα : α.IsContactForm) {x : M}
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
-      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.val x ![v, w] = 0 :=
-  eq_reebVectorField_iff_of_isContactFormAt (isContactForm_iff_forall_isContactFormAt.1 hα x)
+      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.val x ![v, w] = 0 := by
+  rw [reebVectorField, eq_characteristicVectorField_iff (isContactForm_def.1 hα x),
+    mextDerivₗ_apply]
 
 /-- The Reeb vector field of a contact form vanishes nowhere. -/
 theorem IsContactForm.reebVectorField_ne_zero (hα : α.IsContactForm) (x : M) :
@@ -238,14 +245,21 @@ theorem IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one
     ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) n g x ∧ mvfderiv I g x (α.reebVectorField x) = 1 :=
   exists_contMDiffAt_mvfderiv_eq_one (hα.reebVectorField_ne_zero x) n
 
+/-- At a point where `α` is a contact form, removing its Reeb component `α(v) R_α` from a tangent
+vector `v` leaves a vector of `ker α_x`. -/
+theorem sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt {x : M}
+    (h : IsContactFormAt α.val x) (v : TangentSpace I x) :
+    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+  simp [mem_kerDistribution, ContinuousAlternatingMap.vecCons_smul,
+    apply_reebVectorField_of_isContactFormAt h]
+
 /-- Removing its Reeb component `α(v) R_α` from a tangent vector `v` leaves a vector of the
 contact distribution. -/
 theorem IsContactForm.sub_smul_reebVectorField_mem_kerDistribution (hα : α.IsContactForm)
     {x : M} (v : TangentSpace I x) :
-    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-  rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
-  simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField, smul_eq_mul, mul_one,
-    sub_self]
+    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x :=
+  sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x) v
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in

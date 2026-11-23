@@ -41,13 +41,14 @@ the extension step of its compactly supported variant.
 
 A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambient manifolds
 (`PartialDiffeomorph.liftOpens`), pulls a form back as `Ψ` pulls back its restriction to `V`
-(`TauCeti.mpullback_liftOpens_apply_coe`), and a partial diffeomorphism, viewed as a
-diffeomorphism between its source and target, pulls back the restriction of a form to its target as
-it pulls back the form itself (`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a
-construction carried out on an open submanifold, such as a flow defined only where some
-condition on the forms holds, transfers to the ambient manifold, together with the points it
-fixes and pointwise identities between pulled back forms
-(`TauCeti.exists_partialDiffeomorph_forall_mpullback_of_opens`).
+(`TauCeti.mpullback_liftOpens_apply_coe`). When `U = V` and `Ψ` fixes the points of a set `K ⊆ U`,
+some partial diffeomorphism of the ambient manifold fixing `K` pulls forms back in the same way,
+also when `U` is empty (`TauCeti.exists_partialDiffeomorph_mpullback_apply_eq_of_opens`). A partial
+diffeomorphism, viewed as a diffeomorphism between its source and target, pulls back the restriction
+of a form to its target as it pulls back the form itself
+(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a construction carried out on an open
+submanifold, such as a flow defined only where some condition on the forms holds, transfers to the
+ambient manifold.
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -415,39 +416,41 @@ theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
     (Ψ.liftOpens hU hV).mdifferentiableAt hn (by
       rw [PartialDiffeomorph.liftOpens_source]
       exact ⟨x, hx, rfl⟩)
-  -- On `U`, the lift composed with the inclusion is the inclusion composed with `Ψ`.
-  have hcomp : ⇑(Ψ.liftOpens hU hV) ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ :=
-    funext (Ψ.liftOpens_apply_coe hU hV)
   refine (mpullback_subtype_val_apply _ x).symm.trans ?_
-  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift, hcomp,
+  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift,
+    Ψ.liftOpens_comp_subtypeVal hU hV,
     mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
 
 omit [IsManifold I 1 M] in
-/-- **Lifting a partial diffeomorphism of an open subset which fixes a set.** Let `Ψ` be a partial
-diffeomorphism of an open subset `U` of `M` whose source and target contain the points of a set
-`K ⊆ U`, and which fixes them. Then its lift to `M` has source and target containing `K` and fixes
-`K`. If moreover the pullback along `Ψ` of the restriction to `U` of a form `ω` satisfies a
-pointwise condition `P` on the source of `Ψ`, then so does the pullback of `ω` along the lift on
-its source. -/
-theorem exists_partialDiffeomorph_forall_mpullback_of_opens {n : WithTop ℕ∞} (hn : n ≠ 0)
-    {U : Opens M} (hU : Nonempty U) {K : Set M} (hKU : K ⊆ U) {Ψ : PartialDiffeomorph I I U U n}
+/-- **A partial diffeomorphism of an open subset fixing a set, read in the ambient manifold.** Let
+`Ψ` be a partial diffeomorphism of an open subset `W` of `M`, whose source and target contain the
+points of a set `K ⊆ W` and which fixes them. Then there is a partial diffeomorphism `Φ` of `M`
+whose source and target contain `K`, which fixes every point of `K`, and which at each point of its
+source pulls every form back as `Ψ` pulls back the restriction of the form to `W`. For nonempty
+`W` it is `Ψ.liftOpens`. -/
+theorem exists_partialDiffeomorph_mpullback_apply_eq_of_opens {n : WithTop ℕ∞} (hn : n ≠ 0)
+    {W : Opens M} {K : Set M} (hKW : K ⊆ W) (Ψ : PartialDiffeomorph I I W W n)
     (hsrc : Subtype.val ⁻¹' K ⊆ Ψ.source) (htgt : Subtype.val ⁻¹' K ⊆ Ψ.target)
-    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Ψ y = y) (ω : RoughForm I M F k)
-    {P : (x : M) → (TangentSpace I x [⋀^Fin k]→L[ℝ] F) → Prop}
-    (hP : ∀ y ∈ Ψ.source, P y (mpullback I I Ψ (mpullback I I (Subtype.val : U → M) ω) y)) :
-    ∃ φ : PartialDiffeomorph I I M M n, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, P x (mpullback I I φ ω x) := by
-  refine ⟨Ψ.liftOpens hU hU, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Ψ y = y) :
+    ∃ Φ : PartialDiffeomorph I I M M n, K ⊆ Φ.source ∧ K ⊆ Φ.target ∧ (∀ x ∈ K, Φ x = x) ∧
+      ∀ x ∈ Φ.source, ∃ y ∈ Ψ.source, (y : M) = x ∧
+        ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {l : ℕ} (ω : RoughForm I M G l),
+          mpullback I I Φ ω x = mpullback I I Ψ (mpullback I I (Subtype.val : W → M) ω) y := by
+  rcases isEmpty_or_nonempty W with hW | hW
+  · -- For empty `W`, the set `K` is empty and the partial diffeomorphism with empty source will do.
+    obtain rfl : K = ∅ := eq_empty_of_forall_notMem fun x hx ↦ hW.false ⟨x, hKW hx⟩
+    exact ⟨(Diffeomorph.refl I M n).toPartialDiffeomorph.restrOpen ∅ isOpen_empty, by simp,
+      by simp, by simp, fun x hx ↦ by simp at hx⟩
+  refine ⟨Ψ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
   · rw [PartialDiffeomorph.liftOpens_source]
-    exact ⟨⟨x, hKU hx⟩, hsrc hx, rfl⟩
+    exact ⟨⟨x, hKW hx⟩, hsrc hx, rfl⟩
   · rw [PartialDiffeomorph.liftOpens_target]
-    exact ⟨⟨x, hKU hx⟩, htgt hx, rfl⟩
-  · exact (Ψ.liftOpens_apply_coe hU hU ⟨x, hKU hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKU hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
-  rw [mpullback_liftOpens_apply_coe Ψ hn hU hU ω hy]
-  exact hP y hy
+    exact ⟨⟨x, hKW hx⟩, htgt hx, rfl⟩
+  · exact (Ψ.liftOpens_apply_coe hW hW ⟨x, hKW hx⟩).trans
+      (congrArg Subtype.val (hfix ⟨x, hKW hx⟩ hx))
+  · rw [PartialDiffeomorph.liftOpens_source] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    exact ⟨y, hy, rfl, fun ω ↦ mpullback_liftOpens_apply_coe Ψ hn hW hW ω hy⟩
 
 omit [IsManifold I 1 M] in
 /-- **Pullback along a partial diffeomorphism, as a diffeomorphism of open subsets.** Pulling the

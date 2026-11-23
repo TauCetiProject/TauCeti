@@ -175,27 +175,27 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
       mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.val x = g • α₀.val x := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · -- For empty `K`, the partial diffeomorphism with empty source will do.
-    refine ⟨(Diffeomorph.refl I M ∞).toPartialDiffeomorph.restrOpen ∅ isOpen_empty, by simp,
-      by simp, by simp, fun x hx ↦ ?_⟩
-    simp at hx
   -- Restrict both forms to an open neighbourhood `W` of `K` on which the segment is contact.
   obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval hd
   set W : TopologicalSpace.Opens M := ⟨N, hN⟩
-  have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
+  set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
+    mpullback (Subtype.val : W → M) contMDiff_subtypeVal
+  have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
+      IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).val y := by
+    rw [← map_sub, ← map_smul, ← map_add]
+    exact (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hcN y y.property s hs)
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
-      (fun (y : W) s hs ↦ by
-        rw [← map_sub, ← map_smul, ← map_add, isContactFormAt_mpullback_subtypeVal_iff]
-        exact hcN y y.property s hs)
-      fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
+      hcW fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
-  refine exists_partialDiffeomorph_forall_mpullback_of_opens (by simp) hW hKN hsrc htgt hfix α₁.val
-    (P := fun x v ↦ ∃ g : ℝ, 0 < g ∧ v = g • α₀.val x) fun y hy ↦ ?_
+  obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ :=
+    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix
+  refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
   obtain ⟨g, hg, hφy⟩ := hφ y hy
+  refine ⟨g, hg, (hΦy α₁.val).trans ?_⟩
   rw [coe_mpullback, coe_mpullback] at hφy
-  exact ⟨g, hg, hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))⟩
+  exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))
 
 end TauCeti.SmoothForm

@@ -18,12 +18,13 @@ bijective pulls a contact form back to a contact form. Pointwise the converse ho
 global reflection only needs surjectivity of the map. In particular diffeomorphisms preserve
 and reflect contactness. The contact hyperplanes are the inverse images under the differential.
 
-At every point where the original form is contact, the differential carries the Reeb vector of
-the pulled-back form to the original Reeb vector
-(`TauCeti.SmoothForm.mfderiv_reebVectorField_mpullback_of_isContactFormAt`). Thus a strict
-contact diffeomorphism intertwines the Reeb fields, rather than merely preserving the contact
-hyperplanes. No compactness or completeness is needed for
-these statements, which concern vector fields rather than their global flows.
+For a contact form, the differential carries the Reeb field of the pulled-back form to the
+original Reeb field. Thus a strict contact diffeomorphism intertwines the Reeb fields, rather
+than merely preserving the contact hyperplanes. No compactness or completeness is needed for
+these statements, which concern vector fields rather than their global flows. Restricting a
+one-form to an open subset changes neither where it is contact
+(`TauCeti.SmoothForm.isContactFormAt_mpullback_subtype_val_iff`) nor its Reeb vectors
+(`TauCeti.SmoothForm.reebVectorField_mpullback_subtype_val`).
 
 A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
 zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
@@ -173,16 +174,6 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
   SmoothForm.isContactForm_mpullback_iff e.contMDiff
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) e.surjective α
 
-/-- Restriction to an open subset `W` preserves and reflects the pointwise contact condition. -/
-theorem isContactFormAt_mpullback_subtypeVal_iff {W : TopologicalSpace.Opens M}
-    {α : SmoothForm I M ℝ 1} (y : W) :
-    IsContactFormAt (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α).val y ↔
-      IsContactFormAt α.val y := by
-  rw [coe_mpullback]
-  exact isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
-    (α.contMDiff.of_le (by simp) y)
-    (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)
-
 /-- If the pullback of a one-form along a smooth map `f : M → N` is a contact form and `M` is
 nonempty, then the model space of `M` is finite-dimensional whenever that of `N` is. -/
 theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
@@ -199,37 +190,6 @@ theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
       exact (mextDeriv α.val (f x)).map_coord_zero 0 rfl
   exact Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap hinj
 
-/-- **Naturality of the Reeb vector at a point.** The differential at `x` of a smooth map with
-bijective differential at `x` carries the Reeb vector of the pulled-back form at `x` to the Reeb
-vector of `α` at `f x`, provided `α` is a contact form at `f x`. -/
-theorem mfderiv_reebVectorField_mpullback_of_isContactFormAt [FiniteDimensional ℝ E]
-    {α : SmoothForm J N ℝ 1} (f : M → N) (hf : ContMDiff I J ∞ f) {x : M}
-    (hdf : Function.Bijective (mfderiv I J f x)) (hα : IsContactFormAt α.val (f x)) :
-    mfderiv I J f x ((SmoothForm.mpullback f hf α).reebVectorField x) =
-      α.reebVectorField (f x) := by
-  have : FiniteDimensional ℝ F := LinearEquiv.finiteDimensional
-    (LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap hdf :
-      TangentSpace I x ≃ₗ[ℝ] TangentSpace J (f x))
-  have hβ : IsContactFormAt (SmoothForm.mpullback f hf α).val x := by
-    rw [coe_mpullback, isContactFormAt_mpullback_iff (hf.of_le (by simp)).contMDiffAt
-      (α.contMDiff.of_le (by simp) (f x)) hdf]
-    exact hα
-  refine (eq_reebVectorField_iff_of_isContactFormAt hα).2 ⟨?_, ?_⟩
-  · have h := apply_reebVectorField_of_isContactFormAt hβ
-    rw [SmoothForm.mpullback_apply] at h
-    convert h using 2
-    ext i
-    fin_cases i
-    rfl
-  · intro w
-    obtain ⟨v, rfl⟩ := hdf.2 w
-    have h := mextDeriv_reebVectorField_left_of_isContactFormAt hβ v
-    have hd := eval₂_mpullback f hf (mextDerivₗ J 1 α) x
-      ((SmoothForm.mpullback f hf α).reebVectorField x) v
-    rw [← mextDerivₗ_mpullback] at hd
-    simp only [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at hd
-    exact hd.symm.trans h
-
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of
 the pulled-back contact form to the original Reeb field. -/
 theorem IsContactForm.mfderiv_reebVectorField_mpullback
@@ -238,9 +198,55 @@ theorem IsContactForm.mfderiv_reebVectorField_mpullback
     (f : M → N) (hf : ContMDiff I J ∞ f)
     (hdf : ∀ x, Function.Bijective (mfderiv I J f x)) (x : M) :
     mfderiv I J f x ((SmoothForm.mpullback f hf α).reebVectorField x) =
-      α.reebVectorField (f x) :=
-  mfderiv_reebVectorField_mpullback_of_isContactFormAt f hf (hdf x)
-    (isContactForm_iff_forall_isContactFormAt.1 hα (f x))
+      α.reebVectorField (f x) := by
+  have : FiniteDimensional ℝ F := LinearEquiv.finiteDimensional
+    (LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap (hdf x) :
+      TangentSpace I x ≃ₗ[ℝ] TangentSpace J (f x))
+  have hβ := hα.mpullback f hf hdf
+  apply hα.eq_reebVectorField_iff.mpr
+  constructor
+  · have h := hβ.apply_reebVectorField x
+    rw [SmoothForm.mpullback_apply] at h
+    convert h using 2
+    ext i
+    fin_cases i
+    rfl
+  · intro w
+    obtain ⟨v, rfl⟩ := (hdf x).2 w
+    have h := hβ.mextDeriv_reebVectorField_left x v
+    have hd := eval₂_mpullback f hf (mextDerivₗ J 1 α) x
+      ((SmoothForm.mpullback f hf α).reebVectorField x) v
+    rw [← mextDerivₗ_mpullback] at hd
+    simp only [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at hd
+    exact hd.symm.trans h
+
+/-- Restricting a one-form to an open subset does not change where it is a contact form. -/
+theorem isContactFormAt_mpullback_subtype_val_iff {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    IsContactFormAt (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).val x ↔
+      IsContactFormAt α.val x := by
+  rw [coe_mpullback, isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
+    (α.contMDiff.of_le (by simp) x)
+    (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
+
+/-- Restricting a one-form to an open subset does not change its Reeb vectors. -/
+@[simp]
+theorem reebVectorField_mpullback_subtype_val {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).reebVectorField x =
+      α.reebVectorField x := by
+  rw [← characteristicVectorField_mextDerivₗ, ← characteristicVectorField_mextDerivₗ,
+    characteristicVectorField_def, characteristicVectorField_def, mextDerivₗ_mpullback]
+  -- The tangent spaces of `U` at `x` and of `M` at `↑x` are both the model space, so both sides
+  -- are the Reeb vector of the same covector for the same bilinear form.
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, coe_mpullback_subtype_val_apply]
+    exact (degreeOneEquiv_coe_apply α (x : M) v).symm
+  · ext v w
+    rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, coe_mpullback_subtype_val_apply]
+    exact ((bilinFormAt_apply _ (x : M) v w).trans
+      (SmoothBundleForm.eval₂_apply _ (x : M) v w)).symm
 
 end SmoothForm
 
