@@ -107,21 +107,19 @@ private def rankTwoReflection (b c : ℤ) (i : Fin 2) : (Fin 2 → ℤ) ≃ₗ[�
   (rankTwoCartan b c).columnReflection (rankTwoCartan_diag b c) i
 
 private abbrev coordinates : (Fin 2 → ℤ) ≃ₗ[ℤ] (ℤ × ℤ) :=
-  LinearEquiv.finTwoArrow ℤ ℤ
-
-private theorem coordinates_apply (v : Fin 2 → ℤ) : coordinates v = (v 0, v 1) := rfl
+  LinearEquiv.piFinTwo ℤ (fun _ ↦ ℤ)
 
 private theorem coordinates_reflection_zero (b c : ℤ) (v : Fin 2 → ℤ) :
     coordinates (rankTwoReflection b c 0 v) =
       (b * (coordinates v).2 - (coordinates v).1, (coordinates v).2) := by
-  rw [coordinates_apply, coordinates_apply]
+  simp only [coordinates, LinearEquiv.piFinTwo_apply]
   simp [rankTwoReflection, rankTwoCartan, Fin.sum_univ_two]
   ring
 
 private theorem coordinates_reflection_one (b c : ℤ) (v : Fin 2 → ℤ) :
     coordinates (rankTwoReflection b c 1 v) =
       ((coordinates v).1, c * (coordinates v).1 - (coordinates v).2) := by
-  rw [coordinates_apply, coordinates_apply]
+  simp only [coordinates, LinearEquiv.piFinTwo_apply]
   simp [rankTwoReflection, rankTwoCartan, Fin.sum_univ_two]
   ring
 
@@ -143,7 +141,7 @@ private theorem rankTwoReflectedPair_eq_chebyshev (b c : ℤ) (n : ℕ) :
   unfold rankTwoReflection
   rw [Matrix.columnReflection_mul_columnReflection_pow_single,
     Matrix.columnReflection_mul_columnReflection_mul_columnReflection_pow_single]
-  simp [coordinates_apply, rankTwoCartan, mul_comm]
+  simp [coordinates, rankTwoCartan, mul_comm]
 
 private theorem rankTwoReflectedPair_signs {b c : ℤ}
     (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
@@ -168,11 +166,11 @@ private theorem rankTwoDenominatorPair_eq_rankTwoReflectedPair {b c : ℤ}
   let T := r₀ * r₁
   let e : Fin 2 → ℤ := Pi.single 0 1
   let o := r₀ (Pi.single 1 1)
-  have coord_e : coordinates e = (1, 0) := by simp [coordinates_apply, e]
+  have coord_e : coordinates e = (1, 0) := by simp [coordinates, e]
   have coord_o : coordinates o = (b, 1) := by
     change coordinates (rankTwoReflection b c 0 (Pi.single 1 1)) = (b, 1)
-    rw [coordinates_reflection_zero, coordinates_apply]
-    simp
+    rw [coordinates_reflection_zero]
+    simp [coordinates]
   have he : c • o - e = T e := by
     apply coordinates.injective
     simp only [map_sub, map_smul, T, r₀, r₁, mul_apply_eq_comp, coordinates_reflection_zero,
@@ -260,13 +258,14 @@ theorem rankTwoDenominatorPair_even_injective {b c : ℤ} (hb : 0 ≤ b) (hbc : 
 the initial odd vector. -/
 theorem rankTwoDenominatorPair_odd_snd_strictMono {b c : ℤ} (hb : 0 ≤ b) (hbc : 4 ≤ b * c) :
     StrictMono fun n : ℕ ↦ (rankTwoDenominatorPair b c n).2.2 := by
-  apply strictMono_nat_of_lt_succ
-  intro n
-  cases n with
-  | zero => simp
-  | succ n =>
-    have h := S_eval_add_S_sub_one_eval_strictMono (R := ℤ) (t := b * c - 2) (by omega)
-    simpa only [rankTwoDenominatorPair_succ_eq_chebyshev hb hbc] using h (Nat.lt_succ_self n)
+  have h : (fun n : ℕ ↦ (rankTwoDenominatorPair b c n).2.2) =
+      (fun n : ℕ ↦ (rankTwoDenominatorPair b c n).1.1) := by
+    funext n
+    cases n with
+    | zero => simp
+    | succ n => simp only [rankTwoDenominatorPair_succ_eq_chebyshev hb hbc]
+  rw [h]
+  exact rankTwoDenominatorPair_even_fst_strictMono hb hbc
 
 /-- Under the growth hypotheses, all odd denominator vectors are pairwise distinct. -/
 theorem rankTwoDenominatorPair_odd_injective {b c : ℤ} (hb : 0 ≤ b) (hbc : 4 ≤ b * c) :
