@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, an estimate
+for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and basic closure properties of
+`RingHom.IsBounded` (identity and composition).
 -/
 
 public section
@@ -126,5 +127,24 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
   simp at hz
 
 end TauCeti
+
+namespace RingHom
+
+/-- The identity ring homomorphism on a seminormed ring is bounded with constant `1`. -/
+@[simp]
+theorem isBounded_id {A : Type*} [SeminormedRing A] : (RingHom.id A).IsBounded :=
+  ⟨1, zero_lt_one, fun x ↦ by simp⟩
+
+/-- The composition of two bounded ring homomorphisms is bounded. -/
+theorem IsBounded.comp {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
+    {ψ : B →+* C} (hψ : ψ.IsBounded) {φ : A →+* B} (hφ : φ.IsBounded) :
+    (ψ.comp φ).IsBounded := by
+  obtain ⟨C₁, hC₁, h₁⟩ := hψ
+  obtain ⟨C₂, hC₂, h₂⟩ := hφ
+  exact ⟨C₁ * C₂, mul_pos hC₁ hC₂, fun x ↦
+    (h₁ (φ x)).trans
+      ((mul_le_mul_of_nonneg_left (h₂ x) hC₁.le).trans_eq (mul_assoc C₁ C₂ ‖x‖).symm)⟩
+
+end RingHom
 
 end

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Unbundled.SmoothingSeminorm
 
-import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromConst
 import Mathlib.Order.Zorn
 
@@ -16,12 +15,12 @@ import Mathlib.Order.Zorn
 
 Every nonzero power-multiplicative ring seminorm `ρ` on a commutative ring `R` is the pointwise
 maximum of the multiplicative ring seminorms `α : MulRingSeminorm R` bounded above by `ρ`
-([BGR, §1.3.2, Theorem 2]). Given `x₀ : R` with `ρ x₀ ≠ 0`, `seminormFromConst` produces a
-power-multiplicative seminorm `μ₁ ≤ ρ` agreeing with `ρ` at `x₀` for which `x₀` is multiplicative.
-Zorn's lemma applied to descending chains of power-multiplicative seminorms below `μ₁` that keep
-`x₀` multiplicative and preserve its value yields a minimal element; applying `seminormFromConst`
-again at each element of nonzero seminorm shows that a minimal element is multiplicative on all of
-`R`.
+([BGR, §1.3.2, Theorem 3]). Given `x₀ : R` with `ρ x₀ ≠ 0`, `seminormFromConst`
+([BGR, Proposition 1.3.2/2]) produces a power-multiplicative seminorm `μ₁ ≤ ρ` agreeing with `ρ`
+at `x₀` for which `x₀` is multiplicative. Zorn's lemma applied to descending chains of
+power-multiplicative seminorms below `μ₁` that keep `x₀` multiplicative and preserve its value
+yields a minimal element; applying `seminormFromConst` again at each element of nonzero seminorm
+shows that a minimal element is multiplicative on all of `R`.
 
 Combining this representation with `RingSeminorm.smoothing` expresses `smoothingFun μ x`, for any
 ring seminorm `μ` on a commutative ring `R`, as the supremum of `α x` over all multiplicative ring
@@ -53,7 +52,8 @@ formula on the Gel'fand spectrum of a normed commutative ring.
 
 ## References
 
-* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.3.2, Theorem 2.
+* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.3.2, Proposition 2 and
+  Theorem 3.
 * V. G. Berkovich, *Spectral Theory and Analytic Geometry over Non-Archimedean Fields*,
   Mathematical Surveys and Monographs 33, AMS, 1990, Theorem 1.3.1.
 -/
@@ -151,16 +151,9 @@ variable {R : Type*} [CommRing R]
 /-- Over a commutative ring, if `α : MulRingSeminorm R` satisfies `α x ≤ C * μ x` for every `x`,
 then `α x ≤ smoothingFun μ x` for every `x`. -/
 theorem le_smoothingFun_of_le_mul (α : MulRingSeminorm R) {μ : RingSeminorm R} {C : ℝ}
-    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x := by
-  have hle : ∀ y, α y ≤ μ y :=
-    contraction_of_isPowMul_of_boundedWrt μ α.isPowMul (f := RingHom.id R)
-      ⟨max C 1, zero_lt_one.trans_le (le_max_right _ _),
-        fun y ↦ (h y).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))⟩
-  refine le_ciInf fun n ↦ ?_
-  calc α x = (α x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by
-        rw [one_div, Real.pow_rpow_inv_natCast (apply_nonneg α x) n.ne_zero]
-    _ = α (x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by rw [map_pow]
-    _ ≤ μ (x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by gcongr; exact hle _
+    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x :=
+  (smoothingFun_of_powMul α.toRingSeminorm (map_one α).le fun n _ ↦ map_pow α x n).symm.trans_le
+    ((RingHom.id R).smoothingFun_map_le_of_le_mul (ν := α.toRingSeminorm) h x)
 
 end CommRing
 
@@ -266,12 +259,7 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- A nonzero power-multiplicative ring seminorm takes value `1` at `1`. -/
-theorem map_one_eq_one_of_isPowMul {ρ : RingSeminorm R} (hpm : IsPowMul ρ) (hρ : ρ ≠ 0) :
-    ρ 1 = 1 :=
-  (ρ.seminorm_one_eq_one_iff_ne_zero hpm.map_one_le_one).2 hρ
-
-/-- Predicate characterizing the Zorn poset in BGR Theorem 1.3.2/2: power-multiplicative ring
+/-- Predicate characterizing the Zorn poset in BGR Theorem 1.3.2/3: power-multiplicative ring
 seminorm functions normalized at `1` that take value `r` at `x₀` and are multiplicative at `x₀`. -/
 private structure PowMulSeminormAt (x₀ : R) (r : ℝ) (f : R → ℝ) : Prop where
   map_zero : f 0 = 0
@@ -332,49 +320,6 @@ private theorem powMulSeminormAt_iInf_of_chain {x₀ : R} {r : ℝ}
   exact ⟨lb, PowMulSeminormAt.of_ringSeminorm lb hlb_pm hlb_one hlb_x₀ hlb_x₀_mul,
     fun z hz ↦ hlb_le ⟨z, hz⟩⟩
 
-private theorem coe_seminormFromConst {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) : ⇑(seminormFromConst hc hpm) = seminormFromConst' c f :=
-  funext (seminormFromConst_def hc hpm)
-
-private theorem isPowMul_seminormFromConst {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) : IsPowMul (seminormFromConst hc hpm) := by
-  rw [coe_seminormFromConst]
-  exact seminormFromConst_isPowMul hc hpm
-
-private theorem seminormFromConst_map_one {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) : seminormFromConst hc hpm 1 = 1 := by
-  rw [seminormFromConst_def]
-  exact seminormFromConst_one hc hpm
-
-private theorem seminormFromConst_mul_self {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) (y : R) :
-    seminormFromConst hc hpm (c * y) = seminormFromConst hc hpm c * seminormFromConst hc hpm y := by
-  simp only [seminormFromConst_def]
-  exact seminormFromConst_const_mul hc hpm y
-
-private theorem seminormFromConst_le {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) (x : R) : seminormFromConst hc hpm x ≤ f x := by
-  rw [seminormFromConst_def]
-  exact seminormFromConst_le_seminorm hc hpm x
-
-private theorem seminormFromConst_apply_self {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) : seminormFromConst hc hpm c = f c := by
-  rw [seminormFromConst_def]
-  exact seminormFromConst_apply_c hc hpm
-
-private theorem seminormFromConst_apply_of_isMul' {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) {x : R} (hx : ∀ y, f (x * y) = f x * f y) :
-    seminormFromConst hc hpm x = f x := by
-  rw [seminormFromConst_def]
-  exact seminormFromConst_apply_of_isMul hc hpm hx
-
-private theorem seminormFromConst_isMul_of_isMul' {c : R} {f : RingSeminorm R} (hc : f c ≠ 0)
-    (hpm : IsPowMul f) {x : R} (hx : ∀ y, f (x * y) = f x * f y) (y : R) :
-    seminormFromConst hc hpm (x * y) =
-      seminormFromConst hc hpm x * seminormFromConst hc hpm y := by
-  simp only [seminormFromConst_def]
-  exact seminormFromConst_isMul_of_isMul hc hpm hx y
-
 /-- Every minimal element of `{f | PowMulSeminormAt x₀ r f}` is multiplicative on all of `R`. -/
 private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → ℝ}
     (hm_min : Minimal (· ∈ {f | PowMulSeminormAt x₀ r f}) m) (c y : R) :
@@ -391,34 +336,34 @@ private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → 
     simpa only [hν_apply] using hν_mul
   · let g : RingSeminorm R := seminormFromConst hc0 hν_pm
     have hg_le : (⇑g : R → ℝ) ≤ m := fun a ↦
-      (seminormFromConst_le hc0 hν_pm a).trans_eq (hν_apply a)
+      (seminormFromConst_le_seminorm hc0 hν_pm a).trans_eq (hν_apply a)
     have hν_x₀_mul (a : R) : ν (x₀ * a) = ν x₀ * ν a := by
       simp only [hν_apply]
       exact hm.const_mul a
     have hg_mem : PowMulSeminormAt x₀ r g :=
       PowMulSeminormAt.of_ringSeminorm g
-        (isPowMul_seminormFromConst hc0 hν_pm)
-        (seminormFromConst_map_one hc0 hν_pm)
-        ((seminormFromConst_apply_of_isMul' hc0 hν_pm hν_x₀_mul).trans
+        (seminormFromConst_isPowMul hc0 hν_pm)
+        (seminormFromConst_one hc0 hν_pm)
+        ((seminormFromConst_apply_of_isMul hc0 hν_pm hν_x₀_mul).trans
           ((hν_apply x₀).trans hm.apply_x₀))
-        (seminormFromConst_isMul_of_isMul' hc0 hν_pm hν_x₀_mul)
+        (seminormFromConst_isMul_of_isMul hc0 hν_pm hν_x₀_mul)
     have hgm : m = ⇑g := (hm_min.eq_of_le hg_mem hg_le).symm
     rw [hgm]
-    exact seminormFromConst_mul_self hc0 hν_pm y
+    exact seminormFromConst_const_mul hc0 hν_pm y
 
-/-- Auxiliary step of BGR Theorem 1.3.2/2 when `ρ x₀ ≠ 0`. -/
+/-- Auxiliary step of BGR Theorem 1.3.2/3 when `ρ x₀ ≠ 0`. -/
 private theorem exists_mulRingSeminorm_le_of_apply_ne_zero {ρ : RingSeminorm R}
     (hpm : IsPowMul ρ) {x₀ : R} (hx₀ : ρ x₀ ≠ 0) :
     ∃ α : MulRingSeminorm R, (∀ x, α x ≤ ρ x) ∧ α x₀ = ρ x₀ := by
   let μ₁ : RingSeminorm R := seminormFromConst hx₀ hpm
-  have hμ₁_le (x : R) : μ₁ x ≤ ρ x := seminormFromConst_le hx₀ hpm x
-  have hμ₁_x₀ : μ₁ x₀ = ρ x₀ := seminormFromConst_apply_self hx₀ hpm
+  have hμ₁_le (x : R) : μ₁ x ≤ ρ x := seminormFromConst_le_seminorm hx₀ hpm x
+  have hμ₁_x₀ : μ₁ x₀ = ρ x₀ := seminormFromConst_apply_c hx₀ hpm
   have hμ₁_mem : PowMulSeminormAt x₀ (μ₁ x₀) μ₁ :=
     PowMulSeminormAt.of_ringSeminorm μ₁
-      (isPowMul_seminormFromConst hx₀ hpm)
-      (seminormFromConst_map_one hx₀ hpm)
+      (seminormFromConst_isPowMul hx₀ hpm)
+      (seminormFromConst_one hx₀ hpm)
       rfl
-      (seminormFromConst_mul_self hx₀ hpm)
+      (seminormFromConst_const_mul hx₀ hpm)
   obtain ⟨m, hm_le, hm_min⟩ :=
     zorn_ge_nonempty₀ {f | PowMulSeminormAt x₀ (μ₁ x₀) f}
       (fun _ hcs hc _ hy₀ ↦ powMulSeminormAt_iInf_of_chain hcs hc hy₀)
@@ -429,14 +374,17 @@ private theorem exists_mulRingSeminorm_le_of_apply_ne_zero {ρ : RingSeminorm R}
             map_mul' := mul_of_minimal_powMulSeminormAt hm_min },
     fun x ↦ (hm_le x).trans (hμ₁_le x), hm.apply_x₀.trans hμ₁_x₀⟩
 
-/-- **Bosch–Güntzer–Remmert Theorem 1.3.2/2.** For every nonzero power-multiplicative ring seminorm
+/-- **Bosch–Güntzer–Remmert Theorem 1.3.2/3.** For every nonzero power-multiplicative ring seminorm
 `ρ` on a commutative ring `R` and every `x₀ : R`, there exists a multiplicative ring seminorm
-`α : MulRingSeminorm R` with `α ≤ ρ` and `α x₀ = ρ x₀`. -/
+`α : MulRingSeminorm R` with `α ≤ ρ` and `α x₀ = ρ x₀` (proved via Zorn's lemma and
+`seminormFromConst`, [BGR, Proposition 1.3.2/2]). -/
 theorem exists_mulRingSeminorm_le_and_apply_eq {ρ : RingSeminorm R} (hpm : IsPowMul ρ)
     (hρ : ρ ≠ 0) (x₀ : R) :
     ∃ α : MulRingSeminorm R, (∀ x, α x ≤ ρ x) ∧ α x₀ = ρ x₀ := by
   by_cases hx₀ : ρ x₀ = 0
-  · have h1 : ρ 1 ≠ 0 := by rw [map_one_eq_one_of_isPowMul hpm hρ]; exact one_ne_zero
+  · have h1 : ρ 1 ≠ 0 := by
+      rw [(ρ.seminorm_one_eq_one_iff_ne_zero hpm.map_one_le_one).2 hρ]
+      exact one_ne_zero
     obtain ⟨α, hα, -⟩ := exists_mulRingSeminorm_le_of_apply_ne_zero hpm h1
     exact ⟨α, hα, le_antisymm (hα x₀) (by rw [hx₀]; exact apply_nonneg α x₀)⟩
   · exact exists_mulRingSeminorm_le_of_apply_ne_zero hpm hx₀

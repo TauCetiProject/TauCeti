@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromBounded
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Smoothings of ring seminorms on commutative rings
@@ -63,11 +64,11 @@ public section
 
 open Filter Topology
 
-/-- For any positive real `D`, `D ^ (1 / n) → 1` as `n → ∞`. -/
-private theorem tendsto_rpow_one_div_atTop {D : ℝ} (hD : 0 < D) :
-    Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-  simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
-    (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
+/-- Evaluating `normRingSeminorm R` gives the ambient norm. -/
+@[simp]
+theorem normRingSeminorm_apply {R : Type*} [NonUnitalSeminormedRing R] (x : R) :
+    normRingSeminorm R x = ‖x‖ :=
+  (rfl)
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
@@ -83,7 +84,7 @@ private theorem smoothingFun_map_le_of_le_mul_of_tendsto {μ : RingSeminorm R} {
   have hD : 0 < D := zero_lt_one.trans_le (le_max_right _ _)
   have hlim : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n) atTop
       (𝓝 (smoothingFun μ x)) := by
-    simpa using (tendsto_rpow_one_div_atTop hD).mul htend
+    simpa using (Real.tendsto_const_rpow_one_div_atTop_nhds_one_nat hD.ne').mul htend
   refine ge_of_tendsto hlim (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
   calc smoothingFun ν (φ x) ≤ ν (φ x ^ n) ^ (1 / n : ℝ) :=
         smoothingFun_le ν (φ x) ⟨n, hn⟩
@@ -161,7 +162,7 @@ private theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ
     exists_pow_le_const_mul_pow μ hμ1 y (lt_add_of_pos_right _ (half_pos hε))
   have hC : 0 < Cx * Cy := mul_pos (zero_lt_one.trans_le hCx1) (zero_lt_one.trans_le hCy1)
   have hClim : Tendsto (fun n : ℕ ↦ (Cx * Cy) ^ (1 / n : ℝ) * (a + b)) atTop (𝓝 (a + b)) := by
-    simpa using (tendsto_rpow_one_div_atTop hC).mul_const (a + b)
+    simpa using (Real.tendsto_const_rpow_one_div_atTop_nhds_one_nat hC.ne').mul_const (a + b)
   have hab : a + b = smoothingFun μ x + smoothingFun μ y + ε := by
     dsimp [a, b]; ring
   rw [← hab]
@@ -225,7 +226,7 @@ theorem tendsto_smoothingFun (μ : RingSeminorm R) (x : R) :
   have hlow := tendsto_smoothingFun_of_map_one_le_one μ.boundedSeminorm μ.boundedSeminorm_one_le x
   have hhigh : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ.boundedSeminorm x n)
       atTop (𝓝 (smoothingFun μ.boundedSeminorm x)) := by
-    simpa using (tendsto_rpow_one_div_atTop hD).mul hlow
+    simpa using (Real.tendsto_const_rpow_one_div_atTop_nhds_one_nat hD.ne').mul hlow
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow hhigh
     (Eventually.of_forall fun n ↦ ?_) (Eventually.of_forall fun n ↦ ?_)
   · dsimp [smoothingSeminormSeq]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.TrivSqZeroExt
+public import TauCeti.Analysis.Normed.Algebra.TrivSqZeroExt
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.Analysis.Normed.Ring.DualNumber
 public import TauCeti.Analysis.Normed.Ring.GelfandSpectrum
@@ -119,20 +119,6 @@ private theorem trivSqZeroExtFstHom_apply (R M : Type*) [Semiring R]
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom y = y.fst := by
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
 
-private theorem inlHom_isBounded (R M : Type*) [SeminormedRing R]
-    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
-    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
-    (TrivSqZeroExt.inlHom R M).IsBounded :=
-  ⟨1, zero_lt_one, fun x ↦ by simp⟩
-
-private theorem fstHom_isBounded (R M : Type*) [SeminormedRing R]
-    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
-    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
-    ((TrivSqZeroExt.fstHom ℕ R M).toRingHom).IsBounded :=
-  ⟨1, zero_lt_one, fun y ↦ by
-    rw [trivSqZeroExtFstHom_apply, one_mul, TrivSqZeroExt.norm_def]
-    exact le_add_of_nonneg_right (norm_nonneg _)⟩
-
 private theorem fstHom_inlHom (R M : Type*) [Semiring R]
     [AddCommMonoid M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] (x : R) :
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom (TrivSqZeroExt.inlHom R M x) = x := by
@@ -155,9 +141,9 @@ noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
     GelfandSpectrum (TrivSqZeroExt R M) ≃ₜ GelfandSpectrum R :=
   retractHomeomorph
     (TrivSqZeroExt.inlHom R M)
-    (inlHom_isBounded R M)
+    (TrivSqZeroExt.isBounded_inlHom R M)
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom
-    (fstHom_isBounded R M)
+    (TrivSqZeroExt.isBounded_fstHom ℕ R M)
     (fstHom_inlHom R M)
     (sub_inlHom_fstHom_isNilpotent R M)
 

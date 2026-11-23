@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Ring.Basic
 public import TauCeti.Analysis.Normed.Unbundled.MulRingSeminorm
 
 import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
@@ -25,7 +26,7 @@ closed pointwise algebraic relations and inequalities, making `GelfandSpectrum A
 Hausdorff space (`GelfandSpectrum.instCompactSpace`, `GelfandSpectrum.instT2Space`).
 
 Over a commutative seminormed ring, combining `RingSeminorm.smoothing` with
-Bosch–Güntzer–Remmert Theorem 1.3.2/2 (`RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq`) yields
+Bosch–Güntzer–Remmert Theorem 1.3.2/3 (`RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq`) yields
 **Berkovich's spectral formula** (`GelfandSpectrum.smoothingFun_eq_sSup`): for every `x : A`,
 `smoothingFun (normRingSeminorm A) x` is the supremum of `α x` over `α : GelfandSpectrum A`, and
 when `normRingSeminorm A ≠ 0` (in particular on every nontrivial normed commutative ring) the
@@ -61,7 +62,7 @@ normalized (`[NormMulClass A] [NormOneClass A]`), it defines the top point
 * `TauCeti.GelfandSpectrum.smoothingFun_eq_sSup`,
   `TauCeti.GelfandSpectrum.exists_apply_eq_smoothingFun`,
   `TauCeti.GelfandSpectrum.isGreatest_range_eval`: Berkovich's formula for the spectral seminorm.
-* `TauCeti.GelfandSpectrum.instNonempty`, `TauCeti.GelfandSpectrum.compactSpace_nonempty`:
+* `TauCeti.GelfandSpectrum.instNonempty`, `TauCeti.GelfandSpectrum.nonempty_iff_nontrivial`:
   nonemptiness on nontrivial normed commutative rings.
 * `TauCeti.GelfandSpectrum.apply_eq_norm`, `TauCeti.GelfandSpectrum.instUnique`: the Gel'fand
   spectrum of a normed division ring is a singleton consisting of the norm.
@@ -72,29 +73,11 @@ normalized (`[NormMulClass A] [NormOneClass A]`), it defines the top point
   Mathematical Surveys and Monographs 33, AMS, 1990, §1.2 (Theorem 1.2.1) and §1.3 (Theorem 1.3.1).
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory: foundations*, Astérisque 371 (2015),
   §2.3 (Definition 2.3.2, Theorem 2.3.4, Theorem 2.3.10, Remark 2.3.11(b)).
-* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.3.2, Theorem 2.
+* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.3.2, Theorem 3 (and
+  Proposition 2 for `seminormFromConst`).
 -/
 
 public section
-
-namespace RingHom
-
-/-- The identity ring homomorphism on a seminormed ring is bounded with constant `1`. -/
-@[simp]
-theorem isBounded_id {A : Type*} [SeminormedRing A] : (RingHom.id A).IsBounded :=
-  ⟨1, zero_lt_one, fun x ↦ by simp⟩
-
-/-- The composition of two bounded ring homomorphisms is bounded. -/
-theorem IsBounded.comp {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
-    {ψ : B →+* C} (hψ : ψ.IsBounded) {φ : A →+* B} (hφ : φ.IsBounded) :
-    (ψ.comp φ).IsBounded := by
-  obtain ⟨C₁, hC₁, h₁⟩ := hψ
-  obtain ⟨C₂, hC₂, h₂⟩ := hφ
-  exact ⟨C₁ * C₂, mul_pos hC₁ hC₂, fun x ↦
-    (h₁ (φ x)).trans
-      ((mul_le_mul_of_nonneg_left (h₂ x) hC₁.le).trans_eq (mul_assoc C₁ C₂ ‖x‖).symm)⟩
-
-end RingHom
 
 namespace TauCeti
 
@@ -160,9 +143,6 @@ theorem ext {α β : GelfandSpectrum A} (h : ∀ x, α x = β x) : α = β :=
 theorem bound (α : GelfandSpectrum A) : (RingHom.id A).IsBoundedWrt norm α :=
   α.bound'
 
-private theorem normRingSeminorm_apply (x : A) : normRingSeminorm A x = ‖x‖ :=
-  rfl
-
 /-- **Contractivity of spectrum points.** Every `α : GelfandSpectrum A` satisfies `α x ≤ ‖x‖` for
 all `x : A`, because `α (x ^ n) = α x ^ n` absorbs multiplicative constants as `n → ∞`. -/
 theorem apply_le_norm (α : GelfandSpectrum A) (x : A) : α x ≤ ‖x‖ := by
@@ -203,7 +183,7 @@ theorem abs_apply_sub_le_norm_sub (α : GelfandSpectrum A) (x y : A) :
 
 /-- Every point of `GelfandSpectrum A` is continuous as a map `A → ℝ`. -/
 @[continuity, fun_prop]
-theorem continuous_apply_self (α : GelfandSpectrum A) : Continuous (α : A → ℝ) :=
+protected theorem continuous (α : GelfandSpectrum A) : Continuous (α : A → ℝ) :=
   Metric.continuous_iff.2 fun x ε hε ↦ ⟨ε, hε, fun y hy ↦ by
     rw [Real.dist_eq]
     exact (α.abs_apply_sub_le_norm_sub y x).trans_lt (by rwa [← dist_eq_norm])⟩
@@ -586,12 +566,6 @@ instance instNonempty [Nontrivial A] : Nonempty (GelfandSpectrum A) :=
 nontrivial. -/
 theorem nonempty_iff_nontrivial : Nonempty (GelfandSpectrum A) ↔ Nontrivial A :=
   ⟨fun _ ↦ nontrivial_of_nonempty, fun _ ↦ inferInstance⟩
-
-/-- `GelfandSpectrum A` is compact, and nonempty whenever `A` is nontrivial
-(Berkovich Theorem 1.2.1; Kedlaya–Liu Theorem 2.3.4). -/
-theorem compactSpace_nonempty :
-    CompactSpace (GelfandSpectrum A) ∧ (Nontrivial A → Nonempty (GelfandSpectrum A)) :=
-  ⟨inferInstance, fun _ ↦ inferInstance⟩
 
 end NormedCommRing
 

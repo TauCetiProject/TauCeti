@@ -197,4 +197,10 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
 
+/-- For any nonzero real `c`, `c ^ (1 / n : ℝ)` tends to `1` as `n → ∞`. -/
+theorem tendsto_const_rpow_one_div_atTop_nhds_one_nat {c : ℝ} (hc : c ≠ 0 := by positivity) :
+    Tendsto (fun n : ℕ ↦ c ^ (1 / n : ℝ)) atTop (𝓝 1) := by
+  simpa [Function.comp_def] using ((continuousAt_const_rpow hc).tendsto).comp
+    (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
+
 end Real
