@@ -15,11 +15,11 @@ public import TauCeti.RepresentationTheory.Irreducible
 /-!
 # `(𝔤, K)`-modules
 
-Let `𝔤` be a Lie algebra over a field `k` and let a group `K` act on `𝔤` through a representation
-`Ad`; the definitions only use that `K` is a monoid. A `(𝔤, K)`-module is a `𝔤`-module `V` with a
-representation `ρ` of `K` on `V` which is covariant, `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, and locally
-finite: every vector is `K`-finite (`Representation.IsGFinite`), that is, its orbit spans a
-finite-dimensional subspace.
+Let `𝔤` be a Lie algebra over a field `k` and let a group `K` act on `𝔤` by Lie algebra
+endomorphisms through a representation `Ad`; the definitions only use that `K` is a monoid. A
+`(𝔤, K)`-module is a `𝔤`-module `V` (a Lie module over `k`) with a representation `ρ` of `K` on `V`
+which is covariant, `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, and locally finite: every vector is `K`-finite
+(`Representation.IsGFinite`), that is, its orbit spans a finite-dimensional subspace.
 
 This file records the algebraic part of the theory, which needs neither a topology nor a Lie group
 structure on `K`. For a real reductive group with maximal compact subgroup `K` and complexified Lie
@@ -29,6 +29,7 @@ condition is a further hypothesis on a `TauCeti.GKModule`; nothing below uses it
 
 ## Main definitions
 
+* `TauCeti.IsLieAction Ad`: `K` acts on `𝔤` by Lie algebra endomorphisms.
 * `TauCeti.GKModule Ad V`: a `(𝔤, K)`-module structure on the `𝔤`-module `V`.
 * `TauCeti.GKSubmodule M`: a `(𝔤, K)`-submodule, a Lie submodule stable under `K`.
 * `TauCeti.GKModule.submodule`, `TauCeti.GKModule.quotient`: the `(𝔤, K)`-module structures on a
@@ -37,7 +38,8 @@ condition is a further hypothesis on a `TauCeti.GKModule`; nothing below uses it
 * `TauCeti.GKModule.isotypic M σ`: the `σ`-isotypic component, the sum of the images of the
   `K`-equivariant maps from `σ` to `V`. It is `K`-stable (`TauCeti.GKModule.isotypicSubrep`) but
   not `𝔤`-stable in general, since `𝔤` moves `K`-types.
-* `TauCeti.GKModule.multiplicity M σ`: the dimension of `Hom_K(σ, V)`.
+* `TauCeti.GKModule.multiplicity M σ`: the dimension of `Hom_K(σ, V)` in `ℕ∞`, equal to `⊤` when
+  it is infinite.
 * `TauCeti.GKModule.IsAdmissible`: `Hom_K(σ, V)` is finite-dimensional for every irreducible `σ`.
 * `TauCeti.GKModule.IsHarishChandraModule`: admissible and finitely generated over `𝔤`, that is,
   over the enveloping algebra `U(𝔤)`.
@@ -59,11 +61,11 @@ condition is a further hypothesis on a `TauCeti.GKModule`; nothing below uses it
 
 ## Implementation notes
 
-The multiplicity is the dimension of `Hom_K(σ, V)`. When `k` is not algebraically closed this is
-the number of copies of `σ` in `V(σ)` multiplied by the dimension of the division algebra
-`End_K(σ)`. Admissibility is quantified over the irreducible subrepresentations of `V`, which
-avoids fixing a universe for `σ`: an irreducible representation with a nonzero map to `V` is
-isomorphic to its image.
+The multiplicity is the dimension of `Hom_K(σ, V)`. For irreducible `σ` with `Hom_K(σ, V)`
+finite-dimensional, when `k` is not algebraically closed this is the number of copies of `σ` in
+`V(σ)` multiplied by the dimension of the division algebra `End_K(σ)`. Admissibility is
+quantified over the irreducible subrepresentations of `V`, which avoids fixing a universe for `σ`:
+an irreducible representation with a nonzero map to `V` is isomorphic to its image.
 
 ## References
 
@@ -82,11 +84,17 @@ universe v w
 
 variable {k 𝔤 K : Type*} [Field k] [LieRing 𝔤] [LieAlgebra k 𝔤] [Monoid K]
 
+/-- A representation `Ad` of a monoid `K` on a Lie algebra `𝔤` **acts by Lie algebra
+endomorphisms** when every `Ad g` preserves the Lie bracket. -/
+class IsLieAction (Ad : Representation k K 𝔤) : Prop where
+  /-- Every `Ad g` preserves the Lie bracket. -/
+  map_lie (g : K) (x y : 𝔤) : Ad g ⁅x, y⁆ = ⁅Ad g x, Ad g y⁆
+
 /-- A **`(𝔤, K)`-module** structure on a `𝔤`-module `V`, for a monoid `K` acting on the Lie algebra
-`𝔤` through `Ad`: a representation `ρ` of `K` on `V` with `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, under
-which every vector is `K`-finite. -/
-structure GKModule (Ad : Representation k K 𝔤) (V : Type v) [AddCommGroup V] [Module k V]
-    [LieRingModule 𝔤 V] where
+`𝔤` by Lie algebra endomorphisms through `Ad`: a representation `ρ` of `K` on `V` with
+`ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, under which every vector is `K`-finite. -/
+structure GKModule (Ad : Representation k K 𝔤) [IsLieAction Ad] (V : Type v) [AddCommGroup V]
+    [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V] where
   /-- The action of `K`. -/
   ρ : Representation k K V
   /-- The action of `K` is covariant for the actions of `K` on `𝔤` and of `𝔤` on `V`. -/
@@ -94,8 +102,8 @@ structure GKModule (Ad : Representation k K 𝔤) (V : Type v) [AddCommGroup V] 
   /-- Every vector is `K`-finite. -/
   isGFinite (v : V) : ρ.IsGFinite v
 
-variable {Ad : Representation k K 𝔤} {V : Type v} [AddCommGroup V] [Module k V]
-  [LieRingModule 𝔤 V]
+variable {Ad : Representation k K 𝔤} [IsLieAction Ad] {V : Type v} [AddCommGroup V]
+  [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
 
 /-- A **`(𝔤, K)`-submodule** of a `(𝔤, K)`-module: a Lie submodule stable under `K`. -/
 structure GKSubmodule (M : GKModule Ad V) where
@@ -173,8 +181,6 @@ theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :
     (((M.submodule N).ρ g v : N.toLieSubmodule) : V) = M.ρ g v :=
   (rfl)
 
-variable [LieModule k 𝔤 V]
-
 /-- The `(𝔤, K)`-module structure on the quotient by a `(𝔤, K)`-submodule. -/
 def quotient : GKModule Ad (V ⧸ N.toLieSubmodule) where
   ρ := M.ρ.quotient N.toLieSubmodule.toSubmodule fun g _ hv ↦ N.apply_mem g hv
@@ -201,7 +207,7 @@ section DirectSum
 open DirectSum
 
 variable {ι : Type*} {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
-  [∀ i, LieRingModule 𝔤 (V i)]
+  [∀ i, LieRingModule 𝔤 (V i)] [∀ i, LieModule k 𝔤 (V i)]
 
 /-- The `(𝔤, K)`-module structure on a direct sum of `(𝔤, K)`-modules. Every vector of the direct
 sum has finitely many nonzero components, so the family may be infinite. -/
@@ -309,13 +315,23 @@ def isotypicSubrep : Subrepresentation M.ρ where
 theorem mem_isotypicSubrep {v : V} : v ∈ M.isotypicSubrep σ ↔ v ∈ M.isotypic σ :=
   Iff.rfl
 
-/-- The **multiplicity** of `σ` in a `(𝔤, K)`-module: the dimension of `Hom_K(σ, V)`, or `0` when
-it is infinite-dimensional. -/
-noncomputable def multiplicity : ℕ :=
-  Module.finrank k (IntertwiningMap σ M.ρ)
+/-- The **multiplicity** of `σ` in a `(𝔤, K)`-module: the dimension of `Hom_K(σ, V)`, as an
+element of `ℕ∞`, which is `⊤` when `Hom_K(σ, V)` is infinite-dimensional. -/
+noncomputable def multiplicity : ℕ∞ :=
+  (Module.rank k (IntertwiningMap σ M.ρ)).toENat
 
-theorem multiplicity_def : M.multiplicity σ = Module.finrank k (IntertwiningMap σ M.ρ) :=
+theorem multiplicity_def : M.multiplicity σ = (Module.rank k (IntertwiningMap σ M.ρ)).toENat :=
   (rfl)
+
+/-- When `Hom_K(σ, V)` is finite-dimensional, the multiplicity is its `finrank`. -/
+theorem multiplicity_eq_finrank [FiniteDimensional k (IntertwiningMap σ M.ρ)] :
+    M.multiplicity σ = Module.finrank k (IntertwiningMap σ M.ρ) := by
+  rw [multiplicity_def, ← Module.finrank_eq_rank, Cardinal.toENat_nat]
+
+/-- The multiplicity is finite exactly when `Hom_K(σ, V)` is finite-dimensional. -/
+theorem multiplicity_lt_top_iff :
+    M.multiplicity σ < ⊤ ↔ FiniteDimensional k (IntertwiningMap σ M.ρ) := by
+  rw [multiplicity_def, Cardinal.toENat_lt_top, Module.rank_lt_aleph0_iff]
 
 /-- Evaluation of `K`-equivariant maps `σ → V` at a vector `w`, which lands in the isotypic
 component `V(σ)`. -/
@@ -351,11 +367,13 @@ theorem finiteDimensional_intertwiningMap_of_isotypic [σ.IsIrreducible]
 
 variable {σ} in
 /-- For irreducible `σ`, the multiplicity is at most the dimension of the isotypic component. -/
-theorem multiplicity_le_finrank_isotypic [σ.IsIrreducible] [FiniteDimensional k (M.isotypic σ)] :
-    M.multiplicity σ ≤ Module.finrank k (M.isotypic σ) := by
+theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
+    M.multiplicity σ ≤ (Module.rank k (M.isotypic σ)).toENat := by
   have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
   obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  exact LinearMap.finrank_le_finrank_of_injective (M.evalIntertwiningMap_injective hw)
+  have h := OrderHomClass.mono Cardinal.toENat
+    (LinearMap.lift_rank_le_of_injective _ (M.evalIntertwiningMap_injective (σ := σ) hw))
+  rwa [Cardinal.toENat_lift, Cardinal.toENat_lift] at h
 
 end Isotypic
 
@@ -439,7 +457,7 @@ theorem submodule (hM : M.IsAdmissible) (N : GKSubmodule M) : (M.submodule N).Is
 
 /-- A finite direct sum of admissible `(𝔤, K)`-modules is admissible. -/
 theorem directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-    [∀ i, Module k (V i)] [∀ i, LieRingModule 𝔤 (V i)]
+    [∀ i, Module k (V i)] [∀ i, LieRingModule 𝔤 (V i)] [∀ i, LieModule k 𝔤 (V i)]
     {M : ∀ i, GKModule Ad (V i)} (hM : ∀ i, (M i).IsAdmissible) :
     (GKModule.directSum M).IsAdmissible := by
   intro U hU
