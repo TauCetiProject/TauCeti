@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Module
-public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.Algebra.MonoidAlgebra.Ideal
 
 /-!
 # Tensor products with monoid algebras
@@ -34,8 +33,9 @@ commutes with base change. For a commutative ring `R`, a commutative additive mo
 * `TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul` and
   `TauCeti.MonoidAlgebra.tensorEquivFinsupp_symm_single`: the equivalence and its inverse on
   generators.
-* `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv_tmul`: the base-change equivalence of monomial
-  quotients on pure tensors.
+* `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv_tmul` and
+  `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv_symm_mk_single`: the base-change equivalence
+  of monomial quotients on pure tensors, and its inverse on classes of monomials.
 -/
 
 public section
@@ -81,6 +81,21 @@ open TensorProduct
 variable {R M : Type*} [CommRing R] [AddCommMonoid M] (S : Type*) [CommRing S] [Algebra R S]
   (D : Set M)
 
+/-- Base change of `R[M]` to `S` sends `1 ⊗ p` to the image of `p` under the coefficient change
+`R → S`. -/
+private theorem scalarTensorEquiv_one_tmul (p : AddMonoidAlgebra R M) :
+    scalarTensorEquiv R S (1 ⊗ₜ p) = mapRingHom M (algebraMap R S) p := by
+  ext m
+  simp
+
+/-- Including `R[M]` into `S ⊗[R] R[M]` and then identifying the result with `S[M]` is the
+coefficient change `R → S`. -/
+private theorem scalarTensorEquiv_comp_includeRight :
+    (scalarTensorEquiv R S (M := M) : S ⊗[R] AddMonoidAlgebra R M →+* AddMonoidAlgebra S M).comp
+        (Algebra.TensorProduct.includeRight (R := R) (A := S) : AddMonoidAlgebra R M →ₐ[R] _) =
+      mapRingHom M (algebraMap R S) :=
+  RingHom.ext (scalarTensorEquiv_one_tmul S)
+
 /-- The formation of the quotient by a monomial ideal commutes with base change: for every
 `R`-algebra `S`, the scalar extension `S ⊗[R] (R[M] ⧸ (D))` is the quotient `S[M] ⧸ (D)` by the
 ideal spanned by the same monomials over `S`. -/
@@ -89,8 +104,8 @@ def quotientSpanOf'ImageTensorEquiv :
       AddMonoidAlgebra S M ⧸ Ideal.span (of' S M '' D) :=
   (Algebra.TensorProduct.tensorQuotientEquiv S _ S _).trans <|
     Ideal.quotientEquivAlg _ _ (scalarTensorEquiv R S) <| by
-      rw [Ideal.map_span, Ideal.map_span, Set.image_image, Set.image_image]
-      exact congrArg _ <| Set.image_congr fun m _ ↦ by simp [of'_apply]
+      rw [← Ideal.map_coe Algebra.TensorProduct.includeRight, Ideal.map_map,
+        scalarTensorEquiv_comp_includeRight, map_mapRingHom_ideal_span_of'_image]
 
 /-- The base-change equivalence of monomial quotients sends `s ⊗ [p]` to the class of `s` times
 the image of `p` under the coefficient change `R → S`. -/
@@ -98,9 +113,16 @@ the image of `p` under the coefficient change `R → S`. -/
 theorem quotientSpanOf'ImageTensorEquiv_tmul (s : S) (p : AddMonoidAlgebra R M) :
     quotientSpanOf'ImageTensorEquiv S D (s ⊗ₜ Ideal.Quotient.mk _ p) =
       Ideal.Quotient.mk _ (s • mapRingHom M (algebraMap R S) p) := by
-  simp only [quotientSpanOf'ImageTensorEquiv, AlgEquiv.trans_apply,
-    Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
-    scalarTensorEquiv_tmul, ← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, AlgHom.toRingHom_eq_coe,
-    Algebra.toRingHom_ofId]
+  rw [← scalarTensorEquiv_one_tmul]
+  simp [quotientSpanOf'ImageTensorEquiv]
+
+/-- The inverse of the base-change equivalence of monomial quotients sends the class of the
+monomial `single m s` over `S` to `s ⊗` the class of the monomial `single m 1` over `R`. -/
+@[simp]
+theorem quotientSpanOf'ImageTensorEquiv_symm_mk_single (m : M) (s : S) :
+    (quotientSpanOf'ImageTensorEquiv (R := R) S D).symm (Ideal.Quotient.mk _ (single m s)) =
+      s ⊗ₜ Ideal.Quotient.mk (Ideal.span (of' R M '' D)) (single m 1) := by
+  rw [AlgEquiv.symm_apply_eq, quotientSpanOf'ImageTensorEquiv_tmul]
+  simp
 
 end AddMonoidAlgebra

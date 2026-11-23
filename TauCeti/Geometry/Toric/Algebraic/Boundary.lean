@@ -333,6 +333,17 @@ theorem boundaryQuotientTensorEquiv_tmul (S : Type*) [CommRing S] [Algebra R S] 
       Ideal.Quotient.mk _ (s • mapRingHom _ (algebraMap R S) f) := by
   simp [boundaryQuotientTensorEquiv, Algebra.TensorProduct.congr_apply]
 
+open TensorProduct in
+/-- The inverse of the base-change equivalence of boundaries sends the class of the monomial
+`single p s` over `S` to `s ⊗` the class of the monomial `single p 1` over `R`. -/
+@[simp]
+theorem boundaryQuotientTensorEquiv_symm_mk_single (S : Type*) [CommRing S] [Algebra R S]
+    (p : (ι →₀ ℕ) × Q) (s : S) :
+    (boundaryQuotientTensorEquiv (R := R) S).symm (Ideal.Quotient.mk _ (single p s)) =
+      s ⊗ₜ Ideal.Quotient.mk (Ideal.span {boundaryMonomial R ι Q}) (single p 1) := by
+  rw [AlgEquiv.symm_apply_eq, boundaryQuotientTensorEquiv_tmul]
+  simp
+
 end Quotient
 
 section Radical
