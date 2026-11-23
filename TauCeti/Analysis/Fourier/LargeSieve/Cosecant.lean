@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
+import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
 
 /-!
 # Cosecant row bound for well-spaced points on `UnitAddCircle`

@@ -48,9 +48,10 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
 * `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
   `F (-(k : ℤ))` over `k < a`.
-* `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`, and
-  `Finset.sum_Ico_int_add_eq_sum_fin`: reindex symmetric integer intervals `[-K, K]` by
-  `Fin (2 * K + 1)` and shifted integer intervals `[M, M + H)` by `range H` or `Fin H`.
+* `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`,
+  `Finset.sum_Ico_int_add_eq_sum_fin`, and `Finset.sum_fin_ite_sub_eq_sum_range`: reindex
+  symmetric integer intervals `[-K, K]` by `Fin (2 * K + 1)`, shifted integer intervals
+  `[M, M + H)` by `range H` or `Fin H`, and zero-padded windows `[L, L + H)` inside `Fin D`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
@@ -175,22 +176,8 @@ theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ →
 theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
     (M : ℤ) (H : ℕ) (g : ℤ → α) :
     ∑ n ∈ Ico M (M + H), g n = ∑ j ∈ range H, g (M + (j : ℤ)) := by
-  refine sum_nbij' (fun n ↦ (n - M).toNat) (fun j ↦ M + (j : ℤ)) ?_ ?_ ?_ ?_ ?_
-  · intro n hn
-    simp only [mem_Ico, mem_range] at hn ⊢
-    omega
-  · intro j hj
-    simp only [mem_range, mem_Ico] at hj ⊢
-    omega
-  · intro n hn
-    simp only [mem_Ico] at hn
-    omega
-  · intro j _
-    omega
-  · intro n hn
-    simp only [mem_Ico] at hn
-    congr 1
-    omega
+  rw [Int.Ico_eq_finset_map, sum_map, add_sub_cancel_left, Int.toNat_natCast]
+  rfl
 
 /-- Reindex a sum over `Ico M (M + H)` by `Fin H`. -/
 theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
@@ -201,11 +188,26 @@ theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
 /-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
 theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :
     ∑ n ∈ Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
-  have hIcc : Icc (-(K : ℤ)) K = Ico (-(K : ℤ)) (-(K : ℤ) + ((2 * K + 1 : ℕ) : ℤ)) := by
-    ext n; simp only [mem_Icc, mem_Ico]; omega
-  rw [hIcc, sum_Ico_int_add_eq_sum_fin]
+  rw [Int.Icc_eq_finset_map, sum_map, show (K + 1 - -(K : ℤ)).toNat = 2 * K + 1 by omega,
+    ← Fin.sum_univ_eq_sum_range]
   refine sum_congr rfl fun k _ ↦ ?_
-  congr 1; ring
+  simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
+  rw [sub_eq_add_neg, add_comm]
+
+/-- Reindex a zero-padded sum over `Fin D` on the shifted window `[L, L + H)` by `range H`,
+assuming `L + H ≤ D`. -/
+theorem sum_fin_ite_sub_eq_sum_range {α : Type*} [AddCommMonoid α]
+    {D L H : ℕ} (hD : L + H ≤ D) (g : ℕ → α) :
+    (∑ k : Fin D, if L ≤ (k : ℕ) ∧ (k : ℕ) - L < H then g ((k : ℕ) - L) else 0) =
+      ∑ j ∈ range H, g j := by
+  rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ if L ≤ k ∧ k - L < H then g (k - L) else 0),
+    ← sum_filter]
+  have hfilt : (range D).filter (fun k ↦ L ≤ k ∧ k - L < H) = Ico L (L + H) := by
+    ext k
+    simp only [mem_filter, mem_range, mem_Ico]
+    omega
+  rw [hfilt, sum_Ico_eq_sum_range, add_tsub_cancel_left]
+  simp
 
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.Order.Chebyshev
 
 /-!
 # Real Fourier characters and geometric exponential sums
@@ -15,9 +17,12 @@ sums of Mathlib's real additive Fourier character `Real.fourierChar : AddChar �
 
 * `Real.conj_fourierChar` and `Real.fourierChar_mul_fourierChar`: conjugation and multiplication of
   complex-valued `Real.fourierChar`.
+* `Real.norm_fourierChar_sub_one`: chord length `‖Real.fourierChar t - 1‖ = 2 * |sin (π * t)|`.
 * `Real.norm_sum_range_fourierChar_mul_abs_sin` and
   `Real.norm_sum_range_fourierChar_sq_eq_sin_div_sq`: closed forms for the norm of a geometric
   exponential sum in terms of `Real.sin`.
+* `TauCeti.norm_sum_Ico_fourierChar_sq_le_mul_sum`: one-point Cauchy–Schwarz bound
+  `‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`.
 -/
 
 public section
@@ -34,6 +39,15 @@ theorem fourierChar_mul_fourierChar (x y : ℝ) :
     (Real.fourierChar x : ℂ) * (Real.fourierChar y : ℂ) = (Real.fourierChar (x + y) : ℂ) := by
   rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul]
 
+/-- The chord length between `Real.fourierChar t` and `1` on the unit circle is
+`2 * |sin (π * t)|`. -/
+theorem norm_fourierChar_sub_one (t : ℝ) :
+    ‖(Real.fourierChar t : ℂ) - 1‖ = 2 * |Real.sin (Real.pi * t)| := by
+  have ht : (Real.fourierChar t : ℂ) = Complex.exp (Complex.I * ((2 * Real.pi * t : ℝ) : ℂ)) := by
+    simp only [Real.fourierChar_apply, mul_comm]
+  rw [ht, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
+  congr 3; ring
+
 /-- Closed-form product identity for the norm of a geometric exponential sum:
 `‖∑ k ∈ range M, Real.fourierChar (k * t)‖ * |sin (π * t)| = |sin (π * M * t)|`. -/
 theorem norm_sum_range_fourierChar_mul_abs_sin (t : ℝ) (M : ℕ) :
@@ -46,15 +60,9 @@ theorem norm_sum_range_fourierChar_mul_abs_sin (t : ℝ) (M : ℕ) :
   simp_rw [hpow]
   have hgeom := congrArg (fun w : ℂ ↦ ‖w‖) (geom_sum_mul z M)
   rw [norm_mul] at hgeom
-  have hnorm_sub_one (s : ℝ) :
-      ‖(Real.fourierChar s : ℂ) - 1‖ = 2 * |Real.sin (Real.pi * s)| := by
-    have hs : (Real.fourierChar s : ℂ) = Complex.exp (Complex.I * ((2 * Real.pi * s : ℝ) : ℂ)) := by
-      simp only [Real.fourierChar_apply, mul_comm]
-    rw [hs, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
-    congr 3; ring
-  have hz1 : ‖z - 1‖ = 2 * |Real.sin (Real.pi * t)| := hnorm_sub_one t
+  have hz1 : ‖z - 1‖ = 2 * |Real.sin (Real.pi * t)| := norm_fourierChar_sub_one t
   have hzM : ‖z ^ M - 1‖ = 2 * |Real.sin (Real.pi * (M : ℝ) * t)| := by
-    rw [← hpow M, hnorm_sub_one, mul_assoc]
+    rw [← hpow M, norm_fourierChar_sub_one, mul_assoc]
   rw [hz1, hzM] at hgeom
   linarith
 
@@ -70,3 +78,26 @@ theorem norm_sum_range_fourierChar_sq_eq_sin_div_sq (t : ℝ) (M : ℕ)
   exact h
 
 end Real
+
+namespace TauCeti
+
+/-- One-point Cauchy–Schwarz bound for an exponential sum over `Finset.Ico M (M + H)`:
+`‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`. -/
+theorem norm_sum_Ico_fourierChar_sq_le_mul_sum (M : ℤ) (H : ℕ) (a : ℤ → ℂ) (t : ℝ) :
+    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2 ≤
+      (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
+  have htri :
+      ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ≤
+        ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ := by
+    refine le_trans (norm_sum_le _ _) ?_
+    simp [Circle.norm_coe]
+  have hIco : ((Finset.Ico M (M + (H : ℤ))).card : ℝ) = (H : ℝ) := by
+    rw [Int.card_Ico, add_sub_cancel_left, Int.toNat_natCast]
+  calc
+    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2
+        ≤ (∑ n ∈ Finset.Ico M (M + H), ‖a n‖) ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) htri 2
+    _ ≤ (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
+      simpa [hIco] using sq_sum_le_card_mul_sum_sq (s := Finset.Ico M (M + H)) (f := fun n ↦ ‖a n‖)
+
+end TauCeti

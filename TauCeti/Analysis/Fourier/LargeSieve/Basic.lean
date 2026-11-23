@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Group.AddCircle
-import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.Fejer.Finite
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
+import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
 import TauCeti.Analysis.Fourier.LargeSieve.Cosecant
 import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
@@ -43,8 +43,6 @@ tapered Fourier vectors.
 * `TauCeti.icoCorePadVec_eq_zero_of_lt_abs`, `TauCeti.norm_icoCorePadVec_sq`,
   `TauCeti.fourierChar_mul_sum_icoCorePadVec`, and `TauCeti.norm_sum_icoCorePadVec_fourierChar`:
   support, squared-norm, and Fourier phase identities for `icoCorePadVec`.
-* `TauCeti.norm_sum_Ico_fourierChar_sq_le_mul_sum`: one-point Cauchy–Schwarz bound
-  `‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`.
 * `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
   core-supported vectors.
 * `Finset.sum_norm_sum_fourierChar_sq_le_of_support`: centered core additive large sieve for
@@ -303,28 +301,16 @@ theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N
     rcases abs_cases ((k : ℤ) - ((N + L : ℕ) : ℤ)) with ⟨_, _⟩ | ⟨_, _⟩ <;> omega
   rw [icoCorePadVec_apply, ite_eq_right hnot]
 
-private theorem sum_fin_ite_sub_eq_sum_range {α : Type*} [AddCommMonoid α]
-    {H N L : ℕ} (hHN : H ≤ 2 * N + 1) (g : ℕ → α) :
-    (∑ k : Fin (2 * (N + L) + 1), if L ≤ k.val ∧ k.val - L < H then g (k.val - L) else 0) =
-      ∑ j ∈ Finset.range H, g j := by
-  rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ if L ≤ k ∧ k - L < H then g (k - L) else 0),
-    ← Finset.sum_filter]
-  have hfilt : (Finset.range (2 * (N + L) + 1)).filter (fun k ↦ L ≤ k ∧ k - L < H) =
-      Finset.Ico L (L + H) := by
-    ext k
-    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
-    omega
-  rw [hfilt, Finset.sum_Ico_eq_sum_range, add_tsub_cancel_left]
-  exact Finset.sum_congr rfl fun j _ ↦ by rw [Nat.add_sub_cancel_left]
-
 /-- When `H ≤ 2 * N + 1`, the squared norm of `icoCorePadVec M H N L a` equals the squared
 `ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
 theorem norm_icoCorePadVec_sq {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ) (a : ℤ → ℂ) :
     ‖icoCorePadVec M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   rw [EuclideanSpace.norm_sq_eq, Finset.sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
-    ← sum_fin_ite_sub_eq_sum_range hHN (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
+    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) (by omega)
+      (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
+  change ‖if L ≤ (k : ℕ) ∧ (k : ℕ) - L < H then a (M + (((k : ℕ) - L : ℕ) : ℤ)) else 0‖ ^ 2 = _
   split_ifs <;> simp
 
 /-- When `H ≤ 2 * N + 1`, shifting the centered Fourier sum of `icoCorePadVec M H N L a` by the
@@ -339,24 +325,27 @@ theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 *
       ∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ) := by
   rw [Finset.mul_sum, Finset.sum_Ico_int_add_eq_sum_range M H
     (fun n ↦ a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)),
-    ← sum_fin_ite_sub_eq_sum_range hHN (fun j ↦
+    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) (by omega) (fun j ↦
       a (M + (j : ℤ)) * (Real.fourierChar (((M + (j : ℤ) : ℤ) : ℝ) * t) : ℂ))]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
+  change (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
+      ((if L ≤ (k : ℕ) ∧ (k : ℕ) - L < H then a (M + (((k : ℕ) - L : ℕ) : ℤ)) else 0) *
+        (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) = _
   split_ifs with hk
   · calc
       (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
-          (a (M + ((k.val - L : ℕ) : ℤ)) *
+          (a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
             (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ))
-          = a (M + ((k.val - L : ℕ) : ℤ)) *
+          = a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
               ((Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
                 (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) := by
             ring
-      _ = a (M + ((k.val - L : ℕ) : ℤ)) *
-            (Real.fourierChar (((M + ((k.val - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) := by
+      _ = a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
+            (Real.fourierChar (((M + (((k : ℕ) - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) := by
           rw [Real.fourierChar_mul_fourierChar]
           congr 3
-          have heq : M + ((k.val - L : ℕ) : ℤ) =
+          have heq : M + (((k : ℕ) - L : ℕ) : ℤ) =
               (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by omega
           rw [heq]; push_cast; ring
   · simp
@@ -370,25 +359,6 @@ theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 
           (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ =
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ := by
   rw [← fourierChar_mul_sum_icoCorePadVec hHN L a t, norm_mul, Circle.norm_coe, one_mul]
-
-/-- One-point Cauchy–Schwarz bound for an exponential sum over `Finset.Ico M (M + H)`:
-`‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`. -/
-theorem norm_sum_Ico_fourierChar_sq_le_mul_sum (M : ℤ) (H : ℕ) (a : ℤ → ℂ) (t : ℝ) :
-    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2 ≤
-      (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-  have htri :
-      ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ≤
-        ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ := by
-    refine le_trans (norm_sum_le _ _) ?_
-    simp [Circle.norm_coe]
-  have hIco : ((Finset.Ico M (M + (H : ℤ))).card : ℝ) = (H : ℝ) := by
-    rw [Int.card_Ico, add_sub_cancel_left, Int.toNat_natCast]
-  calc
-    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2
-        ≤ (∑ n ∈ Finset.Ico M (M + H), ‖a n‖) ^ 2 :=
-      pow_le_pow_left₀ (norm_nonneg _) htri 2
-    _ ≤ (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-      simpa [hIco] using sq_sum_le_card_mul_sum_sq (s := Finset.Ico M (M + H)) (f := fun n ↦ ‖a n‖)
 
 end TauCeti
 
