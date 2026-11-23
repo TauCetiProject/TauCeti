@@ -27,6 +27,8 @@ Noetherian ring the converse holds by Baer's criterion, since the ideals are fin
   injective object of `FGModuleCat R`.
 * `FGModuleCat.moduleInjective_of_injective`: over a left Noetherian ring, an injective object of
   `FGModuleCat R` is an injective module.
+* `FGModuleCat.injective_obj_iff`: over a left Noetherian ring, a finitely generated module is
+  injective in `ModuleCat R` exactly when it is injective in `FGModuleCat R`.
 -/
 
 public section
@@ -81,5 +83,12 @@ theorem moduleInjective_of_injective [IsNoetherianRing R] [Small.{v} R] (X : FGM
   refine ⟨(Injective.factorThru (ofHom (g ∘ₗ eI.toLinearMap)) i).hom.hom ∘ₗ eR.symm.toLinearMap,
     fun x hx ↦ ?_⟩
   simpa [i, -Injective.comp_factorThru] using congrArg (fun φ ↦ φ.hom.hom (eI.symm ⟨x, hx⟩)) h
+
+/-- Over a left Noetherian ring, a finitely generated module is injective among all modules exactly
+when it is an injective object of `FGModuleCat R`. -/
+theorem injective_obj_iff [IsNoetherianRing R] [Small.{v} R] (X : FGModuleCat.{v} R) :
+    Injective X.obj ↔ Injective X :=
+  (Module.injective_iff_injective_object R X).symm.trans
+    ⟨fun _ ↦ injective_of_moduleInjective X, fun _ ↦ moduleInjective_of_injective X⟩
 
 end FGModuleCat
