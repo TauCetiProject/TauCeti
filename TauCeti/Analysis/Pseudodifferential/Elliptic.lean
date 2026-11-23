@@ -37,8 +37,6 @@ degree:
   `g` from the unit sphere of frequencies is elliptic exactly when `g` is invertible there.
 * `HomogeneousSymbol.isElliptic_normRpow`: the powers `‖ξ‖ ^ m Id` of the frequency norm are
   elliptic.
-* `HomogeneousSymbol.IsElliptic.compPosition`: pulling back the position along a smooth map
-  preserves ellipticity.
 * `HomogeneousSymbol.IsElliptic.compProdMap` and `HomogeneousSymbol.isElliptic_compProdMap_iff`:
   linear changes of variables preserve ellipticity, and invertible ones do not change it.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
@@ -99,12 +97,6 @@ theorem isElliptic_id : (id X E V).IsElliptic :=
 theorem IsElliptic.comp {b : HomogeneousSymbol X E W U m'} {a : HomogeneousSymbol X E V W m}
     (hb : b.IsElliptic) (ha : a.IsElliptic) : (b.comp a).IsElliptic :=
   fun x ξ hξ ↦ by simpa using (hb x ξ hξ).comp (ha x ξ hξ)
-
-/-- Pulling back the position preserves ellipticity. -/
-theorem IsElliptic.compPosition {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
-    (a.compPosition g hg).IsElliptic :=
-  fun y ξ hξ ↦ by simpa using ha (g y) ξ hξ
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
