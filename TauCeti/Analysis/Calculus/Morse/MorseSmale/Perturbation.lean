@@ -11,7 +11,7 @@ public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Normed.Lp.PiLp
-import TauCeti.Topology.Order.Sublevel
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Dynamics.Flow.Variational
 
