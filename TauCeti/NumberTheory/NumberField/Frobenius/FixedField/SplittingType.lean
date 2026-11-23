@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
 public import TauCeti.NumberTheory.NumberField.FixedField
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.DecompositionOrbits
+import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 
 /-!
 # Frobenius cycle lengths and splitting in a fixed field
@@ -104,20 +105,9 @@ theorem fullCycleType_toPerm_inertiaOrbitQuotient_eq_map_inertiaDeg
   set D := stabilizer (L ≃ₐ[K] L) Q
   set I := Q.inertia D
   set frob : D ⧸ I := QuotientGroup.mk ⟨σ, hσ.mem_stabilizer⟩
-  -- Frobenius modulo `I` generates `D / I`, because `⟨σ⟩ ⊔ I = D`.
-  have hgen : Subgroup.zpowers frob = ⊤ := by
-    have h := congrArg (Subgroup.map (QuotientGroup.mk' I))
-      (zpowers_sup_inertia_eq_top_of_isArithFrobAt Q hσ)
-    rw [Subgroup.map_sup, MonoidHom.map_zpowers, Subgroup.map_top_of_surjective _
-      (QuotientGroup.mk'_surjective I), QuotientGroup.map_mk'_self, sup_bot_eq] at h
-    exact h
-  -- Rewrite the full cycle type as `(D / I)`-orbit sizes on `I \ (G / H)`.
-  have horb_eq : ∀ ω : orbitRel.Quotient I ((L ≃ₐ[K] L) ⧸ H),
-      orbit (Subgroup.zpowers frob) ω = orbit (D ⧸ I) ω := fun ω ↦ by
-    ext ω'
-    simp only [mem_orbit_iff, Subgroup.smul_def]
-    exact ⟨fun ⟨g, hg⟩ ↦ ⟨g.val, hg⟩, fun ⟨g, hg⟩ ↦ ⟨⟨g, hgen ▸ Subgroup.mem_top g⟩, hg⟩⟩
-  rw [fullCycleType_toPerm_eq_map_card_orbit frob, TauCeti.map_card_orbit_eq_of_orbit_eq horb_eq,
+  rw [fullCycleType_toPerm_eq_map_card_orbit frob,
+    TauCeti.map_card_orbit_eq_of_orbit_eq
+      (orbit_eq_of_eq_top (zpowers_mk_eq_top_of_isArithFrobAt Q hσ)),
     map_card_orbit_quotientInertia_eq_map_inertiaDeg p Q H (𝓞 ↥(fixedField H))]
 
 end Ideal

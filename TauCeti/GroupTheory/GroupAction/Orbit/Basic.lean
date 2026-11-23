@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.GroupTheory.GroupAction.Defs
 
 /-!
@@ -36,6 +37,8 @@ ambient elements without packing subgroup-membership proofs into the witness lis
   of `a` whose fiber lies in `s`, together with a witness set `W ⊆ H` covering `s`.
 * `MulAction.orbit_eq_of_invariant_list`: specialization of `MulAction.orbit_eq_of_invariant` to an
   explicit witness list `ws : List G`.
+* `MulAction.orbit_eq_of_eq_top`: a subgroup equal to `⊤` has the same orbits as the ambient
+  group.
 -/
 
 public section
@@ -90,5 +93,13 @@ theorem orbit_eq_of_invariant_list {G α S : Type*} {β : Sort*} [SetLike S G] [
   orbit_eq_of_invariant f {g | g ∈ ws} hf hs hws fun x hx ↦ by
     obtain ⟨g, hg, rfl⟩ := List.mem_map.mp (hcov x hx)
     exact ⟨g, hg, rfl⟩
+
+/-- If a subgroup `H` equals `⊤`, its orbits coincide with those of the ambient group. -/
+@[to_additive /-- If an additive subgroup `H` equals `⊤`, its orbits coincide with those of the
+ambient group. -/]
+theorem orbit_eq_of_eq_top {G α : Type*} [Group G] [MulAction G α] {H : Subgroup G}
+    (hH : H = ⊤) (a : α) : orbit H a = orbit G a :=
+  Set.Subset.antisymm (orbit_subgroup_subset H a) fun _ ⟨g, hg⟩ ↦
+    ⟨⟨g, hH ▸ Subgroup.mem_top g⟩, hg⟩
 
 end MulAction
