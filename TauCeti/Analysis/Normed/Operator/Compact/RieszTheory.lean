@@ -56,13 +56,14 @@ consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 * `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed; neither `X` nor `𝕜` need
   be complete.
 * `IsCompactOperator.isClosed_range_pow_one_sub`: `range ((1 - K) ^ n)` is closed.
-* `IsCompactOperator.exists_succ_eq_of_descending_chain`: for compact `K`, a decreasing chain of
-  subspaces of a seminormed space, each closed in the previous one, on which `1 - K` steps down
-  the chain, cannot be strictly decreasing: `V (p + 1) = V p` for some `p`.
-* `IsCompactOperator.exists_succ_eq_of_ascending_chain`: for compact `K`, an increasing chain of
-  subspaces of a seminormed space, each closed in the next one, on which `K - μ n • 1` steps down
-  the chain for scalars `μ n` bounded away from zero, cannot be strictly increasing:
-  `V (p + 1) = V p` for some `p`.
+* `IsCompactOperator.exists_succ_eq_of_descending_chain`: for compact `K` on a seminormed space over
+  a nontrivially normed field, a decreasing chain of subspaces, each closed in the previous one, on
+  which `1 - K` steps down the chain, cannot be strictly decreasing: `V (p + 1) = V p` for some
+  `p`.
+* `IsCompactOperator.exists_succ_eq_of_ascending_chain`: for compact `K` on a seminormed space over
+  a nontrivially normed field, an increasing chain of subspaces, each closed in the next one, on
+  which `K - μ n • 1` steps down the chain for scalars `μ n` bounded away from zero, cannot be
+  strictly increasing: `V (p + 1) = V p` for some `p`.
 * `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
@@ -120,10 +121,11 @@ variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable {K : X →L[𝕜] X}
 
-/-- Let `K` be compact. A decreasing chain of subspaces of a seminormed space, each closed in the
-previous one and stable under `1 - K` in the sense that `1 - K` carries the `n`-th one into the
-`(n + 1)`-st, cannot be strictly decreasing: `V (p + 1) = V p` for some `p`. For a chain of closed
-subspaces `hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
+/-- Let `K` be a compact operator on a seminormed space over a nontrivially normed field. A
+decreasing chain of subspaces, each closed in the previous one and stable under `1 - K` in the
+sense that `1 - K` carries the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing:
+`V (p + 1) = V p` for some `p`. For a chain of closed subspaces
+`hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
 `fun n ↦ (hV (n + 1)).preimage continuous_subtypeVal`. -/
 theorem _root_.IsCompactOperator.exists_succ_eq_of_descending_chain (hK : IsCompactOperator K)
     {V : ℕ → Submodule 𝕜 X} (hmono : ∀ n, V (n + 1) ≤ V n)
@@ -148,10 +150,10 @@ theorem _root_.IsCompactOperator.exists_succ_eq_of_descending_chain (hK : IsComp
   rw [dist_eq_norm] at hlt
   exact (key m n hmn).not_gt hlt
 
-/-- Let `K` be compact, and let `μ n` be scalars with `ε ≤ ‖μ n‖` for a fixed `ε > 0`. An
-increasing chain of subspaces of a seminormed space, each closed in the next one, such that
-`K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th, cannot be strictly increasing:
-`V (p + 1) = V p` for some `p`. For a chain of closed subspaces
+/-- Let `K` be a compact operator on a seminormed space over a nontrivially normed field, and let
+`μ n` be scalars with `ε ≤ ‖μ n‖` for a fixed `ε > 0`. An increasing chain of subspaces, each
+closed in the next one, such that `K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th,
+cannot be strictly increasing: `V (p + 1) = V p` for some `p`. For a chain of closed subspaces
 `hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
 `fun n ↦ (hV n).preimage continuous_subtypeVal`. -/
 theorem _root_.IsCompactOperator.exists_succ_eq_of_ascending_chain (hK : IsCompactOperator K)

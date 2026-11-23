@@ -27,8 +27,8 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   replaced by a `t`-orthogonal sequence `e` with the same initial spans,
   `span (e '' Iio n) = span (w '' Iio n)`. The vector `e n` is `w n` minus an almost best
   approximation of `w n` in the span of the previous vectors (`TauCeti.riesz_lemma_translate`);
-  the losses at the successive steps are chosen with product at least `t`. This holds over any
-  complete normed field, trivially normed or not.
+  the losses at the successive steps are chosen with product at least `t`. This holds in any
+  ultrametric seminormed space over any complete normed field, trivially normed or not.
 * `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a space of countable type has a
   `t`-orthogonal basis indexed by a set of natural numbers.
 * `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional space has a `t`-orthogonal
@@ -87,16 +87,17 @@ open scoped NNReal
 
 namespace TauCeti
 
-/-- Over a trivially normed field, adding a vector `v` to a closed subspace `W` gives a closed
-subspace. A vector of `W ⊔ K ∙ v` of norm less than `infDist v W` lies in `W`, so near each of its
-points `W ⊔ K ∙ v` agrees with a translate of `W`. -/
+/-- Over a trivially normed field, adding a vector `v` to a closed subspace `W` of a seminormed
+space gives a closed subspace. -/
 private theorem isClosed_sup_span_singleton_of_discreteTopology {K E : Type*} [NormedField K]
     [DiscreteTopology K] [SeminormedAddCommGroup E] [NormedSpace K E] {W : Submodule K E}
     (hW : IsClosed (W : Set E)) (v : E) : IsClosed ((W ⊔ K ∙ v : Submodule K E) : Set E) := by
   by_cases hv : v ∈ W
   · rwa [sup_eq_left.2 ((span_singleton_le_iff_mem v W).2 hv)]
   have hδ : 0 < infDist v W := (hW.notMem_iff_infDist_pos ⟨0, W.zero_mem⟩).1 hv
-  -- A nonzero coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`.
+  -- A vector of `W ⊔ K ∙ v` of norm less than `infDist v W` lies in `W`, because a nonzero
+  -- coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`. Hence near each of its
+  -- points `W ⊔ K ∙ v` agrees with a translate of `W`.
   have hsmall {u : E} (hu : u ∈ W ⊔ K ∙ v) (hlt : ‖u‖ < infDist v W) : u ∈ W := by
     obtain ⟨w, hw, _, hd, rfl⟩ := mem_sup.1 hu
     obtain ⟨d, rfl⟩ := mem_span_singleton.1 hd
@@ -128,12 +129,13 @@ private theorem isClosed_sup_span_singleton_of_discreteTopology {K E : Type*} [N
     exact sub_mem hw hu
   exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
 
-/-- Over a complete normed field, the span of a finite set is closed. Over a nontrivially normed
-field the span is a finite-dimensional subspace, and over a trivially normed field each new
-vector keeps the span closed (`isClosed_sup_span_singleton_of_discreteTopology`). -/
+/-- Over a complete normed field, the span of a finite set in a normed space is closed. -/
 private theorem isClosed_span_of_finite {K E : Type*} [NormedField K] [CompleteSpace K]
     [NormedAddCommGroup E] [NormedSpace K E] {s : Set E} (hs : s.Finite) :
     IsClosed (span K s : Set E) := by
+  -- Over a trivially normed field, induct over `s` using
+  -- `isClosed_sup_span_singleton_of_discreteTopology`; over a nontrivially normed field, use
+  -- finite dimensionality.
   rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
   · induction s, hs using Set.Finite.induction_on with
     | empty => simp
@@ -144,29 +146,36 @@ private theorem isClosed_span_of_finite {K E : Type*} [NormedField K] [CompleteS
     exact (span K s).isClosed_of_finiteDimensional
 
 /-- **Approximate Gram–Schmidt process**: over a complete normed field, every sequence `w` in an
-ultrametric normed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence `e` with
-the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
+ultrametric seminormed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence `e`
+with the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
 theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField K]
-    [CompleteSpace K] [NormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E] (w : ℕ → E)
-    {t : ℝ≥0} (ht : t < 1) :
+    [CompleteSpace K] [SeminormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E]
+    (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalFamily K t e ∧
       ∀ n, span K (e '' Iio n) = span K (w '' Iio n) := by
-  -- Orthogonality constants of the successive initial segments: a strictly decreasing sequence
-  -- in `(t, 1)`.
+  -- Work in the normed space `SeparationQuotient E`, where finite spans are closed and the
+  -- quotient map preserves norms, then lift each approximant back to the original initial span.
+  let q : E →ₗ[K] SeparationQuotient E := (SeparationQuotient.mkCLM K E).toLinearMap
+  have hq_nnnorm (x : E) : ‖q x‖₊ = ‖x‖₊ := by simp [q]
+  have : IsUltrametricDist (SeparationQuotient E) :=
+    IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm <|
+      SeparationQuotient.surjective_mk.forall₂.2 fun a b ↦ by
+        simpa only [← SeparationQuotient.mk_add, SeparationQuotient.norm_mk] using
+          IsUltrametricDist.norm_add_le_max a b
   obtain ⟨T, hT, hTt, -⟩ := exists_seq_strictAnti_tendsto' ht
   have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
     ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
-  -- The initial spans `span K (w '' Iio n)` are spans of finite sets, hence closed.
-  have hF (n : ℕ) : IsClosed (span K (w '' Iio n) : Set E) :=
-    isClosed_span_of_finite ((finite_Iio n).image w)
-  -- Subtract from `w n` an almost best approximation `y n` in the previous span, with loss
-  -- `T (n + 1) / T n < 1`.
-  have hr (n : ℕ) : ((T (n + 1) / T n : ℝ≥0) : ℝ) < 1 := by
-    exact_mod_cast (div_lt_one (hT' n).1).2 (hT n.lt_succ_self)
-  choose y hyF hy using fun n ↦
-    riesz_lemma_translate (F := (span K (w '' Iio n)).toAddSubmonoid)
-      (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (w n) (hr n)
-  simp only [Submodule.mem_toAddSubmonoid] at hyF hy
+  have hF (n : ℕ) : IsClosed (span K ((q ∘ w) '' Iio n) : Set (SeparationQuotient E)) :=
+    isClosed_span_of_finite ((finite_Iio n).image (q ∘ w))
+  choose z hzF hz using fun n ↦
+    riesz_lemma_translate (F := (span K ((q ∘ w) '' Iio n)).toAddSubmonoid)
+      (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (q (w n))
+      (by exact_mod_cast (div_lt_one (hT' n).1).2 (hT n.lt_succ_self))
+  simp only [Submodule.mem_toAddSubmonoid] at hzF hz
+  have hmap (u : ℕ → E) (n : ℕ) :
+      (span K (u '' Iio n)).map q = span K ((q ∘ u) '' Iio n) := by
+    rw [Submodule.map_span, Set.image_comp]
+  choose y hyF hyq using fun n ↦ Submodule.mem_map.1 ((hmap w n).symm ▸ hzF n)
   set e : ℕ → E := fun n ↦ w n - y n
   have hspan (n : ℕ) : span K (e '' Iio n) = span K (w '' Iio n) := by
     induction n with
@@ -179,18 +188,19 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
           sub_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
       · rw [span_singleton_le_iff_mem, ← sub_add_cancel (w n) (y n)]
         exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
-  -- Each `e n` is `T (n + 1) / T n`-orthogonal to the previous vectors, so for every `N` the
-  -- vectors `e i` with `i < N` are `T N`-orthogonal, and `t ≤ T N`.
-  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) hT.antitone
-    (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N z hz ↦ by
-      rw [hspan] at hz
-      exact_mod_cast hy N z hz
+  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) (e := q ∘ e) hT.antitone
+    (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N u hu ↦ by
+      rw [← hmap e N, hspan N, hmap w N] at hu
+      rw [Function.comp_apply, map_sub, hyq N]
+      exact_mod_cast hz N u hu
   refine ⟨e, isTOrthogonalFamily_def.2 fun s a ↦ ?_, hspan⟩
   have hs (i : ℕ) (hi : i ∈ s) : i ∈ Iio (s.sup id + 1) :=
     Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)
   rw [← Finset.subtype_map_of_mem hs, Finset.sup_map, Finset.sum_map]
-  exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
-    (isTOrthogonalFamily_def.1 (key _) _ fun i ↦ a i)
+  simpa only [Function.comp_def, Function.Embedding.coe_subtype, ← map_smul, ← map_sum,
+    hq_nnnorm] using
+    (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
+      (isTOrthogonalFamily_def.1 (key _) (s.subtype (· ∈ Iio (s.sup id + 1))) fun i ↦ a i)
 
 variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
 

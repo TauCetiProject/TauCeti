@@ -10,22 +10,25 @@ public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Eigenvalue thresholds for compact operators
 
-A compact operator has only finitely many eigenvalues outside any ball of positive radius
-about zero. Neither the scalar field nor the ambient normed space need be complete. For
+Let `K` be a compact operator on a normed space over a nontrivially normed field `𝕜`. Then `K` has
+only finitely many eigenvalues outside any ball of positive radius about zero. Neither `𝕜` nor the
+ambient normed space needs to be complete; only the nontrivial norm on `𝕜` is used. For
 eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operators
 `∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces that
 `K - μ n • 1` steps down, which the ascending-chain criterion
 `IsCompactOperator.exists_succ_eq_of_ascending_chain` rules out when the `μ n` are bounded away
 from zero. A nonzero spectral value is an eigenvalue: as for Riesz's form of the Fredholm
 alternative, the ranges of the powers of `1 - μ⁻¹ • K` stabilise, so if this operator is
-injective then it is surjective, and it is bounded below. Hence the spectrum is countable and
-can accumulate only at zero, again without completeness.
+injective then it is both surjective and bounded below, hence invertible. Hence the spectrum is
+countable and can accumulate only at zero, again without completeness.
 
 ## References
 
@@ -82,8 +85,8 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
 
-/-- A sequence of eigenvalues of a compact operator whose norms are bounded below by a positive
-constant is not injective. -/
+/-- For a compact operator on a normed space over a nontrivially normed field, a sequence of
+eigenvalues whose norms are bounded below by a positive constant is not injective. -/
 private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     {ε : ℝ} (hε : 0 < ε) (μ : ℕ → 𝕜)
     (hμ : ∀ n, Module.End.HasEigenvalue (K : Module.End 𝕜 E) (μ n)) (hnorm : ∀ n, ε ≤ ‖μ n‖) :
@@ -95,8 +98,9 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
   exact (hstrict p).ne' hp
 
-/-- A compact operator has only finitely many eigenvalues whose norm is at least a fixed
-positive number. Neither the scalar field nor the ambient normed space need be complete. -/
+/-- A compact operator on a normed space over a nontrivially normed field has only finitely many
+eigenvalues whose norm is at least a fixed positive number. Neither the scalar field nor the
+ambient normed space needs to be complete. -/
 theorem finite_eigenvalues_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
     {μ : 𝕜 | Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ ∧ ε ≤ ‖μ‖}.Finite := by
   classical
@@ -105,8 +109,8 @@ theorem finite_eigenvalues_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 
   exact hK.not_injective_eigenvalues_of_norm_ge hε (fun n ↦ (e n).val)
     (fun n ↦ (e n).property.1) (fun n ↦ (e n).property.2) (Subtype.coe_injective.comp e.injective)
 
-/-- The set of eigenvalues of a compact operator is countable, even when the ambient space
-is not complete. -/
+/-- The set of eigenvalues of a compact operator on a normed space over a nontrivially normed field
+is countable. Neither the scalar field nor the ambient normed space needs to be complete. -/
 theorem countable_eigenvalues (hK : IsCompactOperator K) :
     {μ : 𝕜 | Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ}.Countable := by
   have hc := Set.countable_iUnion fun n : ℕ ↦
@@ -118,10 +122,10 @@ theorem countable_eigenvalues (hK : IsCompactOperator K) :
   · obtain ⟨n, hn⟩ := exists_nat_one_div_lt (norm_pos_iff.mpr hzero)
     exact Or.inr (Set.mem_iUnion.mpr ⟨n, hμ, hn.le⟩)
 
-/-- A nonzero spectral value of a compact operator is an eigenvalue, where the spectrum is taken
-in the algebra of continuous endomorphisms. Unlike Mathlib's
-`IsCompactOperator.hasEigenvalue_iff_mem_spectrum`, neither the ambient normed space nor the
-scalar field needs to be complete. -/
+/-- A nonzero spectral value of a compact operator on a normed space over a nontrivially normed
+field is an eigenvalue, where the spectrum is taken in the algebra of continuous endomorphisms.
+Unlike Mathlib's `IsCompactOperator.hasEigenvalue_iff_mem_spectrum`, neither the ambient normed
+space nor the scalar field needs to be complete. -/
 theorem hasEigenvalue_of_mem_spectrum (hK : IsCompactOperator K) {μ : 𝕜} (hμ : μ ≠ 0)
     (h : μ ∈ spectrum 𝕜 K) : Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ := by
   by_contra hne
@@ -138,7 +142,7 @@ theorem hasEigenvalue_of_mem_spectrum (hK : IsCompactOperator K) {μ : 𝕜} (h�
     simpa only [Module.End.hasEigenvalue_iff, ne_eq, not_not] using hne
   have hinj : Function.Injective (A : E →ₗ[𝕜] E) := LinearMap.ker_eq_bot.1 (hker.trans heig)
   -- The ranges of the powers of `A` stabilise, so the injective `A` is surjective.
-  have hsurj : Function.Surjective (A : E →ₗ[𝕜] E) := by
+  have hsurj : Function.Surjective A := by
     obtain ⟨p, hp⟩ := hK'.exists_range_pow_succ_eq_one_sub
     intro y
     obtain ⟨z, hz⟩ : ((A : E →ₗ[𝕜] E) ^ p) y ∈ LinearMap.range ((A : E →ₗ[𝕜] E) ^ (p + 1)) :=
@@ -149,28 +153,25 @@ theorem hasEigenvalue_of_mem_spectrum (hK : IsCompactOperator K) {μ : 𝕜} (h�
   obtain ⟨c, hc, hbound⟩ := hK'.exists_pos_mul_norm_le_of_disjoint_ker (M := ⊤)
     (by simpa only [Submodule.top_coe] using isClosed_univ)
     (disjoint_top.2 (hker.trans heig))
-  let e := LinearEquiv.ofBijective (A : E →ₗ[𝕜] E) ⟨hinj, hsurj⟩
-  let e' := e.toContinuousLinearEquivOfBounds ‖A‖ c⁻¹ A.le_opNorm fun y ↦ by
-    have hy : (1 - μ⁻¹ • K : E →L[𝕜] E) (e.symm y) = y := e.apply_symm_apply y
-    rw [le_inv_mul_iff₀ hc]
-    simpa only [hy] using hbound (e.symm y) Submodule.mem_top
-  -- By construction `e'` applies `A`.
-  have hunit : IsUnit A := ⟨ContinuousLinearEquiv.toUnit e', by ext x; rfl⟩
+  have hunit : IsUnit A := ContinuousLinearMap.isInvertible_iff_isUnit.1 <|
+    ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le hsurj fun x ↦
+      (le_inv_mul_iff₀ hc).2 (hbound x Submodule.mem_top)
   have h1 : (1 : 𝕜) ∈ spectrum 𝕜 (μ⁻¹ • K) := by
     simpa [Units.smul_def, smul_eq_mul, hμ] using
       (spectrum.smul_mem_smul_iff (a := K) (s := μ) (r := Units.mk0 μ⁻¹ (inv_ne_zero hμ))).2 h
   rw [spectrum.mem_iff, map_one] at h1
   exact h1 hunit
 
-/-- Away from any ball of positive radius about zero, the spectrum of a compact operator is
-finite. Neither the scalar field nor the ambient normed space need be complete. -/
+/-- Away from any ball of positive radius about zero, the spectrum of a compact operator on a
+normed space over a nontrivially normed field is finite. Neither the scalar field nor the ambient
+normed space needs to be complete. -/
 theorem finite_spectrum_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
     {μ : 𝕜 | μ ∈ spectrum 𝕜 K ∧ ε ≤ ‖μ‖}.Finite :=
   (hK.finite_eigenvalues_norm_ge hε).subset fun _ hμ ↦
     ⟨hK.hasEigenvalue_of_mem_spectrum (norm_pos_iff.mp (hε.trans_le hμ.2)) hμ.1, hμ.2⟩
 
-/-- The spectrum of a compact operator is countable. Neither the scalar field nor the ambient
-normed space need be complete. -/
+/-- The spectrum of a compact operator on a normed space over a nontrivially normed field is
+countable. Neither the scalar field nor the ambient normed space needs to be complete. -/
 theorem countable_spectrum (hK : IsCompactOperator K) : (spectrum 𝕜 K).Countable := by
   refine ((Set.countable_singleton (0 : 𝕜)).union hK.countable_eigenvalues).mono ?_
   intro μ hμ
@@ -179,8 +180,8 @@ theorem countable_spectrum (hK : IsCompactOperator K) : (spectrum 𝕜 K).Counta
   · exact Or.inr (hK.hasEigenvalue_of_mem_spectrum hzero hμ)
 
 open Filter Topology in
-/-- Zero is the only possible accumulation point of the spectrum of a compact operator. In
-particular, every nonzero spectral value is isolated. -/
+/-- Zero is the only possible accumulation point of the spectrum of a compact operator on a normed
+space over a nontrivially normed field. In particular, every nonzero spectral value is isolated. -/
 theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
     (hμ : AccPt μ (𝓟 (spectrum 𝕜 K))) : μ = 0 := by
   by_contra hzero
