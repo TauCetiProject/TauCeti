@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.PrincipalUnitGroup
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -806,10 +807,7 @@ theorem mem_ramificationGroup_one_of_mem_ker_tameCharacter_of_charZero
   -- Average `x` over `G_0` to obtain a `G_0`-invariant element `s` congruent to `#G_0 * x`
   -- mod `𝔪`.
   let s : S := ∑ τ : ramificationGroup G S 0, (τ : G) • x
-  have hs_inv : (σ : G) • s = s := by
-    simp only [s, Finset.smul_sum]
-    refine Fintype.sum_equiv (Equiv.mulLeft σ) _ _ fun τ ↦ ?_
-    simp [Subgroup.coe_mul, mul_smul]
+  have hs_inv : (σ : G) • s = s := TauCeti.smul_sum_smul σ x
   have hdiff_mem : ((Fintype.card (ramificationGroup G S 0) : ℕ) : S) * x - s ∈
       maximalIdeal S := by
     have heq : ((Fintype.card (ramificationGroup G S 0) : ℕ) : S) * x - s =

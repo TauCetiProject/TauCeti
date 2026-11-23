@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+import Mathlib.Algebra.CharP.Algebra
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
@@ -49,8 +50,8 @@ automorphisms.
   `SMulCommClass` instances.
 * `IsLocalRing.instPerfectFieldResidueFieldLocalizationAtPrimeInt`: the residue field of
   `Localization.AtPrime p` for any prime `p : Ideal ℤ` is perfect, so any algebraic (in particular
-  finite) residue field of `S` is separable over it
-  (`IsLocalRing.isSeparable_residueField_localizationAtPrimeUnderInt`).
+  finite) residue field of `S` is separable over it via Mathlib's
+  `Algebra.IsAlgebraic.isSeparable_of_perfectField`.
 * `IsLocalization.AtPrime.isLocalHom_lift`: the lift of a homomorphism to a local ring along the
   localization at a prime mapped into the maximal ideal is local.
 * `IsLocalization.AtPrime.isLocalHom_algebraMap_of_liesOver` and
@@ -175,35 +176,13 @@ instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [p.I
     PerfectField (ResidueField (Localization.AtPrime p)) := by
   by_cases hp : p = ⊥
   · subst hp
-    have : CharZero (ResidueField (Localization.AtPrime (⊥ : Ideal ℤ))) := by
-      refine ⟨fun m n h ↦ ?_⟩
-      have hinj : Function.Injective
-          (algebraMap ℤ (ResidueField (Localization.AtPrime (⊥ : Ideal ℤ)))) := by
-        rw [RingHom.injective_iff_ker_eq_bot, RingHom.ker_eq_bot_iff_eq_zero]
-        intro z hz
-        rw [IsScalarTower.algebraMap_apply ℤ (Localization.AtPrime (⊥ : Ideal ℤ))
-            (ResidueField (Localization.AtPrime (⊥ : Ideal ℤ))),
-          ResidueField.algebraMap_eq, residue_eq_zero_iff] at hz
-        have hz' : z ∈ (maximalIdeal (Localization.AtPrime (⊥ : Ideal ℤ))).under ℤ := hz
-        rwa [IsLocalization.AtPrime.under_maximalIdeal (Localization.AtPrime (⊥ : Ideal ℤ))
-          (⊥ : Ideal ℤ)] at hz'
-      exact Int.natCast_inj.mp (hinj (by simpa using h))
+    have : CharZero (ResidueField (Localization.AtPrime (⊥ : Ideal ℤ))) :=
+      charZero_of_injective_algebraMap <| (RingHom.injective_iff_ker_eq_bot _).mpr
+        (Ideal.ker_algebraMap_residueField (⊥ : Ideal ℤ))
     infer_instance
   · have : Finite (ℤ ⧸ p) := Ring.HasFiniteQuotients.finiteQuotient hp
     have : Finite p.ResidueField := inferInstance
     infer_instance
-
-/-- When `ResidueField S` is algebraic over the prime residue field of
-`Localization.AtPrime ((maximalIdeal S).under ℤ)` (in particular whenever `ResidueField S` is
-finite), the residue field extension is separable. Note that `PerfectField (ResidueField S)` alone
-does not suffice without algebraicity (e.g. `ℂ[[t]]` has residue field `ℂ`, which is not algebraic
-over `ℚ`). -/
-theorem isSeparable_residueField_localizationAtPrimeUnderInt
-    [Algebra.IsAlgebraic (ResidueField (Localization.AtPrime ((maximalIdeal S).under ℤ)))
-      (ResidueField S)] :
-    Algebra.IsSeparable (ResidueField (Localization.AtPrime ((maximalIdeal S).under ℤ)))
-      (ResidueField S) :=
-  Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 end PrimeBase
 

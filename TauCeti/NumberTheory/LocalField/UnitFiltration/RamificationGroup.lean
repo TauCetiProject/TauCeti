@@ -69,14 +69,12 @@ is a `p`-group for the residue characteristic `p` when the action is faithful an
 * `TauCeti.ker_ramificationGroupToUnitFiltrationGraded` and
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective`: the kernel is exactly
   `G_{i+1}`, and `θ_i` is injective.
-* `TauCeti.ramificationGroupGradedToResidueField_ofMul_mk` and
-  `TauCeti.ramificationGroupGradedToResidueField_injective_of_localField`:
-  uniformizer-coordinate comparison and injectivity for the canonical positive-depth residue
-  coordinate `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`.
-* `TauCeti.coe_tameCharacter_of_val_eq_smul_div`,
-  `TauCeti.tameCharacterGraded_injective_of_localField`, and
-  `TauCeti.ker_tameCharacter_of_localField`: ratio evaluation, injectivity on
-  `G_0 / G_1`, and kernel of the canonical tame character.
+* `TauCeti.ramificationGroupGradedToResidueField_ofMul_mk`: uniformizer-coordinate comparison
+  for the canonical positive-depth residue coordinate
+  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`.
+* `TauCeti.coe_tameCharacter_of_val_eq_smul_div` and
+  `TauCeti.tameCharacterGraded_injective_of_localField`: ratio evaluation and injectivity on
+  `G_0 / G_1` of the canonical tame character.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero_of_localField`,
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`, and
   `TauCeti.not_dvd_index_ramificationGroup_one_of_localField`: the tame quotient is
@@ -424,14 +422,6 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) (π : 𝒪[L])
   rw [Subring.coe_mul, coe_smul_integer] at hmul
   rw [hmul]
 
-/-- The positive-depth ramification quotient embeds in the additive residue field. -/
-theorem ramificationGroupGradedToResidueField_injective_of_localField
-    (n : ℕ) (π : 𝒪[L]) (hπ : Irreducible π) :
-    Function.Injective
-      (IsDiscreteValuationRing.ramificationGroupGradedToResidueField G n hπ) :=
-  IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective
-    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) n hπ
-
 /-! ### The tame character -/
 
 /-- For `σ ∈ G_0` and `y ∈ 𝒪[L]` equal in `L` to `σ ϖ / ϖ`, the tame character sends `σ` to the
@@ -450,16 +440,6 @@ theorem tameCharacterGraded_injective_of_localField (hϖ : Irreducible ϖ) :
     Function.Injective (IsDiscreteValuationRing.tameCharacterGraded G hϖ) :=
   IsDiscreteValuationRing.tameCharacterGraded_injective
     G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) hϖ
-
-/-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
-@[simp]
-theorem ker_tameCharacter_of_localField (hϖ : Irreducible ϖ) :
-    (IsDiscreteValuationRing.tameCharacter G hϖ).ker =
-      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
-  ext σ
-  rw [MonoidHom.mem_ker, ← IsDiscreteValuationRing.tameCharacterGraded_mk hϖ,
-    map_eq_one_iff _ (tameCharacterGraded_injective_of_localField hϖ),
-    QuotientGroup.eq_one_iff, zero_add]
 
 variable (G L) in
 /-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
@@ -516,7 +496,8 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_
     simp only [dvd_zero, not_true_eq_false, iff_false]
     intro h
     obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-    have hker := ker_tameCharacter_of_localField (G := G) hϖ
+    have hker := IsDiscreteValuationRing.ker_tameCharacter
+      G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) hϖ
     rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
     exact hfin (Finite.of_injective _ hker)
 
