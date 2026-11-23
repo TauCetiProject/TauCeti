@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representab
 public import TauCeti.RingTheory.FormalGroup.Height.Regular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Smooth
 
 /-!
@@ -55,30 +56,32 @@ Landweber regular whenever the classifying map `ℤ[a₁, ⋯, a₆] → R` of a
 the universal elliptic curve over `ℤ[a₁, ⋯, a₆][Δ⁻¹]` is Landweber regular
 (`WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`).
 
-Flatness of the classifying map `Spec R → M_ell` to the moduli stack is a weaker condition. The
-Weierstrass cubics form a smooth surjective atlas `Spec ℤ[a₁, ⋯, a₆]` of the stack of cubic
-curves, presented by the group scheme of changes of variables, in which `M_ell` is the open
-substack `Δ ≠ 0`. So `Spec R → M_ell` is flat exactly when its pullback to this atlas is flat.
-That pullback is `Spec R[u, u⁻¹, r, s, t]`, the scheme of changes of variables `C` out of `W`,
-and its map to the atlas classifies the target `C • W` of the universal change of variables. So
-the stack-level hypothesis is that the classifying map of
-`universalChange R • W.baseChange R[u, u⁻¹, r, s, t]` is flat. It follows from flatness of
-`ℤ[a₁, ⋯, a₆] → R`, being the base change of the flat right unit of the Weierstrass Hopf
-algebroid (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`). Under this
-hypothesis the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`. It is
-isomorphic to the base change of `Ê`, and Landweber regularity descends along the faithfully flat
-extension `R → R[u, u⁻¹, r, s, t]`
-(`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`). Hence `Ê` is Landweber
-regular on `R` (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
+Flatness of the classifying map `Spec R → M_cub` to the moduli stack of cubic curves is a weaker
+condition. The Weierstrass cubics form a smooth surjective atlas `Spec ℤ[a₁, ⋯, a₆]` of the
+stack of cubic curves, presented by the group scheme of changes of variables, in which the
+smooth-or-nodal locus `(c₄, Δ) = R` and `M_ell` are open substacks. So `Spec R → M_cub` is flat
+exactly when its pullback to this atlas is flat. That pullback is `Spec R[u, u⁻¹, r, s, t]`, the
+scheme of changes of variables `C` out of `W`, and its map to the atlas classifies the target
+`C • W` of the universal change of variables. So the stack-level hypothesis is that the
+classifying map of `universalChange R • W.baseChange R[u, u⁻¹, r, s, t]` is flat. It follows
+from flatness of `ℤ[a₁, ⋯, a₆] → R`, being the base change of the flat right unit of the
+Weierstrass Hopf algebroid (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`).
+When `(c₄, Δ) = R`, `C • W` also has `(c₄, Δ) = R[u, u⁻¹, r, s, t]`
+(`WeierstrassCurve.span_variableChange_c₄_Δ`), so under this flatness hypothesis
+the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`. It is isomorphic to
+the base change of `Ê`, and Landweber regularity descends along the faithfully flat extension
+`R → R[u, u⁻¹, r, s, t]` (`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`).
+Hence `Ê` is Landweber regular on `R`
+(`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
 
 ## Main results
 
-* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff_of_span_eq_top` and
-  `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top`: Landweber regularity
-  for smooth-or-nodal Weierstrass families reduces to weak regularity of `(p, A)`.
-* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff` and
-  `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: the formal group of an elliptic curve is
-  Landweber regular on `M` exactly when `(p, A)` is weakly regular on `M` for every prime `p`.
+* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three`: for
+  `m ≥ 2` and `I₃(Ê) = ⊤` (in particular when `(p, c₄, Δ) = ⊤` or `W` is elliptic), weak
+  regularity of the length-`m` Landweber sequence reduces to `(p, A)`.
+* `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top` and
+  `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: Landweber regularity for smooth-or-nodal
+  Weierstrass families and elliptic curves reduces to weak regularity of `(p, A)`.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_eq_zero_of_isUnit_c₄`: for nodal
   families (`Δ = 0`, `IsUnit c₄`), Landweber regularity reduces to `p`-torsion-freeness.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top` and
@@ -87,7 +90,8 @@ regular on `R` (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_univers
 * `WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`: Landweber regularity
   of the universal elliptic curve.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`: Landweber regularity
-  when the classifying map to the moduli stack is flat, tested on the Weierstrass atlas.
+  for smooth-or-nodal families when the classifying map to the moduli stack is flat, tested on
+  the Weierstrass atlas.
 
 ## References
 
@@ -111,7 +115,13 @@ section General
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p : ℕ}
 
-private theorem isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three
+/-- **Regular-sequence Landweber criterion when `I₃(Ê) = ⊤`.** For `m ≥ 2`, a prime `p`, a
+Weierstrass curve `W` over `R` with `(formalGroup W).heightIdeal p 3 = ⊤` (for instance when
+`(p, c₄, Δ) = ⊤` via `heightIdeal_formalGroup_eq_top_iff` or when `W` is elliptic via
+`heightIdeal_formalGroup_eq_top`), and an `R`-module `M`, the Landweber sequence
+`(formalGroup W).landweberSequence p m` is weakly regular on `M` if and only if `(p, A)` is
+weakly regular on `M`, where `A` is the Hasse invariant in the coordinate `T = -x / y`. -/
+theorem isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three
     (hp : p.Prime) (M : Type*) [AddCommGroup M] [Module R M] {m : ℕ} (hm : 2 ≤ m)
     (hI : (formalGroup W).heightIdeal p 3 = ⊤) :
     IsWeaklyRegular M ((formalGroup W).landweberSequence p m) ↔
@@ -141,19 +151,6 @@ private theorem isLandweberRegular_formalGroup_iff_of_heightIdeal_three
   rw [FormalGroup.isLandweberRegular_def]
   exact forall₂_congr fun p hp ↦
     W.forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M (hI hp)
-
-/-- **Regular-sequence Landweber criterion when `(p, c₄, Δ) = R`.** For `m ≥ 2`, a prime `p`, a
-Weierstrass curve `W` over `R` with `(p, c₄, Δ) = R`, and an `R`-module `M`, the Landweber
-sequence `(formalGroup W).landweberSequence p m` is weakly regular on `M` if and only if `(p, A)`
-is weakly regular on `M`, where `A` is the Hasse invariant in the coordinate `T = -x / y`. -/
-theorem isWeaklyRegular_landweberSequence_formalGroup_iff_of_span_eq_top
-    (h : Ideal.span {(p : R), W.c₄, W.Δ} = ⊤) (hp : p.Prime) (M : Type*)
-    [AddCommGroup M] [Module R M] {m : ℕ} (hm : 2 ≤ m) :
-    IsWeaklyRegular M ((formalGroup W).landweberSequence p m) ↔
-      IsWeaklyRegular M
-        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
-  W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M hm
-    ((W.heightIdeal_formalGroup_eq_top_iff hp le_rfl).mpr h)
 
 /-- **Landweber regularity criterion for smooth-or-nodal Weierstrass families.** If
 `(c₄, Δ) = R`, then `formalGroup W` is Landweber regular on an `R`-module `M` if and only if
@@ -190,23 +187,31 @@ theorem isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top
   (W.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top h R).mpr
     fun _ hp ↦ W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat hflat hp
 
+/-- **Landweber exactness for a flat classifying map to the moduli stack.** Let `W` be a
+smooth-or-nodal Weierstrass curve over `R` (`(c₄, Δ) = R`) and `S = R[u, u⁻¹, r, s, t]` the ring of
+changes of variables over `R`. The map `Spec S → Spec ℤ[a₁, a₂, a₃, a₄, a₆]` classifying the
+universal change of variables `C • W` of `W` is the pullback to the Weierstrass atlas of the
+classifying map `Spec R → M_cub`. If it is flat, then the formal group of `W` is Landweber regular
+on `R`. -/
+theorem isLandweberRegular_formalGroup_of_flat_universalChange
+    (hspan : Ideal.span {W.c₄, W.Δ} = ⊤)
+    (h : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
+    (formalGroup W).IsLandweberRegular R := by
+  have hspan' :
+      Ideal.span {(ChangeRing.universalChange R • W.baseChange (ChangeRing R)).c₄,
+        (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).Δ} = ⊤ := by
+    rw [span_variableChange_c₄_Δ, baseChange, map_c₄, map_Δ, ← Set.image_pair,
+      ← Ideal.map_span, hspan, Ideal.map_top]
+  have hreg := isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top _ hspan' h
+  rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
+    map_formalGroup] at hreg
+  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
+
 end General
 
 section Elliptic
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
-
-/-- **Direct regular-sequence Landweber criterion for an elliptic curve.** For `m ≥ 2`, a prime
-`p`, an elliptic curve `W` over `R`, and an `R`-module `M`, the Landweber sequence
-`(formalGroup W).landweberSequence p m` is weakly regular on `M` if and only if `(p, A)` is
-weakly regular on `M`, where `A` is the Hasse invariant in the coordinate `T = -x / y`. -/
-theorem isWeaklyRegular_landweberSequence_formalGroup_iff {p : ℕ} (hp : p.Prime) (M : Type*)
-    [AddCommGroup M] [Module R M] {m : ℕ} (hm : 2 ≤ m) :
-    IsWeaklyRegular M ((formalGroup W).landweberSequence p m) ↔
-      IsWeaklyRegular M
-        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
-  W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M hm
-    (W.heightIdeal_formalGroup_eq_top hp le_rfl)
 
 /-- **The regular-sequence criterion for Landweber exactness of an elliptic curve.** The formal
 group of an elliptic Weierstrass curve `W` is Landweber regular on an `R`-module `M` exactly when,
@@ -226,19 +231,6 @@ theorem isLandweberRegular_formalGroup_of_flat (h : W.specialize.Flat) :
     (formalGroup W).IsLandweberRegular R :=
   W.isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) W.isUnit_Δ) h
-
-/-- **Landweber exactness for a flat classifying map to the moduli stack.** Let `W` be an elliptic
-Weierstrass curve over `R` and `S = R[u, u⁻¹, r, s, t]` the ring of changes of variables over `R`.
-The map `Spec S → Spec ℤ[a₁, a₂, a₃, a₄, a₆]` classifying the universal change of variables
-`C • W` of `W` is the pullback to the Weierstrass atlas of the classifying map `Spec R → M_ell`.
-If it is flat, then the formal group of `W` is Landweber regular on `R`. -/
-theorem isLandweberRegular_formalGroup_of_flat_universalChange
-    (h : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  have hreg := isLandweberRegular_formalGroup_of_flat _ h
-  rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
-    map_formalGroup] at hreg
-  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
 
 namespace Universal
 
