@@ -31,7 +31,6 @@ vectors. This file adds:
 
 ## Main definitions
 
-* `ContRepresentation.lieSmoothVectorsAction I π`: the action of `G` on the smooth vectors.
 * `ContRepresentation.lieSmoothVectorsEnvelopingAction I π`: the action of `U(𝔤)` on the smooth
   vectors, an `ℝ`-algebra homomorphism into the `R`-linear endomorphisms.
 * `ContRepresentation.lieSmoothVectorsBaseChangeDerivedAction I π`: the `R`-linear extension of the
@@ -67,30 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-section Action
-
-variable {R : Type*} [Ring R] [Module R V] (π : ContRepresentation R G V)
-  [ContMDiffMul I ∞ G] [SMulCommClass ℝ R V] [ContinuousConstSMul R V]
-
-/-- The action of the group on its smooth vectors, by restricting the operators of the
-representation (`IsLieSmoothVector.apply`). -/
-def lieSmoothVectorsAction : G →* Module.End R (lieSmoothVectors I π) where
-  toFun g :=
-    { toFun w :=
-        ⟨π g w, (mem_lieSmoothVectors I π).2 (((mem_lieSmoothVectors I π).1 w.property).apply g)⟩
-      map_add' v w := Subtype.ext (map_add (π g) (v : V) w)
-      map_smul' r w := Subtype.ext (map_smul (π g) r (w : V)) }
-  map_one' := LinearMap.ext fun w ↦ Subtype.ext (by simp)
-  map_mul' g h := LinearMap.ext fun w ↦ Subtype.ext (by simp [map_mul])
-
-/-- The action of the group on smooth vectors is the action of the representation. -/
-@[simp]
-theorem coe_lieSmoothVectorsAction_apply (g : G) (w : lieSmoothVectors I π) :
-    (lieSmoothVectorsAction I π g w : V) = π g w :=
-  (rfl)
-
-end Action
-
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
@@ -106,18 +81,16 @@ variable {I} in
 of `Ad(g) X` is the conjugate `π(g) dπ(X) π(g)⁻¹` of the derived action of `X`. -/
 theorem lieDerivative_Ad (g : G) (X : LeftInvariantDerivation I G) (v : V) :
     lieDerivative π (Ad (I := I) g X) v = π g (lieDerivative π X (π g⁻¹ v)) := by
-  let L : V →L[ℝ] V := (π g).toLinearMap.toAddMonoidHom.toRealLinearMap (π g).continuous
-  let L' : V →L[ℝ] V := (π g⁻¹).toLinearMap.toAddMonoidHom.toRealLinearMap (π g⁻¹).continuous
+  let L : V →L[ℝ] V := (π g : V →+ V).toRealLinearMap (π g).continuous
+  let L' : V →L[ℝ] V := (π g⁻¹ : V →+ V).toRealLinearMap (π g⁻¹).continuous
   set f : ℝ → V := fun t ↦ π (lieExp (t • X)) (π g⁻¹ v)
   have hfun : (fun t : ℝ ↦ π (lieExp (t • Ad (I := I) g X)) v) = L ∘ f := by
     funext t
     rw [← map_smul, ← conj_lieExp, map_mul, map_mul]
-    rfl
+    simp [L, f]
   have hL' : L' ∘ (L ∘ f) = f := by
     funext t
-    have h := π.apply_inv_apply (g := g⁻¹) (v := f t)
-    rw [inv_inv] at h
-    exact h
+    simpa [L, L'] using π.apply_inv_apply (g := g⁻¹) (v := f t)
   rw [lieDerivative_def, lieDerivative_def, hfun]
   by_cases hf : DifferentiableAt ℝ f 0
   · exact (L.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hf.hasDerivAt).deriv
@@ -179,18 +152,18 @@ theorem lieSmoothVectorsEnvelopingAction_map_Ad (g : G)
         lieSmoothVectorsAction I π g⁻¹ := by
   have hinv : lieSmoothVectorsAction I π g⁻¹ * lieSmoothVectorsAction I π g = 1 := by
     rw [← map_mul, inv_mul_cancel, map_one]
+  have hinv' : lieSmoothVectorsAction I π g * lieSmoothVectorsAction I π g⁻¹ = 1 := by
+    rw [← map_mul, mul_inv_cancel, map_one]
   induction u using TauCeti.UniversalEnvelopingAlgebra.induction_ι with
   | ι X =>
     rw [TauCeti.UniversalEnvelopingAlgebra.map_ι, lieSmoothVectorsEnvelopingAction_ι,
       lieSmoothVectorsEnvelopingAction_ι, LieEquiv.coe_toLieHom, lieSmoothVectorsDerivative_Ad]
   | algebraMap c =>
-    rw [AlgHom.commutes, AlgHom.commutes, ← Algebra.commutes, mul_assoc, ← map_mul,
-      mul_inv_cancel, map_one, mul_one]
+    simp [← Algebra.commutes, mul_assoc, hinv']
   | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, mul_add, add_mul]
   | mul a b ha hb =>
-    rw [map_mul, map_mul, ha, hb, map_mul]
-    simp only [mul_assoc]
-    rw [← mul_assoc (lieSmoothVectorsAction I π g⁻¹), hinv, one_mul]
+    simp only [map_mul, ha, hb, mul_assoc, ← mul_assoc (lieSmoothVectorsAction I π g⁻¹) _ _, hinv,
+      one_mul]
 
 /-- **The `U(𝔤)`-module of smooth vectors**, through `lieSmoothVectorsEnvelopingAction`. -/
 instance instModuleUniversalEnvelopingAlgebraLieSmoothVectors :
@@ -241,13 +214,29 @@ def lieSmoothVectorsBaseChangeEnvelopingAction :
       Module.End R (lieSmoothVectors I π) :=
   UniversalEnvelopingAlgebra.lift R (lieSmoothVectorsBaseChangeDerivedAction I π)
 
+/-- An element of `R ⊗[ℝ] 𝔤` acts on smooth vectors by its extended derived endomorphism. -/
+theorem lieSmoothVectorsBaseChangeEnvelopingAction_ι (x : R ⊗[ℝ] LeftInvariantDerivation I G) :
+    lieSmoothVectorsBaseChangeEnvelopingAction I π (UniversalEnvelopingAlgebra.ι R x) =
+      lieSmoothVectorsBaseChangeDerivedAction I π x := by
+  rw [lieSmoothVectorsBaseChangeEnvelopingAction, UniversalEnvelopingAlgebra.lift_ι_apply]
+
+/-- `lieSmoothVectorsBaseChangeEnvelopingAction_ι` in `simp`-normal form, where the canonical map
+into `U(R ⊗[ℝ] 𝔤)` is written through the tensor algebra. -/
+@[simp]
+theorem lieSmoothVectorsBaseChangeEnvelopingAction_mkAlgHom_ι
+    (x : R ⊗[ℝ] LeftInvariantDerivation I G) :
+    lieSmoothVectorsBaseChangeEnvelopingAction I π
+        (UniversalEnvelopingAlgebra.mkAlgHom R (R ⊗[ℝ] LeftInvariantDerivation I G)
+          (TensorAlgebra.ι R x)) =
+      lieSmoothVectorsBaseChangeDerivedAction I π x :=
+  lieSmoothVectorsBaseChangeEnvelopingAction_ι I π x
+
 /-- An element `a ⊗ X` of `R ⊗[ℝ] 𝔤` acts on smooth vectors by `a • dπ(X)`. -/
 theorem lieSmoothVectorsBaseChangeEnvelopingAction_ι_tmul (a : R)
     (X : LeftInvariantDerivation I G) :
     lieSmoothVectorsBaseChangeEnvelopingAction I π (UniversalEnvelopingAlgebra.ι R (a ⊗ₜ X)) =
       a • lieSmoothVectorsDerivative I π X := by
-  rw [lieSmoothVectorsBaseChangeEnvelopingAction, UniversalEnvelopingAlgebra.lift_ι_apply,
-    lieSmoothVectorsBaseChangeDerivedAction_tmul]
+  simp [UniversalEnvelopingAlgebra.ι_apply]
 
 /-- **The `U(R ⊗[ℝ] 𝔤)`-module of smooth vectors**, through
 `lieSmoothVectorsBaseChangeEnvelopingAction`. -/
