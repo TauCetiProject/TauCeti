@@ -891,11 +891,7 @@ theorem smul_sub_mem_of_mem_ramificationGroup_zero_of_forall_mem_maximalIdeal (R
     rw [← residue_ne_zero_iff_isUnit, map_add, map_mul, hd0, mul_zero, add_zero]
     rw [← residue_ne_zero_iff_isUnit] at hder
     rwa [derivative_map, eval_map_algebraMap]
-  obtain ⟨u, hu⟩ := hunit.exists_right_inv
-  have hd_eq : d = d * ((derivative f).eval x + k * d) * u := by
-    rw [mul_assoc, hu, mul_one]
-  rw [hd_eq, hdu]
-  exact I.mul_mem_right u hfσ
+  exact (I.mul_unit_mem_iff_mem hunit).mp (hdu ▸ hfσ)
 
 /-- When `S` is a local `R`-algebra on which `G` acts by `R`-algebra automorphisms with separable
 residue extension, membership of an element `σ ∈ G_0` in `G_i` is decided on any generating set `s`
@@ -1008,6 +1004,12 @@ theorem smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup {k m : ℕ} {σ :
     · rw [smul_add, add_sub_add_comm]
       exact add_mem h₁ h₂
 
+private theorem mem_smul_top_maximalIdeal_pow_iff {m : ℕ}
+    {z : (maximalIdeal S ^ m : Ideal S)} :
+    z ∈ (maximalIdeal S • ⊤ : Submodule S (maximalIdeal S ^ m : Ideal S)) ↔
+      (z : S) ∈ maximalIdeal S ^ (m + 1) := by
+  rw [Submodule.mem_smul_top_iff, Ideal.smul_eq_mul, ← pow_succ']
+
 /-- The positive-depth **displacement homomorphism** on `G_{n+1}`, sending `σ` to the function
 `x ↦ [σ • x - x]` in the `(n + 2)`-nd graded piece `𝔪^(n+2) / 𝔪^(n+3)` of the maximal-ideal
 filtration. Its kernel is `G_{n+2}` (`ker_displacementHom`). -/
@@ -1023,17 +1025,14 @@ def displacementHom (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing 
       rw [← ofAdd_add]
       refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
       rw [Pi.add_apply, ← Submodule.Quotient.mk_add, Submodule.Quotient.eq,
-        Submodule.mem_smul_top_iff]
-      change ((σ * τ : ramificationGroup G S ((n + 1 : ℕ) : ℤ)) : G) • x - x -
-          (((σ : G) • x - x) + ((τ : G) • x - x)) ∈
-        maximalIdeal S • maximalIdeal S ^ (n + 2)
+        mem_smul_top_maximalIdeal_pow_iff]
+      simp only [Submodule.coe_sub, Submodule.coe_add]
       have hy : (τ : G) • x - x ∈ maximalIdeal S ^ (n + 2) :=
         mem_ramificationGroup_natCast_iff.mp τ.property x
       have hστ : (σ : G) • ((τ : G) • x - x) - ((τ : G) • x - x) ∈
           maximalIdeal S ^ (n + 3) :=
         Ideal.pow_le_pow_right (by omega)
           (smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup σ.property hy)
-      rw [smul_eq_mul, ← pow_succ']
       convert hστ using 1
       rw [Subgroup.coe_mul, mul_smul, smul_sub]
       ring
@@ -1058,10 +1057,7 @@ theorem ker_displacementHom (G : Type*) [Group G] (S : Type*) [CommRing S]
     mem_ramificationGroup_natCast_iff, funext_iff]
   refine forall_congr' fun x ↦ ?_
   rw [Pi.zero_apply, toAdd_displacementHom_apply, Submodule.Quotient.mk_eq_zero,
-    Submodule.mem_smul_top_iff]
-  change (σ : G) • x - x ∈ maximalIdeal S • maximalIdeal S ^ (n + 2) ↔
-    (σ : G) • x - x ∈ maximalIdeal S ^ (n + 3)
-  rw [smul_eq_mul, ← pow_succ']
+    mem_smul_top_maximalIdeal_pow_iff]
 
 /-- At positive depth `i > 0`, the commutator subgroup `⁅G_i, G_i⁆` lies in `G_{i+1}`. -/
 theorem commutator_ramificationGroup_le (G : Type*) [Group G] (S : Type*) [CommRing S]
@@ -1110,10 +1106,8 @@ theorem pow_mem_ramificationGroup_succ_iff {i : ℤ} (hi : 0 < i) {σ : G}
   rw [htoNat, ← hmem, MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero, funext_iff]
   refine forall_congr' fun x ↦ ?_
   rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, toAdd_displacementHom_apply,
-    ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_top_iff]
-  change m • (σ • x - x) ∈ maximalIdeal S • maximalIdeal S ^ (n + 2) ↔
-    (m : S) * (σ • x - x) ∈ maximalIdeal S ^ (n + 3)
-  rw [nsmul_eq_mul, smul_eq_mul, ← pow_succ']
+    ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+    mem_smul_top_maximalIdeal_pow_iff, Submodule.coe_smul_of_tower, nsmul_eq_mul]
 
 /-- At positive depth `i > 0` in residue characteristic `p`, the `p`-th power of every element of
 `G_i` lies in `G_{i+1}`. -/

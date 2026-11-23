@@ -209,7 +209,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     (residueFieldEquivMaximalIdealGradedOfUniformizer
       ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
       (P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht))
-      (i + 2)).symm.toAddEquiv).toAddMonoidHom.toMultiplicative.comp
+      (i + 2)).symm.toAddEquiv).toMultiplicative.toMonoidHom.comp
     (IsLocalRing.displacementHom (P.integers.decompositionSubgroup F) P.integers i)).comp
     (MulEquiv.subgroupCongr (ramificationGroup_def F P (i + 1))).toMonoidHom
 
@@ -223,7 +223,7 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
       IsLocalRing.residue P.integers y := by
   have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
   rw [ramificationResidueHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    AddMonoidHom.toMultiplicative_apply_apply, AddEquiv.coe_toAddMonoidHom,
+    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, AddEquiv.toMultiplicative_apply_apply,
     toAdd_ofAdd, AddEquiv.piCongrRight_apply, LinearEquiv.coe_toAddEquiv]
   apply (residueFieldEquivMaximalIdealGradedOfUniformizer
     ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
@@ -233,9 +233,9 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
     IsLocalRing.toAdd_displacementHom_apply]
   refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
   apply Subtype.ext
-  change ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') (x : F') - (x : F') =
-    (y : F') * t ^ (i + 2)
-  rw [hy, mul_comm, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ ht0), one_mul]
+  rw [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+    MulEquiv.subgroupCongr_apply, Subtype.coe_mk, MulMemClass.coe_mul, SubmonoidClass.coe_pow,
+    Subtype.coe_mk, hy, mul_comm, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ ht0), one_mul]
 
 /-- **The kernel of the ramification residue is the next ramification group** (Stichtenoth,
 Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group of functions from
@@ -243,14 +243,18 @@ Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group 
 theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     (ramificationResidueHom F P ht i).ker =
       (ramificationGroup F P (i + 2)).subgroupOf (ramificationGroup F P (i + 1)) := by
-  ext g
   have hidx : ((i + 2 : ℕ) : ℤ) = ((i + 1 : ℕ) : ℤ) + 1 := by omega
-  rw [ramificationResidueHom, MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    AddMonoidHom.toMultiplicative_apply_apply, ← toAdd_eq_zero, toAdd_ofAdd,
-    AddEquiv.coe_toAddMonoidHom, map_eq_zero_iff _ (AddEquiv.injective _), toAdd_eq_zero,
-    ← MonoidHom.mem_ker, IsLocalRing.ker_displacementHom, Subgroup.mem_subgroupOf,
-    Subgroup.mem_subgroupOf, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_apply,
-    ramificationGroup_def F P (i + 2), hidx]
+  rw [ramificationResidueHom, ← MonoidHom.comap_ker,
+    MonoidHom.ker_comp_of_injective _ _
+      (AddEquiv.piCongrRight fun _ ↦
+        (residueFieldEquivMaximalIdealGradedOfUniformizer
+          ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
+          (P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht))
+          (i + 2)).symm.toAddEquiv).toMultiplicative.injective,
+    IsLocalRing.ker_displacementHom]
+  ext g
+  simp only [Subgroup.mem_comap, Subgroup.mem_subgroupOf, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_apply, ramificationGroup_def, hidx]
 
 end Residue
 

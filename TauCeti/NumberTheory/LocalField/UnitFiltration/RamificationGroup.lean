@@ -46,8 +46,6 @@ separable base extension.
 * `TauCeti.ramificationGroupToUnitFiltrationGraded`: the homomorphism
   `G_i → U(L,i) / U(L,i+1)`, and
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded`: the induced `θ_i` on `G_i / G_{i+1}`.
-* `TauCeti.ramificationGroupOneSylow`: the wild inertia group `G_1`, viewed inside `G_0`, as its
-  unique normal Sylow `p`-subgroup.
 
 ## Main results
 
@@ -75,8 +73,9 @@ separable base extension.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`: the tame quotient
   is cyclic, of order dividing `q - 1`.
-* `TauCeti.eq_ramificationGroupOneSylow` and `TauCeti.natCard_ramificationGroup_one`: uniqueness
-  and order `p ^ (v_p #G_0)` of the wild inertia Sylow subgroup.
+* `TauCeti.not_dvd_index_ramificationGroup_one` and `TauCeti.natCard_ramificationGroup_one`:
+  index prime to `p` and order `p ^ (v_p #G_0)` of wild inertia (together with
+  `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex` for the Sylow `p`-subgroup).
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
   trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
   prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
@@ -171,6 +170,13 @@ def uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i
   (unitFiltrationEquivPrincipalUnitGroup i).symm
     (IsDiscreteValuationRing.uniformizerRatio i hϖ σ)
 
+private theorem uniformizerRatio_eq_symm (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
+    uniformizerRatio i hϖ σ =
+      (unitFiltrationEquivPrincipalUnitGroup i).symm
+        (IsDiscreteValuationRing.uniformizerRatio i hϖ σ) :=
+  (rfl)
+
 /-- Coerced to `L`, `uniformizerRatio i hϖ σ` is `σ • ϖ / ϖ`. -/
 @[simp]
 theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
@@ -178,7 +184,8 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
   have hϖne : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   have hcoe : ((uniformizerRatio i hϖ σ : Lˣ) : L) =
       (((IsDiscreteValuationRing.uniformizerRatio i hϖ σ : 𝒪[L]ˣ) : 𝒪[L]) : L) := by
-    rw [uniformizerRatio, coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply, Units.coe_map]
+    rw [uniformizerRatio_eq_symm, coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply,
+      Units.coe_map]
     rfl
   rw [hcoe, eq_div_iff hϖne, mul_comm, ← coe_smul_integer, ← MulMemClass.coe_mul,
     IsDiscreteValuationRing.mul_coe_uniformizerRatio]
@@ -225,8 +232,7 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGroupGraded_apply,
-    unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk]
-  rfl
+    unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk, ← uniformizerRatio_eq_symm]
 
 /-- The quotient homomorphism does not depend on the choice of uniformizer: two uniformizers
 differ by a unit of `𝒪[L]`, and `σ` moves that unit inside `U(L,i+1)`. -/
@@ -407,20 +413,24 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
   rw [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_mk,
-    unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk]
-  rfl
+    ← IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGroupGraded_apply,
+    ← MulEquiv.coe_toMonoidHom, ← MonoidHom.comp_apply,
+    ← ramificationGroupToUnitFiltrationGraded,
+    ramificationGroupToUnitFiltrationGraded_apply]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :
     Function.Injective (ramificationGroupGradedToUnitFiltrationGraded (G := G) i hϖ) := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
-  intro q hq
-  induction q using QuotientGroup.induction_on with
-  | _ σ =>
-    rw [MonoidHom.mem_ker, ramificationGroupGradedToUnitFiltrationGraded_mk,
-      ← ramificationGroupToUnitFiltrationGraded_apply] at hq
-    rw [QuotientGroup.eq_one_iff]
-    exact (ker_ramificationGroupToUnitFiltrationGraded hϖ).le hq
+  have hlift :
+      ramificationGroupGradedToUnitFiltrationGraded (G := G) i hϖ =
+        QuotientGroup.lift _ (ramificationGroupToUnitFiltrationGraded i hϖ)
+          (ramificationGroup_succ_subgroupOf_le_ker hϖ) := by
+    refine QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun σ ↦ ?_)
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+      QuotientGroup.lift_mk, ramificationGroupGradedToUnitFiltrationGraded_mk,
+      ramificationGroupToUnitFiltrationGraded_apply]
+  rw [hlift, QuotientGroup.injective_lift_iff]
+  exact (ker_ramificationGroupToUnitFiltrationGraded hϖ).symm
 
 /-- The descended quotient map does not depend on the choice of uniformizer. -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible {ϖ' : 𝒪[L]}
@@ -503,48 +513,6 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
   exact TauCeti.not_dvd_natCard_of_injective_units p
     (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ)
     (tameCharacterGraded_injective hϖ)
-
-variable (G) in
-/-- **Wild inertia is the Sylow `p`-subgroup of inertia.** For the residue characteristic `p`,
-the first ramification group `G_1`, viewed as a subgroup of `G_0`, is a Sylow `p`-subgroup. -/
-noncomputable def ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
-    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
-    Sylow p (ramificationGroup G 𝒪[L] 0) :=
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex G 𝒪[L] p
-    (not_dvd_index_ramificationGroup_one G p)
-
-variable (G) in
-/-- The subgroup underlying `ramificationGroupOneSylow` is `G_1` viewed inside `G_0`. -/
-@[simp]
-theorem ramificationGroupOneSylow_coe (p : ℕ) [CharP 𝓀[L] p]
-    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
-    (ramificationGroupOneSylow (G := G) (L := L) p :
-      Subgroup (ramificationGroup G 𝒪[L] 0)) =
-      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) :=
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex_coe G 𝒪[L] p
-    (not_dvd_index_ramificationGroup_one G p)
-
-variable (G) in
-/-- The wild inertia Sylow subgroup is normal in inertia. -/
-theorem ramificationGroupOneSylow_normal (p : ℕ) [CharP 𝓀[L] p]
-    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
-    (ramificationGroupOneSylow (G := G) (L := L) p :
-      Subgroup (ramificationGroup G 𝒪[L] 0)).Normal :=
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex_normal G 𝒪[L] p
-    (not_dvd_index_ramificationGroup_one G p)
-
-variable (G) in
-/-- The wild inertia Sylow subgroup is the unique Sylow `p`-subgroup of inertia. -/
-theorem eq_ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
-    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)]
-    (Q : Sylow p (ramificationGroup G 𝒪[L] 0)) :
-    Q = ramificationGroupOneSylow (G := G) (L := L) p :=
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsLocalRing.eq_ramificationGroupOneSylowOfNotDvdIndex G 𝒪[L] p
-    (not_dvd_index_ramificationGroup_one G p) Q
 
 variable (G) in
 /-- The order of wild inertia is the residue-characteristic part of the order of inertia:

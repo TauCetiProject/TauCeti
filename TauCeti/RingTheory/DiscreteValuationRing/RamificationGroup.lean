@@ -73,8 +73,6 @@ through a fraction field or Teichmüller lifts.
   induced homomorphism on `G_0 / G_1`.
 * `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`: the positive-depth
   coordinate homomorphism `Additive (G_{n+1} / G_{n+2}) →+ k` attached to a uniformizer.
-* `TauCeti.IsDiscreteValuationRing.ramificationGroupOneSylow`: in prime residue characteristic `p`,
-  `G_1` as the unique normal Sylow `p`-subgroup of a finite inertia group `G_0`.
 
 ## Main results
 
@@ -103,12 +101,12 @@ through a fraction field or Teichmüller lifts.
   the kernels and injectivity of the graded embeddings under separable residue extension.
 * `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero`,
   `TauCeti.IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one`,
-  `TauCeti.IsDiscreteValuationRing.eq_ramificationGroupOneSylow`,
   `TauCeti.IsDiscreteValuationRing.natCard_ramificationGroup_one`,
   `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
   and `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_charZero`: structure of
   `G_0 / G_1`, `G_1`, and `G_0`, including the tame criterion
-  `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`.
+  `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero` (together with
+  `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex` for the Sylow `p`-subgroup).
 
 ## References
 
@@ -420,23 +418,12 @@ theorem tameCharacterGraded_injective_of_injective {ϖ : B} (hϖ : Irreducible �
     Function.Injective (tameCharacterGraded (G := G) hϖ) :=
   (maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits B).injective.comp h
 
-private def ramificationGroupCastSuccEquiv (n : ℕ) :
-    ramificationGroup G B ((n : ℤ) + 1) ≃* ramificationGroup G B ((n + 1 : ℕ) : ℤ) :=
-  MulEquiv.subgroupCongr (congrArg (ramificationGroup G B) (Nat.cast_succ (R := ℤ) n).symm)
-
 private def ramificationGroupGradedCastSuccEquiv (n : ℕ) :
     RamificationGroupGraded G B ((n : ℤ) + 1) ≃*
       RamificationGroupGraded G B ((n + 1 : ℕ) : ℤ) :=
-  QuotientGroup.congr _ _ (ramificationGroupCastSuccEquiv n) (by
-    ext σ
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf,
-      ramificationGroupCastSuccEquiv, Subtype.exists]
-    constructor
-    · rintro ⟨a, _, ha, rfl⟩
-      simpa [Nat.cast_succ] using ha
-    · intro hσ
-      exact ⟨σ, Nat.cast_succ (R := ℤ) n ▸ σ.property,
-        by simpa [Nat.cast_succ] using hσ, rfl⟩)
+  QuotientGroup.equivQuotientSubgroupOfOfEq
+    (congrArg (fun k : ℤ ↦ ramificationGroup G B (k + 1)) (Nat.cast_succ (R := ℤ) n).symm)
+    (congrArg (ramificationGroup G B) (Nat.cast_succ (R := ℤ) n).symm)
 
 /-- At positive depth `n + 1`, composing `θ_{n+1}` with the uniformizer coordinate on
 `(1 + 𝔪 ^ (n + 1)) / (1 + 𝔪 ^ (n + 2))` gives an additive homomorphism
@@ -469,9 +456,14 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) {ϖ : B} (hϖ :
         (Additive.ofMul (QuotientGroup.mk
           (uniformizerRatio (n + 1) hϖ
             ⟨(τ : G), (Nat.cast_succ (R := ℤ) n).symm ▸ τ.property⟩))) := by
-  rw [ramificationGroupGradedToResidueField_apply, ramificationGroupGradedCastSuccEquiv,
-    QuotientGroup.congr_mk, ramificationGroupGradedToPrincipalUnitGroupGraded_mk]
-  rfl
+  rw [ramificationGroupGradedToResidueField_apply]
+  have hcast :
+      ramificationGroupGradedCastSuccEquiv (G := G) (B := B) n (QuotientGroup.mk τ) =
+        QuotientGroup.mk ⟨(τ : G), (Nat.cast_succ (R := ℤ) n).symm ▸ τ.property⟩ :=
+    QuotientGroup.quotientMapSubgroupOfOfLe_mk
+      (congrArg (fun k : ℤ ↦ ramificationGroup G B (k + 1)) (Nat.cast_succ (R := ℤ) n).symm).le
+      (congrArg (ramificationGroup G B) (Nat.cast_succ (R := ℤ) n).symm).le τ
+  rw [hcast, ramificationGroupGradedToPrincipalUnitGroupGraded_mk]
 
 /-- If `(τ : G) • ϖ - ϖ = y * ϖ ^ (n + 2)`, then the positive-depth residue coordinate of the
 class of `τ` relative to `ϖ` is `residue B y`. -/
@@ -685,52 +677,6 @@ theorem not_dvd_index_ramificationGroup_one (A G B : Type*) [CommRing A] [IsLoca
     rw [Subgroup.index_eq_card, RamificationGroupGraded, zero_add]
   rw [hidx]
   exact not_dvd_natCard_ramificationGroupGraded_zero A G B p
-
-/-- **Wild inertia is the Sylow `p`-subgroup of inertia.** When `B` is a local `A`-algebra on which
-`G` acts faithfully by `A`-algebra automorphisms with separable residue extension, prime residue
-characteristic `p`, and finite `G_0`, the group `G_1` viewed inside `G_0` is a Sylow
-`p`-subgroup. -/
-def ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    Sylow p (ramificationGroup G B 0) :=
-  ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p)
-
-/-- The subgroup underlying `ramificationGroupOneSylow` is `G_1` inside `G_0`. -/
-@[simp]
-theorem ramificationGroupOneSylow_coe (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    (ramificationGroupOneSylow A G B p : Subgroup (ramificationGroup G B 0)) =
-      (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) :=
-  ramificationGroupOneSylowOfNotDvdIndex_coe G B p
-    (not_dvd_index_ramificationGroup_one A G B p)
-
-/-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-instance ramificationGroupOneSylow_normal (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    (ramificationGroupOneSylow A G B p : Subgroup (ramificationGroup G B 0)).Normal :=
-  ramificationGroupOneSylowOfNotDvdIndex_normal G B p
-    (not_dvd_index_ramificationGroup_one A G B p)
-
-/-- **Uniqueness of the wild inertia Sylow subgroup**: when `B` is a local `A`-algebra on which `G`
-acts faithfully by `A`-algebra automorphisms with separable residue extension, prime residue
-characteristic `p`, and finite `G_0`, the group `G_1` is the unique Sylow `p`-subgroup of `G_0`. -/
-theorem eq_ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (Q : Sylow p (ramificationGroup G B 0)) :
-    Q = ramificationGroupOneSylow A G B p :=
-  eq_ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p) Q
 
 /-- When `B` is a local `A`-algebra on which `G` acts faithfully by `A`-algebra automorphisms with
 separable residue extension, prime residue characteristic `p`, and finite `G_0`, the cardinality of

@@ -187,11 +187,6 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change (π π' : R
   rw [← residueFieldEquivMaximalIdealGradedOfUniformizer_change]
   simp
 
-private theorem smul_top_maximalIdeal_pow_eq_comap (n : ℕ) :
-    (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R)) =
-      Submodule.comap (maximalIdeal R ^ (n + 1)).subtype (maximalIdeal R ^ (n + 2)) := by
-  rw [Ideal.smul_top_eq_comap_mul, ← pow_succ]
-
 /-- The positive-depth principal-unit coordinate associated to a uniformizer `π` of a discrete
 valuation ring `R`: the class of `u ∈ 1 + 𝔪^(n+1)` is sent to the residue of `(u - 1) / π^(n+1)`. -/
 noncomputable def maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer (n : ℕ)
@@ -200,8 +195,7 @@ noncomputable def maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOf
   ((maximalIdeal R).principalUnitGroupPowQuotientEquiv
     (by rw [Ideal.jacobson_bot]; exact (ringJacobson_eq_maximalIdeal R).ge) n).toAdditive.trans <|
     (AddEquiv.additiveMultiplicative _).trans <|
-      (Submodule.quotEquivOfEq _ _
-        (smul_top_maximalIdeal_pow_eq_comap (R := R) n).symm).toAddEquiv.trans
+      ((maximalIdeal R).powQuotientComapEquivSmulTop (n + 1)).trans
         (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).symm.toAddEquiv
 
 /-- Multiplying the uniformizer coordinate of the class of `u ∈ 1 + 𝔪^(n+1)` by `π^(n+1)` gives
@@ -213,8 +207,11 @@ theorem maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformize
         (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ
           (Additive.ofMul (QuotientGroup.mk u))) =
       Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩ := by
-  simp [maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer,
-    AddEquiv.additiveMultiplicative]
+  simp only [maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer,
+    AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, AddEquiv.additiveMultiplicative_apply,
+    toMul_ofMul, Ideal.principalUnitGroupPowQuotientEquiv_mk,
+    toAdd_ofAdd, Ideal.powQuotientComapEquivSmulTop_mk]
+  exact (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).apply_symm_apply _
 
 /-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the residue
 of `y`. -/

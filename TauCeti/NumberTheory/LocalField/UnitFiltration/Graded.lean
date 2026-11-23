@@ -158,19 +158,9 @@ noncomputable def unitFiltrationGradedEquivPrincipalUnitGroupPowGraded (i : ℕ)
     UnitFiltrationGraded K i ≃* (IsLocalRing.maximalIdeal 𝒪[K]).PrincipalUnitGroupPowGraded i :=
   QuotientGroup.congr _ _ (unitFiltrationEquivPrincipalUnitGroup i) (by
     ext u
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      change (unitFiltrationEquivPrincipalUnitGroup i x : 𝒪[K]ˣ) ∈
-        (IsLocalRing.maximalIdeal 𝒪[K] ^ (i + 1)).principalUnitGroup
-      rw [coe_unitFiltrationEquivPrincipalUnitGroup_apply]
-      exact (mem_unitFiltration_iff_mem_principalUnitGroup (i + 1) _).mp <| by
-        simpa only [unitsMap_subtype_unitFiltrationToIntegerUnits] using hx
-    · intro hu
-      refine ⟨(unitFiltrationEquivPrincipalUnitGroup i).symm u, ?_,
-        (unitFiltrationEquivPrincipalUnitGroup i).apply_symm_apply u⟩
-      rw [coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply]
-      exact (mem_unitFiltration_iff_mem_principalUnitGroup (i + 1) _).mpr hu)
+    rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, Subgroup.mem_subgroupOf,
+      Subgroup.mem_subgroupOf, coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply]
+    exact mem_unitFiltration_iff_mem_principalUnitGroup (i + 1) (u : 𝒪[K]ˣ))
 
 /-- Evaluating `unitFiltrationGradedEquivPrincipalUnitGroupPowGraded` on a quotient class. -/
 @[simp]
@@ -190,23 +180,11 @@ theorem unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk (i : ℕ)
   rw [MulEquiv.symm_apply_eq, unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_mk,
     MulEquiv.apply_symm_apply]
 
-private theorem smul_top_maximalIdeal_pow_eq_comap (n : ℕ) :
-    (𝓂[K] • ⊤ : Submodule 𝒪[K] (𝓂[K] ^ (n + 1) : Ideal 𝒪[K])) =
-      Submodule.comap (𝓂[K] ^ (n + 1)).subtype (𝓂[K] ^ (n + 2)) := by
-  rw [Ideal.smul_top_eq_comap_mul, ← pow_succ]
-
-private noncomputable def maximalIdealQuotEquivGraded (n : ℕ) :
-    Multiplicative (↥(𝓂[K] ^ (n + 1)) ⧸
-        Submodule.comap (𝓂[K] ^ (n + 1)).subtype (𝓂[K] ^ (n + 2))) ≃*
-      Multiplicative (MaximalIdealGraded K (n + 1)) :=
-  (Submodule.quotEquivOfEq _ _
-    (smul_top_maximalIdeal_pow_eq_comap (K := K) n).symm).toAddEquiv.toMultiplicative
-
 /-- Subtracting one, modulo the next power of the maximal ideal, is a homomorphism from a
 positive unit-filtration step to the multiplicative copy of the corresponding ideal quotient. -/
 noncomputable def unitFiltrationToMaximalIdealGraded (n : ℕ) :
     unitFiltration K (n + 1) →* Multiplicative (MaximalIdealGraded K (n + 1)) :=
-  (maximalIdealQuotEquivGraded n).toMonoidHom.comp <|
+  (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative.toMonoidHom.comp <|
     (Ideal.principalUnitGroupToQuotient (𝓂[K] ^ (n + 1)) (𝓂[K] ^ (n + 2))
       (by rw [← pow_add]; exact Ideal.pow_le_pow_right (by omega))).comp
       (unitFiltrationEquivPrincipalUnitGroup (n + 1)).toMonoidHom
@@ -218,16 +196,20 @@ theorem unitFiltrationToMaximalIdealGraded_apply (n : ℕ)
     unitFiltrationToMaximalIdealGraded n x =
       Multiplicative.ofAdd (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
   simp only [unitFiltrationToMaximalIdealGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    Ideal.principalUnitGroupToQuotient_apply, maximalIdealQuotEquivGraded,
-    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, LinearEquiv.coe_toAddEquiv]
-  rfl
+    Ideal.principalUnitGroupToQuotient_apply, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
+    Ideal.powQuotientComapEquivSmulTop_mk]
+  exact congrArg (fun z ↦ Multiplicative.ofAdd (Submodule.Quotient.mk z)) <|
+    Subtype.ext (by
+      rw [Subtype.coe_mk, coe_unitFiltrationEquivPrincipalUnitGroup_apply,
+        coe_unitFiltrationDifference])
 
 /-- The kernel of subtracting one modulo `𝓂[K]^(n+2)` is precisely `U(K,n+2)`. -/
 theorem ker_unitFiltrationToMaximalIdealGraded (n : ℕ) :
     (unitFiltrationToMaximalIdealGraded (K := K) n).ker =
       (unitFiltration K (n + 2)).subgroupOf (unitFiltration K (n + 1)) := by
   rw [unitFiltrationToMaximalIdealGraded,
-    MonoidHom.ker_comp_of_injective _ _ (maximalIdealQuotEquivGraded n).injective,
+    MonoidHom.ker_comp_of_injective _ _
+      (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative.injective,
     ← MonoidHom.comap_ker, Ideal.ker_principalUnitGroupToQuotient]
   ext x
   simp only [Subgroup.mem_comap, Subgroup.mem_subgroupOf, MulEquiv.coe_toMonoidHom,
@@ -240,8 +222,8 @@ graded piece. -/
 theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
     Function.Surjective (unitFiltrationToMaximalIdealGraded (K := K) n) := by
   simp only [unitFiltrationToMaximalIdealGraded, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
-  have h1 : Function.Surjective (maximalIdealQuotEquivGraded (K := K) n) :=
-    (maximalIdealQuotEquivGraded n).surjective
+  have h1 : Function.Surjective (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative :=
+    (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative.surjective
   have h2 : Function.Surjective (Ideal.principalUnitGroupToQuotient
       (𝓂[K] ^ (n + 1)) (𝓂[K] ^ (n + 2))
       (by rw [← pow_add]; exact Ideal.pow_le_pow_right (by omega))) :=
@@ -259,7 +241,7 @@ noncomputable def unitFiltrationGradedSuccEquivMaximalIdealGraded (n : ℕ) :
     ((IsLocalRing.maximalIdeal 𝒪[K]).principalUnitGroupPowQuotientEquiv
       (by rw [Ideal.jacobson_bot]; exact (IsLocalRing.ringJacobson_eq_maximalIdeal 𝒪[K]).ge)
       n).trans
-      (maximalIdealQuotEquivGraded n)
+      (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative
 
 /-- On a class represented by `u ∈ U(K,n+1)`, the positive-depth graded equivalence is the
 class of `u - 1` modulo `𝓂[K]^(n+2)`. -/
@@ -268,11 +250,14 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk
     (n : ℕ) (x : unitFiltration K (n + 1)) :
     unitFiltrationGradedSuccEquivMaximalIdealGraded (K := K) n (QuotientGroup.mk x) =
       Multiplicative.ofAdd (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
-  simp only [unitFiltrationGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply,
+  rw [unitFiltrationGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply, MulEquiv.trans_apply,
     unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_mk,
-    Ideal.principalUnitGroupPowQuotientEquiv_mk, maximalIdealQuotEquivGraded,
-    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, LinearEquiv.coe_toAddEquiv]
-  rfl
+    Ideal.principalUnitGroupPowQuotientEquiv_mk,
+    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, Ideal.powQuotientComapEquivSmulTop_mk]
+  exact congrArg (fun z ↦ Multiplicative.ofAdd (Submodule.Quotient.mk z)) <|
+    Subtype.ext (by
+      rw [Subtype.coe_mk, coe_unitFiltrationEquivPrincipalUnitGroup_apply,
+        coe_unitFiltrationDifference])
 
 /-- Every positive graded piece `U(K,n+1) / U(K,n+2)`, read additively, is isomorphic to the
 additive group of the residue field. -/
