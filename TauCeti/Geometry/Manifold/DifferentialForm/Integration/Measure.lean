@@ -397,7 +397,7 @@ private theorem measure_mpullback_apply_of_subset (hf : MeasurableEmbedding f)
   have hb : b.map C.toLinearEquiv = b' := by
     simp [C, Basis.map_equiv]
   have hμ : b.addHaar.map C = b'.addHaar := by
-    rw [b.map_addHaar C, hb]
+    simpa [C] using (b.measurePreserving_equiv b' (Equiv.refl _)).map_eq
   rw [RoughForm.measure_apply_of_subset _ hA (hAsub.trans inter_subset_left),
     ψ.measure_apply_of_subset (hf.measurableSet_image.2 hA)
       (image_subset_iff.2 (hAsub.trans inter_subset_right)),

@@ -666,7 +666,7 @@ theorem _root_.Orientation.measure_sphereVolumeForm_univ :
   have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
   have hΦ := (diffeomorphSphere v ι).toHomeomorph.measurePreserving_measure_mpullback
     ((diffeomorphSphere v ι).mdifferentiable (by simp)) o.sphereVolumeForm.val
-  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ,
+  rw [← hΦ.measure_preimage MeasurableSet.univ.nullMeasurableSet, preimage_univ,
     Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o,
     RoughForm.measure_smul, smul_apply, measure_fubiniStudyForm_univ]
   -- The frame `(v, ι 1, ι i)` has volume `±1`, so the pullback is `±4π ω_FS`.
