@@ -26,8 +26,9 @@ open Set
 
 namespace MeasureTheory.Measure
 
-/-- The **entropy** `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` of a function `g`, with the
-convention `0 log 0 = 0` of `Real.log`. -/
+/-- The **entropy** `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` of a function `g`.
+This is real-valued even for nonintegrable inputs: each nonintegrable Bochner integral is zero.
+It uses `0 log 0 = 0` and, for signed inputs, `Real.log x = Real.log |x|`. -/
 noncomputable def entropy {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) : ℝ :=
   ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ)
 
@@ -56,7 +57,8 @@ theorem entropy_zero_measure {α : Type*} {mα : MeasurableSpace α} (g : α →
     entropy (0 : Measure α) g = 0 := by
   simp [entropy]
 
-/-- The entropy of a constant under an arbitrary measure. -/
+/-- The entropy of a constant under an arbitrary measure. For infinite total mass,
+`μ.real univ` and the entropy are zero. -/
 theorem entropy_const {α : Type*} [MeasurableSpace α] (μ : Measure α) (c : ℝ) :
     entropy μ (fun _ ↦ c) =
       μ.real univ * (c * Real.log c) -
@@ -74,19 +76,16 @@ theorem entropy_dirac {α : Type*} [MeasurableSpace α] [MeasurableSingletonClas
     (a : α) (g : α → ℝ) : entropy (dirac a) g = 0 := by
   simp [entropy_def]
 
-/-- Scaling a measure scales entropy and subtracts the scaled integral of `g` times the logarithm
-of the scaling factor. -/
+/-- Scaling a measure by `c` scales entropy by `c.toReal` and subtracts the scaled integral of
+`g` times `Real.log c.toReal`. For `c = ∞`, the real projection and the entropy are zero. -/
 theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
     (c : ℝ≥0∞) (g : α → ℝ) :
     entropy (c • μ) g =
       c.toReal * entropy μ g - (c.toReal * (∫ x, g x ∂μ)) * Real.log c.toReal := by
   simp only [entropy_def, integral_smul_measure, smul_eq_mul]
-  by_cases hc : c.toReal = 0
-  · simp [hc]
-  by_cases hg : (∫ x, g x ∂μ) = 0
-  · simp [hg]
-  rw [Real.log_mul hc hg]
-  ring
+  have h := Real.negMulLog_mul c.toReal (∫ x, g x ∂μ)
+  simp only [Real.negMulLog_eq_neg] at h
+  nlinarith
 
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
 function, when the function and its `x log x` transform are integrable. -/

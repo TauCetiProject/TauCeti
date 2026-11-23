@@ -42,7 +42,7 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
-* `MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero` transfers zeros of an a.e. nonnegative,
+* `MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero` transfers zeros of an a.e. nonnegative,
   a.e.-strongly measurable function's marginal to the function itself, assuming a.e. integrable
   sections.
 * `MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul` derives integrability
@@ -259,7 +259,8 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
 
 /-- An a.e. nonnegative, a.e. strongly measurable function with a.e. integrable sections vanishes
 almost everywhere where its second marginal vanishes. -/
-theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measure α) (ν : Measure β)
+theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero
+    (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] {g : α × β → ℝ}
     (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
     (hsections : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y)) μ) :

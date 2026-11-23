@@ -16,9 +16,10 @@ For a nonnegative integrable function whose `x log x` transform is integrable, t
 entropy under a probability measure is nonnegative. This is Jensen's inequality for `x log x`,
 including at zero. The product chain rule applies to signed functions when `g`, `g log g`, and the
 first marginal's `x log x` transform are integrable. An integral log-sum inequality yields entropy
-convexity under mixtures and product subadditivity for a.e. nonnegative functions. For finite
-factors, integrability of `g` and `g log g` on the product suffices; more general versions also
-require integrability of both marginal `x log x` terms.
+convexity under unnormalized mixtures and product subadditivity for a.e. nonnegative functions.
+The mixture inequality integrates both sides against the mixing measure without dividing by its
+mass. For finite factors, integrability of `g` and `g log g` on the product suffices; the s-finite
+versions also require integrability of both marginal `x log x` terms.
 -/
 
 public section
@@ -76,8 +77,8 @@ theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [M
   have hlower := Real.self_sub_one_le_mul_log ha
   have hupper := Real.convexOn_mul_log.map_average_le
     Real.continuous_mul_log.continuousOn isClosed_Ici hx hxi hli
-  simp only [average_eq, smul_eq_mul] at hupper
-  simp only [show ν.real univ = c from rfl] at hupper
+  have hc_eq : ν.real univ = c := rfl
+  simp only [average_eq, smul_eq_mul, hc_eq] at hupper
   have hlog_eq :
       c * ((c⁻¹ * ∫ y, g (x, y) ∂ν) * Real.log (c⁻¹ * ∫ y, g (x, y) ∂ν)) =
         (∫ y, g (x, y) ∂ν) * Real.log (∫ y, g (x, y) ∂ν) -
@@ -245,9 +246,10 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
   rw [integral_entropy_prod_right μ ν g hlog hmargy]
   exact hint'
 
-/-- Entropy is convex under mixtures for an a.e. nonnegative function, including when its total
-mass is zero. The function and its `x log x` transform must be integrable on the product, and
-both marginal `x log x` transforms must be integrable. -/
+/-- Entropy is convex under unnormalized mixtures for an a.e. nonnegative function and s-finite
+measures, including when its total mass is zero. Both sides integrate against `ν` without
+dividing by its mass. The function and its `x log x` transform must be integrable on the product,
+and both marginal `x log x` transforms must be integrable. -/
 theorem entropy_integral_le_integral_entropy_of_integrable_marginals_mul_log {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] (g : α × β → ℝ)
@@ -266,7 +268,7 @@ theorem entropy_integral_le_integral_entropy_of_integrable_marginals_mul_log {α
   exact entropy_integral_le_integral_entropy_aux μ ν g hnonneg hg hlog hmargx
     hmargy (μ.integrable_mul_comp_snd_of_integrable_marginal_mul ν hnonneg
       hg.aestronglyMeasurable hg.prod_left_ae hweight hmargy)
-    (ae_ae_of_ae_prod (μ.ae_eq_zero_of_marginal_eq_zero ν hnonneg
+    (ae_ae_of_ae_prod (μ.ae_eq_zero_of_marginal_right_eq_zero ν hnonneg
       hg.aestronglyMeasurable hg.prod_left_ae))
 
 /-- Product entropy subadditivity for an a.e. nonnegative function when the function and its
@@ -289,9 +291,9 @@ theorem entropy_prod_le_of_integrable_marginals_mul_log {α β : Type*}
     μ ν g hnonneg hg hlog hmargx hmargy
   linarith
 
-/-- Entropy is convex when averaging sections of an a.e. nonnegative function against `ν`, with
-the reference measure `μ` fixed. Both measures are finite and the function and its
-`x log x` transform are integrable. -/
+/-- Entropy is convex when integrating sections of an a.e. nonnegative function against `ν`,
+with the reference measure `μ` fixed. Both sides integrate against `ν` without dividing by its
+mass. Both measures are finite and the function and its `x log x` transform are integrable. -/
 theorem entropy_integral_le_integral_entropy {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] (g : α × β → ℝ)
