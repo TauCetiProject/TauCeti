@@ -52,12 +52,12 @@ def skewAdjointOfStrictUpper :
 /-- The extension on a strict upper entry is the given coordinate. -/
 @[simp] theorem skewAdjointOfStrictUpper_apply_of_lt (x : FinStrictUpper n → E) {i j : Fin n}
     (h : i < j) : skewAdjointOfStrictUpper x i j = x ⟨(i, j), h⟩ := by
-  exact dite_eq_left h
+  simp [skewAdjointOfStrictUpper, h]
 
 /-- The extension on a strict lower entry is the negative conjugate reflected coordinate. -/
 @[simp] theorem skewAdjointOfStrictUpper_apply_of_gt (x : FinStrictUpper n → E) {i j : Fin n}
     (h : j < i) : skewAdjointOfStrictUpper x i j = -star (x ⟨(j, i), h⟩) := by
-  exact (dite_eq_right h.not_gt).trans (dite_eq_left h)
+  simp [skewAdjointOfStrictUpper, h, h.not_gt]
 
 /-- The skew-adjoint extension has zero diagonal. -/
 @[simp] theorem skewAdjointOfStrictUpper_apply_diag (x : FinStrictUpper n → E) (i : Fin n) :

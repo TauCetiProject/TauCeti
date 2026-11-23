@@ -317,6 +317,14 @@ def selfAdjointDiagonal :
   · simp [selfAdjointDiagonal]
   · simp [selfAdjointDiagonal, h, h.ne']
 
+/-- The coordinates of a unitary conjugate read the ambient conjugated matrix. -/
+theorem selfAdjointCoordinates_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) =
+      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
+  rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+    Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
+
 /-- Coordinate change induced by conjugation with a unitary frame. -/
 def unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
     SelfAdjointCoordinates n 𝕜 ≃L[ℝ] SelfAdjointCoordinates n 𝕜 :=
@@ -343,8 +351,11 @@ self-adjoint matrix with the given coordinates. -/
 theorem unitaryConjCoordinates_apply (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
     unitaryConjCoordinates U x =
       selfAdjointCoordinatesLinearMap
-        (Unitary.conjStarAlgAut ℝ _ U (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜)) :=
-  (rfl)
+        (Unitary.conjStarAlgAut ℝ _ U
+          (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜)) := by
+  rw [unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+    LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv,
+    selfAdjointCoordinates_selfAdjointConj]
 
 /-- Conjugating the coordinates of a self-adjoint matrix gives the coordinates of its
 unitary conjugate. -/
@@ -355,13 +366,5 @@ unitary conjugate. -/
   rw [unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply,
     ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
     LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv]
-
-/-- The coordinates of a unitary conjugate read the ambient conjugated matrix. -/
-theorem selfAdjointCoordinates_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
-    selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) =
-      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
-  rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
-    Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 end TauCeti
