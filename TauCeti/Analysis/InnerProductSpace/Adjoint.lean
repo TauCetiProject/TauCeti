@@ -18,9 +18,10 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
-orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`), and
-the orthogonal projection onto `ker T†` agrees with the orthogonal projection onto `(range T)ᗮ`
-(`ContinuousLinearMap.starProjection_ker_adjoint`).
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`), the
+orthogonal projection onto `ker T†` agrees with the orthogonal projection onto `(range T)ᗮ`
+(`ContinuousLinearMap.starProjection_ker_adjoint`), and the adjoint is injective exactly when the
+operator has dense range (`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -132,6 +133,15 @@ theorem starProjection_ker_adjoint [CompleteSpace E] [CompleteSpace F] (T : E �
   exact Submodule.eq_starProjection_of_mem_orthogonal
     (T.orthogonal_range ▸ T.rangeᗮ.starProjection_apply_mem y)
     (T.orthogonal_range ▸ T.rangeᗮ.sub_starProjection_mem_orthogonal y)
+
+/-- The adjoint of a bounded operator between Hilbert spaces is injective exactly when the
+operator has dense range: its kernel is the orthogonal complement of the range. -/
+theorem adjoint_injective_iff_denseRange [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F} :
+    Function.Injective (u†) ↔ DenseRange u := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range,
+    ← Submodule.topologicalClosure_eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top,
+    LinearMap.coe_range, coe_coe]
+  rfl
 
 /-- The pointwise adjoint `x ↦ (f x)†` of a continuous family of operators between Hilbert spaces
 is continuous. -/
