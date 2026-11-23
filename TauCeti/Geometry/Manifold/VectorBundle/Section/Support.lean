@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Topology.Perfect
-public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Compactly supported smooth bundle sections
@@ -233,6 +233,16 @@ def zeroOffInChart (c : OpenPartialHomeomorph M E) (L₀ : Set E) :
 theorem mem_zeroOffInChart {c : OpenPartialHomeomorph M E} {L₀ : Set E} {s : Cₛ^n⟮I; F, V⟯} :
     s ∈ zeroOffInChart I F n V c L₀ ↔ ∀ y ∈ c.target, y ∉ L₀ → s (c.symm y) = 0 :=
   Iff.rfl
+
+/-- A section supported in a compact subset `K` of a chart source vanishes outside `c '' K` on the
+chart target. -/
+theorem supportedIn_le_zeroOffInChart (c : OpenPartialHomeomorph M E)
+    {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
+    supportedIn I F n V K ≤ zeroOffInChart I F n V c (c.imageCompact hK) := by
+  intro s hs
+  refine mem_zeroOffInChart.2 fun y hyc hy ↦ s.eq_zero_of_notMem_tsupport fun h ↦ ?_
+  rw [c.coe_imageCompact hK] at hy
+  exact hy ⟨c.symm y, hs h, c.right_inv hyc⟩
 
 variable (I F n V) in
 /-- The submodule of native smooth sections with compact closed support. Its subtype is the

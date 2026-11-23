@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Chart localization of smooth bundle sections
@@ -203,7 +202,7 @@ theorem continuous_chartLocalization
     Continuous (t.chartLocalization c hc hct ψ L hL hψ) := by
   let := frameTopology (I := I) (n := n) e U hU
   exact (continuous_chartCoeffLinearMap t c hc hct e U hU hcover hL Subset.rfl).comp
-    ((continuous_smulLinearMap_frameTopology e U hU ψ).subtype_mk _)
+    ((continuous_smul_function_frameTopology e U hU ψ).subtype_mk _)
 
 end Continuity
 

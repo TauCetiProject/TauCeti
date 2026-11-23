@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Analysis.Distribution.TestFunction
-public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Native test functions in bundle charts
@@ -357,22 +356,6 @@ theorem chartTestSection_ofSupportedIn_chartCoeff [T2Space M]
   · rw [chartTestSection_apply_of_notMem t c hc hct _ hx]
     exact (hs_compl x hx).symm
 
-omit [ContMDiffVectorBundle n F V I] in
-private theorem chartTestCoeff_zero_of_notMem {K : Compacts M} (hK : (K : Set M) ⊆ c.source)
-    (s : supportedIn I F n V K) {y : E} (hyc : y ∈ c.target)
-    (hy : y ∉ (c.imageCompact hK : Set E)) :
-    s.val (c.symm y) = 0 :=
-  s.val.eq_zero_of_notMem_tsupport fun h ↦ by
-    rw [c.coe_imageCompact hK] at hy
-    exact hy ⟨c.symm y, mem_supportedIn.1 s.property h, c.right_inv hyc⟩
-
-omit [ContMDiffVectorBundle n F V I] in
-/-- A section supported in a compact subset `K` of a chart source vanishes outside `c '' K` on the
-chart target. -/
-theorem supportedIn_le_zeroOffInChart {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
-    supportedIn I F n V K ≤ zeroOffInChart I F n V c (c.imageCompact hK) :=
-  fun s hs ↦ mem_zeroOffInChart.2 fun _ hyc hy ↦ chartTestCoeff_zero_of_notMem c hK ⟨s, hs⟩ hyc hy
-
 /-- Read a `C^n` section supported in a compact subset `K` of a chart source as a supported test
 function in `E`, via the inverse chart and the bundle frame. -/
 def chartTestCoeff {K : Compacts M} (hK : (K : Set M) ⊆ c.source)
@@ -401,7 +384,7 @@ theorem chartTestCoeff_apply_of_mem {K : Compacts M} (hK : (K : Set M) ⊆ c.sou
       t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) :=
   chartCoeff_apply_of_mem t c hc_symm hct (c.imageCompact_subset_target hK)
     (c.coe_imageCompact hK ▸ hKL) s.val
-    (fun _ hyc hy' ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy') hy
+    (mem_zeroOffInChart.1 (supportedIn_le_zeroOffInChart c hK s.property)) hy
 
 /-- Outside the chart target, `chartTestCoeff` vanishes. -/
 @[simp]
@@ -411,7 +394,7 @@ theorem chartTestCoeff_apply_of_notMem {K : Compacts M} (hK : (K : Set M) ⊆ c.
     t.chartTestCoeff c hc_symm hct hK hKL s y = 0 :=
   chartCoeff_apply_of_notMem t c hc_symm hct (c.imageCompact_subset_target hK)
     (c.coe_imageCompact hK ▸ hKL) s.val
-    (fun _ hyc hy' ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy') hy
+    (mem_zeroOffInChart.1 (supportedIn_le_zeroOffInChart c hK s.property)) hy
 
 /-- Extending the chart coefficients of a section supported inside the chart source recovers the
 original section. -/
@@ -427,7 +410,7 @@ theorem chartTestSection_ofSupportedIn_chartTestCoeff [T2Space M]
   rw [ofSupportedIn_apply]
   exact t.chartTestSection_ofSupportedIn_chartCoeff c hc_symm hct hc
     (c.imageCompact_subset_target hK) (c.coe_imageCompact hK ▸ hKL) hL s.val
-    (fun _ hyc hy ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy)
+    (mem_zeroOffInChart.1 (supportedIn_le_zeroOffInChart c hK s.property))
     fun _ hx ↦ s.val.eq_zero_of_notMem_tsupport fun h ↦ hx (hK (mem_supportedIn.1 s.property h))
 
 /-- Reading back an extended supported test function recovers it identically. -/

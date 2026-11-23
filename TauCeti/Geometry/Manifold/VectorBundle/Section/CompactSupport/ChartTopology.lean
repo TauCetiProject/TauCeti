@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topo
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
-import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Chart-generated topology on compactly supported bundle sections

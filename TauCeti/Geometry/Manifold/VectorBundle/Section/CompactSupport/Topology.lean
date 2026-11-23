@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
-import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The fixed-compact inductive topology on bundle tests
@@ -20,9 +19,7 @@ Compactly supported native bundle sections carry the final locally convex topolo
 fixed-compact support stages. Each stage has the subspace topology of the compact derivative
 section topology. Linear maps from this space into locally convex real topological vector
 spaces are continuous exactly when they are continuous on every stage. This is the fixed-support
-presentation of the topology used for bundle-valued tests, on which pointwise multiplication by a
-fixed `C^n` scalar function is continuous
-(`ContMDiffSection.continuous_smulLinearMap_compactlySupported`).
+presentation of the topology used for bundle-valued tests.
 
 A native test function on the target of a smooth chart, read in a smooth bundle frame, extends by
 zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`). These chart
@@ -212,37 +209,6 @@ end Cover
 
 end ContMDiffSection
 
-namespace ContMDiffSection
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
-  {ι : Type*} (e : ι → Trivialization F (π F V))
-  [∀ i, MemTrivializationAtlas (e i)]
-  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
-
-/-- Pointwise multiplication by a fixed `C^n` scalar function is continuous on compactly supported
-sections for the fixed-compact inductive topology. -/
-theorem continuous_smulLinearMap_compactlySupported (f : C^n⟮I, M; ℝ⟯) :
-    letI := compactlySupportedTopology (I := I) (n := n) e U hU
-    Continuous ((smulLinearMap (I := I) (F := F) (V := V) (n := n) f).restrict
-      fun _ hs ↦ smul_function_mem_compactlySupported f hs) := by
-  let := frameTopology (I := I) (n := n) e U hU
-  let := compactlySupportedTopology (I := I) (n := n) e U hU
-  refine (continuous_compactlySupportedTopology_iff e U hU _).2 fun K ↦ ?_
-  let g : supportedIn I F n V K → supportedIn I F n V K := fun s ↦
-    ⟨f • s.val, smul_function_mem_supportedIn f s.property⟩
-  have hg : Continuous g :=
-    ((continuous_smulLinearMap_frameTopology e U hU f).comp continuous_subtypeVal).subtype_mk _
-  exact ((continuous_ofSupportedIn e U hU K).comp hg).congr fun s ↦ Subtype.ext (by simp [g])
-
-end ContMDiffSection
-
 namespace Bundle.Trivialization
 
 open ContMDiffSection
@@ -405,32 +371,22 @@ def chartTestSectionEquiv :
       t.chartTestSection c hc' hct (invFun s) = s :=
     (hstage ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
       ⟨s.val, mem_supportedIn.2 Subset.rfl⟩).trans (Subtype.ext (ofSupportedIn_apply _ _))
-  let invLM : compactlySupported I F n V →ₗ[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
-    { toFun := invFun
-      map_add' := fun s₁ s₂ ↦ t.chartTestSection_injective c hc' hct <| by
-        rw [map_add, hinv_right, hinv_right, hinv_right]
-      map_smul' := fun a s ↦ t.chartTestSection_injective c hc' hct <| by
-        simp only [RingHom.id_apply, map_smul, hinv_right] }
-  have hright : (t.chartTestSection c hc' hct).comp invLM = LinearMap.id :=
-    LinearMap.ext hinv_right
-  have hleft : invLM.comp (t.chartTestSection c hc' hct) = LinearMap.id :=
-    LinearMap.ext fun φ ↦
-      t.chartTestSection_injective c hc' hct (LinearMap.congr_fun hright _)
   let eqv : 𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃ₗ[ℝ] compactlySupported I F n V :=
-    LinearEquiv.ofLinearMap (t.chartTestSection c hc' hct) invLM hright hleft
+    LinearEquiv.ofBijective (t.chartTestSection c hc' hct)
+      ⟨t.chartTestSection_injective c hc' hct, fun s ↦ ⟨invFun s, hinv_right s⟩⟩
   refine
     { toLinearEquiv := eqv
       continuous_toFun := continuous_chartTestSection t c hc' hct e U hU
       continuous_invFun := ?_ }
-  refine (continuous_compactlySupportedTopology_iff e U hU invLM).2 fun K ↦ ?_
+  refine (continuous_compactlySupportedTopology_iff e U hU eqv.symm.toLinearMap).2 fun K ↦ ?_
   refine ((TestFunction.continuous_ofSupportedIn (c.imageCompact_subset_target (hsub K))).comp
     (continuous_chartTestCoeff t c hc hct (hsub K)
       (c.coe_imageCompact (hsub K)).symm.subset e U hU hcover)).congr fun sec ↦
     t.chartTestSection_injective c hc' hct <| by
-      simpa only [stageReadback, invLM, LinearMap.coe_comp, Function.comp_apply,
+      dsimp only [stageReadback, LinearMap.coe_comp, Function.comp_apply,
         ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM,
-        LinearMap.coe_mk, AddHom.coe_mk] using
-        (hstage K sec).trans (hinv_right (ofSupportedIn K sec)).symm
+        LinearEquiv.coe_toLinearMap]
+      exact (hstage K sec).trans (eqv.apply_symm_apply (ofSupportedIn K sec)).symm
 
 /-- The forward map of `chartTestSectionEquiv` is `chartTestSection`. -/
 @[simp]
