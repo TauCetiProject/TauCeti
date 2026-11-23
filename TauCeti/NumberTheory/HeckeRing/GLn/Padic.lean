@@ -34,8 +34,9 @@ Hecke ring of `GL_n` over `ℤ` with the integral local ring, by sending a `p`-p
 
 The heart is that **every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`**
 (`HeckeRing.GLn.commensurator_GLnZp_eq_top`). For `g ∈ GL_n(ℚ_p)` choose `k, l` with
-`A = p ^ k g` and `B = p ^ l g⁻¹` integral (`Padic.exists_forall_norm_pow_mul_le_one`). If
-`γ ∈ GL_n(ℤ_p)` is congruent to `1` modulo `p ^ (k + l)`, say `γ = 1 + p ^ (k + l) C`, then
+`A = p ^ k g` and `B = p ^ l g⁻¹` integral (`Matrix.exists_map_padicInt_eq_pow_smul`). If
+`γ ∈ GL_n(ℤ_p)` is congruent to `1` modulo `p ^ (k + l)`, say `γ = 1 + p ^ (k + l) C`
+(`PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`), then
 `g⁻¹ γ g = 1 + B C A` is integral, and so is its inverse `g⁻¹ γ⁻¹ g`, so `g⁻¹ γ g ∈ GL_n(ℤ_p)`.
 Thus the principal congruence subgroup of level `p ^ (k + l)`, the kernel of reduction
 `GL_n(ℤ_p) → GL_n(ℤ/p^(k+l)ℤ)` and so of finite index in `GL_n(ℤ_p)`, lies in `g GL_n(ℤ_p) g⁻¹`.
@@ -61,9 +62,9 @@ By `Subgroup.Commensurable.commensurator_eq_top_iff` this one inclusion for ever
 * `HeckeRing.GLn.padicScalar_mem_padicIntEntries`,
   `HeckeRing.GLn.padicScalar_inv_notMem_padicIntEntries`: `p I ∈ Δ_p`, and `p⁻¹ I ∉ Δ_p` in
   positive rank.
-* `HeckeRing.GLn.padicScalarUnit`, `HeckeRing.GLn.val_padicScalarUnit`: the central coset
-  `[K (p I) K]` of the integral local ring is a unit of the rational one, with inverse
-  `[K (p⁻¹ I) K]`.
+* `HeckeRing.GLn.padicScalarUnit`, `HeckeRing.GLn.val_padicScalarUnit`,
+  `HeckeRing.GLn.val_inv_padicScalarUnit`: the central coset `[K (p I) K]` of the integral local
+  ring is a unit of the rational one, with inverse `[K (p⁻¹ I) K]`.
 
 ## References
 
@@ -161,33 +162,6 @@ section Commensurator
 
 variable {n p}
 
-/-- **Clearing denominators in `GL_n(ℚ_p)`**: some `p ^ k M` is the image of a matrix over
-`ℤ_p`. -/
-private lemma exists_map_eq_pow_smul (M : Matrix (Fin n) (Fin n) ℚ_[p]) :
-    ∃ (k : ℕ) (A : Matrix (Fin n) (Fin n) ℤ_[p]),
-      A.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ k • M := by
-  obtain ⟨k, hk⟩ := Padic.exists_forall_norm_pow_mul_le_one fun ij : Fin n × Fin n ↦ M ij.1 ij.2
-  exact ⟨k, Matrix.of fun i j ↦ ⟨_, hk (i, j)⟩, by ext; rfl⟩
-
-/-- A matrix of `GL_n(ℤ_p)` that reduces to `1` modulo `p ^ m` is `1 + p ^ m C` for an integral
-`C`. -/
-private lemma exists_eq_one_add_pow_smul {m : ℕ} {γ : GL (Fin n) ℤ_[p]}
-    (hγ : γ ∈ (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) m)).ker) :
-    ∃ C : Matrix (Fin n) (Fin n) ℤ_[p],
-      (γ : Matrix (Fin n) (Fin n) ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
-  have hentry (i j : Fin n) :
-      (p : ℤ_[p]) ^ m ∣ (γ : Matrix (Fin n) (Fin n) ℤ_[p]) i j - (1 : Matrix _ _ ℤ_[p]) i j := by
-    rw [← Ideal.mem_span_singleton, ← PadicInt.ker_toZModPow, RingHom.mem_ker, map_sub]
-    have h := congrArg (fun x : GL (Fin n) (ZMod (p ^ m)) ↦ (x : Matrix _ _ (ZMod (p ^ m))) i j)
-      (MonoidHom.mem_ker.mp hγ)
-    simp only [GeneralLinearGroup.map_apply, Units.val_one] at h
-    rw [h, sub_eq_zero, Matrix.one_apply, Matrix.one_apply]
-    split_ifs <;> simp
-  choose C hC using hentry
-  refine ⟨Matrix.of C, ?_⟩
-  ext i j
-  rw [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← hC, add_sub_cancel]
-
 /-- **The conjugation step.** If `p ^ k g` and `p ^ l g⁻¹` are integral and `γ ∈ GL_n(ℤ_p)` is
 congruent to `1` modulo `p ^ (k + l)`, then `g⁻¹ γ g` is integral. -/
 private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} {k l : ℕ}
@@ -198,25 +172,31 @@ private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} {k l 
     (hγ : γ ∈ (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l))).ker) :
     g⁻¹ * GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) γ * g ∈
       padicIntEntries n p := by
-  obtain ⟨C, hC⟩ := exists_eq_one_add_pow_smul hγ
+  obtain ⟨C, hC⟩ := PadicInt.exists_eq_one_add_pow_smul_of_mem_ker hγ
   set f := (PadicInt.Coe.ringHom (p := p)).mapMatrix (m := Fin n)
   rw [map_coe_eq_mapMatrix] at hA hB
   have hfγ : f γ = 1 + ((p : ℚ_[p]) ^ (k + l)) • f C := by
     rw [hC, map_add, map_one]
     ext i j
     simp [f]
+  -- the key identity `(p ^ l g⁻¹) C (p ^ k g) = p ^ (k + l) g⁻¹ C g`
+  have hBCA : f (B * C * A) = (p : ℚ_[p]) ^ (k + l) •
+      ((↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p]) * f C * (g : Matrix (Fin n) (Fin n) ℚ_[p])) := by
+    rw [map_mul, map_mul, hA, hB, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
+      ← pow_add, add_comm l k]
+  -- so `g⁻¹ (1 + p ^ (k + l) C) g = 1 + B C A` is integral
   refine mem_padicIntEntries_iff.mpr ⟨1 + B * C * A, ?_⟩
-  rw [map_coe_eq_mapMatrix, map_add, map_one, map_mul, map_mul, hA, hB, Units.val_mul,
-    Units.val_mul, coe_map_coe, map_coe_eq_mapMatrix, hfγ, mul_add, add_mul, mul_one,
-    Units.inv_mul, mul_smul_comm, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
-    pow_add, mul_comm, smul_mul_assoc]
+  rw [map_coe_eq_mapMatrix, map_add, map_one, hBCA, Units.val_mul, Units.val_mul, coe_map_coe,
+    map_coe_eq_mapMatrix, hfγ]
+  simp [mul_add, add_mul]
 
 /-- **Every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`.** For `g ∈ GL_n(ℚ_p)`, a principal
 congruence subgroup of `GL_n(ℤ_p)`, of finite index, lies in `g GL_n(ℤ_p) g⁻¹`. -/
 theorem commensurator_GLnZp_eq_top : commensurator (GLnZp n p) = ⊤ := by
   refine commensurator_eq_top_iff.mpr fun g ↦ ?_
-  obtain ⟨k, A, hA⟩ := exists_map_eq_pow_smul (p := p) (g : Matrix (Fin n) (Fin n) ℚ_[p])
-  obtain ⟨l, B, hB⟩ := exists_map_eq_pow_smul (p := p) (↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p])
+  obtain ⟨k, A, hA⟩ := exists_map_padicInt_eq_pow_smul (p := p) (g : Matrix (Fin n) (Fin n) ℚ_[p])
+  obtain ⟨l, B, hB⟩ :=
+    exists_map_padicInt_eq_pow_smul (p := p) (↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p])
   set ι := GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) (n := Fin n)
   set K := (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l)) (n := Fin n)).ker
   have hι : Function.Injective ι := fun u v h ↦
@@ -307,17 +287,14 @@ theorem padicScalar_mem_padicIntEntries : padicScalar n p ∈ padicIntEntries n 
     exact inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr (Fact.out : p.Prime).one_le)
   · simp
 
-/-- In positive rank, `p⁻¹ I` does not have entries in `ℤ_p`: the central coset of `p I` has no
-inverse in the integral local Hecke pair, unlike in the rational one. -/
+/-- In positive rank, `p⁻¹ I` does not have entries in `ℤ_p`: the coset `[K (p⁻¹ I) K]`, the
+inverse of `[K (p I) K]` in the rational local Hecke ring, is not a double coset of the integral
+local Hecke pair. -/
 theorem padicScalar_inv_notMem_padicIntEntries [NeZero n] :
     (padicScalar n p)⁻¹ ∉ padicIntEntries n p := by
   rw [mem_padicIntEntries_iff_norm_le_one]
   intro h
-  have h0 := h 0 0
-  rw [padicScalar, ← map_inv, GeneralLinearGroup.coe_scalar, Units.val_inv_eq_inv_val,
-    Units.val_mk0, Matrix.scalar_apply, Matrix.diagonal_apply_eq, norm_inv, Padic.norm_p,
-    inv_inv] at h0
-  exact (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt).not_ge h0
+  simpa [padicScalar, ← map_inv, Padic.norm_p, (Fact.out : p.Prime).one_lt.not_ge] using h 0 0
 
 /-- **The central coset `[K (p I) K]` is a unit of the rational local Hecke ring**, with inverse
 `[K (p⁻¹ I) K]`, since `p I` is central. -/
@@ -327,6 +304,7 @@ noncomputable def padicScalarUnit : (PadicRationalHeckeRing n p)ˣ :=
 
 /-- The underlying element of `padicScalarUnit` is the image of the central coset `[K (p I) K]`
 of the integral local Hecke ring. -/
+@[simp]
 theorem val_padicScalarUnit :
     (padicScalarUnit n p : PadicRationalHeckeRing n p) =
       padicIntegralToRationalRingHom n p ℤ (HeckeCosetModule.single ℤ
@@ -335,6 +313,14 @@ theorem val_padicScalarUnit :
   simp only [padicScalarUnit, HeckeCosetModule.val_unitOfMemNormalizer,
     padicIntegralToRationalRingHom_single, HeckeCoset.map_mk]
   exact congrArg (HeckeCosetModule.single ℤ · 1) (HeckeCoset.mk_congr_val rfl)
+
+/-- The inverse of `padicScalarUnit` is the central coset `[K (p⁻¹ I) K]`. -/
+@[simp]
+theorem val_inv_padicScalarUnit :
+    (↑(padicScalarUnit n p)⁻¹ : PadicRationalHeckeRing n p) =
+      HeckeCosetModule.single ℤ (HeckeCoset.mk (GLnZp n p) (GLnZp n p)
+        ⟨(padicScalar n p)⁻¹, Submonoid.mem_top _⟩) 1 :=
+  HeckeCosetModule.val_inv_unitOfMemNormalizer _ _ _ _
 
 /-- The central coset `[K (p I) K]` of the integral local Hecke ring becomes a unit in the rational
 one. -/
