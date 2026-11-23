@@ -50,7 +50,8 @@ the `e * f`-th power of that of `v`.
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
 
 `NumberField.FinitePlace.finprod_comp_mk` reindexes a product over the finite places by the
-height one primes of the ring of integers.
+height one primes of the ring of integers, and `NumberField.FinitePlace.mk_injective` records that
+distinct primes give distinct places, so that a finite product over primes is one over places.
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
@@ -185,6 +186,10 @@ theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.val.IsEquiv v.val := 
   rw [← norm_lt_one_iff_mem K, ← norm_lt_one_iff_mem K, ← mk_apply, ← mk_apply,
     mk_maximalIdeal, mk_maximalIdeal]
   exact h.lt_one_iff
+
+/-- Distinct height one primes of the ring of integers give distinct finite places. -/
+theorem mk_injective : Function.Injective (mk : HeightOneSpectrum (𝓞 K) → FinitePlace K) :=
+  equivHeightOneSpectrum.symm.injective
 
 /-- A product over the finite places of a number field, reindexed by the height one primes of its
 ring of integers. -/

@@ -24,7 +24,9 @@ section `α = 2(p + i q)`. Pullback by `z ↦ t z` multiplies connection compone
 with coupling `c` is `*iF_a = c(1 - |α|²)/8`. Dilation changes `c` to `t² c`,
 multiplies the curvature defect by `t²`, and multiplies the complex defect by `t`.
 In particular, the physical coefficient `r/4` becomes `1/8` in the coordinate
-`w = √(2r) z`.
+`w = √(2r) z`. The curvature coefficient `∂₁ b₂ - ∂₂ b₁` is multiplied by `t²` and the covariant
+derivative `d_a α` by `t`, so for `t = √(2r)` the plane integral of the integrand of Taubes's
+scaled energy does not depend on `r`.
 
 The same laws hold for the linearization and the infinitesimal and finite gauge
 actions. For positive coupling the gauge row uses the coefficient metric `|b|² + c |δα|²/4`; its
@@ -163,6 +165,79 @@ theorem integral_norm_iteratedFDeriv_dilateField_apply (μ : Measure ℂ) [μ.Is
   rw [← mul_assoc]
   congr 1
   split_ifs <;> simp only [mul_one, mul_pow, ← pow_mul] <;> field_simp [ht] <;> ring
+
+/-- A field differentiable at the dilated point has a differentiable dilation. -/
+theorem differentiableAt_dilateField {t : ℝ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x (t • z)) : DifferentiableAt ℝ (dilateField t x) z := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ x (t • w) i) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx).comp z
+      (differentiableAt_id.const_smul t)
+  rw [differentiableAt_euclidean]
+  intro i
+  fin_cases i
+  · simpa [dilateField] using (hc 0).const_mul t
+  · simpa [dilateField] using (hc 1).const_mul t
+  · simpa [dilateField] using hc 2
+  · simpa [dilateField] using hc 3
+
+/-- Dilation multiplies the curvature coefficient `∂₁ b₂ - ∂₂ b₁` by `t²`. -/
+@[simp]
+theorem curvature_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    curvature (dilateField t x) z = t ^ 2 * curvature x (t • z) := by
+  simp only [curvature_apply, fderiv_dilateField_apply, Fin.isValue, Fin.reduceLT, ↓reduceIte,
+    real_smul, smul_apply, smul_eq_mul]
+  ring
+
+/-- Dilation multiplies the covariant derivative `d_a α` of the section by `t`. -/
+@[simp]
+theorem covariantDerivative_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
+    covariantDerivative (dilateField t x) z v = t * covariantDerivative x (t • z) v := by
+  have hs : sectionValue (dilateField t x) = fun w ↦ sectionValue x (t • w) :=
+    funext fun w ↦ by simp [sectionValue_apply, dilateField]
+  rw [covariantDerivative_apply, covariantDerivative_apply, hs, fderiv_comp_smul]
+  simp only [dilateField_apply, real_smul, smul_apply, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_mul]
+  ring
+
+open MeasureTheory in
+/-- **The scaled vortex energy does not depend on `r`.** For `r > 0` and `t = √(2r)`, the plane
+integral of `r⁻¹ |*iF_a|² + |∇₁ α|² + |∇_i α|² + r (1 - |α|²)²` for the dilated field
+`dilateField t X` equals `∫ (2 |*iF_a|² + |∇₁ α|² + |∇_i α|² + (1 - |α|²)² / 2)` for `X`, which
+does not involve `r`. Pointwise the first integrand is `2r` times the second at `t z`, and the
+area factor `t⁻²` of the coordinate `w = t z` cancels `2r`.
+
+The first integrand is the integrand `r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²` of Taubes's scaled
+energy written in plane quantities: for a field pulled back to `ℂ_base × ℂ_normal` along a normal
+coordinate, `|F_a|` is `|*iF_a|` and `|∇_a α|²` is `|∇₁ α|² + |∇_i α|²` at that coordinate. -/
+theorem integral_inv_mul_curvature_dilateField_sq_add (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    {r : ℝ} (hr : 0 < r) (X : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ∫ z, (r⁻¹ * curvature (dilateField (√(2 * r)) X) z ^ 2 +
+        ‖covariantDerivative (dilateField (√(2 * r)) X) z 1‖ ^ 2 +
+        ‖covariantDerivative (dilateField (√(2 * r)) X) z I‖ ^ 2 +
+        r * (1 - ‖sectionValue (dilateField (√(2 * r)) X) z‖ ^ 2) ^ 2) ∂μ =
+      ∫ z, (2 * curvature X z ^ 2 + ‖covariantDerivative X z 1‖ ^ 2 +
+        ‖covariantDerivative X z I‖ ^ 2 + (1 - ‖sectionValue X z‖ ^ 2) ^ 2 / 2) ∂μ := by
+  set t := √(2 * r)
+  have ht : t ^ 2 = 2 * r := Real.sq_sqrt (by positivity)
+  have ht₀ : 0 ≤ t := Real.sqrt_nonneg _
+  set g : ℂ → ℝ := fun w ↦ 2 * curvature X w ^ 2 + ‖covariantDerivative X w 1‖ ^ 2 +
+    ‖covariantDerivative X w I‖ ^ 2 + (1 - ‖sectionValue X w‖ ^ 2) ^ 2 / 2
+  -- Pointwise, the integrand is `2 r g (t z)`.
+  have key (z : ℂ) : r⁻¹ * curvature (dilateField t X) z ^ 2 +
+      ‖covariantDerivative (dilateField t X) z 1‖ ^ 2 +
+      ‖covariantDerivative (dilateField t X) z I‖ ^ 2 +
+      r * (1 - ‖sectionValue (dilateField t X) z‖ ^ 2) ^ 2 = (2 * r) * g (t • z) := by
+    have hs : sectionValue (dilateField t X) z = sectionValue X (t • z) := by
+      simp [sectionValue_apply, dilateField_apply]
+    simp only [g, curvature_dilateField, covariantDerivative_dilateField, hs,
+      norm_mul, Complex.norm_real, Real.norm_of_nonneg ht₀]
+    field_simp
+    rw [ht]
+    ring
+  simp_rw [key]
+  rw [integral_const_mul, Measure.integral_comp_smul μ g t, Complex.finrank_real_complex, ht,
+    abs_of_nonneg (by positivity), smul_eq_mul]
+  field_simp
 
 /-- The plane vortex defects with curvature coefficient `c/8`. The last two rows
 are the real and imaginary parts of `∂bar_a α`, with the existing normalization. -/

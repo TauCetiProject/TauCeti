@@ -57,8 +57,6 @@ Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a space `A`:
   cover of a normal paracompact base.
 * `TauCeti.isHurewiczFibration_of_partitionOfUnity`: a continuous map locally a Hurewicz fibration
   over a numerable cover is a Hurewicz fibration.
-* `TauCeti.isHurewiczFibration_of_isSubordinate`: convenience form for closed-support subordination
-  `ρ.IsSubordinate U`.
 * `TauCeti.isHurewiczFibration_of_isOpenCover`: a continuous map locally a Hurewicz fibration over
   an open cover of a normal paracompact base is a Hurewicz fibration.
 
@@ -875,16 +873,6 @@ theorem isHurewiczFibration_of_partitionOfUnity {p : E → B} (hp : Continuous p
   isHurewiczFibration_iff.2 ⟨hp, fun _ _ ↦
     HasHomotopyLiftingProperty.of_partitionOfUnity ρ hρ
       fun i W _ ↦ (hpU i).hasHomotopyLiftingProperty W⟩
-
-/-- Convenience form of `TauCeti.isHurewiczFibration_of_partitionOfUnity` for a partition of unity
-subordinate to `U` in the closed-support sense (`PartitionOfUnity.IsSubordinate`). -/
-theorem isHurewiczFibration_of_isSubordinate {p : E → B} (hp : Continuous p)
-    {U : ι → Set B} {ρ : PartitionOfUnity ι B} (hρ : ρ.IsSubordinate U)
-    (hpU : ∀ i, IsHurewiczFibration.{w}
-      ((U i).restrictPreimage p)) :
-    IsHurewiczFibration.{w} p :=
-  isHurewiczFibration_of_partitionOfUnity hp ρ
-    (fun i ↦ (subset_tsupport _).trans (hρ i)) hpU
 
 /-- Over a normal paracompact base (including every paracompact Hausdorff base), a continuous map
 that is locally a Hurewicz fibration over an open cover is globally a Hurewicz fibration. -/

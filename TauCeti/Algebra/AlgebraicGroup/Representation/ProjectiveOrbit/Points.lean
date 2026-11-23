@@ -134,4 +134,21 @@ theorem projectiveOrbitMap_kernelPoint_eq_one_iff (m : M) (hm : Module.IsUnimodu
   rw [haction] at h
   simpa [Submodule.map_span, AlgHom.convOne_def] using h
 
+/-- Two rational points have the same projective orbit image exactly when their matrix
+coefficients at `m` are proportional by one nonzero scalar. This is the rational-point form of
+`projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient`. -/
+theorem projectiveOrbitMap_kernelPoint_eq_iff_exists_units_matrixCoefficient
+    (m : M) (hm : Module.IsUnimodular k m) (g h : WithConv (H →ₐ[k] k)) :
+    projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint h.ofConv) ↔
+      ∃ c : kˣ, ∀ φ : Module.Dual k M,
+        h.ofConv (matrixCoefficient (C := H) φ m) =
+          c * g.ofConv (matrixCoefficient (C := H) φ m) := by
+  simp_rw [projectiveOrbitMap_kernelPoint_eq_iff_span_eq,
+    Submodule.span_singleton_eq_span_singleton, apply_matrixCoefficient]
+  refine exists_congr fun c ↦ ⟨fun hc φ ↦ by simp [← hc, Units.smul_def], fun hc ↦ ?_⟩
+  rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff k]
+  intro φ
+  simp [hc φ, Units.smul_def]
+
 end TauCeti.Comodule

@@ -210,10 +210,7 @@ theorem isUnit_cellularIncidence_realization_face (c : RealizationCell K (n + 1)
     intro x hx
     rw [Set.mem_ofPred_eq] at hx ⊢
     rw [hx]
-    exact Finset.ssubset_iff_subset_ne.2 ⟨c.face_val_subset j, fun h ↦ by
-      have hcard := congrArg Finset.card h
-      rw [(c.face j).property, c.property] at hcard
-      omega⟩
+    exact c.face_val_ssubset j
   | succ n =>
     exact isUnit_cellularIncidence_realization_of_subset (R := R) c (c.face j)
       (c.face_val_subset j)

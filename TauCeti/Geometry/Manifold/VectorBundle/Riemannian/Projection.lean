@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Hermitian
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth orthogonal projection onto a nowhere-zero section

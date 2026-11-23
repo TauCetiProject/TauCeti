@@ -109,7 +109,7 @@ private def coverLift {M : GradedModuleCat.{max w uA} 𝒜} (m : J → M)
   classical
   refine ofHom (DirectSum.toModule A J M fun j =>
     (LinearMap.toSpanSingleton A M (m j)).comp (Ideal.span {e j}).subtype)
-    (TauCeti.LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
+    (LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
   refine InternalGrading.toModule_mem_of_mem_directSumPiece _ M.grading.piece _
     (fun j z hz => ?_) (by simpa only [InternalGrading.directSum_piece] using hy)
   simpa using SetLike.GradedSMul.smul_mem
@@ -247,7 +247,7 @@ private theorem coverLift_surjective {M : GradedModuleCat.{max w uA} 𝒜}
     Function.Surjective (coverLift he₀ d m hm).hom := by
   rw [← LinearMap.range_eq_top]
   refine InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜 _
-    (TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range (coverLift he₀ d m hm).isHomogeneous)
+    (LinearMap.IsHomogeneous.isHomogeneous_range (coverLift he₀ d m hm).isHomogeneous)
     b hb fun p => (hgen p).trans (sup_le_sup_right ?_ _)
   intro x hx
   refine (Submodule.span_le (p := (LinearMap.range (coverLift he₀ d m hm).hom).restrictScalars
@@ -300,9 +300,9 @@ private def pieceQuotientMap (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
       map_smul' c x := by
         ext
         -- Multiplication by a degree-zero scalar is homogeneous of degree zero.
-        have hf : TauCeti.LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
+        have hf : LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
             M.grading.piece M.grading.piece 0 :=
-          TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
+          LinearMap.isHomogeneous_def.mpr fun q z hz => by
             simpa [add_comm] using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hz
         have h := hf.map_decompose p x
         rw [add_zero] at h

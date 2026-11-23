@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Products, powers and idempotents of block matrices
@@ -24,6 +26,11 @@ block matrix `!![1 - e, a; b, 1 - f]` is an involution conjugating `e ⊕ 0` to 
 equivalent idempotents, such as those presenting isomorphic projective modules, become conjugate
 after stabilization.
 
+Heights `h` on `X` and `h'` on `X'` combine to the height `TauCeti.sumHeight h h'` on `X ⊕ X'`,
+with `h'` shifted above every value of `h`. When the nonzero entries of square matrices `D` and
+`D'` raise `h` and `h'`, those of the block upper-triangular matrix `fromBlocks D G 0 D'` raise
+`sumHeight h h'`, so its paths of nonzero entries have bounded length.
+
 The four blocks of a product `B * C` of rectangular block matrices are computed directly in terms
 of the blocks of `B` and `C` via `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`,
 `Matrix.toBlocks₂₁_mul`, and `Matrix.toBlocks₂₂_mul`, over any type with
@@ -40,11 +47,17 @@ and empty blocks.
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
-* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`: the direct sum of idempotent matrices is
-  idempotent.
+* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
+  the direct sum of idempotent matrices is idempotent, and that of star projections is a star
+  projection. Conversely, by `Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff` and
+  `Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff`, so are the diagonal blocks of such a
+  direct sum.
 * `Matrix.fromBlocks_one_sub_mul_self_of_mul_eq` and
   `Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq`: Murray–von Neumann
   equivalent idempotents are conjugate after stabilization.
+* `TauCeti.sumHeight_lt_of_fromBlocks`: a block upper-triangular matrix raises the height
+  `TauCeti.sumHeight h h'` along its nonzero entries; `TauCeti.univ_sup_sumHeight_le` bounds
+  that height.
 
 ## References
 
@@ -137,6 +150,35 @@ public theorem IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*
   rw [IsIdempotentElem, Matrix.fromBlocks_multiply, he.eq, hf.eq]
   simp
 
+/-- The block-diagonal matrix `Matrix.fromBlocks p 0 0 q` with star projections as diagonal blocks
+is a star projection. -/
+public theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*} [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α} {q : Matrix n n α}
+    (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) :=
+  ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq.isIdempotentElem,
+    (hp.isSelfAdjoint.isHermitian.fromBlocks Matrix.conjTranspose_zero
+      hq.isSelfAdjoint.isHermitian).isSelfAdjoint⟩
+
+/-- This is the `iff` version of `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
+public theorem Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
+    [Fintype n] [NonUnitalNonAssocSemiring α] {e : Matrix m m α} {f : Matrix n n α} :
+    IsIdempotentElem (Matrix.fromBlocks e 0 0 f) ↔ IsIdempotentElem e ∧ IsIdempotentElem f := by
+  simp only [IsIdempotentElem, Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul,
+    add_zero, zero_add, Matrix.fromBlocks_inj, true_and]
+
+/-- This is the `iff` version of `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
+public theorem Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
+    [Fintype n] [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α}
+    {q : Matrix n n α} :
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) ↔ IsStarProjection p ∧ IsStarProjection q := by
+  simp only [isStarProjection_iff, Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff,
+    ← Matrix.isHermitian_iff_isSelfAdjoint, Matrix.isHermitian_fromBlocks_iff,
+    Matrix.conjTranspose_zero, true_and]
+  exact and_and_and_comm
+
 section MurrayVonNeumann
 
 variable {m n α : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [Ring α]
@@ -170,3 +212,59 @@ public theorem Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_o
     Matrix.one_mul, Matrix.mul_zero, Matrix.zero_mul, hee, hbe, hba, sub_self, add_zero]
 
 end MurrayVonNeumann
+
+namespace TauCeti
+
+section SumHeight
+
+open Finset
+
+variable {X X' A : Type*}
+
+/-- The height on `X ⊕ X'` of two heights on `X` and `X'`, that of `X'` shifted above that of
+`X`. -/
+public def sumHeight [Fintype X] (h : X → ℕ) (h' : X' → ℕ) : X ⊕ X' → ℕ :=
+  Sum.elim h fun y => univ.sup h + 1 + h' y
+
+/-- On `X`, `sumHeight h h'` is `h`. -/
+@[simp]
+public theorem sumHeight_inl [Fintype X] (h : X → ℕ) (h' : X' → ℕ) (x : X) :
+    sumHeight h h' (.inl x) = h x :=
+  (rfl)
+
+/-- On `X'`, `sumHeight h h'` is `h'` shifted above the largest value of `h`. -/
+@[simp]
+public theorem sumHeight_inr [Fintype X] (h : X → ℕ) (h' : X' → ℕ) (y : X') :
+    sumHeight h h' (.inr y) = univ.sup h + 1 + h' y :=
+  (rfl)
+
+/-- The largest value of `sumHeight h h'` is at most the sum of the largest heights plus one. -/
+public theorem univ_sup_sumHeight_le [Fintype X] [Fintype X'] (h : X → ℕ) (h' : X' → ℕ) :
+    univ.sup (sumHeight h h') ≤ univ.sup h + univ.sup h' + 1 :=
+  Finset.sup_le fun a _ => by
+    rcases a with x | y
+    · have := le_sup (f := h) (mem_univ x)
+      rw [sumHeight_inl]
+      omega
+    · have := le_sup (f := h') (mem_univ y)
+      rw [sumHeight_inr]
+      omega
+
+/-- A block upper-triangular matrix `fromBlocks D G 0 D'` increases `sumHeight h h'` along its
+nonzero entries when `D` and `D'` increase `h` and `h'`. -/
+public theorem sumHeight_lt_of_fromBlocks [Fintype X] [Zero A] {D : Matrix X X A}
+    {D' : Matrix X' X' A} (h : X → ℕ) (hD : ∀ x y, D x y ≠ 0 → h x < h y) (h' : X' → ℕ)
+    (hD' : ∀ x y, D' x y ≠ 0 → h' x < h' y) (G : Matrix X X' A) {a b : X ⊕ X'}
+    (hab : Matrix.fromBlocks D G 0 D' a b ≠ 0) :
+    sumHeight h h' a < sumHeight h h' b := by
+  rcases a with x | x <;> rcases b with y | y <;>
+    simp only [sumHeight_inl, sumHeight_inr, Matrix.fromBlocks_apply₁₁,
+      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂] at hab ⊢
+  · exact hD x y hab
+  · have := le_sup (f := h) (mem_univ x); omega
+  · simp at hab
+  · have := hD' x y hab; omega
+
+end SumHeight
+
+end TauCeti

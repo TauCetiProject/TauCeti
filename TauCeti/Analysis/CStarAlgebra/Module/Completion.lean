@@ -22,7 +22,10 @@ dense `ι`, `extAction` extends the `A₀`-action (`cstarModuleOfDense`).
 
 * `UniformSpace.Completion.instCStarModule`, `inner_completionSeparationQuotientₗᵢ`.
 * `TauCeti.IsPosSemidefCStarModuleAlong.extAction`, `extSMul`, `cstarModuleOfDense`,
-  `ContinuousLinearMap.fromCompletion_extAction`, `liftOfInner`, `equivOfInner`.
+  `ContinuousLinearMap.fromCompletion_extAction`, `fromCompletion_extAction_iff`, `liftOfInner`,
+  `equivOfInner`.
+* `TauCeti.IsPosSemidefCStarModuleAlong.topologicalClosure_span_range_inner_completion` and
+  `topologicalClosure_span_range_unop_inner_completion`: completion preserves fullness.
 * `TauCeti.IsPosSemidefCStarModuleAlong.completionRightModuleEquiv`: completing a dense
   `⋆`-subalgebra `s` of `A` as a right `s`-module recovers `A` as a right Hilbert `A`-module.
 
@@ -204,6 +207,24 @@ theorem ext_inner_coe_left_completion (hι : DenseRange ι) {z₁ z₂ : Complet
     (isClosed_eq (continuous_inner_completion_comp hι continuous_id continuous_const)
       (continuous_inner_completion_comp hι continuous_id continuous_const)) h
 
+variable (E) in
+/-- Completion preserves the closed complex linear span of the `A`-valued inner products, so
+`Completion E` is full if and only if the inner products of `E` span a dense subspace of `A`. -/
+theorem topologicalClosure_span_range_inner_completion (hι : DenseRange ι) :
+    (Submodule.span ℂ
+        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
+      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure := by
+  refine le_antisymm
+    (Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_topologicalClosure _))
+    (Submodule.topologicalClosure_mono <| Submodule.span_mono ?_)
+  · rw [Submodule.span_le]; rintro _ ⟨⟨x, y⟩, rfl⟩
+    refine Completion.induction_on₂ x y
+      ((Submodule.isClosed_topologicalClosure _).preimage (continuous_inner_completion hι))
+      fun u v ↦ ?_
+    simp only [inner_coe hι]
+    exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(u, v), rfl⟩)
+  · rintro _ ⟨⟨u, v⟩, rfl⟩; exact ⟨((u : Completion E), (v : Completion E)), inner_coe hι u v⟩
+
 /-! #### Inner-product preservation of `liftOfInner` and `equivOfInner` -/
 
 section LiftOfInnerInner
@@ -328,6 +349,10 @@ theorem norm_extAction_le (hι : DenseRange ι) : ‖extAction E hι‖ ≤ 1 :=
   ext_inner_left_completion hι fun _ ↦ by
     rw [inner_extAction_right hι, inner_extAction_right hι, inner_extAction_right hι, mul_assoc]
 
+theorem extAction_mul_eq_comp (hι : DenseRange ι) (a b : A) :
+    extAction E hι (a * b) = (extAction E hι a).comp (extAction E hι b) :=
+  ContinuousLinearMap.ext (extAction_mul hι a b)
+
 /-- Uniqueness of the extended action on `Completion E` from its values on `(ι a₀, x)`. -/
 theorem eq_extAction_iff (hι : DenseRange ι) (g : A →L[ℂ] Completion E →L[ℂ] Completion E) :
     g = extAction E hι ↔
@@ -379,6 +404,19 @@ theorem _root_.ContinuousLinearMap.fromCompletion_extAction {F : Type*}
   rintro _ ⟨a₀, rfl⟩
   simpa only [P, extAction_iota_apply] using f.fromCompletion_smul (hf a₀) z
 
+/-- `f.fromCompletion` intertwines `extAction E hι` with the `A`-action on `F` if and only if
+`f : E →L[ℂ] F` intertwines the `A₀`-action with `ι`. -/
+theorem _root_.ContinuousLinearMap.fromCompletion_extAction_iff {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [ContinuousSMul A F]
+    (f : E →L[ℂ] F) (hι : DenseRange ι) :
+    (∀ (a : A) (z : Completion E),
+        f.fromCompletion (extAction E hι a z) = a • f.fromCompletion z) ↔
+      ∀ (a₀ : A₀) (x : E), f (a₀ • x) = ι a₀ • f x :=
+  ⟨fun h a₀ x ↦ by
+      simpa only [extAction_iota_coe, ContinuousLinearMap.fromCompletion_apply_coe] using
+        h (ι a₀) x,
+    fun h ↦ f.fromCompletion_extAction hι h⟩
+
 section LiftOfInnerExtAction
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
@@ -387,7 +425,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F
 
 @[simp] theorem liftOfInner_extAction (a : A) (z : Completion E) :
     liftOfInner ι f hf (extAction E hι a z) = a • liftOfInner ι f hf z :=
-  ContinuousLinearMap.fromCompletion_extAction _ hι (map_smul_of_inner_eq ι f hf) a z
+  ContinuousLinearMap.fromCompletion_extAction _ hι (map_smul_of_inner_eq ι hf) a z
 @[simp] theorem equivOfInner_extAction (hdense : DenseRange f) (a : A) (z : Completion E) :
     equivOfInner ι f hf hdense (extAction E hι a z) = a • equivOfInner ι f hf hdense z :=
   liftOfInner_extAction hι f hf a z
@@ -407,6 +445,34 @@ end InnerCompletion
     [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) (z : Completion E) :
     extAction E hι (1 : A) z = z :=
   ext_inner_left_completion hι fun _ ↦ by rw [inner_extAction_right hι, one_mul]
+
+/-- Right-module form of `topologicalClosure_span_range_inner_completion`: completion preserves
+the closed complex linear span of the `A`-valued inner products `⟨x, y⟩_A = unop ⟪x, y⟫_Aᵐᵒᵖ`. -/
+theorem topologicalClosure_span_range_unop_inner_completion {A₀ A : Type*} (E : Type*)
+    [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ι : A₀ →⋆ₙₐ[ℂ] Aᵐᵒᵖ}
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner Aᵐᵒᵖ E]
+    [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) :
+    (Submodule.span ℂ (Set.range fun p : Completion E × Completion E ↦
+        unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure =
+      (Submodule.span ℂ
+        (Set.range fun p : E × E ↦ unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure := by
+  have h := congrArg (fun S : Submodule ℂ Aᵐᵒᵖ ↦
+      (MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) '' (S : Set Aᵐᵒᵖ))
+    (topologicalClosure_span_range_inner_completion E hι)
+  have himg (s : Set Aᵐᵒᵖ) : (MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) ''
+      ((Submodule.span ℂ s).topologicalClosure : Set Aᵐᵒᵖ) =
+        ((Submodule.span ℂ (unop '' s)).topologicalClosure : Set A) := by
+    rw [Submodule.topologicalClosure_coe, Submodule.topologicalClosure_coe,
+      Homeomorph.image_closure]
+    congr 1
+    have hcoe : ((MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) : Aᵐᵒᵖ → A) =
+        ((MulOpposite.opLinearEquiv ℂ (M := A)).symm.toLinearMap : Aᵐᵒᵖ → A) := by ext x; simp
+    have hcoe' : ((MulOpposite.opLinearEquiv ℂ (M := A)).symm.toLinearMap : Aᵐᵒᵖ → A) = unop := by
+      ext x; simp
+    rw [hcoe, ← Submodule.map_coe, Submodule.map_span, hcoe']
+  exact SetLike.coe_injective <| by
+    simpa only [himg, ← Set.range_comp, Function.comp_def] using h
 
 end TauCeti.IsPosSemidefCStarModuleAlong
 
@@ -477,6 +543,15 @@ identifying `Completion (SeparationQuotient E)` with `Completion E` as Hilbert `
     (inner_completionSeparationQuotientₗᵢ
       ((Completion.completionSeparationQuotientₗᵢ ℂ E).symm u)
       ((Completion.completionSeparationQuotientₗᵢ ℂ E).symm v)).symm
+
+variable (E) in
+/-- Completion preserves the closed complex linear span of the `A`-valued inner products. -/
+theorem topologicalClosure_span_range_inner_completion :
+    (Submodule.span ℂ
+        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
+      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure :=
+  IsPosSemidefCStarModuleAlong.topologicalClosure_span_range_inner_completion (ι := .id ℂ A) E
+    denseRange_id
 
 end TauCeti.PosSemidefCStarModule
 
