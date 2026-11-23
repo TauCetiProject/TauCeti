@@ -12,8 +12,8 @@ public import Mathlib.Topology.Separation.Basic
 # Total disconnectedness of discrete sets and of a universe lift
 
 A discrete set is totally disconnected, since a preconnected discrete set has at most one point.
-Conversely a totally disconnected space is `T₁` (`TotallyDisconnectedSpace.t1Space`): the closure
-of a point is preconnected, so it is that point.
+Conversely a totally disconnected space is `T₁` (`TotallyDisconnectedSpace.t1Space`): each point
+is its own connected component, and connected components are closed.
 In a `T₁` space every finite set is discrete (`Set.Finite.isDiscrete`), which is how a finite
 ω-limit set is shown to be a single point. Likewise a continuous map from a preconnected space to a
 discrete space is constant, so it is the constant map at its limit along any nontrivial filter
@@ -35,12 +35,11 @@ theorem IsDiscrete.isTotallyDisconnected {X : Type*} [TopologicalSpace X] {s : S
     (hs : IsDiscrete s) : IsTotallyDisconnected s := fun _t hts ht ↦
   ht.isDiscrete_iff_subsingleton.1 (hs.mono hts)
 
-/-- **A totally disconnected space is `T₁`.** The closure of a point is preconnected, hence a
-subsingleton, so it is that point. -/
+/-- **A totally disconnected space is `T₁`.** Each point is its own connected component
+(`connectedComponent_eq_singleton`), and connected components are closed. -/
 theorem TotallyDisconnectedSpace.t1Space (X : Type*) [TopologicalSpace X]
     [TotallyDisconnectedSpace X] : T1Space X :=
-  ⟨fun x => closure_subset_iff_isClosed.1 fun _ hy =>
-    isPreconnected_singleton.closure.subsingleton hy (subset_closure (Set.mem_singleton x))⟩
+  ⟨fun x => connectedComponent_eq_singleton x ▸ isClosed_connectedComponent⟩
 
 open Filter Topology in
 /-- **A continuous map from a preconnected space to a discrete space is constant at its limit.** If

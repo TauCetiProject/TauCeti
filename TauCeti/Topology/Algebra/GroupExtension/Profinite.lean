@@ -313,8 +313,7 @@ theorem exists_continuous_factorSet [ContinuousMul E] [CompactSpace E]
     let e := (ContinuousMonoidHom.mk S.rightHom hrh).quotientKerEquivOfSurjective
       S.rightHom_surjective
     have he : Topology.IsInducing ⇑e.symm :=
-      (Function.LeftInverse.isEmbedding e.apply_symm_apply e.continuous
-        e.symm.continuous).isInducing
+      Homeomorph.coe_ofClass e.symm ▸ (Homeomorph.ofClass e.symm).isInducing
     exact he.continuousMul e.symm
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,

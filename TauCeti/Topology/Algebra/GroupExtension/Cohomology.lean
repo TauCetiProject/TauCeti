@@ -445,22 +445,23 @@ private theorem exists_equiv_continuous_of_contCohomologyClass_factorSet_eq
   let ρ := FactorSet.rescaleEquiv _ _ x hx'
   let φ' := factorSetToGroupExtensionEquiv σ' hσ' hact'
   let e : S.Equiv S' := (φ.symm.trans ρ).trans φ'
-  let e' : E' → E := fun y => φ (ρ.symm (φ'.symm y))
   have he_apply : ∀ y, e y = φ' (ρ (φ.symm y)) := fun y => by
     simp only [e, GroupExtension.Equiv.trans_apply]
+  have he_symm_apply : ∀ y, e.symm y = φ (ρ.symm (φ'.symm y)) := fun y => by
+    rw [← e.symm_apply_apply (φ (ρ.symm (φ'.symm y))), he_apply,
+      GroupExtension.Equiv.symm_apply_apply, GroupExtension.Equiv.apply_symm_apply,
+      GroupExtension.Equiv.apply_symm_apply]
   have he : Continuous ⇑e :=
     ((continuous_factorSetToGroupExtensionEquiv hinl'.continuous hσ'c hσ' hact').comp
       ((FactorSet.continuous_rescaleEquiv hx' hx).comp
         (continuous_factorSetToGroupExtensionEquiv_symm hinl hrh hσc hσ hact))).congr
       fun y => (he_apply y).symm
-  refine ⟨e, he, fun hrh' => isHomeomorph_iff_exists_inverse.2 ⟨he, e', fun y => ?_, fun y => ?_,
-    (continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
-      ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
-        (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))⟩⟩
-  · simp only [e', he_apply, GroupExtension.Equiv.symm_apply_apply,
-      GroupExtension.Equiv.apply_symm_apply]
-  · simp only [e', he_apply, GroupExtension.Equiv.symm_apply_apply,
-      GroupExtension.Equiv.apply_symm_apply]
+  exact ⟨e, he, fun hrh' => isHomeomorph_iff_exists_inverse.2
+    ⟨he, e.symm, e.symm_apply_apply, e.apply_symm_apply,
+      ((continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
+        ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
+          (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))).congr
+        fun y => (he_symm_apply y).symm⟩⟩
 
 /-- **Equal classes give a homeomorphic equivalence.** Two extensions of `G` by `M`, both inducing
 the ambient action and both with continuous projection, embedded kernel and a continuous
