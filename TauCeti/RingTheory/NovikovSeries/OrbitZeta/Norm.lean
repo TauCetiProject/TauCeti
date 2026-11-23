@@ -93,7 +93,7 @@ private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
     rintro ⟨k, hk⟩
     rw [AddSubgroup.subtype_apply] at hk
     obtain ⟨j, hj⟩ := (QuotientAddGroup.addOrderOf_mk_dvd_iff_nsmul_mem K _ _).2
-      (hk ▸ k.2 : (n + 1) • γ i ∈ K)
+      (hk ▸ k.property : (n + 1) • γ i ∈ K)
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (n := j) (by rintro rfl; simp at hj)
     dsimp only at hj
     exact hp ⟨(i, j), Prod.ext rfl (Nat.sub_eq_of_eq_add hj.symm)⟩

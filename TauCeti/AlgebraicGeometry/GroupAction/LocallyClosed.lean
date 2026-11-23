@@ -5,11 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
-public import TauCeti.AlgebraicGeometry.RationalPoint.Image
-public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-public import TauCeti.Topology.Algebra.MulAction.Orbit
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
+import TauCeti.AlgebraicGeometry.Pullback.Over
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.Topology.Algebra.MulAction.Orbit
+import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Orbits of algebraic group actions are locally closed
@@ -19,32 +26,37 @@ space of `X` by the translation homeomorphisms, and they preserve every geometri
 `TauCeti.SchemeAction.orbit G x`.
 
 When `G` is of finite type and `X` is quasi-compact and locally Noetherian, the geometric orbit
-is constructible, by Chevalley's theorem. Over an algebraically closed field `k`, with `G` and `X`
-of finite type, the rational points of the orbit are exactly the translates `g • x` of `x` by
-the rational points `g` of `G`, and the closed points of the orbit are the corresponding points
-of the underlying space. Hence the rational points of `G` act transitively on the closed points
-of the orbit, and the orbit is locally closed: it is open in its closure, and its boundary is
-closed and of strictly smaller dimension.
+is constructible, by Chevalley's theorem. Over an arbitrary field `k`, when `G` and `X` are
+locally of finite type with quasi-compact underlying spaces and `x` is a `k`-rational point of
+`X`, the geometric orbit `orbit G x` is locally closed (`isLocallyClosed_orbit`): it is open in
+its closure, and its boundary is closed and of strictly smaller dimension.
 
-No smoothness, reducedness, separatedness or connectedness hypothesis is needed, and `X` need
-not be irreducible. The orbit is the full topological image of the orbit morphism, including its
-nonclosed points; it is not replaced by the set of rational points. No subscheme structure on
-the orbit is constructed here.
+No algebraic closedness of `k`, smoothness, reducedness, affineness, separatedness or
+connectedness hypothesis is needed, and `X` need not be irreducible. The orbit is the full
+topological image of the orbit morphism, including its nonclosed points; it is not replaced by
+the set of rational points. No subscheme structure on the orbit is constructed here.
 
-The argument combines `AlgebraicGeometry.Scheme.Hom.exists_comp_eq_iff_mem_range`, which lifts
-rational points along morphisms, with
-`TauCeti.isLocallyClosed_of_isConstructible_of_closedPoints_transitive`, which only needs
-transitivity on closed points.
+Over an algebraically closed field, a closed point of the orbit lifts to a closed point of the
+Jacobson scheme `G` (`Continuous.exists_isClosed_singleton_of_mem_range`), which is a rational
+point of `G`; thus the rational points of `G` act transitively on the closed points of the orbit,
+and local closedness follows from
+`TauCeti.isLocallyClosed_of_isConstructible_of_closedPoints_transitive`. Over a general field `k`,
+base change to `AlgebraicClosure k` pulls the orbit back along the projection
+`X ×_k Spec (AlgebraicClosure k) ⟶ X` (`orbit_pullback`). Because every morphism to `Spec k` is
+universally open and `Spec (AlgebraicClosure k) ⟶ Spec k` is surjective, this projection is an
+open quotient map on underlying topological spaces, so local closedness descends by
+`IsOpenQuotientMap.isLocallyClosed_preimage_iff`.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), Proposition 1.65 and §7.c.
+* J. S. Milne, *Algebraic Groups* (2017), Proposition 1.65(b), pp. 26–27, and §7.c.
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicGeometry
   Topology
+open scoped CategoryTheory.Obj
 
 namespace TauCeti.SchemeAction
 
@@ -72,58 +84,61 @@ variable {k : Type u} [Field k] [IsAlgClosed k] (G : Over (Spec (.of k)))
 section RationalPoints
 
 variable [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
-  [LocallyOfFiniteType X.hom]
 
-/-- Over an algebraically closed field, a rational point of `X` lies in the geometric orbit of
-`x` exactly when it is a translate of `x` by a rational point of `G`. -/
-theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    (a : (𝟙_ (Over (Spec (.of k)))).left) :
-    y.left a ∈ orbit G x ↔ ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
-  have hw : (orbitMap G x).left ≫ X.hom = G.hom := Over.w (orbitMap G x)
-  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
-    rw [hw]
-    infer_instance
-  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-  rw [mem_orbit]
-  refine Iff.trans
-    ((orbitMap G x).left.exists_comp_eq_iff_mem_range X.hom y.left (Over.w y)).symm ?_
-  symm
-  constructor
-  · rintro ⟨g, rfl⟩
-    refine ⟨g.left, ?_⟩
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left] at h
-    exact h
-  · rintro ⟨q, hq⟩
-    have hqG : q ≫ G.hom = (𝟙_ (Over (Spec (.of k)))).hom := by
-      rw [← hw, ← Category.assoc, hq, Over.w y]
-    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G := Over.homMk (U := 𝟙_ _) (V := G) q hqG
-    refine ⟨g, ?_⟩
-    ext1
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left, hq] at h
-    exact h.symm
+/-- Over an algebraically closed field, with `G` locally of finite type, the orbit morphism sends
+every closed point of `G` to a translate of `x` by a rational point of `G`. -/
+theorem exists_orbitMap_left_apply_eq_smul_left_apply (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    {c : G.left} (hc : IsClosed {c}) (a : (𝟙_ (Over (Spec (.of k)))).left) :
+    ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitMap G x).left c = (g • x).left a := by
+  let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
+    Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
+      (pointOfClosedPoint_comp G.hom c _)
+  refine ⟨g, ?_⟩
+  rw [← left_comp_orbitMap_left, Scheme.Hom.comp_apply]
+  exact congrArg _ (pointOfClosedPoint_apply G.hom c hc a).symm
 
-/-- Over an algebraically closed field, the closed points of the geometric orbit of `x` are
-exactly the points underlying its translates by rational points of `G`. -/
+/-- Over an algebraically closed field, with `G` locally of finite type, the closed points of the
+geometric orbit of `x` are exactly the points underlying its translates by rational points of
+`G`. -/
 theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     orbit G x ∩ closedPoints X.left =
       ⋃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.range (g • x).left := by
-  ext p
-  simp only [Set.mem_iUnion, Set.mem_range]
-  constructor
-  · rintro ⟨hp, hpc⟩
-    let y : 𝟙_ (Over (Spec (.of k))) ⟶ X :=
-      Over.homMk (pointOfClosedPoint X.hom p (mem_closedPoints_iff.mp hpc))
-        (pointOfClosedPoint_comp X.hom p _)
-    have hy (a) : y.left a = p := pointOfClosedPoint_apply X.hom p _ a
-    obtain ⟨g, hg⟩ := (left_apply_mem_orbit_iff G x y (IsLocalRing.closedPoint k)).mp
-      ((hy _).symm ▸ hp)
-    exact ⟨g, IsLocalRing.closedPoint k, hg ▸ hy _⟩
-  · rintro ⟨g, a, rfl⟩
-    refine ⟨(left_apply_mem_orbit_iff G x (g • x) a).mpr ⟨g, rfl⟩, ?_⟩
-    obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-    exact ((pointEquivClosedPoint X.hom) ⟨(g • x).left, Over.w (g • x)⟩).property
+  refine Set.Subset.antisymm (fun p ⟨hpo, hpc⟩ ↦ ?_) ?_
+  · -- A closed point of the orbit is the image of a closed point of the Jacobson scheme `G`,
+    -- which is a rational point of `G`.
+    have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
+    obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
+      (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
+    obtain ⟨g, hg⟩ :=
+      exists_orbitMap_left_apply_eq_smul_left_apply G x hc (IsLocalRing.closedPoint k)
+    exact Set.mem_iUnion.mpr ⟨g, _, hg.symm.trans hfc⟩
+  simp only [Set.iUnion_subset_iff]
+  rintro g _ ⟨a, rfl⟩
+  refine ⟨smul_left_apply_mem_orbit G x g a, ?_⟩
+  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
+  exact mem_closedPoints_iff.mpr
+    (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w (g • x)))
+
+/-- Over an algebraically closed field, with `G` locally of finite type, a rational point of `X`
+lies in the geometric orbit of `x` exactly when it is a translate of `x` by a rational point of
+`G`. -/
+theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    (a : (𝟙_ (Over (Spec (.of k)))).left) :
+    y.left a ∈ orbit G x ↔ ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ smul_left_apply_mem_orbit G x g a⟩
+  -- The rational point `y` is a closed point of the orbit, hence a translate `g • x` at the
+  -- underlying point; two sections agreeing at a point of `Spec k` are equal.
+  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
+  have hy : y.left (IsLocalRing.closedPoint k) ∈ orbit G x ∩ closedPoints X.left :=
+    ⟨h, mem_closedPoints_iff.mpr
+      (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w y))⟩
+  rw [orbit_inter_closedPoints] at hy
+  obtain ⟨g, b, hb⟩ := Set.mem_iUnion.mp hy
+  obtain rfl : b = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
+  refine ⟨g, Over.OverMorphism.ext ?_⟩
+  simpa only [Category.id_comp] using
+    (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (Over.w (g • x)) (Over.w y) (𝟙 _)
+      (IsLocalRing.closedPoint k)).mpr hb
 
 end RationalPoints
 
@@ -132,7 +147,8 @@ section Transitivity
 variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
   [LocallyOfFiniteType X.hom]
 
-/-- Over an algebraically closed field, with `G` and `X` locally of finite type, any two closed
+omit [LocallyOfFiniteType X.hom] in
+/-- Over an algebraically closed field, with `G` locally of finite type, any two closed
 points of the geometric orbit of `x` are related by translation by a rational point of `G`. -/
 theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
     (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {p q : X.left}
@@ -171,12 +187,9 @@ theorem exists_eq_of_equivariant_of_range_subset_orbit
 
 end Transitivity
 
-variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]
-  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
-
-/-- Over an algebraically closed field, the geometric orbit of a rational point under a
-finite-type group scheme acting on a finite-type scheme is locally closed. -/
-theorem isLocallyClosed_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+private theorem isLocallyClosed_orbit_of_isAlgClosed [GrpObj G] [ModObj G X]
+    [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
+    [CompactSpace X.left] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     IsLocallyClosed (orbit G x) := by
   have : IsNoetherian X.left := { __ := LocallyOfFiniteType.isLocallyNoetherian X.hom }
   have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
@@ -188,37 +201,55 @@ theorem isLocallyClosed_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
   simpa only [translationMulAction_smul] using
     exists_translation_eq_of_mem_orbit_inter_closedPoints G x hp hq
 
-/-- Over an algebraically closed field, the geometric orbit of a rational point is open in its
-closure. -/
+end AlgClosed
+
+section Field
+
+variable {k : Type u} [Field k] (G : Over (Spec (.of k))) {X : Over (Spec (.of k))}
+  [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+
+/-- Over any field, the geometric orbit of a rational point under a finite-type group scheme
+acting on a finite-type scheme is locally closed. Neither algebraic closedness of the ground
+field nor smoothness, reducedness, affineness or separatedness is required. -/
+theorem isLocallyClosed_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    IsLocallyClosed (orbit G x) := by
+  let f := Spec.algebraMap k (AlgebraicClosure k)
+  let := (Over.pullback f).modObjObj G X
+  rw [← (pullback.fst X.hom f).isOpenQuotientMap.isLocallyClosed_preimage_iff,
+    ← orbit_pullback G f x]
+  exact isLocallyClosed_orbit_of_isAlgClosed ((Over.pullback f).obj G) _
+
+/-- Over any field, the geometric orbit of a rational point is open in its closure. -/
 theorem isOpen_orbitClosure_preimage_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     IsOpen ((Subtype.val : orbitClosure G x → X.left) ⁻¹' orbit G x) := by
   rw [orbitClosure_def]
   exact (isLocallyClosed_orbit G x).isOpen_preimage_val_closure
 
-/-- Over an algebraically closed field, the boundary of the geometric orbit of a rational point
-is closed. -/
+/-- Over any field, the boundary of the geometric orbit of a rational point is closed. -/
 theorem isClosed_orbitBoundary (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     IsClosed (orbitBoundary G x) := by
   rw [orbitBoundary_def, orbitClosure_def]
   exact isOpen_compl_iff.mp (isLocallyClosed_orbit G x).isOpen_coborder
 
-/-- Over an algebraically closed field, the closure of the geometric orbit of a rational point
-has the same dimension as the orbit. -/
+/-- Over any field, the closure of the geometric orbit of a rational point has the same dimension
+as the orbit. -/
 theorem topologicalKrullDim_orbitClosure (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     topologicalKrullDim (orbitClosure G x) = topologicalKrullDim (orbit G x) := by
   rw [orbitClosure_def]
   exact AlgebraicGeometry.topologicalKrullDim_closure_of_isLocallyClosed X.hom
     (isLocallyClosed_orbit G x)
 
-/-- Over an algebraically closed field, the boundary of the geometric orbit of a rational point
-has strictly smaller dimension than the orbit, even when the orbit closure is reducible. -/
+/-- Over any field, the boundary of the geometric orbit of a rational point has strictly smaller
+dimension than the orbit, even when the group is disconnected or the orbit closure is
+reducible. -/
 theorem topologicalKrullDim_orbitBoundary_lt (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     topologicalKrullDim (orbitBoundary G x) < topologicalKrullDim (orbit G x) := by
   rw [orbitBoundary_def, orbitClosure_def]
   exact AlgebraicGeometry.topologicalKrullDim_closure_sdiff_lt_of_isLocallyClosed X.hom
-    (isLocallyClosed_orbit G x) ⟨x.left (IsLocalRing.closedPoint k),
-      (left_apply_mem_orbit_iff G x x _).mpr ⟨1, one_smul _ _⟩⟩
+    (isLocallyClosed_orbit G x)
+    ⟨x.left (IsLocalRing.closedPoint k), left_apply_mem_orbit G x _⟩
 
-end AlgClosed
+end Field
 
 end TauCeti.SchemeAction

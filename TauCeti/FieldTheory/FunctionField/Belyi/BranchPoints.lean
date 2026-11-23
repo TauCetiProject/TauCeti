@@ -80,6 +80,8 @@ namespace TauCeti
 
 namespace Place
 
+section MarkedPlace
+
 variable {k : Type*} [Field k]
 
 /-- The order of a monomial `c X ^ a (X - 1) ^ b` at the marked places `0`, `1` and `∞`. -/
@@ -161,6 +163,8 @@ theorem mapsTo_branchPointAut_zeroOneInfty (ρ : Perm (Fin 3)) :
   rw [← range_markedPlace] at hP ⊢
   obtain ⟨i, rfl⟩ := hP
   exact ⟨ρ i, (map_branchPointAut_markedPlace ρ i).symm⟩
+
+end MarkedPlace
 
 section Reorder
 

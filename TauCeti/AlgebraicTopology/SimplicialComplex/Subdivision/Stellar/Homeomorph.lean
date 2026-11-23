@@ -29,6 +29,19 @@ A precomplex can omit vertices, so its polyhedron is the subset of an ambient we
 whose supports are its faces. The single-move theorem allows any ambient complex containing
 both precomplexes. The sequence theorem uses the full complex as a common ambient space.
 
+Applied to the closed star of a nonempty face, starred at a vertex fresh for that closed star,
+the homeomorphism exhibits the closed star as a simplicial cone on its barycentre
+(`exists_homeomorph_stellarSubdivision_closedStar`). The starred closed star is a cone with
+apex the new vertex (`isCone_stellarSubdivision_closedStar`), and the apex maps to the face
+barycentre (`AbstractSimplicialComplex.stellarSubdivisionLinearMap_single_eq_faceBarycenter`).
+The open apex star corresponds to the points whose carriers contain the face. The cone link,
+identified combinatorially with `closedStar K σ ⊓ deletion K σ` by
+`link_stellarSubdivision_closedStar_singleton`, corresponds to the part of the closed star
+avoiding the face and is fixed pointwise. This boundary is the base of the cone, not the
+ambient topological frontier. The closed star is a neighbourhood of the open apex star relative
+to the polyhedron of the original precomplex (`setOf_support_mem_closedStar_mem_nhds`, in
+`Realization.Star.Basic`), but it need not be one in the ambient weak realization.
+
 The construction uses the bijective barycentric map of `Stellar.Realization`, the closed-simplex
 continuity criterion of `Realization.Subcomplex`, and, on finite parts, the compact subpolyhedron
 and coordinate-embedding theorems of `Realization.Finite`. Intrinsic stellar equivalences are
@@ -37,7 +50,7 @@ transported through the relabeling homeomorphisms from `Realization.Relabel`.
 ## References
 
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer
-  (1972), Chapter 2 (starrings and stellar equivalence).
+  (1972), Chapter 2 (starrings, stellar equivalence and conical neighbourhoods).
 -/
 
 public section
@@ -57,21 +70,21 @@ private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
     (hv : ({v} : Finset ι) ∉ K)
     (hfin : K.faces.Finite) (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
-        {x : Realization A // x.1.support ∈ K},
-      ∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 := by
+    ∃ e : {x : Realization A // x.val.support ∈ stellarSubdivision K σ v} ≃ₜ
+        {x : Realization A // x.val.support ∈ K},
+      ∀ x, (e x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val := by
   classical
-  let S := {x : Realization A | x.1.support ∈ stellarSubdivision K σ v}
-  let T := {x : Realization A | x.1.support ∈ K}
+  let S := {x : Realization A | x.val.support ∈ stellarSubdivision K σ v}
+  let T := {x : Realization A | x.val.support ∈ K}
   have hcompactS : IsCompact S := A.isCompact_setOf_support_mem hS
     (finite_faces_stellarSubdivision hfin)
   have hcompactT : IsCompact T := A.isCompact_setOf_support_mem hK hfin
   let : CompactSpace S := isCompact_iff_compactSpace.mp hcompactS
   have hsource (x : S) :
-      x.1.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ)
+      x.val.val ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ)
         (stellarSubdivision K σ v)).space :=
     Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-      ⟨Realization.nonneg A x.1, Realization.sum_eq_one A x.1, x.2⟩
+      ⟨Realization.nonneg A x.val, Realization.sum_eq_one A x.val, x.property⟩
   -- Convert normalized coordinates in either precomplex into the containing realization.
   have hmem (P : PreAbstractSimplicialComplex ι) (hP : P ≤ A.toPreAbstractSimplicialComplex)
       (y : ι →₀ ℝ) (hy : y ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space) :
@@ -80,10 +93,10 @@ private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
     exact ⟨TauCeti.mem_standardGeometricComplex_space_iff.mpr ⟨h₁, h₂, hP h₃⟩, h₃⟩
   have hb := bijOn_stellarSubdivisionLinearMap hσ hv
   let f : S → T := fun x =>
-    ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.1.1,
+    ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.val.val,
       (hmem K hK _ (hb.mapsTo (hsource x))).1⟩,
       (hmem K hK _ (hb.mapsTo (hsource x))).2⟩
-  have hfval (x : S) : (f x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 :=
+  have hfval (x : S) : (f x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val :=
     rfl
   -- Restrict the existing point-set bijection to these two subpolyhedra.
   have hbij : Function.Bijective f := by
@@ -92,10 +105,10 @@ private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
       apply Subtype.ext
       apply Subtype.ext
       apply hb.injOn (hsource x) (hsource y)
-      simpa only [hfval] using congrArg (fun z : T => z.1.1) hxy
+      simpa only [hfval] using congrArg (fun z : T => z.val.val) hxy
     · intro y
       have hy := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-        ⟨Realization.nonneg A y.1, Realization.sum_eq_one A y.1, y.2⟩
+        ⟨Realization.nonneg A y.val, Realization.sum_eq_one A y.val, y.property⟩
       obtain ⟨x, hx, hxy⟩ := hb.surjOn hy
       obtain ⟨hxA, hxface⟩ := hmem _ hS x hx
       refine ⟨⟨⟨x, hxA⟩, hxface⟩, ?_⟩
@@ -108,8 +121,8 @@ private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
     apply (A.isClosedEmbedding_realization_coe_restrict hcompactT).isEmbedding.continuous_iff.mpr
     apply continuous_pi
     intro i
-    have hcoord (j : ι) : Continuous (fun x : S => x.1.1 j) :=
-      ((continuous_apply j).comp (continuous_realization_coe A)).comp continuous_subtype_val
+    have hcoord (j : ι) : Continuous (fun x : S => x.val.val j) :=
+      ((continuous_apply j).comp (continuous_realization_coe A)).comp continuous_subtypeVal
     simp only [Function.comp_def, hfval, Finset.stellarSubdivisionLinearMap_apply]
     exact (hcoord i).add ((hcoord v).mul continuous_const)
   let e := (Equiv.ofBijective f hbij).toHomeomorphOfContinuousClosed hc hc.isClosedMap
@@ -122,9 +135,9 @@ locally finite. -/
 theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
-        {x : Realization A // x.1.support ∈ K},
-      ∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 := by
+    ∃ e : {x : Realization A // x.val.support ∈ stellarSubdivision K σ v} ≃ₜ
+        {x : Realization A // x.val.support ∈ K},
+      ∀ x, (e x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val := by
   classical
   -- Continuity in each direction is tested on closed simplices. A closed simplex of either
   -- complex lies in the finite part of `K` on its vertices together with `σ`, where the
@@ -135,9 +148,9 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
       stellarSubdivision (K ⊓ simplex W) σ v ≤ stellarSubdivision K σ v :=
     stellarSubdivision_mono (hsub W)
   have hlocal (W : Finset ι) (hW : σ ⊆ W) :
-      ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} ≃ₜ
-          {x : Realization A // x.1.support ∈ K ⊓ simplex W},
-        ∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 :=
+      ∃ e : {x : Realization A // x.val.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} ≃ₜ
+          {x : Realization A // x.val.support ∈ K ⊓ simplex W},
+        ∀ x, (e x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val :=
     exists_homeomorph_stellarSubdivision_of_finite
       (mem_inf.mpr ⟨hσ, mem_simplex.mpr ⟨(K.isRelLowerSet_faces hσ).1, hW⟩⟩)
       (fun h => hv (mem_inf.mp h).1)
@@ -146,49 +159,50 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
   choose e he using hlocal
   -- The global barycentric bijection.
   have hb := bijOn_stellarSubdivisionLinearMap hσ hv
-  have hspace (P : PreAbstractSimplicialComplex ι) (x : {x : Realization A // x.1.support ∈ P}) :
-      x.1.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space :=
+  have hspace (P : PreAbstractSimplicialComplex ι) (x : {x : Realization A // x.val.support ∈ P}) :
+      x.val.val ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space :=
     Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-      ⟨Realization.nonneg A x.1, Realization.sum_eq_one A x.1, x.2⟩
+      ⟨Realization.nonneg A x.val, Realization.sum_eq_one A x.val, x.property⟩
   have hmem (y : ι →₀ ℝ) (hy : y ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space) :
       y ∈ (standardGeometricComplex A).space ∧ y.support ∈ K := by
     obtain ⟨h₁, h₂, h₃⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
     exact ⟨TauCeti.mem_standardGeometricComplex_space_iff.mpr ⟨h₁, h₂, hK h₃⟩, h₃⟩
-  let f : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} →
-      {x : Realization A // x.1.support ∈ K} := fun x =>
-    ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.1.1, (hmem _ (hb.mapsTo (hspace _ x))).1⟩,
+  let f : {x : Realization A // x.val.support ∈ stellarSubdivision K σ v} →
+      {x : Realization A // x.val.support ∈ K} := fun x =>
+    ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.val.val, (hmem _ (hb.mapsTo (hspace _ x))).1⟩,
       (hmem _ (hb.mapsTo (hspace _ x))).2⟩
-  have hfval (x : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v}) :
-      (f x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 := rfl
+  have hfval (x : {x : Realization A // x.val.support ∈ stellarSubdivision K σ v}) :
+      (f x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val := rfl
   have hinj : Function.Injective f := fun x y hxy =>
     Subtype.ext (Subtype.ext (hb.injOn (hspace _ x) (hspace _ y)
-      (by simpa only [hfval] using congrArg (fun z => z.1.1) hxy)))
+      (by simpa only [hfval] using congrArg (fun z => z.val.val) hxy)))
   -- On each finite part, `f` agrees with the finite homeomorphism.
   have hcompat (W : Finset ι) (hW : σ ⊆ W)
-      (x : {x : Realization A // x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v}) :
-      f ⟨x.1, hsubS W x.2⟩ = ⟨(e W hW x).1, (mem_inf.mp (e W hW x).2).1⟩ :=
+      (x : {x : Realization A // x.val.support ∈ stellarSubdivision (K ⊓ simplex W) σ v}) :
+      f ⟨x.val, hsubS W x.property⟩ = ⟨(e W hW x).val, (mem_inf.mp (e W hW x).property).1⟩ :=
     Subtype.ext (Subtype.ext (he W hW x).symm)
   have hsurj : Function.Surjective f := by
     intro y
-    have hW : σ ⊆ y.1.1.support ∪ σ := Finset.subset_union_right
-    let y' : {x : Realization A // x.1.support ∈ K ⊓ simplex (y.1.1.support ∪ σ)} :=
-      ⟨y.1, mem_inf.mpr ⟨y.2, mem_simplex.mpr ⟨(K.isRelLowerSet_faces y.2).1,
+    have hW : σ ⊆ y.val.val.support ∪ σ := Finset.subset_union_right
+    let y' : {x : Realization A // x.val.support ∈ K ⊓ simplex (y.val.val.support ∪ σ)} :=
+      ⟨y.val, mem_inf.mpr ⟨y.property, mem_simplex.mpr ⟨(K.isRelLowerSet_faces y.property).1,
         Finset.subset_union_left⟩⟩⟩
-    refine ⟨⟨((e _ hW).symm y').1, hsubS _ ((e _ hW).symm y').2⟩, ?_⟩
+    refine ⟨⟨((e _ hW).symm y').val, hsubS _ ((e _ hW).symm y').property⟩, ?_⟩
     rw [hcompat _ hW, Homeomorph.apply_symm_apply]
   let F := Equiv.ofBijective f ⟨hinj, hsurj⟩
   -- Each closed simplex of `K` lies in the finite part spanned by its vertices and `σ`.
   have hsimplex (τ W : Finset ι) (hτ : τ ∈ K) (hτW : τ ⊆ W) : τ ∈ K ⊓ simplex W :=
     mem_inf.mpr ⟨hτ, mem_simplex.mpr ⟨(K.isRelLowerSet_faces hτ).1, hτW⟩⟩
   have hincT (W : Finset ι) :
-      Continuous fun y : {x : Realization A // x.1.support ∈ K ⊓ simplex W} =>
-        (⟨y.1, (mem_inf.mp y.2).1⟩ : {x : Realization A // x.1.support ∈ K}) :=
-    continuous_subtype_val.subtype_mk _
+      Continuous fun y : {x : Realization A // x.val.support ∈ K ⊓ simplex W} =>
+        (⟨y.val, (mem_inf.mp y.property).1⟩ : {x : Realization A // x.val.support ∈ K}) :=
+    continuous_subtypeVal.subtype_mk _
   have hincS (W : Finset ι) :
       Continuous fun y : {x : Realization A //
-          x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} =>
-        (⟨y.1, hsubS W y.2⟩ : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v}) :=
-    continuous_subtype_val.subtype_mk _
+          x.val.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} =>
+        (⟨y.val, hsubS W y.property⟩ :
+            {x : Realization A // x.val.support ∈ stellarSubdivision K σ v}) :=
+    continuous_subtypeVal.subtype_mk _
   have hcont : Continuous f := by
     refine (continuous_subtype_iff_faceInclusion hS).mpr fun τ hτ => ?_
     have hW : σ ⊆ τ.erase v ∪ σ := Finset.subset_union_right
@@ -217,18 +231,63 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
     simp only [Function.comp_apply, Homeomorph.apply_symm_apply]
   exact ⟨{ toEquiv := F, continuous_toFun := hcont, continuous_invFun := hcontSymm }, hfval⟩
 
+/-- The starred closed star of a face is identified with the original closed star in the weak
+topology. This starred complex is a simplicial cone with apex the new vertex
+(`isCone_stellarSubdivision_closedStar`), and the cone apex maps by the barycentric stellar map
+to the face barycentre. The open apex star maps exactly to carriers containing the face; the
+cone link maps to the boundary subpolyhedron, and that boundary is fixed pointwise. The
+containing realization may have arbitrary unused vertices. -/
+theorem exists_homeomorph_stellarSubdivision_closedStar (hσ : σ ∈ K)
+    (hv : ({v} : Finset ι) ∉ closedStar K σ)
+    (hK : closedStar K σ ≤ A.toPreAbstractSimplicialComplex)
+    (hS : stellarSubdivision (closedStar K σ) σ v ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.val.support ∈ stellarSubdivision (closedStar K σ) σ v} ≃ₜ
+        {x : Realization A // x.val.support ∈ closedStar K σ},
+      (∀ x, (e x).val.val = Finset.stellarSubdivisionLinearMap σ v x.val.val) ∧
+      (∀ x, 0 < x.val.val v ↔ σ ⊆ (e x).val.val.support) ∧
+      (∀ x, x.val.val.support ∈ link (stellarSubdivision (closedStar K σ) σ v) {v} ↔
+        (e x).val.val.support ∈ deletion K σ) ∧
+      (∀ x, x.val.val.support ∈ link (stellarSubdivision (closedStar K σ) σ v) {v} →
+        (e x).val = x.val) := by
+  have hσstar : σ ∈ closedStar K σ := by simp [hσ]
+  have hcone := isCone_stellarSubdivision_closedStar (v := v) hσ
+  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσstar hv hK hS
+  have hopen (x) : 0 < x.val.val v ↔ σ ⊆ (e x).val.val.support := by
+    rw [he]
+    exact (subset_support_stellarSubdivisionLinearMap_iff
+        (Realization.nonneg A x.val) x.property).symm
+  have hzero (x : {x : Realization A // x.val.support ∈ stellarSubdivision (closedStar K σ) σ v}) :
+      x.val.val v = 0 ↔ (e x).val.val.support ∈ deletion K σ := by
+    rw [mem_deletion]
+    have hface := closedStar_le (e x).property
+    have hnonneg := Realization.nonneg A x.val v
+    rw [← hopen]
+    exact ⟨fun hz => ⟨hface, by linarith⟩, fun h => by linarith [h.2]⟩
+  refine ⟨e, he, hopen, ?_, ?_⟩
+  · intro x
+    rw [mem_link, Finset.disjoint_singleton_right, Finsupp.notMem_support_iff]
+    have hinsert := hcone.insert_mem x.property
+    simpa only [x.property, true_and, Finset.union_singleton, hinsert, and_true] using hzero x
+  · intro x hx
+    have hxv : x.val.val v = 0 := Finsupp.notMem_support_iff.mp
+      (Finset.disjoint_singleton_right.mp (mem_link.mp hx).2.1)
+    apply Subtype.ext
+    rw [he]
+    ext i
+    simp [Finset.stellarSubdivisionLinearMap_apply, hxv]
+
 /-- Stellar equivalent precomplexes have homeomorphic weak polyhedra. The subtypes exclude every
 unused vertex, even though their common ambient complex contains all vertices. -/
 theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L) :
-    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
+    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ K} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ L}) := by
   have hle (P : PreAbstractSimplicialComplex ι) :
       P ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
     fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
       (P.isRelLowerSet_faces.prop_of_mem hτ)
   refine h.induction_on (P := fun A B => Nonempty
-      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B}))
+      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ B}))
     (fun P Q hPQ => ?_) (fun _ => ⟨Homeomorph.refl _⟩)
     (fun _ _ ⟨e⟩ => ⟨e.symm⟩) (fun _ _ _ ⟨e⟩ ⟨e'⟩ => ⟨e.trans e'⟩)
   obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hPQ
@@ -237,8 +296,8 @@ theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L) :
 
 private noncomputable def topRelabelingHomeomorph {κ : Type*} [DecidableEq κ]
     (P : PreAbstractSimplicialComplex ι) (f : ι ↪ κ) :
-    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
-      {y : Realization (⊤ : AbstractSimplicialComplex κ) // y.1.support ∈ P.map f} :=
+    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ P} ≃ₜ
+      {y : Realization (⊤ : AbstractSimplicialComplex κ) // y.val.support ∈ P.map f} :=
   P.relabelingHomeomorph f
     (fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
       (P.isRelLowerSet_faces.prop_of_mem hτ))
@@ -250,11 +309,11 @@ use different vertex labels. The two relabelings in the definition are removed b
 homeomorphisms of `Realization.Relabel`. -/
 theorem StellarEquivalentUpToRelabeling.nonempty_homeomorph
     (h : StellarEquivalentUpToRelabeling K L) :
-    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
+    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ K} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ L}) := by
   refine h.induction_on (P := fun A B => Nonempty
-      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B}))
+      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ B}))
     (fun P Q f g he => ?_) (fun _ => ⟨Homeomorph.refl _⟩)
     (fun _ _ ⟨e⟩ => ⟨e.symm⟩) (fun _ _ _ ⟨e⟩ ⟨e'⟩ => ⟨e.trans e'⟩)
   obtain ⟨e⟩ := he.nonempty_homeomorph

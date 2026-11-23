@@ -271,7 +271,7 @@ private theorem isWeightBounded_of_mem_plus {S : Pair A} {U : Pair C} (z : Pair.
     (t : Fin n → U.plus) :
     IsWeightBounded z.toRingHom (fun _ : Fin n ↦ ({1} : Set A)) (fun i ↦ (t i : C)) :=
   (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).2
+    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).property
 
 /-- **Evaluation of `S.polydisc n` at a tuple `t : Fin n → U.plus`** along a base morphism
 `z : Pair.Hom S U` into a complete Hausdorff Huber pair `U`. -/
@@ -291,7 +291,7 @@ noncomputable def Pair.polydisc.evalHom {S : Pair A} {U : Pair C}
     (fun i c hc ↦ by
       obtain rfl : c = 1 := Set.mem_singleton_iff.mp hc
       rw [map_one, one_mul, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
-      exact (t i).2)
+      exact (t i).property)
 
 @[simp]
 theorem Pair.polydisc.toRingHom_evalHom_weightedC {S : Pair A}
@@ -351,12 +351,12 @@ noncomputable def Pair.polydisc.homEquiv {S : Pair A} {U : Pair C}
     {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z} ≃
       (Fin n → U.plus) where
-  toFun h i := ⟨h.1.toRingHom (Pair.polydiscVar n A i),
-    h.1.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
+  toFun h i := ⟨h.val.toRingHom (Pair.polydiscVar n A i),
+    h.val.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
   invFun t := ⟨Pair.polydisc.evalHom z t,
     Pair.polydisc.evalHom_comp_weightedCompletionHom z t⟩
   left_inv h := Subtype.ext <| Pair.polydisc.hom_ext
-    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.2.symm)
+    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.property.symm)
     fun i ↦ Pair.polydisc.toRingHom_evalHom_polydiscVar z _ i
   right_inv t := funext fun i ↦ Subtype.ext <|
     Pair.polydisc.toRingHom_evalHom_polydiscVar z t i
@@ -366,7 +366,7 @@ theorem Pair.polydisc.homEquiv_apply {S : Pair A} {U : Pair C}
     (z : Pair.Hom S U) (n : ℕ)
     (h : {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z}) (i : Fin n) :
-    (Pair.polydisc.homEquiv z n h i : C) = h.1.toRingHom (Pair.polydiscVar n A i) :=
+    (Pair.polydisc.homEquiv z n h i : C) = h.val.toRingHom (Pair.polydiscVar n A i) :=
   (rfl)
 
 @[simp]
@@ -390,7 +390,8 @@ noncomputable def Pair.polydisc.taylorHom (S : Pair A) {n : ℕ}
         algebraMap A (restrictedMvPowerSeriesCompletion n A) (a i : A),
       add_mem (S.polydiscVar_mem_polydiscPlus n i)
         (algebraMap_completion_weightedRestrictedSubring_apply n A isWeightFamily_one_weight
-          (a i : A) ▸ S.weightedC_mem_weighted_completion_plus isWeightFamily_one_weight (a i).2)⟩
+          (a i : A) ▸ S.weightedC_mem_weighted_completion_plus isWeightFamily_one_weight
+              (a i).property)⟩
 
 @[simp]
 theorem Pair.polydisc.taylorHom_comp_weightedCompletionHom (S : Pair A) {n : ℕ}

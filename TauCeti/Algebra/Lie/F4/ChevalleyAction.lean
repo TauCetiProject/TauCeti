@@ -474,7 +474,7 @@ theorem f4_ad_pow_rootVector_eq_zero_of_no_endpoint (α β : Fin 48) (n : ℕ)
 
 /-- A missing second root-string endpoint makes the second adjoint divided power vanish. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
-    (α β : Fin 48) (hopp : β ≠ f4OppositeRootIndex α)
+    (α β : Fin 48)
     (hno : ∀ γ : Fin 48, f4SimplyConnectedRootDatum.root γ ≠
       f4SimplyConnectedRootDatum.root β +
         (2 : ℤ) • f4SimplyConnectedRootDatum.root α) :
@@ -482,6 +482,12 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
+  have hopp : β ≠ f4OppositeRootIndex α := by
+    rintro rfl
+    refine hno α ?_
+    rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
+      f4SimplyConnectedRootDatum.reflection_apply_self]
+    module
   exact (Associative.dividedPower_apply_eq_zero_iff _ 2 _).2
     (f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 2 hopp hno)
 
@@ -513,6 +519,25 @@ theorem f4_dividedPower_two_ad_rootVector_opposite (α : Fin 48) :
   norm_num
   rfl
 
+/-- Away from the opposite root, the second divided adjoint power of a root vector annihilates
+every root vector that is not longer: an F₄ root string reaching two steps past its start begins
+at a long root and steps by a short one. -/
+theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_length_le (α β : Fin 48)
+    (hlen : f4Length β ≤ f4Length α) (hopp : β ≠ f4OppositeRootIndex α) :
+    Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot α))) •
+        f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
+  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β
+  intro γ hγ
+  have hneg : f4SimplyConnectedRootDatum.root β ≠
+      -f4SimplyConnectedRootDatum.root α := by
+    intro h
+    exact hopp (by simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
+      f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
+  obtain ⟨hα, hβ⟩ := f4Length_eq_one_and_eq_two_of_root_eq_add_two_zsmul α β γ hneg hγ
+  omega
+
 /-- Away from the opposite-root string, the second divided adjoint power annihilates every
 short-root vector. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
@@ -520,41 +545,20 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
     Associative.dividedPower 2
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
-        f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
-  intro δ hpinned
-  rcases f4Length_eq_one_or_eq_two α with hα | hα
-  · have hneg : f4SimplyConnectedRootDatum.root β ≠
-        -f4SimplyConnectedRootDatum.root α := by
-      intro h
-      exact hopp (by simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
-        f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
-    exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β δ 2
-      (hα.trans hβ.symm) hneg
-      (by omega) hpinned).elim
-  · have hn :=
-      f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
-        α β δ 2 hα hβ (by omega) hpinned
-    omega
+        f4ChevalleyRootVector (f4KillingRoot β) = 0 :=
+  f4_dividedPower_two_ad_rootVector_eq_zero_of_length_le α β
+    (by have := f4Length_pos α; omega) hopp
 
-/-- Away from the opposite string, the second divided adjoint power annihilates a long root
-vector when both roots have long length. -/
+/-- Away from the opposite root, the second divided adjoint power of a long root vector
+annihilates every root vector, of either length. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
-    (α β : Fin 48) (hα : f4Length α = 2) (hβ : f4Length β = 2)
-    (hopp : β ≠ f4OppositeRootIndex α) :
+    (α β : Fin 48) (hα : f4Length α = 2) (hopp : β ≠ f4OppositeRootIndex α) :
     Associative.dividedPower 2
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
-        f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
-  intro γ hγ
-  have hneg : f4SimplyConnectedRootDatum.root β ≠
-      -f4SimplyConnectedRootDatum.root α := by
-    intro h
-    exact hopp (by simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
-      f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
-  exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β γ 2
-    (hα.trans hβ.symm) hneg (by omega) hγ).elim
+        f4ChevalleyRootVector (f4KillingRoot β) = 0 :=
+  f4_dividedPower_two_ad_rootVector_eq_zero_of_length_le α β
+    (by rcases f4Length_eq_one_or_eq_two β with h | h <;> omega) hopp
 
 /-- The second divided adjoint power annihilates every Cartan element. -/
 theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
@@ -592,21 +596,9 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       simpa [smul_smul] using h
     rw [hthree, pow_succ', mul_apply_eq_comp, hpow, map_smul, ad_apply,
       lie_self, smul_zero]
-  · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
-    · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
-      simpa only [Nat.reduceAdd] using
-        (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
-          (ad ℚ (F4.lieAlgebra valid_F4)
-            (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
-    · rcases f4Length_eq_one_or_eq_two α with _ | hα
-      · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
-        intro δ hpinned
-        exact (f4_not_root_eq_add_three_zsmul α β δ hpinned).elim
-      · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hβ hopp
-        simpa only [Nat.reduceAdd] using
-        (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
-          (ad ℚ (F4.lieAlgebra valid_F4)
-            (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
+  · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
+    intro δ hpinned
+    exact (f4_not_root_eq_add_three_zsmul α β δ hpinned).elim
 
 /-- The third adjoint power annihilates every Cartan element. -/
 theorem f4_ad_pow_three_cartan_eq_zero (α : Fin 48)

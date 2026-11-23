@@ -8,8 +8,8 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
-import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.GroupTheory.Perm.PermCongr
+import TauCeti.GroupTheory.Perm.Recognition
 
 /-!
 # Galois orbits on the roots of a polynomial
@@ -38,6 +38,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
 
 * `Polynomial.Gal.galActionHom_eq_permCongr`: the root permutations in two splitting extensions
   correspond under `Polynomial.Gal.rootsEquivRoots`.
+* `Polynomial.Gal.map_range_galActionHom`: the Galois image in one splitting extension is the
+  transport of the Galois image in another.
 * `TauCeti.mem_orbit_iff_minpoly_eq`: two roots of `p` are in the same Galois orbit exactly when
   their minimal polynomials agree.
 * `TauCeti.image_val_orbit_eq_rootSet_minpoly`: read inside `E`, the orbit of a root is the root
@@ -52,6 +54,11 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   `E`, if the automorphism group `Gal(E/F)` is transitive on the roots, then so is `p.Gal`.
 * `TauCeti.isPretransitive_algEquiv_rootSet_iff_gal`: in a normal splitting extension `E`, the
   automorphism group `Gal(E/F)` is transitive on the roots exactly when `p.Gal` is.
+* `TauCeti.exists_algEquiv_apply_rootSet_numbering_eq_numbering_finRotate`: in a normal splitting
+  extension, the roots of a separable irreducible polynomial of prime degree `n` can be numbered so
+  that some automorphism acts on them as the rotation `finRotate n`.
+* `TauCeti.irreducible_of_map_eq_prod_X_sub_C_of_cycle`: a polynomial whose linear factors over an
+  extension are those of distinct elements cycled by an automorphism is irreducible.
 * `TauCeti.irreducible_map_iff_isPretransitive_fixingSubgroup`: in a normal splitting extension
   `E`, a separable `p` stays irreducible over an intermediate field `K` exactly when the
   automorphisms fixing `K` act transitively on the roots.
@@ -129,6 +136,19 @@ theorem _root_.Polynomial.Gal.galActionHom_eq_permCongr (E' : Type w) [Field E']
   simp only [Gal.galActionHom, MulAction.toPermHom_apply, MulAction.toPerm_apply,
     Equiv.permCongr_apply, ← Gal.smul_rootsEquivRoots, Equiv.apply_symm_apply]
 
+variable (p) in
+/-- Transporting the Galois image in one splitting extension along
+`Polynomial.Gal.rootsEquivRoots` gives the Galois image in the other. -/
+theorem _root_.Polynomial.Gal.map_range_galActionHom (E' : Type w) [Field E'] [Algebra F E']
+    [Fact ((p.map (algebraMap F E')).Splits)] :
+    (Gal.galActionHom p E).range.map (Gal.rootsEquivRoots p E E').permCongrHom.toMonoidHom =
+      (Gal.galActionHom p E').range := by
+  simp only [MonoidHom.map_range]
+  congr 1
+  ext g x
+  rw [MonoidHom.comp_apply, Gal.galActionHom_eq_permCongr p E E' g]
+  simp only [MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe]
+
 /-- Two roots of `p` lie in the same Galois orbit exactly when their minimal polynomials over the
 base field agree. -/
 @[simp]
@@ -162,7 +182,7 @@ private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Al
       x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
     (x : p.rootSet L) :
     MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
-  have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+  have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
   ext y
   rw [Set.mem_preimage, (minpoly.monic hint).mem_rootSet, horbit y x, eq_comm,
     minpoly.eq_iff_aeval_minpoly_eq_zero hint]
@@ -174,11 +194,11 @@ private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [A
       x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
     (x : p.rootSet L) :
     Subtype.val '' MulAction.orbit p.Gal x = (minpoly F (x : L)).rootSet L := by
-  have hdvd : minpoly F (x : L) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hdvd : minpoly F (x : L) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   refine Set.Subset.antisymm ?_ fun z hz => ?_
   · rintro _ ⟨y, hy, rfl⟩
     exact (orbit_eq_preimage_rootSet_minpoly_aux horbit x).le hy
-  · have hzp : z ∈ p.rootSet L := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.2,
+  · have hzp : z ∈ p.rootSet L := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.property,
       aeval_eq_zero_of_dvd_aeval_eq_zero hdvd (aeval_eq_zero_of_mem_rootSet hz)⟩
     exact ⟨⟨z, hzp⟩, (orbit_eq_preimage_rootSet_minpoly_aux horbit x).ge hz, rfl⟩
 
@@ -199,10 +219,10 @@ degree of that minimal polynomial. -/
 theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
     (hsep : (minpoly F (x : E)).Separable) :
     Nat.card (MulAction.orbit p.Gal x) = (minpoly F (x : E)).natDegree := by
-  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   have hsplits : ((minpoly F (x : E)).map (algebraMap F E)).Splits :=
     (Fact.out (p := ((p.map (algebraMap F E)).Splits))).of_dvd
-      (by simpa using ne_zero_of_mem_rootSet x.2) (Polynomial.map_dvd _ hdvd)
+      (by simpa using ne_zero_of_mem_rootSet x.property) (Polynomial.map_dvd _ hdvd)
   rw [Nat.card_congr (Equiv.Set.image _ _ Subtype.val_injective),
     image_val_orbit_eq_rootSet_minpoly, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplits]
@@ -222,9 +242,9 @@ theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDe
   refine ⟨fun h => ?_, fun h => Gal.galAction_isPretransitive p E h⟩
   have hcard : Fintype.card (p.rootSet E) = p.natDegree := card_rootSet_eq_natDegree hsep Fact.out
   obtain ⟨x⟩ : Nonempty (p.rootSet E) := Fintype.card_pos_iff.mp (by omega)
-  have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.2
-  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
-  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.property
+  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
+  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   have hdegle : p.natDegree ≤ (minpoly F (x : E)).natDegree := by
     rw [← natCard_orbit_eq_natDegree_minpoly E x (hsep.of_dvd hdvd), MulAction.orbit_eq_univ]
     simp [Nat.card_eq_fintype_card, hcard]
@@ -270,6 +290,64 @@ theorem isPretransitive_algEquiv_rootSet_iff_gal [Normal F E] :
   obtain ⟨g, rfl⟩ := h.exists_smul_eq x y
   obtain ⟨σ, rfl⟩ := Gal.restrict_surjective p E g
   exact ⟨σ, Subtype.ext <| by simp⟩
+
+/-- **A Galois automorphism rotating the roots of a prime-degree polynomial.** Let `E` be a normal
+extension of `F` in which a separable irreducible polynomial `p` of prime degree `n` splits. Then
+the roots of `p` in `E` can be numbered by `Fin n` so that some automorphism of `E` over `F` acts on
+them as the rotation `finRotate n`, that is `a ↦ a + 1`: the transitive Galois image contains a
+full cycle by Cauchy's theorem, and a full cycle is conjugate to the rotation. -/
+theorem exists_algEquiv_apply_rootSet_numbering_eq_numbering_finRotate [Normal F E]
+    (hsep : p.Separable) (hirr : Irreducible p) {n : ℕ} (hdeg : p.natDegree = n) (hn : n.Prime) :
+    ∃ (e : p.rootSet E ≃ Fin n) (g : E ≃ₐ[F] E), ∀ i, g (e.symm i) = e.symm (finRotate n i) := by
+  classical
+  have hcard : Fintype.card (p.rootSet E) = n := hdeg ▸ card_rootSet_eq_natDegree hsep Fact.out
+  -- A transitive group of prime degree contains a full cycle `c`, which lifts to `Gal(E/F)`.
+  obtain ⟨c, hc, hcyc, hsupp⟩ := exists_isCycle_mem_of_isPretransitive_of_prime_card
+    (isPretransitive_range_galActionHom E hirr) (hcard ▸ hn)
+  obtain ⟨σ, rfl⟩ := MonoidHom.mem_range.mp hc
+  obtain ⟨g, rfl⟩ := Gal.restrict_surjective p E σ
+  -- Read through any numbering, `c` has cycle type `{n}`, so it is conjugate to the rotation.
+  obtain ⟨e₀⟩ : Nonempty (p.rootSet E ≃ Fin n) := ⟨Fintype.equivFinOfCardEq hcard⟩
+  obtain ⟨τ, hτ⟩ := isConj_iff.mp <| (Equiv.Perm.isConj_iff_cycleType_eq
+      (σ := e₀.permCongr (Gal.galActionHom p E (Gal.restrict p E g))) (τ := finRotate n)).mpr <| by
+    rw [Equiv.Perm.cycleType_permCongr, hcyc.cycleType, hsupp, Finset.card_univ, hcard,
+      cycleType_finRotate_of_le hn.two_le]
+  refine ⟨e₀.trans τ, g, fun i => ?_⟩
+  rw [← hτ]
+  simp [Equiv.permCongr_apply, Equiv.Perm.inv_def, Gal.galActionHom_restrict]
+
+variable {E} in
+open Fin.NatCast in
+/-- **Irreducibility from a cycle of roots.** Let `q` be a polynomial over `F` whose image over an
+extension `E` is the product of the linear factors `X - C (u k)` of an injective family `u` indexed
+by `Fin (n + 1)`, and let an automorphism `g` of `E` over `F` cycle that family,
+`g (u k) = u (k + 1)`. Then `q` is irreducible: its roots are distinct, and the powers of `g` act
+transitively on them. -/
+theorem irreducible_of_map_eq_prod_X_sub_C_of_cycle {q : F[X]} {n : ℕ} {u : Fin (n + 1) → E}
+    (g : E ≃ₐ[F] E) (hinj : Function.Injective u) (hu : ∀ k, g (u k) = u (k + 1))
+    (hq : q.map (algebraMap F E) = ∏ k, (X - C (u k))) : Irreducible q := by
+  have : Fact ((q.map (algebraMap F E)).Splits) := ⟨hq ▸ Splits.prod fun k _ => Splits.X_sub_C _⟩
+  have hsep : q.Separable := (separable_map _).1 (hq ▸ separable_prod_X_sub_C_iff.2 hinj)
+  have hdeg : 0 < q.natDegree := by
+    rw [← natDegree_map (algebraMap F E), hq,
+      natDegree_prod_of_monic _ _ fun _ _ => monic_X_sub_C _]
+    simp
+  -- Every root is some `u k`, and `g ^ m` moves `u k` to `u (k + m)`.
+  have hroot : ∀ y ∈ q.rootSet E, ∃ k, u k = y := fun y hy => by
+    have hy := aeval_eq_zero_of_mem_rootSet hy
+    rw [aeval_def, eval₂_eq_eval_map, hq, eval_prod, Finset.prod_eq_zero_iff] at hy
+    obtain ⟨k, -, hk⟩ := hy
+    exact ⟨k, (sub_eq_zero.1 (by simpa using hk)).symm⟩
+  have hpow : ∀ (m : ℕ) k, (g ^ m) (u k) = u (k + m) := fun m => by
+    induction m with
+    | zero => simp
+    | succ m ih => intro k; rw [pow_succ', AlgEquiv.mul_apply, ih, hu, Nat.cast_succ, add_assoc]
+  refine (isPretransitive_iff_irreducible E hsep hdeg).1 <|
+    isPretransitive_gal_rootSet_of_isPretransitive_algEquiv E ⟨fun y z => ?_⟩
+  obtain ⟨i, hi⟩ := hroot y y.property
+  obtain ⟨j, hj⟩ := hroot z z.property
+  refine ⟨g ^ (j - i).val, Subtype.ext ?_⟩
+  simp [← hi, ← hj, hpow]
 
 /-- **Irreducibility over an intermediate field.** Let `E` be a normal extension of `F` in which a
 separable polynomial `p` of positive degree splits, and let `K` be an intermediate field. Then `p`
@@ -390,7 +468,7 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow {q : F[X]}
   have hroot (x : p.rootSet p.SplittingField) : aeval (x : p.SplittingField) q = 0 :=
     eq_zero_of_pow_eq_zero (n := n) <| by
       rw [← map_pow]
-      exact aeval_eq_zero_of_dvd_aeval_eq_zero hpq (aeval_eq_zero_of_mem_rootSet x.2)
+      exact aeval_eq_zero_of_dvd_aeval_eq_zero hpq (aeval_eq_zero_of_mem_rootSet x.property)
   refine ⟨fun x y => ?_⟩
   have hx := minpoly.eq_of_irreducible hq (hroot x)
   have hy := minpoly.eq_of_irreducible hq (hroot y)
@@ -484,9 +562,9 @@ noncomputable def orbitQuotientEquivFactors (hp : p ≠ 0) :
     (Quotient.lift
       (fun x : p.rootSet E =>
         (⟨minpoly F (x : E), by
-          have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+          have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
           exact ⟨minpoly.irreducible hint, minpoly.monic hint,
-            minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)⟩⟩ : p.Factors))
+            minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)⟩⟩ : p.Factors))
       fun _ _ hxy => Subtype.ext ((mem_orbit_iff_minpoly_eq E).mp hxy))
     ⟨by
       refine fun a b => Quotient.inductionOn₂ a b fun x y hxy => ?_

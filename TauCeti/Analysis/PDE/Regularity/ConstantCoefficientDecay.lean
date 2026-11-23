@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Average
 
@@ -91,8 +92,10 @@ classically, whose gradient is the weak gradient almost everywhere
 * `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero`:
   decay of the `L²` mean oscillation of the weak gradient of a weak solution in `H¹(Ω)`, with
   exponent `n + 2`.
-* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`:
-  the comparison with the frozen problem for `-div(A ∇u) = -div G` with `G ∈ L²`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`
+  and `TauCeti.PDE.setIntegral_ball_norm_gradient_sq_le_add_of_forall_energyFormH1_eq`: the
+  comparison with the frozen problem for `-div(A ∇u) = -div G` with `G ∈ L²`, for the mean
+  oscillation and for the `L²` mass of the gradient.
 * `TauCeti.PDE.setIntegral_norm_gradient_sq_le_add_of_frozen` and
   `TauCeti.PDE.setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen`: decay of the `L²`
   mass and of the `L²` mean oscillation of the weak gradient of any `u ∈ H¹(Ω)`, up to its
@@ -123,6 +126,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 variable [CompleteSpace F] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {lam Lam : ℝ}
   {u : EuclideanSpace ℝ ι → F} {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ}
 
+omit [CompleteSpace F] in
 /-- **Decay of the `L²` mass for constant coefficients.** Let `A` be a square matrix with
 `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u` be a `C²` solution of
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on the ball `ball x₀ R ⊆ ℝⁿ`, with `‖u‖²` integrable there. Then for every
@@ -141,9 +145,15 @@ theorem setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 
     ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖u x‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
-  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
-    (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu) hint hρ hρR
+  -- `u ∘ e` is harmonic for a linear change of variables `e`, and so is its image `L ∘ u ∘ e` in
+  -- the completion `F̂`, where the mean-value property is available; `L` preserves norms.
+  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (u := L ∘ u) e hae hbe
+    ((harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu).comp_CLM L)
+    (by simpa only [Function.comp_apply, hL] using hint) hρ hρR
+  simp only [Function.comp_apply, hL] at h
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
 
 /-- **Decay of the `L²` mean oscillation for constant coefficients.** Let `A` be a square matrix
@@ -170,7 +180,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_
       2 ^ (3 * Fintype.card ι + 10) * (Fintype.card ι + 1) ^ 2 *
         √(Lam / lam) ^ (Fintype.card ι + 2) * (ρ / R) ^ (Fintype.card ι + 2) *
           ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
   have h := setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu) hint hρ hρR
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
@@ -195,7 +205,7 @@ theorem setIntegral_ball_norm_gradient_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (
     ∫ x in ball x₀ ρ, ‖∇ g x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖∇ g x‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hg hLg) hint hρ
     hρR
@@ -223,7 +233,7 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_sum_smul_fderiv_f
       2 ^ (3 * Fintype.card ι + 10) * (Fintype.card ι + 1) ^ 2 *
         √(Lam / lam) ^ (Fintype.card ι + 2) * (ρ / R) ^ (Fintype.card ι + 2) *
           ∫ x in ball x₀ R, ‖∇ g x - c‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have h := setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hg hLg) hint hρ
     hρR
@@ -550,6 +560,43 @@ theorem setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen
     (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq measure_ball_lt_top.ne
       (hfm.integrableOn_of_subset one_le_two hρs measure_ball_lt_top.ne)
       (hfm.integrableOn_norm_sub_sq_of_subset hρs measure_ball_lt_top.ne _)) hdec
+
+/-- **Comparison with the frozen problem for constant coefficients, `L²` mass.** Let `A` be a
+constant coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)`
+solve `-div(A ∇u) = -div G` weakly on an open set `Ω ⊆ ℝ^{n+1}`, that is
+`∫_Ω ⟨A ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩` for every test function `φ`. Let `ball x₀ r ⊆ Ω` and let `c` be a
+constant vector with `G - c` square integrable on `ball x₀ r`. Then for `0 < ρ ≤ r`
+
+`∫_{B_ρ} ‖∇u‖² ≤ 4 D (ρ / r)^(n + 1) ∫_{B_r} ‖∇u‖² + ((4 D + 2) / λ²) ∫_{B_r} ‖G - c‖²`,
+
+with `D = 2^(n + 1) (Λ / λ)^((n + 1) / 2)`. This is the companion of
+`TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`
+for the `L²` mass of the gradient in place of its mean oscillation. -/
+theorem setIntegral_ball_norm_gradient_sq_le_add_of_forall_energyFormH1_eq
+    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    {u : W1p volume Omega 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) {c : EuclideanSpace ℝ (Fin (n + 1))}
+    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (ball x₀ r))) (hρ : 0 < ρ)
+    (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ, ‖W1p.gradient u x‖ ^ 2 ≤
+      4 * (2 ^ (n + 1) * √(Lam / lam) ^ (n + 1)) * (ρ / r) ^ (n + 1) *
+          (∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2) +
+        (4 * (2 ^ (n + 1) * √(Lam / lam) ^ (n + 1)) + 2) / lam ^ 2 *
+          ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+  have hx₀ : x₀ ∈ ball x₀ r := mem_ball_self (hρ.trans_le hρr)
+  have hAu : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
+    fun ξ => (le_abs_self _).trans
+      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hA.upper_bound hx₀) ξ)
+  obtain ⟨w, hw0, hE⟩ :=
+    exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le hA hu hball hGc
+  refine (setIntegral_norm_gradient_sq_le_add_of_frozen hA.pos (hA.lower_bound hx₀) hAu hw0 hball
+    hρ hρr).trans (add_le_add le_rfl ?_)
+  rw [div_mul_eq_mul_div, mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left hE (by positivity)
 
 end Comparison
 

@@ -117,7 +117,7 @@ def cayleyWord {v w : (cayley α).V} (p : (cayley α).Path v w) : List (α × Bo
   simp [cayleyWord]
 
 @[simp] theorem cayleyWord_cons {a b c : (cayley α).V} (p : (cayley α).Path a b)
-    (e : Quiver.Hom b c) : cayleyWord (p.cons e) = cayleyWord p ++ [(cayleyDartEquiv e.1).2] := by
+    (e : Quiver.Hom b c) : cayleyWord (p.cons e) = cayleyWord p ++ [(cayleyDartEquiv e.val).2] := by
   simp [cayleyWord]
 
 @[simp] theorem cayleyWord_comp {a b c : (cayley α).V} (p : (cayley α).Path a b)
@@ -149,7 +149,7 @@ theorem cayleyVertexEquiv_mul_mk_cayleyWord {v w : (cayley α).V} (p : (cayley �
     cases p with
     | nil => exact iff_of_true (by simp) (Path.isReduced_toPath _ e)
     | cons p f =>
-      rw [Path.isReduced_cons_cons, ← ih, cayley_ne_rev_iff (e.2.1.trans f.2.2.symm),
+      rw [Path.isReduced_cons_cons, ← ih, cayley_ne_rev_iff (e.property.1.trans f.property.2.symm),
         cayleyWord_cons (p.cons f) e, cayleyWord_cons p f, FreeGroup.IsReduced,
         List.isChain_append, ← FreeGroup.IsReduced]
       simp
@@ -219,11 +219,20 @@ def cayleyMulLeft : FreeGroup α →* (cayley α).Aut where
   -- The coordinates are identity maps, and the identity automorphism and a product of
   -- automorphisms are the identity and the composite of the underlying equivalences. So the
   -- compatibility with reversal and both laws reduce to the monoid laws of the free group.
-  map_one' := Aut.ext (fun v => cayleyVertexEquiv.injective (one_mul (cayleyVertexEquiv v)))
-    fun e => cayleyDartEquiv.injective (Prod.ext (one_mul (cayleyDartEquiv e).1) rfl)
-  map_mul' x y := Aut.ext
-    (fun v => cayleyVertexEquiv.injective (mul_assoc x y (cayleyVertexEquiv v)))
-    fun e => cayleyDartEquiv.injective (Prod.ext (mul_assoc x y (cayleyDartEquiv e).1) rfl)
+  map_one' := Iso.ext
+    (fun v => by
+      rw [Aut.one_equivV]
+      exact cayleyVertexEquiv.injective (one_mul (cayleyVertexEquiv v)))
+    fun e => by
+      rw [Aut.one_equivE]
+      exact cayleyDartEquiv.injective (Prod.ext (one_mul (cayleyDartEquiv e).1) rfl)
+  map_mul' x y := Iso.ext
+    (fun v => by
+      rw [Aut.mul_equivV]
+      exact cayleyVertexEquiv.injective (mul_assoc x y (cayleyVertexEquiv v)))
+    fun e => by
+      rw [Aut.mul_equivE]
+      exact cayleyDartEquiv.injective (Prod.ext (mul_assoc x y (cayleyDartEquiv e).1) rfl)
 
 /-- Left multiplication acts on the vertices of the Cayley graph. -/
 @[simp] theorem cayleyVertexEquiv_cayleyMulLeft_smul (g : FreeGroup α) (v : (cayley α).V) :

@@ -1,26 +1,24 @@
 name: PR status
 
-# Keeps every PR's status label and its Zulip post current, reconciling in batches.
+# Keeps every PR's status label current, reconciling in batches.
 #
-# This used to be three per-event workflows (pr-labels.yml's per-event jobs, zulip-pr.yml and
-# zulip-pr-status.yml): one GitHub-hosted job for every label, comment, push and build event on every
-# PR, over a thousand an hour, each spending most of its short life on setup. Those jobs competed with
-# PR builds for the organisation's twenty GitHub-hosted slots.
-#
-# Now the events only wake this workflow. Its concurrency group is global, and GitHub admits one run
+# PR events wake this workflow. Its concurrency group is global, and GitHub admits one run
 # at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
 # Each fresh scan reconciles every PR touched since its saved watermark
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
 # run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
-# job's `environment`) and then the run ahead of it, typically one to three minutes in all.
+# job's `environment`) and then the run ahead of it, then reserved reconciliation capacity. Bounded batches retain unfinished work.
 # Failed runs retain unfinished work and quota deadlines in a verified artifact;
 # the next run resumes without replaying its successful prefix.
-# pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
+# pr-labels.yml keeps the hourly backstop sweep of labels and the manual re-sync.
+# This job uses isolated PR-status guests restricted to these trusted main workflows.
+# Candidate build guests cannot receive this repository App key.
 
 on:
   # Retry retained work even after the final PR event of a quiet period.
   schedule:
     - cron: "7 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
   pull_request_target:
     types: [opened, reopened, synchronize, closed, edited, converted_to_draft, ready_for_review, labeled, unlabeled]
@@ -39,11 +37,20 @@ permissions:
 jobs:
   reconcile:
     # Meaningful PR events plus periodic/manual recovery; other events skip.
+    # Lifecycle label writes are skipped: labels.py writes them from this batch (the list is its
+    # STATUS_LABELS), and they are outputs rather than inputs, so waking on them only replaced the
+    # pending run and painted a cancelled check on the PR head. Labels that are inputs
+    # (self-tested, hold, keep, roadmap/*, ...) still wake the batch.
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
-        ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
+        (((github.event_name == 'schedule'
+             && (vars.PR_STATUS_SHARED_EVIDENCE == 'true' || github.event.schedule == '7 * * * *'))
+            || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
         || (github.event_name == 'pull_request_target'
-          && (github.event.action != 'edited' || github.event.changes.base != null))
+          && (github.event.action != 'edited' || github.event.changes.base != null)
+          && !((github.event.action == 'labeled' || github.event.action == 'unlabeled')
+               && contains(fromJSON('["awaiting-CI","awaiting-review","review-in-progress","ci-failed","awaiting-author","merge-check-failed","needs-human-review","awaiting-dependency","on-hold","ready-to-merge"]'),
+                    github.event.label.name)))
         || (github.event_name == 'workflow_run'
             && ((github.event.workflow_run.name == 'pr-build'
                  && contains(fromJSON('["pull_request_target", "workflow_dispatch", "repository_dispatch"]'),
@@ -54,8 +61,10 @@ jobs:
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
-    timeout-minutes: 30
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 20
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
     # skip. Here only runs that pass the filter enter the group. (Nothing else may share it: GitHub
@@ -91,18 +100,18 @@ jobs:
       # version proposed by the PR.
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1a2fd2de61b53e1721517aa4ff6adffdefa09520
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1a2fd2de61b53e1721517aa4ff6adffdefa09520
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       # Discover artifacts directly: cancelled pending runs have no artifact and
@@ -160,27 +169,30 @@ jobs:
           print("since=" + t.strftime("%Y-%m-%dT%H:%M:%SZ"))
           EOF
 
-      - name: Reconcile labels and Zulip posts
+      - name: Reconcile PR status labels
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
-          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
-          ZULIP_SITE: https://leanprover.zulipchat.com
-          ZULIP_CHANNEL: rss
-          ZULIP_TOPIC: Tau Ceti PRs
           SINCE: ${{ steps.since.outputs.since }}
           # The event's own PR, when its payload names one, goes first.
           PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
-        # From the repository root: readiness finds the pinned policy at .tauceti-review/runner.
+        # From the repository root: readiness finds the merge policy (TauCetiReview main) at .tauceti-review/runner.
         run: |
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"
           case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
-          python3 scripts/pr_status/batch.py "${args[@]}"
+          result=0
+          python3 scripts/pr_status/batch.py "${args[@]}" --budget-seconds 600 || result=$?
+          if [ "$result" -eq 75 ]; then
+            echo "::notice::PR reconciliation deferred; checkpoint retains unfinished work"
+          else
+            exit "$result"
+          fi
 
       - name: Save completed progress and unfinished work
         if: always()

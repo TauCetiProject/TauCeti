@@ -107,16 +107,13 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
   -- Finally identify the chosen chart reading with its actual manifold derivative.
   let j : enlarged.atlas := ⟨e, hsub he⟩
   have hxj : x ∈ (Z.localTriv j).baseSet := hx
-  have hd : e.MDifferentiable I I :=
-    ⟨fun y hy ↦ (mdifferentiableAt_of_mem_maximalAtlas (hsub he) hy).mdifferentiableWithinAt,
-      fun y hy ↦
-        (mdifferentiableAt_symm_of_mem_maximalAtlas (hsub he) hy).mdifferentiableWithinAt⟩
+  have hd : e.MDifferentiable I I := mdifferentiable_of_mem_maximalAtlas (hsub he)
   let L : TangentSpace I x ≃L[ℝ] E := hd.mfderiv hx
   have hmap : mfderiv I I e x = (Z.localTriv j).continuousLinearMapAt ℝ x := by
     let : ChartedSpace H M := enlarged
     have : IsManifold I 1 M := enlargedManifold
     exact (Manifold.mfderiv_eq_of_chartAt_eq (I := I)
-      (c := cM) (c' := enlarged) rfl e x).trans
+      (c := cM) (c' := enlarged) e x rfl).trans
       (Manifold.mfderiv_atlas_eq_continuousLinearMapAt (I := I) j hxj)
   have hlin : L.toLinearEquiv = (Z.localTriv j).linearEquivAt ℝ x hxj := by
     ext v

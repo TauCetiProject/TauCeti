@@ -16,7 +16,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.QuaternionProduct
 
 Every matrix-product model of the even Clifford algebra of a regular four-dimensional quadratic
 space carries reversal to adjugation in both factors. Consequently its reverse norm-one equation
-is precisely the pair of determinant-one equations. In particular, this applies to the model given
+is precisely the pair of determinant-one equations, and reversal negates an element precisely
+when both of its matrices have trace zero. In particular, this applies to the model given
 by the two half-spin actions, so the factors of the Spin group act on the half-spin modules by
 their standard representations.
 
@@ -68,7 +69,7 @@ theorem map_reverseEven_eq_adjugate_prod_of_finrank_eq_four
   let ek : (Fin 2 → K) ≃ₐ[K] K × K :=
     AlgEquiv.ofRingEquiv (f := RingEquiv.piFinTwo (fun _ : Fin 2 => K)) (fun _ => rfl)
   have hE : Nonempty (Subalgebra.center K (even Q) ≃ₐ[K] K × K) :=
-    ⟨(TauCeti.centerCongr (e.trans ep.symm)).trans <|
+    ⟨(Subalgebra.centerCongr (e.trans ep.symm)).trans <|
       TauCeti.centerPiAlgEquiv.trans <|
         (AlgEquiv.piCongrRight (fun _ => TauCeti.centerAlgEquivOfIsCentral K M)).trans ek⟩
   let f : M × M →ₗ[K] M × M :=
@@ -107,5 +108,16 @@ theorem reverseEven_mul_eq_one_iff_det_eq_one_prod_of_finrank_eq_four
   rw [Prod.ext_iff]
   simp only [Prod.fst_mul, Prod.snd_mul, Prod.fst_one, Prod.snd_one,
     Matrix.adjugate_mul_self_eq_one_iff_det_eq_one]
+
+/-- In a quaternary matrix-product model, reversal negates an even element exactly when both of
+its matrices have trace zero: reversal is adjugation, and `adjugate A = tr A • 1 - A`. -/
+theorem reverseEven_eq_neg_iff_trace_eq_zero_prod_of_finrank_eq_four
+    (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 4)
+    (e : even Q ≃ₐ[K] Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K)
+    (x : even Q) :
+    reverseEven Q x = -x ↔ (e x).1.trace = 0 ∧ (e x).2.trace = 0 := by
+  rw [← e.injective.eq_iff, map_reverseEven_eq_adjugate_prod_of_finrank_eq_four Q hQ hV e,
+    map_neg, Prod.ext_iff]
+  simp [Matrix.adjugate_fin_two_eq_trace_smul_one_sub]
 
 end CliffordAlgebra

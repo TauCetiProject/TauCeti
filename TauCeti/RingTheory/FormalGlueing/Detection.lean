@@ -51,7 +51,7 @@ theorem eq_zero_of_one_tmul_eq_zero_of_localized (m : M) (hS : (1 : S) ⊗ₜ[R]
     refine (Ideal.mem_primaryComponent_span_iff G).mpr fun g hg ↦ ?_
     obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff (.powers g)
       (LocalizedModule.mkLinearMap (.powers g) M)).mp (hloc g hg)
-    obtain ⟨n, hn⟩ := s.2
+    obtain ⟨n, hn⟩ := s.property
     exact ⟨n, by simpa only [Submonoid.smul_def, ← hn] using hs⟩
   have hfg : (Ideal.span (G : Set R)).FG := ⟨G, rfl⟩
   let e := primaryComponentEquivTensorProduct (M := M) hG hfg

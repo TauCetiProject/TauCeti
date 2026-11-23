@@ -40,6 +40,13 @@ convergent kernel itself.
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
 * `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
   the kernel is continuous, and indeed smooth, off the diagonal.
+* `TauCeti.Symbol.stronglyMeasurable_uncurry_offDiagonalKernel`: the kernel, with its value `0` on
+  the diagonal, is strongly measurable.
+* `TauCeti.Symbol.contDiffOn_quantizationKernel`: the absolutely convergent kernel of a symbol of
+  order `m < -n` is smooth off the diagonal.
+* `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, on an open set `U` not
+  containing `x`, a kernel continuous on `U` that represents `u ↦ Op(a) u (x)` on compactly
+  supported Schwartz functions supported in `U` is the off-diagonal kernel there.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
@@ -85,6 +92,28 @@ def offDiagonalKernel (a : Symbol n V W m) (x y : CoordinateSpace n) : V →L[�
 theorem offDiagonalKernel_self (a : Symbol n V W m) (x : CoordinateSpace n) :
     offDiagonalKernel a x x = 0 := by
   simp [offDiagonalKernel]
+
+/-- The off-diagonal kernel of the zero symbol vanishes. -/
+@[simp]
+theorem offDiagonalKernel_zero (x y : CoordinateSpace n) :
+    offDiagonalKernel (0 : Symbol n V W m) x y = 0 := by
+  simp [offDiagonalKernel]
+
+/-- The off-diagonal kernel is additive in the symbol. -/
+theorem offDiagonalKernel_add (a b : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (a + b) x y = offDiagonalKernel a x y + offDiagonalKernel b x y := by
+  rw [offDiagonalKernel, offDiagonalKernel, offDiagonalKernel, map_add, coefficient_add,
+    quantizationKernel_add
+      ((frequencyLaplacianPow _ a).integrable_coefficient (sub_two_mul_floor_lt m n) x)
+      ((frequencyLaplacianPow _ b).integrable_coefficient (sub_two_mul_floor_lt m n) x),
+    smul_add]
+
+/-- The off-diagonal kernel is homogeneous in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_smul (c : ℂ) (a : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (c • a) x y = c • offDiagonalKernel a x y := by
+  rw [offDiagonalKernel, offDiagonalKernel, map_smul, coefficient_smul, quantizationKernel_smul,
+    smul_comm]
 
 /-- **Independence of the exponent.** Off the diagonal, for every `N` with `m - 2N < -n`,
 the kernel is `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)`. -/
@@ -165,6 +194,28 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
 
+/-- **Continuity in the second variable.** For fixed `x`, the off-diagonal kernel `y ↦ K(x, y)` is
+continuous away from `x`. -/
+theorem continuousOn_offDiagonalKernel_compl_singleton (a : Symbol n V W m)
+    (x : CoordinateSpace n) : ContinuousOn (offDiagonalKernel a x) {x}ᶜ := by
+  have hmaps : Set.MapsTo (fun y ↦ (x, y)) {x}ᶜ
+      {p : CoordinateSpace n × CoordinateSpace n | p.1 ≠ p.2} :=
+    fun y hy (hxy : x = y) ↦ hy (Set.mem_singleton_iff.2 hxy.symm)
+  exact ((continuousOn_offDiagonalKernel a).comp
+    (continuous_const.prodMk continuous_id).continuousOn hmaps).congr
+    fun y _ ↦ (Function.uncurry_apply_pair _ x y).symm
+
+/-- **Measurability.** The off-diagonal kernel, with its value `0` on the diagonal, is strongly
+measurable as a function of `(x, y)`, as integral operators with this kernel require. -/
+theorem stronglyMeasurable_uncurry_offDiagonalKernel (a : Symbol n V W m) :
+    MeasureTheory.StronglyMeasurable (Function.uncurry (offDiagonalKernel a)) := by
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hK := (frequencyLaplacianPow N a).continuous_quantizationKernel (sub_two_mul_floor_lt m n)
+  have hs : Measurable (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1 : ℝ) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) := by fun_prop
+  -- By definition, the kernel is this measurable scalar times a continuous kernel.
+  exact hs.stronglyMeasurable.smul hK.stronglyMeasurable
+
 /-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
 each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
 (`TauCeti.Symbol.contDiff_quantizationKernel`). -/
@@ -183,6 +234,30 @@ theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
   have hK := ((frequencyLaplacianPow N a).contDiff_quantizationKernel k
     (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
   exact (hs.smul hK).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
+
+/-- **Smoothness off the diagonal for symbols of order `m < -n`.** The absolutely convergent kernel
+`K_a` is smooth on `{(x, y) | x ≠ y}`. -/
+theorem contDiffOn_quantizationKernel (a : Symbol n V W m) (hm : m < -n) :
+    ContDiffOn ℝ ∞ (Function.uncurry (quantizationKernel a.coefficient)) {p | p.1 ≠ p.2} :=
+  (contDiffOn_offDiagonalKernel a).congr fun _ hp ↦
+    (offDiagonalKernel_eq_quantizationKernel a hm hp).symm
+
+/-- **Uniqueness of the kernel off the diagonal.** On an open set `U` not containing `x`, a kernel
+`K` continuous on `U` that represents `u ↦ Op(a) u (x)` on the compactly supported Schwartz
+functions supported in `U` is the off-diagonal kernel: `K y = offDiagonalKernel a x y` for every
+`y ∈ U`. -/
+theorem eqOn_offDiagonalKernel_of_forall [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m)
+    {x : CoordinateSpace n} {U : Set (CoordinateSpace n)} (hU : IsOpen U) (hxU : x ∉ U)
+    {K : CoordinateSpace n → V →L[ℂ] W} (hK : ContinuousOn K U)
+    (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u → tsupport u ⊆ U →
+      quantizeSchwartzValue a.coefficient u x = ∫ y, K y (u y)) :
+    Set.EqOn K (offDiagonalKernel a x) U := by
+  have hK₀ : ContinuousOn (offDiagonalKernel a x) U :=
+    (continuousOn_offDiagonalKernel_compl_singleton a x).mono fun y hy (hyx : y = x) ↦
+      hxU (hyx ▸ hy)
+  refine hU.eqOn_of_integral_clm_apply_eq (μ := volume) hK hK₀ fun u hu huU ↦ ?_
+  rw [← h u hu huU,
+    quantizeSchwartzValue_eq_integral_offDiagonalKernel a hu fun hx ↦ hxU (huU hx)]
 
 /-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
 positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/

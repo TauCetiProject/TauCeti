@@ -54,7 +54,8 @@ example (a : R) :
         (globalSectionsIso (IsAdicRing.ideal_spec R).2.1).hom =
       CommRingCat.ofHom (Polynomial.evalRingHom a) := by
   intro _ _
-  erw [map_globalSections, Iso.inv_hom_id_assoc]
+  exact (Iso.inv_comp_eq _).mpr
+    (map_globalSections (Polynomial.evalRingHom a) continuous_of_discreteTopology)
 
 end Evaluation
 
@@ -104,11 +105,6 @@ end Zero
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
-
-private local instance : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
 
 -- A continuous map from a nondiscrete adic ring also gives a local morphism.
 example (J : Ideal ℤ_[p]) :

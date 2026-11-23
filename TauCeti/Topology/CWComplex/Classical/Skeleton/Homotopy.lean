@@ -75,7 +75,8 @@ theorem exists_homotopicRel_cellMap (n : ℕ) (f : C(C, Y))
   let H (j : cell C n) := (hψ j).some
   -- Glue the cell homotopies over the closed `n`-cells, stationary on `skeletonLT C n`.
   obtain ⟨F, hFG, hFH⟩ := exists_continuousMap_prod_skeletonLT_succ (Z := I) (n := n)
-    (f.comp ⟨fun p : I × (skeletonLT C n : Set X) ↦ ⟨p.2, (skeletonLT C n).subset_complex p.2.2⟩,
+    (f.comp ⟨fun p : I × (skeletonLT C n : Set X) ↦ ⟨p.2, (skeletonLT C n).subset_complex
+        p.2.property⟩,
       by fun_prop⟩)
     (fun j ↦ (H j).toContinuousMap) (fun j t y hy ↦ ((H j).eq_fst t hy).trans (by
       rw [ContinuousMap.comp_apply, cellMap_apply]; rfl))
@@ -90,12 +91,12 @@ theorem exists_homotopicRel_cellMap (n : ℕ) (f : C(C, Y))
   -- Extend `F` over `C` by the homotopy extension property of `skeletonLT C (n + 1)`.
   have hHEP := hasHomotopyExtensionProperty_skeletonLT (C := C) (n + 1)
   obtain ⟨G, hG₀, hGF⟩ := hHEP.exists_extension_of_isClosed hHEP.isClosed f
-    (F.comp ⟨fun p ↦ (p.1, ⟨p.2.1, p.2.2⟩), by fun_prop⟩) fun a ↦ hF₀ a.1.1 a.2
+    (F.comp ⟨fun p ↦ (p.1, ⟨p.2.val, p.2.property⟩), by fun_prop⟩) fun a ↦ hF₀ a.val.val a.property
   refine ⟨⟨fun x ↦ G (1, x), by fun_prop⟩, ⟨⟨⟨G, hG₀, fun _ ↦ rfl⟩, fun t x hx ↦ ?_⟩⟩,
     fun j y ↦ ?_⟩
-  · exact (hGF t ⟨x, skeletonLT_mono (by exact_mod_cast n.le_succ) hx⟩).trans (hFG t x.1 hx)
+  · exact (hGF t ⟨x, skeletonLT_mono (by exact_mod_cast n.le_succ) hx⟩).trans (hFG t x.val hx)
   · rw [cellMap_apply]
-    exact (hGF 1 ⟨_, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩).trans
+    exact (hGF 1 ⟨_, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property)⟩).trans
       ((hFH j 1 y).trans ((H j).apply_one y))
 
 end Step
@@ -113,14 +114,14 @@ obtained from the previous one by `step`. -/
 private def approx : (m : ℕ) →
     {g : C(C, Y) // MapsTo g {x : C | (x : X) ∈ skeletonLT C m} (S m)}
   | 0 => ⟨f, by simpa only [Nat.cast_zero, ← SetLike.mem_coe, skeletonLT_zero_eq_base] using hf⟩
-  | m + 1 => ⟨(step m _ (approx m).2).choose, (step m _ (approx m).2).choose_spec.2⟩
+  | m + 1 => ⟨(step m _ (approx m).property).choose, (step m _ (approx m).property).choose_spec.2⟩
 
 /-- The homotopy from the `m`-th to the `(m + 1)`-st improvement of `f`, stationary on
 `skeletonLT C m`. -/
 private def approxHomotopy (m : ℕ) :
-    (approx S step f hf m).1.HomotopyRel (approx S step f hf (m + 1)).1
+    (approx S step f hf m).val.HomotopyRel (approx S step f hf (m + 1)).val
       {x : C | (x : X) ∈ skeletonLT C m} :=
-  (step m _ (approx S step f hf m).2).choose_spec.1.some
+  (step m _ (approx S step f hf m).property).choose_spec.1.some
 
 /-- The time `1 - 2⁻ᵐ` at which the homotopy from the `m`-th to the `(m + 1)`-st improvement
 starts. -/
@@ -162,13 +163,13 @@ private lemma stageParam_of_ge {m : ℕ} {t : I} (ht : stageTime (m + 1) ≤ t) 
 `k`-th one run during `[stageTime k, stageTime (k + 1)]`, followed by the constant homotopy at
 the `m`-th improvement. -/
 private def approxConcat : (m : ℕ) → {Φ : C(I × C, Y) //
-    ∀ (t : I) x, stageTime m ≤ t → Φ (t, x) = (approx S step f hf m).1 x}
-  | 0 => ⟨(approx S step f hf 0).1.comp .snd, fun _ _ _ ↦ rfl⟩
-  | m + 1 => ⟨⟨fun p ↦ if (p.1 : ℝ) ≤ stageTime m then (approxConcat m).1 p
+    ∀ (t : I) x, stageTime m ≤ t → Φ (t, x) = (approx S step f hf m).val x}
+  | 0 => ⟨(approx S step f hf 0).val.comp .snd, fun _ _ _ ↦ rfl⟩
+  | m + 1 => ⟨⟨fun p ↦ if (p.1 : ℝ) ≤ stageTime m then (approxConcat m).val p
       else approxHomotopy S step f hf m (stageParam m p.1, p.2),
-      (approxConcat m).1.continuous.if_le (by fun_prop) (by fun_prop) continuous_const
+      (approxConcat m).val.continuous.if_le (by fun_prop) (by fun_prop) continuous_const
         fun p hp ↦ by
-          rw [(approxConcat m).2 _ _ hp.ge, stageParam_of_le hp.le,
+          rw [(approxConcat m).property _ _ hp.ge, stageParam_of_le hp.le,
             (approxHomotopy S step f hf m).apply_zero]⟩,
     fun t x ht ↦ by
       have ht' : ¬ (t : ℝ) ≤ stageTime m := (stageTime_lt_succ m).trans_le ht |>.not_ge
@@ -176,7 +177,7 @@ private def approxConcat : (m : ℕ) → {Φ : C(I × C, Y) //
         ContinuousMap.HomotopyWith.apply_one]⟩
 
 private lemma approxConcat_zero (m : ℕ) (x : C) :
-    (approxConcat S step f hf m).1 (0, x) = f x := by
+    (approxConcat S step f hf m).val (0, x) = f x := by
   induction m with
   | zero => rfl
   | succ m ih =>
@@ -184,11 +185,11 @@ private lemma approxConcat_zero (m : ℕ) (x : C) :
 
 private lemma approxConcat_succ_of_mem {m : ℕ} (t : I) {x : C}
     (hx : (x : X) ∈ (skeletonLT C m : Set X)) :
-    (approxConcat S step f hf (m + 1)).1 (t, x) = (approxConcat S step f hf m).1 (t, x) := by
+    (approxConcat S step f hf (m + 1)).val (t, x) = (approxConcat S step f hf m).val (t, x) := by
   simp only [approxConcat, ContinuousMap.coe_mk]
   split_ifs with ht
   · rfl
-  · rw [(approxHomotopy S step f hf m).eq_fst _ hx, (approxConcat S step f hf m).2 _ _
+  · rw [(approxHomotopy S step f hf m).eq_fst _ hx, (approxConcat S step f hf m).property _ _
       (not_le.1 ht).le]
 
 include step hf in
@@ -202,20 +203,20 @@ theorem exists_homotopicRel_forall_mapsTo_skeletonLT :
       f.HomotopicRel g {x : C | (x : X) ∈ D} := by
   -- Glue the concatenations of the first `m` homotopies over the skeleta.
   obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT (C := C) (Z := I) (k := 0)
-    (fun m ↦ (approxConcat S step f hf m).1.comp
+    (fun m ↦ (approxConcat S step f hf m).val.comp
       ⟨fun p : I × (skeletonLT C ((0 + m : ℕ) : ℕ∞) : Set X) ↦
-        (p.1, ⟨p.2, (skeletonLT C _).subset_complex p.2.2⟩), by fun_prop⟩)
+        (p.1, ⟨p.2, (skeletonLT C _).subset_complex p.2.property⟩), by fun_prop⟩)
     fun m t x hx ↦ approxConcat_succ_of_mem S step f hf t (by simpa using hx)
   have hG' (m : ℕ) (t : I) (x : C) (hx : (x : X) ∈ (skeletonLT C m : Set X)) :
-      G (t, x) = (approxConcat S step f hf m).1 (t, x) :=
+      G (t, x) = (approxConcat S step f hf m).val (t, x) :=
     hG m t x (by simpa using hx)
   refine ⟨⟨fun x ↦ G (1, x), by fun_prop⟩, fun n x hx ↦ ?_,
     ⟨⟨⟨G, fun x ↦ ?_, fun _ ↦ rfl⟩, fun t x hx ↦ ?_⟩⟩⟩
   · -- On `skeletonLT C n` the final map is the `n`-th improvement.
     have h := hG' n 1 x hx
-    rw [(approxConcat S step f hf n).2 1 x (stageTime_le_one n)] at h
-    exact h ▸ (approx S step f hf n).2 hx
-  · obtain ⟨m, hm⟩ := exists_mem_skeletonLT_add 0 x.2
+    rw [(approxConcat S step f hf n).property 1 x (stageTime_le_one n)] at h
+    exact h ▸ (approx S step f hf n).property hx
+  · obtain ⟨m, hm⟩ := exists_mem_skeletonLT_add 0 x.property
     exact (hG' m 0 x (by simpa using hm)).trans (approxConcat_zero S step f hf m x)
   · -- On the base `D = skeletonLT C 0` the homotopy is stationary.
     exact hG' 0 t x (by rw [Nat.cast_zero, skeletonLT_zero_eq_base]; exact hx)

@@ -132,7 +132,7 @@ private theorem upperTriangularClass_bijective (h : a ≠ d) :
     exact Fin.ext (by omega)
   · induction X using Quotient.inductionOn' with
     | h M =>
-      obtain ⟨g, b, hb₀, hb, hg⟩ := exists_smul_eq_upperTriangular h M.2
+      obtain ⟨g, b, hb₀, hb, hg⟩ := exists_smul_eq_upperTriangular h M.property
       refine ⟨⟨b.toNat, by have := Int.natCast_natAbs (d - a); omega⟩,
         Quotient.sound' ⟨g, Subtype.ext ?_⟩⟩
       simp [hg, Int.toNat_of_nonneg hb₀]
@@ -175,7 +175,7 @@ theorem cardStabilizerOnOrbit_traceDetFiber_add_mul (h : a ≠ d)
   | h M =>
     rw [cardStabilizerOnOrbit_mk, SubMulAction.stabilizer_of_subMul, ← card_stabilizer_ofMatrix]
     exact card_stabilizer_of_discrim_eq_sq (sub_ne_zero.2 h.symm)
-      (discrim_ofMatrix_of_mem_traceDetFiber M.2)
+      (discrim_ofMatrix_of_mem_traceDetFiber M.property)
 
 end BinaryQuadraticForm
 
