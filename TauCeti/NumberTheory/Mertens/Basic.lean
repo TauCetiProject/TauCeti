@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.SumPrimePow
@@ -207,17 +208,32 @@ theorem exists_abs_sum_primesLE_inv_sub_log_log_sub_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) - Real.log (Real.log x) - meisselMertensConstant| ≤
         C / Real.log x := by
-  have hf : Monotone fun x : ℝ ↦ ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ := fun x y hxy ↦
-    sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hxy)) fun _ _ _ ↦ by
-      positivity
-  have hg : MonotoneOn (fun x : ℝ ↦ Real.log (Real.log x)) (Set.Ici 2) := fun x hx y _ hxy ↦
-    Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx))
-      (Real.log_le_log (zero_lt_two.trans_le hx) hxy)
   obtain ⟨C, -, hC⟩ :=
     isBigO_sum_primesLE_inv_sub_log_log_sub_meisselMertensConstant.exists_norm_le_div_log
-      one_lt_two fun b ↦
-        ⟨_, fun x hx ↦ abs_sub_sub_le_of_monotoneOn_Icc (hf.monotoneOn _)
-          (hg.mono Set.Icc_subset_Ici_self) meisselMertensConstant hx⟩
+      one_lt_two fun b ↦ by
+      refine ⟨(∑ p ∈ Nat.primesLE ⌊b⌋₊, (p : ℝ)⁻¹) +
+          (|Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))|) + |meisselMertensConstant|,
+        fun x hx ↦ ?_⟩
+      rw [Real.norm_eq_abs]
+      have hsum_nonneg : 0 ≤ ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ :=
+        sum_nonneg fun _ _ ↦ by positivity
+      have hsum_le : (∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) ≤ ∑ p ∈ Nat.primesLE ⌊b⌋₊, (p : ℝ)⁻¹ :=
+        sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hx.2)) fun _ _ _ ↦ by
+          positivity
+      have hll_lo : Real.log (Real.log 2) ≤ Real.log (Real.log x) :=
+        Real.log_le_log (Real.log_pos one_lt_two) (Real.log_le_log zero_lt_two hx.1)
+      have hll_hi : Real.log (Real.log x) ≤ Real.log (Real.log (max b 2)) :=
+        Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx.1))
+          (Real.log_le_log (by linarith [hx.1]) (hx.2.trans (le_max_left _ _)))
+      have hll_abs : |Real.log (Real.log x)| ≤
+          |Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))| := by
+        rw [abs_le]
+        constructor
+        · linarith [neg_abs_le (Real.log (Real.log 2)), abs_nonneg (Real.log (Real.log (max b 2)))]
+        · linarith [le_abs_self (Real.log (Real.log (max b 2))), abs_nonneg (Real.log (Real.log 2))]
+      refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans ?_) le_rfl)
+      rw [abs_of_nonneg hsum_nonneg]
+      exact add_le_add hsum_le hll_abs
   exact ⟨C, by simpa only [Real.norm_eq_abs] using hC⟩
 
 /-- For `x ≥ 1`, the inclusive reciprocal-prime sum `∑_{p ≤ x} p⁻¹` exceeds the strict-cutoff sum
@@ -432,20 +448,6 @@ private theorem sum_Icc_two_vonMangoldt_div_mul_log (N : ℕ) :
   · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN), sum_insert (by simp)]
     simp
 
-/-- At any prime power `p ^ k` (including `k = 0`, where both sides vanish by division by zero),
-`Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`. -/
-theorem vonMangoldt_div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
-    Λ (p ^ k) / (((p ^ k : ℕ) : ℝ) * Real.log ((p ^ k : ℕ) : ℝ)) =
-      ((p : ℝ)⁻¹) ^ k / (k : ℝ) := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  have hp0 : (p : ℝ) ≠ 0 := mod_cast hp.ne_zero
-  have hk0 : (k : ℝ) ≠ 0 := mod_cast hk
-  have hlog : Real.log (p : ℝ) ≠ 0 := (Real.log_pos (mod_cast hp.one_lt)).ne'
-  rw [ArithmeticFunction.vonMangoldt_apply_pow hk, ArithmeticFunction.vonMangoldt_apply_prime hp,
-    Nat.cast_pow, Real.log_pow, inv_pow]
-  field_simp
-
 /-- Exact prime-power regrouping of the weighted von Mangoldt sum:
 `∑_{2 ≤ n ≤ N} Λ(n) / (n log n) = ∑_{p ≤ N} ∑_{1 ≤ k ≤ log_p N} 1 / (k p ^ k)`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_eq (N : ℕ) :
@@ -454,8 +456,8 @@ theorem sum_Icc_vonMangoldt_div_mul_log_eq (N : ℕ) :
   rw [sum_Icc_two_vonMangoldt_div_mul_log, Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log
     (fun n hn ↦ by rw [ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hn, zero_div])]
   refine sum_congr rfl fun p hp ↦ sum_congr rfl fun k _ ↦ ?_
-  rw [vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp), inv_pow,
-    div_eq_mul_inv, div_eq_mul_inv, one_mul, mul_inv, mul_comm]
+  rw [vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp)]
+  simp [div_eq_mul_inv, mul_comm]
 
 /-- The weighted von Mangoldt sum never exceeds the logarithmic Euler-product sum up to `x`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_le_sum_primesLE_neg_log_one_sub_inv (x : ℝ) :
@@ -688,11 +690,17 @@ theorem exists_abs_prod_primesLE_one_sub_inv_sub_exp_neg_div_log_le :
   have hP_ge : c₁ * Real.log x ≤ P := (hB x hx).1
   have hP_pos : 0 < P := (mul_pos hc₁ hlog).trans_le hP_ge
   have heg_pos : 0 < Real.exp Real.eulerMascheroniConstant := Real.exp_pos _
-  have hinv : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) = P⁻¹ := by
-    simp [P, prod_inv_distrib]
-  rw [hinv, Real.exp_neg, div_eq_mul_inv, ← mul_inv,
-    inv_sub_inv hP_pos.ne' (mul_pos heg_pos hlog).ne',
-    abs_div, abs_of_pos (mul_pos hP_pos (mul_pos heg_pos hlog)), abs_sub_comm]
+  have hrew : |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) -
+      Real.exp (-Real.eulerMascheroniConstant) / Real.log x| =
+      |P - Real.exp Real.eulerMascheroniConstant * Real.log x| /
+        (P * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
+    have hinv : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) = P⁻¹ := by
+      simp [P, prod_inv_distrib]
+    rw [hinv, Real.exp_neg, abs_sub_comm P, ← abs_of_pos (mul_pos hP_pos (mul_pos heg_pos hlog)),
+      ← abs_div]
+    congr 1
+    field_simp
+  rw [hrew]
   calc |P - Real.exp Real.eulerMascheroniConstant * Real.log x| /
         (P * (Real.exp Real.eulerMascheroniConstant * Real.log x))
       ≤ max C 0 / (c₁ * Real.log x * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
@@ -733,6 +741,20 @@ private theorem prod_filter_prime_one_sub_inv_le (T : Finset ℕ) (n : ℕ) :
   exact prod_le_prod_of_subset_of_le_one₀ hsub
     (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p)) (fun _ _ _ ↦ sub_le_self 1 (by positivity))
 
+private theorem prod_primes_one_sub_inv_pos (S : Finset ℕ) (hS : ∀ p ∈ S, p.Prime) :
+    0 < ∏ p ∈ S, (1 - (p : ℝ)⁻¹) :=
+  prod_pos fun p hp ↦ sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast (hS p hp).one_lt))
+
+private theorem inv_le_mul_iff_div_le {c L P : ℝ} (hc : 0 < c) (hL : 0 < L) (hP : 0 < P) :
+    P⁻¹ ≤ c * L ↔ c⁻¹ / L ≤ P := by
+  rw [inv_le_comm₀ hP (mul_pos hc hL)]
+  simp [div_eq_mul_inv, mul_comm]
+
+private theorem mul_le_inv_iff_le_div {c L P : ℝ} (hc : 0 < c) (hL : 0 < L) (hP : 0 < P) :
+    c * L ≤ P⁻¹ ↔ P ≤ c⁻¹ / L := by
+  rw [le_inv_comm₀ (mul_pos hc hL) hP]
+  simp [div_eq_mul_inv, mul_comm]
+
 /-- **Universal lower bound for partial Euler products with omitted primes.** There is an absolute
 positive constant `c₁ > 0` such that for every finite set `T : Finset ℕ` and every real `y ≥ 2`,
 `c₁ / log y ≤ ∏_{p ≤ y, p ∉ T} (1 - p⁻¹)`. -/
@@ -741,17 +763,15 @@ theorem exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv :
       c₁ / Real.log y ≤ ∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹) := by
   obtain ⟨_, c₂, _, hc₂, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
   refine ⟨c₂⁻¹, inv_pos.mpr hc₂, fun T y hy ↦ ?_⟩
-  have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := prod_pos fun p hp ↦
-    sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast Nat.one_lt_of_mem_primesLE hp))
-  have hfull : c₂⁻¹ / Real.log y ≤ ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := by
-    have hle : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ ≤ c₂ * Real.log y := by
-      simpa [prod_inv_distrib] using (hB y hy).2
-    calc c₂⁻¹ / Real.log y = (c₂ * Real.log y)⁻¹ := by rw [div_eq_inv_mul, mul_inv, mul_comm]
-      _ ≤ ((∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹)⁻¹ :=
-          inv_anti₀ (inv_pos.mpr hprod_pos) hle
-      _ = ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := inv_inv _
-  exact hfull.trans (prod_le_prod_of_subset_of_le_one₀ (filter_subset _ _)
-    (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p)) (fun _ _ _ ↦ sub_le_self 1 (by positivity)))
+  have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
+  have hprod_pos := prod_primes_one_sub_inv_pos (Nat.primesLE ⌊y⌋₊) fun _ ↦
+    Nat.prime_of_mem_primesLE
+  have hle : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ ≤ c₂ * Real.log y := by
+    simpa [prod_inv_distrib] using (hB y hy).2
+  exact ((inv_le_mul_iff_div_le hc₂ hlog hprod_pos).mp hle).trans
+    (prod_le_prod_of_subset_of_le_one₀ (filter_subset _ _)
+      (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p))
+      (fun _ _ _ ↦ sub_le_self 1 (by positivity)))
 
 /-- **Two-sided `1 / log y` comparison for partial Euler products with omitted primes.** For every
 finite set `T : Finset ℕ`, there exist positive constants `c₁, c₂ > 0` such that for all `y ≥ 2`,
@@ -763,17 +783,14 @@ theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds (T : Finset �
   obtain ⟨c₁, hc₁, hlo⟩ := exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv
   obtain ⟨c₁', _, hc₁', _, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
   set P := ∏ p ∈ T with p.Prime, (1 - (p : ℝ)⁻¹)
-  have hPpos : 0 < P := prod_pos fun p hp ↦
-    sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast (mem_filter.mp hp).2.one_lt))
+  have hPpos := prod_primes_one_sub_inv_pos (T.filter Nat.Prime) fun _ hp ↦ (mem_filter.mp hp).2
   refine ⟨c₁, c₁'⁻¹ / P, hc₁, div_pos (inv_pos.mpr hc₁') hPpos, fun y hy ↦ ⟨hlo T y hy, ?_⟩⟩
   have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hfull : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)) ≤ c₁'⁻¹ / Real.log y := by
-    have hle : c₁' * Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ := by
-      simpa [prod_inv_distrib] using (hB y hy).1
-    calc (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))
-        = ((∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹)⁻¹ := (inv_inv _).symm
-      _ ≤ (c₁' * Real.log y)⁻¹ := inv_anti₀ (mul_pos hc₁' hlog) hle
-      _ = c₁'⁻¹ / Real.log y := by rw [mul_inv, div_eq_inv_mul, mul_comm]
+  have hprod_pos := prod_primes_one_sub_inv_pos (Nat.primesLE ⌊y⌋₊) fun _ ↦
+    Nat.prime_of_mem_primesLE
+  have hle : c₁' * Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ := by
+    simpa [prod_inv_distrib] using (hB y hy).1
+  have hfull := (mul_le_inv_iff_le_div hc₁' hlog hprod_pos).mp hle
   have hmul : P * (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ≤ c₁'⁻¹ / Real.log y :=
     (mul_le_mul_of_nonneg_right (prod_filter_prime_one_sub_inv_le T ⌊y⌋₊)
       (prod_nonneg fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p))).trans
@@ -807,12 +824,8 @@ theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_inv_bounds (T : Finse
   have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹) :=
     (div_pos hc₁ hlogy).trans_le hlo
   rw [prod_inv_distrib]
-  constructor
-  · calc c₂⁻¹ * Real.log y = (c₂ / Real.log y)⁻¹ := by rw [inv_div, div_eq_inv_mul]
-      _ ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹))⁻¹ := inv_anti₀ hprod_pos hhi
-  · calc (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹))⁻¹
-        ≤ (c₁ / Real.log y)⁻¹ := inv_anti₀ (div_pos hc₁ hlogy) hlo
-      _ = c₁⁻¹ * Real.log y := by rw [inv_div, div_eq_inv_mul]
+  exact ⟨(mul_le_inv_iff_le_div (inv_pos.mpr hc₂) hlogy hprod_pos).mpr (by simpa using hhi),
+    (inv_le_mul_iff_div_le (inv_pos.mpr hc₁) hlogy hprod_pos).mpr (by simpa using hlo)⟩
 
 /-! ### Series of higher-prime-power reciprocals -/
 

@@ -36,10 +36,10 @@ together with its exact domain of summability and truncated power-series remaind
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
 * `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
   `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
-* `Real.hasSum_pow_div_natCast_tail`, `Real.neg_log_one_sub_sub_sum_Icc_nonneg`,
-  `Real.abs_neg_log_one_sub_sub_sum_Icc_le`, `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and
-  `Real.neg_log_one_sub_inv_sub_sum_Icc_le`: shifted tail series, nonnegativity, and geometric
-  upper bounds for the truncated power-series remainder of `-log (1 - x)` and `-log (1 - x⁻¹)`.
+* `Real.neg_log_one_sub_sub_sum_Icc_nonneg`, `Real.abs_neg_log_one_sub_sub_sum_Icc_le`,
+  `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and `Real.neg_log_one_sub_inv_sub_sum_Icc_le`:
+  nonnegativity and geometric upper bounds for the truncated power-series remainder of
+  `-log (1 - x)` and `-log (1 - x⁻¹)`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -182,21 +182,13 @@ theorem summable_pow_div_natCast_iff {x : ℝ} :
   refine not_summable_one_div_natCast (habs.of_nonneg_of_le (fun n => by positivity) fun n => ?_)
   exact div_le_div_of_nonneg_right (one_le_pow₀ (not_lt.mp hx)) n.cast_nonneg
 
-/-- For `|x| < 1` and any `m : ℕ`, the shifted tail `∑_{j ≥ 0} x ^ (j + m + 1) / (j + m + 1)` sums
-to the `m`-th Taylor remainder `-log (1 - x) - ∑ k ∈ Icc 1 m, x ^ k / k`. -/
-theorem hasSum_pow_div_natCast_tail {x : ℝ} (hx : |x| < 1) (m : ℕ) :
-    HasSum (fun j : ℕ ↦ x ^ (j + (m + 1)) / (j + (m + 1) : ℕ))
-      (-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k) := by
-  have hrange : ∑ k ∈ Finset.range (m + 1), x ^ k / (k : ℝ) = ∑ k ∈ Finset.Icc 1 m, x ^ k / k := by
-    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.succ_pos _)]
-    simp [Finset.Ico_add_one_right_eq_Icc]
-  rw [← hrange]
-  exact (hasSum_nat_add_iff' (m + 1)).mpr (hasSum_pow_div_natCast hx)
-
-/-- For `0 ≤ x < 1`, the `m`-th Taylor remainder of `-log (1 - x)` is nonnegative. -/
-theorem neg_log_one_sub_sub_sum_Icc_nonneg {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (m : ℕ) :
-    0 ≤ -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k :=
-  (hasSum_pow_div_natCast_tail (by rwa [abs_of_nonneg hx0]) m).nonneg fun _ ↦ by positivity
+/-- For `0 ≤ x < 1`, the truncated power-series remainder
+`-log (1 - x) - ∑_{1 ≤ k ≤ n} x ^ k / k` is nonnegative. -/
+theorem neg_log_one_sub_sub_sum_Icc_nonneg {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (n : ℕ) :
+    0 ≤ -log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ) := by
+  have habs : |x| < 1 := by rwa [abs_of_nonneg hx0]
+  rw [← (hasSum_pow_div_natCast habs).tsum_eq, sub_nonneg]
+  exact (hasSum_pow_div_natCast habs).summable.sum_le_tsum _ fun _ _ ↦ by positivity
 
 /-- For `|x| ≤ 1 / 2`, the truncated power-series remainder of `-log (1 - x)` has absolute value at
 most `2 |x| ^ (n + 1)`. -/
@@ -250,6 +242,7 @@ theorem neg_log_one_sub_inv_sub_sum_Icc_le {x : ℝ} (hx : 2 ≤ x) (n : ℕ) :
     _ ≤ 2 * |x⁻¹| ^ (n + 1) := abs_neg_log_one_sub_sub_sum_Icc_le hinv n
     _ = 2 * (x ^ (n + 1))⁻¹ := by
         rw [abs_of_pos (inv_pos.mpr hx0), inv_pow]
+
 end Real
 
 namespace Complex
