@@ -107,8 +107,7 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     (TopCat.homeoOfIso (forgetToTop.mapIso e)).trans <|
       TopCat.homeoOfIso (eqToIso (presentationLimitPreAdicSpace_carrier P S.plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP))
-  let _ : CompactSpace X := h.symm.compactSpace
-  exact h.isOpenEmbedding.spectralSpace
+  exact h.symm.spectralSpace
 
 /-- A pre-adic space whose underlying topological space is not quasi-compact is not affinoid. -/
 theorem not_isAffinoid_of_noncompactSpace {X : PreAdicSpace.{u}} [NoncompactSpace X] :
