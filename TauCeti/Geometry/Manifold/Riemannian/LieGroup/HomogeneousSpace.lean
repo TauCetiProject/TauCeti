@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
@@ -15,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Homogeneous and normal homogeneous metrics on `G ⧸ K`
@@ -28,10 +24,10 @@ A positive-definite symmetric bilinear form `β` on `T_o(G ⧸ K)` that is invar
 isotropy action `k ↦ d(k •)_o` of `K` extends to a unique `G`-invariant Riemannian metric on
 `G ⧸ K`: at `x = g • o` the inner product evaluates `β` on the translates by `g⁻¹`, and invariance
 under `K` makes this independent of the representative `g`. The metric is smooth because near
-each point `g` can be chosen as a smooth local section of the submersion `π`. Through the
-isomorphism `dπ_1 : 𝔪 ≃ T_o(G ⧸ K)` for an `Ad(K)`-stable complement `𝔪` of the Lie algebra `𝔨` of
-`K`, isotropy-invariant forms on `T_o(G ⧸ K)` are the `Ad(K)`-invariant inner products on a
-reductive complement.
+each point `g` can be chosen as a smooth local section of the submersion `π`. Classically, through
+`dπ_1` restricted to an `Ad(K)`-stable complement `𝔪` of the Lie algebra `𝔨` of `K`, these forms
+correspond to the `Ad(K)`-invariant inner products on `𝔪`; that correspondence is not formalized
+here.
 
 For a Riemannian metric on `G` whose inner product at the identity is `Ad(K)`-invariant, the
 horizontal inner product at `o`, transported from `𝔪 = 𝔨^⊥` by the horizontal lift, is
@@ -89,9 +85,11 @@ section Metric
 variable (hK : IsClosed (K : Set G))
 
 variable (I K) in
-/-- The bilinear form at `x` of the `G`-invariant extension of a bilinear form `β` on the tangent
-space at the base point `o = [1]` of `G ⧸ K`: it evaluates `β` on the translates to `o` by the
-inverse of the representative `x.out` of `x`. -/
+/-- The pullback of a bilinear form `β` on the tangent space at the base point `o = [1]` of
+`G ⧸ K` to the tangent space at `x`, along the translation by the inverse of the chosen
+representative `x.out` of `x`. When `β` is invariant under the isotropy action of `K`, this does
+not depend on the representative (`homogeneousBilinearForm_apply_of_mk_eq`), and it is the value at
+`x` of the `G`-invariant extension of `β`. -/
 def homogeneousBilinearForm
     (β : letI := quotientChartedSpaceOfIsClosed I hK
       TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ]
@@ -111,8 +109,8 @@ variable {β : letI := quotientChartedSpaceOfIsClosed I hK
       TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ]
         TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ] ℝ}
 
-/-- The homogeneous extension of `β` evaluates `β` on the translates to the base point by the
-inverse of the representative of `x`. -/
+/-- `homogeneousBilinearForm` evaluates `β` on the translates to the base point by the inverse of
+the chosen representative of `x`; for isotropy-invariant `β` this is the homogeneous extension. -/
 @[simp]
 theorem homogeneousBilinearForm_apply (x : G ⧸ K) :
     letI := quotientChartedSpaceOfIsClosed I hK
@@ -178,9 +176,8 @@ theorem contMDiff_homogeneousBilinearForm
     (isSubmersion_quotientMk (I := I) hK).exists_contMDiffOn_section_of_surjective
       QuotientGroup.mk_surjective x₀
   have hUn : U ∈ 𝓝 x₀ := hU.mem_nhds hx₀U
-  have hpt : ∀ x ∈ U, (s x)⁻¹ • x = ((1 : G) : G ⧸ K) := fun x hx ↦ by
-    calc (s x)⁻¹ • x = (s x)⁻¹ • ((s x : G) : G ⧸ K) := by rw [hsec x hx]
-      _ = _ := by rw [MulAction.Quotient.smul_coe, smul_eq_mul, inv_mul_cancel]
+  have hpt : ∀ x ∈ U, (s x)⁻¹ • x = ((1 : G) : G ⧸ K) := fun x hx ↦
+    QuotientGroup.inv_smul_of_mk_eq (hsec x hx)
   have hsmooth : ContMDiffAt (𝓘(ℝ, QuotientModelSpace I K).prod 𝓘(ℝ, QuotientModelSpace I K))
       𝓘(ℝ, QuotientModelSpace I K) ∞ (uncurry fun x y : G ⧸ K ↦ (s x)⁻¹ • y) (x₀, x₀) :=
     ContMDiffAt.smul (I := I) (f := fun p : (G ⧸ K) × (G ⧸ K) ↦ (s p.1)⁻¹) (g := Prod.snd)
@@ -204,6 +201,8 @@ theorem contMDiff_homogeneousBilinearForm
           TangentSpace 𝓘(ℝ, QuotientModelSpace I K) x →L[ℝ] ℝ) ((1 : G) : G ⧸ K)
           β)).congr_of_eventuallyEq ?_
     filter_upwards [hUn] with x hx
+    -- The base points agree by `hpt`; the fibres of the bundle of bilinear forms are all the same
+    -- model space, so the two forms are the same element of it and `HEq.rfl` closes the goal.
     exact TotalSpace.ext (hpt x hx) HEq.rfl
 
 variable (hK) in
@@ -271,9 +270,13 @@ theorem homogeneousMetric_inner_one :
     (homogeneousMetric hK hsymm hpos hβ).inner ((1 : G) : G ⧸ K) = β := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   have := isManifold_quotientOfIsClosed (I := I) hK
+  have hid : (fun y : G ⧸ K ↦ (1 : G)⁻¹ • y) = id := by
+    funext y
+    simp
   ext u v
-  rw [homogeneousMetric_inner_of_mk_eq rfl,
-    show (fun y : G ⧸ K ↦ (1 : G)⁻¹ • y) = id by funext y; simp, mfderiv_id]
+  rw [homogeneousMetric_inner_of_mk_eq rfl, hid, mfderiv_id]
+  -- `ContinuousLinearMap.id` applied to `u`, in the fibre at `(1 : G)⁻¹ • o`, is `u` in the fibre
+  -- at `o`: the two fibres coincide only up to defeq, so `simp` cannot rewrite across them.
   rfl
 
 /-- **`G` acts by isometries of the homogeneous metric.** -/
@@ -292,11 +295,12 @@ theorem homogeneousMetric_inner_mfderiv_smul (g : G) (x : G ⧸ K) :
   intro v w
   have hg : ((g * x.out : G) : G ⧸ K) = g • x := by
     rw [← smul_eq_mul, ← MulAction.Quotient.smul_coe, QuotientGroup.out_eq']
-  have key := mfderiv_smul_quotient_comp (I := I) hK (g * x.out)⁻¹ g x rfl
-    (show (g * x.out)⁻¹ * g = x.out⁻¹ by group)
+  have key := mfderiv_smul_quotient_comp (I := I) hK (g * x.out)⁻¹ g x (c := x.out⁻¹) rfl
+    (by group)
   rw [homogeneousMetric_inner_of_mk_eq hg, key, key, homogeneousMetric_inner,
     homogeneousBilinearForm_apply]
 
+variable (hsymm hpos hβ) in
 /-- **Uniqueness of `G`-invariant metrics.** A Riemannian metric on `G ⧸ K` for which `G` acts by
 isometries is the homogeneous metric of its value at the base point. -/
 theorem eq_homogeneousMetric
@@ -323,6 +327,8 @@ theorem eq_homogeneousMetric
   have hpt : ∀ (p : G ⧸ K), p = ((1 : G) : G ⧸ K) →
       ∀ a b : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) p,
         m.inner p a b = m.inner ((1 : G) : G ⧸ K) a b := by
+    -- The vectors live in the fibre at `p`, which is the fibre at `o` only up to defeq; after
+    -- `subst`, both sides are the same expression.
     rintro p rfl a b
     rfl
   ext x v w
@@ -368,6 +374,16 @@ def horizontalLiftOne :
       (LinearEquiv.ofBijective _
         (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm.toLinearMap)
 
+/-- The horizontal lift at the identity is the inverse of the restriction of `dπ_1` to `𝔨^⊥`,
+followed by the inclusion of `𝔨^⊥`. -/
+theorem horizontalLiftOne_apply :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ∀ u : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K),
+      horizontalLiftOne I K hK u = ((LinearEquiv.ofBijective _
+        (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm u :
+          TangentSpace I (1 : G)) :=
+  fun _ ↦ (rfl)
+
 /-- The horizontal lift at the identity is horizontal. -/
 theorem horizontalLiftOne_mem :
     letI := quotientChartedSpaceOfIsClosed I hK
@@ -398,11 +414,12 @@ theorem horizontalLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} :
       (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a) = a := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   intro ha
-  have := congrArg Subtype.val
-    ((LinearEquiv.ofBijective _
-      (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm_apply_apply
-      ⟨a, ha⟩)
-  exact this
+  have h := (LinearEquiv.ofBijective _
+    (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm_apply_apply ⟨a, ha⟩
+  simp only [LinearEquiv.ofBijective_apply, LinearMap.coe_comp, Function.comp_apply,
+    Submodule.coe_subtype, ContinuousLinearMap.coe_coe] at h
+  rw [horizontalLiftOne_apply]
+  exact congrArg Subtype.val h
 
 variable (I K) in
 /-- **The horizontal inner product at the base point.** The inner product on `T_o(G ⧸ K)` that
@@ -425,22 +442,21 @@ theorem horizontalInnerOne_apply :
       inner ℝ (horizontalLiftOne I K hK u) (horizontalLiftOne I K hK v) :=
   fun _ _ ↦ rfl
 
-/-- **Isotropy invariance of the horizontal inner product.** If the inner product at the identity
-of `G` is invariant under `Ad(K)`, then the horizontal inner product at the base point of `G ⧸ K`
-is invariant under the isotropy action of `K`. -/
-theorem horizontalInnerOne_mfderiv_smul
+/-- **Equivariance of the horizontal lift.** If the inner product at the identity of `G` is
+invariant under `Ad(K)`, then for `k ∈ K` the horizontal lift of the isotropy translate
+`d(k •)_o u` is `Ad_k` applied to the horizontal lift of `u`. -/
+theorem horizontalLiftOne_mfderiv_smul
     (hAd : ∀ k ∈ K, ∀ a c : TangentSpace I (1 : G),
       inner ℝ (E := TangentSpace I (1 : G)) (Lie.adjointContinuousLinearMap (I := I) k a)
-        (Lie.adjointContinuousLinearMap (I := I) k c) = inner ℝ a c) :
+        (Lie.adjointContinuousLinearMap (I := I) k c) = inner ℝ a c) {k : G} (hk : k ∈ K) :
     letI := quotientChartedSpaceOfIsClosed I hK
-    ∀ k ∈ K, ∀ u v, horizontalInnerOne I K hK
-        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
-          (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u)
-        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
-          (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) v) = horizontalInnerOne I K hK u v := by
+    ∀ u, horizontalLiftOne I K hK
+      (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+        (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u) =
+      (Lie.adjointContinuousLinearMap (I := I) k :
+          TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G)) (horizontalLiftOne I K hK u) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   set D := mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
-  intro k hk u v
   have hker : ∀ k ∈ K, ∀ w ∈ D.ker, Lie.adjointContinuousLinearMap (I := I) k w ∈ D.ker := by
     intro k hk w hw
     rw [LinearMap.mem_ker] at hw ⊢
@@ -455,21 +471,32 @@ theorem horizontalInnerOne_mfderiv_smul
     refine (Submodule.mem_orthogonal (E := TangentSpace I (1 : G)) D.ker _).2 fun w hw ↦ ?_
     rw [← Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv k w, hAd k hk]
     exact ha _ (hker k⁻¹ (K.inv_mem hk) w hw)
-  have hlift : ∀ u, horizontalLiftOne I K hK
-      (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
-        (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u) =
-      (Lie.adjointContinuousLinearMap (I := I) k :
-          TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G)) (horizontalLiftOne I K hK u) := by
-    intro u
-    have h := mfderiv_smul_mfderiv_quotientMk_one hK hk (horizontalLiftOne I K hK u)
-    rw [mfderiv_quotientMk_horizontalLiftOne] at h
-    rw [h]
-    exact horizontalLiftOne_mfderiv_quotientMk hK (hperp _ (horizontalLiftOne_mem hK u))
+  intro u
+  have h := mfderiv_smul_mfderiv_quotientMk_one hK hk (horizontalLiftOne I K hK u)
+  rw [mfderiv_quotientMk_horizontalLiftOne] at h
+  rw [h]
+  exact horizontalLiftOne_mfderiv_quotientMk hK (hperp _ (horizontalLiftOne_mem hK u))
+
+/-- **Isotropy invariance of the horizontal inner product.** If the inner product at the identity
+of `G` is invariant under `Ad(K)`, then the horizontal inner product at the base point of `G ⧸ K`
+is invariant under the isotropy action of `K`. -/
+theorem horizontalInnerOne_mfderiv_smul
+    (hAd : ∀ k ∈ K, ∀ a c : TangentSpace I (1 : G),
+      inner ℝ (E := TangentSpace I (1 : G)) (Lie.adjointContinuousLinearMap (I := I) k a)
+        (Lie.adjointContinuousLinearMap (I := I) k c) = inner ℝ a c) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ∀ k ∈ K, ∀ u v, horizontalInnerOne I K hK
+        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+          (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u)
+        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+          (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) v) = horizontalInnerOne I K hK u v := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  intro k hk u v
   -- `rw [horizontalInnerOne_apply]` does not apply on the left: the arguments there live in the
   -- fibre at `k • o`, which is the fibre at `o` only up to defeq.
   change inner ℝ (horizontalLiftOne I K hK _) (horizontalLiftOne I K hK _) =
     inner ℝ (horizontalLiftOne I K hK u) (horizontalLiftOne I K hK v)
-  rw [hlift, hlift]
+  rw [horizontalLiftOne_mfderiv_smul hK hAd hk, horizontalLiftOne_mfderiv_smul hK hAd hk]
   exact hAd k hk _ _
 
 /-- The horizontal inner product at the base point is symmetric. -/

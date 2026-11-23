@@ -397,6 +397,25 @@ section Translation
 variable (hK : IsClosed (K : Set G))
 
 include hK in
+/-- Each translation of `G ⧸ K` is differentiable. -/
+theorem mdifferentiable_smul_quotient (g : G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    MDifferentiable 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+      (fun y : G ⧸ K ↦ g • y) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  exact ContMDiffSMul.mdifferentiable_const_smul (I := I) (I' := 𝓘(ℝ, QuotientModelSpace I K))
+    (M := G ⧸ K) (n := ∞) (by simp) g
+
+include hK in
+/-- The projection `G → G ⧸ K` is differentiable. -/
+theorem mdifferentiable_quotientMk :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    MDifferentiable I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  exact (contMDiff_quotientMk (I := I) hK).mdifferentiable (by simp)
+
+include hK in
 /-- The differential of a translation of `G ⧸ K` is injective. -/
 theorem injective_mfderiv_smul_quotient (g : G) (x : G ⧸ K) :
     letI := quotientChartedSpaceOfIsClosed I hK
@@ -420,9 +439,7 @@ theorem mfderiv_smul_quotient_comp (g h : G) (x : G ⧸ K) {y : G ⧸ K} (hy : h
         (fun z : G ⧸ K ↦ c • z) x v := by
   subst hc
   let _ := quotientChartedSpaceOfIsClosed I hK
-  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
-  have hd (a : G) := ContMDiffSMul.mdifferentiable_const_smul (I := I)
-    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) a
+  have hd := mdifferentiable_smul_quotient (I := I) hK
   have hfun : (fun z : G ⧸ K ↦ (g * h) • z) = (fun z ↦ g • z) ∘ fun z ↦ h • z :=
     funext fun z ↦ mul_smul g h z
   intro v
@@ -440,11 +457,8 @@ theorem mfderiv_smul_mfderiv_quotientMk_one {k : G} (hk : k ∈ K) (a : GroupLie
       mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
         (Lie.adjointContinuousLinearMap (I := I) k a) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
-  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
-  have hπ : MDifferentiable I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) :=
-    (contMDiff_quotientMk (I := I) hK).mdifferentiable (by simp)
-  have hτ := ContMDiffSMul.mdifferentiable_const_smul (I := I)
-    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) k
+  have hπ := mdifferentiable_quotientMk (I := I) hK
+  have hτ := mdifferentiable_smul_quotient (I := I) hK k
   have hc := (Lie.conjDiffeomorph (I := I) (n := 1) k).mdifferentiable (by simp)
   have hfun : (fun y : G ⧸ K ↦ k • y) ∘ (QuotientGroup.mk : G → G ⧸ K) =
       (QuotientGroup.mk : G → G ⧸ K) ∘ Lie.conjDiffeomorph (I := I) (n := 1) k := by
@@ -467,11 +481,8 @@ theorem mfderiv_smul_inv_mfderiv_quotientMk_mulInvariantVectorField (g : G)
           (mulInvariantVectorField a g)) =
       mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a := by
   let _ := quotientChartedSpaceOfIsClosed I hK
-  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
-  have hπ : MDifferentiable I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) :=
-    (contMDiff_quotientMk (I := I) hK).mdifferentiable (by simp)
-  have hτ := ContMDiffSMul.mdifferentiable_const_smul (I := I)
-    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) g⁻¹
+  have hπ := mdifferentiable_quotientMk (I := I) hK
+  have hτ := mdifferentiable_smul_quotient (I := I) hK g⁻¹
   have hL : MDifferentiable I I (fun y : G ↦ g * y) :=
     (contMDiff_mul_left (I := I) (n := ∞)).mdifferentiable (by simp)
   have hfun : (fun y : G ⧸ K ↦ g⁻¹ • y) ∘ ((QuotientGroup.mk : G → G ⧸ K) ∘ fun y : G ↦ g * y) =
