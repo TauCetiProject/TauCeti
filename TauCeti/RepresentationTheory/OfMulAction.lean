@@ -49,7 +49,7 @@ Galois group.
 * `Representation.ofMulAction_comp_subtype`: restricting a permutation representation to a
   subgroup gives the permutation representation of the subgroup.
 * `Representation.IntertwiningMap.coeff_ofMulAction_single_smul`: the matrix entries of an
-  intertwining map of a permutation representation are invariant under the diagonal action.
+  intertwining map between permutation representations are invariant under the diagonal action.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
 * `Representation.leftRegular_apply_eq_single_mul`: the left regular action of `g` is left
@@ -150,11 +150,11 @@ theorem _root_.Representation.ofMulAction_comp_subtype {G : Type*} [Group G] [Mu
     (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X :=
   MonoidHom.ext fun s ↦ (ofMulAction_subgroup S s).symm
 
-/-- The matrix entries `(t, s) ↦ φ(s)(t)` of an intertwining map `φ` of the permutation
-representation `k[X]` are invariant under the diagonal action of `G`. -/
-theorem _root_.Representation.IntertwiningMap.coeff_ofMulAction_single_smul {G : Type*} [Group G]
-    [MulAction G X] (φ : (ofMulAction k G X).IntertwiningMap (ofMulAction k G X)) (g : G)
-    (s t : X) :
+/-- The matrix entries `(t, s) ↦ φ(s)(t)` of an intertwining map `φ : k[X] → k[Y]` between
+permutation representations are invariant under the diagonal action of `G` on `X × Y`. -/
+theorem _root_.Representation.IntertwiningMap.coeff_ofMulAction_single_smul {G Y : Type*}
+    [Group G] [MulAction G X] [MulAction G Y]
+    (φ : (ofMulAction k G X).IntertwiningMap (ofMulAction k G Y)) (g : G) (s : X) (t : Y) :
     (φ (MonoidAlgebra.single (g • s) 1)).coeff (g • t) =
       (φ (MonoidAlgebra.single s 1)).coeff t := by
   rw [← ofMulAction_single, φ.isIntertwining, coeff_ofMulAction, inv_smul_smul]
