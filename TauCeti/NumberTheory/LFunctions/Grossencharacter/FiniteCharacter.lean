@@ -80,8 +80,8 @@ comparison is stated for nonzero integers only.
   finite character is a function of the residue modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_zero_iff`: it vanishes exactly at the
   integers not prime to `𝔪`.
-* `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_one_of_isCongrOne`: it is `1` on the
-  integers congruent to one modulo `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_one_of_mk_eq_one`: it is `1` on the
+  nonzero integers congruent to one modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
   value.
 
@@ -303,16 +303,6 @@ theorem finiteCharacterK_unitsToPrimeToSubgroup (χ : Grossencharacter K 𝔪) (
   refine Units.ext ?_
   rw [← χ.finiteCharacter_eq_finiteCharacterK (a := u) _ (by simp), finiteCharacter_unit]
 
-/-- **The finite character is `1` on the integers congruent to one modulo `𝔪`**: this is Hecke's
-unit relation `compatibility`, the archimedean value being the monomial of the infinity type
-there. -/
-theorem finiteCharacter_eq_one_of_isCongrOne (χ : Grossencharacter K 𝔪) {a : 𝓞 K} {x : Kˣ}
-    (hx : IsCongrOne 𝔪 x) (ha : algebraMap (𝓞 K) K a = x) : χ.finiteCharacter a = 1 := by
-  rw [χ.finiteCharacter_apply_of_algebraMap_eq ha,
-    χ.archimedeanValue_eq_embeddingCharacter fun _ ↦ hx.pos,
-    AlgebraicInfinityType.coe_embeddingCharacter_apply]
-  exact χ.compatibility x hx a ha
-
 /-- **The finite character vanishes exactly at the integers not prime to `𝔪`.** -/
 theorem finiteCharacter_eq_zero_iff (χ : Grossencharacter K 𝔪) {a : 𝓞 K} :
     χ.finiteCharacter a = 0 ↔ ¬ 𝔪.IsCoprimeTo (Ideal.span {a}) := by
@@ -340,6 +330,13 @@ theorem finiteCharacter_eq_of_sub_mem (χ : Grossencharacter K 𝔪) {a b : 𝓞
     (hb : b ≠ 0) (hab : a - b ∈ 𝔪.finitePart) : χ.finiteCharacter a = χ.finiteCharacter b := by
   rw [χ.finiteCharacter_eq_residueCharacter ha, χ.finiteCharacter_eq_residueCharacter hb,
     Ideal.Quotient.eq.mpr hab]
+
+/-- **The finite character is `1` on the nonzero integers congruent to one modulo `𝔪₀`**, with no
+sign condition at the real places of `𝔪`. The integer `0` is excluded: when `𝔪₀ = 𝓞 K` it is
+congruent to one, while `χ_f(0) = 0`. -/
+theorem finiteCharacter_eq_one_of_mk_eq_one (χ : Grossencharacter K 𝔪) {a : 𝓞 K} (ha₀ : a ≠ 0)
+    (ha : Ideal.Quotient.mk 𝔪.finitePart a = 1) : χ.finiteCharacter a = 1 := by
+  rw [χ.finiteCharacter_eq_residueCharacter ha₀, ha, MulChar.map_one]
 
 /-- **The residue character is determined by the finite character**: it is the unique character
 of `𝓞 K ⧸ 𝔪₀` whose value at the class of every nonzero integer `a` is `χ_f(a)`. Every class has a
