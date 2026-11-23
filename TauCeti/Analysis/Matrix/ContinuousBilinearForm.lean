@@ -36,9 +36,6 @@ of continuous bilinear forms applies to paths of matrices.
   of `M` is nondegenerate exactly when `M` is invertible.
 * `Matrix.hasDerivWithinAt_toContinuousLinearMap₂'`: entrywise derivatives of a path of matrices
   give the derivative of its bilinear forms.
-* `Matrix.sum_sum_transpose_mul_mul_apply_mul`: a bilinear map summed against the entries of
-  `Wᵀ A W` on vectors `eₖ` is the bilinear map summed against the entries of `A` on the vectors
-  `∑ₖ Wᵢₖ eₖ`.
 -/
 
 public section
@@ -137,34 +134,5 @@ theorem continuousOn_toContinuousLinearMap₂' {X : Type*} [TopologicalSpace X]
   exact toContinuousLinearMap₂'CLM.continuous.comp_continuousOn h
 
 end ContinuousBilinearForm
-
-section BilinearSum
-
-omit [DecidableEq n] in
-/-- Summing a bilinear map `B` against the entries of `Wᵀ A W` on a family of vectors `e` is
-summing it against the entries of `A` on the vectors `∑ₖ Wᵢₖ eₖ`. -/
-theorem sum_sum_transpose_mul_mul_apply_mul {𝕜 M : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup M] [NormedSpace 𝕜 M] (A W : Matrix n n 𝕜)
-    (B : M →L[𝕜] M →L[𝕜] 𝕜) (e : n → M) :
-    ∑ k, ∑ l, (Wᵀ * A * W) k l * B (e k) (e l) =
-      ∑ i, ∑ j, A i j * B (∑ k, W i k • e k) (∑ l, W j l • e l) := by
-  have hcomm (f : n → n → n → n → 𝕜) :
-      ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i :=
-    calc ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ k, ∑ l, ∑ i, ∑ j, f k l j i :=
-          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-      _ = ∑ k, ∑ i, ∑ l, ∑ j, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-      _ = ∑ i, ∑ k, ∑ l, ∑ j, f k l j i := Finset.sum_comm
-      _ = ∑ i, ∑ k, ∑ j, ∑ l, f k l j i :=
-          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-      _ = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-  simp only [map_sum, map_smul, FunLike.coe_sum, Finset.sum_apply,
-    FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, Matrix.mul_apply, Matrix.transpose_apply,
-    Finset.mul_sum, Finset.sum_mul]
-  rw [hcomm]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
-
-end BilinearSum
 
 end Matrix
