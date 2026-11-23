@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.DeterminantBound
 public import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
-public import TauCeti.Analysis.Polynomial.HasseDerivBound
-public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
+public import TauCeti.Analysis.Matrix.ConfluentVandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.IntervalCases

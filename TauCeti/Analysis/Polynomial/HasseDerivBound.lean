@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Data.Nat.Choose.Bounds
-public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -44,9 +43,6 @@ of `Polynomial.norm_eval_le_l1Norm_mul`, `Polynomial.l1Norm_hasseDeriv_le` and
   consumed by row-dependent determinant bounds and the Euclidean form consumed by Hadamard's
   inequality. The row of the jet `⟨i, k⟩` of the confluent Vandermonde matrix with nodes `a` is
   this family at the point `a i`.
-* `Matrix.norm_confluentVandermonde_le`: node bounds `‖a i‖ ≤ N i` and bounds `B ρ` on
-  `choose j k · N i ^ (j - k)` over the exponents `j < ∑ i, m i` bound the entries of the row
-  `ρ = finSigmaFinEquiv ⟨i, k⟩` of `Matrix.confluentVandermonde a m`.
 
 ## References
 
@@ -149,25 +145,3 @@ theorem sum_sq_norm_eval_hasseDeriv_X_pow_le (ha : ‖a‖ ≤ A) (k : ℕ) (s :
 end Row
 
 end Polynomial
-
-namespace Matrix
-
-variable {R : Type*} [SeminormedRing R] [NormOneClass R] {r : ℕ}
-
-/-- The row bounds of a confluent Vandermonde matrix: if `‖a i‖ ≤ N i` for every node and `B ρ`
-bounds `choose j k · N i ^ (j - k)` for every exponent `j < ∑ i, m i`, where
-`ρ = finSigmaFinEquiv ⟨i, k⟩`, then `B ρ` bounds every entry of the row `ρ`. -/
-theorem norm_confluentVandermonde_le {a : Fin r → R} {m : Fin r → ℕ} {N : Fin r → ℝ}
-    (hN : ∀ i, ‖a i‖ ≤ N i) {B : Fin (∑ i, m i) → ℝ}
-    (hB : ∀ i (k : Fin (m i)), ∀ j < ∑ i, m i,
-      (j.choose k : ℝ) * N i ^ (j - k) ≤ B (finSigmaFinEquiv ⟨i, k⟩))
-    (ρ j : Fin (∑ i, m i)) :
-    ‖confluentVandermonde a m ρ j‖ ≤ B ρ := by
-  obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
-  rw [confluentVandermonde_apply, Equiv.symm_apply_apply]
-  refine (Polynomial.norm_eval_hasseDeriv_X_pow_le k j (a i)).trans
-    (le_trans ?_ (hB i k j j.isLt))
-  gcongr
-  exact hN i
-
-end Matrix
