@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Order.Floor
-import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.ODE.Gronwall.Integrable
 import TauCeti.MeasureTheory.Function.L1Space.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -284,7 +283,8 @@ theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ 
         filter_upwards [ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans hsub')
           (hFm.and hLip)] with r ⟨hr, hrL⟩
         rw [← dist_eq_norm]
-        exact (hrL.norm_le_norm_add_mul_dist x₀ (x r)).trans (add_le_add hr le_rfl)
+        exact (norm_le_norm_add_const_of_dist_le (hrL.dist_le_mul (x r) x₀)).trans
+          (add_le_add hr le_rfl)
     _ ≤ |∫ r in t₀..s, m r| + |∫ r in t₀..s, (L r : ℝ) * ‖x r - x₀‖| := by
         rw [integral_add hmi hLu]
         exact abs_add_le _ _

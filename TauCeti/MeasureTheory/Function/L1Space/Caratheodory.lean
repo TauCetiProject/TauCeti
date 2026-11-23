@@ -6,20 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Integrability of Carathéodory compositions
 
-Let `F : ℝ → E → E` be a time-dependent map on `[a, b]` such that `F t` is Lipschitz with
-constant `L t` for almost every `t ∈ [a, b]`, where `L : ℝ → ℝ≥0` is integrable on `[a, b]`.
+Let `F : α → X → G` be a family of maps such that `F t` is Lipschitz with constant `L t` for
+`μ`-almost every `t`, where `L : α → ℝ≥0` is integrable. On an interval, `F : ℝ → E → G` is a
+time-dependent map on `[a, b]`.
 
 ## Main results
 
-* `TauCeti.integrableOn_apply_of_integrableOn_apply`: if every section `t ↦ F t x` is almost
-  everywhere strongly measurable on `[a, b]`, integrability of one section `t ↦ F t x₀` gives
-  integrability of every section.
+* `TauCeti.integrable_apply_of_integrable_apply`: if every section `t ↦ F t x` is almost
+  everywhere strongly measurable, integrability of one section `t ↦ F t x₀` gives integrability
+  of every section.
 * `TauCeti.integrableOn_apply_of_lipschitzWith`: if every section is integrable on `[a, b]`, then
   along every curve `x` continuous on `[a, b]` the composite `s ↦ F s (x s)` is integrable on
   `[a, b]`; its measurability is Tau Ceti's
@@ -38,21 +38,20 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] {F : ℝ → E → E} {L : ℝ → ℝ≥0} {a b : ℝ}
-
-/-- **Integrability of the sections.** If `t ↦ F t x` is almost everywhere strongly measurable on
-`[a, b]` for every `x`, one section `t ↦ F t x₀` is integrable there, and `F t` is Lipschitz with
-an integrable constant `L t` for almost every `t ∈ [a, b]`, then every section is integrable on
-`[a, b]`. -/
-theorem integrableOn_apply_of_integrableOn_apply {x₀ : E}
-    (hF : ∀ x, AEStronglyMeasurable (fun t ↦ F t x) (volume.restrict (Icc a b)))
-    (hF₀ : IntegrableOn (fun t ↦ F t x₀) (Icc a b))
-    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
-    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzWith (L t) (F t)) (x : E) :
-    IntegrableOn (fun t ↦ F t x) (Icc a b) := by
+/-- **Integrability of the sections.** If `t ↦ F t x` is almost everywhere strongly measurable
+for every `x`, one section `t ↦ F t x₀` is integrable, and `F t` is Lipschitz with an integrable
+constant `L t` for almost every `t`, then every section is integrable. -/
+theorem integrable_apply_of_integrable_apply {α X G : Type*} [MeasurableSpace α] {μ : Measure α}
+    [PseudoMetricSpace X] [NormedAddCommGroup G] {F : α → X → G} {L : α → ℝ≥0} {x₀ : X}
+    (hF : ∀ x, AEStronglyMeasurable (fun t ↦ F t x) μ) (hF₀ : Integrable (fun t ↦ F t x₀) μ)
+    (hL : Integrable (fun t ↦ (L t : ℝ)) μ) (hLip : ∀ᵐ t ∂μ, LipschitzWith (L t) (F t)) (x : X) :
+    Integrable (fun t ↦ F t x) μ := by
   refine Integrable.mono' (hF₀.norm.add (hL.mul_const (dist x x₀))) (hF x) ?_
   filter_upwards [hLip] with t ht
-  exact ht.norm_le_norm_add_mul_dist x₀ x
+  exact norm_le_norm_add_const_of_dist_le (ht.dist_le_mul x x₀)
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] {F : ℝ → E → G}
+  {L : ℝ → ℝ≥0} {a b : ℝ}
 
 /-- **Integrability along a curve.** If every section `t ↦ F t x` is integrable on `[a, b]` and
 `F t` is Lipschitz with an integrable constant `L t` for almost every `t ∈ [a, b]`, then
@@ -68,7 +67,8 @@ theorem integrableOn_apply_of_lipschitzWith (hF : ∀ x, IntegrableOn (fun t ↦
       (fun y ↦ (hF y).aestronglyMeasurable) (hLip.mono fun _ ht ↦ ht.continuous.continuousAt)
   refine Integrable.mono' ((hF 0).norm.add (hL.mul_const C)) hmeas ?_
   filter_upwards [hLip, ae_restrict_mem measurableSet_Icc] with s hs hsI
-  refine (hs.norm_le_norm_add_mul_dist 0 (x s)).trans (add_le_add_right ?_ _)
+  refine (norm_le_norm_add_const_of_dist_le (hs.dist_le_mul (x s) 0)).trans
+    (add_le_add_right ?_ _)
   rw [dist_zero_right]
   exact mul_le_mul_of_nonneg_left (hC s hsI) (L s).coe_nonneg
 
