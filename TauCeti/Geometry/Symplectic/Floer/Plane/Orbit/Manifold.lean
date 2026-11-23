@@ -173,7 +173,8 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : SmoothT
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) :=
-  setLIntegral_ofReal_comp_realChart_positive_le fun _ hz ↦
+  positive.setLIntegral_ofReal_comp_realChart_cylindricalEndLift_le measurableSet_Ioi
+    (fun _ hz ↦ exp_lt_norm_realChart_positive hz.1) fun _ hz ↦
     floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans hz.1.le)
       (mdifferentiableAt_realChart_positive hu hz.1)
 
@@ -194,9 +195,10 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) :=
-  setLIntegral_ofReal_comp_realChart_positive_le_of_subset hs hst fun _ hz ↦
-    floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans (hst hz).1.le)
-      (mdifferentiableAt_realChart_positive hu (hst hz).1)
+  (positive.setLIntegral_ofReal_comp_realChart_cylindricalEndLift_eq hs (fun _ hz ↦ (hst hz).2)
+    fun _ hz ↦ floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans (hst hz).1.le)
+      (mdifferentiableAt_realChart_positive hu (hst hz).1)).trans_le <|
+    lintegral_mono_set <| image_subset_iff.2 fun _ hz ↦ exp_lt_norm_realChart_positive (hst hz).1
 
 /-- **The energy of a translated end of the positive plane in a manifold.** For `a ≥ 2`, if `u` is
 differentiable on the part `‖w‖ > exp (2πa)` of the positive plane, and the translate `s + (R, 0)`

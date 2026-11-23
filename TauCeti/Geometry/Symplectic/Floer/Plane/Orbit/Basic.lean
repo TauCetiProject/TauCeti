@@ -275,8 +275,7 @@ solving the Floer equation `(du - X_𝔎)^{0,1} = 0` there for almost complex st
 is a one-periodic orbit `x` of the Hamiltonian vector field such that the loops
 `ℓ_R(t) = u(φ(ε R + i t))`, where `φ` is the end lift `p.cylindricalEndLift` and `ε = p.endSign`,
 converge uniformly to `x` along some `R_n → ∞`, and their actions `A_H(ℓ_R)` tend to the action
-`A_H(x)` as `R → ∞`. The positive plane's end is the half-cylinder `s > a` and the negative plane's
-end is `s < -a`, so no time reversal of the Hamiltonian is needed. -/
+`A_H(x)` as `R → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_cylindricalEndLift_of_floer
     (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
