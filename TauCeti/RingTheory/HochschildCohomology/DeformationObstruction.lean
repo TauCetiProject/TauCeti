@@ -61,6 +61,10 @@ The `A∞` form of this obstruction theory, with braces of suspended Hochschild 
 `TauCeti.Algebra.Homology.AInfinity.Algebra.Deformation`. The classification of the deformations
 of order one up to equivalence by `HH²(A, A)` is the infinitesimal half of the same theory.
 
+Gerstenhaber's composition, the associator coefficients and the obstruction are defined for
+`2`-cochains on any `R`-module `A`, since they only use the cochains themselves; the algebra
+structure enters through `φ₀ = μ` and the Hochschild differential.
+
 ## Main definitions
 
 * `TauCeti.gerstenhaberComp`: Gerstenhaber's composition of two `2`-cochains.
@@ -99,7 +103,7 @@ namespace TauCeti
 
 section Bilinear
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+variable {R A : Type*} [CommSemiring R] [AddCommGroup A] [Module R A]
 
 /-- A `2`-cochain as a bilinear map, `a ↦ b ↦ f(a, b)`. -/
 private def bil (f : (Fin 2 → A) →ₘₗ[R] A) : A →ₗ[R] A →ₗ[R] A :=
@@ -146,6 +150,70 @@ def gerstenhaberComp (f g : (Fin 2 → A) →ₘₗ[R] A) : (Fin 3 → A) →ₘ
 theorem gerstenhaberComp_apply (f g : (Fin 2 → A) →ₘₗ[R] A) (v : Fin 3 → A) :
     gerstenhaberComp f g v = f ![g ![v 0, v 1], v 2] - f ![v 0, g ![v 1, v 2]] := by
   simp [gerstenhaberComp, bil_apply]
+
+
+/-! ### The associator coefficients and the obstruction of a family of cochains -/
+
+/-- Gerstenhaber's composition vanishes when its first argument does. -/
+@[simp]
+theorem gerstenhaberComp_zero_left (g : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp 0 g = 0 := by
+  ext v
+  simp [gerstenhaberComp_apply]
+
+/-- Gerstenhaber's composition vanishes when its second argument does. -/
+@[simp]
+theorem gerstenhaberComp_zero_right (f : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp f 0 = 0 := by
+  ext v
+  have h : ∀ x : A, f ![0, x] = 0 := fun x ↦ by rw [← bil_apply, map_zero, LinearMap.zero_apply]
+  have h' : ∀ x : A, f ![x, 0] = 0 := fun x ↦ by rw [← bil_apply, map_zero]
+  simp [gerstenhaberComp_apply, h, h']
+
+/-- The coefficient `∑_{i + j = k} φᵢ ∘ φⱼ` of `tᵏ` in the associator of the multiplication
+`μₜ = ∑ tⁱ φᵢ`, Gerstenhaber's composition `∘` being `TauCeti.gerstenhaberComp`. -/
+def deformationAssociator (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) : (Fin 3 → A) →ₘₗ[R] A :=
+  ∑ x ∈ Finset.antidiagonal k, gerstenhaberComp (φ x.1) (φ x.2)
+
+/-- Evaluating the coefficients of the associator. -/
+theorem deformationAssociator_apply (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) (v : Fin 3 → A) :
+    deformationAssociator φ k v = ∑ x ∈ Finset.antidiagonal k,
+      (φ x.1 ![φ x.2 ![v 0, v 1], v 2] - φ x.1 ![v 0, φ x.2 ![v 1, v 2]]) := by
+  simp [deformationAssociator, gerstenhaberComp_apply]
+
+/-- The coefficient of `tᵏ` only depends on the coefficients `φ 0, …, φ k`. -/
+theorem deformationAssociator_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {k : ℕ}
+    (h : ∀ i ≤ k, φ i = ψ i) : deformationAssociator φ k = deformationAssociator ψ k := by
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rw [Finset.mem_antidiagonal] at hx
+  rw [h x.1 (by omega), h x.2 (by omega)]
+
+/-- The **obstruction** to extending a deformation of order `n` to order `n + 1`: the
+coefficient `∑_{i + j = n + 1, 1 ≤ i, j ≤ n} φᵢ ∘ φⱼ` of `tⁿ⁺¹` in the associator of the
+truncated multiplication `∑_{i ≤ n} tⁱ φᵢ`. -/
+def algebraDeformationObstruction (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (n : ℕ) :
+    (Fin 3 → A) →ₘₗ[R] A :=
+  deformationAssociator (fun i ↦ if i ≤ n then φ i else 0) (n + 1)
+
+/-- Unfolding `TauCeti.algebraDeformationObstruction`. -/
+theorem algebraDeformationObstruction_def (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (n : ℕ) :
+    algebraDeformationObstruction φ n =
+      deformationAssociator (fun i ↦ if i ≤ n then φ i else 0) (n + 1) :=
+  (rfl)
+
+/-- The obstruction only depends on the coefficients `φ 0, …, φ n`. -/
+theorem algebraDeformationObstruction_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {n : ℕ}
+    (h : ∀ i ≤ n, φ i = ψ i) :
+    algebraDeformationObstruction φ n = algebraDeformationObstruction ψ n := by
+  rw [algebraDeformationObstruction_def, algebraDeformationObstruction_def]
+  refine deformationAssociator_congr fun i _ ↦ ?_
+  split_ifs with hi
+  exacts [h i hi, rfl]
+
+/-- There is no obstruction to deformations of order one. -/
+@[simp]
+theorem algebraDeformationObstruction_zero (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) :
+    algebraDeformationObstruction φ 0 = 0 := by
+  simp [algebraDeformationObstruction_def, deformationAssociator,
+    Finset.Nat.sum_antidiagonal_succ]
 
 end Bilinear
 
@@ -259,20 +327,6 @@ section Deformation
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 
-/-- Gerstenhaber's composition vanishes when its first argument does. -/
-@[simp]
-theorem gerstenhaberComp_zero_left (g : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp 0 g = 0 := by
-  ext v
-  simp [gerstenhaberComp_apply]
-
-/-- Gerstenhaber's composition vanishes when its second argument does. -/
-@[simp]
-theorem gerstenhaberComp_zero_right (f : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp f 0 = 0 := by
-  ext v
-  have h : ∀ x : A, f ![0, x] = 0 := fun x ↦ by rw [← bil_apply, map_zero, LinearMap.zero_apply]
-  have h' : ∀ x : A, f ![x, 0] = 0 := fun x ↦ by rw [← bil_apply, map_zero]
-  simp [gerstenhaberComp_apply, h, h']
-
 /-- Composing with the multiplication on either side gives minus the Hochschild coboundary:
 `μ ∘ ψ + ψ ∘ μ = -δψ`. -/
 theorem gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 → A) →ₘₗ[R] A) :
@@ -283,24 +337,6 @@ theorem gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 → A) →ₘₗ[R] A) 
   rw [apply_eq_apply_vecCons_three (-_), neg_apply, coboundary_two_apply]
   simp [gerstenhaberComp_apply]
   abel
-
-/-- The coefficient `∑_{i + j = k} φᵢ ∘ φⱼ` of `tᵏ` in the associator of the multiplication
-`μₜ = ∑ tⁱ φᵢ`, Gerstenhaber's composition `∘` being `TauCeti.gerstenhaberComp`. -/
-def deformationAssociator (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) : (Fin 3 → A) →ₘₗ[R] A :=
-  ∑ x ∈ Finset.antidiagonal k, gerstenhaberComp (φ x.1) (φ x.2)
-
-/-- Evaluating the coefficients of the associator. -/
-theorem deformationAssociator_apply (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) (v : Fin 3 → A) :
-    deformationAssociator φ k v = ∑ x ∈ Finset.antidiagonal k,
-      (φ x.1 ![φ x.2 ![v 0, v 1], v 2] - φ x.1 ![v 0, φ x.2 ![v 1, v 2]]) := by
-  simp [deformationAssociator, gerstenhaberComp_apply]
-
-/-- The coefficient of `tᵏ` only depends on the coefficients `φ 0, …, φ k`. -/
-theorem deformationAssociator_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {k : ℕ}
-    (h : ∀ i ≤ k, φ i = ψ i) : deformationAssociator φ k = deformationAssociator ψ k := by
-  refine Finset.sum_congr rfl fun x hx ↦ ?_
-  rw [Finset.mem_antidiagonal] at hx
-  rw [h x.1 (by omega), h x.2 (by omega)]
 
 variable (R A) in
 /-- The family `φ` is a **deformation of order `n`** of the algebra `A`: the multiplication
@@ -347,35 +383,6 @@ theorem isAlgebraDeformationOfOrder_zero_iff {φ : ℕ → (Fin 2 → A) →ₘ�
   rw [Nat.le_zero.1 hk]
   ext v
   simp [deformationAssociator_apply, h, mul_assoc]
-
-/-- The **obstruction** to extending a deformation of order `n` to order `n + 1`: the
-coefficient `∑_{i + j = n + 1, 1 ≤ i, j ≤ n} φᵢ ∘ φⱼ` of `tⁿ⁺¹` in the associator of the
-truncated multiplication `∑_{i ≤ n} tⁱ φᵢ`. -/
-def algebraDeformationObstruction (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (n : ℕ) :
-    (Fin 3 → A) →ₘₗ[R] A :=
-  deformationAssociator (fun i ↦ if i ≤ n then φ i else 0) (n + 1)
-
-/-- Unfolding `TauCeti.algebraDeformationObstruction`. -/
-theorem algebraDeformationObstruction_def (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (n : ℕ) :
-    algebraDeformationObstruction φ n =
-      deformationAssociator (fun i ↦ if i ≤ n then φ i else 0) (n + 1) :=
-  (rfl)
-
-/-- The obstruction only depends on the coefficients `φ 0, …, φ n`. -/
-theorem algebraDeformationObstruction_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {n : ℕ}
-    (h : ∀ i ≤ n, φ i = ψ i) :
-    algebraDeformationObstruction φ n = algebraDeformationObstruction ψ n := by
-  rw [algebraDeformationObstruction_def, algebraDeformationObstruction_def]
-  refine deformationAssociator_congr fun i _ ↦ ?_
-  split_ifs with hi
-  exacts [h i hi, rfl]
-
-/-- There is no obstruction to deformations of order one. -/
-@[simp]
-theorem algebraDeformationObstruction_zero (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) :
-    algebraDeformationObstruction φ 0 = 0 := by
-  simp [algebraDeformationObstruction_def, deformationAssociator,
-    Finset.Nat.sum_antidiagonal_succ]
 
 /-- **The coefficient of `tⁿ⁺¹` in the associator** of `μₜ` is the obstruction of the
 truncation at order `n` minus the Hochschild coboundary of `φ (n + 1)`. -/
