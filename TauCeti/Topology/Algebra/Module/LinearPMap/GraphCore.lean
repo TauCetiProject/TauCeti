@@ -64,7 +64,8 @@ theorem isClosed_iff_forall_tendsto [FirstCountableTopology E] [FirstCountableTo
     A.IsClosed ↔ ∀ (u : ℕ → A.domain) (x : E) (y : F),
       Tendsto (fun n => (u n : E)) atTop (𝓝 x) → Tendsto (fun n => A (u n)) atTop (𝓝 y) →
         ∃ h : x ∈ A.domain, A ⟨x, h⟩ = y := by
-  refine ⟨fun hA u x y hx hy => hA.mem_domain_of_tendsto (fun n => (u n).2) hx hy, fun h => ?_⟩
+  refine ⟨fun hA u x y hx hy => hA.mem_domain_of_tendsto (fun n => (u n).property) hx hy,
+    fun h => ?_⟩
   refine IsSeqClosed.isClosed fun z p hz hp => ?_
   choose u hu₁ hu₂ using fun n => A.mem_graph_iff.mp (hz n)
   obtain ⟨hp₁, hp₂⟩ := h u p.1 p.2 (by simpa only [hu₁] using hp.fst_nhds)
