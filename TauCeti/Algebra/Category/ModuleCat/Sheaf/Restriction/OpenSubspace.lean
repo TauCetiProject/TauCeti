@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.Module
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Unit
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Basic
 public import TauCeti.Topology.Sheaves.Functors
 public import TauCeti.Topology.Sheaves.Over
 
@@ -25,7 +24,7 @@ canonical ring map `U.sheafInclusionHom RingCat R`. At the same time, restrictio
 has its own left adjoint (extension by zero), so both `U.sheafOfModulesRestrict R` and pullback
 along `U.sheafInclusionHom RingCat R` preserve all limits as well as all colimits. Under Mathlib's
 slice equivalence `U.sheafOfModulesEquivOver R`, open-subspace restriction agrees with slice
-restriction `SheafOfModules.overFunctor R U` and preserves free module sheaves.
+restriction `SheafOfModules.overFunctor R U`.
 
 ## Main declarations
 
@@ -36,13 +35,12 @@ restriction `SheafOfModules.overFunctor R U` and preserves free module sheaves.
   `sheafOfModulesRestrict_obj_val_presheaf_map`;
 * `TopologicalSpace.Opens.sheafOfModulesRestrictAdj` (with sectionwise unit and counit formulas
   `sheafOfModulesRestrictAdj_unit_app_val_app` and `sheafOfModulesRestrictAdj_counit_app_val_app`)
-  and `TopologicalSpace.Opens.sheafOfModulesRestrictIsoPullback`: the adjunction of open-subspace
-  restriction with direct image and its identification with pullback;
-* `TopologicalSpace.Opens.overFunctorCompSheafOfModulesEquivOver`,
-  `TopologicalSpace.Opens.sheafOfModulesRestrictUnitIso`,
-  `TopologicalSpace.Opens.sheafOfModulesEquivOverFunctorObjFreeIso`, and
-  `TopologicalSpace.Opens.sheafOfModulesRestrictFreeIso`: compatibility of open-subspace
-  restriction with slice restriction, the unit module sheaf, and free module sheaves.
+  and `TopologicalSpace.Opens.sheafOfModulesRestrictIsoPullback` (with adjunction transpose
+  formula `sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictIsoPullback_hom_app`): the
+  adjunction of open-subspace restriction with direct image and its identification with pullback;
+* `TopologicalSpace.Opens.overFunctorCompSheafOfModulesEquivOver` (with sectionwise formula
+  `overFunctorCompSheafOfModulesEquivOver_hom_app_val_app`): compatibility of open-subspace
+  restriction with slice restriction.
 
 ## References
 
@@ -260,6 +258,16 @@ def sheafOfModulesRestrictIsoPullback :
   (U.sheafOfModulesRestrictAdj.{v} R).leftAdjointUniq
     (SheafOfModules.pullbackPushforwardAdjunction.{v} (U.sheafInclusionHom RingCat.{u} R))
 
+/-- Under `sheafOfModulesRestrictAdj`, transposing `sheafOfModulesRestrictIsoPullback.hom.app M`
+produces the unit at `M` of the pullback-pushforward adjunction along `U.sheafInclusionHom`. -/
+theorem sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictIsoPullback_hom_app
+    (M : SheafOfModules.{v} R) :
+    (U.sheafOfModulesRestrictAdj.{v} R).homEquiv _ _
+        ((U.sheafOfModulesRestrictIsoPullback.{v} R).hom.app M) =
+      (SheafOfModules.pullbackPushforwardAdjunction.{v}
+        (U.sheafInclusionHom RingCat.{u} R)).unit.app M :=
+  Adjunction.homEquiv_leftAdjointUniq_hom_app _ _ M
+
 /-- Pullback of module sheaves along an open inclusion preserves all limits. -/
 instance preservesLimits_pullback_sheafInclusionHom :
     PreservesLimits (SheafOfModules.pullback.{u} (U.sheafInclusionHom RingCat.{u} R)) :=
@@ -278,71 +286,17 @@ def overFunctorCompSheafOfModulesEquivOver :
   ext : 2
   rfl
 
-/-- Open-subspace restriction preserves the unit sheaf of modules. -/
-def sheafOfModulesRestrictUnitIso :
-    (U.sheafOfModulesRestrict.{u} R).obj (SheafOfModules.unit R) ≅
-      SheafOfModules.unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R) :=
-  (U.sheafOfModulesRestrictIsoPullback.{u} R).app (SheafOfModules.unit R) ≪≫
-    SheafOfModules.pullbackObjUnitIso (U.sheafInclusionHom RingCat.{u} R)
-
-/-- Under `U.sheafOfModulesEquivOver R`, free module sheaves on the slice site over `U` correspond
-to free module sheaves on the open subspace `U`. -/
-def sheafOfModulesEquivOverFunctorObjFreeIso (I : Type u) :
-    (U.sheafOfModulesEquivOver R).functor.obj (SheafOfModules.free I) ≅
-      SheafOfModules.free I :=
-  let F : SheafOfModules.{u} (R.over U) ⥤ SheafOfModules.{u} (U.sheafRestrict.obj R) :=
-    (U.sheafOfModulesEquivOver R).functor
-  haveI : PreservesColimitsOfShape (Discrete I) F :=
-    (U.sheafOfModulesEquivOver R).toAdjunction.leftAdjoint_preservesColimits
-      |>.preservesColimitsOfShape
-  (SheafOfModules.mapFreeIso F I (U.sheafOfModulesEquivOverUnit R).symm).symm
-
-/-- Through `sheafOfModulesEquivOverFunctorObjFreeIso`, the image of a free generator `ιFree i`
-is `ιFree i` on the open subspace `U` precomposed with the unit comparison. -/
-@[reassoc (attr := simp)]
-theorem sheafOfModulesEquivOver_functor_map_ιFree_comp_sheafOfModulesEquivOverFunctorObjFreeIso_hom
-    (I : Type u) (i : I) :
-    (U.sheafOfModulesEquivOver R).functor.map (SheafOfModules.ιFree i) ≫
-        (U.sheafOfModulesEquivOverFunctorObjFreeIso R I).hom =
-      (U.sheafOfModulesEquivOverUnit R).hom ≫ SheafOfModules.ιFree i :=
-  SheafOfModules.map_ιFree_mapFreeIso_inv _ I _ i
-
-/-- Open-subspace restriction sends the free module sheaf on `I` to the free module sheaf on `I`. -/
-def sheafOfModulesRestrictFreeIso (I : Type u) :
-    (U.sheafOfModulesRestrict.{u} R).obj (SheafOfModules.free I) ≅
-      SheafOfModules.free I :=
-  haveI : PreservesColimitsOfShape (Discrete I) (U.sheafOfModulesRestrict.{u} R) :=
-    (U.sheafOfModulesRestrictAdj.{u} R).leftAdjoint_preservesColimits.preservesColimitsOfShape
-  (SheafOfModules.mapFreeIso (U.sheafOfModulesRestrict.{u} R) I
-    (U.sheafOfModulesRestrictUnitIso R).symm).symm
-
-/-- Through `sheafOfModulesRestrictFreeIso`, restricting a free generator `ιFree i` gives
-`ιFree i` on the open subspace `U` precomposed with `sheafOfModulesRestrictUnitIso`. -/
-@[reassoc (attr := simp)]
-theorem sheafOfModulesRestrict_map_ιFree_comp_sheafOfModulesRestrictFreeIso_hom
-    (I : Type u) (i : I) :
-    (U.sheafOfModulesRestrict.{u} R).map (SheafOfModules.ιFree i) ≫
-        (U.sheafOfModulesRestrictFreeIso R I).hom =
-      (U.sheafOfModulesRestrictUnitIso R).hom ≫ SheafOfModules.ιFree i :=
-  SheafOfModules.map_ιFree_mapFreeIso_inv _ I _ i
-
-/-- A trivialization of `M.over U` by a free module sheaf induces a trivialization of the
-open-subspace restriction `(U.sheafOfModulesRestrict R).obj M`. -/
-def sheafOfModulesRestrictIsoFreeOfOverIsoFree (M : SheafOfModules.{u} R) {I : Type u}
-    (e : M.over U ≅ SheafOfModules.free I) :
-    (U.sheafOfModulesRestrict.{u} R).obj M ≅ SheafOfModules.free I :=
-  ((U.overFunctorCompSheafOfModulesEquivOver R).app M).symm ≪≫
-    (U.sheafOfModulesEquivOver R).functor.mapIso e ≪≫
-    U.sheafOfModulesEquivOverFunctorObjFreeIso R I
-
-/-- A trivialization of the open-subspace restriction `(U.sheafOfModulesRestrict R).obj M` by a free
-module sheaf induces a trivialization of `M.over U`. -/
-def overIsoFreeOfSheafOfModulesRestrictIsoFree (M : SheafOfModules.{u} R) {I : Type u}
-    (e : (U.sheafOfModulesRestrict.{u} R).obj M ≅ SheafOfModules.free I) :
-    M.over U ≅ SheafOfModules.free I :=
-  (U.sheafOfModulesEquivOver R).fullyFaithfulFunctor.preimageIso
-    ((U.overFunctorCompSheafOfModulesEquivOver R).app M ≪≫ e ≪≫
-      (U.sheafOfModulesEquivOverFunctorObjFreeIso R I).symm)
+/-- On sections over `W`, `(U.overFunctorCompSheafOfModulesEquivOver R).hom.app M` is the
+identity on underlying sections over `U.isOpenEmbedding.functor.obj W.unop`. -/
+theorem overFunctorCompSheafOfModulesEquivOver_hom_app_val_app (M : SheafOfModules.{v} R)
+    (W : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ)
+    (x : M.val.presheaf.obj (op (U.isOpenEmbedding.functor.obj W.unop))) :
+    (eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R M W) :
+        ((U.sheafOfModulesRestrict.{v} R).obj M).val.presheaf.obj W ⟶
+          M.val.presheaf.obj (op (U.isOpenEmbedding.functor.obj W.unop)))
+      (((U.overFunctorCompSheafOfModulesEquivOver.{v} R).hom.app M).val.app W x) = x := by
+  unfold overFunctorCompSheafOfModulesEquivOver
+  rfl
 
 end ModuleRestriction
 

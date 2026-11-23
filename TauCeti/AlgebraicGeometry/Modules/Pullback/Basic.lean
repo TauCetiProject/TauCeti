@@ -7,9 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.OpenSubspace
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
@@ -81,12 +82,10 @@ with composition: the composition isomorphism of pullbacks carries the compariso
   isomorphism exactly when its pullbacks to the members of an open cover are, and
   `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
   immersions whose images cover the scheme;
-* `AlgebraicGeometry.Scheme.Modules.overEquivFunctorObjFreeIso`: the identification of modules on
-  the slice at an open `U` with modules on the open subscheme `U` preserves free modules, so
-  trivializations of a module pass between the slice and the open subscheme
-  (`AlgebraicGeometry.Scheme.Modules.restrictIsoFreeOfOverIsoFree`,
-  `AlgebraicGeometry.Scheme.Modules.overIsoFreeOfRestrictIsoFree`), and a trivialization of the
-  pullback along an open immersion `f` is one of the restriction to `f.opensRange`
+* `AlgebraicGeometry.Scheme.Modules.restrictIsoFreeOfOverIsoFree` and
+  `AlgebraicGeometry.Scheme.Modules.overIsoFreeOfRestrictIsoFree`: trivializations of a module
+  pass between the slice and the open subscheme, and a trivialization of the pullback along an
+  open immersion `f` is one of the restriction to `f.opensRange`
   (`AlgebraicGeometry.Scheme.Modules.restrictOpensRangeIsoFree`);
 * `AlgebraicGeometry.Scheme.Modules.ιFree_pullbackObjFreeIso_inv`: through Mathlib's
   `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the pullback of a basis section is the basis section; multiplied by a
@@ -110,13 +109,6 @@ universe u
 noncomputable section
 
 variable {X Y : Scheme.{u}}
-
-/-- Mathlib's site-level pushforward along a morphism of schemes is a right adjoint. Mathlib's
-statements about pullbacks of sheaves of modules ask for this by instance, while the adjunction is
-recorded for `Scheme.Modules.pushforward`, which instance search does not unfold. -/
-instance isRightAdjoint_sheafOfModulesPushforward (f : X ⟶ Y) :
-    (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-  inferInstanceAs (pushforward f).IsRightAdjoint
 
 section Coherence
 
@@ -573,25 +565,19 @@ end Over
 
 section Free
 
-/-- The identification of modules on the slice site over an open `U` with modules on the open
-subscheme `U` preserves free modules. -/
-def overEquivFunctorObjFreeIso (U : X.Opens) (I : Type u) :
-    (overEquiv U).functor.obj (SheafOfModules.free I) ≅ SheafOfModules.free I :=
-  U.sheafOfModulesEquivOverFunctorObjFreeIso X.ringCatSheaf I
-
 /-- A trivialization of `M` on the slice site over an open `U` gives a trivialization of the
 restriction of `M` to the open subscheme `U`. -/
 def restrictIsoFreeOfOverIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
     (e : M.over U ≅ SheafOfModules.free I) : M.restrict U.ι ≅ SheafOfModules.free I :=
   ((overFunctorEquiv U).app M).symm ≪≫ (overEquiv U).functor.mapIso e ≪≫
-    overEquivFunctorObjFreeIso U I
+    U.sheafOfModulesEquivOverFunctorObjFreeIso X.ringCatSheaf I
 
 /-- A trivialization of the restriction of `M` to the open subscheme `U` gives a trivialization
 of `M` on the slice site over `U`. -/
 def overIsoFreeOfRestrictIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
     (e : M.restrict U.ι ≅ SheafOfModules.free I) : M.over U ≅ SheafOfModules.free I :=
   (overEquiv U).fullyFaithfulFunctor.preimageIso ((overFunctorEquiv U).app M ≪≫ e ≪≫
-    (overEquivFunctorObjFreeIso U I).symm)
+    (U.sheafOfModulesEquivOverFunctorObjFreeIso X.ringCatSheaf I).symm)
 
 /-- A trivialization of the pullback of `M` along an open immersion `f` gives a trivialization of
 the restriction of `M` to the open image of `f`. -/

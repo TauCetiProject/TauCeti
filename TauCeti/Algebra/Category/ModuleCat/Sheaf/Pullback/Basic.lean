@@ -18,6 +18,8 @@ naturally isomorphic site functors, conjugate to Mathlib's `SheafOfModules.pushf
 
 ## Main declarations
 
+* `SheafOfModules.isRightAdjoint_pushforward`: pushforward of module sheaves between small sites
+  in the same universe is a right adjoint;
 * `SheafOfModules.pullbackCongr` and `SheafOfModules.pullbackCongr₂`: natural isomorphisms between
   pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors.
 -/
@@ -104,6 +106,19 @@ theorem conjugateEquiv_pullbackCongr₂_inv {F' : C ⥤ D} [Functor.IsContinuous
   (conjugateEquiv _ _).apply_symm_apply _
 
 end SiteCongr
+
+/-- Between small sites in the same universe, pushforward of module sheaves along any continuous
+functor and ring-sheaf morphism is a right adjoint. This is a theorem rather than a global instance
+so that explicit `[IsRightAdjoint]` hypotheses on general site-level lemmas do not become redundant
+instance binders. -/
+theorem isRightAdjoint_pushforward {C D : Type u} [SmallCategory C] [SmallCategory D]
+    {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
+    [Functor.IsContinuous F J K] {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}}
+    [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
+    (pushforward.{u} φ).IsRightAdjoint :=
+  have := PresheafOfModules.instIsRightAdjointPushforward (F := F) φ.hom
+  inferInstance
 
 end SheafOfModules
 

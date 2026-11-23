@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.OpenSubspace
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.Colimits
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 
 /-!

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Quasicoherent
-import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 
 /-!
 # Preservation of local finiteness and presentation properties under scheme pullback
