@@ -27,6 +27,8 @@ to `t` and then to the preimage of `s`, yields canonically homeomorphic nested s
   `subtypePreimageComm s t` with `subtypePreimageComm t s` is the identity homeomorphism.
 * `Homeomorph.Set.subtypePreimageComm_self`: `subtypePreimageComm s s` is the identity
   homeomorphism.
+* `Homeomorph.Set.subtypeVal_comp_subtypePreimageComm`: composing `subtypePreimageComm s t` with
+  the target's composite inclusion into `X` equals the source's composite inclusion into `X`.
 -/
 
 public section
@@ -69,6 +71,15 @@ theorem subtypePreimageComm_trans_subtypePreimageComm (s t : Set X) :
 @[simp]
 theorem subtypePreimageComm_self (s : Set X) :
     subtypePreimageComm s s = Homeomorph.refl _ := by
+  rfl
+
+/-- Composing `Homeomorph.Set.subtypePreimageComm s t` with the target's nested inclusion into `X`
+equals the source's nested inclusion into `X`. -/
+@[simp]
+theorem subtypeVal_comp_subtypePreimageComm (s t : Set X) :
+    (Subtype.val : t → X) ∘ (Subtype.val : (Subtype.val : t → X) ⁻¹' s → t) ∘
+      subtypePreimageComm s t =
+    (Subtype.val : s → X) ∘ (Subtype.val : (Subtype.val : s → X) ⁻¹' t → s) := by
   rfl
 
 end Homeomorph.Set

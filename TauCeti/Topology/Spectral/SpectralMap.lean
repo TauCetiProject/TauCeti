@@ -54,7 +54,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   from quasiseparated spaces to compact spaces.
 * `IsSpectralMap.quasiSeparatedSpace_of_surjective` : quasiseparatedness descends along surjective
   spectral maps.
-* `Homeomorph.spectralSpace` : spectrality transports along a homeomorphism.
+* `Homeomorph.spectralSpace`, `Homeomorph.spectralSpace_iff` : spectrality transports along a
+  homeomorphism.
 
 ## References
 

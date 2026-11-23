@@ -401,6 +401,7 @@ theorem IsLocallySpectralSpace.isLocallySpectralMap_fst
     refine ⟨U' ×ˢ V, U', hU'V, hU'o.prod hVo, hU'o, ⟨huU', hyV⟩, hU'Vs.toQuasiSeparatedSpace, ?_⟩
     have heq : hU'V.restrict Prod.fst (U' ×ˢ V) U' = Prod.fst ∘ Homeomorph.Set.prod U' V := by
       funext _
+      apply Subtype.ext
       rfl
     rw [heq]
     exact isProperMap_fst_of_compactSpace.isSpectralMap.comp
@@ -409,16 +410,15 @@ theorem IsLocallySpectralSpace.isLocallySpectralMap_fst
   have hι : IsOpenEmbedding ι := by
     refine IsOpenEmbedding.of_comp ι (hUo.isOpenEmbedding_subtypeVal.prodMap .id) ?_
     have heq : (Prod.map (Subtype.val : U → X) id) ∘ ι = (Subtype.val : W → X × Y) := by
-      funext _
-      rfl
+      ext _ <;> simp [ι]
     rw [heq]
     exact hWo.isOpenEmbedding_subtypeVal
   have hls : IsLocallySpectralMap (Prod.fst ∘ ι) :=
     IsLocallySpectralMap.comp (SpectralSpace.isLocallySpectralSpace.prod hY)
       hfstU hι.isLocallySpectralMap
   have heq : hWU.restrict Prod.fst W U = Prod.fst ∘ ι := by
-    funext _
-    rfl
+    ext _
+    simp [ι]
   rw [heq]
   exact hls.isSpectralMap
 
@@ -435,7 +435,8 @@ theorem IsLocallySpectralSpace.isLocallySpectralMap_snd
   have hW'V : MapsTo (Prod.fst : Y × X → Y) (Prod.swap ⁻¹' W) V := fun _ h ↦ hWV h
   have heq : hWV.restrict Prod.snd W V = (hW'V.restrict Prod.fst (Prod.swap ⁻¹' W) V) ∘ e := by
     funext _
-    rfl
+    apply Subtype.ext
+    simp [e, Homeomorph.subtype, Equiv.subtypeEquiv]
   rw [heq]
   exact (hX.isLocallySpectralMap_fst.isSpectralMap_restrict hW'V
     (hWo.preimage continuous_swap) hVo).comp e.isProperMap.isSpectralMap
