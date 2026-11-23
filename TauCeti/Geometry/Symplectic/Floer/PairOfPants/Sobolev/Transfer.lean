@@ -606,9 +606,10 @@ theorem memLp_endTransferCoeff (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : C
 
 /-- The **transfer of `L²` jets along an end chart**: a jet `(ξ, ∂s ξ, ∂t ξ)` on the strip is sent
 by the jet coefficient of the transfer (`endTransferCoeff`) and then by the `L²` isometry
-(`endChartLp`) to `S`. On the jet of a test section `ξ` of the cylinder it is the conformal jet of
-the transferred section (`endTransfer_jetLp_ae_eq`), so it maps `W^{1,2}` of the cylinder into
-`W^{1,2}_0(S)` (`endTransfer_mem_H1`). -/
+(`endChartLp`) to `S`. For a cutoff `β` satisfying the hypotheses of `endTransfer_mem_H1`, it
+sends the jet of a test section `ξ` of the cylinder to the conformal jet of the transferred section
+(`endTransfer_jetLp_ae_eq`), so it maps `W^{1,2}` of the cylinder into `W^{1,2}_0(S)`
+(`endTransfer_mem_H1`). -/
 def endTransfer (q : Puncture) (β : ℝ × ℝ → ℝ) :
     Lp (V × V × V) 2 StripSobolev.stripMeasure →L[ℝ]
       Lp (V × V × V) 2 (volume.restrict thricePuncturedSphereReal) :=

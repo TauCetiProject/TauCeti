@@ -20,8 +20,9 @@ pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` es
 operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
 along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
-A coefficient field followed by an essentially bounded field read along a quasi-measure-preserving
-change of coordinates is again essentially bounded (`TauCeti.memLp_top_comp_comp`).
+An essentially bounded coefficient field followed by an essentially bounded field read along a
+quasi-measure-preserving change of coordinates is again essentially bounded
+(`TauCeti.memLp_top_comp_comp`).
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
@@ -130,20 +131,21 @@ theorem continuousOn_jetOperator {μ : Measure (ℝ × ℝ)} {X : Type*} [Topolo
   exact tendsto_iff_norm_sub_tendsto_zero.mpr
     (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hle hlim)
 
-/-- Composing an essentially bounded coefficient field `N`, followed by an essentially bounded
-field `M` read along a quasi-measure-preserving map `φ`, gives an essentially bounded coefficient
-field, bounded by the product of the `L^∞` norms of `M` and `N`. -/
-theorem memLp_top_comp_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    {μ ν : Measure (ℝ × ℝ)} {φ : ℝ × ℝ → ℝ × ℝ} (hφ : QuasiMeasurePreserving φ μ ν)
-    {M : ℝ × ℝ → U →L[ℝ] W} {N : ℝ × ℝ → V × V × V →L[ℝ] U}
-    (hM : MemLp M ∞ ν) (hN : MemLp N ∞ μ) :
-    MemLp (fun z ↦ (M (φ z)).comp (N z)) ∞ μ := by
+/-- Composing an essentially bounded field `N` of continuous linear maps, followed by an
+essentially bounded field `M` read along a quasi-measure-preserving map `φ`, gives an essentially
+bounded field. -/
+theorem memLp_top_comp_comp {𝕜 α β E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} {φ : α → β} (hφ : QuasiMeasurePreserving φ μ ν)
+    {M : β → F →L[𝕜] G} {N : α → E →L[𝕜] F} (hM : MemLp M ∞ ν) (hN : MemLp N ∞ μ) :
+    MemLp (fun x ↦ (M (φ x)).comp (N x)) ∞ μ := by
   refine memLp_top_of_bound
-    ((ContinuousLinearMap.compL ℝ (V × V × V) U W).aestronglyMeasurable_comp₂
+    ((ContinuousLinearMap.compL 𝕜 E F G).aestronglyMeasurable_comp₂
       (hM.aestronglyMeasurable.comp_quasiMeasurePreserving hφ) hN.aestronglyMeasurable)
     (lpNorm M ∞ ν * lpNorm N ∞ μ) ?_
   filter_upwards [hφ.ae (ae_le_lpNorm_exponent_top hM), ae_le_lpNorm_exponent_top hN]
-    with z h₁ h₂
+    with x h₁ h₂
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
     (mul_le_mul h₁ h₂ (norm_nonneg _) ((norm_nonneg _).trans h₁))
 
