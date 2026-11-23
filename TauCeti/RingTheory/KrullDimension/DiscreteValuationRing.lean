@@ -164,15 +164,6 @@ theorem krullDimLE_quotient_maximalIdeal (n : ℕ) [Ring.KrullDimLE n B] :
   Ring.krullDimLE_iff.mpr
     ((ringKrullDim_quotient_maximalIdeal_le (K := K)).trans (Ring.krullDimLE_iff.mp ‹_›))
 
-/-- The canonical identification `ResidueField R ⊗[R] A ≃ₐ[R] A ⧸ 𝔪_R A`. -/
-private noncomputable def residueFieldTensorEquivQuotient (R A : Type*) [CommRing R]
-    [IsLocalRing R] [CommRing A] [Algebra R A] :
-    IsLocalRing.ResidueField R ⊗[R] A ≃ₐ[R]
-      A ⧸ (IsLocalRing.maximalIdeal R).map (algebraMap R A) :=
-  (Algebra.TensorProduct.comm R (IsLocalRing.ResidueField R) A).trans
-    ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot A
-      (IsLocalRing.maximalIdeal R)).symm.restrictScalars R)
-
 include K in
 /-- Every fibre ring `p.Fiber A` of a torsion-free finite-type algebra `A` over a discrete
 valuation ring `R` has Krull dimension at most that of the generic fibre `B`. -/
@@ -194,7 +185,8 @@ theorem ringKrullDim_fiber_le (p : Ideal R) [hp : p.IsPrime] :
     let eF : (IsLocalRing.maximalIdeal R).Fiber A ≃ₐ[R]
         A ⧸ (IsLocalRing.maximalIdeal R).map (algebraMap R A) :=
       (Algebra.TensorProduct.congr em.symm (.refl : A ≃ₐ[R] A)).trans
-        (residueFieldTensorEquivQuotient R A)
+        ((Algebra.TensorProduct.quotIdealMapEquivQuotTensor A
+          (IsLocalRing.maximalIdeal R)).symm.restrictScalars R)
     rw [ringKrullDim_eq_of_ringEquiv eF.toRingEquiv]
     exact ringKrullDim_quotient_maximalIdeal_le (R := R) (K := K) (A := A) (B := B)
 
@@ -208,7 +200,11 @@ theorem ringKrullDim_residueField_tensorProduct_le {R : Type*} [CommRing R] [IsD
     [_root_.IsDiscreteValuationRing R] (K A : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
     [CommRing A] [Algebra R A] [Module.IsTorsionFree R A] [Algebra.FiniteType R A] :
     ringKrullDim (IsLocalRing.ResidueField R ⊗[R] A) ≤ ringKrullDim (K ⊗[R] A) := by
-  rw [ringKrullDim_eq_of_ringEquiv (residueFieldTensorEquivQuotient R A).toRingEquiv]
+  let e : IsLocalRing.ResidueField R ⊗[R] A ≃ₐ[R]
+      A ⧸ (IsLocalRing.maximalIdeal R).map (algebraMap R A) :=
+    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor A
+      (IsLocalRing.maximalIdeal R)).symm.restrictScalars R
+  rw [ringKrullDim_eq_of_ringEquiv e.toRingEquiv]
   have : Algebra.IsPushout R A K (K ⊗[R] A) := Algebra.IsPushout.symm inferInstance
   exact ringKrullDim_quotient_maximalIdeal_le (R := R) (K := K) (A := A) (B := K ⊗[R] A)
 
