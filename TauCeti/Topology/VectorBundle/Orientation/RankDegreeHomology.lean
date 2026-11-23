@@ -71,7 +71,8 @@ open sets and the passage to the whole base by compact supports
 * `TauCeti.thomPairSingularHomologyIsoTwistedHomology_hom_apply`: it sends the local orientation of
   the fibre over `b` selected by `o` to the element with value `1` at `o`.
 * `TauCeti.thomPairSingularHomologyIsoTwistedHomology_inv_apply`: its inverse sends the class of
-  `σ` over `b` to `σ(o)` times the local orientation selected by `o`, for any orientation `o`.
+  `σ` over `b` to `σ(o)` times the image in the Thom pair of the local orientation selected by `o`,
+  for any orientation `o`.
 
 ## References
 
@@ -451,6 +452,12 @@ private theorem orientationHomologyFunctor_map_comp_thomPairOverHomologyMap {W W
   exact (Category.assoc _ _ _).symm.trans ((eq_whisker h1 _).trans (h2.trans
     (h4.symm.trans ((eq_whisker h3.symm _).trans (Category.assoc _ _ _)))))
 
+/-- An element of a rank-one free `ℤ`-module, identified with `ℤ` by `e`, is `e σ` times the element
+`e.symm 1`. -/
+private theorem eq_smul_symm_one {M : Type*} [AddCommGroup M] [Module ℤ M] (e : M ≃ₗ[ℤ] ℤ)
+    (σ : M) : σ = e σ • e.symm 1 :=
+  e.injective (by simp)
+
 section Trivial
 
 variable (b₀ : B) {W : Set B} (hW : W ⊆ (trivializationAt F E b₀).baseSet)
@@ -475,13 +482,8 @@ private theorem signLocalSystemFiberEquiv_trivGen (x : W) :
 private theorem eq_smul_trivGen (x : W)
     (σ : (orientationSystemOver F E hF W).obj (FundamentalGroupoid.mk x)) :
     σ = signLocalSystemFiberEquiv (card_fin_eq_finrank hF) (trivOrientation hF b₀ hW x) σ •
-      trivGen hF b₀ hW x := by
-  apply (signLocalSystemFiberEquiv (card_fin_eq_finrank hF) (trivOrientation hF b₀ hW x)).injective
-  -- The fibre of the restricted system is that of `B` only by unfolding, so the equalities are
-  -- chained as terms.
-  exact ((map_zsmul (signLocalSystemFiberEquiv (card_fin_eq_finrank hF)
-    (trivOrientation hF b₀ hW x)) _ _).trans
-      ((congrArg _ (signLocalSystemFiberEquiv_trivGen hF b₀ hW x)).trans (mul_one _))).symm
+      trivGen hF b₀ hW x :=
+  eq_smul_symm_one _ σ
 
 /-- The element `TauCeti.trivGen`, as a map out of the coefficients. -/
 private def trivGenHom (x : W) :
@@ -696,8 +698,8 @@ theorem thomPairSingularHomologyIsoTwistedHomology_hom_apply (b : B)
 
 omit [FiniteDimensional ℝ F] in
 /-- The inverse isomorphism sends the class of an element `σ` of the fibre of `o(E)` over `b` to
-`σ(o)` times the local orientation of the fibre over `b` selected by `o`, for any orientation `o`
-of `E_b`. -/
+`σ(o)` times the image, under the inclusion of the fibre pair into the Thom pair, of the local
+orientation of the fibre over `b` selected by `o`, for any orientation `o` of `E_b`. -/
 theorem thomPairSingularHomologyIsoTwistedHomology_inv_apply (b : B)
     (o : Orientation ℝ (E b) (Fin (n + 1)))
     (σ : (signLocalSystem F E ℤ ((Fintype.card_fin (n + 1)).trans hF.symm)).obj
@@ -707,11 +709,8 @@ theorem thomPairSingularHomologyIsoTwistedHomology_inv_apply (b : B)
       signLocalSystemFiberEquiv (R := ℤ) ((Fintype.card_fin (n + 1)).trans hF.symm) o σ •
         TopPair.singularHomologyMap (fiberThomPairMap F E b) (ModuleCat.of ℤ (ULift.{w} ℤ))
           (n + 1) (fiberLocalOrientation hF b o).val := by
-  set e := signLocalSystemFiberEquiv (R := ℤ) ((Fintype.card_fin (n + 1)).trans hF.symm) o
-  have hσ : σ = e σ • e.symm 1 := by
-    rw [← map_zsmul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
-  conv_lhs => rw [hσ]
-  rw [map_zsmul, map_zsmul, ← thomPairSingularHomologyIsoTwistedHomology_hom_apply hF b o,
+  conv_lhs => rw [eq_smul_symm_one (signLocalSystemFiberEquiv _ o) σ]
+  simp only [map_zsmul, ← thomPairSingularHomologyIsoTwistedHomology_hom_apply hF b o,
     Iso.hom_inv_id_apply]
 
 end Twisted
