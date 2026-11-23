@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!

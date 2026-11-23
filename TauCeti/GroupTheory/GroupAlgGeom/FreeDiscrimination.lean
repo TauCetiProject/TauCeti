@@ -8,8 +8,9 @@ module
 public import TauCeti.GroupTheory.BigPowers
 public import TauCeti.GroupTheory.FreeGroup.BigPowers
 public import TauCeti.GroupTheory.FreeGroup.CSA
-public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 import Mathlib.GroupTheory.CoprodI
+import TauCeti.GroupTheory.GroupAlgGeom.Separated
 
 /-!
 # Free `G`-groups are discriminated by `G`
@@ -29,10 +30,18 @@ generally, the coefficient group may embed into a
 nonabelian CSA BP target `H`, and the same construction discriminates `G[X]` by `H` over that
 embedding.
 
+Discrimination implies separation, so in all these cases the radical of the empty system is
+trivial: no nontrivial equation of `G[X]` vanishes at every point of `G^X` (of `H^X` for an
+embedding into `H`).
+
 ## Main results
 
 * `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_injective`: `G[X]` is discriminated over `G` by
   any nonabelian CSA BP target receiving an injective coefficient map from `G`.
+* `TauCeti.GroupAlgGeom.GX.I_univ_eq_bot_of_injective`,
+  `TauCeti.GroupAlgGeom.GX.I_univ_eq_bot_of_isFreeGroup`: hence the radical `Rad_H(∅) = I_H(H^X)`
+  of the empty system over such a target `H` is trivial; in particular `Rad_F(∅) = I_F(F^X)` is
+  trivial over a nonabelian free group `F`.
 * `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy`: for a nonabelian CSA group `G` with the big
   powers property, `G[X]` is discriminated by `G` over `G`.
 * `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_isFreeGroup`: for a nonabelian free group `F`,
@@ -59,9 +68,9 @@ distinct cosets. The big powers property for alternating products
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.5.
+  (2005), §2.4 (the radical) and §2.5.
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §2.
+  and ideal theory*, J. Algebra 219 (1999), §1.10 and §2.
 -/
 
 public section
@@ -308,6 +317,22 @@ theorem isDiscriminatedBy_of_isFreeGroup {F : Type u} [Group F] [IsFreeGroup F]
     (hF : ¬IsMulCommutative F) :
     IsDiscriminatedBy (Coprod.inl : F →* GX F X) (.id F) :=
   isDiscriminatedBy IsFreeGroup.isBP IsFreeGroup.isCSA hF
+
+/-- **The radical of the empty system is trivial.** If the coefficient group embeds into a
+nonabelian CSA group `H` with the big powers property, the only equation of `G[X]` satisfied by
+every point of `H^X` is `1`: the ideal of all of `H^X`, which is the radical `Rad_H(∅)` of the
+empty system (`TauCeti.GroupAlgGeom.Rad_empty`), is trivial. -/
+theorem I_univ_eq_bot_of_injective (hι : Function.Injective ι) (hBP : IsBP H) (hH : IsCSA H)
+    (hab : ¬IsMulCommutative H) : I ι (Set.univ : Set (X → H)) = ⊥ :=
+  isSeparatedBy_inl_iff_I_univ_eq_bot.1
+    (isDiscriminatedBy_of_injective ι hι hBP hH hab).isSeparatedBy
+
+/-- **The radical of the empty system over a nonabelian free group is trivial.** For a nonabelian
+free group `F` and any set of variables `X`, the only equation of `F[X]` satisfied by every point
+of `F^X` is `1`, so `Rad(∅) = I(F^X)` is trivial. -/
+theorem I_univ_eq_bot_of_isFreeGroup {F : Type u} [Group F] [IsFreeGroup F]
+    (hF : ¬IsMulCommutative F) : I (.id F) (Set.univ : Set (X → F)) = ⊥ :=
+  I_univ_eq_bot_of_injective (.id F) Function.injective_id IsFreeGroup.isBP IsFreeGroup.isCSA hF
 
 end GX
 

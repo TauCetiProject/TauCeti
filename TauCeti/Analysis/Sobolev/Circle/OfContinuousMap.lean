@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Derivative
 public import TauCeti.Analysis.Sobolev.Circle.Lp
+public import TauCeti.Analysis.Sobolev.Circle.Rotation
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.Uniqueness
@@ -49,6 +50,8 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
 
 * `TauCeti.CircleSobolev.coeff_ofContinuousMap`: the coefficients of `ofContinuousMap T f` are
   the Fourier coefficients of `f`.
+* `TauCeti.CircleSobolev.rotate_ofContinuousMap`: the rotation by `θ` of the class of a loop
+  `f` is the class of the translated loop `x ↦ f (x + θ)`.
 * `TauCeti.CircleSobolev.ofContinuousMap_toContinuousMap`: for `s > 1/2`, the continuous
   representative of `a ∈ H^s(E)` is sent back to `a`, regarded as an element of `H⁰(E)`.
 * `TauCeti.CircleSobolev.ofContinuousMap_injective`: a continuous loop is determined by its
@@ -161,6 +164,16 @@ theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
   rw [← b.coord_apply, ← hcoord]
   congr 1
   exact (coeff_toLpₗᵢ_symm T _ n).trans (fourierCoeff_toLp _ n)
+
+/-- The rotation by `θ` of the class in `H⁰(E)` of a continuous loop `f` is the class of the
+translated loop `x ↦ f (x + θ)`. -/
+@[simp]
+theorem rotate_ofContinuousMap (θ : AddCircle T) (f : C(AddCircle T, E)) :
+    rotate θ (ofContinuousMap T f) = ofContinuousMap T (f.comp (ContinuousMap.addRight θ)) :=
+  CircleSobolev.ext (funext fun n ↦ by
+    rw [coeff_rotate, coeff_ofContinuousMap, coeff_ofContinuousMap, ContinuousMap.coe_comp,
+      ContinuousMap.coe_addRight]
+    exact (fourierCoeff_comp_add_right f θ n).symm)
 
 end OfContinuousMap
 
@@ -296,8 +309,8 @@ theorem inner_ofContinuousMap (f g : C(AddCircle T, F)) :
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ f j))
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ g j)) using 1
     · funext n
-      simp only [← inner_conj_symm _ (fourierBasis n), ← HilbertBasis.repr_apply_apply,
-        fourierBasis_repr, fourierCoeff_toLp, hcoeff, inner_conj_symm]
+      simp only [← inner_conj_symm _ (fourierBasis n), inner_fourierBasis_left,
+        fourierCoeff_toLp, hcoeff, inner_conj_symm]
     · rw [ContinuousMap.inner_toLp]
       refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
       simp [φ, mul_comm]

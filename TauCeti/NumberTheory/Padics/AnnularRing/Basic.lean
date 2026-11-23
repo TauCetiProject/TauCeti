@@ -397,6 +397,15 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     · simp [hm, pow_succ']
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
 
+/-- The monomial `T ^ a U ^ b` has normal form `p ^ b T ^ (a - b)`. -/
+theorem coeff_T_pow_mul_U_pow (a b : ℕ) (m : ℤ) :
+    ((T : AnnularRing p) ^ a * U ^ b).coeff m = if m = a - b then (p : ℤ_[p]) ^ b else 0 := by
+  rw [coeff_mul_of_coeff_eq_zero (k := a) fun i hi ↦ by rw [coeff_T_pow, ite_eq_right hi],
+    coeff_T_pow, ite_eq_left rfl, one_mul, coeff_U_pow]
+  by_cases h : m = a - b
+  · rw [ite_eq_left (by omega), ite_eq_left h]
+  · rw [ite_eq_right (by omega), ite_eq_right h]
+
 /-- Multiplication by `T ^ n` shifts the normal form up by `n` degrees. -/
 @[simp] theorem coeff_T_pow_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
     (T ^ n * x).coeff m = x.coeff (m - n) := by

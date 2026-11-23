@@ -564,6 +564,12 @@ theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   funext v
   exact cast_apply h α x v
 
+/-- Transporting a smooth form along a trivial degree equality leaves it unchanged. -/
+theorem cast_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (h : n = n) (α : SmoothForm I M F n) :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α = α :=
+  (rfl)
+
 /-- Successive degree transports collapse to the transport along their composite equality. -/
 theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m o : ℕ} (h : n = m) (h' : m = o)
@@ -794,6 +800,15 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
   simpa [Bundle.Trivial.eq_trivialization, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation
+
+/-- Evaluating a degree-two form at two equal points agrees after identifying their tangent spaces
+by `tangentSpaceCast`. -/
+theorem eval₂_tangentSpaceCast (φ : SmoothForm I M F 2) {x y : M} (h : x = y)
+    (v w : TangentSpace I x) :
+    φ.eval₂ y (tangentSpaceCast I x y v) (tangentSpaceCast I x y w) = φ.eval₂ x v w := by
+  subst h
+  -- `tangentSpaceCast I x x` is the identity of the model fibre.
+  rfl
 
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
 

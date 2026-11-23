@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Complexification
 import TauCeti.Topology.VectorBundle.RestrictScalars
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # `C^n` complex vector bundles over real manifolds and complexification of `C^n` sections
@@ -26,6 +26,9 @@ For any real `C^n` vector bundle `E : B → Type*` with model fibre `F` whose co
 `TauCeti.contMDiff_complexification_section_iff`, `TauCeti.tmulConjDiffeomorph`,
 `TauCeti.complexificationTotalSpaceDiffeomorphProd`, `ContMDiffSection.complexificationEquiv`,
 `ContMDiffSection.complexificationEquivProd`, and `ContMDiffSection.conjEquiv`.
+The real sections identify with the existing native fixed-point submodule through
+`ContMDiffSection.realPointsConjEquiv`; real/imaginary pairs compute multiplication by `I` and
+conjugation without any extra smooth-bundle assumptions.
 The canonical complex-linear extension of any smooth real bundle map is smooth on the actual
 complexification total space (`TauCeti.contMDiff_liftBaseChangeComplex_totalSpace`), with no
 injectivity, maximality or finite-rank assumption.
@@ -494,6 +497,17 @@ variable {IB F n E}
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) (x : B) :
     conjEquiv IB F n E σ x = tmulConj (E x) (σ x) := (rfl)
 @[simp] theorem conjEquiv_symm : (conjEquiv IB F n E).symm = conjEquiv IB F n E := (rfl)
+/-- A section fixed by native tensor conjugation is reconstructed from its real coordinate. -/
+theorem oneTmulLinearMap_realPartLinearMap_of_conjEquiv_eq
+    {σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯}
+    (hσ : conjEquiv IB F n E σ = σ) :
+    oneTmulLinearMap IB F n E (realPartLinearMap IB F n E σ) = σ := by
+  ext x
+  have hfix := congrArg (fun τ : Cₛ^n⟮IB; Complexification F, fun y ↦ ℂ ⊗[ℝ] E y⟯ ↦ τ x) hσ
+  obtain ⟨v, hv⟩ := (tmulConj_eq_self_iff (E x) (σ x)).mp
+    (by simpa only [conjEquiv_apply] using hfix)
+  simp [hv]
+
 @[simp] theorem complexificationEquivProd_apply
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
     complexificationEquivProd IB F n E σ =
@@ -532,6 +546,104 @@ theorem complexificationEquiv_tmul_eq_smul (z : ℂ) (s : Cₛ^n⟮IB; F, E⟯) 
     conjEquiv IB F n E (complexificationEquiv IB F n E u) =
       complexificationEquiv IB F n E (tmulConj Cₛ^n⟮IB; F, E⟯ u) := by
   obtain ⟨s, t, rfl⟩ := exists_one_tmul_add_I_tmul u; ext x; simp [TensorProduct.neg_tmul]
+
+/-- In real/imaginary coordinates, multiplication by `I` is the quarter-turn `(s, t) ↦ (-t, s)`. -/
+theorem complexificationEquivProd_I_smul
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    complexificationEquivProd IB F n E (Complex.I • σ) =
+      (-(complexificationEquivProd IB F n E σ).2,
+        (complexificationEquivProd IB F n E σ).1) := by
+  ext <;> simp [complexificationEquivProd_apply, realPartLinearMap_apply,
+    imaginaryPartLinearMap_apply, coe_smul_of_normedAlgebra, realPart_smul, imaginaryPart_smul]
+
+/-- Real part is unchanged by the native conjugation of sections. -/
+@[simp]
+theorem realPartLinearMap_conjEquiv
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    realPartLinearMap IB F n E (conjEquiv IB F n E σ) = realPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- Imaginary part changes sign under the native conjugation of sections. -/
+@[simp]
+theorem imaginaryPartLinearMap_conjEquiv
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    imaginaryPartLinearMap IB F n E (conjEquiv IB F n E σ) =
+      -imaginaryPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- The native conjugation acts on the real/imaginary pair by `(s, t) ↦ (s, -t)`. -/
+theorem complexificationEquivProd_conjEquiv
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    complexificationEquivProd IB F n E (conjEquiv IB F n E σ) =
+      ((complexificationEquivProd IB F n E σ).1,
+        -(complexificationEquivProd IB F n E σ).2) := by
+  simp only [complexificationEquivProd_apply, realPartLinearMap_conjEquiv,
+    imaginaryPartLinearMap_conjEquiv]
+
+/-- Included real sections are fixed by the native conjugation. -/
+@[simp]
+theorem conjEquiv_oneTmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
+    conjEquiv IB F n E (oneTmulLinearMap IB F n E s) = oneTmulLinearMap IB F n E s :=
+  ext fun x ↦ by simp
+
+/-- A section of the complexification is fixed by conjugation exactly when its imaginary part
+vanishes. This uses no manifold-regularity assumptions beyond those needed to define sections. -/
+@[simp]
+theorem conjEquiv_eq_self_iff
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    conjEquiv IB F n E σ = σ ↔ imaginaryPartLinearMap IB F n E σ = 0 := by
+  constructor
+  · intro h
+    have ht : -imaginaryPartLinearMap IB F n E σ = imaginaryPartLinearMap IB F n E σ := by
+      simpa only [imaginaryPartLinearMap_conjEquiv] using
+        congrArg (imaginaryPartLinearMap IB F n E) h
+    have htwo : (2 : ℝ) • imaginaryPartLinearMap IB F n E σ = 0 := by
+      rw [two_smul]
+      exact add_eq_zero_iff_eq_neg.mpr ht.symm
+    exact (smul_eq_zero.mp htwo).resolve_left two_ne_zero
+  · intro h
+    apply (complexificationEquivProd IB F n E).injective
+    simp only [complexificationEquivProd_apply, realPartLinearMap_conjEquiv,
+      imaginaryPartLinearMap_conjEquiv, h, neg_zero]
+
+variable (IB F n E) in
+/-- Real sections are exactly the existing `realPoints` submodule of native conjugation on
+complexified sections. Its inverse is the already defined real-part map. -/
+def realPointsConjEquiv : Cₛ^n⟮IB; F, E⟯ ≃ₗ[ℝ]
+    realPoints (conjEquiv IB F n E).toLinearMap where
+  toFun s := ⟨oneTmulLinearMap IB F n E s, by
+    simpa only [mem_realPoints, LinearEquiv.coe_coe] using conjEquiv_oneTmulLinearMap s⟩
+  invFun σ := realPartLinearMap IB F n E σ.val
+  map_add' s t := Subtype.ext ((oneTmulLinearMap IB F n E).map_add s t)
+  map_smul' r s := by
+    apply Subtype.ext
+    -- realPoints uses the real action induced by the complex action. Compare this with
+    -- the native real action on sections through their scalar tower, rather than unfolding it.
+    exact ((oneTmulLinearMap IB F n E).map_smul r s).trans
+      ((RCLike.real_smul_eq_coe_smul (K := ℂ) r
+        (oneTmulLinearMap IB F n E s)).trans (Complex.coe_smul r _))
+  left_inv s := realPartLinearMap_oneTmulLinearMap s
+  right_inv σ := by
+    apply Subtype.ext
+    have hfix : conjEquiv IB F n E σ.val = σ.val := by
+      simpa only [LinearEquiv.coe_coe] using (mem_realPoints.mp σ.property)
+    have him := (conjEquiv_eq_self_iff σ.val).mp hfix
+    simpa only [him, map_zero, add_zero] using
+      oneTmulLinearMap_realPartLinearMap_add_ITmulLinearMap_imaginaryPartLinearMap σ.val
+
+/-- The fixed-point comparison includes a real section by `1 ⊗ₜ s`. -/
+@[simp]
+theorem coe_realPointsConjEquiv_apply (s : Cₛ^n⟮IB; F, E⟯) :
+    (realPointsConjEquiv IB F n E s : Cₛ^n⟮IB; Complexification F,
+      fun x ↦ ℂ ⊗[ℝ] E x⟯) = oneTmulLinearMap IB F n E s := by
+  rfl
+
+/-- The inverse fixed-point comparison takes the real part. -/
+@[simp]
+theorem realPointsConjEquiv_symm_apply
+    (σ : realPoints (conjEquiv IB F n E).toLinearMap) :
+    (realPointsConjEquiv IB F n E).symm σ = realPartLinearMap IB F n E σ := by
+  rfl
 
 end ComplexificationSections
 

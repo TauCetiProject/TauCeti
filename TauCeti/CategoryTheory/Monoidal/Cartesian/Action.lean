@@ -18,6 +18,11 @@ by a global group point is an automorphism. The orbit morphism intertwines left
 translation on the group with translation on the acted-on object. Moving its base
 point corresponds instead to right multiplication on the group.
 
+A morphism is equivariant exactly when it commutes with the action on points with values in
+every object (`TauCeti.isModHom_iff_map_smul`). A point `x : Z ⟶ X` of a pseudo-torsor, an
+action for which `(g, x) ↦ (g • x, x)` is an isomorphism, trivialises it over `Z`
+(`TauCeti.isIso_lift_smul_snd_of_isIso_leftSMul`).
+
 These constructions apply in particular to group schemes acting on schemes over a
 base. All identities are identities of morphisms, rather than only of global points.
 They use Mathlib's `Hom.mulAction` and the existing group-object `TauCeti.leftTranslation`.
@@ -64,6 +69,41 @@ theorem mul_orbitMap (x : 𝟙_ C ⟶ X) :
 theorem orbitMap_comp (x : 𝟙_ C ⟶ X) (f : X ⟶ Y) [IsModHom G f] :
     orbitMap G x ≫ f = orbitMap G (x ≫ f) := by
   simp [orbitMap, IsModHom.map_smul, Category.assoc]
+
+variable {G} in
+/-- A morphism is equivariant if and only if it commutes with the action on points with values
+in every object. -/
+theorem isModHom_iff_map_smul (f : X ⟶ Y) :
+    IsModHom G f ↔ ∀ (T : C) (g : T ⟶ G) (x : T ⟶ X), (g • x) ≫ f = g • (x ≫ f) := by
+  refine ⟨fun _ T g x ↦ IsModHom.map_smul f g x, fun hf ↦ ⟨?_⟩⟩
+  have := hf (G ⊗ X) (fst G X) (snd G X)
+  simp only [Hom.smul_def, ← lift_whiskerLeft, lift_fst_snd, Category.id_comp] at this
+  exact this
+
+variable {G} in
+/-- A point `x : Z ⟶ X` of a pseudo-torsor trivialises it over `Z`: when
+`(g, x) ↦ (g • x, x)` is an isomorphism `G ⊗ X ≅ X ⊗ X`, the morphism `(g, z) ↦ (g • x z, z)`
+is an isomorphism `G ⊗ Z ≅ X ⊗ Z`. -/
+theorem isIso_lift_smul_snd_of_isIso_leftSMul [IsIso (ModObj.leftSMul G X)] {Z : C}
+    (x : Z ⟶ X) : IsIso (lift (fst G Z • (snd G Z ≫ x)) (snd G Z)) := by
+  have H := (ModObj.isIso_leftSMul_iff (M := G) (X := X)).1 ‹_›
+  have key {T : C} (g : T ⟶ G) (z : T ⟶ Z) :
+      lift g z ≫ lift (fst G Z • (snd G Z ≫ x)) (snd G Z) = lift (g • (z ≫ x)) z := by
+    simp [comp_smul]
+  rw [isIso_iff_yoneda_map_bijective]
+  refine fun T ↦ ⟨fun t t' htt ↦ ?_, fun y ↦ ?_⟩
+  · dsimp only at htt
+    rw [← lift_comp_fst_snd t, ← lift_comp_fst_snd t', key, key] at htt
+    have h₂ : t ≫ snd G Z = t' ≫ snd G Z := by simpa using congrArg (· ≫ snd X Z) htt
+    have h₁ : (t ≫ fst G Z) • (t ≫ snd G Z ≫ x) = (t' ≫ fst G Z) • (t' ≫ snd G Z ≫ x) := by
+      simpa using congrArg (· ≫ fst X Z) htt
+    refine CartesianMonoidalCategory.hom_ext _ _
+      ((H T (t ≫ snd G Z ≫ x) _).unique rfl ?_).symm h₂
+    rw [h₁, reassoc_of% h₂]
+  · obtain ⟨g, hg, -⟩ := H T (y ≫ snd X Z ≫ x) (y ≫ fst X Z)
+    refine ⟨lift g (y ≫ snd X Z), ?_⟩
+    dsimp only
+    rw [key, Category.assoc, hg, lift_comp_fst_snd]
 
 end Monoid
 
@@ -124,8 +164,8 @@ theorem leftTranslation_hom_orbitMap (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
 /-- Moving the base point of an orbit morphism amounts to right multiplication on the group.
 The order of multiplication matters for a noncommutative group. -/
 theorem orbitMap_smul (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
-    orbitMap G (g • x) = (TauCeti.rightTranslation g).hom ≫ orbitMap G x := by
-  simp [orbitMap, TauCeti.rightTranslation_hom, comp_smul, SemigroupAction.mul_smul]
+    orbitMap G (g • x) = (GrpObj.mulRight g).hom ≫ orbitMap G x := by
+  simp [orbitMap, ← Hom.mul_def, comp_smul, SemigroupAction.mul_smul]
 
 end TauCeti
 

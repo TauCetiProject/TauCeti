@@ -112,6 +112,8 @@ of a completed group algebra attached to two topological generators.
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.exists_subst_add_X_pow_mul`: perturbing a zero-constant input by `X ^ m * r`
   gives a difference `X ^ m * s` with `s(0) = f₁ r(0)`.
+* `PowerSeries.coe_inv_eq_subst_of_coe_eq_subst`: if a unit `u` is `f (a)` for a unit `f`, then
+  `u⁻¹ = f⁻¹ (a)`.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
 * `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
@@ -350,6 +352,14 @@ theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X�
       refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
         ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
     rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
+
+/-- If a unit `u` is the substitution `f (a)` of a unit `f`, then its inverse is the substitution
+`f⁻¹ (a)` of the inverse. -/
+theorem coe_inv_eq_subst_of_coe_eq_subst {a : S⟦X⟧} (ha : HasSubst a) {f : R⟦X⟧ˣ} {u : S⟦X⟧ˣ}
+    (hu : (u : S⟦X⟧) = (f : R⟦X⟧).subst a) :
+    ((u⁻¹ : S⟦X⟧ˣ) : S⟦X⟧) = ((f⁻¹ : R⟦X⟧ˣ) : R⟦X⟧).subst a := by
+  refine Units.inv_eq_of_mul_eq_one_right ?_
+  rw [hu, ← coe_substAlgHom ha, ← map_mul, Units.mul_inv, map_one]
 
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
