@@ -31,6 +31,6 @@ variable {α : Type*} (l : Filter α)
 theorem comap_val_smallSets_eq_atBot :
     comap (Subtype.val : {s : Set α // s ∈ l} → Set α) l.smallSets = atBot :=
   ((l.hasBasis_smallSets.comap _).to_hasBasis (fun s hs ↦ ⟨⟨s, hs⟩, trivial, fun _ ↦ id⟩)
-    fun s _ ↦ ⟨s.1, s.2, fun _ ↦ id⟩).eq_of_same_basis atBot_basis
+    fun s _ ↦ ⟨s.val, s.property, fun _ ↦ id⟩).eq_of_same_basis atBot_basis
 
 end Filter

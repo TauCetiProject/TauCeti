@@ -19,14 +19,18 @@ in that trap. In particular this applies to Morse functions, without compactness
 manifold, and to proper bounded-below Morse functions without a separately supplied trap.
 
 If a forward curve converges to a nondegenerate critical point, its Riemannian extended distance
-to that point is bounded by `C * exp (-c * t)` for every `t ≥ 0`. The existing eventual estimate
+`Manifold.riemannianEDist I` to that point is bounded by `C * exp (-c * t)` for every `t ≥ 0`. This
+is the intrinsic distance of the metric on the tangent bundle, so no metric space structure on `M`
+is assumed; it induces the topology of `M` (`PseudoEMetricSpace.ofRiemannianMetric`), so it is
+continuous along the curve. The existing eventual estimate
 `TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient` supplies the tail
 bound, and `TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient` supplies compact-trap
 convergence. Continuity on the initial compact time interval absorbs that interval into `C`.
 No adapted metric or positivity of the Hessian is required, so a trajectory may converge to a
 saddle. For Morse functions, convergence alone supplies the nondegenerate critical point:
 `IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient` proves criticality of the limit,
-and `TauCeti.IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient` gives the distance bound.
+and `TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient` gives the distance
+bound.
 
 The comparison with the maximal curve moves the time origin to time `1`, which lies in the
 interior of the prescribed curve's domain. It therefore does not require a two-sided derivative
@@ -114,26 +118,27 @@ end Topological
 section Distance
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [PseudoEMetricSpace M] [ChartedSpace H M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [IsManifold I 2 M] [BoundarylessManifold I M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  [IsRiemannianManifold I M] {f : M → ℝ} {γ : ℝ → M} {p : M}
+  {f : M → ℝ} {γ : ℝ → M} {p : M}
 
 /-- Transfer the eventual maximal-flow estimate to a prescribed forward curve. -/
-private theorem eventually_edist_neg_mgradient
+private theorem eventually_riemannianEDist_neg_mgradient
     (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0)) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p) (hconv : Tendsto γ atTop (𝓝 p)) :
-    ∃ c > 0, ∃ C > 0, ∀ᶠ t in atTop, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
+    ∃ c > 0, ∃ C > 0, ∀ᶠ t in atTop,
+      Manifold.riemannianEDist I (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
   have heq := hγ.eqOn_maximalIntegralCurve_Ici
     (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
-  have hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) (γ 1) :=
-    fun t ht ↦ hγ.Ioi_subset_maximalIntegralCurveInterval_of_Ici
-      (by norm_num : (0 : ℝ) < 1) (by simp only [mem_Ioi, mem_Ici] at *; linarith)
   have hlim := (hγ.tendsto_maximalIntegralCurve_iff
     (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   obtain ⟨c, hc, C, hC, hbound⟩ :=
-    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp hx hlim hf
+    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp.mem_criticalPoints
+      hp.exists_mul_abs_sub_le_norm_mgradient_sq hlim hf
   refine ⟨c, hc, C * Real.exp c, by positivity, ?_⟩
   filter_upwards [(tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id).eventually hbound,
     eventually_ge_atTop (1 : ℝ)] with t ht ht1
@@ -141,36 +146,41 @@ private theorem eventually_edist_neg_mgradient
   have hpoint : maximalIntegralCurve (-mgradient I f) (γ 1) (t - 1) = γ t := by
     simpa only [comp_apply, sub_add_cancel] using
       heq (x := t - 1) (by simp only [mem_Ioi]; linarith)
-  rw [← sub_eq_add_neg, hpoint, exp_neg_mul_sub, mul_one, ← mul_assoc] at ht
-  rw [IsRiemannianManifold.out (I := I)]
-  exact ht
+  rwa [← sub_eq_add_neg, hpoint, exp_neg_mul_sub, mul_one, ← mul_assoc] at ht
 
 /-- A prescribed forward negative-gradient curve converging to a nondegenerate critical point
-satisfies an exponential distance bound for every nonnegative time, not only eventually. The
-extended distance is the Riemannian path distance. The limit may be a saddle. -/
-theorem IsMIntegralCurveOn.exists_edist_le_exp_of_tendsto_neg_mgradient
+satisfies an exponential bound on its Riemannian extended distance to that point, for every
+nonnegative time and not only eventually. No metric space structure on `M` is assumed. The limit
+may be a saddle. -/
+theorem IsMIntegralCurveOn.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient
     (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0)) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p) (hconv : Tendsto γ atTop (𝓝 p)) :
-    ∃ C > 0, ∃ c > 0, ∀ t ≥ 0, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
+    ∃ C > 0, ∃ c > 0, ∀ t ≥ 0,
+      Manifold.riemannianEDist I (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
+  -- The Riemannian distance is the distance of a pseudo-emetric structure whose topology is that
+  -- of `M` by construction, so it is continuous.
+  let : PseudoEMetricSpace M := .ofRiemannianMetric I M
   -- The whole trajectory and its limit lie in one connected set. Distances to the limit are
-  -- finite even when the ambient extended metric takes infinite values between components.
+  -- finite even when the extended distance takes infinite values between components.
   have hconn := (isPreconnected_Ici.image γ hγ.continuousOn).closure
   have hpcl : p ∈ closure (γ '' Ici 0) :=
     mem_closure_of_tendsto hconv (by
       filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht using mem_image_of_mem γ ht)
-  have hfin (t : ℝ) (ht : 0 ≤ t) : edist (γ t) p ≠ ⊤ := by
-    rw [IsRiemannianManifold.out (I := I)]
-    exact (riemannianEDist_lt_top_of_isPreconnected I hconn
+  have hfin (t : ℝ) (ht : 0 ≤ t) : Manifold.riemannianEDist I (γ t) p ≠ ⊤ :=
+    (riemannianEDist_lt_top_of_isPreconnected I hconn
       (subset_closure (mem_image_of_mem γ ht)) hpcl).ne
-  have hcont : ContinuousOn (fun t ↦ (edist (γ t) p).toReal) (Ici 0) :=
-    ENNReal.continuousOn_toReal.comp
+  have hcont : ContinuousOn (fun t ↦ (Manifold.riemannianEDist I (γ t) p).toReal) (Ici 0) := by
+    simp_rw [← IsRiemannianManifold.out (I := I)]
+    exact ENNReal.continuousOn_toReal.comp
       (continuous_edist.comp_continuousOn (hγ.continuousOn.prodMk continuousOn_const))
-      (fun t ht ↦ hfin t ht)
-  obtain ⟨c, hc, C, _, hbound⟩ := eventually_edist_neg_mgradient hγ hf hp hconv
-  have hbound' : ∀ᶠ t in atTop, (edist (γ t) p).toReal ≤ C * Real.exp (-(c * t)) := by
+      fun t ht ↦ by rw [IsRiemannianManifold.out (I := I)]; exact hfin t ht
+  obtain ⟨c, hc, C, _, hbound⟩ := eventually_riemannianEDist_neg_mgradient hγ hf hp hconv
+  have hbound' : ∀ᶠ t in atTop,
+      (Manifold.riemannianEDist I (γ t) p).toReal ≤ C * Real.exp (-(c * t)) := by
     filter_upwards [hbound] with t ht
     exact ENNReal.toReal_le_of_le_ofReal (by positivity) ht
   obtain ⟨B, hB, hBbound⟩ := hcont.exists_forall_le_mul_exp_Ici_of_eventually_le hbound'
@@ -179,15 +189,16 @@ theorem IsMIntegralCurveOn.exists_edist_le_exp_of_tendsto_neg_mgradient
 
 namespace TauCeti
 
-/-- A convergent prescribed forward trajectory of a Morse function satisfies an exponential
-Riemannian extended-distance bound for every nonnegative time. No compact trap or criticality
-hypothesis on the limit needs to be supplied. -/
-theorem IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient
+/-- A convergent prescribed forward trajectory of a Morse function satisfies an exponential bound
+on its Riemannian extended distance to the limit, for every nonnegative time. No compact trap,
+criticality hypothesis on the limit or metric space structure on `M` needs to be supplied. -/
+theorem IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient
     (hf : IsMorse I f) (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0))
     (hconv : Tendsto γ atTop (𝓝 p)) :
-    ∃ C > 0, ∃ c > 0, ∀ t ≥ 0, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
+    ∃ C > 0, ∃ c > 0, ∀ t ≥ 0,
+      Manifold.riemannianEDist I (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_num)
-  exact hγ.exists_edist_le_exp_of_tendsto_neg_mgradient hf2
+  exact hγ.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient hf2
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       (hγ.mem_criticalPoints_of_tendsto_neg_mgradient hf2 hconv)) hconv
 

@@ -91,7 +91,7 @@ end LieTypeIndex
 Every `E₇(q)` is valid, by `TauCeti.LieTypeIndex.valid_E7`, so the outer subtype excludes nothing
 here; it is retained because the carrier-valued constructions of the family take
 `TauCeti.ValidLieTypeIndex`. -/
-abbrev TypeE7LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeE7}
+abbrev TypeE7LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeE7}
 
 /-! ## The index and its numbered data -/
 
@@ -112,12 +112,12 @@ theorem exists_eq_of (d : TypeE7LieIndex) : ∃ q : PrimePower, d = of q := by
   all_goals exact fun _ hd => ((LieTypeIndex.isTypeE7_iff _).mp hd).elim
 
 /-- The family `E₇(q)` is built on the diagram `E₇`. -/
-@[simp] theorem dynkinType_eq (d : TypeE7LieIndex) : d.1.dynkinType = .E7 := by
+@[simp] theorem dynkinType_eq (d : TypeE7LieIndex) : d.val.dynkinType = .E7 := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_E7 q
 
 /-- The family `E₇(q)` has rank seven, that being the rank of `E₇`. -/
-@[simp] theorem rank_eq_seven (d : TypeE7LieIndex) : d.1.rank = 7 :=
+@[simp] theorem rank_eq_seven (d : TypeE7LieIndex) : d.val.rank = 7 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 end TypeE7LieIndex

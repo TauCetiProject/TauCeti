@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.PlaneShear
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Matrix.Contraction
 
 /-!
 # The cubic shear: an `Lᵖ` isometry that is unbounded on `W^{1,p}`
@@ -73,9 +74,6 @@ private theorem norm_smul_fderiv_single_le {f : EuclideanSpace ℝ (Fin 2) → �
       3 * w 0 ^ 2 by simp] at h
     simp only [fderiv_comp_sub] at h
     exact h
-  have hle : ∀ L : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ, ∀ i : Fin 2,
-      |L (EuclideanSpace.single i 1)| ≤ ‖L‖ := fun L i => by
-    simpa [PiLp.norm_single] using L.le_opNorm (EuclideanSpace.single i 1)
   have hgrowth : (3 * (k - R) ^ 2) * |D| ≤ 3 * w 0 ^ 2 * |D| := by
     rcases eq_or_ne D 0 with hD0 | hD0
     · simp [hD0]
@@ -93,7 +91,8 @@ private theorem norm_smul_fderiv_single_le {f : EuclideanSpace ℝ (Fin 2) → �
         fderiv ℝ f (T w) (EuclideanSpace.single 0 1)| := by
         rw [hchain, add_sub_cancel_left, abs_mul,
           abs_of_nonneg (by positivity : (0 : ℝ) ≤ 3 * w 0 ^ 2)]
-    _ ≤ _ := (abs_sub _ _).trans (add_le_add (hle _ 0) (hle _ 0))
+    _ ≤ _ := (abs_sub _ _).trans (add_le_add
+      (ContinuousLinearMap.abs_apply_single_le _ 0) (ContinuousLinearMap.abs_apply_single_le _ 0))
 
 section Sobolev
 

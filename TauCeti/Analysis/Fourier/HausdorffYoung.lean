@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Fourier.LpSpace
 public import TauCeti.MeasureTheory.Integral.RieszThorin
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
@@ -36,12 +39,28 @@ integrable `f ∈ Lᵖ` is the limit of integrable simple functions `gₙ` both 
 (`MeasureTheory.Integrable.tendstoUniformly_fourier`), and
 Fatou's lemma for `L^{p'}` norms passes the inequality to the limit.
 
+The restriction `p ≤ 2` cannot be dropped: in every positive dimension and for every `p > 2`
+there is no constant `C` with `‖𝓕 f‖_{p'} ≤ C ‖f‖_p`, not even for Schwartz functions
+(`TauCeti.exists_mul_eLpNorm_lt_eLpNorm_fourier`). The counterexamples are the Gaussians of
+complex variance `f_t(x) = exp (-(π + i t) ‖x‖²)`, `t ∈ ℝ`. The modulus of `f_t` is
+`exp (-π ‖x‖²)`, so `‖f_t‖_p` does not depend on `t`. Its Fourier transform is a Gaussian of
+height `π^(n/2) ‖π + i t‖^(-n/2)` and of real parameter `π³ / ‖π + i t‖²`, so it is lower and
+wider as `|t|` grows (`SchwartzMap.eLpNorm_fourier_gaussian`), and
+`‖𝓕 f_t‖_{p'} = c ‖π + i t‖^(n/p' - n/2)`, which tends to infinity exactly because `p' < 2`.
+Together with the inequality this characterizes the exponents for which a Hausdorff–Young bound
+`‖𝓕 f‖_{p'} ≤ C ‖f‖_p` holds: for `1 ≤ p`, exactly those with `p ≤ 2`
+(`TauCeti.exists_forall_eLpNorm_fourier_le_mul_iff`).
+
 ## Main declarations
 
 * `MeasureTheory.Integrable.eLpNorm_fourier_le`: **the Hausdorff–Young inequality**
   `‖𝓕 f‖_{p'} ≤ ‖f‖_p` for integrable `f` and `1 ≤ p ≤ 2`.
 * `MeasureTheory.Integrable.memLp_fourier`: the Fourier integral of `f ∈ L¹ ∩ Lᵖ`,
   `1 ≤ p ≤ 2`, lies in `L^{p'}`.
+* `TauCeti.exists_mul_eLpNorm_lt_eLpNorm_fourier`: the inequality fails for `p > 2`, by any
+  finite constant, already for Gaussians.
+* `TauCeti.exists_forall_eLpNorm_fourier_le_mul_iff`: for `1 ≤ p`, a bound
+  `‖𝓕 f‖_{p'} ≤ C ‖f‖_p` with a finite constant holds if and only if `p ≤ 2`.
 
 ## References
 
@@ -182,3 +201,73 @@ theorem memLp_fourier {f : E → ℂ} (hf : Integrable f) {p : ℝ≥0∞} (hfp 
   memLp_iff.2 ((hf.eLpNorm_fourier_le hp₁ hp₂).trans_lt hfp.eLpNorm_lt_top)
 
 end MeasureTheory.Integrable
+
+namespace TauCeti
+
+open SchwartzMap Complex
+
+/-- **The Hausdorff–Young inequality fails for `p > 2`.** On a nontrivial finite-dimensional real
+inner product space, for `2 < p` and every finite constant `C`, some Schwartz function `f`, a
+Gaussian of complex variance, has `C ‖f‖_p < ‖𝓕 f‖_{p'}`, where `p' = p.conjExponent`. -/
+theorem exists_mul_eLpNorm_lt_eLpNorm_fourier [Nontrivial E] {p : ℝ≥0∞} (hp : 2 < p)
+    {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    ∃ f : 𝓢(E, ℂ), C * eLpNorm f p volume < eLpNorm (𝓕 ⇑f) p.conjExponent volume := by
+  -- The conjugate exponent `q = p'` satisfies `0 < q < 2`.
+  have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
+  set q := p.conjExponent
+  have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q p
+  have hqlt : q < 2 := ENNReal.HolderConjugate.lt_two hp
+  have hqtop : q ≠ ∞ := ne_top_of_lt hqlt
+  have hq2 : q.toReal < 2 := by
+    simpa using (ENNReal.toReal_lt_toReal hqtop ENNReal.ofNat_ne_top).2 hqlt
+  set n : ℝ := (Module.finrank ℝ E : ℝ)
+  have hn : 0 < n := by simpa [n] using Module.finrank_pos (R := ℝ) (M := E)
+  have hq : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
+  -- The Gaussians `f_t = exp (-(π + i t) ‖x‖²)`.
+  have hb (t : ℝ) : 0 < ((Real.pi : ℂ) + t * I).re := by simpa using Real.pi_pos
+  have hπ : 0 < (Real.pi : ℂ).re := by simpa using Real.pi_pos
+  -- The `Lᵖ` norm of `f_t` does not depend on `t`, since its modulus does not.
+  have hK (t : ℝ) : eLpNorm (gaussian (hb t) : 𝓢(E, ℂ)) p volume =
+      eLpNorm (gaussian hπ : 𝓢(E, ℂ)) p volume :=
+    eLpNorm_congr_norm_ae (gaussian (hb t)).continuous.aestronglyMeasurable
+      (gaussian hπ).continuous.aestronglyMeasurable (Eventually.of_forall fun x ↦ by
+        rw [norm_gaussian_apply, norm_gaussian_apply]
+        simp)
+  set K := eLpNorm (gaussian hπ : 𝓢(E, ℂ)) p volume
+  have hKtop : K ≠ ∞ := ((gaussian hπ : 𝓢(E, ℂ)).memLp p volume).eLpNorm_lt_top.ne
+  -- The `L^{p'}` norm of `𝓕 f_t` is `c ‖π + i t‖ ^ e` with `e = n / p' - n / 2 > 0`.
+  set e := n / q.toReal - n / 2
+  have he : 0 < e := by
+    have : n / 2 < n / q.toReal := div_lt_div_of_pos_left hn hq hq2
+    simp only [e]
+    linarith
+  set c := Real.pi ^ (n / 2) / (Real.pi * Real.pi * q.toReal) ^ (n / (2 * q.toReal))
+  have hc : 0 < c := by positivity
+  have hF (t : ℝ) : eLpNorm (𝓕 ⇑(gaussian (hb t) : 𝓢(E, ℂ))) q volume =
+      ENNReal.ofReal (c * ‖(Real.pi : ℂ) + t * I‖ ^ e) := by
+    rw [eLpNorm_fourier_gaussian (hb t) hq0 hqtop]
+    simp [c, e, n]
+  -- Since `‖π + i t‖ ≥ |t|`, these norms are unbounded.
+  have hN : Tendsto (fun t : ℝ ↦ ‖(Real.pi : ℂ) + t * I‖) atTop atTop :=
+    tendsto_atTop_mono (fun t ↦ (le_abs_self t).trans
+      (by simpa using abs_im_le_norm ((Real.pi : ℂ) + t * I))) tendsto_id
+  obtain ⟨t, ht⟩ := (((tendsto_rpow_atTop he).comp hN).const_mul_atTop hc
+    |>.eventually_gt_atTop (C * K).toReal).exists
+  refine ⟨gaussian (hb t), ?_⟩
+  rw [hK, hF]
+  exact (ENNReal.lt_ofReal_iff_toReal_lt (ENNReal.mul_ne_top hC hKtop)).2 ht
+
+/-- **The exponents of the Hausdorff–Young inequality.** On a nontrivial finite-dimensional real
+inner product space and for `1 ≤ p`, the Fourier integral satisfies a bound
+`‖𝓕 f‖_{p'} ≤ C ‖f‖_p` with a finite constant `C` for every integrable `f` if and only if
+`p ≤ 2`. For `p ≤ 2` this is the Hausdorff–Young inequality, with `C = 1`. -/
+theorem exists_forall_eLpNorm_fourier_le_mul_iff [Nontrivial E] {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    (∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ f : E → ℂ, Integrable f →
+      eLpNorm (𝓕 f) p.conjExponent volume ≤ C * eLpNorm f p volume) ↔ p ≤ 2 := by
+  refine ⟨fun ⟨C, hC, h⟩ ↦ ?_, fun hp2 ↦ ⟨1, ENNReal.one_ne_top, fun f hf ↦ by
+    simpa using hf.eLpNorm_fourier_le hp hp2⟩⟩
+  by_contra! hp2
+  obtain ⟨f, hf⟩ := exists_mul_eLpNorm_lt_eLpNorm_fourier (E := E) hp2 hC
+  exact (h f f.integrable).not_gt hf
+
+end TauCeti

@@ -151,9 +151,6 @@ theorem conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul (hh : h.IsRightIn
         coefficientMatrix (C := A) b =
       (haarGramMatrix h b).map (algebraMap ℂ A) := by
   set u := coefficientMatrix (C := A) b
-  -- The coproduct of each coefficient entry, `Δ (u i j) = ∑ k, u i k ⊗ u k j`.
-  let r (i j : ι) : Coalgebra.Repr ℂ (u i j) ι :=
-    ⟨Finset.univ, fun k ↦ u i k, fun k ↦ u k j, (comul_coefficientMatrix_eq_sum b i j).symm⟩
   ext j l
   calc _ = ∑ i, ∑ k, ∑ m, h (star (u i k) * u i m) • (star (u k j) * u m l) := by
         simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, haarGramMatrix_apply,
@@ -163,7 +160,9 @@ theorem conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul (hh : h.IsRightIn
         rw [Finset.sum_comm]
         exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
     _ = ∑ i, h (star (u i j) * u i l) • (1 : A) :=
-        Finset.sum_congr rfl fun i _ ↦ by simpa [r] using hh.sum_sum_mul (r i j).star (r i l)
+        Finset.sum_congr rfl fun i _ ↦ by
+          simpa [u] using hh.sum_sum_mul (b.coefficientMatrixRepr (C := A) i j).star
+            (b.coefficientMatrixRepr (C := A) i l)
     _ = _ := by
         simp [map_sum, Algebra.algebraMap_eq_smul_one, u]
 

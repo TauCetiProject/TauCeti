@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Polarization
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
+import Mathlib.Analysis.Complex.OperatorNorm
+import TauCeti.MeasureTheory.VectorMeasure.Variation.Basic
 
 /-!
 # The sharp variation estimate for polarized spectral measures
@@ -22,7 +24,11 @@ uniform norm control for integration against polarized spectral measures: integr
 a bounded measurable function is bounded in absolute value by its supremum norm times
 `‖ψ‖ * ‖ξ‖`.
 
-On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`.
+On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`, and in
+general the variation is symmetric in the two vectors (`variation_polarizedComplexMeasure_comm`)
+and absolutely continuous with respect to both `P.diag ξ` and `P.diag ψ`
+(`variation_polarizedComplexMeasure_absolutelyContinuous_diag`,
+`variation_polarizedComplexMeasure_absolutelyContinuous_diag_left`).
 
 The finite-variation instance makes this property available to the vector-measure
 integration API and subsequent spectral-integral estimates.
@@ -96,6 +102,40 @@ instance instIsFiniteMeasurePolarizedVariation (P : ProjValMeasure X H) (ψ ξ :
   refine ⟨?_⟩
   exact (P.polarizedComplexMeasure_variation_univ_le ψ ξ).trans_lt
     ENNReal.ofReal_lt_top
+
+/-- Swapping the two vectors conjugates the polarized complex measure and therefore leaves its
+variation unchanged. -/
+theorem variation_polarizedComplexMeasure_comm (P : ProjValMeasure X H) (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation = (P.polarizedComplexMeasure ξ ψ).variation := by
+  have hle (u v : H) :
+      (P.polarizedComplexMeasure u v).variation ≤ (P.polarizedComplexMeasure v u).variation := by
+    rw [← P.mapRangeL_conjCLE_polarizedComplexMeasure v u]
+    simpa [Complex.conjCLE_nnNorm] using
+      VectorMeasure.variation_mapRangeL_le (Complex.conjCLE : ℂ →L[ℝ] ℂ)
+        (P.polarizedComplexMeasure v u)
+  exact le_antisymm (hle ψ ξ) (hle ξ ψ)
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
+diagonal measure `P.diag ξ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag (P : ProjValMeasure X H)
+    (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ξ := by
+  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => ?_
+  have hproj : P.proj B hB ξ = 0 :=
+    eNorm_eq_zero.1 (sq_eq_zero_iff.1 ((P.enorm_sq_proj_apply B hB ξ).trans h0))
+  have hres : (P.polarizedComplexMeasure ψ ξ).restrict B = 0 := by
+    rw [← P.polarizedComplexMeasure_proj_right B hB ψ ξ, hproj,
+      P.polarizedComplexMeasure_zero_right]
+  have hvar := congrArg (fun ν => ν.variation Set.univ) hres
+  simpa [VectorMeasure.variation_restrict hB, Measure.restrict_apply_univ] using hvar
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
+diagonal measure `P.diag ψ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag_left (P : ProjValMeasure X H)
+    (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ψ := by
+  rw [P.variation_polarizedComplexMeasure_comm ψ ξ]
+  exact P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ξ ψ
 
 /-- The variation of the diagonal polarized measure is the diagonal measure. -/
 @[simp]

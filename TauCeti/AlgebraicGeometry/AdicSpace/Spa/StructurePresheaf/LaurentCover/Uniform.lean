@@ -55,9 +55,9 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isUniform
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus ⊤ ↦
       ((presentationLimitMap (P := P)
-          (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.1 x,
+          (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.val x,
         (presentationLimitMap (P := P)
-          (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.1 x) := by
+          (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.val x) := by
   exact isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbedding_toCompletionLoc
     P hAplus f fun hden₂ ↦
       isClosedEmbedding_laurentCover_of_isUniform P f (Localization.Away (1 : A))
@@ -69,7 +69,7 @@ is a complete Hausdorff uniform Tate ring. -/
 theorem injective_presentationLimitMap_laurentCoverOpen_of_isUniform
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
     Function.Injective fun (x : presentationLimit (P := P) Aplus ⊤) (b : Bool) ↦
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 x :=
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val x :=
   injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletionLoc P hAplus f
     fun hden₂ ↦ (isClosedEmbedding_laurentCover_of_isUniform P f _ _ hden₂).injective
 
@@ -81,11 +81,11 @@ theorem exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A)
     (x : ∀ b, presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 (x true) =
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 (x false)) :
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val (x false)) :
     ∃ a : presentationLimit (P := P) Aplus ⊤, ∀ b,
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 a =
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val a =
         x b :=
   exists_presentationLimitMap_eq_of_laurentCoverOpen_of_exact_toCompletionLoc P hAplus f
     (fun hden₂ ↦ laurentCover_exact_of_isUniform P f _ _ hden₂ _) x hx

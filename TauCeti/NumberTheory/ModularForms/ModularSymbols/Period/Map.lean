@@ -76,7 +76,7 @@ map. -/
 private def periodFunctional (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k) :
     ModularSymbols R Γ w →ₗ[R] ℂ :=
   Coinvariants.lift _ (rawPairing R f hk) fun γ ↦ by
-    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, rawPairing_comp_symbolRep f hk γ.2]
+    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, rawPairing_comp_symbolRep f hk γ.property]
 
 -- Stated through `periodFunctional` so that it can be rewritten with: the linear maps produced by
 -- `Coinvariants.lift` carry the additive structure of `ℂ` as an `AddCommGroup`, which does not
