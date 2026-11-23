@@ -110,8 +110,8 @@ theorem isBaseChange_complex_unitarySubgroup :
   refine LinearMap.isBaseChange_complex_of_star_eq_neg _
     ((unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).injective.comp Subtype.val_injective)
     (fun X ↦ ?_) (fun A hA ↦ ?_)
-  · have hX := X.2
-    rw [← (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm_apply_apply X.1,
+  · have hX := X.property
+    rw [← (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm_apply_apply X.val,
       unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg] at hX
     exact hX
   · refine ⟨⟨(unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm A, ?_⟩, ?_⟩
@@ -158,8 +158,8 @@ private theorem exists_specialUnitaryToMatrix_eq_iff (A : Matrix n n ℂ) :
   rw [← unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff]
   constructor
   · rintro ⟨X, rfl⟩
-    have hX := X.2
-    rwa [← (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm_apply_apply X.1] at hX
+    have hX := X.property
+    rwa [← (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm_apply_apply X.val] at hX
   · intro hA
     exact ⟨⟨_, hA⟩, by simp⟩
 
@@ -258,7 +258,7 @@ theorem skewAdjointBaseChangeLieEquiv_symm_apply (G : Subgroup (Matrix m m ℝ)�
     (skewAdjointBaseChangeLieEquiv S G J hG).symm
         ⟨(unitsLieAlgebraLieEquiv (R := Matrix m m ℝ) (X : LeftInvariantDerivation _ _)).map
             (algebraMap ℝ S),
-          by simpa using (skewAdjointBaseChangeLieEquiv S G J hG (1 ⊗ₜ[ℝ] X)).2⟩ =
+          by simpa using (skewAdjointBaseChangeLieEquiv S G J hG (1 ⊗ₜ[ℝ] X)).property⟩ =
       1 ⊗ₜ[ℝ] X := by
   rw [LieEquiv.symm_apply_eq]
   exact Subtype.ext (by rw [coe_skewAdjointBaseChangeLieEquiv_tmul, one_smul])
@@ -298,7 +298,7 @@ theorem specialOrthogonalBaseChangeLieEquiv_symm_apply
     (specialOrthogonalBaseChangeLieEquiv S n).symm
         ⟨(unitsLieAlgebraLieEquiv (R := Matrix n n ℝ) (X : LeftInvariantDerivation _ _)).map
             (algebraMap ℝ S),
-          by simpa using (specialOrthogonalBaseChangeLieEquiv S n (1 ⊗ₜ[ℝ] X)).2⟩ =
+          by simpa using (specialOrthogonalBaseChangeLieEquiv S n (1 ⊗ₜ[ℝ] X)).property⟩ =
       1 ⊗ₜ[ℝ] X := by
   rw [LieEquiv.symm_apply_eq]
   exact Subtype.ext (by rw [coe_specialOrthogonalBaseChangeLieEquiv_tmul, one_smul])
@@ -335,7 +335,7 @@ theorem symplecticBaseChangeLieEquiv_symm_apply (l : Type*) [Fintype l] [Decidab
     (symplecticBaseChangeLieEquiv S l).symm
         ⟨(unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℝ)
             (X : LeftInvariantDerivation _ _)).map (algebraMap ℝ S),
-          by simpa using (symplecticBaseChangeLieEquiv S l (1 ⊗ₜ[ℝ] X)).2⟩ =
+          by simpa using (symplecticBaseChangeLieEquiv S l (1 ⊗ₜ[ℝ] X)).property⟩ =
       1 ⊗ₜ[ℝ] X := by
   rw [LieEquiv.symm_apply_eq]
   exact Subtype.ext (by rw [coe_symplecticBaseChangeLieEquiv_tmul, one_smul])

@@ -180,7 +180,7 @@ theorem adjoin_range_map_genericMatrix :
       GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
       GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
     rw [hinv]
-    exact (M.adjugate i j).2
+    exact (M.adjugate i j).property
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -256,6 +256,15 @@ theorem pointsMulEquiv_toGL
   rw [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     ← Matrix.SpecialLinearGroup.toGLKerEquiv_apply_coe, MulEquiv.apply_symm_apply,
     MulEquiv.subgroupCongr_apply, GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
+
+/-- Companion of `pointsMulEquiv_toGL` in the form consumers hold: the ambient point is the
+composite with `coordinateMap`, the normal form of `quotientPointsHom` under
+`CommHopfAlgCat.quotientPointsHom_apply`. -/
+theorem toGL_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
+    Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n f) =
+      GeneralLinear.pointsMulEquiv n (toConv (f.ofConv.comp (coordinateMap R n).hom)) := by
+  rw [← pointsMulEquiv_toGL, CommHopfAlgCat.quotientPointsHom_apply]
 
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/

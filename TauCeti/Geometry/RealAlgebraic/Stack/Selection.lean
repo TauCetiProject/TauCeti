@@ -43,7 +43,7 @@ theorem exists_eq_root_of_continuous (D : Delineation P) {k : ι} {f : X → ℝ
   have hclosed (j : Fin D.count) : IsClosed {x | D.root j x = f x} :=
     isClosed_eq (D.continuous_root j) hf
   have hcompl : {x | D.root i x = f x}ᶜ = ⋃ j : {j : Fin D.count // j ≠ i},
-      {x | D.root j.1 x = f x} := by
+      {x | D.root j.val x = f x} := by
     ext x
     simp only [mem_compl_iff, mem_ofPred_eq, mem_iUnion, Subtype.exists, exists_prop]
     constructor
@@ -55,7 +55,7 @@ theorem exists_eq_root_of_continuous (D : Delineation P) {k : ι} {f : X → ℝ
   have hclopen : IsClopen {x | D.root i x = f x} := by
     refine ⟨hclosed i, ?_⟩
     rw [← isClosed_compl_iff, hcompl]
-    exact isClosed_iUnion_of_finite fun j ↦ hclosed j.1
+    exact isClosed_iUnion_of_finite fun j ↦ hclosed j.val
   have hall := hclopen.eq_univ ⟨x₀, hi⟩
   exact ⟨i, funext fun x ↦ (eq_univ_iff_forall.mp hall x).symm⟩
 

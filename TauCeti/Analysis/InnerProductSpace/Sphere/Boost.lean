@@ -347,9 +347,6 @@ theorem fderiv_sphereBoost_log_apply_eq (e : E →ₗᵢ[ℝ] F) {x v : E} {y w 
     exact hv (hev.elim (fun h => h) fun h => e.injective (h.trans (map_zero e).symm))
   have hxy : e x = - -y := by rw [hex, neg_neg]
   rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, Real.exp_log (by positivity)]
-  rw [← LinearIsometry.norm_map e v]
-  refine TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize ?_
-  rw [LinearIsometry.norm_map]
-  simpa [NormedSpace.normalize, map_smul] using hev
+  rw [div_eq_mul_inv, mul_smul, ← map_smul, hev, smul_inv_smul₀ (norm_ne_zero_iff.2 hw)]
 
 end LinearIsometry
