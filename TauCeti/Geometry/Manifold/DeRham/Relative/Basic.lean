@@ -34,9 +34,11 @@ reads `d (inl α) = inl (dα) + inr (α|_W)` and `d (inr β) = -inr (dβ)`
 relative cochain is a function on `M` (`TauCeti.relativeDeRhamComplex.inl_zero_bijective`). So the
 relative cocycles are the pairs with `dα = 0` and `α|_W = dβ`
 (`TauCeti.relativeDeRhamComplex.d_coord_symm_eq_zero_iff`), and the relative coboundaries are the
-pairs `(dγ, γ|_W - dε)` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_iff`). A smooth map
-of open pairs `(M, W) → (M', W')` acts componentwise by pullback
-(`TauCeti.relativeDeRhamComplex.map_inl`, `TauCeti.relativeDeRhamComplex.map_inr`).
+pairs `(dγ, γ|_W - dε)` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_iff`), or
+`(dγ, γ|_W)` in degree `1` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_zero_iff`). A
+smooth map of open pairs `(M, W) → (M', W')` acts componentwise by pullback
+(`TauCeti.relativeDeRhamComplex.map_inl`, `TauCeti.relativeDeRhamComplex.map_inr`), functorially
+(`TauCeti.relativeDeRhamComplex.map_id`, `TauCeti.relativeDeRhamComplex.map_comp`).
 
 The class of a relative cocycle `(α, β)` is `TauCeti.relativeDeRhamCohomology.mk`. The connecting
 map `δ : H^k(W) → H^(k+1)(M, W)` is `δ [b] = -[(0, b)]`
@@ -47,8 +49,10 @@ singular cohomology.
 
 Two degenerate pairs recover known groups. In degree `0` the relative cohomology is the space of
 functions on `M` with zero differential that vanish on `W`
-(`TauCeti.relativeDeRhamCohomology.classZero_bijective`). For empty `W` the first projection of
-the cocone is an isomorphism onto the extended de Rham complex of `M`
+(`TauCeti.relativeDeRhamCohomology.classZero_bijective`), that is, the locally constant functions
+on `M` vanishing on `W`
+(`TauCeti.relativeDeRhamCohomology.mem_cocyclesZero_iff_isLocallyConstant`). For empty `W` the
+first projection of the cocone is an isomorphism onto the extended de Rham complex of `M`
 (`TauCeti.relativeDeRhamComplex.isIso_fst_of_isEmpty`), so it identifies `H^k(M, ∅)` with the de
 Rham cohomology of `M`.
 
@@ -442,6 +446,7 @@ theorem map_id :
     map I W (I' := I) (W' := W) (f := id) (g := id) contMDiff_id (fun _ ↦ rfl) = 𝟙 _ := by
   simp only [map, deRhamComplex.map_id, extendMap_id]
   rw [CochainComplex.mappingCone.map_id, CategoryTheory.Functor.map_id]
+  rfl
 
 variable {E'' : Type u} {H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} {M'' : Type v} [TopologicalSpace M'']
@@ -662,7 +667,7 @@ theorem mem_cocyclesZero_iff_isLocallyConstant (α : SmoothForm I M ℝ 0) :
     simpa using this
   · ext x v
     rw [SmoothForm.mpullback_apply, Subsingleton.elim (fun _ ↦ _) (0 : Fin 0 → _)]
-    simpa using h x x.2
+    simpa using h x x.property
 
 /-- The cochain `inl α` of a relative cocycle `α` of degree `0` is a cycle. -/
 theorem d_inl_eq_zero_of_mem_cocyclesZero {α : SmoothForm I M ℝ 0}
