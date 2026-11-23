@@ -111,14 +111,14 @@ theorem coeff_eq_meromorphicPolarCoeffAt (decomp : PolarPartDecomposition f S U)
       (pow_ne_zero _ (sub_ne_zero.mpr h_ne))
   have h_g_cont : ContinuousAt g ↑s :=
     (decomp.analyticRemainder_differentiableOn.continuousOn.continuousAt
-      (hU.mem_nhds (hSU s.2))).add h_sum_an.continuousAt
+      (hU.mem_nhds (hSU s.property))).add h_sum_an.continuousAt
   have h_off : ∀ᶠ z in 𝓝 (↑s : ℂ), z ∉ (↑S : Set ℂ) \ {(↑s : ℂ)} := by
     have h_closed : IsClosed ((↑S : Set ℂ) \ {(↑s : ℂ)}) :=
       (S.finite_toSet.subset Set.sdiff_subset).isClosed
     exact h_closed.isOpen_compl.mem_nhds (by simp)
   have h_exp : ∀ᶠ z in 𝓝[≠] (↑s : ℂ), f z = g z + ∑ k : Fin (decomp.order s),
       decomp.coeff s k / (z - (↑s : ℂ)) ^ (k.val + 1) := by
-    filter_upwards [nhdsWithin_le_nhds (hU.mem_nhds (hSU s.2)),
+    filter_upwards [nhdsWithin_le_nhds (hU.mem_nhds (hSU s.property)),
       nhdsWithin_le_nhds h_off, self_mem_nhdsWithin] with z hzU hzS hz_ne
     have h_f := decomp.f_eq z ⟨hzU, fun hzS' => hzS ⟨hzS', hz_ne⟩⟩
     rw [← Finset.add_sum_erase _ _ (Finset.mem_attach S s)] at h_f

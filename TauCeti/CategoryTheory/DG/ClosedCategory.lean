@@ -128,16 +128,16 @@ noncomputable def dgClosedHomEquiv
     (X ⟶ Y) ≃ dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) where
   toFun f := ⟨dgClosedHom R f, dgClosedHom_mem_dgCycles R f⟩
-  invFun f := dgClosedHomOf (C := C) R f.1 f.2
+  invFun f := dgClosedHomOf (C := C) R f.val f.property
   left_inv f := dgClosedHomOf_dgClosedHom R f
-  right_inv f := Subtype.ext (dgClosedHom_dgClosedHomOf R f.1 f.2)
+  right_inv f := Subtype.ext (dgClosedHom_dgClosedHomOf R f.val f.property)
 
 /-- The equivalence from underlying morphisms to cycles evaluates by taking the degree-zero
 component. -/
 @[simp]
 theorem dgClosedHomEquiv_apply_coe
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    (dgClosedHomEquiv R X Y f).1 = dgClosedHom R f :=
+    (dgClosedHomEquiv R X Y f).val = dgClosedHom R f :=
   (rfl)
 
 /-- The inverse equivalence constructs the underlying morphism represented by a cocycle. -/
@@ -146,7 +146,7 @@ theorem dgClosedHomEquiv_symm_apply
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
     (f : dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)) :
-    (dgClosedHomEquiv R X Y).symm f = dgClosedHomOf R f.1 f.2 :=
+    (dgClosedHomEquiv R X Y).symm f = dgClosedHomOf R f.val f.property :=
   (rfl)
 
 /-- The identity at an object of Mathlib's underlying category has the DG identity as its
@@ -168,7 +168,7 @@ theorem dgClosedHom_comp
     dgClosedHom R (f ≫ g) = dgCompZero R (dgClosedHom R f) (dgClosedHom R g) := by
   rw [dgCompZero_def]
   simp only [dgClosedHom, ForgetEnrichment.homTo_comp, HomologicalComplex.comp_f]
-  rw [leftUnitor_inv_f, leftUnitor'_inv]
+  rw [leftUnitor_inv_f]
   simp only [Category.assoc, tensorHom_def, HomologicalComplex.comp_f,
     ι_whiskerRight_assoc, ι_whiskerLeft_assoc]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
@@ -188,7 +188,7 @@ theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat
     ((eHomWhiskerLeft (CochainComplex (ModuleCat.{v} R) ℤ) X g).f p).hom f =
       dgComp R f (dgClosedHom R g) (add_zero p) := by
   rw [eHomWhiskerLeft, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    rightUnitor_inv_f, rightUnitor'_inv]
+    rightUnitor_inv_f]
   simp only [Category.assoc, ι_whiskerLeft_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
   rw [← dgCompMap_tmul, dgCompMap_def]
   rfl
@@ -203,7 +203,7 @@ theorem eHomWhiskerRight_f_apply {X Y : ForgetEnrichment (CochainComplex (Module
     ((eHomWhiskerRight (CochainComplex (ModuleCat.{v} R) ℤ) g Z).f p).hom f =
       dgComp R (dgClosedHom R g) f (zero_add p) := by
   rw [eHomWhiskerRight, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    leftUnitor_inv_f, leftUnitor'_inv]
+    leftUnitor_inv_f]
   simp only [Category.assoc, ι_whiskerRight_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
   rw [← dgCompMap_tmul, dgCompMap_def]
   rfl

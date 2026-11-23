@@ -623,7 +623,7 @@ def reducedBurauSpaceEquiv (n : ℕ) (t : R) :
       Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ, Fin.val_zero, pow_zero, one_mul,
       Fin.val_succ]
     abel⟩
-  invFun x := Fin.tail x.1
+  invFun x := Fin.tail x.val
   left_inv x := by
     funext i
     simp
@@ -631,7 +631,7 @@ def reducedBurauSpaceEquiv (n : ℕ) (t : R) :
     apply Subtype.ext
     funext i
     refine Fin.cases ?_ (fun j ↦ by simp only [Fin.tail, Fin.cons_succ]) i
-    have hx := x.2
+    have hx := x.property
     simp only [reducedBurauSpace, LinearMap.mem_ker, geometricCovector_apply,
       Fin.sum_univ_succ, Fin.val_zero, pow_zero, one_mul, Fin.val_succ] at hx
     simpa only [Fin.tail, Fin.cons_zero] using (eq_neg_of_add_eq_zero_left hx).symm
@@ -670,7 +670,7 @@ theorem reducedBurauSpaceEquiv_apply_coe (n : ℕ) (t : R) (x : Fin n → R) :
 @[simp]
 theorem reducedBurauSpaceEquiv_symm_apply (n : ℕ) (t : R)
     (x : ReducedBurauSpace (n + 1) t) :
-    (reducedBurauSpaceEquiv n t).symm x = Fin.tail x.1 := by
+    (reducedBurauSpaceEquiv n t).symm x = Fin.tail x.val := by
   simp [reducedBurauSpaceEquiv]
 
 /-- The unreduced Burau matrix representation, regarded as a representation on the free module of
@@ -724,7 +724,7 @@ def reducedBurauSubrepresentation (n : ℕ) (t : Rˣ) :
 theorem coe_reducedBurauSubrepresentation_apply (n : ℕ) (t : Rˣ) (b : BraidGroup n)
     (x : ReducedBurauSpace n (t : R)) :
     (reducedBurauSubrepresentation n t b x : Fin n → R) =
-      (burau n t b : Matrix (Fin n) (Fin n) R) *ᵥ x.1 :=
+      (burau n t b : Matrix (Fin n) (Fin n) R) *ᵥ x.val :=
   by
     rw [reducedBurauSubrepresentation, Representation.subrepresentation_apply]
     exact burauRepresentation_apply n t b x

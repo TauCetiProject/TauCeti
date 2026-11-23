@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
+public import TauCeti.Topology.PathSpace.Moore.From
 
 /-!
 # The Moore-path replacement of a Hurewicz fibration
@@ -16,6 +18,9 @@ Moore-path replacement is a **fibre homotopy equivalence** over `B`
 (`TauCeti.MooreReplacement.fiberHomotopyEquiv`), and so the fibre `F` of `p` over `b` is homotopy
 equivalent to the fibre `F'` of the replacement
 (`TauCeti.MooreReplacement.fiberHomotopyEquivFiber`).
+So a map of Hurewicz fibrations covering a map of the bases, which restricts to a homotopy
+equivalence of the fibres, induces a homotopy equivalence of the fibres of the replacements
+(`TauCeti.MooreReplacement.Fiber.squareMapHomotopyEquiv`).
 The fibre homotopy equivalence identifies each fibre of `p` with the corresponding fibre of the
 replacement, `f ↦ (f, const)`, compatibly with the projections to `B`.  The hypothesis is the
 homotopy lifting property with respect to `E'` itself, so the universe of test spaces is that of
@@ -24,7 +29,8 @@ homotopy lifting property with respect to `E'` itself, so the universe of test s
 The endpoint evaluation `P_{A→X} X → X` of the Moore paths starting in a subset `A` is the
 Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X`
 (`TauCeti.MooreReplacement.homeomorphPathsFrom`), so it is a Hurewicz fibration
-(`TauCeti.MoorePath.isHurewiczFibration_target`).
+(`TauCeti.MoorePath.isHurewiczFibration_target`); for `A = {b}` this is the end point of the based
+path space `P_b X` (`TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`).
 
 ## Main definitions
 
@@ -36,7 +42,11 @@ Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X
 ## Main results
 
 * `TauCeti.MooreReplacement.fiberHomotopyEquivFiber`: `F ≃ₕ F'` for a Hurewicz fibration.
+* `TauCeti.MooreReplacement.Fiber.squareMapHomotopyEquiv`: a map of Hurewicz fibrations that is a
+  homotopy equivalence on the fibres induces a homotopy equivalence `F'_p ≃ₕ F'_{p'}` of the fibres
+  of the replacements.
 * `TauCeti.MoorePath.isHurewiczFibration_target`: the endpoint evaluation is a Hurewicz fibration.
+* `TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`: so is the end point of `P_b X`.
 
 ## References
 
@@ -148,7 +158,7 @@ def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     FiberHomotopyEquiv p (endpoint p) where
   toFun := incl p
   invFun := homotopyInverse hp
-  comp_toFun := ContinuousMap.ext fun e ↦ by simp
+  comp_toFun := endpoint_comp_incl p
   comp_invFun := ContinuousMap.ext fun x ↦ by simp
   left_inv := ⟨(leftHomotopy hp).symm⟩
   right_inv := ⟨(rightHomotopy hp).symm⟩
@@ -167,26 +177,78 @@ theorem fiberHomotopyEquiv_invFun {p : C(E, B)} (hp : IsHurewiczFibration.{max u
 Moore-path replacement, by `f ↦ (f, const)`. -/
 def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B) :
     HomotopyEquiv {e // p e = b} (Fiber p b) :=
-  ((fiberHomotopyEquiv hp).fiber b).trans
-    ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
-      rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
+  ((fiberHomotopyEquiv hp).fiber b).trans (Fiber.homeomorphEndpointFiber p b).symm.toHomotopyEquiv
 
-@[simp]
 theorem val_fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (b : B) (f : {e // p e = b}) : (fiberHomotopyEquivFiber hp b f).val = incl p f := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_apply _ b f).trans (by rw [fiberHomotopyEquiv_toFun])
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv,
+    Fiber.val_homeomorphEndpointFiber_symm_apply, FiberHomotopyEquiv.coe_fiber_apply,
+    fiberHomotopyEquiv_toFun]
+
+/-- The homotopy equivalence `F ≃ₕ F'` is the inclusion `f ↦ (f, const)` of the fibre. -/
+@[simp]
+theorem fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B)
+    (f : {e // p e = b}) : fiberHomotopyEquivFiber hp b f = MooreLiftingFunction.fiberIncl p b f :=
+  Fiber.ext <| by rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
 
 @[simp]
 theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
     (hp : IsHurewiczFibration.{max u v} p) (b : B) (x : Fiber p b) :
     ((fiberHomotopyEquivFiber hp b).symm x : E) = homotopyInverse hp x.val := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply, ← Homeomorph.symm_toHomotopyEquiv,
-    Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_symm_apply _ b _).trans
-    (by rw [fiberHomotopyEquiv_invFun]; rfl)
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply,
+    ← Homeomorph.symm_toHomotopyEquiv, Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv,
+    FiberHomotopyEquiv.coe_fiber_symm_apply, fiberHomotopyEquiv_invFun,
+    Fiber.coe_homeomorphEndpointFiber_apply]
+
+/-! ### Maps of fibres covering a map of the bases -/
+
+section SquareMap
+
+variable {E' : Type u} {B' : Type v} [TopologicalSpace E'] [TopologicalSpace B']
+
+/-- For Hurewicz fibrations `p` and `p'`, a commutative square `p' ∘ h = g ∘ p` whose top map `h`
+restricts to a homotopy equivalence `e` from the fibre of `p` over `b` to the fibre of `p'` over
+`b' = g b` induces a **homotopy equivalence of the fibres of the Moore-path replacements**, with
+forward map `Fiber.squareMap h g hsq hg`. -/
+def Fiber.squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p')
+    (h : C(E, E')) (g : C(B, B'))
+    (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    Fiber p b ≃ₕ Fiber p' b' :=
+  ((fiberHomotopyEquivFiber hp b).symm.trans (e.trans (fiberHomotopyEquivFiber hp' b'))).ofHomotopic
+    (Fiber.squareMap h g hsq hg) <| by
+      -- On the fibre of `p` the map of fibres is the composite of `e` and the inclusion of the
+      -- fibre of `p'`: both send `x` to `(h x, const)`.
+      have hsq' : (Fiber.squareMap h g hsq hg).comp (fiberHomotopyEquivFiber hp b).toFun =
+          (fiberHomotopyEquivFiber hp' b').toFun.comp e.toFun := by
+        ext x : 1
+        rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, fiberHomotopyEquivFiber_apply,
+          fiberHomotopyEquivFiber_apply, Fiber.squareMap_fiberIncl]
+        exact congrArg _ (Subtype.ext (he x).symm)
+      have := (Homotopic.refl (Fiber.squareMap h g hsq hg)).comp
+        (fiberHomotopyEquivFiber hp b).right_inv
+      rw [ContinuousMap.comp_id, ← ContinuousMap.comp_assoc, hsq'] at this
+      exact this.symm
+
+theorem Fiber.squareMapHomotopyEquiv_toFun {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p') (h : C(E, E'))
+    (g : C(B, B')) (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    (Fiber.squareMapHomotopyEquiv hp hp' h g hsq hg e he).toFun = Fiber.squareMap h g hsq hg :=
+  HomotopyEquiv.ofHomotopic_toFun _ _ _
+
+/-- The homotopy equivalence `Fiber.squareMapHomotopyEquiv` is the map of fibres
+`Fiber.squareMap`. -/
+@[simp]
+theorem Fiber.coe_squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p') (h : C(E, E'))
+    (g : C(B, B')) (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    ⇑(Fiber.squareMapHomotopyEquiv hp hp' h g hsq hg e he) = Fiber.squareMap h g hsq hg :=
+  HomotopyEquiv.coe_ofHomotopic _ _ _
+
+end SquareMap
 
 /-! ### The endpoint evaluation -/
 
@@ -195,22 +257,22 @@ variable {X : Type u} [TopologicalSpace X]
 theorem source_path_mem {A : Set X} (x : MooreReplacement (ContinuousMap.subtypeVal A)) :
     x.path.source ∈ A := by
   rw [source_path]
-  exact x.point.2
+  exact x.point.property
 
 /-- The Moore paths starting in `A` are the Moore-path replacement of the inclusion `A → X`. -/
 def homeomorphPathsFrom (A : Set X) :
     MooreReplacement (ContinuousMap.subtypeVal A) ≃ₜ {γ : MoorePath X // γ.source ∈ A} where
   toFun x := ⟨x.path, source_path_mem x⟩
-  invFun γ := mk ⟨γ.1.source, γ.2⟩ γ.1 rfl
+  invFun γ := mk ⟨γ.val.source, γ.property⟩ γ.val rfl
   left_inv x := ext (Subtype.ext (by simp)) (by simp)
   right_inv γ := Subtype.ext (path_mk _ _ _)
   continuous_toFun := continuous_path.subtype_mk _
   continuous_invFun := continuous_mk ((MoorePath.continuous_source.comp
-    continuous_subtype_val).subtype_mk _) continuous_subtype_val _
+    continuous_subtypeVal).subtype_mk _) continuous_subtypeVal _
 
 @[simp]
 theorem path_homeomorphPathsFrom_symm (A : Set X) (γ : {γ : MoorePath X // γ.source ∈ A}) :
-    ((homeomorphPathsFrom A).symm γ).path = γ.1 :=
+    ((homeomorphPathsFrom A).symm γ).path = γ.val :=
   path_mk _ _ _
 
 end MooreReplacement
@@ -218,11 +280,21 @@ end MooreReplacement
 /-- The **endpoint evaluation** `P_{A→X} X → X` of the Moore paths starting in a subset `A` is a
 Hurewicz fibration. -/
 theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (A : Set X) :
-    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.1.target := by
+    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.val.target := by
   convert (MooreReplacement.isHurewiczFibration_endpoint.{w} _).comp_homeomorph
     (MooreReplacement.homeomorphPathsFrom A).symm using 1
   funext γ
   rw [Function.comp_apply, MooreReplacement.endpoint_apply,
     MooreReplacement.path_homeomorphPathsFrom_symm]
+
+/-- The **end point** `P_b X → X` of the Moore paths starting at `b` is a Hurewicz fibration. -/
+theorem MoorePathFrom.isHurewiczFibration_endpoint {X : Type u} [TopologicalSpace X] (b : X) :
+    IsHurewiczFibration.{w} (MoorePathFrom.endpoint X b) := by
+  have h : IsHurewiczFibration.{w} fun γ : MoorePathFrom X b ↦ γ.val.target :=
+    MoorePath.isHurewiczFibration_target ({b} : Set X)
+  convert h using 1
+  funext γ
+  exact (MoorePathFrom.endpoint_apply γ).trans
+    (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
 
 end TauCeti
