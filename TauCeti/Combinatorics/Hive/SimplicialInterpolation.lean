@@ -22,10 +22,10 @@ extends `f : Vertex n → ℝ` to a continuous piecewise-affine function `interp
 `barycentricSimplex n` (defined by pulling back `TauCeti.Hive.interpolation f` along
 `x ↦ (x 1, x 2)`, `interpolate_eq_interpolation`, and via `planarInterpolate f` to
 `planarSimplex n ⊆ ℝ²`), agreeing on each unit triangle `T` with
-`triangleAffine f T = ∑ i, f (T.vertex i) • T.weight i`. Its finite differences along the
+`triangleAffine T f = ∑ i, f (T.vertex i) • T.weight i`. Its finite differences along the
 outer-perimeter unit steps `(-1, 1, 0)`, `(0, -1, 1)`, `(1, 0, -1)` form the zero-sum triple
 `triangleGradient f T` over any additive abelian group (matching the directional derivatives of
-`triangleAffine f T` when `R = ℝ`); across the shared edge of `down s` and `adjacentUp s i`, the
+`triangleAffine T f` when `R = ℝ`); across the shared edge of `down s` and `adjacentUp s i`, the
 `(i + 1)`-coordinate is constant while the `i`-th jumps by the rhombus slack.
 
 ## Main definitions and results
@@ -209,74 +209,61 @@ end
 
 /-! ### Simplicial affine pieces and continuous piecewise-affine interpolation -/
 
-/-- Continuous affine extension of `f : Vertex n → ℝ` on a unit triangle `T : UnitTriangle n`. -/
-noncomputable def triangleAffine (f : Vertex n → ℝ) (T : UnitTriangle n) : (Fin 3 → ℝ) →ᴬ[ℝ] ℝ :=
-  f (T.vertex 0) • T.weight 0 + f (T.vertex 1) • T.weight 1 + f (T.vertex 2) • T.weight 2
+/-- Continuous affine extension of `f : Vertex n → ℝ` on a unit triangle `T : UnitTriangle n`,
+bundled as a linear map in `f`. -/
+noncomputable def triangleAffine (T : UnitTriangle n) :
+    (Vertex n → ℝ) →ₗ[ℝ] ((Fin 3 → ℝ) →ᴬ[ℝ] ℝ) :=
+  (Fintype.linearCombination ℝ T.weight).comp (LinearMap.funLeft ℝ ℝ T.vertex)
 
-theorem triangleAffine_def (f : Vertex n → ℝ) (T : UnitTriangle n) : triangleAffine f T =
-    f (T.vertex 0) • T.weight 0 + f (T.vertex 1) • T.weight 1 + f (T.vertex 2) • T.weight 2 := (rfl)
-theorem triangleAffine_apply (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
-    triangleAffine f T x = ∑ i : Fin 3, f (T.vertex i) * T.weight i x := by
-  simp [triangleAffine, Fin.sum_univ_three, add_assoc]
-@[simp] theorem triangleAffine_zero (T : UnitTriangle n) :
-    triangleAffine (0 : Vertex n → ℝ) T = 0 := by ext x; simp [triangleAffine_apply]
-theorem triangleAffine_add (f g : Vertex n → ℝ) (T : UnitTriangle n) :
-    triangleAffine (f + g) T = triangleAffine f T + triangleAffine g T := by
-  ext x; simp [triangleAffine_apply, add_mul, Finset.sum_add_distrib]
-theorem triangleAffine_smul (c : ℝ) (f : Vertex n → ℝ) (T : UnitTriangle n) :
-    triangleAffine (c • f) T = c • triangleAffine f T := by
-  ext x; simp [triangleAffine_apply, mul_assoc, Finset.mul_sum]
-theorem triangleAffine_neg (f : Vertex n → ℝ) (T : UnitTriangle n) :
-    triangleAffine (-f) T = -triangleAffine f T := by simpa using triangleAffine_smul (-1 : ℝ) f T
-theorem triangleAffine_sub (f g : Vertex n → ℝ) (T : UnitTriangle n) :
-    triangleAffine (f - g) T = triangleAffine f T - triangleAffine g T := by
-  rw [sub_eq_add_neg, triangleAffine_add, triangleAffine_neg, sub_eq_add_neg]
+theorem triangleAffine_apply (T : UnitTriangle n) (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
+    triangleAffine T f x = ∑ i : Fin 3, f (T.vertex i) * T.weight i x := by
+  simp [triangleAffine, Fintype.linearCombination_apply, Fin.sum_univ_three]
 theorem triangleAffine_const (c : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
-    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine (fun _ : Vertex n => c) T x = c := by
+    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine T (fun _ : Vertex n => c) x = c := by
   rw [triangleAffine_apply, ← Finset.mul_sum, T.sum_weight hx, mul_one]
 theorem triangleAffine_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f)
     (T : UnitTriangle n) {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) :
-    triangleAffine (ofRhombusConcave f hf) T x = triangleAffine f T x - f (Vertex.cornerA n) := by
+    triangleAffine T (ofRhombusConcave f hf) x = triangleAffine T f x - f (Vertex.cornerA n) := by
   rw [show ⇑(ofRhombusConcave f hf) = f - fun _ => f (Vertex.cornerA n)
-    from funext fun _ => ofRhombusConcave_apply _ _ _, triangleAffine_sub,
+    from funext fun _ => ofRhombusConcave_apply _ _ _, map_sub,
     ContinuousAffineMap.sub_apply, triangleAffine_const _ T hx]
 theorem triangleAffine_addLeft (f : Vertex (m + n) → ℝ) (p : Vertex m) (T : UnitTriangle n)
-    (x : Fin 3 → ℝ) : triangleAffine f (T.addLeft p) (p.barycentric + x) =
-      triangleAffine (fun q => f (p.add q)) T x := by
+    (x : Fin 3 → ℝ) : triangleAffine (T.addLeft p) f (p.barycentric + x) =
+      triangleAffine T (fun q => f (p.add q)) x := by
   simp [triangleAffine_apply, UnitTriangle.vertex_addLeft, UnitTriangle.weight_addLeft_apply]
 theorem triangleAffine_subtriangle (h : RealHive (m + k)) (p : Vertex m) (T : UnitTriangle k)
-    {x : Fin 3 → ℝ} (hx : ∑ i, x i = (k : ℝ)) : triangleAffine (h.subtriangle p) T x =
-      triangleAffine h (T.addLeft p) (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
+    {x : Fin 3 → ℝ} (hx : ∑ i, x i = (k : ℝ)) : triangleAffine T (h.subtriangle p) x =
+      triangleAffine (T.addLeft p) h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
   rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, triangleAffine_sub,
+    from funext fun _ => subtriangle_apply _ _ _, map_sub,
     ContinuousAffineMap.sub_apply, ← triangleAffine_addLeft, triangleAffine_const _ T hx]
 theorem triangleAffine_comp_rotate (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
-    triangleAffine (fun p => f p.rotate) T x = triangleAffine f T.rotate (fun k => x (k - 1)) := by
+    triangleAffine T (fun p => f p.rotate) x = triangleAffine T.rotate f (fun k => x (k - 1)) := by
   simp only [triangleAffine_apply]
   exact Fintype.sum_equiv (Equiv.addRight (1 : Fin 3)) _ _ fun i => by
     simp [UnitTriangle.vertex_rotate, UnitTriangle.weight_rotate_apply]
 theorem triangleAffine_rotate (h : RealHive n) (T : UnitTriangle n) {x : Fin 3 → ℝ}
-    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine h.rotate T x =
-      triangleAffine h T.rotate (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
+    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine T h.rotate x =
+      triangleAffine T.rotate h (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
   rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, triangleAffine_sub, ContinuousAffineMap.sub_apply,
+    from funext fun _ => rotate_apply _ _, map_sub, ContinuousAffineMap.sub_apply,
     triangleAffine_comp_rotate, triangleAffine_const _ T hx]
 theorem triangleAffine_comp_reflect (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
-    triangleAffine (fun p => f p.reflect) T x = triangleAffine f T.reflect (fun k => x (-k)) := by
+    triangleAffine T (fun p => f p.reflect) x = triangleAffine T.reflect f (fun k => x (-k)) := by
   simp only [triangleAffine_apply]
   exact Fintype.sum_equiv (Equiv.neg (Fin 3)) _ _ fun i => by
     rw [Equiv.neg_apply, UnitTriangle.vertex_reflect, UnitTriangle.weight_reflect_apply]
 theorem triangleAffine_reflect (h : RealHive n) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
-    triangleAffine h.reflect T x = triangleAffine h T.reflect (fun k => x (-k)) := by
+    triangleAffine T h.reflect x = triangleAffine T.reflect h (fun k => x (-k)) := by
   rw [coe_reflect]; exact triangleAffine_comp_reflect h T x
 @[simp] theorem triangleAffine_vertex (f : Vertex n → ℝ) (T : UnitTriangle n) (i : Fin 3) :
-    triangleAffine f T (T.vertex i).barycentric = f (T.vertex i) := by
+    triangleAffine T f (T.vertex i).barycentric = f (T.vertex i) := by
   rw [triangleAffine_apply]; fin_cases i <;> simp
-/-- Any affine map agreeing with `f` on the vertices of `T` equals `triangleAffine f T` on the
+/-- Any affine map agreeing with `f` on the vertices of `T` equals `triangleAffine T f` on the
 hyperplane `{x | ∑ i, x i = n}`. -/
 theorem eq_triangleAffine_of_vertex {f : Vertex n → ℝ} {T : UnitTriangle n}
     {A : (Fin 3 → ℝ) →ᵃ[ℝ] ℝ} (hA : ∀ i, A (T.vertex i).barycentric = f (T.vertex i))
-    {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) : A x = triangleAffine f T x := by
+    {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) : A x = triangleAffine T f x := by
   have hw := T.sum_weight hx
   have h := (Finset.univ.map_affineCombination (fun i => (T.vertex i).barycentric)
     (fun i => T.weight i x) hw A).symm
@@ -284,21 +271,21 @@ theorem eq_triangleAffine_of_vertex {f : Vertex n → ℝ} {T : UnitTriangle n}
     T.sum_weight_smul_vertex hx] at h
   rw [← h]
   simp [triangleAffine_apply, hA, mul_comm]
-/-- Any affine map agreeing with `f` on the vertices of `T` agrees with `triangleAffine f T` on
+/-- Any affine map agreeing with `f` on the vertices of `T` agrees with `triangleAffine T f` on
 `T.cell`. -/
 theorem eqOn_triangleAffine_of_vertex {f : Vertex n → ℝ} {T : UnitTriangle n}
     {A : (Fin 3 → ℝ) →ᵃ[ℝ] ℝ} (hA : ∀ i, A (T.vertex i).barycentric = f (T.vertex i)) :
-    EqOn A (triangleAffine f T) T.cell := fun _ hx => eq_triangleAffine_of_vertex hA
+    EqOn A (triangleAffine T f) T.cell := fun _ hx => eq_triangleAffine_of_vertex hA
   (mem_barycentricSimplex_iff.mp (T.cell_subset_barycentricSimplex hx)).2
 theorem triangleAffine_barycentricLinear (c₀ α β γ : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) :
-    triangleAffine (barycentricLinear c₀ α β γ) T x = c₀ + x 0 * α + x 1 * β + x 2 * γ := by
+    triangleAffine T (barycentricLinear c₀ α β γ) x = c₀ + x 0 * α + x 1 * β + x 2 * γ := by
   let p (i : Fin 3) : (Fin 3 → ℝ) →ᴬ[ℝ] ℝ := (ContinuousLinearMap.proj i).toContinuousAffineMap
   let A := ContinuousAffineMap.const ℝ _ c₀ + α • p 0 + β • p 1 + γ • p 2
   simpa [A, p, mul_comm] using (eq_triangleAffine_of_vertex (A := A.toAffineMap)
     (fun i => by simp [A, p, mul_comm]) hx).symm
 theorem triangleAffine_affine (β γ : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
-    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine (affine n β γ) T x = x 1 * β + x 2 * γ := by
+    (hx : ∑ i, x i = (n : ℝ)) : triangleAffine T (affine n β γ) x = x 1 * β + x 2 * γ := by
   have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
   simpa [hcoe] using triangleAffine_barycentricLinear (0 : ℝ) 0 β γ T hx
 
@@ -311,28 +298,21 @@ def unitStepVec (s : Fin 3) : Fin 3 → ℝ := Pi.single (s + 1) (1 : ℝ) - Pi.
 theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by
   simp [unitStepVec, Finset.sum_pi_single']
 
-/-- The directional derivative of `triangleAffine f T` along `unitStepVec s` equals the
+/-- The directional derivative of `triangleAffine T f` along `unitStepVec s` equals the
 combinatorial edge slope `triangleGradient f T s`. -/
 @[simp] theorem triangleAffine_contLinear_unitStepVec (f : Vertex n → ℝ) (T : UnitTriangle n)
-    (s : Fin 3) : (triangleAffine f T).contLinear (unitStepVec s) = triangleGradient f T s := by
-  cases T <;> fin_cases s <;> simp [triangleAffine] <;> ring
+    (s : Fin 3) : (triangleAffine T f).contLinear (unitStepVec s) = triangleGradient f T s := by
+  cases T <;> fin_cases s <;>
+    simp [triangleAffine, Fintype.linearCombination_apply, Fin.sum_univ_three] <;> ring
 
-/-- Simplicial extension of `f : Vertex n → ℝ` to `Fin 3 → ℝ`, agreeing with
-`TauCeti.Hive.interpolation f (x 1, x 2)` (and with `triangleAffine f T` on each cell `T.cell`)
-on `barycentricSimplex n` and taking fallback value `f (cornerA n)` outside `barycentricSimplex n`
-(and for `n = 0`). -/
-noncomputable def interpolate (f : Vertex n → ℝ) (x : Fin 3 → ℝ) : ℝ := open Classical in
+private noncomputable def interpolateFun (f : Vertex n → ℝ) (x : Fin 3 → ℝ) : ℝ :=
+  open Classical in
   if x ∈ barycentricSimplex n then interpolation f (x 1, x 2) else f (Vertex.cornerA n)
 
-/-- On `barycentricSimplex n`, the simplicial interpolation `interpolate f` agrees with the
-`(y, z)`-chart interpolation `interpolation f` under the coordinate projection `x ↦ (x 1, x 2)`. -/
-theorem interpolate_eq_interpolation (f : Vertex n → ℝ) {x : Fin 3 → ℝ}
-    (hx : x ∈ barycentricSimplex n) :
-    interpolate f x = interpolation f (x 1, x 2) := by simp [interpolate, hx]
-theorem interpolate_eq_triangleAffine (f : Vertex n → ℝ) {T : UnitTriangle n} {x : Fin 3 → ℝ}
-    (hx : x ∈ T.cell) : interpolate f x = triangleAffine f T x := by
+private theorem interpolateFun_eq_triangleAffine (f : Vertex n → ℝ) {T : UnitTriangle n}
+    {x : Fin 3 → ℝ} (hx : x ∈ T.cell) : interpolateFun f x = triangleAffine T f x := by
   have hxS := T.cell_subset_barycentricSimplex hx
-  rw [interpolate_eq_interpolation f hxS]
+  simp only [interpolateFun, hxS, ↓reduceIte]
   have hsum : x 0 + x 1 + x 2 = (n : ℝ) := by
     simpa [Fin.sum_univ_three, add_assoc] using (mem_barycentricSimplex_iff.mp hxS).2
   cases T with
@@ -381,14 +361,51 @@ theorem interpolate_eq_triangleAffine (f : Vertex n → ℝ) {T : UnitTriangle n
     have hdiff : 1 - ((b.y : ℝ) + 1 - x 1) - ((b.z : ℝ) + 1 - x 2) = (b.x : ℝ) + 1 - x 0 := by
       linarith
     rw [hdiff]; ring
+
+private theorem exists_linearMap_interpolateFun (n : ℕ) (x : Fin 3 → ℝ) :
+    ∃ L : (Vertex n → ℝ) →ₗ[ℝ] ℝ, ∀ f : Vertex n → ℝ, interpolateFun f x = L f := by
+  by_cases hx : x ∈ barycentricSimplex n
+  · rcases n with _ | m
+    · rw [barycentricSimplex_zero, mem_singleton_iff] at hx
+      refine ⟨LinearMap.proj (Vertex.cornerA 0), fun f => ?_⟩
+      simpa [interpolateFun, hx] using interpolation_vertex f (Vertex.cornerA 0)
+    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+      refine ⟨{ toFun := fun f => triangleAffine T f x
+                map_add' := fun f g => by simp
+                map_smul' := fun c f => by simp },
+        fun f => interpolateFun_eq_triangleAffine f hT⟩
+  · refine ⟨LinearMap.proj (Vertex.cornerA n), fun f => ?_⟩
+    simp [interpolateFun, hx]
+
+/-- Simplicial extension of `f : Vertex n → ℝ` to `Fin 3 → ℝ`, agreeing with
+`TauCeti.Hive.interpolation f (x 1, x 2)` (and with `triangleAffine T f` on each cell `T.cell`)
+on `barycentricSimplex n` and taking fallback value `f (cornerA n)` outside `barycentricSimplex n`
+(and for `n = 0`), bundled as a linear map in `f`. -/
+noncomputable def interpolate {n : ℕ} : (Vertex n → ℝ) →ₗ[ℝ] ((Fin 3 → ℝ) → ℝ) where
+  toFun := interpolateFun
+  map_add' f g := funext fun x => by
+    obtain ⟨L, hL⟩ := exists_linearMap_interpolateFun n x
+    simp [hL]
+  map_smul' c f := funext fun x => by
+    obtain ⟨L, hL⟩ := exists_linearMap_interpolateFun n x
+    simp [hL]
+
+/-- On `barycentricSimplex n`, the simplicial interpolation `interpolate f` agrees with the
+`(y, z)`-chart interpolation `interpolation f` under the coordinate projection `x ↦ (x 1, x 2)`. -/
+theorem interpolate_eq_interpolation (f : Vertex n → ℝ) {x : Fin 3 → ℝ}
+    (hx : x ∈ barycentricSimplex n) :
+    interpolate f x = interpolation f (x 1, x 2) := by simp [interpolate, interpolateFun, hx]
+theorem interpolate_eq_triangleAffine (f : Vertex n → ℝ) {T : UnitTriangle n} {x : Fin 3 → ℝ}
+    (hx : x ∈ T.cell) : interpolate f x = triangleAffine T f x :=
+  interpolateFun_eq_triangleAffine f hx
 /-- Two unit triangles whose cells both contain `x` assign the same affine value at `x`. -/
 theorem triangleAffine_eq_of_mem_cell (f : Vertex n → ℝ) {T₁ T₂ : UnitTriangle n} {x : Fin 3 → ℝ}
-    (hx₁ : x ∈ T₁.cell) (hx₂ : x ∈ T₂.cell) : triangleAffine f T₁ x = triangleAffine f T₂ x :=
+    (hx₁ : x ∈ T₁.cell) (hx₂ : x ∈ T₂.cell) : triangleAffine T₁ f x = triangleAffine T₂ f x :=
   (interpolate_eq_triangleAffine f hx₁).symm.trans (interpolate_eq_triangleAffine f hx₂)
 /-- Outside `barycentricSimplex n`, `interpolate f` takes the fallback value `f (cornerA n)`. -/
 theorem interpolate_of_notMem_barycentricSimplex (f : Vertex n → ℝ) {x : Fin 3 → ℝ}
     (hx : x ∉ barycentricSimplex n) : interpolate f x = f (Vertex.cornerA n) := by
-  simp [interpolate, hx]
+  simp [interpolate, interpolateFun, hx]
 @[simp] theorem interpolate_rank_zero (f : Vertex 0 → ℝ) (x : Fin 3 → ℝ) :
     interpolate f x = f (Vertex.cornerA 0) := by
   by_cases hx : x ∈ barycentricSimplex 0
@@ -423,7 +440,7 @@ theorem interpolate_lineMap_of_isUnitEdge (f : Vertex n → ℝ) {a c : Vertex n
   obtain ⟨ia, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell ha
   obtain ⟨ic, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell hc
   rw [interpolate_eq_triangleAffine f (T.convex_cell.lineMap_mem ha hc ht),
-    (triangleAffine f T).apply_lineMap, triangleAffine_vertex, triangleAffine_vertex,
+    (triangleAffine T f).apply_lineMap, triangleAffine_vertex, triangleAffine_vertex,
     AffineMap.lineMap_apply_module, smul_eq_mul, smul_eq_mul]
 
 /-- `interpolate f` is piecewise affine on `barycentricSimplex n` (outside which it uses the
@@ -433,7 +450,7 @@ theorem isPiecewiseAffineOn_interpolate (f : Vertex n → ℝ) :
   rcases n with _ | m
   · exact (isPiecewiseAffineOn_continuousAffineMap
       (ContinuousAffineMap.const ℝ _ (f (Vertex.cornerA 0))) _).congr fun _ _ => by simp
-  · exact isPiecewiseAffineOn_of_finite (C := UnitTriangle.cell) (A := triangleAffine f)
+  · exact isPiecewiseAffineOn_of_finite (C := UnitTriangle.cell) (A := fun T => triangleAffine T f)
       (fun T => T.isConvexPolyhedron_cell) (by rw [UnitTriangle.iUnion_cell_eq_barycentricSimplex])
       fun _ _ hx => interpolate_eq_triangleAffine f hx.2
 /-- `interpolate f` is piecewise linear (`IsPLOn`) on `barycentricSimplex n`. -/
@@ -444,31 +461,6 @@ theorem continuousOn_interpolate (f : Vertex n → ℝ) :
     ContinuousOn (interpolate f) (barycentricSimplex n) :=
   (isPiecewiseAffineOn_interpolate f).continuousOn
 
-theorem interpolate_add (f g : Vertex n → ℝ) (x : Fin 3 → ℝ) :
-    interpolate (f + g) x = interpolate f x + interpolate g x := by
-  by_cases hx : x ∈ barycentricSimplex n
-  · rcases n with _ | m
-    · simp
-    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
-      rw [interpolate_eq_triangleAffine _ hT, interpolate_eq_triangleAffine _ hT,
-        interpolate_eq_triangleAffine _ hT, triangleAffine_add, ContinuousAffineMap.add_apply]
-  · simp [interpolate_of_notMem_barycentricSimplex _ hx]
-theorem interpolate_smul (c : ℝ) (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
-    interpolate (c • f) x = c * interpolate f x := by
-  by_cases hx : x ∈ barycentricSimplex n
-  · rcases n with _ | m
-    · simp
-    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
-      rw [interpolate_eq_triangleAffine _ hT, interpolate_eq_triangleAffine _ hT,
-        triangleAffine_smul, ContinuousAffineMap.smul_apply, smul_eq_mul]
-  · simp [interpolate_of_notMem_barycentricSimplex _ hx]
-theorem interpolate_neg (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
-    interpolate (-f) x = -interpolate f x := by simpa using interpolate_smul (-1 : ℝ) f x
-theorem interpolate_sub (f g : Vertex n → ℝ) (x : Fin 3 → ℝ) :
-    interpolate (f - g) x = interpolate f x - interpolate g x := by
-  rw [sub_eq_add_neg, interpolate_add, interpolate_neg, sub_eq_add_neg]
-@[simp] theorem interpolate_zero (x : Fin 3 → ℝ) : interpolate (0 : Vertex n → ℝ) x = 0 := by
-  simpa using interpolate_smul 0 (0 : Vertex n → ℝ) x
 @[simp] theorem interpolate_const (c : ℝ) (x : Fin 3 → ℝ) :
     interpolate (fun _ : Vertex n => c) x = c := by
   by_cases hx : x ∈ barycentricSimplex n
@@ -481,7 +473,7 @@ theorem interpolate_sub (f g : Vertex n → ℝ) (x : Fin 3 → ℝ) :
 theorem interpolate_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f) (x : Fin 3 → ℝ) :
     interpolate (ofRhombusConcave f hf) x = interpolate f x - f (Vertex.cornerA n) := by
   rw [show ⇑(ofRhombusConcave f hf) = f - fun _ => f (Vertex.cornerA n)
-    from funext fun _ => ofRhombusConcave_apply _ _ _, interpolate_sub, interpolate_const]
+    from funext fun _ => ofRhombusConcave_apply _ _ _, map_sub, Pi.sub_apply, interpolate_const]
 theorem interpolate_barycentricLinear (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) :
     interpolate (barycentricLinear (n := n) c₀ α β γ) x = c₀ + x 0 * α + x 1 * β + x 2 * γ := by
@@ -509,7 +501,7 @@ theorem interpolate_subtriangle (h : RealHive (m + k)) (p : Vertex m) {x : Fin 3
     (hx : x ∈ barycentricSimplex k) : interpolate (h.subtriangle p) x =
       interpolate h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
   rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, interpolate_sub,
+    from funext fun _ => subtriangle_apply _ _ _, map_sub, Pi.sub_apply,
     interpolate_comp_add h p hx, interpolate_const]
 /-- Compatibility of `interpolate` with clockwise rotation on `barycentricSimplex n`. -/
 theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
@@ -525,7 +517,7 @@ theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx :
 theorem interpolate_rotate (h : RealHive n) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate h.rotate x = interpolate h (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
   rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, interpolate_sub, interpolate_comp_rotate h hx,
+    from funext fun _ => rotate_apply _ _, map_sub, Pi.sub_apply, interpolate_comp_rotate h hx,
     interpolate_const]
 /-- Compatibility of `interpolate` with reflection fixing `A = (n, 0, 0)`. -/
 theorem interpolate_comp_reflect (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
@@ -548,9 +540,10 @@ theorem interpolate_reflect (h : RealHive n) (x : Fin 3 → ℝ) :
 
 /-- Simplicial extension of `f : Vertex n → ℝ` to `EuclideanSpace ℝ (Fin 2)` that is continuous and
 piecewise affine on `planarSimplex n`, defined by pulling `interpolate f` back along
-`planeInvAffine n`. -/
-noncomputable def planarInterpolate (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) : ℝ :=
-  interpolate f (planeInvAffine n u)
+`planeInvAffine n`, bundled as a linear map in `f`. -/
+noncomputable def planarInterpolate {n : ℕ} :
+    (Vertex n → ℝ) →ₗ[ℝ] (EuclideanSpace ℝ (Fin 2) → ℝ) :=
+  (LinearMap.funLeft ℝ ℝ (planeInvAffine n)).comp interpolate
 
 theorem planarInterpolate_def (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     planarInterpolate f u = interpolate f (planeInvAffine n u) := (rfl)
@@ -558,7 +551,7 @@ theorem planarInterpolate_def (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fi
     planarInterpolate f p.plane = f p := by simp [planarInterpolate]
 theorem planarInterpolate_planeLinear (f : Vertex n → ℝ) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) : planarInterpolate f (planeLinear x) = interpolate f x := by
-  rw [planarInterpolate, planeInvAffine_planeLinear hx]
+  rw [planarInterpolate_def, planeInvAffine_planeLinear hx]
 /-- Any function that is affine on every planar unit-triangle cell `planeLinear '' T.cell` and
 agrees with `f` on `Vertex.plane` equals `planarInterpolate f` on `planarSimplex n`. -/
 theorem eqOn_planarInterpolate_of_affineOn_cell {f : Vertex n → ℝ}
@@ -580,21 +573,8 @@ theorem planarInterpolate_of_notMem_planarSimplex (f : Vertex n → ℝ) {u : Eu
 theorem planarInterpolate_lineMap_of_isUnitEdge (f : Vertex n → ℝ) {a c : Vertex n}
     (h : IsUnitEdge a c) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     planarInterpolate f (AffineMap.lineMap a.plane c.plane t) = (1 - t) * f a + t * f c := by
-  rw [planarInterpolate, (planeInvAffine n).apply_lineMap, planeInvAffine_plane,
+  rw [planarInterpolate_def, (planeInvAffine n).apply_lineMap, planeInvAffine_plane,
     planeInvAffine_plane, interpolate_lineMap_of_isUnitEdge f h ht]
-theorem planarInterpolate_add (f g : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate (f + g) u = planarInterpolate f u + planarInterpolate g u :=
-  interpolate_add f g (planeInvAffine n u)
-theorem planarInterpolate_smul (c : ℝ) (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate (c • f) u = c * planarInterpolate f u :=
-  interpolate_smul c f (planeInvAffine n u)
-theorem planarInterpolate_neg (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate (-f) u = -planarInterpolate f u := interpolate_neg f (planeInvAffine n u)
-theorem planarInterpolate_sub (f g : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate (f - g) u = planarInterpolate f u - planarInterpolate g u :=
-  interpolate_sub f g (planeInvAffine n u)
-@[simp] theorem planarInterpolate_zero (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate (0 : Vertex n → ℝ) u = 0 := interpolate_zero (planeInvAffine n u)
 @[simp] theorem planarInterpolate_const (c : ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     planarInterpolate (fun _ : Vertex n => c) u = c := interpolate_const c (planeInvAffine n u)
 theorem planarInterpolate_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f)

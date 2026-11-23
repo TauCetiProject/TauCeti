@@ -72,14 +72,14 @@ private theorem rhombusSlack_nonneg_of_concaveOn {f : Vertex n → ℝ} {S : Set
 `((sᵢ + 1) - xᵢ)` times the unit-rhombus slack. -/
 theorem triangleAffine_adjacentUp_sub_down (f : Vertex (m + 2) → ℝ) (s : Vertex m) (i : Fin 3)
     {x : Fin 3 → ℝ} (hx : ∑ k, x k = ((m + 2 : ℕ) : ℝ)) :
-    triangleAffine f (adjacentUp s i) x - triangleAffine f (UnitTriangle.down s) x =
+    triangleAffine (adjacentUp s i) f x - triangleAffine (UnitTriangle.down s) f x =
       ((s.coord i : ℝ) + 1 - x i) * rhombusSlack f ((UnitTriangle.down s).vertex (i + 2))
         ((adjacentUp s i).vertex i) ((UnitTriangle.down s).vertex (i + 1))
         ((UnitTriangle.down s).vertex i) := by
   let c := rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
     ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i)
-  let B := triangleAffine f (UnitTriangle.down s) + c • (UnitTriangle.down s).weight i
-  have hB : B x = triangleAffine f (adjacentUp s i) x :=
+  let B := triangleAffine (UnitTriangle.down s) f + c • (UnitTriangle.down s).weight i
+  have hB : B x = triangleAffine (adjacentUp s i) f x :=
     eq_triangleAffine_of_vertex (A := B.toAffineMap) (fun j => by
       rcases (by fin_cases i <;> fin_cases j <;> decide : j = i ∨ j = i + 1 ∨ j = i + 2) with
         hj | hj | hj
@@ -105,7 +105,7 @@ theorem eqOn_inf_triangleAffine_adjacentCell {f : Vertex (m + 2) → ℝ} {s : V
     (hslack : 0 ≤ rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
       ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i)) :
     EqOn (interpolate f)
-      (⇑(triangleAffine f (adjacentUp s i)) ⊓ ⇑(triangleAffine f (UnitTriangle.down s)))
+      (⇑(triangleAffine (adjacentUp s i) f) ⊓ ⇑(triangleAffine (UnitTriangle.down s) f))
       (adjacentCell s i) := fun x hx_adj => by
   have hdiff := triangleAffine_adjacentUp_sub_down f s i (mem_barycentricSimplex_iff.mp
     ((mem_adjacentCell_iff.mp hx_adj).elim (UnitTriangle.cell_subset_barycentricSimplex _ ·)
@@ -127,8 +127,8 @@ theorem concaveOn_adjacentCell_iff (f : Vertex (m + 2) → ℝ) (s : Vertex m) (
   ⟨fun hconc => rhombusSlack_nonneg_of_concaveOn hconc (isRhombus_adjacent s i)
       (mem_adjacentCell_iff.mpr (Or.inl ((adjacentUp s i).barycentric_vertex_mem_cell i)))
       (mem_adjacentCell_iff.mpr (Or.inr ((UnitTriangle.down s).barycentric_vertex_mem_cell i))),
-    fun hslack => (((triangleAffine f (adjacentUp s i)).toAffineMap.concaveOn
-      (convex_adjacentCell s i)).inf ((triangleAffine f (UnitTriangle.down s)).toAffineMap.concaveOn
+    fun hslack => (((triangleAffine (adjacentUp s i) f).toAffineMap.concaveOn
+      (convex_adjacentCell s i)).inf ((triangleAffine (UnitTriangle.down s) f).toAffineMap.concaveOn
       (convex_adjacentCell s i))).congr (eqOn_inf_triangleAffine_adjacentCell hslack).symm⟩
 
 /-! ### Comparison with `(y, z)`-chart interpolation and global concavity criterion -/
@@ -189,7 +189,7 @@ theorem concaveOn_planarSimplex_planarInterpolate (h : RealHive n) :
 
 private theorem IsRhombusConcave.le_triangleAffine_barycentric {f : Vertex n → ℝ}
     (hf : IsRhombusConcave f) (T : UnitTriangle n) (v : Vertex n) :
-    f v ≤ triangleAffine f T v.barycentric := by
+    f v ≤ triangleAffine T f v.barycentric := by
   cases T with
   | up b =>
     rename_i k
@@ -199,7 +199,7 @@ private theorem IsRhombusConcave.le_triangleAffine_barycentric {f : Vertex n →
     let β := f ((UnitTriangle.up b).vertex 1)
     let γ := f ((UnitTriangle.up b).vertex 2)
     have hL (w : Vertex (k + 1)) : barycentricLinear c₀ α β γ w =
-        triangleAffine f (UnitTriangle.up b) w.barycentric := by
+        triangleAffine (UnitTriangle.up b) f w.barycentric := by
       simp [c₀, α, β, γ, barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring
     rw [← hL v]
     exact hf.le_barycentricLinear (k := 0) (c₀ := c₀) (α := α) (β := β) (γ := γ)
@@ -217,7 +217,7 @@ private theorem IsRhombusConcave.le_triangleAffine_barycentric {f : Vertex n →
     let β := -f ((UnitTriangle.down b).vertex 1)
     let γ := -f ((UnitTriangle.down b).vertex 2)
     have hL (w : Vertex (k + 2)) : barycentricLinear c₀ α β γ w =
-        triangleAffine f (UnitTriangle.down b) w.barycentric := by
+        triangleAffine (UnitTriangle.down b) f w.barycentric := by
       simp [c₀, α, β, γ, barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring
     rw [← hL v]
     exact hf.le_barycentricLinear (k := 3) (c₀ := c₀) (α := α) (β := β) (γ := γ)
@@ -227,16 +227,16 @@ private theorem IsRhombusConcave.le_triangleAffine_barycentric {f : Vertex n →
       (by rw [hL, triangleAffine_vertex]) (by rw [hL, triangleAffine_vertex])
       (by rw [hL, triangleAffine_vertex]) v
 
-/-- Every affine piece `triangleAffine f T` globally upper-bounds `interpolate f` on
+/-- Every affine piece `triangleAffine T f` globally upper-bounds `interpolate f` on
 `barycentricSimplex n` whenever `f` is rhombus-concave. -/
 theorem IsRhombusConcave.interpolate_le_triangleAffine {f : Vertex n → ℝ}
     (hf : IsRhombusConcave f) (T : UnitTriangle n) {x : Fin 3 → ℝ}
-    (hx : x ∈ barycentricSimplex n) : interpolate f x ≤ triangleAffine f T x := by
+    (hx : x ∈ barycentricSimplex n) : interpolate f x ≤ triangleAffine T f x := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := by cases T <;> exact ⟨_, rfl⟩
   obtain ⟨T', hxT'⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
   rw [interpolate_eq_triangleAffine f hxT']
-  exact le_of_forall_le_of_mem_convexHull (a := (triangleAffine f T').toAffineMap)
-    (b := (triangleAffine f T).toAffineMap)
+  exact le_of_forall_le_of_mem_convexHull (a := (triangleAffine T' f).toAffineMap)
+    (b := (triangleAffine T f).toAffineMap)
     (by
       rintro _ ⟨i, rfl⟩
       rw [ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.coe_toAffineMap,
@@ -245,11 +245,11 @@ theorem IsRhombusConcave.interpolate_le_triangleAffine {f : Vertex n → ℝ}
     (T'.cell_eq_convexHull ▸ hxT')
 /-- **Global affine-envelope formula**: for `n = m + 1 ≥ 1` and rhombus-concave `f`,
 `interpolate f x` on `barycentricSimplex (m + 1)` is the minimum over all `n²` unit triangles of
-`triangleAffine f T x`. -/
+`triangleAffine T f x`. -/
 theorem IsRhombusConcave.interpolate_eq_inf'_triangleAffine {f : Vertex (m + 1) → ℝ}
     (hf : IsRhombusConcave f) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex (m + 1)) :
     interpolate f x = Finset.univ.inf' Finset.univ_nonempty
-      (fun T : UnitTriangle (m + 1) => triangleAffine f T x) := by
+      (fun T : UnitTriangle (m + 1) => triangleAffine T f x) := by
   obtain ⟨T₀, hT₀⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
   exact le_antisymm (Finset.le_inf' _ _ fun T _ => hf.interpolate_le_triangleAffine T hx)
     ((Finset.inf'_le _ (Finset.mem_univ T₀)).trans (interpolate_eq_triangleAffine f hT₀).ge)

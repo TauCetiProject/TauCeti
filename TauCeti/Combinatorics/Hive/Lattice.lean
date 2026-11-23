@@ -250,9 +250,27 @@ theorem sqDist_eq_six_iff (b d : Vertex n) :
   · rcases h with ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ |
         ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ <;> (rw [hx, hy, hz]; norm_num)
 
+end Vertex
+
+/-- Continuous linear map extending `Vertex.plane` to all of `Fin 3 → ℝ`:
+`(x₀, x₁, x₂) ↦ (x₂ + x₁ / 2, √3 * x₁ / 2)`. -/
+noncomputable def planeLinear : (Fin 3 → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi
+      ![ContinuousLinearMap.proj 2 + (1 / 2 : ℝ) • ContinuousLinearMap.proj 1,
+        (Real.sqrt 3 / 2 : ℝ) • ContinuousLinearMap.proj 1])
+
+@[simp] theorem planeLinear_zero_coord (x : Fin 3 → ℝ) :
+    planeLinear x 0 = x 2 + x 1 / 2 := by simp [planeLinear]; ring
+
+@[simp] theorem planeLinear_one_coord (x : Fin 3 → ℝ) :
+    planeLinear x 1 = Real.sqrt 3 * x 1 / 2 := by simp [planeLinear]; ring
+
+namespace Vertex
+
 /-- The equilateral planar realization of the triangular lattice. -/
 noncomputable def plane (p : Vertex n) : EuclideanSpace ℝ (Fin 2) :=
-  !₂[(p.z : ℝ) + p.y / 2, Real.sqrt 3 * p.y / 2]
+  planeLinear p.barycentric
 
 @[simp] theorem plane_zero (p : Vertex n) :
     p.plane 0 = (p.z : ℝ) + p.y / 2 := by simp [plane]
@@ -283,6 +301,9 @@ theorem plane_injective : Function.Injective (plane (n := n)) := by
   exact (sqDist_eq_zero_iff p q).mp (by exact_mod_cast hz)
 
 end Vertex
+
+@[simp] theorem planeLinear_barycentric (p : Vertex n) : planeLinear p.barycentric = p.plane :=
+  (rfl)
 
 namespace Vertex
 

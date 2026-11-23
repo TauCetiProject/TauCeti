@@ -37,7 +37,7 @@ Unit triangles `TauCeti.Hive.UnitTriangle n` have two orientations (`UnitTriangl
 
 ## Main definitions and results
 
-* `TauCeti.Hive.barycentricSimplex`, `TauCeti.Hive.planeLinear`, `TauCeti.Hive.planeInvAffine`,
+* `TauCeti.Hive.barycentricSimplex`, `TauCeti.Hive.planeInvAffine`,
   `TauCeti.Hive.planarSimplex`.
 * `TauCeti.Hive.UnitTriangle` (`card`, `weight`, `cell`, `isConvexPolyhedron_cell`,
   `cell_eq_convexHull`, `iUnion_cell_eq_barycentricSimplex`, `mem_range_vertex_of_weight_pos`).
@@ -120,21 +120,6 @@ theorem barycentricSimplex_eq_convexHull (n : ℕ) :
       (by rintro _ ⟨s, rfl⟩; exact ⟨Vertex.edgePoint n s 0, rfl⟩))
     (convexHull_min (fun _ ⟨_, h⟩ => h ▸ barycentric_mem_barycentricSimplex _)
       (convex_barycentricSimplex _))
-
-/-- Continuous linear map extending `Vertex.plane` to all of `Fin 3 → ℝ`:
-`(x₀, x₁, x₂) ↦ (x₂ + x₁ / 2, √3 * x₁ / 2)`. -/
-noncomputable def planeLinear : (Fin 3 → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.pi
-      ![ContinuousLinearMap.proj 2 + (1 / 2 : ℝ) • ContinuousLinearMap.proj 1,
-        (Real.sqrt 3 / 2 : ℝ) • ContinuousLinearMap.proj 1])
-
-@[simp] theorem planeLinear_zero_coord (x : Fin 3 → ℝ) :
-    planeLinear x 0 = x 2 + x 1 / 2 := by simp [planeLinear]; ring
-@[simp] theorem planeLinear_one_coord (x : Fin 3 → ℝ) :
-    planeLinear x 1 = Real.sqrt 3 * x 1 / 2 := by simp [planeLinear]; ring
-@[simp] theorem planeLinear_barycentric (p : Vertex n) : planeLinear p.barycentric = p.plane := by
-  ext i; fin_cases i <;> simp
 
 /-- Continuous affine inverse of `planeLinear` onto the affine hyperplane `{x | ∑ i, x i = n}`. -/
 noncomputable def planeInvAffine (n : ℕ) : EuclideanSpace ℝ (Fin 2) →ᴬ[ℝ] (Fin 3 → ℝ) :=
