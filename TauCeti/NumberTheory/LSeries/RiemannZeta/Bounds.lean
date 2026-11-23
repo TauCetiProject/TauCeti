@@ -43,7 +43,7 @@ error `‖s‖ a^(-Re s)/(2 Re s)` at every cut point `a > 0`, and at `a = 1` th
 `‖riemannZeta₀ s - 1/2‖ ≤ ‖s‖/(2 Re s)`. Hence `‖ζ(z)‖ ≤ 1/2 + 1/‖z - 1‖ + ‖z‖/(2 Re z)`, which
 on the discs `‖z - (3/2 + it)‖ ≤ 1` with `|t| ≥ 2` is at most `4 + |t|`: the input that
 Borel–Carathéodory arguments near the line `Re s = 1` take. On the real axis, the fractional-part
-formula and `0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real `σ > 1`.
+formula and `0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real `σ > 0`, `σ ≠ 1`.
 
 ## Main results
 
@@ -67,7 +67,7 @@ formula and `0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real
   discs about `3/2 + it`.
 * `TauCeti.one_div_sub_one_lt_riemannZeta_re`, `TauCeti.riemannZeta_re_lt_one_add_one_div_sub_one`
   and `TauCeti.norm_riemannZeta_lt_one_add_one_div_sub_one`: `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)`
-  for real `σ > 1`, and `‖ζ(s)‖ < 1 + 1/(Re s - 1)` on `Re s > 1`.
+  for real `σ > 0`, `σ ≠ 1`, and `‖ζ(s)‖ < 1 + 1/(Re s - 1)` on `Re s > 1`.
 
 ## References
 
@@ -323,11 +323,11 @@ private theorem integrableOn_sub_floor_mul_rpow {σ : ℝ} (hσ : 0 < σ) :
   rw [norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
   exact mul_le_of_le_one_left (by positivity) (Nat.abs_sub_floor_le (by linarith))
 
-/-- The real form of `TauCeti.riemannZeta_eq_div_sub_mul_integral` at real `σ > 1`. -/
-private theorem riemannZeta_re_eq_div_sub_mul_integral {σ : ℝ} (hσ : 1 < σ) :
+/-- The real form of `TauCeti.riemannZeta_eq_div_sub_mul_integral` at real `σ > 0`, `σ ≠ 1`. -/
+private theorem riemannZeta_re_eq_div_sub_mul_integral {σ : ℝ} (hσ : 0 < σ) (hσ₁ : σ ≠ 1) :
     (riemannZeta σ).re = σ / (σ - 1) - σ * ∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) := by
-  have h := riemannZeta_eq_div_sub_mul_integral (s := σ) (by simpa using zero_lt_one.trans hσ)
-    (by exact_mod_cast hσ.ne')
+  have h := riemannZeta_eq_div_sub_mul_integral (s := σ) (by simpa using hσ)
+    (by exact_mod_cast hσ₁)
   have hI : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-((σ : ℂ) + 1)) =
       ((∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) : ℝ) : ℂ) := by
     rw [← integral_complex_ofReal]
@@ -343,10 +343,9 @@ private theorem riemannZeta_re_eq_div_sub_mul_integral {σ : ℝ} (hσ : 1 < σ)
     rfl
   rw [h', ofReal_re]
 
-/-- **The lower bound by the pole.** For real `σ > 1`, `1/(σ - 1) < Re ζ(σ)`. -/
-theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) :
+/-- **The lower bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `1/(σ - 1) < Re ζ(σ)`. -/
+theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     1 / (σ - 1) < (riemannZeta σ).re := by
-  have hσ0 : 0 < σ := zero_lt_one.trans hσ
   have hint_f := integrableOn_sub_floor_mul_rpow hσ0
   have hint_r : IntegrableOn (fun t : ℝ ↦ t ^ (-(σ + 1))) (Set.Ioi 1) :=
     integrableOn_Ioi_rpow_of_lt (by linarith) one_pos
@@ -365,15 +364,14 @@ theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) :
     rw [mul_sub, mul_one_div_cancel hσ0.ne'] at this
     linarith
   have halg : σ / (σ - 1) = 1 / (σ - 1) + 1 := by
-    field_simp [sub_ne_zero.mpr hσ.ne']
+    field_simp [sub_ne_zero.mpr hσ₁]
     ring
-  rw [riemannZeta_re_eq_div_sub_mul_integral hσ, halg]
+  rw [riemannZeta_re_eq_div_sub_mul_integral hσ0 hσ₁, halg]
   linarith
 
-/-- **The upper bound by the pole.** For real `σ > 1`, `Re ζ(σ) < 1 + 1/(σ - 1)`. -/
-theorem riemannZeta_re_lt_one_add_one_div_sub_one {σ : ℝ} (hσ : 1 < σ) :
+/-- **The upper bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `Re ζ(σ) < 1 + 1/(σ - 1)`. -/
+theorem riemannZeta_re_lt_one_add_one_div_sub_one {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     (riemannZeta σ).re < 1 + 1 / (σ - 1) := by
-  have hσ0 : 0 < σ := zero_lt_one.trans hσ
   have hint := integrableOn_sub_floor_mul_rpow hσ0
   have hIoo : 0 < ∫ t in Set.Ioo (1 : ℝ) 2, (t - ⌊t⌋₊) * t ^ (-(σ + 1)) := by
     refine setIntegral_pos_of_ae_pos (by simp) (hint.mono_set Set.Ioo_subset_Ioi_self) ?_
@@ -389,14 +387,15 @@ theorem riemannZeta_re_lt_one_add_one_div_sub_one {σ : ℝ} (hσ : 1 < σ) :
           (Real.rpow_nonneg (by linarith) _))
       Set.Ioo_subset_Ioi_self.eventuallySubset)
   have halg : σ / (σ - 1) = 1 + 1 / (σ - 1) := by
-    field_simp [sub_ne_zero.mpr hσ.ne']
+    field_simp [sub_ne_zero.mpr hσ₁]
     ring
-  rw [riemannZeta_re_eq_div_sub_mul_integral hσ, halg]
+  rw [riemannZeta_re_eq_div_sub_mul_integral hσ0 hσ₁, halg]
   linarith [mul_pos hσ0 hpos]
 
 /-- On `1 < Re s`, `‖ζ(s)‖ < 1 + 1/(Re s - 1)`. -/
 theorem norm_riemannZeta_lt_one_add_one_div_sub_one {s : ℂ} (hs : 1 < s.re) :
     ‖riemannZeta s‖ < 1 + 1 / (s.re - 1) :=
-  (norm_riemannZeta_le hs).trans_lt (riemannZeta_re_lt_one_add_one_div_sub_one hs)
+  (norm_riemannZeta_le hs).trans_lt
+    (riemannZeta_re_lt_one_add_one_div_sub_one (zero_lt_one.trans hs) (by linarith : s.re ≠ 1))
 
 end TauCeti

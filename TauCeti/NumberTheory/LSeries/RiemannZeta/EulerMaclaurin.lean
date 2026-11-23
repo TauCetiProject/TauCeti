@@ -310,20 +310,10 @@ theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) 
 /-! ### The regularized formula and the Euler–Mascheroni constant -/
 
 /-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`, without the polar term
-`a^(1-s)/(s - 1)`. It is holomorphic on `0 < Re s`. -/
+`a^(1-s)/(s - 1)`. For `a > 0` it is holomorphic on `0 < Re s`. -/
 private noncomputable def sawtoothReg (a : ℝ) (s : ℂ) : ℂ :=
   ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) + bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
     s * ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))
-
-private theorem differentiableOn_sawtoothReg {a : ℝ} (ha : 0 < a) :
-    DifferentiableOn ℂ (sawtoothReg a) {s : ℂ | 0 < s.re} := by
-  have hsum : Differentiable ℂ fun s : ℂ ↦ ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) :=
-    Differentiable.fun_sum fun n hn ↦ differentiable_id.neg.const_cpow
-      (Or.inl (Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1)))
-  have hbd : Differentiable ℂ fun s : ℂ ↦ (bernoulliFun 1 (Int.fract a) : ℂ) * (a : ℂ) ^ (-s) :=
-    (differentiable_id.neg.const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))).const_mul _
-  exact (hsum.differentiableOn.add hbd.differentiableOn).sub
-    (differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO ha isBigO_sawtooth))
 
 /-- **The regularized Euler–Maclaurin formula.** For real `a > 0` and every `s` with `0 < Re s`,
 including `s = 1`, Mathlib's entire function `riemannZeta₁ s = (s - 1) ζ(s)` is
@@ -385,9 +375,17 @@ theorem eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth {a : ℝ} (ha : 0 < 
   have hd₁ : HasDerivAt (fun z : ℂ ↦ (a : ℂ) ^ (1 - z)) (-(Real.log a : ℂ)) 1 := by
     simpa [ofReal_log ha.le] using ((hasDerivAt_const (1 : ℂ) (1 : ℂ)).sub
       (hasDerivAt_id (1 : ℂ))).const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))
+  have hsum : Differentiable ℂ fun s : ℂ ↦ ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) :=
+    Differentiable.fun_sum fun n hn ↦ differentiable_id.neg.const_cpow
+      (Or.inl (Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1)))
+  have hbd : Differentiable ℂ fun s : ℂ ↦ (bernoulliFun 1 (Int.fract a) : ℂ) * (a : ℂ) ^ (-s) :=
+    (differentiable_id.neg.const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))).const_mul _
+  have hreg : DifferentiableOn ℂ (sawtoothReg a) {s : ℂ | 0 < s.re} :=
+    (hsum.differentiableOn.add hbd.differentiableOn).sub
+      (differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO ha isBigO_sawtooth))
   have hd₂ : HasDerivAt (fun z : ℂ ↦ (z - 1) * sawtoothReg a z) (sawtoothReg a 1) 1 := by
     simpa using ((hasDerivAt_id (1 : ℂ)).sub_const (1 : ℂ)).fun_mul
-      ((differentiableOn_sawtoothReg ha).differentiableAt hmem).hasDerivAt
+      (hreg.differentiableAt hmem).hasDerivAt
   have hγ : (Real.eulerMascheroniConstant : ℂ) = -(Real.log a : ℂ) + sawtoothReg a 1 := by
     rw [← deriv_riemannZeta₁_one, heq.deriv_eq, (hd₁.fun_add hd₂).deriv]
   have hI : ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-((1 : ℂ) + 1)) =
