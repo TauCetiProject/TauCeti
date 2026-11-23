@@ -5,9 +5,9 @@ Authors: Jeromie Beasley
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint
-public import TauCeti.RepresentationTheory.ClassicalGroups.AdjointSquare.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.AdjointSquare.Products
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Products
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination

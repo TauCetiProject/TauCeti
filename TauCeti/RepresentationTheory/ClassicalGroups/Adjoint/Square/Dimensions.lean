@@ -5,7 +5,7 @@ Authors: Jeromie Beasley
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.AdjointSquare.Parity
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Parity
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 

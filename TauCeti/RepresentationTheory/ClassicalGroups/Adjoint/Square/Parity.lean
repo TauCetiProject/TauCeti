@@ -5,7 +5,7 @@ Authors: Jeromie Beasley
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.AdjointSquare.Embedding
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Embedding
 
 /-!
 # Tensor-flip parity of the two adjoint embeddings

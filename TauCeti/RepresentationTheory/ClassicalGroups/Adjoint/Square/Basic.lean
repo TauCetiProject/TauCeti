@@ -40,17 +40,8 @@ def symmetricProduct [NeZero (n : K)] :
     trace_tracelessAnticommutator X.val Y.val⟩) ?_ ?_ ?_ ?_
   · exact fun X Y Z => Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val)
   · exact fun a X Y => Subtype.ext (tracelessAnticommutator_smul_left a X.val Y.val)
-  · intro X Y Z
-    apply Subtype.ext
-    exact (tracelessAnticommutator_comm X.val (Y.val + Z.val)).trans <|
-      (tracelessAnticommutator_add_left Y.val Z.val X.val).trans <|
-        congrArg₂ (· + ·) (tracelessAnticommutator_comm Y.val X.val)
-          (tracelessAnticommutator_comm Z.val X.val)
-  · intro a X Y
-    apply Subtype.ext
-    exact (tracelessAnticommutator_comm X.val (a • Y.val)).trans <|
-      (tracelessAnticommutator_smul_left a Y.val X.val).trans <|
-        congrArg (a • ·) (tracelessAnticommutator_comm Y.val X.val)
+  · exact fun X Y Z => Subtype.ext (tracelessAnticommutator_add_right X.val Y.val Z.val)
+  · exact fun a X Y => Subtype.ext (tracelessAnticommutator_smul_right a X.val Y.val)
 
 /-- The bilinear map has the advertised matrix formula. -/
 @[simp]

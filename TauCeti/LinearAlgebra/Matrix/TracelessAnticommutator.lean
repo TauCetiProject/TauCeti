@@ -67,6 +67,19 @@ theorem tracelessAnticommutator_smul_left (a : K) (X Y : Matrix ι ι K) :
   congr 2
   ring
 
+/-- Additivity in the second argument. -/
+theorem tracelessAnticommutator_add_right (X Y Z : Matrix ι ι K) :
+    tracelessAnticommutator X (Y + Z) =
+      tracelessAnticommutator X Y + tracelessAnticommutator X Z := by
+  rw [tracelessAnticommutator_comm X, tracelessAnticommutator_add_left,
+    tracelessAnticommutator_comm Y X, tracelessAnticommutator_comm Z X]
+
+/-- Scalar compatibility in the second argument. -/
+theorem tracelessAnticommutator_smul_right (a : K) (X Y : Matrix ι ι K) :
+    tracelessAnticommutator X (a • Y) = a • tracelessAnticommutator X Y := by
+  rw [tracelessAnticommutator_comm X, tracelessAnticommutator_smul_left,
+    tracelessAnticommutator_comm Y X]
+
 /-- Conjugation by an invertible matrix preserves the traceless anticommutator. -/
 theorem tracelessAnticommutator_units_smul (g : ConjAct (Matrix ι ι K)ˣ) (X Y : Matrix ι ι K) :
     tracelessAnticommutator (g • X) (g • Y) = g • tracelessAnticommutator X Y := by

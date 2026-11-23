@@ -5,8 +5,8 @@ Authors: Jeromie Beasley
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint
-public import TauCeti.RepresentationTheory.ClassicalGroups.AdjointSquare.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Basic
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
