@@ -17,7 +17,12 @@ and `‖u i‖ * s i = r i`, then substitution `X i ↦ u i * X i` is an algebra
 algebra at polyradius `r` to the algebra at polyradius `s`, isometric for positive polyradii
 (`TauCeti.MvPowerSeries.restrictedRescaleAlgHom`); the `u i` need not be invertible. If each `u i`
 is a multiplicative unit, this substitution is an isometric algebra equivalence
-(`TauCeti.MvPowerSeries.restrictedRescaleEquiv`) whose inverse substitutes the inverse units.
+(`TauCeti.MvPowerSeries.restrictedRescaleEquiv`) whose inverse substitutes the inverse units, and
+whose underlying homomorphism is the rescaling homomorphism
+(`TauCeti.MvPowerSeries.restrictedRescaleEquiv_toAlgHom`). Rescaling by `1` is the identity
+(`TauCeti.MvPowerSeries.restrictedRescaleAlgHom_one`), and successive rescalings compose to the
+rescaling by the pointwise product
+(`TauCeti.MvPowerSeries.restrictedRescaleAlgHom_comp_restrictedRescaleAlgHom`).
 
 The construction works at arbitrary positive real polyradii, including radii that are not norms
 of scalars. It uses Mathlib's coefficientwise `MvPowerSeries.rescale`, so its coefficient formula
@@ -81,6 +86,37 @@ theorem restrictedRescaleAlgHom_X (u : σ → R) (hu : ∀ i (x : R), ‖u i * x
   · simp [hn]
   · simp
 
+/-- Rescaling by `1` at the same polyradius is the identity. -/
+@[simp]
+theorem restrictedRescaleAlgHom_one
+    (hu : ∀ i (x : R), ‖(1 : σ → R) i * x‖ = ‖(1 : σ → R) i‖ * ‖x‖)
+    (hrr : ∀ i, ‖(1 : σ → R) i‖ * r i = r i) :
+    restrictedRescaleAlgHom 1 hu hrr = AlgHom.id R (IsRestricted.subring (R := R) r) :=
+  AlgHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Rescaling homomorphisms compose by multiplying their scaling families. -/
+theorem restrictedRescaleAlgHom_comp_restrictedRescaleAlgHom {t : σ → ℝ} (u v : σ → R)
+    (hu : ∀ i (x : R), ‖u i * x‖ = ‖u i‖ * ‖x‖) (hrs : ∀ i, ‖u i‖ * s i = r i)
+    (hv : ∀ i (x : R), ‖v i * x‖ = ‖v i‖ * ‖x‖) (hst : ∀ i, ‖v i‖ * t i = s i)
+    (huv : ∀ i (x : R), ‖(u * v) i * x‖ = ‖(u * v) i‖ * ‖x‖)
+    (hrt : ∀ i, ‖(u * v) i‖ * t i = r i) :
+    (restrictedRescaleAlgHom v hv hst).comp (restrictedRescaleAlgHom u hu hrs) =
+      restrictedRescaleAlgHom (u * v) huv hrt :=
+  AlgHom.ext fun _ ↦ Subtype.ext (by simp [rescale_rescale])
+
+/-- Applying two rescaling homomorphisms in turn rescales by the pointwise product of their
+scaling families. -/
+@[simp]
+theorem restrictedRescaleAlgHom_restrictedRescaleAlgHom {t : σ → ℝ} (u v : σ → R)
+    (hu : ∀ i (x : R), ‖u i * x‖ = ‖u i‖ * ‖x‖) (hrs : ∀ i, ‖u i‖ * s i = r i)
+    (hv : ∀ i (x : R), ‖v i * x‖ = ‖v i‖ * ‖x‖) (hst : ∀ i, ‖v i‖ * t i = s i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedRescaleAlgHom v hv hst (restrictedRescaleAlgHom u hu hrs f) =
+      restrictedRescaleAlgHom (u * v)
+        (fun i x ↦ by rw [Pi.mul_apply, mul_assoc, hu, hv, hu, mul_assoc])
+        (fun i ↦ by rw [Pi.mul_apply, hu, mul_assoc, hst, hrs]) f :=
+  Subtype.ext (by simp [rescale_rescale])
+
 /-- The change of weights obtained by substituting `X i ↦ u i * X i`, where each `u i` is a
 multiplicative unit and `‖u i‖ * s i = r i`. The inverse substitutes `u i⁻¹`. For positive
 polyradii, this equivalence is an isometry. -/
@@ -114,6 +150,16 @@ theorem coe_restrictedRescaleEquiv_symm (u : σ → Rˣ)
     ((restrictedRescaleEquiv u hu hrs).symm f : MvPowerSeries σ R) =
       MvPowerSeries.rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) f := by
   rfl
+
+/-- As an algebra homomorphism, the rescaling equivalence is the rescaling homomorphism by the
+underlying elements of the units. -/
+@[simp]
+theorem restrictedRescaleEquiv_toAlgHom (u : σ → Rˣ)
+    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
+    (restrictedRescaleEquiv u hu hrs :
+        IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s) =
+      restrictedRescaleAlgHom (fun i ↦ (u i : R)) (fun i ↦ (hu i).norm_mul) hrs :=
+  AlgHom.ext fun _ ↦ Subtype.ext (by simp)
 
 /-- The rescaling equivalence sends `X i` to `u i * X i`. -/
 @[simp]
