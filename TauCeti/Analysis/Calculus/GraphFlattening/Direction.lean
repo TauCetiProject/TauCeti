@@ -19,12 +19,14 @@ For a real function `γ` on a real normed space `E` and a vector `ν`, the shear
 `TauCeti.shearAlong γ ν z = z + γ z • ν` moves each point along `ν` by the height `γ z`. When `γ`
 is invariant under translation along `ν`, the shear by `-γ` inverts it
 (`TauCeti.shearAlong_neg_shearAlong`, `TauCeti.shearAlong_shearAlong_neg`), and for a unit vector
-`ν` in an inner product space it carries the height `⟪y, ν⟫` to the height `⟪x, ν⟫ - γ x` above
-the graph of `γ` (`TauCeti.real_inner_shearAlong_sub`). So it flattens the region above the
-graph of `γ` over the hyperplane `ν^⊥` to a half-space, without the splitting `E = ℝ × ν^⊥` used
-by `TauCeti.graphFlattening`.
+`ν` in an inner product space it raises the height `⟪y, ν⟫` by `γ y`
+(`TauCeti.real_inner_shearAlong`), so it carries the height `⟪y, ν⟫` to the height
+`⟪x, ν⟫ - γ x` above the graph of `γ` (`TauCeti.real_inner_shearAlong_sub`). So it flattens
+the region above the graph of `γ` over the hyperplane `ν^⊥` to a half-space, without the
+splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`.
 
-This file records the calculus of this shear. Its derivative is `id + Dγ(y) ν`
+This file records the calculus of this shear. It is `C^m` when `γ` is
+(`TauCeti.contDiff_shearAlong`), its derivative is `id + Dγ(y) ν`
 (`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`, and its second
 derivative is `D²γ(h, k) ν`. The second-order chain rule through it
 (`TauCeti.fderiv_fderiv_comp_shearAlong_apply`) reads
@@ -75,12 +77,16 @@ section InnerProduct
 
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] {γ : E → ℝ} {ν : E}
 
+/-- For a unit vector `ν`, the shear `shearAlong γ ν` raises the height `⟪y, ν⟫` by `γ y`. -/
+theorem real_inner_shearAlong (hν : ‖ν‖ = 1) (y : E) :
+    ⟪shearAlong γ ν y, ν⟫_ℝ = ⟪y, ν⟫_ℝ + γ y := by
+  rw [shearAlong_def, real_inner_add_smul_self_of_norm_eq_one hν]
+
 /-- For a unit vector `ν` and `γ` invariant along `ν`, the shear `shearAlong γ ν` carries the
 height `⟪y, ν⟫` to the height `⟪x, ν⟫ - γ x` above the graph of `γ`. -/
 theorem real_inner_shearAlong_sub (hν : ‖ν‖ = 1) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (y : E) : ⟪shearAlong γ ν y, ν⟫_ℝ - γ (shearAlong γ ν y) = ⟪y, ν⟫_ℝ := by
-  rw [shearAlong_def, hγν, real_inner_add_smul_self_of_norm_eq_one hν]
-  ring
+  rw [real_inner_shearAlong hν, shearAlong_def, hγν, add_sub_cancel_right]
 
 end InnerProduct
 
@@ -151,6 +157,16 @@ theorem holderOnWith_id_add_smulRight {X : Type*} [PseudoMetricSpace X] (hν : �
 
 variable {γ : E → ℝ}
 
+/-- The shear `shearAlong γ ν` is `C^m` at `y` when `γ` is. -/
+theorem contDiffAt_shearAlong {m : WithTop ℕ∞} {y : E} (hγ : ContDiffAt ℝ m γ y) :
+    ContDiffAt ℝ m (shearAlong γ ν) y :=
+  contDiffAt_fun_id.add (hγ.smul contDiffAt_const)
+
+/-- The shear `shearAlong γ ν` is `C^m` when `γ` is. -/
+theorem contDiff_shearAlong {m : WithTop ℕ∞} (hγ : ContDiff ℝ m γ) :
+    ContDiff ℝ m (shearAlong γ ν) :=
+  contDiff_iff_contDiffAt.2 fun _ => contDiffAt_shearAlong hγ.contDiffAt
+
 /-- The derivative of the shear `shearAlong γ ν`. -/
 theorem hasFDerivAt_shearAlong {y : E} (hγ : DifferentiableAt ℝ γ y) :
     HasFDerivAt (shearAlong γ ν) (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν) y :=
@@ -178,9 +194,7 @@ theorem fderiv_fderiv_comp_shearAlong_apply {w : E → F} {y : E}
       fderiv ℝ (fderiv ℝ w) (shearAlong γ ν y) (h + fderiv ℝ γ y h • ν)
           (k + fderiv ℝ γ y k • ν) +
         fderiv ℝ (fderiv ℝ γ) y h k • fderiv ℝ w (shearAlong γ ν y) ν := by
-  have hφ : ContDiffAt ℝ 2 (shearAlong γ ν) y := contDiffAt_fun_id.add
-    (hγ.smul contDiffAt_const)
-  rw [fderiv_fderiv_comp_apply (φ := shearAlong γ ν) (b := y) hw hφ,
+  rw [fderiv_fderiv_comp_apply (φ := shearAlong γ ν) (b := y) hw (contDiffAt_shearAlong hγ),
     (hasFDerivAt_shearAlong (hγ.differentiableAt two_ne_zero)).fderiv,
     fderiv_fderiv_shearAlong_apply hγ]
   simp [map_smul]

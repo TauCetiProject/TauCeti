@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.Matrix.Holder
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -169,20 +170,16 @@ private theorem norm_le_mul_norm_sub_inner_smul (hν : ‖ν‖ = 1) {y : E} {G 
   have hg : ‖g‖ ≤ G := by rw [LinearIsometryEquiv.norm_map]; exact hG
   have hνg : ⟪ν, g⟫_ℝ = 0 := by
     rw [real_inner_comm, InnerProductSpace.toDual_symm_apply, hγν]
-  have hle (z : E) : ‖z - ⟪ν, z⟫_ℝ • g‖ ≤ (1 + G) * ‖z‖ ∧ ‖z + ⟪ν, z⟫_ℝ • g‖ ≤ (1 + G) * ‖z‖ := by
-    have h1 : ‖⟪ν, z⟫_ℝ • g‖ ≤ G * ‖z‖ := by
-      rw [norm_smul, Real.norm_eq_abs, mul_comm]
-      calc ‖g‖ * |⟪ν, z⟫_ℝ| ≤ G * (‖ν‖ * ‖z‖) := by
-            gcongr
-            exact abs_real_inner_le_norm ν z
-        _ = G * ‖z‖ := by rw [hν, one_mul]
-    constructor <;> [refine (norm_sub_le _ _).trans ?_; refine (norm_add_le _ _).trans ?_] <;>
-      linarith
-  refine ⟨(hle ξ).1, ?_⟩
-  have hinner : ⟪ν, ξ - ⟪ν, ξ⟫_ℝ • g⟫_ℝ = ⟪ν, ξ⟫_ℝ := by
-    rw [inner_sub_right, real_inner_smul_right, hνg, mul_zero, sub_zero]
-  have := (hle (ξ - ⟪ν, ξ⟫_ℝ • g)).2
-  rwa [hinner, sub_add_cancel] at this
+  -- `ξ ↦ ξ - ⟪ν, ξ⟫ g` is the transvection along `-g`, inverted by the one along `g`.
+  have hT (s : E) (hs : ‖s‖ ≤ G) : ‖transvectionL ν s‖ ≤ 1 + G :=
+    (norm_transvectionL_le ν s).trans (by rw [hν, one_mul]; gcongr)
+  have hξ : ξ - ⟪ν, ξ⟫_ℝ • g = transvectionL ν (-g) ξ := by
+    rw [transvectionL_apply, smul_neg, sub_eq_add_neg]
+  rw [hξ]
+  refine ⟨((transvectionL ν (-g)).le_opNorm ξ).trans (by gcongr; exact hT _ (by rwa [norm_neg])),
+    ?_⟩
+  conv_lhs => rw [← transvectionL_transvectionL_neg hνg ξ]
+  exact ((transvectionL ν g).le_opNorm _).trans (by gcongr; exact hT g hg)
 
 /-- **Ellipticity of the sheared coefficients.** If `A` has ellipticity bounds `λ, Λ`, then
 `Wᵀ A W`, `W = shearRows γ ν y`, has ellipticity bounds `λ / (1 + G)²` and `Λ (1 + G)²`. -/
@@ -614,9 +611,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
   set y₀ : E := shearAlong (-γ) ν x₀ with hy₀def
   have hy₀ : shearAlong γ ν y₀ = x₀ := shearAlong_shearAlong_neg hγν x₀
   obtain ⟨hLγ, hLγ', -, -⟩ := graph_facts hα1.le hγ hG1 hG2
-  have hφ : ContDiff ℝ 2 (shearAlong γ ν) := by
-    rw [funext (shearAlong_def γ ν)]
-    exact contDiff_id.add (hγ.smul contDiff_const)
+  have hφ : ContDiff ℝ 2 (shearAlong γ ν) := contDiff_shearAlong hγ
   have hmem (y : E) (hy : dist y y₀ ≤ r) := shearAlong_mem_ball_inter hν hγν hLγ hy₀ hrR hy
   have hU' : IsOpen ((shearAlong γ ν) ⁻¹' U) := hU.preimage hφ.continuous
   have hBU' : ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} ⊆ (shearAlong γ ν) ⁻¹' U :=
@@ -656,7 +651,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
   have hflatv := hC₁ (a := fun y => (shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y)
     (x₀ := y₀) (c₀ := 0) (ne_zero_of_norm_ne_zero (by rw [hν]; exact one_ne_zero))
     (by
-      rw [hy₀def, shearAlong_def, Pi.neg_apply, real_inner_add_smul_self_of_norm_eq_one hν]
+      rw [hy₀def, real_inner_shearAlong hν, Pi.neg_apply]
       linarith)
     (fun ξ => (hEllv ξ).1) (fun ξ => (hEllv ξ).2) (fun k l => (hcoef k l).1)
     (fun y hy k l => (hcoef k l).2 y (hHo hy)) hU' hBU' hv
@@ -671,8 +666,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
       (closedBall y₀ ((1 + G) * ρ) ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) := fun x hx =>
     ⟨mem_closedBall.2 (dist_shearAlong_le hν.le hLγ' (mem_closedBall.1 hx.1)), by
       have h2 : γ x ≤ ⟪x, ν⟫_ℝ := hx.2
-      simp only [mem_ofPred_eq, shearAlong_def, Pi.neg_apply,
-        real_inner_add_smul_self_of_norm_eq_one hν]
+      simp only [mem_ofPred_eq, real_inner_shearAlong hν, Pi.neg_apply]
       linarith⟩
   have hback := holderOnWith_iteratedFDeriv_two_comp_shearAlong_neg hα1.le hν.le hγ hG1 hG2 hG3 hρr
     hU' hBU' hv hDv' hD2v' hflatv hmaps
