@@ -85,85 +85,30 @@ theorem algebraMap_mem_completedIdeal {N : Ideal R} {r : R} (hr : r ∈ N) :
     algebraMap R (integralAdeles R K) r ∈ completedIdeal K N :=
   Ideal.mem_map_of_mem _ hr
 
-variable (K) in
-/-- A nonzero integral ideal, as a unit of the group of nonzero fractional ideals. -/
-abbrev idealUnit {N : Ideal R} (hN : N ≠ ⊥) : (FractionalIdeal R⁰ K)ˣ :=
-  Units.mk0 (N : FractionalIdeal R⁰ K) (FractionalIdeal.coeIdeal_ne_zero.mpr hN)
-
-/-- The diagonal image of `r ∈ R` lies in the finite adelic extension of `N` exactly when
-`r ∈ N`. -/
-theorem algebraMap_mem_finiteAdelicIdeal_idealUnit_iff {N : Ideal R} (hN : N ≠ ⊥) (r : R) :
-    algebraMap R 𝔸ᶠ[R, K] r ∈ finiteAdelicIdeal (idealUnit K hN) ↔ r ∈ N := by
-  rw [IsScalarTower.algebraMap_apply R K, algebraMap_mem_finiteAdelicIdeal_iff, Units.val_mk0,
-    FractionalIdeal.mem_coeIdeal]
+/-- The diagonal image of `r ∈ R` lies in the finite adelic extension of a nonzero ideal `N`,
+viewed as a unit fractional ideal, exactly when `r ∈ N`. -/
+theorem algebraMap_mem_finiteAdelicIdeal_mk0_iff {N : Ideal R} (hN : N ≠ ⊥) (r : R) :
+    algebraMap R 𝔸ᶠ[R, K] r ∈
+        finiteAdelicIdeal (FractionalIdeal.mk0 K ⟨N, mem_nonZeroDivisors_of_ne_zero hN⟩) ↔
+      r ∈ N := by
+  rw [IsScalarTower.algebraMap_apply R K, algebraMap_mem_finiteAdelicIdeal_iff,
+    FractionalIdeal.coe_mk0, FractionalIdeal.mem_coeIdeal]
   refine ⟨fun ⟨s, hs, hsr⟩ ↦ ?_, fun hr ↦ ⟨r, hr, rfl⟩⟩
   rwa [← IsFractionRing.injective R K hsr]
 
 /-- Elements of `NÔ` lie in the finite adelic extension of `N`. -/
 theorem coe_mem_finiteAdelicIdeal_of_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥)
     {x : integralAdeles R K} (hx : x ∈ completedIdeal K N) :
-    (x : 𝔸ᶠ[R, K]) ∈ finiteAdelicIdeal (idealUnit K hN) := by
+    (x : 𝔸ᶠ[R, K]) ∈
+      finiteAdelicIdeal (FractionalIdeal.mk0 K ⟨N, mem_nonZeroDivisors_of_ne_zero hN⟩) := by
   -- The trace of the adelic extension on `Ô` is an ideal containing the image of `N`.
   let J : Ideal (integralAdeles R K) :=
-    (finiteAdelicIdeal (idealUnit K hN)).comap (Algebra.linearMap (integralAdeles R K) 𝔸ᶠ[R, K])
+    (finiteAdelicIdeal (FractionalIdeal.mk0 K ⟨N, mem_nonZeroDivisors_of_ne_zero hN⟩)).comap
+      (Algebra.linearMap (integralAdeles R K) 𝔸ᶠ[R, K])
   have hle : completedIdeal K N ≤ J := by
     refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
-    exact (algebraMap_mem_finiteAdelicIdeal_idealUnit_iff hN r).mpr hr
+    exact (algebraMap_mem_finiteAdelicIdeal_mk0_iff hN r).mpr hr
   exact hle hx
-
-/-- For a nonzero `a ∈ R`, an integral finite adele `x` is congruent modulo `aÔ` to the diagonal
-image of an element of `R`; this is density of `R` in `Ô` together with openness of `aÔ`. -/
-private theorem exists_sub_mem_span_singleton {a : R} (ha : a ≠ 0) (x : integralAdeles R K) :
-    ∃ r : R, ∃ y : integralAdeles R K,
-      x - algebraMap R (integralAdeles R K) r = algebraMap R (integralAdeles R K) a * y := by
-  set c : 𝔸ᶠ[R, K] := algebraMap K 𝔸ᶠ[R, K] (algebraMap R K a)⁻¹
-  have hU : IsOpen {z : 𝔸ᶠ[R, K] | c * ((x : 𝔸ᶠ[R, K]) - z) ∈ integralAdeles R K} :=
-    (isOpen_integralAdeles R K).preimage (continuous_const.mul (continuous_const.sub continuous_id))
-  have hx : (x : 𝔸ᶠ[R, K]) ∈ closure (Set.range (algebraMap R 𝔸ᶠ[R, K])) := by
-    rw [closure_range_algebraMap]
-    exact x.property
-  have hxU : (x : 𝔸ᶠ[R, K]) ∈ {z : 𝔸ᶠ[R, K] | c * ((x : 𝔸ᶠ[R, K]) - z) ∈ integralAdeles R K} := by
-    simpa only [Set.mem_ofPred_eq, sub_self, mul_zero] using (integralAdeles R K).zero_mem
-  obtain ⟨_, hz, r, rfl⟩ := mem_closure_iff.mp hx _ hU hxU
-  refine ⟨r, ⟨_, hz⟩, Subtype.ext ?_⟩
-  have hca : algebraMap R 𝔸ᶠ[R, K] a * c = 1 := by
-    rw [IsScalarTower.algebraMap_apply R K, ← map_mul,
-      mul_inv_cancel₀ ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), map_one]
-  simp only [Subalgebra.coe_sub, Subalgebra.coe_mul, Subalgebra.coe_algebraMap]
-  rw [← mul_assoc, hca, one_mul]
-
-/-- For `N ≠ ⊥`, every integral finite adele is congruent modulo `NÔ` to the diagonal image of an
-element of `R`. -/
-theorem exists_sub_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) (x : integralAdeles R K) :
-    ∃ r : R, x - algebraMap R (integralAdeles R K) r ∈ completedIdeal K N := by
-  obtain ⟨a, haN, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hN
-  obtain ⟨r, y, hy⟩ := exists_sub_mem_span_singleton (K := K) ha x
-  exact ⟨r, hy ▸ Ideal.mul_mem_right _ _ (algebraMap_mem_completedIdeal haN)⟩
-
-/-- For `N ≠ ⊥`, an integral finite adele lies in the finite adelic extension of `N` exactly when
-it lies in `NÔ`. -/
-theorem coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥)
-    (x : integralAdeles R K) :
-    (x : 𝔸ᶠ[R, K]) ∈ finiteAdelicIdeal (idealUnit K hN) ↔ x ∈ completedIdeal K N := by
-  refine ⟨fun hx ↦ ?_, coe_mem_finiteAdelicIdeal_of_mem_completedIdeal hN⟩
-  obtain ⟨r, hr⟩ := exists_sub_mem_completedIdeal hN x
-  have hrN : r ∈ N := by
-    rw [← algebraMap_mem_finiteAdelicIdeal_idealUnit_iff (K := K) hN]
-    have h := sub_mem hx (coe_mem_finiteAdelicIdeal_of_mem_completedIdeal hN hr)
-    simpa only [Subalgebra.coe_sub, Subalgebra.coe_algebraMap, sub_sub_cancel] using h
-  simpa using add_mem hr (algebraMap_mem_completedIdeal (K := K) hrN)
-
-/-- For `N ≠ ⊥`, the rational points of `NÔ` are the elements of `N`. -/
-theorem algebraMap_mem_completedIdeal_iff {N : Ideal R} (hN : N ≠ ⊥) {r : R} :
-    algebraMap R (integralAdeles R K) r ∈ completedIdeal K N ↔ r ∈ N := by
-  rw [← coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal hN, Subalgebra.coe_algebraMap,
-    algebraMap_mem_finiteAdelicIdeal_idealUnit_iff]
-
-variable (K) in
-/-- For `N ≠ ⊥`, pulling `NÔ` back along the diagonal map recovers `N`. -/
-theorem comap_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
-    (completedIdeal K N).comap (algebraMap R (integralAdeles R K)) = N :=
-  Ideal.ext fun _ ↦ algebraMap_mem_completedIdeal_iff hN
 
 variable (K) in
 /-- For `N ≠ ⊥`, the completion `NÔ` is open in the integral finite adeles. -/
@@ -198,6 +143,40 @@ variable (K) in
 theorem isClosed_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     IsClosed (completedIdeal K N : Set (integralAdeles R K)) :=
   (completedIdeal K N).toAddSubgroup.isClosed_of_isOpen (isOpen_completedIdeal K hN)
+
+/-- For `N ≠ ⊥`, every integral finite adele is congruent modulo `NÔ` to the diagonal image of an
+element of `R`: `R` is dense in `Ô` and `NÔ` is open. -/
+theorem exists_sub_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) (x : integralAdeles R K) :
+    ∃ r : R, x - algebraMap R (integralAdeles R K) r ∈ completedIdeal K N :=
+  (denseRange_algebraMap_integralAdeles R K).exists_mem_open
+    ((isOpen_completedIdeal K hN).preimage (continuous_const.sub continuous_id)) ⟨x, by simp⟩
+
+/-- For `N ≠ ⊥`, an integral finite adele lies in the finite adelic extension of `N` exactly when
+it lies in `NÔ`. -/
+theorem coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥)
+    (x : integralAdeles R K) :
+    (x : 𝔸ᶠ[R, K]) ∈
+        finiteAdelicIdeal (FractionalIdeal.mk0 K ⟨N, mem_nonZeroDivisors_of_ne_zero hN⟩) ↔
+      x ∈ completedIdeal K N := by
+  refine ⟨fun hx ↦ ?_, coe_mem_finiteAdelicIdeal_of_mem_completedIdeal hN⟩
+  obtain ⟨r, hr⟩ := exists_sub_mem_completedIdeal hN x
+  have hrN : r ∈ N := by
+    rw [← algebraMap_mem_finiteAdelicIdeal_mk0_iff (K := K) hN]
+    have h := sub_mem hx (coe_mem_finiteAdelicIdeal_of_mem_completedIdeal hN hr)
+    simpa only [Subalgebra.coe_sub, Subalgebra.coe_algebraMap, sub_sub_cancel] using h
+  simpa using add_mem hr (algebraMap_mem_completedIdeal (K := K) hrN)
+
+/-- For `N ≠ ⊥`, the rational points of `NÔ` are the elements of `N`. -/
+theorem algebraMap_mem_completedIdeal_iff {N : Ideal R} (hN : N ≠ ⊥) {r : R} :
+    algebraMap R (integralAdeles R K) r ∈ completedIdeal K N ↔ r ∈ N := by
+  rw [← coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal hN, Subalgebra.coe_algebraMap,
+    algebraMap_mem_finiteAdelicIdeal_mk0_iff hN]
+
+variable (K) in
+/-- For `N ≠ ⊥`, pulling `NÔ` back along the diagonal map recovers `N`. -/
+theorem comap_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
+    (completedIdeal K N).comap (algebraMap R (integralAdeles R K)) = N :=
+  Ideal.ext fun _ ↦ algebraMap_mem_completedIdeal_iff hN
 
 variable (K) in
 /-- For `N ≠ ⊥`, the diagonal map induces a ring isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`. -/
