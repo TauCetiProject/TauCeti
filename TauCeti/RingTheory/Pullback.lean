@@ -65,7 +65,7 @@ variable {R S T : Type*} [Ring R] [Ring S] [Semiring T] (f : R →+* T) (g : S �
 /-- The two components of an element of the fibre product agree in `T`: the pointwise form of
 Mathlib's `RingHom.pullback_comm_sq`. -/
 theorem pullback_comm_sq_apply (x : f.pullback g) : f (x : R × S).1 = g (x : R × S).2 :=
-  x.2
+  x.property
 
 /-! ## The universal property -/
 
@@ -127,7 +127,7 @@ variable (f g U) in
 correspond to pairs of ring homomorphisms `U →+* R` and `U →+* S` that agree over `T`. -/
 def pullbackLiftEquiv :
     {φ : (U →+* R) × (U →+* S) // f.comp φ.1 = g.comp φ.2} ≃ (U →+* f.pullback g) where
-  toFun φ := f.pullbackLift g φ.1.1 φ.1.2 φ.2
+  toFun φ := f.pullbackLift g φ.val.1 φ.val.2 φ.property
   invFun ψ := ⟨((f.pullbackFst g).comp ψ, (f.pullbackSnd g).comp ψ), by
     rw [← comp_assoc, pullback_comm_sq, comp_assoc]⟩
   left_inv _ := rfl
@@ -135,7 +135,7 @@ def pullbackLiftEquiv :
 
 @[simp]
 theorem pullbackLiftEquiv_apply (φ : {φ : (U →+* R) × (U →+* S) // f.comp φ.1 = g.comp φ.2}) :
-    pullbackLiftEquiv f g U φ = f.pullbackLift g φ.1.1 φ.1.2 φ.2 :=
+    pullbackLiftEquiv f g U φ = f.pullbackLift g φ.val.1 φ.val.2 φ.property :=
   (rfl)
 
 @[simp]
@@ -328,9 +328,9 @@ theorem map_pullbackFst_ker_pullbackSnd_eq :
 /-- The first projection restricts to an additive isomorphism from the kernel of the second
 projection onto `ker f`, `(r, 0) ↦ r`. -/
 def kerPullbackSndEquiv : ker (f.pullbackSnd g) ≃+ ker f where
-  toFun x := ⟨f.pullbackFst g x, pullbackFst_mem_ker x.2⟩
-  invFun r := ⟨⟨((r : R), 0), by simpa using mem_ker.1 r.2⟩, by simp⟩
-  left_inv x := Subtype.ext <| Subtype.ext <| Prod.ext rfl (mem_ker.1 x.2).symm
+  toFun x := ⟨f.pullbackFst g x, pullbackFst_mem_ker x.property⟩
+  invFun r := ⟨⟨((r : R), 0), by simpa using mem_ker.1 r.property⟩, by simp⟩
+  left_inv x := Subtype.ext <| Subtype.ext <| Prod.ext rfl (mem_ker.1 x.property).symm
   right_inv _ := rfl
   map_add' _ _ := rfl
 
@@ -347,9 +347,9 @@ theorem coe_coe_kerPullbackSndEquiv_symm_apply (r : ker f) :
 /-- The second projection restricts to an additive isomorphism from the kernel of the first
 projection onto `ker g`, `(0, s) ↦ s`. -/
 def kerPullbackFstEquiv : ker (f.pullbackFst g) ≃+ ker g where
-  toFun x := ⟨f.pullbackSnd g x, pullbackSnd_mem_ker x.2⟩
-  invFun s := ⟨⟨(0, (s : S)), by simpa [eq_comm] using mem_ker.1 s.2⟩, by simp⟩
-  left_inv x := Subtype.ext <| Subtype.ext <| Prod.ext (mem_ker.1 x.2).symm rfl
+  toFun x := ⟨f.pullbackSnd g x, pullbackSnd_mem_ker x.property⟩
+  invFun s := ⟨⟨(0, (s : S)), by simpa [eq_comm] using mem_ker.1 s.property⟩, by simp⟩
+  left_inv x := Subtype.ext <| Subtype.ext <| Prod.ext (mem_ker.1 x.property).symm rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
 

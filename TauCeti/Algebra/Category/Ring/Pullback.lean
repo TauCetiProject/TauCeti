@@ -36,7 +36,11 @@ namespace RingCat
 variable {A B C : RingCat.{u}} (f : A ⟶ C) (g : B ⟶ C)
 
 /-- The pullback cone in `RingCat` on the fibre product `RingHom.pullback f.hom g.hom`, with the
-projections `RingHom.pullbackFst` and `RingHom.pullbackSnd`. -/
+projections `RingHom.pullbackFst` and `RingHom.pullbackSnd`.
+
+The body is exposed because the statements of `pullbackCone_fst` and `pullbackCone_snd` compare
+morphisms out of `(pullbackCone f g).pt` with morphisms out of `of (f.hom.pullback g.hom)`, and
+these sources agree only after unfolding the cone. -/
 @[expose]
 def pullbackCone : PullbackCone f g :=
   PullbackCone.mk (ofHom (f.hom.pullbackFst g.hom)) (ofHom (f.hom.pullbackSnd g.hom))
