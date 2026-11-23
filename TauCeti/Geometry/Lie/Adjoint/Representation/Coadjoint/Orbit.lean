@@ -41,10 +41,14 @@ The Kirillov–Kostant–Souriau form on `G ⧸ G_ν` and the moment-map propert
   `G → G ⧸ G_ν` is a smooth submersion.
 * `Module.Dual.finrank_quotientModelSpace_add_finrank_lieAnnihilator`: the orbit has dimension
   `dim 𝔤 - dim 𝔤_ν`.
+* `Module.Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator`: the orbit has the
+  dimension of its algebraic tangent model `𝔤 ⧸ 𝔤_ν`.
 * `Module.Dual.ker_mfderiv_quotientMk_stabilizer_coadjointRepresentation`: the vertical
   directions of `G → G ⧸ G_ν` at `g` are `d(L_g)(𝔤_ν)`.
 * `Module.Dual.contMDiff_orbitMap_coadjointRepresentation_apply`: each component of the orbit map
   `[g] ↦ Ad*_g ν` is smooth.
+* `Module.Dual.contMDiff_orbitMap_coadjointRepresentation_components`: the components of the
+  orbit map in a basis of `𝔤` form a smooth map to `κ → ℝ`.
 
 ## References
 
@@ -118,6 +122,21 @@ theorem finrank_quotientModelSpace_add_finrank_lieAnnihilator :
       BoundarylessManifold.isInteriorPoint
   omega
 
+/-- **The tangent model of a coadjoint orbit.** The model space of `G ⧸ G_ν` has the dimension of
+the algebraic tangent model `𝔤 ⧸ 𝔤_ν`. -/
+theorem finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator :
+    finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) =
+      finrank ℝ (GroupLieAlgebra I G ⧸ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule) := by
+  have h := ν.finrank_quotientModelSpace_add_finrank_lieAnnihilator
+  have hq := Submodule.finrank_quotient_add_finrank
+    (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule
+  -- `𝔤 = GroupLieAlgebra I G` is the model space `E`, and a Lie subalgebra has the dimension of
+  -- its underlying submodule.
+  have hE : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
+  have hS : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule =
+      finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν) := rfl
+  omega
+
 variable {ν}
 
 /-- **The vertical directions of a coadjoint orbit.** The kernel of the differential at `g` of the
@@ -147,5 +166,13 @@ theorem contMDiff_orbitMap_coadjointRepresentation_apply (ξ : GroupLieAlgebra I
     QuotientGroup.mk_surjective le_rfl).1 (by
       simpa only [comp_def, Representation.orbitMap_mk] using
         contMDiff_coadjointRepresentation_apply ν ξ)
+
+/-- The components `[g] ↦ ((Ad*_g ν) (b i))ᵢ` of the orbit map of the coadjoint representation in a
+basis `b` of `𝔤` form a smooth map to `κ → ℝ`. -/
+theorem contMDiff_orbitMap_coadjointRepresentation_components {κ : Type*} [Fintype κ]
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) :
+    ContMDiff 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      𝓘(ℝ, κ → ℝ) ∞ fun x i ↦ (coadjointRepresentation ℝ I G).orbitMap ν x (b i) :=
+  contMDiff_pi_module_iff.2 fun i ↦ ν.contMDiff_orbitMap_coadjointRepresentation_apply (b i)
 
 end Module.Dual

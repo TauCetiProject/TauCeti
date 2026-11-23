@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Straight boundary arcs of the Schwarz--Christoffel map

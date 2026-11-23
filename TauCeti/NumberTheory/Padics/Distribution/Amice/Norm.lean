@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
 import Mathlib.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -191,12 +192,9 @@ omit hp in
 theorem tendsto_amiceRadius : Tendsto (amiceRadius p) atTop (𝓝 1) := by
   rcases lt_or_ge 1 p with hp1 | hp1
   · have h1 : (1 : ℝ) < p := by exact_mod_cast hp1
-    have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
-      simpa using ((tendsto_pow_atTop_atTop_of_one_lt h1).const_mul_atTop
-        (sub_pos.mpr h1)).inv_tendsto_atTop.neg
-    have hlim := (Real.continuousAt_const_rpow (zero_lt_one.trans h1).ne').tendsto.comp hexp
-    rw [Real.rpow_zero] at hlim
-    exact hlim
+    refine (tendsto_const_rpow_div_pow_atTop (zero_lt_one.trans h1).ne' h1
+      (-(1 / ((p : ℝ) - 1)))).congr fun h ↦ ?_
+    simp only [amiceRadius_def, neg_div, div_mul_eq_div_div]
   · -- The degenerate values `p = 0` and `p = 1`: the radii are eventually constant `1`.
     interval_cases p
     · refine tendsto_const_nhds.congr' ?_

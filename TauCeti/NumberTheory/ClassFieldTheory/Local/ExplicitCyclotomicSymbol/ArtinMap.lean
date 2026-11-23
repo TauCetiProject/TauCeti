@@ -383,7 +383,7 @@ theorem localArtinMap_cyclotomic_padic_neg_one (L : Type*) [Field L] [Algebra �
     σ ζ = ζ⁻¹ := by
   have : NeZero (p ^ n) := ⟨pow_ne_zero n (Fact.out : p.Prime).ne_zero⟩
   rw [localArtinMap_cyclotomic_padic_primePow p L ι (k := 0) (u := -1) (by simp) hσ hζ,
-    inv_neg_one, Units.val_neg, Units.val_one, map_neg, map_one, pow_val_neg_one hζ]
+    inv_neg_one, Units.val_neg, Units.val_one, map_neg, map_one, pow_val_neg hζ, pow_val_one hζ]
 
 /-- **`−1` is not a norm from a field containing a root of unity of `p`-power order other than
 `±1`.** If a finite Galois extension `L/ℚ_p` contains `ζ` with `ζ ^ pⁿ = 1` and `ζ ^ 2 ≠ 1`, then
