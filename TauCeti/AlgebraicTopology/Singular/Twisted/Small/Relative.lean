@@ -354,6 +354,7 @@ lemma subsetPairTwistedHomologyMap_comp (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂
 
 /-- Equal pairs of subsets of `X` have isomorphic relative twisted homology, by the maps of the
 inclusions in both directions. -/
+@[expose]
 def subsetPairTwistedHomologyIsoOfEq (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
     (TopPair.ofInclusion hC₁).twistedHomology
         ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) n ≅
