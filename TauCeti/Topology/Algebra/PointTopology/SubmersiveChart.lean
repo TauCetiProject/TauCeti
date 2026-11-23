@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Implicit
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import Mathlib.Topology.IsLocalHomeomorph
 public import TauCeti.Analysis.MvPolynomial.Jacobian
 public import TauCeti.RingTheory.Extension.Presentation.Submersive
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
-public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import TauCeti.Analysis.Calculus.ImplicitFunctionData
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Local charts on the points of smooth algebras
@@ -31,25 +30,24 @@ basis of the Kähler differentials of `S` over `K`.
 
 The proof applies Mathlib's implicit function theorem, `ImplicitFunctionData`, to the relations
 as left function and to the coordinate projection as right function, at the coordinate vector of
-the point. The two kernels are complementary because the Jacobian minor is invertible at every
-point of a submersive presentation
+the point, through `ImplicitFunctionData.exists_openPartialHomeomorph_levelSet`. The two kernels
+are complementary (`Matrix.isCompl_ker_mulVecLin_ker_funLeft`) because the Jacobian minor is
+invertible at every point of a submersive presentation
 (`Algebra.SubmersivePresentation.isUnit_det_jacobiMatrix_solution`). No hypothesis on the
 characteristic of `K` is needed, and the theorem applies over `ℝ`, `ℂ` and every nonarchimedean
 local field.
 
 ## Main results
 
-* `TauCeti.exists_openPartialHomeomorph_levelSet`: on a level set of the left function of
-  implicit-function data, the right function is a local homeomorphism at the base point.
-* `TauCeti.isCompl_ker_mulVecLin_ker_restrict`: if a square minor of a matrix is invertible, the
-  kernel of the matrix and the vectors supported on the minor's columns are complementary.
 * `Algebra.SubmersivePresentation.isLocalHomeomorph_pointCoords`: the coordinates outside
   `Set.range P.map` are a local homeomorphism on the points of a submersive presentation.
 * `Algebra.IsStandardSmooth.exists_openPartialHomeomorph_points` and
   `Algebra.Smooth.exists_openPartialHomeomorph_points`: every point of a standard smooth, or
   more generally smooth, `K`-algebra lies in the source of a chart, a homeomorphism from an open
-  set of points onto an open subset of some `Kⁿ`. For a smooth algebra the chart comes from a
-  standard smooth localization `A[1/g]` with `x g ≠ 0`, whose points form an open subset.
+  set of points onto an open subset of some `Kⁿ`. The chart of a standard smooth algebra is
+  evaluation at finitely many elements; for a smooth algebra the chart is defined on points `y`
+  with `y g` a unit for some `g` with `x g ≠ 0`, and is evaluation at finitely many elements of
+  the localization `A[1/g]`.
 
 ## References
 
@@ -62,109 +60,6 @@ local field.
 public section
 
 open MvPolynomial Topology
-
-namespace TauCeti
-
-section LevelSet
-
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
-
-/-- **Implicit function theorem on a level set.** On the level set of the left function of
-implicit-function data through the base point, the right function agrees with an open partial
-homeomorphism onto an open subset of `G` whose source contains the base point. -/
-theorem exists_openPartialHomeomorph_levelSet (φ : ImplicitFunctionData 𝕜 E F G) {c : F}
-    (hc : φ.leftFun φ.pt = c) :
-    ∃ e : OpenPartialHomeomorph {x | φ.leftFun x = c} G,
-      ⟨φ.pt, hc⟩ ∈ e.source ∧ ∀ x, e x = φ.rightFun x.val := by
-  let Φ := φ.toOpenPartialHomeomorph
-  have hΦ (x : E) : Φ x = (φ.leftFun x, φ.rightFun x) := φ.toOpenPartialHomeomorph_apply x
-  have hinv : Set.LeftInvOn Prod.snd (fun g : G ↦ (c, g)) ((fun g ↦ (c, g)) ⁻¹' Φ.target) :=
-    fun _ _ ↦ rfl
-  refine ⟨Φ.subtypeCoord {x | φ.leftFun x = c} ⟨⟨φ.pt, hc⟩⟩ (fun g ↦ (c, g)) Prod.snd
-    (fun {g} hg ↦ ?_) (fun {x} _ hx ↦ ?_) hinv
-    (continuous_const.prodMk continuous_id) continuous_snd.continuousOn,
-    ?_, fun x ↦ ?_⟩
-  · have h := congrArg Prod.fst (Φ.right_inv hg)
-    rwa [hΦ] at h
-  · rw [hΦ, hx.out]
-  · rw [OpenPartialHomeomorph.subtypeCoord_source]
-    exact φ.pt_mem_toOpenPartialHomeomorph_source
-  · rw [OpenPartialHomeomorph.subtypeCoord_apply, hΦ]
-
-end LevelSet
-
-section Minor
-
-open Matrix
-
-variable {K σ ι : Type*} [CommRing K] [Fintype σ] [Fintype ι] [DecidableEq σ]
-
-omit [DecidableEq σ] in
-/-- A matrix applied to a vector supported on the image of an injective `s` is its minor on the
-columns `s` applied to the restriction of the vector. -/
-private theorem mulVec_eq_submatrix_mulVec (A : Matrix σ ι K) {s : σ → ι}
-    (hs : Function.Injective s) {v : ι → K} (hv : ∀ i ∉ Set.range s, v i = 0) :
-    A *ᵥ v = A.submatrix id s *ᵥ (v ∘ s) := by
-  ext j
-  simp only [Matrix.mulVec, dotProduct, Matrix.submatrix_apply, id_eq, Function.comp_apply]
-  exact (Fintype.sum_of_injective s hs _ _ (fun i hi ↦ by simp [hv i hi]) fun _ ↦ rfl).symm
-
-/-- Extending by zero the image of `u` under the inverse of an invertible minor gives a preimage
-of `u`. -/
-private theorem mulVec_extend_inv_mulVec (A : Matrix σ ι K) {s : σ → ι}
-    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) (u : σ → K) :
-    A *ᵥ Function.extend s ((A.submatrix id s)⁻¹ *ᵥ u) 0 = u := by
-  have hv : ∀ i ∉ Set.range s, Function.extend s ((A.submatrix id s)⁻¹ *ᵥ u) 0 i = 0 :=
-    fun i hi ↦ Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩
-  rw [mulVec_eq_submatrix_mulVec A hs hv, Function.extend_comp hs, Matrix.mulVec_mulVec,
-    Matrix.mul_nonsing_inv _ hA, Matrix.one_mulVec]
-
-/-- **Complementary kernels from an invertible minor.** If the minor of `A` on the columns `s` is
-invertible, then the kernel of `A` and the vectors vanishing at the columns outside `range s` are
-complementary subspaces. -/
-theorem isCompl_ker_mulVecLin_ker_restrict (A : Matrix σ ι K) {s : σ → ι}
-    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) :
-    IsCompl (LinearMap.ker A.mulVecLin)
-      (LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι))) := by
-  have hmem {v : ι → K} :
-      v ∈ LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι)) ↔
-        ∀ i ∉ Set.range s, v i = 0 := by
-    simp only [LinearMap.mem_ker, funext_iff, LinearMap.funLeft_apply,
-      Pi.zero_apply, Subtype.forall, Set.mem_compl_iff]
-  constructor
-  · rw [Submodule.disjoint_def]
-    intro v hv hv'
-    rw [hmem] at hv'
-    rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, mulVec_eq_submatrix_mulVec A hs hv'] at hv
-    have h0 : v ∘ s = 0 := by
-      simpa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hA] using
-        congrArg ((A.submatrix _root_.id s)⁻¹ *ᵥ ·) hv
-    ext i
-    by_cases hi : i ∈ Set.range s
-    · obtain ⟨j, rfl⟩ := hi
-      exact congrFun h0 j
-    · exact hv' i hi
-  · rw [codisjoint_iff, eq_top_iff]
-    intro v _
-    let w := Function.extend s ((A.submatrix id s)⁻¹ *ᵥ (A *ᵥ v)) 0
-    have hw : w ∈ LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι)) :=
-      hmem.2 fun i hi ↦ Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩
-    refine Submodule.mem_sup.2 ⟨v - w, ?_, w, hw, sub_add_cancel v w⟩
-    rw [LinearMap.mem_ker, map_sub, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply,
-      mulVec_extend_inv_mulVec A hs hA, sub_self]
-
-/-- A matrix with an invertible square minor is surjective. -/
-theorem surjective_mulVec_of_isUnit_det_submatrix (A : Matrix σ ι K) {s : σ → ι}
-    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) :
-    Function.Surjective A.mulVec :=
-  fun u ↦ ⟨_, mulVec_extend_inv_mulVec A hs hA u⟩
-
-end Minor
-
-end TauCeti
 
 namespace Algebra.SubmersivePresentation
 
@@ -181,8 +76,7 @@ private theorem aevalTower_comp_eq_eval (x : S →ₐ[K] K) (p : MvPolynomial ι
     aevalTower (x.comp (IsScalarTower.toAlgHom K K S)) (fun i ↦ x (P.val i)) p =
       eval (fun i ↦ x (P.val i)) p := by
   rw [Subsingleton.elim (x.comp (IsScalarTower.toAlgHom K K S)) (Algebra.ofId K K),
-    MvPolynomial.aevalTower_ofId]
-  rfl
+    MvPolynomial.aevalTower_ofId, MvPolynomial.aeval_eq_eval]
 
 /-- The coordinate vector of a point lies on the zero set of the relations. -/
 private theorem eval_relation_eq_zero (x : S →ₐ[K] K) (j : σ) :
@@ -206,11 +100,20 @@ private theorem isUnit_det_jacobiMatrixAt_submatrix [Fintype σ] [DecidableEq σ
 /-- The coordinates of a point of a submersive presentation at the variables outside the range
 of `P.map`. These are the smooth local parameters, and they are local coordinates on the points
 (`Algebra.SubmersivePresentation.isLocalHomeomorph_pointCoords`). -/
-@[expose]
 def pointCoords (x : S →ₐ[K] K) : ↥(Set.range P.map)ᶜ → K :=
   fun i ↦ x (P.val i)
 
+@[simp]
+theorem pointCoords_apply (x : S →ₐ[K] K) (i : ↥(Set.range P.map)ᶜ) :
+    P.pointCoords x i = x (P.val i) := (rfl)
+
 variable [TopologicalSpace K] [IsTopologicalRing K]
+
+omit [IsTopologicalRing K] in
+@[continuity, fun_prop]
+theorem continuous_pointCoords : Continuous P.pointCoords :=
+  continuous_pi fun i ↦ by
+    simpa only [pointCoords_apply] using PointTopology.continuous_eval (P.val i)
 
 /-- The coordinate vectors of points identify the points, with their evaluation topology, with
 the zero set of the relations in `ι → K`. -/
@@ -229,26 +132,40 @@ private noncomputable def zeroSetHomeomorph :
     simp only [Set.mem_ofPred_eq, funext_iff, Pi.zero_apply]
     exact h
 
+private theorem coe_zeroSetHomeomorph_apply (x : S →ₐ[K] K) :
+    (P.zeroSetHomeomorph x : ι → K) = fun i ↦ x (P.val i) := (rfl)
+
 end Algebra
 
 variable {K S ι σ : Type*} [NontriviallyNormedField K] [CompleteSpace K] [CommRing S]
   [Algebra K S] [Finite ι] [Finite σ] (P : SubmersivePresentation K S ι σ)
 
-section Fintype
-
-variable [Fintype ι] [Fintype σ] [DecidableEq σ] [Fintype ↥(Set.range P.map)ᶜ]
-
 /-- The coordinate projection onto the variables outside the range of `P.map`. -/
 private noncomputable def coordProj : (ι → K) →L[K] ↥(Set.range P.map)ᶜ → K :=
   ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj i.val
+
+omit [CompleteSpace K] [Finite ι] in
+private theorem coordProj_apply (v : ι → K) (i : ↥(Set.range P.map)ᶜ) :
+    P.coordProj v i = v i := by
+  simp [coordProj]
+
+omit [CompleteSpace K] [Finite ι] in
+private theorem toLinearMap_coordProj :
+    (P.coordProj : (ι → K) →ₗ[K] ↥(Set.range P.map)ᶜ → K) =
+      LinearMap.funLeft K K Subtype.val := by
+  ext v i
+  simp [coordProj_apply]
+
+section Fintype
+
+variable [Fintype ι] [Fintype σ] [DecidableEq σ] [Fintype ↥(Set.range P.map)ᶜ]
 
 /-- The implicit-function data at the coordinate vector of a point: the relations as left
 function and the coordinate projection onto the variables outside `range P.map` as right
 function. -/
 private noncomputable abbrev implicitData (x : S →ₐ[K] K) :
     ImplicitFunctionData K (ι → K) (σ → K) (↥(Set.range P.map)ᶜ → K) :=
-  have hπ : (P.coordProj : (ι → K) →ₗ[K] ↥(Set.range P.map)ᶜ → K) =
-      LinearMap.funLeft K K Subtype.val := rfl
+  have hπ := P.toLinearMap_coordProj
   have hJ := fderiv_eval_family P.relation fun i ↦ x (P.val i)
   have hA := P.isUnit_det_jacobiMatrixAt_submatrix x
   { leftFun := fun y j ↦ eval y (P.relation j)
@@ -259,21 +176,14 @@ private noncomputable abbrev implicitData (x : S →ₐ[K] K) :
     hasStrictFDerivAt_leftFun := (analyticOnNhd_eval_family P.relation _ trivial).hasStrictFDerivAt
     hasStrictFDerivAt_rightFun := P.coordProj.hasStrictFDerivAt
     range_leftDeriv := by
-      change LinearMap.range (fderiv K (fun y j ↦ eval y (P.relation j))
-        (fun i ↦ x (P.val i)) : (ι → K) →ₗ[K] σ → K) = ⊤
       rw [hJ, LinearMap.range_eq_top, Matrix.coe_mulVecLin]
-      exact surjective_mulVec_of_isUnit_det_submatrix _ P.map_inj hA
+      exact Matrix.mulVec_surjective_of_isUnit_det_submatrix _ P.map_inj hA
     range_rightDeriv := by
-      change LinearMap.range (P.coordProj : (ι → K) →ₗ[K] ↥(Set.range P.map)ᶜ → K) = ⊤
       rw [hπ, LinearMap.range_eq_top]
-      exact fun w ↦ ⟨Function.extend Subtype.val w 0, funext fun i ↦
-        Subtype.val_injective.extend_apply w 0 i⟩
+      exact LinearMap.funLeft_surjective_of_injective K K _ Subtype.val_injective
     isCompl_ker := by
-      change IsCompl (LinearMap.ker (fderiv K (fun y j ↦ eval y (P.relation j))
-          (fun i ↦ x (P.val i)) : (ι → K) →ₗ[K] σ → K))
-        (LinearMap.ker (P.coordProj : (ι → K) →ₗ[K] ↥(Set.range P.map)ᶜ → K))
       rw [hJ, hπ]
-      exact isCompl_ker_mulVecLin_ker_restrict _ P.map_inj hA }
+      exact Matrix.isCompl_ker_mulVecLin_ker_funLeft _ P.map_inj hA }
 
 end Fintype
 
@@ -288,7 +198,7 @@ private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
       {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0} (↥(Set.range P.map)ᶜ → K),
       ⟨fun i ↦ x (P.val i), funext (P.eval_relation_eq_zero x)⟩ ∈ e.source ∧
         ∀ y, e y = P.coordProj y.val :=
-    exists_openPartialHomeomorph_levelSet (P.implicitData x) (c := 0)
+    ImplicitFunctionData.exists_openPartialHomeomorph_levelSet (P.implicitData x) (c := 0)
       (funext (P.eval_relation_eq_zero x))
   refine ⟨P.zeroSetHomeomorph.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
   · rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
@@ -296,7 +206,8 @@ private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
     exact he
   · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
       Homeomorph.toOpenPartialHomeomorph_apply, hee]
-    rfl
+    ext i
+    simp [coordProj_apply, coe_zeroSetHomeomorph_apply]
 
 /-- **Local charts on the points of a submersive presentation.** The values of a point at the
 variables outside the range of `P.map` form a local homeomorphism from the points, with their
@@ -315,22 +226,35 @@ open TauCeti.PointTopology
 variable {K A : Type*} [NontriviallyNormedField K] [CompleteSpace K] [CommRing A] [Algebra K A]
 
 /-- Every point of a standard smooth `K`-algebra has a chart: an open partial homeomorphism from
-the points, with their evaluation topology, to some `Kⁿ`, whose source contains the point. -/
+the points, with their evaluation topology, to some `Kⁿ`, whose source contains the point, and
+which is evaluation at finitely many elements `a i` of `A`. -/
 theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K A]
     (x : A →ₐ[K] K) :
-    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)), x ∈ e.source := by
+    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (a : Fin n → A),
+      x ∈ e.source ∧ ∀ y i, e y i = y (a i) := by
   obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := ‹IsStandardSmooth K A›.out
-  obtain ⟨e, hx, -⟩ := P.isLocalHomeomorph_pointCoords x
+  obtain ⟨e, hx, he⟩ := P.isLocalHomeomorph_pointCoords x
   let := Fintype.ofFinite ↥(Set.range P.map)ᶜ
-  exact ⟨_, e.transHomeomorph (Homeomorph.piCongrLeft (Y := fun _ ↦ K)
-    (Fintype.equivFin ↥(Set.range P.map)ᶜ)), hx⟩
+  let c := Fintype.equivFin ↥(Set.range P.map)ᶜ
+  refine ⟨_, e.transHomeomorph (Homeomorph.piCongrLeft (Y := fun _ ↦ K) c),
+    fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_⟩
+  obtain ⟨i, rfl⟩ := c.surjective i
+  rw [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
+    Homeomorph.piCongrLeft_apply_apply, ← he,
+    SubmersivePresentation.pointCoords_apply]
+  simp only [c.symm_apply_apply]
 
-/-- **Local charts on the points of a smooth algebra.** Every point of a smooth `K`-algebra has
-a chart: an open partial homeomorphism from the points, with their evaluation topology, to some
-`Kⁿ`, whose source contains the point. The chart is a chart of a standard smooth localization
-`A[1/g]` with `x g ≠ 0`, transported along the open embedding of its points. -/
+/-- **Local charts on the points of a smooth algebra.** Every point `x` of a smooth `K`-algebra
+has a chart: an open partial homeomorphism from the points, with their evaluation topology, to
+some `Kⁿ`, whose source contains `x`. There is `g : A` with `x g ≠ 0` such that every point of
+the source sends `g` to a unit, and the chart is evaluation at finitely many elements `b i` of the
+localization `A[1/g]`, through the unique extension of a point to `A[1/g]`. -/
 theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K] K) :
-    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)), x ∈ e.source := by
+    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (g : A)
+      (b : Fin n → Localization.Away g), x ∈ e.source ∧ x g ≠ 0 ∧
+      e.source ⊆ {y | IsUnit (y g)} ∧
+      ∀ (y : Localization.Away g →ₐ[K] K) i,
+        e (y.comp (IsScalarTower.toAlgHom K A (Localization.Away g))) i = y (b i) := by
   obtain ⟨s, hs, hst⟩ := Smooth.exists_span_eq_top_isStandardSmooth K A
   obtain ⟨g, hg, hxg⟩ : ∃ g ∈ s, x g ≠ 0 := by
     by_contra! h
@@ -342,15 +266,12 @@ theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K]
     fun y ↦ y.comp (IsScalarTower.toAlgHom K A (Localization.Away g))
   have hj : IsOpenEmbedding j := isOpenEmbedding_localization g Units.isEmbedding_val₀ <| by
     simpa only [isUnit_iff_ne_zero] using isOpen_ne
-  obtain ⟨y, rfl⟩ : x ∈ Set.range j := by
-    rw [IsLocalization.Away.range_comp_toAlgHom g]
-    exact isUnit_iff_ne_zero.2 hxg
-  obtain ⟨n, e, he⟩ := IsStandardSmooth.exists_openPartialHomeomorph_points y
-  have : Nonempty (Localization.Away g →ₐ[K] K) := ⟨y⟩
-  refine ⟨n, (hj.toOpenPartialHomeomorph j).symm.trans e, ?_⟩
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-    IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.mem_inter_iff, Set.mem_preimage,
-    hj.toOpenPartialHomeomorph_left_inv]
-  exact ⟨Set.mem_range_self y, he⟩
+  have hrange : Set.range j = {y | IsUnit (y g)} := IsLocalization.Away.range_comp_toAlgHom g
+  obtain ⟨y, rfl⟩ : x ∈ Set.range j := hrange ▸ isUnit_iff_ne_zero.2 hxg
+  obtain ⟨n, e, b, he, heb⟩ := IsStandardSmooth.exists_openPartialHomeomorph_points y
+  refine ⟨n, e.lift_openEmbedding hj, g, b, Set.mem_image_of_mem j he, hxg, ?_, fun z i ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.lift_openEmbedding_source, ← hrange]
+    exact Set.image_subset_range j e.source
+  · rw [OpenPartialHomeomorph.lift_openEmbedding_apply, heb]
 
 end Algebra

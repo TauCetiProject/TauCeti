@@ -39,6 +39,12 @@ Scaling a square matrix by a semifield scalar scales its nonsingular inverse by 
 
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
+A matrix `A` whose minor `A.submatrix id s` on all the rows and the columns picked out by an
+injective `s` is invertible is surjective (`Matrix.mulVec_surjective_of_isUnit_det_submatrix`):
+the inverse of the minor, extended by zero along `s`, gives a preimage
+(`Matrix.mulVec_extend_zero_nonsing_inv_mulVec`). Moreover the kernel of `A` and the vectors
+vanishing off `range s` are complementary (`Matrix.isCompl_ker_mulVecLin_ker_funLeft`).
+
 For invertible matrices `A`, `B` over a linearly ordered field, inverse entries bounded by `L`
 and entrywise difference bounded by `d` give `|A⁻¹ i j - B⁻¹ i j| ≤ (card ι)² L² d`
 (`Matrix.abs_inv_sub_inv_apply_le`). This estimate supplies the inverse-entry Hölder modulus.
@@ -207,3 +213,73 @@ theorem Matrix.abs_inv_sub_inv_apply_le {A B : Matrix ι ι R} {L d : R}
       ring
 
 end InverseBound
+
+namespace Matrix
+
+section InvertibleMinor
+
+variable {K σ ι : Type*} [CommRing K] [Fintype σ] [Fintype ι]
+
+/-- A matrix applied to a vector vanishing off the range of an injective `s` is its minor on the
+columns `s` applied to the restriction of the vector along `s`. -/
+theorem mulVec_eq_submatrix_mulVec_comp (A : Matrix σ ι K) {s : σ → ι}
+    (hs : Function.Injective s) {v : ι → K} (hv : ∀ i ∉ Set.range s, v i = 0) :
+    A *ᵥ v = A.submatrix id s *ᵥ (v ∘ s) := by
+  ext j
+  simp only [Matrix.mulVec, dotProduct, Matrix.submatrix_apply, id_eq, Function.comp_apply]
+  exact (Fintype.sum_of_injective s hs _ _ (fun i hi ↦ by simp [hv i hi]) fun _ ↦ rfl).symm
+
+variable [DecidableEq σ]
+
+/-- Extending by zero along `s` the image of `u` under the inverse of an invertible minor on the
+columns `s` gives a preimage of `u`. -/
+theorem mulVec_extend_zero_nonsing_inv_mulVec (A : Matrix σ ι K) {s : σ → ι}
+    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) (u : σ → K) :
+    A *ᵥ Function.extend s ((A.submatrix id s)⁻¹ *ᵥ u) 0 = u := by
+  rw [Matrix.mulVec_extend_zero hs, Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hA,
+    Matrix.one_mulVec]
+
+/-- **Complementary kernels from an invertible minor.** If the minor of `A` on all the rows and
+the columns picked out by an injective `s` is invertible, then the kernel of `A` and the vectors
+vanishing at the columns outside `range s` are complementary subspaces. -/
+theorem isCompl_ker_mulVecLin_ker_funLeft (A : Matrix σ ι K) {s : σ → ι}
+    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) :
+    IsCompl (LinearMap.ker A.mulVecLin)
+      (LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι))) := by
+  have hmem {v : ι → K} :
+      v ∈ LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι)) ↔
+        ∀ i ∉ Set.range s, v i = 0 := by
+    simp only [LinearMap.mem_ker, funext_iff, LinearMap.funLeft_apply,
+      Pi.zero_apply, Subtype.forall, Set.mem_compl_iff]
+  constructor
+  · rw [Submodule.disjoint_def]
+    intro v hv hv'
+    rw [hmem] at hv'
+    rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, mulVec_eq_submatrix_mulVec_comp A hs hv'] at hv
+    have h0 : v ∘ s = 0 := by
+      simpa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hA] using
+        congrArg ((A.submatrix _root_.id s)⁻¹ *ᵥ ·) hv
+    ext i
+    by_cases hi : i ∈ Set.range s
+    · obtain ⟨j, rfl⟩ := hi
+      exact congrFun h0 j
+    · exact hv' i hi
+  · rw [codisjoint_iff, eq_top_iff]
+    intro v _
+    let w := Function.extend s ((A.submatrix id s)⁻¹ *ᵥ (A *ᵥ v)) 0
+    have hw : w ∈ LinearMap.ker (LinearMap.funLeft K K (Subtype.val : ↥(Set.range s)ᶜ → ι)) :=
+      hmem.2 fun i hi ↦ Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩
+    refine Submodule.mem_sup.2 ⟨v - w, ?_, w, hw, sub_add_cancel v w⟩
+    rw [LinearMap.mem_ker, map_sub, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply,
+      mulVec_extend_zero_nonsing_inv_mulVec A hs hA, sub_self]
+
+/-- A matrix whose minor on all the rows and the columns picked out by an injective `s` is
+invertible is surjective. -/
+theorem mulVec_surjective_of_isUnit_det_submatrix (A : Matrix σ ι K) {s : σ → ι}
+    (hs : Function.Injective s) (hA : IsUnit (A.submatrix id s).det) :
+    Function.Surjective A.mulVec :=
+  fun u ↦ ⟨_, mulVec_extend_zero_nonsing_inv_mulVec A hs hA u⟩
+
+end InvertibleMinor
+
+end Matrix
