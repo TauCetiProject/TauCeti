@@ -11,7 +11,6 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 public import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Topology.PartitionOfUnity.Basic
-import TauCeti.Topology.Algebra.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Density
 
 /-!
@@ -508,8 +507,9 @@ public theorem integrableDensity_zeroDim_iff (μ : RoughDensity I M 0) :
     IntegrableDensity μ ↔ {x | μ x ≠ 0}.Finite := by
   have : DiscreteTopology M := I.discreteTopology M
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
-  rw [integrableDensity_iff, TauCeti.tsupport_eq_support (show M → Density E 0 from μ),
-    isCompact_iff_finite]
+  rw [integrableDensity_iff]
+  unfold _root_.tsupport
+  rw [closure_discrete, isCompact_iff_finite]
   exact ⟨fun h ↦ h.1, fun hfin ↦ ⟨hfin, ⟨Basis.empty E⟩, fun _ _ ↦ by
     rw [Basis.addHaar_eq_dirac]; exact integrable_dirac (by simp)⟩⟩
 
@@ -536,7 +536,8 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
     ⟨s.card, α, fun i ↦ {α i},
       fun i ↦ extChartAt_source_zeroDim (I := I) (α i) ▸ isOpen_extChartAt_source (α i),
       fun i ↦ (extChartAt_source_zeroDim (I := I) (α i)).ge,
-      by rw [TauCeti.tsupport_eq_support (show M → Density E 0 from μ)]
+      by unfold _root_.tsupport
+         rw [closure_discrete]
          exact fun x hx ↦ mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩⟩
   rw [integralDensity_eq_chartCover_integral μ ((integrableDensity_zeroDim_iff μ).mpr hfin) b c
       Subset.rfl, ChartCover.integral_eq_sum]
@@ -547,8 +548,7 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
       eq_univ_of_forall (s := {extChartAt I (α i) (α i)}) fun y ↦ Subsingleton.elim y _,
       Measure.restrict_univ, Basis.addHaar_eq_dirac, integral_dirac,
       Subsingleton.elim (0 : E) (extChartAt I (α i) (α i)),
-      μ.coeffInChartAt_apply_of_mem_source b (α i) (mem_extChartAt_source (α i)),
-      μ.inChartAt_extChartAt_self (α i)]
+      μ.coeffInChartAt_extChartAt_self b (α i)]
     exact congrArg (μ (α i)) (Subsingleton.elim _ 0)
   simp_rw [hterm]
   rw [finsum_eq_sum_of_support_subset (f := fun x : M ↦ μ x 0) (s := s)
@@ -670,10 +670,8 @@ public theorem integralDensity_pos_of_continuousOn_inChartAt [IsManifold I 1 M]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦
     integral_nonneg fun y ↦ coeffInChartAt_nonneg_of_basis_nonneg hnn b (c.center i) y)
   have hg₀ : 0 < μ.coeffInChartAt b x₀ (extChartAt I x₀ x₀) := by
-    obtain ⟨b', hb'⟩ := μ.exists_basis_inChartAt_chart_apply_eq b x₀ (mem_extChartAt_source x₀)
-    rw [μ.coeffInChartAt_apply_of_mem_source b x₀ (mem_extChartAt_source x₀), hb',
-      (μ x₀).apply_eq_abs_det_mul c₀ b']
-    exact mul_pos (abs_pos.mpr (c₀.isUnit_det b').ne_zero) hpos
+    rw [μ.coeffInChartAt_extChartAt_self b x₀, (μ x₀).apply_eq_abs_det_mul c₀ b]
+    exact mul_pos (abs_pos.mpr (c₀.isUnit_det b).ne_zero) hpos
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x₀
     (coeffInChartAt_nonneg_of_basis_nonneg hnn b x₀)
     (hi.integrable_coeffInChartAt b x₀).integrableOn
