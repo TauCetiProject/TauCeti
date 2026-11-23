@@ -607,6 +607,18 @@ theorem interFst_reflInter (x : X) : (refl 𝕜 X).interFst (reflInter 𝕜 x) =
 theorem interSnd_reflInter (x : X) : (refl 𝕜 X).interSnd (reflInter 𝕜 x) = x :=
   (rfl)
 
+theorem reflInter_interFst (x : (refl 𝕜 X).inter) :
+    reflInter 𝕜 ((refl 𝕜 X).interFst x) = x := by
+  have h := (refl 𝕜 X).mem_inter_iff.1 x.property
+  simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
+  exact Subtype.ext (Prod.ext rfl h)
+
+theorem reflInter_interSnd (x : (refl 𝕜 X).inter) :
+    reflInter 𝕜 ((refl 𝕜 X).interSnd x) = x := by
+  have h := (refl 𝕜 X).mem_inter_iff.1 x.property
+  simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
+  exact Subtype.ext (Prod.ext h.symm rfl)
+
 /-- For the couple `(X, X)`, the inclusion of the first space into the sum inverts
 `sumSpaceEmbed`. -/
 @[simp]

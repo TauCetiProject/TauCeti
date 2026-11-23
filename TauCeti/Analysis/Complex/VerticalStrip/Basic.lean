@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.HasPrimitives.Basic
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.NormSq
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Vertical strips
@@ -84,6 +86,16 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
+/-- On the open unit vertical strip `0 < re ζ < 1`, `1 + exp (I * π * ζ)` is nonzero. -/
+theorem one_add_exp_I_pi_mul_ne_zero {ζ : ℂ} (hζ : ζ ∈ verticalStrip 0 1) :
+    1 + exp (I * Real.pi * ζ) ≠ 0 := by
+  have hsin : 0 < Real.sin (Real.pi * ζ.re) := sin_pi_mul_pos_of_pos_of_lt_one hζ.1 hζ.2
+  refine normSq_pos.1 ?_
+  rw [normSq_one_add_exp]
+  have him : (I * (Real.pi : ℂ) * ζ).im = Real.pi * ζ.re := by simp
+  rw [him]
+  positivity
 
 section ScaleFactor
 

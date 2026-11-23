@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Symmetry
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Endpoint norm formulas for the complex interpolation method
@@ -15,9 +16,14 @@ At the boundary points `θ = 0` and `θ = 1`, the complex interpolation norm of 
 admissible trace pair `g = (g₀, g₁)` reduces to the endpoint norm of the trace evaluated at `0`:
 
 * `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_mk_zero`: `‖mk 0 g‖ = ‖g₀ 0‖`;
-* `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_mk_one`: `‖mk 1 g‖ = ‖g₁ 0‖`.
+* `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_mk_one`: `‖mk 1 g‖ = ‖g₁ 0‖`;
+* `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_toFst`: `‖toFst u‖ = ‖u‖`;
+* `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_toSnd`: `‖toSnd u‖ = ‖u‖`;
+* `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_ofInter_zero`,
+  `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_ofInter_one`: `‖ofInter 0 x‖ = ‖C.interFst x‖`
+  and `‖ofInter 1 x‖ = ‖C.interSnd x‖`.
 
-Both identities hold for any compatible couple of normed spaces without completeness or density
+These identities hold for any compatible couple of normed spaces without completeness or density
 assumptions, by multiplying with Gaussian-type holomorphic cutoff factors `exp (A (z² - 2 z))` and
 using symmetry (`ComplexMethodSpace.swap`).
 -/
@@ -37,12 +43,9 @@ variable {X₀ X₁ V : Type*}
 private theorem exp_neg_mul_norm_le {E : Type*} [NormedAddCommGroup E] {x y : ℝ} {f : C₀(ℝ, E)}
     {ε : ℝ} (hx : 0 < x) (hy : x ≤ y) (hε : 0 < ε) (hA : 2 * ‖f‖ / ε < x) (t : ℝ) :
     Real.exp (-y) * ‖f t‖ ≤ ε / 2 := by
-  have h1 : Real.exp (-y) ≤ x⁻¹ := by
-    rw [Real.exp_neg]
-    exact inv_anti₀ hx (by linarith [Real.add_one_le_exp y])
   have h2 : ‖f‖ / x ≤ ε / 2 := (div_le_iff₀ hx).2 (by nlinarith [(div_lt_iff₀ hε).1 hA])
-  exact (mul_le_mul h1 (ZeroAtInftyContinuousMap.norm_coe_le_norm f t) (norm_nonneg _)
-    (inv_pos.2 hx).le).trans ((inv_mul_eq_div _ _).trans_le h2)
+  exact (mul_le_mul (exp_neg_le_inv hx hy) (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
+    (norm_nonneg _) (inv_pos.2 hx).le).trans ((inv_mul_eq_div _ _).trans_le h2)
 
 private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.1 0‖ := by
   refine le_of_forall_pos_lt_add fun ε hε => ?_
@@ -55,60 +58,65 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
     simp only [c, norm_mul, Complex.norm_exp, neg_re, ofReal_re, norm_stripGaussian, ← Real.exp_add]
   have hc_le (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) : ‖c z‖ ≤ 1 := by
     rw [hc_norm]
-    have hsq : (z.re - 1) ^ 2 ≤ 1 :=
-      (sq_le_one_iff_abs_le_one _).2 (abs_le.2 ⟨by linarith [hz.1], by linarith [hz.2]⟩)
-    exact Real.exp_le_one_iff.2 (by nlinarith [hsq, sq_nonneg z.im, hA.le])
+    exact Real.exp_le_one_iff.2 <| by
+      nlinarith [(sq_le_one_iff_abs_le_one (z.re - 1)).2
+        (abs_le.2 ⟨by linarith [hz.1], by linarith [hz.2]⟩), sq_nonneg z.im, hA.le]
   have hbound := norm_smul_mk_le_of_diffContOnCl 0 g
-    (((differentiable_stripGaussian A 1).const_mul (Complex.exp (-(A : ℂ)))).diffContOnCl) hc_le
+    ((differentiable_stripGaussian A 1).const_mul (Complex.exp (-(A : ℂ)))).diffContOnCl hc_le
     (B := ‖g.val.1 0‖ + ε / 2) (by positivity)
     (fun t => by
-      rw [norm_smul]
-      by_cases ht : |t| < δ
-      · have hd := hclose (by simpa [Real.dist_eq] using ht)
-        rw [dist_eq_norm] at hd
+      rw [norm_smul]; by_cases ht : |t| < δ
+      · have hd := hclose (by simpa [Real.dist_eq] using ht); rw [dist_eq_norm] at hd
         exact (mul_le_of_le_one_left (norm_nonneg _)
-          (hc_le (t * I) (by simp [verticalClosedStrip]))).trans
+          (hc_le _ (by simp [verticalClosedStrip]))).trans
           (by linarith [norm_sub_norm_le (g.val.1 t) (g.val.1 0)])
       · have hsq : δ ^ 2 ≤ t ^ 2 := by simpa [sq_abs] using pow_le_pow_left₀ hδ.le (not_lt.1 ht) 2
-        have hA1 := ((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt
-        have hA1' : 2 * ‖g.val.1‖ / ε < A * δ ^ 2 :=
-          (div_lt_iff₀ hε).2 (by nlinarith [(div_lt_iff₀ (by positivity)).1 hA1])
-        have hc_left : ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) := by
-          rw [hc_norm]
-          congr 1
-          simp only [mul_I_re, mul_I_im, ofReal_re, ofReal_im]
-          ring
-        rw [hc_left]
+        have hA1' : 2 * ‖g.val.1‖ / ε < A * δ ^ 2 := (div_lt_iff₀ hε).2 <| by
+          nlinarith [(div_lt_iff₀ (by positivity)).1
+            (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt)]
+        rw [show ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) by rw [hc_norm]; congr 1; simp; ring]
         exact (exp_neg_mul_norm_le (by positivity) (by nlinarith) hε hA1' t).trans
           (le_add_of_nonneg_left (norm_nonneg _)))
     (fun t => by
-      have hc_right : ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) := by
-        rw [hc_norm]
-        congr 1
-        simp only [add_re, one_re, mul_I_re, add_im, one_im, mul_I_im, zero_add, ofReal_re,
-          ofReal_im]
-        ring
-      rw [norm_smul, hc_right]
+      rw [norm_smul, show ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) by
+        rw [hc_norm]; congr 1; simp; ring]
       exact (exp_neg_mul_norm_le hA (by nlinarith [sq_nonneg t]) hε
         (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt) t).trans
         (le_add_of_nonneg_left (norm_nonneg _)))
-  have hc0 : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by rw [hc_norm]; simp
-  rw [norm_smul, hc0, one_mul] at hbound
+  rw [norm_smul, show ‖c ((0 : ℝ) : ℂ)‖ = 1 by rw [hc_norm]; simp, one_mul] at hbound
   linarith [half_lt_self hε]
 
 /-- At `θ = 0`, the quotient norm of an admissible trace pair is the norm in `X₀` of its left
 boundary trace at `0`. -/
-@[simp]
-theorem norm_mk_zero (g : C.stripTraces) :
+@[simp] theorem norm_mk_zero (g : C.stripTraces) :
     ‖mk 0 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 0‖ :=
   le_antisymm (norm_mk_zero_le g) (by simpa only [toFst_mk] using norm_toFst_le (mk 0 g))
 
 /-- At `θ = 1`, the quotient norm of an admissible trace pair is the norm in `X₁` of its right
 boundary trace at `0`. -/
-@[simp]
-theorem norm_mk_one (g : C.stripTraces) :
+@[simp] theorem norm_mk_one (g : C.stripTraces) :
     ‖mk 1 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 0‖ := by
   rw [← (swap C 1).norm_map (mk 1 g), swap_mk, sub_self, norm_mk_zero]
   simp only [stripTracesSwap_apply_fst, neg_zero]
+
+/-- `ComplexMethodSpace.toFst : [X₀, X₁]_0 →L[ℂ] X₀` preserves norms without completeness
+assumptions. -/
+@[simp] theorem norm_toFst (u : C.ComplexMethodSpace 0) : ‖toFst u‖ = ‖u‖ := by
+  obtain ⟨g, rfl⟩ := mk_surjective u; simp
+
+/-- `ComplexMethodSpace.toSnd : [X₀, X₁]_1 →L[ℂ] X₁` preserves norms without completeness
+assumptions. -/
+@[simp] theorem norm_toSnd (u : C.ComplexMethodSpace 1) : ‖toSnd u‖ = ‖u‖ := by
+  obtain ⟨g, rfl⟩ := mk_surjective u; simp
+
+/-- On `X₀ ∩ X₁`, the `[X₀, X₁]_0` norm coincides with the `X₀` norm without completeness
+assumptions. -/
+@[simp] theorem norm_ofInter_zero (x : C.inter) : ‖ofInter 0 x‖ = ‖C.interFst x‖ := by
+  rw [← norm_toFst, toFst_ofInter]
+
+/-- On `X₀ ∩ X₁`, the `[X₀, X₁]_1` norm coincides with the `X₁` norm without completeness
+assumptions. -/
+@[simp] theorem norm_ofInter_one (x : C.inter) : ‖ofInter 1 x‖ = ‖C.interSnd x‖ := by
+  rw [← norm_toSnd, toSnd_ofInter]
 
 end TauCeti.CompatibleCouple.ComplexMethodSpace

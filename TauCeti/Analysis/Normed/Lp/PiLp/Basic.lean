@@ -274,27 +274,6 @@ end PseudoMetricSpace
 
 section Scaling
 
-/-- Scaling estimate in `PiLp`: if `∑ i, b i ^ qr = B ^ qr` with `B > 0` and `b i > 0`, then
-`‖toLp p (i ↦ B * (b i / B) ^ (qr / p))‖ ≤ B`. -/
-theorem norm_toLp_mul_div_rpow_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {B qr : ℝ} (hB : 0 < B)
-    {b : ι → ℝ} (hb : ∀ i, 0 < b i) (hsum : ∑ i, b i ^ qr = B ^ qr) :
-    ‖WithLp.toLp p (fun i ↦ B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [PiLp.norm_toLp, pi_norm_le_iff_of_nonneg hB.le]
-    intro i; simp [abs_of_pos hB]
-  · have hp0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
-    rw [PiLp.norm_eq_sum hp0]
-    have hterm (i : ι) : ‖B * (b i / B) ^ (qr * (p⁻¹).toReal)‖ ^ p.toReal =
-        B ^ p.toReal * (b i ^ qr / B ^ qr) := by
-      have hpos : 0 < b i / B := div_pos (hb i) hB
-      rw [Real.norm_of_nonneg (by positivity), Real.mul_rpow hB.le (Real.rpow_nonneg hpos.le _),
-        ← Real.rpow_mul hpos.le, ENNReal.toReal_inv, inv_mul_cancel_right₀ hp0.ne',
-        Real.div_rpow (hb i).le hB.le]
-    simp_rw [hterm, ← Finset.mul_sum, ← Finset.sum_div, hsum,
-      div_self (Real.rpow_pos_of_pos hB qr).ne', mul_one, one_div,
-      Real.rpow_rpow_inv hB.le hp0.ne']
-    exact le_rfl
-
 /-- Perturbing a vector `v : PiLp q β` over a nonempty finite index type by `ε > 0`, for
 `1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B` satisfies
 `B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
@@ -404,6 +383,35 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
 end Single
 
 end PiLp
+
+namespace TauCeti
+
+/-- Scaling estimate for finite `Lᵖ` norms (`p ≠ 0`): if `∑ i, b i ^ qr = B ^ qr` with `B > 0`
+and `b i > 0`, then `‖toLp p (i ↦ B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B`. -/
+theorem norm_toLp_mul_div_rpow_le {ι : Type*} [Fintype ι] {p : ℝ≥0∞} (hp0 : p ≠ 0) {B qr : ℝ}
+    (hB : 0 < B) {b : ι → ℝ} (hb : ∀ i, 0 < b i) (hsum : ∑ i, b i ^ qr = B ^ qr) :
+    ‖WithLp.toLp p (fun i ↦ B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [PiLp.norm_eq_ciSup]
+    cases isEmpty_or_nonempty ι
+    · simp [hB.le]
+    · exact ciSup_le fun i ↦ by simp [abs_of_pos hB]
+  · have hp_pos := ENNReal.toReal_pos hp0 hp
+    rw [PiLp.norm_eq_sum hp_pos]
+    have hterm (i : ι) :
+        ‖WithLp.toLp p (fun j ↦ B * (b j / B) ^ (qr * (p⁻¹).toReal)) i‖ ^ p.toReal =
+          B ^ p.toReal * (b i ^ qr / B ^ qr) := by
+      have hpos : 0 < b i / B := div_pos (hb i) hB
+      rw [PiLp.toLp_apply, Real.norm_of_nonneg (by positivity),
+        Real.mul_rpow hB.le (Real.rpow_nonneg hpos.le _),
+        ← Real.rpow_mul hpos.le, ENNReal.toReal_inv, inv_mul_cancel_right₀ hp_pos.ne',
+        Real.div_rpow (hb i).le hB.le]
+    simp_rw [hterm, ← Finset.mul_sum, ← Finset.sum_div, hsum,
+      div_self (Real.rpow_pos_of_pos hB qr).ne', mul_one, one_div,
+      Real.rpow_rpow_inv hB.le hp_pos.ne']
+    exact le_rfl
+
+end TauCeti
 
 namespace LinearIsometry
 

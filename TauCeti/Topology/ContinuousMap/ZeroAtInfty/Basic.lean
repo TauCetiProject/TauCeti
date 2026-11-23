@@ -154,7 +154,7 @@ theorem exists_isCompact_norm_lt (f : C₀(α, β)) {δ : ℝ} (hδ : 0 < δ) :
     simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hKsub hx⟩
 
 /-- A function in `C₀(ℝ, β)` has norm at most `δ > 0` outside some bounded interval `[-T, T]`. -/
-theorem exists_abs_ge_norm_le (f : C₀(ℝ, β)) {δ : ℝ} (hδ : 0 < δ) :
+theorem exists_forall_norm_le_of_le_abs (f : C₀(ℝ, β)) {δ : ℝ} (hδ : 0 < δ) :
     ∃ T > 0, ∀ s : ℝ, T ≤ |s| → ‖f s‖ ≤ δ := by
   obtain ⟨K, hK, hKlt⟩ := f.exists_isCompact_norm_lt hδ
   obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
