@@ -49,7 +49,8 @@ foundational invariance and functoriality properties:
   (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_smul_top_eq_top`).
   When `I_(n+1)(F) = R`, `v_n` is a unit modulo `I_n(F)`, so weak regularity for all `m` reduces
   further to `m = n`
-  (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`).
+  (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_succ_eq_top`).
   In particular, a module is Landweber regular for `𝔾ₘ` precisely when every prime acts
   injectively on it (`FormalGroup.isLandweberRegular_𝔾ₘ_iff`), and for `𝔾ₐ` precisely when every
   prime acts bijectively (`FormalGroup.isLandweberRegular_𝔾ₐ_iff`).
@@ -77,7 +78,8 @@ foundational invariance and functoriality properties:
   `FormalGroup.isRegular_ofFn_iff_landweberSequence`: replacing each `v_i` by any lift modulo
   `I_i(F)` preserves weak regularity and regularity.
 * `FormalGroup.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
-  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`, and
+  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_succ_eq_top`, and
   `FormalGroup.isLandweberRegular_iff_of_heightIdeal_two_eq_top`: when `I_(n+1)(F) = R`, Landweber
   regularity at prime `p` reduces to `F.landweberSequence p n`, and when `I₂(F) = R` at every
   prime `p`, Landweber regularity reduces to `p`-torsion-freeness.
@@ -305,14 +307,22 @@ theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top 
   (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).trans
     (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M n.le_succ hI)
 
+/-- If `I_(n+1)(F) = ⊤` at every prime `p`, then `F` is Landweber regular on an `R`-module `M` if
+and only if `F.landweberSequence p n` is weakly regular on `M` for every prime `p`. -/
+theorem isLandweberRegular_iff_of_heightIdeal_succ_eq_top (M : Type*) [AddCommGroup M]
+    [Module R M] {n : ℕ} (hI : ∀ ⦃p : ℕ⦄, p.Prime → F.heightIdeal p (n + 1) = ⊤) :
+    F.IsLandweberRegular M ↔
+      ∀ ⦃p : ℕ⦄, p.Prime → IsWeaklyRegular M (F.landweberSequence p n) :=
+  forall₂_congr fun _ hp ↦
+    F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M (hI hp)
+
 /-- If `I₂(F) = ⊤` at every prime `p`, then `F` is Landweber regular on an `R`-module `M` if and
 only if multiplication by every prime `p` is injective on `M`. -/
 theorem isLandweberRegular_iff_of_heightIdeal_two_eq_top (M : Type*) [AddCommGroup M] [Module R M]
     (hI : ∀ ⦃p : ℕ⦄, p.Prime → F.heightIdeal p 2 = ⊤) :
     F.IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
-  refine forall₂_congr fun p hp ↦ ?_
-  rw [F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M (hI hp),
-    landweberSequence_one, isWeaklyRegular_singleton_iff]
+  rw [F.isLandweberRegular_iff_of_heightIdeal_succ_eq_top M hI]
+  simp only [landweberSequence_one, isWeaklyRegular_singleton_iff]
 
 end Comm
 
