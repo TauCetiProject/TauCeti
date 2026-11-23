@@ -182,10 +182,10 @@ end NormExample
 
 section HaarScaling
 
-example {α ε : Type*} [TopologicalSpace α] [MeasurableSpace α]
-    [TopologicalSpace ε] [ENorm ε] {μ : Measure α} {p : ℝ≥0∞} {U : Set α} {f : α → ε} :
-    MemLpLoc p U f ((2 : ℝ≥0∞) • μ) ↔ MemLpLoc p U f μ :=
-  memLpLoc_smul_measure_iff (c := 2) two_ne_zero ENNReal.ofNat_ne_top
+example {α F : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [NormedAddCommGroup F] {μ : Measure α} {p : ℝ≥0∞} {U : Set α} {f : α → F}
+    (hf : MemLpLoc p U f μ) : MemLpLoc p U f ((2 : ℝ≥0∞) • μ) :=
+  hf.of_measure_le_smul ENNReal.ofNat_ne_top le_rfl
 
 example {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E} {p : ℝ≥0∞}
@@ -225,13 +225,13 @@ theorem prodEquivEuclideanSpaceFin2_apply_one (p : ℝ × ℝ) :
 
 /-- Local `Lᵖ` membership on `ℝ × ℝ` (with the supremum norm and product Lebesgue measure) matches
 `EuclideanSpace ℝ (Fin 2)` under `prodEquivEuclideanSpaceFin2`. -/
-theorem memLpLoc_prod_iff_euclideanSpaceFin2 {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
-    {p : ℝ≥0∞} {V : Set (EuclideanSpace ℝ (Fin 2))} {u : EuclideanSpace ℝ (Fin 2) → ε} :
+theorem memLpLoc_prod_iff_euclideanSpaceFin2 {F : Type*} [NormedAddCommGroup F]
+    {p : ℝ≥0∞} {V : Set (EuclideanSpace ℝ (Fin 2))} {u : EuclideanSpace ℝ (Fin 2) → F} :
     MemLpLoc p (prodEquivEuclideanSpaceFin2 ⁻¹' V) (u ∘ prodEquivEuclideanSpaceFin2) volume ↔
       MemLpLoc p V u volume := by
   have : Measure.IsAddHaarMeasure (volume : Measure (ℝ × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  exact prodEquivEuclideanSpaceFin2.memLpLoc_comp_preimage_iff
+  exact prodEquivEuclideanSpaceFin2.memLpLoc_comp_right_iff volume volume
 
 /-- Local Sobolev membership on `ℝ × ℝ` (with the supremum norm and product Lebesgue measure)
 matches `EuclideanSpace ℝ (Fin 2)` under `prodEquivEuclideanSpaceFin2`. -/

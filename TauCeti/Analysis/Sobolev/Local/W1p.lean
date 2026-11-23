@@ -83,9 +83,9 @@ theorem MemWkpLoc.exists_weakDerivStep {u : E → F} (hu : MemWkpLoc p Ω 1 u μ
     ∃ v : WeakDerivStep μ W p (ContinuousLinearMap.id ℝ (Lp F p (μ.restrict W))),
       ⇑(WeakDerivStep.prev _ v) =ᵐ[μ.restrict W] u ∧
       ⇑(WeakDerivStep.weakFDeriv _ v) =ᵐ[μ.restrict W] D := by
-  have huW : MemLp u p (μ.restrict W) := hu.memLpLoc.memLp_of_closure_subset hWc hWΩ
+  have huW : MemLp u p (μ.restrict W) := hu.memLpLoc.memLp_restrict_of_isCompact_closure hWc hWΩ
   have hDW : MemLp D p (μ.restrict W) :=
-    (hu.memLpLoc_of_hasWeakFDerivOn hD).memLp_of_closure_subset hWc hWΩ
+    (hu.memLpLoc_of_hasWeakFDerivOn hD).memLp_restrict_of_isCompact_closure hWc hWΩ
   let base := ContinuousLinearMap.id ℝ (Lp F p (μ.restrict W))
   have hDw : HasWeakFDerivOn μ W (base (huW.toLp u)) (hDW.toLp D) :=
     ((hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ))).congr_ae

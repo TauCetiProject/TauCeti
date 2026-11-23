@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!
 # The degree of a cyclotomic extension of a number field
@@ -144,10 +143,10 @@ root of unity in a field of characteristic zero, then `[ℚ(ζ) : ℚ] = φ m`.
 
 Mathlib's `IsCyclotomicExtension.Rat.finrank` computes this degree for a field that already carries
 an `IsCyclotomicExtension {m} ℚ` instance; the ambient field here is arbitrary, and the instance for
-`ℚ(ζ)` is supplied by `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton`. -/
+`ℚ(ζ)` is supplied by `IsPrimitiveRoot.intermediateField_adjoin_isCyclotomicExtension`. -/
 theorem IsPrimitiveRoot.finrank_adjoin_eq_totient {Ω : Type*} [Field Ω] [CharZero Ω] {m : ℕ}
     [NeZero m] {ζ : Ω} (hζ : IsPrimitiveRoot ζ m) :
     Module.finrank ℚ (IntermediateField.adjoin ℚ {ζ}) = m.totient := by
   have : IsCyclotomicExtension {m} ℚ (IntermediateField.adjoin ℚ {ζ}) :=
-    hζ.isCyclotomicExtension_adjoin_singleton
+    hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   exact IsCyclotomicExtension.Rat.finrank m _

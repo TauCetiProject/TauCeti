@@ -15,7 +15,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 For a base `q > 1` and `‖a‖ = 1`, every zero of the factor `1 - a q^(-s)` has real part zero.
 For `q ≥ 2` and `Re s ≥ 1` its logarithmic derivative has norm at most `log q`.
-These estimates control finite Euler corrections uniformly in the character.
+These estimates control finite Euler corrections uniformly in the character. The unweighted
+factor also has the exact logarithmic derivative `log q / (q ^ s - 1)`; at a real argument
+and a nonnegative real base, its real part is `Real.log q / (q ^ σ - 1)`.
 -/
 
 public section
@@ -24,12 +26,45 @@ open Complex Real
 namespace Complex
 
 /-- The logarithmic derivative of a weighted exponential Euler factor, with total division. -/
-theorem logDeriv_one_sub_mul_cpow_neg {q : ℂ} (hq : q ≠ 0) (a s : ℂ) :
+theorem logDeriv_one_sub_mul_cpow_neg {q : ℂ} (a s : ℂ) :
     logDeriv (fun z : ℂ ↦ 1 - a * q ^ (-z)) s =
       a * q ^ (-s) * log q / (1 - a * q ^ (-s)) := by
-  have hd := (((hasDerivAt_neg s).const_cpow (Or.inl hq)).const_mul a).const_sub 1
-  rw [logDeriv_apply, hd.deriv]
+  rw [logDeriv_apply, deriv_const_sub, deriv_const_mul_field,
+    Complex.deriv_const_cpow differentiable_neg.differentiableAt, deriv_neg]
   ring
+
+/-- A zero base is allowed for every complex coefficient and argument, with total division. -/
+example (a s : ℂ) : logDeriv (fun z : ℂ ↦ 1 - a * (0 : ℂ) ^ (-z)) s = 0 := by
+  simpa only [log_zero, mul_zero, zero_div] using
+    logDeriv_one_sub_mul_cpow_neg (q := 0) a s
+
+/-- An unweighted Euler factor has logarithmic derivative `log q / (q ^ s - 1)`,
+with total division even when the factor vanishes. -/
+theorem logDeriv_one_sub_cpow_neg (q s : ℂ) :
+    logDeriv (fun z : ℂ ↦ 1 - q ^ (-z)) s = log q / (q ^ s - 1) := by
+  have h := logDeriv_one_sub_mul_cpow_neg (q := q) 1 s
+  simp only [one_mul] at h
+  rw [h, cpow_neg]
+  by_cases hq : q = 0
+  · simp only [hq, log_zero, mul_zero, zero_div]
+  by_cases hpow : q ^ s = 1
+  · simp only [hpow, inv_one, sub_self, div_zero]
+  · field_simp [cpow_ne_zero_iff.mpr (.inl hq), sub_ne_zero.mpr hpow]
+
+/-- At a real argument, an unweighted Euler factor with nonnegative real base has the real
+logarithmic derivative `log q / (q ^ σ - 1)`, with total division. -/
+theorem re_logDeriv_one_sub_ofReal_cpow_neg {q : ℝ} (hq : 0 ≤ q) (σ : ℝ) :
+    (logDeriv (fun z : ℂ ↦ 1 - (q : ℂ) ^ (-z)) (σ : ℂ)).re =
+      Real.log q / (q ^ σ - 1) := by
+  rw [logDeriv_one_sub_cpow_neg,
+    ← Complex.ofReal_cpow hq, ← Complex.ofReal_log hq, ← Complex.ofReal_one,
+    ← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.ofReal_re]
+
+-- Base zero is included at every real exponent, with total division also at exponent zero.
+example (σ : ℝ) :
+    (logDeriv (fun z : ℂ ↦ 1 - (0 : ℂ) ^ (-z)) (σ : ℂ)).re = 0 := by
+  simpa only [Complex.ofReal_zero, Real.log_zero, zero_div] using
+    re_logDeriv_one_sub_ofReal_cpow_neg (q := 0) (le_refl 0) σ
 
 /-- A weighted Euler factor with unit-modulus coefficient can vanish only on the imaginary axis. -/
 theorem re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero {q : ℝ} (hq : 1 < q)
@@ -60,7 +95,7 @@ theorem norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le {q : ℝ} (hq : 2 ≤ q)
     have ht := norm_sub_norm_le (1 : ℂ) (a * (q : ℂ) ^ (-s))
     rw [norm_one] at ht
     linarith
-  rw [logDeriv_one_sub_mul_cpow_neg (by exact_mod_cast hq0.ne'), norm_div, norm_mul, hlog]
+  rw [logDeriv_one_sub_mul_cpow_neg, norm_div, norm_mul, hlog]
   apply (div_le_iff₀ (by linarith : 0 < ‖1 - a * (q : ℂ) ^ (-s)‖)).mpr
   have hlog0 : 0 ≤ Real.log q := Real.log_nonneg (by linarith)
   nlinarith [mul_le_mul_of_nonneg_right hterm hlog0,

@@ -342,7 +342,7 @@ private theorem eLpNormWkp_clm_comp_le_max [OpensMeasurableSpace E] {F : Type ma
     [NormedSpace ℝ G] [CompleteSpace G] {f : E → F} (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) μ ≤ ‖A‖ₑ * eLpNormWkp p U k f μ := by
   induction k generalizing F G with
-  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
+  | zero => exact A.eLpNorm_comp_le
   | succ k ih =>
     by_cases hA : A = 0
     · subst hA
@@ -354,7 +354,7 @@ private theorem eLpNormWkp_clm_comp_le_max [OpensMeasurableSpace E] {F : Type ma
     have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
-    · exact MeasureTheory.eLpNorm_clm_comp_le A
+    · exact A.eLpNorm_comp_le
     · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
       refine le_iInf fun D => ?_
       rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
@@ -370,7 +370,7 @@ norm. -/
 theorem eLpNormWkp_clm_comp_le [OpensMeasurableSpace E] [CompleteSpace G] (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) μ ≤ ‖A‖ₑ * eLpNormWkp p U k f μ := by
   cases k with
-  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
+  | zero => exact A.eLpNorm_comp_le
   | succ k =>
     by_cases hA : A = 0
     · subst hA
@@ -382,7 +382,7 @@ theorem eLpNormWkp_clm_comp_le [OpensMeasurableSpace E] [CompleteSpace G] (A : F
     have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
-    · exact MeasureTheory.eLpNorm_clm_comp_le A
+    · exact A.eLpNorm_comp_le
     · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
       refine le_iInf fun D => ?_
       rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]

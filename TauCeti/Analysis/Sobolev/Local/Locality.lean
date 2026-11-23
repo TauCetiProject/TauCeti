@@ -64,9 +64,8 @@ namespace TauCeti
 
 section MemLpLoc
 
-variable {α ε : Type*} [TopologicalSpace α] [RegularSpace α] [MeasurableSpace α]
-  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε]
-  {μ : Measure α} {p : ℝ≥0∞} {U : Set α} {f : α → ε}
+variable {α F : Type*} [TopologicalSpace α] [RegularSpace α] [MeasurableSpace α]
+  [NormedAddCommGroup F] {μ : Measure α} {p : ℝ≥0∞} {U : Set α} {f : α → F}
 
 /-- Local `Lᵖ` membership is a local property: on any regular space, it holds on `U` exactly when
 every point of `U` has a neighbourhood within `U` on which it holds. -/

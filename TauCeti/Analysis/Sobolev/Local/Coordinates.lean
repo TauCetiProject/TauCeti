@@ -66,7 +66,8 @@ theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
     exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
   · intro h
     have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) μ :=
-      MemLpLoc.sum Finset.univ fun i _ => (h i).smul_const (b i)
+      MemLpLoc.sum Finset.univ fun i _ =>
+        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
 
 end MemLpLoc

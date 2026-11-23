@@ -10,14 +10,16 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
-# Lipschitz maps are in every local `W^{1,p}` class
+# Lipschitz maps and maps with Lipschitz derivative in local Sobolev classes
 
-A globally Lipschitz map from a finite-dimensional real normed space `E` into a finite-dimensional
-real normed space `F` is in the local class `W^{1,p}` on every set, for every exponent and every
-additive Haar measure (`LipschitzWith.memWkpLoc_one`). More generally, a map locally Lipschitz on
-an open set `Ω` lies in `W^{1,p}_loc(Ω; F)` for every exponent (`LocallyLipschitzOn.memWkpLoc_one`).
-By Rademacher's theorem its Fréchet derivative is a weak derivative, and that derivative is bounded
-by the local Lipschitz constant on compact subsets.
+A map from a finite-dimensional real normed space `E` into a finite-dimensional real normed space
+`F` which is locally Lipschitz on an open set `Ω` is in the local class `W^{1,p}` there, for every
+exponent and every additive Haar measure (`LocallyLipschitzOn.memWkpLoc_one`). By Rademacher's
+theorem its Fréchet derivative is a weak derivative, and that derivative is bounded near each point
+by a local Lipschitz constant. A globally Lipschitz map is therefore in `W^{1,p}` on every set
+(`LipschitzWith.memWkpLoc_one`), and a differentiable map whose derivative is locally Lipschitz is
+in `W^{2,p}` (`DifferentiableOn.memWkpLoc_two_of_locallyLipschitzOn_fderiv`): it is `C^{1,1}`, hence
+`W^{2,∞}`.
 
 ## References
 
@@ -29,7 +31,7 @@ by the local Lipschitz constant on compact subsets.
 
 public section
 
-open MeasureTheory TopologicalSpace Filter Metric
+open MeasureTheory TopologicalSpace Filter Set
 open scoped ENNReal
 
 namespace TauCeti
@@ -38,36 +40,40 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {U : Set E}
 
+/-- A map from a finite-dimensional real normed space into a finite-dimensional real normed space
+which is locally Lipschitz on an open set `Ω` is in the local class `W^{1,p}` on `Ω`, for every
+exponent and every additive Haar measure: its Fréchet derivative is a weak derivative, bounded near
+each point of `Ω` by a local Lipschitz constant. -/
+theorem _root_.LocallyLipschitzOn.memWkpLoc_one [FiniteDimensional ℝ F] {Ω : Opens E}
+    {u : E → F} (hu : LocallyLipschitzOn (Ω : Set E) u) : MemWkpLoc p Ω 1 u μ := by
+  refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hu.continuousOn.memLpLoc, fderiv ℝ u,
+    hu.hasWeakFDerivOn_fderiv (μ := μ), memWkpLoc_zero_iff.2 <|
+      memLpLoc_of_forall_eventually_norm_le (measurable_fderiv ℝ u).aestronglyMeasurable
+        fun z hz => ?_⟩
+  obtain ⟨K, t, ht, hK⟩ := hu hz
+  rw [nhdsWithin_eq_nhds.2 (Ω.isOpen.mem_nhds hz)] at ht
+  exact ⟨K, (eventually_mem_nhds_iff.2 ht).mono fun _ hw => norm_fderiv_le_of_lipschitzOn ℝ hw hK⟩
+
 /-- A globally Lipschitz map from a finite-dimensional real normed space into a finite-dimensional
 real normed space is in the local class `W^{1,p}` on every set, for every exponent: its Fréchet
 derivative is a weak derivative bounded by the Lipschitz constant. -/
 theorem _root_.LipschitzWith.memWkpLoc_one [FiniteDimensional ℝ F] {K : NNReal} {u : E → F}
-    (hu : LipschitzWith K u) : MemWkpLoc p U 1 u μ := by
-  refine memWkpLoc_succ_iff.2 ⟨hu.continuous.continuousOn.memLpLoc, fderiv ℝ u, ?_,
-    memWkpLoc_zero_iff.2 ?_⟩
-  · have hΩ : LocallyLipschitzOn ((⊤ : Opens E) : Set E) u :=
-      hu.locallyLipschitz.locallyLipschitzOn
-    exact (hΩ.hasWeakFDerivOn_fderiv (μ := μ)).mono le_top
-  · refine memLpLoc_iff.2 fun L _ hL => ?_
-    have : IsFiniteMeasure (μ.restrict L) := ⟨by simpa using hL.measure_lt_top⟩
-    exact MemLp.of_bound (measurable_fderiv ℝ u).aestronglyMeasurable K
-      (Eventually.of_forall fun _ => norm_fderiv_le_of_lipschitz ℝ hu)
+    (hu : LipschitzWith K u) : MemWkpLoc p U 1 u μ :=
+  (hu.locallyLipschitz.locallyLipschitzOn.memWkpLoc_one (Ω := ⊤) (μ := μ)).mono <| by
+    rw [Opens.coe_top]
+    exact subset_univ U
 
-/-- A map locally Lipschitz on an open set `Ω` of a finite-dimensional real normed space, with
-values in a finite-dimensional real normed space, lies in `W^{1,p}_loc(Ω; F)` for every exponent:
-its Fréchet derivative is a weak derivative and is bounded on every compact subset of `Ω`. -/
-theorem _root_.LocallyLipschitzOn.memWkpLoc_one [FiniteDimensional ℝ F] {Ω : Opens E}
-    {u : E → F} (hu : LocallyLipschitzOn (Ω : Set E) u) : MemWkpLoc p Ω 1 u μ := by
-  refine hu.continuousOn.memWkpLoc_one_iff_of_isOpen.2
-    ⟨fderiv ℝ u, hu.hasWeakFDerivOn_fderiv (μ := μ), memLpLoc_iff.2 fun L hLΩ hL => ?_⟩
-  obtain ⟨δ, hδ, hδΩ⟩ := hL.exists_cthickening_subset_open Ω.isOpen hLΩ
-  obtain ⟨C, hC⟩ := (hu.mono hδΩ).exists_lipschitzOnWith_of_compact hL.cthickening
-  have : IsFiniteMeasure (μ.restrict L) := ⟨by simpa using hL.measure_lt_top⟩
-  refine MemLp.of_bound (measurable_fderiv ℝ u).aestronglyMeasurable C
-    ((ae_restrict_iff' hL.measurableSet).2 (Eventually.of_forall fun x hx => ?_))
-  have hmem : cthickening δ L ∈ nhds x :=
-    Filter.mem_of_superset (isOpen_thickening.mem_nhds (self_subset_thickening hδ _ hx))
-      (thickening_subset_cthickening _ _)
-  exact norm_fderiv_le_of_lipschitzOn ℝ hmem hC
+/-- A map from a finite-dimensional real normed space into a finite-dimensional real normed space
+which is differentiable on an open set `Ω`, with derivative locally Lipschitz on `Ω`, is in the
+local class `W^{2,p}` on `Ω`, for every exponent: its first weak derivative is its classical
+derivative, and its second weak derivative is the almost-everywhere derivative of that
+derivative. -/
+theorem _root_.DifferentiableOn.memWkpLoc_two_of_locallyLipschitzOn_fderiv [FiniteDimensional ℝ F]
+    {Ω : Opens E} {u : E → F} (hu : DifferentiableOn ℝ u Ω)
+    (hDu : LocallyLipschitzOn (Ω : Set E) (fderiv ℝ u)) : MemWkpLoc p Ω 2 u μ := by
+  have hC1 : ContDiffOn ℝ 1 u Ω := (contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen).2
+    ⟨hu, by simp, contDiffOn_zero.2 hDu.continuousOn⟩
+  exact memWkpLoc_succ_iff_of_isOpen.2
+    ⟨hu.continuousOn.memLpLoc, fderiv ℝ u, hC1.hasWeakFDerivOn_fderiv, hDu.memWkpLoc_one⟩
 
 end TauCeti

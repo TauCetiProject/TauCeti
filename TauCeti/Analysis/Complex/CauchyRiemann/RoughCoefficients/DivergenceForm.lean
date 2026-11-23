@@ -216,14 +216,16 @@ private theorem IsWeakCRSolution.integral_crPairing_of_contDiff
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hξ1)
   have hb₂ : Integrable (fun z => χ z • J z (ξ z)) :=
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hJξ)
-  have hP := (crPairing v).integrable_of_bilin_of_continuousOn ha hK
-    (fun z hz => crPairingField_eq_zero_of_notMem_tsupport χ hz) hA.continuous.continuousOn
+  have hP := (crPairing v).integrable_of_bilin_of_continuousOn ha.integrableOn hK
+    (.of_forall fun z hz => crPairingField_eq_zero_of_notMem_tsupport χ hz)
+    hA.continuous.continuousOn
   have hA' (e : ℂ) : ContinuousOn (fun z => fderiv ℝ A z e) (tsupport (χ : ℂ → ℝ)) :=
     ((hA.continuous_fderiv (by simp)).clm_apply continuous_const).continuousOn
-  have hQ₁ := (crPairing v).integrable_of_bilin_of_continuousOn hb₁ hK
-    (fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz) (hA' 1)
-  have hQ₂ := (crPairing v).integrable_of_bilin_of_continuousOn hb₂ hK
-    (fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz) (hA' I)
+  have hQ₁ := (crPairing v).integrable_of_bilin_of_continuousOn hb₁.integrableOn hK
+    (.of_forall fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz) (hA' 1)
+  have hQ₂ := (crPairing v).integrable_of_bilin_of_continuousOn hb₂.integrableOn hK
+    (.of_forall fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz)
+    (hA' I)
   refine ⟨hP, hQ₁, hQ₂, ?_⟩
   obtain ⟨Φ, hpt⟩ := exists_testFunction_inner_crFormalAdjoint_sub_inner (J := J) (DJ := DJ)
     (S := S) (ξ := ξ) (η := η) χ v hA
@@ -327,15 +329,15 @@ private theorem IsWeakCRSolution.integral_crPairing_coeff
     hball z hz 0 hδ.le (mem_closedBall_self le_rfl)
   have hUm : MeasurableSet (U : Set ℂ) := U.isOpen.measurableSet
   have hJpU : MemLp J p (volume.restrict U) :=
-    hc.memLpLoc_coeff.memLp_of_closure_subset hUc hUΩ
+    hc.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hUc hUΩ
   have hDJU : MemLp DJ p (volume.restrict U) :=
-    hc.memLpLoc_deriv.memLp_of_closure_subset hUc hUΩ
+    hc.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hUc hUΩ
   have hg : MemLp ((U : Set ℂ).indicator J) ⊤ volume :=
     (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
-      (hJ.memLp_of_closure_subset hUc hUΩ)
+      (hJ.memLp_restrict_of_isCompact_closure hUc hUΩ)
   have hDg (e : ℂ) : MemLp ((U : Set ℂ).indicator (fun z => DJ z e)) p volume :=
     (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
-      ((hc.memLpLoc_deriv_apply e).memLp_of_closure_subset hUc hUΩ)
+      ((hc.memLpLoc_deriv_apply e).memLp_restrict_of_isCompact_closure hUc hUΩ)
   have hwJ : HasWeakFDerivOn volume U J DJ :=
     hc.hasWeakFDerivOn.mono fun x hx => hUΩ (subset_closure hx)
   have key := integral_add_eq_zero_of_forall_normed_convolution (crPairing v)
