@@ -340,25 +340,28 @@ theorem quarticGluingLate_neg (p r q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) :
 
 /-! ### Recovering the gluing parameter and the time coordinates -/
 
+/-- The time coordinate of `|c * intervalBaseOrbit 1 t|` is `t` when `c = ±1`. -/
+private theorem intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit {c : ℝ} (hc : c = -1 ∨ c = 1)
+    (t : ℝ) : intervalBaseTimeCoordinate |c * intervalBaseOrbit 1 t| = t := by
+  have hc' : |c| = 1 := by rcases hc with h | h <;> simp [h]
+  rw [abs_mul, hc', one_mul, abs_of_pos (intervalBaseOrbit_mem_Ioo 1 t).1,
+    intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul]
+
 /-- On a coordinate moving between `p` and `r` towards `q i = ±1`, the time coordinate is
 recovered from the early point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingEarly {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i ≠ r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingEarly p r q ρ u i| = u i := by
-  have hq' : |q i| = 1 := by rcases hq with h | h <;> simp [h]
-  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_right hpr, abs_mul, hq', one_mul,
-    abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1, intervalBaseTimeCoordinate_intervalBaseOrbit,
-    one_mul]
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_right hpr]
+  exact intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq (u i)
 
 /-- On a coordinate moving between `r` and `q` towards `q i = ±1`, the time coordinate is
 recovered from the late point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingLate {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingLate p r q ρ u i| = u i := by
-  have hq' : |q i| = 1 := by rcases hq with h | h <;> simp [h]
-  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr, abs_mul, hq', one_mul,
-    abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1, intervalBaseTimeCoordinate_intervalBaseOrbit,
-    one_mul]
+  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr]
+  exact intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq (u i)
 
 /-- On a coordinate `i` moving between `r` and `q` towards `q i = ±1`, the gluing parameter is
 recovered from the early point `y` and the time coordinate as `e^{-u i} q i y i / √(1 - y i²)`. -/
@@ -459,28 +462,19 @@ theorem contDiff_quarticGluingLate [Fintype ι] {n : WithTop ℕ∞} (p r q : ι
 jointly, including at the break `ρ = 0`. -/
 theorem continuous_quarticGluingEarly (p r q : ι → ℝ) :
     Continuous fun x : ℝ × (ι → ℝ) ↦ quarticGluingEarly p r q x.1 x.2 :=
-  continuous_pi fun i ↦ by
-    have hx : Continuous fun x : ℝ × (ι → ℝ) ↦ Real.exp (x.2 i) * x.1 := by fun_prop
-    simp only [quarticGluingEarly_apply]
-    split_ifs
-    · exact continuous_const
-    · exact continuous_const.mul
-        (hx.mul ((contDiff_id.inv_sqrt_one_add_sq (n := 0)).continuous.comp hx))
-    · exact continuous_const.mul
-        ((contDiff_intervalBaseOrbit 1 (n := 0)).continuous.comp (by fun_prop))
+  continuous_pi fun i ↦
+    ((contDiff_quarticGluingEarly_apply (n := 0) p r q i (u := fun y : ℝ × ℝ ↦ fun _ ↦ y.2)
+      contDiff_fst contDiff_snd).continuous.comp
+        (f := fun x : ℝ × (ι → ℝ) ↦ (x.1, x.2 i)) (by fun_prop) :)
 
 /-- The late point depends continuously on the gluing parameter and the time coordinates
 jointly, including at the break `ρ = 0`. -/
 theorem continuous_quarticGluingLate (p r q : ι → ℝ) :
     Continuous fun x : ℝ × (ι → ℝ) ↦ quarticGluingLate p r q x.1 x.2 :=
-  continuous_pi fun i ↦ by
-    have hy : Continuous fun x : ℝ × (ι → ℝ) ↦ Real.exp (-x.2 i) * x.1 := by fun_prop
-    simp only [quarticGluingLate_apply]
-    split_ifs
-    · exact continuous_const
-    · exact continuous_const.mul
-        ((contDiff_intervalBaseOrbit 1 (n := 0)).continuous.comp (by fun_prop))
-    · exact continuous_const.mul ((contDiff_id.inv_sqrt_one_add_sq (n := 0)).continuous.comp hy)
+  continuous_pi fun i ↦
+    ((contDiff_quarticGluingLate_apply (n := 0) p r q i (u := fun y : ℝ × ℝ ↦ fun _ ↦ y.2)
+      contDiff_fst contDiff_snd).continuous.comp
+        (f := fun x : ℝ × (ι → ℝ) ↦ (x.1, x.2 i)) (by fun_prop) :)
 
 /-- **Convergence to the broken trajectory, early side.** As the gluing parameter tends to `0`,
 the early point tends to the point with time coordinates `u` on the first piece. -/
