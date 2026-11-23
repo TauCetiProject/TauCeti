@@ -569,6 +569,17 @@ theorem coe_inducedDifferential_ofInducedDifferential
       D ⟨φ, inducedModule_ofInducedDifferential hd hidem hι D hD hDD ▸ φ.property⟩ :=
   boxDifferential_ofInducedDifferential_of_mem hd hidem hι D hD hDD _
 
+/-- The induced differential of the type `D` structure of `D` is `D`, as an `R`-linear map,
+transported along `TauCeti.TypeDStructure.inducedModule_ofInducedDifferential`. -/
+theorem inducedDifferential_ofInducedDifferential :
+    (N.ofInducedDifferential hd hidem hι D hD hDD).inducedDifferential hd hι =
+      ((LinearEquiv.ofEq _ _ (inducedModule_ofInducedDifferential hd hidem hι D hD hDD)
+        ).symm.restrictScalars R).toLinearMap ∘ₗ D ∘ₗ
+        ((LinearEquiv.ofEq _ _ (inducedModule_ofInducedDifferential hd hidem hι D hD hDD)
+          ).restrictScalars R).toLinearMap :=
+  LinearMap.ext fun φ => Subtype.ext (coe_inducedDifferential_ofInducedDifferential hd hidem hι
+    D hD hDD φ)
+
 /-- **The universal property of `ofInducedDifferential`**: it is the only type `D` structure with
 the idempotents of `N` whose box tensor differential is `D`. -/
 theorem eq_ofInducedDifferential_iff {N' : TypeDStructure d ι X} :
