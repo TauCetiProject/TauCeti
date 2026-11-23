@@ -9,8 +9,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Over
 
-import TauCeti.CategoryTheory.MorphismProperty.Over
-
 /-!
 # Zariski refinements by finite-type schemes
 
@@ -61,11 +59,8 @@ lemma exists_finiteType_zariski_refinement (S : Scheme.{u}) [QuasiSeparatedSpace
           (fun j ↦ (MorphismProperty.Over.forget _ ⊤ S).map (g j))) =
         𝒜.openCover.sieve₀ := by
       rw [Sieve.overEquiv_ofArrows]
-      simp only [MorphismProperty.Over.forget_obj_left,
-        ← CategoryTheory.Over.forget_map, ← Functor.comp_map,
-        MorphismProperty.Over.forget_comp_forget_map]
-      simp only [CategoryTheory.Over.forget_map]
-      -- The source of each `g j` depends on `Z j`, so reduce the affine family together.
+      -- Forgetting preserves the object and arrow projections definitionally. Reduce the
+      -- dependent sources `Z j` and the affine arrows `g j` together.
       rfl
     rw [Presieve.map_ofArrows, ← Sieve.generate_le_iff]
     apply (Sieve.overEquiv _).le_iff_le.mp

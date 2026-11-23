@@ -14,7 +14,6 @@ public import TauCeti.CategoryTheory.Sites.DenseSubsite.InducedTopology
 import Mathlib.CategoryTheory.MorphismProperty.CommaSites
 import TauCeti.AlgebraicGeometry.Sites.Zariski.FiniteType
 import TauCeti.CategoryTheory.Comma.Over
-import TauCeti.CategoryTheory.MorphismProperty.Over
 import TauCeti.CategoryTheory.Sites.CoverPreserving
 
 /-!
@@ -276,8 +275,8 @@ theorem ofArrows_mem_finiteTypeHTopology_iff
       Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈ hTopology X.left := by
   rw [mem_finiteTypeHTopology_iff, Sieve.functorPushforward_ofArrows,
     GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
-  simp only [MorphismProperty.Over.forget_obj_left, ← CategoryTheory.Over.forget_map,
-    ← Functor.comp_map, MorphismProperty.Over.forget_comp_forget_map]
+  -- Forgetting the restricted over category preserves both the object and arrow projections
+  -- definitionally; reducing them together preserves the dependent source types.
   rfl
 
 /-- Change of base along any scheme morphism preserves the generators of the finite-type

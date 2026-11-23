@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Presentations and iterated slices of a restricted over category
