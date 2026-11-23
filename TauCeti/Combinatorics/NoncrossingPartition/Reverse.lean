@@ -67,10 +67,10 @@ private theorem isNoncrossing_comap_copy_revPerm {P : Finpartition (univ : Finse
 def reverse (n : ℕ) :
     NoncrossingPartition (univ : Finset (Fin n)) ≃o NoncrossingPartition (univ : Finset (Fin n))
     where
-  toFun π := ⟨(π.1.copy (image_univ_equiv Fin.revPerm).symm).comap Fin.revPerm,
-    isNoncrossing_comap_copy_revPerm π.2⟩
-  invFun π := ⟨(π.1.copy (image_univ_equiv Fin.revPerm).symm).comap Fin.revPerm,
-    isNoncrossing_comap_copy_revPerm π.2⟩
+  toFun π := ⟨(π.val.copy (image_univ_equiv Fin.revPerm).symm).comap Fin.revPerm,
+    isNoncrossing_comap_copy_revPerm π.property⟩
+  invFun π := ⟨(π.val.copy (image_univ_equiv Fin.revPerm).symm).comap Fin.revPerm,
+    isNoncrossing_comap_copy_revPerm π.property⟩
   left_inv π := Subtype.ext <| Finpartition.ext <| by
     simp [Finpartition.parts_comap_copy_equiv, image_image, map_eq_image, Function.comp_def]
   right_inv π := Subtype.ext <| Finpartition.ext <| by
@@ -81,8 +81,8 @@ def reverse (n : ℕ) :
 `Fin.rev`. -/
 @[simp]
 theorem parts_reverse (π : NoncrossingPartition (univ : Finset (Fin n))) :
-    (reverse n π).1.parts = π.1.parts.image fun B => B.map Fin.revPerm.toEmbedding :=
-  Finpartition.parts_comap_copy_equiv π.1 Fin.revPerm
+    (reverse n π).val.parts = π.val.parts.image fun B => B.map Fin.revPerm.toEmbedding :=
+  Finpartition.parts_comap_copy_equiv π.val Fin.revPerm
 
 /-- The reversal of noncrossing partitions is its own inverse. -/
 @[simp]
@@ -100,7 +100,7 @@ theorem reverse_reverse (π : NoncrossingPartition (univ : Finset (Fin n))) :
 `π` evaluated at the reversed parts `Fin.rev '' B`. -/
 theorem prod_parts_reverse {M : Type*} [CommMonoid M]
     (π : NoncrossingPartition (univ : Finset (Fin n))) (g : Finset (Fin n) → M) :
-    ∏ B ∈ (reverse n π).1.parts, g B = ∏ B ∈ π.1.parts, g (B.map Fin.revPerm.toEmbedding) := by
+    ∏ B ∈ (reverse n π).val.parts, g B = ∏ B ∈ π.val.parts, g (B.map Fin.revPerm.toEmbedding) := by
   rw [parts_reverse, prod_image fun B _ C _ h => map_injective _ h]
 
 end TauCeti.NoncrossingPartition

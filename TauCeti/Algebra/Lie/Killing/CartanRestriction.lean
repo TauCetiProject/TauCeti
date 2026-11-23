@@ -63,10 +63,10 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
 * `TauCeti.map_dualMap_killingSymmetricEquiv`: **the restriction square.** Restricting a polynomial
   function on `L` to `H` along the inclusion commutes with the Killing identifications, the
   restriction on the `S(L)` side being `lieCartanRestriction H`.
-* `LieSubalgebra.lift_eval_killingSymmetricEquiv`: the same square evaluated at a point `z ∈ H`, the
-  restriction being read at the weight dual to `z`.
 * `TauCeti.lift_lieCartanRestriction`: the value of `lieCartanRestriction H p` at a weight `λ` is
   the value of `p` at `TauCeti.killingExtend λ`.
+* `TauCeti.lift_eval_killingSymmetricEquiv_coe`: evaluating `killingSymmetricEquiv K L r` at a
+  Cartan element `z : H` agrees with evaluating `lieCartanRestriction H r` at `cartanEquivDual H z`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
 * `TauCeti.lieCartanRestriction_surjective`: the restriction is onto, split by the map induced by
   the inclusion `H → L`.
@@ -158,7 +158,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpace {χ : H → K}
   refine ((eq_killingCartanProjection_iff H).mpr fun h ↦ ?_).symm
   rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply, traceForm_comm]
   exact (killingForm_eq_zero_of_mem_zeroRoot_mem_posFitting K L H
-    (le_zeroRootSubalgebra K L H h.2) hmem).symm
+    (le_zeroRootSubalgebra K L H h.property) hmem).symm
 
 variable {H} in
 /-- **The projection is the root-space projection at the zero weight**: when `H` splits `L`, `π` is
@@ -186,7 +186,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x
   have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
     rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
     exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
-      (Finset.mem_filter.mp (α : H.root).2).2 hy
+      (Finset.mem_filter.mp (α : H.root).property).2 hy
   exact hle hx
 
 variable {H} (b : (IsKilling.rootSystem H).Base)
@@ -278,16 +278,6 @@ theorem _root_.LieSubalgebra.lift_eval_map_cartanEquivDual (z : H) (p : Symmetri
       SymmetricAlgebra.lift (cartanEquivDual H z) p :=
   AlgHom.congr_fun (H.lift_eval_comp_map_cartanEquivDual z) p
 
-/-- **Evaluation at a point of `H`.** Evaluating the polynomial function on `L` that corresponds to
-`p ∈ S(L)` under the Killing form at a point `z ∈ H` gives the value of the restriction
-`lieCartanRestriction H p` at the weight `κ(z, ·)` dual to `z`. -/
-theorem _root_.LieSubalgebra.lift_eval_killingSymmetricEquiv (z : H) (p : SymmetricAlgebra K L) :
-    SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L p) =
-      SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H p) := by
-  -- evaluating at `z ∈ L` is evaluating the restriction to `H` at `z ∈ H`
-  refine (SymmetricAlgebra.lift_eval_map_dualMap K H.incl.toLinearMap z _).symm.trans ?_
-  rw [map_dualMap_killingSymmetricEquiv, H.lift_eval_map_cartanEquivDual]
-
 /-- **The restriction, read on the weights.** Viewing `S(L)` as the polynomial functions on `L*`
 and `S(H)` as the polynomial functions on the weights `H*`, the value of `lieCartanRestriction H p`
 at a weight `λ` is the value of `p` at the extension `TauCeti.killingExtend λ` of `λ` to `L`. -/
@@ -299,5 +289,16 @@ theorem lift_lieCartanRestriction (lam : Dual K H) (p : SymmetricAlgebra K L) :
   congr 1
   refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
   simp [killingExtend_eq_comp_killingCartanProjection H]
+
+variable {H} in
+/-- Evaluating `killingSymmetricEquiv K L r` at `(z : L)` for `z : H` agrees with evaluating the
+Cartan restriction `lieCartanRestriction H r` at `cartanEquivDual H z`. -/
+theorem lift_eval_killingSymmetricEquiv_coe (z : H) (r : SymmetricAlgebra K L) :
+    SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L r) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H r) := by
+  rw [lift_lieCartanRestriction, killingSymmetricEquiv_apply, ← AlgHom.comp_apply]
+  congr 1
+  refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
+  simp [killingExtend_apply, traceForm_comm K L L x (z : L)]
 
 end TauCeti

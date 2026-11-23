@@ -37,6 +37,7 @@ Tau Ceti formalization in `TauCeti/Algebra/Lie/UniversalEnveloping/Functoriality
 * `SymmetricAlgebra.map_apply_ι`: evaluation of the induced map on a canonical generator.
 * `SymmetricAlgebra.map_unique`: characterization of the induced map by its generators.
 * `SymmetricAlgebra.map_id` and `SymmetricAlgebra.map_comp_map`: functoriality laws.
+* `SymmetricAlgebra.algebraMapInv_map`: the induced maps preserve the augmentation.
 * `SymmetricAlgebra.lift_comp_map`: lifting along an induced map lifts the composite.
 * `SymmetricAlgebra.lift_eval_comp_map_dualMap`: evaluating a polynomial function pulled back
   along the transpose of `f` at `z` is evaluating it at `f z`.
@@ -126,6 +127,17 @@ theorem lift_eval_comp_map_dualMap (f : M →ₗ[R] N) (z : M) :
 theorem lift_eval_map_dualMap (f : M →ₗ[R] N) (z : M) (p : SymmetricAlgebra R (Module.Dual R N)) :
     lift (Module.Dual.eval R M z) (map R f.dualMap p) = lift (Module.Dual.eval R N (f z)) p := by
   simp
+
+/-- A map of symmetric algebras induced by a linear map preserves the augmentation
+`SymmetricAlgebra.algebraMapInv`: it does not change constant terms. -/
+@[simp]
+theorem algebraMapInv_map (f : M →ₗ[R] N) (a : SymmetricAlgebra R M) :
+    algebraMapInv (map R f a) = algebraMapInv a := by
+  have h : (algebraMapInv : SymmetricAlgebra R N →ₐ[R] R).comp (map R f) = algebraMapInv := by
+    apply algHom_ext
+    ext m
+    simp [algebraMapInv_ι]
+  exact AlgHom.congr_fun h a
 
 /-- A left inverse of linear maps induces a left inverse of the corresponding symmetric-algebra
 maps. -/

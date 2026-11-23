@@ -72,8 +72,8 @@ theorem torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph [ContinuousAdd E]
   -- Align `Subtype.val` on `(TopCat.ofHom _).fiber _` with `{w | torusFamilyProjection _ w = _}`.
   change torusFamilyBaseChangeMap P f
       (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous)
-        (Quotient.mk _ v)).1 =
-    (torusFamilyFiberHomeomorph P (f z) hcont (Quotient.mk _ v)).1
+        (Quotient.mk _ v)).val =
+    (torusFamilyFiberHomeomorph P (f z) hcont (Quotient.mk _ v)).val
   rw [coe_torusFamilyFiberHomeomorph, coe_torusFamilyFiberHomeomorph,
     torusFamilyFiberMap_mk, torusFamilyFiberMap_mk, torusFamilyBaseChangeMap_mk]
 

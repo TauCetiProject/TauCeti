@@ -61,6 +61,8 @@ namespace TauCeti
 
 namespace FiniteField
 
+section Fintype
+
 variable (F : Type*) [Field F] [Fintype F]
 
 section NoZeroDivisors
@@ -81,11 +83,9 @@ theorem pow_card_pow_natDegree_minpoly {x : E} (hx : IsIntegral F x) :
 
 end NoZeroDivisors
 
-variable {E : Type*} [Field E] [Algebra F E]
-
 section Algebraic
 
-variable [Algebra.IsAlgebraic F E]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
 
 -- The inclusion behind `TauCeti.FiniteField.orbit_eq_rootSet_minpoly`, needed first to know that
 -- the orbit is finite.
@@ -220,7 +220,7 @@ theorem mem_orbit_iff_exists_pow_card_pow {x y : E} :
   set φ := _root_.FiniteField.frobeniusAlgEquivOfAlgebraic F E with hφ
   refine ⟨?_, ?_⟩
   · rintro ⟨g, rfl⟩
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp g.property
     have hx : IsIntegral F x := (Algebra.IsAlgebraic.isAlgebraic (R := F) x).isIntegral
     set m := (minpoly F x).natDegree
     have hm0 : 0 < m := minpoly.natDegree_pos hx
@@ -247,6 +247,8 @@ theorem mem_orbit_iff_exists_pow_card_pow {x y : E} :
     exact pow_card_pow_mem_orbit F x n
 
 end Algebraic
+
+end Fintype
 
 section Finite
 

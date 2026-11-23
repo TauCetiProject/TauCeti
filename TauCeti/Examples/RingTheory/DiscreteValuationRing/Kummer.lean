@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
-import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 
 /-!
 # Tests for Kummer extensions of a discrete valuation ring
@@ -16,8 +16,8 @@ For a height-one prime `v` of `ℤ` containing a prime number `p`, the localizat
 `ℚ` and uniformizer `p`
 (`IsDedekindDomain.HeightOneSpectrum.irreducible_natCast_localizationAtPrime`).
 A field `L` generated over `ℚ` by a square root `α` of `p` is `ℚ(√p)`, and the results of
-`TauCeti.RingTheory.DiscreteValuationRing.Kummer` (Stacks, Lemma 15.116.2) compute the integral
-closure of `ℤ_(p)` in it.
+`TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic` (Stacks, Lemma 15.116.2) compute the
+integral closure of `ℤ_(p)` in it.
 
 * For `p = 3` the integral closure is `ℤ_(3)[√3]`, a discrete valuation ring whose maximal ideal
   has ramification index `2` over `ℤ_(3)`.

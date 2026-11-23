@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.MittagLeffler
+public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
 # Čech cohomology of the structure sheaf, a point skyscraper and the zero sheaf
@@ -29,6 +32,10 @@ empty.
 * **The zero sheaf.** A presheaf all of whose sections are zero has vanishing Čech cohomology in
   every degree (`TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`). This is what treating
   the support of `ℂ_x` as empty would produce, and it disagrees with `H⁰(ℂ_x) = ℂ`.
+* **The Mittag-Leffler obstruction on `ℙ¹`.** The principal parts of `1/z` relative to the zero
+  divisor are a nonzero Mittag-Leffler distribution, and their obstruction
+  `TauCeti.RiemannSurface.mittagLefflerConnecting` vanishes because `1/z` is a global meromorphic
+  function realizing them.
 
 No compactness, connectedness or separation is used for the skyscraper and zero-sheaf
 statements.
@@ -46,6 +53,8 @@ statements.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_of_isZero_sections`: a presheaf with zero
   sections has `dim Hⁿ = 0` for every `n`. The vanishing itself is
   `TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`.
+* `TauCeti.RiemannSurface.MeromorphicFunction.principalParts_coordinate_inv_ne_zero`: on `ℙ¹`,
+  the principal parts of `1/z` relative to the zero divisor are nonzero.
 
 ## References
 
@@ -136,5 +145,27 @@ theorem finrank_cechCohomology_of_isZero_sections
     (P : (Opens (TopCat.of X))ᵒᵖ ⥤ ModuleCat.{0} ℂ) (hP : ∀ U, IsZero (P.obj U)) (n : ℕ) :
     Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj P) = 0 :=
   ModuleCat.finrank_eq_zero_of_isZero (isZero_cechCohomology_obj_of_isZero _ _ n _ hP)
+
+section Sphere
+
+open MeromorphicFunction
+
+/-- On `ℙ¹`, the principal parts of `1/z` relative to the zero divisor are nonzero, since `1/z`
+has a pole at the origin. -/
+theorem MeromorphicFunction.principalParts_coordinate_inv_ne_zero :
+    principalParts (0 : WeilDivisor (OnePoint ℂ)) coordinate⁻¹ ≠ 0 := fun h ↦ by
+  have h0 := principalParts_apply_eq_zero_iff.1 (DFinsupp.ext_iff.1 h ((0 : ℂ) : OnePoint ℂ))
+  rw [AddValuation.map_inv, order_coordinate_zero] at h0
+  exact absurd h0 (by decide)
+
+/-- On `ℙ¹`, the nonzero Mittag-Leffler distribution of principal parts of `1/z` has zero
+Mittag-Leffler obstruction. -/
+example :
+    principalParts (0 : WeilDivisor (OnePoint ℂ)) coordinate⁻¹ ≠ 0 ∧
+      mittagLefflerConnecting 0 (principalParts (0 : WeilDivisor (OnePoint ℂ)) coordinate⁻¹) =
+        0 :=
+  ⟨principalParts_coordinate_inv_ne_zero, mittagLefflerConnecting_principalParts _⟩
+
+end Sphere
 
 end TauCeti.RiemannSurface
