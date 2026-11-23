@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.EMetricSpace.Lipschitz
@@ -16,10 +17,12 @@ import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
@@ -61,6 +64,9 @@ integrable on the product of a half-line with `V`.
 * `TauCeti.memLp_norm_fderiv_of_lipschitzWith`,
   `TauCeti.integrable_norm_fderiv_sq_of_lipschitzWith`: `Lᵖ` and squared-energy integrability of
   `‖fderiv 𝕜 u‖` for a compactly supported Lipschitz map.
+* `TauCeti.mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq`: the weighted
+  one-dimensional Dirichlet energy of a compactly supported Lipschitz radial function along a unit
+  ray is bounded above by the full-space Dirichlet energy `∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`.
 * `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
   integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
 * `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
@@ -194,6 +200,64 @@ theorem integrable_norm_fderiv_sq_of_lipschitzWith [CompleteSpace F] {K : ℝ≥
     (memLp_two_iff_integrable_sq_norm (measurable_fderiv 𝕜 u).norm.aestronglyMeasurable).1 hmem
 
 end Energy
+
+section Radial
+
+/-- For a compactly supported `K`-Lipschitz radial real function `v : E → ℝ` on a finite-dimensional
+real inner product space with an additive Haar measure `μ`, the weighted one-dimensional Dirichlet
+energy along a unit ray `r ↦ v (r • e₀)` on `(0, ∞)` is bounded above by the full-space
+Dirichlet energy `∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`. -/
+theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {K : ℝ≥0} {v : E → ℝ} (hv_lip : LipschitzWith K v) (hv_supp : HasCompactSupport v)
+    (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y) {e₀ : E} (he₀ : ‖e₀‖ = 1) :
+    (Module.finrank ℝ E : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+        ∫ r in Ioi (0 : ℝ), r ^ (Module.finrank ℝ E - 1) *
+          (deriv (fun r : ℝ ↦ v (r • e₀)) r) ^ 2) ≤
+      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
+  have : Nontrivial E := ⟨⟨e₀, 0, fun h ↦ by simp [h] at he₀⟩⟩
+  set n := Module.finrank ℝ E with hn_def
+  let φ : ℝ → ℝ := fun r ↦ ‖fderiv ℝ v (max r 0 • e₀)‖ ^ 2
+  have hv_grad_int := integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := μ) hv_lip hv_supp
+  have hv_grad_eq : (fun x : E ↦ ‖fderiv ℝ v x‖ ^ 2) = fun x ↦ φ ‖x‖ := funext fun x ↦ by
+    have hnorm : ‖x‖ = ‖‖x‖ • e₀‖ := by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one]
+    simp only [φ, max_eq_left (norm_nonneg x), norm_fderiv_eq_of_norm_eq hv_rad hnorm]
+  have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by
+    rw [hv_grad_eq] at hv_grad_int
+    exact ((integrable_fun_norm_addHaar μ (f := φ)).mp hv_grad_int).congr_fun
+      (fun r (hr : 0 < r) ↦ by simp [φ, max_eq_left hr.le, smul_eq_mul, ← hn_def])
+      measurableSet_Ioi
+  have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
+      r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := fun r (hr : 0 < r) ↦
+    mul_le_mul_of_nonneg_left (deriv_radial_sq_le hv_rad he₀ hr) (pow_nonneg hr.le _)
+  have hderiv_int :
+      IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2) (Ioi 0) :=
+    hφ_int.mono' (((continuous_pow (n - 1)).measurable.mul
+      ((measurable_deriv fun s : ℝ ↦ v (s • e₀)).pow_const 2)).aestronglyMeasurable.restrict)
+      (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ by
+        rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg (mem_Ioi.1 hr).le _) (sq_nonneg _))]
+        exact hpt r hr)
+  have hrad_le : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
+      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
+    setIntegral_mono_on hderiv_int hφ_int measurableSet_Ioi hpt
+  have hgrad_polar : (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) =
+      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
+    rw [hv_grad_eq, integral_fun_norm_addHaar μ φ]
+    simp only [nsmul_eq_mul, smul_eq_mul, ← hn_def]
+    congr 2
+    exact setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
+      simp [φ, max_eq_left hr.le]
+  calc (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+        ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2)
+      ≤ (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+          ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hrad_le measureReal_nonneg)
+          (Nat.cast_nonneg n)
+    _ = ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := hgrad_polar
+
+end Radial
 
 section CauchyRiemann
 

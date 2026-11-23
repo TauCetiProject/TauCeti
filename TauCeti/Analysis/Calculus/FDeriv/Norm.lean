@@ -126,16 +126,7 @@ theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ �
     · exact absurd (hmin h hxy) hx
     · exact h
     · exact absurd (hmin h hxy.symm) hy
-  -- The reflection exchanging `x` and `y` is a linear isometry preserving `v`.
-  let T := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).toContinuousLinearEquiv
-  have hT : v ∘ T = v := funext fun z ↦ by
-    have hz : ‖T z‖ = ‖z‖ := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).norm_map z
-    exact le_antisymm (hv _ _ hz.ge) (hv _ _ hz.le)
-  have hTx : T x = y := Submodule.reflection_sub hnorm
-  have hcomp := T.comp_right_fderiv (f := v) (x := x)
-  rw [hT, hTx] at hcomp
-  rw [hcomp]
-  exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
+  exact norm_fderiv_eq_of_norm_eq (fun a b h ↦ le_antisymm (hv b a h.ge) (hv a b h.le)) hnorm
 
 /-- The derivative of the norm has norm at most `1` at every point, including the points where the
 norm is not differentiable and its derivative is `0` by definition. -/

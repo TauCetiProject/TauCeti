@@ -11,9 +11,7 @@ public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
-import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Homogeneous
 import TauCeti.Analysis.PDE.Yamabe.WeightedSobolev
@@ -54,63 +52,6 @@ open Filter Function MeasureTheory Metric Module Set TopologicalSpace
 open scoped ContDiff Distributions Gradient NNReal Topology
 
 namespace TauCeti.Yamabe
-
-/-- For a compactly supported `K`-Lipschitz radial real function `v : E → ℝ`, the weighted
-one-dimensional Dirichlet energy of the scaled unit-ray profile `r ↦ c * v (max r 0 • e₀)`
-on `(0, ∞)` is bounded above by `c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`. -/
-private theorem integral_radial_deriv_sq_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] {K : ℝ≥0} {v : E → ℝ}
-    (hv_lip : LipschitzWith K v) (hv_supp : HasCompactSupport v)
-    (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y) {e₀ : E} (he₀ : ‖e₀‖ = 1) (c : ℝ) :
-    (finrank ℝ E : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-        ∫ r in Ioi (0 : ℝ), r ^ (finrank ℝ E - 1) *
-          (deriv (fun r ↦ c * v (max r 0 • e₀)) r) ^ 2) ≤
-      c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-  set n := finrank ℝ E with hn_def
-  let f : ℝ → ℝ := fun r ↦ c * v (max r 0 • e₀)
-  let φ : ℝ → ℝ := fun r ↦ ‖fderiv ℝ v (max r 0 • e₀)‖ ^ 2
-  have hv_grad_int := integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := μ) hv_lip hv_supp
-  have hv_grad_eq : (fun x : E ↦ ‖fderiv ℝ v x‖ ^ 2) = fun x ↦ φ ‖x‖ := funext fun x ↦ by
-    have hnorm : ‖x‖ = ‖‖x‖ • e₀‖ := by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one]
-    simp only [φ, max_eq_left (norm_nonneg x), norm_fderiv_eq_of_norm_eq hv_rad hnorm]
-  have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by
-    rw [hv_grad_eq] at hv_grad_int
-    exact ((integrable_fun_norm_addHaar μ (f := φ)).mp hv_grad_int).congr_fun
-      (fun r (hr : 0 < r) ↦ by simp [φ, max_eq_left hr.le, smul_eq_mul, ← hn_def])
-      measurableSet_Ioi
-  have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2 ≤
-      c ^ 2 * (r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) := fun r (hr : 0 < r) ↦ by
-    have hev : f =ᶠ[𝓝 r] fun s ↦ c * v (s • e₀) :=
-      Filter.eventually_of_mem (Ioi_mem_nhds hr) fun s hs ↦ by simp [f, max_eq_left hs.le]
-    rw [hev.deriv_eq, deriv_const_mul_field, mul_pow, mul_left_comm]
-    exact mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left (deriv_radial_sq_le hv_rad he₀ hr) (pow_nonneg hr.le _))
-      (sq_nonneg c)
-  have hderiv_f_int : IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv f r) ^ 2) (Ioi 0) :=
-    (hφ_int.const_mul (c ^ 2)).mono' (((continuous_pow (n - 1)).measurable.mul
-      ((measurable_deriv f).pow_const 2)).aestronglyMeasurable.restrict)
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ by
-        rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg (mem_Ioi.1 hr).le _) (sq_nonneg _))]
-        exact hpt r hr)
-  have hrad_le : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2 ≤
-      c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := by
-    rw [← integral_const_mul]
-    exact setIntegral_mono_on hderiv_f_int (hφ_int.const_mul (c ^ 2)) measurableSet_Ioi hpt
-  have hgrad_polar : (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) =
-      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-    rw [hv_grad_eq, integral_fun_norm_addHaar μ φ]
-    simp only [nsmul_eq_mul, smul_eq_mul, ← hn_def]; congr 2
-    exact setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
-      simp [φ, max_eq_left hr.le]
-  calc (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-        ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2)
-      ≤ (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-          (c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2)) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hrad_le measureReal_nonneg)
-          (Nat.cast_nonneg n)
-    _ = c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by rw [← hgrad_polar]; ring
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -185,7 +126,26 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
   -- Stage 3: Apply the 1D weighted Sobolev inequality to `f` and rescale back to `v`.
   have h1d := mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral hn hf_lip
     (fun r _ ↦ mul_nonneg hc.le (hv_nonneg _)) hf_anti hR hfR hnorm
-  have hrad := integral_radial_deriv_sq_le volume hv_lip hv_supp hv_rad he₀ c
+  have hrad : (n : ℝ) * (volume.real (ball (0 : E) 1) *
+        ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2) ≤
+      c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 := by
+    have hcongr : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2 =
+        c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s ↦ v (s • e₀)) r) ^ 2 := by
+      rw [← integral_const_mul]
+      refine setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ ?_
+      have hev : f =ᶠ[𝓝 r] fun s ↦ c * v (s • e₀) :=
+        Filter.eventually_of_mem (Ioi_mem_nhds hr) fun s hs ↦ by simp [f, max_eq_left hs.le]
+      rw [hev.deriv_eq, deriv_const_mul_field]
+      ring
+    rw [hcongr]
+    calc (n : ℝ) * (volume.real (ball (0 : E) 1) *
+            (c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s ↦ v (s • e₀)) r) ^ 2))
+        = c ^ 2 * ((n : ℝ) * (volume.real (ball (0 : E) 1) *
+            ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s ↦ v (s • e₀)) r) ^ 2)) := by ring
+      _ ≤ c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 :=
+          mul_le_mul_of_nonneg_left
+            (mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
+              volume hv_lip hv_supp hv_rad he₀) (sq_nonneg c)
   have hS_pos : 0 < roundSphereVolume n ^ (2 / pₙ) :=
     Real.rpow_pos_of_pos (roundSphereVolume_pos n) _
   have hM_rpow : 0 < M ^ (2 / pₙ) := Real.rpow_pos_of_pos hM_pos _
