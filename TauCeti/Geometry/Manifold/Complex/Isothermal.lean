@@ -112,10 +112,7 @@ variable {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} {e e' : OpenPartial
 
 /-- An isothermal chart is a differentiable open partial homeomorphism. -/
 theorem mdifferentiable (he : IsIsothermalChart j e) : e.MDifferentiable 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) :=
-  ⟨fun _ hx ↦
-      (mdifferentiableAt_of_mem_maximalAtlas he.mem_maximalAtlas hx).mdifferentiableWithinAt,
-    fun _ hz ↦
-      (mdifferentiableAt_symm_of_mem_maximalAtlas he.mem_maximalAtlas hz).mdifferentiableWithinAt⟩
+  mdifferentiable_of_mem_maximalAtlas he.mem_maximalAtlas
 
 /-- In an isothermal chart, `j = i`: the differential of the chart carries `j` to multiplication
 by `i`. -/

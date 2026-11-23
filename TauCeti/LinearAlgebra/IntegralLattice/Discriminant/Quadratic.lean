@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+
 /-!
 # Discriminant quadratic modules of even integral lattices
 
@@ -273,6 +275,18 @@ theorem discriminantQuadraticIsometry_toFiniteBilinearModule (e : Isometry L M)
     discriminantQuadraticIsometry_toAddEquiv,
     discriminantBilinearIsometry_toAddEquiv]
 
+/-- The identity lattice isometry induces the identity discriminant-quadratic isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V) [L.IsNondegenerate]
+    (hL : L.IsEven) :
+    (Isometry.refl L).discriminantQuadraticIsometry hL =
+      QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic := by
+  refine DFunLike.ext _ _ fun x ↦ ?_
+  rw [QuadraticMap.IsometryEquiv.refl_apply]
+  refine (discriminantQuadraticIsometry_apply (Isometry.refl L) hL x).trans ?_
+  rw [discriminantGroupEquiv_refl]
+  exact LinearEquiv.refl_apply (R := ℤ) (M := L.DiscriminantGroup) x
+
 /-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
 isometry. -/
 @[simp]
@@ -286,6 +300,16 @@ theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
   exact ((e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm_apply_eq.mpr
     ((e.discriminantQuadraticIsometry_apply _ (e.discriminantGroupEquiv.symm x)).trans
       (e.discriminantGroupEquiv.apply_symm_apply x)).symm).symm
+
+/-- The inverse of the induced discriminant quadratic isometry acts through the inverse of the
+discriminant-group equivalence. -/
+@[simp]
+theorem discriminantQuadraticIsometry_symm_apply (e : Isometry L M)
+    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven)
+    (y : M.DiscriminantGroup) :
+    (e.discriminantQuadraticIsometry hL).symm y = e.discriminantGroupEquiv.symm y := by
+  rw [← e.discriminantQuadraticIsometry_symm (e.isEven_iff.mp hL),
+    discriminantQuadraticIsometry_apply, discriminantGroupEquiv_symm]
 
 /-- The discriminant quadratic isometry induced by a composite is the composite of the induced
 isometries. -/
