@@ -34,7 +34,8 @@ isomorphism of groups, and under translation:
 * `Subgroup.mk_mulEquiv_out_bijective`: an isomorphism `e : G ≃* G'` carrying `H` onto `H'` carries
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
-  translated coset `g • q` lies in the coset of `g * q.out`.
+  translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.out_inv_smul`:
+  `q.out⁻¹` translates `q` to the base point.
 * `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
   the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
@@ -311,6 +312,14 @@ as `g` times the chosen representative of `q`. -/
 @[to_additive]
 theorem mk_out_smul (g : G) (q : G ⧸ H) : ((g • q).out : G ⧸ H) = (g * q.out : G) := by
   simp [← smul_eq_mul]
+
+/-- The inverse of the chosen representative of a left coset `q` translates `q` to the base point
+`⟦1⟧`. -/
+@[to_additive (attr := simp) /-- The negative of the chosen representative of a left coset `q`
+translates `q` to the base point `⟦0⟧`. -/]
+theorem out_inv_smul (q : G ⧸ H) : q.out⁻¹ • q = ((1 : G) : G ⧸ H) := by
+  calc q.out⁻¹ • q = q.out⁻¹ • ((q.out : G) : G ⧸ H) := by rw [QuotientGroup.out_eq']
+    _ = _ := by rw [MulAction.Quotient.smul_coe, smul_eq_mul, inv_mul_cancel]
 
 /-- For `h ∈ H` and a coset `k ∈ H ⧸ K.subgroupOf H`, the elements `a * (h • k).out` and
 `a * h * k.out` of `G` lie in the same left coset of `K`, for every `a ∈ G`. No inclusion `K ≤ H`

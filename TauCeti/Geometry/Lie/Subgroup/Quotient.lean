@@ -42,6 +42,11 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
   `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`), which therefore span every
   tangent space of `G ⧸ K` (`Subgroup.surjective_fundamentalVectorField`);
 * `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`);
+  the differential of each translation is injective (`Subgroup.injective_mfderiv_smul_quotient`)
+  and satisfies the chain rule (`Subgroup.mfderiv_smul_quotient_comp`), and `dπ_1` intertwines
+  `Ad_k` for `k ∈ K` with the differential of the translation by `k`
+  (`Subgroup.mfderiv_smul_mfderiv_quotientMk_one`) and `dπ_g` on left-invariant vector fields with
+  `dπ_1` (`Subgroup.mfderiv_smul_inv_mfderiv_quotientMk_mulInvariantVectorField`);
 * for closed subgroups `K ≤ G` and `L ≤ G'`, the map `[(g, g')] ↦ ([g], [g'])` is a diffeomorphism
   `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` (`Subgroup.quotientProdDiffeomorph`).
 
@@ -384,6 +389,99 @@ theorem contMDiffSMul_quotientOfIsClosed (hK : IsClosed (K : Set G)) :
     funext fun p ↦ MulAction.Quotient.smul_coe K p.1 p.2
   rw [hcomp]
   exact hπ.contMDiff.comp (contMDiff_mul I ∞)
+
+/-! ### Translations of the homogeneous space -/
+
+section Translation
+
+variable (hK : IsClosed (K : Set G))
+
+include hK in
+/-- The differential of a translation of `G ⧸ K` is injective. -/
+theorem injective_mfderiv_smul_quotient (g : G) (x : G ⧸ K) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    Injective (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+      (fun y : G ⧸ K ↦ g • y) x) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  exact ((Diffeomorph.smul I 𝓘(ℝ, QuotientModelSpace I K) ∞ g).isInvertible_mfderiv
+    (by simp) (x := x)).injective
+
+include hK in
+/-- **Chain rule for translations of `G ⧸ K`.** -/
+theorem mfderiv_smul_quotient_comp (g h : G) (x : G ⧸ K) {y : G ⧸ K} (hy : h • x = y) {c : G}
+    (hc : g * h = c) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ∀ v : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) x,
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun z : G ⧸ K ↦ g • z) y
+        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+          (fun z : G ⧸ K ↦ h • z) x v) =
+      mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+        (fun z : G ⧸ K ↦ c • z) x v := by
+  subst hc
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  have hd (a : G) := ContMDiffSMul.mdifferentiable_const_smul (I := I)
+    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) a
+  have hfun : (fun z : G ⧸ K ↦ (g * h) • z) = (fun z ↦ g • z) ∘ fun z ↦ h • z :=
+    funext fun z ↦ mul_smul g h z
+  intro v
+  rw [hfun]
+  exact (mfderiv_comp_apply_of_eq x (hd g y) (hd h x) hy v).symm
+
+/-- **The projection intertwines conjugation and translation.** For `k ∈ K`, the differential at
+the base point of the translation by `k` sends `dπ_1 a` to `dπ_1 (Ad_k a)`, where `π` is the
+projection `G → G ⧸ K`. -/
+theorem mfderiv_smul_mfderiv_quotientMk_one {k : G} (hk : k ∈ K) (a : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun y : G ⧸ K ↦ k • y)
+        ((1 : G) : G ⧸ K)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a) =
+      mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
+        (Lie.adjointContinuousLinearMap (I := I) k a) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  have hπ : MDifferentiable I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) :=
+    (contMDiff_quotientMk (I := I) hK).mdifferentiable (by simp)
+  have hτ := ContMDiffSMul.mdifferentiable_const_smul (I := I)
+    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) k
+  have hc := (Lie.conjDiffeomorph (I := I) (n := 1) k).mdifferentiable (by simp)
+  have hfun : (fun y : G ⧸ K ↦ k • y) ∘ (QuotientGroup.mk : G → G ⧸ K) =
+      (QuotientGroup.mk : G → G ⧸ K) ∘ Lie.conjDiffeomorph (I := I) (n := 1) k := by
+    funext y
+    simp only [comp_apply, Lie.conjDiffeomorph_apply, MulAction.Quotient.smul_coe, smul_eq_mul]
+    exact (QuotientGroup.mk_mul_of_mem (k * y) (K.inv_mem hk)).symm
+  rw [Lie.adjointContinuousLinearMap_apply,
+    ← mfderiv_comp_apply_of_eq 1 (hπ _) (hc 1) (by simp), ← hfun]
+  exact (mfderiv_comp_apply_of_eq 1 (hτ _) (hπ 1) rfl a).symm
+
+/-- **The projection is left-equivariant on left-invariant vector fields.** Translating
+`dπ_g (X_a g)` back to the base point by `g⁻¹` gives `dπ_1 a`, where `X_a` is the left-invariant
+vector field of `a` and `π` is the projection `G → G ⧸ K`. -/
+theorem mfderiv_smul_inv_mfderiv_quotientMk_mulInvariantVectorField (g : G)
+    (a : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun y : G ⧸ K ↦ g⁻¹ • y)
+        (g : G ⧸ K)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+          (mulInvariantVectorField a g)) =
+      mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  have hπ : MDifferentiable I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) :=
+    (contMDiff_quotientMk (I := I) hK).mdifferentiable (by simp)
+  have hτ := ContMDiffSMul.mdifferentiable_const_smul (I := I)
+    (I' := 𝓘(ℝ, QuotientModelSpace I K)) (M := G ⧸ K) (n := ∞) (by simp) g⁻¹
+  have hL : MDifferentiable I I (fun y : G ↦ g * y) :=
+    (contMDiff_mul_left (I := I) (n := ∞)).mdifferentiable (by simp)
+  have hfun : (fun y : G ⧸ K ↦ g⁻¹ • y) ∘ ((QuotientGroup.mk : G → G ⧸ K) ∘ fun y : G ↦ g * y) =
+      (QuotientGroup.mk : G → G ⧸ K) := by
+    funext y
+    simp
+  rw [mulInvariantVectorField, ← mfderiv_comp_apply_of_eq 1 (hπ g) (hL 1) (mul_one g),
+    ← mfderiv_comp_apply_of_eq 1 (hτ _) ((hπ (g * 1)).comp 1 (hL 1)) (by simp), hfun]
+
+end Translation
 
 /-! ### Products of homogeneous spaces -/
 

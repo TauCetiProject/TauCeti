@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
@@ -70,6 +71,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
+* `Subgroup.t3Space_quotientOfIsClosed`: the quotient of a weakly locally compact topological
+  group by a closed subgroup, normal or not, is regular.
 -/
 
 public section
@@ -471,6 +474,17 @@ preimage in `G` of a finite subgroup of `G ⧸ N` is discrete. -/]
 instance instDiscreteTopologyComapMk' [T2Space G] (N : Subgroup G) [N.Normal] [DiscreteTopology N]
     (D : Subgroup (G ⧸ N)) [Finite D] : DiscreteTopology (D.comap (QuotientGroup.mk' N)) :=
   discreteTopology_comap_mk' N D
+
+/-- The quotient of a weakly locally compact topological group by a closed subgroup `K` is
+regular, also when `K` is not normal. -/
+@[to_additive /-- The quotient of a weakly locally compact additive topological group by a closed
+subgroup `K` is regular. -/]
+theorem t3Space_quotientOfIsClosed [WeaklyLocallyCompactSpace G] {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) : T3Space (G ⧸ K) := by
+  have : IsClosed (K : Set G) := hK
+  have : WeaklyLocallyCompactSpace (G ⧸ K) :=
+    QuotientGroup.isOpenQuotientMap_mk.weaklyLocallyCompactSpace
+  infer_instance
 
 end DiscreteComap
 
