@@ -171,7 +171,7 @@ theorem polynomialInputDegree_polynomialReparametrize_le [Fintype J] (R : W → 
 @[simp] theorem polynomialReparametrize_X (f : W → W') (P : J → MvPolynomial (W ⊕ I) K) :
     polynomialReparametrize (fun w => X (f w)) P = fun j => rename (Sum.map f id) (P j) := by
   funext j
-  rw [polynomialReparametrize_apply, rename_eq_aeval (Sum.map f id), aeval_eq_bind₁]
+  rw [polynomialReparametrize_apply, ← bind₁_X_comp (Sum.map f id)]
   refine congrArg (fun F => bind₁ F (P j)) (funext fun i => ?_)
   cases i <;> simp
 
@@ -181,9 +181,7 @@ input polynomial. -/
     (j : J) :
     inputPolynomial (fun k => rename (Sum.map f id) (P k)) j =
       map (rename f : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
-  have hf : (bind₁ (fun w => X (f w)) : MvPolynomial W K →ₐ[K] MvPolynomial W' K) = rename f :=
-    (aeval_eq_bind₁ _).symm.trans (rename_eq_aeval f).symm
-  rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, hf]
+  rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, bind₁_X_comp]
 
 /-- Renaming the parameter variables precomposes the realization map with that renaming. -/
 @[simp] theorem polynomialRealization_rename_sumMap (f : W → W')
@@ -260,17 +258,13 @@ theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
         (fun j => map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
           (inputPolynomial P j))
         (inputPolynomial Q l) := by
-  have hrinr :
-      (bind₁ (fun v => X (Sum.inr v)) : MvPolynomial V K →ₐ[K] MvPolynomial (W ⊕ V) K) =
-        rename Sum.inr :=
-    (aeval_eq_bind₁ _).symm.trans (rename_eq_aeval Sum.inr).symm
   have hcomp :
       polynomialCompose P Q =
         fun k => bind₁ (Sum.elim (fun v => rename Sum.inl (X (Sum.inr v)))
           (fun j => rename (Sum.map Sum.inl id) (P j))) (Q k) := by
     funext k
     simp [polynomialCompose_apply]
-  rw [hcomp, inputPolynomial_bind₁_sumElim, hrinr]
+  rw [hcomp, inputPolynomial_bind₁_sumElim, bind₁_X_comp]
   exact congrArg (fun g => eval₂ _ g _) (funext fun j => inputPolynomial_rename_sumMap Sum.inl P j)
 
 /-- The uniform input-degree bound of `polynomialCompose P Q` is at most the product of the uniform

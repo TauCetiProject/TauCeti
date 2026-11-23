@@ -121,6 +121,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
+* `Fin.dfoldl_castLE_zero` and `Fin.dfoldl_castLE_succ`: the zero and successor equations for the
+  dependent left fold `Fin.dfoldl` restricted along `Fin.castLE`.
 * `Fin.eq_dfoldl_of_zero_of_succ`: a dependent family indexed by `Fin (n + 1)` satisfying the
   zero and successor equations equals the restricted dependent left fold `Fin.dfoldl`.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -770,6 +772,26 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
       (by rwa [castSucc_castPred])
     rwa [castSucc_castPred] at this
 
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
+`0` returns the initial value `x` (`Fin.castLE _ 0` reduces definitionally to `0`). -/
+theorem dfoldl_castLE_zero {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) :
+    Fin.dfoldl (0 : Fin (n + 1)).val (fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ (0 : Fin (n + 1)).isLt) j)) x = x :=
+  Fin.dfoldl_zero (α := fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j)) _ x
+
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
+`i.succ` applies `f i` to the restricted fold at `i.castSucc` (`Fin.castLE` reduces definitionally
+on `j.castSucc` to `(Fin.castLE _ j).castSucc` and on `Fin.last i.val` to `i`). -/
+theorem dfoldl_castLE_succ {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) (i : Fin n) :
+    Fin.dfoldl i.succ.val (fun j => α (Fin.castLE i.succ.isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x =
+      f i (Fin.dfoldl i.castSucc.val (fun j => α (Fin.castLE i.castSucc.isLt j))
+        (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.castSucc.isLt) j)) x) :=
+  Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
+    (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x
+
 /-- A dependent family indexed by `Fin (n + 1)` that agrees with `x` at `0` and satisfies the step
 equation `g i.succ = f i (g i.castSucc)` equals the restricted dependent left fold `Fin.dfoldl` at
 every prefix index `k`. -/
@@ -780,13 +802,10 @@ theorem eq_dfoldl_of_zero_of_succ {n : ℕ} {α : Fin (n + 1) → Type*}
       Fin.dfoldl k.val (fun j => α (Fin.castLE k.isLt j))
         (fun j => f (Fin.castLE (Nat.le_of_lt_succ k.isLt) j)) x := by
   induction k using Fin.induction with
-  | zero =>
-    refine h0.trans ?_
-    exact (Fin.dfoldl_zero (α := fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j)) _ x).symm
+  | zero => exact h0.trans (Fin.dfoldl_castLE_zero f x).symm
   | succ i ih =>
     rw [hs i, ih]
-    exact (Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
-      (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x).symm
+    exact (Fin.dfoldl_castLE_succ f x i).symm
 
 end Fin
 

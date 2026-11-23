@@ -18,9 +18,7 @@ flattens precisely these parameters, not the entries of the associated dense mat
 `ConvolutionSpec.polynomialPrefix` instantiates `polynomialChainPrefix` on the affine convolution
 layers `a ↦ aeval (polynomialAffineConvolution (A.length_eq i) a) (MLPSpec.layerPolynomial q i)`
 (`ConvolutionSpec.polynomialPrefix_eq_polynomialChainPrefix`), so its final prefix
-`ConvolutionSpec.polynomialRealize` is the corresponding `polynomialChain`
-(`ConvolutionSpec.polynomialRealize_eq_polynomialChain`) and its evaluation agrees with
-convolutional realization.
+`ConvolutionSpec.polynomialRealize` realizes the convolutional network.
 The bias-free tuple substitutes zero for every bias and retains only filter coordinates,
 agreeing by `ConvolutionSpec.polynomialRealizeWeights_eq_polynomialChain` with `polynomialChain`
 of the bias-free convolution layers
@@ -133,17 +131,6 @@ def polynomialRealize (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial 
 /-- The polynomial tuple is the final prefix. -/
 theorem polynomialRealize_def (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialRealize q = A.polynomialPrefix q (Fin.last L) := (rfl)
-
-/-- The affine convolutional polynomial tuple is `polynomialChain` of its affine convolution
-layers followed coordinatewise by `MLPSpec.layerPolynomial q i`. -/
-theorem polynomialRealize_eq_polynomialChain (A : ConvolutionSpec K L)
-    (q : Fin (L - 1) → Polynomial K) :
-    A.polynomialRealize q =
-      polynomialChain (I := fun j => Fin (A.width j))
-        (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
-          (MLPSpec.layerPolynomial q i)) := by
-  rw [polynomialRealize_def, polynomialChain_def]
-  exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
 
 /-- Polynomial hidden activations make the convolutional network jointly polynomial in its
 actual parameters and inputs. -/

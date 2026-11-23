@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Geometry.Neuromanifold.Chain
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Homogeneous
+import TauCeti.Algebra.MvPolynomial.Monad
 
 /-!
 # Finite chains of jointly polynomial models
@@ -86,10 +87,10 @@ def polynomialChainPrefix (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.cas
 @[simp] theorem polynomialChainPrefix_zero
     (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) :
     polynomialChainPrefix P 0 = fun a => X (Sum.inr a) :=
-  -- `Fin.castLE (0 : Fin (n + 1)).isLt 0` has `.val = 0` and is definitionally `0`.
-  Fin.dfoldl_zero
-    (α := fun j => I (Fin.castLE (0 : Fin (n + 1)).isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
-    _ (fun a => X (Sum.inr a))
+  Fin.dfoldl_castLE_zero
+    (α := fun k => I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+    (fun j prev o => bind₁ (Sum.elim (fun w => X (Sum.inl ⟨j, w⟩)) prev) (P j o))
+    (fun a => X (Sum.inr a))
 
 /-- Each step of `polynomialChainPrefix` substitutes the preceding prefix for the layer's inputs
 and tags the layer's parameter variables with its index. -/
@@ -98,16 +99,10 @@ and tags the layer's parameter variables with its index. -/
     polynomialChainPrefix P i.succ o =
       bind₁ (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) (polynomialChainPrefix P i.castSucc))
         (P i o) :=
-  -- `Fin.dfoldl_succ_last` peels off the final step `Fin.last i.val`, whose `Fin.castLE` image
-  -- (`Fin.castLE_last i`) has `.val = i.val` and is definitionally `i`; on the remaining steps
-  -- `j.castSucc`, `Fin.castLE` (`Fin.castLE_castSucc`) agrees definitionally with `i.castSucc`.
-  congrFun (Fin.dfoldl_succ_last
-    (α := fun j => I (Fin.castLE i.succ.isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
-    (fun j prev o =>
-      bind₁ (Sum.elim (fun w => X (Sum.inl ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, w⟩))
-          prev)
-        (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j) o))
-    (fun a => X (Sum.inr a))) o
+  congrFun (Fin.dfoldl_castLE_succ
+    (α := fun k => I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+    (fun j prev o => bind₁ (Sum.elim (fun w => X (Sum.inl ⟨j, w⟩)) prev) (P j o))
+    (fun a => X (Sum.inr a)) i) o
 
 /-- Prefix `k` of `polynomialChainPrefix` depends only on the layers strictly below `k`. -/
 theorem polynomialChainPrefix_congr
@@ -214,7 +209,7 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
   | zero =>
     rw [polynomialChainPrefix_succ, polynomialChainPrefix_zero, polynomialCompose_apply]
     simp only [bind₁_X_right, Sum.elim_inr, rename_rename]
-    rw [rename_eq_aeval _, aeval_eq_bind₁]
+    rw [← bind₁_X_comp]
     refine congrArg (fun F => bind₁ F (P 0 o)) (funext fun x => ?_)
     rcases x with w | a
     · simp
@@ -351,17 +346,13 @@ theorem inputPolynomial_polynomialChainPrefix_succ
           MvPolynomial (Σ j, W j) K))
         (inputPolynomial (polynomialChainPrefix P i.castSucc))
         (inputPolynomial (P i) o) := by
-  have hrsig :
-      (bind₁ (fun w => X ⟨i, w⟩) : MvPolynomial (W i) K →ₐ[K] MvPolynomial (Σ j, W j) K) =
-        rename (Sigma.mk i) :=
-    (aeval_eq_bind₁ _).symm.trans (rename_eq_aeval (Sigma.mk i)).symm
   have hstep :
       polynomialChainPrefix P i.succ =
         fun k => bind₁ (Sum.elim (fun w => rename Sum.inl (X ⟨i, w⟩))
           (polynomialChainPrefix P i.castSucc)) (P i k) := by
     funext k
     simp [polynomialChainPrefix_succ]
-  rw [hstep, inputPolynomial_bind₁_sumElim, hrsig]
+  rw [hstep, inputPolynomial_bind₁_sumElim, bind₁_X_comp]
 
 /-- Reparametrizing each layer `i` by `R i` reparametrizes every prefix of `polynomialChainPrefix`
 by the induced substitution on `Σ i, W i`. -/
@@ -381,9 +372,8 @@ by the induced substitution on `Σ i, W i`. -/
       polynomialReparametrize_apply, bind₁_bind₁, bind₁_bind₁]
     refine congrArg (fun F => bind₁ F (P i o)) (funext fun x => ?_)
     rcases x with w | a
-    · simp only [Sum.elim_inl, bind₁_X_right, rename_rename, bind₁_rename]
-      rw [rename_eq_aeval, aeval_eq_bind₁]
-      simp [Function.comp_def]
+    · simp only [Sum.elim_inl, bind₁_X_right, rename_rename, bind₁_rename, Function.comp_def,
+        bind₁_X_comp]
     · simp only [Sum.elim_inr, bind₁_X_right, ← polynomialReparametrize_apply]
       exact congrFun ih a
 

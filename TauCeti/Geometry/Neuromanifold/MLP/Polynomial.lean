@@ -25,8 +25,7 @@ evaluations of `A` are polynomial jointly in the parameter coordinates and the i
 hidden layers and `X` on the affine output layer, so it satisfies the prefix recursion `h₀ = x`,
 `hᵢ₊₁ = σᵢ₊₁ (Wᵢ₊₁ hᵢ + bᵢ₊₁)` with polynomials in place of functions
 (`MLPSpec.polynomialPrefix_zero`, `MLPSpec.polynomialPrefix_succ`), and its output layer
-`MLPSpec.polynomialRealize A q` is the
-corresponding `polynomialChain` (`MLPSpec.polynomialRealize_eq_polynomialChain`). Evaluating
+`MLPSpec.polynomialRealize A q` is the final prefix. Evaluating
 `MLPSpec.polynomialRealize A q` realizes `A.realize` after `A.parameterEquiv`, and substituting
 zero for every bias variable gives `MLPSpec.polynomialRealizeWeights A q` — equivalently
 `polynomialChain` of the bias-free layers `o ↦ aeval (polynomialLinear o) (layerPolynomial q i)`
@@ -174,15 +173,6 @@ def polynomialRealize (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
 /-- The jointly polynomial tuple of `A` is its output-layer prefix polynomials. -/
 theorem polynomialRealize_def (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialRealize q = A.polynomialPrefix q (Fin.last L) := (rfl)
-
-/-- The jointly polynomial tuple of `A` is `polynomialChain` of its dense layers followed
-coordinatewise by `layerPolynomial q i`. -/
-theorem polynomialRealize_eq_polynomialChain (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
-    A.polynomialRealize q =
-      polynomialChain (I := fun j => Fin (A.width j))
-        (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i)) := by
-  rw [polynomialRealize_def, polynomialChain_def]
-  exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
 
 /-- An MLP whose hidden activations evaluate the polynomials `q` is a jointly polynomial model:
 its polynomial tuple realizes `A.realize` on the parameters assembled from their coordinates. -/

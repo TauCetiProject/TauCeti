@@ -18,6 +18,8 @@ after a change of generators of a finitely generated algebra.
 
 * `MvPolynomial.totalDegree_bind₁_le`: if every `f i` has total degree at most `D`, then
   `bind₁ f p` has total degree at most `p.totalDegree * D`.
+* `MvPolynomial.bind₁_X_comp`: substituting renamed variables `fun i => X (f i)` equals
+  `MvPolynomial.rename f`.
 -/
 
 public section
@@ -25,6 +27,13 @@ public section
 namespace MvPolynomial
 
 variable {σ τ R : Type*} [CommSemiring R]
+
+/-- Substituting renamed variables for the variables of a polynomial is variable renaming. -/
+@[simp]
+theorem bind₁_X_comp (f : σ → τ) :
+    bind₁ (fun i => (X (f i) : MvPolynomial τ R)) = rename f := by
+  ext i
+  simp
 
 /-- Substituting polynomials of total degree at most `D` for the variables multiplies the total
 degree by at most `D`. -/
