@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Stinespring.Basic
 public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
-import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
+import TauCeti.Analysis.CStarAlgebra.Matrix.HilbertSchmidt
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.InnerProductSpace.Positive
@@ -21,7 +21,7 @@ C⋆-algebra, the *2-norm defect* and the *norm defect* at `a` are
 `d₂(φ, a) = Re tr_k(φ(a⋆a) - φ(a)⋆φ(a))` (`CompletelyPositiveMap.twoNormDefect`) and
 `d_∞(φ, a) = ‖φ(a⋆a) - φ(a)⋆φ(a)‖` (`CompletelyPositiveMap.normDefect`). The matrix
 `φ(a⋆a) - φ(a)⋆φ(a)` is positive by the Kadison–Schwarz inequality for c.p.c. maps,
-`CompletelyPositiveMap.star_map_mul_map_le_map_star_mul` (from the operator version
+`CompletelyPositiveMap.star_map_mul_map_le_of_norm_map_le` (from the operator version
 `CompletelyPositiveMap.star_map_mul_map_le_of_opNorm_le_one`), so both defects are nonnegative and
 `d₂ ≤ d_∞`.
 
@@ -60,71 +60,10 @@ open scoped CStarAlgebra ComplexOrder InnerProductSpace
 namespace CompletelyPositiveMap
 
 open CStarMatrix
+open ContinuousLinearMap (hilbertSchmidtEnergy_ne_top hilbertSchmidtNorm_add_le
+  hilbertSchmidtNorm_comp_le_left hilbertSchmidtNorm_comp_le_right)
 
 variable {n : Type*} [Fintype n]
-
-section HilbertSchmidt
-
-open ContinuousLinearMap
-
-variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℂ K]
-
-/-- Operators on `ℂᵏ` have finite Hilbert–Schmidt energy. -/
-private theorem hilbertSchmidtEnergy_ne_top (T : EuclideanSpace ℂ n →L[ℂ] K) :
-    T.hilbertSchmidtEnergy (EuclideanSpace.basisFun n ℂ).toHilbertBasis ≠ ⊤ := by
-  rw [hilbertSchmidtEnergy_def, tsum_fintype]
-  exact ENNReal.sum_ne_top.2 fun _ _ => ENNReal.pow_ne_top eNorm_ne_top
-
-/-- `‖T + U‖_HS ≤ ‖T‖_HS + ‖U‖_HS` for operators on `ℂᵏ`. -/
-private theorem hilbertSchmidtNorm_add_le' (T U : EuclideanSpace ℂ n →L[ℂ] K) :
-    (T + U).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm + U.hilbertSchmidtNorm :=
-  hilbertSchmidtNorm_add_le T U _ (hilbertSchmidtEnergy_ne_top T)
-
-/-- `‖RT‖_HS ≤ ‖R‖ ‖T‖_HS`. -/
-private theorem hilbertSchmidtNorm_comp_le {L : Type*} [NormedAddCommGroup L]
-    [InnerProductSpace ℂ L] (R : K →L[ℂ] L) (T : EuclideanSpace ℂ n →L[ℂ] K) :
-    (R ∘L T).hilbertSchmidtNorm ≤ ‖R‖ * T.hilbertSchmidtNorm := by
-  have h := hilbertSchmidtNorm_comp_comp_le R T (.id ℂ _) _ (hilbertSchmidtEnergy_ne_top T)
-  rw [comp_id] at h
-  exact h.trans (mul_le_of_le_one_right (mul_nonneg (norm_nonneg _) T.hilbertSchmidtNorm_nonneg)
-    norm_id_le)
-
-/-- `‖TY‖_HS ≤ ‖T‖_HS ‖Y‖`. -/
-private theorem hilbertSchmidtNorm_comp_right_le (T : EuclideanSpace ℂ n →L[ℂ] K)
-    (Y : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
-    (T ∘L Y).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm * ‖Y‖ := by
-  have h := hilbertSchmidtNorm_comp_comp_le (.id ℂ K) T Y _ (hilbertSchmidtEnergy_ne_top T)
-  rw [id_comp, mul_assoc] at h
-  exact h.trans (mul_le_of_le_one_left (mul_nonneg T.hilbertSchmidtNorm_nonneg (norm_nonneg _))
-    norm_id_le)
-
-variable [DecidableEq n] [CompleteSpace K]
-
-/-- The normalized trace of `T⋆T` is `k⁻¹ ‖T‖²_HS`. -/
-private theorem normalizedTrace_symm_adjoint_comp_self (T : EuclideanSpace ℂ n →L[ℂ] K) :
-    normalizedTrace (toEuclideanCLM.symm (T.adjoint ∘L T)) =
-      (((Fintype.card n : ℝ)⁻¹ * T.hilbertSchmidtNorm ^ 2 : ℝ) : ℂ) := by
-  rw [normalizedTrace_eq_sum, T.sq_hilbertSchmidtNorm (EuclideanSpace.basisFun n ℂ).toHilbertBasis,
-    hilbertSchmidtEnergy_def, tsum_fintype,
-    ENNReal.toReal_sum fun _ _ => ENNReal.pow_ne_top eNorm_ne_top]
-  push_cast
-  congr 1
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← inner_single_toEuclideanCLM_single (toEuclideanCLM.symm (T.adjoint ∘L T)) i,
-    StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.comp_apply, adjoint_inner_right,
-    inner_self_eq_norm_sq_to_K]
-  simp [OrthonormalBasis.coe_toHilbertBasis, ENNReal.toReal_pow]
-
-/-- The normalized 2-norm of a matrix is `k^{-1/2}` times the Hilbert–Schmidt norm of its
-operator. -/
-private theorem normalizedTwoNorm_symm (Z : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
-    normalizedTwoNorm (toEuclideanCLM.symm Z) =
-      √(Fintype.card n : ℝ)⁻¹ * Z.hilbertSchmidtNorm := by
-  rw [normalizedTwoNorm_def, ← toEuclideanCLM_symm_adjoint_comp,
-    normalizedTrace_symm_adjoint_comp_self, Complex.ofReal_re, Real.sqrt_mul (by positivity),
-    Real.sqrt_sq Z.hilbertSchmidtNorm_nonneg]
-
-end HilbertSchmidt
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -330,8 +269,8 @@ private theorem sqrt_normDefect_eq (a : A) : √(φ.normDefect a) = ‖defectOp 
 
 private theorem twoNormDefect_eq (a : A) :
     φ.twoNormDefect a = (Fintype.card n : ℝ)⁻¹ * (defectOp φ a).hilbertSchmidtNorm ^ 2 := by
-  rw [twoNormDefect_def, map_star_mul_sub_eq hφ, normalizedTrace_symm_adjoint_comp_self,
-    Complex.ofReal_re]
+  rw [twoNormDefect_def, map_star_mul_sub_eq hφ,
+    normalizedTrace_toEuclideanCLM_symm_adjoint_comp_self, Complex.ofReal_re]
 
 private theorem sqrt_twoNormDefect_eq (a : A) :
     √(φ.twoNormDefect a) = √(Fintype.card n : ℝ)⁻¹ * (defectOp φ a).hilbertSchmidtNorm := by
@@ -352,7 +291,7 @@ include hφ
 
 /-- **Kadison–Schwarz inequality** for a completely positive contraction into matrices:
 `φ(a)⋆φ(a) ≤ φ(a⋆a)`. -/
-theorem star_map_mul_map_le_map_star_mul (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
+theorem star_map_mul_map_le_of_norm_map_le (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
   classical
   rw [← toEuclideanCLM_le_toEuclideanCLM_iff, map_mul, map_star, ← toOp_apply, ← toOp_apply]
   exact (toOp φ).star_map_mul_map_le_of_opNorm_le_one (norm_toContinuousLinearMap_toOp_le hφ) a
@@ -387,9 +326,11 @@ theorem norm_map_mul_sub_le' (a b : A) :
 theorem normalizedTwoNorm_map_mul_sub_le (a b : A) :
     normalizedTwoNorm (φ (a * b) - φ a * φ b) ≤ ‖a‖ * √(φ.twoNormDefect b) := by
   classical
-  rw [map_mul_sub_eq hφ, normalizedTwoNorm_symm, sqrt_twoNormDefect_eq hφ, mul_left_comm]
+  rw [map_mul_sub_eq hφ, normalizedTwoNorm_toEuclideanCLM_symm, sqrt_twoNormDefect_eq hφ,
+    mul_left_comm]
   gcongr
-  refine (hilbertSchmidtNorm_comp_le _ _).trans ?_
+  refine (hilbertSchmidtNorm_comp_le_left _ _ _
+    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
   rw [ContinuousLinearMap.adjoint.norm_map]
   exact mul_le_mul_of_nonneg_right (by simpa using norm_defectOp_le hφ (star a))
     (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
@@ -400,10 +341,11 @@ theorem normalizedTwoNorm_map_mul_sub_le' (a b : A) :
   classical
   have h : star (φ (a * b) - φ a * φ b) = φ (star b * star a) - star (φ b) * φ (star a) := by
     rw [← star_mul, φ.map_star, φ.map_star, star_sub, star_mul]
-  rw [← normalizedTwoNorm_star, h, map_star_mul_sub_eq hφ, normalizedTwoNorm_symm,
+  rw [← normalizedTwoNorm_star, h, map_star_mul_sub_eq hφ, normalizedTwoNorm_toEuclideanCLM_symm,
     sqrt_twoNormDefect_eq hφ, mul_assoc, mul_comm (ContinuousLinearMap.hilbertSchmidtNorm _)]
   gcongr
-  refine (hilbertSchmidtNorm_comp_le _ _).trans ?_
+  refine (hilbertSchmidtNorm_comp_le_left _ _ _
+    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
   rw [ContinuousLinearMap.adjoint.norm_map]
   exact mul_le_mul_of_nonneg_right (norm_defectOp_le hφ b)
     (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
@@ -421,7 +363,8 @@ theorem sqrt_twoNormDefect_add_le (a b : A) :
   classical
   simp only [sqrt_twoNormDefect_eq hφ, map_add, ← mul_add]
   gcongr
-  exact hilbertSchmidtNorm_add_le' _ _
+  exact hilbertSchmidtNorm_add_le _ _ _
+    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)
 
 /-- The product rule `d_∞(φ, ab)^{1/2} ≤ ‖b‖ d_∞(φ, a)^{1/2} + ‖a‖ d_∞(φ, b)^{1/2}`. -/
 theorem sqrt_normDefect_mul_le (a b : A) :
@@ -444,11 +387,15 @@ theorem sqrt_twoNormDefect_mul_le (a b : A) :
   simp only [sqrt_twoNormDefect_eq hφ, mul_left_comm _ √_, ← mul_add]
   rw [defectOp_mul hφ]
   gcongr
-  refine (hilbertSchmidtNorm_add_le' _ _).trans (add_le_add ?_ ?_)
-  · refine (hilbertSchmidtNorm_comp_right_le _ _).trans ?_
+  refine (hilbertSchmidtNorm_add_le _ _ _
+    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans
+    (add_le_add ?_ ?_)
+  · refine (hilbertSchmidtNorm_comp_le_right _ _ _
+      (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
     rw [norm_toEuclideanCLM, mul_comm ‖b‖]
     exact mul_le_mul_of_nonneg_left (hφ b) (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
-  · refine (hilbertSchmidtNorm_comp_le _ _).trans ?_
+  · refine (hilbertSchmidtNorm_comp_le_left _ _ _
+      (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
     exact mul_le_mul_of_nonneg_right (norm_defectSqrt_comp_le hφ a)
       (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
 
