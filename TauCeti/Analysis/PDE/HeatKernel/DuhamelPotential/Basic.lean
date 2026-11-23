@@ -691,30 +691,30 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     rw [dist_eq_norm] at hb
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
-  -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
-  have hs₀ : 0 ≤ 2 * t' - t := by linarith
-  have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
-    intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)
-      (hH' hτt) hα₀ hτ le_rfl x
+  -- Otherwise split both integrals at `s₀ = t' - h > 0`; the tails have lengths `2 h` and `h`.
+  set s₀ := t' - h with hs₀_def
+  have hs₀ : 0 < s₀ := by linarith
+  have hlen₁ : t - s₀ = 2 * h := by linarith
+  have hlen₂ : t' - s₀ = h := by linarith
+  -- For `s₀ ≤ τ ≤ t`, the slice Hessians at time `τ` are integrable on `[0, s₀]` and `[s₀, τ]`.
+  have hint {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) :
+      IntervalIntegrable (Φ τ) volume 0 s₀ ∧ IntervalIntegrable (Φ τ) volume s₀ τ := by
+    have hg := intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf
+      (hfM' hτt) (hH' hτt) hα₀ (hs₀.trans_le hτ) le_rfl x
+    have hmem : s₀ ∈ [[0, τ]] := by
+      rw [uIcc_of_le (hs₀.le.trans hτ)]
+      exact ⟨hs₀.le, hτ⟩
+    exact ⟨hg.mono_set (uIcc_subset_uIcc_left hmem), hg.mono_set (uIcc_subset_uIcc_right hmem)⟩
   -- Away from the diagonal, the time Lipschitz bound integrates to `O(H h^(α/2))`.
-  have hfar : ‖∫ s in 0..2 * t' - t, (Φ t s - Φ t' s)‖ ≤
-      2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
-    simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
+  have hfar : ‖∫ s in 0..s₀, (Φ t s - Φ t' s)‖ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
+    simpa only [mul_assoc, ← hh_def, ← hs₀_def] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
         hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-  have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
-    rw [uIcc_of_le (hs₀.trans hτ)]
-    exact ⟨hs₀, hτ⟩
-  have hg₁ := hint ht le_rfl
-  have hg₂ := hint (by linarith) htt'.le
-  have hb := norm_intervalIntegral_sub_le_of_sub_le
-    (hg₁.mono_set (uIcc_subset_uIcc_left (hmem (by linarith))))
-    (hg₁.mono_set (uIcc_subset_uIcc_right (hmem (by linarith))))
-    (hg₂.mono_set (uIcc_subset_uIcc_left (hmem (by linarith))))
-    (hg₂.mono_set (uIcc_subset_uIcc_right (hmem (by linarith)))) hfar
-    (hnear hs₀ (by linarith) le_rfl) (hnear hs₀ (by linarith) htt'.le)
-  rw [show t - (2 * t' - t) = 2 * h by rw [hh_def]; ring,
-    show t' - (2 * t' - t) = h by rw [hh_def]; ring, Real.mul_rpow zero_le_two hh.le] at hb
+  obtain ⟨hg₁, hg₁'⟩ := hint (by linarith) le_rfl
+  obtain ⟨hg₂, hg₂'⟩ := hint (by linarith) htt'.le
+  have hb := norm_intervalIntegral_sub_le_of_sub_le hg₁ hg₁' hg₂ hg₂' hfar
+    (hnear hs₀.le (by linarith) le_rfl) (hnear hs₀.le (by linarith) htt'.le)
+  rw [hlen₁, hlen₂, Real.mul_rpow zero_le_two hh.le] at hb
   linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`

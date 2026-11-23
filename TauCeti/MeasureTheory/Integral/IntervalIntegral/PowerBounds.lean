@@ -30,9 +30,12 @@ is at most `K * ((b - a) ^ (u + 1) / (u + 1))`. Both use `TauCeti.intervalIntegr
 and `TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
 `K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
 
-`TauCeti.norm_intervalIntegral_sub_le_of_sub_le` compares two interval integrals with a common
-lower endpoint by splitting both at a common point. The norm of their difference is at most a
-bound for the integral of the difference up to the split point plus bounds for the two tails.
+`TauCeti.norm_intervalIntegral_sub_le_of_sub_le` compares two oriented interval integrals, with
+respect to any measure on `ℝ`, that start at a common endpoint, by splitting both at a common
+point. Each integrand must be interval integrable on its two pieces: from the starting endpoint to
+the split point, and from the split point to its own final endpoint. No ordering of the endpoints
+is assumed. The norm of the difference of the two integrals is then at most a bound for the
+integral of the difference up to the split point plus bounds for the two tails.
 -/
 
 public section
@@ -232,21 +235,30 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
         ((δ ^ 2) ^ (-((1 - α) / 2)) * δ) := by field_simp
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
 
-/-- **Difference of two integrals over nearby intervals.** Split `∫ₐ^t g₁` and `∫ₐ^{t'} g₂` at a
-common point `s₀`, given that `g₁` is interval integrable on `[a, s₀]` and `[s₀, t]` and `g₂` on
-`[a, s₀]` and `[s₀, t']`. If `‖∫ₐ^{s₀} (g₁ - g₂)‖ ≤ D`, `‖∫_{s₀}^t g₁‖ ≤ B₁` and
-`‖∫_{s₀}^{t'} g₂‖ ≤ B₂`, then `‖∫ₐ^t g₁ - ∫ₐ^{t'} g₂‖ ≤ D + B₁ + B₂`. -/
+/-- **Difference of two integrals over nearby intervals.** Split `∫ₐ^t g₁ ∂μ` and
+`∫ₐ^{t'} g₂ ∂μ` at a common point `s₀`, given that `g₁` is interval integrable for `μ` on
+`[a, s₀]` and `[s₀, t]` and `g₂` on `[a, s₀]` and `[s₀, t']`. If `‖∫ₐ^{s₀} (g₁ - g₂) ∂μ‖ ≤ D`,
+`‖∫_{s₀}^t g₁ ∂μ‖ ≤ B₁` and `‖∫_{s₀}^{t'} g₂ ∂μ‖ ≤ B₂`, then
+`‖∫ₐ^t g₁ ∂μ - ∫ₐ^{t'} g₂ ∂μ‖ ≤ D + B₁ + B₂`. The integrals are oriented, and no ordering of `a`,
+`s₀`, `t` and `t'` is assumed. -/
 theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {a s₀ t t' D B₁ B₂ : ℝ}
-    (hg₁ : IntervalIntegrable g₁ volume a s₀) (hg₁' : IntervalIntegrable g₁ volume s₀ t)
-    (hg₂ : IntervalIntegrable g₂ volume a s₀) (hg₂' : IntervalIntegrable g₂ volume s₀ t')
-    (hD : ‖∫ s in a..s₀, (g₁ s - g₂ s)‖ ≤ D) (h₁ : ‖∫ s in s₀..t, g₁ s‖ ≤ B₁)
-    (h₂ : ‖∫ s in s₀..t', g₂ s‖ ≤ B₂) :
-    ‖(∫ s in a..t, g₁ s) - ∫ s in a..t', g₂ s‖ ≤ D + B₁ + B₂ := by
-  rw [← intervalIntegral.integral_add_adjacent_intervals hg₁ hg₁',
-    ← intervalIntegral.integral_add_adjacent_intervals hg₂ hg₂',
-    show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
-    ← intervalIntegral.integral_sub hg₁ hg₂]
-  exact (norm_sub_le_of_le (norm_add_le _ _) le_rfl).trans (add_le_add (add_le_add hD h₁) h₂)
+    [NormedSpace ℝ V] {μ : Measure ℝ} {g₁ g₂ : ℝ → V} {a s₀ t t' D B₁ B₂ : ℝ}
+    (hg₁ : IntervalIntegrable g₁ μ a s₀) (hg₁' : IntervalIntegrable g₁ μ s₀ t)
+    (hg₂ : IntervalIntegrable g₂ μ a s₀) (hg₂' : IntervalIntegrable g₂ μ s₀ t')
+    (hD : ‖∫ s in a..s₀, (g₁ s - g₂ s) ∂μ‖ ≤ D) (h₁ : ‖∫ s in s₀..t, g₁ s ∂μ‖ ≤ B₁)
+    (h₂ : ‖∫ s in s₀..t', g₂ s ∂μ‖ ≤ B₂) :
+    ‖(∫ s in a..t, g₁ s ∂μ) - ∫ s in a..t', g₂ s ∂μ‖ ≤ D + B₁ + B₂ :=
+  calc ‖(∫ s in a..t, g₁ s ∂μ) - ∫ s in a..t', g₂ s ∂μ‖
+      = ‖((∫ s in a..s₀, g₁ s ∂μ) - ∫ s in a..s₀, g₂ s ∂μ) + (∫ s in s₀..t, g₁ s ∂μ) -
+          ∫ s in s₀..t', g₂ s ∂μ‖ := by
+        rw [← intervalIntegral.integral_add_adjacent_intervals hg₁ hg₁',
+          ← intervalIntegral.integral_add_adjacent_intervals hg₂ hg₂']
+        congr 1
+        abel
+    _ = ‖(∫ s in a..s₀, (g₁ s - g₂ s) ∂μ) + (∫ s in s₀..t, g₁ s ∂μ) -
+          ∫ s in s₀..t', g₂ s ∂μ‖ := by
+        rw [intervalIntegral.integral_sub hg₁ hg₂]
+    _ ≤ D + B₁ + B₂ :=
+        (norm_sub_le_of_le (norm_add_le _ _) le_rfl).trans (add_le_add (add_le_add hD h₁) h₂)
 
 end TauCeti
