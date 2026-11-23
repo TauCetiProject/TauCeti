@@ -94,17 +94,16 @@ theorem unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
 unimodular divisors `{g 0} - {g ∞}`, which span by Manin's lemma. -/
 theorem addMonoidHom_ext_unimodular {V : Type*} [AddCommMonoid V] {φ ψ : degreeZero ℤ →+ V}
     (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ := by
-  -- `φ` and `ψ` agree on an additive subgroup, which contains the spanning family of Manin's lemma.
-  have hle : Submodule.span ℤ (Set.range fun g : SL(2, ℤ) ↦
-      degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞)) ≤
-        (φ.eqLocus ψ).toIntSubmodule := by
-    refine Submodule.span_le.2 (Set.range_subset_iff.2 fun g ↦ ?_)
-    -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
-    rw [SetLike.mem_coe, degreeZeroRep_apply, degreeZeroGLRep_divisor, ← neg_divisor,
-      ← unimodularDivisor_def (R := ℤ)]
-    exact neg_mem (h g)
-  ext D
-  exact hle (span_degreeZeroRep_eq_top (R := ℤ) ▸ Submodule.mem_top)
+  -- The spanning family of Manin's lemma generates `Div⁰` as an additive group.
+  refine AddMonoidHom.eq_of_eqOn_dense (s := Set.range fun g : SL(2, ℤ) ↦
+    degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞)) ?_ ?_
+  · rw [← Submodule.span_int_eq_addSubgroupClosure, span_degreeZeroRep_eq_top,
+      Submodule.top_toAddSubgroup]
+  rintro _ ⟨g, rfl⟩
+  -- The translate `g ({∞} - {0})` is the reversed unimodular divisor `unimodularDivisor (g * S)`.
+  dsimp only
+  rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, ← neg_divisor,
+    ← unimodularDivisor_def (R := ℤ), ← unimodularDivisor_mul_S, h]
 
 end UnimodularDivisor
 
