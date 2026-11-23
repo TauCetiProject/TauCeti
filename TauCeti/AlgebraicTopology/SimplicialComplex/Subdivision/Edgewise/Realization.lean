@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.B
 
 import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.LinearAlgebra.Finsupp.Pi
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
 # The realization map of an edgewise subdivision
@@ -79,8 +79,8 @@ variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : �
 /-! ### The face map -/
 
 private theorem linearCombination_edgewisePoint_mem {ρ : Finset (K.EdgewiseVertex k)}
-    {σ : Finset ι} (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (x : StandardSimplex ρ) :
-    Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1 ∈
+    {σ : Finset ι} (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (x : StandardSimplex ρ) :
+    Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val ∈
       convexHull ℝ ((fun v => Finsupp.single v (1 : ℝ)) '' (σ : Set ι)) := by
   rw [Finsupp.linearCombination_apply, Finsupp.sum]
   refine (convex_convexHull ℝ _).sum_mem (fun u _ => StandardSimplex.nonneg x u)
@@ -92,34 +92,35 @@ private theorem linearCombination_edgewisePoint_mem {ρ : Finset (K.EdgewiseVert
 closed simplex on a set `σ` of vertices of `K` containing all their entries. It is linear in
 barycentric coordinates and sends the vertex `u` to `edgewisePoint u`. -/
 def edgewiseSubdivisionFaceMap {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) : StandardSimplex ρ → StandardSimplex σ :=
-  fun x => ⟨Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1, by
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) : StandardSimplex ρ → StandardSimplex σ :=
+  fun x => ⟨Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val,
+      by
     simpa only [coe_image] using linearCombination_edgewisePoint_mem hρσ x⟩
 
 /-- The edgewise face map is the linear combination of the points `edgewisePoint u`. -/
 @[simp]
 theorem edgewiseSubdivisionFaceMap_val {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (x : StandardSimplex ρ) :
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (x : StandardSimplex ρ) :
     (edgewiseSubdivisionFaceMap hρσ x : ι →₀ ℝ) =
-      Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1 :=
+      Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val :=
   (rfl)
 
 /-- The coordinates of the edgewise face map: the coordinate at `i` is the combination of the
 coordinates at `i` of the points `edgewisePoint u`, weighted by the barycentric coordinates. -/
 theorem edgewiseSubdivisionFaceMap_apply {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (x : StandardSimplex ρ) (i : ι) :
-    (edgewiseSubdivisionFaceMap hρσ x : ι →₀ ℝ) i = ∑ u ∈ ρ, x.1 u * edgewisePoint u.1 i := by
-  have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (↑ρ : Set (K.EdgewiseVertex k)) :=
-    (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (x : StandardSimplex ρ) (i : ι) :
+    (edgewiseSubdivisionFaceMap hρσ x : ι →₀ ℝ) i = ∑ u ∈ ρ, x.val u * edgewisePoint u.val i := by
+  have hsupp : x.val ∈ Finsupp.supported ℝ ℝ (↑ρ : Set (K.EdgewiseVertex k)) :=
+    (Finsupp.mem_supported ℝ x.val).mpr (StandardSimplex.support_subset x)
   rw [edgewiseSubdivisionFaceMap_val, Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp]
   simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul]
 
 /-- The edgewise face map is continuous. -/
 theorem continuous_edgewiseSubdivisionFaceMap {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) : Continuous (edgewiseSubdivisionFaceMap hρσ) := by
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) : Continuous (edgewiseSubdivisionFaceMap hρσ) := by
   refine continuous_induced_rng.mpr (continuous_pi fun i => ?_)
   simp only [Function.comp_apply, edgewiseSubdivisionFaceMap_apply]
-  have hcoe : Continuous fun x : StandardSimplex ρ => (x.1 : K.EdgewiseVertex k → ℝ) :=
+  have hcoe : Continuous fun x : StandardSimplex ρ => (x.val : K.EdgewiseVertex k → ℝ) :=
     continuous_induced_dom
   exact continuous_finsetSum _ fun u _ => ((continuous_apply u).comp hcoe).mul continuous_const
 
@@ -127,16 +128,16 @@ theorem continuous_edgewiseSubdivisionFaceMap {ρ : Finset (K.EdgewiseVertex k)}
 
 /-- Every entry of a vertex of `ρ` is an entry of some vertex of `ρ`. -/
 private theorem mem_biUnion_image (ρ : Finset (K.EdgewiseVertex k)) :
-    ∀ u ∈ ρ, ∀ l, u.1 l ∈ ρ.biUnion fun u => univ.image u.1 :=
+    ∀ u ∈ ρ, ∀ l, u.val l ∈ ρ.biUnion fun u => univ.image u.val :=
   fun u hu l => mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
 
 private theorem linearCombination_edgewisePoint_mem_realization
     (x : Realization (K.edgewiseSubdivision k)) :
-    Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1 ∈
+    Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val ∈
       (standardGeometricComplex K).space :=
   mem_realization_iff.mpr ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision (support_mem _ x), by
     simpa only [coe_image] using linearCombination_edgewisePoint_mem (mem_biUnion_image _)
-      ⟨x.1, by simpa only [carrier_val] using mem_convexHull_carrier _ x⟩⟩
+      ⟨x.val, by simpa only [carrier_val] using mem_convexHull_carrier _ x⟩⟩
 
 variable (K k) in
 /-- The canonical map from the realization of the `k`-th edgewise subdivision of `K` to the
@@ -144,27 +145,27 @@ realization of `K`. It sends each vertex `u` of the subdivision to `edgewisePoin
 of its entries, and is linear in barycentric coordinates on every simplex. -/
 def edgewiseSubdivisionRealizationMap :
     Realization (K.edgewiseSubdivision k) → Realization K :=
-  fun x => ⟨Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1,
+  fun x => ⟨Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val,
     linearCombination_edgewisePoint_mem_realization x⟩
 
 /-- The edgewise realization map is the linear combination of the points `edgewisePoint u`. -/
 @[simp]
 theorem edgewiseSubdivisionRealizationMap_val (x : Realization (K.edgewiseSubdivision k)) :
     (edgewiseSubdivisionRealizationMap K k x : ι →₀ ℝ) =
-      Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.1) x.1 :=
+      Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val :=
   (rfl)
 
 /-- A vertex `u` of the edgewise subdivision is sent to `edgewisePoint u`, the average of its
 entries. -/
 theorem edgewiseSubdivisionRealizationMap_vertex (u : K.EdgewiseVertex k) :
-    (edgewiseSubdivisionRealizationMap K k (vertex _ u) : ι →₀ ℝ) = edgewisePoint u.1 := by
+    (edgewiseSubdivisionRealizationMap K k (vertex _ u) : ι →₀ ℝ) = edgewisePoint u.val := by
   simp
 
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the edgewise realization map is the edgewise face map followed by the face inclusion
 of `σ`. -/
 theorem edgewiseSubdivisionRealizationMap_comp_faceInclusion (ρ : Face (K.edgewiseSubdivision k))
-    (σ : Face K) (hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1) :
+    (σ : Face K) (hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val) :
     edgewiseSubdivisionRealizationMap K k ∘ faceInclusion _ ρ =
       faceInclusion K σ ∘ edgewiseSubdivisionFaceMap hρσ := by
   funext x
@@ -178,15 +179,15 @@ of the points assigned to its vertices. This statement does not require finitely
 vertices. -/
 theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
     (ρ : Face (K.edgewiseSubdivision k)) :
-    range (fun x : StandardSimplex ρ.1 =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)) := by
+    range (fun x : StandardSimplex ρ.val =>
+      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
+      convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) := by
   classical
   let L : (K.EdgewiseVertex k →₀ ℝ) →ₗ[ℝ] (ι → ℝ) :=
     (Finsupp.lcoeFun : (ι →₀ ℝ) →ₗ[ℝ] (ι → ℝ)).comp
-      (Finsupp.linearCombination ℝ fun a : K.EdgewiseVertex k => edgewisePoint a.1)
-  have hformula : (fun x : StandardSimplex ρ.1 =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
+      (Finsupp.linearCombination ℝ fun a : K.EdgewiseVertex k => edgewisePoint a.val)
+  have hformula : (fun x : StandardSimplex ρ.val =>
+      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
       L ∘ Subtype.val := by
     funext x
     simp [L]
@@ -194,7 +195,7 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
   rw [L.image_convexHull]
   congr 1
   have hsingle (a : K.EdgewiseVertex k) :
-      L (Finsupp.single a 1) = (edgewisePoint a.1 : ι → ℝ) := by simp [L]
+      L (Finsupp.single a 1) = (edgewisePoint a.val : ι → ℝ) := by simp [L]
   simp only [Finset.coe_image, Set.image_image]
   simp only [hsingle, image_eq_range]
   -- The subtype of the coerced set `(ρ.1 : Set _)` and the finset subtype `ρ.1` are
@@ -206,9 +207,9 @@ theorem continuous_edgewiseSubdivisionRealizationMap :
     Continuous (edgewiseSubdivisionRealizationMap K k) := by
   refine continuous_iff_faceInclusion.mpr fun ρ => ?_
   rw [edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ
-    ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩ (mem_biUnion_image ρ.1)]
+    ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩ (mem_biUnion_image ρ.val)]
   exact (continuous_faceInclusion K _).comp
-    (continuous_edgewiseSubdivisionFaceMap (mem_biUnion_image ρ.1))
+    (continuous_edgewiseSubdivisionFaceMap (mem_biUnion_image ρ.val))
 
 /-! ### Injectivity -/
 
@@ -218,7 +219,7 @@ private theorem mul_sum_le_edgewiseSubdivisionRealizationMap
     (x : Realization (K.edgewiseSubdivision k)) (i : ι) :
     (k : ℝ) * Finsupp.linearCombination ℝ (fun j : ι => if j ≤ i then (1 : ℝ) else 0)
         (edgewiseSubdivisionRealizationMap K k x : ι →₀ ℝ) =
-      ∑ w ∈ x.1.support, x.1 w * #{l | w.1 l ≤ i} := by
+      ∑ w ∈ x.val.support, x.val w * #{l | w.val l ≤ i} := by
   rw [edgewiseSubdivisionRealizationMap_val, Finsupp.apply_linearCombination,
     Finsupp.linearCombination_apply, Finsupp.sum, mul_sum]
   refine sum_congr rfl fun w _ => ?_
@@ -231,15 +232,16 @@ open scoped Classical in
 with `c u ≤ c w ≤ c u + 1` below `u` and `c` constant above `u`. Then the weighted deviation of
 `c` from `c u` lies in `[0, ∑ w < u, x w]`. -/
 private theorem deviation_bounds_of_forall_card_eq (x : Realization (K.edgewiseSubdivision k))
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (c : K.EdgewiseVertex k → ℕ)
-    (hbelow : ∀ w ∈ x.1.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
-    (hA : ∀ w ∈ x.1.support, u < w → c w = c u) :
-    0 ≤ ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ∧
-      ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ≤ ∑ w ∈ x.1.support with w < u, x.1 w := by
-  have hρ : x.1.support ∈ K.edgewiseSubdivision k := support_mem _ x
-  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  have hD : ∀ w ∈ x.1.support, 0 ≤ x.1 w * ((c w : ℝ) - c u) ∧
-      x.1 w * ((c w : ℝ) - c u) ≤ if w < u then x.1 w else 0 := by
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.val.support) (c : K.EdgewiseVertex k → ℕ)
+    (hbelow : ∀ w ∈ x.val.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
+    (hA : ∀ w ∈ x.val.support, u < w → c w = c u) :
+    0 ≤ ∑ w ∈ x.val.support, x.val w * ((c w : ℝ) - c u) ∧
+      ∑ w ∈ x.val.support, x.val w * ((c w : ℝ) - c u) ≤ ∑ w ∈ x.val.support with w < u, x.val w
+          := by
+  have hρ : x.val.support ∈ K.edgewiseSubdivision k := support_mem _ x
+  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.val w := Realization.nonneg _ x w
+  have hD : ∀ w ∈ x.val.support, 0 ≤ x.val w * ((c w : ℝ) - c u) ∧
+      x.val w * ((c w : ℝ) - c u) ≤ if w < u then x.val w else 0 := by
     intro w hw
     rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
     · obtain ⟨h₁, h₂⟩ := hbelow w hw h.le
@@ -259,21 +261,21 @@ carrier with `c w' ≠ c u` and `c w ≤ c w' + 1` on the carrier, `c u ≤ c w 
 `c w ≤ c u ≤ c w + 1` above `u`. Then the weighted deviation of `c` from `c u` lies in
 `[-∑ w > u, x w, 0]`. -/
 private theorem deviation_bounds_of_exists_card_ne (x : Realization (K.edgewiseSubdivision k))
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (c : K.EdgewiseVertex k → ℕ)
-    (hbelow : ∀ w ∈ x.1.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
-    (habove : ∀ w ∈ x.1.support, u ≤ w → c w ≤ c u ∧ c u ≤ c w + 1)
-    {w' : K.EdgewiseVertex k} (hw' : w' ∈ x.1.support) (huw' : u < w')
-    (hrise : ∀ w ∈ x.1.support, c w ≤ c w' + 1) (hne : c w' ≠ c u) :
-    -∑ w ∈ x.1.support with u < w, x.1 w ≤
-        ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ∧
-      ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ≤ 0 := by
-  have hρ : x.1.support ∈ K.edgewiseSubdivision k := support_mem _ x
-  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.val.support) (c : K.EdgewiseVertex k → ℕ)
+    (hbelow : ∀ w ∈ x.val.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
+    (habove : ∀ w ∈ x.val.support, u ≤ w → c w ≤ c u ∧ c u ≤ c w + 1)
+    {w' : K.EdgewiseVertex k} (hw' : w' ∈ x.val.support) (huw' : u < w')
+    (hrise : ∀ w ∈ x.val.support, c w ≤ c w' + 1) (hne : c w' ≠ c u) :
+    -∑ w ∈ x.val.support with u < w, x.val w ≤
+        ∑ w ∈ x.val.support, x.val w * ((c w : ℝ) - c u) ∧
+      ∑ w ∈ x.val.support, x.val w * ((c w : ℝ) - c u) ≤ 0 := by
+  have hρ : x.val.support ∈ K.edgewiseSubdivision k := support_mem _ x
+  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.val w := Realization.nonneg _ x w
   have hw'u : c w' + 1 = c u := by
     have := habove w' hw' huw'.le
     omega
-  have hD : ∀ w ∈ x.1.support, -(if u < w then x.1 w else 0) ≤ x.1 w * ((c w : ℝ) - c u) ∧
-      x.1 w * ((c w : ℝ) - c u) ≤ 0 := by
+  have hD : ∀ w ∈ x.val.support, -(if u < w then x.val w else 0) ≤ x.val w * ((c w : ℝ) - c u) ∧
+      x.val w * ((c w : ℝ) - c u) ≤ 0 := by
     intro w hw
     rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
     · have h₁ := (hbelow w hw h.le).1
@@ -298,16 +300,16 @@ in the interval `[∑ w < u, x w, ∑ w ≤ u, x w)`. Then `k` times the coordin
 vertices `≤ i` of the image of `x`, minus `θ`, lies in `(c - 1, c]`, where `c` is the number of
 entries of `u` that are `≤ i`. -/
 private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k))
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) {θ : ℝ}
-    (hθ : ∑ w ∈ x.1.support with w < u, x.1 w ≤ θ)
-    (hθ' : θ < ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u) (i : ι) :
-    (#{l | u.1 l ≤ i} : ℝ) - 1 < ∑ w ∈ x.1.support, x.1 w * #{l | w.1 l ≤ i} - θ ∧
-      ∑ w ∈ x.1.support, x.1 w * #{l | w.1 l ≤ i} - θ ≤ #{l | u.1 l ≤ i} := by
-  set s := x.1.support
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.val.support) {θ : ℝ}
+    (hθ : ∑ w ∈ x.val.support with w < u, x.val w ≤ θ)
+    (hθ' : θ < ∑ w ∈ x.val.support with w < u, x.val w + x.val u) (i : ι) :
+    (#{l | u.val l ≤ i} : ℝ) - 1 < ∑ w ∈ x.val.support, x.val w * #{l | w.val l ≤ i} - θ ∧
+      ∑ w ∈ x.val.support, x.val w * #{l | w.val l ≤ i} - θ ≤ #{l | u.val l ≤ i} := by
+  set s := x.val.support
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
-  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_eq_one _ x
+  set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.val l ≤ i}
+  have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.val w := Realization.nonneg _ x w
+  have hsum : ∑ w ∈ s, x.val w = 1 := Realization.sum_eq_one _ x
   have hbelow : ∀ w ∈ s, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1 := fun _ hw hwu =>
     ⟨card_filter_le_card_filter_of_le hwu (p := (· ≤ i)) antitone_le,
       card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hu
@@ -317,19 +319,19 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
       card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
         (p := (· ≤ i)) antitone_le⟩
   -- The mass of `x` splits into the parts below `u`, at `u`, and above `u`.
-  have hsplit : ∑ w ∈ s with w < u, x.1 w + x.1 u + ∑ w ∈ s with u < w, x.1 w = 1 := by
-    rw [← hsum, sum_filter, sum_filter, ← sum_ite_eq_of_mem' s u (fun w => x.1 w) hu,
+  have hsplit : ∑ w ∈ s with w < u, x.val w + x.val u + ∑ w ∈ s with u < w, x.val w = 1 := by
+    rw [← hsum, sum_filter, sum_filter, ← sum_ite_eq_of_mem' s u (fun w => x.val w) hu,
       ← sum_add_distrib, ← sum_add_distrib]
     refine sum_congr rfl fun w hw => ?_
     rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
     · simp [h, h.ne, h.not_gt]
     · simp
     · simp [h, h.ne', h.not_gt]
-  have hT0 : 0 ≤ ∑ w ∈ s with w < u, x.1 w := sum_nonneg fun w _ => hx0 w
-  have hR0 : 0 ≤ ∑ w ∈ s with u < w, x.1 w := sum_nonneg fun w _ => hx0 w
+  have hT0 : 0 ≤ ∑ w ∈ s with w < u, x.val w := sum_nonneg fun w _ => hx0 w
+  have hR0 : 0 ≤ ∑ w ∈ s with u < w, x.val w := sum_nonneg fun w _ => hx0 w
   -- The combination of counts is `c u` plus the weighted deviations from `c u`.
-  have hdev : ∑ w ∈ s, x.1 w * (c w : ℝ) =
-      c u + ∑ w ∈ s, x.1 w * ((c w : ℝ) - c u) := by
+  have hdev : ∑ w ∈ s, x.val w * (c w : ℝ) =
+      c u + ∑ w ∈ s, x.val w * ((c w : ℝ) - c u) := by
     simp only [mul_sub, sum_sub_distrib, ← sum_mul, hsum, one_mul, add_sub_cancel]
   rw [hdev]
   by_cases hA : ∀ w ∈ s, u < w → c w = c u
@@ -350,12 +352,13 @@ open scoped Classical in
 `x` of the edgewise subdivision, cover `[0, 1)`. -/
 private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivision k))
     {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ < 1) :
-    ∃ u ∈ x.1.support, ∑ w ∈ x.1.support with w < u, x.1 w ≤ θ ∧
-      θ < ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u := by
-  set s := x.1.support
+    ∃ u ∈ x.val.support, ∑ w ∈ x.val.support with w < u, x.val w ≤ θ ∧
+      θ < ∑ w ∈ x.val.support with w < u, x.val w + x.val u := by
+  set s := x.val.support
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_eq_one _ x
-  have hle (u) (hu : u ∈ s) : ∑ w ∈ s with w ≤ u, x.1 w = ∑ w ∈ s with w < u, x.1 w + x.1 u := by
+  have hsum : ∑ w ∈ s, x.val w = 1 := Realization.sum_eq_one _ x
+  have hle (u) (hu : u ∈ s) : ∑ w ∈ s with w ≤ u, x.val w = ∑ w ∈ s with w < u, x.val w + x.val u
+      := by
     rw [show {w ∈ s | w ≤ u} = insert u {w ∈ s | w < u} by
       ext w
       simp only [mem_filter, mem_insert, le_iff_lt_or_eq]
@@ -367,7 +370,7 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
       sum_insert (by simp), add_comm]
   -- A minimal vertex has nothing below it; take the largest vertex whose interval starts by `θ`.
   obtain ⟨m, hm⟩ := Finset.exists_minimal (mem_edgewiseSubdivision_iff.mp hρ).1
-  obtain ⟨u, hu⟩ := Finset.exists_maximal (s := {u ∈ s | ∑ w ∈ s with w < u, x.1 w ≤ θ})
+  obtain ⟨u, hu⟩ := Finset.exists_maximal (s := {u ∈ s | ∑ w ∈ s with w < u, x.val w ≤ θ})
     ⟨m, mem_filter.mpr ⟨hm.prop, by
       rw [filter_eq_empty_iff.mpr fun w hw hwm => hwm.not_ge (hm.2 hw hwm.le), sum_empty]
       exact hθ₀⟩⟩
@@ -393,7 +396,7 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
       · exact h.le
       · exact le_rfl
       · exact absurd (hw.2 (mem_filter.mpr ⟨hw's, h⟩) hw'w.le) hw'w.not_ge
-    have hwθ : ∑ w' ∈ s with w' < w, x.1 w' ≤ θ := by
+    have hwθ : ∑ w' ∈ s with w' < w, x.val w' ≤ θ := by
       rw [heq, hle u hus]
       exact hlt
     exact huw.not_ge (hu.2 (mem_filter.mpr ⟨hws, hwθ⟩) huw.le)
@@ -402,21 +405,21 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
 which, for every `i`, `z i - θ` lies in `(c - 1, c]`, where `c` is the number of its entries
 `≤ i`. -/
 private theorem eq_of_card_sub_one_lt_and_le {u w : K.EdgewiseVertex k} {z : ι → ℝ} {θ : ℝ}
-    (hu : ∀ i, (#{l | u.1 l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | u.1 l ≤ i})
-    (hw : ∀ i, (#{l | w.1 l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | w.1 l ≤ i}) :
+    (hu : ∀ i, (#{l | u.val l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | u.val l ≤ i})
+    (hw : ∀ i, (#{l | w.val l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | w.val l ≤ i}) :
     u = w := by
   -- Both counts are the least integer `≥ z i - θ`, and a monotone tuple is determined by its
   -- counts.
   have hle (u w : K.EdgewiseVertex k)
-      (hu : ∀ i, (#{l | u.1 l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | u.1 l ≤ i})
-      (hw : ∀ i, (#{l | w.1 l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | w.1 l ≤ i}) :
+      (hu : ∀ i, (#{l | u.val l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | u.val l ≤ i})
+      (hw : ∀ i, (#{l | w.val l ≤ i} : ℝ) - 1 < z i - θ ∧ z i - θ ≤ #{l | w.val l ≤ i}) :
       u ≤ w := fun j => by
-    have h : (#{l | w.1 l ≤ w.1 j} : ℝ) < #{l | u.1 l ≤ w.1 j} + 1 := by
-      linarith [hu (w.1 j), hw (w.1 j)]
-    have h' : #{l | w.1 l ≤ w.1 j} ≤ #{l | u.1 l ≤ w.1 j} :=
+    have h : (#{l | w.val l ≤ w.val j} : ℝ) < #{l | u.val l ≤ w.val j} + 1 := by
+      linarith [hu (w.val j), hw (w.val j)]
+    have h' : #{l | w.val l ≤ w.val j} ≤ #{l | u.val l ≤ w.val j} :=
       Nat.lt_add_one_iff.mp (by exact_mod_cast h)
-    exact (Tuple.lt_card_le_iff_apply_le_of_monotone u.2.1).mp
-      (((Tuple.lt_card_le_iff_apply_le_of_monotone w.2.1).mpr le_rfl).trans_le h')
+    exact (Tuple.lt_card_le_iff_apply_le_of_monotone u.property.1).mp
+      (((Tuple.lt_card_le_iff_apply_le_of_monotone w.property.1).mpr le_rfl).trans_le h')
   exact le_antisymm (hle u w hu hw) (hle w u hw hu)
 
 open scoped Classical in
@@ -425,22 +428,22 @@ carrier of the first is a vertex of the carrier of the second, and its interval
 `[∑ w < u, x w, ∑ w ≤ u, x w)` for the first is contained in that for the second. -/
 private theorem mem_support_and_Ico_subset {x x' : Realization (K.edgewiseSubdivision k)}
     (h : edgewiseSubdivisionRealizationMap K k x = edgewiseSubdivisionRealizationMap K k x')
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) :
-    u ∈ x'.1.support ∧
-      Set.Ico (∑ w ∈ x.1.support with w < u, x.1 w)
-          (∑ w ∈ x.1.support with w < u, x.1 w + x.1 u) ⊆
-        Set.Ico (∑ w ∈ x'.1.support with w < u, x'.1 w)
-          (∑ w ∈ x'.1.support with w < u, x'.1 w + x'.1 u) := by
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.val.support) :
+    u ∈ x'.val.support ∧
+      Set.Ico (∑ w ∈ x.val.support with w < u, x.val w)
+          (∑ w ∈ x.val.support with w < u, x.val w + x.val u) ⊆
+        Set.Ico (∑ w ∈ x'.val.support with w < u, x'.val w)
+          (∑ w ∈ x'.val.support with w < u, x'.val w + x'.val u) := by
   -- Every offset `θ` in the interval of `u` for `x` lies in the interval of some vertex `w` for
   -- `x'`, and the counts of both `u` and `w` are then determined by the common image.
-  have key : ∀ θ ∈ Set.Ico (∑ w ∈ x.1.support with w < u, x.1 w)
-      (∑ w ∈ x.1.support with w < u, x.1 w + x.1 u), u ∈ x'.1.support ∧
-        θ ∈ Set.Ico (∑ w ∈ x'.1.support with w < u, x'.1 w)
-          (∑ w ∈ x'.1.support with w < u, x'.1 w + x'.1 u) := by
+  have key : ∀ θ ∈ Set.Ico (∑ w ∈ x.val.support with w < u, x.val w)
+      (∑ w ∈ x.val.support with w < u, x.val w + x.val u), u ∈ x'.val.support ∧
+        θ ∈ Set.Ico (∑ w ∈ x'.val.support with w < u, x'.val w)
+          (∑ w ∈ x'.val.support with w < u, x'.val w + x'.val u) := by
     rintro θ ⟨hθ, hθ'⟩
-    have hsplit : ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u ≤ 1 := by
-      refine (?_ : _ ≤ ∑ w ∈ x.1.support, x.1 w).trans_eq (Realization.sum_eq_one _ x)
-      rw [← sum_filter_add_sum_filter_not x.1.support (· < u)]
+    have hsplit : ∑ w ∈ x.val.support with w < u, x.val w + x.val u ≤ 1 := by
+      refine (?_ : _ ≤ ∑ w ∈ x.val.support, x.val w).trans_eq (Realization.sum_eq_one _ x)
+      rw [← sum_filter_add_sum_filter_not x.val.support (· < u)]
       gcongr
       · exact single_le_sum (fun w _ => Realization.nonneg _ x w)
           (mem_filter.mpr ⟨hu, lt_irrefl u⟩)
@@ -462,13 +465,13 @@ theorem edgewiseSubdivisionRealizationMap_injective :
   classical
   intro x x' h
   refine Subtype.ext (Finsupp.ext fun u => ?_)
-  by_cases hu : u ∈ x.1.support
+  by_cases hu : u ∈ x.val.support
   · obtain ⟨hu', h₁⟩ := mem_support_and_Ico_subset h hu
     obtain ⟨-, h₂⟩ := mem_support_and_Ico_subset h.symm hu'
     have hpos := Realization.pos_of_mem_support _ x hu
     have := (Set.Ico_eq_Ico_iff (Or.inl (lt_add_of_pos_right _ hpos))).mp (h₁.antisymm h₂)
     linarith [this.1, this.2]
-  · have hu' : u ∉ x'.1.support := fun hu' => hu (mem_support_and_Ico_subset h.symm hu').1
+  · have hu' : u ∉ x'.val.support := fun hu' => hu (mem_support_and_Ico_subset h.symm hu').1
     rw [Finsupp.notMem_support_iff.mp hu, Finsupp.notMem_support_iff.mp hu']
 
 end AbstractSimplicialComplex

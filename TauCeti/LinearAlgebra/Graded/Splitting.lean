@@ -24,19 +24,21 @@ contract a complex of vector spaces onto its cohomology.
 
 ## Main result
 
-* `TauCeti.LinearMap.IsHomogeneous.exists_rightInverse`: a surjective homogeneous map of degree
+* `LinearMap.IsHomogeneous.exists_rightInverse`: a surjective homogeneous map of degree
   `r` onto a projective module has a homogeneous right inverse of degree `-r`.
 -/
 
 public section
 
-namespace TauCeti.LinearMap.IsHomogeneous
+namespace LinearMap.IsHomogeneous
+
+open TauCeti (InternalGrading)
 
 universe uR uM uN
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [Semiring R]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-  {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+  {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {f : M →ₗ[R] N} {r : ℤ}
 
 /-- A surjective homogeneous linear map of degree `r` between internally graded modules has a
 homogeneous right inverse of degree `-r` if its target is projective. -/
@@ -47,4 +49,4 @@ theorem exists_rightInverse [Module.Projective R N] (hf : IsHomogeneous f G.piec
   refine ⟨H.homogeneousPart G s (-r), ?_, H.isHomogeneous_homogeneousPart G s (-r)⟩
   simpa [hs] using H.comp_homogeneousPart G H s (-r) hf
 
-end TauCeti.LinearMap.IsHomogeneous
+end LinearMap.IsHomogeneous

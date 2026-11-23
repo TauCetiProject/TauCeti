@@ -163,8 +163,8 @@ private theorem exists_range_levelNorm_le_of_pow_mem {W : OpenSubgroup (Absolute
   have : IsScalarTower E L' (SeparableClosure K) := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower K E L' := .of_algebraMap_eq fun _ ↦ rfl
   let f : L ≃ₐ[E] L' :=
-    { toFun x := ⟨x, x.2⟩
-      invFun x := ⟨x, x.2⟩
+    { toFun x := ⟨x, x.property⟩
+      invFun x := ⟨x, x.property⟩
       left_inv _ := rfl
       right_inv _ := rfl
       map_mul' _ _ := rfl

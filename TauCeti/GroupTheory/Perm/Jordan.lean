@@ -111,10 +111,10 @@ theorem exists_eqOn_compl_support_mul_mul_inv_mem_zpowers {g x : Perm α}
   obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd hsq
     (g := ⟨g, hgF⟩) (h := ⟨x * g * x⁻¹, hg'F⟩) (by rw [orderOf_mk, hgc.orderOf])
     (by rw [orderOf_mk, hgc.conj.orderOf, card_support_conj])
-  refine ⟨y * x, mul_mem y.2.1 hx, fun z hz ↦ ?_, ?_⟩
+  refine ⟨y * x, mul_mem y.property.1 hx, fun z hz ↦ ?_, ?_⟩
   · have hyz : (y : Perm α) (x z) = x z := by
       by_contra h
-      exact hz ((hxs z).1 (by simpa using mem_range_ofSubtype_iff.1 y.2.2 (mem_support.2 h)))
+      exact hz ((hxs z).1 (by simpa using mem_range_ofSubtype_iff.1 y.property.2 (mem_support.2 h)))
     rw [Perm.mul_apply, hyz]
   · obtain ⟨k, hk⟩ := mem_zpowers_iff.1 hy
     refine mem_zpowers_iff.2 ⟨k, ?_⟩
@@ -134,7 +134,7 @@ private theorem exists_eqOn_swap_mul_mul_inv_mem_zpowers {g : Perm α} (hgc : g.
     g.supportᶜ.equivFin.symm.toEmbedding.trans (Function.Embedding.subtype _)
   obtain ⟨x, hx⟩ := exists_smul_eq G e (e.trans (swap a b).toEmbedding)
   have hxΔ : ∀ z ∉ g.support, (x : Perm α) z = swap a b z := fun z hz ↦ by
-    simpa only [e, Function.Embedding.smul_apply, Function.Embedding.trans_apply,
+    simpa only [e, smul_apply, Function.Embedding.trans_apply,
       Function.Embedding.subtype_apply, Equiv.toEmbedding_apply, Equiv.symm_apply_apply,
       Subgroup.smul_def, Perm.smul_def] using
       DFunLike.congr_fun hx (g.supportᶜ.equivFin ⟨z, mem_compl.2 hz⟩)
@@ -147,7 +147,8 @@ private theorem exists_eqOn_swap_mul_mul_inv_mem_zpowers {g : Perm α} (hgc : g.
       have : (x : Perm α) (swap a b ((x : Perm α) z)) = (x : Perm α) z := by
         rw [hxΔ _ hw, swap_apply_self]
       exact hw (by rwa [(x : Perm α).injective this])
-  obtain ⟨n, hnG, hn, hng⟩ := exists_eqOn_compl_support_mul_mul_inv_mem_zpowers hgc hgp hg x.2 hxs
+  obtain ⟨n, hnG, hn, hng⟩ := exists_eqOn_compl_support_mul_mul_inv_mem_zpowers hgc hgp hg
+      x.property hxs
   exact ⟨n, hnG, fun z hz ↦ (hn z hz).trans (hxΔ z hz), hng⟩
 
 /-- **Jordan's theorem for a cycle of prime length** (Wielandt, Theorem 13.9). A primitive

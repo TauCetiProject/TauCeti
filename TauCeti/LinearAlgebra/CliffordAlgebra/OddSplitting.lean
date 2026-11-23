@@ -217,9 +217,9 @@ theorem ofEvenProd_injective (hcomm : ∀ x : ↥(even Q), Commute ω (x : Cliff
     simp only [mul_add, ← mul_assoc, hff, hfe, zero_mul, zero_add, mul_zero] at h'
     exact h'
   have hxmem : (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    rw [← even_toSubmodule Q]; exact x.2
+    rw [← even_toSubmodule Q]; exact x.property
   have hymem : (y : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    rw [← even_toSubmodule Q]; exact y.2
+    rw [← even_toSubmodule Q]; exact y.property
   have hx0 : (x : CliffordAlgebra Q) = 0 :=
     eq_zero_of_mem_even_of_halfOneAdd_mul_eq_zero hodd hxmem hx
   have hy0 : (y : CliffordAlgebra Q) = 0 :=

@@ -74,22 +74,22 @@ private theorem exists_sliceChart_closure_analyticConeOrbit (σ : Φ.cones) {k :
   let n := Module.finrank ℤ N
   let r : Fin k ≃ {ρ : Φ.Ray // ρ.toCone ≤ σ} := ((Finite.equivFin _).trans (finCongr hk)).symm
   have hmem (y : Φ.analyticRealization hΦ) : y ∈ closure (Φ.analyticConeOrbit hΦ σ) ↔
-      ∀ a, y ∈ Φ.analyticBoundaryComponent hΦ (r a).1 := by
+      ∀ a, y ∈ Φ.analyticBoundaryComponent hΦ (r a).val := by
     simp only [← Φ.iInter_analyticBoundaryComponent_eq_closure_analyticConeOrbit hΦ σ,
       mem_iInter]
-    exact ⟨fun h a ↦ h _ (r a).2, fun h ρ hρ ↦ by simpa using h (r.symm ⟨ρ, hρ⟩)⟩
+    exact ⟨fun h a ↦ h _ (r a).property, fun h ρ hρ ↦ by simpa using h (r.symm ⟨ρ, hρ⟩)⟩
   obtain ⟨s, j, e, hx, hs, he⟩ :=
     Φ.exists_partialDiffeomorph_analyticBoundaryComponent_normalForm hΦ x ω
   -- Every ray of `σ` passes through `x`, so the normal form assigns it a coordinate, and the
   -- orbit closure is the common zero locus of these `k` coordinates.
-  have hs' (a : Fin k) : (r a).1 ∈ s := (hs _).mp ((hmem x).mp x.2 a)
+  have hs' (a : Fin k) : (r a).val ∈ s := (hs _).mp ((hmem x).mp x.property a)
   let j' : Fin k ↪ Fin n :=
-    ⟨fun a ↦ j ⟨(r a).1, hs' a⟩,
+    ⟨fun a ↦ j ⟨(r a).val, hs' a⟩,
       fun a b h ↦ r.injective (Subtype.ext (congrArg (Subtype.val : s → Φ.Ray) (j.injective h)))⟩
   have heS (y) (hy : y ∈ e.source) :
       y ∈ closure (Φ.analyticConeOrbit hΦ σ) ↔ ∀ a, e y (j' a) = 0 := by
     rw [hmem]
-    exact forall_congr' fun a ↦ (he y hy (r a).1).trans (exists_prop_of_true (hs' a))
+    exact forall_congr' fun a ↦ (he y hy (r a).val).trans (exists_prop_of_true (hs' a))
   -- Split the coordinates of `ℂ ^ n` into the `k` coordinates of the rays of `σ`, which become
   -- the transverse coordinates, and the remaining `n - k` coordinates.
   obtain ⟨L, hL⟩ : ∃ L : (Fin n → ℂ) ≃L[ℂ] (Fin (n - k) → ℂ) × (Fin k → ℂ),
@@ -124,14 +124,14 @@ of the expected codimension. -/
 theorem exists_isManifold_closure_analyticConeOrbit_isSmoothEmbedding (σ : Φ.cones) :
     letI := Φ.analyticChartedSpace hΦ
     ∃ C : ChartedSpace (Fin (Module.finrank ℤ N -
-          Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V))) → ℂ)
+          Module.finrank ℝ (Submodule.span ℝ (σ.val : Set V))) → ℂ)
         (closure (Φ.analyticConeOrbit hΦ σ)),
       letI := C
       IsManifold 𝓘(ℂ, Fin (Module.finrank ℤ N -
-          Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V))) → ℂ) ω
+          Module.finrank ℝ (Submodule.span ℝ (σ.val : Set V))) → ℂ) ω
           (closure (Φ.analyticConeOrbit hΦ σ)) ∧
         Manifold.IsSmoothEmbedding 𝓘(ℂ, Fin (Module.finrank ℤ N -
-            Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V))) → ℂ)
+            Module.finrank ℝ (Submodule.span ℝ (σ.val : Set V))) → ℂ)
           𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) ω
           (Subtype.val : closure (Φ.analyticConeOrbit hΦ σ) → Φ.analyticRealization hΦ) := by
   let := Φ.analyticChartedSpace hΦ
@@ -139,10 +139,10 @@ theorem exists_isManifold_closure_analyticConeOrbit_isSmoothEmbedding (σ : Φ.c
   -- The fan rays contained in `σ` are the rays of the regular, hence simplicial, cone `σ`, so
   -- there are exactly `dim σ` of them.
   have hk : Nat.card {ρ : Φ.Ray // ρ.toCone ≤ σ} =
-      Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V)) := by
+      Module.finrank ℝ (Submodule.span ℝ (σ.val : Set V)) := by
     rw [Nat.card_congr (Φ.rayEquiv σ)]
     exact (finrank_span_face_eq_card_rays_of_isSimplicial
-      (((isRegular_iff.mp hΦ) σ.1 σ.2).isSimplicial Φ.lattice) ⟨σ.1, .refl _⟩).symm
+      (((isRegular_iff.mp hΦ) σ.val σ.property).isSimplicial Φ.lattice) ⟨σ.val, .refl _⟩).symm
   choose A e hcover hslice using Φ.exists_sliceChart_closure_analyticConeOrbit hΦ σ hk
   let q (x : closure (Φ.analyticConeOrbit hΦ σ)) := (e x).toOpenPartialHomeomorph
   have hq (x) : IsSliceChart (q x) (univ ×ˢ {0}) (closure (Φ.analyticConeOrbit hΦ σ)) := by

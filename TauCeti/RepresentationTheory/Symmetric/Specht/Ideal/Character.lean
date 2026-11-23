@@ -47,7 +47,9 @@ conjugates of `g`.
   finite-dimensional representation `M` of `Sₙ` in characteristic zero,
   `n! · dim (c_t M) = ∑_σ χ^μ(σ) χ_M(σ)`, since the action of `c_t` is a scaled projection.
 * `Nat.Partition.youngSymmetrizer_mul_self`: the Young symmetrizer `c_μ` of a partition satisfies
-  `c_μ² = (n! / f^μ) c_μ`.
+  `c_μ² = (n! / f^μ) c_μ`, and
+  `Nat.Partition.isUnit_algebraMap_factorial_div_finrank_spechtModule`: its scalar `n! / f^μ` is
+  a unit.
 * `Nat.Partition.finrank_span_youngSymmetrizer`: `dim (k[Sₙ] c_μ) = f^μ`.
 
 ## References
@@ -140,6 +142,13 @@ theorem youngSymmetrizer_mul_self [CommSemiring k] [Algebra ℚ k] :
     rw [YoungDiagram.card_ofPartition]
   rw [youngSymmetrizer_def, ← map_mul, YoungTableau.youngSymmetrizerOver_sq, map_smul,
     YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation, hd]
+
+/-- The scalar `d! / f^μ` of `c_μ² = (d! / f^μ) c_μ` (`Nat.Partition.youngSymmetrizer_mul_self`)
+is a unit. -/
+theorem isUnit_algebraMap_factorial_div_finrank_spechtModule [Semiring k] [Algebra ℚ k] :
+    IsUnit (algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule (R := ℚ) μ))) :=
+  (isUnit_iff_ne_zero.mpr (div_ne_zero (Nat.cast_ne_zero.mpr d.factorial_ne_zero)
+    (Nat.cast_ne_zero.mpr (finrank_spechtModule_pos μ).ne'))).map _
 
 /-- **The left ideal `k[S_d] c_μ` has the dimension `f^μ` of the Specht module.** Its character
 at the identity, multiplied by `d! / f^μ`, is `d!` times the coefficient `1` of the identity in

@@ -56,11 +56,11 @@ statement about polynomials, usable by any caller with a common divisor in hand,
 `evalEval_ψ₂_sq` is an unconditional on-curve evaluation. The torsion input that turns them into
 the Nagell–Lutz disjunct lives in `Torsion/Discriminant.lean`.
 
-This is an ingredient for the Nagell–Lutz theorem, whose short-model form `lutz_nagell` concludes
-`x, y ∈ ℤ` together with `y = 0 ∨ y² ∣ Δ`. It is the algebraic step feeding the **second
-disjunct** of that disjunction, for long Weierstrass models as well. Establishing the full
-disjunction additionally requires the torsion input above and a separate treatment of the `y = 0`
-branch.
+This is an ingredient for the Nagell–Lutz theorem: the algebraic step feeding the **second
+disjunct** of the long-model companion `κ = 0 ∨ κ² ∣ 4Δ`. Establishing that disjunction
+additionally requires the torsion input above and a separate treatment of the `κ = 0` branch. For a
+model with `a₁ = a₃ = 0` the short-model theorems use the sharper step of
+`CubicDiscriminant.lean` instead, which gives `y²` dividing `Δ / 16`.
 
 ## Provenance
 

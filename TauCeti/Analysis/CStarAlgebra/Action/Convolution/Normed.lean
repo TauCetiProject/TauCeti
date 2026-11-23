@@ -154,20 +154,9 @@ variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 of the inverted Haar measure. -/
 theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ := by
   simp only [norm_eq_integral_norm, ofConv_star, norm_twistedInvolution_apply]
-  -- On compactly supported continuous integrands `μ` is a multiple of a Haar measure, for which
-  -- this is the inversion formula.
-  have hc : Continuous fun s => (Measure.modularCharacter s : ℝ) * ‖f.ofConv s⁻¹‖ :=
-    (NNReal.continuous_coe.comp continuous_modularCharacter).mul
-      (f.ofConv.continuous.comp continuous_inv).norm
-  have hcs : HasCompactSupport fun s => (Measure.modularCharacter s : ℝ) * ‖f.ofConv s⁻¹‖ :=
-    (f.ofConv.hasCompactSupport.comp_homeomorph (Homeomorph.inv G)).norm.mul_left
-  rw [Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar hc hcs,
-    Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport (f := fun s => ‖f.ofConv s‖)
-      μ Measure.haar f.ofConv.continuous.norm f.ofConv.hasCompactSupport.norm,
-    integral_smul_nnreal_measure, integral_smul_nnreal_measure]
-  simpa only [smul_eq_mul] using congrArg _ (integral_modularCharacter_smul_inv_eq_self
-    (μ := Measure.haar) (f := fun s => ‖f.ofConv s‖) f.ofConv.continuous.norm
-    f.ofConv.hasCompactSupport.norm)
+  simpa only [smul_eq_mul] using integral_modularCharacter_smul_inv_eq_self
+    (μ := μ) (f := fun s => ‖f.ofConv s‖) f.ofConv.continuous.norm
+    f.ofConv.hasCompactSupport.norm
 
 /-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
 completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach

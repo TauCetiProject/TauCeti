@@ -223,7 +223,7 @@ the residue field map of `g⁻¹` at `y`, which makes this a left action. It is 
 `SpecMap_residueAction_fromSpecResidueField`, and its kernel is the inertia group
 (`ker_residueAction`). -/
 noncomputable def residueAction (y : Y) : decomposition σ y →* Aut (Y.residueField y) where
-  toFun g := .of (residueIso σ g.2)
+  toFun g := .of (residueIso σ g.property)
   map_one' := by
     ext1
     refine Iso.ext (Scheme.eq_of_SpecMap_comp_fromSpecResidueField ?_)
@@ -239,7 +239,7 @@ is compatible with the canonical morphism `Spec κ(y) ⟶ Y` and the action of `
 theorem SpecMap_residueAction_fromSpecResidueField (y : Y) (g : decomposition σ y) :
     Spec.map (residueAction σ y g).asIso.hom ≫ Y.fromSpecResidueField y =
       Y.fromSpecResidueField y ≫ (σ (g : G)⁻¹).asIso.hom :=
-  SpecMap_residueIso_fromSpecResidueField σ g.2
+  SpecMap_residueIso_fromSpecResidueField σ g.property
 
 /-- The inertia group is the kernel of the action of the decomposition group on the residue
 field. -/

@@ -76,7 +76,7 @@ universe u v
 
 namespace Representation
 
-open TauCeti TauCeti.Representation
+open TauCeti
 
 section OrbitIndex
 

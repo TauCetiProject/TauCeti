@@ -91,7 +91,7 @@ theorem exists_relationModule_surjective_of_exact {A Y : Type*} [AddCommGroup A]
     (hc'.trans ((LinearMap.range_eq_top (f := π ∘ₗ φ)).mpr (hπ.comp hφ)).symm)
   -- `φ` carries `ker (π ∘ φ)` into `ker π = range i ≅ A`.
   have hmem (x : LinearMap.ker (π ∘ₗ φ)) : φ x ∈ LinearMap.range i :=
-    (hiπ (φ x)).mp (LinearMap.mem_ker.mp x.2)
+    (hiπ (φ x)).mp (LinearMap.mem_ker.mp x.property)
   let β₀ : LinearMap.ker (π ∘ₗ φ) →ₗ[Λ] A :=
     (LinearEquiv.ofInjective i hi).symm.toLinearMap ∘ₗ (φ.restrict fun x hx ↦ hmem ⟨x, hx⟩)
   have hβ₀ (x : LinearMap.ker (π ∘ₗ φ)) : i (β₀ x) = φ x := by

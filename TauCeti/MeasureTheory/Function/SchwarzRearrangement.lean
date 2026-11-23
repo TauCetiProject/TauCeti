@@ -5,14 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
+-- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
+-- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
+import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -71,6 +76,11 @@ rearrangement, which gives the case `p = ∞`.
 * `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
   `MeasureTheory.Integrable.toReal_schwarzRearrangement`: almost-everywhere finiteness and
   integrability of the real-valued rearrangement of the positive part of an integrable function.
+* `TauCeti.ae_schwarzRearrangement_ofReal_ne_top`: almost-everywhere finiteness of the
+  rearrangement of the positive part of an a.e.-measurable function with one superlevel set of
+  finite measure.
+* `TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement`: equimeasurability of the real-valued
+  rearrangement at nonnegative levels.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -93,32 +103,6 @@ open MeasureTheory Metric Set Filter Topology
 open scoped ENNReal
 
 namespace TauCeti
-
-section Distribution
-
-variable {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ≥0∞}
-
-/-- **Right continuity of the distribution function.** The measure of a strict superlevel set
-`{t < f}` is approached by those of strictly higher levels, so anything below it is already below
-`μ {s < f}` for some `s > t`. -/
-theorem exists_lt_lt_measure_setOf_lt {t c : ℝ≥0∞} (h : c < μ {y | t < f y}) :
-    ∃ s, t < s ∧ c < μ {y | s < f y} := by
-  have ht : t ≠ ∞ := by
-    rintro rfl
-    simp at h
-  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 ht)
-  have hunion : {y | t < f y} = ⋃ n, {y | u n < f y} := by
-    ext y
-    simp only [mem_ofPred_eq, mem_iUnion]
-    exact ⟨fun hy ↦ (hlim.eventually (gt_mem_nhds hy)).exists,
-      fun ⟨n, hn⟩ ↦ (hut n).1.trans hn⟩
-  have hmono : Monotone fun n ↦ {y | u n < f y} :=
-    fun m n hmn y hy ↦ (hu.antitone hmn).trans_lt hy
-  rw [hunion, hmono.measure_iUnion, lt_iSup_iff] at h
-  obtain ⟨n, hn⟩ := h
-  exact ⟨u n, (hut n).1, hn⟩
-
-end Distribution
 
 section Measure
 
@@ -148,7 +132,7 @@ theorem lt_schwarzRearrangement_iff {x : E} {t : ℝ≥0∞} :
     obtain ⟨hball, hts⟩ := hs
     exact hball.trans_le (measure_mono fun y hy ↦ hts.trans hy)
   · intro h
-    obtain ⟨s, hts, hs⟩ := exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨s, hts, hs⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact ⟨s, lt_iSup_iff.2 ⟨hs, hts⟩⟩
 
 /-- The strict superlevel sets of the Schwarz rearrangement, as sets. -/
@@ -384,6 +368,50 @@ theorem _root_.MeasureTheory.Integrable.toReal_schwarzRearrangement {u : E → �
     Integrable (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) μ := by
   exact integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
     hu.lintegral_schwarzRearrangement_ofReal_ne_top
+
+/-- The Schwarz rearrangement of the positive part of an a.e.-measurable real function is finite
+almost everywhere as soon as one superlevel set `{u > t}` has finite measure. -/
+theorem ae_schwarzRearrangement_ofReal_ne_top {u : E → ℝ} (hu : AEMeasurable u μ) {t : ℝ}
+    (ht : μ {x | t < u x} ≠ ∞) :
+    ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞ := by
+  have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun n : ℕ ↦ {x | (n : ℝ) < u x})
+    (fun n ↦ nullMeasurableSet_lt aemeasurable_const hu)
+    (fun m n hmn x (hx : (n : ℝ) < u x) ↦ (Nat.cast_le.2 hmn).trans_lt hx)
+    ⟨⌈t⌉₊, ne_top_of_le_ne_top ht (measure_mono fun x (hx : (⌈t⌉₊ : ℝ) < u x) ↦
+      (Nat.le_ceil t).trans_lt hx)⟩
+  have hempty : ⋂ n : ℕ, {x | (n : ℝ) < u x} = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ by
+      obtain ⟨n, hn⟩ := exists_nat_ge (u x)
+      exact (mem_iInter.1 hx n).not_ge hn
+  rw [hempty, measure_empty] at hlim
+  refine ae_iff.2 (le_antisymm (ge_of_tendsto' hlim fun n ↦ ?_) zero_le)
+  calc μ {x | ¬schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞}
+      ≤ μ {x | ENNReal.ofReal n < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} :=
+        measure_mono fun x (hx : ¬_ ≠ ∞) ↦ by simp_all [mem_ofPred_eq]
+    _ = μ {x | (n : ℝ) < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg n.cast_nonneg
+
+/-- At a nonnegative level `s`, the real-valued Schwarz rearrangement of the positive part of `u`
+has the same superlevel measure as `u`, provided the extended rearrangement is finite almost
+everywhere. -/
+theorem addHaar_setOf_lt_toReal_schwarzRearrangement {u : E → ℝ}
+    (hu : ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞) {s : ℝ}
+    (hs : 0 ≤ s) :
+    μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal} =
+      μ {x | s < u x} := by
+  calc μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal}
+      = μ {x | ENNReal.ofReal s < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} := by
+        refine measure_congr ?_
+        filter_upwards [hu] with x hx
+        exact (ENNReal.ofReal_lt_iff_lt_toReal hs hx).symm
+    _ = μ {x | s < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
 
 variable (μ)
 

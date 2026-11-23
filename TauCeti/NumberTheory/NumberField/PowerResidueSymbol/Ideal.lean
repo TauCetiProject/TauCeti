@@ -37,12 +37,18 @@ zero ideal, which has no prime factors, is the trivial character.
   `𝔞` and `𝔟`.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
+* `Ideal.powerResidueSymbolIdeal_prod_right`: multiplicativity in a finite product of nonzero
+  ideals.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
+* `Ideal.powerResidueSymbolIdeal_prod_right`: `(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` for nonzero ideals
+  `𝔞ᵢ`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
+* `Ideal.powerResidueSymbolIdeal_eq_zero_or_pow_eq_one`: every value of the symbol is either `0` or
+  an `n`-th root of unity.
 * `Ideal.powerResidueSymbolIdeal_neg`: `(-x / 𝔞)_n = (x / 𝔞)_n` for odd `n`.
 * `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
   `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
@@ -165,6 +171,23 @@ theorem powerResidueSymbolIdeal_mul_right_intCast (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 
       powerResidueSymbolIdeal 𝔞 n (m : 𝓞 K ⧸ 𝔞) * powerResidueSymbolIdeal 𝔟 n (m : 𝓞 K ⧸ 𝔟) := by
   simpa using powerResidueSymbolIdeal_mul_right (n := n) h𝔞 h𝔟 (m : 𝓞 K)
 
+/-- **Multiplicativity in a finite product of ideals.**
+`(α / ∏ i ∈ s, f i)_n = ∏ i ∈ s, (α / f i)_n` when none of the ideals `f i` (`i ∈ s`) is zero. -/
+theorem powerResidueSymbolIdeal_prod_right {ι : Type*} (s : Finset ι) (f : ι → Ideal (𝓞 K))
+    (hf : ∀ i ∈ s, f i ≠ ⊥) (α : 𝓞 K) :
+    powerResidueSymbolIdeal (∏ i ∈ s, f i) n (Quotient.mk (∏ i ∈ s, f i) α) =
+      ∏ i ∈ s, powerResidueSymbolIdeal (f i) n (Quotient.mk (f i) α) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, one_eq_top, powerResidueSymbolIdeal_top]
+  | insert i s hi ih =>
+    have hfi : f i ≠ ⊥ := hf i (Finset.mem_insert_self i s)
+    have hfs : ∏ j ∈ s, f j ≠ ⊥ := by
+      rw [← zero_eq_bot]
+      exact Finset.prod_ne_zero_iff.mpr fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, powerResidueSymbolIdeal_mul_right hfi hfs,
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+
 /-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
 theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
     powerResidueSymbolIdeal (𝔞 ^ k) n (Quotient.mk (𝔞 ^ k) α) =
@@ -193,9 +216,15 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
     simpa [Quotient.factor_mk] using
       hx.map (Quotient.factor (le_of_dvd (dvd_of_mem_normalizedFactors hP)))
   rw [symbolAt, dite_eq_left hPm]
-  by_cases hn : (absNorm P).Coprime n
-  · exact powerResidueSymbol_pow_eq_one hn hαP.ne_zero
-  · rw [powerResidueSymbol_of_not_coprime hn, MulChar.one_apply hαP, one_pow]
+  exact powerResidueSymbol_pow_eq_one hαP.ne_zero
+
+/-- Every value of the `n`-th power residue symbol at an ideal is either `0` or an `n`-th root of
+unity. -/
+theorem powerResidueSymbolIdeal_eq_zero_or_pow_eq_one (𝔞 : Ideal (𝓞 K)) (x : 𝓞 K ⧸ 𝔞) :
+    powerResidueSymbolIdeal 𝔞 n x = 0 ∨ powerResidueSymbolIdeal 𝔞 n x ^ n = 1 := by
+  by_cases hx : IsUnit x
+  · exact Or.inr (powerResidueSymbolIdeal_pow_eq_one hx)
+  · exact Or.inl (MulChar.map_nonunit _ hx)
 
 /-- For odd `n`, `(-x / 𝔞)_n = (x / 𝔞)_n` at every ideal `𝔞`: the symbol is a character of odd
 order dividing `n`, so its value at `-1` is `1`. -/
