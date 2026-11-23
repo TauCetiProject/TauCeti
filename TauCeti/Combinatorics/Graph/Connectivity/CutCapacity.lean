@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Data.Set.Card
 
