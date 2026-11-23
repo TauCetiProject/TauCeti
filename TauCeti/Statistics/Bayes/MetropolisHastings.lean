@@ -6,6 +6,7 @@ Authors: Bastiaan Braams, Claude
 module
 
 public import TauCeti.Probability.Kernel.Matrix.Invariance
+import TauCeti.Basic.ENNReal.Real
 
 /-!
 # The Metropolis–Hastings kernel on a finite state space
@@ -34,6 +35,8 @@ Invariance of the weight measure then follows from Mathlib's `Kernel.IsReversibl
 ## Main results
 
 * `TauCeti.isSymm_diagonal_mul_metropolisHastingsMatrix`: detailed balance in matrix form.
+* `TauCeti.metropolisHastingsKernel_eq_toKernel`: under the Markov hypotheses, the kernel is
+  `Matrix.rowStochastic.toKernel` of the positive part of the matrix.
 * `TauCeti.isMarkovKernel_metropolisHastingsKernel`: the kernel is Markov.
 * `TauCeti.isReversible_metropolisHastingsKernel`: the kernel is reversible for the weight
   measure.
@@ -209,17 +212,18 @@ theorem toNNReal_mul_toNNReal_metropolisHastingsMatrix_comm {π : ι → ℝ} {q
   rw [← Real.toNNReal_mul hx, ← Real.toNNReal_mul hy,
     mul_metropolisHastingsMatrix_comm hx hy (hq x y) (hq y x)]
 
+/-- For nonnegative weights and a nonnegative proposal whose rows sum to at most `1`, the positive
+part of the Metropolis–Hastings matrix is row-stochastic. -/
+theorem map_toNNReal_metropolisHastingsMatrix_mem_rowStochastic {π : ι → ℝ} {q : Matrix ι ι ℝ}
+    (hπ : 0 ≤ π) (hq : ∀ x y, 0 ≤ q x y) (hq₁ : ∀ x, ∑ y, q x y ≤ 1) :
+    (metropolisHastingsMatrix π q).map Real.toNNReal ∈ Matrix.rowStochastic ℝ≥0 ι := by
+  rw [Matrix.mem_rowStochastic_iff_sum]
+  refine ⟨fun _ _ ↦ zero_le, fun x ↦ NNReal.coe_injective ?_⟩
+  simp only [Matrix.map_apply, NNReal.coe_sum, NNReal.coe_one,
+    Real.coe_toNNReal _ (metropolisHastingsMatrix_nonneg hπ hq hq₁ x _),
+    sum_metropolisHastingsMatrix]
+
 variable [MeasurableSpace ι] [MeasurableSingletonClass ι]
-
-omit [DecidableEq ι] [MeasurableSingletonClass ι] in
-/-- A finite sum of finitely weighted Dirac measures is a finite measure. -/
-private theorem isFiniteMeasure_sum_smul_dirac (c : ι → ℝ≥0∞) (hc : ∀ y, c y ≠ ∞) :
-    IsFiniteMeasure (∑ y, c y • Measure.dirac y) :=
-  ⟨by simpa using fun y ↦ (hc y).lt_top⟩
-
-/-- The positive part of a real number, through `ℝ≥0∞`, is `Real.toNNReal`. -/
-private theorem toNNReal_ofReal (r : ℝ) : (ENNReal.ofReal r).toNNReal = r.toNNReal :=
-  ENNReal.toNNReal_coe r.toNNReal
 
 /-- The **Metropolis–Hastings kernel**, with transition matrix `metropolisHastingsMatrix π q`
 (negative entries, which do not occur under the hypotheses of
@@ -241,26 +245,35 @@ theorem metropolisHastingsKernel_apply_singleton (π : ι → ℝ) (q : Matrix �
 Metropolis–Hastings matrix. -/
 theorem toMatrix_metropolisHastingsKernel_apply (π : ι → ℝ) (q : Matrix ι ι ℝ) (x y : ι) :
     (metropolisHastingsKernel π q).toMatrix x y = (metropolisHastingsMatrix π q x y).toNNReal := by
-  rw [Kernel.toMatrix_apply, metropolisHastingsKernel_apply_singleton, toNNReal_ofReal]
+  rw [Kernel.toMatrix_apply, metropolisHastingsKernel_apply_singleton, ENNReal.toNNReal_ofReal]
 
 instance (π : ι → ℝ) (q : Matrix ι ι ℝ) : IsFiniteKernel (metropolisHastingsKernel π q) := by
-  have (x : ι) : IsFiniteMeasure (metropolisHastingsKernel π q x) :=
-    isFiniteMeasure_sum_smul_dirac _ fun _ ↦ ENNReal.ofReal_ne_top
+  have (x : ι) : IsFiniteMeasure (metropolisHastingsKernel π q x) := by
+    have (y : ι) := (Measure.dirac y).smul_finite
+      (ENNReal.ofReal_ne_top (r := metropolisHastingsMatrix π q x y))
+    rw [metropolisHastingsKernel_apply]
+    infer_instance
   exact ⟨⟨∑ x, metropolisHastingsKernel π q x Set.univ,
     ENNReal.sum_lt_top.2 fun _ _ ↦ measure_lt_top _ _,
     fun x ↦ Finset.single_le_sum (f := fun x ↦ metropolisHastingsKernel π q x Set.univ)
       (fun _ _ ↦ bot_le) (Finset.mem_univ x)⟩⟩
+
+/-- Under the Markov hypotheses, the Metropolis–Hastings kernel is the kernel
+`Matrix.rowStochastic.toKernel` of the positive part of the Metropolis–Hastings matrix. -/
+theorem metropolisHastingsKernel_eq_toKernel {π : ι → ℝ} {q : Matrix ι ι ℝ} (hπ : 0 ≤ π)
+    (hq : ∀ x y, 0 ≤ q x y) (hq₁ : ∀ x, ∑ y, q x y ≤ 1) :
+    metropolisHastingsKernel π q = Matrix.rowStochastic.toKernel
+      ⟨_, map_toNNReal_metropolisHastingsMatrix_mem_rowStochastic hπ hq hq₁⟩ := by
+  rw [← Kernel.toMatrix_inj, Matrix.rowStochastic.toMatrix_toKernel]
+  exact Matrix.ext fun x y ↦ toMatrix_metropolisHastingsKernel_apply π q x y
 
 /-- For nonnegative weights and a nonnegative proposal whose rows sum to at most `1`, the
 Metropolis–Hastings kernel is Markov. -/
 theorem isMarkovKernel_metropolisHastingsKernel {π : ι → ℝ} {q : Matrix ι ι ℝ} (hπ : 0 ≤ π)
     (hq : ∀ x y, 0 ≤ q x y) (hq₁ : ∀ x, ∑ y, q x y ≤ 1) :
     IsMarkovKernel (metropolisHastingsKernel π q) := by
-  refine ⟨fun x ↦ ⟨?_⟩⟩
-  simp only [metropolisHastingsKernel_apply, FunLike.coe_sum, Finset.sum_apply,
-    smul_apply, measure_univ, smul_eq_mul, mul_one]
-  rw [← ENNReal.ofReal_sum_of_nonneg fun y _ ↦ metropolisHastingsMatrix_nonneg hπ hq hq₁ x y,
-    sum_metropolisHastingsMatrix, ENNReal.ofReal_one]
+  rw [metropolisHastingsKernel_eq_toKernel hπ hq hq₁]
+  infer_instance
 
 /-- **Reversibility** of the Metropolis–Hastings kernel: for a nonnegative proposal, the kernel
 satisfies detailed balance with respect to the weight measure `∑ x, ofReal (π x) • δ_x` of the
@@ -272,10 +285,14 @@ theorem isReversible_metropolisHastingsKernel {π : ι → ℝ} {q : Matrix ι �
   set w : Measure ι := ∑ x, ENNReal.ofReal (π x) • Measure.dirac x with hw_def
   have hw (a : ι) : w {a} = ENNReal.ofReal (π a) := by
     rw [hw_def, ← Measure.sum_fintype, Measure.sum_smul_dirac_singleton]
-  have : IsFiniteMeasure w := isFiniteMeasure_sum_smul_dirac _ fun _ ↦ ENNReal.ofReal_ne_top
+  have : IsFiniteMeasure w := by
+    have (x : ι) := (Measure.dirac x).smul_finite (ENNReal.ofReal_ne_top (r := π x))
+    rw [hw_def]
+    infer_instance
   rw [Kernel.isReversible_iff_isSymm_diagonal_mul]
   refine Matrix.IsSymm.ext fun a b ↦ ?_
-  simp only [Matrix.diagonal_mul, toMatrix_metropolisHastingsKernel_apply, hw, toNNReal_ofReal]
+  simp only [Matrix.diagonal_mul, toMatrix_metropolisHastingsKernel_apply, hw,
+    ENNReal.toNNReal_ofReal]
   exact toNNReal_mul_toNNReal_metropolisHastingsMatrix_comm hq b a
 
 end TauCeti
