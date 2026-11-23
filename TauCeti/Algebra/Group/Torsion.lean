@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Units.Defs
 import Mathlib.Algebra.Group.Commute.Basic
-import Mathlib.Algebra.Group.Semiconj.Units
+import Mathlib.Algebra.Group.Commute.Units
 
 /-!
 # Commuting with nonzero powers in monoids with unique roots
@@ -32,21 +32,18 @@ variable {M : Type*} [Monoid M] [HasUniqueRoots M] {x y : M}
 /-- In a monoid with unique roots, a unit commutes with a nonzero natural power of `x`
 exactly when it commutes with `x`. -/
 @[simp]
-theorem pow_left_iff {n : ℕ} (hn : n ≠ 0) (hy : IsUnit y) :
-    Commute (x ^ n) y ↔ Commute x y := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.pow_left n⟩
+theorem pow_right_iff {n : ℕ} (hn : n ≠ 0) (hy : IsUnit y) :
+    Commute y (x ^ n) ↔ Commute y x := by
   obtain ⟨u, rfl⟩ := hy
-  -- Conjugation by `u` fixes `x ^ n`, hence also its unique `n`-th root `x`.
-  have hconj : ↑u * x * ↑u⁻¹ = x :=
-    pow_left_injective hn <| (u.conj_pow x n).trans (u.mul_inv_eq_iff_eq_mul.2 h.eq.symm)
-  exact (u.mul_inv_eq_iff_eq_mul.1 hconj).symm
+  rw [u.commute_iff_mul_inv_cancel, u.commute_iff_mul_inv_cancel, ← u.conj_pow,
+    (pow_left_injective hn).eq_iff]
 
 /-- In a monoid with unique roots, a unit commutes with a nonzero natural power of `x`
 exactly when it commutes with `x`. -/
 @[simp]
-theorem pow_right_iff {n : ℕ} (hn : n ≠ 0) (hy : IsUnit y) :
-    Commute y (x ^ n) ↔ Commute y x :=
-  Commute.symm_iff.trans ((pow_left_iff hn hy).trans Commute.symm_iff)
+theorem pow_left_iff {n : ℕ} (hn : n ≠ 0) (hy : IsUnit y) :
+    Commute (x ^ n) y ↔ Commute x y :=
+  Commute.symm_iff.trans ((pow_right_iff hn hy).trans Commute.symm_iff)
 
 end Monoid
 
