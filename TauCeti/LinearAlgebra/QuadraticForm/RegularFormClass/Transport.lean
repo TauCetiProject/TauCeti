@@ -34,8 +34,10 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 
 ## Main results
 
-* `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form on
-  coordinatewise images under `e`.
+* `TauCeti.RegularFormPresentation.equivOfRingEquiv_mk`: transport of an explicit diagonal
+  presentation `⟨n, a⟩`.
+* `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form along
+  `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`.
 * `TauCeti.presentedForm_equivOfRingEquiv_eq_transport`: the form presented by a transported
   presentation is `QuadraticMap.transport` along `coordEquivOfRingEquiv`.
 * `TauCeti.equivalent_presentedForm_equivOfRingEquiv_iff`: presentation transport preserves and
@@ -98,6 +100,14 @@ theorem RegularFormPresentation.equivOfRingEquiv_def (e : K ≃+* L)
   apply Units.ext
   simp
 
+/-- Transporting an explicit diagonal presentation `⟨n, a⟩` along `e` keeps its rank and maps its
+weights by `Units.map e`. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_mk (e : K ≃+* L) (n : ℕ) (a : Fin n → Kˣ) :
+    RegularFormPresentation.equivOfRingEquiv e ⟨n, a⟩ =
+      ⟨n, fun i ↦ Units.map (e : K →* L) (a i)⟩ :=
+  RegularFormPresentation.equivOfRingEquiv_def e ⟨n, a⟩
+
 /-- Transporting a presentation along `e` leaves its rank unchanged. -/
 @[simp]
 theorem RegularFormPresentation.fst_equivOfRingEquiv (e : K ≃+* L)
@@ -121,19 +131,6 @@ theorem RegularFormPresentation.equivOfRingEquiv_apply (e : K ≃+* L)
     rintro _ rfl j
     simp
   exact h _ (RegularFormPresentation.equivOfRingEquiv_def e p) i
-
-/-- Evaluating the form presented by `RegularFormPresentation.equivOfRingEquiv e p` on
-coordinatewise `e`-images of `x` gives `e (presentedForm p x)`. -/
-@[simp↓ 1100]
-theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K ≃+* L)
-    (x : Fin p.1 → K) :
-    presentedForm (RegularFormPresentation.equivOfRingEquiv e p)
-        (fun i ↦ e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i))) =
-      e (presentedForm p x) := by
-  rw [presentedForm_apply, presentedForm_apply, map_sum]
-  refine Fintype.sum_equiv (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)) _ _
-    fun i ↦ ?_
-  simp [RegularFormPresentation.equivOfRingEquiv_apply]
 
 /-- The coordinate semilinear equivalence induced by a ring isomorphism `e : K ≃+* L` on a
 diagonal presentation `p`. -/
@@ -171,6 +168,19 @@ theorem RegularFormPresentation.coordEquivOfRingEquiv_symm_apply
     (y : Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) (i : Fin p.1) :
     (p.coordEquivOfRingEquiv e).symm y i =
       e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p).symm i)) := (rfl)
+
+/-- Evaluating the form presented by `RegularFormPresentation.equivOfRingEquiv e p` on
+`TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` gives `e (presentedForm p x)`. -/
+@[simp↓ 1100]
+theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K ≃+* L)
+    (x : Fin p.1 → K) :
+    presentedForm (RegularFormPresentation.equivOfRingEquiv e p)
+        (p.coordEquivOfRingEquiv e x) =
+      e (presentedForm p x) := by
+  rw [presentedForm_apply, presentedForm_apply, map_sum]
+  refine Fintype.sum_equiv (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)) _ _
+    fun i ↦ ?_
+  simp [RegularFormPresentation.equivOfRingEquiv_apply]
 
 /-- The form presented by a transported presentation is the `QuadraticMap.transport` of the
 original presented form along `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`. -/
@@ -531,8 +541,7 @@ theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
     refine ⟨{ toLinearEquiv := hL, map_app' := fun w ↦ ?_ }⟩
     obtain ⟨v, rfl⟩ := f.surjective w
     have hfv : f.symm (f v) = v := f.symm_apply_apply v
-    have hcoord : hL (f v) =
-        fun i ↦ e (g v (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := by
+    have hcoord : hL (f v) = p.coordEquivOfRingEquiv e (g v) := by
       ext i
       simp [hL, hAdd, hfv]
     rw [LinearEquiv.toFun_eq_coe, hcoord, presentedForm_equivOfRingEquiv p e (g v),
