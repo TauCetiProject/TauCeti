@@ -181,11 +181,11 @@ private theorem fieldOfParts_eq (P : _root_.Polynomial ℂ) {w : ℂ → ℝ} {z
   · simp only [fieldOfParts, Fin.mk_one, amplitudeField_apply_one, hD, h4, hconj, hN, one_mul,
       Complex.re_mul_ofReal, PiLp.toLp_apply, Matrix.cons_val_one, Matrix.cons_val_zero]
     field_simp
-  · simp only [fieldOfParts, h3, h1, hsqrt, Complex.re_mul_ofReal]
-    simp [Real.exp_add, exp_backgroundAmplitude]
+  · simp only [fieldOfParts, Fin.reduceFinMk, h3, h1, hsqrt, Complex.re_mul_ofReal, PiLp.toLp_apply,
+      Matrix.cons_val, amplitudeField_apply_two, Real.exp_add, exp_backgroundAmplitude]
     field_simp
-  · simp only [fieldOfParts, h3, h1, hsqrt, Complex.im_mul_ofReal]
-    simp [Real.exp_add, exp_backgroundAmplitude]
+  · simp only [fieldOfParts, Fin.reduceFinMk, h3, h1, hsqrt, Complex.im_mul_ofReal, PiLp.toLp_apply,
+      Matrix.cons_val, amplitudeField_apply_three, Real.exp_add, exp_backgroundAmplitude]
     field_simp
 
 /-! ### The background parts -/
@@ -436,6 +436,19 @@ private theorem ball_subset_partsWindow {x₀ : Fin 6 → ℂ} (h₀ : partsNorm
   · exact one_half_le_sq_add_sq (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
       h₀ (he 0) (he 1)
 
+/-- Parts within `1 / 8` of the parts of the vortex of `P_{c₀}` at a point lie in the window. -/
+private theorem ball_vortexParts_subset_partsWindow (c₀ : Fin m → ℂ) (z : ℂ) :
+    ball (vortexParts c₀ c₀ z) (1 / 8) ⊆ partsWindow (‖vortexParts c₀ c₀‖ + 1) :=
+  ball_subset_partsWindow (partsNormSq_vortexParts_self c₀ z)
+    (by linarith [norm_coe_le_norm (vortexParts c₀ c₀) z])
+
+/-- Bounded parts within `1 / 8` of the parts of the vortex of `P_{c₀}` take values in the
+window. -/
+private theorem vortexParts_mem_partsWindow {c₀ : Fin m → ℂ} {f : ℂ →ᵇ (Fin 6 → ℂ)}
+    (hf : f ∈ ball (vortexParts c₀ c₀) (1 / 8)) (z : ℂ) :
+    f z ∈ partsWindow (‖vortexParts c₀ c₀‖ + 1) :=
+  ball_vortexParts_subset_partsWindow c₀ z ((dist_coe_le_dist z).trans_lt hf)
+
 open scoped Classical in
 /-- The superposition operator `f ↦ fieldOfParts ∘ f`, on parts with values in the window, and
 `0` otherwise. -/
@@ -455,16 +468,13 @@ private theorem fieldOfPartsBCF_apply {R : ℝ} {f : ℂ →ᵇ (Fin 6 → ℂ)}
 private theorem contDiffAt_fieldOfPartsBCF (c₀ : Fin m → ℂ) :
     ContDiffAt ℝ ∞ (fieldOfPartsBCF (‖vortexParts c₀ c₀‖ + 1)) (vortexParts c₀ c₀) := by
   set R := ‖vortexParts c₀ c₀‖ + 1
-  have hball (z : ℂ) : ball (vortexParts c₀ c₀ z) (1 / 8) ⊆ partsWindow R :=
-    ball_subset_partsWindow (partsNormSq_vortexParts_self c₀ z)
-      (by linarith [norm_coe_le_norm (vortexParts c₀ c₀) z])
   have hopen : IsOpen {x : Fin 6 → ℂ | 0 < partsNormSq x} :=
     isOpen_lt continuous_const contDiff_partsNormSq.continuous
   refine contDiffAt_infty.2 fun n ↦ contDiffAt_of_forall_apply_eq
     (ContDiffOn.uniformContDiffOn hopen (partsWindow_subset R) (isCompact_partsWindow R)
       fun x hx ↦ (contDiffAt_infty.1 (contDiffAt_fieldOfParts hx) n).contDiffWithinAt)
-    (by norm_num) hball fun f hf z ↦ fieldOfPartsBCF_apply (fun z' ↦ hball z' ?_) z
-  exact (dist_coe_le_dist z').trans_lt hf
+    (by norm_num) (ball_vortexParts_subset_partsWindow c₀) fun f hf z ↦
+      fieldOfPartsBCF_apply (vortexParts_mem_partsWindow hf) z
 
 /-! ### Smooth dependence on the divisor -/
 
@@ -482,18 +492,13 @@ theorem contDiff_polynomialVortexLp_monicOfCoeff :
     (toLpTop μ⊤ ℝ : (ℂ →ᵇ EuclideanSpace ℝ (Fin 4)) →L[ℝ] _).contDiff.contDiffAt.comp c₀
       ((contDiffAt_fieldOfPartsBCF c₀).comp c₀ hF.contDiffAt)
   refine hcomp.congr_of_eventuallyEq ?_
-  have hball (z : ℂ) : ball (vortexParts c₀ c₀ z) (1 / 8) ⊆ partsWindow R :=
-    ball_subset_partsWindow (partsNormSq_vortexParts_self c₀ z)
-      (by linarith [norm_coe_le_norm (vortexParts c₀ c₀) z])
   filter_upwards [hF.continuous.continuousAt.preimage_mem_nhds
     (ball_mem_nhds (vortexParts c₀ c₀) (by norm_num : (0 : ℝ) < 1 / 8))] with c hc
-  have hwin (z : ℂ) : vortexParts c₀ c z ∈ partsWindow R :=
-    hball z ((dist_coe_le_dist z).trans_lt hc)
   refine Lp.ext ?_
   filter_upwards [polynomialVortexLp_ae_eq (monicOfCoeff c),
     coeFn_toLpTop μ⊤ (𝕜 := ℝ) (fieldOfPartsBCF R (vortexParts c₀ c)),
     ae_restrict_of_ae (ae_fieldOfParts_vortexParts c₀ c)] with z h₁ h₂ h₃
-  rw [h₁, h₂, fieldOfPartsBCF_apply hwin, h₃]
+  rw [h₁, h₂, fieldOfPartsBCF_apply (vortexParts_mem_partsWindow hc), h₃]
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {P : X → _root_.Polynomial ℂ}
   {n : ℕ∞}
