@@ -79,7 +79,7 @@ theorem one_le_house_pow_mul_norm_of_isUltrametricDist {L : Type*} [NormedField 
   have hNK : (N : K) = c * x * z := by
     simpa [hyK] using congrArg ((↑) : 𝓞 K → K) hz
   have hz1 : ‖σ (z : K)‖ ≤ 1 :=
-    IsUltrametricDist.norm_le_one_of_isIntegral
+    IsUltrametricDist.norm_le_one_of_isIntegral (fun _ _ _ ↦ norm_pow _ _)
       ((RingOfIntegers.isIntegral_coe z).map σ.toIntAlgHom)
   have hNσ : ‖(N : L)‖ ≤ ‖σ x‖ := by
     rw [← map_intCast σ, hNK, map_mul, map_mul, map_intCast, norm_mul, norm_mul]
