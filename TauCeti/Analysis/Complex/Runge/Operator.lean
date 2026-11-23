@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.Runge.Rational.Basic
 
 /-!
@@ -67,8 +66,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_sum_smul_le {K Ω V W : Set 
   refine ⟨L, hL, hKL, hLVW, fun {ε} hε ↦ ?_⟩
   obtain ⟨N, ζ, p, q, hζ, -, hqΩ, hle⟩ := hop hε
   refine ⟨N, ζ, fun i w ↦ (p i).eval w / (q i).eval w, hζ, fun i ↦
-    DifferentiableOn.div (p i).differentiable.differentiableOn
-      (q i).differentiable.differentiableOn fun z hz h0 ↦ (hqΩ i z h0).1 hz,
+    Polynomial.differentiableOn_eval_div_eval fun z hz h0 ↦ (hqΩ i z h0).1 hz,
     fun f M hf hM w hw ↦ hle f M (hf.mono inter_subset_left) hM w hw⟩
 
 end TauCeti

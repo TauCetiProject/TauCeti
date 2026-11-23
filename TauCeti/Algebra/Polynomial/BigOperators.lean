@@ -185,11 +185,11 @@ theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
     exact_mod_cast hn.ne'
 
 /-- **Common denominator for a finite linear combination of polynomial fractions.** Given finite
-families `a : ι → K` and `p q : ι → K[X]` over a field `K` with `q i ≠ 0` on `s : Finset ι`,
+families `a : ι → K` and `p q : ι → K[X]` over a semifield `K` with `q i ≠ 0` on `s : Finset ι`,
 there exist `P Q : K[X]` with `Q ≠ 0`, every root of `Q` a root of some `q i` (`i ∈ s`), and
 `P.eval z / Q.eval z = ∑ i ∈ s, a i * ((p i).eval z / (q i).eval z)` at every `z` where no
 `q i` (`i ∈ s`) vanishes. -/
-theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Field K] (s : Finset ι)
+theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Semifield K] (s : Finset ι)
     (a : ι → K) (p q : ι → K[X]) (hq : ∀ i ∈ s, q i ≠ 0) :
     ∃ P Q : K[X], Q ≠ 0 ∧ (∀ z, Q.eval z = 0 → ∃ i ∈ s, (q i).eval z = 0) ∧
       ∀ z, (∀ i ∈ s, (q i).eval z ≠ 0) →
@@ -204,8 +204,7 @@ theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Field K] (s : Finset ι)
       Finset.prod_ne_zero_iff.mpr fun j hj ↦ hz j (Finset.mem_of_mem_erase hj)
     rw [← Finset.mul_prod_erase s q hi]
     simp only [eval_mul, eval_C, eval_prod]
-    rw [mul_div_mul_right _ _ herase]
-    ring
+    rw [mul_div_mul_right _ _ herase, mul_div_assoc]
 
 end Polynomial
 

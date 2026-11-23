@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.Runge.Rational.SimpleFraction
 import TauCeti.Topology.ConnectedComponents
 
@@ -56,8 +56,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt {K Ω : Set ℂ} (hfi
   obtain ⟨p, q, -, hqΩ, hlt⟩ := hK.exists_rational_norm_inv_sub_lt ha
     (fun haH => hfill.compl_inter_connectedComponentIn_nonempty hKΩ ⟨haH, ha⟩) hε
   refine ⟨fun z => p.eval z / q.eval z, ?_, hlt⟩
-  exact p.differentiable.differentiableOn.div q.differentiable.differentiableOn
-    fun z hz h0 => (hqΩ z h0).1 hz
+  exact Polynomial.differentiableOn_eval_div_eval fun z hz h0 => (hqΩ z h0).1 hz
 
 /-- **Converse of Runge's theorem.** If `Ω ⊆ ℂ` is open and every simple fraction `(z - a)⁻¹` with
 `a ∈ Ω \ K` can be uniformly approximated on `K` by functions holomorphic on `Ω`, then `K` is

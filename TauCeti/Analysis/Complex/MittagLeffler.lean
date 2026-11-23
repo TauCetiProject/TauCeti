@@ -12,7 +12,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.RemovableSingularity
-import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.Codiscrete
 

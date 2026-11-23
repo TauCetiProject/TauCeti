@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Hyperfunction.Localization
 import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 import TauCeti.Analysis.Distribution.Support
 
 /-!

@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
+import TauCeti.Analysis.Normed.Module.Exhaustion
 
 /-!
 # The Dolbeault lemma on open subsets of the plane

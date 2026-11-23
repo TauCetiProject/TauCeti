@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Bornology.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -97,6 +98,23 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
     (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
 
 end DivisionRing
+
+section TopologicalDivisionRing
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [TopologicalSpace 𝕜] [ContinuousSub 𝕜] [ContinuousInv₀ 𝕜]
+
+/-- The inversion `z ↦ (z - q)⁻¹` is continuous on the punctured space `{q}ᶜ`. -/
+theorem continuousOn_inv_sub_compl_singleton (q : 𝕜) :
+    ContinuousOn (fun z : 𝕜 ↦ (z - q)⁻¹) {q}ᶜ :=
+  (continuousOn_id.sub continuousOn_const).inv₀ fun _ hz h ↦ hz (sub_eq_zero.mp h)
+
+/-- Inverting a compact set `K` about a point `q ∉ K` yields a compact set. -/
+theorem _root_.IsCompact.image_inv_sub {K : Set 𝕜} (hK : IsCompact K) {q : 𝕜} (hq : q ∉ K) :
+    IsCompact ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :=
+  hK.image_of_continuousOn
+    ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦ hq (h ▸ hz))
+
+end TopologicalDivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
 
@@ -191,17 +209,6 @@ theorem norm_inv_sub_sub_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ}
 section Completion
 
 variable {q : 𝕜} {U : Set 𝕜}
-
-/-- The inversion `z ↦ (z - q)⁻¹` is continuous on the punctured space `{q}ᶜ`. -/
-theorem continuousOn_inv_sub_compl_singleton (q : 𝕜) :
-    ContinuousOn (fun z : 𝕜 ↦ (z - q)⁻¹) {q}ᶜ :=
-  (continuousOn_id.sub continuousOn_const).inv₀ fun _ hz h ↦ hz (sub_eq_zero.mp h)
-
-/-- Inverting a compact set `K` about a point `q ∉ K` yields a compact set. -/
-theorem _root_.IsCompact.image_inv_sub (hK : IsCompact K) (hq : q ∉ K) :
-    IsCompact ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :=
-  hK.image_of_continuousOn
-    ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦ hq (h ▸ hz))
 
 /-- Inverting a set `U` about a point `q` outside its closure gives a bounded set. -/
 theorem isBounded_image_inv_sub (hq : q ∉ closure U) :

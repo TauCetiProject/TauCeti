@@ -12,7 +12,7 @@ public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.LogLinearFactor
 import TauCeti.Analysis.Complex.Pompeiu.Discretization
-import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 
 /-!
 # Zero-free Runge approximation

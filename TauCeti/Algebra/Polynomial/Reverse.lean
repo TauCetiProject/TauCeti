@@ -458,15 +458,10 @@ theorem natDegree_reflect_comp_X_sub_C_le [Ring R] (a₀ : R) {d : ℕ} {P : R[X
 
 /-- The degree-`d` coefficient of `(Q.reflect d).comp (X - C a₀)` equals `Q.eval 0` whenever
 `Q.natDegree ≤ d`. -/
-theorem coeff_reflect_comp_X_sub_C [CommRing R] (a₀ : R) {d : ℕ} {Q : R[X]}
+theorem coeff_reflect_comp_X_sub_C [Ring R] (a₀ : R) {d : ℕ} {Q : R[X]}
     (hQ : Q.natDegree ≤ d) : ((Q.reflect d).comp (X - C a₀)).coeff d = Q.eval 0 := by
-  have hcoeff (q : R[X]) (hq : q.natDegree ≤ d) (r : R) : (taylor r q).coeff d = q.coeff d := by
-    rcases hq.eq_or_lt with hdeg | hlt
-    · rw [← hdeg, coeff_taylor_natDegree, coeff_natDegree]
-    · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
-        coeff_eq_zero_of_natDegree_lt hlt]
   rw [sub_eq_add_neg, ← C_neg, ← taylor_apply,
-    hcoeff _ (natDegree_reflect_le_of_natDegree_le hQ), coeff_reflect_self,
-    coeff_zero_eq_eval_zero]
+    coeff_taylor_eq_coeff_of_natDegree_le (natDegree_reflect_le_of_natDegree_le hQ),
+    coeff_reflect_self, coeff_zero_eq_eval_zero]
 
 end Polynomial

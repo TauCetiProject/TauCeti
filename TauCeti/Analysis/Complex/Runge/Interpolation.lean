@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Analytic.HermiteInterpolation
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Complex.Runge.Rational.Basic
 
@@ -73,7 +73,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq
   have hW_open : IsOpen W := isOpen_ne_fun q_r.differentiable.continuous continuous_const
   have hΩW : Ω ⊆ W := fun z hz h0 ↦ (hqrΩ z h0).1 hz
   have hrW : DifferentiableOn ℂ r W :=
-    p_r.differentiable.differentiableOn.div q_r.differentiable.differentiableOn fun _ hz ↦ hz
+    Polynomial.differentiableOn_eval_div_eval fun _ hz ↦ hz
   refine ⟨fun z ↦ P.eval z + Q z * r z,
     P.differentiable.differentiableOn.add (hQ_diff.differentiableOn.mul (hrW.mono hΩW)),
     fun z hz ↦ ?_, fun a ha k hk ↦ ?_⟩
