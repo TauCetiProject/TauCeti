@@ -41,6 +41,8 @@ near the support.
 
 * `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
   `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
+* `Distribution.isVanishingOn_of_forall_inter`: an additive map on test functions vanishes on an
+  open set if it vanishes on its intersections with an open cover of `Ω`.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
@@ -59,6 +61,8 @@ near the support.
   smooth multiples and cutoffs, open/regularity restriction, existence of a test cutoff equal to
   one near the support (and avoiding a given point off the support), and compactness of
   point-evaluation support.
+* `Distribution.exists_cutoff_abs_le_one`: a cutoff equal to one near the support of `T` can be
+  replaced by one with `|ψ| ≤ 1` and the same germ along the support of `T`.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
@@ -178,6 +182,14 @@ theorem isVanishingOn_sUnion {S : Set (Set E)} (hS : ∀ s ∈ S, IsOpen s ∧ I
     IsVanishingOn T (⋃₀ S) := by
   rw [sUnion_eq_iUnion]
   exact isVanishingOn_iUnion T (fun s ↦ (hS s s.property).1) fun s ↦ (hS s s.property).2
+
+/-- **Localization principle, cover form.** An additive map on test functions vanishes on an open
+set `W` if it vanishes on `U x ∩ W` for open sets `U x` containing the points `x` of `Ω`. -/
+theorem isVanishingOn_of_forall_inter {U : Ω → Set E} (hU : ∀ x, IsOpen (U x))
+    (hxU : ∀ x, (x : E) ∈ U x) {W : Set E} (hW : IsOpen W) (hT : ∀ x, IsVanishingOn T (U x ∩ W)) :
+    IsVanishingOn T W := fun φ hφ ↦
+  isVanishingOn_iUnion T (fun x ↦ (hU x).inter hW) hT φ fun y hy ↦
+    mem_iUnion.2 ⟨⟨y, φ.tsupport_subset hy⟩, hxU _, hφ hy⟩
 
 /-- An additive map on test functions vanishes on the complement of its support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
@@ -307,6 +319,29 @@ theorem dsupport_comp_subset {W : Type*} [Zero W] (f : 𝓓^{n}(Ω, F) → V) {g
   sInter_subset_sInter fun _ hs ↦ ⟨fun φ hφ ↦ by simp [hs.1 φ hφ, hg], hs.2⟩
 
 end SmoothMultiple
+
+section Cutoff
+
+variable [FiniteDimensional ℝ E] [Zero V]
+
+/-- A cutoff equal to one near the support of `T` can be replaced by one `ψ` with `|ψ| ≤ 1`, equal
+to one near the support of `T` and supported in the support of the original cutoff. The two
+cutoffs have the same germ along the support of `T`. -/
+theorem exists_cutoff_abs_le_one {β : Type*} [Zero β] [FunLike 𝓕 E β] {T : 𝓕 → V}
+    {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
+      tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
+  have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
+    have h : χ x = 1 := interior_subset hx
+    exact subset_tsupport _ (by simp [h])
+  have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
+  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := n)
+    (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
+    hTW (hW.trans χ.tsupport_subset)
+  exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
+    (hχ.and hψ1).mono fun x hx ↦ hx.1.trans hx.2.symm⟩
+
+end Cutoff
 
 section Augmentation
 
