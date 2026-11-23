@@ -697,19 +697,6 @@ theorem finiteCharacterK'_zero (χ : Grossencharacter K 𝔪) : χ.finiteCharact
   classical
   exact dite_eq_left rfl
 
-/-- `finiteCharacterK'` evaluates to `1` at `1`. -/
-@[simp]
-theorem finiteCharacterK'_one (χ : Grossencharacter K 𝔪) : χ.finiteCharacterK' 1 = 1 := by
-  classical
-  rw [finiteCharacterK', dite_eq_right one_ne_zero]
-  have h1 : Units.mk0 (1 : K) one_ne_zero ∈ primeToSubgroup 𝔪 := by
-    rw [Units.mk0_one]
-    exact (primeToSubgroup 𝔪).one_mem
-  rw [dite_eq_left h1]
-  have hsub : (⟨Units.mk0 (1 : K) one_ne_zero, h1⟩ : primeToSubgroup 𝔪) = 1 :=
-    Subtype.ext Units.mk0_one
-  rw [hsub, map_one, Units.val_one]
-
 /-- On `x : primeToSubgroup 𝔪`, `finiteCharacterK'` agrees with `finiteCharacterK`. -/
 theorem finiteCharacterK'_of_mem (χ : Grossencharacter K 𝔪) (x : primeToSubgroup 𝔪) :
     χ.finiteCharacterK' ((x : Kˣ) : K) = χ.finiteCharacterK x := by
@@ -721,6 +708,11 @@ theorem finiteCharacterK'_of_mem (χ : Grossencharacter K 𝔪) (x : primeToSubg
   have hsub : (⟨Units.mk0 ((x : Kˣ) : K) (x : Kˣ).ne_zero, hx⟩ : primeToSubgroup 𝔪) = x :=
     Subtype.ext (Units.ext (Units.val_mk0 (x : Kˣ).ne_zero))
   rw [hsub]
+
+/-- `finiteCharacterK'` evaluates to `1` at `1`. -/
+@[simp]
+theorem finiteCharacterK'_one (χ : Grossencharacter K 𝔪) : χ.finiteCharacterK' 1 = 1 := by
+  simpa using χ.finiteCharacterK'_of_mem 1
 
 /-- Outside `primeToSubgroup 𝔪`, `finiteCharacterK'` vanishes on `x : Kˣ`. -/
 theorem finiteCharacterK'_of_not_mem (χ : Grossencharacter K 𝔪) {x : Kˣ}

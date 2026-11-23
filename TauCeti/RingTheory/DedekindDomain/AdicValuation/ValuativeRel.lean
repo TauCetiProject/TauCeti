@@ -362,20 +362,17 @@ theorem mul_inv_mem_unitFiltration_of_valued_sub_lt
     (huz : Valued.v ((u : v.adicCompletion K) - (z : v.adicCompletion K)) <
       WithZero.exp (-(n : ℤ))) :
     u * z⁻¹ ∈ TauCeti.unitFiltration (v.adicCompletion K) n := by
-  have hsub : ((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1 =
-      ((u : v.adicCompletion K) - (z : v.adicCompletion K)) * (z : v.adicCompletion K)⁻¹ := by
-    simp [sub_mul]
-  have hlt : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
-      WithZero.exp (-(n : ℤ)) := by
-    rw [hsub, map_mul, map_inv₀, hz, inv_one, mul_one]
-    exact huz
-  have hle1 : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
-      Valued.v (1 : v.adicCompletion K) := by
-    rw [map_one]
-    exact hlt.trans_le (WithZero.exp_le_exp.mpr (by omega))
-  exact (v.mem_unitFiltration_adicCompletion_iff).mpr
-    ⟨(Valuation.map_eq_of_sub_lt (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) hle1).trans
-      (map_one _), hlt.le⟩
+  have : Finite (R ⧸ v.asIdeal) :=
+    Finite.of_equiv _ (v.residueFieldEquivAdicCompletion (K := K)).toEquiv.symm
+  obtain ⟨πu, hπu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
+  obtain ⟨π, hπ, hπ_coe⟩ := (TauCeti.isUniformizer_iff_exists_irreducible _ _).mp hπu
+  have h1 : Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) :=
+    hπ_coe ▸ v.isUniformizer_iff_valued_eq_exp_neg_one.mp hπu
+  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
+  refine TauCeti.mul_inv_mem_unitFiltration_of_valuation_sub_lt hπ
+    (hequiv.eq_one_iff_eq_one.mpr hz) ?_
+  rwa [← map_pow, hequiv.lt_iff_lt, map_pow, h1, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
 
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
