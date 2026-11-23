@@ -145,7 +145,7 @@ continuous on the additive circle. -/
 theorem continuous_poissonKernel_toCircle {T : ℝ} {w : ℂ} (hw : ‖w‖ < 1) :
     Continuous fun t : AddCircle T ↦ poissonKernel 0 w (AddCircle.toCircle t) :=
   (continuousOn_poissonKernel (s := sphere 0 1) (by simpa using hw.ne)).comp_continuous
-    (continuous_subtype_val.comp AddCircle.continuous_toCircle) fun t ↦ by simp
+    (continuous_subtypeVal.comp AddCircle.continuous_toCircle) fun t ↦ by simp
 
 /-- For a pole inside the unit disk, the Poisson kernel parametrized by `AddCircle.toCircle` has
 normalized Haar integral one. -/

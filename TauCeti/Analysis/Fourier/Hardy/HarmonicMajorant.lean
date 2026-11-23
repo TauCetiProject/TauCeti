@@ -11,7 +11,6 @@ import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Complex.Herglotz
 import TauCeti.Analysis.Complex.Poisson.Integral
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -226,8 +225,8 @@ private theorem exists_poissonMajorant_eq_re_herglotzTransform :
   have hne (z : ℂ) (hz : ‖z‖ = 1) : z - w ≠ 0 :=
     sub_ne_zero.2 (ne_of_apply_ne norm (hz.trans_ne hw'.ne'))
   have hH : Continuous fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w) :=
-    (continuous_subtype_val.add continuous_const).div
-      (continuous_subtype_val.sub continuous_const) fun z ↦ hne z (Circle.norm_coe z)
+    (continuous_subtypeVal.add continuous_const).div
+      (continuous_subtypeVal.sub continuous_const) fun z ↦ hne z (Circle.norm_coe z)
   have hint : Integrable (fun t : UnitAddCircle ↦ ((toCircle t : ℂ) + w) / ((toCircle t : ℂ) - w) *
       ((‖(x : Lp ℂ 2 (haarAddCircle (T := 1))) t‖ ^ 2 : ℝ) : ℂ)) haarAddCircle :=
     x.integrable_norm_sq.ofReal.continuous_mul_of_compactSpace (hH.comp continuous_toCircle)
@@ -352,10 +351,10 @@ private theorem sum_range_norm_sq_taylorCoeff_mul_le (hF : DifferentiableOn ℂ 
     push_cast
     ring_nf
   have hy_le := le_of_tendsto y.tendsto_circleAverage_norm_sq_diskFunction hmean
-  rw [← hardyBasis.tsum_norm_sq_inner y] at hy_le
+  rw [← hardyBasis.tsum_norm_inner_sq y] at hy_le
   simp only [← HilbertBasis.repr_apply_apply] at hy_le
   have hsum : Summable fun n ↦ ‖hardyBasis.repr y n‖ ^ 2 := by
-    simpa only [← HilbertBasis.repr_apply_apply] using hardyBasis.summable_norm_sq_inner y
+    simpa only [← HilbertBasis.repr_apply_apply] using hardyBasis.summable_norm_inner_sq y
   refine le_trans (le_of_eq (Finset.sum_congr rfl fun n _ ↦ ?_))
     ((hsum.sum_le_tsum _ fun n _ ↦ by positivity).trans hy_le)
   rw [hrepr]
@@ -385,7 +384,7 @@ theorem exists_eqOn_diskFunction_of_harmonic_majorant (hF : DifferentiableOn ℂ
   refine ⟨hardyBasis.repr.symm ⟨a, memℓp_gen (by simpa using hsum)⟩, fun w hw ↦ ?_, ?_⟩
   · rw [diskFunction_hardyBasis_repr_symm]
     exact (hasSum_taylorCoeff_mul_pow hF hw).tsum_eq.symm
-  · rw [← hardyBasis.tsum_norm_sq_inner]
+  · rw [← hardyBasis.tsum_norm_inner_sq]
     simp only [← HilbertBasis.repr_apply_apply, LinearIsometryEquiv.apply_symm_apply]
     exact Real.tsum_le_of_sum_range_le (fun _ ↦ by positivity) hpartial
 
