@@ -591,29 +591,14 @@ theorem dsupport_cone_subset (p : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →
     ext y
     simp only [mem_image, mem_prod, Prod.exists, mem_iUnion, segment_eq_image', exists_prop]
     grind
-  rw [← hC]
+  rw [← hC, cone_eq hχ]
   have hcont : Continuous fun q : E × ℝ ↦ p + q.2 • (q.1 - p) := by fun_prop
   have hCc : IsCompact ((fun q : E × ℝ ↦ p + q.2 • (q.1 - p)) '' (dsupport T ×ˢ Icc 0 1)) :=
     (hTc.prod isCompact_Icc).image hcont
-  -- A test form supported off the cone vanishes along every segment from `p` to points near the
-  -- support of `T`, so its cone vanishes near the support of `T`.
-  have hvan : IsVanishingOn (cone p T)
-      ((fun q : E × ℝ ↦ p + q.2 • (q.1 - p)) '' (dsupport T ×ˢ Icc 0 1))ᶜ := fun ω hω ↦ by
-    rw [cone_eq hχ, ContinuousLinearMap.comp_apply, ← map_zero T]
-    refine map_eq_map_of_eventuallyEq T (eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_)
-    have hseg : ∀ᶠ y in 𝓝 x, ∀ t ∈ Icc (0 : ℝ) 1, p + t • (y - p) ∉ tsupport ω :=
-      isCompact_Icc.eventually_forall_of_forall_eventually fun t ht ↦
-        hcont.continuousAt.eventually
-          ((isClosed_tsupport ω).isOpen_compl.mem_nhds fun hmem ↦ hω hmem ⟨(x, t), ⟨hx, ht⟩, rfl⟩)
-    filter_upwards [hseg] with y hy
-    have h0 : poincareHomotopy p ω y = 0 := by
-      rw [poincareHomotopy_congr (ω₂ := 0) fun z hz ↦ ?_, poincareHomotopy_zero, Pi.zero_apply]
-      rw [segment_eq_image'] at hz
-      obtain ⟨t, ht, rfl⟩ := hz
-      exact image_eq_zero_of_notMem_tsupport (hy t ht)
-    simp [h0]
-  have hsub := (hvan.disjoint_dsupport hCc.isClosed.isOpen_compl).subset_compl_left
-  rwa [compl_compl] at hsub
+  -- A test form supported off the cone has its homotopy supported off the support of `T`.
+  exact dsupport_comp_subset_of_disjoint T hCc.isClosed fun ω hω ↦ disjoint_left.2 fun x hx hxT ↦ by
+    obtain ⟨q, ⟨⟨-, ht⟩, hq⟩, rfl⟩ := tsupport_cutoffHomotopyPullbackCLM_subset ω hx
+    exact disjoint_left.1 hω hq ⟨q, ⟨hxT, ht⟩, rfl⟩
 
 /-- The distributional support of `cone p T` is always compact. -/
 theorem isCompact_dsupport_cone (p : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) :
