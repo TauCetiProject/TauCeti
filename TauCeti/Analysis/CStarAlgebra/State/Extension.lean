@@ -24,12 +24,11 @@ extends to a state of the ambient C⋆-algebra, with or without units.
   `pullbackFunctional A f` along star homomorphisms is a contravariant functor.
 * `TauCeti.mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace`: if the
   restriction of a state along a composite `A → B → C` is a state, so is its restriction to `B`.
-* `TauCeti.injOn_pullbackFunctional_inr_stateSpace` and
-  `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: each state of `A` is the restriction of
-  exactly one state of the unitization `Unitization ℂ A`. A pure state of `A` comes from a pure
-  state of the unitization, `TauCeti.mem_extremePoints_stateSpace_of_pullbackFunctional_inr`, and
-  a pure state of the unitization restricting to a state of `A` restricts to a pure state,
-  `TauCeti.pullbackFunctional_inr_mem_extremePoints_stateSpace`.
+* `TauCeti.mem_extremePoints_stateSpace_of_pullbackFunctional_inr`: a state of the unitization
+  `Unitization ℂ A` restricting to a pure state of `A` is pure, and
+  `TauCeti.pullbackFunctional_inr_mem_extremePoints_stateSpace`: a pure state of the unitization
+  restricting to a state of `A` restricts to a pure state. Both rest on each state of `A` being
+  the restriction of exactly one state of the unitization, proved here by private lemmas.
 * `TauCeti.isExtreme_stateSpace_inter_preimage_pullbackFunctional`: the states of `B` restricting
   along a star homomorphism `f : A → B` to a pure state of `A` form a face of the state space of
   `B`. When `B` is unital this face is weak-* compact, by
@@ -193,9 +192,15 @@ section Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-! The two private lemmas below can be replaced by the public
+`TauCeti.injOn_pullbackFunctional_inr_stateSpace` and
+`TauCeti.existsUnique_mem_stateSpace_unitization` of
+`TauCeti.Analysis.CStarAlgebra.State.Unitization` once
+https://github.com/TauCetiProject/TauCeti/pull/39824 adds them. -/
+
 /-- A state of `Unitization ℂ A` is determined by its restriction to `A`: it takes the value
 `λ + ψ a` at `λ + a`. -/
-theorem injOn_pullbackFunctional_inr_stateSpace :
+private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
     InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
       (stateSpace (Unitization ℂ A)) := by
   have key {ψ : WeakDual ℂ (Unitization ℂ A)} (hψ : ψ ∈ stateSpace (Unitization ℂ A))
@@ -211,7 +216,7 @@ theorem injOn_pullbackFunctional_inr_stateSpace :
 
 /-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
 `λ + a ↦ λ + φ a`. -/
-theorem surjOn_pullbackFunctional_inr_stateSpace :
+private theorem surjOn_pullbackFunctional_inr_stateSpace_aux :
     SurjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
       (stateSpace (Unitization ℂ A)) (stateSpace A) := by
   intro φ hφ
@@ -237,7 +242,7 @@ theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual �
   have hE : stateSpace (Unitization ℂ A) ∩
       pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ⁻¹' {φ} = {ψ} :=
     Subset.antisymm (fun χ ⟨hχ, hχφ⟩ =>
-      injOn_pullbackFunctional_inr_stateSpace hχ hψ (hχφ.trans h.symm))
+      injOn_pullbackFunctional_inr_stateSpace_aux hχ hψ (hχφ.trans h.symm))
       (singleton_subset_iff.2 ⟨hψ, h⟩)
   rw [hE] at hface
   exact hface.mem_extremePoints
@@ -250,12 +255,12 @@ theorem pullbackFunctional_inr_mem_extremePoints_stateSpace {ψ : WeakDual ℂ (
     pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈
       extremePoints ℝ (stateSpace A) := by
   refine ⟨hψA, fun χ₁ hχ₁ χ₂ hχ₂ hseg => ?_⟩
-  obtain ⟨χ₁', hχ₁', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hχ₁
-  obtain ⟨χ₂', hχ₂', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hχ₂
+  obtain ⟨χ₁', hχ₁', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hχ₁
+  obtain ⟨χ₂', hχ₂', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hχ₂
   obtain ⟨a, b, ha, hb, hab, hcomb⟩ := hseg
   -- the combination `a χ₁' + b χ₂'` is a state of the unitization restricting as `ψ` does
   have hψ' : a • χ₁' + b • χ₂' = ψ := by
-    refine injOn_pullbackFunctional_inr_stateSpace
+    refine injOn_pullbackFunctional_inr_stateSpace_aux
       (convex_stateSpace hχ₁' hχ₂' ha.le hb.le hab) hψ.1 ?_
     rw [← hcomb]
     exact DFunLike.ext _ _ fun x => by simp
@@ -319,7 +324,7 @@ be unital. -/
 theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f) :
     SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
-  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ
+  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hφ
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_stateSpace_of_unital
     (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) (Unitization.starMap_injective hf) hφ'
   rw [← pullbackFunctional_pullbackFunctional_inr] at hφ ⊢
@@ -333,7 +338,7 @@ theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Functio
     SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
       (extremePoints ℝ (stateSpace A)) := by
   intro φ hφ
-  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ.1
+  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hφ.1
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_extremePoints_stateSpace_of_unital
     (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) (Unitization.starMap_injective hf)
     (mem_extremePoints_stateSpace_of_pullbackFunctional_inr hφ hφ' rfl)
