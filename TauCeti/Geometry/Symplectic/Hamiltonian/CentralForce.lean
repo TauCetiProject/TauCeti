@@ -599,20 +599,33 @@ theorem norm_rungeLenz_eq_of_hasDerivAt_kepler {m : ℝ} (hm : m ≠ 0) {κ : �
       (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq u hu))).differentiableAt) ht₀ ht,
     sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht]
 
-/-- **The perihelion bound along a Kepler motion.** For `m ≠ 0`, along an integral curve of the
-Kepler Hamiltonian vector field on a preconnected set `s` of times avoiding the collision set, the
+/-- **The perihelion bound along a Kepler motion.** Along an integral curve of the Kepler
+Hamiltonian vector field on a preconnected set `s` of times avoiding the collision set, the
 distance to the centre at every time `t ∈ s` is at least `ℓ² / (m κ + ‖A‖)`, computed from the
 squared angular momentum `ℓ²` and the Runge–Lenz vector `A` at any time `τ ∈ s`. -/
-theorem sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler {m : ℝ} (hm : m ≠ 0) {κ : ℝ}
-    {s : Set ℝ} (hs : IsPreconnected s) {γ : ℝ → V × V}
+theorem sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler {m κ : ℝ} {s : Set ℝ}
+    (hs : IsPreconnected s) {γ : ℝ → V × V}
     (hγ : ∀ t ∈ s, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
       (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t)) t)
     (hq : ∀ t ∈ s, (γ t).1 ≠ 0) {τ t : ℝ} (hτ : τ ∈ s) (ht : t ∈ s) :
     (‖(γ τ).1‖ ^ 2 * ‖(γ τ).2‖ ^ 2 - ⟪(γ τ).1, (γ τ).2⟫_ℝ ^ 2) /
         (m * κ + ‖rungeLenz m κ (γ τ)‖) ≤ ‖(γ t).1‖ := by
-  have h := sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz m κ (γ t)
-  rw [sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hτ ht,
-    norm_rungeLenz_eq_of_hasDerivAt_kepler hm hs hγ hq hτ ht] at h
+  have h : ‖(γ τ).1‖ ^ 2 * ‖(γ τ).2‖ ^ 2 - ⟪(γ τ).1, (γ τ).2⟫_ℝ ^ 2 ≤
+      ‖(γ t).1‖ * (m * κ + ‖rungeLenz m κ (γ τ)‖) := by
+    rcases eq_or_ne m 0 with rfl | hm
+    · -- With zero mass the position does not move, so the static bound at `τ` applies.
+      have hderiv (u : ℝ) (hu : u ∈ s) : HasDerivWithinAt (Prod.fst ∘ γ) 0 s u := by
+        have h := hasFDerivAt_fst.comp_hasDerivAt u (hγ u hu)
+        rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
+          (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq u hu))) (hq u hu)] at h
+        simpa using h.hasDerivWithinAt
+      have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+        (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) hτ ht
+      rw [show (γ t).1 = (γ τ).1 from sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))]
+      exact sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz 0 κ (γ τ)
+    · rw [← sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hτ ht,
+        ← norm_rungeLenz_eq_of_hasDerivAt_kepler hm hs hγ hq hτ ht]
+      exact sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz m κ (γ t)
   rcases le_or_gt (m * κ + ‖rungeLenz m κ (γ τ)‖) 0 with hD | hD
   · exact (div_nonpos_of_nonneg_of_nonpos (sq_sub_inner_sq_nonneg (γ τ)) hD).trans
       (norm_nonneg _)

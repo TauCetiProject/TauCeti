@@ -123,7 +123,7 @@ private theorem exists_pos_forall_le_norm_fst_and_norm_snd_le_kepler (hm : 0 < m
     (m * κ + ‖rungeLenz m κ (η 0)‖)
   have hr₀ : 0 < r₀ := div_pos ((sq_sub_inner_sq_nonneg (η 0)).lt_of_ne hℓ.symm) (by positivity)
   have hr (t : ℝ) (ht : t ∈ J) : r₀ ≤ ‖(η t).1‖ :=
-    sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler hm.ne' hJ hη hq h0 ht
+    sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler hJ hη hq h0 ht
   -- Energy conservation then bounds the momentum.
   refine ⟨r₀, hr₀, √(2 * m * (E + κ / r₀)), fun t ht ↦ ⟨hr t ht, ?_⟩⟩
   have hH : centralForceHamiltonian m (fun r ↦ -κ / r) (η t) = E :=
