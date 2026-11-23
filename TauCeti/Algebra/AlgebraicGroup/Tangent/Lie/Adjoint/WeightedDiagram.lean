@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Exponential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Uniqueness
 import Mathlib.Data.Set.Card
+import Mathlib.SetTheory.Cardinal.NatCard
 import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 import TauCeti.Algebra.Lie.CartanExists
@@ -504,13 +505,10 @@ theorem vectorOrbit_mk_eq_iff_eq {b : (LieAlgebra.IsKilling.rootSystem 𝔥).Bas
     (t₂ : IsSl2Triple (h₂ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₂ f₂) :
     Comodule.VectorOrbit.mk (k := k) (H := H) e₁ =
       Comodule.VectorOrbit.mk (k := k) (H := H) e₂ ↔ h₁ = h₂ := by
-  refine ⟨fun horb ↦ ?_, ?_⟩
-  · obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp horb
-    exact Subtype.ext
-      (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq
-        b t₂ h₁.property h₂.property hge)
-  · rintro rfl
-    exact t₁.vectorOrbit_mk_eq t₂
+  rw [Comodule.VectorOrbit.mk_eq_mk_iff,
+    t₁.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq b t₂
+      h₁.property h₂.property,
+    b.weightedDynkinDiagram_injective.eq_iff]
 
 /-- **Geometric adjoint orbit classification by weighted Dynkin diagrams.** For a connected Killing
 affine group `G`, two `sl₂` triples with dominant neutral elements have identical topological
@@ -778,13 +776,9 @@ theorem ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_eq
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard =
       b.dominantNeutralElements.ncard + 1 := by
-  have hnotMem : Comodule.VectorOrbit.mk (k := k) (H := H)
-      (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∉ Set.range b.dominantVectorOrbit := by
-    rintro ⟨h, hh⟩
-    exact b.dominantVectorOrbit_ne_mk_zero h hh
-  rw [← b.insert_mk_zero_range_dominantVectorOrbit,
-    Set.ncard_insert_of_notMem hnotMem (Set.finite_range _),
-    Set.ncard_range_of_injective b.dominantVectorOrbit_injective, Nat.card_coe_set_eq]
+  rw [image_vectorOrbit_mk_setOf_isNilpotent_ad, ← Nat.card_coe_set_eq]
+  exact (Nat.card_congr (b.optionDominantNeutralElementsEquivNilpotentOrbit (H := H))).symm.trans
+    (by rw [Finite.card_option, Nat.card_coe_set_eq])
 
 end TauCeti
 

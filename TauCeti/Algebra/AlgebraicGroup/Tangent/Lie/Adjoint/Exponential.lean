@@ -129,23 +129,6 @@ section ModuleRat
 
 variable [Module ℚ (Module.Dual R (Bialgebra.CotangentSpace R H))]
 
-/-- **The exponential point of an `ad`-nilpotent tangent vector acts on `𝔤` as `exp (ad x)`.** -/
-theorem basePointsRepresentation_adjoint_expPoint
-    {x : Module.Dual R (Bialgebra.CotangentSpace R H)}
-    (hd : ∀ a : H, ∃ n,
-      (Bialgebra.leftInvariantDerivation (Derivation.cotangentDualLieEquiv (R := R) (H := H) x))^[n]
-        a = 0)
-    (hx : IsNilpotent (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x)) :
-    Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H))
-        (toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := R) (H := H) x) hd)) =
-      IsNilpotent.exp (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x) := by
-  have hnil : IsNilpotent (Comodule.differential (R := R) (H := H)
-      (M := Module.Dual R (Bialgebra.CotangentSpace R H))
-      (Derivation.cotangentDualLieEquiv (R := R) (H := H) x)) := by
-    rwa [Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
-  rw [Comodule.basePointsRepresentation_expPoint hd hnil,
-    Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
-
 /-- **The exponential one-parameter subgroup of an `ad`-nilpotent tangent vector acts on `𝔤` as
 `exp (t • ad x)`.** -/
 theorem basePointsRepresentation_adjoint_expPointAt
@@ -163,6 +146,19 @@ theorem basePointsRepresentation_adjoint_expPointAt
     rwa [Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
   rw [Comodule.basePointsRepresentation_expPointAt_of_isNilpotent _ hd hnil t,
     Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
+
+/-- **The exponential point of an `ad`-nilpotent tangent vector acts on `𝔤` as `exp (ad x)`.** -/
+theorem basePointsRepresentation_adjoint_expPoint
+    {x : Module.Dual R (Bialgebra.CotangentSpace R H)}
+    (hd : ∀ a : H, ∃ n,
+      (Bialgebra.leftInvariantDerivation (Derivation.cotangentDualLieEquiv (R := R) (H := H) x))^[n]
+        a = 0)
+    (hx : IsNilpotent (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x)) :
+    Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H))
+        (toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := R) (H := H) x) hd)) =
+      IsNilpotent.exp (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x) := by
+  simpa [Bialgebra.expPointAt_one, one_smul] using
+    basePointsRepresentation_adjoint_expPointAt hd hx 1
 
 end ModuleRat
 
@@ -386,8 +382,10 @@ theorem Comodule.basePointsRepresentation_expAdPoint
 theorem basePointsRepresentation_expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 (expAdPoint hx) =
       IsNilpotent.exp (LieAlgebra.ad k 𝔤 x) := by
-  rw [Comodule.basePointsRepresentation_expAdPoint (M := 𝔤) hx,
-    Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
+  let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+  rw [expAdPoint_def]
+  exact basePointsRepresentation_adjoint_expPoint
+    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx) hx
 
 /-- **Two `ad`-nilpotent elements have the same exponential point if and only if they are equal.**
 -/

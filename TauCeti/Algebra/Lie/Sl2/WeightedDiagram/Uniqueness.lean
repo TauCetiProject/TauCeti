@@ -143,10 +143,7 @@ theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
       b.dominantNeutralElements := by
   intro h₁ hh₁ h₂ hh₂ horb
   dsimp only at horb
-  have hmem : (h₂ : L) ∈ MulAction.orbit (intLieAlgebra K L) (h₁ : L) := by
-    rw [horb]
-    exact MulAction.mem_orbit_self (h₂ : L)
-  obtain ⟨⟨g, hg⟩, hgh⟩ := hmem
+  obtain ⟨⟨g, hg⟩, hgh⟩ := MulAction.orbit_eq_iff.mp horb.symm
   exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq hh₁ hh₂ hg hgh
 
 end IntOrbits
@@ -219,13 +216,11 @@ theorem existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra
       (h' : L) ∈ MulAction.orbit (intLieAlgebra K L) h := by
   obtain ⟨g, hg, h', hh', hgh, -⟩ :=
     t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
-  refine ⟨h', ⟨hh', ⟨⟨g, hg⟩, hgh⟩⟩, ?_⟩
-  rintro h'' ⟨hh'', g₁, hg₁⟩
-  refine b.injOn_orbit_dominantNeutralElements hh'' hh' ?_
-  dsimp only
-  have hgh' : (⟨g, hg⟩ : intLieAlgebra K L) • h = (h' : L) := hgh
-  have hg₁' : g₁ • h = (h'' : L) := hg₁
-  rw [← hg₁', ← hgh', MulAction.orbit_smul, MulAction.orbit_smul]
+  have hm₁ : (h' : L) ∈ MulAction.orbit (intLieAlgebra K L) h := ⟨⟨g, hg⟩, hgh⟩
+  refine ⟨h', ⟨hh', hm₁⟩, ?_⟩
+  rintro h'' ⟨hh'', hm₂⟩
+  exact b.injOn_orbit_dominantNeutralElements hh'' hh'
+    ((MulAction.orbit_eq_iff.mpr hm₂).trans (MulAction.orbit_eq_iff.mpr hm₁).symm)
 
 /-- **Conjugate nilpositive elements under `Int(L)` share the same dominant neutral element.** -/
 theorem eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H).Base)
