@@ -78,7 +78,8 @@ are the constant terms of the logarithm of the characteristic series of the Witt
 * `TauCeti.logOf_aHatSeries`, `TauCeti.coeff_logOf_aHatSeries`:
   `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`; its odd coefficients vanish
   (`TauCeti.coeff_logOf_aHatSeries_of_odd`), and `TauCeti.coeff_two_logOf_aHatSeries` and
-  `TauCeti.coeff_four_logOf_aHatSeries` give `log Â(X) = -X²/24 + X⁴/2880 + …`.
+  `TauCeti.coeff_four_logOf_aHatSeries` give the `X²`- and `X⁴`-coefficients `-1/24` and
+  `1/2880`.
 
 ## References
 
@@ -354,14 +355,14 @@ theorem coeff_logOf_aHatSeries_of_odd {n : ℕ} (hn : Odd n) :
   · simp [logOf_aHatSeries]
   · simp [coeff_logOf_aHatSeries A hlt.ne', bernoulli_eq_zero_of_odd hn hlt]
 
-/-- `log Â(X) = -X²/24 + …`, so `log Â(X)` has `X²`-coefficient `2 G₂(0) / 2!`. -/
+/-- The `X²`-coefficient of `log Â(X)` is `-1/24`; numerically, this is `2 G₂(0) / 2!`. -/
 @[simp]
 theorem coeff_two_logOf_aHatSeries :
     coeff 2 (logOf (aHatSeries A)) = algebraMap ℚ A (-1 / 24) := by
   rw [coeff_logOf_aHatSeries A (by decide), bernoulli_two]
   norm_num [Nat.factorial]
 
-/-- `log Â(X) = -X²/24 + X⁴/2880 + …`, so `log Â(X)` has `X⁴`-coefficient `2 G₄(0) / 4!`. -/
+/-- The `X⁴`-coefficient of `log Â(X)` is `1/2880`; numerically, this is `2 G₄(0) / 4!`. -/
 @[simp]
 theorem coeff_four_logOf_aHatSeries :
     coeff 4 (logOf (aHatSeries A)) = algebraMap ℚ A (1 / 2880) := by

@@ -59,13 +59,15 @@ theorem constantCoeff_eisensteinGSeries (k : ℕ) :
     constantCoeff (eisensteinGSeries A k) = algebraMap ℚ A (-bernoulli k / (2 * k)) := by
   simp [eisensteinGSeries_def]
 
-/-- `G₂(q) = -1/24 + ∑ σ₁(n) qⁿ`. -/
+/-- The constant coefficient of `G₂` is `-1/24`. -/
+@[simp high]
 theorem constantCoeff_eisensteinGSeries_two :
     constantCoeff (eisensteinGSeries A 2) = algebraMap ℚ A (-1 / 24) := by
   rw [constantCoeff_eisensteinGSeries, bernoulli_two]
   norm_num
 
-/-- `G₄(q) = 1/240 + ∑ σ₃(n) qⁿ`. -/
+/-- The constant coefficient of `G₄` is `1/240`. -/
+@[simp high]
 theorem constantCoeff_eisensteinGSeries_four :
     constantCoeff (eisensteinGSeries A 4) = algebraMap ℚ A (1 / 240) := by
   rw [constantCoeff_eisensteinGSeries, bernoulli_eq_bernoulli'_of_ne_one (by decide),
