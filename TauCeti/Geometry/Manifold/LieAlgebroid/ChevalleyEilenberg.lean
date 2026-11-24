@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -141,11 +142,6 @@ section Complex
 variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
   [FiniteDimensional ℝ F]
 
-local instance instIsScalarTowerAlternatingMap {k : ℕ} :
-    IsScalarTower ℝ C^∞⟮I, M; ℝ⟯
-      (A.Sections [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) where
-  smul_assoc c f Ψ := by ext s x; simp
-
 /-- Over a finite-dimensional Hausdorff manifold and a finite-rank Lie algebroid `A`, `k`-cochains
 identify `C^∞(M)`-linearly with `C^∞(M)`-multilinear alternating maps on `A.Sections`. -/
 def cochainSectionsEquiv (k : ℕ) :
@@ -157,6 +153,12 @@ def cochainSectionsEquiv (k : ℕ) :
     A.cochainSectionsEquiv k φ s = φ.evalSection (A.sectionsEquiv ∘ s) := by
   ext x
   simp [cochainSectionsEquiv, AlternatingMap.compLinearMap_apply]
+
+@[simp] theorem cochainSectionsEquiv_symm_apply_apply {k : ℕ}
+    (Φ : A.Sections [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
+    (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
+    (A.cochainSectionsEquiv k).symm Φ x (s · x) = Φ (A.sectionsEquiv.symm ∘ s) x := by
+  simp [cochainSectionsEquiv, AlternatingMap.compLinearMap_apply, Function.comp_def]
 
 private theorem evalSection_eq_cochainSectionsEquiv {k : ℕ} (φ : A.Cochain k)
     (s : Fin k → Cₛ^∞⟮I; F, V⟯) :
@@ -350,7 +352,7 @@ theorem lieDeriv_smul_right {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I
   (A.cochainSectionsEquiv 0).injective (by simp)
 
 /-- **Cartan's homotopy formula** in positive degree: `ι_a (d_A φ) = L_a φ - d_A (ι_a φ)`. -/
-theorem curryLeft_extDeriv_succ {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain (k + 1)) :
+@[simp] theorem curryLeft_extDeriv_succ {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain (k + 1)) :
     (A.extDeriv (k + 1) φ).curryLeft a = A.lieDeriv a φ - A.extDeriv k (φ.curryLeft a) :=
   (A.cochainSectionsEquiv (k + 1)).injective (by simp)
 
@@ -404,9 +406,6 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k
   simp only [sub_mul, mul_sub, Finset.sum_mul, Finset.mul_sum]
   ring
 
-private theorem neg_one_pow_mul_self (n : ℕ) : (-1 : ℝ) ^ n * (-1 : ℝ) ^ n = 1 := by
-  rw [← mul_pow]; simp
-
 private theorem extDeriv_cast_cochain {m m' : ℕ} (h : m = m') (η : A.Cochain m) :
     A.extDeriv m' (LinearEquiv.cast (R := ℝ) (M := A.Cochain) h η) =
       LinearEquiv.cast (R := ℝ) (M := A.Cochain) (congrArg (· + 1) h) (A.extDeriv m η) := by
@@ -430,7 +429,7 @@ private theorem extDeriv_wedge_zero_right {k : ℕ} (φ : A.Cochain k) (ψ : A.C
       ContMDiffSection.alternating_sub_apply, ContMDiffSection.alternating_smul_apply,
       ContMDiffSection.curryLeft_wedge_apply φ (A.extDeriv 0 ψ) a x w,
       curryLeft_extDeriv_zero, smul_eq_mul, Function.comp_def, Fin.cast_eq_self,
-      mul_add, ← mul_assoc, neg_one_pow_mul_self, one_mul]
+      mul_add, neg_one_pow_mul_neg_one_pow_mul]
     rw [pow_succ]
     ring
 
@@ -471,7 +470,7 @@ private theorem extDeriv_wedge_sign_cancel (k : ℕ) (a₁ b₁ g₁ f₁ d₁ e
         (-1 : ℝ) ^ (k + 1) * (e₁ + (-1 : ℝ) ^ (k + 1) * f₁)) =
       ((a₁ - g₁) + (-1 : ℝ) ^ (k + 1 + 1) * e₁) +
         (-1 : ℝ) ^ (k + 1) * (d₁ + (-1 : ℝ) ^ (k + 1) * (b₁ - f₁)) := by
-  simp only [mul_add, mul_sub, ← mul_assoc, neg_one_pow_mul_self, one_mul]
+  simp only [mul_add, mul_sub, neg_one_pow_mul_neg_one_pow_mul]
   simp only [pow_succ]
   ring
 

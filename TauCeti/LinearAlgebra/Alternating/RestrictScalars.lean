@@ -30,6 +30,18 @@ public section
 
 namespace AlternatingMap
 
+section IsScalarTower
+
+variable {S T A M N ι : Type*} [Monoid S] [Monoid T] [Semiring A]
+  [AddCommMonoid M] [AddCommMonoid N] [Module A M] [Module A N]
+  [DistribMulAction S N] [DistribMulAction T N] [SMulCommClass A S N] [SMulCommClass A T N]
+
+instance instIsScalarTower [SMul S T] [IsScalarTower S T N] :
+    IsScalarTower S T (M [⋀^ι]→ₗ[A] N) :=
+  FunLike.isScalarTower
+
+end IsScalarTower
+
 section RestrictScalars
 
 variable (R : Type*) {A M N ι : Type*} [Semiring R] [Semiring A] [SMul R A]
