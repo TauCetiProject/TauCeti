@@ -28,13 +28,8 @@ variable {R : Type*} [Semiring R] {V : Type*} [Category* V] [Preadditive V] [Lin
   {ι : Type*} (c : ComplexShape ι) [CategoryWithHomology V]
 
 /-- Taking homology in a fixed degree on the homotopy category is a linear functor. -/
-instance (i : ι) : (homologyFunctor V c i).Linear R where
-  map_smul {K L} f a := by
-    have := Functor.linear_of_iso R (homologyFunctorFactors V c i).symm
-    obtain ⟨K, rfl⟩ := quotient_obj_surjective K
-    obtain ⟨L, rfl⟩ := quotient_obj_surjective L
-    obtain ⟨f, rfl⟩ := (quotient V c).map_surjective f
-    rw [← Functor.map_smul]
-    exact (quotient V c ⋙ homologyFunctor V c i).map_smul a f
+instance (i : ι) : (homologyFunctor V c i).Linear R :=
+  have := Functor.linear_of_iso R (homologyFunctorFactors V c i).symm
+  (quotient V c).linear_of_full_essSurj_comp (homologyFunctor V c i)
 
 end HomotopyCategory

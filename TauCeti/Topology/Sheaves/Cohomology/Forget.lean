@@ -277,11 +277,9 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
   -- the objects of the composite agree only up to unfolding, so its factors are matched with `erw`
   erw [hA]
   -- forgetting the module structure commutes with the class map
-  have hB := ConcreteCategory.congr_hom
-    (Functor.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
-      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) _ 0 ΓK) c
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hB
-  erw [hB]
+  rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app]
+  erw [(ΓK.sc 0).map_homologyπ_comp_mapHomologyIso_inv_apply
+    (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) c]
   -- the maps of complexes act on classes through their maps on cycles
   erw [← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0),
     HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
@@ -289,7 +287,8 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
   -- evaluation at `⊤` commutes with the class map
   let P := ((sheafToPresheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).mapHomologicalComplex
     (ComplexShape.up ℕ)).obj (godementForget F)
-  erw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app_homologyπ_apply]
+  rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
+  erw [ShortComplex.homologyπ_comp_mapHomologyIso_hom_apply]
   simp only [evaluation_obj_map]
   erw [Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply,
     Sheaf.H.equiv₀_cohomologyPresheafObjIsoH_hom_apply]
