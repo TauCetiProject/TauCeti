@@ -113,14 +113,10 @@ theorem projPoint_eq_chartPoint {v : ι → K} (hv : v ≠ 0) {k : ι} (hk : v k
 /-- **Homogeneous coordinates are defined up to a scalar.** Rescaling the coordinates by a
 nonzero scalar does not change the point. -/
 theorem projPoint_smul {v : ι → K} (hv : v ≠ 0) {c : K} (hc : c ≠ 0) :
-    projPoint (c • v) (smul_ne_zero hc hv) = projPoint v hv := by
-  obtain ⟨k, hk⟩ := Function.ne_iff.mp hv
-  have hck : (c • v) k ≠ 0 := by simpa using And.intro hc hk
-  rw [projPoint_eq_chartPoint _ hk, projPoint_eq_chartPoint _ hck]
-  congr 1
-  exact AlgHom.toRingHom_injective <| (projChartEval_toRingHom _ hck).trans <|
-    (Away.lift_eq_of_forall_mem _ _ (Units.mk0 c hc) (fun n a ha ↦ projEval_smul_of_mem c v ha)
-      (projCoord_mem k) _ _).trans (projChartEval_toRingHom _ hk).symm
+    projPoint (c • v) (smul_ne_zero hc hv) = projPoint v hv :=
+  Subtype.ext <| TauCeti.ProjectiveSpectrum.fromOfGlobalSections_eq_of_unit_rescaling _ _ _
+    (Units.map (Scheme.ΓSpecIso (.of K)).inv.hom.toMonoidHom (Units.mk0 c hc))
+    (fun n a ha ↦ by simp [projEval_smul_of_mem c v ha]) _
 
 /-- The point with homogeneous coordinates `v` pulls the standard chart `D₊(X_k)` back to the
 basic open of `v k` in `Spec K`. -/
