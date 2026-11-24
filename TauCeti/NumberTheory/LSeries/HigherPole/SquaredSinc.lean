@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Integrals.SincSq
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
 
 /-!
 # The normalised squared-sinc kernel
@@ -191,22 +192,22 @@ theorem squaredSinc_fourier (hell : 0 ≤ ell) (v : ℝ) :
       intervalIntegral.integral_comp_neg f, neg_zero]
     exact (intervalIntegral.integral_add_adjacent_intervals
       (hfc.intervalIntegrable _ _) (hfc.intervalIntegrable _ _)).symm
-  -- On `[0, L]` the even part is the real function `2 (1 - y / L) cos (v y)`.
+  -- On `[0, L]` the even part is the real function `2 (1 - y / L) cos (y v)`.
   have heven : ∫ y in 0..L, (f (-y) + f y) =
-      ((2 * ∫ y in 0..L, (1 - y / L) * cos (v * y) : ℝ) : ℂ) := by
+      ((2 * ∫ y in 0..L, (1 - y / L) * cos (y * v) : ℝ) : ℂ) := by
     rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_ofReal]
     refine intervalIntegral.integral_congr fun y hy ↦ ?_
     rw [uIcc_of_le hL] at hy
     have hcos : Complex.exp (Complex.I * (-y : ℝ) * v) + Complex.exp (Complex.I * y * v) =
-        2 * (cos (v * y) : ℂ) := by
+        2 * (cos (y * v) : ℂ) := by
       rw [Complex.ofReal_cos, Complex.two_cos]
       push_cast
       ring_nf
     simp only [hf, abs_neg, abs_of_nonneg hy.1, ← mul_add, hcos]
     push_cast
     ring
-  rw [hsplit, heven, integral_one_sub_div_mul_cos, squaredSinc_def, hLdef]
-  have harg : v / 2 * (2 * ell) = ell * v := by ring
+  rw [hsplit, heven, integral_one_sub_div_mul_cos_mul, squaredSinc_def, hLdef]
+  have harg : 2 * ell * v / 2 = ell * v := by ring
   rw [harg]
   push_cast
   ring

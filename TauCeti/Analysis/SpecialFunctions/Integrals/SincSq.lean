@@ -12,7 +12,7 @@ import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.SineIntegral
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
-# The integral of `sinc²` and the cosine transform of the triangle
+# The integral of `sinc²`
 
 Unlike `Real.sinc` itself, whose integral over `[0, ∞)` exists only as an improper limit, its
 square is Lebesgue integrable on `ℝ`, being bounded by `2 / (1 + x²)`, and
@@ -28,9 +28,6 @@ The derivative of `x ↦ sin x * sinc x = sin² x / x` is `2 sinc (2x) - sinc² 
 * `TauCeti.integrable_sinc_sq`: `sinc ^ 2` is integrable on `ℝ`.
 * `TauCeti.integral_Ioi_sinc_sq`: `∫ x in Ioi 0, sinc x ^ 2 = π / 2`.
 * `TauCeti.integral_sinc_sq`: `∫ x, sinc x ^ 2 = π`.
-* `TauCeti.integral_one_sub_div_mul_cos`: the dual computation
-  `∫₀ᴸ (1 - y / L) cos (v y) dy = L sinc (v L / 2)² / 2`, which identifies `sinc²` as the cosine
-  transform of a triangle.
 -/
 
 public section
@@ -110,37 +107,5 @@ theorem integral_sinc_sq : ∫ x, sinc x ^ 2 = π := by
     funext fun x ↦ by rcases abs_choice x with h | h <;> simp [h]
   simp only [hfun, integral_Ioi_sinc_sq] at h
   linarith
-
-/-! ### The cosine transform of the triangle -/
-
-/-- An antiderivative of `y ↦ (1 - y / L) cos (v y)`, written with `sinc` so that it is valid
-for every frequency `v`, including `v = 0`. -/
-private theorem hasDerivAt_one_sub_div_mul_cos_primitive (L v y : ℝ) :
-    HasDerivAt (fun y ↦ (1 - y / L) * (y * sinc (v * y)) + (y * sinc (v / 2 * y)) ^ 2 / (2 * L))
-      ((1 - y / L) * cos (v * y)) y := by
-  rcases eq_or_ne L 0 with rfl | hL
-  · simpa using hasDerivAt_mul_sinc_mul v y
-  have h₁ := (((hasDerivAt_id y).div_const L).const_sub 1).mul (hasDerivAt_mul_sinc_mul v y)
-  have h₂ := ((hasDerivAt_mul_sinc_mul (v / 2) y).pow 2).div_const (2 * L)
-  refine (h₁.add h₂).congr_deriv ?_
-  have hsinc : y * sinc (v / 2 * y) * cos (v / 2 * y) = y * sinc (v * y) := by
-    rw [mul_assoc, ← sinc_two_mul]
-    ring_nf
-  simp only [id, Nat.cast_ofNat]
-  rw [show (2 - 1 : ℕ) = 1 from rfl, pow_one, mul_assoc 2, hsinc]
-  field_simp
-  ring
-
-/-- **The cosine transform of the triangle is a squared sinc**:
-`∫₀ᴸ (1 - y / L) cos (v y) dy = L sinc (v L / 2)² / 2` for all real `L` and `v`. -/
-theorem integral_one_sub_div_mul_cos (L v : ℝ) :
-    ∫ y in 0..L, (1 - y / L) * cos (v * y) = L * sinc (v / 2 * L) ^ 2 / 2 := by
-  rcases eq_or_ne L 0 with rfl | hL
-  · simp
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun y _ ↦ hasDerivAt_one_sub_div_mul_cos_primitive L v y)
-    ((by fun_prop : Continuous fun y ↦ (1 - y / L) * cos (v * y)).intervalIntegrable _ _)]
-  field_simp
-  ring
 
 end TauCeti
