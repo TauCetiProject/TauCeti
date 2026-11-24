@@ -30,6 +30,8 @@ records the derivatives of a section cut off by a function of `s`.
   density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
   germ of the map at `z`.
+* `TauCeti.Floer.integrableOn_sobolevDensity_of_eventuallyEq_zero`: a `C¹` map vanishing near
+  every point with `s > N` has integrable density over every half-cylinder `(a, ∞) × [0, 1]`.
 * `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineReal`,
   `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineImag`: the derivatives of a section cut off
   by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
@@ -85,6 +87,19 @@ theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ
     (h : ξ =ᶠ[𝓝 z] η) :
     sobolevDensity ξ z = sobolevDensity η z := by
   rw [sobolevDensity_apply, sobolevDensity_apply, h.fderiv_eq, h.eq_of_nhds]
+
+/-- A `C¹` map that vanishes near every point with `s > N` has integrable `W^{1,2}` energy density
+over every half-cylinder `(a, ∞) × [0, 1]`. -/
+theorem integrableOn_sobolevDensity_of_eventuallyEq_zero {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ)
+    {N : ℝ} (hzero : ∀ z : ℝ × ℝ, N < z.1 → ξ =ᶠ[𝓝 z] 0) (a : ℝ) :
+    IntegrableOn (sobolevDensity ξ) (Ioi a ×ˢ Icc 0 1) := by
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (((continuous_sobolevDensity hξ).continuousOn).integrableOn_compact
+    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun z hz ↦ ?_
+  have hzN : N < z.1 := by
+    by_contra! h
+    exact hz.2 ⟨⟨le_of_lt hz.1.1, h⟩, hz.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero z hzN), sobolevDensity_zero]
 
 /-- The `s`-derivative of a section cut off by a function `β(s)`: `∂s (β ξ) = β ∂s ξ + β' ξ`. -/
 theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {β' : ℝ}
