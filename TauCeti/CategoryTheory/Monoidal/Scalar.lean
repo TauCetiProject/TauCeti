@@ -175,14 +175,6 @@ theorem circlesCommuteAt_smul_id {R : Type*} [Semiring R] [Preadditive C] [Linea
     CirclesCommuteAt (r • 𝟙 (𝟙_ C)) X := by
   simp [circlesCommuteAt_iff]
 
-/-- If `algebraMap R (End (𝟙_ C))` is surjective for a commutative semiring `R` over which `C` is
-monoidal linear, every scalar is central at every object. -/
-theorem circlesCommuteAt_of_surjective {R : Type*} [CommSemiring R] [Preadditive C] [Linear R C]
-    [MonoidalPreadditive C] [MonoidalLinear R C]
-    (h : Function.Surjective (algebraMap R (End (𝟙_ C)))) (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) :
-    CirclesCommuteAt d X :=
-  (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective h d X).symm
-
 /-- In a braided target, the existing scalar-action identity supplies local centrality. -/
 example [BraidedCategory C] (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) : CirclesCommuteAt d X :=
   (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom d X).symm

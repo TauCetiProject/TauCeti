@@ -9,7 +9,15 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
-# Recovering a subspace from its exterior line
+# Exterior algebras of subspaces
+
+The exterior algebra of a submodule maps into that of the ambient module, and these images grow
+with the submodule (`ExteriorAlgebra.range_map_subtype_mono`). Every element of an exterior algebra
+already lies in the image of the exterior algebra of a finite submodule
+(`ExteriorAlgebra.exists_finite_submodule_mem_range_map_subtype`), which reduces statements about
+a single element to the finite case.
+
+## Recovering a subspace from its exterior line
 
 A finite subset of a basis spans a direct summand. Its top exterior product recovers that
 summand: a vector belongs to it exactly when its exterior product with the top product vanishes.
@@ -50,6 +58,30 @@ theorem ιMulti_mem_span_of_mem_span {n : ℕ} (v w : Fin n → M)
     simpa [f, Function.comp_def, hw'] using h
   rw [heq]
   exact smul_mem _ _ (subset_span (Set.mem_singleton _))
+
+/-- The image of the exterior algebra of a submodule grows with the submodule. -/
+theorem range_map_subtype_mono {p q : Submodule R M} (h : p ≤ q) :
+    (ExteriorAlgebra.map p.subtype).range ≤ (ExteriorAlgebra.map q.subtype).range := by
+  rw [← Submodule.subtype_comp_inclusion p q h, ← ExteriorAlgebra.map_comp_map]
+  exact AlgHom.range_comp_le_range _ _
+
+/-- Every element of an exterior algebra lies in the image of the exterior algebra of a finite
+submodule. -/
+theorem exists_finite_submodule_mem_range_map_subtype (x : ExteriorAlgebra R M) :
+    ∃ p : Submodule R M, Module.Finite R p ∧ x ∈ (ExteriorAlgebra.map p.subtype).range := by
+  induction x using ExteriorAlgebra.induction with
+  | algebraMap r => exact ⟨⊥, inferInstance, Subalgebra.algebraMap_mem _ r⟩
+  | ι m => exact ⟨span R {m}, inferInstance, ι R ⟨m, mem_span_singleton_self m⟩, by simp⟩
+  | mul a b ha hb =>
+    obtain ⟨p, _, ha⟩ := ha
+    obtain ⟨q, _, hb⟩ := hb
+    exact ⟨p ⊔ q, inferInstance,
+      mul_mem (range_map_subtype_mono le_sup_left ha) (range_map_subtype_mono le_sup_right hb)⟩
+  | add a b ha hb =>
+    obtain ⟨p, _, ha⟩ := ha
+    obtain ⟨q, _, hb⟩ := hb
+    exact ⟨p ⊔ q, inferInstance,
+      add_mem (range_map_subtype_mono le_sup_left ha) (range_map_subtype_mono le_sup_right hb)⟩
 
 end ExteriorAlgebra
 

@@ -25,16 +25,20 @@ isomorphism `a : X ≅ Xᘁᘁ` is the composite scalar
 
 `squaredNorm a := doubleDualTrace a.hom ≫ doubleDualTrace (a.inv)ᘁ : 𝟙_ C ⟶ 𝟙_ C`.
 
-Although `doubleDualTrace a.hom` and `doubleDualTrace (a.inv)ᘁ` individually scale by `c` and
-`c⁻¹` when `a` is multiplied by a unit scalar `c`, their composite cancels that ambiguity: when
-`X` has scalar endomorphisms over a commutative semiring `R`, `squaredNorm a` is independent of the
-choice of isomorphism `a : X ≅ Xᘁᘁ` (`TauCeti.squaredNorm_congr`). For a general object whose
-endomorphism algebra is non-scalar, `squaredNorm a` genuinely depends on `a`.
+Although `doubleDualTrace a.hom` and `doubleDualTrace (a.inv)ᘁ` individually scale by `r` and its
+inverse when `a` is multiplied by a unit scalar `r`, their composite cancels that ambiguity: when
+every endomorphism of `X` is a scalar multiple of `𝟙 X` over a commutative semiring `R`
+(`Function.Surjective (algebraMap R (End X))`), `squaredNorm a` is independent of the choice of
+isomorphism `a : X ≅ Xᘁᘁ` (`TauCeti.squaredNorm_congr`). For an object with more endomorphisms it
+genuinely depends on `a`: for `X = k²` in finite-dimensional vector spaces, the canonical
+isomorphism `X ≅ Xᘁᘁ` gives `2 · 2 = 4`, whereas its composite with `diag(1, 2)` gives
+`3 · (3/2) = 9/2`.
 
 We develop the basic calculus of `doubleDualTrace` and `squaredNorm`:
 
-* **Dinaturality and invariance**: `doubleDualTrace (a ≫ gᘁᘁ) = doubleDualTrace (g ≫ a)`, so
-  conjugating `a` by an isomorphism `e : X ≅ Y` preserves both `doubleDualTrace` and `squaredNorm`.
+* **Cyclicity and invariance**: `doubleDualTrace (f ≫ b) = doubleDualTrace (b ≫ (fᘁ)ᘁ)`
+  (`TauCeti.doubleDualTrace_comm`), so conjugating `a` by an isomorphism `e : X ≅ Y` preserves both
+  `doubleDualTrace` and `squaredNorm`.
 * **Double-mate invariance and duality**: because `doubleRightDualFunctor C` preserves scalars
   under its unit comparison, `doubleDualTrace (aᘁᘁ) = doubleDualTrace a`, and passing from
   `a : X ≅ Xᘁᘁ` to `a.rightAdjointMate.symm : Xᘁ ≅ Xᘁᘁᘁ` preserves `squaredNorm`
@@ -44,34 +48,36 @@ We develop the basic calculus of `doubleDualTrace` and `squaredNorm`:
 * **Linearity and biproducts**: `doubleDualTrace` is additive, `R`-linear, and sums over the
   diagonal components of finite and binary biproducts.
 * **Invertibility from split coevaluation**: when `η_ X Xᘁ` is a split monomorphism and every
-  endomorphism of `X` is a scalar multiple of `𝟙 X`, `doubleDualTrace a.hom` is an isomorphism in
-  `C` and a unit in `End (𝟙_ C)`.
+  endomorphism of `X` is a scalar multiple of `𝟙 X`, `doubleDualTrace b` is an isomorphism in `C`
+  and a unit in `End (𝟙_ C)` for any isomorphism `b : X ⟶ Xᘁᘁ`.
 
-The resulting invertibility and nonvanishing properties in finite semisimple categories live in
-`TauCeti.CategoryTheory.Monoidal.Rigid.Semisimple`, and the pivot-free global dimension lives in
-`TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim`.
+Comparison with pivotal traces and dimensions lives in
+`TauCeti.CategoryTheory.Monoidal.Pivotal.Trace`, invertibility and nonvanishing in finite
+semisimple categories live in `TauCeti.CategoryTheory.Monoidal.Rigid.Semisimple`, and the
+pivot-free global dimension lives in `TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim`.
 
 ## Main declarations
 
 * `TauCeti.doubleDualTrace` and `TauCeti.squaredNorm`: the bidual trace of `X ⟶ Xᘁᘁ` and the
   squared norm of `X ≅ Xᘁᘁ`;
-* `TauCeti.doubleDualTrace_comp_rightAdjointMate_rightAdjointMate`, `TauCeti.doubleDualTrace_conj`,
-  and `TauCeti.squaredNorm_conj`: dinaturality and isomorphism invariance;
+* `TauCeti.doubleDualTrace_comm`, `TauCeti.doubleDualTrace_rightAdjointMate`,
+  `TauCeti.doubleDualTrace_conj`, and `TauCeti.squaredNorm_conj`: cyclicity, mate unfolding, and
+  isomorphism invariance;
 * `TauCeti.doubleDualTrace_rightAdjointMate_rightAdjointMate` and
   `TauCeti.squaredNorm_rightAdjointMate_symm`: invariance under the double right adjoint mate and
   under passing to `a.rightAdjointMate.symm`;
 * `TauCeti.doubleDualTrace_ε_doubleRightDualFunctor`,
   `TauCeti.doubleDualTrace_rightAdjointMate_η_doubleRightDualFunctor`, and
   `TauCeti.squaredNorm_εIso_doubleRightDualFunctor`: values at the tensor unit;
-* `TauCeti.squaredNorm_congr`: independence of `a : X ≅ Xᘁᘁ` for objects with scalar
-  endomorphisms;
+* `TauCeti.squaredNorm_congr`: independence of `a : X ≅ Xᘁᘁ` when `algebraMap R (End X)` is
+  surjective;
 * `TauCeti.isIso_doubleDualTrace_of_isSplitMono` and
   `TauCeti.isUnit_endOf_doubleDualTrace_of_isSplitMono`: invertibility when `η_ X Xᘁ` splits.
 
 ## References
 
 * P. Etingof, D. Nikshych, V. Ostrik, *On fusion categories*, Ann. of Math. **162** (2005),
-  §2.1, Proposition 2.1 and Definition 2.2
+  [arXiv:math/0203060](https://arxiv.org/abs/math/0203060), §2.1, Proposition 2.1 and Definition 2.2
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.21
 -/
 
@@ -89,44 +95,53 @@ section RightRigid
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
 
-/-- The trace of a morphism `a : X ⟶ Xᘁᘁ`, closed against the evaluation of `(Xᘁ, Xᘁᘁ)`. -/
-noncomputable def doubleDualTrace {X : C} (a : X ⟶ (Xᘁ : C)ᘁ) : 𝟙_ C ⟶ 𝟙_ C :=
-  η_ X (Xᘁ : C) ≫ a ▷ (Xᘁ : C) ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C)
+/-- The trace of a morphism `b : X ⟶ Xᘁᘁ`, closed against the evaluation of `(Xᘁ, Xᘁᘁ)`. -/
+noncomputable def doubleDualTrace {X : C} (b : X ⟶ (Xᘁ : C)ᘁ) : 𝟙_ C ⟶ 𝟙_ C :=
+  η_ X (Xᘁ : C) ≫ b ▷ (Xᘁ : C) ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C)
 
 /-- **The squared norm** of `X` with respect to an isomorphism `a : X ≅ Xᘁᘁ`
 (Etingof–Nikshych–Ostrik, *On fusion categories*, §2.1): `Tr(a) ≫ Tr((a⁻¹)ᘁ)`. -/
 noncomputable def squaredNorm {X : C} (a : X ≅ (Xᘁ : C)ᘁ) : 𝟙_ C ⟶ 𝟙_ C :=
-  doubleDualTrace a.hom ≫ doubleDualTrace (rightAdjointMate a.inv)
+  doubleDualTrace a.hom ≫ doubleDualTrace (a.invᘁ)
 
 /-- The defining formula of `TauCeti.doubleDualTrace`. -/
-theorem doubleDualTrace_def {X : C} (a : X ⟶ (Xᘁ : C)ᘁ) :
-    doubleDualTrace a = η_ X (Xᘁ : C) ≫ a ▷ (Xᘁ : C) ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
+theorem doubleDualTrace_def {X : C} (b : X ⟶ (Xᘁ : C)ᘁ) :
+    doubleDualTrace b = η_ X (Xᘁ : C) ≫ b ▷ (Xᘁ : C) ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
   (rfl)
 
 /-- The defining formula of `TauCeti.squaredNorm`. -/
 theorem squaredNorm_def {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
-    squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (rightAdjointMate a.inv) :=
+    squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (a.invᘁ) :=
   (rfl)
 
 /-- Since scalars commute, `TauCeti.squaredNorm` is also the product of its two trace factors in
 the reverse order. -/
 theorem squaredNorm_def' {X : C} (a : X ≅ (Xᘁ : C)ᘁ) :
-    squaredNorm a = doubleDualTrace (rightAdjointMate a.inv) ≫ doubleDualTrace a.hom :=
+    squaredNorm a = doubleDualTrace (a.invᘁ) ≫ doubleDualTrace a.hom :=
   scalar_comm _ _
 
-/-- **Dinaturality of the bidual trace**: sliding `gᘁᘁ` across the evaluation and coevaluation
-turns `doubleDualTrace (a ≫ gᘁᘁ)` into `doubleDualTrace (g ≫ a)`. -/
-theorem doubleDualTrace_comp_rightAdjointMate_rightAdjointMate {X Y : C}
-    (a : X ⟶ (Yᘁ : C)ᘁ) (g : Y ⟶ X) :
-    doubleDualTrace (a ≫ gᘁᘁ) = doubleDualTrace (g ≫ a) := by
-  rw [doubleDualTrace_def, doubleDualTrace_def, comp_whiskerRight, Category.assoc,
-    rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
-    coevaluation_comp_rightAdjointMate_assoc, ← comp_whiskerRight_assoc]
+/-- **Cyclicity**: for `f : X ⟶ Y` and `b : Y ⟶ Xᘁᘁ`, the bidual trace of `f ≫ b` is the bidual
+trace of `b ≫ (fᘁ)ᘁ`. -/
+theorem doubleDualTrace_comm {X Y : C} (f : X ⟶ Y) (b : Y ⟶ (Xᘁ : C)ᘁ) :
+    doubleDualTrace (f ≫ b) = doubleDualTrace (b ≫ (fᘁ)ᘁ) := by
+  rw [doubleDualTrace_def, doubleDualTrace_def, comp_whiskerRight, comp_whiskerRight,
+    Category.assoc, Category.assoc]
+  -- Slide `f` around the loop: at the coevaluation `f ▷ Xᘁ` becomes `Y ◁ fᘁ`, which passes `b`
+  -- and reaches the evaluation of `Xᘁ` as `fᘁᘁ ▷ Yᘁ`.
+  rw [← coevaluation_comp_rightAdjointMate_assoc, whisker_exchange_assoc,
+    ← rightAdjointMate_comp_evaluation]
+
+/-- The bidual trace of the right adjoint mate of `b : Xᘁᘁ ⟶ X` closes `b` up with the
+coevaluation of `Xᘁ` and the evaluation of `X`. -/
+theorem doubleDualTrace_rightAdjointMate {X : C} (b : (Xᘁ : C)ᘁ ⟶ X) :
+    doubleDualTrace (bᘁ) =
+      η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ (Xᘁ : C) ◁ b ≫ ε_ X (Xᘁ : C) := by
+  rw [doubleDualTrace_def, rightAdjointMate_comp_evaluation]
 
 /-- Conjugating `a : X ⟶ Xᘁᘁ` by an isomorphism `e : X ≅ Y` leaves `doubleDualTrace` unchanged. -/
 theorem doubleDualTrace_conj {X Y : C} (e : X ≅ Y) (a : X ⟶ (Xᘁ : C)ᘁ) :
     doubleDualTrace (e.inv ≫ a ≫ (e.hom)ᘁᘁ) = doubleDualTrace a := by
-  rw [← Category.assoc, doubleDualTrace_comp_rightAdjointMate_rightAdjointMate, e.hom_inv_id_assoc]
+  rw [← Category.assoc, ← doubleDualTrace_comm, e.hom_inv_id_assoc]
 
 /-- Transporting `a : X ≅ Xᘁᘁ` along an isomorphism `e : X ≅ Y` preserves `squaredNorm`. -/
 theorem squaredNorm_conj {X Y : C} (e : X ≅ Y) (a : X ≅ (Xᘁ : C)ᘁ) :
@@ -150,11 +165,11 @@ theorem squaredNorm_conj {X Y : C} (e : X ≅ Y) (a : X ≅ (Xᘁ : C)ᘁ) :
     exact (congrArg doubleDualTrace hhom).trans (doubleDualTrace_conj e a.hom)
   · -- Similarly, the source `(doubleRightDualFunctor C).obj Y` of `hinv` aligns with `(Yᘁ : C)ᘁ`
     -- in `rightAdjointMate`.
-    refine (congrArg (fun f : (Yᘁ : C)ᘁ ⟶ Y ↦ doubleDualTrace (rightAdjointMate f)) hinv).trans ?_
+    refine (congrArg (fun f : (Yᘁ : C)ᘁ ⟶ Y ↦ doubleDualTrace (fᘁ)) hinv).trans ?_
     rw [comp_rightAdjointMate, comp_rightAdjointMate, ← Iso.rightAdjointMate_inv e,
       ← Iso.symm_hom e.rightAdjointMate, ← Iso.rightAdjointMate_hom e,
       ← Iso.symm_inv e.rightAdjointMate, Category.assoc]
-    exact doubleDualTrace_conj e.rightAdjointMate.symm (rightAdjointMate a.inv)
+    exact doubleDualTrace_conj e.rightAdjointMate.symm (a.invᘁ)
 
 /-- **Double-mate invariance**: the bidual trace of `aᘁᘁ` equals the bidual trace of `a`. -/
 @[simp]
@@ -305,8 +320,7 @@ theorem doubleDualTrace_biproduct {ι : Type*} [Fintype ι] {X : ι → C} [HasB
         rw [Preadditive.sum_comp, doubleDualTrace_sum]
     _ = ∑ i, doubleDualTrace (biproduct.ι X i ≫ a ≫ (biproduct.π X i)ᘁᘁ) := by
         refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [Category.assoc, ← doubleDualTrace_comp_rightAdjointMate_rightAdjointMate,
-          Category.assoc]
+        rw [Category.assoc, doubleDualTrace_comm, Category.assoc]
 
 /-- The bidual trace of a morphism out of a binary biproduct is the sum of the bidual traces of
 its two diagonal components. -/
@@ -319,8 +333,8 @@ theorem doubleDualTrace_biprod {X Y : C} [HasBinaryBiproduct X Y]
       = doubleDualTrace ((biprod.fst ≫ biprod.inl + biprod.snd ≫ biprod.inr) ≫ a) := by simp
     _ = _ := by
         rw [Preadditive.add_comp, doubleDualTrace_add, Category.assoc, Category.assoc,
-          ← doubleDualTrace_comp_rightAdjointMate_rightAdjointMate (biprod.inl ≫ a) biprod.fst,
-          ← doubleDualTrace_comp_rightAdjointMate_rightAdjointMate (biprod.inr ≫ a) biprod.snd,
+          doubleDualTrace_comm biprod.fst (biprod.inl ≫ a),
+          doubleDualTrace_comm biprod.snd (biprod.inr ≫ a),
           Category.assoc, Category.assoc]
 
 end Linear
@@ -330,38 +344,64 @@ section ScalarEnd
 variable {R : Type w} [CommSemiring R] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
   [MonoidalLinear R C] {X : C}
 
+/-- Precomposing `a : X ⟶ Xᘁᘁ` with `algebraMap R (End X) r = r • 𝟙 X` scales `doubleDualTrace a`
+by `r`. -/
+theorem doubleDualTrace_comp_of_algebraMap_eq {f : X ⟶ X} {r : R}
+    (h : algebraMap R (End X) r = End.of f) (a : X ⟶ (Xᘁ : C)ᘁ) :
+    doubleDualTrace (f ≫ a) = r • doubleDualTrace a := by
+  have hf : r • 𝟙 X = f := by rw [← End.algebraMap_asHom, h]
+  rw [← hf, Linear.smul_comp, Category.id_comp, doubleDualTrace_smul]
+
+/-- Postcomposing `g : Xᘁᘁ ⟶ X` with `algebraMap R (End X) r = r • 𝟙 X` scales
+`doubleDualTrace (gᘁ)` by `r`. -/
+theorem doubleDualTrace_rightAdjointMate_comp_of_algebraMap_eq (g : (Xᘁ : C)ᘁ ⟶ X) {f : X ⟶ X}
+    {r : R} (h : algebraMap R (End X) r = End.of f) :
+    doubleDualTrace ((g ≫ f)ᘁ) = r • doubleDualTrace (gᘁ) := by
+  have hf : r • 𝟙 X = f := by rw [← End.algebraMap_asHom, h]
+  rw [← hf, Linear.comp_smul, Category.comp_id, rightAdjointMate_smul, doubleDualTrace_smul]
+
 /-- Precomposing `a : X ⟶ Xᘁᘁ` with an endomorphism `f : X ⟶ X` of an object with scalar
 endomorphisms scales `doubleDualTrace a` by the scalar of `f`. -/
 theorem doubleDualTrace_comp_of_bijective
     (hX : Function.Bijective (algebraMap R (End X))) (f : X ⟶ X) (a : X ⟶ (Xᘁ : C)ᘁ) :
-    doubleDualTrace (f ≫ a) = endAlgEquivOfBijective hX (End.of f) • doubleDualTrace a := by
-  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
-  rw [Linear.smul_comp, Category.id_comp, doubleDualTrace_smul]
+    doubleDualTrace (f ≫ a) = endAlgEquivOfBijective hX (End.of f) • doubleDualTrace a :=
+  doubleDualTrace_comp_of_algebraMap_eq (algebraMap_endAlgEquivOfBijective hX (End.of f)) a
 
 /-- Postcomposing `g : Xᘁᘁ ⟶ X` with an endomorphism `f : X ⟶ X` of an object with scalar
-endomorphisms scales `doubleDualTrace (rightAdjointMate g)` by the scalar of `f`. -/
+endomorphisms scales `doubleDualTrace (gᘁ)` by the scalar of `f`. -/
 theorem doubleDualTrace_rightAdjointMate_comp_of_bijective
     (hX : Function.Bijective (algebraMap R (End X))) (g : (Xᘁ : C)ᘁ ⟶ X) (f : X ⟶ X) :
-    doubleDualTrace (rightAdjointMate (g ≫ f)) =
-      endAlgEquivOfBijective hX (End.of f) • doubleDualTrace (rightAdjointMate g) := by
-  conv_lhs => rw [← endAlgEquivOfBijective_endOf_smul_id hX f]
-  rw [Linear.comp_smul, Category.comp_id, rightAdjointMate_smul, doubleDualTrace_smul]
+    doubleDualTrace ((g ≫ f)ᘁ) =
+      endAlgEquivOfBijective hX (End.of f) • doubleDualTrace (gᘁ) :=
+  doubleDualTrace_rightAdjointMate_comp_of_algebraMap_eq g
+    (algebraMap_endAlgEquivOfBijective hX (End.of f))
 
 variable (R) in
-/-- **Independence of the isomorphism**: for an object `X` with scalar endomorphisms over a
-commutative semiring `R`, `squaredNorm a` does not depend on the chosen isomorphism
-`a : X ≅ Xᘁᘁ`. -/
-theorem squaredNorm_congr (hX : Function.Bijective (algebraMap R (End X)))
+/-- **The squared norm does not depend on the isomorphism** `X ≅ Xᘁᘁ` when every endomorphism
+of `X` is a scalar multiple of `𝟙 X` over a commutative semiring `R`: two such isomorphisms differ
+by a scalar `r`, their inverses by an inverse scalar `s` on `X`, and the two factors of the squared
+norm scale by `r` and `s`. -/
+theorem squaredNorm_congr (hX : Function.Surjective (algebraMap R (End X)))
     (a b : X ≅ (Xᘁ : C)ᘁ) :
     squaredNorm a = squaredNorm b := by
-  -- Write `a.hom = (a ≪≫ b.symm).hom ≫ b.hom` and `a.inv = b.inv ≫ (a ≪≫ b.symm).inv`; their
-  -- scalars are inverse to each other in `R`.
-  let u : X ≅ X := a ≪≫ b.symm
-  have ha : a.hom = u.hom ≫ b.hom := by simp [u]
-  have hainv : a.inv = b.inv ≫ u.inv := by simp [u]
-  rw [squaredNorm_def, squaredNorm_def, ha, hainv, doubleDualTrace_comp_of_bijective hX,
-    doubleDualTrace_rightAdjointMate_comp_of_bijective hX, Linear.smul_comp, Linear.comp_smul,
-    smul_smul, endAlgEquivOfBijective_hom_mul_inv hX u, one_smul]
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (b.hom ≫ a.inv)
+  obtain ⟨s, hs⟩ := End.exists_smul_id_eq_of_surjective hX (a.hom ≫ b.inv)
+  have hb : b.hom = r • a.hom := by
+    rw [← Category.comp_id b.hom, ← a.inv_hom_id, ← Category.assoc, ← hr, Linear.smul_comp,
+      Category.id_comp]
+  have hb' : b.inv = s • a.inv := by
+    rw [← Category.id_comp b.inv, ← a.inv_hom_id, Category.assoc, ← hs, Linear.comp_smul,
+      Category.comp_id]
+  -- The scalars `r` and `s` act inversely to each other on `X`, so `(r * s) • a.hom = a.hom`.
+  have hrs : (r * s) • a.hom = a.hom := by
+    have h : (r • 𝟙 X) ≫ (s • 𝟙 X) = 𝟙 X := by
+      rw [hr, hs, Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id]
+    rw [Linear.smul_comp, Linear.comp_smul, Category.id_comp, smul_smul] at h
+    rw [← Category.id_comp a.hom, ← Linear.smul_comp, h]
+  rw [squaredNorm_def, squaredNorm_def, hb, hb']
+  simp only [rightAdjointMate_smul, doubleDualTrace_smul, Linear.comp_smul, Linear.smul_comp,
+    smul_smul]
+  rw [← Linear.smul_comp, ← doubleDualTrace_smul, mul_comm, hrs]
 
 end ScalarEnd
 
@@ -371,33 +411,34 @@ variable {R : Type w} [CommSemiring R] [Preadditive C] [Linear R C] [MonoidalPre
   [MonoidalLinear R C] {X : C}
 
 /-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then some scalar multiple of `doubleDualTrace a.hom` equals `𝟙 (𝟙_ C)`. -/
+`𝟙 X`, then some scalar multiple of `doubleDualTrace b` equals `𝟙 (𝟙_ C)` for any isomorphism
+`b : X ⟶ Xᘁᘁ`. -/
 theorem exists_smul_doubleDualTrace_eq_id [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
-    ∃ r : R, r • doubleDualTrace a.hom = 𝟙 (𝟙_ C) := by
-  let p : ExactPairing Xᘁ X := exactPairingCongrRight a
+    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
+    ∃ r : R, r • doubleDualTrace b = 𝟙 (𝟙_ C) := by
+  let p : ExactPairing Xᘁ X := exactPairingCongrRight (asIso b)
   obtain ⟨r, hr⟩ := @hom_tensorUnit_eq_smul_evaluation_of_surjective_right C _ _ _ _ R _ _ _ Xᘁ X p
     hX (retraction (η_ X Xᘁ))
   refine ⟨r, ?_⟩
-  rw [doubleDualTrace_def, ← exactPairingCongrRight_evaluation a, ← Linear.comp_smul, ← hr]
+  rw [doubleDualTrace_def, ← asIso_hom b, ← exactPairingCongrRight_evaluation (asIso b),
+    ← Linear.comp_smul, ← hr]
   exact IsSplitMono.id (η_ X Xᘁ)
 
 /-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then `doubleDualTrace a.hom` is an isomorphism in `C`. -/
+`𝟙 X`, then `doubleDualTrace b` is an isomorphism in `C` for any isomorphism `b : X ⟶ Xᘁᘁ`. -/
 theorem isIso_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
-    IsIso (doubleDualTrace a.hom) := by
-  obtain ⟨r, hr⟩ := exists_smul_doubleDualTrace_eq_id hX a
-  exact ⟨⟨r • 𝟙 (𝟙_ C),
-    by rw [Linear.comp_smul, Category.comp_id, hr],
-    by rw [Linear.smul_comp, Category.id_comp, hr]⟩⟩
+    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
+    IsIso (doubleDualTrace b) := by
+  obtain ⟨r, hr⟩ := exists_smul_doubleDualTrace_eq_id hX b
+  exact Linear.isIso_of_smul_eq_id hr
 
 /-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then `End.of (doubleDualTrace a.hom)` is a unit in `End (𝟙_ C)`. -/
+`𝟙 X`, then `End.of (doubleDualTrace b)` is a unit in `End (𝟙_ C)` for any isomorphism
+`b : X ⟶ Xᘁᘁ`. -/
 theorem isUnit_endOf_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ (Xᘁ : C)ᘁ) :
-    IsUnit (End.of (doubleDualTrace a.hom)) :=
-  (CategoryTheory.isUnit_iff_isIso _).2 (isIso_doubleDualTrace_of_isSplitMono hX a)
+    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
+    IsUnit (End.of (doubleDualTrace b)) :=
+  (CategoryTheory.isUnit_iff_isIso _).mpr (isIso_doubleDualTrace_of_isSplitMono hX b)
 
 end SplitMono
 

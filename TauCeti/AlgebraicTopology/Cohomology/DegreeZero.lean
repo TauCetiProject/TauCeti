@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.Topology.Category.TopCat.Monoidal
+import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
 # Degree-zero singular cohomology as functions on path components
@@ -31,11 +33,14 @@ functions `X → k` that are constant on path components:
 The unit of the cup product, the class `TopCat.singularCohomologyZeroOne` of the constant
 cocycle `1`, has the value `1` everywhere, and on a path-connected space every degree-zero class
 is its value at any point times the unit
-(`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`). Pulling back along the
-constant map at `x` gives the value at `x` times the unit
+(`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`), so evaluation at a point
+gives a `k`-linear equivalence `H⁰(X; k) ≃ₗ[k] k` (`TauCeti.singularCohomologyZeroEvalEquiv`).
+Pulling back along the constant map at `x` gives the value at `x` times the unit
 (`TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul`), which reduces
 multiplicativity of the values for the cup product
-(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
+(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point, and implies that
+restricting `pr₂^* b + pr₁^* θ ⌣ pr₂^* c` along `TopCat.prodFiberInclusion X Y p` yields
+`b + θ(p) • c` (`TopCat.singularCohomologyMap_prodFiberInclusion_add_singularCup`).
 
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
@@ -43,7 +48,9 @@ invertible for the cup product (`TauCeti.exists_singularCup_matrix_eq_one`), and
 class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`). The inverse has, at
 every point, the inverse matrix of values; it is a class because the matrix of values, and so its
 inverse, is constant on path components. The cup product with a unit is a bijection of the
-cohomology with any coefficients (`TauCeti.bijective_singularCup_left_of_singularCup_eq_one`).
+cohomology with any coefficients (`TauCeti.bijective_singularCup_left_of_singularCup_eq_one`), so
+the cup product with a class whose values are units is bijective in every degree
+(`TauCeti.bijective_singularCup_left_of_forall_isUnit`).
 
 ## References
 
@@ -179,11 +186,12 @@ lemma singularCohomologyZeroOne_def :
         (X.constSingularCocycle k (𝟙 (𝟙_ (ModuleCat.{w} k)))) :=
   (rfl)
 
-/-- **The left unit law** for the cup product with the unit class. -/
+/-- **The left unit law** for the cup product with the unit class, with coefficients in any
+module `M`. -/
 @[simp]
-lemma singularCup_singularCohomologyZeroOne_left {q : ℕ} (h : 0 + q = q)
-    (b : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    X.singularCup k (λ_ _).inv (λ_ _).hom 0 q q h (singularCohomologyZeroOne X) b = b :=
+lemma singularCup_singularCohomologyZeroOne_left {M : ModuleCat.{w} k} {q : ℕ} (h : 0 + q = q)
+    (b : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M q) :
+    X.singularCup k (λ_ _).inv (λ_ M).hom 0 q q h (singularCohomologyZeroOne X) b = b :=
   X.singularCup_constSingularCocycle_left k (η := 𝟙 _) (by simp) (by simp) h b
 
 /-- **The right unit law** for the cup product with the unit class. -/
@@ -227,6 +235,29 @@ lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [PathConnecte
   singularCohomologyZero_ext fun x ↦ by
     rw [singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined x x₀), map_smul,
       singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
+
+/-- On a path-connected space, evaluation at any point `x₀` identifies `H⁰(X; k)` with `k`,
+with inverse sending `c` to `c • 1`. -/
+def singularCohomologyZeroEvalEquiv [PathConnectedSpace X] (x₀ : X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 ≃ₗ[k] k :=
+  LinearEquiv.ofLinearMap
+    (f := singularCohomologyZeroEval x₀)
+    (g := LinearMap.toSpanSingleton k _ (X.singularCohomologyZeroOne (k := k)))
+    (LinearMap.ext fun c ↦ by simp)
+    (LinearMap.ext fun u ↦ (eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne x₀ u).symm)
+
+/-- `TauCeti.singularCohomologyZeroEvalEquiv` evaluates a degree-zero class at `x₀`. -/
+@[simp]
+lemma singularCohomologyZeroEvalEquiv_apply [PathConnectedSpace X] (x₀ : X)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
+    singularCohomologyZeroEvalEquiv x₀ u = singularCohomologyZeroEval x₀ u :=
+  (rfl)
+
+/-- The inverse of `TauCeti.singularCohomologyZeroEvalEquiv` sends `c` to `c • 1`. -/
+@[simp]
+lemma singularCohomologyZeroEvalEquiv_symm_apply [PathConnectedSpace X] (x₀ : X) (c : k) :
+    (singularCohomologyZeroEvalEquiv x₀).symm c = c • X.singularCohomologyZeroOne :=
+  (rfl)
 
 /-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
 the unit class. -/
@@ -344,6 +375,49 @@ theorem bijective_singularCup_left_of_singularCup_eq_one
   exact Function.bijective_iff_has_inverse.2 ⟨fun a ↦ X.singularCup k
     (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a c', key c c' hcc', key c' c hc'c⟩
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- **The cup product with a degree-zero class whose values are units is bijective**: for such a
+class `u ∈ H⁰(X; k)` and a `k`-module `M`, the map `a ↦ a ⌣ u` on `Hᵖ(X; M)`, along the right
+unitor `M ⊗ k ≅ M`, is a bijection. Its inverse is the cup product with the inverse of `u` given by
+`TauCeti.exists_singularCup_eq_one`. -/
+theorem bijective_singularCup_left_of_forall_isUnit (M : ModuleCat.{w} k)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (hu : ∀ x : X, IsUnit (singularCohomologyZeroEval x u)) (p : ℕ) :
+    Function.Bijective fun a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p ↦
+      X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a u := by
+  obtain ⟨v, h₁, h₂⟩ := exists_singularCup_eq_one u hu
+  exact bijective_singularCup_left_of_singularCup_eq_one h₁ h₂ M p
+
 end Invertibility
 
 end TauCeti
+
+namespace TopCat
+
+open CartesianMonoidalCategory
+
+variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
+
+/-- Restricting `pr₂^* b + pr₁^* θ ⌣ pr₂^* c` (`θ ∈ H⁰(X; k)`) along
+`TopCat.prodFiberInclusion X Y p` yields `b + θ(p) • c`. -/
+theorem singularCohomologyMap_prodFiberInclusion_add_singularCup (X Y : TopCat.{w}) (p : X) (n : ℕ)
+    (θ : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (b c : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    TopCat.singularCohomologyMap (prodFiberInclusion X Y p) n
+        (TopCat.singularCohomologyMap (snd X Y) n b +
+          (X ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom 0 n n (zero_add n)
+            (TopCat.singularCohomologyMap (fst X Y) 0 θ)
+            (TopCat.singularCohomologyMap (snd X Y) n c)) =
+      b + TauCeti.singularCohomologyZeroEval p θ • c := by
+  have hsnd (y : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+      TopCat.singularCohomologyMap (prodFiberInclusion X Y p) n
+        (TopCat.singularCohomologyMap (snd X Y) n y) = y := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, prodFiberInclusion_snd,
+      TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  rw [map_add, hsnd, ← TopCat.singularCup_naturality, hsnd, ← ConcreteCategory.comp_apply,
+    ← TopCat.singularCohomologyMap_comp, prodFiberInclusion_fst,
+    TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul, map_smul,
+    LinearMap.smul_apply, TopCat.singularCohomologyZeroOne_def,
+    Y.singularCup_constSingularCocycle_left k (η := 𝟙 _) (by monoidal) (by monoidal) (zero_add n)]
+
+end TopCat

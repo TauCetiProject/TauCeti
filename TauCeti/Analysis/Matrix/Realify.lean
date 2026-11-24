@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Realify
 public import Mathlib.Analysis.Matrix.Order
 
 /-!
-# Positivity and norms of realified matrices
+# Positivity, norms and functional calculus of realified matrices
 
 Realification preserves and reflects positive semidefiniteness. This allows Hermitian
 covariance matrices to be used as real covariance matrices after splitting coordinates
@@ -20,6 +20,14 @@ of the original Hermitian quadratic form. Positivity is transported using Mathli
 For an arbitrary `𝕜`-matrix `A`, we also record that `A.realify` has twice the squared Frobenius
 norm (`Matrix.sum_sq_realify`) and the same Euclidean `ℓ²` operator norm
 (`Matrix.l2_opNorm_realify`) as `A`.
+
+A square matrix and its realification have the same real spectrum (`Matrix.spectrum_realify`),
+since realification preserves and reflects invertibility. As realification is a continuous
+homomorphism of `ℝ`-algebras with involution (`Matrix.realifyStarAlgHom`), it commutes with the
+continuous functional calculus, `(f A).realify = f A.realify` for every real function `f`
+(`Matrix.realify_cfc`), and in particular with real powers and square roots
+(`Matrix.realify_rpow`, `Matrix.realify_sqrt`). These identities need no hypotheses, because the
+two sides vanish together outside the domain of the functional calculus.
 -/
 
 public section
@@ -79,9 +87,12 @@ theorem posDef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
     exact hR.dotProduct_mulVec_pos hy
   · intro hA
     have hR : A.realify.PosSemidef := posSemidef_realify_iff.mpr hA.posSemidef
-    exact hR.posDef_iff_isUnit.mpr
-      ((isUnit_iff_isUnit_det A.realify).mpr
-        (isUnit_det_realify_iff.mpr ((isUnit_iff_isUnit_det A).mp hA.isUnit)))
+    exact hR.posDef_iff_isUnit.mpr (isUnit_realify_iff.mpr hA.isUnit)
+
+/-- Realification preserves and reflects nonnegativity in the Loewner order. -/
+@[simp]
+theorem realify_nonneg_iff [Finite n] {A : Matrix n n 𝕜} : 0 ≤ A.realify ↔ 0 ≤ A := by
+  rw [nonneg_iff_posSemidef, nonneg_iff_posSemidef, posSemidef_realify_iff]
 
 /-- The sum of squared entries of `A.realify` is twice the sum of squared norms of `A`. -/
 theorem sum_sq_realify {m : Type*} [Fintype m] [Fintype n] (A : Matrix m n 𝕜) :
@@ -161,5 +172,64 @@ theorem l2_opNorm_realify {m : Type*} [Fintype m] [Fintype n] [DecidableEq n] (A
   · rw [hTK_apply, ← norm_reImToLp (A *ᵥ z.ofLp), ← toEuclideanLin_realify_reImToLp A z.ofLp,
       ← hTR_apply, ← norm_reImToLp z.ofLp]
     exact TR.le_opNorm (reImToLp z.ofLp)
+
+end Matrix
+
+/-! ### Spectra and the continuous functional calculus -/
+
+namespace Matrix
+
+section FunctionalCalculus
+
+variable {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
+
+section Unital
+
+variable [DecidableEq ι]
+
+/-- A square matrix and its realification have the same real spectrum. -/
+@[simp]
+theorem spectrum_realify (A : Matrix ι ι 𝕜) : spectrum ℝ A.realify = spectrum ℝ A := by
+  ext r
+  have h : (algebraMap ℝ (Matrix ι ι 𝕜) r - A).realify = algebraMap ℝ _ r - A.realify := by
+    rw [← realifyAlgHom_apply, map_sub, AlgHom.commutes, realifyAlgHom_apply]
+  rw [spectrum.mem_iff, spectrum.mem_iff, ← h, isUnit_realify_iff]
+
+/-- **Realification commutes with the continuous functional calculus**: for every real function
+`f`, `f(A)` realifies to `f(A_ℝ)`. This holds without hypotheses: if `A` is not self-adjoint, or
+`f` is not continuous on its spectrum, both sides are zero. -/
+@[simp]
+theorem realify_cfc (f : ℝ → ℝ) (A : Matrix ι ι 𝕜) : (cfc f A).realify = cfc f A.realify := by
+  by_cases hA : IsSelfAdjoint A
+  · by_cases hf : ContinuousOn f (spectrum ℝ A)
+    · -- Realification is a star-algebra homomorphism, continuous since it is linear between
+      -- finite-dimensional spaces.
+      have hc : Continuous (realifyStarAlgHom ι 𝕜) :=
+        (realifyStarAlgHom ι 𝕜).toAlgHom.toLinearMap.continuous_of_finiteDimensional
+      simpa using (realifyStarAlgHom ι 𝕜).map_cfc f A hf hc hA (by simpa using hA)
+    · rw [cfc_apply_of_not_continuousOn A hf,
+        cfc_apply_of_not_continuousOn _ (by rwa [spectrum_realify]), realify_zero]
+  · rw [cfc_apply_of_not_predicate A hA,
+      cfc_apply_of_not_predicate _ (by rwa [isSelfAdjoint_realify_iff]), realify_zero]
+
+/-- Realification commutes with real powers. Both sides are zero when `A` is not positive
+semidefinite. -/
+@[simp]
+theorem realify_rpow (A : Matrix ι ι 𝕜) (y : ℝ) : (A ^ y).realify = A.realify ^ y := by
+  by_cases hA : 0 ≤ A
+  · rw [CFC.rpow_eq_cfc_real hA, CFC.rpow_eq_cfc_real (realify_nonneg_iff.2 hA), realify_cfc]
+  · rw [CFC.rpow_def, CFC.rpow_def, cfc_apply_of_not_predicate A hA,
+      cfc_apply_of_not_predicate _ (realify_nonneg_iff.not.2 hA), realify_zero]
+
+end Unital
+
+open scoped Classical in
+/-- Realification commutes with square roots. Both sides are zero when `A` is not positive
+semidefinite. -/
+@[simp]
+theorem realify_sqrt (A : Matrix ι ι 𝕜) : (CFC.sqrt A).realify = CFC.sqrt A.realify := by
+  rw [CFC.sqrt_eq_rpow, CFC.sqrt_eq_rpow, realify_rpow]
+
+end FunctionalCalculus
 
 end Matrix

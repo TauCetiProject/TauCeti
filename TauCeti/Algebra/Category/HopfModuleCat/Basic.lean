@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
+public import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
 # All modules over an algebra, as a home for coproduct tensor products
@@ -29,6 +32,10 @@ restriction of scalars along `algebraMap k H`.
 ## Main declarations
 
 * `TauCeti.HopfModuleCat k H`: all left `H`-modules in the universe of `k`.
+* `TauCeti.HopfModuleCat.instEnoughProjectives`, `TauCeti.HopfModuleCat.instEnoughInjectives`,
+  `TauCeti.HopfModuleCat.instEnoughProjectivesOfFinite`, and
+  `TauCeti.HopfModuleCat.instEnoughInjectivesOfFinite`: enough projectives and enough injectives on
+  `HopfModuleCat k H` when `H` is `u`-small or finitely generated as a `k`-module.
 * `TauCeti.HopfModuleCat.forgetToModule`: the faithful forgetful functor to `k`-modules.
 -/
 
@@ -102,6 +109,40 @@ theorem hom_comp {M N P : HopfModuleCat k H} (f : M ⟶ N) (g : N ⟶ P) :
     (f ≫ g).hom = g.hom ∘ₗ f.hom := (rfl)
 
 end Ring
+
+section Small
+
+variable (k : Type u) (H : Type v) [Ring H] [Small.{u} H]
+
+/-- When `H` is small in the universe of `k`, `HopfModuleCat k H` inherits enough projectives from
+`ModuleCat.{u} H`. -/
+instance instEnoughProjectives : EnoughProjectives (HopfModuleCat k H) :=
+  inferInstanceAs (EnoughProjectives (ModuleCat.{u} H))
+
+/-- When `H` is small in the universe of `k`, `HopfModuleCat k H` inherits enough injectives from
+`ModuleCat.{u} H`. -/
+instance instEnoughInjectives : EnoughInjectives (HopfModuleCat k H) :=
+  inferInstanceAs (EnoughInjectives (ModuleCat.{u} H))
+
+end Small
+
+section Finite
+
+variable (k : Type u) [Semiring k] (H : Type v) [Ring H] [Module k H] [Module.Finite k H]
+
+/-- When `H` is finitely generated as a `k`-module, `HopfModuleCat k H` has enough projectives
+without an explicit `Small` hypothesis. -/
+instance instEnoughProjectivesOfFinite : EnoughProjectives (HopfModuleCat k H) := by
+  have := Module.Finite.small k H
+  exact inferInstance
+
+/-- When `H` is finitely generated as a `k`-module, `HopfModuleCat k H` has enough injectives
+without an explicit `Small` hypothesis. -/
+instance instEnoughInjectivesOfFinite : EnoughInjectives (HopfModuleCat k H) := by
+  have := Module.Finite.small k H
+  exact inferInstance
+
+end Finite
 
 variable (k : Type u) [Field k] (H : Type v) [Ring H] [Algebra k H]
 

@@ -167,7 +167,7 @@ theorem isBaseChange_complex_codRestrict_of_star_eq_neg {P : Submodule ℂ V}
     IsBaseChange ℂ (f.codRestrict (P.restrictScalars ℝ) hfP) := by
   -- The conjugation `v ↦ -v⋆` of `V`, restricted to `P`.
   let K : P.restrictScalars ℝ →ₛₗ[starRingEnd ℂ] P.restrictScalars ℝ :=
-    { toFun v := ⟨-star (v : V), P.neg_mem (hP _ v.2)⟩
+    { toFun v := ⟨-star (v : V), P.neg_mem (hP _ v.property)⟩
       map_add' v w := Subtype.ext (by simp [add_comm])
       -- The `ℂ`-action on `P.restrictScalars ℝ` is `P`'s action, transported by the instance
       -- `Submodule.restrictScalars.origModule`; no simp lemma moves the coercion through it,
@@ -179,7 +179,7 @@ theorem isBaseChange_complex_codRestrict_of_star_eq_neg {P : Submodule ℂ V}
     -- `hfP` lands in `P` rather than in `P.restrictScalars ℝ`, so `LinearMap.codRestrict_apply`
     -- does not match up to reducible unfolding; `show` unfolds `K` and the corestriction.
     (fun x ↦ Subtype.ext (show -star (f x) = f x by simp [hskew])) fun v hv ↦ ?_
-  obtain ⟨x, hx⟩ := hsurj v v.2 (by
+  obtain ⟨x, hx⟩ := hsurj v v.property (by
     simpa [K, neg_eq_iff_eq_neg] using congrArg Subtype.val hv)
   exact ⟨x, Subtype.ext hx⟩
 

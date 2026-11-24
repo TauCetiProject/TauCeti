@@ -44,6 +44,9 @@ one multiplies them by `(-1) ^ n`, `n` the complex rank
 
 * `Bundle.Trivialization.mapOrientation_complexOrientation`: a complex-linear trivialization reads
   the canonical orientation of a fibre as the canonical orientation of the model fibre.
+* `TauCeti.VectorBundleOrientation.mapOrientation_complex` and
+  `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex`: a trivialization of the atlas
+  reads the canonical orientation, possibly reindexed, as that of the model fibre.
 * `TauCeti.VectorBundleOrientation.pullback_complex`: the canonical orientation of a pullback
   bundle is the pullback of the canonical orientation.
 * `TauCeti.VectorBundleOrientation.complex_trivial`: the canonical orientation of the trivial
@@ -138,6 +141,14 @@ theorem mapOrientation_complex (e : Trivialization F (π F E)) [MemTrivializatio
   have := VectorBundle.finiteDimensional ℂ F E b
   rw [complex_apply, Trivialization.mapOrientation_complexOrientation _ _ _ rfl, finCongr_refl,
     Orientation.reindex_refl, Equiv.refl_apply]
+
+/-- A complex-linear trivialization of the atlas reads the canonical orientation, reindexed along
+`f`, as the canonical orientation of the model fibre reindexed along `f`. -/
+theorem mapOrientation_reindex_complex {ι : Type*} (f : Fin (2 * finrank ℂ F) ≃ ι)
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {b : B} (hb : b ∈ e.baseSet) :
+    e.mapOrientation ι hb (reindex f (complex F E) b) =
+      Orientation.reindex ℝ F f (complexOrientation F) := by
+  rw [reindex_apply, Trivialization.mapOrientation_reindex, mapOrientation_complex]
 
 /-- **Naturality of the canonical orientation.** The canonical orientation of the pullback `f*E` of
 a complex vector bundle along a continuous map `f` is the pullback of the canonical orientation

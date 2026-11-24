@@ -23,9 +23,11 @@ Because `squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X`
 (`TauCeti.squaredNorm_pivotalIsoApp` in `TauCeti.CategoryTheory.Monoidal.Pivotal.Trace`),
 `globalDim C` equals the pivot-free global dimension `TauCeti.normGlobalDim` of
 `TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim` evaluated at `pivotalIsoApp`. When every simple
-representative has scalar endomorphisms, `normGlobalDim C a` is independent of the family
-`a : ∀ S : SimpleClasses C, S.repr ≅ S.reprᘁᘁ`, so `normGlobalDim C a = globalDim C`
-(`TauCeti.normGlobalDim_eq_globalDim`), and `globalDim C` does not depend on the pivotal structure.
+representative has scalar endomorphisms (`Function.Surjective (algebraMap R (End S.repr))`),
+`normGlobalDim C a` is independent of the family `a : ∀ S : SimpleClasses C, S.repr ≅ S.reprᘁᘁ`, so
+`normGlobalDim C a = globalDim C` (`TauCeti.normGlobalDim_eq_globalDim`), and `globalDim C` does not
+depend on the pivotal structure (`TauCeti.globalDim_pivotalCategory_eq_of_surjective`,
+`TauCeti.globalDim_pivotalCategory_eq`).
 
 ## Main declarations
 
@@ -34,9 +36,9 @@ representative has scalar endomorphisms, `normGlobalDim C a` is independent of t
   `TauCeti.globalDim_eq_normGlobalDim_pivotalIsoApp` computing it;
 * `TauCeti.globalDim_eq_sum_quantumDim_comp_quantumDim`: in a spherical category it is the sum of
   the squared quantum dimensions of the simple objects;
-* `TauCeti.normGlobalDim_eq_globalDim_of_bijective` and `TauCeti.normGlobalDim_eq_globalDim`:
+* `TauCeti.normGlobalDim_eq_globalDim_of_surjective` and `TauCeti.normGlobalDim_eq_globalDim`:
   agreement of the pivot-free global dimension with `TauCeti.globalDim`;
-* `TauCeti.globalDim_pivotalCategory_eq_of_bijective` and `TauCeti.globalDim_pivotalCategory_eq`:
+* `TauCeti.globalDim_pivotalCategory_eq_of_surjective` and `TauCeti.globalDim_pivotalCategory_eq`:
   independence of `TauCeti.globalDim` from the pivotal structure.
 
 ## References
@@ -52,8 +54,6 @@ open CategoryTheory CategoryTheory.Limits MonoidalCategory
 universe w v u
 
 namespace TauCeti
-
-section GlobalDim
 
 variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
   [Fintype (SimpleClasses C)]
@@ -89,33 +89,29 @@ theorem globalDim_eq_sum_quantumDim_comp_quantumDim [PivotalCategory C] [Spheric
 
 /-- When every simple representative has scalar endomorphisms over a commutative semiring `R`,
 the pivot-free global dimension equals `TauCeti.globalDim` for any pivotal structure. -/
-theorem normGlobalDim_eq_globalDim_of_bijective (R : Type w) [CommSemiring R] [PivotalCategory C]
+theorem normGlobalDim_eq_globalDim_of_surjective (R : Type w) [CommSemiring R] [PivotalCategory C]
     [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    (hS : ∀ S : SimpleClasses C, Function.Bijective (algebraMap R (End S.repr)))
+    (hS : ∀ S : SimpleClasses C, Function.Surjective (algebraMap R (End S.repr)))
     (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
     normGlobalDim C a = globalDim C := by
   rw [globalDim_eq_normGlobalDim_pivotalIsoApp]
-  exact normGlobalDim_congr_of_bijective C R hS a _
+  exact normGlobalDim_congr_of_surjective C R hS a _
 
 /-- When every simple representative has scalar endomorphisms over a commutative semiring `R`,
 `TauCeti.globalDim` does not depend on the pivotal structure. -/
-theorem globalDim_pivotalCategory_eq_of_bijective (R : Type w) [CommSemiring R]
+theorem globalDim_pivotalCategory_eq_of_surjective (R : Type w) [CommSemiring R]
     [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    (hS : ∀ S : SimpleClasses C, Function.Bijective (algebraMap R (End S.repr)))
+    (hS : ∀ S : SimpleClasses C, Function.Surjective (algebraMap R (End S.repr)))
     (P Q : PivotalCategory C) :
     @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q := by
   rw [@globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ P,
     @globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ Q]
-  exact Finset.sum_congr rfl fun S _ ↦
-    leftDim_comp_rightDim_eq_of_surjective P Q (hS S).surjective
-
-end GlobalDim
+  exact Finset.sum_congr rfl fun S _ ↦ leftDim_comp_rightDim_eq_of_surjective P Q (hS S)
 
 section Field
 
-variable (k : Type w) [Field k] [IsAlgClosed k] (C : Type u) [Category.{v} C]
-  [MonoidalCategory C] [RigidCategory C] [Preadditive C] [MonoidalPreadditive C] [Linear k C]
-  [MonoidalLinear k C] [HasKernels C] [Fintype (SimpleClasses C)]
+variable (k : Type w) [Field k] [IsAlgClosed k] [MonoidalPreadditive C] [Linear k C]
+  [MonoidalLinear k C] [HasKernels C]
   [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
 
 include k in
@@ -125,18 +121,8 @@ equals `globalDim C` for every pivotal structure on `C`. -/
 theorem normGlobalDim_eq_globalDim [PivotalCategory C]
     (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
     normGlobalDim C a = globalDim C :=
-  normGlobalDim_eq_globalDim_of_bijective C k
-    (fun S ↦ bijective_algebraMap_end_of_simple k S.repr) a
-
-end Field
-
-section PivotalEq
-
-variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
-  [Fintype (SimpleClasses C)]
-variable (k : Type w) [Field k] [IsAlgClosed k] [MonoidalPreadditive C] [Linear k C]
-  [MonoidalLinear k C] [HasKernels C]
-  [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
+  normGlobalDim_eq_globalDim_of_surjective C k
+    (fun S ↦ (bijective_algebraMap_end_of_simple k S.repr).surjective) a
 
 include k in
 /-- **The global dimension does not depend on the pivotal structure**: over an algebraically
@@ -144,9 +130,9 @@ closed field `k`, if the endomorphisms of each simple object are finite-dimensio
 pivotal structures `P` and `Q` on `C` give the same global dimension. -/
 theorem globalDim_pivotalCategory_eq (P Q : PivotalCategory C) :
     @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q :=
-  globalDim_pivotalCategory_eq_of_bijective C k
-    (fun S ↦ bijective_algebraMap_end_of_simple k S.repr) P Q
+  globalDim_pivotalCategory_eq_of_surjective C k
+    (fun S ↦ (bijective_algebraMap_end_of_simple k S.repr).surjective) P Q
 
-end PivotalEq
+end Field
 
 end TauCeti

@@ -75,7 +75,7 @@ theorem derivedDefiningIdeal_toIdeal_le_ker :
     (derivedDefiningIdeal (R := R) H).toIdeal ≤
       RingHom.ker (HopfAlgebra.commutatorAlgHom (R := R) (H := H)).toRingHom := by
   rw [derivedDefiningIdeal, HopfIdeal.sSup_toIdeal]
-  exact iSup_le fun I ↦ I.2
+  exact iSup_le fun I ↦ I.property
 
 /-- The commutator coordinate morphism vanishes on each element of the derived defining
 ideal. -/

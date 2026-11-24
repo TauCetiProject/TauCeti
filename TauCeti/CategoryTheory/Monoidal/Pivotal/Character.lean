@@ -275,7 +275,7 @@ theorem normGlobalDim_ne_zero_of_pivotalCategory (P : PivotalCategory C)
     (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
     normGlobalDim C a ≠ 0 := by
   let _ := P
-  rw [normGlobalDim_eq_globalDim k C a]
+  rw [normGlobalDim_eq_globalDim C k a]
   exact globalDim_ne_zero k C
 
 end NeZero

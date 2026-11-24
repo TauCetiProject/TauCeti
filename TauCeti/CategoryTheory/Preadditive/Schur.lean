@@ -90,13 +90,13 @@ theorem endAlgEquivOfSimple_symm_apply (c : k) :
 /-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
 `f`. -/
 theorem algebraMap_endAlgEquivOfSimple (f : End X) :
-    algebraMap k (End X) (endAlgEquivOfSimple k X f) = f := by
-  rw [← endAlgEquivOfSimple_symm_apply, AlgEquiv.symm_apply_apply]
+    algebraMap k (End X) (endAlgEquivOfSimple k X f) = f :=
+  algebraMap_endAlgEquivOfBijective (bijective_algebraMap_end_of_simple k X) f
 
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]
-theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom := by
-  rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSimple]
+theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom :=
+  endAlgEquivOfBijective_smul_id (bijective_algebraMap_end_of_simple k X) f
 
 /-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
