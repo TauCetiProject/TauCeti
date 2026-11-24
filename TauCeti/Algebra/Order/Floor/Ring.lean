@@ -35,6 +35,7 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   its fractional part `Int.fract t`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
+* `TauCeti.fract_inv_two`: `{1/2} = 1/2`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -83,6 +84,11 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
       (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
+
+/-- The fractional part of `1/2` is `1/2`. -/
+@[simp]
+theorem fract_inv_two : Int.fract (2⁻¹ : K) = 2⁻¹ :=
+  Int.fract_eq_self.mpr ⟨by positivity, inv_lt_one_of_one_lt₀ one_lt_two⟩
 
 /-- For a step `δ > 0`, the point `x` lies in the interval `[δ m, δ (m + 1)]` with
 `m = ⌊x / δ⌋`. -/

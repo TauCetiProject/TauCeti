@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 

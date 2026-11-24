@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Topology.Homotopy.AmbientIsotopyConj
 public import TauCeti.Topology.Homotopy.Isotopy.Basic

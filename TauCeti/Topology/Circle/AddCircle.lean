@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.Algebra.AddCircle
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The additive circle and the complex unit circle

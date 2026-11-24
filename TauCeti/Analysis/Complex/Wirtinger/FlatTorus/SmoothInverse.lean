@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.Torus.Decay
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
