@@ -78,9 +78,7 @@ theorem closedFormOperator_comp_continuousLinearEquiv {V' : Type*} [SeminormedAd
     [NormedSpace 𝕜 V'] (j : V →L[𝕜] H) (hj : Function.Injective j) (hdense : DenseRange j)
     (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (e : V' ≃L[𝕜] V) :
     closedFormOperator (j.comp (e : V' →L[𝕜] V)) (hj.comp e.injective)
-        (by
-          rw [DenseRange, coe_comp, ContinuousLinearEquiv.coe_coe, e.surjective.range_comp]
-          exact hdense)
+        (hdense.comp e.surjective.denseRange j.continuous)
         (q.bilinearComp (e : V' →L[𝕜] V) (e : V' →L[𝕜] V)) =
       closedFormOperator j hj hdense q := by
   refine (eq_closedFormOperator_of_mem_graph_iff _ _ _ _ fun x h ↦ ?_).symm
