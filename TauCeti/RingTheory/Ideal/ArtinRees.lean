@@ -203,13 +203,11 @@ theorem exists_mkQ_comp_eq_factorPow_comp [IsNoetherianRing R] [Module.Finite R 
     simp [h, hh₀]
   have hΦh : (Φ h : (Fin a → R) →ₗ[R] N) ∈ (I ^ (n + k) • ⊤ : Submodule R _) := by
     refine (Pi.basisFun R (Fin a)).mem_smul_top_linearMap_iff.mpr fun t ↦ ?_
-    have hKt : π (K (Pi.basisFun R (Fin a) t)) = 0 := by
+    have hKt : π (K (Pi.single t 1)) = 0 := by
       rw [← LinearMap.mem_ker, ← hK]
       exact LinearMap.mem_range_self K _
     have := LinearMap.congr_fun hgh (K (Pi.basisFun R (Fin a) t))
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, hKt, map_zero, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero] at this
-    simpa only [Φ, LinearMap.lcomp_apply] using this
+    simpa [Φ, hKt, Submodule.Quotient.mk_eq_zero] using this
   -- Artin–Rees corrects `h` by some `c ∈ I ^ n • Hom(Rᵇ, N)` to a map killing `range K = ker π`.
   obtain ⟨c, hc, hΦc⟩ := hk (Φ.rangeRestrict) (LinearMap.surjective_rangeRestrict Φ) n
     ⟨Φ h, h, rfl⟩ hΦh
@@ -222,11 +220,8 @@ theorem exists_mkQ_comp_eq_factorPow_comp [IsNoetherianRing R] [Module.Finite R 
   refine LinearMap.ext fun x ↦ ?_
   have hgx := LinearMap.congr_fun hgh x
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply] at hgx
-  simp only [LinearMap.comp_apply, LinearMap.equivOfSurjective_apply, LinearMap.sub_apply,
-    Submodule.mkQ_apply, Submodule.Quotient.mk_sub, ← hgx,
-    (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.apply_mem_smul_top_of_mem_smul_top hc x),
-    sub_zero]
-  exact (Submodule.factor_mk _ (h x)).symm
+  simp [← hgx, (Submodule.Quotient.mk_eq_zero _).mpr
+    (LinearMap.apply_mem_smul_top_of_mem_smul_top hc x)]
 
 end Hom
 

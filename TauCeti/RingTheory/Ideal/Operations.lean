@@ -518,8 +518,7 @@ theorem mem_smul_top_linearMap_iff (b : Basis ι R M) [Finite ι] {I : Ideal R}
   -- `f` is the image of its family of basis values under the linear equivalence `b.constr`.
   have := Submodule.mem_map_of_mem (f := (b.constr R).toLinearMap)
     ((I.mem_smul_top_pi_iff (N := fun _ ↦ N)).mpr hf)
-  rwa [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range, LinearEquiv.coe_coe,
-    b.constr_self] at this
+  simpa [Submodule.map_smul'', b.constr_self] using this
 
 end Module.Basis
 
