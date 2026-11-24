@@ -65,6 +65,11 @@ instance : FaithfulSMul (𝓞 K) (Codomain σ) :=
 /-- The identification of `Codomain σ` with `ℂ`, as `ℂ`-algebras. -/
 def equiv : Codomain σ ≃ₐ[ℂ] ℂ := AlgEquiv.refl
 
+instance : Module.Finite ℂ (Codomain σ) := .equiv (equiv σ).symm.toLinearEquiv
+
+@[simp]
+theorem algebraMap_equiv (c : Codomain σ) : algebraMap ℂ (Codomain σ) (equiv σ c) = c := (rfl)
+
 @[simp]
 theorem equiv_algebraMap (x : K) : equiv σ (algebraMap K (Codomain σ) x) = σ x := (rfl)
 
@@ -115,6 +120,12 @@ theorem baseChange_injective [NumberField K] {E F : Type*} [AddCommGroup E] [Mod
 theorem one_tmul_ne_zero {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Flat (𝓞 K) E]
     {x : E} (hx : x ≠ 0) : (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := fun h =>
   hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
+
+/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
+theorem one_tmul_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (a : 𝓞 K) (x : E) :
+    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
+  rw [← TensorProduct.smul_tmul, tmul_eq_smul, Algebra.smul_def, mul_one,
+    equiv_algebraMap_ringOfIntegers]
 
 end Codomain
 

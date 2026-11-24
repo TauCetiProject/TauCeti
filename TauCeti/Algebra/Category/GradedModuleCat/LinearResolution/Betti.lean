@@ -54,6 +54,11 @@ single term, so no finite projective dimension is needed.
 
 In the namespace `TauCeti.GradedProjectiveResolution`:
 
+* `coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton` and `trunc_bettiPoincarePowerSeries`:
+  a vanishing term contributes nothing, so the Betti series of a resolution whose terms vanish
+  above homological degree `N` is a polynomial of degree at most `N` in `t`.
+* `eval_trunc_bettiPoincarePowerSeries`: the Betti series truncated below `t^(N + 1)` and evaluated
+  at `t = -1` is the coordinate of the alternating class `∑_{n ≤ N} (-1)ⁿ [Pₙ]`.
 * `IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries`: the coefficient of
   `qʲ tⁿ` in `dᵢ` times the Betti series is `dim_k Extⁿ(M, Sᵢ{j})`.
 * `IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`: `dᵢ` times the Betti series is
@@ -126,6 +131,48 @@ theorem coeff_bettiPoincarePowerSeries (r : GradedProjectiveResolution.{uk, uA, 
     PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i) =
       bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
   simp [bettiPoincarePowerSeries]
+
+/-- A vanishing term of a resolution contributes nothing to its Betti Poincaré series. -/
+theorem coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) {n : ℕ}
+    (hn : Subsingleton (r.X n)) :
+    PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i) = 0 := by
+  have hZ : Limits.IsZero (r.finiteProjectiveTerm n) :=
+    Limits.IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _) _
+      (by simpa using GradedModuleCat.isZero_of_subsingleton (r.termObj n))
+  rw [coeff_bettiPoincarePowerSeries, ← LaurentK0.ofExactK0_exactK0_of.{uA},
+    ExactK0.of_eq_zero_of_isZero.{uA} hZ, map_zero, map_zero, Finsupp.zero_apply]
+
+/-- **The Betti Poincaré series of a finite resolution is a polynomial.** If the terms of the
+resolution vanish above homological degree `N`, its Betti Poincaré series agrees with its
+truncation below `t^(N + 1)`. -/
+theorem trunc_bettiPoincarePowerSeries
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) {N : ℕ}
+    (hN : ∀ n, N < n → Subsingleton (r.X n)) :
+    (PowerSeries.trunc (N + 1) (r.bettiPoincarePowerSeries bP i) : PowerSeries _) =
+      r.bettiPoincarePowerSeries bP i := by
+  ext n : 1
+  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with h
+  · rfl
+  · exact (r.coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton bP i (hN n (by omega))).symm
+
+/-- The Betti Poincaré series truncated below `t^(N + 1)` and evaluated at `t = -1` is the
+coordinate of the alternating class `∑_{n ≤ N} (-1)ⁿ [P_n]` of the terms. -/
+theorem eval_trunc_bettiPoincarePowerSeries
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) (N : ℕ) :
+    (PowerSeries.trunc (N + 1) (r.bettiPoincarePowerSeries bP i)).eval (-1) =
+      bP.repr (∑ n ∈ Finset.range (N + 1),
+        (-1 : ℤ) ^ n • LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
+  rw [← Polynomial.eval₂_id, PowerSeries.eval₂_trunc_eq_sum_range, map_sum,
+    Finset.sum_apply']
+  exact Finset.sum_congr rfl fun n _ ↦ by simp [coeff_bettiPoincarePowerSeries, mul_comm]
 
 end GradedProjectiveResolution
 

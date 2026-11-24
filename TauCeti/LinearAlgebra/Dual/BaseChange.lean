@@ -25,6 +25,7 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_one_tmul`: evaluation at a scalar-extended
   functional with coefficient one is its base change.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
+* `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
 * `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
@@ -33,8 +34,6 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange`: compatibility between a semilinear
   extension of `f : X →+ V` and the base change of an integral linear form agreeing with a linear
   form on `f(X)`.
-* `TauCeti.Module.Dual.baseChangeEvaluation_rTensor`: the pairing commutes with base change
-  along an algebra map `A → B`.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
@@ -86,6 +85,21 @@ theorem baseChangeEvaluation_tmul (a b : A) (φ : Module.Dual R M) (m : M) :
   rw [Algebra.algebraMap_self_apply]
   ac_rfl
 
+/-- Scalar-extended evaluation is natural in the scalar algebra: extending scalars along
+`f : A →ₐ[R] B` and then evaluating is `f` of the evaluation over `A`. -/
+theorem _root_.AlgHom.baseChangeEvaluation_rTensor {B : Type*} [CommSemiring B] [Algebra R B]
+    (f : A →ₐ[R] B) (ξ : A ⊗[R] Module.Dual R M) (v : A ⊗[R] M) :
+    baseChangeEvaluation (R := R) (M := M) (A := B)
+        (LinearMap.rTensor (Module.Dual R M) f.toLinearMap ξ)
+        (LinearMap.rTensor M f.toLinearMap v) =
+      f (baseChangeEvaluation (R := R) (M := M) (A := A) ξ v) := by
+  induction ξ using TensorProduct.inductionOn with
+  | add ξ ξ' hξ hξ' => simp only [map_add, LinearMap.add_apply, hξ, hξ']
+  | tmul a φ =>
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simp only [map_add, hv, hv']
+    | tmul b m => simp [map_mul]
+
 /-- Evaluation against a base-changed functional is natural with respect to the base change of
 a linear map. -/
 @[simp]
@@ -128,19 +142,6 @@ theorem _root_.AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange {S T X V :
     F (f.liftBaseChangeSemilinear σ z) = σ (Module.Dual.baseChange S φ z) :=
   f.apply_liftBaseChangeSemilinear σ F (Module.Dual.baseChange S φ)
     (fun x ↦ by rw [Module.Dual.baseChange_apply_one_tmul, eq_intCast, map_intCast, hF x]) z
-
-/-- The pairing of `A ⊗[R] M^∨` with `A ⊗[R] M` commutes with base change along `A → B`. -/
-theorem baseChangeEvaluation_rTensor {B : Type*} [CommSemiring B] [Algebra R B] (f : A →ₐ[R] B)
-    (ξ : A ⊗[R] Module.Dual R M) (x : A ⊗[R] M) :
-    baseChangeEvaluation (R := R) (M := M) (A := B) (f.toLinearMap.rTensor _ ξ)
-        (f.toLinearMap.rTensor M x) =
-      f (baseChangeEvaluation (R := R) (M := M) (A := A) ξ x) := by
-  induction ξ using TensorProduct.inductionOn with
-  | add ξ η hξ hη => simp only [map_add, LinearMap.add_apply, hξ, hη]
-  | tmul a φ =>
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul b m => simp
 
 section FiniteProjective
 

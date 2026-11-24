@@ -197,7 +197,7 @@ theorem baseChangeDualEquiv_map (h : ∀ p, rankAtStalk (R := R) M p = k + l) (f
   refine (Submodule.span_le (p := LinearMap.ker (baseChangeEvaluation (R := R) (M := M) (A := B)
     (f.toLinearMap.rTensor _ ξ))).2 ?_) hy
   rintro _ ⟨x, hx, rfl⟩
-  rw [SetLike.mem_coe, LinearMap.mem_ker, baseChangeEvaluation_rTensor,
+  rw [SetLike.mem_coe, LinearMap.mem_ker, AlgHom.baseChangeEvaluation_rTensor,
     (mem_baseChangeDualEquiv_iff h N ξ).1 hξ x hx, map_zero]
 
 /-- **Naturality of the inverse of `baseChangeDualEquiv`.** -/
