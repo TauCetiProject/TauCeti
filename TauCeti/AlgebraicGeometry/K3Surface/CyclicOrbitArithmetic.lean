@@ -33,8 +33,8 @@ stabilizer of order `gcd (m, d)`, gives the relation
 This file develops the purely arithmetic consequences of these relations:
 
 * the number of points fixed by the subgroup of order `d > 1` is the value at `d` of the rational
-  Mathieu function `ε d = 24 / (d * ∏_{p ∣ d} (1 + 1 / p))`, the character of the Mathieu
-  permutation representation at an element of order `d`;
+  Mathieu function `ε d = 24 / ψ d = 24 / (d * ∏_{p ∣ d} (1 + 1 / p))`, with `ψ` the Dedekind ψ
+  function, the character of the Mathieu permutation representation at an element of order `d`;
 * if the exceptional root lattice `⨁_{m ∣ n} A_{m-1} ^ (a m)` has rank at most `21`, as it must
   inside the Picard lattice of the resolution, then `n ∈ {1, 2, 3, 4, 5, 6, 7, 8, 11, 14, 15}`;
 * for `n = 11, 14, 15` the orbit counts are forced, the root lattices are `2 A₁₀`,
@@ -42,11 +42,12 @@ This file develops the purely arithmetic consequences of these relations:
   as in characteristic zero, leaves `n ≤ 8`.
 
 The relations are inverted along the divisor lattice using Jordan's totient function `J₂`,
-through `gcd (m, d) ^ 2 = ∑_{e ∣ gcd (m, d)} J₂ e` and `J₂ e * ε e = 24 * φ e`.
+through `gcd (m, d) ^ 2 = ∑_{e ∣ gcd (m, d)} J₂ e` and `J₂ e * ε e = 24 * φ e`, the latter
+from `J₂ = ψ * φ`.
 
 ## Main definitions
 
-* `TauCeti.mathieuFunction`: the rational Mathieu function `ε`.
+* `TauCeti.mathieuFunction`: the rational Mathieu function `ε = 24 / ψ`.
 * `TauCeti.IsK3CyclicOrbitData n a`: the orbit relations above, for all divisors `d` of `n`.
 * `TauCeti.cyclicFixedPointCount n a d`: the number `∑_{d ∣ m ∣ n} (n / m) * a m` of points
   fixed by the subgroup of order `d`.
@@ -81,24 +82,27 @@ namespace TauCeti
 
 /-! ### The rational Mathieu function -/
 
-/-- The rational Mathieu function `ε n = 24 / (n * ∏_{p ∣ n} (1 + 1 / p))`, the product running
-over the primes dividing `n`. As observed by Mukai, when `M₂₃` has an element of order `n`, `ε n`
-is the number of letters that element fixes in the action of `M₂₃` on `24` letters, and when a K3
-surface has a tame symplectic automorphism of order `n`, `ε n` is its number of fixed points. Its
-value at `0` is `0`, by the convention `x / 0 = 0`. -/
+/-- The rational Mathieu function `ε n = 24 / ψ n = 24 / (n * ∏_{p ∣ n} (1 + 1 / p))`, where `ψ` is
+the Dedekind ψ function `ArithmeticFunction.dedekindPsi` and the product runs over the primes
+dividing `n`. As observed by Mukai, when `M₂₃` has an element of order `n`, `ε n` is the number of
+letters that element fixes in the action of `M₂₃` on `24` letters, and when a K3 surface has a tame
+symplectic automorphism of order `n`, `ε n` is its number of fixed points. Its value at `0` is `0`,
+by the convention `x / 0 = 0`. -/
 def mathieuFunction (n : ℕ) : ℚ :=
-  24 / (n * ∏ p ∈ n.primeFactors, (1 + (p : ℚ)⁻¹))
+  24 / dedekindPsi n
 
-theorem mathieuFunction_def (n : ℕ) :
-    mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactors, (1 + (p : ℚ)⁻¹)) := (rfl)
+theorem mathieuFunction_def (n : ℕ) : mathieuFunction n = 24 / dedekindPsi n := (rfl)
 
-/-- `ε n` with the prime factors of `n` written as `n.primeFactorsList.toFinset`, the evaluation
-step for concrete values of `ε`. On a numeral `n`, the `Nat.primeFactorsList_ofNat` simproc factors
-`n.primeFactorsList`, so `norm_num [mathieuFunction_eq_primeFactorsList]` computes `ε n`. There is
-no such simproc for `n.primeFactors`, so `mathieuFunction_def` alone does not suffice. -/
+/-- `ε n` as `24 / (n * ∏_{p ∣ n} (1 + 1 / p))`, with the prime factors of `n` written as
+`n.primeFactorsList.toFinset`: the evaluation step for concrete values of `ε`. On a numeral `n`,
+the `Nat.primeFactorsList_ofNat` simproc factors `n.primeFactorsList`, so
+`norm_num [mathieuFunction_eq_primeFactorsList]` computes `ε n`. There is no such simproc for
+`n.primeFactors`, so the Euler product `dedekindPsi_eq_prod` alone does not suffice. -/
 theorem mathieuFunction_eq_primeFactorsList (n : ℕ) :
     mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactorsList.toFinset, (1 + (p : ℚ)⁻¹)) := by
-  rw [Nat.toFinset_factors, mathieuFunction_def]
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [mathieuFunction_def]
+  rw [Nat.toFinset_factors, mathieuFunction_def, dedekindPsi_eq_prod hn]
 
 @[simp]
 theorem mathieuFunction_zero : mathieuFunction 0 = 0 := by
@@ -106,19 +110,12 @@ theorem mathieuFunction_zero : mathieuFunction 0 = 0 := by
 
 @[simp]
 theorem mathieuFunction_one : mathieuFunction 1 = 24 := by
-  simp [mathieuFunction_def]
+  simp [mathieuFunction_def, isMultiplicative_dedekindPsi.map_one]
 
 /-- The value of `ε` at a prime power: `ε (p ^ k) = 24 / (p ^ (k - 1) * (p + 1))` for `k ≠ 0`. -/
 theorem mathieuFunction_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) :
     mathieuFunction (p ^ k) = 24 / ((p : ℚ) ^ (k - 1) * (p + 1)) := by
-  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hp.ne_zero
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt (Nat.pos_of_ne_zero hk)
-  rw [mathieuFunction_def, Nat.primeFactors_prime_pow hk hp, Finset.prod_singleton]
-  congr 1
-  simp only [zero_add, Nat.add_sub_cancel]
-  push_cast
-  field_simp
-  ring
+  simp [mathieuFunction_def, dedekindPsi_apply_prime_pow hp hk]
 
 /-- The value of `ε` at a prime: `ε p = 24 / (p + 1)`. -/
 @[simp]
@@ -129,18 +126,12 @@ theorem mathieuFunction_prime {p : ℕ} (hp : p.Prime) : mathieuFunction p = 24 
 and `n`. -/
 theorem mathieuFunction_mul {m n : ℕ} (h : m.Coprime n) :
     mathieuFunction (m * n) = mathieuFunction m * mathieuFunction n / 24 := by
-  rw [mathieuFunction_def, mathieuFunction_def, mathieuFunction_def, Nat.Coprime.primeFactors_mul h,
-    Finset.prod_union h.disjoint_primeFactors, Nat.cast_mul]
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  have hprod : ∀ s : ℕ, (∏ p ∈ s.primeFactors, (1 + (p : ℚ)⁻¹)) ≠ 0 := fun s ↦
-    Finset.prod_ne_zero_iff.2 fun p _ ↦ by positivity
-  have := hprod m
-  have := hprod n
-  have : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hm
-  have : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  rw [mathieuFunction_def, mathieuFunction_def, mathieuFunction_def,
+    isMultiplicative_dedekindPsi.map_mul_of_coprime h, Int.cast_mul]
+  rcases eq_or_ne (dedekindPsi m : ℚ) 0 with hm | hm
+  · simp [hm]
+  rcases eq_or_ne (dedekindPsi n : ℚ) 0 with hn | hn
+  · simp [hn]
   field_simp
 
 /-- `ε` is `24` times Euler's totient over Jordan's totient `J₂`: `ε n * J₂ n = 24 * φ n`. -/
@@ -148,17 +139,9 @@ theorem mathieuFunction_mul_jordanTotient (n : ℕ) :
     mathieuFunction n * jordanTotient 2 n = 24 * n.totient := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [jordanTotient_eq_prod 2 hn, Nat.totient_eq_mul_prod_factors, mathieuFunction_def]
-  have hn' : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hn
-  have hprod : (∏ p ∈ n.primeFactors, (1 + (p : ℚ)⁻¹)) ≠ 0 :=
-    Finset.prod_ne_zero_iff.2 fun p _ ↦ by positivity
-  have hsq : ∏ p ∈ n.primeFactors, (1 - ((p : ℚ) ^ 2)⁻¹) =
-      (∏ p ∈ n.primeFactors, (1 + (p : ℚ)⁻¹)) * ∏ p ∈ n.primeFactors, (1 - (p : ℚ)⁻¹) := by
-    rw [← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun p _ ↦ ?_
-    ring
-  rw [hsq, div_mul_eq_mul_div, div_eq_iff (mul_ne_zero hn' hprod)]
-  ring
+  have hψ : (dedekindPsi n : ℚ) ≠ 0 := Int.cast_ne_zero.2 (dedekindPsi_pos hn).ne'
+  rw [mathieuFunction_def, ← dedekindPsi_mul_totient, Int.cast_mul, Int.cast_natCast]
+  field_simp
 
 /-! ### Orbit relations -/
 
