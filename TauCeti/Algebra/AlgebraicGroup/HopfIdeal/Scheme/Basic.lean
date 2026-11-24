@@ -118,6 +118,7 @@ theorem mapMulEquiv_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R)
   refine h.trans (congrArg (Spec.mapMulEquiv q ≫ ·) (Over.OverMorphism.ext ?_))
   rw [quotientSpecι_def, hopfSpec_map_left]
   simp only [OverClass.asOverHom_left]
+  -- Reconcile the `CommRing` instance on `R` with the bundled `CommRingCat.of R` carrier.
   rfl
 
 /-- A morphism into a quotient Hopf spectrum, followed by its inclusion, is represented by

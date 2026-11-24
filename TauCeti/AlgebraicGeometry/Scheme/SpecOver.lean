@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Group.Affine
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 /-!
 # Schemes and morphisms over an affine base
@@ -34,9 +33,7 @@ A morphism `Spec B ⟶ X` over `Spec R` whose image lies in an affine open `Spec
 
 The same correspondence is stated for Mathlib's bundled spectrum functor
 `AlgebraicGeometry.algSpec`, whose morphisms are morphisms in the category of schemes over
-`Spec R`: maps `algSpec B ⟶ algSpec A` are the `R`-algebra homomorphisms `A →ₐ[R] B`. Morphisms
-between arbitrary schemes over `Spec R` are determined by their restriction to all relative
-spectra `(algSpec R).obj (op A)`.
+`Spec R`: maps `algSpec B ⟶ algSpec A` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 
 ## Main declarations
 
@@ -62,8 +59,6 @@ spectra `(algSpec R).obj (op A)`.
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
   morphism `Spec.algebraMap R A`.
-* `TauCeti.AlgebraicGeometry.hom_ext_of_forall_algSpec`: relative morphisms over `Spec R` are
-  determined by their values on all relative affine spectra `(algSpec R).obj (op A)`.
 -/
 
 public section
@@ -293,24 +288,6 @@ theorem algSpecHomEquivAlgHom_map_comp {B' : CommAlgCat.{u} R} (h : B ⟶ B')
       h.hom.comp (algSpecHomEquivAlgHom A B g) := by
   rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
     op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom, CommAlgCat.ofHom_hom]
-
-/-- **Relative morphisms are determined by their affine points.** Two morphisms `X ⟶ Y` over
-`Spec R` that agree on every affine test scheme `(algSpec R).obj (op A) ⟶ X` are equal. -/
-theorem hom_ext_of_forall_algSpec {X Y : Over (Spec R)} {f g : X ⟶ Y}
-    (h : ∀ (A : CommAlgCat.{u} R) (p : (algSpec R).obj (op A) ⟶ X), p ≫ f = p ≫ g) :
-    f = g := by
-  ext1
-  refine Scheme.hom_ext_of_forall_spec fun A a ↦ ?_
-  let φ : R ⟶ A := Spec.preimage (a ≫ X.hom)
-  let _ : Algebra R A := φ.hom.toAlgebra
-  have hφ : Spec.map (CommRingCat.ofHom (algebraMap R A)) = a ≫ X.hom := Spec.map_preimage _
-  let p : (algSpec R).obj (op (CommAlgCat.of R A)) ⟶ X :=
-    (algSpecObjIsoOverMk (CommAlgCat.of R A)).hom ≫ Over.homMk a hφ.symm
-  have hp : p.left = a := by
-    simp only [p, Over.comp_left, algSpecObjIsoOverMk_hom_left, Over.homMk_left]
-    exact Category.id_comp _
-  rw [← hp]
-  exact congrArg Over.Hom.left (h (CommAlgCat.of R A) p)
 
 end algSpec
 

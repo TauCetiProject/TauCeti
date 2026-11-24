@@ -188,6 +188,16 @@ private def specPointsHomInvariantEquiv (Y : Over (Spec (CommRingCat.of R))) :
           f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)} :=
   Equiv.subtypeEquiv (specPointsHomEquiv H Y) (specPointsHomEquiv_invariant_iff H I)
 
+@[simp]
+private theorem specPointsHomInvariantEquiv_symm_apply_val {Y : Over (Spec (CommRingCat.of R))}
+    (ψ : {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+        (CommAlgCat.pointsSheaf Y).obj //
+      ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+        (n : quotientPointsSubgroup H I A.unop.unop),
+        f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)}) :
+    ((specPointsHomInvariantEquiv H I Y).symm ψ).val = (specPointsHomEquiv H Y).symm ψ.val :=
+  (rfl)
+
 private def sheafQuotientHomEquiv (Y : Over (Spec (CommRingCat.of R))) :
     (CommAlgCat.pointsSheaf X ⟶ CommAlgCat.pointsSheaf Y) ≃
       {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
@@ -231,9 +241,10 @@ def representedQuotientHomEquiv (Y : Over (Spec (CommRingCat.of R))) :
 @[simp] theorem representedQuotientHomEquiv_apply {Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
     (representedQuotientHomEquiv H I e Y f).val = representedQuotientProjection H I e ≫ f := by
   apply (specPointsHomEquiv H Y).injective
-  rw [specPointsHomEquiv_comp, specPointsHomEquiv_representedQuotientProjection, Category.assoc]
-  simpa [representedQuotientHomEquiv, specPointsHomInvariantEquiv] using
-    sheafQuotientHomEquiv_apply H I e ((CommAlgCat.pointsSheafFunctor R).map f)
+  rw [representedQuotientHomEquiv, Equiv.trans_apply, Equiv.trans_apply,
+    specPointsHomInvariantEquiv_symm_apply_val, Equiv.apply_symm_apply,
+    Functor.FullyFaithful.homEquiv_apply, sheafQuotientHomEquiv_apply,
+    specPointsHomEquiv_comp, specPointsHomEquiv_representedQuotientProjection, Category.assoc]
 
 /-- Morphisms out of a scheme representing `G/N` are determined by their composites with
 `representedQuotientProjection`. -/

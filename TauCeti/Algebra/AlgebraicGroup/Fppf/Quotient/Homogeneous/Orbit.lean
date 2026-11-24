@@ -160,22 +160,6 @@ private theorem mapMulEquiv_comp_orbitProjection_eq_iff
     Category.assoc, Category.assoc, orbitProjection_inclusion,
     inv_mul_mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff]
 
-local instance
-    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom] :
-    Sheaf.IsLocallySurjective
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) := by
-  have : Flat
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  have : Surjective
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  have : LocallyOfFinitePresentation
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  exact TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
-
 /-- **Orbit-map comparison for any orbit.** For a geometrically reduced affine group of finite type
 over a field acting on a finite-type scheme, the descended orbit projection gives an isomorphism of
 fppf sheaves `G / Stab_G(x) ≅ CommAlgCat.pointsSheaf (orbitOver G x)`. -/
@@ -284,13 +268,6 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf
   have : LocallyOfFinitePresentation
       (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
     locallyOfFinitePresentation_orbitMap _ x
-  have : Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology k)
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)).hom :=
-    TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
-  have : Sheaf.IsLocallySurjective ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) :=
-    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2 ‹_›
   exact isIso_fppfHomogeneousQuotientToPointsSheaf_of_isLocallySurjective H x
 
 /-- **Homogeneous orbit comparison from rational-point transitivity.** Over an algebraically closed

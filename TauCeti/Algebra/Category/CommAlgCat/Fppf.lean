@@ -406,6 +406,15 @@ instance isLocallySurjective_pointsSheafFunctor_map
   exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr hepi'
 
 variable {R} in
+/-- **Fppf morphisms induce locally surjective maps on affine points sheaves (sheaf form).** -/
+instance isLocallySurjective_sheaf_pointsSheafFunctor_map
+    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
+    [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
+    Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map f) :=
+  (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2
+    (isLocallySurjective_pointsSheafFunctor_map f)
+
+variable {R} in
 /-- **Locally surjective maps of points come from surjective morphisms.** If a morphism of
 schemes over `Spec R` induces an fppf locally surjective map of sheaves of points, then it is
 surjective. -/

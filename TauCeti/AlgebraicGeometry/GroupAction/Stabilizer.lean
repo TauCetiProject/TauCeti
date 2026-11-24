@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Group.Cartier
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
-import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
 
 /-!
 # Geometry of scheme-theoretic stabilizers
@@ -156,7 +156,11 @@ private theorem isPullback_orbitMap_left :
   simpa only [Over.forget_map, Over.toUnit_left] using
     (orbitFiber.isPullback G x x).map (Over.forget S)
 
-private theorem smooth_iff_smooth_stabilizer {Y : Scheme.{u}} (f : G.left ⟶ Y)
+/-- Over an arbitrary base scheme, a faithfully flat and quasi-compact morphism `f : G.left ⟶ Y`
+whose fibre over a base section `y` is the stabilizer and whose kernel pair is right
+multiplication by the stabilizer is smooth if and only if the stabilizer is smooth over the base
+scheme. -/
+theorem smooth_iff_smooth_stabilizer {Y : Scheme.{u}} (f : G.left ⟶ Y)
     [Flat f] [Surjective f] [QuasiCompact f] {y : (𝟙_ (Over S)).left ⟶ Y}
     (hfib : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom f y)
     (hkp : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left f f) :

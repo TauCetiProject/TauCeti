@@ -142,19 +142,24 @@ theorem toProjectiveOrbitPoints_app_eq_iff (m : M) (hm : Module.IsUnimodular k m
       toProjectiveOrbitPoints (H := H) m hm :=
   (rfl)
 
-private instance isLocallySurjective_pointsSheafFunctor_map_toProjectiveOrbit
-    [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m) :
-    Sheaf.IsLocallySurjective
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map (toProjectiveOrbitOver (H := H) m hm)) := by
-  have hp : (toProjectiveOrbitOver (H := H) m hm).left = toProjectiveOrbit (H := H) m hm :=
-    Over.homMk_left _ _
-  have : Flat (toProjectiveOrbitOver (H := H) m hm).left := by
-    rw [hp]; exact (inferInstance : Flat (toProjectiveOrbit (H := H) m hm))
-  have : Surjective (toProjectiveOrbitOver (H := H) m hm).left := by
-    rw [hp]; exact (inferInstance : Surjective (toProjectiveOrbit (H := H) m hm))
-  have : LocallyOfFinitePresentation (toProjectiveOrbitOver (H := H) m hm).left := by
-    rw [hp]; exact (inferInstance : LocallyOfFinitePresentation (toProjectiveOrbit (H := H) m hm))
-  exact TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
+private theorem toProjectiveOrbitOver_left (m : M) (hm : Module.IsUnimodular k m) :
+    (toProjectiveOrbitOver (H := H) m hm).left = toProjectiveOrbit (H := H) m hm :=
+  Over.homMk_left _ _
+
+private instance [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m) :
+    Flat (toProjectiveOrbitOver (H := H) m hm).left := by
+  rw [toProjectiveOrbitOver_left]
+  exact (inferInstance : Flat (toProjectiveOrbit (H := H) m hm))
+
+private instance (m : M) (hm : Module.IsUnimodular k m) :
+    Surjective (toProjectiveOrbitOver (H := H) m hm).left := by
+  rw [toProjectiveOrbitOver_left]
+  exact (inferInstance : Surjective (toProjectiveOrbit (H := H) m hm))
+
+private instance (m : M) (hm : Module.IsUnimodular k m) :
+    LocallyOfFinitePresentation (toProjectiveOrbitOver (H := H) m hm).left := by
+  rw [toProjectiveOrbitOver_left]
+  exact (inferInstance : LocallyOfFinitePresentation (toProjectiveOrbit (H := H) m hm))
 
 /-- **Points of the orbit lift fppf locally to the group.** For a reduced group, the orbit map
 on points is locally surjective for the fppf topology. -/
@@ -164,8 +169,7 @@ instance isLocallySurjective_toProjectiveOrbitPoints [_root_.IsReduced H] (m : M
       (toProjectiveOrbitPoints (H := H) m hm) := by
   rw [← specPointsHomEquiv_toProjectiveOrbit, CommHopfAlgCat.specPointsHomEquiv_eq_comp,
     Presheaf.comp_isLocallySurjective_iff]
-  exact (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2
-    (isLocallySurjective_pointsSheafFunctor_map_toProjectiveOrbit (H := H) m hm)
+  infer_instance
 
 section Descent
 
