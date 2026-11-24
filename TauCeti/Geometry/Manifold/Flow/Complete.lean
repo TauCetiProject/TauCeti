@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 
 /-!
@@ -46,7 +48,8 @@ make completeness available without choosing a global flow or assuming finite di
   `TauCeti.isCompleteVectorField_of_isProperMap`: fields whose maximal integral curves stay in
   the compact fibres of a map, for instance of a proper map, are complete.
 * `TauCeti.isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le`: a field `v` is complete when
-  some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it.
+  some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it, with no
+  completeness assumption on the model space.
 
 ## References
 
@@ -194,8 +197,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   rcases isEmpty_or_nonempty M with hM | hM
   · exact fun x ↦ isEmptyElim x
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have := CompleteSpace.of_locallyCompact_manifold M I
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     isCompact_univ fun _ _ ↦ mem_univ _
 
@@ -225,12 +227,15 @@ theorem isCompleteVectorField_of_isProperMap {Y : Type*} [TopologicalSpace Y]
   isCompleteVectorField_of_isCompact_preimage_singleton hv
     (fun _ ↦ hG.isCompact_preimage isCompact_singleton) hGv
 
+omit [CompleteSpace E] in
 /-- **A `C¹` vector field along which a proper function changes at a bounded rate is complete.**
 If `f : M → ℝ` is proper and differentiable and `|df(v)| ≤ C` everywhere, then along the maximal
 integral curve `γ` through `x` the mean value inequality gives `|f (γ t) - f x| ≤ C |t|`. Up to a
 finite time `T` the curve therefore stays in the compact set `f⁻¹ [f x - C T, f x + C T]`, so by
 the escape lemma neither end of its maximal interval of existence is finite. The function `f` need
-not be bounded below, and no metric is involved. -/
+not be bounded below, and no metric is involved. Nor is completeness of the model space assumed: a
+proper real function makes a nonempty manifold locally compact, hence modelled on a
+finite-dimensional space. -/
 theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
@@ -239,6 +244,9 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
+  have : Nonempty M := ⟨x⟩
+  have : FiniteDimensional ℝ E := hfp.finiteDimensional_of_manifold I
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun T ↦ ?_
   obtain ⟨K, hK, hmem⟩ := (isMIntegralCurveOn_maximalIntegralCurve hv)

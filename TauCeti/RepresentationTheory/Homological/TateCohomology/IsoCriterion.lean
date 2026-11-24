@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.TrivialityCriterion

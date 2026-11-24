@@ -12,12 +12,13 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Geometry.Manifold.ExtChartAt.ExtendTrans
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
-# Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
+# Coordinate overlaps, measurability, and precompact chart neighborhoods
 
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
@@ -48,17 +49,16 @@ without differentiability assumptions, and they take values in the range of the 
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
 the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
-inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
-of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
-convex neighbourhood within the model range, inside the chart target, on which flat calculus
-applies even when the manifold has boundary.
-
-For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
-homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
-maximal atlas and `Ψ` is smooth with smooth inverse, the transition maps between such charts are
-smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
+inverse charts agree through inclusion on the smaller target; on an open subset of a normed space
+all charts coincide and the inverse charts fix the points of the subset. Near a chart point the
+inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart
+point has a convex neighbourhood within the model range, inside the chart target, on which flat
+calculus applies even when the manifold has boundary.
 
 ## Main results
+
+* `IsLocalMin.comp_extChartAt_symm`, `IsLocalMax.comp_extChartAt_symm` and
+  `IsLocalExtr.comp_extChartAt_symm`: local extrema pass to the preferred coordinate expression.
 
 * `TauCeti.extChartAt_prod_modelSpace_apply` and `TauCeti.extChartAt_prod_modelSpace_symm_apply`:
   the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
@@ -88,6 +88,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   is continuous on its domain, for extended charts over any models.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
+* `CompleteSpace.of_locallyCompact_manifold`: a nonempty locally compact manifold is modelled on a
+  complete space.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
   is covered by the sources of countably many charts, whose targets have compact exhaustions.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
@@ -126,15 +128,6 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.exists_contDiffBump_extChartAt_subset`: on a boundaryless manifold, a bump function in
   the chart at a point of an open set `U`, with closed outer ball in the chart target and image
   in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
-* `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
-  charts read in the model vector space and moved by a homeomorphism, and their smooth transition
-  maps; `OpenPartialHomeomorph.coe_extendTrans` and
-  `OpenPartialHomeomorph.toPartialEquiv_extendTrans_refl` relate them to
-  `OpenPartialHomeomorph.extend`.
-* `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
-  `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
-  `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
-  `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
 * `OpenPartialHomeomorph.extend_modelWithCornersSelf`,
   `OpenPartialHomeomorph.isOpen_extend_target_inter_preimage`,
   `OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage`, and
@@ -154,6 +147,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A local minimum remains a local minimum in the preferred extended chart. -/
+theorem _root_.IsLocalMin.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalMin f x) :
+    IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by
+    rwa [extChartAt_to_inv]
+  exact hm.comp_continuous (continuousAt_extChartAt_symm x)
+
+/-- A local maximum remains a local maximum in the preferred extended chart. -/
+theorem _root_.IsLocalMax.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalMax f x) :
+    IsLocalMax (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  IsLocalMin.comp_extChartAt_symm (α := αᵒᵈ) h
+
+/-- A local extremum remains a local extremum in the preferred extended chart. -/
+theorem _root_.IsLocalExtr.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalExtr f x) :
+    IsLocalExtr (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  h.elim (fun hm ↦ Or.inl (hm.comp_extChartAt_symm (I := I)))
+    (fun hm ↦ Or.inr (hm.comp_extChartAt_symm (I := I)))
 
 /-- The target of the extended chart of a product manifold at `x` is the product of the targets
 of the extended charts of the factors at the components of `x`. -/
@@ -664,6 +678,15 @@ instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
     I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- **The model space of a locally compact manifold is complete.** By Riesz's theorem a nonempty
+locally compact manifold over a complete field is modelled on a finite-dimensional space
+(`FiniteDimensional.of_locallyCompact_manifold`), which is complete. -/
+theorem _root_.CompleteSpace.of_locallyCompact_manifold [CompleteSpace 𝕜] (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] (I : ModelWithCorners 𝕜 E H) [Nonempty M]
+    [LocallyCompactSpace M] : CompleteSpace E :=
+  have := FiniteDimensional.of_locallyCompact_manifold M I
+  FiniteDimensional.completeSpace 𝕜 E
 
 /-- On a sigma-compact manifold with locally compact model, select a countable set of chart
 centres whose chart sources cover the manifold, together with compact exhaustions of their chart
@@ -1295,6 +1318,17 @@ theorem extChartAt_opens_target (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
   simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
 
+/-- All charts of an open subset of a normed space are the same restriction of the identity. -/
+theorem chartAt_opens_model_space_eq {U : Opens E} (x y : U) : chartAt E x = chartAt E y := by
+  simp only [Opens.chartAt_eq, chartAt_self_eq]
+
+/-- On an open subset of a normed space, every inverse extended chart sends a point of the subset
+to itself. -/
+theorem extChartAt_opens_model_space_symm_apply {U : Opens E} (x : U) {z : E} (hz : z ∈ U) :
+    (extChartAt 𝓘(𝕜, E) x).symm z = ⟨z, hz⟩ :=
+  Subtype.ext ((coe_extChartAt_symm_apply U x (by rwa [extChartAt_opens_target])).trans
+    (by simp))
+
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=
@@ -1353,131 +1387,5 @@ theorem continuousOn_extend_comp_symm {𝕜' E' H' N : Type*} [NontriviallyNorme
       fun _ hw ↦ (hW hw).2.1) fun _ hw ↦ (hW hw).2.2
 
 end Extend
-
-section ExtendTrans
-
-variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [TopologicalSpace H]
-  [TopologicalSpace M]
-
-/-- A chart `c` of `M`, read in the vector space `E` of a boundaryless model `I` and then moved to
-`F` by a homeomorphism `Ψ`. Its coordinates are `Ψ ∘ c.extend I`. -/
-noncomputable def extendTrans (c : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H)
-    [I.Boundaryless] (Ψ : E ≃ₜ F) : OpenPartialHomeomorph M F :=
-  (c.trans I.toHomeomorph.toOpenPartialHomeomorph).trans Ψ.toOpenPartialHomeomorph
-
-variable (c : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
-  (Ψ : E ≃ₜ F)
-
-/-- The source of `c.extendTrans I Ψ` is the source of `c`. -/
-@[simp]
-theorem extendTrans_source : (c.extendTrans I Ψ).source = c.source := by
-  simp [extendTrans, mfld_simps]
-
-/-- The target of `c.extendTrans I Ψ` is the target of `c`, read in `E` and moved by `Ψ`. -/
-@[simp]
-theorem extendTrans_target :
-    (c.extendTrans I Ψ).target = Ψ.symm ⁻¹' (I.symm ⁻¹' c.target) := by
-  ext v
-  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
-
-/-- The chart `c.extendTrans I Ψ` reads a point through `c`, then `I`, then `Ψ`. -/
-@[simp]
-theorem extendTrans_apply (w : M) : c.extendTrans I Ψ w = Ψ (I (c w)) := by
-  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_apply]
-
-/-- The inverse of `c.extendTrans I Ψ` is the inverse of `Ψ`, then of `I`, then of `c`. -/
-@[simp]
-theorem extendTrans_symm_apply (v : F) :
-    (c.extendTrans I Ψ).symm v = c.symm (I.symm (Ψ.symm v)) := by
-  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
-
-/-- The coordinates of `c.extendTrans I Ψ` are those of the extended chart `c.extend I`, moved
-by `Ψ`. -/
-theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := by
-  funext w
-  simp
-
-/-- Moved by the identity, the chart `c.extendTrans I` is the extended chart `c.extend I`. -/
-theorem toPartialEquiv_extendTrans_refl :
-    (c.extendTrans I (Homeomorph.refl E)).toPartialEquiv = c.extend I :=
-  PartialEquiv.ext (fun w ↦ by simp) (fun v ↦ by simp) (by simp)
-
-/-- Moved by the identity, the coordinates of `c.extendTrans I` are those of the extended chart
-`c.extend I`. -/
-theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
-  congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
-
-/-- A chart with values in a normed space, read in its own self model and moved by the identity,
-is the chart itself. -/
-@[simp]
-theorem extendTrans_modelWithCornersSelf_refl (e : OpenPartialHomeomorph M E) :
-    e.extendTrans 𝓘(𝕜, E) (Homeomorph.refl E) = e := by
-  refine OpenPartialHomeomorph.ext _ _ (fun w ↦ ?_) (fun v ↦ ?_) (extendTrans_source _ _ _)
-  · simp
-  · simp
-
-/-- The transition map between two charts `c.extendTrans I Ψ` is `C^m` when `c` runs over the
-maximal atlas of `M` and `Ψ` over homeomorphisms that are `C^m` with `C^m` inverses. -/
-theorem contDiffOn_extendTrans_comp_symm [NormedSpace 𝕜 F] [ChartedSpace H M] {m : ℕ∞ω}
-    {c₁ c₂ : OpenPartialHomeomorph M H} (hc₁ : c₁ ∈ IsManifold.maximalAtlas I m M)
-    (hc₂ : c₂ ∈ IsManifold.maximalAtlas I m M) {Ψ₁ Ψ₂ : E ≃ₜ F}
-    (hΨ₁ : ContDiff 𝕜 m Ψ₁.symm) (hΨ₂ : ContDiff 𝕜 m Ψ₂) :
-    ContDiffOn 𝕜 m (c₂.extendTrans I Ψ₂ ∘ (c₁.extendTrans I Ψ₁).symm)
-      ((c₁.extendTrans I Ψ₁).symm ≫ₕ c₂.extendTrans I Ψ₂).source := by
-  have hmaps : Set.MapsTo Ψ₁.symm ((c₁.extendTrans I Ψ₁).symm ≫ₕ c₂.extendTrans I Ψ₂).source
-      (I.extendCoordChange c₁ c₂).source := by
-    intro v hv
-    simp only [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply] at hv ⊢
-    exact ⟨⟨by simp [I.range_eq_univ], hv.1⟩, hv.2⟩
-  refine (hΨ₂.comp_contDiffOn ((I.contDiffOn_extendCoordChange hc₁ hc₂).comp
-    hΨ₁.contDiffOn hmaps)).congr fun v _ ↦ ?_
-  simp [mfld_simps]
-
-end ExtendTrans
-
-section IsExtendTransChart
-
-variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H]
-  [TopologicalSpace M] [ChartedSpace H M]
-
-/-- `e` is a chart `c.extendTrans I Ψ`: a chart `c` of `M` from its maximal atlas for `C^m`, read in
-the model vector space `E` and moved to `F` by a `C^m` homeomorphism `Ψ` with `C^m` inverse. The
-transition maps between such charts are `C^m`
-(`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). -/
-def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
-    [I.Boundaryless] (m : ℕ∞ω) : Prop :=
-  ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
-    c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
-      e = c.extendTrans I Ψ
-
-variable {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {m : ℕ∞ω}
-
-/-- Characterisation of `OpenPartialHomeomorph.IsExtendTransChart`: `e` is `c.extendTrans I Ψ` for
-a chart `c` from the maximal atlas for `C^m` and a `C^m` homeomorphism `Ψ` with `C^m` inverse. -/
-theorem isExtendTransChart_iff {e : OpenPartialHomeomorph M F} :
-    e.IsExtendTransChart I m ↔ ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
-      c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
-        e = c.extendTrans I Ψ :=
-  Iff.rfl
-
-/-- A chart `c` from the maximal atlas for `C^m`, moved by a `C^m` homeomorphism `Ψ` with `C^m`
-inverse, satisfies `OpenPartialHomeomorph.IsExtendTransChart`. -/
-theorem isExtendTransChart_extendTrans {c : OpenPartialHomeomorph M H}
-    (hc : c ∈ IsManifold.maximalAtlas I m M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 m Ψ)
-    (hΨ' : ContDiff 𝕜 m Ψ.symm) : (c.extendTrans I Ψ).IsExtendTransChart I m :=
-  ⟨c, Ψ, hc, hΨ, hΨ', rfl⟩
-
-/-- The transition map between two charts satisfying `OpenPartialHomeomorph.IsExtendTransChart`
-for `C^m` is `C^m`. -/
-theorem IsExtendTransChart.contDiffOn_comp_symm {e₁ e₂ : OpenPartialHomeomorph M F}
-    (he₁ : e₁.IsExtendTransChart I m) (he₂ : e₂.IsExtendTransChart I m) :
-    ContDiffOn 𝕜 m (e₂ ∘ e₁.symm) (e₁.symm ≫ₕ e₂).source := by
-  obtain ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩ := he₁
-  obtain ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩ := he₂
-  exact contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂
-
-end IsExtendTransChart
 
 end OpenPartialHomeomorph

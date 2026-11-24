@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
@@ -114,22 +115,12 @@ private theorem norm_floerLinearization_comp_positiveEndChart_sq_le (ω : Symple
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     u ξ (positiveEndChart q ζ)
   have hB₀ : 0 ≤ B := (norm_nonneg _).trans hB
-  have hJD : ‖Jx D‖ ≤ B * ‖D‖ :=
-    (ContinuousLinearMap.le_opNorm (Jx.toLinearMap.toContinuousLinearMap) D).trans
-      (by gcongr)
-  have h : ‖a • D - b • Jx D‖ ≤ (|a| + |b|) * (1 + B) * ‖D‖ := by
-    refine (norm_sub_le _ _).trans ?_
-    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-    nlinarith [mul_le_mul_of_nonneg_left hJD (abs_nonneg b),
-      mul_nonneg (mul_nonneg (abs_nonneg a) hB₀) (norm_nonneg D),
-      mul_nonneg (abs_nonneg b) (norm_nonneg D)]
-  calc _ ≤ ((|a| + |b|) * (1 + B) * ‖D‖) ^ 2 := by gcongr
-    _ ≤ _ := by
-        have hab : (|a| + |b|) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
-          nlinarith [sq_abs a, sq_abs b, sq_nonneg (|a| - |b|)]
-        rw [mul_pow, mul_pow]
-        nlinarith [mul_le_mul_of_nonneg_right hab
-          (mul_nonneg (sq_nonneg (1 + B)) (sq_nonneg ‖D‖))]
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hB a (-b) D
+  rw [neg_sq, neg_smul, ← sub_eq_add_neg] at h
+  refine h.trans ?_
+  rw [← mul_assoc]
+  gcongr
+  nlinarith
 
 /-- **Changing variables along an end chart.** For a nonnegative integrable function `g`, the
 integral of `det (dφ'_q) · g ∘ φ'_q` over a finite band `[a, b] × [0, 1]` is at most the integral

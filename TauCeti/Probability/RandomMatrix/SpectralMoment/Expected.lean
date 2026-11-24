@@ -397,7 +397,7 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix'
     (K := Set.Icc (0 - 2 * Real.sqrt s) (0 + 2 * Real.sqrt s)) isCompact_Icc
     (ae_iff.mp (ae_mem_Icc_semicircleReal 0 s))
     (fun k ↦ Eventually.of_forall fun n ↦
-      integrable_pow_bind_spectralMeasure_wignerMatrix (hξp k n) (hηp k n))
+      integrable_pow_bind_spectralMeasure_wignerMatrix (hξp (2 * k) n) (hηp (2 * k) n))
     fun k ↦ ?_
   obtain ⟨B₁, hB₁⟩ := hξ k
   obtain ⟨B₂, hB₂⟩ := hη k

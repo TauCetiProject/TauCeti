@@ -50,6 +50,8 @@ a single set of positive finite measure are equal.
 * `MeasureTheory.Measure.isMulRightInvariant_of_isHaarMeasure_of_isFiniteMeasure` and
   `MeasureTheory.Measure.isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure`: a finite Haar
   measure is right-invariant and inversion-invariant.
+* `MonoidHom.map_haar_eq_self`: a continuous surjective endomorphism of a locally compact group
+  preserves every finite Haar measure. The additive version is `AddMonoidHom.map_addHaar_eq_self`.
 
 All of the `MeasureTheory.Measure` results above have additive versions.
 -/
@@ -118,6 +120,16 @@ theorem isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure (μ : Measure G)
     [μ.IsHaarMeasure] [IsFiniteMeasure μ] : μ.IsInvInvariant := by
   have : μ.IsMulRightInvariant := isMulRightInvariant_of_isHaarMeasure_of_isFiniteMeasure μ
   exact ⟨isMulLeftInvariant_eq_of_measure_univ_eq _ _ <| by simp [inv_apply]⟩
+
+/-- A continuous surjective endomorphism of a locally compact group preserves every finite Haar
+measure. -/
+@[to_additive /-- A continuous surjective additive endomorphism of a locally compact additive
+group preserves every finite additive Haar measure. -/]
+theorem _root_.MonoidHom.map_haar_eq_self {μ : Measure G} [μ.IsHaarMeasure] [IsFiniteMeasure μ]
+    (f : G →* G) (hf : Continuous f) (hsurj : Function.Surjective f) : μ.map f = μ := by
+  have : (μ.map f).IsHaarMeasure := isHaarMeasure_map_of_isFiniteMeasure μ f hf hsurj
+  refine isMulLeftInvariant_eq_of_measure_univ_eq _ _ ?_
+  rw [map_apply hf.measurable .univ, preimage_univ]
 
 end FiniteHaar
 

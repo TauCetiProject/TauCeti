@@ -818,16 +818,6 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
-private theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) :
-    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
-      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
-  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
-    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
-
 /-- **Finiteness of relative homology for a cobordism relative to its outgoing boundary.** Let `f`
 be a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then the relative
 singular homology `Hₙ(f⁻¹[a, b], f⁻¹(b); V)` of the band relative to its upper level is
