@@ -29,7 +29,7 @@ a product `u t`.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.bijective_mapPointsFunctor_productMapOfNormal_app`: over a commutative
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_productMapOfNormal_app_bijective`: over a commutative
   algebra `A` with `T(A) → Q(A)` bijective, multiplication `N(A) ⋊ T(A) → G(A)` is bijective.
 * `TauCeti.CommHopfAlgCat.isIso_productMapOfNormal_of_isIso`: multiplication `N ⋊ T → G` is an
   isomorphism of affine groups.
@@ -59,7 +59,7 @@ variable {H K : _root_.CommHopfAlgCat.{u} R} (I J : HopfIdeal R H) (hI : I.IsNor
 
 /-- The composite of multiplication `N ⋊ T → G` with the comparison isomorphism of
 `normalSemidirectProduct` is bijective on points over `A`, when `T(A) → Q(A)` is. -/
-private theorem bijective_mapPointsFunctor_productMapOfNormal_comp_app
+private theorem mapPointsFunctor_productMapOfNormal_comp_app_bijective
     (hπ : kernelHopfIdeal π = I) (A : CommAlgCat.{u} R)
     (hbij : Function.Bijective ((mapPointsFunctor (π ≫ mkQuotient H J)).app A)) :
     Function.Bijective
@@ -120,20 +120,17 @@ private theorem bijective_mapPointsFunctor_productMapOfNormal_comp_app
 homomorphism `G → Q` with kernel `N`. If the closed subgroup `T` cut out by `J` maps bijectively
 to `Q` on points over a commutative algebra `A`, then multiplication `N(A) ⋊ T(A) → G(A)` is
 bijective. -/
-theorem bijective_mapPointsFunctor_productMapOfNormal_app (hπ : kernelHopfIdeal π = I)
+theorem mapPointsFunctor_productMapOfNormal_app_bijective (hπ : kernelHopfIdeal π = I)
     (A : CommAlgCat.{u} R)
     (hbij : Function.Bijective ((mapPointsFunctor (π ≫ mkQuotient H J)).app A)) :
     Function.Bijective ((mapPointsFunctor (productMapOfNormal H I J hI)).app A) := by
-  have hiso : Function.Bijective
-      ((mapPointsFunctor (normalSemidirectProductIso H I J hI).hom).app A) :=
-    ConcreteCategory.bijective_of_isIso
-      (((pointsFunctor (R := R)).map (normalSemidirectProductIso H I J hI).hom.op).app A)
+  have hiso := mapPointsFunctor_app_bijective_of_isIso (normalSemidirectProductIso H I J hI).hom A
   have hcomp : (mapPointsFunctor (productMapOfNormal H I J hI ≫
       (normalSemidirectProductIso H I J hI).hom)).app A =
       (mapPointsFunctor (productMapOfNormal H I J hI)).app A ∘
         (mapPointsFunctor (normalSemidirectProductIso H I J hI).hom).app A :=
     funext fun x ↦ mapPointsFunctor_comp_app_apply _ _ A x
-  have h := bijective_mapPointsFunctor_productMapOfNormal_comp_app I J hI π hπ A hbij
+  have h := mapPointsFunctor_productMapOfNormal_comp_app_bijective I J hI π hπ A hbij
   rw [hcomp] at h
   exact (Function.Bijective.of_comp_iff _ hiso).1 h
 
@@ -146,9 +143,8 @@ theorem isIso_productMapOfNormal_of_isIso (hπ : kernelHopfIdeal π = I)
   have : IsIso (mapPointsFunctor.{u, u, u} (productMapOfNormal H I J hI)) := by
     rw [NatTrans.isIso_iff_isIso_app]
     exact fun A ↦ (ConcreteCategory.isIso_iff_bijective _).2
-      (bijective_mapPointsFunctor_productMapOfNormal_app I J hI π hπ A
-        (ConcreteCategory.bijective_of_isIso
-          (((pointsFunctor (R := R)).map (π ≫ mkQuotient H J).op).app A)))
+      (mapPointsFunctor_productMapOfNormal_app_bijective I J hI π hπ A
+        (mapPointsFunctor_app_bijective_of_isIso (π ≫ mkQuotient H J) A))
   exact isIso_of_isIso_mapPointsFunctor _
 
 end
