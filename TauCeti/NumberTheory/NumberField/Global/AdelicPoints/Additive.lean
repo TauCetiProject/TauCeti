@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
-public import TauCeti.Algebra.AlgebraicGroup.Adelic.IntegralModel
+public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.IntegralModel
 
 /-!
 # Integral models of the additive group `𝔾ₐ`

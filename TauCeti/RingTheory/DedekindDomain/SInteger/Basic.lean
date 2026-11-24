@@ -322,6 +322,24 @@ theorem isScalarTower_integerInclusionAlgebra (hSS' : S ⊆ S') :
   exact IsScalarTower.of_algebraMap_eq fun x ↦
     (coe_algebraMap_integerInclusionAlgebra K hSS' x).symm
 
+/-- For `S ⊆ T`, `T.integer K` as an `(S.integer K)`-subalgebra of `K`. -/
+noncomputable def _root_.Set.integerSubalgebra {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
+    Subalgebra (S.integer K) K :=
+  { (T.integer K).toSubring with
+    algebraMap_mem' x := Set.integer_mono K hST x.property }
+
+/-- Membership in `Set.integerSubalgebra K hST` agrees with membership in `T.integer K`. -/
+@[simp]
+lemma _root_.Set.mem_integerSubalgebra {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) {x : K} :
+    x ∈ Set.integerSubalgebra K hST ↔ x ∈ T.integer K :=
+  Iff.rfl
+
+/-- The underlying set of `Set.integerSubalgebra K hST` is `T.integer K`. -/
+@[simp]
+lemma _root_.Set.coe_integerSubalgebra {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
+    (Set.integerSubalgebra K hST : Set K) = T.integer K :=
+  (rfl)
+
 end IsDedekindDomain
 
 end

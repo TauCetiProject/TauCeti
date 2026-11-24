@@ -328,6 +328,31 @@ theorem algebraMap_mem_integralAdeles_iff (x : K) :
   rw [← sIntegralAdeles_empty, algebraMap_mem_sIntegralAdeles_iff, Set.mem_integer_empty_iff,
     RingHom.mem_range]
 
+variable (R K) in
+/-- For `S ⊆ T`, `sIntegralAdeles R K T` as an `(S.integer K)`-subalgebra of
+`FiniteAdeleRing R K`. -/
+noncomputable def sIntegralAdelesSubalgebra (S T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) :
+    Subalgebra (S.integer K) (FiniteAdeleRing R K) :=
+  { (sIntegralAdeles R K T).toSubring with
+    algebraMap_mem' x := by
+      rw [IsScalarTower.algebraMap_apply (S.integer K) K (FiniteAdeleRing R K)]
+      exact (algebraMap_mem_sIntegralAdeles_iff T (x : K)).mpr
+        (Set.integer_mono K hST x.property) }
+
+/-- Membership in `sIntegralAdelesSubalgebra` agrees with membership in `sIntegralAdeles`. -/
+@[simp]
+theorem mem_sIntegralAdelesSubalgebra {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T)
+    {a : FiniteAdeleRing R K} :
+    a ∈ sIntegralAdelesSubalgebra R K S T hST ↔ a ∈ sIntegralAdeles R K T :=
+  Iff.rfl
+
+/-- The underlying set of `sIntegralAdelesSubalgebra` is `sIntegralAdeles R K T`. -/
+@[simp]
+theorem coe_sIntegralAdelesSubalgebra (S T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) :
+    (sIntegralAdelesSubalgebra R K S T hST : Set (FiniteAdeleRing R K)) =
+      sIntegralAdeles R K T :=
+  (rfl)
+
 /-- Subtracting the diagonal image of `x + y`, for `y ∈ R`, from a finite adele that is integral
 after subtracting the diagonal image of `x` keeps it integral. -/
 theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R K} {x : K}
