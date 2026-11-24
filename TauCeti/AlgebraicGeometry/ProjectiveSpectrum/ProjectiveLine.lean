@@ -1218,29 +1218,6 @@ lemma polynomialPoint_X (i : Fin 2) :
       RingHom.id R[X] := by ext <;> simp
   simp [polynomialPoint, h]
 
-/-- The normalized zero point in the second chart is the native infinity section. -/
-@[simp]
-lemma polynomialPoint_zero :
-    polynomialPoint R (RingHom.id R) 1 0 = infinitySection R := by
-  rw [infinitySection_def, polynomialPoint]
-  have h : Polynomial.eval₂RingHom (RingHom.id R) (0 : R) = Polynomial.evalRingHom 0 := by
-    ext <;> simp
-  rw [h]
-
-/-- The native projective line, regarded as an object of the category over `Spec R`. -/
-noncomputable abbrev toOver : Over (Spec (.of R)) :=
-  Over.mk (projectiveLine R ↘ Spec (.of R))
-
-/-- The projective line as an over-category object has its usual structure morphism. -/
-@[simp]
-lemma toOver_hom : (toOver R).hom = (projectiveLine R ↘ Spec (.of R)) := (rfl)
-
-end TauCeti.AlgebraicGeometry.projectiveLine
-
-namespace TauCeti.AlgebraicGeometry.projectiveLine
-
-variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
-
 /-- The polynomial charts commute with base change: the chart `D₊(Xᵢ)` of `ℙ¹_S` lies over the
 chart `D₊(Xᵢ)` of `ℙ¹_R`, through extension of coefficients `R[X] → S[X]`. -/
 @[reassoc]
@@ -1262,5 +1239,22 @@ lemma isPullback_polynomialChartι_baseChangeProjection (i : Fin 2) :
     (isPullback_baseChangeProjection R S)
   rw [polynomialChartι_over, polynomialChartι_over]
   exact isPullback_SpecMap_polynomial R S
+
+/-- The normalized zero point in the second chart is the native infinity section. -/
+@[simp]
+lemma polynomialPoint_zero :
+    polynomialPoint R (RingHom.id R) 1 0 = infinitySection R := by
+  rw [infinitySection_def, polynomialPoint]
+  have h : Polynomial.eval₂RingHom (RingHom.id R) (0 : R) = Polynomial.evalRingHom 0 := by
+    ext <;> simp
+  rw [h]
+
+/-- The native projective line, regarded as an object of the category over `Spec R`. -/
+noncomputable abbrev toOver : Over (Spec (.of R)) :=
+  Over.mk (projectiveLine R ↘ Spec (.of R))
+
+/-- The projective line as an over-category object has its usual structure morphism. -/
+@[simp]
+lemma toOver_hom : (toOver R).hom = (projectiveLine R ↘ Spec (.of R)) := (rfl)
 
 end TauCeti.AlgebraicGeometry.projectiveLine
