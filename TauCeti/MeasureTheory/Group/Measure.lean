@@ -324,8 +324,7 @@ theorem measure_preimage_monoidHom {G F : Type*} [Group G] [MeasurableSpace G] [
       fun t _ => hfibm t]
     simp [hfibμ]
   have hindex : φ.ker.index = Nat.card F := by
-    rw [Subgroup.index_ker, MonoidHom.range_eq_top.2 hφ]
-    exact Nat.card_congr (Equiv.Set.univ F)
+    rw [Subgroup.index_ker, MonoidHom.range_eq_top.2 hφ, Subgroup.card_top]
   have : φ.ker.FiniteIndex := ⟨by rw [hindex]; exact Nat.card_pos.ne'⟩
   have huniv := Subgroup.index_mul_measure φ.ker hker μ
   rw [hindex] at huniv
