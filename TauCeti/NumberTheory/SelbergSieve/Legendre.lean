@@ -145,9 +145,8 @@ theorem multSum_one_sub_sum_multSum_le_siftedSum (s : BoundingSieve) :
       ∑ d ∈ r.divisors, c d = 1 - (r.primeFactors.card : ℝ) := by
     simp [c, sum_sub_distrib, primeFactors_eq_to_filter_divisors_prime, hr]
   convert s.sum_mul_multSum_le_siftedSum (c := c) fun r hr ↦ ?_ using 1
-  · simp only [c, sub_mul, ite_mul, one_mul, zero_mul, sum_sub_distrib, sum_ite_eq',
-      mem_divisors, one_dvd, ne_eq, s.prodPrimes_ne_zero, not_false_eq_true, and_self,
-      ite_true, ← sum_filter, primeFactors_eq_to_filter_divisors_prime]
+  · simp [c, sub_mul, ite_mul, sum_sub_distrib, ← sum_filter,
+      primeFactors_eq_to_filter_divisors_prime, s.prodPrimes_ne_zero]
   · have hr0 : r ≠ 0 := ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hr
     rw [hsum r hr0]
     split_ifs with h1
