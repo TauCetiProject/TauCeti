@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Orientation
+public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Unit
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
-import TauCeti.Geometry.Manifold.Boundary.Derivative
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 
 /-!
 # The outward unit normal along the boundary
@@ -25,14 +25,18 @@ exactly one of them points outward. This is the **outward unit normal**
 (`TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`).
 
 It is the unit gradient of `-x⁰`, for the normal coordinate `x⁰` of the preferred half-space chart
-at `q`. The same formula holds with the normal coordinate of every preferred chart whose source
-contains `q` (`TauCeti.outwardUnitNormal_eq_normalize_mgradient`): the gradient of such an `x⁰` is
-orthogonal to the boundary, since `x⁰` vanishes along it, and has positive normal coordinate.
+at `q`: that gradient is orthogonal to the boundary, since `x⁰` vanishes along it, and has
+positive normal coordinate. The same formula holds with the normal coordinate of every chart of the
+`C¹` maximal atlas whose source contains `q` (`TauCeti.outwardUnitNormal_eq_normalize_mgradient`),
+since at `q` the differentials of two such normal coordinates are positive multiples of each other.
 Because the unit gradient of a function with nonvanishing differential is as regular as the metric
 (`TauCeti.Manifold.contMDiffAt_normalize_mgradient`), this local formula makes `q ↦ (q, ν(q))` a
 `C^k` map `∂M → TM` for a `C^k` metric on a `C^(k + 1)` manifold
 (`TauCeti.contMDiff_outwardUnitNormal`). The pointwise uniqueness glues the chart formulas, so no
-partition of unity, Hausdorff or countability hypothesis is needed.
+partition of unity, Hausdorff or countability hypothesis is needed. Since diffeomorphisms preserve
+outward vectors and the tangent space of the boundary, the differential of an isometry of
+Riemannian manifolds with boundary carries outward unit normals to outward unit normals
+(`TauCeti.RiemannianIsometry.mfderiv_outwardUnitNormal`).
 
 The outward unit normal is the normal field of the divergence theorem on a Riemannian manifold
 with boundary, and the reference vector of the hypersurface geometry of `∂M`: inward and outward
@@ -48,10 +52,13 @@ directions, boundary defining functions and the second fundamental form are read
   `TauCeti.inner_outwardUnitNormal_mfderiv_subtypeVal`: its three defining laws.
 * `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it.
 * `TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`: it spans the normal space.
-* `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any preferred chart.
+* `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any chart of the `C¹` maximal
+  atlas.
 * `TauCeti.contMDiff_outwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric.
 * `TauCeti.exists_halfSpaceOutwardUnitNormal`: a smooth field along the boundary satisfying the
   three laws exists.
+* `TauCeti.inner_outwardUnitNormal_of_mem_boundaryTangentSpace`: it is orthogonal to `T_q∂M`.
+* `TauCeti.RiemannianIsometry.mfderiv_outwardUnitNormal`: naturality under isometries.
 
 ## References
 
@@ -227,15 +234,24 @@ theorem eq_outwardUnitNormal_iff {q : (𝓡∂ (n + 1)).boundary M}
   ⟨fun hv ↦ hv ▸ isOutwardUnitNormal_outwardUnitNormal q,
     fun hv ↦ eq_of_isOutwardUnitNormal hv (isOutwardUnitNormal_outwardUnitNormal q)⟩
 
-/-- **The outward unit normal in a chart**: for every preferred chart whose source contains the
-boundary point `q`, the outward unit normal at `q` is the unit gradient of minus the normal
-coordinate `x⁰` of that chart. -/
-theorem outwardUnitNormal_eq_normalize_mgradient {α : M} {q : (𝓡∂ (n + 1)).boundary M}
-    (hq : (q : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source) :
+/-- **The outward unit normal in a chart**: for every chart of the `C¹` maximal atlas whose source
+contains the boundary point `q`, the outward unit normal at `q` is the unit gradient of minus the
+normal coordinate `x⁰` of that chart. -/
+theorem outwardUnitNormal_eq_normalize_mgradient
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : (𝓡∂ (n + 1)).boundary M}
+    (hq : (q : M) ∈ e.source) :
     outwardUnitNormal q = NormedSpace.normalize (Manifold.mgradient (𝓡∂ (n + 1))
-      (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) q) :=
-  (eq_outwardUnitNormal_iff.mpr
-    (isOutwardUnitNormal_normalize_mgradient_neg_chartAt_normal hq)).symm
+      (fun y ↦ -(e y).val 0) q) := by
+  -- The differential of the normal coordinate of `e` is a positive multiple of that of the
+  -- preferred chart at `q`, and so are the gradients of minus these coordinates.
+  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul he
+    (IsManifold.chart_mem_maximalAtlas (q : M)) q.property hq (mem_chart_source _ _)
+  have hneg (g : M → ℝ) : Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ -g y) q =
+      -Manifold.mgradient (𝓡∂ (n + 1)) g q :=
+    Manifold.mgradient_neg
+  rw [hneg, Manifold.mgradient_def, h, map_smul, ← smul_neg, ← Manifold.mgradient_def, ← hneg,
+    NormedSpace.normalize_smul_of_pos ha, outwardUnitNormal]
 
 /-! ### Regularity -/
 
@@ -263,7 +279,8 @@ theorem contMDiff_outwardUnitNormal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1))
   filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     ((chartAt (EuclideanHalfSpace (n + 1)) (q₀ : M)).open_source.mem_nhds
       (mem_chart_source _ _))] with q hq
-  simp only [Function.comp_apply, outwardUnitNormal_eq_normalize_mgradient hq, ψ]
+  simp only [Function.comp_apply,
+    outwardUnitNormal_eq_normalize_mgradient (IsManifold.chart_mem_maximalAtlas _) hq, ψ]
 
 /-- **Existence of the outward unit normal**: along the boundary of a smooth Riemannian manifold
 modelled on the half-space there is a smooth field of unit vectors that point outward and are
@@ -285,5 +302,49 @@ theorem exists_halfSpaceOutwardUnitNormal [IsManifold (𝓡∂ (n + 1)) ∞ M]
   exact ⟨outwardUnitNormal, contMDiff_outwardUnitNormal, fun x ↦
     ⟨norm_outwardUnitNormal x, isOutwardPointing_outwardUnitNormal x,
       inner_outwardUnitNormal_mfderiv_subtypeVal x⟩⟩
+
+/-- The outward unit normal is orthogonal to the tangent space of the boundary. -/
+theorem inner_outwardUnitNormal_of_mem_boundaryTangentSpace {q : (𝓡∂ (n + 1)).boundary M}
+    {v : TangentSpace (𝓡∂ (n + 1)) (q : M)} (hv : v ∈ boundaryTangentSpace q) :
+    ⟪outwardUnitNormal q, v⟫_ℝ = 0 := by
+  rw [boundaryTangentSpace_def, LinearMap.mem_range] at hv
+  obtain ⟨w, rfl⟩ := hv
+  exact inner_outwardUnitNormal_mfderiv_subtypeVal q w
+
+/-! ### Naturality -/
+
+section Naturality
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace (EuclideanHalfSpace (n + 1)) M']
+  [IsManifold (𝓡∂ (n + 1)) 1 M']
+  [RiemannianBundle (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+
+/-- **Naturality of the outward unit normal.** The differential of an isometry of Riemannian
+manifolds with boundary carries the outward unit normal at `q` to the outward unit normal at
+`Φ q`. -/
+theorem RiemannianIsometry.mfderiv_outwardUnitNormal
+    (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') (q : (𝓡∂ (n + 1)).boundary M) :
+    mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q (outwardUnitNormal q) =
+      outwardUnitNormal (⟨Φ q, Φ.apply_mem_boundary q.property⟩ :
+        (𝓡∂ (n + 1)).boundary M') := by
+  refine eq_outwardUnitNormal_iff.mpr
+    ⟨by rw [Φ.norm_mfderiv, norm_outwardUnitNormal], ?_, fun w ↦ ?_⟩
+  · exact (isOutwardPointing_mfderiv_iff (by simp) Φ.toDiffeomorph _).mpr
+      (isOutwardPointing_outwardUnitNormal q)
+  · have hw := mfderiv_subtypeVal_mem_boundaryTangentSpace
+      (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') w
+    have hw' : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w ∈
+        (boundaryTangentSpace q).map (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap := by
+      have hmap := map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph q
+      simp only [RiemannianIsometry.coe_toDiffeomorph] at hmap
+      rw [hmap]
+      exact hw
+    obtain ⟨u, hu, hu'⟩ := hw'
+    rw [← hu']
+    simp only [ContinuousLinearMap.coe_coe]
+    rw [Φ.inner_mfderiv, inner_outwardUnitNormal_of_mem_boundaryTangentSpace hu]
+
+end Naturality
 
 end TauCeti

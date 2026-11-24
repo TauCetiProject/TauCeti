@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Degree.Basic
 -- Private: global degree invariance, Whitney smooth approximation and
 -- homotopy/path-connectedness bridges are used only inside definitions and proofs.
 import TauCeti.Geometry.Manifold.Degree.Global
-import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Geometry.Manifold.SmoothApprox.Basic
 import TauCeti.Topology.Homotopy.Homotopic.With
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
