@@ -21,8 +21,7 @@ the height of a kernel using its defining forms and dot-product duality.
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
-gives the absolute Euclidean bound for vectors and subspaces, both for linearly
-independent generators (`Submodule.subspaceHeight_le_prod`) and for arbitrary
+gives the absolute Euclidean bound for vectors and subspaces, for arbitrary
 finite spanning families (`Submodule.relativeSubspaceArakelovHeight_span_range_le_prod`,
 `Submodule.subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow`, and for nonzero generators
 `Submodule.subspaceHeight_span_range_le_prod`).
@@ -110,22 +109,6 @@ namespace Submodule
 open TauCeti
 
 variable {K ι : Type*} [Field K] [NumberField K] [LinearOrder ι] [Finite ι]
-
-/-- A subspace's absolute Euclidean height is at most the product of the
-Euclidean heights of any linearly independent spanning family. -/
-theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
-    (hx : LinearIndependent K x) :
-    subspaceHeight (span K (range x)) ≤ ∏ i, height2 (x i) := by
-  rw [subspaceHeight_span_range hx]
-  exact height2_plucker_le_prod x
-
-/-- The relative Arakelov height of a subspace is bounded by the product of
-relative Arakelov heights of its basis vectors. -/
-theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
-    (b : Basis (Fin p) K U) :
-    relativeSubspaceArakelovHeight U ≤ ∏ i, arakelovMulHeight (b i : ι → K) := by
-  rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
-  exact arakelovMulHeight_plucker_le_prod _
 
 /-- The relative Arakelov height of the span of a finite family of vectors is at most the product
 of their relative Arakelov heights, without assuming linear independence or nonvanishing
