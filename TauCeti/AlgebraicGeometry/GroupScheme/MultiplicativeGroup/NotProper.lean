@@ -83,7 +83,7 @@ theorem not_universallyClosed [IsAffine S] [Nontrivial Γ(S, ⊤)] :
     (Scheme.ΓSpecIso (CommRingCat.of R[T;T⁻¹])).hom.hom
   rw [← CommRingCat.hom_comp, hcomp, CommRingCat.hom_comp] at ha
   apply not_isIntegral_T (R := R) one_ne_zero
-  change φ.hom.IsIntegralElem _
+  rw [_root_.IsIntegral, ← CommRingCat.hom_ofHom (algebraMap R _)]
   convert RingHom.IsIntegralElem.of_comp ha using 1
   simp [a]
 
