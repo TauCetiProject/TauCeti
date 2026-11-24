@@ -209,8 +209,11 @@ pulling back `u • x` gives the pulled-back gauge acting on the pulled-back fie
 theorem dilateFramedField_smul {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
     {f : ContDiffBump (0 : ℝ)} (ht : 0 < t) (u : sobolevGaugeGroup hs)
     (x : framedFieldSpace f m k) :
-    dilateFramedField ht (u • x) = dilateSobolevGauge ht.ne' u • dilateFramedField ht x :=
-  Subtype.ext (dilateField_gaugeTransform t u x)
+    dilateFramedField ht (u • x) = dilateSobolevGauge ht.ne' u • dilateFramedField ht x := by
+  ext1
+  rw [coe_dilateFramedField, coe_sobolevGaugeGroup_smul, coe_sobolevGaugeGroup_smul,
+    coe_dilateFramedField, funext (coe_dilateSobolevGauge_apply ht.ne' u),
+    dilateField_gaugeTransform]
 
 /-- **Dilation preserves `G_(k+1)` orbits in `A_m^k`.** For `k > 1` and `t > 0`, two framed fields
 of `A_m^k` lie in the same `G_(k+1)` orbit exactly when their pullbacks by `z ↦ t z` do. -/
