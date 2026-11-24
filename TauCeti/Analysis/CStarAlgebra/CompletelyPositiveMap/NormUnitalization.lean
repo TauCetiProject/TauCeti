@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Defect
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
+import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Compressing a completely positive contraction
@@ -35,29 +37,6 @@ public section
 open scoped CStarAlgebra ComplexOrder
 
 namespace CompletelyPositiveMap
-
-private theorem compress_mul_sub_eq {R : Type*} [Ring R] {Q : R} (hQ : Q * Q = Q) (x y z : R) :
-    Q * x * Q - Q * y * Q * (Q * z * Q) =
-      Q * (x - y * z) * Q + Q * y * (1 - Q) * ((1 - Q) * z * Q) := by
-  have hQ' (w : R) : Q * (Q * w) = Q * w := by rw [← mul_assoc, hQ]
-  simp only [mul_sub, sub_mul, mul_one, one_mul, mul_assoc, hQ']
-  abel
-
-section NormLeOne
-
-variable {R : Type*} [NonUnitalSeminormedRing R] {q : R} (hq : ‖q‖ ≤ 1)
-include hq
-
-private theorem norm_mul_le_of_norm_le_one_left (x : R) : ‖q * x‖ ≤ ‖x‖ :=
-  (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hq)
-
-private theorem norm_mul_le_of_norm_le_one_right (x : R) : ‖x * q‖ ≤ ‖x‖ :=
-  (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hq)
-
-private theorem norm_mul_mul_le_of_norm_le_one (x : R) : ‖q * x * q‖ ≤ ‖x‖ :=
-  (norm_mul_le_of_norm_le_one_right hq _).trans (norm_mul_le_of_norm_le_one_left hq x)
-
-end NormLeOne
 
 open CStarMatrix TauCeti
 
@@ -117,7 +96,7 @@ theorem norm_compress_map_mul_sub_le [DecidableEq n] {Q : CStarMatrix n n ℂ}
           ‖φ a * (1 - Q)‖ ^ 2 * ‖(1 - Q) * φ b‖ ^ 2 := mul_pow _ _ _
       _ ≤ (‖a‖ ^ 2 * ε) * (‖b‖ ^ 2 * ε) := mul_le_mul ha hb (by positivity) (by positivity)
       _ = (ε * ‖a‖ * ‖b‖) ^ 2 := by ring
-  rw [compress_mul_sub_eq hQ.isIdempotentElem.eq]
+  rw [hQ.isIdempotentElem.compress_sub_compress_mul_compress]
   refine (norm_add_le _ _).trans (add_le_add (norm_mul_mul_le_of_norm_le_one hQn _) ?_)
   calc ‖Q * φ a * (1 - Q) * ((1 - Q) * φ b * Q)‖
       ≤ ‖Q * φ a * (1 - Q)‖ * ‖(1 - Q) * φ b * Q‖ := norm_mul_le _ _

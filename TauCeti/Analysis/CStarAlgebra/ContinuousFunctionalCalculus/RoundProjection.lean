@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.Indicator
 
 /-!
@@ -122,20 +123,12 @@ theorem norm_sub_roundProjection_le (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2�
 rounding: `‖(1 - χ_{[1/2, ∞)}(h)) h‖ ≤ 2δ`. -/
 theorem norm_one_sub_roundProjection_mul_le (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2‖ ≤ δ)
     (hδ4 : δ < 1 / 4) : ‖(1 - roundProjection h) * h‖ ≤ 2 * δ := by
-  have hc := continuousOn_roundProjection_indicator hδ hδ4
-  have h0 : 0 ≤ δ := (norm_nonneg _).trans hδ
-  have he : cfc (fun t : ℝ ↦ (1 - (Set.Ici (1 / 2 : ℝ)).indicator (1 : ℝ → ℝ) t) * t) h =
-      (1 - roundProjection h) * h := by
-    rw [cfc_mul (fun t : ℝ ↦ 1 - (Set.Ici (1 / 2 : ℝ)).indicator (1 : ℝ → ℝ) t) (fun t ↦ t) h
-        (hf := continuousOn_const.sub hc),
-      cfc_sub (fun _ : ℝ ↦ (1 : ℝ)) _ h (hg := hc), cfc_const_one ℝ h, cfc_id' ℝ h,
-      roundProjection_def]
-  rw [← he]
-  refine norm_cfc_le (by positivity) fun t ht ↦ ?_
-  rcases lt_and_abs_le_or_le_and_abs_one_sub_le_of_mem_spectrum hδ ht with ⟨h1, h2⟩ | ⟨h1, -⟩
-  · rwa [Set.indicator_of_notMem (by simpa using h1), sub_zero, one_mul, Real.norm_eq_abs]
-  · rw [Set.indicator_of_mem (by simpa using h1), Pi.one_apply, sub_self, zero_mul, norm_zero]
-    positivity
+  have hQ := isStarProjection_roundProjection h
+  have he : (1 - roundProjection h) * h = (1 - roundProjection h) * (h - roundProjection h) := by
+    simp [mul_sub, sub_mul, hQ.isIdempotentElem.eq]
+  rw [he]
+  exact (norm_mul_le_of_norm_le_one_left hQ.one_sub.norm_le _).trans
+    (norm_sub_roundProjection_le hh hδ hδ4)
 
 end CStarAlgebra
 
