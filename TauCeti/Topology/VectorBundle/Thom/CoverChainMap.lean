@@ -340,6 +340,19 @@ theorem thomPairSignCochainMap_f_apply (n : ℕ)
     (thomPairSignCochainMap F E hι R k M).f n φ = (thomPairSignChainMap F E hι R).f n ≫ φ :=
   (rfl)
 
+/-- The lift of a cocycle `φ` of `(E, E₀)` with coefficients in the orientation system is `φ`
+precomposed with the chain map to orientation-twisted chains. -/
+theorem iCycles_cyclesMap_thomPairSignCochainMap {n : ℕ}
+    (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) k M).cycles n) :
+    (TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of R R) k M).iCycles n
+        (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R k M) n φ) =
+      (thomPairSignChainMap F E hι R).f n ≫
+        ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) k M).iCycles n φ :=
+  (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ _) φ).trans
+    (thomPairSignCochainMap_f_apply hι R k M _ _)
+
 /-- **Lifted cochains are anti-invariant under the deck involution**: `δ^*` negates every cochain of
 `(E', E'₀)` lifted from an orientation-twisted cochain of `(E, E₀)`. -/
 theorem thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap :

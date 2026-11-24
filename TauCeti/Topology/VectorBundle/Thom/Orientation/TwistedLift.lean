@@ -76,21 +76,6 @@ variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [Norm
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [CommRing R]
 
-/-- The lift of a cocycle `φ` of `(E, E₀)` with coefficients in the orientation system is `φ`
-precomposed with the chain map to orientation-twisted chains. -/
-theorem iCycles_cyclesMap_thomPairSignCochainMap {n : ℕ}
-    (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
-      (ModuleCat.of R R)).cycles n) :
-    (TopPair.singularCochainComplex
-        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-        (ModuleCat.of R R) R (ModuleCat.of R R)).iCycles n
-        (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R)) n φ) =
-      (thomPairSignChainMap F E hι R).f n ≫
-        ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
-          (ModuleCat.of R R)).iCycles n φ :=
-  (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ _) φ).trans
-    (thomPairSignCochainMap_f_apply hι R R (ModuleCat.of R R) _ _)
-
 section SemiInvariant
 
 /-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the bundle
