@@ -138,7 +138,7 @@ theorem image_snd_eq_setOf_debut_ne_top (s : Set (ι × Ω)) :
 otherwise, including infinite endpoints. -/
 -- Simplify before coercions to `WithTop ℝ≥0` are rewritten to coercions to `ENNReal`.
 @[simp↓]
-theorem debut_Icc (σ τ : Ω → WithTop ι) :
+theorem debut_setOf_le_and_le (σ τ : Ω → WithTop ι) :
     debut {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) ≤ τ p.2} =
       fun ω ↦ if σ ω ≤ τ ω then σ ω else ⊤ := by
   classical
@@ -154,13 +154,13 @@ theorem debut_Icc (σ τ : Ω → WithTop ι) :
 
 /-- The debut of a closed upper stochastic ray `[τ, ∞)` is `τ`. -/
 @[simp↓]
-theorem debut_le (τ : Ω → WithTop ι) :
+theorem debut_setOf_le (τ : Ω → WithTop ι) :
     debut {p : ι × Ω | τ p.2 ≤ p.1} = τ := by
-  simpa using debut_Icc τ (fun _ ↦ ⊤)
+  simpa using debut_setOf_le_and_le τ (fun _ ↦ ⊤)
 
 /-- The debut of the finite graph `[[τ]]` of a random time `τ` is `τ`. -/
 @[simp↓]
-theorem debut_eq (τ : Ω → WithTop ι) :
+theorem debut_setOf_eq (τ : Ω → WithTop ι) :
     debut {p : ι × Ω | τ p.2 = p.1} = τ := by
   have heq : {p : ι × Ω | τ p.2 = p.1} =
       {p : ι × Ω | τ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) ≤ τ p.2} := by

@@ -522,8 +522,7 @@ private lemma Ioi_prod_mem_generateFrom {Ω : Type*} {m : MeasurableSpace Ω}
   classical
   let η : Ω → WithTop ℝ≥0 := A.piecewise (fun _ ↦ (s : WithTop ℝ≥0)) (fun _ ↦ ⊤)
   have hη : IsStoppingTime ℱ η :=
-    (isStoppingTime_const ℱ s).piecewise_of_le
-      TauCeti.IsAnnouncingSequence.top.isStoppingTime_limit
+    (isStoppingTime_const ℱ s).piecewise_of_le (isStoppingTime_top ℱ)
       (fun _ ↦ le_rfl) (fun _ ↦ le_top) hA
   have heq : Ioi s ×ˢ A =
       ⋃ k : ℕ, {p : ℝ≥0 × Ω | η p.2 + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1} := by

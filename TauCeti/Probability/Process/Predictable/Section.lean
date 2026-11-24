@@ -170,7 +170,7 @@ theorem isPredictableTime_debut_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω
     ext ω
     rw [TauCeti.debut_iUnion, iInf_apply, Finset.inf_univ_eq_iInf]
     refine iInf_congr fun i ↦ ?_
-    rw [TauCeti.debut_Icc]
+    rw [TauCeti.debut_setOf_le_and_le]
     congr
   rw [heq]
   exact TauCeti.IsPredictableTime.finsetInf fun i _ ↦ (hσ i).ite_le (hτ i)
@@ -692,7 +692,7 @@ theorem isPredictableTime_iff_measurableSet_predictable_le
     IsPredictableTime ℱ τ ↔ MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | τ p.2 ≤ p.1} := by
   refine ⟨fun h ↦ h.measurableSet_predictable_le, fun h ↦ ?_⟩
   have hτ : IsStoppingTime ℱ τ := by
-    simpa only [debut_le] using (ℱ.predictable_le_progressive _ h).isStoppingTime_debut P
+    simpa only [debut_setOf_le] using (ℱ.predictable_le_progressive _ h).isStoppingTime_debut P
   obtain ⟨_, hσ⟩ := hτ.exists_isAEAnnouncingSequence_of_measurableSet_predictable_le P h
   exact hσ.isPredictableTime
 
