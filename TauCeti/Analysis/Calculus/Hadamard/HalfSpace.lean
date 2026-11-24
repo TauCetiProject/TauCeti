@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.Analysis.Calculus.ParametricIntegral.Segment
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
 # Hadamard division on a half-space
@@ -40,23 +40,6 @@ open scoped Topology ContDiff
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- A closed half-space `{x | a ≤ ℓ x}` of a real normed space has unique derivatives, including
-on its boundary hyperplane. -/
-theorem ContinuousLinearMap.uniqueDiffOn_halfSpace (ℓ : E →L[ℝ] ℝ) (a : ℝ) :
-    UniqueDiffOn ℝ {x | a ≤ ℓ x} := by
-  by_cases hℓ : ℓ = 0
-  · by_cases ha : a ≤ 0
-    · simp [hℓ, ha]
-    · simp [hℓ, ha, uniqueDiffOn_empty]
-  obtain ⟨w, hw⟩ : ∃ w, ℓ w ≠ 0 := by
-    by_contra! h
-    exact hℓ (ContinuousLinearMap.ext h)
-  -- The point `((a + 1) / ℓ w) • w` lies in the open half-space `{a < ℓ}`.
-  refine uniqueDiffOn_convex ((convex_Ici a).linear_preimage ℓ.toLinearMap)
-    ⟨((a + 1) / ℓ w) • w, mem_interior_iff_mem_nhds.2 <| mem_of_superset
-      ((isOpen_lt continuous_const ℓ.continuous).mem_nhds ?_) fun x (hx : a < ℓ x) ↦ hx.le⟩
-  simp [div_mul_cancel₀ _ hw]
-
 namespace TauCeti
 
 /-- Radii for Hadamard division: for `w ∈ ball q δ` and `0 ≤ a < ε`, the foot `w - ℓ(w) v` of `w`
@@ -81,7 +64,7 @@ private theorem exists_radii_mapsTo {ℓ : E →L[ℝ] ℝ} {v : E} (hv : ℓ v 
   · have h2 : ‖y - q‖ < δ := mem_ball_iff_norm.1 hy
     nlinarith [hℓ y, norm_nonneg ℓ]
   rintro ⟨a, w⟩ ⟨⟨ha0, haε⟩, hw⟩
-  refine ⟨show 0 ≤ ℓ ((w - ℓ w • v) + a • v) by simpa [hv] using ha0, ?_⟩
+  refine ⟨by simpa [hv] using ha0, ?_⟩
   rw [mem_ball, dist_eq_norm] at hw ⊢
   have hfoot : (w - ℓ w • v) + a • v - q = ((w - q) - ℓ (w - q) • v) + a • v := by
     simp only [map_sub, hq, sub_zero]
@@ -119,7 +102,7 @@ private theorem eq_smul_intervalIntegral_fderivWithin {ℓ : E →L[ℝ] ℝ} {v
   rw [hFTC, ← intervalIntegral.integral_smul]
   refine intervalIntegral.integral_congr fun τ _ ↦ ?_
   simp only [map_smul]
-  rw [lineMap_apply, vsub_eq_sub, vadd_eq_add, hyc, smul_smul, add_comm]
+  simp [lineMap_apply, hyc, smul_smul, add_comm]
 
 /-- Hadamard division on a half-space, at a point `q` of the boundary hyperplane, given a vector
 `v` with `ℓ v = 1`. -/
@@ -187,9 +170,7 @@ theorem exists_contDiffOn_eq_smul_of_eq_zero {k : ℕ∞} {ℓ : E →L[ℝ] ℝ
   · by_cases hℓ : ℓ = 0
     · refine ⟨0, interior s, isOpen_interior, hqs, contDiffOn_const, fun y hy ↦ ?_⟩
       simp [h0 y (interior_subset hy.2) (by simp [hℓ]), hℓ]
-    · obtain ⟨w, hw⟩ : ∃ w, ℓ w ≠ 0 := by
-        by_contra! h
-        exact hℓ (ContinuousLinearMap.ext h)
+    · obtain ⟨w, hw⟩ := ContinuousLinearMap.exists_ne_zero hℓ
       exact exists_contDiffOn_eq_smul_of_apply_eq_zero (v := (ℓ w)⁻¹ • w)
         (by simp [inv_mul_cancel₀ hw]) hq hs hf h0
   · -- Above the hyperplane, divide by `ℓ`.

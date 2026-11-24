@@ -190,8 +190,10 @@ private theorem contMDiffAt_ratio (hρ : IsBoundaryDefiningFunctionOn n ρ U)
       have hwnc := hnc.mvfderiv_inwardBasisVector_pos hye hyb
       rw [hd, smul_apply, smul_eq_mul] at hwρ
       refine ⟨left_ne_zero_of_mul hwρ.ne', ?_⟩
-      rw [ratio_of_mem_boundary hyb, hd, hd', smul_apply, smul_apply, smul_eq_mul, smul_eq_mul,
-        mul_div_mul_right _ _ hwnc.ne', Pi.div_apply]
+      -- `ratio` divides the derivatives on the inward basis vector; the `•` there is on the
+      -- tangent space `ℝ`, i.e. multiplication.
+      rw [ratio_of_mem_boundary hyb, hd, hd', smul_apply, smul_apply]
+      exact mul_div_mul_right (G' y) (G y) hwnc.ne'
   have hd : ContMDiffOn (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ (G' / G) (N ∩ N') :=
     (hG'.mono inter_subset_right).div₀ (hG.mono inter_subset_left) fun y hy ↦ (hkey y hy).1
   refine (hd.contMDiffAt ((hN.inter hN').mem_nhds ⟨hxN, hxN'⟩)).congr_of_eventuallyEq ?_
