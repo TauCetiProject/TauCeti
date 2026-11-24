@@ -34,6 +34,8 @@ order exactly.
 * `profiniteOrder_eq_bot_iff`: a profinite group has order `⊥ = 1` exactly when it is trivial.
 * `profiniteOrder_apply_eq_top_iff`: a prime has infinite exponent exactly when its powers divide
   the orders of finite continuous quotients without bound.
+* `profiniteOrder_apply_eq_zero_iff`: a prime has exponent zero exactly when it divides the order
+  of no finite continuous quotient.
 * `Subgroup.profiniteOrder_eq_iSup_image`: a subgroup's order as the supremum of its
   images in the ambient finite quotients.
 * `Subgroup.profiniteOrder_apply_eq_iSup_image`: the primewise form of this description.
@@ -187,6 +189,16 @@ theorem profiniteOrder_apply_eq_top_iff (p : Nat.Primes) :
   simp only [hdvd, profiniteOrder_apply, ENat.iSup_natCast_eq_top, not_bddAbove_iff,
     Set.mem_range, exists_exists_eq_and]
   exact ⟨fun h n ↦ (h n).imp fun _ ↦ le_of_lt, fun h n ↦ (h (n + 1)).imp fun _ ↦ id⟩
+
+/-- The exponent of a prime `p` in `profiniteOrder G` is zero exactly when `p` divides the order
+of no finite continuous quotient. -/
+theorem profiniteOrder_apply_eq_zero_iff (p : Nat.Primes) :
+    profiniteOrder G p = 0 ↔
+      ∀ U : OpenNormalSubgroup G, ¬ (p : ℕ) ∣ Nat.card (G ⧸ U.toSubgroup) := by
+  have : Fact (p : ℕ).Prime := ⟨p.prop⟩
+  simp only [profiniteOrder_apply, ENat.iSup_eq_zero, Nat.cast_eq_zero]
+  refine forall_congr' fun U ↦ ?_
+  rw [Nat.padicValNat_def, dvd_iff_multiplicity_ne_zero Nat.card_pos.ne', not_not]
 
 end Profinite
 

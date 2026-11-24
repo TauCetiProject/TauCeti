@@ -232,6 +232,15 @@ theorem strictMonoCechComplexFunctor_obj_X_hom_ext (P : Cᵒᵖ ⥤ A) {n : ℕ}
     (h : ∀ a, f ≫ strictMonoCechComplexπ U P a = g ≫ strictMonoCechComplexπ U P a) : f = g :=
   Pi.hom_ext _ _ h
 
+/-- In a thin category, restricting the factors of an ordered Čech cochain at two equal strictly
+increasing tuples along any maps gives the same result. -/
+theorem strictMonoCechComplexπ_comp_map_eq [Quiver.IsThin C] (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : C}
+    {a a' : {a : Fin (n + 1) → ι // StrictMono a}} (h : a = a')
+    (f : W ⟶ ∏ᶜ fun j ↦ U (a.val j)) (g : W ⟶ ∏ᶜ fun j ↦ U (a'.val j)) :
+    strictMonoCechComplexπ U P a ≫ P.map f.op = strictMonoCechComplexπ U P a' ≫ P.map g.op := by
+  subst h
+  rw [Subsingleton.elim f g]
+
 private lemma strictMonoCechComplexFunctor_obj_d (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     ((strictMonoCechComplexFunctor U).obj P).d n (n + 1) = strictMonoCechComplexD U P n := by
   dsimp only [strictMonoCechComplexFunctor]

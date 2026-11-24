@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
-public import Mathlib.RingTheory.PowerSeries.WellKnown
+public import TauCeti.RingTheory.PowerSeries.InvOneSubPow
 
 /-!
 # Hilbert series of a symmetric algebra
@@ -26,8 +26,8 @@ The denominator-cleared form combines with homogeneous regular-sequence quotient
 formulas to compute coinvariant Hilbert series.
 
 The coefficient calculation uses `Module.Basis.symmetricAlgebraHomogeneous` and
-Mathlib's `Sym.card_sym_eq_multichoose`; the series calculation uses the existing
-binomial expansion of `PowerSeries.invOneSubPow`.
+Mathlib's `Sym.card_sym_eq_multichoose`; the series calculation is
+`PowerSeries.mk_multichoose_eq_invOneSubPow`.
 
 ## References
 
@@ -49,16 +49,7 @@ theorem mk_finrank_eq_invOneSubPow (S : Type*) [CommRing S] :
     PowerSeries.mk (fun n ↦ (Module.finrank R (homogeneousSubmodule R M n) : S)) =
       (PowerSeries.invOneSubPow S (Module.finrank R M) : PowerSeries S) := by
   simp_rw [finrank_homogeneousSubmodule]
-  cases hr : Module.finrank R M with
-  | zero =>
-    ext n
-    cases n <;> simp [PowerSeries.invOneSubPow_zero]
-  | succ r =>
-    rw [PowerSeries.invOneSubPow_val_succ_eq_mk_add_choose]
-    ext n
-    simp only [PowerSeries.coeff_mk, Nat.multichoose_eq]
-    congr 1
-    rw [Nat.succ_add_sub_one, Nat.choose_symm_add]
+  exact PowerSeries.mk_multichoose_eq_invOneSubPow S _
 
 /-- The denominator-cleared Hilbert-series formula for a symmetric algebra. It is valid
 over an arbitrary commutative coefficient ring, including integer coefficients when

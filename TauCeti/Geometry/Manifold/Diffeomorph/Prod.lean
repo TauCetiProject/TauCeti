@@ -24,6 +24,9 @@ The four-way exchange `((a, b), (c, d)) ↦ ((a, c), (b, d))` of a product of tw
 the diffeomorphism `Diffeomorph.prodProdProdComm`, the smooth counterpart of
 `Equiv.prodProdProdComm`. It regroups a product of relations `M₁ ⇝ N₁` and `M₂ ⇝ N₂` as a
 relation `M₁ × M₂ ⇝ N₁ × N₂`.
+
+The homeomorphism underlying Mathlib's factor swap `Diffeomorph.prodComm` is
+`Homeomorph.prodComm` (`Diffeomorph.toHomeomorph_prodComm`).
 -/
 
 public section
@@ -148,5 +151,11 @@ theorem coe_prodProdProdComm :
   (rfl)
 
 end prodProdProdComm
+
+/-- The homeomorphism underlying the factor swap `M × N ≃ N × M` is the factor swap. -/
+@[simp]
+theorem toHomeomorph_prodComm :
+    (Diffeomorph.prodComm I J M N n).toHomeomorph = Homeomorph.prodComm M N :=
+  Homeomorph.ext fun _ ↦ rfl
 
 end Diffeomorph

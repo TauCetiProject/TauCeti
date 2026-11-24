@@ -60,6 +60,8 @@ preserves isotropic and Lagrangian maps
 
 ## Main declarations
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mem_of_forall_eval₂_eq_zero_of_isCoisotropic`: a vector
+  `σ`-orthogonal to a coisotropic subspace `W ⊆ T_x M` lies in `W`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsIsotropicMap`, `IsCoisotropicMap`, `IsLagrangianMap`:
   the three tangent-image predicates.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero`: isotropy is the
@@ -101,6 +103,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate) {f : N → M}
+
+/-! ### Coisotropic subspaces of a tangent space -/
+
+/-- A tangent vector `σ`-orthogonal to a coisotropic subspace `W` of `T_x M` lies in `W`. -/
+theorem mem_of_forall_eval₂_eq_zero_of_isCoisotropic {x : M}
+    {W : Submodule ℝ (TangentSpace I x)} (hW : (hσ.symplecticFormAt x).IsCoisotropic W)
+    {v : TangentSpace I x} (hv : ∀ w ∈ W, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ W := by
+  refine SymplecticForm.isCoisotropic_iff_le.1 hW ?_
+  rw [SymplecticForm.mem_orthogonal_iff']
+  intro w hw
+  rw [symplecticFormAt_apply]
+  exact hv w hw
 
 /-! ### The three predicates -/
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.OfQuotient
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.GroupTheory.GroupAction.FixedPoints
 
 /-!
@@ -30,20 +31,28 @@ For `G` compact and `A` discrete this gives the reduction of `H¹(G, A)` to fini
 every class is inflated from `G ⧸ U` for an open normal subgroup `U`, and `G ⧸ U` is finite.
 Together with the injectivity of inflation, `H¹(G, A)` is the union of the injective images of
 the sets `H¹(G ⧸ U, Aᵁ)`. For a profinite Galois group this is the reduction of continuous Galois
-cohomology to the cohomology of finite Galois extensions.
+cohomology to the cohomology of finite Galois extensions. The transition maps between the finite
+levels and the resulting colimit statement are in
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Nonabelian/FiniteQuotient.lean`.
 
 The key construction is `TauCeti.NonabelianH1.Cocycle.descend`: a cocycle trivial on `N` is
 constant on the cosets of `N`, takes values in `Aᴺ`, and so descends to a cocycle of `G ⧸ N`.
+For `M ≤ N`, refinement to `G ⧸ M` combines pullback along `G ⧸ M → G ⧸ N` with
+`Aᴺ ↪ Aᴹ`. The elementary representative calculation gives compatibility with inflation;
+injectivity of inflation then gives the identity, composition, and injectivity laws on classes.
 
 ## Main definitions
 
 * `TauCeti.NonabelianH1.infl`: inflation `H¹(G ⧸ N, Aᴺ) → H¹(G, A)`.
+* `TauCeti.NonabelianH1.transition`: refinement from `G ⧸ N` to `G ⧸ M` for `M ≤ N`.
 * `TauCeti.NonabelianH1.Cocycle.descend`: the cocycle of `G ⧸ N` with values in `Aᴺ` induced by a
   cocycle trivial on `N`.
 
 ## Main results
 
-* `TauCeti.NonabelianH1.infl_injective`: inflation is injective.
+* `TauCeti.NonabelianH1.infl_injective`: inflation is injective; in particular it reflects the
+  base point (`TauCeti.NonabelianH1.infl_eq_one_iff`).
+* `TauCeti.NonabelianH1.infl_transition`: inflation commutes with refinement.
 * `TauCeti.NonabelianH1.res_eq_one_iff`: a class restricts to the base point exactly when it is
   inflated.
 * `TauCeti.NonabelianH1.exists_mem_range_infl`: for `G` compact and `A` discrete, every class is
@@ -139,6 +148,14 @@ theorem map_descend (hf : ∀ n ∈ N, f n = 1) :
       (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul N) = f :=
   ext fun g ↦ by simp
 
+variable {N} in
+/-- Two cocycles of `G ⧸ N` with values in `Aᴺ` are equal when their values, as elements of `A`,
+agree at the class of every `g : G`. -/
+theorem ext_quotientMk {d d' : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)}
+    (h : ∀ g : G, (d g : A) = d' g) : d = d' :=
+  ext fun q ↦ by
+    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (h g)
+
 end Cocycle
 
 /-- The class of a cocycle trivial on `N` is the inflation of the class of its descent. -/
@@ -166,6 +183,143 @@ theorem infl_injective : Function.Injective (infl (A := A) N) := by
   refine mk_eq_mk_iff.mpr ⟨⟨a, haN⟩, fun q ↦ ?_⟩
   induction q using QuotientGroup.induction_on with | H g =>
   exact Subtype.ext (by simpa using ha g)
+
+/-- A class is inflated to the base point exactly when it is the base point. -/
+@[simp]
+theorem infl_eq_one_iff {c : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)} :
+    infl N c = 1 ↔ c = 1 :=
+  (infl_injective N).eq_iff' (infl_one N)
+
+section Transition
+
+variable {M N P : Subgroup G} [M.Normal] [N.Normal] [P.Normal]
+
+private def transitionCoefficients (h : M ≤ N) :
+    FixedPoints.subgroup N A →ₜ* FixedPoints.subgroup M A :=
+  ContinuousMonoidHom.subgroupInclusion (fixedPoints_subgroup_antitone G A h)
+
+omit [TopologicalSpace G] [M.Normal] [N.Normal] in
+private theorem coe_transitionCoefficients (h : M ≤ N) (a : FixedPoints.subgroup N A) :
+    (transitionCoefficients h a : A) = (a : A) :=
+  rfl
+
+private theorem transition_smul (h : M ≤ N) (q : G ⧸ M)
+    (a : FixedPoints.subgroup N A) :
+    transitionCoefficients h (QuotientGroup.mapOfLEContinuousMonoidHom h q • a) =
+      q • transitionCoefficients h a := by
+  induction q using QuotientGroup.induction_on with | H g =>
+  apply Subtype.ext
+  simp only [QuotientGroup.mapOfLEContinuousMonoidHom_mk,
+    coe_transitionCoefficients, coe_quotient_smul_fixedPoints_subgroup]
+
+namespace Cocycle
+
+/-- Refinement from `G ⧸ N` to `G ⧸ M` for `M ≤ N`, combining quotient pullback and inclusion
+of fixed coefficient groups. -/
+def transition (h : M ≤ N) (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
+    Cocycle (G ⧸ M) (FixedPoints.subgroup M A) :=
+  c.map (QuotientGroup.mapOfLEContinuousMonoidHom h) (transitionCoefficients h) (transition_smul h)
+
+/-- At a representative `g`, refinement retains the underlying coefficient value. -/
+@[simp]
+theorem coe_transition_apply (h : M ≤ N)
+    (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) (g : G) :
+    (transition h c (g : G ⧸ M) : A) = (c (g : G ⧸ N) : A) := by
+  simp only [transition, Cocycle.map_apply, QuotientGroup.mapOfLEContinuousMonoidHom_mk,
+    coe_transitionCoefficients]
+
+/-- Inflating a refined cocycle agrees with its original inflation. -/
+theorem map_transition (h : M ≤ N)
+    (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
+    (transition h c).map (Subgroup.quotientMkContinuousMonoidHom M)
+      (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul M) =
+    c.map (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.subgroupSubtype _)
+      (subgroupSubtype_quotientMk_smul N) := by
+  ext g
+  simp
+
+/-- Refinement to the same subgroup fixes each cocycle. -/
+@[simp]
+theorem transition_refl (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
+    transition (le_refl N) c = c :=
+  ext_quotientMk (coe_transition_apply _ c)
+
+/-- Successive refinements agree with direct refinement. -/
+theorem transition_transition (hPM : P ≤ M) (hMN : M ≤ N)
+    (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
+    transition hPM (transition hMN c) = transition (hPM.trans hMN) c :=
+  ext_quotientMk fun g ↦ by simp
+
+/-- Refinement preserves the trivial cocycle. -/
+@[simp]
+theorem transition_one (h : M ≤ N) :
+    transition h (1 : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) = 1 :=
+  map_one _ _ _
+
+/-- Refinement is injective on cocycles. -/
+theorem transition_injective (h : M ≤ N) :
+    Function.Injective (transition (A := A) h) := fun c d hcd ↦
+  ext_quotientMk fun g ↦ by
+    simpa using congrArg (fun f : Cocycle (G ⧸ M) (FixedPoints.subgroup M A) ↦
+      (f (g : G ⧸ M) : A)) hcd
+
+end Cocycle
+
+/-- The pointed-set refinement map for `M ≤ N`, induced by quotient pullback and the
+inclusion of fixed coefficient groups. -/
+def transition (h : M ≤ N) :
+    NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A) →
+      NonabelianH1 (G ⧸ M) (FixedPoints.subgroup M A) :=
+  map (QuotientGroup.mapOfLEContinuousMonoidHom h) (transitionCoefficients h) (transition_smul h)
+
+/-- Refinement sends a cocycle class to the class of its refinement. -/
+@[simp]
+theorem transition_mk (h : M ≤ N) (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
+    transition h (mk c) = mk (c.transition h) :=
+  map_mk _ _ _ c
+
+/-- Inflation commutes with refinement. -/
+@[simp↓]
+theorem infl_transition (h : M ≤ N)
+    (a : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)) :
+    infl M (transition h a) = infl N a := by
+  induction a using induction_on with | mk c =>
+  simp only [transition_mk, infl_mk, Cocycle.map_transition]
+
+/-- Refinement to the same subgroup is the identity on cohomology. -/
+@[simp]
+theorem transition_refl (a : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)) :
+    transition (le_refl N) a = a := by
+  apply infl_injective N
+  exact infl_transition _ a
+
+/-- Successive refinements agree with direct refinement on cohomology. -/
+theorem transition_transition (hPM : P ≤ M) (hMN : M ≤ N)
+    (a : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)) :
+    transition hPM (transition hMN a) = transition (hPM.trans hMN) a := by
+  apply infl_injective P
+  rw [infl_transition, infl_transition, infl_transition]
+
+/-- Refinement preserves the distinguished cohomology class. -/
+@[simp]
+theorem transition_one (h : M ≤ N) :
+    transition h (1 : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)) = 1 :=
+  map_one _ _ _
+
+/-- Each refinement map on nonabelian cohomology is injective. -/
+theorem transition_injective (h : M ≤ N) :
+    Function.Injective (transition (A := A) h) := by
+  intro a b hab
+  apply infl_injective N
+  simpa only [infl_transition] using congrArg (infl M) hab
+
+/-- A class is refined to the base point exactly when it is the base point. -/
+@[simp]
+theorem transition_eq_one_iff (h : M ≤ N)
+    {a : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)} : transition h a = 1 ↔ a = 1 :=
+  (transition_injective h).eq_iff' (transition_one h)
+
+end Transition
 
 /-- The restriction to `N` of an inflated class is the base point. -/
 @[simp]
