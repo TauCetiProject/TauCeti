@@ -137,6 +137,7 @@ gives a set of measure one.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
+* `AffineIsometryEquiv.measurePreserving_addHaar`: so does an affine isometry self-equivalence.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -897,6 +898,22 @@ theorem map_addHaar
   (f.measurePreserving_addHaar μ).map_eq
 
 end LinearIsometryEquiv
+
+namespace AffineIsometryEquiv
+
+/-- Every affine isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ᵃⁱ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hf : ⇑f = fun x ↦ f.linearIsometryEquiv x + f 0 := funext fun x ↦ by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right μ (f 0)).comp
+    (f.linearIsometryEquiv.measurePreserving_addHaar μ)
+
+end AffineIsometryEquiv
 
 namespace MeasureTheory.Measure
 
