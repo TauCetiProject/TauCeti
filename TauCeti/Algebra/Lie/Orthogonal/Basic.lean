@@ -42,6 +42,7 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
+  `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal_mul`,
   `LieAlgebra.Orthogonal.inv_indefiniteDiagonal`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_ne_zero`,
@@ -103,6 +104,14 @@ theorem indefiniteDiagonal_mul_indefiniteDiagonal :
   rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
   congr 1
   ext (i | i) <;> simp
+
+open Matrix in
+/-- Multiplying twice on the left by the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
+form is the identity. -/
+@[simp]
+theorem indefiniteDiagonal_mul_indefiniteDiagonal_mul {m : Type*} (A : Matrix (p ⊕ q) m R) :
+    indefiniteDiagonal p q R * (indefiniteDiagonal p q R * A) = A := by
+  rw [← Matrix.mul_assoc, indefiniteDiagonal_mul_indefiniteDiagonal, Matrix.one_mul]
 
 open Matrix in
 /-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is its own inverse. -/
