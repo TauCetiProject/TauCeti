@@ -188,9 +188,9 @@ theorem spinorDetEquiv_ιMulti_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ
         (exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
           AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i))) =
       AssociatedBundle.mk SpinC p (η v) := by
-  change exteriorPower.alternatingMapLinearEquiv (AssociatedBundle.alternatingMap SpinC P η x)
-    (LinearEquiv.ofEq _ _ (congrArg (⋀[ℂ]^· _) h₂) (exteriorPower.ιMulti ℂ _ fun i ↦
-      AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i)))) = _
+  refine (spinorDetEquiv_apply o hQ b ρ ε P h₂ η hη x _).trans ?_
+  -- `erw`: the argument is typed as `⋀² W^ε_x`, not as the synonym `DetBundle`.
+  erw [DetBundle.linearEquiv_apply]
   rw [exteriorPower.ofEq_ιMulti h₂, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
   simpa only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self] using
     alternatingMap_spinorBundle_mk o hQ b ρ ε P h₂ η p v
