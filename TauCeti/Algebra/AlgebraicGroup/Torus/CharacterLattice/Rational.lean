@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.Rational
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.GaloisModule
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Cocharacter.Basic
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.SeparableDescent
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.GaloisModule
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.CharacterLattice
 public import TauCeti.Algebra.Bialgebra.GroupLike.BaseChange
 
@@ -33,7 +32,6 @@ to `χ`.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.smul_groupLikeBaseChange`: characters defined over `k` are Galois-fixed.
 * `TauCeti.multiplicativeTypeCommHopfAlgProperty.exists_groupLikeBaseChange_eq_iff`: a geometric
   character of a group of multiplicative type is defined over `k` exactly when it is Galois-fixed.
 * `TauCeti.multiplicativeTypeCommHopfAlgProperty.groupLikeEquivFixedPoints`: the characters over
@@ -55,33 +53,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 universe u
-
-namespace CommHopfAlgCat
-
-variable {k : Type u} [Field k]
-
-/-- A character defined over the ground field is fixed by the absolute Galois group. -/
-@[simp]
-theorem smul_groupLikeBaseChange {A : Type*} [Semiring A] [Bialgebra k A]
-    (σ : Field.absoluteGaloisGroup k) (g : _root_.GroupLike k A) :
-    σ • (groupLikeBaseChange g :
-      _root_.GroupLike (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] A)) =
-      groupLikeBaseChange g := by
-  apply _root_.GroupLike.val_injective
-  rw [val_smul, val_groupLikeBaseChange, ScalarAut.smul_tmul, map_one]
-
-/-- The map on geometric characters induced by a Hopf-algebra morphism extends the map on
-characters defined over the ground field. -/
-@[simp]
-theorem geometricCharacterMap_groupLikeBaseChange {H K : _root_.CommHopfAlgCat.{u} k}
-    (f : H ⟶ K) (g : _root_.GroupLike k H) :
-    geometricCharacterMap f (groupLikeBaseChange g) =
-      groupLikeBaseChange (f.hom.mapGroupLike g) := by
-  apply _root_.GroupLike.val_injective
-  rw [val_geometricCharacterMap, val_groupLikeBaseChange, baseChangeMap_apply_tmul,
-    val_groupLikeBaseChange, BialgHom.val_mapGroupLike]
-
-end CommHopfAlgCat
 
 namespace multiplicativeTypeCommHopfAlgProperty
 
