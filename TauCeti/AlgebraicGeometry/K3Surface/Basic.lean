@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms.Basic
 
 /-!
 # K3 surfaces over a field
