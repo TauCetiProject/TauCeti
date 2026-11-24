@@ -81,6 +81,84 @@ noncomputable abbrev rightDiscs :
     (CompletedTensor.continuous_polydiscEquiv_symm A 1 1)).trans
     (CompletedTensor.polydiscEquiv A 1 (1 + 1))
 
+/-- `leftDiscs` fixes the coefficients. -/
+theorem leftDiscs_algebraMap (a : A) :
+    leftDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := by
+  rw [CompletedTensor.algebraMap_eq_inl, RingHom.comp_apply, RingEquiv.trans_apply,
+    CompletedTensor.congr_inl, CompletedTensor.polydiscEquiv_algebraMap,
+    CompletedTensor.inl_algebraMap]
+  erw [CompletedTensor.polydiscEquiv_algebraMap]
+
+/-- `rightDiscs` fixes the coefficients. -/
+theorem rightDiscs_algebraMap (a : A) :
+    rightDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := by
+  rw [CompletedTensor.algebraMap_eq_inl, RingHom.comp_apply, RingEquiv.trans_apply,
+    CompletedTensor.congr_inl, RingEquiv.refl_apply, CompletedTensor.inl_algebraMap]
+  erw [CompletedTensor.polydiscEquiv_algebraMap]
+
+/-- `leftDiscs` sends `T` to the first coordinate. -/
+theorem leftDiscs_T :
+    leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 0 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl,
+    CompletedTensor.polydiscEquiv_inl_polydiscVar]
+  erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
+  rfl
+
+/-- `leftDiscs` sends `S` to the second coordinate. -/
+theorem leftDiscs_S :
+    leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 1 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl,
+    CompletedTensor.polydiscEquiv_inr_polydiscVar]
+  erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
+  rfl
+
+/-- `leftDiscs` sends `R` to the third coordinate. -/
+theorem leftDiscs_R : leftDiscs A (CompletedTensor.inr A _ _ ((V 1) 0)) = (V 3) 2 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr, RingEquiv.refl_apply]
+  erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
+  rfl
+
+/-- `rightDiscs` sends `T` to the first coordinate. -/
+theorem rightDiscs_T : rightDiscs A (CompletedTensor.inl A _ _ ((V 1) 0)) = (V 3) 0 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl, RingEquiv.refl_apply]
+  erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
+  rfl
+
+/-- `rightDiscs` sends `S` to the second coordinate. -/
+theorem rightDiscs_S :
+    rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 1 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr,
+    CompletedTensor.polydiscEquiv_inl_polydiscVar]
+  erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
+  rfl
+
+/-- `rightDiscs` sends `R` to the third coordinate. -/
+theorem rightDiscs_R :
+    rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 2 := by
+  simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr,
+    CompletedTensor.polydiscEquiv_inr_polydiscVar]
+  erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
+  rfl
+
+/-- The inverse of `leftDiscs` is continuous. -/
+theorem continuous_leftDiscs_symm : Continuous (leftDiscs A).symm :=
+  (CompletedTensor.continuous_congr_symm ..).comp
+    (CompletedTensor.continuous_polydiscEquiv_symm A (1 + 1) 1)
+
+/-- `leftDiscs` is a homeomorphism. -/
+theorem isHomeomorph_leftDiscs : IsHomeomorph (leftDiscs A) :=
+  (leftDiscs A).toEquiv.isHomeomorph_iff.mpr
+    ⟨(CompletedTensor.continuous_polydiscEquiv A (1 + 1) 1).comp
+      (CompletedTensor.continuous_congr ..), continuous_leftDiscs_symm A⟩
+
+/-- `rightDiscs` is a homeomorphism. -/
+theorem isHomeomorph_rightDiscs : IsHomeomorph (rightDiscs A) :=
+  (rightDiscs A).toEquiv.isHomeomorph_iff.mpr
+    ⟨(CompletedTensor.continuous_polydiscEquiv A 1 (1 + 1)).comp
+      (CompletedTensor.continuous_congr ..),
+      (CompletedTensor.continuous_congr_symm ..).comp
+        (CompletedTensor.continuous_polydiscEquiv_symm A 1 (1 + 1))⟩
+
 /-- *three_discs_associator_field*: both iterated completed tensor products of three closed
 discs are `A⟨T, S, R⟩` by homeomorphic ring isomorphisms fixing the coefficients and sending the
 three coordinates to `T, S, R` in this order, and under them the associator is the identity. -/
@@ -98,83 +176,36 @@ theorem three_discs_associator_field :
       eR (CompletedTensor.inr A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 2 ∧
       (eL.symm.trans (CompletedTensor.assoc A (D 1) (D 1) (D 1))).trans eR =
         RingEquiv.refl (D 3) := by
-  have hLc : ∀ a : A, leftDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := fun a ↦ by
-    rw [CompletedTensor.algebraMap_eq_inl, RingHom.comp_apply, RingEquiv.trans_apply,
-      CompletedTensor.congr_inl, CompletedTensor.polydiscEquiv_algebraMap,
-      CompletedTensor.inl_algebraMap]
-    erw [CompletedTensor.polydiscEquiv_algebraMap]
-  have hRc : ∀ a : A, rightDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := fun a ↦ by
-    rw [CompletedTensor.algebraMap_eq_inl, RingHom.comp_apply, RingEquiv.trans_apply,
-      CompletedTensor.congr_inl, RingEquiv.refl_apply, CompletedTensor.inl_algebraMap]
-    erw [CompletedTensor.polydiscEquiv_algebraMap]
-  have hL0 : leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) =
-      (V 3) 0 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl,
-      CompletedTensor.polydiscEquiv_inl_polydiscVar]
-    erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
-    rfl
-  have hL1 : leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) =
-      (V 3) 1 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl,
-      CompletedTensor.polydiscEquiv_inr_polydiscVar]
-    erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
-    rfl
-  have hL2 : leftDiscs A (CompletedTensor.inr A _ _ ((V 1) 0)) = (V 3) 2 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr, RingEquiv.refl_apply]
-    erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
-    rfl
-  have hR0 : rightDiscs A (CompletedTensor.inl A _ _ ((V 1) 0)) = (V 3) 0 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inl, RingEquiv.refl_apply]
-    erw [CompletedTensor.polydiscEquiv_inl_polydiscVar]
-    rfl
-  have hR1 : rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) =
-      (V 3) 1 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr,
-      CompletedTensor.polydiscEquiv_inl_polydiscVar]
-    erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
-    rfl
-  have hR2 : rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) =
-      (V 3) 2 := by
-    simp only [RingEquiv.trans_apply, CompletedTensor.congr_inr,
-      CompletedTensor.polydiscEquiv_inr_polydiscVar]
-    erw [CompletedTensor.polydiscEquiv_inr_polydiscVar]
-    rfl
-  have hLs : Continuous (leftDiscs A).symm :=
-    (CompletedTensor.continuous_congr_symm ..).comp
-      (CompletedTensor.continuous_polydiscEquiv_symm A (1 + 1) 1)
-  have hLh : IsHomeomorph (leftDiscs A) :=
-    (leftDiscs A).toEquiv.isHomeomorph_iff.mpr
-      ⟨(CompletedTensor.continuous_polydiscEquiv A (1 + 1) 1).comp
-        (CompletedTensor.continuous_congr ..), hLs⟩
-  have hRh : IsHomeomorph (rightDiscs A) :=
-    (rightDiscs A).toEquiv.isHomeomorph_iff.mpr
-      ⟨(CompletedTensor.continuous_polydiscEquiv A 1 (1 + 1)).comp
-        (CompletedTensor.continuous_congr ..),
-        (CompletedTensor.continuous_congr_symm ..).comp
-          (CompletedTensor.continuous_polydiscEquiv_symm A 1 (1 + 1))⟩
-  refine ⟨leftDiscs A, rightDiscs A, hLh, hRh, hLc, hL0, hL1, hL2, hRc, hR0, hR1, hR2, ?_⟩
+  refine ⟨leftDiscs A, rightDiscs A, isHomeomorph_leftDiscs A, isHomeomorph_rightDiscs A,
+    leftDiscs_algebraMap A, leftDiscs_T A, leftDiscs_S A, leftDiscs_R A, rightDiscs_algebraMap A,
+    rightDiscs_T A, rightDiscs_S A, rightDiscs_R A, ?_⟩
   -- Both sides are continuous and agree on constants and on the three coordinates.
   apply RingEquiv.toRingHom_injective
   refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous _ ?_ continuous_id
     (fun a ↦ ?_) fun i ↦ ?_
-  · exact (hRh.continuous.comp (CompletedTensor.continuous_assoc A _ _ _)).comp hLs
+  · exact ((isHomeomorph_rightDiscs A).continuous.comp
+      (CompletedTensor.continuous_assoc A _ _ _)).comp (continuous_leftDiscs_symm A)
   · change rightDiscs A (CompletedTensor.assoc A _ _ _ ((leftDiscs A).symm
       (algebraMap A (D 3) a))) = algebraMap A (D 3) a
     rw [show (leftDiscs A).symm (algebraMap A (D 3) a) = algebraMap A _ a by
-        rw [RingEquiv.symm_apply_eq, hLc],
+        rw [RingEquiv.symm_apply_eq, leftDiscs_algebraMap],
       CompletedTensor.algebraMap_eq_inl, RingHom.comp_apply, CompletedTensor.algebraMap_eq_inl,
-      RingHom.comp_apply, CompletedTensor.assoc_inl_inl, CompletedTensor.inl_algebraMap, hRc]
+      RingHom.comp_apply, CompletedTensor.assoc_inl_inl, CompletedTensor.inl_algebraMap,
+      rightDiscs_algebraMap]
   · change rightDiscs A (CompletedTensor.assoc A _ _ _ ((leftDiscs A).symm ((V 3) i))) =
       (V 3) i
     fin_cases i
     · rw [show (leftDiscs A).symm ((V 3) ⟨0, by decide⟩) = _ from
-        (RingEquiv.symm_apply_eq _).mpr hL0.symm, CompletedTensor.assoc_inl_inl, hR0]
+        (RingEquiv.symm_apply_eq _).mpr (leftDiscs_T A).symm, CompletedTensor.assoc_inl_inl,
+        rightDiscs_T]
       rfl
     · rw [show (leftDiscs A).symm ((V 3) ⟨1, by decide⟩) = _ from
-        (RingEquiv.symm_apply_eq _).mpr hL1.symm, CompletedTensor.assoc_inl_inr, hR1]
+        (RingEquiv.symm_apply_eq _).mpr (leftDiscs_S A).symm, CompletedTensor.assoc_inl_inr,
+        rightDiscs_S]
       rfl
     · rw [show (leftDiscs A).symm ((V 3) ⟨2, by decide⟩) = _ from
-        (RingEquiv.symm_apply_eq _).mpr hL2.symm, CompletedTensor.assoc_inr, hR2]
+        (RingEquiv.symm_apply_eq _).mpr (leftDiscs_R A).symm, CompletedTensor.assoc_inr,
+        rightDiscs_R]
       rfl
 
 /-- Under `A⟨T⟩ ⊗̂_A A⟨T⟩ ≃ A⟨T, S⟩`, the symmetry of the completed tensor product. -/
