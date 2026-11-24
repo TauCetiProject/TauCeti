@@ -460,10 +460,7 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral_eq_sum_residue
   set P : Finset ℂ :=
     (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
     (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k)
-  obtain ⟨ε, _, hstrip_poles⟩ := exists_open_strip_avoiding_poles hσ₁ hσ₁p hσ₂ hσ₂p
-  set U : Set ℂ := {s : ℂ | σ₁ - ε < s.re ∧ s.re < σ₂ + ε}
-  have hU : IsOpen U :=
-    (isOpen_lt continuous_const continuous_re).inter (isOpen_lt continuous_re continuous_const)
+  obtain ⟨ε, hε, hstrip_poles⟩ := exists_open_strip_avoiding_poles hσ₁ hσ₁p hσ₂ hσ₂p
   have hP : ∀ s ∈ P, σ₁ < s.re ∧ s.re < σ₂ := fun s hs ↦ by
     simp only [P, Finset.mem_union, Finset.mem_image] at hs
     rcases hs with ⟨k, hk, rfl⟩ | ⟨k, hk, rfl⟩
@@ -472,19 +469,22 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral_eq_sum_residue
     · obtain ⟨h1, h2⟩ := TauCeti.mem_Ico_ceil_neg_iff.mp hk
       simp only [sub_re, neg_re, natCast_re]
       exact ⟨by linarith, lt_of_le_of_ne (by linarith) (fun h ↦ hσ₂p k (by linarith))⟩
-  have hdiff : DifferentiableOn ℂ f (U \ (↑P : Set ℂ)) := fun s ⟨hsU, hsP⟩ ↦
-    (differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0
-      (fun k hk ↦ hsP (Finset.mem_coe.mpr (hstrip_poles s hsU.1 hsU.2 (Or.inl ⟨k, hk⟩))))
-      (fun k hk ↦ hsP (Finset.mem_coe.mpr (hstrip_poles s hsU.1 hsU.2
-        (Or.inr ⟨k, by linear_combination hk⟩))))).differentiableWithinAt
+  have hdiff_closed : DifferentiableOn ℂ f ({t : ℂ | σ₁ ≤ t.re ∧ t.re ≤ σ₂} \ (↑P : Set ℂ)) :=
+    fun s ⟨hs, hsP⟩ ↦
+      (differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0
+        (fun k hk ↦ hsP (Finset.mem_coe.mpr
+          (hstrip_poles s (by linarith [hs.1]) (by linarith [hs.2]) (Or.inl ⟨k, hk⟩))))
+        (fun k hk ↦ hsP (Finset.mem_coe.mpr (hstrip_poles s (by linarith [hs.1])
+          (by linarith [hs.2]) (Or.inr ⟨k, by linear_combination hk⟩))))).differentiableWithinAt
   have htop : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₁..σ₂, f (x + (T : ℝ) * I)) atTop (𝓝 0) := by
     simpa [f] using tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add hc σ₁ σ₂ 1 (by norm_num)
   have hbot : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₁..σ₂, f (x + (T : ℝ) * I)) atBot (𝓝 0) := by
     simpa [f, Function.comp_def] using
       (tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add (p := p) hc σ₁ σ₂ (-1)
         (by norm_num)).comp tendsto_neg_atBot_atTop
-  exact TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue f hσ hU
-    (fun t ⟨ht1, ht2⟩ ↦ ⟨by linarith, by linarith⟩) P hP hdiff
+  exact TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue f hσ P hP
+    hdiff_closed.continuousOn
+    (hdiff_closed.mono (sdiff_subset_sdiff_left fun _ ⟨h1, h2⟩ ↦ ⟨h1.le, h2.le⟩))
     (fun s _ ↦ meromorphicAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0 s)
     (integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₂ hσ₂p)
     (integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₁ hσ₁p) htop hbot
