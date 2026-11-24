@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Limits.Affine.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
