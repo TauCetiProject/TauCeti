@@ -8,12 +8,14 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels, infimum values, and maxima attaining a bound
+# Minima on sublevels and images, infimum values, and maxima attaining a bound
 
 A minimum on a sublevel transfers to the full admissible set. At an admissible minimizer,
 the sublevel at the minimum value is the set of all minimizers, and in a conditionally complete
 lattice that value equals `sInf (f '' S)`. When an upper bound of a function is attained, the
 global maximizers are exactly the points attaining it (`TauCeti.isMaxOn_univ_iff_eq`).
+Pullback objectives along a map `p` also transfer `IsMinOn`, feasible minimizers, and
+attained-minimum existence identically between `s` and `p '' s`.
 -/
 
 public section
@@ -45,6 +47,27 @@ theorem isMinOn_iff_eq_csInf {X β : Type*} [ConditionallyCompleteLattice β] {f
     IsMinOn f S u ↔ f u = sInf (f '' S) :=
   ⟨fun h ↦ ((h.isGLB hu).csInf_eq ⟨f u, u, hu, rfl⟩).symm,
     fun h _ hx ↦ h ▸ csInf_le hb (mem_image_of_mem f hx)⟩
+
+/-- A point `p z` minimizes `f` on `p '' s` if and only if `z` minimizes `f ∘ p` on `s`. -/
+theorem isMinOn_image_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} {z : X} :
+    IsMinOn f (p '' s) (p z) ↔ IsMinOn (f ∘ p) s z := by
+  simp only [isMinOn_iff, forall_mem_image, Function.comp_apply]
+
+/-- A point `z` is a feasible minimizer of `f ∘ p` on `s` if and only if `z ∈ s` and `p z` is a
+feasible minimizer of `f` on `p '' s`. -/
+theorem mem_and_isMinOn_comp_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} {z : X} :
+    (z ∈ s ∧ IsMinOn (f ∘ p) s z) ↔ z ∈ s ∧ p z ∈ p '' s ∧ IsMinOn f (p '' s) (p z) := by
+  rw [isMinOn_image_iff]
+  exact ⟨fun ⟨hz, hmin⟩ ↦ ⟨hz, mem_image_of_mem p hz, hmin⟩, fun ⟨hz, _, hmin⟩ ↦ ⟨hz, hmin⟩⟩
+
+/-- An attained minimum of `f` on `p '' s` exists if and only if an attained minimum of `f ∘ p`
+on `s` exists. -/
+theorem exists_mem_image_isMinOn_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} :
+    (∃ y ∈ p '' s, IsMinOn f (p '' s) y) ↔ ∃ z ∈ s, IsMinOn (f ∘ p) s z := by
+  simp only [exists_mem_image, isMinOn_image_iff]
 
 end TauCeti
 

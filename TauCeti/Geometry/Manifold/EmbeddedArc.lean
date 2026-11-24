@@ -87,14 +87,14 @@ private theorem exists_injective_chart_arc [Nontrivial E] (b : M) :
   have hseg' : segment ℝ c (c + w) = (fun s : ℝ => c + s • w) '' Icc 0 1 := by
     rw [segment_eq_image', add_sub_cancel_left]
   have hmem (t : I) : c + (t : ℝ) • w ∈ φ.symm.source :=
-    φ.symm_source ▸ hseg (hseg' ▸ mem_image_of_mem _ t.2)
+    φ.symm_source ▸ hseg (hseg' ▸ mem_image_of_mem _ t.property)
   refine ⟨⟨fun t => φ.symm (c + (t : ℝ) • w), φ.continuousOn_symm.comp_continuous (by fun_prop)
     fun t => φ.symm_source ▸ hmem t⟩, fun s t hst => ?_, c, c + w, hseg, ?_⟩
   · exact Subtype.ext (smul_left_injective ℝ hw (add_left_cancel (φ.symm.injOn (hmem s)
       (hmem t) hst)))
   · rw [hseg', image_image]
     ext z
-    exact ⟨fun ⟨t, ht⟩ => ⟨t, t.2, ht⟩, fun ⟨t, ht, hz⟩ => ⟨⟨t, ht⟩, hz⟩⟩
+    exact ⟨fun ⟨t, ht⟩ => ⟨t, t.property, ht⟩, fun ⟨t, ht, hz⟩ => ⟨⟨t, ht⟩, hz⟩⟩
 
 variable {n : ℕ∞ω} [IsManifold 𝓘(ℝ, E) n M]
 

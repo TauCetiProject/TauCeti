@@ -189,10 +189,10 @@ variable {G : Type w} {X : Type u} [Group G] [MulAction G X] {d : LambdaMetric �
 
 private def smulUnitDistEquiv (hG : d.IsIsometricAction G) (g : G) :
     { p : X × X // d p.1 p.2 = 1 } ≃ { p : X × X // d p.1 p.2 = 1 } where
-  toFun p := ⟨(g • p.1.1, g • p.1.2), by rw [hG.dist_smul_smul, p.2]⟩
-  invFun p := ⟨(g⁻¹ • p.1.1, g⁻¹ • p.1.2), by rw [hG.dist_smul_smul, p.2]⟩
-  left_inv p := Subtype.ext (Prod.ext (inv_smul_smul g p.1.1) (inv_smul_smul g p.1.2))
-  right_inv p := Subtype.ext (Prod.ext (smul_inv_smul g p.1.1) (smul_inv_smul g p.1.2))
+  toFun p := ⟨(g • p.val.1, g • p.val.2), by rw [hG.dist_smul_smul, p.property]⟩
+  invFun p := ⟨(g⁻¹ • p.val.1, g⁻¹ • p.val.2), by rw [hG.dist_smul_smul, p.property]⟩
+  left_inv p := Subtype.ext (Prod.ext (inv_smul_smul g p.val.1) (inv_smul_smul g p.val.2))
+  right_inv p := Subtype.ext (Prod.ext (smul_inv_smul g p.val.1) (smul_inv_smul g p.val.2))
 
 /-- The automorphism of `d.toSerreGraph` induced by an element `g : G` of an isometric action. -/
 private noncomputable def IsIsometricAction.toSerreGraphIso (hG : d.IsIsometricAction G) (g : G) :
@@ -236,8 +236,8 @@ theorem IsIsometricAction.toSerreGraphVertexEquiv_symm_smul (hG : d.IsIsometricA
 @[simp]
 theorem IsIsometricAction.toSerreGraphDartEquiv_smul (hG : d.IsIsometricAction G) (g : G)
     (e : d.toSerreGraph.E) :
-    (d.toSerreGraphDartEquiv (hG.toSerreGraphAut g • e)).1 =
-      (g • (d.toSerreGraphDartEquiv e).1.1, g • (d.toSerreGraphDartEquiv e).1.2) := by
+    (d.toSerreGraphDartEquiv (hG.toSerreGraphAut g • e)).val =
+      (g • (d.toSerreGraphDartEquiv e).val.1, g • (d.toSerreGraphDartEquiv e).val.2) := by
   simp [SerreGraph.Aut.smul_dart_def, IsIsometricAction.toSerreGraphAut,
     IsIsometricAction.toSerreGraphIso, smulUnitDistEquiv]
 
@@ -273,7 +273,7 @@ theorem IsTree.exists_toSerreGraphAut_smul_eq_rev_iff (hd : d.IsTree) (hG : d.Is
   rw [isInversion_iff]
   refine ⟨?_, fun ⟨hne, hsq⟩ => ?_⟩
   · rintro ⟨e, hrev⟩
-    have hval := congrArg (fun f => (d.toSerreGraphDartEquiv f).1) hrev
+    have hval := congrArg (fun f => (d.toSerreGraphDartEquiv f).val) hrev
     rw [hG.toSerreGraphDartEquiv_smul, toSerreGraphDartEquiv_rev] at hval
     rcases heq : d.toSerreGraphDartEquiv e with ⟨⟨u, v⟩, huv⟩
     rw [heq] at hval
@@ -317,21 +317,21 @@ noncomputable def IsTree.toGTreeDartEquiv (hd : d.IsTree) (hG : d.IsIsometricAct
 theorem IsTree.toGTreeVertexEquiv_src (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (hinv : ∀ g : G, ¬IsInversion X g) (e : (hd.toGTree hG hinv).E) :
     hd.toGTreeVertexEquiv hG hinv ((hd.toGTree hG hinv).src e) =
-      (hd.toGTreeDartEquiv hG hinv e).1.1 :=
+      (hd.toGTreeDartEquiv hG hinv e).val.1 :=
   d.toSerreGraphVertexEquiv_src e
 
 @[simp]
 theorem IsTree.toGTreeVertexEquiv_tgt (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (hinv : ∀ g : G, ¬IsInversion X g) (e : (hd.toGTree hG hinv).E) :
     hd.toGTreeVertexEquiv hG hinv ((hd.toGTree hG hinv).tgt e) =
-      (hd.toGTreeDartEquiv hG hinv e).1.2 :=
+      (hd.toGTreeDartEquiv hG hinv e).val.2 :=
   d.toSerreGraphVertexEquiv_tgt e
 
 @[simp]
 theorem IsTree.toGTreeDartEquiv_rev (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (hinv : ∀ g : G, ¬IsInversion X g) (e : (hd.toGTree hG hinv).E) :
-    (hd.toGTreeDartEquiv hG hinv ((hd.toGTree hG hinv).rev e)).1 =
-      ((hd.toGTreeDartEquiv hG hinv e).1.2, (hd.toGTreeDartEquiv hG hinv e).1.1) :=
+    (hd.toGTreeDartEquiv hG hinv ((hd.toGTree hG hinv).rev e)).val =
+      ((hd.toGTreeDartEquiv hG hinv e).val.2, (hd.toGTreeDartEquiv hG hinv e).val.1) :=
   d.toSerreGraphDartEquiv_rev e
 
 @[simp]
@@ -350,8 +350,8 @@ theorem IsTree.toGTreeVertexEquiv_symm_smul (hd : d.IsTree) (hG : d.IsIsometricA
 @[simp]
 theorem IsTree.toGTreeDartEquiv_smul (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (hinv : ∀ g : G, ¬IsInversion X g) (g : G) (e : (hd.toGTree hG hinv).E) :
-    (hd.toGTreeDartEquiv hG hinv (g • e)).1 =
-      (g • (hd.toGTreeDartEquiv hG hinv e).1.1, g • (hd.toGTreeDartEquiv hG hinv e).1.2) :=
+    (hd.toGTreeDartEquiv hG hinv (g • e)).val =
+      (g • (hd.toGTreeDartEquiv hG hinv e).val.1, g • (hd.toGTreeDartEquiv hG hinv e).val.2) :=
   hG.toSerreGraphDartEquiv_smul g e
 
 @[simp]
@@ -440,20 +440,20 @@ theorem IsFree.chiswellGTreeVertexEquiv_chiswellGTreeRoot :
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_src (e : hl.chiswellGTree.E) :
-    hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.src e) = (hl.chiswellGTreeDartEquiv e).1.1 :=
+    hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.src e) = (hl.chiswellGTreeDartEquiv e).val.1 :=
   hl.isTree_chiswellMetric.toGTreeVertexEquiv_src l.isIsometricAction_chiswellMetric
     hl.not_isInversion_chiswellTree e
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_tgt (e : hl.chiswellGTree.E) :
-    hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.tgt e) = (hl.chiswellGTreeDartEquiv e).1.2 :=
+    hl.chiswellGTreeVertexEquiv (hl.chiswellGTree.tgt e) = (hl.chiswellGTreeDartEquiv e).val.2 :=
   hl.isTree_chiswellMetric.toGTreeVertexEquiv_tgt l.isIsometricAction_chiswellMetric
     hl.not_isInversion_chiswellTree e
 
 @[simp]
 theorem IsFree.chiswellGTreeDartEquiv_rev (e : hl.chiswellGTree.E) :
-    (hl.chiswellGTreeDartEquiv (hl.chiswellGTree.rev e)).1 =
-      ((hl.chiswellGTreeDartEquiv e).1.2, (hl.chiswellGTreeDartEquiv e).1.1) :=
+    (hl.chiswellGTreeDartEquiv (hl.chiswellGTree.rev e)).val =
+      ((hl.chiswellGTreeDartEquiv e).val.2, (hl.chiswellGTreeDartEquiv e).val.1) :=
   hl.isTree_chiswellMetric.toGTreeDartEquiv_rev l.isIsometricAction_chiswellMetric
     hl.not_isInversion_chiswellTree e
 
@@ -470,8 +470,8 @@ theorem IsFree.chiswellGTreeVertexEquiv_symm_smul (g : G) (x : l.ChiswellTree) :
 
 @[simp]
 theorem IsFree.chiswellGTreeDartEquiv_smul (g : G) (e : hl.chiswellGTree.E) :
-    (hl.chiswellGTreeDartEquiv (g • e)).1 =
-      (g • (hl.chiswellGTreeDartEquiv e).1.1, g • (hl.chiswellGTreeDartEquiv e).1.2) :=
+    (hl.chiswellGTreeDartEquiv (g • e)).val =
+      (g • (hl.chiswellGTreeDartEquiv e).val.1, g • (hl.chiswellGTreeDartEquiv e).val.2) :=
   hl.isTree_chiswellMetric.toGTreeDartEquiv_smul l.isIsometricAction_chiswellMetric
     hl.not_isInversion_chiswellTree g e
 

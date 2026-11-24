@@ -80,30 +80,30 @@ private noncomputable def trimToSetsData (p : ArrowWalk Q s t) (hs : s ∈ A) (h
 
 /-- The source of the walk obtained by trimming `p` between the terminal sets `A` and `B`. -/
 noncomputable def trimToSetsSource (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) : V :=
-  (trimToSetsData p hs ht).1.1
+  (trimToSetsData p hs ht).val.1
 
 /-- The target of the walk obtained by trimming `p` between the terminal sets `A` and `B`. -/
 noncomputable def trimToSetsTarget (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) : V :=
-  (trimToSetsData p hs ht).1.2.1
+  (trimToSetsData p hs ht).val.2.1
 
 /-- Trim a directed walk from a vertex of `A` to a vertex of `B` to its segment from its last
 vertex in `A` to the first vertex in `B` at or after it. The internal vertices of the result lie
 in neither terminal set. -/
 noncomputable def trimToSets (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) :
     ArrowWalk Q (p.trimToSetsSource hs ht) (p.trimToSetsTarget hs ht) :=
-  (trimToSetsData p hs ht).1.2.2
+  (trimToSetsData p hs ht).val.2.2
 
 /-- The source of a walk trimmed between `A` and `B` belongs to `A`. -/
 @[simp]
 theorem trimToSetsSource_mem (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) :
     p.trimToSetsSource hs ht ∈ A :=
-  (trimToSetsData p hs ht).2.1
+  (trimToSetsData p hs ht).property.1
 
 /-- The target of a walk trimmed between `A` and `B` belongs to `B`. -/
 @[simp]
 theorem trimToSetsTarget_mem (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) :
     p.trimToSetsTarget hs ht ∈ B :=
-  (trimToSetsData p hs ht).2.2.1
+  (trimToSetsData p hs ht).property.2.1
 
 /-- A trimmed walk is a contiguous segment of the original walk, beginning at its last vertex in
 `A`. -/
@@ -112,12 +112,12 @@ theorem exists_eq_comp_trimToSets_comp (p : ArrowWalk Q s t) (hs : s ∈ A) (ht 
       (after : ArrowWalk Q (p.trimToSetsTarget hs ht) t),
       p = before.comp ((p.trimToSets hs ht).comp after) ∧
         ∀ z ∈ ((p.trimToSets hs ht).comp after).vertices.tail, z ∉ A :=
-  (trimToSetsData p hs ht).2.2.2.1
+  (trimToSetsData p hs ht).property.2.2.1
 
 /-- A walk trimmed between `A` and `B` ends at its first vertex in `B`. -/
 theorem notMem_of_mem_dropLast_vertices_trimToSets (p : ArrowWalk Q s t) (hs : s ∈ A)
     (ht : t ∈ B) {z : V} (hz : z ∈ (p.trimToSets hs ht).vertices.dropLast) : z ∉ B :=
-  (trimToSetsData p hs ht).2.2.2.2 z hz
+  (trimToSetsData p hs ht).property.2.2.2 z hz
 
 /-- A walk trimmed between `A` and `B` contains no vertex of `A` after its source. -/
 theorem notMem_of_mem_tail_vertices_trimToSets (p : ArrowWalk Q s t) (hs : s ∈ A)

@@ -46,10 +46,10 @@ The inverse reads the matrix entry indexed by the root. -/
 def rootSpaceEquiv (p : DiagonalRootIndex n) :
     R ≃ₗ[R] Derivation.adjointWeightSpace (diagonalTorusCoordinateMap (R := R) (N := n)).hom
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} n).root p)) where
-  toFun c := ⟨c • matrixUnitTangent p.1.1.down p.1.2.down, by
+  toFun c := ⟨c • matrixUnitTangent p.val.1.down p.val.2.down, by
     rw [diagonalRootDatum_root, ofAdd_diagonalRoot]
     exact Submodule.smul_mem _ c (matrixUnitTangent_mem_adjointWeightSpace _ _)⟩
-  invFun x := cotangentDualMatrixEquiv x.val p.1.1.down p.1.2.down
+  invFun x := cotangentDualMatrixEquiv x.val p.val.1.down p.val.2.down
   left_inv c := by simp
   right_inv x := by
     apply Subtype.ext
@@ -57,11 +57,11 @@ def rootSpaceEquiv (p : DiagonalRootIndex n) :
     have hx := x.property
     simp only [diagonalRootDatum_root, ofAdd_diagonalRoot,
       adjointWeightSpace_matrixUnitWeight_eq_span_singleton
-        (fun h ↦ p.2 (ULift.down_injective h)), Submodule.mem_span_singleton] at hx
+        (fun h ↦ p.property (ULift.down_injective h)), Submodule.mem_span_singleton] at hx
     obtain ⟨c, hc⟩ := hx
-    have hentry : cotangentDualMatrixEquiv x.val p.1.1.down p.1.2.down = c := by
+    have hentry : cotangentDualMatrixEquiv x.val p.val.1.down p.val.2.down = c := by
       simpa using congrArg
-        (fun y ↦ cotangentDualMatrixEquiv y p.1.1.down p.1.2.down) hc.symm
+        (fun y ↦ cotangentDualMatrixEquiv y p.val.1.down p.val.2.down) hc.symm
     rw [hentry]
     exact hc
   map_add' a b := Subtype.ext (add_smul _ _ _)
@@ -72,7 +72,7 @@ def rootSpaceEquiv (p : DiagonalRootIndex n) :
 theorem rootSpaceEquiv_apply_coe (p : DiagonalRootIndex n) (c : R) :
     (rootSpaceEquiv (R := R) p c :
       Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n))) =
-      c • matrixUnitTangent p.1.1.down p.1.2.down := (rfl)
+      c • matrixUnitTangent p.val.1.down p.val.2.down := (rfl)
 
 /-- The inverse root-space trivialization is the distinguished matrix entry. -/
 @[simp]
@@ -80,7 +80,7 @@ theorem rootSpaceEquiv_symm_apply (p : DiagonalRootIndex n)
     (x : Derivation.adjointWeightSpace (diagonalTorusCoordinateMap (R := R) (N := n)).hom
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} n).root p))) :
     (rootSpaceEquiv (R := R) p).symm x =
-      cotangentDualMatrixEquiv x.val p.1.1.down p.1.2.down := (rfl)
+      cotangentDualMatrixEquiv x.val p.val.1.down p.val.2.down := (rfl)
 
 /-- The represented root-subgroup differential is the normalized root-space trivialization,
 with the additive tangent space identified with the base ring. -/
@@ -91,7 +91,7 @@ theorem cotangentLinearEquiv_rootSpaceEquiv (p : DiagonalRootIndex n)
         (rootSpaceEquiv (R := R) p (AdditiveGroup.gaTangentLinearEquiv d)) =
       derivationComp (B := R)
         (rootSubgroupCoordinateMap (R := R) (N := n)
-          (fun h ↦ p.2 (ULift.down_injective h))).hom d := by
+          (fun h ↦ p.property (ULift.down_injective h))).hom d := by
   apply (tangentLinearEquivMatrix n).injective
   simp only [tangentLinearEquivMatrix_apply]
   rw [tangentMatrix_derivationComp_rootSubgroup, ← cotangentDualMatrixEquiv_apply]

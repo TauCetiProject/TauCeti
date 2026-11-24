@@ -89,8 +89,7 @@ theorem shortExact_tensorLeftShortComplex_cubicalChainComplexShortComplex :
     (tensorLeftShortComplex ((normalizedCubicalChainComplex k).obj X)
       (P.cubicalChainComplexShortComplex k)).ShortExact :=
   shortExact_tensorLeftShortComplex_of_preservesFiniteLimits _
-    (P.shortExact_cubicalChainComplexShortComplex k) fun n ↦
-      (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
+    (P.shortExact_cubicalChainComplexShortComplex k)
 
 /-- The cross product carries `N(X) ⊗ N(B)` into the chains of `X × B`, which vanish in the
 relative chains of `X × (Y, B)`. -/

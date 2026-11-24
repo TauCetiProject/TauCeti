@@ -64,7 +64,7 @@ unordered image. -/
 theorem card_filter_ofFinEmb_eq {β : Type*} [Fintype β] [DecidableEq β] {r : ℕ}
     (t : Set.powersetCard β r) :
     Finset.card (Finset.univ.filter fun x : {x : Fin r → β // Function.Injective x} ↦
-      ofFinEmb r β ⟨x.1, x.2⟩ = t) = r.factorial := by
+      ofFinEmb r β ⟨x.val, x.property⟩ = t) = r.factorial := by
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, ← natCard_ofFinEmb_eq t]
   exact Nat.card_congr ((Equiv.subtypeInjectiveEquivEmbedding (Fin r) β).subtypeEquiv fun _ ↦
     Iff.rfl)
@@ -79,37 +79,37 @@ the `r!` possible positive fiber multiplicities `1, …, r!`. -/
 theorem card_filter_ofFinEmb_eq_sum_factorial {β : Type*} [Fintype β] [DecidableEq β] {r : ℕ}
     (W : Finset {x : Fin r → β // Function.Injective x})
     (P : Set.powersetCard β r → Prop) [DecidablePred P] :
-    (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)).card =
-      ∑ k : Fin r.factorial, (k.1 + 1) *
+    (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)).card =
+      ∑ k : Fin r.factorial, (k.val + 1) *
         (univ.filter fun s : Set.powersetCard β r ↦
-          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s).card =
-            k.1 + 1).card := by
+          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1).card := by
   classical
-  have hlhs : (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)).card =
+  have hlhs : (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)).card =
       ∑ s : Set.powersetCard β r,
-        if P s then (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s).card
+        if P s then (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card
         else 0 := by
     rw [← sum_filter, card_eq_sum_card_fiberwise
       (f := fun x : {x : Fin r → β // Function.Injective x} ↦
-        Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)
+        Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)
       (t := univ.filter P) (fun x hx ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hx).2⟩)]
     refine sum_congr rfl fun s hs ↦ congrArg card (ext fun x ↦ ?_)
     simp only [mem_filter]
     exact ⟨fun hx ↦ ⟨hx.1.1, hx.2⟩,
       fun hx ↦ ⟨⟨hx.1, hx.2 ▸ (mem_filter.1 hs).2⟩, hx.2⟩⟩
   have hrhs (k : Fin r.factorial) :
-      (k.1 + 1) * (univ.filter fun s : Set.powersetCard β r ↦
-          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s).card =
-            k.1 + 1).card =
+      (k.val + 1) * (univ.filter fun s : Set.powersetCard β r ↦
+          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1).card =
         ∑ s : Set.powersetCard β r,
-          if P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s).card =
-            k.1 + 1 then k.1 + 1 else 0 := by
+          if P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1 then k.val + 1 else 0 := by
     rw [← sum_filter, sum_const, Nat.nsmul_eq_mul, mul_comm]
   rw [hlhs]
   simp_rw [hrhs]
   rw [sum_comm]
   refine sum_congr rfl fun s _ ↦ ?_
-  set ms := (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s).card
+  set ms := (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card
   have hms_le : ms ≤ r.factorial :=
     (card_le_card (filter_subset_filter _ (subset_univ W))).trans_eq
       (Set.powersetCard.card_filter_ofFinEmb_eq s)

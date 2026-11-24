@@ -81,27 +81,29 @@ theorem mem_chart_and_rankLocus_eq_bot_iff_flagPivots
   constructor
   · rintro ⟨hchart, hrank⟩
     let a := schubertCellEquiv b hp hnk K ⟨⟨N, hchart⟩, hrank⟩
-    have hN : N = ((schubertCellEquiv b hp hnk K).symm a).1.1 := by simp [a]
+    have hN : N = ((schubertCellEquiv b hp hnk K).symm a).val.val := by simp [a]
     rw [hN, toSubmodule_schubertCellEquiv_symm]
     exact Basis.flagPivots_span_echelonRow (univ.image p) a
   · intro hpiv
     let a := (b.baseChange K).flagCellEquiv (univ.image p) ⟨N.toSubmodule, hpiv⟩
-    have hN : N = ((schubertCellEquiv b hp hnk K).symm a).1.1 := Grassmannian.ext <| by
+    have hN : N = ((schubertCellEquiv b hp hnk K).symm a).val.val := Grassmannian.ext <| by
       rw [toSubmodule_schubertCellEquiv_symm, ← Basis.coe_flagCellEquiv_symm_apply,
         Equiv.symm_apply_apply]
     rw [hN]
-    exact ⟨((schubertCellEquiv b hp hnk K).symm a).1.2, ((schubertCellEquiv b hp hnk K).symm a).2⟩
+    exact ⟨((schubertCellEquiv b hp hnk K).symm a).val.property,
+        ((schubertCellEquiv b hp hnk K).symm a).property⟩
 
 /-- Over a field `K`, the Schubert cell coordinates `schubertCellEquiv` agree with the linear
 echelon coordinates `(b.baseChange K).flagCellEquiv (Finset.univ.image p)`. -/
 theorem schubertCellEquiv_eq_flagCellEquiv {p : Fin r → Fin n}
     (hp : StrictMono p) (hnk : r + k = n)
     (N : {N : chart K (fun j ↦ (1 : K) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)) //
-      ∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥}) :
+      ∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥}) :
     schubertCellEquiv b hp hnk K N =
       (b.baseChange K).flagCellEquiv (univ.image p)
-        ⟨N.1.1.toSubmodule,
-          (mem_chart_and_rankLocus_eq_bot_iff_flagPivots b hp hnk N.1.1).mp ⟨N.1.2, N.2⟩⟩ := by
+        ⟨N.val.val.toSubmodule,
+          (mem_chart_and_rankLocus_eq_bot_iff_flagPivots b hp hnk N.val.val).mp ⟨N.val.property,
+              N.property⟩⟩ := by
   refine ((b.baseChange K).flagCellEquiv (univ.image p)).symm.injective <| Subtype.ext ?_
   rw [Equiv.symm_apply_apply, Basis.coe_flagCellEquiv_symm_apply,
     ← toSubmodule_schubertCellEquiv_symm b hp hnk, Equiv.symm_apply_apply]
@@ -181,7 +183,7 @@ private theorem map_grassmannianCongr_shearEquiv {u v : Fin n} (huv : u ≠ v) (
   rw [map_toSubmodule_eq_span, LinearEquiv.toSubmodule_grassmannianCongr_apply,
     LinearEquiv.toSubmodule_grassmannianCongr_apply, map_toSubmodule_eq_span,
     Submodule.map_span, Submodule.map_coe, ← Set.image_comp, ← Set.image_comp]
-  refine congrArg (Submodule.span B) <| Set.image_congr' fun x ↦
+  refine congrArg (Submodule.span B) <| Set.image_congr' rfl fun x ↦
     (b.baseChange B).repr.injective (Finsupp.ext fun w ↦ ?_)
   simp only [Function.comp_apply, shearEquiv_toLinearMap, LinearMap.rTensor_def,
     ← b.map_baseChange_repr, repr_shearLin, AlgHom.toLinearMap_apply, map_add, apply_ite f,

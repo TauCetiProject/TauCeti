@@ -70,29 +70,29 @@ variable {n : ℕ}
 /-- The unit vector `v / ‖v‖` of a nonzero quaternionic coordinate vector. -/
 private def normalizeSphere :
     C({v : Fin (n + 1) → ℍ // v ≠ 0}, sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :=
-  normalizeToSphere (fun v : {v : Fin (n + 1) → ℍ // v ≠ 0} ↦ WithLp.toLp 2 v.1)
-    ((PiLp.continuous_toLp 2 _).comp continuous_subtype_val)
-    fun v ↦ (WithLp.toLp_eq_zero 2).not.2 v.2
+  normalizeToSphere (fun v : {v : Fin (n + 1) → ℍ // v ≠ 0} ↦ WithLp.toLp 2 v.val)
+    ((PiLp.continuous_toLp 2 _).comp continuous_subtypeVal)
+    fun v ↦ (WithLp.toLp_eq_zero 2).not.2 v.property
 
 private theorem coe_normalizeSphere (v : {v : Fin (n + 1) → ℍ // v ≠ 0}) :
     ((normalizeSphere v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)) =
-      ‖(WithLp.toLp 2 v.1 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖⁻¹ • WithLp.toLp 2 v.1 := by
+      ‖(WithLp.toLp 2 v.val : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖⁻¹ • WithLp.toLp 2 v.val := by
   simp [normalizeSphere, NormedSpace.normalize]
 
 /-- Nonzero vectors spanning the same right line have normalizations in the same orbit of the
 unit quaternions. -/
 private theorem mk_normalizeSphere_eq (v w : {v : Fin (n + 1) → ℍ // v ≠ 0}) (q : ℍ)
-    (hvw : v.1 = op q • w.1) : mk n (normalizeSphere v) = mk n (normalizeSphere w) := by
-  set a := ‖(WithLp.toLp 2 v.1 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖
-  set b := ‖(WithLp.toLp 2 w.1 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖
-  have ha : a ≠ 0 := norm_ne_zero_iff.2 ((WithLp.toLp_eq_zero 2).not.2 v.2)
-  have hb : b ≠ 0 := norm_ne_zero_iff.2 ((WithLp.toLp_eq_zero 2).not.2 w.2)
+    (hvw : v.val = op q • w.val) : mk n (normalizeSphere v) = mk n (normalizeSphere w) := by
+  set a := ‖(WithLp.toLp 2 v.val : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖
+  set b := ‖(WithLp.toLp 2 w.val : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖
+  have ha : a ≠ 0 := norm_ne_zero_iff.2 ((WithLp.toLp_eq_zero 2).not.2 v.property)
+  have hb : b ≠ 0 := norm_ne_zero_iff.2 ((WithLp.toLp_eq_zero 2).not.2 w.property)
   -- `v / ‖v‖ = (w / ‖w‖) c` with `c = (‖w‖ / ‖v‖) q`, which is then a unit quaternion.
   set c : ℍ := (b / a) • q
   have hsmul : ((normalizeSphere w : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)) <• c =
       (normalizeSphere v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) := by
     refine PiLp.ext fun i ↦ ?_
-    have hvi : v.1 i = w.1 i * q := by rw [hvw, Pi.smul_apply, op_smul_eq_mul]
+    have hvi : v.val i = w.val i * q := by rw [hvw, Pi.smul_apply, op_smul_eq_mul]
     simp only [coe_normalizeSphere, PiLp.smul_apply, op_smul_eq_mul, c, smul_mul_assoc,
       mul_smul_comm, smul_smul, hvi]
     congr 1
@@ -100,8 +100,8 @@ private theorem mk_normalizeSphere_eq (v w : {v : Fin (n + 1) → ℍ // v ≠ 0
     field_simp
   have hc : ‖c‖ = 1 := by
     have h := congrArg norm hsmul
-    simpa only [norm_smul, norm_op, mem_sphere_zero_iff_norm.1 (normalizeSphere v).2,
-      mem_sphere_zero_iff_norm.1 (normalizeSphere w).2, mul_one] using h
+    simpa only [norm_smul, norm_op, mem_sphere_zero_iff_norm.1 (normalizeSphere v).property,
+      mem_sphere_zero_iff_norm.1 (normalizeSphere w).property, mul_one] using h
   exact (mk_eq_mk_iff n _ _).2 ⟨⟨c, mem_sphere_zero_iff_norm.2 hc⟩, Subtype.ext hsmul⟩
 
 variable (n) in
@@ -122,7 +122,7 @@ def projectivizationHomeomorph : QuaternionicProjectiveSpace n ≃ₜ ℙ ℍᵐ
       congr 1
       refine Subtype.ext ?_
       rw [coe_normalizeSphere]
-      simp [mem_sphere_zero_iff_norm.1 x.2]
+      simp [mem_sphere_zero_iff_norm.1 x.property]
   right_inv p := by
     induction p using Projectivization.ind with
     | h v hv =>
@@ -136,7 +136,7 @@ def projectivizationHomeomorph : QuaternionicProjectiveSpace n ≃ₜ ℙ ℍᵐ
     refine (isOpenQuotientMap_mk n).isQuotientMap.continuous_iff.2 ?_
     simp only [Function.comp_def, QuaternionicProjectiveSpace.lift_mk]
     exact Projectivization.continuous_mk
-      ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val) _
+      ((PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal) _
   continuous_invFun :=
     Projectivization.continuous_iff.2 ((continuous_mk n).comp normalizeSphere.continuous)
 
@@ -229,7 +229,7 @@ theorem projectivizationHomeomorph_smul_symm_mk
     (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (v : Fin (n + 1) → ℍ) (hv : v ≠ 0) :
     projectivizationHomeomorph n (A • (projectivizationHomeomorph n).symm
         (Projectivization.mk ℍᵐᵒᵖ v hv)) =
-      Projectivization.mk ℍᵐᵒᵖ (A.1 *ᵥ v)
+      Projectivization.mk ℍᵐᵒᵖ (A.val *ᵥ v)
         (((Matrix.mulVec_injective_of_isUnit Unitary.isUnit_coe).ne_iff'
           (Matrix.mulVec_zero _)).2 hv) := by
   rw [projectivizationHomeomorph_symm_mk, smul_mk, projectivizationHomeomorph_mk]
@@ -254,7 +254,7 @@ a quaternionic unitary matrix `A` to the right line `[A e₀]` spanned by its fi
 theorem projectivizationHomeomorph_unitaryQuotientHomeomorph_mk
     (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) :
     projectivizationHomeomorph n (unitaryQuotientHomeomorph n (QuotientGroup.mk A)) =
-      Projectivization.mk ℍᵐᵒᵖ (A.1 *ᵥ Pi.single 0 (1 : ℍ))
+      Projectivization.mk ℍᵐᵒᵖ (A.val *ᵥ Pi.single 0 (1 : ℍ))
         (((Matrix.mulVec_injective_of_isUnit Unitary.isUnit_coe).ne_iff'
           (Matrix.mulVec_zero _)).2 (Pi.single_ne_zero_iff.2 one_ne_zero)) := by
   rw [unitaryQuotientHomeomorph_mk, ← (projectivizationHomeomorph n).symm_apply_apply

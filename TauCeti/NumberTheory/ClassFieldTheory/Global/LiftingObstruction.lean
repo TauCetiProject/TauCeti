@@ -136,8 +136,9 @@ theorem _root_.Subgroup.exists_forall_smul_eq_and_ideleClassMk_eq
   have := subsingleton_H1_unitsCoeff_of_isClosed K V.topologicalClosure hV
   let S := (ideleShortExact K).restrict V.topologicalClosure
   obtain ⟨x, hx⟩ := S.explicitCoeff0_surjective_of_subsingleton
-    ⟨c, (FixedPoints.mem_addSubgroup _ _ _).2 fun v ↦ (MulAction.mem_stabilizer_iff).1 (hW v.2)⟩
-  refine ⟨x, fun v hv ↦ (FixedPoints.mem_addSubgroup _ _ _).1 x.2
+    ⟨c, (FixedPoints.mem_addSubgroup _ _ _).2 fun v ↦ (MulAction.mem_stabilizer_iff).1
+        (hW v.property)⟩
+  refine ⟨x, fun v hv ↦ (FixedPoints.mem_addSubgroup _ _ _).1 x.property
     ⟨v, V.le_topologicalClosure hv⟩, ?_⟩
   simpa [S] using congrArg Subtype.val hx
 

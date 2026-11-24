@@ -138,14 +138,14 @@ theorem ext {f g : ComplexUCB G} (h : ∀ x, (f : G →ᵇ ℂ) x = (g : G →�
 /-- The real part `x ↦ (f x).re` of a function in `ComplexUCB G`, as a real linear map to
 `UCB G`. -/
 def re : ComplexUCB G →ₗ[ℝ] UCB G where
-  toFun f := ⟨reCLM.compLeftContinuousBounded G f, compLeftContinuousBounded_mem_ucb _ f.2⟩
+  toFun f := ⟨reCLM.compLeftContinuousBounded G f, compLeftContinuousBounded_mem_ucb _ f.property⟩
   map_add' _ _ := UCB.ext fun _ => by simp
   map_smul' _ _ := UCB.ext fun _ => by simp
 
 /-- The imaginary part `x ↦ (f x).im` of a function in `ComplexUCB G`, as a real linear map to
 `UCB G`. -/
 def im : ComplexUCB G →ₗ[ℝ] UCB G where
-  toFun f := ⟨imCLM.compLeftContinuousBounded G f, compLeftContinuousBounded_mem_ucb _ f.2⟩
+  toFun f := ⟨imCLM.compLeftContinuousBounded G f, compLeftContinuousBounded_mem_ucb _ f.property⟩
   map_add' _ _ := UCB.ext fun _ => by simp
   map_smul' _ _ := UCB.ext fun _ => by simp
 
@@ -153,7 +153,7 @@ def im : ComplexUCB G →ₗ[ℝ] UCB G where
 `ComplexUCB G`. -/
 def ofReal : UCB G →ₐ[ℝ] ComplexUCB G where
   toFun f := ⟨ofRealCLM.compLeftContinuousBounded G f,
-    compLeftContinuousBounded_mem_complexUCB _ f.2⟩
+    compLeftContinuousBounded_mem_complexUCB _ f.property⟩
   map_one' := ext fun _ => by simp
   map_mul' _ _ := ext fun _ => by simp
   map_zero' := ext fun _ => by simp

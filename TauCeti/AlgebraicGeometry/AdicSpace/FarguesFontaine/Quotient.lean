@@ -205,7 +205,7 @@ theorem isOpenEmbedding_quotientMap_restrict
     (S : Set (spaY p ϖ)) (hS : IsOpen S) (hinj : Set.InjOn (quotientMap hI) S) :
     IsOpenEmbedding (fun v : S ↦ quotientMap hI v.val) := by
   have hq := isOpenQuotientMap_quotientMap hI
-  exact .of_continuous_injective_isOpenMap (hq.continuous.comp continuous_subtype_val)
+  exact .of_continuous_injective_isOpenMap (hq.continuous.comp continuous_subtypeVal)
     hinj.injective (hq.isOpenMap.comp hS.isOpenEmbedding_subtypeVal.isOpenMap)
 
 /-- The restriction of the orbit projection to a `U` window is an open embedding. -/

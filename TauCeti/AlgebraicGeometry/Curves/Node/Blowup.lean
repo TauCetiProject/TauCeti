@@ -116,7 +116,7 @@ private theorem exists_etale_tensor_affineBlowup_singularLocus_ideal
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
   -- `Γ(X, W)` is a standard syntomic `K`-algebra of relative dimension one, presented by `c + 1`
   -- generators and `c` relations.
-  let : Algebra K Γ(X, W) := ((X.baseRingToStructurePresheaf K).app (op W.1)).hom.toAlgebra
+  let : Algebra K Γ(X, W) := ((X.baseRingToStructurePresheaf K).app (op W.val)).hom.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension 1 K Γ(X, W) := by
     refine (isStandardSyntomicOfRelativeDimension_iff 1 _).mp ?_
     rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
@@ -171,7 +171,8 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
       (X ↘ Spec (.of K)) ((t ≫ (X.singularLocus K).subschemeι) pt)
   -- The point `t` is the spectrum of a homomorphism `ψ₀ : Γ(X, W) → L`, whose kernel `q` contains
   -- the ideal of the singular subscheme.
-  obtain ⟨ψ₀, hψ₀⟩ := W.2.exists_SpecMap_comp_fromSpec_eq (t ≫ (X.singularLocus K).subschemeι)
+  obtain ⟨ψ₀, hψ₀⟩ := W.property.exists_SpecMap_comp_fromSpec_eq (t ≫
+      (X.singularLocus K).subschemeι)
     (by rintro _ ⟨y, rfl⟩; simpa [Subsingleton.elim y pt] using hxW)
   let q := RingHom.ker ψ₀.hom
   have : q.IsPrime := RingHom.ker_isPrime _
@@ -181,7 +182,7 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   let A := Localization.AtPrime q
   let := ψ₀.hom.toAlgebra
   have hunit (y : q.primeCompl) : IsUnit (algebraMap Γ(X, W) L y) :=
-    isUnit_iff_ne_zero.mpr fun hy ↦ y.2 (RingHom.mem_ker.mpr hy)
+    isUnit_iff_ne_zero.mpr fun hy ↦ y.property (RingHom.mem_ker.mpr hy)
   let := (IsLocalization.lift (M := q.primeCompl) (S := A) hunit).toAlgebra
   have : IsScalarTower Γ(X, W) A L :=
     .of_algebraMap_eq fun r ↦ (IsLocalization.lift_eq (M := q.primeCompl) (S := A) hunit r).symm
@@ -190,14 +191,14 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   -- Blowing up commutes with the flat base change to `Spec A`, so the base change of the blowup
   -- to `t` is that of the blowup of `Spec A` along the maximal ideal.
   have hbot : Spec.map (CommRingCat.ofHom (algebraMap A L)) ≫
-      Spec.map (CommRingCat.ofHom (algebraMap Γ(X, W) A)) ≫ W.2.fromSpec =
+      Spec.map (CommRingCat.ofHom (algebraMap Γ(X, W) A)) ≫ W.property.fromSpec =
         t ≫ (X.singularLocus K).subschemeι := by
     rw [← hψ₀, ← Category.assoc, ← Spec.map_comp]
     congr 2
     ext r
     exact (IsScalarTower.algebraMap_apply Γ(X, W) A L r).symm
   have hsq := (isPullback_affineBlowup_of_flat ((X.singularLocus K).ideal W) A).paste_horiz
-    ((X.singularLocus K).isPullback_blowupChart_fromSpec W.2).flip
+    ((X.singularLocus K).isPullback_blowupChart_fromSpec W.property).flip
   obtain ⟨a, b, hm, hb, hrank, het⟩ :=
     exists_etale_tensor_affineBlowup_singularLocus_ideal hnodal W hstd q hq
   have : Module.Finite (ResidueField A) (ResidueField A ⊗[A]

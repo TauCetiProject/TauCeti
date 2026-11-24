@@ -149,7 +149,7 @@ theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (ha
     exact liftIoc_coe_apply (hIoc ▸ hx)
   have hint : Integrable (liftIoc (b - a) a f) haarAddCircle := by
     rw [← integrable_smul_measure hc ENNReal.ofReal_ne_top, ← volume_eq_smul_haarAddCircle]
-    exact ((measurePreserving_subtype_coe measurableSet_Ioc).comp
+    exact ((measurePreserving_subtypeVal measurableSet_Ioc).comp
       (measurePreserving_equivIoc _)).integrable_comp_of_integrable (hIoc ▸ hf)
   have hzero := hint.ae_eq_zero_of_forall_fourierCoeff_eq_zero fun n ↦ by
     simpa only [fourierCoeffOn] using h n
@@ -188,13 +188,13 @@ theorem MemLp.hasSum_fourierCoeff_mul (hf : MemLp f 2 AddCircle.haarAddCircle)
       smul_eq_mul, Pi.mul_apply]
     ring
   have hFb (m : ℤ) : ⟪F, fourierBasis m⟫_ℂ = fourierCoeff f (-m) := by
-    rw [← inner_conj_symm, ← HilbertBasis.repr_apply_apply, fourierBasis_repr,
+    rw [← inner_conj_symm, TauCeti.inner_fourierBasis_left,
       fourierCoeff_congr_ae hF, fourierCoeff, fourierCoeff, ← integral_conj]
     congr 1 with t
     simp only [smul_eq_mul, map_mul, Pi.star_apply, RCLike.star_def, RCLike.conj_conj, neg_neg,
       fourier_neg]
   have hbG (m : ℤ) : ⟪fourierBasis m, G⟫_ℂ = fourierCoeff g (m + n) := by
-    rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, fourierCoeff_congr_ae hG,
+    rw [TauCeti.inner_fourierBasis_left, fourierCoeff_congr_ae hG,
       fourierCoeff, fourierCoeff]
     congr 1 with t
     rw [smul_eq_mul, smul_eq_mul, neg_add, fourier_add, mul_assoc]

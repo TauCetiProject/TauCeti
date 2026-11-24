@@ -100,10 +100,10 @@ theorem spinGroup.eq_one_or_eq_negOne_of_finrank_eq_one (hQ : Q ≠ 0)
     (hV : Module.finrank K V = 1) (x : spinGroup Q) :
     x = 1 ∨ x = spinGroup.negOne Q hQ := by
   obtain ⟨a, ha⟩ := exists_eq_algebraMap_of_mem_even_of_finrank_eq_one Q hV x
-    (spinGroup.mem_even x.2)
+    (spinGroup.mem_even x.property)
   rcases subsingleton_or_nontrivial (CliffordAlgebra Q) with hQ' | hQ'
   · exact .inl (Subtype.ext (Subsingleton.elim _ _))
-  have h := spinGroup.star_mul_self_of_mem x.2
+  have h := spinGroup.star_mul_self_of_mem x.property
   rw [ha, star_algebraMap, ← map_mul] at h
   rcases mul_self_eq_one_iff.mp ((algebraMap K (CliffordAlgebra Q)).injective
     (by rw [h, map_one])) with rfl | rfl

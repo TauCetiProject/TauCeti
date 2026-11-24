@@ -75,10 +75,10 @@ theorem nonempty_end_algEquiv_self (P : SplitWedderburnAlgebraPresentation k A)
   have : IsSemisimpleRing A := P.equiv.symm.toRingEquiv.isSemisimpleRing
   have hm : ∀ i, IsSimpleRing (Matrix (Fin (P.degree i)) (Fin (P.degree i)) k) :=
     fun i ↦ inferInstance
-  have hs : ∀ c : isotypicComponents A A, IsSimpleRing (Module.End A c.1) :=
-    fun c ↦ (IsIsotypic.isotypicComponents c.2).isSimpleRing_moduleEnd
+  have hs : ∀ c : isotypicComponents A A, IsSimpleRing (Module.End A c.val) :=
+    fun c ↦ (IsIsotypic.isotypicComponents c.property).isSimpleRing_moduleEnd
   -- Compare the factors of End_A(A), retaining the base field through the opposite algebra.
-  let E : (∀ c : isotypicComponents A A, Module.End A c.1) ≃ₐ[k]
+  let E : (∀ c : isotypicComponents A A, Module.End A c.val) ≃ₐ[k]
       ∀ i, Matrix (Fin (P.degree i)) (Fin (P.degree i)) k :=
     (IsSemisimpleModule.endAlgEquiv k A A).symm.trans <|
       (AlgEquiv.moduleEndSelf k).symm.trans <|

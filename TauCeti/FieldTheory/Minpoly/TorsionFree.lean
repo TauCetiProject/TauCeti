@@ -78,7 +78,7 @@ theorem isIntegrallyClosed_dvd_of_isTorsionFree [IsDomain R] [Module.IsTorsionFr
   let φ : S →ₐ[R] L := Algebra.TensorProduct.includeRight
   have hφ : Function.Injective φ :=
     (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) (TensorProduct.mk R K S 1)).mpr
-      fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.2).isSMulRegular
+      fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.property).isSMulRegular
   rw [← map_dvd_map (algebraMap R K) (IsFractionRing.injective R K) (monic hs),
     ← isIntegrallyClosed_eq_field_fractions_of_injective K φ hφ hs]
   exact minpoly.dvd K (φ s) (by

@@ -205,7 +205,7 @@ theorem finiteEtale_tensorProduct_sections (hdepth : 2 ≤ depth (ModuleCat.of A
     refine (mem_puncturedSpectrum_iff A _).2 fun hx ↦ hp ?_
     have hle : x.asIdeal.comap (algebraMap A Ap) ≤ p :=
       calc x.asIdeal.comap (algebraMap A Ap) ≤ (maximalIdeal Ap).comap (algebraMap A Ap) :=
-            Ideal.comap_mono (IsLocalRing.le_maximalIdeal x.2.ne_top)
+            Ideal.comap_mono (IsLocalRing.le_maximalIdeal x.isPrime.ne_top)
         _ = p := Localization.AtPrime.under_maximalIdeal
     have hx' : x.asIdeal.comap (algebraMap A Ap) = maximalIdeal A :=
       congrArg PrimeSpectrum.asIdeal hx

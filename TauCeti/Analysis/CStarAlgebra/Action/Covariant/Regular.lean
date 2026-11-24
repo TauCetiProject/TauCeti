@@ -231,22 +231,19 @@ private theorem indicatorConstLp_mem_topologicalClosure_span (hρ : ρ.IsNondege
   -- vectors `ρ(b) w`.
   have hcompact {K : Set G} (hK : MeasurableSet K) (hKc : IsCompact K) (hμK : μ K ≠ ∞) :
       indicatorConstLp 2 hK hμK v ∈ M := by
-    let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous
-      { toFun := indicatorConstLp 2 hK hμK
-        map_add' _ _ := indicatorConstLp_add.symm
-        map_smul' := indicatorConstLp_smul hK hμK }
-      (μ.real K ^ (1 / (2 : ℝ≥0∞).toReal))
-      fun v => by simp [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, mul_comm]
+    let L : H →L[ℂ] Lp H 2 μ := indicatorConstLpL ℂ 2 hK hμK
     have hspan : Submodule.span ℂ (⋃ a, Set.range (ρ a)) ≤ M.comap (L : H →ₗ[ℂ] Lp H 2 μ) := by
       refine Submodule.span_le.2 fun _ hv => ?_
       obtain ⟨b, w, rfl⟩ := Set.mem_iUnion.1 hv
+      rw [SetLike.mem_coe, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+        indicatorConstLpL_apply]
       have := (CStarAlgebra.increasingApproximateUnit A).neBot
       have hmem (e : A) :
           (regular α ρ μ).coefficient e (indicatorConstLp 2 hK hμK (ρ b w)) ∈ M :=
         Submodule.le_topologicalClosure _ <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, _, rfl⟩
       exact hM.mem_of_tendsto (tendsto_regular_coefficient_indicatorConstLp
         (CStarAlgebra.increasingApproximateUnit A) hK hKc hμK b w) (.of_forall hmem)
-    exact (hM.preimage L.continuous).closure_subset_iff.2 hspan
+    simpa [L] using (hM.preimage L.continuous).closure_subset_iff.2 hspan
       (NonUnitalStarAlgHom.isNondegenerate_iff_dense.1 hρ v)
   -- In general, approximate `t` from inside by compact sets.
   choose K hKs hKc hKcl hK using fun n : ℕ =>

@@ -319,7 +319,7 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K] (hf : IsDisti
     { isDistinguished := hf
       natDegree_eq := by rw [Polynomial.natDegree_C_mul (inv_ne_zero hb), hω.natDegree_eq]
       coeff_zero_eq_one := by rw [Polynomial.coeff_C_mul, inv_mul_cancel₀ hb]
-      isRestricted := U'.2
+      isRestricted := U'.property
       constantCoeff_eq_one := hU0
       gaussNorm_sub_one_lt := (isUnit_iff_gaussNorm_sub_one_lt_one hr U' hU0).mp
         (((isUnit_iff_ne_zero.mpr hb).map _).mul he)

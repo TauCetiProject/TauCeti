@@ -256,7 +256,7 @@ theorem amiceTransformAlgEquiv_toLinearEquiv :
 @[simp]
 theorem amiceTransformAlgEquiv_symm_apply (F : PowerSeries.OnOpenDisc.subring K 1) :
     amiceTransformAlgEquiv.symm F =
-      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) :=
+      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.property) :=
   amiceTransformEquiv_symm_apply F
 
 end NormedAlgebra

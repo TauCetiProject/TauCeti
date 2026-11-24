@@ -141,9 +141,9 @@ theorem mem_range_map (f : α → β) {w : Sym β n} :
   · rintro ⟨s, rfl⟩ b hb
     obtain ⟨a, -, rfl⟩ := Sym.mem_map.1 hb
     exact Set.mem_range_self a
-  · choose g hg using fun b : {b // b ∈ w} => hw b b.2
+  · choose g hg using fun b : {b // b ∈ w} => hw b b.property
     exact ⟨Sym.map g w.attach,
-      (Sym.map_map _ _ _).trans ((Sym.map_congr fun b _ => hg b).trans w.attach_map_coe)⟩
+      (Sym.map_map _ _ _).trans ((Sym.map_congr rfl fun b _ => hg b).trans w.attach_map_coe)⟩
 
 /-- Concatenating two ordered tuples adjoins the two unordered ones. -/
 @[simp]

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
-public import TauCeti.Analysis.CStarAlgebra.MatrixOrder
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
@@ -67,6 +67,10 @@ def toPositiveLinearMap (φ : A₁ →CP A₂) : A₁ →ₚ[ℂ] A₂ := .ofCla
 
 @[simp] theorem coe_toPositiveLinearMap (φ : A₁ →CP A₂) : ⇑φ.toPositiveLinearMap = φ := (rfl)
 
+/-- A completely positive map preserves adjoints. -/
+@[simp] protected theorem map_star (φ : A₁ →CP A₂) (a : A₁) : φ (star a) = star (φ a) := by
+  simpa only [coe_toPositiveLinearMap] using map_star φ.toPositiveLinearMap a
+
 /-- Reinterpret a completely positive map as a continuous linear map. -/
 noncomputable def toContinuousLinearMap (φ : A₁ →CP A₂) : A₁ →L[ℂ] A₂ :=
   ⟨φ.toLinearMap, map_continuous φ⟩
@@ -115,7 +119,7 @@ noncomputable instance instSMulNNReal : SMul ℝ≥0 (A₁ →CP A₂) where
   smul c φ := ⟨c • φ.toLinearMap, fun _ M hM => by
     refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun x => ?_
     simpa [NNReal.smul_def, Finset.smul_sum, mul_smul_comm, smul_mul_assoc] using
-      smul_nonneg c.2 (CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
+      smul_nonneg c.property (CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
         (φ.map_cstarMatrix_nonneg M hM) x)⟩
 
 @[simp] theorem toLinearMap_smul (c : ℝ≥0) (φ : A₁ →CP A₂) :

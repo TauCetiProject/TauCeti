@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
+import TauCeti.Topology.ContinuousMap.CodRestrict
 
 /-!
 # Relative cubical chains
@@ -33,6 +34,8 @@ pairs fit into a short exact sequence.
 
 * `TauCeti.NormalizedCubicalChain.boundary_mem_supportedIn`: the chains supported in `A` form a
   subcomplex.
+* `TauCeti.NormalizedCubicalChain.map_mem_supportedIn_range`: the push-forward along any map is
+  supported in its range.
 * `TauCeti.NormalizedCubicalChain.range_map_eq_supportedIn_range`: the push-forward along an
   inducing map has image the chains supported in its range.
 * `TauCeti.NormalizedCubicalChain.map_mem_supportedIn_image_iff`: along an embedding `ι`, a chain is
@@ -99,11 +102,18 @@ theorem map_mem_supportedIn {Y : Type*} [TopologicalSpace Y] {A : Set X} {B : Se
   obtain ⟨h, rfl⟩ := hg
   -- `f` restricted to `A`, with values in `B`.
   let f' : C(A, B) :=
-    ⟨fun a ↦ ⟨f a, hf a.2⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ⟨fun a ↦ ⟨f a, hf a.property⟩, (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   have hres : (ContinuousMap.subtypeVal B).comp f' = f.comp (ContinuousMap.subtypeVal A) :=
     ContinuousMap.ext fun _ ↦ rfl
   refine ⟨map R f' n h, ?_⟩
   rw [← LinearMap.comp_apply, ← map_comp, hres, map_comp, LinearMap.comp_apply]
+
+/-- The push-forward of a chain along a map `f` is supported in the range of `f`. -/
+theorem map_mem_supportedIn_range {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {n : ℕ}
+    (g : NormalizedCubicalChain X R n) : map R f n g ∈ supportedIn R (Set.range f) n := by
+  -- `f` factors through its range.
+  have h := map_subtypeVal_mem_supportedIn R (map R (f.codRestrict _ Set.mem_range_self) n g)
+  rwa [← LinearMap.comp_apply, ← map_comp, ContinuousMap.subtypeVal_comp_codRestrict] at h
 
 private theorem supportedIn_le_comap_map {Y : Type*} [TopologicalSpace Y] {A : Set X} {B : Set Y}
     {f : C(X, Y)} (hf : Set.MapsTo f A B) (n : ℕ) :
@@ -136,7 +146,7 @@ theorem range_map_eq_supportedIn_range {Y : Type*} [TopologicalSpace Y] {f : C(X
     | smul r a ha => simpa using Submodule.smul_mem _ r ha
     | ofCube c =>
       rw [map_ofCube]
-      exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2
+      exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).property
 
 /-- **Supports along an embedding**: a chain is supported in `A` exactly when its push-forward
 along an embedding `ι` is supported in `ι '' A`. -/
@@ -177,7 +187,7 @@ private theorem restrictTo_eq_self {A : Set X} {n : ℕ} {g : NormalizedCubicalC
   | smul r a ha => simp [ha]
   | ofCube c =>
     rw [map_ofCube, restrictTo_ofCube]
-    exact ite_eq_left_of_eq_true _ _ (eq_true fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2)
+    exact ite_eq_left_of_eq_true _ _ (eq_true fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).property)
 
 private theorem restrictTo_restrictTo_mem (A B : Set X) {n : ℕ} (g : NormalizedCubicalChain X R n) :
     restrictTo R A n (restrictTo R B n g) ∈ supportedIn R (A ∩ B) n := by

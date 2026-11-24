@@ -141,7 +141,7 @@ private theorem mem_dixonRationalCharacterTableCandidates_iff (p : ℕ) [Fact p.
     List.mem_pi, Option.mem_toList]
   constructor
   · rintro ⟨rows, hrows, degrees, ⟨hdegrees, hsum⟩, rfl⟩
-    exact ⟨fun i => (mem_liftedCentralRowsList d p).mp (rows i).2,
+    exact ⟨fun i => (mem_liftedCentralRowsList d p).mp (rows i).property,
       fun i j hij => hrows (Subtype.ext hij), (fun i => hdegrees i trivial),
       hsum, fun i j => rfl⟩
   · rintro ⟨hrow, hinj, hdegrees, hsum, htable⟩

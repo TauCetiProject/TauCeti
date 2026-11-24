@@ -147,7 +147,7 @@ private theorem normCoeff_ne_imp_ne_of_forall_absNorm_ne
     ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n := by
   rintro n hn rfl
   obtain ⟨I, hI⟩ : (normFiber K n).Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro h0
     rw [normCoeff_eq_sum_normFiber, h0, Finset.sum_empty] at hn
     exact hn rfl

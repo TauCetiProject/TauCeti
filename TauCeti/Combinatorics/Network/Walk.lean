@@ -980,7 +980,7 @@ theorem positiveReachable_iff_nonempty_arrowWalk :
   · rintro ⟨p⟩
     induction p with
     | nil => exact .refl
-    | cons _ e ih => exact .tail ih ⟨e.1, e.2⟩
+    | cons _ e ih => exact .tail ih ⟨e.val, e.property⟩
 
 /-- A vertex set that no arrow of positive capacity leaves is closed under positive reachability.
 -/
@@ -1104,7 +1104,7 @@ abbrev WithoutHom (v w : V) : Type v :=
 variable (F) in
 /-- The inclusion of the arrows outside `F` into the arrow family `Q`. -/
 abbrev WithoutHom.incl : @Prefunctor V ⟨WithoutHom F⟩ V ⟨Q⟩ :=
-  @Prefunctor.mk V ⟨WithoutHom F⟩ V ⟨Q⟩ (fun v ↦ v) fun e ↦ e.1
+  @Prefunctor.mk V ⟨WithoutHom F⟩ V ⟨Q⟩ (fun v ↦ v) fun e ↦ e.val
 
 /-- A walk traversing no arrow of `F` is the image of a walk along the arrows outside `F`. -/
 theorem WithoutHom.exists_mapPath_incl_eq (p : ArrowWalk Q s t) (hp : ∀ a ∈ p.arrows, a ∉ F) :
@@ -1126,7 +1126,7 @@ theorem reachableWithout_iff_nonempty_arrowWalk :
   · rintro ⟨p⟩
     induction p with
     | nil => exact .refl F s
-    | cons _ e ih => exact ih.tail e.1 e.2
+    | cons _ e ih => exact ih.tail e.val e.property
 
 end ReachableWithout
 

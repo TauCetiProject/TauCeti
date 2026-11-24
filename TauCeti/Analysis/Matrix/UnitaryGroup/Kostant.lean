@@ -193,6 +193,12 @@ theorem unitaryTorusDualInclusion_apply (s : ι → ℝ) :
         (isHermitian_diagonal_iff.mpr fun k => conj_ofReal (s k)).isSelfAdjoint⟩ :=
   (rfl)
 
+/-- **The covector `⟨diag(s), ·⟩` in matrix entries**: `⟨diag(s), X⟩ = ∑ₐ sₐ Im Xₐₐ`. -/
+theorem unitaryTorusDualInclusion_apply_apply (s : ι → ℝ) (X : unitaryLieAlgebra ι) :
+    unitaryTorusDualInclusion ι s X = ∑ a, s a * ((X : Matrix ι ι ℂ) a a).im := by
+  rw [unitaryTorusDualInclusion_apply, unitaryTracePairing_apply, trace]
+  simp [diagonal_mul, Finset.mul_sum, Complex.re_sum]
+
 /-- **The torus restriction is a left inverse of the inclusion of `𝔱*`**: the restriction of
 `⟨diag(s), ·⟩` to the Lie algebra of the diagonal torus is `s`. -/
 @[simp]
@@ -217,7 +223,8 @@ theorem mem_range_unitaryTorusDualInclusion_iff {ν : Dual ℝ (unitaryLieAlgebr
   · intro h
     obtain ⟨H, rfl⟩ := (unitaryTracePairingEquiv ι).surjective ν
     rw [unitaryTracePairingEquiv_apply] at h ⊢
-    have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian
+    have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.property : IsSelfAdjoint
+        (H : Matrix ι ι ℂ)).isHermitian
     have hdiag : (H : Matrix ι ι ℂ).IsDiag := isDiag_of_forall_commute_unitaryTorusHom fun z =>
       mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff.mp
         (Representation.mem_stabilizer.mpr (h _ (unitaryTorusHom_mem_unitaryTorus z)))

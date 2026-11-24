@@ -35,8 +35,13 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
+* `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
+  `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
+  `(a + b J) (a - b J) = a² + b²`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
+* `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
+  with `c > 0` makes `J` tame.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
   of tame structures continuous on a compact set, the forms `ω(·, J ·)` are uniformly equivalent
   to the square of the norm.
@@ -95,6 +100,39 @@ theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B
   rw [← hA', ← hB', cayley_eq_cayleyFormula]
   exact map_cayleyFormula (Module.End.toContinuousLinearMap V) J₀.toLinearMap J₁.toLinearMap
 
+/-- Inverting `a - b J` for an almost complex structure `J`: if `B = (a - b J) A` and
+`a² + b² = r²` with `r > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, since `(a + b J) (a - b J) = a² + b²`. -/
+theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
+    {A B : V →L[ℝ] V} {a b r : ℝ} (hAB : ∀ v, B v = a • A v - b • J (A v))
+    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
+    r * ‖A‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖B‖ := by
+  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
+  have hinv (v : V) : (a ^ 2 + b ^ 2) • A v = a • B v + b • J (B v) := by
+    rw [hAB v, map_sub, map_smul, map_smul, apply_apply]
+    module
+  have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
+  have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
+  -- Taking norms in `(a² + b²) A v = a B v + b J B v`: `r² ‖A v‖ ≤ r (1 + ‖J‖) ‖B‖ ‖v‖`.
+  have hv (v : V) : r * ‖A v‖ ≤ (1 + NJ) * ‖B‖ * ‖v‖ := by
+    have hJv : ‖J (B v)‖ ≤ NJ * ‖B v‖ := J.toLinearMap.toContinuousLinearMap.le_opNorm _
+    have h1 : r ^ 2 * ‖A v‖ ≤ r * ((1 + NJ) * ‖B‖ * ‖v‖) := by
+      have hn : ‖(a ^ 2 + b ^ 2) • A v‖ = r ^ 2 * ‖A v‖ := by
+        rw [norm_smul, hab, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+      rw [← hn, hinv v]
+      refine (norm_add_le _ _).trans ?_
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+      calc |a| * ‖B v‖ + |b| * ‖J (B v)‖ ≤ r * ‖B v‖ + r * (NJ * ‖B v‖) := by gcongr
+        _ = r * ((1 + NJ) * ‖B v‖) := by ring
+        _ ≤ r * ((1 + NJ) * (‖B‖ * ‖v‖)) := by gcongr; exact B.le_opNorm v
+        _ = r * ((1 + NJ) * ‖B‖ * ‖v‖) := by ring
+    nlinarith [norm_nonneg (A v)]
+  have hA : ‖A‖ ≤ (1 + NJ) * ‖B‖ / r :=
+    A.opNorm_le_bound (by positivity) fun v ↦ by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hr]
+      linarith [hv v]
+  calc r * ‖A‖ ≤ r * ((1 + NJ) * ‖B‖ / r) := by gcongr
+    _ = (1 + NJ) * ‖B‖ := by field_simp
+
 end AlmostComplexStructure
 
 namespace SymplecticForm
@@ -115,6 +153,14 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
       fun v hv => by simpa [ωc] using h v hv)
   filter_upwards [hJ.eventually hA] with y hy v hv
   simpa [ωc] using hy v hv
+
+omit [FiniteDimensional ℝ V] in
+/-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family
+of tame structures that is continuous on a compact set satisfies such a bound uniformly
+(`TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`). -/
+theorem tames_of_mul_norm_sq_le {ω : SymplecticForm V} {J : AlmostComplexStructure V} {c : ℝ}
+    (hc : 0 < c) (h : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) : ω.Tames J :=
+  fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (h v)
 
 /-- **Uniform equivalence of tame metrics.** If a family of complex structures `J_x` is continuous
 in the operator norm on a compact set `K` and `ω`-tame there, the forms `g_x = ω(·, J_x ·)` are

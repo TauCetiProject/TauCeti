@@ -60,6 +60,9 @@ hypothesis is needed for the definitions and results here.
   `f : A' ⟶ A` and a surjective `g : A'' ⟶ A`, with projections
   `TauCeti.Deformation.ArtinLocalAlg.pullbackFst` and
   `TauCeti.Deformation.ArtinLocalAlg.pullbackSnd`.
+* `TauCeti.Deformation.ArtinLocalAlg.quotient A I hI`: the quotient `A ⧸ I` by a proper ideal,
+  with the quotient morphism `TauCeti.Deformation.ArtinLocalAlg.toQuotient` and the factorisation
+  `TauCeti.Deformation.ArtinLocalAlg.quotientLift` of a morphism whose kernel contains `I`.
 
 ## Main results
 
@@ -77,6 +80,8 @@ hypothesis is needed for the definitions and results here.
 * `TauCeti.Deformation.ArtinLocalAlg.isArtinianRing_pullback`: the fibre product of
   Artinian local rings along a surjection, over a common residue field, is Artinian.
 * `TauCeti.Deformation.ArtinLocalAlg.isPullback`: `A' ×_A A''` is a pullback in `C_Λ`.
+* `TauCeti.Deformation.ArtinLocalAlg.ker_quotientLift`: the kernel of the factorisation
+  `A ⧸ I ⟶ B` of `f` is the image of the kernel of `f`.
 
 ## References
 
@@ -122,6 +127,11 @@ instance (A : ArtinLocalAlg Λ k) : IsLocalRing A.obj.left := A.property.isLocal
 def augmentation (A : ArtinLocalAlg Λ k) : A.obj.left →ₐ[Λ] k :=
   A.obj.hom.hom
 
+/-- The augmentation of an object of `C_Λ` is the structure map of its underlying object of
+`Over (CommAlgCat.of Λ k)`. -/
+theorem augmentation_def (A : ArtinLocalAlg Λ k) : A.augmentation = A.obj.hom.hom :=
+  (rfl)
+
 /-- The augmentation of an object of `C_Λ` is surjective. -/
 theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A.augmentation :=
   A.property.surjective
@@ -129,8 +139,7 @@ theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A
 /-- The kernel of the augmentation of an object of `C_Λ` is its maximal ideal. -/
 theorem ker_augmentation (A : ArtinLocalAlg Λ k) :
     RingHom.ker A.augmentation = maximalIdeal A.obj.left :=
-  have := RingHom.ker_isMaximal_of_surjective _ A.augmentation_surjective
-  eq_maximalIdeal this
+  ker_eq_maximalIdeal _ A.augmentation_surjective
 
 /-- An element of an object of `C_Λ` has augmentation zero exactly when it lies in the maximal
 ideal. -/
@@ -142,7 +151,7 @@ theorem augmentation_eq_zero_iff {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
 /-- An element of an object of `C_Λ` is a unit exactly when its augmentation is nonzero. -/
 theorem isUnit_iff_augmentation_ne_zero {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
     IsUnit a ↔ A.augmentation a ≠ 0 := by
-  rw [Ne, augmentation_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, not_not]
+  rw [Ne, augmentation_eq_zero_iff, notMem_maximalIdeal]
 
 /-- Morphisms of `C_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
@@ -328,13 +337,13 @@ def pullbackAugmentation : AlgHom.pullback f.hom.left.hom g.hom.left.hom →ₐ[
 /-- The augmentation of the fibre product is that of its first component. -/
 @[simp]
 theorem pullbackAugmentation_apply (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    pullbackAugmentation f g x = A'.augmentation x.1.1 :=
+    pullbackAugmentation f g x = A'.augmentation x.val.1 :=
   (rfl)
 
 /-- The two components of a point of the fibre product have the same augmentation. -/
 theorem augmentation_snd_pullback (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    A''.augmentation x.1.2 = A'.augmentation x.1.1 := by
-  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 :=
+    A''.augmentation x.val.2 = A'.augmentation x.val.1 := by
+  have hx : f.hom.left.hom x.val.1 = g.hom.left.hom x.val.2 :=
     AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
   rw [← augmentation_hom_apply g, ← hx, augmentation_hom_apply]
 
@@ -411,13 +420,13 @@ def pullbackSnd : pullback f g hg ⟶ A'' :=
 /-- The first projection takes a pair to its first component. -/
 @[simp]
 theorem pullbackFst_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackFst f g hg).hom.left.hom x = x.1.1 :=
+    (pullbackFst f g hg).hom.left.hom x = x.val.1 :=
   (rfl)
 
 /-- The second projection takes a pair to its second component. -/
 @[simp]
 theorem pullbackSnd_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackSnd f g hg).hom.left.hom x = x.1.2 :=
+    (pullbackSnd f g hg).hom.left.hom x = x.val.2 :=
   (rfl)
 
 /-- The fibre product square commutes. -/
@@ -452,6 +461,102 @@ theorem isPullback : IsPullback (pullbackFst f g hg) (pullbackSnd f g hg) f g :=
     exact Subtype.ext (Prod.ext h₁ h₂)
 
 end Pullback
+
+section Quotient
+
+variable (A : ArtinLocalAlg Λ k) (I : Ideal A.obj.left)
+
+/-- The augmentation of an object of `C_Λ` vanishes on every proper ideal. -/
+theorem augmentation_eq_zero_of_mem (hI : I ≠ ⊤) {a : A.obj.left} (ha : a ∈ I) :
+    A.augmentation a = 0 :=
+  augmentation_eq_zero_iff.mpr (le_maximalIdeal hI ha)
+
+/-- The quotient `A ⧸ I` of an object `A` of `C_Λ` by a proper ideal `I`, augmented by the map
+induced by the augmentation of `A`. -/
+-- Exposed because the carrier of `quotient A I hI` is `A ⧸ I` by definitional unfolding.
+@[expose] def quotient (hI : I ≠ ⊤) : ArtinLocalAlg Λ k :=
+  have : Nontrivial (A.obj.left ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  have : IsLocalRing (A.obj.left ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  mk' (A.obj.left ⧸ I)
+    (Ideal.Quotient.liftₐ I A.augmentation fun _ ↦ augmentation_eq_zero_of_mem A I hI)
+    (Function.Surjective.of_comp (g := Ideal.Quotient.mkₐ Λ I) <| by
+      rw [← AlgHom.coe_comp, Ideal.Quotient.liftₐ_comp]
+      exact A.augmentation_surjective)
+
+/-- The augmentation of `A ⧸ I` is the map induced by the augmentation of `A`. -/
+@[simp]
+theorem augmentation_quotient (hI : I ≠ ⊤) :
+    (A.quotient I hI).augmentation =
+      Ideal.Quotient.liftₐ I A.augmentation fun _ ↦ augmentation_eq_zero_of_mem A I hI :=
+  (rfl)
+
+/-- The quotient morphism `A ⟶ A ⧸ I` of `C_Λ`. -/
+def toQuotient (hI : I ≠ ⊤) : A ⟶ A.quotient I hI :=
+  homMk' (Ideal.Quotient.mkₐ Λ I) (Ideal.Quotient.liftₐ_comp _ _ _)
+
+/-- The underlying algebra map of `toQuotient A I hI` is the quotient map. -/
+@[simp]
+theorem toQuotient_hom_left_hom (hI : I ≠ ⊤) :
+    (A.toQuotient I hI).hom.left.hom = Ideal.Quotient.mkₐ Λ I :=
+  (rfl)
+
+/-- The quotient morphism `A ⟶ A ⧸ I` is surjective. -/
+theorem toQuotient_surjective (hI : I ≠ ⊤) : Function.Surjective (A.toQuotient I hI).hom.left.hom :=
+  Ideal.Quotient.mkₐ_surjective Λ I
+
+/-- The kernel of the quotient morphism `A ⟶ A ⧸ I` is `I`. -/
+theorem ker_toQuotient (hI : I ≠ ⊤) : RingHom.ker (A.toQuotient I hI).hom.left.hom = I :=
+  Ideal.Quotient.mkₐ_ker Λ I
+
+variable {A I} {hI : I ≠ ⊤}
+
+/-- Two morphisms out of `A ⧸ I` agree if they agree after composing with the quotient
+morphism. -/
+theorem quotient_hom_ext {B : ArtinLocalAlg Λ k} {g g' : A.quotient I hI ⟶ B}
+    (h : A.toQuotient I hI ≫ g = A.toQuotient I hI ≫ g') : g = g' := by
+  ext x
+  obtain ⟨a, rfl⟩ := A.toQuotient_surjective I hI x
+  simpa only [comp_hom_left_hom_apply] using congrArg (fun φ ↦ φ.hom.left.hom a) h
+
+variable (hI)
+
+/-- A morphism `f : A ⟶ B` of `C_Λ` whose kernel contains `I` factors through `A ⧸ I`. -/
+def quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B) (hf : I ≤ RingHom.ker f.hom.left.hom) :
+    A.quotient I hI ⟶ B :=
+  homMk' (Ideal.Quotient.liftₐ I f.hom.left.hom fun _ ha ↦ hf ha) <| by
+    ext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    exact augmentation_hom_apply f a
+
+/-- The factorisation `quotientLift hI f hf` sends the class of `a` to `f a`. -/
+@[simp]
+theorem quotientLift_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) (a : A.obj.left) :
+    (quotientLift hI f hf).hom.left.hom (Ideal.Quotient.mk I a) = f.hom.left.hom a :=
+  (rfl)
+
+/-- The factorisation `quotientLift hI f hf` composed with the quotient morphism is `f`. -/
+@[reassoc (attr := simp)]
+theorem toQuotient_comp_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) : A.toQuotient I hI ≫ quotientLift hI f hf = f :=
+  (rfl)
+
+/-- The factorisation of a surjective morphism through `A ⧸ I` is surjective. -/
+theorem quotientLift_surjective {B : ArtinLocalAlg Λ k} {f : A ⟶ B}
+    (hf : I ≤ RingHom.ker f.hom.left.hom) (hsurj : Function.Surjective f.hom.left.hom) :
+    Function.Surjective (quotientLift hI f hf).hom.left.hom :=
+  fun b ↦ let ⟨a, ha⟩ := hsurj b
+    ⟨(A.toQuotient I hI).hom.left.hom a, by rwa [← comp_hom_left_hom_apply,
+      toQuotient_comp_quotientLift]⟩
+
+/-- The kernel of the factorisation of `f` through `A ⧸ I` is the image of the kernel of `f`. -/
+theorem ker_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) :
+    RingHom.ker (quotientLift hI f hf).hom.left.hom =
+      (RingHom.ker f.hom.left.hom).map (A.toQuotient I hI).hom.left.hom :=
+  Ideal.ker_quotient_lift _ hf
+
+end Quotient
 
 end ArtinLocalAlg
 

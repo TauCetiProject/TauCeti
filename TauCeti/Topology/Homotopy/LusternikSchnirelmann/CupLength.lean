@@ -313,9 +313,9 @@ theorem IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq {n d : ℕ}
     obtain ⟨zy, rfl⟩ := ih (fun i ↦ U (Fin.succ i)) fun i ↦ hU (Fin.succ i)
     let V : Set (TopCat.of X) := ⋃ i, (U (Fin.succ i) : Set X)
     have hU0 : IsOpen ((↑) ⁻¹' (U 0 : Set X) : Set ↥((U 0 : Set X) ∪ V)) :=
-      (U 0).isOpen.preimage continuous_subtype_val
+      (U 0).isOpen.preimage continuous_subtypeVal
     have hV : IsOpen ((↑) ⁻¹' V : Set ↥((U 0 : Set X) ∪ V)) :=
-      (isOpen_iUnion fun i ↦ (U (Fin.succ i)).isOpen).preimage continuous_subtype_val
+      (isOpen_iUnion fun i ↦ (U (Fin.succ i)).isOpen).preimage continuous_subtypeVal
     rw [← TopCat.singularCohomologyπ_singularRelativeCup (X := TopCat.of X) R (λ_ _).inv
       (λ_ _).hom (U 0 : Set X) V hU0 hV p q d h za zy]
     refine restrict (iUnion_subset fun i ↦ ?_) _

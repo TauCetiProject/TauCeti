@@ -47,7 +47,7 @@ theorem prod_pow_partialCorrelationGram_eq_sum_prod
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1) (n : Fin p × Fin p → ℕ) :
     (∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.1 *
+        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.val *
           (1 - z ij ^ 2) ^
             partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c) ij := by
   rw [prod_pow_partialCorrelationGram_eq_sum]

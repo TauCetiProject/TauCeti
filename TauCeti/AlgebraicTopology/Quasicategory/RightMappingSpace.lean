@@ -7,10 +7,15 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
-public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
@@ -23,7 +28,8 @@ For vertices `x` and `y` of a simplicial set `X`, the right mapping space `Hom^R
 simplicial set whose `n`-simplices are the `(n + 1)`-simplices of `X` with last vertex `y` whose
 face spanned by the first `n + 1` vertices is the constant simplex at `x`. Its vertices are the
 edges from `x` to `y`. It is the fibre over `x` of the projection `X_{/y} ⟶ X` from the slice over
-`y`, and it models the space of maps from `x` to `y` when `X` is a quasicategory.
+`y` (`SSet.rightMappingSpace.sliceFiberIso`, through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`), and it models the
+space of maps from `x` to `y` when `X` is a quasicategory.
 
 We realise it as a subcomplex of `SimplexCategory.joinVertex.op ⋙ X`, the simplicial set whose
 `n`-simplices are the `(n + 1)`-simplices of `X`, with simplicial operators acting on the first
@@ -42,11 +48,16 @@ If `X` is strict Segal, for instance the nerve of a category, then every simplex
 a single edge to `y`. Hence `Hom^R_X(x, y)` is the discrete simplicial set on the edges from `x`
 to `y`.
 
+An edge of `Hom^R_X(x, y)` from `s₀` to `s₁` is a `2`-simplex of `X` exhibiting `s₀` as a
+composite of the identity of `x` and `s₁`. When `X` is a quasicategory, such a `2`-simplex exists
+exactly when `s₀` and `s₁` have the same class in the homotopy category of `X`, so the connected
+components of `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category.
+
 A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`, which are
 the maps on mapping spaces whose invertibility up to weak equivalence makes `f` fully faithful.
-The projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
-those of `X` and `Y`, and right mapping spaces commute with universe lifts
-(`SSet.rightMappingSpace.uliftIso`).
+On connected components they are the action of `f` on the homotopy categories. The projections
+of a product identify the right mapping spaces of `X ⊗ Y` with the products of those of `X` and
+`Y`, and right mapping spaces commute with universe lifts (`SSet.rightMappingSpace.uliftIso`).
 
 ## Main definitions
 
@@ -56,16 +67,25 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   the discrete simplicial set on the edges from `x` to `y`.
 * `SSet.rightMappingSpace.map x y f`: the map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by
   `f : X ⟶ Y`.
+* `SSet.rightMappingSpace.edgeEquiv`: the edges of `Hom^R_X(x, y)` from `s₀` to `s₁` are the
+  `2`-simplices of `X` exhibiting `s₀` as a composite of the identity of `x` and `s₁`.
+* `SSet.rightMappingSpace.π₀Equiv x y`: for a quasicategory `X`, the connected components of
+  `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category of `X`.
 * `SSet.rightMappingSpace.prodIso`: the isomorphism
   `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁)) ≅ Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`.
+* `SSet.rightMappingSpace.sliceFiberIso x y`: `Hom^R_X(x, y)` is the fibre over `x` of the
+  projection `X_{/y} ⟶ X` from the slice over `y`.
 * `SSet.rightMappingSpace.uliftIso`: the isomorphism
   `Hom^R_{ulift X}(↑x, ↑y) ≅ ulift Hom^R_X(x, y)`.
 
 ## Main results
 
-* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)`, and
+* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)` (at an
+  arbitrary object of the simplex category, `SSet.mem_rightMappingSpace_obj_iff`), and
   `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
   are those in `X` avoiding, respectively fixing, the last vertex.
+* `SSet.rightMappingSpace.π₀_mk_eq_of_compStruct`: a `2`-simplex exhibiting `g` as `id x ≫ f`
+  joins the vertices `f` and `g` of `Hom^R_X(x, y)` by an edge.
 * `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, all horns `Λ[n + 1, i]` in
   `Hom^R_X(x, y)` have fillers.
 * `SSet.rightMappingSpace.kanComplex`: the right mapping spaces of a quasicategory are Kan
@@ -74,6 +94,9 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
   space has the same right mapping space.
+* `SSet.rightMappingSpace.π₀Equiv_mapπ₀_map`: under `π₀Equiv`, the map induced by `f` on
+  connected components of right mapping spaces is the action of `mapHomotopyCategory f` on
+  morphisms.
 
 ## References
 
@@ -133,15 +156,24 @@ theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
   -- set-builder set is the defining predicate, closed by `Iff.rfl`.
   exact Iff.rfl
 
+/-- A simplex of `X` at `joinVertex.obj m` is an `m`-simplex of `Hom^R_X(x, y)` exactly when its
+restriction along `m ⟶ m ⋆ ⦋0⦌` is the constant simplex at `x` and its final vertex is `y`. This
+is the defining condition, for an arbitrary object `m` of the simplex category. -/
+theorem mem_rightMappingSpace_obj_iff {m : SimplexCategory} (σ : X.obj (op (joinVertex.obj m))) :
+    σ ∈ (X.rightMappingSpace x y).obj (op m) ↔
+      X.map (joinVertexInl m).op σ = X.map (SimplexCategory.const m ⦋0⦌ 0).op x ∧
+        X.map (joinVertexInr m).op σ = y :=
+  Iff.rfl
+
 namespace rightMappingSpace
 
 /-- The vertices of the right mapping space `Hom^R_X(x, y)` are the edges from `x` to `y`. -/
 def obj₀Equiv : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y where
-  toFun σ := Edge.mk (σ.1 : X _⦋1⦌)
-    (by simpa [const_eq_id] using ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).1)
+  toFun σ := Edge.mk (σ.val : X _⦋1⦌)
+    (by simpa [const_eq_id] using ((mem_rightMappingSpace_iff (n := 0) _).1 σ.property).1)
     (by
       simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using
-        ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).2)
+        ((mem_rightMappingSpace_iff (n := 0) _).1 σ.property).2)
   invFun e := ⟨e.edge, (mem_rightMappingSpace_iff (n := 0) _).2
     ⟨by simp [const_eq_id],
       by simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using e.tgt_eq⟩⟩
@@ -150,39 +182,63 @@ def obj₀Equiv : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y whe
 
 /-- The edge attached to a vertex of `Hom^R_X(x, y)` is that vertex, as a `1`-simplex of `X`. -/
 theorem obj₀Equiv_apply_edge (σ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
-    (obj₀Equiv σ).edge = σ.1 :=
+    (obj₀Equiv σ).edge = σ.val :=
   (rfl)
 
 /-- The vertex of `Hom^R_X(x, y)` attached to an edge is that edge, as a `1`-simplex of `X`. -/
 theorem obj₀Equiv_symm_apply_coe (e : Edge x y) :
-    (obj₀Equiv.symm e).1 = e.edge :=
+    (obj₀Equiv.symm e).val = e.edge :=
   (rfl)
 
 /-- The `j`-th face of an `(n + 1)`-simplex of `Hom^R_X(x, y)` is the `j`-th face of the
 corresponding `(n + 2)`-simplex of `X`. -/
 theorem coe_δ {n : ℕ} (j : Fin (n + 2)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌) :
-    (SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
-      X.δ j.castSucc (s.1 : X _⦋n + 2⦌) :=
-  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ j) s.1 :)
+    (SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s).val =
+      X.δ j.castSucc (s.val : X _⦋n + 2⦌) :=
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ j) s.val :)
 
 /-- The `j`-th degeneracy of an `n`-simplex of `Hom^R_X(x, y)` is the `j`-th degeneracy of the
 corresponding `(n + 1)`-simplex of `X`. -/
 theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
-      X.σ j.castSucc (s.1 : X _⦋n + 1⦌) :=
-  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.1 :)
+    (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).val =
+      X.σ j.castSucc (s.val : X _⦋n + 1⦌) :=
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.val :)
 
 /-- The first `n + 1` vertices of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`,
 are `x`. -/
 theorem map_const_castSucc {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌)
     (j : Fin (n + 1)) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.1 : X _⦋n + 1⦌) = x :=
-  map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.2).1 j
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.val : X _⦋n + 1⦌) = x :=
+  map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.property).1 j
 
 /-- The last vertex of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, is `y`. -/
 theorem map_const_last {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.1 : X _⦋n + 1⦌) = y :=
-  ((mem_rightMappingSpace_iff _).1 s.2).2
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.val : X _⦋n + 1⦌) = y :=
+  ((mem_rightMappingSpace_iff _).1 s.property).2
+
+/-- A `2`-simplex `CompStruct (id x) f g` of `X` is an edge of `Hom^R_X(x, y)` from `g` to `f`,
+so that `f` and `g` lie in the same connected component of `Hom^R_X(x, y)`. -/
+theorem π₀_mk_eq_of_compStruct {f g : Edge x y} (h : Edge.CompStruct (.id x) f g) :
+    π₀.mk (obj₀Equiv.symm g) = π₀.mk (obj₀Equiv.symm f) := by
+  have hmem : h.simplex ∈ (X.rightMappingSpace x y).obj (op ⦋1⦌) := by
+    refine (mem_rightMappingSpace_iff _).2 ⟨?_, ?_⟩
+    · exact h.d₂.trans (by
+        rw [Edge.id_edge, SimplicialObject.σ,
+          SimplexCategory.eq_const_to_zero (SimplexCategory.σ 0)])
+    · -- The last vertex of the `2`-simplex is the target of its face `f` opposite to `0`.
+      have h' := map_const_map (X := X) (SimplexCategory.δ (0 : Fin 3)).op h.simplex 1
+      rw [← SimplexCategory.δ_zero_eq_const, ← SimplicialObject.δ_def, ← SimplicialObject.δ_def,
+        h.d₀, f.tgt_eq] at h'
+      exact h'.symm
+  let s : (X.rightMappingSpace x y : SSet.{u}) _⦋1⦌ := ⟨h.simplex, hmem⟩
+  have h₁ : obj₀Equiv.symm g = (X.rightMappingSpace x y : SSet.{u}).δ 1 s :=
+    obj₀Equiv.symm_apply_eq.2 (Edge.ext
+      (((obj₀Equiv_apply_edge _).trans ((coe_δ 1 s).trans h.d₁)).symm))
+  have h₀ : obj₀Equiv.symm f = (X.rightMappingSpace x y : SSet.{u}).δ 0 s :=
+    obj₀Equiv.symm_apply_eq.2 (Edge.ext
+      (((obj₀Equiv_apply_edge _).trans ((coe_δ 0 s).trans h.d₀)).symm))
+  rw [h₁, h₀]
+  exact π₀.sound (Edge.mk' s)
 
 /-! ### Horn filling -/
 
@@ -192,13 +248,13 @@ variable {n : ℕ} {i : Fin (n + 2)}
 private def hornFace
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
     (j : Fin (n + 2)) (hj : j ≠ i) : (joinVertex.op ⋙ X) _⦋n⦌ :=
-  (σ₀.app _ (horn.face i j hj)).1
+  (σ₀.app _ (horn.face i j hj)).val
 
 private theorem hornFace_mem
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
     (j : Fin (n + 2)) (hj : j ≠ i) :
     hornFace σ₀ j hj ∈ (X.rightMappingSpace x y).obj (op ⦋n⦌) :=
-  (σ₀.app _ (horn.face i j hj)).2
+  (σ₀.app _ (horn.face i j hj)).property
 
 /-- The faces of a horn in `Hom^R_X(x, y)` satisfy the compatibility of faces of a horn. -/
 private theorem hornFace_δ {m : ℕ} {i : Fin (m + 3)}
@@ -367,8 +423,8 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
         (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s) := by
   refine Subtype.ext ((map_eq_of_isStrictSegal (joinVertex.map
     (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)))
-    mkOfSucc_last_comp_joinVertex_map (s.1 : X _⦋n + 1⦌)
-    ((mem_rightMappingSpace_iff _).1 s.2).1).symm.trans ?_)
+    mkOfSucc_last_comp_joinVertex_map (s.val : X _⦋n + 1⦌)
+    ((mem_rightMappingSpace_iff _).1 s.property).1).symm.trans ?_)
   -- The simplicial operators of `Hom^R_X(x, y)` act on `X` through `joinVertex`.
   rw [Functor.map_comp]
   exact Functor.map_comp_apply X (joinVertex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n))).op
@@ -421,9 +477,9 @@ private theorem range_le_rightMappingSpace (f : X ⟶ Y) (x y : X _⦋0⦌) :
       Y.rightMappingSpace (f.app _ x) (f.app _ y) := by
   rintro m _ ⟨s, rfl⟩
   -- The faces of `f σ` are the images under `f` of the faces of `σ`, by naturality of `f`.
-  exact ⟨(NatTrans.naturality_apply f _ s.1).symm.trans
-      ((congrArg (f.app _) s.2.1).trans (NatTrans.naturality_apply f _ x)),
-    (NatTrans.naturality_apply f _ s.1).symm.trans (congrArg (f.app _) s.2.2)⟩
+  exact ⟨(NatTrans.naturality_apply f _ s.val).symm.trans
+      ((congrArg (f.app _) s.property.1).trans (NatTrans.naturality_apply f _ x)),
+    (NatTrans.naturality_apply f _ s.val).symm.trans (congrArg (f.app _) s.property.2)⟩
 
 variable (x y) in
 /-- The map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by a map of simplicial sets
@@ -447,7 +503,7 @@ theorem map_ι (f : X ⟶ Y) :
 `f`. -/
 @[simp]
 theorem map_app_coe (f : X ⟶ Y) {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    dsimp% ((map x y f).app _ s).1 = f.app _ (s.1 : X _⦋n + 1⦌) :=
+    dsimp% ((map x y f).app _ s).val = f.app _ (s.val : X _⦋n + 1⦌) :=
   (rfl)
 
 variable (x y) in
@@ -509,9 +565,9 @@ instance isIso_map (f : X ⟶ Y) [IsIso f] : IsIso (map x y f) := by
   refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
   -- The preimage of `s` is its image under the inverse of `f`, which lies in `Hom^R_X(x, y)`
   -- because the inverse of `f` sends `f x` and `f y` back to `x` and `y`.
-  have hs : (inv f).app _ (s.1 : Y _⦋n + 1⦌) ∈ (X.rightMappingSpace ((inv f).app _ (f.app _ x))
+  have hs : (inv f).app _ (s.val : Y _⦋n + 1⦌) ∈ (X.rightMappingSpace ((inv f).app _ (f.app _ x))
       ((inv f).app _ (f.app _ y))).obj (op ⦋n⦌) :=
-    ((map (f.app _ x) (f.app _ y) (inv f)).app _ s).2
+    ((map (f.app _ x) (f.app _ y) (inv f)).app _ s).property
   have hx (z : X _⦋0⦌) : (inv f).app _ (f.app _ z) = z := by simp
   rw [hx, hx] at hs
   exact ⟨⟨_, hs⟩, Subtype.ext ((map_app_coe f _).trans (by simp))⟩
@@ -519,19 +575,106 @@ instance isIso_map (f : X ⟶ Y) [IsIso f] : IsIso (map x y f) := by
 /-- If a subcomplex `A` of `X` contains every simplex of `Hom^R_X(x, y)`, for vertices `x` and `y`
 of `A`, then the inclusion of `A` induces an isomorphism `Hom^R_A(x, y) ≅ Hom^R_X(x, y)`. -/
 theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
-    (h : ∀ (n : ℕ) (s : (X.rightMappingSpace x.1 y.1 : SSet.{u}) _⦋n⦌),
-      (s.1 : X _⦋n + 1⦌) ∈ A.obj (op ⦋n + 1⦌)) :
+    (h : ∀ (n : ℕ) (s : (X.rightMappingSpace x.val y.val : SSet.{u}) _⦋n⦌),
+      (s.val : X _⦋n + 1⦌) ∈ A.obj (op ⦋n + 1⦌)) :
     IsIso (map x y A.ι) := by
   rw [NatTrans.isIso_iff_isIso_app]
   rintro ⟨⟨n⟩⟩
   rw [isIso_iff_bijective]
   refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
   -- The simplex `s` of `Hom^R_X(x, y)` lies in `A`, and its faces in `A` are those in `X`.
-  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.2
-  refine ⟨⟨⟨s.1, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
+  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.property
+  refine ⟨⟨⟨s.val, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
   exact Subtype.ext (map_app_coe A.ι _)
 
 end map
+
+/-! ### Edges and connected components -/
+
+section π₀
+
+/-- An edge of `Hom^R_X(x, y)` from `s₀` to `s₁`, a `2`-simplex of `X`, is the same as a
+`2`-simplex exhibiting the edge `s₀` as a composite of the identity of `x` and the edge `s₁`. -/
+def edgeEquiv (s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    Edge s₀ s₁ ≃ Edge.CompStruct (Edge.id x) (obj₀Equiv s₁) (obj₀Equiv s₀) where
+  toFun e := Edge.CompStruct.mk (e.edge.val : X _⦋2⦌)
+    (by
+      -- The degeneracy `⦋1⦌ ⟶ ⦋0⦌` is the constant map.
+      rw [Edge.id_edge, SimplicialObject.σ,
+        Subsingleton.elim (SimplexCategory.σ 0) (SimplexCategory.const _ _ 0)]
+      exact ((mem_rightMappingSpace_iff (n := 1) _).1 e.edge.property).1)
+    ((coe_δ 0 e.edge).symm.trans (congrArg Subtype.val e.tgt_eq))
+    ((coe_δ 1 e.edge).symm.trans (congrArg Subtype.val e.src_eq))
+  invFun h := Edge.mk ⟨h.simplex, (mem_rightMappingSpace_iff (n := 1) _).2
+      ⟨by
+        rw [← Subsingleton.elim (SimplexCategory.σ 0) (SimplexCategory.const _ _ 0),
+          ← SimplicialObject.σ, ← Edge.id_edge]
+        exact h.d₂,
+        -- The last vertex of `h.simplex` is the last vertex of its face `s₁` opposite to `0`.
+        (map_const_map (SimplexCategory.δ 0).op h.simplex (Fin.last 1)).symm.trans (by
+          rw [← SimplicialObject.δ_def, h.d₀]
+          exact map_const_last s₁)⟩⟩
+    (Subtype.ext ((coe_δ 1 _).trans h.d₁)) (Subtype.ext ((coe_δ 0 _).trans h.d₀))
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The `2`-simplex attached to an edge of `Hom^R_X(x, y)` is that edge. -/
+@[simp]
+theorem edgeEquiv_apply_simplex {s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌}
+    (e : Edge s₀ s₁) : dsimp% (edgeEquiv s₀ s₁ e).simplex = e.edge.val :=
+  (rfl)
+
+/-- The edge of `Hom^R_X(x, y)` attached to a `2`-simplex is that `2`-simplex. -/
+@[simp]
+theorem coe_edgeEquiv_symm_apply_edge {s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌}
+    (h : Edge.CompStruct (Edge.id x) (obj₀Equiv s₁) (obj₀Equiv s₀)) :
+    dsimp% ((edgeEquiv s₀ s₁).symm h).edge.val = h.simplex :=
+  (rfl)
+
+variable [X.Quasicategory]
+
+variable (x y) in
+/-- For a quasicategory `X`, the connected components of the right mapping space `Hom^R_X(x, y)`
+are the morphisms from `x` to `y` in the homotopy category of `X`: a vertex of `Hom^R_X(x, y)`,
+an edge from `x` to `y`, is sent to its class. -/
+noncomputable def π₀Equiv :
+    π₀ (X.rightMappingSpace x y : SSet.{u}) ≃ (HomotopyCategory.mk x ⟶ HomotopyCategory.mk y) :=
+  Equiv.ofBijective (π₀.lift (fun s ↦ HomotopyCategory.homMk (obj₀Equiv s))
+      fun s₀ s₁ e ↦ ((HomotopyCategory.homMk_eq_homMk_iff _ _).2 ⟨edgeEquiv s₀ s₁ e⟩).symm)
+    ⟨fun c₀ c₁ h ↦ by
+      induction c₀ with | mk s₀ => ?_
+      induction c₁ with | mk s₁ => ?_
+      obtain ⟨h⟩ := (HomotopyCategory.homMk_eq_homMk_iff _ _).1 h
+      exact (π₀.sound ((edgeEquiv s₁ s₀).symm h)).symm,
+    fun φ ↦ by
+      obtain ⟨e, rfl⟩ := HomotopyCategory.homMk_surjective φ
+      exact ⟨π₀.mk (obj₀Equiv.symm e), by simp⟩⟩
+
+/-- The connected component of a vertex of `Hom^R_X(x, y)` corresponds to the class of the edge
+it is. -/
+@[simp]
+theorem π₀Equiv_mk (s : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    π₀Equiv x y (π₀.mk s) = HomotopyCategory.homMk (obj₀Equiv s) :=
+  (rfl)
+
+/-- The class of an edge corresponds to the connected component of the corresponding vertex of
+`Hom^R_X(x, y)`. -/
+@[simp]
+theorem π₀Equiv_symm_homMk (e : Edge x y) :
+    (π₀Equiv x y).symm (HomotopyCategory.homMk e) = π₀.mk (obj₀Equiv.symm e) :=
+  (Equiv.symm_apply_eq _).2 (by simp)
+
+variable {Y : SSet.{u}} [Y.Quasicategory]
+
+/-- Under `π₀Equiv`, the map induced by `f : X ⟶ Y` on connected components of right mapping
+spaces is the action of the functor of homotopy categories induced by `f`. -/
+@[simp]
+theorem π₀Equiv_mapπ₀_map (f : X ⟶ Y) (c : π₀ (X.rightMappingSpace x y : SSet.{u})) :
+    π₀Equiv (f.app _ x) (f.app _ y) (mapπ₀ (map x y f) c) =
+      (mapHomotopyCategory f).map (π₀Equiv x y c) := by
+  induction c with | mk s => simp
+
+end π₀
 
 /-! ### Products -/
 
@@ -558,7 +701,7 @@ noncomputable def prodIso :
   hom := lift (map (x₀, y₀) (x₁, y₁) (fst X Y)) (map (x₀, y₀) (x₁, y₁) (snd X Y))
   inv := Subcomplex.lift ((X.rightMappingSpace x₀ x₁).ι ⊗ₘ (Y.rightMappingSpace y₀ y₁).ι) (by
     rintro m _ ⟨s, rfl⟩
-    exact (mem_tensor_iff _).2 ⟨s.1.2, s.2.2⟩)
+    exact (mem_tensor_iff _).2 ⟨s.1.property, s.2.property⟩)
   hom_inv_id := by
     ext m s
     rfl
@@ -590,6 +733,76 @@ theorem prodIso_inv_ι :
 
 end prod
 
+/-! ### Right mapping spaces as fibres of slices -/
+
+section sliceFiber
+
+variable (x y)
+
+/-- The `n`-simplices of the fibre over `x` of `X_{/y} ⟶ X` are those of `Hom^R_X(x, y)`, through
+`Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
+private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
+    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m) ≃
+      (X.rightMappingSpace x y : SSet.{u}).obj (op m) where
+  toFun s := ⟨(yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
+      X.obj (op (joinVertex.obj m))), by
+    refine (mem_rightMappingSpace_obj_iff _).2 ⟨?_, ?_⟩
+    · rw [yonedaEquiv_naturality, join.joinVertexInl_comp_joinVertexIso_inv_assoc, ← slice.π_app,
+        ← mem_fiber_iff]
+      exact s.property
+    · rw [yonedaEquiv_naturality, join.joinVertexInr_comp_joinVertexIso_inv_assoc,
+        (slice.objEquiv s.val).property, Equiv.apply_symm_apply]⟩
+  invFun t := ⟨slice.objEquiv.symm ⟨(join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val, by
+      rw [join.inr_comp_joinVertexIso_hom_assoc, yonedaEquiv_symm_naturality_left,
+        ((mem_rightMappingSpace_obj_iff _).1 t.property).2]⟩, by
+    rw [mem_fiber_iff, slice.π_app, Equiv.apply_symm_apply, join.inl_comp_joinVertexIso_hom_assoc,
+      yonedaEquiv_symm_naturality_left, Equiv.apply_symm_apply]
+    exact ((mem_rightMappingSpace_obj_iff _).1 t.property).1⟩
+  left_inv s := Subtype.ext (slice.objEquiv.injective (Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
+  right_inv t := Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc])
+
+/-- **The right mapping space `Hom^R_X(x, y)` is the fibre over `x` of the projection
+`X_{/y} ⟶ X`** of the slice over `y`. Through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, an `n`-simplex
+`Δ[n] ⋆ Δ[0] ⟶ X` of the slice is an `(n + 1)`-simplex of `X` with last vertex `y`, and it lies
+over `x` exactly when its face opposite to the last vertex is constant at `x`. -/
+noncomputable def sliceFiberIso :
+    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
+  NatIso.ofComponents (fun m ↦ (sliceFiberEquiv x y m.unop).toIso) (fun {m m'} f ↦ by
+    ext s : 3
+    refine Subtype.ext ?_
+    -- Both sides are, by definition, the `(n + 1)`-simplices below; they agree by the naturality
+    -- of `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`.
+    have key : (yonedaEquiv ((join.joinVertexIso m'.unop).inv ≫
+        (slice.objEquiv ((slice (yonedaEquiv.symm y)).map f s.val)).val) :
+          X.obj (op (joinVertex.obj m'.unop))) =
+        X.map (joinVertex.map f.unop).op
+          (yonedaEquiv ((join.joinVertexIso m.unop).inv ≫ (slice.objEquiv s.val).val)) := by
+      rw [slice.objEquiv_map_coe, yonedaEquiv_naturality,
+        join.joinVertex_map_comp_joinVertexIso_inv_assoc]
+    -- `key` is the goal, with the maps of the fibre and of `Hom^R_X(x, y)` applied.
+    exact key)
+
+/-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
+`X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
+theorem sliceFiberIso_hom_app_coe {m : SimplexCategory}
+    (s : (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m)) :
+    ((sliceFiberIso x y).hom.app (op m) s).val =
+      (yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
+        X.obj (op (joinVertex.obj m))) :=
+  (rfl)
+
+/-- The simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of `X_{/y} ⟶ X` attached to a simplex of
+`Hom^R_X(x, y)` is its composite with `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
+theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
+    (t : (X.rightMappingSpace x y : SSet.{u}).obj (op m)) :
+    (slice.objEquiv ((sliceFiberIso x y).inv.app (op m) t).val).val =
+      (join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val :=
+  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
+
+end sliceFiber
+
 /-! ### Universe lifts -/
 
 section ulift
@@ -610,10 +823,10 @@ def uliftIso :
     ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) : SSet.{max u v}) ≅
       uliftFunctor.{v, u}.obj (X.rightMappingSpace x y : SSet.{u}) where
   hom :=
-    { app _ := ↾fun s ↦ ULift.up ⟨s.1.down, (mem_uliftFunctor_obj_iff s.1).1 s.2⟩
+    { app _ := ↾fun s ↦ ULift.up ⟨s.val.down, (mem_uliftFunctor_obj_iff s.val).1 s.property⟩
       naturality _ _ _ := rfl }
   inv :=
-    { app _ := ↾fun s ↦ ⟨ULift.up s.down.1, (mem_uliftFunctor_obj_iff _).2 s.down.2⟩
+    { app _ := ↾fun s ↦ ⟨ULift.up s.down.val, (mem_uliftFunctor_obj_iff _).2 s.down.property⟩
       naturality _ _ _ := rfl }
 
 /-- Lowering the image of a simplex under `uliftIso.hom` lowers the underlying simplex of `X`. -/
@@ -622,15 +835,15 @@ theorem uliftIso_hom_app_down_coe {m : SimplexCategoryᵒᵖ}
     (s : ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) :
       SSet.{max u v}).obj m) :
     dsimp% (((uliftIso.{u, v} x y).hom.app m s).down :
-      (X.rightMappingSpace x y : SSet.{u}).obj m).1 = s.1.down :=
+      (X.rightMappingSpace x y : SSet.{u}).obj m).val = s.val.down :=
   (rfl)
 
 /-- The inverse of `uliftIso` lifts the underlying simplex of `X` via `ULift.up`. -/
 @[simp]
 theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
     (s : (uliftFunctor.{v, u}.obj (X.rightMappingSpace x y : SSet.{u})).obj m) :
-    dsimp% (((uliftIso.{u, v} x y).inv.app m s).1 :
-      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.1 :=
+    dsimp% (((uliftIso.{u, v} x y).inv.app m s).val :
+      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
 
 end ulift

@@ -53,10 +53,10 @@ submodules span `A`: the `k`-linear functional equal to `Coalgebra.counit` on `k
 every nontrivial simple coefficient submodule. -/
 def sweedlerIntegral (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤) : A →ₗ[k] k :=
   (Coalgebra.counit (R := k) (A := A) ∘ₗ (Submodule.span k ({1} : Set A)).subtype) ∘ₗ
-    DirectSum.component k (simpleCoefficientSubmodules k A) (fun P ↦ (P.1 : Submodule k A))
+    DirectSum.component k (simpleCoefficientSubmodules k A) (fun P ↦ (P.val : Submodule k A))
       ⟨Submodule.span k ({1} : Set A), span_singleton_one_mem_simpleCoefficientSubmodules⟩ ∘ₗ
     (LinearEquiv.ofBijective
-      (DirectSum.coeLinearMap fun P : simpleCoefficientSubmodules k A ↦ (P.1 : Submodule k A))
+      (DirectSum.coeLinearMap fun P : simpleCoefficientSubmodules k A ↦ (P.val : Submodule k A))
       (isInternal_of_sSup_simpleCoefficientSubmodules_eq_top hspan)).symm.toLinearMap
 
 /-- On `k · 1`, `sweedlerIntegral` agrees with the counit. -/
@@ -68,7 +68,7 @@ theorem sweedlerIntegral_apply_of_mem_span_one (hspan : sSup (simpleCoefficientS
   have hcomp := (isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
     hspan).ofBijective_coeLinearMap_of_mem (i := P₁) hx
   simpa [sweedlerIntegral, P₁, ← DirectSum.apply_eq_component] using
-    congrArg (fun y : P₁.1 ↦ Coalgebra.counit (R := k) (y : A)) hcomp
+    congrArg (fun y : P₁.val ↦ Coalgebra.counit (R := k) (y : A)) hcomp
 
 /-- On every simple coefficient submodule distinct from `k · 1`, `sweedlerIntegral` vanishes. -/
 theorem sweedlerIntegral_apply_of_mem_of_ne (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤)
@@ -81,7 +81,7 @@ theorem sweedlerIntegral_apply_of_mem_of_ne (hspan : sSup (simpleCoefficientSubm
     hspan).ofBijective_coeLinearMap_of_mem_ne (i := ⟨P, hP⟩) (j := P₁)
       (fun h ↦ hPne (congrArg Subtype.val h)) hx
   simpa [sweedlerIntegral, P₁, ← DirectSum.apply_eq_component] using
-    congrArg (fun y : P₁.1 ↦ Coalgebra.counit (R := k) (y : A)) hcomp
+    congrArg (fun y : P₁.val ↦ Coalgebra.counit (R := k) (y : A)) hcomp
 
 /-- `sweedlerIntegral` evaluates to `1` at `1`. -/
 @[simp]

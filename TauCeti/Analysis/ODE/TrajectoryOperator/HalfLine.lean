@@ -298,7 +298,7 @@ private theorem squareIntegrableSolutionsOn_leftCap_Iio (hA : Continuous A) :
       (integrableOn_exp_mul_Iic two_pos (-1)).const_mul _
     refine hi.congr_fun (fun τ hτ ↦ ?_) measurableSet_Iic
     have he : Real.exp (1 * (τ - -1)) ^ 2 = Real.exp 2 * Real.exp (2 * τ) := by
-      rw [← Real.exp_add, ← Real.exp_nat_mul]
+      rw [← Real.exp_add, ← Real.exp_natCast_mul]
       congr 1
       push_cast
       ring
@@ -341,8 +341,8 @@ private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A
   have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
     hbot htop AL hAL
   -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
+  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ :=
+    ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hplus
   have hcompl :=
     hsymplus.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero hker
   omega

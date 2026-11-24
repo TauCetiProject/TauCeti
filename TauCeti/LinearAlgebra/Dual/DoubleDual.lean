@@ -70,12 +70,12 @@ theorem injective_eval_of_finite {R M : Type*} [CommRing R] [IsDomain R] [AddCom
   let f : M →ₗ[R] V := LocalizedModule.mkLinearMap (nonZeroDivisors R) M
   have hf : Function.Injective f :=
     (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) f).mpr fun c ↦
-      (IsRegular.of_ne_zero (nonZeroDivisors.ne_zero c.2)).isSMulRegular
+      (IsRegular.of_ne_zero (nonZeroDivisors.ne_zero c.property)).isSMulRegular
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
   refine injective_eval_iff.mpr fun x hx ↦ ?_
   obtain ⟨ψ, hψx⟩ := Module.Projective.exists_dual_ne_zero K ((map_ne_zero_iff f hf).mpr hx)
   obtain ⟨d, hd⟩ :=
-    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ (f y.1))
+    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ (f y.val))
   have hmem : ∀ m : M, (d : R) • ψ (f m) ∈ LinearMap.range (Algebra.linearMap R K) := by
     suffices ⊤ ≤ (LinearMap.range (Algebra.linearMap R K)).comap
         ((d : R) • (ψ.restrictScalars R).comp f) from fun m ↦ this trivial
@@ -89,7 +89,7 @@ theorem injective_eval_of_finite {R M : Type*} [CommRing R] [IsDomain R] [AddCom
     simpa [φ, Algebra.smul_def] using
       LinearMap.codRestrictOfInjective_comp_apply ((d : R) • (ψ.restrictScalars R).comp f)
         (Algebra.linearMap R K) (IsFractionRing.injective R K) hmem x
-  exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2) hψx
+  exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.property) hψx
     (by rwa [hφ0, map_zero, eq_comm] at hmap)
 
 universe u v w

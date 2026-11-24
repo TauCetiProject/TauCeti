@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
@@ -16,8 +17,11 @@ monoids `G i`, the principal stage `Πʳ i, [G i, B i]_[𝓟 (T : Set ι)ᶜ]` s
 monoid isomorphism `TauCeti.prodContinuousMulEquivPrincipal` from
 `(Π i : T, G i) × (Π i : {i // i ∉ T}, B i)`. Composing with the principal inclusion into
 `Πʳ i, [G i, B i]` yields `TauCeti.levelMonoidHom`, which is always a topological embedding and is
-an open embedding when each `B i` is open. Every declaration has an additive counterpart via
-`@[to_additive]`.
+an open embedding when `B i` is open for every `i ∉ T`. When `G i` are groups and `B i` are
+subgroups open outside `S`, the range of `levelMonoidHom B S` is the level open subgroup
+`TauCeti.levelOpenSubgroup`, identified as a topological group with
+`(Π i : S, G i) × (Π i : {i // i ∉ S}, B i)` via `TauCeti.levelOpenSubgroupEquiv`. Every
+declaration has an additive counterpart via `@[to_additive]`.
 
 ## Main definitions and results
 
@@ -26,10 +30,21 @@ an open embedding when each `B i` is open. Every declaration has an additive cou
   coordinate and `.symm` projection lemmas.
 * `TauCeti.levelMonoidHom`, `TauCeti.range_levelMonoidHom`: canonical monoid homomorphism into
   `Πʳ i, [G i, B i]` and its range `{x | ∀ i ∉ T, x i ∈ B i}`.
-* `TauCeti.isEmbedding_levelMonoidHom`, `TauCeti.isOpenEmbedding_levelMonoidHom`: topological and
-  open embedding properties of `levelMonoidHom`.
-* `TauCeti.image_levelMonoidHom_pi_prod_univ`: image of `(Set.univ.pi ...) ×ˢ Set.univ` under
-  `levelMonoidHom B T` is `RestrictedProduct.box C` when `C i = B i` outside `T`.
+* `TauCeti.isEmbedding_levelMonoidHom`, `TauCeti.isOpenEmbedding_levelMonoidHom_of_isOpen`,
+  `TauCeti.isOpenEmbedding_levelMonoidHom`: topological and open embedding properties of
+  `levelMonoidHom`; openness of `B i` is only needed outside `T`.
+* `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
+  box-preimage formulas for `levelMonoidHom`.
+* `TauCeti.levelOpenSubgroup`, `TauCeti.coe_levelOpenSubgroup_eq_box`,
+  `TauCeti.levelOpenSubgroup_mono`, `TauCeti.exists_superset_mem_levelOpenSubgroup`,
+  `TauCeti.levelOpenSubgroupEquiv`, `TauCeti.val_comp_levelOpenSubgroupEquiv`: level open
+  subgroup of elements integral outside `S`, its coordinate-box form, monotonicity and exhaustion,
+  its topological group chart, and inclusion formulas.
+
+## References
+
+* N. Bourbaki, *General Topology*.
+* A. Weil, *Basic Number Theory*.
 -/
 
 public section
@@ -42,7 +57,11 @@ open scoped RestrictedProduct
 namespace TauCeti
 
 variable {ι : Type*} {G : ι → Type*} {K : ι → Type*} [∀ i, SetLike (K i) (G i)]
-variable [∀ i, Monoid (G i)] [∀ i, SubmonoidClass (K i) (G i)] [∀ i, TopologicalSpace (G i)]
+  [∀ i, TopologicalSpace (G i)]
+
+section Monoid
+
+variable [∀ i, Monoid (G i)] [∀ i, SubmonoidClass (K i) (G i)]
 variable (B : ∀ i, K i) (T : Finset ι)
 
 /-- For any finite index set `T : Finset ι`, the principal stage `Πʳ i, [G i, B i]_[𝓟 (T : Set ι)ᶜ]`
@@ -57,18 +76,19 @@ def prodContinuousMulEquivPrincipal :
   { toFun p := mk (fun i ↦ if hi : i ∈ T then p.1 ⟨i, hi⟩ else (p.2 ⟨i, hi⟩ : G i)) <|
       eventually_principal.mpr fun i hi ↦ by simp [Finset.mem_coe.not.mp hi]
     invFun x :=
-      ((fun i : T ↦ x i.1),
-        fun i : {i // i ∉ T} ↦ ⟨x i.1,
-          eventually_principal.mp x.eventually i.1 (Finset.mem_coe.not.mpr i.2)⟩)
-    left_inv p := by ext i <;> simp [i.2]
+      ((fun i : T ↦ x i.val),
+        fun i : {i // i ∉ T} ↦ ⟨x i.val,
+          eventually_principal.mp x.eventually i.val (Finset.mem_coe.not.mpr i.property)⟩)
+    left_inv p := by ext i <;> simp [i.property]
     right_inv x := by ext i; simp only [mk_apply]; split_ifs <;> rfl
     map_mul' p q := by ext i; by_cases hi : i ∈ T <;> simp [hi]
     continuous_toFun := by
       refine isEmbedding_coe_of_principal.continuous_iff.mpr (continuous_pi fun i ↦ ?_)
       by_cases hi : i ∈ T <;> simp only [Function.comp_def, mk_apply, hi, ↓reduceDIte] <;> fun_prop
     continuous_invFun := Continuous.prodMk
-      (continuous_pi fun i ↦ (continuous_apply i.1).comp continuous_coe)
-      (continuous_pi fun i ↦ Continuous.subtype_mk ((continuous_apply i.1).comp continuous_coe) _) }
+      (continuous_pi fun i ↦ (continuous_apply i.val).comp continuous_coe)
+      (continuous_pi fun i ↦ Continuous.subtype_mk ((continuous_apply i.val).comp continuous_coe) _)
+          }
 
 /-- Coordinate formula for `prodContinuousMulEquivPrincipal B T` at `i ∈ T`. -/
 @[to_additive (attr := simp) prodContinuousAddEquivPrincipal_apply_of_mem
@@ -90,7 +110,7 @@ theorem prodContinuousMulEquivPrincipal_apply_of_notMem
 @[to_additive (attr := simp) prodContinuousAddEquivPrincipal_symm_fst
 /-- First projection of `(prodContinuousAddEquivPrincipal B T).symm`. -/]
 theorem prodContinuousMulEquivPrincipal_symm_fst (x : Πʳ i, [G i, B i]_[𝓟 (T : Set ι)ᶜ]) :
-    ((prodContinuousMulEquivPrincipal B T).symm x).1 = fun i : T ↦ x i.1 := by rfl
+    ((prodContinuousMulEquivPrincipal B T).symm x).1 = fun i : T ↦ x i.val := by rfl
 
 /-- Second projection of `(prodContinuousMulEquivPrincipal B T).symm`. -/
 @[to_additive (attr := simp) prodContinuousAddEquivPrincipal_symm_snd
@@ -98,7 +118,8 @@ theorem prodContinuousMulEquivPrincipal_symm_fst (x : Πʳ i, [G i, B i]_[𝓟 (
 theorem prodContinuousMulEquivPrincipal_symm_snd (x : Πʳ i, [G i, B i]_[𝓟 (T : Set ι)ᶜ]) :
     ((prodContinuousMulEquivPrincipal B T).symm x).2 =
       fun i : {i // i ∉ T} ↦
-        ⟨x i.1, eventually_principal.mp x.eventually i.1 (Finset.mem_coe.not.mpr i.2)⟩ := by rfl
+        ⟨x i.val, eventually_principal.mp x.eventually i.val (Finset.mem_coe.not.mpr i.property)⟩
+            := by rfl
 
 /-- The canonical monoid homomorphism
 `(Π i : T, G i) × (Π i : {i // i ∉ T}, B i) →* Πʳ i, [G i, B i]`, factoring through
@@ -152,8 +173,9 @@ theorem range_levelMonoidHom :
     Set.range (levelMonoidHom B T) = {x : Πʳ i, [G i, B i] | ∀ i ∉ T, x i ∈ B i} := by
   ext x
   simp only [mem_range, Set.mem_ofPred_eq]
-  refine ⟨fun ⟨p, hp⟩ i hi ↦ hp ▸ (levelMonoidHom_apply_of_notMem B T p hi ▸ (p.2 ⟨i, hi⟩).2),
-    fun hx ↦ ⟨((fun i : T ↦ x i.1), fun i : {i // i ∉ T} ↦ ⟨x i.1, hx i.1 i.2⟩), ?_⟩⟩
+  refine
+    ⟨fun ⟨p, hp⟩ i hi ↦ hp ▸ (levelMonoidHom_apply_of_notMem B T p hi ▸ (p.2 ⟨i, hi⟩).property),
+    fun hx ↦ ⟨((fun i : T ↦ x i.val), fun i : {i // i ∉ T} ↦ ⟨x i.val, hx i.val i.property⟩), ?_⟩⟩
   ext i
   by_cases hi : i ∈ T <;> simp [hi]
 
@@ -170,15 +192,43 @@ theorem isEmbedding_levelMonoidHom : IsEmbedding (levelMonoidHom B T) :=
 theorem continuous_levelMonoidHom : Continuous (levelMonoidHom B T) :=
   (isEmbedding_levelMonoidHom B T).continuous
 
+/-- When the reference subobjects `B i` are open for every `i ∉ T`, `levelMonoidHom B T` is an
+open topological embedding into `Πʳ i, [G i, B i]`; no openness is needed at the indices in `T`. -/
+@[to_additive /-- When the reference additive subobjects `B i` are open for every `i ∉ T`,
+`levelAddMonoidHom B T` is an open topological embedding into `Πʳ i, [G i, B i]`; no openness is
+needed at the indices in `T`. -/]
+theorem isOpenEmbedding_levelMonoidHom_of_isOpen (hB : ∀ i ∉ T, IsOpen (B i : Set (G i))) :
+    IsOpenEmbedding (levelMonoidHom B T) :=
+  (isOpenEmbedding_inclusion_principal_of_forall_mem
+    (le_principal_iff.mpr T.finite_toSet.compl_mem_cofinite)
+    fun i hi ↦ hB i (Finset.mem_coe.not.mp hi)).comp
+    (prodContinuousMulEquivPrincipal B T).toHomeomorph.isOpenEmbedding
+
 /-- When each reference subobject `B i` is open, `levelMonoidHom B T` is an open topological
 embedding into `Πʳ i, [G i, B i]`. -/
 @[to_additive /-- When each reference additive subobject `B i` is open, `levelAddMonoidHom B T` is
 an open topological embedding into `Πʳ i, [G i, B i]`. -/]
 theorem isOpenEmbedding_levelMonoidHom [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))] :
     IsOpenEmbedding (levelMonoidHom B T) :=
-  (isOpenEmbedding_inclusion_principal hBopen.out
-    (le_principal_iff.mpr T.finite_toSet.compl_mem_cofinite)).comp
-    (prodContinuousMulEquivPrincipal B T).toHomeomorph.isOpenEmbedding
+  isOpenEmbedding_levelMonoidHom_of_isOpen B T fun i _ ↦ hBopen.out i
+
+/-- The preimage of a coordinate box `box C` under `levelMonoidHom B T` is the product of the
+finite box over `T` and the tail box outside `T`. -/
+@[to_additive (attr := simp) /-- The preimage of a coordinate box `box C` under
+`levelAddMonoidHom B T` is the product of the finite box over `T` and the tail box outside `T`. -/]
+theorem preimage_levelMonoidHom_box (C : ∀ i, Set (G i)) :
+    levelMonoidHom B T ⁻¹' (box C : Set (Πʳ i, [G i, B i])) =
+      (univ.pi fun i : T ↦ C i.val) ×ˢ
+        (univ.pi fun j : {i // i ∉ T} ↦ ((↑) : B j.val → G j.val) ⁻¹' C j.val) := by
+  classical
+  ext p
+  simp only [mem_preimage, mem_box, mem_prod, Set.mem_pi, mem_univ, forall_true_left]
+  refine ⟨fun h ↦ ⟨fun i ↦ ?_, fun j ↦ ?_⟩, fun ⟨h1, h2⟩ i ↦ ?_⟩
+  · simpa [i.property] using h i.val
+  · simpa [j.property] using h j.val
+  · by_cases hi : i ∈ T
+    · simpa [hi] using h1 ⟨i, hi⟩
+    · simpa [hi] using h2 ⟨i, hi⟩
 
 /-- For any family of sets `C : ∀ i, Set (G i)` agreeing with `B i` outside `T`, the image of
 `(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under `levelMonoidHom B T` is `box C`. -/
@@ -186,15 +236,172 @@ theorem isOpenEmbedding_levelMonoidHom [hBopen : Fact (∀ i, IsOpen (B i : Set 
 agreeing with `B i` outside `T`, the image of `(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under
 `levelAddMonoidHom B T` is `box C`. -/]
 theorem image_levelMonoidHom_pi_prod_univ {C : ∀ i, Set (G i)} (hCB : ∀ i ∉ T, C i = B i) :
-    levelMonoidHom B T '' ((univ.pi fun i : T ↦ C i.1) ×ˢ univ) =
+    levelMonoidHom B T '' ((univ.pi fun i : T ↦ C i.val) ×ˢ univ) =
       (box C : Set (Πʳ i, [G i, B i])) := by
-  ext x
-  simp only [mem_image, mem_prod, Set.mem_pi, mem_univ, forall_true_left, and_true, mem_box]
-  refine ⟨?_, fun hx ↦ ⟨((fun i : T ↦ x i.1), fun i ↦ ⟨x i.1, by simpa [hCB i.1 i.2] using hx i.1⟩),
-    fun i ↦ hx i.1, by ext i; by_cases hi : i ∈ T <;> simp [hi]⟩⟩
-  rintro ⟨p, hp, rfl⟩ i
-  by_cases hi : i ∈ T
-  · simpa [hi] using hp ⟨i, hi⟩
-  · rw [levelMonoidHom_apply_of_notMem B T p hi, hCB i hi]; exact (p.2 ⟨i, hi⟩).2
+  have hpre : levelMonoidHom B T ⁻¹' (box C : Set (Πʳ i, [G i, B i])) =
+      (univ.pi fun i : T ↦ C i.val) ×ˢ univ := by
+    rw [preimage_levelMonoidHom_box]
+    congr 1
+    ext f
+    simp [fun j : {i // i ∉ T} ↦ hCB j.val j.property]
+  have hsub : (box C : Set (Πʳ i, [G i, B i])) ⊆ Set.range (levelMonoidHom B T) := by
+    rw [range_levelMonoidHom]
+    exact fun x hx i hi ↦ by simpa [hCB i hi] using mem_box.mp hx i
+  rw [← hpre, Set.image_preimage_eq_of_subset hsub]
+
+end Monoid
+
+section OpenSubgroup
+
+variable [∀ i, Group (G i)] [∀ i, SubgroupClass (K i) (G i)]
+
+/-- For a finite set `S` of indices, the open subgroup `{x | ∀ i ∉ S, x i ∈ B i}` of
+`Πʳ i, [G i, B i]` consisting of elements integral outside `S`. Only the reference subgroups
+outside `S` need be open. -/
+@[to_additive /-- For a finite set `S` of indices, the open additive subgroup
+`{x | ∀ i ∉ S, x i ∈ B i}` of `Πʳ i, [G i, B i]` consisting of elements integral outside `S`. Only
+the reference subgroups outside `S` need be open. -/]
+def levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    OpenSubgroup (Πʳ i, [G i, B i]) where
+  toSubgroup := (levelMonoidHom B S).range
+  isOpen' := (isOpenEmbedding_levelMonoidHom_of_isOpen B S hB).isOpen_range
+
+/-- The underlying subgroup of `levelOpenSubgroup B S hB` is `(levelMonoidHom B S).range`. -/
+@[to_additive
+/-- The underlying additive subgroup of `levelOpenAddSubgroup B S hB` is
+`(levelAddMonoidHom B S).range`. -/]
+theorem toSubgroup_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    (levelOpenSubgroup B S hB : Subgroup (Πʳ i, [G i, B i])) = (levelMonoidHom B S).range := by
+  unfold levelOpenSubgroup
+  rfl
+
+/-- Membership in `levelOpenSubgroup B S hB` means integrality at every index outside `S`. -/
+@[to_additive (attr := simp) /-- Membership in `levelOpenAddSubgroup B S hB` means integrality at
+every index outside `S`. -/]
+theorem mem_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (x : Πʳ i, [G i, B i]) :
+    x ∈ levelOpenSubgroup B S hB ↔ ∀ i ∉ S, x i ∈ B i := by
+  rw [← OpenSubgroup.mem_toSubgroup, toSubgroup_levelOpenSubgroup, ← SetLike.mem_coe,
+    MonoidHom.coe_range, range_levelMonoidHom, Set.mem_ofPred_eq]
+
+/-- As a subset of `Πʳ i, [G i, B i]`, `levelOpenSubgroup B S hB` is the coordinate box equal to
+`Set.univ` on `S` and `B i` outside `S`. -/
+@[to_additive /-- As a subset of `Πʳ i, [G i, B i]`, `levelOpenAddSubgroup B S hB` is the
+coordinate box equal to `Set.univ` on `S` and `B i` outside `S`. -/]
+theorem coe_levelOpenSubgroup_eq_box (B : ∀ i, K i) (S : Finset ι) [DecidablePred (· ∈ S)]
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) =
+      box (fun i ↦ if i ∈ S then univ else (B i : Set (G i))) := by
+  have hrange : (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) =
+      range (inclusion G (fun i ↦ (B i : Set (G i)))
+        (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite)) := by
+    rw [← OpenSubgroup.coe_toSubgroup, toSubgroup_levelOpenSubgroup, MonoidHom.coe_range]
+    exact (prodContinuousMulEquivPrincipal B S).surjective.range_comp
+      (inclusion G (fun i ↦ (B i : Set (G i)))
+        (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite))
+  rw [hrange, range_inclusion_principal_eq_box (S : Set ι)ᶜ
+    (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite)]
+  simp [Set.mem_compl_iff, ite_not]
+
+/-- Enlarging the finite set `S` enlarges the level open subgroup. -/
+@[to_additive /-- Enlarging the finite set `S` enlarges the level open additive subgroup. -/]
+theorem levelOpenSubgroup_mono (B : ∀ i, K i) {S T : Finset ι} (hST : S ⊆ T)
+    (hBS : ∀ i ∉ S, IsOpen (B i : Set (G i)))
+    (hBT : ∀ i ∉ T, IsOpen (B i : Set (G i)) := fun i hi ↦ hBS i fun h ↦ hi (hST h)) :
+    levelOpenSubgroup B S hBS ≤ levelOpenSubgroup B T hBT :=
+  fun x hx ↦ (mem_levelOpenSubgroup B T hBT x).mpr fun i hi ↦
+    (mem_levelOpenSubgroup B S hBS x).mp hx i fun h ↦ hi (hST h)
+
+/-- Any element `x : Πʳ i, [G i, B i]` belongs to `levelOpenSubgroup B T _` for some finite
+superset `T ⊇ S` of a given finite stage `S`. -/
+@[to_additive /-- Any element `x : Πʳ i, [G i, B i]` belongs to `levelOpenAddSubgroup B T _` for
+some finite superset `T ⊇ S` of a given finite stage `S`. -/]
+theorem exists_superset_mem_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (x : Πʳ i, [G i, B i]) :
+    ∃ T : Finset ι, ∃ hST : S ⊆ T,
+      x ∈ levelOpenSubgroup B T (fun i hi ↦ hB i fun h ↦ hi (hST h)) := by
+  classical
+  refine ⟨S ∪ (mem_cofinite.mp x.eventually).toFinset, Finset.subset_union_left,
+    (mem_levelOpenSubgroup B _ _ x).mpr fun i hi ↦ ?_⟩
+  by_contra hnot
+  exact hi (Finset.subset_union_right ((Set.Finite.mem_toFinset _).mpr hnot))
+
+/-- The topological group isomorphism identifying the product
+`(Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)` with the level open subgroup
+`levelOpenSubgroup B S hB`. -/
+@[to_additive /-- The topological additive group isomorphism identifying the product
+`(Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)` with the level open additive subgroup
+`levelOpenAddSubgroup B S hB`. -/]
+def levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    ((Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) ≃ₜ* levelOpenSubgroup B S hB :=
+  ContinuousMulEquiv.mk' (isEmbedding_levelMonoidHom B S).toHomeomorph
+    (map_mul (levelMonoidHom B S).rangeRestrict)
+
+/-- Composing `levelOpenSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
+recovers `levelMonoidHom B S`. -/
+@[to_additive (attr := simp)
+/-- Composing `levelOpenAddSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
+recovers `levelAddMonoidHom B S`. -/]
+theorem val_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    Subtype.val ∘ levelOpenSubgroupEquiv B S hB = levelMonoidHom B S := by
+  funext p
+  -- `ContinuousMulEquiv.mk'` preserves the forward function and `levelOpenSubgroup` has the same
+  -- carrier as `(levelMonoidHom B S).range`, while Mathlib's `ContinuousMulEquiv.coe_mk'` lacks
+  -- `@[to_additive]`, so we reduce locally through `levelOpenSubgroupEquiv` here.
+  dsimp [levelOpenSubgroupEquiv]
+  exact Topology.IsEmbedding.toHomeomorph_apply_coe (isEmbedding_levelMonoidHom B S) p
+
+/-- Coercing `levelOpenSubgroupEquiv B S hB p` into `Πʳ i, [G i, B i]` recovers
+`levelMonoidHom B S p`. -/
+@[to_additive (attr := simp)
+/-- Coercing `levelOpenAddSubgroupEquiv B S hB p` into `Πʳ i, [G i, B i]` recovers
+`levelAddMonoidHom B S p`. -/]
+theorem val_levelOpenSubgroupEquiv_apply (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
+    (p : (Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) :
+    ((levelOpenSubgroupEquiv B S hB p : levelOpenSubgroup B S hB) : Πʳ i, [G i, B i]) =
+      levelMonoidHom B S p :=
+  congrFun (val_comp_levelOpenSubgroupEquiv B S hB) p
+
+/-- Applying `levelMonoidHom B S` to `(levelOpenSubgroupEquiv B S hB).symm u` recovers the
+ambient restricted-product element `(u : Πʳ i, [G i, B i])`. -/
+@[to_additive (attr := simp)
+/-- Applying `levelAddMonoidHom B S` to `(levelOpenAddSubgroupEquiv B S hB).symm u` recovers the
+ambient restricted-product element `(u : Πʳ i, [G i, B i])`. -/]
+theorem levelMonoidHom_levelOpenSubgroupEquiv_symm (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) :
+    levelMonoidHom B S ((levelOpenSubgroupEquiv B S hB).symm u) = (u : Πʳ i, [G i, B i]) := by
+  rw [← val_levelOpenSubgroupEquiv_apply, (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
+
+/-- First projection of `(levelOpenSubgroupEquiv B S hB).symm`. -/
+@[to_additive (attr := simp) /-- First projection of
+`(levelOpenAddSubgroupEquiv B S hB).symm`. -/]
+theorem levelOpenSubgroupEquiv_symm_fst (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) :
+    ((levelOpenSubgroupEquiv B S hB).symm u).1 = fun i : S ↦ (u : Πʳ j, [G j, B j]) i.val := by
+  funext i
+  rw [← levelMonoidHom_apply_of_mem B S _ i.property,
+    levelMonoidHom_levelOpenSubgroupEquiv_symm]
+
+/-- Second projection of `(levelOpenSubgroupEquiv B S hB).symm`. -/
+@[to_additive (attr := simp) /-- Second projection of
+`(levelOpenAddSubgroupEquiv B S hB).symm`. -/]
+theorem levelOpenSubgroupEquiv_symm_snd (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) :
+    ((levelOpenSubgroupEquiv B S hB).symm u).2 =
+      fun j : {i // i ∉ S} ↦
+        ⟨(u : Πʳ k, [G k, B k]) j.val,
+          (mem_levelOpenSubgroup B S hB
+            (u : Πʳ k, [G k, B k])).mp u.property j.val j.property⟩ := by
+  funext j
+  apply Subtype.ext
+  rw [← levelMonoidHom_apply_of_notMem B S _ j.property,
+    levelMonoidHom_levelOpenSubgroupEquiv_symm]
+
+end OpenSubgroup
 
 end TauCeti

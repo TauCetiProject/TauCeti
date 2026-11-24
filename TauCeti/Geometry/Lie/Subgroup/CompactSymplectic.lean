@@ -144,13 +144,13 @@ theorem isBaseChange_complex_GLSymplectic_inf_unitarySubgroup :
           (GLSymplectic l ℂ ⊓ unitarySubgroup (GL (l ⊕ l) ℂ) :
             Subgroup (Matrix (l ⊕ l) (l ⊕ l) ℂ)ˣ) →ₗ[ℝ] Matrix (l ⊕ l) (l ⊕ l) ℂ)
       fun X ↦ unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup
-        (lieSubalgebraOfSubgroup_mono inf_le_left X.2)) := by
+        (lieSubalgebraOfSubgroup_mono inf_le_left X.property)) := by
   let e := unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℂ)
   refine LinearMap.isBaseChange_complex_codRestrict_of_star_eq_neg _
     (fun A hA ↦ Matrix.star_eq_conjTranspose A ▸ LieAlgebra.Symplectic.conjTranspose_mem_sp hA) _
     (fun X Y h ↦ Subtype.ext (e.injective h)) (fun X ↦ ?_) fun A hA hskew ↦ ?_
-  · have hX := X.2
-    rw [← e.symm_apply_apply X.1,
+  · have hX := X.property
+    rw [← e.symm_apply_apply X.val,
       unitsLieAlgebraLieEquiv_symm_mem_GLSymplectic_inf_unitarySubgroup_lieSubalgebra_iff] at hX
     rw [Matrix.star_eq_conjTranspose]
     exact hX.2
@@ -188,7 +188,7 @@ theorem compactSymplecticComplexificationLieEquiv_symm_apply
     (compactSymplecticComplexificationLieEquiv l).symm
         ⟨unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℂ) (X : LeftInvariantDerivation _ _),
           unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup
-            (lieSubalgebraOfSubgroup_mono inf_le_left X.2)⟩ =
+            (lieSubalgebraOfSubgroup_mono inf_le_left X.property)⟩ =
       1 ⊗ₜ[ℝ] X :=
   (isBaseChange_complex_GLSymplectic_inf_unitarySubgroup l).lieEquivOfCodRestrict_symm_apply X
 

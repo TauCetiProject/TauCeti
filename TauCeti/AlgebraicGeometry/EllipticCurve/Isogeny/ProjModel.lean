@@ -225,15 +225,15 @@ noncomputable def equivProjModelHom :
     where
   toFun φ := ⟨φ.toProjModelHom, φ.projModelZero_comp_toProjModelHom⟩
   invFun f :=
-    { pullback := (affinePullback f.1).comp
+    { pullback := (affinePullback f.val).comp
         (IsScalarTower.toAlgHom K W₂.toAffine.CoordinateRing W₂.toAffine.FunctionField)
       mapsInfinity := (CoordinatePullback.mapsInfinity_iff_isEquiv_comap_infinityPlace _).mpr
-        ((projModelZero_comp_eq_iff f.1).mp f.2) }
+        ((projModelZero_comp_eq_iff f.val).mp f.property) }
   left_inv φ := Isogeny.ext <| AlgHom.ext fun x ↦ by
     simp [affinePullback_toProjModelHom]
   right_inv f := Subtype.ext <| affinePullback_injective <| by
     rw [affinePullback_toProjModelHom]
-    exact (fieldPullback_unique _ (affinePullback f.1) fun _ ↦ rfl).symm
+    exact (fieldPullback_unique _ (affinePullback f.val) fun _ ↦ rfl).symm
 
 @[simp]
 theorem coe_equivProjModelHom_apply (φ : Isogeny W₁.toAffine W₂.toAffine) :

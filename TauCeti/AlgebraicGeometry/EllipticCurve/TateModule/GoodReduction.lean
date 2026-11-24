@@ -110,7 +110,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     have hunit : ¬ IsUnit (algebraMap 𝒪[K] A ϖ) :=
       (mem_maximalIdeal _).1 (hϖA ▸ Ideal.mem_span_singleton_self _)
     rw [← integralModel_Δ_eq A (W⁄L)]
-    exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.2 _)
+    exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.map_le_one _)
       (mt hint.isUnit_iff_valuation_eq_one.2 hunit)
   -- At the maximal ideal of `A`, whose adic valuation is equivalent to that of `L`, full
   -- `n`-torsion makes `n` divide the index of `E₀(L)`.

@@ -110,11 +110,11 @@ private theorem isometryGroupExtend_mem_carrier {L : IntegralLattice V} {S : Sub
     simp only [Submodule.coe_sub, Isometry.coe_carrierEquiv_apply, Submodule.coe_smul_of_tower,
       ← Int.cast_smul_eq_zsmul ℚ, map_smul, ← smul_sub] at hy'
     exact smul_right_injective _ (Int.cast_ne_zero.mpr hd) hy'
-  have hy'' := Submodule.mem_map_of_mem (f := (L.restrictMap S).restrictScalars ℤ) y.2
+  have hy'' := Submodule.mem_map_of_mem (f := (L.restrictMap S).restrictScalars ℤ) y.property
   rw [map_restrictMap_restrict_carrier] at hy''
   obtain ⟨z, -, hz⟩ := hy''
   rw [restrictIsometry_apply, hgp]
-  exact L.carrier.add_mem hx (hz ▸ z.2)
+  exact L.carrier.add_mem hx (hz ▸ z.property)
 
 /-! ## The anisotropic case -/
 
@@ -151,7 +151,7 @@ theorem infinite_isometry_of_isIndefinite_of_anisotropic {L : IntegralLattice V}
     refine Isometry.le_range_toIsometryGroup ?_
     rintro _ ⟨g, rfl⟩ z hz
     exact isometryGroupExtend_mem_carrier hS hd
-      (fun w hw ↦ hdπ _ ⟨⟨w, hw⟩, Submodule.mem_top, rfl⟩) g.2 hz
+      (fun w hw ↦ hdπ _ ⟨⟨w, hw⟩, Submodule.mem_top, rfl⟩) g.property hz
   have : Infinite (Isometry.toIsometryGroup L).range :=
     Infinite.of_injective (fun g ↦ ⟨φ g, hrange ⟨g, rfl⟩⟩) fun g h hgh ↦
       hφ (congrArg Subtype.val hgh)

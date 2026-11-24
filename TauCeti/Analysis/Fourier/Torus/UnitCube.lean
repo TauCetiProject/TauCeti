@@ -60,13 +60,13 @@ private theorem measurePreserving_subtype_coe_setOf_forall_mem_Ioc [Fintype d] :
       (Measure.comap Subtype.val volume)
       ((volume : Measure (d → ℝ)).restrict (univ.pi fun _ ↦ Ioc (0 : ℝ) 1)) := by
   rw [← setOf_forall_mem_Ioc_eq_pi]
-  exact measurePreserving_subtype_coe measurableSet_setOf_forall_mem_Ioc
+  exact measurePreserving_subtypeVal measurableSet_setOf_forall_mem_Ioc
 
 /-- The map from the torus to the half-open cube `(0, 1]ᵈ`, read in `d → ℝ`, is a measurable
 embedding. -/
 theorem measurableEmbedding_coe_measurableEquivPiIoc [Countable d] :
     MeasurableEmbedding fun x : UnitAddTorus d ↦ ((measurableEquivPiIoc 0 x : _) : d → ℝ) :=
-  (MeasurableEmbedding.subtype_coe measurableSet_setOf_forall_mem_Ioc).comp
+  (MeasurableEmbedding.subtypeVal measurableSet_setOf_forall_mem_Ioc).comp
     (measurableEquivPiIoc 0).measurableEmbedding
 
 variable [Fintype d]

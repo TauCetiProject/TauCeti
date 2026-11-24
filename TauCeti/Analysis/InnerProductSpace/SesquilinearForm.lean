@@ -7,9 +7,21 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
-# Sesquilinear forms with prescribed adjoints
+# Sesquilinear forms on inner product spaces
+
+A linear map `T : E →ₗ[𝕜] F` defines the sesquilinear form `(x, y) ↦ ⟪x, T y⟫`, and when `F` is
+finite-dimensional every sesquilinear form arises from exactly one `T`. This is the linear
+equivalence `LinearMap.toSesqForm`, the algebraic counterpart of Mathlib's
+`ContinuousLinearMap.toSesqForm`. A sesquilinear form on `E` is Hermitian (`LinearMap.IsSymm`)
+exactly when its operator is symmetric (`LinearMap.isSymm_toSesqForm_iff`). In a basis with Gram
+matrix `g`, the matrix of the operator `A_a` of a form `a` is `g⁻¹[a]`
+(`LinearMap.gram_mul_toMatrix_toSesqForm_symm`).
+
+## Sesquilinear forms with prescribed adjoints
 
 A sesquilinear form on a finite-dimensional inner product space which gives every
 endomorphism its usual adjoint is a scalar multiple of the inner product. For a positive
@@ -25,6 +37,85 @@ public section
 namespace LinearMap
 
 open InnerProductSpace
+open scoped InnerProductSpace
+
+section ToSesqForm
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+variable (𝕜 E F) in
+/-- The sesquilinear form `(x, y) ↦ ⟪x, T y⟫` of a linear map `T : E →ₗ[𝕜] F`, as a linear
+equivalence onto the sesquilinear forms on `F × E`. The inverse sends a form `a` to the linear
+map `y ↦ ∑ i, a (b i) y • b i` for an orthonormal basis `b` of `F`; it is characterized by
+`LinearMap.inner_toSesqForm_symm_apply`. -/
+noncomputable def toSesqForm : (E →ₗ[𝕜] F) ≃ₗ[𝕜] (F →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) where
+  toFun T := (innerₛₗ 𝕜).compl₂ T
+  map_add' S T := by ext; simp [inner_add_right]
+  map_smul' c T := by ext; simp
+  invFun a := ∑ i, (a (stdOrthonormalBasis 𝕜 F i)).smulRight (stdOrthonormalBasis 𝕜 F i)
+  left_inv T := by
+    ext y
+    simpa using (stdOrthonormalBasis 𝕜 F).sum_repr' (T y)
+  right_inv a := by
+    ext x y
+    conv_rhs => rw [← (stdOrthonormalBasis 𝕜 F).sum_repr' x]
+    simp [mul_comm]
+
+/-- The value of the sesquilinear form of `T` at `(x, y)` is `⟪x, T y⟫`. -/
+@[simp]
+theorem toSesqForm_apply_apply (T : E →ₗ[𝕜] F) (x : F) (y : E) :
+    toSesqForm 𝕜 E F T x y = ⟪x, T y⟫_𝕜 := by
+  simp [toSesqForm]
+
+/-- The linear map of a sesquilinear form `a` represents it through the inner product. -/
+@[simp]
+theorem inner_toSesqForm_symm_apply (a : F →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) (x : F) (y : E) :
+    ⟪x, (toSesqForm 𝕜 E F).symm a y⟫_𝕜 = a x y := by
+  rw [← toSesqForm_apply_apply, LinearEquiv.apply_symm_apply]
+
+end ToSesqForm
+
+section ToSesqFormEnd
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E]
+
+/-- The identity represents the inner product. -/
+@[simp]
+theorem toSesqForm_id : toSesqForm 𝕜 E E LinearMap.id = innerₛₗ 𝕜 := by
+  ext; simp
+
+/-- The inner product is represented by the identity. -/
+@[simp]
+theorem toSesqForm_symm_innerₛₗ : (toSesqForm 𝕜 E E).symm (innerₛₗ 𝕜) = LinearMap.id := by
+  rw [LinearEquiv.symm_apply_eq, toSesqForm_id]
+
+/-- The sesquilinear form of an operator is Hermitian exactly when the operator is symmetric. -/
+theorem isSymm_toSesqForm_iff {T : E →ₗ[𝕜] E} :
+    (toSesqForm 𝕜 E E T).IsSymm ↔ T.IsSymmetric := by
+  refine ⟨fun h x y ↦ ?_, fun h ↦ ⟨fun x y ↦ ?_⟩⟩
+  · simpa [inner_conj_symm] using h.eq y x
+  · simp [inner_conj_symm, h y x]
+
+/-- The operator of a Hermitian form is symmetric. -/
+theorem IsSymm.isSymmetric_toSesqForm_symm {a : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} (ha : a.IsSymm) :
+    ((toSesqForm 𝕜 E E).symm a).IsSymmetric := by
+  rw [← isSymm_toSesqForm_iff, LinearEquiv.apply_symm_apply]
+  exact ha
+
+/-- In a basis `b` with Gram matrix `g`, the matrix of the operator `A_a` of a sesquilinear form
+`a` satisfies `g·[A_a] = [a]`, so `[A_a] = g⁻¹[a]`. -/
+theorem gram_mul_toMatrix_toSesqForm_symm {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) (a : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
+    Matrix.gram 𝕜 b * LinearMap.toMatrix b b ((toSesqForm 𝕜 E E).symm a) =
+      LinearMap.toMatrix₂ b b a := by
+  ext i j
+  rw [Matrix.mul_apply, LinearMap.toMatrix₂_apply, ← LinearMap.inner_toSesqForm_symm_apply,
+    ← b.sum_repr ((toSesqForm 𝕜 E E).symm a (b j)), inner_sum]
+  simp [Matrix.gram, LinearMap.toMatrix_apply, inner_smul_right, mul_comm]
+
+end ToSesqFormEnd
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E]

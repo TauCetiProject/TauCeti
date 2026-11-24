@@ -234,8 +234,8 @@ dropped: such a term has a zero factor, so it is zero. -/
 theorem genWeightSpace_tensorProduct_eq_iSup_weight (χ : L → K) :
     (genWeightSpace (M ⊗[K] N) χ).toSubmodule =
       ⨆ p : {p : Weight K L M × Weight K L N // (p.1 : L → K) + (p.2 : L → K) = χ},
-        Submodule.map₂ (TensorProduct.mk K M N) (genWeightSpace M p.1.1).toSubmodule
-          (genWeightSpace N p.1.2).toSubmodule := by
+        Submodule.map₂ (TensorProduct.mk K M N) (genWeightSpace M p.val.1).toSubmodule
+          (genWeightSpace N p.val.2).toSubmodule := by
   apply le_antisymm
   · rw [genWeightSpace_tensorProduct_eq_iSup]
     refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
@@ -247,8 +247,8 @@ theorem genWeightSpace_tensorProduct_eq_iSup_weight (χ : L → K) :
       rwa [Weight.coe_weight_mk, Weight.coe_weight_mk]
     exact le_iSup_of_le ⟨(⟨μ, hμ⟩, ⟨ν, hν⟩), hadd⟩ le_rfl
   · refine iSup_le fun p ↦ ?_
-    exact (map₂_mk_genWeightSpace_le M N p.1.1 p.1.2).trans_eq
-      (congrArg (fun ξ ↦ (genWeightSpace (M ⊗[K] N) ξ).toSubmodule) p.2)
+    exact (map₂_mk_genWeightSpace_le M N p.val.1 p.val.2).trans_eq
+      (congrArg (fun ξ ↦ (genWeightSpace (M ⊗[K] N) ξ).toSubmodule) p.property)
 
 /-- **Every weight of a tensor product is a sum of weights.** If `χ` is a weight of `M ⊗ N`, then
 `χ = μ + ν` for a weight `μ` of `M` and a weight `ν` of `N`. This is the converse of

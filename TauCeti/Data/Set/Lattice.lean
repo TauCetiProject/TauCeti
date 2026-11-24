@@ -35,6 +35,8 @@ and the later sets, and these pieces are disjoint.
   a decreasing sequence of sets, with a prescribed value on the intersection.
 * `TauCeti.iUnion_eq_union_of_pairwise_disjoint`: the decomposition of `⋃ j, C j` for pairwise
   disjoint `C` and the disjointness of its three pieces.
+* `TauCeti.sUnion_sep_subset_eq_inter`: for a family of sets each contained in or disjoint from `s`,
+  the union of those contained in `s` is `s ∩ ⋃₀ 𝒞`.
 -/
 
 public section
@@ -97,5 +99,15 @@ theorem iUnion_eq_union_of_pairwise_disjoint {α : Type*} {C : ℕ → Set α}
     exact ⟨fun i hi ↦ hC (hi.ne), fun i hi i' hi' ↦ hC (by omega : i' ≠ i)⟩
   · simp only [disjoint_iUnion_right]
     exact fun i hi ↦ hC hi.ne
+
+/-- If every member of a family `𝒞` of sets is either contained in `s` or disjoint from `s`, then
+the union of the members contained in `s` equals `s ∩ ⋃₀ 𝒞`. -/
+theorem sUnion_sep_subset_eq_inter {α : Type*} {s : Set α} {𝒞 : Set (Set α)}
+    (h : ∀ t ∈ 𝒞, t ⊆ s ∨ Disjoint t s) :
+    ⋃₀ {t ∈ 𝒞 | t ⊆ s} = s ∩ ⋃₀ 𝒞 := by
+  ext x
+  simp only [mem_sUnion, mem_sep_iff, mem_inter_iff]
+  refine ⟨fun ⟨t, ⟨ht𝒞, hts⟩, hxt⟩ ↦ ⟨hts hxt, ⟨t, ht𝒞, hxt⟩⟩, fun ⟨hxs, t, ht𝒞, hxt⟩ ↦ ?_⟩
+  exact ⟨t, ⟨ht𝒞, (h t ht𝒞).resolve_right fun hd ↦ disjoint_left.1 hd hxt hxs⟩, hxt⟩
 
 end TauCeti

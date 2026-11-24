@@ -102,13 +102,13 @@ theorem typeDGraphSplitAt_symm_fst_inl (v : I ⊕ I → A) (u : Unit) :
 /-- The fixed coordinates retain the positive coordinates outside the chosen pair. -/
 @[simp]
 theorem typeDGraphSplitAt_symm_fst_inr_inl (v : I ⊕ I → A) (i : {i : I // i ≠ c}) :
-    ((typeDGraphSplitAt c A).symm v).1 (.inr (.inl i)) = v (.inl i.1) := by
+    ((typeDGraphSplitAt c A).symm v).1 (.inr (.inl i)) = v (.inl i.val) := by
   simp [typeDGraphSplitAt_symm_apply]
 
 /-- The fixed coordinates retain the negative coordinates outside the chosen pair. -/
 @[simp]
 theorem typeDGraphSplitAt_symm_fst_inr_inr (v : I ⊕ I → A) (i : {i : I // i ≠ c}) :
-    ((typeDGraphSplitAt c A).symm v).1 (.inr (.inr i)) = v (.inr i.1) := by
+    ((typeDGraphSplitAt c A).symm v).1 (.inr (.inr i)) = v (.inr i.val) := by
   simp [typeDGraphSplitAt_symm_apply]
 
 /-- The anti-fixed coordinate is half the difference of the chosen pair. -/

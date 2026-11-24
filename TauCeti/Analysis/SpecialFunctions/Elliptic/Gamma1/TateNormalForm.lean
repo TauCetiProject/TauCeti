@@ -204,7 +204,7 @@ theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem {γ : SL(2, ℤ
 theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul (γ : Gamma1 N) (z : ℍ) :
     ((γ • z).pointedWeierstrassCurve N).tateNormalFormCoeffs =
       (z.pointedWeierstrassCurve N).tateNormalFormCoeffs :=
-  tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem γ.2 z
+  tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem γ.property z
 
 /-- For `N ≥ 4`, the Tate normal form coefficients of `(E_z, 1 / N)` are those of an elliptic curve
 on which `(0, 0)` has exact order `N`. -/
@@ -266,6 +266,6 @@ theorem tateNormalFormCoeffs_pointedWeierstrassCurve_eq_iff (hN : 4 ≤ N) {z z'
     ← coe_gamma1QuotientEquivTateNormalForm_mk hN, Subtype.coe_inj,
     (gamma1QuotientEquivTateNormalForm N hN).apply_eq_iff_eq, Quotient.eq,
     MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  exact ⟨fun ⟨γ, hγ⟩ ↦ ⟨γ, γ.2, hγ⟩, fun ⟨γ, hγ, h⟩ ↦ ⟨⟨γ, hγ⟩, h⟩⟩
+  exact ⟨fun ⟨γ, hγ⟩ ↦ ⟨γ, γ.property, hγ⟩, fun ⟨γ, hγ, h⟩ ↦ ⟨⟨γ, hγ⟩, h⟩⟩
 
 end UpperHalfPlane

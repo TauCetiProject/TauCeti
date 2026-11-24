@@ -56,6 +56,8 @@ tori in the symmetric product is geometric and is not formalized here.
 * `TauCeti.BorderedHeegaardIntersectionSystem.Generator`: its generators, one intersection point
   on each `β`-circle, on distinct `α`-curves, meeting every `α`-circle.
 * `TauCeti.BorderedHeegaardIntersectionSystem.occupied`: the occupancy `o(x)`.
+* `TauCeti.BorderedHeegaardIntersectionSystem.generatorChain`: the `0`-chain of a generator, the
+  indicator of its points.
 * `TauCeti.BorderedHeegaardIntersectionSystem.typeAIdem`,
   `TauCeti.BorderedHeegaardIntersectionSystem.typeDIdem`: the idempotents `I_A(x)` and `I_D(x)`.
 * `TauCeti.BorderedHeegaardIntersectionSystem.glue`: the intersection data of the closed diagram
@@ -151,6 +153,21 @@ theorem card_occupied_add_card [Fintype AlphaCircle] (x : H.Generator) :
   have h := card_toLeft_add_card_toRight
     (u := univ.map ⟨H.alpha ∘ x.point, x.alpha_comp_point_injective⟩)
   rwa [hright, card_univ, card_map, card_univ, Fintype.card_fin] at h
+
+/-! ### The `0`-chain of a generator -/
+
+/-- The `0`-chain of a generator: the indicator function of its intersection points. -/
+noncomputable def generatorChain (x : H.Generator) : Point → ℤ :=
+  (Set.range x.point).indicator 1
+
+/-- The `0`-chain of a generator is the indicator of its points: an intersection point `q` is a
+point of `x` exactly when it is the point of `x` on the `β`-circle through `q`. -/
+@[simp]
+theorem generatorChain_apply [DecidableEq Point] (x : H.Generator) (q : Point) :
+    H.generatorChain x q = if x.point (H.beta q) = q then 1 else 0 := by
+  have : q ∈ Set.range x.point ↔ x.point (H.beta q) = q :=
+    ⟨by rintro ⟨j, rfl⟩; simp, fun h => ⟨_, h⟩⟩
+  simp only [generatorChain, Set.indicator_apply, this, Pi.one_apply]
 
 /-! ### The idempotents of a generator -/
 
@@ -565,8 +582,8 @@ noncomputable def glueGeneratorEquiv :
     (glue_alpha_comp_gluePoint_bijective_iff e _ _).1 (by
       rw [gluePoint_glueLeft_glueRight]
       exact (glue H₁ H₂ e).alpha_comp_betaPoint_bijective x)⟩
-  invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.1.1 x.1.2)
-    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.2)
+  invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.val.1 x.val.2)
+    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.property)
   left_inv x := (glue H₁ H₂ e).betaPoint_injective (by simp [gluePoint_glueLeft_glueRight])
   right_inv x := Subtype.ext (Prod.ext (glueLeft_generatorOfBetaPoint e _ _ _)
     (glueRight_generatorOfBetaPoint e _ _ _))
@@ -580,7 +597,7 @@ theorem coe_glueGeneratorEquiv (x : (glue H₁ H₂ e).Generator) :
 @[simp]
 theorem betaPoint_glueGeneratorEquiv_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ}) :
-    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv e).symm x) = gluePoint x.1.1 x.1.2 :=
+    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv e).symm x) = gluePoint x.val.1 x.val.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 /-- **The generators of a glued diagram are those of the box tensor product.** When every arc has
@@ -610,7 +627,7 @@ theorem betaPoint_glueGeneratorEquivTypeAIdem_symm (R : Type*) [CommSemiring R] 
     {α : Type*} [LinearOrder α] [Fintype α] {M : α → Arc} (hM : Function.Surjective M)
     (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
     (glue H₁ H₂ e).betaPoint ((glueGeneratorEquivTypeAIdem e R hM).symm x) =
-      gluePoint x.1.1 x.1.2 :=
+      gluePoint x.val.1 x.val.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 end Glue

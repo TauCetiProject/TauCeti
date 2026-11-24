@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
 # The Green operator of a self-adjoint operator with compact resolvent
@@ -152,10 +152,10 @@ private theorem bijective_kerOrthogonalPart (hA : IsSelfAdjoint A) (h : A.HasCom
   · -- An element of the kernel orthogonal to the kernel vanishes.
     have hx' : ((x : A.domain) : H) ∈ A.ker ⊓ A.kerᗮ :=
       ⟨coe_mem_ker_iff.2 (by
-        rw [← coe_kerOrthogonalPart hA.isFormalAdjoint, hx, ZeroMemClass.coe_zero]), x.2⟩
+        rw [← coe_kerOrthogonalPart hA.isFormalAdjoint, hx, ZeroMemClass.coe_zero]), x.property⟩
     rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot] at hx'
     exact Subtype.ext (Subtype.ext hx')
-  · obtain ⟨u, hu⟩ := (hA.exists_apply_eq_iff_mem_orthogonal_ker h).2 f.2
+  · obtain ⟨u, hu⟩ := (hA.exists_apply_eq_iff_mem_orthogonal_ker h).2 f.property
     obtain ⟨v, hv, hAv⟩ := exists_coe_eq_sub_starProjection u
     refine ⟨⟨v, ?_⟩, Subtype.ext ?_⟩
     · rw [Submodule.mem_comap, Submodule.subtype_apply, hv]
@@ -181,7 +181,7 @@ private theorem greenLinearMap_spec [A.ker.HasOrthogonalProjection] (hA : IsSelf
   set w := e.symm (A.kerᗮ.orthogonalProjectionOnto f)
   have hw : kerOrthogonalPart A hA.isFormalAdjoint w = A.kerᗮ.orthogonalProjectionOnto f :=
     e.apply_symm_apply _
-  refine ⟨w, rfl, w.2, ?_⟩
+  refine ⟨w, rfl, w.property, ?_⟩
   rw [← coe_kerOrthogonalPart hA.isFormalAdjoint, hw, ← Submodule.starProjection_apply,
     Submodule.starProjection_orthogonal_val]
 
@@ -215,7 +215,7 @@ variable (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
 theorem greenOperator_mem_domain (f : H) : A.greenOperator hA h f ∈ A.domain := by
   have := h.hasOrthogonalProjection_ker
   obtain ⟨u, hu, -, -⟩ := greenLinearMap_spec hA h f
-  exact hu ▸ u.2
+  exact hu ▸ u.property
 
 /-- The Green operator takes values in the orthogonal complement of the kernel of `A`. -/
 theorem greenOperator_mem_orthogonal_ker (f : H) : A.greenOperator hA h f ∈ A.kerᗮ := by
@@ -412,13 +412,13 @@ theorem pos_of_apply_eq_smul (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (
 /-- A bounded operator commuting with a strictly positive operator `A` commutes with its Green
 operator. -/
 theorem commute_greenOperator {U : H →L[ℂ] H} (hUdom : ∀ u ∈ A.domain, U u ∈ A.domain)
-    (hUA : ∀ u : A.domain, A ⟨U u, hUdom u u.2⟩ = U (A u)) (hker : A.ker = ⊥) :
+    (hUA : ∀ u : A.domain, A ⟨U u, hUdom u u.property⟩ = U (A u)) (hker : A.ker = ⊥) :
     Commute (A.greenOperator hA h) U := by
   refine ContinuousLinearMap.ext fun f ↦ ?_
   simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
   -- Both `G (U f)` and `U (G f)` solve `A v = U f`.
   set u : A.domain := ⟨A.greenOperator hA h f, A.greenOperator_mem_domain hA h f⟩
-  have h1 := A.greenOperator_apply_apply_of_ker_eq_bot hA h hker ⟨U u, hUdom u u.2⟩
+  have h1 := A.greenOperator_apply_apply_of_ker_eq_bot hA h hker ⟨U u, hUdom u u.property⟩
   rw [hUA, A.apply_greenOperator_of_ker_eq_bot hA h hker] at h1
   exact h1
 

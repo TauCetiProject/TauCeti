@@ -40,6 +40,10 @@ and hence transfer from a closed immersion composite `i ≫ f` to `i.ker.subsche
 (`AlgebraicGeometry.Scheme.Hom.isFinite_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.flat_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.locallyOfFinitePresentation_ker_subschemeι_comp`).
+
+Finiteness of a morphism is local on the target (`TauCeti.isZariskiLocalAtTarget_isFinite`); this
+is recorded as an instance because instance search does not derive it from Mathlib's affine
+description of `IsFinite`.
 -/
 
 public section
@@ -82,10 +86,10 @@ theorem Scheme.Hom.projective_app {Y S : Scheme.{u}} (g : Y ⟶ S) [IsFinite g] 
     [LocallyOfFinitePresentation g] (U : S.affineOpens) :
     letI := (g.app U).hom.toAlgebra
     Module.Projective Γ(S, U) Γ(Y, g ⁻¹ᵁ U) := by
-  have hflat := g.flat_appLE U.2 (U.2.preimage g) le_rfl
-  have hfp := g.finitePresentation_appLE U.2 (U.2.preimage g) le_rfl
+  have hflat := g.flat_appLE U.property (U.property.preimage g) le_rfl
+  have hfp := g.finitePresentation_appLE U.property (U.property.preimage g) le_rfl
   rw [Scheme.Hom.appLE_eq_app] at hflat hfp
-  have hfin := g.finite_app U U.2
+  have hfin := g.finite_app U U.property
   algebraize [(g.app U).hom]
   have := Module.FinitePresentation.of_finite_of_finitePresentation (R := Γ(S, U))
     (S := Γ(Y, g ⁻¹ᵁ U))
@@ -123,6 +127,14 @@ instance locallyOfFinitePresentation_respectsIso :
       (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's affine description of `IsFinite`, so it is recorded here, using that finite
+means integral and locally of finite type (`AlgebraicGeometry.IsFinite.eq_inf`). -/
+instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} :=
+  IsFinite.eq_inf ▸ @MorphismProperty.IsLocalAtTarget.inf _ _ _ _ _
+    (@HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty)
+    (HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFiniteType)
 
 end TauCeti
 

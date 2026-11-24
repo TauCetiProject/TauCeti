@@ -106,10 +106,10 @@ private theorem continuous_mk_congrModel {Y : Type*} [TopologicalSpace Y]
 reconstructed total spaces covering the identity on `B` and acting by `e` on every fibre. -/
 def congrModelHomeomorph (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) :
     Z.TotalSpace ≃ₜ (Z.congrModel e).TotalSpace where
-  toFun p := ⟨p.proj, e p.2⟩
-  invFun p := ⟨p.proj, e.symm p.2⟩
-  left_inv p := congrArg (TotalSpace.mk' F p.proj) (e.symm_apply_apply p.2)
-  right_inv p := congrArg (TotalSpace.mk' G p.proj) (e.apply_symm_apply p.2)
+  toFun p := ⟨p.proj, e p.snd⟩
+  invFun p := ⟨p.proj, e.symm p.snd⟩
+  left_inv p := congrArg (TotalSpace.mk' F p.proj) (e.symm_apply_apply p.snd)
+  right_inv p := congrArg (TotalSpace.mk' G p.proj) (e.apply_symm_apply p.snd)
   continuous_toFun := Z.continuous_mk_congrModel e continuous_id
   continuous_invFun := by
     refine continuous_iff_continuousAt.2 fun p₀ => ?_
@@ -128,13 +128,13 @@ def congrModelHomeomorph (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) :
 @[simp]
 theorem congrModelHomeomorph_apply (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (p : Z.TotalSpace) :
-    Z.congrModelHomeomorph e p = ⟨p.proj, e p.2⟩ := (rfl)
+    Z.congrModelHomeomorph e p = ⟨p.proj, e p.snd⟩ := (rfl)
 
 /-- Inverse evaluation of `congrModelHomeomorph`. -/
 @[simp]
 theorem congrModelHomeomorph_symm_apply (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (p : (Z.congrModel e).TotalSpace) :
-    (Z.congrModelHomeomorph e).symm p = ⟨p.proj, e.symm p.2⟩ := (rfl)
+    (Z.congrModelHomeomorph e).symm p = ⟨p.proj, e.symm p.snd⟩ := (rfl)
 
 /-- Every local trivialization of `Z.congrModel e` is intertwined with the corresponding local
 trivialization of `Z` by `e` on the model fibre. -/
@@ -144,7 +144,7 @@ theorem localTriv_congrModel_congrModelHomeomorph (Z : VectorBundleCore R B F ι
       (p.proj, e ((Z.localTriv i p).2)) := by
   simp only [congrModelHomeomorph_apply, localTriv_apply, indexAt_congrModel,
     coordChange_congrModel, ContinuousLinearEquiv.arrowCongr_apply]
-  rw [e.symm_apply_apply p.2]
+  rw [e.symm_apply_apply p.snd]
 
 /-- A map into `(Z.congrModel e).TotalSpace` is continuous if and only if the map obtained by
 applying `e.symm` fibrewise into `Z.TotalSpace` is continuous. -/
@@ -213,8 +213,8 @@ theorem reindex_trans {ι'' : Type*} (Z : VectorBundleCore R B F ι)
 homeomorphism of reconstructed total spaces over `B`. -/
 def reindexHomeomorph (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) :
     Z.TotalSpace ≃ₜ (Z.reindex e).TotalSpace where
-  toFun p := ⟨p.proj, p.2⟩
-  invFun p := ⟨p.proj, p.2⟩
+  toFun p := ⟨p.proj, p.snd⟩
+  invFun p := ⟨p.proj, p.snd⟩
   left_inv p := by cases p; rfl
   right_inv p := by cases p; rfl
   continuous_toFun := by
@@ -240,13 +240,13 @@ def reindexHomeomorph (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) :
 @[simp]
 theorem reindexHomeomorph_apply (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι)
     (p : Z.TotalSpace) :
-    Z.reindexHomeomorph e p = ⟨p.proj, p.2⟩ := (rfl)
+    Z.reindexHomeomorph e p = ⟨p.proj, p.snd⟩ := (rfl)
 
 /-- Inverse evaluation of `reindexHomeomorph`. -/
 @[simp]
 theorem reindexHomeomorph_symm_apply (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι)
     (p : (Z.reindex e).TotalSpace) :
-    (Z.reindexHomeomorph e).symm p = ⟨p.proj, p.2⟩ := (rfl)
+    (Z.reindexHomeomorph e).symm p = ⟨p.proj, p.snd⟩ := (rfl)
 
 /-- Each chart `i` of `Z.reindex e` coincides under `reindexHomeomorph` with chart `e i` of `Z`. -/
 theorem localTriv_reindex_reindexHomeomorph (Z : VectorBundleCore R B F ι)

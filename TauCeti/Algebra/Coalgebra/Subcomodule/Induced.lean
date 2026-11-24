@@ -65,7 +65,7 @@ private theorem coact_mem_range (n : N) :
     ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N)) n ∈
       LinearMap.range ((SMulMemClass.subtype N).rTensor C) := by
   rw [LinearMap.comp_apply, LinearMap.rTensor_def, SMulMemClass.subtype_apply]
-  exact N.coact_mem n.2
+  exact N.coact_mem n.property
 
 /-- The coaction induced on the subtype of a subcomodule.
 

@@ -152,23 +152,23 @@ private theorem inv_mul_integral_inner_self_le (o : Manifold.Orientation I M (Fi
     {F η : SmoothForm I M ℝ 2} {α : (x : M) → A x} {β : (x : M) → B x} (hr : 0 < r)
     (hs : Continuous fun x ↦ ‖α x‖ ^ 2) (ht : Continuous fun x ↦ ‖β x‖ ^ 2)
     (hFη : ∀ x, alternatingFormInner (TangentSpace I x) 2
-        ((2 : ℝ) • (SmoothForm.selfDualPart o F).1 x + η.1 x)
-        ((2 : ℝ) • (SmoothForm.selfDualPart o F).1 x + η.1 x) ≤
+        ((2 : ℝ) • (SmoothForm.selfDualPart o F).val x + η.val x)
+        ((2 : ℝ) • (SmoothForm.selfDualPart o F).val x + η.val x) ≤
       r ^ 2 / 8 * ((1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) ^ 2 + 4 * ‖α x‖ ^ 2 * ‖β x‖ ^ 2)) :
-    r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x) ∂riemannianVolume I M ≤
+    r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.val x) (F.val x) ∂riemannianVolume I M ≤
       r / 8 * ∫ x, (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 ∂riemannianVolume I M +
         r / 2 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M +
-        (∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) ∂riemannianVolume I M -
-          integralTopForm o (RoughForm.wedge F.1 F.1)) / r := by
+        (∫ x, alternatingFormInner (TangentSpace I x) 2 (η.val x) (η.val x) ∂riemannianVolume I M -
+          integralTopForm o (RoughForm.wedge F.val F.val)) / r := by
   set Fp := SmoothForm.selfDualPart o F
   -- The continuity of `|η|²`, for `fun_prop` below.
   have hη := (η.isSmoothForm.contMDiff_alternatingFormInner η.isSmoothForm).continuous
   -- Pointwise, `|F⁺|² ≤ (|2 F⁺ + η|² + |η|²) / 2 ≤ (r² / 16) d² + (r² / 4) |β|² + |η|² / 2`,
   -- with `d = 1 - |α|² - |β|²`, since `(1 - |α|² + |β|²)² + 4 |α|² |β|² = d² + 4 |β|²`.
-  have hpt (x : M) : alternatingFormInner (TangentSpace I x) 2 (Fp.1 x) (Fp.1 x) ≤
+  have hpt (x : M) : alternatingFormInner (TangentSpace I x) 2 (Fp.val x) (Fp.val x) ≤
       r ^ 2 / 16 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 + r ^ 2 / 4 * ‖β x‖ ^ 2 +
-        1 / 2 * alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) := by
-    have h₀ := alternatingFormInner_self_nonneg (Fp.1 x + η.1 x)
+        1 / 2 * alternatingFormInner (TangentSpace I x) 2 (η.val x) (η.val x) := by
+    have h₀ := alternatingFormInner_self_nonneg (Fp.val x + η.val x)
     have hb := hFη x
     rw [show (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) ^ 2 + 4 * ‖α x‖ ^ 2 * ‖β x‖ ^ 2 =
       (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 + 4 * ‖β x‖ ^ 2 by ring] at hb
@@ -187,22 +187,22 @@ private theorem inv_mul_integral_inner_self_le (o : Manifold.Orientation I M (Fi
       (Continuous.integrable_of_compactSpace (by fun_prop)),
     integral_const_mul, integral_const_mul, integral_const_mul] at hle
   -- Multiply `∫ |F|² = 2 ∫ |F⁺|² - ∫ F ∧ F` by `r⁻¹`.
-  have hF2 : ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x)
+  have hF2 : ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.val x) (F.val x)
       ∂riemannianVolume I M ≤ r ^ 2 / 8 * ∫ x, (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2
         ∂riemannianVolume I M + r ^ 2 / 2 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M +
-      ∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) ∂riemannianVolume I M -
-        integralTopForm o (RoughForm.wedge F.1 F.1) := by
+      ∫ x, alternatingFormInner (TangentSpace I x) 2 (η.val x) (η.val x) ∂riemannianVolume I M -
+        integralTopForm o (RoughForm.wedge F.val F.val) := by
     have hFc : F ∈ compactlySupportedForms I M 2 := by
       rw [compactlySupportedForms_eq_top]
       exact Submodule.mem_top
     linarith [SmoothForm.integral_inner_self_eq_two_mul_sub o even_two hFc]
-  calc r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x)
+  calc r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.val x) (F.val x)
         ∂riemannianVolume I M
       ≤ r⁻¹ * (r ^ 2 / 8 * ∫ x, (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 ∂riemannianVolume I M +
           r ^ 2 / 2 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M +
-          ∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x)
+          ∫ x, alternatingFormInner (TangentSpace I x) 2 (η.val x) (η.val x)
             ∂riemannianVolume I M -
-          integralTopForm o (RoughForm.wedge F.1 F.1)) :=
+          integralTopForm o (RoughForm.wedge F.val F.val)) :=
         mul_le_mul_of_nonneg_left hF2 (inv_nonneg.2 hr.le)
     _ = _ := by field_simp; ring
 
@@ -241,24 +241,24 @@ theorem inv_mul_integral_add_integral_add_integral_add_mul_integral_le
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖))
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2)
-    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) / 2 =
+    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) / 2 =
       r / 8 * (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) -
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) / 4)
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x) / 4)
     (hFη : ∀ x, alternatingFormInner (TangentSpace I x) 2
-        ((2 : ℝ) • (SmoothForm.selfDualPart o F).1 x + η.1 x)
-        ((2 : ℝ) • (SmoothForm.selfDualPart o F).1 x + η.1 x) ≤
+        ((2 : ℝ) • (SmoothForm.selfDualPart o F).val x + η.val x)
+        ((2 : ℝ) • (SmoothForm.selfDualPart o F).val x + η.val x) ≤
       r ^ 2 / 8 * ((1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) ^ 2 + 4 * ‖α x‖ ^ 2 * ‖β x‖ ^ 2)) :
-    r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x) ∂riemannianVolume I M +
+    r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.val x) (F.val x) ∂riemannianVolume I M +
         ∫ x, ‖Dα x‖ ^ 2 ∂riemannianVolume I M + ∫ x, ‖Dβ x‖ ^ 2 ∂riemannianVolume I M +
         r * ∫ x, (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 ∂riemannianVolume I M ≤
       2 * (4 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
             (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-          2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x)
+          2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x)
             ∂riemannianVolume I M +
           2 * K * riemannianTotalVolume I M) +
         5 / 3 * K₁ * riemannianTotalVolume I M + 2 * riemannianTotalVolume I M +
-        (∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) ∂riemannianVolume I M -
-          integralTopForm o (RoughForm.wedge F.1 F.1)) / r := by
+        (∫ x, alternatingFormInner (TangentSpace I x) 2 (η.val x) (η.val x) ∂riemannianVolume I M -
+          integralTopForm o (RoughForm.wedge F.val F.val)) / r := by
   have hr0 : 0 < r := by linarith
   have hKr' : K / r ≤ 1 := (div_le_one hr0).2 hKr
   have hs : Continuous fun x ↦ ‖α x‖ ^ 2 := hα.continuous

@@ -176,7 +176,7 @@ theorem spaComapLoc_spaCompletedLocalizationHomeomorph_symm (P : PairOfDefinitio
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ x : (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)),
       spaComapLoc P Aplus T s S hden
-        ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x) = x.1 := by
+        ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x) = x.val := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden

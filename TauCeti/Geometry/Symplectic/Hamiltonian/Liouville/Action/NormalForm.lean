@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Hamiltonian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
@@ -36,7 +36,11 @@ for every period `p > 0` there are an open set `U ⊇ L`, an open set `D ⊆ ℝ
 * `Φ` is injective on `U` and a local diffeomorphism at every point of `U`;
 * `Φ` maps `U` onto the open set of covectors whose actions lie in `D`;
 * `Φ` pulls `ω` back to `σ` on `U`;
-* `F = h ∘ (actions of Φ)` on `U`.
+* `F = h ∘ (actions of Φ)` on `U`, the actions being `TauCeti.CotangentBundle.torusActions`;
+* the Hamiltonian vector field of each `F_i` is `∑ j, (∂h_i / ∂I_j) ∂θ_j` in these coordinates:
+  the differential of `Φ` carries it to the image of `(∇h_i(I), 0)` under the differential of
+  the action–angle covering map `κ` at `(θ, I)`
+  (`TauCeti.CotangentBundle.mfderiv_hamiltonianVectorField_eq_mfderiv_actionAngleCover`).
 
 The map `Φ` is assembled from the local action-angle coordinates near `L`
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact`):
@@ -92,9 +96,9 @@ private def rescaledCover (q : (ι → ℝ) × (ι → ℝ)) :
 variable {p a A}
 
 /-- The actions of `rescaledCover p a A (θ, c)` are `a⁻¹ A(c)`. -/
-private theorem rescaledCover_snd_apply_single [DecidableEq ι] (q : (ι → ℝ) × (ι → ℝ)) :
-    (fun i ↦ (rescaledCover p a A q).2 (Pi.single i 1)) = a⁻¹ • A q.2 :=
-  funext fun i ↦ CotangentBundle.actionAngleCover_snd_apply_single p _ i
+private theorem torusActions_rescaledCover [DecidableEq ι] (q : (ι → ℝ) × (ι → ℝ)) :
+    CotangentBundle.torusActions p (rescaledCover p a A q) = a⁻¹ • A q.2 :=
+  CotangentBundle.torusActions_actionAngleCover p _
 
 private theorem contMDiffAt_rescaledCover {q : (ι → ℝ) × (ι → ℝ)}
     (hA : ContDiffAt ℝ ∞ A q.2) :
@@ -192,16 +196,9 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {σ : SmoothTwoForm I M} {ι : Type*} [Fintype ι] [DecidableEq ι] {F : M → ι → ℝ}
 
-/-- **The Liouville–Arnold theorem in action–angle form.** On a symplectic manifold of dimension
-`2 · |ι|`, let `F` be a smooth family of pairwise Poisson-commuting functions, and let the
-connected component `L` of `x` in its level `F⁻¹(F x)` be compact and consist of regular points of
-`F`. The Hamiltonian vector fields of the `F_i` need not be complete. Then for every period `p > 0`
-there are an open neighbourhood `U` of `L`, an open set `D` of actions, a map `Φ` into the
-cotangent bundle of the torus `ι → AddCircle p` and a smooth function `h` on `D` such that `Φ` is
-injective on `U`, a local diffeomorphism at every point of `U`, maps `U` onto the covectors whose
-actions `ξ(e_i)` lie in `D`, pulls the canonical symplectic form back to `σ` on `U`, and turns `F`
-into the function `h` of the actions. -/
-theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
+/-- The Liouville–Arnold normal form without the Hamiltonian vector fields: the construction of the
+chart `Φ` and of the function `h` of the actions. -/
+private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
     (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
     (hdim : 2 * Fintype.card ι = Module.finrank ℝ E) {x : M}
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
@@ -210,7 +207,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
       (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
       (h : (ι → ℝ) → ι → ℝ),
       IsOpen U ∧ connectedComponentIn (F ⁻¹' {F x}) x ⊆ U ∧ IsOpen D ∧ InjOn Φ U ∧
-      Φ '' U = {z | (fun i ↦ z.2 (Pi.single i 1)) ∈ D} ∧
+      Φ '' U = {z | CotangentBundle.torusActions p z ∈ D} ∧
       (∀ y ∈ U, IsLocalDiffeomorphAt I
         ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ y) ∧
       (∀ y ∈ U, ∀ v w : TangentSpace I y,
@@ -222,7 +219,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
             (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
               Φ y w) =
           SmoothBundleForm.eval₂ σ y v w) ∧
-      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (fun i ↦ (Φ y).2 (Pi.single i 1)) := by
+      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (CotangentBundle.torusActions p (Φ y)) := by
   -- Start from the local action-angle coordinates `Ψ(θ, c)`, `2π`-periodic in `θ`, with actions
   -- `A`. On `W = ℝ^ι × U₀`, where `A` is a diffeomorphism, `Ψ` and the rescaled model
   -- `κ(θ, c) = ∑ j, (a⁻¹ A(c))_j dθ_j` at `[a θ]`, `a = p / 2π`, identify the same points, so `κ`
@@ -256,7 +253,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
     extend (fun q : W ↦ Ψ q) (fun q : W ↦ κ q) fun _ ↦ κ 0
   have hΦΨ (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) : Φ (Ψ q) = κ q :=
     FactorsThrough.extend_apply (f := fun q : W ↦ Ψ q) (g := fun q : W ↦ κ q)
-      (fun q q' h ↦ (hκeq q q' q.2 q'.2).2 h) _ ⟨q, hq⟩
+      (fun q q' h ↦ (hκeq q q' q.property q'.property).2 h) _ ⟨q, hq⟩
   have hΨloc (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
       IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ q :=
     (hΨ q.2 hq.2.1).2.1 q.1
@@ -282,7 +279,8 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
   refine ⟨Ψ '' W, (fun c ↦ a⁻¹ • A c) '' U₀, Φ, fun J ↦ ΦA.symm (a • J), ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · -- `Ψ` is a local homeomorphism on the open set `W`, so `Ψ '' W` is open.
-    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q q.2).isLocalHomeomorphOn.isOpen_image hW
+    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q
+        q.property).isLocalHomeomorphOn.isOpen_image hW
   · -- The component is swept out by the angles at the value `F x ∈ U₀`.
     rw [← hrange]
     rintro _ ⟨θ, rfl⟩
@@ -300,15 +298,14 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
   · ext z
     constructor
     · rintro ⟨_, ⟨q, hq, rfl⟩, rfl⟩
-      rw [Set.mem_ofPred_eq, hΦΨ q hq, hκ_def, rescaledCover_snd_apply_single]
+      rw [Set.mem_ofPred_eq, hΦΨ q hq, hκ_def, torusActions_rescaledCover]
       exact ⟨q.2, hq.2, rfl⟩
     · rintro ⟨c, hc, hcz⟩
       obtain ⟨⟨θ₀, I₀⟩, rfl⟩ := CotangentBundle.surjective_actionAngleCover p z
       refine ⟨Ψ (a⁻¹ • θ₀, c), ⟨_, ⟨mem_univ _, hc⟩, rfl⟩, ?_⟩
       rw [hΦΨ _ ⟨mem_univ _, hc⟩, hκ_def, rescaledCover, smul_inv_smul₀ ha]
       congr 2
-      refine hcz.trans (funext fun i ↦ ?_)
-      exact CotangentBundle.actionAngleCover_snd_apply_single p _ i
+      exact hcz.trans (CotangentBundle.torusActions_actionAngleCover p _)
   · rintro _ ⟨q, hq, rfl⟩
     exact hΦloc q hq
   · rintro _ ⟨q, hq, rfl⟩ v w
@@ -336,8 +333,65 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
     exact ΦA.toPartialEquiv.map_source hc.2
   · rintro _ ⟨q, hq, rfl⟩
     dsimp only
-    rw [hΦΨ q hq, hκ_def, rescaledCover_snd_apply_single, smul_inv_smul₀ ha, hAeq hq.2.2]
+    rw [hΦΨ q hq, hκ_def, torusActions_rescaledCover, smul_inv_smul₀ ha, hAeq hq.2.2]
     exact ((ΦA.toPartialEquiv.left_inv hq.2.2).trans ((hΨ q.2 hq.2.1).1 q.1).symm).symm
+
+/-- **The Liouville–Arnold theorem in action–angle form.** On a symplectic manifold of dimension
+`2 · |ι|`, let `F` be a smooth family of pairwise Poisson-commuting functions, and let the
+connected component `L` of `x` in its level `F⁻¹(F x)` be compact and consist of regular points of
+`F`. The Hamiltonian vector fields of the `F_i` need not be complete. Then for every period `p > 0`
+there are an open neighbourhood `U` of `L`, an open set `D` of actions, a map `Φ` into the
+cotangent bundle of the torus `ι → AddCircle p` and a smooth function `h` on `D` such that `Φ` is
+injective on `U`, a local diffeomorphism at every point of `U`, maps `U` onto the covectors whose
+actions `ξ(e_j)` lie in `D`, pulls the canonical symplectic form back to `σ` on `U`, and turns `F`
+into the function `h` of the actions. In these coordinates the Hamiltonian vector field of each
+`F_i` is `∑ j, (∂h_i / ∂I_j) ∂θ_j`: at `y ∈ U` with `Φ y = κ(θ, I)`, the differential of `Φ` carries
+it to the image of `(∇h_i(I), 0)` under the differential at `(θ, I)` of the action–angle covering
+map `κ`. -/
+theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
+    (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
+    (hdim : 2 * Fintype.card ι = Module.finrank ℝ E) {x : M}
+    (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
+    (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) (p : ℝ) [Fact (0 < p)] :
+    ∃ (U : Set M) (D : Set (ι → ℝ))
+      (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
+      (h : (ι → ℝ) → ι → ℝ),
+      IsOpen U ∧ connectedComponentIn (F ⁻¹' {F x}) x ⊆ U ∧ IsOpen D ∧ InjOn Φ U ∧
+      Φ '' U = {z | CotangentBundle.torusActions p z ∈ D} ∧
+      (∀ y ∈ U, IsLocalDiffeomorphAt I
+        ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ y) ∧
+      (∀ y ∈ U, ∀ v w : TangentSpace I y,
+        SmoothBundleForm.eval₂
+            (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+              (ι → AddCircle p)) (Φ y)
+            (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+              Φ y v)
+            (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+              Φ y w) =
+          SmoothBundleForm.eval₂ σ y v w) ∧
+      ContDiffOn ℝ ∞ h D ∧ (∀ y ∈ U, F y = h (CotangentBundle.torusActions p (Φ y))) ∧
+      ∀ y ∈ U, ∀ i, ∀ q : (ι → ℝ) × (ι → ℝ), CotangentBundle.actionAngleCover p q = Φ y →
+        mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) Φ y
+            (σ.hamiltonianVectorField (F · i) y) =
+          mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
+            ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+            (CotangentBundle.actionAngleCover p) q
+            (fun j ↦ fderiv ℝ (h · i) q.2 (Pi.single j 1), 0) := by
+  obtain ⟨U, D, Φ, h, hU, hLU, hD, hinj, himage, hloc, hsymp, hh, hFh⟩ :=
+    exists_actionAngle_aux hσ hF hcomm hdim hreg hK p
+  refine ⟨U, D, Φ, h, hU, hLU, hD, hinj, himage, hloc, hsymp, hh, hFh, fun y hy i q hq ↦ ?_⟩
+  -- Near `y`, `F_i` is the `i`-th component of `h` composed with the actions of `Φ`.
+  have hFi : (F · i) =ᶠ[𝓝 y] (h · i) ∘ CotangentBundle.torusActions p ∘ Φ :=
+    Filter.eventuallyEq_of_mem (hU.mem_nhds hy) fun y' hy' ↦ congrFun (hFh y' hy') i
+  -- The actions of `Φ y` lie in the open set `D`, where `h` is smooth.
+  have hqD : q.2 ∈ D := by
+    have h' : Φ y ∈ Φ '' U := mem_image_of_mem Φ hy
+    simpa [himage, ← hq] using h'
+  have hhi : DifferentiableAt ℝ (h · i) q.2 :=
+    differentiableAt_pi.1 ((hh.differentiableOn (by simp) q.2 hqD).differentiableAt
+      (hD.mem_nhds hqD)) i
+  exact CotangentBundle.mfderiv_hamiltonianVectorField_eq_mfderiv_actionAngleCover p
+    hσ.isNondegenerate (hloc y hy) (hsymp y hy) hFi hq hhi
 
 end IsSymplectic
 

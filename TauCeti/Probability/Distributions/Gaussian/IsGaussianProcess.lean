@@ -59,12 +59,12 @@ theorem iIndepFun.isGaussianProcess {S : T → Type*} {X : (t : T) → S t → �
     classical
     let A : Finset T := I.image Sigma.fst
     let B (t : T) : Finset (S t) := I.preimage (Sigma.mk t) sigma_mk_injective.injOn
-    have hY := ((hindep.precomp Subtype.val_injective).comp (fun a : A ↦ (B a.1).restrict)
-      fun _ ↦ measurable_restrict _).hasGaussianLaw fun a ↦ (hX a.1).hasGaussianLaw (B a.1)
+    have hY := ((hindep.precomp Subtype.val_injective).comp (fun a : A ↦ (B a.val).restrict)
+      fun _ ↦ measurable_restrict _).hasGaussianLaw fun a ↦ (hX a.val).hasGaussianLaw (B a.val)
     exact hY.map ({
-      toFun z p := z ⟨p.1.1, mem_image_of_mem _ p.2⟩ ⟨p.1.2, mem_preimage.mpr p.2⟩
+      toFun z p := z ⟨p.val.1, mem_image_of_mem _ p.property⟩ ⟨p.val.2, mem_preimage.mpr p.property⟩
       map_add' _ _ := rfl, map_smul' _ _ := rfl, cont := by fun_prop } :
-      ((a : A) → B a.1 → E) →L[ℝ] (I → E))
+      ((a : A) → B a.val → E) →L[ℝ] (I → E))
 
 /-- Mutually independent Gaussian processes `X i : T → Ω → E` form a Gaussian process on `ι × T`. -/
 theorem iIndepFun.isGaussianProcess_prod {ι : Type*} {X : ι → T → Ω → E}
@@ -105,7 +105,8 @@ theorem sum_comp_left [NormedSpace ℝ E] {ι F : Type*} [NormedAddCommGroup F] 
     IsGaussianProcess (fun t ω ↦ ∑ i ∈ s, L i t (X i t ω)) P := by
   classical
   refine hX.of_isGaussianProcess fun t ↦ ⟨s ×ˢ {t},
-    { toFun z := ∑ i ∈ s.attach, L i.1 t (z ⟨(i.1, t), mem_product.mpr ⟨i.2, mem_singleton_self t⟩⟩)
+    { toFun z := ∑ i ∈ s.attach,
+        L i.val t (z ⟨(i.val, t), mem_product.mpr ⟨i.property, mem_singleton_self t⟩⟩)
       map_add' _ _ := by simp [sum_add_distrib], map_smul' _ _ := by simp [smul_sum]
       cont := by fun_prop }, fun ω ↦ by
     simpa [restrict_def] using (sum_attach s fun i ↦ L i t (X i t ω)).symm⟩

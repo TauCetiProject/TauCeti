@@ -81,55 +81,55 @@ omit [NormedSpace ℝ F] [∀ b, InnerProductSpace ℝ (E b)] [VectorBundle ℝ 
 spaces. -/
 abbrev sphereBundleFiberBasedHom (q : sphereBundle F E) :
     BasedTopologicalSpace.Hom
-      ⟨sphere (0 : E q.1.proj) 1, unitSphereOfSphereBundle q⟩
+      ⟨sphere (0 : E q.val.proj) 1, unitSphereOfSphereBundle q⟩
       ⟨sphereBundle F E, q⟩ where
-  toContinuousMap := sphereBundleFiberIncl F E q.1.proj
+  toContinuousMap := sphereBundleFiberIncl F E q.val.proj
   map_basepoint := sphereBundleFiberIncl_unitSphereOfSphereBundle q
 
 variable (F E) in
 /-- **The vertical two-sphere family `V₂(q^⊥) → Map_*(S², S(E))` over a unit vector `q : S(E)`.** -/
 def stiefelBundleSphereFamilyFiber (q : sphereBundle F E) :
-    C(stiefel (ℝ ∙ q.1.2)ᗮ 2, BasedMap Sphere2 (sphereBundle F E) Sphere2.north q) :=
+    C(stiefel (ℝ ∙ q.val.snd)ᗮ 2, BasedMap Sphere2 (sphereBundle F E) Sphere2.north q) :=
   BasedMap.lift ((stiefelBundleSphereFamily F E).comp (StiefelBundle.sphereFiberIncl q 2))
     fun x ↦ by simp
 
 /-- The based sphere map associated to a vertical `2`-frame at `q` sends the north pole to `q`. -/
 @[simp]
 theorem stiefelBundleSphereFamilyFiber_apply_north (q : sphereBundle F E)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ 2) :
-    (stiefelBundleSphereFamilyFiber F E q x).1 Sphere2.north = q :=
-  (stiefelBundleSphereFamilyFiber F E q x).2
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ 2) :
+    (stiefelBundleSphereFamilyFiber F E q x).val Sphere2.north = q :=
+  (stiefelBundleSphereFamilyFiber F E q x).property
 
 /-- **Restricting `stiefelBundleSphereFamily` to the vertical fibre `V₂(q^⊥)` over `q` recovers
 `stiefelBundleSphereFamilyFiber`.** -/
 @[simp]
 theorem stiefelBundleSphereFamily_sphereFiberIncl (q : sphereBundle F E)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ 2) :
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ 2) :
     stiefelBundleSphereFamily F E (StiefelBundle.sphereFiberIncl q 2 x) =
-      (stiefelBundleSphereFamilyFiber F E q x).1 := by
+      (stiefelBundleSphereFamilyFiber F E q x).val := by
   rw [stiefelBundleSphereFamilyFiber, BasedMap.lift_apply_val, ContinuousMap.comp_apply]
 
 /-- **The vertical family over `q ∈ S(E)` is the model fibre family on `S(E_{q.1.proj})`
 postcomposed with the fibre inclusion `S(E_{q.1.proj}) ↪ S(E)`.** -/
 theorem stiefelBundleSphereFamilyFiber_eq_map (q : sphereBundle F E)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ 2) :
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ 2) :
     stiefelBundleSphereFamilyFiber F E q x =
-      BasedMap.map (sphereBundleFiberIncl F E q.1.proj)
+      BasedMap.map (sphereBundleFiberIncl F E q.val.proj)
         (sphereBundleFiberIncl_unitSphereOfSphereBundle q)
         (stiefelSphereFamilyFiber (unitSphereOfSphereBundle q) x) := by
   refine Subtype.ext ?_
   rw [← stiefelBundleSphereFamily_sphereFiberIncl, StiefelBundle.sphereFiberIncl_apply,
     stiefelBundleSphereFamily_fiberIncl, stiefelSphereFamily_stiefelFrameIncl]
   exact ContinuousMap.ext fun y ↦
-    (BasedMap.map_apply (sphereBundleFiberIncl F E q.1.proj) _ _ y).symm
+    (BasedMap.map_apply (sphereBundleFiberIncl F E q.val.proj) _ _ y).symm
 
 /-- On the cube `I²` collapsed onto `S²`, the vertical family over `q` evaluates to the double loop
 `stiefelDoubleLoop` inside `S(E_{q.1.proj})` included into `S(E)`. -/
 @[simp]
 theorem stiefelBundleSphereFamilyFiber_apply_sphereCollapse (q : sphereBundle F E)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ 2) (z : Fin 2 → I) :
-    (stiefelBundleSphereFamilyFiber F E q x).1 (sphereCollapse 2 Sphere2.north z) =
-      sphereBundleFiberIncl F E q.1.proj
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ 2) (z : Fin 2 → I) :
+    (stiefelBundleSphereFamilyFiber F E q x).val (sphereCollapse 2 Sphere2.north z) =
+      sphereBundleFiberIncl F E q.val.proj
         (stiefelDoubleLoop (unitSphereOfSphereBundle q) x (z 0) (z 1)) := by
   rw [stiefelBundleSphereFamilyFiber_eq_map, BasedMap.map_apply,
     stiefelSphereFamilyFiber_apply_sphereCollapse]
@@ -139,7 +139,7 @@ theorem stiefelBundleSphereFamilyFiber_apply_sphereCollapse (q : sphereBundle F 
 double loop `stiefelDoubleLoop q x` pushed forward along the `2`-fold loop map of
 `S(E_{q.1.proj}) ↪ S(E)`. -/
 theorem basedMapSphereHomeomorphIteratedLoopSpace_stiefelBundleSphereFamilyFiber
-    (q : sphereBundle F E) (x : stiefel (ℝ ∙ q.1.2)ᗮ 2) :
+    (q : sphereBundle F E) (x : stiefel (ℝ ∙ q.val.snd)ᗮ 2) :
     BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
         ⟨sphereBundle F E, q⟩ Sphere2.north (stiefelBundleSphereFamilyFiber F E q x) =
       (sphereBundleFiberBasedHom F E q).iteratedLoopSpace 2

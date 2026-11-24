@@ -102,7 +102,7 @@ noncomputable def automorphismOrder (C : ConnectedIsoClass n) : ℕ :=
 `Nat.card t.1.automorphismGroup`. -/
 @[simp]
 theorem automorphismOrder_mk (t : ConnectedTriple n) :
-    (mk t).automorphismOrder = Nat.card t.1.automorphismGroup := by
+    (mk t).automorphismOrder = Nat.card t.val.automorphismGroup := by
   rw [automorphismOrder, forget_mk, PermutationTriple.IsoClass.automorphismOrder_mk]
 
 /-- Forgetting connectedness preserves `automorphismOrder`. -/
@@ -118,18 +118,18 @@ theorem automorphismOrder_pos (C : ConnectedIsoClass n) : 0 < C.automorphismOrde
 theorem automorphismOrder_dvd (C : ConnectedIsoClass n) : C.automorphismOrder ∣ n := by
   obtain ⟨t, rfl⟩ := mk_surjective C
   rw [automorphismOrder_mk]
-  exact t.1.card_automorphismGroup_dvd t.2.isPretransitive
+  exact t.val.card_automorphismGroup_dvd t.property.isPretransitive
 
 /-- Executable automorphism order of a connected isomorphism class, computed from
 `TauCeti.PermutationTriple.automorphismFinset`. -/
 @[expose] def computedAutomorphismOrder (C : ConnectedIsoClass n) : ℕ :=
-  Quotient.liftOn' C (fun t ↦ t.1.automorphismFinset.card) fun t t' h ↦ by
+  Quotient.liftOn' C (fun t ↦ t.val.automorphismFinset.card) fun t t' h ↦ by
     obtain ⟨τ, rfl⟩ := h
     simp
 
 /-- On `ConnectedIsoClass.mk t`, `computedAutomorphismOrder` is `t.1.automorphismFinset.card`. -/
 theorem computedAutomorphismOrder_mk (t : ConnectedTriple n) :
-    (mk t).computedAutomorphismOrder = t.1.automorphismFinset.card :=
+    (mk t).computedAutomorphismOrder = t.val.automorphismFinset.card :=
   (rfl)
 
 /-- The executable automorphism order agrees with the mathematical automorphism order. -/
@@ -150,7 +150,7 @@ noncomputable def automorphismOrder (m : MarkedIsoClass n) : ℕ :=
 /-- On `MarkedIsoClass.mk t i`, `automorphismOrder` is `Nat.card t.1.automorphismGroup`. -/
 @[simp]
 theorem automorphismOrder_mk (t : ConnectedTriple n) (i : Fin n) :
-    (mk t i).automorphismOrder = Nat.card t.1.automorphismGroup := by
+    (mk t i).automorphismOrder = Nat.card t.val.automorphismGroup := by
   rw [automorphismOrder, forget_mk, ConnectedIsoClass.automorphismOrder_mk]
 
 /-- Forgetting the marked sheet preserves `automorphismOrder`. -/

@@ -80,7 +80,7 @@ theorem totalVariationOn_le_setLIntegral_of_forall_integral_divergenceCLM_mul_eq
     (hU : U ≤ Ω) :
     totalVariationOn μ U u ≤ ∫⁻ x in ((↑) : Ω → E) ⁻¹' (U : Set E), ‖g x‖ₑ ∂ν := by
   set V : Set Ω := ((↑) : Ω → E) ⁻¹' (U : Set E)
-  have hVm : MeasurableSet V := U.isOpen.measurableSet.preimage measurable_subtype_coe
+  have hVm : MeasurableSet V := U.isOpen.measurableSet.preimage measurable_subtypeVal
   rw [totalVariationOn_le_iff]
   intro φ hφ
   let φΩ : 𝓓(Ω, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hU⟩
@@ -166,7 +166,7 @@ theorem totalVariationOn_eq_setLIntegral_of_forall_integral_divergenceCLM_mul_eq
     forall_isCompact_exists_totalVariationOn_ne_top_of_forall_integral_divergenceCLM_mul_eq hg hdiv
   rw [← variationMeasure_preimage_coe hu hfin hU,
     variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq hu hg hdiv,
-    withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
+    withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtypeVal)]
 
 /-- **Polar density of a measure-represented distributional gradient.** If `u` is locally
 integrable on `Ω` and `Du` is represented against a locally finite measure `ν` on `Ω` by a locally

@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The index form and integration by parts
@@ -46,6 +47,9 @@ without requiring the normal component of `D_t V(a) + u` to vanish.
   within a parameter set, including at closed interval endpoints.
 * `TauCeti.Manifold.indexForm_congr`: invariance under curves and fields agreeing on the open
   segment.
+* `TauCeti.Manifold.indexForm_eq_of_forall_notMem_Icc_eq_zero_left` and
+  `TauCeti.Manifold.indexForm_eq_of_forall_notMem_Icc_eq_zero_right`: restriction to `[u, v] ⊆
+  [a, b]` when one field vanishes outside `[u, v]`.
 * `TauCeti.Manifold.indexForm_comm`, `TauCeti.Manifold.indexForm_add_left`,
   `TauCeti.Manifold.indexForm_const_smul_left` and their right-slot versions: symmetry and
   bilinearity, with zero, negation, subtraction and finite-sum laws.
@@ -380,9 +384,60 @@ theorem indexFormIntegrand_comm (t : ℝ) :
 theorem indexForm_same : indexForm I γ V W a a = 0 := by
   simp only [indexForm_def, intervalIntegral.integral_same]
 
+open MeasureTheory in
+/-- A nonpositive radial curvature term gives nonnegative self-index on an ordered interval.
+Only the open interval matters, and no regularity or integrability hypothesis is needed. -/
+theorem indexForm_self_nonneg_of_curvature_nonpos (hab : a ≤ b)
+    (hR : ∀ t ∈ Ioo a b, inner ℝ
+      ((leviCivitaConnection I M).curvatureTensor (γ t) (W t)
+        (curveVelocity I γ t) (curveVelocity I γ t)) (W t) ≤ 0) :
+    0 ≤ indexForm I γ W W a b := by
+  rw [indexForm_def]
+  apply intervalIntegral.integral_nonneg_of_ae_restrict hab
+  rw [Measure.restrict_congr_set Ioo_ae_eq_Icc.symm]
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+  rw [indexFormIntegrand_def, real_inner_self_eq_norm_sq]
+  exact sub_nonneg.mpr ((hR t ht).trans (sq_nonneg _))
+
 /-- Reversing the orientation of the interval negates the index form. -/
 theorem indexForm_symm : indexForm I γ V W b a = -indexForm I γ V W a b := by
   rw [indexForm_def, indexForm_def, intervalIntegral.integral_symm]
+
+/-- Restricting `indexForm` from `[a, b]` to `[u, v]` (`a ≤ u`, `v ≤ b`) when the right field
+vanishes outside `[u, v]`. -/
+theorem indexForm_eq_of_forall_notMem_Icc_eq_zero_right {u v : ℝ}
+    (hau : a ≤ u) (hvb : v ≤ b) (hW : ∀ t ∉ Icc u v, W t = 0) :
+    indexForm I γ V W u v = indexForm I γ V W a b := by
+  let f := indexFormIntegrand I γ V W
+  let g := (Ioo u v).indicator f
+  have hsupp : Function.support g ⊆ Ioo u v :=
+    fun t ht ↦ by_contra fun h ↦ ht (indicator_of_notMem h f)
+  have hae : f =ᵐ[MeasureTheory.volume] g := by
+    filter_upwards [MeasureTheory.volume.ae_ne u, MeasureTheory.volume.ae_ne v] with t htu htv
+    by_cases hmem : t ∈ Ioo u v
+    · exact (indicator_of_mem hmem f).symm
+    · have ht_not_Icc : t ∉ Icc u v := fun hc ↦
+        hmem ⟨lt_of_le_of_ne hc.1 htu.symm, lt_of_le_of_ne hc.2 htv⟩
+      have h0 : f t = 0 :=
+        (indexFormIntegrand_congr EventuallyEq.rfl (Eventually.of_forall fun _ ↦ HEq.rfl)
+          (eventually_of_mem (isClosed_Icc.isOpen_compl.mem_nhds ht_not_Icc)
+            fun r hr ↦ heq_of_eq (hW r hr))).trans (indexFormIntegrand_zero_right t)
+      exact h0.trans (indicator_of_notMem hmem f).symm
+  rw [indexForm_def, indexForm_def,
+    intervalIntegral.integral_congr_ae (hae.mono fun _ ht _ ↦ ht),
+    intervalIntegral.integral_congr_ae (hae.mono fun _ ht _ ↦ ht)]
+  rcases le_or_gt v u with hvu | _
+  · simp [g, Ioo_eq_empty (not_lt.mpr hvu)]
+  · rw [intervalIntegral.integral_eq_integral_of_support_subset (hsupp.trans Ioo_subset_Ioc_self),
+      intervalIntegral.integral_eq_integral_of_support_subset
+        (hsupp.trans ((Ioo_subset_Ioo hau hvb).trans Ioo_subset_Ioc_self))]
+
+/-- Restricting `indexForm` from `[a, b]` to `[u, v]` (`a ≤ u`, `v ≤ b`) when the left field
+vanishes outside `[u, v]`. -/
+theorem indexForm_eq_of_forall_notMem_Icc_eq_zero_left {u v : ℝ}
+    (hau : a ≤ u) (hvb : v ≤ b) (hV : ∀ t ∉ Icc u v, V t = 0) :
+    indexForm I γ V W u v = indexForm I γ V W a b := by
+  rw [indexForm_comm, indexForm_eq_of_forall_notMem_Icc_eq_zero_right hau hvb hV, indexForm_comm]
 
 /-- The within-set integrand respects subtraction in its first field. -/
 @[to_fun indexFormIntegrandWithin_fun_sub_left]
@@ -614,6 +669,25 @@ theorem indexForm_sub_right
       indexForm I γ V W a b - indexForm I γ V W' a b := by
   rw [indexForm_comm, indexForm_sub_left hW hW' hV, indexForm_comm,
     indexForm_comm (V := W')]
+
+/-- Polarization of the self-index of the difference of two fields. -/
+theorem indexForm_sub_sub_self
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b))
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) (W t)) (uIcc a b)) :
+    indexForm I γ (V - W) (V - W) a b =
+      indexForm I γ V V a b - 2 * indexForm I γ V W a b + indexForm I γ W W a b := by
+  have hsub : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) ((V - W) t)) (uIcc a b) :=
+    hV.sub_sectionAlong hW
+  calc
+    _ = indexForm I γ V (V - W) a b - indexForm I γ W (V - W) a b :=
+      indexForm_sub_left hV hW hsub
+    _ = _ := by
+      rw [indexForm_sub_right hV hV hW, indexForm_sub_right hW hV hW,
+        indexForm_comm (V := W) (W := V)]
+      ring
 
 /-- The index form commutes with finite sums of `C¹` fields in its first slot. -/
 @[to_fun indexForm_fun_sum_left]

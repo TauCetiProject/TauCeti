@@ -52,6 +52,14 @@ def cechComplexPullback (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) :
   (cechComplexFunctor U).map α ≫
     (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).inv
 
+/-- The pullback map is the coefficient map followed by the inverse of the comparison between
+inverse images of intersections and intersections of inverse images. -/
+theorem cechComplexPullback_def (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) :
+    cechComplexPullback f U α =
+      (cechComplexFunctor U).map α ≫
+        (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).inv :=
+  (rfl)
+
 /-- The pullback map is characterized by the coefficient map and the canonical comparison
 between inverse images of intersections and intersections of inverse images. -/
 @[reassoc (attr := simp)]

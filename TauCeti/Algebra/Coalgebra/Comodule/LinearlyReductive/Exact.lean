@@ -84,7 +84,8 @@ theorem isLinearlyReductive_iff_forall_fixedMap_surjective_of_surjective :
         rw [← Comodule.Hom.coe_toLinearMap q, map_sub]
         simp only [Comodule.Hom.coe_toLinearMap, hqs, sub_self]
       exact hqP
-    · simp only [P, Comodule.Hom.sub_apply, Comodule.Hom.id_apply,
+    · rw [Comodule.Hom.coe_toLinearMap]
+      simp only [P, Comodule.Hom.sub_apply, Comodule.Hom.id_apply,
         Comodule.Hom.comp_apply]
       dsimp only [q]
       rw [(W.mkQ_eq_zero_iff z).mpr hz, ← Comodule.Hom.coe_toLinearMap s,

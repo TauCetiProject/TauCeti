@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
 
+import Mathlib.Analysis.InnerProductSpace.LaxMilgram
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
@@ -43,6 +44,8 @@ relative to the fixed inner product of `E`.
   the Riesz operator of `h` is strictly positive exactly when `h` is symmetric and positive
   definite; `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_of_injective`: in
   particular for an inner product pulled back along an injective linear map.
+* `IsCoercive.isStrictlyPositive_continuousLinearMapOfBilin`: in any dimension, the Riesz
+  operator of a symmetric coercive form is strictly positive.
 * `ContinuousLinearMap.metricChangeTransport`: the inverse square root of the Riesz operator.
 * `ContinuousLinearMap.metricChangeEquiv`: the same transport as a continuous linear equivalence,
   with the positive square root as inverse.
@@ -308,24 +311,18 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
   have := FiniteDimensional.completeSpace ℝ E
   have hinner : ∀ u v, ⟪u, h♯ v⟫_ℝ = h v u := fun u v ↦ by
     rw [real_inner_comm, continuousLinearMapOfBilin_apply]
-  rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
-    ContinuousLinearMap.isPositive_iff]
   have hsymm_iff : (h♯ : E →ₗ[ℝ] E).IsSymmetric ↔ ∀ u v, h u v = h v u :=
     forall₂_congr fun u v ↦ by
       rw [ContinuousLinearMap.coe_coe, continuousLinearMapOfBilin_apply, hinner]
-  have hnonneg_iff : (∀ x, 0 ≤ ⟪h♯ x, x⟫_ℝ) ↔ ∀ x, 0 ≤ h x x :=
-    forall_congr' fun x ↦ by rw [continuousLinearMapOfBilin_apply]
-  rw [hsymm_iff, hnonneg_iff]
-  refine ⟨fun ⟨⟨hsymm, hnonneg⟩, hunit⟩ ↦ ⟨hsymm, fun v hv ↦ (hnonneg v).lt_of_ne fun h0 ↦ hv ?_⟩,
-    fun ⟨hsymm, hpos⟩ ↦ ⟨⟨hsymm, fun v ↦ ?_⟩, ?_⟩⟩
-  · -- A vector with `h v v = 0` is killed by `CFC.sqrt h♯`, hence by the injective `h♯`.
-    have hH : 0 ≤ h♯ := ContinuousLinearMap.nonneg_iff_isPositive.mpr <|
-      (ContinuousLinearMap.isPositive_iff _).mpr ⟨hsymm_iff.mpr hsymm, hnonneg_iff.mpr hnonneg⟩
-    have hsqrt : CFC.sqrt h♯ v = 0 := by
-      rw [← inner_self_eq_zero (𝕜 := ℝ), ContinuousLinearMap.inner_sqrt_apply_sqrt_apply hH, h0]
-    refine (ContinuousLinearMap.isUnit_iff_bijective.mp hunit).1 ?_
-    rw [map_zero, ← CFC.sqrt_mul_sqrt_self _ hH, mul_apply_eq_comp, hsqrt, map_zero]
-  · rcases eq_or_ne v 0 with rfl | hv
+  refine ⟨fun hH ↦ ⟨hsymm_iff.mp
+      (ContinuousLinearMap.nonneg_iff_isPositive.mp hH.nonneg).isSymmetric,
+    fun v hv ↦ by simpa only [continuousLinearMapOfBilin_apply] using hH.inner_pos_left hv⟩,
+    fun ⟨hsymm, hpos⟩ ↦ ?_⟩
+  rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
+    ContinuousLinearMap.isPositive_iff, hsymm_iff]
+  refine ⟨⟨hsymm, fun v ↦ ?_⟩, ?_⟩
+  · rw [continuousLinearMapOfBilin_apply]
+    rcases eq_or_ne v 0 with rfl | hv
     · simp
     · exact (hpos v hv).le
   · rw [ContinuousLinearMap.isUnit_iff_bijective]
@@ -344,6 +341,23 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_of_injective [FiniteDimens
     ⟨fun u v ↦ by rw [hh, hh, real_inner_comm], fun v hv ↦ by
       rw [hh]
       exact real_inner_self_pos.2 fun h0 ↦ hv (hK (h0.trans K.map_zero.symm))⟩
+
+/-- The Riesz operator of a symmetric coercive bilinear form on a real Hilbert space, of any
+dimension, is strictly positive: it is positive, and invertible by the Lax–Milgram theorem. So
+`h` is an inner product equivalent to the original one, and `ContinuousLinearMap.metricChangeEquiv`
+applies to it. -/
+theorem _root_.IsCoercive.isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpace E]
+    {h : E →L[ℝ] E →L[ℝ] ℝ} (hh : IsCoercive h) (hsymm : ∀ u v, h u v = h v u) :
+    IsStrictlyPositive h♯ := by
+  refine IsStrictlyPositive.iff_of_unital.2 ⟨ContinuousLinearMap.nonneg_iff_isPositive.2
+    ((ContinuousLinearMap.isPositive_iff _).2 ⟨fun u v ↦ ?_, fun v ↦ ?_⟩), ?_⟩
+  · simp only [ContinuousLinearMap.coe_coe, continuousLinearMapOfBilin_apply, hsymm u v]
+    rw [real_inner_comm, continuousLinearMapOfBilin_apply]
+  · obtain ⟨C, hC, hCv⟩ := hh
+    rw [continuousLinearMapOfBilin_apply]
+    exact (by positivity : 0 ≤ C * ‖v‖ * ‖v‖).trans (hCv v)
+  · exact ((ContinuousLinearEquiv.unitsEquiv ℝ E).symm
+      (IsCoercive.continuousLinearEquivOfBilin hh)).isUnit
 
 end InnerProductSpace
 

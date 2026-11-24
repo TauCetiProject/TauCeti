@@ -207,7 +207,7 @@ elliptic curve over `ℚ` contains exactly one reduced minimal equation. The equ
 change of variables reaching it is not, since it may be composed with `[-1]`. -/
 theorem existsUnique_reducedMinimal (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     ∃! W : { W : WeierstrassCurve ℚ // W.IsElliptic },
-      @IsReducedMinimal W.1 W.2 ∧ ∃ C : VariableChange ℚ, C • E = W.1 := by
+      @IsReducedMinimal W.val W.property ∧ ∃ C : VariableChange ℚ, C • E = W.val := by
   obtain ⟨C, hC⟩ := exists_isReducedMinimal_smul E
   refine ⟨⟨C • E, inferInstance⟩, ⟨hC, C, rfl⟩, ?_⟩
   rintro ⟨W, hW⟩ ⟨hWr, D, rfl⟩

@@ -85,48 +85,48 @@ theorem finitePresentation_sections_pushforward (M : X.Modules) [M.IsFinitePrese
 -- to the open subscheme and its slice site. Only these presentations are used in descent.
 private theorem exists_isFinite_presentation_over_pushforward
     (M : X.Modules) [M.IsQuasicoherent] (f : X ⟶ Y) [IsFinite f] (U : Y.affineOpens)
-    (hfp : Module.FinitePresentation Γ(Y, U.1) Γ((pushforward f).obj M, U.1)) :
-    ∃ P : (((pushforward f).obj M).over U.1).Presentation, P.IsFinite := by
+    (hfp : Module.FinitePresentation Γ(Y, U.val) Γ((pushforward f).obj M, U.val)) :
+    ∃ P : (((pushforward f).obj M).over U.val).Presentation, P.IsFinite := by
   let N := (pushforward f).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pushforward M f
-  have : IsOpenImmersion U.2.fromSpec := U.2.isOpenImmersion_fromSpec
-  let K := N.restrict U.2.fromSpec
+  have : IsOpenImmersion U.property.fromSpec := U.property.isOpenImmersion_fromSpec
+  let K := N.restrict U.property.fromSpec
   have : K.IsQuasicoherent := inferInstance
-  have : Module.FinitePresentation Γ(Y, U.1) (moduleSpecΓFunctor.obj K) := by
+  have : Module.FinitePresentation Γ(Y, U.val) (moduleSpecΓFunctor.obj K) := by
     -- The global-section functor and `Γ(K, ⊤)` have the same sections and scalar action;
     -- their category wrappers differ. Convert this comparison explicitly.
-    convert! Module.FinitePresentation.of_equiv (N.fromSpecSectionsEquiv U.2)
+    convert! Module.FinitePresentation.of_equiv (N.fromSpecSectionsEquiv U.property)
   have : K.IsFinitePresentation :=
-    (SheafOfModules.isFinitePresentation (Spec Γ(Y, U.1)).ringCatSheaf).prop_of_iso
+    (SheafOfModules.isFinitePresentation (Spec Γ(Y, U.val)).ringCatSheaf).prop_of_iso
       (@asIso _ _ _ _ K.fromTildeΓ (isIso_fromTildeΓ_of_isQuasicoherent K))
       (TauCeti.AlgebraicGeometry.isFinitePresentation_tilde (moduleSpecΓFunctor.obj K))
   obtain ⟨P, hP⟩ := K.exists_isFinite_presentation_of_isAffine
-  let F : SheafOfModules (Spec Γ(Y, U.1)).ringCatSheaf ⥤
-      SheafOfModules U.1.toScheme.ringCatSheaf := restrictFunctor U.2.isoSpec.hom
+  let F : SheafOfModules (Spec Γ(Y, U.val)).ringCatSheaf ⥤
+      SheafOfModules U.val.toScheme.ringCatSheaf := restrictFunctor U.property.isoSpec.hom
   have : CategoryTheory.Limits.PreservesColimitsOfSize.{u, u} F :=
-    (restrictAdjunction U.2.isoSpec.hom).leftAdjoint_preservesColimits
-  let e : F.obj K ≅ N.restrict U.1.ι :=
-    ((restrictFunctorComp U.2.isoSpec.hom U.2.fromSpec).app N).symm ≪≫
-      (restrictFunctorCongr U.2.isoSpec_hom_fromSpec).app N
+    (restrictAdjunction U.property.isoSpec.hom).leftAdjoint_preservesColimits
+  let e : F.obj K ≅ N.restrict U.val.ι :=
+    ((restrictFunctorComp U.property.isoSpec.hom U.property.fromSpec).app N).symm ≪≫
+      (restrictFunctorCongr U.property.isoSpec_hom_fromSpec).app N
   -- The isomorphism is stated in scheme modules, while presentations use sheaves of
   -- modules. Supply its instance rather than asking instance search to cross the wrappers.
   let Q := @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ e.hom
-    (Iso.isIso_hom e) (P.map F (restrictUnitIso U.2.isoSpec.hom).symm)
+    (Iso.isIso_hom e) (P.map F (restrictUnitIso U.property.isoSpec.hom).symm)
   have : Q.IsFinite := by
     apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
     exact SheafOfModules.Presentation.isFinite_map _ _ _
-  exact N.exists_isFinite_presentation_over_of_restrict U.1 Q
+  exact N.exists_isFinite_presentation_over_of_restrict U.val Q
 
 private theorem isFinitePresentation_pushforward_of_forall_affineOpens
     (M : X.Modules) [M.IsQuasicoherent] (f : X ⟶ Y) [IsFinite f]
     (hfp : ∀ U : Y.affineOpens,
-      Module.FinitePresentation Γ(Y, U.1) Γ((pushforward f).obj M, U.1)) :
+      Module.FinitePresentation Γ(Y, U.val) Γ((pushforward f).obj M, U.val)) :
     ((pushforward f).obj M).IsFinitePresentation := by
   let N := (pushforward f).obj M
-  have (U : Y.affineOpens) : (N.over U.1).IsFinitePresentation := by
+  have (U : Y.affineOpens) : (N.over U.val).IsFinitePresentation := by
     obtain ⟨P, _⟩ := exists_isFinite_presentation_over_pushforward M f U (hfp U)
     exact P.isFinitePresentation
-  exact SheafOfModules.IsFinitePresentation.of_coversTop N (fun U : Y.affineOpens ↦ U.1)
+  exact SheafOfModules.IsFinitePresentation.of_coversTop N (fun U : Y.affineOpens ↦ U.val)
     (by rw [Opens.coversTop_iff]; exact iSup_affineOpens_eq_top Y)
 
 /-- Finite pushforward on a locally Noetherian target preserves finite presentation.
@@ -135,9 +135,9 @@ instance isFinitePresentation_pushforward_of_isFinite [IsLocallyNoetherian Y]
     (f : X ⟶ Y) [IsFinite f] (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] :
     ((pushforward f).obj M).IsFinitePresentation :=
   isFinitePresentation_pushforward_of_forall_affineOpens M f fun U ↦ by
-    have : IsNoetherianRing Γ(Y, U.1) := IsLocallyNoetherian.component_noetherian U
-    have : Module.Finite Γ(Y, U.1) Γ((pushforward f).obj M, U.1) :=
-      M.finite_sections_pushforward f U.1 U.2
+    have : IsNoetherianRing Γ(Y, U.val) := IsLocallyNoetherian.component_noetherian U
+    have : Module.Finite Γ(Y, U.val) Γ((pushforward f).obj M, U.val) :=
+      M.finite_sections_pushforward f U.val U.property
     exact Module.finitePresentation_of_finite _ _
 
 /-- Direct image along a finite, locally finitely presented morphism preserves finite presentation
@@ -148,6 +148,6 @@ instance isFinitePresentation_pushforward_of_isFinite_of_locallyOfFinitePresenta
     (M : X.Modules) [M.IsFinitePresentation] :
     ((pushforward f).obj M).IsFinitePresentation :=
   isFinitePresentation_pushforward_of_forall_affineOpens M f fun U ↦
-    M.finitePresentation_sections_pushforward f U.1 U.2
+    M.finitePresentation_sections_pushforward f U.val U.property
 
 end AlgebraicGeometry.Scheme.Modules

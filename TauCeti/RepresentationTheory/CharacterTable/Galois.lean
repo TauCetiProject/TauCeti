@@ -148,8 +148,8 @@ convention, and both sides vanish. -/
 theorem Representation.map_ofCharacter_eq_powMap (ρ : Representation k G V) {n j : ℕ}
     (hG : ∀ g : G, g ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
-    σ ∘ (ClassFunction.ofCharacter ρ).1 =
-      (ClassFunction.powMap j (ClassFunction.ofCharacter ρ)).1 := by
+    σ ∘ (ClassFunction.ofCharacter ρ).val =
+      (ClassFunction.powMap j (ClassFunction.ofCharacter ρ)).val := by
   funext g
   simp only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
   exact Representation.map_character_eq_character_pow ρ (hG g) σ hσ

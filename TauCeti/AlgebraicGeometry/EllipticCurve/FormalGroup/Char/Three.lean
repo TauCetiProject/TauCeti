@@ -13,7 +13,8 @@ import Mathlib.Tactic.ReduceModChar
 # Height two in characteristic three
 
 For an elliptic Weierstrass curve over a field of characteristic three, the formal group has
-height two exactly when `b₂ = 0`. The computation
+height two exactly when `b₂ = 0` (the classification at every prime, including singular curves, is
+in `TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`). The computation
 uses the tangent in the coordinates `T = -x/y`, `w = -1/y`: when `b₂ = 0`, its third intersection
 parameter differs from `T` first in degree nine. This works for a general Weierstrass equation,
 without completing the square or changing its coordinates. Over any commutative ring of

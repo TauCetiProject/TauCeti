@@ -45,8 +45,8 @@ regularity, or base-field assumptions where unnecessary:
   is scheme-theoretically dominant, `H¹(X, 𝒪_X) → H¹(X, f_* 𝒪_Y)` is surjective and
   `Hⁿ⁺²(X, 𝒪_X) → Hⁿ⁺²(X, f_* 𝒪_Y)` is bijective for every `n`.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_unit_iff_of_two_le_of_isModification`:
-  when `X` additionally has affine diagonal (for instance is separated), Čech comparison along `f`
-  identifies vanishing of `Hⁿ(X, 𝒪_X)` with vanishing of `Hⁿ(Y, 𝒪_Y)` for every `n ≥ 2`.
+  pushforward comparison along the affine morphism `f` identifies vanishing of `Hⁿ(X, 𝒪_X)` with
+  vanishing of `Hⁿ(Y, 𝒪_Y)` for every `n ≥ 2`.
 
 ## References
 
@@ -202,12 +202,10 @@ end Hom
 
 namespace Modules
 
-/-- Along a finite modification `f : Y ⟶ X` of a Noetherian irreducible scheme `X` with affine
-diagonal (for instance a separated one) of dimension at most one with
-`[IsSchemeTheoreticallyDominant f]`, `Hⁿ(X, 𝒪_X)` vanishes if and only if `Hⁿ(Y, 𝒪_Y)` vanishes in
-every degree `n ≥ 2`. -/
+/-- Along a finite modification `f : Y ⟶ X` of a Noetherian irreducible scheme `X` of dimension at
+most one with `[IsSchemeTheoreticallyDominant f]`, `Hⁿ(X, 𝒪_X)` vanishes if and only if
+`Hⁿ(Y, 𝒪_Y)` vanishes in every degree `n ≥ 2`. -/
 theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Scheme.{u}}
-    [IsAffineHom (pullback.diagonal (terminal.from X))]
     [IsNoetherian X] [IrreducibleSpace X] (hX : topologicalKrullDim X ≤ 1)
     (f : Y ⟶ X) [IsFinite f] [IsModification f] [IsSchemeTheoreticallyDominant f]
     (n : ℕ) (hn : 2 ≤ n) :
@@ -216,10 +214,10 @@ theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Sche
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := (f.cohomologyPushforwardIsoOfCompactSpace
+  let ePush := (f.cohomologyPushforwardIsoOfIsAffineHom
     (SheafOfModules.unit Y.ringCatSheaf) (m + 2)).addCommGroupIsoToAddEquiv
   let eMap := Equiv.ofBijective _ (f.cohomologyMap_unitToPushforwardObjUnit_add_two_bijective hX m)
-  exact (eMap.trans eCech.toEquiv).subsingleton_congr
+  exact (eMap.trans ePush.toEquiv).subsingleton_congr
 
 end Modules
 

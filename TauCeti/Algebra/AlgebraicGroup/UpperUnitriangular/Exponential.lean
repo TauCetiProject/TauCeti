@@ -47,25 +47,25 @@ variable (m : Type v) [Fintype m] [LinearOrder m]
 The source and target are polynomial rings on the same strict-upper indices. -/
 noncomputable def expPullback : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
   MvPolynomial.aeval fun ij : Index m ↦
-    IsNilpotent.exp (genericMatrix R m - 1) ij.1.1 ij.1.2
+    IsNilpotent.exp (genericMatrix R m - 1) ij.val.1 ij.val.2
 
 /-- Pullback by the finite logarithm from `U_m` to strictly upper-triangular matrices. -/
 noncomputable def logPullback : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
   MvPolynomial.aeval fun ij : Index m ↦
-    IsNilpotent.log (genericMatrix R m) ij.1.1 ij.1.2
+    IsNilpotent.log (genericMatrix R m) ij.val.1 ij.val.2
 
 /-- Exponential pullback on a coordinate is the corresponding finite-exponential entry. -/
 @[simp]
 theorem expPullback_X (ij : Index m) :
     expPullback R m (MvPolynomial.X ij) =
-      IsNilpotent.exp (genericMatrix R m - 1) ij.1.1 ij.1.2 := by
+      IsNilpotent.exp (genericMatrix R m - 1) ij.val.1 ij.val.2 := by
   simp [expPullback]
 
 /-- Logarithm pullback on a coordinate is the corresponding finite-logarithm entry. -/
 @[simp]
 theorem logPullback_X (ij : Index m) :
     logPullback R m (MvPolynomial.X ij) =
-      IsNilpotent.log (genericMatrix R m) ij.1.1 ij.1.2 := by
+      IsNilpotent.log (genericMatrix R m) ij.val.1 ij.val.2 := by
   simp [logPullback]
 
 /-- Exponential pullback evaluates the generic unitriangular matrix at the exponential. -/
@@ -95,10 +95,10 @@ variable {A : Type w} [CommRing A] [Algebra ℚ A] [Algebra R A]
 original polynomial at its exponential. This holds over arbitrary commutative value algebras. -/
 theorem aeval_comp_expPullback (M : Matrix m m A) (hM : M.IsUpperTriangular)
     (hdiag : ∀ i, M i i = 0) :
-    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (expPullback R m) =
-      MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.exp M ij.1.1 ij.1.2 := by
+    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.val.1 ij.val.2).comp (expPullback R m) =
+      MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.exp M ij.val.1 ij.val.2 := by
   classical
-  let f := MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2
+  let f := MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.val.1 ij.val.2
   have hmap : f.mapMatrix (genericMatrix R m - 1) = M :=
     map_aeval_genericMatrix_sub_one R m M hM hdiag
   apply MvPolynomial.algHom_ext
@@ -107,21 +107,21 @@ theorem aeval_comp_expPullback (M : Matrix m m A) (hM : M.IsUpperTriangular)
   have h := IsNilpotent.map_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
     f.mapMatrix
   rw [hmap] at h
-  exact congrFun (congrFun h ij.1.1) ij.1.2
+  exact congrFun (congrFun h ij.val.1) ij.val.2
 
 /-- Evaluating logarithm pullback at an upper-unitriangular matrix evaluates the original
 polynomial at its logarithm, including over nonreduced value algebras. -/
 theorem aeval_comp_logPullback (M : Matrix m m A) (hM : M.IsUpperUnitriangular) :
-    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (logPullback R m) =
-      MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.log M ij.1.1 ij.1.2 := by
+    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.val.1 ij.val.2).comp (logPullback R m) =
+      MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.log M ij.val.1 ij.val.2 := by
   classical
   apply MvPolynomial.algHom_ext
   intro ij
   simp only [AlgHom.comp_apply, logPullback_X, MvPolynomial.aeval_X]
   have h := IsNilpotent.map_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
-    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).mapMatrix
+    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.val.1 ij.val.2).mapMatrix
   simp only [AlgHom.mapMatrix_apply, map_aeval_genericMatrix R m M hM] at h
-  exact congrFun (congrFun h ij.1.1) ij.1.2
+  exact congrFun (congrFun h ij.val.1) ij.val.2
 
 end Evaluation
 
@@ -135,7 +135,7 @@ theorem logPullback_comp_expPullback :
     IsNilpotent.exp_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
   apply MvPolynomial.algHom_ext
   intro ij
-  simp [genericMatrix_apply_of_lt R m ij.2]
+  simp [genericMatrix_apply_of_lt R m ij.property]
 
 /-- Exponential pullback after logarithm pullback is the identity on the coordinate ring. -/
 @[simp]
@@ -146,7 +146,7 @@ theorem expPullback_comp_logPullback :
     IsNilpotent.log_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
   apply MvPolynomial.algHom_ext
   intro ij
-  simp [Matrix.one_apply_ne ij.2.ne, genericMatrix_apply_of_lt R m ij.2]
+  simp [Matrix.one_apply_ne ij.property.ne, genericMatrix_apply_of_lt R m ij.property]
 
 /-- Logarithm pullback cancels exponential pullback on every polynomial. -/
 @[simp]

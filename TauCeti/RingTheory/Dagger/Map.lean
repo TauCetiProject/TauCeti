@@ -79,7 +79,7 @@ variable (φ : R →+* S) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
 `φ : R →+* S` satisfying `‖φ r‖ ≤ C * ‖r‖`. -/
 noncomputable def map : washnitzerAlgebra σ R →+* washnitzerAlgebra σ S :=
   ((_root_.MvPowerSeries.map φ).comp (washnitzerAlgebra σ R).toSubring.subtype).codRestrict
-    (washnitzerAlgebra σ S).toSubring fun f ↦ map_mem_washnitzerAlgebra φ hφ f.2
+    (washnitzerAlgebra σ S).toSubring fun f ↦ map_mem_washnitzerAlgebra φ hφ f.property
 
 /-- `washnitzerAlgebra.map` acts as `MvPowerSeries.map` on the underlying formal power series. -/
 @[simp]
@@ -219,7 +219,7 @@ theorem exists_map_eq_and_norm_coeff_le {C' : ℝ}
     (hlift : ∀ s, ∃ r, φ r = s ∧ ‖r‖ ≤ C' * ‖s‖) (g : washnitzerAlgebra σ S) :
     ∃ f, map φ hφ f = g ∧ ∀ t,
       ‖coeff t (f : MvPowerSeries σ R)‖ ≤ C' * ‖coeff t (g : MvPowerSeries σ S)‖ := by
-  obtain ⟨ρ, hρ, hg⟩ := mem_washnitzerAlgebra.mp g.2
+  obtain ⟨ρ, hρ, hg⟩ := mem_washnitzerAlgebra.mp g.property
   obtain ⟨f₀, hf₀, hcoeff⟩ :=
     exists_restrictedMap_eq_and_norm_coeff_le (c := fun _ : σ ↦ ρ) φ hφ hlift ⟨g, hg⟩
   refine ⟨ofRestricted hρ (fun _ ↦ le_rfl) f₀, ?_, fun t ↦ by simpa using hcoeff t⟩

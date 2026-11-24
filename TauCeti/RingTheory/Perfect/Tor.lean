@@ -152,7 +152,7 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
     -- A radical ideal is the directed union of the radicals of its finitely generated subideals.
     have : Nonempty {N : Ideal A // N.FG ∧ N ≤ I} := ⟨⟨⊥, Submodule.fg_bot, bot_le⟩⟩
     have key := ModuleCat.isZero_Tor_succ_quotient_iSup (M := ModuleCat.of A C)
-      (X := ModuleCat.of A A) I.directed_radical_fg (n + 1) fun N ↦ fg N.2.1
+      (X := ModuleCat.of A A) I.directed_radical_fg (n + 1) fun N ↦ fg N.property.1
     rwa [Ideal.iSup_radical_fg, hI.radical] at key
 
 end Quotient

@@ -51,7 +51,7 @@ variable (R : Type uR) (M : Type uM) [CommSemiring R] [AddCommMonoid M] [Module 
 /-- The span of nonempty pure tensor words containing the distinguished element `e`.
 The one-letter word `e` is included. -/
 noncomputable def degenerateWords (e : M) : Submodule R (ReducedTensorWords R M) :=
-  Submodule.span R {z | ∃ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M),
+  Submodule.span R {z | ∃ (n : {n : ℕ // 0 < n}) (x : Fin n.val → M),
     (∃ i, x i = e) ∧ z = of R M n (PiTensorProduct.tprod R x)}
 
 variable {R M}
@@ -60,7 +60,7 @@ variable {R M}
 with a distinguished letter. This is the universal property of their span. -/
 @[simp]
 theorem degenerateWords_le_iff {e : M} {S : Submodule R (ReducedTensorWords R M)} :
-    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M),
+    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.val → M),
       (∃ i, x i = e) → of R M n (PiTensorProduct.tprod R x) ∈ S := by
   rw [degenerateWords, Submodule.span_le]
   constructor
@@ -72,13 +72,13 @@ theorem degenerateWords_le_iff {e : M} {S : Submodule R (ReducedTensorWords R M)
 
 /-- A pure tensor word containing `e` is degenerate. -/
 theorem of_tprod_mem_degenerateWords {e : M} (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → M) (hx : ∃ i, x i = e) :
+    (x : Fin n.val → M) (hx : ∃ i, x i = e) :
     of R M n (PiTensorProduct.tprod R x) ∈ degenerateWords R M e :=
   Submodule.subset_span ⟨n, x, hx, rfl⟩
 
 /-- A block containing `e` is degenerate. -/
 theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : ℕ}
-    (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
+    (hx : ∃ i : Fin n, a ≤ i.val ∧ i.val < a + b ∧ x i = e) :
     subword R x a b ∈ degenerateWords R M e := by
   obtain ⟨i, hai, hib, hi⟩ := hx
   by_cases hab : a + b ≤ n
@@ -88,8 +88,8 @@ theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : �
   have hb : 0 < b := by omega
   rw [subword_eq_of_tprod R x hb hab]
   apply of_tprod_mem_degenerateWords
-  have hj : i.1 - a < b := by omega
-  refine ⟨⟨i.1 - a, hj⟩, ?_⟩
+  have hj : i.val - a < b := by omega
+  refine ⟨⟨i.val - a, hj⟩, ?_⟩
   convert hi using 1
   congr 1
   apply Fin.ext
@@ -140,19 +140,19 @@ variable {N : Type uN} [AddCommMonoid N] [Module R N]
 composed with the letter projection. -/
 theorem apply_eq_comp_letter_of_mem_degenerateWords
     (f : ReducedTensorWords R M →ₗ[R] N) {e : M}
-    (hf : ∀ (n : {n : ℕ // 0 < n}), n.1 ≠ 1 → ∀ x : Fin n.1 → M,
+    (hf : ∀ (n : {n : ℕ // 0 < n}), n.val ≠ 1 → ∀ x : Fin n.val → M,
       (∃ i, x i = e) → f (of R M n (PiTensorProduct.tprod R x)) = 0)
     {z : ReducedTensorWords R M} (hz : z ∈ degenerateWords R M e) :
     f z = f (ofLetter R M (letter R M z)) := by
   induction hz using Submodule.span_induction with
   | mem z hz =>
     obtain ⟨n, x, hx, rfl⟩ := hz
-    by_cases hn : n.1 = 1
+    by_cases hn : n.val = 1
     · obtain ⟨k, hk⟩ := n
       simp only at hn
       subst k
       rw [of_tprod_eq_subword R hk, subword_one R M x (by omega), letter_ofLetter]
-    · rw [hf n hn x hx, of_tprod_eq_subword R n.2,
+    · rw [hf n hn x hx, of_tprod_eq_subword R n.property,
         letter_subword_of_ne_one R M x 0 hn, map_zero, map_zero]
   | zero => simp
   | add x y _ _ hx hy => simp only [map_add, hx, hy]
@@ -161,13 +161,13 @@ theorem apply_eq_comp_letter_of_mem_degenerateWords
 /-- The Taylor expansion of a block containing the distinguished element is degenerate. -/
 theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[R] N)
     {e : M} {e' : N} (he : f (ofLetter R M e) = e')
-    (hf : ∀ (n : {n : ℕ // 0 < n}), n.1 ≠ 1 → ∀ x : Fin n.1 → M,
+    (hf : ∀ (n : {n : ℕ // 0 < n}), n.val ≠ 1 → ∀ x : Fin n.val → M,
       (∃ i, x i = e) → f (of R M n (PiTensorProduct.tprod R x)) = 0)
     {n : ℕ} (x : Fin n → M) {a b : ℕ} (hab : a + b ≤ n)
-    (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
+    (hx : ∃ i : Fin n, a ≤ i.val ∧ i.val < a + b ∧ x i = e) :
     coalgHom R f (subword R x a b) ∈ degenerateWords R N e' := by
   suffices hblock : ∀ b (a n : ℕ) (x : Fin n → M), a + b ≤ n →
-      (∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) →
+      (∃ i : Fin n, a ≤ i.val ∧ i.val < a + b ∧ x i = e) →
       coalgHom R f (subword R x a b) ∈ degenerateWords R N e' from hblock b a n x hab hx
   intro b
   induction b using Nat.strong_induction_on with
@@ -175,7 +175,7 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     intro a n x hab hx
     obtain ⟨i, hai, hib, hi⟩ := hx
     have hb : 0 < b := by omega
-    have hvanish : ∀ c, 1 < c → a + c ≤ n → i.1 < a + c →
+    have hvanish : ∀ c, 1 < c → a + c ≤ n → i.val < a + c →
         f (subword R x a c) = 0 := by
       intro c hc _ hic
       rw [apply_eq_comp_letter_of_mem_degenerateWords f hf
@@ -185,7 +185,7 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     rw [coalgHom_subword]
     apply Submodule.add_mem
     · by_cases hb1 : b = 1
-      · have hie : i.1 = a := by omega
+      · have hie : i.val = a := by omega
         have hsingle : subword R x a b = ofLetter R M e := by
           rw [hb1, subword_one R M x (by omega)]
           congr 1
@@ -200,9 +200,9 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
       intro d hd
       have hdlt : d < b := Finset.mem_range.mp hd
       -- A distinguished letter in the first block survives only in a singleton block.
-      by_cases hid : i.1 < a + d
+      by_cases hid : i.val < a + d
       · by_cases hd1 : d = 1
-        · have hie : i.1 = a := by omega
+        · have hie : i.val = a := by omega
           rw [hd1, subword_one R M x (by omega)]
           have hea : x ⟨a, by omega⟩ = e := by
             convert hi using 1
@@ -224,14 +224,14 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
 `e` to `e'` and every higher component vanishes on words containing `e`. -/
 theorem coalgHom_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[R] N)
     {e : M} {e' : N} (he : f (ofLetter R M e) = e')
-    (hf : ∀ (n : {n : ℕ // 0 < n}), n.1 ≠ 1 → ∀ x : Fin n.1 → M,
+    (hf : ∀ (n : {n : ℕ // 0 < n}), n.val ≠ 1 → ∀ x : Fin n.val → M,
       (∃ i, x i = e) → f (of R M n (PiTensorProduct.tprod R x)) = 0)
     {z : ReducedTensorWords R M} (hz : z ∈ degenerateWords R M e) :
     coalgHom R f z ∈ degenerateWords R N e' := by
   induction hz using Submodule.span_induction with
   | mem z hz =>
     obtain ⟨n, x, hx, rfl⟩ := hz
-    rw [of_tprod_eq_subword R n.2]
+    rw [of_tprod_eq_subword R n.property]
     apply coalgHom_subword_mem_degenerateWords f he hf x (by omega)
     obtain ⟨i, hi⟩ := hx
     exact ⟨i, by omega, by simp, hi⟩
@@ -254,7 +254,7 @@ variable {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module 
 
 /-- A pure tensor word one of whose letters is a scalar multiple of `e` is degenerate. -/
 theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → M) {i : Fin n.1} {c : R} (hi : x i = c • e) :
+    (x : Fin n.val → M) {i : Fin n.val} {c : R} (hi : x i = c • e) :
     of R M n (PiTensorProduct.tprod R x) ∈ degenerateWords R M e := by
   have hx : x = Function.update x i (c • e) := by rw [← hi, Function.update_eq_self]
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
@@ -291,19 +291,19 @@ end Sub
 is the homogeneous element `e` with its degree. -/
 theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
     (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
-    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
-      (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
+    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.val → M) (𝒟 : Fin n.val → ℤ)
+      (i : Fin n.val), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
         of R M n (PiTensorProduct.tprod R x) ∈ S := by
   classical
   refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
   rw [degenerateWords_le_iff]
   rintro n x ⟨i, hi⟩
   -- Expand every letter except the `i`-th one into its homogeneous components.
-  let support : Fin n.1 → Finset ℤ := fun j ↦
+  let support : Fin n.val → Finset ℤ := fun j ↦
     if j = i then {E} else (DirectSum.decompose G.piece (x j)).support
-  let component : Fin n.1 → ℤ → M := fun j p ↦
+  let component : Fin n.val → ℤ → M := fun j p ↦
     if j = i then e else DirectSum.decompose G.piece (x j) p
-  have hx (j : Fin n.1) : ∑ p ∈ support j, component j p = x j := by
+  have hx (j : Fin n.val) : ∑ p ∈ support j, component j p = x j := by
     by_cases hj : j = i
     · subst hj
       simp [support, component, hi]
@@ -343,7 +343,7 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M ℤ)
   swap
   · rw [splice_eq_zero_of_not_fits R _ _ hfit]
     exact Submodule.zero_mem _
-  by_cases hblock : p ≤ i.1 ∧ i.1 < p + d
+  by_cases hblock : p ≤ i.val ∧ i.val < p + d
   · -- The collapsed block contains `e`, so `F` kills it.
     rw [hF (subword_mem_degenerateWords x ⟨i, hblock.1, hblock.2, hi⟩), splice_zero]
     exact Submodule.zero_mem _
@@ -352,7 +352,7 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M ℤ)
     (F (subword R x p d)) hblock
   rw [hy]
   refine of_tprod_mem_degenerateWords_of_eq_smul _ _ (i := k)
-    (c := if i.1 < p then (((q * E).negOnePow : ℤ) : R) else 1) ?_
+    (c := if i.val < p then (((q * E).negOnePow : ℤ) : R) else 1) ?_
   rw [hk, InternalGrading.twistedTuple_apply, hi]
   split_ifs with h₁ h₂ h₂
   · exact G.koszulTwist_apply_of_mem he q

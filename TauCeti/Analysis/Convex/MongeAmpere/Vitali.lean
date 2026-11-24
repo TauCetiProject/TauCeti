@@ -331,7 +331,7 @@ theorem exists_countable_pairwiseDisjoint_convexSection_measure_le :
         measure_biUnion_le μ hs _
     _ ≤ ∑' j : s, (NNReal.sqrt (A * K ^ finrank ℝ E * Lam / lam) : ℝ≥0∞) *
           μ (convexSection Ω u (c j) (ℓ j) (h j)) :=
-        tsum_le_tsum fun j => hdbl j j.2
+        tsum_le_tsum fun j => hdbl j j.property
     _ = _ := by rw [ENNReal.tsum_mul_left, measure_biUnion hs hdisj hmeas]
 
 end TauCeti

@@ -110,7 +110,7 @@ theorem isUnramifiedAt_of_inertia_eq_bot (Q : Ideal A) [Q.IsPrime]
         have hg : (g : G) ∈ Q.inertia G := Ideal.mem_inertia.2 fun a ↦ by
           have ha : a ∈ U (some g) := h ▸ Submodule.mem_top
           exact (mem_U g a).mp ha
-        exact g.2 (by simpa [hQ] using hg)
+        exact g.property (by simpa [hQ] using hg)
     obtain ⟨a, ha⟩ := Submodule.exists_forall_notMem_of_forall_ne_top U hU
     have hdiff (g : G) (hg : g ≠ 1) : a - g • a ∉ Q := by
       intro h

@@ -137,7 +137,7 @@ theorem mem_kleinFour_iff_sq_eq_one (hα : Nat.card α ≤ 4) {g : alternatingGr
     refine ⟨fun hg => by rw [hg, one_pow], fun h2 => ?_⟩
     rcases le_or_gt (Nat.card α) 2 with hle2 | hgt2
     · exact Subtype.ext (Subgroup.mem_bot.mp
-        (alternatingGroup.eq_bot_of_card_le_two hle2 ▸ g.2))
+        (alternatingGroup.eq_bot_of_card_le_two hle2 ▸ g.property))
     · have hA3 := card_alternatingGroup_of_card_eq_three (α := α) (by omega)
       have hg3 : g ^ 3 = 1 := hA3 ▸ pow_card_eq_one' (x := g)
       calc
@@ -152,7 +152,7 @@ theorem mem_kleinFour_iff_sq_eq_one (hα : Nat.card α ≤ 4) {g : alternatingGr
     · rw [← SetLike.mem_coe, alternatingGroup.coe_kleinFour_of_card_eq_four hα4,
         Set.mem_union, Set.mem_singleton_iff, Set.mem_ofPred_eq, ← Subtype.coe_inj,
         Subgroup.coe_one, ← cycleType_eq_zero]
-      exact alternatingGroup.mem_kleinFour_of_order_two_pow hα4 g.2 (n := 1)
+      exact alternatingGroup.mem_kleinFour_of_order_two_pow hα4 g.property (n := 1)
         (orderOf_dvd_iff_pow_eq_one.mpr
           (by simpa only [pow_one, ← Subgroup.coe_pow, Subgroup.coe_one] using
             congrArg Subtype.val h2))
@@ -183,7 +183,7 @@ theorem stabilizer_kleinFour_eq_bot (hα : Nat.card α ≤ 4) (a : α) :
   rw [Subgroup.mem_bot]
   by_contra hne
   rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at hv
-  exact smul_ne_self_of_mem_kleinFour hα v.2 (Subtype.coe_ne_coe.mpr hne) a hv
+  exact smul_ne_self_of_mem_kleinFour hα v.property (Subtype.coe_ne_coe.mpr hne) a hv
 
 /-- For `Nat.card α ≤ 4`, evaluating elements of `alternatingGroup.kleinFour α` at a base point
 `a : α` is injective. -/
@@ -414,7 +414,7 @@ theorem existsUnique_kleinFour_conj_smul_eq (hα : Nat.card α ≤ 4)
   · have hbot := kleinFour_eq_bot_of_card_lt_four hlt
     rw [hbot, Subgroup.isComplement'_bot_left] at hD hD'
     refine ⟨1, by simp [hD, hD'], fun v _ => ?_⟩
-    exact Subtype.ext (Subgroup.mem_bot.mp (hbot ▸ v.2))
+    exact Subtype.ext (Subgroup.mem_bot.mp (hbot ▸ v.property))
   · obtain ⟨a, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD
     obtain ⟨b, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD'
     refine ⟨(kleinFourEquiv hα4 a).symm b, ?_, fun v hv => ?_⟩

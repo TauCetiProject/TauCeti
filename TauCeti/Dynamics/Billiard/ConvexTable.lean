@@ -17,7 +17,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Topology.JordanCurve.Interval
 
 /-!
@@ -380,10 +380,7 @@ table of class `C^∞`. It is the circle billiard table `TauCeti.StrictConvexBil
 def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi * R) where
   toFun := StrictConvexBilliardTable.circle (Real.pos_of_fact_two_pi_mul_pos (R := R))
   one_le := le_top
-  contDiff' := by
-    rw [show ⇑(StrictConvexBilliardTable.circle (Real.pos_of_fact_two_pi_mul_pos (R := R))) =
-      fun s => circleMap 0 R (s / R) from funext StrictConvexBilliardTable.circle_apply]
-    exact (contDiff_circleMap 0 R).comp (contDiff_id.div_const R)
+  contDiff' := StrictConvexBilliardTable.contDiff_circle
   periodic' := by
     simpa using
       (StrictConvexBilliardTable.circle (Real.pos_of_fact_two_pi_mul_pos (R := R))).periodic

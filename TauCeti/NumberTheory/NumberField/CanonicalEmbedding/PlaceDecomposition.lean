@@ -92,24 +92,24 @@ variable {K : Type*} [Field K] {ι : Type*}
 place `w`. -/
 def realPlaceSpan (W : Submodule K (ι → K)) (w : {w : InfinitePlace K // w.IsReal}) :
     Submodule ℝ (EuclideanSpace ℝ ι) :=
-  span ℝ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) '' W)
+  span ℝ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ embedding_of_isReal w.property (v i)) '' W)
 
 /-- The `ℂ`-span in `EuclideanSpace ℂ ι` of a `K`-subspace `W` of `ι → K` along a complex infinite
 place `w`. -/
 def complexPlaceSpan (W : Submodule K (ι → K)) (w : {w : InfinitePlace K // w.IsComplex}) :
     Submodule ℂ (EuclideanSpace ℂ ι) :=
-  span ℂ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) '' W)
+  span ℂ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ w.val.embedding (v i)) '' W)
 
 /-- Every vector of `W` embeds into `W.realPlaceSpan w`. -/
 theorem toLp_mem_realPlaceSpan {W : Submodule K (ι → K)} (w : {w : InfinitePlace K // w.IsReal})
     {v : ι → K} (hv : v ∈ W) :
-    (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ∈ W.realPlaceSpan w :=
+    (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.property (v i)) ∈ W.realPlaceSpan w :=
   subset_span ⟨v, hv, rfl⟩
 
 /-- Every vector of `W` embeds into `W.complexPlaceSpan w`. -/
 theorem toLp_mem_complexPlaceSpan {W : Submodule K (ι → K)}
     (w : {w : InfinitePlace K // w.IsComplex}) {v : ι → K} (hv : v ∈ W) :
-    (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ W.complexPlaceSpan w :=
+    (WithLp.toLp 2 fun i ↦ w.val.embedding (v i)) ∈ W.complexPlaceSpan w :=
   subset_span ⟨v, hv, rfl⟩
 
 /-- `W.realPlaceSpan w` is contained in an `ℝ`-submodule `U` if and only if the image of every
@@ -118,7 +118,7 @@ vector of `W` under `w` belongs to `U`. -/
 theorem realPlaceSpan_le_iff {W : Submodule K (ι → K)} {w : {w : InfinitePlace K // w.IsReal}}
     {U : Submodule ℝ (EuclideanSpace ℝ ι)} :
     W.realPlaceSpan w ≤ U ↔
-      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ∈ U := by
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.property (v i)) ∈ U := by
   rw [realPlaceSpan, span_le, image_subset_iff, subset_def]
   simp only [mem_preimage, SetLike.mem_coe]
 
@@ -128,7 +128,7 @@ vector of `W` under `w` belongs to `U`. -/
 theorem complexPlaceSpan_le_iff {W : Submodule K (ι → K)}
     {w : {w : InfinitePlace K // w.IsComplex}} {U : Submodule ℂ (EuclideanSpace ℂ ι)} :
     W.complexPlaceSpan w ≤ U ↔
-      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ U := by
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ w.val.embedding (v i)) ∈ U := by
   rw [complexPlaceSpan, span_le, image_subset_iff, subset_def]
   simp only [mem_preimage, SetLike.mem_coe]
 
@@ -149,10 +149,10 @@ theorem complexPlaceSpan_bot (w : {w : InfinitePlace K // w.IsComplex}) :
 theorem finrank_realPlaceSpan [Finite ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsReal}) :
     finrank ℝ (W.realPlaceSpan w) = finrank K W := by
-  have himg : (fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ''
+  have himg : (fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ embedding_of_isReal w.property (v i)) ''
       (W : Set (ι → K)) =
       (WithLp.linearEquiv 2 ℝ (ι → ℝ)).symm.toLinearMap ''
-        ((fun v : ι → K ↦ embedding_of_isReal w.2 ∘ v) '' (W : Set (ι → K))) := by
+        ((fun v : ι → K ↦ embedding_of_isReal w.property ∘ v) '' (W : Set (ι → K))) := by
     ext; simp [Function.comp_def]
   rw [realPlaceSpan, himg, ← Submodule.map_span, LinearEquiv.finrank_map_eq,
     W.finrank_span_image_comp]
@@ -162,10 +162,10 @@ theorem finrank_realPlaceSpan [Finite ι] (W : Submodule K (ι → K))
 theorem finrank_complexPlaceSpan [Finite ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsComplex}) :
     finrank ℂ (W.complexPlaceSpan w) = finrank K W := by
-  have himg : (fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ''
+  have himg : (fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ w.val.embedding (v i)) ''
       (W : Set (ι → K)) =
       (WithLp.linearEquiv 2 ℂ (ι → ℂ)).symm.toLinearMap ''
-        ((fun v : ι → K ↦ w.1.embedding ∘ v) '' (W : Set (ι → K))) := by
+        ((fun v : ι → K ↦ w.val.embedding ∘ v) '' (W : Set (ι → K))) := by
     ext; simp [Function.comp_def]
   rw [complexPlaceSpan, himg, ← Submodule.map_span, LinearEquiv.finrank_map_eq,
     W.finrank_span_image_comp]
@@ -200,7 +200,6 @@ abbrev placeSpanProd (W : Submodule K (ι → K)) : Type _ :=
 
 open scoped Classical in
 /-- `W.placeSpanProd` has real dimension `[K : ℚ] * finrank K W`. -/
-@[simp]
 theorem finrank_placeSpanProd [NumberField K] [Finite ι] (W : Submodule K (ι → K)) :
     finrank ℝ W.placeSpanProd = finrank ℚ K * finrank K W := by
   cases nonempty_fintype ι
@@ -258,7 +257,7 @@ private theorem ambientRealProj_mem_realPlaceSpan {W : Submodule K (ι → K)}
   have heq :
       ambientRealProj w
           (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) =
-        WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i) := by
+        WithLp.toLp 2 fun i ↦ embedding_of_isReal w.property (v i) := by
     ext i
     rw [ambientRealProj_apply, PiLp.toLp_apply, PiLp.toLp_apply,
       ContinuousLinearEquiv.apply_symm_apply]
@@ -277,7 +276,7 @@ private theorem ambientComplexProj_mem_complexPlaceSpan {W : Submodule K (ι →
   have heq :
       ambientComplexProj w
           (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) =
-        WithLp.toLp 2 fun i ↦ w.1.embedding (v i) := by
+        WithLp.toLp 2 fun i ↦ w.val.embedding (v i) := by
     ext i
     rw [ambientComplexProj_apply, PiLp.toLp_apply, PiLp.toLp_apply,
       ContinuousLinearEquiv.apply_symm_apply]
@@ -292,11 +291,11 @@ private def toPlaceSpanProdLinear (W : Submodule K (ι → K)) :
     LinearMap.prod
       ((WithLp.linearEquiv 2 ℝ _).symm.toLinearMap ∘ₗ LinearMap.pi fun w ↦
         ((ambientRealProj w).comp W.euclideanSpan.subtype).codRestrict (W.realPlaceSpan w)
-          fun x ↦ ambientRealProj_mem_realPlaceSpan w x.2)
+          fun x ↦ ambientRealProj_mem_realPlaceSpan w x.property)
       ((WithLp.linearEquiv 2 ℝ _).symm.toLinearMap ∘ₗ LinearMap.pi fun w ↦
         ((ambientComplexProj w).comp W.euclideanSpan.subtype).codRestrict
           ((W.complexPlaceSpan w).restrictScalars ℝ)
-          fun x ↦ ambientComplexProj_mem_complexPlaceSpan w x.2)
+          fun x ↦ ambientComplexProj_mem_complexPlaceSpan w x.property)
 
 open scoped Classical in
 private theorem norm_toPlaceSpanProdLinear (W : Submodule K (ι → K)) (x : W.euclideanSpan) :
@@ -482,8 +481,8 @@ theorem two_pow_mul_pi_pow_le_volume_real_supSlice (W : Submodule K (ι → K)) 
     ext x
     simp only [coe_supSlice, mem_ofPred_eq, mem_preimage, Set.mem_prod, mem_univ_pi, SR, SC,
       coe_euclideanSpanEquivPlaceSpanProd_fst_apply, coe_euclideanSpanEquivPlaceSpanProd_snd_apply]
-    refine ⟨fun h ↦ ⟨fun w i ↦ by simpa [normAtPlace_apply_of_isReal w.2] using h w.1 i,
-      fun w i ↦ by simpa [normAtPlace_apply_of_isComplex w.2] using h w.1 i⟩,
+    refine ⟨fun h ↦ ⟨fun w i ↦ by simpa [normAtPlace_apply_of_isReal w.property] using h w.val i,
+      fun w i ↦ by simpa [normAtPlace_apply_of_isComplex w.property] using h w.val i⟩,
       fun ⟨hr, hc⟩ w i ↦ ?_⟩
     by_cases hw : w.IsReal
     · simpa [normAtPlace_apply_of_isReal hw] using hr ⟨w, hw⟩ i
@@ -540,22 +539,22 @@ open scoped Classical in
 private theorem norm_sq_placeSpanProd_fst (W : Submodule K (ι → K)) (x : W.euclideanSpan)
     (w : {w : InfinitePlace K // w.IsReal}) :
     ‖(W.euclideanSpanEquivPlaceSpanProd x).fst w‖ ^ 2 =
-      ∑ i : ι, normAtPlace w.1
+      ∑ i : ι, normAtPlace w.val
         (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2 := by
   rw [← Submodule.norm_coe, PiLp.norm_sq_eq_of_L2]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coe_euclideanSpanEquivPlaceSpanProd_fst_apply, normAtPlace_apply_of_isReal w.2,
+  rw [coe_euclideanSpanEquivPlaceSpanProd_fst_apply, normAtPlace_apply_of_isReal w.property,
     Real.norm_eq_abs]
 
 open scoped Classical in
 private theorem norm_sq_placeSpanProd_snd (W : Submodule K (ι → K)) (x : W.euclideanSpan)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     ‖(W.euclideanSpanEquivPlaceSpanProd x).snd w‖ ^ 2 =
-      ∑ i : ι, normAtPlace w.1
+      ∑ i : ι, normAtPlace w.val
         (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2 := by
   rw [← Submodule.norm_coe, PiLp.norm_sq_eq_of_L2]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coe_euclideanSpanEquivPlaceSpanProd_snd_apply, normAtPlace_apply_of_isComplex w.2]
+  rw [coe_euclideanSpanEquivPlaceSpanProd_snd_apply, normAtPlace_apply_of_isComplex w.property]
 
 open scoped Classical in
 private theorem setOf_euclideanBallSlice_eq_preimage (W : Submodule K (ι → K)) :
@@ -569,7 +568,7 @@ private theorem setOf_euclideanBallSlice_eq_preimage (W : Submodule K (ι → K)
     pi_norm_le_iff_of_nonneg zero_le_one, LinearEquiv.coe_toLinearMap, ballCoords_fst,
     ballCoords_snd]
   simp_rw [← sq_le_one_iff₀ (norm_nonneg _), norm_sq_placeSpanProd_fst, norm_sq_placeSpanProd_snd]
-  exact ⟨fun h ↦ ⟨fun w ↦ h w.1, fun w ↦ h w.1⟩, fun ⟨h₁, h₂⟩ w ↦
+  exact ⟨fun h ↦ ⟨fun w ↦ h w.val, fun w ↦ h w.val⟩, fun ⟨h₁, h₂⟩ w ↦
     if hw : w.IsReal then h₁ ⟨w, hw⟩ else h₂ ⟨w, not_isReal_iff_isComplex.mp hw⟩⟩
 
 open scoped Classical in

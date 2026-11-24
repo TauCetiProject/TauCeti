@@ -58,7 +58,9 @@ function with values in `Λ` on groups of cyclically decomposable words.
 * `TauCeti.InfWord.exists_isMul_iff`: for reduced `u`, `v`, the product `u ∗ v` is defined if and
   only if the lengths of the common initial segments of `u⁻¹` and `v` have a greatest element `δ`;
   `TauCeti.InfWord.isMul_of_isGreatest` gives the product, and
-  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`.
+  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`. If `u ∗ v` is defined,
+  then so is `u ∗ v'` for every initial segment `v'` of `v`
+  (`TauCeti.InfWord.IsMul.exists_isMul_take`).
 * `TauCeti.InfWord.IsMul.length_add_two_nsmul_eq`: `|u ∗ v| + 2 δ = |u| + |v|`, where `δ` is the
   length of the longest common initial segment of `u⁻¹` and `v`; and
   `TauCeti.InfWord.length_add_two_nsmul_eq_of_isMul_inv_left`: `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`,
@@ -373,6 +375,19 @@ theorem exists_isMul_iff (hu : u.IsReduced) (hv : v.IsReduced) : (∃ w, IsMul u
     ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u⁻¹.take β = v.take β} δ :=
   ⟨fun ⟨_, h⟩ => h.exists_isGreatest, fun ⟨_, hδ⟩ => ⟨_, isMul_of_isGreatest hu hv hδ⟩⟩
 
+/-- If `u ∗ v` is defined, then so is the product of `u` with every initial segment of `v`. -/
+theorem IsMul.exists_isMul_take (h : IsMul u v w) (β : Λ) : ∃ w', IsMul u (v.take β) w' := by
+  rw [← take_max_zero]
+  obtain ⟨δ, ⟨h0, hδu, hδv, hδ⟩, hmax⟩ := h.exists_isGreatest
+  refine (exists_isMul_iff h.isReduced_left (h.isReduced_right.take _)).2
+    ⟨min δ (max β 0), ⟨by simp [h0], by simp [hδu], by simp; grind, ?_⟩, ?_⟩
+  · rw [take_take, min_assoc, min_self]
+    simpa using congrArg (take · (min δ (max β 0))) hδ
+  · rintro γ ⟨hγ0, hγu, hγv, hγ⟩
+    have hγβ : γ ≤ max β 0 := by simp at hγv; grind
+    rw [take_take, min_eq_left hγβ] at hγ
+    exact le_min (hmax ⟨hγ0, hγu, by simp at hγv; grind, hγ⟩) hγβ
+
 /-- If the longest common initial segment of `u` and `v` has length `δ`, then `u⁻¹ ∗ v` is
 defined: it is `(u.drop δ)⁻¹ ++ v.drop δ`. -/
 theorem isMul_inv_left_of_isGreatest (hu : u.IsReduced) (hv : v.IsReduced)
@@ -605,7 +620,7 @@ theorem isReduced_of_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) : u.IsReduced
 
 @[simp]
 theorem isReduced_coe (H : ReducedSubgroup Λ X) (u : H) : (u : InfWord Λ X).IsReduced :=
-  H.isReduced_of_mem u.2
+  H.isReduced_of_mem u.property
 
 theorem mul_dom (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) : (u.mul v).Dom :=
   let ⟨w, _, hm⟩ := H.mul_mem hu hv; mul_dom_iff.2 ⟨w, hm⟩
@@ -618,20 +633,25 @@ instance (H : ReducedSubgroup Λ X) : One H where
   one := ⟨empty Λ X, H.empty_mem⟩
 
 instance (H : ReducedSubgroup Λ X) : Inv H where
-  inv u := ⟨u.1⁻¹, H.inv_mem u.2⟩
+  inv u := ⟨u.val⁻¹, H.inv_mem u.property⟩
 
 noncomputable instance (H : ReducedSubgroup Λ X) : Group H where
-  mul u v := ⟨(u.1.mul v.1).get (H.mul_dom u.2 v.2), H.get_mul_mem u.2 v.2⟩
+  mul u v := ⟨(u.val.mul v.val).get (H.mul_dom u.property v.property),
+      H.get_mul_mem u.property v.property⟩
   mul_assoc a b c := Subtype.ext <|
-    ((isMul_get (H.mul_dom a.2 b.2)).assoc_left (isMul_get (H.mul_dom b.2 c.2))
-      (isMul_get (H.mul_dom (H.get_mul_mem a.2 b.2) c.2))).unique
-      (isMul_get (H.mul_dom a.2 (H.get_mul_mem b.2 c.2)))
+    ((isMul_get (H.mul_dom a.property b.property)).assoc_left (isMul_get
+        (H.mul_dom b.property c.property))
+      (isMul_get (H.mul_dom (H.get_mul_mem a.property b.property) c.property))).unique
+      (isMul_get (H.mul_dom a.property (H.get_mul_mem b.property c.property)))
   one_mul a := Subtype.ext <|
-    (isMul_get (H.mul_dom H.empty_mem a.2)).unique (isMul_empty_left (H.isReduced_of_mem a.2))
+    (isMul_get (H.mul_dom H.empty_mem a.property)).unique (isMul_empty_left
+        (H.isReduced_of_mem a.property))
   mul_one a := Subtype.ext <|
-    (isMul_get (H.mul_dom a.2 H.empty_mem)).unique (isMul_empty_right (H.isReduced_of_mem a.2))
+    (isMul_get (H.mul_dom a.property H.empty_mem)).unique (isMul_empty_right
+        (H.isReduced_of_mem a.property))
   inv_mul_cancel a := Subtype.ext <|
-    (isMul_get (H.mul_dom (H.inv_mem a.2) a.2)).unique (isMul_inv_self (H.isReduced_of_mem a.2))
+    (isMul_get (H.mul_dom (H.inv_mem a.property) a.property)).unique (isMul_inv_self
+        (H.isReduced_of_mem a.property))
 
 @[simp]
 theorem coe_one (H : ReducedSubgroup Λ X) : ((1 : H) : InfWord Λ X) = empty Λ X := (rfl)
@@ -644,7 +664,7 @@ theorem coe_inv (H : ReducedSubgroup Λ X) (u : H) :
 @[simp]
 theorem isMul_coe_mul (H : ReducedSubgroup Λ X) (u v : H) :
     IsMul (u : InfWord Λ X) (v : InfWord Λ X) ((u * v : H) : InfWord Λ X) :=
-  isMul_get (H.mul_dom u.2 v.2)
+  isMul_get (H.mul_dom u.property v.property)
 
 @[simp]
 theorem mul_coe_eq_some (H : ReducedSubgroup Λ X) (u v : H) :
@@ -690,10 +710,10 @@ theorem mem_inf {H K : ReducedSubgroup Λ X} : w ∈ H ⊓ K ↔ w ∈ H ∧ w �
 
 /-- The inclusion homomorphism from a subgroup `H` of reduced words to a larger subgroup `K`. -/
 noncomputable def inclusion {H K : ReducedSubgroup Λ X} (h : H ≤ K) : H →* K where
-  toFun u := ⟨u, h u.2⟩
+  toFun u := ⟨u, h u.property⟩
   map_one' := Subtype.ext ((coe_one H).trans (coe_one K).symm)
   map_mul' u v := Subtype.ext <|
-    ((K.isMul_coe_mul ⟨u, h u.2⟩ ⟨v, h v.2⟩).unique (H.isMul_coe_mul u v)).symm
+    ((K.isMul_coe_mul ⟨u, h u.property⟩ ⟨v, h v.property⟩).unique (H.isMul_coe_mul u v)).symm
 
 @[simp]
 theorem coe_inclusion {H K : ReducedSubgroup Λ X} (h : H ≤ K) (u : H) :
@@ -726,7 +746,7 @@ instance : OrderBot (ReducedSubgroup Λ X) where
 
 instance : Unique (⊥ : ReducedSubgroup Λ X) where
   default := 1
-  uniq u := Subtype.ext ((mem_bot.1 u.2).trans (coe_one _).symm)
+  uniq u := Subtype.ext ((mem_bot.1 u.property).trans (coe_one _).symm)
 
 end ReducedSubgroup
 
