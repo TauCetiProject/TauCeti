@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ParameterFamily
 public import TauCeti.RingTheory.MvPolynomial.JetInterpolation
+import TauCeti.LinearAlgebra.Basis.Submodule
 
 /-!
 # Rational evaluation of bounded-degree polynomials at a tuple of a number field
@@ -90,18 +91,20 @@ theorem range_firstJetValueMap_conjugate :
     LinearMap.range (firstJetValueMap (fun (τ : K →+* ℂ) j ↦ τ (κ j)) d) =
       Submodule.span ℂ
         (canonicalEmbedding K '' (restrictTotalDegree σ ℚ d).map (aeval κ).toLinearMap) := by
-  -- The rational values at `κ` are spanned by the values of the monomials.
-  have hW : ((restrictTotalDegree σ ℚ d).map (aeval κ).toLinearMap : Set K) =
-      Submodule.span ℚ (Set.range fun s : {s : σ →₀ ℕ // s.degree ≤ d} ↦
-        aeval κ (monomial (s : σ →₀ ℕ) (1 : ℚ))) := by
-    rw [restrictTotalDegree_eq_span, Submodule.map_span, ← Set.image_comp,
-      ← Subtype.range_coe_subtype (p := fun s : σ →₀ ℕ ↦ s.degree ≤ d), ← Set.range_comp]
-    simp only [Function.comp_def, AlgHom.toLinearMap_apply]
-  rw [hW, span_canonicalEmbedding_image_span, ← Set.range_comp, LinearMap.range_eq_map,
-    ← (basisRestrictTotalDegree σ ℂ d).span_eq, Submodule.map_span, ← Set.range_comp]
+  -- The conjugate vectors of the rational values at `κ` span the same complex subspace as the
+  -- conjugate vectors of the values of the monomial basis.
+  have hspan : Submodule.span ℂ
+      (canonicalEmbedding K '' (restrictTotalDegree σ ℚ d).map (aeval κ).toLinearMap) =
+        Submodule.span ℂ (Set.range fun s ↦ canonicalEmbedding K
+          (aeval κ (basisRestrictTotalDegree σ ℚ d s : MvPolynomial σ ℚ))) := by
+    rw [Submodule.map_coe, ← Set.image_comp]
+    exact (basisRestrictTotalDegree σ ℚ d).span_image
+      ((canonicalEmbedding K).toRatAlgHom.toLinearMap ∘ₗ (aeval κ).toLinearMap)
+  rw [hspan, LinearMap.range_eq_map, ← (basisRestrictTotalDegree σ ℂ d).span_eq,
+    Submodule.map_span, ← Set.range_comp]
   congr 2
   funext s
-  exact firstJetValueMap_conjugate_basisRestrictTotalDegree κ d s
+  simpa using firstJetValueMap_conjugate_basisRestrictTotalDegree κ d s
 
 /-- The complex value map at the conjugate points `(τ (κ j))_j` of `κ` in degree `d` is onto if and
 only if every element of `K` is the value at `κ` of a rational polynomial of total degree at
