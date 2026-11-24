@@ -364,13 +364,25 @@ since `E_∞(A) ≤ GL_∞(A)₀`. -/
 def toStableComponentGroup : AlgebraicK1 A →* StableComponentGroup A :=
   Group.Abelianization.lift (QuotientGroup.mk' _)
 
+/-- The comparison sends the class in `K₁(A)` of an element of `GL_∞(A)` to its class in the
+stable component group. -/
+@[simp]
+theorem toStableComponentGroup_of (x : StableGeneralLinearGroup A) :
+    toStableComponentGroup A (Group.Abelianization.of x) = (x : StableComponentGroup A) :=
+  Group.Abelianization.lift_apply_of _ _
+
+/-- The comparison composed with the abelianization map `GL_∞(A) → K₁(A)` is the quotient map
+`GL_∞(A) → GL_∞(A) / GL_∞(A)₀`. -/
+theorem toStableComponentGroup_comp_of :
+    (toStableComponentGroup A).comp Group.Abelianization.of = QuotientGroup.mk' _ :=
+  MonoidHom.ext toStableComponentGroup_of
+
 /-- The comparison sends the class in `K₁(A)` of an invertible matrix to its class in the stable
 component group. -/
 @[simp]
 theorem toStableComponentGroup_mk (n : ℕ) (u : GL (Fin n) A) :
     toStableComponentGroup A (mk A n u) = StableComponentGroup.mk A n u := by
-  rw [mk_apply, toStableComponentGroup, Group.Abelianization.lift_apply_of,
-    StableComponentGroup.mk_apply, QuotientGroup.mk'_apply]
+  rw [mk_apply, toStableComponentGroup_of, StableComponentGroup.mk_apply]
 
 /-- The comparison of algebraic `K₁` with the stable component group is surjective. -/
 theorem toStableComponentGroup_surjective : Function.Surjective (toStableComponentGroup A) := by
@@ -383,15 +395,13 @@ of the stable identity component. -/
 theorem ker_toStableComponentGroup :
     (toStableComponentGroup A).ker =
       (StableGeneralLinearGroup.identityComponent A).map Group.Abelianization.of := by
-  have h : (toStableComponentGroup A).comp Group.Abelianization.of = QuotientGroup.mk' _ :=
-    MonoidHom.ext fun _ ↦ Group.Abelianization.lift_apply_of _ _
   -- The abelianization map is surjective, so the kernel is the image of its preimage.
   have hof : Function.Surjective
       (Group.Abelianization.of : StableGeneralLinearGroup A →* AlgebraicK1 A) := fun x ↦ by
     obtain ⟨n, u, rfl⟩ := exists_mk x
     exact ⟨_, (mk_apply n u).symm⟩
   rw [← Subgroup.map_comap_eq_self_of_surjective hof (toStableComponentGroup A).ker,
-    MonoidHom.comap_ker, h, QuotientGroup.ker_mk']
+    MonoidHom.comap_ker, toStableComponentGroup_comp_of, QuotientGroup.ker_mk']
 
 /-- The comparison of algebraic `K₁` with the stable component group is natural for continuous
 ring homomorphisms. -/
