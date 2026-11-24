@@ -49,8 +49,8 @@ case.
   `Representation.toSubmodule_smoothVectors_eq_biSup_invariants_isCompact`: over a commutative ring
   `A` and an additive commutative group `V`, for a locally profinite group, `V^∞` is the union and
   supremum of the invariants of the compact open subgroups.
-* `Representation.iSup_invariants_eq_smoothVectors`,
-  `Representation.isSmooth_iff_iSup_invariants_eq_top`: for any basis of neighbourhoods of `1`
+* `Representation.biSup_invariants_eq_toSubmodule_smoothVectors`,
+  `Representation.isSmooth_iff_biSup_invariants_eq_top`: for any basis of neighbourhoods of `1`
   made of subgroups, `V^∞` is the supremum of their invariants.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
@@ -367,8 +367,8 @@ variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
 
 /-- For any family of subgroups forming a basis of neighbourhoods of `1`, the smooth vectors are
 the supremum of the invariants of the members of the family. -/
-theorem iSup_invariants_eq_smoothVectors {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
-    (hU : (𝓝 (1 : G)).HasBasis p fun i ↦ (U i : Set G)) :
+theorem biSup_invariants_eq_toSubmodule_smoothVectors {ι : Type*} {p : ι → Prop}
+    {U : ι → Subgroup G} (hU : (𝓝 (1 : G)).HasBasis p fun i ↦ (U i : Set G)) :
     ⨆ (i) (_ : p i), invariants (ρ.comp (U i).subtype) = ρ.smoothVectors.toSubmodule := by
   refine le_antisymm (iSup₂_le fun i hi v hv ↦ ?_) fun v hv ↦ ?_
   · have hUi : IsOpen (U i : Set G) := (U i).isOpen_of_mem_nhds (hU.mem_of_mem hi)
@@ -381,10 +381,10 @@ theorem iSup_invariants_eq_smoothVectors {ι : Type*} {p : ι → Prop} {U : ι 
 
 /-- For any family of subgroups forming a basis of neighbourhoods of `1`, a representation is
 smooth exactly when the invariants of the members of the family span `V`. -/
-theorem isSmooth_iff_iSup_invariants_eq_top {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
+theorem isSmooth_iff_biSup_invariants_eq_top {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
     (hU : (𝓝 (1 : G)).HasBasis p fun i ↦ (U i : Set G)) :
     IsSmooth ρ ↔ ⨆ (i) (_ : p i), invariants (ρ.comp (U i).subtype) = ⊤ := by
-  rw [iSup_invariants_eq_smoothVectors hU, isSmooth_iff_forall_mem_smoothVectors,
+  rw [biSup_invariants_eq_toSubmodule_smoothVectors hU, isSmooth_iff_forall_mem_smoothVectors,
     Submodule.eq_top_iff']
   rfl
 

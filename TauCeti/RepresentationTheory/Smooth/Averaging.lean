@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.RepresentationTheory.RelativeNorm
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
-import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.RepresentationTheory.Invariants
-import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # The averaging projector onto the invariants of a compact group
@@ -36,12 +35,14 @@ Bernstein's notes onto `V^U`.
 
 ## Main results
 
-* `Representation.smoothAverage_apply_of_le`: `e_K v = [K : H]⁻¹ • ∑_{q ∈ K ⧸ H} σ q v` for every
-  open subgroup `H` fixing `v`.
+* `Representation.smoothAverage_apply_of_le`, `Representation.smoothAverage_apply_eq_relNorm`:
+  `e_K v = [K : H]⁻¹ • ∑_{q ∈ K ⧸ H} σ q v = [K : H]⁻¹ • relNorm σ H v` for every open subgroup `H`
+  fixing `v`.
 * `Representation.isProj_smoothAverage`, `Representation.range_smoothAverage`: `e_K` is a
   projection onto the invariants `V^K`, and it is idempotent
   (`Representation.smoothAverage_smoothAverage`).
-* `Representation.smoothAverage_apply_apply`: `e_K (σ k v) = e_K v`.
+* `Representation.smoothAverage_apply_apply`, `Representation.apply_smoothAverage_apply`:
+  `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
 * `Representation.smoothAverage_comp_smoothAverage_subgroup`,
@@ -65,40 +66,23 @@ namespace Representation
 variable {A K V W : Type*} [CommRing A] [Group K] [AddCommGroup V] [Module A V]
   [AddCommGroup W] [Module A W]
 
-section Formula
+/-- Dividing `n • v` by a natural number `n` that is a unit of `A` gives back `v`. -/
+private theorem inverse_natCast_smul_nsmul {n : ℕ} (hn : IsUnit (n : A)) (v : V) :
+    Ring.inverse (n : A) • n • v = v := by
+  rw [← Nat.cast_smul_eq_nsmul A, smul_smul, Ring.inverse_mul_cancel _ hn, one_smul]
 
-variable (σ : Representation A K V)
-
-/-- The averaging formula over the cosets of `H` does not change when `H` is replaced by a smaller
-subgroup of finite index invertible in `A`: by `Subgroup.sum_out_smul_eq_relIndex_nsmul`, the sum
-over the cosets of `H'` is `[H : H']` times the sum over the cosets of `H`. -/
-private theorem smul_finsum_out_of_le {H H' : Subgroup K} (hle : H' ≤ H) [Finite (K ⧸ H')]
-    (hu : IsUnit (H'.index : A)) {v : V} (hv : H ≤ σ.stabilizer v) :
-    Ring.inverse (H'.index : A) • ∑ᶠ q : K ⧸ H', σ q.out v =
-      Ring.inverse (H.index : A) • ∑ᶠ q : K ⧸ H, σ q.out v := by
-  have : H'.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  have : H.FiniteIndex := Subgroup.finiteIndex_of_le hle
-  let _ : SemigroupAction K V :=
-    { smul := fun k x ↦ σ k x
-      mul_smul := fun a b x ↦ show σ (a * b) x = σ a (σ b x) by rw [map_mul]; rfl }
-  let _ := Subgroup.fintypeQuotientOfFiniteIndex (H := H')
-  let _ := Subgroup.fintypeQuotientOfFiniteIndex (H := H)
-  have htower : ∑ᶠ q : K ⧸ H', σ q.out v = H'.relIndex H • ∑ᶠ q : K ⧸ H, σ q.out v := by
-    rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype]
-    exact Subgroup.sum_out_smul_eq_relIndex_nsmul hle fun h hh ↦ mem_stabilizer.1 (hv hh)
-  rw [htower]
-  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu ⊢
-  have hr := (IsUnit.mul_iff.1 hu).1
-  rw [← Nat.cast_smul_eq_nsmul A, smul_smul]
-  congr 1
-  rw [Ring.inverse_mul (Or.inl hr), Ring.inverse_mul_cancel_right _ _ hr]
-
-end Formula
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 section Compact
 
 variable [TopologicalSpace K] [SeparatelyContinuousMul K] [CompactSpace K]
   (σ : Representation A K V) [IsSmooth σ] (hK : TauCeti.HasUnitProOrder A K)
+
+/-- For a smooth representation of a compact group, the stabilizer of every vector has finite
+index, since it is open. -/
+instance IsSmooth.finiteIndex_stabilizer (v : V) : (σ.stabilizer v).FiniteIndex :=
+  have := (σ.stabilizer v).quotient_finite_of_isOpen (IsSmooth.isOpen_stabilizer v)
+  Subgroup.finiteIndex_of_finite_quotient
 
 omit [IsSmooth σ] in
 include hK in
@@ -109,8 +93,12 @@ private theorem orbitAverage_eq {H : Subgroup K} (hH : IsOpen (H : Set K)) {v : 
     Ring.inverse (Nat.card (range fun k : K ↦ σ k v) : A) • ∑ᶠ w ∈ range fun k : K ↦ σ k v, w =
       Ring.inverse (H.index : A) • ∑ᶠ q : K ⧸ H, σ q.out v := by
   have := H.quotient_finite_of_isOpen hH
-  rw [natCard_range_eq_index_stabilizer, finsum_mem_range_eq_finsum_orbitMap,
-    smul_finsum_out_of_le σ hv (hK.isUnit_index hH) le_rfl]
+  have : H.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : (σ.stabilizer v).FiniteIndex := Subgroup.finiteIndex_of_le hv
+  rw [natCard_range_eq_index_stabilizer, finsum_mem_range_eq_finsum_out, finsum_eq_sum_of_fintype,
+    finsum_eq_sum_of_fintype, ← relNorm_apply, ← relNorm_apply,
+    inverse_index_smul_relNorm_apply_of_le σ hv (hK.isUnit_index hH) fun h ↦
+      mem_stabilizer.1 h.property]
 
 /-- **The averaging projector** of a smooth representation of a compact group whose pro-order is
 invertible in `A`: it sends `v` to the barycentre `|K v|⁻¹ • ∑_{w ∈ K v} w` of its orbit, which
@@ -132,12 +120,10 @@ noncomputable def smoothAverage : V →ₗ[A] V where
     simp only [map_add]
   map_smul' c v := by
     have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-    have := (σ.stabilizer v).quotient_finite_of_isOpen hH
     have hcv : σ.stabilizer v ≤ σ.stabilizer (c • v) := fun h hh ↦ by
       rw [mem_stabilizer, map_smul, mem_stabilizer.1 hh]
     simp only [RingHom.id_apply]
     rw [orbitAverage_eq σ hK hH le_rfl, orbitAverage_eq σ hK hH hcv, smul_comm c]
-    let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
     simp only [finsum_eq_sum_of_fintype, map_smul, Finset.smul_sum]
 
 /-- The averaging projector sends `v` to the barycentre of its orbit. -/
@@ -153,24 +139,31 @@ theorem smoothAverage_apply_of_le {H : Subgroup K} (hH : IsOpen (H : Set K)) {v 
     σ.smoothAverage hK v = Ring.inverse (H.index : A) • ∑ᶠ q : K ⧸ H, σ q.out v :=
   orbitAverage_eq σ hK hH hv
 
+/-- The averaging projector in terms of the relative norm: for every open subgroup `H` fixing `v`,
+`e_K v = [K : H]⁻¹ • relNorm σ H v`. -/
+theorem smoothAverage_apply_eq_relNorm {H : Subgroup K} [Fintype (K ⧸ H)]
+    (hH : IsOpen (H : Set K)) {v : V} (hv : H ≤ σ.stabilizer v) :
+    σ.smoothAverage hK v = Ring.inverse (H.index : A) • relNorm σ H v := by
+  rw [σ.smoothAverage_apply_of_le hK hH hv, finsum_eq_sum_of_fintype, relNorm_apply]
+
 /-- The average of a vector is invariant. -/
 theorem smoothAverage_apply_mem_invariants (v : V) : σ.smoothAverage hK v ∈ invariants σ := by
   intro k
-  have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-  have := (σ.stabilizer v).quotient_finite_of_isOpen hH
-  let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
-  rw [smoothAverage_apply_of_le σ hK hH le_rfl, map_smul, finsum_eq_sum_of_fintype,
-    ← relNorm_apply, relNorm_apply_eq_self σ (fun h ↦ mem_stabilizer.1 h.property) k]
+  rw [σ.smoothAverage_apply_eq_relNorm hK (IsSmooth.isOpen_stabilizer v) le_rfl, map_smul,
+    relNorm_apply_eq_self σ (fun h ↦ mem_stabilizer.1 h.property) k]
+
+/-- The group acts trivially on the average of a vector. -/
+@[simp]
+theorem apply_smoothAverage_apply (k : K) (v : V) :
+    σ k (σ.smoothAverage hK v) = σ.smoothAverage hK v :=
+  σ.smoothAverage_apply_mem_invariants hK v k
 
 /-- The averaging projector fixes the invariant vectors. -/
 theorem smoothAverage_apply_of_mem_invariants {v : V} (hv : v ∈ invariants σ) :
     σ.smoothAverage hK v = v := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-  have := (σ.stabilizer v).quotient_finite_of_isOpen hH
-  let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
-  rw [smoothAverage_apply_of_le σ hK hH le_rfl, finsum_eq_sum_of_fintype, ← relNorm_apply,
-    relNorm_apply_of_forall_apply_eq σ hv, ← Nat.cast_smul_eq_nsmul A, smul_smul,
-    Ring.inverse_mul_cancel _ (hK.isUnit_index hH), one_smul]
+  rw [σ.smoothAverage_apply_eq_relNorm hK hH le_rfl, relNorm_apply_of_forall_apply_eq σ hv,
+    inverse_natCast_smul_nsmul (hK.isUnit_index hH)]
 
 /-- The averaging projector is a projection onto the invariants. -/
 theorem isProj_smoothAverage : LinearMap.IsProj (invariants σ) (σ.smoothAverage hK) :=
@@ -202,19 +195,10 @@ vectors `σ k x - x`. -/
 theorem smoothAverage_apply_sub_mem_ker (v : V) :
     σ.smoothAverage hK v - v ∈ Coinvariants.ker σ := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-  have := (σ.stabilizer v).quotient_finite_of_isOpen hH
-  let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
-  have hv : v = Ring.inverse ((σ.stabilizer v).index : A) • ∑ _q : K ⧸ σ.stabilizer v, v := by
-    rw [Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Subgroup.index,
-      ← Nat.cast_smul_eq_nsmul A, smul_smul, Ring.inverse_mul_cancel _ (hK.isUnit_index hH),
-      one_smul]
-  have hsub : Ring.inverse ((σ.stabilizer v).index : A) •
-      ∑ q : K ⧸ σ.stabilizer v, σ q.out v - v =
-      Ring.inverse ((σ.stabilizer v).index : A) •
-        ∑ q : K ⧸ σ.stabilizer v, (σ q.out v - v) := by
-    rw [Finset.sum_sub_distrib, smul_sub, ← hv]
-  rw [smoothAverage_apply_of_le σ hK hH le_rfl, finsum_eq_sum_of_fintype, hsub]
-  exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun q _ ↦ Coinvariants.sub_mem_ker _ _)
+  have h := Submodule.smul_mem _ (Ring.inverse ((σ.stabilizer v).index : A))
+    (relNorm_sub_index_nsmul_mem (ρ := σ) (H := σ.stabilizer v) v)
+  rwa [smul_sub, inverse_natCast_smul_nsmul (hK.isUnit_index hH),
+    ← σ.smoothAverage_apply_eq_relNorm hK hH le_rfl] at h
 
 /-- The kernel of the averaging projector is the span of the vectors `σ k x - x`. -/
 theorem ker_smoothAverage : LinearMap.ker (σ.smoothAverage hK) = Coinvariants.ker σ := by
@@ -229,14 +213,14 @@ theorem IntertwiningMap.map_smoothAverage {ρ : Representation A K W} [IsSmooth 
     (f : σ.IntertwiningMap ρ) (v : V) :
     f (σ.smoothAverage hK v) = ρ.smoothAverage hK (f v) := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-  have := (σ.stabilizer v).quotient_finite_of_isOpen hH
-  let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
-  rw [σ.smoothAverage_apply_of_le hK hH le_rfl, ρ.smoothAverage_apply_of_le hK hH
-    (f.stabilizer_le v), map_smul, finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, map_sum]
+  rw [σ.smoothAverage_apply_eq_relNorm hK hH le_rfl,
+    ρ.smoothAverage_apply_eq_relNorm hK hH (f.stabilizer_le v), map_smul, relNorm_apply,
+    relNorm_apply, map_sum]
   simp only [f.isIntertwining]
 
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `H` and
 then over `K` is averaging over `K`. -/
+@[simp]
 theorem smoothAverage_comp_smoothAverage_subgroup (H : Subgroup K) [CompactSpace H]
     (hH : TauCeti.HasUnitProOrder A H) :
     σ.smoothAverage hK ∘ₗ smoothAverage (σ.comp H.subtype) hH = σ.smoothAverage hK := by
@@ -248,6 +232,7 @@ theorem smoothAverage_comp_smoothAverage_subgroup (H : Subgroup K) [CompactSpace
 
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `K` and
 then over `H` is averaging over `K`. -/
+@[simp]
 theorem smoothAverage_subgroup_comp_smoothAverage (H : Subgroup K) [CompactSpace H]
     (hH : TauCeti.HasUnitProOrder A H) :
     smoothAverage (σ.comp H.subtype) hH ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK := by
@@ -264,16 +249,21 @@ theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [Separately
     [Invertible (Fintype.card K : A)] (σ : Representation A K V) [IsSmooth σ]
     (hK : TauCeti.HasUnitProOrder A K) : σ.smoothAverage hK = σ.averageMap := by
   ext v
-  let _ := Fintype.ofFinite (K ⧸ (⊥ : Subgroup K))
   have hu : IsUnit ((⊥ : Subgroup K).index : A) := by
     rw [Subgroup.index_bot, Nat.card_eq_fintype_card]
     exact isUnit_of_invertible _
-  rw [σ.smoothAverage_apply_of_le hK (IsSmooth.isOpen_stabilizer v) le_rfl,
-    ← smul_finsum_out_of_le σ bot_le hu le_rfl, averageMap_apply, Subgroup.index_bot,
-    Nat.card_eq_fintype_card, Ring.inverse_invertible, finsum_eq_sum_of_fintype]
+  have hbot : ∀ h : (⊥ : Subgroup K), σ h v = v := fun h ↦ by
+    rw [Subgroup.mem_bot.1 h.property, map_one, one_apply_eq_self]
+  -- The cosets of `⊥` are the elements of `K`.
+  have hmk : Function.Bijective (QuotientGroup.mk : K → K ⧸ (⊥ : Subgroup K)) :=
+    ⟨fun a b h ↦ inv_mul_eq_one.1 (Subgroup.mem_bot.1 (QuotientGroup.eq.1 h)),
+      QuotientGroup.mk_surjective⟩
+  rw [σ.smoothAverage_apply_eq_relNorm hK (IsSmooth.isOpen_stabilizer v) le_rfl,
+    ← inverse_index_smul_relNorm_apply_of_le σ bot_le hu fun h ↦ mem_stabilizer.1 h.property,
+    averageMap_apply, Subgroup.index_bot, Nat.card_eq_fintype_card, Ring.inverse_invertible,
+    relNorm_apply]
   congr 1
-  exact Fintype.sum_equiv (QuotientGroup.quotientBot (G := K)).toEquiv _ _ fun q ↦ by
-    conv_rhs => rw [← QuotientGroup.out_eq' q]
-    rfl
+  exact (Fintype.sum_bijective _ hmk _ _ fun g ↦
+    σ.apply_eq_apply_of_quotientGroup_mk_eq hbot (QuotientGroup.out_eq' _).symm).symm
 
 end Representation

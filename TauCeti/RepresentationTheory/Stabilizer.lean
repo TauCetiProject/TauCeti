@@ -79,7 +79,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.le_stabilizer_ofMulAction`
 * `Representation.le_stabilizer_dual`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
-  `Representation.range_orbitMap`, `Representation.finsum_mem_range_eq_finsum_orbitMap` and
+  `Representation.range_orbitMap`, `Representation.finsum_mem_range_eq_finsum_out` and
   `Representation.natCard_range_eq_index_stabilizer`: the orbit is in bijection with the cosets of
   the stabilizer.
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
@@ -344,7 +344,7 @@ theorem range_orbitMap : Set.range (ρ.orbitMap v) = Set.range fun g : G ↦ ρ 
   (QuotientGroup.mk_surjective.range_comp (ρ.orbitMap v)).symm
 
 /-- The sum over the orbit of `v` is the sum over the cosets of its stabilizer. -/
-theorem finsum_mem_range_eq_finsum_orbitMap :
+theorem finsum_mem_range_eq_finsum_out :
     ∑ᶠ w ∈ Set.range fun g : G ↦ ρ g v, w = ∑ᶠ q : G ⧸ ρ.stabilizer v, ρ q.out v := by
   rw [← range_orbitMap, finsum_mem_range (ρ.orbitMap_injective v)]
   refine finsum_congr fun q ↦ ?_
