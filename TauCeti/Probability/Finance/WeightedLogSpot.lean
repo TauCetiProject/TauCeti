@@ -190,7 +190,7 @@ theorem derivWithin_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ
     derivWithin (weightedLogSpotPrice u s) (Icc a b) t =
       (1 + s) * timeDerivL u (slabMk (log s) t) :=
   (hasDerivWithinAt_weightedLogSpotPrice_time u s t).derivWithin
-    (uniqueDiffOn_Icc hab t t.2)
+    (uniqueDiffOn_Icc hab t t.property)
 
 /-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
 theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)

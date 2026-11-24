@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
-public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Hom
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.UniqueScale
 
 /-!
@@ -28,7 +28,11 @@ a reference invariant form `B₀`, an invariant form `B` therefore has one scale
 `C`. When `B₀` is positive definite, for instance the canonical form `P.RootForm`, which restricts
 to the canonical form of every component, this identifies the positive-definite invariant forms
 with the families of positive scalars, one per component: the invariant metrics of a root system
-have exactly one free positive parameter per irreducible component.
+have exactly one free positive parameter per irreducible component. This parametrisation is
+natural: pulling forms back along an equivalence of root systems reindexes the scales by the
+induced bijection of irreducible components. Restriction and orthogonal reconstruction are natural
+in the same way, through the induced equivalences of component pairings
+`RootPairing.Equiv.componentPairingEquiv`.
 
 ## Main definitions
 
@@ -53,6 +57,17 @@ have exactly one free positive parameter per irreducible component.
   exactly when every component form is.
 * `RootPairing.InvariantForm.form_apply_eq_componentScale_mul`: on the component space of `C`, an
   invariant form is `componentScale B₀ B C` times the reference form.
+* `RootPairing.InvariantForm.componentScale_comap_componentOf`: the component scales of forms
+  pulled back along a morphism are the scales of the original forms on the image components.
+* `RootPairing.InvariantForm.componentScale_comap`,
+  `RootPairing.InvariantForm.posDefEquivScale_comap`,
+  `RootPairing.InvariantForm.posDefEquivScale_symm_comp_componentEquiv_coe`: the component scales of
+  forms pulled back along an equivalence are the scales of the original forms on the corresponding
+  components.
+* `RootPairing.InvariantForm.restrictComponent_comap`,
+  `RootPairing.InvariantForm.comap_ofComponent`: restriction and orthogonal reconstruction
+  commute with the pullbacks along an equivalence and along the induced equivalences of component
+  pairings.
 
 ## References
 
@@ -84,7 +99,7 @@ theorem rootForm_componentPairing {ι K M N : Type*} [Field K] [AddCommGroup M] 
     simp
   · by_contra hi
     refine h ?_
-    rw [coroot'_eq_zero_of_mem_componentSpace (fun h' ↦ hi ((C.mem_supp_iff i).mpr h')) x.2,
+    rw [coroot'_eq_zero_of_mem_componentSpace (fun h' ↦ hi ((C.mem_supp_iff i).mpr h')) x.property,
       zero_mul]
 
 /-! ### Restriction and orthogonal reconstruction -/
@@ -157,7 +172,7 @@ theorem ofComponent_form_apply_of_mem (F : ∀ C, (P.componentPairing C).Invaria
 theorem restrictComponent_ofComponent (F : ∀ C, (P.componentPairing C).InvariantForm)
     (C : P.Component) : (ofComponent F).restrictComponent C = F C := by
   ext x y
-  rw [restrictComponent_form_apply, ofComponent_form_apply_of_mem _ x.2 y.2]
+  rw [restrictComponent_form_apply, ofComponent_form_apply_of_mem _ x.property y.property]
 
 variable [NeZero (2 : K)]
 
@@ -171,8 +186,8 @@ theorem ofComponent_restrictComponent (B : P.InvariantForm) :
   simp only [map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun C _ ↦ ?_
   rw [restrictComponent_form_apply, Finset.sum_eq_single C]
-  · exact fun D _ hD ↦ B.apply_eq_zero_of_mem_componentSpace hD (P.componentProj D x).2
-      (P.componentProj C y).2
+  · exact fun D _ hD ↦ B.apply_eq_zero_of_mem_componentSpace hD (P.componentProj D x).property
+      (P.componentProj C y).property
   · exact fun h ↦ absurd (Finset.mem_univ C) h
 
 /-- **An invariant form is the same as a family of invariant forms on the components**: restriction
@@ -243,13 +258,32 @@ theorem form_apply_eq_componentScale_mul (B₀ B : P.InvariantForm) {C : P.Compo
       rw [componentScale, div_mul_cancel₀ _ (B₀.ne_zero _)])
   simpa using LinearMap.congr_fun₂ h ⟨x, hx⟩ ⟨y, hy⟩
 
-/-- The scale on a component is the ratio of the two forms at any root of that component. -/
+omit [Finite ι] [P.IsRootSystem] [NeZero (2 : K)] in
+/-- The scale on a component is the ratio of the two forms at any root of that component. The
+ratio is constant along each edge of the non-orthogonality graph, since the Cartan integers of two
+non-orthogonal roots determine the ratio of their squared lengths. -/
 theorem componentScale_eq_div (B₀ B : P.InvariantForm) (i : ι) :
     componentScale B₀ B (P.componentOf i) =
       B.form (P.root i) (P.root i) / B₀.form (P.root i) (P.root i) := by
-  rw [form_apply_eq_componentScale_mul B₀ B (root_mem_componentSpace i)
-    (root_mem_componentSpace i), mul_div_cancel_right₀ _ (B₀.ne_zero i)]
+  have adj {j k : ι} (h : P.nonorthogonalGraph.Adj j k) :
+      B.form (P.root j) (P.root j) / B₀.form (P.root j) (P.root j) =
+        B.form (P.root k) (P.root k) / B₀.form (P.root k) (P.root k) := by
+    have hB := B.pairing_mul_eq_pairing_mul_swap j k
+    have hB₀ := B₀.pairing_mul_eq_pairing_mul_swap j k
+    have hjk : P.pairing j k ≠ 0 := fun h0 ↦ (P.nonorthogonalGraph_adj.mp h).2
+      ⟨h0, by simpa [h0, B₀.ne_zero j] using hB₀⟩
+    rw [div_eq_div_iff (B₀.ne_zero j) (B₀.ne_zero k)]
+    refine mul_left_cancel₀ hjk ?_
+    linear_combination B₀.form (P.root j) (P.root j) * hB - B.form (P.root j) (P.root j) * hB₀
+  obtain ⟨p⟩ := SimpleGraph.ConnectedComponent.exact
+    ((SimpleGraph.ConnectedComponent.mem_supp_iff _ _).mp (P.componentOf i).nonempty_supp.some_mem)
+  rw [componentScale]
+  generalize (P.componentOf i).nonempty_supp.some = j at p ⊢
+  induction p with
+  | nil => rfl
+  | cons h _ ih => exact (adj h).trans ih
 
+omit [NeZero (2 : K)] in
 /-- The scale of the orthogonal sum of unit multiples of the restrictions of `B₀` is the given
 unit. -/
 @[simp]
@@ -279,14 +313,14 @@ invariant form is determined by its scales on the irreducible components, and ev
 positive scales occurs. -/
 noncomputable def posDefEquivScale (B₀ : P.InvariantForm) (hB₀ : B₀.form.toQuadraticMap.PosDef) :
     {B : P.InvariantForm // B.form.toQuadraticMap.PosDef} ≃ (P.Component → {c : K // 0 < c}) where
-  toFun B C := ⟨componentScale B₀ B C, componentScale_pos hB₀ B.2 C⟩
-  invFun c := ⟨ofComponent fun C ↦ Units.mk0 (c C : K) (c C).2.ne' • B₀.restrictComponent C,
+  toFun B C := ⟨componentScale B₀ B C, componentScale_pos hB₀ B.property C⟩
+  invFun c := ⟨ofComponent fun C ↦ Units.mk0 (c C : K) (c C).property.ne' • B₀.restrictComponent C,
     posDef_ofComponent_iff.mpr fun C x hx ↦ by
-      simpa using mul_pos (c C).2 (posDef_restrictComponent hB₀ C x hx)⟩
+      simpa using mul_pos (c C).property (posDef_restrictComponent hB₀ C x hx)⟩
   left_inv B := by
     refine Subtype.ext ((componentEquiv (P := P)).injective (funext fun C ↦ ?_))
     ext x y
-    simp [form_apply_eq_componentScale_mul B₀ B.1 x.2 y.2]
+    simp [form_apply_eq_componentScale_mul B₀ B.val x.property y.property]
   right_inv c := by
     ext C
     simp
@@ -296,7 +330,7 @@ component space. -/
 theorem form_posDefEquivScale_symm_apply_of_mem (B₀ : P.InvariantForm)
     (hB₀ : B₀.form.toQuadraticMap.PosDef) (c : P.Component → {c : K // 0 < c}) {C : P.Component}
     {x y : M} (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
-    ((posDefEquivScale B₀ hB₀).symm c).1.form x y = c C * B₀.form x y := by
+    ((posDefEquivScale B₀ hB₀).symm c).val.form x y = c C * B₀.form x y := by
   simp [posDefEquivScale, ofComponent_form_apply_of_mem _ hx hy]
 
 @[simp]
@@ -306,6 +340,88 @@ theorem posDefEquivScale_apply_coe (B₀ : P.InvariantForm) (hB₀ : B₀.form.t
   (rfl)
 
 end Ordered
+
+/-! ### Transport along equivalences -/
+
+section Equiv
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module K M₂] [AddCommGroup N₂] [Module K N₂]
+  {Q : RootPairing ι₂ K M₂ N₂}
+
+omit [Finite ι] [P.IsRootSystem] [NeZero (2 : K)] in
+/-- **The component scales are natural under morphisms**: the scale of the pulled-back forms on
+the component of a root of `P` is the scale of the original forms on the component of its image. -/
+@[simp]
+theorem componentScale_comap_componentOf (f : P.Hom Q) (B₀ B : Q.InvariantForm) (i : ι) :
+    componentScale (comap f B₀) (comap f B) (P.componentOf i) =
+      componentScale B₀ B (Q.componentOf (f.indexEquiv i)) := by
+  simp [componentScale_eq_div, Hom.root_weightMap_apply]
+
+omit [Finite ι] [P.IsRootSystem] [NeZero (2 : K)] in
+/-- **The component scales are natural under equivalences**: the scale of the pulled-back forms on
+a component of `P` is the scale of the original forms on the corresponding component of `Q`. -/
+@[simp]
+theorem componentScale_comap (e : P.Equiv Q) (B₀ B : Q.InvariantForm) (C : P.Component) :
+    componentScale (comap e.toHom B₀) (comap e.toHom B) C =
+      componentScale B₀ B (e.componentEquiv C) := by
+  obtain ⟨i, rfl⟩ : ∃ i, P.componentOf i = C := C.exists_rep
+  simp
+
+variable [Finite ι₂] [Q.IsRootSystem]
+
+omit [NeZero (2 : K)] in
+/-- **Restricting the pullback of an invariant form to a component** is pulling back its
+restriction to the corresponding component along the equivalence of component pairings. -/
+theorem restrictComponent_comap (e : P.Equiv Q) (B : Q.InvariantForm) (C : P.Component) :
+    (comap e.toHom B).restrictComponent C =
+      comap (e.componentPairingEquiv C rfl).toHom (B.restrictComponent (e.componentEquiv C)) := by
+  ext x y
+  simp
+
+omit [NeZero (2 : K)] in
+/-- **Orthogonal reconstruction commutes with the pullbacks**: the pullback of the orthogonal sum
+of a family of component forms is the orthogonal sum of their pullbacks along the equivalences of
+component pairings, reindexed along the bijection of components. -/
+theorem comap_ofComponent (e : P.Equiv Q) (G : ∀ D, (Q.componentPairing D).InvariantForm) :
+    comap e.toHom (ofComponent G) =
+      ofComponent fun C ↦ comap (e.componentPairingEquiv C rfl).toHom (G (e.componentEquiv C)) := by
+  have := Fintype.ofFinite P.Component
+  have := Fintype.ofFinite Q.Component
+  ext x y
+  rw [comap_form_apply, ofComponent_form_apply, ofComponent_form_apply]
+  refine (Fintype.sum_equiv e.componentEquiv _ _ fun C ↦ ?_).symm
+  rw [comap_form_apply, Equiv.componentPairingEquiv_weightMap_componentProj,
+    Equiv.componentPairingEquiv_weightMap_componentProj]
+
+variable [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- **The parametrisation of positive-definite invariant forms by component scales is natural
+under equivalences**: pulling a positive-definite form back along `e` reindexes its family of
+scales by the bijection `e.componentEquiv` of irreducible components. -/
+@[simp]
+theorem posDefEquivScale_comap (e : P.Equiv Q) (B₀ B : Q.InvariantForm)
+    (hB₀ : (comap e.toHom B₀).form.toQuadraticMap.PosDef)
+    (hB : (comap e.toHom B).form.toQuadraticMap.PosDef) :
+    posDefEquivScale (comap e.toHom B₀) hB₀ ⟨comap e.toHom B, hB⟩ =
+      posDefEquivScale B₀ ((posDef_comap_iff e).mp hB₀) ⟨B, (posDef_comap_iff e).mp hB⟩ ∘
+        e.componentEquiv := by
+  ext C
+  simp
+
+/-- The positive-definite form with scales reindexed along `e` is the pullback along `e` of the
+positive-definite form with the original scales. -/
+theorem posDefEquivScale_symm_comp_componentEquiv_coe (e : P.Equiv Q) (B₀ : Q.InvariantForm)
+    (hB₀ : (comap e.toHom B₀).form.toQuadraticMap.PosDef) (c : Q.Component → {c : K // 0 < c}) :
+    ((posDefEquivScale (comap e.toHom B₀) hB₀).symm (c ∘ e.componentEquiv) : P.InvariantForm) =
+      comap e.toHom ((posDefEquivScale B₀ ((posDef_comap_iff e).mp hB₀)).symm c) := by
+  have hB := (posDef_comap_iff e).mpr ((posDefEquivScale B₀ ((posDef_comap_iff e).mp hB₀)).symm
+      c).property
+  have key : posDefEquivScale (comap e.toHom B₀) hB₀ ⟨_, hB⟩ = c ∘ e.componentEquiv := by
+    rw [posDefEquivScale_comap]
+    simp
+  rw [← key, _root_.Equiv.symm_apply_apply]
+
+end Equiv
 
 end InvariantForm
 

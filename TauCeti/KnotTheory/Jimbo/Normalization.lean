@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Jimbo.Stabilization
 public import TauCeti.KnotTheory.Markov.Basic
+import TauCeti.KnotTheory.Markov.Skein
 
 /-!
 # Writhe normalization of the Jimbo trace
@@ -20,7 +21,8 @@ HOMFLY. Our normalization assigns the quantum dimension `∑ a, jimboWeight q a`
 to the one-strand unknot, rather than one. The normalized trace satisfies the
 oriented HOMFLY skein relation with `a = q ^ N` and `z = q - q⁻¹`.
 No invertibility of that sum is assumed, so the construction works over arbitrary
-commutative rings and at `q = 1`.
+commutative rings and at `q = 1`. Moreover, the normalized trace of every braid closure is
+divisible by the quantum dimension (`MarkovBraid.sum_jimboWeight_dvd_jimboTrace`).
 No geometric-to-diagram or Markov classification theorem is asserted here.
 
 ## References
@@ -94,6 +96,16 @@ theorem jimboTrace_one (q : Rˣ) :
     jimboTrace (N := N) ⟨n, 1⟩ q = (∑ a : Fin N, jimboWeight q a) ^ (n + 1) := by
   simp [jimboTrace_def]
 
+/-- Adding an uncrossed strand multiplies the writhe-normalized Jimbo trace by the quantum
+dimension. -/
+@[simp]
+theorem jimboTrace_strandIncl (q : Rˣ) (b : BraidGroup (n + 1)) :
+    jimboTrace (N := N) ⟨n + 1, BraidGroup.strandIncl b⟩ q =
+      (∑ a : Fin N, jimboWeight q a) * jimboTrace (N := N) ⟨n, b⟩ q := by
+  rw [jimboTrace_def, jimboTrace_def, BraidGroup.exponentSum_strandIncl,
+    jimboWeightedTrace_strandIncl]
+  ring
+
 /-- The writhe-normalized Jimbo trace satisfies the oriented HOMFLY skein relation
 with `a = q ^ N` and `z = q - q⁻¹`, in any braid context. -/
 theorem jimboTrace_skein (q : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
@@ -128,5 +140,44 @@ theorem MarkovEquiv.jimboTrace_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ) 
     β.jimboTrace (N := N) q = γ.jimboTrace (N := N) q :=
   h.induction (fun hmove ↦ hmove.jimboTrace_eq q) (fun _ ↦ rfl) (fun _ ih ↦ ih.symm)
     (fun _ _ ih ih' ↦ ih.trans ih')
+
+namespace MarkovBraid
+
+/-- Ring homomorphisms commute with the writhe-normalized Jimbo trace, mapping the parameter unit
+along `Units.map`. -/
+@[simp]
+theorem map_jimboTrace {S : Type*} [CommRing S] (β : MarkovBraid)
+    (f : R →+* S) (q : Rˣ) :
+    f (β.jimboTrace (N := N) q) = β.jimboTrace (N := N) (Units.map (f : R →* S) q) := by
+  let qS : Sˣ := Units.map (f : R →* S) q
+  have hqS : (qS : S) = f q := by simp [qS]
+  have hqS_inv : (↑qS⁻¹ : S) = f ↑q⁻¹ := by simp [qS]
+  have hsum : f (∑ a : Fin N, jimboWeight q a) = ∑ a : Fin N, jimboWeight qS a := by
+    simp [qS]
+  refine congrFun (eq_of_skein (qS ^ N) ((qS : S) - ↑qS⁻¹) (∑ a : Fin N, jimboWeight qS a)
+    (F := fun γ ↦ f (γ.jimboTrace (N := N) q))
+    (G := fun γ ↦ γ.jimboTrace (N := N) qS)
+    (fun _ _ h ↦ congrArg f (h.jimboTrace_eq q))
+    (fun _ _ h ↦ h.jimboTrace_eq qS) ?_ ?_ ?_ ?_ ?_) β
+  · intro m c i
+    have hs := congrArg f (jimboTrace_skein (N := N) q 1 c i)
+    simpa only [one_mul, map_sub, map_mul, Units.val_pow_eq_pow_val, map_pow, ← inv_pow,
+      smul_eq_mul, hqS, hqS_inv] using hs
+  · intro m c i
+    simpa only [one_mul, smul_eq_mul, inv_pow] using jimboTrace_skein (N := N) qS 1 c i
+  · intro m b
+    simp [smul_eq_mul, hsum]
+  · intro m b
+    simp [smul_eq_mul]
+  · simp [hsum]
+
+/-- Over any commutative ring `R` and at any unit parameter `q : Rˣ`, the writhe-normalized
+`N`-colour Jimbo trace is divisible by the quantum dimension `[N]_q`. -/
+theorem sum_jimboWeight_dvd_jimboTrace (β : MarkovBraid) (q : Rˣ) :
+    (∑ a : Fin N, jimboWeight q a) ∣ β.jimboTrace (N := N) q := by
+  rw [jimboTrace_def]
+  exact dvd_mul_of_dvd_right (sum_jimboWeight_dvd_jimboWeightedTrace q β.braid) _
+
+end MarkovBraid
 
 end TauCeti

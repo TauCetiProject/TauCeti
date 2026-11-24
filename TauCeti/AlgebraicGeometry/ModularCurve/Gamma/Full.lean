@@ -220,7 +220,7 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
   constructor
   · intro y y' h
     dsimp [toStructure] at h
-    have h' := congrArg (fun α ↦ (gammaEquiv _ α).1) h
+    have h' := congrArg (fun α ↦ (gammaEquiv _ α).val) h
     simp only [Equiv.apply_symm_apply] at h'
     have hyy' : ∀ a,
         ((y' ≫ X.drinfeldBasisSchemeι N) ≫ X.curve.torsionPairHom N a) =

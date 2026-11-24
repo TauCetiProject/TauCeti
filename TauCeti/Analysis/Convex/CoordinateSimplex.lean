@@ -218,7 +218,7 @@ theorem interior_coordinateSimplex : interior (coordinateSimplex ι) =
 /-- The points of the coordinate simplex whose coordinate sum is less than one form an open
 set in its subtype topology. -/
 theorem isOpen_setOf_sum_lt_one_coordinateSimplex :
-    IsOpen {y : coordinateSimplex ι | ∑ i, y.1 i < 1} :=
+    IsOpen {y : coordinateSimplex ι | ∑ i, y.val i < 1} :=
   isOpen_lt (by fun_prop) continuous_const
 
 /-- A point lies on the frontier exactly when it is in the simplex and at least one of its

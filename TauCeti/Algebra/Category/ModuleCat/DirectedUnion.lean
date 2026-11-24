@@ -189,7 +189,7 @@ variable {R : Type u} [CommRing R] (M : Type u) [AddCommGroup M] [Module R M]
 noncomputable def tensorSubringMap {A B : Subring R} (h : A ≤ B) :
     R ⊗[A] M →ₗ[R] R ⊗[B] M :=
   have : CompatibleSMul B A R M := ⟨fun a r m ↦ by
-    simpa [Subring.smul_def] using smul_tmul (⟨a, h a.2⟩ : B) r m⟩
+    simpa [Subring.smul_def] using smul_tmul (⟨a, h a.property⟩ : B) r m⟩
   mapOfCompatibleSMul B A R R M
 
 @[simp]

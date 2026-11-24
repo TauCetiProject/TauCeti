@@ -104,7 +104,7 @@ classification list, since it is not simple and its derived subgroup is the Tits
 `²F₄(2)` is not a `ReeF4LieIndex`. The Tits group itself, the Suzuki family `²B₂` and the Ree
 family `²G₂` are excluded too; they are the other three constructors of
 `TauCeti.SuzukiReeIndex`. -/
-abbrev ReeF4LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsReeF4}
+abbrev ReeF4LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsReeF4}
 
 namespace ReeF4LieIndex
 
@@ -123,27 +123,27 @@ theorem exists_eq_of (d : ReeF4LieIndex) :
   all_goals exact fun _ hs => by simp at hs
 
 /-- The Ree family of type `F₄` is built on the rank-four diagram `F₄`. -/
-@[simp] theorem dynkinType_eq (d : ReeF4LieIndex) : d.1.dynkinType = .F4 := by
+@[simp] theorem dynkinType_eq (d : ReeF4LieIndex) : d.val.dynkinType = .F4 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_reeF4 m
 
 /-- The Ree family of type `F₄` has rank four, that being the rank of `F₄`. -/
-@[simp] theorem rank_eq_four (d : ReeF4LieIndex) : d.1.rank = 4 :=
+@[simp] theorem rank_eq_four (d : ReeF4LieIndex) : d.val.rank = 4 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 /-- The Ree family of type `F₄` lives in characteristic two. -/
-@[simp] theorem characteristic_eq_two (d : ReeF4LieIndex) : d.1.characteristic = 2 := by
+@[simp] theorem characteristic_eq_two (d : ReeF4LieIndex) : d.val.characteristic = 2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.characteristic_reeF4 m
 
 /-- **The field order of a valid Ree index of type `F₄` is at least eight.** The one smaller value
 the constructor could take is `²F₄(2)`, which is excluded from the classification list. -/
-theorem eight_le_fieldOrder (d : ReeF4LieIndex) : 8 ≤ d.1.fieldOrder := by
+theorem eight_le_fieldOrder (d : ReeF4LieIndex) : 8 ≤ d.val.fieldOrder := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   have hm : 1 ≤ m := by simpa using hvalid
   calc (8 : ℕ) = 2 ^ (2 * 1 + 1) := by norm_num
     _ ≤ 2 ^ (2 * m + 1) := Nat.pow_le_pow_right (by norm_num) (by omega)
-    _ = (of m hvalid).1.fieldOrder := (LieTypeIndex.fieldOrder_reeF4 m).symm
+    _ = (of m hvalid).val.fieldOrder := (LieTypeIndex.fieldOrder_reeF4 m).symm
 
 -- This specialization is what a construction on a carrier defined over `𝔽₂` needs: there the
 -- characteristic is the numeral `2` rather than a projection of the index, and the index's own
@@ -151,16 +151,16 @@ theorem eight_le_fieldOrder (d : ReeF4LieIndex) : 8 ≤ d.1.fieldOrder := by
 -- inside such a statement.
 /-- **The field order of a Ree index of type `F₄` is the recorded power of two.** This is the
 characteristic-two reading of `TauCeti.ValidLieTypeIndex.fieldOrder_eq_characteristic_pow`. -/
-theorem fieldOrder_eq_two_pow (d : ReeF4LieIndex) : d.1.fieldOrder = 2 ^ d.1.fieldExponent := by
-  rw [d.1.fieldOrder_eq_characteristic_pow, d.characteristic_eq_two]
+theorem fieldOrder_eq_two_pow (d : ReeF4LieIndex) : d.val.fieldOrder = 2 ^ d.val.fieldExponent := by
+  rw [d.val.fieldOrder_eq_characteristic_pow, d.characteristic_eq_two]
 
 /-- A Ree index of type `F₄` is a Suzuki--Ree index: its Steinberg map is an odd power of a
 half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : ReeF4LieIndex) : SuzukiReeIndex :=
-  ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isReeF4 d.2⟩
+  ⟨d.val, LieTypeIndex.usesHalfFrobenius_of_isReeF4 d.property⟩
 
 /-- The indexed length permutation reverses the short-root carrier's four nodes. -/
-theorem finCongr_lengthPerm (d : ReeF4LieIndex) (i : Fin d.1.rank) :
+theorem finCongr_lengthPerm (d : ReeF4LieIndex) (i : Fin d.val.rank) :
     finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
       Fin.revPerm (finCongr d.rank_eq_four i) := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
@@ -172,12 +172,12 @@ first power at the two long simple roots, Bourbaki nodes `1` and `2`, and the se
 two short ones. This is the `F₄` reading of the general convention
 `TauCeti.SuzukiReeIndex.exponent_of_isLongSimpleRoot`, whose long-root predicate is the
 Bourbaki-numbered one of `TauCeti.DynkinType`. -/
-@[simp] theorem exponent_eq (d : ReeF4LieIndex) (i : Fin d.1.rank) :
+@[simp] theorem exponent_eq (d : ReeF4LieIndex) (i : Fin d.val.rank) :
     d.toSuzukiReeIndex.exponent i = if (i : ℕ) < 2 then 1 else 2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   -- The index type `Fin d.1.rank` depends on the diagram, so `dynkinType_eq` cannot be rewritten
   -- with directly under the binder; the `F₄` root-length predicate is read off by `congrFun`.
-  have hlong : (of m hvalid).1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) < 2 :=
+  have hlong : (of m hvalid).val.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) < 2 :=
     Iff.of_eq (congrFun DynkinType.isLongSimpleRoot_F4 i)
   by_cases h : (i : ℕ) < 2
   · have hi : (of m hvalid).toSuzukiReeIndex.exponent i = 1 :=

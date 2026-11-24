@@ -85,22 +85,21 @@ theorem hasDerivAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
   -- Without an integrable numerator every integral in sight is `0`.
   by_cases h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b
   swap
-  · have hnum_of : ∀ (g : ℝ → ℂ) (n : ℕ) (w' : ℂ),
-        (∀ t ∈ uIoc a b, (γ t - w') ^ n * g t = f (γ t) * deriv γ t) →
-        ¬ IntervalIntegrable g volume a b := fun g n w' hg hint ↦
-      h_num_int ((intervalIntegrable_congr hg).mp
-        (hint.continuousOn_mul ((hγ_cont.sub continuousOn_const).pow n)))
-    have h0 : ∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t = 0 :=
-      intervalIntegral.integral_undef (hnum_of _ 2 w fun t ht ↦ by
-        have hne : γ t - w ≠ 0 := sub_ne_zero.mpr (hoff t (uIoc_subset_uIcc ht))
-        field_simp)
+  · have h0 : ∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t = 0 :=
+      intervalIntegral.integral_undef fun hint ↦ h_num_int
+        (intervalIntegrable_mul_deriv_of_pow_sub_mul_eq (n := 2) (w := w) hγ_cont hint
+          fun t ht ↦ by
+            have hne : γ t - w ≠ 0 := sub_ne_zero.mpr (hoff t (uIoc_subset_uIcc ht))
+            field_simp)
     rw [h0]
     refine (hasDerivAt_const w (0 : ℂ)).congr_of_eventuallyEq ?_
     filter_upwards [Metric.ball_mem_nhds w hε_pos] with w' hw'
     rw [h_eq]
-    exact intervalIntegral.integral_undef (hnum_of _ 1 w' fun t ht ↦ by
-      have hne : γ t - w' ≠ 0 := sub_ne_zero.mpr (avoid w' hw' t (uIoc_subset_uIcc ht))
-      field_simp)
+    exact intervalIntegral.integral_undef fun hint ↦ h_num_int
+      (intervalIntegrable_mul_deriv_of_pow_sub_mul_eq (n := 1) (w := w') hγ_cont hint
+        fun t ht ↦ by
+          have hne : γ t - w' ≠ 0 := sub_ne_zero.mpr (avoid w' hw' t (uIoc_subset_uIcc ht))
+          field_simp)
   have hnum := (intervalIntegrable_iff.mp h_num_int).aestronglyMeasurable
   rw [h_eq, h_deriv]
   refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (𝕜 := ℂ)

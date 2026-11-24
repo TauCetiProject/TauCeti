@@ -44,7 +44,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 /-- **The singular-value Hoffman–Wielandt inequality** when the domain dimension does not exceed
 the codomain dimension. The squared distance between the ordered singular values is at most the
 squared Frobenius seminorm of the difference. -/
-theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
+private theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
     (A B : E →ₗ[𝕜] F) (hEF : finrank 𝕜 E ≤ finrank 𝕜 F) :
     ∑ i : Fin (finrank 𝕜 E), (A.singularValues i - B.singularValues i) ^ 2 ≤
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F (A - B) ^ 2 := by
@@ -96,33 +96,43 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
   nlinarith [hcross]
 
 /-- **The singular-value Hoffman–Wielandt inequality** for arbitrary finite-dimensional maps.
-The sum runs over the first `min (finrank 𝕜 E) (finrank 𝕜 F)` singular values; beyond that index,
+The sum may run over any initial segment of the singular values: beyond the smaller dimension,
 both maps' singular values are zero. -/
-theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_min
-    (A B : E →ₗ[𝕜] F) :
-    ∑ i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)),
-        (A.singularValues i - B.singularValues i) ^ 2 ≤
+theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
+    (A B : E →ₗ[𝕜] F) {k : ℕ} :
+    ∑ i : Fin k, (A.singularValues i - B.singularValues i) ^ 2 ≤
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F (A - B) ^ 2 := by
-  by_cases hEF : finrank 𝕜 E ≤ finrank 𝕜 F
-  · have hm : min (finrank 𝕜 E) (finrank 𝕜 F) = finrank 𝕜 E :=
-      Nat.min_eq_left hEF
-    rw [hm]
-    exact A.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le B hEF
-  · have hFE : finrank 𝕜 F ≤ finrank 𝕜 E := le_of_not_ge hEF
-    have h := (adjoint A).sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
-      (adjoint B) hFE
-    have hm : min (finrank 𝕜 E) (finrank 𝕜 F) = finrank 𝕜 F :=
-      Nat.min_eq_right hFE
-    have hadj_sub : adjoint A - adjoint B = adjoint (A - B) :=
-      (map_sub LinearMap.adjoint A B).symm
-    have hnorm :
-        TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 F E (adjoint (A - B)) =
-          TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F (A - B) := by
-      rw [← TauCeti.UnitarilyInvariantSeminorm.schatten_two (𝕜 := 𝕜) (E := F) (F := E),
-        ← TauCeti.UnitarilyInvariantSeminorm.schatten_two (𝕜 := 𝕜) (E := E) (F := F),
-        TauCeti.UnitarilyInvariantSeminorm.schatten_apply_adjoint]
-    rw [hm]
-    rw [singularValues_adjoint, singularValues_adjoint, hadj_sub, hnorm] at h
-    exact h
+  let d := min (finrank 𝕜 E) (finrank 𝕜 F)
+  have hmin : ∑ i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)),
+      (A.singularValues i - B.singularValues i) ^ 2 ≤
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F (A - B) ^ 2 := by
+    rcases le_total (finrank 𝕜 E) (finrank 𝕜 F) with hEF | hFE
+    · rw [min_eq_left hEF]
+      exact A.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le B hEF
+    · rw [min_eq_right hFE]
+      have h := (adjoint A).sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
+        (adjoint B) hFE
+      rw [singularValues_adjoint, singularValues_adjoint, ← map_sub,
+        ← TauCeti.UnitarilyInvariantSeminorm.schatten_two (𝕜 := 𝕜) (E := F) (F := E),
+        TauCeti.UnitarilyInvariantSeminorm.schatten_apply_adjoint,
+        TauCeti.UnitarilyInvariantSeminorm.schatten_two] at h
+      exact h
+  have hzero (T : E →ₗ[𝕜] F) (i : ℕ) (hi : d ≤ i) : T.singularValues i = 0 := by
+    rcases le_total (finrank 𝕜 E) (finrank 𝕜 F) with hEF | hFE
+    · exact T.singularValues_of_finrank_le (by simpa [d, min_eq_left hEF] using hi)
+    · exact T.singularValues_of_finrank_le_right (by simpa [d, min_eq_right hFE] using hi)
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ (A.singularValues i - B.singularValues i) ^ 2)]
+    at hmin ⊢
+  calc
+    _ ≤ ∑ i ∈ Finset.range (max k d), (A.singularValues i - B.singularValues i) ^ 2 :=
+      Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono (le_max_left _ _))
+        (fun _ _ _ ↦ sq_nonneg _)
+    _ = ∑ i ∈ Finset.range d, (A.singularValues i - B.singularValues i) ^ 2 := by
+      symm
+      apply Finset.sum_subset (Finset.range_mono (le_max_right _ _))
+      intro i _ hi
+      have hi' : d ≤ i := by simpa only [Finset.mem_range, not_lt] using hi
+      simp [hzero A i hi', hzero B i hi']
+    _ ≤ _ := hmin
 
 end LinearMap

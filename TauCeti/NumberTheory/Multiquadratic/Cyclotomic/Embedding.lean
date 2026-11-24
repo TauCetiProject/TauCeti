@@ -221,11 +221,11 @@ theorem exists_isCyclotomicExtension_and_adjoin_range_le {ι : Type*} [Finite ι
   obtain ⟨N, hpos, hle⟩ : ∃ N : ℕ, 0 < N ∧ adjoin ℚ (Set.range r) ≤
       adjoin ℚ {Complex.exp (2 * Real.pi * Complex.I / (N : ℂ))} := by
     have : Fintype {i : ι // d i ≠ 0} := Fintype.ofFinite _
-    have hprod : 0 < ∏ i : {i : ι // d i ≠ 0}, ((d i.1).num * (d i.1).den).natAbs :=
+    have hprod : 0 < ∏ i : {i : ι // d i ≠ 0}, ((d i.val).num * (d i.val).den).natAbs :=
       Finset.prod_pos fun i _ => Int.natAbs_pos.mpr
-        (mul_ne_zero (Rat.num_ne_zero.mpr i.2) (by exact_mod_cast (d i.1).den_nz))
+        (mul_ne_zero (Rat.num_ne_zero.mpr i.property) (by exact_mod_cast (d i.val).den_nz))
     refine ⟨_, ?_, le_trans ?_
-      (adjoin_range_le_adjoin_exp (fun i : {i : ι // d i ≠ 0} => i.2) fun i => hr i.1)⟩
+      (adjoin_range_le_adjoin_exp (fun i : {i : ι // d i ≠ 0} => i.property) fun i => hr i.val)⟩
     · omega
     · rw [adjoin_le_iff]
       rintro x ⟨i, rfl⟩

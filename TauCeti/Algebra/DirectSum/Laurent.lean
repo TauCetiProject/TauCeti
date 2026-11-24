@@ -50,7 +50,7 @@ theorem coeff_decomposeLaurent (x : A) (i : ℤ) :
   | zero => simp
   | add x y hx hy => simp [hx, hy]
   | @homogeneous j x =>
-    rw [decomposeLaurent_of_mem ℳ x.2]
+    rw [decomposeLaurent_of_mem ℳ x.property]
     by_cases h : j = i
     · subst i
       simp [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single]
@@ -72,9 +72,9 @@ theorem decomposeLaurent_mul (a x : A) :
     | zero => simp
     | add x y hx hy => simp [mul_add, hx, hy]
     | @homogeneous j x =>
-      have hax : (a : A) * x ∈ ℳ (i + j) := SetLike.GradedSMul.smul_mem a.2 x.2
-      rw [decomposeLaurent_of_mem ℳ hax, decomposeLaurent_of_mem 𝒜 a.2,
-        decomposeLaurent_of_mem ℳ x.2]
+      have hax : (a : A) * x ∈ ℳ (i + j) := SetLike.GradedSMul.smul_mem a.property x.property
+      rw [decomposeLaurent_of_mem ℳ hax, decomposeLaurent_of_mem 𝒜 a.property,
+        decomposeLaurent_of_mem ℳ x.property]
       simp only [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.single_mul_single]
 
 end

@@ -195,6 +195,43 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   simpa only [hcoe, LinearMap.mkContinuous_apply, hf₀_apply, hℓ] using h
 
 omit [IsFiniteMeasureOnCompacts mu] in
+/-- The Riesz representation step of the `L²` weak-derivative criterion:
+a functional on `L²(Omega)` of norm at most `C` that integrates a test function against `u` and
+the directional derivative of the test function is represented by a weak directional derivative of
+`u` in `L²(Omega)` of norm at most `C`. -/
+private theorem exists_norm_le_hasWeakLineDerivOn_of_dual {u : E → ℝ}
+    [IsFiniteMeasureOnCompacts (mu.restrict Omega)]
+    (hu : LocallyIntegrableOn u Omega mu) (v : E)
+    (hld : ∀ phi : 𝓓(Omega, ℝ), ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega =
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu)
+    {C : ℝ} {Λ : StrongDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))} (hΛnorm : ‖Λ‖ ≤ C)
+    (hΛphi : ∀ phi : 𝓓(Omega, ℝ), Λ (testFunctionLp (mu := mu.restrict Omega) 2 phi) =
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega) :
+    ∃ g : Lp ℝ 2 ((mu.restrict Omega).restrict Omega),
+      ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
+  have hres : (mu.restrict Omega).restrict Omega = mu.restrict Omega :=
+    Measure.restrict_restrict_of_subset subset_rfl
+  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))).symm (-Λ)
+  refine ⟨g, ?_, ?_⟩
+  · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
+  · have hg : LocallyIntegrableOn g Omega mu :=
+      locallyIntegrableOn_of_locallyIntegrable_restrict
+        (((Lp.memLp g).locallyIntegrable (by norm_num)).mono_measure hres.ge)
+    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
+    have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
+        ∫ x, (phi : E → ℝ) x • g x ∂mu := by
+      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul (w := (g : E → ℝ)) phi]
+      have hrestrict (F : E → ℝ) :
+          ∫ x in Omega, F x ∂mu.restrict Omega = ∫ x in Omega, F x ∂mu := by
+        rw [hres]
+      refine Eq.trans ?_ (hrestrict fun x => phi x • g x)
+      refine integral_congr_ae ?_
+      filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
+      simp [hx]
+    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg, hld]
+    simp only [smul_eq_mul]
+
+omit [IsFiniteMeasureOnCompacts mu] in
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Omega`. If for some `C ≥ 0` every test function `phi` on `Omega` satisfies
 
@@ -221,26 +258,8 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
         exact hbound phi
   have hres : (mu.restrict Omega).restrict Omega = mu.restrict Omega :=
     Measure.restrict_restrict_of_subset subset_rfl
-  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))).symm (-Λ)
   rw [← hres]
-  refine ⟨g, ?_, ?_⟩
-  · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
-  · have hg : LocallyIntegrableOn g Omega mu :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        (((Lp.memLp g).locallyIntegrable (by norm_num)).mono_measure hres.ge)
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
-    have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
-        ∫ x, (phi : E → ℝ) x • g x ∂mu := by
-      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul (w := (g : E → ℝ)) phi]
-      have hrestrict (F : E → ℝ) :
-          ∫ x in Omega, F x ∂mu.restrict Omega = ∫ x in Omega, F x ∂mu := by
-        rw [hres]
-      refine Eq.trans ?_ (hrestrict fun x => phi x • g x)
-      refine integral_congr_ae ?_
-      filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
-      simp [hx]
-    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg, hld]
-    simp only [smul_eq_mul]
+  exact exists_norm_le_hasWeakLineDerivOn_of_dual hu v hld hΛnorm hΛphi
 
 end Representation
 
@@ -316,6 +335,14 @@ theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (fun x => ∇ (phi : E → ℝ) x) q (mu.restrict Omega) :=
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
     phi.hasCompactSupport.gradient
+
+/-- A field in `Lᵖ` paired with the gradient of a test function is integrable. -/
+theorem integrable_inner_gradient_testFunction {p : ENNReal} [Fact (1 ≤ p)] {F : E → E}
+    (hF : MemLp F p mu) (phi : 𝓓(Omega, ℝ)) :
+    Integrable (fun x => ⟪F x, ∇ (phi : E → ℝ) x⟫_ℝ) mu :=
+  hF.integrable_inner_of_holderConjugate (q' := p.conjExponent)
+    ((continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
+      phi.hasCompactSupport.gradient)
 
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=
@@ -460,12 +487,12 @@ theorem testFunctionLp_dilateTestFunction (hr : 0 < r)
     (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     testFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
       r ^ ((finrank ℝ E : ℝ) / q.toReal) •
-        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp q phi) := by
+        (mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (testFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [testFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
     Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal))
-      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp (mu := mu) q phi)),
-    Measure.coeFn_dilateLp hr (testFunctionLp (mu := mu) q phi),
+      ((mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (testFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp (𝕜 := ℝ) hr (testFunctionLp (mu := mu) q phi),
     (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
       (inv_ne_zero hr.ne')).ae_eq_comp (testFunctionLp_apply_ae (mu := mu) q phi)]
     with x hx hy hz hw
@@ -491,12 +518,12 @@ theorem gradientTestFunctionLp_dilateTestFunction (hr : 0 < r)
     (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     gradientTestFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
       r ^ ((finrank ℝ E : ℝ) / q.toReal - 1) •
-        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp q phi) := by
+        (mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (gradientTestFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
     Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal - 1))
-      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp (mu := mu) q phi)),
-    Measure.coeFn_dilateLp hr (gradientTestFunctionLp (mu := mu) q phi),
+      ((mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (gradientTestFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp (𝕜 := ℝ) hr (gradientTestFunctionLp (mu := mu) q phi),
     (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
       (inv_ne_zero hr.ne')).ae_eq_comp (gradientTestFunctionLp_apply_ae (mu := mu) q phi)]
     with x hx hy hz hw

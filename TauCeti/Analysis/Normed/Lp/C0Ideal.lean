@@ -29,6 +29,11 @@ quotient norm `1`, and the family `(aₙ / n)` has quotient norm `0`.
 * `lp.isClosed_c0Ideal`: the `c₀` ideal is closed.
 * `lp.star_mem_c0Ideal`: the `c₀` ideal is closed under `star`.
 * `lp.norm_mk_c0Ideal`: the quotient norm is the limit superior of the coordinate norms.
+* `lp.norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one`: a family of norm-one elements has quotient
+  norm `1`.
+* `lp.normOneClass_quotient_c0Ideal`: in particular, the unit of the quotient has norm `1`.
+* `lp.nontrivial_quotient_c0Ideal`: over an infinite index type the quotient by the `c₀` ideal of
+  a bounded product of normed rings with `‖1‖ = 1` is nonzero.
 
 ## References
 
@@ -99,11 +104,22 @@ theorem star_mem_c0Ideal [∀ i, StarRing (A i)] [∀ i, NormedStarGroup (A i)] 
     (ha : a ∈ c0Ideal A) : star a ∈ c0Ideal A :=
   mem_c0Ideal.2 (by simpa [lp.star_apply] using mem_c0Ideal.1 ha)
 
-/-- **The quotient norm of the bounded product by the `c₀` ideal** is the limit superior of the
-coordinate norms along the cofinite filter. The index type is infinite; for a finite one the
-quotient is zero. -/
-theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
+/-- Over a finite index type both sides of `lp.norm_mk_c0Ideal` are `0`: every family lies in the
+`c₀` ideal, and the cofinite filter is `⊥`, so the limit superior is `sInf` of all of `ℝ`, which
+is `0` by `Real.sInf_of_not_bddBelow`. -/
+private theorem norm_mk_c0Ideal_of_finite [Finite ι] (a : lp A ∞) :
     ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = limsup (fun i ↦ ‖a i‖) cofinite := by
+  rw [TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 (mem_c0Ideal.2 (by simp [cofinite_eq_bot])),
+    _root_.norm_zero, cofinite_eq_bot, limsup, limsSup, map_bot]
+  simp only [eventually_bot, Set.ofPred_true]
+  exact (Real.sInf_of_not_bddBelow not_bddBelow_univ).symm
+
+/-- **The quotient norm of the bounded product by the `c₀` ideal** is the limit superior of the
+coordinate norms along the cofinite filter. For a finite index type both sides are `0`. -/
+theorem norm_mk_c0Ideal (a : lp A ∞) :
+    ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = limsup (fun i ↦ ‖a i‖) cofinite := by
+  rcases finite_or_infinite ι with hι | hι
+  · exact norm_mk_c0Ideal_of_finite a
   have hbdd : IsBoundedUnder (· ≤ ·) cofinite (fun i ↦ ‖a i‖) :=
     isBoundedUnder_of ⟨‖a‖, fun i ↦ norm_apply_le_norm ENNReal.top_ne_zero a i⟩
   have hcobdd : IsCoboundedUnder (· ≤ ·) cofinite (fun i ↦ ‖a i‖) :=
@@ -152,5 +168,27 @@ theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
     have h := norm_apply_le_norm ENNReal.top_ne_zero (a + z) i
     calc ‖a i‖ ≤ ‖a i + z i‖ + ‖z i‖ := by simpa using norm_sub_le (a i + z i) (z i)
       _ ≤ ‖a + z‖ + ε := add_le_add (by simpa using h) hi.le
+
+/-- A bounded family of norm-one elements has quotient norm one modulo the `c₀` ideal. -/
+theorem norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one [Infinite ι] (a : lp A ∞)
+    (ha : ∀ i, ‖a i‖ = 1) : ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = 1 := by
+  simp [norm_mk_c0Ideal, ha]
+
+end lp
+
+namespace lp
+
+variable {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)] [∀ i, NormOneClass (A i)]
+  [Infinite ι]
+
+/-- Over an infinite index type, the unit of the quotient of a bounded product of normed rings
+with `‖1‖ = 1` by the `c₀` ideal has norm one. -/
+instance normOneClass_quotient_c0Ideal : NormOneClass (lp A ∞ ⧸ c0Ideal A) :=
+  ⟨by simpa using norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one (A := A) 1 fun _ ↦ by simp⟩
+
+/-- The quotient of a bounded product of normed rings with `‖1‖ = 1`, over an infinite index type,
+by the `c₀` ideal is nonzero. -/
+instance nontrivial_quotient_c0Ideal : Nontrivial (lp A ∞ ⧸ c0Ideal A) :=
+  NormOneClass.nontrivial
 
 end lp

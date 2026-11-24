@@ -188,7 +188,7 @@ theorem character_symPower_eq_chebyshevU_eval (d : ℕ) (g : SU2) :
 /-- The trace is continuous on `SU(2)`, the topology being induced from the matrices. -/
 private theorem continuous_trace :
     Continuous fun g : SU2 => Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-  Continuous.matrix_trace continuous_subtype_val
+  Continuous.matrix_trace continuous_subtypeVal
 
 /-- **The character of `Symᵈ(ℂ²)` is continuous**, being a polynomial in the trace. -/
 theorem continuous_character_symPower (d : ℕ) :

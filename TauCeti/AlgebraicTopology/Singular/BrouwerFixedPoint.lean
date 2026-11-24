@@ -28,7 +28,7 @@ followed by `r_*` through `H~ₘ(Dᵐ⁺¹; ℤ)`, which vanishes as the disk is
 (`TauCeti.isZero_reducedSingularHomologyFunctor_of_contractibleSpace`).
 
 A self-map `f` of the disk without fixed points gives a retraction of the boundary inclusion,
-sending `x` to the point where the ray from `f x` through `x` meets the boundary sphere
+sending `x` to the point where the ray from `f x` through `x` leaves the disk
 (`ContinuousMap.closedBallRayRetraction`), so no such `f` exists.
 
 A nonempty compact convex set `C` has a point `c` of its intrinsic interior, and is then
@@ -111,7 +111,8 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
   -- The boundary inclusion keeps the underlying point of the sphere.
   have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s :=
     TopCat.coe_diskBoundaryInclusion_apply_down n s
-  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸ (eS s).2)).trans hs)
+  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸
+      (eS s).property)).trans hs)
 
 section CompactConvex
 
@@ -125,7 +126,8 @@ theorem brouwerFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ C
     (hne : C.Nonempty) (f : C(C, C)) : ∃ x, IsFixedPt f x := by
   obtain ⟨c, hc⟩ := hne.intrinsicInterior hconv
   let V := (affineSpan ℝ C).direction
-  -- `C` is a closed ball of `V` around `c`, and that ball is the disk of dimension `finrank ℝ V`.
+  -- `C` is homeomorphic to the closed unit ball of `V`, which is the disk of dimension
+  -- `finrank ℝ V`.
   let e : TopCat.disk.{0} (Module.finrank ℝ V) ≃ₜ C :=
     (Homeomorph.ulift.trans (closedBallHomeomorphOfFinrankEq (F := V) (by simp))).trans
       (convexClosedBallHomeomorph hconv hC.isClosed hC.isBounded hc)
@@ -166,6 +168,6 @@ theorem brouwerFixedPoint_compactConvex_continuousOn {E : Type*} [NormedAddCommG
     (hfC : MapsTo f C C) : ∃ x ∈ C, IsFixedPt f x := by
   obtain ⟨x, hx⟩ := brouwerFixedPoint_compactConvex_finiteSpan (Submodule.span ℝ C)
     Submodule.subset_span hC hconv hne ⟨hfC.restrict f C C, hf.mapsToRestrict hfC⟩
-  exact ⟨x, x.2, congrArg Subtype.val hx⟩
+  exact ⟨x, x.property, congrArg Subtype.val hx⟩
 
 end TauCeti

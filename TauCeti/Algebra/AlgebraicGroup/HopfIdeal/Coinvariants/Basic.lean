@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
@@ -54,6 +55,8 @@ This file sets up that candidate and proves its Hopf-algebraic closure propertie
   `TauCeti.HopfIdeal.mem_coinvariants_iff_forall_mul`: the functor-of-points characterization.
 * `TauCeti.HopfIdeal.sub_algebraMap_counit_mem_of_mem_coinvariants` and
   `TauCeti.HopfIdeal.span_coinvariants_counit_eq_zero_le`: coinvariants are constant on `N`.
+* `IsGroupLikeElem.mem_coinvariants_iff`: a group-like element is coinvariant exactly when it is
+  congruent to `1` modulo `I`.
 * `TauCeti.HopfIdeal.coinvariants_mono`, `TauCeti.HopfIdeal.coinvariants_bot` and
   `TauCeti.HopfIdeal.coinvariants_augmentation`: dependence on the Hopf ideal.
 * `TauCeti.HopfIdeal.comul_mem_range_lTensor_of_mem_coinvariants`: the left coideal property.
@@ -182,6 +185,22 @@ theorem sub_algebraMap_counit_mem_of_mem_coinvariants (hh : h ∈ I.coinvariants
     h - algebraMap R H (Coalgebra.counit (R := R) h) ∈ I := by
   rw [← mem_toIdeal, ← Ideal.Quotient.eq, mk_eq_algebraMap_counit_of_mem_coinvariants hh,
     Ideal.Quotient.mk_algebraMap]
+
+/-- A group-like element is coinvariant exactly when it is congruent to `1` modulo the Hopf
+ideal: a character of the affine group is invariant under right translation by the closed
+subgroup cut out by `I` exactly when it is trivial on that subgroup.
+
+As a simp lemma this has higher priority than `TauCeti.HopfIdeal.mem_coinvariants_iff`, which
+has the same left-hand side and would otherwise unfold the membership first. -/
+@[simp high]
+theorem _root_.IsGroupLikeElem.mem_coinvariants_iff (hh : IsGroupLikeElem R h) :
+    h ∈ I.coinvariants ↔ h - 1 ∈ I := by
+  refine ⟨fun hmem ↦ ?_, fun hmem ↦ ?_⟩
+  · simpa [hh.counit_eq_one] using sub_algebraMap_counit_mem_of_mem_coinvariants hmem
+  · have hmk : Ideal.Quotient.mk I.toIdeal h = 1 :=
+      (Ideal.Quotient.eq.mpr (mem_toIdeal.mpr hmem)).trans (map_one _)
+    rw [HopfIdeal.mem_coinvariants_iff, hh.comul_eq_tmul_self]
+    simp [hmk]
 
 /-- The zero Hopf ideal cuts out the whole group, whose right-invariant functions are the
 constants. -/
@@ -348,7 +367,7 @@ theorem inv_mul_mem_quotientPointsSubgroup_iff_comp_val_eq [Module.Flat R H]
     g₁⁻¹ * g₂ ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       g₁.ofConv.comp I.coinvariants.val = g₂.ofConv.comp I.coinvariants.val := by
   refine ⟨fun hn ↦ AlgHom.ext fun x ↦ ?_, fun hg ↦ ?_⟩
-  · have := ofConv_mul_apply_of_mem_coinvariants x.2 g₁ hn
+  · have := ofConv_mul_apply_of_mem_coinvariants x.property g₁ hn
     rw [mul_inv_cancel_left] at this
     exact this.symm
   · rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]

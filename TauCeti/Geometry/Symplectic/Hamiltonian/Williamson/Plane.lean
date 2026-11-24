@@ -62,6 +62,8 @@ are the hyperbolic ones (`κ > 0`, one for each `κ`), the elliptic ones (`κ < 
 * `TauCeti.SymplecticForm.exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul`: elliptic pairs.
 * `TauCeti.SymplecticForm.exists_apply_eq_one_apply_eq_zero_apply_eq_smul`: parabolic pairs.
 * `TauCeti.SymplecticForm.exists_apply_eq_one_apply_eq_smul_apply_eq_neg_smul`: hyperbolic pairs.
+* `exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul_of_neg_of_mul_self_eq_smul_one`:
+  elliptic pairs on a plane for `A² = κ`, `κ < 0`.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_forall_apply_eq_iff`: the classification of
   the symplectic Lie algebra of a plane up to linear symplectomorphism.
 
@@ -174,6 +176,27 @@ theorem exists_apply_eq_one_apply_eq_smul_apply_eq_neg_smul [Nontrivial V] {A : 
 
 section Plane
 
+/-- **Elliptic normal pairs on a plane.** On a symplectic plane, an endomorphism `A` with
+`A² = κ`, `κ < 0`, has a pair `(q, p)` with `ω(q, p) = 1`, `A q = -c p` and `A p = c q` for some
+`c` with `c² = -κ`. -/
+theorem exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul_of_neg_of_mul_self_eq_smul_one
+    (hV : finrank ℝ V = 2) {A : Module.End ℝ V} {κ : ℝ} (hκ : κ < 0) (hAA : A * A = κ • 1) :
+    ∃ c : ℝ, c ^ 2 = -κ ∧ ∃ q p : V, ω q p = 1 ∧ A q = -c • p ∧ A p = c • q := by
+  -- Take `c = ±√(-κ)` with the sign of `ω(A v, v)` for some `v ≠ 0`.
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨v, hv0⟩ := exists_ne (0 : V)
+  have hv := apply_ne_zero_of_neg_of_mul_self_eq_smul_one (ω := ω) hV hκ hAA hv0
+  have hsqrt : 0 < √(-κ) := Real.sqrt_pos.2 (neg_pos.2 hκ)
+  have hsqrt2 : √(-κ) ^ 2 = -κ := Real.sq_sqrt (neg_nonneg.2 hκ.le)
+  obtain ⟨c, hsq, hc⟩ : ∃ c : ℝ, c ^ 2 = -κ ∧ 0 < c * ω (A v) v := by
+    rcases lt_or_gt_of_ne hv with h | h
+    · exact ⟨-√(-κ), by rw [neg_sq, hsqrt2], by nlinarith⟩
+    · exact ⟨√(-κ), hsqrt2, by positivity⟩
+  have hAAv : A (A v) = -(c ^ 2) • v := by
+    simpa [hsq] using LinearMap.congr_fun hAA v
+  obtain ⟨q, p, hqp, hAq, hAp, -⟩ := exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul hAAv hc
+  exact ⟨c, hsq, q, p, hqp, hAq, hAp⟩
+
 /-- **Williamson's classification on a symplectic plane.** Two elements `A` and `B` of the
 symplectic Lie algebras of symplectic planes `(V, ω)` and `(W, ω')` are conjugate by a linear
 symplectomorphism exactly when their squares are the same homothety and their Hamiltonians
@@ -215,17 +238,14 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
     · exact ⟨-b, by ring, by nlinarith⟩
     · exact ⟨b, rfl, mul_pos hb hx⟩
   rcases lt_trichotomy κ 0 with hκ0 | rfl | hκ0
-  · -- Elliptic: `κ = -c²`.
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    have hb : 0 < √(-κ) := Real.sqrt_pos.2 (by linarith)
-    have hb2 : √(-κ) ^ 2 = -κ := Real.sq_sqrt (by linarith)
-    obtain ⟨c, hc2, hcv⟩ :=
-      hchoose _ hb _ (apply_ne_zero_of_neg_of_mul_self_eq_smul_one hV hκ0 hAA hv)
-    have hc0 : c ≠ 0 := by rintro rfl; simp at hcv
-    obtain ⟨w, hcw⟩ := hsign c hc0 ⟨v, hcv⟩
+  · -- Elliptic: `κ = -c²`, where `c` has the sign of the Hamiltonian of `A`, `ω(A q, q) = c`.
+    obtain ⟨c, hc2, q, p, hqp, hAq, hAp⟩ :=
+      exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul_of_neg_of_mul_self_eq_smul_one
+        (ω := ω) hV hκ0 hAA
+    have hc0 : c ≠ 0 := by rintro rfl; linarith
+    have hcq : ω (A q) q = c := by simp [hAq, ← ω.neg_eq q p, hqp]
+    obtain ⟨w, hcw⟩ := hsign c hc0 ⟨q, by rw [hcq]; exact mul_self_pos.2 hc0⟩
     have hκc : κ = -(c ^ 2) := by linarith
-    obtain ⟨q, p, hqp, hAq, hAp, -⟩ :=
-      exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul (by rw [hAAv, hκc]) hcv
     obtain ⟨q', p', hqp', hBq, hBp, -⟩ :=
       exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul (by rw [hBBw, hκc]) hcw
     exact exists_isSymplectomorphism_forall_apply_eq_of_pair hV hW hqp hqp'

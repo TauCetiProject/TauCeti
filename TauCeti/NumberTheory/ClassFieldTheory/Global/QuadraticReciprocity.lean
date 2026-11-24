@@ -147,9 +147,9 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_legendreSym (hp : p ≠ 2
   · -- At every other prime both `p` and `q` are units.
     have hℓ2 : (ℓ : ℕ) ≠ 2 := fun h ↦ hmem (by simp [show ℓ = P₂ from Subtype.ext h])
     have hℓp : ¬ (ℓ : ℕ) ∣ p := fun h ↦ hmem (by
-      simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hpp).1 h)])
+      simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.property hpp).1 h)])
     have hℓq : ¬ (ℓ : ℕ) ∣ q := fun h ↦ hmem (by
-      simp [show ℓ = Pq from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hqp).1 h)])
+      simp [show ℓ = Pq from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.property hqp).1 h)])
     exact ⟨hℓ2, Int.natCast_dvd_natCast.not.2 hℓp, Int.natCast_dvd_natCast.not.2 hℓq⟩
 
 /-- **The Hilbert reciprocity sum of two odd primes.** For distinct odd primes `p` and `q`, the sign
@@ -219,8 +219,8 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_mul_legendreSym (hp : p �
   · -- At every other prime both `m` and `p` are units.
     have hℓ2 : (ℓ : ℕ) ≠ 2 := fun h ↦ hmem (by simp [show ℓ = P₂ from Subtype.ext h])
     have hℓp : ¬ (ℓ : ℕ) ∣ p := fun h ↦ hmem (by
-      simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hpp).1 h)])
-    exact ⟨hℓ2, hm ℓ ℓ.2 hℓ2, Int.natCast_dvd_natCast.not.2 hℓp⟩
+      simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.property hpp).1 h)])
+    exact ⟨hℓ2, hm ℓ ℓ.property hℓ2, Int.natCast_dvd_natCast.not.2 hℓp⟩
 
 /-- **The Hilbert reciprocity sum of an odd prime and a power of `2` up to sign.** Let `p` be an
 odd prime and `m` an integer divisible by no odd prime. Then the sign of the sum over all places of

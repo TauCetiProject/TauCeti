@@ -39,10 +39,12 @@ along `modelWithCornersSelf_prod`.
 
 ## Main declarations
 
-* `TauCeti.MorseChart.coord_mfderiv_prod`: the product of fields linear in Morse charts is linear
-  in the product Morse chart.
+* `TauCeti.MorseChart.coord_mfderiv_prod` and `TauCeti.MorseChart.forall_coord_mfderiv_prod`: the
+  product of fields linear in Morse charts is linear in the product Morse chart.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is a pseudo-gradient adapted to the
   separated sum.
+* `TauCeti.IsAdaptedPseudoGradient.prod_chartedSpaceSelf`: the same on a product `E × E'` of normed
+  spaces, with the charts of the normed space `E × E'`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_prod` and `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`:
   on compact Hausdorff manifolds, its flow is the product of the flows (`Flow.prod`).
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_prod` and
@@ -116,6 +118,23 @@ theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
   · exact congrFun hφ j
   · exact congrFun hψ j
 
+/-- **The product of linear fields is linear in the product of Morse charts**, at every point of
+its source, when `X` is the linear field in `φ` and `Y` the linear field in `ψ` at every point of
+their sources. -/
+theorem forall_coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
+    {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
+    (hφ : ∀ z ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart z (X z)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart z) i))
+    (hψ : ∀ z ∈ ψ.toChart.source, ψ.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart z (Y z)) =
+      fun i ↦ -(ψ.weight i * ψ.coord (ψ.toChart z) i)) :
+    ∀ p ∈ (φ.prod ψ).toChart.source, (φ.prod ψ).coord (mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ, E × E')
+      (φ.prod ψ).toChart p (Manifold.prodVectorField X Y p)) =
+      fun i ↦ -((φ.prod ψ).weight i * (φ.prod ψ).coord ((φ.prod ψ).toChart p) i) := by
+  intro p hp
+  have hp' := hp
+  rw [prod_toChart] at hp'
+  exact φ.coord_mfderiv_prod ψ hp (hφ p.1 hp'.1) (hψ p.2 hp'.2)
+
 end MorseChart
 
 /-! ### Products of adapted pseudo-gradients -/
@@ -146,11 +165,28 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
       (hX.mdifferentiable p₁) (hY.mdifferentiable p₂)).1 hp
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart p₁ h₁
     obtain ⟨ψ, hψ⟩ := hY.exists_morseChart p₂ h₂
-    refine ⟨φ.prod ψ, fun q hq ↦ φ.coord_mfderiv_prod ψ hq ?_ ?_⟩
-    · rw [MorseChart.prod_toChart] at hq
-      exact hφ q.1 hq.1
-    · rw [MorseChart.prod_toChart] at hq
-      exact hψ q.2 hq.2
+    exact ⟨φ.prod ψ, φ.forall_coord_mfderiv_prod ψ hφ hψ⟩
+
+/-- **The product of adapted pseudo-gradients on a product of normed spaces**, for the charts of
+the normed space `E × E'` itself. These are its product charts (`chartedSpaceSelf_prod`), so if `X`
+is a pseudo-gradient adapted to `f` on `E` and `Y` one adapted to `g` on `E'`, then `(X, Y)` is a
+pseudo-gradient adapted to `f ∘ Prod.fst + g ∘ Prod.snd` on the normed space `E × E'`. -/
+theorem prod_chartedSpaceSelf {f : E → ℝ} {g : E' → ℝ} {X : (z : E) → TangentSpace 𝓘(ℝ, E) z}
+    {Y : (z : E') → TangentSpace 𝓘(ℝ, E') z} (hX : IsAdaptedPseudoGradient f X)
+    (hY : IsAdaptedPseudoGradient g Y) :
+    @IsAdaptedPseudoGradient (E × E') _ _ (E × E') _ (chartedSpaceSelf (E × E')) _
+      (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) := by
+  -- Adaptedness for the product charts transfers along their equality with the charts of `E × E'`.
+  have key : ∀ (c : ChartedSpace (E × E') (E × E'))
+      (m : @IsManifold _ _ _ _ _ _ _ 𝓘(ℝ, E × E') ∞ (E × E') _ c),
+      c = chartedSpaceSelf (E × E') →
+      @IsAdaptedPseudoGradient _ _ _ _ _ c m (f ∘ Prod.fst + g ∘ Prod.snd)
+        (Manifold.prodVectorField X Y) →
+      @IsAdaptedPseudoGradient _ _ _ _ _ (chartedSpaceSelf (E × E')) inferInstance
+        (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) := by
+    rintro c m rfl h
+    exact h
+  exact key _ _ chartedSpaceSelf_prod (hX.prod hY)
 
 /-! ### The flow, stable and unstable manifolds of a product -/
 

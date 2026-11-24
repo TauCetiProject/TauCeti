@@ -120,8 +120,7 @@ theorem exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero [FiniteDimensional �
   choose γ hγ hγ₀ hγ₁ using fun y : M ↦ exists_contMDiff_curve (I := I) (n := ⊤) x₀ y
   set f : M → F := fun y ↦ pathIntegral φ (γ y) 0 1 with hf_def
   -- Near each point `x`, `f` differs by a constant from a local primitive `g` of `φ`.
-  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const (f := f) fun x ↦ ?_
   obtain ⟨g, hg, hdg, hδ⟩ := exists_local_primitive_pathIntegral_eq_add_sub hr hφ
     (Eventually.of_forall fun y ↦ congrFun hclosed y) (hγ x) (hγ₀ x) (hγ₁ x)
   refine ⟨g, f x - g x, hg, ?_, hdg⟩
@@ -151,6 +150,7 @@ theorem deRhamCohomology.mk_eq_zero_iff_forall_pathIntegral_eq_zero [FiniteDimen
     [T2Space M] [IsManifold I ∞ M] [PreconnectedSpace M] (φ : closedForms I M 1) (x₀ : M) :
     deRhamCohomology.mk I 1 φ = 0 ↔ ∀ γ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ γ → γ 0 = x₀ →
       γ 1 = x₀ → pathIntegral ((φ : SmoothForm I M ℝ 1) : RoughForm I M ℝ 1) γ 0 1 = 0 := by
-  rw [deRhamCohomology.mk_eq_zero_iff, mem_exactForms_one_iff_forall_pathIntegral_eq_zero φ.2]
+  rw [deRhamCohomology.mk_eq_zero_iff, mem_exactForms_one_iff_forall_pathIntegral_eq_zero
+      φ.property]
 
 end TauCeti

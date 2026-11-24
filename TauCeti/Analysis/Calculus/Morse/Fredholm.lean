@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Energy
 public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
+public import TauCeti.Analysis.Fredholm.LevelSet.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 public import TauCeti.Analysis.ODE.TrajectoryOperator.HalfLine
+public import TauCeti.Analysis.ODE.TrajectoryOperator.Section
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
@@ -55,6 +57,17 @@ along a nonconstant trajectory is exactly the line of the velocity, since the so
 linearized equation are determined by one initial value. The linearized operator is then
 surjective exactly when the Morse index drops by one.
 
+The section of Schwarz's construction is the trajectory section
+`TauCeti.WeakDerivStep.boundedTrajectorySection` of the field `-∇f` around `γ`,
+`ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)`, whose zeros are the paths `ξ` for which `γ + ξ` is again a negative
+gradient trajectory. For a `C²` function the gradient is locally Lipschitz, and when `γ` has
+bounded range the section is defined on all of `W^{1,p}(ℝ, E)`, without a global Lipschitz bound
+on `∇f`. It is strictly differentiable at every `ξ₀` with derivative
+`ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`, since the Hessian is uniformly continuous on bounded sets. At
+`ξ₀ = 0` along a connecting trajectory this derivative is `D_γ`. So if `D_γ` is surjective, the
+implicit function theorem gives a chart of the set of nearby trajectories `γ + ξ` onto an open
+subset of `ℝ^(ind p - ind q)`.
+
 ## Main results
 
 * `ContDiff.memLp_top_hessianOperator_comp`: the Hessian along a connecting trajectory is
@@ -94,6 +107,14 @@ surjective exactly when the Morse index drops by one.
   the linearized equation has no nonzero square-integrable solution.
 * `IsIntegralCurve.squareIntegrableSolutions_hessianOperator_eq_bot`: neither does it along a
   trajectory with the same nondegenerate limit at both ends, which stays at that limit.
+* `ContDiff.hasStrictFDerivAt_boundedTrajectorySection_neg_gradient`: for a `C²` function and a
+  path with bounded range, the trajectory section of `-∇f` is strictly differentiable at every
+  `ξ₀`, with derivative `ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`.
+* `ContDiff.contDiff_boundedTrajectorySection_neg_gradient`: for a `C^{n+2}` function `f` and a
+  continuous path with bounded range, the trajectory section of `-∇f` is `C^{n+1}`.
+* `IsIntegralCurve.exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gradient`: if the
+  linearized operator is surjective, the negative gradient trajectories `γ + ξ` with
+  `ξ ∈ W^{1,2}(ℝ, E)` near `0` are parametrized by an open subset of `ℝ^(ind p - ind q)`.
 
 ## References
 
@@ -106,7 +127,7 @@ surjective exactly when the Morse index drops by one.
 public section
 
 open Filter InnerProductSpace MeasureTheory Set TopologicalSpace
-open scoped ENNReal Gradient Topology
+open scoped ENNReal Gradient NNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {γ : ℝ → E} {p q : E}
@@ -130,6 +151,50 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
   exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
 
 end ContDiff
+
+section TrajectorySection
+
+open TauCeti TauCeti.WeakDerivStep
+
+/-- **The derivative of the trajectory section of `-∇f`.** Let `f` be a `C²` function on a
+finite-dimensional real inner product space, and let `γ` be a path with bounded range. Then at
+every `ξ₀` the trajectory section `ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)` of `-∇f` around `γ`, from
+`W^{1,r}(ℝ, E)` to `Lʳ(ℝ, E)`, is strictly differentiable, with derivative the trajectory operator
+`ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`. The gradient need not be globally Lipschitz. -/
+theorem ContDiff.hasStrictFDerivAt_boundedTrajectorySection_neg_gradient (hf : ContDiff ℝ 2 f)
+    (hγ : AEStronglyMeasurable γ volume) (hb : Bornology.IsBounded (range γ)) {r : ℝ≥0∞}
+    [Fact (1 ≤ r)] (hr : r ≠ ∞)
+    {ξ₀ : WeakDerivStep volume ⊤ r
+      (ContinuousLinearMap.id ℝ (Lp E r (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ hessianOperator f (γ s + toZeroAtInfty (F := E) hr ξ₀ s)) :
+    HasStrictFDerivAt (boundedTrajectorySection (-∇ f) γ
+      (hf.locallyLipschitz_neg_gradient le_rfl) hγ hb hr)
+      (trajectoryOperator AL) ξ₀ := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  refine hasStrictFDerivAt_boundedTrajectorySection _ hγ hb hr
+    (V' := fun x ↦ -hessianOperator f x)
+    (fun x ↦ ContDiffAt.hasFDerivAt_neg_gradient hf.contDiffAt) hH.neg ?_
+  filter_upwards [hAL] with s hs
+  rw [hs, neg_neg]
+
+/-- **The trajectory section of `-∇f` is `C^{n+1}`.** Let `f` be a `C^{n+2}` function, `n ≤ ∞`,
+on a finite-dimensional real inner product space, and let `γ` be a continuous path with bounded
+range. Then the trajectory section `ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)` of `-∇f` around `γ`, from
+`W^{1,r}(ℝ, E)` to `Lʳ(ℝ, E)`, is `C^{n+1}`. The gradient need not be globally Lipschitz. -/
+theorem ContDiff.contDiff_boundedTrajectorySection_neg_gradient {n : ℕ∞}
+    (hf : ContDiff ℝ (n + 2) f) (hγ : Continuous γ) (hb : Bornology.IsBounded (range γ))
+    {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr : r ≠ ∞) :
+    ContDiff ℝ (n + 1) (boundedTrajectorySection (-∇ f) γ
+      (hf.locallyLipschitz_neg_gradient le_add_self) hγ.aestronglyMeasurable hb hr) := by
+  have h := contDiff_boundedTrajectorySection (n := n + 1)
+    (hf.locallyLipschitz_neg_gradient le_add_self) hγ hb hr
+    (hf.gradient_right (m := ((n + 1 : ℕ∞) : WithTop ℕ∞))
+      (by push_cast; exact le_of_eq (by ring))).neg
+  exact_mod_cast h
+
+end TrajectorySection
 
 namespace IsIntegralCurve
 
@@ -433,8 +498,7 @@ theorem finrank_squareIntegrableSolutionsOn_Iio_hessianOperator
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   obtain ⟨α, hα, hminus, -⟩ := exists_pos_mul_norm_le_hessianOperator hp hp
   rw [finrank_squareIntegrableSolutionsOn_Iio (A := fun s ↦ hessianOperator f (γ s))
-      (hH.comp hγ.continuous)
-      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hminus
+      (hH.comp hγ.continuous) hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hminus
       ((hH.tendsto p).comp hbot),
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
@@ -451,8 +515,7 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   obtain ⟨α, hα, hplus, -⟩ := exists_pos_mul_norm_le_hessianOperator hq hq
   rw [finrank_squareIntegrableSolutionsOn_Ioi (A := fun s ↦ hessianOperator f (γ s))
-      (hH.comp hγ.continuous)
-      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hplus
+      (hH.comp hγ.continuous) hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hplus
       ((hH.tendsto q).comp htop),
     ← hq.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
   exact hq.finrank_stableLinearSubspace_add_morseIndex
@@ -474,7 +537,63 @@ theorem surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top
         squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Ioi 0) = ⊤ := by
   obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
     trajectory_hypotheses hγ hf hp hq hbot htop
-  exact surjective_trajectoryOperator_iff_sup_eq_top hA hsym hα hminus hplus hAbot hAtop AL hAL
+  exact surjective_trajectoryOperator_iff_sup_eq_top hA
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAbot hα hminus)
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAtop hα hplus) hAbot hAtop
+    AL hAL
+
+/-- **Near a transverse trajectory, the trajectories are parametrized by `ℝ^(ind p - ind q)`.**
+Let `f` be a `C²` function on a finite-dimensional real inner product space, and let `γ` be a
+negative gradient trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate
+critical point `q` at `+∞`, along which the linearized operator `ξ ↦ ξ' + Hess f(γ) ξ` from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective. Then a neighbourhood of `0` in the set of paths
+`ξ ∈ W^{1,2}(ℝ, E)` for which `γ + ξ` is again a negative gradient trajectory is homeomorphic to
+an open subset of `ℝ^(ind p - ind q)`, by a chart sending `0` to `0`. The gradient need not be
+globally Lipschitz. These paths are the zeros of the trajectory section
+`TauCeti.WeakDerivStep.boundedTrajectorySection` of `-∇f` around `γ`
+(`TauCeti.WeakDerivStep.boundedTrajectorySection_eq_zero_iff`), to which the implicit function
+theorem applies. -/
+theorem exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gradient
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s))
+    (hsurj : Function.Surjective (trajectoryOperator (p := 2) AL)) :
+    ∃ e : OpenPartialHomeomorph
+        {ξ : WeakDerivStep volume ⊤ 2
+            (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) |
+          IsIntegralCurve (γ + ⇑(toZeroAtInfty (F := E) ENNReal.ofNat_ne_top ξ)) fun _ x ↦ -∇ f x}
+        (Fin (morseIndex f p - morseIndex f q) → ℝ),
+      ⟨0, by simpa using hγ⟩ ∈ e.source ∧ e ⟨0, by simpa using hγ⟩ = 0 := by
+  -- The range of `γ` is bounded, and at `ξ₀ = 0` the coefficient is the Hessian along `γ`.
+  have hb : Bornology.IsBounded (range γ) :=
+    hγ.continuous.isBounded_range_iff_isBigO_atTop_atBot.2 ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩
+  have hV := hf.locallyLipschitz_neg_gradient le_rfl
+  have hS := hf.hasStrictFDerivAt_boundedTrajectorySection_neg_gradient
+    hγ.continuous.aestronglyMeasurable hb (r := 2) ENNReal.ofNat_ne_top (ξ₀ := 0) (by
+      filter_upwards [hAL] with s hs
+      rw [hs, map_zero, zero_apply, add_zero])
+  have hFred := isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
+  have hindex := index_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
+  rw [ContinuousLinearMap.index_of_surjective _ hsurj] at hindex
+  have hn : Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
+      morseIndex f p - morseIndex f q := by
+    omega
+  -- The zeros of the section are the trajectories near `γ`.
+  have hset : {ξ | boundedTrajectorySection (-∇ f) γ hV hγ.continuous.aestronglyMeasurable hb
+      (p := (2 : ℝ≥0∞)) ENNReal.ofNat_ne_top ξ = 0} =
+      {ξ | IsIntegralCurve (γ + ⇑(toZeroAtInfty (F := E) (p := 2) ENNReal.ofNat_ne_top ξ))
+        fun _ x ↦ -∇ f x} :=
+    Set.ext fun ξ ↦ boundedTrajectorySection_eq_zero_iff hV _ hb _ hγ ξ
+  set e := levelSetChartModel hS (LinearMap.range_eq_top.2 hsurj) hFred.closedComplemented_ker
+    hFred.finite_ker hn (boundedTrajectorySection_zero _ _ _ _)
+  have h0 : (Homeomorph.setCongr hset).symm ⟨0, by simpa using hγ⟩ =
+      ⟨0, boundedTrajectorySection_zero _ _ _ _⟩ :=
+    Subtype.ext rfl
+  refine ⟨(Homeomorph.setCongr hset).symm.toOpenPartialHomeomorph.trans e, ?_, ?_⟩
+  · simpa [h0] using mem_levelSetChartModel_source _ _ _ _ _ _
+  · simpa [h0] using levelSetChartModel_apply_self _ _ _ _ _ _
 
 end IsIntegralCurve
 

@@ -214,7 +214,7 @@ theorem stabilizeXHomologyMap_unblockedHomologyClass
     G.stabilizeXHomologyMap s R
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomologyClass R z) =
       G.unblockedHomologyClass R
-        ⟨G.stabilizeXChainMap s R z, G.stabilizeXChainMap_mem_ker s R z.2⟩ := by
+        ⟨G.stabilizeXChainMap s R z, G.stabilizeXChainMap_mem_ker s R z.property⟩ := by
   simp only [stabilizeXHomologyMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -229,9 +229,9 @@ theorem stabilizeXHomologyMap_bijective : Function.Bijective (G.stabilizeXHomolo
   · obtain ⟨z, rfl⟩ := unblockedHomologyClass_surjective _ R y
     rw [stabilizeXHomologyMap_unblockedHomologyClass, unblockedHomologyClass_eq_zero_iff] at hy
     rw [unblockedHomologyClass_eq_zero_iff]
-    exact G.mem_range_of_stabilizeXChainMap_mem_range s R z.2 hy
+    exact G.mem_range_of_stabilizeXChainMap_mem_range s R z.property hy
   · obtain ⟨c, rfl⟩ := unblockedHomologyClass_surjective _ R y
-    obtain ⟨m, hm, hcm⟩ := G.exists_sub_stabilizeXChainMap_mem_range s R c.2
+    obtain ⟨m, hm, hcm⟩ := G.exists_sub_stabilizeXChainMap_mem_range s R c.property
     refine ⟨_, (G.stabilizeXHomologyMap_unblockedHomologyClass s R ⟨m, hm⟩).trans ?_⟩
     rw [← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff, Submodule.coe_sub,
       ← neg_sub]
@@ -267,27 +267,28 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n) (R : Type*) [Comm
 stabilization `G'` of `G` again has an odd number of components, and a class of `GH⁻(G')` of
 Alexander degree `a` goes to a class of `GH⁻(G)` of Alexander degree `a`. -/
 theorem stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
-    {y : (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomology R}
+    {y : (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomology R}
     (hy : y ∈ (alexanderUnblockedHomologyGrading
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R).piece a) :
-    G.1.stabilizeXHomologyMap s R y ∈ (G.alexanderUnblockedHomologyGrading R).piece a := by
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R).piece a) :
+    G.val.stabilizeXHomologyMap s R y ∈ (G.alexanderUnblockedHomologyGrading R).piece a := by
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
     at hy ⊢
   obtain ⟨z, hz, hzy⟩ := hy
-  obtain rfl : y = (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomologyClass R z := by
+  obtain rfl : y = (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomologyClass R z
+      := by
     apply ((ModuleCat.mono_iff_injective
-      ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomologyIso R).hom).mp
+      ((G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomologyIso R).hom).mp
         inferInstance)
     rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
   refine ⟨_, ?_, (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass _ _ _).symm.trans
-    (congrArg _ (G.1.stabilizeXHomologyMap_unblockedHomologyClass s R z).symm)⟩
-  have hG' : G.stabilizeX s = ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-      (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ :=
+    (congrArg _ (G.val.stabilizeXHomologyMap_unblockedHomologyClass s R z).symm)⟩
+  have hG' : G.stabilizeX s = ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+      (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ :=
     Subtype.ext (G.val_stabilizeX s)
-  have key : ∀ c, c ∈ alexanderChainMinusPiece ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-      (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R a →
-        G.1.stabilizeXChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
+  have key : ∀ c, c ∈ alexanderChainMinusPiece ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+      (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R a →
+        G.val.stabilizeXChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
     rw [← hG']
     intro c hc
     have h := G.stabilizeXMap_mem_alexanderChainMinusPiece s R hc

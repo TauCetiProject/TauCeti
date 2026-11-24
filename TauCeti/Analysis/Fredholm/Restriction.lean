@@ -56,13 +56,11 @@ theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
     ext x
     exact (congrArg Subtype.val (restrict_apply hT x)).symm
   have hdom : index (T.comp E₁.subtypeL) =
-      index T + index E₁.subtypeL := by
-    simpa only [index_def, toLinearMap_comp] using
-      hTfull.index_comp hιE
+      index T + index E₁.subtypeL :=
+    index_comp hTfull hιE
   have hcod : index (F₁.subtypeL.comp (T.restrict hT)) =
-      index F₁.subtypeL + index (T.restrict hT) := by
-    simpa only [index_def, toLinearMap_comp] using
-      hιF.index_comp hT₁
+      index F₁.subtypeL + index (T.restrict hT) :=
+    index_comp hιF hT₁
   have hEindex : index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
     rw [index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]

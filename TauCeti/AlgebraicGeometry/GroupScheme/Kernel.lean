@@ -100,7 +100,7 @@ lemma kernelMap_comp_kernelBaseChangeIso_inv {S T : Scheme.{u}} (s : T ⟶ S)
         (kernelBaseChangeIso s f₂).inv =
       (kernelBaseChangeIso s f₁).inv ≫
         (Over.pullback s).mapGrp.map (kernel.map f₁ f₂ g h w) :=
-  kernel_map_comp_preserves_kernel_iso_inv (Over.pullback s).mapGrp f₁ f₂ g h w
+  kernelMap_comp_preservesKernelIso_inv (Over.pullback s).mapGrp f₁ f₂ g h w
 
 /-- The categorical kernel of a group-scheme homomorphism is its fibre over the identity section.
 The horizontal maps are the kernel inclusion and the identity section; the other map from the
@@ -184,7 +184,7 @@ the points of `H` with values in `Z`. -/
 noncomputable def kernelPointsMulEquiv :
     (Z ⟶ (kernel f).X) ≃* (IsMonHom.monoidHom f.hom.hom Z).ker where
   toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by simp⟩
-  invFun x := kernelLift x.1 (MonoidHom.mem_ker.1 x.2 :)
+  invFun x := kernelLift x.val (MonoidHom.mem_ker.1 x.property :)
   left_inv y := kernel_hom_ext (kernelLift_ι _ _)
   right_inv x := Subtype.ext (kernelLift_ι _ _)
   map_mul' y y' := Subtype.ext (MonObj.mul_comp _ _ _)
@@ -200,7 +200,7 @@ theorem coe_kernelPointsMulEquiv_apply (y : Z ⟶ (kernel f).X) :
 @[simp]
 theorem kernelPointsMulEquiv_symm_apply_ι (x : (IsMonHom.monoidHom f.hom.hom Z).ker) :
     (kernelPointsMulEquiv f Z).symm x ≫ (kernel.ι f).hom.hom = x :=
-  kernelLift_ι x.1 (MonoidHom.mem_ker.1 x.2 :)
+  kernelLift_ι x.val (MonoidHom.mem_ker.1 x.property :)
 
 /-- **The kernel of a homomorphism out of a commutative group scheme is commutative**: its group
 law is the restriction of that of the source. -/

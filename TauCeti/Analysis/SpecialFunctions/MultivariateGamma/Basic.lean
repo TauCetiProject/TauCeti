@@ -62,12 +62,12 @@ namespace TauCeti
 `Γ_p(a) = π ^ (p * (p - 1) / 4) * ∏_{i < p} Γ(a - i / 2)`. Both the exponent of `π` and the
 shifts of the Gamma factors are real, so this is not the truncated natural-number quotient. -/
 def multivariateGamma (p : ℕ) (a : ℝ) : ℝ :=
-  π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) * ∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2)
+  π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) * ∏ i : Fin p, Real.Gamma (a - (i.val : ℝ) / 2)
 
 /-- The defining formula of the multivariate Gamma function. -/
 theorem multivariateGamma_def (p : ℕ) (a : ℝ) :
     multivariateGamma p a =
-      π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) * ∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2) := (rfl)
+      π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) * ∏ i : Fin p, Real.Gamma (a - (i.val : ℝ) / 2) := (rfl)
 
 /-- In dimension zero there are no Gamma factors and the constant is `1`. -/
 @[simp]
@@ -84,9 +84,9 @@ into `Γ_q(a - p / 2)`, at the cost of the cross term `π ^ (p * q / 2)` in the 
 theorem multivariateGamma_add (p q : ℕ) (a : ℝ) :
     multivariateGamma (p + q) a = π ^ ((p : ℝ) * (q : ℝ) / 2) *
       multivariateGamma p a * multivariateGamma q (a - (p : ℝ) / 2) := by
-  have hprod : (∏ i : Fin (p + q), Real.Gamma (a - (i.1 : ℝ) / 2)) =
-      (∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2)) *
-        ∏ j : Fin q, Real.Gamma (a - (p : ℝ) / 2 - (j.1 : ℝ) / 2) := by
+  have hprod : (∏ i : Fin (p + q), Real.Gamma (a - (i.val : ℝ) / 2)) =
+      (∏ i : Fin p, Real.Gamma (a - (i.val : ℝ) / 2)) *
+        ∏ j : Fin q, Real.Gamma (a - (p : ℝ) / 2 - (j.val : ℝ) / 2) := by
     rw [Fin.prod_univ_add]
     simp only [Fin.val_castAdd, Fin.val_natAdd]
     congr 1
@@ -112,7 +112,8 @@ theorem multivariateGamma_succ (p : ℕ) (a : ℝ) :
 /-- The multivariate Gamma function as a product over its rows: row `i` contributes the Gamma
 factor `Γ(a - i / 2)` together with the share `π ^ (i / 2)` of the power of `π`. -/
 theorem multivariateGamma_eq_prod (p : ℕ) (a : ℝ) :
-    multivariateGamma p a = ∏ i : Fin p, π ^ ((i.1 : ℝ) / 2) * Real.Gamma (a - (i.1 : ℝ) / 2) := by
+    multivariateGamma p a = ∏ i : Fin p, π ^ ((i.val : ℝ) / 2) * Real.Gamma (a - (i.val : ℝ) / 2)
+        := by
   induction p with
   | zero => simp
   | succ p ih =>
@@ -127,7 +128,7 @@ theorem multivariateGamma_pos {p : ℕ} {a : ℝ} (ha : ((p : ℝ) - 1) / 2 < a)
     0 < multivariateGamma p a := by
   rw [multivariateGamma_def]
   refine mul_pos (rpow_pos_of_pos pi_pos _) (Finset.prod_pos fun i _ => Gamma_pos_of_pos ?_)
-  have hi : (i.1 : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast i.2
+  have hi : (i.val : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast i.isLt
   linarith
 
 /-- `Γ_p` does not vanish on the classical range of its shape parameter. -/
@@ -138,7 +139,7 @@ theorem multivariateGamma_ne_zero {p : ℕ} {a : ℝ} (ha : ((p : ℝ) - 1) / 2 
 /-- Off the classical range, `Γ_p(a)` vanishes exactly when one of its Gamma factors sits at a
 pole, that is, when `a - i / 2` is a nonpositive integer for some `i < p`. -/
 theorem multivariateGamma_eq_zero_iff (p : ℕ) (a : ℝ) :
-    multivariateGamma p a = 0 ↔ ∃ i : Fin p, ∃ m : ℕ, a - (i.1 : ℝ) / 2 = -m := by
+    multivariateGamma p a = 0 ↔ ∃ i : Fin p, ∃ m : ℕ, a - (i.val : ℝ) / 2 = -m := by
   rw [multivariateGamma_def, mul_eq_zero,
     or_iff_right (rpow_pos_of_pos pi_pos _).ne', Finset.prod_eq_zero_iff]
   simp [Real.Gamma_eq_zero_iff]
@@ -147,7 +148,7 @@ theorem multivariateGamma_eq_zero_iff (p : ℕ) (a : ℝ) :
 their Gamma factors, since the powers of `π` cancel. -/
 theorem multivariateGamma_div_multivariateGamma (p : ℕ) (a b : ℝ) :
     multivariateGamma p a / multivariateGamma p b =
-      ∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2) / Real.Gamma (b - (i.1 : ℝ) / 2) := by
+      ∏ i : Fin p, Real.Gamma (a - (i.val : ℝ) / 2) / Real.Gamma (b - (i.val : ℝ) / 2) := by
   rw [multivariateGamma_def, multivariateGamma_def,
     mul_div_mul_left _ _ (rpow_pos_of_pos pi_pos _).ne', Finset.prod_div_distrib]
 
@@ -156,7 +157,7 @@ Wishart laws need this to be measurable in their degree parameter. -/
 @[fun_prop]
 theorem measurable_multivariateGamma (p : ℕ) : Measurable (multivariateGamma p) := by
   have hfun : multivariateGamma p = fun a => π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) *
-      ∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2) := funext (multivariateGamma_def p)
+      ∏ i : Fin p, Real.Gamma (a - (i.val : ℝ) / 2) := funext (multivariateGamma_def p)
   rw [hfun]
   exact measurable_const.mul (Finset.measurable_prod _ fun i _ =>
     Real.measurable_Gamma.comp (measurable_id.sub_const _))

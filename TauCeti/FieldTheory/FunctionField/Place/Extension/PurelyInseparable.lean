@@ -149,7 +149,7 @@ instance isPurelyInseparable_residueField (P' : Place k' F') :
   obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem F q (z : F')
   have hm : q ^ n ≠ 0 := pow_ne_zero _ (expChar_pos F q).ne'
   have haP : a ∈ (P'.restrict k F).integers :=
-    (mem_integers_iff_of_algebraMap_eq_pow k F P' hm ha).mp z.2
+    (mem_integers_iff_of_algebraMap_eq_pow k F P' hm ha).mp z.property
   refine ⟨n, IsLocalRing.residue _ ⟨a, haP⟩, ?_⟩
   rw [IsLocalRing.ResidueField.algebraMap_residue, ← map_pow]
   congr 1

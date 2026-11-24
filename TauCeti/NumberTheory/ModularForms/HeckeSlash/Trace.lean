@@ -95,7 +95,7 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
   induction q using Quotient.inductionOn with
   | h r =>
     have he : e ⟦r⟧ =
-        ⟦⟨a * r * a⁻¹, (Subgroup.mem_normalizer_iff.mp ha r).mp r.2⟩⟧ := by
+        ⟦⟨a * r * a⁻¹, (Subgroup.mem_normalizer_iff.mp ha r).mp r.property⟩⟧ := by
       dsimp only [e]
       rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
         decompQuotientEquivMulLeft_mk]

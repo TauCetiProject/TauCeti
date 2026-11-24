@@ -60,17 +60,17 @@ of the same fixed degree is equality. -/
 @[simp↓]
 theorem relativeEffectiveCartierDegreeSubfunctor_le_iff_eq {d : ℕ} {T : (Over S)ᵒᵖ}
     (D E : (relativeEffectiveCartierDegreeSubfunctor f d).toFunctor.obj T) :
-    D.1.1 ≤ E.1.1 ↔ D = E := by
-  have hD : (D.1.1 : (pullback T.unop.hom f).IdealSheafData).IsRelativeEffectiveCartier
+    D.val.val ≤ E.val.val ↔ D = E := by
+  have hD : (D.val.val : (pullback T.unop.hom f).IdealSheafData).IsRelativeEffectiveCartier
       (pullback.fst T.unop.hom f) :=
-    (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp D.1.2
-  have hE : (E.1.1 : (pullback T.unop.hom f).IdealSheafData).IsRelativeEffectiveCartier
+    (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp D.val.property
+  have hE : (E.val.val : (pullback T.unop.hom f).IdealSheafData).IsRelativeEffectiveCartier
       (pullback.fst T.unop.hom f) :=
-    (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp E.1.2
-  have hrank : (D.1.1.subschemeι ≫ pullback.fst T.unop.hom f).finrank =
-      (E.1.1.subschemeι ≫ pullback.fst T.unop.hom f).finrank :=
-    ((mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff (f := f)).mp D.2).trans
-      ((mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff (f := f)).mp E.2).symm
+    (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp E.val.property
+  have hrank : (D.val.val.subschemeι ≫ pullback.fst T.unop.hom f).finrank =
+      (E.val.val.subschemeι ≫ pullback.fst T.unop.hom f).finrank :=
+    ((mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff (f := f)).mp D.property).trans
+      ((mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff (f := f)).mp E.property).symm
   refine ⟨fun h ↦ Subtype.ext (Subtype.ext ?_), fun h ↦ h ▸ le_rfl⟩
   have := hD.isFinite
   exact (hD.le_iff_eq_of_finrank_eq hE hrank).mp h

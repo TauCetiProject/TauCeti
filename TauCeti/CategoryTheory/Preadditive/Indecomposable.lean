@@ -6,17 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Idempotents.Basic
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Linear.Basic
-public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
 public import Mathlib.RingTheory.Artinian.Defs
-import TauCeti.RingTheory.LocalRing.Basic
 import Mathlib.CategoryTheory.Adjunction.Limits
-import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
-import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
@@ -69,9 +64,9 @@ decomposition of the whole object.
   is indecomposable.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
-* `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
-  and bijective on the endomorphisms of an indecomposable object carries it to an indecomposable
-  object; in particular a fully faithful one does.
+* `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor bijective on the
+  endomorphisms of an indecomposable object carries it to an indecomposable object when
+  idempotents split in the source; in particular a fully faithful one does.
 * `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: indecomposability is invariant under
   equivalence of categories, with no idempotent completeness.
 
