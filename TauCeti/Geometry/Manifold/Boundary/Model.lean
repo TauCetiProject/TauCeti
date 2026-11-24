@@ -387,6 +387,13 @@ variable (m k) in
 theorem smulDiffeomorph_one : smulDiffeomorph m k one_pos = Diffeomorph.refl (𝓡∂ m) _ k :=
   Diffeomorph.ext fun x ↦ Subtype.ext (one_smul ℝ x.val)
 
+/-- Scaling by `δ` and then by `ε` is scaling by `ε * δ`. -/
+@[simp]
+theorem smulDiffeomorph_trans {δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) :
+    (smulDiffeomorph m k hδ).trans (smulDiffeomorph m k hε) =
+      smulDiffeomorph m k (mul_pos hε hδ) :=
+  Diffeomorph.ext fun x ↦ Subtype.ext (smul_smul ε δ x.val)
+
 end Scaling
 
 end EuclideanHalfSpace
