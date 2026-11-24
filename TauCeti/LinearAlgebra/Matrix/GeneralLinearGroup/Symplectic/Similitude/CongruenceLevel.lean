@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Similitude.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Similitude.SiegelParabolic
 -- `PadicInt.toZModPow` occurs in the statements of the `p`-adic specialization.
 public import Mathlib.NumberTheory.Padics.RingHoms
 -- `QuotientGroup.quotientKerEquivOfSurjective` gives the quotient `Γ₀ / Γ₁ ≃* GL`.
 public import Mathlib.GroupTheory.QuotientGroup.Basic
--- Non-public, used only in the proofs: block products, the Levi embedding used to lift the
--- upper-left block, lifting invertible matrices along a local ring hom, and the locality of
--- truncation modulo `p ^ m`.
+-- Non-public, used only in the proofs: blocks of the identity and of entrywise images, the Levi
+-- embedding used to lift the upper-left block, lifting invertible matrices along a local ring
+-- hom, and the locality of truncation modulo `p ^ m`.
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi
@@ -37,10 +37,10 @@ similitude condition `c(γ) ≡ 1 mod pᵐ` in `Γ₀(pᵐ)`. That condition is 
 (`TauCeti.GSp.det_eq_multiplier_pow`).
 
 The block upper-triangular similitudes form the Siegel parabolic subgroup
-(`TauCeti.GSp.siegelParabolic`), and on it the upper-left block `A` is a group morphism to
-`GL l S` (`TauCeti.GSp.upperLeftHom`): the lower-left block vanishes, so `(γδ)₁₁ = A_γ A_δ`.
-Its composite with reduction, `TauCeti.GSp.Gamma0.upperLeftHom`, has kernel `Γ₁(f)`, because a
-block upper-triangular similitude satisfies `A Dᵀ = c • 1`, so `A = 1` and `c = 1` force `D = 1`.
+(`TauCeti.GSp.siegelParabolic`), on which the upper-left block `A` is a group morphism to `GL`
+(`TauCeti.GSp.upperLeftHom`). Its composite with reduction, `TauCeti.GSp.Gamma0.upperLeftHom`,
+has kernel `Γ₁(f)`, because a block upper-triangular similitude satisfies `A Dᵀ = c • 1`, so
+`A = 1` and `c = 1` force `D = 1`.
 Hence `Γ₁(f)` is normal in `Γ₀(f)`; when `f` is surjective and reflects units, as reduction modulo
 `pᵐ` does for `m ≥ 1`, every invertible `A` lifts to the Levi element `diag(Ã, (Ã⁻¹)ᵀ)`, and
 
@@ -57,8 +57,6 @@ whole group.
 
 ## Main definitions
 
-* `TauCeti.GSp.siegelParabolic`: the similitudes with vanishing lower-left block.
-* `TauCeti.GSp.upperLeftHom`: the upper-left block, a morphism from the Siegel parabolic to `GL`.
 * `TauCeti.GSp.Gamma`, `TauCeti.GSp.Gamma1`, `TauCeti.GSp.Gamma0`: the level subgroups.
 * `TauCeti.GSp.Gamma0.upperLeftHom`: the upper-left block of the reduction, on `Γ₀(f)`.
 * `TauCeti.GSp.Gamma0.quotientGamma1EquivGL`: the isomorphism `Γ₀(f) / Γ₁(f) ≃* GL l S`.
@@ -92,123 +90,6 @@ namespace GSp
 universe u v
 
 variable {l : Type*} [DecidableEq l] [Fintype l]
-
-/-! ### Block identities -/
-
-section Blocks
-
-variable {R : Type u} [CommRing R]
-
-omit [Fintype l] in
-/-- The upper-left block of the identity matrix is the identity. -/
-private theorem toBlocks₁₁_one : (1 : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁ = 1 := by
-  rw [← fromBlocks_one, toBlocks_fromBlocks₁₁]
-
-omit [Fintype l] in
-/-- The lower-left block of the identity matrix is zero. -/
-private theorem toBlocks₂₁_one : (1 : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁ = 0 := by
-  rw [← fromBlocks_one, toBlocks_fromBlocks₂₁]
-
-omit [Fintype l] in
-/-- The lower-right block of the identity matrix is the identity. -/
-private theorem toBlocks₂₂_one : (1 : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₂ = 1 := by
-  rw [← fromBlocks_one, toBlocks_fromBlocks₂₂]
-
-variable [Nonempty l]
-
-/-- **The block form of the similitude condition**: for a similitude `γ = (A B; C D)` with
-multiplier `c`, `A Dᵀ - B Cᵀ = c • 1`. -/
-theorem toBlocks₁₁_mul_transpose_toBlocks₂₂_sub (M : GSp l R) :
-    ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁ *
-        ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₂ᵀ -
-      ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₂ *
-        ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁ᵀ =
-      (multiplier l R M : R) • 1 := by
-  have h := congrArg Matrix.toBlocks₁₂ (mul_J_mul_transpose M)
-  rw [← fromBlocks_toBlocks ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)] at h
-  simp only [Matrix.J, fromBlocks_transpose, fromBlocks_multiply, fromBlocks_smul,
-    toBlocks_fromBlocks₁₂, Matrix.mul_zero, Matrix.mul_neg, Matrix.mul_one, zero_add, add_zero,
-    smul_neg, Matrix.neg_mul] at h
-  rw [← neg_inj, ← h]
-  abel
-
-/-- For a block upper-triangular similitude `γ = (A B; 0 D)` with multiplier `c`,
-`A Dᵀ = c • 1`. -/
-theorem toBlocks₁₁_mul_transpose_toBlocks₂₂_of_toBlocks₂₁_eq_zero {M : GSp l R}
-    (hM : ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁ = 0) :
-    ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁ *
-        ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₂ᵀ =
-      (multiplier l R M : R) • 1 := by
-  simpa [hM] using toBlocks₁₁_mul_transpose_toBlocks₂₂_sub M
-
-end Blocks
-
-/-! ### The Siegel parabolic and its upper-left block -/
-
-section SiegelParabolic
-
-variable (l) (S : Type v) [CommRing S] [Nonempty l]
-
-/-- The **Siegel parabolic subgroup**: the similitudes `(A B; 0 D)` with vanishing lower-left
-block. -/
-def siegelParabolic : Subgroup (GSp l S) where
-  carrier := {M | ((M : GL (l ⊕ l) S) : Matrix (l ⊕ l) (l ⊕ l) S).toBlocks₂₁ = 0}
-  mul_mem' {M N} hM hN := by
-    simp only [Set.mem_ofPred_eq, Subgroup.coe_mul, Units.val_mul, toBlocks₂₁_mul] at hM hN ⊢
-    rw [hM, hN, Matrix.zero_mul, Matrix.mul_zero, add_zero]
-  one_mem' := by
-    simp only [Set.mem_ofPred_eq, OneMemClass.coe_one, Units.val_one]
-    exact toBlocks₂₁_one
-  inv_mem' {M} hM := by
-    simp only [Set.mem_ofPred_eq] at hM ⊢
-    rw [coe_inv, ← fromBlocks_toBlocks ((M : GL (l ⊕ l) S) : Matrix (l ⊕ l) (l ⊕ l) S), hM]
-    simp [Matrix.J, fromBlocks_transpose, fromBlocks_multiply, fromBlocks_smul, fromBlocks_neg]
-
-variable {l S}
-
-/-- Membership in the Siegel parabolic: the lower-left block vanishes. -/
-theorem mem_siegelParabolic_iff {M : GSp l S} :
-    M ∈ siegelParabolic l S ↔ ((M : GL (l ⊕ l) S) : Matrix (l ⊕ l) (l ⊕ l) S).toBlocks₂₁ = 0 :=
-  Iff.rfl
-
-omit [DecidableEq l] [Nonempty l] in
-/-- On block upper-triangular matrices, the upper-left block of a product is the product of the
-upper-left blocks. -/
-private theorem toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero {M N : Matrix (l ⊕ l) (l ⊕ l) S}
-    (hN : N.toBlocks₂₁ = 0) : (M * N).toBlocks₁₁ = M.toBlocks₁₁ * N.toBlocks₁₁ := by
-  rw [toBlocks₁₁_mul, hN, Matrix.mul_zero, add_zero]
-
-/-- The upper-left block of an element of the Siegel parabolic is invertible, with inverse the
-upper-left block of its inverse. -/
-private theorem toBlocks₁₁_mul_toBlocks₁₁_inv (M : siegelParabolic l S) :
-    ((M : GSp l S) : GL (l ⊕ l) S).val.toBlocks₁₁ *
-        ((M⁻¹ : siegelParabolic l S) : GSp l S).val.val.toBlocks₁₁ = 1 := by
-  rw [← toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero (M⁻¹).property]
-  simp only [InvMemClass.coe_inv, Units.mul_inv]
-  exact toBlocks₁₁_one
-
-variable (l S) in
-/-- The **upper-left block** `A` of an element `(A B; 0 D)` of the Siegel parabolic, as a group
-morphism to `GL l S`. -/
-def upperLeftHom : siegelParabolic l S →* GL l S where
-  toFun M := ⟨((M : GSp l S) : GL (l ⊕ l) S).val.toBlocks₁₁,
-    ((M⁻¹ : siegelParabolic l S) : GSp l S).val.val.toBlocks₁₁,
-    toBlocks₁₁_mul_toBlocks₁₁_inv M, by
-      simpa only [inv_inv] using toBlocks₁₁_mul_toBlocks₁₁_inv M⁻¹⟩
-  map_one' := Units.ext <| by
-    simp only [OneMemClass.coe_one, Units.val_one]
-    exact toBlocks₁₁_one
-  map_mul' M N := Units.ext <| by
-    simp only [Subgroup.coe_mul, Units.val_mul]
-    exact toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero N.property
-
-/-- The upper-left block morphism takes an element to its upper-left block. -/
-@[simp]
-theorem coe_upperLeftHom (M : siegelParabolic l S) :
-    (upperLeftHom l S M : Matrix l l S) = ((M : GSp l S) : GL (l ⊕ l) S).val.toBlocks₁₁ :=
-  (rfl)
-
-end SiegelParabolic
 
 /-! ### The level subgroups -/
 
@@ -248,8 +129,10 @@ variable [Nonempty l]
 
 variable (l) in
 /-- The **congruence subgroup** `Γ₀(f)`: the similitudes whose reduction along `f` is block
-upper-triangular with multiplier `1`. For `f = PadicInt.toZModPow m` this is Scholze's
-`Γ₀(pᵐ) = {γ : γ ≡ (∗ ∗; 0 ∗) mod pᵐ and c(γ) ≡ 1 mod pᵐ}`. -/
+upper-triangular with multiplier `1`. For `f = PadicInt.toZModPow m` this is
+`Γ₀(pᵐ) = {γ : γ ≡ (∗ ∗; 0 ∗) mod pᵐ and c(γ) ≡ 1 mod pᵐ}`, Scholze's `Γ₀(pᵐ)`
+(Definition 3.1.1) with the similitude condition `c(γ) ≡ 1 mod pᵐ` in place of the printed
+`det γ ≡ 1 mod pᵐ`. -/
 noncomputable def Gamma0 (f : R →+* S) : Subgroup (GSp l R) :=
   (siegelParabolic l S).comap (map l f) ⊓ ((Units.map (f : R →* S)).comp (multiplier l R)).ker
 
@@ -260,8 +143,8 @@ theorem mem_Gamma0_iff {f : R →+* S} {M : GSp l R} :
       (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₁ = 0 ∧
         f (multiplier l R M : R) = 1 := by
   rw [Gamma0, Subgroup.mem_inf, Subgroup.mem_comap, mem_siegelParabolic_iff, MonoidHom.mem_ker,
-    coe_map, MonoidHom.comp_apply, Units.ext_iff]
-  rfl
+    coe_map, MonoidHom.comp_apply, Units.ext_iff, Units.coe_map, MonoidHom.coe_ofClass,
+    Units.val_one, Matrix.GeneralLinearGroup.val_map_apply]
 
 /-- The reduction of an element of `Γ₀(f)` lies in the Siegel parabolic over `S`. -/
 private theorem map_mem_siegelParabolic {f : R →+* S} {M : GSp l R} (hM : M ∈ Gamma0 l f) :
@@ -372,8 +255,8 @@ theorem upperLeftHom_surjective {f : R →+* S} [IsLocalHom f] (hf : Function.Su
     rw [mem_Gamma0_iff, hL, hc, Units.val_one, map_one, fromBlocks_map]
     simp
   refine ⟨⟨L, hL0⟩, Units.ext ?_⟩
-  rw [coe_upperLeftHom, hL, fromBlocks_map, toBlocks_fromBlocks₁₁]
-  rfl
+  rw [coe_upperLeftHom, Matrix.GeneralLinearGroup.val_map_apply, hL, fromBlocks_map,
+    toBlocks_fromBlocks₁₁]
 
 variable (l) in
 /-- **`Γ₀(f) / Γ₁(f) ≃* GL l S`** through the upper-left block of the reduction, when `f` is
@@ -414,13 +297,7 @@ theorem Gamma0_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+*
   obtain ⟨h₂₁, hc⟩ := hM
   subst h
   refine ⟨?_, by rw [RingHom.comp_apply, hc, map_one]⟩
-  have hmap : ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map (g.comp f) =
-      (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).map g := by
-    rw [Matrix.map_map]
-    rfl
-  -- Entrywise maps commute with taking blocks.
-  have h₂₁map (N : Matrix (l ⊕ l) (l ⊕ l) S) : (N.map g).toBlocks₂₁ = N.toBlocks₂₁.map g := rfl
-  rw [hmap, h₂₁map, h₂₁, Matrix.map_zero _ (map_zero g)]
+  rw [RingHom.coe_comp, ← Matrix.map_map, toBlocks₂₁_map, h₂₁, Matrix.map_zero _ (map_zero g)]
 
 /-- A factorization `f' = g ∘ f` gives `Γ₁(f) ⊆ Γ₁(f')`. -/
 theorem Gamma1_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+* T} (g : S →+* T)
@@ -429,16 +306,8 @@ theorem Gamma1_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+*
   rw [mem_Gamma1_iff] at hM ⊢
   obtain ⟨h₁₁, h₂₁, h₂₂⟩ := hM
   subst h
-  have hmap : ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map (g.comp f) =
-      (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).map g := by
-    rw [Matrix.map_map]
-    rfl
-  -- Entrywise maps commute with taking blocks.
-  have h₁₁map (N : Matrix (l ⊕ l) (l ⊕ l) S) : (N.map g).toBlocks₁₁ = N.toBlocks₁₁.map g := rfl
-  have h₂₁map (N : Matrix (l ⊕ l) (l ⊕ l) S) : (N.map g).toBlocks₂₁ = N.toBlocks₂₁.map g := rfl
-  have h₂₂map (N : Matrix (l ⊕ l) (l ⊕ l) S) : (N.map g).toBlocks₂₂ = N.toBlocks₂₂.map g := rfl
-  rw [hmap, h₁₁map, h₂₁map, h₂₂map, h₁₁, h₂₁, h₂₂, Matrix.map_one _ (map_zero g) (map_one g),
-    Matrix.map_zero _ (map_zero g)]
+  rw [RingHom.coe_comp, ← Matrix.map_map, toBlocks₁₁_map, toBlocks₂₁_map, toBlocks₂₂_map, h₁₁,
+    h₂₁, h₂₂, Matrix.map_one _ (map_zero g) (map_one g), Matrix.map_zero _ (map_zero g)]
   exact ⟨rfl, rfl, rfl⟩
 
 /-! ### Multiplier images -/

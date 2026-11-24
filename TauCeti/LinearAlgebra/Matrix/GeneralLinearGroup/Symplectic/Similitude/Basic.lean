@@ -74,35 +74,6 @@ universe u
 
 variable (l : Type*) [DecidableEq l] [Fintype l] (R : Type u) [CommRing R]
 
-/-- Similitudes compose: if `M` scales `J` by `a` and `N` scales `J` by `b`, then `M * N` scales
-`J` by `a * b`. -/
-private theorem mul_J_mul_transpose_mul {M N : Matrix (l ⊕ l) (l ⊕ l) R} {a b : R}
-    (hM : M * J l R * Mᵀ = a • J l R) (hN : N * J l R * Nᵀ = b • J l R) :
-    M * N * J l R * (M * N)ᵀ = (a * b) • J l R := by
-  calc M * N * J l R * (M * N)ᵀ = M * (N * J l R * Nᵀ) * Mᵀ := by
-        simp only [transpose_mul, Matrix.mul_assoc]
-    _ = (a * b) • J l R := by
-        rw [hN, Matrix.mul_smul, Matrix.smul_mul, hM, smul_smul, mul_comm]
-
-/-- If `N` is a left inverse of `M` and `M` scales `J` by `c`, then so does `Mᵀ`. -/
-private theorem transpose_mul_J_mul_of_mul_J_mul_transpose {M N : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hNM : N * M = 1) {c : R} (h : M * J l R * Mᵀ = c • J l R) :
-    Mᵀ * J l R * M = c • J l R := by
-  have h₁ : J l R * Mᵀ = c • (N * J l R) := by
-    calc J l R * Mᵀ = N * (M * J l R * Mᵀ) := by
-          simp only [← Matrix.mul_assoc, hNM, Matrix.one_mul]
-      _ = c • (N * J l R) := by rw [h, Matrix.mul_smul]
-  calc Mᵀ * J l R * M = -(J l R * J l R) * Mᵀ * J l R * M := by
-        rw [J_squared, neg_neg, Matrix.one_mul]
-    _ = -(J l R * (J l R * Mᵀ) * J l R * M) := by
-        simp only [Matrix.neg_mul, Matrix.mul_assoc]
-    _ = c • (J l R * N * (-(J l R * J l R)) * M) := by
-        rw [h₁]
-        simp only [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_neg, Matrix.neg_mul, smul_neg,
-          Matrix.mul_assoc]
-    _ = c • J l R := by
-        rw [J_squared, neg_neg, Matrix.mul_one, Matrix.mul_assoc, hNM, Matrix.mul_one]
-
 /-- The **symplectic similitude group** `GSp(l ⊕ l, R)`: the invertible matrices `γ` with
 `γ J γᵀ = c • J` for some unit `c`, where `J = Matrix.J l R` is the standard alternating form. -/
 def GSp : Subgroup (GL (l ⊕ l) R) where
@@ -111,7 +82,7 @@ def GSp : Subgroup (GL (l ⊕ l) R) where
   mul_mem' := by
     rintro M N ⟨a, ha⟩ ⟨b, hb⟩
     exact ⟨a * b, by
-      simpa only [Units.val_mul] using mul_J_mul_transpose_mul l R ha hb⟩
+      simpa only [Units.val_mul] using mul_mul_J_mul_transpose_eq_mul_smul ha hb⟩
   one_mem' := ⟨1, by simp⟩
   inv_mem' := by
     rintro M ⟨c, hc⟩
@@ -140,30 +111,12 @@ theorem mem_iff {M : GL (l ⊕ l) R} :
         (c : R) • J l R :=
   Iff.rfl
 
-/-- For an invertible matrix, `γ J γᵀ = c • J` and `γᵀ J γ = c • J` are equivalent, for every
-scalar `c`. -/
-theorem mul_J_mul_transpose_eq_smul_iff (M : GL (l ⊕ l) R) (c : R) :
-    (M : Matrix (l ⊕ l) (l ⊕ l) R) * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = c • J l R ↔
-      (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = c • J l R := by
-  have hNM : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) *
-      (M : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
-    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-  have hMN : (M : Matrix (l ⊕ l) (l ⊕ l) R) *
-      ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
-    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-  refine ⟨transpose_mul_J_mul_of_mul_J_mul_transpose l R hNM, fun h ↦ ?_⟩
-  have hT : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ *
-      (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = 1 := by
-    rw [← transpose_mul, hMN, transpose_one]
-  simpa only [transpose_transpose] using
-    transpose_mul_J_mul_of_mul_J_mul_transpose l R hT (by simpa only [transpose_transpose] using h)
-
 /-- Membership in the similitude group, in the transposed form `γᵀ J γ = c • J`. -/
 theorem mem_iff' {M : GL (l ⊕ l) R} :
     M ∈ GSp l R ↔ ∃ c : Rˣ,
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) =
         (c : R) • J l R := by
-  simp only [mem_iff, mul_J_mul_transpose_eq_smul_iff]
+  simp only [mem_iff, GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff]
 
 /-- The similitude group is closed under transposition, written `star` on the units of a matrix
 ring over a ring with trivial star. -/
@@ -183,19 +136,6 @@ section Multiplier
 
 variable [Nonempty l]
 
-omit [Fintype l] in
-variable (l R) in
-/-- For nonempty `l`, the scalar multiples of `J` determine the scalar. -/
-theorem smul_J_injective : Function.Injective fun c : R ↦ c • J l R := by
-  intro c d h
-  obtain ⟨i⟩ := ‹Nonempty l›
-  simpa [Matrix.J] using congrFun (congrFun h (Sum.inr i)) (Sum.inl i)
-
-/-- The similitude factor is unique: two scalars by which an invertible matrix scales `J` agree. -/
-theorem eq_of_mul_J_mul_transpose_eq {M : Matrix (l ⊕ l) (l ⊕ l) R} {c d : R}
-    (hc : M * J l R * Mᵀ = c • J l R) (hd : M * J l R * Mᵀ = d • J l R) : c = d :=
-  smul_J_injective l R (hc.symm.trans hd)
-
 variable (l R) in
 /-- The **similitude multiplier** `c : GSp l R →* Rˣ`, characterized by `γ J γᵀ = c(γ) • J`
 (`TauCeti.GSp.mul_J_mul_transpose`). Its kernel is the symplectic group
@@ -207,7 +147,7 @@ noncomputable def multiplier : GSp l R →* Rˣ where
   map_mul' M N := Units.ext <|
     eq_of_mul_J_mul_transpose_eq (mem_iff.1 (M * N).property).choose_spec <| by
       simpa only [Subgroup.coe_mul, Units.val_mul] using
-        mul_J_mul_transpose_mul l R (mem_iff.1 M.property).choose_spec
+        mul_mul_J_mul_transpose_eq_mul_smul (mem_iff.1 M.property).choose_spec
           (mem_iff.1 N.property).choose_spec
 
 /-- **The defining identity of the multiplier**: `γ J γᵀ = c(γ) • J`. -/
@@ -222,7 +162,7 @@ theorem transpose_mul_J_mul (M : GSp l R) :
     ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R *
         ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) =
       (multiplier l R M : R) • J l R :=
-  (mul_J_mul_transpose_eq_smul_iff _ _).1 (mul_J_mul_transpose M)
+  (GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff _ _).1 (mul_J_mul_transpose M)
 
 /-- The multiplier is the unit by which a similitude scales `J`. -/
 theorem multiplier_eq_iff {M : GSp l R} {c : Rˣ} :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
@@ -27,8 +28,18 @@ goes through the Pfaffian; there is none in this Mathlib, and the cheap determin
 yields only `A.det ^ 2 = (d ^ Fintype.card l) ^ 2`, which is strictly weaker over a general
 commutative ring. Only the rank-two case is proved here, that being the case in hand.
 
+In every rank, the factor `c` in `M J Mᵀ = c • J` is unique when `l` is nonempty, multiplies
+under products, and for invertible `M` is also the factor in `Mᵀ J M = c • J`. These are the facts
+behind the multiplier of the symplectic similitude group.
+
 ## Main results
 
+* `Matrix.smul_J_injective` and `Matrix.eq_of_mul_J_mul_transpose_eq`: for nonempty `l`, the
+  factor by which a matrix scales `J` is unique.
+* `Matrix.mul_mul_J_mul_transpose_eq_mul_smul`: the scaling factors multiply under products.
+* `Matrix.transpose_mul_J_mul_of_mul_J_mul_transpose` and
+  `Matrix.GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff`: for an invertible matrix,
+  `M J Mᵀ = c • J` and `Mᵀ J M = c • J` are equivalent.
 * `Matrix.transpose_mul_J_mul_eq_det_smul`: `Aᵀ J A = det A • J`.
 * `Matrix.transpose_mul_J_mul_eq_smul_iff`: the multiplier is the determinant.
 * `Matrix.det_eq_of_symplectic_adjoint_of_mul_eq_smul_one`: the same, from an adjoint `B` with
@@ -55,6 +66,72 @@ curve occurring in any statement here.
 public section
 
 namespace Matrix
+
+section Similitude
+
+variable {l R : Type*} [DecidableEq l] [CommRing R]
+
+/-- For nonempty `l`, the scalar multiples of `J` determine the scalar. -/
+theorem smul_J_injective [Nonempty l] : Function.Injective fun c : R ↦ c • J l R := by
+  intro c d h
+  obtain ⟨i⟩ := ‹Nonempty l›
+  simpa [Matrix.J] using congrFun (congrFun h (Sum.inr i)) (Sum.inl i)
+
+variable [Fintype l]
+
+/-- **The similitude factor is unique**: two scalars by which a matrix scales `J` agree. -/
+theorem eq_of_mul_J_mul_transpose_eq [Nonempty l] {M : Matrix (l ⊕ l) (l ⊕ l) R} {c d : R}
+    (hc : M * J l R * Mᵀ = c • J l R) (hd : M * J l R * Mᵀ = d • J l R) : c = d :=
+  smul_J_injective (hc.symm.trans hd)
+
+/-- **Similitudes compose**: if `M` scales `J` by `a` and `N` scales `J` by `b`, then `M * N`
+scales `J` by `a * b`. -/
+theorem mul_mul_J_mul_transpose_eq_mul_smul {M N : Matrix (l ⊕ l) (l ⊕ l) R} {a b : R}
+    (hM : M * J l R * Mᵀ = a • J l R) (hN : N * J l R * Nᵀ = b • J l R) :
+    M * N * J l R * (M * N)ᵀ = (a * b) • J l R := by
+  calc M * N * J l R * (M * N)ᵀ = M * (N * J l R * Nᵀ) * Mᵀ := by
+        simp only [transpose_mul, Matrix.mul_assoc]
+    _ = (a * b) • J l R := by
+        rw [hN, Matrix.mul_smul, Matrix.smul_mul, hM, smul_smul, mul_comm]
+
+/-- If `N` is a left inverse of `M` and `M J Mᵀ = c • J`, then also `Mᵀ J M = c • J`. -/
+theorem transpose_mul_J_mul_of_mul_J_mul_transpose {M N : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hNM : N * M = 1) {c : R} (h : M * J l R * Mᵀ = c • J l R) :
+    Mᵀ * J l R * M = c • J l R := by
+  have h₁ : J l R * Mᵀ = c • (N * J l R) := by
+    calc J l R * Mᵀ = N * (M * J l R * Mᵀ) := by
+          simp only [← Matrix.mul_assoc, hNM, Matrix.one_mul]
+      _ = c • (N * J l R) := by rw [h, Matrix.mul_smul]
+  calc Mᵀ * J l R * M = -(J l R * J l R) * Mᵀ * J l R * M := by
+        rw [J_squared, neg_neg, Matrix.one_mul]
+    _ = -(J l R * (J l R * Mᵀ) * J l R * M) := by
+        simp only [Matrix.neg_mul, Matrix.mul_assoc]
+    _ = c • (J l R * N * (-(J l R * J l R)) * M) := by
+        rw [h₁]
+        simp only [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_neg, Matrix.neg_mul, smul_neg,
+          Matrix.mul_assoc]
+    _ = c • J l R := by
+        rw [J_squared, neg_neg, Matrix.mul_one, Matrix.mul_assoc, hNM, Matrix.mul_one]
+
+/-- For an invertible matrix, `M J Mᵀ = c • J` and `Mᵀ J M = c • J` are equivalent, for every
+scalar `c`. -/
+theorem GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff (M : GL (l ⊕ l) R) (c : R) :
+    (M : Matrix (l ⊕ l) (l ⊕ l) R) * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = c • J l R ↔
+      (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = c • J l R := by
+  have hNM : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) *
+      (M : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
+    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+  have hMN : (M : Matrix (l ⊕ l) (l ⊕ l) R) *
+      ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
+    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
+  refine ⟨transpose_mul_J_mul_of_mul_J_mul_transpose hNM, fun h ↦ ?_⟩
+  have hT : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ *
+      (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = 1 := by
+    rw [← transpose_mul, hMN, transpose_one]
+  simpa only [transpose_transpose] using
+    transpose_mul_J_mul_of_mul_J_mul_transpose hT (by simpa only [transpose_transpose] using h)
+
+end Similitude
 
 variable {l R : Type*} [DecidableEq l] [Fintype l] [Unique l] [CommRing R]
 
