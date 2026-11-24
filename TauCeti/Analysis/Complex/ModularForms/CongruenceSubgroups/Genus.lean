@@ -96,6 +96,18 @@ private theorem finite_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ 
   H.isCofinite_map_sl2zToPSL2R.finite_ellipticOrbits.subset fun q hq ↦
     (H.mem_ellipticOrbits_map_sl2zToPSL2R_iff q).mpr (hq ▸ hm)
 
+/-- On the orbits of stabilizer order `m ∈ {2, 3}` the summand `1 - 1 / m` of the elliptic defect
+is constant, so its sum is `1 - 1 / m` times the number of such orbits. -/
+private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ m = 3) :
+    ∑ᶠ q ∈ {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ | cardStabilizerOnOrbit q = m},
+        (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) =
+      Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = m} *
+        (1 - (m : ℝ)⁻¹) := by
+  have hs := H.finite_setOf_cardStabilizerOnOrbit_eq hm
+  rw [finsum_mem_congr rfl fun q (hq : cardStabilizerOnOrbit q = m) ↦ by rw [hq],
+    finsum_mem_eq_finite_toFinset_sum _ hs, Finset.sum_const, nsmul_eq_mul,
+    ← Set.ncard_eq_toFinset_card _ hs, ← Nat.card_coe_set_eq, Set.coe_ofPred]
+
 /-- **The elliptic defect of a finite-index subgroup of `SL(2, ℤ)`.** Summing `1 - 1 / m` over the
 elliptic orbits, of orders `m = 2` and `m = 3`, gives `ε₂ / 2 + 2 ε₃ / 3`. -/
 theorem finsum_mem_ellipticOrbits_map_sl2zToPSL2R :
@@ -103,24 +115,17 @@ theorem finsum_mem_ellipticOrbits_map_sl2zToPSL2R :
       Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 2} / 2 +
       2 * Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} /
         3 := by
-  have h2 := H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inl rfl)
-  have h3 := H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inr rfl)
   have hdisj : Disjoint {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ | cardStabilizerOnOrbit q = 2}
       {q | cardStabilizerOnOrbit q = 3} :=
     Set.disjoint_left.mpr fun q h2 h3 ↦ by simp_all
-  -- on the orbits of order `m` the summand is the constant `1 - 1 / m`
-  have hconst (m : ℕ) : ∑ᶠ q ∈ {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ |
-      cardStabilizerOnOrbit q = m}, (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) =
-      ∑ᶠ q ∈ {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ | cardStabilizerOnOrbit q = m},
-        (1 - (m : ℝ)⁻¹) :=
-    finsum_mem_congr rfl fun q hq ↦ by rw [show cardStabilizerOnOrbit q = m from hq]
   rw [show (H.map sl2zToPSL2R).ellipticOrbits =
       {q | cardStabilizerOnOrbit q = 2} ∪ {q | cardStabilizerOnOrbit q = 3} from
-      Set.ext H.mem_ellipticOrbits_map_sl2zToPSL2R_iff, finsum_mem_union hdisj h2 h3, hconst,
-    hconst, finsum_mem_eq_finite_toFinset_sum _ h2, finsum_mem_eq_finite_toFinset_sum _ h3,
-    Finset.sum_const, Finset.sum_const, ← Set.ncard_eq_toFinset_card _ h2,
-    ← Set.ncard_eq_toFinset_card _ h3, ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
-  simp only [nsmul_eq_mul, Set.coe_ofPred]
+      Set.ext H.mem_ellipticOrbits_map_sl2zToPSL2R_iff,
+    finsum_mem_union hdisj (H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inl rfl))
+      (H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inr rfl)),
+    H.finsum_mem_setOf_cardStabilizerOnOrbit_eq (Or.inl rfl),
+    H.finsum_mem_setOf_cardStabilizerOnOrbit_eq (Or.inr rfl)]
+  push_cast
   ring
 
 /-- The modular curve `X(H)` of a finite-index subgroup `H ≤ SL(2, ℤ)` has finite CW type, so its
@@ -228,31 +233,22 @@ theorem twelve_mul_genus_compactifiedQuotient_Gamma_add (hN : 2 ≤ N) :
 /-- **`X₀(11)` has genus `1`**: `d = 12`, `ε₂ = ε₃ = 0` and `ε∞ = 2`, so `g = 1 + 1 - 1`. -/
 theorem genus_compactifiedQuotient_Gamma0_eleven :
     genus ((Gamma0 11).map sl2zToPSL2R).CompactifiedQuotient = 1 := by
-  have h := twelve_mul_genus_compactifiedQuotient_Gamma0_add 11
-  have hidx := Gamma0_index_mul_prod_primeFactors (N := 11)
-  rw [Nat.Prime.primeFactors (by decide : Nat.Prime 11), Finset.prod_singleton,
-    Finset.prod_singleton] at hidx
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at h
   have h2 : Fintype.card {x : ZMod 11 // x ^ 2 + 1 = 0} = 0 := by decide
   have h3 : Fintype.card {x : ZMod 11 // x ^ 2 - x + 1 = 0} = 0 := by decide
-  have hc : ∑ g ∈ Nat.divisors 11, Nat.totient (Nat.gcd g (11 / g)) = 2 := by decide
-  rw [h2, h3, hc] at h
+  have : Fact (Nat.Prime 11) := ⟨by decide⟩
+  have h := twelve_mul_genus_compactifiedQuotient_Gamma0_add 11
+  rw [← card_cuspOrbit_Gamma0, card_cuspOrbit_Gamma0_of_prime, Gamma0_prime_index 11 Fact.out,
+    Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h2, h3] at h
   omega
 
 /-- **`X₁(13)` has genus `2`**: `[SL(2, ℤ) : Γ₁(13)] = 168`, there are `12` cusps and no elliptic
 points, so `g = 1 + 7 - 6`. Using the index `168` in place of the degree `84` would give `9`. -/
 theorem genus_compactifiedQuotient_Gamma1_thirteen :
     genus ((Gamma1 13).map sl2zToPSL2R).CompactifiedQuotient = 2 := by
+  have : Fact (Nat.Prime 13) := ⟨by decide⟩
   have h := twenty_four_mul_genus_compactifiedQuotient_Gamma1_add 13 (by norm_num)
-  have hc := card_cuspOrbit_Gamma1 (N := 13) (by norm_num) (by norm_num)
-  have hidx0 := Gamma0_index_mul_prod_primeFactors (N := 13)
-  rw [Nat.Prime.primeFactors (by decide : Nat.Prime 13), Finset.prod_singleton,
-    Finset.prod_singleton] at hidx0
-  have hsum : ∑ g ∈ Nat.divisors 13, Nat.totient g * Nat.totient (13 / g) = 24 := by decide
-  have hunits : Nat.card (ZMod 13)ˣ = 12 := by
-    rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
-      Nat.totient_prime (by decide : Nat.Prime 13)]
-  rw [Gamma1_index, hunits] at h
+  rw [card_cuspOrbit_Gamma1_of_prime (by norm_num), Gamma1_index, Nat.card_eq_fintype_card,
+    ZMod.card_units, Gamma0_prime_index 13 Fact.out] at h
   omega
 
 end CongruenceSubgroup
