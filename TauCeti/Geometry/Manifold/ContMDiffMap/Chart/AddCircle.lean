@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Topology.Instances.AddCircle.Lift
@@ -289,6 +290,16 @@ private theorem eventually_chartJetSet_of_lift (hG : Continuous G)
         exact add_lt_add (hi v hvt') hAv
     _ = δ := add_halves δ
 
+omit [Fact (0 < p)] in
+/-- Locally uniform convergence on `ℝ` of the order-zero iterated derivatives of real functions is
+locally uniform convergence of the functions themselves: the case `s = univ` of
+`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`. -/
+private theorem tendstoLocallyUniformly_iteratedFDeriv_zero_iff {Φ : ι → ℝ → ℝ} {Ψ : ℝ → ℝ} :
+    TendstoLocallyUniformly (fun i ↦ iteratedFDeriv ℝ 0 (Φ i)) (iteratedFDeriv ℝ 0 Ψ) l ↔
+      TendstoLocallyUniformly Φ Ψ l := by
+  simp only [← tendstoLocallyUniformlyOn_univ,
+    TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff]
+
 /-- **Convergence of circle maps from their lifts.** A family `f i` of `C^n` maps
 `AddCircle p → AddCircle q` converges to `g` in the weak Whitney topology when lifts `F i` of the
 `f i` and a continuous lift `G` of `g` have iterated derivatives of each order `m ≤ n` converging
@@ -299,12 +310,8 @@ theorem tendsto_addCircle_addCircle_of_lift (hG : Continuous G)
       (iteratedFDeriv ℝ m G) l) :
     Tendsto f l (𝓝 g) := by
   -- The lifts themselves converge locally uniformly.
-  have h₀ : TendstoLocallyUniformly F G l := by
-    refine Metric.tendstoLocallyUniformly_iff.2 fun ε hε w ↦ ?_
-    obtain ⟨t, ht, hev⟩ := Metric.tendstoLocallyUniformly_iff.1 (h 0 (by simp)) ε hε w
-    refine ⟨t, ht, hev.mono fun i hi v hv ↦ ?_⟩
-    simpa only [iteratedFDeriv_zero_eq_comp, Function.comp_apply,
-      LinearIsometryEquiv.dist_map] using hi v hv
+  have h₀ : TendstoLocallyUniformly F G l :=
+    tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
   refine tendsto_manifoldWeakWhitney_iff.2 fun x y m hm K hK V hV hgK ↦ ?_
   rw [mem_chartJetSet] at hgK
   simp only [mem_chartJetSet]
@@ -446,16 +453,12 @@ theorem tendsto_addCircle_addCircle_iff_lift (hn : 1 ≤ n) (hF : ∀ i, Continu
       iteratedFDeriv ℝ (m + 1) Φ := by
     simp_rw [sub_eq_add_neg]
     exact TauCeti.iteratedFDeriv_succ_add_const Φ _ m
-  have hzero {Φ : ι → ℝ → ℝ} {Ψ : ℝ → ℝ} :
-      TendstoLocallyUniformly (fun i ↦ iteratedFDeriv ℝ 0 (Φ i)) (iteratedFDeriv ℝ 0 Ψ) l ↔
-        TendstoLocallyUniformly Φ Ψ l := by
-    simp only [Metric.tendstoLocallyUniformly_iff, iteratedFDeriv_zero_eq_comp,
-      Function.comp_apply, LinearIsometryEquiv.dist_map]
   constructor
   · refine fun hfg ↦ ⟨((continuous_eval_const_manifoldWeakWhitney (0 : AddCircle p)).tendsto g).comp
       hfg, fun m hm ↦ ?_⟩
     rcases m with _ | m
-    · exact hzero.2 (tendstoLocallyUniformly_lift_sub_lift_zero hn hF hG hfF hgG hfg)
+    · exact tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2
+        (tendstoLocallyUniformly_lift_sub_lift_zero hn hF hG hfF hgG hfg)
     · simp only [hsub]
       exact tendstoLocallyUniformly_iteratedFDeriv_lift hF hG hfF hgG hfg hm (Nat.succ_ne_zero m)
   · rintro ⟨h₀, h⟩
@@ -477,8 +480,8 @@ theorem tendsto_addCircle_addCircle_iff_lift (hn : 1 ≤ n) (hF : ∀ i, Continu
     · simp only [AddCircle.coe_add, AddCircle.coe_sub, ← hfF, ← hgG, hrc, QuotientAddGroup.mk_zero]
       abel
     · rcases m with _ | m
-      · refine hzero.2 ?_
-        have h0 := hzero.1 (h 0 (by simp))
+      · refine tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2 ?_
+        have h0 := tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
         have hc : TendstoLocallyUniformly (fun i (_ : ℝ) ↦ G 0 + r (f i 0 - g 0))
             (fun _ ↦ G 0 + 0) l :=
           (tendsto_const_nhds.add hdiff).tendstoUniformly_const.tendstoLocallyUniformly

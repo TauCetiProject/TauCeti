@@ -51,7 +51,6 @@ reflection `θ ↦ -θ`.
 
 * `AddCircle.prodDiffeomorphOfLift`: the level-preserving diffeomorphism
   `(a, [x]) ↦ (a, [L (κ a, x)])` of `N × AddCircle T`.
-* `AddCircle.diffeomorphOfLift`: the circle diffeomorphism `[x] ↦ [F x]` of a single lift `F`.
 * `AddCircle.diffeotopyOfLift`: the diffeotopy of `AddCircle T` which at time `t` is the circle
   map with lift `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`, from the identity to the map with lift `F`.
 * `AddCircle.collarDiffeomorphOfLift`: the level-preserving diffeomorphism of `N × AddCircle T`
@@ -260,50 +259,6 @@ theorem prodDiffeomorphOfLift_symm_apply_coe (a : N) (x : ℝ) :
   rw [← prodDiffeomorphOfLift_apply_coe hL hn hper hpos κ hκ a x, Diffeomorph.symm_apply_apply]
 
 end Family
-
-/-! ### A single circle diffeomorphism from a lift -/
-
-section Single
-
-variable {F : ℝ → ℝ} (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
-  (hpos : ∀ x, 0 < deriv F x)
-
-/-- The constant family of lifts `F`, over the parameter line. -/
-private abbrev constFamily : (ℝ × AddCircle T) ≃ₘ^n⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ).prod 𝓘(ℝ)⟯
-    ℝ × AddCircle T :=
-  prodDiffeomorphOfLift (L := fun q : ℝ × ℝ ↦ F q.2) (hF.comp contDiff_snd) hn
-    (fun _ x ↦ hper x) (fun _ x ↦ hpos x) (fun _ : ℝ ↦ (0 : ℝ)) contMDiff_const
-
-/-- **A circle diffeomorphism from a lift.** A `C^n` lift `F`, `n ≠ 0`, with
-`F (x + T) = F x + T` and positive derivative, descends to the orientation-preserving `C^n`
-diffeomorphism `[x] ↦ [F x]` of `AddCircle T`. -/
-def diffeomorphOfLift : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T where
-  toFun θ := (constFamily hF hn hper hpos (0, θ)).2
-  invFun θ := ((constFamily hF hn hper hpos).symm (0, θ)).2
-  left_inv θ := by
-    dsimp only
-    rw [show ((0 : ℝ), (constFamily hF hn hper hpos (0, θ)).2) = constFamily hF hn hper hpos (0, θ)
-      from Prod.ext (fst_prodDiffeomorphOfLift (hF.comp contDiff_snd) hn _ _ _ contMDiff_const
-        ((0 : ℝ), θ)).symm rfl,
-      Diffeomorph.symm_apply_apply]
-  right_inv θ := by
-    dsimp only
-    rw [show ((0 : ℝ), ((constFamily hF hn hper hpos).symm (0, θ)).2) =
-        (constFamily hF hn hper hpos).symm (0, θ)
-      from Prod.ext (fst_prodDiffeomorphOfLift_symm (hF.comp contDiff_snd) hn _ _ _ contMDiff_const
-        ((0 : ℝ), θ)).symm rfl,
-      Diffeomorph.apply_symm_apply]
-  contMDiff_toFun := contMDiff_snd.comp
-    ((constFamily hF hn hper hpos).contMDiff.comp (contMDiff_const.prodMk contMDiff_id))
-  contMDiff_invFun := contMDiff_snd.comp
-    ((constFamily hF hn hper hpos).symm.contMDiff.comp (contMDiff_const.prodMk contMDiff_id))
-
-/-- The diffeomorphism `diffeomorphOfLift` is `[x] ↦ [F x]`. -/
-@[simp]
-theorem diffeomorphOfLift_apply_coe (x : ℝ) :
-    diffeomorphOfLift hF hn hper hpos x = (F x : AddCircle T) := (rfl)
-
-end Single
 
 /-! ### Interpolating a lift to the identity -/
 

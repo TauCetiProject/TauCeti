@@ -83,13 +83,13 @@ theorem deriv_sinPerturbationLift_pos (k : ℕ) (x : ℝ) : 0 < deriv (sinPertur
 /-- The `k`-th perturbation `θ ↦ θ + sin ((k + 2) θ) / (k + 2) ^ 2` of the identity of the circle
 `ℝ / 2πℤ`, as a `C^n` diffeomorphism, `n ≠ 0`. -/
 def sinPerturbation {n : ℕ∞ω} (hn : n ≠ 0) (k : ℕ) : Diff 𝓘(ℝ) (AddCircle (2 * π)) n :=
-  AddCircle.diffeomorphOfLift (contDiff_sinPerturbationLift k) hn
-    (sinPerturbationLift_add_two_pi k) (deriv_sinPerturbationLift_pos k)
+  (AddCircle.diffeotopyOfLift (contDiff_sinPerturbationLift k) hn
+    (sinPerturbationLift_add_two_pi k) (deriv_sinPerturbationLift_pos k)).final
 
 @[simp]
 theorem sinPerturbation_apply_coe {n : ℕ∞ω} (hn : n ≠ 0) (k : ℕ) (x : ℝ) :
     sinPerturbation hn k x = (sinPerturbationLift k x : AddCircle (2 * π)) :=
-  AddCircle.diffeomorphOfLift_apply_coe _ _ _ _ x
+  AddCircle.diffeotopyOfLift_final_apply_coe _ _ _ _ x
 
 /-- The lift minus the identity, `x ↦ sin ((k + 2) x) / (k + 2) ^ 2`, has `m`-th derivative
 `(k + 2) ^ m sin⁽ᵐ⁾ ((k + 2) x) / (k + 2) ^ 2`. -/
@@ -121,17 +121,6 @@ private theorem dist_iteratedFDeriv_sinPerturbationLift (k m : ℕ) (x : ℝ) :
     show sinPerturbationLift k - id = fun y ↦ sinPerturbationLift k y - id y from rfl,
     iteratedDeriv_sinPerturbationLift_sub_id, Real.norm_eq_abs]
 
-/-- The lifts, normalized to vanish at `0`, are the lifts themselves. -/
-private theorem sinPerturbationLift_sub_sinPerturbationLift_zero (k : ℕ) :
-    (fun x ↦ sinPerturbationLift k x - sinPerturbationLift k 0) = sinPerturbationLift k := by
-  funext x
-  simp
-
-/-- The identity, normalized to vanish at `0`, is the identity. -/
-private theorem id_sub_id_zero : (fun x : ℝ ↦ id x - id 0) = id := by
-  funext x
-  simp
-
 /-- The values at `0` of the perturbations are `0`. -/
 private theorem sinPerturbation_apply_zero {n : ℕ∞ω} (hn : n ≠ 0) (k : ℕ) :
     sinPerturbation hn k 0 = 0 := by
@@ -152,7 +141,7 @@ theorem tendsto_sinPerturbation_one :
     simp only [Function.comp_def, h₀]
     exact tendsto_const_nhds
   · have hm' : m ≤ 1 := by exact_mod_cast hm
-    simp only [sinPerturbationLift_sub_sinPerturbationLift_zero, id_sub_id_zero]
+    simp only [sinPerturbationLift_zero, id_eq, sub_zero, ← Function.id_def]
     -- The `m`-th derivatives, `m ≤ 1`, are within `1 / (k + 1)` of those of the identity.
     refine (tendstoUniformlyOn_univ.1 (TauCeti.tendstoUniformlyOn_of_dist_le
       (u := fun k : ℕ ↦ 1 / ((k : ℝ) + 1)) tendsto_one_div_add_atTop_nhds_zero_nat
@@ -185,7 +174,7 @@ theorem not_tendsto_sinPerturbation_one {n : ℕ∞ω} (hn : 2 ≤ n) :
     (F := sinPerturbationLift) (G := id)
     (fun k ↦ (contDiff_sinPerturbationLift (n := 0) k).continuous)
     continuous_id (fun k x ↦ sinPerturbation_apply_coe _ k x) (fun x ↦ rfl)).1 h).2 2 hn
-  simp only [sinPerturbationLift_sub_sinPerturbationLift_zero, id_sub_id_zero] at h₂
+  simp only [sinPerturbationLift_zero, id_eq, sub_zero, ← Function.id_def] at h₂
   -- Near `0` the second derivatives would be uniformly close to `0`, but at `π / (2 (k + 2))`
   -- they are `-1`.
   obtain ⟨t, ht, hev⟩ := Metric.tendstoLocallyUniformly_iff.1 h₂ 1 one_pos 0
