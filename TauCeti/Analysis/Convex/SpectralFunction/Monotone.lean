@@ -69,7 +69,7 @@ theorem mem_of_le_of_forall_add_mem (hΓo : IsOpen Γ)
     continuous_const.sub (continuous_pi fun _ ↦ continuous_id)
   have hev : ∀ᶠ t in nhdsWithin (0 : ℝ) (Ioi 0), μ - (fun _ ↦ t) ∈ Γ :=
     nhdsWithin_le_nhds (hc.continuousAt.preimage_mem_nhds (by
-      rw [show (μ - fun _ : ι ↦ (0 : ℝ)) = μ from sub_zero μ]
+      rw [← Pi.zero_def, sub_zero]
       exact hΓo.mem_nhds hμ))
   obtain ⟨t, hmem, ht⟩ := (hev.and self_mem_nhdsWithin).exists
   have h := hΓ _ hmem (ν - μ + (fun _ ↦ t)) fun i ↦ by
@@ -96,10 +96,8 @@ private theorem exists_mem_sub_eq_sum_fderiv_single [Fintype ι] [DecidableEq ι
       (hΓo.mem_nhds (hsub hz))).hasFDerivAt.hasFDerivWithinAt)
     (convex_segment μ ν) (left_mem_segment ℝ μ ν) (right_mem_segment ℝ μ ν)
   refine ⟨z, hsub hz, h.trans ?_⟩
-  rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
-  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
-    show ∀ i : ι, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
-      fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
+  conv_lhs => rw [pi_eq_sum_univ' (ν - μ)]
+  simp only [map_sum, map_smul, smul_eq_mul, Pi.sub_apply]
 
 /-- **Monotonicity of `f`.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let `f` be
 differentiable on `Γ` with nonnegative partial derivatives there. Then `f μ ≤ f ν` whenever
