@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Counting.Levels
 public import TauCeti.ModelTheory.Counting.Stratification
+public import TauCeti.ModelTheory.RelationalConfiguration.BorelIsomorphism
 
 /-!
 # The bounded-rank dichotomy

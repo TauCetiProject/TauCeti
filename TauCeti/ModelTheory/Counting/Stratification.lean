@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.ExtensionSpectrum
-public import TauCeti.ModelTheory.RelationalConfiguration.BorelIsomorphism
-public import TauCeti.ModelTheory.Scott.Height
+public import TauCeti.ModelTheory.RelationalConfiguration.ScottHeight
 public import TauCeti.SetTheory.Cardinal.AlephOne
 
 /-!
