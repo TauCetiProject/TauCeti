@@ -101,7 +101,7 @@ theorem mk_eq_mk_iff {a b : lp A ∞} : mk A a = mk A b ↔ a - b ∈ c0Ideal A 
 variable (A) in
 @[simp]
 theorem ker_mk : TwoSidedIdeal.ker (mk A) = c0Ideal A :=
-  TwoSidedIdeal.ext fun _ ↦ (TwoSidedIdeal.mem_ker _).trans mk_eq_zero_iff
+  TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom (c0Ideal A)
 
 /-- The norm of `lp.QuotientC0 A` is the limit superior of the coordinate norms along the
 cofinite filter. For a finite index type both sides are `0`. -/
@@ -127,7 +127,7 @@ theorem lift_mk (f : lp A ∞ →⋆ₐ[ℂ] B) (hf : ∀ a ∈ c0Ideal A, f a =
 @[simp]
 theorem lift_comp_mk (f : lp A ∞ →⋆ₐ[ℂ] B) (hf : ∀ a ∈ c0Ideal A, f a = 0) :
     (lift f hf).comp (mk A) = f :=
-  StarAlgHom.ext (lift_mk f hf)
+  TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (c0Ideal A) f hf
 
 /-- Two unital `⋆`-homomorphisms out of `lp.QuotientC0 A` agree when their compositions with
 `lp.QuotientC0.mk A` agree. -/
