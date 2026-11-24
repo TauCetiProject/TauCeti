@@ -38,48 +38,27 @@ section CommSemiring
 
 variable {R B : Type*} [CommSemiring R] [CommRing B] [Algebra R B] (D : Derivation R B B)
 
-/-- A convolution product of linear maps on `R[T;T⁻¹]`, evaluated at the group-like `T`, is the
-product of their values. -/
-private lemma ofConv_convMul_apply_T (f h : WithConv (R[T;T⁻¹] →ₗ[R] B)) :
-    (f * h).ofConv (LaurentPolynomial.T 1) =
-      f.ofConv (LaurentPolynomial.T 1) * h.ofConv (LaurentPolynomial.T 1) := by
-  rw [LinearMap.convMul_apply, LaurentPolynomial.comul_T, TensorProduct.map_tmul,
-    LinearMap.mul'_apply]
-
 /-- **The logarithmic derivative of a point of `𝔾ₘ` is `Du / u`.** -/
 theorem tangentLinearEquiv_pointRightLogDeriv (g : WithConv (R[T;T⁻¹] →ₐ[R] B)) :
     tangentLinearEquiv (D.pointRightLogDeriv g) =
       D (pointsMulEquiv g : B) * ((pointsMulEquiv g)⁻¹ : Bˣ) := by
+  have hT : IsGroupLikeElem R (LaurentPolynomial.T 1 : R[T;T⁻¹]) :=
+    groupLikeT_val R ▸ (groupLikeT R).isGroupLikeElem_val
   rw [tangentLinearEquiv_apply, Derivation.algEquivSelf_pointRightLogDeriv_apply,
-    ofConv_convMul_apply_T, ← map_inv]
+    hT.ofConv_convMul_apply, ← map_inv]
   simp [pointsMulEquiv_apply]
-
-/-- The value of a point of `𝔾ₘ` at `T` times the value of its inverse at `T` is `1`. -/
-private lemma ofConv_apply_T_mul_ofConv_inv_apply_T (g : WithConv (R[T;T⁻¹] →ₐ[R] B)) :
-    g.ofConv (LaurentPolynomial.T 1) * (g⁻¹).ofConv (LaurentPolynomial.T 1) = 1 := by
-  simpa [pointsMulEquiv_apply, ← map_inv] using (pointsMulEquiv g).mul_inv
 
 end CommSemiring
 
 variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B] (D : Derivation R B B)
 
 /-- **The gauge action of `𝔾ₘ` is translation by `-Du / u`**: the adjoint action of the
-commutative group `𝔾ₘ` is trivial. -/
+commutative group `𝔾ₘ` is trivial (`Derivation.pointGauge_of_isCocomm`). -/
 theorem tangentLinearEquiv_pointGauge (g : WithConv (R[T;T⁻¹] →ₐ[R] B))
     (A : Derivation R R[T;T⁻¹] (Bialgebra.CounitAlgebra R R[T;T⁻¹] B)) :
     tangentLinearEquiv (D.pointGauge g A) =
       tangentLinearEquiv A - D (pointsMulEquiv g : B) * ((pointsMulEquiv g)⁻¹ : Bˣ) := by
-  rw [Derivation.pointGauge_def, map_sub, tangentLinearEquiv_pointRightLogDeriv]
-  congr 1
-  have h := LinearMap.congr_fun
-    (congrArg ofConv (Derivation.toConv_algEquivSelf_comp_adDerivation g A))
-    (LaurentPolynomial.T 1)
-  simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe] at h
-  rw [tangentLinearEquiv_apply, tangentLinearEquiv_apply, h, ofConv_convMul_apply_T,
-    ofConv_convMul_apply_T]
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply,
-    Derivation.coeFn_coe]
-  rw [mul_right_comm, ofConv_apply_T_mul_ofConv_inv_apply_T, one_mul]
+  rw [Derivation.pointGauge_of_isCocomm, map_sub, tangentLinearEquiv_pointRightLogDeriv]
 
 /-- **The logarithmic derivative of the loop `t`**: for the point `t` of `𝔾ₘ` over `R⸨t⸩` and
 `D = d/dt`, `dlog t = t⁻¹`, so gauge transformation by `t` changes `d + A dt` into

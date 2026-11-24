@@ -55,6 +55,8 @@ nonreduced ones included.
 * `Derivation.pointGauge_one`, `Derivation.pointGauge_mul`: the gauge action is a left action.
 * `Derivation.pointGauge_eq_iff`: gauge transformations are the solutions of a linear
   differential equation.
+* `Derivation.pointGauge_of_isCocomm`: for a commutative group the gauge action is translation
+  by `-dlog g`.
 
 ## References
 
@@ -74,16 +76,6 @@ section CommSemiring
 
 variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
   [CommSemiring B] [Algebra R B] (D : Derivation R B B)
-
-/-- A point convolved with its inverse, as linear maps, is the convolution unit. -/
-private lemma toConv_mul_toConv_inv (g : WithConv (H →ₐ[R] B)) :
-    toConv g.ofConv.toLinearMap * toConv (g⁻¹).ofConv.toLinearMap = 1 := by
-  rw [← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
-
-/-- The inverse of a point convolved with the point, as linear maps, is the convolution unit. -/
-private lemma toConv_inv_mul_toConv (g : WithConv (H →ₐ[R] B)) :
-    toConv (g⁻¹).ofConv.toLinearMap * toConv g.ofConv.toLinearMap = 1 := by
-  rw [← AlgHom.toLinearMap_convMul, inv_mul_cancel, AlgHom.toLinearMap_convOne]
 
 /-- The derivative `D ∘ g` of a point is a derivation at `g`: composed with the multiplication of
 `H` it is `g ⊠ (D ∘ g) + (D ∘ g) ⊠ g`. -/
@@ -114,7 +106,7 @@ private lemma toConv_dlog_comp_mul' (g : WithConv (H →ₐ[R] B)) :
   rw [show (_root_.Bialgebra.mulCoalgHom R H).toLinearMap = LinearMap.mul' R H from rfl] at h
   rw [h, toConv_ofConv, ofConv_toConv, LinearMap.comp_assoc, toConv_comp_comp_mul' D g,
     ofConv_toConv, AlgHom.toConv_toLinearMap_comp_mul' (g⁻¹).ofConv, add_mul,
-    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, toConv_mul_toConv_inv]
+    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, algHom_toConv_mul_toConv_inv]
 
 /-- **The right logarithmic derivative of a point** `g ∈ G(B)` along a derivation `D` of `B`:
 the tangent vector `dlog g = (D ∘ g) ⋆ g⁻¹` at the identity, obtained by translating the
@@ -125,10 +117,9 @@ noncomputable def pointRightLogDeriv (g : WithConv (H →ₐ[R] B)) :
     (toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap) *
       toConv (g⁻¹).ofConv.toLinearMap).ofConv
   map_one_eq_zero' := by
-    rw [LinearMap.comp_apply, LinearMap.convMul_apply, Bialgebra.comul_one,
-      Algebra.TensorProduct.one_def, TensorProduct.map_tmul, LinearMap.mul'_apply,
-      LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_one, Derivation.coeFn_coe,
-      D.map_one_eq_zero, zero_mul, map_zero]
+    -- Both factors evaluate at `1` factorwise since `comul 1 = 1 ⊗ 1`, and `D 1 = 0`.
+    rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, EmbeddingLike.map_eq_zero_iff]
+    simp [LinearMap.convMul_apply, Algebra.TensorProduct.one_def]
   leibniz' a b := by
     have h := congrArg (fun F => F.ofConv (a ⊗ₜ[R] b)) (toConv_dlog_comp_mul' D g)
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mul'_apply,
@@ -229,7 +220,7 @@ theorem pointRightLogDeriv_mul (g h : WithConv (H →ₐ[R] B)) :
           tg * (toConv ((D : B →ₗ[R] B) ∘ₗ h.ofConv.toLinearMap) *
             toConv (h⁻¹).ofConv.toLinearMap) * toConv (g⁻¹).ofConv.toLinearMap := by
         simp only [add_mul, mul_assoc]
-    _ = _ := by rw [toConv_mul_toConv_inv, mul_one]
+    _ = _ := by rw [algHom_toConv_mul_toConv_inv, mul_one]
 
 /-- **Horizontal points**: the logarithmic derivative of `g` vanishes exactly when `g` is
 killed by `D`, that is, when every coordinate of `g` is a constant for `D`. -/
@@ -243,7 +234,7 @@ theorem pointRightLogDeriv_eq_zero_iff (g : WithConv (H →ₐ[R] B)) :
     calc toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap)
         = toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap) * toConv (g⁻¹).ofConv.toLinearMap *
             toConv g.ofConv.toLinearMap := by
-          rw [mul_assoc, toConv_inv_mul_toConv, mul_one]
+          rw [mul_assoc, algHom_toConv_inv_mul_toConv, mul_one]
       _ = 0 := by rw [← h, zero_mul]
   · intro h0
     apply toConv_algEquivSelf_comp_inj.mp
@@ -254,6 +245,18 @@ section Naturality
 
 variable {C : Type*} [CommSemiring C] [Algebra R C]
 
+/-- The convolution `(D ∘ g) ⋆ g⁻¹` is natural in the coefficient algebra, along an algebra map
+`φ : B → C` intertwining the derivations `D` of `B` and `D'` of `C`. -/
+private lemma toConv_comp_convMul_inv (φ : B →ₐ[R] C) (D' : Derivation R C C)
+    (hφ : ∀ b, D' (φ b) = φ (D b)) (g : WithConv (H →ₐ[R] B)) :
+    toConv (φ.toLinearMap ∘ₗ (toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap) *
+        toConv (g⁻¹).ofConv.toLinearMap).ofConv) =
+      toConv ((D' : C →ₗ[R] C) ∘ₗ (AlgHom.mapValue φ g).ofConv.toLinearMap) *
+        toConv ((AlgHom.mapValue φ g)⁻¹).ofConv.toLinearMap := by
+  rw [LinearMap.algHom_comp_convMul_distrib, toConv_ofConv, ← map_inv]
+  exact congrArg₂ (· * ·) (congrArg toConv (LinearMap.ext fun x => by simp [hφ]))
+    (congrArg toConv (LinearMap.ext fun x => by simp))
+
 /-- **Naturality of the logarithmic derivative** in the coefficient algebra: along an algebra
 map `φ : B → C` intertwining the derivations `D` of `B` and `D'` of `C`, the logarithmic
 derivative of the image of `g` is the image of the logarithmic derivative of `g`. -/
@@ -261,15 +264,11 @@ theorem mapValue_pointRightLogDeriv (φ : B →ₐ[R] C) (D' : Derivation R C C)
     (hφ : ∀ b, D' (φ b) = φ (D b)) (g : WithConv (H →ₐ[R] B)) :
     mapValue φ (D.pointRightLogDeriv g) = D'.pointRightLogDeriv (AlgHom.mapValue φ g) := by
   ext a
+  have h := LinearMap.congr_fun (congrArg ofConv (toConv_comp_convMul_inv D φ D' hφ g)) a
+  rw [ofConv_toConv, LinearMap.comp_apply, AlgHom.toLinearMap_apply] at h
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H C).injective
   rw [algEquivSelf_pointRightLogDeriv_apply, mapValue_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_map, algEquivSelf_pointRightLogDeriv_apply, ← map_inv,
-    ← AlgHom.toLinearMap_apply, ← LinearMap.comp_apply, LinearMap.algHom_comp_convMul_distrib]
-  congr 3
-  · ext x
-    simp [hφ]
-  · ext x
-    simp
+    Bialgebra.CounitAlgebra.algEquivSelf_map, algEquivSelf_pointRightLogDeriv_apply, h]
 
 end Naturality
 
@@ -309,6 +308,13 @@ theorem pointGauge_def (g : WithConv (H →ₐ[R] B))
 theorem pointGauge_zero (g : WithConv (H →ₐ[R] B)) :
     D.pointGauge g 0 = -D.pointRightLogDeriv g := by
   rw [pointGauge_def, ← adRepresentation_apply, map_zero, zero_sub]
+
+/-- For a cocommutative Hopf algebra the adjoint action is trivial, so the gauge action is the
+translation `A ↦ A - dlog g`. -/
+theorem pointGauge_of_isCocomm [_root_.Coalgebra.IsCocomm R H] (g : WithConv (H →ₐ[R] B))
+    (A : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    D.pointGauge g A = A - D.pointRightLogDeriv g := by
+  rw [pointGauge_def, adDerivation_eq_self_of_isCocomm]
 
 /-- The identity point acts trivially by gauge transformations. -/
 @[simp]
@@ -357,10 +363,10 @@ theorem pointGauge_eq_iff {g : WithConv (H →ₐ[R] B)}
   set Dg := toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap)
   constructor
   · intro h
-    rw [← h, sub_mul, mul_assoc (tg * _), toConv_inv_mul_toConv, mul_one, mul_assoc Dg,
-      toConv_inv_mul_toConv, mul_one, sub_sub_cancel]
+    rw [← h, sub_mul, mul_assoc (tg * _), algHom_toConv_inv_mul_toConv, mul_one, mul_assoc Dg,
+      algHom_toConv_inv_mul_toConv, mul_one, sub_sub_cancel]
   · intro h
-    rw [h, sub_mul, mul_assoc _ tg, toConv_mul_toConv_inv, mul_one, sub_sub_cancel]
+    rw [h, sub_mul, mul_assoc _ tg, algHom_toConv_mul_toConv_inv, mul_one, sub_sub_cancel]
 
 /-- **Naturality of the gauge action** in the coefficient algebra, along an algebra map
 `φ : B → C` intertwining the derivations `D` of `B` and `D'` of `C`. -/
