@@ -17,6 +17,8 @@ import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.Mass.PolarDensity
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Integral.DualPairing
+import TauCeti.Topology.ContinuousMap.CompactlySupported
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -35,7 +37,9 @@ there are a regular measure `‖L‖` on `Ω` and a measurable field `τ : Ω �
 `L f = ∫ τ(x) (f x) d‖L‖(x)` for every `f ∈ C_c(Ω, F)`,
 
 and `‖L‖ (U) = sup { L f | ‖f x‖ ≤ 1 for all x, tsupport f ⊆ U }` for every open `U ⊆ Ω`
-(`TauCeti.RealRMK.exists_apply_eq_integral_dual`). The measure and the density are unique: any two
+(`TauCeti.RealRMK.exists_apply_eq_integral_dual`). Conversely, a functional represented by a
+measure finite on compact sets and a density of dual norm at most one satisfies the bound
+(`TauCeti.RealRMK.exists_le_of_apply_eq_integral`). The measure and the density are unique: any two
 such pairs, with measures finite on compact sets, have the same measure
 (`TauCeti.RealRMK.measure_eq_of_apply_eq_integral_dual`) and densities that agree almost everywhere
 (`TauCeti.RealRMK.ae_eq_of_apply_eq_integral_dual`).
@@ -85,110 +89,28 @@ namespace TauCeti.RealRMK
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {L : C_c(Ω, F) →ₗ[ℝ] ℝ}
 
-section Bounds
-
-/-- A one-sided bound of `L` on the unit fields supported in `K` bounds `|L f|` by a constant times
-any pointwise bound on a field `f` supported in `K`. -/
-private lemma exists_abs_le {K : Set Ω}
-    (hK : ∃ C : ℝ, ∀ f : C_c(Ω, F), tsupport f ⊆ K → (∀ x, ‖f x‖ ≤ 1) → L f ≤ C) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ f : C_c(Ω, F), tsupport f ⊆ K → ∀ c : ℝ, 0 ≤ c → (∀ x, ‖f x‖ ≤ c) →
-      |L f| ≤ C * c := by
-  obtain ⟨C, hC⟩ := hK
-  refine ⟨max C 0, le_max_right _ _, fun f hfK c hc hfc => ?_⟩
-  -- Rescaling to unit fields gives the bound for every `c' > c`; then let `c' → c`.
-  have hpos (c' : ℝ) (hc' : c < c') : |L f| ≤ max C 0 * c' := by
-    have hc'0 : 0 < c' := hc.trans_lt hc'
-    have hunit (s : ℝ) (hs : |s| = c'⁻¹) : s * L f ≤ max C 0 := by
-      rw [← smul_eq_mul, ← map_smul]
-      refine (hC (s • f) ?_ fun x => ?_).trans (le_max_left _ _)
-      · rw [CompactlySupportedContinuousMap.coe_smul]
-        exact (closure_mono (Function.support_const_smul_subset s _)).trans hfK
-      rw [CompactlySupportedContinuousMap.smul_apply, norm_smul, Real.norm_eq_abs, hs,
-        inv_mul_le_one₀ hc'0]
-      exact (hfc x).trans hc'.le
-    have h₁ := hunit c'⁻¹ (abs_of_pos (inv_pos.2 hc'0))
-    have h₂ := hunit (-c'⁻¹) (by rw [abs_neg, abs_of_pos (inv_pos.2 hc'0)])
-    have h₁' := (inv_mul_le_iff₀ hc'0).1 h₁
-    have h₂' := (inv_mul_le_iff₀ hc'0).1 (by simpa using h₂ : c'⁻¹ * -L f ≤ max C 0)
-    rw [abs_le]
-    constructor <;> linarith
-  exact ge_of_tendsto ((tendsto_id'.2 nhdsWithin_le_nhds).const_mul (max C 0))
-    (eventually_nhdsWithin_of_forall (s := Ioi c) fun c' hc' => hpos c' hc')
-
-end Bounds
-
 section Pairing
 
-variable [MeasurableSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
 
-/-- A density of dual norm at most one bounds its pairing with `f` by `∫ ‖f‖`. -/
-private lemma enorm_integral_le_lintegral {μ : Measure Ω} {τ : Ω → StrongDual ℝ F}
-    (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1) (f : Ω → F) :
-    ‖∫ x, τ x (f x) ∂μ‖ₑ ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := by
-  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae (hτ.mono fun x hx => ?_))
-  refine ((τ x).le_opENorm (f x)).trans (mul_le_of_le_one_left zero_le ?_)
-  rw [← ofReal_norm]
-  exact ENNReal.ofReal_le_one.2 hx
-
-omit [NormedSpace ℝ F] in
-/-- A field of norm at most one supported in `U` has `∫ ‖f‖ ≤ μ U`. -/
-private lemma lintegral_enorm_le_measure (μ : Measure Ω) {f : Ω → F} {U : Set Ω}
-    (hU : MeasurableSet U) (hfU : tsupport f ⊆ U) (hf : ∀ x, ‖f x‖ ≤ 1) :
-    ∫⁻ x, ‖f x‖ₑ ∂μ ≤ μ U := by
-  rw [← lintegral_indicator_one hU]
-  refine lintegral_mono fun x => ?_
-  by_cases hx : x ∈ U
-  · rw [indicator_of_mem hx, Pi.one_apply, ← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 (hf x)
-  · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hfU h)]
-
-variable [BorelSpace E] [FiniteDimensional ℝ F]
-
-/-- The pairing of a compactly supported continuous field with an essentially bounded density is
-integrable. -/
-private lemma integrable_apply {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
-    {τ : Ω → StrongDual ℝ F} (hτm : AEStronglyMeasurable τ μ) (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1)
-    (f : C_c(Ω, F)) : Integrable (fun x => τ x (f x)) μ :=
-  (f.continuous.integrable_of_hasCompactSupport f.hasCompactSupport).norm.mono'
-    (Continuous.comp_aestronglyMeasurable₂ (g := fun (ℓ : StrongDual ℝ F) v => ℓ v) (by fun_prop)
-      hτm f.continuous.aestronglyMeasurable)
-    (hτ.mono fun x hx => ((τ x).le_opNorm (f x)).trans (mul_le_of_le_one_left (norm_nonneg _) hx))
-
-omit [FiniteDimensional ℝ F] in
-/-- The pairing of a field bounded by `c` and supported in a compact `K` with a density of dual
-norm at most one is at most `c μ(K)`. -/
-private lemma abs_integral_apply_le {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
-    {τ : Ω → StrongDual ℝ F} (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1) {K : Set Ω} (hK : IsCompact K)
-    {f : Ω → F} (hfK : tsupport f ⊆ K) {c : ℝ} (hf : ∀ x, ‖f x‖ ≤ c) :
-    |∫ x, τ x (f x) ∂μ| ≤ c * μ.real K := by
-  have hint : Integrable (K.indicator fun _ => c) μ :=
-    (integrableOn_const hK.measure_lt_top.ne).integrable_indicator hK.measurableSet
-  rw [← Real.norm_eq_abs, mul_comm, ← smul_eq_mul, ← integral_indicator_const _ hK.measurableSet]
-  refine norm_integral_le_of_norm_le hint (hτ.mono fun x hx => ?_)
-  by_cases hxK : x ∈ K
-  · rw [indicator_of_mem hxK]
-    exact ((τ x).le_opNorm _).trans ((mul_le_of_le_one_left (norm_nonneg _) hx).trans (hf x))
-  · rw [indicator_of_notMem hxK, image_eq_zero_of_notMem_tsupport fun h => hxK (hfK h), map_zero,
-      norm_zero]
-
-omit [FiniteDimensional ℝ F] in
-/-- A representation of `L` against a measure finite on compact sets, with a density of dual norm
-at most one, bounds `L` on the unit fields supported in each compact set. -/
-private lemma exists_le_of_apply_eq_integral {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
+/-- **The converse of the Riesz representation theorem for vector fields.** A representation of `L`
+against a measure finite on compact sets, with a density of dual norm at most one, bounds `L` on
+the fields of norm at most one supported in each compact set, by the measure of that set. -/
+theorem exists_le_of_apply_eq_integral {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
     {τ : Ω → StrongDual ℝ F} (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1)
     (h : ∀ f : C_c(Ω, F), L f = ∫ x, τ x (f x) ∂μ) (K : Set Ω) (hK : IsCompact K) :
     ∃ C : ℝ, ∀ f : C_c(Ω, F), tsupport f ⊆ K → (∀ x, ‖f x‖ ≤ 1) → L f ≤ C := by
   refine ⟨(μ K).toReal, fun f hfK hf => ?_⟩
-  have h' := (enorm_integral_le_lintegral hτ f).trans
-    (lintegral_enorm_le_measure μ hK.measurableSet hfK hf)
+  have h' := (enorm_integral_apply_le_lintegral_enorm hτ f).trans
+    (lintegral_enorm_le_measure μ hK.measurableSet ((subset_tsupport f).trans hfK) hf)
   rw [← h f, Real.eNorm_eq_ofReal_abs] at h'
   exact (le_abs_self _).trans ((ENNReal.ofReal_le_iff_le_toReal hK.measure_lt_top.ne).1 h')
 
-variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
-/-- **Minimality of a unit density.** Let `τ` and `σ` be densities of dual norm one for regular
-measures `μ` and `m` on `Ω`, with `m ≤ μ`, that give the same pairings with every test vector
-field. Then `μ = m` and `τ = σ` almost everywhere. -/
+/-- **Minimality of a unit density.** Let `τ` and `σ` be densities of dual norm one for measures
+`μ` and `m` on `Ω` finite on compact sets, with `m ≤ μ`, that give the same pairings with every
+test vector field. Then `μ = m` and `τ = σ` almost everywhere. -/
 private lemma eq_of_le_of_integral_apply_eq {μ m : Measure Ω} [IsFiniteMeasureOnCompacts μ]
     [IsFiniteMeasureOnCompacts m]
     {τ σ : Ω → StrongDual ℝ F} (hτm : AEStronglyMeasurable τ μ) (hτ : ∀ᵐ x ∂μ, ‖τ x‖ = 1)
@@ -201,20 +123,23 @@ private lemma eq_of_le_of_integral_apply_eq {μ m : Measure Ω} [IsFiniteMeasure
   have hkσ : ∀ᵐ x ∂μ, m.rnDeriv μ x ≠ 0 → ‖σ x‖ = 1 := by
     rwa [← Measure.withDensity_rnDeriv_eq m μ hac,
       ae_withDensity_iff (Measure.measurable_rnDeriv m μ)] at hσ
-  set kσ : Ω → StrongDual ℝ F := fun x => (m.rnDeriv μ x).toReal • σ x with hkσ_def
+  set kσ : Ω → StrongDual ℝ F := fun x => (m.rnDeriv μ x).toReal • σ x
+  have hnorm : ∀ᵐ x ∂μ, m.rnDeriv μ x ≠ 0 → ‖kσ x‖ = (m.rnDeriv μ x).toReal := by
+    filter_upwards [hkσ] with x hxσ hk0
+    simp [kσ, norm_smul, hxσ hk0]
   have hkσ1 : ∀ᵐ x ∂μ, ‖kσ x‖ ≤ 1 := by
-    filter_upwards [hk1, hkσ] with x hx hxσ
+    filter_upwards [hk1, hnorm] with x hx hxn
     by_cases hk0 : m.rnDeriv μ x = 0
     · simp [kσ, hk0]
-    · rw [hkσ_def, norm_smul, hxσ hk0, mul_one, Real.norm_eq_abs,
-        abs_of_nonneg ENNReal.toReal_nonneg]
+    · rw [hxn hk0]
       exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hx)
   have hkσm : AEStronglyMeasurable kσ μ :=
     ((Measure.measurable_rnDeriv m μ).ennreal_toReal.smul hσm).aestronglyMeasurable
   -- `τ` and `k σ` give the same pairings against `μ`, so they agree almost everywhere.
   have hpair (φ : 𝓓(Ω, F)) : ∫ x, (τ - kσ) x (φ x) ∂μ = 0 := by
-    have hτφ := integrable_apply hτm (hτ.mono fun _ hx => hx.le) φ.toCompactlySupportedContinuousMap
-    have hkσφ := integrable_apply hkσm hkσ1 φ.toCompactlySupportedContinuousMap
+    have hτφ :=
+      φ.toCompactlySupportedContinuousMap.integrable_dual_apply hτm (hτ.mono fun _ hx => hx.le)
+    have hkσφ := φ.toCompactlySupportedContinuousMap.integrable_dual_apply hkσm hkσ1
     simp only [TestFunction.toCompactlySupportedContinuousMap_apply] at hτφ hkσφ
     simp only [Pi.sub_apply, sub_apply]
     rw [integral_sub hτφ hkσφ, h φ]
@@ -224,16 +149,12 @@ private lemma eq_of_le_of_integral_apply_eq {μ m : Measure Ω} [IsFiniteMeasure
     (((memLp_top_of_bound hτm 1 (hτ.mono fun _ hx => hx.le)).locallyIntegrable le_top).sub
       ((memLp_top_of_bound hkσm 1 hkσ1).locallyIntegrable le_top)) measurable_const (by simp)
     fun U _ φ _ _ => by rw [hpair φ]; simp
-  have hτkσ : τ =ᵐ[μ] kσ := hzero.mono fun x hx => by
-    rwa [Pi.zero_apply, nonpos_iff_eq_zero, ← ofReal_norm, ENNReal.ofReal_eq_zero,
-      norm_le_zero_iff, Pi.sub_apply, sub_eq_zero] at hx
+  have hτkσ : τ =ᵐ[μ] kσ := hzero.mono fun x hx => by simpa [← ofReal_norm, sub_eq_zero] using hx
   -- `‖τ‖ = 1` forces `k = 1`.
   have hk : m.rnDeriv μ =ᵐ[μ] 1 := by
-    filter_upwards [hτkσ, hτ, hkσ] with x hx hx1 hxσ
+    filter_upwards [hτkσ, hτ, hnorm] with x hx hx1 hxn
     have hk0 : m.rnDeriv μ x ≠ 0 := fun h0 => by simp [hx, kσ, h0] at hx1
-    rw [hx, hkσ_def, norm_smul, hxσ hk0, mul_one, Real.norm_eq_abs,
-      abs_of_nonneg ENNReal.toReal_nonneg, ENNReal.toReal_eq_one_iff] at hx1
-    exact hx1
+    rwa [hx, hxn hk0, ENNReal.toReal_eq_one_iff] at hx1
   have hμ : m = μ := by
     rw [← Measure.withDensity_rnDeriv_eq m μ hac, withDensity_congr_ae hk, withDensity_one]
   refine ⟨hμ.symm, hτkσ.trans ?_⟩
@@ -259,7 +180,7 @@ include hL
 /-- The restriction of `L` to test vector fields has locally finite mass. -/
 private lemma hasLocallyFiniteMass_restrictTest : HasLocallyFiniteMass (restrictTest L) := by
   refine hasLocallyFiniteMass_def.2 fun K hK hKΩ => ?_
-  obtain ⟨C, hC0, hC⟩ := exists_abs_le (hL _
+  obtain ⟨C, hC0, hC⟩ := CompactlySupportedContinuousMap.exists_abs_le_mul_of_forall_le (hL _
     (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)))
   refine ⟨C, hC0, fun φ hφK => ?_⟩
   rw [Real.norm_eq_abs]
@@ -295,7 +216,7 @@ private lemma apply_eq_integral_testCLM (f : C_c(Ω, F)) :
     f.exists_isCompact_forall_exists_testFunction_dist_le
   have hK₁ : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
     Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
-  obtain ⟨C, -, hC⟩ := exists_abs_le (hL _ hK₁)
+  obtain ⟨C, -, hC⟩ := CompactlySupportedContinuousMap.exists_abs_le_mul_of_forall_le (hL _ hK₁)
   set M := (massMeasure (testCLM hL)).real (((↑) : Ω → E) ⁻¹' K)
   -- Approximating `f` within `ε` by a test field supported in `K` gives an error `(C + M) ε`.
   have key (ε : ℝ) (hε : ε ∈ Ioi 0) :
@@ -317,7 +238,8 @@ private lemma apply_eq_integral_testCLM (f : C_c(Ω, F)) :
         ∫ x, polarDensity (testCLM hL) x (f x) ∂massMeasure (testCLM hL) -
           ∫ x, polarDensity (testCLM hL) x (φ.toCompactlySupportedContinuousMap x)
             ∂massMeasure (testCLM hL) := by
-      rw [← integral_sub (integrable_apply hτm hτ f) (integrable_apply hτm hτ _)]
+      rw [← integral_sub (f.integrable_dual_apply hτm hτ)
+        (φ.toCompactlySupportedContinuousMap.integrable_dual_apply hτm hτ)]
       simp [g]
     have hsplit : L f - ∫ x, polarDensity (testCLM hL) x (f x) ∂massMeasure (testCLM hL) =
         L g - ∫ x, polarDensity (testCLM hL) x (g x) ∂massMeasure (testCLM hL) := by
@@ -326,7 +248,8 @@ private lemma apply_eq_integral_testCLM (f : C_c(Ω, F)) :
     rw [hsplit, add_mul]
     refine (abs_sub _ _).trans (add_le_add (hC g hgK ε (le_of_lt hε) hg) ?_)
     rw [mul_comm]
-    exact abs_integral_apply_le hτ hK₁ hgK hg
+    exact abs_integral_apply_le_mul_measureReal hτ hK₁.measurableSet hK₁.measure_lt_top.ne
+      ((subset_tsupport g).trans hgK) hg
   have hlim : Tendsto (fun ε : ℝ => (C + M) * ε) (𝓝[>] 0) (𝓝 0) := by
     simpa using (tendsto_id'.2 (nhdsWithin_le_nhds (a := (0 : ℝ)) (s := Ioi 0))).const_mul (C + M)
   have h0 := ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
@@ -357,8 +280,9 @@ private lemma massMeasure_testCLM_eq_iSup {U : Set Ω} (hU : IsOpen U) :
   · rw [apply_eq_integral_testCLM hL f]
     refine (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans ?_
     rw [← Real.eNorm_eq_ofReal_abs]
-    exact (enorm_integral_le_lintegral ((ae_norm_polarDensity_eq_one hT).mono fun _ hx => hx.le)
-      f).trans (lintegral_enorm_le_measure _ hU.measurableSet hfU hf)
+    exact (enorm_integral_apply_le_lintegral_enorm
+      ((ae_norm_polarDensity_eq_one hT).mono fun _ hx => hx.le) f).trans
+      (lintegral_enorm_le_measure _ hU.measurableSet ((subset_tsupport f).trans hfU) hf)
 
 /-- **The Riesz representation theorem for vector fields.** A linear functional `L` on the
 compactly supported continuous fields `C_c(Ω, F)` that is bounded above on the fields of norm at
@@ -389,7 +313,7 @@ private lemma eq_massMeasure_testCLM {μ : Measure Ω} [IsFiniteMeasureOnCompact
   have hle : massMeasure (testCLM hL) ≤ μ := massMeasure_le_of_enorm_apply_le μ fun φ => by
     rw [testCLM_apply, h]
     simp only [TestFunction.toCompactlySupportedContinuousMap_apply]
-    exact enorm_integral_le_lintegral (hτ.mono fun _ hx => hx.le) fun x : Ω => φ x
+    exact enorm_integral_apply_le_lintegral_enorm (hτ.mono fun _ hx => hx.le) fun x : Ω => φ x
   refine eq_of_le_of_integral_apply_eq hτm hτ measurable_polarDensity
     (ae_norm_polarDensity_eq_one hT) hle fun φ => ?_
   rw [← apply_eq_integral_polarDensity hT φ, testCLM_apply, h]
