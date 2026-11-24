@@ -22,7 +22,9 @@ The quadratic form of a positive endomorphism `A` controls its off-diagonal entr
 (`LinearMap.IsPositive.two_mul_re_inner_le`), and on a finite-dimensional space the diagonal
 entries along any orthonormal family sum to at most the trace
 (`LinearMap.IsPositive.sum_re_inner_le_re_trace`). These are the inputs to Ky Fan's maximum
-principle for positive operators.
+principle for positive operators. A positive endomorphism with trace zero is zero
+(`LinearMap.IsPositive.trace_eq_zero_iff`), so symmetric endomorphisms `S ≤ T` with the same
+eigenvalues are equal (`LinearMap.IsSymmetric.eq_of_re_inner_le_of_eigenvalues_eq`).
 
 An operator `D` between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
 order exactly when it is a contraction (`ContinuousLinearMap.self_comp_adjoint_le_one_iff`), so
@@ -71,6 +73,29 @@ theorem IsPositive.sum_re_inner_le_re_trace [FiniteDimensional 𝕜 E] {A : E �
     _ ≤ ∑ x ∈ u, RCLike.re ⟪x, A x⟫_𝕜 :=
         Finset.sum_le_sum_of_subset_of_nonneg hsub fun x _ _ ↦ hA.re_inner_nonneg_right x
     _ = ∑ x : u, RCLike.re ⟪(x : E), A x⟫_𝕜 := (Finset.sum_coe_sort u _).symm
+
+/-- A positive endomorphism of a finite-dimensional space has trace zero iff it is zero: its
+eigenvalues are nonnegative and sum to the trace. -/
+theorem IsPositive.trace_eq_zero_iff [FiniteDimensional 𝕜 E] {A : E →ₗ[𝕜] E}
+    (hA : A.IsPositive) : A.trace 𝕜 E = 0 ↔ A = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  have hsum : ∑ i, hA.isSymmetric.eigenvalues rfl i = 0 := by
+    rw [← hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl, h, map_zero]
+  have hzero := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ hA.nonneg_eigenvalues rfl i).mp hsum
+  exact (hA.isSymmetric.eigenvectorBasis rfl).toBasis.ext fun i ↦ by
+    rw [OrthonormalBasis.coe_toBasis, hA.isSymmetric.apply_eigenvectorBasis,
+      hzero i (Finset.mem_univ _), RCLike.ofReal_zero, zero_smul, LinearMap.zero_apply]
+
+/-- Two symmetric endomorphisms `S ≤ T` in the Loewner order of a finite-dimensional space with the
+same sorted eigenvalues are equal: `T - S` is positive with trace zero. -/
+theorem IsSymmetric.eq_of_re_inner_le_of_eigenvalues_eq [FiniteDimensional 𝕜 E]
+    {S T : E →ₗ[𝕜] E} (hS : S.IsSymmetric) (hT : T.IsSymmetric) {n : ℕ}
+    (hn : Module.finrank 𝕜 E = n) (hST : ∀ x, RCLike.re ⟪S x, x⟫_𝕜 ≤ RCLike.re ⟪T x, x⟫_𝕜)
+    (heq : hS.eigenvalues hn = hT.eigenvalues hn) : S = T := by
+  have hpos : (T - S).IsPositive := ⟨hT.sub hS, fun x ↦ by
+    simpa [inner_sub_left, sub_nonneg] using hST x⟩
+  refine (sub_eq_zero.mp (hpos.trace_eq_zero_iff.mp ?_)).symm
+  rw [map_sub, hT.trace_eq_sum_eigenvalues hn, hS.trace_eq_sum_eigenvalues hn, heq, sub_self]
 
 end LinearMap
 

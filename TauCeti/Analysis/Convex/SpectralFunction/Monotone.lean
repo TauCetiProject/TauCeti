@@ -7,12 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
-import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.InnerProductSpace.Positive
-import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.CourantFischer
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 
 /-!
 # Monotonicity of spectral domains and spectral functions
@@ -21,14 +18,15 @@ Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, where `Γ_n` is the open po
 with positive coordinates to a point of `Γ` stays in `Γ`. Then `Γ` is upward closed for the
 componentwise order. If `f` is differentiable on `Γ` with nonnegative partial derivatives
 `∂_i f`, then `f` is monotone on `Γ`, and strictly monotone if the partial derivatives are
-positive: along the segment from `μ ≤ ν` the derivative of `f` is `Σ_i (ν - μ)_i ∂_i f ≥ 0`.
+positive: by the mean value theorem on the segment from `μ ≤ ν`, `f ν - f μ` is
+`Σ_i (ν - μ)_i ∂_i f(z) ≥ 0` at some point `z` of the segment.
 
 For symmetric operators `S ≤ T` in the Loewner order on a finite-dimensional inner product space,
 the decreasingly sorted eigenvalue vectors satisfy `λ(S) ≤ λ(T)` componentwise
 (`LinearMap.IsSymmetric.eigenvalue_mono`). So the spectral domain `{T | λ(T) ∈ Γ}` is upward
 closed, the spectral function `T ↦ f(λ(T))` is monotone, and it is strictly monotone when the
 partial derivatives of `f` are positive: if `λ(S) = λ(T)`, then `T - S ≥ 0` has trace zero, so
-`S = T`.
+`S = T` (`LinearMap.IsSymmetric.eq_of_re_inner_le_of_eigenvalues_eq`).
 
 Convexity of `Γ` is not used, and `Γ` need not be symmetric for these statements.
 
@@ -79,24 +77,28 @@ theorem mem_of_le_of_forall_add_mem (hΓo : IsOpen Γ)
     linarith
   rwa [sub_add_add_cancel, add_sub_cancel] at h
 
-/-- Along the segment from `μ` to `ν ≥ μ`, the function `t ↦ f (μ + t • (ν - μ))` has derivative
-`fderiv ℝ f (μ + t • (ν - μ)) (ν - μ)` for `0 ≤ t`. -/
-private theorem hasDerivAt_segment (hΓo : IsOpen Γ)
+/-- **Mean value theorem along a segment.** For `μ ∈ Γ` and `ν ≥ μ`, the segment from `μ` to `ν`
+lies in `Γ`, and `f ν - f μ = Σ_i (ν i - μ i) ∂_i f(z)` for some `z ∈ Γ`. -/
+private theorem exists_mem_sub_eq_sum_fderiv_single (hΓo : IsOpen Γ)
     (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
-    (hμ : μ ∈ Γ) (hle : μ ≤ ν) {t : ℝ} (ht : 0 ≤ t) :
-    μ + t • (ν - μ) ∈ Γ ∧ HasDerivAt (fun s : ℝ ↦ f (μ + s • (ν - μ)))
-      (fderiv ℝ f (μ + t • (ν - μ)) (ν - μ)) t := by
-  have hmem : μ + t • (ν - μ) ∈ Γ := mem_of_le_of_forall_add_mem hΓo hΓ hμ fun i ↦ by
+    (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
+    ∃ z ∈ Γ, f ν - f μ = ∑ i, (ν i - μ i) * fderiv ℝ f z (Pi.single i 1) := by
+  have hsub : segment ℝ μ ν ⊆ Γ := by
+    rw [segment_eq_image']
+    rintro _ ⟨t, ht, rfl⟩
+    refine mem_of_le_of_forall_add_mem hΓo hΓ hμ fun i ↦ ?_
     have := hle i
     simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
-    nlinarith
-  refine ⟨hmem, ?_⟩
-  have hline : HasDerivAt (fun s : ℝ ↦ μ + s • (ν - μ)) (ν - μ) t := by
-    convert AffineMap.hasDerivAt_lineMap (a := μ) (b := ν) (x := t) using 1
-    ext s : 1
-    rw [AffineMap.lineMap_apply_module', add_comm]
-  exact HasFDerivAt.comp_hasDerivAt t
-    ((hf _ hmem).differentiableAt (hΓo.mem_nhds hmem)).hasFDerivAt hline
+    nlinarith [ht.1]
+  obtain ⟨z, hz, h⟩ := domain_mvt (f' := fderiv ℝ f)
+    (fun z hz ↦ ((hf z (hsub hz)).differentiableAt
+      (hΓo.mem_nhds (hsub hz))).hasFDerivAt.hasFDerivWithinAt)
+    (convex_segment μ ν) (left_mem_segment ℝ μ ν) (right_mem_segment ℝ μ ν)
+  refine ⟨z, hsub hz, h.trans ?_⟩
+  rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
+  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
+    show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
+      fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
 
 /-- **Monotonicity of `f`.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let `f` be
 differentiable on `Γ` with nonnegative partial derivatives there. Then `f μ ≤ f ν` whenever
@@ -105,17 +107,9 @@ theorem le_of_le_of_forall_fderiv_single_nonneg (hΓo : IsOpen Γ)
     (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
     (hf' : ∀ μ ∈ Γ, ∀ i, 0 ≤ fderiv ℝ f μ (Pi.single i 1)) (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
     f μ ≤ f ν := by
-  have hd := fun t (ht : t ∈ Icc (0 : ℝ) 1) ↦ hasDerivAt_segment hΓo hΓ hf hμ hle ht.1
-  have hmono := monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc (0 : ℝ) 1)
-    (fun t ht ↦ (hd t ht).2.continuousAt.continuousWithinAt)
-    (fun t ht ↦ (hd t (interior_subset ht)).2.hasDerivWithinAt) fun t ht ↦ by
-      rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
-      simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
-        show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
-          fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
-      exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i))
-        (hf' _ (hd t (interior_subset ht)).1 i)
-  simpa using hmono ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩ zero_le_one
+  obtain ⟨z, hz, h⟩ := exists_mem_sub_eq_sum_fderiv_single hΓo hΓ hf hμ hle
+  rw [← sub_nonneg, h]
+  exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i)) (hf' z hz i)
 
 /-- **Strict monotonicity of `f`.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let `f` be
 differentiable on `Γ` with positive partial derivatives there. Then `f μ < f ν` whenever `μ ∈ Γ`,
@@ -125,18 +119,10 @@ theorem lt_of_le_of_ne_of_forall_fderiv_single_pos (hΓo : IsOpen Γ)
     (hf' : ∀ μ ∈ Γ, ∀ i, 0 < fderiv ℝ f μ (Pi.single i 1)) (hμ : μ ∈ Γ) (hle : μ ≤ ν)
     (hne : μ ≠ ν) : f μ < f ν := by
   obtain ⟨j, hj⟩ : ∃ j, μ j ≠ ν j := Function.ne_iff.mp hne
-  have hd := fun t (ht : t ∈ Icc (0 : ℝ) 1) ↦ hasDerivAt_segment hΓo hΓ hf hμ hle ht.1
-  have hmono := strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc (0 : ℝ) 1)
-    (fun t ht ↦ (hd t ht).2.continuousAt.continuousWithinAt)
-    (fun t ht ↦ (hd t (interior_subset ht)).2.hasDerivWithinAt) fun t ht ↦ by
-      have hmem := (hd t (interior_subset ht)).1
-      rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
-      simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
-        show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
-          fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
-      exact Finset.sum_pos' (fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i)) (hf' _ hmem i).le)
-        ⟨j, Finset.mem_univ _, mul_pos (sub_pos.mpr ((hle j).lt_of_ne hj)) (hf' _ hmem j)⟩
-  simpa using hmono ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩ zero_lt_one
+  obtain ⟨z, hz, h⟩ := exists_mem_sub_eq_sum_fderiv_single hΓo hΓ hf hμ hle
+  rw [← sub_pos, h]
+  exact Finset.sum_pos' (fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i)) (hf' z hz i).le)
+    ⟨j, Finset.mem_univ _, mul_pos (sub_pos.mpr ((hle j).lt_of_ne hj)) (hf' z hz j)⟩
 
 end TauCeti
 
@@ -165,22 +151,6 @@ theorem apply_eigenvalues_le_of_re_inner_le (hS : S.IsSymmetric) (hT : T.IsSymme
     (hf : DifferentiableOn ℝ f Γ) (hf' : ∀ μ ∈ Γ, ∀ i, 0 ≤ fderiv ℝ f μ (Pi.single i 1))
     (hSΓ : hS.eigenvalues hn ∈ Γ) : f (hS.eigenvalues hn) ≤ f (hT.eigenvalues hn) :=
   le_of_le_of_forall_fderiv_single_nonneg hΓo hΓ hf hf' hSΓ fun k ↦ eigenvalue_mono hS hT hn hST k
-
-/-- Two symmetric operators `S ≤ T` in the Loewner order with the same eigenvalues are equal: the
-operator `T - S` is positive with trace zero. -/
-theorem eq_of_re_inner_le_of_eigenvalues_eq (hS : S.IsSymmetric) (hT : T.IsSymmetric)
-    (hn : finrank 𝕜 E = n) (hST : ∀ x, RCLike.re ⟪S x, x⟫_𝕜 ≤ RCLike.re ⟪T x, x⟫_𝕜)
-    (heq : hS.eigenvalues hn = hT.eigenvalues hn) : S = T := by
-  have hpos : (T - S).IsPositive := ⟨hT.sub hS, fun x ↦ by
-    simpa [inner_sub_left, sub_nonneg] using hST x⟩
-  have hsum : ∑ i, hpos.isSymmetric.eigenvalues hn i = 0 := by
-    rw [← hpos.isSymmetric.re_trace_eq_sum_eigenvalues hn, map_sub, map_sub,
-      hT.re_trace_eq_sum_eigenvalues hn, hS.re_trace_eq_sum_eigenvalues hn, heq, sub_self]
-  have hzero := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ hpos.nonneg_eigenvalues hn i).mp hsum
-  have hTS : T - S = 0 := (hpos.isSymmetric.eigenvectorBasis hn).toBasis.ext fun i ↦ by
-    rw [OrthonormalBasis.coe_toBasis, hpos.isSymmetric.apply_eigenvectorBasis,
-      hzero i (Finset.mem_univ _), RCLike.ofReal_zero, zero_smul, LinearMap.zero_apply]
-  exact (sub_eq_zero.mp hTS).symm
 
 /-- **Strict monotonicity of spectral functions.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let
 `f` be differentiable on `Γ` with positive partial derivatives there. If `S ≤ T` in the Loewner
