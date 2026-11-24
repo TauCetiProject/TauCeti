@@ -231,9 +231,8 @@ variable {A B n}
 /-- `symbolMap` evaluates a single `Finsupp.single (c, v) a` to `a • elementary A c v`. -/
 @[simp]
 theorem symbolMap_single (c : B) (v : Fin n → B) (a : A) :
-    symbolMap A B n (Finsupp.single (c, v) a) = a • elementary A c v :=
-  Finsupp.linearCombination_single (R := A)
-    (v := fun p : B × (Fin n → B) => elementary A p.1 p.2) a (c, v)
+    symbolMap A B n (Finsupp.single (c, v) a) = a • elementary A c v := by
+  rw [symbolMap, Finsupp.linearCombination_single]
 
 /-- `symbolMap` evaluates `[c; v]` to the elementary form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
 @[simp]
