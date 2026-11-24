@@ -119,7 +119,7 @@ theorem framingNumber_unknotSolidTorus :
   have hdisc := (SimplyConnectedSpace.paths_homotopic diskBoundaryLoop (Path.refl _)).map
     exteriorMeridianDisc
   rw [loopClass_eq_of_apply_eq _ (diskBoundaryLoop.map exteriorMeridianDisc.continuous) fun t ↦ ?_,
-    (loopClass_eq_iff _ _).2 (pathChain_sub_mem_boundaries₁_of_homotopy hdisc.some),
+    (loopClass_eq_iff _ _).2 (pathChain_sub_mem_boundaries₁_of_homotopy ℤ hdisc.some),
     loopClass_eq_of_apply_eq ((Path.refl _).map exteriorMeridianDisc.continuous) (Path.refl _)
       fun _ ↦ rfl, loopClass_refl, map_zero]
   -- Pointwise, the longitude is the boundary of the meridian disc, read through the exchange of

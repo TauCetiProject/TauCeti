@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Orbit
 public import TauCeti.Geometry.Symplectic.Coadjoint.LieGroup
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
+public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 
 import TauCeti.Geometry.Symplectic.Coadjoint
 import TauCeti.Geometry.Lie.RightInvariantVectorField
@@ -59,6 +60,7 @@ injective immersion into `𝔤*`. The orbit has dimension `dim 𝔤 - dim 𝔤_�
   `ω_ν` is the unique two-form pulling back to `σ_ν`.
 * `Module.Dual.isSymplectic_coadjointOrbitForm`: `ω_ν` is symplectic.
 * `Module.Dual.mpullback_smul_coadjointOrbitForm`: `G` acts by symplectomorphisms.
+* `Module.Dual.isSymplecticMap_smul_coadjointOrbitForm`: the same, as symplectic maps.
 * `Module.Dual.isEquivariantMomentMap_coadjointOrbitForm`: the orbit map is an equivariant moment
   map.
 * `Module.Dual.eval₂_coadjointOrbitForm_mfderiv_mulInvariantVectorField`:
@@ -102,18 +104,8 @@ algebraic tangent model `𝔤 ⧸ 𝔤_ν`, which carries the nondegenerate alte
 theorem even_finrank_quotientModelSpace :
     Even (finrank ℝ
       (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))) := by
-  have h := ν.finrank_quotientModelSpace_add_finrank_lieAnnihilator
-  have hq := Submodule.finrank_quotient_add_finrank
-    (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule
-  have he := even_finrank_quotient_lieAnnihilator ν
-  -- `𝔤 = GroupLieAlgebra I G` is the model space `E`, and a Lie subalgebra has the dimension of
-  -- its underlying submodule.
-  have hE : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
-  have hS : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule =
-      finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν) := rfl
-  rwa [show finrank ℝ (GroupLieAlgebra I G ⧸ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule)
-    = finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-    by omega] at he
+  rw [finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
+  exact even_finrank_quotient_lieAnnihilator ν
 
 variable {ν}
 
@@ -185,6 +177,14 @@ theorem eq_coadjointOrbitForm_iff
       ν.leftInvariantKirillovForm :=
   SmoothForm.eq_descendedForm_iff
 
+/-- The Kirillov–Kostant–Souriau form of the zero functional vanishes. -/
+@[simp]
+theorem coadjointOrbitForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).coadjointOrbitForm = 0 := by
+  rw [eq_comm, eq_coadjointOrbitForm_iff 0
+      (isSubmersion_quotientMk_stabilizer_coadjointRepresentation 0).contMDiff,
+    map_zero, leftInvariantKirillovForm_zero]
+
 /-- The KKS form evaluates on images under the differential of the projection `G → G ⧸ G_ν` as
 the left-invariant Kirillov form: `ω_ν(dπ v, dπ w) = σ_ν(v, w)`. -/
 theorem eval₂_coadjointOrbitForm_mfderiv (g : G) (v w : TangentSpace I g) :
@@ -231,6 +231,13 @@ theorem mpullback_smul_coadjointOrbitForm (g : G)
   rw [eq_coadjointOrbitForm_iff ν hπ, SmoothForm.mpullback_mpullback_of_comp_eq hπ hg
     contMDiff_mul_left hπ (funext fun h ↦ MulAction.Quotient.smul_coe _ g h),
     mpullback_quotientMk_coadjointOrbitForm, mpullback_mul_left_leftInvariantKirillovForm]
+
+/-- **`G` acts on its coadjoint orbit by symplectomorphisms**, as symplectic maps: the KKS form
+pairs `d(g •) u` and `d(g •) v` at `g • x` as it pairs `u` and `v` at `x`. -/
+theorem isSymplecticMap_smul_coadjointOrbitForm (g : G) :
+    ν.coadjointOrbitForm.IsSymplecticMap ν.coadjointOrbitForm (g • ·) :=
+  (SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2
+    (ν.mpullback_smul_coadjointOrbitForm g (ContMDiffSMul.contMDiff_const_smul (I := I) g))
 
 /-! ### The orbit map as a moment map -/
 

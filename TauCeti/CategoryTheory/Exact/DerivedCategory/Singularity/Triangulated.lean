@@ -93,6 +93,16 @@ noncomputable def stableToSingularitySuspensionMap (A : C) :
       ((SingularityCategory.Q E).commShiftIso (1 : ℤ)).hom.app _) ≫
         (E.stableToSingularityObjIso A).inv⟦(1 : ℤ)⟧'
 
+/-- The comparison `F(ΣA) ⟶ F(A)⟦1⟧` is the connecting morphism of the suspension presentation
+of `A` in `Dᵇ(E)`, mapped to the singularity category. -/
+theorem stableToSingularitySuspensionMap_eq (A : C) :
+    hF.stableToSingularitySuspensionMap A =
+      (E.stableToSingularityObjIso _).hom ≫ ((SingularityCategory.Q E).map
+        (BoundedDerivedCategory.conflationδ (hF.suspensionPresentation A).conflation) ≫
+          ((SingularityCategory.Q E).commShiftIso (1 : ℤ)).hom.app _) ≫
+            (E.stableToSingularityObjIso A).inv⟦(1 : ℤ)⟧' :=
+  (rfl)
+
 instance isIso_stableToSingularitySuspensionMap (A : C) :
     IsIso (hF.stableToSingularitySuspensionMap A) := by
   -- The middle term `I(A)` of the triangle of the presentation vanishes in `D_sg(E)`.

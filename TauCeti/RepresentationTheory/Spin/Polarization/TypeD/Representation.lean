@@ -122,4 +122,14 @@ theorem coe_typeDSpinMinusLieRep_apply (hline : P.line = ⊥)
   rw [typeDSpinMinusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply,
     coe_spinMinusAction_apply, coe_typeDToEvenLieHom_apply, typeDSpinLieRep_apply]
 
+/-- The two half-spin actions of a split type-`D` matrix are the paired action, through
+`TauCeti.evenSpinActionProd`, of its quadratic Clifford realization in the even subalgebra. -/
+theorem evenSpinActionProd_typeDQuadraticEquiv (hline : P.line = ⊥)
+    (x : LieAlgebra.Orthogonal.typeD ι K) :
+    evenSpinActionProd Q P hline ⟨P.typeDQuadraticEquiv b hline x,
+        quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩ =
+      (P.typeDSpinPlusLieRep b hline x, P.typeDSpinMinusLieRep b hline x) := by
+  rw [evenSpinActionProd_apply]
+  rfl
+
 end TauCeti.SpinPolarizationData

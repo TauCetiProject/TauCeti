@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Exponent
 public import Mathlib.RingTheory.WittVector.Domain
 public import Mathlib.RingTheory.WittVector.Teichmuller
-public import TauCeti.RingTheory.WittVector.Truncated
+public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 /-!
 # Witt vectors of an ideal

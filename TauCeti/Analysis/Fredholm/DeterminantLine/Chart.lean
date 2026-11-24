@@ -144,6 +144,23 @@ theorem finiteDimensional_ker_of_isInvertible_prod_coprod
   FiniteDimensional.of_injective (kerCoprodHom T D₂ : T.ker →ₗ[𝕜] (T.coprod D₂).ker)
     (kerCoprodHom_injective T D₂)
 
+omit [FiniteDimensional 𝕜 G] in
+/-- **The index read in a kernel chart.** If `(D₂, q)` is a kernel chart of `T`, with
+finite-dimensional kernel and cokernel, then `dim ker T + dim Λ = dim G + dim coker T`, that is,
+the index of `T` is `dim G - dim Λ`. -/
+theorem finrank_ker_add_finrank_eq_of_isInvertible_prod_coprod
+    (h : ((T.coprod D₂).prod q).IsInvertible) [FiniteDimensional 𝕜 T.ker]
+    [FiniteDimensional 𝕜 (F ⧸ T.range)] :
+    finrank 𝕜 T.ker + finrank 𝕜 Λ = finrank 𝕜 G + finrank 𝕜 (F ⧸ T.range) := by
+  have := finiteDimensional_ker_coprod T D₂
+  have hk := finrank_ker_coprod_add_finrank_range_parameterToCoker T D₂
+  have hc := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker T D₂
+  have hG := (kerEquivOfProd _ q h).toLinearEquiv.finrank_eq
+  have : Subsingleton (F ⧸ (T.coprod D₂).range) := Submodule.Quotient.subsingleton_iff.2
+    (LinearMap.range_eq_top.2 (surjective_of_isInvertible_prod h))
+  rw [Module.finrank_zero_of_subsingleton] at hc
+  omega
+
 variable (T D₂ q) in
 /-- **A kernel chart of the determinant line.** If the stabilization `T.coprod D₂` paired with the
 coordinate `q : E × Λ →L[𝕜] G` is invertible, then `T.coprod D₂` is onto and `q` identifies its

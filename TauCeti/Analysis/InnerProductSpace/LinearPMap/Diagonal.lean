@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
-import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
@@ -197,7 +196,7 @@ theorem hasSum_diagonalPMap_apply (x : (b.diagonalPMap c).domain) :
 `‖b.diagonalPMap c x‖² = ∑ᵢ ‖c i * ⟪b i, x⟫‖²`. -/
 theorem hasSum_norm_diagonalPMap_apply_sq (x : (b.diagonalPMap c).domain) :
     HasSum (fun i ↦ ‖c i * ⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖b.diagonalPMap c x‖ ^ 2) := by
-  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_sq_inner (b.diagonalPMap c x)
+  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_inner_sq (b.diagonalPMap c x)
 
 /-- The coordinates of `c i • b i` are those of `b i` multiplied by `c`. -/
 private theorem inner_smul_self (i j : ι) : ⟪b j, c i • b i⟫_𝕜 = c j * ⟪b j, b i⟫_𝕜 := by
@@ -240,7 +239,7 @@ theorem dense_diagonalPMap_domain : Dense ((b.diagonalPMap c).domain : Set E) :=
 theorem diagonalPMap_domain_eq_top {C : ℝ} (hc : ∀ i, ‖c i‖ ≤ C) :
     (b.diagonalPMap c).domain = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun x ↦ (b.mem_diagonalPMap_domain_iff c).2 ?_
-  refine ((b.summable_norm_sq_inner x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
+  refine ((b.summable_norm_inner_sq x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
     fun i ↦ ?_
   rw [norm_mul, mul_pow]
   gcongr
@@ -411,7 +410,7 @@ theorem IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq (hA : A.IsFormalAdjoint
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
     (x : A.domain) :
     HasSum (fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2) := by
-  have h := (b.hasSum_norm_sq_inner (x : E)).add (b.hasSum_norm_sq_inner (A x))
+  have h := (b.hasSum_norm_inner_sq (x : E)).add (b.hasSum_norm_inner_sq (A x))
   refine h.congr_fun fun i ↦ ?_
   rw [(b.le_diagonalPMap_iff _).1 (hA.le_diagonalPMap hb) x, norm_mul, RCLike.norm_ofReal,
     mul_pow, sq_abs]

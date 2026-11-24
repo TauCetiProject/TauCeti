@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The formal adjoint of the linearized Floer operator
@@ -49,15 +50,27 @@ Integrating by parts against this pairing gives the **formal adjoint**
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
 * **Green's formula.** Pointwise,
   `η(D ξ) = (D^* η)(ξ) + ∂s (η(ξ)) + ∂t ((η ∘ J)(ξ))`
-  (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, for a `C¹`
-  map `ξ` with compact support and data that are `C¹` (Hamiltonians `C²`) near its support,
-  `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the plane
-  (`integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply`).
+  (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, when the
+  common support of `η` and `ξ` is compact and `η`, `ξ` and the data are `C¹` (Hamiltonians `C²`)
+  on it, `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the plane
+  (`integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply`). Over a closed
+  rectangle, with regularity only on the rectangle, the same identity holds when `η(ξ)` takes
+  equal values on the two vertical sides and `(η ∘ J)(ξ)` on the two horizontal sides
+  (`setIntegral_apply_floerLinearization_eq_setIntegral_floerLinearizationAdjoint_apply`, by the
+  divergence theorem); on `[a, b] × [0, 1]` this covers `ξ` vanishing at `s = a, b` with `η`, `ξ`
+  and `J(·, u ·)` of period one in `t`.
 * **Classical cokernel elements.** If `η` is `C¹` on an open set `U`, then it annihilates `D ξ` for
   every smooth `ξ` compactly supported in `U` exactly when `D^* η = 0` on `U`
   (`forall_integral_apply_floerLinearization_eq_zero_iff`). This is the fundamental lemma of
   the calculus of variations (`IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`), applied to
   Green's formula with test maps `φ v`.
+
+For the cylindrical datum `(J_t, 0, H_t)`, the zeroth-order coefficient `∂t J - C` at `z` is a
+continuous function `cylindricalAdjointCoeff (t, w z, ∂t w z)` of the time, the value and the slice
+velocity of the map (`fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff`,
+`continuous_cylindricalAdjointCoeff`), uniformly continuous near the curve of a stationary
+cylinder (`exists_pos_forall_norm_cylindricalAdjointCoeff_sub_le`). This is how the coefficients
+of the adjoint along maps close to an orbit in `C¹` are compared with those at the orbit.
 
 For `t`-dependent data along a stationary map, the metric version of this adjoint, for the pairing
 `∫ ω(·, J_t ·)`, is `TauCeti.Floer.stationaryCylinderAdjoint`. The regularity of weak (`L²`)
@@ -306,67 +319,170 @@ theorem continuous_floerLinearizationAdjoint
   continuous_iff_continuousAt.2 fun z ↦
     continuousAt_floerLinearizationAdjoint (hJ z) (hKs z) (hKt z) hu.contDiffAt hη.contDiffAt
 
-/-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
-let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
-`K_s`, `K_t` be `C²`, at each point of the support of `ξ` (at `(z, u z)` for the coefficients).
-Then `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the whole plane. -/
+/-- The formal adjoint on a covector field `η` supported in a set `U` is continuous when `η` is
+`C¹` and the data are regular along `u` on `U`. This is the adjoint counterpart of
+`continuous_floerLinearization_of_tsupport_subset`. -/
+theorem continuous_floerLinearizationAdjoint_of_tsupport_subset {U : Set (ℝ × ℝ)}
+    (hJ : ∀ z ∈ U, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z) (hη : ContDiff ℝ 1 η) (hηU : tsupport η ⊆ U) :
+    Continuous (ω.floerLinearizationAdjoint J Ks Kt u η) := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  by_cases hz : z ∈ U
+  · exact continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+      hη.contDiffAt
+  · have h : ω.floerLinearizationAdjoint J Ks Kt u η =ᶠ[𝓝 z] fun _ ↦ 0 :=
+      Filter.mem_of_superset ((isClosed_tsupport η).isOpen_compl.mem_nhds fun h ↦ hz (hηU h))
+        fun w hw ↦ floerLinearizationAdjoint_of_notMem_tsupport hw
+    exact continuousAt_const.congr h.symm
+
+/-- Off the common topological support of `η` and `ξ`, the pairings `η(D ξ)`, `(D^* η)(ξ)`,
+`η(ξ)` and `(η ∘ J)(ξ)` all vanish near the point. -/
+private theorem eventually_notMem_tsupport_inter (hz : z ∉ tsupport η ∩ tsupport ξ) :
+    ∀ᶠ w in 𝓝 z, η w (ω.floerLinearization J Ks Kt u ξ w) = 0 ∧
+      ω.floerLinearizationAdjoint J Ks Kt u η w (ξ w) = 0 ∧ η w (ξ w) = 0 ∧
+        (η w).comp (J w (u w)) (ξ w) = 0 := by
+  filter_upwards [((isClosed_tsupport η).inter (isClosed_tsupport ξ)).isOpen_compl.mem_nhds hz]
+    with w hw
+  rcases not_and_or.1 hw with h | h
+  · simp [floerLinearizationAdjoint_of_notMem_tsupport (ω := ω) (J := J) (Ks := Ks) (Kt := Kt)
+      (u := u) h, image_eq_zero_of_notMem_tsupport h]
+  · rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
+      (notMem_tsupport_iff_eventuallyEq.1 h)]
+    simp [image_eq_zero_of_notMem_tsupport h]
+
+/-- **Green's formula over the plane.** Let the common topological support of the covector field
+`η` and the map `ξ` be compact, and on it let `u`, `η` and `ξ` be `C¹`, the coefficients `J` be
+`C¹` and the Hamiltonians `K_s`, `K_t` be `C²` (at `(z, u z)` for the coefficients). Then
+`∫ η(D ξ) = ∫ (D^* η)(ξ)` over the whole plane. This covers both a compactly supported `ξ` paired
+with any `η` that is `C¹` near its support, and a compactly supported `η` paired with any `ξ` that
+is `C¹` near the support of `η`. -/
 theorem integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply
-    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
-    (hJ : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 u z) (hη : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 η z) :
+    (hJ : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 u z)
+    (hη : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 η z)
+    (hξ : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 ξ z)
+    (hc : IsCompact (tsupport η ∩ tsupport ξ)) :
     ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) =
       ∫ z, ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+  set K := tsupport η ∩ tsupport ξ
+  have hK : IsClosed K := (isClosed_tsupport η).inter (isClosed_tsupport ξ)
+  have hev {z : ℝ × ℝ} (hz : z ∉ K) :=
+    eventually_notMem_tsupport_inter (ω := ω) (J := J) (Ks := Ks) (Kt := Kt) (u := u) hz
+  have hJu (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
+    (hJ z hz).comp₂ contDiffAt_id (hu z hz)
+  -- The two divergence terms of the pointwise Green formula are derivatives of compactly
+  -- supported `C¹` functions, so they integrate to zero.
+  set F : ℝ × ℝ → ℝ := fun w ↦ η w (ξ w)
+  set G : ℝ × ℝ → ℝ := fun w ↦ (η w).comp (J w (u w)) (ξ w)
+  have hF : ContDiff ℝ 1 F := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ K
+    · exact (hη z hz).clm_apply (hξ z hz)
+    · exact contDiffAt_const.congr_of_eventuallyEq ((hev hz).mono fun _ hw ↦ hw.2.2.1)
+  have hG : ContDiff ℝ 1 G := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ K
+    · exact ((hη z hz).clm_comp (hJu z hz)).clm_apply (hξ z hz)
+    · exact contDiffAt_const.congr_of_eventuallyEq ((hev hz).mono fun _ hw ↦ hw.2.2.2)
+  have hFc : HasCompactSupport F := .intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.2.1
+  have hGc : HasCompactSupport G := .intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.2.2
+  -- The term `(D^* η)(ξ)` is continuous with compact support.
+  have hT : Integrable fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+    refine Continuous.integrable_of_hasCompactSupport (continuous_iff_continuousAt.2 fun z ↦ ?_)
+      (.intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.1)
+    by_cases hz : z ∈ K
+    · exact (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+        (hη z hz)).clm_apply (hξ z hz).continuousAt
+    · exact continuousAt_const.congr ((hev hz).mono fun _ hw ↦ hw.2.1.symm)
+  -- The pointwise Green formula holds everywhere.
+  have hpt (z : ℝ × ℝ) : η z (ω.floerLinearization J Ks Kt u ξ z) =
+      ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) + fderiv ℝ F z stdComplexLineReal +
+        fderiv ℝ G z stdComplexLineImag := by
+    by_cases hz : z ∈ K
+    · exact apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
+        ((hξ z hz).differentiableAt one_ne_zero) ((hη z hz).differentiableAt one_ne_zero)
+        ((hJu z hz).differentiableAt one_ne_zero)
+    · have hF0 : F =ᶠ[𝓝 z] fun _ ↦ 0 := (hev hz).mono fun _ hw ↦ hw.2.2.1
+      have hG0 : G =ᶠ[𝓝 z] fun _ ↦ 0 := (hev hz).mono fun _ hw ↦ hw.2.2.2
+      rw [(hev hz).self_of_nhds.1, (hev hz).self_of_nhds.2.1, hF0.fderiv_eq, hG0.fderiv_eq]
+      simp
+  simp_rw [hpt]
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set K := tsupport ξ
-  set A : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ (η w).comp (J w (u w))
-  set C := ω.floerLinearizationCoeff J Ks Kt u
-  have hA (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 A z :=
-    (hη z hz).clm_comp ((hJ z hz).comp₂ contDiffAt_id (hu z hz))
-  -- The pairings of `η`, `A` and their derivatives with `ξ` and its derivatives are integrable:
-  -- each is continuous on the support of `ξ`, which is compact.
-  have hdξ (v : ℝ × ℝ) {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
-      Integrable fun z ↦ F z (fderiv ℝ ξ z v) :=
-    Continuous.integrable_clm_apply_of_continuousOn
-      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hξc.fderiv_apply (𝕜 := ℝ) v)
-      (tsupport_fderiv_apply_subset ℝ v) fun z hz ↦ (hF z hz).continuousWithinAt
-  have hξK {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
-      Integrable fun z ↦ F z (ξ z) :=
-    hξ.continuous.integrable_clm_apply_of_continuousOn hξc subset_rfl fun z hz ↦
-      (hF z hz).continuousWithinAt
-  have hd {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContDiffAt ℝ 1 F z) (v : ℝ × ℝ) (z : ℝ × ℝ)
-      (hz : z ∈ K) : ContinuousAt (fun w ↦ fderiv ℝ F w v) z :=
-    ((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
-  have ha := hdξ stdComplexLineReal fun z hz ↦ (hη z hz).continuousAt
-  have hb := hdξ stdComplexLineImag fun z hz ↦ (hA z hz).continuousAt
-  have ha' := (hξK (hd hη stdComplexLineReal)).neg
-  have hb' := hξK (hd hA stdComplexLineImag)
-  have hc := hξK (F := fun z ↦ (η z).comp (C z)) fun z hz ↦
-    (hη z hz).continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff
-      (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz))
-  -- Integration by parts in `s` for `η(∂s ξ)` and in `t` for `(η ∘ J)(∂t ξ)`.
-  have hIs := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := volume)
-    (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)) hη hξ hξc stdComplexLineReal
-  have hIt := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := volume)
-    (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)) hA hξ hξc stdComplexLineImag
-  -- Both sides split into the same three integrals.
-  have e₁ := integral_add (ha.add hb) hc
-  have e₂ := integral_add (ha'.sub hb') hc
-  have e₃ := integral_sub ha' hb'
-  simp only [Pi.add_apply, Pi.sub_apply, Pi.neg_apply, comp_apply, id_apply] at e₁ e₂ e₃ hIs hIt
-  have hL : (fun z ↦ η z (ω.floerLinearization J Ks Kt u ξ z)) = fun z ↦
-      η z (fderiv ℝ ξ z stdComplexLineReal) + A z (fderiv ℝ ξ z stdComplexLineImag) +
-        η z (C z (ξ z)) := by
-    ext z
-    simp only [floerLinearization_eq_add, map_add, A, C, comp_apply]
-  have hR : (fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z)) = fun z ↦
-      -fderiv ℝ η z stdComplexLineReal (ξ z) - fderiv ℝ A z stdComplexLineImag (ξ z) +
-        η z (C z (ξ z)) := by
-    ext z
-    simp only [floerLinearizationAdjoint_def, add_apply, sub_apply, neg_apply, comp_apply, A, C]
-  rw [hL, hR, e₁, e₂, integral_add ha hb, e₃, integral_neg, hIs, hIt]
-  ring
+  have hdF : Integrable fun z ↦ fderiv ℝ F z stdComplexLineReal :=
+    integrable_fderiv_apply_of_hasCompactSupport (μ := volume) hF hFc _
+  have hdG : Integrable fun z ↦ fderiv ℝ G z stdComplexLineImag :=
+    integrable_fderiv_apply_of_hasCompactSupport (μ := volume) hG hGc _
+  rw [integral_add (hT.fun_add hdF) hdG, integral_add hT hdF,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport (μ := volume) hF hFc,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport (μ := volume) hG hGc, add_zero, add_zero]
+
+/-- **Green's formula on a rectangle.** On the closed rectangle `R = [a₁, b₁] × [a₂, b₂]` let `u`,
+the covector field `η` and the map `ξ` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
+`K_s`, `K_t` be `C²` (at `(z, u z)` for the coefficients). If the pairing `η(ξ)` takes equal values
+on the vertical sides `s = a₁` and `s = b₁`, and `(η ∘ J)(ξ)` takes equal values on the horizontal
+sides `t = a₂` and `t = b₂`, then `∫ η(D ξ) = ∫ (D^* η)(ξ)` over `R`. On the fundamental domain
+`[a, b] × [0, 1]` of the cylinder, both side conditions hold when `ξ` vanishes at `s = a, b` and
+`η`, `ξ` and `J(·, u ·)` have period one in `t`. -/
+theorem setIntegral_apply_floerLinearization_eq_setIntegral_floerLinearizationAdjoint_apply
+    {a₁ b₁ a₂ b₂ : ℝ}
+    (hJ : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 u z)
+    (hη : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 η z)
+    (hξ : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 ξ z)
+    (hvert : ∀ t ∈ Icc a₂ b₂, η (b₁, t) (ξ (b₁, t)) = η (a₁, t) (ξ (a₁, t)))
+    (hhor : ∀ s ∈ Icc a₁ b₁, η (s, b₂) (J (s, b₂) (u (s, b₂)) (ξ (s, b₂))) =
+      η (s, a₂) (J (s, a₂) (u (s, a₂)) (ξ (s, a₂)))) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, η z (ω.floerLinearization J Ks Kt u ξ z) =
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+  rcases lt_or_ge b₁ a₁ with h₁ | h₁
+  · simp [Icc_eq_empty_of_lt h₁]
+  rcases lt_or_ge b₂ a₂ with h₂ | h₂
+  · simp [Icc_eq_empty_of_lt h₂]
+  set R := Icc a₁ b₁ ×ˢ Icc a₂ b₂
+  have hR : IsCompact R := isCompact_Icc.prod isCompact_Icc
+  have hJu (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
+    (hJ z hz).comp₂ contDiffAt_id (hu z hz)
+  set F : ℝ × ℝ → ℝ := fun w ↦ η w (ξ w)
+  set G : ℝ × ℝ → ℝ := fun w ↦ (η w).comp (J w (u w)) (ξ w)
+  have hF (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 F z := (hη z hz).clm_apply (hξ z hz)
+  have hG (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 G z :=
+    ((hη z hz).clm_comp (hJu z hz)).clm_apply (hξ z hz)
+  have hT : ContinuousOn (fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z)) R :=
+    fun z hz ↦ ((continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz)
+      (hu z hz) (hη z hz)).clm_apply (hξ z hz).continuousAt).continuousWithinAt
+  have hdiv : ContinuousOn
+      (fun z ↦ fderiv ℝ F z stdComplexLineReal + fderiv ℝ G z stdComplexLineImag) R :=
+    fun z hz ↦ ((((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).add
+      (((hG z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)).continuousWithinAt
+  -- By the divergence theorem, the divergence terms integrate to the differences of the values on
+  -- opposite sides, which vanish.
+  have hint :
+      ∫ z in R, (fderiv ℝ F z stdComplexLineReal + fderiv ℝ G z stdComplexLineImag) = 0 := by
+    have hRI : R = Icc (a₁, a₂) (b₁, b₂) := Icc_prod_Icc a₁ b₁ a₂ b₂
+    have hsub : Ioo a₁ b₁ ×ˢ Ioo a₂ b₂ ⊆ R := prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
+    rw [hRI] at hR hdiv ⊢
+    rw [stdComplexLineReal_eq, stdComplexLineImag_eq,
+      integral_divergence_prod_Icc_of_hasFDerivAt_of_le F G (fderiv ℝ F) (fderiv ℝ G) _ _ ⟨h₁, h₂⟩
+        (fun z hz ↦ (hF z (hRI ▸ hz)).continuousAt.continuousWithinAt)
+        (fun z hz ↦ (hG z (hRI ▸ hz)).continuousAt.continuousWithinAt)
+        (fun z hz ↦ ((hF z (hsub hz)).differentiableAt one_ne_zero).hasFDerivAt)
+        (fun z hz ↦ ((hG z (hsub hz)).differentiableAt one_ne_zero).hasFDerivAt)
+        (hdiv.integrableOn_compact hR)]
+    dsimp only
+    rw [intervalIntegral.integral_congr (f := fun s ↦ G (s, b₂)) (g := fun s ↦ G (s, a₂))
+        fun s hs ↦ hhor s (uIcc_of_le h₁ ▸ hs),
+      intervalIntegral.integral_congr (f := fun t ↦ F (b₁, t)) (g := fun t ↦ F (a₁, t))
+        fun t ht ↦ hvert t (uIcc_of_le h₂ ▸ ht)]
+    simp
+  rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
+      (apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
+        ((hξ z hz).differentiableAt one_ne_zero) ((hη z hz).differentiableAt one_ne_zero)
+        ((hJu z hz).differentiableAt one_ne_zero)).trans (add_assoc _ _ _),
+    integral_add (hT.integrableOn_compact hR) (hdiv.integrableOn_compact hR), hint, add_zero]
 
 /-! ### Classical cokernel elements -/
 
@@ -388,8 +504,9 @@ theorem forall_integral_apply_floerLinearization_eq_zero_iff {U : Set (ℝ × �
       (hξU : tsupport ξ ⊆ U) :
       ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = ∫ z, f z (ξ z) :=
     integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply
-      (hξ.of_le (by simp)) hξc (fun z hz ↦ hJ z (hξU hz)) (fun z hz ↦ hKs z (hξU hz))
-      (fun z hz ↦ hKt z (hξU hz)) (fun z hz ↦ hu z (hξU hz)) fun z hz ↦ hη z (hξU hz)
+      (fun z hz ↦ hJ z (hξU hz.2)) (fun z hz ↦ hKs z (hξU hz.2)) (fun z hz ↦ hKt z (hξU hz.2))
+      (fun z hz ↦ hu z (hξU hz.2)) (fun z hz ↦ hη z (hξU hz.2))
+      (fun _ _ ↦ (hξ.of_le (by simp)).contDiffAt) (hξc.isCompact.inter_left (isClosed_tsupport η))
   refine ⟨fun h ↦ ?_, fun h ξ hξ hξc hξU ↦ ?_⟩
   · have hf : ContinuousOn f U := fun z hz ↦
       (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
@@ -414,5 +531,95 @@ theorem forall_integral_apply_floerLinearization_eq_zero_iff {U : Set (ℝ × �
     by_cases hz : z ∈ tsupport ξ
     · simp [h (hξU hz)]
     · simp [image_eq_zero_of_notMem_tsupport hz]
+
+/-! ### The zeroth-order coefficient for cylindrical data -/
+
+/-- The zeroth-order coefficient `A = ∂t J - C` of the Cauchy–Riemann form
+`floerLinearizationAdjoint_eq_neg` of the formal adjoint, for the cylindrical datum
+`(J_t, 0, H_t)`, as a function of the time `t`, the value `y = w(z)` and the slice velocity
+`d = ∂t w(z)` of the map:
+
+`A(t, y, d) = dJ_{(t, y)}(1, d) - (dJ_t(y) (·)) (d - X_{H_t}(y)) + J_t(y) dX_{H_t}(y)`. -/
+noncomputable def cylindricalAdjointCoeff (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (p : ℝ × V × V) : V →L[ℝ] V :=
+  fderiv ℝ (Function.uncurry J) (p.1, p.2.1) (1, p.2.2) -
+    ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (H p.1) p.2.1) -
+      (J p.1 p.2.1).comp (fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1))
+
+/-- The coordinate expression of `cylindricalAdjointCoeff`. -/
+theorem cylindricalAdjointCoeff_def (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (p : ℝ × V × V) :
+    ω.cylindricalAdjointCoeff J H p =
+      fderiv ℝ (Function.uncurry J) (p.1, p.2.1) (1, p.2.2) -
+        ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (H p.1) p.2.1) -
+          (J p.1 p.2.1).comp (fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1)) :=
+  (rfl)
+
+/-- For the cylindrical datum `(J_t, 0, H_t)`, the zeroth-order coefficient `∂t J - C` of the
+formal adjoint along `w` at `z` is `cylindricalAdjointCoeff` at `(t, w z, ∂t w z)`. -/
+theorem fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} (hJ : Differentiable ℝ (Function.uncurry J))
+    {w : ℝ × ℝ → V} {z : ℝ × ℝ} (hw : DifferentiableAt ℝ w z) :
+    fderiv ℝ (fun p ↦ J p.2 (w p)) z stdComplexLineImag -
+        ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w z =
+      ω.cylindricalAdjointCoeff J H (z.2, w z, fderiv ℝ w z stdComplexLineImag) := by
+  have hd := (hJ (z.2, w z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hw.hasFDerivAt)
+  rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = Function.uncurry J ∘ fun p ↦ (p.2, w p) from
+    funext fun p ↦ (Function.uncurry_apply_pair J p.2 (w p)).symm, hd.fderiv,
+    cylindricalAdjointCoeff_def]
+  congr 1
+  ext y
+  simp [floerLinearizationCoeff_apply]
+
+/-- `cylindricalAdjointCoeff` is continuous for `C¹` structures and `C²` Hamiltonians. -/
+theorem continuous_cylindricalAdjointCoeff (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V}
+    {H : ℝ → V → ℝ} (hJ : ContDiff ℝ 1 (Function.uncurry J))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) :
+    Continuous (ω.cylindricalAdjointCoeff J H) := by
+  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
+  have hg : Continuous fun p : ℝ × V × V ↦ (p.1, p.2.1) :=
+    continuous_fst.prodMk continuous_snd.fst
+  have hdJ : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (J p.1) p.2.1 :=
+    (ContDiff.fderiv (f := fun p : ℝ × V × V ↦ J p.1) (g := fun p ↦ p.2.1) (n := 0)
+      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd.fst (by simp)).continuous
+  have hdX : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1 :=
+    (ContDiff.fderiv (f := fun (p : ℝ × V × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
+      (g := fun p ↦ p.2.1) (n := 0) (hX.comp (contDiff_fst.fst.prodMk contDiff_snd))
+      contDiff_snd.fst (by simp)).continuous
+  have hXp : Continuous fun p : ℝ × V × V ↦ ω.hamiltonianVectorField (H p.1) p.2.1 :=
+    hX.continuous.comp hg
+  have hJp : Continuous fun p : ℝ × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hg
+  rw [show ω.cylindricalAdjointCoeff J H = _ from funext (ω.cylindricalAdjointCoeff_def J H)]
+  exact (((hJ.continuous_fderiv one_ne_zero).comp hg).clm_apply
+    (continuous_const.prodMk continuous_snd.snd)).sub
+    ((((flipₗᵢ ℝ V V V).continuous.comp hdJ).clm_apply (continuous_snd.snd.sub hXp)).sub
+      (hJp.clm_comp hdX))
+
+/-- Near the curve `t ↦ (x t, X_{H_t}(x t))`, `t ∈ [0, 1]`, of the stationary cylinder over `x`,
+the values of `J_t` and of `cylindricalAdjointCoeff` are uniformly continuous: for `ε > 0` there
+is `δ > 0` such that two points `δ`-close to the curve over the same `t` have `ε`-close values. -/
+theorem exists_pos_forall_norm_cylindricalAdjointCoeff_sub_le (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hJ : ContDiff ℝ 1 (Function.uncurry J)) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hx : Continuous x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ t ∈ Icc (0 : ℝ) 1, ∀ q q' : V × V,
+      ‖q - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
+      ‖q' - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
+      ‖J t q.1 - J t q'.1‖ ≤ ε ∧
+        ‖ω.cylindricalAdjointCoeff J H (t, q) - ω.cylindricalAdjointCoeff J H (t, q')‖ ≤ ε := by
+  have hc : Continuous fun t ↦ (x t, ω.hamiltonianVectorField (H t) (x t)) :=
+    hx.prodMk ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
+      (continuous_id.prodMk hx))
+  -- Both values at once, as the pair `(J_t, cylindricalAdjointCoeff)` in the product space.
+  have hΦ : Continuous fun p : ℝ × V × V ↦ (J p.1 p.2.1, ω.cylindricalAdjointCoeff J H p) :=
+    (hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)).prodMk
+      (ω.continuous_cylindricalAdjointCoeff hJ hH)
+  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
+    hc.continuousOn (fun _ _ ↦ hΦ.continuousAt) (half_pos hε)
+  refine ⟨δ, hδ, fun t ht q q' hq hq' ↦ ?_⟩
+  have hb := h t ht q' hq'
+  rw [norm_sub_rev] at hb
+  simpa using norm_prod_le_iff.1
+    ((norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (h t ht q hq) hb))
 
 end TauCeti.SymplecticForm
