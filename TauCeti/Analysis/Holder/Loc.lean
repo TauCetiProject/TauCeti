@@ -16,7 +16,7 @@ public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Holder.OpenSet
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

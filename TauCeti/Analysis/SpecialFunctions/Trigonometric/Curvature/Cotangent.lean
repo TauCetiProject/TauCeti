@@ -78,6 +78,11 @@ theorem integral_curvatureCosine_div_sq_sub_mul_curvatureSine_div_sq (κ a b : �
 @[simp] theorem curvatureCotangent_zero_right (κ : ℝ) : curvatureCotangent κ 0 = 0 := by
   simp [curvatureCotangent_def]
 
+/-- The model logarithmic derivative is odd in its radial parameter. -/
+@[simp] theorem curvatureCotangent_neg (κ t : ℝ) :
+    curvatureCotangent κ (-t) = -curvatureCotangent κ t := by
+  simp only [curvatureCotangent_def, curvatureCosine_neg, curvatureSine_neg, div_neg]
+
 /-- The scalar Riccati equation wherever the model sine is nonzero. -/
 theorem hasDerivAt_curvatureCotangent {κ t : ℝ} (ht : curvatureSine κ t ≠ 0) :
     HasDerivAt (curvatureCotangent κ) (-curvatureCotangent κ t ^ 2 - κ) t := by

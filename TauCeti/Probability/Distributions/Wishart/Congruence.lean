@@ -11,6 +11,8 @@ public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
+
 /-!
 # The scale of the nonsingular Wishart law
 
@@ -296,5 +298,23 @@ theorem isProbabilityMeasure_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p 
   have := isProbabilityMeasure_nonsingularWishartMeasure_inv_two_smul_one (p := p) hn
   rw [nonsingularWishartMeasure_eq_map_sqrt_smul_one n hS (by norm_num : (0 : ℝ) < 2⁻¹)]
   infer_instance
+
+/-- A nonsingular Wishart law is a probability measure exactly when its scale is positive
+definite and its degree is above `p - 1`. -/
+@[simp]
+theorem isProbabilityMeasure_nonsingularWishartMeasure_iff :
+    IsProbabilityMeasure (nonsingularWishartMeasure n S) ↔
+      S.PosDef ∧ (p : ℝ) - 1 < n := by
+  constructor
+  · intro h
+    refine ⟨?_, ?_⟩
+    · by_contra hS
+      rw [nonsingularWishartMeasure_of_not_posDef n hS] at h
+      exact not_isProbabilityMeasure_zero h
+    · by_contra hn
+      rw [nonsingularWishartMeasure_of_le S (not_lt.mp hn)] at h
+      exact not_isProbabilityMeasure_zero h
+  · rintro ⟨hS, hn⟩
+    exact isProbabilityMeasure_nonsingularWishartMeasure hS hn
 
 end TauCeti.Probability
