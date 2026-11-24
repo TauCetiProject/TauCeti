@@ -689,8 +689,8 @@ lemma isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint (hUV : U ⊔ V
   have : IsEmpty ((Opens.toTopCat X).obj (U ⊓ V)) :=
     ⟨fun x ↦ Set.disjoint_left.1 (Opens.coe_disjoint.2 hd) (Opens.mem_inf.1 x.property).1
       (Opens.mem_inf.1 x.property).2⟩
-  have h (m : ℕ) := (TauCeti.isZero_singularCohomology_of_isEmpty R k M
-    ((Opens.toTopCat X).obj (U ⊓ V)) m).of_iso (compactSupportCohomologyIsoOfCompactSpace m)
+  have h (m : ℕ) := isZero_compactSupportCohomology_of_isEmpty R k M
+    (X := (Opens.toTopCat X).obj (U ⊓ V)) m
   -- By definition, `compactSupportCohomologyMayerVietorisFromBiprod` is this map, read on
   -- `(Opens.toTopCat X).obj U = TopCat.of ↥U`, with `Opens.inclusion' U` the subspace inclusion.
   exact isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero R k M U V hUV n (h n)

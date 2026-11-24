@@ -15,6 +15,8 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
+import TauCeti.Order.SupClosed
+
 /-!
 # The duality map of an oriented manifold
 
@@ -325,8 +327,7 @@ theorem bijective_dualityMap_of_cofinal
 theorem bijective_dualityMap_of_isEmpty [IsEmpty M] :
     Function.Bijective (o.dualityMap hn L p q h) := by
   have hc : IsZero ((TopCat.of M).compactSupportCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :=
-    (isZero_singularCohomology_of_isEmpty _ ℤ L (TopCat.of M) p).of_iso
-      (TopCat.compactSupportCohomologyIsoOfCompactSpace p)
+    TopCat.isZero_compactSupportCohomology_of_isEmpty _ ℤ L p
   have hh : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
       (TopCat.of M)) :=
     isZero_singularHomology_of_isEmpty L _ q
@@ -672,29 +673,12 @@ theorem bijective_dualityMap_comap_iSup_of_pairwise_disjoint {ι : Type} {s : ι
     (hs : Pairwise fun i j ↦ Disjoint (s i) (s j))
     (hD : ∀ i, Function.Bijective ((o.comap (s i).isOpenEmbedding').dualityMap hn L p q h)) :
     Function.Bijective ((o.comap (⨆ i, s i).isOpenEmbedding').dualityMap hn L p q h) := by
-  classical
-  -- The finite partial unions form a directed family with the same union.
-  let T : Finset ι → Opens M := fun F ↦ ⨆ i ∈ F, s i
-  have hT : Monotone T := fun _ _ hFG ↦ biSup_mono fun _ hi ↦ hFG hi
-  have hTD (F : Finset ι) :
-      Function.Bijective ((o.comap (T F).isOpenEmbedding').dualityMap hn L p q h) := by
-    induction F using Finset.induction_on with
-    | empty =>
-      have : IsEmpty ↥(T ∅) := ⟨fun x ↦ by simpa [T] using x.property⟩
-      exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
-    | insert a F ha ih =>
-      have hTa : T (insert a F) = s a ⊔ T F := by
-        simp only [T, Finset.iSup_insert]
-      have hd : Disjoint (s a) (T F) := by
-        simp only [T, disjoint_iSup_iff]
-        exact fun i hi ↦ hs fun hai ↦ ha (hai ▸ hi)
-      rw [hTa]
-      exact o.bijective_dualityMap_comap_sup_of_disjoint hn L h hd (hD a) ih
-  have hsup : ⨆ F, T F = ⨆ i, s i :=
-    le_antisymm (iSup_le fun _ ↦ iSup₂_le fun i _ ↦ le_iSup s i)
-      (iSup_le fun i ↦ le_iSup_of_le {i} (by simp [T]))
-  rw [← hsup]
-  exact o.bijective_dualityMap_comap_iSup_of_monotone hn L h hT hTD
+  refine TauCeti.iSup_of_pairwise_disjoint
+    (fun W ↦ Function.Bijective ((o.comap W.isOpenEmbedding').dualityMap hn L p q h)) ?_
+    (fun _ _ hd ↦ o.bijective_dualityMap_comap_sup_of_disjoint hn L h hd)
+    (fun _ ht ↦ o.bijective_dualityMap_comap_iSup_of_monotone hn L h ht) hs hD
+  have : IsEmpty ↥(⊥ : Opens M) := ⟨fun x ↦ x.property⟩
+  exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
 
 end Union
 

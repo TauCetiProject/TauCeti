@@ -37,7 +37,9 @@ closed set `C` misses `⋃ x ∈ s, segment 𝕜 x₀ x` for an arbitrary set `s
 topological additive group, the convex join of any two compact sets is compact
 (`IsCompact.convexJoin`), so every compact set `K` lies in a compact set star-convex about any
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
-(`TopologicalSpace.Compacts.starHull`).
+(`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
+about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`).
 -/
 
 public section
@@ -245,3 +247,24 @@ theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (h
   exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts
+
+open TopologicalSpace in
+/-- For an inducing map `j : U → E` whose range is star-convex about one of its points `y`, every
+compact subset `K₀` of `U` lies in a compact subset `K` whose image contains `y` and is star-convex
+about `y`: the preimage of the star hull about `y` of the image of `K₀`, which lies in the range of
+`j`. -/
+theorem Topology.IsInducing.exists_compacts_le_starConvex_image {𝕜 E U : Type*} [Ring 𝕜]
+    [PartialOrder 𝕜] [IsOrderedRing 𝕜] [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+    [TopologicalSpace U] {j : U → E} (hj : IsInducing j) {y : E} (hU : StarConvex 𝕜 y (range j))
+    (hy : y ∈ range j) (K₀ : Compacts U) :
+    ∃ K : Compacts U, K₀ ≤ K ∧ StarConvex 𝕜 y (j '' (K : Set U)) ∧ y ∈ j '' (K : Set U) := by
+  let S := (K₀.map j hj.continuous).starHull 𝕜 y
+  have hS : (S : Set E) ⊆ range j := Compacts.starHull_subset hU hy (image_subset_range _ _)
+  have hjS : j '' (j ⁻¹' S) = S := image_preimage_eq_of_subset hS
+  refine ⟨⟨j ⁻¹' S, hj.isCompact_preimage' S.isCompact hS⟩,
+    fun u hu ↦ Compacts.le_starHull 𝕜 y _ ⟨u, hu, rfl⟩, ?_, ?_⟩
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.starConvex_starHull 𝕜 y _
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.mem_starHull_self 𝕜 y _
