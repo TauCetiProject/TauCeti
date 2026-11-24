@@ -60,8 +60,9 @@ coarse bound `|α|² ≤ 1 + K₃ / r` controlling `f` where `|α| > 1`, gives e
 
 `|∇_a α|² ≤ (K₂ + 1) r w₊ + 4 (K₁ + K₂ + K₁ K₂) / 3 + (K₂ + 1) K₃`
 
-(`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`). The constants depend only on `K₁`,
-`K₂` and `K₃`, not on `r`, the manifold or the solution.
+(`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`). The first inequality alone gives the
+coarse bound with `K₃ = 4 K₁` (`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`). The
+constants depend only on `K₁`, `K₂` and `K₃`, not on `r`, the manifold or the solution.
 
 ## The joint bound
 

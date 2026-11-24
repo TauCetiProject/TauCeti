@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
@@ -57,6 +58,10 @@ with no continuity assumed) and computes their principal symbols:
 * `OpenPartialHomeomorph.chartCompression`: the chart compression of an operator on `C^∞(M)`.
 * `OpenPartialHomeomorph.chartCompressionDifferentialOperators`: the chart compression of
   differential operators of order at most `m`.
+* `OpenPartialHomeomorph.complexCutoffPullback`, `OpenPartialHomeomorph.complexCutoffPushforward`
+  and `OpenPartialHomeomorph.complexChartCompression`: the same constructions for complex-linear
+  operators on complex-valued smooth functions, through which pseudodifferential operators on `M`
+  are read in charts.
 
 ## References
 
@@ -336,5 +341,92 @@ theorem smoothPrincipalSymbol_chartCompressionDifferentialOperators
     ring
 
 end PrincipalSymbol
+
+/-! ### Complex-valued functions
+
+Operators with complex symbols, such as pseudodifferential operators, act on complex-valued smooth
+functions. Their chart compressions use the same real cutoffs, acting on complex values by real
+scalar multiplication, and are complex-linear in the operator and in the function. -/
+
+section Complex
+
+/-- **Pulling a complex-valued function on a chart back to the manifold.** For a cutoff `ψ` with
+compact support in the target of the chart `e`, the smooth complex-valued function on `M` equal to
+`(ψ f) ∘ e` on the chart source and to `0` elsewhere, as a complex-linear map in `f`: the
+complexification of `cutoffPullback`. -/
+def complexCutoffPullback (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  ContMDiffMap.complexifyLinearMap (e.cutoffPullback he ψ)
+
+/-- The real part of the complex pullback is the pullback of the real part. -/
+@[simp]
+theorem complexCutoffPullback_re (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (e.complexCutoffPullback he ψ f).re = e.cutoffPullback he ψ f.re := by
+  ext x
+  simp [complexCutoffPullback]
+
+/-- The imaginary part of the complex pullback is the pullback of the imaginary part. -/
+@[simp]
+theorem complexCutoffPullback_im (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (e.complexCutoffPullback he ψ f).im = e.cutoffPullback he ψ f.im := by
+  ext x
+  simp [complexCutoffPullback]
+
+theorem complexCutoffPullback_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ e.source) :
+    e.complexCutoffPullback he ψ f x = ψ (e x) • f (e x) := by
+  apply Complex.ext <;> simp [complexCutoffPullback, cutoffPullback_apply_of_mem he _ _ hx]
+
+theorem complexCutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∉ e.source) :
+    e.complexCutoffPullback he ψ f x = 0 := by
+  simp [complexCutoffPullback, cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- **Pushing a complex-valued function on the manifold forward to a chart.** For a cutoff `φ`
+with compact support in the target of the chart `e`, the smooth complex-valued function
+`φ · (h ∘ e⁻¹)` on `E`, which vanishes outside the chart target, as a complex-linear map in
+`h`: the complexification of `cutoffPushforward`. -/
+def complexCutoffPushforward (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  ContMDiffMap.complexifyLinearMap (e.cutoffPushforward he φ)
+
+omit [T2Space M] in
+@[simp]
+theorem complexCutoffPushforward_apply (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (h : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : E) :
+    e.complexCutoffPushforward he φ h y = φ y • h (e.symm y) := by
+  apply Complex.ext <;> simp [complexCutoffPushforward]
+
+/-- The **chart compression** of a complex-linear operator `D` on the complex-valued smooth
+functions on `M` by cutoffs `φ` and `ψ` with compact supports in the target of the chart `e`: the
+operator `f ↦ φ · (D ((ψ f) ∘ e)) ∘ e⁻¹` on the complex-valued smooth functions on `E`, linear in
+`D`. -/
+def complexChartCompression (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    (C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯ where
+  toFun D := e.complexCutoffPushforward he φ ∘ₗ D ∘ₗ e.complexCutoffPullback he ψ
+  map_add' D₁ D₂ := by rw [LinearMap.add_comp, LinearMap.comp_add]
+  map_smul' c D := by
+    rw [LinearMap.smul_comp, LinearMap.comp_smul, RingHom.id_apply]
+
+@[simp]
+theorem complexChartCompression_apply (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) (y : E) :
+    e.complexChartCompression he φ ψ D f y = φ y • D (e.complexCutoffPullback he ψ f) (e.symm y) :=
+  e.complexCutoffPushforward_apply he φ _ y
+
+/-- The chart compression of the complexification of a real-linear operator `D` on the
+real-valued smooth functions on `M` is the complexification of the chart compression of `D`. -/
+theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), M; ℝ⟯) :
+    e.complexChartCompression he φ ψ (ContMDiffMap.complexifyLinearMap D) =
+      ContMDiffMap.complexifyLinearMap (e.chartCompression he φ ψ D) := by
+  ext f y
+  apply Complex.ext <;> simp
+
+end Complex
 
 end OpenPartialHomeomorph

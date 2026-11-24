@@ -42,8 +42,8 @@ Both sides are computed through the third covariant derivative
   (`CovariantDerivative.secondCovariantDerivative_covariantDerivative`,
   `CovariantDerivative.roughLaplacian_covariantDerivative_apply_eq_sum`);
 * `∇_v(∇*∇σ) = -∑ᵢ ∇³σ(v, eᵢ, eᵢ)`, since a metric connection commutes with the metric trace
-  (`CovariantDerivative.covariantDerivative_roughLaplacian_eq_sum`), read in the smooth chart frame
-  and its metric-dual frame (`CovariantDerivative.roughLaplacian_eq_neg_sum_chartDualFrame`);
+  (`CovariantDerivative.covariantDerivative_roughLaplacian_eq_sum`, an instance of
+  `CovariantDerivative.IsMetricCompatible.covariantDerivative_metricTrace`);
 * the Ricci identities for `∇³σ` swap its first two and its last two slots
   (`Curvature/ThirdCovariantDerivative.lean`).
 
@@ -103,12 +103,7 @@ theorem roughLaplacian_eq_neg_sum_chartDualFrame (α : M) {y : M}
     (hy : y ∈ (chartAt H α).source) :
     cov.roughLaplacian covT σ y = -∑ i, cov.secondCovariantDerivative covT σ y
       (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
-  by_cases hσ : CMDiff ∞ (T% σ)
-  · rw [roughLaplacian_eq_sum cov covT σ y (stdOrthonormalBasis ℝ (TangentSpace I y))]
-    simp only [secondCovariantDerivative_eq_hom_apply cov covT hσ]
-    rw [sum_apply_chartDualFrame_eq_sum α hy (covT.hom cov (cov σ) y)
-      (stdOrthonormalBasis ℝ (TangentSpace I y))]
-  · simp [hσ]
+  rw [roughLaplacian_def, metricTrace_eq_sum_chartDualFrame α hy]
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
@@ -121,55 +116,17 @@ theorem covariantDerivative_roughLaplacian_eq_sum
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (v : TangentSpace I x) :
     cov (cov.roughLaplacian covT σ) x v =
       -∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (b i) (b i) := by
-  set Fr := chartLocalFrame (I := I) x
-  set Du := chartDualFrame (I := I) x
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
-    mem_baseSet_trivializationAt E _ x
-  have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (Fr i)) x :=
-    (contMDiffAt_chartLocalFrame (n := 1) x i).mdifferentiableAt one_ne_zero
-  have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (Du i)) x :=
-    (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
   have hD2x :=
     (contMDiff_hom_covariantDerivative cov (covT := covT) hσ).mdifferentiableAt (x := x) (by simp)
-  have hterm (i : Fin (Module.finrank ℝ E)) :
-      MDiffAt (T% fun y ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y)) x :=
-    (hD2x.clm_bundle_apply (hF i)).clm_bundle_apply (hD i)
-  have hsum : MDiffAt (T% (∑ i, fun y ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y))) x := by
-    simpa [Finset.sum_apply] using MDifferentiableAt.sum_section
-      (t := fun i (y : M) ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y)) (s := Finset.univ)
-      fun i _ ↦ hterm i
-  -- Near `x`, the rough Laplacian is `-∑ᵢ ∇²σ(Fᵢ, Dᵢ)` in the chart frame and its dual frame.
-  have hloc : ∀ᶠ y in 𝓝 x, cov.roughLaplacian covT σ y =
-      (-∑ i, fun y ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y)) y := by
-    filter_upwards [hU] with y hy
-    rw [roughLaplacian_eq_neg_sum_chartDualFrame cov covT x
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)]
-    simp only [secondCovariantDerivative_eq_hom_apply cov covT hσ, Pi.neg_apply, Finset.sum_apply,
-      Fr, Du]
-  have hneg := mdifferentiableAt_neg_section hsum
-  have hlap : MDiffAt (T% (cov.roughLaplacian covT σ)) x :=
-    hneg.congr_of_eventuallyEq (hloc.mono fun y hy ↦ by simp only [hy])
-  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hlap hneg univ_mem hloc,
-    cov.isCovariantDerivativeOnUniv.neg hsum,
-    cov.isCovariantDerivativeOnUniv.sum fun i _ ↦ hterm i]
-  -- Differentiate each term by the Leibniz rule; the terms with `∇Fᵢ` and `∇Dᵢ` cancel.
-  have hexp (i : Fin (Module.finrank ℝ E)) :
-      cov (fun y ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y)) x v =
-        covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (Fr i x) (Du i x) +
-          covT.hom cov (cov σ) x (covT (Fr i) x v) (Du i x) +
-          covT.hom cov (cov σ) x (Fr i x) (covT (Du i) x v) := by
-    rw [hom_hom_apply covT covT cov hD2x (hF i) (hD i)]
-    abel
-  have hcancel : ∑ i, covT.hom cov (cov σ) x (Fr i x) (covT (Du i) x v) =
-      -∑ i, covT.hom cov (cov σ) x (covT (Fr i) x v) (Du i x) :=
-    hcov.sum_apply_chartDualFrame_cancel x (covT.hom cov (cov σ) x) v hU hF hD
-  have htr : ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (Fr i x) (Du i x) =
-      ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (b i) (b i) :=
-    sum_apply_chartDualFrame_eq_sum x (mem_chart_source H x) _ b
-  simp only [neg_apply, sum_apply, hexp, Finset.sum_add_distrib]
-  rw [hcancel, add_neg_cancel_right, htr]
+  -- The rough Laplacian is minus the metric trace of the section `∇²σ` of `Hom(TM, Hom(TM, V))`.
+  have hlap : cov.roughLaplacian covT σ = -fun y ↦ LinearMap.BilinMap.metricTrace
+      (ContinuousLinearMap.toLinearMap₁₂ (covT.hom cov (cov σ) y)) := by
+    funext y
+    rw [roughLaplacian_def, Pi.neg_apply,
+      secondCovariantDerivative_eq_toLinearMap₁₂_hom cov covT hσ y]
+  rw [hlap, cov.isCovariantDerivativeOnUniv.neg hD2x.metricTrace, neg_apply,
+    hcov.covariantDerivative_metricTrace cov hD2x v, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-! ### The commutation formula -/
 
