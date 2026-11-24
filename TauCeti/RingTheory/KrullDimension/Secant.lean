@@ -272,14 +272,8 @@ theorem exists_isSecant_singleton (h : 0 < supportDim R M) : ∃ x : R, IsSecant
   -- by one, and prime avoidance provides one.
   have : Nontrivial M := (supportDim_ne_bot_iff_nontrivial R M).1 (ne_bot_of_gt h)
   -- If `𝔪` were a minimal prime over `Ann M`, it would be the only point of the support.
-  have hm : maximalIdeal R ∉ (annihilator R M).minimalPrimes := by
-    intro hm
-    refine h.not_ge (Order.krullDim_nonpos_iff_forall_isMax.2 fun q q' _ ↦ ?_)
-    have hq (q : support R M) : q.val.asIdeal = maximalIdeal R :=
-      le_antisymm (le_maximalIdeal q.val.isPrime.ne_top)
-        (hm.2 ⟨q.val.isPrime, mem_support_iff_of_finite.1 q.property⟩
-          (le_maximalIdeal q.val.isPrime.ne_top))
-    exact (Subtype.ext (PrimeSpectrum.ext ((hq q').trans (hq q).symm))).le
+  have hm : maximalIdeal R ∉ (annihilator R M).minimalPrimes :=
+    fun hm ↦ h.not_ge (supportDim_nonpos_of_maximalIdeal_mem_minimalPrimes hm)
   obtain ⟨x, hx, hxS⟩ := Set.not_subset.1 <| mt (subset_iUnion_iff_mem_of_isMaximal_of_finite
     ((annihilator R M).finite_minimalPrimes_of_isNoetherianRing R) ⊥ ⊥
     (fun p hp _ _ ↦ hp.1.1) bot_ne_top bot_ne_top).1 hm

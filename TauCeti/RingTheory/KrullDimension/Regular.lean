@@ -153,9 +153,12 @@ theorem supportDim_quotSMulTop_mul {R M : Type*} [CommRing R] [AddCommGroup M] [
       max (supportDim R (QuotSMulTop r M)) (supportDim R (QuotSMulTop s M)) := by
   have hup (x : R) : IsUpperSet (support R (QuotSMulTop x M)) :=
     fun _ _ hpq hp ↦ mem_support_mono hpq hp
-  rw [supportDim, supportDim, supportDim, ← Order.krullDim_union_of_isUpperSet (hup r) (hup s),
-    support_quotSMulTop, support_quotSMulTop, support_quotSMulTop,
-    PrimeSpectrum.zeroLocus_singleton_mul, Set.inter_union_distrib_left]
+  have hsupp : support R (QuotSMulTop (r * s) M) =
+      support R (QuotSMulTop r M) ∪ support R (QuotSMulTop s M) := by
+    simp only [support_quotSMulTop, PrimeSpectrum.zeroLocus_singleton_mul,
+      Set.inter_union_distrib_left]
+  rw [supportDim, hsupp]
+  exact Order.krullDim_union_of_isUpperSet (hup r) (hup s)
 
 end Module
 

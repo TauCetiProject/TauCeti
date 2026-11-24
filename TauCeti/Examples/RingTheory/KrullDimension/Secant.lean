@@ -36,8 +36,9 @@ example (h : IsSecant ℚ⟦X⟧ [(X : ℚ⟦X⟧)]) : IsSecant ℚ⟦X⟧ [(X :
 /-- `[0]` is never secant for a finite module: dividing by `0` does not change the support. -/
 example {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] : ¬ IsSecant M [(0 : R)] := by
-  rw [isSecant_singleton_iff, supportDim, supportDim, support_quotSMulTop,
-    PrimeSpectrum.zeroLocus_singleton_zero, Set.inter_univ]
+  have hsupp : support R (QuotSMulTop (0 : R) M) = support R M := by
+    simp [support_quotSMulTop]
+  rw [isSecant_singleton_iff, supportDim, hsupp]
   exact fun h ↦ lt_irrefl _ h.2
 
 /-- `[1]` is never secant, since `1 ∉ 𝔪`. -/
@@ -51,8 +52,9 @@ example {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] (r : R) : ¬ IsSecant M [r, r] := by
   rw [isSecant_cons_iff, isSecant_singleton_iff]
   rintro ⟨-, -, -, h⟩
-  rw [supportDim, supportDim, support_quotSMulTop, support_quotSMulTop,
-    Set.inter_assoc, Set.inter_self] at h
+  have hsupp : support R (QuotSMulTop r (QuotSMulTop r M)) = support R (QuotSMulTop r M) := by
+    simp [support_quotSMulTop]
+  rw [supportDim, hsupp] at h
   exact lt_irrefl _ h
 
 /-- Only the empty list is secant for the zero module. -/
