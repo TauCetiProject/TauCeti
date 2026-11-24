@@ -74,10 +74,6 @@ universe u
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- The image of a set under a composite of morphisms of schemes is the image of its image. -/
-theorem image_comp {Z : Scheme.{u}} (g : Y ⟶ Z) (s : Set X) : (f ≫ g) '' s = g '' (f '' s) := by
-  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
-
 /-- A morphism locally of finite type into a Jacobson scheme which is constant on a nonempty
 locally closed subset `Z` maps `Z` to a closed point. -/
 theorem exists_isClosed_singleton_image_eq [JacobsonSpace Y] [LocallyOfFiniteType f]

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted.Basic
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
+import TauCeti.AlgebraicGeometry.Scheme.Basic
+import TauCeti.Topology.Irreducible
 
 /-!
 # Vertices of the dual graph contracted by a prestable map
@@ -91,12 +93,13 @@ private theorem isContractedVertex_postcomp_iff_image {r : W ⟶ Spec (.of K)} (
     (F.postcomp h hh).IsContractedVertex v ↔
       (h '' (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
         (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _))).Subsingleton := by
-  -- The source curve of `F.postcomp h hh` is that of `F`, and its map is `F.map ≫ h`
-  -- (`postcomp_curve`, `postcomp_map`); `change` is used because the vertex `v` depends on the
-  -- curve, so rewriting with these lemmas would change the type of the set being mapped.
-  change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
+  -- The source curve of `F.postcomp h hh` is that of `F` (`postcomp_curve`); `change` is used
+  -- because the vertex `v` depends on the curve, so rewriting with that lemma would change the
+  -- type of the set being mapped. For the same reason the image computation is a term, not `rw`.
+  change (((F.curve.total.singularLocus K).blowupToBase ≫ (F.postcomp h hh).map) ''
     (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton ↔ _
-  rw [← Category.assoc, Scheme.Hom.image_comp]
+  exact Iff.of_eq <| congrArg Set.Subsingleton <| (Scheme.Hom.image_comp _ _ _).trans <|
+    (F.image_postcomp_map h hh _).trans (congrArg _ (Scheme.Hom.image_comp _ _ _).symm)
 
 variable {F} in
 /-- Postcomposition with a morphism of targets contracts every vertex the map contracts. -/
@@ -112,17 +115,9 @@ theorem isContractedVertex_postcomp_iff_of_isDiscrete {r : W ⟶ Spec (.of K)} (
     (hdisc : ∀ w : W, _root_.IsDiscrete (h ⁻¹' {w})) (hh : h ≫ r = q)
     {v : F.curve.dualGraph.Vertex} :
     (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v := by
-  refine ⟨fun hv ↦ ?_, (·.postcomp h hh)⟩
-  rw [isContractedVertex_postcomp_iff_image] at hv
-  rw [isContractedVertex_iff]
-  set E := ((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
-    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)
-  obtain hE | ⟨a, ha⟩ := E.eq_empty_or_nonempty
-  · exact hE ▸ Set.subsingleton_empty
-  refine IsDiscrete.subsingleton_of_isPreirreducible ((hdisc (h a)).mono fun b hb ↦
-    hv (Set.mem_image_of_mem _ hb) (Set.mem_image_of_mem _ ha)) ?_
+  rw [isContractedVertex_postcomp_iff_image, isContractedVertex_iff]
   exact ((F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v).prop.1.image _
-    (Scheme.Hom.continuous _).continuousOn).isPreirreducible
+    (Scheme.Hom.continuous _).continuousOn).isPreirreducible.subsingleton_image_iff hdisc
 
 /-- Postcomposition with a morphism of targets that is injective on points contracts the same
 vertices. -/

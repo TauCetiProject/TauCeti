@@ -43,6 +43,8 @@ and every section of the target gives a constant prestable map.
   the pullback of `F` along `C ×_S T ⟶ C` and `V ×_S T ⟶ V`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.isPullback_pullback_ev`: the base-changed evaluations
   are the base changes of the evaluations.
+* `TauCeti.AlgebraicGeometry.PrestableMap.image_postcomp_map`: the image of a set under a
+  postcomposed map is the image of its image.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullback_const`: base change of a constant map is the
   constant map through the base-changed section.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullback_postcomp`: base change of a postcomposed map
@@ -179,6 +181,15 @@ theorem postcomp_ev {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (i : Fin n) :
     (F.postcomp h hh).ev i = F.ev i ≫ h :=
   -- By definition, the evaluation is `sᵢ ≫ F ≫ h`.
   (Category.assoc (F.curve.marking i) F.map h).symm
+
+/-- The image of a set under the map of a postcomposed prestable map is its image under the
+original map, pushed forward along the morphism of targets. -/
+theorem image_postcomp_map {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (E : Set F.curve.total) :
+    (F.postcomp h hh).map '' E = h '' (F.map '' E) := by
+  rw [Set.image_image]
+  -- The source curve of `F.postcomp h hh` is that of `F`, and its map is `F.map ≫ h`
+  -- (`postcomp_curve`, `postcomp_map`); the pointwise identity is stated on that curve.
+  exact Set.image_congr fun x _ ↦ Scheme.Hom.comp_apply F.map h x
 
 /-- Postcomposition with the identity of the target does nothing. -/
 @[simp]

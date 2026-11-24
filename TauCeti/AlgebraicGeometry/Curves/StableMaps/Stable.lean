@@ -60,9 +60,10 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   `isStableFiber_postcomp_iff_of_injective`, `isStableFiber_postcomp_iff_of_locallyQuasiFinite`
   and `isStableFiber_postcomp_iff` are the injective, locally quasi-finite and universally
   injective cases.
-* `isStableMap_postcomp_iff_of_locallyQuasiFinite` and `isStableMap_postcomp_iff`:
-  postcomposition with a locally quasi-finite, respectively universally injective, morphism of
-  targets does not change stability.
+* `isStableMap_postcomp_iff_of_isDiscrete`: postcomposition with a morphism of targets whose base
+  changes to the geometric points have discrete fibres does not change stability;
+  `isStableMap_postcomp_iff_of_locallyQuasiFinite` and `isStableMap_postcomp_iff` are the locally
+  quasi-finite and universally injective cases.
 
 ## References
 
@@ -130,7 +131,8 @@ a stable fibre. -/
 theorem isStableFiber_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
     (hinj : Function.Injective h) (hh : h ≫ r = q) :
     (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
-  forall_congr' fun _ ↦ imp_congr_left (F.isContractedVertex_postcomp_iff_of_injective h hinj hh)
+  F.isStableFiber_postcomp_iff_of_isDiscrete h
+    (fun _ ↦ (Set.subsingleton_singleton.preimage hinj).isDiscrete) hh
 
 /-- Postcomposition with a locally quasi-finite morphism of targets, for instance a finite
 morphism or an immersion, does not change being a stable fibre. -/
@@ -182,33 +184,44 @@ theorem IsStableMap.of_postcomp {F : PrestableMap q n} {r : W ⟶ S} (h : V ⟶ 
   rw [pullback_postcomp] at this
   exact this.of_postcomp _ _
 
+/-- Postcomposition with a morphism of targets does not change stability when the base change
+`V ×_S Spec Ω ⟶ W ×_S Spec Ω` of the morphism of targets to every geometric point has discrete
+fibres. -/
+theorem isStableMap_postcomp_iff_of_isDiscrete (F : PrestableMap q n) {r : W ⟶ S}
+    (h : V ⟶ W) (hh : h ≫ r = q)
+    (hdisc : ∀ (Ω : Type u) [Field Ω] [IsAlgClosed Ω] (x : Spec (.of Ω) ⟶ S) w,
+      _root_.IsDiscrete
+        (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp) ⁻¹' {w})) :
+    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap := by
+  refine ⟨IsStableMap.of_postcomp h hh, fun hF Ω _ _ x ↦ ?_⟩
+  rw [pullback_postcomp, isStableFiber_postcomp_iff_of_isDiscrete _ _ (hdisc Ω x)]
+  exact hF Ω x
+
 /-- Postcomposition with a locally quasi-finite morphism of targets, for instance a finite
 morphism or an immersion, does not change stability. -/
 @[simp]
 theorem isStableMap_postcomp_iff_of_locallyQuasiFinite (F : PrestableMap q n) {r : W ⟶ S}
     (h : V ⟶ W) [LocallyQuasiFinite h] (hh : h ≫ r = q) :
-    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap := by
-  refine ⟨IsStableMap.of_postcomp h hh, fun hF Ω _ _ x ↦ ?_⟩
-  have : LocallyQuasiFinite
-      (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
-    MorphismProperty.pullbackMap (P := @LocallyQuasiFinite) ‹_› inferInstance hh.symm
-      (Category.id_comp x).symm
-  rw [pullback_postcomp, isStableFiber_postcomp_iff_of_locallyQuasiFinite]
-  exact hF Ω x
+    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap :=
+  F.isStableMap_postcomp_iff_of_isDiscrete h hh fun _ _ _ x ↦
+    have : LocallyQuasiFinite
+        (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
+      MorphismProperty.pullbackMap (P := @LocallyQuasiFinite) ‹_› inferInstance hh.symm
+        (Category.id_comp x).symm
+    Scheme.Hom.isDiscrete_preimage_singleton _
 
 /-- Postcomposition with a universally injective morphism of targets does not change
 stability. -/
 @[simp]
 theorem isStableMap_postcomp_iff (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     [UniversallyInjective h] (hh : h ≫ r = q) :
-    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap := by
-  refine ⟨IsStableMap.of_postcomp h hh, fun hF Ω _ _ x ↦ ?_⟩
-  have : UniversallyInjective
-      (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
-    MorphismProperty.pullbackMap (P := @UniversallyInjective) ‹_› inferInstance hh.symm
-      (Category.id_comp x).symm
-  rw [pullback_postcomp, isStableFiber_postcomp_iff]
-  exact hF Ω x
+    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap :=
+  F.isStableMap_postcomp_iff_of_isDiscrete h hh fun _ _ _ x _ ↦
+    have : UniversallyInjective
+        (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
+      MorphismProperty.pullbackMap (P := @UniversallyInjective) ‹_› inferInstance hh.symm
+        (Category.id_comp x).symm
+    (Set.subsingleton_singleton.preimage (Scheme.Hom.injective _)).isDiscrete
 
 end PrestableMap
 
