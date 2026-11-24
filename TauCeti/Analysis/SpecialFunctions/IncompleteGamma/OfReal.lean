@@ -7,45 +7,39 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
 
 /-!
-# The incomplete Gamma functions on the real line
+# The lower incomplete Gamma functions on the real line
 
-The complex incomplete Gamma functions of `TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower`
-and `TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper` restrict, at a real parameter and a
-nonnegative real argument, to real-valued functions: the lower and regularized ones to Tau Ceti's
-real `TauCeti.lowerIncompleteGamma` and `TauCeti.regularizedGamma`, the upper one to the real tail
-integral `∫ₓ^∞ t^{a−1} e^{−t} dt`.
+For a positive real parameter and a nonnegative real argument, the complex lower and regularized
+incomplete Gamma functions of `TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower` agree with
+Tau Ceti's real `TauCeti.lowerIncompleteGamma` and `TauCeti.regularizedGamma`.
 
 ## Main results
 
 * `Complex.lowerIncompleteGamma_ofReal`: `γ(s, x)` is the real `TauCeti.lowerIncompleteGamma s x`
   for `0 < s` and `0 ≤ x`;
 * `Complex.regularizedGamma_ofReal`: `P(s, x)` is the real `TauCeti.regularizedGamma s x` for
-  `0 < s` and `0 ≤ x`;
-* `Complex.regularizedGamma_ofReal_im`: `P(a, x)` is real for every real `a` and `0 ≤ x`;
-* `Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral`,
-  `Complex.upperIncompleteGamma_ofReal_im`: `Γ(a, x)` is the real integral
-  `∫ₓ^∞ t^{a−1} e^{−t} dt` for every real `a` and `0 ≤ x`, hence real.
+  `0 < s` and `0 ≤ x`.
 
-The reality of Tricomi's `γ*(a, x)` for real `a` and `x` is
-`Complex.tricomiIncompleteGamma_ofReal_im`.
+For every real parameter and nonnegative argument, `P` and the upper function are real:
+`Complex.regularizedGamma_ofReal_im` in `TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower`,
+and `Complex.upperIncompleteGamma_ofReal_im`, with the real tail integral
+`Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral`, in
+`TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper`. The reality of Tricomi's `γ*(a, x)` for
+real `a` and `x` is `Complex.tricomiIncompleteGamma_ofReal_im`.
 
 ## References
 
 * NIST Digital Library of Mathematical Functions, §8.2, <https://dlmf.nist.gov/8.2>.
 
-The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
-`DLMF/IncompleteGamma/Regularized.lean` and `DLMF/IncompleteGamma/RealIntegrals.lean`, and
-restated on Tau Ceti's definitions.
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/IncompleteGamma/Regularized.lean`, and restated on Tau Ceti's definitions.
 -/
 
 public section
 
 noncomputable section
-
-open MeasureTheory Set
 
 namespace Complex
 
@@ -64,27 +58,5 @@ theorem regularizedGamma_ofReal {s x : ℝ} (hs : 0 < s) (hx : 0 ≤ x) :
   have h := lowerIncompleteGamma_ofReal hs hx
   rw [lowerIncompleteGamma_def] at h
   rw [TauCeti.regularizedGamma_eq_div, ofReal_div, ← h, ← Gamma_ofReal, mul_div_cancel_left₀ _ hG]
-
-/-- `P(a, x) = x^a γ*(a, x)` is real for every real `a` and `0 ≤ x`. -/
-@[simp]
-theorem regularizedGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
-    (regularizedGamma a x).im = 0 := by
-  rw [regularizedGamma_def, ← ofReal_cpow hx, ← ofReal_tricomiIncompleteGamma_ofReal_re,
-    ← ofReal_mul, ofReal_im]
-
-/-- For real `a` and `0 ≤ x`, `Γ(a, x)` is the real tail integral `∫ₓ^∞ t^{a−1} e^{−t} dt`. -/
-theorem upperIncompleteGamma_ofReal_eq_ofReal_integral (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
-    upperIncompleteGamma a x = ((∫ t in Ioi x, t ^ (a - 1) * Real.exp (-t) : ℝ) : ℂ) := by
-  rw [upperIncompleteGamma_ofReal, ← integral_complex_ofReal]
-  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-  rw [ofReal_mul, ofReal_cpow (hx.trans ht.le), ofReal_exp]
-  push_cast
-  rfl
-
-/-- `Γ(a, x)` is real for every real `a` and `0 ≤ x`. -/
-@[simp]
-theorem upperIncompleteGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
-    (upperIncompleteGamma a x).im = 0 := by
-  rw [upperIncompleteGamma_ofReal_eq_ofReal_integral a hx, ofReal_im]
 
 end Complex
