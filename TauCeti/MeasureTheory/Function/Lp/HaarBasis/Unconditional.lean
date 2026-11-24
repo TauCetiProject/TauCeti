@@ -546,7 +546,7 @@ theorem norm_proj_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis ℝ p hp) A‖ ≤
       max p.toReal (p.toReal / (p.toReal - 1)) / 2 := by
-  have h := (haarBasis ℝ p hp).norm_proj_le_of_sign_bound (M := 1)
+  have h := (haarBasis ℝ p hp).norm_proj_le_of_range_sign_bound (M := 1)
     (fun N ε hε g => by
       have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
       simpa only [RCLike.ofReal_real_eq_id, id_eq, smul_smul, GeneralSchauderBasis.proj_apply] using
@@ -582,7 +582,7 @@ theorem norm_proj_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fa
     (hp1 : 1 < p) (hp : p ≠ ∞) (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis 𝕜 p hp) A‖ ≤
       max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2 := by
-  have h := (haarBasis 𝕜 p hp).norm_proj_le_of_sign_bound (M := 1)
+  have h := (haarBasis 𝕜 p hp).norm_proj_le_of_range_sign_bound (M := 1)
     (fun N ε hε g => by
       have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
       simpa only [smul_smul, GeneralSchauderBasis.proj_apply] using

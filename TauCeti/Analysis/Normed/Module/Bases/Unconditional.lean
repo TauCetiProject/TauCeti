@@ -33,7 +33,7 @@ unconditionally convergent expansions. For an `ℕ`-indexed generalized Schauder
 signed coordinate multipliers over initial segments `Finset.range N` extends with the same
 constant `C` to all finite index sets and all finite coordinate projections, while a bound `K`
 relative to `‖b.proj (Finset.range N) x‖` together with `‖b.proj (Finset.range N)‖ ≤ M` gives
-`‖b.proj A‖ ≤ (1 + K) / 2 * M` (`GeneralSchauderBasis.norm_proj_le_of_sign_bound`).
+`‖b.proj A‖ ≤ (1 + K) / 2 * M` (`GeneralSchauderBasis.norm_proj_le_of_range_sign_bound`).
 These finite estimates hold for any summation filter; for an unconditional basis of a Banach space
 the bound `C` is supplied by `UnconditionalSchauderBasis.nnNormProjBound`.
 
@@ -235,7 +235,7 @@ theorem norm_proj_finset_le_of_range_signed {C : ℝ}
 `‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj (Finset.range N) x‖` and
 the initial projections have norm at most `M`, then every finite coordinate projection has norm at
 most `(1 + K) / 2 * M`. -/
-theorem norm_proj_le_of_sign_bound {K M : ℝ}
+theorem norm_proj_le_of_range_sign_bound {K M : ℝ}
     (hK : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, ε i = 1 ∨ ε i = -1) → ∀ x,
       ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj (Finset.range N) x‖)
     (hM : ∀ N, ‖b.proj (Finset.range N)‖ ≤ M) (A : Finset ℕ) :
