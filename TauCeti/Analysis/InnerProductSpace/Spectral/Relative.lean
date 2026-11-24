@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.LinearAlgebra.BilinearForm.RelativeEigenspace
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
@@ -59,6 +60,8 @@ space structure.
   negative and positive spectral subspaces are complementary.
 * `LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top`: an endomorphism self-adjoint for a positive
   definite form is diagonalizable.
+* `ContinuousLinearEquiv.map_relativeSpectralSubspace_bilinearComp`: pulling continuous forms back
+  along a continuous linear equivalence pulls back their relative spectral subspaces.
 
 The Euclidean isometry is built from a `g`-orthogonal basis
 (`LinearMap.BilinForm.exists_orthogonal_basis`), and the spectral input is the point-spectral
@@ -313,3 +316,41 @@ theorem iSup_eigenspace_eq_top (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hf : g.IsS
     relativeSpectralSubspace_univ hs hspos hq
 
 end LinearMap.IsSelfAdjoint
+
+/-! ### Pullbacks along continuous linear equivalences -/
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+
+/-- Pulling a form and a metric back along a linear equivalence `e` pulls back their relative
+spectral subspaces: these are carried by `e` to the relative spectral subspaces of the original
+pair. -/
+@[simp]
+theorem map_relativeSpectralSubspace_bilinearComp (e : W ≃L[𝕜] V) (q h : V →L[𝕜] V →L[𝕜] 𝕜)
+    (Ω : Set 𝕜) :
+    ((h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
+      (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω).map
+        (e.toLinearEquiv : W →ₗ[𝕜] V) =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  have hc (B : V →L[𝕜] V →L[𝕜] 𝕜) : (B.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm =
+      B.toBilinForm.compl₁₂ (e.toLinearEquiv : W →ₗ[𝕜] V) (e.toLinearEquiv : W →ₗ[𝕜] V) := by
+    ext u v
+    simp
+  rw [hc, hc]
+  exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ e.toLinearEquiv
+
+/-- A vector lies in a relative spectral subspace of a pulled-back pair exactly when its image
+lies in the corresponding relative spectral subspace of the original pair. -/
+@[simp]
+theorem mem_relativeSpectralSubspace_bilinearComp_iff (e : W ≃L[𝕜] V) {q h : V →L[𝕜] V →L[𝕜] 𝕜}
+    {Ω : Set 𝕜} {u : W} :
+    u ∈ (h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
+        (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω ↔
+      e u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  rw [← e.map_relativeSpectralSubspace_bilinearComp q h Ω, Submodule.mem_map]
+  refine ⟨fun hu ↦ ⟨u, hu, rfl⟩, fun ⟨w, hw, hwu⟩ ↦ ?_⟩
+  rwa [← e.injective hwu]
+
+end ContinuousLinearEquiv

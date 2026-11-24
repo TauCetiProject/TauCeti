@@ -40,6 +40,8 @@ point are dense exactly when all of its integer multiples are.
 * `AddCircle.eq_univ_of_isClosed_of_mapsTo_add`: minimality of a rotation of infinite order.
 * `AddCircle.denseRange_nsmul_xor_finite_range`: every `ℕ`-orbit is dense or finite, and never
   both.
+* `Irrational.exists_int_sub_nat_mul_mem_Ioo`: for irrational `α`, some positive multiple `q α`
+  lies within any `ε > 0` below an integer.
 
 ## References
 
@@ -101,3 +103,31 @@ theorem denseRange_nsmul_xor_finite_range (a : AddCircle p) :
 end Real
 
 end AddCircle
+
+/-- For irrational `α` and `ε > 0`, some positive multiple `q α` lies less than `ε` below an
+integer `p`: `0 < p - q α < ε`. -/
+theorem Irrational.exists_int_sub_nat_mul_mem_Ioo {α ε : ℝ} (hα : Irrational α) (hε : 0 < ε) :
+    ∃ q : ℕ, 0 < q ∧ ∃ p : ℤ, (p : ℝ) - q * α ∈ Ioo 0 ε := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have hd := (AddCircle.denseRange_nsmul_coe_iff (p := (1 : ℝ)) (x := α)).2 (by simpa using hα)
+  have hU : IsOpen ((↑) '' Ioo (-min ε 1) 0 : Set (AddCircle (1 : ℝ))) :=
+    QuotientAddGroup.isOpenMap_coe _ isOpen_Ioo
+  obtain ⟨q, y, hy, hyq⟩ :=
+    hd.exists_mem_open hU ((nonempty_Ioo.2 (by simp [hε])).image _)
+  rw [← AddCircle.coe_nsmul, ← sub_eq_zero, ← AddCircle.coe_sub,
+    AddCircle.coe_eq_zero_iff] at hyq
+  obtain ⟨k, hk⟩ := hyq
+  simp only [zsmul_eq_mul, mul_one, nsmul_eq_mul] at hk
+  have hy₁ : -min ε 1 < y := hy.1
+  have hy₂ : y < 0 := hy.2
+  refine ⟨q, Nat.pos_of_ne_zero fun hq ↦ ?_, -k, ?_, ?_⟩
+  · subst hq
+    have h₁ : (-1 : ℤ) < k := by
+      have : (-1 : ℝ) < k := by rw [hk]; push_cast; linarith [min_le_right ε 1]
+      exact_mod_cast this
+    have h₂ : k < 0 := by
+      have : (k : ℝ) < 0 := by rw [hk]; push_cast; linarith
+      exact_mod_cast this
+    omega
+  · push_cast; linarith
+  · push_cast; linarith [min_le_left ε 1]
