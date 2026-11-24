@@ -153,8 +153,8 @@ private theorem stasheffSum_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ
       (dgOperation_of_three_le d 0 le_rfl)]
     simp [dgOperation_two_apply, mul_assoc]
   | n + 4, _ =>
-    exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero _ _ _ (by omega) fun _ ↦
-      dgOperation_of_three_le d 0
+    exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero_of_three_le _ _ _ (by omega)
+      fun _ ↦ dgOperation_of_three_le d 0
 
 /-- The `A∞` algebra of a nonunital DG algebra: `m₁ = d`, `m₂` is the product, and `m n = 0` for
 `n ≥ 3`. -/

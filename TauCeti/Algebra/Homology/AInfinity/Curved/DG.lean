@@ -97,7 +97,7 @@ private theorem curvedStasheffSum_operation (h : IsCurvedDGAlgebra 𝒜 d w) (n 
         (dgOperation_of_three_le d w le_rfl)]
       simp [dgOperation_two_apply, mul_assoc]
     | n + 2, _ =>
-      exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero _ _ _ (by omega)
+      exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero_of_three_le _ _ _ (by omega)
         fun _ ↦ dgOperation_of_three_le d w
 
 /-- The curved `A∞` algebra of a curved differential graded algebra: `m₀ = w`, `m₁ = d`, `m₂` is

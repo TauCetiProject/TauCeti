@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
+public import TauCeti.Algebra.Homology.AInfinity.Algebra
 public import TauCeti.Algebra.Homology.AInfinity.Curved.Stasheff
 
 /-!
@@ -260,13 +260,6 @@ theorem differential_toCurvedAInfinityAlgebra :
     𝒜.toCurvedAInfinityAlgebra.differential = 𝒜.differential := by
   ext x
   simp
-
-/-- The strict units of an uncurved `A∞` algebra are those of it as a curved one. -/
-@[simp]
-theorem strictUnit_toCurvedAInfinityAlgebra_iff {e : A} :
-    𝒜.toCurvedAInfinityAlgebra.StrictUnit e ↔ 𝒜.StrictUnit e :=
-  ⟨fun h ↦ ⟨h.degree_zero, h.binary_left, h.binary_right, h.higher⟩,
-    fun h ↦ ⟨h.degree_zero, h.binary_left, h.binary_right, h.higher⟩⟩
 
 end AInfinityAlgebra
 
