@@ -640,12 +640,13 @@ generators are their brackets `Hᵢ = ⁅Eᵢ, Fᵢ⁆`. -/
 theorem lieSpan_serreE_union_serreF_eq_top :
     LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
       (Set.range (serreE R CM) ∪ Set.range (serreF R CM)) = ⊤ := by
-  have hrange : (serreMk R CM).range = ⊤ := by
-    rw [LieHom.range_eq_top]
+  have hspan :
+      LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
+        (serreMk R CM '' Set.range (FreeLieAlgebra.of R)) = ⊤ := by
+    rw [← LieSubalgebra.map_lieSpan, FreeLieAlgebra.lieSpan_range_of_eq_top,
+      ← LieHom.range_eq_map, LieHom.range_eq_top]
     exact serreMk_surjective R CM
-  rw [eq_top_iff, ← hrange, LieHom.range_eq_map,
-    ← FreeLieAlgebra.lieSpan_range_of_eq_top R (Generators B), LieSubalgebra.map_lieSpan,
-    LieSubalgebra.lieSpan_le]
+  refine top_le_iff.mp (hspan.ge.trans (LieSubalgebra.lieSpan_le.mpr ?_))
   rintro _ ⟨_, ⟨i | i | i, rfl⟩, rfl⟩
   · rw [serreMk_of_H, ← lie_serreE_serreF_self R CM i]
     exact LieSubalgebra.lie_mem _ (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
