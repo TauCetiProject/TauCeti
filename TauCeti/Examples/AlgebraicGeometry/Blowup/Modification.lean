@@ -31,21 +31,14 @@ noncomputable def originIdealSheaf : (Spec (.of (MvPolynomial (Fin 2) k))).Ideal
 
 /-- The support of the ideal sheaf of the origin is not the whole plane. -/
 theorem support_originIdealSheaf_ne_top : (originIdealSheaf k).support ≠ ⊤ := by
+  -- The generic point `(0)` would lie in the support, so `(0)` would contain `x`.
   intro h
   have hmem : (⊥ : PrimeSpectrum (MvPolynomial (Fin 2) k)) ∈ ((originIdealSheaf k).support :
-      Set (Spec (.of (MvPolynomial (Fin 2) k)))) := by
-    rw [h]
-    trivial
-  rw [originIdealSheaf, Scheme.IdealSheafData.coe_support_ofIdealTop, Spec_zeroLocus] at hmem
-  replace hmem := (PrimeSpectrum.mem_zeroLocus (⊥ : PrimeSpectrum (MvPolynomial (Fin 2) k)) _).1
-    hmem
-  have hX : (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom (X 0) ∈
-      (Ideal.span {X 0, X 1}).map (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom :=
-    Ideal.mem_map_of_mem _ (Ideal.subset_span (by simp))
-  have h0 : (X 0 : MvPolynomial (Fin 2) k) ∈
-      ((⊥ : PrimeSpectrum (MvPolynomial (Fin 2) k)).asIdeal : Set (MvPolynomial (Fin 2) k)) :=
-    hmem hX
-  simp at h0
+      Set (Spec (.of (MvPolynomial (Fin 2) k)))) := h ▸ trivial
+  simp only [originIdealSheaf, Scheme.IdealSheafData.coe_support_ofIdealTop,
+    Spec_zeroLocus] at hmem
+  simpa using (PrimeSpectrum.mem_zeroLocus _ _).1 hmem
+    (Ideal.mem_map_of_mem _ (Ideal.subset_span (Set.mem_insert (X 0) {X 1})))
 
 -- The blowup of `𝔸²_k` at the origin is a modification.
 example : IsModification (originIdealSheaf k).blowupToBase :=

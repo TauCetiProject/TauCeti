@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
 public import TauCeti.AlgebraicGeometry.Blowup.Restriction
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.SchematicDensity
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Centre
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 
@@ -18,9 +19,10 @@ complement `X ∖ V(I)` is then dense in `X`, the blowup `Bl_I X ⟶ X` is an is
 (`AlgebraicGeometry.Scheme.IdealSheafData.isIso_blowupToBase_restrict_compl_support`), and its
 preimage is the complement of the exceptional divisor, an effective Cartier divisor
 (`AlgebraicGeometry.Scheme.IdealSheafData.isEffectiveCartier_comap_blowupToBase`). The complement
-of an effective Cartier divisor is dense. So `X ∖ V(I)` is a
-modification witness for the blowup (`IdealSheafData.witness_blowupToBase`), and when `I` is of
-finite type on affines, so that the blowup is proper, the blowup is a modification
+of an effective Cartier divisor is dense
+(`AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.dense_support_compl`). So `X ∖ V(I)`
+is a modification witness for the blowup (`IdealSheafData.witness_blowupToBase`), and when `I` is
+of finite type on affines, so that the blowup is proper, the blowup is a modification
 (`IdealSheafData.isModification_blowupToBase`). Its centre lies in `V(I)`.
 
 On an irreducible scheme the interior condition says only that `V(I)` is not everything
@@ -28,8 +30,6 @@ On an irreducible scheme the interior condition says only that `V(I)` is not eve
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.dense_support_compl`: the
-  complement of an effective Cartier divisor is dense.
 * `AlgebraicGeometry.Scheme.IdealSheafData.witness_blowupToBase`: the complement of `V(I)` is a
   modification witness for the blowup.
 * `AlgebraicGeometry.Scheme.IdealSheafData.isModification_blowupToBase`: the blowup along an ideal
@@ -56,31 +56,9 @@ namespace Scheme.IdealSheafData
 
 variable {I : X.IdealSheafData}
 
-/-- **The complement of an effective Cartier divisor is dense.** Near each point the divisor is
-cut out by a nonzerodivisor `a` on an affine open `U`, and the basic open `D(a) ⊆ U` lies in the
-complement; it is nonempty, since otherwise `a` would be nilpotent and `Γ(X, U)` the zero ring. -/
-theorem IsEffectiveCartier.dense_support_compl (hI : I.IsEffectiveCartier) :
-    Dense (I.support.compl : Set X) := by
-  refine dense_iff_inter_open.2 fun W hW ⟨y, hyW⟩ ↦ ?_
-  obtain ⟨U, hUW, hyU, a, ha, hUa⟩ := hI.exists_eq_span_singleton_le ⟨W, hW⟩ hyW
-  have hle : X.basicOpen a ≤ I.support.compl := by
-    intro z hz hzI
-    have hzU : z ∈ U.val := X.basicOpen_le a hz
-    rw [SetLike.mem_coe, mem_support_iff_of_mem hzU, hUa, Scheme.mem_zeroLocus_iff] at hzI
-    exact hzI a (Ideal.mem_span_singleton_self _) hz
-  have hne : X.basicOpen a ≠ ⊥ := by
-    intro h
-    obtain ⟨n, hn⟩ :=
-      (Scheme.isNilpotent_iff_basicOpen_eq_bot_of_isCompact U.property.isCompact a).2 h
-    have : Nonempty U.val := ⟨⟨y, hyU⟩⟩
-    obtain ⟨s, t, hst⟩ := exists_pair_ne Γ(X, U.val)
-    exact hst ((ha.pow n) (by simp [hn]))
-  obtain ⟨z, hz⟩ := (Opens.ne_bot_iff_nonempty _).1 hne
-  exact ⟨z, hUW (X.basicOpen_le a hz), hle hz⟩
-
-/-- **The complement of the centre is a modification witness for the blowup.** If the support of
-`I` has empty interior, then its open complement is dense, the blowup is an isomorphism over it,
-and its preimage, the complement of the exceptional divisor, is dense in the blowup. -/
+/-- **The complement of the support of `I` is a modification witness for the blowup.** If the
+support of `I` has empty interior, then its open complement is dense, the blowup is an isomorphism
+over it, and its preimage, the complement of the exceptional divisor, is dense in the blowup. -/
 theorem witness_blowupToBase (hI : interior (I.support : Set X) = ∅) :
     IsModification.Witness I.blowupToBase I.support.compl where
   dense := by
@@ -109,11 +87,10 @@ not everything is a modification. -/
 theorem isModification_blowupToBase_of_irreducibleSpace [IrreducibleSpace X]
     [IsLocallyNoetherian X] (hI : I.support ≠ ⊤) : IsModification I.blowupToBase := by
   refine IsModification.of_witness _ (witness_blowupToBase ?_)
-  by_contra hne
-  obtain ⟨x, hx⟩ := Set.ne_empty_iff_nonempty.1 hne
-  refine hI (SetLike.coe_injective ?_)
-  rw [TopologicalSpace.Closeds.coe_top, ← I.support.isClosed.closure_eq, Set.eq_univ_iff_forall]
-  exact fun z ↦ closure_mono interior_subset ((isOpen_interior.dense ⟨x, hx⟩).closure_eq ▸ trivial)
+  -- In an irreducible space a nonempty open set is dense, and a dense closed set is everything.
+  refine Set.not_nonempty_iff_eq_empty.1 fun ⟨x, hx⟩ ↦ hI (SetLike.coe_injective ?_)
+  simpa using I.support.isClosed.dense_iff.1
+    ((isOpen_interior.dense ⟨x, hx⟩).mono interior_subset)
 
 end Scheme.IdealSheafData
 
