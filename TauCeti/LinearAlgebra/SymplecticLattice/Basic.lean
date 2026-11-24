@@ -54,6 +54,10 @@ this file specializes it to symplectic lattices.
 * `TauCeti.SymplecticOLattice.le_dual`: the image of `L` lies in `L^#`.
 * `TauCeti.SymplecticOLattice.dualIndex_eq_relIndex`: the dual index is the index of the image
   of `L` in `L^#`.
+* `TauCeti.SymplecticOLattice.dualIndex_eq_natAbs_det`: the dual index is the absolute value of
+  the Gram determinant of any `ℤ`-basis.
+* `TauCeti.SymplecticOLattice.isSelfDualAt_of_not_dvd_dualIndex`: `L` is self-dual at every
+  `p ∤ [L^# : L]`.
 * `TauCeti.SymplecticOLattice.dualIndex_zero`: the zero lattice has dual index one.
 * `TauCeti.SymplecticOLattice.dualIndex_ne_zero`: for `L` finite free over `ℤ`, `L^#` contains
   `L` with finite index.
@@ -196,6 +200,12 @@ theorem dualIndex_eq_relIndex :
     AddSubgroup.map_comap_eq_self_of_surjective (f := e) (TensorProduct.comm ℤ L ℚ).surjective]
   exact Λ.form.dualIndex_def
 
+/-- **The dual index is the Gram determinant.** For every `ℤ`-basis `b` of `L`,
+`[L^# : L] = |det ⟨b i, b j⟩|`. -/
+theorem dualIndex_eq_natAbs_det {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
+    Λ.dualIndex = (LinearMap.BilinForm.toMatrix b Λ.form).det.natAbs :=
+  Λ.form.dualIndex_eq_natAbs_det Λ.nondegenerate b
+
 /-- If `L` is finite free over `ℤ`, the dual lattice contains the image of `L` with finite
 index. -/
 theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L] : Λ.dualIndex ≠ 0 :=
@@ -206,6 +216,11 @@ theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L] : Λ.dualInd
 image of `L`. For `p` prime this says that `L` and `L^#` agree after localizing at `p`. -/
 abbrev IsSelfDualAt (p : ℕ) : Prop :=
   Λ.form.IsSelfDualAt p
+
+/-- A symplectic lattice is self-dual at every `p` not dividing its dual index `[L^# : L]`. -/
+theorem isSelfDualAt_of_not_dvd_dualIndex {p : ℕ} (hp : ¬p ∣ Λ.dualIndex) :
+    Λ.IsSelfDualAt p :=
+  Λ.form.isSelfDualAt_of_not_dvd_dualIndex hp
 
 /-- A symplectic lattice that is finite free over `ℤ` is self-dual at a prime `p` exactly when `p`
 does not divide its dual index `[L^# : L]`. -/

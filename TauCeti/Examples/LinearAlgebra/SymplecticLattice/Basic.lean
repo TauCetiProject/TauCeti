@@ -44,16 +44,14 @@ noncomputable def symplecticPlane : SymplecticOLattice ℤ (Fin 2 → ℤ) :=
 
 /-- The standard symplectic plane is self-dual: its dual index is one. -/
 theorem symplecticPlane_dualIndex : symplecticPlane.dualIndex = 1 := by
-  rw [SymplecticOLattice.dualIndex, symplecticPlane.form.dualIndex_eq_natAbs_det
-    symplecticPlane.nondegenerate (Pi.basisFun ℤ (Fin 2)), symplecticPlane,
+  rw [symplecticPlane.dualIndex_eq_natAbs_det (Pi.basisFun ℤ (Fin 2)), symplecticPlane,
     SymplecticOLattice.ofIsAlt_form, LinearMap.BilinForm.toMatrix_basisFun,
     LinearMap.BilinForm.toMatrix'_toBilin']
   simp [det_fin_two]
 
 /-- The standard symplectic plane is self-dual at every prime. -/
 theorem symplecticPlane_isSelfDualAt {p : ℕ} (hp : p.Prime) : symplecticPlane.IsSelfDualAt p :=
-  (symplecticPlane.isSelfDualAt_iff_not_dvd_dualIndex hp).2
-    (symplecticPlane_dualIndex ▸ hp.not_dvd_one)
+  symplecticPlane.isSelfDualAt_of_not_dvd_dualIndex (symplecticPlane_dualIndex ▸ hp.not_dvd_one)
 
 /-- The Gram matrix of the rank-four lattice with alternating blocks of weights `1` and `d`. -/
 abbrev weightedGram (d : ℤ) : Matrix (Fin 4) (Fin 4) ℤ :=
@@ -82,8 +80,7 @@ noncomputable def weightedLattice (d : ℤ) (hd : d ≠ 0) : SymplecticOLattice 
 /-- The lattice with blocks of weights `1` and `d` has dual index `d²`. -/
 theorem weightedLattice_dualIndex (d : ℤ) (hd : d ≠ 0) :
     (weightedLattice d hd).dualIndex = d.natAbs ^ 2 := by
-  rw [SymplecticOLattice.dualIndex, (weightedLattice d hd).form.dualIndex_eq_natAbs_det
-    (weightedLattice d hd).nondegenerate (Pi.basisFun ℤ (Fin 4)), weightedLattice,
+  rw [(weightedLattice d hd).dualIndex_eq_natAbs_det (Pi.basisFun ℤ (Fin 4)), weightedLattice,
     SymplecticOLattice.ofIsAlt_form, LinearMap.BilinForm.toMatrix_basisFun,
     LinearMap.BilinForm.toMatrix'_toBilin', det_weightedGram, Int.natAbs_pow]
 
