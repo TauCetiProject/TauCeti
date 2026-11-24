@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+import TauCeti.Algebra.Algebra.Spectrum
 
 /-!
 # The resolvent in the continuous functional calculus
 
 For an element `a` satisfying the predicate of a continuous functional calculus and a point `z` of
 its resolvent set, the function `w ↦ (z - w)⁻¹` is continuous on the spectrum of `a`, and its
-functional calculus is the resolvent `(z - a)⁻¹`.
+functional calculus is the resolvent `(z - a)⁻¹`. Likewise, for a self-adjoint `a` and a real `k`
+with `1 + k a` invertible, `a (1 + k a)⁻¹` is the image of `a` under the fractional linear function
+`x ↦ x / (1 + k x)`.
 
 ## Main results
 
@@ -20,6 +23,8 @@ functional calculus is the resolvent `(z - a)⁻¹`.
   spectrum of `a` for `z` in the resolvent set of `a`.
 * `TauCeti.cfc_inv_sub_eq_resolvent`: `cfc (fun w ↦ (z - w)⁻¹) a = resolvent a z` for `z` in the
   resolvent set of `a`.
+* `IsSelfAdjoint.cfc_div_one_add_mul`: `cfc (fun x ↦ x / (1 + k x)) a = a (1 + k a)⁻¹` when
+  `1 + k a` is invertible.
 -/
 
 public section
@@ -48,3 +53,20 @@ theorem cfc_inv_sub_eq_resolvent {a : A} {z : R} (hz : z ∈ resolventSet R a)
     cfc_id' R a, resolvent]
 
 end TauCeti
+
+namespace IsSelfAdjoint
+
+variable {A : Type*} [Ring A] [StarRing A] [TopologicalSpace A] [Algebra ℝ A]
+  [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint] {a : A}
+
+/-- For a self-adjoint `a` with `1 + k a` invertible, `a (1 + k a)⁻¹` is the image of `a` under the
+fractional linear function `x ↦ x / (1 + k x)`. -/
+theorem cfc_div_one_add_mul (ha : IsSelfAdjoint a) {k : ℝ} (hk : IsUnit (1 + k • a)) :
+    cfc (fun x : ℝ ↦ x / (1 + k * x)) a = a * Ring.inverse (1 + k • a) := by
+  have hne := spectrum.isUnit_one_add_smul_iff.1 hk
+  simp_rw [div_eq_mul_inv]
+  rw [cfc_mul (fun x : ℝ ↦ x) (fun x ↦ (1 + k * x)⁻¹) a, cfc_id' ℝ a,
+    cfc_inv (fun x : ℝ ↦ 1 + k * x) a hne, cfc_const_add 1 (fun x : ℝ ↦ k * x) a,
+    cfc_const_mul_id k a, Algebra.algebraMap_eq_smul_one, one_smul]
+
+end IsSelfAdjoint

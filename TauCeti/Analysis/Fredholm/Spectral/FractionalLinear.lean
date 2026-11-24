@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Spectral.Flow
+import TauCeti.Algebra.Algebra.Spectrum
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.Topology.Algebra.Indicator
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Order.Interval
@@ -15,7 +17,7 @@ import TauCeti.Topology.Order.Interval
 
 Let `k` be a real number and `T` a self-adjoint operator on a real or complex Hilbert space with
 `1 + k T` invertible, that is, with `1 + k x ≠ 0` on the spectrum of `T`
-(`ContinuousLinearMap.isUnit_one_add_smul_iff`). The operator `T (1 + k T)⁻¹` is the image of `T`
+(`spectrum.isUnit_one_add_smul_iff`). The operator `T (1 + k T)⁻¹` is the image of `T`
 under the fractional linear function `x ↦ x / (1 + k x)`
 (`IsSelfAdjoint.cfc_div_one_add_mul`). This function fixes `0`, has derivative `1` there, and is
 increasing on each interval avoiding its pole
@@ -31,20 +33,16 @@ for the eigenvalues `λ` of `A`: the transform at `c'` is the transform at `c` c
 
 The proof compares local counts of eigenvalues. For `0 < c'` with `k c' < 1`, the function
 `x ↦ x / (1 + k x)` maps the points of `[0, c' / (1 - k c')]` onto `[0, c']` and no other point of
-the real line off its pole into `[0, c']`
-(`TauCeti.div_one_add_mul_mem_Icc_iff`). So at a spectral cut `c'` of `T (1 + k T)⁻¹`, its spectral
-projection for `[0, c']` is the spectral projection of `T` for `[0, c' / (1 - k c')]`. For a smaller
-cut `c` of `T`, the latter differs from the count of eigenvalues of `T` in `[0, c]` by the rank of
-the spectral projection for `(c, c' / (1 - k c')]`, which is locally constant along the path. Thus
+the real line off its pole into `[0, c']`. So at a spectral cut `c'` of `T (1 + k T)⁻¹`, its
+spectral projection for `[0, c']` is the spectral projection of `T` for `[0, c' / (1 - k c')]`. For
+a smaller cut `c` of `T`, the latter differs from the count of eigenvalues of `T` in `[0, c]` by the
+rank of the spectral projection for `(c, c' / (1 - k c')]`, which is locally constant along the
+path. Thus
 both paths have local counts which change alike, and
 `TauCeti.spectralFlow_eq_of_forall_exists_isSpectralCutOn` compares their spectral flows.
 
 ## Main results
 
-* `ContinuousLinearMap.isUnit_one_add_smul_iff`: `1 + k T` is invertible exactly when `1 + k x`
-  does not vanish on the spectrum of `T`.
-* `IsSelfAdjoint.cfc_div_one_add_mul`: `T (1 + k T)⁻¹` is the image of `T` under
-  `x ↦ x / (1 + k x)`.
 * `TauCeti.spectralFlow_mul_ringInverse_one_add_smul`: the spectral flow of `A (1 + k A)⁻¹` is that
   of `A`.
 
@@ -63,51 +61,13 @@ open Filter Metric Set Topology
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   [NormedAlgebra ℝ (H →L[𝕜] H)] [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
 
-/-! ### The operator `T (1 + k T)⁻¹` -/
-
-omit [CompleteSpace H] [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint] in
-/-- `1 + k T` is invertible exactly when `1 + k x` does not vanish on the spectrum of `T`. -/
-theorem ContinuousLinearMap.isUnit_one_add_smul_iff {T : H →L[𝕜] H} {k : ℝ} :
-    IsUnit (1 + k • T) ↔ ∀ x ∈ spectrum ℝ T, 1 + k * x ≠ 0 := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · refine iff_of_true ?_ fun x _ ↦ by simp
-    convert isUnit_one (M := H →L[𝕜] H)
-    rw [add_eq_left]
-    exact zero_smul ℝ T
-  rw [← spectrum.zero_notMem_iff ℝ, ← map_one (algebraMap ℝ (H →L[𝕜] H)),
-    ← spectrum.singleton_add_eq, show k • T = Units.mk0 k hk • T from rfl,
-    spectrum.unit_smul_eq_smul]
-  simp [Set.mem_smul_set, eq_neg_iff_add_eq_zero, add_comm]
-
-namespace IsSelfAdjoint
-
-variable {T : H →L[𝕜] H}
-
-/-- `1 + k T` is the image of `T` under `x ↦ 1 + k x`. -/
-theorem cfc_one_add_mul (hT : IsSelfAdjoint T) (k : ℝ) :
-    cfc (fun x : ℝ ↦ 1 + k * x) T = 1 + k • T := by
-  rw [cfc_add (a := T) (fun _ ↦ (1 : ℝ)) (fun x ↦ k * x), cfc_const_one ℝ T,
-    cfc_const_mul k (fun x : ℝ ↦ x) T, cfc_id' ℝ T]
-
-
-/-- For a self-adjoint `T` with `1 + k T` invertible, `T (1 + k T)⁻¹` is the image of `T` under the
-fractional linear function `x ↦ x / (1 + k x)`. -/
-theorem cfc_div_one_add_mul (hT : IsSelfAdjoint T) {k : ℝ} (hk : IsUnit (1 + k • T)) :
-    cfc (fun x : ℝ ↦ x / (1 + k * x)) T = T * Ring.inverse (1 + k • T) := by
-  have hne := ContinuousLinearMap.isUnit_one_add_smul_iff.1 hk
-  simp_rw [div_eq_mul_inv]
-  rw [cfc_mul (fun x : ℝ ↦ x) (fun x ↦ (1 + k * x)⁻¹) T, cfc_id' ℝ T,
-    cfc_inv (fun x : ℝ ↦ 1 + k * x) T hne, hT.cfc_one_add_mul k]
-
-end IsSelfAdjoint
-
 namespace TauCeti
 
 /-! ### The preimage of a small interval -/
 
 /-- For `k c < 1`, the fractional linear function `x ↦ x / (1 + k x)` sends a point
 `x` off its pole into `[0, c]` exactly when `x ∈ [0, c / (1 - k c)]`. -/
-theorem div_one_add_mul_mem_Icc_iff {k c x : ℝ} (hkc : k * c < 1)
+private theorem div_one_add_mul_mem_Icc_iff {k c x : ℝ} (hkc : k * c < 1)
     (hx : 1 + k * x ≠ 0) : x / (1 + k * x) ∈ Icc 0 c ↔ x ∈ Icc 0 (c / (1 - k * c)) := by
   have hd : 0 < 1 - k * c := by linarith
   rw [mem_Icc, mem_Icc, le_div_iff₀ hd]
@@ -132,7 +92,7 @@ theorem div_one_add_mul_mem_Icc_iff {k c x : ℝ} (hkc : k * c < 1)
 
 /-- The fractional linear function `x ↦ x / (1 + k x)` sends `c / (1 - k c)` to `c` when
 `k c ≠ 1`. -/
-theorem div_one_add_mul_div_one_sub_mul {k c : ℝ} (hkc : k * c ≠ 1) :
+private theorem div_one_add_mul_div_one_sub_mul {k c : ℝ} (hkc : k * c ≠ 1) :
     c / (1 - k * c) / (1 + k * (c / (1 - k * c))) = c := by
   have hd : 1 - k * c ≠ 0 := sub_ne_zero.2 hkc.symm
   have h₁ : 1 + k * (c / (1 - k * c)) = 1 / (1 - k * c) := by
@@ -156,7 +116,7 @@ private theorem cfc_indicator_Icc_mul_ringInverse_one_add_smul (hT : IsSelfAdjoi
     cfc ((Icc 0 c').indicator (1 : ℝ → ℝ)) (T * Ring.inverse (1 + k • T)) =
         cfc ((Icc 0 (c' / (1 - k * c'))).indicator (1 : ℝ → ℝ)) T ∧
       c' / (1 - k * c') ∉ spectrum ℝ T := by
-  have hne := ContinuousLinearMap.isUnit_one_add_smul_iff.1 hk
+  have hne := spectrum.isUnit_one_add_smul_iff.1 hk
   have hg : ContinuousOn (fun x : ℝ ↦ x / (1 + k * x)) (spectrum ℝ T) :=
     continuousOn_id.div (continuousOn_const.add (continuousOn_const.mul continuousOn_id)) hne
   have hS := hT.cfc_div_one_add_mul hk
