@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Naturality
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.CrossProduct
 
 /-!
@@ -62,7 +62,17 @@ spectral sequence
   `cokernel (S.abutmentFiltrationMap p (-(p + q)))`, its `hom` being the composite of the two
   `hom`s (`Iso.trans_hom`, `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty_hom`).
 
-Naturality in `X` and `Y`, the edge maps and the collapse corollaries are not treated here.
+* **Naturality in `X`.** A map `g : X ⟶ X'` induces a morphism of spectral sequences
+  `TopCat.singularKunnethSpectralSequenceMapLeft Y R g`, functorially in `g`, through the morphism
+  `g_* ▷ Q.X p` of Künneth bicomplexes (`HomologicalComplex.kunnethBicomplexMapLeft`). It is the
+  spectral sequence of the morphism of spectral objects
+  `TopCat.singularKunnethSpectralObjectMapLeft Y R g`, which on the abutment is
+  `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
+  (`TopCat.singularKunnethAbutmentIso_naturality_left`).
+
+Naturality in `Y`, which needs a comparison of Cartan–Eilenberg resolutions, the identification
+of the second page naturality with the map induced on `Tor`, the edge maps and the collapse
+corollaries are not treated here.
 
 ## Indexing
 
@@ -210,5 +220,110 @@ lemma isIso_singularKunnethFiltrationι (p : ℤ) (n : ℕ) (h : n < p) :
     (by omega)
   rw [singularKunnethFiltrationι_eq]
   infer_instance
+
+/-! ### Naturality in the first space -/
+
+variable {X} {X' X'' : TopCat.{u}} (g : X ⟶ X') (g' : X' ⟶ X'')
+
+/-- The morphism of singular Künneth bicomplexes induced by a map `g : X ⟶ X'`: on column `p` it
+is `g_* ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `C(Y; R)`. -/
+abbrev singularKunnethBicomplexMapLeft :
+    singularKunnethBicomplex X Y R ⟶ singularKunnethBicomplex X' Y R :=
+  kunnethBicomplexMapLeft ((TauCeti.singularChains R).map g) ((TauCeti.singularChains R).obj Y)
+
+/-- The morphism of the spectral objects of the singular Künneth spectral sequences induced by a
+map `g : X ⟶ X'`. -/
+abbrev singularKunnethSpectralObjectMapLeft :
+    singularKunnethSpectralObject X Y R ⟶ singularKunnethSpectralObject X' Y R :=
+  HomologicalComplex₂.columnFiltrationSpectralObjectMap (singularKunnethBicomplexMapLeft Y R g)
+
+/-- **Naturality of the singular Künneth spectral sequence in the first space**: the morphism of
+spectral sequences induced by a map `g : X ⟶ X'`. It is compatible with identities and
+composition (`TopCat.singularKunnethSpectralSequenceMapLeft_id`,
+`TopCat.singularKunnethSpectralSequenceMapLeft_comp`). It is the spectral sequence of the
+morphism of spectral objects `TopCat.singularKunnethSpectralObjectMapLeft Y R g`, which on the
+abutment is the map `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
+(`TopCat.singularKunnethAbutmentIso_naturality_left`). -/
+abbrev singularKunnethSpectralSequenceMapLeft :
+    singularKunnethSpectralSequence X Y R ⟶ singularKunnethSpectralSequence X' Y R :=
+  kunnethSpectralSequenceMapLeft ((TauCeti.singularChains R).map g)
+    ((TauCeti.singularChains R).obj Y)
+
+@[simp]
+lemma singularKunnethBicomplexMapLeft_id : singularKunnethBicomplexMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, kunnethBicomplexMapLeft_id]
+
+@[simp]
+lemma singularKunnethBicomplexMapLeft_comp :
+    singularKunnethBicomplexMapLeft Y R (g ≫ g') =
+      singularKunnethBicomplexMapLeft Y R g ≫ singularKunnethBicomplexMapLeft Y R g' := by
+  rw [singularKunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
+    kunnethBicomplexMapLeft_comp]
+
+@[simp]
+lemma singularKunnethSpectralObjectMapLeft_id :
+    singularKunnethSpectralObjectMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_id,
+    HomologicalComplex₂.columnFiltrationSpectralObjectMap_id]
+
+@[simp]
+lemma singularKunnethSpectralObjectMapLeft_comp :
+    singularKunnethSpectralObjectMapLeft Y R (g ≫ g') =
+      singularKunnethSpectralObjectMapLeft Y R g ≫ singularKunnethSpectralObjectMapLeft Y R g' := by
+  rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_comp,
+    HomologicalComplex₂.columnFiltrationSpectralObjectMap_comp]
+
+@[simp]
+lemma singularKunnethSpectralSequenceMapLeft_id :
+    singularKunnethSpectralSequenceMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethSpectralSequenceMapLeft, CategoryTheory.Functor.map_id,
+    kunnethSpectralSequenceMapLeft_id]
+
+@[simp]
+lemma singularKunnethSpectralSequenceMapLeft_comp :
+    singularKunnethSpectralSequenceMapLeft Y R (g ≫ g') =
+      singularKunnethSpectralSequenceMapLeft Y R g ≫
+        singularKunnethSpectralSequenceMapLeft Y R g' := by
+  rw [singularKunnethSpectralSequenceMapLeft, CategoryTheory.Functor.map_comp,
+    kunnethSpectralSequenceMapLeft_comp]
+
+/-- The comparison `TopCat.singularKunnethTotalHomologyIso` of the total homology of the singular
+Künneth bicomplex with `Hₙ(X × Y; R)` is natural in `X`. -/
+@[reassoc]
+lemma singularKunnethTotalHomologyIso_naturality_left (n : ℕ) :
+    homologyMap (HomologicalComplex₂.total.map (singularKunnethBicomplexMapLeft Y R g)
+        (ComplexShape.down ℕ)) n ≫ (singularKunnethTotalHomologyIso X' Y R n).hom =
+      (singularKunnethTotalHomologyIso X Y R n).hom ≫
+        ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).map (g ▷ Y) := by
+  -- the cross product is natural in the first space
+  have h := TauCeti.singularCrossProduct_naturality R g (𝟙 Y)
+  rw [CategoryTheory.Functor.map_id, tensorHom_id, tensorHom_id] at h
+  have h' : HomologicalComplex₂.total.map (singularKunnethBicomplexMapLeft Y R g)
+        (ComplexShape.down ℕ) ≫ kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X')
+          ((TauCeti.singularChains R).obj Y) ≫ TauCeti.singularCrossProduct R X' Y =
+      (kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X)
+          ((TauCeti.singularChains R).obj Y) ≫ TauCeti.singularCrossProduct R X Y) ≫
+        (TauCeti.singularChains R).map (g ▷ Y) := by
+    rw [total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation_assoc, h, Category.assoc]
+  rw [singularKunnethTotalHomologyIso, singularKunnethTotalHomologyIso, isoOfQuasiIsoAt_hom,
+    isoOfQuasiIsoAt_hom]
+  -- the map induced on singular homology is by definition that induced on the singular chains,
+  -- so the two sides are the maps induced on homology by the two sides of `h'`
+  exact (homologyMap_comp _ _ n).symm.trans
+    ((congrArg (homologyMap · n) h').trans (homologyMap_comp _ _ n))
+
+/-- **Naturality on the abutment.** Through `TopCat.singularKunnethAbutmentIso`, the morphism of
+spectral objects induced by `g : X ⟶ X'` is, on the abutment in degree `n`, the map
+`(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`. -/
+@[reassoc]
+lemma singularKunnethAbutmentIso_naturality_left (n : ℕ) :
+    ((singularKunnethSpectralObjectMapLeft Y R g).hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (singularKunnethAbutmentIso X' Y R n).hom =
+      (singularKunnethAbutmentIso X Y R n).hom ≫
+        ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).map (g ▷ Y) := by
+  rw [singularKunnethAbutmentIso_eq, singularKunnethAbutmentIso_eq, Iso.trans_hom, Iso.trans_hom,
+    HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality_assoc,
+    singularKunnethTotalHomologyIso_naturality_left, Category.assoc]
 
 end TopCat

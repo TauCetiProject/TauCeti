@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Decomposable
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.QuadraticForm
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 import TauCeti.LinearAlgebra.TensorProduct.Segre
@@ -121,7 +120,7 @@ theorem map_dualMap_mem_exteriorFlagForms {N : Type w} [AddCommGroup N] [Module 
     (hs : s ∈ exteriorFlagForms R N d₂) :
     _root_.SymmetricAlgebra.map R p.dualMap s ∈ exteriorFlagForms R M d₁ :=
   ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule p.dualMap hs.1, fun w hw ↦ by
-    rw [_root_.SymmetricAlgebra.lift_map_apply, _root_.SymmetricAlgebra.lift_eval_comp_dualMap]
+    rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap]
     exact hs.2 (p w) (hp w hw)⟩
 
 end ConeDefinitions
@@ -189,7 +188,7 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
     ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
         (TauCeti.SymmetricAlgebra.bilinearToQuadForm B).property, by
       rintro _ ⟨c, v, rfl⟩
-      rw [_root_.SymmetricAlgebra.lift_map_apply, _root_.SymmetricAlgebra.lift_eval_comp_dualMap,
+      rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap,
         TauCeti.SymmetricAlgebra.lift_eval_bilinearToQuadForm]
       have hpv : p₂ (c • exteriorFlagVector k (r + 1) v) =
           (c * φ₀ (exteriorFlagVector k r (v ∘ Fin.castSucc))) •
@@ -199,7 +198,7 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
         _root_.exteriorPower.ιMulti_apply_coe,
         _root_.exteriorPower.ι_contract_mul_ιMulti_eq_zero, map_zero, smul_zero]⟩
   have hval := hw s hs
-  rwa [_root_.SymmetricAlgebra.lift_map_apply, _root_.SymmetricAlgebra.lift_eval_comp_dualMap, hp₂,
+  rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₂,
     TauCeti.SymmetricAlgebra.lift_eval_bilinearToQuadForm] at hval
 
 private noncomputable def incidenceDual {m : ℕ}
@@ -334,8 +333,7 @@ theorem mem_exteriorFlagCone_iff {d : ℕ} (w : FlagSpace k M d) :
       have hval := hw _ (map_dualMap_mem_exteriorFlagForms hp₁_cone hs₀)
       have hp₁w : p₁ ((flagSpaceSuccEquiv k M r).symm (w_r ⊗ₜ[k] θ)) = w_r := by
         simp [p₁, hψ₀]
-      rwa [_root_.SymmetricAlgebra.lift_map_apply, _root_.SymmetricAlgebra.lift_eval_comp_dualMap,
-        hp₁w] at hval
+      rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₁w] at hval
     obtain ⟨c₀, u, rfl⟩ := hw_r_cone
     have hc₀ : c₀ ≠ 0 := fun h ↦ hw_r0 (by simp [h])
     have hu : LinearIndependent k u :=

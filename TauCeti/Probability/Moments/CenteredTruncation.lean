@@ -14,8 +14,9 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 # Bounded centered approximations in mean square
 
 `centeredTruncation X P R` keeps `X` on the closed norm ball of radius `R` and subtracts
-the integral of the truncated variable. On a probability space it is bounded by `2R` and,
-when `X` is almost everywhere strongly measurable, has every finite absolute moment.
+the integral of the truncated variable. It is a measurable function of `X`, so it preserves
+independence. On a probability space it is bounded by `2R`. On a finite measure space, when `X`
+is almost everywhere strongly measurable, it has every finite absolute moment.
 Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
 measurable, and the target space is complete.
 For a centered square-integrable variable on a probability space with values in a complete
@@ -80,6 +81,16 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
   (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const)).sub
     aestronglyMeasurable_const
 
+/-- On a finite measure space, the centered truncation of an almost everywhere strongly
+measurable variable belongs to every `MemLp` space, including `L∞`. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation [IsFiniteMeasure P]
+    (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
+    {p : ℝ≥0∞} : MemLp (centeredTruncation X P R) p P := by
+  rw [centeredTruncation_def]
+  exact ((memLp_const (R : ℝ)).mono'
+    (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
+    (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))).sub (memLp_const _)
+
 variable [IsProbabilityMeasure P]
 
 /-- Centered truncation has norm at most twice the cutoff, including cutoff zero. -/
@@ -90,13 +101,6 @@ theorem norm_centeredTruncation_le (R : ℝ≥0) (ω : Ω) :
       add_le_add (norm_indicator_setOf_norm_le_le X R.coe_nonneg ω)
       (norm_integral_le_of_norm_le_const (μ := P) (f := {ω | ‖X ω‖ ≤ R}.indicator X)
         (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))))
-
-/-- Every finite absolute moment of a centered truncation exists. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation
-    (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
-    {p : ℝ≥0∞} : MemLp (centeredTruncation X P R) p P :=
-  (memLp_const (2 * (R : ℝ))).mono' (hX.centeredTruncation R)
-    (.of_forall (norm_centeredTruncation_le R))
 
 variable [CompleteSpace E]
 
@@ -196,6 +200,41 @@ theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_m
     (by simp only [S, norm_indicator_eq_indicator_norm]; exact
       Set.indicator_le_self' (fun _ _ ↦ norm_nonneg _) _) (norm_nonneg _) R.coe_nonneg
 
+/-- For a square-integrable variable on a probability space with values in a real Hilbert space,
+centering after norm truncation does not increase the second absolute moment. -/
+theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_sq_le
+    (hX : MemLp X 2 P) (R : ℝ≥0) :
+    ∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P ≤ ∫ ω, ‖X ω‖ ^ 2 ∂P := by
+  let S := {ω | ‖X ω‖ ≤ R}
+  let T := S.indicator X
+  have hT : MemLp T 2 P := hX.indicator
+    (nullMeasurableSet_le hX.aestronglyMeasurable.norm.aemeasurable aemeasurable_const)
+  have hnorm (ω : Ω) : ‖T ω‖ ≤ ‖X ω‖ := norm_indicator_le_norm_self X ω
+  rw [centeredTruncation_def, hT.integral_norm_sub_integral_sq]
+  refine (sub_le_self _ (sq_nonneg _)).trans ?_
+  exact integral_mono (hT.integrable_norm_pow (by decide)) (hX.integrable_norm_pow (by decide))
+    fun ω ↦ pow_le_pow_left₀ (norm_nonneg _) (hnorm ω) _
+
+/-- For a square-integrable variable on a probability space with values in a real Hilbert space,
+the centered truncation has absolute moment of order `k+2` bounded by the original second moment
+times `(2*R)^k`. -/
+theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_pow_le
+    (hX : MemLp X 2 P) (R : ℝ≥0) (k : ℕ) :
+    ∫ ω, ‖centeredTruncation X P R ω‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ)) ^ k * ∫ ω, ‖X ω‖ ^ 2 ∂P := by
+  have hR (p : ℕ) : MemLp (centeredTruncation X P R) p P :=
+    hX.aestronglyMeasurable.memLp_centeredTruncation R
+  calc
+    _ ≤ ∫ ω, (2 * (R : ℝ)) ^ k * ‖centeredTruncation X P R ω‖ ^ 2 ∂P := by
+      refine integral_mono (hR _).integrable_norm_pow'
+        ((hR 2).integrable_norm_pow'.const_mul _) fun ω ↦ ?_
+      rw [pow_add]
+      exact mul_le_mul_of_nonneg_right
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_centeredTruncation_le R ω) _) (sq_nonneg _)
+    _ ≤ _ := by
+      rw [integral_const_mul]
+      exact mul_le_mul_of_nonneg_left (hX.integral_norm_centeredTruncation_sq_le R) (by positivity)
+
 /-- Centered truncations approximate a centered square-integrable variable in mean square. -/
 theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_sub_centeredTruncation_sq
     (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0) :
@@ -267,6 +306,12 @@ private theorem centeredTruncationMap_comp (X : Ω → E) (P : Measure Ω) (R : 
   ext ω
   simp only [centeredTruncationMap, centeredTruncation_def, Function.comp_apply,
     Set.indicator_apply, Set.mem_ofPred_eq, id_eq]
+
+/-- Centered truncation is a measurable function of the original variable: truncation outside the
+closed ball of radius `R`, followed by subtraction of the truncated mean. -/
+theorem _root_.TauCeti.Probability.exists_measurable_comp_eq_centeredTruncation (X : Ω → E)
+    (P : Measure Ω) (R : ℝ≥0) : ∃ g : E → E, Measurable g ∧ g ∘ X = centeredTruncation X P R :=
+  ⟨_, measurable_centeredTruncationMap R _, centeredTruncationMap_comp X P R⟩
 
 /-- Equal laws preserve the joint law of a variable and its centered truncation.
 In particular, approximation errors are identically distributed. -/
