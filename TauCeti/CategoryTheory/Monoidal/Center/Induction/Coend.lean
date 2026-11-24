@@ -487,12 +487,12 @@ include k
 /-- The cocone point of `inductionCowedge k X` is `inductionObj X`. -/
 @[simp]
 theorem inductionCowedge_pt (X : C) : (inductionCowedge k X).pt = inductionObj X :=
-  rfl
+  (rfl)
 
 /-- The `Y`-coprojection of `inductionCowedge k X` is `inductionCoendι X Y`. -/
 @[simp]
 theorem inductionCowedge_π (X Y : C) : (inductionCowedge k X).π Y = inductionCoendι X Y :=
-  rfl
+  (rfl)
 
 /-- `inductionCowedge k X` is a colimit cowedge, realizing `inductionObj X` as the categorical
 coend `∫^{Y ∈ C} Y ⊗ X ⊗ Yᘁ`. -/

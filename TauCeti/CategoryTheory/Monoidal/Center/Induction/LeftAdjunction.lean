@@ -105,6 +105,52 @@ private theorem classOfUnitRightDual_evaluation :
   rw [@rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
     rightDualUnitIso_inv_whiskerRight_evaluation]
 
+omit [Abelian C] [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] in
+/-- Cancelling an object isomorphic to `𝟙_ C` on the left from `Y ◁ f = 𝟙 (Y ⊗ X)` yields
+`f = 𝟙 X`. -/
+private theorem eq_id_of_whiskerLeft_eq_id {Y X : C} (i : Y ≅ 𝟙_ C) {f : X ⟶ X}
+    (h : Y ◁ f = 𝟙 (Y ⊗ X)) : f = 𝟙 X := by
+  calc f = (λ_ X).inv ≫ i.inv ▷ X ≫ Y ◁ f ≫ i.hom ▷ X ≫ (λ_ X).hom := by
+        symm
+        rw [← whisker_exchange_assoc, ← comp_whiskerRight_assoc, i.inv_hom_id, id_whiskerRight,
+          Category.id_comp, leftUnitor_naturality, Iso.inv_hom_id_assoc]
+    _ = 𝟙 X := by
+        rw [h, Category.id_comp, ← comp_whiskerRight_assoc, i.inv_hom_id, id_whiskerRight,
+          Category.id_comp, Iso.inv_hom_id]
+
+omit [IsFiniteSemisimpleCategory C] in
+/-- The coevaluation of the unit-transported pairing on `S₀.repr` splits `ε_ S₀.repr S₀.reprᘁ`,
+making `ε_ S₀.repr S₀.reprᘁ` an isomorphism. -/
+private theorem unitCongrPairing_coevaluation_comp_evaluation :
+    let S₀ := SimpleClasses.classOf (𝟙_ C)
+    let e₀ : S₀.repr ≅ 𝟙_ C := SimpleClasses.classOfReprIso (𝟙_ C)
+    let i : S₀.reprᘁ ≅ 𝟙_ C := classOfUnitRightDualIso (C := C) ≪≫ rightDualUnitIso C
+    let p₂ : ExactPairing S₀.reprᘁ S₀.repr :=
+      @exactPairingCongr C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀
+    @ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂ ≫ ε_ S₀.repr S₀.reprᘁ = 𝟙 (𝟙_ C) := by
+  intro S₀ e₀ i p₂
+  rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀,
+    Category.assoc, Category.assoc, classOfUnitRightDual_evaluation,
+    ← whiskerLeft_comp_assoc, Iso.inv_hom_id, whiskerLeft_id, Category.id_comp,
+    TauCeti.ExactPairing.unit_coevaluation, Iso.inv_hom_id]
+
+omit [IsFiniteSemisimpleCategory C] in
+/-- The ordinary evaluation `ε_ S₀.repr S₀.reprᘁ` at `S₀ = classOf (𝟙_ C)` is an isomorphism. -/
+private theorem isIso_evaluation_classOf_unit :
+    let S₀ := SimpleClasses.classOf (𝟙_ C)
+    IsIso (ε_ S₀.repr S₀.reprᘁ) := by
+  intro S₀
+  let e₀ : S₀.repr ≅ 𝟙_ C := SimpleClasses.classOfReprIso (𝟙_ C)
+  let i : S₀.reprᘁ ≅ 𝟙_ C := classOfUnitRightDualIso (C := C) ≪≫ rightDualUnitIso C
+  let p₂ : ExactPairing S₀.reprᘁ S₀.repr :=
+    @exactPairingCongr C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀
+  have : IsIso (@ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂) := by
+    rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀,
+      TauCeti.ExactPairing.unit_coevaluation]
+    infer_instance
+  rw [IsIso.eq_inv_of_hom_inv_id (unitCongrPairing_coevaluation_comp_evaluation (C := C))]
+  infer_instance
+
 /-- On the representative `S₀.repr` of `SimpleClasses.classOf (𝟙_ C)`, the swapped evaluation
 `swapEval S₀.repr` agrees with the unit pairing transported along `classOfReprIso (𝟙_ C)`. -/
 private theorem swapEval_classOf_unit :
@@ -118,25 +164,14 @@ private theorem swapEval_classOf_unit :
   let p₁ : ExactPairing S₀.reprᘁ S₀.repr := simpleSwapExactPairing S₀.repr
   let p₂ : ExactPairing S₀.reprᘁ S₀.repr :=
     @exactPairingCongr C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀
-  have hp₂_eval : @ExactPairing.evaluation C _ _ S₀.reprᘁ S₀.repr p₂ =
-      S₀.repr ◁ ((classOfUnitRightDualIso (C := C)).hom ≫ (rightDualUnitIso C).hom) ≫
-        e₀.hom ▷ 𝟙_ C ≫ (ρ_ (𝟙_ C)).hom :=
-    @exactPairingCongr_evaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀
-  have hp₂_coeval_iso : IsIso (@ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂) := by
+  have hp₂_comp := unitCongrPairing_coevaluation_comp_evaluation (C := C)
+  -- Since `ε_ S₀.repr S₀.reprᘁ` is an isomorphism, both coevaluations equal its inverse, so
+  -- the comparison isomorphism `rightDualIso p₁ p₂` is the identity.
+  have : IsIso (@ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂) := by
     rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀,
       TauCeti.ExactPairing.unit_coevaluation]
     infer_instance
-  have hp₂_comp : @ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂ ≫ ε_ S₀.repr S₀.reprᘁ =
-      𝟙 (𝟙_ C) := by
-    rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀,
-      Category.assoc, Category.assoc, classOfUnitRightDual_evaluation,
-      ← whiskerLeft_comp_assoc, Iso.inv_hom_id, whiskerLeft_id, Category.id_comp,
-      TauCeti.ExactPairing.unit_coevaluation, Iso.inv_hom_id]
-  have hε_eq : ε_ S₀.repr S₀.reprᘁ = inv (@ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂) :=
-    IsIso.eq_inv_of_hom_inv_id hp₂_comp
-  have hε_iso : IsIso (ε_ S₀.repr S₀.reprᘁ) := by
-    rw [hε_eq]
-    infer_instance
+  have : IsIso (ε_ S₀.repr S₀.reprᘁ) := isIso_evaluation_classOf_unit
   have hcoeval : swapCoeval S₀.repr = @ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂ := by
     rw [← cancel_mono (ε_ S₀.repr S₀.reprᘁ), simpleSwapExactPairing_coevaluation_comp_evaluation,
       hp₂_comp]
@@ -145,19 +180,13 @@ private theorem swapEval_classOf_unit :
       ← hcoeval, ExactPairing.rightDualIso_hom,
       @ExactPairing.coevaluation_comp_rightMate C _ _ _ _ _ _ p₂ p₁ (𝟙 S₀.reprᘁ),
       id_whiskerRight, Category.comp_id, hcoeval]
-  have hiso_hom : (rightDualIso p₁ p₂).hom = 𝟙 S₀.repr := by
-    calc (rightDualIso p₁ p₂).hom
-        = (λ_ S₀.repr).inv ≫ i.inv ▷ S₀.repr ≫ (S₀.reprᘁ : C) ◁ (rightDualIso p₁ p₂).hom ≫
-            i.hom ▷ S₀.repr ≫ (λ_ S₀.repr).hom := by
-          symm
-          rw [← whisker_exchange_assoc, ← comp_whiskerRight_assoc, i.inv_hom_id, id_whiskerRight,
-            Category.id_comp, leftUnitor_naturality, Iso.inv_hom_id_assoc]
-      _ = 𝟙 S₀.repr := by
-          rw [hwhisker, Category.id_comp, ← comp_whiskerRight_assoc, i.inv_hom_id, id_whiskerRight,
-            Category.id_comp, Iso.inv_hom_id]
+  have hiso_hom : (rightDualIso p₁ p₂).hom = 𝟙 S₀.repr :=
+    eq_id_of_whiskerLeft_eq_id i hwhisker
   dsimp only [swapEval]
   rw [← ExactPairing.rightDualIso_hom_whiskerRight_evaluation p₁ p₂, hiso_hom, id_whiskerRight,
-    Category.id_comp, hp₂_eval]
+    Category.id_comp, @exactPairingCongr_evaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C)
+      exactPairingUnit i e₀]
+  rfl
 
 end SwapPairing
 
@@ -406,6 +435,35 @@ private theorem map_counitDualEquiv_homDual [∀ X Y : C, FiniteDimensional k (X
     Finsupp.single_apply]
   split_ifs <;> simp
 
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- Transposing the right-hand side of `sum_counitTerm_eq` along `simpleSwapExactPairing S.repr`
+yields the identity on `S.reprᘁ ⊗ U`. -/
+private theorem tensorLeftHomEquiv_swapEval_comp (U : C) (S : SimpleClasses C) :
+    @tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U (simpleSwapExactPairing S.repr)
+      ((α_ S.repr S.reprᘁ U).inv ≫ swapEval S.repr ▷ U ≫ (λ_ U).hom) = 𝟙 (S.reprᘁ ⊗ U) := by
+  let eqv := @tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
+    (simpleSwapExactPairing S.repr)
+  have hsymm : eqv.symm (𝟙 (S.reprᘁ ⊗ U)) =
+      (α_ S.repr S.reprᘁ U).inv ≫ swapEval S.repr ▷ U ≫ (λ_ U).hom := by
+    simp [eqv, tensorLeftHomEquiv]
+  rw [← hsymm, eqv.apply_symm_apply]
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
+  [Simple (𝟙_ C)] in
+/-- Transporting a basis of `X ⟶ Z` along `e : Y ≅ X` multiplies its composition-dual basis on the
+right by `e.inv`. -/
+private theorem basis_map_homCongr_left_homDual {X Y Z : C} [Simple X] [Simple Y]
+    [FiniteDimensional k (X ⟶ X)] [FiniteDimensional k (Y ⟶ Y)]
+    {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι k (X ⟶ Z)) (e : Y ≅ X) (i : ι) :
+    (b.map (Linear.homCongr k e.symm (Iso.refl Z))).homDual i = b.homDual i ≫ e.inv := by
+  symm
+  rw [Basis.eq_homDual_iff]
+  intro j
+  simp only [Basis.map_apply, Linear.homCongr_apply, Iso.symm_inv, Iso.refl_hom,
+    Category.comp_id, Category.assoc]
+  rw [← Category.assoc (b j), b.apply_comp_homDual]
+  split_ifs <;> simp
+
 /-- Completeness identity underlying half-braiding compatibility of `counitLF`. -/
 private theorem sum_counitTerm_eq [Fintype (SimpleClasses C)]
     [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] (U : C) (S : SimpleClasses C) :
@@ -414,19 +472,12 @@ private theorem sum_counitTerm_eq [Fintype (SimpleClasses C)]
         inductionMate k U ((Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).homDual i)) ≫
         (α_ U T.repr T.reprᘁ).hom ≫ U ◁ swapEval T.repr ≫ (ρ_ U).hom) =
       (α_ S.repr S.reprᘁ U).inv ≫ swapEval S.repr ▷ U ≫ (λ_ U).hom := by
+  -- 1. Transpose along `tensorLeftHomEquiv` so the target becomes `𝟙 (S.reprᘁ ⊗ U)` and the sum
+  --    becomes `∑ T, ∑ i, (c T).homDual i ≫ c T i` for the transported bases `c T`.
   apply (@tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
     (simpleSwapExactPairing S.repr)).injective
-  have hrhs : @tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
-      (simpleSwapExactPairing S.repr)
-      ((α_ S.repr S.reprᘁ U).inv ≫ swapEval S.repr ▷ U ≫ (λ_ U).hom) = 𝟙 (S.reprᘁ ⊗ U) := by
-    let eqv := @tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
-      (simpleSwapExactPairing S.repr)
-    have hsymm : eqv.symm (𝟙 (S.reprᘁ ⊗ U)) =
-        (α_ S.repr S.reprᘁ U).inv ≫ swapEval S.repr ▷ U ≫ (λ_ U).hom := by
-      simp [eqv, tensorLeftHomEquiv]
-    rw [← hsymm, eqv.apply_symm_apply]
-  rw [hrhs, ← @tensorLeftHomLinearEquiv_apply C _ _ _ _ k _ _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
-    (simpleSwapExactPairing S.repr)]
+  rw [tensorLeftHomEquiv_swapEval_comp, ← @tensorLeftHomLinearEquiv_apply C _ _ _ _ k _ _ _
+    (S.reprᘁ ⊗ U) S.reprᘁ S.repr U (simpleSwapExactPairing S.repr)]
   simp only [map_sum, tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv_counitTerm k]
   let c (T : SimpleClasses C) :=
     (Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map (counitDualEquiv k U S T)
@@ -438,25 +489,18 @@ private theorem sum_counitTerm_eq [Fintype (SimpleClasses C)]
     rw [← map_counitDualEquiv_homDual k U S T]
     dsimp only [c]
     rw [Basis.map_apply]
+  -- 2. Reindex over dual classes `R ↦ R.dual` and transport `c R.dual` along
+  --    `R.repr ≅ R.dual.reprᘁ` into bases `a R` of `R.repr ⟶ S.reprᘁ ⊗ U`.
   rw [h1, ← Equiv.sum_comp SimpleClasses.dual_involutive.toPerm]
   let e (R : SimpleClasses C) : R.repr ≅ R.dual.reprᘁ :=
     (nonempty_iso_rightDual_rightDual R.repr).some ≪≫ (SimpleClasses.dualReprIso R).rightAdjointMate
   let a (R : SimpleClasses C) :=
     (c R.dual).map (Linear.homCongr k (e R).symm (Iso.refl ((S.reprᘁ : C) ⊗ U)))
-  have ha_dual (R : SimpleClasses C)
-      (i : Fin (Module.finrank k (S.repr ⟶ U ⊗ R.dual.repr))) :
-      (a R).homDual i = (c R.dual).homDual i ≫ (e R).inv := by
-    symm
-    rw [Basis.eq_homDual_iff]
-    intro j
-    simp only [a, Basis.map_apply, Linear.homCongr_apply, Iso.symm_inv, Iso.refl_hom,
-      Category.comp_id, Category.assoc]
-    rw [← Category.assoc (c R.dual j), (c R.dual).apply_comp_homDual]
-    split_ifs <;> simp
+  -- 3. Apply the dual-basis completeness identity `sum_sum_homDual_comp_eq_id` to `a`.
   calc (∑ R : SimpleClasses C, ∑ i, (c R.dual).homDual i ≫ c R.dual i)
       = ∑ R : SimpleClasses C, ∑ i, (a R).homDual i ≫ a R i := by
           refine Finset.sum_congr rfl fun R _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-          simp [ha_dual R i, a, Linear.homCongr_apply]
+          simp [a, basis_map_homCongr_left_homDual, Linear.homCongr_apply]
     _ = 𝟙 ((S.reprᘁ : C) ⊗ U) := sum_sum_homDual_comp_eq_id ((S.reprᘁ : C) ⊗ U) a
 
 end Completeness
@@ -661,6 +705,19 @@ private theorem ι_whiskerRight_inductionβHom_rightDual (X : C) (S : SimpleClas
     rw [inductionβComponent_rightDual_classOf_unit_of_ne k X hTS, zero_comp]
   · simp
 
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- Naturality of the associator, `swapEval`, and left unitor past the `S`-summand inclusion
+`biproduct.ι (inductionSummand X) S`. -/
+private theorem whiskerLeft_ι_comp_swapEval_assoc (X : C) (S : SimpleClasses C) :
+    S.repr ◁ (S.reprᘁ : C) ◁ biproduct.ι (inductionSummand X) S ≫
+        (α_ S.repr S.reprᘁ (inductionObj X)).inv ≫
+        swapEval S.repr ▷ inductionObj X ≫ (λ_ (inductionObj X)).hom =
+      (α_ S.repr S.reprᘁ (inductionSummand X S)).inv ≫
+        swapEval S.repr ▷ inductionSummand X S ≫
+        (λ_ (inductionSummand X S)).hom ≫
+        biproduct.ι (inductionSummand X) S := by
+  rw [associator_inv_naturality_right_assoc, whisker_exchange_assoc, leftUnitor_naturality]
+
 /-- Left triangle identity:
 `inductionMap (unitLF X) ≫ counitLF (inductionHalfBraiding k X) = 𝟙 (inductionObj X)`. -/
 private theorem map_unitLF_comp_counitLF (X : C) :
@@ -670,27 +727,22 @@ private theorem map_unitLF_comp_counitLF (X : C) :
     inductionHalfBraiding_β_hom]
   let S₀ := SimpleClasses.classOf (𝟙_ C)
   let e₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  have htail : S.repr ◁ (S.reprᘁ : C) ◁ biproduct.ι (inductionSummand X) S ≫
-      (α_ S.repr S.reprᘁ (inductionObj X)).inv ≫
-      swapEval S.repr ▷ inductionObj X ≫ (λ_ (inductionObj X)).hom =
-      (α_ S.repr S.reprᘁ (inductionSummand X S)).inv ≫
-        swapEval S.repr ▷ inductionSummand X S ≫
-        (λ_ (inductionSummand X S)).hom ≫
-        biproduct.ι (inductionSummand X) S := by
-    rw [associator_inv_naturality_right_assoc, whisker_exchange_assoc, leftUnitor_naturality]
   dsimp only [unitLF]
   rw [inductionCoendι_tensorUnit k X]
   simp only [whiskerLeft_comp, comp_whiskerRight, Category.assoc]
   rw [← whiskerLeft_comp_assoc S.repr (biproduct.ι (inductionSummand X) S₀ ▷ (S.reprᘁ : C)),
     ι_whiskerRight_inductionβHom_rightDual k X S,
     inductionβComponent_rightDual_classOf_unit_self k X S, Iso.symm_hom, Iso.symm_inv,
-    inductionTerm_apply, whiskerLeft_comp_assoc, htail]
+    inductionTerm_apply, whiskerLeft_comp_assoc, whiskerLeft_ι_comp_swapEval_assoc]
   simp only [← Category.assoc]
   refine (congrArg (· ≫ biproduct.ι (inductionSummand X) S) ?_).trans
     (Category.id_comp (biproduct.ι (inductionSummand X) S))
   dsimp only [inductionSummand]
   let u : 𝟙_ C ⟶ S₀.reprᘁ :=
     (rightDualUnitIso C).inv ≫ (classOfUnitRightDualIso (C := C)).inv
+  -- Cancel `e₀.inv ≫ e₀.hom`, commute `u` past `swapCoeval S.repr` to meet `inductionMate`,
+  -- collapse that pair via `inductionMate_evaluation_classOf_unit`, and close by the
+  -- swap-pairing zigzag `@ExactPairing.coevaluation_evaluation''`.
   calc _ = 𝟙 _ ⊗≫ S.repr ◁ (𝟙_ C ◁ (X ◁ u) ≫
               (e₀.inv ≫ (e₀.hom ≫ swapCoeval S.repr)) ▷ (X ⊗ S₀.reprᘁ)) ▷ (S.reprᘁ : C) ⊗≫
             (S.repr ⊗ S.reprᘁ ⊗ S.repr) ◁ X ◁

@@ -434,12 +434,12 @@ include k
 /-- The cone point of `inductionWedge k X` is `inductionObj X`. -/
 @[simp]
 theorem inductionWedge_pt (X : C) : (inductionWedge k X).pt = inductionObj X :=
-  rfl
+  (rfl)
 
 /-- The `Y`-projection of `inductionWedge k X` is `inductionEndπ X Y`. -/
 @[simp]
 theorem inductionWedge_ι (X Y : C) : (inductionWedge k X).ι Y = inductionEndπ X Y :=
-  rfl
+  (rfl)
 
 /-- `inductionWedge k X` is a limit wedge, realizing `inductionObj X` as the categorical end
 `∫_{Y ∈ C} Y ⊗ X ⊗ Yᘁ`. -/

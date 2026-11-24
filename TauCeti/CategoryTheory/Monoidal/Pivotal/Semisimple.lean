@@ -37,10 +37,7 @@ pivotal structures and their traces are controlled by what happens on simple obj
 * `TauCeti.sphericalCategory_iff_leftDim_eq_rightDim`: a pivotal structure is spherical if and
   only if its left and right dimensions agree on simple objects.
 * `TauCeti.coevaluation_comp_simpleSwapExactPairing_evaluation`: `η_ X Xᘁ` composed with the
-  evaluation of `simpleSwapExactPairing X` equals `leftDim X ≫ rightDim X`;
-* `TauCeti.leftDim_eq_sum_simpleMultiplicities` and
-  `TauCeti.rightDim_eq_sum_simpleMultiplicities`: the left and right dimensions of an object
-  are the sums of those of the simple representatives weighted by their multiplicities.
+  evaluation of `simpleSwapExactPairing X` equals `leftDim X ≫ rightDim X`.
 
 ## References
 
@@ -139,35 +136,5 @@ theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (
     leftTrace_inv_comp_rightTrace_hom k (rightDualIso p₁ p₂)]
 
 end Spherical
-
-section Multiplicity
-
-/-- In a finite semisimple pivotal category, the left dimension of an object is the sum of the
-left dimensions of the simple representatives weighted by their multiplicities in the object. -/
-theorem leftDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
-    leftDim X = (simpleMultiplicities X).sum fun S n ↦ n • leftDim S.repr := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
-  let inv : SplitK0.AdditiveInvariant C (𝟙_ C ⟶ 𝟙_ C) :=
-    { obj := leftDim
-      map_iso := fun _ _ e ↦ leftDim_congr e
-      map_biprod := fun A B ↦ leftDim_biprod }
-  have h := congrArg (SplitK0.lift inv) (SplitK0.of_eq_sum X)
-  rw [SplitK0.lift_of, map_finsuppSum] at h
-  simpa only [map_nsmul, SplitK0.lift_of] using h
-
-/-- In a finite semisimple pivotal category, the right dimension of an object is the sum of the
-right dimensions of the simple representatives weighted by their multiplicities in the object. -/
-theorem rightDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
-    rightDim X = (simpleMultiplicities X).sum fun S n ↦ n • rightDim S.repr := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
-  let inv : SplitK0.AdditiveInvariant C (𝟙_ C ⟶ 𝟙_ C) :=
-    { obj := rightDim
-      map_iso := fun _ _ e ↦ rightDim_congr e
-      map_biprod := fun A B ↦ rightDim_biprod }
-  have h := congrArg (SplitK0.lift inv) (SplitK0.of_eq_sum X)
-  rw [SplitK0.lift_of, map_finsuppSum] at h
-  simpa only [map_nsmul, SplitK0.lift_of] using h
-
-end Multiplicity
 
 end TauCeti

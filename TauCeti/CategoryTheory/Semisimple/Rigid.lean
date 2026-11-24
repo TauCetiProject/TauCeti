@@ -109,17 +109,19 @@ theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (X
   exact ⟨asIso g⟩
 
 omit [MonoidalPreadditive C] in
+/-- For a simple object `X`, the evaluation `ε_ X Xᘁ` is a split epimorphism onto `𝟙_ C`. -/
+private instance isSplitEpi_evaluation_rightDual (X : C) [Simple X] : IsSplitEpi (ε_ X Xᘁ) :=
+  isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+
+omit [MonoidalPreadditive C] in
 /-- Auxiliary morphism `(Xᘁ)ᘁ ⟶ X` obtained by transposing a section of `ε_ X Xᘁ`. -/
 private def simpleSwapDualHom (X : C) [Simple X] : (Xᘁ)ᘁ ⟶ X :=
-  letI := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   (ρ_ (Xᘁ)ᘁ).inv ≫ (tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).symm (section_ (ε_ X Xᘁ))
 
 omit [MonoidalPreadditive C] in
 @[reassoc]
 private theorem coevaluation_comp_simpleSwapDualHom (X : C) [Simple X] :
-    letI := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
     η_ Xᘁ (Xᘁ)ᘁ ≫ Xᘁ ◁ simpleSwapDualHom X = section_ (ε_ X Xᘁ) := by
-  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   refine (?_ : _ = tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X
     ((tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).symm (section_ (ε_ X Xᘁ)))).trans
       ((tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).apply_symm_apply _)
@@ -131,7 +133,6 @@ private theorem isIso_simpleSwapDualHom (X : C) [Simple X] : IsIso (simpleSwapDu
   -- In a rigid abelian category, tensoring on either side is a left adjoint, giving
   -- `MonoidalPreadditive C` and hence `Simple (Xᘁ)ᘁ` via `TauCeti.simple_rightDual`.
   have : MonoidalPreadditive C := monoidalPreadditive_of_isLeftAdjoint C
-  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   refine isIso_of_hom_simple fun h ↦ CategoryTheory.id_ne_zero (𝟙_ C) ?_
   rw [← IsSplitEpi.id (ε_ X Xᘁ), ← coevaluation_comp_simpleSwapDualHom X, h,
     whiskerLeft_zero_of_hasLeftDual, comp_zero, zero_comp]
@@ -152,7 +153,6 @@ omit [MonoidalPreadditive C] in
 theorem simpleSwapExactPairing_coevaluation_comp_evaluation (X : C) [Simple X] :
     @ExactPairing.coevaluation C _ _ Xᘁ X (simpleSwapExactPairing X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
   have := isIso_simpleSwapDualHom X
-  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   rw [simpleSwapExactPairing, exactPairingCongrRight_coevaluation_assoc, Iso.symm_inv, asIso_hom,
     coevaluation_comp_simpleSwapDualHom_assoc]
   exact IsSplitEpi.id (ε_ X Xᘁ)

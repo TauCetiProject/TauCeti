@@ -52,9 +52,9 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
   many simple isomorphism classes;
 * `CategoryTheory.Center.simpleMultiplicities_induction_obj`: Frobenius reciprocity for simple
   multiplicities between `C` and `Center C`;
-* `CategoryTheory.Center.averagingScalar`,
-  `CategoryTheory.Center.forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul`, and
-  `CategoryTheory.Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit`:
+* `CategoryTheory.Center.averagingScalar` and the `averagingScalar` identity
+  (`forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_averagingScalar_smul`
+  and `forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit`):
   the pivot-free averaging scalar and averaging identity, and its pivotal form
   `η_Z ≫ ε'_Z = dim(C) • 𝟙 Z`;
 * `CategoryTheory.Center.isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero`,
@@ -73,9 +73,10 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
 * `CategoryTheory.Center.leftDim_inductionObj`, `CategoryTheory.Center.rightDim_inductionObj`,
   `CategoryTheory.Center.endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory`,
   `CategoryTheory.Center.globalDim_eq_smul_id_of_isFiniteSemisimpleCategory`,
-  `CategoryTheory.Center.globalDim_f_of_isFiniteSemisimpleCategory`, and
-  `CategoryTheory.Center.endAlgEquivOfSimple_globalDim`: `dim(I(X)) = dim(X) · dim(C)` and
-  `globalDim (Center C) = (globalDim C)²`.
+  `CategoryTheory.Center.globalDim_f_of_isFiniteSemisimpleCategory`,
+  `CategoryTheory.Center.endAlgEquivOfSimple_globalDim`,
+  `CategoryTheory.Center.globalDim_eq_smul_id`, and `CategoryTheory.Center.globalDim_f`:
+  `dim(I(X)) = dim(X) · dim(C)` and `globalDim (Center C) = (globalDim C)²`.
 
 ## References
 
@@ -186,7 +187,8 @@ theorem averagingScalar_def :
 unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` multiplies
 `𝟙 Z.1` by `averagingScalar k C`. -/
 @[reassoc]
-theorem forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul
+theorem
+    forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_eq_averagingScalar_smul
     (Z : Center C) :
     ((forgetInductionAdjunction k C).unit.app Z).f ≫
         ((inductionForgetAdjunction k C).counit.app Z).f =
@@ -240,13 +242,14 @@ theorem forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul
 `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at `Z : Center C`
 acts as scalar multiplication by `averagingScalar k C`. -/
 @[reassoc]
-theorem forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul
+theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_averagingScalar_smul
     (Z : Center C) :
     (forgetInductionAdjunction k C).unit.app Z ≫
         (inductionForgetAdjunction k C).counit.app Z =
       averagingScalar k C • 𝟙 Z :=
   Hom.ext
-    (forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul k C Z)
+    (forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_eq_averagingScalar_smul
+      k C Z)
 
 /-- When `averagingScalar k C ≠ 0`, each component of the unit of `forgetInductionAdjunction` is
 a split monomorphism in `Center C`, retracted by
@@ -257,7 +260,7 @@ theorem isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero
   refine IsSplitMono.mk'
     ⟨(averagingScalar k C)⁻¹ • (inductionForgetAdjunction k C).counit.app Z, ?_⟩
   rw [Linear.comp_smul,
-    forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul,
+    forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_averagingScalar_smul,
     smul_smul, inv_mul_cancel₀ h, one_smul]
   simp only [Functor.id_obj]
 
@@ -307,7 +310,7 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit (Z 
     (forgetInductionAdjunction k C).unit.app Z ≫
         (inductionForgetAdjunction k C).counit.app Z =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z := by
-  rw [forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul,
+  rw [forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_averagingScalar_smul,
     averagingScalar_eq_endAlgEquivOfSimple_globalDim]
 
 /-- Underlying morphism form of the averaging identity on `Center C`: composing the unit of
@@ -510,6 +513,22 @@ theorem endAlgEquivOfSimple_globalDim [CharZero k] [Fintype (SimpleClasses (Cent
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 := by
   have := isFiniteSemisimpleCategory k C
   exact endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory k C
+
+/-- **Global dimension of the Drinfeld centre in characteristic zero (scalar multiplication
+form)**: `globalDim (Center C) = (dim C)² • 𝟙 (𝟙_ (Center C))`. -/
+theorem globalDim_eq_smul_id [CharZero k] [Fintype (SimpleClasses (Center C))] :
+    globalDim (Center C) =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 • 𝟙 (𝟙_ (Center C)) := by
+  have := isFiniteSemisimpleCategory k C
+  exact globalDim_eq_smul_id_of_isFiniteSemisimpleCategory k C
+
+include k in
+/-- **Global dimension of the Drinfeld centre in characteristic zero (morphism form)**:
+`(globalDim (Center C)).f = globalDim C ≫ globalDim C`. -/
+theorem globalDim_f [CharZero k] [Fintype (SimpleClasses (Center C))] :
+    (globalDim (Center C)).f = globalDim C ≫ globalDim C := by
+  have := isFiniteSemisimpleCategory k C
+  exact globalDim_f_of_isFiniteSemisimpleCategory k C
 
 end GlobalDim
 
