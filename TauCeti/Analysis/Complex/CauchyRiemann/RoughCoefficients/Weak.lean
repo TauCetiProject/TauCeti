@@ -60,6 +60,8 @@ for the statements here.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field.
+* `TauCeti.IsSobolevCRCoefficients.of_contDiffOn`: `C¹` coefficients `J`, with `DJ = fderiv ℝ J`,
+  and continuous `S` are Sobolev coefficients for every exponent `p`.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
@@ -242,6 +244,13 @@ structure IsSobolevCRCoefficients (p : ℝ≥0∞) (Ω : Opens ℂ) (J : ℂ →
   memLpLoc_deriv : MemLpLoc p Ω DJ
   /-- The zeroth-order coefficient is locally `Lᵖ` on `Ω`. -/
   memLpLoc_zeroth : MemLpLoc p Ω S
+
+/-- `C¹` coefficients `J`, with `DJ = fderiv ℝ J`, and a continuous `S` are Sobolev coefficients
+for every exponent `p`. -/
+theorem IsSobolevCRCoefficients.of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω)
+    (hS : ContinuousOn S Ω) : IsSobolevCRCoefficients p Ω J (fderiv ℝ J) S := by
+  have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
+  exact ⟨hJ.hasWeakFDerivOn_fderiv, hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
 
 section Holder
 
@@ -433,14 +442,8 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
     (hS : ContinuousOn S Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hη : ContinuousOn η Ω) :
     IsWeakCRSolution q Ω J (fderiv ℝ J) S ξ η ↔
       ∀ z ∈ (Ω : Set ℂ), fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z := by
-  have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
   have hξ' : ContinuousOn (fderiv ℝ ξ) Ω := hξ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  have hdiff {f : ℂ → V →L[ℝ] V} (hf : ContDiffOn ℝ 1 f Ω) (z : ℂ) (hz : z ∈ (Ω : Set ℂ)) :
-      DifferentiableAt ℝ f z :=
-    (hf.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
-  have hc : IsSobolevCRCoefficients 2 Ω J (fderiv ℝ J) S :=
-    ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      (hdiff hJ), hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
+  have hc : IsSobolevCRCoefficients 2 Ω J (fderiv ℝ J) S := .of_contDiffOn hJ hS
   have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) :=
     hasWeakFDerivOn_of_differentiableOn (hξ'.locallyIntegrableOn Ω.isOpen.measurableSet)
       fun z hz => (hξ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
