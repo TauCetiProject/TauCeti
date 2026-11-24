@@ -86,7 +86,7 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 section CorepresentableByToIso
 
@@ -567,6 +567,23 @@ theorem mapPointsFunctor_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
   exact Functor.map_preimage
     (pointsFunctor.{u, u, u} (R := R) :
       (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}) _
+
+/-- **Universe lifting for `TauCeti.CommHopfAlgCat.homOfPointsMap`**: over value algebras of any
+universe, the recovered coordinate morphism sends a point `q` to the image under `q` of the
+generic point `α (𝟙 H)`. A points map defined at every universe and natural in the value algebra
+is thus determined by its value on the generic point. -/
+theorem mapPointsFunctor_homOfPointsMap_app {H K : _root_.CommHopfAlgCat.{u} R}
+    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
+      HopfAlgebra.pointsFunctor (R := R) (H := K))
+    (A : CommAlgCat.{w} R) (q : HopfAlgebra.points (R := R) (H := H) A) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap α)).app A q =
+      AlgHom.mapValue (H := K) q.ofConv
+        (α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H))) := by
+  have h := congrArg (fun τ => τ.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)))
+    (mapPointsFunctor_homOfPointsMap α)
+  rw [← h, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapValue_apply, ofConv_toConv,
+    AlgHom.id_comp, ofConv_toConv]
 
 /-- Recovering a coordinate morphism from the points map it induces returns that morphism.
 With `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` this makes

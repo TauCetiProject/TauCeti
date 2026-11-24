@@ -19,8 +19,10 @@ standard complete flag is the subgroup of upper triangular matrices. This file c
 closed subgroup scheme over every commutative ring `R`: the defining Hopf ideal is the join of the
 defining Hopf ideal of `SO_l^J` and the upper triangular Hopf ideal of `GL_l`
 (`TauCeti.GeneralLinear.UpperTriangular.definingHopfIdeal`), so that on points it cuts out the
-upper triangular matrices of `SO_l^J`. The construction is valid over nonreduced algebras and in
-characteristic two.
+upper triangular matrices of `SO_l^J`. This closed subgroup scheme is defined over every
+commutative ring; it is the upper triangular subgroup of the split special orthogonal group only
+where `TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Basic` identifies `SO_l^J` with
+it, away from characteristic two.
 
 The diagonal torus `diag(t₁, …, tₙ, (1), tₙ⁻¹, …, t₁⁻¹)` of `SO_l^J`
 (`TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorus`) factors through the upper triangular
@@ -41,7 +43,8 @@ connectedness or Borel maximality is claimed here.
   are solvable.
 * `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.diagonalTorus`: the diagonal torus as a
   closed subgroup scheme of the upper triangular subgroup, recovering the diagonal torus of
-  `SO_l^J` (`diagonalTorus_comp_inclusion`).
+  `SO_l^J` (`diagonalTorus_comp_inclusion`, and `pointsMulEquiv_diagonalTorusCoordinateMap` on
+  points).
 
 ## References
 
@@ -353,5 +356,26 @@ instance isClosedImmersion_diagonalTorus :
     (DiagonalizableGroup.groupScheme_def R
       (SplitTorus.characterGroup (ULift.{u} (Fin (l / 2))))) _).mpr
     (diagonalTorusCoordinateMap_surjective R l)
+
+/-- **The diagonal torus of the upper triangular subgroup on points**: the factored torus map
+gives the same diagonal matrix as the diagonal torus of `SO_l^J`. -/
+@[simp]
+theorem pointsMulEquiv_diagonalTorusCoordinateMap {A : Type w} [CommRing A] [Algebra R A]
+    (f : WithConv
+      (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin (l / 2)) →₀ ℤ)) →ₐ[R] A)) :
+    (pointsMulEquiv R l (A := A)
+        (toConv (f.ofConv.comp (diagonalTorusCoordinateMap R l).hom)) : GL (Fin l) A) =
+      AntidiagonalSpecialOrthogonal.pointsMulEquiv R l (A := A)
+        (AntidiagonalSpecialOrthogonal.diagonalTorusPoints R l A f) := by
+  have hquot := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (definingHopfIdeal R l) (diagonalTorusCoordinateMap R l)
+    (GeneralLinear.weightTorusCoordinateMap (diagonalTorusWeight l))
+    (CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _) (CommAlgCat.of R A) f
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap R l)
+    (CommAlgCat.of R A) f] at hquot
+  rw [← pointsMulEquiv_coe, ← hquot,
+    AntidiagonalSpecialOrthogonal.pointsMulEquiv_diagonalTorusPoints]
+  exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap _
+    (CommAlgCat.of R A) f
 
 end TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular

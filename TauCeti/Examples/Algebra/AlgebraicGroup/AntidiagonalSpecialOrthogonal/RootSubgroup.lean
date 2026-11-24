@@ -52,17 +52,18 @@ example [Invertible (2 : A)] (a : A) :
   linear_combination (-a ^ 2) * mul_invOf_self (2 : A)
 
 /-- The root index `(0, 1)` of `SO_4^J`, of the root `ε₁ - ε₂`. -/
-def rootIndexFour : RootIndex 4 := ⟨0, 1, by decide, by decide, by decide, by decide⟩
+def rootSubgroupIndexFour : RootSubgroupIndex 4 :=
+  ⟨0, 1, by decide, by decide, by decide, by decide⟩
 
 /-- For `l = 4`, the root matrix of `(0, 1)` is `I + a(E₀₁ - E₂₃)`. -/
 example (a : A) :
-    rootMatrix rootIndexFour a = 1 + a • (single 0 1 1 - single 2 3 1) := by
+    rootMatrix rootSubgroupIndexFour a = 1 + a • (single 0 1 1 - single 2 3 1) := by
   rw [rootMatrix_def, rootNilpotent_def]
   congr
 
 /-- The root matrix of `(0, 1)` lies in `SO_4^J`. -/
 example (a : A) :
-    rootHom rootIndexFour A (Multiplicative.ofAdd a) ∈ pointsSubgroup 4 A :=
+    rootHom rootSubgroupIndexFour A (Multiplicative.ofAdd a) ∈ pointsSubgroup 4 A :=
   rootHom_mem_pointsSubgroup _ _
 
 end TauCeti.AntidiagonalSpecialOrthogonal

@@ -24,8 +24,10 @@ Then `N_ij J_l` is antisymmetric, `N_ij J_l N_ijᵀ = 0` and `N_ij² = 0`, so `x
 it to a morphism of affine group schemes over every commutative ring. For `i, j < l / 2`, `x_ij` is
 the root subgroup of the root `ε_i - ε_j` of the diagonal torus
 (`TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorus`); for `i < l / 2 ≤ j` (so `j' < l / 2`) it
-is that of `ε_i + ε_{j'}`, and the remaining pairs give the negatives. In `1`-indexed notation,
-`x_{ε_i - ε_j}(a) = I + a(E_ij - E_{l+1-j, l+1-i})`.
+is that of `ε_i + ε_{j'}`, and for `j < l / 2 ≤ i` that of `-(ε_{i'} + ε_j)`. Since
+`N_{j' i'} = -N_ij`, the pairs `(i, j)` and `(j', i')` give the same root subgroup with opposite
+parameter, `x_{j' i'}(a) = x_ij(-a)`; this covers the pairs with `i, j ≥ l / 2`. In `1`-indexed
+notation, `x_{ε_i - ε_j}(a) = I + a(E_ij - E_{l+1-j, l+1-i})`.
 
 Each root subgroup is a closed subgroup scheme of `SO_l^J`. For `i < j` the matrix `x_ij(a)` is
 upper triangular, and the root subgroup factors through the upper triangular subgroup of `SO_l^J`
@@ -38,7 +40,7 @@ subgroup follows `TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSu
 
 ## Main declarations
 
-* `TauCeti.AntidiagonalSpecialOrthogonal.RootIndex`: an index pair `(i, j)` as above.
+* `TauCeti.AntidiagonalSpecialOrthogonal.RootSubgroupIndex`: an index pair `(i, j)` as above.
 * `TauCeti.AntidiagonalSpecialOrthogonal.rootMatrix`: the matrix `x_ij(a)`, with
   `rootMatrix_mul_formMatrix_mul_transpose` and `det_rootMatrix`.
 * `TauCeti.AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap` and
@@ -46,7 +48,8 @@ subgroup follows `TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSu
   group-scheme morphism `𝔾ₐ → SO_l^J`, a closed immersion, with
   `pointsMulEquiv_rootSubgroupPoints` on points.
 * `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.rootSubgroup`: for `i < j`, the factored
-  morphism `𝔾ₐ → B`, a closed immersion, with `rootSubgroup_comp_inclusion`.
+  morphism `𝔾ₐ → B`, a closed immersion, with `rootSubgroup_comp_inclusion` and
+  `pointsMulEquiv_rootSubgroupCoordinateMap` on points.
 
 ## References
 
@@ -67,7 +70,7 @@ universe u v w
 /-- **An index pair for a root subgroup of `SO_l^J`**: two distinct indices `i ≠ j`, neither of
 which is the middle index `i = l - 1 - i` of odd `l`, with `j ≠ l - 1 - i`, so that
 `E_ij ≠ E_{j' i'}`. -/
-structure RootIndex (l : ℕ) where
+structure RootSubgroupIndex (l : ℕ) where
   /-- The row index of the elementary matrix `E_ij`. -/
   i : Fin l
   /-- The column index of the elementary matrix `E_ij`. -/
@@ -113,7 +116,7 @@ theorem formMatrix_mul_transpose_rootNilpotent (i j : Fin l) :
   rw [← transpose_formMatrix A l, ← transpose_mul, transpose_formMatrix,
     rootNilpotent_mul_formMatrix, transpose_sub, transpose_single, transpose_single, neg_sub]
 
-variable (r : RootIndex l)
+variable (r : RootSubgroupIndex l)
 
 /-- `N_ij J_l N_ijᵀ = 0`. -/
 theorem rootNilpotent_mul_formMatrix_mul_transpose :
@@ -153,27 +156,22 @@ theorem rootMatrix_zero : rootMatrix r (0 : A) = 1 := by
 
 /-- `x_ij(a + b) = x_ij(a) x_ij(b)`. -/
 theorem rootMatrix_add (a b : A) : rootMatrix r (a + b) = rootMatrix r a * rootMatrix r b := by
-  rw [rootMatrix, rootMatrix, rootMatrix, add_mul, one_mul, mul_add, mul_one, smul_mul_smul,
-    rootNilpotent_mul_self, smul_zero, add_zero, add_smul]
+  simp only [rootMatrix, add_mul, mul_add, one_mul, mul_one, smul_mul_smul, rootNilpotent_mul_self,
+    smul_zero, add_smul]
   abel
 
 /-- **`x_ij(a)` preserves `J_l`**: `x_ij(a) J_l x_ij(a)ᵀ = J_l`. -/
 theorem rootMatrix_mul_formMatrix_mul_transpose (a : A) :
     rootMatrix r a * formMatrix A l * (rootMatrix r a)ᵀ = formMatrix A l := by
-  rw [rootMatrix, transpose_add, transpose_one, transpose_smul, add_mul, one_mul, add_mul,
-    mul_add, mul_add, mul_one, mul_one, mul_smul_comm, smul_mul_assoc, smul_mul_assoc,
-    mul_smul_comm, formMatrix_mul_transpose_rootNilpotent,
+  simp [rootMatrix, add_mul, mul_add, formMatrix_mul_transpose_rootNilpotent,
     rootNilpotent_mul_formMatrix_mul_transpose]
-  simp
 
 /-- `x_ij(a)` is the product of the two commuting transvections `1 + a E_ij` and
 `1 - a E_{j' i'}`. -/
 theorem rootMatrix_eq_transvection_mul_transvection (a : A) :
     rootMatrix r a = transvection r.i r.j a * transvection (Fin.rev r.j) (Fin.rev r.i) (-a) := by
-  rw [transvection, transvection, mul_add, mul_one, add_mul, one_mul,
-    single_mul_single_of_ne _ _ _ _ r.j_ne_rev, add_zero, rootMatrix, rootNilpotent, smul_sub,
-    smul_single, smul_single, smul_eq_mul, mul_one, ← single_neg, ← sub_eq_add_neg,
-    add_sub_assoc]
+  simp [transvection, rootMatrix, rootNilpotent, mul_add, add_mul,
+    single_mul_single_of_ne _ _ _ _ r.j_ne_rev, single_neg, sub_eq_add_neg, add_assoc]
 
 /-- **`x_ij(a)` has determinant one.** -/
 @[simp]
@@ -210,7 +208,7 @@ end Matrices
 
 section Points
 
-variable {l : ℕ} (r : RootIndex l) (A : Type w) [CommRing A]
+variable {l : ℕ} (r : RootSubgroupIndex l) (A : Type w) [CommRing A]
 
 /-- The root subgroup `a ↦ x_ij(a)` as a homomorphism into `GL_l(A)`. -/
 def rootHom : Multiplicative A →* GL (Fin l) A where
@@ -263,7 +261,7 @@ end Points
 
 section HopfPoints
 
-variable {R : Type u} [CommRing R] {l : ℕ} (r : RootIndex l)
+variable {R : Type u} [CommRing R] {l : ℕ} (r : RootSubgroupIndex l)
 variable {A : Type w} [CommRing A] [Algebra R A]
 variable {B : Type v} [CommRing B] [Algebra R B]
 
@@ -316,7 +314,7 @@ end HopfPoints
 
 section Scheme
 
-variable {R : Type u} [CommRing R] {l : ℕ} (r : RootIndex l)
+variable {R : Type u} [CommRing R] {l : ℕ} (r : RootSubgroupIndex l)
 
 /-- **The coordinate morphism `O(SO_l^J) → O(𝔾ₐ)` of the root subgroup**, recovered from its
 natural action on points. -/
@@ -340,20 +338,12 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupCoordinateMap (R := R) r)).app A q =
       rootSubgroupPoints r q := by
-  let q₀ := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hgeneric := congrArg
-    (fun τ => τ.app (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q₀)
-    (mapPointsFunctor_rootSubgroupCoordinateMap (R := R) r)
-  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    AlgHom.id_comp] at hgeneric
-  -- Expose the monoid hom beneath `GrpCat.ofHom` so naturality can rewrite the point.
-  change toConv (rootSubgroupCoordinateMap (R := R) r).hom.toAlgHom =
-    rootSubgroupPoints r q₀ at hgeneric
-  have h := mapValue_rootSubgroupPoints r q.ofConv q₀
-  rw [← hgeneric] at h
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-  simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
-  exact h
+  rw [rootSubgroupCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap_app,
+    rootSubgroupPointsMap_app]
+  -- Applying `GrpCat.ofHom (rootSubgroupPoints r)` is applying `rootSubgroupPoints r`;
+  -- `GrpCat.ofHom_apply` does not fire because the source is spelled `pointsFunctor.obj`.
+  refine (mapValue_rootSubgroupPoints r q.ofConv _).trans ?_
+  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
 
 /-- **The root subgroup `x_ij : 𝔾ₐ → SO_l^J`**, as a morphism of affine group schemes over the
 base ring. -/
@@ -428,7 +418,7 @@ end Scheme
 
 namespace UpperTriangular
 
-variable (R : Type u) [CommRing R] {l : ℕ} (r : RootIndex l)
+variable (R : Type u) [CommRing R] {l : ℕ} (r : RootSubgroupIndex l)
 
 /-- For `i < j`, restricting functions from `GL_l` to `SO_l^J` and then to the root subgroup kills
 the defining Hopf ideal of the upper triangular subgroup of `SO_l^J`. -/
@@ -499,6 +489,34 @@ instance isClosedImmersion_rootSubgroup (h : r.i < r.j) :
   rw [rootSubgroup]
   exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff
     (AdditiveGroup.groupScheme_def R) _).mpr (rootSubgroupCoordinateMap_surjective R r h)
+
+/-- **A positive root subgroup of the upper triangular subgroup on points**: the factored root map
+gives the same root matrix `x_ij(a)` on algebra-valued points. -/
+@[simp]
+theorem pointsMulEquiv_rootSubgroupCoordinateMap {A : Type w} [CommRing A] [Algebra R A]
+    (h : r.i < r.j)
+    (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)
+      (CommAlgCat.of R A)) :
+    (pointsMulEquiv R l (A := A)
+        (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R r h).hom)) : GL (Fin l) A) =
+      rootHom r A (AdditiveGroup.gaPointsMulEquiv f) := by
+  have hquot := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (definingHopfIdeal R l) (rootSubgroupCoordinateMap R r h)
+    (AntidiagonalSpecialOrthogonal.coordinateMap R l ≫
+      AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap r)
+    (by rw [← coordinateMap_comp_coordinateMap, Category.assoc,
+      coordinateMap_comp_rootSubgroupCoordinateMap]) (CommAlgCat.of R A) f
+  have hSO := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (AntidiagonalSpecialOrthogonal.definingHopfIdeal R l)
+    (AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap r)
+    (AntidiagonalSpecialOrthogonal.coordinateMap R l ≫
+      AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap r)
+    (by rw [AntidiagonalSpecialOrthogonal.coordinateMap_def]) (CommAlgCat.of R A) f
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R r h)
+    (CommAlgCat.of R A) f] at hquot
+  rw [← pointsMulEquiv_coe, ← hquot, hSO, mapPointsFunctor_rootSubgroupCoordinateMap_app,
+    AntidiagonalSpecialOrthogonal.pointsMulEquiv_coe, pointsMulEquiv_rootSubgroupPoints,
+    coe_rootPoints]
 
 end UpperTriangular
 
