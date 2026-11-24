@@ -614,18 +614,21 @@ theorem amalgamate_reindex {A' F' : Type*} [DecidableEq A'] {N Q : A' → Type*}
           (fun _ ↦ by simp only [Function.Embedding.inl_apply,
             Equiv.sumCongr_apply, Sum.map_inl])
         (amalgamate e Bs) := by
+  have hcol (a : A') (k : N a) :
+      Equiv.sigmaCongr eA (fun a ↦ (eM a).symm) ⟨a, k⟩ =
+        ⟨eA a, (eM a).symm k⟩ := rfl
   ext : 1
   · ext (⟨a, i⟩ | f) ⟨b, j⟩
     · by_cases hab : a = b
       · subst b
-        simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaCongr]
+        simp [reindex_matrix, Matrix.submatrix_apply, hcol]
       · have h : eA a ≠ eA b := eA.injective.ne hab
-        simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaCongr, hab, h]
+        simp [reindex_matrix, Matrix.submatrix_apply, hcol, hab, h]
     · simp only [amalgamate_matrix_frozen]
       rw [extendFrozen_reindex]
-      simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaCongr]
+      simp [reindex_matrix, Matrix.submatrix_apply, hcol]
   · funext ⟨a, k⟩
-    simp [reindex_symmetrizer, Equiv.sigmaCongr]
+    simp [reindex_symmetrizer, hcol]
 
 end Amalgamation
 
@@ -644,27 +647,29 @@ theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ G a) (g : ∀ a, G a ↪ F
         (fun _ ↦ by simp only [Function.Embedding.inl_apply, Equiv.sumCongr_apply,
           Sum.map_inl]) (amalgamate (fun p : Σ a, B a ↦ (e p.1 p.2).trans (g p.1))
           (fun p ↦ Bs p.1 p.2)) := by
+  have hassoc (a : A) (b : B a) (k : M a b) :
+      (Equiv.sigmaAssoc M).symm ⟨a, b, k⟩ = ⟨⟨a, b⟩, k⟩ := rfl
   ext : 1
   · ext (⟨a, b, i⟩ | f) ⟨c, d, j⟩
     · by_cases hac : a = c
       · subst c
         by_cases hbd : b = d
         · subst d
-          simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc]
+          simp [reindex_matrix, Matrix.submatrix_apply, hassoc]
         · have hp : (⟨a, b⟩ : Σ a, B a) ≠ ⟨a, d⟩ := by
             intro h
             exact hbd (eq_of_heq (Sigma.mk.inj_iff.mp h).2)
-          simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hbd, hp]
+          simp [reindex_matrix, Matrix.submatrix_apply, hassoc, hbd, hp]
       · have hp : (⟨a, b⟩ : Σ a, B a) ≠ ⟨c, d⟩ := fun h ↦ hac (congrArg Sigma.fst h)
-        simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hac, hp]
+        simp [reindex_matrix, Matrix.submatrix_apply, hassoc, hac, hp]
     · rw [reindex_matrix, Matrix.submatrix_apply]
       simp only [Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inr,
         Equiv.refl_symm, Equiv.refl_apply]
-      simpa only [Equiv.sigmaAssoc, Equiv.coe_fn_symm_mk, extendFrozen_matrix_frozen,
+      simpa only [hassoc, extendFrozen_matrix_frozen,
         amalgamate_matrix_frozen] using
         extendFrozen_matrix_frozen_trans (Bs c d) (e c d) (g c) f j
   · funext ⟨a, b, k⟩
-    simp [reindex_symmetrizer, Equiv.sigmaAssoc]
+    simp [reindex_symmetrizer, hassoc]
 
 end Stages
 

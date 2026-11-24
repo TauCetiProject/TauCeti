@@ -409,7 +409,8 @@ section FrozenExtension
 
 variable {J F : Type*} [DecidableEq J] [DecidableEq F]
 
-/-- Mutation retains the zero rows added when extending a factor's frozen boundary. -/
+/-- Mutation commutes with extending the frozen boundary by zero: original rows mutate as
+before, and added frozen rows remain zero. -/
 @[simp] theorem mutation_extendFrozen
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F) (k : K) :
     (B.extendFrozen e).mutation k = (B.mutation k).extendFrozen e := by
