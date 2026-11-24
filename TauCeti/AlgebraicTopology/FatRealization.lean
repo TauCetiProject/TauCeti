@@ -12,6 +12,7 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -211,13 +212,13 @@ theorem exists_toTop_map_eq (t : toTop.{u}.obj n) :
   obtain ⟨k, hk⟩ : ∃ k, #(toTopWeights t).support = k + 1 :=
     Nat.exists_eq_add_one.2 (Finset.card_pos.2 (support_toTopWeights_nonempty t))
   set e := (toTopWeights t).support.orderEmbOfFin hk
-  have he : ((toTopWeights t).support : Set (Fin (n.len + 1))) ⊆ range e := by
-    simp [e, Finset.range_orderEmbOfFin]
-  refine ⟨⦋k⦌ₛ, homEquiv.symm e, ⟨StdSimplex.comap e.injective t.down he⟩, ?_,
-    ULift.ext ((toTop_map_down _ _).trans (StdSimplex.map_comap e.injective t.down he))⟩
+  have he : Set.BijOn e (e ⁻¹' ↑(toTopWeights t).support) ↑(toTopWeights t).support :=
+    Set.bijOn_preimage_iff.2 ⟨e.injective.injOn, (Finset.range_orderEmbOfFin _ hk).superset⟩
+  refine ⟨⦋k⦌ₛ, homEquiv.symm e, ⟨StdSimplex.comap t.down he⟩, ?_,
+    ULift.ext ((toTop_map_down _ _).trans (StdSimplex.map_comap t.down he))⟩
   rintro ⟨i, hi⟩
   exact Finsupp.mem_support_iff.1 ((toTopWeights t).support.orderEmbOfFin_mem hk i)
-    ((StdSimplex.weights_comap_apply e.injective t.down he i).symm.trans hi)
+    ((StdSimplex.weights_comap_apply t.down he i).symm.trans hi)
 
 /-- **Uniqueness of carrier faces, dimension.** If a point of `Δⁿ` is the image of points off the
 boundaries of two faces, the two faces have the same dimension. -/

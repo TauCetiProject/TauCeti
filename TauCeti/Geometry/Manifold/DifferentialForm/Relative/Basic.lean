@@ -163,25 +163,14 @@ theorem mextDeriv_vectorBundlePoincareHomotopy_add_vectorBundlePoincareHomotopy_
     mextDeriv (vectorBundlePoincareHomotopy η) + vectorBundlePoincareHomotopy (mextDeriv η) =
       η - mpullback (IB.prod 𝓘(ℝ, FV)) (IB.prod 𝓘(ℝ, FV))
         (zeroSection FV V ∘ TotalSpace.proj) η := by
-  have hH : ContMDiff ((IB.prod 𝓘(ℝ, FV)).prod (𝓡∂ 1)) (IB.prod 𝓘(ℝ, FV)) 2
-      (vectorBundleFiberScaling FV V) :=
-    contMDiff_vectorBundleFiberScaling
-  have hι (s : Icc (0 : ℝ) 1) : MDifferentiable (IB.prod 𝓘(ℝ, FV))
-      ((IB.prod 𝓘(ℝ, FV)).prod (𝓡∂ 1)) (fun v : TotalSpace FV V ↦ (v, s)) :=
-    mdifferentiable_id.prodMk mdifferentiable_const
-  have h₁ : vectorBundleFiberScaling FV V ∘ (fun v ↦ (v, 1)) = id :=
-    funext fun v ↦ vectorBundleFiberScaling_one v
-  have h₀ : vectorBundleFiberScaling FV V ∘ (fun v ↦ (v, 0)) =
-      zeroSection FV V ∘ TotalSpace.proj :=
-    funext fun v ↦ vectorBundleFiberScaling_zero v
-  funext v
-  rw [Pi.add_apply, vectorBundlePoincareHomotopy_def, vectorBundlePoincareHomotopy_def,
-    mpullback_mextDeriv hH ((isSmoothBundleForm_def 1 _).mpr hη.contMDiff),
-    mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv
-      (hη.mpullback (hH.of_le (by norm_num))),
-    ← mpullback_comp_at (hι 1 v) (hH.mdifferentiable two_ne_zero _),
-    ← mpullback_comp_at (hι 0 v) (hH.mdifferentiable two_ne_zero _), h₁, h₀, mpullback_id,
-    Pi.sub_apply]
+  have h := mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv
+    contMDiff_vectorBundleFiberScaling hη
+  have h₁ : (fun v ↦ vectorBundleFiberScaling FV V (v, 1)) = id :=
+    funext vectorBundleFiberScaling_one
+  have h₀ : (fun v ↦ vectorBundleFiberScaling FV V (v, 0)) = zeroSection FV V ∘ TotalSpace.proj :=
+    funext vectorBundleFiberScaling_zero
+  rwa [← vectorBundlePoincareHomotopy_def, ← vectorBundlePoincareHomotopy_def, h₁, h₀,
+    mpullback_id] at h
 
 /-- **The relative Poincaré identity.** For a closed `C¹` form `η` of positive degree on the total
 space of a `C²` vector bundle over a `C²` base, `d β = η - ρ^* η`, where `β` is the relative

@@ -12,7 +12,7 @@ import Mathlib.Analysis.Normed.Operator.NNNorm
 import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
-# Real parts of continuous linear functionals on balls
+# Real parts of continuous linear functionals
 
 For a continuous linear functional `f` on a seminormed space over `RCLike` scalars and a radius
 `0 ≤ r`, the upper bounds of `re ∘ f` on `closedBall x r` are exactly the reals that are at least
@@ -21,6 +21,10 @@ bound on a ball into a bound on the norm of the separating functional. Similarly
 the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r < ‖f‖`. Applying
 `re_apply_add_mul_norm_le_iff` on unit balls of two factors gives the `ℓ¹` norm identity
 `‖Ψ ∘ inl‖ + ‖Ψ ∘ inr‖ = ‖Ψ‖` on `ℓ^∞` products `E × F`.
+
+For `0 < c`, the scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` bounds the
+real part of `f` at every point, and it determines the dual norm: `‖f‖ ^ 2 / c` is the supremum of
+`2 re (f x) - c ‖x‖ ^ 2` over all `x`.
 
 ## Main results
 
@@ -32,6 +36,9 @@ the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r <
 * `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
   norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
   `Ψ.comp (.inr 𝕜 E F)`.
+* `StrongDual.two_mul_re_apply_le`: the scaled Fenchel–Young inequality.
+* `StrongDual.sq_norm_div_le_of_forall`: an upper bound on `2 re (f x) - c ‖x‖ ^ 2` for all `x`
+  bounds `‖f‖ ^ 2 / c`.
 -/
 
 public section
@@ -109,5 +116,49 @@ theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 
     rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
   have h0 := (re_apply_add_mul_norm_le_iff (f := f₁) (x := 0) zero_le_one).2 h₁
   rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+
+/-- The scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` for `0 < c`. -/
+theorem two_mul_re_apply_le (f : StrongDual 𝕜 E) (x : E) {c : ℝ} (hc : 0 < c) :
+    2 * re (f x) ≤ ‖f‖ ^ 2 / c + c * ‖x‖ ^ 2 := by
+  have h₁ : re (f x) ≤ ‖f‖ * ‖x‖ := (re_le_norm _).trans (f.le_opNorm x)
+  have h₂ := two_mul_le_add_mul_sq (a := ‖x‖) (b := ‖f‖) hc
+  rw [div_eq_inv_mul]
+  linarith
+
+/-- The scaled Fenchel–Young inequality determines the dual norm: if
+`2 re (f x) - c ‖x‖ ^ 2 ≤ B` for every `x`, then `‖f‖ ^ 2 / c ≤ B`. -/
+theorem sq_norm_div_le_of_forall {f : StrongDual 𝕜 E} {c B : ℝ} (hc : 0 < c)
+    (h : ∀ x, 2 * re (f x) - c * ‖x‖ ^ 2 ≤ B) : ‖f‖ ^ 2 / c ≤ B := by
+  have hB : 0 ≤ B := by simpa using h 0
+  by_contra! hlt
+  -- Otherwise `r = √(c B) < ‖f‖`, and a vector on which `re f` exceeds `r ‖x‖`, suitably
+  -- rescaled, violates the bound.
+  have hf : 0 < ‖f‖ := (norm_nonneg f).lt_of_ne fun h₀ ↦ by
+    rw [← h₀] at hlt
+    simp at hlt
+    linarith
+  have hr : √(c * B) < ‖f‖ := by
+    rw [Real.sqrt_lt' hf]
+    rwa [lt_div_iff₀ hc, mul_comm] at hlt
+  obtain ⟨x, hx⟩ := (f.exists_mul_norm_lt_re_apply_iff (Real.sqrt_nonneg _)).2 hr
+  have hfx : 0 < re (f x) := lt_of_le_of_lt (by positivity) hx
+  have hx₀ : 0 < ‖x‖ := (norm_nonneg x).lt_of_ne fun h₀ ↦ by
+    have := (re_le_norm (f x)).trans (f.le_opNorm x)
+    rw [← h₀, mul_zero] at this
+    linarith
+  have hcx : 0 < c * ‖x‖ ^ 2 := mul_pos hc (pow_pos hx₀ 2)
+  set s : ℝ := re (f x) / (c * ‖x‖ ^ 2)
+  have hs := h ((s : 𝕜) • x)
+  rw [map_smul, smul_eq_mul, re_ofReal_mul, norm_smul, norm_ofReal,
+    abs_of_pos (div_pos hfx hcx)] at hs
+  have e : 2 * (s * re (f x)) - c * (s * ‖x‖) ^ 2 = re (f x) ^ 2 / (c * ‖x‖ ^ 2) := by
+    have := hx₀.ne'
+    simp only [s]
+    field_simp
+    ring
+  rw [e, div_le_iff₀ hcx] at hs
+  have h₁ : (√(c * B) * ‖x‖) ^ 2 < re (f x) ^ 2 := pow_lt_pow_left₀ hx (by positivity) two_ne_zero
+  rw [mul_pow, Real.sq_sqrt (by positivity)] at h₁
+  nlinarith
 
 end StrongDual

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!

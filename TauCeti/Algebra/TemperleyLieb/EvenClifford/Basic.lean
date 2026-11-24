@@ -160,7 +160,7 @@ theorem isOrthoᵢ_associated_cliffordForm (m : ℕ) :
 /-- The standard sum-of-squares form `cliffordForm m` is nondegenerate for every `m`. -/
 theorem nondegenerate_cliffordForm (m : ℕ) : (cliffordForm m).Nondegenerate := by
   rw [cliffordForm_eq_weightedSumSquares]
-  exact QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one
+  exact QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one
 
 /-- The **even complex Clifford algebra** `Cl_m⁰` of `cliffordForm m`. -/
 noncomputable abbrev EvenClifford (m : ℕ) : Subalgebra ℂ (CliffordAlgebra (cliffordForm m)) :=
