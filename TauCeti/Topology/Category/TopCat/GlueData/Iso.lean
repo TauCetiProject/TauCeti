@@ -165,6 +165,7 @@ variable (α : D.Iso D')
 
 /-- **Isomorphisms preserve and reflect the gluing.** Two points of pieces of `D` are identified
 in the glued space exactly when their images in the corresponding pieces of `D'` are. -/
+@[simp]
 theorem ι_eq_iff {i j : D.J} (x : D.U i) (y : D.U j) :
     D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) =
         D'.toGlueData.ι (α.indexEquiv j) (α.pieceHomeomorph j y) ↔
