@@ -36,8 +36,9 @@ For a Noetherian local ring `(R, 𝔪)` of prime characteristic `p` with flat Fr
    The ring `P₀` is a regular local ring (`TauCeti.MvPowerSeries.isRegularLocalRing`) of Krull
    dimension `e` (`MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`).
 3. Passing to colimit perfections yields a surjection `P₀_perf → R̂_perf`
-   (`PerfectRing.surjective_lift_comp`), so every `R̂_perf`-module has projective dimension at most
-   `e + 1` (`IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`).
+   (`PerfectRing.lift_surjective_of_surjective`), so every `R̂_perf`-module has projective
+   dimension at most `e + 1`
+   (`IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`).
 4. Since Frobenius on `R̂` is flat, `R̂ → R̂_perf` is faithfully flat
    (`RingHom.FaithfullyFlat.of_isPerfectClosure`), so the projective dimension bound descends to
    the residue field of `R̂` (`ModuleCat.hasProjectiveDimensionLT_of_tensorProduct`). By Serre's
@@ -101,7 +102,8 @@ theorem IsRegularLocalRing.of_flat_frobenius {R : Type u} [CommRing R] [IsLocalR
   -- `PerfectClosure R' p`.
   have hψ : Function.Surjective
       (PerfectRing.lift (PerfectClosure.of P₀ p) ((PerfectClosure.of R' p).comp φ) p) :=
-    PerfectRing.surjective_lift_comp (PerfectClosure.of P₀ p) (PerfectClosure.of R' p) hφ p
+    PerfectRing.lift_surjective_of_surjective
+      (PerfectClosure.of P₀ p) (PerfectClosure.of R' p) hφ p
   have hS : ∀ M : ModuleCat.{u} (PerfectClosure R' p), HasProjectiveDimensionLE M (e + 1) :=
     IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective
       (PerfectClosure.of P₀ p) p hdim hψ

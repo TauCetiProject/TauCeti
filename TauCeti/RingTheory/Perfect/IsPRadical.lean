@@ -31,10 +31,10 @@ for the empty scheme.
 * `PerfectRing.mem_range_lift_iff`: an element lies in the image of a perfection lift along a
   `p`-radical map from a perfect source iff some `p ^ n`-th power lies in the image of the base
   map.
-* `PerfectRing.surjective_lift_iff`: a lift along a `p`-radical map from a perfect source is
+* `PerfectRing.lift_surjective_iff`: a lift along a `p`-radical map from a perfect source is
   surjective iff every target element has a `p ^ n`-th power in the image of the base map.
-* `PerfectRing.surjective_lift_comp`: a surjective ring homomorphism induces a surjective map
-  between perfect closures.
+* `PerfectRing.lift_surjective_of_surjective`: a surjective ring homomorphism induces a surjective
+  map between perfect closures.
 
 ## References
 
@@ -109,7 +109,7 @@ theorem PerfectRing.mem_range_lift_iff {K L L' : Type*} [CommRing K] [CommRing L
 /-- **Surjectivity of a perfection lift**: if `i : K →+* L` is `p`-radical with `L` perfect and
 `L'` is perfect, then `PerfectRing.lift i g p` is surjective if and only if every element of `L'`
 has a `p ^ n`-th power in the image of `g`. -/
-theorem PerfectRing.surjective_lift_iff {K L L' : Type*} [CommRing K] [CommRing L] [CommRing L']
+theorem PerfectRing.lift_surjective_iff {K L L' : Type*} [CommRing K] [CommRing L] [CommRing L']
     (i : K →+* L) (g : K →+* L') (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
     [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] :
     Function.Surjective (PerfectRing.lift i g p) ↔
@@ -118,12 +118,12 @@ theorem PerfectRing.surjective_lift_iff {K L L' : Type*} [CommRing K] [CommRing 
 
 /-- **Perfect closures preserve surjections**: if `f : K →+* K'` is surjective and `i : K →+* L`,
 `j : K' →+* L'` are perfect closures, then the induced map `L →+* L'` is surjective. -/
-theorem PerfectRing.surjective_lift_comp {K K' L L' : Type*} [CommRing K] [CommRing K']
+theorem PerfectRing.lift_surjective_of_surjective {K K' L L' : Type*} [CommRing K] [CommRing K']
     [CommRing L] [CommRing L'] (i : K →+* L) (j : K' →+* L') {f : K →+* K'}
     (hf : Function.Surjective f) (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
     [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] [IsPRadical j p] :
     Function.Surjective (PerfectRing.lift i (j.comp f) p) :=
-  (PerfectRing.surjective_lift_iff i (j.comp f) p).2 fun z ↦ by
+  (PerfectRing.lift_surjective_iff i (j.comp f) p).2 fun z ↦ by
     obtain ⟨n, b, hb⟩ := IsPRadical.pow_mem j p z
     obtain ⟨a, rfl⟩ := hf b
     exact ⟨n, a, hb⟩

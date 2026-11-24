@@ -23,12 +23,11 @@ dim R⟦X⟧ = dim R + 1.
 ```
 
 By induction on the number of variables, the multivariate power series ring `MvPowerSeries σ R`
-over a Noetherian ring `R` has Krull dimension `dim R + |σ|`
-(`MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`,
-`MvPowerSeries.ringKrullDim_of_isNoetherianRing`).
+over a Noetherian ring `R` in finitely many variables has Krull dimension `dim R + Nat.card σ`
+(`MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`).
 
 This is the power series analogue of Mathlib's `Polynomial.ringKrullDim_of_isNoetherianRing` and
-`MvPolynomial.ringKrullDim_of_isNoetherianRing`.
+`MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite`.
 
 ## Main results
 
@@ -36,8 +35,6 @@ This is the power series analogue of Mathlib's `Polynomial.ringKrullDim_of_isNoe
   `dim R⟦X⟧ = dim R + 1`.
 * `MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`: for a Noetherian ring `R` and a
   finite variable type `σ`, `dim (MvPowerSeries σ R) = dim R + Nat.card σ`.
-* `MvPowerSeries.ringKrullDim_of_isNoetherianRing`: for a Noetherian ring `R` and any variable
-  type `σ`, `dim (MvPowerSeries σ R) = dim R + ENat.card σ`.
 -/
 
 public section
@@ -84,36 +81,5 @@ theorem ringKrullDim_of_isNoetherianRing_of_finite [IsNoetherianRing R] [Finite 
     rw [ringKrullDim_eq_of_ringEquiv (optionEquivLeft _ _).toRingEquiv,
       PowerSeries.ringKrullDim_of_isNoetherianRing, IH]
     simp [add_assoc]
-
-/-- **The dimension of a multivariate power series ring.** Over a Noetherian ring `R`, the Krull
-dimension of `MvPowerSeries σ R` is `dim R + ENat.card σ`. -/
-@[simp low]
-theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
-    ringKrullDim (MvPowerSeries σ R) = ringKrullDim R + ENat.card σ := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton (MvPowerSeries σ R) :=
-      ⟨fun _ _ ↦ MvPowerSeries.ext fun _ ↦ Subsingleton.elim _ _⟩
-    simp [ringKrullDim_eq_bot_of_subsingleton]
-  by_cases hσ : Finite σ
-  · simp [ringKrullDim_of_isNoetherianRing_of_finite, ENat.card_eq_coe_natCard]
-  · have : Infinite σ := not_finite_iff_infinite.mp hσ
-    -- Killing all variables outside a finite subset `Fin n ↪ σ` is surjective, so the Krull
-    -- dimension dominates every natural number.
-    have hle (n : ℕ) : (n : WithBot ℕ∞) ≤ ringKrullDim (MvPowerSeries σ R) := by
-      let e : Fin n ↪ σ := Fin.valEmbedding.trans (Infinite.natEmbedding σ)
-      have hsurj : Function.Surjective (killCompl (R := R) e).toRingHom :=
-        Function.RightInverse.surjective (g := rename e) fun p ↦ by
-          simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
-            killCompl_rename_app (e := e) p
-      calc (n : WithBot ℕ∞)
-        _ = 0 + (n : WithBot ℕ∞) := (zero_add _).symm
-        _ ≤ ringKrullDim R + Nat.card (Fin n) := by
-          simpa using add_le_add_left ringKrullDim_nonneg_of_nontrivial (n : WithBot ℕ∞)
-        _ = ringKrullDim (MvPowerSeries (Fin n) R) :=
-          (ringKrullDim_of_isNoetherianRing_of_finite (σ := Fin n)).symm
-        _ ≤ ringKrullDim (MvPowerSeries σ R) := ringKrullDim_le_of_surjective _ hsurj
-    have htop : ringKrullDim (MvPowerSeries σ R) = ⊤ :=
-      ENat.WithBot.eq_top_iff_forall_ge.mpr hle
-    simp [htop, WithBot.coe_bot_le.mp ringKrullDim_nonneg_of_nontrivial]
 
 end MvPowerSeries
