@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.RelEigenvalueVector
+public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Vector
 public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.Complex.TwoFormHermitianForm
@@ -194,10 +194,8 @@ theorem Compatible.exists_isRelEigenvalueVector_ddbarHermitianForm
     ∃ μ, Antitone μ ∧
       IsRelEigenvalueVector (twoFormHermitianForm E κ.val x) (ddbarHermitianForm E α φ x) μ := by
   rw [← coe_twoFormSesqForm (hκ.invariant.apply_I_smul_I_smul x), ← coe_ddbarSesqForm hα]
-  refine exists_isRelEigenvalueVector (hκ.invariant.isSymm_twoFormSesqForm x) (fun _ hv ↦ ?_)
-    (isSymm_ddbarSesqForm hα hφ)
-  rw [twoFormSesqForm_apply]
-  exact hκ.tames.re_twoFormHermitianForm_apply_self_pos x hv
+  exact exists_isRelEigenvalueVector (hκ.invariant.isSymm_twoFormSesqForm x)
+    (fun _ ↦ hκ.re_twoFormSesqForm_apply_self_pos x) (isSymm_ddbarSesqForm hα hφ)
 
 /-- **`λ_κ[κ] = e`.** Relative to itself, a Hermitian metric has the eigenvalue vector
 `e = (1, …, 1)`, and no other. -/
@@ -206,10 +204,8 @@ theorem Compatible.isRelEigenvalueVector_self_iff (x : X)
     IsRelEigenvalueVector (twoFormHermitianForm E κ.val x) (twoFormHermitianForm E κ.val x) μ ↔
       μ = 1 := by
   rw [← coe_twoFormSesqForm (hκ.invariant.apply_I_smul_I_smul x)]
-  refine TauCeti.isRelEigenvalueVector_self_iff (hκ.invariant.isSymm_twoFormSesqForm x)
-    fun _ hv ↦ ?_
-  rw [twoFormSesqForm_apply]
-  exact hκ.tames.re_twoFormHermitianForm_apply_self_pos x hv
+  exact TauCeti.isRelEigenvalueVector_self_iff (hκ.invariant.isSymm_twoFormSesqForm x)
+    fun _ ↦ hκ.re_twoFormSesqForm_apply_self_pos x
 
 end SmoothTwoForm
 

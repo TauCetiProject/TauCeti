@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+public import TauCeti.Geometry.Symplectic.Hermitian
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 /-!
@@ -32,7 +33,12 @@ Hermitian metric `ω`, a smooth two-form compatible with `J`, it is the Hermitia
 * `TauCeti.SmoothTwoForm.Invariant.isSymm_twoFormSesqForm` and
   `TauCeti.SmoothTwoForm.Tames.re_twoFormHermitianForm_apply_self_pos`: for a two-form `ω`
   invariant under, respectively taming, multiplication by `i`, `H_ω(x)` is Hermitian,
-  respectively positive definite.
+  respectively positive definite, and
+  `TauCeti.SmoothTwoForm.Compatible.re_twoFormSesqForm_apply_self_pos`: for a Hermitian metric the
+  sesquilinear form is positive definite.
+* `TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`: `H_α` is the complex associated
+  form `TauCeti.SymplecticForm.complexAssociatedForm` of a symplectic form agreeing with `α`, for
+  `J` multiplication by `i`.
 -/
 
 public section
@@ -154,6 +160,23 @@ theorem Tames.re_twoFormHermitianForm_apply_self_pos
   rw [twoFormHermitianForm_def]
   exact h.trans_eq (SmoothBundleForm.eval₂_apply κ x v (I • v))
 
+/-- **The Hermitian form of a Hermitian metric is positive definite**, as a sesquilinear form. -/
+theorem Compatible.re_twoFormSesqForm_apply_self_pos
+    (hκ : κ.Compatible (SmoothAlmostComplexStructure.ofComplexManifold E X)) (x : X) {v : E}
+    (hv : v ≠ 0) :
+    0 < (twoFormSesqForm E κ.val x (hκ.invariant.apply_I_smul_I_smul x) v v).re := by
+  rw [twoFormSesqForm_apply]
+  exact hκ.tames.re_twoFormHermitianForm_apply_self_pos x hv
+
 end SmoothTwoForm
+
+/-- **`H_α` is the complex associated form of a symplectic form.** If a symplectic form `σ` on the
+real space underlying `E` agrees with the two-form `α`, and `J` is multiplication by `i`, then
+`σ.complexAssociatedForm J` is `H_α`. -/
+theorem SymplecticForm.complexAssociatedForm_eq_hermitianForm {α : E [⋀^Fin 2]→L[ℝ] ℝ}
+    (σ : SymplecticForm E) (J : AlmostComplexStructure E) (hJ : ∀ v, J v = I • v)
+    (hσ : ∀ u v, σ u v = α ![u, v]) (u v : E) :
+    σ.complexAssociatedForm J u v = α.hermitianForm u v := by
+  apply Complex.ext <;> simp [hJ, hσ]
 
 end TauCeti

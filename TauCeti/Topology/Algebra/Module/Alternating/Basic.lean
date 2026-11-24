@@ -118,11 +118,14 @@ theorem apply_vecCons_smul_right {R M N : Type*} [Semiring R]
   simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_smul ![u] r v
 
 /-- A continuous alternating map of two vectors is odd in the second vector. -/
-theorem apply_vecCons_neg_right {R M N : Type*} [Ring R]
+theorem apply_vecCons_neg_right {R M N : Type*} [Semiring R]
     [AddCommGroup M] [Module R M] [TopologicalSpace M]
     [AddCommGroup N] [Module R N] [TopologicalSpace N]
     (f : M [⋀^Fin 2]→L[R] N) (u v : M) : f ![u, -v] = -f ![u, v] := by
-  simpa using f.apply_vecCons_smul_right (-1) u v
+  have h := f.apply_vecCons_add_right u (-v) v
+  have h0 : f ![u, 0] = 0 := by simpa using f.apply_vecCons_smul_right (0 : R) u v
+  rw [neg_add_cancel, h0] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
 
 section Coordinates
 

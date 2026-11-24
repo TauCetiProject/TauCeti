@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues
+public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Basic
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.LinearAlgebra.SesquilinearForm.Star
 import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
@@ -127,20 +127,19 @@ theorem IsRelEigenvalueVector.smul_left {μ : Fin (finrank 𝕜 E) → ℝ}
     IsRelEigenvalueVector (fun u v ↦ (s : 𝕜) * h u v) (a · ·) (s⁻¹ • μ) := by
   obtain ⟨b, hb⟩ := hμ
   -- the family `c • b`, `c = s^{-1/2}`, with `c² = s⁻¹`
-  have hc : (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) * (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) = (s : 𝕜)⁻¹ := by
-    rw [← RCLike.ofReal_mul, ← mul_inv, Real.mul_self_sqrt hs.le, RCLike.ofReal_inv]
-  have hs' : (s : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hs.ne'
+  have hc : (Real.sqrt s)⁻¹ * (Real.sqrt s)⁻¹ = s⁻¹ := by
+    rw [← mul_inv, Real.mul_self_sqrt hs.le]
   refine ⟨fun i ↦ (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) • b i, fun i j ↦ ⟨?_, ?_⟩⟩
-  · simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
-      RCLike.conj_ofReal, (hb i j).1]
-    split_ifs
-    · rw [mul_one, hc, mul_inv_cancel₀ hs']
-    · simp
-  · simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
-      RCLike.conj_ofReal, (hb i j).2]
-    split_ifs
-    · rw [← mul_assoc, hc, Pi.smul_apply, smul_eq_mul, RCLike.ofReal_mul, RCLike.ofReal_inv]
-    · simp
+  · split_ifs with hij
+    · subst hij
+      have hc' : (s : 𝕜) * (((Real.sqrt s)⁻¹ * (Real.sqrt s)⁻¹ : ℝ) : 𝕜) = 1 := by
+        rw [hc, RCLike.ofReal_inv, mul_inv_cancel₀ (RCLike.ofReal_ne_zero.2 hs.ne')]
+      simpa [(hb i i).1, mul_assoc] using hc'
+    · simp [(hb i j).1, hij]
+  · split_ifs with hij
+    · subst hij
+      simp [(hb i i).2, ← mul_assoc, ← hc]
+    · simp [(hb i j).2, hij]
 
 /-- **Simultaneous diagonalization.** For a positive definite Hermitian `h` and a Hermitian `a`,
 there is an `h`-orthonormal basis diagonalizing `a` with decreasing diagonal entries. -/
@@ -170,12 +169,11 @@ private theorem IsRelEigenvalueVector.isSymm_pos [FiniteDimensional 𝕜 E]
     rw [Fintype.linearIndependent_iff]
     intro g hg i
     simpa [map_sum, (hb i _).1] using congrArg (h (b i)) hg
-  let bs := Module.Basis.mk hli (hli.span_eq_top_of_card_eq_finrank' (Fintype.card_fin _)).ge
-  have hbs (i : Fin (finrank 𝕜 E)) : bs i = b i := Module.Basis.mk_apply _ _ i
+  let bs := basisOfLinearIndependentOfCardEqFinrank' b hli (Fintype.card_fin _)
   have hh (i j) : h (bs i) (bs j) = if i = j then ((1 : ℝ) : 𝕜) else 0 := by
-    simpa [hbs] using (hb i j).1
+    simpa [bs] using (hb i j).1
   refine ⟨LinearMap.isSymm_of_basis_diag bs hh, fun v hv ↦ ?_,
-    LinearMap.isSymm_of_basis_diag bs (w := μ) fun i j ↦ by simpa [hbs] using (hb i j).2⟩
+    LinearMap.isSymm_of_basis_diag bs (w := μ) fun i j ↦ by simpa [bs] using (hb i j).2⟩
   have h1 : LinearMap.toMatrix₂ bs bs h = 1 := by
     ext i j
     rw [LinearMap.toMatrix₂_apply, hh, Matrix.one_apply, RCLike.ofReal_one]
@@ -217,8 +215,8 @@ theorem IsRelEigenvalueVector.eq_of_antitone {μ ν : Fin (finrank 𝕜 E) → �
     have hon : Orthonormal 𝕜 b := orthonormal_iff_ite.2 fun i j ↦
       (hh.inner_ofCore_innerProductCore hpos _ _).trans (hb i j).1
     refine ha.relEigenvalues_eq_of_orthonormalBasis rfl
-      (OrthonormalBasis.mk hon (hon.linearIndependent.span_eq_top_of_card_eq_finrank'
-        (Fintype.card_fin _)).ge) hμa fun i j ↦ ?_
+      ((basisOfLinearIndependentOfCardEqFinrank' b hon.linearIndependent
+        (Fintype.card_fin _)).toOrthonormalBasis (by simpa using hon)) hμa fun i j ↦ ?_
     simpa using (hb i j).2
   exact (key hμ hμa).symm.trans (key hν hνa)
 

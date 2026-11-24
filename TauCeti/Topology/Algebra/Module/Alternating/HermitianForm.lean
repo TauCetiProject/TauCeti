@@ -24,6 +24,13 @@ diagonal value `H_α(v, v) = α(v, i v)` is real. It is conjugate linear in the 
 Hermitian, exactly when `α` is invariant under multiplication by `i`, that is, when `α` has type
 (1,1). It is then positive definite exactly when `α` tames multiplication by `i`.
 
+Tau Ceti's `TauCeti.SymplecticForm.complexAssociatedForm` is the same formula
+`ω(u, J v) + i·ω(u, v)` for a nondegenerate symplectic form `ω` and an almost complex structure
+`J` on a real vector space; `TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`
+identifies the two when `J` is multiplication by `i`. Here `α` may be degenerate, as the forms
+`α + i ∂∂bar φ` of complex Hessian equations are, and `i` acts through the complex structure of
+`E`.
+
 ## Main definitions
 
 * `ContinuousAlternatingMap.hermitianForm`: the Hermitian form `H_α` of a real two-form `α`.
@@ -34,7 +41,8 @@ Hermitian, exactly when `α` is invariant under multiplication by `i`, that is, 
 
 * `ContinuousAlternatingMap.hermitianForm_add`, `ContinuousAlternatingMap.hermitianForm_smul` and
   their companions: `H_α` is real linear in `α`.
-* `ContinuousAlternatingMap.hermitianForm_smul_right`: `H_α` is complex linear in the second slot;
+* `ContinuousAlternatingMap.hermitianForm_smul_right`: `H_α` is complex linear in the second slot
+  (`ContinuousAlternatingMap.hermitianForm_real_smul_right` for real scalars);
   `ContinuousAlternatingMap.hermitianForm_real_smul_left`: it is real linear in the first.
 * `ContinuousAlternatingMap.hermitianForm_apply_self`: `H_α(v, v) = α(v, i v)`.
 * `ContinuousAlternatingMap.hermitianForm_smul_left`: for `α` of type (1,1), `H_α` is conjugate
@@ -127,14 +135,18 @@ theorem hermitianForm_I_smul_right (u v : E) :
     α.hermitianForm u (I • v) = I * α.hermitianForm u v := by
   apply Complex.ext <;> simp [smul_smul, α.apply_vecCons_neg_right]
 
+/-- `H_α` is real homogeneous in the second slot, for every real two-form `α`. -/
+@[simp]
+theorem hermitianForm_real_smul_right (r : ℝ) (u v : E) :
+    α.hermitianForm u (r • v) = r * α.hermitianForm u v := by
+  apply Complex.ext <;> simp [smul_comm (I : ℂ) r v, α.apply_vecCons_smul_right]
+
 /-- **`H_α` is complex linear in the second slot**, for every real two-form `α`. -/
 @[simp]
 theorem hermitianForm_smul_right (c : ℂ) (u v : E) :
     α.hermitianForm u (c • v) = c * α.hermitianForm u v := by
-  have hr (r : ℝ) (w : E) : α.hermitianForm u (r • w) = r * α.hermitianForm u w := by
-    apply Complex.ext <;> simp [smul_comm (I : ℂ) r w, α.apply_vecCons_smul_right]
-  rw [← Complex.re_smul_add_im_smul, hermitianForm_add_right, hr, hr,
-    hermitianForm_I_smul_right]
+  rw [← Complex.re_smul_add_im_smul, hermitianForm_add_right, hermitianForm_real_smul_right,
+    hermitianForm_real_smul_right, hermitianForm_I_smul_right]
   conv_rhs => rw [← re_add_im c]
   ring
 
@@ -165,11 +177,13 @@ theorem hermitianForm_neg_right (u v : E) : α.hermitianForm u (-v) = -α.hermit
   simpa using hermitianForm_smul_right (α := α) (-1) u v
 
 /-- `H_α` is subtractive in the first slot. -/
+@[simp]
 theorem hermitianForm_sub_left (u u' v : E) :
     α.hermitianForm (u - u') v = α.hermitianForm u v - α.hermitianForm u' v := by
   rw [sub_eq_add_neg, hermitianForm_add_left, hermitianForm_neg_left, ← sub_eq_add_neg]
 
 /-- `H_α` is subtractive in the second slot. -/
+@[simp]
 theorem hermitianForm_sub_right (u v v' : E) :
     α.hermitianForm u (v - v') = α.hermitianForm u v - α.hermitianForm u v' := by
   rw [sub_eq_add_neg, hermitianForm_add_right, hermitianForm_neg_right, ← sub_eq_add_neg]
