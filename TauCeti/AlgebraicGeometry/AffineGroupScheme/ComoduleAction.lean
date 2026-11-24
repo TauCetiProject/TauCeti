@@ -121,10 +121,11 @@ private def coordinateModObj :
     simp only [comp_lift_assoc, whiskerRight_snd, whiskerRight_fst,
       GrpObj.comp_inv, whiskerLeft_fst, whiskerLeft_snd,
       associator_hom_fst, associator_hom_snd_fst, associator_hom_snd_snd]
-    rw [show fst (op (CommAlgCat.of R H) ⊗ op (CommAlgCat.of R H))
+    have hmul : fst (op (CommAlgCat.of R H) ⊗ op (CommAlgCat.of R H))
         (op (CommAlgCat.of R A)) ≫ MonObj.mul =
-      (fst _ _ ≫ fst _ _) * (fst _ _ ≫ snd _ _) by
-        rw [Hom.mul_def, ← comp_lift_assoc, lift_fst_snd, Category.id_comp]]
+        (fst _ _ ≫ fst _ _) * (fst _ _ ≫ snd _ _) := by
+      rw [← MonObj.comp_mul, MonObj.mul_eq_mul]
+    rw [hmul]
     rw [mul_inv_rev]
     exact (lift_rightAction_mul R H A (snd _ _)
       (fst _ _ ≫ snd _ _)⁻¹ (fst _ _ ≫ fst _ _)⁻¹).symm
