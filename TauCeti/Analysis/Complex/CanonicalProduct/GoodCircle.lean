@@ -210,11 +210,7 @@ theorem exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_di
     rw [hσ.tsum_sigma]
     simp
   -- The weighted product is the product over `Σ i, Fin (m i)` once it converges.
-  have hm (R : ℝ) (_ : 0 < R) : Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p + 1) := by
-    refine ((ha.natCast_mul_inv_rpow_of_le hτ (σ := ((p + 1 : ℕ) : ℝ))
-      (by push_cast; exact hτp)).mul_left (R ^ (p + 1))).congr fun i ↦ ?_
-    rw [Real.rpow_natCast, div_eq_mul_inv, mul_pow]
-    ring
+  have hm (R : ℝ) (_ : 0 < R) := ha.natCast_mul_div_pow_succ hτ hτp R
   obtain ⟨r, hr, hbound⟩ :=
     exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_div p hpτ hτp hσ hR
   refine ⟨r, hr, fun z hz ↦ ?_⟩

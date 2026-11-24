@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.CanonicalProduct.GoodCircle
 import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
+import TauCeti.Analysis.Normed.Group.SummableNormInvRpow
 
 /-!
 # Hadamard factorization of entire functions of finite order
@@ -25,15 +26,13 @@ polynomial of degree at most `n` (`TauCeti.finite_order_hadamard`).
 
 The product is indexed by all nonzero complex numbers; only the zeros of `f` have nonzero
 multiplicity. Every genus `p > ρ - 1` gives such a factorization with an entire exponent
-(`Differentiable.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow`), and the
-exponent is then a polynomial of degree at most `p`
+(`Differentiable.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow`, in
+`TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct`), and the exponent is then a
+polynomial of degree at most `p`
 (`TauCeti.OrderLE.exists_eq_polynomial_eval_of_eq_pow_mul_exp_mul_tprod`).
 
 ## Main results
 
-* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow`: Weierstrass
-  factorization of a nonzero entire function over all nonzero complex numbers, for any genera
-  whose product converges.
 * `TauCeti.OrderLE.exists_eq_polynomial_eval_of_eq_pow_mul_exp_mul_tprod`: for an entire function
   of order at most `ρ < p + 1`, the exponent in its genus-`p` factorization is a polynomial of
   degree at most `p`.
@@ -58,37 +57,6 @@ exponents, and the exponent is bounded through its real part on those circles.
 public section
 
 open Complex Filter Set Topology
-
-namespace Differentiable
-
-/-- A nonzero entire function `f` factors as
-`f z = z ^ m₀ * exp (g z) * ∏' α, E_{p α}(z / α) ^ m_α` with `g` entire, the product running over
-all nonzero complex numbers `α` with the analytic orders `m_α` of `f` as exponents, for any genera
-`p` for which `∑' α, m_α * (R / ‖α‖) ^ (p α + 1)` converges for every `R > 0`. -/
-theorem exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow {f : ℂ → ℂ}
-    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) {p : {a : ℂ // a ≠ 0} → ℕ}
-    (hm : ∀ R : ℝ, 0 < R → Summable fun α : {a : ℂ // a ≠ 0} ↦
-      (analyticOrderNatAt f α : ℝ) * (R / ‖(α : ℂ)‖) ^ (p α + 1)) :
-    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ ∀ z, f z = z ^ analyticOrderNatAt f 0 * cexp (g z) *
-      ∏' α : {a : ℂ // a ≠ 0}, weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α := by
-  let ι : {a : ℂ // a ≠ 0 ∧ f a = 0} → {a : ℂ // a ≠ 0} := fun a ↦ ⟨a, a.property.1⟩
-  have hι : Function.Injective ι := fun a b h ↦ Subtype.ext (by simpa [ι] using h)
-  have hm' (R : ℝ) (hR : 0 < R) : Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
-      (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p (ι a) + 1) :=
-    ((hm R hR).comp_injective hι).congr fun a ↦ by simp [ι]
-  obtain ⟨g, hg, hfg, -⟩ :=
-    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable hf0 hm'
-  refine ⟨g, hg, fun z ↦ ?_⟩
-  rw [hfg z]
-  congr 1
-  -- Points where `f` does not vanish contribute the factor `1`.
-  refine hι.tprod_eq (f := fun α : {a : ℂ // a ≠ 0} ↦
-    weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α) fun α hα ↦ ?_
-  have hord : analyticOrderNatAt f α ≠ 0 := fun h ↦ hα (by simp [h])
-  refine ⟨⟨α, α.property, by_contra fun hfα ↦ hord ?_⟩, rfl⟩
-  rw [analyticOrderNatAt, (hf.analyticAt _).analyticOrderAt_eq_zero.mpr hfα, ENat.toNat_zero]
-
-end Differentiable
 
 namespace TauCeti
 
@@ -134,9 +102,7 @@ theorem OrderLE.exists_eq_polynomial_eval_of_eq_pow_mul_exp_mul_tprod (h : Order
     refine ⟨(max ρ p + p + 1) / 2, ?_, ?_, by linarith⟩ <;>
       linarith [le_max_left ρ (p : ℝ), le_max_right ρ (p : ℝ)]
   have hs : 0 ≤ s := (Nat.cast_nonneg p).trans hps
-  have hsum : Summable fun α : {a : ℂ // a ≠ 0} ↦ (analyticOrderNatAt f α : ℝ) * ‖(α : ℂ)‖⁻¹ ^ s :=
-    (h.summable_analyticOrderNatAt_mul_norm_rpow hf hρs).congr fun α ↦ by
-      rw [Real.rpow_neg (norm_nonneg _), Real.inv_rpow (norm_nonneg _)]
+  have hsum := h.summable_analyticOrderNatAt_mul_norm_inv_rpow hf hρs
   set K := ((Real.log 2 + 12 * Real.sqrt 6 + p) * 4 ^ s + p + 2) *
     ∑' α : {a : ℂ // a ≠ 0}, (analyticOrderNatAt f α : ℝ) * ‖(α : ℂ)‖⁻¹ ^ s
   obtain ⟨B, -, hfB⟩ := h.exists_norm_le_mul_exp_rpow hf.continuous hρs
@@ -185,17 +151,16 @@ theorem finite_order_hadamard (f : ℂ → ℂ) (hf : Differentiable ℂ f)
   have h : OrderLE f ρ := orderLE_of_forall_exists_norm_le_mul_exp_rpow fun b hb ↦
     (hgrowth b hb).imp fun _ hC ↦ hC.2
   have hρn : ρ < ⌊ρ⌋₊ + 1 := Nat.lt_floor_add_one ρ
-  -- `analyticOrderNatAt f z` is by definition `(analyticOrderAt f z).toNat`.
-  have hsum := h.summable_analyticOrderNatAt_mul_norm_rpow hf hρn
-  have hm (R : ℝ) (_ : 0 < R) : Summable fun α : {a : ℂ // a ≠ 0} ↦
-      (analyticOrderNatAt f α : ℝ) * (R / ‖(α : ℂ)‖) ^ (⌊ρ⌋₊ + 1) := by
-    refine (hsum.mul_left (R ^ (⌊ρ⌋₊ + 1))).congr fun α ↦ ?_
-    rw [← Nat.cast_add_one, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast, div_pow]
-    ring
+  have hsum := h.summable_analyticOrderNatAt_mul_norm_inv_rpow hf hρn
+  have hm (R : ℝ) (_ : 0 < R) :=
+    hsum.natCast_mul_div_pow_succ (by positivity) (p := ⌊ρ⌋₊) le_rfl R
   obtain ⟨g, hg, hfg⟩ :=
     hf.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow hne hm
   obtain ⟨P, hP, rfl⟩ := h.exists_eq_polynomial_eval_of_eq_pow_mul_exp_mul_tprod hf hρn hg hfg
-  exact ⟨hsum, P, _, hP, tendstoLocallyUniformlyOn_univ.mp
+  refine ⟨hsum.congr fun α ↦ ?_, P, _, hP, tendstoLocallyUniformlyOn_univ.mp
     (hasProdLocallyUniformlyOn_weierstrassFactor_div_pow hm), hfg⟩
+  rw [Real.rpow_neg (norm_nonneg _), ← Real.inv_rpow (norm_nonneg _)]
+  -- `analyticOrderNatAt f z` is by definition `(analyticOrderAt f z).toNat`.
+  rfl
 
 end TauCeti

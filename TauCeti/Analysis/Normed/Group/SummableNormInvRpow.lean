@@ -9,18 +9,26 @@ public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Counting points of a family with summable inverse powers
+# Families with summable inverse powers
 
 Let `a : ι → E` be a family in a normed group and `0 ≤ τ` with `∑' i, ‖a i‖⁻¹ ^ τ < ∞`, as for
 the zeros of an entire function of finite order below `τ`. Then only finitely many nonzero
 `a i` lie in each ball `‖a i‖ ≤ R`, and any finite set of them numbers at most
 `R ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ`.
 
+With natural weights `m`, summability of `∑' i, m i * ‖a i‖⁻¹ ^ τ` passes to every larger
+exponent, since only finitely many terms have `‖a i‖ < 1`. At an exponent `p + 1 ≥ τ` it gives
+the hypothesis `∑' i, m i * (R / ‖a i‖) ^ (p + 1) < ∞` of the genus-`p` primary product.
+
 ## Main results
 
 * `Summable.finite_setOf_ne_zero_norm_le`: `{i | a i ≠ 0 ∧ ‖a i‖ ≤ R}` is finite.
 * `Summable.card_le_rpow_mul_tsum`: for `0 ≤ R`, a finite set of indices with `a i ≠ 0` and
   `‖a i‖ ≤ R` has at most `R ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ` elements.
+* `Summable.natCast_mul_inv_rpow_of_le`: with natural weights, summability of
+  `m i * ‖a i‖⁻¹ ^ τ` passes from `τ` to every `σ ≥ τ`.
+* `Summable.natCast_mul_div_pow_succ`: for `τ ≤ p + 1`, it gives summability of
+  `m i * (R / ‖a i‖) ^ (p + 1)` for every `R`.
 -/
 
 public section
@@ -74,5 +82,16 @@ theorem natCast_mul_inv_rpow_of_le {m : ι → ℕ} (ha : Summable fun i ↦ (m 
     nlinarith [Real.one_le_rpow hx.le hτ]
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_exponent_ge' (by positivity) hx1 hτ hτσ) (Nat.cast_nonneg _)
+
+/-- If `∑' i, m i * ‖a i‖⁻¹ ^ τ` converges for natural weights `m` and `0 ≤ τ ≤ p + 1`, then so
+does `∑' i, m i * (R / ‖a i‖) ^ (p + 1)` for every `R`: the summability hypothesis of the
+genus-`p` primary product. -/
+theorem natCast_mul_div_pow_succ {m : ι → ℕ} (ha : Summable fun i ↦ (m i : ℝ) * ‖a i‖⁻¹ ^ τ)
+    (hτ : 0 ≤ τ) {p : ℕ} (hτp : τ ≤ p + 1) (R : ℝ) :
+    Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p + 1) := by
+  refine ((ha.natCast_mul_inv_rpow_of_le hτ (σ := ((p + 1 : ℕ) : ℝ))
+    (by push_cast; exact hτp)).mul_left (R ^ (p + 1))).congr fun i ↦ ?_
+  rw [Real.rpow_natCast, div_eq_mul_inv, mul_pow]
+  ring
 
 end Summable

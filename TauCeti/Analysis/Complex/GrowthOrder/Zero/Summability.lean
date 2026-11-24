@@ -20,7 +20,7 @@ genus-one product `TauCeti.divisorProductOne` assumes.
 The family is indexed by the support of Mathlib's native divisor on the whole plane.
 Its integer values are nonnegative because the function is entire.
 The same family indexed by all nonzero complex numbers, with analytic orders as weights, is
-`TauCeti.OrderLE.summable_analyticOrderNatAt_mul_norm_rpow`.
+`TauCeti.OrderLE.summable_analyticOrderNatAt_mul_norm_inv_rpow`.
 
 The proof uses `TauCeti.OrderLE.eventually_sum_divisor_le` at an intermediate
 exponent `B < p`, followed by the dyadic counting criterion
@@ -98,16 +98,17 @@ theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
 /-- The reciprocal `p`th powers of the nonzero complex numbers, weighted by the analytic orders of
 an entire function of order at most `A`, are summable for every `p > A`. Only the zeros of `f`
 have nonzero weight. -/
-theorem OrderLE.summable_analyticOrderNatAt_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
+theorem OrderLE.summable_analyticOrderNatAt_mul_norm_inv_rpow {f : ℂ → ℂ} {A p : ℝ}
     (h : OrderLE f A) (hf : Differentiable ℂ f) (hAp : A < p) :
-    Summable (fun α : {a : ℂ // a ≠ 0} ↦ (analyticOrderNatAt f α : ℝ) * ‖(α : ℂ)‖ ^ (-p)) := by
+    Summable (fun α : {a : ℂ // a ≠ 0} ↦ (analyticOrderNatAt f α : ℝ) * ‖(α : ℂ)‖⁻¹ ^ p) := by
   have hs := (Subtype.val_injective.summable_iff
     (f := fun z : ℂ ↦ (MeromorphicOn.divisor f Set.univ z : ℝ) * ‖z‖ ^ (-p))
     fun z hz ↦ by
       rw [Function.notMem_support.mp fun h ↦ hz ⟨⟨z, h⟩, rfl⟩, Int.cast_zero, zero_mul]).mp
     (h.summable_divisor_mul_norm_rpow hf hAp)
   refine (hs.comp_injective Subtype.val_injective).congr fun α ↦ ?_
-  simp [hf.divisor_univ_eq_analyticOrderNatAt]
+  simp [hf.divisor_univ_eq_analyticOrderNatAt, Real.rpow_neg (norm_nonneg _),
+    Real.inv_rpow (norm_nonneg _)]
 
 /-- The zeros of an entire function of order less than two are inverse-square summable with their
 natural multiplicities. This is the summability hypothesis of the genus-one product
