@@ -52,14 +52,12 @@ private noncomputable def evalZeroParamAlgHom
   letI := Algebra.compHom S (Polynomial.evalRingHom (0 : R))
   { __ := φ.toRingHom
     commutes' p := by
-      have hcomm : φ.toRingHom.comp (algebraMap R[X] (coeffSubalgebra M)) =
-          algebraMap R[X] S := by
+      have hcomm : φ.toRingHom.comp (algebraMap R[X] (coeffSubalgebra M)) = algebraMap R[X] S := by
         refine Polynomial.ringHom_ext' (RingHom.ext fun r ↦ ?_) ?_
         · let := isScalarTower M h1
           simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
             Algebra.compHom_algebraMap_apply, Polynomial.coe_evalRingHom, Polynomial.eval_C]
-          rw [← Polynomial.algebraMap_eq, ← IsScalarTower.algebraMap_apply R R[X],
-            AlgHom.commutes]
+          rw [← Polynomial.algebraMap_eq, ← IsScalarTower.algebraMap_apply R R[X], AlgHom.commutes]
         · simpa [Algebra.compHom_algebraMap_apply, algebraMap_X] using hX
       exact RingHom.congr_fun hcomm p }
 
@@ -78,8 +76,7 @@ private noncomputable def baseChangeEvalZeroAlgHom
   AlgHom.liftEquiv R[X] R (coeffSubalgebra M) S (evalZeroParamAlgHom M h1 φ hX)
 
 private theorem baseChangeEvalZeroAlgHom_tmul
-    (φ : coeffSubalgebra M →ₐ[R] S) (hX : φ (X M h1) = 0)
-    (r : R) (p : coeffSubalgebra M) :
+    (φ : coeffSubalgebra M →ₐ[R] S) (hX : φ (X M h1) = 0) (r : R) (p : coeffSubalgebra M) :
     letI := algebra M h1
     letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
     baseChangeEvalZeroAlgHom M h1 φ hX (r ⊗ₜ[R[X]] p) = r • φ p := by
@@ -100,14 +97,13 @@ private theorem baseChangeEvalZeroAlgHom_bijective
   let := algebra M h1
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
   have hX : φ (X M h1) = 0 := RingHom.mem_ker.mp (hker.symm ▸ Ideal.subset_span rfl)
-  let : IsScalarTower R R[X] R := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    simp [Algebra.compHom_algebraMap_apply]
+  let : IsScalarTower R R[X] R :=
+    IsScalarTower.of_algebraMap_eq fun r ↦ by simp [Algebra.compHom_algebraMap_apply]
   let : IsScalarTower R R[X] (coeffSubalgebra M) := isScalarTower M h1
   let i := (Algebra.TensorProduct.includeRight : coeffSubalgebra M →ₐ[R[X]]
     R ⊗[R[X]] coeffSubalgebra M).restrictScalars R
-  have hi : Function.Surjective i :=
-    Algebra.TensorProduct.includeRight_surjective _ fun r ↦
-      ⟨C r, by simp [Algebra.compHom_algebraMap_apply]⟩
+  have hi : Function.Surjective i := Algebra.TensorProduct.includeRight_surjective _ fun r ↦
+    ⟨C r, by simp [Algebra.compHom_algebraMap_apply]⟩
   have hfi (p : coeffSubalgebra M) : baseChangeEvalZeroAlgHom M h1 φ hX (i p) = φ p :=
     (baseChangeEvalZeroAlgHom_tmul M h1 φ hX 1 p).trans (one_smul R _)
   have hiX : i (X M h1) = 0 := by
@@ -119,8 +115,7 @@ private theorem baseChangeEvalZeroAlgHom_bijective
   · obtain ⟨p, rfl⟩ := hi x
     obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp (by rwa [← hker, RingHom.mem_ker, ← hfi])
     rw [← hq, map_mul, hiX, mul_zero]
-  · obtain ⟨p, rfl⟩ := hsurj s
-    exact ⟨i p, hfi p⟩
+  · obtain ⟨p, rfl⟩ := hsurj s; exact ⟨i p, hfi p⟩
 
 /-- Base change along evaluation `R[X] → R` at `0` recovers the quotient of `coeffSubalgebra M`
 by `(X)`, whenever `φ : coeffSubalgebra M →ₐ[R] S` is surjective with kernel `(X)`. -/
@@ -134,20 +129,19 @@ noncomputable def baseChangeEvalZeroEquiv
 
 /-- The zero-fiber comparison sends a pure tensor `r ⊗ p` to `r • φ p`. -/
 @[simp]
-theorem baseChangeEvalZeroEquiv_tmul
-    (φ : coeffSubalgebra M →ₐ[R] S) (hsurj : Function.Surjective φ)
-    (hker : RingHom.ker φ = Ideal.span {X M h1}) (r : R) (p : coeffSubalgebra M) :
+theorem baseChangeEvalZeroEquiv_tmul (φ : coeffSubalgebra M →ₐ[R] S)
+    (hsurj : Function.Surjective φ) (hker : RingHom.ker φ = Ideal.span {X M h1})
+    (r : R) (p : coeffSubalgebra M) :
     letI := algebra M h1
     letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
     baseChangeEvalZeroEquiv M h1 φ hsurj hker (r ⊗ₜ[R[X]] p) = r • φ p :=
-  baseChangeEvalZeroAlgHom_tmul M h1 φ
-    (RingHom.mem_ker.mp (hker.symm ▸ Ideal.subset_span rfl)) r p
+  baseChangeEvalZeroAlgHom_tmul M h1 φ (RingHom.mem_ker.mp (hker.symm ▸ Ideal.subset_span rfl)) r p
 
 /-- The inverse zero-fiber comparison sends `φ p` to `1 ⊗ p`. -/
 @[simp]
-theorem baseChangeEvalZeroEquiv_symm_apply
-    (φ : coeffSubalgebra M →ₐ[R] S) (hsurj : Function.Surjective φ)
-    (hker : RingHom.ker φ = Ideal.span {X M h1}) (p : coeffSubalgebra M) :
+theorem baseChangeEvalZeroEquiv_symm_apply (φ : coeffSubalgebra M →ₐ[R] S)
+    (hsurj : Function.Surjective φ) (hker : RingHom.ker φ = Ideal.span {X M h1})
+    (p : coeffSubalgebra M) :
     letI := algebra M h1
     letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
     (baseChangeEvalZeroEquiv M h1 φ hsurj hker).symm (φ p) = 1 ⊗ₜ[R[X]] p := by

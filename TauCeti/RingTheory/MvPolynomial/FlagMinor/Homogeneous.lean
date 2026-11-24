@@ -61,8 +61,7 @@ theorem isMultiHomogeneous_flagMinor (R : Type*) [CommRing R] (I : Finset (Fin n
   have hdeg : (∑ c : Fin #I, (Pi.single (I.orderEmbOfFin rfl (σ c)) 1 : Fin n → ℕ)) =
       fun r : Fin n ↦ if r ∈ I then 1 else 0 := by
     rw [Equiv.sum_comp σ fun c ↦ (Pi.single (I.orderEmbOfFin rfl c) 1 : Fin n → ℕ)]
-    ext r
-    rw [Finset.sum_apply]
+    ext r; rw [Finset.sum_apply]
     by_cases hr : r ∈ I
     · obtain ⟨c, rfl⟩ := (Finset.range_orderEmbOfFin I rfl).symm.subset hr
       rw [Fintype.sum_eq_single c fun d hd ↦
@@ -72,10 +71,7 @@ theorem isMultiHomogeneous_flagMinor (R : Type*) [CommRing R] (I : Finset (Fin n
       exact Fintype.sum_eq_zero _ fun c ↦ Pi.single_eq_of_ne
         (by rintro rfl; exact hr (I.orderEmbOfFin_mem rfl c)) 1
   rw [hdeg] at hprod
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
-  · rwa [hσ, one_smul]
-  · rw [hσ, Units.neg_smul, one_smul]
-    exact hprod.neg
+  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ <;> simp [hσ, hprod, hprod.neg]
 
 /-- Indicator weight of column `c` of the generic `n × n` matrix `(z_(r,c))`. -/
 def flagColWeight (c : Fin n) : Fin n × Fin n → ℕ :=
@@ -105,17 +101,12 @@ theorem isWeightedHomogeneous_flagColWeight_flagMinor (R : Type*) [CommRing R]
         if (c : ℕ) < #I then 1 else 0 := by
     simp only [flagColWeight_apply]
     by_cases hc : (c : ℕ) < #I
-    · rw [ite_eq_left hc, Fintype.sum_eq_single ⟨c, hc⟩ fun d hd ↦ ite_eq_right fun h ↦ hd ?_]
-      · simp
-      · exact Fin.ext (by simpa using congrArg Fin.val h)
+    · rw [ite_eq_left hc, Fintype.sum_eq_single ⟨c, hc⟩ fun d hd ↦
+        ite_eq_right fun h ↦ hd (Fin.ext (by simpa using congrArg Fin.val h))]; simp
     · rw [ite_eq_right hc]
-      exact Fintype.sum_eq_zero _ fun d ↦
-        ite_eq_right fun h ↦ hc (by simp [← h])
+      exact Fintype.sum_eq_zero _ fun d ↦ ite_eq_right fun h ↦ hc (by simp [← h])
   rw [hdeg] at hprod
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
-  · rwa [hσ, one_smul]
-  · rw [hσ, Units.neg_smul, one_smul]
-    exact hprod.neg
+  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ <;> simp [hσ, hprod, hprod.neg]
 
 /-- The homogeneous component of `flagMinorAlgebra n R` of column multidegree `d : Fin n → ℕ` for
 the indicator weights `flagColWeight c` of the columns of the generic matrix. -/
@@ -131,9 +122,8 @@ noncomputable def flagMinorColSubmodule (n : ℕ) (R : Type*) [CommRing R] (d : 
 @[simp]
 theorem mem_flagMinorColSubmodule_iff {R : Type*} [CommRing R] {d : Fin n → ℕ}
     {f : flagMinorAlgebra n R} :
-    f ∈ flagMinorColSubmodule n R d ↔
-      ∀ c : Fin n,
-        (f : MvPolynomial (Fin n × Fin n) R).IsWeightedHomogeneous (flagColWeight c) (d c) :=
+    f ∈ flagMinorColSubmodule n R d ↔ ∀ c : Fin n,
+      (f : MvPolynomial (Fin n × Fin n) R).IsWeightedHomogeneous (flagColWeight c) (d c) :=
   Iff.rfl
 
 /-- The column-multidegree submodules form a graded monoid inside `flagMinorAlgebra n R`. -/
@@ -157,6 +147,6 @@ theorem iSupIndep_flagMinorColSubmodule (R : Type*) [CommRing R] :
     · exact fun d hd hdne ↦ let ⟨c, hc⟩ := Function.ne_iff.mp hdne
         by_contra fun hne ↦ hc ((hv d hd c hne).symm.trans (hx c))
     · exact fun h ↦ absurd hd₀ h
-  · push Not at hx; obtain ⟨c, hc⟩ := hx; exact by_contra fun hne ↦ hc (hv d₀ hd₀ c hne)
+  · obtain ⟨c, hc⟩ := not_forall.mp hx; exact by_contra fun hne ↦ hc (hv d₀ hd₀ c hne)
 
 end TauCeti

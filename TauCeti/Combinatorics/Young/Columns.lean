@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Sort
+public import TauCeti.Data.Finset.Sort
 public import TauCeti.Combinatorics.Young.Kostka
 public import TauCeti.Combinatorics.Young.OfRowLens
 
@@ -96,16 +96,14 @@ theorem card_colFinset (T : BoundedSSYT n μ) (m : ℕ) : #(T.colFinset m) = μ.
 theorem mem_colFinset_iff (T : BoundedSSYT n μ) {m : ℕ} {r : Fin n} :
     r ∈ T.colFinset m ↔ ∃ i < μ.colLen m, T.val i m = r := by
   rw [colFinset_def, mem_map]
-  refine ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, i.isLt, by simpa [Fin.ext_iff] using hi⟩, ?_⟩
-  rintro ⟨i, hi, hir⟩
-  exact ⟨⟨i, hi⟩, mem_univ _, Fin.ext hir⟩
+  exact ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, i.isLt, by simpa [Fin.ext_iff] using hi⟩,
+    fun ⟨i, hi, hir⟩ ↦ ⟨⟨i, hi⟩, mem_univ _, Fin.ext hir⟩⟩
 
 /-- Columns past `μ.rowLen 0` are empty. -/
 @[simp]
 theorem colFinset_eq_empty_of_rowLen_zero_le (T : BoundedSSYT n μ) {m : ℕ}
     (hm : μ.rowLen 0 ≤ m) : T.colFinset m = ∅ := by
-  rw [← card_eq_zero, card_colFinset]
-  by_contra h
+  rw [← card_eq_zero, card_colFinset]; by_contra h
   exact (YoungDiagram.mem_iff_lt_rowLen.mp
     (YoungDiagram.mem_iff_lt_colLen.mpr (Nat.pos_of_ne_zero h))).not_ge hm
 
@@ -118,9 +116,8 @@ theorem colFinset_nonempty_of_lt_rowLen_zero (T : BoundedSSYT n μ) {m : ℕ}
 /-- Sorting `T.colFinset m` recovers the column order embedding `T.colOrderEmb m`. -/
 theorem orderEmbOfFin_colFinset (T : BoundedSSYT n μ) (m : ℕ) :
     (T.colFinset m).orderEmbOfFin (T.card_colFinset m) = T.colOrderEmb m :=
-  (orderEmbOfFin_unique' (T.card_colFinset m) fun i ↦ by
-    rw [colFinset_def]
-    exact mem_map_of_mem _ (mem_univ i)).symm
+  (orderEmbOfFin_unique' (T.card_colFinset m) fun i ↦
+    colFinset_def T m ▸ mem_map_of_mem _ (mem_univ i)).symm
 
 @[simp]
 theorem coe_orderEmbOfFin_colFinset_apply (T : BoundedSSYT n μ) (m : ℕ) {k : ℕ}
@@ -136,12 +133,9 @@ theorem sum_ite_mem_colFinset_eq_content (T : BoundedSSYT n μ) (r : Fin n) :
   rw [SemistandardYoungTableau.content_apply, sum_boole]
   -- Map each column `m` containing `r` at `(i, m)` to that unique cell of `μ`.
   refine Finset.card_bij
-    (fun m hm ↦
-      let hex := (T.mem_colFinset_iff.mp (mem_filter.mp hm).right)
-      (Classical.choose hex, m))
+    (fun m hm ↦ (Classical.choose (T.mem_colFinset_iff.mp (mem_filter.mp hm).2), m))
     (fun m hm ↦ ?_) (fun _ _ _ _ h ↦ congrArg Prod.snd h) fun c hc ↦ ?_
-  · obtain ⟨_, hmem⟩ := mem_filter.mp hm
-    have hspec := Classical.choose_spec (T.mem_colFinset_iff.mp hmem)
+  · have hspec := Classical.choose_spec (T.mem_colFinset_iff.mp (mem_filter.mp hm).2)
     exact mem_filter.mpr ⟨(μ.mem_cells _).mpr
       (YoungDiagram.mem_iff_lt_colLen.mpr hspec.left), hspec.right⟩
   · obtain ⟨hcμ, hcr⟩ := mem_filter.mp hc
@@ -150,9 +144,8 @@ theorem sum_ite_mem_colFinset_eq_content (T : BoundedSSYT n μ) (r : Fin n) :
       (YoungDiagram.mem_iff_lt_rowLen.mp hcμ').trans_le (μ.rowLen_anti 0 c.fst (Nat.zero_le _))
     have hrm : r ∈ T.colFinset c.snd :=
       T.mem_colFinset_iff.mpr ⟨c.fst, YoungDiagram.mem_iff_lt_colLen.mp hcμ', hcr⟩
-    refine ⟨c.snd, mem_filter.mpr ⟨mem_range.mpr hm0, hrm⟩, ?_⟩
+    refine ⟨c.snd, mem_filter.mpr ⟨mem_range.mpr hm0, hrm⟩, Prod.ext ?_ rfl⟩
     have hspec := Classical.choose_spec (T.mem_colFinset_iff.mp hrm)
-    refine Prod.ext ?_ rfl
     -- Column strictness makes the row index `i` with `T i c.2 = r` unique.
     by_contra hne
     rcases lt_or_gt_of_ne hne with hlt | hgt
@@ -164,14 +157,7 @@ theorem sum_ite_mem_colFinset_eq_content (T : BoundedSSYT n μ) (r : Fin n) :
 `T.weight r`. -/
 theorem sum_ite_mem_colFinset_eq_weight (T : BoundedSSYT n μ) (r : Fin n) :
     (∑ m ∈ range (μ.rowLen 0), if r ∈ T.colFinset m then 1 else 0) = T.weight r := by
-  rw [weight_apply]
-  exact T.sum_ite_mem_colFinset_eq_content r
-
-private theorem orderEmbOfFin_congr {k : ℕ} {s₁ s₂ : Finset (Fin n)} (hs : s₁ = s₂)
-    {h₁ : #s₁ = k} {h₂ : #s₂ = k} (i : Fin k) :
-    s₁.orderEmbOfFin h₁ i = s₂.orderEmbOfFin h₂ i := by
-  subst hs
-  rfl
+  rw [weight_apply, T.sum_ite_mem_colFinset_eq_content r]
 
 /-- A bounded semistandard Young tableau of shape `μ` is uniquely determined by its column subsets
 on the nonempty column range `m < μ.rowLen 0`. -/
@@ -234,7 +220,7 @@ whole tuple is a `FlagTableauLe`-chain. -/
 theorem flagTableauLe_of_adjacent {k : ℕ} {I : Fin k → Finset (Fin n)}
     (hadj : ∀ (j : ℕ) (hj : j + 1 < k), FlagTableauLe (I ⟨j, Nat.lt_of_succ_lt hj⟩) (I ⟨j + 1, hj⟩))
     {m₁ m₂ : Fin k} (hm : m₁ ≤ m₂) : FlagTableauLe (I m₁) (I m₂) := by
-  obtain ⟨a, ha⟩ := m₁; obtain ⟨b, hb⟩ := m₂
+  rcases m₁, m₂ with ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
   have hab : a ≤ b := Fin.le_def.mp hm; clear hm
   induction b, hab using Nat.le_induction with
   | base => exact FlagTableauLe.refl _
@@ -263,21 +249,17 @@ theorem colLen_shapeOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
 theorem colLen_zero_shapeOfFlagChain_le {k : ℕ} (I : Fin k → Finset (Fin n))
     (hanti : Antitone fun m : Fin k ↦ #(I m)) :
     (shapeOfFlagChain I hanti).colLen 0 ≤ n := by
-  dsimp only [shapeOfFlagChain]
-  rw [YoungDiagram.colLen_transpose]
+  dsimp only [shapeOfFlagChain]; rw [YoungDiagram.colLen_transpose]
   by_cases hk : 0 < k
-  · simpa using (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨0, hk⟩).le.trans
-      (card_finset_fin_le _)
-  · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ (by omega)]
-    exact Nat.zero_le n
+  · simpa using (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨0, hk⟩).le.trans (card_finset_fin_le _)
+  · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ (by omega)]; exact Nat.zero_le n
 
 theorem rowLen_zero_shapeOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
     (hanti : Antitone fun m : Fin k ↦ #(I m)) (hne : ∀ m, (I m).Nonempty) :
     (shapeOfFlagChain I hanti).rowLen 0 = k :=
   le_antisymm
-    (not_lt.mp fun hk ↦ by
-      obtain ⟨hm, _⟩ := mem_shapeOfFlagChain_iff.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hk)
-      omega)
+    (not_lt.mp fun hk ↦
+      have ⟨h, _⟩ := mem_shapeOfFlagChain_iff.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hk); by omega)
     (not_lt.mp fun hk ↦ (YoungDiagram.mem_iff_lt_rowLen.mp
       (mem_shapeOfFlagChain_iff.mpr ⟨hk, (hne _).card_pos⟩)).false)
 
@@ -298,41 +280,35 @@ def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
      row_weak' := fun {i m₁ m₂} hm hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
        have h₁ := mem_shapeOfFlagChain_iff.mp
-         ((shapeOfFlagChain I (antitone_card_of_flagChain hchain)).up_left_mem le_rfl hm.le hcell)
+         ((shapeOfFlagChain I _).up_left_mem le_rfl hm.le hcell)
        simp only [h₁, h₂, ↓reduceDIte]
        exact Fin.le_iff_val_le_val.mp
          ((hchain ⟨m₁, h₁.1⟩ ⟨m₂, h₂.1⟩ (Fin.le_def.mpr hm.le)).2 ⟨i, h₂.2⟩)
      col_strict' := fun {i₁ i₂ m} hi hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
        have h₁ := mem_shapeOfFlagChain_iff.mp
-         ((shapeOfFlagChain I (antitone_card_of_flagChain hchain)).up_left_mem hi.le le_rfl hcell)
+         ((shapeOfFlagChain I _).up_left_mem hi.le le_rfl hcell)
        simp only [h₁, h₂, ↓reduceDIte]
        exact Fin.lt_def.mp (((I ⟨m, h₂.1⟩).orderEmbOfFin rfl).strictMono hi)
      zeros' := fun h ↦ dite_eq_right (h ∘ mem_shapeOfFlagChain_iff.mpr) },
    fun i m hcell ↦ by
      have h := mem_shapeOfFlagChain_iff.mp hcell
-     rw [← SemistandardYoungTableau.to_fun_eq_coe]
-     simp only [h, ↓reduceDIte]
+     rw [← SemistandardYoungTableau.to_fun_eq_coe]; simp only [h, ↓reduceDIte]
      exact ((I ⟨m, h.1⟩).orderEmbOfFin rfl ⟨i, h.2⟩).isLt⟩
 
 theorem boundedSSYTOfFlagChain_apply {k : ℕ} (I : Fin k → Finset (Fin n))
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
     {i : ℕ} (m : Fin k) (hi : i < #(I m)) :
     (boundedSSYTOfFlagChain I hchain).val i m = ((I m).orderEmbOfFin rfl ⟨i, hi⟩ : ℕ) := by
-  dsimp only [boundedSSYTOfFlagChain]
-  rw [← SemistandardYoungTableau.to_fun_eq_coe]
-  have hmem : ∃ hm : (m : ℕ) < k, i < #(I ⟨m, hm⟩) := ⟨m.isLt, hi⟩
-  simp only [hmem, ↓reduceDIte]
+  simp [boundedSSYTOfFlagChain, ← SemistandardYoungTableau.to_fun_eq_coe, m.isLt, hi]
 
 @[simp]
 theorem colFinset_boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) (m : Fin k) :
     (boundedSSYTOfFlagChain I hchain).colFinset m = I m := by
-  ext r
-  rw [BoundedSSYT.mem_colFinset_iff, colLen_shapeOfFlagChain]
+  ext r; rw [BoundedSSYT.mem_colFinset_iff, colLen_shapeOfFlagChain]
   refine ⟨fun ⟨i, hi, hir⟩ ↦ ?_, fun hr ↦ ?_⟩
-  · rw [boundedSSYTOfFlagChain_apply I hchain m hi] at hir
-    exact Fin.ext hir ▸ (I m).orderEmbOfFin_mem rfl _
+  · exact Fin.ext (boundedSSYTOfFlagChain_apply I hchain m hi ▸ hir) ▸ (I m).orderEmbOfFin_mem rfl _
   · obtain ⟨i, rfl⟩ := (Finset.range_orderEmbOfFin (I m) rfl).symm.subset hr
     exact ⟨i, i.isLt, boundedSSYTOfFlagChain_apply I hchain m i.isLt⟩
 
@@ -344,8 +320,7 @@ theorem existsUnique_boundedSSYT_colFinset_eq {k : ℕ} (I : Fin k → Finset (F
     ∃! s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val,
       s.fst.val.rowLen 0 = k ∧ ∀ m : Fin k, s.snd.colFinset m = I m := by
   refine ⟨⟨⟨shapeOfFlagChain I (antitone_card_of_flagChain hchain),
-      colLen_zero_shapeOfFlagChain_le I _⟩,
-      boundedSSYTOfFlagChain I hchain⟩,
+      colLen_zero_shapeOfFlagChain_le I _⟩, boundedSSYTOfFlagChain I hchain⟩,
     ⟨rowLen_zero_shapeOfFlagChain I _ hne, colFinset_boundedSSYTOfFlagChain I hchain⟩, ?_⟩
   rintro ⟨⟨μ₁, hμ₁⟩, T₁⟩ ⟨hrow₁, hcol₁⟩
   have hshape : μ₁ = shapeOfFlagChain I (antitone_card_of_flagChain hchain) := by
@@ -353,19 +328,14 @@ theorem existsUnique_boundedSSYT_colFinset_eq {k : ℕ} (I : Fin k → Finset (F
     simp only [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_colLen]
     by_cases hm : m < k
     · simp only [← T₁.card_colFinset m, colLen_shapeOfFlagChain I _ ⟨m, hm⟩, hcol₁ ⟨m, hm⟩]
-    · have hm₁ : μ₁.rowLen 0 ≤ m := hrow₁.symm ▸ not_lt.mp hm
-      have hm₂ : (shapeOfFlagChain I (antitone_card_of_flagChain hchain)).rowLen 0 ≤ m :=
-        (rowLen_zero_shapeOfFlagChain I _ hne).symm ▸ not_lt.mp hm
-      have h1 : μ₁.colLen m = 0 := by
-        rw [← T₁.card_colFinset, T₁.colFinset_eq_empty_of_rowLen_zero_le hm₁, card_empty]
-      have h2 : (shapeOfFlagChain I (antitone_card_of_flagChain hchain)).colLen m = 0 := by
-        rw [← (boundedSSYTOfFlagChain I hchain).card_colFinset,
-          (boundedSSYTOfFlagChain I hchain).colFinset_eq_empty_of_rowLen_zero_le hm₂, card_empty]
-      rw [h1, h2]
+    · simp only [← T₁.card_colFinset, ← (boundedSSYTOfFlagChain I hchain).card_colFinset,
+        T₁.colFinset_eq_empty_of_rowLen_zero_le (hrow₁.symm ▸ not_lt.mp hm),
+        (boundedSSYTOfFlagChain I hchain).colFinset_eq_empty_of_rowLen_zero_le
+          ((rowLen_zero_shapeOfFlagChain I _ hne).symm ▸ not_lt.mp hm), card_empty]
   subst hshape
-  refine congrArg (Sigma.mk _) (BoundedSSYT.ext_colFinset fun m hm ↦ ?_)
-  have hmk : m < k := hm.trans_eq hrow₁
-  rw [hcol₁ ⟨m, hmk⟩, colFinset_boundedSSYTOfFlagChain I hchain ⟨m, hmk⟩]
+  exact congrArg (Sigma.mk _) (BoundedSSYT.ext_colFinset fun m hm ↦
+    (hcol₁ ⟨m, hm.trans_eq hrow₁⟩).trans
+      (colFinset_boundedSSYTOfFlagChain I hchain ⟨m, hm.trans_eq hrow₁⟩).symm)
 
 /-- Every `FlagTableauLe`-chain of nonempty subsets of `Fin n` is the sequence of nonempty columns
 of a bounded semistandard Young tableau of width `k` and shape with at most `n` rows. -/
@@ -374,7 +344,6 @@ theorem exists_boundedSSYT_colFinset_eq {k : ℕ} (I : Fin k → Finset (Fin n))
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
     ∃ (μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}) (T : BoundedSSYT n μ.val),
       μ.val.rowLen 0 = k ∧ ∀ m : Fin k, T.colFinset m = I m :=
-  let ⟨⟨μ, T⟩, h, _⟩ := existsUnique_boundedSSYT_colFinset_eq I hne hchain
-  ⟨μ, T, h⟩
+  let ⟨⟨μ, T⟩, h, _⟩ := existsUnique_boundedSSYT_colFinset_eq I hne hchain; ⟨μ, T, h⟩
 
 end TauCeti

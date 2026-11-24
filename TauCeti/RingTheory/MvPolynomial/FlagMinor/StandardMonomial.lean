@@ -9,6 +9,8 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import TauCeti.RingTheory.MvPolynomial.FlagMinor.Tableau
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fintype.BigOperators
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Subgroup
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
@@ -110,6 +112,7 @@ private theorem shuffle_term_mem_span (R : Type*) [CommRing R] {I J : Finset (Fi
       Submodule.span ℤ
         ((fun P : Finset (Fin n) × Finset (Fin n) ↦ flagMinor R P.1 * flagMinor R P.2) '' S) := by
   classical
+  cases nonempty_fintype ι₁; cases nonempty_fintype ι₂
   set u₁ := Sum.elim α (γ ∘ σ ∘ Sum.inl) ∘ e₁
   set u₂ := Sum.elim β (γ ∘ σ ∘ Sum.inr) ∘ e₂
   rcases mvPolynomialMinor_eq_zero_or_sign_smul_flagMinor R (card_finset_fin_le I) u₁ with
@@ -121,17 +124,26 @@ private theorem shuffle_term_mem_span (R : Type*) [CommRing R] {I J : Finset (Fi
   have hlt := Equiv.Perm.sum_comp_inl_lt_of_strictMono_of_ne_one hγ₁ hγ₂
     (g := fun z ↦ (γ z : ℕ)) (Fin.lt_def.mp hp₀)
     (fun x ↦ Fin.le_def.mp (hκ₁_ge x)) (fun y ↦ Fin.le_def.mp (hκ₂_le y)) hσ₁ hσ₂ hσne
-  obtain ⟨hsum, hlt'⟩ := Equiv.Perm.sum_image_shuffle_eq_and_lt Fin.val e₁ e₂ α β γ
-    (I.orderEmbOfFin rfl).injective (J.orderEmbOfFin rfl).injective he₁ he₂ hlt hu₁ hu₂
   have himg (K : Finset (Fin n)) : univ.image (K.orderEmbOfFin rfl) = K := by
     rw [← Finset.coe_inj, coe_image, coe_univ, Set.image_univ, range_orderEmbOfFin]
-  rw [himg I, himg J] at hsum
-  rw [himg I] at hlt'
+  have hr₁ := Fintype.sum_image_sum_elim_comp Fin.val e₁ α (γ ∘ Sum.inl)
+    (he₁.symm ▸ (I.orderEmbOfFin rfl).injective)
+  have hr₂ := Fintype.sum_image_sum_elim_comp Fin.val e₂ β (γ ∘ Sum.inr)
+    (he₂.symm ▸ (J.orderEmbOfFin rfl).injective)
+  have hu₁_sum := Fintype.sum_image_sum_elim_comp Fin.val e₁ α (γ ∘ σ ∘ Sum.inl) hu₁
+  have hu₂_sum := Fintype.sum_image_sum_elim_comp Fin.val e₂ β (γ ∘ σ ∘ Sum.inr) hu₂
+  rw [he₁, himg I] at hr₁; rw [he₂, himg J] at hr₂
+  dsimp only [Function.comp_apply] at hu₁_sum hu₂_sum hr₁ hr₂
+  have hsum : (∑ x ∈ univ.image u₁, (x : ℕ)) + ∑ y ∈ univ.image u₂, (y : ℕ) =
+      (∑ x ∈ I, (x : ℕ)) + ∑ y ∈ J, (y : ℕ) := by
+    rw [hu₁_sum, hu₂_sum, hr₁, hr₂, add_add_add_comm,
+      Equiv.Perm.sum_comp_inl_add_sum_comp_inr (fun z ↦ (γ z : ℕ)) σ, add_add_add_comm]
   rw [hs₁, hs₂, Units.smul_def, smul_mul_smul_comm, smul_smul]
   exact Submodule.neg_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span
     ⟨(univ.image u₁, univ.image u₂), hS _
       ((card_image_of_injective univ hu₁).trans (Fintype.card_fin #I))
-      ((card_image_of_injective univ hu₂).trans (Fintype.card_fin #J)) hsum hlt', rfl⟩))
+      ((card_image_of_injective univ hu₂).trans (Fintype.card_fin #J))
+      hsum (by rw [hu₁_sum, hr₁]; exact add_lt_add_right hlt _), rfl⟩))
 
 /-- The shuffles preserving increasing order on each summand form a complement to the subgroup
 `sumCongrHom.range` of blockwise permutations. -/
@@ -155,11 +167,9 @@ private theorem orderedShuffles_isComplement {I J : Finset (Fin n)} (hJI : #J �
     · exact absurd h (lt_of_le_of_lt (hκ₂_le y₂) (hp₀.trans_le (hκ₁_ge x₁))).ne'
     · exact absurd h (lt_of_le_of_lt (hκ₂_le y₁) (hp₀.trans_le (hκ₁_ge x₂))).ne
     · exact congrArg Sum.inr (Subtype.ext ((J.orderEmbOfFin rfl).injective h))
-  have hT_eq : (T : Set (Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a}))) =
-      {σ : Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a}) |
-        StrictMono (γ ∘ σ ∘ Sum.inl) ∧ StrictMono (γ ∘ σ ∘ Sum.inr)} := by
-    ext; simp [T]
-  exact hT_eq ▸ Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range hγ_inj
+  exact (show (T : Set (Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a}))) =
+      {σ : Equiv.Perm _ | StrictMono (γ ∘ σ ∘ Sum.inl) ∧ StrictMono (γ ∘ σ ∘ Sum.inr)} from by
+    ext; simp [T]) ▸ Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range hγ_inj
 
 /-- The `σ = 1` summand in the Sylvester shuffle identity equals `flagMinor R I * flagMinor R J`. -/
 private theorem identity_shuffle_term_eq (R : Type*) [CommRing R] {I J : Finset (Fin n)}
@@ -219,10 +229,9 @@ theorem flagMinor_mul_flagMinor_eq_sum (R : Type*) [CommRing R] {I J : Finset (F
     r₁.monotone (Fin.le_def.mpr (not_lt.mp x.property))
   have hκ₂_le (y : {a // ¬ p₂ a}) : γ (.inr y) ≤ r₂ p₀ :=
     r₂.monotone (Fin.le_def.mpr (not_lt.mp y.property))
-  have hT := orderedShuffles_isComplement hJI hp₀ p₁ p₂ hκ₁_ge hκ₂_le
   have hrel := Matrix.sum_sign_smul_mvPolynomialMinor_comp_mul_mvPolynomialMinor_comp_eq_zero R
     (Fin.castLE (card_finset_fin_le I)) id (Fin.castLE hJI) e₁ e₂ α β γ
-    (Fin.card_lt_add_card_compl p₀) hT
+    (Fin.card_lt_add_card_compl p₀) (orderedShuffles_isComplement hJI hp₀ p₁ p₂ hκ₁_ge hκ₂_le)
   have hu₁_one : Sum.elim α (γ ∘ Sum.inl) ∘ e₁ = r₁ :=
     funext fun b ↦ by by_cases hb : p₁ b <;> simp [e₁, hb, α, γ]
   have hu₂_one : Sum.elim β (γ ∘ Sum.inr) ∘ e₂ = r₂ :=
@@ -234,8 +243,7 @@ theorem flagMinor_mul_flagMinor_eq_sum (R : Type*) [CommRing R] {I J : Finset (F
     add_eq_zero_iff_eq_neg, ← sum_neg_distrib] at hrel
   rw [hrel]
   refine Submodule.sum_mem _ fun σ hσ ↦ ?_
-  obtain ⟨hσ1, hσT⟩ := mem_erase.mp hσ
-  obtain ⟨_, hσ_inl, hσ_inr⟩ := mem_filter.mp hσT
+  obtain ⟨hσ1, hσT⟩ := mem_erase.mp hσ; obtain ⟨_, hσ_inl, hσ_inr⟩ := mem_filter.mp hσT
   exact shuffle_term_mem_span R hJI hp₀ e₁ e₂ α β γ hu₁_one hu₂_one
     (fun _ _ h ↦ r₁.strictMono h) (fun _ _ h ↦ r₂.strictMono h)
     hκ₁_ge hκ₂_le (fun P h₁ h₂ h₃ h₄ ↦ mem_filter.mpr ⟨mem_univ _, h₁, h₂, h₃, h₄⟩)
@@ -260,10 +268,18 @@ private theorem prod_flagMinor_split (R : Type*) [CommRing R] {k : ℕ}
     (∏ m : Fin k, flagMinor R (K m)) =
       (flagMinor R (K j₀) * flagMinor R (K j₁)) *
         ∏ m ∈ (univ.erase j₀).erase j₁, flagMinor R (K m) := by
-  conv_rhs => rw [mul_assoc,
-    mul_prod_erase (univ.erase j₀) (fun m ↦ flagMinor R (K m))
-      (mem_erase.mpr ⟨hj₀₁.symm, mem_univ j₁⟩),
+  conv_rhs => rw [mul_assoc, mul_prod_erase (univ.erase j₀) (fun m ↦ flagMinor R (K m))
+    (mem_erase.mpr ⟨hj₀₁.symm, mem_univ j₁⟩),
     mul_prod_erase univ (fun m ↦ flagMinor R (K m)) (mem_univ j₀)]
+
+private theorem doubleUpdate_erase_spec {k : ℕ} (I : Fin k → Finset (Fin n))
+    {j₀ j₁ : Fin k} (hj₀₁ : j₀ ≠ j₁) (P₁ P₂ : Finset (Fin n)) :
+    Function.update (Function.update I j₀ P₁) j₁ P₂ j₀ = P₁ ∧
+      Function.update (Function.update I j₀ P₁) j₁ P₂ j₁ = P₂ ∧
+      ∀ m ∈ (univ.erase j₀).erase j₁,
+        Function.update (Function.update I j₀ P₁) j₁ P₂ m = I m := by
+  refine ⟨by simp [hj₀₁], by simp, fun m hm ↦ ?_⟩
+  obtain ⟨hm₁, hm₀⟩ := mem_erase.mp hm; simp [hm₁, (mem_erase.mp hm₀).1]
 
 /-- Replacing an adjacent non-standard pair `(I j₀, I j₁)` by `(P.1, P.2)` with the same total row
 sum and strictly smaller first-factor row sum strictly decreases `straightenWeight`. -/
@@ -275,27 +291,19 @@ private theorem straightenWeight_update_lt {k j : ℕ} (hj : j + 1 < k)
     straightenWeight
       (Function.update (Function.update I ⟨j, Nat.lt_of_succ_lt hj⟩ P.1) ⟨j + 1, hj⟩ P.2) <
       straightenWeight I := by
-  let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩
-  let j₁ : Fin k := ⟨j + 1, hj⟩
+  let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩; let j₁ : Fin k := ⟨j + 1, hj⟩
   have hj₀₁ : j₀ ≠ j₁ := by simp [j₀, j₁, Fin.ext_iff]
-  let J := Function.update (Function.update I j₀ P.1) j₁ P.2
-  have hJ₀ : J j₀ = P.1 := (Function.update_of_ne hj₀₁ P.2 _).trans (Function.update_self j₀ P.1 I)
-  have hJ₁ : J j₁ = P.2 := Function.update_self j₁ P.2 (Function.update I j₀ P.1)
-  have hJ_other : ∀ m ∈ (univ.erase j₀).erase j₁, J m = I m := fun m hm ↦ by
-    obtain ⟨hm₁, hm₀⟩ := mem_erase.mp hm
-    exact (Function.update_of_ne hm₁ P.2 _).trans
-      (Function.update_of_ne (mem_erase.mp hm₀).1 P.1 I)
+  obtain ⟨hJ₀, hJ₁, hJ_other⟩ := doubleUpdate_erase_spec I hj₀₁ P.1 P.2
+  set J : Fin k → Finset (Fin n) := Function.update (Function.update I j₀ P.1) j₁ P.2
   have heq_rest :
       (∑ m ∈ (univ.erase j₀).erase j₁, (k - m.val) * ∑ x ∈ J m, (x : ℕ)) =
         ∑ m ∈ (univ.erase j₀).erase j₁, (k - m.val) * ∑ x ∈ I m, (x : ℕ) :=
     sum_congr rfl fun m hm ↦ by rw [hJ_other m hm]
   rw [straightenWeight_split J hj₀₁, straightenWeight_split I hj₀₁, hJ₀, hJ₁, heq_rest]
   simp only [j₀, j₁]
-  have hmul := congrArg ((k - (j + 1)) * ·) hPsum
-  rw [mul_add, mul_add] at hmul
+  have hmul := congrArg ((k - (j + 1)) * ·) hPsum; rw [mul_add, mul_add] at hmul
   have hkj : k - j = k - (j + 1) + 1 := by omega
-  rw [hkj, add_one_mul, add_one_mul]
-  omega
+  rw [hkj, add_one_mul, add_one_mul]; omega
 
 /-- Every product of nonempty flag minors sorted by decreasing size lies in the `R`-span of the
 tableau products `s.2.flagMinorProd R`. -/
@@ -324,20 +332,17 @@ private theorem prod_flagMinor_mem_span_of_antitone (R : Type*) [CommRing R] {k 
       rw [prod_flagMinor_split R I hj₀₁, hc, sum_mul]
       refine Submodule.sum_mem _ fun P hP ↦ ?_
       obtain ⟨_, hP₁, hP₂, hPsum, hPlt⟩ := mem_filter.mp hP
-      let J : Fin k → Finset (Fin n) := Function.update (Function.update I j₀ P.1) j₁ P.2
+      obtain ⟨hJ₀, hJ₁, hJother⟩ := doubleUpdate_erase_spec I hj₀₁ P.1 P.2
+      set J : Fin k → Finset (Fin n) := Function.update (Function.update I j₀ P.1) j₁ P.2
       have hJcard (m : Fin k) : #(J m) = #(I m) := by
         by_cases hm₁ : m = j₁ <;> by_cases hm₀ : m = j₀ <;>
           simp [J, j₀, j₁, hm₁, hm₀, hj₀₁, hP₁, hP₂]
-      have hJ₀ : J j₀ = P.1 :=
-        (Function.update_of_ne hj₀₁ P.2 _).trans (Function.update_self j₀ P.1 I)
-      have hJ₁ : J j₁ = P.2 := Function.update_self j₁ P.2 (Function.update I j₀ P.1)
-      have hJother : ∀ m ∈ (univ.erase j₀).erase j₁, J m = I m := fun m hm ↦ by
-        obtain ⟨hm₁, hm₀⟩ := mem_erase.mp hm
-        exact (Function.update_of_ne hm₁ P.2 _).trans
-          (Function.update_of_ne (mem_erase.mp hm₀).1 P.1 I)
-      rw [smul_mul_assoc, ← hJ₀, ← hJ₁,
-        ← prod_congr rfl fun m hm ↦ congrArg (flagMinor R) (hJother m hm),
-        ← prod_flagMinor_split R J hj₀₁]
+      have hprod : (∏ m : Fin k, flagMinor R (J m)) =
+          (flagMinor R P.1 * flagMinor R P.2) *
+            ∏ m ∈ (univ.erase j₀).erase j₁, flagMinor R (I m) := by
+        rw [prod_flagMinor_split R J hj₀₁, hJ₀, hJ₁]
+        exact congrArg _ (prod_congr rfl fun m hm ↦ congrArg (flagMinor R) (hJother m hm))
+      rw [smul_mul_assoc, ← hprod]
       exact zsmul_mem (ih (straightenWeight J)
         (hW ▸ straightenWeight_update_lt hj I hPsum hPlt) J rfl
         (fun m ↦ card_pos.mp ((hne m).card_pos.trans_eq (hJcard m).symm))
@@ -355,9 +360,7 @@ theorem prod_flagMinor_mem_span_flagMinorProd (R : Type*) [CommRing R]
       (L.map (flagMinor R)).prod := by
     induction L with
     | nil => rfl
-    | cons I tl ih =>
-      rw [List.filter_cons]
-      rcases I.eq_empty_or_nonempty with rfl | hne <;> simp [*]
+    | cons I _ ih => rcases I.eq_empty_or_nonempty with rfl | hne <;> simp [*]
   rw [← hfilter]
   set L₁ := L.filter fun I ↦ decide I.Nonempty
   let L₂ := L₁.mergeSort (fun A B : Finset (Fin n) ↦ decide (#B ≤ #A))
@@ -405,9 +408,6 @@ coefficient `l s₀`. -/
 theorem exists_mem_support_degree_and_leadingCoeff_flagMinorProd {R : Type*} [CommRing R]
     {l : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) →₀ R}
     (hl : l ≠ 0) :
-    haveI : Nontrivial R :=
-      let ⟨s, hs⟩ := Finsupp.support_nonempty_iff.mpr hl
-      ⟨⟨l s, 0, Finsupp.mem_support_iff.mp hs⟩⟩
     ∃ s₀ ∈ l.support,
       rename toLex (Finsupp.linearCombination R (fun s ↦ s.2.flagMinorProd R) l) ≠ 0 ∧
       lex.degree (rename toLex (Finsupp.linearCombination R (fun s ↦ s.2.flagMinorProd R) l)) =
@@ -428,15 +428,15 @@ theorem exists_mem_support_degree_and_leadingCoeff_flagMinorProd {R : Type*} [Co
     fun s hs hne' ↦ by
       by_cases hs0 : l s = 0
       · exact Or.inl (by simp [hs0])
-      · right
-        rw [(s.2.monic_rename_toLex_flagMinorProd R).degree_smul hs0, hs₀_monic.degree_smul hs₀_ne]
+      · right; rw [(s.2.monic_rename_toLex_flagMinorProd R).degree_smul hs0,
+          hs₀_monic.degree_smul hs₀_ne]
         exact lt_of_le_of_ne (hmax s hs) <| lex.toSyn.injective.ne <|
           (BoundedSSYT.degree_rename_toLex_flagMinorProd_injective R).ne hne'
   have hF : rename toLex (Finsupp.linearCombination R (fun s ↦ s.2.flagMinorProd R) l) =
       ∑ s ∈ l.support, l s • g s := by
     simp [g, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
-  refine ⟨s₀, hs₀, ?_⟩
-  simpa only [← hF, hs₀_monic.degree_smul hs₀_ne, hs₀_monic.leadingCoeff_smul] using hsum
+  exact ⟨s₀, hs₀, by simpa only [← hF, hs₀_monic.degree_smul hs₀_ne,
+    hs₀_monic.leadingCoeff_smul] using hsum⟩
 
 /-- **Linear independence of tableau products over every commutative ring.** -/
 theorem linearIndependent_flagMinorProd (R : Type*) [CommRing R] :
@@ -530,7 +530,7 @@ theorem rowLen_eq_of_mem_support_repr_flagMinorBasis {R : Type*} [CommRing R]
   have hv_gs : v (g s) = 0 := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).mp
     (iSupIndep_flagMinorColSubmodule R) _ v hv_mem hv_sum (g s)
     (mem_insert_of_mem (mem_image_of_mem g hs))
-  have hgs : g s ≠ d := hsd; simp only [v, hgs, ↓reduceIte, sub_zero] at hv_gs
+  simp only [v, show g s ≠ d from hsd, ↓reduceIte, sub_zero] at hv_gs
   have hcoeff := congrArg (Finsupp.lapply (R := R) s) (congrArg (flagMinorBasis n R).repr hv_gs)
   simp only [map_sum, map_smul, Module.Basis.repr_self, map_zero, Finsupp.lapply_apply] at hcoeff
   rw [sum_eq_single_of_mem s (mem_filter.mpr ⟨hs, rfl⟩ : s ∈ l.support.filter fun t ↦ g t = g s)
@@ -574,8 +574,7 @@ noncomputable def flagMinorShapeBasis (R : Type*) [CommRing R] (μ : YoungDiagra
           rw [← YoungDiagram.ofRowLensFin_rowLen s.1.val s.1.property,
             ← YoungDiagram.ofRowLensFin_rowLen μ hμ]
           simp_rw [congr_fun (rowLen_eq_of_mem_support_repr_flagMinorBasis x.property hs)]
-        rcases s with ⟨ν, T⟩; subst hs1
-        exact Submodule.subset_span ⟨T, by ext1; simp [w]⟩
+        rcases s with ⟨ν, T⟩; subst hs1; exact Submodule.subset_span ⟨T, by ext1; simp [w]⟩
       have hmap : (Submodule.span R (Set.range v)).map
           (flagMinorColSubmodule n R (fun c ↦ μ.rowLen c)).subtype =
           Submodule.span R (Set.range w) := by rw [Submodule.map_span, ← Set.range_comp]; rfl

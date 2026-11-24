@@ -228,11 +228,9 @@ theorem addMonoidAlgebra_leadingCoeff_withBot_some_comp_toSyn [CommSemiring R]
   · simp
   classical
   rw [AddMonoidAlgebra.leadingCoeff, supDegree_withBot_some_comp_toSyn_eq, m.withBotDegree_eq,
-    ite_eq_right hf, toWithBotSyn_apply_coe]
-  change f.coeff ((WithBot.some ∘ m.toSyn).invFun ((WithBot.some ∘ m.toSyn) (m.degree f))) =
-    m.leadingCoeff f
-  rw [Function.leftInverse_invFun (WithBot.coe_injective.comp m.toSyn.injective)]
-  rfl
+    ite_eq_right hf, toWithBotSyn_apply_coe,
+    ← Function.comp_apply (f := WithBot.some) (g := m.toSyn),
+    Function.leftInverse_invFun (WithBot.coe_injective.comp m.toSyn.injective), leadingCoeff]
 
 /-- If one summand has strictly larger `withBotDegree` than all other summands in `s`, then the
 sum inherits both its `withBotDegree` and its `leadingCoeff`. -/

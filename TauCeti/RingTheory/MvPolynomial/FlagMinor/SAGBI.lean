@@ -99,11 +99,12 @@ theorem isSAGBIBasis_image_nonempty_rename_toLex_flagMinor (R : Type*) [CommRing
   rcases eq_or_ne l 0 with hl0 | hl
   · simp [hf_eq, hl0]
   · obtain ⟨s₀, -, -, hdeg, hlc⟩ := exists_mem_support_degree_and_leadingCoeff_flagMinorProd hl
-    have : Nontrivial R :=
-      let ⟨s, hs⟩ := Finsupp.support_nonempty_iff.mpr hl
-      ⟨⟨l s, 0, Finsupp.mem_support_iff.mp hs⟩⟩
-    rw [hf_eq, MonomialOrder.leadingTerm, hdeg, hlc, s₀.2.degree_rename_toLex_flagMinorProd R,
-      monomial_sum_index]
+    have hlt : monomial (lex.degree (rename toLex (s₀.2.flagMinorProd R))) (1 : R) =
+        lex.leadingTerm (rename toLex (s₀.2.flagMinorProd R)) := by
+      rw [MonomialOrder.leadingTerm, (s₀.2.monic_rename_toLex_flagMinorProd R).leadingCoeff_eq_one]
+    rw [hf_eq, MonomialOrder.leadingTerm, hdeg, hlc, ← mul_one (l s₀), ← C_mul_monomial,
+      ← algebraMap_eq, hlt, s₀.2.leadingTerm_rename_toLex_flagMinorProd R, monomial_sum_index,
+      C_1, one_mul]
     refine mul_mem (Subalgebra.algebraMap_mem _ (l s₀)) (Subalgebra.prod_mem _ fun m hm ↦ ?_)
     rw [← leadingTerm_rename_toLex_flagMinor (R := R)]
     have hmem : rename toLex (flagMinor R (s₀.2.colFinset m)) ∈
@@ -232,11 +233,10 @@ theorem coe_initialAlgebraFlagMinorEquiv_single_one_eq_leadingTerm (R : Type*) [
   rw [coe_initialAlgebraFlagMinorEquiv_single]
   nontriviality R
   let s := GTPattern.nonnegEquivBoundedSSYT n P
-  have hdeg : (GTPattern.flagExponentEquiv.symm P : Fin n ×ₗ Fin n →₀ ℕ) =
-      lex.degree (rename toLex (s.2.flagMinorProd R)) := by
-    rw [BoundedSSYT.degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm R s,
-      Equiv.symm_apply_apply]
-  rw [hdeg, MonomialOrder.leadingTerm, (s.2.monic_rename_toLex_flagMinorProd R).leadingCoeff_eq_one]
+  rw [← Equiv.symm_apply_apply (GTPattern.nonnegEquivBoundedSSYT n) P,
+    ← BoundedSSYT.degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm R s,
+    Equiv.symm_apply_apply, MonomialOrder.leadingTerm,
+    (s.2.monic_rename_toLex_flagMinorProd R).leadingCoeff_eq_one]
 
 /-- The `lex`-initial algebra of `(flagMinorAlgebra n R).map (rename toLex)` is finitely generated
 as an `R`-algebra over every commutative ring `R`. -/
@@ -269,9 +269,9 @@ theorem leadingExponents_rename_toLex_flagMinorAlgebra (R : Type*) [CommRing R]
 `Fin n ×ₗ Fin n →₀ ℕ`. -/
 theorem nsmulSaturated_leadingExponents_rename_toLex_flagMinorAlgebra (R : Type*) [CommRing R]
     [NoZeroDivisors R] [Nontrivial R] :
-    (lex.leadingExponents ((flagMinorAlgebra n R).map (rename toLex))).NSMulSaturated := by
-  rw [leadingExponents_rename_toLex_flagMinorAlgebra R]
-  exact GTPattern.nsmulSaturated_closure_range_flagDiagonalExponent n
+    (lex.leadingExponents ((flagMinorAlgebra n R).map (rename toLex))).NSMulSaturated :=
+  leadingExponents_rename_toLex_flagMinorAlgebra R ▸
+    GTPattern.nsmulSaturated_closure_range_flagDiagonalExponent n
 
 @[simp]
 theorem nsmulSaturation_leadingExponents_rename_toLex_flagMinorAlgebra (R : Type*) [CommRing R]
@@ -295,8 +295,7 @@ theorem coe_leadingExponentsFlagMinorEquiv_apply (R : Type*) [CommRing R] [NoZer
     [Nontrivial R] (e : lex.leadingExponents ((flagMinorAlgebra n R).map (rename toLex))) :
     ⇑(leadingExponentsFlagMinorEquiv n R e : GTPattern n) =
       GTPattern.exponentEntries (e : Fin n ×ₗ Fin n →₀ ℕ) := by
-  rw [leadingExponentsFlagMinorEquiv, AddEquiv.trans_apply, GTPattern.coe_flagExponentEquiv_apply]
-  rfl
+  simp [leadingExponentsFlagMinorEquiv]; rfl
 
 /-- Coercing the inverse image of a nonnegative Gelfand-Tsetlin pattern `P` under
 `leadingExponentsFlagMinorEquiv` recovers the exponent entries by successive differences

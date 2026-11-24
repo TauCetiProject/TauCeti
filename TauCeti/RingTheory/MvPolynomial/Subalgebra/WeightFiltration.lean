@@ -95,11 +95,9 @@ instance weightFiltrationIsRingFiltration :
         TauCeti.MvPolynomial.weightFiltrationLT_succ] using hf
 
 /-- Every element of a polynomial subalgebra has a finite weight bound. -/
-theorem iSup_weightFiltration : (⨆ n, A.weightFiltration w n) = ⊤ := by
-  apply top_unique
-  intro f _
-  apply Submodule.mem_iSup_of_mem ((f : MvPolynomial σ R).weightedTotalDegree w)
-  exact mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl
+theorem iSup_weightFiltration : (⨆ n, A.weightFiltration w n) = ⊤ :=
+  top_unique fun f _ ↦ Submodule.mem_iSup_of_mem ((f : MvPolynomial σ R).weightedTotalDegree w)
+    (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl)
 
 /-- The parameter belongs to the Rees algebra of the induced weight filtration. -/
 theorem one_mem_weightFiltration_one : (1 : A) ∈ A.weightFiltration w 1 := by
@@ -114,17 +112,11 @@ with the polynomial algebra having coefficients in `A`. -/
 theorem map_weightReesAlgebra :
     (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) =
       TauCeti.MvPolynomial.weightReesAlgebra R w ⊓ (Polynomial.mapAlgHom A.val).range := by
-  ext p
-  simp only [Subalgebra.mem_map, Algebra.mem_inf]
-  constructor
-  · rintro ⟨q, hq, rfl⟩
-    refine ⟨?_, AlgHom.mem_range_self _ q⟩
-    rw [TauCeti.MvPolynomial.weightReesAlgebra, mem_coeffSubalgebra_iff]
+  ext p; simp only [Subalgebra.mem_map, Algebra.mem_inf]
+  refine ⟨fun ⟨q, hq, h⟩ ↦ ⟨?_, h ▸ AlgHom.mem_range_self _ q⟩, fun ⟨hp, q, h⟩ ↦ ⟨q, ?_, h⟩⟩
+  · subst h; rw [TauCeti.MvPolynomial.weightReesAlgebra, mem_coeffSubalgebra_iff]
     simpa using mem_coeffSubalgebra_iff.mp hq
-  · rintro ⟨hp, q, rfl⟩
-    refine ⟨q, ?_, rfl⟩
-    apply mem_coeffSubalgebra_iff.mpr
-    simpa using mem_coeffSubalgebra_iff.mp hp
+  · subst h; exact mem_coeffSubalgebra_iff.mpr (by simpa using mem_coeffSubalgebra_iff.mp hp)
 
 end Subalgebra
 
@@ -145,17 +137,14 @@ theorem map_weightReesAlgebra_eq_range_weightReesAeval
     (hQ : ∀ j, Q j ∈ TauCeti.MvPolynomial.weightFiltrationLT R d (e j))
     (hQc : ∀ j, MvPolynomial.aeval c (Q j) = MvPolynomial.aeval c (r j)) :
     (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) = (weightReesAeval c d).range := by
-  rw [A.map_weightReesAlgebra,
-    range_weightReesAeval_eq_inf hc hg hJ hr hQ hQc]
-  congr 1
-  ext p
-  have hv' : p ∈ (Polynomial.mapAlgHom A.val).range ↔ ∀ n, p.coeff n ∈ A.val.range :=
-    Polynomial.mem_map_rangeS A.val.toRingHom
-  rw [Subalgebra.range_val] at hv'
-  have hc' : p ∈ (Polynomial.mapAlgHom (MvPolynomial.aeval c)).range ↔
-      ∀ n, p.coeff n ∈ (MvPolynomial.aeval (R := R) c).range :=
-    Polynomial.mem_map_rangeS (MvPolynomial.aeval (R := R) c).toRingHom
-  rw [hv', hc', MvPolynomial.aeval_range, hA]
+  rw [A.map_weightReesAlgebra, range_weightReesAeval_eq_inf hc hg hJ hr hQ hQc]
+  congr 1; ext p
+  exact (Polynomial.mem_map_rangeS A.val.toRingHom).trans <|
+    (forall_congr' fun n ↦ by
+      simp only [RingHom.mem_rangeS, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        ← Set.mem_range, ← AlgHom.coe_range, Subalgebra.range_val, MvPolynomial.aeval_range,
+        hA]).trans
+      (Polynomial.mem_map_rangeS (MvPolynomial.aeval (R := R) c).toRingHom).symm
 
 /-- Embed the induced weight Rees algebra into the ambient weight Rees algebra via the inclusion
 `A ↪ MvPolynomial σ R`. -/
@@ -176,10 +165,9 @@ theorem coe_weightReesInclusion (g : A.weightReesAlgebra w) :
   simp [weightReesInclusion]
 
 /-- `weightReesInclusion` is injective. -/
-theorem weightReesInclusion_injective : Function.Injective (A.weightReesInclusion w) := by
-  intro g₁ g₂ h
-  refine Subtype.ext (Polynomial.map_injective A.val.toRingHom Subtype.coe_injective ?_)
-  simpa only [coe_weightReesInclusion] using congrArg Subtype.val h
+theorem weightReesInclusion_injective : Function.Injective (A.weightReesInclusion w) :=
+  fun _ _ h ↦ Subtype.ext <| Polynomial.map_injective A.val.toRingHom Subtype.coe_injective <| by
+    simpa only [coe_weightReesInclusion] using congrArg Subtype.val h
 
 /-- `weightReesInclusion` sends monomials of `A.weightReesAlgebra w` to the corresponding ambient
 Rees monomials. -/
@@ -234,13 +222,11 @@ private noncomputable def weightReesSpecialFiberHom :
             (mem_coeffSubalgebra_iff.mp g.property m))).eq_or_lt with heq | hlt
       · rw [← heq, ← _root_.MvPolynomial.weightInitialForm_def]
         exact Algebra.subset_adjoin ⟨b, ((g : A[X]).coeff m).property, rfl⟩
-      · rw [_root_.MvPolynomial.weightedHomogeneousComponent_eq_zero m b hlt]
-        exact zero_mem _
+      · rw [_root_.MvPolynomial.weightedHomogeneousComponent_eq_zero m b hlt]; exact zero_mem _
 
 private theorem coe_weightReesSpecialFiberHom_apply (g : A.weightReesAlgebra w) :
     (A.weightReesSpecialFiberHom w g : MvPolynomial σ R) =
-      TauCeti.MvPolynomial.weightReesSymbol R w (A.weightReesInclusion w g) :=
-  rfl
+      TauCeti.MvPolynomial.weightReesSymbol R w (A.weightReesInclusion w g) := rfl
 
 private theorem coe_weightReesSpecialFiberHom_monomial
     (m : ℕ) (b : A) (hb : b ∈ A.weightFiltration w m) :
@@ -281,19 +267,14 @@ private theorem weightReesSpecialFiberHom_surjective :
     have hbm : (⟨b, hb⟩ : A) ∈ A.weightFiltration w (b.weightedTotalDegree w) :=
       (A.mem_weightFiltration_iff w).mpr
         (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl)
-    refine ⟨coeffSubalgebra.monomial _ _ ⟨b, hb⟩ hbm, Subtype.ext ?_⟩
-    rw [coe_weightReesSpecialFiberHom_monomial]
-    exact (_root_.MvPolynomial.weightInitialForm_def w b).symm
-  | algebraMap r =>
-    exact ⟨algebraMap R _ r, AlgHom.commutes _ r⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨g₁, hg₁⟩ := hx
-    obtain ⟨g₂, hg₂⟩ := hy
-    exact ⟨g₁ + g₂, by simp [hg₁, hg₂]⟩
-  | mul x y _ _ hx hy =>
-    obtain ⟨g₁, hg₁⟩ := hx
-    obtain ⟨g₂, hg₂⟩ := hy
-    exact ⟨g₁ * g₂, by simp [hg₁, hg₂]⟩
+    exact ⟨coeffSubalgebra.monomial _ _ ⟨b, hb⟩ hbm, Subtype.ext
+      ((coe_weightReesSpecialFiberHom_monomial A w _ ⟨b, hb⟩ hbm).trans
+        (_root_.MvPolynomial.weightInitialForm_def w b).symm)⟩
+  | algebraMap r => exact ⟨algebraMap R _ r, AlgHom.commutes _ r⟩
+  | add _ _ _ _ hx hy =>
+    obtain ⟨g₁, hg₁⟩ := hx; obtain ⟨g₂, hg₂⟩ := hy; exact ⟨g₁ + g₂, by simp [hg₁, hg₂]⟩
+  | mul _ _ _ _ hx hy =>
+    obtain ⟨g₁, hg₁⟩ := hx; obtain ⟨g₂, hg₂⟩ := hy; exact ⟨g₁ * g₂, by simp [hg₁, hg₂]⟩
 
 open scoped TensorProduct in
 /-- The zero fibre of the induced weight Rees algebra at `X = 0` is `R`-algebra isomorphic to the
@@ -318,8 +299,7 @@ theorem coe_weightReesAlgebraSpecialFiberEquiv_tmul (r : R) (g : A.weightReesAlg
       r • TauCeti.MvPolynomial.weightReesSymbol R w (A.weightReesInclusion w g) := by
   let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
-  rw [weightReesAlgebraSpecialFiberEquiv, coeffSubalgebra.baseChangeEvalZeroEquiv_tmul]
-  simp [coe_weightReesSpecialFiberHom_apply]
+  simp [weightReesAlgebraSpecialFiberEquiv, coe_weightReesSpecialFiberHom_apply]
 
 open scoped TensorProduct in
 /-- Coercing the image of a pure tensor of `1` with a Rees monomial `b * X ^ m` under

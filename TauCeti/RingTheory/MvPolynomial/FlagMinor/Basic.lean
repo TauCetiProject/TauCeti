@@ -352,10 +352,7 @@ theorem map_flagMinorAlgebra_le (R S : Type*) [CommRing R] [CommRing S] [Algebra
     (flagMinorAlgebra n R).map (MvPolynomial.mapAlgHom (Algebra.ofId R S)) ≤
       (flagMinorAlgebra n S).restrictScalars R := by
   rw [Subalgebra.map_le, flagMinorAlgebra_le_iff]
-  intro I
-  rw [Subalgebra.mem_comap, Subalgebra.mem_restrictScalars, MvPolynomial.mapAlgHom_apply,
-    map_flagMinor]
-  exact flagMinor_mem_flagMinorAlgebra S I
+  exact fun I ↦ by simp [MvPolynomial.mapAlgHom_apply, flagMinor_mem_flagMinorAlgebra]
 
 /-- Under any ring homomorphism `f : R →+* S`, the image of `flagMinorAlgebra n R` generates
 `flagMinorAlgebra n S` over `S`. -/
@@ -367,17 +364,10 @@ theorem adjoin_map_flagMinorAlgebra {R S : Type*} [CommRing R] [CommRing S] (f :
     rw [SetLike.mem_coe, flagMinorAlgebra_def] at hp
     induction hp using Algebra.adjoin_induction with
     | mem _ hx =>
-      obtain ⟨I, rfl⟩ := hx
-      rw [map_flagMinor]
-      exact flagMinor_mem_flagMinorAlgebra S I
-    | algebraMap r =>
-      simpa using (flagMinorAlgebra n S).algebraMap_mem (f r)
-    | add x y _ _ hx hy =>
-      rw [map_add]
-      exact add_mem hx hy
-    | mul x y _ _ hx hy =>
-      rw [map_mul]
-      exact mul_mem hx hy
+      obtain ⟨I, rfl⟩ := hx; rw [map_flagMinor]; exact flagMinor_mem_flagMinorAlgebra S I
+    | algebraMap r => simpa using (flagMinorAlgebra n S).algebraMap_mem (f r)
+    | add _ _ _ _ hx hy => rw [map_add]; exact add_mem hx hy
+    | mul _ _ _ _ hx hy => rw [map_mul]; exact mul_mem hx hy
   · rintro _ ⟨I, rfl⟩
     exact Algebra.subset_adjoin
       ⟨flagMinor R I, flagMinor_mem_flagMinorAlgebra R I, map_flagMinor f I⟩
@@ -397,8 +387,8 @@ theorem map_flagMinorAlgebra_eq_restrictScalars (R S : Type*) [CommRing R] [Comm
       by simp [MvPolynomial.mapAlgHom_apply]⟩
   | algebraMap s =>
     obtain ⟨r, rfl⟩ := hf s
-    exact Subalgebra.mem_map.mpr ⟨algebraMap R _ r, (flagMinorAlgebra n R).algebraMap_mem r,
-      by simp⟩
+    exact Subalgebra.mem_map.mpr
+      ⟨algebraMap R _ r, (flagMinorAlgebra n R).algebraMap_mem r, by simp⟩
   | add _ _ _ _ hx hy => exact add_mem hx hy
   | mul _ _ _ _ hx hy => exact mul_mem hx hy
 
@@ -413,12 +403,8 @@ Gelfand-Tsetlin patterns (`TauCeti.GTPattern.flagExponentEquiv`). -/
 noncomputable def exponentEntries : (Fin n ×ₗ Fin n →₀ ℕ) →+ ℕ → ℕ → ℤ where
   toFun e c j :=
     if h : c < n ∧ j ≤ n then ∑ r : Fin n with r.val < j, (e (toLex (r, ⟨c, h.1⟩)) : ℤ) else 0
-  map_zero' := by
-    funext c j
-    by_cases h : c < n ∧ j ≤ n <;> simp [h]
-  map_add' e f := by
-    funext c j
-    by_cases h : c < n ∧ j ≤ n <;> simp [h, sum_add_distrib]
+  map_zero' := by funext c j; by_cases h : c < n ∧ j ≤ n <;> simp [h]
+  map_add' e f := by funext c j; by_cases h : c < n ∧ j ≤ n <;> simp [h, sum_add_distrib]
 
 theorem exponentEntries_apply (e : Fin n ×ₗ Fin n →₀ ℕ) (c j : ℕ) :
     exponentEntries e c j =
@@ -433,9 +419,7 @@ theorem exponentEntries_succ_sub (e : Fin n ×ₗ Fin n →₀ ℕ) (r c : Fin n
     exponentEntries e c (r + 1) - exponentEntries e c r = e (toLex (r, c)) := by
   have hfilter : (univ.filter fun r' : Fin n ↦ r'.val < r + 1) =
       insert r (univ.filter fun r' : Fin n ↦ r'.val < r) := by
-    ext r'
-    simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
-    omega
+    ext r'; simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]; omega
   have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.isLt, r.isLt⟩
   have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.isLt, r.isLt.le⟩
   simp only [exponentEntries_apply, h₁, h₂, and_self, dite_true, hfilter]
@@ -443,11 +427,8 @@ theorem exponentEntries_succ_sub (e : Fin n ×ₗ Fin n →₀ ℕ) (r c : Fin n
 
 /-- An exponent is determined by its partial column sums. -/
 theorem exponentEntries_injective :
-    Function.Injective (exponentEntries (n := n)) := by
-  intro e f h
-  ext x
-  have hx := congrArg (fun F ↦ F (ofLex x).2 ((ofLex x).1 + 1) - F (ofLex x).2 (ofLex x).1) h
-  simpa using hx
+    Function.Injective (exponentEntries (n := n)) := fun _ _ h ↦ Finsupp.ext fun x ↦ by
+  simpa using congrArg (fun F ↦ F (ofLex x).2 ((ofLex x).1 + 1) - F (ofLex x).2 (ofLex x).1) h
 
 /-- **The partial column sums of the diagonal exponent of `I` form the row-subset pattern of
 `I`.** -/
@@ -462,17 +443,14 @@ theorem exponentEntries_flagDiagonalExponent (I : Finset (Fin n)) :
     lt_card_filter_iff_apply_orderEmbOfFin_of_imp I rfl ⟨c, hcI⟩ (fun r : Fin n ↦ r.val < j)
       fun _ _ hba hp ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.1 hba) hp
   split_ifs with h hcj hcj
-  · -- Only the row `i_c` contributes to the sum.
-    have hcI : c < #I := hcj.2.trans_le (card_le_card (filter_subset _ _))
+  · have hcI : c < #I := hcj.2.trans_le (card_le_card (filter_subset _ _))
     simp [flagDiagonalExponent_apply, hcI, (key hcI).1 hcj.2]
   · refine sum_eq_zero fun r hr ↦ ?_
-    rw [mem_filter] at hr
-    rw [flagDiagonalExponent_apply]
+    rw [mem_filter] at hr; rw [flagDiagonalExponent_apply]
     split_ifs with hcI hr'
     · exact absurd ⟨h.2, (key hcI).2 (hr' ▸ hr.2)⟩ hcj
     all_goals simp
-  · have := card_filter_val_lt_le I j
-    omega
+  · have := card_filter_val_lt_le I j; omega
   · rfl
 
 /-- Distinct row subsets have distinct diagonal exponents, so the `2 ^ n` subsets of `Fin n` give
@@ -489,9 +467,7 @@ private theorem map_closure_range_flagDiagonalExponent :
       (AddSubmonoid.nonneg (GTPattern n)).map coeFnAddMonoidHom := by
   rw [← closure_range_rowSubset, AddMonoidHom.map_mclosure, AddMonoidHom.map_mclosure,
     ← Set.range_comp, ← Set.range_comp]
-  congr 2
-  funext I
-  simp [exponentEntries_flagDiagonalExponent, coeFnAddMonoidHom_apply]
+  congr 2; funext I; simp [exponentEntries_flagDiagonalExponent, coeFnAddMonoidHom_apply]
 
 /-- **The monoid generated by the diagonal exponents of the flag minors.** An exponent lies in it
 if and only if its partial column sums are the entries of a nonnegative Gelfand-Tsetlin pattern. -/
@@ -507,8 +483,7 @@ theorem mem_closure_range_flagDiagonalExponent_iff {e : Fin n ×ₗ Fin n →₀
   · rintro ⟨P, hP, hPe⟩
     have he : exponentEntries e ∈ (AddSubmonoid.nonneg (GTPattern n)).map coeFnAddMonoidHom :=
       ⟨P, hP, by rw [coeFnAddMonoidHom_apply, hPe]⟩
-    rw [← map_closure_range_flagDiagonalExponent] at he
-    obtain ⟨e', he', hee'⟩ := he
+    obtain ⟨e', he', hee'⟩ := map_closure_range_flagDiagonalExponent ▸ he
     rwa [← exponentEntries_injective hee']
 
 /-- **Saturation of the diagonal-exponent monoid.** Inside the ambient exponent monoid
@@ -535,9 +510,7 @@ theorem nsmulSaturated_closure_range_flagDiagonalExponent (n : ℕ) :
               (hQ (i + 1) (j + 1) ▸ hQ i j ▸ Q.entry_succ_succ_le_entry (i := i) hj) hk_pos⟩ }
     refine mem_closure_range_flagDiagonalExponent_iff.mpr ⟨P, zero_le_iff.mpr fun i j ↦ ?_, rfl⟩
     rw [← entry_eq_coe]; dsimp only [P]; rw [exponentEntries_apply]
-    split_ifs
-    · exact sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
-    · exact le_rfl
+    split_ifs <;> [exact sum_nonneg fun _ _ ↦ Nat.cast_nonneg _; exact le_rfl]
 
 @[simp]
 theorem nsmulSaturation_closure_range_flagDiagonalExponent (n : ℕ) :

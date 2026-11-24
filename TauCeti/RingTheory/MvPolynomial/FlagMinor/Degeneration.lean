@@ -50,6 +50,21 @@ section Degeneration
 
 variable {n : ℕ}
 
+/-- The `2 ^ n - 1` nonempty flag minors generate `(flagMinorAlgebra n k).map (rename toLex)`
+and form a `lex`-SAGBI basis of it. -/
+private theorem adjoin_and_isSAGBIBasis_nonempty_flagMinor (k : Type*) [CommRing k] :
+    let c : {I : Finset (Fin n) // I.Nonempty} → MvPolynomial (Fin n ×ₗ Fin n) k :=
+      fun I ↦ rename toLex (flagMinor k I.val)
+    Algebra.adjoin k (Set.range c) = (flagMinorAlgebra n k).map (rename toLex) ∧
+      lex.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range c)) := by
+  intro c
+  have hrange : Set.range c =
+      (fun I : Finset (Fin n) ↦ rename toLex (flagMinor k I)) '' {I | I.Nonempty} := by
+    ext p; simp [c]
+  have hadj : Algebra.adjoin k (Set.range c) = (flagMinorAlgebra n k).map (rename toLex) := by
+    rw [hrange, ← Set.image_image, ← AlgHom.map_adjoin, adjoin_flagMinor_nonempty]
+  exact ⟨hadj, hadj ▸ hrange ▸ isSAGBIBasis_image_nonempty_rename_toLex_flagMinor k⟩
+
 /-- Constructs a strictly positive integral weight `w` and a bounded SAGBI weight certificate on
 the `2 ^ n - 1` nonempty flag minors over a field `k`. -/
 private theorem exists_pos_weight_flagMinor_certificate (k : Type*) [Field k] :
@@ -71,27 +86,22 @@ private theorem exists_pos_weight_flagMinor_certificate (k : Type*) [Field k] :
   classical
   let c : {I : Finset (Fin n) // I.Nonempty} → MvPolynomial (Fin n ×ₗ Fin n) k :=
     fun I ↦ rename toLex (flagMinor k I.val)
-  have hrange : Set.range c =
-      (fun I : Finset (Fin n) ↦ rename toLex (flagMinor k I)) '' {I | I.Nonempty} := by
-    ext p; simp [c]
-  have hadj : Algebra.adjoin k (Set.range c) = (flagMinorAlgebra n k).map (rename toLex) := by
-    rw [hrange, ← Set.image_image, ← AlgHom.map_adjoin, adjoin_flagMinor_nonempty]
-  have hsagbi : lex.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range c)) := by
-    rw [hadj, hrange]; exact isSAGBIBasis_image_nonempty_rename_toLex_flagMinor k
+  -- 1. Use the nonempty-minor SAGBI basis and finite binomial generators of its toric ideal.
+  obtain ⟨-, hsagbi⟩ := adjoin_and_isSAGBIBasis_nonempty_flagMinor (n := n) k
   have hc_monic : ∀ I : {I : Finset (Fin n) // I.Nonempty}, lex.Monic (c I) :=
     fun I ↦ monic_rename_toLex_flagMinor k I.val
-  let a : {I : Finset (Fin n) // I.Nonempty} → Fin n ×ₗ Fin n →₀ ℕ :=
-    fun I ↦ lex.degree (c I)
-  have ha : a = fun I ↦ flagDiagonalExponent I.val :=
-    funext fun I ↦ degree_rename_toLex_flagMinor (R := k) I.val
+  let a : {I : Finset (Fin n) // I.Nonempty} → Fin n ×ₗ Fin n →₀ ℕ := fun I ↦ lex.degree (c I)
+  have haI (I : {I : Finset (Fin n) // I.Nonempty}) :
+      lex.degree (c I) = flagDiagonalExponent I.val :=
+    degree_rename_toLex_flagMinor (R := k) I.val
+  have ha : a = fun I ↦ flagDiagonalExponent I.val := funext haI
   obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span a
   let r : B → MvPolynomial {I : Finset (Fin n) // I.Nonempty} k :=
     fun j ↦ monomial j.val.1 1 - monomial j.val.2 1
   have hker : RingHom.ker (aeval (fun I ↦ monomial (a I) (1 : k))) =
       Ideal.span (Set.range r) := by
-    rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hspan k]
-    congr 1
-    exact Set.image_eq_range _ _
+    rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hspan k, Set.image_eq_range]; rfl
+  -- 2. Subduct each binomial relation and extract a positive weight realizing all reductions.
   choose Q hQc hQ using fun j : B ↦
     hsagbi.exists_aeval_eq_aeval_sub hc_monic (hB j.val j.property)
   obtain ⟨w, hw, hcw, hgw, hQw⟩ :=
@@ -103,29 +113,11 @@ private theorem exists_pos_weight_flagMinor_certificate (k : Type*) [Field k] :
   have hr (j : B) : (r j).IsWeightedHomogeneous d (Finsupp.weight d j.val.1) :=
     (isWeightedHomogeneous_monomial _ _ _ rfl).sub
       (isWeightedHomogeneous_monomial _ _ _ (by rw [hwA, hwA, hB j.val j.property]))
-  have haI (I : {I : Finset (Fin n) // I.Nonempty}) :
-      lex.degree (c I) = flagDiagonalExponent I.val :=
-    degree_rename_toLex_flagMinor (R := k) I.val
-  have hfun : (fun I : {I : Finset (Fin n) // I.Nonempty} ↦ Finsupp.weight w (lex.degree (c I))) =
-      fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val) :=
-    funext fun I ↦ congrArg (Finsupp.weight w) (haI I)
-  have hcw' : ∀ I, c I ∈ TauCeti.MvPolynomial.weightFiltration k w
-      (Finsupp.weight w (flagDiagonalExponent I.val)) := fun I ↦ haI I ▸ hcw I
-  have hgw' : ∀ I, MvPolynomial.weightedHomogeneousComponent w
-      (Finsupp.weight w (flagDiagonalExponent I.val)) (c I) =
-      monomial (flagDiagonalExponent I.val) 1 := fun I ↦ haI I ▸ hgw I
-  have hker' : RingHom.ker (aeval fun I ↦ monomial (flagDiagonalExponent I.val) (1 : k)) =
-      Ideal.span (Set.range r) := by
-    simpa only [ha] using hker
-  have hr' : ∀ j, (r j).IsWeightedHomogeneous
-      (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))
-      (Finsupp.weight (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val)) j.val.1) := by
-    simpa only [d, ha] using hr
-  have hQw' : ∀ j, Q j ∈ TauCeti.MvPolynomial.weightFiltrationLT k
-      (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))
-      (Finsupp.weight (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val)) j.val.1) :=
-    fun j ↦ hfun ▸ hQw j
-  exact ⟨w, B, r, Q, _, hw, hcw', hgw', hker', hr', hQw', hQc⟩
+  -- 3. Transport `a = lex.degree ∘ c` to `flagDiagonalExponent ∘ Subtype.val`.
+  exact ⟨w, B, r, Q, _, hw, fun I ↦ by simpa only [haI I] using hcw I,
+    fun I ↦ by simpa only [haI I] using hgw I,
+    by simpa only [ha] using hker, by simpa only [d, ha] using hr,
+    by simpa only [haI] using hQw, hQc⟩
 
 /-- Converts the nonempty-family weight filtration and top-homogeneous-component certificate into
 the weight-initial form and weighted total degree of every flag minor `flagMinor k I`. -/
@@ -152,20 +144,13 @@ private theorem weightInitialForm_and_weightedTotalDegree_flagMinor {k : Type*} 
       (TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp
         SetLike.GradedOne.one_mem)⟩
   · let J : {I : Finset (Fin n) // I.Nonempty} := ⟨I, hI⟩
-    let dJ := Finsupp.weight w (flagDiagonalExponent I)
-    have hdeg_le : (rename toLex (flagMinor k I)).weightedTotalDegree w ≤ dJ :=
-      TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp (hcw J)
-    have hdeg_eq : (rename toLex (flagMinor k I)).weightedTotalDegree w = dJ := by
-      refine le_antisymm hdeg_le (le_of_not_gt fun hlt ↦ ?_)
-      have h0 := MvPolynomial.weightedHomogeneousComponent_eq_zero dJ
-        (rename toLex (flagMinor k I)) hlt
-      rw [hgw J] at h0
-      exact one_ne_zero (MvPolynomial.monomial_eq_zero.mp h0)
-    have hinit : MvPolynomial.weightInitialForm w (rename toLex (flagMinor k I)) =
-        monomial (flagDiagonalExponent I) 1 := by
-      rw [MvPolynomial.weightInitialForm_def, hdeg_eq]
-      exact hgw J
-    exact ⟨hinit, hdeg_eq⟩
+    have hdeg_eq : (rename toLex (flagMinor k I)).weightedTotalDegree w =
+        Finsupp.weight w (flagDiagonalExponent I) := by
+      refine le_antisymm
+        (TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp (hcw J))
+        (le_of_not_gt fun hlt ↦ one_ne_zero <| MvPolynomial.monomial_eq_zero.mp <| hgw J ▸
+          MvPolynomial.weightedHomogeneousComponent_eq_zero _ (rename toLex (flagMinor k I)) hlt)
+    exact ⟨by rw [MvPolynomial.weightInitialForm_def, hdeg_eq]; exact hgw J, hdeg_eq⟩
 
 /-- **Positive integral weight-Rees degeneration of the flag-minor algebra.** Over any field `k`,
 there exists a strictly positive weight `w : (Fin n ×ₗ Fin n) → ℕ` such that, writing
@@ -186,7 +171,9 @@ there exists a strictly positive weight `w : (Fin n ×ₗ Fin n) → ℕ` such t
    to `AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n))` sending each homogenized flag minor
    to `AddMonoidAlgebra.single ⟨GTPattern.rowSubset I, GTPattern.zero_le_rowSubset I⟩ 1`;
 5. the invertible-`t` fiber `Localization.Away t` is `k`-algebra isomorphic to
-   `LaurentPolynomial (flagMinorAlgebra n k)` via an isomorphism sending `t` to `T 1`. -/
+   `LaurentPolynomial (flagMinorAlgebra n k)` via an isomorphism sending `t` to `T 1` and every
+   `p : A.weightReesAlgebra w` to `Polynomial.toLaurent p` mapped along the inverse of
+   `rename toLex`. -/
 theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
     ∃ w : (Fin n ×ₗ Fin n) → ℕ,
       (∀ s, 0 < w s) ∧
@@ -230,48 +217,40 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
         e (algebraMap _ _ (TauCeti.coeffSubalgebra.X
             (((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w)
             (((flagMinorAlgebra n k).map (rename toLex)).one_mem_weightFiltration_one w))) =
-          LaurentPolynomial.T 1 := by
+          LaurentPolynomial.T 1 ∧
+        ∀ p : ((flagMinorAlgebra n k).map (rename toLex)).weightReesAlgebra w,
+          e (algebraMap _ _ p) =
+            AddMonoidAlgebra.mapAlgEquiv k ℤ
+              ((flagMinorAlgebra n k).equivMapOfInjective (rename toLex)
+                (rename_injective _ toLex.injective)).symm
+              (Polynomial.toLaurent (p : ((flagMinorAlgebra n k).map (rename toLex))[X])) := by
   classical
-  set A : Subalgebra k (MvPolynomial (Fin n ×ₗ Fin n) k) :=
-    (flagMinorAlgebra n k).map (rename toLex)
+  -- 1. Match the `w`-initial algebra and Rees presentation with the diagonal SAGBI basis.
+  obtain ⟨hadj, hsagbi⟩ := adjoin_and_isSAGBIBasis_nonempty_flagMinor (n := n) k
+  set A : Subalgebra _ _ := (flagMinorAlgebra n k).map (rename toLex)
   let c : {I : Finset (Fin n) // I.Nonempty} → MvPolynomial (Fin n ×ₗ Fin n) k :=
     fun I ↦ rename toLex (flagMinor k I.val)
-  have hrange : Set.range c =
-      (fun I : Finset (Fin n) ↦ rename toLex (flagMinor k I)) '' {I | I.Nonempty} := by
-    ext p; simp [c]
-  have hadj : Algebra.adjoin k (Set.range c) = A := by
-    rw [hrange, ← Set.image_image, ← AlgHom.map_adjoin, adjoin_flagMinor_nonempty]
-  have hsagbi : lex.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range c)) := by
-    rw [hadj, hrange]; exact isSAGBIBasis_image_nonempty_rename_toLex_flagMinor k
   obtain ⟨w, ι, r, Q, e, hw, hcw, hgw, hker, hr, hQw, hQc⟩ :=
     exists_pos_weight_flagMinor_certificate (n := n) k
-  have hinit := TauCeti.MvPolynomial.adjoin_weightInitialForm_eq hcw hgw hker hr hQw hQc
-  have hlead : Algebra.adjoin k
-        (Set.range fun I : {I : Finset (Fin n) // I.Nonempty} ↦
-          monomial (flagDiagonalExponent I.val) (1 : k)) =
-      lex.initialAlgebra (Algebra.adjoin k (Set.range c)) := by
-    rw [← hsagbi.adjoin_leadingTerm, ← Set.range_comp]
-    congr 1
-    apply congrArg Set.range
-    funext I
-    simp [leadingTerm_rename_toLex_flagMinor, c]
   have hinit' : Algebra.adjoin k (MvPolynomial.weightInitialForm w '' (A : Set _)) =
       lex.initialAlgebra A := by
     rw [← hadj]
-    exact hinit.trans hlead
+    refine (TauCeti.MvPolynomial.adjoin_weightInitialForm_eq hcw hgw hker hr hQw hQc).trans ?_
+    rw [← hsagbi.adjoin_leadingTerm, ← Set.range_comp]
+    exact congrArg (Algebra.adjoin k) (congrArg Set.range
+      (funext fun I ↦ by simp [leadingTerm_rename_toLex_flagMinor]))
   have hrees_eq : (TauCeti.MvPolynomial.weightReesAeval c
       (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))).range =
       (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) :=
     (A.map_weightReesAlgebra_eq_range_weightReesAeval w hadj.symm hcw hgw hker hr hQw hQc).symm
   have htop := weightInitialForm_and_weightedTotalDegree_flagMinor w hcw hgw
   refine ⟨w, hw, htop, hinit', hrees_eq, ⟨A.flat_weightReesAlgebra w, ?_⟩, ?_⟩
-  · let := TauCeti.coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+  · -- 2. Identify the special fiber `t = 0` with the Gelfand-Tsetlin semigroup algebra.
+    let := TauCeti.coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
     let := Algebra.compHom k (Polynomial.evalRingHom (0 : k))
-    let e0 : (k ⊗[k[X]] A.weightReesAlgebra w) ≃ₐ[k]
-        AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n)) :=
-      (A.weightReesAlgebraSpecialFiberEquiv w).trans
-        ((Subalgebra.equivOfEq _ _ hinit').trans (initialAlgebraFlagMinorEquiv n k).symm)
-    refine ⟨e0, fun I hIm ↦ ?_⟩
+    refine ⟨(A.weightReesAlgebraSpecialFiberEquiv w).trans
+        ((Subalgebra.equivOfEq _ _ hinit').trans (initialAlgebraFlagMinorEquiv n k).symm),
+      fun I hIm ↦ ?_⟩
     rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_apply_eq]
     apply Subtype.ext
     rw [Subalgebra.equivOfEq_apply, Subalgebra.coe_weightReesAlgebraSpecialFiberEquiv_tmul_monomial]
@@ -280,7 +259,8 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
       rw [← (htop I).2, ← MvPolynomial.weightInitialForm_def, (htop I).1]
     rw [hcomp, coe_initialAlgebraFlagMinorEquiv_single,
       ← GTPattern.flagExponentEquiv_flagDiagonalExponent I, AddEquiv.symm_apply_apply]
-  · let e1 := TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent (A.weightFiltration w)
+  · -- 3. Identify the localized fiber away from `t` with `LaurentPolynomial`.
+    let e1 := TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent (A.weightFiltration w)
       (A.one_mem_weightFiltration_one w) (A.weightFiltration_mono w) (A.iSup_weightFiltration w)
     have he1 := TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent_algebraMap_X
       (A.weightFiltration w) (A.one_mem_weightFiltration_one w) (A.weightFiltration_mono w)
@@ -288,9 +268,10 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
     let eA : A ≃ₐ[k] flagMinorAlgebra n k :=
       ((flagMinorAlgebra n k).equivMapOfInjective (rename toLex)
         (rename_injective _ toLex.injective)).symm
-    refine ⟨e1.trans (AddMonoidAlgebra.mapAlgEquiv k ℤ eA), ?_⟩
-    rw [AlgEquiv.trans_apply, he1]
-    exact (AddMonoidAlgebra.mapAlgHom_single eA.toAlgHom 1 1).trans (by rw [map_one]; rfl)
+    refine ⟨e1.trans (AddMonoidAlgebra.mapAlgEquiv k ℤ eA), ?_, fun p ↦ ?_⟩
+    · rw [AlgEquiv.trans_apply, he1]
+      exact (AddMonoidAlgebra.mapAlgHom_single eA.toAlgHom 1 1).trans (by rw [map_one]; rfl)
+    · rw [AlgEquiv.trans_apply, TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent_algebraMap]
 
 end Degeneration
 

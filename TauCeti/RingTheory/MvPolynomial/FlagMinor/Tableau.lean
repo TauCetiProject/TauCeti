@@ -94,14 +94,12 @@ theorem flagMinorProd_def (R : Type*) [CommRing R] (T : BoundedSSYT n μ) :
 
 /-- Every tableau product of flag minors lies in `flagMinorAlgebra n R`. -/
 theorem flagMinorProd_mem_flagMinorAlgebra (R : Type*) [CommRing R] (T : BoundedSSYT n μ) :
-    T.flagMinorProd R ∈ flagMinorAlgebra n R := by
-  rw [T.flagMinorProd_def R]
-  exact prod_mem fun _ _ ↦ flagMinor_mem_flagMinorAlgebra R _
+    T.flagMinorProd R ∈ flagMinorAlgebra n R :=
+  T.flagMinorProd_def R ▸ prod_mem fun _ _ ↦ flagMinor_mem_flagMinorAlgebra R _
 
 @[simp]
 theorem flagMinorProd_bot (R : Type*) [CommRing R] (T : BoundedSSYT n (⊥ : YoungDiagram)) :
-    T.flagMinorProd R = 1 := by
-  simp [flagMinorProd_def]
+    T.flagMinorProd R = 1 := by simp [flagMinorProd_def]
 
 /-- Tableau products of flag minors commute with a change of coefficient ring. -/
 @[simp]
@@ -171,8 +169,7 @@ most `n` rows. -/
 theorem degree_rename_toLex_flagMinorProd_injective (R : Type*) [CommRing R] [Nontrivial R] :
     Function.Injective
       (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) ↦
-        lex.degree (rename toLex (s.snd.flagMinorProd R))) := by
-  intro s₁ s₂ h
+        lex.degree (rename toLex (s.snd.flagMinorProd R))) := fun s₁ s₂ h ↦ by
   simp only [degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm] at h
   exact (GTPattern.nonnegEquivBoundedSSYT n).symm.injective
     (GTPattern.flagExponentEquiv.symm.injective (Subtype.ext h))
@@ -187,11 +184,8 @@ theorem range_degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontri
   ext e
   simp only [Set.mem_range, degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm,
     SetLike.mem_coe]
-  refine ⟨?_, fun he ↦ ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact (GTPattern.flagExponentEquiv.symm _).property
-  · refine ⟨GTPattern.nonnegEquivBoundedSSYT n (GTPattern.flagExponentEquiv ⟨e, he⟩), ?_⟩
-    simp
+  refine ⟨fun ⟨s, hs⟩ ↦ hs ▸ (GTPattern.flagExponentEquiv.symm _).property,
+    fun he ↦ ⟨GTPattern.nonnegEquivBoundedSSYT n (GTPattern.flagExponentEquiv ⟨e, he⟩), by simp⟩⟩
 
 end BoundedSSYT
 
@@ -218,13 +212,10 @@ the row multigrading, of multidegree the content `⇑T.weight` of the tableau `T
 theorem isMultiHomogeneous_flagMinorProd (R : Type*) [CommRing R] (T : BoundedSSYT n μ) :
     IsMultiHomogeneous (⇑(BoundedSSYT.weight T)) (T.flagMinorProd R) := by
   rw [flagMinorProd_def]
-  have h := IsMultiHomogeneous.prod (range (μ.rowLen 0))
-    (fun m ↦ flagMinor R (T.colFinset m))
+  convert IsMultiHomogeneous.prod (range (μ.rowLen 0)) (fun m ↦ flagMinor R (T.colFinset m))
     (fun m r ↦ if r ∈ T.colFinset m then 1 else 0)
     fun m _ ↦ isMultiHomogeneous_flagMinor R (T.colFinset m)
-  convert h using 1
-  ext r
-  rw [Finset.sum_apply, T.sum_ite_mem_colFinset_eq_weight r]
+  ext r; rw [Finset.sum_apply, T.sum_ite_mem_colFinset_eq_weight r]
 
 /-- **Fundamental multigrading for tableau products.** Every `T.flagMinorProd R` is weighted
 homogeneous for the indicator weight `flagColWeight c` of column `c`, of degree `μ.rowLen c`: the
@@ -233,21 +224,17 @@ theorem isWeightedHomogeneous_flagColWeight_flagMinorProd (R : Type*) [CommRing 
     (T : BoundedSSYT n μ) (c : Fin n) :
     (T.flagMinorProd R).IsWeightedHomogeneous (flagColWeight c) (μ.rowLen c) := by
   rw [flagMinorProd_def]
-  have h := IsWeightedHomogeneous.prod (range (μ.rowLen 0))
-    (fun m ↦ flagMinor R (T.colFinset m))
+  convert IsWeightedHomogeneous.prod (range (μ.rowLen 0)) (fun m ↦ flagMinor R (T.colFinset m))
     (fun m ↦ if (c : ℕ) < #(T.colFinset m) then 1 else 0)
     fun m _ ↦ isWeightedHomogeneous_flagColWeight_flagMinor R (T.colFinset m) c
-  convert h using 1
   simp only [T.card_colFinset, sum_boole]
-  -- `(c, m) ∈ μ` holds both as `c < μ.colLen m` and as `m < μ.rowLen c`.
   have hset : {m ∈ range (μ.rowLen 0) | (c : ℕ) < μ.colLen m} = range (μ.rowLen c) := by
     ext m
     simp only [mem_filter, mem_range, ← YoungDiagram.mem_iff_lt_colLen,
       YoungDiagram.mem_iff_lt_rowLen]
     have hle := μ.rowLen_anti 0 c (Nat.zero_le _)
     omega
-  rw [hset]
-  exact (card_range _).symm
+  rw [hset, card_range, Nat.cast_id]
 
 end BoundedSSYT
 

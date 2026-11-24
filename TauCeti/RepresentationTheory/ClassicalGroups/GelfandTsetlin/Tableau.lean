@@ -490,12 +490,9 @@ theorem BoundedSSYT.sum_rowSubset_colFinset (T : BoundedSSYT n μ) :
           him (YoungDiagram.mem_iff_lt_colLen.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hm))
         simp [hle.not_gt, hnot]
     simp only [GTPattern.rowSubset_apply, hjn, true_and, hcol]
-    rw [sum_boole]
-    congr 2
-    ext m
+    rw [sum_boole]; congr 2; ext m
     simp only [mem_filter, mem_range]
-    have hrow := μ.rowLen_anti 0 i (Nat.zero_le i)
-    omega
+    have hrow := μ.rowLen_anti 0 i (Nat.zero_le i); omega
 
 namespace GTPattern
 
@@ -559,9 +556,9 @@ theorem snd_nonnegEquivBoundedSSYT_apply_eq_toTableau (P : AddSubmonoid.nonneg (
     (i c : ℕ) :
     (nonnegEquivBoundedSSYT n P).snd.val i c =
       (P : GTPattern n).toTableau (DominantWeight.colLen_zero_shape_le (P : GTPattern n).topWeight)
-        (fun j ↦ by
-          rw [DominantWeight.natCast_rowLen_shape (zero_le_iff_isPolynomial.mp P.property)]
-          exact congrFun (topWeight_coe (P : GTPattern n)).symm j) i c := by
+        (fun j ↦
+          ((DominantWeight.natCast_rowLen_shape (zero_le_iff_isPolynomial.mp P.property) j).trans
+            (congrFun (topWeight_coe (P : GTPattern n)) j)).symm) i c := by
   rw [snd_nonnegEquivBoundedSSYT_apply_entry, GTPattern.toTableau_apply]
 
 end GTPattern
