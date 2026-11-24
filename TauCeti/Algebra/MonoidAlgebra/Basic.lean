@@ -180,8 +180,9 @@ when each coefficient lies in the image of the coefficient map. -/
 exactly when each coefficient lies in the image of the coefficient map. -/]
 theorem _root_.MonoidAlgebra.mem_range_mapRingHom_iff {R : Type*} [Ring R]
     {M S : Type*} [Ring S] [Monoid M] (f : R →+* S) (p : MonoidAlgebra S M) :
-    p ∈ (MonoidAlgebra.mapRingHom M f).range ↔ ∀ m, p.coeff m ∈ f.range :=
-  MonoidAlgebra.mem_rangeS_mapRingHom_iff f p
+    p ∈ (MonoidAlgebra.mapRingHom M f).range ↔ ∀ m, p.coeff m ∈ f.range := by
+  simpa only [RingHom.mem_range, RingHom.mem_rangeS] using
+    MonoidAlgebra.mem_rangeS_mapRingHom_iff f p
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/

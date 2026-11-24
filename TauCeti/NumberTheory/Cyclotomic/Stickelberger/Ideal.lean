@@ -142,7 +142,8 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
     conv_rhs => rw [← (c⁻¹).isUnit.mul_right_eq_zero, Finset.mul_sum]
     exact Iff.of_eq (congrArg (· = 0) (Finset.sum_congr rfl fun a _ ↦ by ring))
   have hdiv (n : ℤ) : (n : ℚ) / m ∈ (Int.castRingHom ℚ).range ↔ (m : ℤ) ∣ n := by
-    exact_mod_cast Rat.intCast_div_intCast_mem_range_iff (Int.natCast_ne_zero.2 (NeZero.ne m)) n
+    rw [← SetLike.mem_coe, RingHom.coe_range, Int.coe_castRingHom, ← Int.cast_natCast,
+      Rat.intCast_div_intCast_mem_range_iff (Int.natCast_ne_zero.2 (NeZero.ne m))]
   simp only [hdiv, key]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
 
