@@ -102,8 +102,7 @@ theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNor
     exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum hz
   refine ⟨ω, h1, hn, ?_⟩
   have hωa : ω a = z := by simpa using hp 0 1
-  rw [hωa]
-  exact congrArg NNReal.toReal hza
+  rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
 
 end Unital
 

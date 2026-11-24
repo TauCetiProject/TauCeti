@@ -127,10 +127,11 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
 
 /-- A state takes real values on self-adjoint elements. -/
 theorem isSelfAdjoint_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
-    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) :=
-  -- the positive functional `mk₀ φ` evaluates as `φ` by definition
-  ha.map' (PositiveContinuousLinearMap.mk₀ (toStrongDual φ)
-    fun _ => map_nonneg_of_mem_stateSpace hφ)
+    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
+  have hpos : ∀ x, 0 ≤ x → 0 ≤ toStrongDual φ x := fun x hx =>
+    (map_nonneg_of_mem_stateSpace hφ hx).trans_eq (toStrongDual_apply φ x).symm
+  simpa only [PositiveContinuousLinearMap.mk₀_apply, toStrongDual_apply] using
+    ha.map' (PositiveContinuousLinearMap.mk₀ _ hpos)
 
 /-- A state sees only the real part of an element: `re (φ (ℜ x)) = re (φ x)`. -/
 theorem re_apply_realPart_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (x : A) :
