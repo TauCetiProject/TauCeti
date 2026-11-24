@@ -34,10 +34,11 @@ spaces by zero at nontangent indices. The definition retains the zero-normal,
 rescaling and contracted-bracket laws, but omits the paper's condition (3) on an
 action on a graded algebra: no such action is needed for these Lie identities.
 
-The transverse common-kernel calculation uses the contracted normal
-`f (ρ n) • g - g (ρ n) • f`. It is the wall-space calculation for transverse joint
-corrections in Mandel, *Scattering diagrams, theta functions, and refined
-tropical curve counts*, proof of Theorem 2.6.
+A geometric direction `ρ n` is transverse here when it lies outside `f.ker ⊓ g.ker`.
+The common-kernel calculation uses the contracted normal `f (ρ n) • g - g (ρ n) • f`.
+It is the wall-space calculation for transverse joint corrections in Mandel,
+*Scattering diagrams, theta functions, and refined tropical curve counts*,
+proof of Theorem 2.6.
 
 ## Attribution
 
@@ -63,10 +64,6 @@ variable {Γ Λ R L : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 def wallBracketNormal (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) : Λ →+ ℤ :=
   m (ρ n') • m' - m' (ρ n) • m
 
-/-- Express the bracket normal as a difference of integer multiples of the input characters. -/
-theorem wallBracketNormal_def (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) :
-    wallBracketNormal ρ n n' m m' = m (ρ n') • m' - m' (ρ n) • m := (rfl)
-
 /-- Evaluate the bracket normal on a tangent vector. -/
 @[simp]
 theorem wallBracketNormal_apply (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) (v : Λ) :
@@ -83,7 +80,21 @@ theorem wallBracketNormal_zsmul {Γ Λ : Type*} [AddCommGroup Γ] [AddCommMonoid
     simpa only [AddMonoidHom.comp_apply, zsmul_eq_mul, Int.cast_id] using (m.comp ρ).map_zsmul b n'
   have hm' : m' (ρ (a • n)) = a * m' (ρ n) := by
     simpa only [AddMonoidHom.comp_apply, zsmul_eq_mul, Int.cast_id] using (m'.comp ρ).map_zsmul a n
-  simp only [wallBracketNormal_def, hm, hm']
+  simp only [wallBracketNormal, hm, hm']
+
+/-- The contracted normal annihilates the common kernel of its two input characters. -/
+theorem inf_ker_le_ker_wallBracketNormal {Λ : Type*} [AddCommGroup Λ]
+    (ρ : Γ →+ Λ) (n n' : Γ) (f g : Λ →+ ℤ) :
+    f.ker ⊓ g.ker ≤ (wallBracketNormal ρ n n' f g).ker := by
+  intro x hx
+  obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
+  simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
+
+/-- Contracting twice at the same direction gives a normal vanishing on that direction. -/
+@[simp↓]
+theorem wallBracketNormal_apply_same (ρ : Γ →+ Λ) (n : Γ) (f g : Λ →+ ℤ) :
+    wallBracketNormal ρ n n f g (ρ n) = 0 := by
+  simp [mul_comm (f (ρ n)) (g (ρ n))]
 
 /-- Homogeneous submodules with the normal and bracket laws of directed walls.
 For a positive grading, containment in the homogeneous pieces automatically makes
@@ -133,18 +144,18 @@ theorem wall_eq_of_ker_eq (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) 
     H.wall n m = H.wall n m' :=
   le_antisymm (H.wall_le_wall_of_ker_ge n hker.ge) (H.wall_le_wall_of_ker_ge n hker.le)
 
-/-- At a transverse degree, any wall space with normal annihilating the common kernel
+/-- If `ρ n` lies outside `f.ker ⊓ g.ker`, any wall space with normal annihilating the common kernel
 is contained in the wall space with the contracted normal. -/
 theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : Γ}
     (hn : ρ n ∉ f.ker ⊓ g.ker) (hm : f.ker ⊓ g.ker ≤ m.ker) :
     H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
   by_cases hmn : m (ρ n) = 0
   · apply H.wall_le_wall_of_ker_ge n
-    rw [wallBracketNormal_def]
+    rw [wallBracketNormal]
     exact f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
   · simp [hmn]
 
-/-- At a degree transverse to the common kernel of two normals, the sum of the wall spaces
+/-- If `ρ n` lies outside `f.ker ⊓ g.ker`, the sum of the wall spaces
 with normals vanishing on the kernel is the wall space with the contracted normal. -/
 theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ) {n : Γ}
     (hn : ρ n ∉ f.ker ⊓ g.ker) :
@@ -152,11 +163,8 @@ theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ
       H.wall n (wallBracketNormal ρ n n f g) := by
   refine le_antisymm
     (iSup₂_le fun m hm => H.wall_le_wall_wallBracketNormal_of_inf_ker_le f g m hn hm) ?_
-  have hμ : f.ker ⊓ g.ker ≤ (wallBracketNormal ρ n n f g).ker := by
-    intro x hx
-    obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
-    simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
-  exact le_iSup₂_of_le (wallBracketNormal ρ n n f g) hμ le_rfl
+  exact le_iSup₂_of_le (wallBracketNormal ρ n n f g)
+    (inf_ker_le_ker_wallBracketNormal ρ n n f g) le_rfl
 
 end KernelComparison
 

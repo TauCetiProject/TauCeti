@@ -17,7 +17,8 @@ therefore give equal nonzero integer multiples. These facts compare integral nor
 choosing a basis or extending scalars to a field.
 
 If a vector lies outside the common kernel of two characters, any character vanishing
-on that kernel and at the vector also vanishes on the kernel of their contraction.
+on that kernel and at the vector also vanishes on the kernel of the contracted
+character `f v • g - g v • f`.
 
 ## Attribution
 
@@ -37,10 +38,10 @@ namespace AddMonoidHom
 
 variable {A : Type*} [AddGroup A]
 
-private theorem pivot_mem_ker_iff (f g : A →+ ℤ) (v x : A) :
+/-- A pivot difference is in an integer character kernel exactly when the two products agree. -/
+theorem zsmul_sub_zsmul_mem_ker_iff (f g : A →+ ℤ) (v x : A) :
     f v • x - f x • v ∈ g.ker ↔ f v * g x = g v * f x := by
-  rw [AddMonoidHom.sub_mem_ker_iff, map_zsmul, map_zsmul, Int.zsmul_eq_mul,
-    Int.zsmul_eq_mul, mul_comm (f x) (g v)]
+  simp [sub_eq_zero, mul_comm (f x) (g v)]
 
 /-- If the kernel of an integer character is contained in that of another,
 then a nonzero integer multiple of the latter is a multiple of the former.
@@ -55,8 +56,9 @@ theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ)
   obtain ⟨a, ha⟩ := DFunLike.ne_iff.mp hf
   refine ⟨f a, g a, ha, ?_⟩
   ext x
-  have hx : f a • x - f x • a ∈ f.ker := (pivot_mem_ker_iff f f a x).mpr rfl
-  simpa only [zsmul_apply, Int.zsmul_eq_mul] using (pivot_mem_ker_iff f g a x).mp (hker hx)
+  have hx : f a • x - f x • a ∈ f.ker := (zsmul_sub_zsmul_mem_ker_iff f f a x).mpr rfl
+  simpa only [zsmul_apply, Int.zsmul_eq_mul] using
+    (zsmul_sub_zsmul_mem_ker_iff f g a x).mp (hker hx)
 
 /-- Integer characters with the same kernel have equal nonzero integer multiples. -/
 theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
@@ -78,18 +80,21 @@ theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
   exact ⟨d, c, hd, hc, hcd.symm⟩
 
 /-- A character vanishing on the common kernel of two characters and at a vector
-outside it also vanishes on the kernel of their contraction at that vector. -/
+outside it also vanishes on the kernel of `f v • g - g v • f`. -/
 theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
     (hv : v ∉ f.ker ⊓ g.ker) (hm : f.ker ⊓ g.ker ≤ m.ker) (hmv : m v = 0) :
     (f v • g - g v • f).ker ≤ m.ker := by
+  have hcontract (f g : A →+ ℤ) (x : A) :
+      x ∈ (f v • g - g v • f).ker ↔ f v * g x = g v * f x := by
+    simp only [mem_ker, sub_apply, zsmul_apply, Int.zsmul_eq_mul, sub_eq_zero]
   have step (f g : A →+ ℤ) (hf : f v ≠ 0) (hm : f.ker ⊓ g.ker ≤ m.ker) :
       (f v • g - g v • f).ker ≤ m.ker := by
     intro x hx
-    have hx' : f v * g x = g v * f x := by
-      simpa only [mem_ker, sub_apply, zsmul_apply, Int.zsmul_eq_mul, sub_eq_zero] using hx
+    have hx' := (hcontract f g x).mp hx
     have hz : f v • x - f x • v ∈ f.ker ⊓ g.ker :=
       AddSubgroup.mem_inf.mpr
-        ⟨(pivot_mem_ker_iff f f v x).mpr rfl, (pivot_mem_ker_iff f g v x).mpr hx'⟩
+        ⟨(zsmul_sub_zsmul_mem_ker_iff f f v x).mpr rfl,
+          (zsmul_sub_zsmul_mem_ker_iff f g v x).mpr hx'⟩
     have hprod : f v * m x = 0 := by
       simpa [hmv] using AddMonoidHom.mem_ker.mp (hm hz)
     exact AddMonoidHom.mem_ker.mpr ((Int.mul_eq_zero.mp hprod).resolve_left hf)
@@ -98,8 +103,7 @@ theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
       hv (AddSubgroup.mem_inf.mpr ⟨AddMonoidHom.mem_ker.mpr hf, AddMonoidHom.mem_ker.mpr hg⟩)
     intro x hx
     apply step g f hg (by simpa only [inf_comm] using hm)
-    rw [← neg_sub, mem_ker, neg_apply, neg_eq_zero]
-    exact mem_ker.mp hx
+    exact (hcontract g f x).mpr ((hcontract f g x).mp hx).symm
   · exact step f g hf hm
 
 end AddMonoidHom
