@@ -10,8 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.SpecialFunctions.Airy.Equation
 
 /-!
 # Antiderivatives of products of solutions of Airy's equation
@@ -22,12 +21,10 @@ for the products `f g`, `f g'`, `f' g'`, `z f g`, `z f g'` and `z f' g'` (DLMF 9
 For the quotient `g / f` there is a substitution formula (DLMF 9.11.11): if `𝒲 ≠ 0`, `f(z) ≠ 0`
 and `F` has derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivative `F' / f(z)²` at
 `z`. In the statements the Wronskian is written out at the origin as
-`f 0 * deriv g 0 - deriv f 0 * g 0`; its constancy is `TauCeti.wronskian_eq_of_hasDerivAt`.
+`f 0 * deriv g 0 - deriv f 0 * g 0`; its constancy is `TauCeti.wronskian_eq_of_airy_ode`.
 
 ## Main results
 
-* `TauCeti.hasDerivAt_deriv_of_airy_ode`: the derivative of an entire solution `w` has
-  derivative `z w(z)`;
 * `TauCeti.hasDerivAt_antiderivative_mul_of_airy_ode`: `-f' g' + z f g` is an antiderivative
   of `f g` (DLMF 9.11.5);
 * `TauCeti.hasDerivAt_antiderivative_mul_deriv_of_airy_ode`: `(f g + 𝒲 z) / 2` is an
@@ -59,22 +56,6 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ}
 
-/-- For an entire solution `w` of Airy's equation, `w'` has derivative `z w(z)` at `z`. -/
-theorem hasDerivAt_deriv_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
-    (hw' : ∀ z, deriv^[2] w z = z * w z) (z : ℂ) : HasDerivAt (deriv w) (z * w z) z := by
-  rw [← hw' z, Function.iterate_succ_apply, Function.iterate_one]
-  exact (hw.deriv z).hasDerivAt
-
-/-- The Wronskian of two entire solutions of Airy's equation equals its value at the origin. -/
-private theorem wronskian_eq_wronskian_zero_of_airy_ode (hf : Differentiable ℂ f)
-    (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
-    (hg' : ∀ z, deriv^[2] g z = z * g z) (z : ℂ) :
-    f z * deriv g z - deriv f z * g z = f 0 * deriv g 0 - deriv f 0 * g 0 := by
-  have h := wronskian_eq_of_hasDerivAt (q := fun t => t) (fun t => (hg t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hg hg') (fun t => (hf t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hf hf') z 0
-  linear_combination h
-
 /-- For entire solutions `f`, `g` of Airy's equation, `-f' g' + z f g` is an antiderivative of
 `f g` (DLMF 9.11.5). -/
 theorem hasDerivAt_antiderivative_mul_of_airy_ode (hf : Differentiable ℂ f)
@@ -95,7 +76,7 @@ theorem hasDerivAt_antiderivative_mul_deriv_of_airy_ode (hf : Differentiable ℂ
       (f z * deriv g z) z := by
   have h := (((hf z).hasDerivAt.mul (hg z).hasDerivAt).add
     ((hasDerivAt_id z).mul_const (f 0 * deriv g 0 - deriv f 0 * g 0))).div_const 2
-  have hW := wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+  have hW := wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by linear_combination -hW / 2)
 
 /-- For entire solutions `f`, `g` of Airy's equation, `(f g' + f' g + z f' g' - z² f g) / 3` is an
@@ -139,7 +120,7 @@ theorem hasDerivAt_antiderivative_id_mul_mul_deriv_of_airy_ode (hf : Differentia
   have h := (((hasDerivAt_deriv_of_airy_ode hf hf' z).mul
     (hasDerivAt_deriv_of_airy_ode hg hg' z)).div_const 2).add
       (((hasDerivAt_pow 2 z).mul_const (f 0 * deriv g 0 - deriv f 0 * g 0)).div_const 4)
-  have hW := wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+  have hW := wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by linear_combination -(z / 2) * hW)
 
 /-- For entire solutions `f`, `g` of Airy's equation,
@@ -174,7 +155,7 @@ theorem hasDerivAt_comp_div_div_wronskian_of_airy_ode (hf : Differentiable ℂ f
   have h := (hF.comp z ((hg z).hasDerivAt.div (hf z).hasDerivAt hfz)).div_const
     (f 0 * deriv g 0 - deriv f 0 * g 0)
   have he : deriv g z * f z - g z * deriv f z = f 0 * deriv g 0 - deriv f 0 * g 0 := by
-    linear_combination wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+    linear_combination wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by rw [he]; field_simp)
 
 end TauCeti

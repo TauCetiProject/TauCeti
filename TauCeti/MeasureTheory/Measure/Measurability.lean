@@ -8,11 +8,14 @@ module
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
--- Non-public: measurability of the sections `ν.map (Prod.mk a)`, Weierstrass approximation and
--- integrability of continuous maps on compact spaces are used inside proofs only.
+-- Non-public: measurability of the sections `ν.map (Prod.mk a)`, Weierstrass approximation,
+-- integrability of continuous maps on compact spaces and integration against the sampling kernel
+-- are used inside proofs only.
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.Topology.ContinuousMap.Weierstrass
 import TauCeti.MeasureTheory.Integral.ContinuousMap
+import TauCeti.Probability.Kernel.ProbabilityMeasure
 
 /-!
 # Measurability of measure-valued maps
@@ -40,6 +43,8 @@ of measures.
 * `TauCeti.MeasureTheory.measurable_map_finiteMeasure_of_measurable_uncurry` — jointly varying a
   finite measure and the map that pushes it forward is measurable, with a probability-measure
   specialization.
+* `MeasureTheory.StronglyMeasurable.integral_probabilityMeasure` — integrating a fixed strongly
+  measurable function is strongly measurable in the probability measure.
 * `MeasureTheory.measurableSet_isLocallyFiniteMeasure` and
   `MeasureTheory.measurableSet_isFiniteMeasureOnCompacts` — local finiteness is a measurable
   condition on measures on a weakly locally compact, σ-compact space.
@@ -169,6 +174,17 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
 end MeasureTheory
 
 end TauCeti
+
+/-- Integrating a fixed strongly measurable function is strongly measurable in the probability
+measure: it is the integral against the tautological kernel
+`TauCeti.Probability.samplingKernel`. -/
+@[fun_prop]
+theorem MeasureTheory.StronglyMeasurable.integral_probabilityMeasure {α E : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E}
+    (hf : StronglyMeasurable f) :
+    StronglyMeasurable fun P : ProbabilityMeasure α ↦ ∫ x, f x ∂(P : Measure α) := by
+  simpa only [TauCeti.Probability.samplingKernel_apply] using
+    hf.integral_kernel (κ := TauCeti.Probability.samplingKernel α)
 
 open Set
 

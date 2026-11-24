@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Moments.SubExponential
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
-import TauCeti.Probability.Moments.SubGaussian
+import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 
 /-!
 # Sub-Gaussian and sub-exponential moment bounds

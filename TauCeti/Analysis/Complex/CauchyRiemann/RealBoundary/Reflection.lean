@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
-public import TauCeti.Analysis.Complex.Wirtinger.RealBoundaryReflection
+public import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Comparison
 import TauCeti.Analysis.Complex.Wirtinger.Regularity
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Examples
@@ -49,7 +49,7 @@ McDuff–Salamon's normalization `∂ₛ + i ∂ₜ = 2 \bar∂` this is `∂ₛ
 
 The general facts about the reflection used here are in
 `Analysis/Complex/Conformal/Reflection/Basic.lean` and
-`Analysis/Complex/Wirtinger/RealBoundaryReflection.lean`: continuity of the reflection
+`Analysis/Complex/Wirtinger/RealBoundary/Reflection.lean`: continuity of the reflection
 (`TauCeti.continuousOn_starSchwarzReflection_of_symmetric`), local `Lᵖ` bounds on the doubled
 domain (`TauCeti.MemLpLoc.starSchwarzReflection`), and the transfer of zeros
 (`TauCeti.eqOn_starSchwarzReflection_of_subset_im_nonneg`) and of vanishing order

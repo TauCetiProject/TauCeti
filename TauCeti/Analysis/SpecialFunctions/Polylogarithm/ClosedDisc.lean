@@ -24,7 +24,9 @@ For every integer weight `n ≥ 2`, the principal polylogarithm `Liₙ` is conti
 unit disc `‖z‖ ≤ 1`, and its disc series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` converges to it
 absolutely and uniformly there, boundary circle included. At `z = 1` this gives the zeta value
 `Liₙ(1) = ζ(n)`, in particular `Li₂(1) = π² / 6`, and on the unit circle it identifies
-`Liₙ(e^{2πia})` with Mathlib's exponential zeta function `HurwitzZeta.expZeta a n`.
+`Liₙ(e^{2πia})` with Mathlib's exponential zeta function `HurwitzZeta.expZeta a n`. The
+duplication relation `Liₙ(z²) = 2 ^ (n - 1) (Liₙ(z) + Liₙ(-z))` holds on the whole closed disc;
+at `z = 1` it gives `Liₙ(-1) = (2 ^ (1 - n) - 1) ζ(n)`, in particular `Li₂(-1) = -π² / 12`.
 
 Continuity comes from the defining radial integral: on the closed disc the principal logarithm
 satisfies `‖Log (1 - t z)‖ ≤ -log (1 - t)` for `0 ≤ t < 1`, so the radial integrand at `z = 1`
@@ -42,12 +44,17 @@ logarithmic singularity of `Liₙ`.
   `Metric.closedBall 0 1` for `2 ≤ n`.
 * `TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
   `TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`: the disc series converges, absolutely,
-  to `polylog n z` for `‖z‖ ≤ 1`.
+  to `polylog n z` for `‖z‖ ≤ 1`; `TauCeti.Polylog.polylog_eq_tsum_of_norm_le_one` is its `tsum`
+  form.
 * `TauCeti.Polylog.tendstoUniformlyOn_polylog_closedBall_one`: its partial sums converge
   uniformly on `Metric.closedBall 0 1`.
 * `TauCeti.Polylog.polylog_one_eq_riemannZeta` and `TauCeti.Polylog.polylog_two_one`:
   `polylog n 1 = riemannZeta n` and `polylog 2 1 = π ^ 2 / 6`.
 * `TauCeti.Polylog.polylog_exp_eq_expZeta`: `polylog n (exp (2 π i a)) = expZeta a n`.
+* `TauCeti.Polylog.polylog_sq_of_norm_le_one`:
+  `polylog n (z ^ 2) = 2 ^ (n - 1) * (polylog n z + polylog n (-z))` for `‖z‖ ≤ 1`.
+* `TauCeti.Polylog.polylog_neg_one_eq_mul_riemannZeta` and `TauCeti.Polylog.polylog_two_neg_one`:
+  `polylog n (-1) = (2 ^ (1 - n) - 1) * riemannZeta n` and `polylog 2 (-1) = -(π ^ 2 / 12)`.
 
 ## References
 
@@ -133,6 +140,12 @@ theorem hasSum_polylog_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : �
   rw [heq hz']
   exact (Summable.of_norm_bounded hsum fun k ↦ norm_pow_div_le_norm_inv hz _ _).hasSum
 
+/-- For every integer weight `n ≥ 2`, on the closed unit disc `‖z‖ ≤ 1`, `polylog n z` equals the
+sum of its power series. -/
+theorem polylog_eq_tsum_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    polylog n z = ∑' k : ℕ, z ^ (k + 1) / (k + 1 : ℂ) ^ n :=
+  (hasSum_polylog_of_norm_le_one hn hz).tsum_eq.symm
+
 /-- For every integer weight `n ≥ 2`, the polylogarithm disc series converges absolutely on the
 closed unit disc `‖z‖ ≤ 1`, and the sum of the norms of its terms equals `(polylog n ‖z‖).re`. -/
 theorem hasSum_norm_polylog_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
@@ -186,5 +199,45 @@ theorem polylog_exp_eq_expZeta {n : ℤ} (hn : 2 ≤ n) (a : ℝ) :
   rw [Complex.cpow_intCast, ← Complex.exp_natCast_mul]
   push_cast
   ring_nf
+
+/-- **Duplication on the closed disc.** For every integer weight `n ≥ 2` and `‖z‖ ≤ 1`,
+`Liₙ(z²) = 2 ^ (n - 1) (Liₙ(z) + Liₙ(-z))`, boundary circle included. -/
+theorem polylog_sq_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    polylog n (z ^ 2) = (2 : ℂ) ^ (n - 1) * (polylog n z + polylog n (-z)) := by
+  have hz2 : ‖z ^ 2‖ ≤ 1 := by rw [norm_pow]; exact pow_le_one₀ (norm_nonneg z) hz
+  -- In `Liₙ(z) + Liₙ(-z)` the even-indexed terms cancel and the odd-indexed terms double.
+  have h : HasSum (fun k : ℕ ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n + (-z) ^ (k + 1) / (k + 1 : ℂ) ^ n)
+      (2 ^ (1 - n) * polylog n (z ^ 2)) := by
+    have h20 : (2 : ℂ) ≠ 0 := two_ne_zero
+    refine (zero_add (2 ^ (1 - n) * polylog n (z ^ 2))) ▸ HasSum.even_add_odd ?_ ?_
+    · convert hasSum_zero with k
+      simp [neg_pow z, pow_succ, pow_mul]
+      ring
+    · convert (hasSum_polylog_of_norm_le_one hn hz2).mul_left (2 ^ (1 - n)) using 2 with j
+      rw [show 2 * j + 1 + 1 = 2 * (j + 1) by ring, pow_mul, pow_mul, neg_sq]
+      push_cast
+      rw [show (2 * j + 1 + 1 : ℂ) = 2 * (j + 1) by ring, mul_zpow, zpow_sub₀ h20, zpow_one]
+      field_simp
+      ring
+  rw [((hasSum_polylog_of_norm_le_one hn hz).add
+    (hasSum_polylog_of_norm_le_one hn (z := -z) (by rwa [norm_neg]))).unique h, ← mul_assoc,
+    ← zpow_add₀ two_ne_zero]
+  simp
+
+/-- **The value at `-1`.** For every integer weight `n ≥ 2`, `Liₙ(-1) = (2 ^ (1 - n) - 1) ζ(n)`,
+minus the alternating zeta value `∑_{k ≥ 1} (-1) ^ (k + 1) / k ^ n` expressed through `ζ(n)`. -/
+theorem polylog_neg_one_eq_mul_riemannZeta {n : ℤ} (hn : 2 ≤ n) :
+    polylog n (-1) = (2 ^ (1 - n) - 1) * riemannZeta n := by
+  have h := polylog_sq_of_norm_le_one hn (z := 1) (by simp)
+  rw [one_pow, polylog_one_eq_riemannZeta hn] at h
+  have h2 : (2 : ℂ) ^ (1 - n) * 2 ^ (n - 1) = 1 := by
+    rw [← zpow_add₀ two_ne_zero]; simp
+  linear_combination -(2 : ℂ) ^ (1 - n) * h - (polylog n (-1) + riemannZeta n) * h2
+
+/-- **The dilogarithm at `-1`.** `Li₂(-1) = -π² / 12`. -/
+theorem polylog_two_neg_one : polylog 2 (-1) = -((π : ℂ) ^ 2 / 12) := by
+  rw [polylog_neg_one_eq_mul_riemannZeta le_rfl]
+  push_cast [riemannZeta_two]
+  ring
 
 end TauCeti.Polylog

@@ -35,10 +35,11 @@ compact set gives continuity for the LF topology. Uniqueness is the localization
 is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is zero.
 
 The same cutoffs glue integral representations: if `T φ = ∫ φ • f` for real tests supported in
-each member of an open cover of `W`, with one locally integrable `f`, then this holds for every
-real test supported in `W` (`Distribution.apply_eq_integral_of_locally`). Local continuous
-representatives agree on overlaps, since a continuous function on an open set is determined by
-its integrals against the tests supported there (`IsOpen.eqOn_of_integral_smul_eq`).
+each member of an open cover of a set `W`, with one `f` locally integrable on `W`, then this holds
+for every real test supported in `W` (`Distribution.apply_eq_integral_of_locally`). The set `W`
+need not be open. Local continuous representatives agree on overlaps, since a continuous function
+on an open set is determined by its integrals against the tests supported there
+(`IsOpen.eqOn_of_integral_smul_eq`).
 
 ## Main declarations
 
@@ -266,24 +267,29 @@ theorem IsOpen.eqOn_of_integral_smul_eq [FiniteDimensional ℝ E] [CompleteSpace
 
 namespace Distribution
 
-/-- **Integral representations glue.** If `f` is locally integrable on an open set `W` and every
-point of `W` has an open neighbourhood on whose supported real test functions `T` is integration
-against `f` with respect to `μ`, then `T φ = ∫ φ • f ∂μ` for every real test function `φ`
-supported in `W`. -/
-theorem apply_eq_integral_of_locally {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)} {W : Set E} (hW : IsOpen W)
-    {f : E → F} (hf : LocallyIntegrableOn f W μ)
+omit [BorelSpace E] in
+/-- **Integral representations glue.** If `f` is locally integrable on a set `W` and every point
+of `W` has an open neighbourhood on whose supported real test functions `T` is integration against
+`f` with respect to `μ`, then `T φ = ∫ φ • f ∂μ` for every real test function `φ` supported in
+`W`. The set `W` need not be open. -/
+theorem apply_eq_integral_of_locally [OpensMeasurableSpace E] {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)}
+    {W : Set E} {f : E → F} (hf : LocallyIntegrableOn f W μ)
     (h : ∀ x ∈ W, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
       ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y ∂μ)
     {φ : 𝓓^{n}(Ω, ℝ)} (hφ : tsupport φ ⊆ W) : T φ = ∫ y, φ y • f y ∂μ := by
   classical
   choose U hU hxU hT using fun x : W ↦ h x x.property
-  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate (fun x : W ↦ U x ∩ W)
-    (fun x ↦ (hU x).inter hW) fun y hy ↦ mem_iUnion.2 ⟨⟨y, hφ hy⟩, hxU _, hφ hy⟩
+  obtain ⟨s, ψ, hψ, hsum, hψφ⟩ := φ.exists_sum_subordinate U hU
+    fun y hy ↦ mem_iUnion.2 ⟨⟨y, hφ hy⟩, hxU _⟩
+  -- Each piece vanishes where `φ` does, so it is supported in `tsupport φ ⊆ W`.
+  have hψW (i : s) : tsupport (ψ i) ⊆ W :=
+    (closure_minimal (fun x hx ↦ subset_tsupport φ <| norm_pos_iff.1 <|
+      (norm_pos_iff.2 hx).trans_le (hψφ i x)) (isClosed_tsupport φ)).trans hφ
   have hint (i : s) : Integrable (fun y ↦ ψ i y • f y) μ :=
-    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous (ψ i).hasCompactSupport
-      ((hψ i).trans inter_subset_right)
+    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous.continuousOn
+      (ψ i).hasCompactSupport (hψW i)
   rw [← hsum, map_sum,
-    Finset.sum_congr rfl fun (i : s) _ ↦ hT i (ψ i) ((hψ i).trans inter_subset_left),
+    Finset.sum_congr rfl fun (i : s) _ ↦ hT i (ψ i) (hψ i),
     ← integral_finsetSum _ fun i _ ↦ hint i]
   simp [Finset.sum_smul]
 

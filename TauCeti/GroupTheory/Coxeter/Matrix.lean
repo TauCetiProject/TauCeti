@@ -15,8 +15,9 @@ Coxeter group is the group of finitary permutations of `ℕ` and whose Hecke alg
 type-A Hecke algebra, and gives convenient equations for its entries. Mathlib's type-`A` Coxeter
 matrix on `Fin m` is its restriction to the first `m` indices
 (`TauCeti.coxeterMatrixA_eq_coxeterMatrixAInfty`), from which the corresponding equations for the
-entries of `CoxeterMatrix.A m` follow. It also defines the restriction `CoxeterMatrix.restrict` of a
-Coxeter matrix to a set of indices.
+entries of `CoxeterMatrix.A m` follow. It also defines the restriction `CoxeterMatrix.restrict` of
+a Coxeter matrix to a set of indices and records functoriality of `CoxeterMatrix.reindex`
+(`CoxeterMatrix.reindex_refl`, `CoxeterMatrix.reindex_reindex`).
 -/
 
 public section
@@ -77,7 +78,20 @@ end TauCeti
 
 namespace CoxeterMatrix
 
-variable {B : Type*} (M : CoxeterMatrix B)
+variable {B B' B'' : Type*} (M : CoxeterMatrix B)
+
+/-- Reindexing a Coxeter matrix by the identity equivalence leaves it unchanged. -/
+@[simp]
+theorem reindex_refl : M.reindex (Equiv.refl B) = M := by
+  ext
+  rfl
+
+/-- Reindexing a Coxeter matrix twice is reindexing by the composite equivalence. -/
+@[simp]
+theorem reindex_reindex (e : B ≃ B') (e' : B' ≃ B'') :
+    (M.reindex e).reindex e' = M.reindex (e.trans e') := by
+  ext
+  rfl
 
 /-- The **restriction** of a Coxeter matrix to a set `J` of indices: the Coxeter matrix on `J` with
 the same entries. Along the inclusion `Subtype.val`, `CoxeterSystem.parabolicHom` identifies its
