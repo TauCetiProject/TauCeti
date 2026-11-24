@@ -86,6 +86,11 @@ protected def setoid (G : Type*) [Monoid G] (M : Ideal (integralClosure ℤ ℂ)
   r := SameBlock M
   iseqv := ⟨SameBlock.refl M, SameBlock.symm, SameBlock.trans⟩
 
+/-- The block congruence setoid relates exactly the functions in the block congruence. -/
+@[simp]
+theorem setoid_apply : SameBlock.setoid G M χ ψ ↔ SameBlock M χ ψ :=
+  Iff.rfl
+
 /-- The block congruence is monotone in the ideal. -/
 theorem mono (hMN : M ≤ N) (h : SameBlock M χ ψ) : SameBlock N χ ψ := fun g => by
   obtain ⟨x, hx, hxg⟩ := h g
