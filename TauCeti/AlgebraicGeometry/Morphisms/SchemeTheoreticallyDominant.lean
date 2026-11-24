@@ -33,7 +33,9 @@ scheme-theoretically dominant morphism stays so after corestriction along an ope
 containing its image
 (`AlgebraicGeometry.IsOpenImmersion.isSchemeTheoreticallyDominant_lift`). The scheme-theoretic
 image of a scheme-theoretically dominant morphism is its whole target
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`). Two opens, one
+scheme-theoretically dense in the other, have the same scheme-theoretic closure
+(`AlgebraicGeometry.Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant`).
 -/
 
 public section
@@ -59,6 +61,13 @@ theorem _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_comp
 theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant
     (f : W ⟶ X) [IsSchemeTheoreticallyDominant f] (g : X ⟶ Y) : (f ≫ g).ker = g.ker := by
   rw [Scheme.Hom.ker_comp, f.ker_eq_bot, Scheme.IdealSheafData.map_bot]
+
+/-- Opens `V ≤ V'` of a scheme with `V` scheme-theoretically dense in `V'` have the same
+scheme-theoretic closure. -/
+theorem _root_.AlgebraicGeometry.Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant
+    {V V' : X.Opens} (h : V ≤ V') [IsSchemeTheoreticallyDominant (X.homOfLE h)] :
+    V.ι.ker = V'.ι.ker := by
+  rw [← Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant (X.homOfLE h) V'.ι, Scheme.homOfLE_ι]
 
 /-- The scheme-theoretic image of a scheme-theoretically dominant morphism is the whole target. -/
 instance _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι (f : X ⟶ Y)

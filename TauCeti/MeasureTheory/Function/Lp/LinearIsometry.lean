@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
@@ -43,6 +46,8 @@ and uniform 1-Lipschitzness in the `Lᵖ` variable.
   `LinearIsometryEquiv.compLpₗᵢ_indicatorConstLp`: action on indicator `Lᵖ` classes.
 * `LinearIsometry.continuous_compLpₗᵢ` and `LinearIsometryEquiv.continuous_compLpₗᵢ`: joint
   continuity on `X × Lp E p μ` for `1 ≤ p < ∞` from pointwise continuity in `X`.
+* `ContinuousLinearMap.norm_apply_one_compLp`: evaluating an `Lᵖ` family of linear maps
+  `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -233,3 +238,19 @@ theorem continuous_compLpₗᵢ {X : Type*} [TopologicalSpace X] (hp : p ≠ ∞
   LinearIsometry.continuous_compLpₗᵢ hp (f := fun x => (e x).toLinearIsometry) he
 
 end LinearIsometryEquiv
+
+namespace ContinuousLinearMap
+
+variable {α 𝕜 E : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Pointwise evaluation at `1 : 𝕜` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ` norm, since it is
+the isometry `(toSpanSingletonLIE 𝕜 E).symm`. -/
+@[simp]
+theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ⇑(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)) = (toSpanSingletonLIE 𝕜 E).symm :=
+    funext fun φ ↦ (toSpanSingletonLIE_symm_apply 𝕜 E φ).symm
+  exact norm_compLp_of_isometry (h ▸ (toSpanSingletonLIE 𝕜 E).symm.isometry) f
+
+end ContinuousLinearMap

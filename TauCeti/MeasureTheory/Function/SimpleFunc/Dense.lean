@@ -153,7 +153,7 @@ theorem denseRange_toLpTop [ProperSpace E] :
   obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformly_iff.1 hunif (ε / 2) (by positivity))
   refine ⟨N, fun n hn => ?_⟩
   rw [dist_eq_norm]
-  refine (Lp.norm_top_le_of_ae_bound (by positivity) ?_).trans_lt (half_lt_self hε)
+  refine (Lp.norm_le_of_ae_bound_top (by positivity) ?_).trans_lt (half_lt_self hε)
   filter_upwards [Lp.coeFn_sub (toLpTop μ 𝕜 (approxOn f hf _ 0 h₀ n)) φ,
     coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (approxOn f hf _ 0 h₀ n), hφf] with x hsub hx hφx
   rw [hsub, Pi.sub_apply, hx, hφx, ← dist_eq_norm, dist_comm]
