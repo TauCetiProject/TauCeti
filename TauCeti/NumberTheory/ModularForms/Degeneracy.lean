@@ -561,6 +561,14 @@ lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * 
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, hc', mul_comm]
 
+/-- Reading off the lower-left entry: if `diag(d, 1) X = Y diag(d, 1)`, then the lower-left entry
+of `X` is `d` times that of `Y`. -/
+lemma apply_one_zero_eq_of_scaleGL_mul_eq [NeZero d] {X Y : SL(2, ℤ)}
+    (h : scaleGL d * mapGL ℝ X = mapGL ℝ Y * scaleGL d) : X 1 0 = d * Y 1 0 := by
+  have := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) h
+  exact_mod_cast (by simpa [Matrix.mul_apply, Fin.sum_univ_two, mul_comm] using this :
+    ((X 1 0 : ℤ) : ℝ) = d * Y 1 0)
+
 /-- The `diag(d, 1)`-conjugate of a matrix `γ ∈ Γ₀(N)` lies in `Γ₀(M)` whenever `d * M ∣ N`, and
 the conjugation leaves the lower-right entry alone: the diamond label of `γ` is read along the
 reduction `(ZMod N)ˣ → (ZMod M)ˣ`. -/
@@ -656,12 +664,8 @@ lemma mem_gamma1Conj_iff [NeZero q] {γ : SL(2, ℤ)} :
   have hmul : scaleGL q * mapGL ℝ δ = mapGL ℝ γ * scaleGL q := by
     rw [ConjAct.toConjAct_smul] at hγ
     rw [← hγ]; group
-  have h10 := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) hmul
-  have hc : δ 1 0 = q * γ 1 0 := by
-    have h10' : (δ 1 0 : ℝ) = γ 1 0 * q := by
-      simpa [Matrix.mul_apply, Fin.sum_univ_two] using h10
-    exact_mod_cast h10'.trans (mul_comm _ _)
-  refine ⟨δ, hδ, γ 1 0, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
+  refine ⟨δ, hδ, γ 1 0, apply_one_zero_eq_of_scaleGL_mul_eq hmul,
+    (mapGL_inj (S := ℝ) _ _).mp ?_⟩
   rw [← mapGL_conjScale, ← hγ, ConjAct.toConjAct_smul]
 
 /-- For `q ∣ N`, the image of `gamma1Conj q N` in `GL(2, ℝ)` is the whole conjugate
