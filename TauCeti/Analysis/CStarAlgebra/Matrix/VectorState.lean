@@ -29,10 +29,10 @@ standard basis vectors.
   `ξ ξ⋆` compresses `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`.
 * `CStarMatrix.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
 * `CStarMatrix.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
-* `CStarMatrix.normalizedTraceState`: the normalized trace in the weak-* dual, a state for `n`
-  nonempty (`CStarMatrix.normalizedTraceState_mem_stateSpace`).
-* `CStarMatrix.normalizedTraceState_eq_sum_smul_vectorFunctional`: the normalized trace is the
-  average of the vector states of the standard basis vectors.
+* `CStarMatrix.normalizedTraceFunctional`: the normalized trace in the weak-* dual, a state for
+  `n` nonempty (`CStarMatrix.normalizedTraceFunctional_mem_stateSpace`).
+* `CStarMatrix.normalizedTraceFunctional_eq_sum_smul_vectorFunctional`: the normalized trace is
+  the average of the vector states of the standard basis vectors.
 -/
 
 public section
@@ -96,26 +96,27 @@ theorem vectorFunctional_mem_extremePoints_stateSpace {ξ : n → ℂ} (hξ : st
 
 variable (n) in
 /-- The normalized trace as a functional in the weak-* dual. It is a state for a nonempty index
-type, by `CStarMatrix.normalizedTraceState_mem_stateSpace`. -/
-def normalizedTraceState : WeakDual ℂ (CStarMatrix n n ℂ) :=
+type, by `CStarMatrix.normalizedTraceFunctional_mem_stateSpace`. -/
+def normalizedTraceFunctional : WeakDual ℂ (CStarMatrix n n ℂ) :=
   StrongDual.toWeakDual (normalizedTraceMap n).toContinuousLinearMap
 
-/-- `normalizedTraceState n` evaluates to the normalized trace. -/
+/-- `normalizedTraceFunctional n` evaluates to the normalized trace. -/
 @[simp]
-theorem normalizedTraceState_apply (x : CStarMatrix n n ℂ) :
-    normalizedTraceState n x = normalizedTrace x :=
+theorem normalizedTraceFunctional_apply (x : CStarMatrix n n ℂ) :
+    normalizedTraceFunctional n x = normalizedTrace x :=
   normalizedTraceMap_apply x
 
 variable (n) in
 /-- The normalized trace is a state for a nonempty index type. -/
-theorem normalizedTraceState_mem_stateSpace [Nonempty n] :
-    normalizedTraceState n ∈ stateSpace (CStarMatrix n n ℂ) :=
+theorem normalizedTraceFunctional_mem_stateSpace [Nonempty n] :
+    normalizedTraceFunctional n ∈ stateSpace (CStarMatrix n n ℂ) :=
   (normalizedTraceMap n).toWeakDual_mem_stateSpace_iff.2 (norm_normalizedTraceMap n)
 
 /-- The normalized trace of `M_n` is the average of the vector states of the standard basis
 vectors. -/
-theorem normalizedTraceState_eq_sum_smul_vectorFunctional [DecidableEq n] :
-    normalizedTraceState n = ∑ i, (Fintype.card n : ℝ)⁻¹ • vectorFunctional (Pi.single i 1) := by
+theorem normalizedTraceFunctional_eq_sum_smul_vectorFunctional [DecidableEq n] :
+    normalizedTraceFunctional n =
+      ∑ i, (Fintype.card n : ℝ)⁻¹ • vectorFunctional (Pi.single i 1) := by
   refine DFunLike.ext _ _ fun a ↦ ?_
   simp [_root_.sum_apply, normalizedTrace_eq_sum, Finset.mul_sum, Complex.real_smul]
 

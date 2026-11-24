@@ -18,9 +18,9 @@ two kinds of extension:
 
 * the vector states `a ↦ ⟪ξ, a ξ⟫` of unit vectors `ξ` are pure, by
   `CStarMatrix.vectorFunctional_mem_extremePoints_stateSpace`;
-* the normalized trace of `M₂`, a state by `CStarMatrix.normalizedTraceState_mem_stateSpace`, is
-  the midpoint of the vector states of the two standard basis vectors, which differ, so it is not
-  pure.
+* the normalized trace of `M₂`, a state by
+  `CStarMatrix.normalizedTraceFunctional_mem_stateSpace`, is the midpoint of the vector states of
+  the two standard basis vectors, which differ, so it is not pure.
 
 So the state of `ℂ·1` has both pure and non-pure extensions to `M₂`.
 -/
@@ -34,22 +34,23 @@ open scoped ComplexOrder
 
 namespace TauCeti.StateExtensionExamples
 
-/-- **The normalized trace is not pure.** The state `normalizedTraceState (Fin 2)` (a state by
-`CStarMatrix.normalizedTraceState_mem_stateSpace`) is the midpoint of the vector states of the two
-standard basis vectors of `ℂ²`, which differ, so it is not an extreme point of the state space. -/
-theorem normalizedTraceState_notMem_extremePoints_stateSpace :
-    normalizedTraceState (Fin 2) ∉
+/-- **The normalized trace is not pure.** The state `normalizedTraceFunctional (Fin 2)` (a state
+by `CStarMatrix.normalizedTraceFunctional_mem_stateSpace`) is the midpoint of the vector states of
+the two standard basis vectors of `ℂ²`, which differ, so it is not an extreme point of the state
+space. -/
+theorem normalizedTraceFunctional_notMem_extremePoints_stateSpace :
+    normalizedTraceFunctional (Fin 2) ∉
       Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) ℂ)) := by
   have he (i : Fin 2) : star (Pi.single i (1 : ℂ)) ⬝ᵥ Pi.single i 1 = 1 := by simp
   intro h
-  have hseg : normalizedTraceState (Fin 2) ∈ openSegment ℝ (vectorFunctional (Pi.single 0 1))
-      (vectorFunctional (Pi.single 1 1)) :=
+  have hseg : normalizedTraceFunctional (Fin 2) ∈
+      openSegment ℝ (vectorFunctional (Pi.single 0 1)) (vectorFunctional (Pi.single 1 1)) :=
     ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num,
-      by simp [normalizedTraceState_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]⟩
+      by simp [normalizedTraceFunctional_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]⟩
   have h0 := ((mem_extremePoints.1 h).2 _ (vectorFunctional_mem_stateSpace (he 0)) _
     (vectorFunctional_mem_stateSpace (he 1)) hseg).1
   have h1 := DFunLike.congr_fun h0 (ofMatrix (Matrix.single (0 : Fin 2) 0 (1 : ℂ)))
-  rw [vectorFunctional_single, normalizedTraceState_apply, normalizedTrace_eq_sum] at h1
+  rw [vectorFunctional_single, normalizedTraceFunctional_apply, normalizedTrace_eq_sum] at h1
   norm_num [Fin.sum_univ_two] at h1
 
 end TauCeti.StateExtensionExamples
