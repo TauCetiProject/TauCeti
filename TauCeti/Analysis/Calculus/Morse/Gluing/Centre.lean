@@ -29,8 +29,20 @@ large `T`, some orbit from the entrance disc reaches the disc through the centre
 to the centre.
 
 The image of a disc through the centre which is strictly differentiable at `0`, with the
-derivative of its contracting component `x` invertible, contains such a graph near the centre
+derivative of its contracting component `x` invertible, is such a graph near the centre
 (`TauCeti.exists_lipschitzOnWith_graph_of_hasStrictFDerivAt`), by the inverse function theorem.
+
+**The local compactified gluing space at the centre.** Record such an orbit by the pair
+`(z, φ_T z)` of its entrance point `z = (g y, y)` and its point on the graph of `k`
+(`TauCeti.splitCentreGluingPairs`). Its gluing parameter is `r = e^{-T}`, read off as
+`‖x‖ / ε` from the contracting coordinate of the second point, and the matching condition is that
+`y` is a fixed point of `y ↦ r • k (r • g y)`. For small `r` this is a contraction of a closed
+ball with constant `r² Kk Kg`, whose unique fixed point depends Lipschitz-continuously on `r`
+and is `0` at `r = 0`. So the pairs form a single arc, whose closure adds exactly the broken pair
+`((g 0, 0), 0)` of the entrance point on the stable set and the centre
+(`TauCeti.closure_splitCentreGluingPairs`), and that closure is homeomorphic to a closed interval
+(`TauCeti.exists_homeomorph_closure_splitCentreGluingPairs`). This is the analogue at the centre of
+`TauCeti.exists_homeomorph_closure_splitGluingPairs`.
 
 In Morse theory, the entrance disc is a piece of the unstable manifold of a critical point `p`
 which flows into the critical point `a` at the centre of the box, and the disc through the centre is
@@ -41,11 +53,16 @@ submanifold converging to `a`.
 ## Main results
 
 * `TauCeti.exists_lipschitzOnWith_graph_of_hasStrictFDerivAt`: near the centre, the image of a disc
-  through the centre transverse to the unstable set contains a Lipschitz graph `x ↦ (x, k x)` with
+  through the centre transverse to the unstable set is a Lipschitz graph `x ↦ (x, k x)` with
   `k 0 = 0`.
 * `TauCeti.eventually_exists_splitQuadraticFlow_snd_eq`: for all large `T`, the orbit through some
   point of the entrance graph stays in the box up to time `T` and meets the graph of `k` at time
   `T`, in a prescribed neighbourhood of the centre.
+* `TauCeti.splitCentreGluingPairs`: entrance points paired with the points where their orbits meet
+  the graph through the centre.
+* `TauCeti.closure_splitCentreGluingPairs`: their closure adds exactly the broken pair.
+* `TauCeti.exists_homeomorph_closure_splitCentreGluingPairs`: that closure is a closed interval,
+  with the gluing parameter as inverse coordinate.
 
 ## References
 
@@ -67,13 +84,15 @@ variable {G Eₛ Eᵤ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 disc through the centre `(0, 0)` of the split model, strictly differentiable at `0` with the
 derivative of its contracting component `x` invertible. There is a Lipschitz graph `x ↦ (x, k x)`
 over a closed ball of the contracting factor, with `k 0 = 0`, every point of which is `χ z` for
-some `z` in a prescribed neighbourhood `V` of `0`. -/
+some `z` in a prescribed neighbourhood `V` of `0`. Conversely, near `0` every point `χ z` lies on
+the graph of `k`. -/
 theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
     {χ : G → WithLp 2 (Eₛ × Eᵤ)} {χ' : G →L[ℝ] WithLp 2 (Eₛ × Eᵤ)}
     (hχ : HasStrictFDerivAt χ χ' 0) (hχ' : (WithLp.fstL 2 ℝ Eₛ Eᵤ ∘L χ').IsInvertible)
     (hχ₀ : χ 0 = 0) {V : Set G} (hV : V ∈ 𝓝 0) :
     ∃ η > 0, ∃ (K : ℝ≥0) (k : Eₛ → Eᵤ), LipschitzOnWith K k (closedBall 0 η) ∧ k 0 = 0 ∧
-      ∀ x ∈ closedBall 0 η, ∃ z ∈ V, χ z = WithLp.toLp 2 (x, k x) := by
+      (∀ x ∈ closedBall 0 η, ∃ z ∈ V, χ z = WithLp.toLp 2 (x, k x)) ∧
+      ∀ᶠ z in 𝓝 0, (χ z).snd = k (χ z).fst := by
   obtain ⟨L, hL⟩ := hχ'
   -- The contracting component of `χ` is a local diffeomorphism at `0`; invert it.
   set a : G → Eₛ := fun z ↦ (χ z).fst with ha_def
@@ -95,9 +114,15 @@ theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
     exact ((WithLp.sndL 2 ℝ Eₛ Eᵤ).hasStrictFDerivAt.comp (σ 0) hχσ).comp 0 hσ
   obtain ⟨K, s, hs, hks⟩ := hk.exists_lipschitzOnWith
   obtain ⟨η, hη, hηs⟩ := nhds_basis_closedBall.mem_iff.1 (inter_mem hs (inter_mem (hσt hV) hright))
-  refine ⟨η, hη, K, k, hks.mono fun x hx ↦ (hηs hx).1, by simp [k, hσ₀, hχ₀], fun x hx ↦ ?_⟩
-  obtain ⟨-, hxV, hxa⟩ := hηs hx
-  exact ⟨σ x, hxV, WithLp.ofLp_injective 2 (Prod.ext (by simpa [ha_def] using hxa) (by simp [k]))⟩
+  refine ⟨η, hη, K, k, hks.mono fun x hx ↦ (hηs hx).1, by simp [k, hσ₀, hχ₀], fun x hx ↦ ?_,
+    ?_⟩
+  · obtain ⟨-, hxV, hxa⟩ := hηs hx
+    exact ⟨σ x, hxV, WithLp.ofLp_injective 2 (Prod.ext (by simpa [ha_def] using hxa) (by simp [k]))⟩
+  · -- Near `0`, `σ` inverts the contracting component on the left, so `k (a z) = (χ z).snd`.
+    filter_upwards [ha.eventually_left_inverse] with z hz
+    have hk : k (χ z).fst = (χ (σ (a z))).snd := rfl
+    rw [hk]
+    exact (congrArg (fun w ↦ (χ w).snd) hz).symm
 
 omit [NormedSpace ℝ Eᵤ] in
 /-- Along the entrance graph `y ↦ (g y, y)` in the face `‖x‖ = ε`, scaled by a rate `l` with
@@ -219,5 +244,311 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   · rw [hT', WithLp.toLp_fst]
     exact hgη
   · rw [hT', WithLp.toLp_snd, WithLp.toLp_fst]
+
+/-! ### The local compactified gluing space at the centre -/
+
+section Compactification
+
+variable {ε r₀ : ℝ} {Kg Kk : ℝ≥0} {g : Eᵤ → Eₛ} {k : Eₛ → Eᵤ}
+
+/-- The pairs `(z, φ_T z)` of a point `z = (g y, y)` of the graph of `g` and the point of its orbit,
+at a time `T ≥ 0`, on the graph `x ↦ (x, k x)`, with `‖y‖` and the contracting coordinate of
+`φ_T z` at most `r₀ ε`. For `g` with values on the sphere of radius `ε`, the second condition reads
+`e^{-T} ≤ r₀`: the number `e^{-T}` is the gluing parameter of the pair. -/
+def splitCentreGluingPairs (ε r₀ : ℝ) (g : Eᵤ → Eₛ) (k : Eₛ → Eᵤ) :
+    Set (WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ)) :=
+  {p | ‖p.1.snd‖ ≤ r₀ * ε ∧ p.1.fst = g p.1.snd ∧
+    (∃ T, 0 ≤ T ∧ p.2 = splitQuadraticFlow T p.1) ∧ ‖p.2.fst‖ ≤ r₀ * ε ∧ p.2.snd = k p.2.fst}
+
+/-- The conditions defining the gluing pairs at the centre. -/
+@[simp]
+theorem mem_splitCentreGluingPairs {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ)} :
+    p ∈ splitCentreGluingPairs ε r₀ g k ↔
+      ‖p.1.snd‖ ≤ r₀ * ε ∧ p.1.fst = g p.1.snd ∧
+        (∃ T, 0 ≤ T ∧ p.2 = splitQuadraticFlow T p.1) ∧ ‖p.2.fst‖ ≤ r₀ * ε ∧
+          p.2.snd = k p.2.fst :=
+  Iff.rfl
+
+section Hypotheses
+
+variable (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+  (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+  (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε))) (hk₀ : k 0 = 0)
+  (hr₀₁ : r₀ ≤ 1) (hKk : Kk * r₀ ≤ 1)
+
+omit [NormedSpace ℝ Eᵤ] in
+include hgε hk hk₀ in
+/-- For a gluing parameter `r ∈ [0, r₀]`, the point `r • g y` lies in the domain of `k`, where
+`‖k (r • g y)‖ ≤ Kk r ε`. -/
+private theorem smul_mem_closedBall_and_norm_k_le {r : ℝ} (hr : r ∈ Icc 0 r₀) {y : Eᵤ}
+    (hy : y ∈ closedBall 0 (r₀ * ε)) :
+    r • g y ∈ closedBall (0 : Eₛ) (r₀ * ε) ∧ ‖k (r • g y)‖ ≤ Kk * (r * ε) := by
+  have hε : 0 ≤ ε := hgε y hy ▸ norm_nonneg _
+  have hn : ‖r • g y‖ = r * ε := by rw [norm_smul, Real.norm_of_nonneg hr.1, hgε y hy]
+  have hmem : r • g y ∈ closedBall (0 : Eₛ) (r₀ * ε) := by
+    rw [mem_closedBall_zero_iff, hn]
+    exact mul_le_mul_of_nonneg_right hr.2 hε
+  refine ⟨hmem, ?_⟩
+  simpa [hk₀, hn] using hk.norm_sub_le hmem (mem_closedBall_self (mul_nonneg (hr.1.trans hr.2) hε))
+
+include hgε hk hk₀ hKk in
+/-- The gluing map `y ↦ r • k (r • g y)` at the centre sends the closed ball of radius `r₀ ε` to
+itself. -/
+private theorem mapsTo_centreGluing {r : ℝ} (hr : r ∈ Icc 0 r₀) :
+    MapsTo (fun y ↦ r • k (r • g y)) (closedBall 0 (r₀ * ε)) (closedBall 0 (r₀ * ε)) := by
+  intro y hy
+  have hε : 0 ≤ ε := hgε y hy ▸ norm_nonneg _
+  have hkg := (smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hr hy).2
+  rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hr.1]
+  have hKr : Kk * r ≤ 1 := (mul_le_mul_of_nonneg_left hr.2 Kk.coe_nonneg).trans hKk
+  calc r * ‖k (r • g y)‖ ≤ r * (Kk * (r * ε)) := mul_le_mul_of_nonneg_left hkg hr.1
+    _ = r * ((Kk * r) * ε) := by ring
+    _ ≤ r₀ * (1 * ε) := mul_le_mul hr.2 (mul_le_mul_of_nonneg_right hKr hε)
+        (mul_nonneg (mul_nonneg Kk.coe_nonneg hr.1) hε) (hr.1.trans hr.2)
+    _ = r₀ * ε := by ring
+
+include hg hgε hk hk₀ in
+/-- The gluing map `y ↦ r • k (r • g y)` at the centre is Lipschitz with constant
+`Kk * Kg * r₀ ^ 2` on the closed ball of radius `r₀ ε`. -/
+private theorem dist_centreGluing_le {r : ℝ} (hr : r ∈ Icc 0 r₀) {y y' : Eᵤ}
+    (hy : y ∈ closedBall 0 (r₀ * ε)) (hy' : y' ∈ closedBall 0 (r₀ * ε)) :
+    dist (r • k (r • g y)) (r • k (r • g y')) ≤ Kk * Kg * r₀ ^ 2 * dist y y' := by
+  have hrr : r * r ≤ r₀ ^ 2 := pow_two r₀ ▸ mul_le_mul hr.2 hr.2 hr.1 (hr.1.trans hr.2)
+  calc dist (r • k (r • g y)) (r • k (r • g y'))
+      = r * dist (k (r • g y)) (k (r • g y')) := by rw [dist_smul₀, Real.norm_of_nonneg hr.1]
+    _ ≤ r * (Kk * dist (r • g y) (r • g y')) := by
+        gcongr
+        · exact hr.1
+        · exact hk.dist_le_mul _ (smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hr hy).1 _
+            (smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hr hy').1
+    _ = r * (Kk * (r * dist (g y) (g y'))) := by rw [dist_smul₀, Real.norm_of_nonneg hr.1]
+    _ ≤ r * (Kk * (r * (Kg * dist y y'))) := by
+        gcongr
+        · exact hr.1
+        · exact hr.1
+        · exact hg.dist_le_mul _ hy _ hy'
+    _ = Kk * Kg * (r * r) * dist y y' := by ring
+    _ ≤ Kk * Kg * r₀ ^ 2 * dist y y' := by gcongr
+
+include hgε hk hk₀ hr₀₁ in
+/-- The gluing map `y ↦ r • k (r • g y)` at the centre depends Lipschitz-continuously on the gluing
+parameter, uniformly on the closed ball of radius `r₀ ε`. -/
+private theorem dist_centreGluing_le_dist {r s : ℝ} (hr : r ∈ Icc 0 r₀) (hs : s ∈ Icc 0 r₀)
+    {y : Eᵤ} (hy : y ∈ closedBall 0 (r₀ * ε)) :
+    dist (r • k (r • g y)) (s • k (s • g y)) ≤ 2 * Kk * ε * dist r s := by
+  have hε : 0 ≤ ε := hgε y hy ▸ norm_nonneg _
+  obtain ⟨hr', hkr⟩ := smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hr hy
+  obtain ⟨hs', -⟩ := smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hs hy
+  have hr1 : r ≤ 1 := hr.2.trans hr₀₁
+  have hs1 : s ≤ 1 := hs.2.trans hr₀₁
+  have hgy : ‖g y‖ = ε := hgε y hy
+  calc dist (r • k (r • g y)) (s • k (s • g y))
+      ≤ dist (r • k (r • g y)) (s • k (r • g y)) + dist (s • k (r • g y)) (s • k (s • g y)) :=
+        dist_triangle _ _ _
+    _ = dist r s * ‖k (r • g y)‖ + s * dist (k (r • g y)) (k (s • g y)) := by
+        rw [dist_smul₀, Real.norm_of_nonneg hs.1, dist_eq_norm, dist_eq_norm, ← sub_smul,
+          norm_smul, Real.norm_eq_abs, Real.dist_eq]
+    _ ≤ dist r s * (Kk * (1 * ε)) + 1 * (Kk * (dist r s * ε)) := by
+        gcongr
+        · exact hkr.trans (by gcongr)
+        · calc dist (k (r • g y)) (k (s • g y)) ≤ Kk * dist (r • g y) (s • g y) :=
+                hk.dist_le_mul _ hr' _ hs'
+            _ = Kk * (dist r s * ε) := by
+                rw [dist_eq_norm, ← sub_smul, norm_smul, hgy, Real.dist_eq, Real.norm_eq_abs]
+    _ = 2 * Kk * ε * dist r s := by ring
+
+end Hypotheses
+
+/-- **The fixed points of the gluing maps at the centre.** For each gluing parameter
+`r ∈ [0, r₀]`, the gluing map `y ↦ r • k (r • g y)` has a unique fixed point `y r` in the closed
+ball of radius `r₀ ε`, and `y` is continuous on `[0, r₀]`: the maps contract the ball with a
+common constant and depend Lipschitz-continuously on `r`. -/
+private theorem exists_continuousOn_centreGluing_fixedPt [CompleteSpace Eᵤ]
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε))) (hk₀ : k 0 = 0) (hε : 0 < ε)
+    (hr₀ : 0 ≤ r₀) (hr₀₁ : r₀ ≤ 1) (hKk : Kk * r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ y : ℝ → Eᵤ, ContinuousOn y (Icc 0 r₀) ∧ ∀ r ∈ Icc 0 r₀,
+      y r ∈ closedBall 0 (r₀ * ε) ∧ r • k (r • g (y r)) = y r ∧
+        ∀ v ∈ closedBall 0 (r₀ * ε), r • k (r • g v) = v → v = y r := by
+  set B := closedBall (0 : Eᵤ) (r₀ * ε)
+  have hKr : ((Kk * Kg * r₀.toNNReal ^ 2 : ℝ≥0) : ℝ) = Kk * Kg * r₀ ^ 2 := by
+    simp [Real.coe_toNNReal _ hr₀]
+  have hcontr (r : ℝ) (hr : r ∈ Icc 0 r₀) :
+      ContractingWith (Kk * Kg * r₀.toNNReal ^ 2)
+        ((mapsTo_centreGluing hgε hk hk₀ hKk hr).restrict _ B B) := by
+    refine ⟨by rw [← NNReal.coe_lt_coe, hKr]; exact hK, LipschitzWith.of_dist_le_mul ?_⟩
+    rintro ⟨y, hy⟩ ⟨y', hy'⟩
+    rw [hKr]
+    exact dist_centreGluing_le hg hgε hk hk₀ hr hy hy'
+  have hchoice (r : ℝ) : ∃ y, r ∈ Icc 0 r₀ → y ∈ B ∧ r • k (r • g y) = y := by
+    by_cases hr : r ∈ Icc 0 r₀
+    · obtain ⟨y, hy, hfy, -⟩ := (hcontr r hr).exists_fixedPoint' isClosed_closedBall.isComplete
+        (mapsTo_centreGluing hgε hk hk₀ hKk hr) (mem_closedBall_self (by positivity))
+        (edist_ne_top _ _)
+      exact ⟨y, fun _ ↦ ⟨hy, hfy⟩⟩
+    · exact ⟨0, fun h ↦ absurd h hr⟩
+  choose y hy using hchoice
+  have hylip : LipschitzOnWith (2 * Kk * ε / (1 - Kk * Kg * r₀ ^ 2)).toNNReal y (Icc 0 r₀) := by
+    refine LipschitzOnWith.of_dist_le_mul fun r hr r' hr' ↦ ?_
+    have hle := (hcontr r hr).dist_fixedPoint_fixedPoint_of_dist_le'
+      ((mapsTo_centreGluing hgε hk hk₀ hKk hr').restrict _ B B)
+      (x := ⟨y r, (hy r hr).1⟩) (y := ⟨y r', (hy r' hr').1⟩) (Subtype.ext (hy r hr).2)
+      (Subtype.ext (hy r' hr').2) fun v ↦
+        dist_centreGluing_le_dist hgε hk hk₀ hr₀₁ hr hr' v.property
+    rw [Subtype.dist_eq, hKr, ← div_mul_eq_mul_div] at hle
+    exact hle.trans (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) dist_nonneg)
+  exact ⟨y, hylip.continuousOn, fun r hr ↦ ⟨(hy r hr).1, (hy r hr).2, fun v hv hfv ↦
+    Subtype.ext_iff.1 ((hcontr r hr).fixedPoint_unique' (x := ⟨v, hv⟩) (y := ⟨y r, (hy r hr).1⟩)
+      (Subtype.ext hfv) (Subtype.ext (hy r hr).2))⟩⟩
+
+/-- **The gluing parameter of a pair at the centre.** A gluing pair at the centre is
+`((g y, y), (r • g y, k (r • g y)))` for its gluing parameter `r ∈ (0, r₀]` and the expanding
+coordinate `y` of its entrance point, which solves the gluing equation `r • k (r • g y) = y`. -/
+private theorem exists_mem_Ioc_of_mem_splitCentreGluingPairs
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε) (hε : 0 < ε)
+    {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ)} (hp : p ∈ splitCentreGluingPairs ε r₀ g k) :
+    ∃ r ∈ Ioc 0 r₀, r • k (r • g p.1.snd) = p.1.snd ∧
+      (WithLp.toLp 2 (g p.1.snd, p.1.snd),
+        WithLp.toLp 2 (r • g p.1.snd, k (r • g p.1.snd))) = p := by
+  obtain ⟨hp₁, hpg, ⟨T, -, hpT⟩, hp₂, hpk⟩ := hp
+  -- The gluing parameter is `r = e^{-T}`.
+  set r := Real.exp (-T) with hrdef
+  have hrpos : 0 < r := Real.exp_pos _
+  have hp2fst : p.2.fst = r • g p.1.snd := by rw [hpT, splitQuadraticFlow_apply, ← hpg]; rfl
+  have hp2snd : p.2.snd = Real.exp T • p.1.snd := by rw [hpT, splitQuadraticFlow_apply]; rfl
+  have hrr₀ : r ≤ r₀ := by
+    rw [hp2fst, norm_smul, Real.norm_of_nonneg hrpos.le,
+      hgε _ (mem_closedBall_zero_iff.2 hp₁)] at hp₂
+    exact le_of_mul_le_mul_right hp₂ hε
+  refine ⟨r, ⟨hrpos, hrr₀⟩, ?_, Prod.ext ?_ ?_⟩
+  · rw [← hp2fst, ← hpk, hp2snd, smul_smul, hrdef, ← Real.exp_add, neg_add_cancel,
+      Real.exp_zero, one_smul]
+  · apply WithLp.ofLp_injective
+    ext
+    · simp [hpg]
+    · simp
+  · apply WithLp.ofLp_injective
+    ext
+    · simp [hp2fst]
+    · simp [hpk, hp2fst]
+
+/-- **Parametrizing the gluing pairs at the centre.** Under the hypotheses of
+`TauCeti.exists_homeomorph_closure_splitCentreGluingPairs`, the gluing pairs at the centre are the
+values `F r`, `0 < r ≤ r₀`, of a map `F` continuous on `[0, r₀]`, with `F 0` the broken pair
+`((g 0, 0), 0)` and the gluing parameter `r` recovered as `‖(F r).2.fst‖ / ε`. -/
+private theorem exists_splitCentreGluingPairs_parametrization [CompleteSpace Eᵤ]
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε))) (hk₀ : k 0 = 0) (hε : 0 < ε)
+    (hr₀ : 0 ≤ r₀) (hr₀₁ : r₀ ≤ 1) (hKk : Kk * r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ F : ℝ → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ),
+      ContinuousOn F (Icc 0 r₀) ∧ F '' Ioc 0 r₀ = splitCentreGluingPairs ε r₀ g k ∧
+      F 0 = (WithLp.toLp 2 (g 0, 0), 0) ∧ ∀ r ∈ Icc 0 r₀, ‖(F r).2.fst‖ / ε = r := by
+  obtain ⟨y, hyc, hy⟩ :=
+    exists_continuousOn_centreGluing_fixedPt hg hgε hk hk₀ hε hr₀ hr₀₁ hKk hK
+  set F : ℝ → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ) := fun r ↦
+    (WithLp.toLp 2 (g (y r), y r), WithLp.toLp 2 (r • g (y r), k (r • g (y r)))) with hFdef
+  have hgy (r : ℝ) (hr : r ∈ Icc 0 r₀) := hgε _ (hy r hr).1
+  have hnorm (r : ℝ) (hr : r ∈ Icc 0 r₀) : ‖(F r).2.fst‖ = r * ε := by
+    simp [hFdef, norm_smul, Real.norm_of_nonneg hr.1, hgy r hr]
+  -- Continuity: `g` and `k` are Lipschitz on their domains, into which `y` and `r • g (y r)` map.
+  have hgc : ContinuousOn (fun r ↦ g (y r)) (Icc 0 r₀) :=
+    hg.continuousOn.comp hyc fun r hr ↦ (hy r hr).1
+  have hxc : ContinuousOn (fun r ↦ r • g (y r)) (Icc 0 r₀) := continuousOn_id.smul hgc
+  have hkc : ContinuousOn (fun r ↦ k (r • g (y r))) (Icc 0 r₀) :=
+    hk.continuousOn.comp hxc fun r hr ↦
+      (smul_mem_closedBall_and_norm_k_le hgε hk hk₀ hr (hy r hr).1).1
+  have hFc : ContinuousOn F (Icc 0 r₀) :=
+    ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn (hgc.prodMk hyc)).prodMk
+      ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn (hxc.prodMk hkc))
+  have hy₀ : y 0 = 0 := by
+    have h := (hy 0 (left_mem_Icc.2 hr₀)).2.1
+    rw [zero_smul] at h
+    exact h.symm
+  refine ⟨F, hFc, ?_, by simp [hFdef, hy₀, hk₀], fun r hr ↦ by
+    rw [hnorm r hr, mul_div_cancel_right₀ _ hε.ne']⟩
+  ext p
+  constructor
+  · -- The pair of gluing parameter `r > 0` is reached at the time `T = -log r ≥ 0`.
+    rintro ⟨r, hr, rfl⟩
+    have hr' : r ∈ Icc 0 r₀ := Ioc_subset_Icc_self hr
+    have hr1 : r ≤ 1 := hr.2.trans hr₀₁
+    refine ⟨mem_closedBall_zero_iff.1 (hy r hr').1, rfl, ⟨-Real.log r,
+      neg_nonneg.2 (Real.log_nonpos hr.1.le hr1), ?_⟩, ?_, rfl⟩
+    · rw [splitQuadraticFlow_apply, neg_neg, Real.exp_log hr.1, Real.exp_neg, Real.exp_log hr.1]
+      apply WithLp.ofLp_injective
+      ext
+      · simp [hFdef]
+      · have h := congrArg (fun v ↦ r⁻¹ • v) (hy r hr').2.1
+        simp only [smul_smul, inv_mul_cancel₀ hr.1.ne', one_smul] at h
+        simp [hFdef, h]
+    · rw [hnorm r hr']
+      exact mul_le_mul_of_nonneg_right hr.2 hε.le
+  · -- Conversely, the expanding entrance coordinate of a pair of gluing parameter `r` is a fixed
+    -- point of the gluing map, hence `y r`.
+    intro hp
+    obtain ⟨r, hr, hfix, hpe⟩ := exists_mem_Ioc_of_mem_splitCentreGluingPairs hgε hε hp
+    have hpy := (hy r (Ioc_subset_Icc_self hr)).2.2 _ (mem_closedBall_zero_iff.2 hp.1) hfix
+    exact ⟨r, hr, by rw [← hpe, hpy]⟩
+
+section Single
+
+variable [CompleteSpace Eᵤ]
+  (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+  (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+  (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε))) (hk₀ : k 0 = 0) (hε : 0 < ε)
+  (hr₀ : 0 < r₀) (hr₀₁ : r₀ ≤ 1) (hKk : Kk * r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1)
+
+include hg hgε hk hk₀ hε hr₀ hr₀₁ hKk hK
+
+/-- **The closure of the gluing pairs at the centre.** The closure adds exactly the broken pair
+`((g 0, 0), 0)` of the entrance point on the stable set and the centre. -/
+theorem closure_splitCentreGluingPairs :
+    closure (splitCentreGluingPairs ε r₀ g k) =
+      insert (WithLp.toLp 2 (g 0, 0), 0) (splitCentreGluingPairs ε r₀ g k) := by
+  obtain ⟨F, hF, himage, hF₀, -⟩ :=
+    exists_splitCentreGluingPairs_parametrization hg hgε hk hk₀ hε hr₀.le hr₀₁ hKk hK
+  have hclosure : closure (F '' Ioc 0 r₀) = F '' Icc 0 r₀ := by
+    refine subset_antisymm
+      (closure_minimal (image_mono Ioc_subset_Icc_self)
+        (isCompact_Icc.image_of_continuousOn hF).isClosed) ?_
+    simpa only [closure_Ioc hr₀.ne] using
+      ContinuousOn.image_closure (s := Ioc 0 r₀) (f := F) (by rwa [closure_Ioc hr₀.ne])
+  rw [← himage, hclosure, ← insert_left_Ioc hr₀.le, image_insert_eq, hF₀]
+
+/-- **The local compactified gluing space at the centre is a closed interval.** Let
+`y ↦ (g y, y)` be a `Kg`-Lipschitz graph in the entrance face `‖x‖ = ε` and `x ↦ (x, k x)` a
+`Kk`-Lipschitz graph through the centre, with `k 0 = 0`, both over closed balls of radius `r₀ ε`.
+If `r₀ ≤ 1`, `Kk r₀ ≤ 1` and `Kk Kg r₀ ^ 2 < 1`, the closure of the gluing pairs at the centre is
+homeomorphic to `[0, r₀]`, with inverse coordinate the norm of the contracting coordinate of the
+second point divided by `ε`, and with the broken pair `((g 0, 0), 0)` at `0`.
+
+For `r > 0` the pair at `r` is `(z, φ_T z)` with `z = (g y, y)` and `r = e^{-T}`, where `y` is the
+unique solution of `y = r • k (r • g y)` of norm at most `r₀ ε`; as `r → 0` the entrance point
+tends to the point `(g 0, 0)` of the stable set and `φ_T z` to the centre. -/
+theorem exists_homeomorph_closure_splitCentreGluingPairs :
+    ∃ e : Icc (0 : ℝ) r₀ ≃ₜ closure (splitCentreGluingPairs ε r₀ g k),
+      (∀ p, (e.symm p : ℝ) = ‖p.val.2.fst‖ / ε) ∧
+      (e ⟨0, left_mem_Icc.2 hr₀.le⟩).val = (WithLp.toLp 2 (g 0, 0), 0) := by
+  obtain ⟨F, hF, himage, hF₀, hnorm⟩ :=
+    exists_splitCentreGluingPairs_parametrization hg hgε hk hk₀ hε hr₀.le hr₀₁ hKk hK
+  have hcl : closure (splitCentreGluingPairs ε r₀ g k) = range ((Icc 0 r₀).domRestrict F) := by
+    rw [closure_splitCentreGluingPairs hg hgε hk hk₀ hε hr₀ hr₀₁ hKk hK, range_domRestrict,
+      ← himage, ← hF₀, ← image_insert_eq, insert_left_Ioc hr₀.le]
+  have hinj : Function.Injective ((Icc 0 r₀).domRestrict F) := fun r s h ↦ Subtype.ext (by
+    rw [← hnorm r r.property, ← hnorm s s.property]
+    exact congrArg (fun p ↦ ‖p.2.fst‖ / ε) h)
+  have hemb := (hF.domRestrict.isClosedEmbedding hinj).isEmbedding
+  refine ⟨hemb.toHomeomorph.trans (Homeomorph.setCongr hcl.symm), fun p ↦ ?_, hF₀⟩
+  set r := (hemb.toHomeomorph.trans (Homeomorph.setCongr hcl.symm)).symm p
+  have hp : F r = p.val := by
+    have := (hemb.toHomeomorph.trans (Homeomorph.setCongr hcl.symm)).apply_symm_apply p
+    exact congrArg Subtype.val this
+  rw [← hp, hnorm r r.property]
+
+end Single
+
+end Compactification
 
 end TauCeti

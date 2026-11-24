@@ -46,7 +46,12 @@ The Morse box at the break, with the transverse set carried to its exit point
 split coordinates near its entrance and exit points (`eventually_of_morseBox`) and the continuity of
 reading gluing pairs back on `M` (`continuousAt_toChart_symm_of_mem_insert_splitGluingPairs`), in
 the namespace `TauCeti.IsAdaptedPseudoGradient`, are also the setting of the half-open gluing
-charts of `TauCeti.Geometry.Manifold.Morse.Gluing.Transverse`.
+charts of `TauCeti.Geometry.Manifold.Morse.Gluing.Transverse`. So are the Morse chart with a box
+at a critical point (`exists_morseChart_box`), the crossing of the entrance face of every small box
+by a trajectory into the critical point (`eventually_exists_flow_mem_entranceFace`), and the
+continuity of reading split coordinates back on `M`
+(`continuousAt_toChart_symm_coord_symm_splitCoord_symm`), which serve the case of a
+transverse set through the critical point.
 
 **Through the critical point.** The point `y` may also be `q` itself, for a set `Z` through `q`
 transverse to `W^u(q)` there. Its orbit is then constant and never reaches the exit face; instead,
@@ -93,7 +98,7 @@ namespace IsAdaptedPseudoGradient
 chart `φ` in which `X` is linear and a radius `ρ > 0` such that the coordinates of sup norm less
 than `ρ` are coordinates of points of the chart, and on the cube of radius `ρ` the stable and
 unstable sets of `q` are the coordinate planes. -/
-private theorem exists_morseChart_box (hX : IsAdaptedPseudoGradient f X)
+theorem exists_morseChart_box (hX : IsAdaptedPseudoGradient f X)
     (hf : IsMorse 𝓘(ℝ, E) f) {q : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) :
     ∃ (φ : MorseChart E f q) (ρ : ℝ),
       (∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
@@ -157,7 +162,7 @@ chart at `q` in which `X` is linear and on whose cube of radius `ρ` the stable 
 plane where the expanding split coordinate `v` vanishes, and let `a₁` be a point of a trajectory
 from `p ≠ q` to `q`. For every small `ε > 0`, the trajectory crosses the entrance face
 `‖u‖ = ε, v = 0` of the box of radius `ε`. -/
-private theorem eventually_exists_flow_mem_entranceFace (hX : IsAdaptedPseudoGradient f X)
+theorem eventually_exists_flow_mem_entranceFace (hX : IsAdaptedPseudoGradient f X)
     {p q a₁ : M} (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -362,7 +367,7 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
 points of the chart. -/
-private theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
     (φ : MorseChart E f q)
     {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
     (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
@@ -591,7 +596,7 @@ private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdapted
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) hlocq hφZ hZ φ.mem_source hqφZ hqZ hq htr
-  obtain ⟨η, hη, K, k, hk, hk₀, hkpts⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
+  obtain ⟨η, hη, K, k, hk, hk₀, hkpts, -⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
     (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (by simp [hχ₀, φ.apply_self])
     (hχs.mono fun _ hz ↦ hz.2)
   refine ⟨η, hη, K, k, hk, hk₀, fun u hu ↦ ?_⟩
