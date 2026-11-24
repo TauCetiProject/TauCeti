@@ -128,6 +128,8 @@ theorem asSemimoduleIndex_span_injective_iff (a : J.L) :
   · intro hinj x y hxy
     exact hinj ((h x).symm.trans (hxy.trans (h y)))
 
+-- At each walking-multispan constructor, `SemimoduleCat.of` has the same carrier as
+-- the algebra object. Splitting the index exposes that equality of carriers.
 private def componentLinearEquiv (j : WalkingMultispan J) :
     I.multispan.obj j ≃ₗ[R] I.asSemimoduleIndex.multispan.obj j :=
   match j with
@@ -256,6 +258,7 @@ theorem restrictAlgebraSections_linearComparison :
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, AlgHom.toLinearMap_apply,
     compatibleAlgebraFamiliesLinearEquiv_apply, restrictAlgebraSections_apply,
     restrictSections_apply, multispanSectionsLinearEquiv_apply_right]
+  -- The semimodule carrier at the right object is definitionally its algebra carrier.
   rfl
 
 /-- Under joint injectivity, the chamber values determine the entire section. -/
@@ -306,13 +309,26 @@ theorem matchingFamilyAlgEquiv_apply
     (I.matchingFamilyAlgEquiv hinj s).val b = s.val (.right b) := by
   rw [← AlgEquiv.coe_toAlgHom, matchingFamilyAlgEquiv_toAlgHom, restrictAlgebraSections_apply]
 
+/-- Restricting a reconstructed section recovers the original compatible family. -/
+@[simp]
+theorem restrictAlgebraSections_matchingFamilyAlgEquiv_symm_apply
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (x : I.compatibleAlgebraFamilies) :
+    I.restrictAlgebraSections ((I.matchingFamilyAlgEquiv hinj).symm x) = x := by
+  rw [← I.matchingFamilyAlgEquiv_toAlgHom hinj, AlgEquiv.coe_toAlgHom,
+    AlgEquiv.apply_symm_apply]
+
 /-- The reconstructed section has the prescribed value at each chamber. -/
 @[simp]
 theorem matchingFamilyAlgEquiv_symm_apply_right
     (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
     (x : I.compatibleAlgebraFamilies) (b : J.R) :
     ((I.matchingFamilyAlgEquiv hinj).symm x).val (.right b) = x.val b := by
-  rw [← I.matchingFamilyAlgEquiv_apply hinj, AlgEquiv.apply_symm_apply]
+  have h := congrArg (fun z : I.compatibleAlgebraFamilies => z.val b)
+    (I.restrictAlgebraSections_matchingFamilyAlgEquiv_symm_apply hinj x)
+  rw [restrictAlgebraSections_apply] at h
+  -- The right object of the walking multispan uses the given chamber carrier.
+  exact h
 
 /-- Jointly injective incident pairs let chamber algebra maps glue uniquely to an algebra map
 to the sections precisely when each incident pair is in the range of its span. -/
@@ -386,12 +402,32 @@ def compatibleAlgebraFamiliesMap (α : I.multispan ⟶ I'.multispan) :
     I.compatibleAlgebraFamilies →ₐ[R] I'.compatibleAlgebraFamilies where
   toFun x := by
     refine ⟨fun b => (α.app (.right b)).hom (x.val b), ?_⟩
-    obtain ⟨s, rfl⟩ := I.restrictAlgebraSections_surjective x
-    have hvalues : (fun b => (α.app (.right b)).hom ((I.restrictAlgebraSections s).val b)) =
-        (I'.restrictAlgebraSections (AlgCat.sectionsMap α s)).val := by
-      funext b
-      simp only [restrictAlgebraSections_apply, AlgCat.sectionsMap_apply]
-    exact hvalues.symm ▸ (I'.restrictAlgebraSections (AlgCat.sectionsMap α s)).property
+    apply I'.mem_compatibleAlgebraFamilies.mpr
+    intro a
+    obtain ⟨y, hy⟩ := (AlgHom.mem_range _).mp (I.mem_compatibleAlgebraFamilies.mp x.property a)
+    rw [AlgHom.prod_apply] at hy
+    let face : I.left a ⟶ I'.left a := α.app (.left a)
+    let left : I.right (J.fst a) ⟶ I'.right (J.fst a) := α.app (.right (J.fst a))
+    let right : I.right (J.snd a) ⟶ I'.right (J.snd a) := α.app (.right (J.snd a))
+    have hf : I.fst a ≫ left = face ≫ I'.fst a := by
+      have h := α.naturality (.fst a)
+      rw [I.multispan_map_fst, I'.multispan_map_fst] at h
+      exact h
+    have hg : I.snd a ≫ right = face ≫ I'.snd a := by
+      have h := α.naturality (.snd a)
+      rw [I.multispan_map_snd, I'.multispan_map_snd] at h
+      exact h
+    have hfst := congrArg (fun f : I.left a ⟶ I'.right (J.fst a) => f.hom y) hf
+    have hsnd := congrArg (fun f : I.left a ⟶ I'.right (J.snd a) => f.hom y) hg
+    simp only [AlgCat.hom_comp, AlgHom.comp_apply] at hfst hsnd
+    refine (AlgHom.mem_range _).mpr ⟨face.hom y, ?_⟩
+    have hvalue : ((I'.fst a).hom.prod (I'.snd a).hom) (face.hom y) =
+        (left.hom (x.val (J.fst a)), right.hom (x.val (J.snd a))) := by
+      rw [AlgHom.prod_apply]
+      obtain ⟨hyfst, hysnd⟩ := Prod.mk.inj hy
+      exact Prod.ext (hfst.symm.trans (congrArg left.hom hyfst))
+        (hsnd.symm.trans (congrArg right.hom hysnd))
+    exact hvalue
   map_zero' := by ext b; exact map_zero (α.app (.right b)).hom
   map_one' := by ext b; exact map_one (α.app (.right b)).hom
   map_add' x y := by ext b; exact map_add (α.app (.right b)).hom _ _
@@ -404,26 +440,6 @@ theorem compatibleAlgebraFamiliesMap_apply (α : I.multispan ⟶ I'.multispan)
     (x : I.compatibleAlgebraFamilies) (b : J.R) :
     (compatibleAlgebraFamiliesMap α x).val b = (α.app (.right b)).hom (x.val b) := (rfl)
 
-/-- Identity coefficient maps fix compatible algebra families. -/
-@[simp]
-theorem compatibleAlgebraFamiliesMap_id :
-    compatibleAlgebraFamiliesMap (𝟙 I.multispan) = AlgHom.id R _ := by
-  ext x b
-  simp only [compatibleAlgebraFamiliesMap_apply, NatTrans.id_app,
-    AlgCat.hom_id, AlgHom.id_apply]
-  exact AlgHom.id_apply (R := R) (x.val b)
-
-/-- Compatible-family transport respects composition of coefficient maps. -/
-@[simp]
-theorem compatibleAlgebraFamiliesMap_comp (α : I.multispan ⟶ I'.multispan)
-    (β : I'.multispan ⟶ I''.multispan) :
-    compatibleAlgebraFamiliesMap (α ≫ β) =
-      (compatibleAlgebraFamiliesMap β).comp (compatibleAlgebraFamiliesMap α) := by
-  ext x b
-  simp only [AlgHom.comp_apply, compatibleAlgebraFamiliesMap_apply,
-    NatTrans.comp_app, AlgCat.hom_comp]
-  exact AlgHom.comp_apply (β.app (.right b)).hom (α.app (.right b)).hom (x.val b)
-
 /-- Restriction commutes with coefficient transport as an equality of algebra homomorphisms.
 No injectivity hypothesis is required. -/
 theorem restrictAlgebraSections_naturality (α : I.multispan ⟶ I'.multispan) :
@@ -432,7 +448,35 @@ theorem restrictAlgebraSections_naturality (α : I.multispan ⟶ I'.multispan) :
   ext s b
   simp only [AlgHom.comp_apply, restrictAlgebraSections_apply,
     AlgCat.sectionsMap_apply, compatibleAlgebraFamiliesMap_apply]
+  -- The right object of the multispan is definitionally the chamber algebra.
   rfl
+
+private theorem restrictAlgebraSections_naturality_apply
+    (α : I.multispan ⟶ I'.multispan) (s : AlgCat.sectionsSubalgebra I.multispan) :
+    I'.restrictAlgebraSections (AlgCat.sectionsMap α s) =
+      compatibleAlgebraFamiliesMap α (I.restrictAlgebraSections s) :=
+  AlgHom.congr_fun (restrictAlgebraSections_naturality α) s
+
+/-- Identity coefficient maps fix compatible algebra families. -/
+@[simp]
+theorem compatibleAlgebraFamiliesMap_id :
+    compatibleAlgebraFamiliesMap (𝟙 I.multispan) = AlgHom.id R _ := by
+  ext x : 1
+  obtain ⟨s, rfl⟩ := I.restrictAlgebraSections_surjective x
+  simpa only [AlgCat.sectionsMap_id, AlgHom.id_apply] using
+    (restrictAlgebraSections_naturality_apply (𝟙 I.multispan) s).symm
+
+/-- Compatible-family transport respects composition of coefficient maps. -/
+@[simp]
+theorem compatibleAlgebraFamiliesMap_comp (α : I.multispan ⟶ I'.multispan)
+    (β : I'.multispan ⟶ I''.multispan) :
+    compatibleAlgebraFamiliesMap (α ≫ β) =
+      (compatibleAlgebraFamiliesMap β).comp (compatibleAlgebraFamiliesMap α) := by
+  ext x : 1
+  obtain ⟨s, rfl⟩ := I.restrictAlgebraSections_surjective x
+  rw [← restrictAlgebraSections_naturality_apply (α ≫ β), AlgCat.sectionsMap_comp,
+    AlgHom.comp_apply, restrictAlgebraSections_naturality_apply β,
+    restrictAlgebraSections_naturality_apply α, AlgHom.comp_apply]
 
 /-- Inverse reconstruction commutes with coefficient changes as a bundled algebra map. -/
 theorem matchingFamilyAlgEquiv_symm_naturality
@@ -443,15 +487,9 @@ theorem matchingFamilyAlgEquiv_symm_naturality
       (I'.matchingFamilyAlgEquiv hinj').symm.toAlgHom.comp (compatibleAlgebraFamiliesMap α) := by
   ext x : 1
   apply I'.restrictAlgebraSections_injective hinj'
-  have hs := AlgHom.congr_fun (restrictAlgebraSections_naturality α)
-    ((I.matchingFamilyAlgEquiv hinj).symm x)
-  simp only [AlgHom.comp_apply] at hs
-  rw [← I.matchingFamilyAlgEquiv_toAlgHom hinj, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.apply_symm_apply] at hs
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-  rw [← I'.matchingFamilyAlgEquiv_toAlgHom hinj', AlgEquiv.coe_toAlgHom,
-    AlgEquiv.apply_symm_apply]
-  exact hs
+  simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    restrictAlgebraSections_matchingFamilyAlgEquiv_symm_apply] using
+    restrictAlgebraSections_naturality_apply α ((I.matchingFamilyAlgEquiv hinj).symm x)
 
 end Maps
 
