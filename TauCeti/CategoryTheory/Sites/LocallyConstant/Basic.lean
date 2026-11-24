@@ -118,6 +118,10 @@ lemma IsLocallyConstantIn.of_iso {F G : Sheaf J A} (e : F ≅ G) (hF : F.IsLocal
     G.IsLocallyConstantIn J P :=
   fun X ↦ locallyConstantSieve_congr P e X ▸ hF X
 
+instance isClosedUnderIsomorphisms_isLocallyConstantIn :
+    ObjectProperty.IsClosedUnderIsomorphisms (IsLocallyConstantIn J P) where
+  of_iso e hF := hF.of_iso e
+
 lemma isLocallyConstantIn_iff_of_iso {F G : Sheaf J A} (e : F ≅ G) :
     F.IsLocallyConstantIn J P ↔ G.IsLocallyConstantIn J P :=
   ⟨.of_iso e, .of_iso e.symm⟩
