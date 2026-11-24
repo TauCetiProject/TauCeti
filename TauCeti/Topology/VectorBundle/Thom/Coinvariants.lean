@@ -68,7 +68,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
 * `isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`: the lift of an orientation-twisted
   cocycle of `(E, E₀)` is semi-invariant for the sign character.
 * `coinvariantsTensorObjExtendIso`: the coinvariants of the shifted chains of `B'` twisted by the
-  sign character are the shifted chains of `B` twisted by `o(E)`.
+  sign character are the shifted chains of `B` twisted by `o(E)`, with
+  `coinvariantsTensorObjExtendIso_hom_f_mk` computing it on the class of `1 ⊗ (a ⊗ τ)`.
 
 ## References
 
@@ -106,7 +107,9 @@ private def signCharacterRepIso :
 variable (F E ι) in
 /-- The coinvariants of the chains of the orientation cover twisted by the sign character and
 shifted up by `n` are the chains of the base twisted by the orientation local system, shifted up
-by `n`. -/
+by `n`. In degree `q + n`, the class of `1 ⊗ (a ⊗ τ)` goes to the simplex `p ∘ τ` with the
+coefficient of `o(E)` whose value at the initial orientation of `τ` is `a`
+(`coinvariantsTensorObjExtendIso_hom_f_mk`). -/
 def coinvariantsTensorObjExtendIso (n : ℕ) :
     haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     (((((tensorLeft (Rep.of (Representation.ofLinearCharacter
@@ -122,6 +125,56 @@ def coinvariantsTensorObjExtendIso (n : ℕ) :
           (Rep.tensorLeftCompCoinvariantsTensorTrivialIso k ℤˣ _ ≪≫
             (Rep.coinvariantsTensor k ℤˣ).mapIso (signCharacterRepIso k)) _).app _ ≪≫
         coinvariantsTensorSingularChainsRepIsoTwisted hι k)
+
+open scoped Simplicial TensorProduct in
+open LocalCoefficientSystem in
+variable (F E ι) in
+/-- In the degree `q + n` of the shifted complexes, `coinvariantsTensorObjExtendIso` sends the class
+of `1 ⊗ (a ⊗ τ)` to the simplex `p ∘ τ` of `B` with the coefficient of `o(E)` whose value at the
+initial orientation of `τ` is `a`, as `coinvariantsTensorSingularChainsRepIsoTwisted` does in
+degree `q`. -/
+theorem coinvariantsTensorObjExtendIso_hom_f_mk (n : ℕ) {q j : ℕ}
+    (h : (ComplexShape.embeddingDownNatAdd n).f q = j) (a : k)
+    (τ : (TopCat.toSSet.obj (TopCat.of (VectorBundleOrientationCover F E ι))) _⦋q⦌) :
+    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
+    ((coinvariantsTensorObjExtendIso F E ι hι k n).hom.f j).hom
+      ((((Rep.coinvariantsTensor k ℤˣ).obj (Rep.trivial k ℤˣ k)).map
+        (((((tensorLeft (Rep.of (Representation.ofLinearCharacter
+          (Units.map (Int.castRingHom k : ℤ →* k))))).mapHomologicalComplex _).obj
+          (singularChainsRep k (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ)).extendXIso
+            (ComplexShape.embeddingDownNatAdd n) h).inv)).hom
+        (Rep.coinvariantsTensorMk (Rep.trivial k ℤˣ k) _ 1 (a ⊗ₜ simplexChain τ 1))) =
+      (((twistedChainComplex (signLocalSystem F E k hι)).extendXIso
+          (ComplexShape.embeddingDownNatAdd n) h).inv).hom
+        ((ιTwistedChainComplex (signLocalSystem F E k hι) q
+          ((TopCat.toSSet.map (TopCat.ofHom projection)).app _ τ)).hom
+            ((signLocalSystemObjEquiv hι _).symm
+              ((signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+                (initialSheet τ)).symm a))) := by
+  have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
+  -- both extensions conjugate the component in degree `q` by `extendXIso`
+  rw [coinvariantsTensorObjExtendIso, Iso.trans_hom, HomologicalComplex.comp_f,
+    HomologicalComplex.mapExtendIso_hom_f _ _ _ h, Functor.mapIso_hom,
+    ComplexShape.Embedding.extendFunctor_map, HomologicalComplex.extendMap_f _ _ h,
+    Category.assoc, Iso.inv_hom_id_assoc, ← ModuleCat.comp_apply, Iso.inv_hom_id_map_assoc,
+    ModuleCat.comp_apply, Iso.trans_hom, HomologicalComplex.comp_f, ModuleCat.comp_apply,
+    Iso.app_hom, Functor.mapHomologicalComplexCompIso_hom_app_f]
+  refine congrArg _ ?_
+  rw [← coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk hι k q a τ]
+  refine congrArg _ ?_
+  rw [Iso.trans_hom, NatTrans.comp_app, ModuleCat.comp_apply,
+    Rep.tensorLeftCompCoinvariantsTensorTrivialIso_hom_app, Functor.mapIso_hom]
+  have heqToIso : ∀ {ρ σ : Representation k ℤˣ k} (hρ : ρ = σ) (x : k),
+      (eqToIso (congrArg Rep.of hρ)).hom.hom x = x := by
+    rintro _ _ rfl x
+    rfl
+  -- by definition, the left unitor sends `1 ⊗ (a ⊗ τ)` to `(1 • a) ⊗ τ`, and
+  -- `signCharacterRepIso` is the `eqToIso` of `ofLinearCharacter_unitsMap_intCastRingHom`
+  exact congrArg (fun b ↦ Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
+    (Rep.of (singularChainsRepresentation k (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ q))
+    b (simplexChain τ (1 : k)))
+      ((heqToIso Representation.ofLinearCharacter_unitsMap_intCastRingHom ((1 : k) • a)).trans
+        (one_smul k a))
 
 include hι in
 /-- The action of `ℤˣ` on the total space of the pull-back of `E` to the orientation cover is by
