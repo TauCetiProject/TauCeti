@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.BoundedProduct
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+public import TauCeti.Analysis.Normed.Lp.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 
 /-!
@@ -66,46 +67,41 @@ theorem coe_c0Sum : (c0Sum A : Set (lp A ∞)) = c0Ideal A :=
 instance isClosed_c0Sum : IsClosed (c0Sum A : Set (lp A ∞)) :=
   (c0Ideal A).isClosed_toNonUnitalStarSubalgebra
 
-/-- For finitely many factors, the `c₀` direct sum is the whole bounded product. -/
-@[simp]
-theorem c0Sum_eq_top [Finite ι] : c0Sum A = ⊤ :=
-  eq_top_iff.2 fun a _ ↦ by
-    rw [← SetLike.mem_coe, coe_c0Sum, SetLike.mem_coe, mem_c0Ideal]
-    simp [cofinite_eq_bot]
-
 variable {A}
 
 /-- A bounded family lies in the `c₀` direct sum when its coordinate norms tend to `0`. -/
 @[simp]
-theorem mem_c0Sum {a : lp A ∞} : a ∈ c0Sum A ↔ Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0) := by
-  rw [← SetLike.mem_coe, coe_c0Sum, SetLike.mem_coe, mem_c0Ideal]
+theorem mem_c0Sum {a : lp A ∞} : a ∈ c0Sum A ↔ Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0) :=
+  (c0Ideal A).mem_toNonUnitalStarSubalgebra.trans mem_c0Ideal
+
+variable (A) in
+/-- For finitely many factors, the `c₀` direct sum is the whole bounded product. -/
+@[simp]
+theorem c0Sum_eq_top [Finite ι] : c0Sum A = ⊤ :=
+  eq_top_iff.2 fun a _ ↦ mem_c0Sum.2 <| by simp [cofinite_eq_bot]
 
 /-- The `c₀` direct sum absorbs multiplication on the left by the bounded product. -/
-theorem mul_mem_c0Sum_left (a : lp A ∞) {b : lp A ∞} (hb : b ∈ c0Sum A) : a * b ∈ c0Sum A := by
-  rw [← SetLike.mem_coe, coe_c0Sum] at hb ⊢
-  exact (c0Ideal A).mul_mem_left a b hb
+theorem mul_mem_c0Sum_left (a : lp A ∞) {b : lp A ∞} (hb : b ∈ c0Sum A) : a * b ∈ c0Sum A :=
+  (c0Ideal A).mem_toNonUnitalStarSubalgebra.2 <|
+    (c0Ideal A).mul_mem_left a b ((c0Ideal A).mem_toNonUnitalStarSubalgebra.1 hb)
 
 /-- The `c₀` direct sum absorbs multiplication on the right by the bounded product. -/
-theorem mul_mem_c0Sum_right {a : lp A ∞} (ha : a ∈ c0Sum A) (b : lp A ∞) : a * b ∈ c0Sum A := by
-  rw [← SetLike.mem_coe, coe_c0Sum] at ha ⊢
-  exact (c0Ideal A).mul_mem_right a b ha
+theorem mul_mem_c0Sum_right {a : lp A ∞} (ha : a ∈ c0Sum A) (b : lp A ∞) : a * b ∈ c0Sum A :=
+  (c0Ideal A).mem_toNonUnitalStarSubalgebra.2 <|
+    (c0Ideal A).mul_mem_right a b ((c0Ideal A).mem_toNonUnitalStarSubalgebra.1 ha)
 
 section Lift
 
-variable {B : Type*} [NonUnitalNonAssocSemiring B] [DistribMulAction ℂ B] [Star B]
+variable {B : Type*} [NonUnitalNonAssocSemiring B] [Module ℂ B] [Star B]
 
 /-- A family of star homomorphisms `φ i : B → A i` with `‖φ i b‖ → 0` along the cofinite filter
-for every `b` gives a star homomorphism into the `c₀` direct sum. The family is bounded at each
-`b` because it tends to `0`, so `B` needs no norm. -/
+for every `b` gives a star homomorphism into the `c₀` direct sum: `lp.piNonUnitalStarAlgHom φ`
+with its range restricted to `lp.c0Sum A`. The family is bounded at each `b` because it tends to
+`0`, so `B` needs no norm. -/
 def liftToC0Sum (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
     (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) : B →⋆ₙₐ[ℂ] c0Sum A :=
-  let ψ := piNonUnitalStarAlgHom φ fun b ↦ memℓp_infty (hφ b).bddAbove_range_of_cofinite
-  { toFun b := ⟨ψ b, mem_c0Sum.2 <| by simpa [ψ] using hφ b⟩
-    map_smul' c b := Subtype.ext <| map_smul ψ c b
-    map_zero' := Subtype.ext <| map_zero ψ
-    map_add' b b' := Subtype.ext <| map_add ψ b b'
-    map_mul' b b' := Subtype.ext <| map_mul ψ b b'
-    map_star' b := Subtype.ext <| map_star ψ b }
+  (piNonUnitalStarAlgHom φ fun b ↦ memℓp_infty (hφ b).bddAbove_range_of_cofinite).codRestrict
+    (c0Sum A) fun b ↦ mem_c0Sum.2 (by simpa using hφ b)
 
 /-- The `i`-th coordinate of `lp.liftToC0Sum φ hφ b` is `φ i b`. -/
 @[simp]
@@ -123,7 +119,7 @@ theorem eq_liftToC0Sum_iff {φ : ∀ i, B →⋆ₙₐ[ℂ] A i}
   exact NonUnitalStarAlgHom.ext fun b ↦ Subtype.ext <| lp.ext <| funext fun i ↦ by simp [h]
 
 /-- Precomposing `lp.liftToC0Sum` with a star homomorphism `g` lifts the precomposed family. -/
-theorem liftToC0Sum_comp {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction ℂ C]
+theorem liftToC0Sum_comp {C : Type*} [NonUnitalNonAssocSemiring C] [Module ℂ C]
     [Star C] (φ : ∀ i, B →⋆ₙₐ[ℂ] A i) (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0))
     (g : C →⋆ₙₐ[ℂ] B) :
     (liftToC0Sum φ hφ).comp g = liftToC0Sum (fun i ↦ (φ i).comp g) fun c ↦ hφ (g c) :=
@@ -148,8 +144,10 @@ theorem coe_liftToC0Sum_apply (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
 theorem subtype_comp_liftToC0Sum (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
     (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) :
     (NonUnitalStarSubalgebraClass.subtype (c0Sum A)).comp (liftToC0Sum φ hφ) =
-      liftNonUnitalStarAlgHom φ :=
-  NonUnitalStarAlgHom.ext fun b ↦ coe_liftToC0Sum_apply φ hφ b
+      liftNonUnitalStarAlgHom φ := by
+  rw [liftToC0Sum, NonUnitalStarAlgHom.subtype_comp_codRestrict]
+  ext
+  simp
 
 end LiftCStar
 
@@ -170,7 +168,7 @@ def c0SumSingle (i : ι) : A i →⋆ₙₐ[ℂ] c0Sum A where
   map_smul' c a := Subtype.ext <| lp.single_smul ∞ i c a
   map_zero' := Subtype.ext <| lp.single_zero ∞ i
   map_add' a b := Subtype.ext <| lp.single_add ∞ i a b
-  map_mul' a b := Subtype.ext <| single_mul_single i a b
+  map_mul' a b := Subtype.ext <| single_mul i a b
   map_star' a := Subtype.ext <| single_star ∞ i a
 
 /-- The inclusion of `A i` sends `a` to the family `lp.single ∞ i a`. -/

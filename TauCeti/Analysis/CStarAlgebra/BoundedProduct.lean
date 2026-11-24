@@ -26,10 +26,6 @@ bounded because each of them is contractive. The underlying construction,
 `lp.piNonUnitalStarAlgHom`, takes any star algebra as source and any pointwise bounded family of
 star homomorphisms into normed star rings.
 
-The file also records the behaviour of the families `lp.single p i a` supported at one index
-under multiplication and `star`, and `lp.hasSum_single_of_tendsto_cofinite`: a bounded family
-vanishing at infinity is the sum of its coordinates.
-
 ## References
 
 * B. Blackadar, *Operator Algebras*, II.8.1.
@@ -159,45 +155,6 @@ theorem liftNonUnitalStarAlgHom_comp {C : Type*} [NonUnitalCStarAlgebra C]
   simp
 
 end Product
-
-section Single
-
-variable {ι : Type*} [DecidableEq ι]
-
-/-- The family supported at `i` with value `a * b` is the product of those with values `a` and
-`b`. -/
-theorem single_mul_single {A : ι → Type*} [∀ i, NonUnitalNormedRing (A i)] (i : ι) (a b : A i) :
-    lp.single ∞ i (a * b) = lp.single ∞ i a * lp.single ∞ i b :=
-  lp.ext <| by rw [infty_coeFn_mul, lp.coeFn_single, lp.coeFn_single, lp.coeFn_single,
-    Pi.single_mul]
-
-/-- The family supported at `i` with value `star a` is the adjoint of the one with value `a`. -/
-theorem single_star {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, StarAddMonoid (E i)]
-    [∀ i, NormedStarGroup (E i)] (p : ℝ≥0∞) (i : ι) (a : E i) :
-    lp.single p i (star a) = star (lp.single p i a) :=
-  lp.ext <| funext fun j ↦ by
-    rw [lp.star_apply, lp.coeFn_single, lp.coeFn_single, Pi.single_star, Pi.star_apply]
-
-/-- A bounded family whose coordinate norms tend to `0` along the cofinite filter is the sum in
-`lp E ∞` of its coordinates, each placed at its index. -/
-theorem hasSum_single_of_tendsto_cofinite {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
-    {a : lp E ∞} (ha : Filter.Tendsto (fun i ↦ ‖a i‖) Filter.cofinite (nhds 0)) :
-    HasSum (fun i ↦ lp.single ∞ i (a i)) a := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  have hfin := ha.eventually (gt_mem_nhds (half_pos hε))
-  refine ⟨(Filter.eventually_cofinite.1 hfin).toFinset, fun s hs ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (lp.norm_le_of_forall_le (half_pos hε).le fun j ↦ ?_).trans_lt (half_lt_self hε)
-  rw [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_sum, Finset.sum_apply]
-  simp only [lp.coeFn_single, Finset.sum_pi_single]
-  split_ifs with hj
-  · simpa using (half_pos hε).le
-  · have hj' : ‖a j‖ < ε / 2 := by
-      by_contra h
-      exact hj (hs (by simpa using h))
-    simpa using hj'.le
-
-end Single
 
 variable {ι : Type*} {A : ι → Type*} [∀ i, CStarAlgebra (A i)] [∀ i, Nontrivial (A i)]
 
