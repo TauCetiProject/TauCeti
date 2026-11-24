@@ -133,10 +133,7 @@ noncomputable def liftEquiv :
   toFun f := lift f.val f.property
   invFun g := ⟨fun T ↦ (restrict T.property.1).comp g, by
     intro T U h
-    ext1 a
-    apply BigWitt.ext
-    funext n
-    simp only [RingHom.comp_apply, restrict_coeff]⟩
+    rw [← RingHom.comp_assoc, restrict_comp]⟩
   left_inv := by
     rintro ⟨f, hf⟩
     apply Subtype.ext
@@ -250,10 +247,7 @@ noncomputable def liftEquiv :
   toFun f := lift f.val f.property
   invFun g := ⟨fun T ↦ (restrict T.property.1).comp g, by
     intro T U h
-    ext1 a
-    apply NonUnitalBigWitt.ext
-    intro n
-    simp only [NonUnitalRingHom.comp_apply, restrict_coeff]⟩
+    rw [← NonUnitalRingHom.comp_assoc, restrict_comp]⟩
   left_inv := by
     rintro ⟨f, hf⟩
     apply Subtype.ext

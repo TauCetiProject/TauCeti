@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Unitization
-public import TauCeti.Algebra.Module.NatInt
+public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.NonUnitalSubring.Basic
 public import TauCeti.RingTheory.WittVector.Big.Basic
 
@@ -164,18 +164,16 @@ theorem toBigWitt_ghostComponent (n : S) (x : NonUnitalBigWitt S R) :
   (inr_ghostPolynomial x n).symm
 
 /-- Restriction to a smaller truncation set, inherited from the unital Witt ring. -/
-noncomputable def restrict (h : T ≤ S) : NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt T R where
-  toFun x := ⟨BigWitt.restrict h (toBigWitt x), by
-    apply NonUnitalSubring.mem_bot.mpr
-    -- Express kernel membership as the unital augmentation equation.
-    change BigWitt.map (R := Unitization ℤ R) (A := ℤ) T
-      (Unitization.fstHom ℤ R).toRingHom _ = 0
-    apply BigWitt.ext
-    funext n
-    simp⟩
-  map_zero' := Subtype.ext (map_zero _)
-  map_add' x y := Subtype.ext (map_add _ _ _)
-  map_mul' x y := Subtype.ext (map_mul _ _ _)
+noncomputable def restrict (h : T ≤ S) : NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt T R :=
+  NonUnitalRingHom.codRestrict ((BigWitt.restrict h).toNonUnitalRingHom.comp toBigWitt) _
+    fun x ↦ by
+      apply NonUnitalSubring.mem_bot.mpr
+      -- Express kernel membership as the unital augmentation equation.
+      change BigWitt.map (R := Unitization ℤ R) (A := ℤ) T
+        (Unitization.fstHom ℤ R).toRingHom (BigWitt.restrict h (toBigWitt x)) = 0
+      apply BigWitt.ext
+      funext n
+      simp
 
 @[simp]
 theorem restrict_coeff (h : T ≤ S) (x : NonUnitalBigWitt S R) (n : T) :
@@ -201,19 +199,20 @@ private def coefficientAlgHom (f : R →ₙ+* A) : R →ₙₐ[ℤ] A :=
 /-- Functoriality in the nonunital coefficient ring, obtained from functoriality of
 unitization and of the unital Witt ring. -/
 noncomputable def map (S : TruncationSet) (f : R →ₙ+* A) :
-    NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt S A where
-  toFun x := ⟨BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
-      (Unitization.map (coefficientAlgHom f)).toRingHom (toBigWitt x), by
-    apply NonUnitalSubring.mem_bot.mpr
-    -- Express kernel membership as the unital augmentation equation.
-    change BigWitt.map (R := Unitization ℤ A) (A := ℤ) S
-      (Unitization.fstHom ℤ A).toRingHom _ = 0
-    apply BigWitt.ext
-    funext n
-    simp⟩
-  map_zero' := Subtype.ext (map_zero _)
-  map_add' x y := Subtype.ext (map_add _ _ _)
-  map_mul' x y := Subtype.ext (map_mul _ _ _)
+    NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt S A :=
+  NonUnitalRingHom.codRestrict
+    ((BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
+      (Unitization.map (coefficientAlgHom f)).toRingHom).toNonUnitalRingHom.comp toBigWitt) _
+    fun x ↦ by
+      apply NonUnitalSubring.mem_bot.mpr
+      -- Express kernel membership as the unital augmentation equation.
+      change BigWitt.map (R := Unitization ℤ A) (A := ℤ) S
+        (Unitization.fstHom ℤ A).toRingHom
+          (BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
+            (Unitization.map (coefficientAlgHom f)).toRingHom (toBigWitt x)) = 0
+      apply BigWitt.ext
+      funext n
+      simp
 
 @[simp]
 theorem map_coeff (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) (n : S) :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.MinimalAxioms
 public import Mathlib.Algebra.Ring.Pi
 public import TauCeti.RingTheory.WittVector.Big.Ghost
 
@@ -277,22 +278,19 @@ private theorem ghost_neg (x : BigWitt S R) (n : S) : ghost (-x) n = -ghost x n 
     mapData f (-x) = -mapData f x := mapData_operation f (-X false) _
 
 @[instance_reducible] private noncomputable def polyRing (ι : Type*) :
-    CommRing (BigWitt S (MvPolynomial ι ℤ)) where
-  add_assoc x y z := polynomial_ghost_injective (funext fun n ↦ by simp [add_assoc])
-  zero_add x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  add_zero x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  add_comm x y := polynomial_ghost_injective (funext fun n ↦ by simp [add_comm])
-  neg_add_cancel x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  mul_assoc x y z := polynomial_ghost_injective (funext fun n ↦ by simp [mul_assoc])
-  one_mul x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  mul_one x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  mul_comm x y := polynomial_ghost_injective (funext fun n ↦ by simp [mul_comm])
-  left_distrib x y z := polynomial_ghost_injective (funext fun n ↦ by simp [mul_add])
-  right_distrib x y z := polynomial_ghost_injective (funext fun n ↦ by simp [add_mul])
-  zero_mul x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  mul_zero x := polynomial_ghost_injective (funext fun n ↦ by simp)
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+    CommRing (BigWitt S (MvPolynomial ι ℤ)) :=
+  CommRing.ofMinimalAxioms
+    (add_assoc := fun x y z ↦
+      polynomial_ghost_injective (funext fun n ↦ by simp [add_assoc]))
+    (zero_add := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
+    (neg_add_cancel := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
+    (mul_assoc := fun x y z ↦
+      polynomial_ghost_injective (funext fun n ↦ by simp [mul_assoc]))
+    (mul_comm := fun x y ↦
+      polynomial_ghost_injective (funext fun n ↦ by simp [mul_comm]))
+    (one_mul := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
+    (left_distrib := fun x y z ↦
+      polynomial_ghost_injective (funext fun n ↦ by simp [mul_add]))
 
 private noncomputable def lift (x : BigWitt S R) : BigWitt S (MvPolynomial R ℤ) :=
   mk fun n ↦ X (x.coeff n)
@@ -305,48 +303,36 @@ private noncomputable abbrev specialize : BigWitt S (MvPolynomial R ℤ) → Big
   ext n
   simp [mapData, lift]
 
-noncomputable instance : CommRing (BigWitt S R) where
-  add_assoc x y z := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).add_assoc (lift x) (lift y) (lift z))
-  zero_add x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).zero_add (lift x))
-  add_zero x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).add_zero (lift x))
-  add_comm x y := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).add_comm (lift x) (lift y))
-  neg_add_cancel x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).neg_add_cancel (lift x))
-  mul_assoc x y z := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).mul_assoc (lift x) (lift y) (lift z))
-  one_mul x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).one_mul (lift x))
-  mul_one x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).mul_one (lift x))
-  mul_comm x y := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).mul_comm (lift x) (lift y))
-  left_distrib x y z := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).left_distrib (lift x) (lift y) (lift z))
-  right_distrib x y z := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).right_distrib (lift x) (lift y) (lift z))
-  zero_mul x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).zero_mul (lift x))
-  mul_zero x := by
-    simpa using congrArg (specialize (S := S) (R := R))
-      ((polyRing (S := S) R).mul_zero (lift x))
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+noncomputable instance : CommRing (BigWitt S R) :=
+  CommRing.ofMinimalAxioms
+    (add_assoc := fun x y z ↦ by
+      simpa only [specialize, mapData_add, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).add_assoc (lift x) (lift y) (lift z)))
+    (zero_add := fun x ↦ by
+      simpa only [specialize, mapData_add, mapData_zero, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).zero_add (lift x)))
+    (neg_add_cancel := fun x ↦ by
+      simpa only [specialize, mapData_add, mapData_neg, mapData_zero, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).neg_add_cancel (lift x)))
+    (mul_assoc := fun x y z ↦ by
+      simpa only [specialize, mapData_mul, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).mul_assoc (lift x) (lift y) (lift z)))
+    (mul_comm := fun x y ↦ by
+      simpa only [specialize, mapData_mul, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).mul_comm (lift x) (lift y)))
+    (one_mul := fun x ↦ by
+      simpa only [specialize, mapData_mul, mapData_one, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).one_mul (lift x)))
+    (left_distrib := fun x y z ↦ by
+      simpa only [specialize, mapData_mul, mapData_add, specialize_lift] using
+        congrArg (specialize (S := S) (R := R))
+          ((polyRing (S := S) R).left_distrib (lift x) (lift y) (lift z)))
 
 /-- The `n`-th ghost component is a ring homomorphism. -/
 noncomputable def ghostComponent (n : S) : BigWitt S R →+* R where
