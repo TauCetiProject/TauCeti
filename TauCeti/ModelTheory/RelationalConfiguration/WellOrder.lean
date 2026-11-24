@@ -103,6 +103,13 @@ theorem codeRel_ofStructure [L.Structure V] (lt : L.Relations 2) (x y : V) :
   classical
   rw [codeRel_iff, eval_ofStructure, decide_eq_true_iff]
 
+/-- Encoding the structure `relStructure lt r m` and reading back the relation of `lt` recovers
+`r`. -/
+theorem codeRel_ofStructure_relStructure (lt : L.Relations 2) (r : V → V → Prop) (m : V)
+    (x y : V) : codeRel lt (@ofStructure L V (relStructure lt r m)) x y ↔ r x y :=
+  (@codeRel_ofStructure L V (relStructure lt r m) lt x y).trans
+    (relMap_relStructure_self lt r m x y)
+
 /-- The decoded structure of a configuration interprets `lt` by `codeRel lt c`. -/
 theorem relMap_toStructure_iff_codeRel [L.IsRelational] (lt : L.Relations 2)
     (c : RelationalConfiguration L V) (x y : V) :
@@ -225,8 +232,7 @@ theorem exists_mem_wellOrderClass_type_eq [Countable V] [Infinite V] (lt : L.Rel
   let S := relStructure lt r (Classical.arbitrary V)
   let c := @ofStructure L V S
   let f : codeRel lt c ≃r ((· < ·) : β.ToType → β.ToType → Prop) :=
-    ⟨e.symm, fun {x y} =>
-      ((@codeRel_ofStructure L V S lt x y).trans (relMap_relStructure_self lt r _ x y)).symm⟩
+    ⟨e.symm, fun {x y} => (codeRel_ofStructure_relStructure lt r _ x y).symm⟩
   have : IsWellOrder V (codeRel lt c) := f.toRelEmbedding.isWellOrder
   exact ⟨c, mem_wellOrderClass.2 this, f.ordinalType_congr.trans (Ordinal.type_toType β)⟩
 

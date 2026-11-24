@@ -34,8 +34,7 @@ example : ∃ h : IsWellOrder ℕ
   have hS (x y : ℕ) :
       codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb (· < ·) 0)) x y ↔
         x < y :=
-    (@codeRel_ofStructure _ _ (relStructure leSymb (· < ·) 0) leSymb x y).trans
-      (relMap_relStructure_self leSymb (· < ·) 0 x y)
+    codeRel_ofStructure_relStructure leSymb (· < ·) 0 x y
   let f : codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb (· < ·) 0)) ≃r
       (· < · : ℕ → ℕ → Prop) := ⟨Equiv.refl ℕ, fun {x y} => (hS x y).symm⟩
   have hwo := f.toRelEmbedding.isWellOrder
@@ -49,9 +48,7 @@ example : @ofStructure Language.order ℕ (relStructure leSymb
   have hS (x y : ℕ) : codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb
       (fun x y => Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y) 0)) x y ↔
         Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y :=
-    (@codeRel_ofStructure _ _ (relStructure leSymb
-      (fun x y => Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y) 0) leSymb x y).trans
-      (relMap_relStructure_self leSymb _ 0 x y)
+    codeRel_ofStructure_relStructure leSymb _ 0 x y
   intro h
   refine (wellFounded_iff_isEmpty_descending_chain.1 (mem_wellOrderClass.1 h).wf).false
     ⟨fun n => Equiv.intEquivNat (-(n : ℤ)), fun n => ?_⟩
