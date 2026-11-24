@@ -15,6 +15,8 @@ public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
+-- Proof-only: linear disjointness transports linear independence of the constants.
+import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -782,16 +784,11 @@ theorem linearIndependent_algebraMap_constants_of_isPurelyInseparable
   have := isScalarTower_integersAlgebraBase k P'
   have := isScalarTower_integers_restrict k F P'
   let φ := IsScalarTower.toAlgHom k (P'.restrict k F).ResidueField P'.ResidueField
-  -- The image `A` of `F_P` is separable over `k`, hence linearly disjoint from `k'`.
-  let e : (P'.restrict k F).ResidueField ≃ₐ[k] φ.fieldRange := AlgEquiv.ofInjectiveField φ
-  have : Algebra.IsSeparable k φ.fieldRange := Algebra.IsSeparable.of_algHom k _ e.symm.toAlgHom
-  have hA := IntermediateField.LinearDisjoint.linearIndependent_right'
+  -- The image of `F_P` is separable over `k`, hence linearly disjoint from `k'`.
+  have : Algebra.IsSeparable k φ.fieldRange :=
+    Algebra.IsSeparable.of_algHom k _ φ.equivFieldRange.symm.toAlgHom
+  exact IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp
     (φ.fieldRange.linearDisjoint_of_isPurelyInseparable_of_isSeparable k') hb
-  -- Transport the scalars from `A` back to `F_P` along `e`.
-  refine hA.map_of_injective_injective e (AddMonoidHom.id _) (fun r h ↦ by simpa using h)
-    (fun _ h ↦ h) fun r m ↦ ?_
-  simp only [AddMonoidHom.id_apply, Algebra.smul_def]
-  rfl
 
 /-- The **multiplication map of the residue fields**: the `F_P`-algebra map
 `F_P ⊗[k] k' → F'_{P'}`, `a ⊗ c ↦ a · c`, from the fibre of `k' / k` over the residue field `F_P`
@@ -815,7 +812,7 @@ theorem residueFieldMulMap_tmul (a : (P'.restrict k F).ResidueField) (c : k') :
   let _ := integersAlgebraBase k P'
   have := isScalarTower_integersAlgebraBase k P'
   have := isScalarTower_integers_restrict k F P'
-  exact Algebra.smul_def a _
+  rw [residueFieldMulMap, AlgHom.liftEquiv_tmul, IsScalarTower.coe_toAlgHom', Algebra.smul_def]
 
 /-- The multiplication map `F_P ⊗[k] k' → F'_{P'}` is surjective exactly when the residues of the
 constants span `F'_{P'}` over `F_P`. -/
@@ -823,8 +820,7 @@ theorem residueFieldMulMap_surjective_iff :
     Function.Surjective (residueFieldMulMap k F P') ↔
       Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
         ⊤ := by
-  change Function.Surjective (residueFieldMulMap k F P').toLinearMap ↔ _
-  rw [← LinearMap.range_eq_top]
+  rw [← AlgHom.coe_toLinearMap, ← LinearMap.range_eq_top]
   refine ⟨fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_), fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_)⟩
   · rintro _ ⟨x, rfl⟩
     induction x using TensorProduct.inductionOn with
