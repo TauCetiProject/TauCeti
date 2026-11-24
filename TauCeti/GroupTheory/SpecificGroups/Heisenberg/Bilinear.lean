@@ -35,8 +35,8 @@ identity is `(0, 0)`, and its multiplication is
 `(t, w) * (s, v) = (t + s + B w v, w + v)`.
 
 Because the action of the space on the coefficients is trivial, the copy of the coefficient group
-supplied by `TauCeti.FactorSet.inl` is central (`TauCeti.FactorSet.inl_range_le_center`), and the
-commutator of two elements measures the failure of `B` to be symmetric
+supplied by `TauCeti.FactorSet.inl` is central (`TauCeti.FactorSet.range_inl_le_center_iff`), and
+the commutator of two elements measures the failure of `B` to be symmetric
 (`TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl`). Halving an
 alternating form is what makes the commutator recover the form itself
 (`LinearMap.IsAlt.halfForm_commutatorElement_eq_inl`), and the centre of the extension of `ω / 2`
@@ -195,7 +195,8 @@ theorem bilinearExtension_center_eq_range_iff {B : LinearMap.BilinMap R W C} :
       exact hcentral
     simpa only [toAdd_ofAdd] using (hmem_range ⟨1, ofAdd w⟩).mp hin_range
   · intro h_sep
-    refine le_antisymm ?_ (FactorSet.inl_range_le_center _ TauCeti.trivialMulDistribMulAction_smul)
+    refine le_antisymm ?_
+      ((FactorSet.range_inl_le_center_iff _).2 TauCeti.trivialMulDistribMulAction_smul)
     intro p hp
     exact (hmem_range p).mpr (h_sep p.right.toAdd ((hmem_center p).mp hp))
 

@@ -43,6 +43,8 @@ parallel notion of Hölder continuity.
   isometric equivalence, as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
+* `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
+  followed by a continuous linear map `L` has norm at most `‖L‖ * ‖g‖`.
 
 ## References
 
@@ -692,6 +694,13 @@ theorem norm_le_norm_of_apply_eq_comp {f : HolderSpace α X Y'} {g : HolderSpace
     rw [ENNReal.coe_one, one_mul] at he'
     rw [h, h]
     exact he'.trans (g.holderWith x y)
+
+/-- If the values of `f` are those of `g` followed by a continuous linear map `L`, then
+`‖f‖ ≤ ‖L‖ * ‖g‖`. -/
+theorem norm_le_mul_norm_of_apply_eq (L : Y →L[ℝ] Y') {f : HolderSpace α X Y'}
+    {g : HolderSpace α X Y} (h : ∀ x, f x = L (g x)) : ‖f‖ ≤ ‖L‖ * ‖g‖ := by
+  rw [show f = compLeftL L g from ext fun x ↦ by rw [h, compLeftL_apply]]
+  exact (compLeftL L).le_of_opNorm_le (norm_compLeftL_le L) g
 
 end compLeft
 

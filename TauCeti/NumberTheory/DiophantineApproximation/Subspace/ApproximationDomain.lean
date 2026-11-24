@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
@@ -453,7 +453,7 @@ theorem approxDomain_subset_abs {S₀ : Finset (FinitePlace K)}
     approxDomain S₀ L c Q ⊆
       approxDomain S₀ L (fun v i ↦ |c v i|) (max Q₂ Q₁⁻¹) := by
   have hpow (a : ℝ) : Q ^ a ≤ max Q₂ Q₁⁻¹ ^ |a| :=
-    Real.rpow_le_rpow_abs (hQ₁.trans_le hQ.1) (hQ.2.trans (le_max_left _ _))
+    Real.rpow_le_rpow_abs (hQ₁.trans_le hQ.1).le (hQ.2.trans (le_max_left _ _))
       (((inv_le_inv₀ (hQ₁.trans_le hQ.1) hQ₁).mpr hQ.1).trans (le_max_right _ _)) a
   intro x hx
   obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx
