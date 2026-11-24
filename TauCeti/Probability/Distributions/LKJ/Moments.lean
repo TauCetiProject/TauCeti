@@ -178,15 +178,17 @@ theorem integrable_rpow_det_lkjMeasure_iff (hX : HasLaw X (lkjMeasure p η) P)
   have hmeas : Measurable fun R : selfAdjoint.submodule ℝ
       (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det ^ q :=
     hrpow.comp (hdet.prodMk measurable_const)
-  change Integrable ((fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-    (R : Matrix (Fin p) (Fin p) ℝ).det ^ q) ∘ X) P ↔ -η < q
-  rw [← integrable_map_measure (g := fun R : selfAdjoint.submodule ℝ
-      (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det ^ q)
-      hmeas.aestronglyMeasurable hX.aemeasurable, hX.map_eq,
-    TauCeti.Probability.integrable_rpow_det_lkjMeasure_iff hp hη q]
+  calc
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q) P ↔
+        Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (R : Matrix (Fin p) (Fin p) ℝ).det ^ q) (Measure.map X P) := by
+      simpa only [Function.comp_def] using
+        (integrable_map_measure hmeas.aestronglyMeasurable hX.aemeasurable).symm
+    _ ↔ -η < q := by
+      rw [hX.map_eq, TauCeti.Probability.integrable_rpow_det_lkjMeasure_iff hp hη q]
 
-/-- The determinant-power moment of a random matrix with positive-shape LKJ law is the ratio of
-the normalizers at the shifted and original shapes. -/
+/-- When `q > -η`, the determinant-power moment of a random matrix with positive-shape LKJ law is
+the ratio of the normalizers at the shifted and original shapes. -/
 theorem integral_rpow_det_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
     (hη : 0 < η) (hq : -η < q) :
     ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q ∂P =
