@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Instances.Int
 public import TauCeti.Topology.Circle.Degree
-public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.Constructions.SumProd
 public import TauCeti.Topology.MappingSpace.FreeLoop
 

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
-public import TauCeti.Topology.Circle.Loop
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Winding.SegmentSum

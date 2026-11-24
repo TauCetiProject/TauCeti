@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Linearization
 public import TauCeti.Geometry.Manifold.Morse.OneForm.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 
 /-!
 # Regular zeros of closed one-forms

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Basic
 public import TauCeti.Topology.Circle.Degree
-public import TauCeti.Topology.Circle.Loop
 import Mathlib.Geometry.Manifold.SmoothApprox
 import Mathlib.Analysis.Complex.Tietze
 import Mathlib.MeasureTheory.Integral.CircleIntegral

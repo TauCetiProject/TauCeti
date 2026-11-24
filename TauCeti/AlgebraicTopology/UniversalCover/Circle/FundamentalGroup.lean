@@ -14,9 +14,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
-public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
-public import TauCeti.Topology.Circle.Loop
 
 /-!
 # Fundamental groups of additive and complex circles

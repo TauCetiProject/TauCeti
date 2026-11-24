@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Rectangle
 
 /-!
-# Primitives of holomorphic functions and wedge integrals on product domains
+# Primitives of holomorphic functions on discs and product domains
 
 Mathlib's `DifferentiableOn.isExactOn_ball` gives every holomorphic function on a disc a
 primitive there, built from `Complex.wedgeIntegral`. This file records:

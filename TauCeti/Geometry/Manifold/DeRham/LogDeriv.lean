@@ -361,6 +361,9 @@ theorem _root_.ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom
       (Multiplicative.toAdd (circlePeriodHom I M u) c : ℂ) * (2 * π * Complex.I) :=
   homologyPeriodHom_mlogDeriv_eq_circlePeriod u c
 
+section
+omit [FiniteDimensional ℝ E] [T2Space M]
+
 /-- A smooth circle-valued map `u` with `u = exp g` has vanishing periods: `dlog u = dg` is
 exact. -/
 private theorem homologyPeriodHom_mlogDeriv_eq_zero_of_eq_exp {u : C^∞⟮I, M; 𝓡 1, Circle⟯}
@@ -373,6 +376,8 @@ private theorem homologyPeriodHom_mlogDeriv_eq_zero_of_eq_exp {u : C^∞⟮I, M;
     exact mlogDeriv_exp ((hg x).mdifferentiableAt (by simp))
   rw [hdlog]
   exact homologyPeriodHom_mextDeriv hψ
+
+end
 
 /-- A smooth circle-valued map whose `dlog` has vanishing periods is `exp (i f)` for a smooth real
 function `f`. -/

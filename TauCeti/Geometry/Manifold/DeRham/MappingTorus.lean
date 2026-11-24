@@ -89,7 +89,7 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothMappingTorus
 
-variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] (φ : M ≃ₘ⟮I, I⟯ M)
 
@@ -111,10 +111,10 @@ variable {φ}
 
 /-- **Naturality of the time period.** The time period of the image `f_* c` of a class under a
 smooth map `f : X → Y_φ` is the period of the pulled-back time form `f^* dt` on `c`. -/
-theorem timePeriodHom_singularHomologyMap {E₀ H₀ X : Type} [NormedAddCommGroup E₀]
-    [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀] [TopologicalSpace H₀]
+theorem timePeriodHom_singularHomologyMap [FiniteDimensional ℝ E]
+    {E₀ H₀ X : Type} [NormedAddCommGroup E₀]
+    [NormedSpace ℝ E₀] [TopologicalSpace H₀]
     {I₀ : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace X] [ChartedSpace H₀ X] [IsManifold I₀ ∞ X]
-    [T2Space X]
     {f : X → SmoothMappingTorus φ} (hf : ContMDiff I₀ (𝓘(ℝ).prod I) ∞ f)
     (c : ((singularChains ℤ).obj (TopCat.of X)).homology 1) :
     timePeriodHom φ (ContinuousMap.singularHomologyMap ℤ 1 ⟨f, hf.continuous⟩ c) =
@@ -129,7 +129,7 @@ variable (φ)
 /-- **Fibre classes have time period zero.** The time form vanishes on each fibre
 `x ↦ [t, x]`, so `N` vanishes on the image of `H₁(M; ℤ)` under the fibre inclusion. -/
 @[simp]
-theorem timePeriodHom_singularHomologyMap_mk (t : ℝ)
+theorem timePeriodHom_singularHomologyMap_mk [FiniteDimensional ℝ E] (t : ℝ)
     (c : ((singularChains ℤ).obj (TopCat.of M)).homology 1) :
     timePeriodHom φ
         (ContinuousMap.singularHomologyMap ℤ 1 ⟨mk φ t, (contMDiff_mk φ t).continuous⟩ c) = 0 := by
@@ -239,7 +239,7 @@ end Map
 /-- **The iterate law.** The integer-iterate map `Y_(φ^k) → Y_φ`, `[t, x] ↦ [k t, x]`, multiplies
 time periods by `k`. -/
 @[simp]
-theorem timePeriodHom_singularHomologyMap_iterateMap (k : ℤ)
+theorem timePeriodHom_singularHomologyMap_iterateMap [FiniteDimensional ℝ E] (k : ℤ)
     (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus (φ ^ k)))).homology 1) :
     timePeriodHom φ (ContinuousMap.singularHomologyMap ℤ 1
         ⟨iterateMap φ k, (contMDiff_iterateMap φ k).continuous⟩ c) =
@@ -259,7 +259,7 @@ include hφ hx hd in
 which is nondegenerate up to every period, the time periods `N [γ_(x i)] = d i` of the closed
 orbits through distinct points `x i` of positive periods `d i` tend to infinity along the cofinite
 filter. -/
-theorem tendsto_timePeriodHom_closedOrbitHomologyClass :
+theorem tendsto_timePeriodHom_closedOrbitHomologyClass [FiniteDimensional ℝ E] :
     Tendsto (fun i ↦ timePeriodHom φ (closedOrbitHomologyClass (hxd i))) cofinite atTop := by
   simp only [timePeriodHom_closedOrbitHomologyClass]
   refine tendsto_natCast_atTop_atTop.comp (tendsto_atTop.2 fun N ↦ eventually_cofinite.2 ?_)
