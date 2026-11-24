@@ -58,8 +58,6 @@ imposed anywhere.
 * `TauCeti.Dagger.DaggerTensorProduct.lift_inl`, `TauCeti.Dagger.DaggerTensorProduct.lift_inr`,
   `TauCeti.Dagger.DaggerTensorProduct.algHom_ext`: the universal property of the pushout.
 * `TauCeti.Dagger.DaggerTensorProduct.map_id`, `TauCeti.Dagger.DaggerTensorProduct.map_comp`.
-* `TauCeti.Dagger.DaggerTensorProduct.isDaggerAlgebra_tensorProduct`: if `A₂` is finite over
-  `B`, then `A₁ ⊗[B] A₂` is a dagger algebra, hence it is the dagger tensor product.
 
 ## References
 
@@ -73,35 +71,13 @@ public section
 
 namespace TauCeti.Dagger
 
-open washnitzerAlgebra (X)
+open washnitzerAlgebra (X rename rename_X)
 
 open scoped TensorProduct
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "W " σ:max => washnitzerAlgebra σ K
-
-section Blocks
-
-variable (σ₁ σ₂ : Type*) [Finite σ₁] [Finite σ₂]
-
-/-- The inclusion `K⟨X⟩† → K⟨X, Y⟩†` of the first block of variables. -/
-private noncomputable def inlW : W σ₁ →ₐ[K] W (σ₁ ⊕ σ₂) :=
-  washnitzerAlgebra.lift (fun i ↦ X (σ₁ ⊕ σ₂) K (.inl i)) fun i ↦
-    washnitzerAlgebra.supSeminorm_apply_X_le_one (AlgHom.id K (W (σ₁ ⊕ σ₂))) (.inl i)
-
-/-- The inclusion `K⟨Y⟩† → K⟨X, Y⟩†` of the second block of variables. -/
-private noncomputable def inrW : W σ₂ →ₐ[K] W (σ₁ ⊕ σ₂) :=
-  washnitzerAlgebra.lift (fun i ↦ X (σ₁ ⊕ σ₂) K (.inr i)) fun i ↦
-    washnitzerAlgebra.supSeminorm_apply_X_le_one (AlgHom.id K (W (σ₁ ⊕ σ₂))) (.inr i)
-
-private theorem inlW_X (i : σ₁) : inlW σ₁ σ₂ (X σ₁ K i) = X (σ₁ ⊕ σ₂) K (.inl i) :=
-  washnitzerAlgebra.lift_X _ _ i
-
-private theorem inrW_X (i : σ₂) : inrW σ₁ σ₂ (X σ₂ K i) = X (σ₁ ⊕ σ₂) K (.inr i) :=
-  washnitzerAlgebra.lift_X _ _ i
-
-end Blocks
 
 section Relations
 
@@ -117,17 +93,17 @@ series `f` in the first block of variables and a series `g` in the second block 
 noncomputable def DaggerTensorProduct.relIdeal (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂) :
     Ideal (W (σ₁ ⊕ σ₂)) :=
   Ideal.span {p | ∃ f g b, π₁ f = algebraMap B A₁ b ∧ π₂ g = algebraMap B A₂ b ∧
-    inlW σ₁ σ₂ f - inrW σ₁ σ₂ g = p}
+    rename Sum.inl f - rename Sum.inr g = p}
 
 variable {B}
 
-private theorem inlW_mem_relIdeal {π₁ : W σ₁ →ₐ[K] A₁} (π₂ : W σ₂ →ₐ[K] A₂) {f : W σ₁}
-    (hf : π₁ f = 0) : inlW σ₁ σ₂ f ∈ DaggerTensorProduct.relIdeal B π₁ π₂ :=
+private theorem rename_inl_mem_relIdeal {π₁ : W σ₁ →ₐ[K] A₁} (π₂ : W σ₂ →ₐ[K] A₂) {f : W σ₁}
+    (hf : π₁ f = 0) : rename Sum.inl f ∈ DaggerTensorProduct.relIdeal B π₁ π₂ :=
   Ideal.subset_span ⟨f, 0, 0, by simp [hf], by simp, by simp⟩
 
-private theorem inrW_mem_relIdeal (π₁ : W σ₁ →ₐ[K] A₁) {π₂ : W σ₂ →ₐ[K] A₂} {g : W σ₂}
-    (hg : π₂ g = 0) : inrW σ₁ σ₂ g ∈ DaggerTensorProduct.relIdeal B π₁ π₂ := by
-  have : inlW σ₁ σ₂ 0 - inrW σ₁ σ₂ g ∈ DaggerTensorProduct.relIdeal B π₁ π₂ :=
+private theorem rename_inr_mem_relIdeal (π₁ : W σ₁ →ₐ[K] A₁) {π₂ : W σ₂ →ₐ[K] A₂} {g : W σ₂}
+    (hg : π₂ g = 0) : rename Sum.inr g ∈ DaggerTensorProduct.relIdeal B π₁ π₂ := by
+  have : rename Sum.inl (0 : W σ₁) - rename Sum.inr g ∈ DaggerTensorProduct.relIdeal B π₁ π₂ :=
     Ideal.subset_span ⟨0, g, 0, by simp, by simp [hg], rfl⟩
   simpa using neg_mem this
 
@@ -141,16 +117,16 @@ private noncomputable def liftW (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ�
     | .inl i => washnitzerAlgebra.supSeminorm_apply_X_le_one (u₁.comp π₁) i
     | .inr j => washnitzerAlgebra.supSeminorm_apply_X_le_one (u₂.comp π₂) j
 
-private theorem liftW_inlW (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂) (u₁ : A₁ →ₐ[K] C)
-    (u₂ : A₂ →ₐ[K] C) (f : W σ₁) : liftW π₁ π₂ u₁ u₂ (inlW σ₁ σ₂ f) = u₁ (π₁ f) := by
-  have : (liftW π₁ π₂ u₁ u₂).comp (inlW σ₁ σ₂) = u₁.comp π₁ :=
-    washnitzerAlgebra.algHom_ext fun i ↦ by simp [liftW, inlW_X]
+private theorem liftW_rename_inl (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂) (u₁ : A₁ →ₐ[K] C)
+    (u₂ : A₂ →ₐ[K] C) (f : W σ₁) : liftW π₁ π₂ u₁ u₂ (rename Sum.inl f) = u₁ (π₁ f) := by
+  have : (liftW π₁ π₂ u₁ u₂).comp (rename Sum.inl) = u₁.comp π₁ :=
+    washnitzerAlgebra.algHom_ext fun i ↦ by simp [liftW]
   exact AlgHom.congr_fun this f
 
-private theorem liftW_inrW (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂) (u₁ : A₁ →ₐ[K] C)
-    (u₂ : A₂ →ₐ[K] C) (g : W σ₂) : liftW π₁ π₂ u₁ u₂ (inrW σ₁ σ₂ g) = u₂ (π₂ g) := by
-  have : (liftW π₁ π₂ u₁ u₂).comp (inrW σ₁ σ₂) = u₂.comp π₂ :=
-    washnitzerAlgebra.algHom_ext fun i ↦ by simp [liftW, inrW_X]
+private theorem liftW_rename_inr (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂) (u₁ : A₁ →ₐ[K] C)
+    (u₂ : A₂ →ₐ[K] C) (g : W σ₂) : liftW π₁ π₂ u₁ u₂ (rename Sum.inr g) = u₂ (π₂ g) := by
+  have : (liftW π₁ π₂ u₁ u₂).comp (rename Sum.inr) = u₂.comp π₂ :=
+    washnitzerAlgebra.algHom_ext fun i ↦ by simp [liftW]
   exact AlgHom.congr_fun this g
 
 private theorem liftW_eq_zero_of_mem_relIdeal (π₁ : W σ₁ →ₐ[K] A₁) (π₂ : W σ₂ →ₐ[K] A₂)
@@ -160,7 +136,7 @@ private theorem liftW_eq_zero_of_mem_relIdeal (π₁ : W σ₁ →ₐ[K] A₁) (
     liftW π₁ π₂ u₁ u₂ p = 0 := by
   refine Ideal.span_le (I := RingHom.ker (liftW π₁ π₂ u₁ u₂)).mpr ?_ hp
   rintro _ ⟨f, g, b, hf, hg, rfl⟩
-  simp [liftW_inlW, liftW_inrW, hf, hg, h]
+  simp [liftW_rename_inl, liftW_rename_inr, hf, hg, h]
 
 end Relations
 
@@ -210,23 +186,23 @@ private theorem algHom_ext_mkₐ {C : Type*} [CommRing C] [Algebra K C]
 /-- The inclusion `A₁ → A₁ ⊗†_B A₂` of the first factor. -/
 noncomputable def inl : A₁ →ₐ[K] DaggerTensorProduct K B A₁ A₂ :=
   (presentation K A₁).liftOfSurjective (presentation_surjective K A₁)
-    ((mkₐ K B A₁ A₂).comp (inlW _ _)) fun _ hf ↦
-      Ideal.Quotient.eq_zero_iff_mem.mpr (inlW_mem_relIdeal (presentation K A₂) hf)
+    ((mkₐ K B A₁ A₂).comp (rename Sum.inl)) fun _ hf ↦
+      Ideal.Quotient.eq_zero_iff_mem.mpr (rename_inl_mem_relIdeal (presentation K A₂) hf)
 
 /-- The inclusion `A₂ → A₁ ⊗†_B A₂` of the second factor. -/
 noncomputable def inr : A₂ →ₐ[K] DaggerTensorProduct K B A₁ A₂ :=
   (presentation K A₂).liftOfSurjective (presentation_surjective K A₂)
-    ((mkₐ K B A₁ A₂).comp (inrW _ _)) fun _ hg ↦
-      Ideal.Quotient.eq_zero_iff_mem.mpr (inrW_mem_relIdeal (presentation K A₁) hg)
+    ((mkₐ K B A₁ A₂).comp (rename Sum.inr)) fun _ hg ↦
+      Ideal.Quotient.eq_zero_iff_mem.mpr (rename_inr_mem_relIdeal (presentation K A₁) hg)
 
 variable {K B A₁ A₂}
 
 private theorem inl_presentation (f : W (Fin (presentationDim K A₁))) :
-    inl K B A₁ A₂ (presentation K A₁ f) = mkₐ K B A₁ A₂ (inlW _ _ f) :=
+    inl K B A₁ A₂ (presentation K A₁ f) = mkₐ K B A₁ A₂ (rename Sum.inl f) :=
   AlgHom.liftOfSurjective_apply _ _ _ _ f
 
 private theorem inr_presentation (g : W (Fin (presentationDim K A₂))) :
-    inr K B A₁ A₂ (presentation K A₂ g) = mkₐ K B A₁ A₂ (inrW _ _ g) :=
+    inr K B A₁ A₂ (presentation K A₂ g) = mkₐ K B A₁ A₂ (rename Sum.inr g) :=
   AlgHom.liftOfSurjective_apply _ _ _ _ g
 
 /-- The two inclusions agree on the image of `B`. -/
@@ -267,14 +243,14 @@ theorem lift_inl (u₁ : A₁ →ₐ[K] C) (u₂ : A₂ →ₐ[K] C)
     (h : ∀ b : B, u₁ (algebraMap B A₁ b) = u₂ (algebraMap B A₂ b)) (a : A₁) :
     lift u₁ u₂ h (inl K B A₁ A₂ a) = u₁ a := by
   obtain ⟨f, rfl⟩ := presentation_surjective K A₁ a
-  rw [inl_presentation, lift_mkₐ, liftW_inlW]
+  rw [inl_presentation, lift_mkₐ, liftW_rename_inl]
 
 @[simp]
 theorem lift_inr (u₁ : A₁ →ₐ[K] C) (u₂ : A₂ →ₐ[K] C)
     (h : ∀ b : B, u₁ (algebraMap B A₁ b) = u₂ (algebraMap B A₂ b)) (a : A₂) :
     lift u₁ u₂ h (inr K B A₁ A₂ a) = u₂ a := by
   obtain ⟨g, rfl⟩ := presentation_surjective K A₂ a
-  rw [inr_presentation, lift_mkₐ, liftW_inrW]
+  rw [inr_presentation, lift_mkₐ, liftW_rename_inr]
 
 @[simp]
 theorem lift_comp_inl (u₁ : A₁ →ₐ[K] C) (u₂ : A₂ →ₐ[K] C)
@@ -296,9 +272,9 @@ theorem algHom_ext {φ ψ : DaggerTensorProduct K B A₁ A₂ →ₐ[K] C}
     (h₂ : φ.comp (inr K B A₁ A₂) = ψ.comp (inr K B A₁ A₂)) : φ = ψ := by
   refine algHom_ext_mkₐ (washnitzerAlgebra.algHom_ext fun k ↦ ?_)
   rcases k with i | j
-  · rw [AlgHom.comp_apply, AlgHom.comp_apply, ← inlW_X, ← inl_presentation]
+  · rw [AlgHom.comp_apply, AlgHom.comp_apply, ← rename_X Sum.inl, ← inl_presentation]
     exact AlgHom.congr_fun h₁ _
-  · rw [AlgHom.comp_apply, AlgHom.comp_apply, ← inrW_X, ← inr_presentation]
+  · rw [AlgHom.comp_apply, AlgHom.comp_apply, ← rename_X Sum.inr, ← inr_presentation]
     exact AlgHom.congr_fun h₂ _
 
 theorem lift_unique {u₁ : A₁ →ₐ[K] C} {u₂ : A₂ →ₐ[K] C}
@@ -377,9 +353,7 @@ theorem map_inr (ψ : B →+* B') (φ₁ : A₁ →ₐ[K] A₁') (φ₂ : A₂ �
 theorem map_id :
     map (RingHom.id B) (AlgHom.id K A₁) (AlgHom.id K A₂) (fun _ ↦ rfl) (fun _ ↦ rfl) =
       AlgHom.id K (DaggerTensorProduct K B A₁ A₂) := by
-  ext a
-  · exact map_inl (RingHom.id B) (AlgHom.id K A₁) (AlgHom.id K A₂) (fun _ ↦ rfl) (fun _ ↦ rfl) a
-  · exact map_inr (RingHom.id B) (AlgHom.id K A₁) (AlgHom.id K A₂) (fun _ ↦ rfl) (fun _ ↦ rfl) a
+  ext <;> simp [map]
 
 theorem map_comp {B'' : Type*} [CommRing B'']
     {A₁'' : Type*} [CommRing A₁''] [Algebra K A₁''] [Algebra B'' A₁''] [IsDaggerAlgebra K A₁'']
@@ -405,25 +379,25 @@ variable (σ₁ σ₂ : Type*) [Finite σ₁] [Finite σ₂]
 `K⟨X⟩† ⊗†_K K⟨Y⟩† ≃ K⟨X, Y⟩†`, sending `Xᵢ ⊗ 1` to `Xᵢ` and `1 ⊗ Yⱼ` to `Yⱼ`. -/
 noncomputable def washnitzerAlgebraEquiv :
     DaggerTensorProduct K K (W σ₁) (W σ₂) ≃ₐ[K] W (σ₁ ⊕ σ₂) :=
-  AlgEquiv.ofAlgHom (lift (inlW σ₁ σ₂) (inrW σ₁ σ₂) fun c ↦ by simp)
+  AlgEquiv.ofAlgHom (lift (rename Sum.inl) (rename Sum.inr) fun c ↦ by simp)
     (washnitzerAlgebra.lift
       (Sum.elim (fun i ↦ inl K K (W σ₁) (W σ₂) (X σ₁ K i))
         fun j ↦ inr K K (W σ₁) (W σ₂) (X σ₂ K j)) fun
       | .inl i => washnitzerAlgebra.supSeminorm_apply_X_le_one (inl K K (W σ₁) (W σ₂)) i
       | .inr j => washnitzerAlgebra.supSeminorm_apply_X_le_one (inr K K (W σ₁) (W σ₂)) j)
-    (washnitzerAlgebra.algHom_ext fun k ↦ by rcases k with i | j <;> simp [inlW_X, inrW_X])
-    (algHom_ext (washnitzerAlgebra.algHom_ext fun i ↦ by simp [inlW_X])
-      (washnitzerAlgebra.algHom_ext fun j ↦ by simp [inrW_X]))
+    (washnitzerAlgebra.algHom_ext fun k ↦ by rcases k with i | j <;> simp)
+    (algHom_ext (washnitzerAlgebra.algHom_ext fun i ↦ by simp)
+      (washnitzerAlgebra.algHom_ext fun j ↦ by simp))
 
 @[simp]
 theorem washnitzerAlgebraEquiv_inl_X (i : σ₁) :
     washnitzerAlgebraEquiv σ₁ σ₂ (inl K K (W σ₁) (W σ₂) (X σ₁ K i)) = X (σ₁ ⊕ σ₂) K (.inl i) := by
-  rw [washnitzerAlgebraEquiv, AlgEquiv.ofAlgHom_apply, lift_inl, inlW_X]
+  rw [washnitzerAlgebraEquiv, AlgEquiv.ofAlgHom_apply, lift_inl, rename_X]
 
 @[simp]
 theorem washnitzerAlgebraEquiv_inr_X (j : σ₂) :
     washnitzerAlgebraEquiv σ₁ σ₂ (inr K K (W σ₁) (W σ₂) (X σ₂ K j)) = X (σ₁ ⊕ σ₂) K (.inr j) := by
-  rw [washnitzerAlgebraEquiv, AlgEquiv.ofAlgHom_apply, lift_inr, inrW_X]
+  rw [washnitzerAlgebraEquiv, AlgEquiv.ofAlgHom_apply, lift_inr, rename_X]
 
 @[simp]
 theorem washnitzerAlgebraEquiv_symm_X_inl (i : σ₁) :
@@ -438,8 +412,6 @@ theorem washnitzerAlgebraEquiv_symm_X_inr (j : σ₂) :
   rw [washnitzerAlgebraEquiv, AlgEquiv.ofAlgHom_symm_apply, washnitzerAlgebra.lift_X, Sum.elim_inr]
 
 end WashnitzerAlgebra
-
-
 
 section TensorProduct
 
@@ -459,15 +431,11 @@ noncomputable def ofTensorProduct : A₁ ⊗[B] A₂ →ₐ[K] DaggerTensorProdu
 theorem ofTensorProduct_tmul (a₁ : A₁) (a₂ : A₂) :
     ofTensorProduct K B A₁ A₂ (a₁ ⊗ₜ[B] a₂) = inl K B A₁ A₂ a₁ * inr K B A₁ A₂ a₂ := by
   simp only [ofTensorProduct, AlgHom.coe_mk]
+  -- The goal is `Algebra.TensorProduct.lift_tmul`, stated for the `Algebra B` structure on the
+  -- target that `ofTensorProduct` installs locally. That instance is not in scope here, so the
+  -- lemma cannot be applied by name, and restating it with a `let` times out in unification;
+  -- `lift` computes on pure tensors by definition, so `rfl` closes the goal.
   rfl
-
-omit [IsDaggerAlgebra K A₂] in
-/-- **Finite base change of a dagger algebra.** If `A₂` is finite over `B`, then the algebraic
-tensor product `A₁ ⊗[B] A₂` is a `K`-dagger algebra, being finite over the dagger algebra
-`A₁`. -/
-instance isDaggerAlgebra_tensorProduct [Module.Finite B A₂] :
-    IsDaggerAlgebra K (A₁ ⊗[B] A₂) :=
-  IsDaggerAlgebra.of_finite (A := A₁)
 
 end TensorProduct
 
@@ -478,7 +446,7 @@ variable [Algebra K B] [IsScalarTower K B A₁] [IsScalarTower K B A₂]
 variable (K B A₁ A₂) in
 /-- **The dagger tensor product when the algebraic one is a dagger algebra.** If `A₁ ⊗[B] A₂` is
 already a `K`-dagger algebra, for instance when `A₂` is finite over `B`
-(`TauCeti.Dagger.DaggerTensorProduct.isDaggerAlgebra_tensorProduct`), then the comparison map
+(`TauCeti.Dagger.IsDaggerAlgebra.tensorProduct_of_finite`), then the comparison map
 `A₁ ⊗[B] A₂ → A₁ ⊗†_B A₂` is an isomorphism. -/
 noncomputable def tensorProductAlgEquiv [IsDaggerAlgebra K (A₁ ⊗[B] A₂)] :
     A₁ ⊗[B] A₂ ≃ₐ[K] DaggerTensorProduct K B A₁ A₂ :=
