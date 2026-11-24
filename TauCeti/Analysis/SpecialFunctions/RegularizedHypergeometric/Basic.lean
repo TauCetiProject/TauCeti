@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Analytic.Constructions
@@ -17,6 +18,8 @@ import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.RingTheory.Polynomial.Pochhammer
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -35,6 +38,9 @@ an everywhere convergent power series with coefficients
 `(a + b + n - 1)_n / (n! Γ(a + n) Γ(b + n))`, valid without pole exclusions on `a` or `b`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
+Conjugating both `b` and `z` conjugates the value, so for real `b` the function commutes with
+complex conjugation. For `y ≥ 0` all terms after the first are nonnegative when `b > -1`, so
+`₀F₁(; b; y) ≥ 1 / Γ(b)`, which is positive when `b > 0`.
 Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a b c` evaluates to
 `(Gamma c)⁻¹` at `z = 0`, is analytic in `z`, has derivative
 `a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z`, satisfies the classical first-order
@@ -66,6 +72,11 @@ with no condition on the lower parameters.
   `Complex.summable_norm_regularizedHGFun_zero_singleton_mul`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments, with Cauchy product `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul`.
+* `Complex.regularizedHGFun_zero_singleton_conj` — `₀F₁(; conj b; conj z) = conj ₀F₁(; b; z)`,
+  and `Complex.regularizedHGFun_zero_ofReal_singleton_conj` for real `b`.
+* `Complex.inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re`,
+  `Complex.regularizedHGFun_zero_singleton_ofReal_re_pos` — for `y ≥ 0`, `₀F₁(; b; y) ≥ 1 / Γ(b)`
+  when `b > -1`, and `₀F₁(; b; y) > 0` when `b > 0`.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
 * `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
@@ -84,6 +95,16 @@ with no condition on the lower parameters.
   `Complex.mul_deriv_regularizedGaussHGFun_add_mul_eq_mul`,
   `Complex.mul_one_sub_mul_deriv_regularizedGaussHGFun` — parameter-shift and first-order
   contiguous-derivative identities on `‖z‖ < 1` (DLMF §15.5).
+* `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul` — the three-term relation
+  `𝐅(a, b; c; z) = c (1 - z) 𝐅(a + 1, b + 1; c + 1; z) + (c - a)(c - b) z 𝐅(a + 1, b + 1; c + 2; z)`
+  on `‖z‖ < 1`.
+* `Complex.choose_mul_coeff_regularizedGaussHGFunSeries` — the coefficient shift
+  `C(m + i, m) 𝐅ₘ₊ᵢ = (a)ₘ (b)ₘ / m! · 𝐅(a + m, b + m; c + m)ᵢ`.
+* `Complex.norm_regularizedGaussHGFun_le_tsum` — the majorant bound
+  `‖𝐅(a, b; c; w)‖ ≤ ∑ ‖𝐅ⱼ‖ yʲ` for `‖w‖ ≤ y < 1`.
+* `Complex.hasSum_choose_mul_coeff_regularizedGaussHGFunSeries`,
+  `Complex.hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries` — the absolutely convergent
+  binomial double series of `𝐅(a, b; c; u + z)` in powers of `u` and `z` for `‖u‖ + ‖z‖ < 1`.
 * `Complex.analyticAt_uncurry_regularizedGaussHGFun`, `AnalyticAt.regularizedGaussHGFun`,
   `DifferentiableAt.regularizedGaussHGFun`, `DifferentiableWithinAt.regularizedGaussHGFun`,
   `DifferentiableOn.regularizedGaussHGFun`, `Differentiable.regularizedGaussHGFun` — joint
@@ -216,6 +237,43 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasSum (fun n : ℕ => y ^ n / (n ! * Real.Gamma (b + n)))
       (regularizedHGFun 0 {(b : ℂ)} y).re := by
   simpa only [ofReal_re] using hasSum_re (hasSum_ofReal_regularizedHGFun_zero_singleton b y)
+
+open scoped ComplexConjugate in
+/-- `₀F₁(; b; z)` commutes with complex conjugation of the parameter and the argument together:
+`₀F₁(; conj b; conj z) = conj ₀F₁(; b; z)`.
+
+Adapted from `regularized0F1_conj` in the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Bessel/Basic/RegularizedSeries.lean`. -/
+theorem regularizedHGFun_zero_singleton_conj (b z : ℂ) :
+    regularizedHGFun 0 {conj b} (conj z) = conj (regularizedHGFun 0 {b} z) := by
+  refine (hasSum_regularizedHGFun (a := 0) (b := {conj b}) (by simp) (conj z)).unique ?_
+  refine (hasSum_conj'.2 (hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z)).congr_fun
+    fun n => ?_
+  simp [← Gamma_conj]
+
+open scoped ComplexConjugate in
+/-- For a real parameter `b`, `₀F₁(; b; z)` commutes with complex conjugation:
+`₀F₁(; b; conj z) = conj ₀F₁(; b; z)`. -/
+theorem regularizedHGFun_zero_ofReal_singleton_conj (z : ℂ) (b : ℝ) :
+    regularizedHGFun 0 {(b : ℂ)} (conj z) = conj (regularizedHGFun 0 {(b : ℂ)} z) := by
+  simpa using regularizedHGFun_zero_singleton_conj b z
+
+/-- For `b > -1` and `y ≥ 0` every term of the real series of `₀F₁(; b; y)` after the first is
+nonnegative, so `₀F₁(; b; y)` is at least its first term `1 / Γ(b)`. -/
+theorem inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re {b y : ℝ} (hb : -1 < b)
+    (hy : 0 ≤ y) : (Real.Gamma b)⁻¹ ≤ (regularizedHGFun 0 {(b : ℂ)} y).re := by
+  have h := le_hasSum (hasSum_regularizedHGFun_zero_singleton_ofReal_re b y) 0 fun n hn => by
+    have hn : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn
+    have hbn : 0 < b + n := by linarith
+    have := Real.Gamma_pos_of_pos hbn
+    positivity
+  simpa using h
+
+/-- For `b > 0` and `y ≥ 0`, `₀F₁(; b; y)` is positive. -/
+theorem regularizedHGFun_zero_singleton_ofReal_re_pos {b y : ℝ} (hb : 0 < b) (hy : 0 ≤ y) :
+    0 < (regularizedHGFun 0 {(b : ℂ)} y).re :=
+  (inv_pos.2 (Real.Gamma_pos_of_pos hb)).trans_le
+    (inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re (by linarith) hy)
 
 /-- The real part of `₀F₁(; b; y)` is jointly continuous in the real parameter `b` and the real
 argument `y`. -/
@@ -431,6 +489,94 @@ theorem summable_coeff_regularizedGaussHGFunSeries_mul_pow (a b c : ℂ) {z : �
     rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
   have hs := (hasFPowerSeriesOnBall_regularizedGaussHGFun a b c).hasSum (y := z) hmem
   simpa [mul_comm] using hs.summable
+
+/-- The coefficients `C(m + i, m) 𝐅ₘ₊ᵢ` of `regularizedGaussHGFunSeries a b c` are
+`(a)ₘ (b)ₘ / m!` times the coefficients of `regularizedGaussHGFunSeries (a + m) (b + m) (c + m)`,
+so that the `m`-th Taylor coefficient of `𝐅(a, b; c; ·)` at a point is a multiple of
+`𝐅(a + m, b + m; c + m; ·)` there. -/
+theorem choose_mul_coeff_regularizedGaussHGFunSeries (a b c : ℂ) (m i : ℕ) :
+    ((m + i).choose m : ℂ) * (regularizedGaussHGFunSeries a b c).coeff (m + i) =
+      (ascPochhammer ℂ m).eval a * (ascPochhammer ℂ m).eval b / m ! *
+        (regularizedGaussHGFunSeries (a + m) (b + m) (c + m)).coeff i := by
+  simp only [coeff_regularizedGaussHGFunSeries]
+  rw [TauCeti.ascPochhammer_add_eval a m i, TauCeti.ascPochhammer_add_eval b m i,
+    show c + ((m + i : ℕ) : ℂ) = c + m + i by push_cast; ring, Nat.cast_add_choose]
+  field_simp [Nat.factorial_ne_zero]
+
+/-- For `‖w‖ ≤ y < 1`, `‖𝐅(a, b; c; w)‖` is at most the majorant series
+`∑ ‖𝐅ⱼ‖ yʲ` of the coefficients of `regularizedGaussHGFunSeries a b c`. -/
+theorem norm_regularizedGaussHGFun_le_tsum (a b c : ℂ) {w : ℂ} {y : ℝ} (hw : ‖w‖ ≤ y)
+    (hy : y < 1) :
+    ‖regularizedGaussHGFun a b c w‖ ≤
+      ∑' j, ‖(regularizedGaussHGFunSeries a b c).coeff j‖ * y ^ j := by
+  have hy₀ : 0 ≤ y := (norm_nonneg w).trans hw
+  have hs := (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b c
+    (z := (y : ℂ)) (by rwa [norm_real, Real.norm_of_nonneg hy₀])).norm
+  simp only [norm_mul, norm_pow, norm_real, Real.norm_of_nonneg hy₀] at hs
+  have hle (j : ℕ) : ‖(regularizedGaussHGFunSeries a b c).coeff j * w ^ j‖ ≤
+      ‖(regularizedGaussHGFunSeries a b c).coeff j‖ * y ^ j := by
+    rw [norm_mul, norm_pow]; gcongr
+  have hs' := hs.of_nonneg_of_le (fun _ => norm_nonneg _) hle
+  rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow]
+  exact (norm_tsum_le_tsum_norm hs').trans (Summable.tsum_le_tsum hle hs' hs)
+
+open Finset in
+/-- For `‖u‖ + ‖z‖ < 1`, the norms of the terms `C(i + j, i) 𝐅ᵢ₊ⱼ uⁱ zʲ` of the binomial double
+series of `𝐅(a, b; c; u + z)` sum to the majorant series `∑ ‖𝐅ₙ‖ (‖u‖ + ‖z‖)ⁿ`. -/
+theorem hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries (a b c : ℂ) {u z : ℂ}
+    (h : ‖u‖ + ‖z‖ < 1) :
+    HasSum (fun q : ℕ × ℕ => ‖((q.1 + q.2).choose q.1 : ℂ) *
+        (regularizedGaussHGFunSeries a b c).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)‖)
+      (∑' n, ‖(regularizedGaussHGFunSeries a b c).coeff n‖ * (‖u‖ + ‖z‖) ^ n) := by
+  set g : ℕ × ℕ → ℝ := fun q => ‖((q.1 + q.2).choose q.1 : ℂ) *
+    (regularizedGaussHGFunSeries a b c).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)‖
+  have hfib (n : ℕ) : ∑ q ∈ antidiagonal n, g q =
+      ‖(regularizedGaussHGFunSeries a b c).coeff n‖ * (‖u‖ + ‖z‖) ^ n := by
+    rw [(Commute.all _ _).add_pow', mul_sum]
+    refine sum_congr rfl fun q hq => ?_
+    rw [mem_antidiagonal] at hq
+    simp only [g, norm_mul, norm_pow, Complex.norm_natCast, hq, nsmul_eq_mul]
+    ring
+  have h₀ : 0 ≤ ‖u‖ + ‖z‖ := by positivity
+  have hy : Summable fun n =>
+      ‖(regularizedGaussHGFunSeries a b c).coeff n‖ * (‖u‖ + ‖z‖) ^ n := by
+    have := (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b c
+      (z := ((‖u‖ + ‖z‖ : ℝ) : ℂ)) (by rwa [norm_real, Real.norm_of_nonneg h₀])).norm
+    simpa only [norm_mul, norm_pow, norm_real, Real.norm_of_nonneg h₀] using this
+  have hgs : Summable g := by
+    rw [← HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff]
+    refine (summable_sigma_of_nonneg fun _ => norm_nonneg _).2
+      ⟨fun n => Summable.of_finite, hy.congr fun n => ?_⟩
+    rw [tsum_fintype]
+    exact ((sum_coe_sort (antidiagonal n) g).trans (hfib n)).symm
+  have hgrp := hgs.hasSum.sum_antidiagonal
+  rw [show (fun n => ∑ q ∈ antidiagonal n, g q) = _ from funext hfib] at hgrp
+  have hg := hgs.hasSum
+  rwa [← hgrp.tsum_eq] at hg
+
+open Finset in
+/-- For `‖u‖ + ‖z‖ < 1`, `𝐅(a, b; c; u + z)` is the sum of the binomial double series
+`∑ C(i + j, i) 𝐅ᵢ₊ⱼ uⁱ zʲ` in powers of `u` and `z`. -/
+theorem hasSum_choose_mul_coeff_regularizedGaussHGFunSeries (a b c : ℂ) {u z : ℂ}
+    (h : ‖u‖ + ‖z‖ < 1) :
+    HasSum (fun q : ℕ × ℕ => ((q.1 + q.2).choose q.1 : ℂ) *
+        (regularizedGaussHGFunSeries a b c).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2))
+      (regularizedGaussHGFun a b c (u + z)) := by
+  set f : ℕ × ℕ → ℂ := fun q => ((q.1 + q.2).choose q.1 : ℂ) *
+    (regularizedGaussHGFunSeries a b c).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)
+  have hs : Summable f :=
+    (hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries a b c h).summable.of_norm
+  have hgrp := hs.hasSum.sum_antidiagonal
+  have hfib (n : ℕ) : ∑ q ∈ antidiagonal n, f q =
+      (regularizedGaussHGFunSeries a b c).coeff n * (u + z) ^ n := by
+    rw [(Commute.all _ _).add_pow', mul_sum]
+    refine sum_congr rfl fun q hq => ?_
+    rw [mem_antidiagonal] at hq
+    simp only [f, hq, nsmul_eq_mul]
+    ring
+  rw [show (fun n => ∑ q ∈ antidiagonal n, f q) = _ from funext hfib] at hgrp
+  have hF := hs.hasSum
+  rwa [← (hasSum_regularizedGaussHGFun a b c ((norm_add_le _ _).trans_lt h)).unique hgrp] at hF
 
 private theorem succ_mul_coeff_regularizedGaussHGFunSeries_succ (a b c : ℂ) (n : ℕ) :
     ((n : ℂ) + 1) * (regularizedGaussHGFunSeries a b c).coeff (n + 1) =
@@ -747,6 +893,41 @@ theorem _root_.Differentiable.regularizedGaussHGFun {E : Type*} [NormedAddCommGr
     (hc : Differentiable ℂ fc) (hz : Differentiable ℂ fz) (hz_lt : ∀ x, ‖fz x‖ < 1) :
     Differentiable ℂ fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w) :=
   fun x => (ha x).regularizedGaussHGFun (hb x) (hc x) (hz x) (hz_lt x)
+
+/-- Regularized three-term contiguous relation raising `a`, `b` and `c` on the open unit disk:
+`𝐅(a, b; c; z) = c (1 - z) 𝐅(a + 1, b + 1; c + 1; z) + (c - a)(c - b) z 𝐅(a + 1, b + 1; c + 2; z)`,
+for all complex `a`, `b`, `c`. -/
+theorem regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    regularizedGaussHGFun a b c z =
+      c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+        (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z := by
+  -- Multiplied by `a`, the relation is a combination of the shifts in `a`, `b` and `c`.
+  have hmul (a : ℂ) : a * regularizedGaussHGFun a b c z =
+      a * (c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+        (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z) := by
+    have h₂ := regularizedGaussHGFun_eq_sub_mul_add_mul b a c hz
+    rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b a,
+      regularizedGaussHGFun_symm (b + 1) a] at h₂
+    have h₅ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz
+    have h₇ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b (c + 1) hz
+    rw [show c + 1 + 1 = c + 2 by ring] at h₇
+    have h₉ := regularizedGaussHGFun_eq_sub_mul_add_mul a (b + 1) c hz
+    linear_combination -(c - a) * h₂ - (c - a) * (c - b) * h₇ + c * h₅ + c * h₉
+  -- Both sides are continuous in `a`, so the relation extends from `a ≠ 0` to `a = 0`.
+  have hd (k : ℂ) : Differentiable ℂ fun a => regularizedGaussHGFun (a + 1) (b + 1) (c + k) z :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop)
+      fun _ => hz
+  have hL : Continuous fun a => regularizedGaussHGFun a b c z :=
+    (Differentiable.regularizedGaussHGFun differentiable_id (differentiable_const _)
+      (differentiable_const _) (differentiable_const _) fun _ => hz).continuous
+  have hR : Continuous fun a => c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+      (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z :=
+    (continuous_const.mul (hd 1).continuous).add
+      ((((continuous_const.sub continuous_id).mul continuous_const).mul continuous_const).mul
+        (hd 2).continuous)
+  have hext := hL.ext_on (dense_compl_singleton 0) hR fun a' ha' =>
+    mul_left_cancel₀ (Set.mem_compl_singleton_iff.mp ha') (hmul a')
+  exact congrFun hext a
 
 end Gaussian
 
