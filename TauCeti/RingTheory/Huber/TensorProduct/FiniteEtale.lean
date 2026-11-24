@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteAlgebra
+public import TauCeti.RingTheory.Huber.TensorProduct.Plus
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 
@@ -19,7 +19,7 @@ Neither sheafiness nor noetherianity is required. The original base and the fini
 factor need not be complete; both structure maps must be adic.
 
 The proof uses the canonical finite projective comparison
-`Pair.finiteAlgebra.baseChangeEquiv` and its exact transport of plus rings. Thus no
+`CompletedTensor.baseChangeEquiv` and its exact transport of plus rings. Thus no
 uniformisation or replacement of the specified plus ring by power-bounded elements occurs.
 
 ## References
@@ -56,8 +56,8 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
   let : IsHuberRing (C ⊗[A] B) := IsHuberRing.of_isModuleTopology (A := C)
   have hnc : IsNaturallyComplete C (C ⊗[A] B) :=
     IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)
-  let e := finiteAlgebra.baseChangeEquiv A C B hnc
-  have he : IsHomeomorph e := finiteAlgebra.isHomeomorph_baseChangeEquiv A C B hnc
+  let e := CompletedTensor.baseChangeEquiv A C B hnc
+  have he : IsHomeomorph e := CompletedTensor.isHomeomorph_baseChangeEquiv A C B hnc
   have : Module.Finite C (CompletedTensor A C B) := Module.Finite.equiv e.toLinearEquiv
   have : Algebra.Etale C (CompletedTensor A C B) := Algebra.Etale.of_equiv e
   have htop : IsModuleTopology C (CompletedTensor A C B) :=

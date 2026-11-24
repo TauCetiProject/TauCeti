@@ -14,8 +14,7 @@ import TauCeti.RingTheory.Huber.TensorProduct.Derivation
 Let `A → B` be an adic homomorphism into a complete Hausdorff nonarchimedean ring `B`. Every
 continuous `A`-derivation `δ : B → M` into a complete Hausdorff nonarchimedean `B`-module lifts
 to a continuous `B`-linear map `Ωᶜ[B⁄A] →L[B] M`
-(`TauCeti.Huber.ContinuousKaehlerDifferential.lift`), without any noetherian or finite-type
-hypotheses.
+(`Derivation.liftContinuousKaehlerDifferential`), without any noetherian or finite-type hypotheses.
 
 ## References
 
@@ -68,31 +67,44 @@ private noncomputable def liftLinearMap
   have hd_inl : d (inl A B B b) = 0 := liftDerivationOfAlgebraMap_inl ..
   simp [D_apply, q, g, hd_inr, hd_inl]
 
+end Lift
+
+end TauCeti.Huber.ContinuousKaehlerDifferential
+
+namespace Derivation
+
+open TauCeti.Huber ContinuousKaehlerDifferential
+
+section Lift
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace A]
+  [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+  [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
+  {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
+  [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
+  [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
+
 /-- **Universal lift for continuous differentials** (Huber 1996, §1.6, Definition 1.6.1 and
 (1.6.2)(ii), existence): any continuous `A`-derivation `δ : B → M` factors through a continuous
 `B`-linear map `Ωᶜ[B⁄A] →L[B] M`. Neither `A` nor `B` needs any noetherian or finite-type
 hypothesis for existence. -/
-noncomputable def lift {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
-    [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
-    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
-    (δ : Derivation A B M) (hδ : Continuous δ) : ContinuousKaehlerDifferential A B →L[B] M :=
+noncomputable def liftContinuousKaehlerDifferential (δ : Derivation A B M) (hδ : Continuous δ) :
+    ContinuousKaehlerDifferential A B →L[B] M :=
   { (liftLinearMap δ hδ).val with
     cont := IsModuleTopology.continuous_of_linearMap (liftLinearMap δ hδ).val }
 
 /-- Evaluating the universal lift on `d b` recovers `δ b`. -/
-@[simp] theorem lift_D {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
-    [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
-    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
-    (δ : Derivation A B M) (hδ : Continuous δ) (b : B) : lift δ hδ (D A B b) = δ b :=
+@[simp] theorem liftContinuousKaehlerDifferential_comp_D (δ : Derivation A B M)
+    (hδ : Continuous δ) (b : B) :
+    δ.liftContinuousKaehlerDifferential hδ (D A B b) = δ b :=
   (liftLinearMap δ hδ).property b
 
 /-- Precomposing the universal lift with `D A B` recovers `δ`. -/
-@[simp] theorem compDer_lift_D {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
-    [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
-    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
-    (δ : Derivation A B M) (hδ : Continuous δ) : (lift δ hδ).toLinearMap.compDer (D A B) = δ := by
-  ext b; exact lift_D δ hδ b
+@[simp] theorem liftContinuousKaehlerDifferential_comp (δ : Derivation A B M)
+    (hδ : Continuous δ) :
+    (δ.liftContinuousKaehlerDifferential hδ).toLinearMap.compDer (D A B) = δ := by
+  ext b; exact δ.liftContinuousKaehlerDifferential_comp_D hδ b
 
 end Lift
 
-end TauCeti.Huber.ContinuousKaehlerDifferential
+end Derivation

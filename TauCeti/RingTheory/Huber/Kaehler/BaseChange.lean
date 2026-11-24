@@ -106,8 +106,9 @@ private noncomputable def baseChangeToTensorAux (hAB : IsTopologicallyFiniteType
   have : Module.Finite B (ContinuousKaehlerDifferential A B) := finite hAB
   letI : TopologicalSpace M := moduleTopology B' M; have : IsModuleTopology B' M := ⟨rfl⟩
   let δ := baseChangeDerivation (A' := A') hAB
-  exact ⟨liftOfFinite δ.val δ.property.1,
-    fun b ↦ (liftOfFinite_D δ.val δ.property.1 (inl A B A' b)).trans (δ.property.2 b)⟩
+  exact ⟨δ.val.liftContinuousKaehlerDifferentialOfFinite δ.property.1,
+    fun b ↦ (δ.val.liftContinuousKaehlerDifferentialOfFinite_comp_D δ.property.1
+      (inl A B A' b)).trans (δ.property.2 b)⟩
 
 private theorem baseChangeToTensor_comp_fromTensor
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) :

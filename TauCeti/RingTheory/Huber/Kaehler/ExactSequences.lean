@@ -83,7 +83,7 @@ theorem exact_mapBaseChange_mapTower_of_isTopologicallyFiniteType_comp
   have hδB : Continuous δB :=
     (IsModuleTopology.continuous_of_linearMap R.mkQ).comp (continuous_D hAC)
   have := isNoetherianType_of_isTopologicallyFiniteType (B := C) hAC
-  have hs : (liftOfFinite δB hδB).comp (mapTower A B C) = R.mkQ :=
+  have hs : (δB.liftContinuousKaehlerDifferentialOfFinite hδB).comp (mapTower A B C) = R.mkQ :=
     linearMap_ext fun c ↦ by simp; rfl
   intro ω hω
   have hq := (LinearMap.congr_fun hs ω).symm
@@ -221,7 +221,8 @@ theorem exact_kerCotangentToTensor_mapBaseChange [IsNoetherianType B]
     ((IsModuleTopology.continuous_of_linearMap lB).comp (continuous_D hAB)).congr
       fun b ↦ (hδC_eq b).symm
   have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) hAB
-  have hs : (liftOfFinite δC hδC).comp (mapBaseChange A B C hBC.continuous) = L.mkQ :=
+  have hs : (δC.liftContinuousKaehlerDifferentialOfFinite hδC).comp
+      (mapBaseChange A B C hBC.continuous) = L.mkQ :=
     linearMap_tensor_ext fun b ↦ by simp [hδC_eq]
   have hq := (LinearMap.congr_fun hs z).symm
   simp only [LinearMap.comp_apply, hz, map_zero] at hq

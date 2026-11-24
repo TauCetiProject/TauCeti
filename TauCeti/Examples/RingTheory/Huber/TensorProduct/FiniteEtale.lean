@@ -50,7 +50,7 @@ example (n : ℕ) :
 attribute [local instance] CompletedTensor.leftAlgebra in
 /-- The completed base change of the empty cover is still zero. -/
 example : Subsingleton (CompletedTensor ℤ (ZMod 2) (Fin 0 → ℤ)) :=
-  (Pair.finiteAlgebra.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)
+  (CompletedTensor.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)
     (IsNaturallyComplete.of_projective (A := ZMod 2) (M := _))).symm.injective.subsingleton
 
 /-- The new base map in these checks is genuinely noninjective. -/
