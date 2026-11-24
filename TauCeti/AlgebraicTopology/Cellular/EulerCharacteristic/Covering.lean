@@ -170,11 +170,11 @@ theorem _root_.IsCoveringMapOn.eulerChar_pullback {X Z : Type u} {Y : Type*}
     {f : X → Y} {p : Z → Y} (hp : IsCoveringMapOn p (Set.range f)) (hf : Continuous f)
     (hfin : ∀ x, Finite (p ⁻¹' {f x})) {d : ℕ}
     (hd : ∀ x, Nat.card (p ⁻¹' {f x}) = d) :
-    let hq := hp.isCoveringMap_pullback_fst hf (fun x ↦ ⟨x, rfl⟩)
-    let hqfin := fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
-    letI : FiniteCWType (f.Pullback p) := hq.finiteCWType hqfin
+    haveI := (hp.isCoveringMap_pullback_fst hf fun x ↦ ⟨x, rfl⟩).finiteCWType
+      fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
     eulerChar (f.Pullback p) = d * eulerChar X := by
-  intro hq hqfin
+  have hq := hp.isCoveringMap_pullback_fst hf (fun x ↦ ⟨x, rfl⟩)
+  have hqfin := fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
   exact eulerChar_eq_mul_of_isCoveringMap hq hqfin fun x ↦ by
     simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton] using hd x
 
