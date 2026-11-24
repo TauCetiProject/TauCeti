@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Algebra
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import TauCeti.RingTheory.LocalRing.AlgHom
+public import Mathlib.RingTheory.AdicCompletion.RingHom
 
 /-!
 # Adic completions along algebra homomorphisms
@@ -19,16 +18,6 @@ makes the completion of a ring functorial in the pair `(S, I)`: an `R`-algebra h
 onto `I'` induces an isomorphism of completions. This is what is needed to compare the
 completions of isomorphic local rings, for instance of two models of the localization of a ring
 at a prime.
-
-We also record an elementary adic uniqueness principle for `k`-algebra homomorphisms into an
-adically separated commutative ring (`IsHausdorff J S`): if `G` generates a left ideal modulo which
-every element of `R` is represented by a scalar in `k`, then two `k`-algebra homomorphisms
-`R →ₐ[k] S` that agree on `G` and send `G` into `J` are congruent modulo every power `J ^ n`, hence
-equal (`AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`), without assuming `R` is
-commutative. Specializing to local `k`-algebras `R` and `S` with `algebraMap k (ResidueField R)`
-surjective yields uniqueness from agreement on any generating set of `maximalIdeal R`
-(`AlgHom.ext_of_span_eq_maximalIdeal`), even when `R` is not finitely generated as a `k`-algebra
-(as for rings of analytic germs or formal power series).
 
 ## Main definitions and results
 
@@ -45,17 +34,10 @@ surjective yields uniqueness from agreement on any generating set of `maximalIde
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
   `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
-* `AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`: adic congruences to every order and
-  uniqueness of `k`-algebra homomorphisms into an adically separated commutative ring from
-  agreement on a set `G` generating an ideal modulo which every element is represented by a scalar.
-* `AlgHom.ext_of_span_eq_maximalIdeal`: specialization to commutative local `k`-algebras, giving
-  uniqueness from agreement on generators of the maximal ideal.
-
-## References
-
-* N. Bourbaki, *Commutative Algebra*, Chapter III, §2 (for `I`-adic congruences and uniqueness of
-  homomorphisms into adically separated targets) and §3 (for the local-ring specialization and
-  maximal-ideal generators).
+* `IsAdicComplete.liftAlgHomSucc`: the algebra map to an `I`-adically complete ring assembled from
+  compatible algebra maps to the quotients `S ⧸ I ^ (n + 1)`, a reindexing of Mathlib's
+  `IsAdicComplete.liftAlgHom` convenient when level `0` should be `S ⧸ I` rather than the zero
+  ring, with `IsAdicComplete.mk_liftAlgHomSucc`.
 -/
 
 public section
@@ -271,63 +253,38 @@ theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
 
 end AdicCompletion
 
-namespace AlgHom
+namespace IsAdicComplete
 
-/-- **Adic congruences from generators modulo which every element is a scalar.** Suppose `G`
-generates an ideal modulo which every element of `R` is represented by a scalar in `k`, and
-`φ, ψ : R →ₐ[k] S` agree on `G` and map `G` into an ideal `J` of `S`. Then `φ r - ψ r ∈ J ^ n`
-for every `n : ℕ` and `r : R`. -/
-theorem sub_mem_pow_of_eqOn {k R S : Type*} [CommSemiring k] [Ring R] [CommRing S]
-    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} {J : Ideal S}
-    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
-    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
-    ∀ (n : ℕ) (r : R), φ r - ψ r ∈ J ^ n
-  | 0, _ => by simp
-  | n + 1, r => by
-    have hψJ : Ideal.span G ≤ J.comap ψ.toRingHom :=
-      Ideal.span_le.2 fun g hg ↦ Ideal.mem_comap.2 (hG hg ▸ hGJ g hg)
-    obtain ⟨c, hc⟩ := haug r
-    have hrc : φ r - ψ r = φ (r - algebraMap k R c) - ψ (r - algebraMap k R c) := by simp
-    rw [hrc]
-    refine Submodule.span_induction (p := fun x _ ↦ φ x - ψ x ∈ J ^ (n + 1))
-      (fun g hg ↦ by simp [hG hg]) (by simp)
-      (fun x y _ _ hx hy ↦ by simpa only [map_add, sub_add_sub_comm] using add_mem hx hy)
-      (fun a x hx ihx ↦ ?_) hc
-    have hsplit : φ (a • x) - ψ (a • x) = φ a * (φ x - ψ x) + (φ a - ψ a) * ψ x := by
-      simp only [smul_eq_mul, map_mul, mul_sub, sub_mul, sub_add_sub_cancel]
-    rw [hsplit]
-    exact add_mem (Ideal.mul_mem_left _ (φ a) ihx)
-      (pow_succ J n ▸ Ideal.mul_mem_mul (sub_mem_pow_of_eqOn haug hGJ hG n a) (hψJ hx))
+variable {R S A : Type*} [CommRing R] [CommRing S] [Algebra R S] (I : Ideal S) [CommRing A]
+  [Algebra R A] (f : ∀ n : ℕ, A →ₐ[R] S ⧸ I ^ (n + 1))
+  (hf : ∀ {m n : ℕ} (h : m ≤ n),
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ h))).comp (f n) =
+      f m)
 
-/-- **Uniqueness of `k`-algebra homomorphisms into an adically separated ring.** Suppose `G`
-generates an ideal modulo which every element of `R` is represented by a scalar in `k`, and `S` is
-`IsHausdorff J S` for an ideal `J` of `S`. If `φ, ψ : R →ₐ[k] S` agree on `G` and map `G` into
-`J`, then `φ = ψ`. -/
-theorem ext_of_isHausdorff {k R S : Type*} [CommSemiring k] [Ring R] [CommRing S]
-    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} (J : Ideal S) [IsHausdorff J S]
-    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
-    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
-    φ = ψ :=
-  AlgHom.coe_fn_injective <| IsHausdorff.funext' J fun n r ↦
-    Ideal.Quotient.eq.2 (sub_mem_pow_of_eqOn haug hGJ hG n r)
+include hf in
+/-- A family of algebra maps to the quotients `S ⧸ I ^ (n + 1)`, compatible with the transitions,
+gives a family to the quotients `S ⧸ I ^ n`, compatible as in `IsAdicComplete.liftAlgHom`. -/
+private theorem factorₐ_comp_factorₐ_comp {m n : ℕ} (h : m ≤ n) :
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) h)).comp
+        ((Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n)) =
+      (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right m.le_succ)).comp (f m) := by
+  rw [← hf h, ← AlgHom.comp_assoc, ← AlgHom.comp_assoc, Ideal.Quotient.factorₐ_comp,
+    Ideal.Quotient.factorₐ_comp]
 
-/-- **Uniqueness of `k`-algebra homomorphisms of local rings from maximal-ideal generators.** Let
-`R` and `S` be commutative local `k`-algebras such that `algebraMap k (ResidueField R)` is
-surjective and `S` is separated (`IsHausdorff`) with respect to its maximal ideal. If `G` generates
-`maximalIdeal R` and `φ, ψ : R →ₐ[k] S` agree on `G` with `φ` local (no locality assumption on `ψ`
-is needed), then `φ = ψ`. -/
-theorem ext_of_span_eq_maximalIdeal {k R S : Type*} [CommRing k] [CommRing R] [IsLocalRing R]
-    [CommRing S] [IsLocalRing S] [Algebra k R] [Algebra k S]
-    [IsHausdorff (IsLocalRing.maximalIdeal S) S] {φ ψ : R →ₐ[k] S} [IsLocalHom φ]
-    (hres : Function.Surjective (algebraMap k (IsLocalRing.ResidueField R)))
-    {G : Set R} (hG_span : Ideal.span G = IsLocalRing.maximalIdeal R)
-    (hG : Set.EqOn φ ψ G) :
-    φ = ψ := by
-  have : IsLocalHom φ.toRingHom := ⟨IsLocalHom.map_nonunit (f := φ)⟩
-  refine ext_of_isHausdorff (IsLocalRing.maximalIdeal S) (fun r ↦ ?_) (fun g hg ↦ ?_) hG
-  · obtain ⟨c, hc⟩ := hres (IsLocalRing.residue R r)
-    refine ⟨c, hG_span.symm ▸ (IsLocalRing.residue_eq_zero_iff _).1 ?_⟩
-    rw [map_sub, TauCeti.residue_algebraMap, hc, sub_self]
-  · exact map_nonunit φ.toRingHom g (hG_span ▸ Ideal.subset_span hg)
+variable [IsAdicComplete I S]
 
-end AlgHom
+/-- The algebra map to an `I`-adically complete ring assembled from compatible algebra maps to its
+quotients `S ⧸ I ^ (n + 1)`. This is Mathlib's `IsAdicComplete.liftAlgHom`, reindexed so that the
+family starts at `S ⧸ I`. -/
+noncomputable def liftAlgHomSucc : A →ₐ[R] S :=
+  liftAlgHom I (fun n ↦ (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n))
+    (factorₐ_comp_factorₐ_comp I f hf)
+
+/-- Modulo `I ^ (n + 1)`, the map `liftAlgHomSucc I f hf` is `f n`. -/
+@[simp]
+theorem mk_liftAlgHomSucc (n : ℕ) (x : A) :
+    Ideal.Quotient.mk (I ^ (n + 1)) (liftAlgHomSucc I f hf x) = f n x := by
+  rw [liftAlgHomSucc, mk_liftAlgHom _ _ (factorₐ_comp_factorₐ_comp I f hf), AlgHom.comp_apply,
+    ← hf n.le_succ, AlgHom.comp_apply]
+
+end IsAdicComplete

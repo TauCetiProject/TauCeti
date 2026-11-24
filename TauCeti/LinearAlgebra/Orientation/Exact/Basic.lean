@@ -69,6 +69,8 @@ Naturality carries these orientations along the flow.
 * `Orientation.ofExact_inl_snd`: for a product, the induced orientation is the product
   orientation.
 * `Orientation.ofExact_eq_map_prod`: the induced orientation read in a splitting of the sequence.
+* `Orientation.ofExact_comm`: two complementary short exact sequences `A → B → C` and
+  `C → B → A` that split each other induce orientations differing by `(-1) ^ (dim A * dim C)`.
 
 ## References
 
@@ -423,6 +425,31 @@ theorem ofExact_eq_map_prod {A₀ : Type*} [AddCommGroup A₀] [Module R A₀] [
       LinearMap.snd_apply]) o p hm hn
   rw [map_refl, Equiv.refl_apply, ofExact_inl_snd] at h
   rw [← h, ← map_trans, LinearEquiv.symm_trans_self, map_refl, Equiv.refl_apply]
+
+/-- **Exchanging two complementary short exact sequences.** Let `0 → A → B → C → 0`, by `f` and
+`g`, and `0 → C → B → A → 0`, by `f'` and `g'`, split each other: `g' ∘ f` and `g ∘ f'` are the
+identities, so `B = f A ⊕ f' C`. Then the orientation of `B` induced by `p` and `o` through the
+second sequence is `(-1) ^ (m * n)` times the one induced by `o` and `p` through the first, the
+index types being identified through `m + n = n + m`. -/
+theorem ofExact_comm {f' : C →ₗ[R] B} {g' : B →ₗ[R] A} (hf' : Function.Injective f')
+    (hfg' : Function.Exact f' g') (hg' : Function.Surjective g') (hgf : ∀ x, g' (f x) = x)
+    (hgf' : ∀ z, g (f' z) = z) (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
+    (hm : finrank R A = m) (hn : finrank R C = n) :
+    ofExact hf' hfg' hg' p o hn hm =
+      (-1 : Rˣ) ^ (m * n) •
+        Orientation.reindex R B (finCongr (add_comm m n)) (ofExact hf hfg hg o p hm hn) := by
+  -- The two sequences are read in the same splitting `G (x, z) = f x + f' z` of `B`, given by
+  -- `Function.Exact.splitSurjectiveEquiv` with the section `f'` of `g`. Mathlib states no lemma
+  -- for its value, so `hG` unfolds the definition.
+  set G := (hfg.splitSurjectiveEquiv hf ⟨f', LinearMap.ext hgf'⟩).val.symm
+  have hG (x : A) (z : C) : G (x, z) = f x + f' z := rfl
+  have h₁ := ofExact_eq_map_prod hf hfg hg (LinearEquiv.refl R A) G (fun x ↦ by simp [hG])
+    (fun z ↦ by simp [hG, hgf', hfg.apply_apply_eq_zero]) o p hm hn
+  have h₂ := ofExact_eq_map_prod hf' hfg' hg' (LinearEquiv.refl R C)
+    ((LinearEquiv.prodComm R C A).trans G) (fun z ↦ by simp [hG])
+    (fun z ↦ by simp [hG, hgf, hfg'.apply_apply_eq_zero]) p o hn hm
+  rw [map_refl, Equiv.refl_apply] at h₁ h₂
+  rw [h₂, h₁, map_trans, map_prodComm_prod, map_units_smul, ← map_reindex, mul_comm]
 
 section Positive
 

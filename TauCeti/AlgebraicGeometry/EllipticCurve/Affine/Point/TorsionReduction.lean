@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Free
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Division
-import TauCeti.Algebra.Module.Torsion.Snake
+import TauCeti.Algebra.Module.Torsion.Map
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 -- Proof-only: carrying points of `W` to the completion.
