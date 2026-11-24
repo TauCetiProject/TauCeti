@@ -40,10 +40,10 @@ of the `p`-primary components.
   sum of primary components is the sum of the component values.
 * `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: for any odd natural
   number `n`, the restricted `n`-primary component has odd cardinality.
-* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent`: a bilinear isometry restricts
-  to an isometry of `n`-primary components, commuting with `.symm`, `refl`, and `trans`.
-* `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
-  isometry of `p`-primary components.
+* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
+  isometry of `p`-primary components, commuting with `.symm`, `refl`, and `trans` in the bilinear
+  case.
 * `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
   of an orthogonal product is the orthogonal product of the `p`-primary components.
 
@@ -169,28 +169,33 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
-/-! ## Restriction of isometries -/
+/-! ## Primary components under isometries -/
 
-/-- An isometry of finite bilinear modules restricts to an isometry between their `n`-primary
-components. -/
-def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
-    (f : Isometry A B) (n : ℕ) :
-    Isometry (A.restrict (AddCommGroup.primaryComponent A n))
-      (B.restrict (AddCommGroup.primaryComponent B n)) where
-  toAddEquiv :=
-    { toFun x := ⟨f x.val, f.toAddEquiv.map_mem_primaryComponent_iff.mpr x.property⟩
-      invFun y := ⟨f.symm y.val, f.symm.toAddEquiv.map_mem_primaryComponent_iff.mpr y.property⟩
-      left_inv x := Subtype.ext (f.symm_apply_apply x.val)
-      right_inv y := Subtype.ext (f.apply_symm_apply y.val)
-      map_add' x y := Subtype.ext (map_add f x.val y.val) }
-  map_pairing' x y := f.map_pairing x.val y.val
+variable {A} in
+/-- An isometry carries `p`-primary components onto `p`-primary components, so it restricts to an
+isometry between them. -/
+def Isometry.restrictPrimaryComponent {B : FiniteBilinearModule} (f : Isometry A B) (p : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A p))
+      (B.restrict (AddCommGroup.primaryComponent B p)) :=
+  f.restrict fun x ↦ by
+    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+
+variable {A} in
+/-- The restriction of an isometry to primary components acts as the isometry. -/
+@[simp]
+theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteBilinearModule}
+    (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
+  f.restrictHom_restrict_apply _ x
 
 /-- The restricted bilinear isometry on `n`-primary components acts as `f` on subtypes. -/
 @[simp]
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : AddCommGroup.primaryComponent A n) :
-    (f.restrictPrimaryComponent n x : B) = f x.val := (rfl)
+    (f.restrictPrimaryComponent n x : B) = f x.val := by
+  simpa [B.restrictHom_apply, A.restrictHom_apply] using
+    f.restrictHom_restrictPrimaryComponent_apply n x
 
 /-- Restricting a bilinear isometry to `n`-primary components commutes with inversion. -/
 @[simp]

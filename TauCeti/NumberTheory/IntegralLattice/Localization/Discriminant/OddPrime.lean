@@ -8,31 +8,24 @@ module
 public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
-import TauCeti.Algebra.Group.Even
-import TauCeti.Data.Fintype.Fiber
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
+import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Classification
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
-import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.NumberTheory.Padics.BilinearForm.OddPrime
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Odd-prime classification of integral localizations by the discriminant form
 
 Classification of localized integral forms `L_p` over `ℤ_p` at an odd prime `p` (Nikulin,
-Theorem 1.9.1 and Corollaries 1.9.4 and 1.16.3): `L_p ≃ M_p` iff `rank L = rank M`,
-`det L · det M` is a square in `ℤ_p`, and `(A_L)_p ≅ (A_M)_p` (with rank and determinant
-redundant when `finrank ℤ L = AddGroup.rank (A_L)_p` and `finrank ℤ M = AddGroup.rank (A_M)_p`).
+Theorem 1.9.1 and Corollaries 1.9.4 and 1.16.3), building on
+`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent`:
+unit-square determinant and even-lattice variants, and minimal-rank uniqueness when
+`finrank ℤ L = AddGroup.rank (A_L)_p` and `finrank ℤ M = AddGroup.rank (A_M)_p`.
 
 ## Main results
 
-* `IntegralLattice.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule`
 * `IntegralLattice.localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinearModule`
 * `IntegralLattice.localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModule`
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_of_finrank_eq_rank`
@@ -71,96 +64,10 @@ private theorem exists_int_lifts_and_isometry_pi_oddCyclic_primaryComponent
     L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu fun i ↦
       (pow_dvd_pow (p : ℤ_[p]) (le_max_left (k i) 1)).trans (hθ_dvd i)⟩
 
-/-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
-discriminant bilinear modules are isometric, `k` and `l` agree up to a permutation `σ` and every
-positive-scale fiber has square unit product. -/
-private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
-    {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
-    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {n : ℕ}
-    {b : Basis (Fin n) ℤ_[p] (L.LocalCarrier p)} {c : Basis (Fin n) ℤ_[p] (M.LocalCarrier p)}
-    {u v : Fin n → ℤ_[p]ˣ} {k l : Fin n → ℕ}
-    (hb : (L.localIntegralForm p).iIsOrtho b) (hc : (M.localIntegralForm p).iIsOrtho c)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
-    (hcv : ∀ i, M.localIntegralForm p (c i) (c i) = v i * (p : ℤ_[p]) ^ l i)
-    (hdisc : Nonempty (FiniteBilinearModule.Isometry
-      (L.discriminantBilinearModule.restrict (primaryComponent L.discriminantBilinearModule p))
-      (M.discriminantBilinearModule.restrict (primaryComponent M.discriminantBilinearModule p)))) :
-    ∃ σ : Equiv.Perm (Fin n), (∀ i, l (σ i) = k i) ∧
-      ∀ m, 0 < m → IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i)) := by
-  classical
-  have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  obtain ⟨θL, hθL, ⟨fL⟩⟩ :=
-    exists_int_lifts_and_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu
-  obtain ⟨θM, hθM, ⟨fM⟩⟩ :=
-    exists_int_lifts_and_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv
-  obtain ⟨fLM⟩ := hdisc
-  have hpos := FiniteQuadraticModule.forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic
-    (u := u) (v := v) (k := k) (l := l) hp_odd hθL hθM ⟨fL.trans (fLM.trans fM.symm)⟩
-  obtain ⟨σ, hσ⟩ :=
-    Function.exists_perm_of_occCount_eq_of_ne (u := k) (v := l) (z := 0) fun m hm ↦ by
-      rw [Function.occCount_eq_card_filter, Function.occCount_eq_card_filter]
-      exact (hpos m (Nat.pos_of_ne_zero hm)).1
-  have hσi : ∀ i, l (σ i) = k i := congrFun hσ
-  refine ⟨σ, hσi, fun m hm ↦ ?_⟩
-  rw [Finset.prod_filter_equiv k l v m (σ : Fin n ≃ Fin n) hσi]; exact (hpos m hm).2
-
 /-! ### Odd-prime classification theorems -/
 
-/-- **Odd-prime local classification by the discriminant bilinear module.** Let `p` be an odd prime
-and let `L` and `M` be nondegenerate integral lattices. Their localized integral forms over `ℤ_p`
-are isometric if and only if `L` and `M` have the same rank, the product of their signed
-determinants is a square in `ℤ_p`, and the `p`-primary components of their discriminant bilinear
-modules are isometric. -/
-theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule
-    (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
-    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
-    (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
-      finrank ℤ L = finrank ℤ M ∧
-        IsSquare ((L.determinant : ℤ_[p]) * (M.determinant : ℤ_[p])) ∧
-        Nonempty (FiniteBilinearModule.Isometry
-          (L.discriminantBilinearModule.restrict (primaryComponent L.discriminantBilinearModule p))
-          (M.discriminantBilinearModule.restrict
-            (primaryComponent M.discriminantBilinearModule p))) := by
-  classical
-  constructor
-  · intro h
-    obtain ⟨hrank, hsq⟩ := L.localIntegralForm_equivalent_imp M p h
-    exact ⟨hrank, hsq, h.map primaryDiscriminantBilinearIsometry⟩
-  · rintro ⟨hrank, hsq, hdisc⟩
-    obtain ⟨b, u, k, hb, hbu⟩ :=
-      L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
-        (rfl : finrank ℤ L = _)
-    obtain ⟨c, v, l, hc, hcv⟩ :=
-      M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp M.form_nondegenerate
-        hrank.symm
-    obtain ⟨σ, hσ, hpos⟩ :=
-      exists_perm_and_isSquare_pos_of_isometry_primaryComponent hp hb hc hbu hcv hdisc
-    obtain ⟨dL, hdL⟩ := L.exists_unit_sq_mul_determinant_eq_prod_mul_pow hb hbu
-    obtain ⟨dM, hdM⟩ := M.exists_unit_sq_mul_determinant_eq_prod_mul_pow hc hcv
-    have hsum_eq : ∑ j, l j = ∑ i, k i :=
-      (Equiv.sum_comp (σ : Fin _ ≃ Fin _) l).symm.trans (Finset.sum_congr rfl fun i _ ↦ hσ i)
-    have hprod_v : ∏ j, (v j : ℤ_[p]) = ∏ i, (v (σ i) : ℤ_[p]) :=
-      (Equiv.prod_comp (σ : Fin _ ≃ Fin _) fun j ↦ (v j : ℤ_[p])).symm
-    have hfull : IsSquare ((∏ i, u i) * ∏ i, v (σ i)) := by
-      rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod,
-        ← TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff
-          (pow_ne_zero (∑ i, k i) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))]
-      obtain ⟨z, hz⟩ := hsq
-      refine ⟨z * dL * dM, ?_⟩
-      have hmul := congrArg₂ (· * ·) hdL hdM
-      rw [hsum_eq, hprod_v] at hmul; rw [sq]
-      linear_combination -hmul + (dL : ℤ_[p]) ^ 2 * (dM : ℤ_[p]) ^ 2 * hz
-    have hzero : IsSquare ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v (σ i)) := by
-      rw [← Finset.prod_mul_distrib]
-      refine Finset.univ.isSquare_prod_filter_of_isSquare_prod k (fun i ↦ u i * v (σ i)) 0
-        (by rwa [Finset.prod_mul_distrib]) fun m hm ↦ ?_
-      rw [Finset.prod_mul_distrib]; exact hpos m (Nat.pos_of_ne_zero hm)
-    exact (L.localIntegralForm p).equivalent_of_iIsOrtho_of_forall_fiber
-      (M.localIntegralForm p) hp hb hc hbu hcv σ hσ fun m ↦ by
-        rcases Nat.eq_zero_or_pos m with rfl | hm <;> [exact hzero; exact hpos m hm]
-
 /-- Unit-square determinant formulation of
-`localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule`. -/
+`localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent`. -/
 theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinearModule
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
@@ -174,8 +81,8 @@ theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear
   refine ⟨fun h ↦ ⟨(L.localIntegralForm_equivalent_imp M p h).1,
     L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p h,
     h.map primaryDiscriminantBilinearIsometry⟩, fun ⟨hrank, ⟨u, hu⟩, hdisc⟩ ↦ ?_⟩
-  refine (L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp).mpr
-    ⟨hrank, ⟨(u : ℤ_[p]) * (M.determinant : ℤ_[p]), by rw [hu]; ring⟩, hdisc⟩
+  refine (localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent (L := L) (M := M)
+    hp).mpr ⟨hrank, ⟨(u : ℤ_[p]) * (M.determinant : ℤ_[p]), by rw [hu]; ring⟩, hdisc⟩
 
 /-- **Odd-prime local classification for even lattices.** For even nondegenerate lattices `L` and
 `M` and an odd prime `p`, `L_p ≃ M_p` iff `rank L = rank M`, `det L · det M` is a square in `ℤ_p`,
@@ -191,7 +98,7 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModul
             (primaryComponent (L.discriminantQuadraticModule hL) p))
           ((M.discriminantQuadraticModule hM).restrict
             (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
-  rw [L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp,
+  rw [localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent (L := L) (M := M) hp,
     L.nonempty_isometry_restrict_discriminantQuadraticModule_primaryComponent_iff M hL hM
       ((Fact.out : p.Prime).odd_of_ne_two hp)]
 

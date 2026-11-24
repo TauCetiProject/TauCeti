@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit
 public import TauCeti.RepresentationTheory.SU2.LieAlgebra
 public import TauCeti.RepresentationTheory.SU2.StandardBasis
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The coadjoint orbits of `SU(2)`
@@ -52,6 +53,12 @@ of `SU(2)` through `ν_m` is the sphere of radius `√(m ⬝ᵥ m)`**:
 coadjoint orbits of `SO(3)`
 (`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`), while their isotropy
 groups are the preimages of those of `SO(3)` and contain the center `{±1}`.
+Concretely, the rotation `toSO3 g` fixes `e₃` exactly when `g` is diagonal
+(`TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`), so the stabilizer of `ν_(c e₃)`, `c ≠ 0`, is
+the maximal torus `T = {diag(z, z⁻¹)}`
+(`TauCeti.SU2.stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two`), and the
+stabilizer of any nonzero `ν` is a conjugate `g T g⁻¹`
+(`TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_torus_map_conj`).
 The two groups differ in the period of the torus generator `-iσ₃/2`, which is `4π` in `SU(2)` and
 `2π` in `SO(3)` (`TauCeti.lieExp_smul_suTwoEquiv_single_two_eq_one_iff`,
 `TauCeti.toSO3_eq_one_iff_of_coe_eq_lieExp`), not in their coadjoint orbits.
@@ -81,6 +88,9 @@ proves the corresponding statements for these concrete models, through `suTwoLie
   coordinates.
 * `TauCeti.SU2.range_coadjointRepresentation_suTwoDualEquiv`: the coadjoint orbits of `SU(2)` are
   the spheres about the origin.
+* `TauCeti.SU2.stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two`,
+  `TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_torus_map_conj`: the coadjoint
+  stabilizer of a nonzero point is a maximal torus.
 
 ## References
 
@@ -211,6 +221,31 @@ theorem suTwoDualEquiv_mem_range_coadjointRepresentation_iff {m p : Fin 3 → �
       p ⬝ᵥ p = m ⬝ᵥ m := by
   rw [range_coadjointRepresentation_suTwoDualEquiv, suTwoDualEquiv.injective.mem_set_image,
     Set.mem_ofPred_eq]
+
+/-- **The coadjoint stabilizer of `ν_(c e₃)`, `c ≠ 0`, is the maximal torus** `T = {diag(z, z⁻¹)}`
+of `SU(2)`. -/
+theorem stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two {c : ℝ} (hc : c ≠ 0) :
+    coadjointRepresentation.stabilizer (suTwoDualEquiv (c • Pi.single 2 1)) = torus := by
+  ext g
+  rw [mem_stabilizer_coadjointRepresentation_suTwoDualEquiv_iff, mulVec_smul,
+    (smul_right_injective _ hc).eq_iff, toSO3_mulVec_single_two_eq_self_iff]
+
+/-- **The coadjoint stabilizer of a nonzero point of `𝔰𝔲(2)*` is a maximal torus**: a conjugate
+`g T g⁻¹` of the diagonal torus. -/
+theorem exists_stabilizer_coadjointRepresentation_eq_torus_map_conj {ν : Dual ℝ lieAlgebra}
+    (hν : ν ≠ 0) : ∃ g : SU2, coadjointRepresentation.stabilizer ν = torus.map (MulAut.conj g) := by
+  obtain ⟨n, rfl⟩ := suTwoDualEquiv.surjective ν
+  have hn : n ≠ 0 := by rintro rfl; exact hν (map_zero _)
+  -- `ν_n` lies on the coadjoint orbit through `ν_(c e₃)` for `c = √(n ⬝ᵥ n) ≠ 0`.
+  have h0 := dotProduct_self_nonneg n
+  have hc : √(n ⬝ᵥ n) ≠ 0 :=
+    Real.sqrt_ne_zero'.mpr (h0.lt_of_ne (Ne.symm (dotProduct_self_eq_zero.not.mpr hn)))
+  obtain ⟨g, hg⟩ := (suTwoDualEquiv_mem_range_coadjointRepresentation_iff
+    (m := √(n ⬝ᵥ n) • Pi.single 2 1) (p := n)).mpr <| by
+      simp [Real.mul_self_sqrt h0]
+  refine ⟨g, ?_⟩
+  rw [← hg, Representation.stabilizer_conj,
+    stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two hc]
 
 /-! ### The kernel of the coadjoint representation -/
 

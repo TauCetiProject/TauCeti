@@ -71,6 +71,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.exists_int_isCoprime_and_pow_dvd_sub`, `PadicInt.isCoprime_of_isUnit_of_dvd_sub`:
   every unit of `ℤ_p` admits an integer lift coprime to `p` and congruent modulo `p ^ max k 1`,
   and conversely any integer congruent modulo `p` to a unit of `ℤ_p` is coprime to `p`.
+* `PadicInt.exists_intCast_dvd_sub_and_toZMod_eq`: every `p`-adic integer is congruent modulo
+  `p ^ n` to an integer with the same reduction modulo `p`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -99,6 +101,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
@@ -383,6 +386,16 @@ theorem isCoprime_of_isUnit_of_dvd_sub {x : ℤ_[p]} (hx : IsUnit x) {a : ℤ}
     hp.out.coprime_iff_not_dvd.mpr fun h ↦ hndvd (Int.natCast_dvd.mpr h)
   exact (Int.natAbs_eq a).elim (· ▸ hcop.isCoprime) (· ▸ hcop.isCoprime.neg_right)
 
+/-- A `p`-adic integer is congruent modulo `p ^ n` to an integer with the same reduction modulo
+`p`. -/
+theorem exists_intCast_dvd_sub_and_toZMod_eq (x : ℤ_[p]) (n : ℕ) :
+    ∃ θ : ℤ, (p : ℤ_[p]) ^ n ∣ x - θ ∧ toZMod x = θ := by
+  refine ⟨(x.appr (n + 1) : ℕ), ?_, ?_⟩
+  · rw [Int.cast_natCast]
+    exact (pow_dvd_pow _ n.le_succ).trans (dvd_sub_appr x (n + 1))
+  · rw [← cast_toZModPow_eq_toZMod n.succ_ne_zero, toZModPow_eq_natCast_appr,
+      ZMod.cast_natCast (dvd_pow_self p n.succ_ne_zero), Int.cast_natCast]
+
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are
 divisible by `pʲ`: the indices `r + t pʲ` with `t < ⌊n / pʲ⌋`, where `r = appr a j`. -/
@@ -557,6 +570,19 @@ theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n 
   have h := valuation_coe (n : ℤ_[p])
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
+
+/-- **The index of `n ℤ_p` in `ℤ_p` is `p ^ v_p(n)`** for a natural number `n ≠ 0`, the inverse of
+the `p`-adic absolute value of `n`. -/
+theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
+    (nsmulAddMonoidHom (α := ℤ_[p]) n).range.index = p ^ multiplicity p n := by
+  have hrange : (nsmulAddMonoidHom (α := ℤ_[p]) n).range =
+      (Ideal.span {(n : ℤ_[p])}).toAddSubgroup := by
+    ext x
+    simp [Ideal.mem_span_singleton', nsmul_eq_mul, mul_comm]
+  rw [hrange, ← Nat.padicValNat_def, ← valuation_natCast,
+    ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
+  -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
+  exact AddSubgroup.index_eq_card _
 
 /-- A unit of `ℤ_[p]` has valuation `0`. -/
 theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by

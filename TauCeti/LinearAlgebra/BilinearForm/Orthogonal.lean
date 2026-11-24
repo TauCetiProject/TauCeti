@@ -47,6 +47,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
   orthogonal family is the sum of the self-pairings.
 * `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
+* `LinearMap.BilinForm.iIsOrtho.apply_eq_zero_of_mem_span_image_fiber`: the spans of the members
+  of an orthogonal family in distinct fibers of a map are orthogonal.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
 * `LinearMap.BilinForm.exists_forall_restrict_eq_of_isInternal`: forms on the summands of an
@@ -219,6 +221,16 @@ theorem iIsOrtho.reindex {B : LinearMap.BilinForm K V} {ι κ : Type*} {b : Modu
   iIsOrtho_def.mpr fun i j hij ↦ by
     simpa [Module.Basis.reindex_apply] using
       iIsOrtho_def.mp hb (e.symm i) (e.symm j) (e.symm.injective.ne hij)
+
+/-- For an orthogonal family `v`, the spans of its members in distinct fibers of a map `w` are
+orthogonal. -/
+theorem iIsOrtho.apply_eq_zero_of_mem_span_image_fiber {B : LinearMap.BilinForm K V} {ι κ : Type*}
+    {v : ι → V} (hv : B.iIsOrtho v) {w : ι → κ} {c c' : κ} (hc : c ≠ c') {x y : V}
+    (hx : x ∈ Submodule.span K (v '' {i | w i = c}))
+    (hy : y ∈ Submodule.span K (v '' {i | w i = c'})) : B x y = 0 :=
+  apply_eq_zero_of_mem_span (s := v '' {i | w i = c}) (t := v '' {i | w i = c'}) (by
+    rintro _ ⟨i, hi, rfl⟩ _ ⟨j, hj, rfl⟩
+    exact hv fun hij ↦ hc (hi.symm.trans (hij ▸ hj))) hx hy
 
 /-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
 of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
