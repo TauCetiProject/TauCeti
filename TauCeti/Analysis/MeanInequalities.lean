@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
 
 /-!
 # Mean inequalities
@@ -54,6 +57,13 @@ The triangle inequality for the Euclidean norm on `ℝ²`, applied to finitely m
 defined as the Euclidean combination of two component norms, each subadditive, such as the norm
 of a higher-order Sobolev space.
 
+Maclaurin's inequalities `S_l^k ≤ S_k^l` between the elementary symmetric means
+`S_j = σ_j(s) / binom(card s, j)` of a multiset `s` (`Multiset.esymm_div_choose_pow_le_pow`) take
+over `ℝ` the equivalent root form `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`, on the cone
+`σ_1, …, σ_l > 0` and for nonnegative reals. The closed nonnegative orthant lies in the closure of
+the cone, and on its boundary part `σ_l` vanishes. At `k = 1` and `l = card s` this is the
+inequality of arithmetic and geometric means.
+
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
@@ -81,11 +91,14 @@ of a higher-order Sobolev space.
   `ℓᵖ` expression of `f` by `c` times that of `g`.
 * `Real.Lp_const_of_nonneg`: the finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is
   `#s ^ (1 / p) * t`.
+* `Multiset.esymm_div_choose_rpow_le_rpow`,
+  `Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`: Maclaurin's inequalities in root form, on
+  the cone `σ_1, …, σ_l > 0` and for nonnegative reals.
 
 ## References
 
 * G. H. Hardy, J. E. Littlewood and G. Pólya, *Inequalities*, 2nd ed., Cambridge University Press
-  1952, Chapter II.
+  1952, Chapter II (§2.22 for Maclaurin's inequalities).
 -/
 
 public section
@@ -435,3 +448,43 @@ theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ 
     rpow_rpow_inv ht hp]
 
 end Real
+
+namespace Multiset
+
+variable (s : Multiset ℝ)
+
+/-- **Maclaurin's inequalities**: if `σ_1(s), …, σ_l(s) > 0`, then the elementary symmetric means
+`S_j = σ_j(s) / binom(card s, j)` satisfy `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. -/
+theorem esymm_div_choose_rpow_le_rpow {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
+    (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) :
+    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
+      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
+  have hk₀ := s.esymm_div_choose_pos (hpos k (Finset.mem_Icc.mpr ⟨hk, hkl⟩))
+  have hl₀ := s.esymm_div_choose_pos (hpos l (Finset.mem_Icc.mpr ⟨hk.trans hkl, le_rfl⟩))
+  have hpow := s.esymm_div_choose_pow_le_pow hkl hpos
+  have hlR : (0 : ℝ) < l := by exact_mod_cast hk.trans hkl
+  -- Take the `(k l)`-th root of `S_l^k ≤ S_k^l`.
+  have hroot := Real.rpow_le_rpow (by positivity) hpow (by positivity : 0 ≤ 1 / ((k : ℝ) * l))
+  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul hl₀.le,
+    ← Real.rpow_mul hk₀.le] at hroot
+  convert hroot using 2 <;> field_simp
+
+/-- **Maclaurin's inequalities** for nonnegative reals: if every element of `s` is nonnegative,
+then the elementary symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy
+`S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. At `k = 1` and `l = card s` this is the inequality of
+arithmetic and geometric means. -/
+theorem esymm_div_choose_rpow_le_rpow_of_nonneg {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
+    (hs : ∀ a ∈ s, 0 ≤ a) :
+    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
+      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
+  by_cases hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j
+  · exact s.esymm_div_choose_rpow_le_rpow hk hkl hpos
+  push Not at hpos
+  obtain ⟨j, hj, hj₀⟩ := hpos
+  have hl : s.esymm l = 0 :=
+    esymm_eq_zero_of_le hs (hj₀.antisymm (esymm_nonneg hs j)) (Finset.mem_Icc.mp hj).2
+  have hlR : (1 / (l : ℝ)) ≠ 0 := one_div_ne_zero (by have := hk.trans hkl; positivity)
+  rw [hl, zero_div, Real.zero_rpow hlR]
+  exact Real.rpow_nonneg (div_nonneg (esymm_nonneg hs k) (Nat.cast_nonneg _)) _
+
+end Multiset
