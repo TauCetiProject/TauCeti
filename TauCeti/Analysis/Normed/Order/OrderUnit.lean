@@ -456,13 +456,16 @@ variable {E F G : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [
 
 section Module
 
-variable [Module ℝ E] [Preorder E] [FunLike G E F] [LinearMapClass G ℝ E F]
+variable [Module ℝ E] [FunLike G E F] [LinearMapClass G ℝ E F]
 
-/-- **Positive maps are bounded.** A monotone linear map `T` into a space with the order-unit
-norm of `f`, from a space whose norm dominates in the sense `a ≤ ‖a‖ • e` (for instance the
-order-unit norm of `e`), satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. No continuity is assumed. -/
-theorem norm_map_le (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G)
-    (hT : Monotone T) (a : E) : ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
+/-- **Positive maps are bounded.** An order-preserving linear map `T` into a space with the
+order-unit norm of `f`, from a space whose norm dominates in the sense `a ≤ ‖a‖ • e` (for instance
+the order-unit norm of `e`), satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. No continuity is assumed. Order
+preservation is an explicit hypothesis, so that the domain only needs a relation `≤`; a proof of
+`Monotone T` can be passed for it. The real-valued case `f = 1` is
+`PositiveLinearMap.abs_apply_le_mul_norm`. -/
+theorem norm_map_le [LE E] (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G)
+    (hT : ∀ ⦃a b : E⦄, a ≤ b → T a ≤ T b) (a : E) : ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
   have key (b : E) : T b ≤ (‖T e‖ * ‖b‖) • f :=
     calc T b ≤ T (‖b‖ • e) := hT (hu b)
       _ ≤ ‖T (‖b‖ • e)‖ • f := hf.le_norm_smul _
@@ -473,15 +476,15 @@ theorem norm_map_le (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • 
 
 /-- A monotone linear map into a space with the order-unit norm of `f`, from a space whose norm
 dominates in the sense `a ≤ ‖a‖ • e`, is Lipschitz with constant `‖T e‖`. -/
-theorem lipschitzWith_of_monotone (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G)
-    (hT : Monotone T) : LipschitzWith ‖T e‖₊ T :=
+theorem lipschitzWith_of_monotone [Preorder E] (hf : IsOrderUnitNorm f)
+    (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G) (hT : Monotone T) : LipschitzWith ‖T e‖₊ T :=
   AddMonoidHomClass.lipschitz_of_bound_nnNorm T _ fun a => by
     exact_mod_cast hf.norm_map_le hu T hT a
 
 /-- **Automatic continuity.** A monotone linear map into a space with the order-unit norm of `f`,
 from a space whose norm dominates in the sense `a ≤ ‖a‖ • e`, is continuous. -/
-theorem continuous_of_monotone (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G)
-    (hT : Monotone T) : Continuous T :=
+theorem continuous_of_monotone [Preorder E] (hf : IsOrderUnitNorm f)
+    (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G) (hT : Monotone T) : Continuous T :=
   (hf.lipschitzWith_of_monotone hu T hT).continuous
 
 end Module

@@ -50,7 +50,10 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
   normalized positive continuous linear functionals.
 * `TauCeti.OrderUnit.toWeakDual_comp_mem_stateSpace`: states pull back along unital monotone
   continuous linear maps; in particular they restrict to subspaces containing `e`.
-* `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one`: `φ` is a state iff `‖φ‖ = φ e = 1`.
+* `TauCeti.OrderUnit.toWeakDual_inv_smul_mem_stateSpace`: a monotone functional `g` with
+  `0 < g e` normalizes to a state.
+* `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one`: `φ` is a state iff
+  `‖φ‖ = φ e = 1`.
 * `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`: existence of states.
 * `TauCeti.IsOrderUnitNorm.exists_extension_mem_stateSpace`: extension of states from subspaces
   containing `e`.
@@ -130,6 +133,13 @@ theorem toWeakDual_comp_mem_stateSpace {F : Type*} [AddCommGroup F] [Module ℝ 
   ⟨by simpa [StrongDual.coe_toWeakDual, ContinuousLinearMap.coe_comp, coe_toStrongDual] using
     hφ.1.comp hT, by simpa [hTe] using hφ.2⟩
 
+/-- **Normalization.** A monotone continuous linear functional `g` with `0 < g e`, divided by its
+value at `e`, is a state. -/
+theorem toWeakDual_inv_smul_mem_stateSpace {g : StrongDual ℝ E} (hg : Monotone g)
+    (hge : 0 < g e) : StrongDual.toWeakDual ((g e)⁻¹ • g) ∈ stateSpace e :=
+  ⟨fun x y hxy => by simpa using mul_le_mul_of_nonneg_left (hg hxy) (inv_nonneg.2 hge.le),
+    by simp [hge.ne']⟩
+
 end Preorder
 
 section PartialOrder
@@ -194,7 +204,7 @@ variable [IsOrderedAddMonoid E]
 
 /-- A continuous linear functional on an order-unit space is a state exactly when
 `‖φ‖ = φ e = 1`; positivity is then automatic. -/
-theorem mem_stateSpace_iff_norm_eq_one (h : IsOrderUnitNorm e) :
+theorem mem_stateSpace_iff_norm_eq_one_and_apply_eq_one (h : IsOrderUnitNorm e) :
     φ ∈ OrderUnit.stateSpace e ↔ ‖toStrongDual φ‖ = 1 ∧ φ e = 1 := by
   refine ⟨fun hφ => ⟨h.norm_toStrongDual_of_mem_stateSpace hφ, hφ.2⟩, fun ⟨hn, h1⟩ =>
     OrderUnit.mem_stateSpace_iff_map_nonneg.2 ⟨fun a ha => ?_, h1⟩⟩
@@ -207,7 +217,7 @@ theorem mem_stateSpace_iff_norm_eq_one (h : IsOrderUnitNorm e) :
 theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).Nonempty := by
   -- a functional of norm one attaining the norm `‖e‖ = 1` at `e` is a state
   obtain ⟨g, hg, hge⟩ := exists_dual_vector ℝ e (by simp [h.norm_eq_one])
-  exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one.2
+  exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2
     ⟨hg, by simpa [h.norm_eq_one] using hge⟩⟩
 
 /-- **Extension of states.** Every state of a subspace `p` containing `e` extends to a state of
@@ -216,8 +226,8 @@ theorem exists_extension_mem_stateSpace (h : IsOrderUnitNorm e) (p : Submodule �
     (hp : e ∈ p) {ψ : WeakDual ℝ p} (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hp⟩ : p)) :
     ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x := by
   obtain ⟨g, hgx, hg⟩ := exists_extension_norm_eq p (toStrongDual ψ)
-  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one.2 ⟨?_, ?_⟩, fun x => by
-    simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
+  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2 ⟨?_, ?_⟩,
+    fun x => by simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
   · rw [StrongDual.toStrongDual_toWeakDual, hg]
     exact (h.submodule p hp).norm_toStrongDual_of_mem_stateSpace hψ
   · simpa using (hgx ⟨e, hp⟩).trans hψ.2
@@ -229,18 +239,12 @@ theorem nonneg_iff_forall_mem_stateSpace (h : IsOrderUnitNorm e) :
   refine ⟨fun ha φ hφ => OrderUnit.map_nonneg_of_mem_stateSpace hφ ha, fun H => ?_⟩
   have := h.posSMulMono
   have := h.orderClosedTopology
-  -- every monotone functional `g` is a nonnegative multiple of a state, or vanishes at `a`
+  -- every monotone functional `g` is a positive multiple of a state, or vanishes
   refine le_iff_forall_monotone_dual_le.2 fun g hmono => ?_
-  have hga := PositiveLinearMap.abs_apply_le_mul_norm g hmono h.le_norm_smul a
   rw [map_zero]
   rcases (by simpa using hmono h.nonneg : 0 ≤ g e).eq_or_lt with hge | hge
-  · rw [← hge, zero_mul] at hga
-    exact (abs_nonpos_iff.1 hga).ge
-  have hφ : StrongDual.toWeakDual ((g e)⁻¹ • g) ∈ OrderUnit.stateSpace e :=
-    ⟨fun x y hxy => by
-      simpa using mul_le_mul_of_nonneg_left (hmono hxy) (inv_nonneg.2 hge.le),
-      by simp [hge.ne']⟩
-  have := H _ hφ
+  · exact (PositiveLinearMap.apply_eq_zero_of_apply_eq_zero g hmono h.le_norm_smul hge.symm a).ge
+  have := H _ (OrderUnit.toWeakDual_inv_smul_mem_stateSpace hmono hge)
   simp only [StrongDual.toWeakDual_apply, smul_apply, smul_eq_mul] at this
   exact (mul_nonneg_iff_of_pos_left (inv_pos.2 hge)).1 this
 
