@@ -192,18 +192,15 @@ theorem setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo {g : ℝ × ℝ → �
         (by simpa [equivRealProdCLM_symm_apply, re_add_im] using hw)
     exact mem_Ioi.2 (ha.trans_lt h.1.1)
   have hstrip : Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1 ⊆ S := fun w hw ↦ ha.trans_lt hw.1.1
+  have hS : MeasurableSet S := measurableSet_Ioi.preimage measurable_re
   calc ∫⁻ w in ball z₀ r, g (w.re, w.im)
-      = ∫⁻ w in ball z₀ r, f w :=
-        setLIntegral_congr_fun measurableSet_ball fun w hw ↦
-          (indicator_of_mem (hball hw) fun w ↦ g (w.re, w.im)).symm
+      = ∫⁻ w in ball z₀ r, f w := by
+        simp only [f, setLIntegral_indicator hS, inter_eq_right.mpr hball]
     _ ≤ 2 * ∫⁻ w in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, f w :=
         hf.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo z₀ hr
     _ = 2 * ∫⁻ w in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, g (measurableEquivRealProd w) := by
-        congr 1
-        exact setLIntegral_congr_fun (measurableSet_Ioo.reProdIm measurableSet_Icc)
-          fun w hw ↦ by
-            rw [measurableEquivRealProd_apply]
-            exact indicator_of_mem (hstrip hw) fun w ↦ g (w.re, w.im)
+        simp only [f, setLIntegral_indicator hS, inter_eq_right.mpr hstrip,
+          measurableEquivRealProd_apply]
     -- The band `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` is the preimage of its product under
     -- `ℂ ≃ ℝ × ℝ`.
     _ = 2 * ∫⁻ p in Ioo (z₀.re - r) (z₀.re + r) ×ˢ Icc 0 1, g p := by

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Laplacian.CauchyRiemann
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap

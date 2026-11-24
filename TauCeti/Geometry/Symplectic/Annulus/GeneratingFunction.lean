@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -108,8 +109,8 @@ theorem stripGeneratingFunction_add_fst_of_eventuallyEq {a : ℝ} {p : ℝ × �
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
   have hq : ((p.1 + a, t) : ℝ × ℝ) = (p.1, t) + (a, 0) := by simp
   -- Commuting with the translation near `(p.1, t)` makes the derivative of `F` invariant under it.
-  have hD : fderiv ℝ F ((p.1, t) + (a, 0)) = fderiv ℝ F (p.1, t) := by
-    simpa only [fderiv_comp_add_right, fderiv_add_const] using (hF t ht).fderiv_eq (𝕜 := ℝ)
+  have hD : fderiv ℝ F ((p.1, t) + (a, 0)) = fderiv ℝ F (p.1, t) :=
+    fderiv_add_of_eventually_apply_add_eq_add (hF t ht)
   have hv : F ((p.1, t) + (a, 0)) = F (p.1, t) + (a, 0) := (hF t ht).self_of_nhds
   simp only [hq, hv, hD, Prod.snd_add, add_zero]
 
