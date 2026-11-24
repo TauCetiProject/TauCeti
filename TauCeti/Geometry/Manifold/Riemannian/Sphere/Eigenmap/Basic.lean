@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Harmonic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 public import TauCeti.Geometry.Sphere.Connected
+import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
 # Degree-specific harmonic subspaces of the round sphere and their reproducing kernels
@@ -73,8 +74,7 @@ local notation "Eₘ" => EuclideanSpace ℝ (Fin (m + 1))
 local notation "Sₘ" => sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1
 local notation "volₘ" => riemannianVolume (𝓡 m) (sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1)
 
-/-- `ℝᵐ⁺¹` has dimension `m + 1`, so its unit sphere is an `m`-manifold. -/
-local instance instFactFinrankEigenmapBasic : Fact (finrank ℝ Eₘ = m + 1) := ⟨by simp⟩
+attribute [local instance] TauCeti.finrank_euclideanSpace_fin_succ_fact
 
 /-- The spherical harmonics of degree `d`, as continuous functions on `Sᵐ`. -/
 def harmonics : Submodule ℝ C(Sₘ, ℝ) :=
