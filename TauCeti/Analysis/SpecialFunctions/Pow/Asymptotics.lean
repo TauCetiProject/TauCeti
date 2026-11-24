@@ -28,8 +28,8 @@ On a seminormed group, as `‖s‖ → ∞`:
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
-  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0`
-  for real `x → ∞` whenever `1 / 2 < a k`.
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever
+  `a < 0`, and `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -220,6 +220,12 @@ theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
   rcases hab.lt_or_eq with hab | rfl
   · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
   · exact isBigO_refl _ _
+
+/-- For `a < 0`, `‖s‖ ^ a` tends to `0` as `‖s‖ → ∞`. -/
+theorem tendsto_norm_rpow_cobounded {a : ℝ} (ha : a < 0) :
+    Tendsto (fun s : E ↦ ‖s‖ ^ a) (cobounded E) (𝓝 0) :=
+  (Asymptotics.isLittleO_one_iff ℝ).1
+    ((isLittleO_norm_rpow_norm_rpow_cobounded ha).congr_right fun _ ↦ Real.rpow_zero _)
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
