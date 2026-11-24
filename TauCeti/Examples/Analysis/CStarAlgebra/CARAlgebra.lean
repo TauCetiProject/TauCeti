@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
-public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 
 /-!
 # The CAR algebra as a C⋆-inductive limit
@@ -28,45 +28,12 @@ public section
 
 noncomputable section
 
-open scoped ComplexOrder Kronecker
+open scoped ComplexOrder
 
 namespace TauCeti.CARAlgebra
 
 /-- The matrix algebra `M_{2^n}`, as a C⋆-algebra. -/
 abbrev Stage (n : ℕ) : Type := CStarMatrix (Fin (2 ^ n)) (Fin (2 ^ n)) ℂ
-
-/-- The unital ⋆-homomorphism `a ↦ a ⊗ 1₂` from matrices indexed by `m` to matrices indexed by
-`m × Fin 2`. -/
-def kroneckerOne (m : Type*) [Fintype m] [DecidableEq m] :
-    Matrix m m ℂ →⋆ₐ[ℂ] Matrix (m × Fin 2) (m × Fin 2) ℂ where
-  toFun a := a ⊗ₖ 1
-  map_one' := Matrix.one_kronecker_one
-  map_mul' a b := by
-    change (a * b) ⊗ₖ 1 = a ⊗ₖ 1 * b ⊗ₖ (1 : Matrix (Fin 2) (Fin 2) ℂ)
-    rw [← Matrix.mul_kronecker_mul, Matrix.mul_one]
-  map_zero' := Matrix.zero_kronecker _
-  map_add' a b := Matrix.add_kronecker _ _ _
-  commutes' r := by
-    change (algebraMap ℂ (Matrix m m ℂ) r) ⊗ₖ (1 : Matrix (Fin 2) (Fin 2) ℂ) = _
-    rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, Matrix.smul_kronecker,
-      Matrix.one_kronecker_one]
-  map_star' a := by
-    change (star a) ⊗ₖ (1 : Matrix (Fin 2) (Fin 2) ℂ) = star (a ⊗ₖ (1 : Matrix (Fin 2) (Fin 2) ℂ))
-    rw [Matrix.star_eq_conjTranspose, Matrix.star_eq_conjTranspose,
-      Matrix.conjTranspose_kronecker, Matrix.conjTranspose_one]
-
-/-- The entries of `a ⊗ 1₂`. -/
-theorem kroneckerOne_apply {m : Type*} [Fintype m] [DecidableEq m] (a : Matrix m m ℂ)
-    (i j : m × Fin 2) :
-    kroneckerOne m a i j = a i.1 j.1 * (1 : Matrix (Fin 2) (Fin 2) ℂ) i.2 j.2 := by
-  rfl
-
-/-- The map `a ↦ a ⊗ 1₂` is injective. -/
-theorem kroneckerOne_injective (m : Type*) [Fintype m] [DecidableEq m] :
-    Function.Injective (kroneckerOne m) := by
-  intro a b h
-  ext i j
-  simpa [kroneckerOne_apply] using congrFun₂ h (i, 0) (j, 0)
 
 /-- The identification `Fin (2^n) × Fin 2 ≃ Fin (2^(n+1))`. -/
 def finProdFinTwoEquiv (n : ℕ) : Fin (2 ^ n) × Fin 2 ≃ Fin (2 ^ (n + 1)) :=
@@ -76,14 +43,19 @@ def finProdFinTwoEquiv (n : ℕ) : Fin (2 ^ n) × Fin 2 ≃ Fin (2 ^ (n + 1)) :=
 def step (n : ℕ) : Stage n →⋆ₐ[ℂ] Stage (n + 1) :=
   (CStarMatrix.ofMatrixStarAlgEquiv.toStarAlgHom.comp
       ((Matrix.reindexStarAlgEquiv ℂ ℂ (finProdFinTwoEquiv n)).toStarAlgHom.comp
-        (kroneckerOne (Fin (2 ^ n))))).comp
+        (Matrix.kroneckerOneStarAlgHom ℂ (Fin 2) (m := Fin (2 ^ n))))).comp
     CStarMatrix.ofMatrixStarAlgEquiv.symm.toStarAlgHom
 
 /-- The connecting map `a ↦ a ⊗ 1₂` is injective. -/
-theorem step_injective (n : ℕ) : Function.Injective (step n) :=
-  CStarMatrix.ofMatrixStarAlgEquiv.injective.comp
+theorem step_injective (n : ℕ) : Function.Injective (step n) := by
+  have h₀ : Function.Injective
+      (Matrix.kroneckerOneStarAlgHom ℂ (Fin 2) (α := ℂ) (m := Fin (2 ^ n))) :=
+    fun a b h ↦ Matrix.ext fun i j ↦ by
+      simpa [Matrix.kroneckerOneStarAlgHom_apply, Matrix.kronecker_apply] using
+        congrFun₂ h (i, 0) (j, 0)
+  exact CStarMatrix.ofMatrixStarAlgEquiv.injective.comp
     ((Matrix.reindexStarAlgEquiv ℂ ℂ (finProdFinTwoEquiv n)).injective.comp
-      ((kroneckerOne_injective _).comp CStarMatrix.ofMatrixStarAlgEquiv.symm.injective))
+      (h₀.comp CStarMatrix.ofMatrixStarAlgEquiv.symm.injective))
 
 /-- The connecting map `M_{2^i} → M_{2^j}` for `i ≤ j`, the composite of the maps `a ↦ a ⊗ 1₂`. -/
 def connecting (i j : ℕ) (h : i ≤ j) : Stage i →⋆ₐ[ℂ] Stage j :=
