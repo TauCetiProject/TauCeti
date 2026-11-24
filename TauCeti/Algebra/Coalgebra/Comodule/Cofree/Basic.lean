@@ -189,7 +189,7 @@ theorem cofree_coact :
   rfl
 
 /-- The coaction of the cofree comodule unfolds to its implementation `cofreeCoact`. -/
-private theorem cofree_coact_eq_cofreeCoact :
+theorem cofree_coact_eq_cofreeCoact :
     coact (R := R) (C := C) (M := M ⊗[R] C) = cofreeCoact R C M :=
   rfl
 
@@ -199,12 +199,6 @@ theorem cofree_coact_tmul (m : M) (c : C) :
     coact (R := R) (C := C) (M := M ⊗[R] C) (m ⊗ₜ c)
       = (TensorProduct.assoc R M C C).symm (m ⊗ₜ Coalgebra.comul c) :=
   cofreeCoact_tmul m c
-
-/-- A map `f ⊗ id` acting on the coefficient module only commutes with the cofree coactions. -/
-theorem cofree_coact_comp_rTensor (f : M →ₗ[R] N) :
-    coact (R := R) (C := C) (M := N ⊗[R] C) ∘ₗ f.rTensor C =
-      (f.rTensor C).rTensor C ∘ₗ coact (R := R) (C := C) (M := M ⊗[R] C) :=
-  cofreeCoact_comp_rTensor f
 
 /-- The cofree coaction is retracted by the counit projection on the middle factor. This is the
 right-counit law of `C` transported to `M ⊗[R] C`. -/

@@ -80,10 +80,8 @@ theorem perturb_incl_naturality
     (hh : f ∘ₗ c.homotopy = c'.homotopy ∘ₗ f)
     (hδ : f ∘ₗ δ = δ' ∘ₗ f) :
     f ∘ₗ (c.perturb δ hsq hU).incl = (c'.perturb δ' hsq' hU').incl ∘ₗ g := by
-  have hX := c.perturbationSeries_naturality c' f hh hδ hU hU'
-  simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hi hh hX
-  ext x
-  simp [hi, hh, hX]
+  rw [c.comp_perturb_incl_eq_comp δ hU hsq f g hi hh
+    (c.perturbationSeries_naturality c' f hh hδ hU hU'), perturb_incl]
 
 /-- Compatible maps commute with the projections after perturbation. -/
 theorem perturb_proj_naturality
@@ -91,10 +89,8 @@ theorem perturb_proj_naturality
     (hh : f ∘ₗ c.homotopy = c'.homotopy ∘ₗ f)
     (hδ : f ∘ₗ δ = δ' ∘ₗ f) :
     g ∘ₗ (c.perturb δ hsq hU).proj = (c'.perturb δ' hsq' hU').proj ∘ₗ f := by
-  have hX := c.perturbationSeries_naturality c' f hh hδ hU hU'
-  simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hp hh hX
-  ext x
-  simp [hp, hh, hX]
+  rw [c.comp_perturb_proj_eq_comp δ hU hsq f g hp hh
+    (c.perturbationSeries_naturality c' f hh hδ hU hU'), perturb_proj]
 
 /-- Compatible maps commute with the homotopies after perturbation. -/
 theorem perturb_homotopy_naturality

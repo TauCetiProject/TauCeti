@@ -74,7 +74,8 @@ Crainic's `1 - δ h` and `+ h X i`.
   `TauCeti.LinearSpecialContraction.isHomogeneous_perturb_incl` and
   `TauCeti.LinearSpecialContraction.isHomogeneous_perturb_proj`: for `δ` of degree `q`, `h` of
   degree `-q` and `δ h` locally nilpotent, `X` has degree `q`; then `i'` and `p'` have degree
-  zero when `i` and `p` do.
+  zero when `i` and `p` do.  `TauCeti.LinearSpecialContraction.isHomogeneous_perturbedDifferential`
+  gives the degree `q` of `dN + p X i` when `dN` has degree `q`.
 
 ## References
 
@@ -372,7 +373,7 @@ end Perturb
 
 section Intertwining
 
-variable {Q : Type*} [AddCommGroup Q] [Module R Q] (hU : IsUnit (1 + δ * c.homotopy))
+variable {Q : Type*} [AddCommMonoid Q] [Module R Q] (hU : IsUnit (1 + δ * c.homotopy))
 include hU
 
 /-- If `Δ` intertwines `δ` with `δ'` and the homotopy `h` with `h'`, then it intertwines the
@@ -383,31 +384,26 @@ theorem comp_perturbationSeries_eq_comp (Δ : M →ₗ[R] Q) {δ' h' X' : Module
     (hδ' : Δ ∘ₗ δ = δ' ∘ₗ Δ) (hh' : Δ ∘ₗ c.homotopy = h' ∘ₗ Δ)
     (hX' : X' * (1 + h' * δ') = δ') :
     Δ ∘ₗ c.perturbationSeries δ = X' ∘ₗ Δ := by
-  set V := 1 + c.homotopy * δ
-  have hVW : V * Ring.inverse V = 1 := Ring.mul_inverse_cancel _ (isUnit_one_add_mul_comm.1 hU)
-  have hΔV : Δ ∘ₗ V = (1 + h' * δ') ∘ₗ Δ := by
-    simp only [V, Module.End.mul_eq_comp, LinearMap.comp_add, LinearMap.add_comp,
+  -- `V = 1 + h δ` is surjective, so it suffices to compare both sides after `V`, where they both
+  -- become `δ' Δ` by `X V = δ`, `Δ V = (1 + h' δ') Δ` and `X' (1 + h' δ') = δ'`.
+  have hV : Function.Surjective ⇑(1 + c.homotopy * δ) :=
+    ((Module.End.isUnit_iff _).1 (isUnit_one_add_mul_comm.1 hU)).2
+  have hΔV : Δ ∘ₗ (1 + c.homotopy * δ) = (1 + h' * δ') ∘ₗ Δ := by
+    simp only [Module.End.mul_eq_comp, LinearMap.comp_add, LinearMap.add_comp,
       Module.End.one_eq_id, LinearMap.comp_id, LinearMap.id_comp]
     rw [← LinearMap.comp_assoc, hh', LinearMap.comp_assoc, hδ', LinearMap.comp_assoc]
-  calc Δ ∘ₗ c.perturbationSeries δ
-      = Δ ∘ₗ (c.perturbationSeries δ * V) ∘ₗ Ring.inverse V := by
-        rw [Module.End.mul_eq_comp, LinearMap.comp_assoc, ← Module.End.mul_eq_comp V, hVW,
-          Module.End.one_eq_id, LinearMap.comp_id]
-    _ = (X' * (1 + h' * δ')) ∘ₗ Δ ∘ₗ Ring.inverse V := by
-        rw [c.perturbationSeries_mul_one_add δ hU, hX', ← LinearMap.comp_assoc, hδ',
-          LinearMap.comp_assoc]
-    _ = X' ∘ₗ Δ := by
-        rw [Module.End.mul_eq_comp, LinearMap.comp_assoc, ← LinearMap.comp_assoc _ Δ, ← hΔV,
-          LinearMap.comp_assoc, ← Module.End.mul_eq_comp V, hVW, Module.End.one_eq_id,
-          LinearMap.comp_id]
+  refine (LinearMap.cancel_right hV).1 ?_
+  rw [LinearMap.comp_assoc, ← Module.End.mul_eq_comp, c.perturbationSeries_mul_one_add δ hU, hδ',
+    LinearMap.comp_assoc, hΔV, ← LinearMap.comp_assoc, ← Module.End.mul_eq_comp, hX']
 
-variable (hδ : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) {QM QN : Type*} [AddCommGroup QM] [Module R QM]
-  [AddCommGroup QN] [Module R QN] (ΔM : M →ₗ[R] QM) (ΔN : N →ₗ[R] QN) {h' X' : Module.End R QM}
+variable (hδ : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) {QM QN : Type*}
 
 /-- Maps `ΔM`, `ΔN` intertwining the inclusion with `i'`, the homotopy with `h'` and the
 perturbation operator with `X'` intertwine the perturbed inclusion with `i' - h' X' i'`. -/
-theorem comp_perturb_incl_eq_comp {i' : QN →ₗ[R] QM} (hi : ΔM ∘ₗ c.incl = i' ∘ₗ ΔN)
-    (hh : ΔM ∘ₗ c.homotopy = h' ∘ₗ ΔM) (hX : ΔM ∘ₗ c.perturbationSeries δ = X' ∘ₗ ΔM) :
+theorem comp_perturb_incl_eq_comp [AddCommGroup QM] [Module R QM] [AddCommMonoid QN]
+    [Module R QN] (ΔM : M →ₗ[R] QM) (ΔN : N →ₗ[R] QN) {h' X' : Module.End R QM}
+    {i' : QN →ₗ[R] QM} (hi : ΔM ∘ₗ c.incl = i' ∘ₗ ΔN) (hh : ΔM ∘ₗ c.homotopy = h' ∘ₗ ΔM)
+    (hX : ΔM ∘ₗ c.perturbationSeries δ = X' ∘ₗ ΔM) :
     ΔM ∘ₗ (c.perturb δ hδ hU).incl = (i' - h' ∘ₗ X' ∘ₗ i') ∘ₗ ΔN := by
   simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hi hh hX
   ext x
@@ -415,8 +411,10 @@ theorem comp_perturb_incl_eq_comp {i' : QN →ₗ[R] QM} (hi : ΔM ∘ₗ c.incl
 
 /-- Maps `ΔM`, `ΔN` intertwining the projection with `p'`, the homotopy with `h'` and the
 perturbation operator with `X'` intertwine the perturbed projection with `p' - p' X' h'`. -/
-theorem comp_perturb_proj_eq_comp {p' : QM →ₗ[R] QN} (hp : ΔN ∘ₗ c.proj = p' ∘ₗ ΔM)
-    (hh : ΔM ∘ₗ c.homotopy = h' ∘ₗ ΔM) (hX : ΔM ∘ₗ c.perturbationSeries δ = X' ∘ₗ ΔM) :
+theorem comp_perturb_proj_eq_comp [AddCommMonoid QM] [Module R QM] [AddCommGroup QN]
+    [Module R QN] (ΔM : M →ₗ[R] QM) (ΔN : N →ₗ[R] QN) {h' X' : Module.End R QM}
+    {p' : QM →ₗ[R] QN} (hp : ΔN ∘ₗ c.proj = p' ∘ₗ ΔM) (hh : ΔM ∘ₗ c.homotopy = h' ∘ₗ ΔM)
+    (hX : ΔM ∘ₗ c.perturbationSeries δ = X' ∘ₗ ΔM) :
     ΔN ∘ₗ (c.perturb δ hδ hU).proj = (p' - p' ∘ₗ X' ∘ₗ h') ∘ₗ ΔM := by
   simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hp hh hX
   ext x
@@ -476,6 +474,16 @@ theorem isHomogeneous_perturb_proj :
   rw [perturb_proj]
   exact hproj.sub hpXh
 
+include hincl hproj hX in
+/-- If the perturbation operator has degree `q`, the perturbed differential of the retract has
+degree `q` when the inclusion and projection have degree zero and `dN` has degree `q`. -/
+theorem isHomogeneous_perturbedDifferential (hdN : LinearMap.IsHomogeneous dN ℬ ℬ q) :
+    LinearMap.IsHomogeneous (c.perturbedDifferential δ) ℬ ℬ q := by
+  have hpXi := hproj.comp (hX.comp hincl)
+  rw [zero_add, add_zero] at hpXi
+  rw [perturbedDifferential_def]
+  exact hdN.add hpXi
+
 end Graded
 
 /-! ### Comodule-type maps intertwining the perturbation data -/
@@ -484,16 +492,16 @@ section TensorProduct
 
 open scoped TensorProduct
 
-variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R]
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommSemiring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
   {δ : Module.End R M} (hU : IsUnit (1 + δ * c.homotopy))
-  (hsq : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) {C : Type*} [AddCommGroup C] [Module R C]
+  (hsq : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) {C : Type*}
 
 section RTensor
 
-variable {ΔM : M →ₗ[R] M ⊗[R] C} (hδ : ΔM ∘ₗ δ = δ.rTensor C ∘ₗ ΔM)
-  (hh : ΔM ∘ₗ c.homotopy = c.homotopy.rTensor C ∘ₗ ΔM)
+variable [AddCommMonoid C] [Module R C] {ΔM : M →ₗ[R] M ⊗[R] C}
+  (hδ : ΔM ∘ₗ δ = δ.rTensor C ∘ₗ ΔM) (hh : ΔM ∘ₗ c.homotopy = c.homotopy.rTensor C ∘ₗ ΔM)
 include hU hδ hh
 
 /-- If `δ` and the homotopy commute with a map `ΔM : M → M ⊗ C`, such as a right coaction, so does
@@ -527,8 +535,10 @@ end RTensor
 
 section Twisted
 
-variable {τ : C →ₗ[R] C} (hτ : τ ∘ₗ τ = LinearMap.id) {ΔM : M →ₗ[R] C ⊗[R] M}
-  (hδ : ΔM ∘ₗ δ = TensorProduct.map τ δ ∘ₗ ΔM)
+section Series
+
+variable [AddCommMonoid C] [Module R C] {τ : C →ₗ[R] C} (hτ : τ ∘ₗ τ = LinearMap.id)
+  {ΔM : M →ₗ[R] C ⊗[R] M} (hδ : ΔM ∘ₗ δ = TensorProduct.map τ δ ∘ₗ ΔM)
   (hh : ΔM ∘ₗ c.homotopy = TensorProduct.map τ c.homotopy ∘ₗ ΔM)
 include hU hτ hδ hh
 
@@ -542,6 +552,14 @@ theorem comp_perturbationSeries_eq_map_comp :
       ← LinearMap.lTensor_def, Module.End.one_eq_id, ← LinearMap.lTensor_id,
       ← LinearMap.lTensor_add, LinearMap.map_comp_lTensor, ← Module.End.one_eq_id,
       ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, c.perturbationSeries_mul_one_add δ hU]
+
+end Series
+
+-- The perturbed inclusion and projection involve differences tensored with `C` on the left.
+variable [AddCommGroup C] [Module R C] {τ : C →ₗ[R] C} (hτ : τ ∘ₗ τ = LinearMap.id)
+  {ΔM : M →ₗ[R] C ⊗[R] M} (hδ : ΔM ∘ₗ δ = TensorProduct.map τ δ ∘ₗ ΔM)
+  (hh : ΔM ∘ₗ c.homotopy = TensorProduct.map τ c.homotopy ∘ₗ ΔM)
+include hU hτ hδ hh
 
 /-- If `δ` and the homotopy intertwine maps `ΔM : M → C ⊗ M` up to the same involution `τ` of `C`
 and the inclusion commutes with `ΔM` and `ΔN : N → C ⊗ N`, then the perturbed inclusion commutes

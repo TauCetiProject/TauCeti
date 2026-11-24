@@ -312,7 +312,7 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
   have hleft' := hleft.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one
     (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
       (Coalgebra.counit (R := R) (A := TensorWords R B)))
-    AA.isHomogeneous_coaugmentedBarDifferential_grading (by norm_num)
+    AA.isHomogeneous_coaugmentedBarDifferential (by norm_num)
     AA.coaugmentedBarDifferential_sq
   rw [taylorProj_def, Comodule.cofreeCounit_def, LinearMap.comp_assoc, ← hleft',
     ← Comodule.cofreeCounit_def]

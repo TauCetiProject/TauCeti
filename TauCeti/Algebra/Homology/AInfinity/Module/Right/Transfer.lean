@@ -399,7 +399,8 @@ theorem coact_comp_perturbationSeries :
   (MM.barContraction c hh hincl hproj).comp_perturbationSeries_eq_rTensor_comp
     (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor c.homotopy)
+    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
+        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
 
 /-- The perturbation operator has degree one. -/
 theorem isHomogeneous_perturbationSeries :
@@ -477,8 +478,10 @@ theorem coact_comp_transferContraction_incl :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_incl_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor c.homotopy)
-    (by rw [barContraction_incl]; exact Comodule.cofree_coact_comp_rTensor c.incl)
+    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
+        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
+    (by rw [barContraction_incl]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
+        exact Comodule.cofreeCoact_comp_rTensor c.incl)
 
 /-- The perturbed projection commutes with the coactions. -/
 theorem coact_comp_transferContraction_proj :
@@ -489,26 +492,24 @@ theorem coact_comp_transferContraction_proj :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_proj_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor c.homotopy)
-    (by rw [barContraction_proj]; exact Comodule.cofree_coact_comp_rTensor c.proj)
+    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
+        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
+    (by rw [barContraction_proj]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
+        exact Comodule.cofreeCoact_comp_rTensor c.proj)
 
 /-- The transferred bar differential is a coderivation over the algebra bar differential: it is
 the unary part for `d_N` plus the comodule morphism `(p ⊗ 1) X (i ⊗ 1)`. -/
 theorem isGradedCoderivationOver_transferBarDifferential :
     Comodule.IsGradedCoderivationOver (barGrading AA GN) 1 AA.coaugmentedBarDifferential
       (MM.transferBarDifferential c hh hincl hproj) := by
-  have hp := LinearMap.congr_fun
-    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.proj)
-  have hi := LinearMap.congr_fun
-    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.incl)
+  have hp := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R A) c.proj)
+  have hi := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R A) c.incl)
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
-  have hD := (isGradedCoderivationOver_unaryBarDifferential AA GN dN).coact_apply
-  simp only [LinearMap.comp_apply] at hp hi hX
-  rw [Comodule.isGradedCoderivationOver_iff_coact_apply]
-  intro z
-  simp only [transferBarDifferential_def, LinearMap.add_apply, LinearMap.comp_apply, map_add, hD,
-    hp, hi, hX, LinearMap.rTensor_add, LinearMap.rTensor_comp_apply]
-  abel
+  simp only [LinearMap.comp_apply, ← Comodule.cofree_coact_eq_cofreeCoact] at hp hi hX
+  rw [transferBarDifferential_def]
+  refine (isGradedCoderivationOver_unaryBarDifferential AA GN dN).add_of_coact_comp
+    (LinearMap.ext fun z ↦ ?_)
+  simp only [LinearMap.comp_apply, hp, hi, hX, LinearMap.rTensor_comp_apply]
 
 /-- The transferred bar differential squares to zero. -/
 @[simp]
@@ -530,12 +531,12 @@ private theorem isHomogeneous_dN_shift :
 theorem isHomogeneous_transferBarDifferential :
     LinearMap.IsHomogeneous (MM.transferBarDifferential c hh hincl hproj)
       (barGrading AA GN).piece (barGrading AA GN).piece 1 := by
-  rw [transferBarDifferential_def]
-  have hpXi := (isHomogeneous_rTensor hproj).comp
-    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp
-      (isHomogeneous_rTensor hincl))
-  simpa only [zero_add, add_zero] using
-    (isHomogeneous_unaryBarDifferential AA GN (MM.isHomogeneous_dN_shift c hincl hproj)).add hpXi
+  rw [transferBarDifferential]
+  exact (MM.barContraction c hh hincl hproj).isHomogeneous_perturbedDifferential
+    (MM.isHomogeneous_barContraction_incl c hh hincl hproj)
+    (MM.isHomogeneous_barContraction_proj c hh hincl hproj)
+    (MM.isHomogeneous_perturbationSeries c hh hincl hproj)
+    (isHomogeneous_unaryBarDifferential AA GN (MM.isHomogeneous_dN_shift c hincl hproj))
 
 /-- The **transferred right `A∞` module** on the retract `N` of a special contraction of
 `(M, m₁)`: its bar differential is the transferred bar differential. -/

@@ -108,7 +108,7 @@ theorem leftTaylor_def (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B �
   (rfl)
 
 /-- The letterwise Koszul twist of the suspended words is compatible with deconcatenation. -/
-private theorem comul_comp_map_koszulTwist :
+theorem comul_comp_map_koszulTwist :
     Coalgebra.comul ∘ₗ TensorWords.map ((AA.grading.shift 1).koszulTwist 1) =
       TensorProduct.map (TensorWords.map ((AA.grading.shift 1).koszulTwist 1))
           (TensorWords.map ((AA.grading.shift 1).koszulTwist 1)) ∘ₗ
@@ -259,7 +259,7 @@ theorem isHomogeneous_gradedCoderiv (G : InternalGrading R M ℤ)
       rw [← koszulTwist_grading]
       exact W.isHomogeneous_koszulTwist 1
     have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential W.piece W.piece 1 :=
-      AA.isHomogeneous_coaugmentedBarDifferential_grading
+      AA.isHomogeneous_coaugmentedBarDifferential
     have h1 := (hτ.tensorProduct hF).comp hδ
     have h2 := (hb.tensorProduct (LinearMap.isHomogeneous_id (G.shift 1).piece)).comp
       (isHomogeneous_rid_comp_lTensor_counit Y (BB.grading.shift 1))

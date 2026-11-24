@@ -148,7 +148,7 @@ private theorem leftCoact_comp_commutator
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) K ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-  have hb := AA.isHomogeneous_coaugmentedBarDifferential_grading
+  have hb := AA.isHomogeneous_coaugmentedBarDifferential
   rw [eq_sub_of_add_eq hK]
   simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def,
     zero_mul, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, zero_add] using

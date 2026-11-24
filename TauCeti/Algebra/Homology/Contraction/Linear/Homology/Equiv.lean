@@ -36,7 +36,9 @@ public section
 
 namespace TauCeti.LinearContraction
 
-variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+section Semiring
+
+variable {R M N : Type*} [Semiring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {dM : Module.End R M} {dN : Module.End R N}
 
 /-- An element of the retract whose inclusion is a boundary of `dM` is a boundary of `dN`. -/
@@ -52,6 +54,11 @@ theorem exists_mem_ker_sub_incl_mem_range (c : LinearContraction dM dN) {x : M}
   · rw [LinearMap.mem_ker, ← c.proj_dM_apply, LinearMap.mem_ker.1 hx, map_zero]
   · rw [c.incl_proj_apply, LinearMap.mem_ker.1 hx, map_zero, sub_zero, sub_sub_cancel]
     exact ⟨c.homotopy x, rfl⟩
+
+end Semiring
+
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {dM : Module.End R M} {dN : Module.End R N}
 
 /-- The inclusion of a contraction of `(M, dM)` onto `(N, dN)`, for square-zero `dM`, induces an
 isomorphism from the homology of `dN` to the homology of `dM`, inverse to the map induced by the

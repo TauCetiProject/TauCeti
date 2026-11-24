@@ -32,7 +32,8 @@ where `δ` is the perturbation.
 
 * `TauCeti.AInfinityBimodule.unaryBarDifferential`: the unary part of a bimodule bar differential.
 * `TauCeti.AInfinityBimodule.higherTaylor` and `TauCeti.AInfinityBimodule.higherBarDifferential`:
-  the operations with at least one algebra input, and the rest of the bar differential.
+  the operations with at least one algebra input (`TauCeti.AInfinityBimodule.higherTaylor_tmul_of`),
+  and the rest of the bar differential.
 
 ## Main results
 
@@ -218,6 +219,18 @@ theorem higherTaylor_one_tmul_tmul_one (x : M) : MM.higherTaylor ((1 ⊗ₜ x) �
   rw [higherTaylor_def, LinearMap.sub_apply, LinearMap.comp_apply, ← differential_apply,
     taylorProj_tmul]
   simp [TensorWords.counit_eq_counit, TensorWords.counit_one]
+
+/-- On words of lengths `i`, `j` with `i + j ≠ 0`, the higher Taylor map is the suspended
+operation `b_{i,j}`. -/
+theorem higherTaylor_tmul_of {i j : ℕ} (hij : i + j ≠ 0) (a : TensorPower R i A) (x : M)
+    (b : TensorPower R j B) :
+    MM.higherTaylor ((TensorWords.of R A i a ⊗ₜ x) ⊗ₜ TensorWords.of R B j b) =
+      MM.b i j ((a ⊗ₜ x) ⊗ₜ b) := by
+  rw [higherTaylor_def, LinearMap.sub_apply, taylor_tmul_of, LinearMap.comp_apply, taylorProj_tmul,
+    TensorWords.counit_eq_counit, TensorWords.counit_eq_counit]
+  rcases eq_or_ne i 0 with rfl | hi
+  · simp [TensorWords.counit_of_of_ne_zero R B (by omega : j ≠ 0)]
+  · simp [TensorWords.counit_of_of_ne_zero R A hi]
 
 /-- The **higher part** of the bar differential of a bimodule: the difference between the bar
 differential and its unary part.  It applies the operations with at least one algebra input
@@ -440,8 +453,8 @@ end Higher
 
 section LeftComodule
 
-variable {AA : AInfinityAlgebra R A} {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup Q]
-  [Module R Q]
+variable {AA : AInfinityAlgebra R A} {P Q : Type*} [AddCommMonoid P] [Module R P]
+  [AddCommMonoid Q] [Module R Q]
 
 /-- A map `τ ⊗ g ⊗ 1` on the cofree bicomodule, with `τ` the Koszul twist of the left word, is an
 odd map of left comodules. -/
@@ -455,12 +468,8 @@ theorem leftCoact_comp_rTensor_map_koszulTwist (g : P →ₗ[R] Q) :
             (TensorWords R B)) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) P) := by
-  have hτ : Coalgebra.comul ∘ₗ TensorWords.map ((AA.grading.shift 1).koszulTwist 1) =
-      TensorProduct.map (TensorWords.map ((AA.grading.shift 1).koszulTwist 1))
-          (TensorWords.map ((AA.grading.shift 1).koszulTwist 1)) ∘ₗ
-        (Coalgebra.comul : TensorWords R A →ₗ[R] TensorWords R A ⊗[R] TensorWords R A) := by
-    rw [comul_eq_deconcatenation, deconcatenation_natural]
-  have h := Comodule.leftCoactRTensor_comp_lTensor_comp_rTensor_map hτ g
+  have h := Comodule.leftCoactRTensor_comp_lTensor_comp_rTensor_map
+    (comul_comp_map_koszulTwist AA) g
     (LinearMap.id : TensorWords R B →ₗ[R] TensorWords R B)
   simpa only [LinearMap.lTensor_id, LinearMap.id_comp, ← koszulTwist_grading] using h
 
