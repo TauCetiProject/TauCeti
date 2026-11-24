@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Topology.Algebra.Projectivization
 import TauCeti.Algebra.Order.Ring.IntMul
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The weighted circle action on `ℂ²` and its ellipsoid quotient
@@ -33,19 +33,25 @@ Let `a` and `b` be positive natural numbers. The circle acts on `ℂ²` with wei
 (`TauCeti.Toric.weightedEllipsoid a b ε`). It is compact and preserved by the action, which acts
 on it continuously. For `a = b = 1` this is the Hopf action on a round three-sphere.
 
-When `a` and `b` are coprime and `ε > 0`, the reduced space `E / S¹` is a topological sphere with
-two isotropy points, whose cyclic stabilizers have orders `a` and `b` (nontrivial exactly when the
-weight exceeds `1`):
+The isotropy of the action is read off from the weights:
 
 * **Stabilizers.** The circle element `u` fixes `z` exactly when `u ^ a = 1` if `z₁ ≠ 0` and
-  `u ^ b = 1` if `z₂ ≠ 0`. Off the two coordinate axes the action is therefore free
+  `u ^ b = 1` if `z₂ ≠ 0`. Off the two coordinate axes the stabilizer is therefore the cyclic group
+  of `gcd(a, b)`-th roots of unity
+  (`TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_ne_zero`), trivial for coprime weights
   (`TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`), while the points of `E` on the axis
   `z₂ = 0` have the cyclic stabilizer of `a`-th roots of unity, of order `a`
   (`TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`), and those on the axis
   `z₁ = 0` the cyclic stabilizer of order `b`.
-* **Periods.** Accordingly the rotation by the angle `θ` has least period `2π` at the points off
-  the axes (`TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self`), and least periods `2π / a`
-  and `2π / b` on the axes `z₂ = 0` and `z₁ = 0`.
+* **Periods.** Accordingly the rotation by the angle `θ` has least period `2π / gcd(a, b)` at the
+  points off the axes (`TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self`), and least
+  periods `2π / a` and `2π / b` on the axes `z₂ = 0` and `z₁ = 0`.
+
+When `a` and `b` are coprime and `ε > 0`, the reduced space `E / S¹` is a topological sphere with
+two isotropy points, whose cyclic stabilizers have orders `a` and `b` (nontrivial exactly when the
+weight exceeds `1`). Weights with a common factor are reduced to this case in
+`TauCeti.Geometry.Toric.WeightedCircle.CommonFactor`.
+
 * **The quotient.** The weighted Hopf map `z ↦ [z₁ ^ b : z₂ ^ a]` to the complex projective line
   is invariant, because `u` multiplies both homogeneous coordinates by `u ^ (a b)`. Its fibres on
   `E` are exactly the orbits: if `(z₁ ^ b, z₂ ^ a) = c (w₁ ^ b, w₂ ^ a)` for `z, w ∈ E`, comparing
@@ -77,13 +83,17 @@ over the two poles are recorded separately and are not erased.
 
 ## Main results
 
-* `TauCeti.Toric.weightedRotation_eq_self_iff`: the stabilizer of a point of `ℂ²`.
+* `TauCeti.Toric.weightedRotation_eq_self_iff`: the stabilizer of a point of `ℂ²`;
+  `TauCeti.Toric.weightedRotation_eq_self_iff_of_ne_zero`: off the axes it is the group of
+  `gcd(a, b)`-th roots of unity.
 * `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self`,
   `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self_of_snd_eq_zero`,
   `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self_of_fst_eq_zero`: the least periods
-  `2π`, `2π / a` and `2π / b` of the rotations off the axes and on the two axes.
+  `2π / gcd(a, b)`, `2π / a` and `2π / b` of the rotations off the axes and on the two axes.
 * `TauCeti.Toric.isCompact_weightedEllipsoid`: the ellipsoid is compact.
-* `TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`: the action is free off the axes.
+* `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_ne_zero`: off the axes the stabilizer has
+  order `gcd(a, b)`; `TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`: for coprime weights the
+  action is free off the axes.
 * `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`,
   `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_fst_eq_zero`: the axial stabilizers
   have orders `a` and `b`; `TauCeti.Toric.finite_stabilizer_weightedEllipsoid` and
@@ -158,32 +168,30 @@ theorem weightedRotation_eq_self_iff {u : Circle} {z : ℂ × ℂ} :
 
 /-! ### Periods of the weighted rotations -/
 
-/-- **The periods of a point off the axes.** For coprime weights, the rotation by the angle `θ`,
-`z_j ↦ exp(-i a_j θ) z_j`, fixes a point with both coordinates nonzero exactly when `θ` is an
-integer multiple of `2π`. -/
-theorem weightedRotation_exp_neg_eq_self_iff (hab : a.Coprime b) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
-    (h₂ : z.2 ≠ 0) {θ : ℝ} :
-    weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π) := by
-  rw [weightedRotation_eq_self_iff]
-  simp only [ne_eq, h₁, not_false_eq_true, forall_const, h₂]
-  constructor
-  · rintro ⟨h₁, h₂⟩
-    have h := pow_gcd_eq_one.2 ⟨h₁, h₂⟩
-    rw [hab.gcd_eq_one, pow_one, Circle.exp_eq_one] at h
-    obtain ⟨n, hn⟩ := h
-    exact ⟨-n, by push_cast; linarith⟩
-  · rintro ⟨n, rfl⟩
-    have h : Circle.exp (-(n * (2 * π))) = 1 := by
-      rw [← neg_mul, ← Int.cast_neg]
-      exact Circle.exp_int_mul_two_pi _
-    simp [h]
+/-- **The stabilizer of a point off the axes.** A circle element fixes a point with both
+coordinates nonzero exactly when it is a root of unity of order dividing `gcd(a, b)`. -/
+theorem weightedRotation_eq_self_iff_of_ne_zero {u : Circle} {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
+    (h₂ : z.2 ≠ 0) : weightedRotation a b u z = z ↔ u ^ a.gcd b = 1 := by
+  rw [weightedRotation_eq_self_iff, pow_gcd_eq_one]
+  simp [h₁, h₂]
 
-/-- **The least period of a point off the axes** is `2π` for coprime weights. -/
-theorem isLeast_weightedRotation_exp_neg_eq_self (hab : a.Coprime b) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
+/-- **The periods of a point off the axes.** The rotation by the angle `θ`,
+`z_j ↦ exp(-i a_j θ) z_j`, fixes a point with both coordinates nonzero exactly when `θ` is an
+integer multiple of `2π / gcd(a, b)`. For coprime weights these are the multiples of `2π`. -/
+theorem weightedRotation_exp_neg_eq_self_iff (hab : a.gcd b ≠ 0) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
+    (h₂ : z.2 ≠ 0) {θ : ℝ} :
+    weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π / a.gcd b) := by
+  rw [weightedRotation_eq_self_iff_of_ne_zero h₁ h₂, Circle.exp_pow_eq_one_iff hab]
+  constructor <;> rintro ⟨n, hn⟩ <;> exact ⟨-n, by push_cast; linarith⟩
+
+/-- **The least period of a point off the axes** is `2π / gcd(a, b)`, so `2π` for coprime
+weights. -/
+theorem isLeast_weightedRotation_exp_neg_eq_self (hab : a.gcd b ≠ 0) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
     (h₂ : z.2 ≠ 0) :
-    IsLeast {θ : ℝ | 0 < θ ∧ weightedRotation a b (Circle.exp (-θ)) z = z} (2 * π) := by
+    IsLeast {θ : ℝ | 0 < θ ∧ weightedRotation a b (Circle.exp (-θ)) z = z}
+      (2 * π / a.gcd b) := by
   simp_rw [weightedRotation_exp_neg_eq_self_iff hab h₁ h₂]
-  exact isLeast_pos_int_mul (by positivity)
+  exact isLeast_pos_int_mul (div_pos (by positivity) (Nat.cast_pos.2 (Nat.pos_of_ne_zero hab)))
 
 /-- **The periods of a point on the axis `z₂ = 0`.** The rotation by the angle `θ` fixes a point
 `(z₁, 0)` with `z₁ ≠ 0` exactly when `θ` is an integer multiple of `2π / a`. -/
@@ -316,14 +324,30 @@ theorem mem_stabilizer_weightedEllipsoid_iff {z : weightedEllipsoid a b ε} {u :
   rw [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, coe_smul_weightedEllipsoid,
     weightedRotation_eq_self_iff]
 
+/-- Off the axes, the stabilizer consists of the `gcd(a, b)`-th roots of unity. -/
+theorem mem_stabilizer_weightedEllipsoid_iff_of_ne_zero {z : weightedEllipsoid a b ε}
+    (h₁ : (z : ℂ × ℂ).1 ≠ 0) (h₂ : (z : ℂ × ℂ).2 ≠ 0) {u : Circle} :
+    u ∈ MulAction.stabilizer Circle z ↔ u ^ a.gcd b = 1 := by
+  rw [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, coe_smul_weightedEllipsoid,
+    weightedRotation_eq_self_iff_of_ne_zero h₁ h₂]
+
+/-- **The generic stabilizer has order `gcd(a, b)`.** A point of the ellipsoid with both
+coordinates nonzero is fixed exactly by the cyclic group of `gcd(a, b)`-th roots of unity. -/
+theorem natCard_stabilizer_weightedEllipsoid_of_ne_zero (hab : a.gcd b ≠ 0)
+    {z : weightedEllipsoid a b ε} (h₁ : (z : ℂ × ℂ).1 ≠ 0) (h₂ : (z : ℂ × ℂ).2 ≠ 0) :
+    Nat.card (MulAction.stabilizer Circle z) = a.gcd b := by
+  have : NeZero (a.gcd b) := ⟨hab⟩
+  refine (Nat.card_congr <| Equiv.subtypeEquivRight fun u ↦ ?_).trans
+    (natCard_powMonoidHom_ker Circle (a.gcd b))
+  simp [mem_stabilizer_weightedEllipsoid_iff_of_ne_zero h₁ h₂]
+
 /-- **Freeness off the axes.** For coprime weights, a point of the ellipsoid with both coordinates
 nonzero has trivial stabilizer. -/
 theorem stabilizer_weightedEllipsoid_eq_bot (hab : a.Coprime b) {z : weightedEllipsoid a b ε}
     (h₁ : (z : ℂ × ℂ).1 ≠ 0) (h₂ : (z : ℂ × ℂ).2 ≠ 0) :
-    MulAction.stabilizer Circle z = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).2 fun u hu ↦ ?_
-  obtain ⟨hua, hub⟩ := mem_stabilizer_weightedEllipsoid_iff.1 hu
-  simpa [hab.gcd_eq_one] using pow_gcd_eq_one.2 ⟨hua h₁, hub h₂⟩
+    MulAction.stabilizer Circle z = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).2 fun u hu ↦ by
+    simpa [hab.gcd_eq_one] using (mem_stabilizer_weightedEllipsoid_iff_of_ne_zero h₁ h₂).1 hu
 
 /-- On the axis `z₂ = 0`, away from the origin, the stabilizer consists of the `a`-th roots of
 unity. -/

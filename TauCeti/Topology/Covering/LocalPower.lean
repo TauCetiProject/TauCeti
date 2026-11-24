@@ -44,6 +44,8 @@ is what adds up the local degrees over a fibre of a finite branched covering.
 * `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq`: the exponent counts the preimages near
   `x` of the points near `f x`.
 * `TauCeti.IsLocalPowerAt.unique`: the exponent is determined by `f` and `x`.
+* `TauCeti.IsLocalPowerAt.eq_one_iff_exists_injOn`: the exponent is `1` exactly when `f` is
+  injective near `x`, so the branch points are the points of exponent `> 1`.
 * `TauCeti.IsLocalPowerAt.comp_homeomorph`: invariance under a homeomorphism of the source.
 * `IsLocalHomeomorphOn.isLocalPowerAt_one`: a local homeomorphism is locally the first power map
   wherever the target has a chart.
@@ -186,6 +188,27 @@ theorem unique {e' : ℕ} (h : IsLocalPowerAt f x e) (h' : IsLocalPowerAt f x e'
   rw [← hy, ← hy']
   exact Set.ncard_le_ncard (inter_subset_inter_left _ hVV')
     (Set.finite_of_ncard_ne_zero (hy' ▸ h'.ne_zero))
+
+/-- **A local power map is unbranched exactly where it is locally injective**: the exponent is `1`
+exactly when `f` is injective on some neighbourhood of `x`. So the points with exponent `> 1` are
+the branch points in the classical sense, those near which `f` is injective on no neighbourhood. -/
+theorem eq_one_iff_exists_injOn (h : IsLocalPowerAt f x e) : e = 1 ↔ ∃ U ∈ 𝓝 x, InjOn f U := by
+  constructor
+  · rintro rfl
+    obtain ⟨φ, ψ, hx, -, -, -, hpow⟩ := h
+    -- With exponent `1`, `ψ ∘ f` agrees with the injective chart `φ` on its source.
+    have hψf (x' : X) (hx' : x' ∈ φ.source) : ψ (f x') = φ x' := by
+      simpa only [φ.left_inv hx', pow_one] using hpow _ (φ.map_source hx')
+    exact ⟨φ.source, φ.open_source.mem_nhds hx, fun x₁ h₁ x₂ h₂ h12 =>
+      φ.injOn h₁ h₂ (by rw [← hψf x₁ h₁, ← hψf x₂ h₂, h12])⟩
+  · rintro ⟨U, hU, hinj⟩
+    -- Inside `U`, the points close to `f x` have `e` preimages, but at most one by injectivity.
+    obtain ⟨V, hVU, -, -, hV⟩ := h.exists_ncard_inter_preimage_eq hU
+    have := h.nhdsNE_neBot
+    obtain ⟨y, hy⟩ := hV.exists
+    refine le_antisymm ?_ (Nat.one_le_iff_ne_zero.2 h.ne_zero)
+    rw [← hy, ncard_le_one_iff (finite_of_ncard_ne_zero (hy ▸ h.ne_zero))]
+    exact fun ha hb => hinj (hVU ha.1) (hVU hb.1) (ha.2.trans hb.2.symm)
 
 /-- Being locally a power map is invariant under a homeomorphism of the source. -/
 theorem comp_homeomorph {X' : Type*} [TopologicalSpace X'] (g : X' ≃ₜ X) {x' : X'}

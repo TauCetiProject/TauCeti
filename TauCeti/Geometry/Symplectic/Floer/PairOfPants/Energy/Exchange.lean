@@ -161,16 +161,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ} {c : ℝ}
 
-/-- The member `c` of the family is `C¹` jointly in the domain point of `S` and the target
-point. -/
-private theorem contMDiffAt_exchangePerturbation_apply (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) :
-    ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ exchangePerturbation H c p.1 p.2) (Complex.equivRealProdCLM.symm z, x) :=
-  fun _ hz x ↦
-    (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
-      (f := fun p : ℂ × M ↦ (c, p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
-
 variable [IsManifold I ⊤ M] {ω : SmoothTwoForm I M}
 
 variable [FiniteDimensional ℝ E]
@@ -487,7 +477,7 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
   rw [← image_exchangeMap_truncation hc₀ hc₁ hR]
   simpa only [floerEnergyDensity_constSmooth] using
     ω.constSmooth.integral_floerEnergyDensity_image_exchangeMap
-      (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
+      (Floer.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
       (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁
       (contMDiffOn_iff_contDiffOn.mpr (hu.of_le one_le_two))
@@ -509,7 +499,7 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
   conv_lhs => rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁]
   simpa only [hamiltonianCurvature_constSmooth] using
     ω.constSmooth.integral_hamiltonianCurvature_image_exchangeMap
-      (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
+      (Floer.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
       (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁ u
       isOpen_thricePuncturedSphereReal.measurableSet subset_rfl

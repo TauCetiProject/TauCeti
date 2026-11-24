@@ -20,9 +20,11 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 Let `f` be injective and differentiable on a null-measurable subset `s` of a finite-dimensional real
 normed space with an additive Haar measure `μ`. Mathlib's change of variables formula
 `MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` says that `f` pushes the measure
-`|det f'| μ` on `s` forward to `μ` on `f '' s`. If the Jacobian is bounded below, `c ≤ |det f'|`
-on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` on `f '' s`
-(`MeasureTheory.map_restrict_le_smul_restrict_image`).
+`|det f'| μ` on `s` forward to `μ` on `f '' s`. Mathlib states the corresponding lower-integral
+formula on measurable sets only; it holds on null-measurable sets as well
+(`MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul₀`). If the Jacobian is bounded
+below, `c ≤ |det f'|` on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ`
+on `f '' s` (`MeasureTheory.map_restrict_le_smul_restrict_image`).
 
 For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
@@ -61,6 +63,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 
 ## Main declarations
 
+* `MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul₀`: the change of variables
+  formula for lower integrals on a null-measurable set.
 * `MeasureTheory.map_restrict_le_smul_restrict_image`: the pushforward of `μ` on `s` is at most
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
@@ -86,6 +90,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
 * `Equiv.inv_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in
   dimension `n`.
+* `Equiv.inv_max_one_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹‖ ≤ L` everywhere, then
+  `|det Dφ| ≥ (max 1 L)^{-n}` everywhere.
 -/
 
 public section
@@ -98,6 +104,25 @@ namespace MeasureTheory
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   {Ω s t : Set E} {f : E → E} {f' : E → E →L[ℝ] E} {c : ℝ}
+
+/-- **Change of variables on a null-measurable set.** If `f` is injective and differentiable on
+a null-measurable set `s`, then the lower integral of `g` over `f '' s` is the lower integral of
+`|det f'| * g ∘ f` over `s`. -/
+theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul₀ (hs : NullMeasurableSet s μ)
+    (hf' : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (hf : InjOn f s) (g : E → ℝ≥0∞) :
+    ∫⁻ x in f '' s, g x ∂μ = ∫⁻ x in s, ENNReal.ofReal |(f' x).det| * g (f x) ∂μ := by
+  -- Pass to a measurable subset `u` with the same measure; the images of `u` and `s` differ by
+  -- the image of a null set, which is null since `f` is differentiable on it.
+  obtain ⟨u, hus, hu, hsu⟩ := hs.exists_measurable_subset_ae_eq
+  have himage : f '' u =ᵐ[μ] f '' s :=
+    (Filter.EventuallySubset.of_subset (image_mono hus)).antisymm <| ae_subset.2 <|
+      measure_mono_null (subset_image_sdiff _ s u) <|
+        addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
+          (fun x hx ↦ (hf' x hx.1).differentiableWithinAt.mono sdiff_subset)
+          (ae_subset.1 hsu.symm.subset)
+  rw [← setLIntegral_congr himage, ← setLIntegral_congr hsu,
+    lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hu (fun x hx ↦ (hf' x (hus hx)).mono hus)
+      (hf.mono hus) g]
 
 /-- **Pushforward bound from a Jacobian lower bound.** If `f` is injective and differentiable on
 a null-measurable set `s`, and `c ≤ |det f'|` on `s` with `c > 0`, then `f` pushes `μ` restricted to
@@ -428,3 +453,13 @@ theorem Equiv.inv_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E] [Norm
   rw [eq_inv_of_mul_eq_one_left (by rw [← abs_mul, mul_comm, h, abs_one] :
     |(fderiv ℝ φ x).det| * |(fderiv ℝ φ.symm (φ x)).det| = 1)]
   exact inv_anti₀ hpos hle
+
+/-- **A uniform lower bound for the Jacobian determinant.** If a bijection `φ` of a
+finite-dimensional real normed space and its inverse are differentiable and `‖Dφ⁻¹‖ ≤ L`
+everywhere, then `|det Dφ| ≥ (max 1 L)^{-n}` everywhere, in dimension `n`. The bound is positive
+and depends only on `L` and `n`. -/
+theorem Equiv.inv_max_one_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (φ : E ≃ E) (hφ : Differentiable ℝ φ)
+    (hψ : Differentiable ℝ φ.symm) {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ.symm y‖ ≤ L) (x : E) :
+    (max 1 L ^ Module.finrank ℝ E)⁻¹ ≤ |(fderiv ℝ φ x).det| :=
+  φ.inv_pow_le_abs_det_fderiv (hφ x) (hψ _) ((hL _).trans (le_max_right 1 L))

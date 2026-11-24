@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFree
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 
@@ -27,6 +28,8 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply`: the
   finite locally free sheaf `FiniteLocallyFreeSheaf.relativeDifferentials R X` has rank `n`
   everywhere when `X` is smooth of relative dimension `n`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials`: the same
+  sheaf as a finite locally free sheaf of constant rank `n`;
 * `TauCeti.AlgebraicGeometry.isInvertible_relativeDifferentials` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`: in relative dimension one
   it is an invertible sheaf.
@@ -119,6 +122,25 @@ lemma InvertibleSheaf.relativeDifferentials_obj
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     (InvertibleSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
   (rfl)
+
+variable (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))]
+
+/-- The sheaf of relative differentials `Ω_{X/R}` of a scheme smooth of relative dimension `n`
+over `Spec R`, as a finite locally free sheaf of constant rank `n`. -/
+def FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials : FiniteLocallyFreeSheaf.FixedRank X n :=
+  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  ⟨FiniteLocallyFreeSheaf.relativeDifferentials R X,
+    (FiniteLocallyFreeSheaf.isConstantRank_iff _ n).mpr
+      (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R n)⟩
+
+/-- The underlying sheaf of `FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials R X n` is
+`Ω_{X/R}`. -/
+@[simp]
+lemma FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj :
+    (FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials R X n).obj.obj =
+      X.relativeDifferentials R :=
+  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  FiniteLocallyFreeSheaf.relativeDifferentials_obj R X
 
 end
 

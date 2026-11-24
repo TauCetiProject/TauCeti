@@ -57,14 +57,18 @@ For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is anti
 set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
 approximations by open covers. In the exponent, the roots `c ^ (1 / p)` of a finite nonzero `c`
 tend to `1` as `p → ∞`, which turns a lower or upper bound weighted by a power of a measure into
-the corresponding bound in the limit of the `Lᵖ` seminorms.
+the corresponding bound in the limit of the `Lᵖ` seminorms. This is a case of the continuity of
+`y ↦ a ^ y` in the real exponent for a finite nonzero base `a`; it also gives `c ^ ε → 1` as
+`ε → 0`, so that a constant factor does not change an exponential rate in large deviations.
 
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
 For nonnegative bases and exponents, `ofReal a ^ p * ofReal b ^ q` is the image under
 `ENNReal.ofReal` of the real product `a ^ p * b ^ q`; this transfers weighted geometric means
-of nonnegative real functions to `ℝ≥0∞`. For `0 ≤ x` and an arbitrary real exponent `p`,
+of nonnegative real functions to `ℝ≥0∞`. For a positive base `r`, `ofReal (r ^ (a + b))` splits
+as `ofReal (r ^ a) * ofReal (r ^ b)` for all real exponents; this rescales radii in power-law
+weights such as `r ^ (-λ)`. For `0 ≤ x` and an arbitrary real exponent `p`,
 `ENNReal.ofReal (x ^ p) ≤ ENNReal.ofReal x ^ p`, extending `ENNReal.ofReal_rpow_of_pos` across
 `x = 0` where negative powers send `0` to `∞` in `ℝ≥0∞`.
 
@@ -101,6 +105,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.ofReal_rpow_mul_ofReal_rpow`: `ofReal a ^ p * ofReal b ^ q = ofReal (a ^ p * b ^ q)`
   for nonnegative `a`, `b`, `p`, `q`.
+* `ENNReal.ofReal_rpow_add`: `ofReal (r ^ (a + b)) = ofReal (r ^ a) * ofReal (r ^ b)` for `0 < r`.
 * `ENNReal.ofReal_rpow_le`: `ofReal (x ^ p) ≤ ofReal x ^ p` for `0 ≤ x` and any real `p`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
@@ -110,6 +115,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
   `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
+* `ENNReal.continuous_const_rpow`: `y ↦ a ^ y` is continuous for `a ∉ {0, ∞}`.
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
 * `ENNReal.tendsto_const_mul_rpow_one_div_atTop`: `M * c ^ (1 / p) → M` as `p → ∞` for
   `c ∉ {0, ∞}` and any `M : ℝ≥0∞`.
@@ -258,6 +264,12 @@ theorem ofReal_rpow_mul_ofReal_rpow {a b p q : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b
   rw [ofReal_rpow_of_nonneg ha hp, ofReal_rpow_of_nonneg hb hq,
     ofReal_mul (Real.rpow_nonneg ha p)]
 
+/-- For a positive real base, `ENNReal.ofReal` turns a sum of real exponents into a product of
+powers. -/
+theorem ofReal_rpow_add {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    ENNReal.ofReal (r ^ (a + b)) = ENNReal.ofReal (r ^ a) * ENNReal.ofReal (r ^ b) := by
+  rw [← ofReal_mul (by positivity), Real.rpow_add hr]
+
 /-- For any nonnegative real base `x` and any real exponent `p`,
 `ENNReal.ofReal (x ^ p) ≤ ENNReal.ofReal x ^ p`. Equality holds except when `x = 0` and `p < 0`,
 where the left-hand side is `0` and the right-hand side is `∞`. -/
@@ -318,15 +330,21 @@ theorem exists_pos_forall_mem_Icc_rpow_le_add {x r ε : ℝ≥0∞} (hxr : x < r
     nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ≥0))
   exact ⟨η, hη0, hηr.le, hηd⟩
 
+/-- For a finite nonzero base `a`, the power `y ↦ a ^ y` is continuous in the real exponent. -/
+theorem continuous_const_rpow (a : ℝ≥0∞) (h0 : a ≠ 0) (htop : a ≠ ∞) :
+    Continuous fun y : ℝ ↦ a ^ y := by
+  have ha : 0 < a.toReal := toReal_pos h0 htop
+  rw [← ofReal_toReal htop]
+  simp_rw [ofReal_rpow_of_pos ha]
+  exact continuous_ofReal.comp (Real.continuous_const_rpow ha.ne')
+
 /-- For a finite nonzero `c`, the roots `c ^ (1 / p)` tend to `1` as the real exponent `p` tends
 to infinity. -/
 theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
     Filter.Tendsto (fun p : ℝ ↦ c ^ (1 / p)) Filter.atTop (𝓝 1) := by
-  lift c to ℝ≥0 using hc
-  have hc0 : c ≠ 0 := by simpa using hc0
-  have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop Filter.tendsto_id
-  simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
+  simpa only [Function.comp_def, id, rpow_zero] using
+    ((continuous_const_rpow c hc0 hc).tendsto 0).comp
+      (tendsto_const_nhds.div_atTop Filter.tendsto_id)
 
 /-- For a finite nonzero `c` and any `M : ℝ≥0∞`, `M * c ^ (1 / p)` tends to `M` as the real
 exponent `p` tends to infinity. -/
