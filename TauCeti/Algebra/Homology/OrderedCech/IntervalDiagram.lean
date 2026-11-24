@@ -649,15 +649,8 @@ theorem quasiIso_totalMap (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] : QuasiIso
   have hcomm :
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom ≫ totalMap α =
         HomologicalComplex₂.total.map ψ (ComplexShape.down ℕ) ≫
-          (HomologicalComplex₂.totalFlipIso B.flagComplex (ComplexShape.down ℕ)).hom := by
-    ext n q p h
-    rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-      HomologicalComplex₂.ιTotal_totalFlipIso_f_hom_assoc, HomologicalComplex₂.ιTotal_map_assoc,
-      HomologicalComplex₂.ιTotal_totalFlipIso_f_hom]
-    -- `HomologicalComplex₂.ιTotal_totalFlipIso_f_hom` states the sign with types that agree with
-    -- the goal only up to unfolding the total complex, so the sign is moved with `erw`.
-    erw [Linear.units_smul_comp, ιTotal_totalMap, Linear.comp_units_smul]
-    rw [HomologicalComplex₂.flipFunctor_map_f_f]
+          (HomologicalComplex₂.totalFlipIso B.flagComplex (ComplexShape.down ℕ)).hom :=
+    (HomologicalComplex₂.total_map_flip_totalFlipIso_hom (flagComplexMap α) _).symm
   rw [← quasiIso_iff_comp_left
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom, hcomm]
   infer_instance

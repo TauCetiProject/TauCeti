@@ -31,9 +31,11 @@ and cup products, need linearity before passing to cohomology.
 * `TauCeti.ContinuousCohomology.mapAddHom` and
   `TauCeti.ContinuousCohomology.mapLinearMap` bundle that dependence as an additive homomorphism
   and a linear map.
-* `TauCeti.ContinuousCohomology.continuousCochainsFunctor` is the additive functor of
-  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`; its action on
-  maps of discrete modules is `cochainsMap_ofDiscreteModulePair_id`.
+* `TauCeti.ContinuousCohomology.continuousCochainsFunctor` is the functor of homogeneous cochain
+  complexes, with `continuousCochainsFunctorCompHomologyIso`; its action on maps of discrete
+  modules is `cochainsMap_ofDiscreteModulePair_id`. It is additive
+  (`continuousCochainsFunctor_additive`) and, over a commutative coefficient ring, linear
+  (`continuousCochainsFunctor_linear`).
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_additive` and
   `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_linear` install the corresponding
   functor instances.
@@ -422,6 +424,19 @@ noncomputable def continuousCochainsFunctorCompHomologyIso (n : ℕ) :
     exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 end Functor
+
+section FunctorLinear
+
+variable (R : Type u) [CommRing R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- Over a commutative coefficient ring, the cochain functor is linear in the coefficient
+representation. -/
+noncomputable instance continuousCochainsFunctor_linear :
+    (continuousCochainsFunctor R G).Linear R where
+  map_smul f r := cochainsMap_smul (ContinuousMonoidHom.id G) r f
+
+end FunctorLinear
 
 /-- The cochain map of an equivariant map of discrete modules agrees with the cochain functor
 applied to the corresponding map of topological representations. -/
