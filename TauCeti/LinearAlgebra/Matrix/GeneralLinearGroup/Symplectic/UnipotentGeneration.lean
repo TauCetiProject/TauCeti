@@ -104,10 +104,10 @@ private theorem unipotentBlock_single (upper : Bool) (i j : Fin m) (c : R) :
       Matrix.transvection (rootRow upper i) (rootColumn upper j) c := by
   have upper_ne_lower (a b : Fin m) : Fin.castAdd m a ≠ b.addNat m := by
     simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-      Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr a b
+      Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inl_ne_inr a b
   have lower_ne_upper (a b : Fin m) : a.addNat m ≠ Fin.castAdd m b := by
     simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-      Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl a b
+      Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inr_ne_inl a b
   ext a b
   obtain ⟨a, rfl⟩ := finSumFinEquiv.surjective a
   obtain ⟨b, rfl⟩ := finSumFinEquiv.surjective b

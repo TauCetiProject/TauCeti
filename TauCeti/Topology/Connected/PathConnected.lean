@@ -9,6 +9,7 @@ public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Order.PartialSups
 import Mathlib.Order.Atoms.Finite
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.UnitInterval.PathConnected
 
 /-!
 # Path-connected unions and intersections
@@ -33,7 +34,8 @@ If a set is covered by two path-connected subsets but is not itself path connect
 the two subsets is a path component of it.
 
 A function which, near each point of a path, agrees with its value at that point takes the same
-value at the two ends of the path.
+value at the two ends of the path. In particular, so does a function which takes equal values at
+points joined inside some neighbourhood of each point.
 
 ## Main declarations
 
@@ -47,6 +49,8 @@ value at the two ends of the path.
 * `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
 * `Path.eq_of_eventually_eq`: a function locally constant along a path takes the same value at its
   two ends.
+* `Path.eq_of_joinedIn_nhds`: a function constant on pairs of points joined inside a neighbourhood
+  of each point takes the same value at the two ends of a path.
 -/
 
 public section
@@ -123,3 +127,16 @@ same value at the two ends of the path. -/
 theorem Path.eq_of_eventually_eq {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
     (γ : Path x y) (h : ∀ t, ∀ᶠ s in 𝓝 t, f (γ s) = f (γ t)) : f x = f y := by
   simpa using ((IsLocallyConstant.iff_eventually_eq _).2 h).apply_eq_of_preconnectedSpace 0 1
+
+/-- A function which takes equal values at any two points joined inside some neighbourhood of each
+point takes the same value at the two ends of a path. -/
+theorem Path.eq_of_joinedIn_nhds {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
+    (γ : Path x y) (h : ∀ z, ∃ N ∈ 𝓝 z, ∀ ⦃a b⦄, JoinedIn N a b → f a = f b) : f x = f y := by
+  refine γ.eq_of_eventually_eq fun t ↦ ?_
+  obtain ⟨N, hN, hf⟩ := h (γ t)
+  -- Near `t` the path stays in the path component of `γ ⁻¹' N` containing `t`.
+  filter_upwards [pathComponentIn_mem_nhds (γ.continuous.continuousAt.preimage_mem_nhds hN)]
+    with s hs
+  refine (hf ((hs.map γ.continuous.continuousOn).mono ?_)).symm
+  rintro _ ⟨u, hu, rfl⟩
+  exact hu

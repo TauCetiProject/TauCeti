@@ -285,23 +285,27 @@ theorem exists_isFiniteMeasure_eq_herglotzTransform_add
     rw [← ofReal_measureReal (measure_ne_top _ _), ← h, ENNReal.ofReal_eq_coe_nnreal hre₀]
     exact le_rfl
   -- By Prokhorov compactness, the `μs n` converge weakly along an ultrafilter `U ≤ atTop`.
-  obtain ⟨μ, U, hU, hμ, -, hlim⟩ :=
-    finite_measure_cluster_limit μs _ hmass IsTightMeasureSet.of_compactSpace
+  obtain ⟨μ, U, hU, -, hμ, -, hlim⟩ :=
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet μs atTop _ (forall_mem_range.2 hmass)
+      IsTightMeasureSet.of_compactSpace (.of_forall mem_range_self)
   refine ⟨μ, hμ, fun w hw ↦ ?_⟩
   let μf : ℕ → FiniteMeasure Circle := fun n ↦ ⟨μs n, hμs n⟩
   let μf₀ : FiniteMeasure Circle := ⟨μ, hμ⟩
-  have hweak : Tendsto μf U (𝓝 μf₀) := FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 hlim
+  have hweak : Tendsto μf U (𝓝 μf₀) := FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 <| by
+    simpa only [μf, μf₀, FiniteMeasure.toMeasure_mk] using hlim
   -- Pass to the limit along `U` on both sides of the dilated Herglotz formulas.
-  have hconv := (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).1 hweak
-    (.mkOfCompact ⟨_, continuous_add_div_sub hw⟩)
+  have hconv : Tendsto (fun n ↦ ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μs n) U
+      (𝓝 (∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ)) := by
+    simpa only [μf, μf₀, FiniteMeasure.toMeasure_mk, BoundedContinuousFunction.mkOfCompact_apply,
+      ContinuousMap.coe_mk] using (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).1
+        hweak (.mkOfCompact ⟨_, continuous_add_div_sub hw⟩)
   have hFlim : Tendsto (fun n ↦ F (r n * w)) U (𝓝 (F w)) := by
     have h : Tendsto (fun n ↦ (r n : ℂ) * w) atTop (𝓝 w) := by
       simpa using ((continuous_ofReal.tendsto 1).comp hr_lim).mul_const w
     exact ((hF.continuousOn.continuousAt (isOpen_ball.mem_nhds hw)).tendsto.comp h).mono_left hU
+  rw [Measure.herglotzTransform_def]
   exact tendsto_nhds_unique hFlim ((hconv.add_const _).congr fun n ↦ by
-    rw [hrep n w hw, Measure.herglotzTransform_def]
-    simp only [FiniteMeasure.toMeasure_mk, BoundedContinuousFunction.mkOfCompact_apply,
-      ContinuousMap.coe_mk, μf])
+    rw [hrep n w hw, Measure.herglotzTransform_def])
 
 /-- **The Herglotz representation theorem**, as a characterization: a function on the unit disc
 is holomorphic with nonnegative real part if and only if it is the Herglotz transform of a finite
