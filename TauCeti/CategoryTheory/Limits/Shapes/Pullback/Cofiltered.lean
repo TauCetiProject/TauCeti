@@ -113,6 +113,14 @@ lemma Cone.pullbackOverIso_hom_fst (c : Cone D) {i j : I} (hji : j ⟶ i)
     (c.pullbackOverIso hji s).hom ≫ pullback.fst _ _ = pullback.fst _ _ := by
   simp [Cone.pullbackOverIso]
 
+/-- The cone base-change comparison preserves the projection to the source of the base-changed
+map. -/
+@[reassoc (attr := simp)]
+lemma Cone.pullbackOverIso_hom_snd (c : Cone D) {i j : I} (hji : j ⟶ i)
+    {Z : C} (s : Z ⟶ D.obj i) :
+    (c.pullbackOverIso hji s).hom ≫ pullback.snd _ _ = pullback.snd _ _ ≫ pullback.snd _ _ := by
+  simp [Cone.pullbackOverIso]
+
 /-- The cone base-change comparison followed by the map to the stage is the second projection
 of the iterated pullback. -/
 @[reassoc (attr := simp)]
@@ -121,7 +129,7 @@ lemma Cone.pullbackOverIso_hom_π_app (c : Cone D) {i j : I} (hji : j ⟶ i)
     (c.pullbackOverIso hji s).hom ≫
         pullback.map (c.π.app i) s (D.map hji) s (c.π.app j) (𝟙 Z) (𝟙 _) (by simp) (by simp) =
       pullback.snd _ _ := by
-  apply pullback.hom_ext <;> simp [Cone.pullbackOverIso, pullback.condition]
+  apply pullback.hom_ext <;> simp [pullback.condition]
 
 /-- Compatible maps at a stage and at the cone point are conjugate by the canonical
 base-change comparisons. -/
@@ -139,12 +147,12 @@ theorem Cone.pullbackMap_eq_of_pullbackMap_comp_eq (c : Cone D)
       (c.pullbackOverIso hji p).hom ≫ a ≫ (c.pullbackOverIso hji q).inv := by
   rw [← Category.assoc, Iso.eq_comp_inv]
   apply pullback.hom_ext
-  · simp [Cone.pullbackOverIso, ha]
+  · simp [ha]
   · have h := congrArg (· ≫ pullback.snd (D.map hji) q) hb₂
     simp only [Category.assoc, pullback.lift_snd, Category.comp_id] at h
     have key := c.pullbackOverIso_hom_π_app hji p
     rw [Category.assoc, Category.assoc, ← h, reassoc_of% key]
-    simp [Cone.pullbackOverIso]
+    simp
 
 end CategoryTheory.Limits
 
