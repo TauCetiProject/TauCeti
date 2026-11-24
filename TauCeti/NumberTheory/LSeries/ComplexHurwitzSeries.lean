@@ -30,7 +30,8 @@ in `(s, c)`, and the Gamma integral below is the starting point of that continua
 * `TauCeti.summable_norm_complexHurwitzSeries`, `TauCeti.hasSum_complexHurwitzSeries`: absolute
   convergence on `1 < re s`, for every `c : ℂ`.
 * `TauCeti.complexHurwitzSeries_eq_tsum_cpow`: the terms are principal powers `(n + c) ^ (-s)`
-  when `c` is not a nonpositive integer.
+  when `c` is not a nonpositive integer; `TauCeti.complexHurwitzSeries_eq_tsum_cpow_of_re_pos`
+  specializes this to `0 < re c`.
 * `TauCeti.complexHurwitzSeries_add_natCast`, `TauCeti.complexHurwitzSeries_add_one`: the shift
   `ζ_H(s, c + 1) = ζ_H(s, c) - exp (-s log c)` and its iterates.
 * `TauCeti.complexHurwitzSeries_ofReal`: for real `0 < a ≤ 1` the series is Mathlib's
@@ -112,6 +113,15 @@ theorem complexHurwitzSeries_eq_tsum_cpow (s : ℂ) {c : ℂ} (hc : ∀ n : ℕ,
     exact sub_ne_zero.mpr (hc n)
   rw [cpow_def_of_ne_zero hw, mul_comm]
 
+/-- On the right half-plane `0 < re c` the terms of the Hurwitz series are the principal powers
+`(n + c) ^ (-s)`. -/
+theorem complexHurwitzSeries_eq_tsum_cpow_of_re_pos (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
+    complexHurwitzSeries s c = ∑' n : ℕ, ((n : ℂ) + c) ^ (-s) := by
+  refine complexHurwitzSeries_eq_tsum_cpow s fun n h ↦ ?_
+  have := congrArg re h
+  simp only [neg_re, natCast_re] at this
+  linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+
 /-- Shifting the parameter by `k : ℕ` removes the first `k` terms of the Hurwitz series. -/
 theorem complexHurwitzSeries_add_natCast (c : ℂ) {s : ℂ} (hs : 1 < s.re) (k : ℕ) :
     complexHurwitzSeries s (c + k) =
@@ -133,17 +143,14 @@ theorem complexHurwitzSeries_add_one (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
 theorem complexHurwitzSeries_ofReal {a : ℝ} (ha : 0 < a) (ha' : a ≤ 1) {s : ℂ} (hs : 1 < s.re) :
     complexHurwitzSeries s a = HurwitzZeta.hurwitzZeta a s := by
   rw [← (HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re ⟨ha.le, ha'⟩ hs).tsum_eq,
-    complexHurwitzSeries_eq_tsum_cpow s fun n h ↦ ?_]
-  · simp_rw [one_div, cpow_neg]
-  · have := congrArg re h
-    simp only [ofReal_re, neg_re, natCast_re] at this
-    linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+    complexHurwitzSeries_eq_tsum_cpow_of_re_pos s (by simpa using ha)]
+  simp_rw [one_div, cpow_neg]
 
 /-- At `c = 1` the Hurwitz series is the Riemann zeta function. -/
 theorem complexHurwitzSeries_one {s : ℂ} (hs : 1 < s.re) :
     complexHurwitzSeries s 1 = riemannZeta s := by
-  rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, complexHurwitzSeries_eq_tsum_cpow s
-    fun n h ↦ Nat.cast_add_one_ne_zero n (by linear_combination h)]
+  rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs,
+    complexHurwitzSeries_eq_tsum_cpow_of_re_pos s (by norm_num)]
   simp_rw [one_div, cpow_neg]
 
 /-- At `c = 1 / 2` the Hurwitz series is `(2 ^ s - 1) ζ(s)`: the odd terms of `ζ(s)` contribute
@@ -170,8 +177,8 @@ theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
     (hζ.summable.comp_injective (mul_right_injective₀ two_ne_zero)).hasSum
   have hE : ∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s) = (1 - 2 ^ (-s)) * riemannZeta s := by
     linear_combination (heven.even_add_odd hodd).unique hζ
-  rw [complexHurwitzSeries_eq_tsum_cpow s (c := 1 / 2) (fun n h ↦ ?_)]
-  · calc ∑' n : ℕ, ((n : ℂ) + 1 / 2) ^ (-s)
+  rw [complexHurwitzSeries_eq_tsum_cpow_of_re_pos s (c := 1 / 2) (by norm_num)]
+  calc ∑' n : ℕ, ((n : ℂ) + 1 / 2) ^ (-s)
         = ∑' k : ℕ, 2 ^ s * (((2 * k : ℕ) : ℂ) + 1) ^ (-s) := by
           refine tsum_congr fun k ↦ ?_
           have : (k : ℂ) + 1 / 2 = ((2 * k + 1 : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ) := by
@@ -183,10 +190,8 @@ theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
             rw [← ofReal_ofNat, arg_ofReal_of_nonneg zero_le_two]; exact Real.pi_pos.ne
           rw [inv_cpow _ _ harg, cpow_neg, inv_inv]
       _ = (2 ^ s - 1) * riemannZeta s := by
-          rw [tsum_mul_left, hE, ← mul_assoc, mul_sub, mul_one, cpow_neg, mul_inv_cancel₀ h2]
-  · have := congrArg re h
-    norm_num at this
-    linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+          rw [tsum_mul_left, hE, cpow_neg]
+          field_simp
 
 /-- The Gamma integral of the Hurwitz series: for `1 < re s` and `0 < re c`,
 `ζ_H(s, c) = Γ(s)⁻¹ ∫₀^∞ t ^ (s - 1) e^{-ct} / (1 - e^{-t}) dt`. -/
@@ -234,7 +239,7 @@ theorem complexHurwitzSeries_eq_integral {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c
       (t : ℂ) ^ (s - 1) * (exp (-(c * t)) / (1 - exp (-t))) := by
     rw [← (setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦
       (hker ht).tsum_eq), ← hint.tsum_eq,
-      complexHurwitzSeries_eq_tsum_cpow s fun n h ↦ by simpa [h] using hnc n, ← tsum_mul_left]
+      complexHurwitzSeries_eq_tsum_cpow_of_re_pos s hc, ← tsum_mul_left]
     exact tsum_congr fun n ↦ (integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs0 (hnc n)).symm
   rw [← hΓ, inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos hs0)]
 
