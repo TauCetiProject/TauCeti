@@ -26,10 +26,10 @@ GNS representation by `J` gives right multiplication: `J π(a) J [b] = [b a⋆]`
 
 ## Main results
 
-* `PositiveLinearMap.gnsConj_toGNS`, `PositiveLinearMap.gnsConj_coe_toPreGNS`: `J [a] = [a⋆]`.
+* `PositiveLinearMap.gnsConj_apply_toGNS`, `PositiveLinearMap.gnsConj_apply_coe`: `J [a] = [a⋆]`.
 * `PositiveLinearMap.gnsConj_gnsConj`, `PositiveLinearMap.gnsConj_symm`: `J` is an involution.
 * `PositiveLinearMap.inner_gnsConj_gnsConj`: `⟪J x, J y⟫ = ⟪y, x⟫`.
-* `PositiveLinearMap.gnsConj_gnsVector`: `J Ω = Ω`.
+* `PositiveLinearMap.gnsConj_apply_gnsVector`: `J Ω = Ω`.
 * `PositiveLinearMap.gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS`: `J π(a) J [b] = [b a⋆]`.
 
 ## References
@@ -69,14 +69,14 @@ variable (hf : ∀ a b, f (a * b) = f (b * a))
 
 /-- The modular conjugation sends the class of `a` to the class of `a⋆`. -/
 @[simp]
-theorem gnsConj_coe_toPreGNS (a : A) :
+theorem gnsConj_apply_coe (a : A) :
     gnsConj f hf (f.toPreGNS a : f.GNS) = (f.toPreGNS (star a) : f.GNS) :=
   LinearIsometryEquiv.completion_apply_coe _ (f.toPreGNS a)
 
 /-- The modular conjugation sends the class of `a` to the class of `a⋆`, in terms of the class
 map `f.toGNS`. -/
 -- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
-theorem gnsConj_toGNS (a : A) : gnsConj f hf (f.toGNS a) = f.toGNS (star a) := by
+theorem gnsConj_apply_toGNS (a : A) : gnsConj f hf (f.toGNS a) = f.toGNS (star a) := by
   simp
 
 /-- The modular conjugation is its own inverse. -/
@@ -100,14 +100,15 @@ the adjoint: `J π(a) J [b] = [b a⋆]`. -/
 theorem gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS (a b : A) :
     gnsConj f hf (f.gnsNonUnitalStarAlgHom a (gnsConj f hf (f.toGNS b))) =
       f.toGNS (b * star a) := by
-  rw [gnsConj_toGNS, gnsNonUnitalStarAlgHom_apply_toGNS, gnsConj_toGNS, star_mul, star_star]
+  rw [gnsConj_apply_toGNS, gnsNonUnitalStarAlgHom_apply_toGNS, gnsConj_apply_toGNS, star_mul,
+    star_star]
 
 /-- For a unital algebra, the modular conjugation fixes the cyclic vector `Ω = [1]`. -/
 @[simp]
-theorem gnsConj_gnsVector {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    (f : B →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a)) :
+theorem gnsConj_apply_gnsVector {B : Type*} [CStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] (f : B →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a)) :
     gnsConj f hf f.gnsVector = f.gnsVector := by
   have h : f.gnsVector = f.toGNS 1 := by simp [gnsVector_def]
-  rw [h, gnsConj_toGNS, star_one]
+  rw [h, gnsConj_apply_toGNS, star_one]
 
 end PositiveLinearMap
