@@ -104,14 +104,12 @@ open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
 /-! ### The tensor and the conditions -/
 
 section Tensor
 
-variable [Nonempty Y] {c : E × Y → ℝ} {U U' : Set E} {V : Set Y} {x : E} {y : Y} {ξ : E}
-  {η : StrongDual ℝ E}
+variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nonempty Y]
+  {c : E × Y → ℝ} {U U' : Set E} {V : Set Y} {x : E} {y : Y} {ξ : E} {η : StrongDual ℝ E}
 
 /-- The **Ma–Trudinger–Wang tensor** of a cost `c` at `(x, y)`, with respect to the target set
 `V` of its `c`-exponential, on a source direction `ξ` and a momentum direction `η`. Writing
@@ -275,15 +273,16 @@ theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempt
   have : Nontrivial F := rank_pos_iff_nontrivial.1 (zero_lt_one.trans hF)
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : F)
   obtain ⟨ζ, hζ⟩ := exists_linearIndependent_pair_of_one_lt_rank hF hξ
-  -- Remove from `ζ` its component along `ξ`; what remains is nonzero and orthogonal to `ξ`.
-  set ζ' := ζ - (⟪ξ, ζ⟫ / ‖ξ‖ ^ 2) • ξ
-  have hζ' : ζ' ≠ 0 := fun h0 ↦ (LinearIndependent.pair_iff' hξ).1 hζ _ (sub_eq_zero.1 h0).symm
-  have hξζ' : innerSL ℝ ζ' ξ = 0 := by
-    have : ‖ξ‖ ^ 2 ≠ 0 := by positivity
-    simp only [innerSL_apply_apply, ζ', inner_sub_left, real_inner_smul_left,
-      real_inner_self_eq_norm_sq, real_inner_comm ξ ζ]
-    field_simp
-    ring
+  -- Project `ζ` onto the subspace orthogonal to `ξ`; the result is nonzero and orthogonal to `ξ`.
+  set ζ' := (ℝ ∙ ξ)ᗮ.starProjection ζ with hζ'_eq
+  -- `ζ'` vanishes only on `(ℝ ∙ ξ)ᗮᗮ = ℝ ∙ ξ`, which does not contain `ζ`.
+  have hζ' : ζ' ≠ 0 := fun h0 ↦ by
+    rw [hζ'_eq, Submodule.starProjection_apply_eq_zero_iff, Submodule.orthogonal_orthogonal,
+      Submodule.mem_span_singleton] at h0
+    obtain ⟨a, ha⟩ := h0
+    exact (LinearIndependent.pair_iff' hξ).1 hζ a ha
+  have hξζ' : innerSL ℝ ζ' ξ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 ((ℝ ∙ ξ)ᗮ.starProjection_apply_mem ζ)
   have hη : innerSL ℝ ζ' ≠ 0 := by
     rw [← norm_ne_zero_iff, innerSL_apply_norm]
     exact norm_ne_zero_iff.2 hζ'

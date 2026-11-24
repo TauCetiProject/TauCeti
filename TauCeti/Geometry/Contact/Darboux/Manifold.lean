@@ -113,7 +113,7 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint {α : RoughForm I
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
           ![mvfderiv I chart x v] = g x * α x ![v] := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
@@ -185,7 +185,7 @@ theorem IsContactFormAt.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
           ![mvfderiv I chart x v] = g x * α x ![v] := by
   obtain ⟨m, chart, g, -, hx₀', h⟩ := hc.exists_darbouxChart_of_isInteriorPoint hU hx₀U hα hx₀
   obtain rfl := eq_of_finrank_eq_of_mem_source chart hx₀' hn
@@ -203,8 +203,8 @@ theorem SmoothForm.IsContactForm.exists_darbouxChart_of_isInteriorPoint
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = g x * α.1 x ![v] := by
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = g x * α.val x ![v] := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   obtain ⟨n, chart, g, hdim, hx₀', -, h0, hchart⟩ :=
     (isContactForm_iff_forall_isContactFormAt.1 hα x₀).exists_darbouxChart_of_isInteriorPoint
@@ -249,8 +249,8 @@ theorem SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq_of_isInterior
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = g x * α.1 x ![v] := by
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = g x * α.val x ![v] := by
   obtain ⟨m, chart, g, -, hx₀', h⟩ := hα.exists_darbouxChart_of_isInteriorPoint hx₀
   obtain rfl := eq_of_finrank_eq_of_mem_source chart hx₀' hn
   exact ⟨chart, g, hx₀', h⟩
@@ -292,7 +292,7 @@ theorem IsContactFormAt.exists_darbouxChart {α : RoughForm I M ℝ 1} {U : Set 
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
           ![mvfderiv I chart x v] = g x * α x ![v] :=
   hc.exists_darbouxChart_of_isInteriorPoint hU hx₀U hα BoundarylessManifold.isInteriorPoint
 
@@ -309,7 +309,7 @@ theorem IsContactFormAt.exists_darbouxChart_of_finrank_eq {α : RoughForm I M �
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
           ![mvfderiv I chart x v] = g x * α x ![v] :=
   hc.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint hn hU hx₀U hα
     BoundarylessManifold.isInteriorPoint
@@ -326,8 +326,8 @@ theorem SmoothForm.IsContactForm.exists_darbouxChart {α : SmoothForm I M ℝ 1}
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = g x * α.1 x ![v] :=
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = g x * α.val x ![v] :=
   hα.exists_darbouxChart_of_isInteriorPoint BoundarylessManifold.isInteriorPoint
 
 /-- **The contact Darboux theorem for contact structures.** Around every point `x₀` of a
@@ -357,8 +357,8 @@ theorem SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq {α : SmoothF
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = g x * α.1 x ![v] :=
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = g x * α.val x ![v] :=
   hα.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint hn BoundarylessManifold.isInteriorPoint
 
 /-- **The contact Darboux theorem for contact structures in dimension `2 n + 1`.** On a

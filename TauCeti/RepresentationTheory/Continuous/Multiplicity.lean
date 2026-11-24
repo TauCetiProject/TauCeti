@@ -101,11 +101,12 @@ of `T`. -/
 noncomputable def kerCompLinHomEquiv (T : π →ⁱL ρ) :
     (T.compLinHom σ).mapInvariants.ker ≃ₗ[𝕜] (σ →ⁱL T.kerRepresentation) where
   toFun S :=
-    { toContinuousLinearMap := (S.1.1 : V →L[𝕜] E).codRestrict _
-        ((mem_ker_mapInvariants_compLinHom_iff σ T).1 S.2)
+    { toContinuousLinearMap := (S.val.val : V →L[𝕜] E).codRestrict _
+        ((mem_ker_mapInvariants_compLinHom_iff σ T).1 S.property)
       isIntertwining' g := by
         ext v
-        simpa using congr($((mem_linHom_invariants_iff_isIntertwining σ π _).1 S.1.2 g) v) }
+        simpa using congr($((mem_linHom_invariants_iff_isIntertwining σ π _).1 S.val.property g) v)
+            }
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun R :=
@@ -113,7 +114,7 @@ noncomputable def kerCompLinHomEquiv (T : π →ⁱL ρ) :
         (mem_linHom_invariants_iff_isIntertwining σ π _).2 fun g ↦ by
           ext v
           simp [toContinuousLinearMap_apply, R.isIntertwining]⟩,
-      (mem_ker_mapInvariants_compLinHom_iff σ T).2 fun v ↦ (R v).2⟩
+      (mem_ker_mapInvariants_compLinHom_iff σ T).2 fun v ↦ (R v).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -158,18 +159,18 @@ theorem exists_comp_eq (hπ : π.IsUnitary) {S : σ →ⁱL ρ}
     K.isCompl_orthogonal.symm
   let f : V →ₗ[𝕜] E := Kᗮ.subtype ∘ₗ e.symm.toLinearMap ∘ₗ
     (S.toContinuousLinearMap : V →ₗ[𝕜] F).codRestrict _ hS
-  have hf (v : V) : T (f v) = S v := congr($(e.apply_symm_apply ⟨S v, hS v⟩).1)
+  have hf (v : V) : T (f v) = S v := congr($(e.apply_symm_apply ⟨S v, hS v⟩).val)
   -- Since `e` is injective, `T` is injective on `Kᗮ`.
   have hinj {x y : E} (hx : x ∈ Kᗮ) (hy : y ∈ Kᗮ) (hxy : T x = T y) : x = y :=
     congr($(e.injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩) (Subtype.ext (by
       simpa [e, LinearMap.kerComplementEquivRange_apply_coe, toContinuousLinearMap_apply]
-        using hxy))).1)
+        using hxy))).val)
   refine ⟨⟨LinearMap.toContinuousLinearMap f, fun g ↦ ?_⟩, ?_⟩
   · ext v
     -- Both `f (σ g v)` and `π g (f v)` lie in the invariant subspace `Kᗮ` and have image
     -- `S (σ g v) = ρ g (S v)` under `T`.
-    refine hinj (e.symm _).2 (hπ.apply_mem_orthogonal
-      (fun g _ hk ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hk) g (e.symm _).2) ?_
+    refine hinj (e.symm _).property (hπ.apply_mem_orthogonal
+      (fun g _ hk ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hk) g (e.symm _).property) ?_
     simp [hf, S.isIntertwining, T.isIntertwining]
   · ext v
     exact hf v
@@ -185,7 +186,7 @@ theorem mem_range_mapInvariants_compLinHom_iff (hπ : π.IsUnitary)
     exact ⟨(R : V →L[𝕜] E) v, by simp⟩
   · intro hS
     obtain ⟨R, hR⟩ := T.exists_comp_eq σ hπ
-      (S := ⟨S, (mem_linHom_invariants_iff_isIntertwining σ ρ _).1 S.2⟩) hS
+      (S := ⟨S, (mem_linHom_invariants_iff_isIntertwining σ ρ _).1 S.property⟩) hS
     refine ⟨⟨R.toContinuousLinearMap, toContinuousLinearMap_mem_invariants_linHom σ π R⟩, ?_⟩
     ext v
     exact congr($(coe_mapInvariants_compLinHom_apply σ T _) v).trans congr($hR v)
@@ -210,7 +211,7 @@ private noncomputable def toCoker :
     { toContinuousLinearMap := T.toContinuousLinearMap.range.mkQL ∘L (S : V →L[𝕜] F)
       isIntertwining' g := by
         ext v
-        have h := congr($((mem_linHom_invariants_iff_isIntertwining σ ρ _).1 S.2 g) v)
+        have h := congr($((mem_linHom_invariants_iff_isIntertwining σ ρ _).1 S.property g) v)
         simp only [ContinuousLinearMap.comp_apply] at h
         simp [h] }
   map_add' _ _ := by

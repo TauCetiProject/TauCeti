@@ -53,6 +53,8 @@ edge-density energy of a finite graph.
   partitions;
 * `TauCeti.DenseGraphLimits.l2inner_stepGraphonAvg_eq_sum`: the block computation everything else
   is read off from — pairing any kernel against a block-average step graphon;
+* `TauCeti.DenseGraphLimits.l2sq_stepGraphon`: the squared `L²` norm of any step graphon as a
+  measure-weighted block sum;
 * `TauCeti.DenseGraphLimits.graphonPartitionEnergy_eq_sum`: the energy as a finite block sum;
 * `TauCeti.DenseGraphLimits.l2inner_graphon_stepGraphonAvg`: the projection moment identity, and
   `TauCeti.DenseGraphLimits.l2inner_stepGraphonAvg_of_le` is its refinement form;
@@ -161,6 +163,26 @@ theorem l2inner_stepGraphonAvg_eq_sum (hP : ∀ p ∈ P.parts, MeasurableSet p) 
     (SymmKernel.integrable_mul μ K (stepGraphonAvg (μ := μ) P hP W).toSymmKernel)]
   simp only [Graphon.coe_toSymmKernel]
   exact Finset.sum_congr rfl fun pq _ => setIntegral_mul_stepGraphonAvg μ P hP W K pq.1 pq.2
+
+/-- The squared `L²` norm of a step graphon is the measure-weighted sum of its squared block
+values.  No non-nullness hypothesis is needed, as null blocks contribute zero to both sides. -/
+theorem l2sq_stepGraphon (hP : ∀ p ∈ P.parts, MeasurableSet p)
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p) :
+    l2sq μ (stepGraphon (μ := μ) P hP val hsymm).toSymmKernel =
+      ∑ p : P.parts, ∑ q : P.parts,
+        (μ.real (p : Set Ω) * μ.real (q : Set Ω)) * (val p q : ℝ) ^ 2 := by
+  rw [l2sq_def, Finpartition.integral_eq_sum_parts μ P hP
+    (SymmKernel.integrable_sq μ (stepGraphon (μ := μ) P hP val hsymm).toSymmKernel),
+    Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun p _ => Finset.sum_congr rfl fun q _ => ?_
+  calc
+    (∫ z in (p : Set Ω) ×ˢ (q : Set Ω),
+        stepGraphon (μ := μ) P hP val hsymm z.1 z.2 ^ 2 ∂(μ.prod μ)) =
+        ∫ _z in (p : Set Ω) ×ˢ (q : Set Ω), (val p q : ℝ) ^ 2 ∂(μ.prod μ) :=
+      setIntegral_congr_fun ((hP p p.property).prod (hP q q.property)) fun _z hz => by
+        rw [stepGraphon_apply P hP val hsymm hz.1 hz.2]
+    _ = (μ.real (p : Set Ω) * μ.real (q : Set Ω)) * (val p q : ℝ) ^ 2 := by
+      rw [setIntegral_const, measureReal_prod_prod, smul_eq_mul]
 
 /-- The **graphon partition energy** of `W` over a measurable finite partition `P`: the
 `L²(μ ⊗ μ)` norm squared of the block-average step graphon `E[W | P ⊗ P]`.

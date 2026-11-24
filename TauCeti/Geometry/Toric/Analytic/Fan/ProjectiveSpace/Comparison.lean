@@ -100,23 +100,23 @@ private theorem vectorChartPoint_eq (k l : Option (Fin n))
 
 private theorem exists_nonzero_coordinate
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    ∃ k : Option (Fin n), v.1 ((finSuccEquiv n).symm k) ≠ 0 := by
+    ∃ k : Option (Fin n), v.val ((finSuccEquiv n).symm k) ≠ 0 := by
   by_contra! h
-  have hv : v.1 = 0 := by
+  have hv : v.val = 0 := by
     ext j
     simpa using h ((finSuccEquiv n) j)
-  simpa [hv] using v.2
+  simpa [hv] using v.property
 
 private noncomputable def spherePoint
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     (Fan.projectiveSpace b hi).analyticRealization (Fan.isRegular_projectiveSpace b hi) :=
-  vectorChartPoint b hi (Classical.choose (exists_nonzero_coordinate v)) v.1
+  vectorChartPoint b hi (Classical.choose (exists_nonzero_coordinate v)) v.val
 
 private theorem spherePoint_eq
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) (k : Option (Fin n))
-    (hk : v.1 ((finSuccEquiv n).symm k) ≠ 0) :
-    spherePoint b hi v = vectorChartPoint b hi k v.1 :=
-  vectorChartPoint_eq b hi _ k v.1 (Classical.choose_spec (exists_nonzero_coordinate v)) hk
+    (hk : v.val ((finSuccEquiv n).symm k) ≠ 0) :
+    spherePoint b hi v = vectorChartPoint b hi k v.val :=
+  vectorChartPoint_eq b hi _ k v.val (Classical.choose_spec (exists_nonzero_coordinate v)) hk
 
 private theorem spherePoint_smul (c : sphere (0 : ℂ) 1)
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
@@ -124,8 +124,8 @@ private theorem spherePoint_smul (c : sphere (0 : ℂ) 1)
   obtain ⟨k, hk⟩ := exists_nonzero_coordinate v
   have hc : (c : ℂ) ≠ 0 := by
     intro h
-    simpa [h] using c.2
-  have hck : (c • v).1 ((finSuccEquiv n).symm k) ≠ 0 := mul_ne_zero hc hk
+    simpa [h] using c.property
+  have hck : (c • v).val ((finSuccEquiv n).symm k) ≠ 0 := mul_ne_zero hc hk
   rw [spherePoint_eq b hi (c • v) k hck, spherePoint_eq b hi v k hk]
   apply congrArg ((Fan.projectiveSpace b hi).analyticAffineChartι
     (Fan.isRegular_projectiveSpace b hi) (maximalChart b hi k))
@@ -139,15 +139,15 @@ private theorem continuous_spherePoint : Continuous (spherePoint b hi) := by
   obtain ⟨k, hk⟩ := exists_nonzero_coordinate v
   have heval (j : Option (Fin n)) :
       Continuous (fun w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
-        w.1 ((finSuccEquiv n).symm j)) :=
+        w.val ((finSuccEquiv n).symm j)) :=
     (PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ)
-      ((finSuccEquiv n).symm j)).comp continuous_subtype_val
+      ((finSuccEquiv n).symm j)).comp continuous_subtypeVal
   have hcoord : ContinuousAt (fun w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
       fun j : {j : Option (Fin n) // j ≠ k} ↦
-        w.1 ((finSuccEquiv n).symm j) / w.1 ((finSuccEquiv n).symm k)) v :=
+        w.val ((finSuccEquiv n).symm j) / w.val ((finSuccEquiv n).symm k)) v :=
     continuousAt_pi.2 fun j ↦ (heval j).continuousAt.div (heval k).continuousAt hk
   have hcont : ContinuousAt (fun w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
-      vectorChartPoint b hi k w.1) v :=
+      vectorChartPoint b hi k w.val) v :=
     ((Fan.projectiveSpace b hi).analyticAffineChartι
       (Fan.isRegular_projectiveSpace b hi) (maximalChart b hi k)).hom.continuous.continuousAt.comp
         ((chartCoordinates b hi k).symm.continuous.continuousAt.comp hcoord)
@@ -160,24 +160,24 @@ private theorem mk_eq_of_spherePoint_eq
     ComplexProjectiveSpace.mk n v = ComplexProjectiveSpace.mk n w := by
   obtain ⟨k, hk⟩ := exists_nonzero_coordinate v
   obtain ⟨l, hl⟩ := exists_nonzero_coordinate w
-  have heq : vectorChartPoint b hi l w.1 = vectorChartPoint b hi k v.1 :=
+  have heq : vectorChartPoint b hi l w.val = vectorChartPoint b hi k v.val :=
     (spherePoint_eq b hi w l hl).symm.trans (h.symm.trans (spherePoint_eq b hi v k hk))
-  have hwk : w.1 ((finSuccEquiv n).symm k) ≠ 0 := by
+  have hwk : w.val ((finSuccEquiv n).symm k) ≠ 0 := by
     have hh := ((projectiveSpace_chart_eq_iff b hi l k _ _).1 heq).1
-    rw [vectorChart_coordinate b hi l w.1 hl] at hh
+    rw [vectorChart_coordinate b hi l w.val hl] at hh
     exact (div_ne_zero_iff.1 hh).1
-  have hcharts : vectorChart b hi k v.1 = vectorChart b hi k w.1 :=
+  have hcharts : vectorChart b hi k v.val = vectorChart b hi k w.val :=
     ((Fan.projectiveSpace b hi).isOpenEmbedding_analyticAffineChartι
       (Fan.isRegular_projectiveSpace b hi) (maximalChart b hi k)).injective
         ((spherePoint_eq b hi v k hk).symm.trans
           (h.trans (spherePoint_eq b hi w k hwk)))
   have hratio (j : Option (Fin n)) :
-      v.1 ((finSuccEquiv n).symm j) / v.1 ((finSuccEquiv n).symm k) =
-        w.1 ((finSuccEquiv n).symm j) / w.1 ((finSuccEquiv n).symm k) := by
-    rw [← vectorChart_coordinate b hi k v.1 hk,
-      ← vectorChart_coordinate b hi k w.1 hwk, hcharts]
-  let c := v.1 ((finSuccEquiv n).symm k) / w.1 ((finSuccEquiv n).symm k)
-  have hsmul : c • w.1 = v.1 := by
+      v.val ((finSuccEquiv n).symm j) / v.val ((finSuccEquiv n).symm k) =
+        w.val ((finSuccEquiv n).symm j) / w.val ((finSuccEquiv n).symm k) := by
+    rw [← vectorChart_coordinate b hi k v.val hk,
+      ← vectorChart_coordinate b hi k w.val hwk, hcharts]
+  let c := v.val ((finSuccEquiv n).symm k) / w.val ((finSuccEquiv n).symm k)
+  have hsmul : c • w.val = v.val := by
     ext j
     have hj := hratio ((finSuccEquiv n) j)
     simp only [Equiv.symm_apply_apply] at hj
@@ -187,8 +187,8 @@ private theorem mk_eq_of_spherePoint_eq
     exact (div_eq_iff hwk).2 ((mul_comm _ _).trans he.symm)
   have hc : ‖c‖ = 1 := by
     have hn := congrArg norm hsmul
-    simpa only [norm_smul, mem_sphere_zero_iff_norm.1 w.2,
-      mem_sphere_zero_iff_norm.1 v.2, mul_one] using hn
+    simpa only [norm_smul, mem_sphere_zero_iff_norm.1 w.property,
+      mem_sphere_zero_iff_norm.1 v.property, mul_one] using hn
   exact (ComplexProjectiveSpace.mk_eq_mk_iff n v w).2
     ⟨⟨c, mem_sphere_zero_iff_norm.2 hc⟩, Subtype.ext hsmul⟩
 
@@ -245,8 +245,8 @@ private noncomputable def homogeneousSphere (k : Option (Fin n))
 private theorem homogeneousSphere_ratio (k : Option (Fin n))
     (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
     (j : Option (Fin n)) :
-    (homogeneousSphere b hi k x).1 ((finSuccEquiv n).symm j) /
-        (homogeneousSphere b hi k x).1 ((finSuccEquiv n).symm k) =
+    (homogeneousSphere b hi k x).val ((finSuccEquiv n).symm j) /
+        (homogeneousSphere b hi k x).val ((finSuccEquiv n).symm k) =
       projectiveSpaceHomogeneousCoordinate b hi k x j := by
   have hn := norm_ne_zero_iff.2 (projectiveSpaceHomogeneousVector_ne_zero b hi k x)
   simp [homogeneousSphere, NormedSpace.normalize, PiLp.smul_apply]
@@ -254,7 +254,7 @@ private theorem homogeneousSphere_ratio (k : Option (Fin n))
 
 private theorem homogeneousSphere_normalizing_ne_zero (k : Option (Fin n))
     (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ))) :
-    (homogeneousSphere b hi k x).1 ((finSuccEquiv n).symm k) ≠ 0 := by
+    (homogeneousSphere b hi k x).val ((finSuccEquiv n).symm k) ≠ 0 := by
   have hh := homogeneousSphere_ratio b hi k x k
   rw [projectiveSpaceHomogeneousCoordinate_self] at hh
   exact (div_ne_zero_iff.1 (hh ▸ one_ne_zero)).1
@@ -295,7 +295,7 @@ private theorem projectiveSpaceHomeomorph_symm_apply (p : ComplexProjectiveSpace
 point with the usual homogeneous ratios. The other coordinates are allowed to vanish. -/
 theorem projectiveSpaceHomeomorph_symm_mk
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) (k : Option (Fin n))
-    (hk : v.1 ((finSuccEquiv n).symm k) ≠ 0) :
+    (hk : v.val ((finSuccEquiv n).symm k) ≠ 0) :
     let _ := affinePointTopology ((Fan.projectiveSpace b hi).analyticChartGenerators
       (Fan.projectiveSpaceMaximalCone b hi k)).2
     (projectiveSpaceHomeomorph b hi).symm (ComplexProjectiveSpace.mk n v) =
@@ -304,7 +304,7 @@ theorem projectiveSpaceHomeomorph_symm_mk
         ((projectiveSpacePointHomeomorph b hi k
           ((Fan.projectiveSpace b hi).analyticChartGenerators
             (Fan.projectiveSpaceMaximalCone b hi k)).2).symm
-          (fun j ↦ v.1 ((finSuccEquiv n).symm j) / v.1 ((finSuccEquiv n).symm k))) := by
+          (fun j ↦ v.val ((finSuccEquiv n).symm j) / v.val ((finSuccEquiv n).symm k))) := by
   rw [projectiveSpaceHomeomorph_symm_apply, projectivePoint_mk, spherePoint_eq b hi v k hk]
   rfl
 
@@ -366,7 +366,7 @@ theorem preimage_projectiveSpaceHomeomorph_affineOpen (k : Option (Fin n)) :
   constructor
   · intro hp
     obtain ⟨v, hv⟩ := ComplexProjectiveSpace.mk_surjective n (projectiveSpaceHomeomorph b hi p)
-    have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa [← hv] using hp
+    have hk : v.val ((finSuccEquiv n).symm k) ≠ 0 := by simpa [← hv] using hp
     refine ⟨_, (projectiveSpaceHomeomorph_symm_mk b hi v k hk).symm.trans ?_⟩
     rw [hv, Homeomorph.symm_apply_apply]
   · rintro ⟨x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)),
@@ -393,7 +393,7 @@ theorem projectiveSpaceHomeomorph_symm_eq_of_mem_affineOpen (k : Option (Fin n))
           (fun j ↦ ComplexProjectiveSpace.ratio ((finSuccEquiv n).symm k)
             ((finSuccEquiv n).symm j) p)) := by
   obtain ⟨v, rfl⟩ := ComplexProjectiveSpace.mk_surjective n p
-  have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa using hp
+  have hk : v.val ((finSuccEquiv n).symm k) ≠ 0 := by simpa using hp
   simp only [ComplexProjectiveSpace.ratio_mk]
   exact projectiveSpaceHomeomorph_symm_mk b hi v k hk
 

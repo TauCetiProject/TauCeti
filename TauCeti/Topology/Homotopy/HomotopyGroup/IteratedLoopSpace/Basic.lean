@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
+public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Homeomorph
+public import TauCeti.Topology.PathComponent
 
 /-!
 # Homotopy groups of iterated loop spaces
@@ -14,13 +15,26 @@ public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 The shift of homotopy groups along the `k`-fold iterated loop space
 `TauCeti.BasedTopologicalSpace.iteratedLoopSpace` of a based space,
 `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)`, by iterating
-`HomotopyGroup.pathLoopSpaceMulEquiv`.
+`HomotopyGroup.pathLoopSpaceMulEquiv`, and its degree-zero form
+`π₀(Ω^[k] X) ≃ π_k(X)`, which identifies the path components of the `k`-fold loop space with the
+`k`-th homotopy group. In degree zero there is no group structure on the left, so the latter is a
+bijection of pointed sets: the component of the constant iterated loop goes to the class of the
+constant cube loop, the identity when `k` is positive. It is obtained by reading an iterated loop
+as a cube loop through `TauCeti.BasedTopologicalSpace.iteratedLoopSpaceHomeomorph`, and a path
+component of the space of cube loops as a homotopy class through
+`HomotopyGroup.zerothHomotopyEquiv`.
 
 ## Main declarations
 
 * `TauCeti.BasedTopologicalSpace.piIteratedLoopSpaceMulEquiv`:
   `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)`, natural in `X` by
   `TauCeti.BasedTopologicalSpace.piIteratedLoopSpaceMulEquiv_map`.
+* `TauCeti.BasedTopologicalSpace.zerothHomotopyIteratedLoopSpaceEquiv`:
+  `π₀(Ω^[k] X) ≃ π_k(X)`, based by
+  `TauCeti.BasedTopologicalSpace.zerothHomotopyIteratedLoopSpaceEquiv_mk_basepoint` and natural in
+  `X` by `TauCeti.BasedTopologicalSpace.zerothHomotopyIteratedLoopSpaceEquiv_map`; for `k = 2` it
+  is `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`
+  (`TauCeti.BasedTopologicalSpace.zerothHomotopyIteratedLoopSpaceEquiv_two`).
 -/
 
 public section
@@ -101,6 +115,75 @@ theorem piIteratedLoopSpaceMulEquiv_map :
           (ContinuousMap.pathLoopSpaceMulEquiv_map _ _ _
             (fun γ t => Hom.loopSpace_apply f γ t) _ _))
       _ = _ := (ContinuousMap.map_congrMulEquiv _ _ _ _).symm
+
+/-! ### Path components of iterated loop spaces -/
+
+/-- **The path components of the `k`-fold loop space are the `k`-th homotopy group**:
+`π₀(Ω^[k] X) ≃ π_k(X)`. The component of an iterated loop goes to the homotopy class of the cube
+loop it defines under `iteratedLoopSpaceHomeomorph`. -/
+noncomputable def zerothHomotopyIteratedLoopSpaceEquiv (X : BasedTopologicalSpace.{u}) (k : ℕ) :
+    ZerothHomotopy (X.iteratedLoopSpace k).carrier ≃ π_ k X.carrier X.basepoint :=
+  (iteratedLoopSpaceHomeomorph k X).zerothHomotopyCongr.trans zerothHomotopyEquiv
+
+/-- The component of an iterated loop `γ` goes to the class of the cube loop of `γ`. -/
+@[simp]
+theorem zerothHomotopyIteratedLoopSpaceEquiv_mk (X : BasedTopologicalSpace.{u}) (k : ℕ)
+    (γ : (X.iteratedLoopSpace k).carrier) :
+    X.zerothHomotopyIteratedLoopSpaceEquiv k (.mk γ) =
+      ⟦iteratedLoopSpaceHomeomorph k X γ⟧ := by
+  rw [zerothHomotopyIteratedLoopSpaceEquiv, Equiv.trans_apply,
+    Homeomorph.zerothHomotopyCongr_mk]
+  exact zerothHomotopyEquiv_mk _
+
+/-- The class of a cube loop `p` comes from the component of the iterated loop that `p`
+defines. -/
+@[simp]
+theorem zerothHomotopyIteratedLoopSpaceEquiv_symm_mk (X : BasedTopologicalSpace.{u}) (k : ℕ)
+    (p : Ω^ (Fin k) X.carrier X.basepoint) :
+    (X.zerothHomotopyIteratedLoopSpaceEquiv k).symm (⟦p⟧ : π_ k X.carrier X.basepoint) =
+      .mk ((iteratedLoopSpaceHomeomorph k X).symm p) :=
+  (Equiv.symm_apply_eq _).2 <| by
+    rw [zerothHomotopyIteratedLoopSpaceEquiv_mk, Homeomorph.apply_symm_apply]
+
+/-- **The bijection `π₀(Ω^[k] X) ≃ π_k(X)` is based**: the component of the constant iterated
+loop goes to the class of the constant cube loop. -/
+theorem zerothHomotopyIteratedLoopSpaceEquiv_mk_basepoint (X : BasedTopologicalSpace.{u})
+    (k : ℕ) :
+    X.zerothHomotopyIteratedLoopSpaceEquiv k (.mk (X.iteratedLoopSpace k).basepoint) =
+      ⟦GenLoop.const⟧ := by
+  rw [zerothHomotopyIteratedLoopSpaceEquiv_mk, iteratedLoopSpaceHomeomorph_basepoint]
+
+/-- In positive degree, the component of the constant iterated loop goes to the identity of
+`π_(k + 1)(X)`. -/
+theorem zerothHomotopyIteratedLoopSpaceEquiv_succ_mk_basepoint (X : BasedTopologicalSpace.{u})
+    (k : ℕ) :
+    X.zerothHomotopyIteratedLoopSpaceEquiv (k + 1)
+        (.mk (X.iteratedLoopSpace (k + 1)).basepoint) = 1 := by
+  rw [zerothHomotopyIteratedLoopSpaceEquiv_mk_basepoint, HomotopyGroup.one_def]
+
+/-- **The bijection `π₀(Ω^[k] X) ≃ π_k(X)` is natural in `X`**: it carries the component of
+`Ω^[k] f` applied to an iterated loop `γ` to the image under `f` of the class of `γ`. -/
+theorem zerothHomotopyIteratedLoopSpaceEquiv_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
+    (k : ℕ) (γ : (X.iteratedLoopSpace k).carrier) :
+    Y.zerothHomotopyIteratedLoopSpaceEquiv k (.mk (f.iteratedLoopSpace k γ)) =
+      HomotopyGroup.map f.toContinuousMap f.map_basepoint
+        (X.zerothHomotopyIteratedLoopSpaceEquiv k (.mk γ)) := by
+  rw [zerothHomotopyIteratedLoopSpaceEquiv_mk, zerothHomotopyIteratedLoopSpaceEquiv_mk,
+    iteratedLoopSpaceHomeomorph_map, HomotopyGroup.map_mk]
+
+-- `Ω^[2] X` is `Ω (Ω X)` by definitional unfolding of the exposed `iteratedLoopSpace`, so both
+-- bijections have the same type.
+/-- For `k = 2` the bijection is `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: both send the
+component of a double loop `β` to the class of the square `(t₀, t₁) ↦ β t₀ t₁`. -/
+theorem zerothHomotopyIteratedLoopSpaceEquiv_two (X : BasedTopologicalSpace.{u}) :
+    X.zerothHomotopyIteratedLoopSpaceEquiv 2 = zerothHomotopyDoubleLoopSpaceEquiv X.basepoint := by
+  ext c
+  induction c using Quotient.inductionOn with | h β =>
+  refine (zerothHomotopyIteratedLoopSpaceEquiv_mk X 2 β).trans ?_
+  refine Eq.trans ?_ (zerothHomotopyDoubleLoopSpaceEquiv_mk X.basepoint β).symm
+  refine Eq.trans ?_ (fundamentalGroupLoopSpaceMulEquiv_fromPath_mk β).symm
+  exact congrArg _ (GenLoop.ext _ _ fun t ↦
+    (iteratedLoopSpaceHomeomorph_two_apply X β t).trans (GenLoop.fromDoubleLoop_apply β t).symm)
 
 end BasedTopologicalSpace
 

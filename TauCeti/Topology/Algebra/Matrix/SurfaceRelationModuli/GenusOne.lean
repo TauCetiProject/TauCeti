@@ -6,36 +6,38 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Matrix.SurfaceRelationModuli.Basic
+import TauCeti.Analysis.Matrix.UnitaryGroup.SpecialUnitary
+import TauCeti.Analysis.Matrix.UnitaryGroup.TwistedCommutator
 import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Genus-one twisted `SU(r)` surface commutator relation moduli
 
 This file studies the genus-one (`g = 1`) twisted `SU(r)` commutator relation moduli
-`TauCeti.SpecialUnitary.relationModuli r ζ 1`, proving nonemptiness whenever `ζ ^ r = 1` via the
-clock-and-shift pair `(Matrix.specialUnitaryGroup.clock hζ, Matrix.specialUnitaryGroup.shift r)` in
-`SU(r)`, uniqueness up to `SU(r)`-conjugation in the coprime case `IsPrimitiveRoot ζ r` via
-`Matrix.specialUnitaryGroup.exists_conj_eq_clock_shift`, and genus-one consequences and
-non-coprime counterexamples.
+`TauCeti.relationModuli r ζ 1`, proving nonemptiness whenever `ζ ^ r = 1` via
+`Matrix.exists_coe_commutatorElement_eq_smul_one`, uniqueness up to `SU(r)`-conjugation in the
+coprime case `IsPrimitiveRoot ζ r` via `Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one`,
+and genus-one consequences and non-coprime counterexamples.
+
+## Main definitions
+
+* `TauCeti.uniqueRelationModuliOne`: when `IsPrimitiveRoot ζ r`, the genus-one moduli
+  `relationModuli r ζ 1` has a `Unique` element.
 
 ## Main results
 
-* `TauCeti.SpecialUnitary.nonempty_relationSet_one` and
-  `TauCeti.SpecialUnitary.nonempty_relationModuli_one`: whenever `ζ ^ r = 1`, `relationSet r ζ 1`
-  and `relationModuli r ζ 1` are nonempty.
-* `TauCeti.SpecialUnitary.relationModuli_genus_one`: when `IsPrimitiveRoot ζ r`, the genus-one
-  moduli `relationModuli r ζ 1` is nonempty and a subsingleton.
-* `TauCeti.SpecialUnitary.contractibleSpace_relationModuli_one` and
-  `TauCeti.SpecialUnitary.simplyConnectedSpace_relationModuli_one`: when `IsPrimitiveRoot ζ r`,
-  `relationModuli r ζ 1` is contractible and simply connected.
-* `TauCeti.SpecialUnitary.exists_ne_one_smul_eq_self_relationModuli_one`: for `2 ≤ r` and
-  `IsPrimitiveRoot ζ r`, a nontrivial central holonomy twist acts trivially on
-  `relationModuli r ζ 1`, witnessing non-freeness of the central-twist action on the coarse
-  quotient.
-* `TauCeti.SpecialUnitary.nontrivial_relationModuli_two_one_one` and
-  `TauCeti.SpecialUnitary.exists_notMem_center_commute_relationSet_two_one_one`: at the non-coprime
-  parameters `r = 2`, `ζ = 1`, `g = 1`, neither uniqueness up to conjugation nor centrality of
-  stabilizers holds.
+* `TauCeti.nonempty_relationSet_one` and `TauCeti.nonempty_relationModuli_one`: whenever
+  `ζ ^ r = 1`, `relationSet r ζ 1` and `relationModuli r ζ 1` are nonempty.
+* `TauCeti.subsingleton_relationModuli_one`, `TauCeti.contractibleSpace_relationModuli_one`, and
+  `TauCeti.simplyConnectedSpace_relationModuli_one`: when `IsPrimitiveRoot ζ r`,
+  `relationModuli r ζ 1` is a subsingleton, contractible, and simply connected.
+* `TauCeti.exists_ne_one_smul_eq_self_relationModuli_one`: for `2 ≤ r` and `IsPrimitiveRoot ζ r`,
+  a nontrivial central holonomy twist acts trivially on `relationModuli r ζ 1`, witnessing
+  non-freeness of the central-twist action on the coarse quotient.
+* `TauCeti.nontrivial_relationModuli_two_one_one` and
+  `TauCeti.exists_notMem_center_commute_relationSet_two_one_one`: at the non-coprime parameters
+  `r = 2`, `ζ = 1`, `g = 1`, neither uniqueness up to conjugation nor centrality of stabilizers
+  holds.
 
 ## References
 
@@ -50,53 +52,52 @@ public section
 open Matrix Topology
 open scoped commutatorElement
 
-namespace TauCeti.SpecialUnitary
+namespace TauCeti
 
 /-! ### Genus-one existence, uniqueness, and simple connectivity -/
 
 /-- Whenever `ζ ^ r = 1`, the genus-one twisted relation set `relationSet r ζ 1` is nonempty,
-witnessed by the clock-and-shift pair `(clock hζ, shift r)` in `SU(r)`. -/
+witnessed by a rescaled clock-and-shift pair in `SU(r)`. -/
 theorem nonempty_relationSet_one {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
-    Nonempty (relationSet r ζ 1) :=
-  ⟨⟨fun _ => (Matrix.specialUnitaryGroup.clock hζ, Matrix.specialUnitaryGroup.shift r),
-    mem_relationSet_one_iff.mpr (Matrix.specialUnitaryGroup.commutator_clock_shift hζ)⟩⟩
+    Nonempty (relationSet r ζ 1) := by
+  obtain ⟨A, B, hAB⟩ := Matrix.exists_coe_commutatorElement_eq_smul_one (n := Fin r)
+    (by simpa using hζ)
+  exact ⟨⟨fun _ => (A, B), mem_relationSet_one_iff.mpr hAB⟩⟩
 
 /-- Whenever `ζ ^ r = 1`, the genus-one twisted moduli `relationModuli r ζ 1` is nonempty. -/
 theorem nonempty_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
     Nonempty (relationModuli r ζ 1) :=
   (nonempty_relationSet_one hζ).map relationModuliMk
 
-/-- **Genus-one twisted `SU(r)` moduli is a single point.** When `ζ` is a primitive `r`-th root of
-unity, `relationModuli r ζ 1` is nonempty and a subsingleton. No positivity assumption on `r` is
-needed: for `r = 0`, `SU(0)` is trivial and `Matrix (Fin 0) (Fin 0) ℂ` is a subsingleton. -/
-theorem relationModuli_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
-    Nonempty (relationModuli r ζ 1) ∧ Subsingleton (relationModuli r ζ 1) := by
-  refine ⟨nonempty_relationModuli_one hζ.pow_eq_one, ?_⟩
-  let x₀ : relationSet r ζ 1 :=
-    ⟨fun _ => (Matrix.specialUnitaryGroup.clock hζ.pow_eq_one, Matrix.specialUnitaryGroup.shift r),
-      mem_relationSet_one_iff.mpr
-        (Matrix.specialUnitaryGroup.commutator_clock_shift hζ.pow_eq_one)⟩
-  have heq : ∀ x : relationSet r ζ 1, relationModuliMk x = relationModuliMk x₀ := fun x => by
-    obtain ⟨w, hwA, hwB⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_clock_shift hζ
-      (mem_relationSet_one_iff.mp x.2)
-    have hconj : ConjAct.toConjAct w • x = x₀ := Subtype.ext <| funext fun j => by
-      rw [Fin.eq_zero j]
-      exact Prod.ext
-        (by simpa only [conjAct_smul_relationSet_coe, Pi.smul_apply, Prod.smul_fst,
-          ConjAct.toConjAct_smul] using hwA)
-        (by simpa only [conjAct_smul_relationSet_coe, Pi.smul_apply, Prod.smul_snd,
-          ConjAct.toConjAct_smul] using hwB)
-    rw [← relationModuliMk_conjAct_smul (ConjAct.toConjAct w) x, hconj]
+/-- When `ζ` is a primitive `r`-th root of unity, any two points of `relationModuli r ζ 1`
+coincide. No positivity assumption on `r` is needed: for `r = 0`, `SU(0)` is trivial. -/
+theorem subsingleton_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
+    Subsingleton (relationModuli r ζ 1) := by
   refine ⟨fun q₁ q₂ => ?_⟩
   obtain ⟨x₁, rfl⟩ := relationModuliMk_surjective r ζ 1 q₁
   obtain ⟨x₂, rfl⟩ := relationModuliMk_surjective r ζ 1 q₂
-  exact (heq x₁).trans (heq x₂).symm
+  obtain ⟨u, huA, huB⟩ := Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one
+    (n := Fin r) (by simpa using hζ)
+    (mem_relationSet_one_iff.mp x₂.property) (mem_relationSet_one_iff.mp x₁.property)
+  refine (relationModuliMk_eq_iff x₁ x₂).mpr ⟨u, funext fun j => ?_⟩
+  rw [Subsingleton.elim j 0]
+  exact Prod.ext
+    (by simpa only [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul] using huA)
+    (by simpa only [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul] using huB)
+
+/-- **Genus-one twisted `SU(r)` moduli is a single point.** When `ζ` is a primitive `r`-th root of
+unity, `relationModuli r ζ 1` has a unique element. No positivity assumption on `r` is needed: for
+`r = 0`, `SU(0)` is trivial and `Matrix (Fin 0) (Fin 0) ℂ` is a subsingleton. -/
+@[instance_reducible]
+noncomputable def uniqueRelationModuliOne {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
+    Unique (relationModuli r ζ 1) :=
+  @uniqueOfSubsingleton _ (subsingleton_relationModuli_one hζ)
+    (Classical.choice (nonempty_relationModuli_one hζ.pow_eq_one))
 
 /-- When `IsPrimitiveRoot ζ r`, `relationModuli r ζ 1` is contractible. -/
 theorem contractibleSpace_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     ContractibleSpace (relationModuli r ζ 1) := by
-  have := (relationModuli_genus_one hζ).1
-  have := (relationModuli_genus_one hζ).2
+  let _ := uniqueRelationModuliOne hζ
   infer_instance
 
 /-- When `IsPrimitiveRoot ζ r`, `relationModuli r ζ 1` is simply connected. -/
@@ -121,10 +122,10 @@ theorem exists_ne_one_smul_eq_self_relationModuli_one {r : ℕ} (hr : 2 ≤ r) {
     ⟨⟨scalar (Fin r) ζ, Matrix.specialUnitaryGroup.scalar_mem hpow⟩,
       Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar rfl⟩
   refine ⟨fun _ => (zζ, 1), fun h => hζ.ne_one hr ?_, fun _ => ?_⟩
-  · have h0 := congrArg (fun f => ((f 0).1.1 : Matrix (Fin r) (Fin r) ℂ) ⟨0, by omega⟩
+  · have h0 := congrArg (fun f => ((f 0).1.val : Matrix (Fin r) (Fin r) ℂ) ⟨0, by omega⟩
       ⟨0, by omega⟩) h
     simpa [zζ] using h0
-  · exact (relationModuli_genus_one hζ).2.elim _ _
+  · exact (subsingleton_relationModuli_one hζ).elim _ _
 
 /-- **Non-coprime counterexample (`r = 2`, `ζ = 1`, `g = 1`): non-uniqueness.** Without
 `IsPrimitiveRoot ζ r`, the untwisted genus-one moduli `relationModuli 2 1 1` has distinct points
@@ -137,7 +138,8 @@ theorem nontrivial_relationModuli_two_one_one :
   let x₂ : relationSet 2 1 1 := ⟨fun _ => (m1, 1), by simp⟩
   refine ⟨relationModuliMk x₁, relationModuliMk x₂, fun h => ?_⟩
   obtain ⟨u, hu⟩ := (relationModuliMk_eq_iff x₁ x₂).mp h
-  have hu0 : ((ConjAct.toConjAct u • x₂.1) 0).1 = (x₁.1 0).1 := congrArg Prod.fst (congrFun hu 0)
+  have hu0 : ((ConjAct.toConjAct u • x₂.val) 0).1 = (x₁.val 0).1 :=
+    congrArg Prod.fst (congrFun hu 0)
   have hm1_cen : m1 ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) :=
     Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar rfl
   rw [Pi.smul_apply, Prod.smul_fst, ConjAct.smul_eq_self_of_mem_center _ hm1_cen] at hu0
@@ -149,7 +151,7 @@ theorem nontrivial_relationModuli_two_one_one :
 without lying in `Subgroup.center (SU(2))`. -/
 theorem exists_notMem_center_commute_relationSet_two_one_one :
     ∃ (x : relationSet 2 1 1) (u : Matrix.specialUnitaryGroup (Fin 2) ℂ),
-      (∀ j, Commute u (x.1 j).1 ∧ Commute u (x.1 j).2) ∧
+      (∀ j, Commute u (x.val j).1 ∧ Commute u (x.val j).2) ∧
       u ∉ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) := by
   let d : Fin 2 → ℂ := ![Complex.I, -Complex.I]
   have hd_mem : diagonal d ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
@@ -169,4 +171,4 @@ theorem exists_notMem_center_commute_relationSet_two_one_one :
   have h2I : (2 : ℂ) * Complex.I = 0 := by linear_combination h11 - h00
   exact mul_ne_zero two_ne_zero Complex.I_ne_zero h2I
 
-end TauCeti.SpecialUnitary
+end TauCeti

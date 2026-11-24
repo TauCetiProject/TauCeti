@@ -217,6 +217,11 @@ abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
 def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
   QuotientGroup.mk' (inertiaSubgroup K)
 
+/-- The unramified degree map sends `σ` to its coset in `G_K ⧸ I_K`. -/
+theorem unramifiedDegree_apply (σ : Field.absoluteGaloisGroup K) :
+    unramifiedDegree K σ = (σ : unramifiedQuotient K) :=
+  (rfl)
+
 /-- The unramified degree map `G_K → G_K ⧸ I_K` is surjective. -/
 theorem unramifiedDegree_surjective : Function.Surjective (unramifiedDegree K) :=
   QuotientGroup.mk'_surjective _
@@ -321,7 +326,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_zero
   have hτxω : τ • (x - ω) ∈ 𝓂[L] := by
     have h : ((τ.maximalIdealEquiv ⟨x - ω, hxω⟩ : 𝓂[L]) : 𝒪[L]) = τ • (x - ω) :=
       Subtype.ext (by rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_smul_integerRing])
-    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).2
+    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).property
   rw [zero_add, Int.toNat_one, pow_one, show τ • x - x = τ • (x - ω) - (x - ω) by
     rw [smul_sub, hω]
     ring]

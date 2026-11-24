@@ -80,7 +80,7 @@ theorem exists_norm_latticeTheta_sub_one_le (L : Submodule ℤ (mixedSpace K))
     ‖∑' x : {x : L // x ≠ 0}, archGaussian y (x : L)‖
         ≤ ∑' x, Real.exp (-(Real.pi * δ / 2) * t) * a x :=
       tsum_of_norm_bounded (ha.mul_left _).hasSum fun x ↦
-        norm_archGaussian_le_exp_mul (hL x x.2) ht hy
+        norm_archGaussian_le_exp_mul (hL x x.property) ht hy
     _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
       rw [tsum_mul_left, mul_comm]
 

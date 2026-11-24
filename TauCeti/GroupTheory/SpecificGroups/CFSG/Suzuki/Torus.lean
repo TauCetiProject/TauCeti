@@ -323,7 +323,7 @@ theorem normalClosure_unipotentSubgroupOf :
   refine eq_top_iff.mpr fun g _ ↦ ?_
   have hle : suzukiGroup m ≤ X.map (suzukiGroup m).subtype :=
     suzukiGroup_le_iff.mpr ⟨fun a b ↦ ⟨_, hU a b, rfl⟩, ⟨_, hw, rfl⟩⟩
-  obtain ⟨x, hx, hxg⟩ := hle g.2
+  obtain ⟨x, hx, hxg⟩ := hle g.property
   rwa [Subtype.ext hxg] at hx
 
 end Suzuki

@@ -22,11 +22,12 @@ displacements by explicit seeds, in the coordinates `uⱼ = t + A qⱼ`:
 * the translation seed `uⱼ = qᵢ`, in the kernel of `H`;
 * the vibration seed `uⱼ = Aᵢ qⱼ`, with `Aᵢ = qᵢ qᵢᵀ - ¼ 1`, in the eigenspace for `-4`.
 
-These three span the `S₃`-fixed displacements, which therefore form a three-dimensional space.
-The symmetries permute the seeds of the four vertices, `σ • Vᵢ = V_{σ i}`, so the `S₄`-orbit of a
-vibration seed consists of the four distinct vibration seeds; they sum to zero and span the
-eigenspace for `-4`, because the four matrices `Aᵢ` span the symmetric matrices with zero
-diagonal. These are symmetric spanning sets of the irreducible summands, not bases.
+These three are mutually orthogonal and span the `S₃`-fixed displacements, which therefore form
+a three-dimensional space. The symmetries permute the seeds of the four vertices,
+`σ • Vᵢ = V_{σ i}`, so the `S₄`-orbit of a vibration seed consists of the four distinct vibration
+seeds; they sum to zero and span the eigenspace for `-4`, because the four matrices `Aᵢ` span
+the symmetric matrices with zero diagonal. These are symmetric spanning sets of the irreducible
+summands, not bases.
 
 The computations use that a transposition acts on `ℝ³` by the reflection in the plane orthogonal
 to its edge, and that `σ` acts in the coordinates `(t, A)` by `(R_σ t, R_σ A R_σ⁻¹)`.
@@ -46,6 +47,9 @@ to its edge, and that `σ` acts in the coordinates `(t, A)` by `(R_σ t, R_σ A 
   vertex stabilizer.
 * `TauCeti.span_range_tetrahedronVibrationSeed`: the vibration seeds span the eigenspace of `H`
   for `-4`.
+* `TauCeti.dotProduct_tetrahedronTranslationSeed` and `TauCeti.dotProduct_tetrahedronVibrationSeed`:
+  the Gram matrices of the translation and vibration seeds; the three kinds of seed are mutually
+  orthogonal (`TauCeti.dotProduct_tetrahedronVibrationSeed_translationSeed` and its companions).
 * `TauCeti.invariants_tetrahedronDisplacementRep_comp_stabilizer` and
   `TauCeti.finrank_invariants_tetrahedronDisplacementRep_comp_stabilizer`: the `S₃`-fixed
   displacements are spanned by the three seeds and form a space of dimension `3`.
@@ -184,6 +188,82 @@ theorem dotProduct_tetrahedronBreathingMode_self :
   simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three,
     tetrahedronCenteredVertex_eq]
   norm_num
+
+/-- The Gram matrix of the translation seeds: `Tᵢ ⬝ Tⱼ = 4 (qᵢ ⬝ qⱼ)`, which is `3` for `i = j`
+and `-1` otherwise. -/
+theorem dotProduct_tetrahedronTranslationSeed (i j : Fin 4) :
+    tetrahedronTranslationSeed i ⬝ᵥ tetrahedronTranslationSeed j = if i = j then 3 else -1 := by
+  rw [tetrahedronTranslationSeed_def, tetrahedronTranslationSeed_def]
+  fin_cases i <;> fin_cases j <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_three, tetrahedronCenteredVertex_eq] <;>
+      norm_num
+
+/-- Each translation seed has squared norm `3`. -/
+@[simp]
+theorem dotProduct_tetrahedronTranslationSeed_self (i : Fin 4) :
+    tetrahedronTranslationSeed i ⬝ᵥ tetrahedronTranslationSeed i = 3 := by
+  simp [dotProduct_tetrahedronTranslationSeed]
+
+/-- The Gram matrix of the vibration seeds: `Vᵢ ⬝ Vⱼ = tr (Aᵢ Aⱼ)`, which is `3/8` for `i = j`
+and `-1/8` otherwise. -/
+theorem dotProduct_tetrahedronVibrationSeed (i j : Fin 4) :
+    tetrahedronVibrationSeed i ⬝ᵥ tetrahedronVibrationSeed j =
+      if i = j then 3 / 8 else -1 / 8 := by
+  rw [tetrahedronVibrationSeed_def, tetrahedronVibrationSeed_def]
+  fin_cases i <;> fin_cases j <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
+      tetrahedronCenteredVertex_eq, tetrahedronVertexSeedMatrix_apply] <;> norm_num
+
+/-- Each vibration seed has squared norm `3/8`. -/
+@[simp]
+theorem dotProduct_tetrahedronVibrationSeed_self (i : Fin 4) :
+    tetrahedronVibrationSeed i ⬝ᵥ tetrahedronVibrationSeed i = 3 / 8 := by
+  simp [dotProduct_tetrahedronVibrationSeed]
+
+/-- The translation seeds are orthogonal to the breathing mode, as `∑ⱼ qⱼ = 0`. -/
+@[simp]
+theorem dotProduct_tetrahedronTranslationSeed_breathingMode (i : Fin 4) :
+    tetrahedronTranslationSeed i ⬝ᵥ tetrahedronBreathingMode = 0 := by
+  rw [tetrahedronTranslationSeed_def, tetrahedronBreathingMode_def]
+  fin_cases i <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
+      tetrahedronCenteredVertex_eq] <;> norm_num
+
+/-- The breathing mode is orthogonal to the translation seeds. -/
+@[simp]
+theorem dotProduct_tetrahedronBreathingMode_translationSeed (i : Fin 4) :
+    tetrahedronBreathingMode ⬝ᵥ tetrahedronTranslationSeed i = 0 := by
+  rw [dotProduct_comm, dotProduct_tetrahedronTranslationSeed_breathingMode]
+
+/-- The vibration seeds are orthogonal to the breathing mode, as `tr Aᵢ = 0`. -/
+@[simp]
+theorem dotProduct_tetrahedronVibrationSeed_breathingMode (i : Fin 4) :
+    tetrahedronVibrationSeed i ⬝ᵥ tetrahedronBreathingMode = 0 := by
+  rw [tetrahedronVibrationSeed_def, tetrahedronBreathingMode_def]
+  fin_cases i <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
+      tetrahedronCenteredVertex_eq, tetrahedronVertexSeedMatrix_apply] <;> norm_num
+
+/-- The breathing mode is orthogonal to the vibration seeds. -/
+@[simp]
+theorem dotProduct_tetrahedronBreathingMode_vibrationSeed (i : Fin 4) :
+    tetrahedronBreathingMode ⬝ᵥ tetrahedronVibrationSeed i = 0 := by
+  rw [dotProduct_comm, dotProduct_tetrahedronVibrationSeed_breathingMode]
+
+/-- The vibration seeds are orthogonal to the translation seeds, as `∑ⱼ qⱼ = 0`. -/
+@[simp]
+theorem dotProduct_tetrahedronVibrationSeed_translationSeed (i j : Fin 4) :
+    tetrahedronVibrationSeed i ⬝ᵥ tetrahedronTranslationSeed j = 0 := by
+  rw [tetrahedronVibrationSeed_def, tetrahedronTranslationSeed_def]
+  fin_cases i <;> fin_cases j <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
+      tetrahedronCenteredVertex_eq, tetrahedronVertexSeedMatrix_apply] <;> norm_num
+
+/-- The translation seeds are orthogonal to the vibration seeds. -/
+@[simp]
+theorem dotProduct_tetrahedronTranslationSeed_vibrationSeed (i j : Fin 4) :
+    tetrahedronTranslationSeed i ⬝ᵥ tetrahedronVibrationSeed j = 0 := by
+  rw [dotProduct_comm, dotProduct_tetrahedronVibrationSeed_translationSeed]
 
 /-- The breathing mode is fixed by every symmetry. -/
 @[simp]

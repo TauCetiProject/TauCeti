@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.Algebra.Category.ModuleCat.AB
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.Algebra.Category.ModuleCat.Projective.Basic

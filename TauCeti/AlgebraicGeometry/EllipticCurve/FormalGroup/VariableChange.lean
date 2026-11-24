@@ -131,8 +131,7 @@ private theorem coeff_one_formalNum_mul_inverseDenom (C : VariableChange R)
     (W : WeierstrassCurve R) :
     coeff 1 ((PowerSeries.C (C.u : R) ^ 2 * X +
       PowerSeries.C C.r * formalW (C • W)) * C.inverseDenom W) = (↑(C.u⁻¹) : R) := by
-  simp [coeff_mul, Finset.Nat.antidiagonal_succ, constantCoeff_inverseDenom,
-    ← map_pow]
+  simp [coeff_one_mul, constantCoeff_inverseDenom, ← map_pow]
   simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
   congr 1
   group
@@ -154,7 +153,6 @@ theorem formalCoordinate_toPowerSeries (C : VariableChange R) (W : WeierstrassCu
     (C.formalCoordinate W).toPowerSeries =
       (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) *
         invOfUnit (C.formalDenom W) (C.u ^ 3) := by
-  rw [← inverseDenom_def]
   rfl
 
 /-- The induced parameter has linear coefficient `u⁻¹`, in the direction from
@@ -369,9 +367,7 @@ private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
   rw [map_mul, map_one] at hDe
   nth_rw 1 [formalDenom_def] at hDe
   simp only [map_sub, map_mul, map_pow, hC] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by simp
   have he0 := right_ne_zero_of_mul_eq_one hDe
   rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
   simp only [map_mul, map_add, map_pow, hC]
@@ -427,18 +423,6 @@ end Domain
 equation and a change of variables. -/
 private abbrev UnivRing := ChangeRing (MvPolynomial Coeff ℤ)
 
-private theorem injective_algebraMap_univRing :
-    Function.Injective (algebraMap (MvPolynomial (Fin 4) (MvPolynomial Coeff ℤ)) UnivRing) :=
-  IsLocalization.injective _
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem isDomain_univRing : IsDomain UnivRing :=
-  IsLocalization.isDomain_localization
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem charZero_univRing : CharZero UnivRing :=
-  charZero_of_injective_algebraMap injective_algebraMap_univRing
-
 /-- Every pair of a Weierstrass equation and a change of variables is a specialization of the
 universal pair over `UnivRing`. -/
 private theorem exists_map_universal (C : VariableChange R) (W : WeierstrassCurve R) :
@@ -456,8 +440,6 @@ theorem subst_formalCoordinate_formalInvariantDifferentialDenom
     subst (C.formalCoordinate W).toPowerSeries W.formalInvariantDifferentialDenom =
       PowerSeries.C (C.u : R) * d⁄dX (C.formalCoordinate W).toPowerSeries *
         (C • W).formalInvariantDifferentialDenom := by
-  have := isDomain_univRing
-  have := charZero_univRing
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   have h := congrArg (PowerSeries.map k)
     (subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDomain two_ne_zero
@@ -530,10 +512,7 @@ theorem formalGroup_smul (C : VariableChange R) (W : WeierstrassCurve R) :
     formalGroup (C • W) = (C.formalCoordinate W)⁻¹ • formalGroup W := by
   -- prove it for the universal pair after embedding `UnivRing` in its fraction field, a
   -- `ℚ`-algebra, and specialize
-  have := isDomain_univRing
-  have := charZero_univRing
   have hι := IsFractionRing.injective UnivRing (FractionRing UnivRing)
-  have : CharZero (FractionRing UnivRing) := charZero_of_injective_algebraMap hι
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   generalize WeierstrassCurve.map Universal.curve (algebraMap _ UnivRing) = W₀ at hW
   generalize ChangeRing.universalChange (MvPolynomial Coeff ℤ) = C₀ at hC

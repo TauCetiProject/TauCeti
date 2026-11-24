@@ -95,7 +95,7 @@ theorem fullyBlockedHomologyCommutationMap_mk (z : G.fullyBlockedCycles) :
     G.fullyBlockedHomologyCommutationMap C (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk
         (⟨G.fullyBlockedCommutationMap (ZMod 2) C z,
-          G.fullyBlockedCommutationMap_mem_cycles C z.2⟩ : (G').fullyBlockedCycles) := by
+          G.fullyBlockedCommutationMap_mem_cycles C z.property⟩ : (G').fullyBlockedCycles) := by
   simp only [fullyBlockedHomologyCommutationMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
     fullyBlockedHomologyEquivLinearMapHomology_mk, LinearMap.homologyMap_mk,
     fullyBlockedHomologyEquivLinearMapHomology_symm_mk]
@@ -120,7 +120,7 @@ theorem fullyBlockedHomologyCommutationMap_bijective :
       have hΨ := LinearMap.congr_fun
         (G.fullyBlockedCommutationMap_reverse_comp_fullyBlockedDifferential C) w
       have hH := G.fullyBlockedDifferential_fullyBlockedCommutationHomotopy_add_eq C z
-      rw [(mem_fullyBlockedCycles _ _).mp z.2, map_zero, add_zero] at hH
+      rw [(mem_fullyBlockedCycles _ _).mp z.property, map_zero, add_zero] at hH
       simp only [LinearMap.comp_apply, hw] at hΨ
       rw [map_add, ← hΨ, hH, add_left_comm, add_self_eq_zero_of_charTwo (ZMod 2), add_zero]
   · -- The class of a cycle `z` of `GC~(G')` is the image of the class of `Ψ~ z`, since
@@ -128,12 +128,12 @@ theorem fullyBlockedHomologyCommutationMap_bijective :
     induction y using Submodule.Quotient.induction_on with
     | H z =>
       refine ⟨Submodule.Quotient.mk
-        ⟨_, G.fullyBlockedCommutationMap_reverse_mem_cycles C z.2⟩, ?_⟩
+        ⟨_, G.fullyBlockedCommutationMap_reverse_mem_cycles C z.property⟩, ?_⟩
       rw [fullyBlockedHomologyCommutationMap_mk, fullyBlockedHomology_mk_eq_iff,
         mem_fullyBlockedBoundaries]
       refine ⟨(G').fullyBlockedCommutationHomotopy (ZMod 2) C.reverse z, ?_⟩
       have hH := G.fullyBlockedDifferential_fullyBlockedCommutationHomotopy_reverse_add_eq C z
-      rw [(mem_fullyBlockedCycles _ _).mp z.2, map_zero, add_zero] at hH
+      rw [(mem_fullyBlockedCycles _ _).mp z.property, map_zero, add_zero] at hH
       rw [hH, sub_eq_add_neg, neg_eq_of_add_eq_zero_left
         (add_self_eq_zero_of_charTwo (ZMod 2) (z : GridChain (ZMod 2) n))]
       exact add_comm _ _
@@ -154,15 +154,15 @@ end TauCeti.GridDiagram
 
 namespace TauCeti.OddComponentGridDiagram
 
-variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnCommutationData G.1)
+variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnCommutationData G.val)
 
 /-- The map induced on fully blocked homology by a column commutation commutes with the
 homogeneous projections. -/
 theorem fullyBlockedHomologyCommutationMap_bigradedFullyBlockedHomologyProjection (g : ℤ × ℤ)
-    (y : G.1.fullyBlockedHomology) :
-    G.1.fullyBlockedHomologyCommutationMap C (G.bigradedFullyBlockedHomologyProjection g y) =
+    (y : G.val.fullyBlockedHomology) :
+    G.val.fullyBlockedHomologyCommutationMap C (G.bigradedFullyBlockedHomologyProjection g y) =
       (G.swapColumns C).bigradedFullyBlockedHomologyProjection g
-        (G.1.fullyBlockedHomologyCommutationMap C y) := by
+        (G.val.fullyBlockedHomologyCommutationMap C y) := by
   induction y using Submodule.Quotient.induction_on with
   | H z =>
     rw [bigradedFullyBlockedHomologyProjection_mk,
@@ -171,11 +171,11 @@ theorem fullyBlockedHomologyCommutationMap_bigradedFullyBlockedHomologyProjectio
     -- The projection lemma is stated at `(G.swapColumns C).1`, which is only definitionally the
     -- commuted diagram in the type of the class, so it is applied explicitly rather than by `rw`.
     refine Eq.trans ?_ (bigradedFullyBlockedHomologyProjection_mk (G.swapColumns C) g
-      ⟨_, G.1.fullyBlockedCommutationMap_mem_cycles C z.2⟩).symm
+      ⟨_, G.val.fullyBlockedCommutationMap_mem_cycles C z.property⟩).symm
     congr 1
     ext1
     have h := G.map_bigradedChainInclusion_bigradedChainProjection (G.swapColumns C)
-      (G.1.fullyBlockedCommutationMap (ZMod 2) C) 0
+      (G.val.fullyBlockedCommutationMap (ZMod 2) C) 0
       (fun x y hy => G.fullyBlockedCommutationMap_single_apply_eq_zero_of_bidegree_ne C (ZMod 2)
         (by rwa [add_zero] at hy)) g z
     rw [add_zero] at h
@@ -186,13 +186,13 @@ theorem bigradedFullyBlockedHomologyPoincareSeries_swapColumns :
     (G.swapColumns C).bigradedFullyBlockedHomologyPoincareSeries =
       G.bigradedFullyBlockedHomologyPoincareSeries :=
   (G.bigradedFullyBlockedHomologyPoincareSeries_eq_of_linearEquiv
-    (G.1.fullyBlockedHomologyCommutationEquiv C)
+    (G.val.fullyBlockedHomologyCommutationEquiv C)
     (G.fullyBlockedHomologyCommutationMap_bigradedFullyBlockedHomologyProjection C)).symm
 
 /-- Grid diagrams with an odd number of components related by an elementary column commutation
 have the same Poincaré series of fully blocked homology. -/
 theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_isColumnCommutation
-    {G G' : OddComponentGridDiagram n} (h : GridDiagram.IsColumnCommutation G.1 G'.1) :
+    {G G' : OddComponentGridDiagram n} (h : GridDiagram.IsColumnCommutation G.val G'.val) :
     G.bigradedFullyBlockedHomologyPoincareSeries =
       G'.bigradedFullyBlockedHomologyPoincareSeries := by
   obtain ⟨C, hC⟩ := GridDiagram.isColumnCommutation_iff_exists_columnCommutationData.mp h

@@ -108,8 +108,8 @@ private lemma gcd_det_eq_one_congr (M : ℕ) {a b : Delta0 N}
       ∀ A : Matrix (Fin 2) (Fin 2) ℤ,
         (↑(b : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
           Int.gcd A.det M = 1 := by
-  obtain ⟨Aa, hAa, -, -, -⟩ := (mem_Delta0_iff N).mp a.2
-  obtain ⟨Ab, hAb, -, -, -⟩ := (mem_Delta0_iff N).mp b.2
+  obtain ⟨Aa, hAa, -, -, -⟩ := (mem_Delta0_iff N).mp a.property
+  obtain ⟨Ab, hAb, -, -, -⟩ := (mem_Delta0_iff N).mp b.property
   have hba : Ab.det = Aa.det := intMatrix_det_eq_of_mem_doubleCoset N
     (HeckeCoset.eq_iff.mp h ▸ DoubleCoset.mem_doubleCoset_self _ _ _) hAa hAb
   -- the integral witness is unique, so each side is a statement about its single witness
@@ -147,7 +147,7 @@ This has high simp priority so it fires before the general `coprimeDetCoset_mk`.
     CoprimeDetCoset N N
         (HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) g) ↔
       CoprimeDet N g := by
-  obtain ⟨A, hA, -, -, -⟩ := (mem_Delta0_iff N).mp g.2
+  obtain ⟨A, hA, -, -, -⟩ := (mem_Delta0_iff N).mp g.property
   rw [coprimeDetCoset_mk, coprimeDet_iff N hA]
   exact ⟨fun h ↦ h A hA, fun h A' hA' ↦
     (Matrix.map_injective Int.cast_injective (hA'.symm.trans hA)) ▸ h⟩
@@ -166,13 +166,13 @@ theorem toLevelOneCoset_injOn :
   rw [← HeckeCoset.mk_rep D₁, ← HeckeCoset.mk_rep D₂] at h ⊢
   rw [toLevelOneCoset_mk, toLevelOneCoset_mk, HeckeCoset.eq_iff, Submonoid.coe_inclusion,
     Submonoid.coe_inclusion] at h
-  obtain ⟨Aa, hAa, -, -, -⟩ := (mem_Delta0_iff N).mp D₁.rep.2
-  obtain ⟨Ab, hAb, -, -, -⟩ := (mem_Delta0_iff N).mp D₂.rep.2
+  obtain ⟨Aa, hAa, -, -, -⟩ := (mem_Delta0_iff N).mp D₁.rep.property
+  obtain ⟨Ab, hAb, -, -, -⟩ := (mem_Delta0_iff N).mp D₂.rep.property
   refine HeckeCoset.eq_iff.mpr ?_
   -- each `Γ₀(N)`-double coset is its level-one one cut down to `Δ₀(N)`, and those agree
-  rw [← doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map N _ D₁.rep.2 Aa hAa
+  rw [← doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map N _ D₁.rep.property Aa hAa
       ((coprimeDet_iff N hAa).mp hD₁'),
-    ← doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map N _ D₂.rep.2 Ab hAb
+    ← doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map N _ D₂.rep.property Ab hAb
       ((coprimeDet_iff N hAb).mp hD₂'), h]
 
 end HeckeRing.GL2

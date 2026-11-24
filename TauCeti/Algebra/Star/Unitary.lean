@@ -13,7 +13,9 @@ public import Mathlib.Algebra.Star.Unitary
 
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
-unitary exactly when its adjoint is its inverse.
+unitary exactly when its adjoint is its inverse. A star-preserving multiplicative map that
+sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to
+unitaries, and the ring inverse of a unitary element is its adjoint.
 
 ## Main definitions and results
 
@@ -24,6 +26,9 @@ unitary exactly when its adjoint is its inverse.
   `unitary A × unitary B`.
 * `Unitary.smul_mul_mul_star_smul`: rescaling `u` by a unitary scalar leaves `u * x * star u`
   unchanged.
+* `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
+  unitaries to unitaries.
+* `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 -/
@@ -59,7 +64,23 @@ theorem smul_mul_mul_star_smul {R M : Type*} [Monoid R] [Monoid M] [MulAction R 
     {r : R} (hr : r ∈ unitary R) (u x : M) :
     (r • u) * x * star (r • u) = u * x * star u := by
   rw [star_smul, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
-    (Unitary.mem_iff.mp hr).2, one_smul]
+    Unitary.mul_star_self_of_mem hr, one_smul]
+
+/-- A star-preserving multiplicative map sending `1` to `1` maps unitaries to unitaries. This
+applies to non-unital `⋆`-homomorphisms that happen to preserve the unit; compare
+`Unitary.map_mem` for monoid homomorphism classes. -/
+theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [StarMul S]
+    [FunLike F R S] [MulHomClass F R S] [StarHomClass F R S] (f : F) (hf : f 1 = 1) {r : R}
+    (hr : r ∈ unitary R) : f r ∈ unitary S :=
+  Unitary.mem_iff.mpr
+    ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem hr, hf],
+      by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem hr, hf]⟩
+
+/-- The ring inverse of a unitary element is its adjoint. -/
+@[simp]
+theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary R) :
+    Ring.inverse (u : R) = star (u : R) :=
+  Ring.inverse_unit (Unitary.toUnits u)
 
 end Unitary
 

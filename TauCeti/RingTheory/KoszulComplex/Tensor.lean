@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -12,6 +13,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # The Koszul complex of a direct sum
@@ -55,8 +57,8 @@ noncomputable section
 universe u
 
 open CategoryTheory MonoidalCategory HomologicalComplex CliffordAlgebra
-open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul proj coe_proj_of_mem proj_coe
-  sum_coe_wedgeTensor_map_proj)
+open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul prodEquivTensor
+  prodEquivTensor_symm_lof)
 open scoped TensorProduct
 
 namespace TauCeti
@@ -106,9 +108,7 @@ private def fromKoszulLinear (n : ℕ) :
     ⋀[R]^n (M × N) →ₗ[R] (koszulComplex φ ⊗ koszulComplex ψ).X n :=
   ∑ i : Fin (n + 1),
     (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom ∘ₗ
-      TensorProduct.map (proj R M i) (proj R N (n - i)) ∘ₗ
-        (GradedTensorProduct.of R _ _).symm.toLinearMap ∘ₗ
-          (ExteriorAlgebra.prodEquivTensor R M N).toLinearMap ∘ₗ (⋀[R]^n (M × N)).subtype
+      DirectSum.component R _ _ i ∘ₗ (prodEquivTensor R M N n).toLinearMap
 
 /-- The inverse comparison map in degree `n`. -/
 private def fromKoszul (n : ℕ) :
@@ -118,49 +118,40 @@ private def fromKoszul (n : ℕ) :
 private theorem fromKoszul_apply (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (fromKoszul φ ψ n).hom x = ∑ i : Fin (n + 1),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom
-        (TensorProduct.map (proj R M i) (proj R N (n - i))
-          ((GradedTensorProduct.of R _ _).symm (ExteriorAlgebra.prodEquivTensor R M N x))) :=
-  by
+        (prodEquivTensor R M N n x i) := by
   -- `fromKoszul` is `ModuleCat.ofHom` of `fromKoszulLinear`, whose source is only definitionally
   -- the term `(koszulComplex (φ.coprod ψ)).X n`, so `ModuleCat.hom_ofHom` does not rewrite.
   change fromKoszulLinear φ ψ n x = _
-  simp only [fromKoszulLinear, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply]
+  rw [fromKoszulLinear, LinearMap.sum_apply]
+  -- Each summand is the defining composite applied to `x`, which unfolds by `LinearMap.comp_apply`
+  -- and `DirectSum.apply_eq_component` (both `rfl`). They cannot be rewritten here: `component`
+  -- lands in `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`, which is only definitionally the source of `ιTensorObj`, so
+  -- `rw` and `simp` meet a motive that is not type-correct.
   rfl
 
 private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
     (b : ⋀[R]^q N) :
     (fromKoszul φ ψ n).hom (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-  have key : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
-      (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q' n h').hom
-          (proj R M p a ⊗ₜ proj R N q' b) =
-        (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-    rintro q' rfl h'
-    rw [proj_coe, proj_coe]
-  rw [fromKoszul_apply, coe_wedgeTensor_tmul, ← ExteriorAlgebra.prodEquivTensor_symm_tmul,
-    AlgEquiv.apply_symm_apply, GradedTensorProduct.of_symm_of]
-  simp only [TensorProduct.map_tmul]
-  rw [Finset.sum_eq_single ⟨p, by omega⟩]
-  · exact key _ (by simp; omega) _
-  · rintro i - hi
-    have : proj R M i a = 0 := Subtype.ext <| by
-      rw [coe_proj_of_mem a.2, ite_eq_right fun h ↦ hi (Fin.ext h.symm)]
-      rfl
-    rw [this, TensorProduct.zero_tmul]
+  obtain rfl : q = n - p := by omega
+  let i : Fin (n + 1) := ⟨p, by omega⟩
+  rw [← prodEquivTensor_symm_lof (i := i) (t := a ⊗ₜ b), fromKoszul_apply,
+    LinearEquiv.apply_symm_apply, Fintype.sum_eq_single i fun j hj ↦ ?_, DirectSum.lof_apply]
+  -- The summand index is `(i : ℕ)` for `i = ⟨p, _⟩`, which is definitionally `p`.
+  · rfl
+  · rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hj]
     exact map_zero _
-  · simp
 
 private theorem toKoszul_fromKoszul (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (toKoszul φ ψ n).hom ((fromKoszul φ ψ n).hom x) = x := by
   rw [fromKoszul_apply, map_sum]
-  simp only [toKoszul_ιTensorObj_apply]
+  simp only [toKoszul_ιTensorObj_apply, ← prodEquivTensor_symm_lof]
   -- The sum is taken in the term `(koszulComplex (φ.coprod ψ)).X n` of the Koszul complex, which
   -- is only definitionally the exterior power `⋀ⁿ (M × N)`.
-  change (∑ i : Fin (n + 1), wedgeTensor R M N i (n - i) n (by omega) _ : ⋀[R]^n (M × N)) = x
-  refine Subtype.ext ?_
-  rw [Submodule.coe_sum, sum_coe_wedgeTensor_map_proj]
-  simp [proj_coe]
-
+  change (∑ i : Fin (n + 1), (prodEquivTensor R M N n).symm
+    (DirectSum.lof R _ _ i (prodEquivTensor R M N n x i)) : ⋀[R]^n (M × N)) = x
+  rw [← map_sum]
+  simp only [DirectSum.lof_eq_of, DirectSum.sum_univ_of, LinearEquiv.symm_apply_apply]
 
 /-- Morphisms out of a summand `⋀ᵖ M ⊗ ⋀^q N` of `K(φ) ⊗ K(ψ)` agree once they agree on pure
 tensors. -/
@@ -258,7 +249,7 @@ private theorem koszulDifferential_wedgeTensor_zero_succ (n : ℕ) (a : ⋀[R]^0
   refine Subtype.ext ?_
   rw [pow_zero, one_smul, coe_koszulDifferential_wedgeTensor_tmul, coe_wedgeTensor_tmul,
     coe_koszulDifferential_apply,
-    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ a.2]
+    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ a.property]
   simp
 
 private theorem koszulDifferential_wedgeTensor_succ_zero (n : ℕ) (a : ⋀[R]^(n + 1) M)
@@ -269,40 +260,37 @@ private theorem koszulDifferential_wedgeTensor_succ_zero (n : ℕ) (a : ⋀[R]^(
   refine Subtype.ext ?_
   rw [coe_koszulDifferential_wedgeTensor_tmul, coe_wedgeTensor_tmul,
     coe_koszulDifferential_apply,
-    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero ψ b.2]
+    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero ψ b.property]
   simp
 
 private theorem toKoszul_comm (n : ℕ) :
     toKoszul φ ψ (n + 1) ≫ (koszulComplex (φ.coprod ψ)).d (n + 1) n =
       (koszulComplex φ ⊗ koszulComplex ψ).d (n + 1) n ≫ toKoszul φ ψ n := by
   refine mapBifunctor.hom_ext fun p q h ↦ ?_
-  have hd : (koszulComplex φ ⊗ koszulComplex ψ).d (n + 1) n =
-      mapBifunctor.D₁ (koszulComplex φ) (koszulComplex ψ) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.down ℕ) (n + 1) n +
-        mapBifunctor.D₂ (koszulComplex φ) (koszulComplex ψ) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.down ℕ) (n + 1) n :=
-    mapBifunctor.d_eq _ _ _ _ _ _
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add]
-  -- `h` is stated with `ComplexShape.π`, which on `ComplexShape.down ℕ` is addition by definition.
-  change p + q = n + 1 at h
+  rw [ComplexShape.π_eq_add] at h
+  rw [HomologicalComplex.tensor_d]
   rcases p with _ | r <;> rcases q with _ | s
   · omega
   · obtain rfl : s = n := by omega
-    rw [ChainComplex.ιTensorObj_D₁_zero_assoc, Limits.zero_comp, zero_add,
-      ChainComplex.ιTensorObj_D₂_succ_assoc, Preadditive.zsmul_comp, Category.assoc]
+    rw [ιTensorObj_d_of_not_rel_left_assoc _ _ h (by simp) (ComplexShape.down_mk (s + 1) s rfl)
+        (by omega),
+      ComplexShape.ε_down_ℕ, Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg,
+      Units.val_one, Preadditive.zsmul_comp, Category.assoc]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_zero_succ φ ψ _ a b).trans
         (congrArg (_ • ·) (whiskerLeft_d_ιTensorObj_toKoszul_tmul φ ψ 0 _ _ _ a b).symm))
   · obtain rfl : r = n := by omega
-    rw [ChainComplex.ιTensorObj_D₂_zero_assoc, Limits.zero_comp, add_zero,
-      ChainComplex.ιTensorObj_D₁_succ_assoc]
+    rw [ιTensorObj_d_of_not_rel_right_assoc _ _ h (ComplexShape.down_mk (r + 1) r rfl) (by simp)
+      (by omega)]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_succ_zero φ ψ _ a b).trans
         (whiskerRight_d_ιTensorObj_toKoszul_tmul φ ψ _ 0 _ _ a b).symm)
-  · rw [ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
-      Preadditive.zsmul_comp, Category.assoc]
+  · rw [ιTensorObj_d_of_rel_assoc _ _ h (ComplexShape.down_mk (r + 1) r rfl)
+        (ComplexShape.down_mk (s + 1) s rfl) (by omega),
+      Preadditive.add_comp, ComplexShape.ε_down_ℕ, Units.smul_def, Units.val_pow_eq_pow_val,
+      Units.val_neg, Units.val_one, Preadditive.zsmul_comp, Category.assoc]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_succ_succ φ ψ r s n h a b).trans

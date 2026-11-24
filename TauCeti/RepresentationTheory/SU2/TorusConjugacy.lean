@@ -55,7 +55,7 @@ namespace SU2
 /-- **Torus conjugacy for `SU(2)`**: every element of `SU(2)` is conjugate into the maximal torus.
 Equivalently, every special unitary `2 × 2` matrix is diagonalised by a special unitary matrix. -/
 theorem exists_conj_mem_torus (g : SU2) : ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
-  obtain ⟨u, z, hu⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_diagonal g
+  obtain ⟨u, _, hu⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_diagonal g
   exact ⟨u, mem_torus_iff.mpr (hu ▸ Matrix.isDiag_diagonal _)⟩
 
 /-- Every element of `SU(2)` is conjugate to the torus element `diag (z, z⁻¹)` for some point `z`

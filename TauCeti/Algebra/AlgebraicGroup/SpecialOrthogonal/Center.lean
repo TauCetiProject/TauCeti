@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # The scheme-theoretic center of the special orthogonal group
@@ -69,8 +70,9 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
       rw [pointsMulEquiv_mapValue, Matrix.SpecialOrthogonalGroup.coe_map, hc]
       ext i j
       by_cases hij : i = j <;> simp [Matrix.scalar_apply, Matrix.map_apply, hij]
+    let : StarRing B := starRingOfComm
     exact (Subgroup.mem_center_iff.mp
-      (Matrix.SpecialOrthogonalGroup.mem_center_of_coe_eq_scalar _ (φ c) hscalar)
+      (Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar hscalar)
         (pointsMulEquiv R n (A := B) h)).symm
 
 include h2 in

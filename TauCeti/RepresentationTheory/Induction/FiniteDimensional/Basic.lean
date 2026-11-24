@@ -110,7 +110,7 @@ the chosen representative of each right coset. -/
 noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
     Rep.coind S.subtype A ≃ₗ[k]
       (Quotient (QuotientGroup.rightRel S) → A) where
-  toFun f q := f.1 q.out
+  toFun f q := f.val q.out
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun x :=
@@ -123,15 +123,15 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
         rw [rightCoset_mk_mul, rightCosetFactor_mul, ← mul_apply_eq_comp, ← map_mul]⟩
   left_inv f := by
     ext g
-    have h := f.2 (rightCosetFactor (S := S) g)
+    have h := f.property (rightCosetFactor (S := S) g)
       (Quotient.out (Quotient.mk'' g :
         Quotient (QuotientGroup.rightRel S)))
     -- Expose `S.subtype` so the representative reconstruction lemma rewrites its argument.
-    change f.1 ((rightCosetFactor (S := S) g : G) *
+    change f.val ((rightCosetFactor (S := S) g : G) *
       Quotient.out (Quotient.mk'' g :
         Quotient (QuotientGroup.rightRel S))) =
         A.ρ (rightCosetFactor (S := S) g)
-          (f.1 (Quotient.out (Quotient.mk'' g :
+          (f.val (Quotient.out (Quotient.mk'' g :
             Quotient (QuotientGroup.rightRel S)))) at h
     simpa only [rightCosetFactor_mul_out] using h.symm
   right_inv x := by
@@ -149,7 +149,7 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
 @[simp]
 theorem coindSubtypeEquivPi_apply (A : Rep.{w} k S)
     (f : Rep.coind S.subtype A) (q : Quotient (QuotientGroup.rightRel S)) :
-    (dsimp% only (coindSubtypeEquivPi A f q)) = f.1 q.out := by
+    (dsimp% only (coindSubtypeEquivPi A f q)) = f.val q.out := by
   rw [coindSubtypeEquivPi]
   rfl
 
@@ -157,7 +157,7 @@ theorem coindSubtypeEquivPi_apply (A : Rep.{w} k S)
 @[simp]
 theorem coindSubtypeEquivPi_symm_apply (A : Rep.{w} k S)
     (x : Quotient (QuotientGroup.rightRel S) → A) (g : G) :
-    (dsimp% only (((coindSubtypeEquivPi A).symm x).1 g)) =
+    (dsimp% only (((coindSubtypeEquivPi A).symm x).val g)) =
       A.ρ (rightCosetFactor (S := S) g) (x (Quotient.mk'' g)) := by
   rw [coindSubtypeEquivPi]
   rfl
@@ -173,19 +173,19 @@ theorem coindSubtypeEquivPi_ρ_apply (A : Rep.{w} k S) (g : G)
     coindSubtypeEquivPi A ((Rep.coind S.subtype A).ρ g f) q =
       A.ρ (rightCosetFactor (S := S) (q.out * g))
         (coindSubtypeEquivPi A f (Quotient.mk'' (q.out * g))) := by
-  have h := f.2 (rightCosetFactor (S := S) (q.out * g))
+  have h := f.property (rightCosetFactor (S := S) (q.out * g))
     (Quotient.out (Quotient.mk'' (q.out * g) :
       Quotient (QuotientGroup.rightRel S)))
   -- Expose `S.subtype` so the representative reconstruction lemma rewrites its argument.
-  change f.1 ((rightCosetFactor (S := S) (q.out * g) : G) *
+  change f.val ((rightCosetFactor (S := S) (q.out * g) : G) *
     Quotient.out (Quotient.mk'' (q.out * g) :
       Quotient (QuotientGroup.rightRel S))) =
       A.ρ (rightCosetFactor (S := S) (q.out * g))
-        (f.1 (Quotient.out (Quotient.mk'' (q.out * g) :
+        (f.val (Quotient.out (Quotient.mk'' (q.out * g) :
           Quotient (QuotientGroup.rightRel S)))) at h
   rw [coindSubtypeEquivPi_apply, coindSubtypeEquivPi_apply]
   -- The coinduced action evaluates `f` at `q.out * g`.
-  change f.1 (q.out * g) = _
+  change f.val (q.out * g) = _
   simpa only [rightCosetFactor_mul_out] using h
 
 /-- The underlying vector space of induction from a finite-index subgroup is a product of copies
@@ -208,7 +208,7 @@ theorem indSubtypeEquivPi_apply [S.FiniteIndex] (A : Rep.{max w u} k S)
     (x : Rep.ind S.subtype A) (q : Quotient (QuotientGroup.rightRel S)) :
     indSubtypeEquivPi A x q =
       ((letI : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
-        Rep.indCoindIso.{w, u, v} A).hom.hom x).1 q.out := by
+        Rep.indCoindIso.{w, u, v} A).hom.hom x).val q.out := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   rw [indSubtypeEquivPi]
   rfl
@@ -228,7 +228,7 @@ theorem indSubtypeEquivPi_mk [S.FiniteIndex] [DecidableRel (QuotientGroup.rightR
   rw [indSubtypeEquivPi_apply]
   -- Pass to the underlying linear map to use Mathlib's comparison-map equation.
   change (((Rep.indCoindIso.{w, u, v} A).hom.hom.toLinearMap
-    (Representation.IndV.mk S.subtype A.ρ g a))).1 q.out = _
+    (Representation.IndV.mk S.subtype A.ρ g a))).val q.out = _
   rw [_root_.Rep.indCoindIso_hom_hom_toLinearMap]
   exact congrFun (TauCeti.indToCoind_mk g a) q.out
 
@@ -268,10 +268,10 @@ theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
       f.hom (indSubtypeEquivPi V x q) := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   have h := (Rep.indCoindNatIso.{w, u, v} k S).hom.naturality f
-  have hx := congrArg (fun m ↦ (m.hom x).1 q.out) h
+  have hx := congrArg (fun m ↦ (m.hom x).val q.out) h
   rw [indSubtypeEquivPi_apply, indSubtypeEquivPi_apply]
-  have hn : ((Rep.indCoindIso W).hom.hom ((Rep.indMap S.subtype f).hom x)).1 q.out =
-      ((Rep.coindMap S.subtype f).hom ((Rep.indCoindIso V).hom.hom x)).1 q.out := by
+  have hn : ((Rep.indCoindIso W).hom.hom ((Rep.indMap S.subtype f).hom x)).val q.out =
+      ((Rep.coindMap S.subtype f).hom ((Rep.indCoindIso V).hom.hom x)).val q.out := by
     simpa only [Rep.indCoindNatIso_hom_app, Rep.indFunctor_map, Rep.coindFunctor_map,
       Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
   exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)

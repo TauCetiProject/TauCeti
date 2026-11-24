@@ -194,7 +194,7 @@ private theorem homotopic_of_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEqui
   -- `F` maps into the bottom face; compress it into the bottom face relative to the ends.
   let _ := relCWComplexCylinder C (∅ : Set X')
   let Φ : C(↥(C ×ˢ (univ : Set I)), TopCat.of (MappingCylinder f)) :=
-    ⟨fun p ↦ F (p.1.2, ⟨p.1.1, p.2.1⟩), by fun_prop⟩
+    ⟨fun p ↦ F (p.val.2, ⟨p.val.1, p.property.1⟩), by fun_prop⟩
   have hΦ : MapsTo Φ {p | (p : X' × I) ∈ C ×ˢ {0, 1} ∪ ∅ ×ˢ univ} (range (incl f)) := by
     rintro ⟨⟨x, t⟩, hx, -⟩ (⟨-, (rfl | rfl)⟩ | ⟨⟨⟩, -⟩)
     · exact ⟨g₀ ⟨x, hx⟩, (F.apply_zero _).symm⟩
@@ -207,9 +207,9 @@ private theorem homotopic_of_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEqui
   -- `X ≃ₜ range (incl f)`.
   let ψ := inclHomeomorph f
   let κ : C(I × C, ↥(C ×ˢ (univ : Set I))) :=
-    ⟨fun q ↦ ⟨(q.2, q.1), q.2.2, mem_univ _⟩, by fun_prop⟩
+    ⟨fun q ↦ ⟨(q.2, q.1), q.2.property, mem_univ _⟩, by fun_prop⟩
   have hend (c : C) (t : I) (ht : t ∈ ({0, 1} : Set I)) : Φ' (κ (t, c)) = F (t, c) :=
-    (H.fst_eq_snd (Or.inl ⟨c.2, ht⟩)).symm
+    (H.fst_eq_snd (Or.inl ⟨c.property, ht⟩)).symm
   refine ⟨⟨(ψ.symm : C(range (incl f), X)).comp
     ((⟨fun p ↦ ⟨Φ' p, hrange (mem_range_self p)⟩, Φ'.continuous.subtype_mk _⟩ :
       C(↥(C ×ˢ (univ : Set I)), range (incl f))).comp κ), fun c ↦ ?_, fun c ↦ ?_⟩⟩

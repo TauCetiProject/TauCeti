@@ -53,7 +53,7 @@ theorem semialgebraicDim_eq_finrank_of_chartedSpace
     let U : Set t := i ⁻¹' φ.source
     have hU : IsOpen U := φ.open_source.preimage (continuous_inclusion ht)
     have : Nonempty U := ⟨⟨⟨y, hy⟩, mem_chart_source E (i ⟨y, hy⟩)⟩⟩
-    let j : U → φ.source := φ.source.codRestrict (i ∘ Subtype.val) (fun z ↦ z.2)
+    let j : U → φ.source := φ.source.codRestrict (i ∘ Subtype.val) (fun z ↦ z.property)
     have hj : IsEmbedding j :=
       ((IsEmbedding.inclusion ht).comp IsEmbedding.subtypeVal).codRestrict _ _
     have hdim := (hf.comp hU.isOpenEmbedding_subtypeVal).finrank_le_of_isEmbedding
@@ -63,7 +63,7 @@ theorem semialgebraicDim_eq_finrank_of_chartedSpace
   · -- A single nonempty chart supplies a cell of the full model dimension inside `s`.
     exact le_semialgebraicDim
       (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
-      (by rintro _ ⟨z, rfl⟩; exact z.1.2)
+      (by rintro _ ⟨z, rfl⟩; exact z.val.property)
       (c.isOpenEmbedding.comp e.isOpenEmbedding_restrict)
 
 /-- For a nonempty subset of real coordinate space with complex manifold charts, its dimension

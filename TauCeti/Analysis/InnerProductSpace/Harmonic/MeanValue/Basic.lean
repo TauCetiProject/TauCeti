@@ -45,7 +45,7 @@ needed.
 A harmonic function is weakly harmonic
 (`InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`): `∫ Δχ • u ∂μ = 0` for every
 test function `χ` supported in the ball. Taking `χ` radial, `χ x = ρ (‖x‖ ^ 2)`, the Laplacian
-`Δχ x = 4 ‖x‖² ρ'' (‖x‖²) + 2 n ρ' (‖x‖²)` is radial too (`ContDiff.laplacian_comp_norm_sq`),
+`Δχ x = 4 ‖x‖² ρ'' (‖x‖²) + 2 n ρ' (‖x‖²)` is radial too (`ContDiffAt.laplacian_comp_norm_sq`),
 and integrating in polar coordinates with the radial variable
 outermost (`TauCeti.integral_eq_integral_Ioi_integral_toSphere`) turns the identity into
 
@@ -97,15 +97,16 @@ open InnerProductSpace Laplacian MeasureTheory Metric Set Filter Topology Topolo
 open scoped Distributions ContDiff
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {u : E → F} {R : ℝ}
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E → F} {R : ℝ}
 
-omit [CompleteSpace F] in
+/-! ### The radial derivative of the sphere integrals -/
+
 /-- The distributional derivative of the sphere integrals `Φ s = ∫ θ, u (s • θ) ∂μ.toSphere` of a
 `C²` function on `ball 0 R` is computed by the Laplacian: for every test function `ψ` on `(0, R)`
 there is a radial `χ`, vanishing outside the ball and nonpositive when `ψ` is nonnegative, with
 `∫ χ • Δu = 2 • ∫ ψ' • Φ`. -/
-private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
+private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul [Nontrivial E]
     (hu : ContDiffOn ℝ 2 u (ball (0 : E) R)) (hR : 0 < R) {ψ : ℝ → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo 0 R) :
     ∃ χ : E → ℝ, (∀ x ∉ ball (0 : E) R, χ x = 0) ∧ ((∀ s, 0 ≤ ψ s) → ∀ x, χ x ≤ 0) ∧
@@ -132,7 +133,7 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
   have hΔ : Δ (χ : E → ℝ) = fun x ↦ 4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
       2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
     funext x
-    rw [hχ, (hρ.of_le (by simp)).laplacian_comp_norm_sq]
+    rw [hχ, (hρ.of_le (by simp)).contDiffAt.laplacian_comp_norm_sq]
   -- Green's identity against `χ`, in polar coordinates.
   -- `Ω` is the ball, as a set.
   have hu' : ContDiffOn ℝ 2 u Ω := hu
@@ -165,8 +166,14 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
     rw [MeasureTheory.integral_smul]
   · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hs (hψs (tsupport_deriv_subset h)).1]
 
+/-! ### The mean-value property -/
+
+section MeanValue
+
+variable [CompleteSpace F]
+
 /-- The mean-value property on spheres about the origin. -/
-private lemma integral_toSphere_eq_of_harmonicOnNhd_zero
+private lemma integral_toSphere_eq_of_harmonicOnNhd_zero [Nontrivial E]
     (hu : HarmonicOnNhd u (closedBall (0 : E) R)) (hR : 0 ≤ R) :
     ∫ θ : sphere (0 : E) 1, u (R • (θ : E)) ∂μ.toSphere = μ.toSphere.real univ • u 0 := by
   rcases hR.eq_or_lt with rfl | hR
@@ -192,7 +199,6 @@ private lemma integral_toSphere_eq_of_harmonicOnNhd_zero
     _ = Φ 0 := (hIcc ⟨le_rfl, hR.le⟩).symm
     _ = μ.toSphere.real univ • u 0 := by simp [hΦ_def, integral_const]
 
-omit [Nontrivial E] in
 /-- **The mean-value property on spheres.** If `u` is harmonic on a neighbourhood of the closed
 ball `closedBall x₀ R`, `0 ≤ R`, then the integral of `u` over the sphere of radius `R` about `x₀`,
 parametrized by the unit sphere with the surface measure `μ.toSphere`, is the total surface
@@ -211,7 +217,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq {x₀ : E}
 /-- **The mean-value property on spheres, average form.** A function harmonic on a neighbourhood
 of the closed ball `closedBall x₀ R`, `0 ≤ R`, in a nontrivial space has value `u x₀` at the
 centre equal to its average over the sphere of radius `R` about `x₀`. -/
-theorem _root_.InnerProductSpace.HarmonicOnNhd.average_toSphere_eq {x₀ : E}
+theorem _root_.InnerProductSpace.HarmonicOnNhd.average_toSphere_eq [Nontrivial E] {x₀ : E}
     (hu : HarmonicOnNhd u (closedBall x₀ R)) (hR : 0 ≤ R) :
     ⨍ θ : sphere (0 : E) 1, u (x₀ + R • (θ : E)) ∂μ.toSphere = u x₀ := by
   have : NeZero μ.toSphere := ⟨μ.toSphere_ne_zero⟩
@@ -219,7 +225,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.average_toSphere_eq {x₀ : E}
     one_smul]
 
 /-- The mean-value property on balls about the origin. -/
-private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero
+private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero [Nontrivial E]
     (hu : HarmonicOnNhd u (closedBall (0 : E) R)) :
     ∫ x in ball (0 : E) R, u x ∂μ = μ.real (ball (0 : E) R) • u 0 := by
   rw [setIntegral_ball_zero_eq_integral_Ioo ((hu.contDiffOn.continuousOn.integrableOn_compact
@@ -229,7 +235,6 @@ private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero
         (hu.mono (closedBall_subset_closedBall hs.2.le)) hs.1.le],
     integral_smul_const, smul_smul, integral_Ioo_pow_mul_toSphere_real_univ]
 
-omit [Nontrivial E] in
 /-- **The mean-value property on balls.** If `u` is harmonic on a neighbourhood of the closed
 ball `closedBall x₀ R`, then the integral of `u` over the open ball of radius `R` about `x₀` is
 the measure of the ball times `u x₀`. (For `R ≤ 0` the ball is empty and both sides vanish.) -/
@@ -245,7 +250,22 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq {x₀ : E}
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, ← h, setIntegral_ball_eq_setIntegral_ball_zero_add]
 
-omit [Nontrivial E] [CompleteSpace F] in
+/-- **The mean-value property on balls, average form.** A function harmonic on a neighbourhood
+of the closed ball `closedBall x₀ R`, `0 < R`, has value `u x₀` at the centre equal to its average
+over the open ball of radius `R` about `x₀`. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq {x₀ : E}
+    (hu : HarmonicOnNhd u (closedBall x₀ R)) (hR : 0 < R) :
+    ⨍ x in ball x₀ R, u x ∂μ = u x₀ := by
+  have hpos : 0 < μ.real (ball x₀ R) := by
+    rw [measureReal_def]
+    exact ENNReal.toReal_pos (measure_ball_pos μ x₀ hR).ne' measure_ball_lt_top.ne
+  rw [setAverage_eq, hu.setIntegral_ball_eq, smul_smul,
+    inv_mul_cancel₀ hpos.ne', one_smul]
+
+end MeanValue
+
+/-! ### An `L¹` bound on harmonic values -/
+
 /-- A harmonic value is bounded by the `L¹` norm on any containing open set, using a ball
 of fixed radius around the evaluation point. Completeness of `F` is not needed. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integral_norm
@@ -271,19 +291,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integ
   rw [inv_mul_eq_div, le_div_iff₀ hV, mul_comm]
   exact hbound
 
-omit [Nontrivial E] in
-/-- **The mean-value property on balls, average form.** A function harmonic on a neighbourhood
-of the closed ball `closedBall x₀ R`, `0 < R`, has value `u x₀` at the centre equal to its average
-over the open ball of radius `R` about `x₀`. -/
-theorem _root_.InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq {x₀ : E}
-    (hu : HarmonicOnNhd u (closedBall x₀ R)) (hR : 0 < R) :
-    ⨍ x in ball x₀ R, u x ∂μ = u x₀ := by
-  have hpos : 0 < μ.real (ball x₀ R) := by
-    rw [measureReal_def]
-    exact ENNReal.toReal_pos (measure_ball_pos μ x₀ hR).ne' measure_ball_lt_top.ne
-  rw [setAverage_eq, hu.setIntegral_ball_eq, smul_smul,
-    inv_mul_cancel₀ hpos.ne', one_smul]
-
 /-! ### The sub-mean-value inequality -/
 
 section SubMeanValue
@@ -291,7 +298,7 @@ section SubMeanValue
 variable {f : E → ℝ}
 
 /-- The sub-mean-value inequality on spheres about the origin. -/
-private lemma mul_le_integral_toSphere_of_laplacian_nonneg_zero
+private lemma mul_le_integral_toSphere_of_laplacian_nonneg_zero [Nontrivial E]
     (hf : ContDiffOn ℝ 2 f (ball (0 : E) R)) (hfc : ContinuousOn f (closedBall (0 : E) R))
     (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) (hR : 0 ≤ R) :
     μ.toSphere.real univ * f 0 ≤ ∫ θ : sphere (0 : E) 1, f (R • (θ : E)) ∂μ.toSphere := by
@@ -328,7 +335,6 @@ private lemma mul_le_integral_toSphere_of_laplacian_nonneg_zero
   calc μ.toSphere.real univ * f 0 = Φ 0 := by simp [hΦ_def, integral_const]
     _ ≤ Φ R := h₁.trans h₂
 
-omit [Nontrivial E] in
 /-- **The sub-mean-value inequality on spheres.** If `f` is `C²` on the ball `ball x₀ R`,
 continuous on its closure, and has nonnegative Laplacian on the ball, then `f x₀` times the total
 surface measure is at most the integral of `f` over the sphere of radius `R` about `x₀`,
@@ -354,7 +360,7 @@ theorem mul_le_integral_toSphere_of_laplacian_nonneg {x₀ : E}
 /-- **The sub-mean-value inequality on spheres, average form.** A function which is `C²` on the
 ball `ball x₀ R`, continuous on its closure, and has nonnegative Laplacian on the ball, is at most
 its average over the sphere of radius `R` about `x₀` at the centre. -/
-theorem le_average_toSphere_of_laplacian_nonneg {x₀ : E}
+theorem le_average_toSphere_of_laplacian_nonneg [Nontrivial E] {x₀ : E}
     (hf : ContDiffOn ℝ 2 f (ball x₀ R)) (hfc : ContinuousOn f (closedBall x₀ R))
     (hΔ : ∀ x ∈ ball x₀ R, 0 ≤ Δ f x) (hR : 0 ≤ R) :
     f x₀ ≤ ⨍ θ : sphere (0 : E) 1, f (x₀ + R • (θ : E)) ∂μ.toSphere := by
@@ -363,7 +369,7 @@ theorem le_average_toSphere_of_laplacian_nonneg {x₀ : E}
   exact mul_le_integral_toSphere_of_laplacian_nonneg hf hfc hΔ hR
 
 /-- The sub-mean-value inequality on balls about the origin. -/
-private lemma mul_le_setIntegral_ball_of_laplacian_nonneg_zero
+private lemma mul_le_setIntegral_ball_of_laplacian_nonneg_zero [Nontrivial E]
     (hf : ContDiffOn ℝ 2 f (ball (0 : E) R)) (hfc : ContinuousOn f (closedBall (0 : E) R))
     (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) :
     μ.real (ball (0 : E) R) * f 0 ≤ ∫ x in ball (0 : E) R, f x ∂μ := by
@@ -383,7 +389,6 @@ private lemma mul_le_setIntegral_ball_of_laplacian_nonneg_zero
     (hf.mono (ball_subset_ball hs.2.le)) (hfc.mono (closedBall_subset_closedBall hs.2.le))
     (fun x hx ↦ hΔ x (ball_subset_ball hs.2.le hx)) hs.1.le
 
-omit [Nontrivial E] in
 /-- **The sub-mean-value inequality on balls.** If `f` is `C²` on the ball `ball x₀ R`,
 continuous on its closure, and has nonnegative Laplacian on the ball, then the measure of the ball
 times `f x₀` is at most the integral of `f` over the ball. -/
@@ -407,7 +412,6 @@ theorem mul_le_setIntegral_ball_of_laplacian_nonneg {x₀ : E}
   rw [Measure.addHaar_real_ball_center, setIntegral_ball_eq_setIntegral_ball_zero_add]
   exact h
 
-omit [Nontrivial E] in
 /-- **The sub-mean-value inequality on balls, average form.** A function which is `C²` on the
 ball `ball x₀ R`, `0 < R`, continuous on its closure, and has nonnegative Laplacian on the ball,
 is at most its average over the ball at the centre. -/

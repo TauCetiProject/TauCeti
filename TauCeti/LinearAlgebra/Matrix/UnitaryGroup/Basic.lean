@@ -5,32 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Commutator
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
-import TauCeti.Algebra.Star.Unitary
-import TauCeti.GroupTheory.Commutator
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
-# Coordinate action of unitary matrices and algebraic identities in `SU(n)`
+# Coordinate action and diagonal stabilizers of unitary matrices
 
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
 matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitary` records that
 permutation matrices over a possibly noncommutative star semiring are unitary. Accordingly
 `Matrix.permutationUnitary` is `Matrix.permMatrixHom` with values in the unitary matrices.
 
-`Matrix.conjTranspose_mul_mul_mem_unitary` transfers unitarity along a possibly rectangular
-matrix whose conjugate transpose is a two-sided inverse.
+`Matrix.mem_unitary_iff_conjTranspose` characterizes `unitary (Matrix n n R)` via the conjugate
+transpose over any star semiring, and `Matrix.conjTranspose_mul_mul_mem_unitary` transfers
+unitarity along a possibly rectangular matrix whose conjugate transpose is a two-sided inverse.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
-`1` except one is unitary exactly when that entry is. For `Matrix.specialUnitaryGroup`, this file
-records basic inverse coercions (`coe_inv`, `coe_mul_coe_inv`, `coe_inv_mul_coe`), subsingleton
-triviality on subsingleton index types (`subsingleton_of_subsingleton`), centrality of scalar
-matrices (`mem_center_of_coe_eq_scalar`), scalar-rescaling invariance of commutators
-(`coe_commutatorElement_of_eq_smul`), and algebraic identities for the twisted commutator relation
-`⁅A, B⁆ = ζ • 1` (`coe_commutatorElement_eq_smul_one_iff`, `commutator_conj_eq_smul_one`,
-`commute_mul_inv_of_commutator_eq_smul_one`, `conj_pow_eq_star_pow_smul`,
-`conj_pow_eq_inv_pow_smul`).
+`1` except one is unitary exactly when that entry is. Multiplying one column `j` of a unitary
+matrix `A` by `star (det A)` therefore keeps it unitary and makes its determinant
+`det A * star (det A) = 1`: this is `Matrix.UnitaryGroup.toSpecialUnitaryAt j A`, a special unitary
+matrix with the same columns as `A` away from `j`
+(`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`).
+
+`Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup` says that a unitary matrix preserves
+the Hermitian dot product `star x ⬝ᵥ y`.
+
+For a diagonal with distinct entries, two unitary frames give the same conjugate exactly
+when their relative frame is diagonal. This is the sign ambiguity for orthogonal frames
+and the phase ambiguity for complex unitary frames in Anderson, Guionnet and Zeitouni,
+*An Introduction to Random Matrices* (2010), §4.1.
+
+For `Matrix.specialUnitaryGroup`, this file also records basic inverse coercions (`coe_inv`,
+`coe_mul_coe_inv`, `coe_inv_mul_coe`), subsingleton triviality on subsingleton index types
+(`subsingleton_of_subsingleton`), and centrality of scalar matrices
+(`mem_center_of_coe_eq_scalar`).
 -/
 
 public section
@@ -52,6 +63,13 @@ end Matrix.UnitaryGroup
 
 namespace Matrix
 
+/-- Over any star semiring, a square matrix belongs to `unitary (Matrix n n R)` if and only if its
+conjugate transpose is a two-sided inverse. -/
+theorem mem_unitary_iff_conjTranspose {R n : Type*} [Semiring R] [StarRing R]
+    [Fintype n] [DecidableEq n] {U : Matrix n n R} :
+    U ∈ unitary (Matrix n n R) ↔ Uᴴ * U = 1 ∧ U * Uᴴ = 1 := by
+  rw [Unitary.mem_iff, star_eq_conjTranspose]
+
 /-- Conjugation by a possibly rectangular matrix with conjugate-transpose inverse preserves
 unitarity over a possibly noncommutative star semiring. -/
 theorem conjTranspose_mul_mul_mem_unitary
@@ -65,7 +83,7 @@ theorem conjTranspose_mul_mul_mem_unitary
     calc
       _ = Pᴴ * (Y * (P * Pᴴ) * Z) * P := by simp only [Matrix.mul_assoc]
       _ = _ := by rw [hP', Matrix.mul_one]
-  rw [Unitary.mem_iff, star_eq_conjTranspose] at hX ⊢
+  rw [mem_unitary_iff_conjTranspose] at hX ⊢
   constructor <;>
     simp only [conjTranspose_mul, conjTranspose_conjTranspose,
       ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]
@@ -76,6 +94,48 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     [Semiring α] [StarRing α] {a : α} {i : n} :
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
+
+/-- A unitary matrix preserves the Hermitian dot product. -/
+theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {n α : Type*} [Fintype n]
+    [DecidableEq n] [CommRing α] [StarRing α] {A : Matrix n n α} (hA : A ∈ unitaryGroup n α)
+    (x y : n → α) : star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
+  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
+    (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
+
+namespace UnitaryGroup
+
+variable {R : Type u} [CommRing R] [StarRing R]
+variable {n : Type v} [Fintype n] [DecidableEq n]
+
+/-- The unitary matrix `A` with its column `j` multiplied by `star (det A)`. It is unitary, and its
+determinant is `det A * star (det A) = 1` since `det A` is a unitary scalar, so it is special
+unitary. Its columns other than `j` are those of `A`
+(`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`). -/
+def toSpecialUnitaryAt (j : n) (A : unitaryGroup n R) : specialUnitaryGroup n R :=
+  ⟨A.val * diagonal (Function.update 1 j (star (A : Matrix n n R).det)),
+    mem_specialUnitaryGroup_iff.2 ⟨mul_mem A.property
+      (diagonal_update_one_mem_unitary_iff.2 (Unitary.star_mem (det_of_mem_unitary A.property))), by
+        rw [det_mul, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ j)]
+        simpa using (det_of_mem_unitary A.property).2⟩⟩
+
+theorem coe_toSpecialUnitaryAt (j : n) (A : unitaryGroup n R) :
+    (toSpecialUnitaryAt j A : Matrix n n R) =
+      A.val * diagonal (Function.update 1 j (star (A : Matrix n n R).det)) :=
+  (rfl)
+
+/-- Away from the column `j`, the columns of `toSpecialUnitaryAt j A` are those of `A`. -/
+theorem toSpecialUnitaryAt_mulVec_single {j k : n} (hk : k ≠ j) (A : unitaryGroup n R) :
+    (toSpecialUnitaryAt j A : Matrix n n R) *ᵥ Pi.single k 1 = A.val *ᵥ Pi.single k 1 := by
+  rw [coe_toSpecialUnitaryAt, ← mulVec_mulVec, diagonal_mulVec_single,
+    Function.update_of_ne hk, Pi.one_apply, one_mul]
+
+/-- A special unitary matrix is its own correction. -/
+@[simp]
+theorem toSpecialUnitaryAt_of_det_eq_one (j : n) {A : unitaryGroup n R}
+    (hA : (A : Matrix n n R).det = 1) : (toSpecialUnitaryAt j A : Matrix n n R) = A := by
+  simp [coe_toSpecialUnitaryAt, hA]
+
+end UnitaryGroup
 
 variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]
@@ -100,9 +160,46 @@ theorem coe_permutationUnitary (σ : Equiv.Perm n) :
     (permutationUnitary (R := R) σ : Matrix n n R) = σ⁻¹.permMatrix R :=
   (rfl)
 
-namespace specialUnitaryGroup
+section DiagonalStabilizer
 
-section CommRing
+variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
+  [CommSemiring R] [IsLeftCancelMulZero R] [StarRing R]
+
+/-- A diagonal with distinct entries has exactly the diagonal unitary frames in its stabilizer. -/
+theorem conjStarAlgAut_diagonal_eq_iff {d : ι → R} (hd : Function.Injective d)
+    (U : unitary (Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d ↔ Matrix.IsDiag (U : Matrix ι ι R) := by
+  rw [Unitary.conjStarAlgAut_apply]
+  constructor
+  · intro h
+    apply TauCeti.isDiag_of_commute_diagonal hd
+    calc
+      diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
+      _ = U * diagonal d := by simp [Matrix.mul_assoc]
+  · intro h
+    have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
+      rw [← h.diagonal_diag]
+      exact Matrix.commute_diagonal _ _
+    rw [hcomm.eq]
+    simp [Matrix.mul_assoc]
+
+/-- Two frames give the same conjugate of a simple diagonal exactly when they differ
+by a right diagonal unitary. -/
+theorem conjStarAlgAut_diagonal_eq_conjStarAlgAut_iff {d : ι → R} (hd : Function.Injective d)
+    (U V : unitary (Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = Unitary.conjStarAlgAut ℕ _ V (diagonal d) ↔
+      Matrix.IsDiag ((star V * U : unitary (Matrix ι ι R)) : Matrix ι ι R) := by
+  rw [← conjStarAlgAut_diagonal_eq_iff hd, Unitary.conjStarAlgAut_mul_apply]
+  have hV : Unitary.conjStarAlgAut ℕ (Matrix ι ι R) (star V)
+      (Unitary.conjStarAlgAut ℕ _ V (diagonal d)) = diagonal d := by
+    rw [← Unitary.conjStarAlgAut_mul_apply]
+    simp
+  conv_rhs => rhs; rw [← hV]
+  exact (Unitary.conjStarAlgAut ℕ (Matrix ι ι R) (star V)).injective.eq_iff.symm
+
+end DiagonalStabilizer
+
+namespace specialUnitaryGroup
 
 variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
 
@@ -130,8 +227,8 @@ determinant-one condition forces the unique entry (if any) to be `1`. -/
 instance subsingleton_of_subsingleton [Subsingleton n] :
     Subsingleton (specialUnitaryGroup n α) := by
   refine ⟨fun A B => Subtype.ext <| Matrix.ext fun i j => ?_⟩
-  have hAdet := (mem_specialUnitaryGroup_iff.mp A.2).2
-  have hBdet := (mem_specialUnitaryGroup_iff.mp B.2).2
+  have hAdet := (mem_specialUnitaryGroup_iff.mp A.property).2
+  have hBdet := (mem_specialUnitaryGroup_iff.mp B.property).2
   rw [det_eq_elem_of_subsingleton _ i] at hAdet hBdet
   rw [Subsingleton.elim j i, hAdet, hBdet]
 
@@ -143,103 +240,6 @@ theorem mem_center_of_coe_eq_scalar {g : specialUnitaryGroup n α} {c : α}
   Subgroup.mem_center_iff.mpr fun h => Subtype.ext <| by
     rw [Submonoid.coe_mul, Submonoid.coe_mul, hg,
       (scalar_commute c (Commute.all c) (h : Matrix n n α)).eq]
-
-open scoped commutatorElement in
-/-- Rescaling two matrices by unitary scalars into `specialUnitaryGroup n α` leaves their
-commutator `U * V * star U * star V` unchanged. -/
-theorem coe_commutatorElement_of_eq_smul {c₁ c₂ : α} (hc₁ : c₁ ∈ unitary α)
-    (hc₂ : c₂ ∈ unitary α) {U V : Matrix n n α} {A B : specialUnitaryGroup n α}
-    (hA : (A : Matrix n n α) = c₁ • U) (hB : (B : Matrix n n α) = c₂ • V) :
-    (↑⁅A, B⁆ : Matrix n n α) = U * V * star U * star V := by
-  rw [commutatorElement_def, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul,
-    coe_inv, coe_inv, hA, hB,
-    Unitary.smul_mul_mul_star_smul hc₁,
-    Matrix.mul_assoc U, Matrix.mul_assoc U,
-    Unitary.smul_mul_mul_star_smul hc₂,
-    ← Matrix.mul_assoc, ← Matrix.mul_assoc]
-
-open scoped commutatorElement in
-/-- In `specialUnitaryGroup n α`, the commutator equation `⁅A, B⁆ = ζ • 1` is equivalent to the
-twisted commutation relation `A * B = ζ • (B * A)`. -/
-theorem coe_commutatorElement_eq_smul_one_iff {ζ : α} {A B : specialUnitaryGroup n α} :
-    (↑⁅A, B⁆ : Matrix n n α) = ζ • 1 ↔
-      (A : Matrix n n α) * (B : Matrix n n α) = ζ • ((B : Matrix n n α) * A) := by
-  constructor
-  · intro h
-    calc (A : Matrix n n α) * B
-        = (↑⁅A, B⁆ : Matrix n n α) * (B : Matrix n n α) * A := by
-          simp only [commutatorElement_def, ← Submonoid.coe_mul, inv_mul_cancel_right]
-      _ = ζ • ((B : Matrix n n α) * A) := by
-          rw [h, Matrix.smul_mul, Matrix.one_mul, smul_mul_assoc]
-  · intro h
-    calc (↑⁅A, B⁆ : Matrix n n α)
-        = (A : Matrix n n α) * B * ((A⁻¹ : specialUnitaryGroup n α) : Matrix n n α) *
-            ((B⁻¹ : specialUnitaryGroup n α) : Matrix n n α) := by
-          rw [commutatorElement_def, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul]
-      _ = ζ • ((B : Matrix n n α) * ((A : Matrix n n α) *
-            ((A⁻¹ : specialUnitaryGroup n α) : Matrix n n α)) *
-            ((B⁻¹ : specialUnitaryGroup n α) : Matrix n n α)) := by
-          rw [h, smul_mul_assoc, smul_mul_assoc, Matrix.mul_assoc (B : Matrix n n α)]
-      _ = ζ • 1 := by
-          rw [coe_mul_coe_inv, Matrix.mul_one, coe_mul_coe_inv]
-
-open scoped commutatorElement in
-/-- Simultaneous conjugation in `specialUnitaryGroup n α` preserves the twisted commutator
-relation `⁅A, B⁆ = ζ • 1`. -/
-theorem commutator_conj_eq_smul_one {ζ : α} {A B : specialUnitaryGroup n α}
-    (hAB : (↑⁅A, B⁆ : Matrix n n α) = ζ • 1) (u : specialUnitaryGroup n α) :
-    (↑⁅u * A * u⁻¹, u * B * u⁻¹⁆ : Matrix n n α) = ζ • 1 := by
-  rw [← conjugate_commutatorElement, Submonoid.coe_mul, Submonoid.coe_mul, hAB,
-    Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, coe_mul_coe_inv]
-
-open scoped commutatorElement in
-/-- If `B₀` and `B` both satisfy `⁅A₀, -⁆ = ζ • 1` in `specialUnitaryGroup n α`, then `A₀`
-commutes with `B * B₀⁻¹`. -/
-theorem commute_mul_inv_of_commutator_eq_smul_one {ζ : α} {A₀ B₀ B : specialUnitaryGroup n α}
-    (hrel₀ : (↑⁅A₀, B₀⁆ : Matrix n n α) = ζ • 1)
-    (hrel : (↑⁅A₀, B⁆ : Matrix n n α) = ζ • 1) :
-    Commute A₀ (B * B₀⁻¹) := by
-  have hcen : ⁅A₀, B₀⁆ ∈ Subgroup.center (specialUnitaryGroup n α) :=
-    mem_center_of_coe_eq_scalar (by rw [hrel₀, scalar_apply, smul_one_eq_diagonal])
-  exact TauCeti.commute_mul_inv_of_commutatorElement_eq (Subtype.ext (hrel.trans hrel₀.symm))
-    (Subgroup.mem_center_iff.mp hcen B₀) (Subgroup.mem_center_iff.mp hcen B)
-
-open scoped commutatorElement in
-/-- If `⁅A, B⁆ = ζ • 1` in `specialUnitaryGroup n α`, then conjugating `A` by `B ^ m` scales `A` by
-`(star ζ) ^ m`. -/
-theorem conj_pow_eq_star_pow_smul {ζ : α} {A B : specialUnitaryGroup n α}
-    (hAB : (↑⁅A, B⁆ : Matrix n n α) = ζ • 1) (m : ℕ) :
-    ((B ^ m * A * (B ^ m)⁻¹ : specialUnitaryGroup n α) : Matrix n n α) =
-      (star ζ) ^ m • (A : Matrix n n α) := by
-  have hBA : (↑⁅B, A⁆ : Matrix n n α) = (star ζ) • 1 := by
-    rw [← commutatorElement_inv, coe_inv, hAB, star_smul, star_one]
-  have hcen : ⁅B, A⁆ ∈ Subgroup.center (specialUnitaryGroup n α) :=
-    mem_center_of_coe_eq_scalar (by rw [hBA, scalar_apply, smul_one_eq_diagonal])
-  rw [Commute.pow_mul_mul_inv_pow_eq_commutatorElement_pow_mul
-    (Subgroup.mem_center_iff.mp hcen B) m, Submonoid.coe_mul, SubmonoidClass.coe_pow,
-    hBA, smul_pow, one_pow, Matrix.smul_mul, Matrix.one_mul]
-
-end CommRing
-
-open scoped commutatorElement in
-/-- Over a star field, if `⁅A, B⁆ = ζ • 1` in `specialUnitaryGroup n α`, then conjugating `A` by
-`B ^ m` scales `A` by `(ζ⁻¹) ^ m`. No `ζ ≠ 0` hypothesis is needed: if `n` is empty both sides
-are the unique `0 × 0` matrix, and otherwise unitarity of `ζ • 1` gives `ζ * star ζ = 1`. -/
-theorem conj_pow_eq_inv_pow_smul {n α : Type*} [Fintype n] [DecidableEq n] [Field α] [StarRing α]
-    {ζ : α} {A B : specialUnitaryGroup n α}
-    (hAB : (↑⁅A, B⁆ : Matrix n n α) = ζ • 1) (m : ℕ) :
-    ((B ^ m * A * (B ^ m)⁻¹ : specialUnitaryGroup n α) : Matrix n n α) =
-      (ζ⁻¹) ^ m • (A : Matrix n n α) := by
-  rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-  · exact Subsingleton.elim _ _
-  have hstar : star ζ = ζ⁻¹ := by
-    have hunit := (Unitary.mem_iff.mp (specialUnitaryGroup_le_unitaryGroup ⁅A, B⁆.2)).2
-    have h0 := congr_fun₂ hunit i₀ i₀
-    rw [hAB, star_smul, star_one, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
-      Matrix.smul_apply, Matrix.smul_apply, Matrix.one_apply_eq, smul_eq_mul, smul_eq_mul,
-      mul_one] at h0
-    exact eq_inv_of_mul_eq_one_right h0
-  rw [conj_pow_eq_star_pow_smul hAB m, hstar]
 
 end specialUnitaryGroup
 

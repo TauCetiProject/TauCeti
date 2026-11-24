@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -27,6 +28,12 @@ composition of one such operator with the adjoint of another, as integral operat
   integrals (`TauCeti.adjoint_comp_integralOperatorLp`). Symmetrically, for kernels with the same
   source space, `T₁ ∘ T₂†` has the kernel `(x, z) ↦ ∫ y, K₁ x y ∘ (K₂ z y)† ∂ν`
   (`TauCeti.integralOperatorLp_comp_adjoint`).
+* More generally, on a proper metric measure space, let `T : L²(V; H) → L²(V; K)` be a bounded
+  operator that is integration against a kernel `k` only away from the support of its argument.
+  If `k` is bounded away from the diagonal, then `T†` is integration against the adjoint kernel
+  `(x, z) ↦ (k z x)†` away from the support of its argument
+  (`ContinuousLinearMap.ae_adjoint_apply_eq_integral`). No integral bound on `k` is needed, so
+  this applies to singular integral operators.
 
 The composed kernels are integrals of operators, not of their norms, so cancellation inside them
 can make them much smaller than the products of `‖K₁‖` and `‖K₂‖`. Combined with Schur's test
@@ -43,6 +50,8 @@ the proof of the Calderón–Vaillancourt theorem.
 * `TauCeti.adjoint_integralOperatorLp`: the adjoint is the integral operator of the adjoint kernel.
 * `TauCeti.adjoint_comp_integralOperatorLp`, `TauCeti.integralOperatorLp_comp_adjoint`: the
   kernels of `T₂† ∘ T₁` and `T₁ ∘ T₂†`.
+* `ContinuousLinearMap.ae_adjoint_apply_eq_integral`: the kernel of the adjoint of an operator
+  given by a kernel only away from the support of its argument.
 
 ## References
 
@@ -368,3 +377,228 @@ end CompAdjoint
 end Composition
 
 end TauCeti
+
+/-! ### Kernels known off the support
+
+The rest of the file concerns a bounded operator `T` on `L²` of a proper metric measure space that
+is integration against a kernel `k` only away from the support of its argument, as singular
+integral operators are. The kernel need not satisfy any integral bound, only boundedness away from
+the diagonal. -/
+
+namespace TauCeti
+
+section OffSupport
+
+open Metric Set
+open scoped InnerProductSpace
+
+variable {𝕜 α β H K : Type*} [RCLike 𝕜] [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
+  {ν : Measure β}
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
+
+/-- The integrand `⟪g x, k x y (φ y)⟫` of the double integral pairing `g` with `T φ` is integrable
+on the product when `g` and `φ` are integrable and vanish outside sets on whose product `k` is
+bounded. This is the counterpart of `TauCeti.integrable_inner_apply_kernel` for kernels bounded
+on the product of the supports rather than having bounded row and column integrals. -/
+theorem integrable_inner_apply_kernel_of_norm_le {k : α → β → H →L[𝕜] K}
+    (hkm : AEStronglyMeasurable (uncurry k) (μ.prod ν)) {s : Set α} {t : Set β} {M : ℝ}
+    (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : α → K} (hgi : Integrable g μ)
+    (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) {φ : β → H} (hφi : Integrable φ ν)
+    (hφ : ∀ᵐ y ∂ν, y ∉ t → φ y = 0) :
+    Integrable (fun p : α × β ↦ ⟪g p.1, k p.1 p.2 (φ p.2)⟫_𝕜) (μ.prod ν) := by
+  have hm : AEStronglyMeasurable (fun p : α × β ↦ k p.1 p.2 (φ p.2)) (μ.prod ν) :=
+    (isBoundedBilinearMap_apply.continuous).comp_aestronglyMeasurable
+      (hkm.prodMk
+        (hφi.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd))
+  refine ((hgi.norm.mul_prod hφi.norm).const_mul M).mono'
+    ((hgi.aestronglyMeasurable.comp_quasiMeasurePreserving
+      Measure.quasiMeasurePreserving_fst).inner hm) ?_
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae hg,
+    Measure.quasiMeasurePreserving_snd.ae hφ] with p hp₁ hp₂
+  by_cases h₁ : p.1 ∈ s
+  · by_cases h₂ : p.2 ∈ t
+    · calc ‖⟪g p.1, k p.1 p.2 (φ p.2)⟫_𝕜‖ ≤ ‖g p.1‖ * (‖k p.1 p.2‖ * ‖φ p.2‖) :=
+            (norm_inner_le_norm _ _).trans
+              (mul_le_mul_of_nonneg_left (le_opNorm _ _) (norm_nonneg _))
+        _ ≤ ‖g p.1‖ * (M * ‖φ p.2‖) := by
+            gcongr
+            exact hM _ h₁ _ h₂
+        _ = M * (‖g p.1‖ * ‖φ p.2‖) := by ring
+    · simp [hp₂ h₂]
+  · simp [hp₁ h₁]
+
+end OffSupport
+
+end TauCeti
+
+namespace ContinuousLinearMap
+
+open Metric Set Filter
+open scoped InnerProductSpace
+
+variable {𝕜 V H K : Type*} [RCLike 𝕜] [MetricSpace V] [ProperSpace V] [MeasurableSpace V]
+  [BorelSpace V] {μ : Measure V} [IsFiniteMeasureOnCompacts μ]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] [NormedSpace ℝ H]
+  [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K] [NormedSpace ℝ K]
+
+omit [BorelSpace V] in
+/-- The pairing identity behind `ContinuousLinearMap.ae_adjoint_apply_eq_integral`: against a test
+function `φ` vanishing outside a compact set `t` disjoint from the compact set `s` outside which
+`g` vanishes, `T† g` pairs like the integral of the transposed kernel. -/
+private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2 μ)
+    {k : V → V → H →L[𝕜] K} (hkm : StronglyMeasurable (Function.uncurry k))
+    (hrep : ∀ (f : Lp H 2 μ) (s : Set V), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
+      ∀ᵐ x ∂μ, x ∉ s → T f x = ∫ z, k x z (f z) ∂μ)
+    {s t : Set V} (hs : IsCompact s) (ht : IsCompact t) (hst : Disjoint s t) {M : ℝ}
+    (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : Lp K 2 μ} (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0)
+    {φ : Lp H 2 μ} (hφ : ∀ᵐ x ∂μ, x ∉ t → φ x = 0) :
+    ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ∫ y, ⟪∫ z, adjoint (k z y) (g z) ∂μ, φ y⟫_𝕜 ∂μ := by
+  have hgi := (Lp.memLp g).integrable_of_ae_notMem_eq_zero one_le_two hs.measure_lt_top.ne hg
+  have hφi := (Lp.memLp φ).integrable_of_ae_notMem_eq_zero one_le_two ht.measure_lt_top.ne hφ
+  calc ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ⟪adjoint T g, φ⟫_𝕜 := (L2.inner_def _ _).symm
+    _ = ⟪g, T φ⟫_𝕜 := adjoint_inner_left _ _ _
+    _ = ∫ z, ⟪g z, T φ z⟫_𝕜 ∂μ := L2.inner_def _ _
+    _ = ∫ z, ∫ y, ⟪g z, k z y (φ y)⟫_𝕜 ∂μ ∂μ := by
+      refine integral_congr_ae ?_
+      filter_upwards [hg, hrep φ t ht hφ] with z hgz hTz
+      by_cases hz : z ∈ s
+      · rw [hTz (disjoint_left.1 hst hz)]
+        exact (integral_inner (hφi.apply_of_norm_le
+          (hkm.comp_measurable measurable_prodMk_left).aestronglyMeasurable (hM z hz) hφ)
+          (g z)).symm
+      · simp [hgz hz]
+    _ = ∫ y, ∫ z, ⟪g z, k z y (φ y)⟫_𝕜 ∂μ ∂μ := integral_integral_swap
+      (TauCeti.integrable_inner_apply_kernel_of_norm_le hkm.aestronglyMeasurable hM hgi hg hφi hφ)
+    _ = ∫ y, ⟪∫ z, adjoint (k z y) (g z) ∂μ, φ y⟫_𝕜 ∂μ := by
+      refine integral_congr_ae ?_
+      filter_upwards [hφ] with y hy
+      by_cases hyt : y ∈ t
+      · have hint : Integrable (fun z ↦ adjoint (k z y) (g z)) μ :=
+          hgi.apply_of_norm_le
+            ((adjoint : (H →L[𝕜] K) ≃ₗᵢ⋆[𝕜] (K →L[𝕜] H)).continuous.comp_stronglyMeasurable
+              (hkm.comp_measurable measurable_prodMk_right)).aestronglyMeasurable
+            (fun z hz ↦ (LinearIsometryEquiv.norm_map _ _).trans_le (hM z hz y hyt)) hg
+        simp_rw [← adjoint_inner_left (k _ y)]
+        rw [← inner_conj_symm, ← integral_inner hint, ← integral_conj]
+        simp_rw [inner_conj_symm]
+      · simp [hy hyt]
+
+omit [NormedSpace ℝ K] in
+/-- On a compact set `t` such that `k` is bounded on `s × t`, where `g` vanishes outside `s`, the
+transposed kernel integral `x ↦ ∫ (k z x)† (g z) dz` is bounded, so its restriction to `t` lies in
+`L²`. -/
+private theorem memLp_indicator_integral_adjoint_apply {k : V → V → H →L[𝕜] K}
+    (hkm : StronglyMeasurable (Function.uncurry k)) {s t : Set V} (hs : IsCompact s)
+    (ht : IsCompact t) {M : ℝ} (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : Lp K 2 μ}
+    (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) :
+    MemLp (t.indicator fun x ↦ ∫ z, adjoint (k z x) (g z) ∂μ) 2 μ := by
+  have : IsFiniteMeasure (μ.restrict t) := isFiniteMeasure_restrict.2 ht.measure_lt_top.ne
+  refine (memLp_indicator_iff_restrict ht.measurableSet.nullMeasurableSet).2 ?_
+  refine MemLp.of_bound (C := M * ∫ z, ‖g z‖ ∂μ) (AEStronglyMeasurable.restrict ?_)
+    ((ae_restrict_iff' ht.measurableSet).2 (.of_forall fun x hx ↦ ?_))
+  · exact AEStronglyMeasurable.integral_prod_right'
+      (f := fun p : V × V ↦ adjoint (k p.2 p.1) (g p.2))
+      ((isBoundedBilinearMap_apply.continuous).comp_aestronglyMeasurable
+        (((adjoint : (H →L[𝕜] K) ≃ₗᵢ⋆[𝕜] (K →L[𝕜] H)).continuous.comp_stronglyMeasurable
+          (hkm.comp_measurable measurable_swap)).aestronglyMeasurable.prodMk
+          ((Lp.aestronglyMeasurable g).comp_quasiMeasurePreserving
+            Measure.quasiMeasurePreserving_snd)))
+  · rw [← integral_const_mul]
+    refine norm_integral_le_of_norm_le
+      (((Lp.memLp g).integrable_of_ae_notMem_eq_zero one_le_two hs.measure_lt_top.ne
+        hg).norm.const_mul M) ?_
+    filter_upwards [hg] with z hz
+    by_cases hzs : z ∈ s
+    · refine (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+      exact (LinearIsometryEquiv.norm_map _ _).trans_le (hM z hzs x hx)
+    · simp [hz hzs]
+
+/-- The local form of `ContinuousLinearMap.ae_adjoint_apply_eq_integral`: the identity holds almost
+everywhere on every compact set `t` disjoint from `s`. -/
+private theorem ae_adjoint_apply_eq_integral_of_disjoint (T : Lp H 2 μ →L[𝕜] Lp K 2 μ)
+    {k : V → V → H →L[𝕜] K} (hkm : StronglyMeasurable (Function.uncurry k))
+    (hrep : ∀ (f : Lp H 2 μ) (s : Set V), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
+      ∀ᵐ x ∂μ, x ∉ s → T f x = ∫ z, k x z (f z) ∂μ)
+    {s t : Set V} (hs : IsCompact s) (ht : IsCompact t) (hst : Disjoint s t) {M : ℝ}
+    (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : Lp K 2 μ} (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) :
+    ∀ᵐ x ∂μ, x ∈ t → adjoint T g x = ∫ z, adjoint (k z x) (g z) ∂μ := by
+  have hψ := memLp_indicator_integral_adjoint_apply hkm hs ht hM hg
+  -- `w = T† g - ψ` is orthogonal to its restriction `φ` to `t`, so `φ = 0`.
+  set w := adjoint T g - hψ.toLp _
+  have hφ := (Lp.memLp w).indicator (s := t) ht.measurableSet.nullMeasurableSet
+  have hφt : ∀ᵐ x ∂μ, x ∉ t → hφ.toLp _ x = 0 := by
+    filter_upwards [hφ.coeFn_toLp] with x hx hxt
+    rw [hx, indicator_of_notMem hxt]
+  -- Pairing against `φ`, which vanishes off `t`, only sees values on `t`.
+  have hpair {a b : V → H} (hab : ∀ᵐ x ∂μ, x ∈ t → a x = b x) :
+      ∫ x, ⟪a x, hφ.toLp _ x⟫_𝕜 ∂μ = ∫ x, ⟪b x, hφ.toLp _ x⟫_𝕜 ∂μ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hab, hφt] with x hx hxφ
+    by_cases hxt : x ∈ t
+    · rw [hx hxt]
+    · rw [hxφ hxt, inner_zero_right, inner_zero_right]
+  have hwφ : ⟪w, hφ.toLp _⟫_𝕜 = 0 := by
+    rw [inner_sub_left, L2.inner_def, L2.inner_def,
+      integral_inner_adjoint_apply_eq T hkm hrep hs ht hst hM hg hφt, sub_eq_zero]
+    refine hpair ?_
+    filter_upwards [hψ.coeFn_toLp] with x hx hxt
+    rw [hx, indicator_of_mem hxt]
+  have hφ0 : ∀ᵐ x ∂μ, hφ.toLp _ x = 0 := by
+    have : hφ.toLp _ = 0 := by
+      refine (inner_self_eq_zero (𝕜 := 𝕜)).1 ?_
+      rw [← hwφ, L2.inner_def, L2.inner_def]
+      refine hpair ?_
+      filter_upwards [hφ.coeFn_toLp] with x hx hxt
+      rw [hx, indicator_of_mem hxt]
+    rw [this]
+    filter_upwards [Lp.coeFn_zero H 2 μ] with x hx
+    rw [hx, Pi.zero_apply]
+  have hw : ∀ᵐ x ∂μ, w x = adjoint T g x - hψ.toLp _ x := Lp.coeFn_sub _ _
+  filter_upwards [hφ.coeFn_toLp, hφ0, hψ.coeFn_toLp, hw]
+    with x hxφ hx0 hxψ hxw hxt
+  simpa [hx0, hxw, hxψ, indicator_of_mem hxt, sub_eq_zero] using hxφ.symm
+
+/-- **The kernel of the adjoint.** Let `T` be a bounded operator `L²(V, H) → L²(V, K)` given by a
+kernel `k` away from the support of its argument: if `f` vanishes outside a compact set `s`, then
+`T f x = ∫ k x z (f z) dz` for almost every `x ∉ s`. If `k` is bounded on the pairs of points at
+distance at least `r`, for every `r > 0`, then the adjoint is given in the same way by the
+transposed kernel `(x, z) ↦ (k z x)†`: if `g` vanishes outside a compact set `s`, then
+`T† g x = ∫ (k z x)† (g z) dz` for almost every `x ∉ s`.
+
+For scalar kernels this is the familiar statement that the adjoint of an integral operator with
+kernel `K (x, y)` has the kernel `conj (K (y, x))`. Only the kernel of `T` enters, and no size or
+smoothness estimate beyond boundedness away from the diagonal. -/
+theorem ae_adjoint_apply_eq_integral (T : Lp H 2 μ →L[𝕜] Lp K 2 μ)
+    {k : V → V → H →L[𝕜] K} (hkm : StronglyMeasurable (Function.uncurry k))
+    (hk : ∀ r > 0, ∃ M, ∀ x y, r ≤ dist x y → ‖k x y‖ ≤ M)
+    (hrep : ∀ (f : Lp H 2 μ) (s : Set V), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
+      ∀ᵐ x ∂μ, x ∉ s → T f x = ∫ z, k x z (f z) ∂μ)
+    (g : Lp K 2 μ) {s : Set V} (hs : IsCompact s) (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) :
+    ∀ᵐ x ∂μ, x ∉ s → adjoint T g x = ∫ z, adjoint (k z x) (g z) ∂μ := by
+  -- The complement of `s` is covered by the compact sets `t m` at distance at least `1 / (m + 1)`
+  -- from `s`, and the identity holds almost everywhere on each of them.
+  set t : ℕ → Set V := fun m ↦ compactCovering V m ∩ {x | ∀ y ∈ s, ((m : ℝ) + 1)⁻¹ ≤ dist x y}
+  have hloc : ∀ m, ∀ᵐ x ∂μ, x ∈ t m → adjoint T g x = ∫ z, adjoint (k z x) (g z) ∂μ := by
+    intro m
+    have hc : (0 : ℝ) < ((m : ℝ) + 1)⁻¹ := by positivity
+    have ht : IsCompact (t m) := by
+      refine (isCompact_compactCovering V m).inter_right ?_
+      simp only [ofPred_forall]
+      exact isClosed_biInter fun y _ ↦ isClosed_le continuous_const
+        (continuous_id.dist continuous_const)
+    have hst : Disjoint s (t m) := disjoint_left.2 fun x hxs hxt ↦
+      (hc.trans_le (hxt.2 x hxs)).ne' (dist_self x)
+    obtain ⟨M, hM⟩ := hk _ hc
+    exact ae_adjoint_apply_eq_integral_of_disjoint T hkm hrep hs ht hst
+      (fun x hx y hy ↦ hM x y (by rw [dist_comm]; exact hy.2 x hx)) hg
+  filter_upwards [ae_all_iff.2 hloc] with x hx hxs
+  obtain ⟨m₁, hm₁⟩ := exists_mem_compactCovering x
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hs.isClosed.isOpen_compl x hxs
+  obtain ⟨m₂, hm₂⟩ := exists_nat_one_div_lt hε
+  refine hx (max m₁ m₂) ⟨compactCovering_subset V (le_max_left _ _) hm₁, fun y hy ↦ ?_⟩
+  refine le_trans ?_ (not_lt.1 fun hlt ↦ hball (mem_ball'.2 hlt) hy)
+  rw [← one_div]
+  refine hm₂.le.trans' (one_div_le_one_div_of_le (by positivity) ?_)
+  exact_mod_cast Nat.succ_le_succ (le_max_right m₁ m₂)
+
+end ContinuousLinearMap

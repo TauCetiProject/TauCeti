@@ -148,10 +148,10 @@ theorem StronglyContinuousSemigroup.realOperator_apply_eq_exp_smul_of_generator_
     refine isClassicalSolution_iff.2 ⟨by simp, fun s => (μ * Real.exp (μ * s)) • (x : X),
       (by fun_prop : Continuous fun s : ℝ => (μ * Real.exp (μ * s)) • (x : X)).continuousOn,
       fun s _ => ?_⟩
-    refine ⟨S.generator.domain.smul_mem _ x.2, ?_, ?_⟩
+    refine ⟨S.generator.domain.smul_mem _ x.property, ?_, ?_⟩
     · refine HasDerivAt.hasDerivWithinAt ?_
       simpa [mul_comm] using ((hasDerivAt_id s).const_mul μ).exp.smul_const (x : X)
-    · have hsmul : (⟨Real.exp (μ * s) • (x : X), S.generator.domain.smul_mem _ x.2⟩ :
+    · have hsmul : (⟨Real.exp (μ * s) • (x : X), S.generator.domain.smul_mem _ x.property⟩ :
           S.generator.domain) = Real.exp (μ * s) • x := Subtype.ext (Submodule.coe_smul _ _).symm
       rw [hsmul, S.generator.map_smul, hx, smul_smul, mul_comm]
   exact (hsol.eq_realOperator ht).symm
@@ -163,6 +163,6 @@ theorem StronglyContinuousSemigroup.apply_eq_exp_smul_of_generator_eq_smul
     (hx : S.generator x = μ • (x : X)) (t : NNReal) :
     S t x = Real.exp (μ * t) • (x : X) := by
   rw [← S.realOperator_coe]
-  exact S.realOperator_apply_eq_exp_smul_of_generator_eq_smul x hx t.2
+  exact S.realOperator_apply_eq_exp_smul_of_generator_eq_smul x hx t.property
 
 end TauCeti.Semigroups

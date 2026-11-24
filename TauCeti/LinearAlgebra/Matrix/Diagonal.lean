@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Data.Matrix.Basis
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Group.Pi.Units
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -23,7 +22,9 @@ diagonal matrix of pairwise distinct entries is itself diagonal.
 
 Neither statement needs a unit or an associative multiplication in the entries: the first holds
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
-elements, which is what forces the off-diagonal entries to vanish.
+elements, which is what forces the off-diagonal entries to vanish. Its converse, that a matrix
+vanishing wherever the diagonal matrix separates two coordinates commutes with it, needs only
+commutativity.
 
 For linear maps between based modules, the coordinate matrix is diagonal exactly when each source
 basis vector maps to the corresponding scalar multiple of the target basis vector.
@@ -41,16 +42,15 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
+* `TauCeti.commute_diagonal_of_apply_eq_zero`: conversely, a matrix vanishing wherever a diagonal
+  matrix separates `i` from `j` commutes with it, over any commutative semiring;
+  `TauCeti.commute_diagonal_iff` combines the two directions.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
-* `TauCeti.submatrix_mul_of_commute_diagonal`, `TauCeti.submatrix_list_prod_of_commute_diagonal`,
-  `TauCeti.det_submatrix_list_prod_of_commute_diagonal`,
-  `TauCeti.det_submatrix_commutatorElement_of_commute_diagonal`: restricting to an eigenspace
-  `{i // t i = c}` of a diagonal matrix commutes with multiplication and list products of matrices
-  commuting with `diagonal t`, and gives determinant `1` on commutators of invertible matrices
-  commuting with `diagonal t`.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
+* `Matrix.prod_pow_mul_apply_mul`: scaling rows and columns of `M` by `s` multiplies an entry
+  monomial `∏ q, M q.1 q.2 ^ n q` by `∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`.
 -/
 
 public section
@@ -114,7 +114,20 @@ theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) 
 section Commute
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
+variable {k : Type*} [NonUnitalNonAssocCommSemiring k]
+
+/-- A matrix whose `(i, j)` entry vanishes whenever the diagonal matrix `diagonal t` separates the
+coordinates `i` and `j` commutes with `diagonal t`. -/
+theorem commute_diagonal_of_apply_eq_zero {t : ι → k} {g : Matrix ι ι k}
+    (hg : ∀ i j, t i ≠ t j → g i j = 0) : Commute (Matrix.diagonal t) g := by
+  rw [commute_iff_eq]
+  ext i j
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal]
+  by_cases hij : t i = t j
+  · rw [hij, mul_comm]
+  · rw [hg i j hij, mul_zero, zero_mul]
+
+variable [IsLeftCancelMulZero k]
 
 /-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
 matrix separates the coordinates `i` and `j`. -/
@@ -130,93 +143,13 @@ theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
     {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
 
-/-- If a matrix `M` commutes with `diagonal t`, restricting to any eigenspace `{i : ι // t i = c}`
-commutes with left multiplication by `M` because all off-block entries of `M` vanish. -/
-theorem submatrix_mul_of_commute_diagonal {t : ι → k} {c : k} [DecidablePred fun i => t i = c]
-    {M : Matrix ι ι k} (hM : Commute (Matrix.diagonal t) M) {κ κ' : Type*} (N : Matrix ι κ k)
-    (f : κ' → κ) :
-    (M * N).submatrix (Subtype.val : {i : ι // t i = c} → ι) f =
-      M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
-          (Subtype.val : {i : ι // t i = c} → ι) *
-        N.submatrix (Subtype.val : {i : ι // t i = c} → ι) f := by
-  ext a b
-  simp only [submatrix_apply, Matrix.mul_apply]
-  -- `Matrix.toBlock_mul_eq_add` requires `[CommRing]` and subtype columns; split the sum directly.
-  rw [← Fintype.sum_subtype_add_sum_subtype (fun i => t i = c)]
-  have hzero : ∑ i : {i : ι // ¬t i = c}, M a.1 i.1 * N i.1 (f b) = 0 :=
-    Finset.sum_eq_zero fun i _ => by
-      rw [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm i.2)), zero_mul]
-  rw [hzero, add_zero]
+/-- A matrix commutes with a diagonal matrix exactly when its `(i, j)` entry vanishes wherever
+that diagonal matrix separates the coordinates `i` and `j`. -/
+theorem commute_diagonal_iff {t : ι → k} {g : Matrix ι ι k} :
+    Commute (Matrix.diagonal t) g ↔ ∀ i j, t i ≠ t j → g i j = 0 :=
+  ⟨fun hg _ _ ↦ apply_eq_zero_of_commute_diagonal hg, commute_diagonal_of_apply_eq_zero⟩
 
 end Commute
-
-/-- If every matrix in a list `L` commutes with `diagonal t`, restricting to an eigenspace
-`{i : ι // t i = c}` commutes with taking the list product `L.prod`. -/
-theorem submatrix_list_prod_of_commute_diagonal {ι k : Type*} [Fintype ι] [DecidableEq ι]
-    [CommSemiring k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
-    [DecidablePred fun i => t i = c] (L : List (Matrix ι ι k))
-    (hL : ∀ M ∈ L, Commute (Matrix.diagonal t) M) :
-    L.prod.submatrix (Subtype.val : {i : ι // t i = c} → ι)
-        (Subtype.val : {i : ι // t i = c} → ι) =
-      (L.map fun M => M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
-        (Subtype.val : {i : ι // t i = c} → ι)).prod := by
-  induction L with
-  | nil => simp [Matrix.submatrix_one _ Subtype.val_injective]
-  | cons M L ih =>
-    rw [List.prod_cons, List.map_cons, List.prod_cons,
-      submatrix_mul_of_commute_diagonal (hL M List.mem_cons_self),
-      ih fun N hN => hL N (List.mem_cons_of_mem M hN)]
-
-/-- If every matrix in a list `L` commutes with `diagonal t`, the determinant of the restriction of
-`L.prod` to an eigenspace `{i : ι // t i = c}` is the product of the determinants of the restricted
-factors. -/
-theorem det_submatrix_list_prod_of_commute_diagonal {ι k : Type*} [Fintype ι] [DecidableEq ι]
-    [CommRing k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
-    [DecidablePred fun i => t i = c] (L : List (Matrix ι ι k))
-    (hL : ∀ M ∈ L, Commute (Matrix.diagonal t) M) :
-    (L.prod.submatrix (Subtype.val : {i : ι // t i = c} → ι)
-        (Subtype.val : {i : ι // t i = c} → ι)).det =
-      (L.map fun M => (M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
-        (Subtype.val : {i : ι // t i = c} → ι)).det).prod := by
-  rw [submatrix_list_prod_of_commute_diagonal L hL]
-  simpa only [coe_detMonoidHom, List.map_map, Function.comp_def] using
-    (detMonoidHom : Matrix {i : ι // t i = c} {i : ι // t i = c} k →* k).map_list_prod
-      (L.map fun M => M.submatrix Subtype.val Subtype.val)
-
-open scoped commutatorElement in
-/-- On any eigenspace `{i : ι // t i = c}` of `diagonal t`, the block restriction of a commutator
-of two invertible matrices commuting with `diagonal t` has determinant `1`. -/
-theorem det_submatrix_commutatorElement_of_commute_diagonal {ι k : Type*} [Fintype ι]
-    [DecidableEq ι] [CommRing k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
-    [DecidablePred fun i => t i = c] {A B : (Matrix ι ι k)ˣ}
-    (hA : Commute (Matrix.diagonal t) (A : Matrix ι ι k))
-    (hB : Commute (Matrix.diagonal t) (B : Matrix ι ι k)) :
-    ((((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix
-      (Subtype.val : {i : ι // t i = c} → ι)
-      (Subtype.val : {i : ι // t i = c} → ι))).det = 1 := by
-  let block (M : Matrix ι ι k) :=
-    M.submatrix (Subtype.val : {i : ι // t i = c} → ι) (Subtype.val : {i : ι // t i = c} → ι)
-  have hdet_mul {M N : Matrix ι ι k} (hM : Commute (Matrix.diagonal t) M) :
-      (block (M * N)).det = (block M).det * (block N).det := by
-    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hM]
-  have hdet_inv {G : (Matrix ι ι k)ˣ} (hG : Commute (Matrix.diagonal t) (G : Matrix ι ι k)) :
-      (block G).det * (block ((G⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det = 1 := by
-    rw [← hdet_mul hG, ← Units.val_mul, mul_inv_cancel, Units.val_one]
-    simp [block, submatrix_one _ Subtype.val_injective]
-  have hval : ((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k) =
-      (A : Matrix ι ι k) * ((B : Matrix ι ι k) *
-        (((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k) *
-          ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k))) := by
-    simp [commutatorElement_def, Matrix.mul_assoc]
-  calc (block ((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det
-      = (block A).det * ((block B).det *
-          ((block ((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det *
-            (block ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det)) := by
-        rw [hval, hdet_mul hA, hdet_mul hB, hdet_mul hA.units_inv_right]
-    _ = ((block A).det * (block ((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det) *
-          ((block B).det * (block ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det) := by
-        ac_rfl
-    _ = 1 := by rw [hdet_inv hA, hdet_inv hB, mul_one]
 
 end TauCeti
 
@@ -236,3 +169,21 @@ theorem toMatrix_eq_diagonal_iff
   · simp [hf, Matrix.toLin_self, Matrix.diagonal_apply]
 
 end Module.Basis
+
+namespace Matrix
+
+/-- Scaling rows and columns of `M` by `s` multiplies an entry monomial `∏ q, M q.1 q.2 ^ n q` by
+`∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`. -/
+theorem prod_pow_mul_apply_mul {ι R : Type*} [Fintype ι] [CommMonoid R]
+    (M : Matrix ι ι R) (s : ι → R) (n : ι × ι → ℕ) :
+    (∏ q : ι × ι, (s q.1 * M q.1 q.2 * s q.2) ^ n q) =
+      (∏ i : ι, s i ^ ∑ j : ι, (n (i, j) + n (j, i))) *
+        ∏ q : ι × ι, M q.1 q.2 ^ n q := by
+  have hterm (q : ι × ι) :
+      (s q.1 * M q.1 q.2 * s q.2) ^ n q =
+        (s q.1 * s q.2) ^ n q * M q.1 q.2 ^ n q := by
+    rw [mul_right_comm, mul_pow]
+  simp_rw [hterm]
+  rw [Finset.prod_mul_distrib, ← Finset.univ_product_univ, Finset.prod_product_mul_pow]
+
+end Matrix
