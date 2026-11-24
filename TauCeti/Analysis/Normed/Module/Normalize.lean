@@ -27,9 +27,6 @@ point `e` of the unit sphere.
   `τ ≤ ‖y‖` by `(τ / ‖y‖) • y` is bounded by `τ` and continuous, also where `y` vanishes.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 * `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
-* `LipschitzWith.norm_mul_comp_sphereDirection`: the positively homogeneous extension
-  `x ↦ ‖x‖ g (x / ‖x‖)` of an `L`-Lipschitz function `g` on the sphere bounded by `M` is
-  `(M + 2L)`-Lipschitz.
 
 ## Main definitions
 
@@ -42,7 +39,6 @@ public section
 noncomputable section
 
 open Filter Metric NormedSpace Set Topology
-open scoped NNReal
 
 namespace TauCeti
 
@@ -185,39 +181,5 @@ theorem norm_mul_dist_sphereDirection_le (x y : E) :
 end Direction
 
 end TauCeti
-
-open TauCeti in
-/-- The positively homogeneous extension `x ↦ ‖x‖ g (x / ‖x‖)` of an `L`-Lipschitz function `g`
-on the unit sphere with `|g| ≤ M` is `(M + 2L)`-Lipschitz on the whole space. The value assigned
-to the direction of the origin is irrelevant, since the extension vanishes there. -/
-theorem LipschitzWith.norm_mul_comp_sphereDirection {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {g : sphere (0 : E) 1 → ℝ} {L M : ℝ≥0}
-    (hg : LipschitzWith L g) (hM : ∀ u, |g u| ≤ M) (e : sphere (0 : E) 1) :
-    LipschitzWith (M + 2 * L) fun x ↦ ‖x‖ * g (sphereDirection e x) := by
-  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
-  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
-    rw [dist_eq_norm]
-    exact abs_norm_sub_norm_le x y
-  calc dist (‖x‖ * g (sphereDirection e x)) (‖y‖ * g (sphereDirection e y))
-      = |(‖x‖ - ‖y‖) * g (sphereDirection e x) +
-          ‖y‖ * (g (sphereDirection e x) - g (sphereDirection e y))| := by
-        rw [Real.dist_eq]
-        congr 1
-        ring
-    _ ≤ |‖x‖ - ‖y‖| * M + ‖y‖ * (L * dist (sphereDirection e x) (sphereDirection e y)) := by
-        refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [abs_mul]
-          exact mul_le_mul_of_nonneg_left (hM _) (abs_nonneg _)
-        · rw [abs_mul, abs_norm, ← Real.dist_eq]
-          exact mul_le_mul_of_nonneg_left (hg.dist_le_mul _ _) (norm_nonneg _)
-    _ ≤ dist x y * M + L * (2 * dist x y) := by
-        have h2 := norm_mul_dist_sphereDirection_le e x y
-        rw [← dist_eq_norm] at h2
-        rw [mul_left_comm]
-        exact add_le_add (mul_le_mul_of_nonneg_right hxy M.coe_nonneg)
-          (mul_le_mul_of_nonneg_left h2 L.coe_nonneg)
-    _ = ((M + 2 * L : ℝ≥0) : ℝ) * dist x y := by
-        push_cast
-        ring
 
 end

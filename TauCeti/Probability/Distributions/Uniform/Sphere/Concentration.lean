@@ -9,7 +9,7 @@ public import Mathlib.Probability.Moments.SubGaussian
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import TauCeti.Analysis.Normed.Module.Normalize.Measurable
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Chi.Moments
@@ -31,8 +31,8 @@ sections of finite-dimensional normed spaces. In dimension zero the sphere is em
 statements hold trivially.
 
 The proof transfers Gaussian concentration to the sphere. The centred function `g = f - 𝔼 f` has
-`|g| ≤ 2L`, since the sphere has diameter `2`, so its positively homogeneous extension
-`G x = ‖x‖ g (x / ‖x‖)` is `4L`-Lipschitz on `E` (`LipschitzWith.norm_mul_comp_sphereDirection`).
+`|g| ≤ 2L`, since the sphere has diameter `2`, so its positively homogeneous extension, the cone
+`G x = ‖x‖ g (x / ‖x‖)` over `g`, is `4L`-Lipschitz on `E` (`LipschitzWith.sphereCone`).
 Gaussian concentration of Lipschitz functions
 (`LipschitzWith.hasSubgaussianMGF_stdGaussian_sub_integral`) makes `G` sub-Gaussian with variance
 proxy `4 π² L²` under the standard Gaussian law, and the polar factorization of that law makes
@@ -92,13 +92,13 @@ private lemma abs_sub_integral_uniformSphereMeasure_le {f : sphere (0 : E) 1 →
 
 /-- **Jensen's inequality in the radius.** For the chi mean `m` of the radius of a standard
 Gaussian vector, the exponential moment `𝔼_σ exp (t m g)` of a measurable function `g` on the
-sphere is at most the Gaussian exponential moment of its homogeneous extension
-`x ↦ ‖x‖ g (x / ‖x‖)`. -/
+sphere is at most the Gaussian exponential moment of its cone `x ↦ ‖x‖ g (x / ‖x‖)`. -/
 private lemma lintegral_exp_mul_integral_chiMeasure_le {g : sphere (0 : E) 1 → ℝ}
     (hg : Measurable g) (e : sphere (0 : E) 1) (t : ℝ) :
     ∫⁻ u, .ofReal (exp (t * (∫ r, r ∂chiMeasure (Module.finrank ℝ E) 1) * g u))
         ∂uniformSphereMeasure E ≤
-      ∫⁻ x, .ofReal (exp (t * (‖x‖ * g (sphereDirection e x)))) ∂stdGaussian E := by
+      ∫⁻ x, .ofReal (exp (t * sphereCone g x)) ∂stdGaussian E := by
+  simp only [sphereCone_eq_norm_smul_sphereDirection e, smul_eq_mul]
   set d := Module.finrank ℝ E
   have : IsProbabilityMeasure (chiMeasure d 1) :=
     isProbabilityMeasure_chiMeasure (Nat.cast_nonneg _) one_pos
@@ -125,35 +125,24 @@ private lemma lintegral_exp_mul_integral_chiMeasure_le {g : sphere (0 : E) 1 →
   rw [← hmean]
   exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp) hid hint
 
-/-- The standard Gaussian integral of the homogeneous extension `x ↦ ‖x‖ g (x / ‖x‖)` of a
-measurable function `g` on the sphere is the chi mean times the uniform spherical integral
-of `g`. -/
-private lemma integral_stdGaussian_norm_mul_comp_sphereDirection {g : sphere (0 : E) 1 → ℝ}
-    (hg : Measurable g) (e : sphere (0 : E) 1) :
-    ∫ x, ‖x‖ * g (sphereDirection e x) ∂stdGaussian E =
+/-- The standard Gaussian integral of the cone `x ↦ ‖x‖ g (x / ‖x‖)` over a measurable function
+`g` on the sphere is the chi mean times the uniform spherical integral of `g`. -/
+private lemma integral_stdGaussian_sphereCone {g : sphere (0 : E) 1 → ℝ} (hg : Measurable g) :
+    ∫ x, sphereCone g x ∂stdGaussian E =
       (∫ r, r ∂chiMeasure (Module.finrank ℝ E) 1) * ∫ u, g u ∂uniformSphereMeasure E := by
-  have hhomog {r : ℝ} (hr : 0 < r) (x : E) :
-      ‖r • x‖ * g (sphereDirection e (r • x)) = r • (‖x‖ * g (sphereDirection e x)) := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    have hpos : 0 < r * ‖x‖ := mul_pos hr (norm_pos_iff.2 hx)
-    rw [show r • x = (r * ‖x‖) • (sphereDirection e x : E) by
-        rw [mul_smul, norm_smul_sphereDirection],
-      sphereDirection_smul_of_pos e hpos, norm_smul, Real.norm_of_nonneg hpos.le,
-      norm_eq_of_mem_sphere, mul_one, smul_eq_mul, mul_assoc]
-  have hmeas : Measurable fun u : sphere (0 : E) 1 ↦ ‖(u : E)‖ * g (sphereDirection e u) :=
-    (measurable_norm.comp measurable_subtypeVal).mul
-      (hg.comp ((measurable_sphereDirection e).comp measurable_subtypeVal))
-  rw [integral_stdGaussian_of_posHomog hmeas.aestronglyMeasurable hhomog, smul_eq_mul]
-  simp only [sphereDirection_coe, norm_eq_of_mem_sphere, one_mul]
+  have hmeas : AEStronglyMeasurable (fun u : sphere (0 : E) 1 ↦ sphereCone g u)
+      (uniformSphereMeasure E) := by
+    simpa only [sphereCone_coe] using hg.aestronglyMeasurable
+  rw [integral_stdGaussian_of_posHomog hmeas fun hr x ↦ sphereCone_smul hr.le x, smul_eq_mul]
+  simp only [sphereCone_coe]
 
-/-- **Transfer of Gaussian concentration to the sphere.** If the homogeneous extension
-`x ↦ ‖x‖ g (x / ‖x‖)` of a bounded measurable function `g` on the sphere is sub-Gaussian with
-variance proxy `c` under the standard Gaussian law in dimension `d`, then `g` itself is
-sub-Gaussian with variance proxy `2 c / d` under the uniform law on the sphere. -/
+/-- **Transfer of Gaussian concentration to the sphere.** If the cone `x ↦ ‖x‖ g (x / ‖x‖)` over a
+bounded measurable function `g` on the sphere is sub-Gaussian with variance proxy `c` under the
+standard Gaussian law in dimension `d`, then `g` itself is sub-Gaussian with variance proxy
+`2 c / d` under the uniform law on the sphere. -/
 private lemma hasSubgaussianMGF_uniformSphereMeasure_of_stdGaussian {g : sphere (0 : E) 1 → ℝ}
     {M c : ℝ≥0} (hg : Measurable g) (hM : ∀ u, |g u| ≤ M) (e : sphere (0 : E) 1)
-    (hG : HasSubgaussianMGF (fun x ↦ ‖x‖ * g (sphereDirection e x)) c (stdGaussian E)) :
+    (hG : HasSubgaussianMGF (sphereCone g) c (stdGaussian E)) :
     HasSubgaussianMGF g (2 * c / Module.finrank ℝ E) (uniformSphereMeasure E) := by
   have : Nontrivial E := ⟨⟨e, 0, ne_zero_of_mem_sphere one_ne_zero e⟩⟩
   set d := Module.finrank ℝ E
@@ -180,8 +169,8 @@ private lemma hasSubgaussianMGF_uniformSphereMeasure_of_stdGaussian {g : sphere 
     calc ENNReal.ofReal (mgf g (uniformSphereMeasure E) s)
         = ∫⁻ u, .ofReal (exp (s * g u)) ∂uniformSphereMeasure E :=
           ofReal_integral_eq_lintegral_ofReal (hint s) (.of_forall fun _ ↦ (exp_pos _).le)
-      _ ≤ ∫⁻ x, .ofReal (exp (s / m * (‖x‖ * g (sphereDirection e x)))) ∂stdGaussian E := hkey
-      _ = .ofReal (mgf (fun x ↦ ‖x‖ * g (sphereDirection e x)) (stdGaussian E) (s / m)) :=
+      _ ≤ ∫⁻ x, .ofReal (exp (s / m * sphereCone g x)) ∂stdGaussian E := hkey
+      _ = .ofReal (mgf (sphereCone g) (stdGaussian E) (s / m)) :=
           (ofReal_integral_eq_lintegral_ofReal (hG.integrable_exp_mul _)
             (.of_forall fun _ ↦ (exp_pos _).le)).symm
       _ ≤ _ := ENNReal.ofReal_le_ofReal (hG.mgf_le _)
@@ -218,18 +207,19 @@ theorem hasSubgaussianMGF_uniformSphereMeasure_sub_integral (hf : LipschitzWith 
   have hgM (u : sphere (0 : E) 1) : |g u| ≤ ((2 * L : ℝ≥0) : ℝ) := by
     push_cast
     exact abs_sub_integral_uniformSphereMeasure_le hf u
-  -- `g` has mean zero, so its `4L`-Lipschitz homogeneous extension has Gaussian mean zero.
+  -- `g` has mean zero, so its `4L`-Lipschitz cone has Gaussian mean zero.
   have hgi : Integrable g (uniformSphereMeasure E) :=
     .of_bound hgL.continuous.aestronglyMeasurable (2 * L)
       (.of_forall fun u ↦ by simpa using hgM u)
   have hfi : Integrable f (uniformSphereMeasure E) :=
     (hgi.add (integrable_const (∫ v, f v ∂uniformSphereMeasure E))).congr
       (.of_forall fun u ↦ sub_add_cancel _ _)
-  have hG0 : ∫ x, ‖x‖ * g (sphereDirection e x) ∂stdGaussian E = 0 := by
-    rw [integral_stdGaussian_norm_mul_comp_sphereDirection hgL.continuous.measurable e,
+  have hG0 : ∫ x, TauCeti.sphereCone g x ∂stdGaussian E = 0 := by
+    rw [integral_stdGaussian_sphereCone hgL.continuous.measurable,
       integral_sub hfi (integrable_const _), integral_const, probReal_univ, one_smul, sub_self,
       mul_zero]
-  have hG := (hgL.norm_mul_comp_sphereDirection hgM e).hasSubgaussianMGF_stdGaussian_sub_integral
+  have hG := hasSubgaussianMGF_stdGaussian_sub_integral <|
+    hgL.sphereCone fun u ↦ (Real.norm_eq_abs _).trans_le (hgM u)
   simp only [hG0, sub_zero] at hG
   -- Gaussian concentration at proxy `π² (4L)² / 4` transfers to proxy `8 π² L² / d`.
   convert hasSubgaussianMGF_uniformSphereMeasure_of_stdGaussian hgL.continuous.measurable hgM e hG
