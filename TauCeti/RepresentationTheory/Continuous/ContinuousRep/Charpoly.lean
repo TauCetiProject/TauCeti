@@ -5,50 +5,50 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Charpoly.BaseChange
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Continuity
-import TauCeti.LinearAlgebra.Charpoly.Comp
+public import TauCeti.RepresentationTheory.Charpoly
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Characteristic polynomials of continuous representations
 
 For a continuous representation `ρ : ContinuousRep Γ A M` on a finite free module `M` over a
-commutative ring `A`, the characteristic polynomial at `g : Γ` is
-`ρ.charpoly g := (ρ g).charpoly = det(X - ρ(g)) ∈ A[X]`.
+commutative ring `A`, the characteristic polynomial at `g : Γ` is `(ρ g).charpoly = det(X - ρ(g))`
+in `A[X]`.
 
-On the algebraic side, `ρ.charpoly g` is monic of degree `Module.finrank A M` (for nontrivial `A`),
-annihilates `ρ g` by Cayley–Hamilton, is `1` on a subsingleton carrier, equals `X - C (χ g)` on the
-rank-one representation `ofCharacter χ` (recording the covariant convention `g ↦ χ(g)`, not the
-contragredient `χ(g)⁻¹`), is invariant under isomorphism of representations and cyclic permutation
-`charpoly(g h) = charpoly(h g)` (hence conjugation in a group), and commutes with continuous scalar
-extension (`charpoly_baseChange`).
+On the algebraic side, `(ρ g).charpoly` is invariant under isomorphism of continuous representations
+(`TauCeti.ContinuousRep.Iso.charpoly_apply_eq`) and cyclic permutation `g * h ↔ h * g`
+(`TauCeti.ContinuousRep.charpoly_apply_mul_comm`, hence conjugation in a group), multiplicative on
+products (`TauCeti.ContinuousRep.charpoly_prod_apply`), equal to `(X - 1) ^ finrank A M` on the
+trivial representation (`TauCeti.ContinuousRep.charpoly_trivial_apply`), equal to `X - C (χ g)` on
+the character line `ofCharacter χ` (`TauCeti.ContinuousRep.charpoly_ofCharacter_apply`), and equal
+to `(ρ g⁻¹).charpoly` on the contragredient `ρ.dual` (`TauCeti.ContinuousRep.charpoly_dual_apply`).
+Compatibility with scalar extension
+`(ρ.baseChange B g).charpoly = (ρ g).charpoly.map (algebraMap A B)` holds directly by `simp` via
+`ContinuousRep.baseChange_apply` and `LinearMap.charpoly_baseChange`.
 
 On the topological side, when `A` is a topological commutative ring and `M` carries its `A`-module
-topology, every coefficient `g ↦ (ρ.charpoly g).coeff k` is continuous
-(`continuous_coeff_charpoly`): in any finite basis of `M` the matrix entries of `ρ g` vary
-continuously, and each characteristic coefficient is a universal polynomial in those entries
-(`Matrix.continuous_charpoly_coeff`). As a consequence, two continuous representations whose
-characteristic polynomials agree (after mapping into a common Hausdorff ring) on a dense subset of
-`Γ` have the same characteristic polynomials everywhere (`charpoly_map_eq_of_dense`,
-`charpoly_eq_of_dense`).
-
-## Main definitions
-
-* `TauCeti.ContinuousRep.charpoly`: the characteristic polynomial `det(X - ρ(g)) ∈ A[X]` of `ρ` at
-  `g : Γ` on a finite free carrier.
+topology, every coefficient `g ↦ (ρ g).charpoly.coeff k` is continuous
+(`TauCeti.ContinuousRep.continuous_charpoly_coeff`): in a finite basis of `M` the matrix of `ρ g`
+is continuous (`TauCeti.ContinuousRep.continuous_toMatrix`), and each characteristic coefficient is
+a universal polynomial in the matrix entries (`Matrix.continuous_charpoly_coeff`). Consequently, two
+continuous representations whose characteristic polynomials agree (after mapping into a common
+Hausdorff ring) on a dense subset of `Γ` have equal characteristic polynomials everywhere on `Γ`
+(`TauCeti.ContinuousRep.charpoly_map_eq_of_dense`, `TauCeti.ContinuousRep.charpoly_eq_of_dense`).
 
 ## Main results
 
-* `TauCeti.ContinuousRep.Iso.charpoly_eq`: isomorphic continuous representations have equal
+* `TauCeti.ContinuousRep.Iso.charpoly_apply_eq`: isomorphic continuous representations have equal
   characteristic polynomials.
-* `TauCeti.ContinuousRep.charpoly_ofCharacter`: `(ofCharacter χ).charpoly g = X - C (χ g)`.
-* `TauCeti.ContinuousRep.charpoly_baseChange`:
-  `(ρ.baseChange B).charpoly g = (ρ.charpoly g).map (algebraMap A B)`.
-* `TauCeti.ContinuousRep.continuous_coeff_charpoly`: each coefficient `g ↦ (ρ.charpoly g).coeff k`
+* `TauCeti.ContinuousRep.charpoly_apply_mul_comm` and `TauCeti.ContinuousRep.charpoly_apply_conj`:
+  cyclic and conjugation invariance of `(ρ g).charpoly`.
+* `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: `(ofCharacter χ g).charpoly = X - C (χ g)`.
+* `TauCeti.ContinuousRep.charpoly_dual_apply`: `(ρ.dual g).charpoly = (ρ g⁻¹).charpoly`.
+* `TauCeti.ContinuousRep.continuous_charpoly_coeff`: each coefficient `g ↦ (ρ g).charpoly.coeff k`
   is continuous when `M` carries its module topology over a topological commutative ring `A`.
-* `TauCeti.ContinuousRep.charpoly_map_eq_of_dense`: equality of characteristic polynomials into a
-  Hausdorff ring propagates from a dense subset of `Γ` to all of `Γ`.
+* `TauCeti.ContinuousRep.charpoly_map_eq_of_dense` and `TauCeti.ContinuousRep.charpoly_eq_of_dense`:
+  equality of characteristic polynomials into a Hausdorff ring propagates from a dense subset of `Γ`
+  to all of `Γ`.
 
 ## References
 
@@ -62,139 +62,85 @@ characteristic polynomials agree (after mapping into a common Hausdorff ring) on
 public section
 
 open Polynomial
-open scoped TensorProduct
 
 namespace TauCeti.ContinuousRep
 
+/-! ### Algebraic properties of `(ρ g).charpoly` -/
+
 section Algebraic
 
-variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A]
-  [AddCommGroup M] [Module A M] [Module.Free A M] [Module.Finite A M] [TopologicalSpace M]
+variable {Γ A M N : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A]
+  [AddCommGroup M] [Module A M] [TopologicalSpace M] [Module.Free A M] [Module.Finite A M]
+  [AddCommGroup N] [Module A N] [TopologicalSpace N] [Module.Free A N] [Module.Finite A N]
 
-/-- **Characteristic polynomial of a continuous representation** on a finite free module:
-`ρ.charpoly g = det(X - ρ(g)) ∈ A[X]`. -/
-noncomputable def charpoly (ρ : ContinuousRep Γ A M) (g : Γ) : A[X] :=
-  (ρ g).charpoly
+/-- **Isomorphic continuous representations have the same characteristic polynomials.** -/
+theorem Iso.charpoly_apply_eq {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N}
+    (e : Iso ρ σ) (g : Γ) : (ρ g).charpoly = (σ g).charpoly :=
+  e.toRepresentationEquiv.charpoly_apply_eq g
 
-/-- Unfolding `ContinuousRep.charpoly` to `LinearMap.charpoly`. -/
-theorem charpoly_def (ρ : ContinuousRep Γ A M) (g : Γ) :
-    ρ.charpoly g = (ρ g).charpoly :=
-  (rfl)
+/-- Cyclic invariance of the characteristic polynomial:
+`(ρ (g * h)).charpoly = (ρ (h * g)).charpoly` for any elements `g, h` of the acting monoid `Γ`. -/
+theorem charpoly_apply_mul_comm (ρ : ContinuousRep Γ A M) (g h : Γ) :
+    (ρ (g * h)).charpoly = (ρ (h * g)).charpoly :=
+  ρ.toRepresentation.charpoly_apply_mul_comm g h
 
-/-- In any finite basis `b` of `M`, `ρ.charpoly g` is the characteristic polynomial of the matrix of
-`ρ g` in `b`. -/
-theorem charpoly_eq_matrix_charpoly {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (ρ : ContinuousRep Γ A M) (b : Module.Basis ι A M) (g : Γ) :
-    ρ.charpoly g = (LinearMap.toMatrix b b (ρ g)).charpoly :=
-  (LinearMap.charpoly_toMatrix (ρ g) b).symm
-
-/-- Every characteristic polynomial of a continuous representation is monic. -/
-theorem charpoly_monic (ρ : ContinuousRep Γ A M) (g : Γ) : (ρ.charpoly g).Monic :=
-  LinearMap.charpoly_monic (ρ g)
-
-/-- Over a nontrivial coefficient ring, the degree of `ρ.charpoly g` is `Module.finrank A M`. -/
+/-- The characteristic polynomial is multiplicative on products of continuous representations. -/
 @[simp]
-theorem charpoly_natDegree [Nontrivial A] (ρ : ContinuousRep Γ A M) (g : Γ) :
-    (ρ.charpoly g).natDegree = Module.finrank A M :=
-  LinearMap.charpoly_natDegree (ρ g)
+theorem charpoly_prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    (ρ.prod σ g).charpoly = (ρ g).charpoly * (σ g).charpoly := by
+  rw [← coe_toRepresentation, toRepresentation_prod]
+  exact Representation.charpoly_prod_apply ρ.toRepresentation σ.toRepresentation g
 
-/-- Evaluating `ρ.charpoly g` at `t : A` gives `det(t · id - ρ g)`. -/
-theorem eval_charpoly (ρ : ContinuousRep Γ A M) (g : Γ) (t : A) :
-    (ρ.charpoly g).eval t = LinearMap.det (algebraMap A (Module.End A M) t - ρ g) :=
-  LinearMap.eval_charpoly (ρ g) t
-
-/-- **Cayley–Hamilton**: each operator `ρ g` is annihilated by `ρ.charpoly g`. -/
+variable (Γ A M) in
+/-- In the trivial representation every element acts with characteristic polynomial
+`(X - 1) ^ rank`. -/
 @[simp]
-theorem aeval_apply_charpoly (ρ : ContinuousRep Γ A M) (g : Γ) :
-    aeval (ρ g) (ρ.charpoly g) = 0 :=
-  LinearMap.aeval_self_charpoly (ρ g)
+theorem charpoly_trivial_apply (g : Γ) :
+    (trivial Γ A M g).charpoly = (X - 1) ^ Module.finrank A M := by
+  rw [← coe_toRepresentation, toRepresentation_trivial]
+  exact Representation.charpoly_trivial_apply A Γ M g
 
-/-- On a subsingleton carrier (such as the zero module), every operator has characteristic
-polynomial `1`. -/
-theorem charpoly_subsingleton [Subsingleton M] (ρ : ContinuousRep Γ A M) (g : Γ) :
-    ρ.charpoly g = 1 := by
-  nontriviality A
-  have : IsEmpty (Module.Free.ChooseBasisIndex A M) :=
-    ⟨fun i => (Module.Free.chooseBasis A M).ne_zero i (Subsingleton.elim _ _)⟩
-  rw [charpoly_def, LinearMap.charpoly_def, Matrix.charpoly_isEmpty]
-
-/-- At `1 : Γ`, the characteristic polynomial is `(X - 1) ^ finrank A M`. -/
+/-- **The characteristic polynomial of a character line.** The element `g` acts on
+`ofCharacter χ` with characteristic polynomial `X - χ g`; the contragredient action would give
+`X - (χ g)⁻¹` instead. -/
 @[simp]
-theorem charpoly_one (ρ : ContinuousRep Γ A M) :
-    ρ.charpoly 1 = (X - 1) ^ Module.finrank A M := by
-  nontriviality A
-  rw [charpoly_def, map_one]
-  exact LinearMap.charpoly_one
-
-/-- Every element of the trivial representation has characteristic polynomial
-`(X - 1) ^ finrank A M`. -/
-@[simp]
-theorem charpoly_trivial (g : Γ) :
-    (trivial Γ A M).charpoly g = (X - 1) ^ Module.finrank A M := by
-  nontriviality A
-  rw [charpoly_def, trivial_apply_eq_id]
-  exact LinearMap.charpoly_one
-
-/-- Cyclic invariance of the characteristic polynomial: `ρ.charpoly (g * h) = ρ.charpoly (h * g)`
-for any elements `g, h` of the acting monoid `Γ`. -/
-theorem charpoly_mul_comm (ρ : ContinuousRep Γ A M) (g h : Γ) :
-    ρ.charpoly (g * h) = ρ.charpoly (h * g) := by
-  rw [charpoly_def, charpoly_def, map_mul, map_mul]
-  exact LinearMap.charpoly_comp_comm (ρ h) (ρ g) rfl
-
-/-- Conjugation invariance of the characteristic polynomial for a group representation. -/
-@[simp]
-theorem charpoly_conj {G : Type*} [Group G] [TopologicalSpace G]
-    (ρ : ContinuousRep G A M) (g h : G) :
-    ρ.charpoly (g * h * g⁻¹) = ρ.charpoly h := by
-  rw [charpoly_mul_comm, inv_mul_cancel_left]
-
-/-- **Isomorphism invariance of characteristic polynomials.** Isomorphic continuous representations
-have the same characteristic polynomial at every `g : Γ`. -/
-theorem Iso.charpoly_eq {N : Type*} [AddCommGroup N] [Module A N] [Module.Free A N]
-    [Module.Finite A N] [TopologicalSpace N]
-    {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N} (e : Iso ρ σ) (g : Γ) :
-    ρ.charpoly g = σ.charpoly g := by
-  change (ρ.toRepresentation g).charpoly = (σ.toRepresentation g).charpoly
-  rw [← e.toRepresentationEquiv.conj_apply_self g, LinearEquiv.charpoly_conj]
+theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ)
+    (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) := by
+  rw [← coe_toRepresentation, toRepresentation_ofCharacter]
+  exact Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
 
 end Algebraic
 
-/-! ### Character lines and scalar extension -/
+section Group
 
-section CharacterAndBaseChange
+variable {G A M : Type*} [Group G] [TopologicalSpace G] [CommRing A]
+  [AddCommGroup M] [Module A M] [TopologicalSpace M] [Module.Free A M] [Module.Finite A M]
 
-variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
+/-- Conjugation invariance of the characteristic polynomial for a continuous group
+representation. -/
+theorem charpoly_apply_conj (ρ : ContinuousRep G A M) (g h : G) :
+    (ρ (g * h * g⁻¹)).charpoly = (ρ h).charpoly :=
+  ρ.toRepresentation.charpoly_apply_conj g h
 
-/-- **Characteristic polynomial of a character line.** The rank-one representation `ofCharacter χ`
-has characteristic polynomial `X - C (χ g)` at `g`. -/
-@[simp]
-theorem charpoly_ofCharacter [ContinuousMul A] (χ : Γ →ₜ* Aˣ) (g : Γ) :
-    (ofCharacter χ).charpoly g = X - C (χ g : A) := by
-  nontriviality A
-  let b := Module.Basis.singleton Unit A
-  have hmat :
-      LinearMap.toMatrix b b (ofCharacter χ g) = Matrix.diagonal fun _ : Unit => (χ g : A) := by
-    ext ⟨⟩ ⟨⟩
-    simp [b, LinearMap.toMatrix_apply]
-  rw [charpoly_eq_matrix_charpoly _ b, hmat, Matrix.charpoly_diagonal]
-  simp
+/-- In a continuous group representation on a finite free module of rank `d`, the characteristic
+polynomial of `g⁻¹` is `(-1) ^ d * det (ρ g⁻¹)` times `(ρ g).charpoly.reverse`. -/
+theorem charpoly_apply_inv (ρ : ContinuousRep G A M) (g : G) :
+    (ρ g⁻¹).charpoly =
+      (-1) ^ Module.finrank A M * C (LinearMap.det (ρ g⁻¹)) * (ρ g).charpoly.reverse :=
+  ρ.toRepresentation.charpoly_apply_inv g
 
-/-- **Scalar extension of characteristic polynomials.** Along any continuous coefficient map `A → B`
-of commutative rings, the characteristic polynomial of `ρ.baseChange B` at `g` is obtained by
-mapping the coefficients of `ρ.charpoly g` along `algebraMap A B`. -/
-@[simp]
-theorem charpoly_baseChange {M : Type*} [AddCommGroup M] [Module A M] [Module.Free A M]
-    [Module.Finite A M] [TopologicalSpace M] [IsModuleTopology A M]
-    (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B]
-    [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)]
-    (ρ : ContinuousRep Γ A M) (g : Γ) :
-    (ρ.baseChange B).charpoly g = (ρ.charpoly g).map (algebraMap A B) := by
-  rw [charpoly_def, baseChange_apply, LinearMap.charpoly_baseChange, charpoly_def]
+/-- In the contragredient representation `ρ.dual`, `g` acts with the characteristic polynomial of
+`g⁻¹` in `ρ`. -/
+theorem charpoly_dual_apply [ContinuousInv G] [TopologicalSpace A] [IsTopologicalRing A]
+    [IsModuleTopology A M] [TopologicalSpace (Module.Dual A M)]
+    [IsModuleTopology A (Module.Dual A M)] (ρ : ContinuousRep G A M) (g : G) :
+    (ρ.dual g).charpoly = (ρ g⁻¹).charpoly := by
+  rw [← coe_toRepresentation, toRepresentation_dual]
+  exact ρ.toRepresentation.charpoly_dual_apply g
 
-end CharacterAndBaseChange
+end Group
 
-/-! ### Continuity of characteristic coefficients and density recognition -/
+/-! ### Continuity of characteristic coefficients and density propagation -/
 
 section Continuity
 
@@ -202,25 +148,23 @@ variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ]
 
 /-- **Continuity of characteristic coefficients.** When `M` is finite free over a topological
 commutative ring `A` and carries its `A`-module topology, every coefficient
-`g ↦ (ρ.charpoly g).coeff k` is continuous on `Γ`. -/
-@[fun_prop]
-theorem continuous_coeff_charpoly {A M : Type*} [CommRing A] [TopologicalSpace A]
+`g ↦ (ρ g).charpoly.coeff k` is continuous on `Γ`. -/
+@[continuity, fun_prop]
+theorem continuous_charpoly_coeff {A M : Type*} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [AddCommGroup M] [Module A M] [Module.Free A M] [Module.Finite A M]
     [TopologicalSpace M] [IsModuleTopology A M] (ρ : ContinuousRep Γ A M) (k : ℕ) :
-    Continuous fun g => (ρ.charpoly g).coeff k := by
+    Continuous fun g => (ρ g).charpoly.coeff k := by
   classical
   let b := Module.Free.chooseBasis A M
-  have hmat : Continuous fun g : Γ => LinearMap.toMatrix b b (ρ g) :=
-    continuous_matrix fun i j =>
-      (ρ.toRepresentation.continuous_iff_toMatrix_apply b).mp ρ.continuous_action i j
-  simpa only [Function.comp_def, charpoly_eq_matrix_charpoly ρ b] using
-    (Matrix.continuous_charpoly_coeff k).comp hmat
+  simpa only [Function.comp_def, ← LinearMap.charpoly_toMatrix _ b] using
+    (Matrix.continuous_charpoly_coeff k).comp (ρ.continuous_toMatrix b)
 
 /-- **Density propagation for characteristic polynomials across coefficient rings.** Let `ρ₁` and
 `ρ₂` be continuous representations on finite free modules with their module topologies over
 topological commutative rings `A₁` and `A₂`, and let `f₁ : A₁ →+* B`, `f₂ : A₂ →+* B` be continuous
-homomorphisms into a Hausdorff ring `B`. If `(ρ₁.charpoly g).map f₁ = (ρ₂.charpoly g).map f₂` for
-all `g` in a dense subset `s ⊆ Γ`, then equality holds for all `g : Γ`. -/
+homomorphisms into a Hausdorff commutative ring `B`. If
+`((ρ₁ g).charpoly).map f₁ = ((ρ₂ g).charpoly).map f₂` for all `g` in a dense subset `s ⊆ Γ`, then
+equality holds for all `g : Γ`. -/
 theorem charpoly_map_eq_of_dense {A₁ A₂ B M₁ M₂ : Type*}
     [CommRing A₁] [TopologicalSpace A₁] [IsTopologicalRing A₁]
     [CommRing A₂] [TopologicalSpace A₂] [IsTopologicalRing A₂]
@@ -232,13 +176,13 @@ theorem charpoly_map_eq_of_dense {A₁ A₂ B M₁ M₂ : Type*}
     (ρ₁ : ContinuousRep Γ A₁ M₁) (ρ₂ : ContinuousRep Γ A₂ M₂)
     {f₁ : A₁ →+* B} {f₂ : A₂ →+* B} (hf₁ : Continuous f₁) (hf₂ : Continuous f₂)
     {s : Set Γ} (hs : Dense s)
-    (h : ∀ g ∈ s, (ρ₁.charpoly g).map f₁ = (ρ₂.charpoly g).map f₂) (g : Γ) :
-    (ρ₁.charpoly g).map f₁ = (ρ₂.charpoly g).map f₂ := by
+    (h : ∀ g ∈ s, ((ρ₁ g).charpoly).map f₁ = ((ρ₂ g).charpoly).map f₂) (g : Γ) :
+    ((ρ₁ g).charpoly).map f₁ = ((ρ₂ g).charpoly).map f₂ := by
   ext k
-  have hc₁ : Continuous fun x : Γ => ((ρ₁.charpoly x).map f₁).coeff k := by
-    simpa only [coeff_map, Function.comp_def] using hf₁.comp (ρ₁.continuous_coeff_charpoly k)
-  have hc₂ : Continuous fun x : Γ => ((ρ₂.charpoly x).map f₂).coeff k := by
-    simpa only [coeff_map, Function.comp_def] using hf₂.comp (ρ₂.continuous_coeff_charpoly k)
+  have hc₁ : Continuous fun x : Γ => (((ρ₁ x).charpoly).map f₁).coeff k := by
+    simpa only [coeff_map, Function.comp_def] using hf₁.comp (ρ₁.continuous_charpoly_coeff k)
+  have hc₂ : Continuous fun x : Γ => (((ρ₂ x).charpoly).map f₂).coeff k := by
+    simpa only [coeff_map, Function.comp_def] using hf₂.comp (ρ₂.continuous_charpoly_coeff k)
   exact congrFun (hc₁.ext_on hs hc₂ fun x hx => congrArg (fun p => p.coeff k) (h x hx)) g
 
 /-- **Density propagation for characteristic polynomials** over a Hausdorff topological commutative
@@ -250,9 +194,9 @@ theorem charpoly_eq_of_dense {A M₁ M₂ : Type*} [CommRing A] [TopologicalSpac
     [AddCommGroup M₂] [Module A M₂] [Module.Free A M₂] [Module.Finite A M₂]
     [TopologicalSpace M₂] [IsModuleTopology A M₂]
     (ρ₁ : ContinuousRep Γ A M₁) (ρ₂ : ContinuousRep Γ A M₂)
-    {s : Set Γ} (hs : Dense s) (h : ∀ g ∈ s, ρ₁.charpoly g = ρ₂.charpoly g) (g : Γ) :
-    ρ₁.charpoly g = ρ₂.charpoly g := by
-  simpa using ρ₁.charpoly_map_eq_of_dense ρ₂ (f₁ := RingHom.id A) (f₂ := RingHom.id A)
+    {s : Set Γ} (hs : Dense s) (h : ∀ g ∈ s, (ρ₁ g).charpoly = (ρ₂ g).charpoly) (g : Γ) :
+    (ρ₁ g).charpoly = (ρ₂ g).charpoly := by
+  simpa using charpoly_map_eq_of_dense ρ₁ ρ₂ (f₁ := RingHom.id A) (f₂ := RingHom.id A)
     continuous_id continuous_id hs (fun x hx => by simp [h x hx]) g
 
 end Continuity

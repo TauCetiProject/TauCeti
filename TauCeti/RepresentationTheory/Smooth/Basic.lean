@@ -47,6 +47,9 @@ open subgroups `U` of `G`.
   (`Representation.isSmooth_ofMulAction_quotient`).
 * `Representation.smoothVectors_leftRegular_eq_bot`: for a Hausdorff (indeed `T₁`) group that is
   not discrete, the left regular representation on `A[G]` has no nonzero smooth vector.
+* `Representation.continuous_iff_isSmooth` and
+  `Representation.continuous_iff_isOpen_stabilizer_of_discrete`: when `G` is a topological group
+  and `V` carries the discrete topology, joint continuity on `G × V` is equivalent to smoothness.
 
 ## References
 
@@ -137,6 +140,22 @@ instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by
     convert isOpen_univ
     exact Set.eq_univ_of_forall fun g ↦ Subsingleton.elim (ρ g v) v⟩
+
+/-- When `V` carries the discrete topology and `G` is a topological group, a representation `ρ` is
+jointly continuous on `G × V` if and only if the stabilizer of every vector is open in `G`. -/
+theorem continuous_iff_isOpen_stabilizer_of_discrete [IsTopologicalGroup G]
+    [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
+    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ∀ v : V, IsOpen (ρ.stabilizer v : Set G) :=
+  letI : MulAction G V := MulAction.compHom V (ρ : G →* Module.End A V)
+  ⟨fun h => continuousSMul_iff_stabilizer_isOpen.mp ⟨h⟩,
+    fun h => (continuousSMul_iff_stabilizer_isOpen.mpr h).continuous_smul⟩
+
+/-- When `V` carries the discrete topology and `G` is a topological group, a representation `ρ` is
+jointly continuous on `G × V` if and only if it is smooth. -/
+theorem continuous_iff_isSmooth [IsTopologicalGroup G]
+    [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
+    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth :=
+  ρ.continuous_iff_isOpen_stabilizer_of_discrete.trans (isSmooth_iff ρ).symm
 
 end IsSmooth
 
