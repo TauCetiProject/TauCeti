@@ -64,21 +64,18 @@ lemma hasFiniteSupport_iff (X : GradedObject I C) :
       by_contra hn
       exact hi (hs i hn)
 
-/-- The finite set of degrees in which a finitely supported graded object is nonzero. -/
-noncomputable def HasFiniteSupport.toFinset {X : GradedObject I C} (hX : X.HasFiniteSupport) :
-    Finset I :=
-  Set.Finite.toFinset hX
-
-@[simp]
-lemma HasFiniteSupport.mem_toFinset {X : GradedObject I C} (hX : X.HasFiniteSupport) {i : I} :
-    i ∈ hX.toFinset ↔ ¬ IsZero (X i) :=
-  Set.Finite.mem_toFinset hX
-
 /-- Finite support is invariant under isomorphism. -/
 lemma hasFiniteSupport_iff_of_iso {X Y : GradedObject I C} (e : X ≅ Y) :
     X.HasFiniteSupport ↔ Y.HasFiniteSupport := by
   unfold HasFiniteSupport
   rw [support_eq_of_iso e]
+
+/-- A graded object `Z` is finitely supported when `X` is and, along an injective map `f`, each
+`Z j` is a zero object as soon as `X (f j)` is. -/
+lemma HasFiniteSupport.of_injective {X : GradedObject I C} {Z : GradedObject J C}
+    (hX : X.HasFiniteSupport) {f : J → I} (hf : Function.Injective f)
+    (h : ∀ j, IsZero (X (f j)) → IsZero (Z j)) : Z.HasFiniteSupport :=
+  (hX.preimage hf.injOn).subset fun j hj hXj ↦ hj (h j hXj)
 
 /-- An object concentrated in one degree has support contained in that singleton. -/
 lemma support_single_subset [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]

@@ -142,7 +142,7 @@ theorem isRepresentedBy_iff_finrank_le_of_isSepClosed
     let S : QuadraticForm K (Fin (Module.finrank K W₂ - Module.finrank K W₁) → K) :=
       weightedSumSquares K
         (1 : Fin (Module.finrank K W₂ - Module.finrank K W₁) → K)
-    have hS : S.Nondegenerate := nondegenerate_weightedSumSquares fun _ ↦ isRegular_one
+    have hS : S.Nondegenerate := nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one
     have hprod : (Q.prod S).Nondegenerate := hQ.prod hS
     have hrank : Module.finrank K
           (W₁ × (Fin (Module.finrank K W₂ - Module.finrank K W₁) → K)) =

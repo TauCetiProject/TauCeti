@@ -41,9 +41,12 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
 * `TauCeti.whiskerLeft_zero_of_hasLeftDual` and `TauCeti.zero_whiskerRight_of_hasRightDual`:
   whiskering by an object with a left (resp. right) dual preserves zero morphisms;
 * `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
-  is not a zero object, by the zigzag identity, and
-  `CategoryTheory.Limits.IsZero.of_exactPairing`: in an exact pairing of `X` with `Y`, if `X` is
-  a zero object then so is `Y`;
+  is not a zero object, by the zigzag identity;
+* `TauCeti.coevaluation_eq_zero_of_isZero_left` and `TauCeti.evaluation_eq_zero_of_isZero_right`:
+  the coevaluation (resp. evaluation) of an exact pairing vanishes when its left (resp. right)
+  object is a zero object;
+* `TauCeti.isZero_right_of_isZero_left` and `TauCeti.isZero_left_of_isZero_right`: the right and
+  left duals of a zero object are zero objects;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
   correspond to morphisms `𝟙_ C ⟶ Y`;
 * `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
@@ -270,20 +273,42 @@ theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
   exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
 
 open Limits in
-/-- In an exact pairing of `X` with `Y`, if `X` is a zero object then so is `Y`. The category `C`
-is not assumed to have zero morphisms. -/
-theorem _root_.CategoryTheory.Limits.IsZero.of_exactPairing {X : C} (hX : IsZero X) (Y : C)
-    [ExactPairing X Y] : IsZero Y := by
-  -- The zero object supplies the zero morphisms. Tensoring with `Y` on the right is a right
-  -- adjoint, so `X ⊗ Y` is zero, and the zigzag identity factors the identity of `Y` through it.
-  let := hX.hasZeroMorphisms
+/-- The coevaluation of an exact pairing of a zero object `X` with `Y` is zero, since it lands in
+the zero object `X ⊗ Y`. -/
+theorem coevaluation_eq_zero_of_isZero_left [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : IsZero X) : η_ X Y = 0 :=
   have := (tensorRightAdjunction X Y).isRightAdjoint
+  ((tensorRight Y).map_isZero hX).eq_of_tgt _ _
+
+open Limits in
+/-- The evaluation of an exact pairing of `X` with a zero object `Y` is zero, since it starts at
+the zero object `Y ⊗ X`. -/
+theorem evaluation_eq_zero_of_isZero_right [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hY : IsZero Y) : ε_ X Y = 0 :=
+  have := (tensorRightAdjunction X Y).isLeftAdjoint
+  ((tensorRight X).map_isZero hY).eq_of_src _ _
+
+open Limits in
+/-- The right dual of a zero object is a zero object: the coevaluation `η_ X Y` is zero, so the
+zigzag identity on `Y` makes the identity of `Y` zero. -/
+theorem isZero_right_of_isZero_left [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : IsZero X) : IsZero Y := by
   have := (tensorLeftAdjunction X Y).isLeftAdjoint
-  have h := ExactPairing.coevaluation_evaluation X Y
+  have hz := ExactPairing.coevaluation_evaluation X Y
   have h0 : Y ◁ (0 : 𝟙_ C ⟶ X ⊗ Y) = 0 := (tensorLeft Y).map_zero _ _
-  rw [((tensorRight Y).map_isZero hX).eq_of_tgt (η_ X Y) 0, h0, zero_comp] at h
-  rw [IsZero.iff_id_eq_zero]
-  simpa using (ρ_ Y).inv ≫= h.symm =≫ (λ_ Y).hom
+  rw [coevaluation_eq_zero_of_isZero_left hX, h0, zero_comp] at hz
+  exact (IsZero.iff_id_eq_zero Y).2 (by simpa using (ρ_ Y).inv ≫= hz.symm =≫ (λ_ Y).hom)
+
+open Limits in
+/-- The left dual of a zero object is a zero object: the evaluation `ε_ X Y` is zero, so the
+zigzag identity on `X` makes the identity of `X` zero. -/
+theorem isZero_left_of_isZero_right [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hY : IsZero Y) : IsZero X := by
+  have := (tensorLeftAdjunction X Y).isRightAdjoint
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have h0 : X ◁ (0 : Y ⊗ X ⟶ 𝟙_ C) = 0 := (tensorLeft X).map_zero _ _
+  rw [evaluation_eq_zero_of_isZero_right hY, h0, comp_zero, comp_zero] at hz
+  exact (IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom)
 
 /-- Naturality of `CategoryTheory.tensorRightHomEquiv` in its first argument. -/
 @[reassoc]

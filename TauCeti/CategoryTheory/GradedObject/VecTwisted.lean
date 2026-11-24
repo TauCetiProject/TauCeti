@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Dualizable
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.CategoryTheory.GradedObject.Module
-public import TauCeti.Algebra.Category.FGModuleCat.Rigid
 public import TauCeti.CategoryTheory.GradedObject.Twisted.Rigid
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Subcategory
 
@@ -28,31 +28,21 @@ The category is realized inside graded modules, which have arbitrary coproducts;
 proofs ensure that convolution remains in the finite-dimensional subcategory. Objects concentrated
 in one degree, including the one-dimensional objects `VecTwisted.delta`, belong to it.
 
-When `G` is a group, `VecTwisted k G c` is rigid. The left and right dual of `X` are both the
-graded dual `VecTwisted.dual X`, whose component in degree `g` is the dual space of the component
-of `X` in degree `g⁻¹`; the pairings (`VecTwisted.gradedPairing` and
-`VecTwisted.leftGradedPairing`) are assembled from those of the components by
-`TauCeti.TwistedGradedObject.exactPairing`, with the coevaluation twisted by the cocycle. In
-particular the dual of `δ_g` is `δ_{g⁻¹}` (`VecTwisted.dualDeltaIso`), with evaluation `1` and
-coevaluation `ω(g, g⁻¹, g)⁻¹`.
-
-## Main declarations
-
-* `TauCeti.VecTwisted.instMonoidalCategory`: the cocycle-twisted monoidal structure;
-* `TauCeti.VecTwisted.dual` and `TauCeti.VecTwisted.instRigidCategory`: the graded dual and the
-  rigid structure it defines, with `TauCeti.VecTwisted.dualDeltaIso : dual (delta g) ≅ delta g⁻¹`;
-* `TauCeti.VecTwisted.coevaluation_hom`, `TauCeti.VecTwisted.evaluation_hom`,
-  `TauCeti.VecTwisted.leftCoevaluation_hom` and `TauCeti.VecTwisted.leftEvaluation_hom`: the
-  structure maps are `TauCeti.TwistedGradedObject.dualCoevaluation` and
-  `TauCeti.TwistedGradedObject.dualEvaluation` of the componentwise pairings
-  `TauCeti.VecTwisted.componentPairing` and `TauCeti.VecTwisted.leftComponentPairing`;
-* `TauCeti.VecTwisted.dualDeltaIso_hom_hom_apply` and
-  `TauCeti.VecTwisted.dualDeltaIso_inv_hom_apply`: the components of `dualDeltaIso` in degree
-  `g⁻¹`.
+When `G` is a group, `VecTwisted k G c` is rigid (`VecTwisted.rigidCategory`). The right dual
+`VecTwisted.rightDual X` has the dual of `X g⁻¹` in degree `g`, and the left dual
+`VecTwisted.leftDual X` has its left dual there. The pairings are the general duality of
+cocycle-twisted graded objects, `TwistedGradedObject.exactPairing`: the right dual of `δ_g` is
+concentrated in degree `g⁻¹`, and its coevaluation carries the scalar `ω(g, g⁻¹, g)⁻¹`.
+`VecTwisted.rightDual_eq`, `VecTwisted.rightDual_evaluation_hom`,
+`VecTwisted.rightDual_coevaluation_hom` and their left analogues identify the chosen duals and
+their structure maps; `VecTwisted.rightDual_obj_evaluation` and
+`VecTwisted.rightDual_obj_coevaluation` describe the pairings of the components.
+`VecTwisted.rightDualDeltaIso` identifies the right dual of `δ_g` with `δ_{g⁻¹}`, by evaluating
+linear functionals on the field at `1`.
 
 ## References
 
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§2.3, 2.10.
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.3 and §2.10.
 -/
 
 public section
@@ -65,7 +55,11 @@ universe u
 
 namespace TauCeti
 
-variable (k G : Type u) [Field k] [Monoid G]
+variable (k G : Type u) [Field k]
+
+section Monoid
+
+variable [Monoid G]
 
 /-- The objects of `VecTwisted`: finitely supported graded vector spaces with finite components.
 The grading is written additively using `Additive G`, so that convolution uses multiplication
@@ -179,288 +173,225 @@ theorem support_delta (g : G) : (delta (c := c) g).obj.support = {Additive.ofMul
 
 end VecTwisted
 
-end TauCeti
+end Monoid
 
-/-! ### Duals -/
+section Rigid
 
-namespace TauCeti.VecTwisted
+variable {k G} [Group G] {c : GradedObject.TwistingCocycle (Additive G) k}
 
-variable {k G : Type u} [Field k] [Group G] {c : GradedObject.TwistingCocycle (Additive G) k}
+namespace VecTwisted
 
-/-- The graded dual of `X`: its component in degree `g` is the dual space of the component of `X`
-in degree `g⁻¹`. It is both the left and the right dual of `X`. -/
-@[expose] def dual (X : VecTwisted k G c) : VecTwisted k G c :=
-  of (fun g ↦ ModuleCat.of k (Module.Dual k (X.obj (-g)))) <| by
-    classical
-    obtain ⟨s, hs⟩ := (CategoryTheory.GradedObject.hasFiniteSupport_iff _).1 X.hasFiniteSupport
-    refine (CategoryTheory.GradedObject.hasFiniteSupport_iff _).2 ⟨s.image (-·), fun g hg ↦ ?_⟩
-    have := ModuleCat.isZero_iff_subsingleton.1
-      (hs _ fun h ↦ hg (Finset.mem_image.2 ⟨-g, h, neg_neg g⟩))
-    exact ModuleCat.isZero_of_subsingleton _
+/-- The right dual of an object of `VecTwisted`: its component in degree `g` is the dual of the
+component of `X` in degree `g⁻¹`. -/
+@[expose] def rightDual (X : VecTwisted k G c) : VecTwisted k G c where
+  obj g := (X.obj (-g))ᘁ
+  property := (objects_iff c _).2
+    ⟨X.hasFiniteSupport.of_injective neg_injective fun _ ↦ isZero_right_of_isZero_left,
+      fun _ ↦ (ModuleCat.finite_projective_of_hasLeftDual _).1⟩
 
-/-- The component of the graded dual in degree `g` is the dual space of the component in
-degree `g⁻¹`. -/
+/-- The component of the right dual in degree `g` is the dual of the component in degree `g⁻¹`. -/
 @[simp]
-theorem dual_obj (X : VecTwisted k G c) (g : Additive G) :
-    (dual X).obj g = ModuleCat.of k (Module.Dual k (X.obj (-g))) :=
+theorem rightDual_obj (X : VecTwisted k G c) (g : Additive G) :
+    (rightDual X).obj g = (X.obj (-g))ᘁ :=
   (rfl)
 
-/-- The pairing of the component of `X` in degree `i` with the component of its graded dual in
-degree `j`, for `i + j = 0`: the pairing `ModuleCat.exactPairingDual` of `X.obj i` with its dual
-space, which is the component of `dual X` in degree `j = -i`. -/
-@[instance_reducible]
-def componentPairing (X : VecTwisted k G c) (i j : Additive G) (h : i + j = 0) :
-    ExactPairing (X.obj i) ((dual X).obj j) :=
-  letI := ModuleCat.exactPairingDual (X.obj i)
-  exactPairingCongrRight (Y' := ModuleCat.of k (Module.Dual k (X.obj i)))
-    (eqToIso (by rw [dual_obj, neg_eq_of_add_eq_zero_left h]))
+/-- The left dual of an object of `VecTwisted`: its component in degree `g` is the left dual of
+the component of `X` in degree `g⁻¹`. -/
+def leftDual (X : VecTwisted k G c) : VecTwisted k G c where
+  obj g := ᘁ(X.obj (-g))
+  property := ⟨X.hasFiniteSupport.of_injective neg_injective fun _ ↦ isZero_left_of_isZero_right,
+    fun _ ↦ (ModuleCat.finite_projective_of_hasRightDual _).1⟩
 
-/-- The pairing of the component of the graded dual of `X` in degree `i` with the component of
-`X` in degree `j`, for `i + j = 0`: the pairing `ModuleCat.leftExactPairingDual` of the dual space
-of `X.obj j`, which is the component of `dual X` in degree `i = -j`, with `X.obj j`. -/
-@[instance_reducible]
-def leftComponentPairing (X : VecTwisted k G c) (i j : Additive G) (h : i + j = 0) :
-    ExactPairing ((dual X).obj i) (X.obj j) :=
-  letI := ModuleCat.leftExactPairingDual (X.obj j)
-  exactPairingCongrLeft (X' := ModuleCat.of k (Module.Dual k (X.obj j)))
-    (eqToIso (by rw [dual_obj, neg_eq_of_add_eq_zero_right h]))
-
-/-- The evaluation of `VecTwisted.componentPairing`: the contraction of
-`ModuleCat.exactPairingDual`, after identifying the component of the graded dual with the dual
-space. -/
+/-- The component of the left dual in degree `g` is the left dual of the component in degree
+`g⁻¹`. -/
 @[simp]
-theorem componentPairing_evaluation (X : VecTwisted k G c) (i j : Additive G) (h : i + j = 0) :
-    @ExactPairing.evaluation _ _ _ _ _ (componentPairing X i j h) =
-      eqToHom (by rw [dual_obj, neg_eq_of_add_eq_zero_left h]) ▷ X.obj i ≫
-        @ExactPairing.evaluation _ _ _ (X.obj i) (ModuleCat.of k (Module.Dual k (X.obj i)))
-          (ModuleCat.exactPairingDual (X.obj i)) :=
+theorem leftDual_obj (X : VecTwisted k G c) (g : Additive G) :
+    (leftDual X).obj g = ᘁ(X.obj (-g)) :=
   (rfl)
 
-/-- The coevaluation of `VecTwisted.componentPairing`: the coevaluation of
-`ModuleCat.exactPairingDual`, after identifying the dual space with the component of the graded
-dual. -/
-@[simp]
-theorem componentPairing_coevaluation (X : VecTwisted k G c) (i j : Additive G) (h : i + j = 0) :
-    @ExactPairing.coevaluation _ _ _ _ _ (componentPairing X i j h) =
-      @ExactPairing.coevaluation _ _ _ (X.obj i) (ModuleCat.of k (Module.Dual k (X.obj i)))
-          (ModuleCat.exactPairingDual (X.obj i)) ≫
-        X.obj i ◁ eqToHom (by rw [dual_obj, neg_eq_of_add_eq_zero_left h]) :=
+/-- The component of `X` in degree `g` is paired with the component of `VecTwisted.rightDual X`
+in degree `g⁻¹`, which is its dual. -/
+instance exactPairingObjRightDualObj (X : VecTwisted k G c) (g : Additive G) :
+    ExactPairing (X.obj g) ((rightDual X).obj (-g)) :=
+  exactPairingCongrRight (Y' := (X.obj g)ᘁ) (eqToIso (by rw [rightDual_obj, neg_neg]))
+
+/-- The evaluation pairing a component of `X` with the component of its right dual in the
+opposite degree is the evaluation of the dual of that component. -/
+theorem rightDual_obj_evaluation (X : VecTwisted k G c) (g : Additive G) :
+    ε_ (X.obj g) ((rightDual X).obj (-g)) =
+      eqToHom (by rw [rightDual_obj, neg_neg]) ▷ X.obj g ≫ ε_ (X.obj g) (X.obj g)ᘁ :=
   (rfl)
 
-/-- The evaluation of `VecTwisted.leftComponentPairing`: the evaluation of
-`ModuleCat.leftExactPairingDual`, after identifying the component of the graded dual with the dual
-space. -/
-@[simp]
-theorem leftComponentPairing_evaluation (X : VecTwisted k G c) (i j : Additive G)
-    (h : i + j = 0) :
-    @ExactPairing.evaluation _ _ _ _ _ (leftComponentPairing X i j h) =
-      X.obj j ◁ eqToHom (by rw [dual_obj, neg_eq_of_add_eq_zero_right h]) ≫
-        @ExactPairing.evaluation _ _ _ (ModuleCat.of k (Module.Dual k (X.obj j))) (X.obj j)
-          (ModuleCat.leftExactPairingDual (X.obj j)) :=
+/-- The coevaluation pairing a component of `X` with the component of its right dual in the
+opposite degree is the coevaluation of the dual of that component. -/
+theorem rightDual_obj_coevaluation (X : VecTwisted k G c) (g : Additive G) :
+    η_ (X.obj g) ((rightDual X).obj (-g)) =
+      η_ (X.obj g) (X.obj g)ᘁ ≫ X.obj g ◁ eqToHom (by rw [rightDual_obj, neg_neg]) :=
   (rfl)
 
-/-- The coevaluation of `VecTwisted.leftComponentPairing`: the coevaluation of
-`ModuleCat.leftExactPairingDual`, after identifying the dual space with the component of the
-graded dual. -/
-@[simp]
-theorem leftComponentPairing_coevaluation (X : VecTwisted k G c) (i j : Additive G)
-    (h : i + j = 0) :
-    @ExactPairing.coevaluation _ _ _ _ _ (leftComponentPairing X i j h) =
-      @ExactPairing.coevaluation _ _ _ (ModuleCat.of k (Module.Dual k (X.obj j))) (X.obj j)
-          (ModuleCat.leftExactPairingDual (X.obj j)) ≫
-        eqToHom (by rw [dual_obj, neg_eq_of_add_eq_zero_right h]) ▷ X.obj j :=
-  (rfl)
+/-- The component of `VecTwisted.leftDual X` in degree `g` is paired with the component of `X` in
+degree `g⁻¹`, of which it is the left dual. -/
+instance exactPairingLeftDualObjObj (X : VecTwisted k G c) (g : Additive G) :
+    ExactPairing ((leftDual X).obj g) (X.obj (-g)) :=
+  inferInstanceAs (ExactPairing ᘁ(X.obj (-g)) (X.obj (-g)))
 
 variable [DecidableEq G]
 
-/-- The pairing of the graded vector space underlying `X` with that underlying its graded dual:
-componentwise the pairing of a finite-dimensional space with its dual
-(`VecTwisted.componentPairing`), twisted by the cocycle through
-`TauCeti.TwistedGradedObject.exactPairing`. -/
-@[instance_reducible]
-def gradedPairing (X : VecTwisted k G c) : ExactPairing X.obj (dual X).obj :=
-  TwistedGradedObject.exactPairing c X.obj (dual X).obj X.hasFiniteSupport (componentPairing X)
+/-- Every object of `VecTwisted` has a right dual, `VecTwisted.rightDual`, paired with it by
+`TwistedGradedObject.exactPairing`. -/
+instance hasRightDual (X : VecTwisted k G c) : HasRightDual X where
+  rightDual := rightDual X
+  exact := @ObjectProperty.exactPairingFullSubcategory _ _ _ _ _ X (rightDual X)
+    (TwistedGradedObject.exactPairing (rightDual X).obj X.hasFiniteSupport)
 
-/-- The pairing of the graded vector space underlying the graded dual of `X` with that underlying
-`X`: componentwise the pairing of the dual of a finite-dimensional space with the space
-(`VecTwisted.leftComponentPairing`), twisted by the cocycle through
-`TauCeti.TwistedGradedObject.exactPairing`. -/
-@[instance_reducible]
-def leftGradedPairing (X : VecTwisted k G c) : ExactPairing (dual X).obj X.obj :=
-  TwistedGradedObject.exactPairing c (dual X).obj X.obj (dual X).hasFiniteSupport
-    (leftComponentPairing X)
+/-- Every object of `VecTwisted` has a left dual, `VecTwisted.leftDual`, paired with it by
+`TwistedGradedObject.exactPairing`. -/
+instance hasLeftDual (X : VecTwisted k G c) : HasLeftDual X where
+  leftDual := leftDual X
+  exact := @ObjectProperty.exactPairingFullSubcategory _ _ _ _ _ (leftDual X) X
+    (TwistedGradedObject.exactPairing X.obj (leftDual X).hasFiniteSupport)
 
-/-- The pairing of `X` with its graded dual, lifted from `VecTwisted.gradedPairing`. -/
-instance instHasRightDual (X : VecTwisted k G c) : HasRightDual X where
-  rightDual := dual X
-  exact :=
-    letI := gradedPairing X
-    inferInstance
+/-- The chosen right dual of an object of `VecTwisted` is `VecTwisted.rightDual`. -/
+@[simp]
+theorem rightDual_eq (X : VecTwisted k G c) : Xᘁ = rightDual X :=
+  (rfl)
 
-/-- The pairing of the graded dual with `X`, lifted from `VecTwisted.leftGradedPairing`. -/
-instance instHasLeftDual (X : VecTwisted k G c) : HasLeftDual X where
-  leftDual := dual X
-  exact :=
-    letI := leftGradedPairing X
-    inferInstance
+/-- The chosen left dual of an object of `VecTwisted` is `VecTwisted.leftDual`. -/
+@[simp]
+theorem leftDual_eq (X : VecTwisted k G c) : (ᘁX) = leftDual X :=
+  (rfl)
 
-/-- The coevaluation of `X` with its right dual is the twisted graded coevaluation
-`TauCeti.TwistedGradedObject.dualCoevaluation` of the componentwise pairings.
+/-- The evaluation of the right dual is `TwistedGradedObject.evaluation` on underlying graded
+objects. -/
+theorem rightDual_evaluation_hom (X : VecTwisted k G c) :
+    (ε_ X Xᘁ).hom = TwistedGradedObject.evaluation X.obj (rightDual X).obj :=
+  (@ObjectProperty.exactPairingFullSubcategory_evaluation_hom _ _ _ _ _ X (rightDual X)
+    (TwistedGradedObject.exactPairing (rightDual X).obj X.hasFiniteSupport)).trans
+    (TwistedGradedObject.exactPairing_evaluation _ _)
 
-Not a `simp` lemma: `simp` already reaches the right-hand side through
-`CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevaluation_hom` and
-`TauCeti.TwistedGradedObject.exactPairing_coevaluation`. -/
-theorem coevaluation_hom (X : VecTwisted k G c) :
-    (η_ X Xᘁ).hom = TwistedGradedObject.dualCoevaluation (Y := (dual X).obj) c X.hasFiniteSupport
-      (componentPairing X) :=
-  letI := gradedPairing X
-  (ObjectProperty.exactPairingFullSubcategory_coevaluation_hom X (dual X)).trans
-    (TwistedGradedObject.exactPairing_coevaluation c _ _ _ _)
+/-- The coevaluation of the right dual is `TwistedGradedObject.coevaluation` on underlying graded
+objects. -/
+theorem rightDual_coevaluation_hom (X : VecTwisted k G c) :
+    (η_ X Xᘁ).hom = TwistedGradedObject.coevaluation c (rightDual X).obj X.hasFiniteSupport :=
+  (@ObjectProperty.exactPairingFullSubcategory_coevaluation_hom _ _ _ _ _ X (rightDual X)
+    (TwistedGradedObject.exactPairing (rightDual X).obj X.hasFiniteSupport)).trans
+    (TwistedGradedObject.exactPairing_coevaluation _ _)
 
-/-- The evaluation of `X` with its right dual is the graded evaluation
-`TauCeti.TwistedGradedObject.dualEvaluation` of the componentwise pairings.
+/-- The evaluation of the left dual is `TwistedGradedObject.evaluation` on underlying graded
+objects. -/
+theorem leftDual_evaluation_hom (X : VecTwisted k G c) :
+    (ε_ (ᘁX) X).hom = TwistedGradedObject.evaluation (leftDual X).obj X.obj :=
+  (@ObjectProperty.exactPairingFullSubcategory_evaluation_hom _ _ _ _ _ (leftDual X) X
+    (TwistedGradedObject.exactPairing X.obj (leftDual X).hasFiniteSupport)).trans
+    (TwistedGradedObject.exactPairing_evaluation _ _)
 
-Not a `simp` lemma: `simp` already reaches the right-hand side through
-`CategoryTheory.ObjectProperty.exactPairingFullSubcategory_evaluation_hom` and
-`TauCeti.TwistedGradedObject.exactPairing_evaluation`. -/
-theorem evaluation_hom (X : VecTwisted k G c) :
-    (ε_ X Xᘁ).hom =
-      TwistedGradedObject.dualEvaluation (X := X.obj) (Y := (dual X).obj) (componentPairing X) :=
-  letI := gradedPairing X
-  (ObjectProperty.exactPairingFullSubcategory_evaluation_hom X (dual X)).trans
-    (TwistedGradedObject.exactPairing_evaluation c _ _ _ _)
+/-- The coevaluation of the left dual is `TwistedGradedObject.coevaluation` on underlying graded
+objects. -/
+theorem leftDual_coevaluation_hom (X : VecTwisted k G c) :
+    (η_ (ᘁX) X).hom = TwistedGradedObject.coevaluation c X.obj (leftDual X).hasFiniteSupport :=
+  (@ObjectProperty.exactPairingFullSubcategory_coevaluation_hom _ _ _ _ _ (leftDual X) X
+    (TwistedGradedObject.exactPairing X.obj (leftDual X).hasFiniteSupport)).trans
+    (TwistedGradedObject.exactPairing_coevaluation _ _)
 
-/-- The coevaluation of the left dual of `X` with `X` is the twisted graded coevaluation
-`TauCeti.TwistedGradedObject.dualCoevaluation` of the componentwise pairings.
-
-Not a `simp` lemma: `simp` already reaches the right-hand side through
-`CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevaluation_hom` and
-`TauCeti.TwistedGradedObject.exactPairing_coevaluation`. -/
-theorem leftCoevaluation_hom (X : VecTwisted k G c) :
-    (η_ (ᘁX) X).hom = TwistedGradedObject.dualCoevaluation (X := (dual X).obj) (Y := X.obj) c
-      (dual X).hasFiniteSupport (leftComponentPairing X) :=
-  letI := leftGradedPairing X
-  (ObjectProperty.exactPairingFullSubcategory_coevaluation_hom (dual X) X).trans
-    (TwistedGradedObject.exactPairing_coevaluation c _ _ _ _)
-
-/-- The evaluation of `X` with its left dual is the graded evaluation
-`TauCeti.TwistedGradedObject.dualEvaluation` of the componentwise pairings.
-
-Not a `simp` lemma: `simp` already reaches the right-hand side through
-`CategoryTheory.ObjectProperty.exactPairingFullSubcategory_evaluation_hom` and
-`TauCeti.TwistedGradedObject.exactPairing_evaluation`. -/
-theorem leftEvaluation_hom (X : VecTwisted k G c) :
-    (ε_ (ᘁX) X).hom = TwistedGradedObject.dualEvaluation (X := (dual X).obj) (Y := X.obj)
-      (leftComponentPairing X) :=
-  letI := leftGradedPairing X
-  (ObjectProperty.exactPairingFullSubcategory_evaluation_hom (dual X) X).trans
-    (TwistedGradedObject.exactPairing_evaluation c _ _ _ _)
-
-/-- Finitely supported finite-dimensional graded vector spaces with cocycle-twisted associator
-form a rigid monoidal category. -/
-instance instRigidCategory : RigidCategory (VecTwisted k G c) where
+/-- `Vec^ω_G` is rigid: the duals of an object are graded by inverse degrees. -/
+instance rigidCategory : RigidCategory (VecTwisted k G c) where
 
 /-- For modules `A` and `B` identified with the field by `e` and `f`, the dual of `A` is
 identified with `B`: a linear functional `φ` is sent to the element of `B` corresponding to the
 value of `φ` at the element of `A` corresponding to `1`. This is the component of
-`VecTwisted.dualDeltaIso` in degree `g⁻¹`. -/
-private def dualIsoOfIsoField {A B : ModuleCat.{u} k} (e : A ≅ ModuleCat.of k k)
-    (f : B ≅ ModuleCat.of k k) : ModuleCat.of k (Module.Dual k A) ≅ B :=
-  (e.symm.toLinearEquiv.dualMap ≪≫ₗ LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫ f.symm
+`VecTwisted.rightDualDeltaIso` in degree `g⁻¹`. -/
+private def rightDualIsoOfIsoField {A B : ModuleCat.{u} k} [Module.Finite k A]
+    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k) : (A)ᘁ ≅ B :=
+  (ModuleCat.homLinearEquiv (S := k) ≪≫ₗ e.symm.toLinearEquiv.dualMap ≪≫ₗ
+    LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫ f.symm
 
-private lemma dualIsoOfIsoField_hom_apply {A B : ModuleCat.{u} k} (e : A ≅ ModuleCat.of k k)
-    (f : B ≅ ModuleCat.of k k) (φ : Module.Dual k A) :
-    (dualIsoOfIsoField e f).hom.hom φ = f.inv.hom (φ (e.inv.hom 1)) :=
-  -- Both sides agree by unfolding `dualIsoOfIsoField`. `simp` leaves `e.symm.toLinearEquiv 1`
-  -- unreduced: composing with `LinearMap.ringLmapEquivSelf` elaborates that equivalence with `k`
-  -- in place of `ModuleCat.of k k`, so `Iso.toLinearEquiv_apply` does not match it.
+private lemma rightDualIsoOfIsoField_hom_apply {A B : ModuleCat.{u} k} [Module.Finite k A]
+    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k)
+    (φ : A ⟶ ModuleCat.of k k) :
+    (rightDualIsoOfIsoField e f).hom.hom φ = f.inv.hom (φ.hom (e.inv.hom 1)) :=
+  -- Both sides agree by unfolding `rightDualIsoOfIsoField`.
   rfl
 
-private lemma dualIsoOfIsoField_inv_apply {A B : ModuleCat.{u} k} (e : A ≅ ModuleCat.of k k)
-    (f : B ≅ ModuleCat.of k k) (x : B) (v : A) :
-    (dualIsoOfIsoField e f).inv.hom (B := ModuleCat.of k (Module.Dual k A)) x v =
+private lemma rightDualIsoOfIsoField_inv_apply {A B : ModuleCat.{u} k} [Module.Finite k A]
+    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k) (x : B)
+    (v : A) :
+    ((rightDualIsoOfIsoField e f).inv.hom x : A ⟶ ModuleCat.of k k).hom v =
       e.hom.hom v * f.hom.hom x :=
-  -- By unfolding, as for `dualIsoOfIsoField_hom_apply`: `LinearMap.ringLmapEquivSelf` sends `x`
-  -- back to multiplication by `x`, and scalar multiplication on `k` is multiplication.
+  -- By unfolding, as for `rightDualIsoOfIsoField_hom_apply`: `LinearMap.ringLmapEquivSelf` sends
+  -- `x` back to multiplication by `x`, and scalar multiplication on `k` is multiplication.
   rfl
 
-/-- The component in degree `h` of `VecTwisted.dualDeltaIso`: in degree `g⁻¹` it is
-`dualIsoOfIsoField` for the identifications of `δ_g` and `δ_{g⁻¹}` with the field there, and in
-the other degrees both objects are zero. -/
-private def dualDeltaIsoApp (g : G) (h : Additive G) :
-    (dual (delta (c := c) g)).obj h ≅ (delta (c := c) g⁻¹).obj h :=
+/-- The component in degree `h` of `VecTwisted.rightDualDeltaIso`: in degree `g⁻¹` it is
+`rightDualIsoOfIsoField` for the identifications of `δ_g` and `δ_{g⁻¹}` with the field there, and
+in the other degrees both objects are zero. -/
+private def rightDualDeltaIsoApp (g : G) (h : Additive G) :
+    (rightDual (delta (c := c) g)).obj h ≅ (delta (c := c) g⁻¹).obj h :=
   if hh : h = Additive.ofMul g⁻¹ then
-    dualIsoOfIsoField (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
+    rightDualIsoOfIsoField (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
         (ModuleCat.of k k) (-h) (by rw [hh, ofMul_inv, neg_neg]))
       (CategoryTheory.GradedObject.singleObjApplyIsoOfEq _ (ModuleCat.of k k) h hh)
   else
-    have : Subsingleton ((delta (c := c) g).obj (-h)) := ModuleCat.isZero_iff_subsingleton.1
-      (CategoryTheory.GradedObject.isInitialSingleObjApply (Additive.ofMul g) (ModuleCat.of k k)
-        (-h) (by rwa [ne_eq, neg_eq_iff_eq_neg, ← ofMul_inv])).isZero
-    (ModuleCat.isZero_of_subsingleton
-        (ModuleCat.of k (Module.Dual k ((delta (c := c) g).obj (-h))))).iso
+    (show IsZero ((delta (c := c) g).obj (-h))ᘁ from
+      isZero_right_of_isZero_left (X := (delta (c := c) g).obj (-h))
+        (CategoryTheory.GradedObject.isInitialSingleObjApply (Additive.ofMul g) (ModuleCat.of k k)
+          (-h) (by rwa [ne_eq, neg_eq_iff_eq_neg, ← ofMul_inv])).isZero).iso
       (CategoryTheory.GradedObject.isInitialSingleObjApply _ _ _ hh).isZero
 
-/-- In degree `g⁻¹`, written `-Additive.ofMul g`, the component `dualDeltaIsoApp` is the first
-branch of its defining `dite`. -/
-private lemma dualDeltaIsoApp_neg_ofMul (g : G) :
-    dualDeltaIsoApp (c := c) g (-Additive.ofMul g) =
-      dualIsoOfIsoField (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
+/-- In degree `g⁻¹`, written `-Additive.ofMul g`, the component `rightDualDeltaIsoApp` is the
+first branch of its defining `dite`. -/
+private lemma rightDualDeltaIsoApp_neg_ofMul (g : G) :
+    rightDualDeltaIsoApp (c := c) g (-Additive.ofMul g) =
+      rightDualIsoOfIsoField (A := (delta (c := c) g).obj (- -Additive.ofMul g))
+        (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
           (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _))
         (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹)
           (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm) :=
   dite_eq_left (ofMul_inv g).symm
 
-/-- The graded dual of `δ_g` is `δ_{g⁻¹}`. In degree `g⁻¹` the isomorphism is the identification
+/-- The right dual of `δ_g` is `δ_{g⁻¹}`. In degree `g⁻¹` the isomorphism is the identification
 of the dual of the field with the field; in the other degrees both objects are zero. -/
-def dualDeltaIso (g : G) : dual (delta (c := c) g) ≅ delta g⁻¹ :=
-  ObjectProperty.isoMk _ <| CategoryTheory.GradedObject.isoMk _ _ (dualDeltaIsoApp g)
+def rightDualDeltaIso (g : G) : rightDual (delta (c := c) g) ≅ delta g⁻¹ :=
+  ObjectProperty.isoMk _ <| CategoryTheory.GradedObject.isoMk _ _ (rightDualDeltaIsoApp g)
 
-/-- In degree `g⁻¹`, written `-Additive.ofMul g`, `VecTwisted.dualDeltaIso` evaluates a linear
-functional on the field at `1`: it sends `φ` to the element of `δ_{g⁻¹}` corresponding to the
-value of `φ` at the element of `δ_g` corresponding to `1`. -/
+/-- In degree `g⁻¹`, written `-Additive.ofMul g`, `VecTwisted.rightDualDeltaIso` evaluates a
+linear functional on the field at `1`: it sends `φ` to the element of `δ_{g⁻¹}` corresponding to
+the value of `φ` at the element of `δ_g` corresponding to `1`. -/
 @[simp]
-theorem dualDeltaIso_hom_hom_apply (g : G)
-    (φ : Module.Dual k ((delta (c := c) g).obj (- -Additive.ofMul g))) :
-    ((dualDeltaIso (c := c) g).hom.hom (-Additive.ofMul g)).hom φ =
+theorem rightDualDeltaIso_hom_hom_apply (g : G)
+    (φ : (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k) :
+    ((rightDualDeltaIso (c := c) g).hom.hom (-Additive.ofMul g)).hom φ =
       (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹) (ModuleCat.of k k)
           (-Additive.ofMul g) (ofMul_inv g).symm).inv.hom
-        (φ ((CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
+        (φ.hom ((CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
           (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) := by
-  -- The component of `dualDeltaIso` is `dualDeltaIsoApp` by definition of the `isoMk`s. `rw`
-  -- cannot use `ObjectProperty.isoMk_hom` or `dualIsoOfIsoField_hom_apply` here, since a
-  -- component of a morphism of `TwistedGradedObject` is only a function after unfolding that type
-  -- synonym; `change` and `exact` check these steps up to unfolding instead.
-  change (dualDeltaIsoApp g (-Additive.ofMul g)).hom.hom φ = _
-  rw [dualDeltaIsoApp_neg_ofMul]
-  exact dualIsoOfIsoField_hom_apply _ _ φ
+  -- The component of `rightDualDeltaIso` is `rightDualDeltaIsoApp` by definition of the `isoMk`s.
+  -- A component of a morphism of `TwistedGradedObject` is only a function after unfolding that
+  -- type synonym, so `change` and `exact` check these steps up to unfolding.
+  change (rightDualDeltaIsoApp g (-Additive.ofMul g)).hom.hom φ = _
+  rw [rightDualDeltaIsoApp_neg_ofMul]
+  exact rightDualIsoOfIsoField_hom_apply _ _ φ
 
-/-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.dualDeltaIso` sends
-`x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
+/-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.rightDualDeltaIso`
+sends `x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
 @[simp]
-theorem dualDeltaIso_inv_hom_apply (g : G)
+theorem rightDualDeltaIso_inv_hom_apply (g : G)
     (x : (delta (c := c) g⁻¹).obj (-Additive.ofMul g))
     (v : (delta (c := c) g).obj (- -Additive.ofMul g)) :
-    ((dualDeltaIso (c := c) g).inv.hom (-Additive.ofMul g)).hom
-      (B := ModuleCat.of k (Module.Dual k ((delta (c := c) g).obj (- -Additive.ofMul g)))) x v =
+    (((rightDualDeltaIso (c := c) g).inv.hom (-Additive.ofMul g)).hom x :
+        (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v =
       (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g) (ModuleCat.of k k)
           (- -Additive.ofMul g) (neg_neg _)).hom.hom v *
         (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹)
           (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x := by
-  -- As in `dualDeltaIso_hom_hom_apply`, the component is `dualDeltaIsoApp` by definition.
-  change (dualDeltaIsoApp g (-Additive.ofMul g)).inv.hom
-    (B := ModuleCat.of k (Module.Dual k ((delta (c := c) g).obj (- -Additive.ofMul g)))) x v = _
-  rw [dualDeltaIsoApp_neg_ofMul]
-  exact dualIsoOfIsoField_inv_apply _ _ x v
+  -- As in `rightDualDeltaIso_hom_hom_apply`, the component is `rightDualDeltaIsoApp` by
+  -- definition.
+  change ((rightDualDeltaIsoApp g (-Additive.ofMul g)).inv.hom x :
+    (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v = _
+  rw [rightDualDeltaIsoApp_neg_ofMul]
+  exact rightDualIsoOfIsoField_inv_apply _ _ x v
 
-/-- The right dual of `X` is its graded dual. -/
-@[simp]
-theorem rightDual_eq (X : VecTwisted k G c) : (Xᘁ : VecTwisted k G c) = dual X :=
-  (rfl)
+end VecTwisted
 
-/-- The left dual of `X` is its graded dual. -/
-@[simp]
-theorem leftDual_eq (X : VecTwisted k G c) : (ᘁX : VecTwisted k G c) = dual X :=
-  (rfl)
+end Rigid
 
-end TauCeti.VecTwisted
+end TauCeti

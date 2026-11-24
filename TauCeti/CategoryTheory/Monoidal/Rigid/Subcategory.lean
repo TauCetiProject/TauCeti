@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.OfEquivalence
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Duality in full monoidal subcategories
@@ -17,16 +16,11 @@ subcategory containing both objects: it is pulled back along the fully faithful 
 inclusion by `CategoryTheory.ExactPairing.ofFullyFaithful`. Its evaluation and coevaluation are
 the ambient ones on underlying objects. Consequently an object and a chosen dual that both
 satisfy a monoidal property remain dual to one another after imposing that property.
-Conversely, the image of an exact pairing of the subcategory under the inclusion has the same
-evaluation and coevaluation on underlying objects.
 
 ## Main declarations
 
 * `CategoryTheory.ObjectProperty.exactPairingFullSubcategory`: an ambient exact pairing induces
-  one in a full monoidal subcategory;
-* `CategoryTheory.ObjectProperty.ι_mapExactPairing_evaluation` and
-  `CategoryTheory.ObjectProperty.ι_mapExactPairing_coevaluation`: the evaluation and coevaluation
-  of the image of an exact pairing under the inclusion.
+  one in a full monoidal subcategory.
 -/
 
 public section
@@ -62,21 +56,5 @@ theorem exactPairingFullSubcategory_evaluation_hom (X Y : P.FullSubcategory)
     [ExactPairing X.obj Y.obj] : (ε_ X Y).hom = ε_ X.obj Y.obj :=
   -- As above, the evaluation is by definition a preimage under `P.ι`.
   (P.ι.map_preimage _).trans (by simp)
-
-/-- The evaluation of the image of an exact pairing of a full monoidal subcategory under the
-inclusion is the evaluation of the pairing on underlying objects. -/
-@[simp]
-theorem ι_mapExactPairing_evaluation (X Y : P.FullSubcategory) [ExactPairing X Y] :
-    @ExactPairing.evaluation C _ _ X.obj Y.obj (P.ι.mapExactPairing X Y) =
-      (ε_ X Y).hom :=
-  (P.ι.mapExactPairing_evaluation X Y).trans (by simp [← Functor.Monoidal.inv_ε])
-
-/-- The coevaluation of the image of an exact pairing of a full monoidal subcategory under the
-inclusion is the coevaluation of the pairing on underlying objects. -/
-@[simp]
-theorem ι_mapExactPairing_coevaluation (X Y : P.FullSubcategory) [ExactPairing X Y] :
-    @ExactPairing.coevaluation C _ _ X.obj Y.obj (P.ι.mapExactPairing X Y) =
-      (η_ X Y).hom :=
-  (P.ι.mapExactPairing_coevaluation X Y).trans (by simp)
 
 end CategoryTheory.ObjectProperty

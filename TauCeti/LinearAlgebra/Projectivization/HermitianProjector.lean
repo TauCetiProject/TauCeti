@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 import Mathlib.LinearAlgebra.Matrix.Action
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # The Hermitian projector of a line
@@ -164,10 +165,8 @@ the Hermitian projector of `U x` is `U P U*`, where `P` is that of `x`. -/
 theorem rankOneHermitianProjector_unitary_mulVec [DecidableEq ι] {U : Matrix ι ι K}
     (hU : U ∈ unitaryGroup ι K) (x : ι → K) :
     rankOneHermitianProjector (U *ᵥ x) = U * rankOneHermitianProjector x * star U := by
-  have hdot : star (U *ᵥ x) ⬝ᵥ (U *ᵥ x) = star x ⬝ᵥ x := by
-    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, ← star_eq_conjTranspose,
-      mem_unitaryGroup_iff'.mp hU, one_mulVec]
-  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def, hdot, Matrix.mul_smul,
+  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def,
+    star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hU, Matrix.mul_smul,
     Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, star_mulVec, star_eq_conjTranspose]
 
 variable (ι K) in
