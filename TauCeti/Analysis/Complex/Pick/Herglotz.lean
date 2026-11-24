@@ -403,7 +403,8 @@ theorem eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b b' : �
 /-- **The Herglotz representation theorem.** A function holomorphic on the upper half-plane with
 nonnegative imaginary part has a unique representation
 `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` with `b ≥ 0` and `ν` a positive measure
-of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`; its constant term is `a = Re F(i)`. -/
+of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. The constant term of this representation is
+`Re F(i)`, by `TauCeti.re_eq_of_eq_subtractedResolventKernel_add`. -/
 theorem existsUnique_eq_subtractedResolventKernel_add {F : ℂ → ℂ}
     (hF : DifferentiableOn ℂ F UpperHalfPlane.upperHalfPlaneSet)
     (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, 0 ≤ (F z).im) :

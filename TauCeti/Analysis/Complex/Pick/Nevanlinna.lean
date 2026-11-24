@@ -466,32 +466,26 @@ theorem ext_of_integral_nevanlinnaKernel {rho rho' : Measure ℝ} [IsFiniteMeasu
   have hne {z : ℂ} (hz : 0 < z.im) (hzI : z ≠ I) :
       resolventTransform rho z = resolventTransform rho' z := by
     have h1 : 1 + z ^ 2 ≠ 0 := by
-      have : 1 + z ^ 2 = (z - I) * (z + I) := by ring_nf; rw [I_sq]; ring
+      have : 1 + z ^ 2 = (z - I) * (z + I) := by linear_combination I_sq
       rw [this]
       refine mul_ne_zero (sub_ne_zero.2 hzI) fun h0 ↦ ?_
       have := congrArg im h0
-      simp only [add_im, I_im, zero_im] at this
+      simp at this
       linarith
     have := hrep z hz
     rw [hmass, _root_.add_right_inj] at this
     exact mul_left_cancel₀ h1 this
   refine ext_of_resolventTransform fun z hz ↦ ?_
   rcases eq_or_ne z I with rfl | hzI
-  · -- At `i`, approach along the imaginary axis, where the transforms agree, by continuity.
-    have hpath : Tendsto (fun s : ℝ ↦ I * (1 + s)) (𝓝[>] 0) (𝓝 I) := by
-      have : Tendsto (fun s : ℝ ↦ I * (1 + s)) (𝓝 0) (𝓝 (I * (1 + ((0 : ℝ) : ℂ)))) :=
-        (continuous_const.mul (continuous_const.add continuous_ofReal)).tendsto 0
-      simpa using this.mono_left nhdsWithin_le_nhds
+  · -- At `i`, the transforms agree on a punctured neighbourhood, so by continuity also at `i`.
     have hcont (μ : Measure ℝ) [IsFiniteMeasure μ] :
-        Tendsto (fun s : ℝ ↦ resolventTransform μ (I * (1 + s))) (𝓝[>] 0)
-          (𝓝 (resolventTransform μ I)) :=
-      (continuousAt_resolventTransform_of_im_ne_zero (by simp)).tendsto.comp hpath
+        Tendsto (resolventTransform μ) (𝓝[≠] I) (𝓝 (resolventTransform μ I)) :=
+      (continuousAt_resolventTransform_of_im_ne_zero (by simp)).tendsto.mono_left
+        nhdsWithin_le_nhds
     refine tendsto_nhds_unique (hcont rho) ((hcont rho').congr' ?_)
-    filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s)
-    refine (hne (by simpa using (by positivity : (0 : ℝ) < 1 + s)) fun h0 ↦ ?_).symm
-    have := congrArg im h0
-    simp only [mul_im, I_re, I_im, add_re, one_re, ofReal_re, add_im, one_im, ofReal_im] at this
-    linarith
+    filter_upwards [nhdsWithin_le_nhds (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz),
+      self_mem_nhdsWithin] with w hw hwI
+    exact (hne hw hwI).symm
   · exact hne hz hzI
 
 end MeasureTheory.Measure

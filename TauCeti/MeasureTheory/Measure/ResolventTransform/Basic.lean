@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
+import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -111,8 +112,7 @@ variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 Mathlib's `hasDerivAt_resolventTransform`. -/
 theorem continuousAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     ContinuousAt (resolventTransform μ) z :=
-  (hasDerivAt_resolventTransform z fun ⟨x, _, hx⟩ ↦
-    hz (by simpa using (congrArg Complex.im hx).symm)).continuousAt
+  (hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)).continuousAt
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
