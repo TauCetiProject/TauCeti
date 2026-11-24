@@ -45,7 +45,7 @@ exactly `m` preimages under `v` (`degree_eq_ncard_of_orbitTorus_comp_eq`): the m
 number of sheets of `C` over the embedded torus `(ℝ / ℤ) × γ`. Since `τ` is injective, `u` is
 injective exactly when `m = 1` (`injective_iff_degree_eq_one_of_orbitTorus_comp_eq`), the embedded
 case, whose `Ω`-area is the least period `d`
-(`integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero`).
+(`integralTopForm_mpullback_suspensionForm_eq_degree_mul` with `m = 1`).
 
 ## Main results
 
@@ -80,7 +80,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
   {x : M} {d : ℕ} [Fact (0 < (d : ℝ))] (h : IsPeriodicPt φ d x)
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ (ℝ × ℝ) H'} [I'.Boundaryless]
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ (ℝ × ℝ) H'}
   {C : Type*} [TopologicalSpace C] [ChartedSpace H' C] [IsManifold I' ∞ C] [T2Space C]
   [CompactSpace C] {o : Manifold.Orientation I' C (Fin 2)}
   {u : C → UnitAddCircle × SmoothMappingTorus φ} {v : C → UnitAddCircle × AddCircle (d : ℝ)}
@@ -91,7 +91,8 @@ boundaryless surface modelled on `ℝ × ℝ`. Then for every smooth two-form `�
 of `u^* β` over `C` is `deg v` times the integral of `τ^* β` over the torus, for the product of the
 positive orientations of the two circles. -/
 theorem integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq
-    (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v) (hτv : orbitTorus φ h ∘ v = u)
+    [BoundarylessManifold I' C] (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
+    (hτv : orbitTorus φ h ∘ v = u)
     (β : SmoothForm (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) ℝ 2) :
     integralTopForm o
         (SmoothForm.mpullback u (hτv ▸ (contMDiff_orbitTorus h).comp hv) β).val =
@@ -104,7 +105,7 @@ theorem integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq
     (SmoothForm.isSmoothForm _)
     (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
 
-variable [I.Boundaryless] [FiniteDimensional ℝ E] [PreconnectedSpace C]
+variable [I'.Boundaryless] [I.Boundaryless] [FiniteDimensional ℝ E] [PreconnectedSpace C]
   {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
     (UnitAddCircle × SmoothMappingTorus φ)}
   {j : SmoothAlmostComplexStructure I' C}
