@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Segment
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
@@ -193,10 +194,7 @@ theorem geodesicSegment_subset_setOf_dist_le_dist {p q z w : ℍ}
 theorem geodesicSegment_subset_setOf_le_re {a : ℝ} {z w : ℍ} (hz : a ≤ z.re) (hw : a ≤ w.re) :
     geodesicSegment z w ⊆ {u : ℍ | a ≤ u.re} := by
   have key (u : ℍ) : a ≤ u.re ↔ dist u ((a + 1) +ᵥ I) ≤ dist u ((a - 1) +ᵥ I) := by
-    rw [dist_le_dist_iff, Complex.dist_eq, Complex.dist_eq, Complex.sq_norm, Complex.sq_norm]
-    simp only [vadd_im, I_im, one_mul, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
-      coe_vadd, Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, coe_re,
-      coe_im, coe_I, Complex.I_re, Complex.I_im]
+    rw [dist_le_dist_iff_re_im, vadd_re, vadd_re, vadd_im, vadd_im, I_re, I_im]
     constructor <;> intro h <;> nlinarith
   exact fun u hu ↦ (key u).2 <|
     geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu
@@ -205,10 +203,7 @@ theorem geodesicSegment_subset_setOf_le_re {a : ℝ} {z w : ℍ} (hz : a ≤ z.r
 theorem geodesicSegment_subset_setOf_re_le {b : ℝ} {z w : ℍ} (hz : z.re ≤ b) (hw : w.re ≤ b) :
     geodesicSegment z w ⊆ {u : ℍ | u.re ≤ b} := by
   have key (u : ℍ) : u.re ≤ b ↔ dist u ((b - 1) +ᵥ I) ≤ dist u ((b + 1) +ᵥ I) := by
-    rw [dist_le_dist_iff, Complex.dist_eq, Complex.dist_eq, Complex.sq_norm, Complex.sq_norm]
-    simp only [vadd_im, I_im, one_mul, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
-      coe_vadd, Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, coe_re,
-      coe_im, coe_I, Complex.I_re, Complex.I_im]
+    rw [dist_le_dist_iff_re_im, vadd_re, vadd_re, vadd_im, vadd_im, I_re, I_im]
     constructor <;> intro h <;> nlinarith
   exact fun u hu ↦ (key u).2 <|
     geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu
@@ -228,12 +223,9 @@ theorem geodesicSegment_subset_setOf_le_normSq_sub {c ρ : ℝ} {z w : ℍ}
   set p : ℍ := mk (c + (2 * r : ℝ) * Complex.I) (by simp [hr])
   set q : ℍ := mk (c + (r / 2 : ℝ) * Complex.I) (by simp [hr])
   have key (u : ℍ) : ρ ≤ Complex.normSq ((u : ℂ) - c) ↔ dist u p ≤ dist u q := by
-    rw [dist_le_dist_iff, Complex.dist_eq, Complex.dist_eq, Complex.sq_norm, Complex.sq_norm,
-      ← hr2]
-    simp only [p, q, mk_im, Complex.normSq_apply,
-      Complex.sub_re, Complex.sub_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im, coe_re,
-      coe_im]
+    rw [dist_le_dist_iff_re_im, Complex.normSq_sub_ofReal, coe_re, coe_im, ← hr2]
+    simp only [p, q, mk_re, mk_im, Complex.add_re, Complex.add_im, Complex.re_ofReal_mul,
+      Complex.im_ofReal_mul, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
     constructor <;> intro h <;> nlinarith
   exact fun u hu ↦ (key u).2 <|
     geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu

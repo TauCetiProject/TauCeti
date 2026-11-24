@@ -19,6 +19,7 @@ the norm along upward vertical rays leaving a point of the closed upper half-pla
 
 ## Main results
 
+* `Complex.normSq_sub_ofReal`: the squared distance to a real point, in coordinates.
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
 * `Complex.norm_sub_eq_of_normSq_sub_eq`: a point at squared distance `ρ ^ 2` is at distance `ρ`.
@@ -49,6 +50,10 @@ theorem norm_sq_add_I_mul_div_sqrt_two (x y : ℝ) :
     ‖((x : ℂ) + I * y) / (Real.sqrt 2 : ℝ)‖ ^ 2 = (x ^ 2 + y ^ 2) / 2 := by
   rw [Complex.sq_norm, map_div₀, normSq_ofReal, mul_comm I,
     normSq_add_mul_I, Real.mul_self_sqrt (by norm_num)]
+
+/-- The squared distance from `z` to a real point `c`, in coordinates. -/
+theorem normSq_sub_ofReal (z : ℂ) (c : ℝ) : normSq (z - c) = (z.re - c) ^ 2 + z.im ^ 2 := by
+  simp [normSq_apply, sq]
 
 /-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
 functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/

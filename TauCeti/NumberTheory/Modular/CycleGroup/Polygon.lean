@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Order.BigOperators.Group.List
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Geometry
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
+import TauCeti.Algebra.Order.BigOperators.Group.List
+import TauCeti.Analysis.Complex.NormSq
 
 /-!
 # The Ford polygon of a digit cycle
@@ -38,9 +40,9 @@ centres `(n.take k).sum` and `(n.take (k + 1)).sum` is `n[k]`.
 * `TauCeti.ModularGroup.isClosed_cyclePolygon`, `measurableSet_cyclePolygon` and
   `geodesicSegment_subset_cyclePolygon`: the polygon is closed, measurable and hyperbolically
   convex.
-* `TauCeti.ModularGroup.take_sum_add_two_le_take_sum` and
-  `disjoint_setOf_normSq_sub_take_sum_le_one`: for digits at least `2`, distinct centres are at
-  least `2` apart and their closed unit discs are disjoint in `ℍ`.
+* `TauCeti.ModularGroup.disjoint_setOf_normSq_sub_take_sum_le_one`: for digits at least `2`,
+  distinct centres are at least `2` apart (`List.sum_take_add_le_sum_take`), so their closed unit
+  discs are disjoint in `ℍ`.
 * `TauCeti.ModularGroup.cyclePolygon_inter_setOf_lt_im` and
   `volume_cyclePolygon_inter_setOf_lt_im`: above height `Y ≥ 1` the polygon is the full strip,
   of area `m / Y`; `take_sum_vadd_I_mem_cyclePolygon`: the points `N_k + i` lie in it.
@@ -85,11 +87,6 @@ theorem mem_cyclePolygon :
       ∀ k ≤ n.length, 1 ≤ Complex.normSq ((z : ℂ) - ((n.take k).sum : ℂ)) := by
   simp [cyclePolygon]
 
-/-- The squared distance from a point of `ℍ` to a real centre, in coordinates. -/
-private theorem normSq_sub_natCast (z : ℍ) (c : ℕ) :
-    Complex.normSq ((z : ℂ) - (c : ℂ)) = (z.re - c) ^ 2 + z.im ^ 2 := by
-  simp [Complex.normSq_apply, sq]
-
 /-- A point of the Ford polygon lies outside the open unit disc about every prefix sum,
 including the prefix sums `(n.take k).sum = n.sum` with `k > ℓ`. -/
 theorem one_le_normSq_sub_of_mem_cyclePolygon (hz : z ∈ cyclePolygon n) (k : ℕ) :
@@ -133,16 +130,6 @@ theorem geodesicSegment_subset_cyclePolygon {w : ℍ} (hz : z ∈ cyclePolygon n
 
 /-! ### Separation of the centres -/
 
-/-- If every digit is at least `2`, then distinct prefix sums are at least `2` apart. -/
-theorem take_sum_add_two_le_take_sum (hn : ∀ a ∈ n, 2 ≤ a) {j k : ℕ} (hjk : j < k)
-    (hk : k ≤ n.length) : (n.take j).sum + 2 ≤ (n.take k).sum := by
-  have hj : j < n.length := hjk.trans_le hk
-  calc (n.take j).sum + 2 ≤ (n.take j).sum + n[j] := by
-        gcongr
-        exact hn _ (List.getElem_mem hj)
-    _ = (n.take (j + 1)).sum := (List.sum_take_succ n j hj).symm
-    _ ≤ (n.take k).sum := List.monotone_sum_take n hjk
-
 /-- If every digit is at least `2`, then the closed unit discs about two distinct prefix sums do
 not meet in `ℍ`: their centres are at least `2` apart, so they can only touch on the real
 axis. -/
@@ -155,13 +142,13 @@ theorem disjoint_setOf_normSq_sub_take_sum_le_one (hn : ∀ a ∈ n, 2 ≤ a) {j
       (ha : Complex.normSq ((z : ℂ) - (a : ℂ)) ≤ 1)
       (hb : Complex.normSq ((z : ℂ) - (b : ℂ)) ≤ 1) : False := by
     have hab' : (a : ℝ) + 2 ≤ b := by exact_mod_cast hab
-    rw [normSq_sub_natCast] at ha hb
+    rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im] at ha hb
     nlinarith [z.im_pos, sq_nonneg (z.re - a + (z.re - b))]
   rw [Set.disjoint_left]
   intro z hzj hzk
   rcases hjk.lt_or_gt with h | h
-  · exact key (take_sum_add_two_le_take_sum hn h hk) z hzj hzk
-  · exact key (take_sum_add_two_le_take_sum hn h hj) z hzk hzj
+  · exact key (List.sum_take_add_le_sum_take hn h (h.trans_le hk)) z hzj hzk
+  · exact key (List.sum_take_add_le_sum_take hn h (h.trans_le hj)) z hzk hzj
 
 /-! ### The cusp strip -/
 
@@ -170,7 +157,7 @@ polygon. -/
 theorem mem_cyclePolygon_of_one_le_im (h0 : 0 ≤ z.re) (hm : z.re ≤ (n.sum : ℝ))
     (him : 1 ≤ z.im) : z ∈ cyclePolygon n := by
   refine mem_cyclePolygon.2 ⟨h0, hm, fun k _ ↦ ?_⟩
-  rw [normSq_sub_natCast]
+  rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im]
   nlinarith [sq_nonneg (z.re - (n.take k).sum)]
 
 /-- The points `N_k + i` lie in the Ford polygon, for every prefix sum `N_k`. -/
@@ -218,7 +205,7 @@ theorem mem_cycleFreeInterval {k : ℕ} {x : ℝ} :
       ((n.take k).sum : ℝ) + 1 < x ∧ x < ((n.take (k + 1)).sum : ℝ) - 1 := by
   rw [cycleFreeInterval_def, mem_Ioo]
 
-/-- The right end of the `k`-th free interval is `1` below `N_k + n[k]`. -/
+/-- For `k < ℓ`, the real prefix sum `N_{k+1}` equals `N_k + n[k]`. -/
 private theorem take_succ_sum_cast {k : ℕ} (hk : k < n.length) :
     ((n.take (k + 1)).sum : ℝ) = (n.take k).sum + n[k] := by
   rw [List.sum_take_succ n k hk, Nat.cast_add]
@@ -246,7 +233,7 @@ theorem mem_cyclePolygon_of_re_mem_Icc {k : ℕ}
   have hsum : ((n.take (k + 1)).sum : ℝ) ≤ n.sum := by
     exact_mod_cast (List.take_sublist (k + 1) n).sum_le_sum fun _ _ ↦ Nat.zero_le _
   refine mem_cyclePolygon.2 ⟨by linarith, by linarith, fun j _ ↦ ?_⟩
-  rw [normSq_sub_natCast]
+  rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im]
   -- The centre `N_j` lies at or left of `N_k`, or at or right of `N_{k+1}`.
   have hgap : 1 ≤ (z.re - (n.take j).sum) ^ 2 := by
     rcases le_or_gt j k with hjk | hjk
