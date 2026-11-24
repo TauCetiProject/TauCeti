@@ -124,16 +124,11 @@ private theorem det_compound_of_two_ne_zero {K : Type*} [Field K] (h2 : (2 : K) 
     exact List.prod_eq_one fun x hx ↦ by
       obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
       exact det_compound_transvection (Ne.isUnit h2) t.hij t.c r
-  have hdet (L : List (TransvectionStruct ι K)) :
-      (L.map TransvectionStruct.toMatrix).prod.det = 1 := by
-    rw [← coe_detMonoidHom, map_list_prod, List.map_map]
-    exact List.prod_eq_one fun x hx ↦ by
-      obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
-      exact det_transvection_of_ne _ _ t.hij t.c
   have h := hcomp L
   have h' := hcomp L'
   rw [detCompoundHom_apply] at h h'
-  rw [compound_mul, compound_mul, det_mul, det_mul, h, h', det_mul, det_mul, hdet, hdet,
+  rw [compound_mul, compound_mul, det_mul, det_mul, h, h', det_mul, det_mul,
+    TransvectionStruct.det_toMatrix_prod, TransvectionStruct.det_toMatrix_prod,
     compound_diagonal, det_diagonal, det_diagonal, Set.powersetCard.prod_prod hr]
   simp only [one_mul, mul_one]
 
