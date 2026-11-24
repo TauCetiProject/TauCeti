@@ -133,6 +133,15 @@ theorem ofRepresentationIso_hom_app_apply {W : Type w} [AddCommGroup W] [Module 
     ((ofRepresentationIso x e).hom.app y).hom v = e v :=
   (rfl)
 
+/-- The inverse of the isomorphism of local systems induced by an equivalence of representations
+is the inverse equivalence on every fiber. -/
+@[simp]
+theorem ofRepresentationIso_inv_app_apply {W : Type w} [AddCommGroup W] [Module R W]
+    {ρ : Representation R (FundamentalGroup X x) V} {σ : Representation R (FundamentalGroup X x) W}
+    (e : ρ.Equiv σ) (y : FundamentalGroupoid X) (w : W) :
+    ((ofRepresentationIso x e).inv.app y).hom w = e.symm w :=
+  (rfl)
+
 /-- **The monodromy of the local system of a representation is that representation.** -/
 @[simp]
 theorem monodromyRepresentation_ofRepresentation

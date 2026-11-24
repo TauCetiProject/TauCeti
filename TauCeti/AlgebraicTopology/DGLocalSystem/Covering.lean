@@ -51,6 +51,8 @@ the rank-one sign representation.
   map is concentrated in degree zero.
 * `IsCoveringMap.liftingLocalSystemPermutationIso_hom_apply_lof_ofCube_point`: the identification
   sends the `0`-chain of a sheet to that sheet.
+* `IsCoveringMap.liftingLocalSystemPermutationIso_inv_apply_single`: conversely, its inverse sends a
+  sheet to the `0`-chain of that sheet.
 * `Circle.representation_liftingLocalSystem_sq`: for the double cover of the circle, the generator
   of the fundamental group exchanges the two point chains of the DG local system.
 
@@ -140,28 +142,19 @@ private def representationEquiv :
       (LocalCoefficientSystem.monodromyRepresentation (hp.permutationLocalSystem R) b) :=
   .mk (chainEquiv hp R Φ b) fun g ↦ LinearMap.ext fun m ↦ by
     have : DiscreteTopology {e // p.hom e = b} := (hp b).discreteTopology_fiber
-    let _ := (hp.isTransitive Φ).mulAction b
-    let _ := (hp.isTransitive Φ).continuousSMul b
-    obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g⁻¹
-    rw [← inv_inv g, ← hγ, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply,
-      LocalCoefficientSystem.monodromyRepresentation_apply]
-    -- `chainEquiv` is `cubicalChainModuleFinsuppEquiv` followed by a relabelling of the sheets, and
-    -- the transport of the permutation local system is `Finsupp.lmapDomain` of the monodromy
-    -- (`IsCoveringMap.permutationLocalSystem_map_apply`).
-    let e : {e // p.hom e = b} ≃ p.hom ⁻¹' {b} :=
-      Equiv.subtypeEquivRight fun _ ↦ Set.mem_singleton_iff.symm
-    change Finsupp.domLCongr (M := R) (R := R) e
-        (cubicalChainModuleFinsuppEquiv _ (MooreLoopSpace B b) R (op _ • m)) =
-      Finsupp.lmapDomain R R _ (Finsupp.domLCongr (M := R) (R := R) e
-        (cubicalChainModuleFinsuppEquiv _ (MooreLoopSpace B b) R m))
-    rw [cubicalChainModuleFinsuppEquiv_op_smul, Finsupp.domLCongr_apply, Finsupp.domLCongr_apply,
-      Finsupp.domCongr_apply, Finsupp.domCongr_apply,
-      Finsupp.lmapDomain_apply, Finsupp.equivMapDomain_eq_mapDomain,
-      Finsupp.equivMapDomain_eq_mapDomain, ← Finsupp.mapDomain_comp, ← Finsupp.mapDomain_comp]
-    refine congrArg₂ _ (funext fun f ↦
-      Subtype.ext ((hp.coe_fiberAct_eq_monodromyPerm Φ b f γ).trans ?_)) rfl
-    simp only [e, coe_monodromyPerm, Function.comp_apply, Equiv.subtypeEquivRight_apply]
+    -- Check the intertwining on the basis of `0`-chains of points.
+    rw [← (cubicalChainModuleFinsuppEquiv _ (MooreLoopSpace B b) R).symm_apply_apply m]
+    induction cubicalChainModuleFinsuppEquiv _ (MooreLoopSpace B b) R m using
+      Finsupp.induction_linear with
+    | zero => simp only [map_zero]
+    | add a c ha hc => simp only [map_add, ha, hc]
+    | single f r =>
+      rw [cubicalChainModuleFinsuppEquiv_symm_single, LinearMap.comp_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe, map_smul, map_smul, map_smul, map_smul,
+        representation_liftingLocalSystem_lof_ofCube_point hp R Φ b, chainEquiv_lof_ofCube_point,
+        chainEquiv_lof_ofCube_point]
+      exact congrArg (r • ·) ((LocalCoefficientSystem.monodromyRepresentation_apply _ b g _).trans
+        (hp.permutationLocalSystem_map_single R g.asHom _ 1)).symm
 
 /-- **The DG local system of a covering map is its permutation local system**: the chains on the
 fibre of `p` over `b`, with the Moore loops acting through the lifting function, are the free
@@ -195,6 +188,24 @@ theorem liftingLocalSystemPermutationIso_hom_apply_lof_ofCube_point [PathConnect
   rw [Iso.trans_hom, NatTrans.comp_app]
   exact (hmon _).trans ((LocalCoefficientSystem.ofRepresentationIso_hom_app_apply b _ _ _).trans
     (chainEquiv_lof_ofCube_point hp R Φ b f))
+
+/-- **The inverse identification sends a sheet to the `0`-chain of that sheet.** -/
+@[simp]
+theorem liftingLocalSystemPermutationIso_inv_apply_single [PathConnectedSpace B]
+    (f : {e // p.hom e = b}) (r : R) :
+    (hp.liftingLocalSystemPermutationIso R Φ b).inv (Finsupp.single ⟨f, f.property⟩ r) =
+      r • cubicalChainModuleLof _ (MooreLoopSpace B b) R 0 (ofCube _ R (SingularCube.point f)) := by
+  have h : (hp.liftingLocalSystemPermutationIso R Φ b).hom
+      (r • cubicalChainModuleLof _ (MooreLoopSpace B b) R 0 (ofCube _ R (SingularCube.point f))) =
+        Finsupp.single ⟨f, f.property⟩ r := by
+    -- The identification is `R`-linear: its underlying `R`-linear map is its image under
+    -- `DGRightModuleCat.forgetToModuleCat`.
+    exact ((DGRightModuleCat.forgetToModuleCat.map
+        (hp.liftingLocalSystemPermutationIso R Φ b).hom).hom.map_smul r _).trans
+      ((congrArg (r • ·)
+        (hp.liftingLocalSystemPermutationIso_hom_apply_lof_ofCube_point R Φ b f)).trans
+          (Finsupp.smul_single_one _ r))
+  rw [← h, ← DGRightModuleCat.comp_apply, Iso.hom_inv_id, DGRightModuleCat.id_apply]
 
 end Permutation
 

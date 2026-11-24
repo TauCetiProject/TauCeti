@@ -103,6 +103,7 @@ theorem isConcentratedInDegreeZero_cubicalChainModuleDG :
 
 /-- **A point of `G` permutes the basis**: under the identification of the chain module with the
 free module on the points of `Y`, the `0`-chain of `g` acts by the map induced by `y ↦ y · g`. -/
+@[simp]
 theorem cubicalChainModuleFinsuppEquiv_op_smul (g : G) (m : cubicalChainModule Y G R) :
     cubicalChainModuleFinsuppEquiv Y G R
         (op (cubicalChainLof G R 0 (ofCube G R (SingularCube.point g))) • m) =
