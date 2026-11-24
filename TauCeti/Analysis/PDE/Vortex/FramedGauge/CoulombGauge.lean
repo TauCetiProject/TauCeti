@@ -951,10 +951,7 @@ variable (hs) in
 `k ≥ 3`. In the real chart of `A_m^k`, there are an open neighbourhood `U` of the coordinates of `x`
 and a map `π` of the real coordinates, smooth on `U` and fixing the coordinates of `x`, such that
 for every field `y` with coordinates in `U`, `π` sends the coordinates of `y` to those of a gauge
-transform `g · y`, `g ∈ G_(k+1)`, lying in the Coulomb slice `coulombSlice x` of `x`. The gauge is
-`exp (i Φ y)` with the smooth phase of
-`exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice`, and `π` is smooth because the
-gauge action is (`TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`). -/
+transform `g · y`, `g ∈ G_(k+1)`, lying in the Coulomb slice `coulombSlice x` of `x`. -/
 theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
     ∃ U : Set (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)), IsOpen U ∧
@@ -966,6 +963,8 @@ theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq (hk : 3 ≤ k)
         ∀ y : SobolevFieldSpace f m k, y.realSubRef (Nat.cast_nonneg k) ∈ U →
           ∃ g : SobolevTopologicalGaugeGroup hs, g • y ∈ coulombSlice x ∧
             (g • y).realSubRef (Nat.cast_nonneg k) = π (y.realSubRef (Nat.cast_nonneg k)) := by
+  -- Take `g = exp (i Φ y)` with the smooth phase `Φ`; `π` is smooth because the gauge action is
+  -- (`contDiff_smulCoord_expGauge`).
   obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ⟩ :=
     exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice hs hk x
   -- The real part of the coordinates of `exp (i Φ u) · (x_m + u)`.
