@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 public import TauCeti.Analysis.CStarAlgebra.FiniteDimensional.MultiplicityMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Matrix
+import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.EuclideanLin
@@ -58,17 +59,6 @@ section UnitaryConjugacy
 
 variable {ι κ : Type*} {n : ι → Type*} {m : κ → Type*}
 
-private theorem piSingle_ofMatrix_single_mul [DecidableEq ι] [∀ i, Fintype (n i)]
-    (i : ι) [DecidableEq (n i)] (a b c : n i) :
-    (Pi.single i (CStarMatrix.ofMatrix (Matrix.single a b (1 : ℂ))) :
-        ∀ i', CStarMatrix (n i') (n i') ℂ) *
-      Pi.single i (CStarMatrix.ofMatrix (Matrix.single b c 1)) =
-      Pi.single i (CStarMatrix.ofMatrix (Matrix.single a c 1)) := by
-  rw [← Pi.single_mul]
-  congr 1
-  apply CStarMatrix.ofMatrix.symm.injective
-  simp
-
 private def evalEuclideanHom [∀ i, Fintype (n i)] [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ)) (j : κ) :
     (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ]
@@ -83,21 +73,6 @@ private theorem evalEuclideanHom_apply [∀ i, Fintype (n i)] [∀ j, Fintype (m
     (j : κ) (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
     evalEuclideanHom φ j x = CStarMatrix.toEuclideanCLM (m j) (φ x j) := by
   simp [evalEuclideanHom]
-
-private theorem star_piSingle_ofMatrix_single [DecidableEq ι] (i : ι) [DecidableEq (n i)]
-    (p q : n i) :
-    star (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q (1 : ℂ))) :
-        ∀ i', CStarMatrix (n i') (n i') ℂ) =
-      Pi.single i (CStarMatrix.ofMatrix (Matrix.single q p 1)) := by
-  rw [← Pi.single_star]
-  congr 1
-  exact CStarMatrix.ofMatrix.symm.injective (by simp)
-
-private theorem piSingle_mul_of_ne [DecidableEq ι] [∀ i, Fintype (n i)]
-    {i₁ i₂ : ι} (h : i₁ ≠ i₂) (a : CStarMatrix (n i₁) (n i₁) ℂ)
-    (b : CStarMatrix (n i₂) (n i₂) ℂ) :
-    (Pi.single i₁ a : ∀ i, CStarMatrix (n i) (n i) ℂ) * Pi.single i₂ b = 0 := by
-  rw [← Pi.single_mul_left, Pi.single_eq_of_ne h, mul_zero, Pi.single_zero]
 
 private theorem finrank_range_evalEuclideanHom_single [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
@@ -148,16 +123,9 @@ private theorem evalEuclideanHom_single_partialBasisVec [DecidableEq ι]
   · subst hi
     simp only [↓reduceDIte]
     by_cases hq : q = q'
-    · subst hq; rw [piSingle_ofMatrix_single_mul]; simp
-    · have hC : CStarMatrix.ofMatrix (Matrix.single p q (1 : ℂ)) *
-          CStarMatrix.ofMatrix (Matrix.single q' (⟨q'⟩ : Nonempty (n i)).some 1) = 0 :=
-        CStarMatrix.ofMatrix.symm.injective (by simp [hq])
-      have hzero : (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q (1 : ℂ))) :
-          ∀ k, CStarMatrix (n k) (n k) ℂ) *
-          Pi.single i (CStarMatrix.ofMatrix (Matrix.single q' (⟨q'⟩ : Nonempty (n i)).some 1)) =
-          0 := by rw [← Pi.single_mul, hC, Pi.single_zero]
-      rw [hzero]; simp [hq]
-  · rw [piSingle_mul_of_ne hi]; simp [hi]
+    · subst hq; simp
+    · rw [CStarMatrix.piSingle_ofMatrix_single_mul_of_ne i p hq]; simp [hq]
+  · rw [Pi.single_mul_single_of_ne hi]; simp [hi]
 
 private theorem orthonormal_partialBasisVec [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
@@ -171,7 +139,8 @@ private theorem orthonormal_partialBasisVec [DecidableEq ι]
         (Pi.single i₁ (CStarMatrix.ofMatrix (Matrix.single p₁ (⟨p₁⟩ : Nonempty (n i₁)).some 1)))
         (minimalRangeBasis φ j i₁ ⟨p₁⟩ t₁) := rfl
   rw [hL, ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
-    ← map_star, star_piSingle_ofMatrix_single, evalEuclideanHom_single_partialBasisVec]
+    ← map_star, CStarMatrix.star_piSingle_ofMatrix_single, star_one,
+    evalEuclideanHom_single_partialBasisVec]
   by_cases hi : i₁ = i₂
   · subst hi; simp only [↓reduceDIte]
     by_cases hp : p₁ = p₂
@@ -183,7 +152,7 @@ private theorem orthonormal_partialBasisVec [DecidableEq ι]
           (Pi.single i₁ (CStarMatrix.ofMatrix (Matrix.single h.some h.some 1))) w = w := by
         rw [← hu]
         simp only [ContinuousLinearMap.coe_coe, ← mul_apply_eq_comp, ← map_mul,
-          piSingle_ofMatrix_single_mul]
+          CStarMatrix.piSingle_ofMatrix_single_mul_same, mul_one]
       rw [hw, ← Submodule.coe_inner,
         orthonormal_iff_ite.mp (minimalRangeBasis φ j i₁ h).orthonormal t₁ t₂]; simp
     · simp [hp]
@@ -245,23 +214,6 @@ private theorem toEuclideanCLM_blockHom_single_basisFun [DecidableEq ι]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   rw [Matrix.toEuclideanCLM_single_basisFun, one_smul]
 
-private theorem elem_eq_sum_piSingle_single [Fintype ι] [DecidableEq ι]
-    [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
-    (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
-    x = ∑ i : ι, ∑ p : n i, ∑ q : n i,
-      CStarMatrix.ofMatrix.symm (x i) p q •
-        Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q 1)) := by
-  conv_lhs => rw [← Finset.univ_sum_single x]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  funext i'
-  by_cases hi : i' = i
-  · subst hi; apply CStarMatrix.ofMatrix.symm.injective
-    simp only [Finset.sum_apply, Pi.smul_apply, Pi.single_eq_same, CStarMatrix.smul_of,
-      CStarMatrix.ofMatrix_symm_sum, Equiv.symm_apply_apply, Matrix.smul_single, smul_eq_mul,
-      mul_one]
-    exact Matrix.matrix_eq_sum_single _
-  · simp [Finset.sum_apply, Pi.single_eq_of_ne hi]
-
 private theorem intertwine_single_of_basis [Finite ι] [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
@@ -311,8 +263,8 @@ private theorem intertwine_of_basis [Finite ι] [DecidableEq ι]
   have key (i : ι) (p q : n i) :=
     congrFun (congrArg DFunLike.coe (intertwine_single_of_basis φ j hb i p q)) w
   simp only [mul_apply_eq_comp] at key ⊢
-  conv_lhs => rw [elem_eq_sum_piSingle_single x]
-  conv_rhs => rw [elem_eq_sum_piSingle_single x]
+  conv_lhs => rw [CStarMatrix.eq_sum_smul_piSingle_ofMatrix_single_one x]
+  conv_rhs => rw [CStarMatrix.eq_sum_smul_piSingle_ofMatrix_single_one x]
   simp only [map_sum, map_smul, sum_apply, smul_apply, key]
 
 private theorem exists_orthonormalBasis_partialBasisVec [DecidableEq ι]
@@ -616,40 +568,27 @@ namespace StarAlgHom
 
 variable {ι κ μ : Type*} {n : ι → Type*} {m : κ → Type*} {l : μ → Type*}
 
-private theorem comp_toNonUnitalStarAlgHom [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
-    [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)] [∀ k, Fintype (l k)] [∀ k, DecidableEq (l k)]
-    (ψ : (∀ j, CStarMatrix (m j) (m j) ℂ) →⋆ₐ[ℂ] (∀ k, CStarMatrix (l k) (l k) ℂ))
-    (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ)) :
-    (ψ.comp φ).toNonUnitalStarAlgHom = ψ.toNonUnitalStarAlgHom.comp φ.toNonUnitalStarAlgHom := by
-  ext; simp
-
 /-- Unitary conjugation in the target leaves the multiplicity matrix of a unital `⋆`-homomorphism
 invariant. -/
-@[simp high]
 theorem multiplicityMatrix_conjStarAlgAut_comp [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     (u : unitary (∀ j, CStarMatrix (m j) (m j) ℂ)) :
     (((Unitary.conjStarAlgAut ℂ _ u).toStarAlgHom.comp φ).toNonUnitalStarAlgHom).multiplicityMatrix
       = φ.toNonUnitalStarAlgHom.multiplicityMatrix := by
-  have heq : ((Unitary.conjStarAlgAut ℂ _ u).toStarAlgHom :
-      _ →⋆ₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ)).toNonUnitalStarAlgHom =
-      (Unitary.conjStarAlgAut ℂ _ u).toNonUnitalStarAlgHom := by ext; simp
-  rw [comp_toNonUnitalStarAlgHom, heq, NonUnitalStarAlgHom.multiplicityMatrix_conjStarAlgAut_comp]
+  rw [toNonUnitalStarAlgHom_comp, StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
+    NonUnitalStarAlgHom.multiplicityMatrix_conjStarAlgAut_comp]
 
 /-- Unitary conjugation in the source leaves the multiplicity matrix of a unital `⋆`-homomorphism
 invariant. -/
-@[simp high]
 theorem multiplicityMatrix_comp_conjStarAlgAut [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     (u : unitary (∀ i, CStarMatrix (n i) (n i) ℂ)) :
     ((φ.comp (Unitary.conjStarAlgAut ℂ _ u).toStarAlgHom).toNonUnitalStarAlgHom).multiplicityMatrix
       = φ.toNonUnitalStarAlgHom.multiplicityMatrix := by
-  have heq : ((Unitary.conjStarAlgAut ℂ _ u).toStarAlgHom :
-      _ →⋆ₐ[ℂ] (∀ i, CStarMatrix (n i) (n i) ℂ)).toNonUnitalStarAlgHom =
-      (Unitary.conjStarAlgAut ℂ _ u).toNonUnitalStarAlgHom := by ext; simp
-  rw [comp_toNonUnitalStarAlgHom, heq, NonUnitalStarAlgHom.multiplicityMatrix_comp_conjStarAlgAut]
+  rw [toNonUnitalStarAlgHom_comp, StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
+    NonUnitalStarAlgHom.multiplicityMatrix_comp_conjStarAlgAut]
 
 /-- **Classification of unital `⋆`-homomorphisms up to unitary conjugacy**: two unital
 `⋆`-homomorphisms between finite products of complex matrix C⋆-algebras are unitarily conjugate in
@@ -666,14 +605,13 @@ theorem exists_unitary_conj_iff_multiplicityMatrix_eq [Finite ι] [∀ i, Fintyp
     ψ.toNonUnitalStarAlgHom
 
 /-- Composition of unital `⋆`-homomorphisms multiplies their multiplicity matrices. -/
-@[simp]
 theorem multiplicityMatrix_comp [Fintype κ] [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)] [∀ k, Fintype (l k)] [∀ k, DecidableEq (l k)]
     (ψ : (∀ j, CStarMatrix (m j) (m j) ℂ) →⋆ₐ[ℂ] (∀ k, CStarMatrix (l k) (l k) ℂ))
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ)) :
     (ψ.comp φ).toNonUnitalStarAlgHom.multiplicityMatrix =
       ψ.toNonUnitalStarAlgHom.multiplicityMatrix * φ.toNonUnitalStarAlgHom.multiplicityMatrix := by
-  rw [comp_toNonUnitalStarAlgHom, NonUnitalStarAlgHom.multiplicityMatrix_comp]
+  rw [toNonUnitalStarAlgHom_comp, NonUnitalStarAlgHom.multiplicityMatrix_comp]
 
 end StarAlgHom
 

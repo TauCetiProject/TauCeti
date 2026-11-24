@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.Defs
 
@@ -45,6 +46,8 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `Matrix.trace_eq_rank_of_isIdempotentElem`: over a commutative local ring (in particular any
+  field), the trace of an idempotent square matrix equals its rank.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -195,6 +198,17 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
 end LinearMap
 
 namespace Matrix
+
+/-- **The trace of an idempotent matrix over a commutative local ring** (in particular over any
+field) equals its rank. This is the matrix form of
+`LinearMap.trace_eq_finrank_range_of_isIdempotentElem`. -/
+theorem trace_eq_rank_of_isIdempotentElem {ι R : Type*} [Fintype ι] [CommRing R] [IsLocalRing R]
+    {A : Matrix ι ι R} (hA : IsIdempotentElem A) :
+    A.trace = (A.rank : R) := by
+  classical
+  have hlin : IsIdempotentElem (Matrix.toLin' A) := hA.map Matrix.toLinAlgEquiv'
+  rw [← Matrix.trace_toLin'_eq, LinearMap.trace_eq_finrank_range_of_isIdempotentElem hlin,
+    Matrix.toLin'_apply', Matrix.finrank_range_mulVecLin]
 
 /-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
 an idempotent is the dimension of its range. This is the matrix form of

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.Data.Matrix.Basis
+import Mathlib.Algebra.GroupWithZero.Pi
+import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
@@ -48,6 +51,19 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`, and
   `CStarMatrix.ofMatrixL_symm_apply` do the same for the other algebraic operations and
   `CStarMatrix.ofMatrixL.symm`.
+* `CStarMatrix.ofMatrix_single_mul_ofMatrix_single_same`,
+  `CStarMatrix.ofMatrix_single_mul_ofMatrix_single_of_ne`,
+  `CStarMatrix.ofMatrix_single_mul_mul_ofMatrix_single`,
+  `CStarMatrix.conjTranspose_ofMatrix_single`, `CStarMatrix.star_ofMatrix_single`,
+  `CStarMatrix.isIdempotentElem_ofMatrix_single_one`,
+  `CStarMatrix.sum_ofMatrix_single_one`, `CStarMatrix.eq_sum_ofMatrix_single`,
+  `CStarMatrix.eq_sum_smul_ofMatrix_single_one`, and their `Pi.single` product forms
+  `CStarMatrix.piSingle_ofMatrix_single_mul_same`,
+  `CStarMatrix.piSingle_ofMatrix_single_mul_of_ne`, `CStarMatrix.star_piSingle_ofMatrix_single`,
+  `CStarMatrix.piSingle_one_eq_sum_ofMatrix_single`,
+  `CStarMatrix.eq_sum_piSingle_ofMatrix_single`, and
+  `CStarMatrix.eq_sum_smul_piSingle_ofMatrix_single_one`: matrix-unit multiplication, adjoint, and
+  spanning identities for C⋆-matrices and their products.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
@@ -187,7 +203,7 @@ lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
-lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+lemma ofMatrix_symm_zero {m : Type*} [Zero A] : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
 @[simp]
@@ -215,6 +231,7 @@ lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Reading a finite sum of C⋆-matrices as an ordinary matrix distributes over the sum. -/
+@[simp]
 lemma ofMatrix_symm_sum {m α : Type*} [AddCommMonoid A] (s : Finset α)
     (f : α → CStarMatrix m n A) :
     ofMatrix.symm (∑ x ∈ s, f x) = ∑ x ∈ s, ofMatrix.symm (f x) :=
@@ -346,6 +363,150 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+section MatrixUnits
+
+variable {n A : Type*}
+
+/-- Multiplying two C⋆-matrix units with matching inner index yields a matrix unit with the product
+of their entries. -/
+@[simp]
+theorem ofMatrix_single_mul_ofMatrix_single_same {l m k : Type*} [Fintype m]
+    [DecidableEq l] [DecidableEq m] [DecidableEq k] [NonUnitalNonAssocSemiring A]
+    (i : l) (j : m) (p : k) (c d : A) :
+    ofMatrix (Matrix.single i j c) * ofMatrix (Matrix.single j p d) =
+      ofMatrix (Matrix.single i p (c * d)) :=
+  ofMatrix.symm.injective (by simp)
+
+/-- Multiplying two C⋆-matrix units with distinct inner indices yields zero. -/
+@[simp]
+theorem ofMatrix_single_mul_ofMatrix_single_of_ne {l m k : Type*} [Fintype m]
+    [DecidableEq l] [DecidableEq m] [DecidableEq k] [NonUnitalNonAssocSemiring A]
+    (i : l) {j j' : m} (h : j ≠ j') (p : k) (c d : A) :
+    ofMatrix (Matrix.single i j c) * ofMatrix (Matrix.single j' p d) = 0 :=
+  ofMatrix.symm.injective (by simp [h])
+
+/-- Sandwiching a C⋆-matrix between two matrix units extracts the `(i', j')` entry. -/
+theorem ofMatrix_single_mul_mul_ofMatrix_single {l m k o : Type*} [Fintype m] [Fintype k]
+    [DecidableEq l] [DecidableEq m] [DecidableEq k] [DecidableEq o]
+    [NonUnitalNonAssocSemiring A] (i : l) (i' : m) (j' : k) (j : o) (a : A)
+    (M : CStarMatrix m k A) (b : A) :
+    ofMatrix (Matrix.single i i' a) * M * ofMatrix (Matrix.single j' j b) =
+      ofMatrix (Matrix.single i j (a * M i' j' * b)) :=
+  ofMatrix.symm.injective (by simp)
+
+/-- Every diagonal unit C⋆-matrix unit `ofMatrix (Matrix.single p p 1)` is idempotent. -/
+theorem isIdempotentElem_ofMatrix_single_one [Fintype n] [DecidableEq n] [NonAssocSemiring A]
+    (p : n) :
+    IsIdempotentElem (ofMatrix (Matrix.single p p (1 : A))) := by
+  rw [IsIdempotentElem, ofMatrix_single_mul_ofMatrix_single_same, mul_one]
+
+/-- The conjugate transpose of a C⋆-matrix unit swaps its indices and applies `star` to the
+entry. -/
+@[simp]
+theorem conjTranspose_ofMatrix_single {m : Type*} [DecidableEq m] [DecidableEq n]
+    [AddMonoid A] [StarAddMonoid A] (i : m) (j : n) (a : A) :
+    (ofMatrix (Matrix.single i j a)).conjTranspose = ofMatrix (Matrix.single j i (star a)) :=
+  ofMatrix.symm.injective (by simp)
+
+/-- The star of a square C⋆-matrix unit swaps its indices and applies `star` to the entry. -/
+@[simp]
+theorem star_ofMatrix_single [DecidableEq n] [AddMonoid A] [StarAddMonoid A]
+    (i j : n) (a : A) :
+    star (ofMatrix (Matrix.single i j a)) = ofMatrix (Matrix.single j i (star a)) :=
+  conjTranspose_ofMatrix_single i j a
+
+/-- The identity C⋆-matrix is the sum of the diagonal unit matrix units. -/
+theorem sum_ofMatrix_single_one [Fintype n] [DecidableEq n] [AddCommMonoid A] [One A] :
+    ∑ i : n, ofMatrix (Matrix.single i i (1 : A)) = (1 : CStarMatrix n n A) :=
+  ofMatrix.symm.injective (by simp [Matrix.sum_single_one])
+
+/-- Every C⋆-matrix expands as the sum of its entrywise matrix units. -/
+theorem eq_sum_ofMatrix_single {m : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [AddCommMonoid A] (M : CStarMatrix m n A) :
+    M = ∑ i : m, ∑ j : n, ofMatrix (Matrix.single i j (M i j)) :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_sum, Equiv.symm_apply_apply]
+    exact Matrix.matrix_eq_sum_single (ofMatrix.symm M)
+
+/-- Every C⋆-matrix over a semiring expands as a linear combination of the unit matrix units
+`ofMatrix (Matrix.single i j 1)`. -/
+theorem eq_sum_smul_ofMatrix_single_one {m : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [Semiring A] (M : CStarMatrix m n A) :
+    M = ∑ i : m, ∑ j : n, M i j • ofMatrix (Matrix.single i j (1 : A)) := by
+  conv_lhs => rw [eq_sum_ofMatrix_single M]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [smul_eq_mul]
+
+/-- Multiplying two single-block C⋆-matrix units in the same coordinate `i` with matching inner
+index `b` yields a single-block matrix unit with the product of their entries. -/
+@[simp]
+theorem piSingle_ofMatrix_single_mul_same {ι : Type*} [DecidableEq ι] {n : ι → Type*}
+    [∀ i, Fintype (n i)] [NonUnitalNonAssocSemiring A] (i : ι) [DecidableEq (n i)]
+    (a b c : n i) (x y : A) :
+    (Pi.single i (ofMatrix (Matrix.single a b x)) : ∀ i', CStarMatrix (n i') (n i') A) *
+      Pi.single i (ofMatrix (Matrix.single b c y)) =
+      Pi.single i (ofMatrix (Matrix.single a c (x * y))) := by
+  rw [← Pi.single_mul, ofMatrix_single_mul_ofMatrix_single_same]
+
+/-- Multiplying two single-block C⋆-matrix units in the same coordinate `i` with distinct inner
+indices yields zero. -/
+@[simp]
+theorem piSingle_ofMatrix_single_mul_of_ne {ι : Type*} [DecidableEq ι] {n : ι → Type*}
+    [∀ i, Fintype (n i)] [NonUnitalNonAssocSemiring A] (i : ι) [DecidableEq (n i)]
+    (a : n i) {b b' : n i} (h : b ≠ b') (c : n i) (x y : A) :
+    (Pi.single i (ofMatrix (Matrix.single a b x)) : ∀ i', CStarMatrix (n i') (n i') A) *
+      Pi.single i (ofMatrix (Matrix.single b' c y)) = 0 := by
+  rw [← Pi.single_mul, ofMatrix_single_mul_ofMatrix_single_of_ne a h c x y, Pi.single_zero]
+
+/-- The star of a single-block C⋆-matrix unit swaps its matrix indices and applies `star` to its
+entry. -/
+theorem star_piSingle_ofMatrix_single {ι : Type*} [DecidableEq ι] {n : ι → Type*}
+    [AddMonoid A] [StarAddMonoid A] (i : ι) [DecidableEq (n i)] (p q : n i) (a : A) :
+    star (Pi.single i (ofMatrix (Matrix.single p q a)) :
+        ∀ i', CStarMatrix (n i') (n i') A) =
+      Pi.single i (ofMatrix (Matrix.single q p (star a))) := by
+  simp
+
+/-- The `i`-th block identity in a product of C⋆-matrix algebras is the sum of the diagonal unit
+single-block matrix units at coordinate `i`. -/
+theorem piSingle_one_eq_sum_ofMatrix_single {ι : Type*} [DecidableEq ι] {n : ι → Type*}
+    [AddCommMonoid A] [One A] (i : ι) [Fintype (n i)] [DecidableEq (n i)] :
+    (Pi.single i (1 : CStarMatrix (n i) (n i) A) : ∀ i', CStarMatrix (n i') (n i') A) =
+      ∑ q : n i, Pi.single i (ofMatrix (Matrix.single q q (1 : A))) := by
+  rw [← sum_ofMatrix_single_one]
+  exact map_sum (AddMonoidHom.single (fun i' ↦ CStarMatrix (n i') (n i') A) i) _ _
+
+/-- Every element of a finite product of C⋆-matrix algebras expands as a sum of single-block matrix
+units. -/
+theorem eq_sum_piSingle_ofMatrix_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)] [AddCommMonoid A]
+    (x : ∀ i, CStarMatrix (n i) (n i) A) :
+    x = ∑ i : ι, ∑ p : n i, ∑ q : n i,
+      Pi.single i (ofMatrix (Matrix.single p q (x i p q))) := by
+  conv_lhs => rw [← Finset.univ_sum_single x]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  let f := AddMonoidHom.single (fun i' ↦ CStarMatrix (n i') (n i') A) i
+  change f (x i) = ∑ p : n i, ∑ q : n i, f (ofMatrix (Matrix.single p q (x i p q)))
+  conv_lhs => rw [eq_sum_ofMatrix_single (x i)]
+  rw [map_sum]
+  simp_rw [map_sum]
+
+/-- Every element of a finite product of C⋆-matrix algebras over a semiring expands as a linear
+combination of the unit single-block matrix units
+`Pi.single i (ofMatrix (Matrix.single p q 1))`. -/
+theorem eq_sum_smul_piSingle_ofMatrix_single_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)] [Semiring A]
+    (x : ∀ i, CStarMatrix (n i) (n i) A) :
+    x = ∑ i : ι, ∑ p : n i, ∑ q : n i,
+      x i p q • (Pi.single i (ofMatrix (Matrix.single p q (1 : A))) :
+        ∀ i', CStarMatrix (n i') (n i') A) := by
+  conv_lhs => rw [eq_sum_piSingle_ofMatrix_single x]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun p _ ↦
+    Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [← Pi.single_smul, smul_of, Matrix.smul_single, smul_eq_mul, mul_one]
+
+end MatrixUnits
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 

@@ -57,6 +57,7 @@ theorem evalNonUnitalStarAlgHom_comp_single_same (i : ι) :
   ext <| Pi.single_eq_same i
 
 /-- Evaluating `NonUnitalStarAlgHom.single R A i` at a distinct coordinate `j ≠ i` gives zero. -/
+@[simp]
 theorem evalNonUnitalStarAlgHom_comp_single_of_ne {i j : ι} (h : j ≠ i) :
     (Pi.evalNonUnitalStarAlgHom R A j).comp (single R A i) = 0 :=
   ext <| Pi.single_eq_of_ne h
