@@ -14,8 +14,11 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 # Finite localization of test functions
 
 A test function can be written as a finite sum of tests subordinate to any open cover of its
-support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
-continuity of the additive map is not required. If `E` is finite-dimensional, every compact
+support; for a cover by finitely many open sets and one further open set `Z`, the piece supported
+in `Z` can be kept separate
+(`TestFunction.exists_add_sum_eq_of_tsupport_subset_biUnion_union`). Consequently, an additive
+map on test functions which vanishes locally vanishes globally; continuity of the additive map is
+not required. If `E` is finite-dimensional, every compact
 subset of the domain also has a cutoff test function equal to one on a neighbourhood of it, every
 point of the domain has a test function with a prescribed value there, supported in a given
 neighbourhood of the point, and every point of the domain has a test function equal to one near it
@@ -134,6 +137,35 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
     have hle : χ i x ≤ 1 := (Finset.single_le_sum (fun j _ ↦ hχ0 j x) i.property).trans (hχ1 x)
     simpa [ψ, norm_smul, abs_of_nonneg (hχ0 i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) hle
+
+omit [FiniteDimensional ℝ E] in
+/-- A test function supported in `(⋃ i ∈ t, U i) ∪ Z`, for finitely many open sets `U i` and an
+open set `Z`, is the sum of a test function supported in `Z` and test functions supported in the
+`U i`. -/
+theorem exists_add_sum_eq_of_tsupport_subset_biUnion_union (φ : 𝓓^{n}(Ω, F)) {ι : Type*}
+    {t : Finset ι} {U : ι → Set E} (hU : ∀ i, IsOpen (U i)) {Z : Set E} (hZ : IsOpen Z)
+    (hφ : tsupport φ ⊆ (⋃ i ∈ t, U i) ∪ Z) :
+    ∃ (φ₀ : 𝓓^{n}(Ω, F)) (φs : t → 𝓓^{n}(Ω, F)),
+      tsupport φ₀ ⊆ Z ∧ (∀ i, tsupport (φs i) ⊆ U i) ∧ φ₀ + ∑ i, φs i = φ := by
+  classical
+  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate
+    (fun i : Option t ↦ i.elim Z fun i ↦ U i) (by rintro (_ | i); exacts [hZ, hU i])
+    fun x hx ↦ by
+      rcases hφ hx with hx | hx
+      · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 hx
+        exact mem_iUnion.2 ⟨some ⟨i, hi⟩, hxi⟩
+      · exact mem_iUnion.2 ⟨none, hx⟩
+  -- Extend the pieces by zero from `s` to all of `Option t`.
+  let φs : Option t → 𝓓^{n}(Ω, F) := fun i ↦ if h : i ∈ s then ψ ⟨i, h⟩ else 0
+  have hφs (i : Option t) : tsupport (φs i) ⊆ i.elim Z fun i ↦ U i := by
+    by_cases h : i ∈ s
+    · simpa [φs, h] using hψ ⟨i, h⟩
+    · simp [φs, h]
+  refine ⟨φs none, fun i ↦ φs (some i), hφs none, fun i ↦ hφs (some i),
+    (Fintype.sum_option φs).symm.trans ?_⟩
+  rw [← hsum, ← Finset.sum_subset (Finset.subset_univ s) fun i _ h ↦ by simp [φs, h],
+    ← Finset.sum_coe_sort s]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [φs]
 
 /-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
 in `[0, 1]`, equal to one on a neighbourhood of `K`, whose topological support lies in `W`. -/
