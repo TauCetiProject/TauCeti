@@ -145,15 +145,10 @@ theorem ofTraceForm_group (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
     (ofTraceForm G).group = G :=
   (rfl)
 
+@[simp]
 theorem ofTraceForm_innerForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
     (ofTraceForm G).innerForm = G.matrixTraceForm :=
   (rfl)
-
-@[simp]
-theorem ofTraceForm_innerForm_apply (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ))
-    (X Y : (ofTraceForm G).group.matrixLieAlgebra) :
-    (ofTraceForm G).innerForm X Y = -Complex.re ((X : Matrix n n ℂ) * Y).trace :=
-  ClosedSubgroup.matrixTraceForm_apply (G := G) X Y
 
 /-- For the trace form, `-tr (X * Y)` is already real and coincides with the real inner product
 `(ofTraceForm G).innerForm X Y`. -/
@@ -161,8 +156,8 @@ theorem ofTraceForm_neg_trace_mul (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ
     (X Y : G.matrixLieAlgebra) :
     -((X : Matrix n n ℂ) * (Y : Matrix n n ℂ)).trace = ((ofTraceForm G).innerForm X Y : ℂ) := by
   apply Complex.ext
-  · have h := ofTraceForm_innerForm_apply G X Y
-    simp [h]
+  · simp only [Complex.neg_re, Complex.ofReal_re]
+    exact (ClosedSubgroup.matrixTraceForm_apply (G := G) X Y).symm
   · have him := Matrix.im_trace_mul_eq_zero_of_conjTranspose_eq_neg
       (ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property)
       (ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra Y.property)

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.YangMills.StructureGroup
-import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.LinearAlgebra.BilinearForm.Hom
 import Mathlib.LinearAlgebra.Complex.Module
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.LinearAlgebra.Matrix.Unique
@@ -180,8 +179,7 @@ private theorem innerForm_su2OfCoord (x y : Fin 3 → ℝ) :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm
         (su2OfCoord x) (su2OfCoord y) =
       (x ⬝ᵥ y) / 2 :=
-  (CompactMatrixStructureGroup.ofTraceForm_innerForm_apply
-      (ClosedSubgroup.specialUnitary (Fin 2) ℂ) (su2OfCoord x) (su2OfCoord y)).trans <| by
+  (ClosedSubgroup.matrixTraceForm_apply (su2OfCoord x) (su2OfCoord y)).trans <| by
     dsimp [su2OfCoord]
     rw [trace_toMatrix_suTwoEquiv_mul]
     simp
@@ -309,12 +307,6 @@ private def pmOneGen : Matrix.unitaryGroup (Fin 1) ℂ :=
 private theorem pmOneGen_sq : pmOneGen ^ 2 = 1 :=
   Subtype.ext (by simp [pmOneGen, sq])
 
-private theorem pmOneGen_ne_one : pmOneGen ≠ 1 := by
-  intro h
-  have h00 := congrFun (congrFun (congrArg Subtype.val h) 0) 0
-  simp [pmOneGen] at h00
-  norm_num at h00
-
 private theorem isOfFinOrder_pmOneGen : IsOfFinOrder pmOneGen :=
   isOfFinOrder_iff_pow_eq_one.mpr ⟨2, by decide, pmOneGen_sq⟩
 
@@ -336,17 +328,10 @@ theorem finite_pmOneSubgroup :
 theorem mem_pmOneSubgroup_iff {U : Matrix.unitaryGroup (Fin 1) ℂ} :
     U ∈ pmOneSubgroup ↔
       (U : Matrix (Fin 1) (Fin 1) ℂ) = 1 ∨ (U : Matrix (Fin 1) (Fin 1) ℂ) = -1 := by
-  have hord : orderOf pmOneGen = 2 := orderOf_eq_prime pmOneGen_sq pmOneGen_ne_one
   change U ∈ Subgroup.zpowers pmOneGen ↔ _
-  rw [isOfFinOrder_pmOneGen.mem_zpowers_iff_mem_range_orderOf, hord]
-  simp only [Finset.mem_image, Finset.mem_range]
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    have : k = 0 ∨ k = 1 := by omega
-    rcases this with rfl | rfl <;> simp [pmOneGen]
-  · rintro (h1 | hm1)
-    · exact ⟨0, by decide, Subtype.ext h1.symm⟩
-    · exact ⟨1, by decide, Subtype.ext (by simpa [pmOneGen] using hm1.symm)⟩
+  rw [Subgroup.mem_zpowers_iff_of_sq_eq_one pmOneGen_sq]
+  exact ⟨fun h ↦ h.imp (congrArg Subtype.val) (congrArg Subtype.val),
+    fun h ↦ h.imp Subtype.ext Subtype.ext⟩
 
 /-- `{±1} ⊂ U(1)` as a compact matrix structure group. -/
 @[expose]
@@ -472,35 +457,29 @@ theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) �
       Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ (hD t).2
     exact ⟨h01, h10, hre0, hre1⟩
   · rintro ⟨h01, h10, hre0, hre1⟩
+    have hskew : Xᴴ = -X := by
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [Complex.ext_iff, h01, h10, hre0, hre1]
     rw [ClosedSubgroup.mem_matrixLieAlgebra_iff]
     intro t
-    let v : Fin 2 → ℂ := fun i ↦ (t : ℂ) * X i i
-    have hdiag : t • X = Matrix.diagonal v := by
+    have hdiag : t • X = Matrix.diagonal (fun i ↦ (t : ℂ) * X i i) := by
       ext i j
-      fin_cases i <;> fin_cases j <;> simp [v, Complex.real_smul, h01, h10]
-    have hexp_diag : NormedSpace.exp (t • X) = Matrix.diagonal (fun i ↦ Complex.exp (v i)) := by
-      rw [hdiag, Matrix.exp_diagonal]
-      let _ : NormedAlgebra ℚ ℂ := TauCeti.normedAlgebraRatOfReal
-      rw [Pi.exp_def]
-      congr 1
-      ext i
-      rw [← Complex.exp_eq_exp_ℂ]
-    have hunit : Matrix.diagonal (fun i ↦ Complex.exp (v i)) ∈ Matrix.unitaryGroup (Fin 2) ℂ := by
-      rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose, Matrix.diagonal_conjTranspose,
-        Matrix.diagonal_mul_diagonal]
-      have hmul : ∀ i : Fin 2, Complex.exp (v i) * (starRingEnd ℂ) (Complex.exp (v i)) = 1 := by
-        intro i
-        have hre_v : (v i).re = 0 := by
-          fin_cases i <;> simp [v, hre0, hre1]
-        have hconj_v : (starRingEnd ℂ) (v i) = -v i := by
-          apply Complex.ext
-          · simp [hre_v]
-          · simp
-        rw [← Complex.exp_conj, hconj_v, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [hmul]
-    refine ⟨⟨Matrix.diagonal (fun i ↦ Complex.exp (v i)), hunit⟩,
-      mem_torusSemidirectZ2Subgroup_iff.mpr (Or.inl ⟨by simp, by simp⟩), hexp_diag.symm⟩
+      fin_cases i <;> fin_cases j <;> simp [Complex.real_smul, h01, h10]
+    have hunit : NormedSpace.exp (t • X) ∈ Matrix.unitaryGroup (Fin 2) ℂ := by
+      open scoped Matrix.Norms.Operator in
+      let _ : SeminormedAddCommGroup (Matrix (Fin 2) (Fin 2) ℂ) :=
+        NormedAddCommGroup.toSeminormedAddCommGroup
+      let _ := Matrix.linftyOpTopologicalSpace (Fin 2) (Fin 2) ℂ
+      let _ := Matrix.linftyOpContinuousStar (Fin 2) ℂ
+      have hskew_t : t • X ∈ skewAdjoint (Matrix (Fin 2) (Fin 2) ℂ) := by
+        rw [skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_smul,
+          star_trivial, hskew, smul_neg]
+      exact NormedSpace.exp_mem_unitary_of_mem_skewAdjoint hskew_t
+    refine ⟨⟨NormedSpace.exp (t • X), hunit⟩,
+      mem_torusSemidirectZ2Subgroup_iff.mpr (Or.inl ?_), rfl⟩
+    dsimp only
+    rw [hdiag, Matrix.exp_diagonal]
+    simp
 
 /-- First diagonal basis element `e₁ = diag(i, 0)` of the Lie algebra of `T² ⋊ ℤ/2`. -/
 def torusE₁ : torusSemidirectZ2Subgroup.matrixLieAlgebra :=

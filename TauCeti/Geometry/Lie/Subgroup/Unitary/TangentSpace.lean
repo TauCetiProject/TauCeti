@@ -103,18 +103,24 @@ theorem mem_matrixTangentSpace_iff_mul_star {g : G} {V : Matrix n n 𝕜} :
   · intro h
     simpa [mul_assoc] using mul_mul_star_mem_matrixLieAlgebra (inv_mem g.property) h
 
+section
+
+open TauCeti TauCeti.Lie
+open scoped Matrix.Norms.Operator
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
+
 /-- **`g 𝔤 = 𝔤 g`.** The tangent space at `g` is also the image of the Lie algebra under right
 multiplication by `g`. -/
 theorem matrixTangentSpace_eq_map_mulRight (g : G) :
     G.matrixTangentSpace g =
       G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
-  ext V
-  rw [mem_matrixTangentSpace_iff_mul_star]
-  constructor
-  · intro h
-    exact ⟨_, h, by simp [mul_assoc]⟩
-  · rintro ⟨X, hX, rfl⟩
-    simpa [mul_assoc] using hX
+  have h := map_mulLeft_unitsLieSubalgebra_eq_map_mulRight
+    (Subgroup.le_normalizer (G.equivToGL g).property)
+  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
+
+end
 
 /-- The tangent space at the identity is the Lie algebra. -/
 @[simp]
@@ -246,19 +252,6 @@ theorem range_mvfderiv_matrixInclusion (g : G) :
       (G.equivToGL g)).range = G.matrixTangentSpace g := by
   have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal (G.equivToGL g)
   simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
-
-variable (G) in
-/-- At any `g ∈ G`, the range of the differential of the matrix inclusion `G → Matrix n n 𝕜`
-is also the right translate `𝔤 · g`. -/
-theorem range_mvfderiv_matrixInclusion_eq_mulRight (g : G) :
-    let E := (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G)).toSubmodule
-    let _ : ChartedSpace E (toGL G) := (embeddedLieSubgroupData G).chartedSpace
-    (mvfderiv 𝓘(ℝ, E) (fun k : toGL G ↦ ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜))
-      (G.equivToGL g)).range =
-      G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
-  have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
-    (G.equivToGL g)
-  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra] using h
 
 end EmbeddedLieSubgroup
 
