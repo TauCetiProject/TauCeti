@@ -233,12 +233,9 @@ theorem moebiusLogSum_eq_integral_moebiusSum (x : ℝ) :
     moebiusLogSum x = (∫ t in (1 : ℝ)..x, moebiusSum t * Real.log (x / t) / t ^ 2) +
       ∫ t in (1 : ℝ)..x, moebiusSum t / t ^ 2 := by
   rcases lt_or_ge x 1 with hx | hx
-  · rw [moebiusLogSum_of_lt_one hx,
-      intervalIntegral.integral_eq_zero_of_forall_lt
-        (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
-      intervalIntegral.integral_eq_zero_of_forall_lt
-        (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
-      add_zero]
+  · rw [moebiusLogSum_of_lt_one hx, intervalIntegral.integral_eq_zero_of_forall_lt _ hx.le,
+      intervalIntegral.integral_eq_zero_of_forall_lt _ hx.le, add_zero] <;>
+      exact fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring
   have hx0 : 0 < x := by linarith
   -- the weight `log (x / t) / t`, written so that it is differentiable on `(0, ∞)`
   have hderiv (t : ℝ) (ht : 0 < t) :
