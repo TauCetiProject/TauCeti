@@ -76,9 +76,11 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
 
 /-- `μ` is an **eigenvalue vector of the form `a` relative to the form `h`**: there is a family
 `b_1, …, b_n`, `n = dim E`, with `h(b_i, b_j) = δ_ij` and `a(b_i, b_j) = μ_i·δ_ij`. For a positive
-definite Hermitian `h` and a Hermitian `a`, such a family is an `h`-orthonormal basis diagonalizing
-`a`, and `μ` is determined up to the order of its entries
-(`IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm`). -/
+definite Hermitian `h` and a Hermitian `a` on a finite-dimensional `E`, such a family is an
+`h`-orthonormal basis diagonalizing `a`, and `μ` is determined up to the order of its entries
+(`IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm`). When `E` is
+infinite-dimensional, `finrank 𝕜 E = 0`, so the family and `μ` are empty and the condition holds
+trivially. -/
 def IsRelEigenvalueVector (h a : E → E → 𝕜) (μ : Fin (finrank 𝕜 E) → ℝ) : Prop :=
   ∃ b : Fin (finrank 𝕜 E) → E, ∀ i j,
     h (b i) (b j) = (if i = j then 1 else 0) ∧ a (b i) (b j) = (if i = j then (μ i : 𝕜) else 0)
@@ -142,7 +144,9 @@ theorem IsRelEigenvalueVector.smul_left {μ : Fin (finrank 𝕜 E) → ℝ}
     · simp [(hb i j).2, hij]
 
 /-- **Simultaneous diagonalization.** For a positive definite Hermitian `h` and a Hermitian `a`,
-there is an `h`-orthonormal basis diagonalizing `a` with decreasing diagonal entries. -/
+there is, in finite dimension, an `h`-orthonormal basis diagonalizing `a` with decreasing diagonal
+entries. When `E` is infinite-dimensional, `finrank 𝕜 E = 0` and the statement is vacuous: the
+family and `μ` are empty. -/
 theorem exists_isRelEigenvalueVector (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v))
     (ha : a.IsSymm) : ∃ μ, Antitone μ ∧ IsRelEigenvalueVector (h · ·) (a · ·) μ := by
   by_cases hE : FiniteDimensional 𝕜 E

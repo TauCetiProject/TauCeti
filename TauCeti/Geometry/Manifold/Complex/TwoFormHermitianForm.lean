@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
-public import TauCeti.Geometry.Symplectic.Hermitian
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 /-!
@@ -36,9 +35,10 @@ Hermitian metric `ω`, a smooth two-form compatible with `J`, it is the Hermitia
   respectively positive definite, and
   `TauCeti.SmoothTwoForm.Compatible.re_twoFormSesqForm_apply_self_pos`: for a Hermitian metric the
   sesquilinear form is positive definite.
-* `TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`: `H_α` is the complex associated
-  form `TauCeti.SymplecticForm.complexAssociatedForm` of a symplectic form agreeing with `α`, for
-  `J` multiplication by `i`.
+
+`TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`, in
+`TauCeti.Geometry.Symplectic.Hermitian`, identifies `H_α` with the complex associated form of a
+symplectic form agreeing with `α`, for `J` multiplication by `i`.
 -/
 
 public section
@@ -169,14 +169,5 @@ theorem Compatible.re_twoFormSesqForm_apply_self_pos
   exact hκ.tames.re_twoFormHermitianForm_apply_self_pos x hv
 
 end SmoothTwoForm
-
-/-- **`H_α` is the complex associated form of a symplectic form.** If a symplectic form `σ` on the
-real space underlying `E` agrees with the two-form `α`, and `J` is multiplication by `i`, then
-`σ.complexAssociatedForm J` is `H_α`. -/
-theorem SymplecticForm.complexAssociatedForm_eq_hermitianForm {α : E [⋀^Fin 2]→L[ℝ] ℝ}
-    (σ : SymplecticForm E) (J : AlmostComplexStructure E) (hJ : ∀ v, J v = I • v)
-    (hσ : ∀ u v, σ u v = α ![u, v]) (u v : E) :
-    σ.complexAssociatedForm J u v = α.hermitianForm u v := by
-  apply Complex.ext <;> simp [hJ, hσ]
 
 end TauCeti
