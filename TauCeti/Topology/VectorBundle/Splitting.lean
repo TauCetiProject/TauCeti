@@ -267,13 +267,14 @@ theorem exists_bundleHomeomorph_prod_of_leftInverse [FiniteDimensional 𝕜 F₂
   have h₁ := (ht.comp (FiberBundle.continuous_proj F₂ E₂)).clm_bundle_apply hv
   have h₃ := (hp.comp (FiberBundle.continuous_proj F₂ E₂)).clm_bundle_apply hv
   have hc : Continuous fun q : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' (F₁ × F₃) (E := E₁ ×ᵇ E₃) q.proj ((t q.proj).prod (p q.proj) q.snd) :=
+      TotalSpace.mk' (F₁ × F₃) (E := E₁ ×ᵇ E₃) q.proj (t q.proj q.snd, p q.proj q.snd) :=
     (FiberBundle.Prod.isInducing_diag F₁ E₁ F₃ E₃).continuous_iff.2 (h₁.prodMk h₃)
   -- Fibrewise, `u ↦ (t u, p u)` is the splitting isomorphism of the exact sequence.
   have hbij (x : B) : Bijective ((t x).prod (p x)) :=
     (LinearMap.exact_iff.2 (hexact x).symm).bijective_prod_of_comp_eq_id (hsurj x)
       congr(ContinuousLinearMap.toLinearMap $(hti x))
-  obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (t x).prod (p x)) hc hbij
+  obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (t x).prod (p x))
+    (hc.congr fun q ↦ by rw [ContinuousLinearMap.prod_apply]) hbij
   exact ⟨h, fun x u ↦ by rw [hh, ContinuousLinearMap.prod_apply]⟩
 
 /-- Every short exact sequence `0 → E₁ → E₂ → E₃ → 0` of continuous Hom-bundle sections between
