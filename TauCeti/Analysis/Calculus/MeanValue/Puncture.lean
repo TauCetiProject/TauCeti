@@ -21,9 +21,7 @@ When the segment `[x, y]` avoids `p`, this is the mean value inequality. Otherwi
 parallel to `p - x`; moving `y` to `y + t v`, with `v` not parallel to `p - x`, gives segments
 `[x, y + t v]` that avoid `p` for `t ≠ 0`, and the inequality for `y` follows by letting `t → 0`.
 
-For a real-valued `f`, McShane's extension then gives a `C`-Lipschitz function on all of `E`
-agreeing with `f` on `s ∖ {p}`. Thus a function with bounded gradient on a punctured ball lies in
-`W^{1,∞}` of the ball. In dimension one the statement fails: the sign function on `ℝ ∖ {0}` has
+In dimension one the statement fails: the sign function on `ℝ ∖ {0}` has
 zero derivative but is not continuous across `0`.
 
 ## Main results
@@ -66,7 +64,7 @@ theorem Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton (hs : Convex 
       rintro rfl
       exact hx.2 (by simpa using hθ)
     refine Submodule.mem_span_singleton.2 ⟨θ⁻¹, ?_⟩
-    rw [← hθ, add_sub_cancel_left, smul_smul, inv_mul_cancel₀ hθ0, one_smul]
+    simp [← hθ, hθ0]
   by_cases hseg : p ∈ segment ℝ x y
   · obtain ⟨v, hv⟩ := Submodule.exists_smul_notMem_of_rank_lt
       (N := Submodule.span ℝ {p - x}) ((rank_span_le _).trans_lt (by simpa using hE))
