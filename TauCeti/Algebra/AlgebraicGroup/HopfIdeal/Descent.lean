@@ -106,7 +106,7 @@ private theorem one_tmul_equivFinsuppOfBasisLeft_mem {κ : Type*} [DecidableEq �
   obtain ⟨y, rfl⟩ := hz
   -- The coefficients of an element of `p.baseChange L` lie in `p`.
   have hy := b.equivFinsuppOfBasisLeft_lTensor_apply p.subtype y j
-  exact HopfIdeal.mem_toIdeal.mp (hy ▸ (TensorProduct.equivFinsuppOfBasisLeft b y j).2)
+  exact HopfIdeal.mem_toIdeal.mp (hy ▸ (TensorProduct.equivFinsuppOfBasisLeft b y j).property)
 
 /-- **Galois descent of Hopf ideals.** Along a Galois extension `L / k`, a Hopf ideal of
 `L ⊗[k] H` stable under the scalar-factor Galois action is the base change of its coefficient Hopf

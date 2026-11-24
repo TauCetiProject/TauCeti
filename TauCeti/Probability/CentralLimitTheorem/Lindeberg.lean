@@ -12,7 +12,7 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Measure.LevyConvergence
 import Mathlib.Probability.Independence.CharacteristicFunction
-import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Analysis.Normed.Ring.ProdSubProd
 import TauCeti.Analysis.SpecialFunctions.Exp.ImaginaryTaylor
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation

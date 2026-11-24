@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
 public import TauCeti.Algebra.Homology.AcyclicModels
 
+import TauCeti.Topology.Homotopy.Contractible
+
 /-!
 # The models of the cubical–simplicial comparison
 
@@ -196,7 +198,7 @@ theorem cubicalModelPresentation_coord (X : TopCat.{u}) (n : ℕ) :
 
 /-- The cube models are contractible. -/
 instance (n : ℕ) : ContractibleSpace (cubeModel.{u} n) :=
-  (Homeomorph.ulift (X := Fin n → unitInterval)).contractibleSpace
+  inferInstanceAs (ContractibleSpace (ULift (Fin n → unitInterval)))
 
 /-! ### Augmentations and acyclicity -/
 

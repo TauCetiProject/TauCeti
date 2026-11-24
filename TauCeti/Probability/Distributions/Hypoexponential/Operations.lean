@@ -13,7 +13,8 @@ public import TauCeti.Probability.Distributions.Hypoexponential.Transforms
 Reindexing a finite rate family preserves its hypoexponential law. Convolution concatenates
 rate families, and multiplying a variable by a positive constant divides all of its rates
 by that constant. These identities allow sums to be regrouped without requiring distinct
-rates and retain empty families as convolution units.
+rates and retain empty families as convolution units. The corresponding random-variable
+theorems transport independent sums and positive scalings through `HasLaw`.
 -/
 
 public section
@@ -97,3 +98,34 @@ theorem map_mul_hypoexponentialMeasure {r : ι → ℝ} {c : ℝ} (hc : 0 < c) :
       hypoexponentialMeasure_eq_zero_of_invalid hscale]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.IndepFun
+
+open TauCeti.Probability
+
+/-- The sum of independent hypoexponential variables concatenates their rate families. -/
+theorem hasLaw_add_hypoexponentialMeasure {ι κ Ω : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace Ω]
+    {P : Measure Ω} {X Y : Ω → ℝ} {r : ι → ℝ} {s : κ → ℝ}
+    (hXY : IndepFun X Y P) (hX : HasLaw X (hypoexponentialMeasure r) P)
+    (hY : HasLaw Y (hypoexponentialMeasure s) P) :
+    HasLaw (X + Y) (hypoexponentialMeasure (Sum.elim r s)) P := by
+  rw [← hypoexponentialMeasure_conv_hypoexponentialMeasure]
+  exact hXY.hasLaw_add hX hY
+
+end ProbabilityTheory.IndepFun
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+/-- Multiplying a hypoexponential variable by a positive constant divides every rate by that
+constant. -/
+theorem const_mul_hypoexponentialMeasure {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {r : ι → ℝ} {c : ℝ}
+    (hX : HasLaw X (hypoexponentialMeasure r) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (hypoexponentialMeasure fun i ↦ r i / c) P := by
+  rw [← map_mul_hypoexponentialMeasure hc]
+  exact (hasLaw_map (measurable_const_mul c).aemeasurable).fun_comp hX
+
+end ProbabilityTheory.HasLaw

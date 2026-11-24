@@ -40,9 +40,11 @@ integral of `ψ (y) f (y + t • e)` over product coordinates
 (`TauCeti.integral_mul_integral_line_eq`), so this pairing is continuous for `L¹` convergence on the
 whole space (`TauCeti.tendsto_integral_mul_integral_line`).
 
-More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
-the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
-via Mathlib's `Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
+More generally, for any subspace `K`, Tonelli's and Fubini's theorems split Lebesgue and Bochner
+integrals over `E` along the orthogonal decomposition `E = Kᗮ ⊕ K`
+(`Submodule.lintegral_eq_lintegral_lintegral_add`, `Submodule.integrable_comp_orthogonal_prod`,
+`Submodule.integral_eq_integral_integral_add`), via Mathlib's
+`Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
 point `p`, a product of sets has the product volume, every point `x` is recovered as the sum of
 its two coordinates and `p`, and each coordinate moves no farther than `x` does.
 
@@ -285,7 +287,7 @@ theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c :
   dsimp only
   -- The transverse coordinate of `x` lies in the open preimage of the interior of `s`.
   have hU : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
-    isOpen_interior.preimage (continuous_subtype_val.add continuous_const)
+    isOpen_interior.preimage (continuous_subtypeVal.add continuous_const)
   refine (hU.measure_pos volume ⟨((orthogonalLineEquiv e he).symm x).1, ?_⟩).trans_le
     (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
       (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))
@@ -400,6 +402,32 @@ theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
     lintegral_prod_symm (fun q ↦ g (e.symm q))
       (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
   simp [e, add_comm]
+
+/-- A Bochner-integrable function on `E` pulls back to an integrable function on `K × Kᗮ` under
+`(a, w) ↦ w + a`. -/
+theorem integrable_comp_orthogonal_prod (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] {g : E → V} (hg : Integrable g) :
+    Integrable (fun q : K × Kᗮ ↦ g ((q.2 : E) + q.1)) (volume.prod volume) := by
+  let p := K.measurableEquivProd (0 : E)
+  have hp : MeasurePreserving p.symm (volume.prod volume) volume := by
+    rw [← Measure.volume_eq_prod]
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      (K.measurePreserving_measurableEquivProd (0 : E)).symm
+  convert hp.integrable_comp_of_integrable hg with q
+  simp [p, add_comm]
+
+/-- Fubini's theorem along an orthogonal decomposition `E = Kᗮ ⊕ K`. -/
+theorem integral_eq_integral_integral_add (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    ∫ x, g x = ∫ w : Kᗮ, ∫ a : K, g ((w : E) + a) := by
+  let p := K.measurableEquivProd (0 : E)
+  have hp : MeasurePreserving p.symm (volume.prod volume) volume := by
+    rw [← Measure.volume_eq_prod]
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      (K.measurePreserving_measurableEquivProd (0 : E)).symm
+  rw [← hp.integral_comp p.symm.measurableEmbedding g,
+    integral_prod_symm (fun q ↦ g (p.symm q)) (hp.integrable_comp_of_integrable hg)]
+  simp [p, add_comm]
 
 /-- In orthogonal coordinates along a subspace, a product of sets has the product volume. -/
 theorem volume_preimage_measurableEquivProd_prod (V : Submodule ℝ E) (p : E) (S : Set V)

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
+import TauCeti.MeasureTheory.Integral.Measurable
 import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.Topology.EMetricSpace.Lipschitz
@@ -30,18 +31,18 @@ remainder) are measurable by `IsCompact.measurable_hausdorffMeasure_inter_preima
 almost-everywhere measurable weights, and almost-everywhere strongly measurable Banach-valued
 integrands via Eilenberg's inequality.
 
-If `f` is locally Lipschitz on a subset `A` of an `n`-dimensional real inner product space `E`
-with values in an `m`-dimensional real normed space `Y` carrying an additive Haar measure `μ`, and
-`n ≤ m + k`, then any condition holding `volume.restrict A`-almost everywhere holds
-`μHE[k].restrict (A ∩ f ⁻¹' {y})`-almost everywhere for `μ`-almost every `y`: enclosing the
-exceptional set in a Borel null hull of `volume.restrict A` produces a subset of `A` of Lebesgue
-measure zero, hence `μHE[m + k]`-null, whose fibers are `μHE[k]`-null almost everywhere by
-Eilenberg's inequality. Neither measurability nor openness of `A` is needed for this descent.
-When `A` is Lebesgue measurable, Borel-measurable weight induction and simple-function
-approximation (adapting `MeasureTheory.StronglyMeasurable.integral_kernel` in
-`Mathlib.Probability.Kernel.MeasurableIntegral` from measurable kernels to families of measures
-with almost-everywhere measurable evaluations) combined with almost-everywhere descent show that
-`y ↦ ∫⁻ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere measurable for every
+If `f` is Lipschitz (or locally Lipschitz) on `A` with values in a real normed space `Y` with
+additive Haar measure `μ`, and `A` is σ-compact up to a `μH[finrank ℝ Y + t]`-null set, then
+`y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable: the fibers of the null part are
+null for almost every `y` by Eilenberg's inequality. When `A` is a subset of an `n`-dimensional
+real inner product space `E` and `n ≤ finrank ℝ Y + k`, any condition holding
+`volume.restrict A`-almost everywhere holds `μHE[k].restrict (A ∩ f ⁻¹' {y})`-almost everywhere for
+`μ`-almost every `y`: enclosing the exceptional set in a Borel null hull of `volume.restrict A`
+produces a subset of `A` of Lebesgue measure zero, hence `μHE[finrank ℝ Y + k]`-null, whose fibers
+are `μHE[k]`-null almost everywhere by Eilenberg's inequality. Neither measurability nor openness of
+`A` is needed for this descent. When `A` is Lebesgue measurable, measure-family integration
+measurability (`TauCeti.MeasureTheory.Integral.Measurable`) combined with almost-everywhere descent
+shows that `y ↦ ∫⁻ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere measurable for every
 `volume.restrict A`-almost everywhere measurable weight `g`, and
 `y ↦ ∫ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere strongly measurable for every
 `volume.restrict A`-almost everywhere strongly measurable function `g` without any integrability
@@ -57,8 +58,8 @@ the integrand is required.
 
 * `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`,
   `LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage`: fiber measures of a Lipschitz
-  (or, on a second-countable domain, locally Lipschitz) map are almost everywhere measurable on a
-  set that is σ-compact up to a null set.
+  (or locally Lipschitz) map are almost everywhere measurable on a set that is σ-compact up to a
+  null set.
 * `LocallyLipschitzOn.ae_ae_restrict_preimage_of_ae_restrict`,
   `LocallyLipschitzOn.ae_ae_eq_restrict_preimage`,
   `LocallyLipschitzOn.ae_nullMeasurableSet_restrict_preimage`,
@@ -66,7 +67,7 @@ the integrand is required.
   `LocallyLipschitzOn.ae_aestronglyMeasurable_restrict_preimage`: ambient almost-everywhere
   predicates, equalities, null-measurable sets, and almost-everywhere (strongly) measurable
   functions descend along locally Lipschitz maps to `μHE[k]` on almost every fiber whenever
-  `dim E ≤ dim Y + k`.
+  `dim E ≤ finrank ℝ Y + k`.
 * `LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`,
   `LocallyLipschitzOn.aemeasurable_setLIntegral_euclideanHausdorffMeasure_inter_preimage`,
   `LocallyLipschitzOn.aestronglyMeasurable_setIntegral_euclideanHausdorffMeasure_inter_preimage`
@@ -96,12 +97,12 @@ variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 section FiberMeasurability
 
-variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [MeasurableSpace Y]
-  [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
+variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [MeasurableSpace Y] [BorelSpace Y]
+  (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
 
 /-- **Fiber measures of a Lipschitz map are almost everywhere measurable.** Let `f` be Lipschitz
-on `A`, with values in an `m`-dimensional real normed space with additive Haar measure `μ`, and
-let `t` be real. If `A` contains a σ-compact set `S` with `μH[m + t] (A \ S) = 0`, then
+on `A`, with values in a real normed space `Y` with additive Haar measure `μ`, and let `t` be
+real. If `A` contains a σ-compact set `S` with `μH[finrank ℝ Y + t] (A \ S) = 0`, then
 `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. -/
 theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → Y} {A S : Set X}
     (hf : LipschitzOnWith K f A) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
@@ -111,14 +112,13 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
     (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS)
 
-/-- **Fiber measures of a locally Lipschitz map on a second-countable domain are almost everywhere
-measurable.** Let `f` be locally Lipschitz on `A`, with values in an `m`-dimensional real normed
-space with additive Haar measure `μ`, and let `t` be real. If `A` contains a σ-compact set `S` with
-`μH[m + t] (A \ S) = 0`, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable.
-Unlike `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`, this assumes
-`[SecondCountableTopology X]` to cover `A \ S` by countably many Lipschitz pieces. -/
+/-- **Fiber measures of a locally Lipschitz map are almost everywhere measurable.** Let `f` be
+locally Lipschitz on `A`, with values in a real normed space `Y` with additive Haar measure `μ`,
+and let `t` be real. If `A` contains a σ-compact set `S` with `μH[finrank ℝ Y + t] (A \ S) = 0`,
+then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. The null set `A \ S` is
+separable, so countably many Lipschitz pieces cover it. -/
 theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
-    [SecondCountableTopology X] {f : X → Y} {A S : Set X}
+    {f : X → Y} {A S : Set X}
     (hf : LocallyLipschitzOn A f) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
     (hAS : μH[finrank ℝ Y + t] (A \ S) = 0) :
     AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ :=
@@ -128,72 +128,18 @@ theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
 
 end FiberMeasurability
 
-/-- Borel-measurable nonnegative integrands have `ν`-almost everywhere measurable integrals
-against any family of measures `κ` with `ν`-almost everywhere measurable values on Borel sets. -/
-private theorem aemeasurable_lintegral_of_aemeasurable_measure {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] {κ : α → Measure β} {ν : Measure α}
-    (hκ : ∀ t, MeasurableSet t → AEMeasurable (fun y ↦ κ y t) ν) {g : β → ℝ≥0∞}
-    (hg : Measurable g) :
-    AEMeasurable (fun y ↦ ∫⁻ x, g x ∂κ y) ν := by
-  refine Measurable.ennreal_induction ?_ ?_ ?_ hg
-  · intro c t ht
-    simp_rw [lintegral_indicator_const ht]
-    exact (hκ t ht).const_mul c
-  · intro g h _ hg _ ihg ihh
-    simp_rw [Pi.add_apply, lintegral_add_left hg]
-    exact ihg.add ihh
-  · intro g hg hmono ih
-    have heq (y : α) : (∫⁻ x, ⨆ n, g n x ∂κ y) = ⨆ n, ∫⁻ x, g n x ∂κ y :=
-      lintegral_iSup hg hmono
-    simp_rw [heq]
-    exact AEMeasurable.iSup ih
-
-/-- Adapting `MeasureTheory.StronglyMeasurable.integral_kernel` in
-`Mathlib.Probability.Kernel.MeasurableIntegral` from measurable kernels to families of measures
-with `ν`-almost everywhere measurable evaluations on Borel sets: if `g : β → V` is strongly
-measurable, then `y ↦ ∫ x, g x ∂κ y` is `ν`-almost everywhere strongly measurable. Neither
-completeness of `V` nor σ-finiteness of `κ y` is assumed. -/
-private theorem aestronglyMeasurable_integral_of_aemeasurable_measure {α β V : Type*}
-    [MeasurableSpace α] [MeasurableSpace β] [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {κ : α → Measure β} {ν : Measure α}
-    (hκ : ∀ t, MeasurableSet t → AEMeasurable (fun y ↦ κ y t) ν) {g : β → V}
-    (hg : StronglyMeasurable g) :
-    AEStronglyMeasurable (fun y ↦ ∫ x, g x ∂κ y) ν := by
-  by_cases hV : CompleteSpace V; swap
-  · simp [integral_of_not_completeSpace hV, aestronglyMeasurable_const]
-  borelize V
-  have : TopologicalSpace.SeparableSpace (range g ∪ {0} : Set V) :=
-    hg.separableSpace_range_union_singleton
-  let s : ℕ → SimpleFunc β V := SimpleFunc.approxOn _ hg.measurable (range g ∪ {0}) 0 (by simp)
-  let g' (n : ℕ) : α → V := {y | Integrable g (κ y)}.indicator fun y ↦ (s n).integral (κ y)
-  have hint_set : NullMeasurableSet {y | Integrable g (κ y)} ν := by
-    simp_rw [Integrable, hg.aestronglyMeasurable, true_and, HasFiniteIntegral]
-    exact (aemeasurable_lintegral_of_aemeasurable_measure hκ hg.eNorm).nullMeasurable
-      measurableSet_Iio
-  refine aestronglyMeasurable_of_tendsto_ae (f := g') atTop (fun n ↦ ?_) (Eventually.of_forall ?_)
-  · refine AEStronglyMeasurable.indicator₀ ?_ hint_set
-    simp_rw [SimpleFunc.integral_eq]
-    refine Finset.aestronglyMeasurable_fun_sum _ fun _ _ ↦ ?_
-    exact (hκ _ ((s n).measurableSet_fiber _)).ennreal_toReal.aestronglyMeasurable.smul_const _
-  · intro y
-    by_cases hgy : Integrable g (κ y)
-    · simp only [mem_ofPred_eq, hgy, indicator_of_mem, g']
-      apply tendsto_integral_approxOn_of_measurable_of_range_subset _ hgy
-      exact subset_rfl
-    · simp [g', hgy, integral_undef]
-
 section EuclideanFiberDescent
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y]
+  [NormedAddCommGroup Y] [NormedSpace ℝ Y]
   [MeasurableSpace Y] [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure]
 
 namespace LocallyLipschitzOn
 
 variable {f : E → Y} {A : Set E} {k : ℕ}
 
-/-- If `f` is locally Lipschitz on a Lebesgue-null subset `A` of `E` and `dim E ≤ dim Y + k`,
+/-- If `f` is locally Lipschitz on a Lebesgue-null subset `A` of `E` and `dim E ≤ finrank ℝ Y + k`,
 then `A ∩ f ⁻¹' {y}` is `μHE[k]`-null for `μ`-almost every `y`. No measurability of `A` is
 needed. -/
 theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_volume_eq_zero
@@ -204,9 +150,9 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_volume_eq_zero
     (TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero hA hk)
 
 /-- **Ambient-to-fiber almost-everywhere descent for locally Lipschitz maps.** If `f` is locally
-Lipschitz on `A ⊆ E`, `p` holds `volume.restrict A`-almost everywhere, and `dim E ≤ dim Y + k`,
-then `p` holds `μHE[k]`-almost everywhere on `A ∩ f ⁻¹' {y}` for `μ`-almost every `y`. Neither `A`
-nor `p` need be measurable. -/
+Lipschitz on `A ⊆ E`, `p` holds `volume.restrict A`-almost everywhere, and
+`dim E ≤ finrank ℝ Y + k`, then `p` holds `μHE[k]`-almost everywhere on `A ∩ f ⁻¹' {y}` for
+`μ`-almost every `y`. Neither `A` nor `p` need be measurable. -/
 theorem ae_ae_restrict_preimage_of_ae_restrict (hf : LocallyLipschitzOn A f) {p : E → Prop}
     (hp : ∀ᵐ x ∂volume.restrict A, p x) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     ∀ᵐ y ∂μ, ∀ᵐ x ∂μHE[k].restrict (A ∩ f ⁻¹' {y}), p x := by
@@ -225,14 +171,14 @@ theorem ae_ae_restrict_preimage_of_ae_restrict (hf : LocallyLipschitzOn A f) {p 
 
 /-- Ambient almost-everywhere equality on `A` descends along a locally Lipschitz map to
 `μHE[k]`-almost-everywhere equality on almost every fiber `A ∩ f ⁻¹' {y}` when
-`dim E ≤ dim Y + k`. -/
+`dim E ≤ finrank ℝ Y + k`. -/
 theorem ae_ae_eq_restrict_preimage (hf : LocallyLipschitzOn A f) {Z : Type*} {g₁ g₂ : E → Z}
     (hg : g₁ =ᵐ[volume.restrict A] g₂) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     ∀ᵐ y ∂μ, g₁ =ᵐ[μHE[k].restrict (A ∩ f ⁻¹' {y})] g₂ :=
   hf.ae_ae_restrict_preimage_of_ae_restrict μ hg hk
 
 /-- A `volume.restrict A`-null-measurable set is `μHE[k]`-null-measurable on almost every fiber
-`A ∩ f ⁻¹' {y}` of a map locally Lipschitz on `A` when `dim E ≤ dim Y + k`. -/
+`A ∩ f ⁻¹' {y}` of a map locally Lipschitz on `A` when `dim E ≤ finrank ℝ Y + k`. -/
 theorem ae_nullMeasurableSet_restrict_preimage (hf : LocallyLipschitzOn A f) {t : Set E}
     (ht : NullMeasurableSet t (volume.restrict A)) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     ∀ᵐ y ∂μ, NullMeasurableSet t (μHE[k].restrict (A ∩ f ⁻¹' {y})) := by
@@ -243,7 +189,8 @@ theorem ae_nullMeasurableSet_restrict_preimage (hf : LocallyLipschitzOn A f) {t 
     (hy.mono fun _ h ↦ Iff.of_eq h)
 
 /-- An almost-everywhere measurable function on `A` is `μHE[k]`-almost everywhere measurable on
-almost every fiber `A ∩ f ⁻¹' {y}` of a map locally Lipschitz on `A` when `dim E ≤ dim Y + k`. -/
+almost every fiber `A ∩ f ⁻¹' {y}` of a map locally Lipschitz on `A` when
+`dim E ≤ finrank ℝ Y + k`. -/
 theorem ae_aemeasurable_restrict_preimage {Z : Type*} [MeasurableSpace Z]
     (hf : LocallyLipschitzOn A f) {g : E → Z} (hg : AEMeasurable g (volume.restrict A))
     (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
@@ -253,7 +200,7 @@ theorem ae_aemeasurable_restrict_preimage {Z : Type*} [MeasurableSpace Z]
 
 /-- An almost-everywhere strongly measurable function on `A` is `μHE[k]`-almost everywhere
 strongly measurable on almost every fiber `A ∩ f ⁻¹' {y}` of a map locally Lipschitz on `A` when
-`dim E ≤ dim Y + k`. -/
+`dim E ≤ finrank ℝ Y + k`. -/
 theorem ae_aestronglyMeasurable_restrict_preimage {Z : Type*} [TopologicalSpace Z]
     (hf : LocallyLipschitzOn A f) {g : E → Z} (hg : AEStronglyMeasurable g (volume.restrict A))
     (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
@@ -264,7 +211,7 @@ theorem ae_aestronglyMeasurable_restrict_preimage {Z : Type*} [TopologicalSpace 
 
 /-- Volume-almost-everywhere equal sets `A₁ =ᵐ[volume] A₂` on whose union `f` is locally Lipschitz
 induce identical restricted fiber measures `μHE[k].restrict (Aᵢ ∩ f ⁻¹' {y})` for `μ`-almost every
-`y` when `dim E ≤ dim Y + k`. -/
+`y` when `dim E ≤ finrank ℝ Y + k`. -/
 theorem ae_restrict_euclideanHausdorffMeasure_preimage_congr {A₁ A₂ : Set E}
     (hf : LocallyLipschitzOn (A₁ ∪ A₂) f) (hA : A₁ =ᵐ[volume] A₂)
     (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
@@ -285,15 +232,16 @@ theorem ae_restrict_euclideanHausdorffMeasure_preimage_congr {A₁ A₂ : Set E}
 
 /-- **Normalized fiber measures of a locally Lipschitz map on a Lebesgue measurable set are almost
 everywhere measurable.** Let `f` be locally Lipschitz on a Lebesgue measurable subset `A` of an
-`n`-dimensional real inner product space, with values in an `m`-dimensional real normed space
-with additive Haar measure `μ`. If `n ≤ m + k`, then `y ↦ μHE[k] (A ∩ f ⁻¹' {y})` is
-`μ`-almost everywhere measurable. Neither openness of `A` nor a global Lipschitz bound is needed.
-This applies to the coarea dimension `k = n - m`, for which `n ≤ m + k` is `le_add_tsub`. -/
+`n`-dimensional real inner product space, with values in a real normed space `Y` with additive
+Haar measure `μ`. If `n ≤ finrank ℝ Y + k`, then `y ↦ μHE[k] (A ∩ f ⁻¹' {y})` is `μ`-almost
+everywhere measurable. Neither openness of `A` nor a global Lipschitz bound is needed. This
+applies to the coarea dimension `k = n - finrank ℝ Y`, for which `n ≤ finrank ℝ Y + k` is
+`le_add_tsub`. -/
 theorem aemeasurable_euclideanHausdorffMeasure_inter_preimage (hf : LocallyLipschitzOn A f)
     (hA : NullMeasurableSet A) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     AEMeasurable (fun y ↦ μHE[k] (A ∩ f ⁻¹' {y})) μ := by
   obtain ⟨S, hSA, hS, hSA'⟩ := hA.exists_isSigmaCompact_subset_ae_eq
-  -- The null part `A \ S` is null for the `n`-dimensional, hence the `(m + k)`-dimensional,
+  -- The null part `A \ S` is null for the `n`-dimensional, hence `(finrank ℝ Y + k)`-dimensional,
   -- Hausdorff measure.
   have hnull : μH[finrank ℝ Y + (k : ℝ)] (A \ S) = 0 :=
     TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero (ae_eq_set.1 hSA').2 (by exact_mod_cast hk)
@@ -314,31 +262,29 @@ private theorem aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage
 
 /-- **Weighted fiber integrals of a locally Lipschitz map are almost everywhere measurable.** Let
 `f` be locally Lipschitz on a Lebesgue-measurable set `A ⊆ E` and let `g : E → ℝ≥0∞` be
-`volume.restrict A`-almost everywhere measurable. Whenever `dim E ≤ dim Y + k`, the fiber-integral
-map `y ↦ ∫⁻ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere measurable. -/
+`volume.restrict A`-almost everywhere measurable. Whenever `dim E ≤ finrank ℝ Y + k`, the
+fiber-integral map `y ↦ ∫⁻ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere measurable. -/
 theorem aemeasurable_setLIntegral_euclideanHausdorffMeasure_inter_preimage
     (hf : LocallyLipschitzOn A f) (hA : NullMeasurableSet A) {g : E → ℝ≥0∞}
     (hg : AEMeasurable g (volume.restrict A)) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     AEMeasurable (fun y ↦ ∫⁻ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]) μ := by
-  refine (aemeasurable_lintegral_of_aemeasurable_measure
-    (hf.aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage μ hA hk)
-    hg.measurable_mk).congr ?_
+  refine (hg.measurable_mk.aemeasurable_lintegral_of_aemeasurable_measure
+    (hf.aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage μ hA hk)).congr ?_
   filter_upwards [hf.ae_ae_eq_restrict_preimage μ hg.ae_eq_mk hk] with y hy
   exact (lintegral_congr_ae hy).symm
 
 /-- **Bochner fiber integrals of a locally Lipschitz map are almost everywhere strongly
 measurable.** Let `f` be locally Lipschitz on a Lebesgue-measurable set `A ⊆ E` and let `g : E → V`
-be `volume.restrict A`-almost everywhere strongly measurable. Whenever `dim E ≤ dim Y + k`, the
-fiber-integral map `y ↦ ∫ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere strongly
+be `volume.restrict A`-almost everywhere strongly measurable. Whenever `dim E ≤ finrank ℝ Y + k`,
+the fiber-integral map `y ↦ ∫ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]` is `μ`-almost everywhere strongly
 measurable. No integrability assumption on `g` is needed. -/
 theorem aestronglyMeasurable_setIntegral_euclideanHausdorffMeasure_inter_preimage
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (hf : LocallyLipschitzOn A f) (hA : NullMeasurableSet A) {g : E → V}
     (hg : AEStronglyMeasurable g (volume.restrict A)) (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
     AEStronglyMeasurable (fun y ↦ ∫ x in A ∩ f ⁻¹' {y}, g x ∂μHE[k]) μ := by
-  refine (aestronglyMeasurable_integral_of_aemeasurable_measure
-    (hf.aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage μ hA hk)
-    hg.stronglyMeasurable_mk).congr ?_
+  refine (hg.stronglyMeasurable_mk.aestronglyMeasurable_integral_of_aemeasurable_measure
+    (hf.aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage μ hA hk)).congr ?_
   filter_upwards [hf.ae_ae_eq_restrict_preimage μ hg.ae_eq_mk hk] with y hy
   exact (integral_congr_ae hy).symm
 
@@ -657,7 +603,7 @@ theorem aestronglyMeasurable_setIntegral_fiber_of_hasFDerivWithinAt
     simp_rw [hset]
     exact aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt μ
       (hs.inter ht.nullMeasurableSet) fun x hx ↦ (hd x hx.1).mono inter_subset_left
-  refine (aestronglyMeasurable_integral_of_aemeasurable_measure hκ hg.stronglyMeasurable_mk).congr
+  refine (hg.stronglyMeasurable_mk.aestronglyMeasurable_integral_of_aemeasurable_measure hκ).congr
     ?_
   filter_upwards [ae_ae_eq_restrict_preimage_of_hasFDerivWithinAt μ hd hg.ae_eq_mk] with y hy
   exact (integral_congr_ae hy).symm

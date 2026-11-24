@@ -156,7 +156,7 @@ theorem ae_integrableOn_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
     hgm.eNorm
   have hfin : (∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, ‖g x‖ₑ ∂μHE[finrank ℝ E - finrank ℝ F]) ≠ ∞ := by
     rw [← hco]
-    refine (lintegral_congr fun x ↦ ?_).symm.trans_lt hint.2 |>.ne
+    refine (lintegral_congr fun x ↦ ?_).symm.trans_lt hint.hasFiniteIntegral |>.ne
     rw [eNorm_smul, Real.eNorm_of_nonneg (LinearMap.normDet_nonneg _)]
   filter_upwards [ae_aestronglyMeasurable_restrict_preimage_of_hasFDerivWithinAt volume hdw hgm,
     ae_lt_top' (aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw hgm.eNorm)
@@ -193,7 +193,8 @@ theorem integrable_setIntegral_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
   exact ⟨aestronglyMeasurable_setIntegral_fiber_of_aestronglyMeasurable_normDet_adjoint_fderiv_smul
       hs hd hsurj hint.aestronglyMeasurable,
     (lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _).trans_lt
-      ((lintegral_setLIntegral_enorm_eq_lintegral_withDensity hs hd hsurj hgν).trans_lt hgν.2)⟩
+      ((lintegral_setLIntegral_enorm_eq_lintegral_withDensity hs hd hsurj hgν).trans_lt
+        hgν.hasFiniteIntegral)⟩
 
 /-- Indicator case of the regular-locus Bochner coarea induction. -/
 private theorem integral_withDensity_eq_indicator [CompleteSpace V]

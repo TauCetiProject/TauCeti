@@ -43,6 +43,9 @@ Section 3.3.
   `TopCat.singularCap_naturality` its naturality.
 * `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
   `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
+* `TopCat.singularCap_coefficient_naturality`: compatible changes of every coefficient object
+  commute with the native cap product on homology and cohomology.
+* `TopCat.singularCap_coefficient_naturality_map`: the same square combined with a map of spaces.
 
 ## References
 
@@ -142,6 +145,78 @@ lemma singularCap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [Ring 
   TauCeti.ChainComplex.cap_naturality _ _ _ _ _ _ _ _
     (alexanderWhitneyDiagonal_naturality f u)
     (SSet.chainComplexPairing_naturality (toSSet.map f) μ).symm p q n h α
+
+section Coefficients
+
+variable {R' S' T' M' P' : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M')]
+
+/-- If `c ≫ u = u' ≫ (a ⊗ b)` and `(v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e`, then cap with the
+cochain pulled back by `a` and postcomposed by `v` equals cap between the homology maps
+of `c` and `e`. -/
+theorem singularCap_coefficient_naturality (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S')
+    (μ : M ⊗ S ⟶ P) (μ' : M' ⊗ S' ⟶ P')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : P ⟶ P')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : X.singularCohomology R k M p) :
+    X.singularCap k u' μ' p q n h
+        (homologyMap (((toSSet.obj X).chainComplex R').linearYonedaObjMap k v) p
+          (X.singularCohomologyChainCoefficientMap k M a p α)) =
+      ((AlgebraicTopology.singularHomologyFunctor C n).map c).app X ≫
+        X.singularCap k u μ p q n h α ≫
+          ((AlgebraicTopology.singularHomologyFunctor C q).map e).app X := by
+  rw [singularCap_def, singularCap_def]
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app
+          ((toSSet.obj X).chainComplex S') ≫ (toSSet.obj X).chainComplexPairing μ' =
+        ((tensorLeft M).mapHomologicalComplex _).map
+            (((SSet.chainComplexFunctor C).map b).app (toSSet.obj X)) ≫
+          (toSSet.obj X).chainComplexPairing μ ≫
+            ((SSet.chainComplexFunctor C).map e).app (toSSet.obj X) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((toSSet.obj X).chainComplexPairing) hμ
+  let f := (TauCeti.ChainComplex.linearYonedaFunctor k M).map
+    (((SSet.chainComplexFunctor C).map a).app (toSSet.obj X)).op
+  let g := ((toSSet.obj X).chainComplex R').linearYonedaObjMap k v
+  have hinput : homologyMap g p (X.singularCohomologyChainCoefficientMap k M a p α) =
+      homologyMap (f ≫ g) p α :=
+    (ConcreteCategory.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (homologyMap_comp f g p).symm α)
+  refine (congrArg (TauCeti.ChainComplex.cap k (X.alexanderWhitneyDiagonal u')
+    ((toSSet.obj X).chainComplexPairing μ') p q n h) hinput).trans ?_
+  exact TauCeti.ChainComplex.cap_coefficient_naturality
+    (X.alexanderWhitneyDiagonal u) ((toSSet.obj X).chainComplexPairing μ)
+    (X.alexanderWhitneyDiagonal u') ((toSSet.obj X).chainComplexPairing μ')
+    (((SSet.chainComplexFunctor C).map c).app (toSSet.obj X))
+    (((SSet.chainComplexFunctor C).map a).app (toSSet.obj X))
+    (((SSet.chainComplexFunctor C).map b).app (toSSet.obj X)) v
+    (((SSet.chainComplexFunctor C).map e).app (toSSet.obj X))
+    (alexanderWhitneyDiagonal_coefficient_naturality X u u' a b c hu)
+    (fun j ↦ congrArg (fun f ↦ f.f j) ha) p q n h α
+
+/-- Coefficient transport commutes with the projection formula for a map of spaces. -/
+theorem singularCap_coefficient_naturality_map {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S') (μ : M ⊗ S ⟶ P) (μ' : M' ⊗ S' ⟶ P')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : P ⟶ P')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : Y.singularCohomology R k M p) :
+    X.singularCap k u' μ' p q n h
+        (TopCat.singularCohomologyMap f p
+          (homologyMap (((toSSet.obj Y).chainComplex R').linearYonedaObjMap k v) p
+          (Y.singularCohomologyChainCoefficientMap k M a p α))) ≫
+        ((AlgebraicTopology.singularHomologyFunctor C q).obj P').map f =
+      ((AlgebraicTopology.singularHomologyFunctor C n).obj T').map f ≫
+        ((AlgebraicTopology.singularHomologyFunctor C n).map c).app Y ≫
+          Y.singularCap k u μ p q n h α ≫
+            ((AlgebraicTopology.singularHomologyFunctor C q).map e).app Y := by
+  rw [singularCap_naturality,
+    singularCap_coefficient_naturality Y k u u' μ μ' a b c v e hu hμ p q n h]
+
+end Coefficients
 
 end Homology
 
