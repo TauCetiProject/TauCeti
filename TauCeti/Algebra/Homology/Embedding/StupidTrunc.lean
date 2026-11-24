@@ -21,7 +21,12 @@ truncation `K.stupidTrunc (ComplexShape.embeddingUpIntLE n)` keeps the terms of 
 is a quotient complex of `K`: Mathlib's projection
 `K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)` is an isomorphism in every degree `≤ n` and
 zero in every degree `> n`. For any embedding, a term of a brutal truncation vanishes where the
-term of the complex does (`HomologicalComplex.isZero_stupidTrunc_X_of_isZero`).
+term of the complex does (`HomologicalComplex.isZero_stupidTrunc_X_of_isZero`), and more generally
+any property of objects invariant under isomorphism and true for zero objects passes from a term
+of the complex to that of the truncation (`HomologicalComplex.prop_stupidTrunc_X`). For a complex
+of complexes, such as a double complex, the truncation keeps the inner complexes exact
+(`HomologicalComplex.acyclic_stupidTrunc_X`) and vanishes in each bidegree where the complex of
+complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`).
 
 When `K` vanishes in degrees `> n + 1`, its top term `K.X (n + 1)` placed in degree `n + 1` is a
 subcomplex, and the two maps form the short complex `CochainComplex.topShortComplex K n`
@@ -77,13 +82,38 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C] {ι ι
   {c : ComplexShape ι} {c' : ComplexShape ι'} (K : HomologicalComplex C c') (e : c.Embedding c')
   [e.IsRelIff]
 
-/-- A term of a brutal truncation vanishes where the corresponding term of the complex does. -/
-lemma isZero_stupidTrunc_X_of_isZero {i' : ι'} (h : IsZero (K.X i')) :
-    IsZero ((K.stupidTrunc e).X i') := by
+/-- A property of objects which is invariant under isomorphism and holds for zero objects holds
+for a term of a brutal truncation as soon as it holds for the corresponding term of the complex:
+that term of the truncation is either isomorphic to it or zero. -/
+lemma prop_stupidTrunc_X (P : C → Prop) (hP : ∀ {X Y : C}, (X ≅ Y) → P X → P Y)
+    (hP₀ : ∀ X : C, IsZero X → P X) {i' : ι'} (h : P (K.X i')) :
+    P ((K.stupidTrunc e).X i') := by
   by_cases h' : ∃ i, e.f i = i'
   · obtain ⟨i, hi⟩ := h'
-    exact h.of_iso (K.stupidTruncXIso e hi)
-  · exact K.isZero_stupidTrunc_X e i' (by simpa using h')
+    exact hP (K.stupidTruncXIso e hi).symm h
+  · exact hP₀ _ (K.isZero_stupidTrunc_X e i' (by simpa using h'))
+
+/-- A term of a brutal truncation vanishes where the corresponding term of the complex does. -/
+lemma isZero_stupidTrunc_X_of_isZero {i' : ι'} (h : IsZero (K.X i')) :
+    IsZero ((K.stupidTrunc e).X i') :=
+  K.prop_stupidTrunc_X e IsZero (fun φ h ↦ h.of_iso φ.symm) (fun _ h ↦ h) h
+
+variable {ι₂ : Type*} {c₂ : ComplexShape ι₂} (L : HomologicalComplex (HomologicalComplex C c₂) c')
+
+/-- A term of a brutal truncation of a complex of complexes, such as a double complex, vanishes
+where the corresponding term of the complex of complexes does. -/
+lemma isZero_stupidTrunc_X_X {i' : ι'} {j : ι₂} (h : IsZero ((L.X i').X j)) :
+    IsZero (((L.stupidTrunc e).X i').X j) :=
+  L.prop_stupidTrunc_X e (fun X ↦ IsZero (X.X j))
+    (fun φ h ↦ h.of_iso ((eval C c₂ j).mapIso φ.symm))
+    (fun _ h ↦ (eval C c₂ j).map_isZero h) h
+
+/-- A brutal truncation of a complex of exact complexes, such as a double complex with exact
+columns, is a complex of exact complexes. -/
+lemma acyclic_stupidTrunc_X (hL : ∀ i', (L.X i').Acyclic) (i' : ι') :
+    ((L.stupidTrunc e).X i').Acyclic :=
+  L.prop_stupidTrunc_X e Acyclic (fun φ h n ↦ (h n).of_iso φ) (fun _ h ↦ acyclic_of_isZero _ h)
+    (hL i')
 
 end HomologicalComplex
 

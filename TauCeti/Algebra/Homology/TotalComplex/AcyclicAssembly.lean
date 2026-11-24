@@ -30,7 +30,7 @@ total complex. The short complex `σ^{≥ p + 1} K ⟶ K ⟶ σ^{≤ p} K` is sp
 induces a short exact sequence of total complexes
 (`HomologicalComplex₂.totalShortComplex_shortExact`). A double complex concentrated in the column
 `p` has as total complex that column shifted by `-p`
-(`HomologicalComplex₂.totalIsoShiftOfIsZero`). An induction over the columns then shows that a
+(`HomologicalComplex₂.shiftIsoTotalOfIsZero`). An induction over the columns then shows that a
 double complex with finitely many nonzero columns, all exact, has an acyclic total complex. In
 general the cohomology of the total complex in degree `n` only involves the antidiagonals
 `n - 1`, `n` and `n + 1`, which meet finitely many columns, and truncating `K` to those columns
@@ -44,11 +44,12 @@ does not change the total complex in these degrees.
 * `HomologicalComplex₂.totalShortComplex`, `HomologicalComplex₂.totalShortComplexSplitting`: the
   short complex of total complexes of a short complex of double complexes, split in each degree
   when the latter is split in each bidegree.
-* `HomologicalComplex₂.totalIsoShiftOfIsZero`, `HomologicalComplex₂.acyclic_total_of_isZero`: the
+* `HomologicalComplex₂.shiftIsoTotalOfIsZero`, `HomologicalComplex₂.acyclic_total_of_isZero`: the
   total complex of a double complex concentrated in one column is that column, shifted, so it is
   acyclic when that column is.
-* `HomologicalComplex₂.hasTotal_of_finite_antidiagonals`: the total complex exists when every
-  antidiagonal has finitely many nonzero terms.
+* `HomologicalComplex₂.hasTotal_of_finite_antidiagonals`,
+  `HomologicalComplex₂.hasTotal_of_isZero_X`: the total complex exists when every antidiagonal
+  has finitely many nonzero terms, for instance when only finitely many columns are nonzero.
 * `HomologicalComplex₂.acyclic_total_of_finite_antidiagonals`: the acyclic assembly lemma.
 
 ## References
@@ -155,6 +156,16 @@ lemma hasTotal_of_finite_antidiagonals [Preadditive C] [HasFiniteCoproducts C]
       obtain rfl : q = n - p := by omega
       exact h
 
+/-- The total complex of a double complex indexed by `ℤ × ℤ` exists in a category with finite
+coproducts when its columns vanish outside `[a, b]`. -/
+lemma hasTotal_of_isZero_X [Preadditive C] [HasFiniteCoproducts C]
+    (L : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (a b : ℤ)
+    (hL : ∀ p, p < a ∨ b < p → IsZero (L.X p)) : L.HasTotal (ComplexShape.up ℤ) :=
+  hasTotal_of_finite_antidiagonals L fun _ ↦ (Set.finite_Icc a b).subset fun p hp ↦ by
+    by_contra h
+    exact hp ((HomologicalComplex.eval C _ _).map_isZero
+      (hL p (by simp only [Set.mem_Icc, not_and_or, not_le] at h; exact h)))
+
 variable [Preadditive C] (L : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ))
   [L.HasTotal (ComplexShape.up ℤ)] (c : ℤ) (hL : ∀ p, p ≠ c → IsZero (L.X p))
 
@@ -175,7 +186,7 @@ lemma isIso_ιTotal_of_isZero {q n : ℤ}
 /-- The total complex of a double complex concentrated in the column `c` is that column shifted by
 `-c`: in degree `n` the isomorphism is the inclusion of the term `(c, n - c)`. The sign `(-1)ᶜ` of
 the total differential on the column `c` is the sign of the differential of the shift by `-c`. -/
-noncomputable def totalIsoShiftOfIsZero :
+noncomputable def shiftIsoTotalOfIsZero :
     (L.X c)⟦-c⟧ ≅ L.total (ComplexShape.up ℤ) :=
   HomologicalComplex.Hom.isoOfComponents
     (fun n ↦
@@ -185,66 +196,36 @@ noncomputable def totalIsoShiftOfIsZero :
       rintro n _ rfl
       have hc : IsZero ((L.X (c + 1)).X (n + -c)) :=
         (HomologicalComplex.eval C _ _).map_isZero (hL _ (by omega))
-      simp only [asIso_hom, total_d, Preadditive.comp_add, ι_D₁, ι_D₂]
-      rw [d₁_eq L _ (show (ComplexShape.up ℤ).Rel c (c + 1) by simp) (n + -c) (n + 1)
-          (by simp only [ComplexShape.π_def]; omega), hc.eq_of_tgt ((L.d c (c + 1)).f (n + -c)),
-        zero_comp, smul_zero, zero_add,
-        d₂_eq L _ c (show (ComplexShape.up ℤ).Rel (n + -c) (n + 1 + -c) by
-          simp only [ComplexShape.up_Rel]; omega) (n + 1)
-          (by simp only [ComplexShape.π_def]; omega)]
-      simp [Int.negOnePow_neg])
+      have h₁ : (ComplexShape.up ℤ).Rel c (c + 1) := rfl
+      have h₁' : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
+          (c + 1, n + -c) = n + 1 := by simp only [ComplexShape.π_def]; omega
+      have h₂ : (ComplexShape.up ℤ).Rel (n + -c) (n + 1 + -c) := by
+        simp only [ComplexShape.up_Rel]; omega
+      have h₂' : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
+          (c, n + 1 + -c) = n + 1 := by simp only [ComplexShape.π_def]; omega
+      simp [total_d, d₁_eq L _ h₁ _ _ h₁', hc.eq_of_tgt ((L.d c (c + 1)).f (n + -c)) 0,
+        d₂_eq L _ c h₂ _ h₂', Int.negOnePow_neg])
 
-/-- In degree `n`, the isomorphism `totalIsoShiftOfIsZero` is the inclusion of the term
+/-- In degree `n`, the isomorphism `shiftIsoTotalOfIsZero` is the inclusion of the term
 `(c, n - c)` into the total complex. -/
 @[simp]
-lemma totalIsoShiftOfIsZero_hom_f (n : ℤ) :
-    (L.totalIsoShiftOfIsZero c hL).hom.f n =
+lemma shiftIsoTotalOfIsZero_hom_f (n : ℤ) :
+    (L.shiftIsoTotalOfIsZero c hL).hom.f n =
       L.ιTotal (ComplexShape.up ℤ) c (n + -c) n (by simp) := by
-  simp [totalIsoShiftOfIsZero]
+  simp [shiftIsoTotalOfIsZero]
 
 include hL in
 /-- The total complex of a double complex concentrated in the column `c` is acyclic when that
 column is. -/
 lemma acyclic_total_of_isZero (hc : (L.X c).Acyclic) :
     (L.total (ComplexShape.up ℤ)).Acyclic := fun n ↦
-  ((CochainComplex.acyclic_shift_iff _ (-c)).2 hc n).of_iso (L.totalIsoShiftOfIsZero c hL)
+  ((CochainComplex.acyclic_shift_iff _ (-c)).2 hc n).of_iso (L.shiftIsoTotalOfIsZero c hL)
 
 end Int
 
 section Abelian
 
 variable {C : Type*} [Category* C] [Abelian C]
-
-/-- A column of a brutal truncation of a double complex with exact columns is exact. -/
-private lemma acyclic_stupidTrunc_X {ι : Type*} {c : ComplexShape ι}
-    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ))
-    (e : c.Embedding (ComplexShape.up ℤ)) [e.IsRelIff] (hK : ∀ p, (K.X p).Acyclic) (p : ℤ) :
-    ((K.stupidTrunc e).X p).Acyclic := by
-  by_cases h : ∃ i, e.f i = p
-  · obtain ⟨i, hi⟩ := h
-    exact fun n ↦ (hK p n).of_iso (K.stupidTruncXIso e hi).symm
-  · exact HomologicalComplex.acyclic_of_isZero _ (K.isZero_stupidTrunc_X e p (by simpa using h))
-
-/-- A term of a brutal truncation of a double complex vanishes where the term of the double
-complex does. -/
-private lemma isZero_stupidTrunc_X_X {ι : Type*} {c : ComplexShape ι}
-    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ))
-    (e : c.Embedding (ComplexShape.up ℤ)) [e.IsRelIff] {p q : ℤ} (h : IsZero ((K.X p).X q)) :
-    IsZero (((K.stupidTrunc e).X p).X q) := by
-  by_cases h' : ∃ i, e.f i = p
-  · obtain ⟨i, hi⟩ := h'
-    exact h.of_iso ((HomologicalComplex.eval C _ q).mapIso (K.stupidTruncXIso e hi))
-  · exact (HomologicalComplex.eval C _ q).map_isZero
-      (K.isZero_stupidTrunc_X e p (by simpa using h'))
-
-/-- A double complex whose columns vanish outside `[a, b]` has a total complex. -/
-private lemma hasTotal_of_isZero_X
-    (L : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (a b : ℤ)
-    (hL : ∀ p, p < a ∨ b < p → IsZero (L.X p)) : L.HasTotal (ComplexShape.up ℤ) :=
-  hasTotal_of_finite_antidiagonals L fun _ ↦ (Set.finite_Icc a b).subset fun p hp ↦ by
-    by_contra h
-    exact hp ((HomologicalComplex.eval C _ _).map_isZero
-      (hL p (by simp only [Set.mem_Icc, not_and_or, not_le] at h; exact h)))
 
 /-- A double complex with exact columns, which vanish outside `[a, a + k)`, has an acyclic total
 complex. -/
@@ -277,8 +258,8 @@ private lemma acyclic_total_of_isZero_X (k : ℕ) :
     exact (totalShortComplex_shortExact (ComplexShape.up ℤ)
       (CochainComplex.stupidTruncShortComplex L a)
       fun p q ↦ (CochainComplex.stupidTruncShortComplexSplitting L a p).map _).acyclic_X₂
-      (ih (a + 1) _ h₁ (acyclic_stupidTrunc_X L _ hc))
-      (acyclic_total_of_isZero _ a h₃ (acyclic_stupidTrunc_X L _ hc a))
+      (ih (a + 1) _ h₁ (L.acyclic_stupidTrunc_X _ hc))
+      (acyclic_total_of_isZero _ a h₃ (L.acyclic_stupidTrunc_X _ hc a))
 
 /-- The inclusion of the brutal truncation of a double complex in the columns `≥ a` induces an
 isomorphism of total complexes in a degree `m` whose antidiagonal vanishes in the columns `< a`. -/
@@ -346,7 +327,7 @@ private lemma acyclic_total_of_finite_antidiagonals_of_columns
   let K₁ : HomologicalComplex₂ C _ _ := K.stupidTrunc (ComplexShape.embeddingUpIntGE a)
   let K₂ : HomologicalComplex₂ C _ _ := K₁.stupidTrunc (ComplexShape.embeddingUpIntLE b)
   have : K₁.HasTotal (ComplexShape.up ℤ) := hasTotal_of_finite_antidiagonals K₁ fun m ↦
-    (hfin m).subset fun p hp h ↦ hp (isZero_stupidTrunc_X_X K _ h)
+    (hfin m).subset fun p hp h ↦ hp (K.isZero_stupidTrunc_X_X _ h)
   have hK₂ (p : ℤ) (hp : p < a ∨ b < p) : IsZero (K₂.X p) := by
     rcases hp with hp | hp
     · exact K₁.isZero_stupidTrunc_X_of_isZero _
@@ -357,7 +338,7 @@ private lemma acyclic_total_of_finite_antidiagonals_of_columns
     isIso_total_map_ιStupidTrunc_f K a m fun p hp ↦ hab m h₁ h₂ p (.inl hp)
   have hπ (m : ℤ) (h₁ : n - 1 ≤ m) (h₂ : m ≤ n + 1) :=
     isIso_total_map_πStupidTrunc_f K₁ b m fun p hp ↦
-      isZero_stupidTrunc_X_X K _ (hab m h₁ h₂ p (.inr hp))
+      K.isZero_stupidTrunc_X_X _ (hab m h₁ h₂ p (.inr hp))
   have := hι (n - 1) le_rfl (by omega)
   have := hι n (by omega) (by omega)
   have := hι (n + 1) (by omega) le_rfl
@@ -370,7 +351,7 @@ private lemma acyclic_total_of_finite_antidiagonals_of_columns
     (total.map (K₁.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) _) (n - 1) n (n + 1) (by simp)
     (by simp)]
   exact acyclic_total_of_isZero_X (b + 1 - a).toNat a K₂ (fun p hp ↦ hK₂ p (by omega))
-    (acyclic_stupidTrunc_X K₁ _ (acyclic_stupidTrunc_X K _ hK)) n
+    (K₁.acyclic_stupidTrunc_X _ (K.acyclic_stupidTrunc_X _ hK)) n
 
 /-- **The acyclic assembly lemma for finite antidiagonals.** In an abelian category, let `K` be a
 double complex indexed by `ℤ × ℤ` such that each antidiagonal `p + q = n` has only finitely many
