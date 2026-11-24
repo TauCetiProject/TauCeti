@@ -14,6 +14,7 @@ public import TauCeti.Topology.CWComplex.Classical.Tower.Union
 public import TauCeti.Topology.Homotopy.Extension.CWComplex
 public import TauCeti.Topology.Homotopy.Extension.Tower
 import TauCeti.Topology.Coherent
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Sequential colimits of CW complexes
@@ -38,7 +39,9 @@ topology makes their union a CW complex (`TauCeti.cwSubcomplexTowerUnion`).
 The range of each stage `F k` is the subcomplex of the colimit made of the cells born at the
 stages up to `k` (`TauCeti.cwComplexOfIsColimitSubcomplex`), and every compact subset of the
 colimit lies in one of these subcomplexes, when the stages are `T1`
-(`TauCeti.exists_subset_cwComplexOfIsColimitSubcomplex_of_isCompact`).
+(`TauCeti.exists_subset_cwComplexOfIsColimitSubcomplex_of_isCompact`). Each of these subcomplexes
+is homeomorphic to its stage (`TauCeti.cwComplexOfIsColimitSubcomplexHomeomorph`), so a statement
+about the stages can be read on the colimit.
 
 For the comparison of such a colimit with another increasing union up to homotopy, the stages are
 linked by closed cofibrations: the range of the `k`-th stage has the homotopy extension property
@@ -66,6 +69,7 @@ union.
 * `TauCeti.cwComplexOfIsColimitSubcomplex`: the range of stage `k`, as a subcomplex of the
   colimit, with `n`-cells in bijection with those of `F k`
   (`TauCeti.cwComplexOfIsColimitSubcomplexCellEquiv`).
+* `TauCeti.cwComplexOfIsColimitSubcomplexHomeomorph`: its homeomorphism with the stage.
 
 ## Main results
 
@@ -422,6 +426,30 @@ theorem exists_subset_cwComplexOfIsColimitSubcomplex_of_isCompact [∀ k, T1Spac
   TopCat.exists_subset_range_ι_of_isCompact (fun _ _ hij ↦
     (TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij).injective) hc hK
 
+/-- The subcomplex of the colimit given by the stage `F k` is homeomorphic to `F k`, by the inverse
+of the map `c.ι.app k` onto its range. -/
+def cwComplexOfIsColimitSubcomplexHomeomorph (k : ℕ) :
+    cwComplexOfIsColimitSubcomplex hF hι hc k ≃ₜ F.obj k :=
+  (Homeomorph.setCongr (coe_cwComplexOfIsColimitSubcomplex hF hι hc k)).trans
+    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding.toHomeomorph.symm
+
+/-- The homeomorphism of the subcomplex given by the stage `F k` with `F k` inverts `c.ι.app k`. -/
+@[simp]
+theorem ι_app_cwComplexOfIsColimitSubcomplexHomeomorph (k : ℕ)
+    (x : cwComplexOfIsColimitSubcomplex hF hι hc k) :
+    dsimp% c.ι.app k (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k x) = (x : c.pt) := by
+  have hemb := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding
+  rw [cwComplexOfIsColimitSubcomplexHomeomorph, Homeomorph.trans_apply,
+    ← hemb.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, Homeomorph.setCongr_apply]
+
+/-- The inverse of the homeomorphism of the subcomplex given by the stage `F k` with `F k` is
+`c.ι.app k`. -/
+@[simp]
+theorem coe_cwComplexOfIsColimitSubcomplexHomeomorph_symm_apply (k : ℕ) (w : F.obj k) :
+    ((cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k).symm w : c.pt) = c.ι.app k w := by
+  conv_rhs => rw [← (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k).apply_symm_apply w]
+  rw [ι_app_cwComplexOfIsColimitSubcomplexHomeomorph]
+
 include hF hι hc in
 /-- **The stages of a sequential colimit of CW complexes are linked by closed cofibrations.**
 Inside the colimit, the range of `F k` has the homotopy extension property in the range of
@@ -579,11 +607,8 @@ theorem exists_homotopyEquiv_cwComplexOfIsColimitSubcomplex [∀ k, T2Space (F.o
           (cwComplexOfIsColimitSubcomplex hF hι hc k)) := by
   obtain ⟨H, hH, hsymm⟩ :=
     exists_homotopyEquiv_of_isColimit_cwComplex hF hι hc hA hAY hAc hAH h hh
-  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc
-  let eW (k : ℕ) : (range (c.ι.app k) : Set c.pt) ≃ₕ A k :=
-    (hemb k).isEmbedding.toHomeomorph.symm.toHomotopyEquiv.trans (h k)
-  refine ⟨H, eW, fun k ⟨_, w, rfl⟩ ↦ ?_, hsymm⟩
-  exact (congrArg (fun y ↦ (h k y : Y))
-    ((hemb k).isEmbedding.toHomeomorph_symm_apply w)).trans (hH k w).symm
+  exact ⟨H, fun k ↦ (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k).toHomotopyEquiv.trans
+    (h k), fun k x ↦ (hH k _).symm.trans
+      (congrArg H (ι_app_cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k x)), hsymm⟩
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Invariants
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.Invariants
 public import TauCeti.AlgebraicTopology.Singular.Transfer.Sign
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
@@ -49,6 +50,12 @@ orientation. It composes three isomorphisms.
   coefficients in the sign local system of `σ` (`IsCoveringMap.signHomologyLinearEquiv`), which is
   `o(E)` by definition.
 
+Dually, for an injective `K`-module `N`, for instance any vector space over a field of
+characteristic other than `2`, the universal coefficient theorem identifies both cohomologies with
+the duals `Hom(-, N)` of the homologies above, so the twisted Thom isomorphism transposes to
+cohomology: `Hᵖ⁺ʳ(E, E₀; K, N) ≃ Hᵖ(B; o(E) ⊗ K, N)`
+(`TauCeti.VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology`).
+
 ## Main definitions
 
 * `TauCeti.VectorBundleOrientationCover.thomPairTransfer`: the relative transfer of the double cover
@@ -63,6 +70,9 @@ orientation. It composes three isomorphisms.
 * `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`: the twisted
   Thom isomorphism `Hₚ₊ᵣ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for a commutative ring `K` in which `2` is
   invertible.
+* `TauCeti.VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology`: its
+  transpose `Hᵖ⁺ʳ(E, E₀; K, N) ≃ Hᵖ(B; o(E) ⊗ K, N)` for an injective `K`-module `N`, characterized
+  by `twistedKronecker_thomPairSingularCohomologyEquivTwistedCohomology`.
 
 ## References
 
@@ -471,6 +481,45 @@ theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) =
       finrank K (LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) :=
   (nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F E hι K h).some.finrank_eq
+
+/-! ### The dual isomorphism in cohomology -/
+
+variable (N : ModuleCat.{w} K) [Injective N]
+
+/-- **The Thom isomorphism in cohomology with coefficients in the orientation local system.** Let
+`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, `K` a commutative
+ring in which `2` is invertible and `N` an injective `K`-module, for instance any vector space over
+a field of characteristic other than `2` (`Module.injective_of_isSemisimpleRing`). Then
+`Hᵐ(E, E₀; K, N) ≃ Hᵖ(B; o(E) ⊗ K, N)` for `m = r + p`, with no orientation of `E` and over any
+base.
+
+It is the transpose of the twisted Thom isomorphism in homology
+(`thomPairSingularHomologyEquivTwistedHomology`): with injective values both cohomologies are the
+duals `Hom(-, N)` of the corresponding homologies, by the universal coefficient theorem
+(`TopPair.singularKronecker_bijective` and
+`TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
+def thomPairSingularCohomologyEquivTwistedCohomology :
+    (thomPair F E).singularCohomology (ModuleCat.of K K) K N m ≃ₗ[K]
+      (signLocalSystem F E K hι).twistedCohomology K N p :=
+  (LinearEquiv.ofBijective _ ((thomPair F E).singularKronecker_bijective K m)).trans
+    ((Linear.homCongr K (thomPairSingularHomologyEquivTwistedHomology hι ω hg h).toModuleIso
+      (Iso.refl N)).trans ((signLocalSystem F E K hι).twistedKroneckerEquiv K p).symm)
+
+/-- **The twisted Thom isomorphism in cohomology is dual to the one in homology**: evaluating the
+image of `α ∈ Hᵐ(E, E₀; K, N)` in `Hᵖ(B; o(E) ⊗ K, N)` on a twisted class is evaluating `α` on the
+class of `Hₘ(E, E₀; K)` that `thomPairSingularHomologyEquivTwistedHomology` sends to it. This
+characterizes `thomPairSingularCohomologyEquivTwistedCohomology`, since the twisted Kronecker map
+is injective for injective values. -/
+@[simp]
+theorem twistedKronecker_thomPairSingularCohomologyEquivTwistedCohomology
+    (α : (thomPair F E).singularCohomology (ModuleCat.of K K) K N m) :
+    (signLocalSystem F E K hι).twistedKronecker K p
+        (thomPairSingularCohomologyEquivTwistedCohomology hι ω hg h N α) =
+      ModuleCat.ofHom (thomPairSingularHomologyEquivTwistedHomology hι ω hg h).symm.toLinearMap ≫
+        (thomPair F E).singularKronecker K m α := by
+  rw [← LocalCoefficientSystem.twistedKroneckerEquiv_apply]
+  simp [thomPairSingularCohomologyEquivTwistedCohomology, Linear.homCongr_apply,
+    -LocalCoefficientSystem.twistedKroneckerEquiv_apply]
 
 end CommRing
 
