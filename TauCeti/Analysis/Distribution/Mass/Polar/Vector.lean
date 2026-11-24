@@ -86,23 +86,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [FiniteDimensional ℝ F] {Ω : Opens E} {n : ℕ∞}
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ] {T : 𝓕}
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The preimage in `Ω` of a compact subset `K ⊆ Ω` of `E` is compact and measurable. -/
-private theorem isCompact_measurableSet_preimage_coe {K : Set E} (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) : IsCompact ((↑) ⁻¹' K : Set Ω) ∧ MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-  ⟨Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ),
-    (hK.isClosed.preimage continuous_subtypeVal).measurableSet⟩
-
-omit [BorelSpace E] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] in
-/-- A field of norm at most one almost everywhere for a measure finite on compact sets is locally
-integrable. -/
-private theorem locallyIntegrable_of_ae_norm_le_one {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
-    {g : Ω → F} (hg : AEStronglyMeasurable g μ) (h1 : ∀ᵐ x ∂μ, ‖g x‖ ≤ 1) :
-    LocallyIntegrable g μ := by
-  have := Ω.isOpen.locallyCompactSpace
-  exact locallyIntegrable_iff.2 fun K hK =>
-    Measure.integrableOn_of_bounded hK.measure_lt_top.ne hg (M := 1) (ae_restrict_of_ae h1)
-
 section Smooth
 
 omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F] in
@@ -129,8 +112,8 @@ private theorem exists_isCompact_localMass_ne_top_approx (hT : HasLocallyFiniteM
         tsupport (⇑φ - ⇑ψ) ⊆ K ∧ (∀ x, ‖φ x - ψ x‖ ≤ ε) ∧
           ‖T (φ - monoCLM ℝ ψ)‖ₑ ≤ localMass T K * ENNReal.ofReal ε := by
   obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
-  obtain ⟨hKc, hKm⟩ := isCompact_measurableSet_preimage_coe hK hKΩ
-  refine ⟨K, (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ, hKc, hKm,
+  have hKc := Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  refine ⟨K, (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ, hKc, hKc.measurableSet,
     fun ε hε => ?_⟩
   obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
   have hsub : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
@@ -303,9 +286,10 @@ theorem ae_norm_polarVector_eq_one : ∀ᵐ x ∂massMeasure T, ‖polarVector T
 
 /-- The polar vector field is locally integrable with respect to the mass measure. -/
 theorem locallyIntegrable_polarVector :
-    LocallyIntegrable (polarVector T) (massMeasure T) :=
-  locallyIntegrable_of_ae_norm_le_one stronglyMeasurable_polarVector.aestronglyMeasurable
-    (ae_norm_polarVector_eq_one.mono fun _ hx => hx.le)
+    LocallyIntegrable (polarVector T) (massMeasure T) := by
+  have := Ω.isOpen.locallyCompactSpace
+  exact (memLp_top_of_bound stronglyMeasurable_polarVector.aestronglyMeasurable 1
+    (ae_norm_polarVector_eq_one.mono fun _ hx => hx.le)).locallyIntegrable le_top
 
 /-- **Uniqueness of the polar vector field.** A locally integrable vector field `η` with
 `T φ = ∫ ⟪η x, φ x⟫ d‖T‖` for every test `φ` agrees with the polar vector field of `T` at
@@ -360,11 +344,11 @@ private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasure
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
     HasLocallyFiniteMass T := by
   refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ => ?_
-  obtain ⟨hKc, hKm⟩ := isCompact_measurableSet_preimage_coe hK hKΩ
+  have hKc := Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
   refine ne_top_of_le_ne_top (hKc.measure_lt_top (μ := μ)).ne
     (localMass_le_iff.2 fun φ hφK hφ => ?_)
   simpa using (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h φ).trans
-    (lintegral_enorm_le_ofReal_mul_measure μ (f := fun x : Ω => φ x) hKm
+    (lintegral_enorm_le_ofReal_mul_measure μ (f := fun x : Ω => φ x) hKc.measurableSet
       (fun x hx => hφK (subset_tsupport _ hx)) fun x => hφ x)
 
 /-- A `μ`-almost everywhere strongly measurable field `η` of norm one at `μ`-almost every point
@@ -379,7 +363,7 @@ private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts
   have hac : massMeasure T ≪ μ :=
     Measure.absolutelyContinuous_of_le (massMeasure_le_of_apply_eq_integral_inner hη1 h)
   have hηl : LocallyIntegrable η μ :=
-    locallyIntegrable_of_ae_norm_le_one hηm (hη1.mono fun _ hx => hx.le)
+    (memLp_top_of_bound hηm 1 (hη1.mono fun _ hx => hx.le)).locallyIntegrable le_top
   have hρl : LocallyIntegrable
       (fun x => ((massMeasure T).rnDeriv μ x).toReal • polarVector T x) μ :=
     locallyIntegrable_iff.2 fun K hK => by
