@@ -66,7 +66,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- The normalization map of a glued nodal curve as a morphism of sheafed spaces: the quotient
 map on points, and on sections the inclusion of matching holomorphic functions into holomorphic
 functions on the normalization. -/
-def normalizationSheafedSpaceHom :
+@[expose] def normalizationSheafedSpaceHom :
     holomorphicStructureSheaf.sheafedSpace I (Σ i, X i) ⟶ sheafedSpace I d :=
   InducedCategory.homMk
     { base := TopCat.quotientMk (gluedRelSetoid d)
@@ -77,6 +77,13 @@ def normalizationSheafedSpaceHom :
 theorem normalizationSheafedSpaceHom_hom_base_apply (x : Σ i, X i) :
     (normalizationSheafedSpaceHom I d).hom.base x = Quotient.mk (gluedRelSetoid d) x := (rfl)
 
+/-- On sections, the normalization map is the inclusion `quotientSheafι` of matching holomorphic
+functions into holomorphic functions on the normalization. -/
+@[simp]
+theorem normalizationSheafedSpaceHom_hom_c_app (U : (Opens (GluedCurve d))ᵒᵖ) :
+    (normalizationSheafedSpaceHom I d).hom.c.app U =
+      (quotientSheafι I (gluedRelSetoid d)).hom.app U := (rfl)
+
 /-- The stalk map of the normalization map at a point of the normalization is restriction of
 germs on the glued curve to that branch. -/
 theorem stalkMap_normalizationSheafedSpaceHom (x : Σ i, X i) :
@@ -84,8 +91,9 @@ theorem stalkMap_normalizationSheafedSpaceHom (x : Σ i, X i) :
       CommRingCat.ofHom (quotientStalkBranch I (gluedRelSetoid d) _ x
         (normalizationSheafedSpaceHom_hom_base_apply I d x).symm) := by
   refine TopCat.Presheaf.stalk_hom_ext _ fun U hx ↦ CommRingCat.hom_ext (RingHom.ext fun g ↦ ?_)
-  exact ((PresheafedSpace.stalkMap_germ_apply (normalizationSheafedSpaceHom I d).hom U x hx
-    g).trans (congrArg _ (quotientSheafι_app_apply I (gluedRelSetoid d) U g))).trans
+  rw [CommRingCat.comp_apply, PresheafedSpace.stalkMap_germ_apply,
+    normalizationSheafedSpaceHom_hom_c_app]
+  exact (congrArg _ (quotientSheafι_app_apply I (gluedRelSetoid d) U g)).trans
     (quotientStalkBranch_germ I (gluedRelSetoid d) _ x _ U hx g).symm
 
 /-- The stalk map of the normalization map at a point of the normalization restricts a germ to
@@ -115,6 +123,11 @@ def complFlagPointSet [∀ i, T1Space (X i)] : Opens (Σ i, X i) :=
 theorem coe_complFlagPointSet [∀ i, T1Space (X i)] :
     (complFlagPointSet d : Set (Σ i, X i)) = (flagPointSet d)ᶜ := (rfl)
 
+/-- A point lies in the complement of the flag points exactly when it is not a flag point. -/
+@[simp]
+theorem mem_complFlagPointSet [∀ i, T1Space (X i)] {x : Σ i, X i} :
+    x ∈ complFlagPointSet d ↔ x ∉ flagPointSet d := Iff.rfl
+
 /-- The complement of the nodes, an open subset of the glued curve. -/
 def complNodeSet [∀ i, T1Space (X i)] : Opens (GluedCurve d) :=
   ⟨(nodeSet d)ᶜ, isOpen_compl_nodeSet d⟩
@@ -122,6 +135,26 @@ def complNodeSet [∀ i, T1Space (X i)] : Opens (GluedCurve d) :=
 @[simp]
 theorem coe_complNodeSet [∀ i, T1Space (X i)] :
     (complNodeSet d : Set (GluedCurve d)) = (nodeSet d)ᶜ := (rfl)
+
+/-- A point lies in the complement of the nodes exactly when it is not a node. -/
+@[simp]
+theorem mem_complNodeSet [∀ i, T1Space (X i)] {z : GluedCurve d} :
+    z ∈ complNodeSet d ↔ z ∉ nodeSet d := Iff.rfl
+
+/-- On points, the normalization map restricted to the complement of the flag points is the
+restriction of the quotient map. -/
+theorem ofRestrict_comp_normalizationSheafedSpaceHom_hom_base [∀ i, T1Space (X i)] :
+    ⇑((holomorphicStructureSheaf.sheafedSpace I (Σ i, X i)).ofRestrict
+        (complFlagPointSet d).isOpenEmbedding ≫ normalizationSheafedSpaceHom I d).hom.base =
+      fun x : complFlagPointSet d ↦ Quotient.mk (gluedRelSetoid d) (x : Σ i, X i) := (rfl)
+
+/-- On points, the normalization map restricted to the complement of the flag points is the
+quotient map. -/
+theorem ofRestrict_comp_normalizationSheafedSpaceHom_hom_base_apply [∀ i, T1Space (X i)]
+    (x : complFlagPointSet d) :
+    ((holomorphicStructureSheaf.sheafedSpace I (Σ i, X i)).ofRestrict
+        (complFlagPointSet d).isOpenEmbedding ≫ normalizationSheafedSpaceHom I d).hom.base x =
+      Quotient.mk (gluedRelSetoid d) (x : Σ i, X i) := (rfl)
 
 /-- **The normalization map is an open immersion off the flag points.** Restricted to the
 complement of the flag points, the normalization map of a glued curve with finitely many flag
@@ -131,11 +164,12 @@ instance isOpenImmersion_ofRestrict_comp_normalizationSheafedSpaceHom [∀ i, T1
       ((holomorphicStructureSheaf.sheafedSpace I (Σ i, X i)).ofRestrict
         (complFlagPointSet d).isOpenEmbedding ≫ normalizationSheafedSpaceHom I d) := by
   refine SheafedSpace.IsOpenImmersion.of_stalk_iso _ ?_ (H := fun x ↦ ?_)
-  · exact isOpenEmbedding_domRestrict_quotient_mk d
+  · rw [ofRestrict_comp_normalizationSheafedSpaceHom_hom_base]
+    exact isOpenEmbedding_domRestrict_quotient_mk d
   · have h₁ : IsIso ((normalizationSheafedSpaceHom I d).hom.stalkMap
         (((holomorphicStructureSheaf.sheafedSpace I (Σ i, X i)).ofRestrict
           (complFlagPointSet d).isOpenEmbedding).hom.base x)) :=
-      isIso_stalkMap_normalizationSheafedSpaceHom I d x.property
+      isIso_stalkMap_normalizationSheafedSpaceHom I d ((mem_complFlagPointSet d).mp x.property)
     rw [InducedCategory.comp_hom, PresheafedSpace.stalkMap.comp]
     exact IsIso.comp_isIso' h₁ (PresheafedSpace.ofRestrict_stalkMap_isIso _ _ x)
 
@@ -145,8 +179,9 @@ theorem range_ofRestrict_comp_normalizationSheafedSpaceHom [∀ i, T1Space (X i)
     Set.range ((holomorphicStructureSheaf.sheafedSpace I (Σ i, X i)).ofRestrict
         (complFlagPointSet d).isOpenEmbedding ≫ normalizationSheafedSpaceHom I d).hom.base =
       (nodeSet d)ᶜ := by
-  rw [← image_quotient_mk_compl, ← Set.range_domRestrict]
-  -- The underlying map of the composite is the restriction of the quotient map.
+  rw [ofRestrict_comp_normalizationSheafedSpaceHom_hom_base, ← image_quotient_mk_compl,
+    ← coe_complFlagPointSet, Set.image_eq_range]
+  -- An open set and its underlying set give the same subtype.
   rfl
 
 /-- **The smooth locus of a glued curve is the normalization off the flag points.** The
@@ -201,7 +236,8 @@ theorem coe_restrictComplFlagPointSetIso_hom_base_apply [∀ i, T1Space (X i)]
     (x : complFlagPointSet d) :
     ((restrictComplFlagPointSetIso I d).hom.hom.base x).val =
       Quotient.mk (gluedRelSetoid d) (x : Σ i, X i) :=
-  congrArg (fun f ↦ f.hom.base x) (restrictComplFlagPointSetIso_hom_ofRestrict I d)
+  (congrArg (fun f ↦ f.hom.base x) (restrictComplFlagPointSetIso_hom_ofRestrict I d)).trans
+    (ofRestrict_comp_normalizationSheafedSpaceHom_hom_base_apply I d x)
 
 /-- Restriction of germs on the glued curve to a branch is a local homomorphism, also at the
 flag points. -/
