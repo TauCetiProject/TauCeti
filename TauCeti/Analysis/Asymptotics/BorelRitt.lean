@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.RCLike
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
