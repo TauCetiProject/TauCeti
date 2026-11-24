@@ -12,9 +12,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLa
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Weitzenböck formula for the Dirac operator
@@ -150,15 +151,15 @@ private theorem sum_frame_eq_zero {ι : Type*} [Fintype ι] {Y : ι → Π y : M
   have hb (i : ι) : b i = Y i x := by simp [b]
   -- The connection coefficients `aᵢⱼ = ⟪Yⱼ, ∇ᵀ_w Yᵢ⟫` of the orthonormal frame.
   set a : ι → ι → ℝ := fun i j ↦ ⟪b j, covT (Y i) x w⟫ with ha_def
+  -- They are skew-symmetric, since `Y` is an orthonormal local frame on an open set around `x`.
+  obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 hY
+  have hs : IsLocalFrameOn I E ∞ Y t :=
+    { linearIndependent := fun hy ↦ (ht _ hy).1.linearIndependent
+      generating := fun hy ↦ (ht _ hy).2
+      contMDiffOn := fun i ↦ (hYs i).contMDiffOn }
   have ha (i j : ι) : a i j = -a j i := by
-    have hconst : (fun y ↦ ⟪Y i y, Y j y⟫) =ᶠ[𝓝 x] fun _ ↦ if i = j then (1 : ℝ) else 0 := by
-      filter_upwards [hY] with y hy
-      exact orthonormal_iff_ite.1 hy.1 i j
-    have h := hcovT.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
-      ((hYs i).mdifferentiable (by simp) x) ((hYs j).mdifferentiable (by simp) x) hconst w
-    have hc := real_inner_comm (Y j x) (covT (Y i) x w)
-    simp only [ha_def, hb]
-    linarith
+    simp only [ha_def, hb, ← hs.coeff_eq_inner hxt (ht x hxt).1]
+    exact hs.coeff_covariantDerivative_swap (by simp) hto (fun y hy ↦ (ht y hy).1) hcovT x j i w
   have hexp (i : ι) : covT (Y i) x w = ∑ j, a i j • b j := (b.sum_repr' _).symm
   -- Expanding `∇ᵀ_w Yᵢ` in the frame gives a skew-symmetric sum of symmetric terms.
   have hsum : ∑ i, (c x (covT (Y i) x w) (cov σ x (Y i x)) +
