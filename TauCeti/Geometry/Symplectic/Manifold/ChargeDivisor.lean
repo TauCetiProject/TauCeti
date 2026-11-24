@@ -39,12 +39,13 @@ for every function `g` continuous at the points of `σ_{w₀}⁻¹(Z)`
 conservation of local charges
 (`TauCeti.PositiveCohomologyAssignment.eventually_sum_localCharge_eq`): near each point `z₀` of
 `σ_{w₀}⁻¹(Z)` the local charges of a nearby leaf add up to `I_{z₀}(σ_{w₀})`, and since they are
-nonnegative their total stays bounded. The filter `l` can be the restriction of `𝓝 w₀` to the
-parameters whose leaves meet `Z` finitely. When `P` is a finite-dimensional real normed space with
-an additive Haar measure and `u⁻¹(Z)` has locally finite `μH[dim P]`, almost every leaf with
-compact `σ_w⁻¹(Z)` meets `Z` in a finite set
+nonnegative their total stays bounded. For `J`-holomorphic leaves, `l` can be the restriction of
+`𝓝 w₀` to the parameters whose leaves meet `Z` finitely, the nonnegativity then coming from
+`TauCeti.PositiveCohomologyAssignment.localCharge_nonneg_of_finite`. When `P` is a
+finite-dimensional real normed space with an additive Haar measure and `u⁻¹(Z)` has locally
+finite `μH[dim P]`, almost every leaf with compact `σ_w⁻¹(Z)` meets `Z` in a finite set
 (`TauCeti.PositiveCohomologyAssignment.ae_charge_eq_sum_localCharge`); this holds for instance
-when `u` is a local diffeomorphism and `Z` has locally finite two-dimensional Hausdorff measure.
+when `u` is a local diffeomorphism and `Z` has locally finite `μH[dim P]`.
 
 Taking `g(z) = zᵏ`, the power sums of the charge multisets converge, and by Newton's identities so
 do their elementary symmetric functions
