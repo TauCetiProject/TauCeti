@@ -37,6 +37,10 @@ frame map read through the identification of the frames of `f *ᵖ E` at `y` wit
 at `f y` (`TauCeti.OrthonormalFrameBundle.pullbackHomeomorph`). Equivalences pull back to
 equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
 
+Precomposing every frame of a lift along `ρ` with a fixed linear isometry `r` of the model gives
+a lift along any `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, on the same principal bundle
+(`TauCeti.OrthonormalFrameLift.precomp`).
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift`: a lift of the orthonormal frame bundle of a real vector bundle
@@ -45,6 +49,8 @@ equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
 * `TauCeti.OrthonormalFrameLift.Equiv`: equivalences of lifts, with `refl`, `symm`, `trans`.
 * `TauCeti.OrthonormalFrameLift.pullback`: the pullback of a lift along a continuous map.
 * `TauCeti.OrthonormalFrameLift.Equiv.pullback`: the pullback of an equivalence.
+* `TauCeti.OrthonormalFrameLift.precomp`: the lift whose frames are those of a lift precomposed
+  with a fixed isometry of the model.
 
 ## Main results
 
@@ -534,6 +540,39 @@ theorem Equiv.lift_pullback_toHomeomorph {s t : OrthonormalFrameLift F E n G ρ}
   (rfl)
 
 end Pullback
+
+/-! ### Changing the model frame -/
+
+/-- The **lift with precomposed frames**: for a lift `s` along `ρ`, a linear isometry `r` of the
+model `ℝⁿ` and a homomorphism `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, the lift along `ρ'` with the same
+principal bundle, whose frame at `p` is the frame of `p` in `s` precomposed with `r`. Its body is
+exposed so that the fibre `(s.precomp r ρ' hr).P x` unfolds to `s.P x` downstream. -/
+@[expose]
+noncomputable def precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    OrthonormalFrameLift F E n G ρ' where
+  P := s.P
+  toFrame p := ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩
+  continuous_toFrame := OrthonormalFrameBundle.continuous_iff.2 fun v ↦
+    (OrthonormalFrameBundle.continuous_totalSpaceMk_frame (r v)).comp s.continuous_toFrame
+  proj_toFrame p := s.proj_toFrame p
+  toFrame_smul x p g v := by
+    have h := s.toFrame_smul x p g (r (WithLp.toLp 2 v)).ofLp
+    simp only [WithLp.toLp_ofLp, hr] at h
+    simpa only [LinearIsometryEquiv.trans_apply] using h
+
+/-- The frame of a point in the lift with precomposed frames is its frame in the original lift
+precomposed with `r`. -/
+@[simp]
+theorem toFrame_precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp)
+    (p : TotalSpace G s.P) :
+    (s.precomp r ρ' hr).toFrame p = ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩ :=
+  (rfl)
 
 end OrthonormalFrameLift
 
