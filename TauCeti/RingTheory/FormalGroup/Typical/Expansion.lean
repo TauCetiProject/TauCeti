@@ -255,7 +255,7 @@ theorem IsPTypical.expansionCoeff_eq_zero (hF : F.IsPTypical p) (hp : p.Prime)
     · exact γ.expansionCoeff_zero
     have hs := isPTypical_sum_monomialCurve hF hp γ.expansionCoeff n
       fun j hj hpow ↦ ih (j + 1) (by omega) hpow
-    rw [expansionCoeff_succ]
+    rw [expansionCoeff_add_one_eq_coeff_sub_sum]
     refine (hγ.sub hs).coeff_eq_zero_of_forall_lt hunit hn fun i hi ↦ ?_
     rw [coeff_sub_congr (fun j hj ↦
         (γ.coeff_sum_expansionCoeff (hj.trans (Nat.lt_succ_iff.mp hi))).symm) (fun _ _ ↦ rfl),

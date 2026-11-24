@@ -225,7 +225,7 @@ variable [F.IsComm]
 
 /-- The expansion coefficient in degree `n + 1` is the degree-`n + 1` coefficient of the residual
 after subtracting the formal-group sum of the expansion terms of lower degree. -/
-theorem expansionCoeff_succ (γ : F.Curve) (n : ℕ) :
+theorem expansionCoeff_add_one_eq_coeff_sub_sum (γ : F.Curve) (n : ℕ) :
     γ.expansionCoeff (n + 1) = coeff (n + 1)
       (γ - ∑ j ∈ range n,
         F.monomialCurve (j + 1) j.succ_ne_zero (γ.expansionCoeff (j + 1))).toPowerSeries := by
