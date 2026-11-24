@@ -176,6 +176,10 @@ private theorem onePairT_nonneg (m n : ℕ) : 0 ≤ onePairT m n := by
   unfold onePairT
   positivity
 
+private theorem onePairP_le_one (m n : ℕ) : onePairP m n ≤ 1 := by
+  unfold onePairP
+  exact descFactorial_div_pow_le_one m n
+
 private theorem onePairT_le_one {m n : ℕ} (hmn : m ≤ n) : onePairT m n ≤ 1 :=
   div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le 2 hmn) (by positivity)
 
@@ -213,7 +217,7 @@ theorem one_sub_descFactorial_div_pow_sub_mul_min_nonneg (m n : ℕ) :
   rcases le_or_gt m n with hmn | hnm
   · rw [← onePairP, ← onePairT, ← max_one_sub_two_mul_mul_add_eq]
     exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
-      (mul_nonneg (sub_nonneg.2 (descFactorial_div_pow_le_one m n))
+      (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n))
         (sub_nonneg.2 (onePairT_le_one hmn)))
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
@@ -369,7 +373,7 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
   rw [sum_ite, ← mul_sum, ← mul_sum]
   simp only [sum_measure_singleton, coe_filter_univ, ← Set.compl_ofPred]
   rw [hPE₂, hPE₂c,
-    ofReal_one_sub_two_mul_mul_add_eq (p := onePairP _ _) (descFactorial_div_pow_le_one _ _) ht0
+    ofReal_one_sub_two_mul_mul_add_eq (onePairP_le_one _ _) ht0
       (onePairT_le_one hmn)]
 
 /-- **The one-pair formula, total-variation form.** For distinct indices `a b : κ` and

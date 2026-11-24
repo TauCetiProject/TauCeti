@@ -46,8 +46,8 @@ error `1 - n.descFactorial m / n^m`, and twice that error for the signed-measure
 This includes `m = n = 0`, whose error is zero. For a nonempty population the error is the
 exact index-collision probability.
 
-If the first `n` coordinates repeat a value with positive probability, the error improves further:
-for a measurable set `S` of populations with a repeated value, it is
+For `2 ≤ m ≤ n`, if the first `n` coordinates repeat a value with positive probability, the error
+improves further: for a measurable set `S` of populations with a repeated value, it is
 `1 - p - t * min p (1 - p) * P((X₀, …, Xₙ₋₁) ∈ S)`, where `p = n.descFactorial m / n^m` and
 `t = m.descFactorial 2 / n.descFactorial 2`.
 
