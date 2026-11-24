@@ -104,7 +104,7 @@ variable {φ}
 /-- **Vectors may act on either spinor argument**: `⟨c(v) s, t⟩ = ⟨s, c(v) t⟩`, for a functional
 killing every contraction and, unless the remainder of the polarization is zero, invariant under
 the grade involution. -/
-theorem spinTrilinearForm_apply_eq
+theorem spinTrilinearForm_apply_eq_reversalPairing_spinAction_ι
     (hφ : ∀ (d : Module.Dual K P.W) (x : ExteriorAlgebra K P.W), φ (contractLeft d x) = 0)
     (hline : P.line = ⊥ ∨ ∀ x : ExteriorAlgebra K P.W, φ (involute x) = φ x)
     (v : V) (s t : ExteriorAlgebra K P.W) :
@@ -120,7 +120,7 @@ theorem spinTrilinearForm_swap
     {c : K} (hrev : ∀ x : ExteriorAlgebra K P.W, φ (reverse x) = c * φ x)
     (v : V) (s t : ExteriorAlgebra K P.W) :
     P.spinTrilinearForm φ v t s = c * P.spinTrilinearForm φ v s t := by
-  rw [P.spinTrilinearForm_apply_eq hφ hline, spinTrilinearForm_apply,
+  rw [P.spinTrilinearForm_apply_eq_reversalPairing_spinAction_ι hφ hline, spinTrilinearForm_apply,
     ExteriorAlgebra.reversalPairing_swap φ hrev]
 
 /-- **The trilinear form is Spin-invariant**: `T (g • v, g s, g t) = T (v, s, t)` for `g` in the
@@ -151,7 +151,8 @@ theorem spinTrilinearForm_add_add_eq_zero
       P.spinTrilinearForm φ v s (spinAction Q P x t) = 0 := by
   -- Move every operator onto the last argument: the three terms become `⟨s, y t⟩` for
   -- `y = x v - v x`, `reverse x * v = -x v` and `v x`, which sum to zero.
-  rw [P.spinTrilinearForm_apply_eq hφ hline w, P.spinTrilinearForm_apply_eq hφ hline v,
+  rw [P.spinTrilinearForm_apply_eq_reversalPairing_spinAction_ι hφ hline w,
+    P.spinTrilinearForm_apply_eq_reversalPairing_spinAction_ι hφ hline v,
     spinTrilinearForm_apply, ← hw, reversalPairing_spinAction P φ hφ hline,
     reversalPairing_spinAction P φ hφ hline, hx, reverse_ι]
   simp only [map_sub, map_neg, map_mul, LinearMap.sub_apply, LinearMap.neg_apply,
@@ -206,6 +207,19 @@ section Basis
 
 variable {I : Type w} [LinearOrder I] (b : Module.Basis I K P.W)
 
+/-- **The trilinear form on a basis vector, the vacuum and an exterior-basis vector**:
+`T (wᵢ, 1, w_s) = φ (wᵢ ∧ w_s)`, which is zero when `i ∈ s` and otherwise `φ` of the basis vector
+of `insert i s` times the sign moving `i` to the front. -/
+theorem spinTrilinearForm_basis_one_basis (φ : Module.Dual K (ExteriorAlgebra K P.W)) (i : I)
+    (s : Finset I) :
+    P.spinTrilinearForm φ (b i : V) 1 (b.ExteriorAlgebra s) =
+      if i ∈ s then 0
+        else
+          ExteriorAlgebra.basisEraseSign i (insert i s) • φ (b.ExteriorAlgebra (insert i s)) := by
+  rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
+    reverse_ι, ExteriorAlgebra.ι_mul_basis, apply_ite φ, map_zero, Units.smul_def, map_zsmul,
+    Units.smul_def]
+
 /-- **The top-degree normalization of the trilinear form**: for a basis `w` of `W` and the
 top-degree coefficient, `T (wᵢ, 1, w_{univ ∖ {i}})` is the sign moving `i` to the front of the
 index set. -/
@@ -213,19 +227,16 @@ theorem spinTrilinearForm_coord_univ_basis_erase [Fintype I] (i : I) :
     P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) (b i : V) 1
         (b.ExteriorAlgebra (Finset.univ.erase i)) =
       ((ExteriorAlgebra.basisEraseSign i Finset.univ : ℤ) : K) := by
-  classical
-  rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
-    reverse_ι, ExteriorAlgebra.ι_mul_basis, ite_eq_right (Finset.notMem_erase i _),
-    Finset.insert_erase (Finset.mem_univ i), Units.smul_def, map_zsmul]
-  simp
+  rw [spinTrilinearForm_basis_one_basis, ite_eq_right (Finset.notMem_erase i _),
+    Finset.insert_erase (Finset.mem_univ i)]
+  simp [Units.smul_def]
 
 /-- **The trilinear form vanishes on a repeated basis vector**: `T (wᵢ, 1, w_s) = 0` when
 `i ∈ s`, since `wᵢ ∧ w_s = 0`. -/
-theorem spinTrilinearForm_basis_one_basis_of_mem (φ : Module.Dual K (ExteriorAlgebra K P.W))
-    {i : I} {s : Finset I} (hi : i ∈ s) :
+theorem spinTrilinearForm_basis_one_basis_eq_zero_of_mem
+    (φ : Module.Dual K (ExteriorAlgebra K P.W)) {i : I} {s : Finset I} (hi : i ∈ s) :
     P.spinTrilinearForm φ (b i : V) 1 (b.ExteriorAlgebra s) = 0 := by
-  rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
-    reverse_ι, ExteriorAlgebra.ι_mul_basis, ite_eq_left hi, map_zero]
+  rw [spinTrilinearForm_basis_one_basis, ite_eq_left hi]
 
 /-- **The trilinear form of the top-degree coefficient pairs `wᵢ`, `1` and `w_{univ ∖ {i}}` to a
 nonzero scalar** over a nontrivial ring, namely the sign `±1`. -/

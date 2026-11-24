@@ -20,9 +20,9 @@ two half-spin representations.
 
 ## Main results
 
-* `TauCeti.SpinPolarizationData.spinTrilinearForm_coord_univ_zero_one_ι_mul_ι_mul_ι`:
+* `TauCeti.SpinPolarizationData.spinTrilinearForm_coord_univ_basis_zero_one_ι_mul_ι_mul_ι_eq_one`:
   `T (w₁, 1, w₂ w₃ w₄) = 1` for the top-degree coefficient.
-* `TauCeti.SpinPolarizationData.spinTrilinearForm_one_one_ι_mul_ι_mul_ι`:
+* `TauCeti.SpinPolarizationData.spinTrilinearForm_basis_one_one_ι_mul_ι_mul_ι_eq_zero`:
   `T (w₂, 1, w₂ w₃ w₄) = 0` for any functional.
 
 ## References
@@ -51,14 +51,15 @@ private theorem ι_mul_ι_mul_ι_eq_basis_erase_zero (b : Module.Basis (Fin 4) K
     ite_eq_right (by decide), mul_smul_comm, ExteriorAlgebra.ι_mul_basis,
     ite_eq_right (by decide), smul_smul]
   -- Both shuffle signs are `+1`, and the index set `{1, 2, 3}` is `univ ∖ {0}`.
-  convert one_smul ℤˣ (b.ExteriorAlgebra (Finset.univ.erase (0 : Fin 4))) using 2
+  convert one_smul ℤˣ (b.ExteriorAlgebra (Finset.univ.erase (0 : Fin 4))) using 3
   · simp only [ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt]
     decide
-  · congr 1
+  · decide
 
 /-- **In rank four, the top-degree trilinear form satisfies `T (w₁, 1, w₂ w₃ w₄) = 1`**, for a
 basis `w₁, …, w₄` of the isotropic summand and its top-degree coefficient. -/
-theorem spinTrilinearForm_coord_univ_zero_one_ι_mul_ι_mul_ι (b : Module.Basis (Fin 4) K P.W) :
+theorem spinTrilinearForm_coord_univ_basis_zero_one_ι_mul_ι_mul_ι_eq_one
+    (b : Module.Basis (Fin 4) K P.W) :
     P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) (b 0 : V) 1
         (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2) * ExteriorAlgebra.ι K (b 3)) =
       1 := by
@@ -68,11 +69,12 @@ theorem spinTrilinearForm_coord_univ_zero_one_ι_mul_ι_mul_ι (b : Module.Basis
 
 /-- **In rank four, `T (w₂, 1, w₂ w₃ w₄) = 0` for any functional `φ`**, since
 `w₂ ∧ w₂ w₃ w₄ = 0`. -/
-theorem spinTrilinearForm_one_one_ι_mul_ι_mul_ι (b : Module.Basis (Fin 4) K P.W) :
+theorem spinTrilinearForm_basis_one_one_ι_mul_ι_mul_ι_eq_zero
+    (b : Module.Basis (Fin 4) K P.W) :
     P.spinTrilinearForm φ (b 1 : V) 1
         (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2) * ExteriorAlgebra.ι K (b 3)) =
       0 := by
   rw [ι_mul_ι_mul_ι_eq_basis_erase_zero]
-  exact P.spinTrilinearForm_basis_one_basis_of_mem b φ (by decide)
+  exact P.spinTrilinearForm_basis_one_basis_eq_zero_of_mem b φ (by decide)
 
 end TauCeti.SpinPolarizationData
