@@ -19,11 +19,11 @@ operator norm. For a finite-dimensional continuous irreducible `σ` over an alge
 field, the kernel `dim(σ) · conj(χ_σ)` of `ContRepresentation.isotypicKernel` acts on `V` through
 the strong integrated operator `ContRepresentation.strongIntegratedOperator`, giving the
 **isotypic projector** `e_σ = π(dim(σ) · conj(χ_σ))`, a continuous self-intertwiner of `π`. On an
-operator-norm continuous representation, in particular a finite-dimensional one, it is main's
-`isotypicProjector`. It is idempotent, and `e_σ ∘ e_τ = 0` for inequivalent irreducibles `σ`,
-`τ`: both identities hold on each `G`-finite vector, where `e_σ` is the finite-dimensional
-projector of a finite-dimensional subrepresentation containing it, and the `G`-finite vectors are
-dense (`ContRepresentation.continuousLinearMap_ext_of_isGFinite`).
+operator-norm continuous representation, in particular a finite-dimensional one, it is the
+finite-dimensional `ContRepresentation.isotypicProjector`. It is idempotent, and `e_σ ∘ e_τ = 0`
+for inequivalent irreducibles `σ`, `τ`: both identities hold on each `G`-finite vector, where
+`e_σ` is the finite-dimensional projector of a finite-dimensional subrepresentation containing it,
+and the `G`-finite vectors are dense (`ContRepresentation.continuousLinearMap_ext_of_isGFinite`).
 
 ## Main definitions
 
@@ -122,6 +122,7 @@ theorem banachIsotypicProjector_apply_of_mem (σ : ContRepresentation k G W)
 variable [IsAlgClosed k]
 
 /-- **`e_σ` is idempotent** for an irreducible `σ`. -/
+@[simp]
 theorem banachIsotypicProjector_idempotent (σ : ContRepresentation k G W) (hσ : Continuous σ)
     (hirr : Representation.IsIrreducible σ.toRepresentation) :
     (banachIsotypicProjector π hπ σ hσ).comp (banachIsotypicProjector π hπ σ hσ) =

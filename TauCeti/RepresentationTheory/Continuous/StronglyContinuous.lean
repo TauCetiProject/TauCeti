@@ -62,7 +62,8 @@ variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] 
   {π : ContRepresentation 𝕜 G V} {W : Submodule 𝕜 V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
 
 /-- Restricting a strongly continuous representation to a finite-dimensional invariant subspace
-gives a representation that is continuous in the operator norm, by `continuous_clm_apply`. -/
+gives a representation that is continuous in the operator norm: on a finite-dimensional space,
+strong and operator-norm continuity agree. -/
 theorem continuous_subrepresentation_of_finiteDimensional (hπ : ∀ v, Continuous fun g ↦ π g v)
     [FiniteDimensional 𝕜 W] : Continuous (subrepresentation π W hW) :=
   continuous_clm_apply.2 (continuous_subrepresentation_apply hπ)
