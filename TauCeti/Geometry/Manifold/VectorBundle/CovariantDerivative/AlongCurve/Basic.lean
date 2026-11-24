@@ -395,6 +395,7 @@ theorem alongCurve_const_of_hasDerivAt (x : M) {W : 𝕜 → TangentSpace I x} {
   rwa [HasDerivWithinAt, nhdsWithin_univ]
 
 /-- Along a constant curve at `x`, a constant field has vanishing covariant derivative. -/
+@[simp]
 theorem alongCurve_const_const (x : M) (w : TangentSpace I x) (t : 𝕜) :
     alongCurve cov (fun _ ↦ x) (fun _ ↦ w) t = 0 :=
   -- Read the constant field in the model space `E = T_x M`, where its derivative vanishes.
