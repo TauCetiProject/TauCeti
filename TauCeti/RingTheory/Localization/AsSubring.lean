@@ -55,6 +55,15 @@ theorem mem_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
       simpa only [u, Units.coe_map_inv, AlgHom.coe_toMonoidHom, Subalgebra.val_apply] using
         (v⁻¹).val.property) (A.algebraMap_mem r)
 
+/-- In a principal embedded localization, membership means that some power of the
+localizing element clears the denominator into the coefficient image. -/
+theorem mem_powers_iff_exists_pow_mul_mem_range (a : R) (A : Subalgebra R K)
+    [IsLocalization (Submonoid.powers a) A] (x : K) :
+    x ∈ A ↔ ∃ n : ℕ, ∃ r : R, algebraMap R K r = algebraMap R K a ^ n * x := by
+  rw [mem_iff_exists_mem_denIdeal (Submonoid.powers a) A x]
+  simp only [Submonoid.mem_powers_iff, exists_exists_eq_and]
+  simp only [Algebra.mem_denIdeal_iff, map_pow, eq_comm]
+
 end TauCeti.Localization.subalgebra
 
 namespace Localization.subalgebra

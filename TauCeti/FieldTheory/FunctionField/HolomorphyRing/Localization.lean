@@ -72,10 +72,8 @@ theorem coe_ofField_powers_eq_holomorphyRing (hF : IsFunctionField k F)
   ext z
   have hmem : z ∈ ofField F (Submonoid.powers x) hx ↔
       ∃ n : ℕ, algebraMap A F x ^ n * z ∈ (algebraMap A F).range := by
-    rw [ofField_eq,
-      TauCeti.Localization.subalgebra.mem_iff_exists_mem_denIdeal (Submonoid.powers x)]
-    simp only [Submonoid.mem_powers_iff, exists_exists_eq_and]
-    simp only [Algebra.mem_denIdeal_iff, map_pow, RingHom.mem_range, eq_comm]
+    rw [ofField_eq, TauCeti.Localization.subalgebra.mem_powers_iff_exists_pow_mul_mem_range x]
+    simp only [RingHom.mem_range]
   rw [SetLike.mem_coe, hmem, Subalgebra.range_algebraMap, SetLike.mem_coe,
     mem_holomorphyRing_iff]
   simp only [Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA', mem_holomorphyRing_iff,
