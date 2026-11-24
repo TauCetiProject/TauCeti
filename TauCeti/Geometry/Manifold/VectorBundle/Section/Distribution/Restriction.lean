@@ -633,30 +633,21 @@ private theorem tsupport_intrinsicInclusionCLM {D : Opens M} (h : U ≤ D)
   have hset : {x : D | intrinsicInclusionCLM (I := I) (F := F) (V := V) h s x ≠ 0} =
       {x : D | t x ≠ 0} := by
     ext x
+    -- Intrinsic inclusion composes the coefficient equivalence, native inclusion and its inverse.
     change ((openDensityHomCLE (I := I) (F := F) (V := V) (U := D)).symm t x ≠ 0) ↔
       (t x ≠ 0)
     erw [openDensityHomCLE_symm_apply (I := I) (F := F) (V := V) (U := D)]
     exact not_congr (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x).symm.map_eq_zero_iff
   rw [hset]
-  obtain ⟨z, hz⟩ := (ofCompactlySupported I (F →L[ℝ] ℝ)
-    (pulledAmbientCoefficients (I := I) (V := V) (U := U))).surjective
-    (openDensityHomCLE (I := I) (F := F) (V := V) s)
+  -- Native inclusion already exposes its support image; density conversion preserves zeros.
   change closure {x : D | inclusionCLM (I := I) (F := F →L[ℝ] ℝ)
     (V := ambientCoefficients (I := I) (V := V)) h
     (openDensityHomCLE (I := I) (F := F) (V := V) s) x ≠ 0} = _
-  rw [← hz, inclusionCLM_ofCompactlySupported]
-  erw [LinearEquiv.symm_apply_apply]
-  erw [← ContMDiffSection.tsupport_def]
-  erw [ContMDiffSection.tsupport_extendByZeroToOpenLinearMap]
-  congr 2
-  rw [ContMDiffSection.tsupport_def]
-  congr 1
+  rw [tsupport_inclusionCLM]
+  apply congrArg (fun K : Set U ↦ (Opens.inclusion h) '' closure K)
   ext x
-  change (z.val x ≠ 0) ↔ (s x ≠ 0)
-  have hx := congrArg (fun w : TauCeti.BundleTest I (F →L[ℝ] ℝ)
-    (pulledAmbientCoefficients (I := I) (V := V) (U := U)) ↦ w x) hz
-  change z.val x = openDensityHomCLE (I := I) (F := F) (V := V) s x at hx
-  rw [hx]
+  -- Both sides evaluate the same coefficient before taking closure and the inclusion image.
+  change (openDensityHomCLE (I := I) (F := F) (V := V) s x ≠ 0) ↔ (s x ≠ 0)
   erw [openDensityHomCLE_apply]
   exact not_congr (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x).map_eq_zero_iff
 
