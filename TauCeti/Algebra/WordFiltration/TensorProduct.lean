@@ -54,7 +54,7 @@ theorem tensorGenerators_apply (x : M × N) :
 
 /-- The left factor inclusion sends words in `f` to words of the same length in
 `tensorGenerators f g`. -/
-theorem includeLeft_mem_wordFiltration_tensorGenerators {k : ℕ} {x : A}
+theorem tmul_one_mem_wordFiltration_tensorGenerators {k : ℕ} {x : A}
     (hx : x ∈ wordFiltration f k) :
     x ⊗ₜ[R] (1 : B) ∈ wordFiltration (tensorGenerators f g) k :=
   map_mem_wordFiltration f (_root_.Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] B) _
@@ -63,7 +63,7 @@ theorem includeLeft_mem_wordFiltration_tensorGenerators {k : ℕ} {x : A}
 
 /-- The right factor inclusion sends words in `g` to words of the same length in
 `tensorGenerators f g`. -/
-theorem includeRight_mem_wordFiltration_tensorGenerators {k : ℕ} {y : B}
+theorem one_tmul_mem_wordFiltration_tensorGenerators {k : ℕ} {y : B}
     (hy : y ∈ wordFiltration g k) :
     (1 : A) ⊗ₜ[R] y ∈ wordFiltration (tensorGenerators f g) k :=
   map_mem_wordFiltration g (_root_.Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) _
@@ -103,7 +103,7 @@ theorem wordFiltration_tensorGenerators (n : ℕ) :
       simp [_root_.Algebra.TensorProduct.tmul_mul_tmul]
     rw [hxy]
     exact wordFiltration_mono _ hij (mul_mem_wordFiltration _
-      (includeLeft_mem_wordFiltration_tensorGenerators f g hx)
-      (includeRight_mem_wordFiltration_tensorGenerators f g hy))
+      (tmul_one_mem_wordFiltration_tensorGenerators f g hx)
+      (one_tmul_mem_wordFiltration_tensorGenerators f g hy))
 
 end TauCeti.Algebra

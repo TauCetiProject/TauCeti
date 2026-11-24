@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Abelian
 public import TauCeti.Algebra.Lie.Sl2.Center
-public import TauCeti.Algebra.Lie.UniversalEnveloping.ProductCenter
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Product.Center
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 
 /-!
@@ -49,7 +49,8 @@ example : productEnveloping K Z0 Z0 1 = 1 ⊗ₜ[K] 1 := map_one _
 example (x : UniversalEnvelopingAlgebra K (Z0 × Z0)) : ∃ c : K, x = algebraMap K _ c := by
   have h := adjoin_image_ι_eq_top K (Z0 × Z0) (S := ∅) <| by
     refine eq_top_iff.2 fun x _ ↦ ?_
-    have hx : x = 0 := rfl
+    have hx : x = 0 := ((AbelianLieAlgebra.equiv K PUnit).prodCongr
+      (AbelianLieAlgebra.equiv K PUnit)).injective (Subsingleton.elim _ _)
     exact hx ▸ zero_mem _
   rw [Set.image_empty, Algebra.adjoin_empty] at h
   have hx : x ∈ (⊥ : Subalgebra K _) := h ▸ Algebra.mem_top
