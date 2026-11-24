@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.LinearAlgebra.Determinant
-import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # Skew-symmetric maps and orthogonal hyperplane frames on real inner product spaces
@@ -18,8 +17,8 @@ preserves inner products and norms, and any two anticommuting skew-symmetric map
 values at every vector `x`. Evaluating a family of `card ι` pairwise anticommuting skew-symmetric
 maps squaring to `-1` at a unit vector `x` therefore produces an orthonormal family in `(ℝ ∙ x)ᗮ`,
 which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`. In odd
-finite dimension a skew-symmetric linear map has a nonzero kernel vector, since its matrix in an
-orthonormal basis is antisymmetric of odd size.
+finite dimension a skew-symmetric linear map `f` has a nonzero kernel vector, since otherwise
+`x, y ↦ ⟪f x, y⟫` would be a nondegenerate alternating form, forcing even dimension.
 
 ## Main definitions and results
 
@@ -99,21 +98,17 @@ nonzero kernel vector. -/
 theorem exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank [FiniteDimensional ℝ E]
     {f : E →ₗ[ℝ] E} (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (hodd : Odd (finrank ℝ E)) :
     ∃ x, x ≠ 0 ∧ f x = 0 := by
-  let b := (stdOrthonormalBasis ℝ E).toBasis
-  -- The matrix of `f` in an orthonormal basis is antisymmetric, and has odd size.
-  have hM : (LinearMap.toMatrix b b f).transpose = -LinearMap.toMatrix b b f := by
-    ext i j
-    simp only [b, Matrix.transpose_apply, Matrix.neg_apply, LinearMap.toMatrix_apply,
-      OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
-      OrthonormalBasis.repr_apply_apply]
-    rw [real_inner_comm, hf]
-  have hdet : LinearMap.det f = 0 := by
-    rw [← LinearMap.det_toMatrix b]
-    exact Matrix.det_eq_zero_of_transpose_eq_neg_of_odd_card (.of_ne_zero two_ne_zero) hM
-      (by rwa [Fintype.card_fin])
-  obtain ⟨x, hx, hx₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (LinearMap.bot_lt_ker_of_det_eq_zero hdet).ne'
-  exact ⟨x, hx₀, hx⟩
+  by_contra! hker
+  have hinj (x : E) (hx : f x = 0) : x = 0 := by_contra fun h ↦ hker x h hx
+  -- The form `x, y ↦ ⟪f x, y⟫` is alternating, and nondegenerate since `f` is injective, so
+  -- the dimension would be even.
+  let B : LinearMap.BilinForm ℝ E := (innerₗ E).comp f
+  have hB : B.IsAlt := inner_apply_self_eq_zero_of_skew hf
+  have hnd : B.Nondegenerate := by
+    refine ⟨fun x hx ↦ hinj x ?_, fun y hy ↦ hinj y ?_⟩
+    · simpa [B] using hx (f x)
+    · simpa [B, hf] using hy (f y)
+  exact Nat.not_even_iff_odd.mpr hodd (hB.even_finrank hnd)
 
 /-- Two anticommuting skew-symmetric maps on a real inner product space take orthogonal values at
 every vector `x`. -/
