@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
 -- Private: the commuting of orthogonal bivectors, the square of a bivector and `w + w⁻¹ = 2 Re w`
 -- on the circle are used only in proofs.
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 

@@ -92,6 +92,9 @@ walks.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_graph`: positivity of every
   Markov trace on `n` strands from a bounded-depth or global path model.
+* `TauCeti.TemperleyLieb.walkRep_strandIncl_apply`,
+  `TauCeti.TemperleyLieb.walkRep_e_last_apply_snoc_snoc`: on walks, adding a strand extends walks
+  by one step, and the last generator mixes the penultimate vertex of walks turning back.
 * `TauCeti.TemperleyLieb.conjTranspose_mem_range_walkRep`: for self-adjoint weights, the image of
   the path representation on walks is closed under the conjugate transpose.
 * `TauCeti.TemperleyLieb.ker_walkRep`, `TauCeti.TemperleyLieb.IsMarkovTrace.ker_walkRep`: for
@@ -844,6 +847,44 @@ theorem walkRep_apply_eq_zero (hδ : IsPathEigenvectorUpTo G v₀ r δ n) (x : T
     {s t : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s}}
     (h : s.val (Fin.last n) ≠ t.val (Fin.last n)) : walkRep G v₀ hr hδ x s t = 0 :=
   pathRep_apply_eq_zero hr hδ x fun h' ↦ h h'.2
+
+/-- On walks, adding a straight strand extends walks by one step: the entry of the path
+representation on walks of `strandIncl x` at two walks is the entry of `x` at their initial
+segments when they end at the same vertex, and `0` otherwise. -/
+theorem walkRep_strandIncl_apply (hδ : IsPathEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1)) (s t : {s : Fin (n + 3) → V // G.IsWalkFrom v₀ s}) :
+    walkRep G v₀ hr hδ (strandIncl x) s t =
+      if s.val (Fin.last (n + 2)) = t.val (Fin.last (n + 2)) then
+        walkRep G v₀ hr (hδ.mono (Nat.le_succ (n + 1))) x ⟨Fin.init s.val, s.property.init⟩
+          ⟨Fin.init t.val, t.property.init⟩
+      else 0 := by
+  rw [walkRep_apply, pathRep_strandIncl_apply hr hδ x s.property, extendLast_apply, walkRep_apply]
+
+/-- The last generator on walks with two final steps: its entry at the walks `p a b` and
+`p' a' b'` is `r a * r a' / r b ^ 2` when the walks agree up to their penultimate vertex and return
+in their last step to the vertex `p (Fin.last n) = b` they left, and `0` otherwise. -/
+theorem walkRep_e_last_apply_snoc_snoc (hδ : IsPathEigenvectorUpTo G v₀ r δ (n + 2))
+    {p p' : Fin (n + 1) → V} {a a' b b' : V}
+    (hs : G.IsWalkFrom v₀ (Fin.snoc (Fin.snoc p a : Fin (n + 2) → V) b : Fin (n + 3) → V))
+    (ht : G.IsWalkFrom v₀ (Fin.snoc (Fin.snoc p' a' : Fin (n + 2) → V) b' : Fin (n + 3) → V)) :
+    walkRep G v₀ hr hδ (e δ (Fin.last n)) ⟨_, hs⟩ ⟨_, ht⟩ =
+      if p = p' ∧ p (Fin.last n) = b ∧ b' = b then r a * r a' / r b ^ 2 else 0 := by
+  have h₀ : (⟨(Fin.last n : ℕ), by omega⟩ : Fin (n + 3)) = (Fin.last n).castSucc.castSucc :=
+    Fin.ext (by simp)
+  have h₁ : (⟨(Fin.last n : ℕ) + 1, by omega⟩ : Fin (n + 3)) = (Fin.last (n + 1)).castSucc :=
+    Fin.ext (by simp)
+  have h₂ : (⟨(Fin.last n : ℕ) + 2, by omega⟩ : Fin (n + 3)) = Fin.last (n + 2) :=
+    Fin.ext (by simp)
+  rw [walkRep_apply, pathRep_e, pathGenerator_apply, h₀, h₁, h₂]
+  simp only [Fin.snoc_castSucc, Fin.snoc_last, ← Fin.snoc_update, Fin.update_snoc_last,
+    Fin.snoc_inj, hs, true_and]
+  have hadj : G.Adj (p' (Fin.last n)) a' := by
+    simpa using ht.adj (a := (Fin.last n).castSucc.castSucc) (b := (Fin.last (n + 1)).castSucc)
+      (by simp)
+  by_cases h : p = p' ∧ p (Fin.last n) = b ∧ b' = b
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    simp [hadj]
+  · split_ifs <;> simp_all
 
 /-- The trace of the path model is the trace of the path representation on walks, weighted by
 `TauCeti.TemperleyLieb.pathWeight`: the walks ending at `v` have weight `(r v / r v₀) ^ 2`. -/

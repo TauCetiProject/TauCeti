@@ -18,7 +18,9 @@ is Hausdorff.
 
 The fibers of a locally injective map are discrete
 (`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
-(`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
+(`IsLocallyInjective.finite_preimage_singleton_inter`), and every fiber of a locally injective map
+out of a compact space is finite (`IsLocallyInjective.finite_preimage_singleton`); this needs no
+topology on the codomain.
 On a Hausdorff space, the neighbourhoods on which a locally injective map is injective can be
 chosen pairwise disjoint over any finite set
 (`IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint`).
@@ -93,6 +95,19 @@ homeomorphism, is finite. -/
 theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInjective p)
     {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
   hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
+
+/-- Every fiber of a locally injective map out of a compact space, such as a local homeomorphism,
+is finite. -/
+theorem IsLocallyInjective.finite_preimage_singleton [CompactSpace E] (hp : IsLocallyInjective p)
+    (b : B) : (p ⁻¹' {b}).Finite := by
+  -- Finitely many open sets on which `p` is injective cover `E`, and each of them meets the fiber
+  -- in at most one point.
+  choose U hUo hxU hU using hp
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hUo fun x _ ↦ mem_iUnion.2 ⟨x, hxU x⟩
+  refine (t.finite_toSet.biUnion fun x _ ↦ Set.Subsingleton.finite (s := U x ∩ p ⁻¹' {b})
+    fun e he e' he' ↦ hU x he.1 he'.1 (he.2.trans he'.2.symm)).subset fun e he ↦ ?_
+  obtain ⟨x, hx, hex⟩ := mem_iUnion₂.1 (ht (mem_univ e))
+  exact mem_iUnion₂.2 ⟨x, hx, hex, he⟩
 
 /-- A locally injective map `p` on a Hausdorff space, such as a local homeomorphism, is injective
 on an open neighbourhood `W e` of each point `e`, and these neighbourhoods can be chosen pairwise

@@ -128,6 +128,13 @@ lemma cyclesDegree_apply (α : cyclesOfDimension X 0) :
       ∑ᶠ x, (X ↘ Spec (.of k)).residueDegree x • (α : AlgebraicCycle X ℤ) x :=
   AlgebraicCycle.degree_apply _ _
 
+omit [LocallyOfFiniteType (X ↘ Spec (.of k))] in
+/-- The degree of a zero-cycle is Mathlib's degree of its underlying cycle along the structure
+morphism. -/
+lemma cyclesDegree_eq_degree (α : cyclesOfDimension X 0) :
+    cyclesDegree k X α = AlgebraicCycle.degree (X ↘ Spec (.of k)) (α : AlgebraicCycle X ℤ) :=
+  (rfl)
+
 /-- Pushforward along a morphism over `k` of quasi-compact schemes preserves the degree of
 zero-cycles. -/
 @[simp]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Symplectization.Annihilator
+public import TauCeti.Geometry.Contact.Symplectization.Trivialization
 public import TauCeti.Geometry.Manifold.Diffeomorph.Annihilator
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
@@ -31,14 +32,30 @@ lift of `h`. This file proves that it is the lift of `h` to the symplectizations
 * it maps the symplectization `ξ⁰ ∖ 0` onto `ξ'⁰ ∖ 0`
   (`Diffeomorph.annihilatorLift_mem_annihilatorPunctured_iff`);
 * it is the only smooth map covering `h` that preserves the tautological one-form
-  (`Diffeomorph.eq_annihilatorLift_of_mpullback_annihilatorLiouvilleForm`).
+  (`Diffeomorph.eq_annihilatorLift_of_mpullback_annihilatorLiouvilleForm`); pointwise, a map
+  differentiable at `z`, covering `h` near `z` and preserving `θ` at `z` agrees with the lift at
+  `z` (`Diffeomorph.apply_eq_annihilatorLift_of_annihilatorLiouvilleForm`).
 
 No coorientation enters: the statements hold equally for contactomorphisms reversing a chosen
 coorientation, which exchange the two halves of the punctured line over each point, and for
-contact structures that are not the kernel of any global one-form. For a contact form `α` and a
-contactomorphism with `h^* α' = f α`, `f > 0`, the trivialized form of this lift is
-`(t, x) ↦ (t - log f(x), h x)` on `ℝ × M`
-(`TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`).
+contact structures that are not the kernel of any global one-form.
+
+In the trivializations `κ_α : (t, x) ↦ eᵗ α_x` of the annihilator lines by one-forms `α` and `α'`
+with kernels `ξ` and `ξ'` (`TauCeti.SmoothForm.symplectizationToAnnihilator`), the lift of a
+diffeomorphism `h` with `h^* α' = f α`, written `Φ`, is explicit. Where `f > 0` it is the lift
+`(t, x) ↦ (t - log f(x), h x)` of `TauCeti.symplectizationLift`:
+
+`Φ (κ_α (t, x)) = κ_α' (t - log f(x), h x)`
+
+(`Diffeomorph.annihilatorLift_symplectizationToAnnihilator`), so on the positive halves `Φ` is the
+lift of the cooriented symplectizations, which pulls `eᵗ α'` back to `eᵗ α`
+(`TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`). Where `f < 0` the lift
+reverses the coorientation and lands in the other half,
+
+`Φ (κ_α (t, x)) = κ_(-α') (t - log(-f(x)), h x)`
+
+(`Diffeomorph.annihilatorLift_symplectizationToAnnihilator_of_neg`). These identities only use
+that `ξ` and `ξ'` are smooth hyperplane fields.
 
 The preservation of `θ` is the naturality of the Liouville form under cotangent lifts
 (`Diffeomorph.mpullback_cotangent_liouvilleForm`), pulled back along the inclusions of the
@@ -158,6 +175,66 @@ theorem annihilatorLift_mem_annihilatorPunctured_iff
       z ∈ hξ.annihilatorPunctured := by
   simp
 
+/-- **The lift of a contactomorphism is determined pointwise by the tautological one-form.** Let
+`G : ξ⁰ → ξ'⁰` be differentiable at `z`, cover `h` near `z`, and pull the tautological one-form
+`θ'` of `ξ'⁰` back at `z` to that of `ξ⁰`. Then `G z` is the lift of `h` at `z`. Only the
+behaviour of `G` near `z` enters, so this also applies to lifts defined on the symplectization
+`ξ⁰ ∖ 0` alone. -/
+theorem apply_eq_annihilatorLift_of_annihilatorLiouvilleForm
+    {G : (TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x) →
+      TotalSpace (Fin 1 → ℝ) fun y ↦ annihilatorSpace J ξ' y}
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
+    haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
+      hξ.finrank_sub_one_add_one
+    letI := hξ'.isContMDiffDistribution.annihilatorFiberBundle hξ'.finrank_sub_one_add_one
+    haveI := hξ'.isContMDiffDistribution.annihilatorVectorBundle hξ'.finrank_sub_one_add_one
+    haveI := hξ'.isContMDiffDistribution.annihilatorContMDiffVectorBundle
+      hξ'.finrank_sub_one_add_one
+    MDifferentiableAt (I.prod 𝓘(ℝ, Fin 1 → ℝ)) (J.prod 𝓘(ℝ, Fin 1 → ℝ)) G z →
+      TotalSpace.proj ∘ G =ᶠ[nhds z] h ∘ TotalSpace.proj →
+      (∀ v, hξ'.annihilatorLiouvilleForm.val (G z)
+          ![mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) (J.prod 𝓘(ℝ, Fin 1 → ℝ)) G z v] =
+        hξ.annihilatorLiouvilleForm.val z ![v]) →
+      G z = h.annihilatorLift hhξ hξ.isContMDiffDistribution hξ'.isContMDiffDistribution
+        hξ.finrank_sub_one_add_one hξ'.finrank_sub_one_add_one z :=
+  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
+  letI := hξ'.isContMDiffDistribution.annihilatorFiberBundle hξ'.finrank_sub_one_add_one
+  haveI := hξ'.isContMDiffDistribution.annihilatorVectorBundle hξ'.finrank_sub_one_add_one
+  haveI := hξ'.isContMDiffDistribution.annihilatorContMDiffVectorBundle
+    hξ'.finrank_sub_one_add_one
+  by
+  intro hG hproj hθ
+  have hGz : (G z).proj = h z.proj := hproj.eq_of_nhds
+  -- `θ' (dG v) = θ v` reads `(G z) (dh (dπ v)) = z (dπ v)`, since `π' ∘ G = h ∘ π` near `z`.
+  have key (v : TangentSpace (I.prod 𝓘(ℝ, Fin 1 → ℝ)) z) :
+      ((G z).snd : TangentSpace J (G z).proj →L[ℝ] ℝ)
+          (mfderiv I J h z.proj (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v)) =
+        (z.snd : TangentSpace I z.proj →L[ℝ] ℝ)
+          (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v) := by
+    have hπ' := mfderiv_comp_apply z
+      ((contMDiff_proj (fun y ↦ annihilatorSpace J ξ' y) (G z)).mdifferentiableAt one_ne_zero)
+      hG v
+    have hπ := mfderiv_comp_apply z (h.mdifferentiable (by simp) z.proj)
+      ((contMDiff_proj (fun x ↦ annihilatorSpace I ξ x) z).mdifferentiableAt one_ne_zero) v
+    have hchain := hπ'.symm.trans ((DFunLike.congr_fun hproj.mfderiv_eq v).trans hπ)
+    have hz := hθ v
+    rw [IsContactDistribution.annihilatorLiouvilleForm_apply,
+      IsContactDistribution.annihilatorLiouvilleForm_apply] at hz
+    rw [← hz, ← hchain]
+  rw [coe_annihilatorLift]
+  refine totalSpace_annihilatorSpace_ext (hGz.trans (proj_annihilatorMap _ h hhξ z).symm)
+    fun w ↦ ?_
+  -- Every tangent vector at `h x` is `dh (dπ v)` for some tangent vector `v` of `ξ⁰` at `z`.
+  obtain ⟨v, hv⟩ := mfderiv_proj_surjective (IB := I) z (mfderiv J I h.symm (h z.proj) w)
+  have hw : mfderiv I J h z.proj (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v) = w := by
+    rw [hv]
+    exact h.mfderiv_apply_mfderiv_symm_apply (by simp) z.proj w
+  rw [← hw, key, annihilatorMap_snd_apply_mfderiv]
+
 /-- **The lift of a contactomorphism is the unique lift preserving the tautological one-form.** A
 smooth map `Ψ : ξ⁰ → ξ'⁰` covering `h` and pulling the tautological one-form `θ'` of `ξ'⁰` back to
 that of `ξ⁰` is the lift of `h` to the annihilator lines. In particular, there is no freedom to
@@ -185,33 +262,72 @@ theorem eq_annihilatorLift_of_mpullback_annihilatorLiouvilleForm
   haveI := hξ'.isContMDiffDistribution.annihilatorVectorBundle hξ'.finrank_sub_one_add_one
   haveI := hξ'.isContMDiffDistribution.annihilatorContMDiffVectorBundle
     hξ'.finrank_sub_one_add_one
-  by
-  intro hΨ hθ
-  funext z
-  -- `θ' (dΨ v) = θ v` reads `(Ψ z) (dh (dπ v)) = z (dπ v)`, since `π' ∘ Ψ = h ∘ π`.
-  have key (v : TangentSpace (I.prod 𝓘(ℝ, Fin 1 → ℝ)) z) :
-      ((Ψ z).snd : TangentSpace J (Ψ z).proj →L[ℝ] ℝ)
-          (mfderiv I J h z.proj (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v)) =
-        (z.snd : TangentSpace I z.proj →L[ℝ] ℝ)
-          (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v) := by
-    have hcomp : (TotalSpace.proj : _ → N) ∘ Ψ = h ∘ TotalSpace.proj := funext hproj
-    have hchain := mfderiv_comp_apply z
-      ((contMDiff_proj (fun y ↦ annihilatorSpace J ξ' y) (Ψ z)).mdifferentiableAt one_ne_zero)
-      ((hΨ z).mdifferentiableAt (by simp)) v
-    rw [hcomp, mfderiv_comp_apply z (h.mdifferentiable (by simp) z.proj)
-      ((contMDiff_proj (fun x ↦ annihilatorSpace I ξ x) z).mdifferentiableAt one_ne_zero)] at hchain
-    have hz := congrArg (fun θ ↦ θ.val z ![v]) hθ
-    simp only [SmoothForm.mpullback_apply_one,
-      IsContactDistribution.annihilatorLiouvilleForm_apply] at hz
-    rw [← hz, ← hchain]
-  rw [coe_annihilatorLift]
-  refine totalSpace_annihilatorSpace_ext ((hproj z).trans (proj_annihilatorMap _ h hhξ z).symm)
-    fun w ↦ ?_
-  -- Every tangent vector at `h x` is `dh (dπ v)` for some tangent vector `v` of `ξ⁰` at `z`.
-  obtain ⟨v, hv⟩ := mfderiv_proj_surjective (IB := I) z (mfderiv J I h.symm (h z.proj) w)
-  have hw : mfderiv I J h z.proj (mfderiv (I.prod 𝓘(ℝ, Fin 1 → ℝ)) I TotalSpace.proj z v) = w := by
-    rw [hv]
-    exact h.mfderiv_apply_mfderiv_symm_apply (by simp) z.proj w
-  rw [← hw, key, annihilatorMap_snd_apply_mfderiv]
+  fun hΨ hθ ↦ funext fun z ↦
+    h.apply_eq_annihilatorLift_of_annihilatorLiouvilleForm hhξ hξ hξ'
+      ((hΨ z).mdifferentiableAt (by simp)) (Filter.Eventually.of_forall hproj) fun v ↦ by
+        rw [← SmoothForm.mpullback_apply_one Ψ hΨ, hθ]
+
+/-! ### The lift in contact-form trivializations -/
+
+section Trivialization
+
+variable {k k' : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+  {D' : Π y : N, Submodule ℝ (TangentSpace J y)}
+  (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) (hD : IsContMDiffDistribution I ∞ k D)
+  (hD' : IsContMDiffDistribution J ∞ k' D') (hk : k + 1 = finrank ℝ E) (hk' : k' + 1 = finrank ℝ F)
+  {α : SmoothForm I M ℝ 1} {α' : SmoothForm J N ℝ 1} (hα : α.kerDistribution = D)
+  (hα' : α'.kerDistribution = D') {f : M → ℝ}
+  (hf : ∀ x, (SmoothForm.mpullback h h.contMDiff α').val x = f x • α.val x)
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a contactomorphism in contact-form trivializations.** If `h` pulls `α'` back to
+`f α`, then at a point where `f` is positive the lift of `h` to the annihilator lines sends the
+covector `κ_α (t, x) = eᵗ α_x` to `κ_α' (t - log f(x), h x)`: in the trivializations by `α` and
+`α'` it is the lift `TauCeti.symplectizationLift` of the cooriented symplectizations. -/
+theorem annihilatorLift_symplectizationToAnnihilator {p : ℝ × M} (hp : 0 < f p.2) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' (α.symplectizationToAnnihilator hα p) =
+      α'.symplectizationToAnnihilator hα' (symplectizationLift h f p) :=
+  letI := hD.annihilatorFiberBundle hk
+  letI := hD'.annihilatorFiberBundle hk'
+  annihilatorInclusion_injective J D' (Fin 1 → ℝ) <| by
+    rw [coe_annihilatorLift, annihilatorInclusion_annihilatorMap,
+      SmoothForm.annihilatorInclusion_symplectizationToAnnihilator,
+      SmoothForm.annihilatorInclusion_symplectizationToAnnihilator]
+    exact cotangent_symplectizationToCotangent hf hp
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-reversing contactomorphism in contact-form trivializations.** If
+`h` pulls `α'` back to `f α`, then at a point where `f` is negative the lift of `h` to the
+annihilator lines sends the covector `κ_α (t, x) = eᵗ α_x` to `κ_(-α') (t - log(-f(x)), h x)`,
+in the other half of the annihilator line of `ξ'`. -/
+theorem annihilatorLift_symplectizationToAnnihilator_of_neg {p : ℝ × M} (hp : f p.2 < 0) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' (α.symplectizationToAnnihilator hα p) =
+      (-α').symplectizationToAnnihilator (SmoothForm.kerDistribution_neg.trans hα')
+        (symplectizationLift h (-f) p) :=
+  annihilatorLift_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα
+    (SmoothForm.kerDistribution_neg.trans hα')
+    (fun x ↦ SmoothForm.mpullback_neg_apply_eq_neg_smul (hf x)) (neg_pos.2 hp)
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-preserving contactomorphism is the lift of the cooriented
+symplectizations.** If `h` pulls `α'` back to `f α` for an everywhere positive `f`, then the lift
+of `h` to the annihilator lines restricts, through the trivializations `κ_α` and `κ_α'`, to the
+map `(t, x) ↦ (t - log f(x), h x)` of `TauCeti.symplectizationLift`. -/
+theorem annihilatorLift_comp_symplectizationToAnnihilator (hf₀ : ∀ x, 0 < f x) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' ∘ α.symplectizationToAnnihilator hα =
+      α'.symplectizationToAnnihilator hα' ∘ symplectizationLift h f :=
+  funext fun p ↦
+    annihilatorLift_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα hα' hf (hf₀ p.2)
+
+end Trivialization
 
 end Diffeomorph
