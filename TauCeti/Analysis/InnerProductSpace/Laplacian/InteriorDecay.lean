@@ -34,7 +34,7 @@ The proof compares `u - K / c²` with the Gaussian barrier
 
 which equals `M` on the sphere `‖y - x‖ = R` and satisfies
 `Δ g = (4 μ² ‖y - x‖² + 2 n μ) g ≤ c² g` on the ball, by the choice of `μ`
-(`ContDiff.laplacian_comp_norm_sq`). So `g` is a supersolution of `-Δ + V`, and the comparison
+(`ContDiffAt.laplacian_comp_norm_sq`). So `g` is a supersolution of `-Δ + V`, and the comparison
 principle for `-Δ + V` (`TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`) gives
 `u x - K / c² ≤ g x = M exp (-c² R² / (4 c R + 2 n))`
 (`TauCeti.le_div_sq_add_mul_exp_of_mul_sub_le_laplacian`), and
@@ -118,7 +118,7 @@ private theorem laplacian_gaussian_barrier_le {x y : E} {c R M : ℝ} (hc : 0 < 
     simp [ρ, sub_eq_add_neg]
   rw [htr, laplacian_comp_add_right (fun w : E ↦ ρ (‖w‖ ^ 2)) (-x)]
   beta_reduce
-  rw [← sub_eq_add_neg, hρ.laplacian_comp_norm_sq, hdd, hd]
+  rw [← sub_eq_add_neg, hρ.contDiffAt.laplacian_comp_norm_sq, hdd, hd]
   have hρy : 0 ≤ ρ (‖y - x‖ ^ 2) := by positivity
   have hyR : ‖y - x‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hy 2
   have hμ := four_mul_sq_mul_sq_add_two_mul_mul_le hc hR (Nat.cast_nonneg (α := ℝ)

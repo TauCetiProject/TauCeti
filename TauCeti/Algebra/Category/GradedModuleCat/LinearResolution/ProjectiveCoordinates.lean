@@ -110,8 +110,6 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) by rw [this]
   cases n with
   | zero =>
-      have : Epi r.augmentation :=
-        (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
       let aug : (M ⟶ (S i).obj.shiftObj 0) ≃ₗ[k]
           (r.termObj 0 ⟶ (S i).obj.shiftObj 0) :=
         LinearEquiv.ofBijective (Linear.leftComp k _ r.augmentation) ⟨
