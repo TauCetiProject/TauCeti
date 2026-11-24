@@ -8,8 +8,6 @@ module
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 
-import Mathlib.CategoryTheory.Limits.ConcreteCategory.Filtered
-
 /-!
 # Filtered colimits in concrete categories
 
@@ -22,9 +20,7 @@ category.
 
 * `CategoryTheory.Limits.Concrete.isColimit_exists_rep_fin`: finitely many elements of the point
   of a colimit cocone of a filtered diagram come from a common stage.
-* `CategoryTheory.Limits.Concrete.exists_homOfLE_map_eq_of_ι_eq`: elements in a preorder-indexed
-  filtered colimit with equal images in the colimit become equal at some later stage.
-* `CategoryTheory.Limits.Concrete.exists_homOfLE_map_eq_zero_of_ι_eq_zero`: elements in a
+* `CategoryTheory.Limits.Concrete.exists_map_homOfLE_eq_zero_of_ι_eq_zero`: elements in a
   preorder-indexed filtered colimit mapping to zero vanish at some later stage.
 -/
 
@@ -50,33 +46,21 @@ theorem isColimit_exists_rep_fin {C : Type*} [Category C]
   refine ⟨IsFiltered.sup O ∅, fun i => F.map (IsFiltered.toSup O ∅ (hO i)) (y i), fun i => ?_⟩
   rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
 
-/-- In a concrete category whose forgetful functor preserves filtered colimits, if two elements at
-stage `n` of a `Type`-small filtered preorder diagram have equal images in a colimit cocone, they
-become equal after applying `F.map (homOfLE hnm)` for some `m ≥ n`. -/
-theorem exists_homOfLE_map_eq_of_ι_eq {C : Type*} [Category* C]
+/-- In a concrete category with zero-preserving morphisms whose forgetful functor preserves the
+colimit of `F`, an element at stage `n` of a filtered preorder diagram that maps to zero in a
+colimit cocone is annihilated by `F.map (homOfLE hnm)` for some `m ≥ n`. -/
+theorem exists_map_homOfLE_eq_zero_of_ι_eq_zero {C : Type*} [Category* C]
     {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
-    [ConcreteCategory C FC] [PreservesFilteredColimits (forget C)]
-    {J : Type} [Preorder J] [IsFiltered J]
-    (F : J ⥤ C) {c : Cocone F} (hc : IsColimit c) {n : J} {x y : ToType (F.obj n)}
-    (h : c.ι.app n x = c.ι.app n y) :
-    ∃ (m : J) (hnm : n ≤ m), F.map (homOfLE hnm) x = F.map (homOfLE hnm) y := by
-  have := preservesSmallestFilteredColimits_of_preservesFilteredColimits (forget C)
-  obtain ⟨m, f, hm⟩ := (hc.eq_iff' x y).1 h
-  exact ⟨m, leOfHom f, by rwa [Subsingleton.elim (homOfLE (leOfHom f)) f]⟩
-
-/-- In a concrete category with zero-preserving morphisms whose forgetful functor preserves filtered
-colimits, an element at stage `n` of a `Type`-small filtered preorder diagram that maps to zero in
-a colimit cocone is annihilated by `F.map (homOfLE hnm)` for some `m ≥ n`. -/
-theorem exists_homOfLE_map_eq_zero_of_ι_eq_zero {C : Type*} [Category* C]
-    {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
-    [ConcreteCategory C FC] [PreservesFilteredColimits (forget C)]
-    [∀ X : C, Zero (CC X)] [∀ X Y : C, ZeroHomClass (FC X Y) (CC X) (CC Y)]
-    {J : Type} [Preorder J] [IsFiltered J]
-    (F : J ⥤ C) {c : Cocone F} (hc : IsColimit c) {n : J} {x : ToType (F.obj n)}
+    [ConcreteCategory C FC] [∀ X : C, Zero (CC X)] [∀ X Y : C, ZeroHomClass (FC X Y) (CC X) (CC Y)]
+    {J : Type*} [Preorder J] [IsFiltered J] (F : J ⥤ C) [PreservesColimit F (forget C)]
+    {c : Cocone F} (hc : IsColimit c) {n : J} {x : ToType (F.obj n)}
     (h : c.ι.app n x = (0 : ToType c.pt)) :
     ∃ (m : J) (hnm : n ≤ m), F.map (homOfLE hnm) x = (0 : ToType (F.obj m)) := by
-  obtain ⟨m, hnm, hm⟩ := exists_homOfLE_map_eq_of_ι_eq F hc (y := (0 : ToType (F.obj n)))
+  obtain ⟨m, f, g, hm⟩ := Concrete.isColimit_exists_of_rep_eq F hc x (0 : ToType (F.obj n))
     (h.trans (map_zero (ConcreteCategory.hom (c.ι.app n))).symm)
-  exact ⟨m, hnm, hm.trans (map_zero (ConcreteCategory.hom (F.map (homOfLE hnm))))⟩
+  exact ⟨m, leOfHom f, by
+    rwa [Subsingleton.elim f (homOfLE (leOfHom f)),
+      Subsingleton.elim g (homOfLE (leOfHom f)),
+      map_zero (ConcreteCategory.hom (F.map (homOfLE (leOfHom f))))] at hm⟩
 
 end CategoryTheory.Limits.Concrete

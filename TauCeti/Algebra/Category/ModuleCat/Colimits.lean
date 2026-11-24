@@ -173,24 +173,25 @@ open CategoryTheory Limits DirectSum
 
 variable {R : Type u} [Ring R]
 
+variable (F : ℕ ⥤ ModuleCat.{v} R)
+
 section
 
-variable (F : ℕ ⥤ ModuleCat.{v} R)
+local instance instHasCoproductNat : HasCoproduct F.obj :=
+  ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
 
 /-- The difference map of the telescope of a sequence `F₀ → F₁ → ⋯` of modules: the endomorphism
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand
 `Fₙ₊₁`. -/
 noncomputable def telescopeDiff : (⨁ n, F.obj n) →ₗ[R] ⨁ n, F.obj n :=
-  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   ((coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫ (coprodIsoDirectSum F.obj).hom).hom
 
 /-- As a morphism in `ModuleCat R`, `ofHom (telescopeDiff F)` is `F.sequenceDifference`
 conjugated by `coprodIsoDirectSum F.obj`. -/
-private theorem ofHom_telescopeDiff [HasCoproduct F.obj] :
+private theorem ofHom_telescopeDiff :
     ofHom (telescopeDiff F) =
       (coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫
         (coprodIsoDirectSum F.obj).hom := by
-  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   rw [telescopeDiff, ofHom_hom]
 
 @[simp]
@@ -198,7 +199,6 @@ theorem telescopeDiff_lof (n : ℕ) (x : F.obj n) :
     telescopeDiff F (lof R ℕ (fun n ↦ F.obj n) n x) =
       lof R ℕ (fun n ↦ F.obj n) n x -
         lof R ℕ (fun n ↦ F.obj n) (n + 1) (F.map (homOfLE (n.le_add_right 1)) x) := by
-  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   let e := coprodIsoDirectSum F.obj
   have hcomp : ofHom (lof R ℕ (fun n ↦ F.obj n) n) ≫ e.inv ≫ F.sequenceDifference ≫ e.hom =
       ofHom (lof R ℕ (fun n ↦ F.obj n) n) -
@@ -237,10 +237,6 @@ theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := by
   induction n with
   | zero => simpa using congr($ha 0)
   | succ n ih => simpa [ih] using congr($ha (n + 1))
-
-end
-
-variable (F : ℕ ⥤ ModuleCat.{v} R)
 
 /-- The telescope sequence `⨁ₙ Fₙ → ⨁ₙ Fₙ → c.pt` of a cocone `c` over a sequence of modules
 `F`: the first map is `telescopeDiff F`, the second is induced by the legs of `c`. It is short
@@ -286,12 +282,13 @@ theorem exists_map_homOfLE_eq_zero_of_telescopeDiff_eq_lof {F : ℕ ⥤ ModuleCa
       φ ≫ eqToHom (telescopeShortComplex_X₃ F (colimit.cocone F))).hom a)
       (telescopeShortComplex F (colimit.cocone F)).zero
     simpa [telescopeShortComplex_f, telescopeShortComplex_g, ha] using hz
-  exact Concrete.exists_homOfLE_map_eq_zero_of_ι_eq_zero F (colimit.isColimit F) hcolim
+  have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
+    (CategoryTheory.forget (ModuleCat.{v} R))
+  exact Concrete.exists_map_homOfLE_eq_zero_of_ι_eq_zero F (colimit.isColimit F) hcolim
 
 /-- The telescope sequence of a colimit cocone over a sequence of modules is short exact. -/
 theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
     (telescopeShortComplex F c).ShortExact := by
-  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   let S := telescopeShortComplex F c
   let e := coprodIsoDirectSum F.obj
   have hg : (e ≪≫ eqToIso (telescopeShortComplex_X₂ F c).symm).hom ≫ S.g =
@@ -318,6 +315,8 @@ theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
   have : Epi S.g := epi_of_isColimit_cofork hcok
   exact ShortComplex.ShortExact.mk' (S.exact_of_g_is_cokernel hcok) inferInstance inferInstance
 
+end
+
 /-- **The legs of a sequential colimit of injections are injective.** If the transition maps
 `Fₙ → Fₙ₊₁` of a sequence of modules are injective, so are the legs `Fₙ → c.pt` of a colimit
 cocone. -/
@@ -325,7 +324,9 @@ theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
     (hinj : ∀ n : ℕ, Function.Injective (F.map (homOfLE (n.le_add_right 1))).hom) (n : ℕ) :
     Function.Injective (c.ι.app n).hom := by
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  obtain ⟨m, hnm, hm⟩ := Concrete.exists_homOfLE_map_eq_zero_of_ι_eq_zero F hc hx
+  have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
+    (CategoryTheory.forget (ModuleCat.{v} R))
+  obtain ⟨m, hnm, hm⟩ := Concrete.exists_map_homOfLE_eq_zero_of_ι_eq_zero F hc hx
   have hinj_le : ∀ {m : ℕ} (hnm : n ≤ m), Function.Injective (F.map (homOfLE hnm)).hom := by
     intro m hnm
     induction m, hnm using Nat.le_induction with

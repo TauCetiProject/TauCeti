@@ -27,7 +27,7 @@ with `ModuleTower.shift` on `X.op ⋙ F` (respectively `(X ⋙ shiftFunctor T (1
 
 ## Main results
 
-* `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_of_isColimit`,
+* `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_eq_shift`,
   `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_sequenceDifference`,
   `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_shift_sequenceDifference`
 -/
@@ -50,7 +50,7 @@ variable {T : Type u} [Category.{v} T] [Preadditive T]
 `Y : ℕ ⥤ T` whose dual product is preserved by `F`, an endomorphism `d : c.pt ⟶ c.pt` satisfying
 `c.inj n ≫ d = c.inj n - Y.map (homOfLE _) ≫ c.inj (n + 1)` corresponds under
 `cofanOpToPiLinearEquiv` to `ModuleTower.shift (Y.op ⋙ F)`. -/
-theorem cofanOpToPiLinearEquiv_map_of_isColimit {R : Type uR} [Ring R]
+theorem cofanOpToPiLinearEquiv_map_eq_shift {R : Type uR} [Ring R]
     (F : Tᵒᵖ ⥤ ModuleCat.{s} R) [F.Additive] (Y : ℕ ⥤ T) {c : Cofan Y.obj}
     (hc : IsColimit c) [PreservesLimit (Discrete.functor fun n ↦ op (Y.obj n)) F]
     (d : c.pt ⟶ c.pt)
@@ -72,7 +72,7 @@ theorem cofanOpToPiLinearEquiv_map_sequenceDifference {R : Type uR} [Ring R]
     (coproductIsCoproduct X.obj).cofanOpToPiLinearEquiv F (F.map X.sequenceDifference.op x) =
       ModuleTower.shift (X.op ⋙ F)
         ((coproductIsCoproduct X.obj).cofanOpToPiLinearEquiv F x) :=
-  cofanOpToPiLinearEquiv_map_of_isColimit F X (coproductIsCoproduct X.obj)
+  cofanOpToPiLinearEquiv_map_eq_shift F X (coproductIsCoproduct X.obj)
     X.sequenceDifference (fun n ↦ by simp) x
 
 section Shift
@@ -106,7 +106,7 @@ theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference {R : Type uR} [Ring 
         (F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op y) =
       ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)
         ((isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F y) :=
-  cofanOpToPiLinearEquiv_map_of_isColimit F (X ⋙ shiftFunctor T (1 : ℤ))
+  cofanOpToPiLinearEquiv_map_eq_shift F (X ⋙ shiftFunctor T (1 : ℤ))
     (isColimitShiftedCoproductCofan X) ((X.sequenceDifference)⟦(1 : ℤ)⟧')
     (fun n ↦ X.shifted_ι_sequenceDifference n) y
 

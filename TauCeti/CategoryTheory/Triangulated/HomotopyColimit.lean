@@ -139,7 +139,8 @@ def isColimitMapCoconeOfMilnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M :
             rw [Preadditive.sub_comp, Category.assoc, ι_comp_sigmaComparison,
               ι_comp_sigmaComparison]
       _ = Sigma.ι (X ⋙ F).obj n ≫ (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
-            rw [Functor.ι_sequenceDifference_assoc]; rfl
+            rw [Functor.ι_sequenceDifference_assoc]
+            dsimp only [Functor.comp]
   have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
   have hz : (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj ≫ F.map ψ = 0 := by
     rw [← Category.assoc, ← hcomp, Category.assoc, ← F.map_comp, hψ, F.map_zero, comp_zero]
@@ -187,7 +188,7 @@ theorem comp_ι_comp_eq_zero_iff_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct
       ← Category.assoc, hm, zero_comp]⟩
   have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
     (CategoryTheory.forget AddCommGrpCat.{v})
-  exact Concrete.exists_homOfLE_map_eq_zero_of_ι_eq_zero
+  exact Concrete.exists_map_homOfLE_eq_zero_of_ι_eq_zero
     (X ⋙ preadditiveCoyoneda.obj (op A)) (isColimitMapCoconeOfMilnorTriangle ht (A := A))
     (n := n) (x := h) (by
       rw [Functor.mapCocone_ι_app, coconeOfMilnorTriangle_ι_app]

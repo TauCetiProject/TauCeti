@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Triangulated.HomologicalFunctor
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
 
+import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import Mathlib.CategoryTheory.Triangulated.Yoneda
 
@@ -283,10 +284,7 @@ theorem hom_shift_eq_zero_of_inCellClosure (W : T) (n : ℤ)
     (fun _ ↦ inferInstance) n
     (fun i k hk ↦ (IsZero.iff_id_eq_zero _).2 (AddCommGrpCat.ext fun g ↦ hG i k hk g)) hR
   intro k hk g
-  have h := ConcreteCategory.congr_hom ((hZ k hk).eq_of_tgt (𝟙 _) 0) g
-  simp only [preadditiveYoneda, preadditiveYonedaObj, Functor.comp_obj, ModuleCat.forget₂_obj,
-    AddCommGrpCat.hom_id] at h
-  exact h
+  exact (AddCommGrpCat.isZero_iff_subsingleton.1 (hZ k hk)).elim g 0
 
 /-- If `X` is nonzero and `Hom(X⟦k⟧, X) = 0` for all `k > 0`, then the negative shift
 `X⟦-1⟧` does not belong to the cellular closure of `{X}`. -/
