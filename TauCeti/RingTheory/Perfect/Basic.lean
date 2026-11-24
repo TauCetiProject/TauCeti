@@ -86,11 +86,7 @@ theorem iterateFrobeniusEquiv_symm_zero_apply (x : R) :
 `(frobeniusEquiv R p).symm`. -/
 theorem iterateFrobeniusEquiv_symm_apply_eq_iterate (x : R) (n : ℕ) :
     (iterateFrobeniusEquiv R p n).symm x = ((frobeniusEquiv R p).symm^[n]) x := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih =>
-    rw [iterateFrobeniusEquiv_symm_add, iterateFrobeniusEquiv_one, RingEquiv.trans_apply,
-      ih, Function.iterate_succ_apply]
+  rw [iterateFrobeniusEquiv_symm, RingAut.coe_pow]
 
 /-- Ring homomorphisms between perfect rings of the same exponential characteristic commute with
 taking `p ^ n`-th roots. -/

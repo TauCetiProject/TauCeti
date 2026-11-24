@@ -32,18 +32,22 @@ Let `(R, R⁺)` be a perfect complete Hausdorff Tate Huber pair of characteristi
   (`untilt.isIntegrallyClosedIn_untiltPlus`), hence a ring of integral elements
   (`untilt.isRingOfIntegralElements_untiltPlus`), yielding the Huber pair `untilt.pair`.
 * Under `untilt.tiltEquiv`, the tilted plus ring `A♭⁺` identifies with `R⁺`
-  (`untilt.mem_tilt_plus_iff`, `untilt.tiltPlusEquiv`), and Mathlib's `PreTilt A⁺ p` identifies
-  with `R⁺` (`untilt.preTiltEquiv`).
-* Fontaine's `θ` identifies with the quotient map `𝕎 R⁺ → A⁺`
-  (`untilt.theta_comp_map_tiltPlusEquiv_symm`, `untilt.fontaineTheta_comp_map_preTiltEquiv_symm`),
-  so `ker θ` maps to `(ξ)` (`untilt.map_ker_theta_eq_span`, `untilt.map_ker_fontaineTheta_eq_span`).
+  (`untilt.mem_tilt_plus_iff`, `untilt.tiltPlusEquiv`), and when `p` is not a unit in `A⁺`,
+  Mathlib's `PreTilt A⁺ p` identifies with `R⁺` (`untilt.preTiltEquiv`).
+* When `A` is nontrivial, `uniformTilt.theta` identifies with the quotient map `𝕎 R⁺ → A⁺`
+  (`untilt.theta_comp_map_tiltPlusEquiv_symm`) so `ker θ` maps to `(ξ)`
+  (`untilt.map_ker_theta_eq_span`); when `p` is not a unit in `A⁺`, Mathlib's
+  `WittVector.fontaineTheta` likewise identifies with `𝕎 R⁺ → A⁺`
+  (`untilt.fontaineTheta_comp_map_preTiltEquiv_symm`) and its kernel maps to `(ξ)`
+  (`untilt.map_ker_fontaineTheta_eq_span`).
 * `untilt.tiltEquiv` is natural with respect to `untilt.map` (`untilt.tiltEquiv_uniformTilt_map`).
 
 ## Main definitions
 
 * `TauCeti.Perfectoid.untilt.pair`: the untilt as a `Huber.Pair A` with plus ring `A⁺`.
 * `TauCeti.Perfectoid.untilt.tiltPlusEquiv`: the ring isomorphism `A♭⁺ ≃+* R⁺`.
-* `TauCeti.Perfectoid.untilt.preTiltEquiv`: the ring isomorphism `PreTilt A⁺ p ≃+* R⁺`.
+* `TauCeti.Perfectoid.untilt.preTiltEquiv`: the ring isomorphism `PreTilt A⁺ p ≃+* R⁺` (when
+  `p` is not a unit in `A⁺`).
 
 ## Main results
 
@@ -53,8 +57,9 @@ Let `(R, R⁺)` be a perfect complete Hausdorff Tate Huber pair of characteristi
 * `TauCeti.Perfectoid.untilt.mem_tilt_plus_iff`:
   `y ∈ (untilt.pair hξ).tilt.plus ↔ tiltEquiv y ∈ R⁺`.
 * `TauCeti.Perfectoid.untilt.map_ker_theta_eq_span`,
-  `TauCeti.Perfectoid.untilt.map_ker_fontaineTheta_eq_span`: under the identification `A♭⁺ ≃+* R⁺`
-  (resp. `PreTilt A⁺ p ≃+* R⁺`), `ker θ` maps to `(ξ)`.
+  `TauCeti.Perfectoid.untilt.map_ker_fontaineTheta_eq_span`: under `A♭⁺ ≃+* R⁺` when `A` is
+  nontrivial (resp. `PreTilt A⁺ p ≃+* R⁺` when `p` is not a unit in `A⁺`), `ker θ` maps to
+  `(ξ)`.
 * `TauCeti.Perfectoid.untilt.tiltEquiv_uniformTilt_map`: naturality of `tiltEquiv`.
 
 ## References
