@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Defect
+import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Asymptotic multiplicative domains of nets of c.p.c. maps into matrices
@@ -21,7 +23,8 @@ defined in the same way with the norm defect `d_∞` (see
 Both are closed nonunital star subalgebras of `A`, that is, C⋆-subalgebras. The square roots of
 the defects are subadditive, satisfy the product rule
 `d(φ, ab)^{1/2} ≤ ‖b‖ d(φ, a)^{1/2} + ‖a‖ d(φ, b)^{1/2}` and are `1`-Lipschitz, which gives
-closure under sums, products and limits, and they are homogeneous, `d(φ, c • a) = |c|² d(φ, a)`.
+closure under sums, products and limits, and they are homogeneous, `d(φ, c • a) = |c|² d(φ, a)`
+(`CompletelyPositiveMap.twoNormDefect_smul`, `CompletelyPositiveMap.normDefect_smul`).
 By the product estimates, the net is asymptotically multiplicative against an element of the
 domain on either side: for `a ∈ D₂` and every `b ∈ A`, `‖φᵢ(ab) - φᵢ(a)φᵢ(b)‖₂ → 0` and
 `‖φᵢ(ba) - φᵢ(b)φᵢ(a)‖₂ → 0`, and in norm for `D_∞`.
@@ -33,17 +36,17 @@ generating-set criterion, for instance for a spanning set of unitaries.
 
 ## Main definitions
 
-* `CompletelyPositiveMap.asymptoticTwoNormDomain`: the C⋆-subalgebra `D₂`.
-* `CompletelyPositiveMap.asymptoticNormDomain`: the C⋆-subalgebra `D_∞`.
+* `TauCeti.asymptoticTwoNormDomain`: the C⋆-subalgebra `D₂`.
+* `TauCeti.asymptoticNormDomain`: the C⋆-subalgebra `D_∞`.
 
 ## Main results
 
-* `CompletelyPositiveMap.isClosed_asymptoticTwoNormDomain`,
-  `CompletelyPositiveMap.isClosed_asymptoticNormDomain`: both domains are closed.
-* `CompletelyPositiveMap.tendsto_normalizedTwoNorm_map_mul_sub_of_mem` and its `'` version:
+* `TauCeti.isClosed_asymptoticTwoNormDomain`,
+  `TauCeti.isClosed_asymptoticNormDomain`: both domains are closed.
+* `TauCeti.tendsto_normalizedTwoNorm_map_mul_sub_of_mem` and its `'` version:
   two-sided asymptotic multiplicativity on `D₂`, and the norm versions for `D_∞`.
-* `CompletelyPositiveMap.tendsto_normalizedTwoNorm_map_mul_sub_of_adjoin`,
-  `CompletelyPositiveMap.tendsto_norm_map_mul_sub_of_adjoin`: the generating-set criterion.
+* `TauCeti.tendsto_normalizedTwoNorm_map_mul_sub_of_adjoin`,
+  `TauCeti.tendsto_norm_map_mul_sub_of_adjoin`: the generating-set criterion.
 
 ## References
 
@@ -58,34 +61,11 @@ noncomputable section
 open Filter Topology
 open scoped ComplexOrder CStarAlgebra
 
-namespace CompletelyPositiveMap
+namespace TauCeti
 
-open CStarMatrix
+open CompletelyPositiveMap CStarMatrix
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-section Homogeneity
-
-variable [PartialOrder A] [StarOrderedRing A] {n : Type*} [Fintype n] (φ : A →CP CStarMatrix n n ℂ)
-
-private theorem map_star_smul_mul_smul_sub (c : ℂ) (a : A) :
-    φ (star (c • a) * (c • a)) - star (φ (c • a)) * φ (c • a) =
-      ((‖c‖ ^ 2 : ℝ) : ℂ) • (φ (star a * a) - star (φ a) * φ a) := by
-  rw [star_smul, smul_mul_smul_comm, map_smul, map_smul, star_smul, smul_mul_smul_comm, ← smul_sub,
-    RCLike.star_def, Complex.conj_mul', Complex.ofReal_pow]
-
-/-- The norm defect is homogeneous of degree two: `d_∞(φ, c • a) = |c|² d_∞(φ, a)`. -/
-theorem normDefect_smul (c : ℂ) (a : A) : φ.normDefect (c • a) = ‖c‖ ^ 2 * φ.normDefect a := by
-  rw [normDefect_def, map_star_smul_mul_smul_sub, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (by positivity), normDefect_def]
-
-/-- The 2-norm defect is homogeneous of degree two: `d₂(φ, c • a) = |c|² d₂(φ, a)`. -/
-theorem twoNormDefect_smul (c : ℂ) (a : A) :
-    φ.twoNormDefect (c • a) = ‖c‖ ^ 2 * φ.twoNormDefect a := by
-  rw [twoNormDefect_def, map_star_smul_mul_smul_sub, normalizedTrace_smul, Complex.re_ofReal_mul,
-    twoNormDefect_def]
-
-end Homogeneity
 
 section Domain
 
@@ -125,26 +105,11 @@ private theorem mem_domainOf_iff {s : ι → A → ℝ} {hs0 hadd hmul hsmul} {a
   Iff.rfl
 
 private theorem isClosed_domainOf {s : ι → A → ℝ} {hs0 hadd hmul hsmul}
-    (hlip : ∀ i a b, s i a ≤ s i b + ‖a - b‖) :
+    (hlip : ∀ i, LipschitzWith 1 (s i)) :
     IsClosed (domainOf l s hs0 hadd hmul hsmul : Set A) := by
-  refine isClosed_iff_clusterPt.2 fun a ha ↦ ?_
-  have key (f : A → A) (hf : ∀ x y, ‖f x - f y‖ ≤ ‖x - y‖)
-      (hD : ∀ b ∈ domainOf l s hs0 hadd hmul hsmul, Tendsto (s · (f b)) l (𝓝 0)) :
-      Tendsto (s · (f a)) l (𝓝 0) := by
-    refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-    obtain ⟨b, hb, hab⟩ := Metric.mem_closure_iff.1 (mem_closure_iff_clusterPt.2 ha) (ε / 2)
-      (half_pos hε)
-    filter_upwards [Metric.tendsto_nhds.1 (hD b hb) (ε / 2) (half_pos hε)] with i hi
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (hs0 i _)] at hi ⊢
-    linarith [hlip i (f a) (f b), hf a b, dist_eq_norm a b]
-  exact ⟨key id (fun _ _ ↦ le_rfl) fun b hb ↦ hb.1,
-    key star (fun x y ↦ by rw [← star_sub, norm_star]) fun b hb ↦ hb.2⟩
-
-/-- A nonnegative function tends to zero exactly when its square root does. -/
-private theorem tendsto_sqrt_nhds_zero_iff {f : ι → ℝ} (hf : ∀ i, 0 ≤ f i) :
-    Tendsto (fun i ↦ √(f i)) l (𝓝 0) ↔ Tendsto f l (𝓝 0) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simpa using h.sqrt⟩
-  simpa [Real.sq_sqrt (hf _)] using h.pow 2
+  have hc := (LipschitzWith.uniformEquicontinuous s 1 hlip).equicontinuous
+    |>.isClosed_setOfPred_tendsto (l := l) (continuous_const (y := (0 : ℝ)))
+  exact hc.inter (hc.preimage continuous_star)
 
 /-! ### The two asymptotic multiplicative domains -/
 
@@ -153,7 +118,7 @@ variable {l} [PartialOrder A] [StarOrderedRing A] {n : ι → Type*} [∀ i, Fin
 
 /-- The **asymptotic 2-norm multiplicative domain** `D₂` of a family of completely positive
 contractions `φᵢ : A → M_{kᵢ}` along a filter `l`: the C⋆-subalgebra of the `a` with
-`d₂(φᵢ, a) → 0` and `d₂(φᵢ, a⋆) → 0` (`CompletelyPositiveMap.mem_asymptoticTwoNormDomain_iff`). -/
+`d₂(φᵢ, a) → 0` and `d₂(φᵢ, a⋆) → 0` (`TauCeti.mem_asymptoticTwoNormDomain_iff`). -/
 def asymptoticTwoNormDomain (l : Filter ι) (φ : ∀ i, A →CP CStarMatrix (n i) (n i) ℂ)
     (hφ : ∀ i a, ‖φ i a‖ ≤ ‖a‖) : NonUnitalStarSubalgebra ℂ A :=
   domainOf l (fun i a ↦ √((φ i).twoNormDefect a)) (fun _ _ ↦ Real.sqrt_nonneg _)
@@ -163,7 +128,7 @@ def asymptoticTwoNormDomain (l : Filter ι) (φ : ∀ i, A →CP CStarMatrix (n 
 
 /-- The **asymptotic norm multiplicative domain** `D_∞` of a family of completely positive
 contractions `φᵢ : A → M_{kᵢ}` along a filter `l`: the C⋆-subalgebra of the `a` with
-`d_∞(φᵢ, a) → 0` and `d_∞(φᵢ, a⋆) → 0` (`CompletelyPositiveMap.mem_asymptoticNormDomain_iff`). -/
+`d_∞(φᵢ, a) → 0` and `d_∞(φᵢ, a⋆) → 0` (`TauCeti.mem_asymptoticNormDomain_iff`). -/
 def asymptoticNormDomain (l : Filter ι) (φ : ∀ i, A →CP CStarMatrix (n i) (n i) ℂ)
     (hφ : ∀ i a, ‖φ i a‖ ≤ ‖a‖) : NonUnitalStarSubalgebra ℂ A :=
   domainOf l (fun i a ↦ √((φ i).normDefect a)) (fun _ _ ↦ Real.sqrt_nonneg _)
@@ -175,33 +140,35 @@ variable (hφ : ∀ i a, ‖φ i a‖ ≤ ‖a‖)
 include hφ
 
 /-- Membership in the asymptotic 2-norm multiplicative domain. -/
+@[simp]
 theorem mem_asymptoticTwoNormDomain_iff {a : A} :
     a ∈ asymptoticTwoNormDomain l φ hφ ↔
       Tendsto (fun i ↦ (φ i).twoNormDefect a) l (𝓝 0) ∧
         Tendsto (fun i ↦ (φ i).twoNormDefect (star a)) l (𝓝 0) := by
   rw [asymptoticTwoNormDomain, mem_domainOf_iff,
-    tendsto_sqrt_nhds_zero_iff l fun i ↦ twoNormDefect_nonneg (hφ i) a,
-    tendsto_sqrt_nhds_zero_iff l fun i ↦ twoNormDefect_nonneg (hφ i) (star a)]
+    Real.tendsto_sqrt_nhds_zero_iff (.of_forall fun i ↦ twoNormDefect_nonneg (hφ i) a),
+    Real.tendsto_sqrt_nhds_zero_iff (.of_forall fun i ↦ twoNormDefect_nonneg (hφ i) (star a))]
 
 /-- Membership in the asymptotic norm multiplicative domain. -/
+@[simp]
 theorem mem_asymptoticNormDomain_iff {a : A} :
     a ∈ asymptoticNormDomain l φ hφ ↔
       Tendsto (fun i ↦ (φ i).normDefect a) l (𝓝 0) ∧
         Tendsto (fun i ↦ (φ i).normDefect (star a)) l (𝓝 0) := by
   rw [asymptoticNormDomain, mem_domainOf_iff,
-    tendsto_sqrt_nhds_zero_iff l fun i ↦ normDefect_nonneg (φ i) a,
-    tendsto_sqrt_nhds_zero_iff l fun i ↦ normDefect_nonneg (φ i) (star a)]
+    Real.tendsto_sqrt_nhds_zero_iff (.of_forall fun i ↦ normDefect_nonneg (φ i) a),
+    Real.tendsto_sqrt_nhds_zero_iff (.of_forall fun i ↦ normDefect_nonneg (φ i) (star a))]
 
 /-- The asymptotic 2-norm multiplicative domain is closed, so it is a C⋆-subalgebra. -/
 theorem isClosed_asymptoticTwoNormDomain :
     IsClosed (asymptoticTwoNormDomain l φ hφ : Set A) :=
-  isClosed_domainOf l fun i a b ↦ by
-    linarith [abs_le.1 (abs_sqrt_twoNormDefect_sub_le (hφ i) a b)]
+  isClosed_domainOf l fun i ↦ .of_le_add fun a b ↦ by
+    linarith [abs_le.1 (abs_sqrt_twoNormDefect_sub_le (hφ i) a b), dist_eq_norm a b]
 
 /-- The asymptotic norm multiplicative domain is closed, so it is a C⋆-subalgebra. -/
 theorem isClosed_asymptoticNormDomain : IsClosed (asymptoticNormDomain l φ hφ : Set A) :=
-  isClosed_domainOf l fun i a b ↦ by
-    linarith [abs_le.1 (abs_sqrt_normDefect_sub_le (hφ i) a b)]
+  isClosed_domainOf l fun i ↦ .of_le_add fun a b ↦ by
+    linarith [abs_le.1 (abs_sqrt_normDefect_sub_le (hφ i) a b), dist_eq_norm a b]
 
 /-- The norm multiplicative domain is contained in the 2-norm multiplicative domain. -/
 theorem asymptoticNormDomain_le_asymptoticTwoNormDomain :
@@ -282,10 +249,10 @@ theorem tendsto_norm_map_mul_sub_of_adjoin {S : Set A}
     refine NonUnitalStarSubalgebra.topologicalClosure_minimal _ (NonUnitalStarAlgebra.adjoin_le
       fun s hs ↦ ?_) (isClosed_asymptoticNormDomain hφ)
     rw [SetLike.mem_coe, mem_asymptoticNormDomain_iff]
-    refine ⟨by simpa [normDefect_def, (φ _).map_star] using hS₁ s hs, ?_⟩
-    simpa [normDefect_def, (φ _).map_star] using hS₂ s hs
+    refine ⟨by simpa [normDefect_eq_norm_map_star] using hS₁ s hs, ?_⟩
+    simpa [normDefect_eq_norm_map_star] using hS₂ s hs
   exact hle (by rw [hS]; exact NonUnitalStarAlgebra.mem_top)
 
 end Domain
 
-end CompletelyPositiveMap
+end TauCeti
