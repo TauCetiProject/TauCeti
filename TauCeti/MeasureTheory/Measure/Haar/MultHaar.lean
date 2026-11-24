@@ -155,6 +155,14 @@ theorem volume_Ioi_absolutelyContinuous_multHaar :
     volume.restrict (Ioi (0 : ℝ)) ≪ multHaar :=
   Measure.ae_le_iff_absolutelyContinuous.1 ae_multHaar_eq_ae_volume_Ioi.ge
 
+/-- A function is almost everywhere strongly measurable for Lebesgue measure on `(0, ∞)` if and
+only if it is almost everywhere strongly measurable for `dt / t`. -/
+theorem aestronglyMeasurable_volume_Ioi_iff_multHaar {β : Type*} [TopologicalSpace β]
+    {f : ℝ → β} :
+    AEStronglyMeasurable f (volume.restrict (Ioi (0 : ℝ))) ↔ AEStronglyMeasurable f multHaar :=
+  ⟨fun h ↦ h.mono_ac multHaar_absolutelyContinuous_volume_Ioi,
+    fun h ↦ h.mono_ac volume_Ioi_absolutelyContinuous_multHaar⟩
+
 /-- A function continuous on `(0, ∞)` is almost everywhere strongly measurable for `dt / t`. -/
 theorem _root_.ContinuousOn.aestronglyMeasurable_multHaar {β : Type*} [TopologicalSpace β]
     [TopologicalSpace.PseudoMetrizableSpace β] {f : ℝ → β} (hf : ContinuousOn f (Ioi 0)) :
@@ -409,34 +417,31 @@ theorem essSup_multHaar_eq_iSup_Ioi {f : ℝ → ℝ≥0∞}
     exact Real.log_lt_log ht htu
   exact hpos.ne' (measure_mono_null hu (meas_essSup_lt (f := f)))
 
+/-- A function `f : ℝ → ℝ≥0∞` is almost everywhere strongly measurable on `(0, ∞)` if and only
+if `t ↦ ENNReal.ofReal (t ^ γ) * f t` is almost everywhere strongly measurable for `dt / t`. -/
+theorem aestronglyMeasurable_volume_Ioi_iff_multHaar_rpow_mul (γ : ℝ) {f : ℝ → ℝ≥0∞} :
+    AEStronglyMeasurable f (volume.restrict (Ioi (0 : ℝ))) ↔
+      AEStronglyMeasurable (fun t : ℝ ↦ ENNReal.ofReal (t ^ γ) * f t) multHaar := by
+  rw [aestronglyMeasurable_volume_Ioi_iff_multHaar]
+  have hmul (c : ℝ) {g : ℝ → ℝ≥0∞} (hg : AEStronglyMeasurable g multHaar) :
+      AEStronglyMeasurable (fun t : ℝ ↦ ENNReal.ofReal (t ^ c) * g t) multHaar :=
+    ((by fun_prop : Measurable fun t : ℝ ↦
+      ENNReal.ofReal (t ^ c)).aemeasurable.mul hg.aemeasurable).aestronglyMeasurable
+  refine ⟨hmul γ, fun hf ↦ (hmul (-γ) hf).congr ?_⟩
+  filter_upwards [ae_pos_multHaar] with t ht
+  simp [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), ← Real.rpow_add ht]
+
 /-- The `Lᵖ(0, ∞)` seminorm of `f : ℝ → ℝ≥0∞` is the `Lᵖ(dt / t)` seminorm of
 `t ↦ t ^ (1 / p) * f t`. -/
 theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (f : ℝ → ℝ≥0∞) :
     eLpNorm f p (volume.restrict (Ioi 0)) =
       eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) p multHaar := by
-  have hmeas_iff : AEStronglyMeasurable f (volume.restrict (Ioi 0)) ↔
-      AEStronglyMeasurable (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) multHaar := by
-    have h1 : AEStronglyMeasurable f (volume.restrict (Ioi 0)) ↔
-        AEStronglyMeasurable f multHaar :=
-      ⟨fun h ↦ h.mono_ac multHaar_absolutelyContinuous_volume_Ioi,
-        fun h ↦ h.mono_ac volume_Ioi_absolutelyContinuous_multHaar⟩
-    rw [h1]
-    refine ⟨fun hf ↦ ((by fun_prop : Measurable fun t : ℝ ↦
-        ENNReal.ofReal (t ^ p.toReal⁻¹)).aemeasurable.mul hf.aemeasurable).aestronglyMeasurable,
-      fun hf ↦ ?_⟩
-    have hrec : (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-p.toReal⁻¹)) *
-        (ENNReal.ofReal (t ^ p.toReal⁻¹) * f t)) =ᵐ[multHaar] f := by
-      filter_upwards [ae_pos_multHaar] with t ht
-      rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), ← Real.rpow_add ht,
-        neg_add_cancel, Real.rpow_zero, ENNReal.ofReal_one, one_mul]
-    exact (((by fun_prop : Measurable fun t : ℝ ↦
-      ENNReal.ofReal (t ^ (-p.toReal⁻¹))).aemeasurable.mul hf.aemeasurable).congr
-      hrec).aestronglyMeasurable
   by_cases hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))
   swap
   · rw [eLpNorm_of_not_aestronglyMeasurable hf,
-      eLpNorm_of_not_aestronglyMeasurable (mt hmeas_iff.2 hf)]
-  have hf' := hmeas_iff.1 hf
+      eLpNorm_of_not_aestronglyMeasurable
+        (mt (aestronglyMeasurable_volume_Ioi_iff_multHaar_rpow_mul p.toReal⁻¹).2 hf)]
+  have hf' := (aestronglyMeasurable_volume_Ioi_iff_multHaar_rpow_mul p.toReal⁻¹).1 hf
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [eLpNorm_exponent_zero hf, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
@@ -453,10 +458,11 @@ theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (f : ℝ → ℝ
   congr 1
   rw [lintegral_multHaar_eq_setLIntegral]
   refine setLIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-  rw [ENNReal.mul_rpow_of_nonneg _ _ hp_pos.le, ← mul_assoc,
-    ENNReal.ofReal_rpow_of_nonneg (Real.rpow_nonneg ht.le _) hp_pos.le,
-    ← Real.rpow_mul ht.le, inv_mul_cancel₀ hp_pos.ne', Real.rpow_one,
-    ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one, one_mul]
+  have hcancel : ENNReal.ofReal t⁻¹ * ENNReal.ofReal (t ^ p.toReal⁻¹) ^ p.toReal = 1 := by
+    rw [ENNReal.ofReal_rpow_of_pos (by positivity), Real.rpow_inv_rpow ht.le hp_pos.ne',
+      ← ENNReal.ofReal_mul (by positivity)]
+    simp [ht.ne']
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hp_pos.le, ← mul_assoc, hcancel, one_mul]
 
 private theorem setLIntegral_multHaar_rpow {s : Set ℝ} (hs : MeasurableSet s) (α : ℝ) :
     ∫⁻ x in s, ENNReal.ofReal (x ^ α) ∂multHaar =
