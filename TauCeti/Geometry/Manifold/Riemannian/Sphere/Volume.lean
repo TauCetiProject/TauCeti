@@ -34,8 +34,8 @@ This gives the mean-zero step in the stability calculation for the projective eq
 
 * `TauCeti.isNegInvariant_riemannianVolume_sphere`: native Riemannian volume on the round unit
   sphere is invariant under negation.
-* `TauCeti.map_subtypeVal_riemannianVolume_sphere`: the inclusion of the sphere carries its
-  Riemannian volume to `μHE[n]` restricted to the sphere.
+* `TauCeti.map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure`: the
+  inclusion of the sphere carries its Riemannian volume to `μHE[n]` restricted to the sphere.
 * `TauCeti.riemannianTotalVolume_sphere`: the round sphere has total volume `|Sⁿ|`.
 
 The proof of antipodal invariance originated in
@@ -81,11 +81,11 @@ variable [FiniteDimensional ℝ E]
 /-- **The Riemannian volume of the round sphere is its surface measure.** The inclusion of the unit
 sphere `Sⁿ` into `E` carries the Riemannian volume of the round metric to the normalized
 `n`-dimensional Hausdorff measure of `E` restricted to the sphere. -/
-theorem map_subtypeVal_riemannianVolume_sphere :
+theorem map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure :
     (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).map ((↑) : sphere (0 : E) 1 → E) =
       (μHE[n]).restrict (sphere (0 : E) 1) := by
-  have h := map_riemannianVolume_of_inner_mfderiv (I := 𝓡 n) (M := sphere (0 : E) 1)
-    Subtype.val_injective fun x v w ↦ by
+  have h := map_riemannianVolume_eq_restrict_euclideanHausdorffMeasure_of_inner_mfderiv
+    (I := 𝓡 n) (M := sphere (0 : E) 1) Subtype.val_injective fun x v w ↦ by
       rw [inner_tangentSpace_sphere, mvfderiv_apply_eq_mfderiv_apply,
         mvfderiv_apply_eq_mfderiv_apply]
       -- The two sides use the inner products of `TangentSpace 𝓘(ℝ, E) x` and of `E`, which agree.
@@ -97,7 +97,8 @@ theorem map_subtypeVal_riemannianVolume_sphere :
 @[simp]
 theorem riemannianTotalVolume_sphere :
     riemannianTotalVolume (𝓡 n) (sphere (0 : E) 1) = roundSphereVolume n := by
-  have h := congr($(map_subtypeVal_riemannianVolume_sphere (E := E) (n := n)) univ)
+  have h := congr($(map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure
+    (E := E) (n := n)) univ)
   rw [Measure.map_apply measurable_subtypeVal MeasurableSet.univ, preimage_univ,
     Measure.restrict_apply MeasurableSet.univ, univ_inter,
     euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out] at h
