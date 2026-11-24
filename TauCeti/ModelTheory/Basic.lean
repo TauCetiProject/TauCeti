@@ -69,6 +69,7 @@ instance nonempty_structure_of_isRelational [L.IsRelational] (M : Type*) :
   ⟨⟨fun f => isEmptyElim f, fun _ _ => False⟩⟩
 
 /-- Strong homomorphisms preserve binary relation symbols on pairs. -/
+@[simp]
 theorem StrongHomClass.map_rel_two {M N : Type*} [L.Structure M] [L.Structure N]
     {F : Type*} [FunLike F M N] [L.StrongHomClass F M N]
     (f : F) (R : L.Relations 2) (x y : M) :

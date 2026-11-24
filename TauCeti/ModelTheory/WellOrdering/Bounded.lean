@@ -237,6 +237,7 @@ theorem relationsIn_boundedWellOrderSentence_subset (lt : L.Relations 2) {α : O
 /-- A structure `M` of any cardinality, in any universe, satisfies
 `boundedWellOrderSentence lt α hα` if and only if it satisfies `wellOrderTypeSentence lt β` for
 some ordinal `β < α`. -/
+@[simp]
 theorem realize_boundedWellOrderSentence_iff_exists (lt : L.Relations 2)
     {α : Ordinal.{o}} (hα : α < ω₁) (M : Type w) [L.Structure M] :
     SentenceInf.Realize (boundedWellOrderSentence lt α hα) M ↔
