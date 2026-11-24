@@ -14,7 +14,10 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 In a metric space, a compact set `A` with `μH[d] A < c` is covered, for every `δ > 0`, by finitely
 many open balls of radii in `(0, δ]` whose radii have `d`-th powers summing to less than `c`
 (`TauCeti.exists_finset_ball_cover_sum_rpow_lt_of_isCompact`). No covering constant is lost
-in passing from the sets of small diameter in the definition of `μH[d]` to balls.
+in passing from the sets of small diameter in the definition of `μH[d]` to balls: a nonempty set
+of diameter below `δ` lies in a ball about any of its points whose radius `ρ ≤ δ` has `ρ ^ d`
+arbitrarily close to the `d`-th power of the diameter
+(`TauCeti.exists_ball_superset_rpow_le_ediam_rpow_add`).
 
 ## References
 
@@ -27,6 +30,27 @@ namespace TauCeti
 
 open MeasureTheory Measure Set Filter Metric
 open scoped ENNReal NNReal Topology
+
+/-- A nonempty set `s` of extended diameter below `ofReal δ` lies in an open ball about any of its
+points, with radius `ρ ∈ (0, δ]` satisfying `ofReal ρ ^ d ≤ ediam s ^ d + ε`. -/
+theorem exists_ball_superset_rpow_le_ediam_rpow_add {Y : Type*} [PseudoMetricSpace Y]
+    {s : Set Y} {y : Y} (hy : y ∈ s) {δ : ℝ} (hsδ : ediam s < ENNReal.ofReal δ) {ε : ℝ≥0∞}
+    (hε : ε ≠ 0) (d : ℝ) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ρ ≤ δ ∧ s ⊆ ball y ρ ∧ ENNReal.ofReal ρ ^ d ≤ ediam s ^ d + ε := by
+  have hδ : 0 < δ := ENNReal.ofReal_pos.1 (zero_le.trans_lt hsδ)
+  -- a radius just above the diameter, with `d`-th power close to that of the diameter
+  obtain ⟨η, hη0, hηδ, hηd⟩ := ENNReal.exists_pos_forall_mem_Icc_rpow_le_add hsδ hε d
+  have hρ : ENNReal.ofReal (ediam s + η).toReal = ediam s + η :=
+    ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hηδ)
+  have hlt : ediam s < ENNReal.ofReal (ediam s + η).toReal := by
+    rw [hρ]
+    exact ENNReal.lt_add_right hsδ.ne_top (by exact_mod_cast hη0.ne')
+  refine ⟨(ediam s + η).toReal, ENNReal.ofReal_pos.1 (zero_le.trans_lt hlt),
+    ENNReal.toReal_le_of_le_ofReal hδ.le hηδ, fun z hz => ?_, ?_⟩
+  · rw [mem_ball, ← edist_lt_ofReal]
+    exact (edist_le_ediam_of_mem hz hy).trans_lt hlt
+  · rw [hρ]
+    exact hηd _ ⟨le_self_add, le_rfl⟩
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
@@ -43,9 +67,7 @@ theorem exists_finset_ball_cover_sum_rpow_lt_of_isCompact {A : Set X} (hA : IsCo
   -- A countable cover by sets `t n` of diameter at most `δ / 2` with `∑ diam (t n) ^ d < c`.
   have hr : (0 : ℝ≥0∞) < ENNReal.ofReal (δ / 2) := ENNReal.ofReal_pos.2 (half_pos hδ)
   rw [hausdorffMeasure_apply] at hAc
-  have h1 := (le_iSup₂ (f := fun (r : ℝ≥0∞) (_ : 0 < r) => ⨅ (t : ℕ → Set X)
-    (_ : A ⊆ ⋃ n, t n) (_ : ∀ n, ediam (t n) ≤ r), ∑' n, ⨆ _ : (t n).Nonempty,
-      ediam (t n) ^ d) _ hr).trans_lt hAc
+  have h1 := (le_iSup₂ _ hr).trans_lt hAc
   simp only [iInf_lt_iff] at h1
   obtain ⟨t, htA, htδ, htc⟩ := h1
   set S := ∑' n, ⨆ _ : (t n).Nonempty, ediam (t n) ^ d
@@ -54,24 +76,10 @@ theorem exists_finset_ball_cover_sum_rpow_lt_of_isCompact {A : Set X} (hA : IsCo
     (ENNReal.coe_ne_zero.2 hε0.ne') ℕ
   -- Enlarge each nonempty `t n` to a ball about one of its points.
   have hball (n : ℕ) (hn : (t n).Nonempty) : ∃ y : X, ∃ ρ : ℝ, 0 < ρ ∧ ρ ≤ δ ∧
-      t n ⊆ ball y ρ ∧ ENNReal.ofReal ρ ^ d ≤ ediam (t n) ^ d + ε' n := by
-    obtain ⟨y, hy⟩ := hn
-    have hDδ : ediam (t n) < ENNReal.ofReal δ :=
-      (htδ n).trans_lt ((ENNReal.ofReal_lt_ofReal_iff hδ).2 (half_lt_self hδ))
-    -- a radius just above the diameter, with `d`-th power close to that of the diameter
-    obtain ⟨η, hη0, hηδ, hηd⟩ := ENNReal.exists_pos_forall_mem_Icc_rpow_le_add hDδ
-      (ENNReal.coe_ne_zero.2 (hε'0 n).ne') d
-    have hρ : ENNReal.ofReal (ediam (t n) + η).toReal = ediam (t n) + η :=
-      ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hηδ)
-    have hlt : ediam (t n) < ENNReal.ofReal (ediam (t n) + η).toReal := by
-      rw [hρ]
-      exact ENNReal.lt_add_right hDδ.ne_top (by exact_mod_cast hη0.ne')
-    refine ⟨y, (ediam (t n) + η).toReal, ENNReal.ofReal_pos.1 (zero_le.trans_lt hlt),
-      ENNReal.toReal_le_of_le_ofReal hδ.le hηδ, fun z hz => ?_, ?_⟩
-    · rw [mem_ball, ← edist_lt_ofReal]
-      exact (edist_le_ediam_of_mem hz hy).trans_lt hlt
-    · rw [hρ]
-      exact hηd _ ⟨le_self_add, le_rfl⟩
+      t n ⊆ ball y ρ ∧ ENNReal.ofReal ρ ^ d ≤ ediam (t n) ^ d + ε' n :=
+    ⟨hn.some, exists_ball_superset_rpow_le_ediam_rpow_add hn.some_mem
+      ((htδ n).trans_lt ((ENNReal.ofReal_lt_ofReal_iff hδ).2 (half_lt_self hδ)))
+      (ENNReal.coe_ne_zero.2 (hε'0 n).ne') d⟩
   choose! y ρ hρ0 hρδ hty hρd using hball
   let B : ℕ → Set X := fun n => ⋃ _ : (t n).Nonempty, ball (y n) (ρ n)
   have hAB : A ⊆ ⋃ n, B n := fun z hz => by
