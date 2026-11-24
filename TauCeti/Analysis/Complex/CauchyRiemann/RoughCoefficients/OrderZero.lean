@@ -140,7 +140,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) = ∫ z in Ω, ⟪ψ z, η z⟫_ℝ := by
   have hs1 : 1 ≤ s := ENNReal.inv_le_one.1 (le_self_add.trans hsq)
   have : Fact (1 ≤ s) := ⟨hs1⟩
-  -- Mollifications `φ n` of `ψ`, supported in a compact neighbourhood `K' ⊆ Ω` of its support.
+  -- Mollifications `φ n` of `ψ`, supported in a compact set `K' ⊆ Ω` containing its support.
   obtain ⟨K', hK'c, hK'm, hK'Ω, hψK', ρ, φ, hρ, hφ, hφs, hderiv⟩ :=
     hψ.exists_seq_testFunction_convolution_normed hψc hψΩ hψb le_top hDψ hs1
   have hs'q : s.conjExponent ≤ q := ENNReal.inv_le_inv.1 <|

@@ -18,7 +18,7 @@ import TauCeti.Topology.MetricSpace.Thickening
 
 Let `ψ` be a compactly supported field on an open set `Ω` of a finite-dimensional space, with a
 weak derivative `Dψ ∈ Lˢ(Ω)`. Mollifying `ψ` by normalized bumps of shrinking radius gives test
-functions `φ n` on `Ω`, supported in a fixed compact neighbourhood `K' ⊆ Ω` of the support of `ψ`,
+functions `φ n` on `Ω`, supported in a fixed compact set `K' ⊆ Ω` containing the support of `ψ`,
 whose derivatives on `K'` are the mollifications of `Dψ`
 (`TauCeti.HasWeakFDerivOn.exists_seq_testFunction_convolution_normed`). Pairings of these
 derivatives with a fixed field in the conjugate exponent converge to the pairings with `Dψ`
@@ -61,7 +61,7 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 /-- **Mollifying a compactly supported Sobolev field.** Let `ψ ∈ Lᵖ` be supported in a compact
 subset of `Ω`, with a weak derivative `Dψ ∈ Lˢ(Ω)`, `1 ≤ p, s`. Then there are a compact
-measurable neighbourhood `K' ⊆ Ω` of the support of `ψ`, normalized bumps `ρ n` with radii tending
+measurable set `K' ⊆ Ω` containing the support of `ψ`, normalized bumps `ρ n` with radii tending
 to zero, and test functions `φ n = ρ n ⋆ ψ` on `Ω`, supported in `K'`, whose derivatives on `K'`
 are the mollifications `ρ n ⋆ Dψ` of the zero extension of `Dψ`. -/
 theorem HasWeakFDerivOn.exists_seq_testFunction_convolution_normed
