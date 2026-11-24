@@ -81,9 +81,11 @@ variable {𝕜 ι Y G : Type*} [NontriviallyNormedField 𝕜] [Finite ι] [Topol
 @[simp] theorem piRingContinuousLinearEquiv_symm_apply {κ : Type*} [Fintype κ] [DecidableEq κ]
     (g : κ → G) (v : κ → 𝕜) :
     (piRingContinuousLinearEquiv 𝕜 κ G).symm g v = ∑ i : κ, v i • g i := by
+  -- `piRingContinuousLinearEquiv` only assumes `[Finite κ]` and uses `Fintype.ofFinite κ`
+  -- internally, whereas the RHS sum uses the caller's `[Fintype κ]` instance.
   let _ := Fintype.ofFinite κ
-  exact (LinearEquiv.piRing_symm_apply (S := 𝕜) g v).trans
-    (Finset.sum_congr (congrArg (@Finset.univ κ) (Subsingleton.elim _ _)) fun _ _ ↦ rfl)
+  refine (LinearEquiv.piRing_symm_apply (S := 𝕜) g v).trans ?_
+  congr!
 
 /-- Over a nontrivially normed field `𝕜` and a finite index type `ι`, a family
 `T : Y → (ι → 𝕜) →L[𝕜] G` into a topological `𝕜`-module `G` is continuous within `s` at `y₀` if

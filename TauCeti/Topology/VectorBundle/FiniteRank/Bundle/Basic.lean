@@ -555,14 +555,13 @@ private theorem trivializationAt_ofBundle_self
       (letI := constStratumTopology 𝕜 n V n
        (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) ⟨b.val, b.property⟩)
          |>.compContinuousLinearEquiv (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-           (isInducing_constStratum_pullback 𝕜 n V)) :=
-  (congrArg (fun inst ↦ @trivializationAt _ (Fin n → 𝕜) _ _ _ _ _ inst b)
-      (fiberBundleStratum_ofBundle_self 𝕜 n V)).trans <|
-    letI := constStratumTopology 𝕜 n V n
-    FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
-      (E := (constStratumInclusion n : _ → X) *ᵖ V)
-      (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-      (isInducing_constStratum_pullback 𝕜 n V) ⟨b.val, b.property⟩
+           (isInducing_constStratum_pullback 𝕜 n V)) := by
+  rw [fiberBundleStratum_ofBundle_self]
+  let := constStratumTopology 𝕜 n V n
+  exact FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
+    (E := (constStratumInclusion n : _ → X) *ᵖ V)
+    (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+    (isInducing_constStratum_pullback 𝕜 n V) ⟨b.val, b.property⟩
 
 /-- On the `n`th rank stratum of `ofBundle 𝕜 n V`, the preferred trivialization's fibrewise inverse
 at `b` agrees with that of `V` at `b.1`. -/
@@ -582,6 +581,13 @@ at `b` agrees with that of `V` at `b.1`. -/
   exact Trivialization.symm_apply ((trivializationAt (Fin n → 𝕜) V b.val).pullback
     (constStratumInclusion n)) (FiberBundle.mem_baseSet_trivializationAt (Fin n → 𝕜) V b.val) v
 
+/-- The forgetful map from the `m`th rank stratum of `ofBundle 𝕜 n V` to `TotalSpace (Fin n → 𝕜) V`
+is inducing by construction of `constStratumTopology`. -/
+theorem isInducing_stratum_ofBundle (m : ℕ) :
+    IsInducing (fun p : TotalSpace (Fin m → 𝕜) ((ofBundle 𝕜 n V).StratumFiber m) ↦
+      (⟨p.proj.val, p.snd⟩ : TotalSpace (Fin n → 𝕜) V)) :=
+  ⟨rfl⟩
+
 /-- The global total space of `ofBundle 𝕜 n V` is canonically homeomorphic to
 `TotalSpace (Fin n → 𝕜) V`. -/
 noncomputable def ofBundleHomeomorph :
@@ -593,13 +599,13 @@ noncomputable def ofBundleHomeomorph :
   continuous_toFun := by
     have hsigma : Continuous (fun q : (ofBundle 𝕜 n V).GluedTotalSpace ↦
         (⟨q.2.proj.val, q.2.snd⟩ : TotalSpace (Fin n → 𝕜) V)) :=
-      continuous_sigma fun _ ↦ continuous_induced_dom
+      continuous_sigma fun m ↦ (isInducing_stratum_ofBundle 𝕜 n V m).continuous
     exact (hsigma.comp (ofBundle 𝕜 n V).totalSpaceHomeomorph.symm.continuous).congr fun p ↦ by
       rw [Function.comp_apply, (ofBundle 𝕜 n V).totalSpaceHomeomorph_symm_apply]
   continuous_invFun := by
     have h_in : Continuous (fun p : TotalSpace (Fin n → 𝕜) V ↦
         (⟨⟨p.proj, rfl⟩, p.snd⟩ : TotalSpace (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n))) :=
-      continuous_induced_rng.2 (continuous_id : Continuous (id : TotalSpace (Fin n → 𝕜) V → _))
+      (isInducing_stratum_ofBundle 𝕜 n V n).continuous_iff.2 continuous_id
     exact ((ofBundle 𝕜 n V).totalSpaceHomeomorph.continuous.comp
       (continuous_sigmaMk.comp h_in)).congr fun _ ↦ by
       simp only [Function.comp_apply, totalSpaceHomeomorph_apply]
