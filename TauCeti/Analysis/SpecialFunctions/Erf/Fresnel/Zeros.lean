@@ -92,65 +92,66 @@ theorem analyticOrderAt_fresnelS_zero : analyticOrderAt fresnelS 0 = 3 :=
 
 /-! ### Positivity of the real Fresnel integrals -/
 
+/-- `πt²/2` has derivative `πx` at `x`. -/
+private theorem hasDerivAt_pi_mul_sq_div_two (x : ℝ) :
+    HasDerivAt (fun t : ℝ => π * t ^ 2 / 2) (π * x) x := by
+  convert ((hasDerivAt_pow 2 x).const_mul π).div_const 2 using 1
+  ring
+
+/-- For continuous `f`, the real integral `∫₀ˣ f(πt²/2) dt` has derivative `f(πx²/2)`. -/
+private theorem hasDerivAt_integral_comp_pi_mul_sq_div_two {f : ℝ → ℝ} (hf : Continuous f)
+    (x : ℝ) :
+    HasDerivAt (fun x : ℝ => ∫ t in (0 : ℝ)..x, f (π * t ^ 2 / 2)) (f (π * x ^ 2 / 2)) x :=
+  ((hf.comp (by fun_prop : Continuous fun t : ℝ => π * t ^ 2 / 2)).integral_hasStrictDerivAt
+    0 x).hasDerivAt
+
+/-- A function with a nonnegative derivative at every point of a convex set is monotone on it. -/
+private theorem monotoneOn_of_hasDerivAt_nonneg {D : Set ℝ} (hD : Convex ℝ D) {f f' : ℝ → ℝ}
+    (hf : ∀ x ∈ D, HasDerivAt f (f' x) x) (hf' : ∀ x ∈ D, 0 ≤ f' x) : MonotoneOn f D :=
+  monotoneOn_of_hasDerivWithinAt_nonneg hD
+    (fun x hx => (hf x hx).continuousAt.continuousWithinAt)
+    (fun x hx => (hf x (interior_subset hx)).hasDerivWithinAt)
+    fun x hx => hf' x (interior_subset hx)
+
 /-- The comparison function `C(x) − sin(πx²/2)/(πx) + (cos(πx²/2) − 1)/(π²x³)` has derivative
 `3(1 − cos(πx²/2))/(π²x⁴) ≥ 0` for `x ≠ 0`, so it is monotone on `[1, ∞)`. -/
 private theorem monotoneOn_fresnelC_comparison :
     MonotoneOn (fun x : ℝ => (∫ t in (0 : ℝ)..x, Real.cos (π * t ^ 2 / 2)) -
         Real.sin (π * x ^ 2 / 2) / (π * x) + (Real.cos (π * x ^ 2 / 2) - 1) / (π ^ 2 * x ^ 3))
       (Ici 1) := by
-  have hderiv : ∀ x : ℝ, 1 ≤ x → HasDerivAt (fun x : ℝ =>
-      (∫ t in (0 : ℝ)..x, Real.cos (π * t ^ 2 / 2)) - Real.sin (π * x ^ 2 / 2) / (π * x) +
-        (Real.cos (π * x ^ 2 / 2) - 1) / (π ^ 2 * x ^ 3))
-      (3 * (1 - Real.cos (π * x ^ 2 / 2)) / (π ^ 2 * x ^ 4)) x := by
-    intro x hx
-    have hx0 : x ≠ 0 := by positivity
-    have hφ : HasDerivAt (fun t : ℝ => π * t ^ 2 / 2) (π * x) x := by
-      convert ((hasDerivAt_pow 2 x).const_mul π).div_const 2 using 1
-      ring
-    have h0 := ((by fun_prop : Continuous fun t : ℝ => Real.cos (π * t ^ 2 / 2)
-      ).integral_hasStrictDerivAt 0 x).hasDerivAt
-    have h1 := hφ.sin.div ((hasDerivAt_id x).const_mul π) (mul_ne_zero Real.pi_ne_zero hx0)
-    have h2 := (hφ.cos.sub_const 1).div ((hasDerivAt_pow 3 x).const_mul (π ^ 2))
-      (mul_ne_zero (pow_ne_zero 2 Real.pi_ne_zero) (pow_ne_zero 3 hx0))
-    convert (h0.sub h1).add h2 using 1
-    · funext y
-      simp only [Pi.add_apply, Pi.sub_apply, Pi.div_apply, id]
-    · simp only [id]
-      norm_num
-      field_simp
-      ring
-  refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ici 1)
-    (fun x hx => (hderiv x hx).continuousAt.continuousWithinAt)
-    (fun x hx => (hderiv x (interior_subset hx)).hasDerivWithinAt) fun x _ => ?_
-  exact div_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)]) (by positivity)
+  refine monotoneOn_of_hasDerivAt_nonneg (convex_Ici 1)
+    (f' := fun x => 3 * (1 - Real.cos (π * x ^ 2 / 2)) / (π ^ 2 * x ^ 4)) (fun x hx => ?_)
+    fun x _ => div_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)]) (by positivity)
+  have hx0 : x ≠ 0 := (zero_lt_one.trans_le hx).ne'
+  have hφ := hasDerivAt_pi_mul_sq_div_two x
+  have h1 := hφ.sin.div ((hasDerivAt_id x).const_mul π) (mul_ne_zero Real.pi_ne_zero hx0)
+  have h2 := (hφ.cos.sub_const 1).div ((hasDerivAt_pow 3 x).const_mul (π ^ 2))
+    (mul_ne_zero (pow_ne_zero 2 Real.pi_ne_zero) (pow_ne_zero 3 hx0))
+  convert ((hasDerivAt_integral_comp_pi_mul_sq_div_two Real.continuous_cos x).sub h1).add h2
+    using 1
+  · funext y
+    simp only [Pi.add_apply, Pi.sub_apply, Pi.div_apply, id]
+  · simp only [id]
+    field_simp
+    ring
 
 /-- The comparison function `S(x) − (1 − cos(πx²/2))/(πx)` has derivative
 `(1 − cos(πx²/2))/(πx²) ≥ 0` for `x ≠ 0`, so it is monotone on `[1, ∞)`. -/
 private theorem monotoneOn_fresnelS_comparison :
     MonotoneOn (fun x : ℝ => (∫ t in (0 : ℝ)..x, Real.sin (π * t ^ 2 / 2)) -
         (1 - Real.cos (π * x ^ 2 / 2)) / (π * x)) (Ici 1) := by
-  have hderiv : ∀ x : ℝ, 1 ≤ x → HasDerivAt (fun x : ℝ =>
-      (∫ t in (0 : ℝ)..x, Real.sin (π * t ^ 2 / 2)) - (1 - Real.cos (π * x ^ 2 / 2)) / (π * x))
-      ((1 - Real.cos (π * x ^ 2 / 2)) / (π * x ^ 2)) x := by
-    intro x hx
-    have hx0 : x ≠ 0 := by positivity
-    have hφ : HasDerivAt (fun t : ℝ => π * t ^ 2 / 2) (π * x) x := by
-      convert ((hasDerivAt_pow 2 x).const_mul π).div_const 2 using 1
-      ring
-    have h0 := ((by fun_prop : Continuous fun t : ℝ => Real.sin (π * t ^ 2 / 2)
-      ).integral_hasStrictDerivAt 0 x).hasDerivAt
-    have h1 := (hφ.cos.const_sub 1).div ((hasDerivAt_id x).const_mul π)
-      (mul_ne_zero Real.pi_ne_zero hx0)
-    convert h0.sub h1 using 1
-    · funext y
-      simp only [Pi.sub_apply, Pi.div_apply, id]
-    · simp only [id]
-      field_simp
-      ring
-  refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ici 1)
-    (fun x hx => (hderiv x hx).continuousAt.continuousWithinAt)
-    (fun x hx => (hderiv x (interior_subset hx)).hasDerivWithinAt) fun x _ => ?_
-  exact div_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)]) (by positivity)
+  refine monotoneOn_of_hasDerivAt_nonneg (convex_Ici 1)
+    (f' := fun x => (1 - Real.cos (π * x ^ 2 / 2)) / (π * x ^ 2)) (fun x hx => ?_)
+    fun x _ => div_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)]) (by positivity)
+  have hx0 : x ≠ 0 := (zero_lt_one.trans_le hx).ne'
+  have h1 := ((hasDerivAt_pi_mul_sq_div_two x).cos.const_sub 1).div
+    ((hasDerivAt_id x).const_mul π) (mul_ne_zero Real.pi_ne_zero hx0)
+  convert (hasDerivAt_integral_comp_pi_mul_sq_div_two Real.continuous_sin x).sub h1 using 1
+  · funext y
+    simp only [Pi.sub_apply, Pi.div_apply, id]
+  · simp only [id]
+    field_simp
+    ring
 
 /-- `C(1) ≥ 1 − π²/40`, from `cos y ≥ 1 − y²/2`. -/
 private theorem one_sub_pi_sq_div_forty_le_integral_cos :
@@ -158,8 +159,7 @@ private theorem one_sub_pi_sq_div_forty_le_integral_cos :
   have h : ∫ t in (0 : ℝ)..1, (1 - π ^ 2 / 8 * t ^ 4) = 1 - π ^ 2 / 40 := by
     rw [integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _), intervalIntegral.integral_const_mul,
-      integral_pow]
-    norm_num
+      integral_pow, integral_one]
     ring
   rw [← h]
   refine integral_mono_on zero_le_one (Continuous.intervalIntegrable (by fun_prop) _ _)
@@ -174,7 +174,6 @@ private theorem pi_div_six_sub_le_integral_sin :
     rw [integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _), intervalIntegral.integral_const_mul,
       intervalIntegral.integral_const_mul, integral_pow, integral_pow]
-    norm_num
     ring
   rw [← h]
   refine integral_mono_on zero_le_one (Continuous.intervalIntegrable (by fun_prop) _ _)
@@ -192,12 +191,18 @@ theorem integral_cos_pi_mul_sq_div_two_pos {x : ℝ} (hx : 0 < x) :
     have ht1 : t ^ 2 < 1 := by nlinarith [ht.1, ht.2]
     exact Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos, sq_nonneg t],
       by nlinarith [Real.pi_pos]⟩
-  · have hmono := monotoneOn_fresnelC_comparison (mem_Ici.2 le_rfl) (mem_Ici.2 hx1.le) hx1.le
+  · -- The comparison function takes the value `C(1) − 1/π − 1/π²` at `1`.
+    have hmono : (∫ t in (0 : ℝ)..1, Real.cos (π * t ^ 2 / 2)) - 1 / π - 1 / π ^ 2 ≤
+        (∫ t in (0 : ℝ)..x, Real.cos (π * t ^ 2 / 2)) - Real.sin (π * x ^ 2 / 2) / (π * x) +
+          (Real.cos (π * x ^ 2 / 2) - 1) / (π ^ 2 * x ^ 3) := by
+      convert monotoneOn_fresnelC_comparison (mem_Ici.2 le_rfl) (mem_Ici.2 hx1.le) hx1.le
+        using 1
+      simp only [one_pow, mul_one, Real.sin_pi_div_two, Real.cos_pi_div_two]
+      ring
     have hC1 := one_sub_pi_sq_div_forty_le_integral_cos
-    simp only [one_pow, mul_one, Real.sin_pi_div_two, Real.cos_pi_div_two] at hmono
     -- Bound the two boundary terms at `x`.
-    have hsin : -1 / π ≤ Real.sin (π * x ^ 2 / 2) / (π * x) := by
-      rw [div_le_div_iff₀ Real.pi_pos (by positivity)]
+    have hsin : -(1 / π) ≤ Real.sin (π * x ^ 2 / 2) / (π * x) := by
+      rw [neg_le, ← neg_div, div_le_div_iff₀ (by positivity) Real.pi_pos]
       nlinarith [Real.neg_one_le_sin (π * x ^ 2 / 2), Real.pi_pos]
     have hcos : (Real.cos (π * x ^ 2 / 2) - 1) / (π ^ 2 * x ^ 3) ≤ 0 :=
       div_nonpos_of_nonpos_of_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)])
@@ -208,10 +213,6 @@ theorem integral_cos_pi_mul_sq_div_two_pos {x : ℝ} (hx : 0 < x) :
       rw [div_lt_iff₀ Real.pi_pos]; nlinarith [Real.pi_gt_d4]
     have hπ3 : 1 / π ^ 2 < 0.10133 := by
       rw [div_lt_iff₀ (by positivity)]; nlinarith [Real.pi_gt_d4]
-    have e : (0 - 1) / π ^ 2 = -(1 / π ^ 2) := by ring
-    have e' : -1 / π = -(1 / π) := by ring
-    rw [e] at hmono
-    rw [e'] at hsin
     linarith
 
 /-- The real Fresnel integral `∫₀ˣ sin(πt²/2) dt` is positive for `x > 0`. -/
@@ -223,35 +224,32 @@ theorem integral_sin_pi_mul_sq_div_two_pos {x : ℝ} (hx : 0 < x) :
     have ht1 : t ^ 2 < 1 := by nlinarith [ht.1, ht.2]
     exact Real.sin_pos_of_pos_of_lt_pi (by have := ht.1; positivity)
       (by nlinarith [Real.pi_pos])
-  · have hmono := monotoneOn_fresnelS_comparison (mem_Ici.2 le_rfl) (mem_Ici.2 hx1.le) hx1.le
+  · -- The comparison function takes the value `S(1) − 1/π` at `1`.
+    have hmono : (∫ t in (0 : ℝ)..1, Real.sin (π * t ^ 2 / 2)) - 1 / π ≤
+        (∫ t in (0 : ℝ)..x, Real.sin (π * t ^ 2 / 2)) -
+          (1 - Real.cos (π * x ^ 2 / 2)) / (π * x) := by
+      convert monotoneOn_fresnelS_comparison (mem_Ici.2 le_rfl) (mem_Ici.2 hx1.le) hx1.le
+        using 1
+      simp only [one_pow, mul_one, Real.cos_pi_div_two]
+      ring
     have hS1 := pi_div_six_sub_le_integral_sin
-    simp only [one_pow, mul_one, Real.cos_pi_div_two, sub_zero] at hmono
     have hcos : 0 ≤ (1 - Real.cos (π * x ^ 2 / 2)) / (π * x) :=
       div_nonneg (by linarith [Real.cos_le_one (π * x ^ 2 / 2)]) (by positivity)
     -- Numerical check `π/6 − π³/336 > 1/π`.
-    have hπ1 : π ^ 3 < 3.15 ^ 3 := pow_lt_pow_left₀ Real.pi_lt_d2 Real.pi_pos.le (by norm_num)
+    have hπ1 : π ^ 3 < 31.26 := calc
+      π ^ 3 < 3.15 ^ 3 := pow_lt_pow_left₀ Real.pi_lt_d2 Real.pi_pos.le (by norm_num)
+      _ < 31.26 := by norm_num
     have hπ2 : 1 / π < 0.3185 := by
       rw [div_lt_iff₀ Real.pi_pos]; nlinarith [Real.pi_gt_d2]
-    norm_num at hπ1
     linarith [Real.pi_gt_d2]
 
 /-! ### The zeros on the rays `ph z ∈ (π/4)ℤ` -/
 
-/-- Pulling a direction `ω` out of `C(rω)`. -/
-private theorem fresnelC_ofReal_mul (r : ℝ) (ω : ℂ) :
-    fresnelC (r * ω) =
-      ω * ∫ s in (0 : ℝ)..1, (r : ℂ) * Complex.cos (ω ^ 2 * (π * ((s : ℂ) * r) ^ 2 / 2)) := by
-  rw [fresnelC_def, ← intervalIntegral.integral_const_mul]
-  congr 1
-  funext s
-  rw [show (π : ℂ) * ((s : ℂ) * (r * ω)) ^ 2 / 2 = ω ^ 2 * (π * ((s : ℂ) * r) ^ 2 / 2) by ring]
-  ring
-
-/-- Pulling a direction `ω` out of `S(rω)`. -/
-private theorem fresnelS_ofReal_mul (r : ℝ) (ω : ℂ) :
-    fresnelS (r * ω) =
-      ω * ∫ s in (0 : ℝ)..1, (r : ℂ) * Complex.sin (ω ^ 2 * (π * ((s : ℂ) * r) ^ 2 / 2)) := by
-  rw [fresnelS_def, ← intervalIntegral.integral_const_mul]
+/-- Pulling a direction `ω` out of the segment integral `∫₀¹ rω F(π(srω)²/2) ds`. -/
+private theorem integral_ofReal_mul_mul_comp (F : ℂ → ℂ) (r : ℝ) (ω : ℂ) :
+    ∫ s in (0 : ℝ)..1, (r * ω) * F (π * ((s : ℂ) * (r * ω)) ^ 2 / 2) =
+      ω * ∫ s in (0 : ℝ)..1, (r : ℂ) * F (ω ^ 2 * (π * ((s : ℂ) * r) ^ 2 / 2)) := by
+  rw [← intervalIntegral.integral_const_mul]
   congr 1
   funext s
   rw [show (π : ℂ) * ((s : ℂ) * (r * ω)) ^ 2 / 2 = ω ^ 2 * (π * ((s : ℂ) * r) ^ 2 / 2) by ring]
@@ -280,7 +278,7 @@ private theorem integral_mul_comp_eq (f : ℝ → ℝ) (r : ℝ) :
 private theorem fresnelC_ofReal_mul_ne_zero {r : ℝ} (hr : 0 < r) {ω : ℂ} (hω : ω ≠ 0)
     (hω2 : ω ^ 2 = 1 ∨ ω ^ 2 = -1 ∨ ω ^ 2 = I ∨ ω ^ 2 = -I) :
     fresnelC (r * ω) ≠ 0 := by
-  rw [fresnelC_ofReal_mul]
+  rw [fresnelC_def, integral_ofReal_mul_mul_comp]
   refine mul_ne_zero hω ?_
   have hcos : (∀ w : ℂ, Complex.cos (ω ^ 2 * w) = Complex.cos w) ∨
       ∀ w : ℂ, Complex.cos (ω ^ 2 * w) = Complex.cosh w := by
@@ -304,7 +302,7 @@ private theorem fresnelC_ofReal_mul_ne_zero {r : ℝ} (hr : 0 < r) {ω : ℂ} (h
 private theorem fresnelS_ofReal_mul_ne_zero {r : ℝ} (hr : 0 < r) {ω : ℂ} (hω : ω ≠ 0)
     (hω2 : ω ^ 2 = 1 ∨ ω ^ 2 = -1 ∨ ω ^ 2 = I ∨ ω ^ 2 = -I) :
     fresnelS (r * ω) ≠ 0 := by
-  rw [fresnelS_ofReal_mul]
+  rw [fresnelS_def, integral_ofReal_mul_mul_comp]
   refine mul_ne_zero hω ?_
   have hω2' : ω ^ 2 ≠ 0 := pow_ne_zero 2 hω
   have hsin : (∀ w : ℂ, Complex.sin (ω ^ 2 * w) = ω ^ 2 * Complex.sin w) ∨
