@@ -130,36 +130,20 @@ theorem strictTransformCompHom_snd :
     strictTransformCompHom f φ U ψ ≫ pullback.snd f (ψ ≫ φ) = pullback.snd _ _ :=
   pullback.lift_snd _ _ _
 
-/-- The comparison morphism `X ×_S S'' ⟶ X ×_S S'` induced by `ψ`. -/
-private def pullbackCompHom : pullback f (ψ ≫ φ) ⟶ pullback f φ :=
-  pullback.lift (pullback.fst _ _) (pullback.snd _ _ ≫ ψ) (by simp [pullback.condition])
-
-@[reassoc (attr := simp)]
-private theorem pullbackCompHom_fst :
-    pullbackCompHom f φ ψ ≫ pullback.fst f φ = pullback.fst f (ψ ≫ φ) :=
-  pullback.lift_fst _ _ _
-
-@[reassoc (attr := simp)]
-private theorem pullbackCompHom_snd :
-    pullbackCompHom f φ ψ ≫ pullback.snd f φ = pullback.snd f (ψ ≫ φ) ≫ ψ :=
-  pullback.lift_snd _ _ _
-
-/-- `X ×_S S''` is the base change of `X ×_S S'` along `ψ`, through `pullbackCompHom`. -/
-private theorem isPullback_pullbackCompHom :
-    IsPullback (pullbackCompHom f φ ψ) (pullback.snd f (ψ ≫ φ)) (pullback.snd f φ) ψ :=
-  IsPullback.of_right (by simpa using IsPullback.of_hasPullback f (ψ ≫ φ)) (by simp)
-    (IsPullback.of_hasPullback f φ)
-
 /-- `strictTransformCompHom` is the base change of the closed immersion `Z' ⟶ X ×_S S'` along
 `X ×_S S'' ⟶ X ×_S S'`, so it is a closed immersion. -/
 instance isClosedImmersion_strictTransformCompHom :
     IsClosedImmersion (strictTransformCompHom f φ U ψ) := by
   have hb := IsPullback.of_hasPullback ((strictTransform f φ U).subschemeι ≫ pullback.snd f φ) ψ
   rw [← strictTransformCompHom_snd f φ U ψ] at hb
+  -- `X ×_S S''` is the base change of `X ×_S S'` along `ψ`.
+  have hm : IsPullback ((pullbackLeftPullbackSndIso f φ ψ).inv ≫ pullback.fst _ _)
+      (pullback.snd f (ψ ≫ φ)) (pullback.snd f φ) ψ :=
+    IsPullback.of_iso_pullback ⟨by simp⟩ (pullbackLeftPullbackSndIso f φ ψ).symm rfl (by simp)
   have h : IsPullback (pullback.fst _ _) (strictTransformCompHom f φ U ψ)
-      (strictTransform f φ U).subschemeι (pullbackCompHom f φ ψ) :=
-    IsPullback.of_bot hb (pullback.hom_ext (by simp) (by simp [pullback.condition]))
-      (isPullback_pullbackCompHom f φ ψ)
+      (strictTransform f φ U).subschemeι
+      ((pullbackLeftPullbackSndIso f φ ψ).inv ≫ pullback.fst _ _) :=
+    IsPullback.of_bot hb (pullback.hom_ext (by simp) (by simp [pullback.condition])) hm
   exact MorphismProperty.of_isPullback (P := @IsClosedImmersion) h inferInstance
 
 /-- The open of `X ×_S S''` lying over `U` maps to `Z' ×_{S'} S''` over
@@ -169,15 +153,17 @@ private theorem exists_comp_strictTransformCompHom_eq :
         pullback ((strictTransform f φ U).subschemeι ≫ pullback.snd f φ) ψ,
       g ≫ strictTransformCompHom f φ U ψ = (strictTransformOpen f (ψ ≫ φ) U).ι := by
   have hm : strictTransformOpen f (ψ ≫ φ) U ≤
-      pullbackCompHom f φ ψ ⁻¹ᵁ strictTransformOpen f φ U := by
+      ((pullbackLeftPullbackSndIso f φ ψ).inv ≫ pullback.fst _ _) ⁻¹ᵁ
+        strictTransformOpen f φ U := by
     rw [strictTransformOpen_def, strictTransformOpen_def, ← comp_preimage]
     simp
-  let t := (pullbackCompHom f φ ψ).resLE _ _ hm
+  let t := ((pullbackLeftPullbackSndIso f φ ψ).inv ≫ pullback.fst _ _).resLE _ _ hm
   let a := IsClosedImmersion.lift (strictTransform f φ U).subschemeι
     (strictTransformOpen f φ U).ι
     (by rw [IdealSheafData.ker_subschemeι]; exact (strictTransform_def f φ U).le)
   have ht : t ≫ a ≫ (strictTransform f φ U).subschemeι =
-      (strictTransformOpen f (ψ ≫ φ) U).ι ≫ pullbackCompHom f φ ψ := by
+      (strictTransformOpen f (ψ ≫ φ) U).ι ≫ (pullbackLeftPullbackSndIso f φ ψ).inv ≫
+        pullback.fst _ _ := by
     simp [t, a, resLE_comp_ι]
   refine ⟨pullback.lift (t ≫ a) ((strictTransformOpen f (ψ ≫ φ) U).ι ≫ pullback.snd _ _) ?_, ?_⟩
   · rw [Category.assoc, reassoc_of% ht]
