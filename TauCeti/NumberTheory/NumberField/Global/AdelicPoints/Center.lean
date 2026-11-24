@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.Basic
 public import TauCeti.Topology.Algebra.PointTopology.HopfIdeal
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # The centre on adelic points
@@ -32,8 +33,11 @@ on that ideal, and proves that
 
 * `TauCeti.AdelicPoints.centerPoints`: the adelic points `Z(𝔸_K)` of the centre.
 * `TauCeti.AdelicPoints.isClosed_centerPoints`, `TauCeti.AdelicPoints.centerPoints_le_center`.
+* `TauCeti.AdelicPoints.comap_diagonal_quotientPointsSubgroup`,
+  `TauCeti.AdelicPoints.map_diagonal_quotientPointsSubgroup`: for the closed subgroup scheme cut
+  out by any Hopf ideal, the rational points are the adelic points meeting `G(K)`.
 * `TauCeti.AdelicPoints.comap_diagonal_centerPoints`,
-  `TauCeti.AdelicPoints.map_diagonal_centerPoints`: `Z(K) = Z(𝔸_K) ∩ G(K)`.
+  `TauCeti.AdelicPoints.centerPoints_inf_range_diagonal`: `Z(K) = Z(𝔸_K) ∩ G(K)`.
 * `TauCeti.AdelicPoints.centerPoints_eq_top`: for a commutative group, such as `𝔾ₘ`, every adelic
   point lies in the centre.
 * For `GLₙ`, `Z(𝔸_K)` is the centre of `GLₙ(𝔸_K)`, the invertible scalar matrices: an `example`
@@ -76,40 +80,66 @@ theorem centerPoints_le_center : centerPoints R K H ≤ Subgroup.center (AdelicP
 
 /-- For a commutative affine group, such as `𝔾ₘ`, every adelic point lies in the centre:
 `Z(𝔸_K) = G(𝔸_K)`. -/
-theorem centerPoints_eq_top [Coalgebra.IsCocomm K H] : centerPoints R K H = ⊤ :=
-  eq_top_iff.2 fun x _ ↦
-    (mem_quotientPointsSubgroup_iff H _ (CommAlgCat.of K (AdeleRing R K)) x).2 fun h hh ↦ by
-    rw [(centerDefiningIdeal_eq_bot_iff_isCocomm H).2 inferInstance] at hh
-    rw [HopfIdeal.mem_bot.1 hh, map_zero]
+theorem centerPoints_eq_top [Coalgebra.IsCocomm K H] : centerPoints R K H = ⊤ := by
+  rw [centerPoints, (centerDefiningIdeal_eq_bot_iff_isCocomm H).2 inferInstance,
+    quotientPointsSubgroup_bot]
+
+/-! ### Rational points of closed subgroups -/
+
+variable {R K H} [Nontrivial (AdeleRing R K)]
+
+/-- A rational point lies in the adelic points of the closed subgroup scheme cut out by a Hopf
+ideal `I` exactly when it lies in its rational points. -/
+@[simp]
+theorem diagonal_mem_quotientPointsSubgroup_iff (I : HopfIdeal K H) (g : WithConv (H →ₐ[K] K)) :
+    diagonal R K H g ∈ quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K)) ↔
+      g ∈ quotientPointsSubgroup H I (CommAlgCat.of K K) := by
+  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  refine forall₂_congr fun h _ ↦ ?_
+  rw [diagonal_apply_apply, map_eq_zero_iff _ (algebraMap K (AdeleRing R K)).injective]
+
+variable (R K H)
+
+/-- The rational points of the closed subgroup scheme cut out by `I` are the preimage of its
+adelic points under the rational diagonal. -/
+theorem comap_diagonal_quotientPointsSubgroup (I : HopfIdeal K H) :
+    (quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K))).comap (diagonal R K H) =
+      quotientPointsSubgroup H I (CommAlgCat.of K K) :=
+  Subgroup.ext (diagonal_mem_quotientPointsSubgroup_iff I)
+
+/-- The image under the rational diagonal of the rational points of the closed subgroup scheme
+cut out by `I` is the intersection of its adelic points with the image of `G(K)`. -/
+theorem map_diagonal_quotientPointsSubgroup (I : HopfIdeal K H) :
+    (quotientPointsSubgroup H I (CommAlgCat.of K K)).map (diagonal R K H) =
+      quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K)) ⊓ (diagonal R K H).range := by
+  rw [← comap_diagonal_quotientPointsSubgroup R K H I, Subgroup.map_comap_eq, inf_comm]
 
 /-! ### Rational points of the centre -/
 
-variable {R K H} [Nontrivial (AdeleRing R K)]
+variable {R K H}
 
 /-- A rational point lies in `Z(𝔸_K)` exactly when it lies in `Z(K)`. -/
 @[simp]
 theorem diagonal_mem_centerPoints_iff (g : WithConv (H →ₐ[K] K)) :
     diagonal R K H g ∈ centerPoints R K H ↔
       g ∈ quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K) := by
-  rw [centerPoints, mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
-  refine forall₂_congr fun h _ ↦ ?_
-  rw [diagonal_apply_apply, map_eq_zero_iff _ (algebraMap K (AdeleRing R K)).injective]
+  rw [centerPoints, diagonal_mem_quotientPointsSubgroup_iff]
 
 variable (R K H)
 
 /-- `Z(K) = Z(𝔸_K) ∩ G(K)`, as the preimage of `Z(𝔸_K)` under the rational diagonal. -/
 theorem comap_diagonal_centerPoints :
     (centerPoints R K H).comap (diagonal R K H) =
-      quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K) :=
-  Subgroup.ext diagonal_mem_centerPoints_iff
+      quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K) := by
+  rw [centerPoints, comap_diagonal_quotientPointsSubgroup]
 
-/-- `Z(K) = Z(𝔸_K) ∩ G(K)`: the image of `Z(K)` under the rational diagonal is the intersection of
-`Z(𝔸_K)` with the image of `G(K)`. -/
-theorem map_diagonal_centerPoints :
-    (quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K)).map
-        (diagonal R K H) =
-      centerPoints R K H ⊓ (diagonal R K H).range := by
-  rw [← comap_diagonal_centerPoints R K H, Subgroup.map_comap_eq, inf_comm]
+/-- `Z(K) = Z(𝔸_K) ∩ G(K)`: the intersection of `Z(𝔸_K)` with the image of `G(K)` is the image of
+`Z(K)` under the rational diagonal. -/
+theorem centerPoints_inf_range_diagonal :
+    centerPoints R K H ⊓ (diagonal R K H).range =
+      (quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K)).map
+        (diagonal R K H) := by
+  rw [centerPoints, map_diagonal_quotientPointsSubgroup]
 
 /-! ### The general linear group -/
 
@@ -120,8 +150,9 @@ variable (R K : Type u) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K
 
 open GeneralLinear in
 /-- For `GLₙ`, the adelic points of the centre are the centre of the group `GLₙ(𝔸_K)` of
-invertible adelic matrices, which consists of the invertible scalar matrices: main's
-`TauCeti.GeneralLinear.map_centerPointsSubgroup_pointsMulEquiv_eq_center` over `𝔸_K`. -/
+invertible adelic matrices, which consists of the invertible scalar matrices; this is
+`TauCeti.GeneralLinear.map_centerPointsSubgroup_pointsMulEquiv_eq_center` with coefficients in
+`𝔸_K`. -/
 example :
     (centerPoints R K (coordinateHopfAlgebra K n)).map (pointsMulEquiv n).toMonoidHom =
       Subgroup.center (Matrix.GeneralLinearGroup (Fin n) (AdeleRing R K)) :=
