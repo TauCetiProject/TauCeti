@@ -122,9 +122,8 @@ theorem nonempty_iff_isTotallyComplex {K : Type*} [Field K] :
   refine ⟨fun h w ↦ ?_, fun h φ ↦ ?_⟩
   · rw [← InfinitePlace.not_isReal_iff_isComplex, InfinitePlace.isReal_iff]
     exact h w.embedding
-  · have := InfinitePlace.isReal_mk_iff.not.mp
-      (InfinitePlace.not_isReal_iff_isComplex.mpr (h (InfinitePlace.mk φ)))
-    exact fun hφ ↦ this (ComplexEmbedding.isReal_iff.mpr hφ)
+  · exact fun hφ ↦ @IsTotallyComplex.complexEmbedding_not_isReal K _ ⟨h⟩ φ
+      (ComplexEmbedding.isReal_iff.mpr hφ)
 
 instance {K : Type*} [Field K] [IsTotallyComplex K] : Nonempty (CMType K) :=
   nonempty_iff_isTotallyComplex.mpr inferInstance
