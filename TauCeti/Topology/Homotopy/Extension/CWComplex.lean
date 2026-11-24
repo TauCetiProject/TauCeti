@@ -74,31 +74,35 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
   -- Extend `G` over every closed `n`-cell, by the homotopy extension property of the boundary
   -- sphere inside the closed ball.
   have hext : ∀ j : cell C n, ∃ K : C(I × closedBall (0 : Fin n → ℝ) 1, Y),
-      (∀ y, K (0, y) = f ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩) ∧
+      (∀ y, K (0, y) = f ⟨map n j y, map_mem_skeletonLT_succ j
+          (mem_closedBall_zero_iff.1 y.property)⟩) ∧
       ∀ t (y : closedBall (0 : Fin n → ℝ) 1) (hy : (y : Fin n → ℝ) ∈ sphere 0 1),
-        K (t, y) = G (t, ⟨⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
+        K (t, y) = G (t, ⟨⟨map n j y, map_mem_skeletonLT_succ j
+            (mem_closedBall_zero_iff.1 y.property)⟩,
           cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) := by
     intro j
     obtain ⟨K, hK0, hKs⟩ :=
       (hasHomotopyExtensionProperty_sphere_closedBall (E := Fin n → ℝ)).exists_extension_of_isClosed
-        (isClosed_sphere.preimage continuous_subtype_val)
-        (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
+        (isClosed_sphere.preimage continuous_subtypeVal)
+        (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j
+            (mem_closedBall_zero_iff.1 y.property)⟩,
           (continuous_map_closedBall j).subtype_mk _⟩)
         (G.comp ⟨fun p ↦ (p.1, ⟨⟨map n j p.2,
-          map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.1.2)⟩,
-          cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.2, rfl⟩⟩),
+          map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.val.property)⟩,
+          cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.property, rfl⟩⟩),
           continuous_fst.prodMk ((((continuous_map_closedBall j).comp
-            (continuous_subtype_val.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
+            (continuous_subtypeVal.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
         fun a ↦ hG _
     exact ⟨K, hK0, fun t y hy ↦ hKs t ⟨y, hy⟩⟩
   choose K hK0 hKs using hext
   -- Glue `G` and the extensions `K j` over the closed `n`-cells.
   obtain ⟨F, hFG, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ
     (G.comp ⟨fun p : I × (skeletonLT C n : Set X) ↦
-      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono (by exact_mod_cast n.le_succ) p.2.2⟩, p.2.2⟩),
+      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono
+          (by exact_mod_cast n.le_succ) p.2.property⟩, p.2.property⟩),
       by fun_prop⟩) K hKs
-  refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.1 a.2⟩
-  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+  refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.val a.property⟩
+  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
   · rw [hFG 0 x hx]
     exact hG ⟨x, hx⟩
   · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
@@ -115,24 +119,25 @@ variable (k f H) in
 `TauCeti.hasHomotopyExtensionProperty_skeletonLT_succ`. -/
 private def extensionSeq (hH : ∀ a, H (0, a) = f a) : (j : ℕ) →
     {G : C(I × (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X), Y) //
-      ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.2⟩}
-  | 0 => ⟨H.comp ⟨fun p ↦ (p.1, ⟨⟨p.2, (skeletonLT C _).subset_complex p.2.2⟩, p.2.2⟩),
+      ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.property⟩}
+  | 0 => ⟨H.comp ⟨fun p ↦ (p.1, ⟨⟨p.2, (skeletonLT C _).subset_complex p.2.property⟩,
+      p.2.property⟩),
       by fun_prop⟩, fun x ↦ hH _⟩
   | j + 1 =>
     have h := (hasHomotopyExtensionProperty_skeletonLT_succ (C := C) (k + j)).exists_extension
-      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.2⟩, by fun_prop⟩)
-      ((extensionSeq hH j).1.comp ⟨fun p ↦ (p.1, ⟨p.2, p.2.2⟩), by fun_prop⟩)
-      fun a ↦ (extensionSeq hH j).2 _
+      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.property⟩, by fun_prop⟩)
+      ((extensionSeq hH j).val.comp ⟨fun p ↦ (p.1, ⟨p.2, p.2.property⟩), by fun_prop⟩)
+      fun a ↦ (extensionSeq hH j).property _
     ⟨h.choose, h.choose_spec.1⟩
 
 private lemma extensionSeq_succ_apply {hH : ∀ a, H (0, a) = f a} (j : ℕ) (t : I)
     (x : X) (hx : x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X)) :
-    (extensionSeq k f H hH (j + 1)).1
+    (extensionSeq k f H hH (j + 1)).val
         (t, ⟨x, skeletonLT_mono (by exact_mod_cast (k + j).le_succ) hx⟩) =
-      (extensionSeq k f H hH j).1 (t, ⟨x, hx⟩) := by
+      (extensionSeq k f H hH j).val (t, ⟨x, hx⟩) := by
   rw [extensionSeq]
   exact ((hasHomotopyExtensionProperty_skeletonLT_succ (C := C) (k + j)).exists_extension _ _
-    fun a ↦ (extensionSeq k f H hH j).2 _).choose_spec.2 t ⟨_, hx⟩
+    fun a ↦ (extensionSeq k f H hH j).property _).choose_spec.2 t ⟨_, hx⟩
 
 end Glue
 
@@ -144,10 +149,10 @@ theorem hasHomotopyExtensionProperty_skeletonLT (k : ℕ) :
   intro Y _ f H hH
   -- Solve the problem on the successive skeleta and glue the solutions.
   obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT
-    (fun j ↦ (extensionSeq k f H hH j).1) (extensionSeq_succ_apply (hH := hH))
-  refine ⟨G, fun x ↦ ?_, fun t a ↦ hG 0 t a.1 a.2⟩
-  obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.2
-  exact (hG j 0 x hj).trans ((extensionSeq k f H hH j).2 _)
+    (fun j ↦ (extensionSeq k f H hH j).val) (extensionSeq_succ_apply (hH := hH))
+  refine ⟨G, fun x ↦ ?_, fun t a ↦ hG 0 t a.val a.property⟩
+  obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.property
+  exact (hG j 0 x hj).trans ((extensionSeq k f H hH j).property _)
 
 /-- **Relative CW inclusions are cofibrations: the base of a relative CW complex has the homotopy
 extension property inside the complex.**  The base is also closed
@@ -235,7 +240,7 @@ private lemma ballPointDeformation_properties {n : ℕ} {y₀ : Fin n → ℝ} (
       module
     rw [hconv, ← mem_closedBall_zero_iff]
     exact (convex_closedBall (0 : Fin n → ℝ) 1) (mem_closedBall_zero_iff.2 hy)
-      (mem_closedBall_zero_iff.2 hy₀.le) (by linarith [s.2.2]) s.2.1 (by linarith)
+      (mem_closedBall_zero_iff.2 hy₀.le) (by linarith [s.property.2]) s.property.1 (by linarith)
   · -- Inside radius `r₀`, the cutoff is `1` and time `1` sends `y` to `y₀`.
     have hge : 1 ≤ 2 - ‖y - y₀‖ / r₀ := by
       have : ‖y - y₀‖ / r₀ < 1 := (div_lt_one hr₀).2 hy
@@ -270,7 +275,7 @@ private lemma exists_singletonControl_skeletonLT {n : ℕ} (j : cell C n) {x : X
       · rfl
   refine ⟨u.comp ⟨fun z ↦ ((), z), by fun_prop⟩, fun z ↦ ?_, fun z hz ↦ ?_⟩
   · simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
-    obtain hz' | ⟨i, y, hy, hzy⟩ := mem_skeletonLT_or_exists_map z.2
+    obtain hz' | ⟨i, y, hy, hzy⟩ := mem_skeletonLT_or_exists_map z.property
     · rw [hu_skel () z hz']
       exact ⟨fun h ↦ absurd h one_ne_zero,
         fun h ↦ absurd (h ▸ hz') (disjoint_skeletonLT_openCell le_rfl |>.notMem_of_mem_right hx)⟩
@@ -298,7 +303,7 @@ private lemma exists_singletonControl_skeletonLT {n : ℕ} (j : cell C n) {x : X
         exact (disjoint_openCell_of_ne (by simpa using hij)).notMem_of_mem_left
           ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ (h ▸ hx)
   · simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hz
-    obtain hz' | ⟨i, y, hy, hzy⟩ := mem_skeletonLT_or_exists_map z.2
+    obtain hz' | ⟨i, y, hy, hzy⟩ := mem_skeletonLT_or_exists_map z.property
     · rw [hu_skel () z hz'] at hz
       exact (lt_irrefl _ hz).elim
     · have hsub : z = ⟨map n i y, map_mem_skeletonLT_succ i hy.le⟩ := Subtype.ext hzy.symm
@@ -326,7 +331,7 @@ private lemma hasHomotopyExtensionProperty_singleton_skeletonLT {n : ℕ} (j : c
     { control := u
       control_eq_zero_iff := fun z ↦ (hu0 z).trans (by simp [Subtype.ext_iff])
       deformation := ⟨fun q ↦ ⟨cellDeformation {j} (ballPointDeformation y₀) (q.1, q.2),
-          cellDeformation_mem hΨb q.1 q.2.2⟩,
+          cellDeformation_mem hΨb q.1 q.2.property⟩,
         (continuous_cellDeformation {j} hΨs hΨb).subtype_mk _⟩
       deformation_zero := fun z ↦ Subtype.ext <| by
         simp only [ContinuousMap.coe_mk]
@@ -353,13 +358,13 @@ theorem hasHomotopyExtensionProperty_singleton_of_notMem_base {x₀ : C} (hx₀ 
   -- in turn has the homotopy extension property in `C`.
   have hxC : (x₀ : X) ∈ D ∪ ⋃ n, ⋃ j : cell C n, openCell n j := by
     rw [union_iUnion_openCell_eq_complex]
-    exact x₀.2
+    exact x₀.property
   obtain ⟨n, j, hxj⟩ := mem_iUnion₂.1 (hxC.resolve_left hx₀)
   let hsub := (skeletonLT C ((n + 1 : ℕ) : ℕ∞)).subset_complex
   have hrange : range (inclusion hsub) =
       (Subtype.val ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) : Set C) := by
     ext z
-    exact ⟨fun ⟨w, hw⟩ ↦ hw ▸ w.2, fun hz ↦ ⟨⟨z, hz⟩, rfl⟩⟩
+    exact ⟨fun ⟨w, hw⟩ ↦ hw ▸ w.property, fun hz ↦ ⟨⟨z, hz⟩, rfl⟩⟩
   have himg := (hasHomotopyExtensionProperty_singleton_skeletonLT j hxj).image_of_isEmbedding
     (Topology.IsEmbedding.inclusion hsub) (hrange ▸ hasHomotopyExtensionProperty_skeletonLT (n + 1))
   rwa [image_singleton] at himg

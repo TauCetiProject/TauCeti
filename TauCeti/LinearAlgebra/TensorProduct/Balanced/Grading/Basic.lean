@@ -80,7 +80,7 @@ private theorem relations_eq_span_homogeneous :
           simpa only [smul_add, TensorProduct.add_tmul, TensorProduct.tmul_add,
             add_sub_add_comm, SetLike.mem_coe] using Submodule.add_mem _ hn hn'
         | @homogeneous r n =>
-          exact Submodule.subset_span ⟨p, q, r, a, m, n, a.2, m.2, n.2, rfl⟩
+          exact Submodule.subset_span ⟨p, q, r, a, m, n, a.property, m.property, n.property, rfl⟩
   · rw [Submodule.span_le]
     rintro z ⟨p, q, r, a, m, n, _, _, _, rfl⟩
     rw [balancedTensorRelations_def]
@@ -272,11 +272,12 @@ private theorem koszulTwist_tmul_balanced
     | add m m' hm hm' => simp only [smul_add, map_add, add_tmul, hm, hm']
     | @homogeneous q m =>
       have ham : op (a : A) • (m : M) ∈ (InternalGrading.ofDecomposition ℳ).piece (q + p) := by
-        simpa only [InternalGrading.ofDecomposition_piece] using op_smul_mem_of_mem_graded a.2 m.2
+        simpa only [InternalGrading.ofDecomposition_piece] using op_smul_mem_of_mem_graded
+            a.property m.property
       have hm : (m : M) ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
-        simpa only [InternalGrading.ofDecomposition_piece] using m.2
+        simpa only [InternalGrading.ofDecomposition_piece] using m.property
       rw [InternalGrading.koszulTwist_one_apply_of_mem _ ham,
-        InternalGrading.koszulTwist_one_apply_of_mem _ hm, hk a.2, Int.negOnePow_add]
+        InternalGrading.koszulTwist_one_apply_of_mem _ hm, hk a.property, Int.negOnePow_add]
       simp only [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast,
         smul_tmul, tmul_smul, balance, Units.val_mul, Int.cast_mul, mul_comm, mul_smul]
 

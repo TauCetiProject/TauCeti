@@ -153,16 +153,7 @@ theorem norm_energyFormH1_comp_add_sub_le
           exact (hK.norm_sub_le hxs hx).trans_eq (by rw [add_sub_cancel_left])
       _ = _ := by ring
   -- Cauchy--Schwarz for the two gradients.
-  have hmem : ∀ q : W1p mu Omega 2, MemLp (W1p.gradient q : EuclideanSpace ℝ ι →
-      EuclideanSpace ℝ ι) (ENNReal.ofReal (2 : ℝ)) (mu.restrict Omega) := fun q => by
-    simpa using Lp.memLp (W1p.gradient q)
-  have hsq : ∀ q : W1p mu Omega 2,
-      √(∫ x, ‖W1p.gradient q x‖ ^ 2 ∂mu.restrict Omega) = ‖W1p.gradient q‖ :=
-    fun q => by
-      have := W1p.integral_norm_gradient_sq_eq_norm_gradient_sq q
-      rw [this, Real.sqrt_sq (norm_nonneg _)]
-  have hCS := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two (hmem z) (hmem y)
-  simp only [Real.rpow_two, ← Real.sqrt_eq_rpow, hsq] at hCS
+  have hCS := Lp.integral_norm_mul_norm_le (W1p.gradient z) (W1p.gradient y)
   have hint : Integrable (fun x => ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖)
       (mu.restrict Omega) := by
     have hmem' : ∀ q : W1p mu Omega 2,

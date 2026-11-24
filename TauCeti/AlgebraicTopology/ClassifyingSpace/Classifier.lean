@@ -169,7 +169,7 @@ theorem exists_mapOfEq_cellularClassifyingSpace_of_subsingleton {S : Type u}
       FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq hcomp rfl hf hsubf₀,
       FundamentalGroup.pathComponentMulEquiv_apply,
       ← FundamentalGroup.mapOfEq_rfl
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent z, Z))]
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent z, Z))]
     exact (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq
       (ContinuousMap.ext fun _ ↦ rfl) hf₀ rfl hsubf₀ _).symm
   rw [h₁]
@@ -256,7 +256,7 @@ private lemma exists_bijective_mapOfEq_cellularClassifyingSpace_some {C : Set X}
   let _ : CWComplex (univ : Set (TopCat.of E)) := RelCWComplex.toCWComplex _
   have hEmpty (m : ℕ) (hm : 2 < m) : IsEmpty (cell (univ : Set (TopCat.of E)) m) :=
     ⟨fun i ↦ by
-      have hi := (cE.toRelCWComplexCellEquiv m (eCell m i)).2
+      have hi := (cE.toRelCWComplexCellEquiv m (eCell m i)).property
       simp only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] at hi
       omega⟩
   let K := killHomotopyGroups 2 (TopCat.of E) a₀
@@ -376,11 +376,12 @@ def pointedHomotopyEquivMonoidHomOfCWComplex [CWComplex (univ : Set X)] [PathCon
     Quotient (pointedHomotopySetoid x₀ y₀) ≃
       (FundamentalGroup X x₀ →* FundamentalGroup Y y₀) :=
   Equiv.ofBijective
-    (Quotient.lift (fun f : {f : C(X, Y) // f x₀ = y₀} ↦ FundamentalGroup.mapOfEq f.1 f.2)
-      fun f g h ↦ FundamentalGroup.mapOfEq_eq_of_homotopicRel f.2 g.2 (mem_singleton x₀)
-        (pointedHomotopySetoid_iff.1 h))
+    (Quotient.lift (fun f : {f : C(X, Y) // f x₀ = y₀} ↦ FundamentalGroup.mapOfEq f.val f.property)
+      fun f g h ↦ FundamentalGroup.mapOfEq_eq_of_homotopicRel f.property g.property
+        (mem_singleton x₀) (pointedHomotopySetoid_iff.1 h))
     ⟨Quotient.ind₂ fun f g hfg ↦ Quotient.sound
-        (pointedHomotopySetoid_iff.2 (homotopicRel_of_mapOfEq_eq_of_cwComplex hY f.2 g.2 hfg)),
+        (pointedHomotopySetoid_iff.2
+          (homotopicRel_of_mapOfEq_eq_of_cwComplex hY f.property g.property hfg)),
       fun φ ↦ by
         obtain ⟨f, hf, hfφ⟩ := exists_mapOfEq_of_cwComplex hY φ
         exact ⟨⟦⟨f, hf⟩⟧, hfφ⟩⟩
@@ -389,7 +390,8 @@ def pointedHomotopyEquivMonoidHomOfCWComplex [CWComplex (univ : Set X)] [PathCon
 theorem pointedHomotopyEquivMonoidHomOfCWComplex_mk [CWComplex (univ : Set X)]
     [PathConnectedSpace X] (x₀ : X) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
     (f : {f : C(X, Y) // f x₀ = y₀}) :
-    pointedHomotopyEquivMonoidHomOfCWComplex x₀ hY ⟦f⟧ = FundamentalGroup.mapOfEq f.1 f.2 := by
+    pointedHomotopyEquivMonoidHomOfCWComplex x₀ hY ⟦f⟧ =
+      FundamentalGroup.mapOfEq f.val f.property := by
   unfold pointedHomotopyEquivMonoidHomOfCWComplex
   rfl
 
@@ -409,7 +411,7 @@ def pointedHomotopyEquivMonoidHom {C : Set X} [CWComplex C] [PathConnectedSpace 
 theorem pointedHomotopyEquivMonoidHom_mk {C : Set X} [CWComplex C] [PathConnectedSpace C]
     (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
     (f : {f : C(C, Y) // f x₀ = y₀}) :
-    pointedHomotopyEquivMonoidHom x₀ hY ⟦f⟧ = FundamentalGroup.mapOfEq f.1 f.2 := by
+    pointedHomotopyEquivMonoidHom x₀ hY ⟦f⟧ = FundamentalGroup.mapOfEq f.val f.property := by
   let _ := cwComplexUniv C
   exact pointedHomotopyEquivMonoidHomOfCWComplex_mk x₀ hY f
 

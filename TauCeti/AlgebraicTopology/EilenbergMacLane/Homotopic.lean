@@ -108,7 +108,7 @@ theorem subsingleton_relHomotopyGroup_diagonal
       ⟨TopPair.ofSubset (X := TopCat.of (Y × Y)) (diagonal Y), b⟩) := by
   -- The diagonal is a retract of `Y × Y`, so its inclusion is injective on homotopy groups.
   let r : C(Y × Y, diagonal Y) := ⟨fun p ↦ ⟨(p.1, p.1), rfl⟩, by fun_prop⟩
-  have hr : r (b : Y × Y) = b := Subtype.ext (Prod.ext rfl b.2)
+  have hr : r (b : Y × Y) = b := Subtype.ext (Prod.ext rfl b.property)
   have hrι : r.comp (ContinuousMap.subtypeVal (diagonal Y)) = ContinuousMap.id _ := by
     ext ⟨p, hp⟩
     · simp [r]
@@ -197,7 +197,7 @@ theorem homotopicRel_skeletonLT_one_of_forall_homotopicRel
       exact (hfg (.const I x) hx hx).fst_eq_snd (Or.inl rfl)
     exact fun x hx ↦ h hx
   have hE (n : ℕ) (hn : n < 2) : IsEmpty (@cell X _ C E E.relCWComplex n) := by
-    refine ⟨fun i ↦ (E.relCWComplexCellEquiv n i).2 ?_⟩
+    refine ⟨fun i ↦ (E.relCWComplexCellEquiv n i).property ?_⟩
     simp only [E, skeletonLT_I, mem_ofPred_eq]
     exact_mod_cast hn
   -- The structure relative to `E` is not an instance: `C` already carries one relative to `D`.
@@ -246,7 +246,7 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   have h := homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
     (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) (f := f.comp e) (g := g.comp e)
     hf hg <| by
@@ -280,8 +280,9 @@ private lemma exists_homotopicRel_eq_on_skeletonLT_one {C : Set X} [CWComplex C]
   let A : Set C := Subtype.val ⁻¹' (skeletonLT C ((1 : ℕ) : ℕ∞) : Set X)
   have := zeroSkeletonDiscreteTopology C
   let eA : A ≃ₜ ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
-    { toFun := fun a ↦ ⟨(a : C), a.2⟩
-      invFun := fun b ↦ ⟨⟨(b : X), (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex b.2⟩, b.2⟩
+    { toFun := fun a ↦ ⟨(a : C), a.property⟩
+      invFun := fun b ↦
+        ⟨⟨(b : X), (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex b.property⟩, b.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun := by fun_prop
@@ -375,7 +376,7 @@ private lemma homotopicRel_of_forall_subsingleton {C : Set X} [CWComplex C] [Pat
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
   subst hf
-  obtain ⟨w₀, hw₀⟩ := nonempty_skeletonLT_one (C := C) ⟨x₀, x₀.2⟩
+  obtain ⟨w₀, hw₀⟩ := nonempty_skeletonLT_one (C := C) ⟨x₀, x₀.property⟩
   let v₀ : C := ⟨w₀, (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex hw₀⟩
   have hv₀ : (v₀ : X) ∈ skeletonLT C 1 := hw₀
   let δ : Path x₀ v₀ := PathConnectedSpace.somePath x₀ v₀
@@ -435,9 +436,10 @@ theorem homotopicRel_of_mapOfEq_eq {C : Set X} [CWComplex C] [PathConnectedSpace
   have hg' : g' x₀ = y₀' := Subtype.ext hg
   have hS : ∀ (z : S) (n : ℕ), Subsingleton (π_ (n + 2) S z) := fun z n ↦ by
     have hz : Subsingleton (π_ (n + 2) Y z) :=
-      (homotopyGroupEquivOfPath (N := Fin (n + 2)) z.2.somePath).subsingleton_congr.1 (hY n)
+      (homotopyGroupEquivOfPath (N := Fin (n + 2)) z.property.somePath).subsingleton_congr.1
+        (hY n)
     have hbij := HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-      (N := Fin (n + 2)) (S := S) (x := z) (fun _ hw ↦ z.2.trans hw) rfl
+      (N := Fin (n + 2)) (S := S) (x := z) (fun _ hw ↦ z.property.trans hw) rfl
     exact hbij.1.subsingleton
   have hinj : Function.Injective
       (FundamentalGroup.mapOfEq (ContinuousMap.subtypeVal S)
@@ -477,7 +479,7 @@ theorem homotopicRel_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set X)] [Path
   have : PathConnectedSpace (univ : Set X) :=
     (Homeomorph.Set.univ X).symm.surjective.pathConnectedSpace
       (Homeomorph.Set.univ X).symm.continuous
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
   have h := homotopicRel_of_mapOfEq_eq (C := (univ : Set X)) (x₀ := ⟨x₀, trivial⟩) hY
     (f := f.comp e) (g := g.comp e) hf hg <| MonoidHom.ext fun p ↦ by
@@ -541,7 +543,7 @@ theorem homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath_of_cwComplex
   have : PathConnectedSpace (univ : Set X) :=
     (Homeomorph.Set.univ X).symm.surjective.pathConnectedSpace
       (Homeomorph.Set.univ X).symm.continuous
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
   let u₀ : (univ : Set X) := ⟨x₀, mem_univ x₀⟩
   have hcomp (k : C(X, Y)) (a : FundamentalGroup (univ : Set X) u₀) :
