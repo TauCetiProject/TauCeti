@@ -42,9 +42,14 @@ theorem killingForm_eq_of_lie_mem [Module.Free R L] [Module.Finite R L] (K : Lie
     killingForm R K x y = killingForm R L x y := by
   have hf : ∀ z, (LieAlgebra.ad R L x ∘ₗ LieAlgebra.ad R L y) z ∈ K.toSubmodule :=
     fun z ↦ hK _ x.property _
+  have hres : (LieAlgebra.ad R L x ∘ₗ LieAlgebra.ad R L y).restrict (p := K.toSubmodule)
+      (q := K.toSubmodule) (fun z _ ↦ hf z) = LieAlgebra.ad R K x ∘ₗ LieAlgebra.ad R K y := by
+    -- The carrier of `K.toSubmodule` is that of `K`, and the bracket of `K` is that of `L`.
+    ext z
+    rfl
   rw [killingForm_apply_apply, killingForm_apply_apply,
     ← LinearMap.trace_restrict_eq_of_forall_mem _ _ hf]
-  rfl
+  exact congrArg (LinearMap.trace R K) hres
 
 /-- **The Killing forms of nested subalgebras** `K ≤ K'` agree on `K` when `⁅K, K'⁆ ⊆ K`. -/
 theorem killingForm_inclusion_eq {K K' : LieSubalgebra R L} [Module.Free R K'] [Module.Finite R K']

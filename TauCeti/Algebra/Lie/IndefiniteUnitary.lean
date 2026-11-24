@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.RingTheory.Complex
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.Algebra.Lie.Killing.Subalgebra
-import TauCeti.LinearAlgebra.Complex.Trace
+import TauCeti.LinearAlgebra.Trace.Complex
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
@@ -33,14 +33,16 @@ The Killing form of `𝔲(p, q)` is the real part of the Killing form of `𝔤�
 
 `κ(X, Y) = Re (2 n trace (X * Y) - 2 trace X * trace Y)`.
 
-The map `σ Z = J Zᴴ J` is a conjugate-linear involution of `𝔤𝔩_n(ℂ)` with fixed points `-𝔲(p, q)`,
-so `P Z = Z - σ Z` maps `𝔤𝔩_n(ℂ)` onto `𝔲(p, q)` and acts on it as multiplication by two. For
-`X, Y ∈ 𝔲(p, q)` the operator `L = ad X ∘ ad Y` of `𝔤𝔩_n(ℂ)` preserves `𝔲(p, q)`, so cycling the
-trace, twice the real trace of `ad X ∘ ad Y` on `𝔲(p, q)` is the real trace of `L` minus that of
-`σ ∘ L`. The first is twice the real part of the complex trace of the complex-linear map `L`
-(`LinearMap.trace_restrictScalars`), which is the Killing form of `𝔤𝔩_n(ℂ)`
-(`Matrix.killingForm_apply`). The second vanishes, since `σ ∘ L` anticommutes with
-multiplication by `i` (`LinearMap.trace_eq_zero_of_map_I_smul`).
+The map `σ Z = J Zᴴ J` is a conjugate-linear involution of `𝔤𝔩_n(ℂ)` acting as `-1` on
+`𝔲(p, q)`, so `P Z = Z - σ Z` maps `𝔤𝔩_n(ℂ)` onto `𝔲(p, q)` and acts on it as multiplication by
+two. For `X, Y ∈ 𝔲(p, q)` the operator `L = ad X ∘ ad Y` of `𝔤𝔩_n(ℂ)` preserves `𝔲(p, q)`, so
+cycling the trace, twice the real trace of `ad X ∘ ad Y` on `𝔲(p, q)` is the real trace of `L`
+minus that of `σ ∘ L`. The first is twice the real part of the complex trace of the
+complex-linear map `L` (`LinearMap.trace_restrictScalars`), which is the Killing form of
+`𝔤𝔩_n(ℂ)` (`Matrix.killingForm_apply`). The second vanishes, since `σ ∘ L` anticommutes with
+multiplication by `i` (`LinearMap.trace_eq_zero_of_map_I_smul_eq_neg`). This follows the
+computation of `LieAlgebra.Symplectic.killingForm_apply` in
+`TauCeti/Algebra/Lie/Symplectic/Killing.lean`.
 
 Brackets in `𝔲(p, q)` are trace-free, so the Killing form of `𝔰𝔲(p, q)` is the restriction of
 that of `𝔲(p, q)` (`LieSubalgebra.killingForm_inclusion_eq`):
@@ -64,6 +66,12 @@ is nondegenerate, and `𝔰𝔲(p, q)` is semisimple.
 * `TauCeti.isKilling_specialIndefiniteUnitaryLieAlgebra`: the Killing form of `𝔰𝔲(p, q)` is
   nondegenerate; in particular `𝔰𝔲(p, q)` is semisimple
   (`TauCeti.isSemisimple_specialIndefiniteUnitaryLieAlgebra`).
+
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
+  140, Birkhäuser, 2002, Chapter I (the real forms `𝔲(p, q)` and `𝔰𝔲(p, q)` and the Killing
+  forms of the classical Lie algebras).
 -/
 
 public section
@@ -101,6 +109,7 @@ def indefiniteUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix (p ⊕ q) (p ⊕ q) 
 variable {p q}
 
 /-- Membership in `𝔲(p, q)` as the equation `Xᴴ J = -(J X)`. -/
+@[simp]
 theorem mem_indefiniteUnitaryLieAlgebra_iff {X : Matrix (p ⊕ q) (p ⊕ q) ℂ} :
     X ∈ indefiniteUnitaryLieAlgebra p q ↔
       Xᴴ * indefiniteDiagonal p q ℂ = -(indefiniteDiagonal p q ℂ * X) :=
@@ -142,6 +151,7 @@ def specialIndefiniteUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix (p ⊕ q) (p 
     rw [Ring.lie_def, trace_sub, trace_mul_comm, sub_self]⟩
 
 /-- Membership in `𝔰𝔲(p, q)`: membership in `𝔲(p, q)` and trace zero. -/
+@[simp]
 theorem mem_specialIndefiniteUnitaryLieAlgebra_iff {X : Matrix (p ⊕ q) (p ⊕ q) ℂ} :
     X ∈ specialIndefiniteUnitaryLieAlgebra p q ↔
       X ∈ indefiniteUnitaryLieAlgebra p q ∧ X.trace = 0 :=
@@ -186,51 +196,63 @@ private theorem sigma_apply (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
 private theorem sub_sigma_mem (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
     Z - sigma Z ∈ indefiniteUnitaryLieAlgebra p q := by
   have hJ := indefiniteDiagonal_mul_indefiniteDiagonal (p := p) (q := q) (R := ℂ)
-  rw [mem_indefiniteUnitaryLieAlgebra_iff, sigma_apply, conjTranspose_sub, conjTranspose_mul,
-    conjTranspose_mul, ← star_eq_conjTranspose (indefiniteDiagonal p q ℂ),
-    star_indefiniteDiagonal, conjTranspose_conjTranspose, Matrix.sub_mul, Matrix.mul_assoc,
-    Matrix.mul_assoc, hJ, Matrix.mul_one, Matrix.mul_sub, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc, hJ, Matrix.one_mul, neg_sub]
+  have hJ' (A : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
+      indefiniteDiagonal p q ℂ * (indefiniteDiagonal p q ℂ * A) = A := by
+    rw [← Matrix.mul_assoc, hJ, Matrix.one_mul]
+  simp only [mem_indefiniteUnitaryLieAlgebra_iff, sigma_apply, conjTranspose_sub,
+    conjTranspose_mul, conjTranspose_conjTranspose, isHermitian_indefiniteDiagonal.eq,
+    Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc, hJ, hJ', Matrix.mul_one, neg_sub]
 
 private theorem sigma_I_smul (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
     sigma (Complex.I • Z) = -(Complex.I • sigma Z) := by
   rw [sigma_apply, sigma_apply, conjTranspose_smul, Complex.star_def, Complex.conj_I,
     Matrix.mul_smul, Matrix.smul_mul, neg_smul]
 
+/-- The projection `Z ↦ Z - J Zᴴ J` of the complex matrices onto `𝔲(p, q)`, which is
+multiplication by two on `𝔲(p, q)`. -/
+private def project : Matrix (p ⊕ q) (p ⊕ q) ℂ →ₗ[ℝ] indefiniteUnitaryLieAlgebra p q where
+  toFun Z := ⟨Z - sigma Z, sub_sigma_mem Z⟩
+  map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
+  map_smul' r Z := by ext1; simp [smul_sub]
+
+private theorem coe_project_apply (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
+    (project Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) = Z - sigma Z :=
+  rfl
+
 /-- Twice the Killing form of `𝔲(p, q)` is twice the real part of that of `𝔤𝔩_n(ℂ)`. -/
 private theorem two_mul_killingForm_indefiniteUnitaryLieAlgebra_apply
     (X Y : indefiniteUnitaryLieAlgebra p q) :
     2 * killingForm ℝ (indefiniteUnitaryLieAlgebra p q) X Y =
       2 * (killingForm ℂ (Matrix (p ⊕ q) (p ⊕ q) ℂ) X Y).re := by
-  let U := (indefiniteUnitaryLieAlgebra p q).toSubmodule
+  let ι := (indefiniteUnitaryLieAlgebra p q).incl.toLinearMap
   -- `ad X ∘ ad Y` on `𝔤𝔩_n(ℂ)`, a complex-linear map viewed as a real-linear one.
   let L := (ad ℂ (Matrix (p ⊕ q) (p ⊕ q) ℂ) X ∘ₗ ad ℂ _ Y).restrictScalars ℝ
-  let P : Matrix (p ⊕ q) (p ⊕ q) ℂ →ₗ[ℝ] U :=
-    (LinearMap.id - sigma).codRestrict U sub_sigma_mem
-  have h1 : P ∘ₗ L ∘ₗ U.subtype =
+  have h1 : project ∘ₗ L ∘ₗ ι =
       (2 : ℝ) • (ad ℝ (indefiniteUnitaryLieAlgebra p q) X ∘ₗ ad ℝ _ Y) := by
     ext1 W
     have hW : L W ∈ indefiniteUnitaryLieAlgebra p q :=
       LieSubalgebra.lie_mem _ X.property (LieSubalgebra.lie_mem _ Y.property W.property)
     have hσ : sigma (L W) = -L W := mem_indefiniteUnitaryLieAlgebra_iff'.mp hW
     apply Subtype.ext
-    change L W - sigma (L W) = (2 : ℝ) • L W
-    rw [hσ, sub_neg_eq_add, two_smul]
-  have h2 : U.subtype ∘ₗ P = LinearMap.id - sigma := rfl
+    simp only [ι, LinearMap.comp_apply, coe_project_apply, LieHom.coe_toLinearMap,
+      LieSubalgebra.coe_incl, hσ, sub_neg_eq_add]
+    simp [L, two_smul]
+  have h2 : ι ∘ₗ project = LinearMap.id - sigma := by
+    ext1 Z
+    simp [ι, coe_project_apply]
   -- `σ ∘ L` anticommutes with multiplication by `i`, so its real trace vanishes.
   have h3 : LinearMap.trace ℝ _ (sigma ∘ₗ L) = 0 :=
-    LinearMap.trace_eq_zero_of_map_I_smul _ fun Z ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply, map_smul,
+    LinearMap.trace_eq_zero_of_map_I_smul_eq_neg _ fun Z ↦ by
+      simp only [L, LinearMap.comp_apply, LinearMap.restrictScalars_apply, map_smul,
         sigma_I_smul]
-      rfl
-  have htrace : LinearMap.trace ℝ U (P ∘ₗ L ∘ₗ U.subtype) =
+  have htrace : LinearMap.trace ℝ _ (project ∘ₗ L ∘ₗ ι) =
       LinearMap.trace ℝ _ L - LinearMap.trace ℝ _ (sigma ∘ₗ L) := by
     rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm', ← LinearMap.comp_assoc, h2,
       LinearMap.sub_comp, map_sub, LinearMap.id_comp]
   rw [h1, map_smul, smul_eq_mul, h3, sub_zero, LinearMap.trace_restrictScalars,
-    Algebra.trace_complex_apply, ← killingForm_apply_apply] at htrace
-  rw [killingForm_apply_apply, ← htrace]
-  rfl
+    Algebra.trace_complex_apply] at htrace
+  rw [killingForm_apply_apply, killingForm_apply_apply]
+  exact htrace
 
 /-- **The Killing form of `𝔲(p, q)`** is the real part of that of `𝔤𝔩_n(ℂ)`:
 `κ(X, Y) = Re (2 n trace (X * Y) - 2 trace X * trace Y)` for `n = p + q`. -/

@@ -26,6 +26,12 @@ for `n` the cardinality of the index type.
 ## Main results
 
 * `LieAlgebra.SpecialLinear.killingForm_apply`: `κ(X, Y) = 2 n trace (X * Y)` on `𝔰𝔩 n R`.
+
+## References
+
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§1.2 and 5.
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
+  140, Birkhäuser, 2002, Chapter I (the Killing forms of the classical Lie algebras).
 -/
 
 public section
