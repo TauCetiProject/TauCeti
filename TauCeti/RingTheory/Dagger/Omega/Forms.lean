@@ -47,7 +47,8 @@ noncomputable def formsMap (f : A →ₐ[K] B) (q : ℕ) :
 
 theorem formsMap_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
     formsMap (g.comp f) q = (formsMap g q) ∘ₗ (formsMap f q) := LinearMap.ext fun ω ↦ by
-  rw [formsMap_apply, mapSemilinear_comp, exteriorPower.mapSemilinear_comp_apply]; rfl
+  rw [formsMap_apply, mapSemilinear_comp, exteriorPower.mapSemilinear_comp_apply,
+    LinearMap.comp_apply, formsMap_apply, formsMap_apply]
 
 end Functoriality
 

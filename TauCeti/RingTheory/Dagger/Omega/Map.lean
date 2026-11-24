@@ -68,7 +68,9 @@ theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
   let q : Ω[A⁄R] →ₗ[A] M ⧸ P :=
     { toFun := fun z ↦ P.mkQ (g z)
       map_add' := fun _ _ ↦ by rw [map_add, map_add]
-      map_smul' := fun a z ↦ by rw [g.map_smulₛₗ, LinearMap.map_smul]; rfl }
+      map_smul' := fun a z ↦ by
+        rw [g.map_smulₛₗ, LinearMap.map_smul, RingHom.id_apply]
+        exact (MulAction.compHom_smul_def (f.toRingHom : A →* B) a (P.mkQ (g z))).symm }
   have : IsNoetherian A (M ⧸ P) := isNoetherian_of_tower R inferInstance
   exact (Submodule.Quotient.mk_eq_zero P).mp <|
     (ofKaehler_eq_zero_iff.mp hx) (LinearMap.ker q) (Module.Finite.equiv q.quotKerEquivRange.symm)
@@ -161,7 +163,7 @@ theorem mapSemilinear_surjective [IsDaggerAlgebra K B] {f : A →ₐ[K] B}
 
 /-- Over a complete ultrametric normed field `K`, any algebra homomorphism `A →ₐ[K] K` induces the
 zero map on `Omega`. -/
-@[simp] theorem mapSemilinear_toSelf (φ : A →ₐ[K] K) (ω : Omega K A) :
+@[simp] theorem mapSemilinear_apply_eq_zero_of_algHom_base (φ : A →ₐ[K] K) (ω : Omega K A) :
     mapSemilinear φ ω = 0 := Subsingleton.elim _ _
 
 /-- **Jacobian formula for `mapSemilinear` on Monsky–Washnitzer algebras** over a complete

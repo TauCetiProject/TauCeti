@@ -71,7 +71,8 @@ theorem not_exactAt_deRhamComplex_washnitzer_one_charP (p : ℕ) [CharP K p] [Fa
   obtain ⟨f₀, hf₀⟩ := LinearMap.mem_range.mp ((exactForms_succ K W 0) ▸ hex.symm ▸ hclosed)
   obtain ⟨c, rfl⟩ := (exteriorPower.zeroEquiv W _).symm.surjective f₀
   exact not_exists_d_eq_X_pow_sub_one_smul_d_X_charP p
-    ⟨c, (exteriorPower.oneEquiv W _).symm.injective (by rwa [exteriorDeriv_zero_symm] at hf₀)⟩
+    ⟨c, (exteriorPower.oneEquiv W _).symm.injective
+      (by rwa [exteriorPowerDeriv_zero_zeroEquiv_symm] at hf₀)⟩
 
 /-- In characteristic `p > 0`, `H¹_dR(K⟨X₀⟩† / K)` is nontrivial. -/
 theorem nontrivial_deRhamCohomology_washnitzer_one_charP (p : ℕ) [CharP K p] [Fact p.Prime] :

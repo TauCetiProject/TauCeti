@@ -13,11 +13,13 @@ public import TauCeti.RingTheory.Dagger.Omega.DeRham.Derivative
 # Coordinate formulas for the overconvergent exterior derivative
 
 Over an arbitrary complete ultrametric normed field `K` (of any characteristic), computes the
-coordinates of `Omega.exteriorDeriv` on the Monsky–Washnitzer algebra `W = K⟨X_σ⟩†` in the
+coordinates of `Omega.exteriorPowerDeriv` on the Monsky–Washnitzer algebra `W = K⟨X_σ⟩†` in the
 exterior-power basis `((washnitzerBasis σ K).exteriorPower _)`:
-`washnitzerBasis_exteriorPower_repr_exteriorDeriv` expands `dω` in terms of partial derivatives
-`pderiv σ K` and shuffle signs `basisEraseSign`, and `exteriorDeriv_one_eq_zero_iff` characterizes
-closed `1`-forms by the curl-free condition `∂ᵢ fⱼ = ∂ⱼ fᵢ`.
+`washnitzerBasis_exteriorPower_ne_zero` records non-vanishing of basis wedges,
+`washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv` expands `dω` in terms of partial
+derivatives `pderiv σ K` and shuffle signs `basisEraseSign`, and
+`exteriorPowerDeriv_one_eq_zero_iff_washnitzer` characterizes closed `1`-forms by the curl-free
+condition `∂ᵢ fⱼ = ∂ⱼ fᵢ`.
 -/
 
 public section
@@ -30,27 +32,37 @@ section CoordinateFormula
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- Over a complete ultrametric normed field `K`, basis monomials `dX_{i₀} ∧ ⋯ ∧ dX_{i_{r-1}}`
-are killed by `exteriorDeriv` in any characteristic. -/
-theorem exteriorDeriv_washnitzerBasis_exteriorPower [Finite σ] [LinearOrder σ] (r : ℕ)
+/-- Over a complete ultrametric normed field `K`, every exterior-power basis wedge
+`dX_{i₀} ∧ ⋯ ∧ dX_{i_{r-1}}` on `washnitzerAlgebra σ K` is nonzero. -/
+theorem washnitzerBasis_exteriorPower_ne_zero [Finite σ] [LinearOrder σ] (r : ℕ)
     (t : Set.powersetCard σ r) :
-    exteriorDeriv K (washnitzerAlgebra σ K) r ((washnitzerBasis σ K).exteriorPower r t) = 0 := by
+    (washnitzerBasis σ K).exteriorPower r t ≠ 0 :=
+  have : Nontrivial (washnitzerAlgebra σ K) :=
+    (FaithfulSMul.algebraMap_injective K (washnitzerAlgebra σ K)).nontrivial
+  ((washnitzerBasis σ K).exteriorPower r).ne_zero t
+
+/-- Over a complete ultrametric normed field `K`, basis monomials `dX_{i₀} ∧ ⋯ ∧ dX_{i_{r-1}}`
+are killed by `exteriorPowerDeriv` in any characteristic. -/
+theorem exteriorPowerDeriv_washnitzerBasis_exteriorPower [Finite σ] [LinearOrder σ] (r : ℕ)
+    (t : Set.powersetCard σ r) :
+    exteriorPowerDeriv K (washnitzerAlgebra σ K) r
+        ((washnitzerBasis σ K).exteriorPower r t) = 0 := by
   have hcomp : (washnitzerBasis σ K) ∘ (Set.powersetCard.ofFinEmbEquiv.symm t) =
       (d K (washnitzerAlgebra σ K)) ∘ (X σ K ∘ Set.powersetCard.ofFinEmbEquiv.symm t) :=
     funext fun _ ↦ washnitzerBasis_apply ..
   rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family, hcomp]
-  exact exteriorDeriv_ιMulti_comp_d _
+  exact exteriorPowerDeriv_ιMulti_comp_d _
 
-private theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul
+private theorem washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv_smul
     [Fintype σ] [LinearOrder σ] (r : ℕ) (t : Set.powersetCard σ r)
     (c : washnitzerAlgebra σ K) (u : Set.powersetCard σ (r + 1)) :
     ((washnitzerBasis σ K).exteriorPower (r + 1)).repr
-        (exteriorDeriv K (washnitzerAlgebra σ K) r
+        (exteriorPowerDeriv K (washnitzerAlgebra σ K) r
           (c • (washnitzerBasis σ K).exteriorPower r t)) u =
       ∑ k : σ, if k ∉ t.val ∧ insert k t.val = u.val then
         basisEraseSign k u.val • pderiv σ K k c else 0 := by
   rw [← (washnitzerBasis σ K).exteriorAlgebra_repr_coe_eq, ← Module.Basis.coord_apply,
-    exteriorDeriv_smul, exteriorDeriv_washnitzerBasis_exteriorPower, smul_zero, add_zero,
+    exteriorPowerDeriv_smul, exteriorPowerDeriv_washnitzerBasis_exteriorPower, smul_zero, add_zero,
     coe_wedgeLeft_apply, ← ExteriorAlgebra.basis_eq_coe_basis]
   conv_lhs => rw [← (washnitzerBasis σ K).sum_repr (d K (washnitzerAlgebra σ K) c)]
   rw [map_sum, Finset.sum_mul, map_sum]
@@ -67,11 +79,11 @@ private theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul
 
 /-- **Coordinate formula for the overconvergent exterior derivative** over a complete ultrametric
 normed field `K` in any characteristic. -/
-theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrder σ]
+theorem washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv [Finite σ] [LinearOrder σ]
     (r : ℕ) (ω : ⋀[washnitzerAlgebra σ K]^r (Omega K (washnitzerAlgebra σ K)))
     (u : Set.powersetCard σ (r + 1)) :
     ((washnitzerBasis σ K).exteriorPower (r + 1)).repr
-        (exteriorDeriv K (washnitzerAlgebra σ K) r ω) u =
+        (exteriorPowerDeriv K (washnitzerAlgebra σ K) r ω) u =
       ∑ k ∈ u.val.attach, basisEraseSign k.val u.val •
         pderiv σ K k.val (((washnitzerBasis σ K).exteriorPower r).repr ω
           (Set.powersetCard.ofCard (s := u.val.erase k.val)
@@ -80,7 +92,7 @@ theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrde
   rw [← Module.Basis.coord_apply]
   conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
   rw [map_sum, map_sum, Finset.sum_congr rfl fun t _ ↦ by
-      rw [Module.Basis.coord_apply, washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul],
+      rw [Module.Basis.coord_apply, washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv_smul],
     Finset.sum_comm, ← Finset.sum_subset (Finset.subset_univ u.val)]
   · rw [← Finset.sum_attach u.val]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -95,16 +107,16 @@ theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrde
       rw [ite_eq_right]; rintro ⟨_, hins⟩; exact hku (hins ▸ Finset.mem_insert_self k t.val)
 
 /-- For `i < j`, the `{i, j}`-coordinate of `dω` for a `1`-form `ω` is `∂ᵢ ωⱼ - ∂ⱼ ωᵢ`. -/
-private theorem washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one [Finite σ] [LinearOrder σ]
-    (ω : Omega K (washnitzerAlgebra σ K)) {i j : σ} (hij : i < j) :
+private theorem washnitzerBasis_exteriorPower_two_repr_exteriorPowerDeriv_one [Finite σ]
+    [LinearOrder σ] (ω : Omega K (washnitzerAlgebra σ K)) {i j : σ} (hij : i < j) :
     ((washnitzerBasis σ K).exteriorPower 2).repr
-        (exteriorDeriv K (washnitzerAlgebra σ K) 1
+        (exteriorPowerDeriv K (washnitzerAlgebra σ K) 1
           ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω))
         (Set.powersetCard.ofCard (Finset.card_pair hij.ne)) =
       pderiv σ K i ((washnitzerBasis σ K).repr ω j) -
         pderiv σ K j ((washnitzerBasis σ K).repr ω i) := by
   set u := Set.powersetCard.ofCard (Finset.card_pair hij.ne)
-  rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv]
+  rw [washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv]
   have hatt : u.val.attach = {⟨i, by simp [u]⟩, ⟨j, by simp [u]⟩} := by
     ext ⟨x, hx⟩; simp only [Finset.mem_attach, Finset.mem_insert, Finset.mem_singleton,
       Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.ofCard] using hx
@@ -128,8 +140,9 @@ private theorem washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one [Finite
 /-- **Curl-free characterization of closed `1`-forms** on `W = K⟨X_σ⟩†` over a complete
 ultrametric normed field `K` (any characteristic): `d(∑ᵢ fᵢ dXᵢ) = 0` iff `∂ᵢ fⱼ = ∂ⱼ fᵢ` for all
 `i, j : σ`. -/
-theorem exteriorDeriv_one_eq_zero_iff [Finite σ] (ω : Omega K (washnitzerAlgebra σ K)) :
-    exteriorDeriv K (washnitzerAlgebra σ K) 1
+theorem exteriorPowerDeriv_one_eq_zero_iff_washnitzer [Finite σ]
+    (ω : Omega K (washnitzerAlgebra σ K)) :
+    exteriorPowerDeriv K (washnitzerAlgebra σ K) 1
         ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω) = 0 ↔
       ∀ i j, pderiv σ K i ((washnitzerBasis σ K).repr ω j) =
         pderiv σ K j ((washnitzerBasis σ K).repr ω i) := by
@@ -139,7 +152,7 @@ theorem exteriorDeriv_one_eq_zero_iff [Finite σ] (ω : Omega K (washnitzerAlgeb
   refine ⟨fun h i j ↦ ?_, fun h u ↦ ?_⟩
   · have hlt {a b : σ} (hab : a < b) : pderiv σ K a ((washnitzerBasis σ K).repr ω b) =
         pderiv σ K b ((washnitzerBasis σ K).repr ω a) := sub_eq_zero.mp <| by
-      simpa [washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hab] using
+      simpa [washnitzerBasis_exteriorPower_two_repr_exteriorPowerDeriv_one ω hab] using
         h (Set.powersetCard.ofCard (Finset.card_pair hab.ne))
     rcases lt_trichotomy i j with hij | rfl | hji; exacts [hlt hij, rfl, (hlt hji).symm]
   · obtain ⟨i, j, hij, hu⟩ := Finset.card_eq_two.mp (Set.powersetCard.card_eq u)
@@ -147,7 +160,8 @@ theorem exteriorDeriv_one_eq_zero_iff [Finite σ] (ω : Omega K (washnitzerAlgeb
     · exact this j i hij.symm (hu.trans (Finset.pair_comm i j))
         (lt_of_le_of_ne (le_of_not_gt hlt) hij.symm)
     have hu' : u = Set.powersetCard.ofCard (Finset.card_pair hlt.ne) := Subtype.ext hu
-    rw [hu', washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hlt, h i j, sub_self]; rfl
+    rw [hu', washnitzerBasis_exteriorPower_two_repr_exteriorPowerDeriv_one ω hlt, h i j, sub_self,
+      Finsupp.coe_zero, Pi.zero_apply]
 
 end CoordinateFormula
 

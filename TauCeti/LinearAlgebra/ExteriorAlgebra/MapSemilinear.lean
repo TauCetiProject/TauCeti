@@ -29,6 +29,13 @@ private noncomputable abbrev algebraOfRingHom (σ : A →+* B) (N : Type*) [AddC
     [Module B N] : Algebra A (ExteriorAlgebra B N) :=
   ((algebraMap B _).comp σ).toAlgebra' fun a x ↦ Algebra.commutes (σ a) x
 
+private theorem algebraOfRingHom_algebraMap (σ : A →+* B) (N : Type*) [AddCommGroup N]
+    [Module B N] (a : A) :
+    letI := algebraOfRingHom σ N
+    algebraMap A (ExteriorAlgebra B N) a = algebraMap B (ExteriorAlgebra B N) (σ a) :=
+  -- `RingHom.toAlgebra'` defines `algebraMap A _` as `(algebraMap B _).comp σ`.
+  rfl
+
 /-- **Semilinear functoriality of the exterior algebra.** A `σ`-semilinear map `g : M →ₛₗ[σ] N`
 induces `ExteriorAlgebra A M →+* ExteriorAlgebra B N` sending `algebraMap a` to `algebraMap (σ a)`
 and `ι A m` to `ι B (g m)`. -/
@@ -36,7 +43,7 @@ noncomputable def mapSemilinear (g : M →ₛₗ[σ] N) :
     ExteriorAlgebra A M →+* ExteriorAlgebra B N :=
   letI := algebraOfRingHom σ N
   (lift A ⟨{ toFun := fun m ↦ ι B (g m), map_add' := fun _ _ ↦ by simp,
-             map_smul' := fun a m ↦ by simp [Algebra.smul_def]; rfl },
+             map_smul' := fun a m ↦ by simp [Algebra.smul_def, algebraOfRingHom_algebraMap] },
     fun m ↦ ι_sq_zero (g m)⟩).toRingHom
 
 @[simp] theorem mapSemilinear_algebraMap (g : M →ₛₗ[σ] N) (a : A) :

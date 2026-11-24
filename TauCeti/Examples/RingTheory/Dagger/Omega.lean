@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.Omega.DeRham.Derivative
+public import TauCeti.RingTheory.Dagger.Omega.DeRham.Coordinates
 public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.Unramified.Field
@@ -74,11 +74,8 @@ theorem injective_quotientMap_doubledOrigin_of_charTwo [CharP K 2] :
     simp [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul W, htwo]
   simp [hd]
 
-end TauCeti.Examples
-
 section KaehlerComparison
 
-open TauCeti.Dagger
 open scoped DualNumber
 
 -- No norm, completeness, separability or reducedness is required for the comparison.
@@ -131,36 +128,38 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
 end KaehlerComparison
 
 section TwoVariableDeRham
-open TauCeti.Dagger TauCeti.Dagger.washnitzerAlgebra
 
-/-- **Explicit two-variable calculation**: on `K⟨X₀, X₁⟩†`, `d(X₀ • dX₁) = dX₀ ∧ dX₁`. -/
-theorem exteriorDeriv_X_zero_smul_d_X_one (K : Type*) [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] :
-    let W := washnitzerAlgebra (Fin 2) K
-    Omega.exteriorDeriv K W 1 (X (Fin 2) K 0 •
-        (exteriorPower.oneEquiv W (Omega K W)).symm (Omega.d K W (X (Fin 2) K 1))) =
-      exteriorPower.ιMulti W 2 ![Omega.d K W (X (Fin 2) K 0), Omega.d K W (X (Fin 2) K 1)] := by
-  intro W
-  rw [show (exteriorPower.oneEquiv W (Omega K W)).symm (Omega.d K W (X (Fin 2) K 1)) =
-      exteriorPower.ιMulti W 1 (Omega.d K W ∘ ![X (Fin 2) K 1]) from
+open TauCeti.Dagger.washnitzerAlgebra
+
+-- Explicit two-variable calculation: on `K⟨X₀, X₁⟩†`, `d(X₀ • dX₁) = dX₀ ∧ dX₁`.
+example :
+    let W₂ := washnitzerAlgebra (Fin 2) K
+    Omega.exteriorPowerDeriv K W₂ 1 (X (Fin 2) K 0 •
+        (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1))) =
+      exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
+  intro W₂
+  rw [show (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1)) =
+      exteriorPower.ιMulti W₂ 1 (Omega.d K W₂ ∘ ![X (Fin 2) K 1]) from
       Subtype.ext <| by simp [exteriorPower.oneEquiv_symm_apply, ExteriorAlgebra.ιMulti_succ_apply],
-    Omega.exteriorDeriv_smul_ιMulti_comp_d]
+    Omega.exteriorPowerDeriv_smul_ιMulti_comp_d]
   congr 1; funext i; fin_cases i <;> rfl
 
-/-- On `K⟨X₀, X₁⟩†`, the `2`-form `dX₀ ∧ dX₁` is nonzero. -/
-theorem d_X_zero_wedge_d_X_one_ne_zero (K : Type*) [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] :
-    let W := washnitzerAlgebra (Fin 2) K
-    exteriorPower.ιMulti W 2 ![Omega.d K W (X (Fin 2) K 0), Omega.d K W (X (Fin 2) K 1)] ≠ 0 := by
-  intro W h0; have : Nontrivial W := (FaithfulSMul.algebraMap_injective K W).nontrivial
+-- On `K⟨X₀, X₁⟩†`, the `2`-form `dX₀ ∧ dX₁` is nonzero.
+example :
+    let W₂ := washnitzerAlgebra (Fin 2) K
+    exteriorPower.ιMulti W₂ 2
+        ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] ≠ 0 := by
+  intro W₂
   let s : Set.powersetCard (Fin 2) 2 := ⟨Finset.univ, by simp⟩
   let e : Fin 2 ↪o Fin 2 := Set.powersetCard.ofFinEmbEquiv.symm s
   have hlt : (e 0 : ℕ) < (e 1 : ℕ) := e.strictMono (by decide)
-  have heq : exteriorPower.ιMulti_family W 2 (Omega.washnitzerBasis (Fin 2) K) s =
-      exteriorPower.ιMulti W 2 ![Omega.d K W (X (Fin 2) K 0), Omega.d K W (X (Fin 2) K 1)] := by
-    rw [exteriorPower.ιMulti_family]; congr 1; funext i; fin_cases i <;>
+  have heq : (Omega.washnitzerBasis (Fin 2) K).exteriorPower 2 s =
+      exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
+    rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family]; congr 1; funext i; fin_cases i <;>
       [have : e 0 = 0 := Fin.ext (by omega); have : e 1 = 1 := Fin.ext (by omega)] <;>
       simp [e, this] <;> rfl
-  have hdiag := exteriorPower.ιMultiDual_apply_diag W 2 (Omega.washnitzerBasis (Fin 2) K) s
-  rw [heq, h0, map_zero] at hdiag; exact zero_ne_one hdiag
+  exact heq ▸ Omega.washnitzerBasis_exteriorPower_ne_zero 2 s
+
 end TwoVariableDeRham
+
+end TauCeti.Examples

@@ -730,11 +730,12 @@ theorem map_toRingHom_eq_mapSemilinear (f : A →ₐ[R] B) :
       ExteriorAlgebra.mapSemilinear (KaehlerDifferential.mapSemilinear f) :=
   ExteriorAlgebra.ringHom_ext
     (fun a ↦ by
-      change (map f : TauCeti.DGAlgHom _ _) (algebraMap A (ExteriorAlgebra A Ω[A⁄R]) a) = _
-      rw [map_algebraMap, ExteriorAlgebra.mapSemilinear_algebraMap]; rfl)
+      rw [RingHom.coe_coe, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom,
+        map_algebraMap, ExteriorAlgebra.mapSemilinear_algebraMap, AlgHom.toRingHom_eq_coe,
+        AlgHom.coe_toRingHom])
     (fun ω ↦ by
-      change (map f : TauCeti.DGAlgHom _ _) (ExteriorAlgebra.ι A ω) = _
-      rw [map_ι, ExteriorAlgebra.mapSemilinear_ι])
+      rw [RingHom.coe_coe, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom,
+        map_ι, ExteriorAlgebra.mapSemilinear_ι])
 
 end Functoriality
 
