@@ -31,9 +31,7 @@ derivations of a not necessarily commutative algebra, with addition written mult
 with the subgroup `TauCeti.infinitesimalDualNumberAut`; its inverse reads off the coefficient of
 `ε` in the image of a constant. The commutative
 `TauCeti.derivationEquivInfinitesimalDualNumberAut` is obtained from it through
-`TauCeti.derivationEquivDerivationLieAlgebra`. The infinitesimal automorphisms of the base change
-`R[ε] ⊗[R] A` over `R[ε]` correspond to these by conjugation with
-`TauCeti.dualNumberAlgebraTensorAlgEquiv`.
+`TauCeti.derivationEquivDerivationLieAlgebra`.
 
 ## References
 
