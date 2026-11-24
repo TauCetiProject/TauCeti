@@ -101,6 +101,12 @@ theorem robbianoSweedlerSubalgebra_def (R : Type*) [CommSemiring R] :
     robbianoSweedlerSubalgebra R = Algebra.adjoin R (Set.range (robbianoSweedlerGen R)) :=
   (rfl)
 
+/-- Each generator `robbianoSweedlerGen R i` belongs to `robbianoSweedlerSubalgebra R`. -/
+theorem robbianoSweedlerGen_mem_robbianoSweedlerSubalgebra (R : Type*) [CommSemiring R]
+    (i : Fin 3) : robbianoSweedlerGen R i ∈ robbianoSweedlerSubalgebra R := by
+  rw [robbianoSweedlerSubalgebra_def]
+  exact Algebra.subset_adjoin ⟨i, rfl⟩
+
 /-- The Robbiano–Sweedler subalgebra is finitely generated as an `R`-algebra. -/
 theorem fg_robbianoSweedlerSubalgebra (R : Type*) [CommSemiring R] :
     (robbianoSweedlerSubalgebra R).FG :=
@@ -145,11 +151,25 @@ theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 
   -- Reduce `f` to a polynomial `p` in `X 1`, then equate its `(X 0, 0)` and `(0, X 0)`
   -- specializations: the former collapses `p` to its constant term, while the latter renames `p`
   -- injectively into `X 0`.
+  have hlhs :
+      aeval ![X 0, (0 : MvPolynomial (Fin 2) R)] (rename (fun _ : Unit ↦ (1 : Fin 2)) p) =
+        rename (fun _ : Unit ↦ (0 : Fin 2)) (C (constantCoeff p)) := by
+    have hcomp :
+        (![X 0, (0 : MvPolynomial (Fin 2) R)] ∘ fun _ : Unit ↦ (1 : Fin 2)) = fun _ ↦ 0 :=
+      funext fun _ ↦ by simp
+    rw [aeval_rename, hcomp, aeval_zero', algebraMap_eq, rename_C]
+  have hrhs :
+      aeval ![(0 : MvPolynomial (Fin 2) R), X 0] (rename (fun _ : Unit ↦ (1 : Fin 2)) p) =
+        rename (fun _ : Unit ↦ (0 : Fin 2)) p := by
+    have hcomp :
+        (![(0 : MvPolynomial (Fin 2) R), X 0] ∘ fun _ : Unit ↦ (1 : Fin 2)) =
+          X ∘ fun _ : Unit ↦ (0 : Fin 2) :=
+      funext fun _ ↦ by simp
+    rw [aeval_rename, hcomp, ← rename_eq_aeval]
   have heq : rename (fun _ : Unit ↦ (0 : Fin 2)) (C (constantCoeff p)) =
       rename (fun _ : Unit ↦ (0 : Fin 2)) p := by
-    have hspec := aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf
-    rw [aeval_rename, aeval_rename] at hspec
-    simpa [Function.comp_def, aeval_zero', algebraMap_eq, rename_eq_aeval] using hspec
+    rw [← hlhs, ← hrhs]
+    exact aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf
   have hp : p = C (constantCoeff p) := (rename_injective _ (fun _ _ _ ↦ rfl) heq).symm
   rw [hp, rename_C, degree_C]
 
@@ -180,19 +200,19 @@ theorem mul_X_one_pow_mem_robbianoSweedlerSubalgebra (n : ℕ) :
   | ind n ih =>
     match n with
     | 0 =>
-      rw [robbianoSweedlerSubalgebra_def, pow_one]
-      exact Algebra.subset_adjoin ⟨1, rfl⟩
+      rw [pow_one, ← robbianoSweedlerGen_one]
+      exact robbianoSweedlerGen_mem_robbianoSweedlerSubalgebra R 1
     | 1 =>
-      rw [robbianoSweedlerSubalgebra_def]
-      exact Algebra.subset_adjoin ⟨2, rfl⟩
+      rw [← robbianoSweedlerGen_two]
+      exact robbianoSweedlerGen_mem_robbianoSweedlerSubalgebra R 2
     | m + 2 =>
       rw [← robbianoSweedler_step_identity (R := R) (m + 1)]
       have hg0 : (X 0 + X 1 : MvPolynomial (Fin 2) R) ∈ robbianoSweedlerSubalgebra R := by
-        rw [robbianoSweedlerSubalgebra_def]
-        exact Algebra.subset_adjoin ⟨0, rfl⟩
+        rw [← robbianoSweedlerGen_zero]
+        exact robbianoSweedlerGen_mem_robbianoSweedlerSubalgebra R 0
       have hg1 : (X 0 * X 1 : MvPolynomial (Fin 2) R) ∈ robbianoSweedlerSubalgebra R := by
-        rw [robbianoSweedlerSubalgebra_def]
-        exact Algebra.subset_adjoin ⟨1, rfl⟩
+        rw [← robbianoSweedlerGen_one]
+        exact robbianoSweedlerGen_mem_robbianoSweedlerSubalgebra R 1
       exact sub_mem (mul_mem hg0 (ih (m + 1) (by omega))) (mul_mem hg1 (ih m (by omega)))
 
 section NoZeroDivisors
@@ -394,13 +414,10 @@ theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontri
       TauCeti.toricIdeal R (fun i ↦ lex.degree (robbianoSweedlerStage R n i)) := by
   rw [robbianoSweedlerBinomial_def]
   refine TauCeti.monomial_sub_monomial_mem_toricIdeal ?_
-  simp only [map_add, Finsupp.linearCombination_single, one_smul, degree_robbianoSweedlerStage]
-  ext d
-  fin_cases d
-  · simp
-  · simp only [Fin.isValue, Fin.reduceFinMk, Finsupp.coe_add, Pi.add_apply, Finsupp.single_apply,
-      Fin.zero_ne_one, ↓reduceIte, Fin.val_zero]
-    omega
+  simp only [map_add, Finsupp.linearCombination_single, one_smul, degree_robbianoSweedlerStage,
+    Fin.val_zero, Finsupp.single_zero, add_zero]
+  rw [← add_assoc, add_add_add_comm (Finsupp.single (0 : Fin 2) 1),
+    ← Finsupp.single_add (1 : Fin 2), show 1 + (n + 1) = n + 2 by omega]
 
 /-- Evaluating `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields the next
 monomial `X 0 * X 1 ^ (n + 3)`. -/
@@ -412,16 +429,12 @@ theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) 
         (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
         robbianoSweedlerStage R n a * robbianoSweedlerStage R n b := by
     rw [monomial_add_single, ← X, pow_one, map_mul, aeval_X, aeval_X]
-  rw [robbianoSweedlerBinomial_def, map_sub, hmul, hmul]
-  have h1 : (⟨1, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero 0)
-  have hn1 : (⟨n + 1, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero n)
-  have hn2 : (⟨n + 2, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero (n + 1))
-  rw [robbianoSweedlerStage_apply_zero, robbianoSweedlerStage_apply_of_ne_zero R n hn2,
-    robbianoSweedlerStage_apply_of_ne_zero R n h1,
-    robbianoSweedlerStage_apply_of_ne_zero R n hn1]
-  dsimp only
-  rw [pow_one]
-  exact robbianoSweedler_step_identity (R := R) (n + 1)
+  have hstage (k : ℕ) (hk : k + 1 < n + 3) :
+      robbianoSweedlerStage R n ⟨k + 1, hk⟩ = X 0 * X 1 ^ (k + 1) := by
+    simp
+  rw [robbianoSweedlerBinomial_def, map_sub, hmul, hmul,
+    robbianoSweedlerStage_apply_zero, hstage 0, hstage n, hstage (n + 1)]
+  ring
 
 /-- At every stage `n` over a nontrivial commutative ring, evaluating the toric binomial
 `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields a polynomial that admits a

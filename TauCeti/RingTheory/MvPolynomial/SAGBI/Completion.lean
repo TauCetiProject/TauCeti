@@ -686,6 +686,14 @@ private theorem monic_of_subductionStep
   | zero => exact hG
   | succ n ih => exact (hstep n).monic ih
 
+private theorem adjoin_eq_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
+    (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) (n : ℕ) :
+    Algebra.adjoin k (G n) = Algebra.adjoin k (G 0) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [(hstep n).adjoin_eq (hf n), ih]
+
 private theorem isFairSAGBISequence_of_subductionStep
     (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
     (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) (hG : ∀ g ∈ G 0, m.Monic g)
@@ -732,9 +740,8 @@ theorem isSAGBIBasis_iUnion_of_subductionStep
     m.IsSAGBIBasis (⋃ n, G n) (Algebra.adjoin k (G 0)) := by
   have hseq := isFairSAGBISequence_of_subductionStep hstep hf hG hJ hfair
   refine IsSAGBIBasis.mk (Set.iUnion_subset fun n ↦ ?_) ?_
-  · have h := hseq.adjoin_eq n
-    simp only [Subtype.range_coe] at h
-    exact h ▸ Algebra.subset_adjoin
+  · rw [← adjoin_eq_of_subductionStep hstep hf n]
+    exact Algebra.subset_adjoin
   · have hsup := hseq.iSup_adjoin_leadingTerm_eq_initialAlgebra
     simp only [Subtype.range_coe] at hsup
     rw [Set.image_iUnion, Algebra.adjoin_iUnion, hsup]
@@ -754,19 +761,17 @@ theorem exists_isSAGBIBasis_of_subductionStep
     (hfg : (m.initialAlgebra (Algebra.adjoin k (G 0))).FG) :
     ∃ N, m.IsSAGBIBasis (G N) (Algebra.adjoin k (G 0)) ∧ ∀ n, N ≤ n → G n = G N := by
   have hseq := isFairSAGBISequence_of_subductionStep hstep hf hG hJ hfair
-  obtain ⟨N, hN⟩ := hseq.exists_isSAGBIBasis_of_fg
-    (fg_initialAlgebra_iff_fg_leadingExponents.mp (by simpa only [Subtype.range_coe] using hfg))
-  have hN' : m.IsSAGBIBasis (G N) (Algebra.adjoin k (G 0)) := by
-    simpa only [Subtype.range_coe] using hN N le_rfl
-  refine ⟨N, hN', fun i hi ↦ ?_⟩
+  have hfg' : (m.leadingExponents (Algebra.adjoin k (Set.range fun g : G 0 ↦ g.val))).FG := by
+    rw [Subtype.range_coe]
+    exact fg_initialAlgebra_iff_fg_leadingExponents.mp hfg
+  obtain ⟨N, hN⟩ := hseq.exists_isSAGBIBasis_of_fg hfg'
+  simp only [Subtype.range_coe] at hN
+  refine ⟨N, hN N le_rfl, fun i hi ↦ ?_⟩
   induction i, hi using Nat.le_induction with
   | base => rfl
   | succ i hi ih =>
-    have hfi : f i ∈ Algebra.adjoin k (G 0) := by
-      have h := hseq.adjoin_eq i
-      simp only [Subtype.range_coe] at h
-      exact h ▸ hf i
-    rw [(hstep i).eq_of_isSAGBIBasis (by simpa only [Subtype.range_coe] using hN i hi) hfi, ih]
+    have hfi : f i ∈ Algebra.adjoin k (G 0) := adjoin_eq_of_subductionStep hstep hf i ▸ hf i
+    rw [(hstep i).eq_of_isSAGBIBasis (hN i hi) hfi, ih]
 
 end Run
 
