@@ -21,9 +21,10 @@ principal symbol is elliptic.
 
 The samples of the full Hardy symbol at `2πn` are the indicator of the positive integers.
 The corresponding multiplier is the projection onto the strictly positive Fourier modes.
-The operator `circleFourierIndexSymbolOperator` realizes the full circle index symbol on every
-Fourier mode. Its difference from the original operator is supported on the
-constant input mode, and the finite-rank perturbation preserves the index `-1`.
+For every cutoff the full circle index symbol sends mode `n` to mode `n + 1` for `n > 0`
+and fixes the other modes. The operator `circleFourierIndexSymbolOperator` realizes this action
+on the Fourier basis. Its difference from the original operator is supported on the constant
+input mode, and the finite-rank perturbation preserves the index `-1`.
 
 The circle projection and operator come from Atiyah–Singer, *The Index of Elliptic Operators: I*,
 §8, pp. 525–526. The homogeneous branch arguments are adapted from `PeriodicFourierSymbol.lean`
@@ -228,61 +229,39 @@ theorem projection_Ioi_eq_diagonal_circleHardyProjectionSample
   rw [HilbertBasis.projection_eq_diagonal _ _ h]
   exact congrArg _ (Subtype.ext (circleHardyProjectionSample_eq_indicator ρ).symm)
 
-/-- The bounded circle index operator built from the support of the sampled full Hardy symbol. -/
-def circleFourierIndexSymbolOperator (ρ : FrequencyCutoff (CoordinateSpace 1)) : L² →L[ℂ] L² :=
-  let Qρ := (fourierBasis (T := 1)).projection (Function.support (circleHardyProjectionSample ρ))
-  (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) ∘L Qρ) +
-    (ContinuousLinearMap.id ℂ _ - Qρ)
-
-/-- The lattice support selects exactly the positive modes for multiplication by the first mode. -/
-theorem circleFourierIndexSymbolOperator_apply (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (f : L²) : circleFourierIndexSymbolOperator ρ f = fourierLp (T := 1) ∞ 1 • Q f + (f - Q f) := by
-  simp [circleFourierIndexSymbolOperator, circleHardyProjectionSample_eq_indicator,
-    Lp.multiplicationOperator_apply]
-
-/-- The continuous representative of the symbol action on the Fourier mode of index `n`. -/
-def circleFourierIndexSymbolMode (ρ : FrequencyCutoff (CoordinateSpace 1)) (n : ℤ) :
-    C(AddCircle (1 : ℝ), ℂ) :=
-  (1 - circleHardyProjectionSample ρ n) • fourier n +
-    circleHardyProjectionSample ρ n • fourier (n + 1)
-
-/-- Evaluate the continuous representative as a linear combination of consecutive modes. -/
-@[simp]
-theorem circleFourierIndexSymbolMode_apply (ρ : FrequencyCutoff (CoordinateSpace 1)) (n : ℤ)
-    (x : AddCircle (1 : ℝ)) : circleFourierIndexSymbolMode ρ n x =
-      (1 - circleHardyProjectionSample ρ n) * fourier n x +
-        circleHardyProjectionSample ρ n * fourier (n + 1) x := by
-  simp only [circleFourierIndexSymbolMode, ContinuousMap.add_apply, ContinuousMap.smul_apply,
-    smul_eq_mul]
-
-/-- At each real position the continuous mode representative is obtained by evaluating the full
-symbol at the corresponding angular frequency. -/
-theorem circleFourierIndexSymbolMode_coe_apply (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (n : ℤ) (x : ℝ) : circleFourierIndexSymbolMode ρ n ↑x =
-      (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * Real.pi * (n : ℝ)))
-        (fourier (T := 1) n ↑x) := by
-  rw [circleFourierIndexSymbolMode_apply, coefficient_toSymbol_circleFourierIndexSymbol]
+/-- At angular frequency `2πn` the full index symbol sends the character of index `n` to
+the next character for `n > 0` and fixes it for `n ≤ 0`. -/
+@[simp↓]
+theorem coefficient_toSymbol_circleFourierIndexSymbol_apply_fourier
+    (ρ : FrequencyCutoff (CoordinateSpace 1)) (n : ℤ) (x : ℝ) :
+    (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * Real.pi * (n : ℝ)))
+      (fourier (T := 1) n ↑x) = fourier (T := 1) (if 0 < n then n + 1 else n) ↑x := by
+  rw [coefficient_toSymbol_circleFourierIndexSymbol]
   simp only [LinearIsometryEquiv.symm_apply_apply]
-  rw [← circleHardyProjectionSample_eq_cutoff, fourier_add]
+  rw [← circleHardyProjectionSample_eq_cutoff, circleHardyProjectionSample_eq]
   simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
-  ring
+  by_cases hn : 0 < n
+  · simp only [ite_eq_left hn, fourier_add]
+    ring
+  · simp [hn]
 
-/-- The L² class of the symbol action shifts the strictly positive modes and fixes the others. -/
+/-- The bounded operator realizing the circle index symbol on the Fourier lattice.
+It multiplies the strictly positive projection by the first character and fixes its complement. -/
+def circleFourierIndexSymbolOperator : L² →L[ℂ] L² :=
+  (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) ∘L Q) +
+    (ContinuousLinearMap.id ℂ _ - Q)
+
+/-- Apply the circle index symbol operator to a function using its positive-frequency part. -/
+theorem circleFourierIndexSymbolOperator_apply (f : L²) :
+    circleFourierIndexSymbolOperator f = fourierLp (T := 1) ∞ 1 • Q f + (f - Q f) := by
+  simp [circleFourierIndexSymbolOperator, Lp.multiplicationOperator_apply]
+
+/-- The circle index symbol operator shifts strictly positive Fourier modes and fixes the others. -/
 @[simp]
-theorem toLp_circleFourierIndexSymbolMode (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (n : ℤ) : ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (circleFourierIndexSymbolMode ρ n) =
+theorem circleFourierIndexSymbolOperator_fourierLp (n : ℤ) :
+    circleFourierIndexSymbolOperator (fourierLp (T := 1) 2 n) =
       fourierLp (T := 1) 2 (if 0 < n then n + 1 else n) := by
-  simp only [circleFourierIndexSymbolMode, map_add, map_smul, fourierLp,
-    circleHardyProjectionSample_eq]
-  split_ifs <;> simp
-
-/-- On every Fourier mode the cutoff operator is the `L²` class of the symbol evaluation. -/
-@[simp]
-theorem circleFourierIndexSymbolOperator_fourierLp (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (n : ℤ) : circleFourierIndexSymbolOperator ρ (fourierLp (T := 1) 2 n) =
-      ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (circleFourierIndexSymbolMode ρ n) := by
-  rw [circleFourierIndexSymbolOperator_apply, fourierBasis_projection_fourierLp,
-    toLp_circleFourierIndexSymbolMode]
+  rw [circleFourierIndexSymbolOperator_apply, fourierBasis_projection_fourierLp]
   by_cases hn : 0 < n <;> simp [hn, fourierLp_smul_fourierLp, add_comm 1 n]
 
 /-- The Hardy projection and the strictly positive projection differ by the constant mode. -/
@@ -305,9 +284,8 @@ theorem hardySubmodule_starProjection_sub_projection_Ioi :
   · simp [hn, hn.ne', hn.le]
 
 /-- The difference of the original circle operator and the sampled symbol operator is rank one. -/
-theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ =
+theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator :
+    circleFourierIndexOperator - circleFourierIndexSymbolOperator =
       InnerProductSpace.rankOne ℂ (fourierBasis (T := 1) 1 - fourierBasis (T := 1) 0)
         (fourierBasis (T := 1) 0) := by
   let M := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) (p := 2)
@@ -328,60 +306,53 @@ theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
 
 /-- The original operator minus the sampled operator sends each input to its zeroth Fourier
 coefficient times the difference between the first and constant modes. -/
-theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) (f : L²) :
-    (circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ) f =
+theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply (f : L²) :
+    (circleFourierIndexOperator - circleFourierIndexSymbolOperator) f =
       fourierCoeff f 0 • (fourierBasis (T := 1) 1 - fourierBasis (T := 1) 0) := by
   rw [circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator,
     InnerProductSpace.rankOne_apply, inner_fourierBasis_left]
 
-/-- The original circle operator acts by the cutoff symbol on every nonconstant mode and sends
-the constant mode to the first mode. -/
-theorem circleFourierIndexOperator_fourierBasis_eq_toLp_add
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) (n : ℤ) :
+/-- The original circle operator agrees with the sampled symbol on every nonconstant mode and
+sends the constant mode to the first mode. -/
+theorem circleFourierIndexOperator_fourierBasis_eq_fourierLp_add (n : ℤ) :
     circleFourierIndexOperator (fourierBasis (T := 1) n) =
-      ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (circleFourierIndexSymbolMode ρ n) +
+      fourierLp (T := 1) 2 (if 0 < n then n + 1 else n) +
         (if n = 0 then fourierBasis (T := 1) 1 - fourierBasis (T := 1) 0 else 0) := by
-  have h := circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply ρ
-    (fourierBasis (T := 1) n)
+  have h := circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply (fourierBasis n)
   rw [sub_apply, sub_eq_iff_eq_add'] at h
   simpa only [coe_fourierBasis, circleFourierIndexSymbolOperator_fourierLp, fourierCoeff_fourierLp,
     eq_comm (a := (0 : ℤ)) (b := n), ite_smul, one_smul, zero_smul] using h
 
-/-- The difference of the original and cutoff circle index operators has complex rank one. -/
-theorem rank_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    (circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ).rank = 1 := by
+/-- The difference of the original and sampled circle index operators has complex rank one. -/
+theorem rank_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator :
+    (circleFourierIndexOperator - circleFourierIndexSymbolOperator).rank = 1 := by
   rw [circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator]
   have hb : Orthonormal ℂ (fourierBasis (T := 1)) := (fourierBasis (T := 1)).orthonormal
   exact InnerProductSpace.rank_rankOne
     (sub_ne_zero.mpr (hb.linearIndependent.injective.ne (by decide))) (hb.ne_zero 0)
 
-/-- The difference of the original operator and the cutoff operator has finite range. -/
-theorem hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    (circleFourierIndexOperator -
-      circleFourierIndexSymbolOperator ρ).toLinearMap.HasFiniteRange := by
-  have h : (circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ).rank <
+/-- The difference of the original and sampled circle index operators has finite range. -/
+theorem hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator :
+    (circleFourierIndexOperator - circleFourierIndexSymbolOperator).toLinearMap.HasFiniteRange := by
+  have h : (circleFourierIndexOperator - circleFourierIndexSymbolOperator).rank <
       Cardinal.aleph0 := by
     rw [rank_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator]
     exact Cardinal.one_lt_aleph0
   have := Module.rank_lt_aleph0_iff.mp h
   exact Submodule.FG.of_finite
 
-/-- The cutoff circle index operator is Fredholm. -/
-theorem isFredholm_circleFourierIndexSymbolOperator (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    (circleFourierIndexSymbolOperator ρ).IsFredholm := by
-  have h := (hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator ρ).neg
+/-- The sampled circle index operator is Fredholm. -/
+theorem isFredholm_circleFourierIndexSymbolOperator :
+    circleFourierIndexSymbolOperator.IsFredholm := by
+  have h := hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator.neg
   simpa [neg_sub] using isFredholm_circleFourierIndexOperator.add_hasFiniteRange
-    (v := -(circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ)) h
+    (v := -(circleFourierIndexOperator - circleFourierIndexSymbolOperator)) h
 
-/-- The cutoff circle index operator has Fredholm index `-1` for every cutoff. -/
-theorem index_circleFourierIndexSymbolOperator (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    (circleFourierIndexSymbolOperator ρ).index = -1 := by
-  have h := (hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator ρ).neg
+/-- The sampled circle index operator has Fredholm index `-1`. -/
+theorem index_circleFourierIndexSymbolOperator : circleFourierIndexSymbolOperator.index = -1 := by
+  have h := hasFiniteRange_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator.neg
   have heq := ContinuousLinearMap.index_add_of_hasFiniteRange
-    (K := -(circleFourierIndexOperator - circleFourierIndexSymbolOperator ρ))
+    (K := -(circleFourierIndexOperator - circleFourierIndexSymbolOperator))
     isFredholm_circleFourierIndexOperator h
   simpa [neg_sub, index_circleFourierIndexOperator] using heq
 
