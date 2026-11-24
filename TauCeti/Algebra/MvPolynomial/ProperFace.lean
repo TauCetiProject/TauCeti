@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import TauCeti.Algebra.BigOperators.ProperFace
+public import TauCeti.Data.Finsupp.Multiset
 
 /-!
 # Proper-face polynomials
@@ -23,6 +24,8 @@ subsets `s`, so the top monomial `∏_i X_i` is missing.
 ## Main results
 
 * `TauCeti.eval_properFacePolynomial`: evaluation gives the proper-face sum.
+* `TauCeti.properFacePolynomial_eq_properFaceSum`: the polynomial is the proper-face sum of the
+  constants `C (c s)` at the variables `X`; the linearity lemmas below follow from this.
 * `TauCeti.properFacePolynomial_add`, `TauCeti.properFacePolynomial_smul`,
   `TauCeti.properFacePolynomial_sum`: linearity in the coefficients.
 * `TauCeti.coeff_properFacePolynomial`, `TauCeti.coeff_sum_single_properFacePolynomial`,
@@ -59,42 +62,59 @@ theorem eval_properFacePolynomial (c : Finset ι → R) (x : ι → R) :
     eval x (properFacePolynomial c) = properFaceSum c x := by
   simp [properFacePolynomial, properFaceSum_def]
 
+/-- The proper-face polynomial is the proper-face sum of the constant coefficients `C (c s)`
+evaluated at the variables `X`. -/
+theorem properFacePolynomial_eq_properFaceSum (c : Finset ι → R) :
+    properFacePolynomial c = properFaceSum (fun s ↦ C (c s)) X := by
+  rw [properFacePolynomial_def, properFaceSum_def]
+
 @[simp]
 theorem properFacePolynomial_zero : properFacePolynomial (0 : Finset ι → R) = 0 := by
-  simp [properFacePolynomial]
+  simp [properFacePolynomial_eq_properFaceSum, ← Pi.zero_def]
 
 @[simp]
 theorem properFacePolynomial_add (c d : Finset ι → R) :
     properFacePolynomial (c + d) = properFacePolynomial c + properFacePolynomial d := by
-  simp [properFacePolynomial, add_mul, sum_add_distrib]
+  simp only [properFacePolynomial_eq_properFaceSum, ← properFaceSum_add]
+  congr 1
+  ext s : 1
+  simp
 
 @[simp]
 theorem properFacePolynomial_smul (a : R) (c : Finset ι → R) :
     properFacePolynomial (a • c) = a • properFacePolynomial c := by
-  simp [properFacePolynomial, smul_sum, smul_eq_C_mul, mul_assoc]
+  rw [properFacePolynomial_eq_properFaceSum, properFacePolynomial_eq_properFaceSum, smul_eq_C_mul,
+    ← properFaceSum_smul]
+  congr 1
+  ext s : 1
+  simp
 
 @[simp]
 theorem properFacePolynomial_sum {α : Type*} (t : Finset α) (c : α → Finset ι → R) :
     properFacePolynomial (∑ j ∈ t, c j) = ∑ j ∈ t, properFacePolynomial (c j) := by
-  simp only [properFacePolynomial, Finset.sum_apply, map_sum, sum_mul]
-  exact sum_comm
+  simp only [properFacePolynomial_eq_properFaceSum, ← properFaceSum_sum]
+  congr 1
+  ext s : 1
+  simp
 
 /-- A single coefficient at a proper subset `s` contributes exactly `C a * ∏_{i ∈ s} X_i`; at
 the full subset it contributes nothing. -/
 theorem properFacePolynomial_single (s : Finset ι) (a : R) :
     properFacePolynomial (Pi.single s a) = if s = univ then 0 else C a * ∏ i ∈ s, X i := by
-  rw [properFacePolynomial]
-  split_ifs with hs
-  · exact sum_eq_zero fun t ht ↦ by
-      rw [Pi.single_eq_of_ne (hs ▸ (mem_ssubsets.1 ht).ne), C_0, zero_mul]
-  · rw [sum_eq_single_of_mem s (mem_ssubsets.2 (ssubset_univ_iff.2 hs)) fun t _ hts ↦ by
-      rw [Pi.single_eq_of_ne hts, C_0, zero_mul], Pi.single_eq_same]
+  rw [properFacePolynomial_eq_properFaceSum, ← properFaceSum_single]
+  congr 1
+  ext t : 1
+  simp only [Pi.single_apply, apply_ite C, C_0]
 
 /-- The coefficient at the full subset does not affect the proper-face polynomial. -/
 @[simp]
 theorem properFacePolynomial_update_univ (c : Finset ι → R) (a : R) :
-    properFacePolynomial (Function.update c univ a) = properFacePolynomial c :=
-  sum_congr rfl fun s hs ↦ by rw [Function.update_of_ne (mem_ssubsets.1 hs).ne]
+    properFacePolynomial (Function.update c univ a) = properFacePolynomial c := by
+  rw [properFacePolynomial_eq_properFaceSum, properFacePolynomial_eq_properFaceSum,
+    ← properFaceSum_update_univ (fun s ↦ C (c s)) (C a)]
+  congr 1
+  ext t : 1
+  simp only [Function.update_apply, apply_ite C]
 
 /-- The coefficient of a monomial `m` in a proper-face polynomial is the sum of the
 coefficients `c_s` over the proper subsets `s` with `m = ∑_{i ∈ s} e_i`. -/
@@ -109,15 +129,8 @@ theorem coeff_properFacePolynomial (m : ι →₀ ℕ) (c : Finset ι → R) :
 theorem coeff_sum_single_properFacePolynomial (s : Finset ι) (c : Finset ι → R) :
     (properFacePolynomial c).coeff (∑ i ∈ s, Finsupp.single i 1) =
       if s = univ then 0 else c s := by
-  have hinj : ∀ t : Finset ι,
-      ∑ i ∈ t, Finsupp.single i 1 = ∑ i ∈ s, Finsupp.single i 1 ↔ t = s := fun t ↦ by
-    refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-    ext j
-    have := congr($h j)
-    simp only [Finset.sum_apply', Finsupp.single_apply, sum_ite_eq'] at this
-    split_ifs at this <;> simp_all
   rw [coeff_properFacePolynomial]
-  simp only [hinj, filter_eq', mem_ssubsets, ssubset_univ_iff]
+  simp only [Finsupp.sum_single_one_injective.eq_iff, filter_eq', mem_ssubsets, ssubset_univ_iff]
   split_ifs <;> simp_all
 
 /-- The top monomial `∏_i X_i` does not occur in a proper-face polynomial. -/
