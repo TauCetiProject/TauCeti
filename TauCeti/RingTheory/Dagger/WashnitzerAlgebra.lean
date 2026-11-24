@@ -576,7 +576,9 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
       ⟨h0, fun t ht ↦ ?_⟩
     simpa only [map_sub, coeff_C, ht, ↓reduceIte, sub_zero,
       Finsupp.prod_pow_eq_pow_degree] using hρt t
-  exact hg.map (washnitzerAlgebra.ofRestricted hρ (fun _ ↦ le_rfl))
+  have hfg : washnitzerAlgebra.ofRestricted hρ (fun _ ↦ le_rfl) g = f :=
+    Subtype.ext (washnitzerAlgebra.coe_ofRestricted _ _ g)
+  exact hfg ▸ hg.map _
 
 /-- An overconvergent series is a unit of the Tate algebra iff it is a unit of the
 Monsky–Washnitzer algebra: the Tate-algebra inverse of an overconvergent series, when it exists, is
