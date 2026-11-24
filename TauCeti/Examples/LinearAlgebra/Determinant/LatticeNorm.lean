@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.LatticeNorm
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.RingTheory.Norm.Basic
 
 /-!
 # Examples of determinant-lattice norms
