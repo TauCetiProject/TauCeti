@@ -195,11 +195,9 @@ theorem initialJet_surjective_of_isSimplyConnected (hU : IsSimplyConnected (U : 
   obtain ⟨φ, rfl⟩ := initialJetGerm_surjective (E := E) ha v
   obtain ⟨y, hy, hyφ⟩ := (mem_solutionGerms_iff ha).mp φ.property
   obtain ⟨F, hF, hFy⟩ := hy.exists_isSolution hU
-  have hext : HolomorphicFunctions.extend hF.toSolutionSpace.val =ᶠ[𝓝 a] y :=
-    (hF.eqOn_extend_toSolutionSpace.eventuallyEq_of_mem (U.isOpen.mem_nhds ha)).trans hFy
   refine ⟨hF.toSolutionSpace, funext fun j ↦ ?_⟩
-  rw [initialJet_apply, initialJetGerm_apply ha φ hyφ.symm j]
-  exact hext.iteratedDeriv_eq j
+  rw [hF.initialJet_toSolutionSpace ha, initialJetGerm_apply ha φ hyφ.symm j]
+  exact hFy.iteratedDeriv_eq j
 
 variable (E) in
 /-- **The initial-jet isomorphism on a simply connected domain.** On a simply connected domain, the

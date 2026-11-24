@@ -293,6 +293,12 @@ theorem IsSolution.eqOn_extend_toSolutionSpace (hy : E.IsSolution y) :
     EqOn (HolomorphicFunctions.extend hy.toSolutionSpace.val) y U :=
   fun _ hz ↦ HolomorphicFunctions.extend_of _ hz
 
+/-- The initial jet of a bundled solution is the jet of unscaled derivatives of the solution. -/
+@[simp]
+theorem IsSolution.initialJet_toSolutionSpace (hy : E.IsSolution y) {a : ℂ} (ha : a ∈ U) :
+    E.initialJet ha hy.toSolutionSpace = fun j : Fin n ↦ iteratedDeriv j y a :=
+  funext (HolomorphicFunctions.jet_of ha n _ _)
+
 /-- The first coordinate of a companion-system solution, bundled on the domain as a
 scalar solution. -/
 def IsCompanionSolution.toSolutionSpace {v : ℂ → Fin n → ℂ}
