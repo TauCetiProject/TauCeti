@@ -277,18 +277,18 @@ namespace Submodule
 open Module
 open scoped InnerProductSpace
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {e : F}
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {e : F}
 
 /-- The orthogonal projection onto `e^⊥` removes the `e` component. -/
 theorem coe_orthogonalProjectionOnto_orthogonal_singleton (he : ‖e‖ = 1) (y : F) :
-    ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto y : F) = y - ⟪e, y⟫_ℝ • e := by
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto y : F) = y - ⟪e, y⟫_𝕜 • e := by
   rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ he]
+    Submodule.starProjection_unit_singleton 𝕜 he]
 
 /-- The projection of `k + c e` onto `e^⊥` is `k`, without a unit-norm assumption. -/
 @[simp]
-theorem orthogonalProjectionOnto_add_smul (k : (ℝ ∙ e)ᗮ) (c : ℝ) :
-    (ℝ ∙ e)ᗮ.orthogonalProjectionOnto ((k : F) + c • e) = k := by
+theorem orthogonalProjectionOnto_add_smul (k : (𝕜 ∙ e)ᗮ) (c : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((k : F) + c • e) = k := by
   simp [map_add, map_smul, orthogonalProjectionOnto_mem_subspace_eq_self,
     orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
 

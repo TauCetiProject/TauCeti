@@ -64,11 +64,11 @@ theorem nonempty_translatedGraph_inter_range_coe_sphere_iff (hn : 1 ≤ n) (he :
       _ ≤ ‖e‖ * ‖(x : F)‖ := real_inner_le_norm _ _
       _ = 1 := by rw [he, hx, one_mul]
   · intro ht1
-    obtain ⟨w, hw, hworth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-      (𝕜 := ℝ) ({e} : Finset F) (by
-        rw [Finset.card_singleton, (Fact.out : finrank ℝ F = n + 1)]
+    obtain ⟨w, hw⟩ := exists_norm_eq_one_mem_orthogonal_singleton (𝕜 := ℝ) e (by
+        rw [(Fact.out : finrank ℝ F = n + 1)]
         omega)
-    have hew : ⟪e, w⟫_ℝ = 0 := hworth e (by simp)
+    have hew : ⟪e, (w : F)⟫_ℝ = 0 :=
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 w.property
     set y : F := t • e + √(1 - t ^ 2) • (w : F)
     have hs : √(1 - t ^ 2) ^ 2 = 1 - t ^ 2 := Real.sq_sqrt (by nlinarith)
     have hy : ‖y‖ = 1 := by
@@ -130,6 +130,13 @@ theorem heightAboveGraph_oneSubExpNegSqGraph (he : ‖e‖ = 1) (k : (ℝ ∙ e)
     heightAboveGraph e (fun _ ↦ 0) (oneSubExpNegSqGraph e k) = 1 - Real.exp (-‖(k : F)‖ ^ 2) := by
   rw [oneSubExpNegSqGraph, heightAboveGraph_add_smul he, sub_zero]
 
+omit [FiniteDimensional ℝ F] in
+/-- The exponential graph has norm at least that of its transverse coordinate. -/
+theorem norm_le_norm_oneSubExpNegSqGraph (k : (ℝ ∙ e)ᗮ) :
+    ‖k‖ ≤ ‖oneSubExpNegSqGraph e k‖ := by
+  simpa only [oneSubExpNegSqGraph, Submodule.orthogonalProjectionOnto_add_smul] using
+    (ℝ ∙ e)ᗮ.norm_orthogonalProjectionOnto_apply_le (oneSubExpNegSqGraph e k)
+
 /-- The graph `oneSubExpNegSqGraph e` is a proper map. -/
 theorem isProperMap_oneSubExpNegSqGraph : IsProperMap (oneSubExpNegSqGraph e) := by
   have hc : Continuous (oneSubExpNegSqGraph e) := by
@@ -141,10 +148,7 @@ theorem isProperMap_oneSubExpNegSqGraph : IsProperMap (oneSubExpNegSqGraph e) :=
     (isBounded_closedBall (x := 0) (r := R) |>.subset fun k hk ↦ ?_)
   have h := mem_closedBall_zero_iff.1 (hR hk)
   rw [mem_closedBall_zero_iff]
-  have hnorm : ‖k‖ ≤ ‖oneSubExpNegSqGraph e k‖ := by
-    simpa only [oneSubExpNegSqGraph, Submodule.orthogonalProjectionOnto_add_smul] using
-      (ℝ ∙ e)ᗮ.norm_orthogonalProjectionOnto_apply_le (oneSubExpNegSqGraph e k)
-  exact hnorm.trans h
+  exact (norm_le_norm_oneSubExpNegSqGraph k).trans h
 
 omit [FiniteDimensional ℝ F] in
 /-- **Contact times of the exponential graph.** For `t < 1`, `oneSubExpNegSqGraph e k` lies on
@@ -175,11 +179,7 @@ theorem nonempty_translatedGraph_inter_range_oneSubExpNegSqGraph_iff (he : ‖e�
     rw [← hy.2]
     linarith [Real.exp_pos (-‖(k : F)‖ ^ 2)]
   · intro ht1
-    obtain ⟨v, hv, hvorth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-      (𝕜 := ℝ) ({e} : Finset F) (by simp; omega)
-    let w : (ℝ ∙ e)ᗮ := ⟨v, Submodule.mem_orthogonal_singleton_iff_inner_right.2
-      (hvorth e (by simp))⟩
-    have hw : ‖(w : F)‖ = 1 := hv
+    obtain ⟨w, hw⟩ := exists_norm_eq_one_mem_orthogonal_singleton (𝕜 := ℝ) e hF
     have hl : 0 ≤ -Real.log (1 - t) :=
       neg_nonneg.2 (Real.log_nonpos (by linarith) (by linarith))
     refine ⟨_, (oneSubExpNegSqGraph_mem_translatedGraph_iff he ht1 (√(-Real.log (1 - t)) • w)).2 ?_,
@@ -206,11 +206,7 @@ theorem not_isBounded_and_not_exists_firstContact_oneSubExpNegSqGraph (he : ‖e
     nonempty_translatedGraph_inter_range_oneSubExpNegSqGraph_iff he hF ht
   refine ⟨fun hb ↦ ?_, fun ⟨t₀, ht₀, hne, hmax⟩ ↦ ?_⟩
   · obtain ⟨R, hR⟩ := hb.subset_closedBall 0
-    obtain ⟨v, hv, hvorth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-      (𝕜 := ℝ) ({e} : Finset F) (by simp; omega)
-    let w : (ℝ ∙ e)ᗮ := ⟨v, Submodule.mem_orthogonal_singleton_iff_inner_right.2
-      (hvorth e (by simp))⟩
-    have hw : ‖(w : F)‖ = 1 := hv
+    obtain ⟨w, hw⟩ := exists_norm_eq_one_mem_orthogonal_singleton (𝕜 := ℝ) e hF
     set k : (ℝ ∙ e)ᗮ := (|R| + 1) • w
     have hk : oneSubExpNegSqGraph e k ∈ ⋃ t ∈ Icc (0 : ℝ) 2,
         translatedGraph e univ (fun _ ↦ 0) t ∩ range (oneSubExpNegSqGraph e) := by
@@ -221,9 +217,7 @@ theorem not_isBounded_and_not_exists_firstContact_oneSubExpNegSqGraph (he : ‖e
       rw [mem_translatedGraph_iff he, heightAboveGraph_oneSubExpNegSqGraph he]
       exact ⟨mem_univ _, rfl⟩
     have h1 := mem_closedBall_zero_iff.1 (hR hk)
-    have h2 : ‖k‖ ≤ ‖oneSubExpNegSqGraph e k‖ := by
-      simpa only [oneSubExpNegSqGraph, Submodule.orthogonalProjectionOnto_add_smul] using
-        (ℝ ∙ e)ᗮ.norm_orthogonalProjectionOnto_apply_le (oneSubExpNegSqGraph e k)
+    have h2 := norm_le_norm_oneSubExpNegSqGraph k
     have h3 : ‖k‖ = |R| + 1 := by
       rw [norm_smul, ← Submodule.norm_coe w, hw, mul_one, Real.norm_eq_abs,
         abs_of_pos (by positivity)]

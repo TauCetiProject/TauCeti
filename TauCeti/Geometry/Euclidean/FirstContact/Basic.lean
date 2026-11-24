@@ -12,8 +12,8 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 /-!
 # The first-contact lemma for translated graphs
 
-Let `e` be a unit vector of a real inner product space `F`, `P` the orthogonal projection onto
-`e^⊥`, `Ω` a closed subset of `e^⊥` and `g : e^⊥ → ℝ` continuous on `Ω`. The barrier
+Let `e` be a unit vector of a finite-dimensional real inner product space `F`, `P` the orthogonal
+projection onto `e^⊥`, `Ω` a closed subset of `e^⊥` and `g : e^⊥ → ℝ` continuous on `Ω`. The barrier
 `S_t = {k + (g(k) + t) e : k ∈ Ω}` is the graph of `g` translated by `t e`, and its boundary
 `∂S_t` is the part over the frontier of `Ω`. A point `y` lies on `S_t` exactly when `P y ∈ Ω` and
 its height `⟪e, y⟫ - g(P y)` above the graph of `g` is `t`.
@@ -264,7 +264,8 @@ theorem exists_firstContact_tangent (hf : IsProperMap f) (he : ‖e‖ = 1) (hΩ
   refine ⟨hint, hev', fun v ↦ inner_mvfderiv_eq_fderiv_of_isLocalExtr
     BoundarylessManifold.isInteriorPoint (Or.inr ?_) (hfd x)
     (hgd.differentiableAt (isOpen_interior.mem_nhds hint)) v⟩
-  simpa only [IsLocalMax, IsMaxFilter, hxt] using hev'
+  rw [← hxt] at hev'
+  exact (hev' : IsLocalMax (fun y ↦ heightAboveGraph e g (f y)) x)
 
 end Tangency
 
