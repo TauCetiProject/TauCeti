@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo.Cyclic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # Stabilizers of vectors in `SO(3)`
 
 The rotations of `R³` fixing a vector `p` are the rotations of the plane orthogonal to `p`. In
-coordinates: a rotation fixing the last standard basis vector `e₂` has the block form `diag(A, 1)`
-with `A ∈ SO(2, R)`, and this identifies `SO(2, R)` with the stabilizer of `e₂`, over any
-commutative ring. If `p` is a unit vector with a unit vector `u` orthogonal to it, the rotation
-with columns `u`, `p ⨯₃ u` and `p` carries `e₂` to `p`, and conjugating by it identifies `SO(2, R)`
-with the stabilizer of `p`.
+coordinates: the image of the block embedding `B ↦ diag(1, B)` of `SO(m, R)` in `SO(1 + m, R)`
+(`Matrix.SpecialOrthogonalGroup.fromBlocksOne`) is the stabilizer of the first standard basis
+vector `e₀`, over any commutative ring. If `p` is a unit vector with a unit vector `u` orthogonal
+to it, the rotation `ofFrame p u` with columns `p`, `u` and `p ⨯₃ u` carries `e₀` to `p`, and
+conjugating by it identifies `SO(2, R)` with the stabilizer of `p`.
 
 Over a field in which `2 ≠ 0` every unit vector has an orthogonal unit vector
 (`TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`), and over an integral domain in which
@@ -31,12 +33,12 @@ of `ℝ³`.
 
 ## Main declarations
 
-* `TauCeti.Matrix.SpecialOrthogonalGroup.mem_stabilizer_single_two_iff`: a rotation fixes the last
-  standard basis vector `e₂` exactly when its third column and third row are `e₂`.
-* `TauCeti.Matrix.SpecialOrthogonalGroup.equivLastStabilizer`: `SO(2, R)` is the stabilizer of the
-  last standard basis vector in `SO(3, R)`, through `A ↦ diag(A, 1)`.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.range_fromBlocksOne_eq_stabilizer`: the block-diagonal
+  rotations `diag(1, B)` are the stabilizer of `e₀`.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.equivFirstStabilizer`: `SO(m, R)` is the stabilizer of
+  the first standard basis vector in `SO(1 + m, R)`, through `B ↦ diag(1, B)`.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.equivStabilizer`: `SO(2, R)` is the stabilizer of a unit
-  vector `p` with an orthogonal unit vector `u`, through conjugation by the frame `(u, p ⨯₃ u, p)`.
+  vector `p` with an orthogonal unit vector `u`, through conjugation by the frame `(p, u, p ⨯₃ u)`.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_stabilizer`: a finite stabilizer of a vector `p`
   with `p ⬝ᵥ p ≠ 0` in a group of rotations is cyclic.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_stabilizer_of_ne_zero`: over a linearly ordered
@@ -58,99 +60,49 @@ attribute [local instance] starRingOfComm
 
 variable {R : Type*} [CommRing R]
 
-/-! ### The stabilizer of the last standard basis vector -/
+/-! ### The stabilizer of the first standard basis vector -/
 
-/-- The block matrix `diag(A, 1)` of a rotation `A` of `R²` is a rotation of `R³`. -/
-private theorem blockDiag_mem (A : specialOrthogonalGroup (Fin 2) R) :
-    !![(A : Matrix (Fin 2) (Fin 2) R) 0 0, (A : Matrix (Fin 2) (Fin 2) R) 0 1, 0;
-      (A : Matrix (Fin 2) (Fin 2) R) 1 0, (A : Matrix (Fin 2) (Fin 2) R) 1 1, 0; 0, 0, 1] ∈
-      specialOrthogonalGroup (Fin 3) R := by
-  have := mem_specialOrthogonalGroup_fin_two_iff.mp A.property
-  simp [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff, ← Matrix.ext_iff,
-    Fin.forall_fin_succ, vecHead, vecTail, det_fin_three]
-  grind
+variable (R) in
+/-- **The block-diagonal rotations `diag(1, B)` are the stabilizer of the first standard basis
+vector `e₀`**: the image of the block embedding of `SO(m)` in `SO(1 + m)` is the subgroup fixing
+`e₀`. -/
+theorem range_fromBlocksOne_eq_stabilizer (m : ℕ) :
+    (Matrix.SpecialOrthogonalGroup.fromBlocksOne R 1 m).range =
+      stabilizer (specialOrthogonalGroup (Fin (1 + m)) R) (Pi.single 0 1 : Fin (1 + m) → R) := by
+  ext A
+  rw [Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, Fin.forall_fin_one,
+    Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self]
+  rfl
 
-/-- **A rotation of `R³` fixes `e₂` exactly when its third column and third row are `e₂`.** -/
-theorem mem_stabilizer_single_two_iff {g : specialOrthogonalGroup (Fin 3) R} :
-    g ∈ stabilizer (specialOrthogonalGroup (Fin 3) R) (Pi.single 2 1 : Fin 3 → R) ↔
-      (g : Matrix (Fin 3) (Fin 3) R) 0 2 = 0 ∧ (g : Matrix (Fin 3) (Fin 3) R) 1 2 = 0 ∧
-        (g : Matrix (Fin 3) (Fin 3) R) 2 2 = 1 ∧ (g : Matrix (Fin 3) (Fin 3) R) 2 0 = 0 ∧
-        (g : Matrix (Fin 3) (Fin 3) R) 2 1 = 0 := by
-  rw [Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self]
-  refine ⟨fun hcol ↦ ?_, fun ⟨h02, h12, h22, _, _⟩ ↦ ?_⟩
-  · -- An orthogonal matrix fixing a vector has transpose fixing it too.
-    have hrow : (g : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ Pi.single 2 1 = Pi.single 2 1 := by
-      conv_lhs => rw [← hcol]
-      rw [mulVec_mulVec, (mem_orthogonalGroup_iff' _ _).mp
-        (mem_specialOrthogonalGroup_iff.mp g.property).1, one_mulVec]
-    rw [mulVec_single_one] at hcol hrow
-    exact ⟨by simpa using congrFun hcol 0, by simpa using congrFun hcol 1,
-      by simpa using congrFun hcol 2, by simpa using congrFun hrow 0,
-      by simpa using congrFun hrow 1⟩
-  · rw [mulVec_single_one]
-    ext i
-    fin_cases i <;> simp [h02, h12, h22]
+variable (R) in
+/-- **`SO(m, R)` is the stabilizer of the first standard basis vector `e₀` in `SO(1 + m, R)`**, over
+any commutative ring: a rotation `B` corresponds to the block matrix `diag(1, B)`
+(`Matrix.SpecialOrthogonalGroup.fromBlocksOne`). -/
+noncomputable def equivFirstStabilizer (m : ℕ) :
+    specialOrthogonalGroup (Fin m) R ≃* stabilizer (specialOrthogonalGroup (Fin (1 + m)) R)
+      (Pi.single 0 1 : Fin (1 + m) → R) :=
+  (MonoidHom.ofInjective (Matrix.SpecialOrthogonalGroup.fromBlocksOne_injective R 1)).trans
+    (MulEquiv.subgroupCongr (range_fromBlocksOne_eq_stabilizer R m))
 
-/-- The upper left `2 × 2` block of a rotation of `R³` fixing `e₂` is a rotation of `R²`. -/
-private theorem block_mem {g : specialOrthogonalGroup (Fin 3) R}
-    (hg : g ∈ stabilizer (specialOrthogonalGroup (Fin 3) R) (Pi.single 2 1 : Fin 3 → R)) :
-    !![(g : Matrix (Fin 3) (Fin 3) R) 0 0, (g : Matrix (Fin 3) (Fin 3) R) 0 1;
-      (g : Matrix (Fin 3) (Fin 3) R) 1 0, (g : Matrix (Fin 3) (Fin 3) R) 1 1] ∈
-      specialOrthogonalGroup (Fin 2) R := by
-  obtain ⟨h02, h12, h22, -, -⟩ := mem_stabilizer_single_two_iff.mp hg
-  obtain ⟨hO, hdet⟩ := mem_specialOrthogonalGroup_iff.mp g.property
-  have hO' := (mem_orthogonalGroup_iff _ _).mp hO
-  -- The first two rows are orthonormal, and the block has determinant one.
-  have e00 := Matrix.ext_iff.mpr hO' 0 0
-  have e01 := Matrix.ext_iff.mpr hO' 0 1
-  have e11 := Matrix.ext_iff.mpr hO' 1 1
-  simp only [Matrix.mul_apply, Fin.sum_univ_three, transpose_apply, h02, h12, zero_mul, add_zero,
-    one_apply_eq, one_apply_ne (show (0 : Fin 3) ≠ 1 by decide)] at e00 e01 e11
-  rw [det_fin_three, h02, h12, h22] at hdet
-  rw [of_mem_specialOrthogonalGroup_fin_two_iff]
-  refine ⟨?_, ?_, by linear_combination e00⟩
-  · linear_combination (-(g : Matrix (Fin 3) (Fin 3) R) 0 0) * e11 +
-      (g : Matrix (Fin 3) (Fin 3) R) 1 0 * e01 + (g : Matrix (Fin 3) (Fin 3) R) 1 1 * hdet
-  · linear_combination (-(g : Matrix (Fin 3) (Fin 3) R) 0 1) * e11 +
-      (g : Matrix (Fin 3) (Fin 3) R) 1 1 * e01 - (g : Matrix (Fin 3) (Fin 3) R) 1 0 * hdet
-
-/-- **`SO(2, R)` is the stabilizer of the last standard basis vector `e₂` in `SO(3, R)`**, over any
-commutative ring: a rotation `A` of `R²` corresponds to the block matrix `diag(A, 1)`. -/
-def equivLastStabilizer :
-    specialOrthogonalGroup (Fin 2) R ≃* stabilizer (specialOrthogonalGroup (Fin 3) R)
-      (Pi.single 2 1 : Fin 3 → R) where
-  toFun A := ⟨⟨_, blockDiag_mem A⟩, mem_stabilizer_single_two_iff.mpr <| by simp⟩
-  invFun g := ⟨_, block_mem g.property⟩
-  left_inv A := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  right_inv g := by
-    obtain ⟨h02, h12, h22, h20, h21⟩ := mem_stabilizer_single_two_iff.mp g.property
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [h02, h12, h22, h20, h21]
-  map_mul' A B := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The rotation attached to `A ∈ SO(2, R)` is the block matrix `diag(A, 1)`. -/
+/-- The rotation attached to `B ∈ SO(m, R)` is the block matrix `diag(1, B)`. -/
 @[simp]
-theorem coe_equivLastStabilizer_apply (A : specialOrthogonalGroup (Fin 2) R) :
-    ((equivLastStabilizer A : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
-      !![(A : Matrix (Fin 2) (Fin 2) R) 0 0, (A : Matrix (Fin 2) (Fin 2) R) 0 1, 0;
-        (A : Matrix (Fin 2) (Fin 2) R) 1 0, (A : Matrix (Fin 2) (Fin 2) R) 1 1, 0; 0, 0, 1] :=
+theorem coe_equivFirstStabilizer_apply {m : ℕ} (B : specialOrthogonalGroup (Fin m) R) :
+    (equivFirstStabilizer R m B : specialOrthogonalGroup (Fin (1 + m)) R) =
+      Matrix.SpecialOrthogonalGroup.fromBlocksOne R 1 m B :=
   (rfl)
 
-/-- The rotation of `R²` attached to a rotation of `R³` fixing `e₂` is its upper left `2 × 2`
+/-- The rotation of `Rᵐ` attached to a rotation of `R¹⁺ᵐ` fixing `e₀` is its lower right `m × m`
 block. -/
 @[simp]
-theorem coe_equivLastStabilizer_symm_apply
-    (g : stabilizer (specialOrthogonalGroup (Fin 3) R) (Pi.single 2 1 : Fin 3 → R)) :
-    (equivLastStabilizer.symm g : Matrix (Fin 2) (Fin 2) R) =
-      !![((g : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 0 0,
-        ((g : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 0 1;
-        ((g : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 1 0,
-        ((g : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 1 1] :=
-  (rfl)
+theorem coe_equivFirstStabilizer_symm_apply {m : ℕ}
+    (g : stabilizer (specialOrthogonalGroup (Fin (1 + m)) R) (Pi.single 0 1 : Fin (1 + m) → R))
+    (k l : Fin m) :
+    ((equivFirstStabilizer R m).symm g : Matrix (Fin m) (Fin m) R) k l =
+      ((g : specialOrthogonalGroup (Fin (1 + m)) R) : Matrix (Fin (1 + m)) (Fin (1 + m)) R)
+        (Fin.natAdd 1 k) (Fin.natAdd 1 l) := by
+  conv_rhs => rw [← (equivFirstStabilizer R m).apply_symm_apply g]
+  rw [coe_equivFirstStabilizer_apply,
+    Matrix.SpecialOrthogonalGroup.fromBlocksOne_apply_natAdd_natAdd]
 
 /-! ### The stabilizer of a unit vector -/
 
@@ -160,23 +112,24 @@ variable {p u : Fin 3 → R}
 
 /-- **`SO(2, R)` is the stabilizer of a unit vector `p` in `SO(3, R)`**, given a unit vector `u`
 orthogonal to `p`: a rotation `A` of the plane corresponds to the rotation acting by `A` in the
-oriented orthonormal basis `(u, p ⨯₃ u)` of the plane orthogonal to `p`. -/
+oriented orthonormal basis `(u, p ⨯₃ u)` of the plane orthogonal to `p`. It conjugates
+`equivFirstStabilizer` by the rotation `ofFrame p u`, which carries `e₀` to `p`. -/
 noncomputable def equivStabilizer (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0) :
     specialOrthogonalGroup (Fin 2) R ≃* stabilizer (specialOrthogonalGroup (Fin 3) R) p :=
-  equivLastStabilizer.trans <| stabilizerEquivStabilizer (g := ⟨_, ofFrame_cross_mem hp hu hpu⟩) <|
-    by rw [Submonoid.smul_def, smul_eq_mulVec, ofFrame_cross_mulVec_single_two hu hpu]
+  (equivFirstStabilizer R 2).trans <|
+    stabilizerEquivStabilizer (g := ⟨ofFrame p u, ofFrame_mem_iff.mpr ⟨hp, hu, hpu⟩⟩) <| by
+      rw [Submonoid.smul_def, smul_eq_mulVec, mulVec_single_one, ofFrame_col_zero]
 
-/-- The rotation attached to `A ∈ SO(2, R)` is `F * diag(A, 1) * Fᵀ`, where `F` is the frame
-matrix with columns `u`, `p ⨯₃ u` and `p`. -/
+/-- The rotation attached to `A ∈ SO(2, R)` is `F * diag(1, A) * Fᵀ`, where `F` is the frame
+matrix with columns `p`, `u` and `p ⨯₃ u`. -/
 @[simp]
 theorem coe_equivStabilizer_apply (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0)
     (A : specialOrthogonalGroup (Fin 2) R) :
     ((equivStabilizer hp hu hpu A : specialOrthogonalGroup (Fin 3) R) :
       Matrix (Fin 3) (Fin 3) R) =
-      ofFrame u (p ⨯₃ u) *
-        ((equivLastStabilizer A : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) *
-        (ofFrame u (p ⨯₃ u))ᵀ := by
-  simp [equivStabilizer, stabilizerEquivStabilizer_apply, Matrix.SpecialOrthogonalGroup.coe_inv]
+      ofFrame p u * (Matrix.SpecialOrthogonalGroup.fromBlocksOne R 1 2 A :
+        Matrix (Fin 3) (Fin 3) R) * (ofFrame p u)ᵀ :=
+  (rfl)
 
 /-- The rotation of the plane attached to a rotation `g` fixing `p` is the matrix whose columns
 are the coordinates of `g u` and `g (p ⨯₃ u)` in the orthonormal basis `(u, p ⨯₃ u)`. -/
@@ -188,10 +141,10 @@ theorem coe_equivStabilizer_symm_apply (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 
         u ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ (p ⨯₃ u);
         (p ⨯₃ u) ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ u,
         (p ⨯₃ u) ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ (p ⨯₃ u)] := by
-  simp only [equivStabilizer, MulEquiv.symm_trans_apply, coe_equivLastStabilizer_symm_apply,
-    stabilizerEquivStabilizer_symm_apply, MulAut.conj_apply, Submonoid.coe_mul,
-    Matrix.SpecialOrthogonalGroup.coe_inv, inv_inv]
   ext i j
+  simp only [equivStabilizer, MulEquiv.symm_trans_apply, coe_equivFirstStabilizer_symm_apply,
+    stabilizerEquivStabilizer_symm_apply, MulAut.conj_apply, Submonoid.coe_mul,
+    coe_specialOrthogonalGroup_inv, inv_inv]
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, mulVec, dotProduct, Fin.sum_univ_three, ofFrame_apply] <;> ring
 
@@ -204,13 +157,9 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
     (H : Subgroup (specialOrthogonalGroup (Fin 3) R)) {p : Fin 3 → R} (hp : p ⬝ᵥ p ≠ 0)
     [Finite (stabilizer H p)] : IsCyclic (stabilizer H p) := by
   let L := AlgebraicClosure (FractionRing R)
-  have hφ : Function.Injective (algebraMap R L) := by
-    rw [IsScalarTower.algebraMap_eq R (FractionRing R)]
-    exact (algebraMap (FractionRing R) L).injective.comp (IsFractionRing.injective R _)
+  have hφ : Function.Injective (algebraMap R L) := FaithfulSMul.algebraMap_injective R L
   set φ := algebraMap R L
-  have : NeZero (2 : L) := ⟨by
-    rw [← map_ofNat φ 2, ← map_zero φ]
-    exact hφ.ne two_ne_zero⟩
+  have : NeZero (2 : L) := NeZero.of_faithfulSMul R L 2
   -- Normalize the image `p'` of `p` in `L³` to a unit vector `q`, and choose `u` orthogonal to it.
   set p' : Fin 3 → L := φ ∘ p
   have hp' : p' ⬝ᵥ p' ≠ 0 := by

@@ -23,8 +23,6 @@ Mathlib's special linear group (`Matrix.SpecialLinearGroup.subsingleton_of_subsi
 ## Main declarations
 
 * `Matrix.SpecialOrthogonalGroup.map`: entrywise mapping of special orthogonal matrices.
-* `Matrix.SpecialOrthogonalGroup.coe_inv`: the inverse of a special orthogonal matrix is its
-  transpose.
 * `Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self`: membership in the stabilizer
   of a vector under the natural action of `SO(n)`.
 * `Matrix.SpecialOrthogonalGroup.subsingleton_of_subsingleton`: `SO(n)` is trivial for `n ≤ 1`.
@@ -38,11 +36,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 attribute [local instance] starRingOfComm
-
-/-- The inverse of a special orthogonal matrix is its transpose. -/
-theorem coe_inv (A : specialOrthogonalGroup n R) :
-    ((A⁻¹ : specialOrthogonalGroup n R) : Matrix n n R) = (A : Matrix n n R)ᵀ :=
-  (rfl)
 
 /-- An element of `SO(n)` fixes a vector exactly when its matrix does. -/
 theorem mem_stabilizer_iff_mulVec_eq_self {v : n → R} {g : specialOrthogonalGroup n R} :

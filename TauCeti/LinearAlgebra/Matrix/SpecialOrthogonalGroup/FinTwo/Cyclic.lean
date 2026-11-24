@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.RingTheory.IntegralDomain
+public import TauCeti.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 
 /-!
@@ -39,12 +39,8 @@ theorem isCyclic_of_injective_specialOrthogonalGroup_fin_two [IsDomain R] [NeZer
     {G : Type*} [Group G] [Finite G] (f : G →* _root_.Matrix.specialOrthogonalGroup (Fin 2) R)
     (hf : Function.Injective f) : IsCyclic G := by
   let L := AlgebraicClosure (FractionRing R)
-  have hφ : Function.Injective (algebraMap R L) := by
-    rw [IsScalarTower.algebraMap_eq R (FractionRing R)]
-    exact (algebraMap (FractionRing R) L).injective.comp (IsFractionRing.injective R _)
-  have h2 : (2 : L) ≠ 0 := by
-    rw [← map_ofNat (algebraMap R L) 2, ← map_zero (algebraMap R L)]
-    exact hφ.ne two_ne_zero
+  have hφ : Function.Injective (algebraMap R L) := FaithfulSMul.algebraMap_injective R L
+  have h2 : (2 : L) ≠ 0 := (NeZero.of_faithfulSMul R L 2).out
   obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : L) two_pos
   let e := Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits i 2⁻¹ hi (mul_inv_cancel₀ h2)
   refine isCyclic_of_injective_ringHom ((Units.coeHom L).comp
