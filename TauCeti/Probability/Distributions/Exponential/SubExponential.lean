@@ -31,7 +31,8 @@ theorem mgf_centered_expMeasure_le {r t : ℝ} (hr : 0 < r) (ht : t ≤ r / 2) :
   have htr : t / r ≤ 1 / 2 := by
     rw [div_le_iff₀ hr]
     linarith
-  rw [mgf_centered_expMeasure hr ht1]
+  rw [mgf_sub_const_expMeasure hr ht1 r⁻¹]
+  simp only [← div_eq_mul_inv]
   have heq : r / (r - t) = 1 / (1 - t / r) := by
     field_simp
   rw [heq]

@@ -54,8 +54,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
-* `integrable_exp_mul_sub_expMeasure_iff`, `mgf_centered_expMeasure` — the exponential
-  integrability threshold for a shifted law and the centered moment-generating function;
+* `integrable_exp_mul_sub_expMeasure_iff`, `mgf_sub_const_expMeasure` — the exponential
+  integrability threshold and moment-generating function for a shifted law;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
@@ -336,19 +336,19 @@ theorem integrable_exp_mul_sub_expMeasure_iff (hr : 0 < r) (t c : ℝ) :
   rw [hfun, integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _)),
     integrable_exp_mul_expMeasure_iff hr]
 
-/-- The centered MGF of a positive-rate exponential law, on its integrability domain. -/
+/-- The MGF of a shifted positive-rate exponential law, on its integrability domain. -/
 @[simp]
-theorem mgf_centered_expMeasure (hr : 0 < r) (ht : t < r) :
-    mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t =
-      exp (-(t / r)) * (r / (r - t)) := by
+theorem mgf_sub_const_expMeasure (hr : 0 < r) (ht : t < r) (c : ℝ) :
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+      exp (-(t * c)) * (r / (r - t)) := by
   calc
-    mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t =
-        mgf id (expMeasure r) t * exp (t * (-r⁻¹)) := by
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+        mgf id (expMeasure r) t * exp (t * (-c)) := by
       simpa only [sub_eq_add_neg, id_eq] using
-        (mgf_add_const (X := id) (μ := expMeasure r) (t := t) (-r⁻¹))
-    _ = exp (-(t / r)) * (r / (r - t)) := by
+        (mgf_add_const (X := id) (μ := expMeasure r) (t := t) (-c))
+    _ = exp (-(t * c)) * (r / (r - t)) := by
       rw [mgf_id_expMeasure hr ht]
-      simp only [div_eq_mul_inv, mul_neg]
+      simp only [mul_neg]
       ring
 
 /-- The cumulant-generating function of an exponential law with positive rate. -/
