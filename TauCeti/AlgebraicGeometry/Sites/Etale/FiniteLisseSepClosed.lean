@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
-public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
 public import TauCeti.AlgebraicGeometry.Sites.EtaleSepClosed
 
 /-!
@@ -29,8 +28,6 @@ its global sections, which is finite lisse when they are finitely generated.
 
 * `CategoryTheory.Sheaf.isFiniteLisse_iff_finite_Γ`: on `Spec Ω`, a sheaf of `Λ`-modules is finite
   lisse exactly when its global sections are a finitely generated `Λ`-module.
-* `CategoryTheory.Sheaf.isFiniteLisse_constantSheaf_iff`: on any scheme with a geometric point,
-  the constant sheaf on a `Λ`-module `M` is finite lisse exactly when `M` is finitely generated.
 * `CategoryTheory.Sheaf.finiteLisseSepClosedEquivalence`: the finite lisse étale sheaves of
   `Λ`-modules on `Spec Ω` are equivalent to `FGModuleCat Λ`, through the constant sheaf functor.
 
@@ -50,16 +47,6 @@ namespace CategoryTheory.Sheaf
 
 variable (Ω : Type u) [Field Ω] [IsSepClosed Ω] {Λ : Type u} [Ring Λ]
 
-/-- On a scheme with a geometric point, the constant étale sheaf on a `Λ`-module `M` is finite
-lisse exactly when `M` is finitely generated: its stalk at the point is `M`. -/
-theorem isFiniteLisse_constantSheaf_iff {S : Scheme.{u}} (s : Spec (.of Ω) ⟶ S)
-    (M : ModuleCat.{u} Λ) :
-    ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M).IsFiniteLisse ↔
-      Module.Finite Λ M :=
-  ⟨fun h ↦ have := h.finite_etaleStalk s
-    .equiv ((pointSmallEtale s).sheafFiberConstantSheafIso M).toLinearEquiv,
-    fun _ ↦ isFiniteLisse_constantSheaf M⟩
-
 /-- On a separably closed field, an étale sheaf of `Λ`-modules is finite lisse exactly when its
 global sections are a finitely generated `Λ`-module. -/
 theorem isFiniteLisse_iff_finite_Γ
@@ -69,19 +56,37 @@ theorem isFiniteLisse_iff_finite_Γ
   -- `F` is the constant sheaf on its global sections.
   have e : (constantSheaf _ (ModuleCat.{u} Λ)).obj ((Sheaf.Γ _ (ModuleCat.{u} Λ)).obj F) ≅ F :=
     asIso (adj.counit.app F)
-  rw [← isFiniteLisse_constantSheaf_iff Ω (𝟙 _)]
-  exact ⟨fun h ↦ IsFiniteLisse.of_iso e.symm h, fun h ↦ IsFiniteLisse.of_iso e h⟩
+  rw [← isFiniteLisse_constantSheaf_iff (𝟙 (Spec (.of Ω)))]
+  exact isLocallyConstantIn_iff_of_iso e.symm
 
 variable (Λ) in
 /-- On a separably closed field, the finite lisse étale sheaves of `Λ`-modules form a category
-equivalent to the finitely generated `Λ`-modules, through the constant sheaf functor. -/
+equivalent to the finitely generated `Λ`-modules, through the constant sheaf functor and the
+global sections functor. -/
 noncomputable def finiteLisseSepClosedEquivalence :
     FGModuleCat.{u} Λ ≌ ObjectProperty.FullSubcategory
       fun F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ) ↦ F.IsFiniteLisse :=
-  haveI : ObjectProperty.IsClosedUnderIsomorphisms
-      fun F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ) ↦ F.IsFiniteLisse :=
-    ⟨fun e h ↦ IsFiniteLisse.of_iso e h⟩
-  (constantSheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).asEquivalence
-    |>.congrFullSubcategory <| funext fun M ↦ propext (isFiniteLisse_constantSheaf_iff Ω (𝟙 _) M)
+  (constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).toEquivalence
+    |>.congrFullSubcategory <| funext fun M ↦ propext <|
+      (ObjectProperty.prop_inverseImage_iff _ _ M).trans <|
+        (isFiniteLisse_constantSheaf_iff (𝟙 _) M).trans (ModuleCat.isFG_iff M).symm
+
+/-- The equivalence `finiteLisseSepClosedEquivalence` sends a finitely generated module to its
+constant sheaf. -/
+@[simp]
+theorem finiteLisseSepClosedEquivalence_functor_obj_obj (M : FGModuleCat.{u} Λ) :
+    ((finiteLisseSepClosedEquivalence Ω Λ).functor.obj M).obj =
+      (constantSheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj M.obj := by
+  rfl
+
+/-- The inverse of `finiteLisseSepClosedEquivalence` sends a finite lisse sheaf to its global
+sections. -/
+@[simp]
+theorem finiteLisseSepClosedEquivalence_inverse_obj_obj
+    (F : ObjectProperty.FullSubcategory
+      fun F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ) ↦ F.IsFiniteLisse) :
+    ((finiteLisseSepClosedEquivalence Ω Λ).inverse.obj F).obj =
+      (Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F.obj := by
+  rfl
 
 end CategoryTheory.Sheaf
