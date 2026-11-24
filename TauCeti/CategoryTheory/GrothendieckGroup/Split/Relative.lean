@@ -38,8 +38,9 @@ difference map is an isomorphism (`TauCeti.RelativeK0.toSplitK0EquivOfIsZero`), 
 
 The presentation uses only direct sums, but when `D` is preadditive and `T` preserves binary
 biproducts it already satisfies the relation for split short exact sequences of triples
-(`TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq`): if `γ : T(P₁ ⊞ P₂) ≅ T(Q₁ ⊞ Q₂)` is triangular,
-restricting to `α₁` on the first summand and inducing `α₂` on the second, then
+(`TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`): if
+`γ : T(P₁ ⊞ P₂) ≅ T(Q₁ ⊞ Q₂)` is triangular, restricting to `α₁` on the first summand and inducing
+`α₂` on the second, then
 `[P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂] = [P₁, α₁, Q₁] + [P₂, α₂, Q₂]`, whatever its off-diagonal block. That block
 need not come from a morphism of `C`: the unipotent automorphism it defines becomes a commutator
 after adding a summand
@@ -76,8 +77,10 @@ essentially small.
   `[P, id, P] = 0`, `[Q, α⁻¹, P] = -[P, α, Q]` and `[P, T(γ), Q] = 0`.
 * `TauCeti.RelativeK0.of_biprod`: the direct-sum relation for a functor preserving binary
   biproducts.
-* `TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq`: the relation for triangular isomorphisms.
+* `TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`: the relation for triangular
+  isomorphisms.
 * `TauCeti.RelativeK0.liftEquiv`: the universal property.
+* `TauCeti.RelativeK0.induction_on`: induction on the classes of triples.
 * `TauCeti.RelativeK0.exists_eq_of`: every element is the class of a single triple.
 * `TauCeti.RelativeK0.toSplitK0_of`: the difference map sends `[P, α, Q]` to `[P] - [Q]`.
 * `TauCeti.RelativeK0.toSplitK0EquivOfIsZero`: the difference map is an isomorphism when `T` sends
@@ -258,6 +261,27 @@ theorem hom_ext {G : Type*} [AddMonoid G] {f g : RelativeK0 T →+ G}
       · rw [hp, ← map_add, ← map_add, add_neg_cancel, map_zero, map_zero]
   | add a b ha hb => simp only [map_add, ha, hb]
 
+/-- Induction on the classes of triples. -/
+@[elab_as_elim]
+theorem induction_on {motive : RelativeK0 T → Prop} (x : RelativeK0 T) (zero : motive 0)
+    (of : ∀ (P Q : C) (α : T.obj P ≅ T.obj Q), motive (of T α))
+    (add : ∀ a b, motive a → motive b → motive (a + b)) (neg : ∀ a, motive a → motive (-a)) :
+    motive x := by
+  obtain ⟨y, rfl⟩ := mk_surjective T x
+  induction y using FreeAddCommGroup.induction_on with
+  | zero => rwa [map_zero]
+  | of p => exact of p.1 p.2.1 p.2.2
+  | neg p hp => simpa only [map_neg] using neg _ hp
+  | add a b ha hb => simpa only [map_add] using add _ _ ha hb
+
+variable (T) in
+/-- The classes of triples generate `K₀(T)`. -/
+theorem closure_range_of :
+    AddSubgroup.closure (Set.range fun p : Σ P Q : C, T.obj P ≅ T.obj Q => of T p.2.2) = ⊤ :=
+  eq_top_iff.2 fun x _ => induction_on x (zero_mem _)
+    (fun P Q α => AddSubgroup.subset_closure ⟨⟨P, Q, α⟩, rfl⟩) (fun _ _ => add_mem)
+    (fun _ => neg_mem)
+
 end Basic
 
 section Biprod
@@ -302,23 +326,10 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts
   {D : Type u'} [Category.{v'} D] [Preadditive D] [HasBinaryBiproducts D] {T : C ⥤ D}
   [T.PreservesZeroMorphisms] [PreservesBinaryBiproducts T]
 
-/-- Under `T(Q₁ ⊞ Q₂) ≅ T(Q₁) ⊞ T(Q₂)`, an automorphism fixing the first summand and inducing
-the identity on the second is the unipotent automorphism given by its off-diagonal block. -/
-private lemma conj_mapBiprod_eq_unipotentLower {Q₁ Q₂ : C}
-    (u : T.obj (Q₁ ⊞ Q₂) ≅ T.obj (Q₁ ⊞ Q₂)) (h₁ : T.map biprod.inl ≫ u.hom = T.map biprod.inl)
-    (h₂ : u.hom ≫ T.map biprod.snd = T.map biprod.snd) :
-    (T.mapBiprod Q₁ Q₂).symm ≪≫ u ≪≫ T.mapBiprod Q₁ Q₂ =
-      Biprod.unipotentLower
-        (biprod.inr ≫ (T.mapBiprod Q₁ Q₂).inv ≫ u.hom ≫ T.map biprod.fst) := by
-  ext
-  · simp [Biprod.ofComponents, reassoc_of% h₁]
-  · simp [Biprod.ofComponents, reassoc_of% h₁]
-  · simp [Biprod.ofComponents]
-  · simp [Biprod.ofComponents, h₂, ← T.map_comp]
-
 /-- An automorphism of `T(Q₁ ⊞ Q₂)` which fixes `T` of the first summand and induces the identity
 on `T` of the second has trivial class, whatever its off-diagonal block. -/
-theorem of_eq_zero_of_inl_comp_eq {Q₁ Q₂ : C} {u : T.obj (Q₁ ⊞ Q₂) ≅ T.obj (Q₁ ⊞ Q₂)}
+theorem of_eq_zero_of_inl_comp_eq_of_comp_snd_eq {Q₁ Q₂ : C}
+    {u : T.obj (Q₁ ⊞ Q₂) ≅ T.obj (Q₁ ⊞ Q₂)}
     (h₁ : T.map biprod.inl ≫ u.hom = T.map biprod.inl)
     (h₂ : u.hom ≫ T.map biprod.snd = T.map biprod.snd) : of T u = 0 := by
   set M := T.mapBiprod Q₁ Q₂
@@ -335,7 +346,7 @@ theorem of_eq_zero_of_inl_comp_eq {Q₁ Q₂ : C} {u : T.obj (Q₁ ⊞ Q₂) ≅
     rw [hu]
     simp only [E, Iso.trans_symm, Iso.trans_assoc]
   have h' := of_biprod u (Iso.refl (T.obj Q₂))
-  rw [of_refl, add_zero, h, conj_mapBiprod_eq_unipotentLower u h₁ h₂,
+  rw [of_refl, add_zero, h, T.mapBiprod_symm_trans_trans_eq_unipotentLower u h₁ h₂,
     Biprod.unipotentLower_biprod_eq_commutatorElement, of_trans_commutatorElement_trans] at h'
   exact h'.symm
 
@@ -343,7 +354,7 @@ theorem of_eq_zero_of_inl_comp_eq {Q₁ Q₂ : C} {u : T.obj (Q₁ ⊞ Q₂) ≅
 along `T` of the first inclusions and induces `α₂` along `T` of the second projections, then
 `[P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂] = [P₁, α₁, Q₁] + [P₂, α₂, Q₂]`, whatever its off-diagonal block
 `T(P₂) ⟶ T(Q₁)`. This is the relation imposed by a split short exact sequence of triples. -/
-theorem of_eq_add_of_inl_comp_eq {P₁ P₂ Q₁ Q₂ : C} {α₁ : T.obj P₁ ≅ T.obj Q₁}
+theorem of_eq_add_of_inl_comp_eq_of_comp_snd_eq {P₁ P₂ Q₁ Q₂ : C} {α₁ : T.obj P₁ ≅ T.obj Q₁}
     {α₂ : T.obj P₂ ≅ T.obj Q₂} {γ : T.obj (P₁ ⊞ P₂) ≅ T.obj (Q₁ ⊞ Q₂)}
     (h₁ : T.map biprod.inl ≫ γ.hom = α₁.hom ≫ T.map biprod.inl)
     (h₂ : γ.hom ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.hom) :
@@ -352,7 +363,8 @@ theorem of_eq_add_of_inl_comp_eq {P₁ P₂ Q₁ Q₂ : C} {α₁ : T.obj P₁ �
   have hδ₁ : T.map biprod.inl ≫ δ.inv = α₁.inv ≫ T.map biprod.inl := by simp [δ]
   have hδ₂ : δ.inv ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.inv := by simp [δ]
   have hγ : γ = δ ≪≫ (δ.symm ≪≫ γ) := by simp
-  rw [hγ, of_trans, of_biprod, of_eq_zero_of_inl_comp_eq (u := δ.symm ≪≫ γ), add_zero]
+  rw [hγ, of_trans, of_biprod, of_eq_zero_of_inl_comp_eq_of_comp_snd_eq (u := δ.symm ≪≫ γ),
+    add_zero]
   · simp [reassoc_of% hδ₁, h₁]
   · simp [h₂, reassoc_of% hδ₂]
 
@@ -556,6 +568,17 @@ private lemma map_map_comp_mapTriple (G : D ⥤ D') {F : C ⥤ C'} (e : T ⋙ G 
   simp only [mapTriple, Iso.trans_hom, Iso.symm_hom, Iso.app_inv, Iso.app_hom,
     Functor.mapIso_hom, reassoc_of% h₁, ← G.map_comp_assoc, h, G.map_comp, Category.assoc, h₂]
 
+/-- The square of `map_map_comp_mapTriple`, transported along isomorphisms `a : F(X') ≅ A` and
+`b : F(Y') ≅ B` carrying `F(i)` to `i'` and `F(j)` to `j'`. -/
+private lemma map_comp_mapTriple_conj (G : D ⥤ D') {F : C ⥤ C'} (e : T ⋙ G ≅ F ⋙ T')
+    {X Y X' Y' : C} {A B : C'} {i : X ⟶ X'} {j : Y ⟶ Y'} {i' : F.obj X ⟶ A} {j' : F.obj Y ⟶ B}
+    (a : F.obj X' ≅ A) (b : F.obj Y' ≅ B) (hi : F.map i ≫ a.hom = i') (hj : F.map j ≫ b.hom = j')
+    {α : T.obj X ≅ T.obj Y} {γ : T.obj X' ≅ T.obj Y'} (h : T.map i ≫ γ.hom = α.hom ≫ T.map j) :
+    T'.map i' ≫ ((T'.mapIso a).symm ≪≫ mapTriple G e γ ≪≫ T'.mapIso b).hom =
+      (mapTriple G e α).hom ≫ T'.map j' := by
+  subst hi hj
+  simp [reassoc_of% map_map_comp_mapTriple G e h]
+
 end MapTriple
 
 section Map
@@ -584,15 +607,9 @@ noncomputable def map (F : C ⥤ C') [F.PreservesZeroMorphisms]
             T'.mapIso (F.mapBiprod Q Q'))
           (by simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, Functor.mapIso_inv,
             Iso.hom_inv_id_map_assoc])]
-        refine of_eq_add_of_inl_comp_eq_of_inr_comp_eq ?_ ?_ <;>
-          simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, Functor.mapIso_inv,
-            ← T'.map_comp_assoc]
-        · rw [show biprod.inl ≫ (F.mapBiprod P P').inv = F.map biprod.inl by simp,
-            reassoc_of% map_map_comp_mapTriple G e h₁, ← T'.map_comp,
-            show F.map biprod.inl ≫ (F.mapBiprod Q Q').hom = biprod.inl by simp]
-        · rw [show biprod.inr ≫ (F.mapBiprod P P').inv = F.map biprod.inr by simp,
-            reassoc_of% map_map_comp_mapTriple G e h₂, ← T'.map_comp,
-            show F.map biprod.inr ≫ (F.mapBiprod Q Q').hom = biprod.inr by simp]
+        exact of_eq_add_of_inl_comp_eq_of_inr_comp_eq
+          (map_comp_mapTriple_conj G e _ _ (by simp) (by simp) h₁)
+          (map_comp_mapTriple_conj G e _ _ (by simp) (by simp) h₂)
       map_trans := fun _ _ _ α β => by
         rw [← of_trans]
         congr 1

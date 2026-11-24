@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Images of the structure maps of a binary biproduct
@@ -18,6 +18,11 @@ normal forms of the two components of `CategoryTheory.Functor.mapBiprod`, so the
 let `simp` move the structure maps of a binary biproduct through that comparison. No preservation
 hypothesis is needed: only the existence of the biproduct `F(X) ⊞ F(Y)`.
 
+When `F` preserves the biproduct and its target is preadditive, an automorphism of `F(X ⊞ Y)`
+which fixes `F` of the first inclusion and induces the identity along `F` of the second projection
+becomes, under `F(X ⊞ Y) ≅ F(X) ⊞ F(Y)`, the unipotent automorphism given by its off-diagonal
+block.
+
 ## Main results
 
 * `CategoryTheory.Limits.biprod.map_inl_comp_lift_map`,
@@ -26,6 +31,8 @@ hypothesis is needed: only the existence of the biproduct `F(X) ⊞ F(Y)`.
 * `CategoryTheory.Limits.biprod.desc_map_comp_map_fst`,
   `CategoryTheory.Limits.biprod.desc_map_comp_map_snd`: the comparison `F(X) ⊞ F(Y) ⟶ F(X ⊞ Y)`
   followed by `F(fst)` and `F(snd)` is the projection.
+* `CategoryTheory.Functor.mapBiprod_symm_trans_trans_eq_unipotentLower`: a triangular
+  automorphism of `F(X ⊞ Y)` with identity diagonal is unipotent under `F.mapBiprod X Y`.
 -/
 
 public section
@@ -69,3 +76,27 @@ theorem biprod.desc_map_comp_map_snd :
   ext <;> simp [← F.map_comp]
 
 end CategoryTheory.Limits
+
+namespace CategoryTheory.Functor
+
+open CategoryTheory.Limits
+
+variable {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [Preadditive D]
+  [HasBinaryBiproducts D] (F : C ⥤ D) [F.PreservesZeroMorphisms] {X Y : C} [HasBinaryBiproduct X Y]
+  [PreservesBinaryBiproduct X Y F]
+
+/-- Under `F(X ⊞ Y) ≅ F(X) ⊞ F(Y)`, an automorphism of `F(X ⊞ Y)` fixing `F` of the first
+inclusion and inducing the identity along `F` of the second projection is the unipotent
+automorphism given by its off-diagonal block `F(Y) ⟶ F(X)`. -/
+theorem mapBiprod_symm_trans_trans_eq_unipotentLower (u : F.obj (X ⊞ Y) ≅ F.obj (X ⊞ Y))
+    (h₁ : F.map biprod.inl ≫ u.hom = F.map biprod.inl)
+    (h₂ : u.hom ≫ F.map biprod.snd = F.map biprod.snd) :
+    (F.mapBiprod X Y).symm ≪≫ u ≪≫ F.mapBiprod X Y =
+      Biprod.unipotentLower (F.map biprod.inr ≫ u.hom ≫ F.map biprod.fst) := by
+  ext
+  · simp [Biprod.ofComponents, reassoc_of% h₁]
+  · simp [Biprod.ofComponents, reassoc_of% h₁]
+  · simp [Biprod.ofComponents]
+  · simp [Biprod.ofComponents, h₂, ← F.map_comp]
+
+end CategoryTheory.Functor
