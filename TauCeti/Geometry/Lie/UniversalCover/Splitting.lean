@@ -307,6 +307,8 @@ private theorem isMulCommutative_centerFactor :
       LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
   ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
 
+attribute [local instance] t2Space_centerFactor isMulCommutative_centerFactor
+
 omit [T2Space G] in
 /-- The integral leaf subgroup of the centre is simply connected, as a factor of `G`. -/
 private theorem simplyConnectedSpace_centerFactor
@@ -329,8 +331,6 @@ private def centerFactorContinuousMulEquiv
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
   let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
     LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
-  have := t2Space_centerFactor (I := I) (G := G)
-  have := isMulCommutative_centerFactor (I := I) (G := G)
   have := simplyConnectedSpace_centerFactor hc
   have : FiniteDimensional ℝ (LeftInvariantDerivation A.I' A.X) :=
     finiteDimensional_leftInvariantDerivation
@@ -348,17 +348,10 @@ private theorem toHom_centerFactorContinuousMulEquiv
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom
         (centerFactorContinuousMulEquiv hc z) =
       lieExp (I := I) (z.toAdd : LeftInvariantDerivation I G) := by
-  have := t2Space_centerFactor (I := I) (G := G)
-  have := isMulCommutative_centerFactor (I := I) (G := G)
   have := simplyConnectedSpace_centerFactor hc
-  simp only [centerFactorContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-    ContinuousAddEquiv.toMultiplicative_apply, ContinuousMulEquiv.multiplicativeAdditive_apply,
-    toAdd_ofAdd, ContinuousAddEquiv.trans_apply, lieExpContinuousAddEquiv_apply, toMul_ofMul,
-    ContinuousLinearEquiv.toContinuousAddEquiv_coe, LinearEquiv.coe_toContinuousLinearEquiv_symm']
-  -- The exponential of the centre factor at `Y`, pushed into `G`, is `exp` of the image of `Y`
-  -- under the Lie map of the inclusion, and that Lie map inverts the linear isomorphism onto `𝔷`.
-  rw [← ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply, map_lieExp,
-    lieMap_centerFactorLieEquiv_symm]
+  -- The exponential of the centre factor, pushed into `G`, is `exp` of the image under the Lie
+  -- map of the inclusion (`map_lieExp`), and that Lie map inverts the linear isomorphism onto `𝔷`.
+  simp [centerFactorContinuousMulEquiv, lieMap_centerFactorLieEquiv_symm]
 
 /-- **The centre factor of a simply connected Lie group is the centre of its Lie algebra.** If the
 centre `𝔷` and the derived algebra `[𝔤, 𝔤]` of the Lie algebra of a simply connected Lie group `G`
@@ -376,14 +369,11 @@ def lieExpCenterProdDerivedContinuousMulEquiv
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X
       ≃ₜ* G :=
   let e := centerFactorContinuousMulEquiv hc
-  ContinuousMulEquiv.mk'
-    ((e.toHomeomorph.prodCongr (Homeomorph.refl _)).trans
-      (centerProdDerivedContinuousMulEquiv hc).toHomeomorph)
-    (fun p q ↦ by
-      simp only [Homeomorph.trans_apply, Homeomorph.coe_prodCongr, Homeomorph.refl_apply,
-        ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
-        ← map_mul (centerProdDerivedContinuousMulEquiv hc), Prod.map, id_eq, map_mul e,
-        Prod.mk_mul_mk])
+  ContinuousMulEquiv.trans
+    { toMulEquiv := e.toMulEquiv.prodCongr (MulEquiv.refl _)
+      continuous_toFun := e.continuous.prodMap continuous_id
+      continuous_invFun := e.symm.continuous.prodMap continuous_id }
+    (centerProdDerivedContinuousMulEquiv hc)
 
 @[simp]
 theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
@@ -397,11 +387,9 @@ theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
         ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
           LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
             (I := I)).toHom p.2 := by
-  simp only [lieExpCenterProdDerivedContinuousMulEquiv, ContinuousMulEquiv.coe_mk',
-    Homeomorph.trans_apply, Homeomorph.coe_prodCongr, Homeomorph.refl_apply,
-    ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
-    centerProdDerivedContinuousMulEquiv_apply, Prod.map_fst, Prod.map_snd, id_eq,
-    toHom_centerFactorContinuousMulEquiv]
+  simp only [lieExpCenterProdDerivedContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
+    centerProdDerivedContinuousMulEquiv_apply]
+  exact congrArg (· * _) (toHom_centerFactorContinuousMulEquiv hc p.1)
 
 @[simp]
 theorem lieExpCenterProdDerivedContinuousMulEquiv_symm_apply_lieExp_mul
