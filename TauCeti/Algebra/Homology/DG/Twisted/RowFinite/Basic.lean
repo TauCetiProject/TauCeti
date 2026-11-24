@@ -299,11 +299,8 @@ theorem rowFiniteSignedMap_mem_of_forall_mem_support {ℳ : ℤ → Submodule R 
     rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) := by
   rw [rowFiniteSignedMap_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x hx ↦ ?_
-  have hfx : (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 (f x) ∈ 𝒜 (n + ind x) := by
-    have := InternalGrading.koszulTwist_mem_piece (InternalGrading.ofDecomposition 𝒜)
-      (by rw [InternalGrading.ofDecomposition_piece]; exact hf x) 1
-    rwa [InternalGrading.ofDecomposition_piece] at this
-  have := SetLike.GradedSMul.smul_mem hfx (hh x hx)
+  have := SetLike.GradedSMul.smul_mem
+    (InternalGrading.koszulTwist_mem_ofDecomposition 𝒜 (hf x) 1) (hh x hx)
   convert this using 2
   simp only [vadd_eq_add]
   ring
@@ -347,7 +344,9 @@ theorem rowFiniteSignedMap_sub (h h' : P → M) :
 theorem rowFiniteSignedMap_single (h : P → M) (x : P)
     {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
     rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x a) = q.negOnePow • (a • h x) := by
-  simp [rowFiniteSignedMap, Finsupp.lsum_single, koszulTwist_one_smul_eq_negOnePow_smul ha]
+  simp [rowFiniteSignedMap, Finsupp.lsum_single,
+    (InternalGrading.ofDecomposition 𝒜).koszulTwist_one_smul_eq_negOnePow_smul
+      (by rwa [InternalGrading.ofDecomposition_piece])]
 
 /-- A generator maps to its specified image. -/
 @[simp]
@@ -549,7 +548,9 @@ theorem rowFiniteTwistedDifferential_apply_of_mem (m : P → P →₀ A) {deg : 
       Finsupp.mapRange.linearMap d r + r.sum (fun y a ↦ (deg y).negOnePow • (a • m y)) := by
   rw [rowFiniteTwistedDifferential_apply]
   congr 1
-  exact Finsupp.sum_congr fun y _ ↦ koszulTwist_one_smul_eq_negOnePow_smul (hr y) (m y)
+  exact Finsupp.sum_congr fun y _ ↦
+    (InternalGrading.ofDecomposition 𝒜).koszulTwist_one_smul_eq_negOnePow_smul
+      (by rw [InternalGrading.ofDecomposition_piece]; exact hr y) (m y)
 
 /-- The twisting equation of a single row says exactly that the row is a cycle of the twisted
 differential: a vector `r` of total degree `1 - k`, read as the prospective row of a generator of
