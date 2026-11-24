@@ -11,6 +11,7 @@ public import Mathlib.Order.Filter.AtTopBot.Defs
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -183,10 +184,13 @@ theorem setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo {g : ℝ × ℝ → �
       exact hg w.re hw w.im
     · have hw' : w + I ∉ S := by simpa [S] using hw
       simp only [f, indicator_of_notMem hw', indicator_of_notMem hw]
+  -- The real coordinates map the disc into the square `B_r(z₀.re) × B_r(z₀.im)`.
   have hball : ball z₀ r ⊆ S := fun w hw ↦ by
-    have h := abs_lt.1 ((abs_re_le_norm (w - z₀)).trans_lt (mem_ball_iff_norm.1 hw))
-    rw [sub_re] at h
-    exact mem_Ioi.2 (by linarith)
+    have h : equivRealProdCLM w ∈ Ioo (z₀.re - r) (z₀.re + r) ×ˢ Ioo (z₀.im - r) (z₀.im + r) := by
+      rw [← Real.ball_eq_Ioo, ← Real.ball_eq_Ioo, ball_prod_same]
+      exact (dist_equivRealProdCLM_le w (z₀.re, z₀.im)).trans_lt
+        (by simpa [equivRealProdCLM_symm_apply, re_add_im] using hw)
+    exact mem_Ioi.2 (ha.trans_lt h.1.1)
   have hstrip : Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1 ⊆ S := fun w hw ↦ ha.trans_lt hw.1.1
   calc ∫⁻ w in ball z₀ r, g (w.re, w.im)
       = ∫⁻ w in ball z₀ r, f w :=
@@ -197,7 +201,9 @@ theorem setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo {g : ℝ × ℝ → �
     _ = 2 * ∫⁻ w in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, g (measurableEquivRealProd w) := by
         congr 1
         exact setLIntegral_congr_fun (measurableSet_Ioo.reProdIm measurableSet_Icc)
-          fun w hw ↦ indicator_of_mem (hstrip hw) fun w ↦ g (w.re, w.im)
+          fun w hw ↦ by
+            rw [measurableEquivRealProd_apply]
+            exact indicator_of_mem (hstrip hw) fun w ↦ g (w.re, w.im)
     -- The band `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` is the preimage of its product under
     -- `ℂ ≃ ℝ × ℝ`.
     _ = 2 * ∫⁻ p in Ioo (z₀.re - r) (z₀.re + r) ×ˢ Icc 0 1, g p := by

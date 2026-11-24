@@ -124,58 +124,67 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 variable {u : ℂ → V} {J : V → V →L[ℝ] V} {z : ℂ} {e₀ : V}
 
-/-- The Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` differentiated twice at `z`, in the directions
-`w` and then `a`. -/
-private theorem fderiv_fderiv_fderiv_apply_I_eq (hu : ContDiffAt ℝ 3 u z)
-    (hJ : ContDiffAt ℝ 2 J (u z)) (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
-    (a w : ℂ) :
-    fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z a w I =
-      J (u z) (fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z a w 1) +
-        fderiv ℝ (fun y ↦ J (u y)) z a (fderiv ℝ (fderiv ℝ u) z w 1) +
-        fderiv ℝ (fderiv ℝ fun y ↦ J (u y)) z a w (fderiv ℝ u z 1) +
-        fderiv ℝ (fun y ↦ J (u y)) z w (fderiv ℝ (fderiv ℝ u) z a 1) := by
-  set g : ℂ → V →L[ℝ] V := fun y ↦ J (u y)
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ u)) z :=
-    (hDu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hg : ContDiffAt ℝ 2 g z := hJ.comp z (hu.of_le (by norm_num))
-  have hDg : DifferentiableAt ℝ (fderiv ℝ g) z :=
-    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- The equation differentiated once, at every point near `z`.
-  have hfirst : (fun y ↦ fderiv ℝ (fderiv ℝ u) y w I) =ᶠ[𝓝 z]
-      fun y ↦ g y (fderiv ℝ (fderiv ℝ u) y w 1) + fderiv ℝ g y w (fderiv ℝ u y 1) := by
-    have hDu' : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 2 (fderiv ℝ u) y := hDu.eventually (by simp)
-    have hg' : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 2 g y := hg.eventually (by simp)
-    filter_upwards [hDu', hg', hCR.eventually_nhds] with y hy hgy hCRy
-    have hξ : DifferentiableAt ℝ (fun y ↦ fderiv ℝ u y 1) y :=
-      (hy.differentiableAt (by norm_num)).clm_apply (differentiableAt_const 1)
-    have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L w)
-      (EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ u y I)
-        (f := fun y ↦ g y (fderiv ℝ u y 1)) hCRy)
-    rw [fderiv_clm_apply_const_apply (hy.differentiableAt (by norm_num)),
-      fderiv_clm_apply (hgy.differentiableAt (by norm_num)) hξ] at h
-    simpa [fderiv_clm_apply_const_apply (hy.differentiableAt (by norm_num))] using h
-  have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L a) hfirst.fderiv_eq
-  rw [fderiv_clm_apply (hD2.clm_apply (differentiableAt_const w)) (differentiableAt_const I),
-    fderiv_fun_add (hg.differentiableAt (by norm_num) |>.clm_apply
-      ((hD2.clm_apply (differentiableAt_const w)).clm_apply (differentiableAt_const 1)))
-      ((hDg.clm_apply (differentiableAt_const w)).clm_apply
-        ((hDu.differentiableAt (by norm_num)).clm_apply (differentiableAt_const 1))),
-    fderiv_clm_apply (hg.differentiableAt (by norm_num))
-      ((hD2.clm_apply (differentiableAt_const w)).clm_apply (differentiableAt_const 1)),
-    fderiv_clm_apply (hDg.clm_apply (differentiableAt_const w))
-      ((hDu.differentiableAt (by norm_num)).clm_apply (differentiableAt_const 1)),
-    fderiv_clm_apply (hD2.clm_apply (differentiableAt_const w)) (differentiableAt_const 1)] at h
-  simp only [fderiv_const_apply, add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add,
-    fderiv_clm_apply_const_apply hD2, fderiv_clm_apply_const_apply hDg,
-    fderiv_clm_apply_const_apply (hDu.differentiableAt (by norm_num))] at h
+/-! ### Linear Cauchy–Riemann equations, differentiated -/
+
+section NormedSpace
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {v : ℂ → W} {J B : ℂ → W →L[ℝ] W}
+
+/-- **The differentiated linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and solves
+`∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z`, then differentiating the
+equation at `z` in the direction `w` gives
+`∂_w ∂ₜv = (∂_w J) ∂ₛv + J ∂_w ∂ₛv + (∂_w B) v + B ∂_w v`. -/
+theorem fderiv_fderiv_apply_I_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z)
+    (hJ : DifferentiableAt ℝ J z) (hB : DifferentiableAt ℝ B z)
+    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y)) (w : ℂ) :
+    fderiv ℝ (fderiv ℝ v) z w I =
+      fderiv ℝ J z w (fderiv ℝ v z 1) + J z (fderiv ℝ (fderiv ℝ v) z w 1) +
+        fderiv ℝ B z w (v z) + B z (fderiv ℝ v z w) := by
+  have hvd : DifferentiableAt ℝ v z := hv.differentiableAt (by norm_num)
+  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
+    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hvs : DifferentiableAt ℝ (fun y ↦ fderiv ℝ v y 1) z :=
+    hDv.clm_apply (differentiableAt_const 1)
+  have h := congrArg (fun L : ℂ →L[ℝ] W ↦ L w)
+    (Filter.EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ v y I)
+      (f := fun y ↦ J y (fderiv ℝ v y 1) + B y (v y)) heq)
+  rw [fderiv_clm_apply_const_apply hDv, fderiv_fun_add (hJ.clm_apply hvs) (hB.clm_apply hvd),
+    fderiv_clm_apply hJ hvs, fderiv_clm_apply hB hvd] at h
+  simp only [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+    fderiv_clm_apply_const_apply hDv] at h
   rw [h]
   abel
 
+/-- **The Laplacian of a solution of a linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and
+solves `∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z` and `J(z)² = -1`, then
+the second derivatives of `v` drop out of `Δ v z`, leaving first-order terms in `v` whose
+coefficients involve `J`, `B` and their first derivatives. -/
+theorem laplacian_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z) (hJ : DifferentiableAt ℝ J z)
+    (hB : DifferentiableAt ℝ B z)
+    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
+    (hJsq : ∀ w, J z (J z w) = -w) :
+    Δ v z = fderiv ℝ J z I (fderiv ℝ v z 1) + J z (fderiv ℝ J z 1 (fderiv ℝ v z 1)) +
+      J z (B z (fderiv ℝ v z 1)) + B z (fderiv ℝ v z I) +
+      J z (fderiv ℝ B z 1 (v z)) + fderiv ℝ B z I (v z) := by
+  have hsymm : fderiv ℝ (fderiv ℝ v) z I 1 = fderiv ℝ (fderiv ℝ v) z 1 I :=
+    hv.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
+  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
+    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have h₁ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq I
+  have h₂ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq 1
+  rw [hsymm, h₂] at h₁
+  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hDv,
+    fderiv_clm_apply_const_apply hDv 1 1, fderiv_clm_apply_const_apply hDv I I, h₁]
+  simp only [map_add, hJsq]
+  abel
+
+end NormedSpace
+
 /-- The Laplacian of `∂ₛu` for a solution of `∂ₜu = J(u) ∂ₛu` with `J(u z)² = -1`: the third
 derivatives of `u` cancel, leaving an expression in `∂ₛu`, the second derivatives of `u`, and the
-first and second derivatives of `J ∘ u`. -/
+first and second derivatives of `J ∘ u`. Differentiating the equation in `s` shows that `∂ₛu` solves
+the linear equation `∂ₜv = (J ∘ u) ∂ₛv + ∂ₛ(J ∘ u) v`, so this is
+`TauCeti.laplacian_eq_of_fderiv_I_eq`. -/
 private theorem laplacian_fderiv_one_eq (hu : ContDiffAt ℝ 3 u z) (hJ : ContDiffAt ℝ 2 J (u z))
     (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
     (hJsq : ∀ v, J (u z) (J (u z) v) = -v) :
@@ -185,24 +194,36 @@ private theorem laplacian_fderiv_one_eq (hu : ContDiffAt ℝ 3 u z) (hJ : ContDi
         fderiv ℝ (fun y ↦ J (u y)) z 1 (fderiv ℝ (fderiv ℝ u) z 1 I) +
         fderiv ℝ (fderiv ℝ fun y ↦ J (u y)) z 1 I (fderiv ℝ u z 1) +
         fderiv ℝ (fun y ↦ J (u y)) z I (fderiv ℝ (fderiv ℝ u) z 1 1) := by
+  set g : ℂ → V →L[ℝ] V := fun y ↦ J (u y)
   have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
-  -- The symmetries of the second and third derivatives used below.
-  have hsymm₂ : fderiv ℝ (fderiv ℝ u) z I 1 = fderiv ℝ (fderiv ℝ u) z 1 I :=
-    hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
-  have hsymm₃ : fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z I I 1 =
-      fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z 1 I I := by
-    rw [fderiv_fderiv_fderiv_apply_comm hu (by simp) I I 1,
-      hDu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1]
-  have h₁ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 I
-  have h₂ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 1
-  rw [fderiv_fderiv_fderiv_apply_comm hu (by simp) 1 I 1, h₂, hsymm₂] at h₁
-  have hDf : DifferentiableAt ℝ (fderiv ℝ fun y ↦ fderiv ℝ u y 1) z :=
-    ((hDu.clm_apply contDiffAt_const).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)
-  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hDf,
-    fderiv_clm_apply_const_apply hDf 1 1, fderiv_clm_apply_const_apply hDf I I,
-    fderiv_fderiv_fderiv_apply hu, fderiv_fderiv_fderiv_apply hu, hsymm₃, h₁]
-  simp only [map_add, hJsq]
+  have hD2 : DifferentiableAt ℝ (fderiv ℝ u) z := hDu.differentiableAt (by norm_num)
+  have hg : ContDiffAt ℝ 2 g z := hJ.comp z (hu.of_le (by norm_num))
+  have hDg : DifferentiableAt ℝ (fderiv ℝ g) z :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  -- Near `z`, `v = ∂ₛu` solves `∂ₜv = g ∂ₛv + (∂ₛg) v`.
+  have heq : ∀ᶠ y in 𝓝 z, fderiv ℝ (fun y ↦ fderiv ℝ u y 1) y I =
+      g y (fderiv ℝ (fun y ↦ fderiv ℝ u y 1) y 1) + fderiv ℝ g y 1 (fderiv ℝ u y 1) := by
+    filter_upwards [hu.eventually (by simp), hg.eventually (by simp), hCR.eventually_nhds]
+      with y huy hgy hCRy
+    have hDuy : DifferentiableAt ℝ (fderiv ℝ u) y :=
+      (huy.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
+    have hξ : DifferentiableAt ℝ (fun y ↦ fderiv ℝ u y 1) y :=
+      hDuy.clm_apply (differentiableAt_const 1)
+    have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L 1)
+      (EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ u y I)
+        (f := fun y ↦ g y (fderiv ℝ u y 1)) hCRy)
+    rw [fderiv_clm_apply_const_apply hDuy,
+      fderiv_clm_apply (hgy.differentiableAt (by norm_num)) hξ] at h
+    simp only [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      fderiv_clm_apply_const_apply hDuy] at h
+    rw [fderiv_clm_apply_const_apply hDuy, fderiv_clm_apply_const_apply hDuy,
+      huy.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1, h]
+  rw [laplacian_eq_of_fderiv_I_eq (hDu.clm_apply contDiffAt_const)
+      (hg.differentiableAt (by norm_num)) (hDg.clm_apply (differentiableAt_const 1)) heq hJsq,
+    fderiv_clm_apply_const_apply hD2, fderiv_clm_apply_const_apply hD2,
+    fderiv_clm_apply_const_apply hDg, fderiv_clm_apply_const_apply hDg,
+    hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1,
+    hg.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1]
   module
 
 /-- The Laplacian of `∂ₛu` for a solution of `∂ₜu = J(u) ∂ₛu`, when `J` is invariant under the
@@ -508,54 +529,6 @@ theorem exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul
 section Linear
 
 variable {v : ℂ → V} {J B : ℂ → V →L[ℝ] V}
-
-/-- **The differentiated linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and solves
-`∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z`, then differentiating the
-equation at `z` in the direction `w` gives
-`∂_w ∂ₜv = (∂_w J) ∂ₛv + J ∂_w ∂ₛv + (∂_w B) v + B ∂_w v`. -/
-theorem fderiv_fderiv_apply_I_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z)
-    (hJ : DifferentiableAt ℝ J z) (hB : DifferentiableAt ℝ B z)
-    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y)) (w : ℂ) :
-    fderiv ℝ (fderiv ℝ v) z w I =
-      fderiv ℝ J z w (fderiv ℝ v z 1) + J z (fderiv ℝ (fderiv ℝ v) z w 1) +
-        fderiv ℝ B z w (v z) + B z (fderiv ℝ v z w) := by
-  have hvd : DifferentiableAt ℝ v z := hv.differentiableAt (by norm_num)
-  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
-    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hvs : DifferentiableAt ℝ (fun y ↦ fderiv ℝ v y 1) z :=
-    hDv.clm_apply (differentiableAt_const 1)
-  have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L w)
-    (Filter.EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ v y I)
-      (f := fun y ↦ J y (fderiv ℝ v y 1) + B y (v y)) heq)
-  rw [fderiv_clm_apply_const_apply hDv, fderiv_fun_add (hJ.clm_apply hvs) (hB.clm_apply hvd),
-    fderiv_clm_apply hJ hvs, fderiv_clm_apply hB hvd] at h
-  simp only [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-    fderiv_clm_apply_const_apply hDv] at h
-  rw [h]
-  abel
-
-/-- **The Laplacian of a solution of a linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and
-solves `∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z` and `J(z)² = -1`, then
-the second derivatives of `v` drop out of `Δ v z`, leaving first-order terms in `v` whose
-coefficients involve `J`, `B` and their first derivatives. -/
-theorem laplacian_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z) (hJ : DifferentiableAt ℝ J z)
-    (hB : DifferentiableAt ℝ B z)
-    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
-    (hJsq : ∀ w, J z (J z w) = -w) :
-    Δ v z = fderiv ℝ J z I (fderiv ℝ v z 1) + J z (fderiv ℝ J z 1 (fderiv ℝ v z 1)) +
-      J z (B z (fderiv ℝ v z 1)) + B z (fderiv ℝ v z I) +
-      J z (fderiv ℝ B z 1 (v z)) + fderiv ℝ B z I (v z) := by
-  have hsymm : fderiv ℝ (fderiv ℝ v) z I 1 = fderiv ℝ (fderiv ℝ v) z 1 I :=
-    hv.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
-  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
-    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have h₁ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq I
-  have h₂ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq 1
-  rw [hsymm, h₂] at h₁
-  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hDv,
-    fderiv_clm_apply_const_apply hDv 1 1, fderiv_clm_apply_const_apply hDv I I, h₁]
-  simp only [map_add, hJsq]
-  abel
 
 /-- **The squared norm of a solution of a linear Cauchy–Riemann equation is almost
 subharmonic.** Let `v : ℂ → V` be `C²` at `z` and solve `∂ₜv = J ∂ₛv + B v` near `z`, where the

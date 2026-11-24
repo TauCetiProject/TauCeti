@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
@@ -15,6 +16,7 @@ import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.EMetricSpace.Lipschitz
@@ -56,8 +58,11 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   translations along a vector `v` has derivative vanishing on `v`.
 * `TauCeti.fderiv_add_snd_of_periodic_snd`: a map on a product of period `c` in the second
   coordinate has a Fréchet derivative of period `c` in it.
-* `TauCeti.fderiv_add_snd_of_eventually_periodic_snd`, `TauCeti.periodic_fderiv_mk_of_isOpen`:
-  its local forms, for periodicity near a point or over an open set of first coordinates.
+* `TauCeti.fderiv_add_of_eventually_apply_add_eq_add`, `TauCeti.periodic_fderiv_mk_of_isOpen`:
+  local forms, for translation behaviour near a point or periodicity over an open set of first
+  coordinates.
+* `TauCeti.contDiffOn_prod_univ_of_periodic_snd`: a map periodic in the second coordinate that is
+  `C^n` near one period is `C^n` everywhere.
 * `TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`: a periodic function solving `x' = Y` for a
   periodic `Y` within a single closed period interval `[a, a + T]` solves it everywhere.
 -/
@@ -66,13 +71,23 @@ public section
 
 namespace TauCeti
 
+open Filter Topology in
+/-- If `f (y + c) = f y + d` for `y` near `x`, then the Fréchet derivative of `f` at `x + c` equals
+that at `x`: near `x`, translating the argument by `c` only adds the constant `d`. -/
+theorem fderiv_add_of_eventually_apply_add_eq_add {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E → F} {c x : E} {d : F} (h : ∀ᶠ y in 𝓝 x, f (y + c) = f y + d) :
+    fderiv 𝕜 f (x + c) = fderiv 𝕜 f x := by
+  rw [← fderiv_comp_add_right,
+    (show (fun y ↦ f (y + c)) =ᶠ[𝓝 x] fun y ↦ f y + d from h).fderiv_eq, fderiv_add_const]
+
 /-- The Fréchet derivative of a function with `f (x + c) = f x + d` is `c`-periodic: translating
 the argument by `c` only adds the constant `d`. For `d = 0` this is `Function.Periodic.fderiv`. -/
 theorem periodic_fderiv_of_apply_add_eq_add {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : E → F} {c : E} {d : F} (h : ∀ x, f (x + c) = f x + d) :
-    Function.Periodic (fderiv 𝕜 f) c := fun x ↦ by
-  rw [← fderiv_comp_add_right, funext h, fderiv_add_const]
+    Function.Periodic (fderiv 𝕜 f) c := fun _ ↦
+  fderiv_add_of_eventually_apply_add_eq_add (Filter.Eventually.of_forall h)
 
 /-- The derivative of a function with `f (x + c) = f x + d`, such as a lift of a degree one circle
 map (`c = d = 1`), is `c`-periodic. This is the one-variable form of
@@ -167,30 +182,39 @@ theorem fderiv_add_snd_of_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedF
   have hp : Function.Periodic f (0, c) := fun ⟨p, q⟩ ↦ by simpa using hf p q
   simpa using hp.fderiv (x, y)
 
-open Filter Topology in
-/-- A map on a product that is of period `c` in the second coordinate near `(x, y)` has a Fréchet
-derivative of period `c` in it at `(x, y)`. This is the local form of
-`TauCeti.fderiv_add_snd_of_periodic_snd`. -/
-theorem fderiv_add_snd_of_eventually_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F} {x : E} {y : F}
-    (hf : ∀ᶠ w in 𝓝 (x, y), f (w.1, w.2 + c) = f w) :
-    fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
-  have hev : (fun w ↦ f (w + (0, c))) =ᶠ[𝓝 (x, y)] f := hf.mono fun w hw ↦ by
-    simpa [Prod.add_def] using hw
-  have h := fderiv_comp_add_right (𝕜 := 𝕜) (f := f) (x := (x, y)) ((0 : E), c)
-  rw [hev.fderiv_eq] at h
-  simpa using h.symm
-
 /-- A map on a product that is of period `c` in the second coordinate over an open set `S` of first
 coordinates has, over `S`, a Fréchet derivative of period `c` in it. -/
 theorem periodic_fderiv_mk_of_isOpen {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F} {S : Set E} (hS : IsOpen S)
     (hf : ∀ x ∈ S, Function.Periodic (fun y ↦ f (x, y)) c) {x : E} (hx : x ∈ S) :
-    Function.Periodic (fun y ↦ fderiv 𝕜 f (x, y)) c := fun _ ↦
-  fderiv_add_snd_of_eventually_periodic_snd <|
-    Filter.eventually_of_mem ((hS.preimage continuous_fst).mem_nhds hx) fun w hw ↦ hf w.1 hw w.2
+    Function.Periodic (fun y ↦ fderiv 𝕜 f (x, y)) c := fun y ↦ by
+  have h := fderiv_add_of_eventually_apply_add_eq_add (𝕜 := 𝕜) (f := f) (c := ((0 : E), c))
+    (x := (x, y)) (d := 0) <| Filter.eventually_of_mem
+      ((hS.preimage continuous_fst).mem_nhds hx) fun w hw ↦ by
+        simpa [Prod.add_def] using hf w.1 hw w.2
+  simpa using h
+
+open Set in
+/-- **Regularity from one period.** Let `f` on `E × ℝ` be `c`-periodic in the second coordinate
+over an open set `S` of first coordinates, with `c > 0`. If `f` is `C^n` on `S × T` for an open
+set `T` containing the period interval `[0, c)`, then `f` is `C^n` on `S × ℝ`. -/
+theorem contDiffOn_prod_univ_of_periodic_snd {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E × ℝ → G} {S : Set E}
+    {T : Set ℝ} {c : ℝ} {n : WithTop ℕ∞} (hS : IsOpen S) (hT : IsOpen T) (hc : 0 < c)
+    (hcT : Ico 0 c ⊆ T) (hf : ∀ x ∈ S, Function.Periodic (fun y ↦ f (x, y)) c)
+    (hfT : ContDiffOn ℝ n f (S ×ˢ T)) : ContDiffOn ℝ n f (S ×ˢ univ) := by
+  rintro ⟨x, y⟩ ⟨hx, -⟩
+  -- Near `(x, y)`, `f` is `f` translated by an integer number of periods into `S × T`.
+  obtain ⟨m, hm, -⟩ := existsUnique_sub_zsmul_mem_Ico hc y 0
+  have hg : ContDiff ℝ n fun w : E × ℝ ↦ (w.1, w.2 - m • c) :=
+    contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)
+  have hfg : ContDiffAt ℝ n (fun w : E × ℝ ↦ f (w.1, w.2 - m • c)) (x, y) :=
+    ContDiffAt.comp (x, y) (hfT.contDiffAt (x := (x, y - m • c))
+      ((hS.prod hT).mem_nhds ⟨hx, hcT (by simpa using hm)⟩)) hg.contDiffAt
+  refine (hfg.congr_of_eventuallyEq ?_).contDiffWithinAt
+  filter_upwards [(hS.preimage continuous_fst).mem_nhds hx] with w hw
+  exact ((hf w.1 hw).sub_zsmul_eq m (x := w.2)).symm
 
 open Set in
 /-- **Periodic solutions of a differential equation on one period.** Let `x` and `Y` be

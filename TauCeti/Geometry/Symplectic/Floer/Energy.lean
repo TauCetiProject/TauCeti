@@ -16,6 +16,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -79,6 +80,10 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
+* `SymplecticForm.fderiv_apply_zero_one_eq_of_floer`,
+  `SymplecticForm.norm_fderiv_sub_smulRight_le_of_floer`: for a perturbation `K_t dt`, the Floer
+  equation `∂ₜu = J ∂ₛu + X_{K_t}(u)` and the resulting bound on the deviation of `du` from
+  `dt ⊗ w`.
 * `SymplecticForm.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le`: for `H_t dt`, the energy
   controls `∫ ‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
@@ -614,6 +619,37 @@ theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
   rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
   -- `c ‖∂ₛu - X_{K_s}‖²` is at most the energy density `ω(∂ₛu - X_{K_s}, J (∂ₛu - X_{K_s}))`.
   exact norm_sq_le_of_mul_norm_sub_sq_le hc (hJc _)
+
+/-- **The Floer equation solved for `∂ₜu`.** If `u` solves the Floer equation at `z` for a
+perturbation `K_t dt` without `ds`-component, then `∂ₜu = J ∂ₛu + X_{K_t}(u)` at `z`. -/
+theorem fderiv_apply_zero_one_eq_of_floer (ω : SymplecticForm V) {J : AlmostComplexStructure V}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    fderiv ℝ u z (0, 1) = J (fderiv ℝ u z (1, 0)) + ω.hamiltonianVectorField (Kt z) (u z) := by
+  have h' := h.apply_stdComplexLineImag
+  simp only [ContinuousLinearMap.coe_coe, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag, hamiltonianVectorField_const, Pi.zero_apply,
+    sub_zero] at h'
+  rw [stdComplexLineReal_eq, stdComplexLineImag_eq] at h'
+  exact sub_eq_iff_eq_add.1 h'
+
+/-- **The `C¹` deviation from a reference vector.** If `u` solves the Floer equation at `z` for a
+perturbation `K_t dt` without `ds`-component and `‖J v‖ ≤ M ‖v‖`, then
+`‖du - dt ⊗ w‖ ≤ (1 + M) ‖∂ₛu‖ + ‖X_{K_t}(u) - w‖` at `z` for every `w ∈ V`, since
+`∂ₜu = J ∂ₛu + X_{K_t}(u)`. With `w = 0` this bounds `du`, and with `w = X_{K_t}(y)` it bounds the
+deviation of `du` from the derivative of a loop through `y`. -/
+theorem norm_fderiv_sub_smulRight_le_of_floer (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} {M : ℝ} (w : V) (hJM : ∀ v, ‖J v‖ ≤ M * ‖v‖)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ‖fderiv ℝ u z - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight w‖ ≤
+      (1 + M) * ‖fderiv ℝ u z (1, 0)‖ + ‖ω.hamiltonianVectorField (Kt z) (u z) - w‖ := by
+  refine (ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one _).trans ?_
+  simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.coe_snd', zero_smul, sub_zero, one_smul]
+  rw [ω.fderiv_apply_zero_one_eq_of_floer h, add_sub_assoc]
+  linarith [norm_add_le (J (fderiv ℝ u z (1, 0))) (ω.hamiltonianVectorField (Kt z) (u z) - w),
+    hJM (fderiv ℝ u z (1, 0))]
 
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
 vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
