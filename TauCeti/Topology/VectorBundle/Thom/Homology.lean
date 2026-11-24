@@ -88,6 +88,9 @@ isomorphism in cohomology over an arbitrary base over a field:
 * `TauCeti.isIso_homologyThomMap`, `TauCeti.bijective_homologyThomMap`,
   `TauCeti.homologyThomIso`: for a Thom class `u` with coefficients in a commutative ring `K`, the
   homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
+* `TauCeti.quasiIso_pushforwardCapChainMap_thomPair`: the homology Thom isomorphism at the chain
+  level: for a cocycle `φ` representing a Thom class, `x ↦ ±π_*(x ⌢ φ)` is a quasi-isomorphism from
+  the relative chains of `(E, E₀)` to the chains of `B` shifted up by the rank.
 * `TauCeti.finrank_singularHomology_thomPair_of_isThomClass`: over a commutative ring, for a bundle
   with a Thom class, `dim Hₘ(E, E₀; K) = bₚ(B; K)`.
 * `TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`: over a field of characteristic two,
@@ -468,6 +471,30 @@ theorem homologyThomIso_hom (p m : ℕ) (h : finrank ℝ F + p = m)
     (hu : IsThomClass F E u) :
     (homologyThomIso F E p m h u hu).hom =
       homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u := (rfl)
+
+/-- **The homology Thom isomorphism at the chain level.** Let `E → B` be a real vector bundle of
+rank `r` over any base, `K` a commutative ring, and `φ` a relative cocycle of degree `r` of the Thom
+pair `(E, E₀)` with coefficients in `K` whose class is a Thom class. Then the chain map
+`x ↦ (-1)^(r p) π_*(x ⌢ φ)` on relative chains of degree `r + p`
+(`TopPair.pushforwardCapChainMap`), from the relative chains of `(E, E₀)` to the chains of `B`
+placed `r` degrees higher, both with coefficients in `K`, is a quasi-isomorphism: below the rank
+the homology of the Thom pair vanishes, and above it the map induces the homology Thom
+isomorphism `TauCeti.homologyThomIso`, up to sign. -/
+theorem quasiIso_pushforwardCapChainMap_thomPair
+    (φ : ((thomPair F E).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).cycles
+      (finrank ℝ F))
+    (hφ : IsThomClass F E (((thomPair F E).singularCochainComplex (ModuleCat.of K K) K
+      (ModuleCat.of K K)).homologyπ (finrank ℝ F) φ)) :
+    QuasiIso ((thomPair F E).pushforwardCapChainMap (thomPairProj F E) (ModuleCat.of K K)
+      (finrank ℝ F)
+      (((thomPair F E).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).iCycles
+        (finrank ℝ F) φ)
+      (ChainComplex.d_comp_linearYonedaObj_iCycles (finrank ℝ F) (finrank ℝ F + 1) φ)) :=
+  TopPair.quasiIso_pushforwardCapChainMap _ _ _ _ φ
+    (fun _ hm ↦
+      haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+      isZero_singularHomology_thomPair _ hm)
+    fun p m h ↦ isIso_homologyThomMap p m h hφ
 
 variable (F E) in
 /-- **The homology Thom isomorphism, in dimensions.** Let `E → B` be a real vector bundle with

@@ -13,6 +13,9 @@ public import Mathlib.Algebra.DualNumber
 An algebra homomorphism `f : A →ₐ[R] B` induces a homomorphism `A[ε] →ₐ[R] B[ε]`
 by applying `f` to both coefficients and preserving `ε`. This is the morphism of trivial
 first-order deformations, constructed with Mathlib's universal property `DualNumber.lift`.
+
+For the endomorphism `TrivSqZeroExt.map g` of `R[ε]` induced by an `R`-linear map `g : R →ₗ[R] R`,
+the image of `ε` is `g 1 • ε` (`LinearMap.trivSqZeroExtMap_eps`).
 -/
 
 public section
@@ -58,3 +61,14 @@ theorem dualNumberMap_comp (f : A →ₐ[R] B) (g : B →ₐ[R] C) :
   ext z <;> simp
 
 end AlgHom
+
+namespace LinearMap
+
+variable {R : Type*} [CommSemiring R]
+
+/-- `TrivSqZeroExt.map f` multiplies `ε` by `f 1`. -/
+@[simp]
+theorem trivSqZeroExtMap_eps (f : R →ₗ[R] R) : map f ε = f 1 • ε :=
+  (map_inr f 1).trans (inr_eq_smul_eps _)
+
+end LinearMap

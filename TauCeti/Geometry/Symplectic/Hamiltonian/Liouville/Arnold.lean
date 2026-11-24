@@ -323,11 +323,8 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {
   rw [hσ.mpullback_hamiltonianFlowAction] at hφ
   rw [hφ]
   -- The derivative lands in `T_{v • y} M`, which is `T_y M` since `v • y = y`.
-  have key : ∀ z, z = y → ∀ a' b' : E,
-      SmoothBundleForm.eval₂ σ z a' b' = SmoothBundleForm.eval₂ σ y a' b' := by
-    rintro _ rfl _ _
-    rfl
-  exact (key _ ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
+  exact (SmoothForm.eval₂_congr_basePoint σ
+    ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
 
 /-- **The orbit map has injective derivative at regular points.** If `v • x` is a regular point of
 `F`, the derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)` of the orbit map `v ↦ v • x` at `v` is injective,

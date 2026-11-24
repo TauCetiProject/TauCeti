@@ -38,9 +38,7 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
     (hn : Ideal.absNorm 𝔭.asIdeal = 2 → 4 ∣ n) (hm : (n : 𝓞 ℚ) ∈ 𝔭.asIdeal) :
     𝔭 ∈ ramifiedPrimes ℚ F := by
   let p := Ideal.absNorm 𝔭.asIdeal
-  have hp : p.Prime := by
-    simpa [p, Rat.HeightOneSpectrum.absNorm_asIdeal] using
-      Rat.HeightOneSpectrum.prime_natGenerator 𝔭
+  have hp : p.Prime := Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭
   have : Fact p.Prime := ⟨hp⟩
   have hpn : p ∣ n := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
   obtain ⟨e, m, hpm, hnm⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.ne_one
