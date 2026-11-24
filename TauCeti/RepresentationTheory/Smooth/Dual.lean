@@ -80,11 +80,8 @@ theorem smoothDual_apply_coe (g : G) (f : ρ.dual.smoothVectors.toSubmodule) (v 
 /-- If an open subgroup `U` fixes every vector, it fixes every linear form, and every linear form
 is smooth. -/
 theorem smoothVectors_dual_eq_top_of_le_stabilizer {U : Subgroup G} (hU : IsOpen (U : Set G))
-    (h : ∀ v, U ≤ ρ.stabilizer v) : ρ.dual.smoothVectors = ⊤ := by
-  refine eq_top_iff.2 fun f _ ↦ mem_smoothVectors_iff.2 (Subgroup.isOpen_mono (fun g hg ↦ ?_) hU)
-  refine mem_stabilizer.2 (LinearMap.ext fun v ↦ ?_)
-  simp only [dual_apply, Dual.transpose_apply, LinearMap.comp_apply,
-    mem_stabilizer.1 (h v (inv_mem hg))]
+    (h : ∀ v, U ≤ ρ.stabilizer v) : ρ.dual.smoothVectors = ⊤ :=
+  eq_top_iff.2 fun f _ ↦ mem_smoothVectors_iff.2 (Subgroup.isOpen_mono (le_stabilizer_dual h f) hU)
 
 /-- **The dual of a finitely generated smooth representation is smooth**: the stabilizers of
 finitely many generators meet in an open subgroup fixing every vector. -/
@@ -242,9 +239,9 @@ theorem smoothDualEval_surjective_iff [IsSmooth ρ] {U : Subgroup G} (hU : IsOpe
     (h : ∀ v, U ≤ ρ.stabilizer v) :
     Function.Surjective ρ.smoothDualEval ↔ FiniteDimensional k V := by
   have h₁ := smoothVectors_dual_eq_top_of_le_stabilizer hU h
-  have hfix (f : ρ.dual.smoothVectors.toSubmodule) : U ≤ ρ.smoothDual.stabilizer f :=
-    fun g hg ↦ mem_stabilizer.2 <| Subtype.ext <| LinearMap.ext fun v ↦ by
-      rw [smoothDual_apply_coe, mem_stabilizer.1 (h v (inv_mem hg))]
+  have hfix (f : ρ.dual.smoothVectors.toSubmodule) : U ≤ ρ.smoothDual.stabilizer f := by
+    rw [Subrepresentation.stabilizer_toRepresentation]
+    exact le_stabilizer_dual h f
   have h₂ := smoothVectors_dual_eq_top_of_le_stabilizer hU hfix
   let e₁ := LinearEquiv.ofTop _ (congrArg Subrepresentation.toSubmodule h₁)
   let Φ := (LinearEquiv.ofTop _ (congrArg Subrepresentation.toSubmodule h₂)).trans

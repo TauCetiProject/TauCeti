@@ -48,6 +48,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.mem_invariants_comp_subtype_iff`
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.le_stabilizer_ofMulAction`
+* `Representation.le_stabilizer_dual`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
@@ -115,6 +116,20 @@ theorem le_stabilizer_ofMulAction {X : Type*} [MulAction G X] {U : Subgroup G}
     exact mem_stabilizer.2 (by rw [ofMulAction_single, MulAction.mem_stabilizer_iff.1 (h x hg)])
 
 end Semiring
+
+section CommSemiring
+
+variable {A G V : Type*} [CommSemiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {ρ : Representation A G V}
+
+/-- A subgroup fixing every vector fixes every linear form in the dual representation. -/
+theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
+    (f : Module.Dual A V) : U ≤ ρ.dual.stabilizer f := fun g hg ↦
+  mem_stabilizer.2 <| LinearMap.ext fun v ↦ by
+    simp only [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+      mem_stabilizer.1 (h v (inv_mem hg))]
+
+end CommSemiring
 
 section CommRing
 
