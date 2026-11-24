@@ -53,6 +53,9 @@ presentation of the elementary subgroup; that injectivity is not proved here.
 
 ## Main results
 
+* `TauCeti.DynkinType.commutatorElement_eq_of_isSteinbergRelator`: a commutator relator gives the
+  corresponding equation between root generators in the presented group;
+  `TauCeti.DynkinType.commutatorElement_eq_one_of_root_add_notMem_range` is its commuting case.
 * `TauCeti.DynkinType.ChevalleyDatum.lift_eq_one_of_isSteinbergRelator`: every relator holds among
   the root elements of every Chevalley datum over every commutative ring.
 * `TauCeti.DynkinType.ChevalleyDatum.range_steinbergLift`: the range of `steinbergLift` is the
@@ -258,6 +261,33 @@ def steinbergRootSubgroup (γ : Fin t.numRoots) :
 theorem steinbergRootSubgroup_apply (γ : Fin t.numRoots) (a : Multiplicative A) :
     t.steinbergRootSubgroup ht A γ a = PresentedGroup.of (γ, a.toAdd) :=
   (rfl)
+
+variable {t ht A}
+
+/-- A relator `⁅X_α(u), X_β(v)⁆ w⁻¹` of the presentation gives the equation
+`⁅X_α(u), X_β(v)⁆ = w` in the presented group. -/
+theorem commutatorElement_eq_of_isSteinbergRelator {α β : Fin t.numRoots} {u v : A}
+    {w : FreeGroup (Fin t.numRoots × A)}
+    (hr : IsSteinbergRelator A t ht (⁅steinbergRoot α u, steinbergRoot β v⁆ * w⁻¹)) :
+    ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ =
+      PresentedGroup.mk (t.steinbergRelators ht A) w := by
+  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
+    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
+  exact PresentedGroup.mk_eq_mk_of_mul_inv_mem ((t.mem_steinbergRelators ht A).mpr hr)
+
+/-- Root generators of the presented group commute when the sum of their roots is neither a root
+nor zero. -/
+theorem commutatorElement_eq_one_of_root_add_notMem_range {α β : Fin t.numRoots}
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
+      Set.range (t.simplyConnectedRootDatum ht).root)
+    (h₀ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ≠ 0)
+    (u v : A) :
+    ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ = 1 := by
+  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
+    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
+  exact PresentedGroup.one_of_mem ((t.mem_steinbergRelators ht A).mpr (.commute h h₀ u v))
+
+variable (t ht A)
 
 namespace ChevalleyDatum
 

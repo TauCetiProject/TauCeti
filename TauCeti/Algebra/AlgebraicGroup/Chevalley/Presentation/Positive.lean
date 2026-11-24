@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Presentation
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Presentation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
@@ -117,17 +117,6 @@ end Definition
 
 variable {t : DynkinType} {ht : t.Valid} {A : Type u} [CommRing A]
 
-/-- A relator `⁅X_α(u), X_β(v)⁆ w⁻¹` of the presentation gives the equation
-`⁅X_α(u), X_β(v)⁆ = w` in the presented group. -/
-private theorem commutatorElement_eq_of_isSteinbergRelator {α β : Fin t.numRoots} {u v : A}
-    {w : FreeGroup (Fin t.numRoots × A)}
-    (hr : IsSteinbergRelator A t ht (⁅steinbergRoot α u, steinbergRoot β v⁆ * w⁻¹)) :
-    ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ =
-      PresentedGroup.mk (t.steinbergRelators ht A) w := by
-  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
-    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
-  exact PresentedGroup.mk_eq_mk_of_mul_inv_mem ((t.mem_steinbergRelators ht A).mpr hr)
-
 /-- Positive root generators commute when the sum of their roots is not a root: as positive roots
 never cancel, the sum is not zero either. -/
 private theorem commutatorElement_eq_one_of_mem_posRoots {α β : Fin t.numRoots}
@@ -138,11 +127,9 @@ private theorem commutatorElement_eq_one_of_mem_posRoots {α β : Fin t.numRoots
     (u v : A) :
     ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ = 1 := by
   rw [posRoots_rationalRootSystem] at hα hβ
-  have h₀ := root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ hα
-    (root_mem_posRootCone_of_mem_posRoots _ _ hβ)
-  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
-    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
-  exact PresentedGroup.one_of_mem ((t.mem_steinbergRelators ht A).mpr (.commute h h₀ u v))
+  exact commutatorElement_eq_one_of_root_add_notMem_range h
+    (root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ hα
+      (root_mem_posRootCone_of_mem_posRoots _ _ hβ)) u v
 
 /-- A generator at a positive root of height larger than those of `α` and `β` lies in the join
 of the root generators of such roots. -/
@@ -158,23 +145,6 @@ private theorem mk_steinbergRoot_mem_iSup_height {α β d : Fin t.numRoots}
   (le_iSup₂ (f := fun γ _ => (t.steinbergRootSubgroup ht A γ).range) d
     (Finset.mem_filter.mpr ⟨(mem_posRootsFinset _ _ d).mpr hd, hheight⟩))
     ⟨ofAdd w, t.steinbergRootSubgroup_apply ht A d (ofAdd w)⟩
-
-/-- Outside `G₂`, two linearly independent roots `α`, `β` never have both `2α + β` and
-`α + 2β` as roots. -/
-private theorem add_two_nsmul_notMem_range_root [(t.rationalRootSystem ht).IsNotG2]
-    {α β : Fin t.numRoots}
-    (hlin : LinearIndependent ℚ
-      ![(t.rationalRootSystem ht).root α, (t.rationalRootSystem ht).root β])
-    (hdouble : 2 • (t.simplyConnectedRootDatum ht).root α +
-      (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root) :
-    (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root := by
-  obtain ⟨δ, hδ⟩ := hdouble
-  rintro ⟨ε, hε⟩
-  refine (t.rationalRootSystem ht).not_double_root_add_and_root_add_double_mem hlin
-    ⟨⟨δ, (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ⟩, ⟨ε, ?_⟩⟩
-  rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht β α ε 2).mpr (by rw [hε, add_comm]),
-    add_comm]
 
 /-- Outside `G₂`, if the sum of two positive roots `α` and `β` is a root `γ`, the commutator of
 their generators is a product of generators at `γ` and possibly `2α + β` or `α + 2β`, all of
