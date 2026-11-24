@@ -25,6 +25,7 @@ sphere, which moves nets built from arbitrary approximants onto the sphere.
 * `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
   vector `x`.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
+* `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
 
 ## Main definitions
 
@@ -143,6 +144,24 @@ theorem continuousAt_sphereDirection (hx : x ≠ 0) : ContinuousAt (sphereDirect
     coe_sphereDirection_of_ne_zero e hx]
   exact (tendsto_id.normalize hx).congr' <| Filter.mem_of_superset (isOpen_ne.mem_nhds hx)
     fun y hy ↦ (coe_sphereDirection_of_ne_zero e hy).symm
+
+/-- Directions of two vectors are at distance at most `2 ‖x - y‖ / ‖y‖`, in the multiplied-out
+form `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`, which also holds when either vector vanishes. -/
+theorem norm_mul_dist_sphereDirection_le (x y : E) :
+    ‖y‖ * dist (sphereDirection e x) (sphereDirection e y) ≤ 2 * ‖x - y‖ := by
+  set u : E := (sphereDirection e x : E)
+  have hu : ‖u‖ = 1 := norm_eq_of_mem_sphere (sphereDirection e x)
+  -- `‖y‖ • (u - v) = (‖y‖ - ‖x‖) • u + (x - y)`, using `‖x‖ • u = x` and `‖y‖ • v = y`.
+  have hdecomp : ‖y‖ • (u - sphereDirection e y) = (‖y‖ - ‖x‖) • u + (x - y) := by
+    rw [smul_sub, norm_smul_sphereDirection, sub_smul, norm_smul_sphereDirection]
+    abel
+  calc ‖y‖ * dist (sphereDirection e x) (sphereDirection e y)
+      = ‖(‖y‖ - ‖x‖) • u + (x - y)‖ := by
+        rw [Subtype.dist_eq, dist_eq_norm, ← hdecomp, norm_smul, norm_norm]
+    _ ≤ |‖y‖ - ‖x‖| + ‖x - y‖ := by
+        simpa [norm_smul, hu] using norm_add_le ((‖y‖ - ‖x‖) • u) (x - y)
+    _ ≤ 2 * ‖x - y‖ := by
+        linarith [abs_norm_sub_norm_le y x, norm_sub_rev y x]
 
 end Direction
 
