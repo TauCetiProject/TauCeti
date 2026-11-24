@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Slice
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -127,6 +128,15 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
     Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 :=
   (injective_smul_add_mfderiv_iff_notMem_range himm).2 (h s)
 
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`a Z (ι s) + dι_s w = 0` only for `a = 0` and `w = 0`. -/
+theorem IsTransverseAlong.eq_zero_of_smul_add_eq_zero {Z : (x : M) → TangentSpace I x}
+    {ι : S → M} (h : IsTransverseAlong J Z ι) {s : S}
+    (himm : Function.Injective (mfderiv J I ι s)) {a : ℝ} {w : TangentSpace J s}
+    (hw : a • Z (ι s) + mfderiv J I ι s w = 0) : a = 0 ∧ w = 0 :=
+  Prod.ext_iff.1 <| h.injective_smul_add himm (a₁ := (a, w)) (a₂ := (0, 0)) <|
+    hw.trans (by simp only [zero_smul, zero_add]; exact (map_zero _).symm)
+
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
 If a function `h` vanishes on the slice near `s` and its derivative along `Z` vanishes at `ι s`,
@@ -137,21 +147,12 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
     (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
     (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
     mvfderiv I h (ι s) = 0 := by
-  -- A function that is not differentiable at `ι s` has zero differential there by convention.
-  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
-  swap
-  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
   set L := (mfderiv J I ι s).toLinearMap
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hdim ▸ Nat.succ_pos _)
   have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
-  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`
-  -- (trivially when `ι` is not differentiable at `s`, as then `L = 0`).
-  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
-    by_cases hιs : MDifferentiableAt J I ι s
-    · have hc := mvfderiv_comp_apply s hh hιs w
-      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-      exact hc.symm
-    · rw [show L w = 0 by simp [L, mfderiv_zero_of_not_mdifferentiableAt hιs], map_zero]
+  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
+  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 :=
+    mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero h0 w
   -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
   have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
     refine Submodule.eq_top_of_finrank_eq ?_
@@ -179,7 +180,8 @@ theorem mem_closure_setOf_lt_of_mvfderiv_pos {f : M → ℝ} {x : M} {v : Tangen
   by_contra h
   rw [mem_closure_iff_frequently, not_frequently] at h
   have hmax : IsLocalMax f x := h.mono fun y hy ↦ not_lt.1 hy
-  simp [mem_criticalPoints.1 (hmax.mem_criticalPoints (I := I))] at hpos
+  simp [mem_criticalPoints.1
+    (hmax.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint)] at hpos
 
 /-- **The frontier of a sublevel set crossed outwards by a vector field.** Let `f` be continuous,
 and let `Z` be a vector field with `df(Z) > 0` along the level `f⁻¹(c)`. Then the frontier of the
