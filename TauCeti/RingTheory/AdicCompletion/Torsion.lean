@@ -35,8 +35,8 @@ Artinianness and essentiality of submodules are preserved when passing between `
 and `AdicCompletion I R`.
 
 When `R` is Noetherian, Artin–Rees on ideals of `AdicCompletion I R` implies that any
-`AdicCompletion I R`-linear map from an ideal of `AdicCompletion I R` into an `I`-power-torsion
-module factors through a finite quotient `R ⧸ I ^ m`
+`AdicCompletion I R`-linear map from an ideal `𝔟` of `AdicCompletion I R` into an `I`-power-torsion
+module factors through the image of `𝔟` in `R ⧸ I ^ m` for some `m`
 (`TauCeti.AdicCompletion.exists_ker_evalₐ_le_ker_of_torsionModule`).
 
 For a finite `R`-module `N`, `TauCeti.AdicCompletion.torsionLiftEquiv` identifies `R`-linear maps

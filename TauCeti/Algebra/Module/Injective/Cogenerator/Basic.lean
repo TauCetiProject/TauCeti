@@ -130,7 +130,7 @@ include hE
 
 /-- Restriction kernels in the `E`-dual reverse and reflect inclusion of submodules when `E`
 is an injective cogenerator. -/
-theorem ker_lcomp_subtype_le_iff_of_forall_isMaximal
+theorem ker_lcomp_subtype_le_iff_ge_of_forall_isMaximal
     {M : Type w} [AddCommGroup M] [Module R M] (N P : Submodule R M) :
     ker (N.subtype.lcomp S E) ≤ ker (P.subtype.lcomp S E) ↔ P ≤ N := by
   constructor
@@ -157,7 +157,7 @@ theorem ker_lcomp_subtype_le_iff_of_forall_isMaximal
 def dualAnnihilatorOrderEmbedding {M : Type w} [AddCommGroup M] [Module R M] :
     Submodule R M ↪o (Submodule S (M →ₗ[R] E))ᵒᵈ :=
   OrderEmbedding.ofMapLEIff (fun N ↦ OrderDual.toDual (ker (N.subtype.lcomp S E)))
-    (fun _ _ ↦ ker_lcomp_subtype_le_iff_of_forall_isMaximal hE S _ _)
+    (fun _ _ ↦ ker_lcomp_subtype_le_iff_ge_of_forall_isMaximal hE S _ _)
 
 /-- The dual annihilator embedding assigns to `N` the maps vanishing on `N`. -/
 @[simp]

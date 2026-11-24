@@ -82,6 +82,19 @@ theorem adicCompletionResidueMap_apply
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   simp [adicCompletionResidueMap]
 
+/-- Restricting scalars on the range of `adicCompletionResidueMap` recovers `range ι`. -/
+@[simp]
+theorem restrictScalars_range_adicCompletionResidueMap :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+    (range hι.adicCompletionResidueMap).restrictScalars R = range ι := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  ext x
+  simp only [Submodule.restrictScalars_mem, mem_range, adicCompletionResidueMap_apply]
+  exact ⟨fun ⟨y, hy⟩ ↦ ⟨(AdicCompletion.residueFieldAlgEquiv R).symm y, hy⟩,
+    fun ⟨z, hz⟩ ↦ ⟨AdicCompletion.residueFieldAlgEquiv R z, by simpa using hz⟩⟩
+
 variable [Small.{v} R]
 
 include hι
@@ -99,13 +112,8 @@ theorem adicCompletion :
   · intro y₁ y₂ hy
     rw [adicCompletionResidueMap_apply, adicCompletionResidueMap_apply] at hy
     exact (AdicCompletion.residueFieldAlgEquiv R).symm.injective (hι.injective hy)
-  · rw [← AdicCompletion.isEssential_restrictScalars_torsionModule_iff hι.mem_primaryComponent]
-    have hrange : (range hι.adicCompletionResidueMap).restrictScalars R = range ι := by
-      ext x
-      simp only [Submodule.restrictScalars_mem, mem_range, adicCompletionResidueMap_apply]
-      exact ⟨fun ⟨y, hy⟩ ↦ ⟨(AdicCompletion.residueFieldAlgEquiv R).symm y, hy⟩,
-        fun ⟨z, hz⟩ ↦ ⟨AdicCompletion.residueFieldAlgEquiv R z, by simpa using hz⟩⟩
-    rw [hrange]
+  · rw [← AdicCompletion.isEssential_restrictScalars_torsionModule_iff hι.mem_primaryComponent,
+      hι.restrictScalars_range_adicCompletionResidueMap]
     exact hι.isEssential_range
 
 end TauCeti.IsInjectiveEnvelope
