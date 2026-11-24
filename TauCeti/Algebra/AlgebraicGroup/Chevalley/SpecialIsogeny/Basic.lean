@@ -15,10 +15,11 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 /-!
 # Root-subgroup maps of the Chevalley exceptional isogenies
 
-Over `[ExpChar A 2]` (`B₂`, `F₄`) and `[ExpChar A 3]` (`G₂`), Steinberg's exceptional endomorphism
-maps `x_α(u) ↦ x_{f(α)}(ε_α u ^ q(α))` (`b2SpecialIsogenyRootSubgroup`,
-`f4SpecialIsogenyRootSubgroup`, `g2SpecialIsogenyRootSubgroup`, with signs `g2SpecialIsogenySign`),
-intertwining signed simple roots and Weyl words and squaring to `D.frobenius p 1 A`.
+Over `[ExpChar A 2]` (`B₂`, `F₄`) and `[ExpChar A 3]` (`G₂`), this file defines the root-subgroup
+homomorphisms `α ↦ (u ↦ x_{indexEquiv α}(ε_α · u ^ exponent (indexEquiv α)))` of Steinberg's
+exceptional isogenies (`b2SpecialIsogenyRootSubgroup`, `f4SpecialIsogenyRootSubgroup`, and
+`g2SpecialIsogenyRootSubgroup` with signs `g2SpecialIsogenySign`), and proves their formulas on
+signed simple roots, Steinberg Weyl words, and two-fold iteration (`D.frobenius p 1 A`).
 -/
 
 public section
@@ -141,9 +142,7 @@ end PkgAPI
 /-! ## `B₂` in characteristic two -/
 
 section B2
-
 local notation "eqB2" => simplyConnectedRootDatum_B 2
-
 private noncomputable def b2Pkg (ht : (B 2).Valid) : SpecialPkg (B 2) ht 2 where
   iso := b2SpecialIsogeny.ofEq (eqB2 ht); scale := 2; scale_eq := rfl
   mul_self := ofEq_mul_self _ (eqB2 ht) b2SpecialIsogeny_mul_self
@@ -156,7 +155,6 @@ private noncomputable def b2Pkg (ht : (B 2).Valid) : SpecialPkg (B 2) ht 2 where
   exp_simple i := (ofEq_exponent (eqB2 ht) b2SpecialIsogeny _).trans
     ((congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
       ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i)))
-
 private theorem b2_ie (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
     (b2Pkg ht).iso.indexEquiv α = b2SpecialIsogeny.indexEquiv α :=
   congrArg (· α) (ofEq_indexEquiv (eqB2 ht) b2SpecialIsogeny)
@@ -168,10 +166,11 @@ private theorem b2_ε (ht : (B 2).Valid) (α : Fin (B 2).numRoots) : (b2Pkg ht).
 variable {ht : (B 2).Valid} (D : ChevalleyDatum (B 2) ht) (A : Type v) [CommRing A] [ExpChar A 2]
 local notation "ΦB2" => DynkinType.simplyConnectedRootDatum (B 2) ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `B₂`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `B₂`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(u ^ exponent (indexEquiv α)))` (with `indexEquiv` and `exponent` from
+`b2SpecialIsogeny` and sign `ε = 1`). -/
 noncomputable def b2SpecialIsogenyRootSubgroup (α : Fin (B 2).numRoots) :
     Multiplicative A →* D.points A := (b2Pkg ht).hom D A α
-
 local notation "xB2" => D.b2SpecialIsogenyRootSubgroup A
 
 /-- Explicit root-subgroup formula for `b2SpecialIsogenyRootSubgroup` on additive parameters. -/
@@ -204,9 +203,8 @@ theorem b2SpecialIsogenyRootSubgroup_reflectionPerm_simpleIndex (i : Fin (B 2).r
 /-- Steinberg's Weyl word in `b2SpecialIsogenyRootSubgroup` gives `D.weylElement` at the partner. -/
 theorem b2SpecialIsogenyRootSubgroup_weylElement (α : Fin (B 2).numRoots) (s : Aˣ) :
     xB2 α (ofAdd (s : A)) * xB2 ((ΦB2).reflectionPerm α α) (ofAdd (-((s⁻¹ : Aˣ) : A))) *
-        xB2 α (ofAdd (s : A)) =
-      D.weylElement (b2SpecialIsogeny.indexEquiv α) A
-        (s ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat) := by
+        xB2 α (ofAdd (s : A)) = D.weylElement (b2SpecialIsogeny.indexEquiv α) A
+          (s ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat) := by
   have h := (b2Pkg ht).weylElement D A α s; rwa [b2_ex, b2_ie, b2_ε, map_one, one_mul] at h
 
 /-- Applying `b2SpecialIsogenyRootSubgroup` twice gives `D.frobenius 2 1 A` on root subgroups. -/
@@ -246,7 +244,9 @@ private theorem f4_ε (ht : F4.Valid) (α : Fin F4.numRoots) : (f4Pkg ht).ε α 
 variable {ht : F4.Valid} (D : ChevalleyDatum F4 ht) (A : Type v) [CommRing A] [ExpChar A 2]
 local notation "ΦF4" => F4.simplyConnectedRootDatum ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `F₄`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `F₄`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(u ^ exponent (indexEquiv α)))` (with `indexEquiv` and `exponent` from
+`f4SpecialIsogeny` and sign `ε = 1`). -/
 noncomputable def f4SpecialIsogenyRootSubgroup (α : Fin F4.numRoots) :
     Multiplicative A →* D.points A := (f4Pkg ht).hom D A α
 local notation "xF4" => D.f4SpecialIsogenyRootSubgroup A
@@ -281,9 +281,8 @@ theorem f4SpecialIsogenyRootSubgroup_reflectionPerm_simpleIndex (i : Fin F4.rank
 /-- Steinberg's Weyl word in `f4SpecialIsogenyRootSubgroup` gives `D.weylElement` at the partner. -/
 theorem f4SpecialIsogenyRootSubgroup_weylElement (α : Fin F4.numRoots) (s : Aˣ) :
     xF4 α (ofAdd (s : A)) * xF4 ((ΦF4).reflectionPerm α α) (ofAdd (-((s⁻¹ : Aˣ) : A))) *
-        xF4 α (ofAdd (s : A)) =
-      D.weylElement (f4SpecialIsogeny.indexEquiv α) A
-        (s ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat) := by
+        xF4 α (ofAdd (s : A)) = D.weylElement (f4SpecialIsogeny.indexEquiv α) A
+          (s ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat) := by
   have h := (f4Pkg ht).weylElement D A α s; rwa [f4_ex, f4_ie, f4_ε, map_one, one_mul] at h
 
 /-- Applying `f4SpecialIsogenyRootSubgroup` twice gives `D.frobenius 2 1 A` on root subgroups. -/
@@ -332,10 +331,11 @@ private theorem g2_ε (ht : G2.Valid) (α : Fin G2.numRoots) :
 variable {ht : G2.Valid} (D : ChevalleyDatum G2 ht) (A : Type v) [CommRing A] [ExpChar A 3]
 local notation "ΦG2" => G2.simplyConnectedRootDatum ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `G₂`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `G₂`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(g2SpecialIsogenySign α · u ^ exponent (indexEquiv α)))` (with
+`indexEquiv` and `exponent` from `g2SpecialIsogeny`). -/
 noncomputable def g2SpecialIsogenyRootSubgroup (α : Fin G2.numRoots) :
     Multiplicative A →* D.points A := (g2Pkg ht).hom D A α
-
 local notation "xG2" => D.g2SpecialIsogenyRootSubgroup A
 
 /-- Explicit signed root-subgroup formula for `g2SpecialIsogenyRootSubgroup` on `ofAdd u`. -/
@@ -369,10 +369,9 @@ theorem g2SpecialIsogenyRootSubgroup_reflectionPerm_simpleIndex (i : Fin G2.rank
 /-- Steinberg's Weyl word in `g2SpecialIsogenyRootSubgroup` gives the signed `D.weylElement`. -/
 theorem g2SpecialIsogenyRootSubgroup_weylElement (α : Fin G2.numRoots) (s : Aˣ) :
     xG2 α (ofAdd (s : A)) * xG2 ((ΦG2).reflectionPerm α α) (ofAdd (-((s⁻¹ : Aˣ) : A))) *
-        xG2 α (ofAdd (s : A)) =
-      D.weylElement (g2SpecialIsogeny.indexEquiv α) A
-        (Units.map (Int.castRingHom A).toMonoidHom (g2SpecialIsogenySign α) *
-          s ^ (g2SpecialIsogeny.exponent (g2SpecialIsogeny.indexEquiv α)).toNat) := by
+        xG2 α (ofAdd (s : A)) = D.weylElement (g2SpecialIsogeny.indexEquiv α) A
+          (Units.map (Int.castRingHom A).toMonoidHom (g2SpecialIsogenySign α) *
+            s ^ (g2SpecialIsogeny.exponent (g2SpecialIsogeny.indexEquiv α)).toNat) := by
   have h := (g2Pkg ht).weylElement D A α s; rwa [g2_ex, g2_ie, g2_ε] at h
 
 /-- Applying `g2SpecialIsogenyRootSubgroup` twice gives `D.frobenius 3 1 A` on root subgroups. -/

@@ -14,8 +14,11 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 # Chevalley commutator relations and simple-root determination for the `G₂` exceptional isogeny
 
 Over `[ExpChar A 3]`, `g2SpecialIsogenyRootSubgroup` satisfies all Chevalley commutator relations
-of the pinned `G₂` Chevalley system, is determined on all twelve roots by the four signed simple
-roots, and squares to `D.frobenius 3 1 A` on `D.elementarySubgroup A`.
+of the pinned `G₂` Chevalley system. Any group homomorphism `D.points A →* E.points A` agreeing
+with `g2SpecialIsogenyRootSubgroup` on the positive and negative simple root subgroups agrees with
+it on all twelve root subgroups, and any endomorphism `D.points A →* D.points A` agreeing with it
+on the positive and negative simple root subgroups squares to `D.frobenius 3 1 A` on
+`D.elementarySubgroup A`.
 -/
 
 public section
@@ -221,10 +224,9 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ 
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair {i j k l m : Fin G2.numRoots}
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
     (hij : (ΦG2).root k = (ΦG2).root i + (ΦG2).root j) (u v : A) :
-    ⁅xG2 i (ofAdd u), xG2 j (ofAdd v)⁆ =
-      xG2 k (ofAdd (((NG2 i j / 2 : ℤ) : A) * (2 * u * v))) *
-        xG2 l (ofAdd (((NG2 i j / 2 * (NG2 i k / 3) : ℤ) : A) * (3 * u ^ 2 * v))) *
-        xG2 m (ofAdd (-((NG2 i j / 2 * (NG2 k j / 3) : ℤ) : A) * (3 * u * v ^ 2))) := by
+    ⁅xG2 i (ofAdd u), xG2 j (ofAdd v)⁆ = xG2 k (ofAdd (((NG2 i j / 2 : ℤ) : A) * (2 * u * v))) *
+      xG2 l (ofAdd (((NG2 i j / 2 * (NG2 i k / 3) : ℤ) : A) * (3 * u ^ 2 * v))) *
+      xG2 m (ofAdd (-((NG2 i j / 2 * (NG2 k j / 3) : ℤ) : A) * (3 * u * v ^ 2))) := by
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
   obtain ⟨hfi, hfj, hfk, hadd', hdvd⟩ :=
     g2_short_pair_partner i j k hi hj hk ((g2_root_add_iff i j k).mp hij)
@@ -240,12 +242,11 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
     (hδ : (ΦG2).root δ = (ΦG2).root α + (ΦG2).root γ)
     (hε : (ΦG2).root ε = (ΦG2).root α + (ΦG2).root δ)
     (hζ : (ΦG2).root ζ = (ΦG2).root δ + (ΦG2).root γ) (u v : A) :
-    ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ =
-      xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) *
-        xG2 δ (ofAdd (((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
-        xG2 ε (ofAdd (((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
-        xG2 ζ (ofAdd (((2 * (NG2 α β * (NG2 α γ / 2) * NG2 α β *
-          (NG2 δ γ / 3)) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
+    ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ = xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) *
+      xG2 δ (ofAdd (((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
+      xG2 ε (ofAdd (((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
+      xG2 ζ (ofAdd (((2 * (NG2 α β * (NG2 α γ / 2) * NG2 α β *
+        (NG2 δ γ / 3)) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
   have r {i j k} := g2_root_add_iff (ht := ht) i j k
   have hmem := mem_g2ShortLongTuples (r.mp hγ) (r.mp hδ) (r.mp hε) (r.mp hζ)
   obtain ⟨⟨r₁, r₂, r₃, r₄, qa, qb, qg, qd, qe, qz⟩, d₁, d₂, d₃, d₄⟩ :=
@@ -281,12 +282,11 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_short
     (hδ : (ΦG2).root δ = (ΦG2).root α + (ΦG2).root γ)
     (hε : (ΦG2).root ε = (ΦG2).root α + (ΦG2).root δ)
     (hζ : (ΦG2).root ζ = (ΦG2).root δ + (ΦG2).root γ) (u v : A) :
-    ⁅xG2 β (ofAdd v), xG2 α (ofAdd u)⁆ =
-      xG2 γ (ofAdd (-(NG2 α β : A) * (u * v))) *
-        xG2 δ (ofAdd (-((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
-        xG2 ε (ofAdd (-((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
-        xG2 ζ (ofAdd (((NG2 α β * (NG2 α γ / 2) * NG2 α β *
-          (NG2 δ γ / 3) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
+    ⁅xG2 β (ofAdd v), xG2 α (ofAdd u)⁆ = xG2 γ (ofAdd (-(NG2 α β : A) * (u * v))) *
+      xG2 δ (ofAdd (-((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
+      xG2 ε (ofAdd (-((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
+      xG2 ζ (ofAdd (((NG2 α β * (NG2 α γ / 2) * NG2 α β *
+        (NG2 δ γ / 3) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
   have r {i j k} := g2_root_add_iff (ht := ht) i j k
   obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ := g2_short_long_factors_comm (α, β, γ, δ, ε, ζ)
     (mem_g2ShortLongTuples (r.mp hγ) (r.mp hδ) (r.mp hε) (r.mp hζ))
@@ -384,10 +384,11 @@ private theorem eq_quadruple_of_g2_half (φ : D.points A →* E.points A)
   refine ⟨hg, hd, he, fun w => ?_⟩
   rw [← ofAdd_toAdd w, (wD _).2.2.2, (wE _).2.2.2]; simp only [map_commutatorElement, hb, he]
 
-/-- **Simple-root determination for the `G₂` exceptional isogeny.** -/
+/-- A group homomorphism `φ : D.points A →* E.points A` agreeing with
+`E.g2SpecialIsogenyRootSubgroup A` on the positive and negative simple root subgroups agrees with
+it on all twelve root subgroups. -/
 theorem map_rootSubgroupPoints_of_g2SpecialIsogeny_simple (φ : D.points A →* E.points A)
-    (hpos : ∀ i u, φ (D.rootSubgroupPoints (G2.simpleIndex ht i) A u) =
-      xE (G2.simpleIndex ht i) u)
+    (hpos : ∀ i u, φ (D.rootSubgroupPoints (G2.simpleIndex ht i) A u) = xE (G2.simpleIndex ht i) u)
     (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
       xE ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
@@ -416,11 +417,12 @@ theorem map_rootSubgroupPoints_of_g2SpecialIsogeny_simple (φ : D.points A →* 
     first | exact h0 u | exact h1 u | exact h2 u | exact h3 u | exact h4 u | exact h5 u |
       exact h6 u | exact h7 u | exact h8 u | exact h9 u | exact h10 u | exact h11 u
 
-/-- **Frobenius square relation for the `G₂` exceptional isogeny** on `D.elementarySubgroup A`. -/
+/-- An endomorphism `φ : D.points A →* D.points A` agreeing with `g2SpecialIsogenyRootSubgroup` on
+the positive and negative simple root subgroups squares to `D.frobenius 3 1 A` on
+`D.elementarySubgroup A`. -/
 theorem comp_self_eq_frobenius_of_g2SpecialIsogeny_simple (φ : D.points A →* D.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints (G2.simpleIndex ht i) A u) =
-      xG2 (G2.simpleIndex ht i) u)
-    (hneg : ∀ i u, φ (D.rootSubgroupPoints
+      xG2 (G2.simpleIndex ht i) u) (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
       xG2 ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
     {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 3 1 A g := by

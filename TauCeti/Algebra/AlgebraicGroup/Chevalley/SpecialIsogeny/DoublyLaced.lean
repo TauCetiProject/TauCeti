@@ -15,11 +15,14 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
-# Characteristic-two commutator relations and Weyl determination for `B₂` and `F₄`
+# Characteristic-two commutator relations and simple-root determination for `B₂` and `F₄`
 
 Over `[ExpChar A 2]`, `b2SpecialIsogenyRootSubgroup` and `f4SpecialIsogenyRootSubgroup` satisfy all
-Chevalley commutator relations of the source root system, are determined on all roots by the signed
-simple roots, and square to `D.frobenius 2 1 A` on `D.elementarySubgroup A`.
+Chevalley commutator relations of the source root system. Any group homomorphism
+`D.points A →* E.points A` agreeing with these maps on the positive and negative simple root
+subgroups agrees with them on every root subgroup, and any endomorphism `D.points A →* D.points A`
+agreeing with them on the positive and negative simple root subgroups squares to
+`D.frobenius 2 1 A` on `D.elementarySubgroup A`.
 -/
 
 public section
@@ -36,9 +39,7 @@ private theorem charTwoOfExpChar (A : Type*) [CommRing A] [ExpChar A 2] : CharP 
   (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
 attribute [local instance] charTwoOfExpChar
 section DoublyLacedAux
-
 private noncomputable abbrev scD (t : DynkinType) (ht : t.Valid) := t.simplyConnectedRootDatum ht
-
 private structure DoublyLacedIso (t : DynkinType) (ht : t.Valid) where
   iso : RootPairingIsogeny (scD t ht) (scD t ht)
   mul_self : iso * iso = smulId (scD t ht) 2
@@ -53,11 +54,9 @@ private noncomputable abbrev partnerPt {t : DynkinType} {ht : t.Valid} (D : Chev
     (ofAdd (u ^ (F.iso.exponent (F.iso.indexEquiv α)).toNat))
 
 section WithDatum
-
 variable {t : DynkinType} {ht : t.Valid}
 local notation "Φ" => scD t ht
 local notation "N" => t.structureConstant ht
-
 local notation "scOr" => structureConstant_eq_natCast_or_eq_neg_natCast
 private abbrev lenAdd (F : DoublyLacedIso t ht) :=
   (Φ).length_of_root_eq_add_zsmul F.iso.exponent F.sym
@@ -487,21 +486,23 @@ theorem commutatorElement_b2SpecialIsogenyRootSubgroup_of_root_eq_add_two_nsmul
       xB2 δ (ofAdd (((-(NB2 β α * NB2 β γ / 2) : ℤ) : A) * (u * v ^ 2))) := by
   simpa only [b2_pt] using commutatorElement_doublyLaced_of_add_two_nsmul D (b2DL ht) hγ hδ A u v
 
-/-- **Simple-root determination for the `B₂` exceptional isogeny.** -/
+/-- A group homomorphism `φ : D.points A →* E.points A` agreeing with
+`E.b2SpecialIsogenyRootSubgroup A` on the positive and negative simple root subgroups agrees with
+it on every root subgroup. -/
 theorem map_rootSubgroupPoints_of_b2SpecialIsogeny_simple (φ : D.points A →* E.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints ((B 2).simpleIndex ht i) A u) =
-      xEB2 ((B 2).simpleIndex ht i) u)
-    (hneg : ∀ i u, φ (D.rootSubgroupPoints
+      xEB2 ((B 2).simpleIndex ht i) u) (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦB2).reflectionPerm ((B 2).simpleIndex ht i) ((B 2).simpleIndex ht i)) A u) =
       xEB2 ((ΦB2).reflectionPerm ((B 2).simpleIndex ht i) ((B 2).simpleIndex ht i)) u)
     (α : Fin (B 2).numRoots) (u : Multiplicative A) : φ (D.rootSubgroupPoints α A u) = xEB2 α u :=
   map_rootSubgroupPoints_doublyLaced D E (b2DL ht) A (b2_pt E A) φ hpos hneg α u
 
-/-- **Frobenius square relation for the `B₂` exceptional isogeny** on `D.elementarySubgroup A`. -/
+/-- An endomorphism `φ : D.points A →* D.points A` agreeing with `b2SpecialIsogenyRootSubgroup` on
+the positive and negative simple root subgroups squares to `D.frobenius 2 1 A` on
+`D.elementarySubgroup A`. -/
 theorem comp_self_eq_frobenius_of_b2SpecialIsogeny_simple (φ : D.points A →* D.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints ((B 2).simpleIndex ht i) A u) =
-      xB2 ((B 2).simpleIndex ht i) u)
-    (hneg : ∀ i u, φ (D.rootSubgroupPoints
+      xB2 ((B 2).simpleIndex ht i) u) (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦB2).reflectionPerm ((B 2).simpleIndex ht i) ((B 2).simpleIndex ht i)) A u) =
       xB2 ((ΦB2).reflectionPerm ((B 2).simpleIndex ht i) ((B 2).simpleIndex ht i)) u)
     {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 2 1 A g :=
@@ -512,14 +513,12 @@ end B2
 /-! ## Type `F₄` in characteristic two -/
 
 section F4
-
 variable {ht : F4.Valid} (D E : ChevalleyDatum F4 ht) (A : Type v) [CommRing A] [ExpChar A 2]
 local notation "ΦF4" => F4.simplyConnectedRootDatum ht
 local notation "NF4" => F4.structureConstant ht
 local notation "xF4" => D.f4SpecialIsogenyRootSubgroup A
 local notation "xEF4" => E.f4SpecialIsogenyRootSubgroup A
 local notation "eqF4" => simplyConnectedRootDatum_F4
-
 private noncomputable def f4DL (ht : F4.Valid) : DoublyLacedIso F4 ht where
   iso := f4SpecialIsogeny.ofEq (eqF4 ht); σ := lengthPermF4
   mul_self := ofEq_mul_self _ (eqF4 ht) f4SpecialIsogeny_mul_self
@@ -534,7 +533,6 @@ private noncomputable def f4DL (ht : F4.Valid) : DoublyLacedIso F4 ht where
     -- Expose `Fin 48` on `α, β` after transporting along `simplyConnectedRootDatum_F4`.
     change Fin 48 at α β
     rw [f4SpecialIsogeny_exponent, f4SpecialIsogeny_exponent]; exact f4Length_mul_pairing_comm α β
-
 private theorem f4_pt (α : Fin F4.numRoots) (u : A) :
     xF4 α (ofAdd u) = partnerPt D (f4DL ht) A α u := by
   have hi : (f4DL ht).iso.indexEquiv α = f4SpecialIsogeny.indexEquiv α :=
@@ -573,21 +571,23 @@ theorem commutatorElement_f4SpecialIsogenyRootSubgroup_of_root_eq_add_two_nsmul
       xF4 δ (ofAdd (((-(NF4 β α * NF4 β γ / 2) : ℤ) : A) * (u * v ^ 2))) := by
   simpa only [f4_pt] using commutatorElement_doublyLaced_of_add_two_nsmul D (f4DL ht) hγ hδ A u v
 
-/-- **Simple-root determination for the `F₄` exceptional isogeny.** -/
+/-- A group homomorphism `φ : D.points A →* E.points A` agreeing with
+`E.f4SpecialIsogenyRootSubgroup A` on the positive and negative simple root subgroups agrees with
+it on every root subgroup. -/
 theorem map_rootSubgroupPoints_of_f4SpecialIsogeny_simple (φ : D.points A →* E.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints (F4.simpleIndex ht i) A u) =
-      xEF4 (F4.simpleIndex ht i) u)
-    (hneg : ∀ i u, φ (D.rootSubgroupPoints
+      xEF4 (F4.simpleIndex ht i) u) (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦF4).reflectionPerm (F4.simpleIndex ht i) (F4.simpleIndex ht i)) A u) =
       xEF4 ((ΦF4).reflectionPerm (F4.simpleIndex ht i) (F4.simpleIndex ht i)) u)
     (α : Fin F4.numRoots) (u : Multiplicative A) : φ (D.rootSubgroupPoints α A u) = xEF4 α u :=
   map_rootSubgroupPoints_doublyLaced D E (f4DL ht) A (f4_pt E A) φ hpos hneg α u
 
-/-- **Frobenius square relation for the `F₄` exceptional isogeny** on `D.elementarySubgroup A`. -/
+/-- An endomorphism `φ : D.points A →* D.points A` agreeing with `f4SpecialIsogenyRootSubgroup` on
+the positive and negative simple root subgroups squares to `D.frobenius 2 1 A` on
+`D.elementarySubgroup A`. -/
 theorem comp_self_eq_frobenius_of_f4SpecialIsogeny_simple (φ : D.points A →* D.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints (F4.simpleIndex ht i) A u) =
-      xF4 (F4.simpleIndex ht i) u)
-    (hneg : ∀ i u, φ (D.rootSubgroupPoints
+      xF4 (F4.simpleIndex ht i) u) (hneg : ∀ i u, φ (D.rootSubgroupPoints
         ((ΦF4).reflectionPerm (F4.simpleIndex ht i) (F4.simpleIndex ht i)) A u) =
       xF4 ((ΦF4).reflectionPerm (F4.simpleIndex ht i) (F4.simpleIndex ht i)) u)
     {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 2 1 A g :=
