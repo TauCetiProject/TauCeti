@@ -130,18 +130,6 @@ private theorem amiceIntegral_coe (φ : Multiplicative ℤ_[p] →ₜ* Γ) (P : 
     rw [map_smul, add_comm X, amiceIntegral_one_add_X_pow, Polynomial.aeval_monomial,
       Algebra.smul_def]
 
-/-- **`[φ 1] - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of a
-commutative profinite group, for every continuous homomorphism `φ : ℤ_p → Γ`. So power series over
-`ℤ_p` can be evaluated at `[φ 1] - 1` by `PowerSeries.aeval`. No pro-`p` hypothesis on `Γ` is
-needed: the image of `φ` is pro-`p`. -/
-theorem isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
-    IsTopologicallyNilpotent (of ℤ_[p] Γ (φ (.ofAdd 1)) - 1) := by
-  have h := ((continuous_amiceIntegral φ).tendsto 0).comp (HasEval.X (R := ℤ_[p]))
-  rw [map_zero] at h
-  refine h.congr fun n ↦ ?_
-  rw [Function.comp_apply, ← Polynomial.coe_X, ← Polynomial.coe_pow, amiceIntegral_coe, map_pow,
-    Polynomial.aeval_X]
-
 end TauCeti.completedGroupAlgebra
 
 namespace AbstractMeasure
