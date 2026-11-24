@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Mul
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Dot product lemmas
@@ -34,6 +35,9 @@ to the form of the image matrix at the image vectors.
   integer vectors, is the cast of the integer value of the form.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
   with strictly positive weights vanishes.
+* `TauCeti.sum_mul_sub_eq_dotProduct_sub`, `TauCeti.sum_mul_sub_eq_sub_dotProduct`: for weights `p`
+  of total weight `1`, the `p`-average of the differences `v i - c` is `p ⬝ᵥ v - c`, and that of
+  the differences `c - v i` is `c - p ⬝ᵥ v`.
 * `Finset.exists_forall_dotProduct_ne_zero`: over an infinite domain, some vector has nonzero dot
   product with each of finitely many nonzero vectors.
 -/
@@ -84,6 +88,18 @@ theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [NonUnitalNonA
     c ⬝ᵥ x = 0 ↔ x = 0 := by
   simp [dotProduct, Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ mul_nonneg (hc j).le (hx j),
     (hc _).ne', funext_iff]
+
+/-- For weights `p` of total weight `1`, the `p`-average of the differences `v i - c` is
+`p ⬝ᵥ v - c`. -/
+theorem sum_mul_sub_eq_dotProduct_sub {ι R : Type*} [Fintype ι] [NonAssocRing R] {p : ι → R}
+    (hp : ∑ i, p i = 1) (v : ι → R) (c : R) : ∑ i, p i * (v i - c) = p ⬝ᵥ v - c := by
+  simp only [mul_sub, Finset.sum_sub_distrib, sum_mul_const_of_sum_eq_one hp, dotProduct]
+
+/-- For weights `p` of total weight `1`, the `p`-average of the differences `c - v i` is
+`c - p ⬝ᵥ v`. -/
+theorem sum_mul_sub_eq_sub_dotProduct {ι R : Type*} [Fintype ι] [NonAssocRing R] {p : ι → R}
+    (hp : ∑ i, p i = 1) (v : ι → R) (c : R) : ∑ i, p i * (c - v i) = c - p ⬝ᵥ v := by
+  simp only [mul_sub, Finset.sum_sub_distrib, sum_mul_const_of_sum_eq_one hp, dotProduct]
 
 end TauCeti
 

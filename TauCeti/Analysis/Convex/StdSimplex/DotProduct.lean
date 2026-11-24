@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Convex.StdSimplex.Faces
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Order.Compact
+import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # The probability simplex and expected values
@@ -25,7 +26,6 @@ expected value of `v` under `p`.
 * `TauCeti.mem_simplex_iff`: the simplex consists of the nonnegative vectors of sum `1`.
 * `TauCeti.convex_simplex`, `TauCeti.isCompact_simplex`: the simplex is convex, and compact over
   a finite type.
-* `TauCeti.sum_mul_const_of_sum_eq_one`: weights of total `1` average a constant to itself.
 * `TauCeti.le_dotProduct_of_mem_simplex`, `TauCeti.dotProduct_le_of_mem_simplex`: an expected
   value lies between any lower and upper bounds of the values.
 -/
@@ -37,11 +37,6 @@ open Finset Matrix Convexity
 namespace TauCeti
 
 variable {ι : Type*}
-
-/-- Weights of total weight `1` average a constant to itself. -/
-theorem sum_mul_const_of_sum_eq_one {α : Type*} [NonAssocSemiring α] {s : Finset ι}
-    {p : ι → α} (hp : ∑ i ∈ s, p i = 1) (c : α) : ∑ i ∈ s, p i * c = c := by
-  rw [← sum_mul, hp, one_mul]
 
 variable (ι) in
 /-- The probability simplex in `ι → ℝ`, the weight vectors of `Convexity.StdSimplex ℝ ι`. Its

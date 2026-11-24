@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.StdSimplex.DotProduct
+import TauCeti.Data.Matrix.DotProduct
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Fintype.Order
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
@@ -171,8 +172,7 @@ theorem sum_sub_eq_sum_mul_regret (p u : ℕ → ι → ℝ) {q : ι → ℝ} (h
     ∑ t ∈ range T, (q ⬝ᵥ u t - p t ⬝ᵥ u t) = ∑ a, q a * regret p u T a := by
   simp only [regret_def, mul_sum]
   rw [sum_comm]
-  refine sum_congr rfl fun t _ ↦ ?_
-  simp only [mul_sub, sum_sub_distrib, sum_mul_const_of_sum_eq_one hq, dotProduct]
+  exact sum_congr rfl fun t _ ↦ (sum_mul_sub_eq_dotProduct_sub hq (u t) _).symm
 
 /-- The largest regret against a mixed comparator is the external regret, the largest regret
 against a single action. -/
@@ -183,8 +183,8 @@ theorem isGreatest_sum_sub_image_simplex [Nonempty ι] (p u : ℕ → ι → ℝ
   refine ⟨?_, ?_⟩
   · obtain ⟨a, ha⟩ := exists_eq_ciSup_of_finite (f := regret p u T)
     refine ⟨Pi.single a 1, single_mem_simplex a, ?_⟩
-    simp only [← ha, sum_sub_eq_sum_mul_regret p u (mem_simplex_iff.1 (single_mem_simplex a)).2,
-      Pi.single_apply, ite_mul, one_mul, zero_mul, sum_ite_eq', mem_univ, ite_true]
+    rw [← ha, regret_def]
+    simp
   · rintro _ ⟨q, hq, rfl⟩
     dsimp only
     rw [sum_sub_eq_sum_mul_regret p u (mem_simplex_iff.1 hq).2]
@@ -196,7 +196,8 @@ theorem regret_const {p : ℕ → ι → ℝ} {T : ℕ} (hp : ∀ t < T, ∑ i, 
     (a : ι) : regret p (fun t _ ↦ c t) T a = 0 := by
   rw [regret_def]
   refine sum_eq_zero fun t ht ↦ ?_
-  simp only [dotProduct, sum_mul_const_of_sum_eq_one (hp t (mem_range.1 ht)), sub_self]
+  rw [← sum_mul_sub_eq_sub_dotProduct (hp t (mem_range.1 ht))]
+  simp
 
 /-- With a single action, every regret of plays of total weight `1` is `0`. -/
 theorem regret_eq_zero_of_subsingleton [Subsingleton ι] {p : ℕ → ι → ℝ} {T : ℕ}
@@ -269,9 +270,9 @@ instance is a mixed strategy: the regret against `a` is the gain from the consta
 theorem regret_le_swapRegret {p : ℕ → ι → ℝ} (u : ℕ → ι → ℝ) {T : ℕ}
     (hp : ∀ t < T, ∑ i, p t i = 1) (a : ι) : regret p u T a ≤ swapRegret p u T := by
   rw [regret_def]
-  refine le_of_eq_of_le (sum_congr rfl fun t ht ↦ ?_) (le_swapRegret p u T fun _ ↦ a)
-  simp only [mul_sub, sum_sub_distrib, sum_mul_const_of_sum_eq_one (hp t (mem_range.1 ht)),
-    dotProduct]
+  exact le_of_eq_of_le
+    (sum_congr rfl fun t ht ↦ (sum_mul_sub_eq_sub_dotProduct (hp t (mem_range.1 ht)) _ _).symm)
+    (le_swapRegret p u T fun _ ↦ a)
 
 end SwapRegret
 
