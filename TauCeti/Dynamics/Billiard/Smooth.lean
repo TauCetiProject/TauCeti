@@ -14,7 +14,6 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
 # Smoothness of the billiard map
@@ -26,9 +25,9 @@ If `χ` is `C^(n+1)` for some `n ≠ 0`, then `B` is `C^n` on the strip
 (`TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`), and so is its inverse: `B` is a
 `C^n` diffeomorphism of the strip onto itself
 (`TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`). One derivative is lost
-because the tangential components are inner products with the derivative `χ'`. The billiard map
-`β` induced by `B` on the space of collision states `AddCircle L × (-1, 1)` is therefore a
-homeomorphism as soon as `χ` is `C²` (`TauCeti.StrictConvexBilliardTable.billiardHomeomorph`).
+because the tangential components are inner products with the derivative `χ'`. That `B` and the
+billiard map `β` on `AddCircle L × (-1, 1)` are homeomorphisms needs no smoothness at all; see
+`TauCeti.Dynamics.Billiard.Homeomorph`.
 
 The proof is the implicit function theorem for the generating function
 `S(s, t) = -‖χ(t) - χ(s)‖` (`TauCeti.StrictConvexBilliardTable.generatingFunction`). On the domain
@@ -48,10 +47,6 @@ components. The next tangential component `w = ⟪u, χ'(t)⟫` is then `C^n` to
 
 The inverse of `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` and `τ(s, v) = (s + L, v)`
 (`TauCeti.StrictConvexBilliardTable.nextCollisionEquiv_symm_apply`), so it is `C^n` as well.
-Since `B` and its inverse commute with `τ`, their continuity passes to the quotient by the open
-quotient map `ℝ × (-1, 1) → AddCircle L × (-1, 1)`.
-
-Whether `β` is still a homeomorphism when `χ` is only `C¹` is not treated here.
 
 ## Main results
 
@@ -65,11 +60,6 @@ Whether `β` is still a homeomorphism when `χ` is only `C¹` is not treated her
   on the strip when `χ` is `C^(n+1)`.
 * `TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`: the next-collision map as a
   `C^n` diffeomorphism of the strip, with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`.
-* `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv`,
-  `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv_symm`: continuity of the
-  next-collision bijection of `ℝ × (-1, 1)` and of its inverse.
-* `TauCeti.StrictConvexBilliardTable.billiardHomeomorph`: the billiard map as a homeomorphism of
-  `AddCircle L × (-1, 1)`.
 
 ## References
 
@@ -298,76 +288,6 @@ theorem nextCollisionPartialDiffeomorph_source (hn : n ≠ 0) (hχ : ContDiff �
 @[simp]
 theorem nextCollisionPartialDiffeomorph_target (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
     (χ.nextCollisionPartialDiffeomorph hn hχ).target = univ ×ˢ Ioo (-1) 1 :=
-  (rfl)
-
-/-! ### The billiard map as a homeomorphism -/
-
-/-- A map of `ℝ × ℝ` that is continuous on the strip `ℝ × (-1, 1)` and maps it into itself
-restricts to a continuous map of `ℝ × (-1, 1)`. -/
-private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
-    (hf : ContinuousOn f (univ ×ˢ Ioo (-1) 1))
-    (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
-    Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
-      ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
-  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
-    fun x ↦ ⟨mem_univ _, x.2.property⟩
-  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
-
-/-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
-theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
-  (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
-    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.property).congr fun x ↦ by simp
-
-/-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
-`C²`. -/
-theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
-    Continuous χ.nextCollisionEquiv.symm :=
-  (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
-    fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
-
-/-- The projection `ℝ × (-1, 1) → AddCircle L × (-1, 1)` onto the space of collision states is an
-open quotient map. -/
-private theorem isOpenQuotientMap_prodMap_coe :
-    IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
-  QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-
-/-- A map of `AddCircle L × (-1, 1)` is continuous when it lifts along the projection from
-`ℝ × (-1, 1)` to a continuous map. -/
-private theorem continuous_of_lift
-    {g : AddCircle χ.period × Ioo (-1 : ℝ) 1 → AddCircle χ.period × Ioo (-1 : ℝ) 1}
-    {F : ℝ × Ioo (-1 : ℝ) 1 → ℝ × Ioo (-1 : ℝ) 1} (hF : Continuous F)
-    (h : ∀ (s : ℝ) v, g (s, v) = (((F (s, v)).1 : AddCircle χ.period), (F (s, v)).2)) :
-    Continuous g := by
-  rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
-  convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp hF using 1
-  funext ⟨s, v⟩
-  exact h s v
-
-/-- **The billiard map is a homeomorphism.** If `χ` is `C²`, the billiard map `β` of the table is
-a homeomorphism of the space of collision states `AddCircle L × (-1, 1)`. -/
-def billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
-    AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
-  toEquiv := χ.billiardMap
-  continuous_toFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv hχ) fun s v ↦ by simp
-  continuous_invFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv_symm hχ)
-    fun s v ↦ by simp [AddCircle.coe_period]
-
-/-- The underlying bijection of the billiard homeomorphism is the billiard map. -/
-@[simp]
-theorem billiardHomeomorph_toEquiv (hχ : ContDiff ℝ 2 χ) :
-    (χ.billiardHomeomorph hχ).toEquiv = χ.billiardMap :=
-  (rfl)
-
-/-- The billiard homeomorphism acts as the billiard map. -/
-@[simp]
-theorem coe_billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
-    ⇑(χ.billiardHomeomorph hχ) = χ.billiardMap :=
-  (rfl)
-
-/-- The inverse of the billiard homeomorphism acts as the inverse of the billiard map. -/
-@[simp]
-theorem coe_billiardHomeomorph_symm (hχ : ContDiff ℝ 2 χ) :
-    ⇑(χ.billiardHomeomorph hχ).symm = χ.billiardMap.symm :=
   (rfl)
 
 end StrictConvexBilliardTable
