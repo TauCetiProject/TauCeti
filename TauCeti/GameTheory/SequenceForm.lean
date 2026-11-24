@@ -104,6 +104,7 @@ variable {parent : J → Option (Σ j, A j)} {ρ : J → ℕ}
 point to the decision points following it: a property of sequences that holds at the empty
 sequence, and holds at each sequence `⟨j, a⟩` as soon as it holds at the sequence `parent j`
 leading to `j`, holds at every sequence. -/
+@[elab_as_elim]
 theorem sequence_induction (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ → ρ j' < ρ j)
     {P : Option (Σ j, A j) → Prop} (empty : P none)
     (step : ∀ j a, P (parent j) → P (some ⟨j, a⟩)) (s : Option (Σ j, A j)) : P s := by
@@ -136,15 +137,14 @@ theorem exists_isSequenceForm (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ →
 theorem IsSequenceForm.unique (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ → ρ j' < ρ j)
     {b : ∀ j, A j → ℝ} {x y : Option (Σ j, A j) → ℝ} (hx : IsSequenceForm parent b x)
     (hy : IsSequenceForm parent b y) : x = y :=
-  funext <| sequence_induction (P := fun s ↦ x s = y s) hρ
-    (by rw [hx.apply_none, hy.apply_none]) fun j a h ↦ by
-    rw [hx.apply_some, hy.apply_some, h]
+  funext fun s ↦ sequence_induction hρ (by rw [hx.apply_none, hy.apply_none])
+    (fun j a h ↦ by rw [hx.apply_some, hy.apply_some, h]) s
 
 /-- The sequence form of nonnegative weights is nonnegative. -/
 theorem IsSequenceForm.nonneg (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ → ρ j' < ρ j)
     {b : ∀ j, A j → ℝ} {x : Option (Σ j, A j) → ℝ} (hx : IsSequenceForm parent b x)
     (hb : ∀ j a, 0 ≤ b j a) (s : Option (Σ j, A j)) : 0 ≤ x s :=
-  sequence_induction (P := fun s ↦ 0 ≤ x s) hρ (by rw [hx.apply_none]; exact zero_le_one)
+  sequence_induction hρ (by rw [hx.apply_none]; exact zero_le_one)
     (fun j a h ↦ by rw [hx.apply_some]; exact mul_nonneg h (hb j a)) s
 
 variable [∀ j, Fintype (A j)]
@@ -200,7 +200,7 @@ theorem sequenceFormPolytope_subset_Icc
     (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ → ρ j' < ρ j) :
     sequenceFormPolytope parent ⊆ Set.Icc 0 1 := by
   rintro x ⟨hx1, hx0, hxsum⟩
-  refine ⟨hx0, sequence_induction (P := fun s ↦ x s ≤ 1) hρ hx1.le fun j a h ↦ ?_⟩
+  refine ⟨hx0, fun s ↦ sequence_induction hρ hx1.le (fun j a h ↦ ?_) s⟩
   calc x (some ⟨j, a⟩) ≤ ∑ a', x (some ⟨j, a'⟩) :=
         single_le_sum (f := fun a' ↦ x (some ⟨j, a'⟩)) (fun a' _ ↦ hx0 _) (mem_univ a)
     _ = x (parent j) := hxsum j
