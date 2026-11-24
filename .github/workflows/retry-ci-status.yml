@@ -30,7 +30,7 @@ jobs:
     with:
       project_ref: ${{ github.workflow_sha }}
       source_run_id: ${{ inputs.source_run_id || '' }}
-      source_attempt: ${{ inputs.source_attempt || '1' }}
+      source_attempt: ${{ inputs.source_attempt }}
     secrets:
       CI_READ_APP_ID: ${{ secrets.CI_READ_APP_ID }}
       CI_READ_APP_PRIVATE_KEY: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
