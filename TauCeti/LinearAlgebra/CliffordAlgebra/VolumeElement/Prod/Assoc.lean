@@ -106,11 +106,16 @@ private theorem complexProdTensor_assoc_left
   have hcomp := AlgHom.cliffordProdTensor_comp_prodMap ρ₁₂_std (TensorProduct.map γ₁ γ₂)
     hγ₁₂_sq hγ₁₂_anti ρ₃ e₁₂ (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
+  have hγ'ρ (v : ℂ ⊗[ℝ] WithLp 2 (U × V)) :
+      TensorProduct.map γ₁ γ₂ * (ρ₁₂_std.comp (map e₁₂)) (ι (Q₁₂.baseChange ℂ) v) =
+        -((ρ₁₂_std.comp (map e₁₂)) (ι (Q₁₂.baseChange ℂ) v) * TensorProduct.map γ₁ γ₂) := by
+    rw [AlgHom.comp_apply, map_apply_ι]
+    exact hγ₁₂_anti (e₁₂ v)
   have hL := complexProdTensor_eq_comp hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂
   rw [complexProdTensor_eq_comp,
-    AlgHom.cliffordProdTensor_congr (hγ' := hγ₁₂_sq)
-      (hγ'ρ := fun v ↦ by simpa [γ₁, γ₂, e₁₂] using hγ₁₂_anti (e₁₂ v)) hL hvol rfl,
-    ← hcomp, AlgHom.comp_assoc, map_comp_map]
+    AlgHom.cliffordProdTensor_congr (hγ' := hγ₁₂_sq) (hγ'ρ := hγ'ρ) hL hvol rfl, ← hcomp]
+  simp only [AlgHom.comp_assoc, map_comp_map]
+  rfl
 
 omit [Fact (finrank ℝ (WithLp 2 (U × V)) = k + n)] in
 private theorem complexProdTensor_assoc_right :
@@ -134,8 +139,9 @@ private theorem complexProdTensor_assoc_right :
   have hR := complexProdTensor_eq_comp hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃
   rw [complexProdTensor_eq_comp,
     AlgHom.cliffordProdTensor_congr (hγ' := map_complexVolume_mul_self o₁ hQ₁ ρ₁)
-      (hγ'ρ := map_complexVolume_mul_map_ι o₁ hk ρ₁) rfl rfl hR,
-    ← hcomp, AlgHom.comp_assoc, map_comp_map]
+      (hγ'ρ := map_complexVolume_mul_map_ι o₁ hk ρ₁) rfl rfl hR, ← hcomp]
+  simp only [AlgHom.comp_assoc, map_comp_map]
+  rfl
 
 /-- **Associativity of `complexProdTensor` (algebra-map form).** Conjugating the left-associated
 action on `(E ⊗ F) ⊗ G` by `TensorProduct.assoc ℂ E F G` gives the right-associated action on
@@ -157,9 +163,9 @@ theorem conjAlgEquiv_assoc_complexProdTensor
       (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂
       (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
       (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃,
-    equivOfIsometry_toAlgHom, AlgHom.comp_assoc, AlgHom.comp_assoc,
-    map_comp_map, map_comp_map,
-    QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange]
+    equivOfIsometry_toAlgHom]
+  simp only [AlgHom.comp_assoc, map_comp_map]
+  rw [QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange]
 
 /-- **Associativity of `complexProdTensor` (pointwise form).** `TensorProduct.assoc ℂ E F G`
 intertwines the two iterated `complexProdTensor` actions for every Clifford element `a` and tensor
@@ -213,8 +219,7 @@ theorem assoc_complexProdTensor_complexVolume
     have hassoc := Orientation.map_withLpProdAssoc_prod (p := 2) o₁ o₂ o₃
       (Fact.out : finrank ℝ U = k) (Fact.out : finrank ℝ V = n) (Fact.out : finrank ℝ W = m)
     simp only [ho₁₂, ho₂₃] at hassoc
-    rw [← ho_R, ← ho_L, hassoc, Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
-      Orientation.reindex_refl, Equiv.refl_apply]
+    rw [← ho_R, ← ho_L, hassoc, eq_comm, Orientation.reindex_finCongr_eq_iff]
   rw [complexProdTensor_complexVolume_of_map_prod hQ_L o₁₂
       (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn) _ ρ₃ o₃ o_L hm hQ₃ ho_L,
     complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂,

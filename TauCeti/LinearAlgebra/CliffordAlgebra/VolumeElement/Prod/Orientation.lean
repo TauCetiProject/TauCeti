@@ -246,12 +246,12 @@ private theorem complexProdTensor_complexVolume_of_map_prod_aux
         Rhs ρ₂' b₁.toBasis.orientation o₂' := by
     rcases b₂.toBasis.orientation_eq_or_eq_neg o₂' with rfl | rfl
     · exact hbase b₁ b₂ ρ₂'
-    · rw [Orientation.prod_neg_right, Orientation.map_neg, complexVolume_neg_orientation, map_neg,
-        hbase b₁ b₂ ρ₂', hneg_right]
+    · rw [Orientation.map_prod_neg_right, complexVolume_neg_orientation, map_neg, hbase b₁ b₂ ρ₂',
+        hneg_right]
   subst ho
   rcases b₁.toBasis.orientation_eq_or_eq_neg o₁ with rfl | rfl
   · exact hpos ρ₂ o₂
-  · rw [Orientation.prod_neg_left, Orientation.map_neg, complexVolume_neg_orientation, map_neg,
+  · rw [Orientation.map_prod_neg_left, complexVolume_neg_orientation, map_neg,
       complexProdTensor_neg_orientation_eq_involute, hpos (ρ₂.comp involute) o₂, hneg_left]
 
 /-- **Frame-free product chirality**: for even `n` and `m`, `Q₁ v = -‖v‖²`, `Q₂ w = -‖w‖²`, and
@@ -301,7 +301,7 @@ theorem complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod (hm : Ev
       -complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) := by
   have ho' : ((-o₁).prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = -o := by
-    rw [Orientation.prod_neg_left, Orientation.map_neg, ho]
+    rw [Orientation.map_prod_neg_left, ho]
   rw [complexProdTensor_complexVolume_of_map_prod hQ (-o₁) hQ₁ hn ρ₁ ρ₂ o₂ (-o) hm hQ₂ ho',
     complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho]
   simp [TensorProduct.map_neg_left]

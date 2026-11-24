@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientati
 public import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Unit
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.LinearAlgebra.Ray
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -155,13 +156,12 @@ theorem lid_complexProdTensor_neg_positiveOrientation_complexVolume
       (-(-1 : ℂ) ^ m) • ρ₂ (complexVolume Q₂ o₂) ((TensorProduct.lid ℂ F) z) := by
   have ho' : ((positiveOrientation : Orientation ℝ V (Fin 0)).prod o₂ Fact.out Fact.out).map
       (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = -o := by
-    rw [← neg_neg (positiveOrientation : Orientation ℝ V (Fin 0)), Orientation.prod_neg_left,
-      Orientation.map_neg, ho]
-  rw [complexProdTensor_neg_orientation_eq_involute, ← neg_neg o,
-    complexVolume_neg_orientation, map_neg, LinearMap.neg_apply, map_neg,
-    lid_complexProdTensor_positiveOrientation_complexVolume hQ ρ₁ (ρ₂.comp involute) o₂ (-o) hQ₂
-      ho' z]
-  simp [involute_complexVolume, neg_smul]
+    rw [← ho, Orientation.map_prod_neg_left, Module.Ray.neg_neg]
+  have h := lid_complexProdTensor_positiveOrientation_complexVolume hQ ρ₁ (ρ₂.comp involute) o₂
+    (-o) hQ₂ ho' z
+  simp only [complexVolume_neg_orientation, map_neg, LinearMap.neg_apply,
+    AlgHom.comp_apply, involute_complexVolume, map_smul, LinearMap.smul_apply] at h
+  rw [complexProdTensor_neg_orientation_eq_involute, neg_eq_iff_eq_neg.1 h, neg_smul]
 
 end Volume
 
@@ -232,10 +232,10 @@ theorem rid_complexProdTensor_neg_positiveOrientation_complexVolume
       -ρ₁ (complexVolume Q₁ o₁) ((TensorProduct.rid ℂ E) z) := by
   have ho' : (o₁.prod (positiveOrientation : Orientation ℝ W (Fin 0)) Fact.out Fact.out).map
       (Fin (n + 0)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = -o := by
-    rw [← neg_neg (positiveOrientation : Orientation ℝ W (Fin 0)), Orientation.prod_neg_right,
-      Orientation.map_neg, ho]
-  rw [← neg_neg o, complexVolume_neg_orientation, map_neg, LinearMap.neg_apply, map_neg,
-    rid_complexProdTensor_positiveOrientation_complexVolume hQ o₁ hQ₁ hn ρ₁ ρ₂ (-o) ho' z]
+    rw [← ho, Orientation.map_prod_neg_right, Module.Ray.neg_neg]
+  have h := rid_complexProdTensor_positiveOrientation_complexVolume hQ o₁ hQ₁ hn ρ₁ ρ₂ (-o) ho' z
+  simp only [complexVolume_neg_orientation, map_neg, LinearMap.neg_apply] at h
+  exact neg_eq_iff_eq_neg.1 h
 
 end Volume
 

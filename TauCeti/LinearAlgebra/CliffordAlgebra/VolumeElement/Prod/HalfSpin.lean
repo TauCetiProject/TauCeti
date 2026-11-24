@@ -147,23 +147,10 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
     (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂)
     {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) =
-      2 ^ ((n + m) / 2 - 1) := by
-  -- Equip `E ⊗ F` with the `CliffordAlgebra (Q.baseChange ℂ)`-module structure induced by
-  -- `complexProdTensor` so `finrank_eigenspace_complexVolume_of_bijective_lsmul` applies.
-  let : Module (CliffordAlgebra (Q.baseChange ℂ)) (E ⊗[ℂ] F) :=
-    Module.compHom (E ⊗[ℂ] F) (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).toRingHom
-  have hsmul (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] F) :
-      a • z = complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z := rfl
-  have : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) (E ⊗[ℂ] F) :=
-    ⟨fun c a z ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
-  have hlsmul : (Algebra.lsmul ℂ ℂ (E ⊗[ℂ] F) :
-      CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] F)) =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ :=
-    AlgHom.ext fun a ↦ LinearMap.ext fun z ↦ hsmul a z
-  rw [← hlsmul]
-  exact finrank_eigenspace_complexVolume_of_bijective_lsmul o
+      2 ^ ((n + m) / 2 - 1) :=
+  (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).finrank_eigenspace_complexVolume_of_bijective o
     (QuadraticForm.withLpProd_eq_neg_norm_sq hQ hQ₁ hQ₂)
-    (hlsmul.symm ▸ complexProdTensor_bijective hQ o₁ hQ₁ hn ρ₁ ρ₂ hρ₁ hρ₂) hnm hμ
+    (complexProdTensor_bijective hQ o₁ hQ₁ hn ρ₁ ρ₂ hρ₁ hρ₂) hnm hμ
 
 end HalfSpin
 

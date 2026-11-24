@@ -27,7 +27,10 @@ variable (p : ℝ≥0∞) (K V : Type*) [Semiring K] [AddCommGroup V] [Module K 
 instance instModuleFree [Module.Free K V] : Module.Free K (WithLp p V) :=
   Module.Free.of_equiv (WithLp.linearEquiv p K V).symm
 
-/-- `WithLp` does not change `Module.finrank`. -/
+/-- `WithLp` does not change `Module.finrank`.
+
+Not `@[simp]`: collides in `simpNF` with Mathlib's `finrank_euclideanSpace` as well as
+`WithLp.finrank_prod` and `WithLp.finrank_complexification`. -/
 theorem finrank_eq : Module.finrank K (WithLp p V) = Module.finrank K V :=
   (WithLp.linearEquiv p K V).finrank_eq
 

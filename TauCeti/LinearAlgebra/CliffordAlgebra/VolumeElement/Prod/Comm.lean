@@ -140,8 +140,7 @@ theorem koszulComm_complexProdTensor_complexVolume_map
       (WithLp.linearEquiv 2 ℝ (W × V)).symm = o_WV := by
     rw [← ho_WV, ← ho_VW,
       Orientation.map_withLpProdComm_prod_of_even o₁ o₂ Fact.out Fact.out (hn.mul_right m),
-      Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
-      Equiv.refl_apply]
+      eq_comm, Orientation.reindex_finCongr_eq_iff]
   exact koszulComm_complexProdTensor_complexVolume hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂
     o_VW o_WV ho_VW ho_WV' z
 
