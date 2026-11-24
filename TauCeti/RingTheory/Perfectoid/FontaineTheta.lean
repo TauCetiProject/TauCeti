@@ -227,7 +227,6 @@ theorem exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul {ϖ : A♭}
       (add_mem (subset_span (by simp)) (mul_mem_right _ _ (subset_span (by simp))))
   have hξ_reg : (p : WittVector p A♭) + teichmuller p ϖ * α ∈ (WittVector p A♭)⁰ :=
     hξ.mem_nonZeroDivisors (Ideal.le_radical (mem_span_singleton.mpr hξ₀_dvd))
-      (PreTilt.mem_nonZeroDivisors_of_untilt hreg)
   refine ⟨α, hξ, hξ_reg, le_antisymm (ker_fontaineTheta_le_span hreg hbij.1 hξ hξ₀_dvd hker) ?_⟩
   exact span_le.mpr (Set.singleton_subset_iff.mpr hker)
 
