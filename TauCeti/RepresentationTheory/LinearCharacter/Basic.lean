@@ -38,6 +38,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
+* `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
+  the multiplication action of `ℤˣ` on `k`.
 * `Representation.ofLinearCharacter_injective`: the representation remembers its character.
 * `Representation.ofLinearCharacter_one`: the trivial character carries the trivial
   representation.
@@ -120,6 +122,16 @@ that fixes the convention: `χ = 1` acts by the scalar `1`. -/
 theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
+
+/-- **The sign character of `ℤˣ` carries the multiplication action of `ℤˣ`.** Over a commutative
+ring `k`, the character `ℤˣ →* kˣ` induced by `ℤ → k` acts on `k` by `u • a`, so its
+one-dimensional representation is the action of `ℤˣ` on `k`. -/
+@[simp]
+theorem ofLinearCharacter_unitsMap_intCastRingHom [CommRing k] :
+    ofLinearCharacter (Units.map (Int.castRingHom k : ℤ →* k)) = ofDistribMulAction k ℤˣ k := by
+  ext u
+  rw [ofLinearCharacter_apply, ofDistribMulAction_apply_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, eq_intCast, Units.smul_def, zsmul_eq_mul]
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
