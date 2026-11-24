@@ -11,8 +11,10 @@ public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.Index.Basic
+public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RepresentationTheory.RelativeNorm
 import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Cover
 
@@ -40,6 +42,13 @@ Conjugation by `g ∈ G` is an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`
 (`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For `T ≤ P`,
 the **Mackey formula** expresses `Tr_Q^P(a)`, viewed in `R[G]^T`, as the sum over the double
 cosets `TxQ` in `P` of the traces from `T ∩ xQx⁻¹` to `T` of `x a x⁻¹`.
+
+Relative traces from subgroups of index invertible in `R` are onto: if `|P : H|` is a unit of `R`,
+then `Tr_H^P(|P : H|⁻¹ b) = b` for `b ∈ R[G]^P`, so `Tr_H^P(R[G]^H) = R[G]^P`
+(`TauCeti.relTraceIdeal_eq_top_of_isUnit_index`) and `Tr_H^L(R[G]^H) = Tr_P^L(R[G]^P)` for
+`P ≤ L`. In characteristic `p` this applies to a Sylow `p`-subgroup `S` of `P`, so
+`Tr_S^L(R[G]^S) = Tr_P^L(R[G]^P)` (`TauCeti.relTraceIdeal_eq_of_subgroupOf_eq_sylow`). For `P = G`,
+every element of the centre `R[G]^G` is a trace from `S` (`TauCeti.relTraceIdeal_sylow_eq_top`).
 
 For a `p`-subgroup `P` of a finite group in characteristic `p`, the ideals `R[G]^P_Q` for `Q < P`
 lie in the kernel of the Brauer homomorphism of `P`, and the defect groups of the blocks of `R[G]`
@@ -73,6 +82,12 @@ are described through them.
   `TauCeti.inclusion_relTrace_eq_sum_doubleCoset`: the Mackey formula
   `Tr_Q^P(a) = ∑_{TxQ} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T` for `T ≤ P`, over any system of
   double coset representatives and over the double coset quotient.
+* `TauCeti.relTrace_inclusion_smul_of_mul_index_eq_one`: `Tr_H^P(r b) = b` when
+  `r |P : H| = 1` and `b ∈ R[G]^P`.
+* `TauCeti.relTraceIdeal_eq_of_subgroupOf_eq_sylow`: in characteristic `p`,
+  `Tr_S^L(R[G]^S) = Tr_P^L(R[G]^P)` for a Sylow `p`-subgroup `S` of `P ≤ L`.
+* `TauCeti.relTraceIdeal_sylow_eq_top`: in characteristic `p`, `Tr_S^G(R[G]^S) = R[G]^G` for a
+  Sylow `p`-subgroup `S`.
 
 ## References
 
@@ -549,5 +564,62 @@ theorem coeff_relTrace_single_inf_centralizer [Finite G] (P : Subgroup G) (g : G
   simp only [Set.mem_toFinset, horbit]
 
 end OrbitSum
+
+section Index
+
+variable {R G : Type*} [CommSemiring R] [Group G] {H P L : Subgroup G}
+  [(H.subgroupOf P).FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **Traces from subgroups of invertible index.** If `r |P : H| = 1` in `R`, then
+`Tr_H^P(r b) = b` for every `b ∈ R[G]^P`. -/
+theorem relTrace_inclusion_smul_of_mul_index_eq_one (hHP : H ≤ P) {r : R}
+    (hr : r * (H.subgroupOf P).index = 1) (b : conjInvariants R P) :
+    relTrace R H P (Subalgebra.inclusion (conjInvariants_anti hHP) (r • b)) = b := by
+  rw [relTrace_inclusion hHP, ← Nat.cast_smul_eq_nsmul R, smul_smul, mul_comm, hr, one_smul]
+
+/-- If `|P : H|` is a unit of `R`, every element of `R[G]^P` is a trace from `H`. -/
+theorem relTraceIdeal_eq_top_of_isUnit_index (hHP : H ≤ P)
+    (hu : IsUnit ((H.subgroupOf P).index : R)) : relTraceIdeal R hHP = ⊤ := by
+  obtain ⟨u, hu⟩ := hu
+  refine eq_top_iff.2 fun b _ => (mem_relTraceIdeal_iff hHP).2
+    ⟨_, relTrace_inclusion_smul_of_mul_index_eq_one hHP (r := ((u⁻¹ : Rˣ) : R))
+      (by rw [← hu, Units.inv_mul]) b⟩
+
+/-- If `|P : H|` is a unit of `R`, then `Tr_H^L(R[G]^H) = Tr_P^L(R[G]^P)` for `H ≤ P ≤ L`. -/
+theorem relTraceIdeal_eq_of_isUnit_index (hHP : H ≤ P) (hPL : P ≤ L)
+    [(P.subgroupOf L).FiniteIndex] [(H.subgroupOf L).FiniteIndex]
+    (hu : IsUnit ((H.subgroupOf P).index : R)) :
+    relTraceIdeal R (hHP.trans hPL) = relTraceIdeal R hPL := by
+  refine le_antisymm (relTraceIdeal_mono hPL hHP) ?_
+  intro x hx
+  obtain ⟨a, rfl⟩ := (mem_relTraceIdeal_iff hPL).1 hx
+  obtain ⟨b, rfl⟩ := (mem_relTraceIdeal_iff hHP (x := a)).1
+    (by rw [relTraceIdeal_eq_top_of_isUnit_index hHP hu]; trivial)
+  exact (mem_relTraceIdeal_iff _).2 ⟨b, (relTrace_relTrace hHP hPL b).symm⟩
+
+/-- In characteristic `p`, if `H ≤ P` is a Sylow `p`-subgroup `S` of `P`, then
+`Tr_H^L(R[G]^H) = Tr_P^L(R[G]^P)` for `P ≤ L`. -/
+theorem relTraceIdeal_eq_of_subgroupOf_eq_sylow {p : ℕ} [Fact p.Prime] [CharP R p]
+    (hHP : H ≤ P) (hPL : P ≤ L) [(P.subgroupOf L).FiniteIndex] [(H.subgroupOf L).FiniteIndex]
+    (S : Sylow p P) (hS : H.subgroupOf P = S) :
+    relTraceIdeal R (hHP.trans hPL) = relTraceIdeal R hPL := by
+  -- `|P : H| = |P : S|` is prime to `p`, hence a unit of `R`.
+  have : (S : Subgroup P).FiniteIndex := hS ▸ inferInstance
+  refine relTraceIdeal_eq_of_isUnit_index hHP hPL (isUnit_natCast_of_not_dvd Fact.out ?_)
+  rw [hS]
+  exact S.not_dvd_index
+
+end Index
+
+/-- In characteristic `p`, every element of `R[G]^G` is a trace from a Sylow `p`-subgroup `S`:
+`x = Tr_S^G(|G : S|⁻¹ x)`. -/
+theorem relTraceIdeal_sylow_eq_top {R G : Type*} [CommSemiring R] [Group G] {p : ℕ}
+    [Fact p.Prime] [CharP R p] (S : Sylow p G) [(S : Subgroup G).FiniteIndex] :
+    relTraceIdeal R (le_top : (S : Subgroup G) ≤ ⊤) = ⊤ := by
+  have := relTraceIdeal_eq_of_subgroupOf_eq_sylow (R := R) (le_top : (S : Subgroup G) ≤ ⊤)
+    le_rfl (S.subtype le_top) (S.coe_subtype le_top).symm
+  rwa [relTraceIdeal_self] at this
 
 end TauCeti
