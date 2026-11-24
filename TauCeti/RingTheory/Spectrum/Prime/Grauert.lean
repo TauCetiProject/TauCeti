@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Homology
 import TauCeti.Algebra.Module.FinitePresentation
 import TauCeti.RingTheory.Flat.Extensions
 import TauCeti.RingTheory.Flat.Reduced.Basic
+import TauCeti.RingTheory.Flat.Reduced.ConstantRank
 import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 import TauCeti.Topology.Semicontinuity.Basic
 
@@ -105,18 +106,6 @@ theorem flat_quotient_range_of_isLocallyConstant_finrank_fiber_homology (hfg : g
     Module.Flat R (M₂ ⧸ range f) :=
   flat_of_isLocallyConstant_finrank_fiber _ (isLocallyConstant_finrank_fiber_quotient_range hfg h).1
 
-/-- Under the hypotheses of Grauert's theorem, the outgoing cokernel `M₃ ⧸ range g` is
-projective. -/
-private theorem projective_quotient_range (hfg : g ∘ₗ f = 0)
-    (h : IsLocallyConstant fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
-      ((ker (g.baseChange p.asIdeal.ResidueField)).map
-        (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
-    Module.Projective R (M₃ ⧸ range g) := by
-  have := Module.finitePresentation_of_projective R M₃
-  have := Module.FinitePresentation.quotient (Submodule.fg_range g)
-  exact projective_of_isLocallyConstant_finrank_fiber _
-    (isLocallyConstant_finrank_fiber_quotient_range hfg h).2
-
 /-- Under the hypotheses of Grauert's theorem, the image `range g` is projective and finitely
 presented, as a direct summand of `M₃`. -/
 private theorem projective_range (hfg : g ∘ₗ f = 0)
@@ -125,12 +114,12 @@ private theorem projective_range (hfg : g ∘ₗ f = 0)
         (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
     Module.Projective R (range g) ∧ Module.FinitePresentation R (range g) := by
   have := Module.finitePresentation_of_projective R M₃
-  have := projective_quotient_range hfg h
+  have := g.projective_quotient_range_of_isLocallyConstant
+    (isLocallyConstant_finrank_fiber_quotient_range hfg h).2
   have : Module.FinitePresentation R (range g) :=
     Module.finitePresentation_of_projective_of_exact _ _ (Submodule.injective_subtype _)
       (range g).mkQ_surjective (exact_subtype_mkQ _)
-  have : Module.Flat R (range g) := (exact_subtype_mkQ _).flat_left_of_injective_of_surjective
-    (Submodule.injective_subtype _) (range g).mkQ_surjective
+  have := (range g).flat_of_flat_quotient
   exact ⟨Module.Flat.projective_of_finitePresentation, inferInstance⟩
 
 /-- **Grauert's theorem: homology is flat.** Over a reduced ring, for a complex `M₁ → M₂ → M₃`
@@ -167,7 +156,8 @@ theorem homologyBaseChange_bijective_of_isLocallyConstant_finrank_fiber_homology
       ((ker (g.baseChange p.asIdeal.ResidueField)).map
         (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
     Function.Bijective (homologyBaseChange S f g) :=
-  have := projective_quotient_range hfg h
+  have := g.projective_quotient_range_of_isLocallyConstant
+    (isLocallyConstant_finrank_fiber_quotient_range hfg h).2
   homologyBaseChange_bijective S hfg
 
 /-- **Grauert's theorem: the rank of homology.** Over a reduced ring, for a complex

@@ -36,6 +36,8 @@ cohomology and base change.
 * `LinearMap.homologyBaseChange_surjective`: it is surjective when `M₃ ⧸ range g` is flat.
 * `LinearMap.homologyBaseChange_injective`: it is injective when `range g` is flat.
 * `LinearMap.homologyBaseChange_bijective`: it is bijective when `M₃` and `M₃ ⧸ range g` are flat.
+* `LinearMap.quotientRangeToRange`, `LinearMap.exact_subtype_quotientRangeToRange`: the short
+  exact sequence `0 → H → M₂ ⧸ range f → range g → 0` presenting homology.
 * `LinearMap.flat_homology`, `LinearMap.finite_homology`, `LinearMap.finitePresentation_homology`:
   flatness and finiteness of homology, from the short exact sequence
   `0 → H → M₂ ⧸ range f → range g → 0`.
@@ -99,20 +101,29 @@ private theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm (hfg : g ∘�
   ext m
   simp
 
-/-- The surjection `M₂ ⧸ range f → range g` induced by `g`. Its kernel is the homology, so
-homology sits in a short exact sequence `0 → H → M₂ ⧸ range f → range g → 0`. -/
-private noncomputable def quotientRangeToRange (hfg : g ∘ₗ f = 0) : M₂ ⧸ range f →ₗ[R] range g :=
+/-- The surjection `M₂ ⧸ range f → range g` induced by `g`. Its kernel is the homology
+(`LinearMap.ker_quotientRangeToRange`), so homology sits in a short exact sequence
+`0 → H → M₂ ⧸ range f → range g → 0` (`LinearMap.exact_subtype_quotientRangeToRange`). -/
+noncomputable def quotientRangeToRange (hfg : g ∘ₗ f = 0) : M₂ ⧸ range f →ₗ[R] range g :=
   (range f).liftQ g.rangeRestrict (by rw [ker_rangeRestrict]; exact range_le_ker_iff.2 hfg)
 
-private theorem quotientRangeToRange_surjective (hfg : g ∘ₗ f = 0) :
+/-- The map `M₂ ⧸ range f → range g` induced by `g` is surjective. -/
+theorem quotientRangeToRange_surjective (hfg : g ∘ₗ f = 0) :
     Function.Surjective (quotientRangeToRange hfg) := by
   rintro ⟨_, ⟨m, rfl⟩⟩
   exact ⟨Submodule.Quotient.mk m, rfl⟩
 
-private theorem exact_subtype_quotientRangeToRange (hfg : g ∘ₗ f = 0) :
+/-- The kernel of the map `M₂ ⧸ range f → range g` induced by `g` is the homology
+`(ker g).map (range f).mkQ`. -/
+theorem ker_quotientRangeToRange (hfg : g ∘ₗ f = 0) :
+    ker (quotientRangeToRange hfg) = (ker g).map (range f).mkQ := by
+  rw [quotientRangeToRange, Submodule.ker_liftQ, ker_rangeRestrict]
+
+/-- Homology sits in a short exact sequence `0 → H → M₂ ⧸ range f → range g → 0`: the inclusion
+of homology into `M₂ ⧸ range f` is exact at `M₂ ⧸ range f` with the map induced by `g`. -/
+theorem exact_subtype_quotientRangeToRange (hfg : g ∘ₗ f = 0) :
     Function.Exact ((ker g).map (range f).mkQ).subtype (quotientRangeToRange hfg) := by
-  rw [exact_iff, Submodule.range_subtype, quotientRangeToRange, Submodule.ker_liftQ,
-    ker_rangeRestrict]
+  rw [exact_iff, Submodule.range_subtype, ker_quotientRangeToRange]
 
 /-- Homology is flat when the cokernel of the incoming map and the image of the outgoing map are
 flat. -/
@@ -184,8 +195,7 @@ theorem homologyBaseChange_injective [Module.Flat R (range g)] (hfg : g ∘ₗ f
 `R`-algebra `S`. -/
 theorem homologyBaseChange_bijective [Module.Flat R M₃] [Module.Flat R (M₃ ⧸ range g)]
     (hfg : g ∘ₗ f = 0) : Function.Bijective (homologyBaseChange S f g) := by
-  have : Module.Flat R (range g) := Function.Exact.flat_left_of_injective_of_surjective
-    (exact_subtype_mkQ _) (Submodule.injective_subtype _) (Submodule.mkQ_surjective _)
+  have := (range g).flat_of_flat_quotient
   exact ⟨homologyBaseChange_injective S hfg, homologyBaseChange_surjective S hfg⟩
 
 end LinearMap
