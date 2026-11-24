@@ -26,7 +26,7 @@ Independently marking the occurrences of a Poisson random measure `N` of intensi
 Markov kernel `κ : Kernel X E` produces a Poisson random measure on `X × E` with intensity
 `Λ ⊗ₘ κ`, whose ground projection recovers `N` almost surely.
 
-The theorem is proved at two main levels of generality:
+The theorem is proved at three levels of generality:
 
 * Given any measurable optional occurrence enumeration `e : Ω → ι → Option X` representing `N`
   almost everywhere, `IsPoissonRandomMeasure.compProd_optionalTupleMarking` and
@@ -37,8 +37,13 @@ The theorem is proved at two main levels of generality:
   marking kernel, while intrinsic marking via `Kernel.markingOfCover` gives the marked law,
   the joint realization on `Ω × Measure (X × E)` with almost-sure ground projection
   `p.2.map Prod.fst = N p.1`, and transfer to any realization on an arbitrary probability space
-  with that joint law (`IsPoissonRandomMeasure.of_map_prod_eq_compProd_markingOfCover`). For a
-  constant mark kernel `Kernel.const X Q`, the intensity reduces to `Λ.prod Q`
+  with that joint law (`IsPoissonRandomMeasure.of_map_prod_eq_compProd_markingOfCover`).
+* On any sigma-compact Hausdorff standard Borel space `X` whose intensity `Λ` is finite on
+  compact sets, the canonical cover-free kernel `Kernel.marking` applies directly
+  (`IsPoissonRandomMeasure.compProd_marking`, `IsPoissonRandomMeasure.comp_marking`,
+  `IsPoissonRandomMeasure.ae_map_fst_compProd_marking`,
+  `IsPoissonRandomMeasure.of_map_prod_eq_compProd_marking`). For a constant mark kernel
+  `Kernel.const X Q`, the intensity reduces to `Λ.prod Q`
   (`IsPoissonRandomMeasure.exists_isMarkovKernel_marking_prod`).
 
 ## References
@@ -217,6 +222,55 @@ theorem IsPoissonRandomMeasure.of_map_prod_eq_compProd_markingOfCover
   exact ae_of_ae_map (h.measurable.prodMk hM).aemeasurable hcomp_proj
 
 end StandardBorel
+
+section CompactCovering
+
+variable {Ω X E : Type*} [MeasurableSpace Ω]
+  [TopologicalSpace X] [T2Space X] [SigmaCompactSpace X]
+  [MeasurableSpace X] [OpensMeasurableSpace X] [StandardBorelSpace X]
+  [MeasurableSpace E] {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
+  [IsFiniteMeasureOnCompacts Λ]
+
+/-- Joint realization of independent marking on `Ω × Measure (X × E)` via the canonical
+cover-free kernel `Kernel.marking`: the second coordinate is a Poisson random measure of intensity
+`Λ ⊗ₘ κ`. -/
+theorem IsPoissonRandomMeasure.compProd_marking
+    (h : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ] :
+    IsPoissonRandomMeasure (P ⊗ₘ (κ.marking.comap N h.measurable)) Prod.snd (Λ ⊗ₘ κ) := by
+  rw [κ.marking_eq_markingOfCover_compactCovering]
+  exact h.compProd_markingOfCover _ _ fun n => (isCompact_compactCovering X n).measure_lt_top
+
+/-- **Cover-free Poisson marking theorem via `Kernel.marking`.** On a sigma-compact Hausdorff
+standard Borel space, independently marking a Poisson random measure whose intensity `Λ` is finite
+on compact sets produces a Poisson random measure of intensity `Λ ⊗ₘ κ`. -/
+theorem IsPoissonRandomMeasure.comp_marking
+    (h : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ] :
+    IsPoissonRandomMeasure (κ.marking ∘ₘ (P.map N)) id (Λ ⊗ₘ κ) := by
+  rw [κ.marking_eq_markingOfCover_compactCovering]
+  exact h.comp_markingOfCover _ _ fun n => (isCompact_compactCovering X n).measure_lt_top
+
+/-- On the joint marking space `Ω × Measure (X × E)` defined via `Kernel.marking`, forgetting
+marks almost surely recovers the original Poisson realization `N`. -/
+theorem IsPoissonRandomMeasure.ae_map_fst_compProd_marking
+    (h : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ] :
+    ∀ᵐ p ∂(P ⊗ₘ (κ.marking.comap N h.measurable)), p.2.map Prod.fst = N p.1 := by
+  rw [κ.marking_eq_markingOfCover_compactCovering]
+  exact h.ae_map_fst_compProd_markingOfCover _ _ fun n =>
+    (isCompact_compactCovering X n).measure_lt_top
+
+/-- If `(N, M)` on an arbitrary probability space has joint law `(P.map N) ⊗ₘ κ.marking`, then
+`M` is a Poisson random measure of intensity `Λ ⊗ₘ κ` and its ground projection equals `N`
+almost surely. -/
+theorem IsPoissonRandomMeasure.of_map_prod_eq_compProd_marking
+    {κ : Kernel X E} [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ)
+    {M : Ω → Measure (X × E)} (hM : Measurable M)
+    (hjoint : P.map (fun ω => (N ω, M ω)) = (P.map N) ⊗ₘ κ.marking) :
+    IsPoissonRandomMeasure P M (Λ ⊗ₘ κ) ∧ ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω := by
+  rw [κ.marking_eq_markingOfCover_compactCovering] at hjoint
+  exact h.of_map_prod_eq_compProd_markingOfCover _ _
+    (fun n => (isCompact_compactCovering X n).measure_lt_top) hM hjoint
+
+end CompactCovering
 
 section StandardBorelExists
 
