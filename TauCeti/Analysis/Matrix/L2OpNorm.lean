@@ -29,6 +29,7 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
+* `Matrix.l2_opNorm_mul_conjTranspose_self`: the operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
@@ -70,6 +71,13 @@ theorem norm_trace_le_card_mul_l2_opNorm (M : Matrix n n 𝕜) :
     Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearEquiv.coe_coe,
     Matrix.trace_toLin_eq, finrank_euclideanSpace, Matrix.l2_opNorm_toEuclideanCLM] using h
 
+/-- The Euclidean operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`, for a possibly rectangular `A`.
+Mathlib's `Matrix.l2_opNorm_conjTranspose_mul_self` is the form for `Aᴴ * A`. -/
+theorem l2_opNorm_mul_conjTranspose_self {m : Type*} [Fintype m] [DecidableEq m]
+    (A : Matrix m n 𝕜) : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
+  simpa only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] using
+    l2_opNorm_conjTranspose_mul_self Aᴴ
+
 /-- The squared Frobenius norm of a rectangular matrix is at most its number of rows times
 its squared Euclidean operator norm. Empty row and column types are allowed. -/
 theorem sum_sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
@@ -81,10 +89,7 @@ theorem sum_sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
       (re_trace_mul_conjTranspose_self A).symm
     _ ≤ ‖(A * Aᴴ).trace‖ := RCLike.re_le_norm _
     _ ≤ (Fintype.card m : ℝ) * ‖A * Aᴴ‖ := norm_trace_le_card_mul_l2_opNorm _
-    _ = (Fintype.card m : ℝ) * ‖A‖ ^ 2 := by
-      have h := l2_opNorm_conjTranspose_mul_self Aᴴ
-      simp only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] at h
-      rw [h, sq]
+    _ = (Fintype.card m : ℝ) * ‖A‖ ^ 2 := by rw [l2_opNorm_mul_conjTranspose_self, sq]
 
 /-- The sum of squared entry norms over any set of positions is at most the row count times
 the squared Euclidean operator norm. -/

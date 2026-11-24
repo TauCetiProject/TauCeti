@@ -106,6 +106,7 @@ theorem apply_mem_radical_of_mem_radical [Algebra ℚ A] (D : Derivation R A A) 
   refine Submodule.mem_sInf.mpr fun P hP ↦ D.apply_mem_of_mem_minimalPrimes hI hP
     (fun n hn ↦ ?_) (Submodule.mem_sInf.mp hx P hP)
   by_contra hn0
-  exact hP.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem P hn (TauCeti.isUnit_natCast_of_ne_zero hn0))
+  exact hP.isPrime.ne_top
+    (Ideal.eq_top_of_isUnit_mem P hn (TauCeti.isUnit_natCast_of_ne_zero ℚ hn0))
 
 end Derivation

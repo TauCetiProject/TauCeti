@@ -15,6 +15,8 @@ public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Topology.DiscreteSubset
@@ -46,6 +48,8 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
+* `TauCeti.Toric.IsIntegralLattice.finiteIndex_range`: a map of integral lattices in the same
+  real vector space compatible with them has image of finite index.
 * `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
   map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
   to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
@@ -175,6 +179,24 @@ theorem IsIntegralLattice.finrank_eq (h : IsIntegralLattice i) :
   rw [← Module.finrank_baseChange (R := ℝ) (S := ℤ) (M' := N),
     h.isBaseChange.equiv.finrank_eq]
 
+/-- A map `f : N' →+ N` compatible with integral lattices `i'` and `i` in the same real vector
+space has image of finite index: the two lattices have the same rank. -/
+theorem IsIntegralLattice.finiteIndex_range {N' : Type*} [AddCommGroup N'] {i' : N' →+ V}
+    {f : N' →+ N} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (hf : ∀ n, i' n = i (f n)) : f.range.FiniteIndex := by
+  have := hi.free
+  have := hi.finite
+  have hinj : Function.Injective f.toIntLinearMap := fun a b hab ↦
+    hi'.injective (by simp only [hf, AddMonoidHom.coe_toIntLinearMap] at hab ⊢; rw [hab])
+  have : Finite (N ⧸ AddSubgroup.toIntSubmodule f.range) := by
+    rw [← AddMonoidHom.coe_toIntLinearMap_range]
+    exact Submodule.finiteQuotientOfFreeOfRankEq _
+      (by rw [LinearMap.finrank_range_of_inj hinj, hi'.finrank_eq, hi.finrank_eq])
+  -- The quotient by a submodule is defined as the quotient by its underlying additive subgroup,
+  -- and the subgroup underlying `AddSubgroup.toIntSubmodule f.range` is `f.range` itself.
+  have : Finite (N ⧸ f.range) := this
+  exact AddSubgroup.finiteIndex_of_finite_quotient
+
 /-- An integral lattice sits in a finite-dimensional real vector space. -/
 theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
     FiniteDimensional ℝ V := by
@@ -250,6 +272,16 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
     (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
+
+/-- For prescribed characters, contraction adds a transverse lattice line to their
+common real kernel. No independence or codimension assumption is needed. -/
+theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
+    (f g : N →+ ℤ) (v : N)
+    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
+    (h.realCharacter (f v • g - g v • f)).ker =
+      (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/

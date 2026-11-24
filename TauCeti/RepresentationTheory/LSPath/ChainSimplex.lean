@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 public import TauCeti.RepresentationTheory.LSPath.Linked
-public import TauCeti.RepresentationTheory.LSPath.Realization
+public import TauCeti.RepresentationTheory.LSPath.Realization.Faithful
 
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Order.Interval.Set.Nat

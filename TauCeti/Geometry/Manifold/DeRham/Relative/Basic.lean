@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Relative
 public import Mathlib.Algebra.Homology.Embedding.Extend
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 
 /-!
 # The relative de Rham complex of an open pair
@@ -33,9 +34,11 @@ reads `d (inl α) = inl (dα) + inr (α|_W)` and `d (inr β) = -inr (dβ)`
 relative cochain is a function on `M` (`TauCeti.relativeDeRhamComplex.inl_zero_bijective`). So the
 relative cocycles are the pairs with `dα = 0` and `α|_W = dβ`
 (`TauCeti.relativeDeRhamComplex.d_coord_symm_eq_zero_iff`), and the relative coboundaries are the
-pairs `(dγ, γ|_W - dε)` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_iff`). A smooth map
-of open pairs `(M, W) → (M', W')` acts componentwise by pullback
-(`TauCeti.relativeDeRhamComplex.map_inl`, `TauCeti.relativeDeRhamComplex.map_inr`).
+pairs `(dγ, γ|_W - dε)` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_iff`), or
+`(dγ, γ|_W)` in degree `1` (`TauCeti.relativeDeRhamComplex.coord_symm_mem_range_d_zero_iff`). A
+smooth map of open pairs `(M, W) → (M', W')` acts componentwise by pullback
+(`TauCeti.relativeDeRhamComplex.map_inl`, `TauCeti.relativeDeRhamComplex.map_inr`), functorially
+(`TauCeti.relativeDeRhamComplex.map_id`, `TauCeti.relativeDeRhamComplex.map_comp`).
 
 The class of a relative cocycle `(α, β)` is `TauCeti.relativeDeRhamCohomology.mk`. The connecting
 map `δ : H^k(W) → H^(k+1)(M, W)` is `δ [b] = -[(0, b)]`
@@ -46,10 +49,12 @@ singular cohomology.
 
 Two degenerate pairs recover known groups. In degree `0` the relative cohomology is the space of
 functions on `M` with zero differential that vanish on `W`
-(`TauCeti.relativeDeRhamCohomology.classZero_bijective`). For empty `W` the first projection of
-the cocone is an isomorphism onto the extended de Rham complex of `M`
-(`TauCeti.relativeDeRhamComplex.isIso_fst_of_isEmpty`), so it identifies `H^k(M, ∅)` with the de
-Rham cohomology of `M`.
+(`TauCeti.relativeDeRhamCohomology.classZero_bijective`), that is, the locally constant functions
+on `M` vanishing on `W`
+(`TauCeti.relativeDeRhamCohomology.mem_cocyclesZero_iff_isLocallyConstant_and_forall_eq_zero`).
+For empty `W` the first projection of the cocone is an isomorphism onto the extended de Rham
+complex of `M` (`TauCeti.relativeDeRhamComplex.isIso_fst_of_isEmpty`), so it identifies
+`H^k(M, ∅)` with the de Rham cohomology of `M`.
 
 The construction needs no finite dimensionality, separation or countability of `M`.
 
@@ -351,6 +356,27 @@ theorem coord_symm_mem_range_d_iff (k : ℕ) (α : SmoothForm I M ℝ (k + 1 + 1
     exact ⟨(coord I W k).symm (γ, ε), (coord I W (k + 1)).injective (by
       rw [coord_d, LinearEquiv.apply_symm_apply])⟩
 
+/-- A relative cochain `(α, β)` of degree `1` is a coboundary exactly when it is `(dγ, γ|_W)` for
+a smooth function `γ` on `M`. -/
+theorem coord_symm_mem_range_d_zero_iff (α : SmoothForm I M ℝ 1) (β : SmoothForm I W ℝ 0) :
+    (coord I W 0).symm (α, β) ∈
+        LinearMap.range ((relativeDeRhamComplex I W).d (0 : ℕ) (0 + 1 : ℕ)).hom ↔
+      ∃ γ : SmoothForm I M ℝ 0, mextDerivₗ I (F := ℝ) 0 γ = α ∧
+        SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal γ = β := by
+  have hd (γ : SmoothForm I M ℝ 0) :
+      (relativeDeRhamComplex I W).d (0 : ℕ) (0 + 1 : ℕ) (inl I W 0 γ) =
+        (coord I W 0).symm (mextDerivₗ I (F := ℝ) 0 γ,
+          SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal γ) := by
+    rw [d_inl, coord_symm_apply]
+  constructor
+  · rintro ⟨x, hx⟩
+    obtain ⟨γ, rfl⟩ := (inl_zero_bijective I W).surjective x
+    have h := (hd γ).symm.trans hx
+    rw [(coord I W 0).symm.injective.eq_iff, Prod.mk.injEq] at h
+    exact ⟨γ, h⟩
+  · rintro ⟨γ, rfl, rfl⟩
+    exact ⟨inl I W 0 γ, hd γ⟩
+
 section Map
 
 variable {E' : Type u} {H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -412,6 +438,33 @@ theorem map_inr (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
   apply (relativeCoordinates (deRhamRestriction I W) (k + 1 : ℕ) k (by push_cast; lia)).injective
   rw [relativeCoordinates_map_f, relativeCoordinates_inr, relativeCoordinates_inr]
   rw [extendMap_deRhamComplexMap_f_symm_apply, map_zero]
+
+/-- The identity of the pair `(M, W)` induces the identity cochain map. -/
+@[simp]
+theorem map_id :
+    map I W (I' := I) (W' := W) (f := id) (g := id) contMDiff_id (fun _ ↦ rfl) = 𝟙 _ := by
+  -- `map` is the `⟦-1⟧` shift of `mappingCone.map`, between the cocones
+  -- `mappingCocone _ = (mappingCone _)⟦-1⟧`.
+  unfold map relativeDeRhamComplex CochainComplex.mappingCocone
+  simp only [deRhamComplex.map_id, extendMap_id, CochainComplex.mappingCone.map_id,
+    CategoryTheory.Functor.map_id]
+
+variable {E'' : Type u} {H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} {M'' : Type v} [TopologicalSpace M'']
+  [ChartedSpace H'' M''] [IsManifold I'' 2 M''] {W'' : Opens M''} {f' : M' → M''}
+  {g' : W' → W''}
+
+/-- The cochain maps induced by smooth maps of open pairs reverse composition. -/
+theorem map_comp (hf : ContMDiff I I' ∞ f) (hfg : ∀ x, (g x : M') = f x)
+    (hf' : ContMDiff I' I'' ∞ f') (hfg' : ∀ x, (g' x : M'') = f' x) :
+    map I W (f := f' ∘ f) (g := g' ∘ g) (hf'.comp hf)
+        (fun x ↦ (hfg' (g x)).trans (congrArg f' (hfg x))) =
+      map I' W' hf' hfg' ≫ map I W hf hfg := by
+  -- As in `map_id`, unfold `map` to the shift of `mappingCone.map` between mapping cones.
+  unfold map relativeDeRhamComplex CochainComplex.mappingCocone
+  rw [← CategoryTheory.Functor.map_comp, ← CochainComplex.mappingCone.map_comp]
+  -- Fold the composite pullbacks back into pullbacks along the composites on both sides.
+  simp only [← extendMap_comp, ← deRhamComplex.map_comp]
 
 end Map
 
@@ -603,6 +656,20 @@ theorem mem_cocyclesZero_iff (α : SmoothForm I M ℝ 0) :
     α ∈ cocyclesZero I W ↔ mextDerivₗ I (F := ℝ) 0 α = 0 ∧
       SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal α = 0 := by
   rw [cocyclesZero, Submodule.mem_inf, mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.mem_ker]
+
+/-- A smooth function on `M` is a relative cocycle of degree `0` exactly when it is locally
+constant and vanishes on `W`. -/
+theorem mem_cocyclesZero_iff_isLocallyConstant_and_forall_eq_zero (α : SmoothForm I M ℝ 0) :
+    α ∈ cocyclesZero I W ↔ IsLocallyConstant (fun x ↦ α.val x 0) ∧ ∀ x ∈ W, α.val x 0 = 0 := by
+  rw [cocyclesZero, Submodule.mem_inf, mem_closedForms_zero_iff, LinearMap.mem_ker]
+  refine and_congr_right fun _ ↦ ⟨fun h x hx ↦ ?_, fun h ↦ ?_⟩
+  · have := congrArg (fun φ : SmoothForm I W ℝ 0 ↦ φ.val ⟨x, hx⟩ 0) h
+    rw [SmoothForm.mpullback_apply,
+      Subsingleton.elim (fun _ ↦ _) (0 : Fin 0 → TangentSpace I x)] at this
+    simpa using this
+  · ext x v
+    rw [SmoothForm.mpullback_apply, Subsingleton.elim (fun _ ↦ _) (0 : Fin 0 → _)]
+    simpa using h x x.property
 
 /-- The cochain `inl α` of a relative cocycle `α` of degree `0` is a cycle. -/
 theorem d_inl_eq_zero_of_mem_cocyclesZero {α : SmoothForm I M ℝ 0}

@@ -37,8 +37,11 @@ For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t >
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
-is a principal logarithm. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open,
-star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
+is a principal logarithm. The plane slit along the complement of a convex real set `S` is open
+when `S` is, and star-shaped about every point of `S`
+(`TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`);
+it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is
+open, star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
 preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for `0 < m`.
 
@@ -58,6 +61,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.isOpen_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.starConvex_zero_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.isConnected_setOf_one_sub_pow_mem_slitPlane`
+* `TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`,
+  `TauCeti.ofReal_mem_setOf_im_ne_zero_or_re_mem_iff`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
@@ -85,6 +90,35 @@ open Complex
 open scoped NNReal
 
 namespace TauCeti
+
+/-- The plane slit along the complement of a real set `S`, `{z | z.im ≠ 0 ∨ z.re ∈ S}`, is open
+when `S` is. -/
+theorem isOpen_setOf_im_ne_zero_or_re_mem {S : Set ℝ} (hS : IsOpen S) :
+    IsOpen {z : ℂ | z.im ≠ 0 ∨ z.re ∈ S} :=
+  (isOpen_ne_fun Complex.continuous_im continuous_const).union
+    (hS.preimage Complex.continuous_re)
+
+/-- A real point lies in the plane slit along the complement of a real set `S`,
+`{z | z.im ≠ 0 ∨ z.re ∈ S}`, exactly when it lies in `S`. -/
+theorem ofReal_mem_setOf_im_ne_zero_or_re_mem_iff {S : Set ℝ} {c : ℝ} :
+    (c : ℂ) ∈ {z : ℂ | z.im ≠ 0 ∨ z.re ∈ S} ↔ c ∈ S := by
+  simp
+
+/-- The plane slit along the complement of a convex real set `S`, `{z | z.im ≠ 0 ∨ z.re ∈ S}`,
+is star-shaped about every point `c` of `S`: a segment from `c` either leaves the real axis or
+stays in `S`. -/
+theorem _root_.Convex.starConvex_setOf_im_ne_zero_or_re_mem {S : Set ℝ} (hS : Convex ℝ S) {c : ℝ}
+    (hc : c ∈ S) : StarConvex ℝ (c : ℂ) {z : ℂ | z.im ≠ 0 ∨ z.re ∈ S} := by
+  intro z hz s t hs ht hst
+  simp only [Set.mem_ofPred_eq, Complex.add_im, Complex.add_re, Complex.smul_re, Complex.smul_im,
+    smul_eq_mul, Complex.ofReal_re, Complex.ofReal_im, mul_zero, zero_add] at hz ⊢
+  rcases ht.eq_or_lt with rfl | ht
+  · have hs_one : s = 1 := by linarith
+    right
+    simpa [hs_one] using hc
+  · rcases hz with hz | hz
+    · exact Or.inl (mul_ne_zero ht.ne' hz)
+    · exact Or.inr (hS hc hz hs ht.le hst)
 
 /-- Differences `z - s` with `z` in the closed lower half-plane lie in the slit plane when `s` lies
 strictly above the real axis. -/
