@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
@@ -366,20 +367,6 @@ noncomputable def realizationOneSimplexHomeomorphUnitInterval :
     Realization (⊤ : AbstractSimplicialComplex (Fin 2)) ≃ₜ unitInterval :=
   (realizationTopHomeomorphStdSimplex (ι := Fin 2)).trans Convexity.StdSimplex.homeomorphI
 
-private theorem homeomorphI_symm_apply_coe (x : unitInterval) :
-    ((Convexity.StdSimplex.homeomorphI.symm x).weights : Fin 2 → ℝ) =
-      ![1 - (x : ℝ), (x : ℝ)] := by
-  have h : Convexity.StdSimplex.homeomorphI.symm x =
-      Convexity.StdSimplex.duple (s := 1 - (x : ℝ)) (t := (x : ℝ)) 0 1
-        (sub_nonneg.mpr x.property.2) x.property.1 (by ring) := by
-    rw [Homeomorph.symm_apply_eq]
-    exact Subtype.ext (by
-      simp [Convexity.StdSimplex.homeomorphI_apply_coe,
-        Convexity.StdSimplex.weights_duple])
-  rw [h, Convexity.StdSimplex.weights_duple]
-  funext i
-  fin_cases i <;> simp
-
 /-- The one-simplex homeomorphism is its second barycentric coordinate. -/
 @[simp]
 theorem realizationOneSimplexHomeomorphUnitInterval_coe (x : Realization
@@ -395,18 +382,16 @@ theorem realizationOneSimplexHomeomorphUnitInterval_symm_apply_val_zero (x : uni
     (realizationOneSimplexHomeomorphUnitInterval.symm x : Fin 2 →₀ ℝ) 0 =
       1 - (x : ℝ) := by
   rw [realizationOneSimplexHomeomorphUnitInterval, Homeomorph.symm_trans_apply,
-    realizationTopHomeomorphStdSimplex_symm_apply_val,
-    homeomorphI_symm_apply_coe]
-  rfl
+    realizationTopHomeomorphStdSimplex_symm_apply_val]
+  exact Convexity.StdSimplex.homeomorphI_symm_weights_zero x
 
 /-- The first barycentric coordinate of the interval inverse is the interval coordinate. -/
 @[simp]
 theorem realizationOneSimplexHomeomorphUnitInterval_symm_apply_val_one (x : unitInterval) :
     (realizationOneSimplexHomeomorphUnitInterval.symm x : Fin 2 →₀ ℝ) 1 = (x : ℝ) := by
   rw [realizationOneSimplexHomeomorphUnitInterval, Homeomorph.symm_trans_apply,
-    realizationTopHomeomorphStdSimplex_symm_apply_val,
-    homeomorphI_symm_apply_coe]
-  rfl
+    realizationTopHomeomorphStdSimplex_symm_apply_val]
+  exact Convexity.StdSimplex.homeomorphI_symm_weights_one x
 
 /-- The zeroth vertex of the realized one-simplex is the left endpoint of the interval. -/
 @[simp]

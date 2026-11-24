@@ -210,7 +210,7 @@ theorem sum_temperedVacuumOperator_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
       c' 3 = ∂_{I} (c 2) - ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
     refine ⟨?_, ?_, ?_, ?_⟩ <;>
     · ext z
-      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      simp [c, c', SchwartzMap.lineDerivOp_postcompCLM]
       ring
   simp only [c, c'] at h₀ h₁ h₂ h₃
   simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumOperator_apply_zero,
@@ -236,7 +236,7 @@ theorem sum_temperedVacuumAdjoint_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
       c' 3 = ∂_{I} (c 2) + ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
     refine ⟨?_, ?_, ?_, ?_⟩ <;>
     · ext z
-      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      simp [c, c', SchwartzMap.lineDerivOp_postcompCLM]
       ring
   simp only [c, c'] at h₀ h₁ h₂ h₃
   simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumAdjoint_apply_zero,

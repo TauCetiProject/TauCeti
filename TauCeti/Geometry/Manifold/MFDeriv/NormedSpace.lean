@@ -31,7 +31,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   between normed spaces.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
 * `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
-  linear.
+  linear. For a continuous linear equivalence, `ContinuousLinearEquiv.mvfderiv_comp_apply`
+  requires no differentiability hypothesis.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
 * `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
@@ -201,6 +202,20 @@ theorem _root_.ContinuousLinearMap.mvfderiv_comp_apply (L : F →L[𝕜] F') {g 
     (hg : MDiffAt g x) (v : TangentSpace I x) :
     mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
   rw [mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hg, ContinuousLinearMap.fderiv]
+
+/-- Postcomposing by a continuous linear equivalence commutes with the vector-valued
+manifold derivative, evaluated on a tangent vector. Both derivatives are zero when `g` is
+not differentiable at `x`, since the inverse equivalence preserves differentiability. -/
+theorem _root_.ContinuousLinearEquiv.mvfderiv_comp_apply (L : F ≃L[𝕜] F') (g : M → F) (x : M)
+    (v : TangentSpace I x) : mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
+  by_cases hg : MDiffAt g x
+  · exact L.toContinuousLinearMap.mvfderiv_comp_apply hg v
+  have hLg : ¬ MDiffAt (L ∘ g) x := fun hLg ↦ hg (by
+    simpa only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.symm_apply_apply] using
+      L.symm.toContinuousLinearMap.mdifferentiableAt.comp x hLg)
+  simp only [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hLg,
+    mfderiv_zero_of_not_mdifferentiableAt hg, ContinuousLinearMap.comp_zero, zero_apply, map_zero]
 
 /-- The derivative of a pair map `z ↦ (f z, g z)` into a product of normed spaces is the pair of
 the derivatives of its components. -/

@@ -78,24 +78,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {β : Type*} {mβ : MeasurableSpace β} {ρ : Measure β}
 
-/-- At each parameter, `‖A f‖_r ≤ ∑ⱼ ‖A Pⱼ f‖_r` for a bounded operator `A` on `L²`: the partial
-sums of the blocks converge to `f` in `L²`, and the `L^r` seminorm is lower semicontinuous on
-`L²`. -/
-private theorem eLpNorm_apply_le_tsum {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
-    (A : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V))
-    (f : Lp F 2 (volume : Measure V)) {r : ℝ≥0∞} (hr : 1 ≤ r) :
-    eLpNorm (A f) r volume ≤ ∑' j, eLpNorm (A (Lp.fourierMultiplierCLM F (m j) f)) r volume := by
-  by_contra! h
-  have hlim := (A.continuous.tendsto f).comp
-    (φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f)
-  obtain ⟨N, hN⟩ := (hlim.eventually (TauCeti.lowerSemicontinuous_eLpNorm_Lp
-    (Measure.AbsolutelyContinuous.refl volume) r (A f) _ h)).exists
-  rw [Function.comp_apply, map_sum] at hN
-  dsimp only at hN
-  rw [eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)] at hN
-  exact (hN.trans_le ((eLpNorm_sum_le hr).trans (sum_le_tsum _))).false
-
 omit [Nontrivial V] in
 /-- The frequency-localized estimate applied to `x = Pⱼ f` bounds `‖T(·) Pⱼ f‖_{L^q L^r}` by
 `K C 2^{jσ} ‖Pⱼ f‖₂`, since `Pⱼ f` is reproduced by its neighbouring blocks. -/
@@ -185,7 +167,8 @@ theorem exists_eLpNorm_eLpNorm_le_mul_tsum (σ : ℝ) {q r : ℝ≥0∞} (hq : 1
   calc eLpNorm (fun b ↦ eLpNorm (T b f) r volume) q ρ
       ≤ eLpNorm (fun b ↦ ∑' j, eLpNorm (T b (Lp.fourierMultiplierCLM F (m j) f)) r volume) q ρ :=
         eLpNorm_mono_eNorm (hmeas f).aestronglyMeasurable fun b ↦ by
-          simpa only [eNorm_eq_self] using φ.eLpNorm_apply_le_tsum hm (T b) f hr
+          simpa only [eNorm_eq_self] using
+            φ.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM hm (T b) f hr
     _ ≤ ∑' j, eLpNorm (fun b ↦ eLpNorm (T b (Lp.fourierMultiplierCLM F (m j) f)) r volume) q ρ :=
         eLpNorm_tsum_le (fun j ↦ hmeas _) hq
     _ ≤ ∑' j, (∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) * C *

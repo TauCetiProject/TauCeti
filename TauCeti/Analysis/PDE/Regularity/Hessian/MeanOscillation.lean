@@ -14,7 +14,7 @@ import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace

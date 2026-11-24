@@ -265,21 +265,20 @@ theorem compMulLeft_ofStage (a : ℤ_[p]) (h : ℕ) (c : AnalyticStage p h E) :
 @[simp]
 theorem eval_compMulLeft (a : ℤ_[p]) (f : LocallyAnalytic p S E) (x : ℤ_[p]) :
     eval S (compMulLeft S a f) x = eval S f (a * x) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, eval_ofStage, eval_ofStage,
-    AnalyticStage.eval_compMulLeft]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, eval_ofStage, eval_ofStage, AnalyticStage.eval_compMulLeft]
 
 /-- Dilation by `1` is the identity. -/
 @[simp]
 theorem compMulLeft_one (f : LocallyAnalytic p S E) : compMulLeft S 1 f = f := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, AnalyticStage.compMulLeft_one]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, AnalyticStage.compMulLeft_one]
 
 /-- Dilations compose: `x ↦ f(a a' x)` is `x ↦ f(a x)` dilated by `a'`. -/
 theorem compMulLeft_mul (a a' : ℤ_[p]) (f : LocallyAnalytic p S E) :
     compMulLeft S (a * a') f = compMulLeft S a' (compMulLeft S a f) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, compMulLeft_ofStage, compMulLeft_ofStage,
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, compMulLeft_ofStage, compMulLeft_ofStage,
     AnalyticStage.compMulLeft_mul]
 
 /-- **Mahler terms of a dilation.** Dilation by `a` sends the Mahler term `x ↦ (x choose n) • e`
@@ -308,14 +307,9 @@ variable {K : Type*} [NontriviallyNormedField K] [Algebra ℤ_[p] K]
 /-- The pushforward of a locally analytic distribution along multiplication by `a ∈ ℤ_p`:
 `(a_* μ)(f) = μ(x ↦ f(a x))`. -/
 noncomputable def mapMulLeft (a : ℤ_[p]) :
-    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ LocallyAnalytic.compMulLeft K a,
-    mem_iff.mpr fun h ↦ by
-      convert (stage h μ ∘L AnalyticStage.compMulLeft K a).continuous using 1
-      ext c
-      simp⟩
-  map_add' μ ν := rfl
-  map_smul' b μ := rfl
+    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K :=
+  dualMap (LocallyAnalytic.compMulLeft K a) (fun _ ↦ AnalyticStage.compMulLeft K a)
+    (compMulLeft_ofStage K a)
 
 /-- The distribution `a_* μ` takes the value `μ(x ↦ f(a x))` on `f`. -/
 @[simp]
@@ -323,22 +317,20 @@ theorem coe_mapMulLeft_apply (a : ℤ_[p]) (μ : LocallyAnalyticDistribution p K
     (f : LocallyAnalytic p K K) :
     (mapMulLeft a μ : Module.Dual K (LocallyAnalytic p K K)) f =
       (μ : Module.Dual K (LocallyAnalytic p K K)) (LocallyAnalytic.compMulLeft K a f) :=
-  (rfl)
+  coe_dualMap_apply μ f
 
 /-- The restriction of `a_* μ` to a stage is the restriction of `μ` composed with dilation on that
 stage. -/
 @[simp]
 theorem stage_mapMulLeft (a : ℤ_[p]) (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stage h (mapMulLeft a μ) = stage h μ ∘L AnalyticStage.compMulLeft K a := by
-  ext c
-  simp
+    stage h (mapMulLeft a μ) = stage h μ ∘L AnalyticStage.compMulLeft K a :=
+  stage_dualMap h μ
 
 /-- Pushforward along a dilation does not increase the stage seminorms. -/
 theorem stageSeminorm_mapMulLeft_le (a : ℤ_[p]) (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stageSeminorm h (mapMulLeft a μ) ≤ stageSeminorm h μ := by
-  rw [stageSeminorm_apply, stageSeminorm_apply, stage_mapMulLeft]
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_of_le_one_right (norm_nonneg _) (opNorm_compMulLeft_le_one a))
+    stageSeminorm h (mapMulLeft a μ) ≤ stageSeminorm h μ :=
+  (stageSeminorm_dualMap_le h μ).trans
+    (mul_le_of_le_one_left (apply_nonneg _ _) (opNorm_compMulLeft_le_one a))
 
 /-- Pushforward along multiplication by `1` is the identity. -/
 @[simp]
