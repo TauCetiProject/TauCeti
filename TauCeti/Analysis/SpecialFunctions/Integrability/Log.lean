@@ -67,6 +67,8 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
   `TauCeti.setLIntegral_norm_clog_one_sub_mul_pow_le`, and
   `TauCeti.exists_setLIntegral_norm_clog_one_sub_mul_pow_le`: uniform `L^k` bounds for translated
   real logarithms and for `t ↦ Log (1 - t z)` on `(a, b]` over bounded `z`.
+* `Complex.subsingleton_one_sub_ofReal_mul_eq_zero` and `Complex.ae_one_sub_ofReal_mul_ne_zero`:
+  for fixed `z : ℂ`, `1 - t z` vanishes at most once on `ℝ`, hence is nonzero a.e.
 * `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
 * `TauCeti.integrableOn_log_log_const_div_pow`: `(log log (c / r))^k` is integrable on `(0, R)`.
 * `TauCeti.integrableOn_inv_mul_log_const_div_rpow`: `(r (log (c / r))^p)⁻¹`, `p > 1`, is
@@ -459,3 +461,26 @@ theorem integrableOn_mul_inv_mul_log_const_div_sq {c R : ℝ} (hR : R < c) :
   field_simp
 
 end TauCeti
+
+namespace Complex
+
+/-- For a fixed `z : ℂ`, the factor `1 - t z` vanishes at most once as `t` varies over `ℝ`. -/
+theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
+    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
+  intro t₁ ht₁ t₂ ht₂
+  have hz : z ≠ 0 := by
+    rintro rfl
+    simp at ht₁
+  have h1 : (t₁ : ℂ) * z = 1 := sub_eq_zero.mp ht₁ |>.symm
+  have h2 : (t₂ : ℂ) * z = 1 := sub_eq_zero.mp ht₂ |>.symm
+  exact ofReal_injective (mul_right_cancel₀ hz (h1.trans h2.symm))
+
+open MeasureTheory in
+/-- For any `z : ℂ` and any measure `μ` on `ℝ` with null singletons, `1 - t z ≠ 0` almost
+everywhere. -/
+theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingletonClass μ] :
+    ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
+  rw [ae_iff]
+  simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
+
+end Complex

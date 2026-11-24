@@ -196,32 +196,6 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
           gcongr
           · linarith [le_max_right R 0]
 
-end TauCeti.Polylog
-
-namespace Complex
-
-/-- For a fixed `z : ℂ`, the factor `1 - t z` vanishes at most once as `t` varies over `ℝ`. -/
-theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
-    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
-  intro t₁ ht₁ t₂ ht₂
-  have hz : z ≠ 0 := by
-    rintro rfl
-    simp at ht₁
-  have h1 : (t₁ : ℂ) * z = 1 := sub_eq_zero.mp ht₁ |>.symm
-  have h2 : (t₂ : ℂ) * z = 1 := sub_eq_zero.mp ht₂ |>.symm
-  exact ofReal_injective (mul_right_cancel₀ hz (h1.trans h2.symm))
-
-/-- For any `z : ℂ` and any measure `μ` on `ℝ` with null singletons, `1 - t z ≠ 0` almost
-everywhere. -/
-theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingletonClass μ] :
-    ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
-  rw [ae_iff]
-  simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
-
-end Complex
-
-namespace TauCeti.Polylog
-
 /-- Any function agreeing with the polylogarithm's radial integrand on `(0, 1)` away from the
 possible zero of `1 - t z` has the same interval integral on `[0, 1]`. -/
 theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ}
@@ -274,12 +248,11 @@ theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
   have haR : a * R' ≤ 1 / 2 := by
     rw [ha_def, div_mul_eq_mul_div, one_mul, div_le_iff₀ (by positivity)]
     linarith [le_max_right R 0]
-  set I₁ : ℝ≥0∞ := ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (Real.log t ^ (2 * k))
+  set I₁ : ℝ≥0∞ := ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (|Real.log t| ^ (2 * k))
   have hI₁ : I₁ < ∞ := by
     refine lt_of_le_of_lt (lintegral_mono fun t ↦ ?_)
       (intervalIntegrable_log_pow (2 * k) (a := 0) (b := 1)).1.hasFiniteIntegral
-    rw [← ofReal_norm, Real.norm_eq_abs]
-    exact ENNReal.ofReal_le_ofReal (le_abs_self _)
+    rw [← ofReal_norm, norm_pow, Real.norm_eq_abs]
   obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_clog_one_sub_mul_pow_le 2 a 1 R'
   set Ka : ℝ := |Real.log a| ^ k / a
   refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ + ENNReal.ofReal (Ka ^ 2) * C₂,
@@ -291,7 +264,7 @@ theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
       (by gcongr; exact hC₂z z hzR)))
   calc ∫⁻ t in Ioc 0 a, ENNReal.ofReal
           (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2)
-      ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal ((3 / 2 * R') ^ 2 * Real.log t ^ (2 * k)) := by
+      ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal ((3 / 2 * R') ^ 2 * |Real.log t| ^ (2 * k)) := by
         refine (setLIntegral_mono' measurableSet_Ioc fun t ht ↦ ENNReal.ofReal_le_ofReal ?_).trans
           (lintegral_mono' (Measure.restrict_mono (Ioc_subset_Ioc_right ha1) le_rfl) le_rfl)
         have h1 : ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ≤
@@ -299,10 +272,10 @@ theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
           (norm_radialIntegrand_le_of_mul_le ht.1 k
             ((mul_le_mul ht.2 hzR (norm_nonneg z) ha0.le).trans haR)).trans (by gcongr)
         exact (pow_le_pow_left₀ (norm_nonneg _) h1 2).trans_eq
-          (by rw [mul_pow, ← pow_mul, mul_comm k 2, pow_mul, sq_abs, ← pow_mul])
+          (by rw [mul_pow, ← pow_mul, mul_comm k 2])
     _ = ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ := by
         simp_rw [ENNReal.ofReal_mul (sq_nonneg _)]
-        exact lintegral_const_mul _ ((Real.measurable_log.pow_const _).ennreal_ofReal)
+        exact lintegral_const_mul _ (by fun_prop)
 
 /-- Over any bounded family of complex parameters `z i`, the radial integrands of the polylogarithm
 of weight `k + 2` are uniformly integrable (`MeasureTheory.UniformIntegrable`, and hence

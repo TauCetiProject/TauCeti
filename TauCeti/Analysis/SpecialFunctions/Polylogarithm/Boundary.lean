@@ -161,6 +161,15 @@ theorem tendsto_polylog_sub_mul_I_nhdsGT_zero (n : ℤ) {x : ℝ} (hx : x ≠ 1 
   (tendsto_polylog_nhdsWithin_im_neg n hx).comp
     (Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
 
+/-- Imaginary part of the radial integrand at a real parameter `x`. -/
+private lemma im_radialIntegrand_ofReal (k : ℕ) (t x : ℝ) :
+    (((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * (x : ℂ))) / (t : ℂ)).im =
+      -((-Real.log t) ^ k / t) * ((1 : ℂ) - (t : ℂ) * (x : ℂ)).arg := by
+  simp only [div_eq_mul_inv, ← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.mul_im,
+    Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, mul_zero, Complex.neg_im,
+    Complex.log_im]
+  ring
+
 /-- Imaginary part of the radial integral on `(1, ∞)` obtained by splitting `[0, 1]` at `x⁻¹`. -/
 private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 < x) :
     (∫ t : ℝ in (0 : ℝ)..1,
@@ -186,9 +195,7 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
     rw [inv_mul_cancel₀ (zero_lt_one.trans hx).ne'] at htx
     have harg : ((1 : ℂ) - (t : ℂ) * (x : ℂ)).arg = 0 := by
       simpa using Complex.arg_ofReal_of_nonneg (by linarith : 0 ≤ 1 - t * x)
-    simp only [g, div_eq_mul_inv, ← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.mul_im,
-      Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, mul_zero, Complex.neg_im,
-      Complex.log_im, harg, neg_zero]
+    simp only [g, im_radialIntegrand_ofReal, harg, mul_zero]
   have h2 : ∫ t in x⁻¹..1, (g t).im = -Real.pi * ∫ t in x⁻¹..1, (-Real.log t) ^ k / t := by
     rw [← intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hx_inv_le,
       intervalIntegral.integral_of_le hx_inv_le]
@@ -197,9 +204,7 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
     rw [inv_mul_cancel₀ (zero_lt_one.trans hx).ne'] at htx
     have harg : ((1 : ℂ) - (t : ℂ) * (x : ℂ)).arg = Real.pi := by
       simpa using Complex.arg_ofReal_of_neg (by linarith : 1 - t * x < 0)
-    simp only [g, div_eq_mul_inv, ← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.mul_im,
-      Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, mul_zero, Complex.neg_im,
-      Complex.log_im, harg]
+    simp only [g, im_radialIntegrand_ofReal, harg]
     ring
   have h_log_int : ∫ t in x⁻¹..1, (-Real.log t) ^ k / t = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
     simp_rw [neg_pow (Real.log _), mul_div_assoc]
