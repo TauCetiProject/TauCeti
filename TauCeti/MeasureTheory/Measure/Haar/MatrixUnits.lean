@@ -126,7 +126,7 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R)) (
       (MeasurableEquiv.funUnique (Fin 1) (Fin 1 → R)).symm.trans (Matrix.ofMeasurableEquiv _ _ _)
   let f : R →ₙ+ Matrix (Fin 1) (Fin 1) R :=
     { toFun := e
-      map_add' := fun _ _ ↦ rfl }
+      map_add' := fun x y ↦ by ext i j; simp [e] }
   have : (μ.map e).IsAddLeftInvariant := isAddLeftInvariant_map f e.measurable e.surjective
   have hset : e ⁻¹' {M | IsUnit M} = {x | IsUnit x} := by
     ext x

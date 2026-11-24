@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.MeasureTheory.Measure.Haar.CompactRing
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 public import TauCeti.RingTheory.MvPolynomial.FractionRing
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Haar-null zero loci of polynomials on open matrix groups
@@ -103,7 +104,7 @@ theorem measure_setOf_eval_algebraMap_eq_zero (μ : Measure (Matrix m n R)) [Sig
     (Matrix.ofMeasurableEquiv m n R).symm.trans (MeasurableEquiv.curry m n R).symm
   let f : Matrix m n R →ₙ+ (m × n → R) :=
     { toFun := e
-      map_add' := fun _ _ ↦ rfl }
+      map_add' := fun M N ↦ by ext p; simp [e, Function.uncurry_def, Matrix.row_apply] }
   have : SigmaFinite (μ.map e) := e.sigmaFinite_map
   have : (μ.map e).IsAddLeftInvariant := isAddLeftInvariant_map f e.measurable e.surjective
   have hset : e ⁻¹' {x | MvPolynomial.eval (algebraMap R E ∘ x) P = 0} =
@@ -130,7 +131,6 @@ theorem haarProb_setOf_eval_algebraMap_eq_zero (f : G →* Matrix n n R) (hf : C
     (hinj : Function.Injective f) (hopen : IsOpen (range f)) (P : MvPolynomial (n × n) E)
     (hP : P ≠ 0) :
     haarProb G {g | MvPolynomial.eval (fun p ↦ algebraMap R E (f g p.1 p.2)) P = 0} = 0 := by
-  have : CompactSpace (Matrix n n R) := inferInstanceAs (CompactSpace (n → n → R))
   let μ : Measure (Matrix n n R) := addHaar
   have hemb : MeasurableEmbedding f :=
     (IsOpenEmbedding.mk (hf.isClosedEmbedding hinj).toIsEmbedding hopen).measurableEmbedding
