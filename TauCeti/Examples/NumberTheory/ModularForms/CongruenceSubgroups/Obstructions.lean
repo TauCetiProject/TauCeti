@@ -85,9 +85,9 @@ theorem card_fin_two_zmod_twelve :
 /-! ### Projective indices and explicit obstruction checks -/
 
 private theorem gammaProjective_index_eleven : (GammaProjective 11).index = 660 := by
-  have h := two_mul_index_map_Gamma (N := 11) (by omega)
+  have h := two_mul_GammaProjective_index (N := 11) (by omega)
   have : Fact (Nat.Prime 11) := ⟨by decide⟩
-  rw [← GammaProjective_def, TauCeti.natCard_SL_fin_two_zmod] at h
+  rw [TauCeti.natCard_SL_fin_two_zmod] at h
   omega
 
 /-- Projective indices `(GammaProjective N).index` at `N ∈ {6, 8, 10, 11, 12}` and
@@ -98,11 +98,9 @@ theorem gammaProjective_index_checks :
       ((GammaProjective 10).index = 360 ∧ ¬ 7 ∣ (GammaProjective 10).index) ∧
       (GammaProjective 11).index = 660 ∧
       ((GammaProjective 12).index = 576 ∧ ¬ 7 ∣ (GammaProjective 12).index) := by
-  have h6 : (GammaProjective 6).index = 72 := GammaProjective_def 6 ▸ index_map_Gamma_six
-  have h8 : (GammaProjective 8).index = 192 := GammaProjective_def 8 ▸ index_map_Gamma_eight
-  have h10 : (GammaProjective 10).index = 360 := GammaProjective_def 10 ▸ index_map_Gamma_ten
-  have h12 : (GammaProjective 12).index = 576 := GammaProjective_def 12 ▸ index_map_Gamma_twelve
-  refine ⟨⟨h6, ?_⟩, h8, ⟨h10, ?_⟩, gammaProjective_index_eleven, ⟨h12, ?_⟩⟩ <;> omega
+  rw [GammaProjective_index_six, GammaProjective_index_eight, GammaProjective_index_ten,
+    gammaProjective_index_eleven, GammaProjective_index_twelve]
+  decide
 
 /-- Separation of the composition-factor obstruction from the order obstruction (`N = 11`,
 `ℓ = 5`): `|PSL₂(𝔽₅)| = 60 ∣ 660 = (GammaProjective 11).index`, yet `PSL₂(𝔽₅)` cannot occur as a

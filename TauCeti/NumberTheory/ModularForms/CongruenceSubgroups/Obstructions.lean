@@ -10,7 +10,6 @@ public import TauCeti.GroupTheory.Subgroup.IsSubnormal
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Principal
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Principal
 import Mathlib.Algebra.Field.ZMod
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CompositionFactors
@@ -93,19 +92,6 @@ namespace TauCeti.CongruenceSubgroup
 
 /-! ### Composition-factor obstructions in `PSL₂(ℤ)` -/
 
-/-- The quotient of `SL₂(ℤ)` by the normal core of `Γ.liftSL` is canonically isomorphic to the
-quotient of `PSL₂(ℤ)` by the normal core of `Γ`, since `SL₂(ℤ) →* PSL₂(ℤ)` is surjective. -/
-private noncomputable def quotientNormalCoreLiftSLEquiv (Γ : Subgroup PSL(2, ℤ)) :
-    (SL(2, ℤ) ⧸ Γ.liftSL.normalCore) ≃* (PSL(2, ℤ) ⧸ Γ.normalCore) :=
-  let π : SL(2, ℤ) →* PSL(2, ℤ) := QuotientGroup.mk' (Subgroup.center SL(2, ℤ))
-  let φ : SL(2, ℤ) →* PSL(2, ℤ) ⧸ Γ.normalCore := (QuotientGroup.mk' Γ.normalCore).comp π
-  have hker : Γ.liftSL.normalCore = φ.ker := by
-    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', Subgroup.liftSL_def]
-    exact Subgroup.normalCore_comap_of_forall_exists_mul_eq π fun g ↦
-      let ⟨x, hx⟩ := QuotientGroup.mk'_surjective _ g; ⟨x, 1, one_mem _, by rw [mul_one]; exact hx⟩
-  QuotientGroup.liftEquiv Γ.liftSL.normalCore
-    ((QuotientGroup.mk'_surjective _).comp (QuotientGroup.mk'_surjective _)) hker
-
 /-- **Level-`N` composition-factor obstruction in `PSL₂(ℤ)`:** if `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`,
 then every nonabelian simple subnormal section `S` of `PSL₂(ℤ) ⧸ Γ.normalCore` is isomorphic to
 `PSL(2, ZMod ℓ)` for a prime `ℓ ≥ 5` dividing `N`. -/
@@ -115,7 +101,7 @@ theorem exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL {N : ℕ} (hN : N ≠ 0
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) S) :
     ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
   CongruenceSubgroup.exists_prime_dvd_and_mulEquiv_of_Gamma_le hN h hcomm
-    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
+    (hsec.congr_left Γ.quotientNormalCoreLiftSLEquiv.symm)
 
 /-- **Composition-factor obstruction for projective congruence subgroups:** if `Γ.liftSL` is a
 congruence subgroup of `SL₂(ℤ)`, then every nonabelian simple subnormal section `S` of
@@ -126,7 +112,7 @@ theorem compositionFactor_quotient_normalCore_of_isCongruenceSubgroup_liftSL
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) S) :
     ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
   CongruenceSubgroup.compositionFactor_quotient_normalCore_of_isCongruenceSubgroup hΓ hcomm
-    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
+    (hsec.congr_left Γ.quotientNormalCoreLiftSLEquiv.symm)
 
 /-- **Prime-level divisibility criterion:** if `PSL₂(ℤ) ⧸ Γ.normalCore` admits `PSL(2, ZMod ℓ)`
 (`ℓ` prime, `5 ≤ ℓ`) as a subnormal section and `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`, then `ℓ ∣ N`. -/
@@ -157,7 +143,7 @@ theorem not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) (alternatingGroup α)) :
     ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL :=
   CongruenceSubgroup.not_isCongruenceSubgroup_of_hasSubnormalSection_alternatingGroup hα
-    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
+    (hsec.congr_left Γ.quotientNormalCoreLiftSLEquiv.symm)
 
 /-- **Alternating monodromy noncongruence theorem (`A_n`, `n ≥ 6`):** if
 `(PSL₂(ℤ) ⧸ Γ.normalCore) ≃* alternatingGroup α` with `6 ≤ Nat.card α`, then `Γ.liftSL` is not a
