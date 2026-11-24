@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Scaling and normalization of Euclidean minimal graphs
@@ -143,16 +144,14 @@ theorem contDiffOn_normalizedHeight {u : E → ℝ} (p : E) (R : ℝ) {S T : Set
   exact ((hu.comp (contDiffOn_const.add (contDiffOn_const.smul contDiffOn_id)) hmap).sub
     contDiffOn_const).const_smul R⁻¹
 
-private theorem mem_ball_normalizedHeight {p z : E} {R a : ℝ} (hR : 0 < R)
-    (hz : z ∈ ball (0 : E) a) : p + R • z ∈ ball p (R * a) := by
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hR]
-  exact mul_lt_mul_of_pos_left (by simpa only [mem_ball, dist_zero_right] using hz) hR
-
 /-- A positive height normalization takes differentiability on a scaled ball to a fixed ball. -/
 theorem contDiffOn_normalizedHeight_ball {u : E → ℝ} {p : E} {R a : ℝ} {k : ℕ∞ω}
     (hR : 0 < R) (hu : ContDiffOn ℝ k u (ball p (R * a))) :
     ContDiffOn ℝ k (normalizedHeight u p R) (ball (0 : E) a) := by
-  exact contDiffOn_normalizedHeight p R hu (fun _ hx ↦ mem_ball_normalizedHeight hR hx)
+  apply contDiffOn_normalizedHeight p R hu
+  intro z hz
+  simpa only [mem_preimage, vadd_eq_add, Real.norm_of_nonneg hR.le, add_comm] using
+    (preimage_smul_vadd_ball_norm p (c := R) (norm_pos_iff.mpr hR.ne') a).symm.subset hz
 
 end Generic
 
@@ -182,23 +181,6 @@ section Operator
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]
-
-private theorem nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
-    {u v : E → ℝ} {x y : E} {a : ℝ} (hgrad : ∇ v x = ∇ u y)
-    (hsecond : iteratedFDeriv ℝ 2 v x = a • iteratedFDeriv ℝ 2 u y) :
-    nondivergenceOperator v x = a * nondivergenceOperator u y := by
-  have hlap : Δ v x = a * Δ u y := by
-    rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis v
-      (stdOrthonormalBasis ℝ E),
-      InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis u
-        (stdOrthonormalBasis ℝ E)]
-    simp_rw [hsecond, smul_apply, smul_eq_mul]
-    rw [Finset.mul_sum]
-  have hH := congrArg (fun A : E [×2]→L[ℝ] ℝ ↦ A ![∇ u y, ∇ u y]) hsecond
-  simp only [smul_apply, smul_eq_mul, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one] at hH
-  rw [nondivergenceOperator_eq, nondivergenceOperator_eq, hgrad, hlap, hH]
-  ring
 
 /-- The nondivergence minimal graph operator scales inversely under simultaneous graph dilation. -/
 theorem nondivergenceOperator_dilatedHeight (u : E → ℝ) (r : ℝ) (x : E) :
@@ -245,7 +227,9 @@ theorem abs_normalizedHeight_le_mul_norm {u : E → ℝ} {p z : E} {R a M : ℝ}
   have hbound := (convex_ball p (R * a)).norm_image_sub_le_of_norm_fderiv_le
     (fun x hx ↦ (hu x hx).differentiableAt (isOpen_ball.mem_nhds hx))
     (fun x hx ↦ by simpa only [← norm_gradient_eq_norm_fderiv] using hgrad x hx)
-    hp (mem_ball_normalizedHeight hR hz)
+    hp (by
+      simpa only [mem_preimage, vadd_eq_add, Real.norm_of_nonneg hR.le, add_comm] using
+        (preimage_smul_vadd_ball_norm p (c := R) (norm_pos_iff.mpr hR.ne') a).symm.subset hz)
   calc
     _ = R⁻¹ * ‖u (p + R • z) - u p‖ := by
       rw [normalizedHeight_apply, abs_mul, abs_inv, abs_of_pos hR, Real.norm_eq_abs]
