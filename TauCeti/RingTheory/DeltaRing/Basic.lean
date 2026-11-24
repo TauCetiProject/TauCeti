@@ -52,6 +52,8 @@ such a ring commutes with `δ` exactly when it commutes with the Frobenius lifts
   surjective ring homomorphism out of a `δ`-ring makes it a `δ`-map.
 * `TauCeti.DeltaRing.isEmpty_of_natCast_eq_zero`: a nonzero ring in which `p = 0` has no
   `δ`-structure.
+* `TauCeti.DeltaRing.delta_natCast_mul_notMem`: for a radical ideal `m ∋ p` and `w ∉ m`,
+  `δ (p w) ∉ m`; consequently `p w ≠ e c` when `e, c ∈ m` (`natCast_mul_ne_mul`).
 
 ## References
 
@@ -319,6 +321,16 @@ theorem frobenius_sub_pow (x : A) : frobenius p A x - x ^ p = p * delta p x := b
 theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x ^ p :=
   ⟨delta p x, frobenius_sub_pow x⟩
 
+/-- For a radical ideal `m` containing `p`, the Frobenius preserves and reflects membership in
+`m`, as `φ x ≡ x ^ p` modulo `p`. -/
+theorem frobenius_mem_iff_of_natCast_mem {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {x : A} : frobenius p A x ∈ m ↔ x ∈ m := by
+  have h : frobenius p A x - x ^ p ∈ m := by
+    rw [frobenius_sub_pow]
+    exact m.mul_mem_right _ hpm
+  refine ⟨fun hx ↦ hm ⟨p, by simpa using m.sub_mem hx h⟩, fun hx ↦ ?_⟩
+  simpa using m.add_mem h (m.pow_mem_of_mem hx p (Fact.out : p.Prime).pos)
+
 variable (p A) in
 /-- The Frobenius of a `δ`-ring is a Frobenius lift. -/
 @[simp]
@@ -547,6 +559,34 @@ theorem delta_natCast_self : delta p (p : A) = 1 - (p : A) ^ (p - 1) := by
     rw [mul_sub, mul_one, ← pow_succ', Nat.sub_add_cancel hp.out.one_le]
   rw [delta_natCast, h, Int.mul_ediv_cancel_left _ hp0]
   simp
+
+/-- If `p` lies in a radical ideal `m` of a `δ`-ring and `w ∉ m`, then `δ (p w) ∉ m`: modulo `m`,
+`δ (p w)` is `w ^ p` (as `δ p = 1 - p ^ (p - 1)`). -/
+theorem delta_natCast_mul_notMem {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {w : A} (hwm : w ∉ m) : delta p ((p : A) * w) ∉ m := by
+  intro hδ
+  have hp1 : (p : A) ^ (p - 1) ∈ m := m.pow_mem_of_mem hpm _ (Nat.sub_pos_of_lt hp.out.one_lt)
+  have hL : delta p ((p : A) * w) - w ^ p ∈ m := by
+    have : delta p ((p : A) * w) - w ^ p = (p : A) ^ p * delta p w -
+        w ^ p * (p : A) ^ (p - 1) + p * (1 - (p : A) ^ (p - 1)) * delta p w := by
+      rw [delta_mul, delta_natCast_self]
+      ring
+    rw [this]
+    exact m.add_mem (m.sub_mem (m.mul_mem_right _ (m.pow_mem_of_mem hpm _ hp.out.pos))
+      (m.mul_mem_left _ hp1)) (m.mul_mem_right _ (m.mul_mem_right _ hpm))
+  exact hwm (hm ⟨p, by simpa using m.sub_mem hδ hL⟩)
+
+/-- If `p` lies in a radical ideal `m` of a `δ`-ring, then `p w ≠ e c` for `e, c ∈ m` and
+`w ∉ m`: applying `δ`, the left side lies outside `m` by `delta_natCast_mul_notMem`, while the
+right side lies in `m`. -/
+theorem natCast_mul_ne_mul {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {e c w : A} (hem : e ∈ m) (hcm : c ∈ m) (hwm : w ∉ m) : (p : A) * w ≠ e * c := by
+  intro hpw
+  refine delta_natCast_mul_notMem hm hpm hwm ?_
+  rw [hpw, delta_mul]
+  exact m.add_mem (m.add_mem (m.mul_mem_right _ (m.pow_mem_of_mem hem _ hp.out.pos))
+    (m.mul_mem_right _ (m.pow_mem_of_mem hcm _ hp.out.pos)))
+    (m.mul_mem_right _ (m.mul_mem_right _ hpm))
 
 omit [DeltaRing p A] in
 /-- A nonzero ring in which `p = 0`, for instance a nonzero ring of characteristic `p`, has no

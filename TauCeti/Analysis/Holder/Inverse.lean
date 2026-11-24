@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.FaaDiBruno

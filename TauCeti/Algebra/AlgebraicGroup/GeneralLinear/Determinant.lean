@@ -39,6 +39,8 @@ of the coordinate morphism, and hence injectivity of that morphism.
 
 * `TauCeti.GeneralLinear.determinantGroupLike`: the localized generic determinant as a
   group-like element.
+* `TauCeti.GeneralLinear.det_genericMatrix`: the determinant of the generic matrix is that
+  group-like element.
 * `TauCeti.GeneralLinear.antipode_genericMatrix`: the antipode of a generic entry is the inverse
   determinant times an adjugate entry.
 * `TauCeti.GeneralLinear.adjoin_genericMatrix_union_antipode_determinant`: the generic entries
@@ -86,21 +88,24 @@ theorem determinantGroupLike_val :
         (Matrix.det (localizedGenericMatrix R n)) :=
   by rw [determinantGroupLike]
 
+/-- The determinant of the generic matrix of `GLₙ` is the determinant group-like element. -/
+theorem det_genericMatrix :
+    (genericMatrix R n).det = (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
+  have hmap : genericMatrix R n =
+      (coordinateHopfAlgebraAlgEquiv R n).mapMatrix (localizedGenericMatrix R n) := by
+    ext i j
+    simp [localizedGenericMatrix_apply]
+  rw [hmap, ← AlgEquiv.map_det, determinantGroupLike_val]
+
 /-- The antipode of a generic entry of `GLₙ`, an entry of the inverse generic matrix, is the
 inverse determinant `S(det)` times the corresponding entry of the adjugate. -/
 theorem antipode_genericMatrix (i j : Fin n) :
     HopfAlgebra.antipode R (genericMatrix R n i j) =
       HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) *
         (genericMatrix R n).adjugate i j := by
-  have hdet : (genericMatrix R n).det = (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
-    have hmap : genericMatrix R n =
-        (coordinateHopfAlgebraAlgEquiv R n).mapMatrix (localizedGenericMatrix R n) := by
-      ext i j
-      simp [localizedGenericMatrix_apply]
-    rw [hmap, ← AlgEquiv.map_det, determinantGroupLike_val]
   have hinv : Ring.inverse (genericMatrix R n).det =
       HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
-    rw [hdet]
+    rw [det_genericMatrix]
     exact Ring.inverse_unit (GroupLike.toUnits R (determinantGroupLike R n))
   rw [genericMatrix_apply, coordinateHopfAlgebra_antipode_X, ← genericMatrix_inv_apply,
     Matrix.inv_def, hinv, Matrix.smul_apply, smul_eq_mul]

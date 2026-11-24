@@ -26,6 +26,8 @@ functors.
   property.
 * `TauCeti.CommHopfAlgCat.quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor`: the
   same property as an equality of subgroups of points.
+* `TauCeti.CommHopfAlgCat.mapDomain_quotientPointsHom_eq_one`: a morphism kills the points of
+  every closed subgroup contained in its kernel.
 -/
 
 public section
@@ -87,6 +89,18 @@ theorem quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor (f : H �
     BialgHom.mapDomain (A := A) f.hom g = 1
   rw [BialgHom.mapDomain_apply]
   exact (mapPointsFunctor_app_eq_one_iff f A g).symm
+
+/-- A morphism `f` kills the points of every closed subgroup contained in its kernel, that is, cut
+out by a Hopf ideal `I` containing the kernel Hopf ideal of `f`. -/
+theorem mapDomain_quotientPointsHom_eq_one {I : HopfIdeal R K} (f : H ⟶ K)
+    (hf : kernelHopfIdeal f ≤ I) (A : CommAlgCat.{w} R)
+    (u : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient K I) A) :
+    BialgHom.mapDomain (A := A) f.hom (quotientPointsHom K I A u) = 1 := by
+  rw [BialgHom.mapDomain_apply]
+  refine (mapPointsFunctor_app_eq_one_iff f A _).mpr ?_
+  have hu := quotientPointsHom_mem_quotientPointsSubgroup K I A u
+  rw [mem_quotientPointsSubgroup_iff] at hu ⊢
+  exact fun h hh => hu h (hf hh)
 
 end CommHopfAlgCat
 

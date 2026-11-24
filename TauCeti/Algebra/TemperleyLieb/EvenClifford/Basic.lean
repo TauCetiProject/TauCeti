@@ -118,7 +118,7 @@ open scoped ComplexConjugate ComplexOrder TensorProduct
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Arithmetic helpers for `√2` in `ℂ` -/
+/-! ### The self-adjoint loop parameter `√2` -/
 
 /-- Registers `IsSelfAdjoint (Real.sqrt 2 : ℂ)` as a `Fact` so that
 `TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m` carries the analytic adjoint instances
