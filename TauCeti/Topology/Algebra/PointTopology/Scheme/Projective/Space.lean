@@ -118,17 +118,30 @@ theorem projPoint_smul {v : ι → K} (hv : v ≠ 0) {c : K} (hc : c ≠ 0) :
   have hck : (c • v) k ≠ 0 := by simpa using And.intro hc hk
   rw [projPoint_eq_chartPoint _ hk, projPoint_eq_chartPoint _ hck]
   congr 1
-  refine Away.algHom_ext (projCoord_mem k) fun n a ha ↦ ?_
-  rw [projChartEval_awayMk, projChartEval_awayMk, projEval_smul_of_mem c v (by simpa using ha),
-    Pi.smul_apply, smul_eq_mul, mul_pow, mul_div_mul_left _ _ (pow_ne_zero n hc)]
+  exact AlgHom.toRingHom_injective <| (projChartEval_toRingHom _ hck).trans <|
+    (Away.lift_eq_of_forall_mem _ _ (Units.mk0 c hc) (fun n a ha ↦ projEval_smul_of_mem c v ha)
+      (projCoord_mem k) _ _).trans (projChartEval_toRingHom _ hk).symm
 
 /-- The point with homogeneous coordinates `v` pulls the standard chart `D₊(X_k)` back to the
 basic open of `v k` in `Spec K`. -/
-private theorem projPoint_preimage_basicOpen (v : ι → K) (hv : v ≠ 0) (k : ι) :
+theorem projPoint_preimage_basicOpen (v : ι → K) (hv : v ≠ 0) (k : ι) :
     (projPoint v hv).val ⁻¹ᵁ Proj.basicOpen (homogeneousSubmodule K (ι → K)) (projCoord K k) =
       (Spec (.of K)).basicOpen ((Scheme.ΓSpecIso (.of K)).inv.hom (v k)) := by
   rw [projPoint_val, Proj.fromOfGlobalSections_preimage_basicOpen _ _ _ one_pos (projCoord_mem k),
     RingHom.comp_apply, RingHom.coe_coe, projEval_projCoord]
+
+/-- The point with homogeneous coordinates `v` lies on the standard chart `D₊(X_k)` exactly when
+`v k ≠ 0`. -/
+theorem projPoint_mem_basicOpen_iff (v : ι → K) (hv : v ≠ 0) (k : ι) :
+    (projPoint v hv).val (IsLocalRing.closedPoint K) ∈
+        Proj.basicOpen (homogeneousSubmodule K (ι → K)) (projCoord K k) ↔ v k ≠ 0 := by
+  rw [← Scheme.Hom.mem_preimage (projPoint v hv).val (x := IsLocalRing.closedPoint K),
+    projPoint_preimage_basicOpen]
+  by_cases hk : v k = 0
+  · rw [hk, map_zero, Scheme.basicOpen_zero]
+    exact iff_of_false id (not_not_intro rfl)
+  · rw [Scheme.basicOpen_of_isUnit _ ((IsUnit.mk0 _ hk).map _)]
+    exact iff_of_true trivial hk
 
 /-- **Homogeneous coordinates are unique up to a scalar.** Two nonzero coordinate vectors give
 the same point exactly when they are proportional. -/
@@ -138,11 +151,8 @@ theorem projPoint_eq_projPoint_iff {v w : ι → K} (hv : v ≠ 0) (hw : w ≠ 0
   · obtain ⟨k, hk⟩ := Function.ne_iff.mp hv
     -- The point lies on the chart `D₊(X_k)`, so `w k ≠ 0` as well.
     have hwk : w k ≠ 0 := by
-      intro hwk
-      have h' := projPoint_preimage_basicOpen v hv k
-      rw [h, projPoint_preimage_basicOpen w hw k, hwk, map_zero, Scheme.basicOpen_zero,
-        Scheme.basicOpen_of_isUnit _ ((IsUnit.mk0 _ hk).map _)] at h'
-      exact bot_ne_top h'
+      rw [← projPoint_mem_basicOpen_iff w hw k, ← h]
+      exact (projPoint_mem_basicOpen_iff v hv k).2 hk
     rw [projPoint_eq_chartPoint hv hk, projPoint_eq_chartPoint hw hwk] at h
     have hα := chartPoint_injective _ _ _ _ h
     refine ⟨w k / v k, div_ne_zero hwk hk, funext fun i ↦ ?_⟩
