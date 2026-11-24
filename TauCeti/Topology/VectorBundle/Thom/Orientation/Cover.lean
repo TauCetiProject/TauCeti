@@ -48,7 +48,8 @@ coefficients (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEqui
   `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
 * `TauCeti.VectorBundleOrientationCover.coverThomPairMap`: the map of Thom pairs from the pull-back
   bundle to `E`, with `deckThomPairMap_comp_coverThomPairMap` (the lifted deck involution covers
-  the identity of the Thom pair of `E`).
+  the identity of the Thom pair of `E`) and `fiberThomPairMap_comp_coverThomPairMap` (it includes
+  the fibre over `q` as the fibre of `E` over `q.proj`).
 * `TauCeti.VectorBundleOrientationCover.singularCohomologyMap_deckThomPairMap_thomClassOfModel`:
   it negates the Thom class of the tautological orientation.
 * `TauCeti.VectorBundleOrientationCover.singularHomologyMap_deckThomPairMap_comp_homologyThomMap`
@@ -200,6 +201,17 @@ theorem coverThomPairMap_fst_apply
     (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
     TopPair.Hom.fst (coverThomPairMap F E ι) v = Pullback.lift _ v :=
   pullbackThomPairMap_fst_apply F E _ v
+
+-- Not a simp lemma, for the same reason as `lift_deckThomPairMap_fst`: simp rewrites the coercion
+-- of the bundled projection in the pull-back on the left-hand side, so it is not in simp normal
+-- form.
+/-- The fibre of `E'` over a point `q` of the orientation cover is included in the Thom pair of `E`
+as the fibre over `q.proj`. -/
+@[reassoc]
+theorem fiberThomPairMap_comp_coverThomPairMap (q : VectorBundleOrientationCover F E ι) :
+    fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q ≫
+      coverThomPairMap F E ι = fiberThomPairMap F E q.proj :=
+  fiberThomPairMap_comp_pullbackThomPairMap F E _ q
 
 /-- A vector `v` of `E'` lies over the point `v.proj` of the orientation cover, which lies over the
 image of `v` in the base. -/
