@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Interval.Set.Basic
+import Mathlib.Order.Interval.Set.LinearOrder
 
 /-!
 # Set difference of intervals in a linear order
@@ -27,14 +28,10 @@ namespace Set
 theorem Icc_sdiff_Ioo {α : Type*} [LinearOrder α] {a b c d : α}
     (hac : a ≤ c) (hcd : c ≤ d) (hdb : d ≤ b) :
     Icc a b \ Ioo c d = Icc a c ∪ Icc d b := by
-  ext x
-  simp only [mem_sdiff, mem_Icc, mem_Ioo, mem_union, not_and, not_lt]
-  refine ⟨fun ⟨⟨hax, hxb⟩, hnot⟩ => ?_, ?_⟩
-  · by_cases hxc : x ≤ c
-    · exact Or.inl ⟨hax, hxc⟩
-    · exact Or.inr ⟨hnot (not_le.mp hxc), hxb⟩
-  · rintro (⟨hax, hxc⟩ | ⟨hdx, hxb⟩)
-    · exact ⟨⟨hax, hxc.trans (hcd.trans hdb)⟩, fun hcx => absurd hcx (not_lt.mpr hxc)⟩
-    · exact ⟨⟨hac.trans (hcd.trans hdx), hxb⟩, fun _ => hdx⟩
+  rw [sdiff_eq, ← Ioi_inter_Iio, compl_inter, compl_Ioi, compl_Iio,
+    inter_comm, union_inter_distrib_right, ← Ici_inter_Iic]
+  rw [← inter_assoc, inter_comm (Iic c), inter_assoc, Iic_inter_Iic, min_eq_left (hcd.trans hdb),
+    Ici_inter_Iic]
+  rw [← inter_assoc, Ici_inter_Ici, sup_eq_left.mpr (hac.trans hcd), Ici_inter_Iic]
 
 end Set

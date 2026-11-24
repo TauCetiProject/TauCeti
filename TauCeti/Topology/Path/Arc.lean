@@ -55,8 +55,10 @@ omit [T2Space X] in
 endpoints. -/
 theorem image_Ioo_eq_range_sdiff_endpoints {γ : Path x y} (hγ : Injective γ) :
     γ '' Ioo 0 1 = range γ \ {x, y} := by
-  rw [← Set.Icc_sdiff_both, ← unitInterval.univ_eq_Icc, Set.image_sdiff hγ, Set.image_univ,
-    Set.image_pair, γ.source, γ.target]
+  have h : (Ioo 0 1 : Set unitInterval) = univ \ {0, 1} := by
+    rw [unitInterval.univ_eq_Icc, Set.Icc_sdiff_both]
+  rw [h, Set.image_sdiff hγ]
+  simp
 
 /-- **An arc is a closed one-dimensional disc.** The range of an injective path in a Hausdorff
 space is homeomorphic to the closed unit ball of a one-dimensional real normed space, by a

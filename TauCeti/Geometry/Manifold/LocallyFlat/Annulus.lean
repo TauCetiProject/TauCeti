@@ -17,6 +17,7 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Annulus
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Data.Set.Function
 import TauCeti.Order.Interval.Set.LinearOrder
 import TauCeti.Topology.MetricSpace.ProperSpace
 
@@ -141,6 +142,7 @@ theorem coboundAnnulus_iff_exists_homeomorph {f g : X → E} :
       ∃ Φ : X × I ≃ₜ ↥(filledHull (range f) \ (filledHull (range g) \ range g)),
         (fun p => (Φ p : E)) '' (univ ×ˢ {0}) = range f ∧
         (fun p => (Φ p : E)) '' (univ ×ˢ {1}) = range g := by
+  rw [coboundAnnulus_iff]
   refine ⟨?_, ?_⟩
   · rintro ⟨h, hemb, hrange, h0, h1⟩
     exact ⟨hemb.toHomeomorph.trans (Homeomorph.setCongr hrange), h0, h1⟩
@@ -157,6 +159,7 @@ theorem coboundAnnulus_congr {f f' g g' : X → E} (hf : range f = range f')
 domain. -/
 theorem CoboundAnnulus.comp_homeomorph {Y : Type*} [TopologicalSpace Y] {f g : X → E}
     (h : CoboundAnnulus f g) (e : Y ≃ₜ X) : CoboundAnnulus (f ∘ e) (g ∘ e) := by
+  rw [coboundAnnulus_iff] at h ⊢
   obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
   let ψ : Y × I ≃ₜ X × I := e.prodCongr (Homeomorph.refl I)
   have himg (t : I) : ψ '' (univ ×ˢ {t}) = univ ×ˢ {t} := by
@@ -179,6 +182,7 @@ theorem CoboundAnnulus.homeomorph_comp {F : Type*} [TopologicalSpace F] [Bornolo
     {f g : X → E} (h : CoboundAnnulus f g) (e : E ≃ₜ F)
     (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) :
     CoboundAnnulus (e ∘ f) (e ∘ g) := by
+  rw [coboundAnnulus_iff] at h ⊢
   obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
   refine ⟨e ∘ φ, e.isEmbedding.comp hφ, ?_, ?_, ?_⟩
   · rw [range_comp, hrange, Set.image_sdiff e.injective, e.image_filledHull he,
@@ -261,6 +265,7 @@ theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
       simp [affine]
       ring
     exact hline.codRestrict _ hpos
+  rw [coboundAnnulus_iff]
   refine ⟨fun p => (R - (R - r) * p.2) • (p.1 : E), ?_, ?_, ?_, ?_⟩
   · have hemb := IsEmbedding.subtypeVal.comp
       ((homeomorphUnitSphereProdOfNormPos E).symm.isEmbedding.comp
@@ -356,28 +361,34 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
   have hdisj : Disjoint (range (Path.segment a c)) (range (Path.segment b d)) := by
     rw [hrange_ac, hrange_bd]
     exact Set.disjoint_left.mpr fun _ h1 h2 => by linarith [h1.2, h2.1]
+  have himg_neg : h '' ({um} ×ˢ univ) = range (Path.segment a c) :=
+    Subset.antisymm (by rintro _ ⟨⟨_, t⟩, ⟨rfl, _⟩, rfl⟩; exact ⟨t, (hh_neg t).symm⟩)
+      (by rintro _ ⟨t, rfl⟩; exact ⟨(um, t), ⟨rfl, trivial⟩, hh_neg t⟩)
+  have himg_pos : h '' ({up} ×ˢ univ) = range (Path.segment b d) :=
+    Subset.antisymm (by rintro _ ⟨⟨_, t⟩, ⟨rfl, _⟩, rfl⟩; exact ⟨t, (hh_pos t).symm⟩)
+      (by rintro _ ⟨t, rfl⟩; exact ⟨(up, t), ⟨rfl, trivial⟩, hh_pos t⟩)
+  have huniv_prod : (univ : Set (sphere (0 : ℝ) 1 × I)) = {um} ×ˢ univ ∪ {up} ×ˢ univ := by
+    rw [← union_prod, singleton_union, ← huniv, univ_prod_univ]
+  have hh_inj_neg : InjOn h ({um} ×ˢ univ) := by
+    rintro ⟨u₁, t₁⟩ ⟨hu₁, _⟩ ⟨u₂, t₂⟩ ⟨hu₂, _⟩ heq
+    simp only [mem_singleton_iff] at hu₁ hu₂
+    subst hu₁ hu₂
+    rw [hh_neg, hh_neg] at heq
+    exact Prod.ext rfl (Path.segment_injective_of_ne hac.ne heq)
+  have hh_inj_pos : InjOn h ({up} ×ˢ univ) := by
+    rintro ⟨u₁, t₁⟩ ⟨hu₁, _⟩ ⟨u₂, t₂⟩ ⟨hu₂, _⟩ heq
+    simp only [mem_singleton_iff] at hu₁ hu₂
+    subst hu₁ hu₂
+    rw [hh_pos, hh_pos] at heq
+    exact Prod.ext rfl (Path.segment_injective_of_ne hdb.ne' heq)
   have hh_inj : Injective h := by
-    rintro ⟨u₁, t₁⟩ ⟨u₂, t₂⟩ heq
-    rcases hu_eq u₁ with rfl | rfl <;> rcases hu_eq u₂ with rfl | rfl
-    · rw [hh_neg, hh_neg] at heq
-      exact Prod.ext rfl (Path.segment_injective_of_ne hac.ne heq)
-    · rw [hh_neg, hh_pos] at heq
-      exact (hdisj.ne_of_mem (mem_range_self t₁) (mem_range_self t₂) heq).elim
-    · rw [hh_pos, hh_neg] at heq
-      exact (hdisj.ne_of_mem (mem_range_self t₂) (mem_range_self t₁) heq.symm).elim
-    · rw [hh_pos, hh_pos] at heq
-      exact Prod.ext rfl (Path.segment_injective_of_ne hdb.ne' heq)
+    rw [← injOn_univ, huniv_prod]
+    exact hh_inj_neg.union_of_disjoint_image hh_inj_pos (by rwa [himg_neg, himg_pos])
   have : CompactSpace (sphere (0 : ℝ) 1) := isCompact_iff_compactSpace.mp (isCompact_sphere 0 1)
+  rw [coboundAnnulus_iff]
   refine ⟨h, (hh_cont.isClosedEmbedding hh_inj).isEmbedding, ?_, ?_, ?_⟩
   · have hrange_h : range h = range (Path.segment a c) ∪ range (Path.segment b d) := by
-      refine Subset.antisymm ?_ ?_
-      · rintro _ ⟨⟨u, t⟩, rfl⟩
-        rcases hu_eq u with rfl | rfl
-        · exact Or.inl ⟨t, (hh_neg t).symm⟩
-        · exact Or.inr ⟨t, (hh_pos t).symm⟩
-      · rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-        · exact ⟨(um, t), hh_neg t⟩
-        · exact ⟨(up, t), hh_pos t⟩
+      rw [← image_univ, huniv_prod, image_union, himg_neg, himg_pos]
     rw [hrange_h, hrange_ac, hrange_bd, hfhf, hg_open, Icc_sdiff_Ioo hac.le hcd.le hdb.le]
   · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ, ← image_univ, huniv, image_pair]
     simp [hh_neg, hh_pos, hrf]
@@ -405,8 +416,10 @@ theorem coboundAnnulus_of_injective_of_finrank_eq_one
       (e.image_subset_filledHull_sdiff_iff he (range g) (range f)).mpr hsub)
 
 /-- **The annulus conjecture holds in dimension `1` (`n = 0`).** -/
-theorem annulusConjecture_zero : AnnulusConjecture 0 := fun _ _ hf hg hsub =>
-  coboundAnnulus_of_injective_of_finrank_eq_one (by simp) hf.injective hg.injective hsub
+theorem annulusConjecture_zero : AnnulusConjecture 0 := by
+  rw [annulusConjecture_iff]
+  exact fun _ _ hf hg hsub =>
+    coboundAnnulus_of_injective_of_finrank_eq_one (by simp) hf.injective hg.injective hsub
 
 private theorem coboundAnnulus_of_continuous_injective_complex {f g : sphere (0 : ℂ) 1 → ℂ}
     (hfc : Continuous f) (hfi : Injective f) (hgc : Continuous g) (hgi : Injective g)
@@ -444,9 +457,11 @@ theorem coboundAnnulus_of_continuous_injective_of_finrank_eq_two
       (e.image_subset_filledHull_sdiff_iff he (range g) (range f)).mpr hsub)
 
 /-- **The annulus conjecture holds in dimension `2` (`n = 1`).** -/
-theorem annulusConjecture_one : AnnulusConjecture 1 := fun _ _ hf hg hsub =>
-  coboundAnnulus_of_continuous_injective_of_finrank_eq_two (by simp)
-    hf.continuous hf.injective hg.continuous hg.injective hsub
+theorem annulusConjecture_one : AnnulusConjecture 1 := by
+  rw [annulusConjecture_iff]
+  exact fun _ _ hf hg hsub =>
+    coboundAnnulus_of_continuous_injective_of_finrank_eq_two (by simp)
+      hf.continuous hf.injective hg.continuous hg.injective hsub
 
 /-- **The annulus conjecture holds in dimensions `1` and `2` (`n ≤ 1`).** -/
 theorem annulusConjecture_of_le_one {n : ℕ} (hn : n ≤ 1) : AnnulusConjecture n := by

@@ -60,8 +60,9 @@ splitting off the first coordinate identifies the closed unit ball with the cube
   ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
   homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
-* `TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`: `TauCeti.squareHomeomorphClosedBall`
-  carries `TauCeti.squareBoundary` onto the unit sphere, inducing
+* `TauCeti.squareHomeomorphClosedBall` and `TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`:
+  identification of `I × I` with the closed unit ball of any two-dimensional real normed space,
+  carrying `TauCeti.squareBoundary` onto the unit sphere, inducing
   `TauCeti.squareBoundaryHomeomorphSphere` and `TauCeti.coe_squareBoundaryHomeomorphSphere_apply`.
 -/
 
@@ -422,6 +423,16 @@ theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
     rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
   rw [mem_sphere_zero_iff_norm, hx, closedBallHomeomorphProd, Homeomorph.trans_apply,
     cubeSplitHomeomorph_mem_prodBoundary_iff]
+
+/-- Identification of the unit square `I × I` with the closed unit ball of any two-dimensional real
+normed space, carrying the boundary of the square onto the unit sphere. -/
+def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hF : Module.finrank ℝ F = 2) :
+    (I × I) ≃ₜ Metric.closedBall (0 : F) 1 :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  Homeomorph.finTwoArrow.symm.trans <|
+    (cubeHomeomorphClosedBall (Fin 2)).trans <|
+      closedBallHomeomorphOfFinrankEq (by simp [hF])
 
 /-- `TauCeti.squareHomeomorphClosedBall` carries a point of the unit square onto the unit sphere
 exactly when it lies on `TauCeti.squareBoundary`. -/

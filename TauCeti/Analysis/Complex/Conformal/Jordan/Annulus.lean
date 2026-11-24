@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
 import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Decomposition
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Data.Set.Basic
 import TauCeti.Data.Set.InjOnUnion
 import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 import TauCeti.Topology.Frontier
@@ -86,71 +87,6 @@ namespace TauCeti
 /-! ### Normalized planar annulus theorem -/
 
 section Normalized
-
-/-- Set-level decomposition behind `split_second_half`: cutting `Db` along `γ₂` inside
-`U = Da ∪ Db` isolates `F` from `Db'`, leaving `Da` and `Db'` covering `U \ (F \ C)` with
-intersection `J₁ ∪ J₂`. -/
-private theorem sdiff_filledHull_decomposition {α : Type*}
-    {Da Db Db' F U C γ₁ γ₂ J₁ J₂ κ : Set α} {p₁ p₂ : α}
-    (hD_union : Da ∪ Db = U) (hD_inter : Da ∩ Db = κ)
-    (hDb_union : F ∪ Db' = Db) (hDb_inter : F ∩ Db' = γ₂)
-    (hF_inside : F \ C ⊆ Db \ κ)
-    (hκ_eq : κ = J₁ ∪ γ₁ ∪ J₂) (hγu : γ₁ ∪ γ₂ = C) (hγi : γ₁ ∩ γ₂ = {p₁, p₂})
-    (hp₁J₁ : p₁ ∈ J₁) (hp₂J₂ : p₂ ∈ J₂)
-    (hγ₁F : γ₁ ⊆ F) (hJ₁Db' : J₁ ⊆ Db') (hJ₂Db' : J₂ ⊆ Db') :
-    Da ∪ Db' = U \ (F \ C) ∧ Da ∩ Db' = J₁ ∪ J₂ := by
-  have hDb'_sub : Db' ⊆ Db := hDb_union ▸ subset_union_right
-  have hκDa : κ ⊆ Da := hD_inter ▸ inter_subset_left
-  have hγ₂C : γ₂ ⊆ C := hγu ▸ subset_union_right
-  have hγ₁Da : γ₁ ⊆ Da := (subset_union_right.trans subset_union_left).trans (hκ_eq ▸ hκDa)
-  have hJ₁Da : J₁ ⊆ Da := (subset_union_left.trans subset_union_left).trans (hκ_eq ▸ hκDa)
-  have hJ₂Da : J₂ ⊆ Da := subset_union_right.trans (hκ_eq ▸ hκDa)
-  have hRF_union : (Da ∪ Db') ∪ F = U := by
-    rw [union_assoc, union_comm Db' F, hDb_union, hD_union]
-  have hDaF : Da ∩ F ⊆ C := by
-    intro z ⟨hzA, hzF⟩
-    by_contra hzC
-    have hzW := hF_inside ⟨hzF, hzC⟩
-    exact hzW.2 (hD_inter ▸ ⟨hzA, hzW.1⟩)
-  have hRF_inter : (Da ∪ Db') ∩ F = C := by
-    refine Subset.antisymm ?_ ?_
-    · rw [union_inter_distrib_right, inter_comm Db' F, hDb_inter]
-      exact union_subset hDaF hγ₂C
-    · rw [← hγu]
-      refine union_subset (subset_inter (hγ₁Da.trans subset_union_left) hγ₁F) ?_
-      have hγ₂Db' : γ₂ ⊆ Db' := hDb_inter ▸ inter_subset_right
-      have hγ₂F : γ₂ ⊆ F := hDb_inter ▸ inter_subset_left
-      exact subset_inter (hγ₂Db'.trans subset_union_right) hγ₂F
-  have hCU : C ⊆ U := hRF_inter ▸ inter_subset_left.trans (hRF_union ▸ subset_union_left)
-  refine ⟨?_, Subset.antisymm ?_ ?_⟩
-  · rw [sdiff_sdiff_eq_sdiff_union hCU, ← hRF_union, union_sdiff_right, ← hRF_inter,
-      sdiff_union_inter]
-  · intro z ⟨hzA, hzB'⟩
-    have hzκ : z ∈ J₁ ∪ γ₁ ∪ J₂ := hκ_eq ▸ hD_inter ▸ ⟨hzA, hDb'_sub hzB'⟩
-    rcases hzκ with (hzJ₁ | hzγ₁) | hzJ₂
-    · exact Or.inl hzJ₁
-    · have hzγ₂ : z ∈ γ₂ := hDb_inter ▸ ⟨hγ₁F hzγ₁, hzB'⟩
-      rcases (hγi ▸ ⟨hzγ₁, hzγ₂⟩ : z ∈ ({p₁, p₂} : Set α)) with rfl | rfl
-      · exact Or.inl hp₁J₁
-      · exact Or.inr hp₂J₂
-    · exact Or.inr hzJ₂
-  · rintro z (hz | hz)
-    · exact ⟨hJ₁Da hz, hJ₁Db' hz⟩
-    · exact ⟨hJ₂Da hz, hJ₂Db' hz⟩
-
-/-- Shrink the second side of a singleton intersection `A ∩ S = {x}` to `B ⊆ S` while retaining the
-shared point `x`. -/
-private theorem inter_eq_singleton_of_subset {α : Type*} {A B S : Set α} {x : α}
-    (hAS : A ∩ S = {x}) (hBS : B ⊆ S) (hxA : x ∈ A) (hxB : x ∈ B) :
-    A ∩ B = {x} :=
-  Subset.antisymm ((inter_subset_inter_right A hBS).trans hAS.subset)
-    (singleton_subset_iff.mpr ⟨hxA, hxB⟩)
-
-/-- Swapped-order variant of `inter_eq_singleton_of_subset`. -/
-private theorem inter_eq_singleton_of_subset_left {α : Type*} {A B S : Set α} {x : α}
-    (hAS : A ∩ S = {x}) (hBS : B ⊆ S) (hxB : x ∈ B) (hxA : x ∈ A) :
-    B ∩ A = {x} :=
-  inter_comm A B ▸ inter_eq_singleton_of_subset hAS hBS hxA hxB
 
 /-- On either real ray `{s * r | r ≥ 0}` (`s = ±1`), a Jordan curve `C ⊆ ball 0 1` enclosing `0`
 has a last intersection point at some radius `t ∈ (0, 1)`, giving an injective radial segment from
@@ -296,10 +232,10 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
   -- Build the complementary boundary path `β₂ = (J₁.symm.trans σ_b).trans J₂.symm` of `W_b`.
   have hJ₁_σb : range J₁.symm ∩ range σ_b = {1} :=
     Path.symm_range J₁ ▸
-      inter_eq_singleton_of_subset hJ₁S hσ_bS J₁.source_mem_range σ_b.source_mem_range
+      Set.inter_eq_singleton_of_subset hJ₁S.subset hσ_bS J₁.source_mem_range σ_b.source_mem_range
   have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} :=
-    Path.symm_range J₂ ▸
-      inter_eq_singleton_of_subset_left hJ₂S hσ_bS σ_b.target_mem_range J₂.target_mem_range
+    Path.symm_range J₂ ▸ inter_comm (range J₂) (range σ_b) ▸
+      Set.inter_eq_singleton_of_subset hJ₂S.subset hσ_bS J₂.target_mem_range σ_b.target_mem_range
   set β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
   have hβ₂_inj : Injective β₂ :=
     Path.injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
@@ -351,11 +287,40 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
     ext z; simp only [mem_union]; tauto
   dsimp only
   rw [← hJₐ_eq, ← hJ_b'_eq]
-  exact sdiff_filledHull_decomposition hD_union hD_inter hD_b_union hD_b_inter hC_inside
-    hκ₁_range hγu hγi J₁.target_mem_range J₂.source_mem_range
-    (fun z hz => subset_filledHull (hγ₁C hz))
-    (fun z hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inl (Or.inl hz))))
-    (fun z hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inr hz)))
+  set Db' : Set ℂ := filledHull (range γ₂ ∪ range β₂)
+  have hDb'_sub : Db' ⊆ filledHull J_b := hD_b_union ▸ subset_union_right
+  have hRF_union : (filledHull Jₐ ∪ Db') ∪ filledHull C = closedBall 0 1 := by
+    rw [union_assoc, union_comm Db' (filledHull C), hD_b_union, hD_union]
+  have hDaF : filledHull Jₐ ∩ filledHull C ⊆ C := fun z ⟨hzA, hzF⟩ => by
+    by_contra hzC
+    have hzW := hC_inside ⟨hzF, hzC⟩
+    exact hzW.2 (hD_inter ▸ ⟨hzA, hzW.1⟩)
+  have hγ₁Da : range γ₁ ⊆ filledHull Jₐ :=
+    (subset_union_right.trans subset_union_left).trans
+      (hκ₁_range ▸ (hD_inter ▸ inter_subset_left))
+  have hRF_inter : (filledHull Jₐ ∪ Db') ∩ filledHull C = C := by
+    refine Subset.antisymm ?_ ?_
+    · rw [union_inter_distrib_right, inter_comm Db' (filledHull C), hD_b_inter]
+      exact union_subset hDaF hγ₂C
+    · intro z hz
+      rcases hγu.symm.subset hz with hzγ₁ | hzγ₂
+      · exact ⟨Or.inl (hγ₁Da hzγ₁), subset_filledHull (hγ₁C hzγ₁)⟩
+      · exact ⟨Or.inr ((hD_b_inter ▸ inter_subset_right) hzγ₂), subset_filledHull (hγ₂C hzγ₂)⟩
+  refine ⟨?_, ?_⟩
+  · exact (Set.union_sdiff_sdiff_inter (filledHull Jₐ ∪ Db') (filledHull C)).symm.trans
+      (by rw [hRF_union, hRF_inter])
+  · refine Set.inter_eq_of_inter_eq_union (g := range γ₁) ?_ hDb'_sub ?_ ?_
+    · rw [hD_inter, hκ₁_range]
+      ext z; simp only [mem_union]; tauto
+    · exact union_subset
+        (fun _ hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inl (Or.inl hz))))
+        (fun _ hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inr hz)))
+    · rintro z ⟨hzγ₁, hzDb'⟩
+      have hzγ₂ : z ∈ range γ₂ :=
+        hD_b_inter ▸ ⟨subset_filledHull (hγ₁C hzγ₁), hzDb'⟩
+      rcases (hγi ▸ ⟨hzγ₁, hzγ₂⟩ : z ∈ ({p₁, p₂} : Set ℂ)) with rfl | rfl
+      · exact Or.inl J₁.target_mem_range
+      · exact Or.inr J₂.source_mem_range
 
 /-- Gluing two four-sided parametrizations `Φp, Φm : I × I ≃ₜ Ap, Am` that agree on the common
 vertical edges `J₁` and `J₂.symm` and map the top edges to the upper and lower semicircles yields a
@@ -560,9 +525,10 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
   have hγ₁C : range γ₁ ⊆ C := hγu ▸ subset_union_left
   have hγ₂C : range γ₂ ⊆ C := hγu ▸ subset_union_right
   have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} :=
-    inter_eq_singleton_of_subset hJ₁C hγ₁C J₁.target_mem_range γ₁.source_mem_range
+    Set.inter_eq_singleton_of_subset hJ₁C.subset hγ₁C J₁.target_mem_range γ₁.source_mem_range
   have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} :=
-    inter_eq_singleton_of_subset_left hJ₂C hγ₁C γ₁.target_mem_range J₂.source_mem_range
+    inter_comm (range J₂) (range γ₁) ▸
+      Set.inter_eq_singleton_of_subset hJ₂C.subset hγ₁C J₂.source_mem_range γ₁.target_mem_range
   set κ₁ : Path (1 : ℂ) (-1 : ℂ) := (J₁.trans γ₁).trans J₂
   have hκ₁_inj : Injective κ₁ :=
     Path.injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
@@ -664,12 +630,14 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
       (Path.injective_symm_iff.mpr hJ₂_inj)
       (sphere_disjoint_ball.mono harcS (hαC.trans hCb))
       (by rwa [Path.symm_range]) ?_ ?_ ?_ ?_).2
-    · exact inter_eq_singleton_of_subset_left hJ₁S harcS arc.source_mem_range J₁.source_mem_range
-    · exact Path.symm_range J₂ ▸
-        inter_eq_singleton_of_subset_left hJ₂S harcS arc.target_mem_range J₂.target_mem_range
-    · exact inter_eq_singleton_of_subset_left hJ₁C hαC α.source_mem_range J₁.target_mem_range
-    · exact Path.symm_range J₂ ▸
-        inter_eq_singleton_of_subset_left hJ₂C hαC α.target_mem_range J₂.source_mem_range
+    · exact inter_comm (range J₁) (range arc) ▸
+        Set.inter_eq_singleton_of_subset hJ₁S.subset harcS J₁.source_mem_range arc.source_mem_range
+    · exact Path.symm_range J₂ ▸ inter_comm (range J₂) (range arc) ▸
+        Set.inter_eq_singleton_of_subset hJ₂S.subset harcS J₂.target_mem_range arc.target_mem_range
+    · exact inter_comm (range J₁) (range α) ▸
+        Set.inter_eq_singleton_of_subset hJ₁C.subset hαC J₁.target_mem_range α.source_mem_range
+    · exact Path.symm_range J₂ ▸ inter_comm (range J₂) (range α) ▸
+        Set.inter_eq_singleton_of_subset hJ₂C.subset hαC J₂.source_mem_range α.target_mem_range
   obtain ⟨Φp, hΦp_top, hΦp_bot, hΦp_left, hΦp_right⟩ :=
     hmkSquare upperSemicirclePath_injective hαp_inj hσpS hαpC
   obtain ⟨Φm, hΦm_top, hΦm_bot, hΦm_left, hΦm_right⟩ :=
