@@ -42,9 +42,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
-* `MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero` transfers zeros of an a.e. nonnegative,
-  a.e.-strongly measurable function's marginal to the function itself, assuming a.e. integrable
-  sections.
+* `MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero` transfers zeros of an
+  a.e. nonnegative, a.e.-strongly measurable function's marginal to the function itself,
+  assuming a.e. integrable sections.
 * `MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul` derives integrability
   of an a.e. nonnegative, a.e.-strongly measurable function times an a.e.-measurable second-factor
   weight from integrability of its weighted marginal, assuming a.e. integrable sections.
