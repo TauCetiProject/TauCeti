@@ -69,6 +69,10 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`: a `C¹` weak solution of
+  `L_x y = g`, tested against smooth compactly supported fields, solves it almost everywhere, by
+  integration by parts and the fundamental lemma of the calculus of variations
+  (`TauCeti.ae_eq_of_forall_integral_inner_eq`).
 * `forall_integral_inner_gaugeFixedAdjoint_eq_iff`: a `C¹` field is a weak solution of
   `L_x y = f`, for continuous `f`, exactly when it is a classical solution.
 * `gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`: `L_x` is `L_x'` plus multiplication by
@@ -1012,6 +1016,26 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
       (ae_of_all _ fun z ↦ by simp only [Pi.sub_apply]; ring))
 
 open scoped ContDiff in
+/-- **`C¹` weak solutions are classical.** Let `x` be continuous, `y` a `C¹` field and `g` locally
+integrable for an additive Haar measure `μ`. If `∫ ⟪y, L_x* η⟫ = ∫ ⟪g, η⟫` for every smooth
+compactly supported test field `η`, then `L_x y = g` almost everywhere. -/
+theorem gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq
+    {x y g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hg : LocallyIntegrable g μ)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪g z, η z⟫ ∂μ) :
+    gaugeFixedOperator x y =ᵐ[μ] g := by
+  have hLy : Continuous (gaugeFixedOperator x y) := continuous_gaugeFixedOperator hx hy
+  have h := ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
+    (hLy.locallyIntegrable.locallyIntegrableOn _) (hg.locallyIntegrableOn _) fun φ ↦ ?_
+  · simpa using h
+  -- Test the weak equation against `φ`, moving `L_x` onto it by integration by parts.
+  simp only [real_inner_comm _ (φ _)]
+  rw [integral_inner_gaugeFixedOperator hy (φ.contDiff.of_le (by simp))
+    (.inr φ.hasCompactSupport)]
+  exact hweak φ φ.contDiff φ.hasCompactSupport
+
+open scoped ContDiff in
 /-- **Weak solutions in `C¹` are classical.** Let `x` be a continuous field, `y` a `C¹` field
 and `f` a continuous field. Then `y` is a weak solution of `L_x y = f`,
 `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every smooth compactly supported `η`, exactly when
@@ -1021,23 +1045,12 @@ theorem forall_integral_inner_gaugeFixedAdjoint_eq_iff {x y f : ℂ → Euclidea
     (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ↔
       ∀ z, gaugeFixedOperator x y z = f z := by
+  refine ⟨fun hweak ↦ congrFun (((continuous_gaugeFixedOperator hx hy).ae_eq_iff_eq μ hf).1
+    (gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hx hy hf.locallyIntegrable
+      hweak)), fun heq η hη hηc ↦ ?_⟩
   -- Integration by parts moves `L_x*` from the compactly supported test field onto `y`.
-  have hparts (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ :=
-    (integral_inner_gaugeFixedOperator hy (hη.of_le (by exact_mod_cast le_top))
-      (.inr hηc)).symm
-  refine ⟨fun hweak ↦ ?_, fun heq η hη hηc ↦ by simp_rw [hparts η hη hηc, heq]⟩
-  -- Both sides are continuous and pair equally with every test field, so they agree.
-  have hL := continuous_gaugeFixedOperator hx hy
-  have hae : gaugeFixedOperator x y =ᵐ[μ] f := by
-    simpa using ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
-      (hL.locallyIntegrable.locallyIntegrableOn _) (hf.locallyIntegrable.locallyIntegrableOn _)
-      fun φ ↦ by
-        have h := hweak φ φ.contDiff φ.hasCompactSupport
-        rw [hparts φ φ.contDiff φ.hasCompactSupport] at h
-        simpa only [real_inner_comm] using h
-  exact congrFun ((hL.ae_eq_iff_eq μ hf).1 hae)
+  rw [← integral_inner_gaugeFixedOperator hy (hη.of_le (by exact_mod_cast le_top)) (.inr hηc)]
+  simp_rw [heq]
 
 end Adjoint
 
