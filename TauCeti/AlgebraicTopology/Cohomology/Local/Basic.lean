@@ -252,7 +252,7 @@ theorem span_singularCohomology_complSingleton_eq_top_iff
   rw [LinearEquiv.span_singleton_eq_top_iff_isUnit
       (singularCohomologyComplSingletonFinrankEquivSelf (ModuleCat.of k k) φ hx),
     singularCohomologyComplSingletonFinrankEquivSelf_apply, hy', map_smul, smul_eq_mul,
-    IsUnit.mul_iff, and_iff_right (ψ.span_singleton_eq_top_iff_isUnit.1 hy)]
-  rfl
+    IsUnit.mul_iff, and_iff_right (ψ.span_singleton_eq_top_iff_isUnit.1 hy), ModuleCat.hom_comp,
+    LinearMap.comp_apply, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.symm_hom]
 
 end TauCeti

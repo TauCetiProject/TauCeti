@@ -939,6 +939,11 @@ private theorem overUnivIso_hom (n : ℕ) :
   -- the ambient space of `(E, E₀)` only after unfolding the Thom pair.
   erw [overUnivIso, Iso.trans_hom, Functor.mapIso_hom,
     TopPair.twistedChainComplexCoefficientIso_hom]
+  -- `rfl`: what remains holds by unfolding `eqToIso.hom` to `eqToHom`, `asIso.hom` to the map
+  -- itself, `HomologicalComplex.homologyFunctor` to `HomologicalComplex.homologyMap` (so the first
+  -- factor is the abbreviation `TopPair.twistedHomologyCoefficientMap`), and the abbreviation
+  -- `signSys` to `thomPairSignLocalSystem`. The goal typechecks only after unfolding the Thom pair
+  -- (see the `erw` above), so `rw` cannot perform these steps.
   rfl
 
 omit [FiniteDimensional ℝ F] in
@@ -963,6 +968,9 @@ private theorem twistedHomologyMap_fiberThomPairOverMap_comp_overUnivIso_hom (b 
     Category.assoc] at h
   rw [overUnivIso_hom, h, ← TopPair.twistedHomologyCoefficientMap_comp_assoc, eqToHom_trans,
     eqToHom_refl, TopPair.twistedHomologyCoefficientMap_id, Category.id_comp]
+  -- `rfl`: both sides are now the same composite, up to implicit arguments that write the
+  -- orientation system as `thomPairOverSignLocalSystem F E R hι univ`, by definition the
+  -- pull-back of `signSys F E R hι` along the inclusion of `E|_univ`, or as that pull-back.
   rfl
 
 /-- **The fibre class is the image of the fibre pair.** For a linear trivialization `e` at `b`, the

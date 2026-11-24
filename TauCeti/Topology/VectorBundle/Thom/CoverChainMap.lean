@@ -11,8 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.Thom.SignClass
 public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
-import TauCeti.Algebra.Module.Equiv.SpanSingleton
-import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
 
 /-!
 # Chains of the Thom pair of the orientation cover as orientation-twisted chains
@@ -66,8 +65,8 @@ the fibre pair read through a trivialization to the fibre class of `π^*o(E)`
 (`TauCeti.thomPairSignFiberClass_eq_twistedHomologyMap`), up to sign. The Kronecker pairing of the
 lifted class with that class is therefore `±1`, since `U` takes the value `1` on every fibre class,
 and a class of the local cohomology `Hʳ(E'_q, E'_q ∖ {0}; K)` whose pairing with a generator is a
-unit generates it (`TauCeti.span_singularCohomology_complSingleton_eq_top_iff`). So `(E', E'₀)` has
-a cocycle representing a Thom class which `δ^*` negates exactly
+unit generates it (`ContinuousLinearEquiv.span_singularCohomology_compl_zero_eq_top_iff`). So
+`(E', E'₀)` has a cocycle representing a Thom class which `δ^*` negates exactly
 (`exists_isThomClass_homologyπ_and_deckThomPairMap_eq_neg`).
 
 The lift of the deck involution is stated for an index type `ι : Type` of the orientations, and
@@ -287,20 +286,6 @@ private theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMa
     TopPair.singularChainComplexMap (deckThomPairMap F E ι) (ModuleCat.of R R) ≫
         thomPairSignChainMapAux hι R = -thomPairSignChainMapAux hι R := by
   set P := thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
-  -- Move `δ_*` past the comparison of constant-coefficient chains with ordinary chains.
-  have h1 : TopPair.singularChainComplexMap (deckThomPairMap F E ι) (ModuleCat.of R R) ≫
-      (P.twistedChainComplexConstantIso (ModuleCat.of R R)).inv =
-      (P.twistedChainComplexConstantIso (ModuleCat.of R R)).inv ≫
-        P.twistedChainComplexCoefficientMap (LocalCoefficientSystem.pullbackConstantIso
-          (TopPair.Hom.fst (deckThomPairMap F E ι)).hom (ModuleCat.of R R)).inv ≫
-        TopPair.twistedChainComplexMap (deckThomPairMap F E ι)
-          ((LocalCoefficientSystem.constantFunctor P.fst).obj (ModuleCat.of R R)) := by
-    rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
-      TopPair.twistedChainComplexConstantIso_hom_pair_naturality, ← Category.assoc
-        (TopPair.twistedChainComplexCoefficientMap _ _),
-      ← TopPair.twistedChainComplexCoefficientMap_comp,
-      Iso.inv_hom_id, TopPair.twistedChainComplexCoefficientMap_id, Category.id_comp,
-      Iso.inv_hom_id_assoc]
   -- Since `δ ≫ q = q`, the twisted chain maps of `δ` and of `q` compose to that of `q`, up to the
   -- comparison of the coefficient systems.
   have h2 : TopPair.twistedChainComplexMap (deckThomPairMap F E ι)
@@ -321,7 +306,9 @@ private theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMa
     rw [TopPair.twistedChainComplexCoefficientMap_comp_assoc, h3,
       ← TopPair.twistedChainComplexCoefficientMap_comp_assoc, Iso.inv_hom_id,
       TopPair.twistedChainComplexCoefficientMap_id, Category.id_comp]
-  rw [thomPairSignChainMapAux, ← Category.assoc, h1, Category.assoc, Category.assoc,
+  -- Move `δ_*` past the comparison of constant-coefficient chains with ordinary chains.
+  rw [thomPairSignChainMapAux, ← Category.assoc,
+    TopPair.twistedChainComplexConstantIso_inv_pair_naturality, Category.assoc, Category.assoc,
     ← Category.assoc (TopPair.twistedChainComplexMap (deckThomPairMap F E ι) _),
     TopPair.twistedChainComplexMap_naturality, Category.assoc, h2,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
@@ -516,23 +503,6 @@ theorem singularChainComplexMap_fiberThomPairMap_comp_thomPairSignChainMap
           (thomPairSignLocalSystem F E R hι) := by
   have hfg := fiberThomPairMap_comp_coverThomPairMap (F := F) (E := E) (ι := ι) q
   set f := fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q
-  -- Move the fibre inclusion past the comparison of constant-coefficient chains with ordinary
-  -- chains.
-  have h1 : TopPair.singularChainComplexMap f (ModuleCat.of R R) ≫
-      (TopPair.twistedChainComplexConstantIso
-        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-        (ModuleCat.of R R)).inv =
-      (TopPair.twistedChainComplexConstantIso _ (ModuleCat.of R R)).inv ≫
-        TopPair.twistedChainComplexCoefficientMap _ (LocalCoefficientSystem.pullbackConstantIso
-          (TopPair.Hom.fst f).hom (ModuleCat.of R R)).inv ≫
-        TopPair.twistedChainComplexMap f
-          ((LocalCoefficientSystem.constantFunctor _).obj (ModuleCat.of R R)) := by
-    rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
-      TopPair.twistedChainComplexConstantIso_hom_pair_naturality, ← Category.assoc
-        (TopPair.twistedChainComplexCoefficientMap _ _),
-      ← TopPair.twistedChainComplexCoefficientMap_comp,
-      Iso.inv_hom_id, TopPair.twistedChainComplexCoefficientMap_id, Category.id_comp,
-      Iso.inv_hom_id_assoc]
   -- Compose the fibre inclusion with `q`.
   have h2 : TopPair.twistedChainComplexMap f
         ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (coverThomPairMap F E ι)).hom).obj
@@ -550,44 +520,20 @@ theorem singularChainComplexMap_fiberThomPairMap_comp_thomPairSignChainMap
   have h5 := TopPair.twistedChainComplexMap_naturality (f ≫ coverThomPairMap F E ι)
     (signSystem F E hι R)
     (eqToHom (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι).symm)
-  rw [thomPairSignChainMap_def, reassoc_of% h1, TopPair.twistedChainComplexMap_naturality_assoc,
+  -- Move the fibre inclusion past the comparison of constant-coefficient chains with ordinary
+  -- chains, then compose it with `q`.
+  rw [thomPairSignChainMap_def, TopPair.twistedChainComplexConstantIso_inv_pair_naturality_assoc,
+    TopPair.twistedChainComplexMap_naturality_assoc,
     reassoc_of% h2, h5, h4]
   simp only [← TopPair.twistedChainComplexCoefficientMap_comp_assoc]
   congr 3
   exact thomPairSignChainMap_fiber_coefficients hι R q
+
 /-! ### The lifted Thom class is a Thom class -/
 
 section ThomClass
 
 variable [FiniteDimensional ℝ F] {K : Type} [CommRing K]
-
-omit [VectorBundle ℝ F E] in
-/-- On the fibre pair over `b`, a class of `Hʳ(E_b, E_b ∖ {0}; K)` generates it when its Kronecker
-pairing with the class which a linear trivialization reads as the point class of `1` is a unit. -/
-private theorem span_eq_top_of_isUnit_singularKronecker (e : Trivialization F (π F E))
-    [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
-    (c : (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
-    (hc : IsUnit (((TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularKronecker
-      K (finrank ℝ F) c).hom (TopPair.singularHomologyMap
-        (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv (ModuleCat.of K K) (finrank ℝ F)
-        (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))))) :
-    Submodule.span K {c} = ⊤ := by
-  -- Read `c` on `(F, F ∖ {0})` through the trivialization.
-  let Φ : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F) ≃ₗ[K]
-      (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology
-        (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F) :=
-    ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
-  have h : Submodule.span K {Φ.symm c} = ⊤ := by
-    rw [span_singularCohomology_complSingleton_eq_top_iff (OpenPartialHomeomorph.refl F)
-      (Set.mem_univ 0) (span_complZeroPairPointHom_one F K)]
-    -- `change`: `Φ⁻¹` is the pull-back along the inverse of the trivialization of the fibre pair.
-    change IsUnit ((TopPair.singularKronecker _ K _ (TopPair.singularCohomologyMap
-      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv _ c)).hom _)
-    rwa [TopPair.singularKronecker_naturality]
-  simpa using (Φ.span_singleton_apply_eq_top_iff).2 h
 
 /-- On the fibre over a point `q` of the orientation cover, the chain map to orientation-twisted
 chains sends the class of the fibre pair read through a linear trivialization `e` as the point class
@@ -649,7 +595,8 @@ theorem isThomClass_thomPairSignCohomologyMap_twistedThomClass (ω : Orientation
     (ModuleCat.of K K) (finrank ℝ F)
     (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))
   set U := twistedThomClass F E K hι ω
-  refine span_eq_top_of_isUnit_singularKronecker e hb _ ?_
+  refine ((e.continuousLinearEquivAt ℝ q.proj hb).span_singularCohomology_compl_zero_eq_top_iff
+    (span_complZeroPairPointHom_one F K) _).2 ?_
   -- The Kronecker pairing is the value of `U` on a fibre class, normalized by `ω` or by `-ω`.
   have h₁ := congrArg (ModuleCat.Hom.hom · y) (TopPair.singularKronecker_naturality
     (fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q) K
