@@ -59,10 +59,10 @@ of one dimension less than `M`, let `ι` be an injective immersion into the boun
 the graph be a regular level `K⁻¹(c)`. Then a closed characteristic of this level, contractible in
 some set, is the image under `j_f` of a closed Reeb orbit `γ` of `j_f^* α = f ι^* α` up to a change
 of time, and the radial homotopy joins it to the loop `ι ∘ γ` on `Σ`, which is therefore
-contractible in `M`
-(`TauCeti.IsLiouvilleDomain.exists_reebVectorField_of_hasContractibleClosedCharacteristic`).
+contractible in `M`; see
+`IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`.
 This is how Corollary E brings a closed characteristic of the hypersurface `Σ_α = j_f(S)` back to
-a closed Reeb orbit of `α = f ι^* α` on `Σ`, contractible in the ambient manifold.
+a closed Reeb orbit of the contact form `f ι^* α` on `Σ`, contractible in the ambient manifold.
 
 ## Main definitions
 
@@ -84,9 +84,9 @@ a closed Reeb orbit of `α = f ι^* α` on `Σ`, contractible in the ambient man
   into the complement of the domain, and a closed embedding of a compact boundary.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph`: on a completion, for a
   boundary point `ι s` and `f s ≥ 1`, the radial coordinate of `j_f(s)` is `f(s)`.
-* `TauCeti.IsLiouvilleDomain.exists_reebVectorField_of_hasContractibleClosedCharacteristic`:
-  a contractible closed characteristic of a graph which is a regular level comes from a closed Reeb
-  orbit `γ` of `f ι^* α` whose loop `ι ∘ γ` is contractible in `M`.
+* `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`
+  in `TauCeti`: a contractible closed characteristic of a graph which is a regular level comes
+  from a closed Reeb orbit `γ` of `f ι^* α` whose loop `ι ∘ γ` is contractible in `M`.
 
 ## References
 
@@ -370,7 +370,7 @@ Indeed the closed characteristic is the closed Reeb orbit `j_f ∘ γ` up to a c
 radial homotopy `TauCeti.liouvilleGraphHomotopy` joins its loop to the loop `ι ∘ γ`. This is the
 step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that brings a closed
 characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form `α` on `Σ`. -/
-theorem exists_reebVectorField_of_hasContractibleClosedCharacteristic
+theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic
     (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
     (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
     (hιs : ∀ s, Injective (mfderiv J I ι s)) (hιW : ∀ s, ι s ∈ frontier W)
@@ -417,8 +417,7 @@ theorem exists_reebVectorField_of_hasContractibleClosedCharacteristic
     h.isNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq hj hji hαneg hK hdθ hKj hδ
       (hδj 0) hT.ne' hper
   -- Reversing time turns it into a closed Reeb orbit of `j^* α`.
-  refine ⟨γ ∘ (· * -1), ?_, ⟨τ, hτ, fun t ↦ by
-    rw [comp_apply, comp_apply, add_mul, mul_neg_one τ, ← sub_eq_add_neg, hγτ.sub_eq]⟩, T,
+  refine ⟨γ ∘ (· * -1), ?_, ⟨τ / -1, by simpa using hτ, hγτ.mul_const' (-1)⟩, T,
     ψ.trans (Homeomorph.neg ℝ), hT, ?_⟩
   · refine (isMIntegralCurve_congr_vectorField fun t ↦ ?_).1 (hγ.comp_mul (-1))
     rw [Pi.smul_apply, map_neg, hα.reebVectorField_neg, neg_one_smul, neg_neg]

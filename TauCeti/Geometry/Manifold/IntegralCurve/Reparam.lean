@@ -105,7 +105,7 @@ theorem exists_orderIso_isMIntegralCurve_comp (hγ : IsMIntegralCurve γ X) (hh 
 /-- **Reparametrizing an integral curve along a nonvanishing multiple of the field.** Let `γ` be an
 integral curve of `X`, and let `Y (γ t) = h t • X (γ t)` for a continuous nowhere vanishing
 function `h` with `|h| ≤ c`. Then `γ ∘ ψ` is an integral curve of `Y` for a homeomorphism `ψ` of
-`ℝ` fixing `0`, increasing if `h` is positive and decreasing if `h` is negative. -/
+`ℝ` fixing `0`. -/
 theorem exists_homeomorph_isMIntegralCurve_comp_of_abs_le (hγ : IsMIntegralCurve γ X)
     (hh : Continuous h) (hh0 : ∀ t, h t ≠ 0) {c : ℝ} (hc : ∀ t, |h t| ≤ c)
     (hY : ∀ t, Y (γ t) = h t • X (γ t)) :

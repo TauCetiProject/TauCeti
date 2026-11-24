@@ -13,7 +13,6 @@ import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
-import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # Reeb fields of energy hypersurfaces
@@ -190,33 +189,6 @@ section ClosedOrbit
 
 variable [IsManifold J ∞ S]
 
-/-- Along a hypersurface of contact type, `θ(X_K)` is continuous: its inverse is the factor
-relating the continuous sections `dι ∘ R` and `X_K ∘ ι`
-(`IsNondegenerate.mfderiv_reebVectorField_mpullback`). -/
-private theorem IsNondegenerate.continuous_apply_hamiltonianVectorField [FiniteDimensional ℝ E']
-    (hσ : σ.IsNondegenerate) {θ : SmoothForm I M ℝ 1} {ι : S → M} (hι : ContMDiff J I ∞ ι)
-    (hα : (SmoothForm.mpullback ι hι θ).IsContactForm) {K : M → ℝ}
-    (hKs : ContMDiff I 𝓘(ℝ) 2 K) (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s))
-    (hK : ∀ s, (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) :
-    Continuous fun s ↦ θ.val (ι s) ![σ.hamiltonianVectorField K (ι s)] := by
-  set X := σ.hamiltonianVectorField K
-  set c : S → ℝ := fun s ↦ θ.val (ι s) ![X (ι s)]
-  have hc0 (s : S) : c s ≠ 0 := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ s) (hK s)
-  have hXs : ContMDiff I I.tangent 1 (T% X) :=
-    hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])
-  have hinv : Continuous fun s ↦ (c s)⁻¹ := continuous_iff_continuousAt.2 fun s ↦
-    TauCeti.VectorBundle.continuousAt_of_eventually_eq_smul (φ := fun s ↦ T% X (ι s))
-      (ψ := fun s ↦ tangentMap J I ι ⟨s, (SmoothForm.mpullback ι hι θ).reebVectorField s⟩)
-      ((hXs.continuous.comp hι.continuous).continuousAt)
-      (((hι.continuous_tangentMap (by simp)).comp
-        hα.contMDiff_reebVectorField.continuous).continuousAt)
-      (Filter.Eventually.of_forall fun s ↦ by
-        simp [tangentMap, hσ.mfderiv_reebVectorField_mpullback hι hα (hdθ s) (hK s), X, c])
-      fun h ↦ hc0 s <| by
-        simp only [c]
-        rw [show X (ι s) = 0 from h, ← SmoothForm.degreeOneEquiv_coe_apply, map_zero]
-  exact (hinv.inv₀ fun s ↦ inv_ne_zero (hc0 s)).congr fun s ↦ inv_inv (c s)
-
 variable [BoundarylessManifold I M] [T2Space M] [BoundarylessManifold J S] [CompactSpace S]
 
 /-- **Closed characteristics of a compact hypersurface of contact type are closed Reeb orbits.**
@@ -243,10 +215,10 @@ theorem IsNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq
   -- `dι (R s) = c(s)⁻¹ • X_K (ι s)` with `c(s) = θ(X_K)` at `ι s`, continuous and nonvanishing.
   set c : S → ℝ := fun s ↦ θ.val (ι s) ![X (ι s)]
   have hc0 (s : S) : c s ≠ 0 := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ s) (hK s)
-  have hcc : Continuous c := hσ.continuous_apply_hamiltonianVectorField hι hα hKs hdθ hK
   have hRs : ContMDiff J J.tangent 1 (T% R) := hα.contMDiff_reebVectorField.of_le (by simp)
   have hXs : ContMDiff I I.tangent 1 (T% X) :=
     hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])
+  have hcc : Continuous c := (θ.contMDiff_apply_vectorField hXs).continuous.comp hι.continuous
   -- Change the time of the Reeb orbit through `s₀` by `ψ' = c ∘ γ ∘ ψ`, with `|c|` bounded on the
   -- compact `S`: this gives an integral curve of `c • R`, which `ι` carries to `X_K`.
   obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hcc.continuousOn
