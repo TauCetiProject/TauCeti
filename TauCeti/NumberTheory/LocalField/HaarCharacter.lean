@@ -91,12 +91,13 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
 
-variable {K} in
-/-- The units of the ring of integers, the elements of valuation one, form a measurable set: they
-are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). -/
-theorem measurableSet_setOf_valuation_eq_one [MeasurableSpace K] [BorelSpace K] :
-    MeasurableSet {x : K | valuation K x = 1} := by
-  simpa only [Valuation.restrict_eq_one_iff] using ((valuation K).isClosed_sphere 1).measurableSet
+/-- In a ring with a valuative topology, the elements of valuation one form a measurable set: they
+are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). In a local field these
+are the units of the ring of integers. -/
+theorem measurableSet_setOf_valuation_eq_one {R : Type*} [Ring R] [ValuativeRel R]
+    [TopologicalSpace R] [IsValuativeTopology R] [MeasurableSpace R] [OpensMeasurableSpace R] :
+    MeasurableSet {x : R | valuation R x = 1} := by
+  simpa only [Valuation.restrict_eq_one_iff] using ((valuation R).isClosed_sphere 1).measurableSet
 
 /-- **The normalized Haar measure of a local field.** There is exactly one additive Haar measure
 on `K` giving the ring of integers `𝒪[K]` mass one, namely
