@@ -12,6 +12,7 @@ import TauCeti.Algebra.Lie.Matrix.NegTranspose
 import TauCeti.Algebra.Lie.SpecialLinear.Root.Generation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
 import TauCeti.LinearAlgebra.Dimension.Basis
+import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
 
 /-!
@@ -453,15 +454,6 @@ theorem exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose (hι : Finty
   -- through the linear equivalence explicitly.
   exact congrArg Matrix.transpose (map_neg (LinearMap.toMatrix B B) _)
 
-omit [Invertible (2 : K)] in
-/-- Endomorphisms whose matrices are `A` and `-Aᵀ` have opposite traces. -/
-private theorem trace_eq_neg_of_toMatrix_eq_neg_transpose {M N : Type*} [AddCommGroup M]
-    [Module K M] [AddCommGroup N] [Module K N] (B : Basis κ K M) (B' : Basis κ K N)
-    {f : Module.End K M} {g : Module.End K N}
-    (h : LinearMap.toMatrix B' B' g = -(LinearMap.toMatrix B B f)ᵀ) :
-    LinearMap.trace K N g = -LinearMap.trace K M f := by
-  simp [LinearMap.trace_eq_matrix_trace K B, LinearMap.trace_eq_matrix_trace K B', h]
-
 /-- Every element of `so₆` acts on the odd half-spin module by an endomorphism of trace zero. -/
 @[simp]
 theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_three (hι : Fintype.card ι = 3)
@@ -469,7 +461,7 @@ theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_three (hι : Fintype.card 
     LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
   obtain ⟨B', hB'⟩ := P.exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose b hline hι
     (P.monomialBasis b hι)
-  simp [trace_eq_neg_of_toMatrix_eq_neg_transpose _ B' (hB' x), hι]
+  simp [LinearMap.trace_eq_neg_of_toMatrix_eq_neg_transpose _ B' (hB' x), hι]
 
 /-- **`so₆` acts faithfully on the odd half-spin module.** For an even polarization with
 `dim W = 3`, the action of the split type-`D` Lie algebra on `S⁻` is injective. -/
@@ -497,7 +489,7 @@ theorem mem_range_typeDSpinMinusLieRep_iff_of_card_eq_three (hι : Fintype.card 
   have hfg : LinearMap.toMatrix B' B' f = -(LinearMap.toMatrix B B g)ᵀ := by
     rw [← negTransposeLieEquiv_apply, LinearMap.toMatrix_toLin, LieEquiv.apply_symm_apply]
   have hg : LinearMap.trace K (spinPlus Q P) g = 0 := by
-    rw [← neg_eq_zero, ← trace_eq_neg_of_toMatrix_eq_neg_transpose B B' hfg, hf]
+    rw [← neg_eq_zero, ← LinearMap.trace_eq_neg_of_toMatrix_eq_neg_transpose B B' hfg, hf]
   obtain ⟨x, hx⟩ := (LieHom.mem_range _ _).mp
     ((P.mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three b hline hι).mpr hg)
   exact ⟨x, (LinearMap.toMatrix B' B').injective (by rw [hB', hx, hfg])⟩
