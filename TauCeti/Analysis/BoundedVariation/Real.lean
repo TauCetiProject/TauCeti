@@ -47,13 +47,13 @@ one-dimensional isoperimetric inequality and its rigidity:
   finite measure has perimeter `2` exactly when it agrees almost everywhere with a nonempty such
   interval (`TauCeti.Real.perimeter_eq_two_iff`).
 
-By `TauCeti.perimeter_setOf_inner_lt`, a half-line ending at `x` has perimeter `1` in an open set
-containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
-`TauCeti.Real.perimeter_Ioi`).
-
 These are the statements about almost every line section that slicing arguments for sets of
 finite perimeter in higher dimensions apply: a section of perimeter less than `4` is an interval
 up to a null set.
+
+By `TauCeti.perimeter_setOf_inner_lt`, a half-line with endpoint `x` has perimeter `1` in an open
+set containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
+`TauCeti.Real.perimeter_Ioi`).
 
 ## Main results
 

@@ -100,32 +100,29 @@ density one at `x`, then `y ↦ ∫_a^y 1_s` has derivative `1` at `x`. -/
 theorem hasDerivAt_integral_indicator_of_hasDensityAt_one (hs : NullMeasurableSet s) (a : ℝ)
     (h : HasDensityAt volume s x 1) :
     HasDerivAt (fun y => ∫ t in a..y, s.indicator (1 : ℝ → ℝ) t) 1 x := by
-  obtain ⟨u, -, hu, hus⟩ := hs.exists_measurable_superset_ae_eq
-  replace h := h.congr_ae hus.symm
-  simp_rw [intervalIntegral.integral_congr_ae_restrict
-    (ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (f := (1 : ℝ → ℝ)) hus.symm))]
-  clear hs hus
-  have h0 : HasDensityAt volume uᶜ x 0 :=
-    (hasDensityAt_compl_zero_iff hu.nullMeasurableSet
+  have h0 : HasDensityAt volume sᶜ x 0 :=
+    (hasDensityAt_compl_zero_iff hs
       (Metric.eventually_measure_closedBall_ne_zero_ne_top volume x)).2 h
-  have hc := hasDerivAt_integral_indicator_of_hasDensityAt_zero_aux hu.compl a h0
-  -- `1_u = 1 - 1_{uᶜ}`, so the primitive of `1_u` is `y - a` minus that of `1_{uᶜ}`.
-  have hfun : (fun y => ∫ t in a..y, u.indicator (1 : ℝ → ℝ) t) =
-      fun y => (y - a) - ∫ t in a..y, uᶜ.indicator (1 : ℝ → ℝ) t := by
+  have hc := hasDerivAt_integral_indicator_of_hasDensityAt_zero hs.compl a h0
+  -- `1_s = 1 - 1_{sᶜ}`, so the primitive of `1_s` is `y - a` minus that of `1_{sᶜ}`.
+  have hfun : (fun y => ∫ t in a..y, s.indicator (1 : ℝ → ℝ) t) =
+      fun y => (y - a) - ∫ t in a..y, sᶜ.indicator (1 : ℝ → ℝ) t := by
     funext y
-    have hsum : ∀ t, u.indicator (1 : ℝ → ℝ) t = 1 - uᶜ.indicator 1 t := fun t => by
-      by_cases ht : t ∈ u <;> simp [ht]
+    have hsum : ∀ t, s.indicator (1 : ℝ → ℝ) t = 1 - sᶜ.indicator 1 t := fun t => by
+      by_cases ht : t ∈ s <;> simp [ht]
     simp_rw [hsum]
     rw [intervalIntegral.integral_sub intervalIntegrable_const
-      (intervalIntegrable_indicator_one hu.compl.nullMeasurableSet a y)]
+      (intervalIntegrable_indicator_one hs.compl a y)]
     simp
   rw [hfun]
-  have h2 : HasDerivAt (fun y => (y - a) - ∫ t in a..y, uᶜ.indicator (1 : ℝ → ℝ) t) (1 - 0) x :=
+  have h2 : HasDerivAt (fun y => (y - a) - ∫ t in a..y, sᶜ.indicator (1 : ℝ → ℝ) t) (1 - 0) x :=
     ((hasDerivAt_id' x).sub_const a).sub hc
   rwa [sub_zero] at h2
 
-/-- `TauCeti.Real.measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero` for a measurable set. -/
-private theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero_aux (hs : MeasurableSet s)
+/-- **A set without essential boundary points in an interval is null or conull there.** If no
+point of `(a, b)` lies in the essential boundary of a null-measurable set `s ⊆ ℝ`, then
+`s ∩ (a, b)` or `(a, b) \ s` is Lebesgue-null. -/
+theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero (hs : NullMeasurableSet s)
     {a b : ℝ} (h : ∀ y ∈ Ioo a b, y ∉ essentialBoundary volume s) :
     volume (s ∩ Ioo a b) = 0 ∨ volume (Ioo a b \ s) = 0 := by
   rcases le_or_gt b a with hba | hab
@@ -139,16 +136,13 @@ private theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero_aux (hs :
     simp only [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior, not_and,
       not_not] at hy'
     by_cases h1 : HasDensityAt volume s y 1
-    · simpa [g, h1] using
-        hasDerivAt_integral_indicator_of_hasDensityAt_one hs.nullMeasurableSet a h1
-    · simpa [g, h1] using
-        hasDerivAt_integral_indicator_of_hasDensityAt_zero hs.nullMeasurableSet a (hy' h1)
+    · simpa [g, h1] using hasDerivAt_integral_indicator_of_hasDensityAt_one hs a h1
+    · simpa [g, h1] using hasDerivAt_integral_indicator_of_hasDensityAt_zero hs a (hy' h1)
   have hcont : ContinuousOn F (Icc a b) :=
-    (intervalIntegral.continuous_primitive
-      (intervalIntegrable_indicator_one hs.nullMeasurableSet) a).continuousOn
+    (intervalIntegral.continuous_primitive (intervalIntegrable_indicator_one hs) a).continuousOn
   obtain ⟨c, -, hc⟩ := exists_hasDerivAt_eq_slope F g hab hcont hderiv
   have hFb : F b = volume.real (s ∩ Ioc a b) :=
-    intervalIntegral.integral_indicator_one hs.nullMeasurableSet hab.le
+    intervalIntegral.integral_indicator_one hs hab.le
   have hFa : F a = 0 := intervalIntegral.integral_same
   have hba : b - a ≠ 0 := (sub_pos.2 hab).ne'
   have hfin : volume (s ∩ Ioc a b) ≠ ∞ :=
@@ -162,7 +156,7 @@ private theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero_aux (hs :
       linarith
     have hsdiff : volume (Ioc a b \ s) = volume (Ioc a b) - volume (s ∩ Ioc a b) := by
       rw [← sdiff_inter_self_eq_sdiff,
-        measure_sdiff inter_subset_right (hs.inter measurableSet_Ioc).nullMeasurableSet hfin]
+        measure_sdiff inter_subset_right (hs.inter measurableSet_Ioc.nullMeasurableSet) hfin]
     right
     refine measure_mono_null (sdiff_subset_sdiff_left Ioo_subset_Ioc_self) ?_
     simp [hsdiff, Real.volume_Ioc, ← ofReal_measureReal hfin, hreal]
@@ -175,22 +169,5 @@ private theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero_aux (hs :
     left
     refine measure_mono_null (inter_subset_inter_right _ Ioo_subset_Ioc_self) ?_
     rwa [measureReal_eq_zero_iff hfin] at hreal
-
-/-- **A set without essential boundary points in an interval is null or conull there.** If no
-point of `(a, b)` lies in the essential boundary of a null-measurable set `s ⊆ ℝ`, then
-`s ∩ (a, b)` or `(a, b) \ s` is Lebesgue-null. -/
-theorem measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero (hs : NullMeasurableSet s)
-    {a b : ℝ} (h : ∀ y ∈ Ioo a b, y ∉ essentialBoundary volume s) :
-    volume (s ∩ Ioo a b) = 0 ∨ volume (Ioo a b \ s) = 0 := by
-  obtain ⟨u, -, hu, hus⟩ := hs.exists_measurable_superset_ae_eq
-  rw [← essentialBoundary_congr_ae hus] at h
-  have h1 : u ∩ Ioo a b =ᵐ[volume] s ∩ Ioo a b := eventuallyEqSet_iff.2 <| by
-    filter_upwards [eventuallyEqSet_iff.1 hus] with y hy
-    rw [mem_inter_iff, mem_inter_iff, hy]
-  have h2 : Ioo a b \ u =ᵐ[volume] Ioo a b \ s := eventuallyEqSet_iff.2 <| by
-    filter_upwards [eventuallyEqSet_iff.1 hus] with y hy
-    rw [Set.mem_sdiff, Set.mem_sdiff, hy]
-  rw [← measure_congr h1, ← measure_congr h2]
-  exact measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero_aux hu h
 
 end TauCeti.Real
