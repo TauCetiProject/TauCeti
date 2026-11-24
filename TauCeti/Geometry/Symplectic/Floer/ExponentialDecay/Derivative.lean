@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 
 /-!
 # Exponential decay of the derivatives at a nondegenerate end
@@ -46,11 +45,10 @@ mean-value inequality for the nonlinear equation, this needs no smallness of the
 
 **From energy to pointwise decay.** A disc of radius at most `1 / 2` centred in `[s, ∞) × [0, 1]`
 lies over `[s - 1 / 2, ∞)`, and by periodicity in `t` the integral of `‖v‖²` over it is at most
-twice its integral over `[s - 1 / 2, ∞) × [0, 1]`
-(`TauCeti.setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo`), which the energy
-controls. So `‖v(s, t)‖² ≤ D e^{-κ s}`. Finally
-`∂ₜu - X_{H_t}(x) = J ∂ₛu + X_{H_t}(u) - X_{H_t}(x)`, and the last difference is at most a
-Lipschitz constant times `‖u - x‖`.
+twice its integral over `[s - 1 / 2, ∞) × [0, 1]`, which the energy controls
+(`TauCeti.SymplecticForm.setLIntegral_ball_enorm_fderiv_stdComplexLineReal_sq_le`). So
+`‖v(s, t)‖² ≤ D e^{-κ s}`. Finally `∂ₜu - X_{H_t}(x) = J ∂ₛu + X_{H_t}(u) - X_{H_t}(x)`, and the
+last difference is at most a Lipschitz constant times `‖u - x‖`.
 
 The almost complex structures enter through their values along `u`, as in
 `TauCeti.Geometry.Symplectic.Floer.ExponentialDecay`. Their regularity, bounds on them and their
@@ -183,23 +181,16 @@ private theorem ofReal_setIntegral_ball_le_mul_setLIntegral
       = ∫⁻ w in ball y r, ‖fderiv ℝ u (w.re, w.im) stdComplexLineReal‖ₑ ^ 2 := by
         simp only [Complex.equivRealProdCLM_apply, stdComplexLineReal_eq,
           ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    -- Over `s > a`, the derivative of `u` is `1`-periodic in `t`.
-    _ ≤ 2 * ∫⁻ z in Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1,
-          ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 :=
-        setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo
-          (g := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2)
-          (fun s hs t ↦ congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ ‖L stdComplexLineReal‖ₑ ^ 2)
-            (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t)) y hr (hs.le.trans hsy)
-    _ ≤ 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 := by
-        gcongr
-        exact fun t ht ↦ hsy.trans ht.1.le
-    -- `‖∂ₛu‖² ≤ (2 / c) e` on `[s, ∞) × [0, 1]`.
+    _ ≤ 2 * (ENNReal.ofReal (2 / c) * ∫⁻ z in Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1,
+          ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) :=
+        setLIntegral_ball_enorm_fderiv_stdComplexLineReal_sq_le hper hc hr (hs.le.trans hsy)
+          (fun z hz ↦ hJc z ⟨hs.trans_le (hsy.trans hz.1.1.le), hz.2⟩)
+          fun z hz ↦ hfloer z ⟨hs.trans_le (hsy.trans hz.1.1.le), hz.2⟩
+    -- The band `(y.re - r, y.re + r)` lies over `[s, ∞)`.
     _ ≤ 2 * (ENNReal.ofReal (2 / c) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) := by
         gcongr
-        exact ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
-          (measurableSet_Ici.prod measurableSet_Icc) (fun z hz ↦ hJc z ⟨hs.trans_le hz.1, hz.2⟩)
-          fun z hz ↦ hfloer z ⟨hs.trans_le hz.1, hz.2⟩
+        exact fun t ht ↦ hsy.trans ht.1.le
     _ = ENNReal.ofReal (2 * (2 / c)) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
         rw [← mul_assoc, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]

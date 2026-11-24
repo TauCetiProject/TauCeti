@@ -102,7 +102,9 @@ in `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue`) has no additive 
 threshold: on discs of a radius `r` depending only on the data and a bound for `∂ₛu`, it gives
 `π r² ‖∂ₛu(z₀)‖² ≤ 15 ∫_{B_r(z₀)} ‖∂ₛu‖²`
 (`Floer.exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_fifteen_mul_setIntegral_ball`).
-Combined with the bounded derivative, this bounds `‖∂ₛu(s, t)‖²` by a constant times the energy of
+By periodicity in `t` the integral over the disc is at most `2 · (2 / c)` times the energy of the
+band of the same width (`setLIntegral_ball_enorm_fderiv_stdComplexLineReal_sq_le`). Combined with
+the bounded derivative, this bounds `‖∂ₛu(s, t)‖²` by a constant times the energy of
 `u` over `(s - 1, ∞) × [0, 1]`
 (`exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensity`). At a
 nondegenerate orbit, where the energy of the end decays exponentially, this gives the exponential
@@ -523,6 +525,39 @@ end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
+section NormedSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {a c r : ℝ} {y : ℂ}
+
+/-- **The integral of `‖∂ₛu‖²` over a disc is controlled by the energy of a band.** Let `u` be
+`1`-periodic in `t` over `s > a` and solve the Floer equation for a perturbation `K_t dt` on the
+band `(y.re - r, y.re + r) × [0, 1]`, for a family `J` given along `u` as a function of the domain
+point and tamed with constant `c` there. For a disc of radius `r ≤ 1 / 2` about `y` lying over
+`[a, ∞)`, read in the coordinate `z = s + i t`, the integral of `‖∂ₛu‖²` over the disc is at most
+`2 · (2 / c)` times the energy of that band. -/
+theorem setLIntegral_ball_enorm_fderiv_stdComplexLineReal_sq_le
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hc : 0 < c) (hr : r ≤ 1 / 2)
+    (ha : a ≤ y.re - r) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJc : ∀ z ∈ Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hfloer : ∀ z ∈ Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫⁻ w in ball y r, ‖fderiv ℝ u (w.re, w.im) stdComplexLineReal‖ₑ ^ 2 ≤
+      2 * (ENNReal.ofReal (2 / c) * ∫⁻ z in Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z)) := by
+  -- Over `s > a`, the derivative of `u` is `1`-periodic in `t`.
+  refine (setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo
+    (g := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2)
+    (fun s hs t ↦ congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ ‖L stdComplexLineReal‖ₑ ^ 2)
+      (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t)) y hr ha).trans ?_
+  -- `‖∂ₛu‖² ≤ (2 / c) e` on the band.
+  gcongr
+  exact ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+    (measurableSet_Ioo.prod measurableSet_Icc) hJc hfloer
+
+end NormedSpace
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {J : ℝ → V → AlmostComplexStructure V}
   {W : Set (ℝ × V)} {K : Set V} {u : ℝ × ℝ → V} {a : ℝ}
@@ -885,21 +920,16 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
     (((hdv.clm_apply continuousOn_const).mono (hball.trans hbS)).norm.pow 2).integrableOn_compact
       (isCompact_closedBall y r) |>.mono_set ball_subset_closedBall
   have hdisc : ENNReal.ofReal (∫ w in ball y r, ‖fderiv ℝ v w 1‖ ^ 2) ≤
-      2 * ∫⁻ p in Ioo (z.1 - r) (z.1 + r) ×ˢ Icc 0 1, ‖fderiv ℝ u p stdComplexLineReal‖ₑ ^ 2 := by
+      2 * (ENNReal.ofReal (2 / c) * ∫⁻ p in Ioo (z.1 - r) (z.1 + r) ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u p)) := by
     rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun _ ↦ sq_nonneg _), ← hyre]
-    -- On the disc `∂ₛv(w) = ∂ₛu(re w, im w)`, and `∂ₛu` is `1`-periodic in `t` over `s > a`.
+    -- On the disc `∂ₛv(w) = ∂ₛu(re w, im w)`.
     refine (setLIntegral_congr_fun measurableSet_ball fun w hw ↦ ?_).trans_le
-      (setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo
-        (g := fun p ↦ ‖fderiv ℝ u p stdComplexLineReal‖ₑ ^ 2)
-        (fun s hs t ↦ congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ ‖L stdComplexLineReal‖ₑ ^ 2)
-          (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t)) y hr2 (by linarith))
+      (setLIntegral_ball_enorm_fderiv_stdComplexLineReal_sq_le hper hc hr2 (by linarith)
+        (fun p hp v ↦ (hcM p.2 _ (huK p.1 (hband (hyre ▸ hp.1)) p.2) v).1)
+        fun p hp ↦ hfloer p ⟨hband (hyre ▸ hp.1), hp.2⟩)
     rw [hderiv w (hbS (hball (ball_subset_closedBall hw))), stdComplexLineReal_eq,
       ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-  -- Combine with `‖∂ₛu‖² ≤ (2 / c) e` on the band.
-  have hstrip := ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
-    (measurableSet_Ioo.prod measurableSet_Icc)
-    (fun p hp v ↦ (hcM p.2 _ (huK p.1 (hband hp.1) p.2) v).1)
-    fun p hp ↦ hfloer p ⟨hband hp.1, hp.2⟩
   have hpt : ‖fderiv ℝ u z (1, 0)‖ ^ 2 ≤ 15 / (π * r ^ 2) *
       ∫ w in ball y r, ‖fderiv ℝ v w 1‖ ^ 2 := by
     rw [div_mul_eq_mul_div, le_div_iff₀ hπr]
@@ -914,8 +944,6 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
             ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u p))) := by
         gcongr
         refine hdisc.trans ?_
-        gcongr
-        refine hstrip.trans ?_
         gcongr
         exact fun s hs ↦ mem_Ioi.2 (by linarith [hs.1])
     _ = _ := by
