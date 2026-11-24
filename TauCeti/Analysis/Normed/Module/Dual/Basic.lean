@@ -154,12 +154,10 @@ theorem exists_isMaxOn_re_apply_closedBall_iff {f : StrongDual 𝕜 E} :
   refine ⟨fun ⟨x, hx, hmax⟩ ↦ ⟨x, mem_closedBall_zero_iff.1 hx, ?_⟩, fun ⟨x, hx, h⟩ ↦
     ⟨x, mem_closedBall_zero_iff.2 hx, isMaxOn_iff.2 fun y hy ↦ h ▸ (re_le_norm _).trans
       (f.unit_le_opNorm y (mem_closedBall_zero_iff.1 hy))⟩⟩
-  refine ((re_le_norm _).trans (f.unit_le_opNorm x (mem_closedBall_zero_iff.1 hx))).antisymm
-    (f.opNorm_le_of_unit_norm ?_ fun y hy ↦ ?_)
-  · simpa using isMaxOn_iff.1 hmax 0 (mem_closedBall_self zero_le_one)
-  · -- `‖f y‖` is the real part of `f` at a rotation of `y`, which lies in the closed unit ball.
-    obtain ⟨z, hz, hfz⟩ := f.exists_norm_eq_apply_eq_norm_apply y
-    simpa [hfz] using isMaxOn_iff.1 hmax z (mem_closedBall_zero_iff.2 (hz.trans hy).le)
+  -- `re (f x)` bounds `re ∘ f` on the closed unit ball, so it is at least `‖f‖`.
+  refine ((re_le_norm _).trans (f.unit_le_opNorm x (mem_closedBall_zero_iff.1 hx))).antisymm ?_
+  simpa using (re_apply_add_mul_norm_le_iff (f := f) (x := 0) zero_le_one).2
+    fun y hy ↦ isMaxOn_iff.1 hmax y hy
 
 /-- The real part of a functional `L` commutes with a real-weighted series `∑' i, w i • h i` of a
 bounded family `h`. -/

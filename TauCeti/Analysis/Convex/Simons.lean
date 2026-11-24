@@ -71,27 +71,6 @@ private noncomputable def comb (x : ℕ → β → ℝ) (w : ℕ → ℝ) (b : �
 private noncomputable def supComb (x : ℕ → β → ℝ) (w : ℕ → ℝ) : ℝ :=
   ⨆ b, comb x w b
 
-/-- Mixing σ-convex weights `ν i` with summable nonnegative weights `a i` gives summable weights,
-summable along each column and as a family on `ℕ × ℕ`. -/
-private lemma hasSum_mix {a : ℕ → ℝ} {A : ℝ} (ha0 : ∀ i, 0 ≤ a i) (ha : HasSum a A)
-    {ν : ℕ → ℕ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m) (hν : ∀ i, HasSum (ν i) 1) :
-    HasSum (fun m ↦ ∑' i, a i * ν i m) A ∧ (∀ m, Summable fun i ↦ a i * ν i m) ∧
-      Summable fun p : ℕ × ℕ ↦ a p.1 * ν p.1 p.2 := by
-  set h : ℕ × ℕ → ℝ := fun p ↦ a p.1 * ν p.1 p.2
-  have h0 : 0 ≤ h := fun p ↦ mul_nonneg (ha0 _) (hν0 _ _)
-  have hrow : ∀ i, ∑' m, h (i, m) = a i := fun i ↦ by
-    simp only [h, (hν i).summable.tsum_mul_left, (hν i).tsum_eq, mul_one]
-  have hh : Summable h := (summable_prod_of_nonneg h0).2
-    ⟨fun i ↦ (hν i).summable.mul_left (a i), by simpa only [hrow] using ha.summable⟩
-  have hsw : Summable fun p : ℕ × ℕ ↦ h p.swap := hh.prod_symm
-  have hcol : ∀ m, Summable fun i ↦ a i * ν i m := fun m ↦ hsw.prod_factor m
-  refine ⟨?_, hcol, hh⟩
-  have hcolsum : Summable fun m ↦ ∑' i, a i * ν i m :=
-    ((summable_prod_of_nonneg fun p ↦ h0 p.swap).1 hsw).2
-  refine hcolsum.hasSum_iff.2 ?_
-  rw [Summable.tsum_comm' hh (fun i ↦ hh.prod_factor i) hcol, ← ha.tsum_eq]
-  exact tsum_congr hrow
-
 /-- The partial mixture `∑ i < n, 2⁻⁽ⁱ⁺¹⁾ ν i` of a sequence of weights. -/
 private noncomputable def partialMix (ν : ℕ → ℕ → ℝ) (n : ℕ) : ℕ → ℝ :=
   fun m ↦ ∑ i ∈ range n, (1 / 2) ^ (i + 1) * ν i m
@@ -111,8 +90,8 @@ private lemma summable_partialMix {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n 
 private lemma tailMix_mem_tailWeights {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
     (n : ℕ) : tailMix ν n ∈ tailWeights n := by
   refine ⟨fun m ↦ tsum_nonneg fun i ↦ mul_nonneg (by positivity) ((hν _).1 m), fun m hm ↦ ?_,
-    (hasSum_mix (fun _ ↦ by positivity) hasSum_half_pow_succ (fun i ↦ (hν (i + n)).1)
-      fun i ↦ (hν (i + n)).2.2).1⟩
+    hasSum_half_pow_succ.tsum_mul_of_hasSum_one (fun _ ↦ by positivity)
+      (fun i ↦ (hν (i + n)).1) fun i ↦ (hν (i + n)).2.2⟩
   refine (tsum_congr fun i ↦ ?_).trans tsum_zero
   rw [(hν (i + n)).2.1 m (by omega), mul_zero]
 
@@ -124,12 +103,14 @@ private lemma half_pow_add_succ (i n : ℕ) :
 private lemma partialMix_add_smul_tailMix {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
     (n : ℕ) :
     partialMix ν n + (1 / 2 : ℝ) ^ n • tailMix ν n = tailMix ν 0 := by
-  have hmix := fun n ↦ hasSum_mix (fun _ ↦ by positivity) hasSum_half_pow_succ
-    (fun i ↦ (hν (i + n)).1) fun i ↦ (hν (i + n)).2.2
+  -- The columns of the mixture of the weights from index `n` on are summable.
+  have hcol (n m : ℕ) : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * ν (i + n) m :=
+    (hasSum_half_pow_succ.summable.prod_mul_of_hasSum_one (fun _ ↦ by positivity)
+      (fun i ↦ (hν (i + n)).1) fun i ↦ (hν (i + n)).2.2).prod_symm.prod_factor m
   funext m
-  have hcol : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * ν i m := by simpa using (hmix 0).2.1 m
+  have hcol₀ : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * ν i m := by simpa using hcol 0 m
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, partialMix, tailMix, add_zero]
-  rw [← hcol.sum_add_tsum_nat_add n, ← ((hmix n).2.1 m).tsum_mul_left]
+  rw [← hcol₀.sum_add_tsum_nat_add n, ← (hcol n m).tsum_mul_left]
   simp only [half_pow_add_succ, mul_assoc]
 
 section Bounded
@@ -164,7 +145,8 @@ private lemma comb_add_smul {s ν : ℕ → ℝ} (hs : Summable s) (hν : Summab
 private lemma comb_mix {a : ℕ → ℝ} {A : ℝ} (ha0 : ∀ i, 0 ≤ a i) (ha : HasSum a A)
     {ν : ℕ → ℕ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m) (hν : ∀ i, HasSum (ν i) 1) (b : β) :
     comb x (fun m ↦ ∑' i, a i * ν i m) b = ∑' i, a i * comb x (ν i) b := by
-  obtain ⟨-, hcol, hh⟩ := hasSum_mix ha0 ha hν0 hν
+  have hh := ha.summable.prod_mul_of_hasSum_one ha0 hν0 hν
+  have hcol (m : ℕ) : Summable fun i ↦ a i * ν i m := hh.prod_symm.prod_factor m
   set f : ℕ → ℕ → ℝ := fun i m ↦ a i * ν i m * x m b
   have hf : Summable (Function.uncurry f) := hh.mul_of_abs_le fun p ↦ hM p.2 b
   have hfswap : Summable fun p : ℕ × ℕ ↦ Function.uncurry f p.swap := hf.prod_symm
