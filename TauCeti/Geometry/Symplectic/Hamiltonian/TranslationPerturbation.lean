@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.Dynamics.PeriodicPts.FixedPointIndex
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
@@ -52,6 +53,14 @@ points of period `k` away from the points of smaller period nondegenerate, and t
 twists of `TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` would then make the
 resulting finitely many orbits nondegenerate in all iterates.
 
+The perturbation also counts degenerate periodic points. If the points of period `k` of `φ` in an
+open set `U ⊆ W` form a compact set, possibly degenerate, then near that set the perturbed map has
+finitely many points of period `k`, all nondegenerate, and their signed count
+`∑ sign det (1 - d((φ ∘ ψ)^[k])_x)` is the fixed-point index of `φ^[k]` on `U`
+(`TauCeti.SymplecticForm.exists_hamiltonianFlow_sum_sign_det_eq_fixedPointIndex`). Every other
+small perturbation of this kind gives the same count
+(`TauCeti.exists_pos_forall_sum_sign_det_iterate_comp_eq_fixedPointIndex`).
+
 ## Main results
 
 * `TauCeti.SymplecticForm.exists_hamiltonianFlow_eventuallyEq_add`: localized Hamiltonian
@@ -62,6 +71,9 @@ resulting finitely many orbits nondegenerate in all iterates.
   nondegenerate.
 * `TauCeti.SymplecticForm.exists_hamiltonianFlow_finite_fixedPoints`: the case `k = 1`, in which
   the fixed points in the compact set become nondegenerate and finite.
+* `TauCeti.SymplecticForm.exists_hamiltonianFlow_sum_sign_det_eq_fixedPointIndex`: such a
+  perturbation of a map with a compact, possibly degenerate, set of points of period `k` has
+  nondegenerate periodic points near that set, whose signed count is the fixed-point index.
 
 ## References
 
@@ -277,5 +289,62 @@ theorem exists_hamiltonianFlow_finite_fixedPoints {φ : V → V} {K W : Set V} (
   refine (hK.of_isClosed_subset hclosed inter_subset_left).finite_of_isNondegenerateFixedPt
     fun x hx ↦ hnd' x hx.1 ?_
   simpa [IsFixedPt, sub_eq_zero] using hx.2
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.SymplecticForm
+
+open TopologicalSpace
+open scoped Manifold NNReal
+
+/- The fixed-point index is defined for spaces in `Type`. -/
+variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  (ω : SymplecticForm V)
+
+/-- **Hamiltonian translations count degenerate periodic points by the fixed-point index.** Let
+`W` be an open subset of a finite-dimensional symplectic vector space such that every orbit of `φ`
+starting in `W` leaves `W` until time `k > 0`, with `φ` differentiable along these orbits. Let
+`f : U → V` be `φ^[k]` on an open set `U ⊆ W`, with compact, possibly degenerate, fixed set. There
+is an open neighbourhood `U' ⊆ U` of this fixed set such that, for every `ε > 0`, some smooth
+Hamiltonian `H` with compact support inside `W` has a time-one map `ψ` moving no point by more
+than `ε`, for which the fixed points of `(φ ∘ ψ)^[k]` in `U'` are nondegenerate, finitely many,
+and have signed count `∑ sign det (1 - d((φ ∘ ψ)^[k])_x)` equal to the fixed-point index of
+`f`. The conclusions hold for every Lipschitz constant of the Hamiltonian vector field, one of
+which exists.
+
+The signed count is the same for every small perturbation with nondegenerate periodic points in
+`U'` (`TauCeti.exists_pos_forall_sum_sign_det_iterate_comp_eq_fixedPointIndex`); this theorem
+shows that Hamiltonian ones exist. -/
+theorem exists_hamiltonianFlow_sum_sign_det_eq_fixedPointIndex {φ : V → V} {k : ℕ} (hk : 0 < k)
+    {W : Set V} (hW : IsOpen W) (hφ : ∀ y ∈ W, ∀ j < k, DifferentiableAt ℝ φ (φ^[j] y))
+    (hret : ∀ y ∈ W, ∀ j, 0 < j → j < k → φ^[j] y ∉ W) {U : Opens V} (hUW : (U : Set V) ⊆ W)
+    (f : C(U, V)) (hf : ∀ z, f z = φ^[k] z) (hfix : IsCompact {z | f z = z}) :
+    ∃ U' : Opens V, U' ≤ U ∧ (∀ z, f z = z → (z : V) ∈ U') ∧ ∀ {ε : ℝ}, 0 < ε →
+      ∃ H : V → ℝ, ContDiff ℝ (⊤ : ℕ∞) H ∧ HasCompactSupport H ∧ tsupport H ⊆ W ∧
+        (∃ L, LipschitzWith L (ω.hamiltonianVectorField H)) ∧
+        ∀ {L : ℝ≥0} (hX : LipschitzWith L (ω.hamiltonianVectorField H)),
+          (∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+          (∀ z : U', (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z →
+            IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z) ∧
+          ∃ hfin : {z : U' | (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z}.Finite,
+            ∑ z ∈ hfin.toFinset,
+                (SignType.sign (1 - fderiv ℝ (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z).det : ℤ) =
+              f.fixedPointIndex := by
+  obtain ⟨U', hU'U, hfU', hU'c, hU'cU, δ, hδ, hcount⟩ :=
+    exists_pos_forall_sum_sign_det_iterate_comp_eq_fixedPointIndex hk hret hUW f hf hfix
+  refine ⟨U', hU'U, hfU', fun {ε} hε ↦ ?_⟩
+  -- Make the periodic points in the compact closure of `U'` nondegenerate, moving points by less
+  -- than `δ`.
+  obtain ⟨H, hH, hHc, hHW, hHX, hψ⟩ := ω.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate hk
+    hU'c hW (hU'cU.trans hUW) hφ hret (lt_min hε (half_pos hδ))
+  refine ⟨H, hH, hHc, hHW, hHX, fun hX ↦ ?_⟩
+  obtain ⟨-, hid, hdisp, hnd⟩ := hψ hX
+  have hnd' (z : U') (hz : (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z) :
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z :=
+    hnd z (subset_closure z.property) hz
+  refine ⟨fun w ↦ (hdisp w).trans (min_le_left _ _), hnd', hcount _
+    (ω.contDiff_hamiltonianFlow_apply H 0 hX (hH.of_le (by simp)) 1).continuous.continuousOn
+    (fun w _ ↦ (hdisp w).trans_lt ((min_le_right _ _).trans_lt (half_lt_self hδ)))
+    (fun w hw ↦ (hid w hw).eq_of_nhds) hnd'⟩
 
 end TauCeti.SymplecticForm

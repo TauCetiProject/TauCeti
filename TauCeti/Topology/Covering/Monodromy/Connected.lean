@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Covering.Monodromy.Full
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Monodromy of connected covering spaces

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Multiset
 /-!
 # Absolute-value bounds for multiset sums
 
-For a multiset in a linearly ordered additive commutative group, bounding each element in absolute
+For a multiset in a lattice-ordered additive commutative group, bounding each element in absolute
 value by `B` bounds the absolute value of the sum by `s.card • B`. These are the `Multiset`
 counterparts of `Finset.abs_sum_le_card_nsmul`
 (`TauCeti/Algebra/Order/BigOperators/Sum/UnitWeights.lean`).
@@ -25,12 +25,13 @@ public section
 
 namespace Multiset
 
-variable {ι R : Type*} [AddCommGroup R] [LinearOrder R] [IsOrderedAddMonoid R]
+variable {ι R : Type*} [AddCommGroup R] [Lattice R] [IsOrderedAddMonoid R]
 
 /-- If every element of `s` has absolute value at most `B`, then `|s.sum| ≤ s.card • B`. -/
 theorem abs_sum_le_card_nsmul (s : Multiset R) {B : R} (h : ∀ x ∈ s, |x| ≤ B) :
     |s.sum| ≤ s.card • B :=
-  abs_sum_le_sum_abs.trans <| by
+  -- the triangle inequality `|s.sum| ≤ (s.map abs).sum`, valid in any lattice-ordered group
+  (le_sum_of_subadditive abs abs_zero.le abs_add_le s).trans <| by
     simpa using sum_le_card_nsmul (s.map abs) B (by simpa using h)
 
 /-- Mapped form of `Multiset.abs_sum_le_card_nsmul`: if `|f x| ≤ B` for every `x ∈ s`, then

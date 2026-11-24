@@ -757,6 +757,13 @@ theorem valueL_apply (f : ParabolicCkHolderSpace k α E F hab) (p : slab (E := E
 theorem coe_valueL (f : ParabolicCkHolderSpace k α E F hab) : ⇑(valueL f) = f :=
   funext (valueL_apply f)
 
+/-- Evaluation of a finite sum is the sum of the evaluations. -/
+@[simp]
+theorem coe_sum {κ : Type*} (s : Finset κ) (f : κ → ParabolicCkHolderSpace k α E F hab) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) := by
+  rw [← coe_valueL, map_sum, FunLike.coe_sum]
+  simp only [coe_valueL]
+
 /-- The supremum norm of the underlying map equals that of the order-zero derivative field. -/
 theorem norm_valueL (f : ParabolicCkHolderSpace k α E F hab) :
     ‖valueL f‖ = ‖mixedDerivL 0 0 f‖ := by

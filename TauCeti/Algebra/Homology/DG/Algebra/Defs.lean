@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 import TauCeti.Algebra.Module.GradedModule.Internal
 import TauCeti.Data.List.ProdOfFn
@@ -44,9 +44,6 @@ its degree alone.
 
 ## Main results
 
-* `TauCeti.map_mul_of_leibniz_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_leibniz`, and
-  `TauCeti.map_algebraMap_of_leibniz`: consequences of the graded Leibniz rule alone, shared with
-  the curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs`.
 * `TauCeti.IsNonUnitalDGAlgebra.map_decompose` computes the differential on homogeneous
   components.
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_map_eq_zero` and
@@ -80,35 +77,6 @@ public section
 open DirectSum
 
 namespace TauCeti
-
-section Leibniz
-
-/-!
-### A consequence of the Leibniz law alone
-
-The next lemma uses only the graded Leibniz rule, and not that `d` raises degree by one or squares
-to zero.  It is stated with that rule as a hypothesis so that differential graded algebras and the
-curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs` share one
-proof.  The corresponding consequence of the degree law alone, that `d` commutes with homogeneous
-projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
--/
-
-variable {ι A σ F : Type*} [DecidableEq ι] [NonUnitalNonAssocRing A]
-  [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
-  [FunLike F A A] [AddMonoidHomClass F A A] {d : F} {s : ι → ℤˣ}
-
-/-- The graded Leibniz rule against a cycle in the right factor, for any index type and sign
-family. The vanishing signed term permits an arbitrary left factor, without a homogeneity
-hypothesis. -/
-theorem map_mul_of_leibniz_of_map_eq_zero
-    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
-    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | homogeneous a => simp [hl a.property b, hb]
-  | add a a' ha ha' => simp [add_mul, ha, ha']
-
-end Leibniz
 
 section NonUnital
 
@@ -170,38 +138,6 @@ theorem isNonUnitalDGAlgebra_zero (𝒜 : ℤ → Submodule R A) [SetLike.Graded
   leibniz := fun _ _ ↦ by simp
 
 end NonUnital
-
-section UnitalLeibniz
-
-variable {A ι σ : Type*} [NonAssocRing A] [Zero ι] [SetLike σ A] (𝒜 : ι → σ)
-  [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A → A}
-
-/-- A function satisfying a graded Leibniz rule with arbitrary unit signs `s : ι → ℤˣ` annihilates
-the unit: the rule for `1 * 1` reads `d 1 = d 1 + s 0 • d 1`, hence `s 0 • d 1 = 0` and `d 1 = 0`.
-Neither additivity nor a direct-sum decomposition is needed. -/
-theorem map_one_eq_zero_of_leibniz
-    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b)) :
-    d 1 = 0 := by
-  have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul] at key
-  exact (smul_eq_zero_iff_eq (s 0)).1 (left_eq_add.mp key)
-
-end UnitalLeibniz
-
-section AlgebraLeibniz
-
-variable {R A ι σ F : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Zero ι] [SetLike σ A]
-  (𝒜 : ι → σ) [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} [FunLike F A A] [LinearMapClass F R A A] {d : F}
-
-/-- A linear map satisfying a graded Leibniz rule with arbitrary unit signs `s : ι → ℤˣ`
-annihilates the image of the ground semiring. Only the unit's degree-zero membership is needed from
-the grading. -/
-theorem map_algebraMap_of_leibniz
-    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
-    (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz 𝒜 hl, smul_zero]
-
-end AlgebraLeibniz
 
 section Unital
 

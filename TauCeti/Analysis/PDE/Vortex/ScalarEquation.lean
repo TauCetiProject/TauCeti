@@ -46,6 +46,8 @@ When `h` is smooth and nowhere zero, this extends by continuity across the zeros
   `f` is entire and its zeros have dense complement.
 * `TauCeti.Vortex.normSq_le_one_of_tendsto`: a `C²` solution on the whole plane with
   `|α| → 1` at infinity satisfies `|α| ≤ 1` everywhere, by the maximum principle.
+* `TauCeti.Vortex.normSq_le_one_of_tendsto_sectionValue_mul_inv_pow`: the same bound for a
+  plane vortex with the degree-`m` end framing.
 
 ## References
 
@@ -281,5 +283,14 @@ theorem normSq_le_one_of_tendsto {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   · rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hα
       (Eventually.of_forall hsol)]
     linarith
+
+/-- A plane vortex with the degree-`m` end framing satisfies `|α|² ≤ 1` everywhere: the framed
+case of `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
+theorem normSq_le_one_of_tendsto_sectionValue_mul_inv_pow {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (z : ℂ) : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 :=
+  normSq_le_one_of_tendsto ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
 
 end TauCeti.Vortex
