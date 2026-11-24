@@ -41,6 +41,8 @@ completeness theorem also apply to manifolds with boundary and corners.
   coordinate derivative on a coordinate set, and its finiteness.
 * `ContMDiffMap.finiteAtlasHolderSubmodule`: the maps whose `k`th coordinate derivatives are
   `α`-Hölder on every piece of a finite family.
+* `ContMDiffMap.ofContinuous`: a continuous map as a `C⁰` map, in the form that
+  `TauCeti.CompactChartAtlas.CkHolderSpace 0` uses.
 * `TauCeti.CompactChartAtlas.CkHolderSpace`: the normed space `C^{k,α}(M, F)` of an atlas.
 
 ## Main results
@@ -262,6 +264,25 @@ theorem mem_finiteAtlasHolderSubmodule_iff (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
 
 end FiniteAtlas
 
+section OrderZero
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- A continuous map as a `C⁰` map, with the order written as the cast of the natural number `0`,
+the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+def ofContinuous (f : M → M') (hf : Continuous f) : C^(0 : ℕ)⟮I, M; I', M'⟯ :=
+  ⟨f, by
+    rw [Nat.cast_zero]
+    exact contMDiff_zero_iff.mpr hf⟩
+
+@[simp]
+theorem coe_ofContinuous (f : M → M') (hf : Continuous f) :
+    ⇑(ofContinuous (I := I) (I' := I') f hf) = f :=
+  (rfl)
+
+end OrderZero
+
 end ContMDiffMap
 
 namespace TauCeti
@@ -269,6 +290,13 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H]
+
+/-- A charted space is a `C⁰` manifold for the order `0` written as the cast of the natural number
+`0`, the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+instance isManifold_natCast_zero (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] : IsManifold I ((0 : ℕ) : WithTop ℕ∞) M := by
+  rw [Nat.cast_zero]
+  infer_instance
 
 namespace CompactChartAtlas
 
