@@ -195,7 +195,7 @@ def pglEquivIsometryEquiv : PGL(2, ℝ) ≃* (ℍ ≃ᵢ ℍ) :=
   MulEquiv.ofBijective (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ)
     -- stated as `Function.Bijective` so that `MulEquiv.ofBijective_apply` applies by `simp`
     (show Function.Bijective (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ) from
-      ⟨fun _ _ h ↦ eq_of_smul_eq_smul fun z ↦ by simpa using DFunLike.congr_fun h z,
+      ⟨IsometryEquiv.constSMulHom_injective PGL(2, ℝ) ℍ,
         fun f ↦ f.isometry.exists_pgl_smul_eq.imp fun _ hc ↦ IsometryEquiv.ext fun z ↦ by
           simpa using hc z⟩)
 

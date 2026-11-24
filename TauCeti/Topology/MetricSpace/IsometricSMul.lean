@@ -34,7 +34,8 @@ For a group acting by isometries, `TauCeti.dist_conj_smul` computes the displace
 The product and commutator displacement bounds control short elements of isometric actions.
 
 A group acting by isometries maps to the isometry group `X ≃ᵢ X` by the monoid homomorphism
-`IsometryEquiv.constSMulHom`, sending `c` to `IsometryEquiv.constSMul c`.
+`IsometryEquiv.constSMulHom`, sending `c` to `IsometryEquiv.constSMul c`; it is injective when
+the action is faithful (`IsometryEquiv.constSMulHom_injective`).
 -/
 
 public section
@@ -106,6 +107,11 @@ def constSMulHom : G →* (Y ≃ᵢ Y) where
 @[simp]
 theorem constSMulHom_apply (c : G) : constSMulHom G Y c = constSMul c :=
   (rfl)
+
+/-- For a faithful action, `IsometryEquiv.constSMulHom` is injective: distinct elements of `G`
+act by distinct isometries. -/
+theorem constSMulHom_injective [FaithfulSMul G Y] : Function.Injective (constSMulHom G Y) :=
+  fun _ _ h ↦ eq_of_smul_eq_smul fun y ↦ DFunLike.congr_fun h y
 
 end IsometryEquiv
 
