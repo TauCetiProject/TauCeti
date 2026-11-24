@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.Knot.Differential
+public import Mathlib.Algebra.MvPolynomial.Eval
+public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
 
 /-!
 # The full multi-pointed differential of a Heegaard diagram
@@ -19,10 +20,9 @@ one, recording their multiplicity at every basepoint separately:
 
 This file sets up these counts for the abstract region incidence data
 `TauCeti.HeegaardRegionSystem` with a finite set of basepoints, counting nonnegative domains in
-place of holomorphic disks, as the hat, minus and knot differentials of
-`TauCeti.LowDimTopology.Heegaard.HatDifferential`,
-`TauCeti.LowDimTopology.Heegaard.MinusDifferential` and
-`TauCeti.LowDimTopology.Heegaard.Knot.Differential` do.
+place of holomorphic disks, as the hat and minus differentials of
+`TauCeti.LowDimTopology.Heegaard.HatDifferential` and
+`TauCeti.LowDimTopology.Heegaard.MinusDifferential` do.
 
 * The **full coefficient** `H.fullCoefficient χ x y : MvPolynomial Basepoint (ZMod 2)` is the sum
   of the monomials `∏_b X_b ^ n_b(D)` over the nonnegative domains `D` of Maslov index one from `x`
@@ -34,8 +34,9 @@ place of holomorphic disks, as the hat, minus and knot differentials of
 
 The other differentials are specializations of the variables.
 
-* For a doubly pointed diagram, the full coefficient is the knot coefficient
-  (`fullCoefficient_withBasepoints_eq_knotCoefficient`).
+* For a doubly pointed diagram, the full coefficient is the knot coefficient, and the knot
+  differential is the full differential (`TauCeti.LowDimTopology.Heegaard.Knot.Differential`,
+  which derives its basic API from the one here).
 * Setting every variable to `U` gives the minus coefficient, which records the total multiplicity
   at the basepoints (`aeval_X_fullCoefficient`, and on chains `mapRange_aeval_X_fullDifferential`).
 * Setting every variable to `0` gives the hat coefficient (`constantCoeff_fullCoefficient`, and on
@@ -68,10 +69,8 @@ count has the properties listed.
 * `TauCeti.HeegaardRegionSystem.coeff_fullCoefficient`: the coefficients count domains by their
   multiplicities at the basepoints.
 * `TauCeti.HeegaardRegionSystem.aeval_fullCoefficient`: evaluating the variables.
-* `TauCeti.HeegaardRegionSystem.fullCoefficient_withBasepoints_eq_knotCoefficient`,
-  `TauCeti.HeegaardRegionSystem.aeval_X_fullCoefficient` and
-  `TauCeti.HeegaardRegionSystem.constantCoeff_fullCoefficient`: the knot, minus and hat
-  coefficients.
+* `TauCeti.HeegaardRegionSystem.aeval_X_fullCoefficient` and
+  `TauCeti.HeegaardRegionSystem.constantCoeff_fullCoefficient`: the minus and hat coefficients.
 * `TauCeti.HeegaardRegionSystem.mapRange_fullDifferential_apply`,
   `TauCeti.HeegaardRegionSystem.mapRange_aeval_X_fullDifferential` and
   `TauCeti.HeegaardRegionSystem.mapRange_constantCoeff_fullDifferential`: the same on chains.
@@ -207,15 +206,6 @@ theorem constantCoeff_fullCoefficient (hfin : (H.minusDomains χ x y).Finite) :
 end Coefficient
 
 variable {χ : Region → ℤ} {x y : H.Generator}
-
-/-- **The full coefficient of a doubly pointed diagram is the knot coefficient.** For the diagram
-pointed at `w` and `z` alone, with `X 0` the variable of `w` and `X 1` that of `z`, the full
-coefficient is the knot coefficient `∑ U ^ n_w(D) V ^ n_z(D)`. -/
-theorem fullCoefficient_withBasepoints_eq_knotCoefficient (w z : Basepoint) :
-    (H.withBasepoints ![H.basepoint w, H.basepoint z]).fullCoefficient χ x y =
-      H.knotCoefficient χ w z x y := by
-  rw [fullCoefficient_def, knotCoefficient_def, minusDomains_withBasepoints]
-  simp [Fin.prod_univ_two]
 
 section Differential
 

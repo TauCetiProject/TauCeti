@@ -53,6 +53,9 @@ exactly one holomorphic disk modulo translation is analytic and is not formalize
   `TauCeti.GridDiagram.minusDomains_eq_image_emptyRectangles`: the index-one nonnegative domains are
   the domains of the empty rectangles.
 * `TauCeti.GridDiagram.finite_minusDomains`: there are finitely many.
+* `TauCeti.GridDiagram.fullCoefficient_gridStateEquivGenerator` and
+  `TauCeti.GridDiagram.aeval_fullCoefficient_gridStateEquivGenerator`: the full coefficients, and
+  their evaluations, are sums over the empty rectangles.
 * `TauCeti.GridDiagram.aeval_sumElim_X_one_fullCoefficient` and
   `TauCeti.GridDiagram.aeval_sumElim_X_zero_fullCoefficient`: the specializations of the full
   coefficients are the filtered and unblocked grid coefficients.
@@ -194,6 +197,35 @@ end Weights
 
 section Coefficients
 
+/-- **The full coefficient of a grid diagram counts the empty rectangles.** Evaluating the variable
+of each marking at an element `g` of an algebra, the full coefficient of the Heegaard diagram of a
+grid diagram from `x` to `y` is the sum, over the empty rectangles from `x` to `y`, of the product
+of the values of `g` at the `O`- and `X`-markings that the rectangle covers. -/
+theorem aeval_fullCoefficient_gridStateEquivGenerator {S : Type*} [CommSemiring S]
+    [Algebra (ZMod 2) S] (g : Fin n ⊕ Fin n → S) (x y : GridState n) :
+    aeval g (G.heegaardRegionSystem.fullCoefficient 1 (G.gridStateEquivGenerator x)
+        (G.gridStateEquivGenerator y)) =
+      ∑ R ∈ GridRectangleBetween.emptyRectangles x y,
+        (∏ c, if (c, G.O c) ∈ R.toGridRectangle.coveredSquares then g (Sum.inl c) else 1) *
+          ∏ c, if (c, G.X c) ∈ R.toGridRectangle.coveredSquares then g (Sum.inr c) else 1 := by
+  rw [HeegaardRegionSystem.aeval_fullCoefficient _ (G.finite_minusDomains _ _),
+    finsum_mem_minusDomains]
+  exact Finset.sum_congr rfl fun R _ => G.prod_pow_domain_basepoint g _
+
+/-- **The full coefficient of a grid diagram counts the empty rectangles.** The full coefficient of
+the Heegaard diagram of a grid diagram from `x` to `y` is the sum, over the empty rectangles from
+`x` to `y`, of the monomial of the `O`- and `X`-markings that the rectangle covers, each with
+exponent one. -/
+theorem fullCoefficient_gridStateEquivGenerator (x y : GridState n) :
+    G.heegaardRegionSystem.fullCoefficient 1 (G.gridStateEquivGenerator x)
+        (G.gridStateEquivGenerator y) =
+      ∑ R ∈ GridRectangleBetween.emptyRectangles x y,
+        (∏ c, if (c, G.O c) ∈ R.toGridRectangle.coveredSquares then
+          MvPolynomial.X (Sum.inl c) else 1) *
+          ∏ c, if (c, G.X c) ∈ R.toGridRectangle.coveredSquares then
+            MvPolynomial.X (Sum.inr c) else 1 := by
+  rw [← G.aeval_fullCoefficient_gridStateEquivGenerator, aeval_X_left_apply]
+
 /-- **The filtered grid differential counts the index-one domains.** In the full coefficient of
 the Heegaard diagram of a grid diagram from `x` to `y`, keep the variable `V_c` of the `O`-marking
 of each column and set the variables of the `X`-markings to `1`. The result is the coefficient of
@@ -204,9 +236,9 @@ theorem aeval_sumElim_X_one_fullCoefficient (x y : GridState n) :
         (G.heegaardRegionSystem.fullCoefficient 1 (G.gridStateEquivGenerator x)
           (G.gridStateEquivGenerator y)) =
       G.filteredCoefficient (ZMod 2) x y := by
-  rw [HeegaardRegionSystem.aeval_fullCoefficient _ (G.finite_minusDomains _ _),
-    finsum_mem_minusDomains, filteredCoefficient_def]
-  exact Finset.sum_congr rfl fun R _ => G.prod_pow_domain_basepoint_sumElim_X_one _
+  rw [aeval_fullCoefficient_gridStateEquivGenerator, filteredCoefficient_def]
+  exact Finset.sum_congr rfl fun R _ =>
+    (G.prod_pow_domain_basepoint _ _).symm.trans (G.prod_pow_domain_basepoint_sumElim_X_one _)
 
 /-- **The unblocked grid differential counts the index-one domains avoiding the `X`-markings.** In
 the full coefficient of the Heegaard diagram of a grid diagram from `x` to `y`, keep the variable
@@ -224,9 +256,10 @@ theorem aeval_sumElim_X_zero_fullCoefficient (x y : GridState n) :
       (fun R => Disjoint R.toGridRectangle.coveredSquares G.XSet) := by
     ext R
     rw [mem_unblockedRectangles, Finset.mem_filter, GridRectangleBetween.mem_emptyRectangles]
-  rw [HeegaardRegionSystem.aeval_fullCoefficient _ (G.finite_minusDomains _ _),
-    finsum_mem_minusDomains, unblockedCoefficient_def, h, Finset.sum_filter]
-  exact Finset.sum_congr rfl fun R _ => G.prod_pow_domain_basepoint_sumElim_X_zero _
+  rw [aeval_fullCoefficient_gridStateEquivGenerator, unblockedCoefficient_def, h,
+    Finset.sum_filter]
+  exact Finset.sum_congr rfl fun R _ =>
+    (G.prod_pow_domain_basepoint _ _).symm.trans (G.prod_pow_domain_basepoint_sumElim_X_zero _)
 
 end Coefficients
 
