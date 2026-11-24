@@ -156,7 +156,7 @@ theorem orientation_reindex_eq_orientationAt {x : M} {n : ℕ}
 
 /-- **`J`-adapted frames of a surface are positive for the complex orientation.** On a surface,
 every basis `(v, J v)` of the tangent space at `x` is positive. -/
-theorem orientation_eq_orientationAt (h2 : finrank ℝ E = 2) {x : M}
+theorem orientation_eq_orientationAt_of_apply_one_eq (h2 : finrank ℝ E = 2) {x : M}
     {b : Basis (Fin 2) ℝ (TangentSpace I x)} (hb : b 1 = J x (b 0)) :
     b.orientation = (J.orientation h2).orientationAt x := by
   have h : 1 * 2 = 2 := rfl

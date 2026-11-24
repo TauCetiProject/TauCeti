@@ -389,8 +389,9 @@ theorem orientation_reindex (J : AlmostComplexStructure V) {n : ℕ}
     (b.reindex (finProdFinEquiv.trans (finCongr h))).orientation = J.orientation hk := by
   rw [J.exists_tames.choose_spec.orientation_reindex hb hk h, orientation]
 
-/-- **The complex orientation is natural.** A real linear equivalence `e : V ≃ V'` with
-`e ∘ J = J' ∘ e` carries the complex orientation of `J` to that of `J'`. -/
+/-- **The complex orientation is natural.** A real linear equivalence `e : V ≃ₗ[ℝ] W` that is
+complex linear from `J` to `J'` (`e ∘ J = J' ∘ e`) carries the complex orientation of `J` to that
+of `J'`. -/
 theorem map_orientation {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {e : V ≃ₗ[ℝ] W} (he : IsComplexLinearMap J J' e.toLinearMap) (hk : finrank ℝ V = k) :
     Orientation.map (Fin k) e (J.orientation hk) =
