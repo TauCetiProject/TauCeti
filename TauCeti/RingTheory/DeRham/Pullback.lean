@@ -35,8 +35,9 @@ de Rham complexes `TauCeti.DeRham.complexMap f : complex A B ⟶ complex A C`, f
 * `TauCeti.DeRham.zeroEquiv_pullback`, `TauCeti.DeRham.oneEquiv_pullback`: in degrees zero and
   one the pullback is `f` and `KaehlerDifferential.mapSemilinear f`.
 * `TauCeti.DeRham.pullback_d`: pullback commutes with the de Rham differential.
-* `TauCeti.DeRham.pullback_gMul`: pullback preserves wedge products.
-* `TauCeti.DeRham.pullback_id`, `TauCeti.DeRham.pullback_comp_apply`: functoriality of pullback.
+* `TauCeti.DeRham.pullback_wedge`: pullback preserves wedge products.
+* `TauCeti.DeRham.pullback_id`, `TauCeti.DeRham.pullback_comp`,
+  `TauCeti.DeRham.pullbackLinear_comp`: functoriality of pullback.
 * `TauCeti.DeRham.complexMap_id`, `TauCeti.DeRham.complexMap_comp`: functoriality of the
   morphism of de Rham complexes.
 
@@ -50,8 +51,10 @@ which span the forms over `A`.
 
 The semilinearity homomorphism of `pullback f n` is the coercion `(f : B →+* C)`, the simp-normal
 form of `f.toRingHom`, so that its simp lemmas still apply once `simp` has normalised the type of
-the map. For the same reason functoriality, `pullback_comp_apply`, is stated pointwise: Mathlib's
-`RingHomCompTriple` instance for algebra homomorphisms is phrased with `AlgHom.toRingHom`.
+the map. For the same reason functoriality cannot be stated as a composite of semilinear maps:
+Mathlib's `RingHomCompTriple` instance for algebra homomorphisms is phrased with
+`AlgHom.toRingHom`. It is stated instead for the underlying functions (`pullback_comp`) and for the
+`A`-linear pullbacks (`pullbackLinear_comp`).
 
 ## References
 
@@ -167,7 +170,7 @@ theorem pullback_d (ω : Forms A B n) :
 /-- **Pullback preserves wedge products**: `f* (α ∧ β) = f* α ∧ f* β`, for the graded
 multiplication of the exterior algebra. -/
 @[simp]
-theorem pullback_gMul {m : ℕ} (α : Forms A B m) (β : Forms A B n) :
+theorem pullback_wedge {m : ℕ} (α : Forms A B m) (β : Forms A B n) :
     pullback f (m + n) (GradedMonoid.GMul.mul (A := fun i => Forms A B i) α β) =
       GradedMonoid.GMul.mul (A := fun i => Forms A C i) (pullback f m α) (pullback f n β) :=
   Subtype.ext (map_mul (KaehlerDeRham.map f) α.val β.val)
@@ -188,6 +191,17 @@ theorem pullback_id : (pullback (AlgHom.id A B) n : Forms A B n →ₗ[B] Forms 
 theorem pullback_comp_apply (g : C →ₐ[A] E) (ω : Forms A B n) :
     pullback (g.comp f) n ω = pullback g n (pullback f n ω) :=
   Subtype.ext <| (coe_pullback _ ω).trans <| by simp
+
+/-- **Functoriality of pullback**: as functions, pullback along `g ∘ f` is `g* ∘ f*`. -/
+theorem pullback_comp (g : C →ₐ[A] E) :
+    ⇑(pullback (g.comp f) n) = pullback g n ∘ pullback f n :=
+  funext (pullback_comp_apply f g)
+
+/-- **Functoriality of the `A`-linear pullback**: pullback along `g ∘ f` is the composite of the
+`A`-linear pullbacks along `f` and `g`. -/
+theorem pullbackLinear_comp (g : C →ₐ[A] E) :
+    pullbackLinear (g.comp f) n = pullbackLinear g n ∘ₗ pullbackLinear f n :=
+  LinearMap.ext (pullback_comp_apply f g)
 
 end
 
