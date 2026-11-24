@@ -63,6 +63,9 @@ models are chosen to agree on the earlier cells, so they assemble to a single mo
   base model built along the filtration, whose relative cycles with target in each stage, or in
   the union, are relative boundaries there; when the `N n` are stable under the differential,
   this makes it a quasi-isomorphism onto each stage and onto the union.
+* `TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`: relative boundaries
+  with target in the stages of a filtration, from the generators of rank `< k`, give relative
+  boundaries with target in the union.
 
 ## References
 
@@ -162,6 +165,32 @@ private theorem linearCombination_fullRows_inl {g : P → M}
   rw [fullRows, Sum.elim_inl, linearCombination_mapDomain, Sum.elim_comp_inl, hg p]
 
 end Base
+
+omit [IsScalarTower R A M] in
+/-- **Relative boundaries below the stages of a filtration assemble.** Let the generators carry a
+rank `r` in `ℕ`, and let `F` be an increasing sequence of submodules of `M`. If for every `k` the
+map `g`, restricted to the generators of rank `< k`, has relative cycles with target in `F k` that
+are relative boundaries with target in `F k`, then every relative cycle of `g` with target in
+`⨆ k, F k` is a relative boundary with target in `⨆ k, F k`. -/
+theorem exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported (m : P → P →₀ A)
+    {g : P → M} (r : P → ℕ) {F : ℕ → Submodule A M} (hF : Monotone F)
+    (hK : ∀ (k : ℕ) (f : P →₀ A) (w : M), f ∈ supported A A {y | r y < k} →
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0 →
+      linearCombination A g f = dM w → w ∈ F k → ∃ (f' : P →₀ A) (w' : M), w' ∈ F k ∧
+        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
+          linearCombination A g f' + dM w' = w)
+    {f : P →₀ A} {w : M} (hf : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0)
+    (hfw : linearCombination A g f = dM w) (hw : w ∈ ⨆ k, F k) :
+    ∃ (f' : P →₀ A) (w' : M), w' ∈ ⨆ k, F k ∧
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
+        linearCombination A g f' + dM w' = w := by
+  obtain ⟨k₁, hk₁⟩ := (Submodule.mem_iSup_of_directed F hF.directed_le).1 hw
+  -- `f` involves finitely many generators, so it lies below some rank.
+  obtain ⟨k₀, hk₀⟩ := exists_mem_supported_lt (R := A) r f
+  obtain ⟨f', w', hw', hf', hfw'⟩ := hK (max k₀ k₁) f w
+    (supported_mono (Set.ofPred_subset_ofPred.2 fun _ ↦ lt_max_of_lt_left) hk₀) hf hfw
+    (hF (le_max_right k₀ k₁) hk₁)
+  exact ⟨f', w', Submodule.mem_iSup_of_mem _ hw', hf', hfw'⟩
 
 variable (st : G → ℕ) (N : ℕ → Submodule A M) (c₀ : G → M)
   (m₀ : RowFiniteTwistingCocycle 𝒜 d P indP) (g : P → M)
@@ -546,11 +575,10 @@ theorem exists_rowFiniteTwistingCocycle_sum_of_forall_exists (hM : IsDGLeftModul
       (hfin n).exists_eq f w (subset_below_iff.2 hf) hDf hfw hw
     exact ⟨f', w', subset_below_iff.1 hf', hw', hDf', hfw'⟩
   -- A relative cycle of the union lives at a finite stage of the cells and the filtration.
-  · obtain ⟨k, hk⟩ := (Submodule.mem_iSup_of_directed N hN.directed_le).1 hw
-    obtain ⟨k₀, hk₀⟩ := exists_mem_supported_lt (R := A) (Sum.elim (fun _ ↦ 0) st) f
-    obtain ⟨f', w', -, hw', hDf', hfw'⟩ := (hfin (max k₀ k)).exists_eq f w
-      (subset_below_iff.2 fun x hx ↦ lt_max_of_lt_left ((mem_supported A f).1 hk₀ hx))
-      hf hfw (hN (le_max_right k₀ k) hk)
-    exact ⟨f', w', Submodule.mem_iSup_of_mem _ hw', hDf', hfw'⟩
+  · refine exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported m.m
+      (Sum.elim (fun _ ↦ 0) st) hN (fun k f w hf hDf hfw hw ↦ ?_) hf hfw hw
+    obtain ⟨f', w', -, hw', hDf', hfw'⟩ := (hfin k).exists_eq f w
+      (subset_below_iff.2 fun x hx ↦ (mem_supported A f).1 hf hx) hDf hfw hw
+    exact ⟨f', w', hw', hDf', hfw'⟩
 
 end TauCeti

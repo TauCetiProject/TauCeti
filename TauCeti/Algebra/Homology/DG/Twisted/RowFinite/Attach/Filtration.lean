@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.QuasiIso
 public import TauCeti.LinearAlgebra.Finsupp.Supported
-import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
 
 /-!
 # Semi-free models along a filtration, one stage of cells at a time
@@ -53,9 +53,6 @@ generators is a base model of `F 0`.
 
 ## Main results
 
-* `TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`: quasi-isomorphisms
-  onto the stages of an exhaustive filtration, from the generators of rank `< k`, give a
-  quasi-isomorphism onto the union.
 * `TauCeti.exists_semifreeModel_of_filtration`: the cell-filtered semi-free model.
 
 ## References
@@ -81,31 +78,6 @@ variable {R : Type uR} {A : Type uA} {P : Type uP}
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
   {ℳ : ℤ → Submodule R M} {dM : M →ₗ[R] M}
-
-omit [IsScalarTower R A M] in
-/-- **Quasi-isomorphisms onto the stages of an exhaustive filtration assemble.** Let the
-generators carry a rank `r` in `ℕ`, and let `F` be an increasing, exhaustive sequence of
-submodules of `M`. If for every `k` the map `g`, restricted to the generators of rank `< k`, has
-relative cycles with target in `F k` that are relative boundaries, then every relative cycle of
-`g` is a relative boundary. -/
-theorem exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported (m : P → P →₀ A)
-    {g : P → M} (r : P → ℕ) {F : ℕ → Submodule A M} (hF : Monotone F)
-    (hFex : ∀ w, ∃ k, w ∈ F k)
-    (hK : ∀ (k : ℕ) (f : P →₀ A) (w : M), f ∈ supported A A {y | r y < k} →
-      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0 →
-      linearCombination A g f = dM w → w ∈ F k → ∃ (f' : P →₀ A) (w' : M),
-        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
-          linearCombination A g f' + dM w' = w)
-    {f : P →₀ A} {w : M} (hf : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0)
-    (hfw : linearCombination A g f = dM w) :
-    ∃ (f' : P →₀ A) (w' : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
-      linearCombination A g f' + dM w' = w := by
-  obtain ⟨k₁, hk₁⟩ := hFex w
-  -- `f` involves finitely many generators, so it lies below some rank.
-  obtain ⟨k₀, hk₀⟩ := exists_mem_supported_lt (R := A) r f
-  exact hK (max k₀ k₁) f w
-    (supported_mono (Set.ofPred_subset_ofPred.2 fun _ ↦ lt_max_of_lt_left) hk₀) hf hfw
-    (hF (le_max_right k₀ k₁) hk₁)
 
 omit [IsScalarTower R A M] in
 /-- **Relative cycles modulo a submodule along a relabelling of the cells.** Let an equivalence
