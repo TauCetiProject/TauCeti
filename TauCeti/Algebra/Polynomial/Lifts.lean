@@ -59,7 +59,7 @@ theorem mem_lifts_of_forall_map_eq {S : Set (B ≃+* B)}
 /-- **Lifting a monic polynomial modulo an ideal.** If `φ : D →+* O` is surjective modulo an
 ideal `I`, then any monic `T : O[X]` lifts to a monic `ψ : D[X]` of the same `natDegree`
 such that `ψ.map φ - T` has all coefficients in `I`. -/
-theorem exists_monic_map_sub_coeff_mem {D O : Type*} [CommRing D] [CommRing O] (φ : D →+* O)
+theorem exists_monic_map_sub_coeff_mem {D O : Type*} [Semiring D] [CommRing O] (φ : D →+* O)
     {I : Ideal O} (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I)
     {T : O[X]} (hT : T.Monic) :
     ∃ ψ : D[X], ψ.Monic ∧ ψ.natDegree = T.natDegree ∧
@@ -77,13 +77,11 @@ theorem exists_monic_map_sub_coeff_mem {D O : Type*} [CommRing D] [CommRing O] (
     intro i
     obtain ⟨d, hd⟩ := hφ (T.coeff i)
     refine ⟨d, ?_⟩
-    rw [RingHom.comp_apply, coeff_map, eq_comm, ← sub_eq_zero, ← map_sub,
-      Ideal.Quotient.eq_zero_iff_mem]
+    rw [RingHom.comp_apply, coeff_map, eq_comm, Ideal.Quotient.mk_eq_mk_iff_sub_mem]
     exact hd
   obtain ⟨ψ, hψ_map, hψ_deg, hψ_monic⟩ := lifts_and_natDegree_eq_and_monic hlifts (hT.map q)
   refine ⟨ψ, hψ_monic, hψ_deg.trans (hT.natDegree_map q), fun i ↦ ?_⟩
-  rw [← Ideal.Quotient.eq_zero_iff_mem, coeff_sub, map_sub, sub_eq_zero, ← coeff_map,
-    ← coeff_map, map_map]
+  rw [coeff_sub, ← Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← coeff_map, ← coeff_map, map_map]
   exact congrArg (fun p : (O ⧸ I)[X] ↦ p.coeff i) hψ_map
 
 /-- **Denominators of divided derivatives from an integral rescaled translate.** If the

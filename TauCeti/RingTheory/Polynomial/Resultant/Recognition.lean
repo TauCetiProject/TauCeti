@@ -7,20 +7,17 @@ module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.RingTheory.Polynomial.GaussLemma
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.RingTheory.Polynomial.Monic.Factorization
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
 # Resultant recognition over a discrete valuation ring
 
 A monic polynomial `P : O[X]` over a discrete valuation ring `O` is uniquely determined by the
 valuations of its nonzero resultants `P.resultant (ψ.map φ)` against monic polynomials `ψ : D[X]`
-lifted from a ring `D` whose image under `φ : D →+* O` is dense modulo every power of a
+lifted from a semiring `D` whose image under `φ : D →+* O` is dense modulo every power of a
 uniformizer `π`. No equal-degree, completeness, separability, characteristic-zero, or finite-
 residue-field assumption is required.
 
@@ -36,12 +33,11 @@ large values of `n` recovers the multiplicity `e` of every monic irreducible fac
 
 ## Main results
 
-* `Polynomial.exists_resultant_eq_pow_mul_of_coeff_mem_span_mul`: for monic `g`, if
-  `ψ - (g + C a)` has all coefficients in `Ideal.span {a * b}`, then
-  `g.resultant ψ = a ^ g.natDegree * u` with `u - 1 ∈ Ideal.span {b}`.
+* `Polynomial.addVal_resultant_of_sub_add_C_pow_mem`: valuation of the resultant of a monic
+  polynomial with a shifted lift.
 * `Polynomial.addVal_resultant_pow_mul_of_sub_add_C_pow_mem`: shifted-factor multiplicity slope
   formula over a discrete valuation ring.
-* `Polynomial.resultantRecognition`: monic tests from a uniformizer-adically dense ring uniquely
+* `Polynomial.resultantRecognition`: monic tests from a uniformizer-adically dense semiring uniquely
   determine a monic polynomial over a discrete valuation ring.
 
 ## References
@@ -59,43 +55,6 @@ noncomputable section
 open Polynomial
 
 namespace Polynomial
-
-section ArbitraryRing
-
-variable {R : Type*} [CommRing R]
-
-/-- **Resultant of a shifted monic factor.** For monic `g : R[X]` and an ideal `I : Ideal R`, if
-`ψ = g + C a + C a * h` and all coefficients of `h` lie in `I`, then
-`g.resultant ψ = a ^ g.natDegree * u` for some `u` congruent to `1` modulo `I`. -/
-theorem exists_resultant_eq_pow_mul {g ψ h : R[X]} (hg : g.Monic) (a : R) {I : Ideal R}
-    (hψ : ψ = g + C a + C a * h) (hh : ∀ i, h.coeff i ∈ I) :
-    ∃ u : R, u - 1 ∈ I ∧ g.resultant ψ = a ^ g.natDegree * u := by
-  refine ⟨Algebra.norm R (AdjoinRoot.mk g (1 + h)),
-    AdjoinRoot.norm_mk_one_add_sub_one_mem hg hh, ?_⟩
-  rw [← AdjoinRoot.norm_mk_C hg a, ← map_mul (Algebra.norm R), ← map_mul,
-    ← AdjoinRoot.norm_mk_eq_resultant hg]
-  congr 1
-  have hrewrite : ψ = g + C a * (1 + h) := by rw [hψ]; ring
-  rw [hrewrite, map_add, AdjoinRoot.mk_self, zero_add]
-
-/-- **Resultant of a shifted monic factor modulo `a * b`.** If `g` is monic and every coefficient
-of `ψ - (g + C a)` lies in `Ideal.span {a * b}`, then `g.resultant ψ = a ^ g.natDegree * u` for
-some `u` with `u - 1 ∈ Ideal.span {b}`. -/
-theorem exists_resultant_eq_pow_mul_of_coeff_mem_span_mul {g ψ : R[X]} (hg : g.Monic) (a b : R)
-    (hψ : ∀ i, (ψ - (g + C a)).coeff i ∈ Ideal.span {a * b}) :
-    ∃ u : R, u - 1 ∈ Ideal.span {b} ∧ g.resultant ψ = a ^ g.natDegree * u := by
-  have hdvd : C (a * b) ∣ ψ - (g + C a) :=
-    (C_dvd_iff_dvd_coeff _ _).mpr fun i ↦ Ideal.mem_span_singleton.mp (hψ i)
-  obtain ⟨k, hk⟩ := hdvd
-  have hrewrite : ψ = g + C a + C a * (C b * k) := by
-    rw [sub_eq_iff_eq_add] at hk
-    rw [hk, C_mul]
-    ring
-  refine exists_resultant_eq_pow_mul hg a hrewrite fun i ↦ ?_
-  rw [coeff_C_mul, Ideal.mem_span_singleton]
-  exact dvd_mul_right b _
-
-end ArbitraryRing
 
 section DVR
 
@@ -173,104 +132,12 @@ end DVR
 
 section Recognition
 
-private theorem exists_factor_ne_multiplicity_aux {O K : Type*} [CommRing O]
-    [IsIntegrallyClosed O] [Field K] [Algebra O K] [IsFractionRing O K]
-    {X₁ X₂ : O[X]} (hX₁ : X₁.Monic) (hX₂ : X₂.Monic)
-    {g A : K[X]} (hgA : X₁.map (algebraMap O K) = g * A)
-    (hgcd : ∀ d : K[X],
-      d ∣ X₁.map (algebraMap O K) → d ∣ X₂.map (algebraMap O K) → d ∣ g)
-    (hA : ¬ IsUnit A) :
-    ∃ R₀ : O[X], R₀.Monic ∧ Irreducible (R₀.map (algebraMap O K)) ∧
-      ∃ e₁ e₂ : ℕ, ∃ S₁ S₂ : O[X], S₁.Monic ∧ S₂.Monic ∧
-        ¬ (R₀.map (algebraMap O K) ∣ S₁.map (algebraMap O K)) ∧
-        ¬ (R₀.map (algebraMap O K) ∣ S₂.map (algebraMap O K)) ∧
-        X₁ = R₀ ^ e₁ * S₁ ∧ X₂ = R₀ ^ e₂ * S₂ ∧ e₁ ≠ e₂ := by
-  classical
-  let ι := algebraMap O K
-  have hA0 : A ≠ 0 := by
-    rintro rfl
-    rw [mul_zero] at hgA
-    exact (hX₁.map ι).ne_zero hgA
-  obtain ⟨R₁, hR₁_irr, hR₁_dvd⟩ := WfDvdMonoid.exists_irreducible_factor hA hA0
-  let R : K[X] := R₁ * C R₁.leadingCoeff⁻¹
-  have hR_monic : R.Monic := monic_mul_leadingCoeff_inv hR₁_irr.ne_zero
-  have hC_unit : IsUnit (C R₁.leadingCoeff⁻¹) :=
-    isUnit_C.mpr (inv_ne_zero (leadingCoeff_ne_zero.mpr hR₁_irr.ne_zero)).isUnit
-  have hR_assoc : Associated R₁ R := associated_mul_unit_right R₁ _ hC_unit
-  have hR_irr : Irreducible R := hR_assoc.irreducible hR₁_irr
-  have hR_dvd_A : R ∣ A := hR_assoc.dvd_iff_dvd_left.mp hR₁_dvd
-  have hR_dvd_X₁ : R ∣ X₁.map ι := hgA ▸ hR_dvd_A.mul_left g
-  obtain ⟨R₀, hR₀_map⟩ := IsIntegrallyClosed.eq_map_mul_C_of_dvd K hX₁ hR_dvd_X₁
-  rw [hR_monic.leadingCoeff, C_1, mul_one] at hR₀_map
-  have hR₀_monic : R₀.Monic :=
-    monic_of_injective (IsFractionRing.injective O K) (hR₀_map ▸ hR_monic)
-  have hR₀_irr : Irreducible (R₀.map ι) := hR₀_map ▸ hR_irr
-  have hR₀_pos : 0 < R₀.natDegree := by
-    rw [← natDegree_map_eq_of_injective (IsFractionRing.injective O K)]
-    exact hR₀_irr.natDegree_pos
-  obtain ⟨e₁, S₁, hS₁_m, hS₁_ndvd', hX₁_eq⟩ := hR₀_monic.exists_pow_mul_not_dvd hR₀_pos hX₁
-  obtain ⟨e₂, S₂, hS₂_m, hS₂_ndvd', hX₂_eq⟩ := hR₀_monic.exists_pow_mul_not_dvd hR₀_pos hX₂
-  have hS₁_ndvd : ¬ (R₀.map ι ∣ S₁.map ι) :=
-    fun h ↦ hS₁_ndvd' (hS₁_m.dvd_of_fraction_map_dvd_fraction_map hR₀_monic h)
-  have hS₂_ndvd : ¬ (R₀.map ι ∣ S₂.map ι) :=
-    fun h ↦ hS₂_ndvd' (hS₂_m.dvd_of_fraction_map_dvd_fraction_map hR₀_monic h)
-  refine ⟨R₀, hR₀_monic, hR₀_irr, e₁, e₂, S₁, S₂,
-    hS₁_m, hS₂_m, hS₁_ndvd, hS₂_ndvd, hX₁_eq, hX₂_eq, ?_⟩
-  rintro rfl
-  have hpow_dvd_g : R ^ e₁ ∣ g := by
-    have hd1 : R ^ e₁ ∣ X₁.map ι := by
-      rw [hX₁_eq, Polynomial.map_mul, Polynomial.map_pow, hR₀_map]
-      exact dvd_mul_right _ _
-    have hd2 : R ^ e₁ ∣ X₂.map ι := by
-      rw [hX₂_eq, Polynomial.map_mul, Polynomial.map_pow, hR₀_map]
-      exact dvd_mul_right _ _
-    exact hgcd (R ^ e₁) hd1 hd2
-  obtain ⟨g', rfl⟩ := hpow_dvd_g
-  have heq : R ^ e₁ * S₁.map ι = R ^ e₁ * (g' * A) := by
-    calc
-      R ^ e₁ * S₁.map ι = (R₀ ^ e₁ * S₁).map ι := by
-        rw [Polynomial.map_mul, Polynomial.map_pow, hR₀_map]
-      _ = X₁.map ι := by rw [← hX₁_eq]
-      _ = R ^ e₁ * (g' * A) := by rw [hgA, mul_assoc]
-  have hS₁_eq := mul_left_cancel₀ (pow_ne_zero e₁ hR_monic.ne_zero) heq
-  exact hS₁_ndvd (hR₀_map.symm ▸ hS₁_eq ▸ hR_dvd_A.mul_left g')
-
-private theorem exists_factor_ne_multiplicity {O K : Type*} [CommRing O]
-    [IsIntegrallyClosed O] [Field K] [Algebra O K] [IsFractionRing O K]
-    {P Q : O[X]} (hP : P.Monic) (hQ : Q.Monic) (hne : P ≠ Q) :
-    ∃ R₀ : O[X], R₀.Monic ∧ Irreducible (R₀.map (algebraMap O K)) ∧
-      ∃ e₁ e₂ : ℕ, ∃ S₁ S₂ : O[X], S₁.Monic ∧ S₂.Monic ∧
-        ¬ (R₀.map (algebraMap O K) ∣ S₁.map (algebraMap O K)) ∧
-        ¬ (R₀.map (algebraMap O K) ∣ S₂.map (algebraMap O K)) ∧
-        P = R₀ ^ e₁ * S₁ ∧ Q = R₀ ^ e₂ * S₂ ∧ e₁ ≠ e₂ := by
-  classical
-  let ι := algebraMap O K
-  have hne_K : P.map ι ≠ Q.map ι :=
-    fun h ↦ hne (map_injective ι (IsFractionRing.injective O K) h)
-  let g := EuclideanDomain.gcd (P.map ι) (Q.map ι)
-  obtain ⟨A, hA⟩ := EuclideanDomain.gcd_dvd_left (P.map ι) (Q.map ι)
-  obtain ⟨B, hB⟩ := EuclideanDomain.gcd_dvd_right (P.map ι) (Q.map ι)
-  have hnot : ¬ IsUnit A ∨ ¬ IsUnit B := by
-    by_contra! h
-    have h1 : Associated (P.map ι) g := hA ▸ (associated_mul_unit_right g A h.1).symm
-    have h2 : Associated (Q.map ι) g := hB ▸ (associated_mul_unit_right g B h.2).symm
-    exact hne_K (eq_of_monic_of_associated (hP.map ι) (hQ.map ι) (h1.trans h2.symm))
-  rcases hnot with hAn | hBn
-  · exact exists_factor_ne_multiplicity_aux hP hQ hA
-      (fun _ h1 h2 ↦ EuclideanDomain.dvd_gcd h1 h2) hAn
-  · obtain ⟨R₀, hR₀_m, hR₀_i, e₂, e₁, S₂, S₁,
-        hS₂_m, hS₁_m, hS₂_nd, hS₁_nd, hQ_eq, hP_eq, hne'⟩ :=
-      exists_factor_ne_multiplicity_aux hQ hP hB
-        (fun _ h1 h2 ↦ EuclideanDomain.dvd_gcd h2 h1) hBn
-    exact ⟨R₀, hR₀_m, hR₀_i, e₁, e₂, S₁, S₂,
-      hS₁_m, hS₂_m, hS₁_nd, hS₂_nd, hP_eq, hQ_eq, hne'.symm⟩
-
 /-- **Resultant recognition.** Let `O` be a discrete valuation ring with uniformizer `π`,
 and let `φ : D →+* O` be a ring homomorphism whose image is dense modulo every power `π ^ N`.
 If monic polynomials `P, Q : O[X]` have equal additive valuations
 `addVal O (P.resultant (ψ.map φ))` and `addVal O (Q.resultant (ψ.map φ))` for every monic
 `ψ : D[X]` such that both resultants are nonzero, then `P = Q`. -/
-theorem resultantRecognition {D O : Type*} [CommRing D] [CommRing O] [IsDomain O]
+theorem resultantRecognition {D O : Type*} [Semiring D] [CommRing O] [IsDomain O]
     [IsDiscreteValuationRing O] (φ : D →+* O) (π : O) (hπ : Irreducible π)
     (hφ : ∀ N : ℕ, ∀ o : O, ∃ d : D, o - φ d ∈ Ideal.span {π ^ N})
     (P Q : Polynomial O) (hP : P.Monic) (hQ : Q.Monic)
@@ -284,23 +151,20 @@ theorem resultantRecognition {D O : Type*} [CommRing D] [CommRing O] [IsDomain O
   let K := FractionRing O
   obtain ⟨R₀, hR₀_m, hR₀_irr, e₁, e₂, S₁, S₂,
       hS₁_m, hS₂_m, hS₁_nd, hS₂_nd, rfl, rfl, he⟩ :=
-    exists_factor_ne_multiplicity (K := K) hP hQ hne
+    hP.exists_factor_ne_multiplicity (K := K) hQ hne
   have hinj := IsFractionRing.injective O K
   have hd_pos : 0 < R₀.natDegree := by
     rw [← natDegree_map_eq_of_injective hinj]
     exact hR₀_irr.natDegree_pos
-  have hSR₁ : S₁.resultant R₀ ≠ 0 :=
+  have hSR (S : O[X]) (hS_nd : ¬ (R₀.map (algebraMap O K) ∣ S.map (algebraMap O K))) :
+      S.resultant R₀ ≠ 0 :=
     resultant_ne_zero_of_isCoprime_map (algebraMap O K)
       (natDegree_map_eq_of_injective hinj _) (natDegree_map_eq_of_injective hinj _)
-      (hR₀_irr.coprime_iff_not_dvd.mpr hS₁_nd).symm
-  have hSR₂ : S₂.resultant R₀ ≠ 0 :=
-    resultant_ne_zero_of_isCoprime_map (algebraMap O K)
-      (natDegree_map_eq_of_injective hinj _) (natDegree_map_eq_of_injective hinj _)
-      (hR₀_irr.coprime_iff_not_dvd.mpr hS₂_nd).symm
+      (hR₀_irr.coprime_iff_not_dvd.mpr hS_nd).symm
   obtain ⟨k₁, hk₁⟩ := ENat.ne_top_iff_exists.mp
-    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr hSR₁)
+    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr (hSR S₁ hS₁_nd))
   obtain ⟨k₂, hk₂⟩ := ENat.ne_top_iff_exists.mp
-    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr hSR₂)
+    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr (hSR S₂ hS₂_nd))
   have hslope (n : ℕ) (hn₁ : k₁ < n) (hn₂ : k₂ < n) :
       n * R₀.natDegree * e₁ + k₁ = n * R₀.natDegree * e₂ + k₂ := by
     let T : O[X] := R₀ + C (π ^ n)

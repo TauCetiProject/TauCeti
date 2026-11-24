@@ -362,11 +362,9 @@ theorem resultant_sub_mem_of_coeff_sub_mem (f : R[X]) {g ψ : R[X]} {I : Ideal R
     (hsub : ∀ i ≤ g.natDegree, (ψ - g).coeff i ∈ I) :
     f.resultant ψ - f.resultant g ∈ I := by
   set q := Ideal.Quotient.mk I
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero, ← resultant_map_map, ← hdeg,
-    ← resultant_map_map]
+  rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← resultant_map_map, ← hdeg, ← resultant_map_map]
   refine resultant_congr_of_coeff_eq (fun _ _ ↦ rfl) fun i hi ↦ ?_
-  simp only [coeff_map]
-  rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, ← coeff_sub]
+  rw [coeff_map, coeff_map, Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← coeff_sub]
   exact hsub i (hdeg ▸ hi)
 
 /-- **Resultant congruence modulo an arbitrary ideal for a monic left argument.** If `f` is monic
@@ -378,9 +376,9 @@ theorem Monic.resultant_sub_mem_of_coeff_sub_mem {f g ψ : R[X]} (hf : f.Monic)
   set q := Ideal.Quotient.mk I
   have hmap : ψ.map q = g.map q := by
     ext i
-    rw [coeff_map, coeff_map, ← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, ← coeff_sub]
+    rw [coeff_map, coeff_map, Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← coeff_sub]
     exact hsub i
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero]
+  rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem]
   rcases subsingleton_or_nontrivial (R ⧸ I) with _ | _
   · exact Subsingleton.elim _ _
   rw [← resultant_map_map, ← resultant_map_map, ← hf.natDegree_map q,
