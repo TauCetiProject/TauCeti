@@ -30,7 +30,7 @@ zero derivative but is not continuous across `0`.
 
 * `Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton`: the mean value inequality on
   `s ∖ {p}`.
-* `Convex.lipschitzOnWith_sdiff_singleton_of_nnnorm_fderiv_le`: the Lipschitz form.
+* `Convex.lipschitzOnWith_sdiff_singleton_of_nnNorm_fderiv_le`: the Lipschitz form.
 
 ## References
 
@@ -89,7 +89,7 @@ theorem Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton (hs : Convex 
 /-- **Lipschitz bound across a puncture.** In a real normed space of dimension greater than one,
 a function differentiable on `s ∖ {p}`, with `s` convex and open, and with `‖Df‖₊ ≤ C` there, is
 `C`-Lipschitz on `s ∖ {p}`. -/
-theorem Convex.lipschitzOnWith_sdiff_singleton_of_nnnorm_fderiv_le (hs : Convex ℝ s)
+theorem Convex.lipschitzOnWith_sdiff_singleton_of_nnNorm_fderiv_le (hs : Convex ℝ s)
     (hso : IsOpen s) (hE : 1 < Module.rank ℝ E) {C : ℝ≥0}
     (hf : ∀ z ∈ s \ {p}, DifferentiableAt ℝ f z) (bound : ∀ z ∈ s \ {p}, ‖fderiv ℝ f z‖₊ ≤ C) :
     LipschitzOnWith C f (s \ {p}) := by
