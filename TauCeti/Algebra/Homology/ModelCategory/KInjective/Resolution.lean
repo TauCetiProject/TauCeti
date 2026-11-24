@@ -33,12 +33,12 @@ modules over a sheaf of rings on a small site, which form a Grothendieck abelian
   family of monomorphic quasi-isomorphisms to which the small object argument applies, with the
   same right lifting property as all monomorphic quasi-isomorphisms.
 * `CochainComplex.monoQuasiIsoMapFactorizationDataRlp`: the functorial factorization.
-* `CochainComplex.injectiveReplacement` and `CochainComplex.ιInjectiveReplacement`: the resulting
-  functorial K-injective replacement, with its natural monomorphic quasi-isomorphism. A morphism is
-  a quasi-isomorphism exactly when its replacement is
-  (`CochainComplex.quasiIso_injectiveReplacement_map_iff`).
 * `TauCeti.hasKInjectiveResolutions_of_isGrothendieckAbelian`: Grothendieck abelian categories
   have K-injective resolutions.
+* `TauCeti.injectiveReplacement` and `TauCeti.ιInjectiveReplacement`: the resulting functorial
+  K-injective replacement, with its natural monomorphic quasi-isomorphism. A morphism is a
+  quasi-isomorphism exactly when its replacement is
+  (`TauCeti.quasiIso_injectiveReplacement_map_iff`).
 
 ## Implementation notes
 
@@ -137,6 +137,24 @@ instance (K : CochainComplex C ℤ) :
     IsKInjective (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).Z :=
   (injective_X_and_isKInjective_monoQuasiIsoMapFactorizationDataRlp_zero K).2
 
+end CochainComplex
+
+namespace TauCeti
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [IsGrothendieckAbelian.{w} C]
+
+/-- A Grothendieck abelian category has K-injective resolutions: every unbounded cochain complex
+admits a quasi-isomorphism into a K-injective complex. -/
+@[stacks 079P]
+instance hasKInjectiveResolutions_of_isGrothendieckAbelian : HasKInjectiveResolutions C where
+  exists_quasiIso_isKInjective K :=
+    ⟨_, (CochainComplex.monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).i, inferInstance,
+      inferInstance⟩
+
+section
+
+open CochainComplex
+
 /-- The morphism from a complex to zero, as a functor to the arrow category. -/
 private noncomputable def arrowToZero : CochainComplex C ℤ ⥤ Arrow (CochainComplex C ℤ) where
   obj K := Arrow.mk (0 : K ⟶ 0)
@@ -146,7 +164,7 @@ variable (C) in
 /-- The **functorial K-injective replacement** of unbounded complexes in a Grothendieck abelian
 category: the middle object of the functorial factorization of the morphism from a complex to zero.
 It is a K-injective complex of injective objects, receiving a monomorphic quasi-isomorphism
-`CochainComplex.ιInjectiveReplacement C` from the complex. -/
+`TauCeti.ιInjectiveReplacement C` from the complex. -/
 noncomputable def injectiveReplacement : CochainComplex C ℤ ⥤ CochainComplex C ℤ :=
   arrowToZero ⋙ (functorialFactorizationData
     (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ))
@@ -180,24 +198,13 @@ instance (K : CochainComplex C ℤ) : QuasiIso ((ιInjectiveReplacement C).app K
 
 /-- The replacement of a morphism of complexes is a quasi-isomorphism exactly when the morphism
 is. -/
+@[simp]
 theorem quasiIso_injectiveReplacement_map_iff {K L : CochainComplex C ℤ} (f : K ⟶ L) :
     QuasiIso ((injectiveReplacement C).map f) ↔ QuasiIso f := by
   rw [← quasiIso_iff_comp_left ((ιInjectiveReplacement C).app K),
     ← (ιInjectiveReplacement C).naturality f, Functor.id_map,
     quasiIso_iff_comp_right f ((ιInjectiveReplacement C).app L)]
 
-end CochainComplex
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [IsGrothendieckAbelian.{w} C]
-
-/-- A Grothendieck abelian category has K-injective resolutions: every unbounded cochain complex
-admits a quasi-isomorphism into a K-injective complex. -/
-@[stacks 079P]
-instance hasKInjectiveResolutions_of_isGrothendieckAbelian : HasKInjectiveResolutions C where
-  exists_quasiIso_isKInjective K :=
-    ⟨_, (CochainComplex.monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).i, inferInstance,
-      inferInstance⟩
+end
 
 end TauCeti

@@ -28,7 +28,7 @@ that it behaves like the localization functor at the quasi-isomorphisms:
   (`TauCeti.KInjectiveDGCategory.dgNerveHomotopyCategoryEquiv_functor_map_homMk_fromNerve`), so two
   maps of complexes give homotopic edges exactly when they agree in the derived category.
 
-The replacement is `CochainComplex.injectiveReplacement`, from the functorial factorization of the
+The replacement is `TauCeti.injectiveReplacement`, from the functorial factorization of the
 injective model structure on unbounded complexes: the morphism from a complex to zero factors as a
 monomorphic quasi-isomorphism into a K-injective complex of injective objects, followed by a
 fibration. Functoriality of the factorization is what allows the replacement to act on simplices
@@ -115,6 +115,12 @@ closed morphism `Cochain.ofHom` of its replacement. -/
       dgClosedHom_comp, dgClosedHom_dgClosedHomOf, dgClosedHom_dgClosedHomOf, dgCompZero_def,
       dgCompZero_def, DGFullSubcategory.dgComp_eq]
 
+/-- The replacement functor sends a complex to its K-injective replacement. -/
+@[simp]
+theorem replacementFunctor_obj (K : CochainComplex C ℤ) :
+    (replacementFunctor R C).obj K = ForgetEnrichment.of _ (replacement K) :=
+  rfl
+
 /-- The closed degree-zero morphism given by the replacement functor on a cochain map `f` is
 `Cochain.ofHom` of the replacement of `f`. -/
 @[simp]
@@ -178,7 +184,7 @@ theorem isEquivalence_edgeMk_map_fromNerve_iff {K L : CochainComplex C ℤ} (f :
 
 /-- **Every object of the K-injective enhancement is the image of a complex**, up to equivalence:
 a K-injective complex `K` is equivalent to its replacement through the quasi-isomorphism
-`CochainComplex.ιInjectiveReplacement`. Hence `TauCeti.KInjectiveDGCategory.fromNerve` is
+`TauCeti.ιInjectiveReplacement`. Hence `TauCeti.KInjectiveDGCategory.fromNerve` is
 essentially surjective on homotopy categories. -/
 instance essSurj_mapHomotopyCategory_fromNerve :
     (mapHomotopyCategory (fromNerve R C)).EssSurj := by
@@ -245,6 +251,23 @@ def fromNerveObjIso (K : CochainComplex C ℤ) :
         ((mapHomotopyCategory (fromNerve R C)).obj (HomotopyCategory.mk (nerveEquiv.symm K))) ≅
       Q.obj K :=
   objIsoOfEq R (fromNerve_app_nerveEquiv_symm R K)
+
+/-- The identification `TauCeti.KInjectiveDGCategory.fromNerveObjIso R K` identifies the image of
+`K` with the class of its K-injective replacement, and then applies `quotientCompQhIso` and the
+inverse of `DerivedCategory.Q` of the quasi-isomorphism from `K` to its replacement. -/
+theorem fromNerveObjIso_hom (K : CochainComplex C ℤ) :
+    (fromNerveObjIso R K).hom =
+      eqToHom ((congrArg (fun x ↦ (dgNerveHomotopyCategoryEquiv R C).functor.obj
+          (HomotopyCategory.mk x)) (fromNerve_app_nerveEquiv_symm R K)).trans (by
+            rw [dgNerveHomotopyCategoryEquiv_functor, Functor.comp_obj,
+              dgNerve.fromHomotopyCategory_obj_mk, Equiv.apply_symm_apply, toDerivedCategory_obj,
+              DGHomotopyCategory.underlying_of, Functor.comp_obj])) ≫
+        (quotientCompQhIso C).hom.app ((injectiveReplacement C).obj K) ≫
+          inv (Q.map ((ιInjectiveReplacement C).app K)) := by
+  simp only [fromNerveObjIso, objIsoOfEq, Iso.trans_hom, eqToIso.hom, Iso.app_hom, Iso.symm_hom,
+    asIso_inv]
+  -- The two transports differ only in how the class of the replacement of `K` is presented.
+  rfl
 
 /-- **The K-injective enhancement induces the localization functor on homotopy categories.**
 Under the identification of the homotopy category of the differential graded nerve of K-injective
