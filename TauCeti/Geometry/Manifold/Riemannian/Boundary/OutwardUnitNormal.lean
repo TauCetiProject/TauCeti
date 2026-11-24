@@ -251,10 +251,7 @@ theorem contMDiff_outwardUnitNormal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1))
   -- Near `q₀`, the normal is the unit gradient of minus the normal coordinate of the chart at `q₀`.
   let ψ : M → ℝ := fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) (q₀ : M) y).val 0
   have hψ : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) (k + 1) ψ q₀ :=
-    ((-EuclideanSpace.proj (0 : Fin (n + 1)) :
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).contMDiff.contMDiffAt.comp _
-        contMDiffAt_extChartAt).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ by
-          simp [ψ])
+    contMDiffAt_neg_chartAt_normal (mem_chart_source _ _)
   have hloc := (Manifold.contMDiffAt_normalize_mgradient hψ
     (mgradient_neg_chartAt_normal_ne_zero q₀.property (mem_chart_source _ _))).comp q₀
       ((isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M).contMDiff.contMDiffAt.of_le
