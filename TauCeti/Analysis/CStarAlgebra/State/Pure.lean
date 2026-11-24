@@ -54,9 +54,7 @@ theorem eq_of_mem_stateSpace_of_map_one_sub_eq_zero (hp : IsStarProjection p)
     rw [map_sub, map_one_of_mem_stateSpace hφ, sub_eq_zero] at hφp
     exact hφp.symm
   obtain ⟨f, -, hf⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hφf (x : A) : φ x = f x := by
-    rw [← hf, StrongDual.toWeakDual_apply, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
-      PositiveContinuousLinearMap.coe_ofClass]
+  have hφf (x : A) : φ x = f x := by simp [← hf]
   have hfq : f (1 - p) = 0 := by rw [← hφf, hφp]
   refine DFunLike.ext _ _ fun a ↦ ?_
   have ha : a * p = p * a * p + (1 - p) * (a * p) := by noncomm_ring
@@ -68,7 +66,7 @@ theorem eq_of_mem_stateSpace_of_map_one_sub_eq_zero (hp : IsStarProjection p)
     rw [hφf]
     exact PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero f
       (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq]) (a * p)
-  calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add, ← mul_add, add_sub_cancel, mul_one]
+  calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add]; congr 1; noncomm_ring
     _ = ω a := by rw [h₁, add_zero, ha]; simp [h₂, hpap, hφ1]
 
 /-- **Vector-type states are pure.** Let `ω` be a state and `p` a projection with `ω(p) = 1` and
