@@ -14,8 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 /-!
 # The sinc function: smoothness, nonnegativity and the scaled function `t ↦ t sinc (ω t)`
 
-`sinc` is real analytic, hence smooth: at the origin it is the slope `dslope sin 0` of an analytic
-function, and elsewhere it agrees with `sin x / x`.
+`sinc` is real analytic, hence smooth, since it is the slope `dslope sin 0` of the analytic
+function `sin`.
 
 `sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
@@ -32,18 +32,11 @@ degenerate frequency `0`. Together with `t ↦ cos (ω t)` it satisfies the subt
 
 public section
 
-open Filter
-
 namespace Real
 
 /-- The function `sinc` is real analytic at every point, including the origin. -/
 theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · obtain ⟨p, hp⟩ := analyticAt_sin (x := (0 : ℝ))
-    rw [sinc_eq_dslope]
-    exact ⟨_, hp.dslope_fslope⟩
-  · refine (analyticAt_sin.div analyticAt_id hx).congr ?_
-    filter_upwards [eventually_ne_nhds hx] with y hy using (sinc_of_ne_zero hy).symm
+  simpa only [sinc_eq_dslope] using (analyticAt_sin (x := x)).dslope 0
 
 /-- The function `sinc` is smooth, indeed analytic. -/
 theorem contDiff_sinc {n : WithTop ℕ∞} : ContDiff ℝ n sinc :=
