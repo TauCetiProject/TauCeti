@@ -239,10 +239,10 @@ private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
 
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
+  rw [← Submodule.zero_eq_bot]
   refine pow_eq_zero_of_le ht ?_
-  rw [forkSpan]
-  exact span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
-    (forkTurn_mul_self k hG (by omega)) (forkTurn_add_pow_eq_zero k hn hG)
+  rw [forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
+    (forkTurn_mul_self k hG (by omega)) (forkTurn_add_pow_eq_zero k hn hG), Submodule.zero_eq_bot]
 
 /-! ### Normal forms of paths -/
 
