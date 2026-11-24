@@ -400,18 +400,14 @@ theorem mem_iff_forall_conj_complexBasis_repr {ι : Type*} (b : Basis ι ℝ L) 
     simpa [← algebraMap_smul ℂ, Complex.conj_eq_iff_re.mp (h i)] using
       L.smul_mem ((hL.complexBasis b).repr x i).re (b i).property
 
-/-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
+/-- A complex-linear isomorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/
-theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-      (L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) := by
-  have hcomm : ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ).comp
-      ((A : E →ₗ[ℂ] E).restrictScalars ℝ) =
-        ((A : E →ₗ[ℂ] E).restrictScalars ℝ).comp
-          ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) :=
-    LinearMap.ext fun x => (A.map_smul Complex.I x).symm
-  rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
-  exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
+theorem map_linearEquiv {F : Type*} [AddCommGroup F] [Module ℝ F] [Module ℂ F]
+    [IsScalarTower ℝ ℂ F] (A : E ≃ₗ[ℂ] F) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ)
+      (L.map ((A : E →ₗ[ℂ] F).restrictScalars ℝ)) :=
+  ((A.restrictScalars ℝ).isMaximalTotallyReal_map_iff
+    (LinearMap.ext fun x => (A.map_smul Complex.I x).symm)).2 hL
 
 omit hL in
 /-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then

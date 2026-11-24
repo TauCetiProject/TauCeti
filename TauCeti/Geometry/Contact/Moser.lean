@@ -11,7 +11,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The horizontal contact-Moser equation
@@ -100,7 +100,8 @@ theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ 
         ((β m).val (b m))) m₀) :
     ContMDiffAt J I.tangent n
       (fun m ↦ (⟨b m, (α m).contactMoserVectorField (β m) (b m)⟩ : TangentBundle I M)) m₀ := by
-  have hR := contMDiffAt_sectionAlong_reebVectorField hc hα hdα
+  have hR := contMDiffAt_sectionAlong_reebVectorField
+    (hc.mono fun m hm ↦ isContactForm_iff_forall_isContactFormAt.1 hm (b m)) hα hdα
   have hβ₁ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := b) (α := β)).2 hβ
   -- The coefficient `β(R_α)`, read in the trivial line bundle.
   have hβR : ContMDiffAt J 𝓘(ℝ) n

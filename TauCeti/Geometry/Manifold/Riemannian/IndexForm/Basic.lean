@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The index form and integration by parts

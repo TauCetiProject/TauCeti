@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable
+public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable.Basic
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.BoundedPlus
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Stalk
 public import TauCeti.CategoryTheory.Exact.Stable.Autoequivalence
