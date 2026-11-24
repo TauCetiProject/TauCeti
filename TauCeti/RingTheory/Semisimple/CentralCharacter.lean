@@ -137,10 +137,11 @@ This is the hypothesis of `TauCeti.centralCharacterOfBijectiveAlgebraMap`. -/
 theorem bijective_algebraMap_center_end_of_isCentral [FaithfulSMul k M]
     [Algebra.IsCentral k (Module.End A M)] :
     Function.Bijective (algebraMap k (Subalgebra.center k (Module.End A M))) := by
-  refine ⟨fun _ _ hab => eq_of_smul_eq_smul (α := M) fun m => ?_, fun f => ?_⟩
-  · simpa using LinearMap.congr_fun (congrArg Subtype.val hab) m
-  · obtain ⟨c, hc⟩ := (Algebra.IsCentral.mem_center_iff k).1 f.property
-    exact ⟨c, Subtype.ext hc.symm⟩
+  have : FaithfulSMul k (Module.End A M) :=
+    (faithfulSMul_iff_algebraMap_injective k _).2 fun _ _ hab =>
+      eq_of_smul_eq_smul (α := M) fun m => by simpa using LinearMap.congr_fun hab m
+  convert (centerAlgEquivOfIsCentral k (Module.End A M)).symm.bijective
+  exact funext fun r => Subtype.ext (coe_centerAlgEquivOfIsCentral_symm k _ r).symm
 
 variable (h : Function.Bijective (algebraMap k (Subalgebra.center k (Module.End A M))))
 
