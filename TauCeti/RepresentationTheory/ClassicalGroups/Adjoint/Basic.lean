@@ -13,10 +13,10 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Subrepresentation
+import Mathlib.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
-import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.Data.Fintype.Fin
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
@@ -50,7 +50,7 @@ variable (K : Type*) [CommRing K] (n : ℕ)
 def matrixAdjointRep :
     Representation K (SpecialLinearGroup (Fin n) K) (Matrix (Fin n) (Fin n) K) :=
   ((Matrix.toLin' : Matrix (Fin n) (Fin n) K ≃ₗ[K]
-    Module.End K (Fin n → K)).symm.conjRingEquiv).toMulEquiv.toMonoidHom.comp
+    Module.End K (Fin n → K)).symm.conjAlgEquiv K).toAlgHom.toMonoidHom.comp
       (Representation.linHom (stdSLRep K n) (stdSLRep K n))
 
 /-- The transported action is conjugation by the determinant-one matrix. -/
@@ -59,17 +59,11 @@ theorem matrixAdjointRep_apply (g : SpecialLinearGroup (Fin n) K)
     (X : Matrix (Fin n) (Fin n) K) :
     matrixAdjointRep K n g X =
       (g : Matrix (Fin n) (Fin n) K) * X * (g⁻¹ : SpecialLinearGroup (Fin n) K) := by
-  let e : Matrix (Fin n) (Fin n) K ≃ₗ[K] Module.End K (Fin n → K) := Matrix.toLin'
-  apply e.injective
-  simp only [matrixAdjointRep, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv]
-  have h := LinearMap.congr_fun (e.symm.conjRingEquiv_apply_comp
-    (Representation.linHom (stdSLRep K n) (stdSLRep K n) g)) (e X)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] at h
-  rw [h, LinearEquiv.apply_symm_apply, Representation.linHom_apply]
-  dsimp only [e]
+  apply (Matrix.toLin' : Matrix (Fin n) (Fin n) K ≃ₗ[K]
+    Module.End K (Fin n → K)).injective
   rw [Matrix.toLin'_mul, Matrix.toLin'_mul]
-  simp only [stdSLRep_apply, Matrix.toLin'_apply', LinearMap.comp_assoc]
+  simp [matrixAdjointRep, LinearEquiv.conjAlgEquiv_apply, Representation.linHom_apply,
+    stdSLRep_apply, ← Matrix.toLin'_apply', LinearMap.comp_assoc]
 
 /-- Conjugation preserves the trace-zero submodule. -/
 def tracelessSubrep : Subrepresentation (matrixAdjointRep K n) where
