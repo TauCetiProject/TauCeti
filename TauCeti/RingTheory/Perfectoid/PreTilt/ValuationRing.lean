@@ -19,8 +19,9 @@ system `(xₙ)ₙ` of `p`-power roots of `x♯` in `V` given by `xₙ = (x ^ (1 
 modulo `p` is the `n`-th coordinate of `x`. Only this multiplicative description is used here; no
 perfectoid hypothesis is made.
 
-* If `V` is reduced, `x♯ = 0` forces every `xₙ` to vanish, so the sharp map detects zero.
-* If `V` is a domain, so is `V♭`.
+* If `V` is reduced, `x♯ = 0` forces every `xₙ` to vanish, so the sharp map detects zero, and if
+  `V` is a domain, so is `V♭` (`PreTilt.untilt_eq_zero_iff` and `PreTilt.instIsDomain` in
+  `TauCeti.RingTheory.Perfectoid.Untilt`).
 * If `V` is an integrally closed domain, divisibility in `V♭` is detected after untilting: if
   `x♯ ∣ y♯` with `x ≠ 0`, then `xₙ ^ p ^ n ∣ yₙ ^ p ^ n`, hence `xₙ ∣ yₙ`, and the quotients
   `yₙ / xₙ` form a compatible system of roots, that is, an element `z ∈ V♭` with `x z = y`.
@@ -41,9 +42,6 @@ valuation; here `V` is any `p`-adically complete domain.
 
 ## Main results
 
-* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`: for reduced `V`, `x♯ = 0` if and
-  only if `x = 0`.
-* `PreTilt.instIsDomain`: the tilt of a `p`-adically complete domain is a domain.
 * `PreTilt.untilt_dvd_untilt_iff`: for an integrally closed domain `V`, `x♯ ∣ y♯` if and only if
   `x ∣ y`.
 * `PreTilt.instValuationRing`: the tilt of a `p`-adically complete valuation ring is a valuation
@@ -64,27 +62,6 @@ namespace PreTilt
 
 variable {V : Type*} [CommRing V] {p : ℕ} [hp : Fact p.Prime] [Fact ¬IsUnit (p : V)]
   [IsAdicComplete (span {(p : V)}) V]
-
-/-- **The sharp map detects zero on the tilt of a reduced ring.** If `V` is reduced, then
-`x♯ = 0` only for `x = 0`. -/
-@[simp]
-theorem untilt_eq_zero_iff [IsReduced V] {x : PreTilt V p} : x.untilt = 0 ↔ x = 0 := by
-  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ untilt_zero⟩
-  have hn : untilt (((frobeniusEquiv (PreTilt V p) p).symm^[n]) x) = 0 :=
-    IsReduced.eq_zero _ ⟨p ^ n, by rw [untilt_iterate_frobeniusEquiv_symm_pow, h]⟩
-  rw [coeff_eq_mk_untilt_iterate, hn, map_zero, map_zero]
-
-/-- For reduced `V`, `x♯ ≠ 0` if and only if `x ≠ 0`. -/
-theorem untilt_ne_zero_iff [IsReduced V] {x : PreTilt V p} : x.untilt ≠ 0 ↔ x ≠ 0 :=
-  untilt_eq_zero_iff.not
-
-/-- **The tilt of a `p`-adically complete domain is a domain.** -/
-instance instIsDomain [IsDomain V] : IsDomain (PreTilt V p) :=
-  have : Nontrivial (PreTilt V p) := CharP.nontrivial_of_char_ne_one hp.out.ne_one
-  have : NoZeroDivisors (PreTilt V p) := ⟨fun {x y} hxy ↦ by
-    have h0 : x.untilt * y.untilt = 0 := by rw [← map_mul, hxy, untilt_zero]
-    simpa only [untilt_eq_zero_iff] using mul_eq_zero.mp h0⟩
-  NoZeroDivisors.to_isDomain _
 
 /-- Over an integrally closed domain, if `x♯ ∣ y♯` then `x ∣ y` in the tilt: the quotients of the
 `p`-power roots of `y♯` by those of `x♯` form a compatible system of roots. -/
