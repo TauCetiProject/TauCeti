@@ -296,12 +296,16 @@ private noncomputable def cotangentDetCanonicalCoords
     (cotangentDetCanonicalCoords (I := I) (M := M) b).symm w i =
       w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
   have h : (cotangentDetCanonicalCoords (I := I) (M := M) b).symm w =
-      (FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).symm
-        (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜 w) :=
-    ContinuousLinearEquiv.symm_trans_apply _ _ w
-  rw [h]
-  simp
-  rfl
+      fun _ ↦ w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
+    apply (cotangentDetCanonicalCoords (I := I) (M := M) b).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+    ext j
+    rw [cotangentDetCanonicalCoords_apply, FiniteRankBundleCore.detScalarEquiv_apply]
+    have : Subsingleton (Fin (canonicalCore I b M).rank) := by
+      rw [rank_canonicalCore]
+      infer_instance
+    exact congrArg w (Subsingleton.elim j _)
+  exact congrFun h i
 
 private theorem coordChange_comp_cotangentDetCanonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x₀ x₁ x : M}
@@ -443,8 +447,9 @@ noncomputable def cotangentDetCanonicalCoreDiffeomorph
     (u : Fin (cotangentCore I b M).det.rank → 𝕜) (i : Fin (canonicalCore I b M).rank) :
     (cotangentDetCanonicalCoreIso I b M).hom.fiberMap x u i =
       FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
-  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_hom]
-  rfl
+  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_hom,
+    ContinuousLinearEquiv.coe_coe]
+  exact cotangentDetCanonicalCoords_apply b u i
 
 /-- Every coordinate entry of `(cotangentDetCanonicalCoreIso I b M).inv.fiberMap x w` is the unique
 coordinate entry of `w` in `canonicalCore I b M`. -/
