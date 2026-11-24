@@ -699,8 +699,9 @@ variable {𝕜 A V : Type*} [CommRing 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCo
 `v ↦ (1 / m!) σ(v, …, v)` of degree `m` on `V`, where `σ` is the point commutator symbol
 `TauCeti.pointCommutatorSymbol φ hJ e D`. At the class of `a ∈ J` it is
 `(1 / m!) φ([⋯[D, a], …, a] 1)` with `m` copies of `a`. The normalization requires `m!` to be
-invertible in `𝕜`, which holds for every `m` in characteristic zero; when it is not, the point
-commutator symbol is the invariant to use instead. -/
+invertible in `𝕜`. This is automatic for every `m` when `𝕜` is a field of characteristic zero,
+but not over an arbitrary ring of characteristic zero such as `ℤ`; when `m!` is not invertible,
+the point commutator symbol is the invariant to use instead. -/
 noncomputable def pointPrincipalSymbol {m : ℕ} [Invertible (m.factorial : 𝕜)]
     (D : differentialOperators 𝕜 A A A m) (v : V) : 𝕜 :=
   ⅟(m.factorial : 𝕜) * pointCommutatorSymbol φ hJ e D fun _ ↦ v

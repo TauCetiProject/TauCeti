@@ -83,7 +83,8 @@ order at most one into such a derivation and multiplication by `D 1` is
   commutator or principal symbol at every point of a boundaryless manifold, exactly when it has
   order at most `m`.
 * `TauCeti.complexSmoothPrincipalSymbol_sum`, `TauCeti.complexSmoothPrincipalSymbol_congr`: the
-  principal symbol is additive over finite sums and depends only on the underlying operator.
+  principal symbol is additive over finite sums and, at a fixed order bound, depends only on the
+  underlying operator.
 * `TauCeti.complexSmoothPrincipalSymbol_eq_apply_one`: an operator `D` of order zero has principal
   symbol `(D 1)(x)`.
 * `TauCeti.complexSmoothPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of
