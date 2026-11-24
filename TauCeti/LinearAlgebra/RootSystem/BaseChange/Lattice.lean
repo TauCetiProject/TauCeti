@@ -589,13 +589,6 @@ noncomputable def unitTmulRootPairingEquiv :
 @[simp] theorem unitTmulRootPairingEquiv_indexEquiv :
     (D.unitTmulRootPairingEquiv S).indexEquiv = _root_.Equiv.refl ι := (rfl)
 
-private theorem isBaseChange_subtype_range_mk_one {R S M : Type*} [CommRing R] [CommRing S]
-    [Algebra R S] [FaithfulSMul R S] [AddCommGroup M] [Module R M] [Module.Flat R M] :
-    IsBaseChange S (LinearMap.range (TensorProduct.mk R S M 1)).subtype :=
-  IsBaseChange.of_equiv ((TensorProduct.unitTmulEquiv R S M).symm.baseChange R S _ M) fun x ↦ by
-    rw [LinearEquiv.baseChange_tmul, ← TensorProduct.coe_unitTmulEquiv_apply,
-      LinearEquiv.apply_symm_apply, Submodule.coe_subtype]
-
 /-- **Scalar extension identifies `D.Aut` with the unit-tensor lattice stabilizer in
 `(D.baseChange S).Aut`.** -/
 noncomputable def autMulEquivLatticeAutBaseChange :
@@ -606,7 +599,8 @@ noncomputable def autMulEquivLatticeAutBaseChange :
     .equiv (TensorProduct.unitTmulEquiv R S Y)
   (D.unitTmulRootPairingEquiv S).autCongr.trans
     ((D.isDualLatticePair_range_mk_one S).autMulEquiv
-      isBaseChange_subtype_range_mk_one isBaseChange_subtype_range_mk_one)
+      TensorProduct.isBaseChange_subtype_range_mk_one
+      TensorProduct.isBaseChange_subtype_range_mk_one)
 
 /-- Coercing `D.autMulEquivLatticeAutBaseChange S g` to `(D.baseChange S).Aut` is
 `D.autBaseChangeHom S g`. -/

@@ -58,8 +58,9 @@ variable (e : M ≃ₗ[R] M) (hroot : ∀ i, e (P.root i) = P.root i)
   (hcoroot : ∀ i x, P.coroot' i (e x) = P.coroot' i x)
 
 /-- **Compatible central automorphism** attached to any linear automorphism `e : M ≃ₗ[R] M` that
-fixes every root and preserves every coroot functional (equivalently `e x - x` lies in the common
-coroot kernel `⨅ i, ker (P.coroot' i)`). No direct-sum splitting of `M` is assumed. -/
+fixes every root and preserves every coroot functional (the latter is equivalent to `e x - x`
+lying in the common coroot kernel `⨅ i, ker (P.coroot' i)` for every `x`). No direct-sum
+splitting of `M` is assumed. -/
 noncomputable def Equiv.ofFixRootCoroot : P.Aut :=
   let eN : N ≃ₗ[R] N := P.flip.toPerfPair ≪≫ₗ e.dualMap ≪≫ₗ P.flip.toPerfPair.symm
   { weightMap := e.toLinearMap

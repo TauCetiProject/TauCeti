@@ -161,7 +161,7 @@ theorem mem_closure_image_iff {M₀ M : Type*} [AddZeroClass M₀] [AddZeroClass
   AddMonoidHom.map_mclosure f s ▸ AddSubmonoid.mem_map_iff_mem hf
 
 /-- An additive homomorphism carries `x ∈ AddSubmonoid.closure s ∨ -x ∈ AddSubmonoid.closure s`
-into `AddSubmonoid.closure (f '' s)`. -/
+into `f x ∈ AddSubmonoid.closure (f '' s) ∨ -f x ∈ AddSubmonoid.closure (f '' s)`. -/
 theorem map_mem_closure_image_or_neg_mem {M₀ M : Type*} [AddGroup M₀] [SubtractionMonoid M]
     (f : M₀ →+ M) {s : Set M₀} {x : M₀}
     (hx : x ∈ AddSubmonoid.closure s ∨ -x ∈ AddSubmonoid.closure s) :
