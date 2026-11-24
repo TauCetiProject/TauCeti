@@ -47,6 +47,8 @@ is weakly regular on `M ⧸ xⁿ M`, and this gives `m ∈ (x, ys) M`.
 * `RingTheory.Sequence.isWeaklyRegular_of_exact`: weak regularity is closed under extensions.
 * `RingTheory.Sequence.IsWeaklyRegular.pow_cons`: raising the first element of a weakly regular
   sequence to a positive power keeps it weakly regular.
+* `RingTheory.Sequence.IsWeaklyRegular.mem_smul_top_sup_of_pow_smul_mem`: if `ys` is weakly
+  regular on `M ⧸ xᵏ M` and `x` is `M`-regular, then `((xᵏ⁺¹, ys) M : xᵏ) ⊆ (x, ys) M`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_prod_pow_smul_mem`: the monomial
   property of a weakly regular sequence.
 * `RingTheory.Sequence.IsRegular.not_prod_pow_smul_top_le`: `(x₁ ⋯ x_d)ⁿ M ⊄ (x₁ⁿ⁺¹, …, x_dⁿ⁺¹) M`
@@ -104,10 +106,10 @@ theorem IsWeaklyRegular.pow_cons {x : R} {ys : List R} (h : IsWeaklyRegular M (x
     exact isWeaklyRegular_of_exact (QuotSMulTop.mulPow_injective h.1 (j + 1))
       (QuotSMulTop.exact_mulPow x (j + 1)) (factor_surjective _) h.2 (ih (Nat.succ_ne_zero j))
 
-/-- The colon step of the monomial property: if `x` is `M`-regular and `ys` is weakly regular on
-`M ⧸ xᵏ M`, then `xᵏ m ∈ (xᵏ⁺¹, ys) M` implies `m ∈ (x, ys) M`. -/
-private theorem mem_sup_of_pow_smul_mem {x : R} (hx : IsSMulRegular M x) {ys : List R} {k : ℕ}
-    (hys : IsWeaklyRegular (QuotSMulTop (x ^ k) M) ys) {m : M}
+/-- **A colon-ideal inclusion.** If `ys` is weakly regular on `M ⧸ xᵏ M` and `x` is `M`-regular,
+then `((xᵏ⁺¹, ys) M : xᵏ) ⊆ (x, ys) M`: `xᵏ m ∈ (xᵏ⁺¹, ys) M` implies `m ∈ (x, ys) M`. -/
+theorem IsWeaklyRegular.mem_smul_top_sup_of_pow_smul_mem {x : R} {ys : List R} {k : ℕ}
+    (hys : IsWeaklyRegular (QuotSMulTop (x ^ k) M) ys) (hx : IsSMulRegular M x) {m : M}
     (hm : x ^ k • m ∈ x ^ (k + 1) • (⊤ : Submodule R M) ⊔ Ideal.ofList ys • ⊤) :
     m ∈ x • ⊤ ⊔ Ideal.ofList ys • (⊤ : Submodule R M) := by
   -- Reduce `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M` modulo `ys`; it stays exact on the left.
@@ -146,8 +148,8 @@ theorem IsWeaklyRegular.mem_ofList_smul_top_of_prod_pow_smul_mem {xs : List R}
     -- Now `xⁿ m ∈ (xⁿ⁺¹, ys) M`; cancel `xⁿ` using the weak regularity of `ys` on `M ⧸ xⁿ M`.
     rcases n.eq_zero_or_pos with rfl | hn
     · simpa using hmem
-    · exact mem_sup_of_pow_smul_mem hx
-        ((isWeaklyRegular_cons_iff M _ ys).1 (h.pow_cons hn.ne')).2 hmem
+    · exact ((isWeaklyRegular_cons_iff M _ ys).1
+        (h.pow_cons hn.ne')).2.mem_smul_top_sup_of_pow_smul_mem hx hmem
 
 /-- **The monomial property of regular sequences.** If `x₁, …, x_d` is a regular sequence on `M`,
 then `(x₁ ⋯ x_d)ⁿ M ⊄ (x₁ⁿ⁺¹, …, x_dⁿ⁺¹) M` for every `n`. -/
