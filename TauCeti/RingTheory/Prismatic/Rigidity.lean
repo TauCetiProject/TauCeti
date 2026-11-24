@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Ideal.TensorProduct
 public import TauCeti.RingTheory.PicardGroup.Submodule
 public import TauCeti.RingTheory.Prismatic.Prism
 
@@ -22,7 +23,8 @@ in `B` and argues one maximal ideal `m` at a time. An invertible ideal `J` is pr
 there are `e ∈ J` and `s ∉ m` with `s J ⊆ (e)` (`Ideal.exists_mul_mem_span_singleton`).
 If `K = I B` were smaller than `J` at `m`, then `s K ⊆ e m`, and `p ∈ K + φ(K) B` gives an
 equation `p w = e c` with `w ∉ m` and `c ∈ m`. Applying `δ`, the left side is `w ^ p` modulo `m`
-(as `δ p = 1 - p ^ (p - 1)`) while the right side lies in `m`, a contradiction.
+(as `δ p = 1 - p ^ (p - 1)`) while the right side lies in `m`, a contradiction
+(`TauCeti.DeltaRing.natCast_mul_ne_mul`).
 
 The argument uses only that `J` is invertible, that `J` and `p` lie in the Jacobson radical of
 `B`, and that `p ∈ K + φ(K) B`; this is
@@ -35,7 +37,7 @@ The argument uses only that `J` is invertible, that `J` and `p` lie in the Jacob
   equals `J`.
 * `TauCeti.Prism.map_ideal_eq`: **rigidity**, `f(I) B = J` for a map of prisms `(A, I) → (B, J)`.
 * `TauCeti.Prism.tensorIdealEquiv`: the isomorphism `B ⊗[A] I ≃ J` of `B`-modules, from
-  `Ideal.tensorToIdeal_bijective`, as `I` and `J` are invertible.
+  `Ideal.liftBaseChange_idealMap_bijective_of_invertible`, as `I` and `J` are invertible.
 * `TauCeti.Prism.eq_of_ideal_le`: prism structures on one `δ`-ring with comparable ideals are equal.
 
 ## References
@@ -52,29 +54,6 @@ open DeltaRing TensorProduct
 
 variable {p : ℕ} [hpf : Fact p.Prime] {A B : Type*} [CommRing A] [CommRing B] [DeltaRing p A]
   [DeltaRing p B]
-
-/-- If `p` lies in a prime ideal `m` of a `δ`-ring, then `p w ≠ e c` for `e, c ∈ m` and `w ∉ m`:
-applying `δ`, the left side is `w ^ p` modulo `m` (as `δ p = 1 - p ^ (p - 1)`), while the right
-side lies in `m`. -/
-theorem DeltaRing.natCast_mul_ne_mul {m : Ideal B} [hm : m.IsPrime] (hpm : (p : B) ∈ m)
-    {e c w : B} (hem : e ∈ m) (hcm : c ∈ m) (hwm : w ∉ m) : (p : B) * w ≠ e * c := by
-  intro hpw
-  have hR : delta p (e * c) ∈ m := by
-    rw [delta_mul]
-    exact m.add_mem (m.add_mem (m.mul_mem_right _ (m.pow_mem_of_mem hem _ hpf.out.pos))
-      (m.mul_mem_right _ (m.pow_mem_of_mem hcm _ hpf.out.pos)))
-      (m.mul_mem_right _ (m.mul_mem_right _ hpm))
-  have hp1 : (p : B) ^ (p - 1) ∈ m := m.pow_mem_of_mem hpm _ (Nat.sub_pos_of_lt hpf.out.one_lt)
-  have hL : delta p ((p : B) * w) - w ^ p ∈ m := by
-    have : delta p ((p : B) * w) - w ^ p = (p : B) ^ p * delta p w -
-        w ^ p * (p : B) ^ (p - 1) + p * (1 - (p : B) ^ (p - 1)) * delta p w := by
-      rw [delta_mul, delta_natCast_self]
-      ring
-    rw [this]
-    exact m.add_mem (m.sub_mem (m.mul_mem_right _ (m.pow_mem_of_mem hpm _ hpf.out.pos))
-      (m.mul_mem_left _ hp1)) (m.mul_mem_right _ (m.mul_mem_right _ hpm))
-  rw [hpw] at hL
-  exact hwm (hm.mem_of_pow_mem p (by simpa using m.sub_mem hR hL))
 
 /-- Let `m` be a prime ideal of a `δ`-ring containing `p` and `e`, and `K` an ideal with
 `s K ⊆ e m` for some `s ∉ m`. Then `p ∉ K + φ(K) B`. -/
@@ -105,7 +84,7 @@ private theorem DeltaRing.natCast_notMem_sup_map_frobenius {m K : Ideal B} [hm :
   obtain ⟨a, ha, rfl⟩ := Ideal.mem_span_singleton_mul.mp hy
   obtain ⟨b, hb, rfl⟩ := Ideal.mem_span_singleton_mul.mp hz
   -- Rewrite as `p w = e c` with `w ∉ m` and `c ∈ m`.
-  refine natCast_mul_ne_mul hpm hem (m.add_mem ha (m.mul_mem_left (e ^ (p - 1)) hb))
+  refine natCast_mul_ne_mul hm.isRadical hpm hem (m.add_mem ha (m.mul_mem_left (e ^ (p - 1)) hb))
     (w := v - delta p e * b) (fun h ↦ hm.mul_notMem hs hφs ?_) ?_
   · simpa [v] using m.add_mem h (m.mul_mem_left (delta p e) hb)
   · have he : e ^ p = e * e ^ (p - 1) := by
@@ -129,11 +108,11 @@ theorem DeltaRing.eq_of_le_of_natCast_mem_sup_map_frobenius {K J : Ideal B}
   obtain ⟨e, heJ, s, hs, hse⟩ := Ideal.exists_mul_mem_span_singleton J m
   refine natCast_notMem_sup_map_frobenius (hjm hp) (hjm (hJ heJ)) hs (fun k hk ↦ ?_) hK
   -- Near `m`, `K` lies in `e m`: otherwise `(K : J)` would contain an element outside `m`.
-  obtain ⟨c, hc⟩ := hse k (hKJ hk)
-  refine ⟨c, by_contra fun hcm ↦ hm.isPrime.mul_notMem hcm hs (hCm ?_), by rw [hc, mul_comm]⟩
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (hse k (hKJ hk))
+  refine ⟨c, by_contra fun hcm ↦ hm.isPrime.mul_notMem hcm hs (hCm ?_), by rw [← hc, mul_comm]⟩
   refine Submodule.mem_colon.mpr fun y hy ↦ ?_
-  obtain ⟨c', hc'⟩ := hse y hy
-  have : c * s * y = c' * (s * k) := by rw [hc, mul_assoc, hc']; ring
+  obtain ⟨c', hc'⟩ := Ideal.mem_span_singleton'.mp (hse y hy)
+  have : c * s * y = c' * (s * k) := by rw [← hc, mul_assoc, ← hc']; ring
   rw [smul_eq_mul, this, ← mul_assoc]
   exact K.mul_mem_left _ hk
 
@@ -159,22 +138,27 @@ section BaseChange
 variable [Algebra A B] (P : Prism p A) (Q : Prism p B)
   (h : P.ideal.map (algebraMap A B) ≤ Q.ideal)
 
+include Q h in
 /-- **Rigidity of maps of prisms**, tensor form (Bhatt and Scholze, Lemma 3.5). For a map of
-prisms `(A, I) → (B, J)` given by a `δ`-algebra `B` over `A`, the natural map `B ⊗[A] I → J` is
+prisms `(A, I) → (B, J)` given by a `δ`-algebra `B` over `A`, the natural map `B ⊗[A] I → I B` is
 an isomorphism of `B`-modules. -/
-theorem tensorToIdeal_bijective (hf : IsDeltaMap p (algebraMap A B)) :
-    Function.Bijective (P.ideal.tensorToIdeal Q.ideal h) :=
-  Ideal.tensorToIdeal_bijective (map_ideal_eq P Q hf h)
+theorem liftBaseChange_idealMap_bijective (hf : IsDeltaMap p (algebraMap A B)) :
+    Function.Bijective ((Algebra.idealMap B P.ideal).liftBaseChange B) := by
+  have : Module.Invertible B (P.ideal.map (algebraMap A B)) := by
+    rw [map_ideal_eq P Q hf h]
+    infer_instance
+  exact Ideal.liftBaseChange_idealMap_bijective_of_invertible B P.ideal
 
 /-- **Rigidity of maps of prisms**, tensor form: the isomorphism `B ⊗[A] I ≃ J` of a map of
 prisms `(A, I) → (B, J)` given by a `δ`-algebra `B` over `A`. -/
 noncomputable def tensorIdealEquiv (hf : IsDeltaMap p (algebraMap A B)) :
     B ⊗[A] P.ideal ≃ₗ[B] Q.ideal :=
-  .ofBijective _ (tensorToIdeal_bijective P Q h hf)
+  .ofBijective _ (liftBaseChange_idealMap_bijective P Q h hf) ≪≫ₗ
+    .ofEq _ _ (map_ideal_eq P Q hf h)
 
 @[simp]
 theorem tensorIdealEquiv_apply (hf : IsDeltaMap p (algebraMap A B)) (x : B ⊗[A] P.ideal) :
-    tensorIdealEquiv P Q h hf x = P.ideal.tensorToIdeal Q.ideal h x := by
+    (tensorIdealEquiv P Q h hf x : B) = (Algebra.idealMap B P.ideal).liftBaseChange B x := by
   simp [tensorIdealEquiv]
 
 end BaseChange
