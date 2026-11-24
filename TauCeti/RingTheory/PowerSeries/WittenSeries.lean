@@ -66,6 +66,8 @@ over the factors `n ∣ N` gives the divisor sum `σ₂ₖ₋₁(N)`.
   `(1 + (-1)ʲ) Gⱼ(q) / j!` for `j ≥ 1`.
 * `TauCeti.coeff_two_mul_logOf_wittenSeries`: the `x²ᵏ`-coefficient of `log Q` is
   `2 G₂ₖ(q) / (2k)!` for `k ≥ 1`.
+* `TauCeti.coeff_two_mul_logOf_aHatSeries`: at `q = 0`, the `x²ᵏ`-coefficient of `log Â` is
+  `2 G₂ₖ(0) / (2k)!`.
 * `TauCeti.coeff_logOf_wittenSeries_of_odd`: the odd coefficients of `log Q` vanish.
 
 ## References
@@ -352,6 +354,21 @@ theorem coeff_two_mul_logOf_wittenSeries {k : ℕ} (hk : k ≠ 0) :
       (2 / (2 * k) ! : ℚ) • eisensteinGSeries A (2 * k) := by
   rw [coeff_logOf_wittenSeries A (by omega), (even_two_mul k).neg_one_pow]
   norm_num
+
+/-- **The `q⁰`-part of `log Q`**: the `x²ᵏ`-coefficient of `log Â(x)` is `2 G₂ₖ(0) / (2k)!`.
+For `k = 1, 2` this gives `TauCeti.coeff_two_logOf_aHatSeries` and
+`TauCeti.coeff_four_logOf_aHatSeries`, by `TauCeti.constantCoeff_eisensteinGSeries_two` and
+`TauCeti.constantCoeff_eisensteinGSeries_four`. -/
+theorem coeff_two_mul_logOf_aHatSeries (k : ℕ) :
+    coeff (2 * k) (logOf (aHatSeries A)) =
+      (2 / (2 * k) ! : ℚ) • constantCoeff (eisensteinGSeries A (2 * k)) := by
+  rw [coeff_logOf_aHatSeries A (by omega), constantCoeff_eisensteinGSeries, Algebra.smul_def,
+    ← map_mul]
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · congr 1
+    push_cast
+    field_simp
 
 /-- The odd coefficients of the logarithm of the characteristic series vanish: `Q` is even
 in `x`. -/
