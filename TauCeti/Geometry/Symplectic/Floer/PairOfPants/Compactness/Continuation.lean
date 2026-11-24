@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Continuation
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -457,19 +456,18 @@ theorem
         (u k)) Ω := fun z hz ↦
     ω.floerEnergyDensity_congr_perturbation _ (hKL k (hΩT hz) 1).symm (hKL k (hΩT hz) I).symm
   -- The energy densities are continuous and nonnegative on `Ω`, so integrable there.
-  have hint (k : ℕ) := TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    ((ω.continuousOn_floerEnergyDensity hΩ ((hu k).of_le (by norm_num))
-      (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
-        (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
-        (hTS (hΩT hy.1)) y.2 1).contDiffWithinAt)
-      (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
-        (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
-        (hTS (hΩT hy.1)) y.2 I).contDiffWithinAt)).aestronglyMeasurable hΩ.measurableSet)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJt _ (hLC k) z (hΩT hz) _ (huK k hz)) (hfl k z hz))
-    (hE k)
+  have hint (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
+    ((hu k).of_le (by norm_num))
+    (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
+      (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
+      (hTS (hΩT hy.1)) y.2 1).contDiffWithinAt)
+    (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
+      (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
+      (hTS (hΩT hy.1)) y.2 I).contDiffWithinAt)
+    (fun z hz ↦ hJt _ (hLC k) z (hΩT hz) _ (huK k hz)) (hfl k) (hE k)
   obtain ⟨φ, -, Z, v, hφ, -, -, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
-    hconv (p := p) hΩ hΩT (fun k ↦ show e (p k) ∈ C by rw [hp]; exact hLC k) hu
+    hconv (p := p) hΩ hΩT (fun k ↦ by
+      rw [mem_preimage, ContinuousLinearEquiv.coe_toHomeomorph, hp]; exact hLC k) hu
       (fun k z hz ↦ by
         have h := hfl k z hz
         rwa [← hp, ω.perturbedFDeriv_congr _ (hKL k (hΩT hz) 1) (hKL k (hΩT hz) I)] at h)
@@ -560,21 +558,18 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
       (φ := fun w ↦ positiveEndChart q (w + (L k q, 0))) hΩ.measurableSet
       ((injOn_positiveEndChart q t₀).comp (add_left_injective _).injOn
         fun w hw ↦ ⟨mem_univ _, by simpa using (hΩI hw).2⟩)
-      (fun w _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).comp w
-        (differentiableAt_id.add_const _))
+      (fun w _ ↦ (hasFDerivAt_positiveEndChart_add q (L k q, 0) w).differentiableAt)
       fun w hw ↦ by
-        rw [fderiv_comp_add_right, abs_of_pos (det_fderiv_positiveEndChart_pos q _)]
+        rw [(hasFDerivAt_positiveEndChart_add q (L k q, 0) w).fderiv,
+          abs_of_pos (det_fderiv_positiveEndChart_pos q _)]
         exact ω.floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add hG hH
           (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num))
           (hΩL k w hw) ((hu k w hw).differentiableAt (by norm_num))]
     exact hE k
   -- The energy densities are continuous and nonnegative on `Ω`, so integrable there.
-  have hint (k : ℕ) := TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    ((ω.continuousOn_floerEnergyDensity hΩ ((hv k).of_le (by norm_num)) contDiffOn_const
-      (hC'.of_le (by norm_num)).contDiffOn).aestronglyMeasurable hΩ.measurableSet)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun w hw ↦
-      ω.floerEnergyDensity_nonneg (hJt w (hΩD hw) _ (huK k hw)) (hfl' k w hw))
-    (hEΩ k)
+  have hint (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
+    ((hv k).of_le (by norm_num)) contDiffOn_const (hC'.of_le (by norm_num)).contDiffOn
+    (fun w hw ↦ hJt w (hΩD hw) _ (huK k hw)) (hfl' k) (hEΩ k)
   exact hconv hΩ hΩD hv hfl' huK (fun k ↦ (hint k).1) fun k ↦ (hint k).2
 
 end TauCeti.SymplecticForm

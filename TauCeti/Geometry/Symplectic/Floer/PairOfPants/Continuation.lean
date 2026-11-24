@@ -468,12 +468,6 @@ theorem perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbatio
   simp [← mul_assoc, continuationHomotopy_def, positiveEndHamiltonian_apply, h1]
   ring
 
-/-- The positive end chart of `q` translated by `c` is differentiable. -/
-private theorem differentiableAt_positiveEndChart_add (q : Puncture) (c : ℝ) (w : ℝ × ℝ) :
-    DifferentiableAt ℝ (fun w ↦ positiveEndChart q (w + (c, 0))) w :=
-  ((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).comp w
-    (differentiableAt_id.add_const _)
-
 end Necks
 
 end Floer
@@ -848,11 +842,11 @@ theorem isComplexLinearMap_perturbedMFDeriv_continuationHomotopy_comp_positiveEn
   rw [perturbedMFDeriv_comp_positiveEndChart_add_eq ω hG hH u hw]
   refine ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback (u := u)
     (φ := fun w ↦ positiveEndChart q (w + (L q, 0)))
-    (differentiableAt_positiveEndChart_add q (L q) w) hu
+    (hasFDerivAt_positiveEndChart_add q (L q, 0) w).differentiableAt hu
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ 1)
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ Complex.I) ?_
     hfloer
-  rw [fderiv_comp_add_right]
+  rw [(hasFDerivAt_positiveEndChart_add q (L q, 0) w).fderiv]
   exact isComplexLinearMap_fderiv_positiveEndChart q _
 
 /-- **The energy density of a neck, for a manifold target.** Where `w.1 + L_q ≥ 2`, the energy
@@ -881,10 +875,10 @@ theorem floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add
       pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦
       pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (differentiableAt_positiveEndChart_add q (L q) w) hu
+    (hasFDerivAt_positiveEndChart_add q (L q, 0) w).differentiableAt hu
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ 1)
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ Complex.I)
-  rw [fderiv_comp_add_right] at h
+  rw [(hasFDerivAt_positiveEndChart_add q (L q, 0) w).fderiv] at h
   rw [← h]
   simp only [floerEnergyDensity_def, Function.comp_def,
     perturbedMFDeriv_comp_positiveEndChart_add_eq ω hG hH u hw]
@@ -914,8 +908,10 @@ theorem setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChar
     (φ := fun w ↦ positiveEndChart q (w + (L q, 0))) hs
     ((injOn_positiveEndChart q t₀).comp (add_left_injective _).injOn
       fun w hw ↦ ⟨mem_univ _, by simpa using (hsI hw).2⟩)
-    (fun w _ ↦ differentiableAt_positiveEndChart_add q (L q) w) fun w hw ↦ ?_).symm
-  rw [fderiv_comp_add_right, abs_of_pos (det_fderiv_positiveEndChart_pos q _), smul_eq_mul,
+    (fun w _ ↦ (hasFDerivAt_positiveEndChart_add q (L q, 0) w).differentiableAt)
+    fun w hw ↦ ?_).symm
+  rw [(hasFDerivAt_positiveEndChart_add q (L q, 0) w).fderiv,
+    abs_of_pos (det_fderiv_positiveEndChart_pos q _), smul_eq_mul,
     ω.floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add hG hH hGs hHs (hsL w hw)
       (hu w hw)]
 
