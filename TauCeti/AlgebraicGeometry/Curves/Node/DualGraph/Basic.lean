@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 public import TauCeti.AlgebraicGeometry.Curves.Node.Normalization
-public import TauCeti.AlgebraicGeometry.Curves.Prestable
 public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
@@ -97,10 +96,6 @@ variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 variable (K) in
 private theorem atWorstNodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)) :=
   PrestableFamily.atWorstNodalOfRelativeDimensionOne
-
-/-- The blowup of a prestable curve along its singular subscheme is regular. -/
-private instance isRegular_blowup : IsRegular (X.singularLocus K).blowup :=
-  X.isRegular_blowup_singularLocus (atWorstNodal K X)
 
 /-- An irreducible component of the blowup of a prestable curve along its singular subscheme, as
 an open subscheme: the blowup is regular, so its irreducible components are disjoint and open. Each
