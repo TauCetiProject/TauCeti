@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import Mathlib.Data.Fin.Tuple.Sort
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
@@ -239,15 +240,6 @@ section Split
 variable {q : QuadraticForm R M}
 
 omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- An element of the span of a linearly independent family is the sum of its coordinates in the
-basis `Basis.span` times the family. -/
-private theorem coe_eq_sum_span_equivFun {ι : Type*} [Fintype ι] {v : ι → M}
-    (hv : LinearIndependent R v) (y : Submodule.span R (Set.range v)) :
-    (y : M) = ∑ i, (Basis.span hv).equivFun y i • v i := by
-  conv_lhs => rw [← (Basis.span hv).sum_equivFun y]
-  simp only [Submodule.coe_sum, Submodule.coe_smul, Basis.span_apply]
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
 /-- Vectors of a submodule are orthogonal for the polar pairing to vectors of its orthogonal
 complement. -/
 private theorem polar_eq_zero_of_mem_orthogonal {S : Submodule R M} {x y : M} (hx : x ∈ S)
@@ -261,7 +253,7 @@ private theorem hasAtomicDecomposition_span_singleton (hπ : Irreducible π) {v 
     HasAtomicDecomposition π (q.comp (Submodule.span R (Set.range ![v])).subtype) := by
   let b := Basis.span hv
   have hy (y : Submodule.span R (Set.range ![v])) : (y : M) = b.equivFun y 0 • v := by
-    rw [coe_eq_sum_span_equivFun hv y, Fin.sum_univ_one, Matrix.cons_val_zero]
+    rw [Module.Basis.coe_eq_sum_span_equivFun hv y, Fin.sum_univ_one, Matrix.cons_val_zero]
   by_cases hq : q v = 0
   · exact .of_forall_eq_zero π b fun y ↦ by
       rw [comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_smul, hq, smul_zero]
@@ -336,7 +328,7 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
   let b := Basis.span hli
   have hy (y : Submodule.span R (Set.range ![u, w])) :
       (y : M) = b.equivFun y 0 • u + b.equivFun y 1 • w := by
-    rw [coe_eq_sum_span_equivFun hli y, Fin.sum_univ_two, Matrix.cons_val_zero,
+    rw [Module.Basis.coe_eq_sum_span_equivFun hli y, Fin.sum_univ_two, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_zero]
   refine .of_isAtomic (m := m) (Q := QuadraticMap.weightedSumSquares R ![ε * a₀, ε * (a₀ * k)] +
       (ε * b₀) • QuadraticMap.linMulLin (LinearMap.proj 0) (LinearMap.proj 1))
