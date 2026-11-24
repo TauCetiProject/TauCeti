@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
+public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Isometry
 public import TauCeti.Analysis.CStarAlgebra.Lift
 
 /-!
@@ -14,8 +14,7 @@ public import TauCeti.Analysis.CStarAlgebra.Lift
 A linear map `φ : A → B` between C⋆-algebras is a **complete quotient map** when every matrix
 amplification `φₙ : M_n(A) → M_n(B)` maps the open unit ball of `M_n(A)` onto the open unit ball
 of `M_n(B)`, for the C⋆-norms of `CStarMatrix`. Complete quotient maps compose, the identity is
-one, and they are complete contractions (`LinearMap.IsCompleteQuotient.norm_map_le`,
-`LinearMap.IsCompleteQuotient.cbNorm_le_one`).
+one, and they are complete contractions (`LinearMap.IsCompleteQuotient.isCompleteContraction`).
 
 A surjective star homomorphism of C⋆-algebras is a complete quotient map
 (`NonUnitalStarAlgHom.isCompleteQuotient`): its amplifications are surjective star
@@ -25,12 +24,13 @@ norm (`NonUnitalStarAlgHom.exists_apply_eq_norm_eq`).
 ## Main declarations
 
 * `LinearMap.IsCompleteQuotient`: complete quotient maps.
-* `LinearMap.IsCompleteQuotient.of_norm_map_le_of_exists_map_eq`: a linear map whose
-  amplifications are contractive and lift the open unit ball is a complete quotient map.
+* `LinearMap.IsCompleteQuotient.of_norm_map_le_of_exists_map_eq`: a complete contraction whose
+  amplifications lift the open unit ball is a complete quotient map.
 * `LinearMap.IsCompleteQuotient.comp`, `LinearMap.isCompleteQuotient_id`: composition and the
   identity.
-* `LinearMap.IsCompleteQuotient.norm_map_le`, `LinearMap.IsCompleteQuotient.cbNorm_le_one`: a
-  complete quotient map is a complete contraction.
+* `LinearMap.IsCompleteQuotient.isCompleteContraction`: a complete quotient map is a complete
+  contraction; `LinearMap.IsCompleteQuotient.norm_map_le`,
+  `LinearMap.IsCompleteQuotient.cbNorm_le_one` restate the consequences.
 * `LinearMap.IsCompleteQuotient.exists_map_eq`: a complete quotient map lifts the open unit ball.
 * `NonUnitalStarAlgHom.isCompleteQuotient`: a surjective star homomorphism is a complete quotient
   map.
@@ -61,10 +61,10 @@ theorem isCompleteQuotient_def {φ : A →ₗ[ℂ] B} :
       (fun x : CStarMatrix (Fin n) (Fin n) A ↦ x.map φ) '' Metric.ball 0 1 = Metric.ball 0 1 :=
   (Iff.rfl)
 
-/-- A linear map whose amplifications at the levels `Fin n` are contractive and lift the open unit
-ball is a complete quotient map. -/
+/-- A complete contraction whose amplifications at the levels `Fin n` lift the open unit ball is a
+complete quotient map. -/
 theorem IsCompleteQuotient.of_norm_map_le_of_exists_map_eq {φ : A →ₗ[ℂ] B}
-    (hle : ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ ‖x‖)
+    (hle : IsCompleteContraction φ)
     (hlift : ∀ (n : ℕ) (y : CStarMatrix (Fin n) (Fin n) B), ‖y‖ < 1 →
       ∃ x : CStarMatrix (Fin n) (Fin n) A, ‖x‖ < 1 ∧ x.map φ = y) :
     IsCompleteQuotient φ := fun n ↦ by
@@ -72,7 +72,7 @@ theorem IsCompleteQuotient.of_norm_map_le_of_exists_map_eq {φ : A →ₗ[ℂ] B
   simp only [Set.mem_image, mem_ball_zero_iff]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact (hle n x).trans_lt hx
+    exact (isCompleteContraction_def.1 hle n x).trans_lt hx
   · exact hlift n y
 
 /-- The identity is a complete quotient map. -/
@@ -89,9 +89,10 @@ theorem IsCompleteQuotient.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (h
       (fun y : CStarMatrix (Fin n) (Fin n) B ↦ y.map ψ) ∘ fun x ↦ x.map φ from
     funext fun _ ↦ CStarMatrix.map_map.symm, Set.image_comp, hφ n, hψ n]
 
-/-- A complete quotient map is contractive on the amplifications at the levels `Fin n`. -/
-private theorem IsCompleteQuotient.norm_map_le_fin {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ)
-    {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map φ‖ ≤ ‖x‖ := by
+/-- A complete quotient map is a complete contraction. -/
+@[grind →]
+theorem IsCompleteQuotient.isCompleteContraction {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
+    IsCompleteContraction φ := isCompleteContraction_def.2 fun n x ↦ by
   refine le_of_forall_gt fun t ht ↦ ?_
   have ht₀ : 0 < t := (norm_nonneg x).trans_lt ht
   have key (r : ℝ) : ‖(t⁻¹ : ℂ)‖ * r < 1 ↔ r < t := by
@@ -105,19 +106,18 @@ private theorem IsCompleteQuotient.norm_map_le_fin {φ : A →ₗ[ℂ] B} (h : I
 /-- A complete quotient map is completely bounded. -/
 theorem IsCompleteQuotient.isCompletelyBounded {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
     IsCompletelyBounded φ :=
-  isCompletelyBounded_def.mpr ⟨1, zero_le_one, fun _ x ↦ (one_mul ‖x‖).symm ▸ h.norm_map_le_fin x⟩
+  (isCompleteContraction_iff.1 h.isCompleteContraction).1
 
 /-- A complete quotient map has cb norm at most `1`. -/
 theorem IsCompleteQuotient.cbNorm_le_one {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
     cbNorm φ ≤ 1 :=
-  cbNorm_le_of_bound zero_le_one fun _ x ↦ (one_mul ‖x‖).symm ▸ h.norm_map_le_fin x
+  (isCompleteContraction_iff.1 h.isCompleteContraction).2
 
 /-- A complete quotient map is a complete contraction: each amplification is contractive, for
 matrices over any finite index type. -/
 theorem IsCompleteQuotient.norm_map_le {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) {κ : Type*}
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ ‖x‖ :=
-  (norm_map_le_cbNorm_mul h.isCompletelyBounded x).trans
-    (mul_le_of_le_one_left (norm_nonneg x) h.cbNorm_le_one)
+  h.isCompleteContraction.norm_map_le x
 
 /-- A complete quotient map lifts the open unit ball: every matrix of norm `< 1` over `B` is the
 amplification of a matrix of norm `< 1` over `A`, for matrices over any finite index type. -/
@@ -152,8 +152,7 @@ theorem isCompleteQuotient (π : F) (hπ : Function.Surjective π) :
     (π : A →ₗ[ℂ] B).IsCompleteQuotient := by
   have hπₙ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A) :
       CStarMatrix.mapₙₐ (ofClass π) x = x.map (π : A →ₗ[ℂ] B) := by simp
-  refine .of_norm_map_le_of_exists_map_eq (fun n x ↦ hπₙ n x ▸ norm_apply_le _ x)
-    fun n y hy ↦ ?_
+  refine .of_norm_map_le_of_exists_map_eq (isCompleteContraction π) fun n y hy ↦ ?_
   have hrange : y ∈ Set.range (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)) :=
     ⟨CStarMatrix.ofMatrix fun i j ↦ (hπ (y i j)).choose, by
       ext i j
