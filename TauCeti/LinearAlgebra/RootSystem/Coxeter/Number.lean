@@ -296,18 +296,12 @@ theorem HasCartanType.natCard_eq_numRoots [Finite ι] [CharZero R] [IsDomain R]
       have hs : (Pi.single i 1 : Fin t.rank → ℤ) ∘ e = Pi.single (e.symm i) 1 := by
         ext k; simp [Pi.single_apply, Equiv.eq_symm_apply]
       rwa [hs] at horb
-  have hinj : Injective (fun c : b.support → ℤ => c ∘ e.symm) := fun c₁ c₂ hc => by
-    ext k
-    simpa using congrFun hc (e k)
-  calc Nat.card ι = (univ : Set ι).ncard := (Set.ncard_univ ι).symm
-    _ = (range b.rootCoefficients).ncard := by
-          rw [← image_univ, Set.ncard_image_of_injective _ b.rootCoefficients_injective]
-    _ = ((fun c : b.support → ℤ => c ∘ e.symm) '' range b.rootCoefficients).ncard :=
-          (Set.ncard_image_of_injective _ hinj).symm
-    _ = (range (t.simpleRootCoefficients ht)).ncard := by rw [himg]
-    _ = (univ : Set (Fin t.numRoots)).ncard := by
-          rw [← image_univ, Set.ncard_image_of_injective _ (t.simpleRootCoefficients_injective ht)]
-    _ = t.numRoots := by simp [Set.ncard_univ]
+  have hinj : Injective (fun c : b.support → ℤ => c ∘ e.symm) := fun c₁ c₂ hc =>
+    funext fun k => by simpa using congrFun hc (e k)
+  rw [← Set.ncard_univ ι, ← Set.ncard_image_of_injective univ b.rootCoefficients_injective,
+    image_univ, ← Set.ncard_image_of_injective _ hinj, himg, ← image_univ,
+    Set.ncard_image_of_injective _ (t.simpleRootCoefficients_injective ht), Set.ncard_univ,
+    Nat.card_fin]
 
 /-- Twice the number of positive roots of a base of valid Cartan type `t` equals `t.numRoots`. -/
 theorem HasCartanType.two_mul_ncard_posRoots_eq_numRoots [Finite ι] [CharZero R] [IsDomain R]
@@ -322,14 +316,14 @@ theorem HasCartanType.orderOf_wordProd [Finite ι] [CharZero R] [IsDomain R] [P.
   cases t with
   | A n => exact Coxeter.orderOf_wordProd_of_hasCartanType_A (DynkinType.valid_A.mp ht) h hnd hall
   | B n =>
-    exact Coxeter.orderOf_wordProd_of_hasCartanType_B
-      (lt_of_lt_of_le zero_lt_two (DynkinType.valid_B.mp ht)) h hnd hall
+    exact Coxeter.orderOf_wordProd_of_hasCartanType_B (by have := DynkinType.valid_B.mp ht; omega)
+      h hnd hall
   | C n =>
-    exact Coxeter.orderOf_wordProd_of_hasCartanType_C
-      (by have := DynkinType.valid_C.mp ht; omega) h hnd hall
+    exact Coxeter.orderOf_wordProd_of_hasCartanType_C (by have := DynkinType.valid_C.mp ht; omega)
+      h hnd hall
   | D n =>
-    exact Coxeter.orderOf_wordProd_of_hasCartanType_D
-      (by have := DynkinType.valid_D.mp ht; omega) h hnd hall
+    exact Coxeter.orderOf_wordProd_of_hasCartanType_D (by have := DynkinType.valid_D.mp ht; omega)
+      h hnd hall
   | E6 => exact Coxeter.orderOf_wordProd_of_hasCartanType_E6 h hnd hall
   | E7 => exact Coxeter.orderOf_wordProd_of_hasCartanType_E7 h hnd hall
   | E8 => exact Coxeter.orderOf_wordProd_of_hasCartanType_E8 h hnd hall
@@ -366,7 +360,7 @@ theorem HasCartanType.roots_charpoly_of_actsBy [DecidableEq ι] [CharZero R] [Is
   | A n => rw [Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW]; simp
   | B n =>
     rw [Coxeter.roots_charpoly_of_hasCartanType_B_of_actsBy
-      (lt_of_lt_of_le zero_lt_two (DynkinType.valid_B.mp ht)) h hnd hall hW]; simp
+      (by have := DynkinType.valid_B.mp ht; omega) h hnd hall hW]; simp
   | C n =>
     rw [Coxeter.roots_charpoly_of_hasCartanType_C_of_actsBy
       (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW]; simp

@@ -162,9 +162,9 @@ theorem roots_charpoly_of_hasCartanType_E6_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e6Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E6 h hnd hall hW
-  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := e6Exponents) (by decide) (by decide)
-  · rw [hmem, Multiset.mem_coe, List.mem_map]
+  exact (Multiset.Nodup.ext hnd_r
+    (by simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := e6Exponents)
+          (by decide) (by decide))).mpr fun ζ => by rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₇` on the simple roots**:
 `exp (2πi e / 18)` for `e ∈ e7Exponents = [1, 5, 7, 9, 11, 13, 17]`, each with multiplicity one. -/
@@ -175,9 +175,9 @@ theorem roots_charpoly_of_hasCartanType_E7_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e7Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 18))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E7 h hnd hall hW
-  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_two_pi_I_div (h := 18) (l := e7Exponents) (by decide) (by decide)
-  · rw [hmem, Multiset.mem_coe, List.mem_map]
+  exact (Multiset.Nodup.ext hnd_r
+    (by simpa using nodup_map_exp_two_pi_I_div (h := 18) (l := e7Exponents)
+          (by decide) (by decide))).mpr fun ζ => by rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₈` on the simple roots**:
 `exp (2πi e / 30)` for `e ∈ e8Exponents = [1, 7, 11, 13, 17, 19, 23, 29]`, each with multiplicity
@@ -189,9 +189,9 @@ theorem roots_charpoly_of_hasCartanType_E8_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e8Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 30))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E8 h hnd hall hW
-  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_two_pi_I_div (h := 30) (l := e8Exponents) (by decide) (by decide)
-  · rw [hmem, Multiset.mem_coe, List.mem_map]
+  exact (Multiset.Nodup.ext hnd_r
+    (by simpa using nodup_map_exp_two_pi_I_div (h := 30) (l := e8Exponents)
+          (by decide) (by decide))).mpr fun ζ => by rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `F₄` on the simple roots**:
 `exp (2πi e / 12)` for `e ∈ f4Exponents = [1, 5, 7, 11]`, each with multiplicity one. -/
@@ -202,9 +202,9 @@ theorem roots_charpoly_of_hasCartanType_F4_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (f4Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_F4 h hnd hall hW
-  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := f4Exponents) (by decide) (by decide)
-  · rw [hmem, Multiset.mem_coe, List.mem_map]
+  exact (Multiset.Nodup.ext hnd_r
+    (by simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := f4Exponents)
+          (by decide) (by decide))).mpr fun ζ => by rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `G₂` on the simple roots**:
 `exp (2πi e / 6)` for `e ∈ g2Exponents = [1, 5]`, each with multiplicity one. -/
@@ -215,9 +215,9 @@ theorem roots_charpoly_of_hasCartanType_G2_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (g2Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 6))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_G2 h hnd hall hW
-  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_two_pi_I_div (h := 6) (l := g2Exponents) (by decide) (by decide)
-  · rw [hmem, Multiset.mem_coe, List.mem_map]
+  exact (Multiset.Nodup.ext hnd_r
+    (by simpa using nodup_map_exp_two_pi_I_div (h := 6) (l := g2Exponents)
+          (by decide) (by decide))).mpr fun ζ => by rw [hmem, Multiset.mem_coe, List.mem_map]
 
 end TauCeti.Coxeter
 

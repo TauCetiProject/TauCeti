@@ -12,7 +12,6 @@ import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Matrix.Mul
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.Perm.Coxeter
-import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.LinearAlgebra.Charpoly.Permutation
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Permutation
@@ -206,14 +205,6 @@ private theorem permMatrixHom_finRotate_mul_eq {m k : ℕ}
     permCoxeterSystem_wordProd_finRange (n := m + 1)
   rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1), hrot] at hprod
 
-private theorem charpoly_permMatrixHom_finRotate {m : ℕ} (hm : 0 < m) :
-    (permMatrixHom (R := ℤ) (finRotate m)).charpoly = X ^ m - 1 := by
-  have hsame : ∀ y : Fin m, (finRotate m).SameCycle ⟨0, hm⟩ y := by
-    rw [← permCoxeterSystem_wordProd_finRange]
-    exact sameCycle_wordProd_permCoxeterSystem (List.Perm.refl _) ⟨0, hm⟩
-  rw [← LinearMap.toMatrix_basisSingleOne_lmapDomain, LinearMap.charpoly_toMatrix,
-    Equiv.Perm.charpoly_lmapDomain_of_forall_sameCycle _ hsame, Fintype.card_fin]
-
 /-- Negacyclic shift matrix on `Fin n`: `ε₀ ↦ ε₁ ↦ ⋯ ↦ ε_{n-1} ↦ -ε₀`. -/
 private def negShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun p q =>
@@ -347,27 +338,18 @@ private theorem permMatrixHom_transposition_mul_diffBasis {n : ℕ} (i : Fin n) 
 
 private theorem list_prod_extReflA {n : ℕ} (L : List (Fin n)) :
     ∃ B : Matrix (Fin n) (Fin 1) ℤ,
-      ((L.map extReflA).prod).submatrix
-          (finSumFinEquiv (m := n) (n := 1)) (finSumFinEquiv (m := n) (n := 1)) =
+      ((L.map extReflA).prod).submatrix (finSumFinEquiv (m := n) (n := 1))
+          (finSumFinEquiv (m := n) (n := 1)) =
         fromBlocks ((L.map (reflMatrix (CartanMatrix.A n))).prod) B 0 1 := by
   induction L with
-  | nil =>
-    refine ⟨0, ?_⟩
-    rw [List.map_nil, List.prod_nil, List.map_nil, List.prod_nil, fromBlocks_one]
-    exact Matrix.submatrix_one_equiv _
+  | nil => exact ⟨0, by simp [fromBlocks_one, Matrix.submatrix_one_equiv]⟩
   | cons a t ih =>
     obtain ⟨B, hB⟩ := ih
     refine ⟨reflMatrix (CartanMatrix.A n) a * B +
         Matrix.of (fun k _ => if k = a ∧ a.val + 1 = n then 1 else 0), ?_⟩
-    let φ := reindexAlgEquiv ℤ ℤ (finSumFinEquiv (m := n) (n := 1)).symm
-    have hmul : (((a :: t).map extReflA).prod).submatrix
-          (finSumFinEquiv (m := n) (n := 1)) (finSumFinEquiv (m := n) (n := 1)) =
-        (extReflA a).submatrix
-          (finSumFinEquiv (m := n) (n := 1)) (finSumFinEquiv (m := n) (n := 1)) *
-          ((t.map extReflA).prod).submatrix
-            (finSumFinEquiv (m := n) (n := 1)) (finSumFinEquiv (m := n) (n := 1)) := by
-      rw [List.map_cons, List.prod_cons]; exact φ.map_mul _ _
-    rw [hmul, hB]; simp [extReflA, fromBlocks_multiply, List.map_cons, List.prod_cons]
+    rw [List.map_cons, List.prod_cons,
+      ← Matrix.submatrix_mul_equiv _ _ _ (finSumFinEquiv (m := n) (n := 1)), hB]
+    simp [extReflA, fromBlocks_multiply, List.map_cons, List.prod_cons]
 
 private theorem permMatrixHom_finRotate_mul_diffBasis (n : ℕ) :
     permMatrixHom (finRotate (n + 1)) * diffBasis (n + 1) =
@@ -382,7 +364,7 @@ theorem charpoly_coxA (n : ℕ) :
   obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
   have hc := (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (n + 1)).ne_zero
     (permMatrixHom_finRotate_mul_diffBasis n)).symm.trans
-    (charpoly_permMatrixHom_finRotate (Nat.succ_pos n))
+    (Matrix.charpoly_permMatrixHom_finRotate (Nat.succ_ne_zero n))
   rw [← charpoly_reindex (finSumFinEquiv (m := n) (n := 1)).symm, reindex_apply,
     Equiv.symm_symm, hB, charpoly_fromBlocks_zero₂₁] at hc
   have h1 : (1 : Matrix (Fin 1) (Fin 1) ℤ).charpoly = X - 1 := by
@@ -395,15 +377,6 @@ theorem charpoly_coxA (n : ℕ) :
 theorem orderOf_coxA_zero : orderOf (coxA 0) = 1 := by
   rw [Subsingleton.elim (coxA 0) 1, orderOf_one]
 
-private theorem val_finRotate_pow_symm_zero {n m : ℕ} (hm : m < n + 1) (hpos : 0 < m) :
-    ((finRotate (n + 1) ^ m).symm 0).val = n + 1 - m := by
-  set s := (finRotate (n + 1) ^ m).symm 0
-  have happ := Fin.coe_finRotate_pow m s
-  rw [Equiv.apply_symm_apply, Fin.val_zero] at happ
-  have hlt := s.isLt
-  obtain ⟨k, hk⟩ := Nat.dvd_of_mod_eq_zero happ.symm
-  rcases k with _ | _ | k <;> simp only [Nat.mul_zero, Nat.mul_succ] at hk <;> omega
-
 /-- **The Coxeter number of `Aₙ` (`0 < n`) is `n + 1`**: the Coxeter element of `CartanMatrix.A n`
 has order `n + 1`. -/
 theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
@@ -411,13 +384,6 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
   obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
   let U : Matrix (Fin (n + 1)) (Fin n) ℤ :=
     (diffBasis (n + 1)).submatrix id (finSumFinEquiv (m := n) (n := 1) ∘ Sum.inl)
-  let W : Matrix (Fin n) (Fin (n + 1)) ℤ :=
-    (sumBasis (n + 1)).submatrix (finSumFinEquiv (m := n) (n := 1) ∘ Sum.inl) id
-  have hWU : W * U = 1 := by
-    ext i j
-    simpa [W, U, Matrix.mul_apply, Matrix.one_apply, finSumFinEquiv.injective.eq_iff] using
-      congrFun₂ (sumBasis_mul_diffBasis (n + 1))
-        (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))
   have hSU : permMatrixHom (finRotate (n + 1)) * U = U * coxA n := by
     ext p j
     have hj := congrFun₂ hint p (finSumFinEquiv (Sum.inl j))
@@ -427,24 +393,20 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
       simpa [coxA, coxeterElement] using congrFun₂ hB r (Sum.inl j)
     simp only [U, Matrix.mul_apply, submatrix_apply, id_eq, Function.comp_apply] at hj ⊢
     rw [hj, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
-    simp_rw [hentry]
-    simp [Fintype.sum_sum_type]
+    simp_rw [hentry]; simp [Fintype.sum_sum_type]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
-  · have hpow : permMatrixHom (finRotate (n + 1)) ^ (n + 1) * U = U * coxA n ^ (n + 1) := by
-      simpa using Matrix.aeval_mul_eq_mul_aeval hSU (Polynomial.X ^ (n + 1) : ℤ[X])
-    have hrot : finRotate (n + 1) ^ (n + 1) = 1 := by
-      simpa [TauCeti.orderOf_finRotate (Nat.succ_ne_zero n)] using
-        pow_orderOf_eq_one (finRotate (n + 1))
-    rw [← map_pow, hrot, map_one, Matrix.one_mul] at hpow
-    rw [← one_mul (coxA n ^ (n + 1)), ← hWU, Matrix.mul_assoc, ← hpow, hWU]
+  · have hch : aeval (coxA n) (X ^ (n + 1) - 1 : ℤ[X]) = 0 := by
+      rw [← geom_sum_mul, map_mul, ← charpoly_coxA, Matrix.aeval_self_charpoly, zero_mul]
+    simpa [sub_eq_zero] using hch
   · have hpow : permMatrixHom (finRotate (n + 1)) ^ m * U = U * coxA n ^ m := by
       simpa using Matrix.aeval_mul_eq_mul_aeval hSU (Polynomial.X ^ m : ℤ[X])
     rw [hm1, Matrix.mul_one, ← map_pow] at hpow
-    have h0 := congrFun₂ hpow 0 ⟨0, hn⟩
-    rw [permMatrixHom_mul_apply] at h0
+    have h0 := congrFun₂ hpow ((finRotate (n + 1) ^ m) 0) ⟨0, hn⟩
+    rw [permMatrixHom_mul_apply, Equiv.symm_apply_apply] at h0
+    have hval : ((finRotate (n + 1) ^ m) 0 : ℕ) = m := by
+      rw [Fin.coe_finRotate_pow, Fin.val_zero, zero_add, Nat.mod_eq_of_lt hm]
     simp only [U, submatrix_apply, id_eq, Function.comp_apply, finSumFinEquiv_apply_left,
-      diffBasis, Matrix.of_apply, Fin.ext_iff, Fin.val_castAdd, Fin.val_zero,
-      val_finRotate_pow_symm_zero hm hpos] at h0
+      diffBasis, Matrix.of_apply, Fin.ext_iff, Fin.val_castAdd, Fin.val_zero, hval] at h0
     split_ifs at h0 <;> omega
 
 /-! ### Type `B` -/
@@ -682,35 +644,27 @@ private theorem forkFlip_mul_apply {m k : ℕ} (M : Matrix (Fin (m + 2)) (Fin k)
       if p.val < m then M p q
       else if p.val = m then -M (Fin.last (m + 1)) q
       else -M (Fin.last m).castSucc q := by
-  rw [Matrix.mul_apply]
-  split_ifs with hp1 hp2
-  · rw [Finset.sum_eq_single p (fun r _ hr => by simp [forkFlip, hp1, hr.symm])
-      (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp1]
+  rw [Matrix.mul_apply]; split_ifs with hp1 hp2
+  · rw [Finset.sum_eq_single p (fun r _ hr => by simp [forkFlip, hp1, hr.symm]) (by simp)]
+    simp [forkFlip, hp1]
   · rw [Finset.sum_eq_single (Fin.last (m + 1))
-      (fun r _ hr => by
-        have hr' : r.val ≠ m + 1 := fun h => hr (Fin.ext h)
-        simp [forkFlip, hp2, hr'])
-      (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp2]
+      (fun r _ hr => by simp [forkFlip, hp2, show r.val ≠ m + 1 from fun h => hr (Fin.ext h)])
+      (by simp)]; simp [forkFlip, hp2]
   · rw [Finset.sum_eq_single (Fin.last m).castSucc
-      (fun r _ hr => by
-        have hr' : r.val ≠ m := fun h => hr (Fin.ext h)
-        simp [forkFlip, hp1, hp2, hr'])
-      (fun h => absurd (Finset.mem_univ _) h)]; simp [forkFlip, hp1, hp2]
+      (fun r _ hr => by simp [forkFlip, hp1, hp2, show r.val ≠ m from fun h => hr (Fin.ext h)])
+      (by simp)]; simp [forkFlip, hp1, hp2]
 
 private theorem forkFlip_mul_basisD (m : ℕ) :
     forkFlip m * basisD m =
       basisD m * reflMatrix (CartanMatrix.D (m + 2)) (Fin.last (m + 1)) := by
-  ext p q
-  rw [forkFlip_mul_apply, mul_reflMatrix_apply]
+  ext p q; rw [forkFlip_mul_apply, mul_reflMatrix_apply]
   have _ := p.isLt; have hq := q.isLt
   have hD : CartanMatrix.D (m + 2) q (Fin.last (m + 1)) =
       if q.val = m + 1 then 2 else if q.val + 1 = m then -1 else 0 := by
     rw [cartanMatrix_D_apply_succ_succ]; simp [Fin.ext_iff]; split_ifs <;> omega
-  rw [hD]
-  rcases eq_or_ne q.val (m + 1) with hq1 | hq1
+  rw [hD]; rcases eq_or_ne q.val (m + 1) with hq1 | hq1
   · simp [hq1, basisD_apply]; split_ifs <;> omega
-  · have hqlt : q.val < m + 1 := by omega
-    simp [hq1, hqlt, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
+  · simp [hq1, show q.val < m + 1 by omega, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
 
 /-- Block-diagonal model `fromBlocks (negShift (m + 1)) 0 0 (-1)` of `coxD (m + 2)`. -/
 private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
@@ -719,10 +673,8 @@ private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
 
 private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
     permMatrixHom (finRotate (m + 2)) * forkFlip m = modelD m := by
-  ext p q
-  rw [permMatrixHom_mul_apply]
-  set s := (finRotate (m + 2)).symm p
-  have _ := s.isLt
+  ext p q; rw [permMatrixHom_mul_apply]
+  set s := (finRotate (m + 2)).symm p; have _ := s.isLt
   have hrot : p.val = if s.val = m + 1 then 0 else s.val + 1 := by
     have h := coe_finRotate s; rw [Equiv.apply_symm_apply] at h
     simpa [Fin.ext_iff, Fin.val_last] using h
@@ -731,14 +683,12 @@ private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
     rw [modelD, reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
   · have _ := ip.isLt; have _ := iq.isLt
     simp only [fromBlocks_apply₁₁, forkFlip, negShift, Matrix.of_apply, finSumFinEquiv_apply_left,
-      Fin.val_castAdd, Fin.ext_iff] at hrot ⊢
-    split_ifs at hrot ⊢ <;> omega
+      Fin.val_castAdd, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
   · fin_cases iq; have _ := ip.isLt
     simp [forkFlip, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
   · fin_cases ip; have _ := iq.isLt
     simp [forkFlip, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
-  · fin_cases ip; fin_cases iq
-    simp [forkFlip] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+  · fin_cases ip; fin_cases iq; simp [forkFlip] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
 
 private theorem modelD_mul_basisD_eq_basisD_mul_coxD (m : ℕ) :
     modelD m * basisD m = basisD m * coxD (m + 2) := by
