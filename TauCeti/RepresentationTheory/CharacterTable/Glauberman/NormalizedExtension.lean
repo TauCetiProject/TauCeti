@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Finite
 public import TauCeti.GroupTheory.SemidirectProduct
-public import TauCeti.RepresentationTheory.FDRep.Scalar
+public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
 /-!
