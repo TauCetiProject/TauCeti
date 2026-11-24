@@ -123,6 +123,7 @@ variable [Finite ι]
 /-- **The action-field specialization in coordinates.** In the lift coordinates of `r` and of the
 energy `0` in each orbit, the action-field specialization of completed combinations is the
 action-field map `TauCeti.NovikovSeries.actionFieldMap E ρ` of Novikov series in each orbit. -/
+@[simp]
 theorem coordinates_actionFieldMap (r : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
     coordinates (actionFieldPotential_vadd F r) (fun _ => 0) (actionFieldMap hF ρ r a) i =
       NovikovSeries.actionFieldMap E ρ (coordinates hF r a i) := by
