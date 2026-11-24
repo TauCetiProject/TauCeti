@@ -153,17 +153,20 @@ theorem contMDiffOn_sectionCoord_of_lieGroup (hn : 3 ≤ n)
   have hn1 : (1 : ℕ∞ω) ≤ n := one_le_of_three_le hn
   have hn0 : n ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hn1
   have : IsManifold IP 1 P := .of_le hn1; have : IsManifold IB 1 B := .of_le hn1
-  refine contMDiffOn_sectionCoord_of_finrank_eq hn1 hsmul hp horbit hU hs_smooth hs hfree
-    (fun b hb ↦ hsmul.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn0 hn (hfree b hb))
-    fun b hb ↦ ?_
-  have hreg_b : IsRegularPoint IP IB p (s b) :=
-    isRegularPoint_of_contMDiffOn_section hn0 hU hs_smooth hs hb (hp (s b))
-  have hreg_val : IsRegularValue IP IB p (p (s b)) :=
-    isRegularValue_of_isRegularPoint_of_orbit_eq_fiber (fun y _ ↦ (hp y).mdifferentiableAt hn0)
-      (fun _ ↦ (hsmul.comp (contMDiff_id.prodMk contMDiff_const) (s b)).mdifferentiableAt hn0)
-      (apply_op_smul_eq_of_orbit_eq_fiber horbit) (fun y hy ↦ (horbit (s b) y).1 hy) hreg_b
-  exact finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber hn (hsmul.of_le hn1)
-    (hp.of_le hn1) hreg_val (hfree b hb) (horbit (s b))
+  rcases U.eq_empty_or_nonempty with rfl | ⟨b₀, hb₀⟩
+  · simp only [preimage_empty, contMDiffOn_empty]
+  · have hreg_b : IsRegularPoint IP IB p (s b₀) :=
+      isRegularPoint_of_contMDiffOn_section hn0 hU hs_smooth hs hb₀ (hp (s b₀))
+    have hreg_val : IsRegularValue IP IB p (p (s b₀)) :=
+      isRegularValue_of_isRegularPoint_of_orbit_eq_fiber (fun y _ ↦ (hp y).mdifferentiableAt hn0)
+        (fun _ ↦ (hsmul.comp (contMDiff_id.prodMk contMDiff_const) (s b₀)).mdifferentiableAt hn0)
+        (apply_op_smul_eq_of_orbit_eq_fiber horbit) (fun y hy ↦ (horbit (s b₀) y).1 hy) hreg_b
+    have hdim : finrank ℝ EP = finrank ℝ EB + finrank ℝ EG :=
+      finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber hn (hsmul.of_le hn1)
+        (hp.of_le hn1) hreg_val (hfree b₀ hb₀) (horbit (s b₀))
+    exact contMDiffOn_sectionCoord_of_finrank_eq hn1 hsmul hp horbit hU hs_smooth hs hfree
+      (fun b hb ↦ hsmul.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn0 hn (hfree b hb))
+      hdim
 
 section VerticalKernel
 
@@ -371,30 +374,22 @@ theorem contMDiffAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {
     (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
 
 /-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
-theorem contMDiffOn_actionDivisionOrOne_of_lieGroup (hsub : IsSubmersion IP IB n p) {s : Set M}
+theorem contMDiffOn_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {s : Set M}
     (hf : EqOn (p ∘ f₁) (p ∘ f₂) s)
+    (hsub : ∀ x ∈ s, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
     ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
-  have := FiniteDimensional.completeSpace ℝ EP
-  have := FiniteDimensional.completeSpace ℝ EB
-  have := FiniteDimensional.completeSpace ℝ EG
-  contMDiffOn_actionDivisionOrOne (one_le_of_three_le hn) hsmul hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
-    hsub hf hf₁ hf₂
+  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp (hf hx)
+    (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy) (hsub x hx) (hf₁ x hx) (hf₂ x hx)
 
 /-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
-theorem contMDiff_actionDivisionOrOne_of_lieGroup (hsub : IsSubmersion IP IB n p)
+theorem contMDiff_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p)
     (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
+    (hsub : ∀ x : M, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
     ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
-  have := FiniteDimensional.completeSpace ℝ EP
-  have := FiniteDimensional.completeSpace ℝ EB
-  have := FiniteDimensional.completeSpace ℝ EG
-  contMDiff_actionDivisionOrOne (one_le_of_three_le hn) hsmul hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
-    hsub hf hf₁ hf₂
+  fun x ↦ contMDiffAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp
+    (Eventually.of_forall hf) (hsub x) (hf₁ x) (hf₂ x)
 
 end ActionDivisionLieGroup
 

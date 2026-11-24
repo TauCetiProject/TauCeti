@@ -411,6 +411,16 @@ theorem _root_.Continuous.actionTrivializationOfSection_symm_apply {q : B × G} 
 theorem _root_.Continuous.baseSet_actionTrivializationOfSection :
     (hf.actionTrivializationOfSection horbit hU hfree hs hcoord hsmul).baseSet = U := (rfl)
 
+/-- Source set of `Continuous.actionTrivializationOfSection`. -/
+@[simp]
+theorem _root_.Continuous.actionTrivializationOfSection_source :
+    (hf.actionTrivializationOfSection horbit hU hfree hs hcoord hsmul).source = f ⁻¹' U := (rfl)
+
+/-- Target set of `Continuous.actionTrivializationOfSection`. -/
+@[simp]
+theorem _root_.Continuous.actionTrivializationOfSection_target :
+    (hf.actionTrivializationOfSection horbit hU hfree hs hcoord hsmul).target = U ×ˢ univ := (rfl)
+
 /-- Every `Continuous.actionTrivializationOfSection` transports to an equivariant trivialization of
 `MapFiber f`. -/
 theorem _root_.Continuous.isEquivariant_toMapFiber_actionTrivializationOfSection :

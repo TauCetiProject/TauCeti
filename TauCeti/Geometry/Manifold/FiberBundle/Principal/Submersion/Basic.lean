@@ -230,12 +230,7 @@ theorem _root_.ContMDiff.contMDiffOn_actionTrivializationOfSection
       (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn hsmul_s)
       (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn
         hsmul_s).source := by
-  have hsrc :
-      (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn
-        hsmul_s).source = p ⁻¹' U := by
-    ext x
-    rw [Trivialization.mem_source, Continuous.baseSet_actionTrivializationOfSection, mem_preimage]
-  rw [hsrc]
+  rw [Continuous.actionTrivializationOfSection_source]
   exact (hp.contMDiffOn.prodMk hcoord).congr fun x _ ↦
     hp.continuous.actionTrivializationOfSection_apply horbit hU hfree hs hcoord.continuousOn
       hsmul_s x
@@ -257,13 +252,7 @@ theorem _root_.ContMDiff.contMDiffOn_symm_actionTrivializationOfSection
         (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).toOpenPartialHomeomorph.symm
       (hp.actionTrivializationOfSection horbit hU hfree hs hcoord
         (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).target := by
-  have htgt :
-      (hp.actionTrivializationOfSection horbit hU hfree hs hcoord
-        (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).target = U ×ˢ univ := by
-    ext q
-    rw [Trivialization.mem_target, Continuous.baseSet_actionTrivializationOfSection]
-    exact ⟨fun hq ↦ ⟨hq, mem_univ _⟩, fun hq ↦ hq.1⟩
-  rw [htgt]
+  rw [Continuous.actionTrivializationOfSection_target]
   exact (hsmul.contMDiffOn_op_smul_section hs_smooth).congr fun q hq ↦
     hp.actionTrivializationOfSection_symm_apply horbit hU hfree hs hcoord
       (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn hq.1
@@ -618,21 +607,23 @@ theorem contMDiffAt_actionDivisionOrOne (hp : ContMDiff IP IB n p) {x₀ : M}
     (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
 
 /-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne`. -/
-theorem contMDiffOn_actionDivisionOrOne (hsub : IsSubmersion IP IB n p) {s : Set M}
+theorem contMDiffOn_actionDivisionOrOne (hp : ContMDiff IP IB n p) {s : Set M}
     (hf : EqOn (p ∘ f₁) (p ∘ f₂) s)
+    (hsub : ∀ x ∈ s, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
     ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
-  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hsub.contMDiff
+  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hp
     (hf hx) (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy)
-    (hsub.isSubmersionAt (f₁ x)) (hf₁ x hx) (hf₂ x hx)
+    (hsub x hx) (hf₁ x hx) (hf₂ x hx)
 
 /-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne`. -/
-theorem contMDiff_actionDivisionOrOne (hsub : IsSubmersion IP IB n p)
+theorem contMDiff_actionDivisionOrOne (hp : ContMDiff IP IB n p)
     (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
+    (hsub : ∀ x : M, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
     ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
-  fun x ↦ contMDiffAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hsub.contMDiff
-    (Eventually.of_forall hf) (hsub.isSubmersionAt (f₁ x)) (hf₁ x) (hf₂ x)
+  fun x ↦ contMDiffAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hp
+    (Eventually.of_forall hf) (hsub x) (hf₁ x) (hf₂ x)
 
 end ActionDivisionSmooth
 
@@ -666,7 +657,7 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
     {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
     (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
     (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
-    (hdim : ∀ b ∈ U, finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG) :
+    (hdim : finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG) :
     ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U) := by
   have := FiniteDimensional.completeSpace 𝕜 EP; have := FiniteDimensional.completeSpace 𝕜 EB
   have := FiniteDimensional.completeSpace 𝕜 EG
@@ -674,7 +665,7 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
     (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
       (isRegularPoint_of_contMDiffOn_section (ENat.one_le_iff_ne_zero_withTop.mp hn)
         hU hs_smooth hs hb (hp (s b)))
-      (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g (s b)) (hinj b hb) (hdim b hb)).ge
+      (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g (s b)) (hinj b hb) hdim).ge
 
 end FiniteDimensional
 
