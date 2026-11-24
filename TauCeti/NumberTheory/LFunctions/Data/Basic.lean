@@ -225,6 +225,11 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
+/-- The root number of a card satisfying the functional equation is nonzero. -/
+theorem HasFunctionalEquation.rootNumber_ne_zero (h : d.HasFunctionalEquation) :
+    d.rootNumber ≠ 0 :=
+  norm_ne_zero_iff.mp (by simp [h.norm_rootNumber])
+
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     d.dual.HasDirichletAgreement where

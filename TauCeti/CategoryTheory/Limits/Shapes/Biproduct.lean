@@ -43,14 +43,20 @@ satisfying a predicate `p` is an isomorphism whenever all excluded summands are 
 (`TauCeti.biproductSubtypeIsoOfIsZero`). Reindexing the family of a biproduct descent or lift along
 an equivalence preserves and reflects being an isomorphism
 (`TauCeti.isIso_biproductDesc_iff_of_equiv`, `TauCeti.isIso_biproductLift_iff_of_equiv`). A
-biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`).
+biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`). The comparison
+isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
+(`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
 and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
-preservation hypothesis. Commutative squares into the images under a functor combine into
-squares through lifts into and descents out of binary biproducts
+preservation hypothesis. For a functor preserving a binary biproduct, the inverse of
+`Functor.mapBiprod` followed by the images of the projections is the pair of projections
+(`CategoryTheory.Functor.mapBiprod_inv_map_fst`, `CategoryTheory.Functor.mapBiprod_inv_map_snd`),
+and morphisms into `F.obj (X ⊞ Y)` are determined by their composites with the images of the
+projections (`CategoryTheory.Functor.map_biprod_hom_ext`). Commutative squares into the images
+under a functor combine into squares through lifts into and descents out of binary biproducts
 (`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
@@ -647,6 +653,37 @@ theorem biprod_desc_comp_map {A₂ A₃ A₄ : D} {B₂ B₃ B₄ : C} [HasBinar
 
 end Comparison
 
+section MapBiprod
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [HasZeroMorphisms D] (F : C ⥤ D) [F.PreservesZeroMorphisms] (X Y : C) [HasBinaryBiproduct X Y]
+  [PreservesBinaryBiproduct X Y F]
+
+/-- The inverse of the comparison `F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y`, followed by the image of the
+first projection, is the first projection. -/
+@[reassoc]
+theorem mapBiprod_inv_map_fst : (F.mapBiprod X Y).inv ≫ F.map biprod.fst = biprod.fst := by
+  rw [Iso.inv_comp_eq, mapBiprod_hom, biprod.lift_fst]
+
+/-- The inverse of the comparison `F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y`, followed by the image of the
+second projection, is the second projection. -/
+@[reassoc]
+theorem mapBiprod_inv_map_snd : (F.mapBiprod X Y).inv ≫ F.map biprod.snd = biprod.snd := by
+  rw [Iso.inv_comp_eq, mapBiprod_hom, biprod.lift_snd]
+
+variable {F X Y} in
+/-- For a functor preserving the biproduct `X ⊞ Y`, two morphisms into `F.obj (X ⊞ Y)` agree if
+their composites with the images of both projections agree. -/
+theorem map_biprod_hom_ext {Z : D} {f g : Z ⟶ F.obj (X ⊞ Y)}
+    (h₁ : f ≫ F.map biprod.fst = g ≫ F.map biprod.fst)
+    (h₂ : f ≫ F.map biprod.snd = g ≫ F.map biprod.snd) : f = g := by
+  rw [← cancel_mono (F.mapBiprod X Y).hom]
+  ext
+  · simpa only [Category.assoc, mapBiprod_hom, biprod.lift_fst] using h₁
+  · simpa only [Category.assoc, mapBiprod_hom, biprod.lift_snd] using h₂
+
+end MapBiprod
+
 section Op
 
 open Opposite
@@ -715,3 +752,17 @@ noncomputable def isColimitBiprod (hc₁ : IsColimit c₁) (hc₂ : IsColimit c�
       · exact Cofork.IsColimit.hom_ext hc₂ (by simp))
 
 end CategoryTheory.Limits.CokernelCofork
+
+namespace CategoryTheory.Limits.Bicone
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type w} {F : J → C}
+
+/-- The comparison isomorphism between the points of two limit bicones of the same family
+carries the inclusions of the first bicone to those of the second. -/
+@[reassoc (attr := simp)]
+theorem ι_comp_conePointUniqueUpToIso_hom {c d : Bicone F} (hc : IsLimit c.toCone)
+    (hd : IsLimit d.toCone) (j : J) : c.ι j ≫ (hc.conePointUniqueUpToIso hd).hom = d.ι j :=
+  hd.hom_ext fun ⟨k⟩ => by
+    simpa [Bicone.ι_π] using c.ι j ≫= hc.conePointUniqueUpToIso_hom_comp hd ⟨k⟩
+
+end CategoryTheory.Limits.Bicone

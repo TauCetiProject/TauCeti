@@ -165,8 +165,8 @@ noncomputable def inverse (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic) 
   contDiffOn_coefficient p hp :=
     ((a.contDiffAt_coefficient hp).clm_inverse (ha p.1 p.2 hp)).contDiffWithinAt
   homogeneous x ξ t ht := by
-    rw [a.homogeneous x ξ t ht, ← Complex.coe_smul, ContinuousLinearMap.inverse_smul,
-      ← Complex.ofReal_inv, Complex.coe_smul, Real.rpow_neg ht.le]
+    rw [a.homogeneous x ξ t ht, ContinuousLinearMap.inverse_smul_of_isScalarTower,
+      Real.rpow_neg ht.le]
 
 @[simp]
 theorem coefficient_inverse (p : X × E) :
@@ -203,11 +203,7 @@ theorem eq_inverse_of_comp_eq_id_left {b : HomogeneousSymbol X E W V (-m)}
   refine ext_of_ne_zero fun x ξ hξ ↦ ?_
   have hb := congrArg (fun c ↦ c.coefficient (x, ξ)) h
   simp only [coefficient_comp, coefficient_castDegree, coefficient_id hξ] at hb
-  calc b.coefficient (x, ξ)
-      = (b.coefficient (x, ξ) ∘L a.coefficient (x, ξ)) ∘L (a.inverse ha).coefficient (x, ξ) := by
-        rw [ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hξ,
-          ContinuousLinearMap.comp_id]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [hb, ContinuousLinearMap.id_comp]
+  exact (ha x ξ hξ).eq_inverse_of_comp_eq_id_left hb
 
 /-- A right inverse of an elliptic symbol is its inverse. -/
 theorem eq_inverse_of_comp_eq_id_right {b : HomogeneousSymbol X E W V (-m)}
@@ -215,11 +211,7 @@ theorem eq_inverse_of_comp_eq_id_right {b : HomogeneousSymbol X E W V (-m)}
   refine ext_of_ne_zero fun x ξ hξ ↦ ?_
   have hb := congrArg (fun c ↦ c.coefficient (x, ξ)) h
   simp only [coefficient_comp, coefficient_castDegree, coefficient_id hξ] at hb
-  calc b.coefficient (x, ξ)
-      = (a.inverse ha).coefficient (x, ξ) ∘L (a.coefficient (x, ξ) ∘L b.coefficient (x, ξ)) := by
-        rw [← ContinuousLinearMap.comp_assoc, coefficient_inverse_comp_coefficient a ha hξ,
-          ContinuousLinearMap.id_comp]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [hb, ContinuousLinearMap.comp_id]
+  exact (ha x ξ hξ).eq_inverse_of_comp_eq_id_right hb
 
 /-- The inverse of the inverse is the original symbol. -/
 @[simp]

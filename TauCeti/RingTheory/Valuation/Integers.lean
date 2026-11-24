@@ -25,6 +25,9 @@ A ring is its own ring of integers for any valuation that is at most `1` everywh
 a domain for its trivial valuation. So constructions taking a ring of integers, such as the Gauss
 valuations on Witt vectors, apply to a perfect field with its trivial valuation.
 
+Multiplication by a unit of valuation one maps the ring of integers `v.integer` onto itself; on a
+local field this says that the units of `𝒪[K]` preserve additive Haar measure.
+
 ## Main results
 
 * `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
@@ -33,6 +36,7 @@ valuations on Witt vectors, apply to a perfect field with its trivial valuation.
   valuation on a field contains a nonzero nonunit, the valuation is nontrivial.
 * `Valuation.integers_self_iff`: a ring is the ring of integers of a valuation on it iff the
   valuation is at most `1` everywhere.
+* `Valuation.units_smul_integer`: a unit of valuation one maps the ring of integers onto itself.
 -/
 
 public section
@@ -86,5 +90,12 @@ variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] {
 (`Valuation.one_apply_le_one`). -/
 theorem integers_self_iff : v.Integers R ↔ ∀ x, v x ≤ 1 :=
   ⟨fun hv ↦ hv.map_le_one, fun h ↦ ⟨Function.injective_id, h, fun r _ ↦ ⟨r, rfl⟩⟩⟩
+
+open scoped Pointwise in
+/-- **A unit of valuation one maps the ring of integers onto itself.** -/
+theorem units_smul_integer {u : Rˣ} (hu : v u = 1) : u • (v.integer : Set R) = v.integer := by
+  ext y
+  rw [Set.mem_smul_set_iff_inv_smul_mem]
+  simp [Units.smul_def, Valuation.mem_integer_iff, hu]
 
 end Valuation

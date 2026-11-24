@@ -61,6 +61,19 @@ The fundamental classes of the homological theory have coefficients in `ULift �
 twisted homology of the base has coefficients in the ring `ℤ` itself; the two coefficient modules
 are identified by `ULift.moduleEquiv` (`TauCeti.uliftIntHomologyIso`).
 
+When `M` is oriented, by an orientation `o`, the twisted fundamental class is the ordinary one.
+The orientation is a continuous section `s : x ↦ (x, oₓ)` of the cover
+(`TauCeti.VectorBundleOrientation.coverSection`), which trivializes `o(TM)` by evaluating a
+function on the two orientations of `TₓM` at `oₓ`
+(`TauCeti.VectorBundleOrientation.signLocalSystemIso`). The cover is the union of the two sheets
+`s(M)` and `t(M)`, where `t = τ ∘ s` is the section given by `-o`; `s` preserves the orientations
+and `t` reverses them, so their local degrees give `[M'] = s_*[M] - t_*[M]`
+(`mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_neg`).
+On the other hand, through the trivialization a class `c` of `M` reads on the cover as
+`s_* c - t_* c`. By uniqueness of `[M]_or`, the trivialization carries `[M]_or` to the
+fundamental class `[M]` of `o`
+(`TauCeti.Manifold.OrientationCover.twistedHomologyConstantIso_hom_twistedFundamentalClass`).
+
 ## Main definitions
 
 * `TauCeti.Manifold.OrientationCover.homologicalOrientation`: the homological orientation of the
@@ -78,6 +91,12 @@ are identified by `ULift.moduleEquiv` (`TauCeti.uliftIntHomologyIso`).
   antisymmetrization carries `[M']` to `2 • [M]_or`.
 * `TauCeti.Manifold.OrientationCover.zsmul_twistedFundamentalClass_ne_zero`: `[M]_or` has infinite
   order when `M` is nonempty.
+* `mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_neg`:
+  for the sections `s` and `t` given by `o` and `-o`, `[M'] = s_*[M] - t_*[M]`.
+* `TauCeti.Manifold.OrientationCover.twistedHomologyCoefficientMap_inv_fundamentalClass`: the
+  trivialization of `o(TM)` given by `o` carries `[M]` back to `[M]_or`.
+* `TauCeti.Manifold.OrientationCover.twistedHomologyConstantIso_hom_twistedFundamentalClass`: the
+  trivialization of `o(TM)` given by `o` carries `[M]_or` to the fundamental class of `o`.
 
 ## References
 
@@ -174,11 +193,8 @@ theorem mapFundamentalClass_deck :
       fun h ↦ h ▸ VectorBundleOrientationCover.deck_deck y⟩
   have hdeg : o.localDegree o hE τ y = -1 := by
     rw [HomologicalOrientation.localDegree_eq_localIndex o o hE hE τ hfib, localIndex_deck]
-  refine (singularHomologyToLocalHomology_apply _ y (o.mapFundamentalClass hE τ)).trans ?_
-  rw [o.singularHomologyπ_mapFundamentalClass]
-  refine (o.localHomologyRestriction_localHomologyMap_fundamentalClassOn o hE τ (K := Set.univ)
-    (by simpa using isCompact_univ) (Set.mem_univ y)).trans ?_
-  rw [hdeg, neg_one_zsmul, HomologicalOrientation.neg_apply, LocalOrientation.coe_neg]
+  rw [o.singularHomologyToLocalHomology_mapFundamentalClass o hE, hdeg, neg_one_zsmul,
+    HomologicalOrientation.neg_apply, LocalOrientation.coe_neg]
 
 /-! ### The twisted fundamental class -/
 
@@ -376,5 +392,164 @@ theorem zsmul_twistedFundamentalClass_ne_zero [Nonempty M] {k : ℤ} (hk : k ≠
 /-- The twisted fundamental class of a nonempty manifold is nonzero. -/
 theorem twistedFundamentalClass_ne_zero [Nonempty M] : twistedFundamentalClass M hE ≠ 0 := by
   simpa using zsmul_twistedFundamentalClass_ne_zero (M := M) hE one_ne_zero
+
+/-! ### The twisted fundamental class of an oriented manifold -/
+
+section Oriented
+
+open TauCeti.Manifold.Orientation
+
+variable (o : Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
+
+omit [CompactSpace M] in
+/-- The section of the cover given by an orientation `o` has local index `1` everywhere. -/
+private theorem localIndex_coverSection (x : M) :
+    ((o.reindex (finCongr hE)).toHomologicalOrientation hE).localIndex (homologicalOrientation hE)
+      (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) x = 1 := by
+  have h := (isOrientationPreservingAt_coverSection o x).reindex (finCongr hE)
+  exact (localIndex_toHomologicalOrientation hE hE _ _ _ h.isInvertible_mfderiv).trans
+    (orientationSign_of_isOrientationPreservingAt h)
+
+omit [CompactSpace M] in
+/-- The section of the cover given by the opposite orientation `-o` has local index `-1`
+everywhere for the orientation `o`: it preserves orientations from `-o`. -/
+private theorem localIndex_coverSection_neg (x : M) :
+    ((o.reindex (finCongr hE)).toHomologicalOrientation hE).localIndex (homologicalOrientation hE)
+      ((-o).toVectorBundleOrientation.coverSection (Fintype.card_fin _)) x = -1 := by
+  have h := ((isOrientationPreservingAt_neg_left _ _ _ _).1
+    (isOrientationPreservingAt_coverSection (-o) x)).reindex (finCongr hE)
+  exact (localIndex_toHomologicalOrientation hE hE _ _ _ h.isInvertible_mfderiv).trans
+    (orientationSign_of_isOrientationReversingAt h)
+
+omit [T2Space M] [CompactSpace M] in
+/-- The section of the cover given by `-o` passes through the other point of each fibre: it is
+the deck involution applied to the section given by `o`. -/
+private theorem coverSection_neg_apply (x : M) :
+    (-o).toVectorBundleOrientation.coverSection (Fintype.card_fin _) x =
+      VectorBundleOrientationCover.deck
+        (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _) x) := by
+  rw [toVectorBundleOrientation_neg, VectorBundleOrientation.deck_coverSection]
+
+/-- **The fundamental class of the orientation cover of an oriented manifold.** For an
+orientation `o` of `M`, the orientation cover is the union of the two sheets `s(M)` and `t(M)`,
+where `s` and `t` are the sections given by `o` and by `-o`. Its fundamental class is
+`[M'] = s_*[M] - t_*[M]`: `s` preserves the orientations and `t` reverses them. -/
+theorem mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_neg :
+    ((o.reindex (finCongr hE)).toHomologicalOrientation hE).mapFundamentalClass hE
+        (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) -
+      ((o.reindex (finCongr hE)).toHomologicalOrientation hE).mapFundamentalClass hE
+        ((-o).toVectorBundleOrientation.coverSection (Fintype.card_fin _)) =
+      (homologicalOrientation hE).fundamentalClass hE := by
+  have hst := coverSection_neg_apply o
+  -- Both sections lie over `M`, so they are injective, and the two sheets are disjoint since the
+  -- deck involution has no fixed point.
+  have hs := o.toVectorBundleOrientation.coverSection_injective (Fintype.card_fin _)
+  have ht := (-o).toVectorBundleOrientation.coverSection_injective (Fintype.card_fin _)
+  have hst' := o.toVectorBundleOrientation.disjoint_range_coverSection_neg (Fintype.card_fin _)
+  rw [← toVectorBundleOrientation_neg] at hst'
+  set oM := (o.reindex (finCongr hE)).toHomologicalOrientation hE
+  set s := o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)
+  set t := (-o).toVectorBundleOrientation.coverSection (Fintype.card_fin _)
+  refine (homologicalOrientation hE).eq_fundamentalClass hE fun y ↦ ?_
+  -- `rw [map_sub]` does not apply: the classes `f_*[M]` live in singular homology presented
+  -- through `singularHomologyFunctor`, only definitionally the homology of the simplicial set.
+  refine (map_sub (singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) y (n + 1)) _
+    _).trans ?_
+  rw [oM.singularHomologyToLocalHomology_mapFundamentalClass (homologicalOrientation hE) hE,
+    oM.singularHomologyToLocalHomology_mapFundamentalClass (homologicalOrientation hE) hE]
+  -- Every point of the cover lies on one of the two sheets.
+  obtain ⟨x, rfl | rfl⟩ : ∃ x, y = s x ∨ y = t x :=
+    ⟨y.proj, hst y.proj ▸ VectorBundleOrientationCover.eq_or_eq_deck (Fintype.card_fin _)
+      (VectorBundleOrientation.proj_coverSection _ _ _).symm⟩
+  · rw [oM.localDegree_eq_localIndex _ hE hE s (by rw [← Set.image_singleton, hs.preimage_image]),
+      localIndex_coverSection, oM.localDegree_eq_zero_of_notMem_range _ hE hE _
+        (Set.disjoint_left.1 hst' (Set.mem_range_self x)), one_zsmul, zero_zsmul, sub_zero]
+  · rw [oM.localDegree_eq_zero_of_notMem_range _ hE hE _
+        (Set.disjoint_right.1 hst' (Set.mem_range_self x)),
+      oM.localDegree_eq_localIndex _ hE hE t (by rw [← Set.image_singleton, ht.preimage_image]),
+      localIndex_coverSection_neg, zero_zsmul, neg_one_zsmul, zero_sub, neg_neg]
+
+/-- **The twisted fundamental class of an oriented manifold, from its fundamental class.** An
+orientation `o` of `M` trivializes the orientation local system `o(TM)`, by evaluating a function
+on the two orientations of `TₓM` at `oₓ` (`TauCeti.VectorBundleOrientation.signLocalSystemIso`).
+The twisted fundamental class `[M]_or` is the image of the fundamental class `[M]` of `o` under the
+inverse of this trivialization: read on the orientation cover, that image is
+`s_*[M] - t_*[M] = [M']`, for the sections `s` and `t` given by `o` and by `-o`. -/
+theorem twistedHomologyCoefficientMap_inv_fundamentalClass :
+    (twistedHomologyCoefficientMap (VectorBundleOrientation.signLocalSystemIso (R := ℤ)
+        (Fintype.card_fin _) o.toVectorBundleOrientation).inv (n + 1)).hom
+        ((twistedHomologyConstantIso (TopCat.of M) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1)).inv.hom
+          (((o.reindex (finCongr hE)).toHomologicalOrientation hE).fundamentalClass hE)) =
+      twistedFundamentalClass M hE := by
+  have hst := coverSection_neg_apply o
+  have hs := o.toVectorBundleOrientation.proj_coverSection (Fintype.card_fin _)
+  have ht := (-o).toVectorBundleOrientation.proj_coverSection (Fintype.card_fin _)
+  set hp := isCoveringMap_projHom E M
+  set oM := (o.reindex (finCongr hE)).toHomologicalOrientation hE
+  set s := o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)
+  set t := (-o).toVectorBundleOrientation.coverSection (Fintype.card_fin _)
+  have hUhom := uliftIntHomologyIso_hom (TopCat.of M) (n + 1)
+  set U := uliftIntHomologyIso (TopCat.of M) (n + 1)
+  set Zu := twistedHomologyConstantIso (TopCat.of M) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1)
+  set Z := twistedHomologyConstantIso (TopCat.of M) (ModuleCat.of ℤ ℤ) (n + 1)
+  -- On coefficients, the inverse trivialization followed by reading functions as formal sums of
+  -- sheets is the identification `ULift ℤ ≅ ℤ` followed by the difference of the sections.
+  have hφ : (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.hom = uliftIntIso.hom :=
+    ModuleCat.hom_ext (LinearMap.ext fun _ ↦ (uliftIntIso_hom_apply _).symm)
+  have hcoef := ConcreteCategory.congr_hom (congrArg (twistedHomologyCoefficientMap · (n + 1))
+    (hp.signLocalSystemIsoOfSection_inv_comp_signLocalSystemToPermutation ℤ
+      VectorBundleOrientationCover.proj_comp_deck (finite_preimage_projHom M)
+      VectorBundleOrientationCover.deck_ne_self
+      (fun _ _ ↦ VectorBundleOrientationCover.eq_or_eq_deck (Fintype.card_fin _)) s t hs ht hst))
+    (Zu.inv.hom (oM.fundamentalClass hE))
+  rw [← VectorBundleOrientation.signLocalSystemIso_def] at hcoef
+  simp only [hφ, twistedHomologyCoefficientMap_comp, twistedHomologyCoefficientMap_sub,
+    ModuleCat.hom_comp, ModuleCat.hom_sub, LinearMap.comp_apply, LinearMap.sub_apply] at hcoef
+  -- On homology with constant coefficients, the identification `ULift ℤ ≅ ℤ` is `U`.
+  have hU : (twistedHomologyCoefficientMap ((constantFunctor (TopCat.of M)).map uliftIntIso.hom)
+      (n + 1)).hom (Zu.inv.hom (oM.fundamentalClass hE)) =
+        Z.inv.hom (U.hom.hom (oM.fundamentalClass hE)) := by
+    rw [hUhom]
+    exact ConcreteCategory.congr_hom
+      (twistedHomologyConstantIso_inv_naturality (TopCat.of M) uliftIntIso.hom (n + 1)) _
+  -- Read on the cover, a section `u` of the cover gives `u_*[M]`.
+  have hsec (u : C(M, OrientationCover 𝓘(ℝ, E) M)) (hu : ∀ x, u x ∈ projHom M ⁻¹' {x}) :
+      (hp.singularHomologyPermutationIso ℤ (n + 1)).inv.hom
+          ((twistedHomologyCoefficientMap (hp.permutationLocalSystemSection ℤ u hu) (n + 1)).hom
+            (Z.inv.hom (U.hom.hom (oM.fundamentalClass hE)))) =
+        (uliftIntHomologyIso (TopCat.of (OrientationCover 𝓘(ℝ, E) M)) (n + 1)).hom.hom
+          (oM.mapFundamentalClass hE u) := by
+    rw [HomologicalOrientation.mapFundamentalClass_def]
+    exact (ConcreteCategory.congr_hom
+      (hp.permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv ℤ u hu (n + 1))
+        _).trans (ConcreteCategory.congr_hom
+          (homologyMap_comp_uliftIntHomologyIso_hom (TopCat.ofHom u) (n + 1)) _).symm
+  -- Hence the class reads as `s_*[M] - t_*[M] = [M']`, and is `[M]_or` by uniqueness.
+  refine eq_twistedFundamentalClass hE
+    ((congrArg (hp.singularHomologyPermutationIso ℤ (n + 1)).inv.hom hcoef).trans ?_)
+  rw [hU, map_sub, coverFundamentalClass_def,
+    ← mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_neg hE o]
+  -- The sides agree only up to the presentation of singular homology, so this is `exact`.
+  exact (congrArg₂ (· - ·) (hsec s hs) (hsec t ht)).trans (map_sub _ _ _).symm
+
+/-- **The twisted fundamental class of an oriented manifold is its fundamental class.** An
+orientation `o` of `M` trivializes the orientation local system `o(TM)`, by evaluating a function
+on the two orientations of `TₓM` at `oₓ` (`TauCeti.VectorBundleOrientation.signLocalSystemIso`).
+Under this trivialization, followed by the identification of homology with constant coefficients
+with singular homology, the twisted fundamental class `[M]_or ∈ Hₙ₊₁(M; o(TM))` is the
+fundamental class `[M] ∈ Hₙ₊₁(M; ℤ)` of `o`. -/
+theorem twistedHomologyConstantIso_hom_twistedFundamentalClass :
+    (twistedHomologyConstantIso (TopCat.of M) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1)).hom.hom
+        ((twistedHomologyCoefficientMap (VectorBundleOrientation.signLocalSystemIso (R := ℤ)
+          (Fintype.card_fin _) o.toVectorBundleOrientation).hom (n + 1)).hom
+            (twistedFundamentalClass M hE)) =
+      ((o.reindex (finCongr hE)).toHomologicalOrientation hE).fundamentalClass hE := by
+  rw [← twistedHomologyCoefficientMap_inv_fundamentalClass hE o,
+    twistedHomologyCoefficientMap_inv_hom_id_apply]
+  -- The constant comparison is only definitionally a map out of singular homology, so
+  -- `rw [Iso.inv_hom_id_apply]` cannot match; it applies up to that identification.
+  exact Iso.inv_hom_id_apply _ _
+
+end Oriented
 
 end TauCeti.Manifold.OrientationCover

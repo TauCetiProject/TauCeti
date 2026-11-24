@@ -8,7 +8,8 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.ColimitsOfShape
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
-public import Mathlib.CategoryTheory.Preadditive.Basic
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 
 /-!
 # Objects killed by a natural number
@@ -18,6 +19,11 @@ objects killed by `e` form an object property, `CategoryTheory.ObjectProperty.is
 closed under subobjects and quotients: if `e` kills `W`, it kills every subobject and every
 quotient of `W`. It contains the zero objects and is closed under colimits of every shape. In a
 category of modules this is the condition that `e` annihilates every element.
+
+A natural number kills a functor exactly when it kills each of its values. Additive functors
+preserve the objects killed by `e`, and faithful additive functors also reflect them, so that,
+for instance, a sheaf is killed by `e` exactly when each of its sections is. Finally, if `a • 𝟙 Z`
+is an epimorphism, a factor `a` can be cancelled from a natural number `a * b` killing `Z`.
 -/
 
 public section
@@ -70,5 +76,41 @@ instance (e : ℕ) (J : Type*) [Category* J] : (isKilledBy C e).IsClosedUnderCol
     -- `e • ι` vanishes on every leg of the colimit cocone.
     rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero]
     exact nsmul_eq_zero_of_isKilledBy (h.prop_diag_obj j) (h.ι.app j)
+
+/-- If `a • 𝟙 Z` is an epimorphism and `a * b` kills `Z`, then `b` kills `Z`. -/
+theorem isKilledBy_of_mul_of_epi {a b : ℕ} {Z : C} [Epi (a • 𝟙 Z)]
+    (h : isKilledBy C (a * b) Z) : isKilledBy C b Z := by
+  rw [prop_isKilledBy_iff] at h ⊢
+  rw [← cancel_epi (a • 𝟙 Z), comp_zero, Preadditive.nsmul_comp, Category.id_comp, ← mul_nsmul',
+    h]
+
+section Functor
+
+variable {D : Type*} [Category* D] [Preadditive D]
+
+omit [Preadditive C] in
+/-- A natural number kills a functor exactly when it kills each of its values. -/
+theorem prop_isKilledBy_functor_iff (e : ℕ) (F : C ⥤ D) :
+    isKilledBy (C ⥤ D) e F ↔ ∀ X, isKilledBy D e (F.obj X) := by
+  rw [prop_isKilledBy_iff, NatTrans.ext_iff, funext_iff]
+  simp only [NatTrans.app_nsmul, NatTrans.id_app, NatTrans.app_zero, prop_isKilledBy_iff]
+
+variable (F : C ⥤ D) [F.Additive]
+
+/-- An additive functor sends objects killed by `e` to objects killed by `e`. -/
+theorem isKilledBy_le_inverseImage (e : ℕ) : isKilledBy C e ≤ (isKilledBy D e).inverseImage F :=
+  fun X hX ↦ by
+    rw [prop_inverseImage_iff, prop_isKilledBy_iff, ← F.map_id, ← F.map_nsmul,
+      (prop_isKilledBy_iff e X).1 hX, F.map_zero]
+
+/-- A faithful additive functor reflects the objects killed by `e`. -/
+theorem inverseImage_isKilledBy [F.Faithful] (e : ℕ) :
+    (isKilledBy D e).inverseImage F = isKilledBy C e := by
+  refine le_antisymm (fun X hX ↦ ?_) (isKilledBy_le_inverseImage F e)
+  rw [prop_inverseImage_iff, prop_isKilledBy_iff, ← F.map_id, ← F.map_nsmul,
+    ← F.map_zero X X] at hX
+  exact (prop_isKilledBy_iff e X).2 (F.map_injective hX)
+
+end Functor
 
 end CategoryTheory.ObjectProperty

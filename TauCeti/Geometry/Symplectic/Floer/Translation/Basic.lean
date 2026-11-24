@@ -22,7 +22,8 @@ perturbation does not depend on `s`, so the perturbed derivative of the translat
 translate of the perturbed derivative of `u` (`SymplecticForm.perturbedFDeriv_comp_add_right`).
 Hence the translate of a solution for the almost complex structures `J` solves the equation for
 the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`,
-and translations preserve the energy (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+and translations translate the energy density
+(`SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so they preserve the energy.
 This file identifies the fixed points of this action of `ℝ` on finite-energy solutions and shows
 that it is free elsewhere, so that the quotient by translations is taken only away from the
 stationary cylinders.

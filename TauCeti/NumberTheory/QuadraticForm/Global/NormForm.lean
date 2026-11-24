@@ -272,7 +272,8 @@ example : ¬ LocallyRepresentsScalar (weightedSumSquares ℚ ![(1 : ℚ), 1]) 3 
       hilbertSymbol_unitAtFinitePlace_rat ℓ (-1) u3] at hv
     have hp : Fact (3 : ℕ).Prime := ⟨Nat.prime_three⟩
     have hpadic : hilbertSymbol (-1 : ℚ_[3]ˣ) (Units.mk0 (3 : ℚ_[3]) (by norm_num)) = -1 :=
-      Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three 3 rfl
+      by simpa [TauCeti.padicPrimeUnit_eq_mk0] using
+        Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three 3 rfl
     have heq : Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom (-1 : ℚˣ) = (-1 : ℚ_[3]ˣ) ∧
         Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom u3 =
           Units.mk0 (3 : ℚ_[3]) (by norm_num) := by

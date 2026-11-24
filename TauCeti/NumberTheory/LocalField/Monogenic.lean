@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
+public import TauCeti.NumberTheory.LocalField.RealAddValuation
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 import TauCeti.RingTheory.LocalRing.Monogenic
@@ -20,6 +21,9 @@ let ramification and different computations use a generator without imposing a s
 monogenicity hypothesis. When the extension is totally ramified, every uniformizer `ϖ` of `L` is
 such a generator, so `1, ϖ, …, ϖ^{e - 1}` is a basis of `𝒪[L]` over `𝒪[K]`, with `e = [L : K]`.
 In that basis the additive valuation of an element of `𝒪[L]` is read off from its coordinates.
+For any `K`-embedding `σ : L →ₐ[K] M` into a local field extension `M/L`, an integral generator
+minimizes the root-difference valuation `v_M(σ y - y)` across `𝒪[L]`; in a totally ramified
+extension this valuation is independent of the choice of uniformizer.
 
 ## Main results
 
@@ -31,6 +35,10 @@ In that basis the additive valuation of an element of `𝒪[L]` is read off from
 * `TauCeti.IsTotallyRamified.addVal_eq_iInf_integralPowerBasis_repr`: the additive valuation of
   `x ∈ 𝒪[L]` is the least of `e(L/K) · v_K(a_i) + i` over the coordinates `a_i` of `x` in that
   basis.
+* `TauCeti.realAddValuation_sub_algebraMap_le_of_adjoin_eq_top`: an integral generator `x` of
+  `𝒪[L]` over `𝒪[K]` minimizes `v_M(σ y - y)` over `y ∈ 𝒪[L]` for every `σ : L →ₐ[K] M`.
+* `TauCeti.realAddValuation_sub_algebraMap_eq_of_irreducible`: in a totally ramified extension
+  `L/K`, any two uniformizers have equal root-difference valuation at every `σ : L →ₐ[K] M`.
 
 ## References
 
@@ -120,5 +128,60 @@ theorem IsTotallyRamified.addVal_eq_iInf_integralPowerBasis_repr (h : IsTotallyR
     rw [← (h.integralPowerBasis hϖ).basis.sum_repr x]
     simp only [PowerBasis.coe_basis, h.integralPowerBasis_gen, Algebra.smul_def]
   exact addVal_sum_algebraMap_mul_pow_of_irreducible hϖ (h.integralPowerBasis_dim hϖ).le _
+
+section Tower
+
+open Polynomial
+
+variable {M : Type*} [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [Algebra K M] [Algebra L M] [IsScalarTower K L M] [ValuativeExtension L M]
+
+/-- If `x ∈ 𝒪[L]` generates `𝒪[L]` over `𝒪[K]`, then `v_M(σ x - x) ≤ v_M(σ y - y)` for every
+`y ∈ 𝒪[L]` and `σ : L →ₐ[K] M`. -/
+theorem realAddValuation_sub_algebraMap_le_of_adjoin_eq_top
+    {x : 𝒪[L]} (hx : Algebra.adjoin 𝒪[K] {x} = ⊤) (y : 𝒪[L]) (σ : L →ₐ[K] M) :
+    realAddValuation M (σ (x : L) - algebraMap L M (x : L)) ≤
+      realAddValuation M (σ (y : L) - algebraMap L M (y : L)) := by
+  have : ValuativeExtension K M := ValuativeExtension.trans K L M
+  obtain ⟨P, hP⟩ : y ∈ (Polynomial.aeval x : 𝒪[K][X] →ₐ[𝒪[K]] 𝒪[L]).range := by
+    rw [← Algebra.adjoin_singleton_eq_range_aeval, hx]; exact Algebra.mem_top
+  have hmem (τ : L →ₐ[K] M) : τ (x : L) ∈ 𝒪[M] := by
+    rw [mem_integer_iff_realAddValuation_nonneg, τ.realAddValuation_apply,
+      ← realAddValuation_algebraMap, ← Valuation.HasExtension.val_algebraMap (vA := valuation M)]
+    exact mem_integer_iff_realAddValuation_nonneg.mp (algebraMap 𝒪[L] 𝒪[M] x).property
+  let c (τ : L →ₐ[K] M) : 𝒪[M] := ⟨τ (x : L), hmem τ⟩
+  have heval (τ : L →ₐ[K] M) :
+      algebraMap 𝒪[M] M ((P.map (algebraMap 𝒪[K] 𝒪[M])).eval (c τ)) = τ (y : L) := by
+    have hhom : (algebraMap 𝒪[M] M).comp (algebraMap 𝒪[K] 𝒪[M]) =
+        τ.toRingHom.comp ((algebraMap 𝒪[L] L).comp (algebraMap 𝒪[K] 𝒪[L])) := by
+      rw [algebraMap_comp_algebraMap_integerRing, algebraMap_comp_algebraMap_integerRing]
+      exact RingHom.ext fun d ↦ (τ.commutes (algebraMap 𝒪[K] K d)).symm
+    have hy : Polynomial.aeval x P = y := hP
+    rw [eval_map, hom_eval₂, ← hy, aeval_def,
+      ← Algebra.algebraMap_ofSubsemiring_apply (S := 𝒪[L]), ← AlgHom.coe_toRingHom τ,
+      hom_eval₂, hom_eval₂, hhom]
+    simp [c, Algebra.algebraMap_ofSubsemiring_apply]
+  obtain ⟨q, hq⟩ := Polynomial.sub_dvd_eval_sub (c σ) (c (IsScalarTower.toAlgHom K L M))
+    (P.map (algebraMap 𝒪[K] 𝒪[M]))
+  have hval := congrArg (algebraMap 𝒪[M] M) hq
+  rw [map_sub, map_mul, heval, heval, map_sub,
+    Algebra.algebraMap_ofSubsemiring_apply, Algebra.algebraMap_ofSubsemiring_apply,
+    Algebra.algebraMap_ofSubsemiring_apply] at hval
+  simp only [c, IsScalarTower.coe_toAlgHom'] at hval
+  rw [hval, (realAddValuation M).map_mul]
+  exact le_add_of_nonneg_right (mem_integer_iff_realAddValuation_nonneg.mp q.property)
+
+/-- **Uniformizer invariance of root-difference valuations.** In a totally ramified extension
+`L/K`, any two uniformizers of `𝒪[L]` have equal root-difference valuation at `σ : L →ₐ[K] M`. -/
+theorem realAddValuation_sub_algebraMap_eq_of_irreducible
+    (h : IsTotallyRamified K L) {ξ ξ' : 𝒪[L]} (hξ : Irreducible ξ) (hξ' : Irreducible ξ')
+    (σ : L →ₐ[K] M) :
+    realAddValuation M (σ (ξ : L) - algebraMap L M (ξ : L)) =
+      realAddValuation M (σ (ξ' : L) - algebraMap L M (ξ' : L)) :=
+  le_antisymm
+    (realAddValuation_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ) ξ' σ)
+    (realAddValuation_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ') ξ σ)
+
+end Tower
 
 end TauCeti

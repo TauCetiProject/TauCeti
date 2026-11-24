@@ -6,7 +6,7 @@ Authors: Codex, Claude
 module
 
 public import Mathlib.Data.Set.BoolIndicator
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 import Mathlib.Data.Finset.Sym
 import Mathlib.Order.Sym2
 import TauCeti.Data.Sym.Sym2

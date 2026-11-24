@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Topology.UniformSpace.Cauchy
+public import Mathlib.Topology.UniformSpace.CompleteSeparated
 
 /-!
 # Completeness transfer between uniformities
@@ -47,3 +48,22 @@ theorem completeSpace_of_continuous_cauchySeq
     u₁.toTopologicalSpace id hcontinuous x).comp hx⟩
 
 end UniformSpace
+
+namespace Topology.IsClosedEmbedding
+
+open Filter Set
+open scoped Topology
+
+/-- A uniformly continuous closed embedding into a complete uniform space has complete domain. -/
+theorem completeSpace_of_uniformContinuous {α β : Type*} [UniformSpace α] [UniformSpace β]
+    [CompleteSpace β] {ι : α → β} (hι : IsClosedEmbedding ι) (hu : UniformContinuous ι) :
+    CompleteSpace α := by
+  refine ⟨fun {l} hl ↦ ?_⟩
+  have : NeBot l := hl.1
+  obtain ⟨y, hy⟩ := CompleteSpace.complete (hl.map hu)
+  have hyr : y ∈ range ι := hι.isClosed_range.mem_of_tendsto hy
+    (Eventually.of_forall fun x ↦ mem_range_self x)
+  obtain ⟨x, rfl⟩ := hyr
+  exact ⟨x, hι.isEmbedding.isInducing.tendsto_nhds_iff.mpr hy⟩
+
+end Topology.IsClosedEmbedding

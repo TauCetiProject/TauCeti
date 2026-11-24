@@ -14,8 +14,9 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 The type tags retain the topology, atlas and smooth structure of their original carrier.
 Smooth addition, negation and additive actions become smooth multiplication, inversion and
 multiplicative actions on `Multiplicative`, and the reverse transfer equips `Additive` with its
-additive Lie-group and smooth-action structures. The transfers preserve the field, models with
-corners, universes and regularity.
+additive Lie-group and smooth-action structures. Smooth addition also makes the translation action
+`g • x = toAdd g + x` of `Multiplicative M` on `M` smooth. The transfers preserve the field, models
+with corners, universes and regularity.
 
 ## References
 
@@ -71,6 +72,12 @@ maps. -/
 instance contMDiffConstSMul {Γ : Type*} [VAdd Γ M] [ContMDiffConstVAdd I n Γ M] :
     ContMDiffConstSMul I n (Multiplicative Γ) M where
   contMDiff_const_smul γ := contMDiff_const_vadd (I := I) (n := n) γ.toAdd
+
+/-- Smooth addition makes the action of `Multiplicative M` on `M` by translations,
+`g • x = toAdd g + x`, smooth. -/
+instance contMDiffSMulSelf [Add M] [ContMDiffAdd I n M] :
+    ContMDiffSMul I I n (Multiplicative M) M where
+  contMDiff_smul := contMDiff_add (I := I) (n := n) (G := M)
 
 end Multiplicative
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.PresentedGroup
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
@@ -23,9 +24,12 @@ presented by `R` is the quotient by the normal closure of their images.
 
 Generators that occur in no relator span a free factor of the presented group.
 
+A group presented on finitely many generators is finitely generated.
+
 ## Main results
 
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
+* `PresentedGroup.fg`: a group presented on finitely many generators is finitely generated.
 * `PresentedGroup.unionEquivQuotient`: the group presented by `R ∪ S` is the quotient of the
   group presented by `R` by the normal closure of the images of `S`.
 * `PresentedGroup.emptyEquivFreeGroup`: the group presented without relators is free.
@@ -132,6 +136,10 @@ theorem mk_mk {α : Type*} (S : Set (FreeGroup α)) (L : List (α × Bool)) :
     mk S (FreeGroup.mk L) =
       (L.map fun p => cond p.2 (of p.1) (of p.1)⁻¹).prod :=
   (mk S).apply_freeGroup_mk L
+
+/-- A group presented on finitely many generators is finitely generated. -/
+instance fg {α : Type*} [Finite α] (rels : Set (FreeGroup α)) : Group.FG (PresentedGroup rels) :=
+  Group.fg_of_surjective (mk_surjective rels)
 
 section Union
 

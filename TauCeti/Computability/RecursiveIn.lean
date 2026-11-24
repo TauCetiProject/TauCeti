@@ -202,6 +202,37 @@ end RecursiveIn
 
 namespace ComputableIn
 
+/-- Binding an optional value to an optional function computable in `O` preserves computability
+in `O`. The function may also depend on the input. -/
+theorem option_bind {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+    {O : Set (ℕ →. ℕ)} {f : α → Option β} {g : α → β → Option γ}
+    (hf : ComputableIn O f) (hg : ComputableIn₂ O g) :
+    ComputableIn O fun a => (f a).bind (g a) := by
+  rcases isEmpty_or_nonempty β with hβ | ⟨⟨b⟩⟩
+  · refine RecursiveIn.of_eq (ComputableIn.const (none : Option γ)) fun a => ?_
+    simp only [Part.some_inj]
+    cases f a with
+    | none => rfl
+    | some b => exact (hβ.false b).elim
+  · have hget : ComputableIn O fun a => (f a).getD b :=
+      (Primrec.option_getD.comp Primrec.id (Primrec.const b)).computableIn.comp hf
+    have htag : Primrec fun p : Bool × Option γ => cond p.1 p.2 none :=
+      Primrec.cond Primrec.fst Primrec.snd (Primrec.const none)
+    refine RecursiveIn.of_eq (htag.computableIn.comp
+      ((Primrec.option_isSome.computableIn.comp hf).pair (hg.comp (ComputableIn.id.pair hget))))
+      fun a => ?_
+    simp only [Part.some_inj]
+    cases f a <;> rfl
+
+/-- Mapping an optional value by a function computable in `O` preserves computability in `O`.
+The map may also depend on the input. -/
+theorem option_map {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+    {O : Set (ℕ →. ℕ)} {f : α → Option β} {g : α → β → γ}
+    (hf : ComputableIn O f) (hg : ComputableIn₂ O g) :
+    ComputableIn O fun a => (f a).map (g a) := by
+  simp only [Option.map_eq_bind, Function.comp_def]
+  exact hf.option_bind (Primrec.option_some.computableIn.comp hg)
+
 /-- Total unbounded search: if `P` is decidable and computable in `O` and holds at some number for
 every parameter, then the least witness `Nat.find` is computable in `O`. -/
 theorem find {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {P : α → ℕ → Prop} [DecidableRel P]

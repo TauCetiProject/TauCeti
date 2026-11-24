@@ -69,12 +69,15 @@ its attainment give actual finite categorical covers of compact locally contract
 * `TauCeti.exists_isOpen_superset_lsCategoryCount_le_encard`: in a locally contractible space every
   set has an open neighbourhood whose count is at most its cardinality.
 * `ContinuousMap.HomotopyEquiv.lsCategoryCount_univ_eq` and `Homeomorph.lsCategoryCount_image`:
-  invariance under homotopy equivalences and homeomorphisms.
+  invariance under homotopy equivalences and homeomorphisms, and
+  `Topology.IsOpenEmbedding.lsCategoryCount_image`: invariance under open embeddings with closed
+  range, such as the inclusions of summands.
 * `TauCeti.lsCategoryCount_eq_zero` and `TauCeti.lsCategoryCount_pos`: the count vanishes exactly
   on the empty set.
 * `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
   sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
-  finite disjoint union is the sum of the counts of its summands.
+  finite disjoint union is the sum of the counts of its summands, with
+  `TauCeti.lsCategoryCount_sum` and `TauCeti.lsCategoryCount_univ_sum` for `X ⊕ Y`.
 * `TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents`: the count of a space with
   finitely many components is the sum of the counts of its components.
 * `TauCeti.lsCategoryCount_preimage_subtypeVal`: a clopen subspace computes the counts of its
@@ -584,51 +587,6 @@ theorem lsCategoryCount_eq_sum_inter {ι : Type*} [Fintype ι] {C : ι → Set X
     _ = (Finset.univ.biUnion J).card := by rw [Finset.card_biUnion hJd, Nat.cast_sum]
     _ ≤ n := by exact_mod_cast (Finset.card_le_univ _).trans (by simp)
 
-section Sigma
-
-variable {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
-
-/-- A summand of a disjoint union has the same Lusternik–Schnirelmann counts in the disjoint union
-as in itself. -/
-@[simp]
-theorem lsCategoryCount_image_sigmaMk (i : ι) (A : Set (Y i)) :
-    lsCategoryCount (Σ i, Y i) (Sigma.mk i '' A) = lsCategoryCount (Y i) A := by
-  refine le_antisymm (IsOpenEmbedding.sigmaMk.lsCategoryCount_image_le A) ?_
-  obtain rfl | ⟨y, -⟩ := A.eq_empty_or_nonempty
-  · simp
-  classical
-  -- Collapsing every other summand to `y` gives a retraction onto `Y i`.
-  let r : C(Σ i, Y i, Y i) :=
-    ⟨fun x ↦ if h : x.1 = i then h ▸ x.2 else y, continuous_sigma fun j ↦ by
-      by_cases h : j = i
-      · subst h
-        simpa using continuous_id'
-      · simpa [h] using continuous_const⟩
-  have hr : r.comp ⟨Sigma.mk i, continuous_sigmaMk⟩ = ContinuousMap.id (Y i) :=
-    ContinuousMap.ext fun a ↦ by simp [r]
-  exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_image _ _)
-
-/-- The Lusternik–Schnirelmann count of a subset of a finite disjoint union is the sum of the counts
-of its parts in the summands. Empty summands contribute `0`, and the sum is `⊤` as soon as one part
-has no finite categorical cover. -/
-theorem lsCategoryCount_sigma [Fintype ι] (A : Set (Σ i, Y i)) :
-    lsCategoryCount (Σ i, Y i) A = ∑ i, lsCategoryCount (Y i) (Sigma.mk i ⁻¹' A) := by
-  have hd : Pairwise (Disjoint on fun i ↦ range (Sigma.mk i : Y i → Σ i, Y i)) :=
-    fun _ _ hij ↦ disjoint_left.mpr fun _ ⟨_, ha⟩ ⟨_, hb⟩ ↦
-      hij (congrArg Sigma.fst (ha.trans hb.symm))
-  rw [lsCategoryCount_eq_sum_inter (fun i ↦ isClopen_range_sigmaMk) hd
-    fun x _ ↦ mem_iUnion.mpr ⟨x.1, x.2, rfl⟩]
-  simp_rw [← image_preimage_eq_inter_range, lsCategoryCount_image_sigmaMk]
-
-/-- The Lusternik–Schnirelmann count of a finite disjoint union is the sum of the counts of its
-summands. -/
-@[simp]
-theorem lsCategoryCount_univ_sigma [Fintype ι] :
-    lsCategoryCount (Σ i, Y i) univ = ∑ i, lsCategoryCount (Y i) univ := by
-  simp [lsCategoryCount_sigma]
-
-end Sigma
-
 section Clopen
 
 /-- On a clopen set `C`, the Lusternik–Schnirelmann count of a subset `A ⊆ C` is the same whether
@@ -695,7 +653,85 @@ theorem Homeomorph.lsCategoryCount_image {X Y : Type*} [TopologicalSpace X] [Top
 
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X]
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- An open embedding with closed range preserves the Lusternik–Schnirelmann count of every
+subset: its range is a clopen copy of the source. -/
+theorem _root_.Topology.IsOpenEmbedding.lsCategoryCount_image {e : Y → X} (he : IsOpenEmbedding e)
+    (hc : IsClosed (range e)) (A : Set Y) : lsCategoryCount X (e '' A) = lsCategoryCount Y A := by
+  rw [← lsCategoryCount_preimage_subtypeVal ⟨hc, he.isOpen_range⟩ (image_subset_range e A),
+    ← Homeomorph.lsCategoryCount_image he.isEmbedding.toHomeomorph A]
+  congr 1
+  ext ⟨_, y, rfl⟩
+  simp [he.injective.mem_set_image, Subtype.ext_iff, he.injective.eq_iff]
+
+section Sigma
+
+variable {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+
+/-- A summand of a disjoint union has the same Lusternik–Schnirelmann counts in the disjoint union
+as in itself. -/
+@[simp]
+theorem lsCategoryCount_image_sigmaMk (i : ι) (A : Set (Y i)) :
+    lsCategoryCount (Σ i, Y i) (Sigma.mk i '' A) = lsCategoryCount (Y i) A :=
+  IsOpenEmbedding.sigmaMk.lsCategoryCount_image isClosed_range_sigmaMk A
+
+/-- The Lusternik–Schnirelmann count of a subset of a finite disjoint union is the sum of the counts
+of its parts in the summands. Empty summands contribute `0`, and the sum is `⊤` as soon as one part
+has no finite categorical cover. -/
+theorem lsCategoryCount_sigma [Fintype ι] (A : Set (Σ i, Y i)) :
+    lsCategoryCount (Σ i, Y i) A = ∑ i, lsCategoryCount (Y i) (Sigma.mk i ⁻¹' A) := by
+  have hd : Pairwise (Disjoint on fun i ↦ range (Sigma.mk i : Y i → Σ i, Y i)) :=
+    fun _ _ hij ↦ disjoint_left.mpr fun _ ⟨_, ha⟩ ⟨_, hb⟩ ↦
+      hij (congrArg Sigma.fst (ha.trans hb.symm))
+  rw [lsCategoryCount_eq_sum_inter (fun i ↦ isClopen_range_sigmaMk) hd
+    fun x _ ↦ mem_iUnion.mpr ⟨x.1, x.2, rfl⟩]
+  simp_rw [← image_preimage_eq_inter_range, lsCategoryCount_image_sigmaMk]
+
+/-- The Lusternik–Schnirelmann count of a finite disjoint union is the sum of the counts of its
+summands. -/
+@[simp]
+theorem lsCategoryCount_univ_sigma [Fintype ι] :
+    lsCategoryCount (Σ i, Y i) univ = ∑ i, lsCategoryCount (Y i) univ := by
+  simp [lsCategoryCount_sigma]
+
+end Sigma
+
+section Sum
+
+/-- A subset of the left summand of `X ⊕ Y` has the same Lusternik–Schnirelmann count in `X ⊕ Y`
+as in `X`. -/
+@[simp]
+theorem lsCategoryCount_image_inl (A : Set X) :
+    lsCategoryCount (X ⊕ Y) (Sum.inl '' A) = lsCategoryCount X A :=
+  IsOpenEmbedding.inl.lsCategoryCount_image isClosed_range_inl A
+
+/-- A subset of the right summand of `X ⊕ Y` has the same Lusternik–Schnirelmann count in `X ⊕ Y`
+as in `Y`. -/
+@[simp]
+theorem lsCategoryCount_image_inr (A : Set Y) :
+    lsCategoryCount (X ⊕ Y) (Sum.inr '' A) = lsCategoryCount Y A :=
+  IsOpenEmbedding.inr.lsCategoryCount_image isClosed_range_inr A
+
+/-- The Lusternik–Schnirelmann count of a subset of `X ⊕ Y` is the sum of the counts of its parts
+in the two summands. -/
+theorem lsCategoryCount_sum (A : Set (X ⊕ Y)) :
+    lsCategoryCount (X ⊕ Y) A =
+      lsCategoryCount X (Sum.inl ⁻¹' A) + lsCategoryCount Y (Sum.inr ⁻¹' A) := by
+  have hd : Pairwise (Disjoint on fun b ↦ cond b (range (@Sum.inl X Y)) (range Sum.inr)) :=
+    pairwise_on_bool.2 isCompl_range_inl_range_inr.disjoint
+  rw [lsCategoryCount_eq_sum_inter (fun b ↦ by cases b <;> simp [isClopen_range_inl,
+    isClopen_range_inr]) hd fun x _ ↦ by cases x <;> simp]
+  simp [← image_preimage_eq_inter_range]
+
+/-- **The Lusternik–Schnirelmann count of a disjoint union** `X ⊕ Y` is the sum of the counts of
+`X` and `Y`. -/
+@[simp]
+theorem lsCategoryCount_univ_sum :
+    lsCategoryCount (X ⊕ Y) univ = lsCategoryCount X univ + lsCategoryCount Y univ := by
+  simp [lsCategoryCount_sum]
+
+end Sum
 
 /-- **Component sum formula.** The Lusternik–Schnirelmann count of a space with finitely many
 connected components is the sum of the counts of its components, each regarded as a space in its

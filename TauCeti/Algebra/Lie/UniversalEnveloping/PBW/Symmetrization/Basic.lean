@@ -28,9 +28,6 @@ by `⁅x, y⁆`. Hence the symmetrization of a homogeneous Lie invariant `p ∈ 
 symbols are the given invariants, in the proof of the Harish-Chandra isomorphism by Chevalley's
 restriction theorem.
 
-The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
-`Sym[R]^n L`. The Lie algebra module has an independent universe.
-
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod`: the commutator of `ι x`
@@ -61,9 +58,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 

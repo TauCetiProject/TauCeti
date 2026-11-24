@@ -49,8 +49,6 @@ characters `χ.primitiveCharacter` of the characters `χ : DirichletCharacter �
 
 ## Main results
 
-* `TauCeti.NumberField.absNorm_eq_pow_orderOf`: for `n = p ^ k * m` with `¬ p ∣ m`, every prime `P`
-  of `𝓞 K` above `p` has norm `p ^ orderOf (p : ZMod m)`.
 * `TauCeti.NumberField.card_primesOverFinset_eq_totient_div_orderOf`: there are
   `m.totient / orderOf (p : ZMod m)` primes of `𝓞 K` above `p`.
 * `TauCeti.NumberField.prod_primesOverFinset_one_sub_absNorm_cpow_neg`,
@@ -86,15 +84,6 @@ variable {K : Type*} [Field K] [NumberField K]
 section Local
 
 variable {n p k m : ℕ} [hp : Fact p.Prime] [IsCyclotomicExtension {n} ℚ K]
-
-/-- **Norm of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`, every prime
-ideal `P` of `𝓞 K` lying over `p` has absolute norm `p ^ orderOf (p : ZMod m)`. -/
-theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
-    [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
-    absNorm P = p ^ orderOf (p : ZMod m) := by
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
-  rw [← pow_inertiaDeg p P, ← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ),
-    inertiaDegIn_eq_orderOf hn hm]
 
 /-- **Cardinality of `primesOverFinset` in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`,
 the number of primes of `𝓞 K` above `p` is `m.totient / orderOf (p : ZMod m)`. -/

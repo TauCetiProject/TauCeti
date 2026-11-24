@@ -54,6 +54,11 @@ a bijection between index types (possibly in different universes), composing wit
 membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
 (`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
 `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
+
+Reading a sequence `b ∈ ℓᵖ(ℤ)` along `k ↦ -k` and weighting it by `2^{(e - s) (-k)}` gives a
+summable series over `k : ℕ` when `s < e`, or `s = e` and `p ≤ 1`
+(`Memℓp.summable_two_rpow_mul_neg`). This is the summability of the low-frequency
+Littlewood–Paley blocks below the critical regularity.
 -/
 
 public section
@@ -470,3 +475,33 @@ theorem coe_lpCongrLeft (e : α ≃ β) :
 end LinearIsometryEquiv
 
 end Equiv
+
+/-- **Weighted summability over the nonpositive integers.** Let `bⱼ ≥ 0`, `j ∈ ℤ`, be a sequence
+in `ℓᵖ`. If `s < e`, or `s = e` and `p ≤ 1`, then `2^{(e - s) j} bⱼ` is summable over the
+nonpositive indices `j = -k`: the weights decay geometrically as `j → -∞` when `s < e`, and
+otherwise `b` itself is summable. -/
+theorem Memℓp.summable_two_rpow_mul_neg {b : ℤ → ℝ} (hb : Memℓp b p) (hb0 : ∀ j, 0 ≤ b j)
+    {s e : ℝ} (hs : s < e ∨ (s = e ∧ p ≤ 1)) :
+    Summable fun k : ℕ ↦ (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) * b (-k) := by
+  rcases hs with hs | ⟨rfl, hp⟩
+  · -- The weights decay geometrically and the sequence is bounded.
+    obtain ⟨M, hM⟩ := memℓp_infty_iff.1 (hb.of_exponent_ge le_top)
+    have hr : (2 : ℝ) ^ (-(e - s)) < 1 :=
+      Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+    refine Summable.of_nonneg_of_le (fun k ↦ mul_nonneg (by positivity) (hb0 _)) (fun k ↦ ?_)
+      ((summable_geometric_of_lt_one (by positivity) hr).mul_left M)
+    have hbM : b (-k) ≤ M := (Real.le_norm_self _).trans (hM ⟨-k, rfl⟩)
+    have hw : (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) = (2 ^ (-(e - s))) ^ k := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+      push_cast
+      ring_nf
+    rw [hw, mul_comm]
+    exact mul_le_mul_of_nonneg_right hbM (by positivity)
+  · -- At the critical regularity the sequence itself is summable.
+    have h1 := (memℓp_gen_iff (by simp : (0 : ℝ) < (1 : ℝ≥0∞).toReal)).1
+      (hb.of_exponent_ge hp)
+    simp only [ENNReal.toReal_one, Real.rpow_one] at h1
+    have hinj : Function.Injective fun k : ℕ ↦ -(k : ℤ) :=
+      neg_injective.comp Nat.cast_injective
+    refine ((h1.comp_injective hinj).of_norm).congr fun k ↦ ?_
+    simp

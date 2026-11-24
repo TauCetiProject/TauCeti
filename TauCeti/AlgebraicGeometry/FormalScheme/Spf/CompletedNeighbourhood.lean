@@ -99,8 +99,19 @@ theorem le_mul_left (f g : BasicNeighbourhood p) : g ≤ f * g := by
 instance : IsDirectedOrder (BasicNeighbourhood p) :=
   ⟨fun f g ↦ ⟨f * g, le_mul_right f g, le_mul_left f g⟩⟩
 
+/-- The least basic neighbourhood of `p` is `D(1)`, the whole formal spectrum. -/
+instance : OrderBot (BasicNeighbourhood p) where
+  bot := ⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩
+  bot_le f := by
+    rw [le_def, basicOpen_one]
+    exact le_top
+
+@[simp]
+theorem elem_bot : (⊥ : BasicNeighbourhood p).elem = 1 :=
+  (rfl)
+
 instance : Nonempty (BasicNeighbourhood p) :=
-  ⟨⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩⟩
+  ⟨⊥⟩
 
 /-- For an ideal of definition `I`, `f ≤ g` holds exactly when `g` lies in the radical of
 `f A + I`, the condition for the restriction map `A_{f} → A_{g}`. -/
@@ -144,6 +155,13 @@ theorem completedNeighbourhoodDiagram_map_apply {f g : BasicNeighbourhood p} (h 
     (completedNeighbourhoodDiagram p).map h x = CompletedAway.restrict
       ((BasicNeighbourhood.le_iff_mem_radical (IsAdicRing.ideal_spec A).2.1).mp h.le) x :=
   (rfl)
+
+/-- The transition maps of the diagram of completed localisations are `A`-algebra maps. -/
+theorem completedNeighbourhoodDiagram_map_algebraMap {f g : BasicNeighbourhood p} (h : f ⟶ g)
+    (a : A) :
+    (completedNeighbourhoodDiagram p).map h (algebraMap A (CompletedAway A f.elem) a) =
+      algebraMap A (CompletedAway A g.elem) a :=
+  (completedNeighbourhoodDiagram_map_apply p h _).trans ((CompletedAway.restrict _).commutes a)
 
 /-! ### The value at `p` -/
 
