@@ -119,6 +119,7 @@ noncomputable def complexSplitCoordinateMap
 
 /-- The complexified split map sends `x` to the image of `h*(1 ⊗ x)` under
 `TauCeti.DeligneTorus.splittingPoint`. -/
+@[simp]
 theorem complexSplitCoordinateMap_apply
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) (x : H) :
     complexSplitCoordinateMap h x = splittingPoint.ofConv (h.hom ((1 : ℝ) ⊗ₜ[ℚ] x)) := by
