@@ -28,6 +28,8 @@ which it takes each value.
   `a` in `∑ t, single (f t) 1` is the number of indices `t` with `f t = a`;
   `Finsupp.sum_sum_single_one_apply` and `Finsupp.sum_single_one_apply_ne_zero_iff` record that
   these letter counts sum to the number of indices and are nonzero exactly at the values of `f`.
+* `Finsupp.finsetSum_single_one_apply`: the coefficient of `a` in the indicator
+  `∑ i ∈ s, single i 1` of a finset `s` is `1` if `a ∈ s` and `0` otherwise.
 * `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
   exponent vectors of total degree `n`.
 * `Multiset.toFinsupp_replicate`: `toFinsupp (replicate k i) = single i k`.
@@ -85,6 +87,12 @@ theorem toMultiset_sum_single_one {α ι : Type*} (s : Finset ι) (p : ι → α
 number of indices `t` with `f t = a`. -/
 theorem sum_single_one_apply {α ι : Type*} [Fintype ι] [DecidableEq α] (f : ι → α) (a : α) :
     (∑ t, single (f t) 1 : α →₀ ℕ) a = (Finset.univ.filter fun t => f t = a).card := by
+  simp [finsetSum_apply, single_apply]
+
+/-- The coefficients of the indicator `∑ i ∈ s, single i 1` of a finset `s`: the coefficient of
+`a` is `1` if `a ∈ s` and `0` otherwise. -/
+theorem finsetSum_single_one_apply {α : Type*} [DecidableEq α] (s : Finset α) (a : α) :
+    (∑ i ∈ s, single i 1 : α →₀ ℕ) a = if a ∈ s then 1 else 0 := by
   simp [finsetSum_apply, single_apply]
 
 /-- The letter counts of a family with values in `F` sum, over `F`, to the number of indices. -/
