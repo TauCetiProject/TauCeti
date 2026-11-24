@@ -27,10 +27,11 @@ The intersection `A ∩ B` is the union of the two disjoint open sides `b (N × 
 function `k` is constant along the line `t ↦ b (a, t)` in `B`, so `g` takes different values at
 `b (a, 1)` and `b (a, -1)`, and these points lie in different components of `A`.
 
-If moreover `M` is connected and `N` is preconnected, the complement has at most two components,
-the components of the two sides (`TauCeti.IsBicollar.compl_range_eq_union_connectedComponentIn`),
-so it has exactly two: they are open, connected and disjoint, contain one side each, cover the
-complement, and have closures obtained by adding the image of `f`
+If moreover `M` is preconnected and `N` is nonempty and preconnected, the complement has at most
+two components, the components of the two sides
+(`TauCeti.IsBicollar.compl_range_eq_union_connectedComponentIn`), so it has exactly two: they are
+open, connected and disjoint, contain one side each, cover the complement, and have closures
+obtained by adding the image of `f`
 (`TauCeti.IsBicollar.separates_of_subsingleton_deRhamCohomology_one`). This is the separation
 theorem for compact connected two-sided hypersurfaces once a unit normal field has been turned into
 a bicollar, the normal collar of the hypersurface. The case `M = ℝⁿ` is the separation half of the
@@ -48,9 +49,9 @@ homeomorphic to `ℝ` (with `0₂` in place of `0₁`) and so is connected.
   of the bicollar are disjoint.
 * `TauCeti.IsBicollar.not_isPreconnected_compl_range`: with `H¹_dR(M) = 0`, a bicollared map with
   closed image and nonempty domain disconnects `M`.
-* `TauCeti.IsBicollar.separates_of_subsingleton_deRhamCohomology_one`: in a connected manifold, for
-  a preconnected domain, the complement has exactly these two components, with closures obtained by
-  adding the image.
+* `TauCeti.IsBicollar.separates_of_subsingleton_deRhamCohomology_one`: in a preconnected manifold,
+  for a nonempty preconnected domain, the complement has exactly these two components, with closures
+  obtained by adding the image.
 
 ## References
 
@@ -106,11 +107,12 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
   classical
   let φ : LocallyConstant (A ⊓ B : Opens M) ℝ :=
     (LocallyConstant.ofIsClopen hS).map fun i : Fin 2 ↦ (i : ℝ)
-  -- The indicator `φ` of the positive side is `g - k` for locally constant `g` on `A`, `k` on `B`.
+  -- `φ` is `0` on the positive side and `1` on the negative side, i.e. the indicator of the
+  -- negative side; it is `g - k` for locally constant `g` on `A` and `k` on `B`.
   obtain ⟨g, k, hg⟩ :=
     deRhamCohomology.exists_locallyConstant_eq_inclusion_sub_inclusion hH' φ
   have hmem : ∀ t : ℝ, t ≠ 0 → b (a, t) ∈ (A ⊓ B : Opens M) := fun t ht ↦
-    ⟨by simpa [A, h.apply_mem_range_iff] using ht, mem_range_self _⟩
+    ⟨h.apply_mem_compl_range a ht, mem_range_self _⟩
   have h1 : (b (a, 1)) ∈ P := mem_image_of_mem b ⟨mem_univ _, mem_Ioi.2 one_pos⟩
   have h2 : (b (a, -1)) ∉ P := fun hP' ↦
     disjoint_left.1 h.disjoint_image_Ioi_Iio hP'
@@ -128,9 +130,7 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
       (⟨b (a, t), mem_range_self _⟩ : B))
       ((h.isOpenEmbedding.continuous.comp (continuous_const.prodMk continuous_id)).subtype_mk _))
       ⟨1, rfl⟩ ⟨-1, rfl⟩
-  refine ⟨g, fun hp hm hne ↦ ?_⟩
-  change g ⟨b (a, 1), hp⟩ = g ⟨b (a, -1), hm⟩ at hne
-  linarith
+  exact ⟨g, fun _ _ ↦ by intro hne; linarith⟩
 
 /-- **The two sides of a bicollared hypersurface lie in different components.** If `f : N → M`
 has closed image and a bicollar `b`, and the first de Rham cohomology of `M` vanishes, then for
@@ -141,8 +141,8 @@ theorem disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomolo
     (hclosed : IsClosed (range f)) (a : N) :
     Disjoint (connectedComponentIn (range f)ᶜ (b (a, 1)))
       (connectedComponentIn (range f)ᶜ (b (a, -1))) := by
-  have hp : b (a, 1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
-  have hm : b (a, -1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
+  have hp : b (a, 1) ∈ (range f)ᶜ := h.apply_mem_compl_range a one_ne_zero
+  have hm : b (a, -1) ∈ (range f)ᶜ := h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)
   obtain ⟨g, hg⟩ := exists_locallyConstant_apply_ne hH h hclosed a
   refine disjoint_left.2 fun z hz₁ hz₂ ↦ hg hp hm ?_
   -- `b (a, -1)` would lie in the component of `b (a, 1)`, on which `g` is constant.
@@ -162,22 +162,19 @@ theorem not_isPreconnected_compl_range (hH : Subsingleton (deRhamCohomology I M 
     ¬IsPreconnected (range f)ᶜ := by
   intro hconn
   obtain ⟨a⟩ := ‹Nonempty N›
-  have hmem (t : ℝ) (ht : t ≠ 0) : b (a, t) ∈ (range f)ᶜ := by
-    simpa [h.apply_mem_range_iff] using ht
+  have hm := h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)
   refine disjoint_left.1
     (h.disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomology hH hclosed a)
-    (hconn.subset_connectedComponentIn (hmem 1 one_ne_zero) subset_rfl
-      (hmem (-1) (by norm_num)))
-    (hconn.subset_connectedComponentIn (hmem (-1) (by norm_num)) subset_rfl
-      (hmem (-1) (by norm_num)))
+    (hconn.subset_connectedComponentIn (h.apply_mem_compl_range a one_ne_zero) subset_rfl hm)
+    (mem_connectedComponentIn hm)
 
-/-- **Separation theorem for bicollared hypersurfaces.** Let `M` be a connected manifold with
+/-- **Separation theorem for bicollared hypersurfaces.** Let `M` be a preconnected manifold with
 `H¹_dR(M) = 0`, and let `f : N → M` have closed image and a bicollar `b`, with `N` preconnected.
 Then the complement of the image of `f` has exactly two components, those of the points
 `b (a, 1)` and `b (a, -1)` for any `a : N`: they are open, connected and disjoint, cover the
 complement, contain the positive and the negative side of the bicollar respectively, and the
 closure of each is itself together with the image of `f`. -/
-theorem separates_of_subsingleton_deRhamCohomology_one [ConnectedSpace M]
+theorem separates_of_subsingleton_deRhamCohomology_one [PreconnectedSpace M]
     (hH : Subsingleton (deRhamCohomology I M 1)) [PreconnectedSpace N] (h : IsBicollar f b)
     (hclosed : IsClosed (range f)) (a : N) :
     letI A := connectedComponentIn (range f)ᶜ (b (a, 1))
@@ -185,8 +182,8 @@ theorem separates_of_subsingleton_deRhamCohomology_one [ConnectedSpace M]
     IsOpen A ∧ IsOpen B ∧ IsConnected A ∧ IsConnected B ∧ Disjoint A B ∧
       A ∪ B = (range f)ᶜ ∧ b '' (univ ×ˢ Ioi 0) ⊆ A ∧ b '' (univ ×ˢ Iio 0) ⊆ B ∧
       closure A = A ∪ range f ∧ closure B = B ∪ range f := by
-  have hp : b (a, 1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
-  have hm : b (a, -1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
+  have hp : b (a, 1) ∈ (range f)ᶜ := h.apply_mem_compl_range a one_ne_zero
+  have hm : b (a, -1) ∈ (range f)ᶜ := h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)
   have hd := h.disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomology hH
     hclosed a
   have hu := (h.compl_range_eq_union_connectedComponentIn a).symm
