@@ -265,8 +265,9 @@ theorem map_qExpansion_weightedG2MF_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)
       map_ratCast, hzero, hrow, V, V']
 
 /-- Cyclotomic conjugation of the normalized coefficients of a single-residue division value.
-Applying `σ` to each Fourier coefficient of `weightedG2MF (Pi.single (a, b) 1)` after division by
-`(2πi)²` gives the corresponding normalized coefficient of `weightedG2MF (Pi.single (a, d b) 1)`.
+Applying `σ` to each Fourier coefficient of `weightedG2MF (Pi.single a 1)` after division by
+`(2πi)²` gives the corresponding normalized coefficient of
+`weightedG2MF (Pi.single ![a 0, d * a 1] 1)`.
 The quantity conjugated is the normalized coefficient, not the division value itself. -/
 theorem map_qExpansion_weightedG2MF_single_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
     (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
