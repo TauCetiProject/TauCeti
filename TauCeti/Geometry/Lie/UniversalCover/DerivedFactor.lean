@@ -40,10 +40,12 @@ composite
 * Since `π ∘ (A × K ≃ G)` sends `(a, k)` to `π(a) π(k)`, the map `f` is surjective and open.
 * The kernel of `π` is discrete, hence central in the connected group `G`. An element of the
   kernel of `f` is therefore `a⁻¹` times a central element of `G`, so it is central in `K`. The
-  Lie algebra `[𝔤, 𝔤]` of `K` has zero centre (`LieHom.center_eq_bot_of_range_eq_of_isCompl`), so
-  the centre of `K` is discrete and so is the kernel of `f`.
+  Lie algebra `[𝔤, 𝔤]` of `K` has zero centre
+  (`TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries`), so the centre of `K` is
+  discrete and so is the kernel of `f`.
 * A surjective open homomorphism with discrete kernel is a covering map, hence a local
-  homeomorphism, and `[𝔤, 𝔤]` is perfect (`LieHom.derivedSeries_one_eq_top_of_range_eq_of_isCompl`).
+  homeomorphism, and `[𝔤, 𝔤]` is perfect
+  (`TauCeti.Lie.derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries`).
 
 For the universal covering group of a compact Lie group the centre and the derived algebra are
 complementary, since its Lie algebra is that of the compact group
@@ -53,11 +55,6 @@ connected Lie group is the product of the subgroup integrating `𝔷` and a comp
 
 ## Main results
 
-* `TauCeti.Lie.integralLeafSubgroupData_center_toHom_mem_center`: the subgroup integrating the
-  centre of `𝔤` is central when `𝔷 ⊕ [𝔤, 𝔤] = 𝔤`.
-* `TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries` and
-  `TauCeti.Lie.derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries`: the subgroup
-  integrating `[𝔤, 𝔤]` has centreless, perfect Lie algebra when `𝔷 ⊕ [𝔤, 𝔤] = 𝔤`.
 * `TauCeti.Lie.compactSpace_integralLeafSubgroupData_derivedSeries`: the subgroup integrating
   `[𝔤, 𝔤]` is compact when `G` covers a compact group.
 * `TauCeti.UniversalCover.isCompl_center_derivedSeries_one`: the Lie algebra of the universal
@@ -95,62 +92,6 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [SecondCountableTopology G] [SimplyConnectedSpace G]
 
-/-- **The subgroup integrating the centre is central.** If the centre `𝔷` and the derived algebra
-`[𝔤, 𝔤]` of the Lie algebra of a simply connected Lie group `G` are complementary, the integral leaf
-subgroup of `𝔷` lies in the centre of `G`. -/
-theorem integralLeafSubgroupData_center_toHom_mem_center
-    (hc : IsCompl (center ℝ (LeftInvariantDerivation I G))
-      (derivedSeries ℝ (LeftInvariantDerivation I G) 1))
-    (a : ((center ℝ (LeftInvariantDerivation I G) :
-      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) :
-    ((center ℝ (LeftInvariantDerivation I G) :
-      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom a ∈
-      Subgroup.center G := by
-  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
-  obtain ⟨p, rfl⟩ := (centerProdDerivedContinuousMulEquiv hc).surjective g
-  rw [centerProdDerivedContinuousMulEquiv_apply]
-  exact (((commute_integralLeafSubgroupData_center p.1 a).map _).mul_left
-    (LieIdeal.commute_integralLeafSubgroupData_of_disjoint _ _ hc.disjoint a p.2).symm).eq
-
-omit [SimplyConnectedSpace G] in
-/-- The Lie map of the subgroup integrating `[𝔤, 𝔤]` has range `[𝔤, 𝔤]`. -/
-private theorem range_lieMap_integralLeafSubgroupData_derivedSeries :
-    LinearMap.range (lieMap ((derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
-      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
-        (I := I)).toContMDiffMonoidMorphism).toLinearMap =
-      (derivedSeries ℝ (LeftInvariantDerivation I G) 1).toSubmodule := by
-  rw [LieSubalgebra.range_lieMap_integralLeafSubgroupData, LieIdeal.toLieSubalgebra_toSubmodule]
-
-omit [SimplyConnectedSpace G] in
-/-- **The subgroup integrating `[𝔤, 𝔤]` has centreless Lie algebra** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`. -/
-theorem center_eq_bot_integralLeafSubgroupData_derivedSeries
-    (hc : IsCompl (center ℝ (LeftInvariantDerivation I G))
-      (derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
-    center ℝ (LeftInvariantDerivation
-      ((derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
-        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).I'
-      ((derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
-        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) =
-      ⊥ :=
-  LieHom.center_eq_bot_of_range_eq_of_isCompl _
-    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _) _
-    range_lieMap_integralLeafSubgroupData_derivedSeries hc
-
-omit [SimplyConnectedSpace G] in
-/-- **The subgroup integrating `[𝔤, 𝔤]` has perfect Lie algebra** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`. -/
-theorem derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries
-    (hc : IsCompl (center ℝ (LeftInvariantDerivation I G))
-      (derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
-    derivedSeries ℝ (LeftInvariantDerivation
-      ((derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
-        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).I'
-      ((derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
-        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) 1 =
-      ⊤ :=
-  LieHom.derivedSeries_one_eq_top_of_range_eq_of_isCompl _
-    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
-    range_lieMap_integralLeafSubgroupData_derivedSeries hc
-
 /-- The image of the subgroup integrating the centre under a surjective homomorphism is central. -/
 private theorem range_comp_toHom_center_le_center
     (hc : IsCompl (center ℝ (LeftInvariantDerivation I G))
@@ -160,10 +101,8 @@ private theorem range_comp_toHom_center_le_center
       LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
         (I := I)).toHom).range ≤ Subgroup.center C := by
   rintro _ ⟨a, rfl⟩
-  refine Subgroup.mem_center_iff.mpr fun c ↦ ?_
-  obtain ⟨g, rfl⟩ := hsurj c
-  rw [MonoidHom.comp_apply, ← map_mul, ← map_mul,
-    Subgroup.mem_center_iff.mp (integralLeafSubgroupData_center_toHom_mem_center hc a) g]
+  exact Subgroup.map_center_le_center hsurj
+    ⟨_, integralLeafSubgroupData_center_toHom_mem_center hc a, rfl⟩
 
 /-- An element `k` of the subgroup integrating `[𝔤, 𝔤]` whose image under a local homeomorphism
 `π` lies in the image of the subgroup `A` integrating the centre is central: `k = a * z` with
