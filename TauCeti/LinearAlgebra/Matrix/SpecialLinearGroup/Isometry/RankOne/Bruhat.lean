@@ -244,11 +244,9 @@ theorem apply_zero_zero_ne_zero_of_mem_borelSubgroup {g : UnitaryRankOne.Group K
 variable (K σ) in
 /-- The unipotent subgroup is contained in the Borel subgroup. -/
 theorem unipotentSubgroup_le_borelSubgroup : unipotentSubgroup K σ ≤ borelSubgroup K σ := by
-  intro g hg
-  rw [unipotentSubgroup_def] at hg
-  obtain ⟨a, rfl⟩ := hg
-  rw [mem_borelSubgroup_iff]
-  simp [HeisenbergGroup.toMatrix_apply]
+  rw [unipotentSubgroup_def, borelSubgroup_def]
+  rintro _ ⟨a, rfl⟩
+  exact MulAction.mem_stabilizer_iff.mpr (upperRootHom_smul_infinity a)
 
 /-- Every image of `upperRootHom` lies in the Borel subgroup. -/
 @[simp]
@@ -389,23 +387,18 @@ theorem borelSubgroup_le_normalizer_unipotentSubgroup (hσ : Function.Involutive
   rw [borelSubgroup_eq_sup hσ]
   exact sup_le (torus_le_normalizer_unipotentSubgroup hσ) Subgroup.le_normalizer
 
-/-- Acting on `infinity K σ` by `upperRootHom (unitaryMk σ hσ (σ c.val.2) c.val.1 _) * weyl`
-produces the affine isotropic point `point K σ c`. -/
-theorem upperRootHom_mul_weyl_smul_infinity (hσ : Function.Involutive σ)
-    (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
-    (upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-        (by simpa [hσ c.val.2] using c.property)) * weyl K σ) • infinity K σ =
-      point K σ c := by
+/-- The Weyl element sends `infinity K σ` to the affine origin `[0 : 0 : 1]`. -/
+@[simp]
+theorem weyl_smul_infinity :
+    weyl K σ • infinity K σ = point K σ ⟨(0, 0), by simp⟩ := by
   apply Subtype.ext
   rw [SubMulAction.val_smul, coe_infinity, coe_point, Subgroup.smul_def, Projectivization.smul_mk]
-  have hvec : ((upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-        (by simpa [hσ c.val.2] using c.property)) * weyl K σ : UnitaryRankOne.Group K σ) :
-      Matrix.SpecialLinearGroup (Fin 3) K) • ![1, 0, 0] = ![c.val.1, c.val.2, 1] := by
+  have hvec : (weyl K σ : Matrix.SpecialLinearGroup (Fin 3) K) • (![1, 0, 0] : Fin 3 → K) =
+      ![0, 0, 1] := by
     rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, vec_one_zero_zero_eq_single,
       Matrix.mulVec_single_one]
     ext i
-    fin_cases i <;>
-      simp [coe_typeAGraphConjugator_two, HeisenbergGroup.toMatrix_apply, hσ c.val.2]
+    fin_cases i <;> simp [coe_typeAGraphConjugator_two]
   simp only [hvec]
 
 /-- The unipotent subgroup meets the Weyl-conjugate of the Borel subgroup trivially. -/
@@ -425,19 +418,16 @@ theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Funct
     ∃ u ∈ unipotentSubgroup K σ, ∃ b ∈ borelSubgroup K σ, u * weyl K σ * b = g := by
   have hg' : g • infinity K σ ≠ infinity K σ := by
     simpa [borelSubgroup_def, MulAction.mem_stabilizer_iff] using hg
-  obtain ⟨c, hc⟩ := exists_point hg'
-  let u : unipotentSubgroup K σ :=
-    ⟨upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-      (by simpa [hσ c.val.2] using c.property)), upperRootHom_mem_unipotentSubgroup _⟩
+  obtain ⟨a, ha, -⟩ := existsUnique_upperRootHom_smul_zero hσ (g • infinity K σ) hg'
   have horb : MulAction.orbitRel (unipotentSubgroup K σ) _
       (g • infinity K σ) (weyl K σ • infinity K σ) := by
     rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-    refine ⟨u, ?_⟩
-    rw [Subgroup.smul_def, smul_smul, upperRootHom_mul_weyl_smul_infinity, hc]
-  obtain ⟨u', hu', b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp
+    refine ⟨⟨upperRootHom K σ a, upperRootHom_mem_unipotentSubgroup a⟩, ?_⟩
+    rw [Subgroup.smul_def, weyl_smul_infinity, ha]
+  obtain ⟨u, hu, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp
     ((orbitRel_smul_iff_mem_doubleCoset_stabilizer (unipotentSubgroup K σ)
       (infinity K σ) g (weyl K σ)).mp horb)
-  exact ⟨u', hu', b, by simpa [borelSubgroup_def] using hb, rfl⟩
+  exact ⟨u, hu, b, by simpa [borelSubgroup_def] using hb, rfl⟩
 
 /-- **Unique sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup
 factors uniquely as `u * weyl * b` with `u ∈ unipotentSubgroup` and `b ∈ borelSubgroup`. -/
