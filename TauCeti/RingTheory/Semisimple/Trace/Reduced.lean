@@ -125,6 +125,9 @@ theorem idealTrace_top (b : B) :
     (LinearEquiv.ofEq _ _ (Submodule.restrictScalars_top R B B)).trans Submodule.topEquiv
   rw [idealTrace_apply, ← LinearMap.trace_conj' _ e]
   refine congrArg _ <| LinearMap.ext fun x ↦ ?_
+  -- Plain `simp [e]` merges `e.conj` into `Submodule.topEquiv.conj` on the domain
+  -- `restrictScalars R ⊤` (not syntactically `⊤`) and gets stuck there, so the conjugation by
+  -- the composite equivalence is unfolded by hand first.
   simp only [e, LinearEquiv.conj_apply_apply, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,
     Submodule.topEquiv_apply, LinearEquiv.coe_ofEq_apply, LinearMap.coe_restrict_apply,
     LinearMap.mulLeft_apply, LinearEquiv.ofEq_symm]
@@ -141,6 +144,18 @@ theorem idealTrace_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
     ext x
     simpa using mul_eq_zero_of_mem_isotypicComponents hc hc' hne hb x.property
   rw [idealTrace_apply R c', h0, map_zero]
+
+/-- A sum over the isotypic components `c'` of a function of `c'` and `idealTrace R c' b`, which
+vanishes when the trace does, reduces for `b` in an isotypic component `c` to its term at `c`. -/
+theorem finsum_mem_isotypicComponents_idealTrace_eq {M : Type*} [AddCommMonoid M]
+    (f : Submodule B B → R → M) (hf : ∀ c', f c' 0 = 0) {c : Submodule B B}
+    (hc : c ∈ isotypicComponents B B) {b : B} (hb : b ∈ c) :
+    ∑ᶠ c' ∈ isotypicComponents B B, f c' (idealTrace R c' b) = f c (idealTrace R c b) := by
+  rw [finsum_mem_def, finsum_eq_single _ c, Set.indicator_of_mem hc]
+  intro c' hne
+  by_cases hc' : c' ∈ isotypicComponents B B
+  · rw [Set.indicator_of_mem hc', idealTrace_eq_zero_of_mem_isotypicComponents hc hc' hne hb, hf]
+  · rw [Set.indicator_of_notMem hc']
 
 end IdealTrace
 
@@ -229,12 +244,8 @@ theorem trace_mulLeft_eq_sum_idealTrace (b : B) :
 of `b`. -/
 theorem idealTrace_eq_trace_mulLeft {c : Submodule B B} (hc : c ∈ isotypicComponents B B)
     {b : B} (hb : b ∈ c) : idealTrace F c b = LinearMap.trace F B (LinearMap.mulLeft F b) := by
-  rw [trace_mulLeft_eq_sum_idealTrace, finsum_mem_def, finsum_eq_single _ c,
-    Set.indicator_of_mem hc]
-  intro c' hne
-  by_cases hc' : c' ∈ isotypicComponents B B
-  · rw [Set.indicator_of_mem hc', idealTrace_eq_zero_of_mem_isotypicComponents hc hc' hne hb]
-  · rw [Set.indicator_of_notMem hc']
+  rw [trace_mulLeft_eq_sum_idealTrace,
+    finsum_mem_isotypicComponents_idealTrace_eq (fun _ t ↦ t) (fun _ ↦ rfl) hc hb]
 
 /-- On an isotypic component `c`, the reduced trace of `b ∈ c` is `(idealDeg F c)⁻¹` times its
 trace on `c`. -/
@@ -242,13 +253,9 @@ theorem semisimpleReducedTrace_eq_of_mem {c : Submodule B B} (hc : c ∈ isotypi
     {b : B} (hb : b ∈ c) :
     semisimpleReducedTrace F B b =
       (idealDeg F c : F)⁻¹ * LinearMap.trace F B (LinearMap.mulLeft F b) := by
-  rw [semisimpleReducedTrace_apply, finsum_mem_def, finsum_eq_single _ c,
-    Set.indicator_of_mem hc, idealTrace_eq_trace_mulLeft hc hb]
-  intro c' hne
-  by_cases hc' : c' ∈ isotypicComponents B B
-  · rw [Set.indicator_of_mem hc', idealTrace_eq_zero_of_mem_isotypicComponents hc hc' hne hb,
-      mul_zero]
-  · rw [Set.indicator_of_notMem hc']
+  rw [semisimpleReducedTrace_apply, finsum_mem_isotypicComponents_idealTrace_eq
+    (fun c' t ↦ (idealDeg F c' : F)⁻¹ * t) (fun _ ↦ mul_zero _) hc hb,
+    idealTrace_eq_trace_mulLeft hc hb]
 
 /-- The degree of an isotypic component of a finite-dimensional semisimple algebra is positive. -/
 theorem idealDeg_pos {c : Submodule B B} (hc : c ∈ isotypicComponents B B) : 0 < idealDeg F c := by
@@ -294,10 +301,12 @@ of `B` over `Z`. -/
 theorem idealDeg_top (Z : Type*) [Field Z] [Algebra F Z] [Algebra Z B] [IsScalarTower F Z B]
     [Algebra.IsCentral Z B] [IsSimpleRing B] [FiniteDimensional F Z] :
     idealDeg F (⊤ : Submodule B B) = deg Z B := by
+  have hB : finrank F B = finrank F Z * deg Z B ^ 2 := by
+    rw [deg_sq, Module.finrank_mul_finrank]
+  have hZ : finrank F Z ≠ 0 := Module.finrank_pos.ne'
   rw [idealDeg_def, Submodule.restrictScalars_top, top_inf_eq, finrank_top,
-    Subalgebra.finrank_toSubmodule, finrank_center_eq_of_isCentral F Z,
-    ← Module.finrank_mul_finrank F Z B, Nat.mul_div_cancel_left _ Module.finrank_pos,
-    ← deg_sq Z B, Nat.sqrt_eq']
+    Subalgebra.finrank_toSubmodule, finrank_center_eq_of_isCentral F Z, hB,
+    Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hZ), Nat.sqrt_eq']
 
 /-- **The reduced trace of a central simple algebra.** On a simple algebra `B` central over a
 field `Z` finite over `F`, `Trd_{B/F}(b) = (deg_Z B)⁻¹ · tr_F(L_b)`. -/
@@ -341,8 +350,9 @@ theorem semisimpleReducedTrace_eq_trace_reducedTrace_of_ne_zero (Z : Type*) [Fie
   have hl : (LinearMap.mulLeft Z b).restrictScalars F = LinearMap.mulLeft F b := by
     ext; simp
   rw [semisimpleReducedTrace_eq_inv_deg_mul_trace_of_isScalarTower Z, ← hl,
-    LinearMap.trace_restrictScalars, trace_mulLeft_eq_deg_mul_reducedTrace, ← nsmul_eq_mul,
-    map_nsmul, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hdeg, one_mul]
+    LinearMap.trace_restrictScalars, trace_mulLeft_eq_deg_mul_reducedTrace]
+  rw [← nsmul_eq_mul, map_nsmul, nsmul_eq_mul]
+  field_simp
 
 /-- **Comparison with the reduced trace of a central simple algebra**, in characteristic `0`. On
 a simple algebra `B` central over a field `Z` finite over `F`, `Trd_{B/F} = Tr_{Z/F} ∘ Trd_{B/Z}`,
@@ -360,8 +370,8 @@ variable [Algebra.IsCentral F B] [IsSimpleRing B] [FiniteDimensional F B]
 the reduced trace `TauCeti.Algebra.reducedTrace F B`. -/
 theorem semisimpleReducedTrace_eq_reducedTrace_of_ne_zero (hdeg : (deg F B : F) ≠ 0) (b : B) :
     semisimpleReducedTrace F B b = reducedTrace F B b := by
-  rw [semisimpleReducedTrace_eq_inv_deg_mul_trace, trace_mulLeft_eq_deg_mul_reducedTrace,
-    ← mul_assoc, inv_mul_cancel₀ hdeg, one_mul]
+  rw [semisimpleReducedTrace_eq_inv_deg_mul_trace, trace_mulLeft_eq_deg_mul_reducedTrace]
+  field_simp
 
 /-- On a central simple algebra in characteristic `0`, `semisimpleReducedTrace F B` is the reduced
 trace `TauCeti.Algebra.reducedTrace F B`. -/
