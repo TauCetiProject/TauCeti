@@ -35,7 +35,8 @@ slice charts, over `z₁ ≠ 0` and over `z₂ ≠ 0`, retaining the finite stab
   (`TauCeti.Toric.exists_weightedRotation_weightedSliceFst_eq_iff`); for the second slice the
   residual group is `ℤ / b`, acting by `u ↦ exp(-2π i a k / b) u`. For coprime weights these
   actions are free away from the centre of the disc, in particular effective
-  (`ZMod.toCircle_pow_mul_eq_self_iff`, applied to `-k`).
+  (`ZMod.toCircle_pow_mul_eq_self_iff`, applied to `-k`). In general each has a kernel of order
+  `gcd(a, b)` (`ZMod.natCard_toCircle_pow_eq_one`), the generic isotropy of the circle action.
 * **Change of slices.** On the overlap `w ≠ 0`, the slice point over `w` is rotated onto the second
   slice at `exp(-i a arg(w) / b) √((2 ε - b |w|²) / a)` (`TauCeti.Toric.weightedSliceTransition`),
   and the second slice meets that orbit exactly in the `ℤ / b`-orbit of this point

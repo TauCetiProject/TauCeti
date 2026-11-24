@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
-public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
+public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Compact.Haar

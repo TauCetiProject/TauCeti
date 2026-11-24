@@ -38,6 +38,8 @@ curvature:
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
+* `OrthonormalBasis.real_sum_inner_mul_inner`: Parseval's identity over `ℝ` with both inner
+  products taken against the basis vector on the right, `∑ i, ⟪x, b i⟫ ⟪y, b i⟫ = ⟪x, y⟫`.
 * `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
   `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
 * `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
@@ -92,6 +94,13 @@ theorem sum_inner_self (b : OrthonormalBasis ι 𝕜 E) : ∑ i, ⟪b i, b i⟫_
 theorem inner_eq_sum_repr (b : OrthonormalBasis ι 𝕜 E) (x y : E) :
     ⟪x, y⟫_𝕜 = ∑ i, conj (b.repr x i) * b.repr y i := by
   simp [← b.sum_inner_mul_inner x y, b.repr_apply_apply]
+
+/-- Parseval's identity over `ℝ` with both inner products taken against the basis vector on the
+right: `∑ i, ⟪x, b i⟫ ⟪y, b i⟫ = ⟪x, y⟫`. -/
+theorem real_sum_inner_mul_inner {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (b : OrthonormalBasis ι ℝ V) (x y : V) : ∑ i, ⟪x, b i⟫_ℝ * ⟪y, b i⟫_ℝ = ⟪x, y⟫_ℝ := by
+  rw [← b.sum_inner_mul_inner x y]
+  simp_rw [real_inner_comm y]
 
 /-- The real inner product in the two coordinates of an orthonormal basis `b` of a plane:
 `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`. -/
