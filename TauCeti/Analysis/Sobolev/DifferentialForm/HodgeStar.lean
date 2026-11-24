@@ -19,9 +19,8 @@ linear isometric equivalence `o.lpFormHodgeStar hkl : LpForm Ω p k ≃ₗᵢ[�
 sign with the orientation, and for `p = 2` its adjoint is `(-1) ^ (k l) ⋆`:
 `⟪⋆u, v⟫ = (-1) ^ (k l) ⟪u, ⋆v⟫`.
 
-Square-integrable forms whose star has a weak exterior derivative are the domain of the weak
-codifferential `δ = ± ⋆ d ⋆`; the adjointness of the star is the pointwise identity that relates
-`δ` to the adjoint of the weak exterior derivative.
+This adjointness is intended for later use: together with integration by parts, it relates a
+weak codifferential `δ = ± ⋆ d ⋆` to the adjoint of the weak exterior derivative.
 
 ## Main definitions
 
@@ -70,10 +69,13 @@ theorem lpFormHodgeStar_lpFormHodgeStar (hkl : k + l = n) (hlk : l + k = n) (u :
 complementary degree. -/
 theorem lpFormHodgeStar_symm_apply (hkl : k + l = n) (hlk : l + k = n) (v : LpForm Ω p l) :
     (o.lpFormHodgeStar hkl).symm v = (-1 : ℝ) ^ (k * l) • o.lpFormHodgeStar hlk v := by
-  apply (o.lpFormHodgeStar hkl).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, map_smul, mul_comm k l,
-    lpFormHodgeStar_lpFormHodgeStar o hlk hkl, smul_smul, ← pow_add, ← two_mul, pow_mul]
-  simp
+  refine Lp.ext ?_
+  rw [lpFormHodgeStar, LinearIsometryEquiv.compLpₗᵢ_symm]
+  filter_upwards
+    [(o.covectorHodgeStar (hkl.trans finrank_euclideanSpace_fin.symm)).symm.coeFn_compLpₗᵢ v,
+    coeFn_lpFormHodgeStar o hlk v,
+    Lp.coeFn_smul ((-1 : ℝ) ^ (k * l)) (o.lpFormHodgeStar hlk v)] with x h₁ h₂ h₃
+  rw [h₁, h₃, Pi.smul_apply, h₂, covectorHodgeStar_symm_apply]
 
 /-- Reversing the orientation negates the Hodge star of `Lᵖ` forms. -/
 @[simp]

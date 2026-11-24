@@ -212,6 +212,20 @@ theorem inner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
   rw [inner_eq_alternatingFormInner]
   exact alternatingFormInner_eq_sum b _ _
 
+/-- A covector of degree zero, the constant `c`, has Gram norm `|c|`. -/
+@[simp]
+theorem norm_toCovector_constOfIsEmpty (c : ℝ) :
+    ‖toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c)‖ = |c| := by
+  -- The constant `c` is the form dual to `c` times the empty wedge, which has norm one.
+  have h : toExteriorPower V 0 (toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c))
+      = c • ιMulti ℝ 0 Fin.elim0 := by
+    apply (alternatingFormEquiv V 0).injective
+    ext v
+    simp [inner_ιMulti_ιMulti]
+  have h1 : ‖ιMulti ℝ 0 (Fin.elim0 : Fin 0 → V)‖ = 1 := by
+    rw [norm_eq_sqrt_real_inner, inner_ιMulti_ιMulti, Matrix.det_isEmpty, Real.sqrt_one]
+  rw [← (toExteriorPower V 0).norm_map, h, norm_smul, h1, mul_one, Real.norm_eq_abs]
+
 end Hilbert
 
 section Pullback

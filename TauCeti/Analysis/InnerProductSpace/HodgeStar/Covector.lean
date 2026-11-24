@@ -19,12 +19,13 @@ is `Orientation.formHodgeStar`, so it inherits the wedge identity `α ∧ ⋆β 
 `⋆⋆ = (-1) ^ (k l)` and the sign change under reversal of orientation. Since it is an isometry,
 its adjoint is `(-1) ^ (k l) ⋆`: `⟪⋆α, β⟫ = (-1) ^ (k l) ⟪α, ⋆β⟫`.
 
-The Gram norm of a covector of degree zero, a constant `c`, is `|c|`, and the volume form has
-Gram norm one, being the star of the constant `1`.
+The volume form has Gram norm one, being the star of the constant `1`, whose Gram norm is one
+(`TauCeti.Covector.norm_toCovector_constOfIsEmpty`).
 
 These are the pointwise identities behind the Hodge star of square-integrable differential forms
-and the codifferential `δ = ± ⋆ d ⋆`, whose adjointness to the exterior derivative is the
-pointwise identity `⟪⋆α, β⟫ = (-1) ^ (k l) ⟪α, ⋆β⟫` integrated.
+and the codifferential `δ = ± ⋆ d ⋆`. The pointwise identity `⟪⋆α, β⟫ = (-1) ^ (k l) ⟪α, ⋆β⟫` is
+one ingredient, combined with the Leibniz rule and integration by parts, of the adjointness of the
+codifferential to the exterior derivative.
 
 ## Main definitions
 
@@ -37,8 +38,7 @@ pointwise identity `⟪⋆α, β⟫ = (-1) ^ (k l) ⟪α, ⋆β⟫` integrated.
 * `Orientation.wedge_ofCovector_covectorHodgeStar_apply`: `α ∧ ⋆β = ⟪α, β⟫ vol`.
 * `Orientation.covectorHodgeStar_covectorHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.inner_covectorHodgeStar_left`: `⟪⋆α, β⟫ = (-1) ^ (k l) ⟪α, ⋆β⟫`.
-* `TauCeti.Covector.norm_toCovector_constOfIsEmpty`, `Orientation.norm_toCovector_volumeFormL`:
-  the constant `c` has Gram norm `|c|` and the volume form has Gram norm one.
+* `Orientation.norm_toCovector_volumeFormL`: the volume form has Gram norm one.
 
 ## References
 
@@ -54,21 +54,6 @@ noncomputable section
 
 open Module exteriorPower TauCeti TauCeti.Covector
 open scoped RealInnerProductSpace
-
-/-- A covector of degree zero, the constant `c`, has Gram norm `|c|`. -/
-@[simp]
-theorem TauCeti.Covector.norm_toCovector_constOfIsEmpty {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (c : ℝ) :
-    ‖toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c)‖ = |c| := by
-  -- The constant `c` is the form dual to `c` times the empty wedge, which has norm one.
-  have h : toExteriorPower V 0 (toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c))
-      = c • ιMulti ℝ 0 Fin.elim0 := by
-    apply (alternatingFormEquiv V 0).injective
-    ext v
-    simp [inner_ιMulti_ιMulti]
-  have h1 : ‖ιMulti ℝ 0 (Fin.elim0 : Fin 0 → V)‖ = 1 := by
-    rw [norm_eq_sqrt_real_inner, inner_ιMulti_ιMulti, Matrix.det_isEmpty, Real.sqrt_one]
-  rw [← (toExteriorPower V 0).norm_map, h, norm_smul, h1, mul_one, Real.norm_eq_abs]
 
 namespace Orientation
 

@@ -105,19 +105,10 @@ theorem codifferential_neg_orientation (hkl : k + 1 + l = finrank ℝ V) :
   have hneg : (fun y ↦ (-o).formHodgeStar hkl (ω y)) =
       (-1 : ℝ) • fun y ↦ o.formHodgeStar hkl (ω y) := by
     funext y
-    rw [formHodgeStar_neg_orientation, Pi.smul_apply, neg_one_smul ℝ (o.formHodgeStar hkl (ω y))]
-  rw [codifferential_apply _ hkl hlk, codifferential_apply _ hkl hlk, hneg, extDeriv_smul,
-    formHodgeStar_neg_orientation, map_smul,
-    neg_one_smul ℝ (o.formHodgeStar hlk (extDeriv (fun y ↦ o.formHodgeStar hkl (ω y)) x)),
-    neg_neg]
-
-omit [FiniteDimensional ℝ V] [Fact (finrank ℝ V = n)] in
-/-- Applying a Hodge star pointwise preserves differentiability of forms. -/
-private theorem differentiableAt_formHodgeStar_comp [FiniteDimensional ℝ V]
-    [Fact (finrank ℝ V = n)] {j m : ℕ} (hjm : j + m = finrank ℝ V)
-    {ω : V → V [⋀^Fin j]→L[ℝ] ℝ} {x : V} (hω : DifferentiableAt ℝ ω x) :
-    DifferentiableAt ℝ (fun y ↦ o.formHodgeStar hjm (ω y)) x :=
-  (LinearMap.toContinuousLinearMap (o.formHodgeStar hjm).toLinearMap).differentiableAt.comp x hω
+    rw [formHodgeStar_neg_orientation, Pi.smul_apply]
+    exact (neg_one_smul ℝ _).symm
+  rw [codifferential_apply _ hkl hlk, codifferential_apply _ hkl hlk, hneg, extDeriv_smul]
+  simp
 
 /-- The codifferential is additive on forms differentiable at the point. -/
 theorem codifferential_add (hkl : k + 1 + l = finrank ℝ V) {ω₁ ω₂ : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ}
@@ -153,11 +144,9 @@ theorem codifferential_codifferential_apply {l' : ℕ} (hkl : k + 1 + l = finran
       (-1 : ℝ) ^ (k + 1 + 1) • extDeriv fun y ↦ o.formHodgeStar hkl' (ω y) := by
     funext y
     exact o.formHodgeStar_codifferential hkl' hkl ω y
-  have hω' : ContDiffAt ℝ r (fun y ↦ o.formHodgeStar hkl' (ω y)) x :=
-    (LinearMap.toContinuousLinearMap (o.formHodgeStar hkl').toLinearMap).contDiff.contDiffAt.comp
-      x hω
   rw [codifferential_apply _ hkl (by omega), hstar, extDeriv_smul,
-    extDeriv_extDeriv_apply hω' hr, smul_zero, map_zero, smul_zero]
+    extDeriv_extDeriv_apply (o.contDiffAt_formHodgeStar_comp hkl' hω) hr, smul_zero, map_zero,
+    smul_zero]
 
 /-- **The codifferential squares to zero** on forms of class `C²`: `δ δ ω = 0`. -/
 theorem codifferential_codifferential {l' : ℕ} (hkl : k + 1 + l = finrank ℝ V)
