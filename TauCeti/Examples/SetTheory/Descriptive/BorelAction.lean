@@ -135,7 +135,7 @@ variable {X Y : Type*} [MeasurableSpace X] [StandardBorelSpace X] [MulAction (Eq
   [MeasurableSpace Y] [StandardBorelSpace Y] [MulAction (Equiv.Perm ℕ) Y]
 
 example (f : X →[Equiv.Perm ℕ] Y) (hmeas : Measurable f) (hinj : Function.Injective f) :
-    MeasurableSet (f.rangeSubMulAction : Set Y) := by
+    MeasurableSet (f.range : Set Y) := by
   simpa using (hmeas.measurableEmbedding hinj).measurableSet_range
 
 example (f : X →[Equiv.Perm ℕ] Y) (hmeas : Measurable f) (hinj : Function.Injective f) :

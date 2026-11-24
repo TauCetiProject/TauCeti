@@ -36,7 +36,7 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
-* `MulActionHom.rangeSubMulAction`: the range of an equivariant map, as an invariant subset.
+* `MulActionHom.range`: the range of an equivariant map, as an invariant subset.
 * `TauCeti.MulAction.stabilizer_preimage_of_subset_range`: the stabilizer of the preimage of a set
   of values is the stabilizer of the set.
 * `TauCeti.MulAction.stabilizer_eq_of_injective`,
@@ -87,18 +87,18 @@ section Range
 variable {G : Type*} [SMul G X] [SMul G Y] (f : X →[G] Y)
 
 /-- The range of an equivariant map, as an invariant subset of the target. -/
-def rangeSubMulAction : SubMulAction G Y where
+def range : SubMulAction G Y where
   carrier := Set.range f
   smul_mem' g := by
     rintro _ ⟨x, rfl⟩
     exact ⟨g • x, map_smul f g x⟩
 
 @[simp]
-theorem coe_rangeSubMulAction : (f.rangeSubMulAction : Set Y) = Set.range f :=
+theorem coe_range : (f.range : Set Y) = Set.range f :=
   Set.ext fun _ => Iff.rfl
 
 @[simp]
-theorem mem_rangeSubMulAction {y : Y} : y ∈ f.rangeSubMulAction ↔ ∃ x, f x = y :=
+theorem mem_range {y : Y} : y ∈ f.range ↔ ∃ x, f x = y :=
   Iff.rfl
 
 end Range

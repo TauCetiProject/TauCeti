@@ -20,7 +20,7 @@ equivalence relation is `MulAction.orbitRel`. The facts below hold for the actio
   `TauCeti.MeasureTheory.Group.Arithmetic`). An invariant Borel subset of a standard Borel space is
   standard Borel (`MeasurableSet.standardBorel`), so an invariant Borel subset of a Borel
   `S∞`-space is again one.
-* The range of an equivariant map is invariant (`MulActionHom.rangeSubMulAction`). For a measurable
+* The range of an equivariant map is invariant (`MulActionHom.range`). For a measurable
   injection from a standard Borel space into a countably separated space it is Borel, by the
   Lusin–Souslin theorem (`Measurable.measurableEmbedding`,
   `MeasurableEmbedding.measurableSet_range`).

@@ -28,7 +28,8 @@ a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly
   addition on `MulMemClass` / `AddMemClass` subobjects.
 * `InvMemClass.measurableInv`, `NegMemClass.measurableNeg`: measurable inversion and negation on
   `InvMemClass` / `NegMemClass` subobjects.
-* `SubMulAction.instMeasurableSMul₂`: the jointly measurable action on a `SubMulAction`.
+* `SubMulAction.instMeasurableSMul₂`, `SubAddAction.instMeasurableVAdd₂`: the jointly measurable
+  action on a `SubMulAction` / `SubAddAction`.
 * `TauCeti.measurableAdd_of_measurableSub`: on an additive group, separately measurable
   subtraction gives separately measurable addition.
 * `TauCeti.measurableAdd₂_of_measurableSub₂`: on an additive group, jointly measurable subtraction
@@ -55,6 +56,9 @@ instance InvMemClass.measurableInv {G S : Type*} [Inv G] [MeasurableSpace G] [Me
 
 /-- The restriction of a jointly measurable action to an invariant subset is jointly
 measurable. -/
+@[to_additive SubAddAction.instMeasurableVAdd₂
+/-- The restriction of a jointly measurable additive action to an invariant subset is
+jointly measurable. -/]
 instance SubMulAction.instMeasurableSMul₂ {G X : Type*} [SMul G X] [MeasurableSpace G]
     [MeasurableSpace X] [MeasurableSMul₂ G X] (p : SubMulAction G X) : MeasurableSMul₂ G p :=
   ⟨(measurable_smul.comp (measurable_fst.prodMk (measurable_subtypeVal.comp
