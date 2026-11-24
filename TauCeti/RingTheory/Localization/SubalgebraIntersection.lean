@@ -27,7 +27,7 @@ instances for their embedded models.
 
 public section
 
-namespace TauCeti.Localization.subalgebra
+namespace TauCeti.IsLocalization
 
 variable {R K : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
 
@@ -41,11 +41,11 @@ theorem iInf_subalgebra_powers_eq_bot_of_span_range_eq_top {ι : Type*} (a : ι 
   refine Submodule.mem_of_span_eq_top_of_smul_pow_mem (1 : Submodule R K)
     (Set.range a) hcover x ?_
   rintro ⟨_, i, rfl⟩
-  obtain ⟨n, r, hr⟩ := (mem_powers_iff_exists_pow_mul_mem_range (a i) (A i) x).mp
+  obtain ⟨n, hn⟩ := (mem_subalgebra_iff_exists_pow_mul_mem_range (a i) (A i) x).mp
     (Algebra.mem_iInf.mp hx i)
   refine ⟨n, ?_⟩
   rw [Algebra.smul_def, Submodule.mem_one]
-  exact ⟨r, by simpa only [map_pow] using hr⟩
+  simpa only [Set.mem_range, map_pow] using hn
 
 /-- Two embedded principal localizations at coprime elements intersect in the coefficient
 image. -/
@@ -65,4 +65,4 @@ theorem inf_subalgebra_powers_eq_bot_of_isCoprime (a b : R) (A B : Subalgebra R 
   simpa only [C, iInf_bool_eq, Bool.false_eq_true, ↓reduceIte, inf_comm] using
     iInf_subalgebra_powers_eq_bot_of_span_range_eq_top d C hc
 
-end TauCeti.Localization.subalgebra
+end TauCeti.IsLocalization

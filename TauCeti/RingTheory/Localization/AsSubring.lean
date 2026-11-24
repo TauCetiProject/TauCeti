@@ -22,13 +22,13 @@ The localization of a Dedekind domain inside its fraction field is again Dedekin
 
 public section
 
-namespace TauCeti.Localization.subalgebra
+namespace TauCeti.IsLocalization
 
 variable {R K : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
 
 /-- An element belongs to an embedded localization precisely when its denominator ideal
 `Algebra.denIdeal K x` meets the denominator monoid. -/
-theorem mem_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
+theorem mem_subalgebra_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
     [IsLocalization S A] (x : K) :
     x ∈ A ↔ ∃ s ∈ S, s ∈ Algebra.denIdeal K x := by
   constructor
@@ -57,14 +57,14 @@ theorem mem_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
 
 /-- In a principal embedded localization, membership means that some power of the
 localizing element clears the denominator into the coefficient image. -/
-theorem mem_powers_iff_exists_pow_mul_mem_range (a : R) (A : Subalgebra R K)
+theorem mem_subalgebra_iff_exists_pow_mul_mem_range (a : R) (A : Subalgebra R K)
     [IsLocalization (Submonoid.powers a) A] (x : K) :
-    x ∈ A ↔ ∃ n : ℕ, ∃ r : R, algebraMap R K r = algebraMap R K a ^ n * x := by
-  rw [mem_iff_exists_mem_denIdeal (Submonoid.powers a) A x]
+    x ∈ A ↔ ∃ n : ℕ, algebraMap R K a ^ n * x ∈ Set.range (algebraMap R K) := by
+  rw [mem_subalgebra_iff_exists_mem_denIdeal (Submonoid.powers a) A x]
   simp only [Submonoid.mem_powers_iff, exists_exists_eq_and]
-  simp only [Algebra.mem_denIdeal_iff, map_pow, eq_comm]
+  simp only [Algebra.mem_denIdeal_iff, map_pow, Set.mem_range, eq_comm]
 
-end TauCeti.Localization.subalgebra
+end TauCeti.IsLocalization
 
 namespace Localization.subalgebra
 

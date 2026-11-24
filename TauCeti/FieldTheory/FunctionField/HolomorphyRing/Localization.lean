@@ -71,12 +71,12 @@ theorem coe_ofField_powers_eq_holomorphyRing (hF : IsFunctionField k F)
     nonZeroDivisors.ne_zero (hx (Submonoid.mem_powers x)) (Subtype.ext h)
   ext z
   have hmem : z ∈ ofField F (Submonoid.powers x) hx ↔
-      ∃ n : ℕ, algebraMap A F x ^ n * z ∈ (algebraMap A F).range := by
-    rw [ofField_eq, TauCeti.Localization.subalgebra.mem_powers_iff_exists_pow_mul_mem_range x]
-    simp only [RingHom.mem_range]
-  rw [SetLike.mem_coe, hmem, Subalgebra.range_algebraMap, SetLike.mem_coe,
+      ∃ n : ℕ, algebraMap A F x ^ n * z ∈ Set.range (algebraMap A F) := by
+    rw [ofField_eq, TauCeti.IsLocalization.mem_subalgebra_iff_exists_pow_mul_mem_range x]
+  rw [SetLike.mem_coe, hmem, ← RingHom.coe_range, Subalgebra.range_algebraMap, SetLike.mem_coe,
     mem_holomorphyRing_iff]
-  simp only [Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA', mem_holomorphyRing_iff,
+  simp only [SetLike.mem_coe, Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA',
+    mem_holomorphyRing_iff,
     Set.mem_inter_iff, Set.mem_ofPred_eq, and_imp]
   constructor
   · rintro ⟨n, hn⟩ P hP hPx
