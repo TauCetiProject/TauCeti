@@ -54,23 +54,23 @@ variable {R : Type uR} [CommRing R] {n : ℕ} {β : Fin n → Type uβ}
   (G : ∀ i j, InternalGrading R (M i j) ℤ)
   (H : ∀ i, ℤ → Submodule R (P i)) (ℬ : ℤ → Submodule R N)
   {p : ℤ} {q : Fin n → ℤ}
-  (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R) H ℬ p)
-  (g : ∀ i, TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+  (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R) H ℬ p)
+  (g : ∀ i, MultilinearMap.homogeneousSubmodule (R := R) (S := R)
     (fun j ↦ (G i j).piece) (H i) (q i))
 
 /-- Simultaneous Koszul-signed substitution of homogeneous multilinear maps with dependent
 input modules. Each input in block `i` is twisted by the sum of the degrees of operations in
 later blocks. The output degree is the sum of all inner degrees plus the outer degree. -/
 noncomputable def signedCompMultilinearMap :
-    TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun ij : Σ i, β i ↦ (G ij.1 ij.2).piece) ℬ ((∑ i, q i) + p) :=
   ⟨(f.val.compMultilinearMap (fun i ↦ (g i).val)).compLinearMap
     (fun ij ↦ (G ij.1 ij.2).koszulTwist (∑ k, if ij.1 < k then q k else 0)), by
-    apply TauCeti.MultilinearMap.mem_homogeneousSubmodule.mpr
-    rw [TauCeti.MultilinearMap.isHomogeneous_def]
+    apply MultilinearMap.mem_homogeneousSubmodule.mpr
+    rw [MultilinearMap.isHomogeneous_def]
     intro d x hx
-    exact ((TauCeti.MultilinearMap.mem_homogeneousSubmodule.mp f.property).compMultilinearMap
-      (fun i ↦ TauCeti.MultilinearMap.mem_homogeneousSubmodule.mp (g i).property)).map_mem
+    exact ((MultilinearMap.mem_homogeneousSubmodule.mp f.property).compMultilinearMap
+      (fun i ↦ MultilinearMap.mem_homogeneousSubmodule.mp (g i).property)).map_mem
         d _ (fun ij ↦ (G ij.1 ij.2).koszulTwist_mem_piece (hx ij) _)⟩
 
 /-- The underlying map is ordinary dependent substitution precomposed with Koszul twists. -/
@@ -143,7 +143,7 @@ theorem signedCompMultilinearMap_val_of_degree_zero (hq : q = 0) :
 /-- Signed substitution is additive in the outer operation. -/
 @[simp]
 theorem signedCompMultilinearMap_add
-    (f' : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R) H ℬ p) :
+    (f' : MultilinearMap.homogeneousSubmodule (R := R) (S := R) H ℬ p) :
     signedCompMultilinearMap G H ℬ (f + f') g =
       signedCompMultilinearMap G H ℬ f g + signedCompMultilinearMap G H ℬ f' g := by
   apply Subtype.ext
@@ -163,7 +163,7 @@ theorem signedCompMultilinearMap_smul (c : R) :
 /-- Substituting the zero outer operation gives zero. -/
 @[simp]
 theorem signedCompMultilinearMap_zero :
-    signedCompMultilinearMap G H ℬ (0 : TauCeti.MultilinearMap.homogeneousSubmodule
+    signedCompMultilinearMap G H ℬ (0 : MultilinearMap.homogeneousSubmodule
       (R := R) (S := R) H ℬ p) g = 0 := by
   apply Subtype.ext
   ext x
@@ -172,7 +172,7 @@ theorem signedCompMultilinearMap_zero :
 
 /-- Signed substitution is additive in each inner operation separately. -/
 theorem signedCompMultilinearMap_update_add (k : Fin n)
-    (a b : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (a b : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun j ↦ (G k j).piece) (H k) (q k)) :
     signedCompMultilinearMap G H ℬ f (Function.update g k (a + b)) =
       signedCompMultilinearMap G H ℬ f (Function.update g k a) +
@@ -184,17 +184,17 @@ theorem signedCompMultilinearMap_update_add (k : Fin n)
     MultilinearMap.compMultilinearMap_apply, Submodule.coe_add, add_apply]
   let x' := fun ij : Σ i, β i ↦
     (G ij.1 ij.2).koszulTwist (∑ l, if ij.1 < l then q l else 0) (x ij)
-  have he (h : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+  have he (h : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun j ↦ (G k j).piece) (H k) (q k)) :=
     funext (Function.apply_update (fun i
-      (h : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+      (h : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
         (fun j ↦ (G i j).piece) (H i) (q i)) ↦ h.val (Sigma.curry x' i)) g k h)
   rw [he, he, he]
   exact f.val.map_update_add _ k _ _
 
 /-- Signed substitution respects scalars in each inner operation separately. -/
 theorem signedCompMultilinearMap_update_smul (k : Fin n) (c : R)
-    (a : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (a : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun j ↦ (G k j).piece) (H k) (q k)) :
     signedCompMultilinearMap G H ℬ f (Function.update g k (c • a)) =
       c • signedCompMultilinearMap G H ℬ f (Function.update g k a) := by
@@ -205,10 +205,10 @@ theorem signedCompMultilinearMap_update_smul (k : Fin n) (c : R)
     MultilinearMap.compMultilinearMap_apply, Submodule.coe_smul, smul_apply]
   let x' := fun ij : Σ i, β i ↦
     (G ij.1 ij.2).koszulTwist (∑ l, if ij.1 < l then q l else 0) (x ij)
-  have he (h : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+  have he (h : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun j ↦ (G k j).piece) (H k) (q k)) :=
     funext (Function.apply_update (fun i
-      (h : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+      (h : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
         (fun j ↦ (G i j).piece) (H i) (q i)) ↦ h.val (Sigma.curry x' i)) g k h)
   rw [he, he]
   exact f.val.map_update_smul _ k c _

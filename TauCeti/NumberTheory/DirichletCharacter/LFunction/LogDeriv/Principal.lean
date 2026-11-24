@@ -7,16 +7,18 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.Analysis.Calculus.LogDeriv
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import Mathlib.Tactic.Linarith
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ChangeLevel
 
 /-!
-# Exact higher-prime-power remainders for principal characters
+# Deleted Euler factors and higher-prime-power remainders for principal characters
 
 Principal characters retain the higher prime powers away from the level's prime divisors.
 The complex logarithmic derivative differs from zeta's by the sum of the deleted Euler-factor
-logarithmic derivatives wherever the principal L-function is nonzero, away from `s = 1`.
+logarithmic derivatives wherever the principal L-function is nonzero, away from `s = 1`, and on
+`1 ≤ Re s` this difference has norm at most `log N`.
 On the real axis, the higher-prime-power remainder has a finite correction bounded by one
 absolute geometric majorant,
 independently of the level.
@@ -34,31 +36,18 @@ theorem logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta (N : ℕ) [NeZero N]
     {s : ℂ} (hL : LFunctionTrivChar N s ≠ 0) (hs1 : s ≠ 1) :
     logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s =
       ∑ p ∈ N.primeFactors, (Real.log p : ℂ) / ((p : ℂ) ^ s - 1) := by
-  let f (p : ℕ) (z : ℂ) := 1 - (p : ℂ) ^ (-z)
-  let P (z : ℂ) := ∏ p ∈ N.primeFactors, f p z
-  have heq : LFunctionTrivChar N =ᶠ[𝓝 s] P * riemannZeta := by
-    filter_upwards [eventually_ne_nhds hs1] with z hz
-    simpa only [P, f, Pi.mul_apply] using LFunctionTrivChar_eq_mul_riemannZeta (N := N) hz
-  have hPζ : P s * riemannZeta s ≠ 0 := by
-    intro hz
-    exact hL (heq.eq_of_nhds.trans hz)
-  have hP := (mul_ne_zero_iff.mp hPζ).1
-  have hζ := (mul_ne_zero_iff.mp hPζ).2
-  have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : DifferentiableAt ℂ (f p) s := by
-    have : NeZero p := ⟨(Nat.pos_of_mem_primeFactors hp).ne'⟩
-    dsimp only [f]
-    fun_prop
-  have hf0 (p : ℕ) (hp : p ∈ N.primeFactors) : f p s ≠ 0 :=
-    Finset.prod_ne_zero_iff.mp hP p hp
-  have hd := (logDeriv_congr_nhds heq).eq_of_nhds
-  rw [logDeriv_mul _ hP hζ (DifferentiableAt.fun_finsetProd hdf)
-    (differentiableAt_riemannZeta hs1), logDeriv_fun_prod hf0 hdf] at hd
-  rw [hd, add_sub_cancel_right]
+  let χ₀ : DirichletCharacter ℂ 1 := 1
+  have hch : changeLevel (one_dvd N) χ₀ = 1 := map_one _
+  have hmul : LFunctionTrivChar N s =
+      χ₀.LFunction s * ∏ p ∈ N.primeFactors, (1 - χ₀ p * (p : ℂ) ^ (-s)) := by
+    simpa [LFunctionTrivChar, hch] using LFunction_changeLevel (one_dvd N) χ₀ (.inr hs1)
+  rw [hmul, mul_ne_zero_iff] at hL
+  have h := logDeriv_LFunction_changeLevel_sub χ₀ (one_dvd N) (.inl hs1) hL.2 hL.1
+  rw [hch, ← LFunctionTrivChar, LFunction_modOne_eq] at h
+  rw [h]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  dsimp only [f]
-  rw [Complex.logDeriv_one_sub_cpow_neg]
-  congr 1
-  exact (Complex.ofReal_log p.cast_nonneg).symm
+  simp only [χ₀, MulChar.one_apply (isUnit_of_subsingleton _), one_mul,
+    Complex.logDeriv_one_sub_cpow_neg, Complex.ofReal_log p.cast_nonneg, Complex.ofReal_natCast]
 
 private theorem re_logDeriv_LFunctionTrivChar_sub (N : ℕ) [NeZero N]
     {σ : ℝ} (hσ : 1 < σ) :
@@ -172,3 +161,18 @@ theorem abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le (N : ℕ) [NeZero
           (zero_lt_one.trans hσ).le))
 
 end Nat
+
+namespace TauCeti
+
+/-- **Deleted Euler factors in the logarithmic derivative of the principal character.** On the
+closed half-plane `1 ≤ re s`, `logDeriv (LFunctionTrivChar N) s` differs from
+`logDeriv riemannZeta s` by at most `log N` in norm. At the principal pole `s = 1`, both terms
+vanish by Lean's totalization. -/
+theorem norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le {N : ℕ} [NeZero N]
+    {s : ℂ} (hs : 1 ≤ s.re) :
+    ‖logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s‖ ≤ Real.log N := by
+  have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
+  simpa [hch, LFunctionTrivChar, LFunction_modOne_eq] using
+    norm_logDeriv_LFunction_changeLevel_sub_le (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
+
+end TauCeti

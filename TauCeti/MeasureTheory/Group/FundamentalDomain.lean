@@ -47,6 +47,7 @@ only along a null frontier, is itself a fundamental domain.
   translated frontiers, whose translates cover almost everything and have pairwise disjoint
   interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.congr_set`: a set a.e. equal to a fundamental domain is one.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_aedisjoint_smul`: a set a.e. disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_subset_iUnion_smul`: a fundamental domain has
@@ -308,6 +309,28 @@ theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [
       rw [mem_smul_set_iff_inv_smul_mem, mul_inv_rev, inv_inv, mul_smul, smul_inv_smul]
       exact hint hxg hx.1
     exact measure_mono_null hsub (measure_union_null (h_frontier g) (h_frontier h))
+
+/-- **A set a.e. equal to a fundamental domain is a fundamental domain.** Fundamental domains are
+determined only up to null sets: changing `s` on a null set, for instance by choosing which
+boundary points of a polygon to keep, gives another fundamental domain, provided the translations
+are quasi-measure-preserving and the group is countable. -/
+@[to_additive /-- **A set a.e. equal to an additive fundamental domain is an additive fundamental
+domain**, for a countable group acting by quasi-measure-preserving translations. -/]
+theorem IsFundamentalDomain.congr_set {G α : Type*} [Group G] [MulAction G α]
+    [MeasurableSpace α] [Countable G] {μ : Measure α} {s t : Set α}
+    (h : IsFundamentalDomain G s μ) (hst : s =ᵐ[μ] t)
+    (h_qmp : ∀ g : G, QuasiMeasurePreserving (g • · : α → α) μ μ) :
+    IsFundamentalDomain G t μ where
+  nullMeasurableSet := h.nullMeasurableSet.congr hst
+  ae_covers := by
+    have hmem : ∀ᵐ x ∂μ, ∀ g : G, (g • x ∈ s ↔ g • x ∈ t) :=
+      ae_all_iff.2 fun g ↦ ((h_qmp g).preimage_ae_eq hst).mem_iff
+    filter_upwards [h.ae_covers, hmem] with x ⟨g, hg⟩ hx
+    exact ⟨g, (hx g).1 hg⟩
+  aedisjoint g g' hne := by
+    have key (g : G) : g • t =ᵐ[μ] g • s := by
+      simpa only [preimage_smul_inv] using (h_qmp g⁻¹).preimage_ae_eq hst.symm
+    exact (h.aedisjoint hne).congr (key g) (key g')
 
 /-- **A set a.e. disjoint from its translates is no larger than a fundamental domain.** If a
 null-measurable set `t` is a.e. disjoint from each of its translates by nonidentity elements, so

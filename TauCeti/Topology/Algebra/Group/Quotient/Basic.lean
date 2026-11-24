@@ -72,6 +72,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
+* `Subgroup.compactSpace_quotient_map`: the image of a subgroup with compact coset space under a
+  continuous surjective homomorphism has compact coset space.
 * `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: in a weakly locally compact
   group with separately continuous multiplication, `G ⧸ Γ` is compact exactly when `K * Γ = G`
   for a compact set `K`.
@@ -96,6 +98,25 @@ instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [Continuou
 end QuotientGroup
 
 namespace Subgroup
+
+/-- **The image of a cocompact subgroup under a continuous surjective homomorphism is cocompact.**
+A continuous surjective homomorphism `f : G →* H` induces a continuous surjection
+`G ⧸ Γ → H ⧸ Γ.map f`, `[g] ↦ [f g]`, so if `G ⧸ Γ` is compact, then so is `H ⧸ Γ.map f`. -/
+@[to_additive /-- **The image of a cocompact additive subgroup under a continuous surjective
+homomorphism is cocompact.** A continuous surjective homomorphism `f : G →+ H` induces a continuous
+surjection `G ⧸ Γ → H ⧸ Γ.map f`, so if `G ⧸ Γ` is compact, then so is `H ⧸ Γ.map f`. -/]
+theorem compactSpace_quotient_map {G H : Type*} [Group G] [Group H] [TopologicalSpace G]
+    [TopologicalSpace H] (Γ : Subgroup G) [CompactSpace (G ⧸ Γ)] {f : G →* H} (hf : Continuous f)
+    (hs : Function.Surjective f) : CompactSpace (H ⧸ Γ.map f) := by
+  have hrel : ∀ x y : G, QuotientGroup.leftRel Γ x y →
+      QuotientGroup.leftRel (Γ.map f) (f x) (f y) := fun x y h ↦ by
+    rw [QuotientGroup.leftRel_apply] at h ⊢
+    exact ⟨_, h, by simp⟩
+  have hsurj : Function.Surjective (Quotient.map' f hrel : G ⧸ Γ → H ⧸ Γ.map f) := by
+    rintro ⟨h⟩
+    obtain ⟨g, rfl⟩ := hs h
+    exact ⟨Quotient.mk'' g, rfl⟩
+  exact hsurj.compactSpace (hf.quotient_map' hrel)
 
 open TauCeti
 

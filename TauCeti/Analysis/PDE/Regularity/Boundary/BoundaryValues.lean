@@ -179,7 +179,7 @@ theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_di
       ENNReal.toReal_mono hF.eLpNorm_ne_top (eLpNorm_mono_measure F hle)
     have hpow : (ρ / R) ^ β ≤ (ρ / R) ^ min β 1 :=
       Real.rpow_le_rpow_of_exponent_ge (by positivity) ((div_le_one hR).2 hρR) (min_le_left _ _)
-    filter_upwards [hdecay h ha (hF.mono_measure hle) hu0 hu hR
+    filter_upwards [hdecay h ha (hF.mono_measure hle) hu0 (fun v _ => hu v) hR
       (ae_restrict_of_ae_restrict_of_subset inter_subset_left hbound) (hext z hz) hρ hρR]
       with x hx
     rw [Real.coe_toNNReal _ hN0, hN, mul_right_comm]

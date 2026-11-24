@@ -76,6 +76,8 @@ this form the transversality condition for continuations is the transversality o
   continuation map are preimages of unstable and stable manifolds under the transition maps.
 * `TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`: the
   continuation coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
+* `TauCeti.continuationTransition`: the transition map `φ_{a, b}` of a smooth field on `M × ℝ`,
+  as a smooth diffeomorphism of `M`.
 
 ## References
 
@@ -388,5 +390,41 @@ theorem eventually_morseContinuationCoeff_eq_ncard_inter_preimage :
     Set.ncard_preimage_of_injective_subset_range Φ.injective fun y _ ↦ Φ.surjective y]
 
 end IsContinuationField
+
+/-! ### The transition diffeomorphism -/
+
+section TransitionDiffeomorph
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  (hVs : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent ∞
+    fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
+
+variable (C) in
+/-- The **transition diffeomorphism** from time `a` to time `b` of a smooth field `V` on `M × ℝ`:
+the time-dependent flow `φ_{a, b}` of the space component of `V` along the base trajectory
+`TauCeti.intervalBaseOrbit C` (`TauCeti.continuationSpaceField`), a smooth diffeomorphism of the
+compact manifold `M`. For a continuation field, very negative `a` and very positive `b`, it
+carries the level of the slab where `V` is `X₀` to the level where `V` is `X₁`. -/
+noncomputable def continuationTransition (a b : ℝ) : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
+  timeDependentFlowDiffeomorph
+    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace
+      ((contMDiff_continuationSpaceField (C := C) hVs).of_le (by simp)))
+    (n := ⊤) le_top (contMDiff_continuationSpaceField (C := C) hVs) a b
+
+/-- The transition diffeomorphism is the time-dependent flow of the space component. -/
+@[simp]
+theorem coe_continuationTransition (a b : ℝ) :
+    ⇑(continuationTransition C hVs a b) = timeDependentFlowOf (continuationSpaceField C V) a b :=
+  funext (timeDependentFlowDiffeomorph_apply _ _ _ a b)
+
+/-- The inverse of the transition diffeomorphism from `a` to `b` is the time-dependent flow of the
+space component from `b` to `a`. -/
+@[simp]
+theorem continuationTransition_symm_apply (a b : ℝ) (x : M) :
+    (continuationTransition C hVs a b).symm x =
+      timeDependentFlowOf (continuationSpaceField C V) b a x :=
+  timeDependentFlowDiffeomorph_symm_apply _ _ _ a b x
+
+end TransitionDiffeomorph
 
 end TauCeti
