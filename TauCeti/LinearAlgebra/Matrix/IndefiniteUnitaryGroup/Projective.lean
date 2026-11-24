@@ -96,7 +96,7 @@ noncomputable def innerAut :
 theorem innerAut_mk (g : indefiniteUnitaryGroup p q K) :
     innerAut (g : ProjectiveIndefiniteUnitaryGroup p q K) =
       GeneralLinearGroup.innerAut (g : GL (p ⊕ q) K) := by
-  rfl
+  simp [innerAut]
 
 /-- **The conjugation representation of `PU(p, q)` is faithful**: an element of `U(p, q)` acting
 trivially by conjugation on the matrix algebra is central in the general linear group, hence
