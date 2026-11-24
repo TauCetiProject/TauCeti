@@ -73,6 +73,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `TauCeti.fderiv_comp_fderiv_eq_id_of_eventuallyEq`: if `Ψ ∘ Φ = id` near `y`, then
+  `DΨ(Φ y) ∘ DΦ(y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
@@ -352,6 +354,13 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
     Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- **The derivative of a local left inverse.** If `Ψ ∘ Φ = id` near `y`, `Φ` is differentiable at
+`y` and `Ψ` at `Φ y`, then `DΨ(Φ y) ∘ DΦ(y) = id`. -/
+theorem fderiv_comp_fderiv_eq_id_of_eventuallyEq {y : E} (hΨ : DifferentiableAt 𝕜 Ψ (Φ y))
+    (hΦ : DifferentiableAt 𝕜 Φ y) (hΨΦ : Ψ ∘ Φ =ᶠ[𝓝 y] id) :
+    fderiv 𝕜 Ψ (Φ y) ∘L fderiv 𝕜 Φ y = ContinuousLinearMap.id 𝕜 E := by
+  rw [← fderiv_comp y hΨ hΦ, hΨΦ.fderiv_eq, fderiv_id]
 
 end TauCeti
 

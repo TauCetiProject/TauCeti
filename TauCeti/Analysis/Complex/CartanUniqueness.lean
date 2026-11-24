@@ -11,6 +11,9 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Normed.Module.Multilinear.Asymptotics
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # H. Cartan's uniqueness theorem
@@ -23,15 +26,18 @@ Two consequences follow. A biholomorphism of a bounded connected neighbourhood `
 circular (stable under multiplication by complex numbers of modulus one) and which fixes `0` is the
 restriction of its derivative at `0`: it commutes with the rotations, by the uniqueness theorem, and
 a holomorphic map commuting with the rotations has no homogeneous terms of degree other than one.
-For the open ball, a linear map sending the ball onto itself preserves the norm, so a
-biholomorphism of a ball fixing its centre `0` is the restriction of a linear isometry. On the unit
-ball of `ℂⁿ` these are the unitary maps. Together with a group of biholomorphisms acting
-transitively on the ball, such as the fractional linear maps of `U(1, n)`, this describes every
-biholomorphism of the ball.
+For the open ball, a linear map sending the ball onto itself preserves the norm
+(`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`), so a biholomorphism of a ball fixing its
+centre `0` is the restriction of a linear isometry. On the unit ball of `EuclideanSpace ℂ (Fin n)`
+these are the unitary maps. Together with a group of biholomorphisms acting transitively on the
+ball, such as the fractional linear maps of `U(1, n)`, this describes every biholomorphism of the
+ball.
 
 ## Main results
 
 * `AnalyticOnNhd.eqOn_id_of_fderiv_eq_id`: **Cartan's uniqueness theorem.**
+* `AnalyticAt.eventuallyEq_fderiv_of_map_smul`: a holomorphic map fixing `0` and commuting with
+  the rotations `z ↦ a • z`, `‖a‖ = 1`, agrees near `0` with its derivative at `0`.
 * `AnalyticOnNhd.eqOn_fderiv_of_invOn`: **Cartan's linearity theorem.** A biholomorphism of a
   bounded circular domain fixing `0` agrees with its derivative at `0`.
 * `AnalyticOnNhd.exists_linearIsometryEquiv_eqOn_ball`: a biholomorphism of `ball 0 r` fixing `0`
@@ -65,41 +71,23 @@ public section
 
 open Set Filter Topology Metric Asymptotics Bornology
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
 
 namespace TauCeti.CartanUniqueness
 
-/-- A homogeneous polynomial `y ↦ q (y, …, y)` of degree `k` is `O(‖y‖ ^ k)` near `0`. -/
-private lemma isBigO_apply_const {k : ℕ} (q : ContinuousMultilinearMap ℂ (fun _ : Fin k => E) E) :
-    (fun y : E => q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ k :=
-  IsBigO.of_bound ‖q‖ (Eventually.of_forall fun y => by
-    simpa [abs_of_nonneg (pow_nonneg (norm_nonneg y) k)] using q.le_opNorm fun _ => y)
-
-/-- For a homogeneous polynomial `P` of degree `k ≥ 2` and `w y = y + O(‖y‖ ^ k)`,
-`P (w y) - P y = O(‖y‖ ^ (k + 1))`. -/
-private lemma isBigO_apply_const_sub {k : ℕ} (hk : 2 ≤ k)
-    (q : ContinuousMultilinearMap ℂ (fun _ : Fin k => E) E) {w : E → E}
-    (hw1 : w =O[𝓝 0] fun y => ‖y‖) (hwy : (fun y => w y - y) =O[𝓝 0] fun y => ‖y‖ ^ k) :
-    (fun y => (q fun _ => w y) - q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1) := by
-  have h1 : (fun y => (q fun _ => w y) - q fun _ => y) =O[𝓝 0]
-      fun y => (‖w y‖ + ‖y‖) ^ (k - 1) * ‖w y - y‖ := by
-    refine IsBigO.of_bound (‖q‖ * k) (Eventually.of_forall fun y => ?_)
-    rw [Real.norm_of_nonneg (by positivity)]
-    refine (q.norm_image_sub_le _ _).trans ?_
-    simp only [Fintype.card_fin, mul_assoc]
-    gcongr
-    · exact (max_le_max (pi_norm_const_le _) (pi_norm_const_le _)).trans
-        (max_le (le_add_of_nonneg_right (norm_nonneg _)) (le_add_of_nonneg_left (norm_nonneg _)))
-    · exact pi_norm_const_le (w y - y)
-  have h2 : (fun y => (‖w y‖ + ‖y‖) ^ (k - 1) * ‖w y - y‖) =O[𝓝 0]
-      fun y => ‖y‖ ^ (k - 1) * ‖y‖ ^ k :=
-    ((hw1.norm_left.add (isBigO_refl _ _)).pow (k - 1)).mul hwy.norm_left
-  have h3 : (fun y : E => ‖y‖ ^ (k - 1) * ‖y‖ ^ k) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1) := by
-    simp only [← pow_add]
-    rcases (show k + 1 ≤ k - 1 + k by omega).eq_or_lt with h | h
-    · rw [h]
-    · exact (isLittleO_norm_pow_norm_pow h).isBigO
-  exact h1.trans (h2.trans h3)
+/-- If `g y = c • P y + O(‖y‖ ^ (k + 1))` for a homogeneous polynomial `P` of degree `k`, then
+`g y = O(‖y‖ ^ k)`. -/
+private lemma isBigO_of_isBigO_sub_smul {k : ℕ}
+    (q : ContinuousMultilinearMap ℂ (fun _ : Fin k => E) E) {g : E → E} {c : ℂ}
+    (hg : (fun y => g y - c • q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1)) :
+    g =O[𝓝 0] fun y => ‖y‖ ^ k := by
+  have : g = fun y => (g y - c • q fun _ => y) + c • q fun _ => y := by
+    ext y
+    abel
+  rw [this]
+  exact (hg.trans (isLittleO_norm_pow_norm_pow (lt_add_one k)).isBigO).add
+    ((q.isBigO_apply_const _).const_smul_left _)
 
 /-- If `f (p + y) = p + y + P y + O(‖y‖ ^ (k + 1))` with `P` homogeneous of degree `k ≥ 2` and
 `f p = p`, then `f^[j] (p + y) = p + y + j • P y + O(‖y‖ ^ (k + 1))`. -/
@@ -115,14 +103,7 @@ private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
     -- `w y` is the displacement of the `j`-th iterate, `f^[j] (p + y) = p + w y`.
     set w : E → E := fun y => f^[j] (p + y) - p with hw_def
     have hwy : (fun y => w y - y) =O[𝓝 0] fun y => ‖y‖ ^ k := by
-      have : (fun y => w y - y) = fun y =>
-          (f^[j] (p + y) - (p + y) - (j : ℂ) • q fun _ => y) + (j : ℂ) • q fun _ => y := by
-        ext y
-        simp only [hw_def]
-        abel
-      rw [this]
-      exact (ih.trans (isLittleO_norm_pow_norm_pow (by omega)).isBigO).add
-        ((isBigO_apply_const q).const_smul_left _)
+      simpa only [hw_def, sub_sub] using isBigO_of_isBigO_sub_smul q ih
     have hw1 : w =O[𝓝 0] fun y => ‖y‖ := by
       have : w = fun y => (w y - y) + y := by
         ext y
@@ -141,7 +122,7 @@ private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
       abel
     rw [key]
     exact (((hf.comp_tendsto hw0).trans (hw1.norm_left.pow (k + 1))).add ih).add
-      (isBigO_apply_const_sub hk q hw1 hwy)
+      (q.isBigO_apply_const_sub hk hw1 hwy)
 
 /-- **Schwarz's lemma for the iterates.** Under the hypotheses of `isBigO_iterate_sub`, if
 `f` is a holomorphic self-map of `U` with `ball p r ⊆ U ⊆ closedBall p R`, then
@@ -168,16 +149,9 @@ private lemma norm_iterate_sub_le {f : E → E} {U : Set E} {p : E} {k : ℕ} (h
       _ ≤ R + r := (norm_sub_le _ _).trans (add_le_add h1 hz.le)
   -- `f^[j] - id` vanishes to order `k` at `p`, by `isBigO_iterate_sub`.
   have hlo : (fun z => (f^[j] z - z) - (f^[j] p - p)) =o[𝓝 p] fun z => ‖z - p‖ ^ (k - 1) := by
-    have h0 : (fun y => f^[j] (p + y) - (p + y)) =o[𝓝 0] fun y => ‖y‖ ^ (k - 1) := by
-      have : (fun y => f^[j] (p + y) - (p + y)) = fun y =>
-          (f^[j] (p + y) - (p + y) - (j : ℂ) • q fun _ => y) + (j : ℂ) • q fun _ => y := by
-        ext y
-        abel
-      rw [this]
-      exact ((isBigO_iterate_sub hk q hf j).trans_isLittleO
-        (isLittleO_norm_pow_norm_pow (by omega))).add
-        (((isBigO_apply_const q).const_smul_left _).trans_isLittleO
-          (isLittleO_norm_pow_norm_pow (by omega)))
+    have h0 : (fun y => f^[j] (p + y) - (p + y)) =o[𝓝 0] fun y => ‖y‖ ^ (k - 1) :=
+      (isBigO_of_isBigO_sub_smul q (isBigO_iterate_sub hk q hf j)).trans_isLittleO
+        (isLittleO_norm_pow_norm_pow (by omega))
     have := h0.comp_tendsto (tendsto_sub_nhds_zero_iff.2 (tendsto_id (x := 𝓝 p)))
     simpa [Function.iterate_fixed hfp, Function.comp_def] using this
   have := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO
@@ -271,12 +245,11 @@ theorem AnalyticOnNhd.eqOn_id_of_fderiv_eq_id {f : E → E} {U : Set E} {p : E}
     simp only [hsum] at hO
     exact apply_eq_zero_of_isBigO (by omega) (q (k + 2)) hf.differentiableOn hU hUb hmaps hfp hO
 
-namespace TauCeti.CartanUniqueness
-
 /-- A holomorphic map near `0` fixing `0` and commuting with the rotations `z ↦ a • z`, `‖a‖ = 1`,
 agrees near `0` with its derivative at `0`: each homogeneous term `P` of degree `n` satisfies
 `a ^ n • P y = a • P y`, which forces `P = 0` for `n ≠ 1`. -/
-private lemma eventuallyEq_fderiv_of_map_smul {f : E → E} (hf : AnalyticAt ℂ f 0) (hf0 : f 0 = 0)
+theorem AnalyticAt.eventuallyEq_fderiv_of_map_smul {f : E → F} (hf : AnalyticAt ℂ f 0)
+    (hf0 : f 0 = 0)
     (h : ∀ a : ℂ, ‖a‖ = 1 → ∀ᶠ z in 𝓝 0, f (a • z) = a • f z) :
     f =ᶠ[𝓝 0] fderiv ℂ f 0 := by
   obtain ⟨q, hq⟩ := hf
@@ -316,17 +289,17 @@ private lemma eventuallyEq_fderiv_of_map_smul {f : E → E} (hf : AnalyticAt ℂ
   convert hasSum_single (f := fun n => q n fun _ => y) 1 fun n hn => hzero n hn y using 1
   simp [hq.fderiv_eq, Matrix.vec_single_eq_const]
 
+namespace TauCeti.CartanUniqueness
+
 /-- If `g` is a left inverse of `f` on a neighbourhood `U` of `0` and `f 0 = 0`, the derivatives
 satisfy `Dg(0) ∘ Df(0) = id`. -/
 private lemma fderiv_comp_fderiv_eq_id {f g : E → E} {U : Set E} (hf : AnalyticOnNhd ℂ f U)
     (hg : AnalyticOnNhd ℂ g U) (hU : U ∈ 𝓝 0) (hinv : LeftInvOn g f U) (hf0 : f 0 = 0) :
     (fderiv ℂ g 0).comp (fderiv ℂ f 0) = ContinuousLinearMap.id ℂ E := by
   have h0 : (0 : E) ∈ U := mem_of_mem_nhds hU
-  have hDg : HasFDerivAt g (fderiv ℂ g 0) (f 0) := by
-    rw [hf0]
-    exact (hg 0 h0).differentiableAt.hasFDerivAt
-  exact (hDg.comp 0 (hf 0 h0).differentiableAt.hasFDerivAt).unique
-    ((hasFDerivAt_id 0).congr_of_eventuallyEq (eventually_of_mem hU fun z hz => hinv hz))
+  have := fderiv_comp_fderiv_eq_id_of_eventuallyEq (by rw [hf0]; exact (hg 0 h0).differentiableAt)
+    (hf 0 h0).differentiableAt (eventually_of_mem hU fun z hz => hinv hz)
+  rwa [hf0] at this
 
 /-- A biholomorphism `f` of a bounded connected circular neighbourhood `U` of `0` fixing `0`
 commutes with the rotations: `g ∘ (a⁻¹ • ·) ∘ f ∘ (a • ·)` fixes `0` with derivative the identity,
@@ -342,14 +315,14 @@ private lemma map_smul_of_invOn {f g : E → E} {U : Set E} (hf : AnalyticOnNhd 
     simp at ha
   have ha' : ‖a⁻¹‖ = 1 := by simp [ha]
   have hg0 : g 0 = 0 := by simpa [hf0] using hinv.1 h0
+  have hmem {z : E} (hz : z ∈ U) : a⁻¹ • f (a • z) ∈ U := hcirc _ ha' (hfU (hcirc a ha hz))
   set h : E → E := fun z => g (a⁻¹ • f (a • z))
-  have hhU : MapsTo h U U := fun z hz => hgU (hcirc _ ha' (hfU (hcirc a ha hz)))
+  have hhU : MapsTo h U U := fun z hz => hgU (hmem hz)
   have hsm (c : ℂ) (x : E) : AnalyticAt ℂ (fun z : E => c • z) x := by fun_prop
   have hh : AnalyticOnNhd ℂ h U := fun z hz => by
-    have hmem : a⁻¹ • f (a • z) ∈ U := hcirc _ ha' (hfU (hcirc a ha hz))
     have h1 : AnalyticAt ℂ (fun z => f (a • z)) z := (hf _ (hcirc a ha hz)).comp (hsm a z)
     have h2 : AnalyticAt ℂ (fun z => a⁻¹ • f (a • z)) z := (hsm a⁻¹ _).comp h1
-    exact (hg _ hmem).comp_of_eq h2 rfl
+    exact (hg _ (hmem hz)).comp_of_eq h2 rfl
   -- The derivative of `h` at `0` is `Dg(0) ∘ Df(0)`, the identity since `g ∘ f = id` near `0`.
   have hgf := fderiv_comp_fderiv_eq_id hf hg hU hinv.1 hf0
   have hDh : fderiv ℂ h 0 = ContinuousLinearMap.id ℂ E := by
@@ -369,9 +342,8 @@ private lemma map_smul_of_invOn {f g : E → E} {U : Set E} (hf : AnalyticOnNhd 
     have := congr($hgf y)
     simpa [smul_smul, inv_mul_cancel₀ ha0] using this
   have hid := hh.eqOn_id_of_fderiv_eq_id hU hUc hUb hhU (by simp [h, hf0, hg0]) hDh hz
-  have hmem : a⁻¹ • f (a • z) ∈ U := hcirc _ ha' (hfU (hcirc a ha hz))
   have := congrArg f hid
-  simp only [h, id, hinv.2 hmem] at this
+  simp only [h, id, hinv.2 (hmem hz)] at this
   rw [← this, smul_inv_smul₀ ha0]
 
 end TauCeti.CartanUniqueness
@@ -384,12 +356,13 @@ theorem AnalyticOnNhd.eqOn_fderiv_of_invOn {f g : E → E} {U : Set E} (hf : Ana
     (hcirc : ∀ a : ℂ, ‖a‖ = 1 → MapsTo (a • ·) U U) (hfU : MapsTo f U U) (hgU : MapsTo g U U)
     (hinv : InvOn g f U U) (hf0 : f 0 = 0) : EqOn f (fderiv ℂ f 0) U :=
   hf.eqOn_of_preconnected_of_eventuallyEq ((fderiv ℂ f 0).analyticOnNhd U) hUc (mem_of_mem_nhds hU)
-    (eventuallyEq_fderiv_of_map_smul (hf 0 (mem_of_mem_nhds hU)) hf0 fun _a ha =>
+    ((hf 0 (mem_of_mem_nhds hU)).eventuallyEq_fderiv_of_map_smul hf0 fun _a ha =>
       eventually_of_mem hU fun _z hz =>
         map_smul_of_invOn hf hg hU hUc hUb hcirc hfU hgU hinv hf0 ha hz)
 
 /-- A biholomorphism of a ball `ball 0 r` in a complex normed space fixing `0` is the restriction
-of a linear isometric equivalence. For the unit ball of `ℂⁿ` these are the unitary maps. -/
+of a linear isometric equivalence. For the unit ball of `EuclideanSpace ℂ (Fin n)` these are the
+unitary maps. -/
 theorem AnalyticOnNhd.exists_linearIsometryEquiv_eqOn_ball {f g : E → E} {r : ℝ}
     (hf : AnalyticOnNhd ℂ f (ball 0 r)) (hg : AnalyticOnNhd ℂ g (ball 0 r))
     (hfU : MapsTo f (ball 0 r) (ball 0 r)) (hgU : MapsTo g (ball 0 r) (ball 0 r))
@@ -408,17 +381,8 @@ theorem AnalyticOnNhd.exists_linearIsometryEquiv_eqOn_ball {f g : E → E} {r : 
   -- `Df(0)` and `Dg(0)` are mutually inverse and map the ball into itself, so they are isometries.
   have h21 := fderiv_comp_fderiv_eq_id hf hg hU hinv.1 hf0
   have h12 := fderiv_comp_fderiv_eq_id hg hf hU hinv.2 hg0
-  have hnorm (L : E →L[ℂ] E) (hL : MapsTo L (ball 0 r) (ball 0 r)) (x : E) : ‖L x‖ ≤ ‖x‖ := by
-    refine le_of_forall_pos_lt_add fun ε hε => ?_
-    have hc : 0 < r / (‖x‖ + ε) := by positivity
-    have hx : ((r / (‖x‖ + ε) : ℝ) : ℂ) • x ∈ ball (0 : E) r := by
-      rw [mem_ball_zero_iff, norm_smul, Complex.norm_real, Real.norm_of_nonneg hc.le,
-        div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-      exact mul_lt_mul_of_pos_left (lt_add_of_pos_right _ hε) hr
-    have := hL hx
-    rw [mem_ball_zero_iff, map_smul, norm_smul, Complex.norm_real, Real.norm_of_nonneg hc.le,
-      div_mul_eq_mul_div, div_lt_iff₀ (by positivity)] at this
-    exact lt_of_mul_lt_mul_left this hr.le
+  have hnorm (L : E →L[ℂ] E) (hL : MapsTo L (ball 0 r) (ball 0 r)) (x : E) : ‖L x‖ ≤ ‖x‖ :=
+    (L.le_of_opNorm_le (L.opNorm_le_one_of_mapsTo_ball hr hL) x).trans_eq (one_mul _)
   have hf1 := hnorm (fderiv ℂ f 0) fun x hx => hfL hx ▸ hfU hx
   have hg1 := hnorm (fderiv ℂ g 0) fun x hx => hgL hx ▸ hgU hx
   have hgf (x : E) : fderiv ℂ g 0 (fderiv ℂ f 0 x) = x := by simpa using congr($h21 x)

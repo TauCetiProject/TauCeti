@@ -85,7 +85,9 @@ weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`).
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over `ℝ` or `ℂ`, an operator sending the ball
+`ball 0 r`, `r > 0`, into itself has operator norm at most one
+(`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
@@ -596,6 +598,30 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
   exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
 
 end Net
+
+section MapsToBall
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 r` has operator norm at most
+one: rescale `x` to a point of norm just below `r`. -/
+theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
+    (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 r)) : ‖L‖ ≤ 1 := by
+  refine L.opNorm_le_bound zero_le_one fun x => le_of_forall_pos_lt_add fun ε hε => ?_
+  set c : ℝ := r / (‖x‖ + ε)
+  have hc : 0 < c := by positivity
+  have hnorm (y : F) : ‖(c : 𝕜) • y‖ = c * ‖y‖ := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos hc]
+  have hcr : c * (‖x‖ + ε) = r := div_mul_cancel₀ r (by positivity)
+  have hx : (c : 𝕜) • x ∈ Metric.ball (0 : E) r := by
+    rw [mem_ball_zero_iff, norm_smul, RCLike.norm_ofReal, abs_of_pos hc, ← hcr]
+    exact mul_lt_mul_of_pos_left (lt_add_of_pos_right _ hε) hc
+  have hLx := hL hx
+  rw [mem_ball_zero_iff, map_smul, hnorm, ← hcr] at hLx
+  simpa using lt_of_mul_lt_mul_left hLx hc.le
+
+end MapsToBall
 
 section MetricQuotient
 
