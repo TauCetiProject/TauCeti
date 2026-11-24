@@ -322,8 +322,7 @@ private theorem surjective_polar : Function.Surjective (polar (E := E) r) := by
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
   obtain ⟨v, hv⟩ := (homeomorphUnitSphereProd E).surjective (u, ⟨Real.exp t, Real.exp_pos t⟩)
   refine ⟨⟨v, v.property⟩, ?_⟩
-  change ((Real.log (homeomorphUnitSphereProd E v).2 : AddCircle (Real.log r)),
-    (homeomorphUnitSphereProd E v).1) = _
+  simp only [polar]
   rw [hv, Real.log_exp]
 
 variable [ProperSpace E]
@@ -350,19 +349,27 @@ def homeomorphAddCircleProdSphere (hr : 1 < r) (hc : (c : 𝕜) = algebraMap ℝ
   Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)
     (continuous_quot_lift _ continuous_polar)
 
+/-- The homeomorphism sends `[v]` to the polar coordinates of `v`. This holds by definition:
+`Continuous.homeoOfEquivCompactToT2` and `Equiv.ofBijective` apply the underlying function, and
+`Quotient.lift` computes on a class. -/
+private theorem homeomorphAddCircleProdSphere_mk (hr : 1 < r)
+    (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (v : {v : E // v ≠ 0}) :
+    homeomorphAddCircleProdSphere hr hc (mk E c v) = polar r v :=
+  rfl
+
 /-- The circle coordinate of the image of `[v]` is `log ‖v‖`. -/
 @[simp]
 theorem homeomorphAddCircleProdSphere_mk_fst (hr : 1 < r) (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r)
     (v : {v : E // v ≠ 0}) :
-    (homeomorphAddCircleProdSphere hr hc (mk E c v)).1 = (Real.log ‖(v : E)‖ : AddCircle _) :=
-  polar_fst v
+    (homeomorphAddCircleProdSphere hr hc (mk E c v)).1 = (Real.log ‖(v : E)‖ : AddCircle _) := by
+  rw [homeomorphAddCircleProdSphere_mk, polar_fst]
 
 /-- The sphere coordinate of the image of `[v]` is `v / ‖v‖`. -/
 @[simp]
 theorem coe_homeomorphAddCircleProdSphere_mk_snd (hr : 1 < r) (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r)
     (v : {v : E // v ≠ 0}) :
-    ((homeomorphAddCircleProdSphere hr hc (mk E c v)).2 : E) = ‖(v : E)‖⁻¹ • (v : E) :=
-  coe_polar_snd v
+    ((homeomorphAddCircleProdSphere hr hc (mk E c v)).2 : E) = ‖(v : E)‖⁻¹ • (v : E) := by
+  rw [homeomorphAddCircleProdSphere_mk, coe_polar_snd]
 
 /-- The inverse polar map sends `(t mod log r, u)` to the class of `exp t • u`. -/
 @[simp]
