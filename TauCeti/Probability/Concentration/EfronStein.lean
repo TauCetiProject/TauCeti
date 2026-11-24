@@ -18,9 +18,9 @@ independent coordinates, stated on `Measure.pi` over an arbitrary finite index t
 with all other coordinates frozen.
 
 The two-factor law of total variance `evariance_prod_eq` and Jensen bound
-`evariance_integral_prod_le` yield the two-factor Efron–Stein inequality `evariance_prod_le`. The
-finite-coordinate proof is by induction on the number of coordinates, followed by transport along
-an equivalence `Fin n ≃ ι`.
+`MeasureTheory.Integrable.evariance_integral_prod_le` yield the two-factor Efron–Stein inequality
+`evariance_prod_le`. The finite-coordinate proof is by induction on the number of coordinates,
+followed by transport along an equivalence `Fin n ≃ ι`.
 
 ## Main results
 

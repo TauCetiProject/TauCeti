@@ -82,14 +82,10 @@ noncomputable def weierstrassPointDiffeomorph (r : ℕ∞ω) :
     (ℂ ⧸ L.lattice.toAddSubgroup) ≃ₘ^r⟮𝓘(ℂ), 𝓘(ℂ)⟯ L.weierstrassCurve.toProjective.Point where
   toEquiv := L.weierstrassPointContinuousAddEquiv.toEquiv
   contMDiff_toFun := L.contMDiff_weierstrassPointContinuousAddEquiv r
-  contMDiff_invFun := by
+  contMDiff_invFun :=
     -- The inverse of a holomorphic homeomorphism of Riemann surfaces is holomorphic.
-    let e := L.weierstrassPointContinuousAddEquiv.toHomeomorph
-    have he : e.isHomeomorph.homeomorph e = e := Homeomorph.ext fun _ ↦ rfl
-    have h := e.isHomeomorph.mdifferentiable_symm
-      ((L.contMDiff_weierstrassPointContinuousAddEquiv 1).mdifferentiable one_ne_zero)
-    rw [he] at h
-    exact h.contMDiff
+    (L.weierstrassPointContinuousAddEquiv.toHomeomorph.mdifferentiable_symm
+      ((L.contMDiff_weierstrassPointContinuousAddEquiv 1).mdifferentiable one_ne_zero)).contMDiff
 
 /-- The biholomorphism `ℂ / Λ ≃ E_Λ(ℂ)` is the group isomorphism
 `PeriodPair.weierstrassPointContinuousAddEquiv`. -/
