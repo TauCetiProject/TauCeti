@@ -37,6 +37,8 @@ Proposition 2.44.
 
 ## Main results
 
+* `TauCeti.continuousOn_chartVolumeDensity_extChartAt_symm`: the chart density of a continuous
+  metric, read in coordinates, is continuous on the chart target.
 * `TauCeti.chartRiemannianVolume_apply`: the coordinate integral formula.
 * `TauCeti.setLIntegral_chartRiemannianVolume`, `TauCeti.setIntegral_chartRiemannianVolume`:
   integration against a chart volume in coordinates.
@@ -80,7 +82,7 @@ private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Typ
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- The chart density of a continuous metric, read in coordinates, is continuous on the chart
 target. -/
-private theorem continuousOn_chartVolumeDensity_extChartAt_symm
+theorem continuousOn_chartVolumeDensity_extChartAt_symm
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
     ContinuousOn (fun y ↦ chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
       (extChartAt I α).target := by
