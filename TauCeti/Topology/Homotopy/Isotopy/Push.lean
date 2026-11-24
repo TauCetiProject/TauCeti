@@ -148,8 +148,9 @@ private theorem isHomeomorph_push (hμ : Continuous μ) (hμ₀ : ∀ w, 0 ≤ �
     · have ht : q.1 = q'.1 := (Prod.ext_iff.1 hqq').1
       have hx := (Prod.ext_iff.1 hqq').2
       simp only [F, ← ht] at hx
-      exact Prod.ext ht ((bijective_push hμ hμ₀ hv q.1.2.1 q.1.2.2).injective hx)
-    · obtain ⟨x, hx⟩ := (bijective_push (p := p) hμ hμ₀ hv y.1.2.1 y.1.2.2).surjective y.2
+      exact Prod.ext ht ((bijective_push hμ hμ₀ hv q.1.property.1 q.1.property.2).injective hx)
+    · obtain ⟨x, hx⟩ := (bijective_push (p := p) hμ hμ₀ hv y.1.property.1 y.1.property.2).surjective
+        y.2
       exact ⟨(y.1, x), Prod.ext rfl hx⟩
   -- Preimages of compact sets are compact: a point is recovered from its image `y` by moving it
   -- back by `s • v` for some `s ∈ [0, 1]`.
@@ -160,9 +161,9 @@ private theorem isHomeomorph_push (hμ : Continuous μ) (hμ₀ : ∀ w, 0 ≤ �
     refine (hK.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))).image hG |>.of_isClosed_subset
       (hK.isClosed.preimage hF) fun q hq => ?_
     refine ⟨(F q, (q.1 : ℝ) * max (1 - μ (q.2 -ᵥ p)) 0), ⟨hq, ?_, ?_⟩, ?_⟩
-    · exact mul_nonneg q.1.2.1 (le_max_right _ _)
+    · exact mul_nonneg q.1.property.1 (le_max_right _ _)
     · have := max_one_sub_le_one (p := p) hμ₀ q.2
-      nlinarith [q.1.2.1, q.1.2.2, le_max_right (1 - μ (q.2 -ᵥ p)) 0]
+      nlinarith [q.1.property.1, q.1.property.2, le_max_right (1 - μ (q.2 -ᵥ p)) 0]
     · simp only [G, F, neg_smul, neg_vadd_vadd]
   exact isHomeomorph_iff_continuous_isClosedMap_bijective.2 ⟨hF, hproper.isClosedMap, hbij⟩
 

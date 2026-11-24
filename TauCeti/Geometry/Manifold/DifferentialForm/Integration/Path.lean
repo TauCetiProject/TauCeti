@@ -548,7 +548,7 @@ theorem pathIntegral_eq_zero_of_mem_exactForms [IsManifold I 2 M] {φ : SmoothFo
     (hab : γ a = γ b) : pathIntegral (φ : RoughForm I M ℝ 1) γ a b = 0 := by
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨g, rfl⟩ := hφ
-  have hg : IsSmoothForm I 1 g.1 :=
+  have hg : IsSmoothForm I 1 g.val :=
     g.isSmoothForm.of_le (by exact_mod_cast le_top)
   rw [mextDerivₗ_apply, pathIntegral_mextDeriv hg hγ, hab, sub_self]
 

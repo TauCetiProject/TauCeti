@@ -254,8 +254,6 @@ namespace Group
 
 open Language.Structure
 
-section Axioms
-
 /-- The multiplication extracted from a group-language structure. -/
 @[instance_reducible] def mulOfStructure (G : Type*) [Language.group.Structure G] : Mul G :=
   ⟨fun x y => funMap mulFunc ![x, y]⟩
@@ -267,15 +265,6 @@ section Axioms
 /-- The identity extracted from a group-language structure. -/
 @[instance_reducible] def oneOfStructure (G : Type*) [Language.group.Structure G] : One G :=
   ⟨funMap oneFunc ![]⟩
-
-variable (G : Type*)
-
-end Axioms
-end Group
-
-namespace Group
-
-open Language.Structure
 
 /-- The extracted identity is the interpretation of the identity symbol. -/
 theorem oneOfStructure_one (G : Type*) [Language.group.Structure G] :
@@ -339,12 +328,10 @@ open Language.Structure
 
 section Axioms
 
-variable (G : Type*)
-
 attribute [local instance] structureOfGroup
 
 /-- Every group with its canonical language structure satisfies the group theory. -/
-instance model_group [Group G] : G ⊨ Language.Theory.group := by
+instance model_group (G : Type*) [Group G] : G ⊨ Language.Theory.group := by
   rw [Language.Theory.model_iff]
   intro φ hφ
   obtain ⟨a, rfl⟩ := hφ
@@ -353,23 +340,15 @@ instance model_group [Group G] : G ⊨ Language.Theory.group := by
 
 end Axioms
 
-section Models
-
-variable (G : Type*) [Language.group.Structure G] [G ⊨ Language.Theory.group]
-
-attribute [local instance] mulOfStructure invOfStructure oneOfStructure
-
-end Models
 end Group
 
 namespace GroupAxiom
 
 open _root_.TauCeti.Group Language.Structure
 
-variable (G : Type*) [Language.group.Structure G] [G ⊨ Language.Theory.group]
-
 /-- Each axiom of a group-language model holds for its extracted operations. -/
-theorem toProp_of_model (a : GroupAxiom) :
+theorem toProp_of_model (G : Type*) [Language.group.Structure G] [G ⊨ Language.Theory.group]
+    (a : GroupAxiom) :
     @GroupAxiom.toProp G (mulOfStructure G) (invOfStructure G) (oneOfStructure G) a := by
   have h : G ⊨ a.toSentence :=
     Language.Theory.realize_sentence_of_mem Language.Theory.group (Set.mem_range_self a)
@@ -387,6 +366,8 @@ section Models
 
 variable (G : Type*) [Language.group.Structure G] [G ⊨ Language.Theory.group]
 
+section
+
 attribute [local instance] mulOfStructure invOfStructure oneOfStructure
 
 /-- A model of the three group axioms carries the group structure given by its symbols. -/
@@ -396,21 +377,20 @@ attribute [local instance] mulOfStructure invOfStructure oneOfStructure
     (GroupAxiom.toProp_of_model G .oneMul)
     (GroupAxiom.toProp_of_model G .invMulCancel)
 
-omit [G ⊨ Language.Theory.group] in
+end
+
 /-- The extracted group's identity is the interpretation of its identity symbol. -/
 theorem groupOfModel_one :
     letI : _root_.Group G := groupOfModel G
     (1 : G) = funMap oneFunc ![] :=
   oneOfStructure_one G
 
-omit [G ⊨ Language.Theory.group] in
 /-- Inversion in the group extracted from a model is the interpretation of its inverse symbol. -/
 theorem groupOfModel_inv (x : G) :
     letI : _root_.Group G := groupOfModel G
     x⁻¹ = funMap invFunc ![x] :=
   invOfStructure_inv G x
 
-omit [G ⊨ Language.Theory.group] in
 /-- Multiplication in the group extracted from a model is its multiplication symbol. -/
 theorem groupOfModel_mul (x y : G) :
     letI : _root_.Group G := groupOfModel G
@@ -657,17 +637,11 @@ theorem not_model_group_multiplicative_nat
 
 end NotModel
 
-section Coefficients
-
-variable {A α : Type*}
-
 /-- Including group-language terms into the coefficient language preserves the identity. -/
-@[simp] theorem onTerm_one :
+@[simp] theorem onTerm_one {A α : Type*} :
     (Language.group.lhomWithConstants A).onTerm (1 : Language.group.Term α) = 1 := by
   rw [one_def, Language.Constants.term, LHom.onTerm]
   exact congrArg (Language.Term.func _) (funext fun i => i.elim0)
-
-end Coefficients
 
 end Group
 

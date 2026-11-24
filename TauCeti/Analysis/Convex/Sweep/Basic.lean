@@ -151,11 +151,11 @@ noncomputable def sweepEquiv (P : Set V) (n : V)
     (hn : n ∉ vectorSpan 𝕜 P) :
     (P × {t : 𝕜 // 0 ≤ t}) ≃ sweep 𝕜 P n :=
   Equiv.ofBijective
-    (fun z => ⟨z.1.1 - z.2.1 • n, z.1.1, z.1.2, z.2.1, z.2.2, rfl⟩)
+    (fun z => ⟨z.1.val - z.2.val • n, z.1.val, z.1.property, z.2.val, z.2.property, rfl⟩)
     ⟨by
       intro z w h
-      have he := sweep_coordinates_unique hn (subset_affineSpan 𝕜 P z.1.2)
-        (subset_affineSpan 𝕜 P w.1.2) (congrArg Subtype.val h)
+      have he := sweep_coordinates_unique hn (subset_affineSpan 𝕜 P z.1.property)
+        (subset_affineSpan 𝕜 P w.1.property) (congrArg Subtype.val h)
       exact Prod.ext (Subtype.ext he.1) (Subtype.ext he.2), by
       rintro ⟨y, x, hx, t, ht, rfl⟩
       exact ⟨(⟨x, hx⟩, ⟨t, ht⟩), rfl⟩⟩
@@ -164,7 +164,7 @@ noncomputable def sweepEquiv (P : Set V) (n : V)
 @[simp]
 theorem sweepEquiv_apply (P : Set V) (n : V) (hn : n ∉ vectorSpan 𝕜 P)
     (z : P × {t : 𝕜 // 0 ≤ t}) :
-    (sweepEquiv P n hn z : V) = z.1.1 - z.2.1 • n := by rfl
+    (sweepEquiv P n hn z : V) = z.1.val - z.2.val • n := by rfl
 
 /-- On a transverse common base sweeping creates no new intersections. -/
 theorem sweep_inter_sweep {P Q : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 (P ∪ Q)) :

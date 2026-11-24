@@ -95,7 +95,7 @@ private def presheafLiftApp (φ : F ⟶ A.X 1) (n : ℕ) (U : X.Opens) :
 
 private lemma presheafLiftApp_apply (φ : F ⟶ A.X 1) (n : ℕ) (U : X.Opens)
     (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val (op U)).symmetricPower n) :
-    presheafLiftApp φ n U x = sectionsLift φ U x.1 n :=
+    presheafLiftApp φ n U x = sectionsLift φ U x.val n :=
   (rfl)
 
 /-- The extension on sections commutes with restriction. -/
@@ -127,12 +127,12 @@ private def presheafLift (φ : F ⟶ A.X 1) (n : ℕ) :
       erw [ModuleCat.comp_apply, ModuleCat.restrictScalars.map_apply, ModuleCat.comp_apply,
         presheafLiftApp_apply, presheafLiftApp_apply,
         PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply]
-      exact (congrArg (· n) (RingHom.congr_fun (sectionsLift_restrict φ f.unop) x.1)).trans
+      exact (congrArg (· n) (RingHom.congr_fun (sectionsLift_restrict φ f.unop) x.val)).trans
         (A.restrictGradedSections_apply f.unop _ n))
 
 private lemma presheafLift_app_apply (φ : F ⟶ A.X 1) (n : ℕ) (U : X.Opensᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U).symmetricPower n) :
-    (presheafLift φ n).app U x = sectionsLift φ U.unop x.1 n :=
+    (presheafLift φ n).app U x = sectionsLift φ U.unop x.val n :=
   (rfl)
 
 variable (X) in
@@ -157,7 +157,7 @@ private lemma presheafLift_tensorHom_comp_mul_app_tmul (φ : F ⟶ A.X 1) (i j :
           (forgetPresheaf X).map (A.toMon.mul i j)).app U (x ⊗ₜ y) =
       (A.toMon.mul i j).app U.unop
         (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U.unop) _ _
-          (sectionsLift φ U.unop x.1 i ⊗ₜ sectionsLift φ U.unop y.1 j)) :=
+          (sectionsLift φ U.unop x.val i ⊗ₜ sectionsLift φ U.unop y.val j)) :=
   (rfl)
 
 /-- The extension is multiplicative on sections. -/
@@ -168,10 +168,10 @@ private lemma presheafLift_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
       PresheafOfModulesOfCommRing.symmetricPowerMul F.val i j ≫ presheafLift φ (i + j) := by
   ext1 U
   refine ModuleCat.MonoidalCategory.tensor_ext fun x y ↦ ?_
-  have hx : sectionsLift φ U.unop x.1 = DirectSum.of _ i (sectionsLift φ U.unop x.1 i) :=
-    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ x.2
-  have hy : sectionsLift φ U.unop y.1 = DirectSum.of _ j (sectionsLift φ U.unop y.1 j) :=
-    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ y.2
+  have hx : sectionsLift φ U.unop x.val = DirectSum.of _ i (sectionsLift φ U.unop x.val i) :=
+    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ x.property
+  have hy : sectionsLift φ U.unop y.val = DirectSum.of _ j (sectionsLift φ U.unop y.val j) :=
+    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ y.property
   refine (presheafLift_tensorHom_comp_mul_app_tmul φ i j U x y).trans ?_
   refine Eq.trans ?_ (presheafLift_app_apply φ (i + j) U
     ((PresheafOfModulesOfCommRing.symmetricPowerMul F.val i j).app U (x ⊗ₜ y))).symm

@@ -44,7 +44,7 @@ private theorem joined_one_transvection {i j : n} (hij : i ≠ j) (a : ℂ) :
     have hlin : (fun t : I => (1 : Matrix n n ℂ) + single i j ((t : ℝ) • a)) =
         fun t : I => (1 : Matrix n n ℂ) + ((t : ℝ) • a) • single i j (1 : ℂ) := by
       ext; simp [smul_single]
-    have ha : Continuous fun t : I => (t : ℝ) • a := continuous_subtype_val.smul continuous_const
+    have ha : Continuous fun t : I => (t : ℝ) • a := continuous_subtypeVal.smul continuous_const
     exact hlin ▸ continuous_const.add (ha.smul continuous_const)
   refine ⟨{
     toFun := fun t => transvection hij ((t : ℝ) • a)
@@ -52,12 +52,12 @@ private theorem joined_one_transvection {i j : n} (hij : i ≠ j) (a : ℂ) :
       Subtype.ext (transvection_coe hij ((t : ℝ) • a)).symm
     source' := Subtype.ext (by simp)
     target' := Subtype.ext (by simp) }⟩
-  rw [← transvection_coe hij]; exact (transvection hij ((t : ℝ) • a)).2
+  rw [← transvection_coe hij]; exact (transvection hij ((t : ℝ) • a)).property
 
 private theorem joined_one_diag2n {i j : n} (hij : i ≠ j) {c : ℂ} (hc : c ≠ 0) :
     Joined (1 : SpecialLinearGroup n ℂ) (diag2n hij c hc) := by
   let z : ℂ := Complex.log c
-  have hval : Continuous (Subtype.val : I → ℝ) := continuous_subtype_val
+  have hval : Continuous (Subtype.val : I → ℝ) := continuous_subtypeVal
   let M : I → Matrix n n ℂ := fun t => diagonal fun k =>
     if k = i then Complex.exp ((t : ℝ) • z)
     else if k = j then Complex.exp (-((t : ℝ) • z)) else 1
@@ -74,8 +74,8 @@ private theorem joined_one_diag2n {i j : n} (hij : i ≠ j) {c : ℂ} (hc : c �
       · simp only [hkj, ↓reduceIte]; exact continuous_const
   refine ⟨{
     toFun := fun t => diag2n hij (Complex.exp ((t : ℝ) • z)) (Complex.exp_ne_zero _)
-    continuous_toFun := (hcont.subtype_mk fun t => hM_eq t ▸ (diag2n hij _ _).2).congr fun t =>
-      Subtype.ext (hM_eq t)
+    continuous_toFun := (hcont.subtype_mk fun t => hM_eq t ▸ (diag2n hij _ _).property).congr
+      fun t => Subtype.ext (hM_eq t)
     source' := Subtype.ext (by ext; simp [diag2n_coe, Matrix.one_apply, Matrix.diagonal_apply])
     target' := Subtype.ext (by simp [z, diag2n_coe, Complex.exp_log hc]) }⟩
 

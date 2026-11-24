@@ -9,12 +9,17 @@ public import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Smooth diagonal pullback of continuous multilinear maps
+# Smooth operations on continuous multilinear maps
 
 Mathlib bundles multilinear pullback as the continuous multilinear operator
 `ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear`.
 Applying the same continuous linear map in every input slot gives an operator-valued
 function that is smooth at every order, including the analytic order `ω`.
+
+Flipping the arguments of a multilinear map with values in operators,
+`ContinuousMultilinearMap.flipLinear`, is the inverse of the continuous linear equivalence
+`ContinuousLinearMap.flipMultilinearEquiv`, so it preserves the regularity of a family of such
+maps (`ContDiffAt.continuousMultilinearMap_flipLinear`).
 -/
 
 public section
@@ -39,3 +44,13 @@ theorem contDiff_compContinuousLinearMapContinuousMultilinear_diagonal (n : With
       (contDiff_pi.mpr fun _ ↦ contDiff_id)
 
 end ContinuousMultilinearMap
+
+/-- Flipping the arguments of a `C^n` family of multilinear maps with values in operators gives a
+`C^n` family of operators with values in multilinear maps. -/
+theorem ContDiffAt.continuousMultilinearMap_flipLinear {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {M : ι → Type*} [∀ i, NormedAddCommGroup (M i)] [∀ i, NormedSpace 𝕜 (M i)]
+    {Φ : X → ContinuousMultilinearMap 𝕜 M (F →L[𝕜] G)} {x : X} {n : ℕ∞ω}
+    (hΦ : ContDiffAt 𝕜 n Φ x) : ContDiffAt 𝕜 n (fun y ↦ (Φ y).flipLinear) x := by
+  -- Flipping is the inverse of the continuous linear equivalence `flipMultilinearEquiv`.
+  simpa [Function.comp_def] using
+    (ContinuousLinearMap.flipMultilinearEquiv 𝕜 M F G).symm.contDiff.contDiffAt.comp x hΦ

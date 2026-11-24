@@ -26,6 +26,8 @@ rescaled perturbation `ε K(c + ε w)` and the almost complex structure `J(c + �
   (`SymplecticForm.perturbedFDeriv_rescale`), so for `ε ≠ 0` the map `v` solves the rescaled
   equation exactly when `u` solves the original one
   (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_rescale_iff`);
+* the Hamiltonian one-form of the rescaled data is `ε` times the original one at `c + ε w`
+  (`SymplecticForm.hamiltonianOneForm_rescale`);
 * the energy density and the curvature of the rescaled data are `ε²` times those of the original
   data (`SymplecticForm.floerEnergyDensity_rescale`, `SymplecticForm.hamiltonianCurvature_rescale`).
 
@@ -53,8 +55,8 @@ one at the origin and derivatives of norm at most two on those discs, while the 
 `c i + ε i • closedBall 0 (R i)` shrink to `z₀`
 (`SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`). The extraction of a
 convergent subsequence of these rescaled maps, which needs elliptic estimates for the rescaled
-equation, and the removal of the singularity at infinity of the limit plane are not carried out
-here.
+equation, is `TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`; the removal of the singularity
+at infinity of the limit plane is not carried out.
 
 ## Main results
 
@@ -133,6 +135,13 @@ theorem perturbedFDeriv_rescale (ω : SymplecticForm V) :
   -- arbitrary maps and Hamiltonians.
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [perturbedFDeriv_apply, fderiv_comp_add_smul, smul_sub, smul_comm ε]
+
+/-- **The Hamiltonian one-form of rescaled data.** The Hamiltonian one-form of the rescaled
+perturbation `ε K(c + ε w)` at `w` is `ε` times that of `K` at `c + ε w`. -/
+theorem hamiltonianOneForm_rescale (ω : SymplecticForm V) {x : V} :
+    ω.hamiltonianOneForm (fun w x ↦ ε * Ks (c + ε • w) x) (fun w x ↦ ε * Kt (c + ε • w) x) w x =
+      ε • ω.hamiltonianOneForm Ks Kt (c + ε • w) x :=
+  ContinuousLinearMap.ext fun v ↦ by simp [smul_comm ε]
 
 /-- **Rescaled solutions.** For a nonzero scale `ε`, the rescaled map `w ↦ u(c + ε w)` solves the
 Floer equation for the rescaled perturbation `ε K(c + ε w)` at `w`, with respect to a structure

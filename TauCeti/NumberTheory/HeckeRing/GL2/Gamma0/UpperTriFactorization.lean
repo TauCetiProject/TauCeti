@@ -171,7 +171,7 @@ private lemma upperTriRep_mul_mapGL_eq {p : ℕ} (j j' : Fin p) (γ γ' : SL(2, 
   fin_cases r <;> fin_cases t <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue,
       Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one,
       Matrix.cons_val_one, algebraMap_int_eq, Matrix.SpecialLinearGroup.map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, Matrix.map_apply, one_mul, mul_one, mul_zero,
+      Int.coe_castRingHom, Matrix.map_apply, one_mul, mul_one, mul_zero,
       add_zero, zero_mul, zero_add] <;>
     [linear_combination -c00; linear_combination -c01 - ((j' : ℕ) : ℚ) * c00;
       linear_combination -c10; linear_combination -((j' : ℕ) : ℚ) * c10 - (p : ℚ) * c11]
@@ -217,7 +217,7 @@ theorem exists_mem_Gamma0_upperTriRep_mul_of_isUnit [NeZero p] {γ : SL(2, ℤ)}
     linear_combination hdet + (γ 1 0 : ℤ) * hb'
   -- the witness, with its four entries read off once, so that nothing below depends on how the
   -- `SL(2, ℤ)` subtype and the matrix literal reduce
-  set γ' : SL(2, ℤ) := ⟨_, hdet'⟩ with hγ'
+  set γ' : SL(2, ℤ) := .mk _ hdet' with hγ'
   have e00 : γ' 0 0 = γ 0 0 + (j : ℕ) * γ 1 0 := by simp [hγ']
   have e01 : γ' 0 1 = b' := by simp [hγ']
   have e10 : γ' 1 0 = (p : ℤ) * γ 1 0 := by simp [hγ']

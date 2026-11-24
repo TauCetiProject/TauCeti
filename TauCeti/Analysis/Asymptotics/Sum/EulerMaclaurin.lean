@@ -34,6 +34,9 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
 * `TauCeti.sum_Ioc_floor_eq_eulerMaclaurin_one`: the first-order formula for nonnegative real
   endpoints and a real Banach-valued function with pointwise derivative and integrable derivative.
   The finite sum is over the natural indices between the endpoint floors.
+* `TauCeti.abs_bernoulliFun_one_fract_le`, `TauCeti.norm_bernoulliFun_one_fract_le` and
+  `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth `B₁({x}) = {x} - 1/2` is bounded by `1/2`,
+  also viewed in `ℂ`, hence `O(1)` along every filter.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -87,6 +90,23 @@ theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
       hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
 
 namespace TauCeti
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
+value at most `1/2`. -/
+theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
+  rw [bernoulliFun_one, abs_le]
+  constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
+
+/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
+theorem norm_bernoulliFun_one_fract_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
+  rw [Complex.norm_real, Real.norm_eq_abs]
+  exact abs_bernoulliFun_one_fract_le x
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2` is bounded, so it is `O(1)` along every filter. -/
+theorem isBigO_bernoulliFun_one_fract (l : Filter ℝ) :
+    (fun x ↦ bernoulliFun 1 (Int.fract x)) =O[l] fun _ ↦ (1 : ℝ) :=
+  Asymptotics.IsBigO.of_bound (1 / 2) (Filter.Eventually.of_forall fun x ↦ by
+    simpa only [Real.norm_eq_abs, norm_one, mul_one] using abs_bernoulliFun_one_fract_le x)
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)

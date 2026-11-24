@@ -85,18 +85,19 @@ variable [FiniteDimensional ℝ E]
 omit [FiniteDimensional ℝ E] in
 /-- The intrinsic frontier of a simplex of `K` outside the subcomplex `A` is covered by the
 subcomplex together with the other simplices of `K` outside `A` that it contains. -/
-private lemma intrinsicFrontier_subset_space_union (s : {s : K.faces // s.1 ∉ A.faces}) :
-    intrinsicFrontier ℝ (convexHull ℝ (s.1.1 : Set E)) ⊆
-      A.space ∪ ⋃ (t : {s : K.faces // s.1 ∉ A.faces})
-        (_ : t ≠ s ∧ convexHull ℝ (t.1.1 : Set E) ⊆ convexHull ℝ (s.1.1 : Set E)),
-        convexHull ℝ (t.1.1 : Set E) := by
+private lemma intrinsicFrontier_subset_space_union (s : {s : K.faces // s.val ∉ A.faces}) :
+    intrinsicFrontier ℝ (convexHull ℝ (s.val.val : Set E)) ⊆
+      A.space ∪ ⋃ (t : {s : K.faces // s.val ∉ A.faces})
+        (_ : t ≠ s ∧ convexHull ℝ (t.val.val : Set E) ⊆ convexHull ℝ (s.val.val : Set E)),
+        convexHull ℝ (t.val.val : Set E) := by
   intro x hx
-  obtain ⟨t, ht, h⟩ := mem_iUnion₂.1 (intrinsicFrontier_convexHull_subset_iUnion s.1.2 hx)
+  obtain ⟨t, ht, h⟩ := mem_iUnion₂.1 (intrinsicFrontier_convexHull_subset_iUnion s.val.property hx)
   obtain ⟨⟨hne, hsub⟩, hxt⟩ := mem_iUnion.1 h
   by_cases htA : t ∈ A.faces
   · exact .inl (convexHull_subset_space htA hxt)
   · exact .inr (mem_iUnion₂.mpr ⟨⟨⟨t, ht⟩, htA⟩,
-      ⟨fun h => hne (congrArg (fun j : {s : K.faces // s.1 ∉ A.faces} => j.1.1) h), hsub⟩, hxt⟩)
+      ⟨fun h => hne (congrArg (fun j : {s : K.faces // s.val ∉ A.faces} => j.val.val) h), hsub⟩,
+          hxt⟩)
 
 /-- In a finite-dimensional real normed space, a locally finite subdivision of a subcomplex
 of a locally finite complex extends to a locally finite subdivision of the whole complex.
@@ -109,12 +110,12 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
       LocallyFinite fun s : M.faces => convexHull ℝ (s : Set E) := by
   classical
   -- Attach exactly the original simplices which are outside the prescribed subcomplex.
-  let J := {s : K.faces // s.1 ∉ A.faces}
-  let P : J → Set E := fun s => convexHull ℝ (s.1.1 : Set E)
-  have hPc (s : J) : IsCompact (P s) := s.1.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)
+  let J := {s : K.faces // s.val ∉ A.faces}
+  let P : J → Set E := fun s => convexHull ℝ (s.val.val : Set E)
+  have hPc (s : J) : IsCompact (P s) := s.val.val.finite_toSet.isCompact_convexHull (𝕜 := ℝ)
   have hPv (s : J) : Convex ℝ (P s) := convex_convexHull ℝ _
   have hPne (s : J) : (P s).Nonempty :=
-    convexHull_nonempty_iff.mpr (K.nonempty_of_mem_faces s.1.2)
+    convexHull_nonempty_iff.mpr (K.nonempty_of_mem_faces s.val.property)
   choose p hp using fun s ↦ (hPne s).intrinsicInterior (hPv s)
   have hP : LocallyFinite P := hK.comp_injective Subtype.val_injective
   have hri : Pairwise fun s t : J => Disjoint (intrinsicInterior ℝ (P s))
@@ -126,10 +127,10 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
     exact intrinsicFrontier_subset_space_union s
   have hLi (s : J) : Disjoint (intrinsicInterior ℝ (P s)) L.space := by
     rw [h.space_eq]
-    exact disjoint_intrinsicInterior_space_of_not_mem hAK s.1.2 s.2
+    exact disjoint_intrinsicInterior_space_of_not_mem hAK s.val.property s.property
   -- Each attachment meets the prescribed subdivision in finitely many boundary simplices.
   obtain ⟨M, hML, hMs, hMP, hMf⟩ := exists_subdivision_extending L P hPc hPv p hp hP hri hfr
-    (fun s x ⟨hxP, hxL⟩ => (h.space_restrict_of_le hAK s.1.2).symm ▸ ⟨hxL, hxP⟩)
+    (fun s x ⟨hxP, hxL⟩ => (h.space_restrict_of_le hAK s.val.property).symm ▸ ⟨hxL, hxP⟩)
     hLi (fun s => finite_faces_restrict hL (hPc s))
   have hMf' : ∀ s ∈ M.faces, s ∈ L.faces ∨ ∃ i, (s : Set E) ⊆ P i := by
     intro s hs
@@ -141,7 +142,7 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
     · rintro x (hxA | hxP)
       · exact space_mono hAK hxA
       · obtain ⟨s, hxs⟩ := mem_iUnion.mp hxP
-        exact convexHull_subset_space s.1.2 hxs
+        exact convexHull_subset_space s.val.property hxs
     · intro x hxK
       obtain ⟨s, hs, hxs⟩ := mem_space_iff.mp hxK
       by_cases hsA : s ∈ A.faces
@@ -153,7 +154,7 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
   rcases hMf' s hs with hsL | ⟨t, hst⟩
   · obtain ⟨t, ht, hst⟩ := h.exists_convexHull_subset hsL
     exact ⟨t, hAK ht, hst⟩
-  · exact ⟨t.1.1, t.1.2, convexHull_min hst (hPv t)⟩
+  · exact ⟨t.val.val, t.val.property, convexHull_min hst (hPv t)⟩
 
 /-- A finite subdivision of a subcomplex of a finite complex extends to a finite subdivision
 of the whole complex, retaining the prescribed triangulation exactly. -/

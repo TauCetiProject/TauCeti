@@ -53,29 +53,30 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- **Goursat coordinate homeomorphism** `H ≃ₜ H.goursatFst × G` via `(g, h) ↦ (g / h, h)`. -/
 def goursatCoordHomeomorph {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H) :
     H ≃ₜ H.goursatFst × G where
-  toFun p := (⟨p.1.1 / p.1.2, (mem_iff_div_mem_goursatFst hH).mp p.2⟩, p.1.2)
-  invFun q := ⟨(q.1.1 * q.2, q.2),
+  toFun p := (⟨p.val.1 / p.val.2, (mem_iff_div_mem_goursatFst hH).mp p.property⟩, p.val.2)
+  invFun q := ⟨(q.1.val * q.2, q.2),
     (mem_iff_div_mem_goursatFst hH).mpr (by simp [mul_div_cancel_right])⟩
-  left_inv p := Subtype.ext (Prod.ext (div_mul_cancel p.1.1 p.1.2) rfl)
-  right_inv q := Prod.ext (Subtype.ext (mul_div_cancel_right q.1.1 q.2)) rfl
+  left_inv p := Subtype.ext (Prod.ext (div_mul_cancel p.val.1 p.val.2) rfl)
+  right_inv q := Prod.ext (Subtype.ext (mul_div_cancel_right q.1.val q.2)) rfl
   continuous_toFun :=
-    (((continuous_fst.comp continuous_subtype_val).div'
-      (continuous_snd.comp continuous_subtype_val)).subtype_mk _).prodMk
-      (continuous_snd.comp continuous_subtype_val)
+    (((continuous_fst.comp continuous_subtypeVal).div'
+      (continuous_snd.comp continuous_subtypeVal)).subtype_mk _).prodMk
+      (continuous_snd.comp continuous_subtypeVal)
   continuous_invFun :=
-    (((continuous_subtype_val.comp continuous_fst).mul continuous_snd).prodMk
+    (((continuous_subtypeVal.comp continuous_fst).mul continuous_snd).prodMk
       continuous_snd).subtype_mk _
 
 @[simp]
 theorem coe_fst_goursatCoordHomeomorph {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H)
-    (p : H) : ((goursatCoordHomeomorph hH p).1 : G) = p.1.1 / p.1.2 := by rfl
+    (p : H) : ((goursatCoordHomeomorph hH p).1 : G) = p.val.1 / p.val.2 := by rfl
 
 @[simp] theorem snd_goursatCoordHomeomorph {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H)
-    (p : H) : (goursatCoordHomeomorph hH p).2 = p.1.2 := by rfl
+    (p : H) : (goursatCoordHomeomorph hH p).2 = p.val.2 := by rfl
 
 @[simp]
 theorem coe_goursatCoordHomeomorph_symm {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H)
-    (q : H.goursatFst × G) : ((goursatCoordHomeomorph hH).symm q : G × G) = (q.1.1 * q.2, q.2) := by
+    (q : H.goursatFst × G) :
+    ((goursatCoordHomeomorph hH).symm q : G × G) = (q.1.val * q.2, q.2) := by
   rfl
 
 /-- Semidirect multiplication law `(a, h) * (b, k) = (a * (h * b * h⁻¹), h * k)` in Goursat
@@ -83,12 +84,12 @@ coordinates. -/
 theorem goursatCoordHomeomorph_mul {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H)
     (p q : H) :
     goursatCoordHomeomorph hH (p * q) =
-      (⟨(goursatCoordHomeomorph hH p).1.1 *
-          ((goursatCoordHomeomorph hH p).2 * (goursatCoordHomeomorph hH q).1.1 *
+      (⟨(goursatCoordHomeomorph hH p).1.val *
+          ((goursatCoordHomeomorph hH p).2 * (goursatCoordHomeomorph hH q).1.val *
             (goursatCoordHomeomorph hH p).2⁻¹),
-        H.goursatFst.mul_mem (goursatCoordHomeomorph hH p).1.2
+        H.goursatFst.mul_mem (goursatCoordHomeomorph hH p).1.property
           ((normal_goursatFst_of_graph_id_le hH).conj_mem _
-            (goursatCoordHomeomorph hH q).1.2 _)⟩,
+            (goursatCoordHomeomorph hH q).1.property _)⟩,
         (goursatCoordHomeomorph hH p).2 * (goursatCoordHomeomorph hH q).2) := by
   refine Prod.ext (Subtype.ext ?_) rfl
   simp only [coe_fst_goursatCoordHomeomorph, snd_goursatCoordHomeomorph, coe_mul, Prod.fst_mul,

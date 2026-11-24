@@ -185,22 +185,24 @@ theorem scalarDiagonalMap_injective [Nonempty ι] :
 /-- **Isomorphism `GL ι R ≃* diagonal ι R`** sending `g` to `(g, g)`. -/
 def diagonalEquiv : GL ι R ≃* diagonal ι R where
   toFun g := ⟨(g, g), mem_diagonal_iff.mpr rfl⟩
-  invFun p := p.1.1
+  invFun p := p.val.1
   left_inv _ := rfl
-  right_inv p := Subtype.ext (Prod.ext rfl (mem_diagonal_iff.mp p.2))
+  right_inv p := Subtype.ext (Prod.ext rfl (mem_diagonal_iff.mp p.property))
   map_mul' _ _ := by rfl
 
 @[simp] theorem coe_diagonalEquiv_apply (g : GL ι R) :
     (diagonalEquiv g : GL ι R × GL ι R) = (g, g) := by rfl
 
-@[simp] theorem diagonalEquiv_symm_apply (p : diagonal ι R) : diagonalEquiv.symm p = p.1.1 := by rfl
+@[simp] theorem diagonalEquiv_symm_apply (p : diagonal ι R) :
+    diagonalEquiv.symm p = p.val.1 := by rfl
 
 /-- **Isomorphism `GL ι R × Rˣ ≃* scalarDiagonal ι R`** for nonempty `ι`. -/
 noncomputable def scalarDiagonalEquiv [Nonempty ι] :
     GL ι R × Rˣ ≃* scalarDiagonal ι R where
   toFun := (scalarDiagonalMap ι R).rangeRestrict
-  invFun q := (q.1.2, (GeneralLinearGroup.unitsMulEquivCenter ι).symm ⟨q.1.1 / q.1.2,
-    Subgroup.mem_diagonalExt.mp (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.2)⟩)
+  invFun q := (q.val.2, (GeneralLinearGroup.unitsMulEquivCenter ι).symm ⟨q.val.1 / q.val.2,
+    Subgroup.mem_diagonalExt.mp
+      (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.property)⟩)
   left_inv p := Prod.ext rfl (by simp [mul_div_cancel_right])
   right_inv q := Subtype.ext (Prod.ext (by simp [div_mul_cancel]) rfl)
   map_mul' := map_mul _
@@ -210,10 +212,10 @@ noncomputable def scalarDiagonalEquiv [Nonempty ι] :
   rfl
 
 @[simp] theorem fst_scalarDiagonalEquiv_symm [Nonempty ι] (q : scalarDiagonal ι R) :
-    (scalarDiagonalEquiv.symm q).1 = q.1.2 := by rfl
+    (scalarDiagonalEquiv.symm q).1 = q.val.2 := by rfl
 
 @[simp] theorem scalar_snd_scalarDiagonalEquiv_symm [Nonempty ι] (q : scalarDiagonal ι R) :
-    GeneralLinearGroup.scalar ι (scalarDiagonalEquiv.symm q).2 = q.1.1 / q.1.2 :=
+    GeneralLinearGroup.scalar ι (scalarDiagonalEquiv.symm q).2 = q.val.1 / q.val.2 :=
   GeneralLinearGroup.scalar_unitsMulEquivCenter_symm _
 
 theorem determinantRatio_surjective [Nonempty ι] :
@@ -233,7 +235,7 @@ noncomputable def quotientDeterminantEqualEquiv [Nonempty ι] :
 def sndProj : scalarDiagonal ι R →* GL ι R :=
   (MonoidHom.snd (GL ι R) (GL ι R)).comp (scalarDiagonal ι R).subtype
 
-@[simp] theorem sndProj_apply (q : scalarDiagonal ι R) : sndProj q = q.1.2 := by rfl
+@[simp] theorem sndProj_apply (q : scalarDiagonal ι R) : sndProj q = q.val.2 := by rfl
 
 theorem sndProj_surjective : Function.Surjective (sndProj (ι := ι) (R := R)) := fun g =>
   ⟨⟨(g, g), diagonal_le_scalarDiagonal (mem_diagonal_iff.mpr rfl)⟩, rfl⟩
@@ -245,6 +247,18 @@ noncomputable def scalarProj [Nonempty ι] : scalarDiagonal ι R →* Rˣ :=
 @[simp] theorem scalarProj_apply_scalarDiagonalEquiv [Nonempty ι] (p : GL ι R × Rˣ) :
     scalarProj (scalarDiagonalEquiv p) = p.2 :=
   congrArg Prod.snd (MulEquiv.symm_apply_apply scalarDiagonalEquiv p)
+
+/-- Applying `GeneralLinearGroup.scalar ι` to `scalarProj q` recovers the ratio
+`q.val.1 / q.val.2`. -/
+@[simp] theorem scalar_scalarProj [Nonempty ι] (q : scalarDiagonal ι R) :
+    GeneralLinearGroup.scalar ι (scalarProj q) = q.val.1 / q.val.2 :=
+  scalar_snd_scalarDiagonalEquiv_symm q
+
+/-- The underlying scalar of `scalarProj q` equals any diagonal entry of `q.val.1 / q.val.2`. -/
+theorem val_scalarProj [Nonempty ι] (q : scalarDiagonal ι R) (i : ι) :
+    ((scalarProj q : Rˣ) : R) = ((q.val.1 / q.val.2 : GL ι R) : Matrix ι ι R) i i := by
+  simpa only [GeneralLinearGroup.coe_scalar, Matrix.scalar_apply, Matrix.diagonal_apply_eq] using
+    congrArg (fun g : GL ι R => (g : Matrix ι ι R) i i) (scalar_scalarProj q)
 
 theorem ker_scalarProj [Nonempty ι] :
     (scalarProj (ι := ι) (R := R)).ker = (diagonal ι R).subgroupOf (scalarDiagonal ι R) := by
@@ -282,13 +296,13 @@ noncomputable def scalarDiagonalContinuousMulEquiv [IsTopologicalRing R] [Nonemp
   continuous_toFun :=
     (((continuous_scalar.comp continuous_snd).mul continuous_fst).prodMk
       continuous_fst).subtype_mk _
-  continuous_invFun := (continuous_snd.comp continuous_subtype_val).prodMk <| by
+  continuous_invFun := (continuous_snd.comp continuous_subtypeVal).prodMk <| by
     obtain ⟨i₀⟩ := ‹Nonempty ι›
-    have hdiv : Continuous fun q : scalarDiagonal ι R => q.1.1 / q.1.2 :=
-      (continuous_fst.comp continuous_subtype_val).div' (continuous_snd.comp continuous_subtype_val)
+    have hdiv : Continuous fun q : scalarDiagonal ι R => q.val.1 / q.val.2 :=
+      (continuous_fst.comp continuous_subtypeVal).div' (continuous_snd.comp continuous_subtypeVal)
     let divMem (q : scalarDiagonal ι R) : Subgroup.center (GL ι R) :=
-      ⟨q.1.1 / q.1.2, Subgroup.mem_diagonalExt.mp
-        (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.2)⟩
+      ⟨q.val.1 / q.val.2, Subgroup.mem_diagonalExt.mp
+        (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.property)⟩
     refine Units.continuous_iff.mpr
       ⟨((Units.continuous_val.comp hdiv).matrix_elem i₀ i₀).congr fun q =>
           (GeneralLinearGroup.val_unitsMulEquivCenter_symm_apply (divMem q) i₀).symm,

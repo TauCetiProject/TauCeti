@@ -14,6 +14,7 @@ import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 import TauCeti.Analysis.Matrix.SpecialLinearGroup.Connected
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unique
 import TauCeti.Topology.Algebra.Group.Goursat
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
@@ -61,18 +62,12 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
 @[simp] theorem determinantEqual_eq_diagonal_of_unique [Unique ι] :
     determinantEqual ι R = diagonal ι R := by
   refine le_antisymm (fun p hp => mem_diagonal_iff.mpr ?_) diagonal_le_determinantEqual
-  have hdet := congrArg Units.val (mem_determinantEqual_iff.mp hp)
-  simp only [GeneralLinearGroup.val_det_apply, Matrix.det_unique] at hdet
-  exact Units.ext (Matrix.ext fun i j => by
-    rw [Unique.eq_default i, Unique.eq_default j]; exact hdet)
+  rw [GeneralLinearGroup.eq_scalar_det p.1, GeneralLinearGroup.eq_scalar_det p.2,
+    mem_determinantEqual_iff.mp hp]
 
-@[simp] theorem scalarDiagonal_eq_top_of_unique [Unique ι] : scalarDiagonal ι R = ⊤ := by
-  refine eq_top_iff.mpr fun p _ => mem_scalarDiagonal_iff.mpr ⟨(p.1 / p.2).det, ?_⟩
-  have hsc : GeneralLinearGroup.scalar ι (p.1 / p.2).det = p.1 / p.2 :=
-    Units.ext (Matrix.ext fun i j => by
-      rw [Unique.eq_default i, Unique.eq_default j, GeneralLinearGroup.coe_scalar,
-        GeneralLinearGroup.val_det_apply, Matrix.det_unique]; simp)
-  rw [hsc, div_mul_cancel]
+@[simp] theorem scalarDiagonal_eq_top_of_unique [Unique ι] : scalarDiagonal ι R = ⊤ :=
+  eq_top_iff.mpr fun p _ => mem_scalarDiagonal_iff.mpr
+    ⟨(p.1 / p.2).det, by rw [← GeneralLinearGroup.eq_scalar_det (p.1 / p.2), div_mul_cancel]⟩
 
 /-- Membership in `scalarDiagonal ι R ⊓ determinantEqual ι R`: pairs differing by an `|ι|`-th root
 of unity scalar. -/
@@ -160,7 +155,7 @@ theorem exists_mem_scalarDiagonal_mul_mem_determinantEqual (p : GL ι ℂ × GL 
   let u : ℂˣ := Units.mk0 (Complex.exp (Complex.log (d : ℂ) / Fintype.card ι))
     (Complex.exp_ne_zero _)
   have hu : u ^ Fintype.card ι = d := Units.ext <| by
-    simp only [u, Units.val_pow_eq_pow_val, Units.val_mk0, ← Complex.exp_nat_mul]
+    simp only [u, Units.val_pow_eq_pow_val, Units.val_mk0, ← Complex.exp_natCast_mul]
     rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Complex.exp_log d.ne_zero]
   refine ⟨(GeneralLinearGroup.scalar ι u, 1), mem_scalarDiagonal_iff.mpr ⟨u, by simp⟩,
     ((GeneralLinearGroup.scalar ι u)⁻¹ * p.1, p.2), ?_,

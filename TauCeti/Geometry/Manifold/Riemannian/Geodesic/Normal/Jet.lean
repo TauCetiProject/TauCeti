@@ -94,7 +94,7 @@ private theorem differentiableWithinAt_sectionCoord_radial (v : TangentSpace I p
       (fun t ↦ TotalSpace.mk' E (riemannianExp I M p (t • v)) (Y t)) {t | t • v ∈ U})
     {t : ℝ} (ht : t • v ∈ U) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) (fun r : ℝ ↦ riemannianExp I M p (r • v)) Y
+      (sectionCoord ℝ (F := E) (fun r : ℝ ↦ riemannianExp I M p (r • v)) Y
         (riemannianExp I M p (t • v))) {r | r • v ∈ U} t :=
   differentiableWithinAt_sectionCoord _ Y ((hY t ht).mdifferentiableWithinAt (by simp))
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
@@ -141,8 +141,8 @@ private theorem alongCurveWithin_const_smul_add_id_smul (h : IsNormalDomain I M 
   have hmul := h.alongCurveWithin_id_smul v (D Y) hDY ht
   dsimp only [D, γ, s] at hmul ⊢
   rw [alongCurveWithin_add (leviCivitaConnection I M) γ _ _ s
-      (by rw [sectionCoord_smul]; exact hcoordY.const_smul c)
-      (by rw [sectionCoord_smul]; exact differentiableWithinAt_id.smul hcoordDY),
+      (by rw [sectionCoord_fun_smul]; exact hcoordY.const_smul c)
+      (by rw [sectionCoord_fun_smul]; exact differentiableWithinAt_id.smul hcoordDY),
     alongCurveWithin_const_smul (leviCivitaConnection I M) γ Y c s t, hmul]
   module
 

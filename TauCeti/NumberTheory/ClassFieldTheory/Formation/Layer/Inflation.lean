@@ -147,7 +147,7 @@ private def levelCocycle (c : cocycles₂ (L.rep F)) :
       (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :=
   ⟨fun q => L.coeffFixedPointsEquiv e he (c q), mem_Z2_iff.2 ⟨continuous_of_discreteTopology,
     fun g h j => by
-      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.2 g h j)
+      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.property g h j)
       rw [map_add, map_add] at hc
       exact hc.trans (congrArg (· + _) (L.coeffFixedPointsEquiv_ρ e he g (c (h, j))))⟩⟩
 
@@ -315,7 +315,7 @@ theorem exists_explicitInfl2_eq (c : H2 L.ground.toSubgroup M) :
   -- inside both `N` and `V` gives a layer `W ◁ U` refining `V ◁ U` whose quotient refines `U ⧸ N`.
   obtain ⟨N, y, rfl⟩ := ContCohomology.exists_explicitInfl2_eq c
   let S : Set G := Subtype.val '' (N : Set L.ground.toSubgroup) ∩ (L.top : Set G)
-  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtype_val _ N.isOpen).inter L.top.isOpen
+  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtypeVal _ N.isOpen).inter L.top.isOpen
   have h1 : (1 : G) ∈ S := ⟨⟨1, N.one_mem, rfl⟩, L.top.one_mem⟩
   obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hS h1
   have hWV : W.toOpenSubgroup ≤ L.top := fun w hw => (hW hw).2

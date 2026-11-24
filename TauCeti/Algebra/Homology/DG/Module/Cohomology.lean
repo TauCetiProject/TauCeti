@@ -81,7 +81,7 @@ namespace IsDGLeftModule
 module over the algebra of cycles of `A` because a cycle acting on a cycle is a cycle. -/
 def cycles (hM : IsDGLeftModule h ℳ dM) : Submodule h.cycles M :=
   { (LinearMap.ker dM).toAddSubmonoid with
-    smul_mem' := fun z _ hx => hM.map_smul_eq_zero_of_map_eq_zero (h.mem_cycles.mp z.2) hx }
+    smul_mem' := fun z _ hx => hM.map_smul_eq_zero_of_map_eq_zero (h.mem_cycles.mp z.property) hx }
 
 @[simp]
 lemma mem_cycles (hM : IsDGLeftModule h ℳ dM) {x : M} : x ∈ hM.cycles ↔ dM x = 0 := Iff.rfl
@@ -95,7 +95,7 @@ inside the cycles.  A cycle of `A` carries a boundary to a boundary, so this is 
 the algebra of cycles. -/
 def boundaries (hM : IsDGLeftModule h ℳ dM) : Submodule h.cycles hM.cycles :=
   { (LinearMap.range dM).toAddSubmonoid.comap hM.cycles.subtype.toAddMonoidHom with
-    smul_mem' := fun z _ hx => hM.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp z.2) hx }
+    smul_mem' := fun z _ hx => hM.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp z.property) hx }
 
 @[simp]
 lemma mem_boundaries (hM : IsDGLeftModule h ℳ dM) {z : hM.cycles} :
@@ -128,8 +128,8 @@ theorem isTorsionBySet_boundaries (hM : IsDGLeftModule h ℳ dM) :
   intro x a
   refine Submodule.Quotient.induction_on _ x fun z => ?_
   rw [← Submodule.Quotient.mk_smul, hM.quotientMk_eq_zero_iff, mem_boundaries]
-  obtain ⟨b, hb⟩ := (h.mem_boundaries.mp (TwoSidedIdeal.mem_asIdeal.mp a.2))
-  have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
+  obtain ⟨b, hb⟩ := (h.mem_boundaries.mp (TwoSidedIdeal.mem_asIdeal.mp a.property))
+  have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.property
   have hrange := hM.map_smul_mem_range_of_map_eq_zero b hz
   rw [hb] at hrange
   rw [Submodule.coe_smul]
@@ -170,7 +170,7 @@ noncomputable instance instDecompositionCyclesDeg (hM : IsDGLeftModule h ℳ dM)
   DirectSum.Decomposition.restrict ℳ hM.cyclesDeg
     ((hM.cycles.subtype).restrictScalars R) Subtype.val_injective
     (fun _ _ ↦ hM.mem_cyclesDeg) fun p z ↦
-      ⟨⟨(decompose ℳ (z : M) p : M), hM.isHomogeneous_cycles p z.2⟩, rfl⟩
+      ⟨⟨(decompose ℳ (z : M) p : M), hM.isHomogeneous_cycles p z.property⟩, rfl⟩
 
 /-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
 and they add up to it. -/

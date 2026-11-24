@@ -437,7 +437,7 @@ theorem IsIrreducible.of_externalTensor_left {ρ : Representation k G V} {σ : R
     let π : V ⊗[k] W →ₗ[k] V := (_root_.TensorProduct.rid k V).toLinearMap.comp (g.lTensor V)
     have hπS : ∀ x, π (S.toSubmodule.subtype.rTensor W x) ∈ S.toSubmodule := fun x =>
       _root_.TensorProduct.inductionOn x
-        (fun s w => by simpa [π] using S.toSubmodule.smul_mem (g w) s.2)
+        (fun s w => by simpa [π] using S.toSubmodule.smul_mem (g w) s.property)
         fun _ _ hx hy => by simpa only [map_add] using S.toSubmodule.add_mem hx hy
     have h1 := hπS t
     rw [ht] at h1

@@ -95,18 +95,19 @@ theorem diagonalExt_goursatFst {H : Subgroup (G × G)} (hH : (MonoidHom.id G).gr
 /-- **Goursat normal-kernel correspondence** for subgroups of `G × G` containing the diagonal. -/
 def graphIdIciOrderIsoNormal (G : Type*) [Group G] :
     Set.Ici (MonoidHom.id G).graph ≃o {N : Subgroup G // N.Normal} where
-  toFun H := ⟨H.1.goursatFst, normal_goursatFst_of_graph_id_le H.2⟩
-  invFun N := let _ := N.2; ⟨diagonalExt N.1, graph_id_le_diagonalExt N.1⟩
+  toFun H := ⟨H.val.goursatFst, normal_goursatFst_of_graph_id_le H.property⟩
+  invFun N := let _ := N.property; ⟨diagonalExt N.val, graph_id_le_diagonalExt N.val⟩
   left_inv H := by
-    let _ := normal_goursatFst_of_graph_id_le H.2; exact Subtype.ext (diagonalExt_goursatFst H.2)
-  right_inv N := by let _ := N.2; exact Subtype.ext (goursatFst_diagonalExt N.1)
+    let _ := normal_goursatFst_of_graph_id_le H.property
+    exact Subtype.ext (diagonalExt_goursatFst H.property)
+  right_inv N := by let _ := N.property; exact Subtype.ext (goursatFst_diagonalExt N.val)
   map_rel_iff' {H₁ H₂} :=
-    ⟨fun hle _ hp => (mem_iff_div_mem_goursatFst H₂.2).mpr
-      (hle ((mem_iff_div_mem_goursatFst H₁.2).mp hp)),
+    ⟨fun hle _ hp => (mem_iff_div_mem_goursatFst H₂.property).mpr
+      (hle ((mem_iff_div_mem_goursatFst H₁.property).mp hp)),
      fun hle _ hg => mem_goursatFst.mpr (hle (mem_goursatFst.mp hg))⟩
 
 @[simp] theorem coe_graphIdIciOrderIsoNormal_apply (H : Set.Ici (MonoidHom.id G).graph) :
-    (graphIdIciOrderIsoNormal G H : Subgroup G) = H.1.goursatFst := by rfl
+    (graphIdIciOrderIsoNormal G H : Subgroup G) = H.val.goursatFst := by rfl
 
 @[simp] theorem coe_graphIdIciOrderIsoNormal_symm_mk (N : Subgroup G) [hN : N.Normal] :
     ((graphIdIciOrderIsoNormal G).symm ⟨N, hN⟩ : Subgroup (G × G)) = diagonalExt N := by rfl
