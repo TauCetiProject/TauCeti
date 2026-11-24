@@ -122,6 +122,13 @@ theorem transversalExtend_apply_of_mem (u : S → U) {s : Γ} (hs : s ∈ S) :
   rw [transversalExtend, h1, h2]
   exact congr($(map_one σ) (u ⟨s, hs⟩))
 
+omit [IsTopologicalGroup Γ] in
+/-- The extension from a right transversal at a point `s : S` is `u s`. -/
+@[simp]
+theorem transversalExtend_apply_coe (u : S → U) (s : S) :
+    transversalExtend σ hS u s = u s :=
+  transversalExtend_apply_of_mem σ hS u s.property
+
 /-- For an open subgroup, the extension from a right transversal is jointly continuous in the
 values and the point. -/
 theorem continuous_transversalExtend (hH : IsOpen (H : Set Γ)) :
@@ -176,11 +183,11 @@ noncomputable def ind (σ : ContinuousRep H A U) : ContinuousRep Γ A (indV H σ
   toRepresentation :=
     (σ.toContRepresentation.coind (ContinuousMonoidHom.subgroupSubtype H)).toRepresentation
   continuous_action := by
-    refine Continuous.subtype_mk ?_ _
     have hr : Continuous fun g : Γ => ContinuousMap.mulRight g :=
       (ContinuousMap.mk (fun q : Γ × Γ => q.2 * q.1) (by fun_prop)).curry.continuous
-    exact ContinuousMap.continuous_comp'.comp
-      (hr.fst'.prodMk (continuous_subtypeVal.comp continuous_snd))
+    refine continuous_induced_rng.2 <| (ContinuousMap.continuous_comp'.comp
+      (hr.fst'.prodMk (continuous_subtypeVal.comp continuous_snd))).congr fun p => ?_
+    exact (ContRepresentation.coind_apply_coe _ _ p.1 p.2).symm
 
 @[simp]
 theorem ind_apply_apply (σ : ContinuousRep H A U) (g : Γ) (f : indV H σ) (x : Γ) :
@@ -218,7 +225,7 @@ noncomputable def indVEquivPi : indV H σ ≃L[A] (S → U) where
     have := (mem_indV _).1 f.property (hS.equiv x).1 (hS.equiv x).2
     rw [Subgroup.IsComplement.equiv_fst_mul_equiv_snd] at this
     exact this.symm
-  right_inv u := funext fun s => transversalExtend_apply_of_mem σ hS u s.property
+  right_inv u := funext fun s => transversalExtend_apply_coe σ hS u s
   continuous_toFun := continuous_pi fun s =>
     (continuous_eval_const (s : Γ)).comp continuous_subtypeVal
   continuous_invFun := by
@@ -248,8 +255,8 @@ finite rank, the induced module has rank `#S · rank U`. -/
 theorem finrank_indV [StrongRankCondition A] [Module.Free A U] [Module.Finite A U] [Finite S] :
     Module.finrank A (indV H σ) = Nat.card S * Module.finrank A U := by
   have := Fintype.ofFinite S
-  rw [(indVEquivPi σ hH hS).toLinearEquiv.finrank_eq, Module.finrank_pi_fintype,
-    Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
+  rw [(indVEquivPi σ hH hS).toLinearEquiv.finrank_eq]
+  simp [Module.finrank_pi_fintype, Nat.card_eq_fintype_card]
 
 end Transversal
 
