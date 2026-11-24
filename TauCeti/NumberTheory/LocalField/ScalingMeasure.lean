@@ -30,9 +30,8 @@ Multiplication by `a ∈ K` scales the measure by `|a|_K ^ β` (Haar measure its
 `β = 1`), and for `β > 0` the shell `|x|_K = q ^ (-k)` of elements of valuation `k` has mass
 `(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])`; for `β ≤ 0` the density, hence every mass, vanishes. At a
 prime `p` and `K = ℚ_[p]` these are the local factors of Neshveyev's measure `μ_β` on the finite
-adeles, the measure whose rational scaling law
-`μ_β(q⁻¹ E) = q ^ β μ_β(E)` underlies the classification of the KMS states of the Bost–Connes
-system.
+adeles, the measure whose rational scaling law `μ_β(r⁻¹ E) = r ^ β μ_β(E)`, for positive
+rationals `r`, underlies the classification of the KMS states of the Bost–Connes system.
 
 ## Main definitions
 
@@ -147,7 +146,7 @@ number. -/
 private theorem one_sub_inv_residueFieldCard_eq_ofReal :
     1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 - (Nat.card 𝓀[K] : ℝ)⁻¹) := by
   rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one,
-    ENNReal.ofReal_inv_of_pos (zero_lt_one.trans one_lt_residueFieldCard), ENNReal.ofReal_natCast]
+    ENNReal.ofReal_inv_of_pos residueFieldCard_pos, ENNReal.ofReal_natCast]
 
 end TauCeti
 
@@ -169,7 +168,7 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
         {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-k)} =
       ENNReal.ofReal ((1 - (Nat.card 𝓀[K] : ℝ) ^ (-β)) * (Nat.card 𝓀[K] : ℝ) ^ (-(k * β))) *
         μ 𝒪[K] := by
-  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans one_lt_residueFieldCard
+  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := residueFieldCard_pos
   -- Write the shell as the sphere `|x|_K = |a|_K` through `a = ϖ ^ k`; the density is constant
   -- on it.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
@@ -244,10 +243,9 @@ theorem map_smul_withDensity_scalingDensity {a : K} (ha : a ≠ 0) (β : ℝ) :
     map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, ENNReal.smul_def,
     withDensity_smul_measure, hf, withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul]
   congr 1
-  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), NNReal.coe_inv]
-  -- The real number underlying `|a|_K : ℝ≥0` is the real cast of `|a|_K : ℚ≥0`.
-  change ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ)⁻¹ * _) = _
-  rw [← Real.rpow_neg_one, ← Real.rpow_add hpos]
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), NNReal.coe_inv,
+    show ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ) = normalizedAbsoluteValue K a by norm_cast,
+    ← Real.rpow_neg_one, ← Real.rpow_add hpos]
   ring_nf
 
 /-- **The scaling law.** For every `a ∈ K` and every set `s`, the `β`-scaling measure of `a • s`
@@ -278,17 +276,17 @@ mass as the Haar measure `μ`; in particular it is a probability measure on `�
 `μ 𝒪[K] = 1`. -/
 theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
     μ.withDensity (scalingDensity K β) 𝒪[K] = μ 𝒪[K] := by
-  have hq : (1 : ℚ≥0) < Nat.card 𝓀[K] := one_lt_residueFieldCard
   have hdisj : Pairwise (Function.onFun Disjoint fun n : ℕ ↦
       {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))}) := by
     intro m n hmn
     refine Set.disjoint_left.2 fun x (hm : _ = _) (hn : _ = _) ↦ hmn ?_
-    have := zpow_right_injective₀ (zero_lt_one.trans hq) hq.ne' (hm.symm.trans hn)
+    have :=
+      zpow_right_injective₀ residueFieldCard_pos one_lt_residueFieldCard.ne' (hm.symm.trans hn)
     omega
   have h0 : (0 : K) ∉ ⋃ n : ℕ,
       {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))} := by
     simp only [Set.mem_iUnion, Set.mem_ofPred_eq, map_zero, not_exists]
-    exact fun n h ↦ (zpow_pos (zero_lt_one.trans hq) _).ne h
+    exact fun n h ↦ (zpow_pos residueFieldCard_pos _).ne h
   have hmeas (n : ℕ) := measurableSet_setOf_normalizedAbsoluteValue_eq (K := K)
     ((Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ)))
   conv_lhs => rw [integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq]

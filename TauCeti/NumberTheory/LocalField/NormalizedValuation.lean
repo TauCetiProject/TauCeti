@@ -473,6 +473,13 @@ theorem one_lt_residueFieldCard {R : Type*} [AddMonoidWithOne R] [PartialOrder R
     (1 : R) < Nat.card 𝓀[K] :=
   Nat.one_lt_cast.2 Finite.one_lt_card
 
+/-- The cardinality `q` of the residue field of a nonarchimedean local field is positive in every
+ordered semiring of characteristic zero. -/
+theorem residueFieldCard_pos {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [CharZero R] :
+    (0 : R) < Nat.card 𝓀[K] :=
+  zero_le_one.trans_lt one_lt_residueFieldCard
+
 /-- The inverse `q⁻¹` of the residue-field cardinality is less than one, so `1 - q⁻¹` is
 positive. -/
 theorem sub_inv_residueFieldCard_pos {R : Type*} [Field R] [LinearOrder R]
@@ -575,7 +582,7 @@ theorem normalizedAbsoluteValue_lt_iff_le_inv_mul {x a : K} (ha : a ≠ 0) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp [pos_iff_ne_zero, ha]
   rw [normalizedAbsoluteValue_apply_ne_zero x hx, normalizedAbsoluteValue_apply_ne_zero a ha,
-    ← zpow_neg_one, ← zpow_add₀ (zero_lt_one.trans one_lt_residueFieldCard).ne',
+    ← zpow_neg_one, ← zpow_add₀ residueFieldCard_pos.ne',
     zpow_lt_zpow_iff_right₀ one_lt_residueFieldCard,
     zpow_le_zpow_iff_right₀ one_lt_residueFieldCard]
   omega
