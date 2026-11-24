@@ -23,8 +23,10 @@ standard Gaussian measure:
 * in `ℝ²`, `γ({x₁ + x₂ < √2}) = Φ(1)`, by projection onto `(e₁ + e₂)/√2`;
 * on the plane `{x ∈ ℝ³ | x₁ + x₂ + x₃ = 0}`, the coordinate `√(3/2) x₁` has the standard
   normal law, with the factor `√(q/(q-1))` at `q = 3`;
-* the splittings along `F = {0}` and `F = E`;
-* the standard Gaussian density at the origin of `ℝ²` is `(2π)⁻¹`.
+* the splittings along `F = {0}` and `F = E`, where the standard Gaussian on the zero factor is
+  the Dirac mass `δ₀`;
+* the standard Gaussian on `ℝ²` has the density `multivariateGaussianPDF 0 1`, whose value at the
+  origin is `(2π)⁻¹`.
 -/
 
 open MeasureTheory ProbabilityTheory Real Set TauCeti.Probability
@@ -55,9 +57,10 @@ example : (gaussianReal 0 1).quantile 1 = 0 := by
   rw [Measure.quantile_def, this, Real.sInf_empty]
 
 /-- `φ` of the quantile at the levels `0` and `1` would be `φ(0) ≠ 0 = I(0) = I(1)`. -/
-example : gaussianPDFReal 0 1 0 ≠ gaussianIsoperimetricProfile 0 := by
-  rw [gaussianIsoperimetricProfile_zero]
-  exact (gaussianPDFReal_pos 0 1 0 one_ne_zero).ne'
+example : gaussianPDFReal 0 1 0 ≠ gaussianIsoperimetricProfile 0 ∧
+    gaussianIsoperimetricProfile 0 = gaussianIsoperimetricProfile 1 := by
+  rw [gaussianIsoperimetricProfile_zero, gaussianIsoperimetricProfile_one]
+  exact ⟨(gaussianPDFReal_pos 0 1 0 one_ne_zero).ne', rfl⟩
 
 /-- `I'(3/10) = -Φ⁻¹(3/10)`. -/
 example : deriv gaussianIsoperimetricProfile (3 / 10) = -(gaussianReal 0 1).quantile (3 / 10) :=
@@ -76,8 +79,7 @@ example : (stdGaussian (EuclideanSpace ℝ (Fin 2))).real {x | x 0 + x 1 < √2}
   have h2 : (0 : ℝ) < √2 := by positivity
   have hnorm : ‖ν‖ = 1 := by
     rw [EuclideanSpace.norm_eq, Fin.sum_univ_two]
-    simp [hν, Real.sq_sqrt]
-    norm_num
+    norm_num [hν, Real.sq_sqrt]
   rw [← measureReal_stdGaussian_setOf_inner_lt hnorm 1]
   congr 1
   ext x
@@ -103,32 +105,50 @@ example : (stdGaussian sumZeroPlane).map
     gaussianReal 0 1 := by
   have hnorm : ‖unitVec‖ = 1 := by
     rw [← Submodule.norm_coe, unitVec, EuclideanSpace.norm_eq]
-    simp [Fin.sum_univ_three, div_pow, mul_pow]
-    norm_num
+    norm_num [Fin.sum_univ_three, div_pow, mul_pow]
   rw [← map_inner_stdGaussian_of_norm_eq_one hnorm]
   congr 1
   funext x
   have hx := Submodule.mem_orthogonal_singleton_iff_inner_right.1 x.property
-  simp [PiLp.inner_apply, Fin.sum_univ_three, unitVec] at hx ⊢
-  linear_combination (√3 / √2 / 3) * hx
+  simp only [unitVec, Submodule.coe_inner, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+    Fin.sum_univ_three, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val,
+    PiLp.smul_apply, smul_eq_mul, mul_one] at hx ⊢
+  linear_combination (√(3 / 2) / 3) * hx
 
-/-- The splitting along `F = {0}`. -/
+/-- The splitting along `F = {0}`: `γ_E = δ₀ ⊗ γ_E`. -/
 example {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] :
-    ((stdGaussian (⊥ : Submodule ℝ E)).prod (stdGaussian (⊥ : Submodule ℝ E)ᗮ)).map
-      (fun p ↦ (p.1 : E) + p.2) = stdGaussian E :=
-  Submodule.map_add_prod_stdGaussian ⊥
+    ((Measure.dirac (0 : (⊥ : Submodule ℝ E))).prod (stdGaussian (⊥ : Submodule ℝ E)ᗮ)).map
+      (fun p ↦ (p.1 : E) + p.2) = stdGaussian E := by
+  have hδ : stdGaussian (⊥ : Submodule ℝ E) = Measure.dirac 0 := by
+    ext s -
+    apply Subsingleton.set_cases (p := fun s ↦ stdGaussian (⊥ : Submodule ℝ E) s = _)
+    all_goals simp
+  rw [← hδ]
+  exact Submodule.map_add_prod_stdGaussian ⊥
 
-/-- The splitting along `F = E`. -/
+/-- The splitting along `F = E`: `γ_E = γ_E ⊗ δ₀`. -/
 example {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] :
-    ((stdGaussian (⊤ : Submodule ℝ E)).prod (stdGaussian (⊤ : Submodule ℝ E)ᗮ)).map
-      (fun p ↦ (p.1 : E) + p.2) = stdGaussian E :=
-  Submodule.map_add_prod_stdGaussian ⊤
+    ((stdGaussian (⊤ : Submodule ℝ E)).prod (Measure.dirac (0 : (⊤ : Submodule ℝ E)ᗮ))).map
+      (fun p ↦ (p.1 : E) + p.2) = stdGaussian E := by
+  have : Subsingleton (⊤ : Submodule ℝ E)ᗮ := by
+    rw [Submodule.top_orthogonal_eq_bot]
+    infer_instance
+  have hδ : stdGaussian (⊤ : Submodule ℝ E)ᗮ = Measure.dirac 0 := by
+    ext s -
+    apply Subsingleton.set_cases (p := fun s ↦ stdGaussian (⊤ : Submodule ℝ E)ᗮ s = _)
+    all_goals simp
+  rw [← hδ]
+  exact Submodule.map_add_prod_stdGaussian ⊤
 
-/-- The standard Gaussian density on `ℝ²` takes the value `(2π)⁻¹` at the origin. -/
-example : (2 * π) ^ (-(Fintype.card (Fin 2) : ℝ) / 2) *
-    exp (-‖(0 : EuclideanSpace ℝ (Fin 2))‖ ^ 2 / 2) = (2 * π)⁻¹ := by
-  norm_num [Real.rpow_neg_one]
+/-- The standard Gaussian on `ℝ²` has the density `multivariateGaussianPDF 0 1`, and that density
+takes the value `(2π)⁻¹` at the origin. -/
+example :
+    stdGaussian (EuclideanSpace ℝ (Fin 2)) = volume.withDensity (multivariateGaussianPDF 0 1) ∧
+    multivariateGaussianPDFReal (0 : EuclideanSpace ℝ (Fin 2)) 1 0 = (2 * π)⁻¹ := by
+  refine ⟨?_, ?_⟩
+  · rw [← multivariateGaussian_eq_withDensity Matrix.PosDef.one, multivariateGaussian_zero_one]
+  · norm_num [multivariateGaussianPDFReal_def, Real.rpow_neg_one]
 
 end TauCeti.Examples.GaussianIsoperimetry
