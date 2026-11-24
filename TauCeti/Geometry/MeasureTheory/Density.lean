@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import Mathlib.MeasureTheory.Measure.Regular
+public import TauCeti.Geometry.Euclidean.Volume.UnitBall
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Order.Filter.ENNReal
-import Mathlib.Topology.Algebra.Order.Field
 import Mathlib.Topology.Order.LiminfLimsup
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Topology.Algebra.Order.Field
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # `k`-dimensional densities of a measure
@@ -48,8 +49,9 @@ This file proves:
   (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure_of_upperDensity_lt`); and an
   outer regular measure has upper density `0` at `μHE[k]`-almost every point of a `μ`-null set
   (`MeasureTheory.Measure.ae_upperDensity_eq_zero_of_measure_eq_zero`). Applied to
-  `μ = θ μHE[k]⌞Γ` and the complement of `Γ`, the last statement says that such a measure has
-  upper density zero at `μHE[k]`-almost every point off its carrier.
+  `μ = θ μHE[k]⌞Γ` and the complement of `Γ`, the last statement says that such a measure, when it
+  is outer regular (for instance, when it is locally finite on a Euclidean space), has upper
+  density zero at `μHE[k]`-almost every point off its carrier.
 
 ## References
 
@@ -63,84 +65,6 @@ noncomputable section
 
 open Filter Metric MeasureTheory Set Topology Module
 open scoped ENNReal NNReal
-
-namespace TauCeti
-
-/-- `ω_k`, the volume of the unit ball of `ℝ ^ k` (that is, of `EuclideanSpace ℝ (Fin k)`). The
-volume of a ball of radius `r > 0` in a `k`-dimensional real inner product space is `ω_k r ^ k`
-(`TauCeti.volume_ball_eq_unitBallVolume_mul`). -/
-def unitBallVolume (k : ℕ) : ℝ≥0∞ :=
-  volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)
-
-theorem unitBallVolume_def (k : ℕ) :
-    unitBallVolume k = volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) :=
-  (rfl)
-
-theorem unitBallVolume_pos (k : ℕ) : 0 < unitBallVolume k :=
-  measure_ball_pos _ _ one_pos
-
-theorem unitBallVolume_ne_zero (k : ℕ) : unitBallVolume k ≠ 0 :=
-  (unitBallVolume_pos k).ne'
-
-theorem unitBallVolume_ne_top (k : ℕ) : unitBallVolume k ≠ ∞ :=
-  measure_ball_lt_top.ne
-
-/-- The volume `ω_k ρ ^ k` of a ball of radius `ρ > 0` in `ℝ ^ k` is nonzero. -/
-theorem unitBallVolume_mul_ofReal_pow_ne_zero (k : ℕ) {ρ : ℝ} (hρ : 0 < ρ) :
-    unitBallVolume k * ENNReal.ofReal ρ ^ k ≠ 0 :=
-  mul_ne_zero (unitBallVolume_ne_zero k) (pow_ne_zero _ (ENNReal.ofReal_pos.2 hρ).ne')
-
-/-- The volume `ω_k ρ ^ k` of a ball of radius `ρ` in `ℝ ^ k` is finite. -/
-theorem unitBallVolume_mul_ofReal_pow_ne_top (k : ℕ) (ρ : ℝ) :
-    unitBallVolume k * ENNReal.ofReal ρ ^ k ≠ ∞ :=
-  ENNReal.mul_ne_top (unitBallVolume_ne_top k) (ENNReal.pow_ne_top ENNReal.ofReal_ne_top)
-
-section InnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- The unit ball of a real inner product space of dimension `k` has volume `ω_k`. -/
-theorem volume_ball_zero_one_eq_unitBallVolume :
-    volume (ball (0 : E) 1) = unitBallVolume (finrank ℝ E) :=
-  volume_ball_eq_of_finrank_eq (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm 0 0 1
-
-/-- A closed ball of radius `r ≥ 0` in a real inner product space of dimension `k` has volume
-`ω_k r ^ k`. -/
-theorem volume_closedBall_eq_unitBallVolume_mul (x : E) {r : ℝ} (hr : 0 ≤ r) :
-    volume (closedBall x r) = unitBallVolume (finrank ℝ E) * ENNReal.ofReal r ^ finrank ℝ E := by
-  rw [Measure.addHaar_closedBall _ x hr, volume_ball_zero_one_eq_unitBallVolume,
-    ENNReal.ofReal_pow hr, mul_comm]
-
-/-- An open ball of radius `r > 0` in a real inner product space of dimension `k` has volume
-`ω_k r ^ k`. -/
-theorem volume_ball_eq_unitBallVolume_mul (x : E) {r : ℝ} (hr : 0 < r) :
-    volume (ball x r) = unitBallVolume (finrank ℝ E) * ENNReal.ofReal r ^ finrank ℝ E := by
-  rw [Measure.addHaar_ball_of_pos _ x hr, volume_ball_zero_one_eq_unitBallVolume,
-    ENNReal.ofReal_pow hr.le, mul_comm]
-
-end InnerProductSpace
-
-/-- A closed ball of radius `r ≥ 0` in `ℝ ^ k` has volume `ω_k r ^ k`. -/
-private lemma volume_closedBall_fin_eq_unitBallVolume_mul (k : ℕ)
-    (x : EuclideanSpace ℝ (Fin k)) {r : ℝ} (hr : 0 ≤ r) :
-    volume (closedBall x r) = unitBallVolume k * ENNReal.ofReal r ^ k := by
-  simpa using volume_closedBall_eq_unitBallVolume_mul x hr
-
-/-- `ω_1 = 2`: the unit ball of `ℝ` is an interval of length `2`. -/
-@[simp]
-theorem unitBallVolume_one : unitBallVolume 1 = 2 := by
-  have h := volume_ball_eq_unitBallVolume_mul (0 : ℝ) one_pos
-  simp only [Real.volume_ball, Module.finrank_self, ENNReal.ofReal_one, one_pow, mul_one] at h
-  rw [← h, ENNReal.ofReal_ofNat]
-
-/-- `ω_2 = π`: the unit disc has area `π`. -/
-@[simp]
-theorem unitBallVolume_two : unitBallVolume 2 = ENNReal.ofReal Real.pi := by
-  rw [unitBallVolume_def, EuclideanSpace.volume_ball_fin_two, ENNReal.ofReal_one, one_pow,
-    one_mul]
-
-end TauCeti
 
 namespace MeasureTheory.Measure
 
@@ -331,20 +255,6 @@ private lemma measure_closedEBall_div_le (μ : Measure X) (k : ℕ) (x : X) {c �
         rw [densityRatio_def, ENNReal.ofReal_mul hc0.le, mul_pow, mul_left_comm (unitBallVolume k),
           ← mul_div_assoc, ENNReal.mul_div_mul_left _ _ hC0 hCtop]
 
-/-- If `a ≤ c ^ k b` for every `c > 1`, then `a ≤ b`. -/
-private lemma le_of_forall_one_lt_le_ofReal_pow_mul (k : ℕ) {a b : ℝ≥0∞}
-    (h : ∀ c : ℝ, 1 < c → a ≤ ENNReal.ofReal c ^ k * b) : a ≤ b := by
-  have hlim : Tendsto (fun c : ℝ ↦ ENNReal.ofReal c ^ k * b) (𝓝[>] 1) (𝓝 b) := by
-    have := ENNReal.Tendsto.mul_const (b := b)
-      (ENNReal.Tendsto.pow (n := k) (ENNReal.continuous_ofReal.tendsto 1)) (Or.inl (by simp))
-    simpa using this.mono_left nhdsWithin_le_nhds
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun c hc ↦ h c hc)
-
-/-- Scaling the radius by `c > 0` does not leave the filter `𝓝[>] 0`. -/
-private lemma tendsto_const_mul_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
-    Tendsto (c * ·) (𝓝[>] (0 : ℝ)) (𝓝[>] 0) :=
-  fun _ hs ↦ eventually_nhdsGT_zero_mul_left hc hs
-
 /-- The upper density may be computed with closed balls. -/
 theorem upperDensity_eq_limsup_closedEBall (μ : Measure X) (k : ℕ) (x : X) :
     μ.upperDensity k x = limsup (fun ρ : ℝ ↦
@@ -352,7 +262,7 @@ theorem upperDensity_eq_limsup_closedEBall (μ : Measure X) (k : ℕ) (x : X) :
         (𝓝[>] 0) := by
   refine le_antisymm (limsup_le_limsup (Eventually.of_forall fun ρ ↦
     ENNReal.div_le_div_right (measure_mono eball_subset_closedEBall) _)) ?_
-  refine le_of_forall_one_lt_le_ofReal_pow_mul k fun c hc ↦ ?_
+  refine ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul k fun c hc ↦ ?_
   calc _ ≤ limsup (fun ρ ↦ ENNReal.ofReal c ^ k * μ.densityRatio k x (c * ρ)) (𝓝[>] 0) :=
         limsup_le_limsup (eventually_nhdsWithin_of_forall fun ρ hρ ↦
           measure_closedEBall_div_le μ k x hc hρ)
@@ -372,7 +282,7 @@ theorem lowerDensity_eq_liminf_closedEBall (μ : Measure X) (k : ℕ) (x : X) :
     μ (closedEBall x (ENNReal.ofReal ρ)) / (unitBallVolume k * ENNReal.ofReal ρ ^ k)
   refine le_antisymm (liminf_le_liminf (Eventually.of_forall fun ρ ↦
     ENNReal.div_le_div_right (measure_mono eball_subset_closedEBall) _)) ?_
-  refine le_of_forall_one_lt_le_ofReal_pow_mul k fun c hc ↦ ?_
+  refine ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul k fun c hc ↦ ?_
   have hc0 : 0 < c := zero_lt_one.trans hc
   calc liminf g (𝓝[>] 0) ≤ liminf (g ∘ (c⁻¹ * ·)) (𝓝[>] 0) := by
         rw [liminf_comp]
@@ -399,32 +309,6 @@ end ClosedBall
 
 section Measurability
 
-/-- For every measure on an extended metric space, the measure of the open ball `B_r(x)` is a
-lower semicontinuous function of its centre `x`. -/
-theorem lowerSemicontinuous_measure_eball (μ : Measure X) (r : ℝ≥0∞) :
-    LowerSemicontinuous fun x ↦ μ (eball x r) := by
-  intro x a ha
-  beta_reduce at ha ⊢
-  rcases eq_or_ne r 0 with rfl | hr
-  · simp at ha
-  -- The ball `B_r(x)` is the increasing union of balls `B_{u n}(x)` with `u n ↑ r`.
-  obtain ⟨u, hu_mono, hu_mem, hu_lim⟩ := exists_seq_strictMono_tendsto' (pos_iff_ne_zero.2 hr)
-  have hunion : eball x r = ⋃ n, eball x (u n) := by
-    refine (iUnion_subset fun n ↦ eball_subset_eball (hu_mem n).2.le).antisymm' fun y hy ↦ ?_
-    obtain ⟨n, hn⟩ := (hu_lim.eventually (lt_mem_nhds (mem_eball.1 hy))).exists
-    exact mem_iUnion.2 ⟨n, hn⟩
-  have hmono : Monotone fun n ↦ eball x (u n) := fun m n hmn ↦
-    eball_subset_eball (hu_mono.monotone hmn)
-  rw [hunion, hmono.measure_iUnion] at ha
-  obtain ⟨n, hn⟩ := lt_iSup_iff.1 ha
-  -- Points `y` with `edist x y < r - u n` have `B_{u n}(x) ⊆ B_r(y)`.
-  have hpos : 0 < r - u n := tsub_pos_of_lt (hu_mem n).2
-  filter_upwards [eball_mem_nhds x hpos] with y hy
-  have hxy : edist x y < r - u n := mem_eball'.1 hy
-  refine hn.trans_le (measure_mono (eball_subset ?_ hxy.ne_top))
-  calc edist x y + u n ≤ (r - u n) + u n := by gcongr
-    _ = r := tsub_add_cancel_of_le (hu_mem n).2.le
-
 /-- The density ratio at a radius `ρ` is at most the supremum of the density ratios at
 rational radii in `(0, ρ)`, because the open ball is the union of the smaller ones. -/
 private lemma densityRatio_le_iSup_rat (μ : Measure X) (k : ℕ) (x : X) (ρ : ℝ) :
@@ -433,7 +317,7 @@ private lemma densityRatio_le_iSup_rat (μ : Measure X) (k : ℕ) (x : X) (ρ : 
   have hunion : eball x (ENNReal.ofReal ρ) = ⋃ q, s q := by
     refine (iUnion_subset fun q ↦ eball_subset_eball
       (ENNReal.ofReal_le_ofReal q.property.2.le)).antisymm' fun y hy ↦ ?_
-    have hy' : edist y x < ENNReal.ofReal ρ := hy
+    have hy' := mem_eball.1 hy
     have hne : edist y x ≠ ∞ := hy'.ne_top
     obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((ENNReal.lt_ofReal_iff_toReal_lt hne).1 hy')
     exact mem_iUnion.2 ⟨⟨q, ENNReal.toReal_nonneg.trans_lt hq1, hq2⟩,
@@ -516,6 +400,26 @@ section Hausdorff
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
+/-- For `ρ > 0`, a lower bound `a ≤ m / (ω_k ρ ^ k)` on a density ratio is a lower bound
+`a * volume (closedBall 0 ρ) ≤ m` in terms of the volume of a closed ball of `ℝ ^ k`. -/
+private lemma le_div_unitBallVolume_mul_iff (k : ℕ) {a m : ℝ≥0∞} {ρ : ℝ} (hρ : 0 < ρ) :
+    a ≤ m / (unitBallVolume k * ENNReal.ofReal ρ ^ k) ↔
+      a * volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) ρ) ≤ m := by
+  rw [volume_closedBall_eq_unitBallVolume_mul (0 : EuclideanSpace ℝ (Fin k)) hρ.le,
+    finrank_euclideanSpace_fin, ENNReal.le_div_iff_mul_le
+      (Or.inl (unitBallVolume_mul_ofReal_pow_ne_zero k hρ))
+      (Or.inl (unitBallVolume_mul_ofReal_pow_ne_top k ρ))]
+
+/-- For `ρ > 0`, an upper bound `m / (ω_k ρ ^ k) ≤ a` on a density ratio is an upper bound
+`m ≤ a * volume (closedBall 0 ρ)` in terms of the volume of a closed ball of `ℝ ^ k`. -/
+private lemma div_unitBallVolume_mul_le_iff (k : ℕ) {a m : ℝ≥0∞} {ρ : ℝ} (hρ : 0 < ρ) :
+    m / (unitBallVolume k * ENNReal.ofReal ρ ^ k) ≤ a ↔
+      m ≤ a * volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) ρ) := by
+  rw [volume_closedBall_eq_unitBallVolume_mul (0 : EuclideanSpace ℝ (Fin k)) hρ.le,
+    finrank_euclideanSpace_fin, ENNReal.div_le_iff_le_mul
+      (Or.inl (unitBallVolume_mul_ofReal_pow_ne_zero k hρ))
+      (Or.inl (unitBallVolume_mul_ofReal_pow_ne_top k ρ))]
+
 /-- **Lower density bound, open-set form.** If the upper density of `μ` is at least `c` at every
 point of `A`, then `c * μHE[k] A ≤ μ U` for every open set `U` containing `A`. -/
 theorem mul_euclideanHausdorffMeasure_le_measure_of_isOpen_of_le_upperDensity (μ : Measure X)
@@ -528,10 +432,7 @@ theorem mul_euclideanHausdorffMeasure_le_measure_of_isOpen_of_le_upperDensity (�
   refine ((frequently_lt_of_lt_limsup (by isBoundedDefault) (hc'.trans_le (h x hx))).and_eventually
     self_mem_nhdsWithin).mono fun ρ ⟨hlt, (hρ : 0 < ρ)⟩ ↦ ?_
   rw [densityRatio_def, eball_ofReal] at hlt
-  rw [volume_closedBall_fin_eq_unitBallVolume_mul k 0 hρ.le]
-  exact ((ENNReal.le_div_iff_mul_le (Or.inl (unitBallVolume_mul_ofReal_pow_ne_zero k hρ))
-    (Or.inl (unitBallVolume_mul_ofReal_pow_ne_top k ρ))).1 hlt.le).trans
-      (measure_mono ball_subset_closedBall)
+  exact ((le_div_unitBallVolume_mul_iff k hρ).1 hlt.le).trans (measure_mono ball_subset_closedBall)
 
 /-- **Lower density bound.** If `μ` is outer regular and its upper density is at least `c` at
 every point of `A`, then `c * μHE[k] A ≤ μ A`. -/
@@ -557,9 +458,7 @@ private lemma measure_le_mul_euclideanHausdorffMeasure_of_upperDensity_lt_of_ne_
   filter_upwards [eventually_lt_of_limsup_lt hlt (by isBoundedDefault), self_mem_nhdsWithin]
     with ρ hρc (hρ : 0 < ρ)
   rw [closedEBall_ofReal hρ.le] at hρc
-  rw [volume_closedBall_fin_eq_unitBallVolume_mul k 0 hρ.le]
-  exact (ENNReal.div_le_iff_le_mul (Or.inl (unitBallVolume_mul_ofReal_pow_ne_zero k hρ))
-    (Or.inl (unitBallVolume_mul_ofReal_pow_ne_top k ρ))).1 hρc.le
+  exact (div_unitBallVolume_mul_le_iff k hρ).1 hρc.le
 
 /-- **Upper density bound.** If the upper density of `μ` is less than `c` at every point of `A`,
 then `μ A ≤ 2 ^ k * c * μHE[k] A`. For `c = ∞` this says that a `μHE[k]`-null set on which
@@ -585,8 +484,11 @@ theorem measure_le_mul_euclideanHausdorffMeasure_of_upperDensity_lt (μ : Measur
   exact zero_le
 
 /-- **Zero upper density on a null set.** If `μ` is outer regular, then at `μHE[k]`-almost every
-point of a `μ`-null set `A`, the upper density of `μ` is `0`. For `μ = θ μHE[k]⌞Γ` and `A` the
-complement of `Γ`, this is the vanishing of the upper density off the carrier `Γ`. -/
+point of a `μ`-null set `A`, the upper density of `μ` is `0`. When `μ = θ μHE[k]⌞Γ` is outer
+regular (for instance, locally finite on a Euclidean space), taking `A` to be the complement of `Γ`
+gives the vanishing of the upper density off the carrier `Γ`. Outer regularity can fail for such
+measures: for `θ = 1`, `Γ = ℝ ^ n` and `k < n`, a point has measure `0` while every nonempty open
+set has infinite measure. -/
 theorem ae_upperDensity_eq_zero_of_measure_eq_zero (μ : Measure X) [μ.OuterRegular] (k : ℕ)
     {A : Set X} (hA : μ A = 0) :
     ∀ᵐ x ∂μHE[k], x ∈ A → μ.upperDensity k x = 0 := by
