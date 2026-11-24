@@ -500,14 +500,17 @@ noncomputable def isLimitLocallyConstantDualFan {I : Type u}
     let e : (LocallyConstant S ℤ →+ LocallyConstant T.unop R) ≃ₗ[R]
         (I → LocallyConstant T.unop R) :=
       addMonoidHomLequivInt R ≪≫ₗ (b.constr R).symm
+    -- The `i`-th coordinate of `e h` is `h (b i)`, the value of the leg `locallyConstantDualEval`.
+    have he (h : LocallyConstant S ℤ →+ LocallyConstant T.unop R) (i : I) : e h i = h (b i) := by
+      simp [e]
     { lift s := ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ (s.π.app ⟨i⟩).hom)
-      fac s i := ModuleCat.hom_ext (LinearMap.ext fun x ↦
-        congrFun (e.apply_symm_apply fun i ↦ (s.π.app ⟨i⟩).hom x) i.as)
+      fac s i := ModuleCat.hom_ext (LinearMap.ext fun x ↦ (he _ i.as).symm.trans
+        (congrFun (e.apply_symm_apply fun i ↦ (s.π.app ⟨i⟩).hom x) i.as))
       uniq s m hm := by
         refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ e.injective ?_)
         refine Eq.trans ?_ (e.apply_symm_apply _).symm
         funext i
-        exact congrArg (fun f ↦ f.hom x) (hm ⟨i⟩) })
+        exact (he _ i).trans (congrArg (fun f ↦ f.hom x) (hm ⟨i⟩)) })
 
 local instance : HasLimitsOfSize.{u, u} (CondensedMod.{u} R) :=
   hasLimitsOfSizeShrink.{u, u, u, u + 1} _
