@@ -51,6 +51,7 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   canonical quotient map.
 * `TauCeti.quotientInertiaSubgroupEquiv K`: the unramified quotient `G_K ⧸ I_K ≃ₜ* Gal(K^{ur}/K)`.
 * `TauCeti.IsArithFrobeniusLift K σ`: `σ ∈ G_K` restricts to the arithmetic Frobenius of `K^{ur}`.
+* `TauCeti.arithFrobLift K`: a chosen arithmetic Frobenius lift.
 
 ## Main results
 
@@ -394,6 +395,16 @@ variable (K) in
 /-- **Arithmetic Frobenius lifts exist**, since restriction to `K^{ur}` is surjective. -/
 theorem exists_isArithFrobeniusLift : ∃ σ : Field.absoluteGaloisGroup K, IsArithFrobeniusLift K σ :=
   restrictMaximalUnramifiedHom_surjective K _
+
+variable (K) in
+/-- A chosen arithmetic Frobenius lift in the absolute Galois group of a nonarchimedean local
+field (`TauCeti.exists_isArithFrobeniusLift`). -/
+def arithFrobLift : Field.absoluteGaloisGroup K :=
+  (exists_isArithFrobeniusLift K).choose
+
+variable (K) in
+theorem isArithFrobeniusLift_arithFrobLift : IsArithFrobeniusLift K (arithFrobLift K) :=
+  (exists_isArithFrobeniusLift K).choose_spec
 
 namespace IsArithFrobeniusLift
 
