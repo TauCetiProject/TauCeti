@@ -26,6 +26,8 @@ boundary line of that half-plane, which is exactly the situation in the Wiener--
   `{z | s.re ≤ z.re}` whenever `LSeriesSummable a s`.
 * `TauCeti.LSeries.continuous_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is continuous, with no
   summability hypothesis (when `LSeriesSummable a s` fails the function is identically `0`).
+* `TauCeti.LSeries.continuous_term_vertical`: `fun t : ℝ ↦ LSeries.term a (s + t * I) n` is
+  continuous along any vertical line.
 * `LSeriesSummable.tendsto_LSeries_nhdsGE`: at a real point of summability `σ`, the values of
   `LSeries a` along the real half-line `[σ, ∞)` tend to its value at `σ`.
 -/
@@ -72,5 +74,14 @@ theorem continuous_vertical (a : ℕ → ℂ) (s : ℂ) :
         fun h ↦ hs ((LSeriesSummable_iff_of_re_eq_re (by simp)).mp h)
     simp only [h0]
     exact continuous_const
+
+/-- Each `L`-series term `t ↦ LSeries.term a (s + t * I) n` is continuous along any vertical
+line. -/
+theorem continuous_term_vertical (a : ℕ → ℂ) (s : ℂ) (n : ℕ) :
+    Continuous fun t : ℝ ↦ LSeries.term a (s + t * I) n := by
+  have hline : Continuous fun t : ℝ ↦ s + (t : ℂ) * I := by fun_prop
+  exact continuous_iff_continuousAt.mpr fun t ↦ ContinuousAt.comp
+    (g := fun z : ℂ ↦ LSeries.term a z n)
+    (LSeries.hasDerivAt_term a n (s + (t : ℂ) * I)).continuousAt hline.continuousAt
 
 end TauCeti.LSeries
