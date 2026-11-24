@@ -591,12 +591,11 @@ theorem convergenceRadius_le_ofReal_of_norm_le_or_le (hc : 0 ≤ c)
     (hgap : ∀ y : A, ‖y‖ ≤ r ∨ c ≤ ‖y‖) (hnc : ¬f.IsRestricted c) :
     f.convergenceRadius A ≤ ENNReal.ofReal r := by
   refine convergenceRadius_le_iff.mpr fun y hy ↦ ?_
-  have hres := isRestricted_norm_of_summable hy
   rcases hgap y with hyr | hcy
   · rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal hyr
-  · refine (hnc (TauCeti.PowerSeries.isRestricted_of_abs_le hres ?_)).elim
-    rwa [abs_of_nonneg hc, abs_norm]
+  · exact (hnc (isRestricted_of_abs_le_norm_of_summable_smul_pow
+      (by simpa only [abs_of_nonneg hc] using hcy) hy)).elim
 
 /-- **Strict inequality across a norm gap.** If no element of `A` has norm in the open interval
 `(r, c)` and the intrinsic radius `f.radius` lies strictly inside `(r, c)`, then the pointwise

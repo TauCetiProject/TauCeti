@@ -176,7 +176,8 @@ theorem convergenceRadius_padic_lt_radius_halfSlopeSeries :
   rw [convergenceRadius_padic_halfSlopeSeries, radius_halfSlopeSeries, ← ENNReal.ofReal_one]
   exact ENNReal.ofReal_lt_ofReal_iff (zero_lt_one.trans hsqrt) |>.mpr hsqrt
 
-/-- Over `ℚ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ ≤ 1`. -/
+/-- Over `ℚ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ ≤ 1` (i.e. on
+`Metric.closedBall (0 : ℚ_[p]) 1`). -/
 theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
     (Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n) ↔ ‖x‖ ≤ 1 := by
   constructor
@@ -190,14 +191,6 @@ theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
       (hx1.trans_eq convergenceRadius_padic_halfSlopeSeries.symm).trans_lt
         convergenceRadius_padic_lt_radius_halfSlopeSeries
 
-/-- The exact convergence set of `halfSlopeSeries p` in `ℚ_[p]` is `Metric.closedBall 0 1`. -/
-theorem setOf_summable_padic_halfSlopeSeries :
-    {x : ℚ_[p] | Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n} =
-      Metric.closedBall 0 1 := by
-  ext x
-  simp only [Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right,
-    summable_halfSlopeSeries_padic_iff]
-
 /-- Every element `x : ℚ_[p]` with `‖x‖ ≤ √p` actually has `‖x‖ ≤ 1`, so `halfSlopeSeries p`
 converges to `(halfSlopeSeries p).evalAt x` at every `ℚ_[p]`-point of `{x | ‖x‖ ≤ √p}`, despite
 failing `IsRestricted √p`. -/
@@ -208,10 +201,7 @@ theorem hasSum_evalAt_halfSlopeSeries_of_norm_le_sqrt {x : ℚ_[p]} (hx : ‖x�
   have hx1 : ‖x‖ ≤ 1 := by
     simpa using
       (Padic.norm_le_pow_iff_norm_lt_pow_add_one x 0).mpr (by simpa using hx.trans_lt hsqrt)
-  have hxe : ‖x‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hx1
-  exact hasSum_evalAt_of_lt_radius <|
-    (hxe.trans_eq convergenceRadius_padic_halfSlopeSeries.symm).trans_lt
-      convergenceRadius_padic_lt_radius_halfSlopeSeries
+  simpa only [PowerSeries.evalAt_def] using (summable_halfSlopeSeries_padic_iff.mpr hx1).hasSum
 
 /-- Over `ℂ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` equals its
 intrinsic radius `√p`. -/
@@ -235,14 +225,8 @@ theorem not_isRestricted_halfSlopeSeries_sqrt :
   rw [hconst] at heven
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds heven)
 
-/-- At any element `z : ℂ_[p]` of norm `√p`, `halfSlopeSeries p` diverges. -/
-theorem not_summable_padicComplex_halfSlopeSeries_of_norm_eq_sqrt {z : ℂ_[p]}
-    (hz : ‖z‖ = Real.sqrt p) :
-    ¬Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • z ^ n := by
-  rw [(halfSlopeSeries p).summable_smul_pow_iff_isRestricted, hz]
-  exact not_isRestricted_halfSlopeSeries_sqrt
-
-/-- Over `ℂ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ < √p`. -/
+/-- Over `ℂ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ < √p` (i.e. on
+`Metric.ball (0 : ℂ_[p]) √p`). -/
 theorem summable_halfSlopeSeries_padicComplex_iff {x : ℂ_[p]} :
     (Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n) ↔ ‖x‖ < Real.sqrt p := by
   constructor
@@ -258,14 +242,6 @@ theorem summable_halfSlopeSeries_padicComplex_iff {x : ℂ_[p]} :
     refine summable_of_lt_convergenceRadius ?_
     rw [convergenceRadius_padicComplex_halfSlopeSeries, ← ofReal_norm]
     exact ENNReal.ofReal_lt_ofReal_iff (Real.sqrt_pos.mpr p_pos) |>.mpr hx
-
-/-- The exact convergence set of `halfSlopeSeries p` in `ℂ_[p]` is `Metric.ball 0 √p`. -/
-theorem setOf_summable_padicComplex_halfSlopeSeries :
-    {z : ℂ_[p] | Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • z ^ n} =
-      Metric.ball 0 (Real.sqrt p) := by
-  ext z
-  simp only [Set.mem_ofPred_eq, Metric.mem_ball, dist_zero_right,
-    summable_halfSlopeSeries_padicComplex_iff]
 
 /-- There exist points in `ℂ_[p]` of norm strictly greater than `1` where `halfSlopeSeries p`
 converges (for instance, any element of norm `p ^ (1 / 3)`). -/
