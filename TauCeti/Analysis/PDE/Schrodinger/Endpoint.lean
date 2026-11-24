@@ -186,8 +186,8 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
   refine ⟨NNReal.sqrt C, fun F _ ↦ ?_⟩
   by_cases hSF : Integrable fun s ↦ schrodingerPropagator ℂ (-s) (F s)
   · -- `F(s) = S(s) (S(-s) F(s))` is integrable, since `S(s)` is unitary.
-    have hF : Integrable F :=
-      (integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSF
+    have hF : Integrable F := (integrable_phasePropagator_apply_iff laplacianSymbol
+      continuous_neg.aestronglyMeasurable).1 hSF
     refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ) hSF ?_
     have h := hC Set.univ MeasurableSet.univ F F hF hF
     simp_rw [inner_schrodingerPropagator_sub_apply, Measure.restrict_univ] at h
@@ -328,8 +328,10 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     -- `F` and `G` are integrable along with `s ↦ S(-s) F(s)` and `t ↦ S(-t) G(t)`.
     refine ⟨C, fun F G _ _ hSF hSG ↦ ?_⟩
     simpa using hC F G
-      ((integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSF)
-      ((integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSG)
+      ((integrable_phasePropagator_apply_iff laplacianSymbol
+        continuous_neg.aestronglyMeasurable).1 hSF)
+      ((integrable_phasePropagator_apply_iff laplacianSymbol
+        continuous_neg.aestronglyMeasurable).1 hSG)
   -- Otherwise `q₁' < q`, and the Christ–Kiselev lemma passes the bound on the untruncated pairing,
   -- which the two dual estimates give, to the region `s < t`.
   have := hpq.coe_ennreal

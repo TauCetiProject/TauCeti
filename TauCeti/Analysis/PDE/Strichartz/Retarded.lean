@@ -196,8 +196,9 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
           enorm_setIntegral_adjoint_le hC hJ.measurableSet hG.restrict hUG.integrableOn]
     _ = _ := by ring
 
-/-- **The retarded estimate for time exponents above `2`.** Let `U(t) : H → L²(X, μ)` satisfy the
-dual estimates of `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` with time exponents
+/-- **The retarded estimate for time exponents at least `2`, not both equal to `2`.** Let
+`U(t) : H → L²(X, μ)` satisfy the dual estimates of
+`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` with time exponents
 `p₁ = q₁'` and `p = q'`, the Hölder conjugates of `2 ≤ q, q₁ ≤ ∞`, at most one of them equal to
 `2`. Then the Christ–Kiselev condition holds (`TauCeti.one_lt_inv_add_inv_of_holderConjugate`), the
 constant `K = (1 - 2^{-δ})⁻¹`, `δ = 1 / p₁ + 1 / p - 1`, is finite, and
