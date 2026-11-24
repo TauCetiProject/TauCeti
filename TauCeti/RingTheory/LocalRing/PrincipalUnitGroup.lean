@@ -52,23 +52,25 @@ section Zero
 
 variable {S : Type*} [CommRing S] [IsLocalRing S]
 
+private theorem principalUnitGroup_maximalIdeal_pow_zero :
+    (maximalIdeal S ^ 0).principalUnitGroup = ⊤ := by
+  rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top]
+
 variable (S) in
 /-- At depth `0`, reduction of units modulo the maximal ideal identifies
 `U(S, 0) / U(S, 1) = Sˣ / (1 + 𝔪)` with `(ResidueField S)ˣ`. -/
 noncomputable def principalUnitGradedZeroEquiv :
     PrincipalUnitGraded S 0 ≃* (ResidueField S)ˣ :=
   (QuotientGroup.congr _ (maximalIdeal S).principalUnitGroup
-      ((MulEquiv.subgroupCongr
-        (by rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top])).trans
+      ((MulEquiv.subgroupCongr principalUnitGroup_maximalIdeal_pow_zero).trans
         Subgroup.topEquiv)
       (by
         ext u
         simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, MonoidHom.coe_ofClass,
           MulEquiv.trans_apply, Subgroup.topEquiv_apply, MulEquiv.subgroupCongr_apply,
           zero_add, pow_one]
-        exact ⟨fun ⟨_, hv, hvu⟩ ↦ hvu ▸ hv,
-          fun hu ↦ ⟨⟨u, by rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top]; trivial⟩,
-            hu, rfl⟩⟩)).trans
+        exact ⟨fun ⟨_, hv, hvu⟩ ↦ hvu ▸ hv, fun hu ↦
+          ⟨⟨u, by rw [principalUnitGroup_maximalIdeal_pow_zero]; trivial⟩, hu, rfl⟩⟩)).trans
     (Ideal.unitsQuotientPrincipalUnitGroupEquiv
       (Ideal.jacobson_bot.trans (ringJacobson_eq_maximalIdeal S)).ge)
 

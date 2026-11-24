@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.LocalRing.PrincipalUnitGroup
 public import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 
 /-!

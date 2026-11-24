@@ -12,6 +12,7 @@ import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
 import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
+import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # The norm on the graded pieces of the unit filtration
@@ -471,7 +472,8 @@ private theorem residue_ne_zero_of_smul_sub_eq {t : ℕ} {π : 𝒪[L]} (hπ : I
   intro h0
   apply hσ
   rw [lowerRamificationGroup_def] at hσ0 ⊢
-  have := (mem_ramificationGroup_natCast_iff_smul_sub_mem hπ hσ0 (n := t + 1)).2 <| by
+  have := (IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
+    (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) hπ hσ0 (n := t + 1)).2 <| by
     rw [hγ, pow_succ' _ (t + 1)]
     exact Ideal.mul_mem_mul ((residue_eq_zero_iff γ).1 h0)
       (Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) _)

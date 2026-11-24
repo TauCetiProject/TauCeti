@@ -982,14 +982,10 @@ theorem commutator_ramificationGroup_le (i j : ℤ) :
 /-- Each positive graded piece `G_i / G_{i+1}` (`0 < i`) is commutative. -/
 theorem isMulCommutative_ramificationGroupGraded {i : ℤ} (hi : 0 < i) :
     IsMulCommutative (RamificationGroupGraded G S i) := by
-  rw [Subgroup.Normal.quotient_commutative_iff_commutator_le,
-    _root_.commutator, Subgroup.commutator_le]
-  intro σ _ τ _
-  rw [Subgroup.mem_subgroupOf]
-  have hmem : ((⁅σ, τ⁆ : ramificationGroup G S i) : G) ∈ ramificationGroup G S (i + i) :=
-    commutator_ramificationGroup_le G S i i
-      (Subgroup.commutator_mem_commutator σ.property τ.property)
-  exact ramificationGroup_antitone G S (by omega : i + 1 ≤ i + i) hmem
+  rw [Subgroup.Normal.quotient_commutative_iff_commutator_le, Subgroup.subgroupOf,
+    ← Subgroup.map_le_iff_le_comap, Subgroup.map_subtype_commutator]
+  exact (commutator_ramificationGroup_le G S i i).trans
+    (ramificationGroup_antitone G S (by omega : i + 1 ≤ i + i))
 
 /-- Each positive graded piece `G_{n+1} / G_{n+2}` (`n : ℕ`) is commutative. -/
 instance instIsMulCommutativeRamificationGroupGradedNatCastSucc {n : ℕ} :

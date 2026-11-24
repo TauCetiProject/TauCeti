@@ -125,6 +125,12 @@ theorem ramificationGroup_def (i : ℕ) :
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
   (rfl)
 
+/-- Finiteness of a place ramification group transports to the underlying local-ring
+ramification group. -/
+theorem finite_isLocalRing_ramificationGroup (i : ℕ) [Finite (ramificationGroup F P i)] :
+    Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i) := by
+  simpa [ramificationGroup_def] using ‹Finite (ramificationGroup F P i)›
+
 /-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
 automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
 order at least `i + 1`. -/

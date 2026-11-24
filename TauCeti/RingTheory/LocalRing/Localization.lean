@@ -7,13 +7,10 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Basic
 public import Mathlib.FieldTheory.Perfect
-public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
-import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # Localization at the maximal ideal of a local ring and at its preimages, and local lifts
