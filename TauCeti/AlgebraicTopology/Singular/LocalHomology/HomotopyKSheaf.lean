@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.Embedding.MapExtend
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShortExact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Chains
@@ -99,63 +98,6 @@ theorem acyclic_localChainKPresheaf_obj_bot (hZ : Z ⊥ = ∅) :
   acyclic_of_isZero _ <| ((ComplexShape.embeddingUpIntLE p).extendFunctor A).map_isZero
     (hZ ▸ isZero_localChainComplex_empty R)
 
-/-- The comparison `G (P ⊞ Q) ≅ G P ⊞ G Q` for an additive functor `G`, with the sign `-1` on the
-second component, which turns the Mayer–Vietoris sequence of relative chains into that of a
-K-presheaf. -/
-private def mapBiprodNegIso {C D : Type*} [Category* C] [Category* D] [Preadditive C]
-    [Preadditive D] [HasBinaryBiproducts C] [HasBinaryBiproducts D] (G : C ⥤ D) [G.Additive]
-    (P Q : C) : G.obj (P ⊞ Q) ≅ G.obj P ⊞ G.obj Q where
-  hom := biprod.lift (G.map biprod.fst) (-G.map biprod.snd)
-  inv := biprod.desc (G.map biprod.inl) (-G.map biprod.inr)
-  hom_inv_id := by
-    rw [biprod.lift_desc, Preadditive.neg_comp, Preadditive.comp_neg, neg_neg,
-      ← G.map_comp, ← G.map_comp, ← G.map_add, biprod.total, G.map_id]
-  inv_hom_id := by
-    apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp [← G.map_comp]
-
-omit [HasCoproducts.{w} A] in
-/-- Extension by zero along `e` carries a three-term sequence `P₄ ⟶ P₂ ⊞ P₃ ⟶ P₁` of chain
-complexes, with monomorphic first map `(f₂, -f₃)` and second map `g₂ + g₃` inducing a
-quasi-isomorphism from its cokernel, to one whose Mayer–Vietoris map
-`mappingCone (E f₂, E f₃) ⟶ E P₁`, given by `(E g₂, -E g₃)` as in
-`TopCat.KPresheaf.mayerVietorisDesc`, is a quasi-isomorphism. -/
-private theorem quasiIso_desc_extendMap {P₁ P₂ P₃ P₄ : ChainComplex A ℕ}
-    (e : (ComplexShape.down ℕ).Embedding (ComplexShape.up ℤ)) {f₂ : P₄ ⟶ P₂} {f₃ : P₄ ⟶ P₃}
-    {g₂ : P₂ ⟶ P₁} {g₃ : P₃ ⟶ P₁} {a : P₄ ⟶ P₂ ⊞ P₃} {b : P₂ ⊞ P₃ ⟶ P₁} [Mono a]
-    (hab : a ≫ b = 0) [QuasiIso (cokernel.desc a b hab)] (ha : a = biprod.lift f₂ (-f₃))
-    (hb : b = biprod.desc g₂ g₃)
-    (eq : HomComplex.δ (-1) 0 (0 : HomComplex.Cochain _ _ (-1)) = HomComplex.Cochain.ofHom
-      (biprod.lift (extendMap f₂ e) (extendMap f₃ e) ≫ biprod.desc (extendMap g₂ e)
-        (-extendMap g₃ e))) :
-    QuasiIso (mappingCone.desc (biprod.lift (extendMap f₂ e) (extendMap f₃ e)) 0
-      (biprod.desc (extendMap g₂ e) (-extendMap g₃ e)) eq) := by
-  subst hb
-  let E := e.extendFunctor A
-  -- the twisted comparison `θ` carries `E a` and `E (g₂ + g₃)` to the maps of the conclusion
-  let θ := mapBiprodNegIso E P₂ P₃
-  have hφ : E.map a ≫ θ.hom = biprod.lift (E.map f₂) (E.map f₃) := by
-    rw [ha]
-    refine biprod.hom_ext _ _ ?_ ?_ <;>
-      simp [θ, mapBiprodNegIso, ← E.map_comp]
-  have hψ : (θ.inv ≫ E.map (cokernel.π a)) ≫ E.map (cokernel.desc _ _ hab) =
-      biprod.desc (E.map g₂) (-E.map g₃) := by
-    rw [Category.assoc, ← E.map_comp, cokernel.π_desc, Iso.inv_comp_eq]
-    simp only [θ, mapBiprodNegIso, biprod.lift_desc, Preadditive.neg_comp, Preadditive.comp_neg,
-      neg_neg, ← E.map_comp, ← E.map_add]
-    rw [biprod.desc_eq]
-  -- so the sequence of the conclusion is short exact up to `E (cokernel a) ⟶ E P₁`
-  let S := ShortComplex.mk (biprod.lift (E.map f₂) (E.map f₃)) (θ.inv ≫ E.map (cokernel.π a))
-    (by rw [← hφ]; simp [← E.map_comp])
-  have hS : S.ShortExact := ShortComplex.shortExact_of_iso
-    (ShortComplex.isoMk (S₁ := (ShortComplex.cokernelSequence a).map E) (Iso.refl _) θ
-      (Iso.refl _) ((Category.id_comp _).trans hφ.symm)
-      ((θ.hom_inv_id_assoc _).trans (Category.comp_id _).symm))
-    ((TauCeti.cokernelSequence_shortExact _).extend e)
-  have : QuasiIso (E.map (cokernel.desc _ _ hab)) := by
-    simp only [E, ComplexShape.Embedding.extendFunctor_map]
-    infer_instance
-  exact mappingCone.quasiIso_desc_of_shortExact hS _ hψ eq
-
 variable [T2Space X]
 
 /-- **The Mayer–Vietoris axiom.** Let `K₁ = K₂ ⊓ K₃` and `K₄ = K₂ ⊔ K₃` for compact sets, and
@@ -168,6 +110,8 @@ theorem quasiIso_localChainKPresheaf_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Co
     QuasiIso ((localChainKPresheaf R Z p).mayerVietorisDesc h) := by
   -- the Mayer–Vietoris sequence `C₄ ⟶ C₂ ⊞ C₃ ⟶ C₁` of chains along `Z K₂` and `Z K₃`: its first
   -- map is a monomorphism, and the second map is a quasi-isomorphism from its cokernel
+  have hc : ∀ {K L : Compacts X}, K ≤ L → (Z L)ᶜ ⊆ (Z K)ᶜ :=
+    fun h ↦ compl_subset_compl.2 (Z.monotone h)
   have hW : (Z K₂)ᶜ ∩ (Z K₃)ᶜ ⊆ (Z K₄)ᶜ := by
     rw [← compl_union]
     exact compl_subset_compl.2 h₄
@@ -175,15 +119,13 @@ theorem quasiIso_localChainKPresheaf_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Co
     rw [← compl_inter]
     exact compl_subset_compl.2 h₁
   have := TopCat.mono_relativeMayerVietorisChainToBiprod R (X := TopCat.of M) (U := (Z K₂)ᶜ)
-    (V := (Z K₃)ᶜ) (W := (Z K₄)ᶜ) (compl_subset_compl.2 (Z.monotone h.le₂₄))
-    (compl_subset_compl.2 (Z.monotone h.le₃₄)) hW
+    (V := (Z K₃)ᶜ) (W := (Z K₄)ᶜ) (hc h.le₂₄) (hc h.le₃₄) hW
   have := TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod R (X := TopCat.of M)
     (U := (Z K₂)ᶜ) (V := (Z K₃)ᶜ) (W := (Z K₄)ᶜ) (Z := (Z K₁)ᶜ) h₂.isOpen_compl
-    h₃.isOpen_compl (compl_subset_compl.2 (Z.monotone h.le₂₄))
-    (compl_subset_compl.2 (Z.monotone h.le₃₄)) (compl_subset_compl.2 (Z.monotone h.le₁₂))
-    (compl_subset_compl.2 (Z.monotone h.le₁₃)) hW hZ
+    h₃.isOpen_compl (hc h.le₂₄) (hc h.le₃₄) (hc h.le₁₂) (hc h.le₁₃) hW hZ
   rw [TopCat.KPresheaf.mayerVietorisDesc_eq_desc]
-  exact quasiIso_desc_extendMap _ _ (by rw [localChainRestriction_def, localChainRestriction_def])
+  exact mappingCone.quasiIso_desc_extendMap_of_quasiIso_cokernelDesc _ _
+    (by rw [localChainRestriction_def, localChainRestriction_def])
     (by rw [localChainRestriction_def, localChainRestriction_def]) _
 
 /-- **The continuity axiom.** Suppose every compact subset of `M` disjoint from `Z K` is disjoint
@@ -209,16 +151,18 @@ def localChainKPresheaf.isColimitCoconeOfCompacts (K : Compacts X)
         ⟨op ⟨L, hLK⟩, hLT⟩)
   rw [TopPair.singularChainComplexFunctor_obj_eq_toSSetPair_comp] at hc
   -- the diagram and the cocone of `hc` are those of the K-presheaf
+  have hR : ∀ {S T : Set M} (h : S ⊆ T), extendMap (TopPair.singularChainComplexMap
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (compl_subset_compl.2 h)) R) _ =
+        extendMap (localChainRestriction R h) (ComplexShape.embeddingUpIntLE p) :=
+    fun h ↦ congrArg (extendMap · _) (localChainRestriction_def R h).symm
   let α : (complPairDiagram hL ⋙ TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor A).obj R) ⋙
       (ComplexShape.embeddingUpIntLE p).extendFunctor A ≅
         (Set.mono_coe K.compactNhds).functor.op ⋙ localChainKPresheaf R Z p :=
-    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun h ↦ (Category.comp_id _).trans
-      ((congrArg (extendMap · _) (localChainRestriction_def R (hL h)).symm).trans
-        (Category.id_comp _).symm)
-  refine IsColimit.precomposeHomEquiv α _ (hc.ofIsoColimit (Cocone.ext (Iso.refl _) fun L ↦ ?_))
-  exact (Category.comp_id _).trans ((congrArg (extendMap · _) (localChainRestriction_def R
-    (Z.monotone (Compacts.subset_of_mem_compactNhds L.unop.property))).symm).trans
-      (Category.id_comp _).symm)
+    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun h ↦
+      (Category.comp_id _).trans ((hR (hL h)).trans (Category.id_comp _).symm)
+  exact IsColimit.precomposeHomEquiv α _ (hc.ofIsoColimit (Cocone.ext (Iso.refl _) fun L ↦
+    (Category.comp_id _).trans ((hR (Z.monotone (Compacts.subset_of_mem_compactNhds
+      L.unop.property))).trans (Category.id_comp _).symm)))
 
 /-- **Relative singular chains form a homotopy K-sheaf** (Pardon, Lemma A.6.3). Let `Z` assign to
 each compact subset `K` of a Hausdorff space `X` a closed subset `Z K` of `M`, monotonically, with
