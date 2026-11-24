@@ -34,11 +34,13 @@ At `θ = π / p` this gives `U ^ p = -1`, `(S U) ^ 3 = -1` and `S ^ 2 = -1`, so 
 `S U`, `S` and `U⁻¹` in `PSL(2, ℝ)` satisfy the relations of `Δ(3, 2, p)` and have the exact
 orders `3`, `2` and `p`. The fixed points in `ℍ` are explicit: for `0 < sin θ`, `U θ` fixes
 exactly the point `i y` with `y = b θ / sin θ`, whose square is `b θ / (1 - b θ)`, and for
-`0 < cos θ`, `S U θ` fixes exactly the point `(1 - 2 b θ + i √3) / (2 cos θ)`. Together with
-the fixed point `i` of `S`, these are the vertices of the hyperbolic triangle with angles
-`π / p`, `π / 3` and `π / 2` that the representation is meant to realize; the identification of
-its vertex transformations with `U⁻¹`, `S U` and `S`, which would make the representation faithful
-with cofinite image, is not proved here. As `p → ∞` the matrices `U (π / p)` and `L (π / p)` tend
+`0 < cos θ`, `S U θ` fixes exactly the point `(1 - 2 b θ + i √3) / (2 cos θ)`. For `7 ≤ p`,
+where `π / p + π / 3 + π / 2 < π`, these two points at `θ = π / p` and the fixed point `i` of `S`
+are the vertices of the hyperbolic triangle with angles `π / p`, `π / 3` and `π / 2` that the
+representation is meant to realize; the identification of its vertex transformations with `U⁻¹`,
+`S U` and `S`, which would make the representation faithful with cofinite image, is not proved
+here. At `p = 6` the triangle group is Euclidean, `b = 1 / 2`, all three fixed points are `i`, and
+the image of the representation is finite. As `p → ∞` the matrices `U (π / p)` and `L (π / p)` tend
 to the unipotent matrices `T` and `Tᵀ`, while the height `b / sin θ` of the fixed point of
 `U (π / p)` is `p / π + O(1 / p)`.
 
@@ -275,8 +277,9 @@ theorem orderOf_mk_S_mul_slU (h : 4 * Real.sin θ ^ 2 ≤ 1) :
 /-! ### Fixed points -/
 
 /-- The height `b θ / sin θ` of the point of `ℍ` fixed by `U θ`
-(`TauCeti.TriangleDeformation.slU_smul_eq_self_iff`): the vertex of order `p` that replaces the
-cusp `∞` of the modular triangle, and tends to it as `p → ∞`. Its square is `b θ / (1 - b θ)`,
+(`TauCeti.TriangleDeformation.slU_smul_eq_self_iff`). At `θ = π / p` with `7 ≤ p` this is the
+vertex of order `p` that replaces the cusp `∞` of the modular triangle, and it tends to `∞` as
+`p → ∞`; at `p = 6` it is `1`, so the fixed point is `i`. Its square is `b θ / (1 - b θ)`,
 and at `θ = π / p` it is `p / π + O(1 / p)`
 (`TauCeti.TriangleDeformation.abs_cuspHeight_pi_div_sub_le`). -/
 def cuspHeight (θ : ℝ) : ℝ :=
@@ -478,7 +481,9 @@ private theorem mk_slU_inv_mul_pslS_mul (h : 4 * Real.sin θ ^ 2 ≤ 1) :
 
 /-- **The deformed representation of `Δ(3, 2, p)`.** For `6 ≤ p`, the homomorphism
 `Δ(3, 2, p) →* PSL(2, ℝ)` sending `x`, `y`, `z` to the classes of `S U`, `S` and `U⁻¹`, where
-`U = U (π / p)`. The images have the exact orders `3`, `2` and `p`. -/
+`U = U (π / p)`. The images have the exact orders `3`, `2` and `p`. For `7 ≤ p` this is meant to
+be the faithful representation of the hyperbolic triangle group (not proved here); at `p = 6`
+all three images fix `i` and the image is finite. -/
 def pslRep (p : ℕ) (hp : 6 ≤ p) : TriangleGroup 3 2 p →* PSL(2, ℝ) :=
   have h := four_mul_sin_pi_div_sq_le_one hp
   TriangleGroup.lift (((ModularGroup.S : SL(2, ℝ)) * slU h : SL(2, ℝ)) : PSL(2, ℝ))
