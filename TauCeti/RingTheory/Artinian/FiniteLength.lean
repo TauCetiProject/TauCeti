@@ -57,8 +57,8 @@ theorem isFiniteLength_dual (R : Type u) [CommRing R] [IsArtinianRing R] (A : Ty
 theorem isArtinianRing_quotient_annihilator {A N : Type*} [CommRing A] [AddCommGroup N]
     [Module A N] (hfl : IsFiniteLength A N) :
     IsArtinianRing (A ⧸ Module.annihilator A N) := by
-  have ⟨hnoeth, hart⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hfl
-  have : Module.Finite A N := Module.finite_def.mpr (IsNoetherian.noetherian ⊤)
+  have : IsNoetherian A N := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).1
+  have : IsArtinian A N := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).2
   obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := A) (M := N)
   let φ : A →ₗ[A] (T → N) :=
     { toFun := fun a t ↦ a • t.val

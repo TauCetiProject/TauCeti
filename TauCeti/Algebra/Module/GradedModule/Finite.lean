@@ -120,6 +120,34 @@ theorem decompose_smul_of_le {A B M : Type*} [Semiring A] [Semiring B]
     · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.property hi, zero_smul]
   | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
+/-- Any `m ∈ ℳ d` in the `B`-span of homogeneous generators `G` decomposes as a sum over those
+generators of degree `≤ d` with homogeneous coefficients of degree `(d - p.1).toNat`. -/
+private theorem exists_eq_sum_filter_decompose_smul {A B M : Type*} [Semiring A] [Semiring B]
+    [Module A B] (ℬ : ℕ → Submodule A B) [DirectSum.Decomposition ℬ]
+    [AddCommMonoid M] [Module A M] [Module B M] (ℳ : ℤ → Submodule A M)
+    [DirectSum.Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i))
+    {G : Finset (ℤ × M)} (hGmem : ∀ p ∈ G, p.2 ∈ ℳ p.1)
+    (hGspan : Submodule.span B (Set.range fun p : G ↦ p.val.2) = ⊤)
+    {d : ℤ} {m : M} (hm : m ∈ ℳ d) :
+    ∃ c : G → B, m = ∑ p ∈ Finset.univ.filter (fun p : G ↦ p.val.1 ≤ d),
+      (decompose ℬ (c p) (d - p.val.1).toNat : B) • p.val.2 := by
+  classical
+  have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.val.2) := hGspan ▸ Submodule.mem_top
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun B).mp hm_span
+  refine ⟨c, ?_⟩
+  conv_lhs => rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply,
+    Submodule.coe_sum]
+  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun p : G ↦ p.val.1 ≤ d)]
+  have hzero : ∑ p ∈ Finset.univ.filter (fun p : G ↦ ¬ p.val.1 ≤ d),
+      (decompose ℳ (c p • p.val.2) d : M) = 0 :=
+    Finset.sum_eq_zero fun p hp ↦
+      decompose_smul_eq_zero_of_lt ℬ ℳ hgraded (by have := (Finset.mem_filter.mp hp).2; omega)
+        (c p) (hGmem p.val p.property)
+  rw [hzero, add_zero]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  exact decompose_smul_of_le ℬ ℳ hgraded (Finset.mem_filter.mp hp).2 (c p) (hGmem p.val p.property)
+
 /-- **Vanishing in sufficiently negative degrees.** A finitely generated `ℤ`-graded module over an
 `ℕ`-graded semiring vanishes in all degrees below some integer `d₀`. -/
 theorem exists_forall_lt_piece_eq_bot {A B M : Type*} [Semiring A] [Semiring B] [Module A B]
@@ -132,17 +160,14 @@ theorem exists_forall_lt_piece_eq_bot {A B M : Type*} [Semiring A] [Semiring B] 
   obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := B) ℳ
   let d₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).min' (h.image _) else 0
   refine ⟨d₀, fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun m hm ↦ ?_⟩
-  have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.val.2) := hGspan ▸ Submodule.mem_top
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun B).mp hm_span
-  rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
-  refine Finset.sum_eq_zero fun p _ ↦ ?_
+  obtain ⟨c, rfl⟩ := exists_eq_sum_filter_decompose_smul ℬ ℳ hgraded hGmem hGspan hm
+  refine Finset.sum_eq_zero fun p hp ↦ ?_
   have hne : G.Nonempty := ⟨p.val, p.property⟩
-  have hd_lt : d < p.val.1 := by
-    have hle : d₀ ≤ p.val.1 := by
-      simp only [d₀, hne, ↓reduceDIte]
-      exact Finset.min'_le _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)
-    exact hd.trans_le hle
-  exact decompose_smul_eq_zero_of_lt ℬ ℳ hgraded hd_lt (c p) (hGmem p.val p.property)
+  have hle : d₀ ≤ p.val.1 := by
+    simp only [d₀, hne, ↓reduceDIte]
+    exact Finset.min'_le _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)
+  have := (Finset.mem_filter.mp hp).2
+  omega
 
 /-- **Finiteness of graded pieces.** Every graded piece of a finitely generated `ℤ`-graded module
 over an `ℕ`-graded semiring whose graded pieces are finite `A`-modules is itself a finite
@@ -174,19 +199,10 @@ theorem moduleFinite_piece {A B M : Type*} [Semiring A] [Semiring B] [Module A B
       have h := hgraded (d - p.val.1).toNat p.val.1 b b.property p.val.2 (hGmem p.val p.property)
       rwa [Int.toNat_of_nonneg (sub_nonneg.mpr hle), add_sub_cancel] at h
     · intro m hm
-      have hm_span : m ∈ Submodule.span B (Set.range fun p : G ↦ p.val.2) :=
-        hGspan ▸ Submodule.mem_top
-      obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun B).mp hm_span
-      rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
-      refine Submodule.sum_mem U fun p _ ↦ ?_
-      by_cases hle : p.val.1 ≤ d
-      · rw [decompose_smul_of_le ℬ ℳ hgraded hle (c p) (hGmem p.val p.property)]
-        have hpU : LinearMap.range (φ p) ≤ U :=
-          Finset.le_sup (f := fun q : G ↦ LinearMap.range (φ q))
-            (Finset.mem_filter.mpr ⟨Finset.mem_univ p, hle⟩)
-        exact hpU ⟨decompose ℬ (c p) (d - p.val.1).toNat, rfl⟩
-      · rw [decompose_smul_eq_zero_of_lt ℬ ℳ hgraded (by omega) (c p) (hGmem p.val p.property)]
-        exact U.zero_mem
+      obtain ⟨c, rfl⟩ := exists_eq_sum_filter_decompose_smul ℬ ℳ hgraded hGmem hGspan hm
+      refine Submodule.sum_mem U fun p hp ↦ ?_
+      exact (Finset.le_sup (f := fun q : G ↦ LinearMap.range (φ q)) hp)
+        ⟨decompose ℬ (c p) (d - p.val.1).toNat, rfl⟩
   exact Module.Finite.of_fg (hU_eq ▸ hU_fg)
 
 /-- **Graded piece finiteness.** Every graded piece of a finitely generated `ℤ`-graded module over
@@ -216,8 +232,8 @@ theorem moduleFinite_piece_mvPolynomial {A σ M : Type*} [CommSemiring A] [Finit
   exact moduleFinite_piece (MvPolynomial.homogeneousSubmodule σ A)
     (fun i ↦ TauCeti.homogeneousSubmodule_moduleFinite i) ℳ hgraded d
 
-/-- For a finitely generated `ℤ`-graded `MvPolynomial σ A`-module, all pieces from some degree `N₀`
-onward are generated over `MvPolynomial σ A` by any single piece `ℳ N₁` with `N₁ ≥ N₀`. -/
+/-- For a finitely generated `ℤ`-graded `MvPolynomial σ A`-module, there is `N₀` such that for
+every `N₁ ≥ N₀`, each piece `ℳ d` with `d ≥ N₁` lies in the `MvPolynomial σ A`-span of `ℳ N₁`. -/
 theorem exists_degree_ge_le_span_piece {A σ M : Type*} [CommSemiring A]
     [AddCommMonoid M] [Module A M] [Module (MvPolynomial σ A) M]
     [IsScalarTower A (MvPolynomial σ A) M] [Module.Finite (MvPolynomial σ A) M]
@@ -231,17 +247,13 @@ theorem exists_degree_ge_le_span_piece {A σ M : Type*} [CommSemiring A]
   obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := MvPolynomial σ A) ℳ
   let N₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).max' (h.image _) else 0
   refine ⟨N₀, fun N₁ hN₁ d hd m hm ↦ ?_⟩
-  have hm_span : m ∈ Submodule.span (MvPolynomial σ A) (Set.range fun p : G ↦ p.val.2) :=
-    hGspan ▸ Submodule.mem_top
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun (MvPolynomial σ A)).mp hm_span
-  rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
+  obtain ⟨c, rfl⟩ := exists_eq_sum_filter_decompose_smul
+    (MvPolynomial.homogeneousSubmodule σ A) ℳ hgraded hGmem hGspan hm
   refine Submodule.sum_mem _ fun p _ ↦ ?_
   have hp_le : p.val.1 ≤ N₁ := le_trans (by
     have hne : G.Nonempty := ⟨p.val, p.property⟩
     simp only [N₀, hne, ↓reduceDIte]
     exact Finset.le_max' _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)) hN₁
-  rw [decompose_smul_of_le (MvPolynomial.homogeneousSubmodule σ A) ℳ hgraded
-    (hp_le.trans hd) (c p) (hGmem p.val p.property)]
   set q := decompose (MvPolynomial.homogeneousSubmodule σ A) (c p) (d - p.val.1).toNat
   have hdeg : (d - p.val.1).toNat = (d - N₁).toNat + (N₁ - p.val.1).toNat := by omega
   have hq : (q : MvPolynomial σ A) ∈

@@ -49,8 +49,6 @@ itself a finite module over the base semiring.
   of finite type over its degree-zero part.
 * `TauCeti.GradedAlgebra.finiteType_gradeZero`: the degree-zero part of a graded algebra of finite
   type over `R` is of finite type over `R`.
-* `TauCeti.GradedAlgebra.moduleFinite_gradeZero_of_mem_bot`: if the degree-zero part consists of
-  scalars from `R`, it is a finite `R`-module.
 
 ## References
 
@@ -249,16 +247,5 @@ instance finiteType_gradeZero [AddCommMonoid ι] [PartialOrder ι] [CanonicallyO
     (GradedRing.projZeroRingHom'_surjective 𝒜)
 
 end GradeZero
-
-/-- If the degree-zero part of a graded algebra consists only of scalars from `R`, then it is a
-finite `R`-module. -/
-theorem moduleFinite_gradeZero_of_mem_bot {R A ι : Type*} [Zero ι] [CommSemiring R] [Semiring A]
-    [Algebra R A] (𝒜 : ι → Submodule R A) [SetLike.GradedOne 𝒜]
-    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) : Module.Finite R (𝒜 0) := by
-  refine Module.Finite.of_surjective
-    ((Algebra.linearMap R A).codRestrict (𝒜 0) fun r ↦ SetLike.algebraMap_mem_graded 𝒜 r) ?_
-  rintro ⟨x, hx⟩
-  obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (h𝒜 x hx)
-  exact ⟨r, rfl⟩
 
 end TauCeti.GradedAlgebra

@@ -15,11 +15,10 @@ This file extends Mathlib's `Polynomial.hilbertPoly` API with three ingredients 
 turning the rational Hilbert–Serre series of a `ℤ`-graded module into its eventual Hilbert
 polynomial:
 
-* **Degree bounds.** Over any nontrivial ring without zero divisors,
-  `(ascPochhammer R d).comp (X - C c + 1)` has degree at most `d`. Over any field `F` (with no
-  characteristic assumption), `preHilbertPoly F d k` therefore has degree at most `d`, and
-  `hilbertPoly p d` has degree strictly less than `d` in `WithBot ℕ`. In particular, for `d = 0`
-  it has degree `⊥ < 0`.
+* **Degree bounds.** Over any ring `R`, `(ascPochhammer R d).comp (X - C c + 1)` has degree at
+  most `d`. Over any field `F` (with no characteristic assumption), `preHilbertPoly F d k`
+  therefore has degree at most `d`, and `hilbertPoly p d` has degree strictly less than `d` in
+  `WithBot ℕ`. In particular, for `d = 0` it has degree `⊥ < 0`.
 * **Integer values and integrality of `(e - 1)! • hilbertPoly`.** Whenever `d! ≠ 0` in `F`,
   evaluating `preHilbertPoly F d k` at an integer `z` yields the generalized multichoose number
   `Ring.multichoose (z - k + 1) d` cast to `F`. Consequently, for every integer polynomial
@@ -27,7 +26,7 @@ polynomial:
   at every integer `z : ℤ`, and multiplying `hilbertPoly (h.map (Int.castRingHom ℚ)) e` by
   `(e - 1)!` produces a polynomial with integer coefficients.
 * **Shifted series.** Given a sequence `f : ℤ → F` whose shifted generating series satisfies
-  `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` with `(e - 1)! ≠ 0`, the
+  `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` of characteristic zero, the
   shifted Hilbert polynomial `(hilbertPoly h e).comp (X - C (d₀ : F))` has degree `< e` and agrees
   with `f d` for all `d ≥ d₀ + h.natDegree + 1`.
 
@@ -57,18 +56,17 @@ namespace Polynomial
 
 section Degree
 
-/-- Composing `ascPochhammer R d` with `X - C c + 1` has degree at most `d` over any nontrivial
-ring without zero divisors. -/
-theorem degree_ascPochhammer_comp_X_sub_C_add_one_le {R : Type*} [Ring R] [NoZeroDivisors R]
-    [Nontrivial R] (d : ℕ) (c : R) :
+/-- Composing `ascPochhammer R d` with `X - C c + 1` has degree at most `d` over any ring. -/
+theorem degree_ascPochhammer_comp_X_sub_C_add_one_le {R : Type*} [Ring R] (d : ℕ) (c : R) :
     ((ascPochhammer R d).comp (X - C c + 1)).degree ≤ d := by
-  have hlin : (X - C c + 1 : R[X]).degree = 1 := by
-    rw [sub_add, ← C_1, ← map_sub]
-    exact degree_X_sub_C _
-  rw [degree_comp, hlin, mul_one]
-  · exact degree_le_natDegree.trans (by rw [ascPochhammer_natDegree])
-  · rw [hlin]
-    exact zero_lt_one
+  have hdeg : (ascPochhammer R d).natDegree ≤ d := by
+    rw [← ascPochhammer_map (Nat.castRingHom R) d]
+    exact natDegree_map_le.trans (by rw [ascPochhammer_natDegree])
+  have hlin : (X - C c + 1 : R[X]).natDegree ≤ 1 :=
+    (natDegree_add_le _ _).trans
+      (max_le ((natDegree_sub_le _ _).trans (max_le natDegree_X_le (by simp))) (by simp))
+  exact degree_le_natDegree.trans
+    (WithBot.coe_le_coe.mpr (natDegree_comp_le.trans (by simpa using Nat.mul_le_mul hdeg hlin)))
 
 variable (F : Type*) [Field F]
 
@@ -181,10 +179,10 @@ theorem degree_hilbertPoly_comp_X_sub_C_lt {F : Type*} [Field F] (p : F[X]) (d :
     exact zero_lt_one
 
 /-- Given a sequence `f : ℤ → F` whose shifted generating series satisfies
-`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` with `(e - 1)! ≠ 0`, the shifted
-Hilbert polynomial agrees with `f d` for every integer `d ≥ d₀ + h.natDegree + 1`. -/
-theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
-    {f : ℤ → F} {d₀ : ℤ} {h : F[X]} {e : ℕ} (hfac : ((e - 1).factorial : F) ≠ 0)
+`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` of characteristic zero, the
+shifted Hilbert polynomial agrees with `f d` for every integer `d ≥ d₀ + h.natDegree + 1`. -/
+theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F] [CharZero F]
+    {f : ℤ → F} {d₀ : ℤ} {h : F[X]} {e : ℕ}
     (hser : (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) * (1 - PowerSeries.X) ^ e = (h : F⟦X⟧))
     {d : ℤ} (hd : d₀ + (h.natDegree : ℤ) + 1 ≤ d) :
     ((hilbertPoly h e).comp (X - C (d₀ : F))).eval (d : F) = f d := by
@@ -198,37 +196,17 @@ theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
     rw [← Int.cast_sub, ← Int.cast_natCast]
     congr 1
     omega
-  rw [eval_comp, eval_sub, eval_X, eval_C, harg]
   have hfn : f d = ((h : F⟦X⟧) * (PowerSeries.invOneSubPow F e : F⟦X⟧)).coeff n := by
     rw [← hinv, PowerSeries.coeff_mk, hdn]
-  rw [hfn]
-  cases e with
-  | zero =>
-    rw [hilbertPoly_zero_right, eval_zero, invOneSubPow_zero, Units.val_one, mul_one, coeff_coe]
-    exact (coeff_eq_zero_of_natDegree_lt hn).symm
-  | succ k =>
-    rw [Nat.add_sub_cancel] at hfac
-    rw [hilbertPoly_succ, eval_finsetSum, PowerSeries.coeff_mul,
-      Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
-      invOneSubPow_val_eq_mk_sub_one_add_choose_of_pos F (k + 1) (Nat.succ_pos k)]
-    simp only [coeff_coe, coeff_mk, eval_smul, smul_eq_mul, Nat.add_sub_cancel]
-    refine Finset.sum_subset_zero_on_sdiff (fun i hi ↦ ?_) (fun i hi ↦ ?_) (fun i hi ↦ ?_)
-    · exact Finset.mem_range_succ_iff.mpr
-        ((le_natDegree_of_ne_zero (mem_support_iff.mp hi)).trans hn.le)
-    · simp only [Finset.mem_sdiff, mem_support_iff, not_not] at hi
-      rw [hi.2, zero_mul]
-    · have hik : i ≤ n := (le_natDegree_of_ne_zero (mem_support_iff.mp hi)).trans hn.le
-      rw [← Int.cast_natCast n, preHilbertPoly_eval_intCast F hfac i (n : ℤ)]
-      congr 1
-      have hsub : ((n : ℤ) - (i : ℤ) + 1) + (k : ℤ) - 1 = ((k + (n - i) : ℕ) : ℤ) := by omega
-      rw [Ring.multichoose_eq, hsub, Ring.choose_natCast, Int.cast_natCast]
+  rw [eval_comp, eval_sub, eval_X, eval_C, harg, hfn,
+    coeff_mul_invOneSubPow_eq_hilbertPoly_eval e hn]
 
 /-- Given a sequence `f : ℤ → ℤ` whose shifted generating series satisfies
-`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧` and a field `F` with `(e - 1)! ≠ 0` in `F`,
-the shifted Hilbert polynomial of `h.map (Int.castRingHom F)` agrees with `(f d : F)` for every
+`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧` and a field `F` of characteristic zero, the
+shifted Hilbert polynomial of `h.map (Int.castRingHom F)` agrees with `(f d : F)` for every
 integer `d ≥ d₀ + h.natDegree + 1`. -/
 theorem eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
-    {f : ℤ → ℤ} {d₀ : ℤ} {h : ℤ[X]} {e : ℕ} (hfac : ((e - 1).factorial : F) ≠ 0)
+    [CharZero F] {f : ℤ → ℤ} {d₀ : ℤ} {h : ℤ[X]} {e : ℕ}
     (hh : (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) * (1 - PowerSeries.X) ^ e = h.toPowerSeries)
     {d : ℤ} (hd : d₀ + (h.natDegree : ℤ) + 1 ≤ d) :
     ((hilbertPoly (h.map (Int.castRingHom F)) e).comp (X - C (d₀ : F))).eval (d : F) =
@@ -247,7 +225,7 @@ theorem eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type
   have hdeg : (h.map (Int.castRingHom F)).natDegree ≤ h.natDegree := natDegree_map_le
   exact eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq
     (f := fun k ↦ (f k : F)) (d₀ := d₀) (h := h.map (Int.castRingHom F)) (e := e)
-    hfac hserF (by omega)
+    hserF (by omega)
 
 end Eventual
 

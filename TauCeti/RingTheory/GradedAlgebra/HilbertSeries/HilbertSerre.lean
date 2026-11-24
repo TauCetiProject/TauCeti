@@ -16,6 +16,7 @@ import TauCeti.Algebra.Module.GradedModule.Length
 import TauCeti.Algebra.Module.MvPolynomial
 import TauCeti.Algebra.Polynomial.Eval.IntCast
 import TauCeti.RingTheory.Artinian.FiniteLength
+import TauCeti.RingTheory.MvPolynomial.Finrank
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Polynomial.HilbertPoly
@@ -106,24 +107,11 @@ private theorem hilbertSeries_mul_one_sub_X {A S M : Type*} [Ring A] [Ring S] [S
         PowerSeries.X *
           (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (GK.piece (d₀ + n))).toNat : ℤ)) := by
   intro GK GQ
-  have hfinK (d : ℤ) : Module.length A (GK.piece d) ≠ ⊤ := by
-    let fK : GK.piece d →ₗ[A] G.piece d :=
-      { toFun := fun x ↦ ⟨x.val.val, (G.mem_ker_piece hμ).mp x.property⟩
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun _ _ ↦ rfl }
-    have hle : Module.length A (GK.piece d) ≤ Module.length A (G.piece d) :=
-      Module.length_le_of_injective fK fun x y h ↦
-        Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.piece d → M) h))
-    exact ne_top_of_le_ne_top (hfinM d) hle
-  have hfinQ (d : ℤ) : Module.length A (GQ.piece d) ≠ ⊤ := by
-    let I := G.submodule (LinearMap.range μ) hμ.isHomogeneous_range
-    have h2 := GradedModule.length_piece_eq_add_of_exact I.piece G.piece GQ.piece
-      (G.isHomogeneous_subtype (LinearMap.range μ) hμ.isHomogeneous_range)
-      (G.isHomogeneous_mkQ (LinearMap.range μ) hμ.isHomogeneous_range)
-      (Submodule.subtype_injective _) (Submodule.mkQ_surjective _)
-      (fun x ↦ by simp [Submodule.Quotient.mk_eq_zero]) d
-    rw [add_zero, add_zero] at h2
-    exact ne_top_of_le_ne_top (hfinM d) (h2 ▸ le_add_self)
+  have hfinK (d : ℤ) : Module.length A (GK.piece d) ≠ ⊤ :=
+    ne_top_of_le_ne_top (hfinM d) (GradedModule.length_ker_piece_le G hμ d)
+  have hfinQ (d : ℤ) : Module.length A (GQ.piece d) ≠ ⊤ :=
+    ne_top_of_le_ne_top (hfinM d)
+      (GradedModule.length_quotient_piece_le G (LinearMap.range μ) hμ.isHomogeneous_range d)
   have hstep (j : ℤ) :
       ((Module.length A (G.piece (j + 1))).toNat : ℤ) -
           ((Module.length A (G.piece j)).toNat : ℤ) =
@@ -253,8 +241,6 @@ private theorem exists_hilbertSeries_step {A : Type u} [CommRing A] [IsArtinianR
   let Q := M ⧸ LinearMap.range μ
   let GK := G.ker hμ
   let GQ := G.quotient (LinearMap.range μ) hμ.isHomogeneous_range
-  let : IsNoetherianRing A := (isArtinianRing_iff_isNoetherianRing_krullDimLE_zero.mp ‹_›).1
-  let : IsNoetherianRing R := MvPolynomial.isNoetherianRing
   have : Module.Finite R K := Module.Finite.of_fg (IsNoetherian.noetherian K)
   have : Module.Finite R Q :=
     Module.Finite.of_surjective (LinearMap.range μ).mkQ (Submodule.mkQ_surjective _)
@@ -276,9 +262,10 @@ private theorem exists_hilbertSeries_step {A : Type u} [CommRing A] [IsArtinianR
       obtain ⟨m, hm, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hq
       rw [(Submodule.eq_bot_iff _).mp (hd₀ d hd) m (hGp ▸ hm), Submodule.Quotient.mk_zero])
   have hfinM : ∀ d, Module.length A (G.piece d) ≠ ⊤ := fun d ↦ by
+    let := MvPolynomial.gradedAlgebra (σ := Fin (e + 1)) (R := A)
     rw [hGp]
-    have : Module.Finite A (ℳ d) := GradedModule.moduleFinite_piece_mvPolynomial ℳ hgraded d
-    exact Module.length_ne_top_iff.mpr (TauCeti.isFiniteLength_of_finite A (ℳ d))
+    exact GradedModule.length_piece_ne_top (MvPolynomial.homogeneousSubmodule (Fin (e + 1)) A)
+      (fun i ↦ TauCeti.homogeneousSubmodule_moduleFinite i) ℳ hgraded d
   have hdiff := hilbertSeries_mul_one_sub_X G hμ (by simpa [hGp] using hd₀) hfinM
   rw [hGp] at hdiff
   refine ⟨hQ - Polynomial.X * hK, ?_⟩
@@ -477,7 +464,6 @@ private theorem exists_hilbertSeries_of_tail_piece_length_ne_top {A : Type u} [C
   have : IsArtinianRing (A ⧸ Module.annihilator A (ℳ N₁)) :=
     TauCeti.isArtinianRing_quotient_annihilator hfl
   have : IsNoetherian A (ℳ N₁) := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).1
-  have : Module.Finite A (ℳ N₁) := Module.finite_def.mpr (IsNoetherian.noetherian ⊤)
   obtain ⟨_, hlt_zero, hI_M'⟩ := tail_span_properties ℳ hgraded N₁
   let G := InternalGrading.ofDecomposition ℳ
   have hGp : G.piece = ℳ := InternalGrading.ofDecomposition_piece ℳ
@@ -570,9 +556,10 @@ theorem hilbertSerre (A : Type u) [CommRing A] [IsArtinianRing A]
         P.degree < (Fintype.card σ : WithBot ℕ) ∧
         ∀ d, N ≤ d → P.eval (d : ℚ) = ((Module.length A (ℳ d)).toNat : ℚ) := by
   let := MvPolynomial.gradedAlgebra (σ := σ) (R := A)
-  have hfin : ∀ d, Module.Finite A (ℳ d) ∧ Module.length A (ℳ d) ≠ ⊤ := fun d ↦ by
-    have hfd : Module.Finite A (ℳ d) := GradedModule.moduleFinite_piece_mvPolynomial ℳ hgraded d
-    exact ⟨hfd, Module.length_ne_top_iff.mpr (TauCeti.isFiniteLength_of_finite A (ℳ d))⟩
+  have hfin : ∀ d, Module.Finite A (ℳ d) ∧ Module.length A (ℳ d) ≠ ⊤ := fun d ↦
+    ⟨GradedModule.moduleFinite_piece_mvPolynomial ℳ hgraded d,
+      GradedModule.length_piece_ne_top (MvPolynomial.homogeneousSubmodule σ A)
+        (fun i ↦ TauCeti.homogeneousSubmodule_moduleFinite i) ℳ hgraded d⟩
   obtain ⟨d₀, hd₀⟩ := GradedModule.exists_forall_lt_piece_eq_bot
     (MvPolynomial.homogeneousSubmodule σ A) ℳ hgraded
   obtain ⟨h, hh⟩ := exists_hilbertSeries_mul_one_sub_X_pow ℳ hgraded d₀
@@ -583,8 +570,7 @@ theorem hilbertSerre (A : Type u) [CommRing A] [IsArtinianRing A]
     Polynomial.degree_hilbertPoly_comp_X_sub_C_lt _ _ _, fun d hd ↦ ?_⟩
   simpa only [Int.cast_natCast] using
     Polynomial.eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq
-      (f := fun k ↦ ((Module.length A (ℳ k)).toNat : ℤ))
-      (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)) hh hd
+      (f := fun k ↦ ((Module.length A (ℳ k)).toNat : ℤ)) hh hd
 
 /-- Any polynomial `P : R[X]` (over a ring `R` with unique additive division) that eventually agrees
 with the `ENat.toNat` length coefficients `(Module.length A (ℳ d)).toNat` of a finitely generated
@@ -608,8 +594,7 @@ theorem exists_int_eval_of_eventually_eval_length {A : Type u} [CommRing A]
       Q.eval d = ((e - 1).factorial : ℤ) * ((Module.length A (ℳ d)).toNat : ℤ) := by
     apply Int.cast_injective (α := ℚ)
     have h1 := Polynomial.eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq (F := ℚ)
-      (f := fun k ↦ ((Module.length A (ℳ k)).toNat : ℤ))
-      (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)) hh (by simpa using hd)
+      (f := fun k ↦ ((Module.length A (ℳ k)).toNat : ℤ)) hh (by simpa using hd)
     have hQrat := Polynomial.eval_intCast_map (Int.castRingHom ℚ) Q d
     rw [eq_intCast, Int.cast_id] at hQrat
     rw [Int.cast_mul, Int.cast_natCast, Int.cast_natCast, ← hQrat, hQmap, Polynomial.eval_smul,

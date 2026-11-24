@@ -34,6 +34,8 @@ polynomials that eventually agree with the `ENat.toNat` lengths of graded pieces
   short exact sequence over any cancellative grading monoid.
 * `TauCeti.GradedModule.length_piece_add_quotient_eq_add_ker`: alternating-length identity for a
   homogeneous endomorphism.
+* `TauCeti.GradedModule.length_ker_piece_le` and `TauCeti.GradedModule.length_quotient_piece_le`:
+  length bounds on graded pieces of kernels and quotients.
 * `TauCeti.GradedModule.eq_add_of_exact_of_eventually_eval_length`: additivity of eventual length
   polynomials in degree-zero short exact sequences.
 * `TauCeti.GradedModule.eq_comp_X_add_C_of_eventually_eval_length`: behavior of eventual length
@@ -120,6 +122,34 @@ theorem length_piece_add_quotient_eq_add_ker {A S ι M : Type*} [Ring A] [Ring S
   rw [add_zero, add_zero] at h2
   rw [h1, h2]
   abel
+
+/-- The `A`-length of each graded piece of the kernel of a homogeneous map is at most that of the
+source piece. -/
+theorem length_ker_piece_le {A S ι M N : Type*} [Ring A] [Ring S] [SMul A S]
+    [DecidableEq ι] [AddRightCancelMonoid ι]
+    [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
+    [AddCommGroup N] [Module A N] [Module S N]
+    (G : InternalGrading A M ι) {H : InternalGrading A N ι} {f : M →ₗ[S] N} {r : ι}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (d : ι) :
+    Module.length A ((G.ker hf).piece d) ≤ Module.length A (G.piece d) :=
+  Module.length_le_of_injective
+    ((((LinearMap.ker f).subtype.restrictScalars A).domRestrict ((G.ker hf).piece d)).codRestrict
+      (G.piece d) fun x ↦ (G.mem_ker_piece hf).mp x.property)
+    fun _ _ h ↦ Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.piece d → M) h))
+
+/-- The `A`-length of each graded piece of a homogeneous quotient is at most that of the ambient
+piece. -/
+theorem length_quotient_piece_le {A S ι M : Type*} [Ring A] [Ring S] [SMul A S]
+    [DecidableEq ι] [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
+    (G : InternalGrading A M ι) (U : Submodule S M) (hU : SetLike.IsHomogeneous G.piece U)
+    (d : ι) :
+    Module.length A ((G.quotient U hU).piece d) ≤ Module.length A (G.piece d) :=
+  Module.length_le_of_surjective
+    (((U.mkQ.restrictScalars A).domRestrict (G.piece d)).codRestrict
+      ((G.quotient U hU).piece d) fun x ↦ G.mk_mem_quotient_piece U hU x.property)
+    fun y ↦ by
+      obtain ⟨x, hx, hxy⟩ := (G.mem_quotient_piece_iff U hU).mp y.property
+      exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
 
 end ExactLength
 
