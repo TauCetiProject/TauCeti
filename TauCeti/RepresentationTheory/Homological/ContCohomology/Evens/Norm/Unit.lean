@@ -63,12 +63,9 @@ theorem cohomF2ZeroLinearEquiv_degreeCast_evensNorm (x : cohomF2 U.toSubgroup 0)
   -- `tensorNormCocycleClass_eq_degreeZeroClass` already reads `[G : U] * 0` as `0`, the value of
   -- `Nat.mul` at `0`, so the remaining transport is along `0 = 0`.
   rw [evensNorm_cochainClass U default, tensorNormCocycleClass_eq_degreeZeroClass,
-    ContinuousCohomology.degreeCast_rfl, CategoryTheory.Iso.refl_hom,
-    CategoryTheory.ConcreteCategory.id_apply,
-    TopRep.cochainClass_eq_degreeZeroClass _ z hz (z.1 1)
-      (fun g ↦ trivialF2_ρ_apply_apply U.toSubgroup g _) rfl,
-    cohomF2ZeroLinearEquiv_degreeZeroClass, cohomF2ZeroLinearEquiv_degreeZeroClass,
-    AddEquiv.apply_symm_apply]
+    TopRep.cochainClass_eq_degreeZeroClass _ z hz (z.val 1)
+      (fun g ↦ trivialF2_ρ_apply_apply U.toSubgroup g _) rfl]
+  simp
 
 /-- **The Evens norm is unital**: `N_U^G 1 = 1`, with the unit of `H⁰(G, 𝔽₂)` transported to the
 degree `[G : U] * 0` of the norm. -/
@@ -77,10 +74,8 @@ theorem evensNorm_one : U.evensNorm (1 : cohomF2 U.toSubgroup 0) =
     (ContinuousCohomology.degreeCast (trivialF2 G) (mul_zero _).symm).hom (1 : cohomF2 G 0) := by
   have h := cohomF2ZeroLinearEquiv_degreeCast_evensNorm U 1
   rw [cohomF2ZeroLinearEquiv_one, ← cohomF2ZeroLinearEquiv_one G] at h
-  rw [← (cohomF2ZeroLinearEquiv G).injective h,
-    ContinuousCohomology.degreeCast_hom_degreeCast_hom_apply,
-    ContinuousCohomology.degreeCast_rfl, CategoryTheory.Iso.refl_hom,
-    CategoryTheory.ConcreteCategory.id_apply]
+  rw [← (cohomF2ZeroLinearEquiv G).injective h]
+  simp
 
 /-- **The Evens norm as a homomorphism of graded monoids**: on homogeneous mod-two classes, the
 map `(n, x) ↦ ([G : U] n, N_U^G x)` preserves the unit (`OpenSubgroup.evensNorm_one`) and cup
