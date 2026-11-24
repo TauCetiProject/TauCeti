@@ -39,6 +39,7 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 * `TauCeti.ModuleTower.IsAdicSystem.levelModule`: each term over `A ⧸ I ^ (n + 1)`, with
   quotient-linear transition `levelTransition` and bijective base-change map `levelReduction`.
 * `TauCeti.ModuleTower.IsAdicSystem.limQuotientEquiv`: `L ⧸ I^{n+1} L ≃ Mₙ`.
+* `TauCeti.ModuleTower.IsAdicSystem.limBaseChangeEquiv`: quotient-linear scalar change of the limit.
 * `TauCeti.ModuleTower.IsAdicSystem.ofLimHom`: the morphism of adic systems induced by a linear map
   of their limits.
 * `TauCeti.ModuleTower.IsAdicSystem.limMapEquiv`: morphisms of adic systems are the linear maps of
@@ -338,6 +339,30 @@ noncomputable def limQuotientEquiv (n : ℕ) :
 theorem limQuotientEquiv_mk (n : ℕ) (x : F.lim) :
     hF.limQuotientEquiv n (Submodule.Quotient.mk x) = F.limπ n x := by
   simp [limQuotientEquiv]
+
+open scoped TensorProduct
+
+/-- The quotient-linear scalar-change equivalence induced by a limit projection. -/
+noncomputable def limBaseChangeEquiv (n : ℕ) :
+    (A ⧸ I ^ (n + 1)) ⊗[A] F.lim ≃ₗ[A ⧸ I ^ (n + 1)] hF.levelModule n := by
+  let := (hF.isTorsionBySet_obj n).module
+  have := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
+  exact ((IsBaseChange.quotient_iff _ _).2
+    ⟨F.limπ_surjective hF.transition_surjective n, hF.ker_limπ n⟩).equiv
+
+/-- The scalar-change equivalence evaluates `1 ⊗ x` by the limit projection. -/
+@[simp↓]
+theorem limBaseChangeEquiv_one_tmul (n : ℕ) (x : F.lim) :
+    hF.limBaseChangeEquiv n (1 ⊗ₜ[A] x) = F.limπ n x := by
+  unfold limBaseChangeEquiv
+  simp only [IsBaseChange.equiv_tmul, one_smul]
+
+/-- The inverse scalar-change equivalence sends a projected element to `1 ⊗ x`. -/
+@[simp↓]
+theorem limBaseChangeEquiv_symm_apply (n : ℕ) (x : F.lim) :
+    (hF.limBaseChangeEquiv n).symm (F.limπ n x) = 1 ⊗ₜ[A] x := by
+  apply (hF.limBaseChangeEquiv n).injective
+  rw [LinearEquiv.apply_symm_apply, hF.limBaseChangeEquiv_one_tmul]
 
 /-! ### Morphisms of adic systems and linear maps of their limits -/
 

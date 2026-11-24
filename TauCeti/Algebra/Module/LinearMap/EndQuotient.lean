@@ -47,6 +47,8 @@ the reduction map over an `(r)`-adically complete base, without requiring the ke
   nilpotent as soon as `I` is.
 * `Ideal.isUnit_of_endMapQ_eq_one`: for a nilpotent ideal, an endomorphism reducing to the
   identity is invertible.
+* `Ideal.bijective_of_mapQ_bijective`: a map to a projective module is bijective if its
+  reduction modulo a nilpotent ideal is bijective.
 * `Ideal.exists_isIdempotentElem_endMapQ_eq`: for a projective module and a nilpotent ideal, every
   idempotent endomorphism of `M ⧸ I • M` is the reduction of an idempotent endomorphism of `M`.
 -/
@@ -137,6 +139,44 @@ theorem isUnit_of_endMapQ_eq_one (hI : IsNilpotent I) {f : Module.End R M}
   have h : IsNilpotent (f - 1) :=
     isNilpotent_of_mem_ker_endMapQ I M hI (by rw [RingHom.mem_ker, map_sub, hf, map_one, sub_self])
   simpa using h.isUnit_one_add
+
+variable {M}
+
+/-- A map to a projective module is bijective if it becomes bijective modulo a nilpotent ideal.
+Lift the inverse of the reduction and apply `isUnit_of_endMapQ_eq_one` to both composites.
+This is the nilpotent-ideal case of
+[Stacks, Lemma 15.3.5](https://stacks.math.columbia.edu/tag/0BC6), with only target projectivity. -/
+theorem bijective_of_mapQ_bijective {N : Type*} [AddCommGroup N] [Module R N]
+    [Module.Projective R N] (hI : IsNilpotent I) (f : M →ₗ[R] N)
+    (hf : Function.Bijective (Submodule.mapQ (I • (⊤ : Submodule R M))
+      (I • (⊤ : Submodule R N)) f (Submodule.smul_top_le_comap_smul_top I f))) :
+    Function.Bijective f := by
+  let e := LinearEquiv.ofBijective _ hf
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property
+    (I • (⊤ : Submodule R M)).mkQ
+    (e.symm.toLinearMap ∘ₗ (I • (⊤ : Submodule R N)).mkQ)
+    (Submodule.mkQ_surjective _)
+  have hg_apply (x : N) : Submodule.Quotient.mk (g x) =
+      e.symm (Submodule.Quotient.mk x) := LinearMap.congr_fun hg x
+  have he_apply (x : M) : e (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (f x) :=
+    Submodule.mapQ_apply _ _ f (h := Submodule.smul_top_le_comap_smul_top I f) x
+  have hgf : endMapQ I M (g ∘ₗ f) = 1 := by
+    apply Submodule.linearMap_qext
+    ext x
+    simp only [LinearMap.comp_apply, Submodule.mkQ_apply, endMapQ_mk, one_apply_eq_self]
+    rw [hg_apply, ← he_apply]
+    exact e.symm_apply_apply (Submodule.Quotient.mk x)
+  have hfg : endMapQ I N (f ∘ₗ g) = 1 := by
+    apply Submodule.linearMap_qext
+    ext x
+    simp only [LinearMap.comp_apply, Submodule.mkQ_apply, endMapQ_mk, one_apply_eq_self]
+    rw [← he_apply, hg_apply]
+    exact e.apply_symm_apply (Submodule.Quotient.mk x)
+  exact ⟨Function.Injective.of_comp
+      ((Module.End.isUnit_iff _).mp (isUnit_of_endMapQ_eq_one I M hI hgf)).injective,
+    Function.Surjective.of_comp
+      ((Module.End.isUnit_iff _).mp (isUnit_of_endMapQ_eq_one I N hI hfg)).surjective⟩
 
 /-- **Idempotents lift along reduction modulo a nilpotent ideal.** For a projective module `N` and a
 nilpotent ideal `J`, every idempotent endomorphism of `N ⧸ J • N` is the reduction `Ideal.endMapQ`
