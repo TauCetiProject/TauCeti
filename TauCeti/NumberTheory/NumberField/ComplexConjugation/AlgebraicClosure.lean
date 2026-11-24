@@ -39,7 +39,9 @@ real, and Mathlib's `NumberField.IsCMField.complexConj F` if `F` is CM.
   totally real or CM by products of two complex conjugations.
 * `TauCeti.NumberField.isCMField_of_forall_isConj`: a field with one automorphism conjugating
   every complex embedding, not the identity, is CM. Mathlib's
-  `NumberField.IsCMField.of_forall_isConj` is the special case of a Galois extension of `ℚ`.
+  `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
+  complex; this criterion assumes only one automorphism, not the identity, conjugating every
+  complex embedding.
 
 ## References
 
@@ -139,15 +141,6 @@ theorem apply_eq_complexConj_of_isCMField {F : Type*} [Field F] [CharZero F]
   rw [hι.eq]
   exact (IsCMField.complexEmbedding_complexConj F (ι.comp τ) x).symm
 
-/-- **Extension of complex embeddings.** For an embedding `τ : F →+* Ω` into an algebraic
-extension of `ℚ`, every embedding `φ : F →+* ℂ` factors as `ι ∘ τ` for some `ι : Ω →+* ℂ`. -/
-theorem exists_comp_eq [Algebra.IsAlgebraic ℚ Ω] {F : Type*} [Field F] [CharZero F]
-    (τ : F →+* Ω) (φ : F →+* ℂ) : ∃ ι : Ω →+* ℂ, ι.comp τ = φ := by
-  let := τ.toAlgebra
-  have : IsScalarTower ℚ F Ω := .of_algebraMap_eq (R := ℚ) (S := F) (A := Ω) fun x ↦ by simp
-  have : Algebra.IsAlgebraic F Ω := Algebra.IsAlgebraic.tower_top (K := ℚ) F
-  exact ⟨ComplexEmbedding.lift Ω φ, ComplexEmbedding.lift_comp_algebraMap Ω φ⟩
-
 variable [Normal ℚ Ω]
 
 /-- **Every embedding of `Ω` into `ℂ` has a complex conjugation.** The image of `Ω` in `ℂ` is
@@ -156,6 +149,8 @@ theorem exists_isConj (ι : Ω →+* ℂ) : ∃ c : Gal(Ω/ℚ), IsConj ι c := 
   let := ι.toAlgebra
   have : IsScalarTower ℚ Ω ℂ := .of_algebraMap_eq fun x ↦ by simp
   refine ⟨(Complex.conjAe.restrictScalars ℚ).restrictNormal Ω, RingHom.ext fun x ↦ ?_⟩
+  -- Both sides unfold to `conj (ι x)` and `ι (c x)`: `conjugate ι x` is `star (ι x)`, which is
+  -- `Complex.conjAe.restrictScalars ℚ (algebraMap Ω ℂ x)` for the algebra `ι.toAlgebra`.
   exact (AlgEquiv.restrictNormal_commutes (Complex.conjAe.restrictScalars ℚ) Ω x).symm
 
 variable (Ω) in
@@ -180,39 +175,47 @@ theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω}
   have hginv : g⁻¹ (τ x) = τ x := g.symm_apply_eq.mpr hgx.symm
   have hc' : g * c * g⁻¹ ∈ complexConjugations Ω := by
     simpa using inv_mul_mul_mem_complexConjugations hc g⁻¹
-  simpa [AlgEquiv.mul_apply, hginv] using
+  -- The conjugate `g c g⁻¹` sends `τ x` to `g (c (τ x))`, and by involutivity of `g c g⁻¹` and
+  -- `h` this is `c (τ x)`.
+  have hcx : (g * c * g⁻¹) (τ x) = c (τ x) :=
     ((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc')).mp
       (h _ hc' _ hc x)).symm
-
-/-- The endomorphism of `F` through which an automorphism `c` of `Ω` acts on `τ(F)`, when it maps
-`τ(F)` into itself. -/
-private noncomputable def restrictAlgHomOfApplyMem (τ : F →+* Ω) (c : Gal(Ω/ℚ))
-    (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) : F →ₐ[ℚ] F :=
-  (AlgEquiv.ofInjectiveField τ.toRatAlgHom).symm.toAlgHom.comp
-    ((c.toAlgHom.comp τ.toRatAlgHom).codRestrict τ.toRatAlgHom.fieldRange.toSubalgebra hmem)
+  calc g (c (τ x)) = (g * c * g⁻¹) (τ x) := by
+        rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hginv]
+    _ = c (τ x) := hcx
 
 omit [Normal ℚ Ω] in
-private theorem apply_restrictAlgHomOfApplyMem (τ : F →+* Ω) (c : Gal(Ω/ℚ))
-    (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
-    τ (restrictAlgHomOfApplyMem τ c hmem x) = c (τ x) :=
-  congr($(AlgEquiv.apply_symm_apply (AlgEquiv.ofInjectiveField τ.toRatAlgHom)
-      ⟨c (τ x), hmem x⟩).val)
+/-- A complex conjugation mapping `τ(F)` into itself maps it onto itself. -/
+private theorem map_fieldRange_eq (τ : F →+* Ω) {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
+    (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) :
+    τ.toRatAlgHom.fieldRange.map c.toAlgHom = τ.toRatAlgHom.fieldRange := by
+  refine le_antisymm (fun y hy ↦ ?_) fun y hy ↦ (IntermediateField.mem_map _).2 ⟨c y, ?_, ?_⟩
+  · obtain ⟨_, ⟨x, rfl⟩, rfl⟩ := (IntermediateField.mem_map _).1 hy
+    exact hmem x
+  · obtain ⟨x, rfl⟩ := AlgHom.mem_fieldRange.1 hy
+    exact hmem x
+  · exact apply_apply_of_mem_complexConjugations hc y
 
 /-- The automorphism of `F` through which a complex conjugation `c` acts on `τ(F)`, when it maps
-`τ(F)` into itself. -/
+`τ(F)` into itself: the restriction `τ(F) ≃ c(τ(F)) = τ(F)` of `c`, read on `F` through `τ`. -/
 private noncomputable def restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) :
     Gal(F/ℚ) :=
-  have hss : (restrictAlgHomOfApplyMem τ c hmem).comp (restrictAlgHomOfApplyMem τ c hmem) =
-      AlgHom.id ℚ F := AlgHom.ext fun x ↦ τ.injective <| by
-    simp [apply_restrictAlgHomOfApplyMem, apply_apply_of_mem_complexConjugations hc]
-  AlgEquiv.ofAlgHom _ _ hss hss
+  τ.toRatAlgHom.equivFieldRange.trans <|
+    ((τ.toRatAlgHom.fieldRange.equivMap c.toAlgHom).trans
+      (IntermediateField.equivOfEq (map_fieldRange_eq τ hc hmem))).trans
+    τ.toRatAlgHom.equivFieldRange.symm
 
 omit [Normal ℚ Ω] in
 private theorem apply_restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
-    τ (restrictOfApplyMem τ hc hmem x) = c (τ x) :=
-  apply_restrictAlgHomOfApplyMem τ c hmem x
+    τ (restrictOfApplyMem τ hc hmem x) = c (τ x) := by
+  have h (z : τ.toRatAlgHom.fieldRange) : τ (τ.toRatAlgHom.equivFieldRange.symm z) = z := by
+    have := AlgHom.equivFieldRange_apply_coe τ.toRatAlgHom (τ.toRatAlgHom.equivFieldRange.symm z)
+    rw [AlgEquiv.apply_symm_apply] at this
+    exact this.symm
+  rw [restrictOfApplyMem, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, h]
+  rfl
 
 /-- **Milne's criterion (Milne, *Complex Multiplication*, I, Proposition 1.4).** A field `F`
 embedded in `Ω` by `τ` (hence algebraic over `ℚ`) is totally real or CM if and only if every
@@ -232,7 +235,12 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
     have hs' := apply_restrictOfApplyMem τ hc₀ hmem
     set s := restrictOfApplyMem τ hc₀ hmem
     have hs : ∀ φ : F →+* ℂ, IsConj φ s := fun φ ↦ by
-      obtain ⟨ι, rfl⟩ := exists_comp_eq τ φ
+      -- Extend `φ` along `τ` to an embedding `ι` of `Ω`.
+      let := τ.toAlgebra
+      have : IsScalarTower ℚ F Ω := .of_algebraMap_eq (R := ℚ) (S := F) (A := Ω) fun x ↦ by simp
+      have : Algebra.IsAlgebraic F Ω := Algebra.IsAlgebraic.tower_top (K := ℚ) F
+      obtain ⟨ι, rfl⟩ : ∃ ι : Ω →+* ℂ, ι.comp τ = φ :=
+        ⟨ComplexEmbedding.lift Ω φ, ComplexEmbedding.lift_comp_algebraMap Ω φ⟩
       obtain ⟨c, hc⟩ := exists_isConj ι
       refine RingHom.ext fun x ↦ ?_
       simp only [conjugate_coe_eq, RingHom.comp_apply, RingHom.coe_coe, hs']
