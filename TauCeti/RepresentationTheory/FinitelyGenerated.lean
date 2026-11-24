@@ -49,7 +49,8 @@ variable {A G V W : Type*} [CommSemiring A] [Monoid G]
 /-- **Finite generation passes to quotients.** -/
 theorem finite_asModule_of_surjective [Module.Finite A[G] ρ.asModule] (f : IntertwiningMap ρ σ)
     (hf : Function.Surjective f) : Module.Finite A[G] σ.asModule :=
-  Module.Finite.of_surjective (IntertwiningMap.equivLinearMapAsModule ρ σ f) hf
+  Module.Finite.of_surjective (IntertwiningMap.equivLinearMapAsModule ρ σ f)
+    ((IntertwiningMap.surjective_equivLinearMapAsModule_iff f).2 hf)
 
 /-- A finite direct sum of finitely generated representations is finitely generated. -/
 instance finite_asModule_directSum {ι : Type*} [Finite ι] {V' : ι → Type*}
@@ -76,7 +77,8 @@ instance finite_asModule_ofMulAction {G X : Type*} [Group G] [MulAction G X]
   | add y z hy hz => rw [map_add]; exact add_mem hy hz
   | single x c =>
     obtain ⟨g, hg⟩ : ∃ g : G, g • (Quotient.mk (MulAction.orbitRel G X) x).out = x :=
-      (MulAction.orbitRel G X).symm (Quotient.mk_out x)
+      MulAction.mem_orbit_iff.1
+        (MulAction.orbitRel_apply.1 ((MulAction.orbitRel G X).symm (Quotient.mk_out x)))
     have hx : MonoidAlgebra.single x c =
         c • τ g (MonoidAlgebra.single (Quotient.mk (MulAction.orbitRel G X) x).out 1) := by
       simp [τ, ofMulAction_single, MonoidAlgebra.smul_single, hg]
@@ -102,21 +104,16 @@ theorem exists_surjective_of_finite_asModule {G : Type*} [Group G] {ρ : Represe
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := A[G]) (M := ρ.asModule)
   choose U hPU hU using fun i : Fin n ↦ hP (ρ.asModuleEquiv (s i))
   let f := IntertwiningMap.directSumToModule fun i ↦ ρ.cosetLift _ _ (hU i)
-  refine ⟨n, U, hPU, f, ?_⟩
-  have hrange : LinearMap.range (IntertwiningMap.equivLinearMapAsModule _ ρ f) = ⊤ := by
-    rw [eq_top_iff, ← hs, Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    refine ⟨(directSum _).asModuleEquiv.symm
-      (DirectSum.lof A _ _ i (MonoidAlgebra.single ((1 : G) : G ⧸ U i) 1)), ?_⟩
-    rw [IntertwiningMap.equivLinearMapAsModule_apply, asModuleEquiv_symm_apply]
-    simp only [f, IntertwiningMap.directSumToModule_lof, cosetLift_single, map_one, one_smul,
-      one_apply_eq_self]
-    exact asModuleEquiv_apply (s i)
-  intro v
-  obtain ⟨x, hx⟩ := LinearMap.range_eq_top.1 hrange (ρ.asModuleEquiv.symm v)
-  rw [IntertwiningMap.equivLinearMapAsModule_apply, asModuleEquiv_symm_apply] at hx
-  refine ⟨(directSum _).asModuleEquiv x, ?_⟩
-  rw [asModuleEquiv_apply]
-  exact hx
+  refine ⟨n, U, hPU, f, (IntertwiningMap.surjective_equivLinearMapAsModule_iff f).1 ?_⟩
+  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  refine ⟨(directSum _).asModuleEquiv.symm
+    (DirectSum.lof A _ _ i (MonoidAlgebra.single ((1 : G) : G ⧸ U i) 1)), ?_⟩
+  apply ρ.asModuleEquiv.injective
+  rw [asModuleEquiv_apply, asModuleEquiv_apply, IntertwiningMap.equivLinearMapAsModule_apply,
+    asModuleEquiv_symm_apply]
+  simp only [f, IntertwiningMap.directSumToModule_lof, cosetLift_single, map_one, one_smul,
+    one_apply_eq_self]
+  exact asModuleEquiv_apply (s i)
 
 end Representation
