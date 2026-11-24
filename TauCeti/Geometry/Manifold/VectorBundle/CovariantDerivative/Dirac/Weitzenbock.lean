@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Weitzenböck formula for the square of a Dirac operator
@@ -50,8 +52,6 @@ smooth vector fields `Y` and smooth sections `τ`.
 
 ## Main results
 
-* `TauCeti.two_nsmul_sum_sum_apply_apply_eq`: the Clifford contraction of a doubly indexed family
-  splits into its trace and its antisymmetrization.
 * `CovariantDerivative.diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative`:
   `D² σ = ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ)` in an orthonormal frame parallel at the point.
 * `CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_of_frame`: the
@@ -75,33 +75,6 @@ open Bundle Filter Set
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
-
-namespace TauCeti
-
-/-- **Clifford contraction of a doubly indexed family.** Let `γᵢ` be additive maps satisfying the
-Clifford relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, such as Clifford multiplication by the vectors of an
-orthonormal basis. Then for every family `B i j`,
-
-`2 ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i + ∑ᵢ ∑ⱼ γᵢ γⱼ (B i j - B j i)`.
-
-For `B i j = ∇²σ(eᵢ, eⱼ)` the first term is twice the rough Laplacian and the second is a
-curvature term. -/
-theorem two_nsmul_sum_sum_apply_apply_eq {ι V G : Type*} [Fintype ι] [DecidableEq ι]
-    [AddCommGroup V] [FunLike G V V] [AddMonoidHomClass G V V] (γ : ι → G)
-    (hγ : ∀ i j s, γ i (γ j s) + γ j (γ i s) = if i = j then -(2 • s) else 0)
-    (B : ι → ι → V) :
-    2 • ∑ i, ∑ j, γ i (γ j (B i j)) =
-      -(2 • ∑ i, B i i) + ∑ i, ∑ j, γ i (γ j (B i j - B j i)) := by
-  -- Exchanging the indices and applying the Clifford relation gives
-  -- `∑ᵢ ∑ⱼ γᵢ γⱼ B j i + ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i`.
-  have hswap : ∑ i, ∑ j, γ i (γ j (B j i)) + ∑ i, ∑ j, γ i (γ j (B i j)) = -(2 • ∑ i, B i i) := by
-    rw [Finset.sum_comm (f := fun i j ↦ γ i (γ j (B j i))), ← Finset.sum_add_distrib]
-    simp only [← Finset.sum_add_distrib, hγ, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
-      Finset.sum_neg_distrib, Finset.smul_sum]
-  simp only [map_sub, Finset.sum_sub_distrib, eq_sub_of_add_eq hswap]
-  abel
-
-end TauCeti
 
 namespace CovariantDerivative
 
@@ -202,10 +175,7 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_of_frame (ht : covT.Is
   simp only [hb]
   simp only [← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
   have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
-  calc _ = (2 : ℝ)⁻¹ • ((2 : ℝ) • ∑ i, ∑ j, c x (e i x) (c x (e j x)
-          (cov.secondCovariantDerivative covT σ x (e i x) (e j x)))) := by
-        rw [smul_smul, inv_mul_cancel₀ h2, one_smul]
-    _ = _ := by rw [h, smul_add, smul_neg, smul_smul, inv_mul_cancel₀ h2, one_smul]
+  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
 
 variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
 
@@ -230,12 +200,11 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add (hσ : CMDiff ∞ (T% 
     cov.diracOperator c (cov.diracOperator c σ) x =
       cov.roughLaplacian (leviCivitaConnection I M) σ x +
         (2 : ℝ)⁻¹ • ∑ i, ∑ j, c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) := by
-  -- Build a normal orthonormal frame from `b`, reindexed by `Fin n`.
-  set eq := Fintype.equivFin ι
+  -- Extend `b` to a geodesic frame.
   obtain ⟨e, he, hframe, hpar, hex⟩ :=
-    TauCeti.Manifold.exists_contMDiff_geodesicFrame (I := I) (M := M) (b.reindex eq)
+    TauCeti.Manifold.exists_contMDiff_geodesicFrame (I := I) (M := M) b
   have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
-  have hτ (i : Fin (Fintype.card ι)) : CMDiff ∞ (T% (fun y ↦ cov σ y (e i y))) :=
+  have hτ (i : ι) : CMDiff ∞ (T% (fun y ↦ cov σ y (e i y))) :=
     cov.contMDiff_apply (he i) hσ'
   have hσ1 := diracOperator_diracOperator_eq_roughLaplacian_add_of_frame cov
     (leviCivitaConnection I M) c
@@ -244,10 +213,7 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add (hσ : CMDiff ∞ (T% 
     hσ e he hframe hpar hcl
     (fun i u ↦ by simp [hc (e i) _ (he i) (hτ i), hpar i])
     (fun i ↦ hdiff (e i) _ (he i) (hτ i))
-  rw [hσ1]
-  simp only [hex, OrthonormalBasis.reindex_apply]
-  congr 2
-  exact Fintype.sum_equiv eq.symm _ _ fun i ↦ Fintype.sum_equiv eq.symm _ _ fun j ↦ rfl
+  simpa only [hex] using hσ1
 
 /-- **The Weitzenböck formula over pairs `i < j`.** Under the hypotheses of
 `diracOperator_diracOperator_eq_roughLaplacian_add`, for every orthonormal basis `eᵢ` of the
@@ -272,20 +238,18 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt (hσ : CMDiff �
   set f : ι → ι → V x := fun i j ↦ c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x)))
   -- The summand is symmetric in `(i, j)`, since `c(eⱼ) c(eᵢ) = -c(eᵢ) c(eⱼ)` for `i ≠ j` and the
   -- curvature is antisymmetric, and it vanishes on the diagonal.
-  have hsymm (i j : ι) (hij : i ≠ j) : f j i = f i j := by
+  have hsymm (i j : ι) : f i j = f j i := by
+    obtain rfl | hij := eq_or_ne i j
+    · rfl
     have hanti := hcl (b i) (b j) (cov.curvatureTensor x (b i) (b j) (σ x))
     simp only [orthonormal_iff_ite.mp b.orthonormal i j, hij, ↓reduceIte, mul_zero, neg_zero,
       zero_smul, add_eq_zero_iff_eq_neg] at hanti
     simp only [f, cov.curvatureTensor_antisymm x (b j) (b i), LinearMap.neg_apply, map_neg, hanti]
-  have hf (i j : ι) : f i j = (if i < j then f i j else 0) + (if j < i then f j i else 0) := by
-    rcases lt_trichotomy i j with h | rfl | h
-    · simp [h, h.not_gt]
-    · simp [f]
-    · simp [h, h.not_gt, hsymm j i h.ne]
-  have hsum : ∑ i, ∑ j, f i j = (2 : ℝ) • ∑ i, ∑ j with i < j, f i j := by
-    conv_lhs => enter [2, i, 2, j]; rw [hf i j]
-    simp only [Finset.sum_add_distrib, Finset.sum_filter, two_smul]
-    rw [Finset.sum_comm (f := fun i j ↦ if j < i then f j i else 0)]
-  rw [hsum, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  have hpairs : ∑ p : {p : ι × ι // p.1 < p.2}, f p.val.1 p.val.2 = ∑ i, ∑ j with i < j, f i j := by
+    rw [← Finset.sum_subtype {p : ι × ι | p.1 < p.2} (by simp) fun p ↦ f p.1 p.2,
+      Finset.sum_filter, Fintype.sum_prod_type]
+    simp only [Finset.sum_filter]
+  rw [TauCeti.sum_symmetric_pairs f hsymm, Finset.sum_eq_zero fun i _ ↦ by simp [f], zero_add,
+    hpairs, ← Nat.cast_smul_eq_nsmul ℝ, Nat.cast_ofNat, inv_smul_smul₀ two_ne_zero]
 
 end CovariantDerivative
