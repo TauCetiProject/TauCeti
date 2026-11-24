@@ -43,6 +43,8 @@ exactly when it agrees on `U` with a section over `V`
 * `TauCeti.Hyperfunction.nonRealOpen`: the open set `ℂ ∖ ℝ`, which is dense
   (`TauCeti.Hyperfunction.dense_nonRealOpen`);
 * `TauCeti.Hyperfunction.complexNeighborhood U`: the open set `W(U) = ℂ ∖ (ℝ ∖ U)`;
+* `TauCeti.Hyperfunction.realAxis`: the real axis as a closed subset of `ℂ`, whose complement is
+  `ℂ ∖ ℝ` (`TauCeti.Hyperfunction.compl_realAxis`);
 * `TauCeti.Hyperfunction.throughReal U`: the holomorphic functions on `ℂ ∖ ℝ` that extend
   holomorphically to `W(U)`;
 * `TauCeti.Hyperfunction.OneDimBoundaryQuotient U`: the quotient `O(ℂ ∖ ℝ) / O(W(U))`, and
@@ -196,6 +198,25 @@ theorem nonRealOpen_le_complexNeighborhood (U : Opens ℝ) :
 /-- The set `W(U)` grows with `U`. -/
 theorem complexNeighborhood_mono : Monotone complexNeighborhood := fun _ _ h =>
   sup_le_sup_left (fun _ hz => h hz) _
+
+/-- The real axis `{z | z.im = 0}`, as a closed subset of `ℂ`. -/
+def realAxis : Closeds ℂ :=
+  ⟨{z | z.im = 0}, isClosed_eq Complex.continuous_im continuous_const⟩
+
+@[simp]
+theorem mem_realAxis_iff {z : ℂ} : z ∈ realAxis ↔ z.im = 0 :=
+  Iff.rfl
+
+/-- The complement of the real axis is `ℂ ∖ ℝ`. -/
+theorem compl_realAxis : realAxis.compl = nonRealOpen := by
+  ext z
+  simp [Closeds.compl]
+
+/-- Removing the real axis from `W(U) = ℂ ∖ (ℝ ∖ U)` leaves `ℂ ∖ ℝ`. -/
+theorem complexNeighborhood_inf_compl_realAxis (U : Opens ℝ) :
+    complexNeighborhood U ⊓ realAxis.compl = nonRealOpen := by
+  rw [compl_realAxis]
+  exact inf_eq_right.2 (nonRealOpen_le_complexNeighborhood U)
 
 /-! ### Functions extending across a real open set -/
 

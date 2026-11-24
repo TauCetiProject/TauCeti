@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.SpecificLimits.CampanatoIteration
 import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
@@ -262,7 +263,7 @@ private theorem setIntegral_ball_inter_le_add_of_le {U H : Opens (EuclideanSpace
   refine ⟨?_, setIntegral_norm_sub_sq_le_add_of_le hsS hC₂ (pow_nonneg hq0 _)
     (pow_le_one₀ hq0 hq1) (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS _)
     (hHm.integrableOn_norm_sub_sq_of_subset hsS hs _) hfK
-    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le hs
+    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset subset_rfl hs
       (hfm.mono_measure (Measure.restrict_mono hsS le_rfl)) ν _) (hd₂ _)⟩
   simpa only [sub_zero] using setIntegral_norm_sub_sq_le_add_of_le (b := 0) (k := 0) (c := 0) hsS
     hC₁ (pow_nonneg hq0 _) (pow_le_one₀ hq0 hq1)

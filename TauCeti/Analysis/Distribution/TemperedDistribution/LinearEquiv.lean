@@ -238,8 +238,7 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
   · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
       A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
     ext u
-    simp [fourierMultiplierCLM_apply_apply, SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg,
-      SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgA]
+    simp [fourierMultiplierCLM_apply_apply, hg, hgA]
 
 /-- The Bessel potential `J^s` commutes with the pullback along a linear isometry. -/
 theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :

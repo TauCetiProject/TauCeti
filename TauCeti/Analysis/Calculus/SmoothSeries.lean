@@ -16,6 +16,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 This file adapts Mathlib's `contDiff_tsum` and `iteratedFDeriv_tsum` in two directions: to bounds
 on the derivatives that decay geometrically, and to summable bounds that only hold near each point.
+It also records that a sum which is locally a finite sum of functions smooth at a point is smooth
+there.
 
 ## Geometric bounds
 
@@ -40,6 +42,11 @@ agrees with the original one near that point.
   every order `k ≤ N` have summable bounds on a neighbourhood of each point is `C^N`.
 * `TauCeti.iteratedFDeriv_tsum_of_locally_summable`: its derivatives through order `N` are the
   sums of the derivatives.
+
+## Locally finite sums
+
+* `Finset.contDiffAt_tsum_of_eventually_eq_zero`: a sum of functions smooth at `x`, all but
+  finitely many of which vanish near `x`, is smooth at `x`.
 -/
 
 public section
@@ -171,5 +178,20 @@ theorem iteratedFDeriv_tsum_of_locally_summable (hf : ∀ i, ContDiff ℝ N (f i
   exact tsum_congr fun i ↦ ((hg i).iteratedFDeriv ℝ k).eq_of_nhds
 
 end Locally
+
+section Eventually
+
+variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : WithTop ℕ∞} {g : ι → E → F} {x : E}
+
+/-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
+all but finitely many of them vanish. This makes locally finite sums of smooth functions, such as
+those built from a smooth partition of unity, smooth. -/
+theorem _root_.Finset.contDiffAt_tsum_of_eventually_eq_zero (s : Finset ι)
+    (hg : ∀ j ∈ s, ContDiffAt 𝕜 n (g j) x) (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
+    ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
+  (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
+
+end Eventually
 
 end TauCeti
