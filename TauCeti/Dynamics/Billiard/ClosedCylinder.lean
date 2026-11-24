@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.Smooth
+import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
@@ -152,9 +154,6 @@ theorem closedNextTangential_of_notMem_Ioo (s : ℝ) {v : ℝ} (hv : v ∉ Ioo (
   · rfl
   · exact absurd ⟨not_le.1 h₁, not_le.1 h₂⟩ hv
 
-private theorem neg_notMem_Ioo {v : ℝ} (hv : v ∉ Ioo (-1 : ℝ) 1) : -v ∉ Ioo (-1 : ℝ) 1 :=
-  fun h ↦ hv ⟨by linarith [h.2], by linarith [h.1]⟩
-
 /-- The extended next collision parameter lies in `[s, s + L]`. -/
 theorem closedNextParam_mem_Icc (s v : ℝ) : χ.closedNextParam s v ∈ Icc s (s + χ.period) := by
   by_cases hv : v ∈ Ioo (-1) 1
@@ -231,18 +230,15 @@ theorem closedNextTangential_closedNextParam_neg_closedNextTangential (s v : ℝ
       χ.closedNextTangential_of_mem_Ioo ⟨by linarith [hw.2], by linarith [hw.1]⟩]
     exact χ.nextTangential_nextParam_neg_nextTangential hv
   rw [χ.closedNextTangential_of_notMem_Ioo s hv,
-    χ.closedNextTangential_of_notMem_Ioo _ (neg_notMem_Ioo hv)]
-
-private theorem neg_mem_Icc_neg_one_one (v : Icc (-1 : ℝ) 1) : -(v : ℝ) ∈ Icc (-1 : ℝ) 1 :=
-  ⟨by linarith [v.property.2], by linarith [v.property.1]⟩
+    χ.closedNextTangential_of_notMem_Ioo _ fun h ↦ hv (by simpa using Set.neg_mem_Ioo_iff.1 h)]
 
 /-- The tangential component `-w` of the extended next collision of `(s, -v)` lies in `[-1, 1]`: it
 is the tangential component of the state that the inverse of the extended map assigns to
 `(s, v)`. -/
 theorem neg_closedNextTangential_neg_mem_Icc (s : ℝ) (v : Icc (-1 : ℝ) 1) :
-    -χ.closedNextTangential s (-v) ∈ Icc (-1 : ℝ) 1 := by
-  have h := χ.closedNextTangential_mem_Icc s (neg_mem_Icc_neg_one_one v)
-  exact ⟨by linarith [h.2], by linarith [h.1]⟩
+    -χ.closedNextTangential s (-v) ∈ Icc (-1 : ℝ) 1 :=
+  Set.neg_mem_Icc_iff.2 <| by
+    simpa using χ.closedNextTangential_mem_Icc s (Set.neg_mem_Icc_iff.2 (by simp))
 
 /-- The next-collision map extended to the closed strip `ℝ × [-1, 1]`, as a bijection. It is the
 identity on the line `v = 1` and the deck translation on the line `v = -1`; its inverse is
@@ -390,29 +386,24 @@ theorem continuousOn_closedNextTangential (hχ : ContDiff ℝ 2 χ) :
 
 /-- For a `C²` table the extended next-collision bijection of `ℝ × [-1, 1]` is continuous. -/
 theorem continuous_closedNextCollisionEquiv (hχ : ContDiff ℝ 2 χ) :
-    Continuous χ.closedNextCollisionEquiv := by
-  have hm : Continuous fun x : ℝ × Icc (-1 : ℝ) 1 ↦ ((x.1, (x.2 : ℝ)) : ℝ × ℝ) :=
-    continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)
-  have hmaps : ∀ x : ℝ × Icc (-1 : ℝ) 1, ((x.1, (x.2 : ℝ)) : ℝ × ℝ) ∈ univ ×ˢ Icc (-1 : ℝ) 1 :=
-    fun x ↦ ⟨mem_univ _, x.2.property⟩
-  exact (((χ.continuousOn_closedNextParam hχ).comp_continuous hm hmaps).prodMk
-    (((χ.continuousOn_closedNextTangential hχ).comp_continuous hm hmaps).subtype_mk
-      fun x ↦ χ.closedNextTangential_mem_Icc x.1 x.2.property)).congr
-    fun x ↦ by simp
+    Continuous χ.closedNextCollisionEquiv :=
+  (((χ.continuousOn_closedNextParam hχ).prodMk
+    (χ.continuousOn_closedNextTangential hχ)).continuous_restrict_univ_prod
+      fun x ↦ χ.closedNextTangential_mem_Icc x.1 x.2.property).congr fun x ↦ by simp
 
 /-- For a `C²` table the inverse of the extended next-collision bijection of `ℝ × [-1, 1]` is
 continuous. -/
 theorem continuous_closedNextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
     Continuous χ.closedNextCollisionEquiv.symm := by
-  have hm : Continuous fun x : ℝ × Icc (-1 : ℝ) 1 ↦ ((x.1, -(x.2 : ℝ)) : ℝ × ℝ) :=
-    continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd).neg
-  have hmaps : ∀ x : ℝ × Icc (-1 : ℝ) 1, ((x.1, -(x.2 : ℝ)) : ℝ × ℝ) ∈ univ ×ˢ Icc (-1 : ℝ) 1 :=
-    fun x ↦ ⟨mem_univ _, neg_mem_Icc_neg_one_one x.2⟩
-  exact ((((χ.continuousOn_closedNextParam hχ).comp_continuous hm hmaps).sub
-    (continuous_const (y := χ.period))).prodMk
-    (((χ.continuousOn_closedNextTangential hχ).comp_continuous hm hmaps).neg.subtype_mk
-      fun x ↦ χ.neg_closedNextTangential_neg_mem_Icc x.1 x.2)).congr
-    fun x ↦ by simp
+  have hι : ContinuousOn (fun p : ℝ × ℝ ↦ (p.1, -p.2)) (univ ×ˢ Icc (-1 : ℝ) 1) :=
+    (continuous_fst.prodMk continuous_snd.neg).continuousOn
+  have hmaps : MapsTo (fun p : ℝ × ℝ ↦ (p.1, -p.2)) (univ ×ˢ Icc (-1 : ℝ) 1)
+      (univ ×ˢ Icc (-1 : ℝ) 1) :=
+    fun p hp ↦ ⟨mem_univ _, Set.neg_mem_Icc_iff.2 (by simpa using hp.2)⟩
+  exact (((((χ.continuousOn_closedNextParam hχ).comp hι hmaps).sub
+    (continuousOn_const (c := χ.period))).prodMk
+    ((χ.continuousOn_closedNextTangential hχ).comp hι hmaps).neg).continuous_restrict_univ_prod
+      fun x ↦ χ.neg_closedNextTangential_neg_mem_Icc x.1 x.2).congr fun x ↦ by simp
 
 /-- **The closed strip.** For a `C²` table the next-collision map extends to a homeomorphism of the
 closed strip `ℝ × [-1, 1]`, equal to the identity on `v = 1` and to the deck translation

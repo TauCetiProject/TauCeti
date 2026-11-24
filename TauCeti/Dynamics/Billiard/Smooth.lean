@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
@@ -302,27 +303,16 @@ theorem nextCollisionPartialDiffeomorph_target (hn : n ≠ 0) (hχ : ContDiff �
 
 /-! ### The billiard map as a homeomorphism -/
 
-/-- A map of `ℝ × ℝ` that is continuous on the strip `ℝ × (-1, 1)` and maps it into itself
-restricts to a continuous map of `ℝ × (-1, 1)`. -/
-private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
-    (hf : ContinuousOn f (univ ×ˢ Ioo (-1) 1))
-    (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
-    Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
-      ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
-  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
-    fun x ↦ ⟨mem_univ _, x.2.property⟩
-  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
-
 /-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
 theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
-  (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
+  ((χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn.continuous_restrict_univ_prod
     fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.property).congr fun x ↦ by simp
 
 /-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
 `C²`. -/
 theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
     Continuous χ.nextCollisionEquiv.symm :=
-  (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
+  ((χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn.continuous_restrict_univ_prod
     fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
 
 /-- **The billiard map is a homeomorphism.** If `χ` is `C²`, the billiard map `β` of the table is
