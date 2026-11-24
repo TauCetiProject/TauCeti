@@ -29,6 +29,7 @@ norm (`NonUnitalStarAlgHom.exists_apply_eq_norm_eq`).
   identity.
 * `LinearMap.IsCompleteQuotient.norm_map_le`, `LinearMap.IsCompleteQuotient.cbNorm_le_one`: a
   complete quotient map is a complete contraction.
+* `LinearMap.IsCompleteQuotient.exists_map_eq`: a complete quotient map lifts the open unit ball.
 * `NonUnitalStarAlgHom.isCompleteQuotient`: a surjective star homomorphism is a complete quotient
   map.
 
@@ -72,21 +73,17 @@ theorem IsCompleteQuotient.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (h
       (fun y : CStarMatrix (Fin n) (Fin n) B ↦ y.map ψ) ∘ fun x ↦ x.map φ from
     funext fun _ ↦ CStarMatrix.map_map.symm, Set.image_comp, hφ n, hψ n]
 
-/-- Rescaling by `t⁻¹` puts `z` in the open unit ball exactly when `‖z‖ < t`. -/
-private theorem inv_smul_mem_ball_iff {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-    {t : ℝ} (ht : 0 < t) (z : E) : (t⁻¹ : ℂ) • z ∈ Metric.ball 0 1 ↔ ‖z‖ < t := by
-  rw [mem_ball_zero_iff, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg ht.le,
-    inv_mul_lt_one₀ ht]
-
 /-- A complete quotient map is contractive on the amplifications at the levels `Fin n`. -/
 private theorem IsCompleteQuotient.norm_map_le_fin {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ)
     {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map φ‖ ≤ ‖x‖ := by
   refine le_of_forall_gt fun t ht ↦ ?_
   have ht₀ : 0 < t := (norm_nonneg x).trans_lt ht
-  have hmem := h n ▸ Set.mem_image_of_mem (fun y : CStarMatrix (Fin n) (Fin n) A ↦ y.map φ)
-    ((inv_smul_mem_ball_iff ht₀ x).mpr ht)
-  rwa [← CStarMatrix.mapₗ_apply, map_smul, CStarMatrix.mapₗ_apply,
-    inv_smul_mem_ball_iff ht₀] at hmem
+  have hx : (t⁻¹ : ℂ) • x ∈ Metric.ball 0 1 := by
+    rwa [mem_ball_zero_iff, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg ht₀.le,
+      inv_mul_lt_one₀ ht₀]
+  have hmem := h n ▸ Set.mem_image_of_mem (fun y : CStarMatrix (Fin n) (Fin n) A ↦ y.map φ) hx
+  rwa [← CStarMatrix.mapₗ_apply, map_smul, CStarMatrix.mapₗ_apply, mem_ball_zero_iff, norm_smul,
+    norm_inv, Complex.norm_real, Real.norm_of_nonneg ht₀.le, inv_mul_lt_one₀ ht₀] at hmem
 
 /-- A complete quotient map is completely bounded. -/
 theorem IsCompleteQuotient.isCompletelyBounded {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
@@ -104,6 +101,25 @@ theorem IsCompleteQuotient.norm_map_le {φ : A →ₗ[ℂ] B} (h : IsCompleteQuo
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ ‖x‖ :=
   (norm_map_le_cbNorm_mul h.isCompletelyBounded x).trans
     (mul_le_of_le_one_left (norm_nonneg x) h.cbNorm_le_one)
+
+/-- A complete quotient map lifts the open unit ball: every matrix of norm `< 1` over `B` is the
+amplification of a matrix of norm `< 1` over `A`, for matrices over any finite index type. -/
+theorem IsCompleteQuotient.exists_map_eq {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) {κ : Type*}
+    [Fintype κ] {y : CStarMatrix κ κ B} (hy : ‖y‖ < 1) :
+    ∃ x : CStarMatrix κ κ A, ‖x‖ < 1 ∧ x.map φ = y := by
+  classical
+  let e := Fintype.equivFin κ
+  have hy' : CStarMatrix.reindexₐ ℂ B e y ∈
+      (fun x : CStarMatrix (Fin (Fintype.card κ)) (Fin (Fintype.card κ)) A ↦ x.map φ) ''
+        Metric.ball 0 1 := by
+    rw [h, mem_ball_zero_iff, StarAlgEquiv.norm_map]
+    exact hy
+  obtain ⟨x', hx', hxy⟩ := hy'
+  refine ⟨(CStarMatrix.reindexₐ ℂ A e).symm x', ?_,
+    EquivLike.injective (CStarMatrix.reindexₐ ℂ B e) ?_⟩
+  · rwa [StarAlgEquiv.norm_map, ← mem_ball_zero_iff]
+  · rw [← hxy]
+    simpa using CStarMatrix.mapₗ_reindexₐ (M := (CStarMatrix.reindexₐ ℂ A e).symm x') (e := e) φ
 
 end LinearMap
 
