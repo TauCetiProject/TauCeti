@@ -29,11 +29,11 @@ unrestricted.
 
 The lifting problem for a single test map `φ : A →+* V` is governed by the prime spectrum of
 `V ⊗[A] B`: a lift exists exactly when some prime of `V ⊗[A] B` lying over the generic point of
-`Spec V` specializes to a prime lying over its closed point. The construction behind this is
-general: in any algebra `T` over a local ring `V`, such a pair of primes `P ≤ Q` yields a
-valuation domain `W` and a map `T →+* W` whose restriction to `V` is injective and local; `W`
-is a valuation subring of the fraction field of `T ⧸ P` with the image of `Q` among its
-nonunits.
+`Spec V` specializes to a prime lying over its closed point. The construction behind this,
+`TauCeti.exists_valuationRing_of_isPrime_le`, is general: in any algebra `T` over a local ring
+`V`, such a pair of primes `P ≤ Q` yields a valuation domain `W` and a map `T →+* W` whose
+restriction to `V` is injective and local; `W` is a valuation subring of the fraction field of
+`T ⧸ P` with the image of `Q` among its nonunits.
 
 Since flat ring maps have going down, faithfully flat ring homomorphisms are v-covers; since
 integral ring maps have going up, so are integral ring homomorphisms surjective on spectra.
@@ -52,9 +52,6 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
   isomorphisms and are stable under base change.
 * `RingHom.IsVCover.comap_surjective`: a v-cover is surjective on prime spectra.
 * `RingHom.IsVCover.pi_of_span_eq_top`: a covering by basic opens is a v-cover.
-* `TauCeti.exists_valuationRing_of_isPrime_le`: a prime `P` and an ideal `Q ⊇ P` of a
-  `V`-algebra, over the generic and the closed point of a local ring `V`, yield an injective local
-  homomorphism from `V` to a valuation domain, through the algebra.
 * `RingHom.isVCover_iff_exists_isPrime_le`: `f` is a v-cover if and only if, for every test map
   `A →+* V`, the prime spectrum of `V ⊗[A] B` contains such a pair.
 * `RingHom.IsVCover.of_faithfullyFlat`: faithfully flat ring homomorphisms are v-covers.
@@ -73,53 +70,25 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
 
 public section
 
-universe u v
+universe u
 
 open IsLocalRing TensorProduct
-
-namespace TauCeti
-
-/-- Let `T` be an algebra over a local ring `V`, let `P` be a prime of `T` lying over the zero
-ideal of `V`, and let `Q ⊇ P` be an ideal of `T` lying over the maximal ideal of `V`. Then there
-is a valuation domain `W` and a homomorphism `g : T →+* W` whose restriction to `V` is injective
-and local. When `Q` is prime, this realizes the specialization from `P` to `Q` in `Spec T`, over
-the specialization from the generic to the closed point of `Spec V`, by a valuation ring. -/
-theorem exists_valuationRing_of_isPrime_le {V : Type*} {T : Type v} [CommRing V] [IsLocalRing V]
-    [CommRing T] [Algebra V T] {P Q : Ideal T} [P.IsPrime] (hPQ : P ≤ Q)
-    (hP : P.comap (algebraMap V T) = ⊥) (hQ : Q.comap (algebraMap V T) = maximalIdeal V) :
-    ∃ (W : Type v) (_ : CommRing W) (_ : IsDomain W) (_ : ValuationRing W) (g : T →+* W),
-      Function.Injective (g.comp (algebraMap V T)) ∧ IsLocalHom (g.comp (algebraMap V T)) := by
-  -- `W` is a valuation subring of the fraction field of `T ⧸ P` containing the image of `T`
-  -- and carrying the image of `Q` into its nonunits.
-  let K := FractionRing (T ⧸ P)
-  let ψ : T →+* K := (algebraMap (T ⧸ P) K).comp (Ideal.Quotient.mk P)
-  have hker : RingHom.ker ψ = P := by
-    ext x
-    simp [ψ, Ideal.Quotient.eq_zero_iff_mem]
-  have hQtop : Q ≠ ⊤ := by
-    rintro rfl
-    exact (maximalIdeal.isMaximal V).ne_top (by rw [← hQ, Ideal.comap_top])
-  obtain ⟨W, hW, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits hQtop
-    (hker.trans_le hPQ)
-  let g : T →+* W := ψ.codRestrict W.toSubring hW
-  refine ⟨W, inferInstance, inferInstance, inferInstance, g, ?_, ⟨fun x hx => ?_⟩⟩
-  · -- the kernel of `V → T → K` is the preimage of `P`, which is zero
-    rw [injective_iff_map_eq_zero]
-    intro x hx
-    have : algebraMap V T x ∈ RingHom.ker ψ := congr(($hx : K))
-    rwa [hker, ← Ideal.mem_comap, hP, Ideal.mem_bot] at this
-  · -- a nonunit of `V` lies in the maximal ideal, so maps into `Q` and then to a nonunit of `W`
-    refine of_not_not fun hxu => ?_
-    have hxQ : algebraMap V T x ∈ Q := by
-      rw [← Ideal.mem_comap, hQ]
-      exact hxu
-    exact ValuationSubring.coe_mem_nonunits_iff.mp (hnon _ hxQ) hx
-
-end TauCeti
 
 namespace RingHom
 
 variable {A B C : Type u} [CommRing A] [CommRing B] [CommRing C]
+
+/-- Ring maps `e : V →+* W` and `ψ : B →+* W` agreeing on `A` glue to a ring map
+`V ⊗[A] B →+* W` restricting to `e` and to `ψ`. -/
+private theorem exists_tensorProduct_lift {V B W : Type*} [CommRing V] [CommRing B]
+    [CommRing W] [Algebra A V] [Algebra A B] (e : V →+* W) (ψ : B →+* W)
+    (h : ψ.comp (algebraMap A B) = e.comp (algebraMap A V)) :
+    ∃ χ : V ⊗[A] B →+* W, χ.comp (algebraMap V (V ⊗[A] B)) = e ∧
+      χ.comp Algebra.TensorProduct.includeRight.toRingHom = ψ := by
+  let : Algebra A W := (e.comp (algebraMap A V)).toAlgebra
+  let e' : V →ₐ[A] W := { e with commutes' := fun _ => rfl }
+  let ψ' : B →ₐ[A] W := { ψ with commutes' := fun r => congr($h r) }
+  exact ⟨(Algebra.TensorProduct.productMap e' ψ').toRingHom, by ext; simp [e'], by ext; simp [ψ']⟩
 
 /-- A ring homomorphism `f : A →+* B` is a *v-cover* if every homomorphism `φ : A →+* V` to a
 valuation domain `V` lifts along `f` after an injective local homomorphism `e : V →+* W` to a
@@ -201,12 +170,8 @@ theorem isStableUnderBaseChange : IsStableUnderBaseChange IsVCover := by
   introv h
   intro V _ _ _ φ
   obtain ⟨W, i₁, i₂, i₃, e, ψ, he, he', hψ⟩ := h V (φ.comp (algebraMap R S))
-  let : Algebra R W := ((e.comp φ).comp (algebraMap R S)).toAlgebra
-  let φ' : S →ₐ[R] W := { e.comp φ with commutes' := fun _ => rfl }
-  let ψ' : T →ₐ[R] W := { ψ with commutes' := fun r => congr($hψ r) }
-  refine ⟨W, i₁, i₂, i₃, e, (Algebra.TensorProduct.productMap φ' ψ').toRingHom, he, he', ?_⟩
-  ext s
-  simp [Algebra.TensorProduct.algebraMap_apply, φ', ψ']
+  obtain ⟨χ, hχ, -⟩ := exists_tensorProduct_lift (e.comp φ) ψ hψ
+  exact ⟨W, i₁, i₂, i₃, e, χ, he, he', hχ⟩
 
 /-- A v-cover is surjective on prime spectra. -/
 theorem comap_surjective {f : A →+* B} (h : f.IsVCover) :
@@ -214,9 +179,7 @@ theorem comap_surjective {f : A →+* B} (h : f.IsVCover) :
   intro p
   obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := h p.asIdeal.ResidueField (algebraMap A _)
   refine ⟨⟨RingHom.ker ψ, RingHom.ker_isPrime ψ⟩, PrimeSpectrum.ext ?_⟩
-  rw [PrimeSpectrum.comap_asIdeal, RingHom.comap_ker, hψ, ← RingHom.comap_ker,
-    (RingHom.injective_iff_ker_eq_bot e).mp he, ← RingHom.ker_eq_comap_bot,
-    Ideal.ker_algebraMap_residueField]
+  simp [RingHom.comap_ker, hψ, RingHom.ker_comp_of_injective _ he]
 
 /-- A family of localizations `A →+* S i` away from elements `s i` generating the unit ideal
 gives a v-cover `A →+* ∏ i, S i`; on spectra, a covering of `Spec A` by basic opens is a v-cover.
@@ -254,13 +217,7 @@ theorem isVCover_iff_exists_isPrime_le (f : A →+* B) :
   · let := φ.toAlgebra
     let := f.toAlgebra
     obtain ⟨W, _, _, _, e, ψ, he, he', hψ⟩ := h V φ
-    let : Algebra A W := (e.comp φ).toAlgebra
-    let e' : V →ₐ[A] W := { e with commutes' := fun _ => rfl }
-    let ψ' : B →ₐ[A] W := { ψ with commutes' := fun r => congr($hψ r) }
-    let χ : V ⊗[A] B →+* W := (Algebra.TensorProduct.productMap e' ψ').toRingHom
-    have hχ : χ.comp (algebraMap V (V ⊗[A] B)) = e := by
-      ext x
-      simp [χ, e']
+    obtain ⟨χ, hχ, -⟩ := exists_tensorProduct_lift e ψ hψ
     refine ⟨RingHom.ker χ, (maximalIdeal W).comap χ, RingHom.ker_isPrime χ, inferInstance,
       Ideal.comap_mono bot_le, ?_, ?_⟩
     · rw [RingHom.comap_ker, hχ, (RingHom.injective_iff_ker_eq_bot e).mp he]
