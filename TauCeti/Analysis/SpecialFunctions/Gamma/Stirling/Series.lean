@@ -123,16 +123,17 @@ theorem stirlingTerm_three {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜] (z : 𝕜
     Rat.cast_inv, Rat.cast_ofNat, Nat.cast_ofNat]
   ring
 
-/-- Positivity of `2 * (j : ℝ) - 1` for `j ≥ 1`. -/
-private theorem two_mul_sub_one_pos {j : ℕ} (hj : 1 ≤ j) : (0 : ℝ) < 2 * (j : ℝ) - 1 := by
-  have : (1 : ℝ) ≤ j := by exact_mod_cast hj
-  linarith
-
 /-- Cast identity `((2 * j - 1 : ℕ) : 𝕜) = 2 * (j : 𝕜) - 1` for `j ≥ 1`. -/
-private theorem natCast_two_mul_sub_one {𝕜 : Type*} [Ring 𝕜] {j : ℕ} (hj : 1 ≤ j) :
+theorem natCast_two_mul_sub_one {𝕜 : Type*} [Ring 𝕜] {j : ℕ} (hj : 1 ≤ j) :
     ((2 * j - 1 : ℕ) : 𝕜) = 2 * (j : 𝕜) - 1 := by
   rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]
   simp only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_one]
+
+/-- Positivity of `2 * (j : 𝕜) - 1` for `j ≥ 1`. -/
+theorem two_mul_sub_one_pos {𝕜 : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {j : ℕ} (hj : 1 ≤ j) : (0 : 𝕜) < 2 * (j : 𝕜) - 1 := by
+  rw [← natCast_two_mul_sub_one hj]
+  exact Nat.cast_pos.mpr (by omega)
 
 /-- Cast identity `((m)! : 𝕜) = m * (m - 1)!` for `m ≠ 0`. -/
 private theorem natCast_factorial {𝕜 : Type*} [Semiring 𝕜] {m : ℕ} (hm : m ≠ 0) :

@@ -161,8 +161,7 @@ theorem neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 �
 theorem neg_one_pow_succ_mul_stirlingTerm_pos {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
     0 < (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by
   have hden : 0 < (2 * (n : ℝ)) * (2 * (n : ℝ) - 1) * x ^ (2 * n - 1) := by
-    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
-    have h2n1 : (0 : ℝ) < 2 * (n : ℝ) - 1 := by linarith
+    have h2n1 : (0 : ℝ) < 2 * (n : ℝ) - 1 := two_mul_sub_one_pos hn
     positivity
   have hB : 0 < (-1 : ℝ) ^ (n + 1) * (bernoulli (2 * n) : ℝ) := by
     exact_mod_cast neg_one_pow_succ_mul_bernoulli_even_pos (by omega : n ≠ 0)

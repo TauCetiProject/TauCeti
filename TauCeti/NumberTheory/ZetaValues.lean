@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.MeasurableSpace.Defs
 public import Mathlib.NumberTheory.ZetaValues
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Bernoulli polynomials and Bernoulli functions
@@ -15,8 +13,7 @@ import Mathlib.MeasureTheory.Function.Floor
 Mathlib's `bernoulliFun` is the real-variable Bernoulli polynomial. This file records how it
 relates to the Bernoulli polynomial over `ℚ`, together with the sign and extremality properties of
 the even Bernoulli numbers `B_{2k}` and even Bernoulli functions `B_{2k}(x)` on `[0, 1]`, deduced
-from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`), as well
-as measurability of the periodic Bernoulli functions `x ↦ bernoulliFun k (Int.fract x)`.
+from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`).
 
 ## Main results
 
@@ -33,7 +30,6 @@ as measurability of the periodic Bernoulli functions `x ↦ bernoulliFun k (Int.
 * `TauCeti.abs_bernoulliFun_even_le`: for all `k` and `x ∈ [0, 1]`, `|B_{2k}(x)| ≤ |B_{2k}|`.
 * `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg`,
   `TauCeti.abs_bernoulliFun_even_fract_le`: the corresponding periodic statements at `Int.fract u`.
-* `TauCeti.measurable_bernoulliFun_fract`: measurability of `x ↦ bernoulliFun k (Int.fract x)`.
 -/
 
 public section
@@ -179,11 +175,5 @@ theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg (k : ℕ) (
 theorem abs_bernoulliFun_even_fract_le (k : ℕ) (u : ℝ) :
     |bernoulliFun (2 * k) (Int.fract u)| ≤ |(bernoulli (2 * k) : ℝ)| :=
   abs_bernoulliFun_even_le k ⟨Int.fract_nonneg u, (Int.fract_lt_one u).le⟩
-
-/-- For every `k : ℕ`, the periodic Bernoulli function `x ↦ bernoulliFun k (Int.fract x)` is
-measurable. -/
-theorem measurable_bernoulliFun_fract (k : ℕ) :
-    Measurable (fun x : ℝ ↦ bernoulliFun k (Int.fract x)) :=
-  (continuous_bernoulliFun k).measurable.comp measurable_fract
 
 end TauCeti

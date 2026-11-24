@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Complex.SlitPlane
+import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 import TauCeti.NumberTheory.ZetaValues
@@ -53,7 +54,7 @@ theorem integrableOn_bernoulliFun_fract_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 
   let g : ℝ → ℂ := fun u ↦ (bernoulliFun (2 * n) (Int.fract u) : ℂ)
   have hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0)) :=
     (Complex.continuous_ofReal.measurable.comp
-      (measurable_bernoulliFun_fract (2 * n))).aestronglyMeasurable
+      ((continuous_bernoulliFun (2 * n)).measurable.comp measurable_fract)).aestronglyMeasurable
   have hg_bdd : ∀ᵐ u ∂(volume.restrict (Ioi 0)), ‖g u‖ ≤ |(bernoulli (2 * n) : ℝ)| :=
     Eventually.of_forall fun u ↦ by
       simpa [g, Complex.norm_real, Real.norm_eq_abs] using abs_bernoulliFun_even_fract_le n u
