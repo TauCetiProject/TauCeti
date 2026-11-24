@@ -9,11 +9,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.Fourier.FourierTransform
+public import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Topology.Circle.Metric
 
 /-!
-# Directional derivatives, growth and Lipschitz bounds of the Fourier phases
+# Derivatives, growth and Lipschitz bounds of the Fourier phases
 
 On a real inner-product space, the phases `ζ ↦ 𝐞 ⟪ζ, x⟫` and `y ↦ 𝐞 (-⟪y, ζ⟫)` of the inverse and
 direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫` and
@@ -23,27 +26,38 @@ direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪�
 bilinear map, specialized to the inner product and evaluated in a direction, which is the form
 used to integrate by parts against the phase.
 
+The plane wave `x ↦ 𝐞 ⟪x, η⟫ = exp(2πi ⟪x, η⟫)` of frequency `η` is smooth, and jointly continuous
+in the frequency and the position; its derivatives of order `k` are bounded by `(2π ‖η‖) ^ k`
+(`Real.norm_iteratedFDeriv_fourierChar_inner_le`, stated with the Fourier atoms in
+`TauCeti.Analysis.PositiveDefinite.FourierAtom`).
+
 The Fourier character `𝐞 t = Circle.exp (2πt)` is `2π`-Lipschitz, since `Circle.exp` is
 `1`-Lipschitz (`TauCeti.lipschitzWith_one_circleExp`). Hence the phase `z ↦ 𝐞 ⟪ζ, z⟫` changes by
 at most `2π ‖ζ‖ ‖z - z'‖`, which is how increments of oscillatory integrals in the spatial variable
 are bounded by a first frequency moment.
 
 The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is a function of temperate growth, and since it has modulus one
-it lies in `L^∞` of any measure, with norm one when the measure is nonzero.
+it lies in `L^∞` of any measure, with norm one when the measure is nonzero. Products of plane
+waves add their frequencies.
 
 ## Main results
 
 * `Real.hasLineDerivAt_fourierChar_inner`: the directional derivative of `ζ ↦ 𝐞 ⟪ζ, x⟫`.
 * `Real.hasLineDerivAt_fourierChar_neg_inner`: the directional derivative of
   `y ↦ 𝐞 (-⟪y, ζ⟫)`.
+* `Real.continuous_fourierChar_inner`, `Real.contDiff_fourierChar_inner`: the plane waves are
+  jointly continuous and smooth in the position.
 * `Real.norm_fourierChar_sub_fourierChar_le`: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`.
 * `Real.norm_fourierChar_smul_sub_fourierChar_smul_le`:
   `‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`.
 * `Real.hasTemperateGrowth_fourierChar_inner`: the plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth.
 * `Real.memLp_top_fourierChar_inner`, `Real.norm_toLp_fourierChar_inner`: the plane wave lies in
   `L^∞` of any measure, with norm one when the measure is nonzero.
+* `Real.toLp_fourierChar_inner_smul_toLp_fourierChar_inner`: in `L^∞`, the product of the plane
+  waves of frequencies `ξ` and `η` is the plane wave of frequency `ξ + η`.
 * `ContDiff.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` when the phase `Φ` is.
 * `HasFDerivAt.fourierChar`: the derivative of `y ↦ 𝐞 (Φ y)` is `2πi 𝐞 (Φ y) DΦ(y)`.
+* `Real.fderiv_fourierChar_comp_apply`: its value in a direction `w`, `2πi DΦ(y) w 𝐞 (Φ y)`.
 -/
 
 public section
@@ -72,6 +86,11 @@ theorem hasLineDerivAt_fourierChar_neg_inner (ζ v y : E) :
   convert (hasFDerivAt_fourierChar_neg_bilinear_left (innerSL ℝ) y ζ).hasLineDerivAt v
     using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm ζ]
   ring
+
+/-- The plane waves `𝐞 ⟪η, x⟫` depend continuously on the frequency and the position jointly. -/
+theorem continuous_fourierChar_inner :
+    Continuous fun p : E × E ↦ (𝐞 ⟪p.1, p.2⟫ : ℂ) :=
+  continuous_subtypeVal.comp (continuous_fourierChar.comp continuous_inner)
 
 /-- The Fourier character is `2π`-Lipschitz: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`, since
 `𝐞 t = Circle.exp (2πt)` and `Circle.exp` is `1`-Lipschitz. -/
@@ -123,6 +142,16 @@ theorem norm_toLp_fourierChar_inner [NeZero μ] (ξ : E) :
     eLpNorm_const _ ENNReal.top_ne_zero (NeZero.ne μ)]
   simp
 
+/-- **The product of two plane waves.** In `L^∞` of any measure, the product of the plane waves
+`x ↦ 𝐞 ⟪x, ξ⟫` and `x ↦ 𝐞 ⟪x, η⟫` is the plane wave `x ↦ 𝐞 ⟪x, ξ + η⟫`. -/
+theorem toLp_fourierChar_inner_smul_toLp_fourierChar_inner (ξ η : E) :
+    ((memLp_top_fourierChar_inner (μ := μ) ξ).toLp _ •
+        (memLp_top_fourierChar_inner (μ := μ) η).toLp _ : Lp ℂ ∞ μ) =
+      (memLp_top_fourierChar_inner (ξ + η)).toLp _ := by
+  rw [MemLp.toLp_smul_toLp]
+  exact MemLp.toLp_congr _ _ (.of_forall fun x ↦ by
+    simp [inner_add_right, AddChar.map_add_eq_mul])
+
 end Real
 
 /-- The Fourier character composed with a `C^n` real phase is `C^n`. -/
@@ -132,6 +161,11 @@ theorem ContDiff.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
   simp_rw [Real.fourierChar_apply]
   exact ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul hΦ)).mul contDiff_const).cexp
 
+/-- The plane wave `x ↦ 𝐞 ⟪x, η⟫` is smooth. -/
+theorem Real.contDiff_fourierChar_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (η : E) {n : WithTop ℕ∞} : ContDiff ℝ n fun x : E ↦ (𝐞 ⟪x, η⟫ : ℂ) :=
+  (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).fourierChar
+
 /-- The derivative of the Fourier character composed with a real phase `Φ` is
 `2πi 𝐞 (Φ y) DΦ(y)`. -/
 theorem HasFDerivAt.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -140,3 +174,11 @@ theorem HasFDerivAt.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   refine ((Real.hasDerivAt_fourierChar (Φ y)).hasFDerivAt.comp y hΦ).congr_fderiv ?_
   ext w
   simp [mul_comm]
+
+/-- The derivative of the phase `y ↦ 𝐞 (Φ y)` in the direction `w` is `2πi DΦ(x) w 𝐞 (Φ x)`. -/
+theorem Real.fderiv_fourierChar_comp_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {Φ : F → ℝ} {x : F} (hΦ : DifferentiableAt ℝ Φ x) (w : F) :
+    fderiv ℝ (fun y ↦ (𝐞 (Φ y) : ℂ)) x w =
+      2 * Real.pi * Complex.I * fderiv ℝ Φ x w * 𝐞 (Φ x) := by
+  rw [hΦ.hasFDerivAt.fourierChar.fderiv, ContinuousLinearMap.smulRight_apply, Complex.real_smul]
+  ring

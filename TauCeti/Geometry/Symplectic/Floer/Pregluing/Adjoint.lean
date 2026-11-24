@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
 import TauCeti.Analysis.ODE.Regularity
-import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The formal adjoint along the pre-glued map
@@ -71,77 +70,6 @@ namespace TauCeti.SymplecticForm
 open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- The zeroth-order coefficient `A = ∂t J - C` of the formal adjoint for the cylindrical datum,
-as a function of `t`, the value `y = w(z)` and the slice velocity `d = ∂t w(z)` of the map. -/
-private noncomputable def adjointCoeff (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
-    (H : ℝ → V → ℝ) (p : ℝ × V × V) : V →L[ℝ] V :=
-  fderiv ℝ (uncurry J) (p.1, p.2.1) (1, p.2.2) -
-    ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (H p.1) p.2.1) -
-      (J p.1 p.2.1).comp (fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1))
-
-/-- For the cylindrical datum, the zeroth-order coefficient of the formal adjoint along `w` at `z`
-is `adjointCoeff` at `(t, w z, ∂t w z)`. -/
-private theorem adjointCoeff_eq (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V}
-    {H : ℝ → V → ℝ} (hJ : Differentiable ℝ (uncurry J)) {w : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hw : DifferentiableAt ℝ w z) :
-    fderiv ℝ (fun p ↦ J p.2 (w p)) z stdComplexLineImag -
-        ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w z =
-      adjointCoeff ω J H (z.2, w z, fderiv ℝ w z stdComplexLineImag) := by
-  have hd := (hJ (z.2, w z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hw.hasFDerivAt)
-  rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = uncurry J ∘ fun p ↦ (p.2, w p) from
-    funext fun p ↦ (uncurry_apply_pair J p.2 (w p)).symm, hd.fderiv, adjointCoeff]
-  congr 1
-  ext y
-  simp [floerLinearizationCoeff_apply]
-
-/-- `adjointCoeff` is continuous for `C¹` structures and `C²` Hamiltonians. -/
-private theorem continuous_adjointCoeff (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V}
-    {H : ℝ → V → ℝ} (hJ : ContDiff ℝ 1 (uncurry J)) (hH : ContDiff ℝ 2 (uncurry H)) :
-    Continuous (adjointCoeff ω J H) := by
-  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
-  have hg : Continuous fun p : ℝ × V × V ↦ (p.1, p.2.1) :=
-    continuous_fst.prodMk continuous_snd.fst
-  have hdJ : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (J p.1) p.2.1 :=
-    (ContDiff.fderiv (f := fun p : ℝ × V × V ↦ J p.1) (g := fun p ↦ p.2.1) (n := 0)
-      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd.fst (by simp)).continuous
-  have hdX : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
-      (g := fun p ↦ p.2.1) (n := 0) (hX.comp (contDiff_fst.fst.prodMk contDiff_snd))
-      contDiff_snd.fst (by simp)).continuous
-  have hXp : Continuous fun p : ℝ × V × V ↦ ω.hamiltonianVectorField (H p.1) p.2.1 :=
-    hX.continuous.comp hg
-  have hJp : Continuous fun p : ℝ × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hg
-  exact (((hJ.continuous_fderiv one_ne_zero).comp hg).clm_apply
-    (continuous_const.prodMk continuous_snd.snd)).sub
-    ((((flipₗᵢ ℝ V V V).continuous.comp hdJ).clm_apply (continuous_snd.snd.sub hXp)).sub
-      (hJp.clm_comp hdX))
-
-
-/-- Near the curve `t ↦ (x t, X_{H_t}(x t))`, `t ∈ [0, 1]`, of the stationary cylinder over `x`,
-the values of `J_t` and of `adjointCoeff` are uniformly continuous: for `ε > 0` there is `δ > 0`
-such that two points `δ`-close to the curve over the same `t` have `ε`-close values. -/
-private theorem exists_pos_forall_norm_adjointCoeff_sub_le (ω : SymplecticForm V)
-    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} (hJ : ContDiff ℝ 1 (uncurry J))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continuous x) {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ > 0, ∀ t ∈ Icc (0 : ℝ) 1, ∀ q q' : V × V,
-      ‖q - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
-      ‖q' - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
-      ‖J t q.1 - J t q'.1‖ ≤ ε ∧ ‖adjointCoeff ω J H (t, q) - adjointCoeff ω J H (t, q')‖ ≤ ε := by
-  have hc : Continuous fun t ↦ (x t, ω.hamiltonianVectorField (H t) (x t)) :=
-    hx.prodMk ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-      (continuous_id.prodMk hx))
-  -- Both values at once, as the pair `(J_t, adjointCoeff)` in the product space.
-  have hΦ : Continuous fun p : ℝ × V × V ↦ (J p.1 p.2.1, adjointCoeff ω J H p) :=
-    (hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)).prodMk
-      (continuous_adjointCoeff ω hJ hH)
-  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
-    hc.continuousOn (fun _ _ ↦ hΦ.continuousAt) (half_pos hε)
-  refine ⟨δ, hδ, fun t ht q q' hq hq' ↦ ?_⟩
-  have hb := h t ht q' hq'
-  rw [norm_sub_rev] at hb
-  simpa using norm_prod_le_iff.1
-    ((norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (h t ht q hq) hb))
 
 omit [FiniteDimensional ℝ V] in
 /-- **The pre-glued map in the middle of the neck.** If `u` is within `θ` of the orbit `x` at
@@ -253,7 +181,7 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
               ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
                 (fun w ↦ v (w - (R, 0))) z)‖ ≤ ε) := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  obtain ⟨δ, hδ, hnear⟩ := exists_pos_forall_norm_adjointCoeff_sub_le ω hJ hH hxc hε
+  obtain ⟨δ, hδ, hnear⟩ := ω.exists_pos_forall_norm_cylindricalAdjointCoeff_sub_le hJ hH hxc hε
   obtain ⟨S, hmid⟩ := exists_forall_norm_prod_sub_le_preglue ω hx hu hv hux hdux hvx hdvx hδ
   have hwd (R : ℝ) : Differentiable ℝ (preglue x u v R) :=
     differentiable_preglue (fun t ↦ (hx t).differentiableAt) hu hv
@@ -263,7 +191,9 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
   refine ⟨fun z hz ht ↦ ?_, fun z hz ht ↦ ?_⟩
   · have hu' : DifferentiableAt ℝ (fun w ↦ u (w + (R, 0))) z :=
       (hu _).comp z (differentiableAt_id.add_const _)
-    rw [adjointCoeff_eq ω hJd (hwd R z), adjointCoeff_eq ω hJd hu', fderiv_comp_add_right]
+    rw [ω.fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff hJd (hwd R z),
+      ω.fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff hJd hu',
+      fderiv_comp_add_right]
     by_cases hs : z.1 < -1
     · rw [preglue_of_le_neg_one hs.le, fderiv_preglue_of_lt_neg_one hs]
       simp [hε.le]
@@ -272,7 +202,9 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
         (u (z + (R, 0)), fderiv ℝ u (z + (R, 0)) stdComplexLineImag) hw hu₀
   · have hv' : DifferentiableAt ℝ (fun w ↦ v (w - (R, 0))) z :=
       (hv _).comp z (differentiableAt_id.sub_const _)
-    rw [adjointCoeff_eq ω hJd (hwd R z), adjointCoeff_eq ω hJd hv', fderiv_comp_sub]
+    rw [ω.fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff hJd (hwd R z),
+      ω.fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff hJd hv',
+      fderiv_comp_sub]
     by_cases hs : 1 < z.1
     · rw [preglue_of_one_le hs.le, fderiv_preglue_of_one_lt hs]
       simp [hε.le]

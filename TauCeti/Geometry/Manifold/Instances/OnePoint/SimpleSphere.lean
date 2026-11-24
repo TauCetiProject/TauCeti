@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Geometry.Manifold.Instances.OnePoint.ContinuousSMul
 import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 
