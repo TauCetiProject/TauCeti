@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+public import TauCeti.Analysis.Sobolev.Cylinder.Morrey
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -25,7 +26,7 @@ iteration: with a right inverse `Q` of `D_w`, a solution is a fixed point of
 `ξ ↦ -Q (F(w) + N_w(ξ))`. The iteration contracts once `N_w` is quadratically small in the sense
 `‖N_w(ξ₁) - N_w(ξ₂)‖ ≲ (‖ξ₁‖ + ‖ξ₂‖) ‖ξ₁ - ξ₂‖`, which is the hypothesis of the abstract
 theorem `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`. This file proves the pointwise form of
-that estimate and its `Lᵖ` form; the `W^{1,p}` form follows by Sobolev embedding.
+that estimate, its `Lᵖ` form, and its `W^{1,p}` form on the cylinder for `p > 2`.
 
 **The remainder depends only on first-order data.** The `∂s` terms of `F` are linear and cancel
 from `N_w`, so at a domain point `z` the remainder is a function
@@ -75,15 +76,22 @@ derivative. For maps differentiable on a measurable subset of the domain this is
 (`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le`), and
 for `ξ₂ = 0` the `Lᵖ` quadratic estimate
 (`exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerLinearization_le`).
-Since `W^{1,p}` embeds in `C⁰` for `p > 2` on a two-dimensional domain, the sup norms `a` and `b`
-are then bounded by `W^{1,p}` norms, and the bound becomes the `W^{1,p} → Lᵖ` estimate
-`‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` needed by the Newton iteration, provided the slice
-defect of `w` is bounded.
+**The estimate in `W^{1,p}` on the cylinder.** For `p > 2`, Morrey's estimate on the cylinder
+(`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`) bounds the sup norm of a `C¹` map of
+period one in `t` by the `Lᵖ` norm on the strip `ℝ × [0, 1]` of its jet `(ξ, ∂s ξ, ∂t ξ)`, which is
+its `W^{1,p}` norm up to a constant. Bounding `a` and `b` this way, the `Lᵖ` estimate on the strip
+becomes the `W^{1,p} → Lᵖ` estimate
+`‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_p ≤ C (1 + A) (‖jet ξ₁‖_p + ‖jet ξ₂‖_p) ‖jet (ξ₁ - ξ₂)‖_p`
+for increments with `‖jet ξᵢ‖_p ≤ δ`
+(`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet`). This
+is the hypothesis `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` of the Newton iteration, provided the
+slice defect `A` of `w` is bounded on the strip.
 
 The constants come from Taylor's theorem and the mean value inequality with uniform constants
 over compact parameter sets (`IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul`,
 `IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sub`). The domain is a coordinate patch
-and the target a vector space; no Sobolev space or Sobolev embedding is constructed here.
+and the target a vector space. The `W^{1,p}` estimate is stated for `C¹` increments; no Sobolev
+space of the cylinder for `p ≠ 2`, and no right inverse of `D_w` on it, is constructed here.
 
 ## References
 
@@ -647,5 +655,145 @@ theorem exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerL
     _ = ((2 * C : ℝ≥0) : ℝ≥0∞) * (P + Q) := by push_cast; ring
 
 end Lp
+
+/-! ### The estimate in `W^{1,p}` on the cylinder -/
+
+section Jet
+
+open MeasureTheory Set
+open StripSobolev (jet stripMeasure jet_sub eLpNorm_le_eLpNorm_jet
+  eLpNorm_fderiv_zero_one_le_eLpNorm_jet)
+open scoped NNReal ENNReal
+
+omit [FiniteDimensional ℝ V] in
+/-- Morrey's estimate on the cylinder with constant `M`, as a bound on the norm by the constant
+`M + 1` times the real `Lᵖ` norm of the jet. -/
+private theorem norm_le_mul_toReal_eLpNorm_jet {M p : ℝ≥0} {η : ℝ × ℝ → V}
+    (hM : ∀ z, ‖η z‖ₑ ≤ M * eLpNorm (jet η) p stripMeasure)
+    (hfin : eLpNorm (jet η) p stripMeasure ≠ ∞) (z : ℝ × ℝ) :
+    ‖η z‖ ≤ (M + 1 : ℝ≥0) * (eLpNorm (jet η) p stripMeasure).toReal := by
+  rw [← toReal_eNorm]
+  calc (‖η z‖ₑ).toReal ≤ (M * eLpNorm (jet η) p stripMeasure).toReal :=
+        ENNReal.toReal_mono (by finiteness) (hM z)
+    _ ≤ (M + 1 : ℝ≥0) * (eLpNorm (jet η) p stripMeasure).toReal := by
+        rw [ENNReal.toReal_mul, ENNReal.coe_toReal]
+        gcongr
+        exact_mod_cast le_add_of_nonneg_right zero_le_one
+
+/-- The arithmetic combining the three terms of the `Lᵖ` quadratic estimate into a product of
+norms of jets. -/
+private theorem mul_add_add_le_of_ofReal_le {C c : ℝ≥0} {a b A : ℝ} {E₁ E₂ E T₁ T₂ T₃ : ℝ≥0∞}
+    (ha0 : 0 ≤ a) (hA0 : 0 ≤ A) (ha : ENNReal.ofReal a ≤ c * (E₁ + E₂))
+    (hb : ENNReal.ofReal b = c * E) (hT₁ : T₁ ≤ E) (hT₂ : T₂ ≤ E₁) (hT₃ : T₃ ≤ E) :
+    (C : ℝ≥0∞) * (ENNReal.ofReal (a * (1 + A)) * T₁ + ENNReal.ofReal b * T₂ +
+        ENNReal.ofReal a * T₃) ≤
+      ((3 * C * c : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (1 + A) * (E₁ + E₂) * E := by
+  set X := E₁ + E₂
+  set R := ENNReal.ofReal (1 + A)
+  have hR : 1 ≤ R := by rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hXR : X ≤ X * R := le_mul_of_one_le_right' hR
+  have haA : ENNReal.ofReal (a * (1 + A)) ≤ c * X * R := by
+    rw [ENNReal.ofReal_mul ha0]
+    gcongr
+  calc (C : ℝ≥0∞) * (ENNReal.ofReal (a * (1 + A)) * T₁ + ENNReal.ofReal b * T₂ +
+        ENNReal.ofReal a * T₃)
+      ≤ C * (c * X * R * E + c * E * (X * R) + c * (X * R) * E) := by
+        rw [hb]
+        gcongr
+        · exact (hT₂.trans le_self_add).trans hXR
+        · exact ha.trans (by gcongr)
+    _ = ((3 * C * c : ℝ≥0) : ℝ≥0∞) * R * X * E := by push_cast; ring
+
+/-- **The quadratic estimate for the Floer operator in `W^{1,p}` on the cylinder.** Let `J` be
+jointly `C²` and the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point,
+let `K` be a compact set of pairs `(p, y)`, and let `p > 2`. There are `δ > 0` and `C` with the
+following property. Let `φ : ℝ × ℝ → P` be a parameter map, measurable on the strip
+`ℝ × [0, 1]`, let `w` be differentiable on the strip, with `(φ, w) ∈ K` and slice defect
+`‖∂t w - X_Kt(w)‖ ≤ A` there, and let `ξ₁`, `ξ₂` be `C¹` maps of period one in `t` whose jets
+`(ξ, ∂s ξ, ∂t ξ)` have `Lᵖ` norm at most `δ` on the strip. Then, all norms on the strip,
+
+`‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_p ≤ C (1 + A) (‖jet ξ₁‖_p + ‖jet ξ₂‖_p) ‖jet (ξ₁ - ξ₂)‖_p`,
+
+where `F` is the Floer operator with coefficients `J (φ z)`, `Ks (φ z)`, `Kt (φ z)`. This is the
+estimate `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` of
+`TauCeti.exists_mem_range_norm_le_add_add_eq_zero` for the remainder `N` of `F` at `w`, in the
+`W^{1,p}` norm of the cylinder. It follows from the `Lᵖ` estimate
+`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le` and
+Morrey's estimate on the cylinder (`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`),
+which bounds the sup norms of `ξ₁`, `ξ₂` and `ξ₁ - ξ₂` by the `Lᵖ` norms of their jets. -/
+theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet
+    (hK : IsCompact K) (hJ : ContDiff ℝ 2 (Function.uncurry J))
+    (hKs : ContDiff ℝ 3 (Function.uncurry Ks)) (hKt : ContDiff ℝ 3 (Function.uncurry Kt))
+    {p : ℝ≥0} (hp : 2 < p) :
+    ∃ δ > 0, ∃ C : ℝ≥0, ∀ {φ : ℝ × ℝ → P} {w ξ₁ ξ₂ : ℝ × ℝ → V} {A : ℝ},
+      AEStronglyMeasurable φ stripMeasure →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, DifferentiableAt ℝ w z) →
+      ContDiff ℝ 1 ξ₁ → ContDiff ℝ 1 ξ₂ →
+      (∀ s t, ξ₁ (s, t + 1) = ξ₁ (s, t)) → (∀ s t, ξ₂ (s, t + 1) = ξ₂ (s, t)) →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, (φ z, w z) ∈ K) →
+      eLpNorm (jet ξ₁) p stripMeasure ≤ ENNReal.ofReal δ →
+      eLpNorm (jet ξ₂) p stripMeasure ≤ ENNReal.ofReal δ →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ w z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt (φ z)) (w z)‖ ≤ A) →
+      eLpNorm (fun z ↦
+          ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₁) z -
+            ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₂) z -
+            ω.floerLinearization (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w
+              (ξ₁ - ξ₂) z) p stripMeasure ≤
+        C * ENNReal.ofReal (1 + A) *
+          (eLpNorm (jet ξ₁) p stripMeasure + eLpNorm (jet ξ₂) p stripMeasure) *
+          eLpNorm (jet (ξ₁ - ξ₂)) p stripMeasure := by
+  obtain ⟨δ, hδ, C, hC⟩ :=
+    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le
+      hK hJ hKs hKt
+  obtain ⟨M, hM⟩ := CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet (V := V) hp
+  have hc0 : (0 : ℝ) < (M + 1 : ℝ≥0) := by positivity
+  refine ⟨δ / (M + 1 : ℝ≥0), by positivity, 3 * C * (M + 1), fun {φ w ξ₁ ξ₂ A} hφ hw hξ₁ hξ₂
+    hper₁ hper₂ hK' h₁ h₂ hA ↦ ?_⟩
+  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast (one_le_two.trans hp.le)
+  have hξ := hξ₁.sub hξ₂
+  have hper : ∀ s t, (ξ₁ - ξ₂) (s, t + 1) = (ξ₁ - ξ₂) (s, t) := by simp [hper₁, hper₂]
+  have hE₁ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₁
+  have hE₂ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₂
+  have hE : eLpNorm (jet (ξ₁ - ξ₂)) p stripMeasure ≠ ∞ := by
+    refine ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hE₁, hE₂⟩) ?_
+    rw [jet_sub (hξ₁.differentiable one_ne_zero) (hξ₂.differentiable one_ne_zero)]
+    exact eLpNorm_sub_le hp1
+  -- Morrey's estimate bounds the sup norms by `a` and `b`, the scaled `Lᵖ` norms of the jets.
+  set a := (M + 1 : ℝ≥0) * max (eLpNorm (jet ξ₁) p stripMeasure).toReal
+    (eLpNorm (jet ξ₂) p stripMeasure).toReal
+  have haδ : a ≤ δ := by
+    have hδc : 0 ≤ δ / (M + 1 : ℝ≥0) := by positivity
+    calc a ≤ (M + 1 : ℝ≥0) * (δ / (M + 1 : ℝ≥0)) := mul_le_mul_of_nonneg_left (max_le
+          (ENNReal.toReal_le_of_le_ofReal hδc h₁) (ENNReal.toReal_le_of_le_ofReal hδc h₂)) hc0.le
+      _ = δ := mul_div_cancel₀ δ hc0.ne'
+  have hQ := hC volume hp1 (MeasurableSet.univ.prod measurableSet_Icc) hφ hw
+    (fun z _ ↦ hξ₁.differentiable one_ne_zero z) (fun z _ ↦ hξ₂.differentiable one_ne_zero z) hK'
+    haδ (fun z _ ↦ (norm_le_mul_toReal_eLpNorm_jet (hM hξ₁ hper₁) hE₁ z).trans
+      (mul_le_mul_of_nonneg_left (le_max_left _ _) hc0.le))
+    (fun z _ ↦ (norm_le_mul_toReal_eLpNorm_jet (hM hξ₂ hper₂) hE₂ z).trans
+      (mul_le_mul_of_nonneg_left (le_max_right _ _) hc0.le))
+    (fun z _ ↦ norm_le_mul_toReal_eLpNorm_jet (hM hξ hper) hE z) hA
+  refine hQ.trans (mul_add_add_le_of_ofReal_le (by positivity)
+    ((norm_nonneg _).trans (hA (0, 0) ⟨mem_univ _, left_mem_Icc.2 zero_le_one⟩)) ?_ ?_
+    (eLpNorm_le_eLpNorm_jet hξ.continuous.aestronglyMeasurable _) ?_ ?_)
+  · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ← ENNReal.toReal_max hE₁ hE₂]
+    gcongr
+    exact ENNReal.ofReal_toReal_le.trans (max_le le_self_add le_add_self)
+  · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
+    exact congrArg _ (ENNReal.ofReal_toReal hE)
+  · rw [stdComplexLineImag_eq]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ₁.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
+  · -- The difference of the slice velocities is the slice velocity of the difference.
+    have h : (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) =
+        fun z ↦ fderiv ℝ (ξ₁ - ξ₂) z stdComplexLineImag := funext fun z ↦ by
+      rw [fderiv_sub (hξ₁.differentiable one_ne_zero z) (hξ₂.differentiable one_ne_zero z),
+        sub_apply]
+    rw [h, stdComplexLineImag_eq]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
+
+end Jet
 
 end TauCeti.SymplecticForm

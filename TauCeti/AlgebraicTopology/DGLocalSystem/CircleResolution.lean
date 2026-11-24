@@ -28,7 +28,8 @@ cocycle on the generators `Unit ⊕ Unit`, with `e₀ = Sum.inl ()` of index `0`
 `e₁ = Sum.inr ()` of index `1`, this is `TauCeti.loopCellCocycle R γ`: the generator `e₁` is
 attached (`TauCeti.RowFiniteTwistingCocycle.attach`) along the cycle `([γ] - [1]) e₀` to the free
 module on `e₀` with zero differential (`TauCeti.loopCellCocycle_m_inr`). It is one-sided, so the
-module is semi-free (`TauCeti.loopCellCocycle_m_eq_zero_of_le`). The differential of a vector
+module is semi-free (`TauCeti.loopCellCocycle_m_eq_zero_of_le`,
+`TauCeti.wellFounded_mem_support_loopCellCocycle`). The differential of a vector
 `α e₀ + β e₁` is `dα ± β ([γ] - [1])` on `e₀` and `dβ` on `e₁`
 (`TauCeti.loopCellCocycle_differential_apply`). The cocycle is defined for every Moore loop of
 every space.
@@ -146,6 +147,13 @@ theorem loopCellCocycle_m_eq_zero_of_le (γ : MooreLoopSpace B b) {x y : Unit �
     (loopCellCocycle R γ).m x y = 0 :=
   RowFiniteTwistingCocycle.attach_m_eq_zero_of_le _ _ _ (fun _ _ _ ↦ by simp)
     (fun _ _ h ↦ absurd h (by simp)) x y h
+
+/-- **The free module of the cocycle is semi-free**: the relation `y ∈ (m x).support` of
+`TauCeti.loopCellCocycle R γ` is well-founded, since the cocycle is one-sided. -/
+theorem wellFounded_mem_support_loopCellCocycle (γ : MooreLoopSpace B b) :
+    WellFounded fun y x ↦ y ∈ ((loopCellCocycle R γ).m x).support :=
+  (loopCellCocycle R γ).wellFounded_mem_support (fun _ _ ↦ loopCellCocycle_m_eq_zero_of_le γ)
+    (p₀ := 0) (by rintro (_ | _) <;> simp)
 
 /-- The differential of the free module of `TauCeti.loopCellCocycle R γ` on `α e₀ + β e₁`: the
 coefficient of `e₀` is `dα + κ(β) ([γ] - [1])`, with `κ` the Koszul sign twist, and the coefficient

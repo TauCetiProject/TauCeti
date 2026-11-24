@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
-import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
-import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # The crossing form formula for the Maslov index of a path of graphs
@@ -35,9 +33,8 @@ transverse to `iℝⁿ`, which are exactly the graphs `{x + i A x}` of symmetric
 combines the localization axiom
 `Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley`, which gives the index as
 half the change of the signature of `A`, with the regular-crossing formula for the signature of a
-path of symmetric forms,
-`ContinuousLinearMap.sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum`,
-applied to the bilinear forms `(x, y) ↦ x ⬝ᵥ A t *ᵥ y` (`Matrix.toContinuousLinearMap₂'`).
+path of symmetric matrices,
+`Matrix.signature_sub_signature_eq_crossingForm_add_two_mul_finsum`.
 
 Matrices carry no preferred norm, so the derivative of `A` at a crossing is asked for entry by
 entry.
@@ -87,41 +84,12 @@ theorem maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley {U V : unita
       ((∑ᶠ t ∈ Ioo (0 : ℝ) 1,
         ((sigPos (crossingForm (A t) (A' t)) : ℤ) - sigNeg (crossingForm (A t) (A' t))) : ℤ) :
           ℝ) := by
-  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
-  have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
   -- The localization axiom: the index is half the change of the signature of `A`.
   have hloc := maslovIndex_eq_signature_sub_of_souriau_eq_cayley γ (A := fun t : I ↦ A t)
     (hAc.comp_continuous continuous_subtypeVal fun t ↦ t.property) (fun t ↦ hA t t.property) hγ
   simp only [Icc.coe_one, Icc.coe_zero] at hloc
-  -- The signature formula for the bilinear forms of `A`.
-  have hsig :=
-    ContinuousLinearMap.sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum
-    (V := fun t ↦ (A t).toContinuousLinearMap₂') (V' := fun t ↦ (A' t).toContinuousLinearMap₂')
-    zero_lt_one (continuousOn_toContinuousLinearMap₂' hAc)
-    (fun t ht ↦ isSymm_toBilinForm_toContinuousLinearMap₂' (hA t ht).isSymm)
-    (fun t ht hnt ↦ hasDerivWithinAt_toContinuousLinearMap₂' (hd t ht (not_not.1 fun h ↦
-      hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero _).2 h))))
-    (fun t ht hnt ↦ (crossingFormIsometryEquiv (hA t ht).isSymm (A' t)).nondegenerate_iff.2
-      (hreg t ht (not_not.1 fun h ↦
-        hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero _).2 h))))
-  have hΓ (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      (sigPos (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
-          (A' t).toContinuousLinearMap₂') : ℤ) -
-          sigNeg (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
-            (A' t).toContinuousLinearMap₂') =
-        (sigPos (crossingForm (A t) (A' t)) : ℤ) - sigNeg (crossingForm (A t) (A' t)) := by
-    have h : QuadraticMap.Equivalent _ _ := ⟨crossingFormIsometryEquiv (hA t ht).isSymm (A' t)⟩
-    rw [h.sigPos_eq, h.sigNeg_eq]
-  have hsum : ∑ᶠ t ∈ Ioo (0 : ℝ) 1,
-        ((sigPos (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
-            (A' t).toContinuousLinearMap₂') : ℤ) -
-          sigNeg (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
-            (A' t).toContinuousLinearMap₂')) =
-      ∑ᶠ t ∈ Ioo (0 : ℝ) 1,
-        ((sigPos (crossingForm (A t) (A' t)) : ℤ) - sigNeg (crossingForm (A t) (A' t))) :=
-    finsum_mem_congr rfl fun t ht ↦ hΓ t (Ioo_subset_Icc_self ht)
-  simp only [toQuadraticMap_toBilinForm_toContinuousLinearMap₂', hΓ 0 h0, hΓ 1 h1, hsum] at hsig
-  rw [hloc, signature_def, signature_def, ← Int.cast_sub, hsig]
+  rw [hloc, ← Int.cast_sub, signature_sub_signature_eq_crossingForm_add_two_mul_finsum zero_lt_one
+    hAc (fun t ht ↦ (hA t ht).isSymm) hd hreg]
   push_cast
   ring
 

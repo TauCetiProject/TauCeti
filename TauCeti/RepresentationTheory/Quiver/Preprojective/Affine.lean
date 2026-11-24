@@ -155,12 +155,8 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule
   let fFin : ∀ v, Fintype (G.neighborSet v) := fun v => Fintype.ofFinite (G.neighborSet v)
   have hx1 := transport_fintype_neighborSet fSub fFin hx0
   let := fFin
-  obtain ⟨x, hx, hxnot⟩ := hx1
-  let C := hG.isAcyclic.isBipartite.coloringBool
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨d, hd, E x, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx,
-    fun h => hxnot ?_⟩
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+  exact ⟨d, hd, SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k
+    hG.isAcyclic.isBipartite.coloringBool o hx1⟩
 
 end SimpleGraph.IsTree
 

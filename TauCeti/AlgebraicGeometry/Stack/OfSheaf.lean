@@ -63,7 +63,7 @@ lemma ofSheaf.objEquiv_map_toFunctor_obj (F : Sheaf Scheme.fppfTopology (Type u)
     {T T' : Scheme.{u}} (f : T' ⟶ T) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
     ofSheaf.objEquiv F T' (((ofSheaf F).toSchPseudofunctor.map f.op.toLoc).toFunctor.obj M) =
       F.obj.map f.op (ofSheaf.objEquiv F T M) :=
-  Pseudofunctor.ofPresheaf.objEquiv_map_toFunctor_obj f.op M
+  Pseudofunctor.ofPresheaf.objEquiv_map_toFunctor_obj f.op.toLoc M
 
 /-- The morphism of stacks in setoids induced by a morphism of fppf sheaves: on the fibre over
 `T` it applies `α` at `T`. -/
@@ -78,6 +78,14 @@ lemma ofSheaf.objEquiv_ofSheafMap_app_toFunctor_obj {F G : Sheaf Scheme.fppfTopo
     ofSheaf.objEquiv G T (((ofSheafMap α).app (.mk (op T))).toFunctor.obj M) =
       α.hom.app (op T) (ofSheaf.objEquiv F T M) :=
   Pseudofunctor.ofPresheaf.objEquiv_ofPresheafMap_app_toFunctor_obj α.hom M
+
+/-- Over any `T`, the morphism of stacks induced by `α` sends the object of the section `x` to
+that of `α.app T x`. Unlike `ofSheaf.objEquiv_ofSheafMap_app_toFunctor_obj`, this describes the
+object itself, which lets lifts in the fibres of `ofSheaf` be built directly from sections. -/
+lemma ofSheafMap_app_toFunctor_obj {F G : Sheaf Scheme.fppfTopology (Type u)} (α : F ⟶ G)
+    (T : LocallyDiscrete Scheme.{u}ᵒᵖ) (x : (ofSheaf F).toSchPseudofunctor.obj T) :
+    ((ofSheafMap α).app T).toFunctor.obj x = ⟨⟨α.hom.app T.as x.down.as⟩⟩ :=
+  (rfl)
 
 open scoped Pseudofunctor.StrongTrans in
 /-- The morphism of stacks induced by the identity of an fppf sheaf is isomorphic to the

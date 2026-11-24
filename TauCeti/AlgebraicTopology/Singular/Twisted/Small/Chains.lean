@@ -27,14 +27,16 @@ coefficients and continuous maps compatible with the families act on small chain
 (`smallTwistedChainComplexCoefficientMap`, `smallTwistedChainComplexMap`). For a subspace `A`, the
 twisted chains of `A` with the restricted system are exactly the chains supported in `A`
 (`TauCeti.LocalCoefficientSystem.subspaceTwistedChainComplexIso`); this identifies the terms
-of the Mayer–Vietoris sequence with homology of subspaces. More generally, for a family `U` inside
-a subset `S`, the chains of `S` subordinate to the preimages of `U` are the chains of `X`
-subordinate to `U` (`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexMap_subtypeVal`).
-Both follow from `TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexLift`. For an open
-cover, every finite
-twisted chain becomes small after sufficiently many subdivisions. This supplies the smallness
-input to the local-coefficient excision argument; no natural choice of subdivision depth or
-chain retraction is asserted here.
+of the Mayer–Vietoris sequence with homology of subspaces. Under it the map induced by an inclusion
+of subspaces is the inclusion of supports, so one is a quasi-isomorphism exactly when the other is
+(`TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexInclusion_iff`). More generally,
+for a family `U` inside a subset `S`, the chains of `S` subordinate to the preimages of `U` are the
+chains of `X` subordinate to `U`
+(`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexMap_subtypeVal`). Both follow from
+`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexLift`. For an open cover, every
+finite twisted chain becomes small after sufficiently many subdivisions. This supplies the
+smallness input to the local-coefficient excision argument; no natural choice of subdivision depth
+or chain retraction is asserted here.
 
 The constructions use `twistedSingularChain`, `twistedSubdivisionChainMap` and the native
 Lebesgue-number theorem for affine subdivision. Coefficients remain in their actual fibres
@@ -667,6 +669,16 @@ lemma isIso_smallTwistedChainComplexMap_subtypeVal {S : Set X} (hUS : ∀ i, U i
       ← range_smallTwistedChainComplexι_f] at hc
     obtain ⟨b, rfl⟩ := hc
     exact ⟨b, rfl⟩
+
+/-- The inclusion of the twisted chains of `X` supported in `S` into those supported in `T` is a
+quasi-isomorphism exactly when the inclusion `S ⊆ T` induces a quasi-isomorphism on twisted chains,
+with `L` restricted to `S` and `T`. -/
+lemma quasiIso_smallTwistedChainComplexInclusion_iff {S T : Set X} (h : S ⊆ T) :
+    QuasiIso (smallTwistedChainComplexSubsetInclusion L h) ↔
+      QuasiIso (subsetTwistedChainComplexMap L h) := by
+  rw [← quasiIso_iff_comp_right _ (subspaceTwistedChainComplexIso L T).inv,
+    smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv,
+    quasiIso_iff_comp_left]
 
 end Subspace
 

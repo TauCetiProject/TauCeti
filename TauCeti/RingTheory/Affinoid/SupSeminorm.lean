@@ -610,7 +610,8 @@ theorem supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hA : IsAffinoidAlgebra K
     rw [coe_supRingSeminorm]
     exact hA.isNonarchimedean_supSeminorm
   simpa only [coe_supRingSeminorm] using
-    hp.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero hpm hna hf
+    hp.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (map_zero _) (apply_nonneg _)
+      (map_mul_le_mul _) hpm hna hf
 
 end IsAffinoidAlgebra
 
