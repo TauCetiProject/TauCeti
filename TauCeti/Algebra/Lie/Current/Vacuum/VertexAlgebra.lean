@@ -154,12 +154,8 @@ variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsS
 
 /-- Over a `ℚ`-algebra the vacuum module has unique divisibility, so it carries the affine vertex
 algebra structure `vacuumFormalVertexAxioms`. -/
-instance : HasUniqueDiv (VacuumModule Φ hΦ hΦs a) where
-  nsmul_right_injective n hn v w h := by
-    have hu : IsUnit (n : R) := by
-      simpa using (isUnit_iff_ne_zero.2 (Nat.cast_ne_zero.2 hn : (n : ℚ) ≠ 0)).map
-        (algebraMap ℚ R)
-    simp only [← Nat.cast_smul_eq_nsmul R] at h
-    exact hu.smul_left_cancel.1 h
+instance : HasUniqueDiv (VacuumModule Φ hΦ hΦs a) :=
+  letI : Module ℚ (VacuumModule Φ hΦ hΦs a) := Module.compHom _ (algebraMap ℚ R)
+  HasUniqueDiv.of_module_rat _
 
 end TauCeti.CurrentAlgebra
