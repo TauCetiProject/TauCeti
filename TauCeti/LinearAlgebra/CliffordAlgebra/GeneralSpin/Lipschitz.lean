@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.GeneralSpin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
 /-!
 # The Clifford group and the Lipschitz group
@@ -25,10 +26,9 @@ Clifford norm `gpinNorm` restricts to Tau Ceti's `lipschitzNorm`; when moreover 
 the vector action `gpinToOrthogonal` restricts to Tau Ceti's `lipschitzToOrthogonal`. Over a
 field of characteristic not two, for a nondegenerate form on a finite-dimensional space taking a
 unit value (equivalently, of positive rank), the Clifford group *is* the Lipschitz group,
-`GSpin(Q)` is its even part, and `Spin(Q)` is Mathlib's `spinGroup`; this is the field-points
-clause of ReductiveGroups §9B.7. In rank `0` the Lipschitz group is trivial while `GPin(Q)` is
-`Kˣ`, and in characteristic two the Lipschitz group can be smaller than `GPin(Q)`, so neither
-hypothesis can be dropped.
+`GSpin(Q)` is its even part, and `Spin(Q)` is Mathlib's `spinGroup`. In rank `0` the Lipschitz
+group is trivial while `GPin(Q)` is `Kˣ`, and in characteristic two the Lipschitz group can be
+smaller than `GPin(Q)`, so neither hypothesis can be dropped.
 
 ## Main results
 
@@ -70,7 +70,9 @@ theorem lipschitzGroup_le_locallyHomogeneousUnits :
 
 /-- **The Lipschitz group lies in the Clifford group** when `Q(m)` is a unit for every
 invertible vector `ι(m)`. The twisted conjugation by an invertible vector `ι(a)` is the reflection
-`ι(b) ↦ ι(b - Q(a)⁻¹ polar(a, b) a)`, read off from the Clifford relations. -/
+`ι(b) ↦ ι(b - Q(a)⁻¹ polar(a, b) a)`, read off from the Clifford relations. The proof adapts
+Mathlib's `lipschitzGroup.involute_act_ι_mem_range_ι`, replacing `invertibleOfInvertibleι` by the
+hypothesis `hQ`. -/
 theorem lipschitzGroup_le_gpinGroup_of_isUnit (hQ : ∀ m, IsUnit (ι Q m) → IsUnit (Q m)) :
     lipschitzGroup Q ≤ gpinGroup Q := by
   rw [gpinGroup_def]
@@ -113,8 +115,7 @@ theorem gpinToOrthogonal_comp_inclusion [Module.Free R M] :
       lipschitzToOrthogonal Q :=
   MonoidHom.ext fun x => Subtype.ext <| LinearEquiv.ext fun m => ι_injective_of_free Q <| by
     rw [MonoidHom.comp_apply, ι_gpinToOrthogonal_apply, coe_lipschitzToOrthogonal_apply,
-      ι_lipschitzVectorAction_apply]
-    rfl
+      ι_lipschitzVectorAction_apply, Subgroup.coe_inclusion]
 
 end Ring
 
@@ -151,9 +152,9 @@ theorem mem_normOneSpinGroup_iff_mem_spinGroup (hQ : Q.Nondegenerate) (hv : ∃ 
   · rintro ⟨hx, h⟩
     have hx' := hx
     rw [gspinGroup_def, Subgroup.mem_inf, mem_evenUnits_iff] at hx'
-    have hstar : star (x : CliffordAlgebra Q) = reverse (x : CliffordAlgebra Q) := by
-      rw [star_def, involute_eq_of_mem_even hx'.2]
-    have h' : star (x : CliffordAlgebra Q) * x = 1 := by rw [hstar]; exact h
+    have h' : star (x : CliffordAlgebra Q) * x = 1 := by
+      rw [star_mul_self_eq_reverse_mul_self_of_mem_even hx'.2]
+      exact h
     have hinv : star (x : CliffordAlgebra Q) = ↑x⁻¹ := Units.eq_inv_of_mul_eq_one_right h'
     refine ⟨⟨h', by rw [hinv, Units.mul_inv]⟩, hx'.2, fun m => ?_⟩
     rw [hinv]
@@ -166,7 +167,7 @@ theorem mem_normOneSpinGroup_iff_mem_spinGroup (hQ : Q.Nondegenerate) (hv : ∃ 
       rw [gspinGroup_eq_lipschitzGroup_inf_evenUnits hQ hv]
       exact ⟨hlip, (mem_evenUnits_iff Q).mpr heven⟩
     refine ⟨hspin, ?_⟩
-    rwa [← involute_eq_of_mem_even heven, ← star_def, involute_eq_of_mem_even heven]
+    rwa [← star_mul_self_eq_reverse_mul_self_of_mem_even heven]
 
 end Field
 

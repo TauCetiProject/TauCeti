@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Action
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
-import Mathlib.LinearAlgebra.QuadraticForm.Basis
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Clifford groups, general spin groups and their norms over a commutative ring
@@ -43,15 +45,19 @@ norm `CliffordAlgebra.cliffordNorm` of
 `TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm`, which differs on odd elements.
 
 When `M` is free, `ι` is injective in every characteristic (`CliffordAlgebra.ι_injective_of_free`),
-and twisted conjugation defines the *vector action* `ρ : GPin(Q) → O(Q)`
-(`CliffordAlgebra.gpinToOrthogonal`), with `ι (ρ(g) v) = α(g) ι(v) g⁻¹`.
+and the vector action `CliffordAlgebra.vectorNormalizerAction` of the vector normalizer restricts
+to the *vector action* `ρ : GPin(Q) → O(Q)` (`CliffordAlgebra.gpinToOrthogonal`), with
+`ι (ρ(g) v) = α(g) ι(v) g⁻¹`.
 
-These are the groups of points of the group functors of ReductiveGroups §9B.7 over the base ring.
-The comparisons with Mathlib's `lipschitzGroup` and `spinGroup` over a field of characteristic
-not two are in `TauCeti.LinearAlgebra.CliffordAlgebra.GeneralSpin.Lipschitz`.
+These are the groups of points over `R` of the Clifford and general spin group functors of
+Conrad, App. C, §C.4. The comparisons with Mathlib's `lipschitzGroup` (over any commutative ring)
+and `spinGroup` (over a field of characteristic not two) are in
+`TauCeti.LinearAlgebra.CliffordAlgebra.GeneralSpin.Lipschitz`.
 
 ## Main declarations
 
+* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap`, `CliffordAlgebra.coe_inv_mem_evenOdd`: an
+  inverse of a homogeneous element is homogeneous of the same parity.
 * `CliffordAlgebra.IsLocallyHomogeneous`, `CliffordAlgebra.locallyHomogeneousUnits`,
   `CliffordAlgebra.evenUnits`: locally homogeneous and even Clifford units.
 * `CliffordAlgebra.gpinGroup`, `CliffordAlgebra.gspinGroup`: the Clifford and general spin groups.
@@ -87,7 +93,7 @@ variable {Q}
 
 /-- In a `ℤ/2`-grading, a two-sided inverse of a homogeneous element modulo a scalar `f` that
 fixes it is homogeneous of the same parity. -/
-private theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
+theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
     (ha : a ∈ evenOdd Q i) (hb : f • b = b) (hab : a * b = algebraMap R _ f)
     (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i := by
   classical
@@ -97,8 +103,7 @@ private theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlg
     exact DirectSum.decompose_of_mem_ne _ (SetLike.algebraMap_mem_graded _ f) hne
   have hfz : f • (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) =
       DirectSum.decompose (evenOdd Q) b (i + 1) := by
-    conv_rhs => rw [← hb, DirectSum.decompose_smul]
-    rfl
+    conv_rhs => rw [← hb, DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
   have hzero : (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
     rw [← hfz, Algebra.smul_def, ← hba, mul_assoc, hz, mul_zero]
   rw [← DirectSum.sum_support_decompose (evenOdd Q) b]
@@ -107,6 +112,15 @@ private theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlg
   · exact SetLike.coe_mem _
   · rw [hzero]
     exact Submodule.zero_mem _
+
+/-- **The inverse of a homogeneous unit is homogeneous** of the same parity. -/
+theorem coe_inv_mem_evenOdd {i : ZMod 2} {x : (CliffordAlgebra Q)ˣ}
+    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q i) :
+    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i := by
+  refine TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular (evenOdd Q) hx
+    x.isUnit.isRegular.left ?_
+  rw [Units.mul_inv, (by decide : ∀ j : ZMod 2, j + j = 0) i]
+  exact SetLike.one_mem_graded _
 
 /-- A Clifford element is **locally homogeneous** when, for some idempotent `e` of the base ring,
 it is even over `e` and odd over `1 - e`: Zariski-locally on `Spec R` it is even or odd. -/
@@ -154,7 +168,7 @@ def locallyHomogeneousUnits : Subgroup (CliffordAlgebra Q)ˣ where
     have h01 : ((0 : ZMod 2) + 1) = 1 := rfl
     have h10 : ((1 : ZMod 2) + 0) = 1 := rfl
     refine ⟨e * f + (1 - e) * (1 - f), ?_, ?_, ?_⟩
-    · change _ * _ = _
+    · rw [IsIdempotentElem]
       linear_combination (1 - 2 * f) ^ 2 * he.eq + hf.eq
     · have h : (e * f + (1 - e) * (1 - f)) • ((x : CliffordAlgebra Q) * y) =
           (e • (x : CliffordAlgebra Q)) * (f • (y : CliffordAlgebra Q)) +
@@ -195,29 +209,26 @@ theorem mem_locallyHomogeneousUnits_iff {x : (CliffordAlgebra Q)ˣ} :
 
 variable (Q) in
 /-- The even units of a Clifford algebra: the units of `C₀(Q)`. -/
-def evenUnits : Subgroup (CliffordAlgebra Q)ˣ where
-  carrier := {x | (x : CliffordAlgebra Q) ∈ evenOdd Q 0}
-  one_mem' := SetLike.one_mem_graded (evenOdd Q)
-  mul_mem' {x y} (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0)
-      (hy : (y : CliffordAlgebra Q) ∈ evenOdd Q 0) := by
-    change ((x * y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0
-    simpa only [Units.val_mul, add_zero] using SetLike.GradedMul.mul_mem hx hy
-  inv_mem' {x} (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0) :=
-    mem_evenOdd_of_mul_eq_algebraMap hx (f := 1) (one_smul _ _)
-      (by rw [Units.mul_inv, map_one]) (by rw [Units.inv_mul, map_one])
+def evenUnits : Subgroup (CliffordAlgebra Q)ˣ :=
+  (even Q).toSubmonoid.units
 
 variable (Q) in
 /-- A unit is even when its underlying element lies in the even subalgebra `C₀(Q)`. -/
 @[simp]
 theorem mem_evenUnits_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ evenUnits Q ↔ (x : CliffordAlgebra Q) ∈ even Q := by
-  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
-  rfl
+  rw [evenUnits, Submonoid.mem_units_iff, Subsemiring.mem_toSubmonoid,
+    Subsemiring.mem_toSubmonoid, Subalgebra.mem_toSubsemiring, Subalgebra.mem_toSubsemiring,
+    and_iff_left_iff_imp, ← Subalgebra.mem_toSubmodule, ← Subalgebra.mem_toSubmodule,
+    even_toSubmodule]
+  exact coe_inv_mem_evenOdd
 
 variable (Q) in
 /-- Even units are locally homogeneous. -/
 theorem evenUnits_le_locallyHomogeneousUnits : evenUnits Q ≤ locallyHomogeneousUnits Q :=
-  fun _ hx => isLocallyHomogeneous_of_mem_evenOdd_zero hx
+  fun _ hx => isLocallyHomogeneous_of_mem_evenOdd_zero <| by
+    rw [← even_toSubmodule, Subalgebra.mem_toSubmodule]
+    exact (mem_evenUnits_iff Q).mp hx
 
 end Homogeneous
 
@@ -247,6 +258,7 @@ theorem gspinGroup_def : gspinGroup Q = vectorNormalizer Q ⊓ evenUnits Q := by
 
 /-- A unit lies in the Clifford group when it normalizes the vectors under twisted conjugation
 and is locally homogeneous. -/
+@[simp]
 theorem mem_gpinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ gpinGroup Q ↔ x ∈ vectorNormalizer Q ∧ IsLocallyHomogeneous (x : CliffordAlgebra Q) :=
   Iff.rfl
@@ -272,7 +284,7 @@ theorem mem_gspinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
   · rintro ⟨⟨h1, h2⟩, hx⟩
     have hx' : (x : CliffordAlgebra Q) ∈ even Q := (mem_evenUnits_iff Q).mp hx
     have hinv : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
-      (mem_evenUnits_iff Q).mp (inv_mem (show x ∈ evenUnits Q from hx))
+      (mem_evenUnits_iff Q).mp (inv_mem hx)
     refine ⟨hx', fun m => ?_, fun m => ?_⟩
     · simpa only [involute_eq_of_mem_even hx'] using h1 m
     · simpa only [involute_eq_of_mem_even hinv] using h2 m
@@ -362,8 +374,8 @@ theorem coe_gpinNorm_of_mem_gspinGroup {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ g
     (((gpinNorm Q ⟨x, gspinGroup_le_gpinGroup Q hx⟩ : (CliffordAlgebra Q)ˣ)) :
         CliffordAlgebra Q) =
       reverse (x : CliffordAlgebra Q) * x := by
-  rw [coe_gpinNorm, star_def,
-    involute_eq_of_mem_even ((mem_evenUnits_iff Q).mp (inf_le_right (a := vectorNormalizer Q) hx))]
+  rw [coe_gpinNorm, star_mul_self_eq_reverse_mul_self_of_mem_even
+    ((mem_evenUnits_iff Q).mp (inf_le_right (a := vectorNormalizer Q) hx))]
 
 variable (Q) in
 /-- **The norm-one Pin group** `Pin(Q) = ker N`: the elements of the Clifford group of Clifford
@@ -372,6 +384,7 @@ noncomputable def normOnePinGroup : Subgroup (CliffordAlgebra Q)ˣ :=
   (gpinNorm Q).ker.map (gpinGroup Q).subtype
 
 /-- An element lies in `Pin(Q)` exactly when it lies in the Clifford group and `star(g) g = 1`. -/
+@[simp]
 theorem mem_normOnePinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ normOnePinGroup Q ↔ x ∈ gpinGroup Q ∧ star (x : CliffordAlgebra Q) * x = 1 := by
   constructor
@@ -398,6 +411,7 @@ theorem normOneSpinGroup_def : normOneSpinGroup Q = normOnePinGroup Q ⊓ gspinG
   rw [normOneSpinGroup]
 
 /-- An element lies in `Spin(Q)` exactly when it lies in `GSpin(Q)` and `reverse(g) g = 1`. -/
+@[simp]
 theorem mem_normOneSpinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ normOneSpinGroup Q ↔ x ∈ gspinGroup Q ∧ reverse (x : CliffordAlgebra Q) * x = 1 := by
   rw [normOneSpinGroup, Subgroup.mem_inf, mem_normOnePinGroup_iff]
@@ -409,106 +423,11 @@ theorem mem_normOneSpinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     rw [← coe_gpinNorm_of_mem_gspinGroup hx] at h
     exact ⟨⟨gspinGroup_le_gpinGroup Q hx, h⟩, hx⟩
 
-/-! ### The vector action for a free module -/
+/-! ### The vector action of the Clifford group for a free module -/
 
 section Free
 
 variable [Module.Free R M]
-
-variable (Q) in
-/-- For free `M`, in every characteristic, `-Q` is the quadratic form of a bilinear form, so
-`CliffordAlgebra.changeForm` maps `C(Q)` linearly to the exterior algebra, compatibly with `ι` and
-with the scalars. -/
-private theorem exists_changeForm :
-    ∃ B : LinearMap.BilinForm R M, B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by
-  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
-  exact ⟨B, by rw [hB, zero_sub]⟩
-
-variable (Q) in
-/-- **`ι` is injective for a free module**, in every characteristic. -/
-theorem ι_injective_of_free : Function.Injective (ι Q) := by
-  obtain ⟨B, hB⟩ := exists_changeForm Q
-  intro m n h
-  have h' := congrArg (fun x => ExteriorAlgebra.ιInv (changeForm hB x)) h
-  simp only [changeForm_ι] at h'
-  exact (ExteriorAlgebra.ι_leftInverse m).symm.trans (h'.trans (ExteriorAlgebra.ι_leftInverse n))
-
-variable (Q) in
-/-- **The scalars embed in the Clifford algebra of a free module**, in every characteristic. -/
-theorem algebraMap_injective_of_free :
-    Function.Injective (algebraMap R (CliffordAlgebra Q)) := by
-  obtain ⟨B, hB⟩ := exists_changeForm Q
-  intro r t h
-  have h' := congrArg (fun x => ExteriorAlgebra.algebraMapInv (changeForm hB x)) h
-  simp only [changeForm_algebraMap] at h'
-  exact (ExteriorAlgebra.algebraMap_leftInverse M r).symm.trans
-    (h'.trans (ExteriorAlgebra.algebraMap_leftInverse M t))
-
-/-- **An invertible vector has invertible square** for a free module, in every characteristic:
-if `ι(m)` is a unit then so is `Q(m)`. -/
-theorem isUnit_of_isUnit_ι_of_free {m : M} (h : IsUnit (ι Q m)) : IsUnit (Q m) := by
-  obtain ⟨B, hB⟩ := exists_changeForm Q
-  let π : CliffordAlgebra Q →ₗ[R] R :=
-    (ExteriorAlgebra.algebraMapInv (R := R) (M := M)).toLinearMap ∘ₗ changeForm hB
-  have hsq : IsUnit (algebraMap R (CliffordAlgebra Q) (Q m)) := by
-    rw [← ι_sq_scalar]
-    exact h.mul h
-  obtain ⟨w, hw⟩ := hsq.exists_right_inv
-  refine IsUnit.of_mul_eq_one (π w) ?_
-  have h1 := congrArg π hw
-  rw [← Algebra.smul_def, map_smul, smul_eq_mul] at h1
-  simpa [π, changeForm_one] using h1
-
-variable (Q) in
-/-- A chosen linear left inverse of `ι` for free `M`. -/
-private noncomputable def vectorPart : CliffordAlgebra Q →ₗ[R] M :=
-  ExteriorAlgebra.ιInv ∘ₗ changeForm (exists_changeForm Q).choose_spec
-
-private theorem vectorPart_ι (m : M) : vectorPart Q (ι Q m) = m := by
-  rw [vectorPart, LinearMap.comp_apply, changeForm_ι]
-  exact ExteriorAlgebra.ι_leftInverse m
-
-variable (Q) in
-/-- Twisted conjugation by a unit, followed by the vector part. -/
-private noncomputable def twistedVectorMap (x : (CliffordAlgebra Q)ˣ) : M →ₗ[R] M where
-  toFun m := vectorPart Q (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹)
-  map_add' a b := by rw [map_add, mul_add, add_mul, map_add]
-  map_smul' r a := by rw [map_smul, mul_smul_comm, smul_mul_assoc, map_smul, RingHom.id_apply]
-
-private theorem ι_twistedVectorMap {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ vectorNormalizer Q)
-    (m : M) :
-    ι Q (twistedVectorMap Q x m) = involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ := by
-  obtain ⟨w, hw⟩ := ((mem_vectorNormalizer_iff Q x).mp hx).1 m
-  change ι Q (vectorPart Q (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹)) = _
-  rw [← hw, vectorPart_ι]
-
-variable (Q) in
-private noncomputable def twistedEndHom : vectorNormalizer Q →* Module.End R M where
-  toFun x := twistedVectorMap Q x
-  map_one' := LinearMap.ext fun m => ι_injective_of_free Q <| by
-    rw [ι_twistedVectorMap (1 : vectorNormalizer Q).property]
-    simp
-  map_mul' x y := LinearMap.ext fun m => ι_injective_of_free Q <| by
-    rw [mul_apply_eq_comp, ι_twistedVectorMap ((x * y).property), ι_twistedVectorMap x.property,
-      ι_twistedVectorMap y.property]
-    simp only [Subgroup.coe_mul, Units.val_mul, map_mul, mul_inv_rev, mul_assoc]
-
-variable (Q) in
-/-- **The vector action of the vector normalizer** on a free module: `ρ(g)` is the linear
-automorphism with `ι (ρ(g) v) = α(g) ι(v) g⁻¹`. -/
-noncomputable def vectorNormalizerAction : vectorNormalizer Q →* M ≃ₗ[R] M :=
-  (LinearMap.GeneralLinearGroup.generalLinearEquiv R M).toMonoidHom.comp
-    (twistedEndHom Q).toHomUnits
-
-/-- The vector action is twisted conjugation inside the Clifford algebra. -/
-@[simp]
-theorem ι_vectorNormalizerAction_apply (x : vectorNormalizer Q) (m : M) :
-    ι Q (vectorNormalizerAction Q x m) =
-      involute ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-  rw [vectorNormalizerAction, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, MonoidHom.coe_toHomUnits]
-  exact ι_twistedVectorMap x.property m
 
 /-- **Elements of the Clifford group act by isometries.** -/
 theorem vectorNormalizerAction_map_app {x : vectorNormalizer Q}

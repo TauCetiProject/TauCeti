@@ -23,6 +23,14 @@ square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) 
 extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
 Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
+
+For a free module, in every characteristic, `-Q` is the quadratic form of a bilinear form
+(`CliffordAlgebra.exists_bilinForm_toQuadraticMap_eq_zero_sub`), so `CliffordAlgebra.changeForm`
+compares `C(Q)` with the exterior algebra. This gives a linear left inverse
+`CliffordAlgebra.vectorPart` of `ι`, injectivity of `ι` and of the scalars
+(`CliffordAlgebra.ι_injective_of_free`, `CliffordAlgebra.algebraMap_injective_of_free`), and
+invertibility of `Q(m)` for an invertible vector `ι(m)`
+(`CliffordAlgebra.isUnit_of_isUnit_ι_of_free`).
 -/
 
 public section
@@ -183,6 +191,64 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero
 
 end Exterior
 
+/-! ### Free modules in every characteristic -/
+
+section Free
+
+variable [Module.Free R M]
+
+/-- For a free module, in every characteristic, `-Q` is the quadratic form of a bilinear form.
+Such a form `B` lets `CliffordAlgebra.changeForm` map `C(Q)` linearly to the exterior algebra,
+compatibly with `ι` and with the scalars. -/
+theorem exists_bilinForm_toQuadraticMap_eq_zero_sub (Q : QuadraticForm R M) :
+    ∃ B : LinearMap.BilinForm R M, B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
+  exact ⟨B, by rw [hB, zero_sub]⟩
+
+/-- A linear left inverse of `ι` for a free module, in every characteristic: `ExteriorAlgebra.ιInv`
+after `CliffordAlgebra.changeForm` to the exterior algebra. It is the counterpart of
+`CliffordAlgebra.ιInv`, which needs `2` to be invertible. -/
+noncomputable def vectorPart (Q : QuadraticForm R M) : CliffordAlgebra Q →ₗ[R] M :=
+  ExteriorAlgebra.ιInv ∘ₗ changeForm (exists_bilinForm_toQuadraticMap_eq_zero_sub Q).choose_spec
+
+/-- `CliffordAlgebra.vectorPart` is a left inverse of `ι`. -/
+@[simp]
+theorem vectorPart_ι (Q : QuadraticForm R M) (m : M) : vectorPart Q (ι Q m) = m := by
+  rw [vectorPart, LinearMap.comp_apply, changeForm_ι]
+  exact ExteriorAlgebra.ι_leftInverse m
+
+/-- **`ι` is injective for a free module**, in every characteristic. -/
+theorem ι_injective_of_free (Q : QuadraticForm R M) : Function.Injective (ι Q) :=
+  Function.LeftInverse.injective (vectorPart_ι Q)
+
+/-- **The scalars embed in the Clifford algebra of a free module**, in every characteristic. -/
+theorem algebraMap_injective_of_free (Q : QuadraticForm R M) :
+    Function.Injective (algebraMap R (CliffordAlgebra Q)) := by
+  obtain ⟨B, hB⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
+  intro r t h
+  have h' := congrArg (fun x => ExteriorAlgebra.algebraMapInv (changeForm hB x)) h
+  simp only [changeForm_algebraMap] at h'
+  exact (ExteriorAlgebra.algebraMap_leftInverse M r).symm.trans
+    (h'.trans (ExteriorAlgebra.algebraMap_leftInverse M t))
+
+/-- **An invertible vector has invertible square** for a free module, in every characteristic:
+if `ι(m)` is a unit then so is `Q(m)`. -/
+theorem isUnit_of_isUnit_ι_of_free {Q : QuadraticForm R M} {m : M} (h : IsUnit (ι Q m)) :
+    IsUnit (Q m) := by
+  obtain ⟨B, hB⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
+  let π : CliffordAlgebra Q →ₗ[R] R :=
+    (ExteriorAlgebra.algebraMapInv (R := R) (M := M)).toLinearMap ∘ₗ changeForm hB
+  have hsq : IsUnit (algebraMap R (CliffordAlgebra Q) (Q m)) := by
+    rw [← ι_sq_scalar]
+    exact h.mul h
+  obtain ⟨w, hw⟩ := hsq.exists_right_inv
+  refine IsUnit.of_mul_eq_one (π w) ?_
+  have h1 := congrArg π hw
+  rw [← Algebra.smul_def, map_smul, smul_eq_mul] at h1
+  simpa [π, changeForm_one] using h1
+
+end Free
+
 /-- A Clifford element annihilated by every left contraction is a scalar. -/
 theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
     (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
@@ -193,8 +259,7 @@ theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
   let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) :=
     linearOrderOfSTO WellOrderingRel
   let b := Module.Free.chooseBasis R M
-  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
-  have h : B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by rw [hB]; simp
+  obtain ⟨B, h⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
   let y : ExteriorAlgebra R M := changeForm h x
   have hycontract (d : Module.Dual R M) :
       contractLeft (Q := (0 : QuadraticForm R M)) d y = 0 := by
