@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 import Mathlib.Analysis.Normed.Module.Ball.Action
-import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
+public import TauCeti.Topology.CWComplex.Classical.Basic
 
 /-!
 # Dimension bounds and compactness of CW complexes
@@ -14,6 +15,11 @@ A relative or absolute CW complex with no cells in dimensions strictly above `d`
 finite-dimensional (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`,
 `Topology.CWComplex.finiteDimensional_of_isEmpty_cell_gt`), regardless of how many cells lie in
 dimensions at most `d`.
+
+Finiteness properties (`FiniteDimensional`, `FiniteType`, `Finite`) transport across any
+dimensionwise family of cell equivalences (`Topology.RelCWComplex.finiteDimensional_of_cellEquiv`,
+`Topology.RelCWComplex.finiteType_of_cellEquiv`, `Topology.RelCWComplex.finite_of_cellEquiv`), and
+in particular along `Topology.RelCWComplex.copy`.
 
 A finite relative CW complex `C` over a compact base `D` is compact
 (`Topology.RelCWComplex.isCompact_of_finite`): it is the union of `D` and of its finitely many
@@ -37,7 +43,65 @@ lemma RelCWComplex.finiteDimensional_of_isEmpty_cell_gt {X : Type*} [Topological
     RelCWComplex.FiniteDimensional C :=
   ⟨Filter.eventually_atTop.2 ⟨d + 1, fun m hm ↦ h m (Nat.lt_of_succ_le hm)⟩⟩
 
+section CellEquiv
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A relative CW complex whose `n`-cells are equivalent to those of a finite-dimensional
+relative CW complex is finite-dimensional. -/
+theorem RelCWComplex.finiteDimensional_of_cellEquiv {C D : Set X} {C' D' : Set Y}
+    (I : RelCWComplex C D) (I' : RelCWComplex C' D')
+    (e : ∀ n, @RelCWComplex.cell _ _ C' D' I' n ≃ @RelCWComplex.cell _ _ C D I n)
+    [@RelCWComplex.FiniteDimensional _ _ C D I] :
+    @RelCWComplex.FiniteDimensional _ _ C' D' I' :=
+  @RelCWComplex.FiniteDimensional.mk _ _ _ _ I' <| by
+    filter_upwards [@RelCWComplex.FiniteDimensional.eventually_isEmpty_cell _ _ C D I _] with n _
+    exact (e n).isEmpty_congr.2 inferInstance
+
+/-- A relative CW complex whose `n`-cells are equivalent to those of a relative CW complex of
+finite type has finite type. -/
+theorem RelCWComplex.finiteType_of_cellEquiv {C D : Set X} {C' D' : Set Y}
+    (I : RelCWComplex C D) (I' : RelCWComplex C' D')
+    (e : ∀ n, @RelCWComplex.cell _ _ C' D' I' n ≃ @RelCWComplex.cell _ _ C D I n)
+    [@RelCWComplex.FiniteType _ _ C D I] :
+    @RelCWComplex.FiniteType _ _ C' D' I' :=
+  @RelCWComplex.FiniteType.mk _ _ _ _ I' fun n ↦
+    have := @RelCWComplex.FiniteType.finite_cell _ _ C D I _ n
+    (e n).finite_iff.2 inferInstance
+
+/-- A relative CW complex whose `n`-cells are equivalent to those of a finite relative CW
+complex is finite. -/
+theorem RelCWComplex.finite_of_cellEquiv {C D : Set X} {C' D' : Set Y}
+    (I : RelCWComplex C D) (I' : RelCWComplex C' D')
+    (e : ∀ n, @RelCWComplex.cell _ _ C' D' I' n ≃ @RelCWComplex.cell _ _ C D I n)
+    [@RelCWComplex.Finite _ _ C D I] :
+    @RelCWComplex.Finite _ _ C' D' I' :=
+  @RelCWComplex.finite_of_finiteDimensional_finiteType _ _ _ _ I'
+    (RelCWComplex.finiteDimensional_of_cellEquiv I I' e)
+    (RelCWComplex.finiteType_of_cellEquiv I I' e)
+
+end CellEquiv
+
 variable {X : Type*} [TopologicalSpace X] {C D : Set X}
+
+/-- Copying a finite-dimensional relative CW complex along set equalities preserves
+finite-dimensionality. -/
+theorem RelCWComplex.finiteDimensional_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C')
+    (hD : D = D') [@RelCWComplex.FiniteDimensional X _ C D I] :
+    @RelCWComplex.FiniteDimensional X _ C' D' (I.copy C' D' hC hD) :=
+  RelCWComplex.finiteDimensional_of_cellEquiv I (I.copy C' D' hC hD) (I.copyCellEquiv C' D' hC hD)
+
+/-- Copying a relative CW complex of finite type along set equalities preserves finite type. -/
+theorem RelCWComplex.finiteType_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C')
+    (hD : D = D') [@RelCWComplex.FiniteType X _ C D I] :
+    @RelCWComplex.FiniteType X _ C' D' (I.copy C' D' hC hD) :=
+  RelCWComplex.finiteType_of_cellEquiv I (I.copy C' D' hC hD) (I.copyCellEquiv C' D' hC hD)
+
+/-- Copying a finite relative CW complex along set equalities preserves finiteness. -/
+theorem RelCWComplex.finite_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C')
+    (hD : D = D') [@RelCWComplex.Finite X _ C D I] :
+    @RelCWComplex.Finite X _ C' D' (I.copy C' D' hC hD) :=
+  RelCWComplex.finite_of_cellEquiv I (I.copy C' D' hC hD) (I.copyCellEquiv C' D' hC hD)
 
 /-- **A finite relative CW complex over a compact base is compact.** -/
 theorem RelCWComplex.isCompact_of_finite [RelCWComplex C D] [RelCWComplex.Finite C]

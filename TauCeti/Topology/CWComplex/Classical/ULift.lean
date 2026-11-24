@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Finite
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Topology.CWComplex.Classical.Finite
 
 /-!
 # Universe lift of classical relative CW complexes
@@ -151,22 +151,17 @@ lemma cellFrontier_ulift (n : ℕ)
 /-- The universe lift of a finite-dimensional relative CW complex is finite-dimensional. -/
 lemma finiteDimensional_ulift [FiniteDimensional C] :
     @FiniteDimensional (ULift.{v, u} X) _ (ULift.down ⁻¹' C) (ULift.down ⁻¹' D) (ulift.{v} C) :=
-  @FiniteDimensional.mk _ _ _ _ (ulift.{v} C) <| by
-    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n _
-    exact (uliftCellEquiv.{v} C n).isEmpty_congr.2 inferInstance
+  finiteDimensional_of_cellEquiv ‹_› (ulift.{v} C) (uliftCellEquiv.{v} C)
 
 /-- The universe lift of a relative CW complex of finite type has finite type. -/
 lemma finiteType_ulift [FiniteType C] :
     @FiniteType (ULift.{v, u} X) _ (ULift.down ⁻¹' C) (ULift.down ⁻¹' D) (ulift.{v} C) :=
-  @FiniteType.mk _ _ _ _ (ulift.{v} C) fun n ↦
-    have := FiniteType.finite_cell (C := C) (D := D) n
-    (uliftCellEquiv.{v} C n).finite_iff.2 inferInstance
+  finiteType_of_cellEquiv ‹_› (ulift.{v} C) (uliftCellEquiv.{v} C)
 
 /-- The universe lift of a finite relative CW complex is finite. -/
 lemma finite_ulift [Finite C] :
     @Finite (ULift.{v, u} X) _ (ULift.down ⁻¹' C) (ULift.down ⁻¹' D) (ulift.{v} C) :=
-  @finite_of_finiteDimensional_finiteType _ _ _ _ (ulift.{v} C)
-    (finiteDimensional_ulift C) (finiteType_ulift C)
+  finite_of_cellEquiv ‹_› (ulift.{v} C) (uliftCellEquiv.{v} C)
 
 end RelCWComplex
 
@@ -213,22 +208,20 @@ lemma cellFrontier_ulift (n : ℕ)
 /-- The universe lift of a finite-dimensional absolute CW complex is finite-dimensional. -/
 instance instFiniteDimensionalUlift [RelCWComplex.FiniteDimensional C] :
     RelCWComplex.FiniteDimensional (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
-  ⟨by
-    filter_upwards [RelCWComplex.FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)]
-      with n _
-    exact (uliftCellEquiv.{v} C n).isEmpty_congr.2 inferInstance⟩
+  RelCWComplex.finiteDimensional_of_cellEquiv (C := C) (D := ∅) inferInstance inferInstance
+    (uliftCellEquiv.{v} C)
 
 /-- The universe lift of an absolute CW complex of finite type has finite type. -/
 instance instFiniteTypeUlift [RelCWComplex.FiniteType C] :
     RelCWComplex.FiniteType (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
-  ⟨fun n ↦
-    have := RelCWComplex.FiniteType.finite_cell (C := C) (D := ∅) n
-    (uliftCellEquiv.{v} C n).finite_iff.2 inferInstance⟩
+  RelCWComplex.finiteType_of_cellEquiv (C := C) (D := ∅) inferInstance inferInstance
+    (uliftCellEquiv.{v} C)
 
 /-- The universe lift of a finite absolute CW complex is finite. -/
 instance instFiniteUlift [RelCWComplex.Finite C] :
     RelCWComplex.Finite (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
-  RelCWComplex.finite_of_finiteDimensional_finiteType (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+  RelCWComplex.finite_of_cellEquiv (C := C) (D := ∅) inferInstance inferInstance
+    (uliftCellEquiv.{v} C)
 
 section Univ
 

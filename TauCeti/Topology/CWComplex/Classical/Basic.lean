@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Finite
+public import Mathlib.Topology.CWComplex.Classical.Basic
 
 /-!
 # Rewriting carrier and base sets of classical relative CW complexes
@@ -21,8 +21,6 @@ maps, mirroring `Topology.RelCWComplex.Subcomplex.copy`.
   keeping `cell` and `map` definitionally unchanged.
 * `Topology.RelCWComplex.copyCellEquiv`, `map_copy`, `openCell_copy`, `closedCell_copy`,
   `cellFrontier_copy`: cell equivalences and characteristic-map/cell-set identities for `copy`.
-* `Topology.RelCWComplex.finiteDimensional_copy`, `finiteType_copy`, `finite_copy`: preservation
-  of finiteness properties under `copy`.
 
 ## References
 
@@ -85,29 +83,5 @@ theorem cellFrontier_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C') (
     @cellFrontier X _ C' D' (I.copy C' D' hC hD) n j =
       @cellFrontier X _ C D I n (I.copyCellEquiv C' D' hC hD n j) :=
   (rfl)
-
-/-- Copying a finite-dimensional relative CW complex along set equalities preserves
-finite-dimensionality. -/
-theorem finiteDimensional_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C') (hD : D = D')
-    [@FiniteDimensional X _ C D I] :
-    @FiniteDimensional X _ C' D' (I.copy C' D' hC hD) :=
-  @FiniteDimensional.mk _ _ _ _ (I.copy C' D' hC hD) <| by
-    filter_upwards [@FiniteDimensional.eventually_isEmpty_cell _ _ C D I _] with n _
-    exact (I.copyCellEquiv C' D' hC hD n).isEmpty_congr.2 inferInstance
-
-/-- Copying a relative CW complex of finite type along set equalities preserves finite type. -/
-theorem finiteType_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C') (hD : D = D')
-    [@FiniteType X _ C D I] :
-    @FiniteType X _ C' D' (I.copy C' D' hC hD) :=
-  @FiniteType.mk _ _ _ _ (I.copy C' D' hC hD) fun n ↦
-    have := @FiniteType.finite_cell _ _ C D I _ n
-    (I.copyCellEquiv C' D' hC hD n).finite_iff.2 inferInstance
-
-/-- Copying a finite relative CW complex along set equalities preserves finiteness. -/
-theorem finite_copy (I : RelCWComplex C D) (C' D' : Set X) (hC : C = C') (hD : D = D')
-    [@Finite X _ C D I] :
-    @Finite X _ C' D' (I.copy C' D' hC hD) :=
-  @finite_of_finiteDimensional_finiteType _ _ _ _ (I.copy C' D' hC hD)
-    (I.finiteDimensional_copy C' D' hC hD) (I.finiteType_copy C' D' hC hD)
 
 end Topology.RelCWComplex
