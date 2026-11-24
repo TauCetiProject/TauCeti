@@ -408,9 +408,7 @@ theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
 theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subgraph}
     (hM : M.IsMatching) (hfin : G.matchingNum ≠ ⊤) (heq : M.edgeSet.encard = G.matchingNum) :
     Maximal Subgraph.IsMatching M := by
-  refine ⟨hM, fun M' hM' hle ↦ ?_⟩
-  by_contra hnot
-  have hlt : M < M' := lt_of_le_not_ge hle hnot
+  refine maximal_iff_forall_gt.mpr ⟨hM, fun M' hlt hM' ↦ ?_⟩
   have hssub : M.edgeSet ⊂ M'.edgeSet := Subgraph.IsMatching.strictMonoOn_edgeSet hM hM' hlt
   have hMfin : M.edgeSet.Finite := encard_ne_top_iff.1 (heq.trans_ne hfin)
   have hlt_encard : M.edgeSet.encard < M'.edgeSet.encard := hMfin.encard_lt_encard hssub
