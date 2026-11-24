@@ -230,6 +230,24 @@ theorem ker_invariant (f : X ⟶ Y) :
   ((f.hom : X →ₗ[𝕜] Y).intertwiningMap_of_isIntertwiningMap (ρ := X.ρ.toRepresentation)
     (σ := Y.ρ.toRepresentation) f.hom_comm_apply).ker.apply_mem_toSubmodule
 
+/-! ### Lattice operations on invariant subspaces -/
+
+variable (X) in
+/-- The zero subspace of a Banach representation is invariant. -/
+theorem bot_invariant : ∀ (g : G), ∀ x ∈ (⊥ : Submodule 𝕜 X), X.ρ g x ∈ (⊥ : Submodule 𝕜 X) := by
+  simp
+
+variable (X) in
+/-- The whole space of a Banach representation is invariant. -/
+theorem top_invariant : ∀ (g : G), ∀ x ∈ (⊤ : Submodule 𝕜 X), X.ρ g x ∈ (⊤ : Submodule 𝕜 X) := by
+  simp
+
+/-- The sum of two invariant subspaces of a Banach representation is invariant: it is the
+supremum of the two subrepresentations. -/
+theorem sup_invariant {B B' : Submodule 𝕜 Y} (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
+    (hB' : ∀ (g : G), ∀ y ∈ B', Y.ρ g y ∈ B') : ∀ (g : G), ∀ y ∈ B ⊔ B', Y.ρ g y ∈ B ⊔ B' :=
+  (⟨B, hB⟩ ⊔ ⟨B', hB'⟩ : Subrepresentation Y.ρ.toRepresentation).apply_mem_toSubmodule
+
 /-! ### The forgetful functor to topological modules -/
 
 /-- The forgetful functor from Banach representations to topological `𝕜`-modules. -/

@@ -95,12 +95,6 @@ namespace AlmostIso
 
 attribute [instance] finiteDimensional_left finiteDimensional_right
 
-omit [CompleteSpace 𝕜] in
-/-- The zero subspace is invariant. -/
-private theorem bot_invariant (X : BanachRep.{w} 𝕜 G) :
-    ∀ (g : G), ∀ x ∈ (⊥ : Submodule 𝕜 X), X.ρ g x ∈ (⊥ : Submodule 𝕜 X) := by
-  simp
-
 /-- The height of an almost isomorphism: the dimension of the subspace divided out of the source
 minus the dimension of the subspace divided out of the target. -/
 noncomputable def height (e : AlmostIso X Y) : ℤ :=
@@ -280,8 +274,8 @@ noncomputable def ofFiniteDimensional (X Y : BanachRep.{w} 𝕜 G) [FiniteDimens
     [FiniteDimensional 𝕜 Y] : AlmostIso X Y where
   left := ⊤
   right := ⊤
-  left_invariant := by simp
-  right_invariant := by simp
+  left_invariant := top_invariant X
+  right_invariant := top_invariant Y
   iso := (isZero_quotient_top X _ _).iso (isZero_quotient_top Y _ _)
 
 @[simp]
@@ -376,15 +370,6 @@ theorem height_refineRight : (e.refineRight B hB h).height = e.height := by
   ring
 
 end Refine
-
-omit [CompleteSpace 𝕜] in
-/-- The sum of two invariant subspaces is invariant. -/
-private theorem sup_invariant {B B' : Submodule 𝕜 Y} (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
-    (hB' : ∀ (g : G), ∀ y ∈ B', Y.ρ g y ∈ B') : ∀ (g : G), ∀ y ∈ B ⊔ B', Y.ρ g y ∈ B ⊔ B' := by
-  intro g y hy
-  obtain ⟨b, hb, b', hb', rfl⟩ := Submodule.mem_sup.mp hy
-  rw [map_add]
-  exact Submodule.add_mem_sup (hB g b hb) (hB' g b' hb')
 
 /-- **Composition of almost isomorphisms**: if `X ⧸ A ≅ Y ⧸ B` and `Y ⧸ B' ≅ Z ⧸ C`, both are
 refined to almost isomorphisms dividing out `B ⊔ B'` from `Y` (`refineRight`), and composed
