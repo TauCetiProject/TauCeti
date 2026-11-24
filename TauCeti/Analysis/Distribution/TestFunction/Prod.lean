@@ -47,6 +47,8 @@ kernels are tested. On an open subset `W` of the `L^p` product `WithLp p (E × D
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
 * `TestFunction.prodSMulCLM_add`, `TestFunction.prodSMulCLM_smul`: its linearity in `ψ`.
+* `TestFunction.lineDerivOp_prodSMulCLM_prod_zero`: differentiating in the first variable acts
+  on the first factor.
 * `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
@@ -160,6 +162,20 @@ theorem prodSMulCLM_smul (c : ℝ) (ψ : 𝓓(O, ℝ)) :
     prodSMulCLM (F := F) (c • ψ) hV = c • prodSMulCLM ψ hV := by
   ext φ p
   simp [mul_smul]
+
+/-- Differentiating in the first variable acts on the first factor of a tensor product:
+`∂_{(v, 0)} (prodSMulCLM ψ hV φ) = prodSMulCLM ψ hV (∂_{v} φ)`. -/
+theorem lineDerivOp_prodSMulCLM_prod_zero (φ : 𝓓(Ω, F)) (v : E) :
+    ∂_{((v, 0) : E × D)} (prodSMulCLM ψ hV φ) = prodSMulCLM ψ hV (∂_{v} φ) := by
+  ext p
+  rw [lineDerivOp_apply, prodSMulCLM_apply, lineDerivOp_apply_eq_fderiv]
+  have hφ : HasLineDerivAt ℝ (φ : E → F) (fderiv ℝ (φ : E → F) p.1 v) p.1 v :=
+    (φ.contDiff.differentiable (by simp) p.1).hasFDerivAt.hasLineDerivAt v
+  have h : HasLineDerivAt ℝ (prodSMulCLM ψ hV φ : E × D → F)
+      (ψ p.2 • fderiv ℝ (φ : E → F) p.1 v) p (v, 0) := by
+    rw [HasLineDerivAt]
+    simpa [prodSMulCLM_apply, Pi.smul_def] using hφ.const_smul (ψ p.2)
+  exact h.lineDeriv
 
 /-! ### Slices -/
 

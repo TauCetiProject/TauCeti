@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
+public import TauCeti.Analysis.Normed.Operator.Induction
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 public import TauCeti.Topology.Sets.Opens
@@ -29,7 +30,7 @@ This file supplies restriction to arbitrary subsets (also combined with a change
 off the subset), linearity, continuous-linear composition, pairing, pointwise product maps of
 operator fields, decreasing the integrability exponent, and decreasing the derivative order.
 Differentiability on an open set with a locally `Lᵖ` (in particular continuous) derivative gives
-first-order local Sobolev membership (`DifferentiableOn.memWkpLoc_one_of_continuousOn_fderiv`),
+first-order local Sobolev membership (`DifferentiableOn.memWkpLoc_one_of_memLpLoc_fderiv`),
 smoothness on an open neighbourhood gives membership at every order, and smooth or continuous
 linear maps (including the identity map `TauCeti.memWkpLoc_id`) on the whole space are in every
 class on every set.
@@ -54,9 +55,10 @@ When `E : Type u` and `F : Type v` live in separate universes, the first derivat
 across universe levels. The private helpers `MemWkpLocAux` and `WeakDerivChainLeAux` fix the
 codomain universe to `max u v` so the recursion is well-typed, while `TauCeti.MemWkpLoc` and
 `TauCeti.WeakDerivChainLe` accept an arbitrary `F : Type v`. Downstream inductive proofs share
-`TauCeti.normSpace_induction_max` and `TauCeti.normSpace_induction_max₂`, lifting `F : Type v` to
+`TauCeti.nat_induction_clm_ulift` and `TauCeti.nat_induction_clm_ulift₂`, lifting `F : Type v` to
 `ULift.{u} F : Type (max u v)` via `ContinuousLinearEquiv.comp_hasWeakFDerivOn` and
-`ContinuousLinearEquiv.comp_memWkpLoc_iff`.
+`ContinuousLinearEquiv.comp_memWkpLoc_iff` (packaged for `MemWkpLoc` by
+`TauCeti.memWkpLoc_ulift_induction`).
 
 ## References
 
@@ -136,8 +138,8 @@ theorem memWkpLoc_succ_iff_of_isOpen : MemWkpLoc p Ω (k + 1) f ↔ MemLpLoc p �
 /-- Every local Sobolev function is locally `Lᵖ`. -/
 theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p U k f) : MemLpLoc p U f := by
   cases k with
-  | zero => exact hf
-  | succ k => exact hf.1
+  | zero => exact memWkpLoc_zero_iff.1 hf
+  | succ _ => exact (memWkpLoc_succ_iff.1 hf).1
 
 /-- A positive-order local Sobolev function has a weak derivative of the preceding order. -/
 theorem MemWkpLoc.exists_weakFDeriv (hf : MemWkpLoc p U (k + 1) f) :
@@ -155,6 +157,12 @@ theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p U (k + 1) f) : CompleteSpace F
   obtain ⟨D, hD, _⟩ := hf.exists_weakFDeriv
   exact hD.completeSpace
 
+/-- At order one, local Sobolev membership is local `Lᵖ` membership together with a weak derivative
+on the interior that is locally `Lᵖ`. -/
+theorem memWkpLoc_one_iff : MemWkpLoc p U 1 f ↔ MemLpLoc p U f ∧
+    ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧ MemLpLoc p U D := by
+  simp only [memWkpLoc_succ_iff, memWkpLoc_zero_iff]
+
 /-- For a continuous function on `U`, local `Lᵖ` membership is automatic, so successor-order
 local Sobolev membership is equivalent to having a weak derivative of the preceding order. -/
 theorem _root_.ContinuousOn.memWkpLoc_succ_iff [OpensMeasurableSpace E]
@@ -170,30 +178,7 @@ theorem _root_.ContinuousOn.memWkpLoc_one_iff [OpensMeasurableSpace E]
     [IsFiniteMeasureOnCompacts (volume : Measure E)] (hf : ContinuousOn f Ω) :
     MemWkpLoc p Ω 1 f ↔
       ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemLpLoc p Ω D := by
-  simpa only [Opens.interior_coe, memWkpLoc_zero_iff] using hf.memWkpLoc_succ_iff (p := p) (k := 0)
-
-/-- Postcomposing with a continuous linear equivalence preserves weak Fréchet differentiability
-without requiring `[OpensMeasurableSpace E]`. -/
-theorem _root_.ContinuousLinearEquiv.comp_hasWeakFDerivOn {μ : Measure E}
-    {Ω : Opens E} {f : E → F} {D : E → E →L[ℝ] F} (e : F ≃L[ℝ] G)
-    (h : HasWeakFDerivOn μ Ω f D) :
-    HasWeakFDerivOn μ Ω (fun x => e (f x)) (fun x => (e : F →L[ℝ] G).comp (D x)) := by
-  refine hasWeakFDerivOn_iff.2 fun v => ?_
-  have hv := h.hasWeakLineDerivOn v
-  have := hv.completeSpace
-  have : CompleteSpace G :=
-    (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mp inferInstance
-  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
-    e.toContinuousLinearMap.locallyIntegrableOn_comp hv.locallyIntegrableOn,
-    e.toContinuousLinearMap.locallyIntegrableOn_comp hv.locallyIntegrableOn_deriv, fun φ => ?_⟩
-  calc ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • e (f x) ∂μ
-      = ∫ x, e (lineDeriv ℝ (φ : E → ℝ) x v • f x) ∂μ := by simp
-    _ = e (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • f x ∂μ) := e.integral_comp_comm _
-    _ = e (-∫ x, (φ : E → ℝ) x • D x v ∂μ) := by
-      rw [hv.integral_lineDeriv_smul_eq_neg_integral_smul φ]
-    _ = -∫ x, (φ : E → ℝ) x • e (D x v) ∂μ := by
-      rw [map_neg, ← e.integral_comp_comm]
-      simp
+  simpa only [Opens.interior_coe] using TauCeti.memWkpLoc_one_iff.trans (and_iff_right hf.memLpLoc)
 
 private theorem comp_memWkpLoc_step {F' : Type v'} {G' : Type w'}
     [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G'] [NormedSpace ℝ G']
@@ -212,7 +197,7 @@ private theorem comp_memWkpLoc_step {F' : Type v'} {G' : Type w'}
 
 private theorem comp_memWkpLoc_aux (e : F ≃L[ℝ] G) (hf : MemWkpLoc p U k f) :
     MemWkpLoc p U k (fun z => e (f z)) := by
-  -- Bootstraps the universe transfer used by `normSpace_induction_max` and `_₂`.
+  -- Bootstraps the universe transfer used by `nat_induction_clm_ulift` and `_₂`.
   have aux : ∀ (k : ℕ) {F' : Type (max u v)} {G' : Type (max u w)}
       [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G'] [NormedSpace ℝ G']
       {f' : E → F'} (e' : F' ≃L[ℝ] G'),
@@ -238,59 +223,40 @@ theorem _root_.ContinuousLinearEquiv.comp_memWkpLoc_iff (e : F ≃L[ℝ] G) :
       comp_memWkpLoc_aux e.symm h,
     comp_memWkpLoc_aux e⟩
 
-/-- An induction principle on `ℕ` for predicates indexed by a real normed space
-`F : Type (max u v)` whose inductive step passes from `E →L[ℝ] F` at order `k` to `F` at order
-`k + 1`, concluding the property at `ULift.{u} F` for an arbitrary `F : Type v`. Pairing this with
-`ContinuousLinearEquiv.comp_memWkpLoc_iff` lifts arbitrary codomain universes without duplicating
-base cases. -/
-theorem normSpace_induction_max (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (P : ℕ → ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F], Prop)
-    (h0 : ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F], P 0 F)
-    (hsucc : ∀ (k : ℕ) (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F],
-      P k (E →L[ℝ] F) → P (k + 1) F)
-    (k : ℕ) (F : Type v) [NormedAddCommGroup F] [NormedSpace ℝ F] :
-    P k (ULift.{u} F) := by
-  have aux : ∀ (k : ℕ) (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F], P k F := by
-    intro k
-    induction k with
-    | zero => exact h0
-    | succ k ih => exact fun F _ _ => hsucc k F (ih (E →L[ℝ] F))
-  exact aux k (ULift.{u} F)
-
-/-- Two-codomain counterpart of `TauCeti.normSpace_induction_max`: the inductive step passes from
-`E →L[ℝ] F` and `E →L[ℝ] G` at order `k` to `F` and `G` at order `k + 1`, concluding at
-`ULift.{u} F` and `ULift.{u} G` for arbitrary `F : Type v` and `G : Type w`. -/
-theorem normSpace_induction_max₂ (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (P : ℕ → ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (G : Type (max u w)) [NormedAddCommGroup G] [NormedSpace ℝ G], Prop)
-    (h0 : ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (G : Type (max u w)) [NormedAddCommGroup G] [NormedSpace ℝ G], P 0 F G)
+/-- Universe-lifting induction concluding `TauCeti.MemWkpLoc p U k f`: given a universe-uniform
+predicate `P` on `(k, F, g)` that yields `MemLpLoc` at `k = 0`, yields `MemLpLoc` and a weak
+derivative satisfying `P` at `k + 1`, and holds for `ContinuousLinearEquiv.ulift.symm ∘ f`,
+concludes `MemWkpLoc p U k f`. -/
+theorem memWkpLoc_ulift_induction
+    (P : ℕ → ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F], (E → F) → Prop)
+    (h0 : ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F] (g : E → F),
+      P 0 F g → MemLpLoc p U g)
     (hsucc : ∀ (k : ℕ) (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (G : Type (max u w)) [NormedAddCommGroup G] [NormedSpace ℝ G],
-      P k (E →L[ℝ] F) (E →L[ℝ] G) → P (k + 1) F G)
-    (k : ℕ) (F : Type v) [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (G : Type w) [NormedAddCommGroup G] [NormedSpace ℝ G] :
-    P k (ULift.{u} F) (ULift.{u} G) := by
-  have aux : ∀ (k : ℕ) (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (G : Type (max u w)) [NormedAddCommGroup G] [NormedSpace ℝ G], P k F G := by
-    intro k
-    induction k with
-    | zero => exact h0
-    | succ k ih => exact fun F _ _ G _ _ => hsucc k F G (ih (E →L[ℝ] F) (E →L[ℝ] G))
-  exact aux k (ULift.{u} F) (ULift.{u} G)
+      (g : E → F), P (k + 1) F g →
+        MemLpLoc p U g ∧ ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) g D ∧
+          P k (E →L[ℝ] F) D)
+    (hf : P k (ULift.{u} F)
+      (fun z => (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[ℝ] F).symm (f z))) :
+    MemWkpLoc p U k f := by
+  have hlift := nat_induction_clm_ulift ℝ E
+    (fun k F _ _ => ∀ g : E → F, P k F g → MemWkpLoc p U k g)
+    (fun _ _ _ g hg => memWkpLoc_zero_iff.2 (h0 _ g hg))
+    (fun k _ _ _ ih g hg => by
+      obtain ⟨hLp, D, hD, hPD⟩ := hsucc k _ g hg
+      exact memWkpLoc_succ_iff.2 ⟨hLp, D, hD, ih D hPD⟩)
+    k F
+  exact (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[ℝ] F).symm.comp_memWkpLoc_iff.1
+    (hlift _ hf)
 
 /-- Restriction preserves the interior weak derivatives and the bounds on compact subsets. -/
 theorem MemWkpLoc.mono (hf : MemWkpLoc p U k f) (hVU : V ⊆ U) :
-    MemWkpLoc p V k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U k f → MemWkpLoc p V k f)
-    (fun _ _ _ _ hf => hf.mono_set hVU)
-    (fun _ _ _ _ ih f hf => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      exact memWkpLoc_succ_iff.2 ⟨hp.mono_set hVU, D, hD.mono (interior_mono hVU), ih D hk⟩)
-    k F
-  exact ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-    (hlift _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf))
+    MemWkpLoc p V k f :=
+  memWkpLoc_ulift_induction (fun k _ _ _ g => MemWkpLoc p U k g)
+    (fun _ _ _ _ hg => hg.memLpLoc.mono_set hVU)
+    (fun _ _ _ _ _ hg => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hg
+      exact ⟨hp.mono_set hVU, D, hD.mono (interior_mono hVU), hk⟩)
+    (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf)
 
 /-- Almost-everywhere changes of the function preserve its local Sobolev class. -/
 theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
@@ -338,28 +304,22 @@ theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn [FiniteDimensional ℝ E] [BorelSp
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent [IsFiniteMeasureOnCompacts (volume : Measure E)]
     (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :
-    MemWkpLoc q U k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U k f → MemWkpLoc q U k f)
-    (fun _ _ _ _ hf => MemLpLoc.mono_exponent hf hqp)
-    (fun _ _ _ _ ih f hf => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      exact memWkpLoc_succ_iff.2 ⟨hp.mono_exponent hqp, D, hD, ih D hk⟩)
-    k F
-  exact ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-    (hlift _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf))
+    MemWkpLoc q U k f :=
+  memWkpLoc_ulift_induction (fun k _ _ _ g => MemWkpLoc p U k g)
+    (fun _ _ _ _ hg => hg.memLpLoc.mono_exponent hqp)
+    (fun _ _ _ _ _ hg => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hg
+      exact ⟨hp.mono_exponent hqp, D, hD, hk⟩)
+    (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf)
 
 /-- Dropping the top derivative preserves local Sobolev membership. -/
-theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U (k + 1) f → MemWkpLoc p U k f)
-    (fun _ _ _ _ hf => hf.1)
-    (fun _ _ _ _ ih f hf => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      exact memWkpLoc_succ_iff.2 ⟨hp, D, hD, ih D hk⟩)
-    k F
-  exact ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-    (hlift _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf))
+theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f :=
+  memWkpLoc_ulift_induction (fun k _ _ _ g => MemWkpLoc p U (k + 1) g)
+    (fun _ _ _ _ hg => hg.memLpLoc)
+    (fun _ _ _ _ _ hg => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hg
+      exact ⟨hp, D, hD, hk⟩)
+    (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf)
 
 /-- Membership at any smaller derivative order follows from membership at a larger one. -/
 theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
@@ -369,46 +329,35 @@ theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
-theorem memWkpLoc_zero_fun [CompleteSpace F] : MemWkpLoc p U k (0 : E → F) := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => CompleteSpace F → MemWkpLoc p U k (0 : E → F))
-    (fun _ _ _ _ => memLpLoc_zero)
-    (fun _ _ _ _ ih _ =>
-      memWkpLoc_succ_iff.2 ⟨memLpLoc_zero, 0, hasWeakFDerivOn_zero, ih inferInstance⟩)
-    k F (completeSpace_ulift_iff.2 inferInstance)
-  simpa only [Pi.zero_apply, map_zero] using
-    (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff (p := p) (U := U) (k := k)
-      (f := (0 : E → F))).1 hlift
+theorem memWkpLoc_zero_fun [CompleteSpace F] : MemWkpLoc p U k (0 : E → F) :=
+  memWkpLoc_ulift_induction (fun _ F _ _ g => CompleteSpace F ∧ g = 0)
+    (fun _ _ _ _ ⟨_, hg⟩ => hg ▸ memLpLoc_zero)
+    (fun _ _ _ _ _ ⟨_, hg⟩ =>
+      ⟨hg ▸ memLpLoc_zero, 0, hg ▸ hasWeakFDerivOn_zero, inferInstance, rfl⟩)
+    ⟨completeSpace_ulift_iff.2 inferInstance, by ext; simp⟩
 
 /-- Local Sobolev membership is closed under addition. -/
 theorem MemWkpLoc.add [OpensMeasurableSpace E] (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
-    MemWkpLoc p U k (f + g) := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ =>
-      ∀ (f g : E → F), MemWkpLoc p U k f → MemWkpLoc p U k g → MemWkpLoc p U k (f + g))
-    (fun _ _ _ _ _ hf hg => MemLpLoc.add hf hg)
-    (fun _ _ _ _ ih _ _ hf hg => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      obtain ⟨hq, D', hD', hk'⟩ := memWkpLoc_succ_iff.1 hg
-      exact memWkpLoc_succ_iff.2 ⟨hp.add hq, D + D', hD.add hD', ih D D' hk hk'⟩)
-    k F
-  simpa only [Pi.add_apply, map_add] using
-    ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-      (hlift _ _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf)
-        (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hg))
+    MemWkpLoc p U k (f + g) :=
+  memWkpLoc_ulift_induction
+    (fun k _ _ _ h => ∃ a b, h = a + b ∧ MemWkpLoc p U k a ∧ MemWkpLoc p U k b)
+    (fun _ _ _ _ ⟨_, _, hab, ha, hb⟩ => hab ▸ ha.memLpLoc.add hb.memLpLoc)
+    (fun _ _ _ _ _ ⟨_, _, hab, ha, hb⟩ => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 ha
+      obtain ⟨hq, D', hD', hk'⟩ := memWkpLoc_succ_iff.1 hb
+      exact ⟨hab ▸ hp.add hq, D + D', hab ▸ hD.add hD', D, D', rfl, hk, hk'⟩)
+    ⟨_, _, by ext; simp, ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf,
+      ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hg⟩
 
 /-- Local Sobolev membership is closed under negation. -/
-theorem MemWkpLoc.neg (hf : MemWkpLoc p U k f) : MemWkpLoc p U k (-f) := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U k f → MemWkpLoc p U k (-f))
-    (fun _ _ _ _ hf => MemLpLoc.neg hf)
-    (fun _ _ _ _ ih _ hf => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      exact memWkpLoc_succ_iff.2 ⟨hp.neg, -D, hD.neg, ih D hk⟩)
-    k F
-  simpa only [Pi.neg_apply, map_neg] using
-    ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-      (hlift _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf))
+theorem MemWkpLoc.neg (hf : MemWkpLoc p U k f) : MemWkpLoc p U k (-f) :=
+  memWkpLoc_ulift_induction
+    (fun k _ _ _ h => ∃ a, h = -a ∧ MemWkpLoc p U k a)
+    (fun _ _ _ _ ⟨_, ha, hma⟩ => ha ▸ hma.memLpLoc.neg)
+    (fun _ _ _ _ _ ⟨_, ha, hma⟩ => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hma
+      exact ⟨ha ▸ hp.neg, -D, ha ▸ hD.neg, D, rfl, hk⟩)
+    ⟨_, by ext; simp, ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf⟩
 
 /-- Local Sobolev membership is closed under subtraction. -/
 theorem MemWkpLoc.sub [OpensMeasurableSpace E] (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
@@ -417,22 +366,19 @@ theorem MemWkpLoc.sub [OpensMeasurableSpace E] (hf : MemWkpLoc p U k f) (hg : Me
 
 /-- Real scalar multiplication preserves local Sobolev membership. -/
 theorem MemWkpLoc.const_smul (hf : MemWkpLoc p U k f) (c : ℝ) :
-    MemWkpLoc p U k (c • f) := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U k f → MemWkpLoc p U k (c • f))
-    (fun _ _ _ _ hf => MemLpLoc.const_smul hf c)
-    (fun _ _ _ _ ih _ hf => by
-      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hf
-      exact memWkpLoc_succ_iff.2 ⟨hp.const_smul c, c • D, hD.const_smul c, ih D hk⟩)
-    k F
-  simpa only [Pi.smul_apply, map_smul] using
-    ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.1
-      (hlift _ (ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf))
+    MemWkpLoc p U k (c • f) :=
+  memWkpLoc_ulift_induction
+    (fun k _ _ _ h => ∃ a, h = c • a ∧ MemWkpLoc p U k a)
+    (fun _ _ _ _ ⟨_, ha, hma⟩ => ha ▸ hma.memLpLoc.const_smul c)
+    (fun _ _ _ _ _ ⟨_, ha, hma⟩ => by
+      obtain ⟨hp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hma
+      exact ⟨ha ▸ hp.const_smul c, c • D, ha ▸ hD.const_smul c, D, rfl, hk⟩)
+    ⟨_, by ext; simp, ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hf⟩
 
 /-- Continuous linear maps of the codomain preserve all local weak derivative orders. -/
 theorem MemWkpLoc.clm_comp [OpensMeasurableSpace E] [CompleteSpace G] (hf : MemWkpLoc p U k f)
     (A : F →L[ℝ] G) : MemWkpLoc p U k (fun z => A (f z)) := by
-  have hlift := normSpace_induction_max₂ E
+  have hlift := nat_induction_clm_ulift₂ ℝ E
     (fun k F _ _ G _ _ => CompleteSpace G → ∀ (f : E → F) (A : F →L[ℝ] G),
       MemWkpLoc p U k f → MemWkpLoc p U k (fun z => A (f z)))
     (fun _ _ _ _ _ _ _ _ A hf => MemLpLoc.clm_comp hf A)
@@ -500,43 +446,31 @@ theorem MemWkpLoc.sum [OpensMeasurableSpace E] {ι : Type*} [CompleteSpace F] (s
 
 /-- A map differentiable on an open set `Ω` whose derivative is locally `Lᵖ` on `Ω` (with
 `1 ≤ p`) belongs to `W^{1,p}_loc(Ω; F)`, with weak derivative `fderiv ℝ f`. -/
-theorem _root_.DifferentiableOn.memWkpLoc_one_of_memLpLoc [FiniteDimensional ℝ E] [BorelSpace E]
-    [(volume : Measure E).IsAddHaarMeasure] [CompleteSpace F] (hf : DifferentiableOn ℝ f Ω)
-    (hp : 1 ≤ p) (hD : MemLpLoc p Ω (fderiv ℝ f)) : MemWkpLoc p Ω 1 f :=
+theorem _root_.DifferentiableOn.memWkpLoc_one_of_memLpLoc_fderiv [FiniteDimensional ℝ E]
+    [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure] [CompleteSpace F]
+    (hf : DifferentiableOn ℝ f Ω) (hp : 1 ≤ p) (hD : MemLpLoc p Ω (fderiv ℝ f)) :
+    MemWkpLoc p Ω 1 f :=
   hf.continuousOn.memWkpLoc_one_iff.2 ⟨fderiv ℝ f,
     hasWeakFDerivOn_of_differentiableOn
       (hD.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed)
       (fun _ hx => hf.differentiableAt (Ω.isOpen.mem_nhds hx)),
     hD⟩
 
-/-- A map differentiable on an open set `Ω` with continuous derivative belongs to
-`W^{1,p}_loc(Ω; F)` for every exponent `p`, with weak derivative `fderiv ℝ f`. -/
-theorem _root_.DifferentiableOn.memWkpLoc_one_of_continuousOn_fderiv [FiniteDimensional ℝ E]
-    [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure] [CompleteSpace F]
-    (hf : DifferentiableOn ℝ f Ω) (hD : ContinuousOn (fderiv ℝ f) Ω) : MemWkpLoc p Ω 1 f :=
-  hf.continuousOn.memWkpLoc_one_iff.2 ⟨fderiv ℝ f,
-    hasWeakFDerivOn_of_differentiableOn
-      (hD.locallyIntegrableOn Ω.isOpen.measurableSet)
-      (fun _ hx => hf.differentiableAt (Ω.isOpen.mem_nhds hx)),
-    hD.memLpLoc⟩
-
 /-- A map that is `Cᵏ` on an open neighbourhood of `U` has locally `Lᵖ` weak derivatives
 through order `k` on `U`, with bounds reaching its boundary, for every exponent. -/
 theorem _root_.ContDiffOn.memWkpLoc [FiniteDimensional ℝ E] [BorelSpace E]
     [(volume : Measure E).IsAddHaarMeasure] [CompleteSpace F]
-    (hf : ContDiffOn ℝ k f (Ω : Set E)) (hU : U ⊆ Ω) : MemWkpLoc p U k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => CompleteSpace F → ∀ (f : E → F),
-      ContDiffOn ℝ k f (Ω : Set E) → MemWkpLoc p U k f)
-    (fun _ _ _ _ _ hf => (hf.continuousOn.mono hU).memLpLoc)
-    (fun k _ _ _ ih _ f hf => by
-      have hD : ContDiffOn ℝ k (fderiv ℝ f) (Ω : Set E) := hf.fderiv_of_isOpen Ω.isOpen (by simp)
-      refine memWkpLoc_succ_iff.2 ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_,
-        ih inferInstance _ hD⟩
-      exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU))
-    k F (completeSpace_ulift_iff.2 inferInstance)
-  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
-  exact e.comp_memWkpLoc_iff.1 (hlift _ (e.contDiff.comp_contDiffOn hf))
+    (hf : ContDiffOn ℝ k f (Ω : Set E)) (hU : U ⊆ Ω) : MemWkpLoc p U k f :=
+  memWkpLoc_ulift_induction
+    (fun k F _ _ g => CompleteSpace F ∧ ContDiffOn ℝ k g (Ω : Set E))
+    (fun _ _ _ _ ⟨_, hg⟩ => (hg.continuousOn.mono hU).memLpLoc)
+    (fun k _ _ _ _ ⟨_, hg⟩ =>
+      ⟨(hg.continuousOn.mono hU).memLpLoc, fderiv ℝ _,
+        (hg.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU),
+        inferInstance, hg.fderiv_of_isOpen Ω.isOpen (by simp)⟩)
+    ⟨completeSpace_ulift_iff.2 inferInstance,
+      by simpa only [Function.comp_def] using
+        (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[ℝ] F).symm.contDiff.comp_contDiffOn hf⟩
 
 /-- A `Cᵏ` map on the whole space is in the local class `W^{k,p}` on every set, for every
 exponent. -/
@@ -631,8 +565,8 @@ theorem weakDerivChainLe_succ_iff :
 theorem WeakDerivChainLe.eLpNorm_le (h : WeakDerivChainLe p S T C m f g) :
     eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) := by
   cases m with
-  | zero => exact h
-  | succ m => exact h.1
+  | zero => exact weakDerivChainLe_zero_iff.1 h
+  | succ _ => exact (weakDerivChainLe_succ_iff.1 h).1
 
 /-- A chain bound passes to every pair of weak derivatives, one order lower. -/
 theorem WeakDerivChainLe.weakFDeriv (h : WeakDerivChainLe p S T C (m + 1) f g)
@@ -668,6 +602,24 @@ theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn [FiniteDimensional ℝ E]
   rw [Measure.restrict_congr_set hU]
   exact (hD.congr_ae hug).ae_eq hg'
 
+omit [BorelSpace E] in
+private theorem memWkpLoc_iff_of_boundedLinearEquiv {F' : Type v'} {G' : Type w'}
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G'] [NormedSpace ℝ G']
+    (φ : F' → G') (ψ : G' → F')
+    (hφ_add : ∀ x y, φ (x + y) = φ x + φ y) (hφ_smul : ∀ (c : ℝ) x, φ (c • x) = c • φ x)
+    (hψ_add : ∀ x y, ψ (x + y) = ψ x + ψ y) (hψ_smul : ∀ (c : ℝ) x, ψ (c • x) = c • ψ x)
+    (C₁ C₂ : ℝ) (hφ : ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖) (hψ : ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
+    (h1 : ∀ x, ψ (φ x) = x) (h2 : ∀ y, φ (ψ y) = y)
+    {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F'} :
+    MemWkpLoc p U k (fun z => φ (f z)) ↔ MemWkpLoc p U k f := by
+  let φL : F' →L[ℝ] G' :=
+    LinearMap.mkContinuous { toFun := φ, map_add' := hφ_add, map_smul' := hφ_smul } C₁ hφ
+  let ψL : G' →L[ℝ] F' :=
+    LinearMap.mkContinuous { toFun := ψ, map_add' := hψ_add, map_smul' := hψ_smul } C₂ hψ
+  let e : F' ≃L[ℝ] G' := ContinuousLinearEquiv.ofContinuousLinearMap φL ψL
+    (by ext y; exact h2 y) (by ext x; exact h1 x)
+  exact e.comp_memWkpLoc_iff
+
 variable [FiniteDimensional ℝ E] [(volume : Measure E).IsAddHaarMeasure]
 
 /-- **Iterated derivatives of a `Cᵏ` representative.** Let `U` agree almost everywhere with its
@@ -679,7 +631,7 @@ theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p U (k + m) u)
     (hU : U =ᵐ[volume] (Opens.interior U : Set E)) (hg : ContDiffOn ℝ k g (Opens.interior U))
     (hug : u =ᵐ[volume.restrict U] g) :
     MemWkpLoc p U m (iteratedFDeriv ℝ k g) := by
-  have hlift := normSpace_induction_max E
+  have hlift := nat_induction_clm_ulift ℝ E
     (fun k F _ _ => ∀ (u g : E → F), MemWkpLoc p U (k + m) u →
       ContDiffOn ℝ k g (Opens.interior U) → u =ᵐ[volume.restrict U] g →
       MemWkpLoc p U m (iteratedFDeriv ℝ k g))
@@ -704,34 +656,21 @@ theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p U (k + m) u)
         |>.comp_memWkpLoc_iff.2 h)
     k F
   let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
-  let eLI_f : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
   have hres := hlift _ _ (e.comp_memWkpLoc_iff.2 hu) (e.contDiff.comp_contDiffOn hg)
     (hug.mono fun _ h => congrArg e h)
-  let eLI : @LinearIsometryEquiv ℝ ℝ Real.semiring Real.semiring (RingHom.id ℝ)
-      (RingHom.id ℝ) _ _ (E [×k]→L[ℝ] F) (E [×k]→L[ℝ] ULift.{u} F)
-      NormedAddCommGroup.toSeminormedAddCommGroup NormedAddCommGroup.toSeminormedAddCommGroup
-      NormedSpace.toModule NormedSpace.toModule :=
-    @LinearIsometryEquiv.mk ℝ ℝ Real.semiring Real.semiring (RingHom.id ℝ) (RingHom.id ℝ) _ _
-      (E [×k]→L[ℝ] F) (E [×k]→L[ℝ] ULift.{u} F)
-      NormedAddCommGroup.toSeminormedAddCommGroup NormedAddCommGroup.toSeminormedAddCommGroup
-      NormedSpace.toModule NormedSpace.toModule
-      { toFun := eLI_f.toLinearIsometry.toContinuousLinearMap.compContinuousMultilinearMap
-        invFun := eLI_f.symm.toLinearIsometry.toContinuousLinearMap.compContinuousMultilinearMap
-        left_inv := fun M => by ext; simp
-        right_inv := fun M => by ext; simp
-        map_add' := fun M N => by ext; simp
-        map_smul' := fun c M => by ext; simp }
-      (fun M => eLI_f.toLinearIsometry.norm_compContinuousMultilinearMap M)
-  let eC := @LinearIsometryEquiv.toContinuousLinearEquiv ℝ ℝ
-    (E [×k]→L[ℝ] F) (E [×k]→L[ℝ] ULift.{u} F) Real.semiring Real.semiring
-    (RingHom.id ℝ) (RingHom.id ℝ) _ _
-    NormedAddCommGroup.toSeminormedAddCommGroup NormedAddCommGroup.toSeminormedAddCommGroup
-    NormedSpace.toModule NormedSpace.toModule eLI
-  have hcomp : iteratedFDeriv ℝ k (⇑e ∘ g) = fun z => eC (iteratedFDeriv ℝ k g z) :=
-    funext fun z => e.iteratedFDeriv_comp_left.trans (by ext; rfl)
+  have hcomp : iteratedFDeriv ℝ k (⇑e ∘ g) =
+      fun z => e.toContinuousLinearMap.compContinuousMultilinearMap (iteratedFDeriv ℝ k g z) :=
+    funext fun z => e.iteratedFDeriv_comp_left
   rw [hcomp] at hres
-  exact (ContinuousLinearEquiv.comp_memWkpLoc_iff (E := E) (k := m)
-    (f := iteratedFDeriv ℝ k g) eC).1 hres
+  exact (memWkpLoc_iff_of_boundedLinearEquiv
+    e.toContinuousLinearMap.compContinuousMultilinearMap
+    e.symm.toContinuousLinearMap.compContinuousMultilinearMap
+    (fun _ _ => by ext; simp) (fun _ _ => by ext; simp)
+    (fun _ _ => by ext; simp) (fun _ _ => by ext; simp)
+    ‖e.toContinuousLinearMap‖ ‖e.symm.toContinuousLinearMap‖
+    (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _)
+    (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _)
+    (fun _ => by ext; simp) (fun _ => by ext; simp)).1 hres
 
 end ContDiffRepresentatives
 

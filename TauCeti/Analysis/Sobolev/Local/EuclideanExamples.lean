@@ -10,9 +10,10 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Sobolev.Local.Haar
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
-import TauCeti.Topology.MetricSpace.SeparatedBalls
+import TauCeti.Topology.MetricSpace.Separable
 
 /-!
 # Membership and non-membership examples for Euclidean local Sobolev classes
@@ -33,7 +34,7 @@ results from `Local.Basic`, `Local.Lipschitz`, and `Local.Haar`:
   functions produce vector-valued ones (`TauCeti.memWkpLoc_one_norm.smul_const`). On the
   non-separable Hilbert space `lp (fun _ : ℝ => ℝ) 2`, however, the bounded map
   `x ↦ lp.single 2 x 1` (`lp.norm_single`) composes with every continuous linear functional to a
-  function equal almost everywhere to zero (`ContinuousLinearMap.ae_eq_zero_comp_lpSingle`)—hence
+  function equal almost everywhere to zero (`ContinuousLinearMap.comp_lpSingle_ae_eq_zero`)—hence
   in every `MemWkpLoc p U k` (`ContinuousLinearMap.memWkpLoc_comp_lpSingle`)—yet fails Bochner
   strong measurability on every measurable set of positive measure
   (`TauCeti.not_aestronglyMeasurable_restrict_lpSingle`) and therefore belongs to no
@@ -121,7 +122,7 @@ example (x : ℝ) : ‖lp.single (E := fun _ : ℝ => ℝ) 2 x (1 : ℝ)‖ = 1 
 /-- Composing `x ↦ lp.single 2 x 1` with any continuous linear functional on
 `lp (fun _ : ℝ => ℝ) 2` vanishes outside a countable set, hence equals `0` almost everywhere on
 `ℝ`. -/
-theorem _root_.ContinuousLinearMap.ae_eq_zero_comp_lpSingle
+theorem _root_.ContinuousLinearMap.comp_lpSingle_ae_eq_zero
     (ℓ : lp (fun _ : ℝ => ℝ) 2 →L[ℝ] ℝ) :
     (ℓ ∘ fun x : ℝ => lp.single (E := fun _ : ℝ => ℝ) 2 x (1 : ℝ)) =ᵐ[volume] 0 := by
   set y : lp (fun _ : ℝ => ℝ) 2 :=
@@ -131,13 +132,8 @@ theorem _root_.ContinuousLinearMap.ae_eq_zero_comp_lpSingle
     have h := InnerProductSpace.toDual_symm_apply
       (x := lp.single (E := fun _ : ℝ => ℝ) 2 x (1 : ℝ)) (y := ℓ)
     rw [← h, lp.inner_single_right, RCLike.inner_apply, conj_trivial, one_mul]
-  have hsum : Summable (fun x : ℝ => ‖y x‖ ^ (2 : ℝ)) := by
-    simpa [ENNReal.toReal_ofNat] using (lp.memℓp y).summable (by norm_num)
-  have hcount : ({x : ℝ | y x ≠ 0}).Countable := by
-    refine hsum.countable_support.mono fun x hx => ?_
-    simp only [Function.mem_support, ne_eq]
-    have hpos : 0 < ‖y x‖ := norm_pos_iff.2 hx
-    positivity
+  have hcount : ({x : ℝ | y x ≠ 0}).Countable :=
+    lp.countable_dsupport (by norm_num : (2 : ℝ≥0∞) ≠ ∞) y
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hcount.measure_zero volume)] with x hx
   have hyx : y x = 0 := not_not.1 hx
   simp [Function.comp_apply, happly, hyx]
@@ -148,7 +144,7 @@ theorem _root_.ContinuousLinearMap.memWkpLoc_comp_lpSingle
     (ℓ : lp (fun _ : ℝ => ℝ) 2 →L[ℝ] ℝ) {p : ENNReal} {U : Set ℝ} {k : ℕ} :
     MemWkpLoc p U k (ℓ ∘ fun x : ℝ => lp.single (E := fun _ : ℝ => ℝ) 2 x (1 : ℝ)) :=
   (memWkpLoc_zero_fun (p := p) (U := U) (k := k)).congr_ae
-    (ae_restrict_of_ae ℓ.ae_eq_zero_comp_lpSingle.symm)
+    (ae_restrict_of_ae ℓ.comp_lpSingle_ae_eq_zero.symm)
 
 /-- On any measurable subset of `ℝ` of positive measure, `x ↦ lp.single 2 x 1` in the
 non-separable Hilbert space `lp (fun _ : ℝ => ℝ) 2` fails Bochner strong measurability. -/
@@ -185,7 +181,7 @@ theorem not_aestronglyMeasurable_restrict_lpSingle {K : Set ℝ} (hKm : Measurab
 /-- **Strong measurability counterexample in a non-separable Banach space.** Although
 `x ↦ lp.single 2 x 1` on `lp (fun _ : ℝ => ℝ) 2` has unit norm everywhere (`lp.norm_single`)
 and composes with every continuous linear functional to an almost-everywhere zero function
-(`ContinuousLinearMap.ae_eq_zero_comp_lpSingle`) and hence into every `MemWkpLoc p U k`
+(`ContinuousLinearMap.comp_lpSingle_ae_eq_zero`) and hence into every `MemWkpLoc p U k`
 (`ContinuousLinearMap.memWkpLoc_comp_lpSingle`), it fails Bochner strong measurability on every
 measurable set of positive measure (`TauCeti.not_aestronglyMeasurable_restrict_lpSingle`) and
 therefore lies in no `MemLpLoc p U` whenever `interior U` is nonempty. -/

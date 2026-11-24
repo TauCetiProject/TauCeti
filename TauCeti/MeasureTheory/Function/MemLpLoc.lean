@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
-public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.Topology.Sets.Opens
 import Mathlib.MeasureTheory.Function.Holder
@@ -43,15 +42,10 @@ half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set
 (`ContinuousLinearMap.memLpLoc_indicator_pos`).
 
 Membership for `μ` passes to every measure bounded by a finite multiple of `μ`
-(`TauCeti.MemLpLoc.of_measure_le_smul`). Two additive Haar measures on a locally compact group
-are proportional on every compact set, so the class does not depend on the choice of Haar
-measure (`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`). Compact sets correspond under a
-homeomorphism, which carries the class for `μ` to the class for the image measure
-(`Homeomorph.memLpLoc_comp_iff`). Since the image of an additive Haar measure under a continuous
-linear equivalence is an additive Haar measure, a continuous linear equivalence `E ≃L[ℝ] E₁` onto
-a finite-dimensional space carries the class of `E₁` to that of `E` for any choice of Haar
-measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`). Thus the class on a finite-dimensional
-space needs no inner product or preferred basis.
+(`TauCeti.MemLpLoc.of_measure_le_smul`), and compact sets correspond under a homeomorphism, which
+carries the class for `μ` to the class for the image measure (`Homeomorph.memLpLoc_comp_iff`).
+Haar-measure independence and linear/affine invariance live in
+`TauCeti.MeasureTheory.Function.MemLpLoc.Haar`.
 -/
 
 public noncomputable section
@@ -452,26 +446,6 @@ theorem memLpLoc_ball_iff {c : X} {r : ℝ} :
 
 end Ball
 
-section Haar
-
-variable {G F : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup F] {p : ℝ≥0∞} {U : Set G} {f : G → F}
-
-/-- **Independence of the Haar measure.** Two additive Haar measures on a locally compact group
-are proportional on every compact set, so they define the same local `Lᵖ` classes. -/
-theorem memLpLoc_iff_of_isAddHaarMeasure (μ ν : Measure G) [μ.IsAddHaarMeasure]
-    [ν.IsAddHaarMeasure] : MemLpLoc p U f μ ↔ MemLpLoc p U f ν := by
-  have key : ∀ (μ ν : Measure G) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure],
-      MemLpLoc p U f μ → MemLpLoc p U f ν := fun μ ν _ _ h K hKU hK =>
-    (h K hKU hK).of_measure_le_smul ENNReal.coe_ne_top <| le_of_eq <| Measure.ext fun s hs => by
-      rw [smul_apply, Measure.restrict_apply hs, Measure.restrict_apply hs]
-      exact Measure.measure_isAddInvariant_eq_smul_of_isCompact_closure ν μ
-        (hK.closure_of_subset Set.inter_subset_right)
-  exact ⟨key μ ν, key ν μ⟩
-
-end Haar
-
 section HalfSpace
 
 /-- The indicator of any open half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set, for every
@@ -515,18 +489,5 @@ theorem Homeomorph.memLpLoc_comp_iff (e : X ≃ₜ Y) :
     have hKe : e ⁻¹' (e '' K) = K := e.preimage_image K
     simpa only [hKe] using (hmem (e '' K)).1
       (h _ (Set.image_subset_iff.2 hKU) (hK.image e.continuous))
-
-variable {E E₁ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-  [MeasurableSpace E₁] [BorelSpace E₁] {U : Set E₁} {f : E₁ → F}
-
-/-- **Linear changes of variables.** A continuous linear equivalence `e : E ≃L[ℝ] E₁` onto a
-finite-dimensional real normed space carries the local `Lᵖ` class of `U` in `E₁` to that of
-`e ⁻¹' U` in `E`, for any additive Haar measures on the two spaces. -/
-theorem ContinuousLinearEquiv.memLpLoc_comp_right_iff (e : E ≃L[ℝ] E₁) (μ : Measure E)
-    [μ.IsAddHaarMeasure] (ν : Measure E₁) [ν.IsAddHaarMeasure] :
-    MemLpLoc p (e ⁻¹' U) (f ∘ e) μ ↔ MemLpLoc p U f ν := by
-  rw [← memLpLoc_iff_of_isAddHaarMeasure (μ.map e) ν]
-  exact e.toHomeomorph.memLpLoc_comp_iff
 
 end Transport

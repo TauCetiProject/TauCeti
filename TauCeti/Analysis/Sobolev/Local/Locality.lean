@@ -88,12 +88,10 @@ theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Op
     (hU : U ⊆ ⋃ i, (O i : Set E)) {k : ℕ} :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p (U ∩ O i) k f := by
   refine ⟨fun hf i => hf.mono inter_subset_left, fun h => ?_⟩
-  have hlift := normSpace_induction_max E
-    (fun k G _ _ => CompleteSpace G → ∀ (g : E → G),
-      (∀ i, MemWkpLoc p (U ∩ O i) k g) → MemWkpLoc p U k g)
-    (fun G _ _ _ g hg =>
-      memWkpLoc_zero_iff.2 <| (memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc)
-    (fun k G _ _ ih _ g hg => by
+  refine memWkpLoc_ulift_induction
+    (fun k G _ _ g => CompleteSpace G ∧ ∀ i, MemWkpLoc p (U ∩ O i) k g)
+    (fun _ _ _ _ ⟨_, hg⟩ => (memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc)
+    (fun _ _ _ _ _ ⟨_, hg⟩ => by
       have hint : ∀ i, interior (U ∩ O i) = interior U ∩ O i := fun i => by
         rw [interior_inter, (O i).isOpen.interior_eq]
       have hsup : (⨆ i, Opens.interior (U ∩ O i)) = Opens.interior U := by
@@ -102,8 +100,8 @@ theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Op
         exact ⟨fun hz => hz.1, fun hz => ⟨hz, hU (interior_subset hz)⟩⟩
       choose D hD hDk using fun i => (hg i).exists_weakFDeriv
       obtain ⟨G', hG, hGD⟩ := exists_hasWeakFDerivOn_iSup _ D hD
-      refine memWkpLoc_succ_iff.2 ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc,
-        (interior U).indicator G', ?_, ih inferInstance _ fun i => ?_⟩
+      refine ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc,
+        (interior U).indicator G', ?_, inferInstance, fun i => ?_⟩
       · rw [hsup] at hG
         exact hG.congr_ae_deriv
           (indicator_ae_eq_restrict measurableSet_interior.nullMeasurableSet).symm
@@ -116,9 +114,8 @@ theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Op
           simp only [indicator_of_mem hzi, indicator_of_mem hzU, hz hzi]
         · have hzi : z ∉ interior (U ∩ O i) := fun hzi => hzU ((hint i ▸ hzi).1)
           simp only [indicator_of_notMem hzi, indicator_of_notMem hzU])
-    k F (completeSpace_ulift_iff.2 inferInstance)
-  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
-  exact e.comp_memWkpLoc_iff.1 (hlift _ fun i => e.comp_memWkpLoc_iff.2 (h i))
+    ⟨completeSpace_ulift_iff.2 inferInstance,
+      fun i => ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 (h i)⟩
 
 /-- Local Sobolev membership on the union of open sets is membership on each of them. -/
 theorem memWkpLoc_iSup_iff [CompleteSpace F] {ι : Type*} (V : ι → Opens E) {k : ℕ} :

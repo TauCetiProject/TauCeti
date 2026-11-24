@@ -65,6 +65,25 @@ universe u u₁ v
 
 section SmulMeasure
 
+private theorem memWkpLoc_smul_measure_imp {E : Type u} {F : Type v}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ ν : Measure E} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) (hν : ν = c • μ)
+    {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F}
+    (hf : @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f) :
+    @MemWkpLoc E _ _ ⟨ν⟩ p U k F _ _ f := by
+  subst hν
+  refine @memWkpLoc_ulift_induction E F _ _ ⟨c • μ⟩ _ _ p U k f
+    (fun k F _ _ g => @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ g)
+    (fun _ _ _ _ hg => (memLpLoc_smul_measure_iff hc0 hc).2
+      (@MemWkpLoc.memLpLoc _ _ _ _ ⟨μ⟩ _ _ _ _ _ _ hg))
+    (fun _ _ _ _ _ hg => by
+      obtain ⟨hp, D, hD, hk⟩ := (@memWkpLoc_succ_iff E _ _ _ ⟨μ⟩ _ _ _ _ _ _).1 hg
+      exact ⟨(memLpLoc_smul_measure_iff hc0 hc).2 hp, D,
+        (hasWeakFDerivOn_smul_measure_iff (μ := μ) (D := D) hc0 hc).2 hD, hk⟩)
+    ((@ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨μ⟩ _ _ _ _ p U k f
+      ContinuousLinearEquiv.ulift.symm).2 hf)
+
 /-- Scaling the ambient measure by a positive finite constant preserves and reflects local Sobolev
 membership at every order. -/
 theorem memWkpLoc_smul_measure_iff {E : Type u} {F : Type v}
@@ -72,22 +91,10 @@ theorem memWkpLoc_smul_measure_iff {E : Type u} {F : Type v}
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     {μ : Measure E} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
     {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F} :
-    @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F),
-      @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f)
-    (fun F _ _ f => by
-      simp only [@memWkpLoc_zero_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_zero_iff E F _ _ ⟨μ⟩]
-      exact memLpLoc_smul_measure_iff hc0 hc)
-    (fun k F _ _ ih f => by
-      simp only [@memWkpLoc_succ_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_succ_iff E F _ _ ⟨μ⟩]
-      exact and_congr (memLpLoc_smul_measure_iff hc0 hc) <| exists_congr fun D =>
-        and_congr (hasWeakFDerivOn_smul_measure_iff (μ := μ) (D := D) hc0 hc) (ih D))
-    k F
-  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
-  rw [← @ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨c • μ⟩ _ _ _ _ p U k f e,
-    ← @ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨μ⟩ _ _ _ _ p U k f e]
-  exact hlift (fun z => e (f z))
+    @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f :=
+  ⟨fun h => memWkpLoc_smul_measure_imp (ENNReal.inv_ne_zero.2 hc) (ENNReal.inv_ne_top.2 hc0)
+      (by rw [smul_smul, ENNReal.inv_mul_cancel hc0 hc, one_smul]) h,
+    fun h => memWkpLoc_smul_measure_imp hc0 hc rfl h⟩
 
 end SmulMeasure
 
@@ -137,17 +144,15 @@ theorem MemWkpLoc.comp_add_right {E : Type u} {F : Type v}
     MemWkpLoc p U k (fun x => u (x + b)) := by
   have hint : MapsTo (· + b) (interior U) (interior V) :=
     (Homeomorph.addRight b).isOpenMap.mapsTo_interior hmaps
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (u : E → F), MemWkpLoc p V k u → MemWkpLoc p U k (fun x => u (x + b)))
-    (fun F _ _ u hu => memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_add_right b hmaps))
-    (fun k F _ _ ih u hu => by
-      obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
-      exact memWkpLoc_succ_iff.2
-        ⟨hLp.comp_add_right b hmaps, fun x => D (x + b),
-          hD.comp_add_right (V := Opens.interior U) (by simpa using hint), ih D hk⟩)
-    k F
-  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
-  exact e.comp_memWkpLoc_iff.1 (hlift (fun x => e (u x)) (e.comp_memWkpLoc_iff.2 hu))
+  refine memWkpLoc_ulift_induction
+    (fun k F _ _ g => ∃ w : E → F, g = (fun x => w (x + b)) ∧ MemWkpLoc p V k w)
+    (fun _ _ _ _ ⟨_, hw, hmw⟩ => hw ▸ hmw.memLpLoc.comp_add_right b hmaps)
+    (fun _ _ _ _ _ ⟨_, hw, hmw⟩ => by
+      obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hmw
+      exact ⟨hw ▸ hLp.comp_add_right b hmaps, fun x => D (x + b),
+        hw ▸ hD.comp_add_right (V := Opens.interior U) (by simpa using hint), D, rfl, hk⟩)
+    ⟨fun x => ContinuousLinearEquiv.ulift.symm (u x), rfl,
+      ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 hu⟩
 
 /-- Right translation preserves and reflects local Sobolev membership at every order. -/
 @[simp]
@@ -181,7 +186,7 @@ theorem MemWkpLoc.comp_continuousLinearEquiv {p : ENNReal} {U : Set E}
     MemWkpLoc p U k (u ∘ e) := by
   have hint : MapsTo e (interior U) (interior V) :=
     e.toHomeomorph.isOpenMap.mapsTo_interior hmaps
-  have hlift := normSpace_induction_max E₁
+  have hlift := nat_induction_clm_ulift ℝ E₁
     (fun k F _ _ => ∀ (u : E₁ → F), MemWkpLoc p V k u → MemWkpLoc p U k (u ∘ e))
     (fun F _ _ u hu =>
       memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv e hmaps))

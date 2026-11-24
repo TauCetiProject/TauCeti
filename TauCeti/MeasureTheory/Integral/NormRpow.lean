@@ -574,6 +574,31 @@ theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {
   exact lt_irrefl _ (((isBounded_closedBall.memLp_norm_rpow_restrict_iff
     (closedBall_mem_nhds 0 hε) (by simp)).1 h2).trans_eq (by simp))
 
+omit [FiniteDimensional ℝ E] in
+private theorem mul_eLpNorm_ball_le_eLpNorm_id {p : ℝ≥0∞} (hp : 0 < p) {e : E} (he : ‖e‖ = 1)
+    {R : ℝ} (hR : 2 ≤ R) :
+    ‖R - 1‖ₑ * mu (ball 0 1) ^ (1 / p.toReal) ≤ eLpNorm (fun x : E => x) p mu := by
+  set B : Set E := ball (R • e) 1
+  have hB_ne : mu.restrict B ≠ 0 := by
+    rw [ne_eq, Measure.restrict_eq_zero, Measure.addHaar_ball_center]
+    exact (measure_ball_pos mu 0 one_pos).ne'
+  calc ‖R - 1‖ₑ * mu (ball 0 1) ^ (1 / p.toReal)
+      = eLpNorm (fun _ : E => R - 1) p (mu.restrict B) := by
+          rw [eLpNorm_const _ hp.ne' hB_ne, Measure.restrict_apply_univ]
+          simp only [B, Measure.addHaar_ball_center]
+    _ ≤ eLpNorm (fun x : E => x) p (mu.restrict B) := by
+          refine eLpNorm_mono_ae aestronglyMeasurable_const
+            ((ae_restrict_iff' measurableSet_ball).2 (Filter.Eventually.of_forall fun x hx => ?_))
+          have hdist : ‖x - R • e‖ < 1 := by simpa [B, dist_eq_norm] using hx
+          have hRe : ‖R • e‖ = R := by
+            rw [norm_smul, Real.norm_of_nonneg (by linarith), he, mul_one]
+          have hnorm : R - 1 ≤ ‖x‖ := by
+            have := norm_sub_norm_le (R • e) x
+            rw [norm_sub_rev, hRe] at this
+            linarith
+          rwa [Real.norm_of_nonneg (by linarith)]
+    _ ≤ eLpNorm (fun x : E => x) p mu := eLpNorm_mono_measure _ Measure.restrict_le_self
+
 /-- On any nontrivial finite-dimensional real normed space, the identity map is not globally `Lᵖ`
 for any `0 < p`, with respect to any additive Haar measure. -/
 theorem not_memLp_id [Nontrivial E] {p : ℝ≥0∞} (hp : 0 < p) :
@@ -582,40 +607,14 @@ theorem not_memLp_id [Nontrivial E] {p : ℝ≥0∞} (hp : 0 < p) :
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   set e : E := ‖v‖⁻¹ • v
   have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
-  set B₀ : Set E := ball 0 1
-  set C : ℝ≥0∞ := mu B₀ ^ (1 / p.toReal)
-  have hB₀_pos : 0 < mu B₀ := measure_ball_pos mu 0 one_pos
-  have hB₀_lt : mu B₀ < ∞ := measure_ball_lt_top
-  have hC_pos : 0 < C := ENNReal.rpow_pos hB₀_pos hB₀_lt.ne
+  set C : ℝ≥0∞ := mu (ball 0 1) ^ (1 / p.toReal)
+  have hB₀_lt : mu (ball 0 1) < ∞ := measure_ball_lt_top
+  have hC_pos : 0 < C := ENNReal.rpow_pos (measure_ball_pos mu 0 one_pos) hB₀_lt.ne
   have hC_ne_top : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) hB₀_lt.ne
   set R : ℝ := (eLpNorm (fun x : E => x) p mu / C).toReal + 2
-  have hR1 : 1 ≤ R - 1 := by
-    have : 0 ≤ (eLpNorm (fun x : E => x) p mu / C).toReal := ENNReal.toReal_nonneg
-    linarith
-  have hR_pos : 0 < R := by linarith
-  set B : Set E := ball (R • e) 1
-  have hvolB : mu B = mu B₀ := Measure.addHaar_ball_center mu (R • e) 1
-  have hB_ne : mu.restrict B ≠ 0 := by
-    intro h0
-    have := congrArg (fun ν : Measure E => ν univ) h0
-    simp only [Measure.restrict_apply_univ, FunLike.coe_zero, Pi.zero_apply, hvolB] at this
-    exact hB₀_pos.ne' this
-  have hconst : eLpNorm (fun _ : E => R - 1) p (mu.restrict B) = ‖R - 1‖ₑ * C := by
-    rw [eLpNorm_const _ hp.ne' hB_ne, Measure.restrict_apply_univ, hvolB]
-  have hle : eLpNorm (fun _ : E => R - 1) p (mu.restrict B) ≤
-      eLpNorm (fun x : E => x) p mu := by
-    refine (eLpNorm_mono_ae aestronglyMeasurable_const ?_).trans
-      (eLpNorm_mono_measure _ Measure.restrict_le_self)
-    refine (ae_restrict_iff' measurableSet_ball).2 (Filter.Eventually.of_forall fun x hx => ?_)
-    have hdist : ‖x - R • e‖ < 1 := by simpa [B, dist_eq_norm] using hx
-    have hRe : ‖R • e‖ = R := by rw [norm_smul, Real.norm_of_nonneg hR_pos.le, he, mul_one]
-    have hnorm : R - 1 ≤ ‖x‖ := by
-      have := norm_sub_norm_le (R • e) x
-      rw [norm_sub_rev, hRe] at this
-      linarith
-    rw [Real.norm_of_nonneg (by linarith)]
-    exact hnorm
-  rw [hconst] at hle
+  have hR : 2 ≤ R := le_add_of_nonneg_left ENNReal.toReal_nonneg
+  have hle : ‖R - 1‖ₑ * C ≤ eLpNorm (fun x : E => x) p mu :=
+    mul_eLpNorm_ball_le_eLpNorm_id hp he hR
   have hdiv_lt : eLpNorm (fun x : E => x) p mu / C < ‖R - 1‖ₑ := by
     have hfin : eLpNorm (fun x : E => x) p mu / C ≠ ∞ :=
       ENNReal.div_ne_top h.eLpNorm_lt_top.ne hC_pos.ne'

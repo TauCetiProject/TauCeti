@@ -9,10 +9,11 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
-import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Topology.Algebra.Support
 
 /-!
 # Non-existence of weak derivatives across a hyperplane jump
@@ -25,7 +26,7 @@ admits no weak derivative on any open set `Ω` meeting `ker ℓ`
 By linear splitting along `ℓ`, the problem reduces to the model product `ℝ × ℝ^d`, where any weak
 derivative vanishes almost everywhere off the hyperplane `{q | q.1 = 0}` and hence almost
 everywhere; testing against a product of bump functions centered on `{q | q.1 = 0}` then yields a
-nonzero boundary integral via `ContDiffBump.integral_Ioi_deriv`.
+nonzero boundary integral via `HasCompactSupport.integral_Ioi_deriv_eq`.
 
 ## Main declarations
 
@@ -41,47 +42,6 @@ open scoped ENNReal Distributions Topology
 namespace TauCeti
 
 section HalfSpaceJump
-
-private def prodBumpTestFunction {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] {Ω : Opens (ℝ × H)} {x₀ : ℝ} {y₀ : H}
-    (a : ContDiffBump x₀) (b : ContDiffBump y₀)
-    (hΩ : (Metric.closedBall x₀ a.rOut ×ˢ Metric.closedBall y₀ b.rOut : Set (ℝ × H)) ⊆ Ω) :
-    𝓓(Ω, ℝ) :=
-  let f : ℝ × H → ℝ := ((a : ℝ → ℝ) ∘ Prod.fst) * ((b : H → ℝ) ∘ Prod.snd)
-  have hfs : tsupport f ⊆ Metric.closedBall x₀ a.rOut ×ˢ Metric.closedBall y₀ b.rOut := by
-    simpa only [f, Pi.mul_def, Function.comp_def, smul_eq_mul, mul_comm,
-      a.tsupport_eq, b.tsupport_eq] using
-      tsupport_snd_smul_fst_subset (b : H → ℝ) (a : ℝ → ℝ)
-  ⟨f, (a.contDiff.comp (ContinuousLinearMap.fst ℝ ℝ H).contDiff).mul
-      (b.contDiff.comp (ContinuousLinearMap.snd ℝ ℝ H).contDiff),
-    ((isCompact_closedBall x₀ a.rOut).prod
-      (isCompact_closedBall y₀ b.rOut)).of_isClosed_subset (isClosed_tsupport f) hfs,
-    hfs.trans hΩ⟩
-
-private theorem prodBumpTestFunction_apply {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] {Ω : Opens (ℝ × H)} {x₀ : ℝ} {y₀ : H}
-    (a : ContDiffBump x₀) (b : ContDiffBump y₀)
-    (hΩ : (Metric.closedBall x₀ a.rOut ×ˢ Metric.closedBall y₀ b.rOut : Set (ℝ × H)) ⊆ Ω)
-    (q : ℝ × H) :
-    (prodBumpTestFunction a b hΩ : ℝ × H → ℝ) q = a q.1 * b q.2 :=
-  rfl
-
-private theorem lineDeriv_prodBumpTestFunction {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] {Ω : Opens (ℝ × H)} {x₀ : ℝ} {y₀ : H}
-    (a : ContDiffBump x₀) (b : ContDiffBump y₀)
-    (hΩ : (Metric.closedBall x₀ a.rOut ×ˢ Metric.closedBall y₀ b.rOut : Set (ℝ × H)) ⊆ Ω)
-    (q : ℝ × H) :
-    lineDeriv ℝ (prodBumpTestFunction a b hΩ : ℝ × H → ℝ) q ((1 : ℝ), (0 : H)) =
-      deriv (a : ℝ → ℝ) q.1 * b q.2 := by
-  have hda : HasDerivAt (a : ℝ → ℝ) (deriv (a : ℝ → ℝ) q.1) (0 + q.1) := by
-    simpa only [zero_add] using ((a.contDiff (n := 1)).differentiable one_ne_zero q.1).hasDerivAt
-  refine HasLineDerivAt.lineDeriv
-    (?_ : HasDerivAt
-      (fun t : ℝ => (prodBumpTestFunction a b hΩ : ℝ × H → ℝ) (q + t • ((1 : ℝ), (0 : H))))
-      (deriv (a : ℝ → ℝ) q.1 * b q.2) 0)
-  have h := (hda.comp_add_const 0 q.1).mul_const (b q.2)
-  simpa only [Prod.smul_mk, smul_eq_mul, mul_one, smul_zero, Prod.fst_add, Prod.snd_add,
-    add_zero, add_comm q.1, prodBumpTestFunction_apply] using h
 
 private theorem ae_zero_of_hasWeakFDerivOn_indicator_fst_pos {d : ℕ}
     {Ω : Opens (ℝ × EuclideanSpace ℝ (Fin d))}
@@ -140,29 +100,40 @@ private theorem not_hasWeakFDerivOn_indicator_fst_pos {d : ℕ}
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen (0, p₀2) hp₀
   let a : ContDiffBump (0 : ℝ) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
   let b : ContDiffBump p₀2 := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  have hΩsupp : (Metric.closedBall (0 : ℝ) a.rOut ×ˢ Metric.closedBall p₀2 b.rOut :
-      Set (ℝ × H)) ⊆ Ω := by
-    intro q hq
-    have hq1 : dist q.1 0 ≤ ε / 3 := by simpa [a] using hq.1
-    have hq2 : dist q.2 p₀2 ≤ ε / 3 := by simpa [b] using hq.2
-    have hqball : q ∈ Metric.closedBall ((0 : ℝ), p₀2) (ε / 3) := by
-      rw [Metric.mem_closedBall, Prod.dist_eq]
-      exact max_le hq1 hq2
-    exact hball (Metric.closedBall_subset_ball (by linarith) hqball)
-  let φ : 𝓓(Ω, ℝ) := prodBumpTestFunction a b hΩsupp
+  let Ω₁ : Opens ℝ := ⟨Metric.ball (0 : ℝ) (ε / 2), Metric.isOpen_ball⟩
+  let Ω₂ : Opens H := ⟨Metric.ball p₀2 (ε / 2), Metric.isOpen_ball⟩
+  have hΩsupp : (Ω₁ : Set ℝ) ×ˢ (Ω₂ : Set H) ⊆ Ω := fun q hq =>
+    hball (Metric.mem_ball.2 <| by
+      rw [Prod.dist_eq]
+      exact max_lt ((Metric.mem_ball.1 hq.1).trans (by linarith))
+        ((Metric.mem_ball.1 hq.2).trans (by linarith)))
+  let φ₁ : 𝓓(Ω₁, ℝ) := ⟨a, a.contDiff, a.hasCompactSupport, by
+    rw [a.tsupport_eq]
+    exact Metric.closedBall_subset_ball (by dsimp only [a]; linarith)⟩
+  let φ₂ : 𝓓(Ω₂, ℝ) := ⟨b, b.contDiff, b.hasCompactSupport, by
+    rw [b.tsupport_eq]
+    exact Metric.closedBall_subset_ball (by dsimp only [b]; linarith)⟩
+  let φ : 𝓓(Ω, ℝ) := TestFunction.prodSMulCLM φ₂ hΩsupp φ₁
   have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
   simp only [Pi.zero_apply, zero_apply, smul_zero, integral_zero, neg_zero] at hkey
   have hint : (∫ q : ℝ × H, lineDeriv ℝ (φ : ℝ × H → ℝ) q (1, 0) • u q) =
       ∫ q : ℝ × H, (Ioi (0 : ℝ)).indicator (deriv (a : ℝ → ℝ)) q.1 * b q.2 := by
     refine integral_congr_ae (Eventually.of_forall fun q => ?_)
-    dsimp only [φ]
-    rw [lineDeriv_prodBumpTestFunction (H := H) a b hΩsupp q]
-    simp only [smul_eq_mul, hu]
-    by_cases hq : 0 < q.1 <;> simp [Set.indicator, hq]
+    have hderiv : lineDeriv ℝ (φ : ℝ × H → ℝ) q (1, 0) = deriv (a : ℝ → ℝ) q.1 * b q.2 := by
+      rw [← TestFunction.lineDerivOp_apply]
+      dsimp only [φ]
+      rw [TestFunction.lineDerivOp_prodSMulCLM_prod_zero, TestFunction.prodSMulCLM_apply,
+        TestFunction.lineDerivOp_one_apply_eq_deriv]
+      exact mul_comm _ _
+    dsimp only
+    rw [hderiv]
+    simp only [smul_eq_mul, hu, Set.indicator_apply, Set.mem_ofPred_eq, Set.mem_Ioi]
+    by_cases hq : 0 < q.1 <;> simp [hq]
   have hprod := integral_prod_mul (μ := (volume : Measure ℝ)) (ν := (volume : Measure H))
     ((Ioi (0 : ℝ)).indicator (deriv (a : ℝ → ℝ))) (fun y => b y)
+  have ha0 : a 0 = 1 := a.one_of_mem_closedBall (Metric.mem_closedBall_self a.rIn_pos.le)
   rw [hint, Measure.volume_eq_prod, hprod, integral_indicator measurableSet_Ioi,
-    a.integral_Ioi_deriv] at hkey
+    a.hasCompactSupport.integral_Ioi_deriv_eq (a.contDiff (n := 1)) 0, ha0] at hkey
   have hb := b.integral_pos (μ := volume)
   linarith
 

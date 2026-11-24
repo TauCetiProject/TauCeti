@@ -25,6 +25,7 @@ import TauCeti.Analysis.Sobolev.Local.Radial
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
+import TauCeti.MeasureTheory.Function.MemLpLoc.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 

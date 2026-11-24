@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 import Mathlib.MeasureTheory.Group.Measure
 
@@ -12,13 +13,14 @@ import Mathlib.MeasureTheory.Group.Measure
 # Measure scaling, translation, and affine invariance of local `Lᵖ` classes
 
 Scaling the ambient measure by a positive finite scalar preserves and reflects `Lᵖ` membership on
-compact sets (`TauCeti.memLpLoc_smul_measure_iff`). Combined with Haar-measure independence
-(`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`) and linear invariance
-(`ContinuousLinearEquiv.memLpLoc_comp_right_iff`) from `TauCeti.MeasureTheory.Function.MemLpLoc`,
-right translations (`TauCeti.MemLpLoc.comp_add_right`, `TauCeti.memLpLoc_comp_add_right_iff`),
-continuous linear equivalences (`TauCeti.MemLpLoc.comp_continuousLinearEquiv`), and real-affine
-equivalences (`TauCeti.MemLpLoc.comp_continuousLinearEquiv_add`) preserve local `Lᵖ` classes
-between arbitrary Borel additive Haar measures.
+compact sets (`TauCeti.memLpLoc_smul_measure_iff`). Two additive Haar measures on a locally compact
+group are proportional on every compact set, so they define the same local `Lᵖ` classes
+(`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`). Combined with right-translation invariance
+(`TauCeti.MemLpLoc.comp_add_right`, `TauCeti.memLpLoc_comp_add_right_iff`), this shows that
+continuous linear equivalences (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`,
+`TauCeti.MemLpLoc.comp_continuousLinearEquiv`) and real-affine equivalences
+(`TauCeti.MemLpLoc.comp_continuousLinearEquiv_add`) preserve local `Lᵖ` classes between arbitrary
+Borel additive Haar measures.
 -/
 
 public noncomputable section
@@ -42,6 +44,28 @@ theorem memLpLoc_smul_measure_iff {X F : Type*}
     fun h => h.of_measure_le_smul hc le_rfl⟩
 
 end SmulMeasure
+
+section Haar
+
+variable {G F : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup F] {p : ℝ≥0∞} {U : Set G} {f : G → F}
+
+/-- **Independence of the Haar measure.** Two additive Haar measures on a locally compact group
+are proportional on every compact set, so they define the same local `Lᵖ` classes. -/
+theorem memLpLoc_iff_of_isAddHaarMeasure (μ ν : Measure G) [μ.IsAddHaarMeasure]
+    [ν.IsAddHaarMeasure] : MemLpLoc p U f μ ↔ MemLpLoc p U f ν := by
+  have key : ∀ (μ ν : Measure G) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure],
+      MemLpLoc p U f μ → MemLpLoc p U f ν := fun μ ν _ _ h =>
+    memLpLoc_iff.2 fun K hKU hK =>
+      ((memLpLoc_iff.1 h) K hKU hK).of_measure_le_smul ENNReal.coe_ne_top <|
+        le_of_eq <| Measure.ext fun s hs => by
+          rw [smul_apply, Measure.restrict_apply hs, Measure.restrict_apply hs]
+          exact Measure.measure_isAddInvariant_eq_smul_of_isCompact_closure ν μ
+            (hK.closure_of_subset Set.inter_subset_right)
+  exact ⟨key μ ν, key ν μ⟩
+
+end Haar
 
 section Translation
 
@@ -73,6 +97,15 @@ variable {E E₁ F : Type*}
   [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
   [MeasurableSpace E₁] [BorelSpace E₁]
   [NormedAddCommGroup F]
+
+/-- **Linear changes of variables.** A continuous linear equivalence `e : E ≃L[ℝ] E₁` onto a
+finite-dimensional real normed space carries the local `Lᵖ` class of `U` in `E₁` to that of
+`e ⁻¹' U` in `E`, for any additive Haar measures on the two spaces. -/
+theorem _root_.ContinuousLinearEquiv.memLpLoc_comp_right_iff (e : E ≃L[ℝ] E₁) (μ : Measure E)
+    [μ.IsAddHaarMeasure] (ν : Measure E₁) [ν.IsAddHaarMeasure] {p : ℝ≥0∞} {U : Set E₁}
+    {f : E₁ → F} : MemLpLoc p (e ⁻¹' U) (f ∘ e) μ ↔ MemLpLoc p U f ν := by
+  rw [← memLpLoc_iff_of_isAddHaarMeasure (μ.map e) ν]
+  exact e.toHomeomorph.memLpLoc_comp_iff
 
 /-- Precomposition with a continuous linear equivalence onto a finite-dimensional real normed space
 preserves local `Lᵖ` membership between arbitrary Borel additive Haar measures. -/

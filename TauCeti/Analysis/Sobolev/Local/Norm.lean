@@ -40,8 +40,9 @@ As with `MemWkpLocAux` in `TauCeti.Analysis.Sobolev.Local.Basic`, when `E : Type
 `F : Type v` live in separate universes, `E →L[ℝ] F` lives in `Type (max u v)`. The private
 helper `eLpNormWkpAux` fixes the codomain universe to `max u v` so the recursion on `k` is
 well-typed while `TauCeti.eLpNormWkp` accepts any `F : Type v`. Inductive proofs reuse
-`TauCeti.normSpace_induction_max` and `TauCeti.normSpace_induction_max₂` by lifting `F` to
-`ULift.{u} F` via `LinearIsometryEquiv.eLpNormWkp_comp`.
+`TauCeti.nat_induction_clm_ulift` and `TauCeti.nat_induction_clm_ulift₂` by lifting `F` to
+`ULift.{u} F` via `LinearIsometryEquiv.eLpNormWkp_comp` (packaged by
+`TauCeti.eLpNormWkp_ulift_induction`).
 
 ## References
 
@@ -144,19 +145,15 @@ private theorem eLpNormWkp_comp_le_step {F' : Type v'} {G' : Type w'}
   rw [eLpNormWkp_succ, eLpNormWkp_succ, e'.eLpNorm_comp]
   refine add_le_add le_rfl (le_iInf₂ fun D hD => ?_)
   let ePost : (E →L[ℝ] F') ≃ₗᵢ[ℝ] (E →L[ℝ] G') :=
-    { toFun := fun A => (e' : F' →L[ℝ] G').comp A
-      invFun := fun B => (e'.symm : G' →L[ℝ] F').comp B
-      left_inv := fun A => by ext x; simp
-      right_inv := fun B => by ext x; simp
-      map_add' := fun A B => by ext x; simp
-      map_smul' := fun c A => by ext x; simp
-      norm_map' := fun _ => e'.toLinearIsometry.norm_toContinuousLinearMap_comp }
+    LinearIsometryEquiv.ofLinearIsometry (e'.toLinearIsometry.postcomp (E := E))
+      (e'.symm.toLinearIsometry.postcomp (E := E)).toLinearMap
+      (by ext B x; simp [LinearIsometry.postcomp]) (by ext A x; simp [LinearIsometry.postcomp])
   exact iInf₂_le_of_le (fun z => ePost (D z))
     (e'.toContinuousLinearEquiv.comp_hasWeakFDerivOn hD) (ih ePost)
 
 private theorem eLpNormWkp_comp_le (e : F ≃ₗᵢ[ℝ] G) :
     eLpNormWkp p U k (fun z => e (f z)) ≤ eLpNormWkp p U k f := by
-  -- Bootstraps the universe transfer used by `normSpace_induction_max` and `_₂`.
+  -- Bootstraps the universe transfer used by `nat_induction_clm_ulift` and `_₂`.
   have aux : ∀ (k : ℕ) {F' : Type (max u v)} {G' : Type (max u w)}
       [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G'] [NormedSpace ℝ G']
       {f' : E → F'} (e' : F' ≃ₗᵢ[ℝ] G'),
@@ -176,34 +173,44 @@ theorem _root_.LinearIsometryEquiv.eLpNormWkp_comp (e : F ≃ₗᵢ[ℝ] G) :
   le_antisymm (eLpNormWkp_comp_le e)
     (by simpa using eLpNormWkp_comp_le e.symm (f := fun z => e (f z)))
 
+omit [MeasureSpace E] in
+/-- Universe-lifting induction for `TauCeti.eLpNormWkp`: proves a universe-uniform predicate
+`P k (ULift.{u} F) ((LinearIsometryEquiv.ulift ℝ F).symm ∘ f)` from a base case at `k = 0` and an
+inductive step from `E →L[ℝ] F` at `k` to `F` at `k + 1`. -/
+private theorem eLpNormWkp_ulift_induction
+    (P : ℕ → ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F], (E → F) → Prop)
+    (h0 : ∀ (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F] (g : E → F), P 0 F g)
+    (hsucc : ∀ (k : ℕ) (F : Type (max u v)) [NormedAddCommGroup F] [NormedSpace ℝ F],
+      (∀ D : E → E →L[ℝ] F, P k (E →L[ℝ] F) D) → ∀ g : E → F, P (k + 1) F g)
+    (f : E → F) :
+    P k (ULift.{u} F) (fun z => (LinearIsometryEquiv.ulift ℝ F).symm (f z)) :=
+  nat_induction_clm_ulift ℝ E (fun k F _ _ => ∀ g : E → F, P k F g)
+    (fun _ _ _ g => h0 _ g) (fun k F _ _ ih g => hsucc k F ih g) k F _
+
 /-- The `W^{k,p}` norm increases with the set. -/
 theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp p U k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), eLpNormWkp p V k f ≤ eLpNormWkp p U k f)
+  simpa using eLpNormWkp_ulift_induction
+    (fun k _ _ _ g => eLpNormWkp p V k g ≤ eLpNormWkp p U k g)
     (fun _ _ _ _ => eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl))
-    (fun _ _ _ _ ih f => by
+    (fun _ _ _ _ ih g => by
       rw [eLpNormWkp_succ, eLpNormWkp_succ]
       gcongr ?_ + ?_
       · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
       · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) (ih D))
-    k F
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  simpa [e.eLpNormWkp_comp] using hlift (fun z => e (f z))
+    f
 
 /-- The `W^{k,p}(U)` norm increases with the derivative order. -/
 theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
     eLpNormWkp p U l f ≤ eLpNormWkp p U k f := by
-  have hlift := normSpace_induction_max E
-    (fun l F _ _ => ∀ (k : ℕ), l ≤ k → ∀ (f : E → F), eLpNormWkp p U l f ≤ eLpNormWkp p U k f)
+  simpa using eLpNormWkp_ulift_induction
+    (fun l _ _ _ g => ∀ (k : ℕ), l ≤ k → eLpNormWkp p U l g ≤ eLpNormWkp p U k g)
     (fun _ _ _ _ _ _ => eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm)
-    (fun _ _ _ _ ih k hlk f => by
+    (fun _ _ _ _ ih g k hlk => by
       obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
       rw [eLpNormWkp_succ, eLpNormWkp_succ]
       gcongr
-      exact ih k (by omega) _)
-    l F
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  simpa [e.eLpNormWkp_comp] using hlift k hlk (fun z => e (f z))
+      exact ih _ k (by omega))
+    f k hlk
 
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
@@ -265,17 +272,15 @@ theorem le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn {a b c : ℝ≥0∞
         simp only [ENNReal.add_iInf, ENNReal.mul_iInf_of_ne hc0 hc]
 
 /-- A function of finite `W^{k,p}` norm lies in the local Sobolev class `W^{k,p}_loc`. -/
-theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), eLpNormWkp p U k f ≠ ∞ → MemWkpLoc p U k f)
-    (fun _ _ _ _ hf => memWkpLoc_zero_iff.2 (memLp_of_eLpNormWkp_ne_top hf).memLpLoc)
-    (fun _ _ _ _ ih _ hf => by
-      obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
-      exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, ih D hDk⟩)
-    k F
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  exact e.toContinuousLinearEquiv.comp_memWkpLoc_iff.1
-    (hlift _ (by simpa [e.eLpNormWkp_comp] using hf))
+theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f :=
+  memWkpLoc_ulift_induction (fun k _ _ _ g => eLpNormWkp p U k g ≠ ∞)
+    (fun _ _ _ _ hg => (memLp_of_eLpNormWkp_ne_top hg).memLpLoc)
+    (fun _ _ _ _ _ hg => by
+      obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hg
+      exact ⟨(memLp_of_eLpNormWkp_ne_top hg).memLpLoc, D, hD, hDk⟩)
+    (by
+      change eLpNormWkp p U k (fun z => (LinearIsometryEquiv.ulift ℝ F).symm (f z)) ≠ ∞
+      simpa using hf)
 
 /-- On an open set, a finite successor-order norm is realized by a weak derivative of finite norm
 of the previous order. -/
@@ -290,17 +295,14 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top [FiniteDimensional �
 /-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
 theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set E}
     (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f ≠ ∞ := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f : E → F), MemWkpLoc p U k f → eLpNormWkp p K k f ≠ ∞)
-    (fun _ _ _ _ hf => (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top)
-    (fun _ _ _ _ ih _ hf => by
-      obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
+  simpa using eLpNormWkp_ulift_induction
+    (fun k _ _ _ g => MemWkpLoc p U k g → eLpNormWkp p K k g ≠ ∞)
+    (fun _ _ _ _ hg => (memLpLoc_iff.1 hg.memLpLoc K hKU hK).eLpNorm_ne_top)
+    (fun _ _ _ _ ih g hg => by
+      obtain ⟨D, hD, hDk⟩ := hg.exists_weakFDeriv
       refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
-      exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih D hDk⟩)
-    k F
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  have h := hlift _ (e.toContinuousLinearEquiv.comp_memWkpLoc_iff.2 hf)
-  simpa [e.eLpNormWkp_comp] using h
+      exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hg.memLpLoc K hKU hK).eLpNorm_ne_top, ih D hDk⟩)
+    f ((LinearIsometryEquiv.ulift ℝ F).symm.toContinuousLinearEquiv.comp_memWkpLoc_iff.2 hf)
 
 /-- A local Sobolev function has finite `W^{k,p}` norm on every set whose closure is compact and
 contained in its domain. -/
@@ -312,36 +314,37 @@ theorem MemWkpLoc.eLpNormWkp_ne_top_of_closure_subset (hf : MemWkpLoc p U k f)
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
 theorem eLpNormWkp_zero_fun [CompleteSpace F] : eLpNormWkp p U k (0 : E → F) = 0 := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => CompleteSpace F → eLpNormWkp p U k (0 : E → F) = 0)
-    (fun _ _ _ _ => by simp)
-    (fun _ _ _ _ ih _ => by
-      refine le_antisymm ((eLpNormWkp_succ_le hasWeakFDerivOn_zero).trans ?_) zero_le
-      simp [ih inferInstance])
-    k F (completeSpace_ulift_iff.2 inferInstance)
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  have he0 : (fun z => e ((0 : E → F) z)) = 0 := by ext; simp
-  rwa [← he0, e.eLpNormWkp_comp] at hlift
+  have h :
+      eLpNormWkp p U k (fun z => (LinearIsometryEquiv.ulift ℝ F).symm ((0 : E → F) z)) = 0 :=
+    eLpNormWkp_ulift_induction (k := k)
+      (fun k F _ _ g => CompleteSpace F → g = 0 → eLpNormWkp p U k g = 0)
+      (fun _ _ _ _ _ hg => by simp [hg])
+      (fun _ _ _ _ ih g _ hg => by
+        subst hg
+        refine le_antisymm ((eLpNormWkp_succ_le hasWeakFDerivOn_zero).trans ?_) zero_le
+        simp [ih 0 inferInstance rfl])
+      (0 : E → F) (completeSpace_ulift_iff.2 inferInstance) (by ext; simp)
+  exact (LinearIsometryEquiv.eLpNormWkp_comp (LinearIsometryEquiv.ulift ℝ F).symm).symm.trans h
 
 /-- The triangle inequality for the `W^{k,p}` norm. -/
 theorem eLpNormWkp_add_le [OpensMeasurableSpace E] (hp : 1 ≤ p) :
     eLpNormWkp p U k (f + g) ≤ eLpNormWkp p U k f + eLpNormWkp p U k g := by
-  have hlift := normSpace_induction_max E
-    (fun k F _ _ => ∀ (f g : E → F),
-      eLpNormWkp p U k (f + g) ≤ eLpNormWkp p U k f + eLpNormWkp p U k g)
-    (fun _ _ _ _ _ => eLpNorm_add_le hp)
-    (fun _ _ _ _ ih f g => by
+  have hadd : (fun z => (LinearIsometryEquiv.ulift ℝ F).symm ((f + g) z)) =
+      (fun z => (LinearIsometryEquiv.ulift ℝ F).symm (f z)) +
+        (fun z => (LinearIsometryEquiv.ulift ℝ F).symm (g z)) := by ext; simp
+  have h := eLpNormWkp_ulift_induction (k := k)
+    (fun k F _ _ h => ∀ a b : E → F, h = a + b →
+      eLpNormWkp p U k h ≤ eLpNormWkp p U k a + eLpNormWkp p U k b)
+    (fun _ _ _ _ a b hab => by simpa [hab] using eLpNorm_add_le hp)
+    (fun _ _ _ _ ih _ a b hab => by
+      subst hab
       rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNormWkp_succ, add_add_add_comm]
       gcongr ?_ + ?_
       · exact eLpNorm_add_le hp
       · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
-          iInf₂_le_of_le (D + D') (hD.add hD') (ih D D'))
-    k F
-  let e : F ≃ₗᵢ[ℝ] ULift.{u} F := (LinearIsometryEquiv.ulift ℝ F).symm
-  have h := hlift (fun z => e (f z)) (fun z => e (g z))
-  have hadd : (fun z => e ((f + g) z)) = (fun z => e (f z)) + fun z => e (g z) := by
-    ext z; simp
-  simpa only [← hadd, e.eLpNormWkp_comp] using h
+          iInf₂_le_of_le (D + D') (hD.add hD') (ih (D + D') D D' rfl))
+    (f + g) _ _ hadd
+  simpa only [LinearIsometryEquiv.eLpNormWkp_comp] using h
 
 /-- The triangle inequality for the `W^{k,p}` norm over a finite sum. -/
 theorem eLpNormWkp_sum_le [OpensMeasurableSpace E] [CompleteSpace F] {ι : Type*}
@@ -355,7 +358,7 @@ norm. -/
 theorem _root_.ContinuousLinearMap.eLpNormWkp_comp_le [OpensMeasurableSpace E] [CompleteSpace G]
     (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f := by
-  have hlift := normSpace_induction_max₂ E
+  have hlift := nat_induction_clm_ulift₂ ℝ E
     (fun k F _ _ G _ _ => CompleteSpace G → ∀ (f : E → F) (A : F →L[ℝ] G),
       eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f)
     (fun _ _ _ _ _ _ _ _ A => A.eLpNorm_comp_le)
