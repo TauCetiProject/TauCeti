@@ -13,7 +13,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # The valued root datum of `SL₂`
@@ -26,8 +28,9 @@ valuation. It is the rank-one case on which the apartment, the affine roots and 
 The root system is the pinned root datum of `SL₂`,
 `TauCeti.DynkinType.typeASimplyConnectedRootDatum 1`, base changed to a commutative ring `R` of
 characteristic zero (an ordered field, for the root datum). Its roots are indexed by the ordered
-pairs `(a, b)` of distinct elements of `Fin 2`: the root `e_a - e_b` takes the value `±2` on the
-coroot space `Fin 1 → R`, and its coroot is `±1`. The datum `TauCeti.BruhatTits.RootDatum.sl2` has
+pairs `(a, b)` of distinct elements of `Fin 2`. Both the root and the coroot spaces are
+`Fin 1 → R`, in which the root `e_a - e_b` is `±2` and its coroot is `±1`, with the sign `+` for
+`a = 0`. The datum `TauCeti.BruhatTits.RootDatum.sl2` has
 
 * `T` the diagonal torus of `SL₂(K)`;
 * `U (e_a - e_b)` the transvections `1 + c E_{a b}`, so that `e₀ - e₁` gives the upper and
@@ -45,7 +48,7 @@ Its (V5) is the computation that `(1 + d E_{b a}) (1 + c E_{a b}) (1 + e E_{b a}
 only if `d c = -1`, so that `ω d = -ω c`. It is compatible with the valuation map of the diagonal
 torus, `diag(t, t⁻¹) ↦ -ω t` (`TauCeti.BruhatTits.Valuation.isCompatible_sl2`), its value sets
 are `ω (Kˣ)`, and the nontriviality of `ω` is necessary
-(`TauCeti.BruhatTits.Valuation.exists_ne_zero_and_ne_zero_of_apply_eq`).
+(`TauCeti.BruhatTits.Valuation.exists_ne_zero_and_map_ne_zero_of_sl2_apply_eq`).
 
 ## Main definitions
 
@@ -57,10 +60,18 @@ are `ω (Kˣ)`, and the nontriviality of `ω` is necessary
 
 ## Main results
 
+* `TauCeti.BruhatTits.sl2RootPairing_root`, `sl2RootPairing_coroot` and `sl2RootPairing_pairing`:
+  the roots `±2`, coroots `±1` and Cartan integers `±2`; the pairing is crystallographic, reduced
+  over a domain, and a root system when `2` is invertible.
 * `TauCeti.BruhatTits.RootDatum.isGenerating_sl2`: the root datum of `SL₂(K)` is generating.
+* `TauCeti.BruhatTits.RootDatum.sl2_positiveSubgroup`, `sl2_negativeSubgroup` and
+  `mem_sl2_weylNormalizer_iff`: `U⁺` and `U⁻` are the upper and lower unipotent subgroups, and `N`
+  consists of the diagonal and antidiagonal matrices.
 * `TauCeti.BruhatTits.Valuation.isCompatible_sl2`: the standard valuation is compatible with the
   valuation map of the diagonal torus.
 * `TauCeti.BruhatTits.Valuation.valueSet_sl2`: both value sets are `ω (Kˣ)`.
+* `TauCeti.BruhatTits.sl2TorusValuationMap_mul` and `sl2TorusValuationMap_inv`: the valuation map
+  of the diagonal torus is a homomorphism.
 
 ## References
 
@@ -143,17 +154,6 @@ private lemma transvection_mul_mul_apply (hab : a ≠ b) (c d e : K) :
     ring
   · simp [transvection_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
-private lemma transvection_ne_one (hab : a ≠ b) {c : K} (hc : c ≠ 0) :
-    transvection hab c ≠ 1 := fun h ↦
-  hc (transvection_injective hab (h.trans (transvection_coeff_zero hab).symm))
-
-private lemma commutator_range_transvectionHom (hab : a ≠ b) :
-    ⁅(transvectionHom (A := K) hab).range, (transvectionHom (A := K) hab).range⁆ = ⊥ := by
-  rw [eq_bot_iff, Subgroup.commutator_le]
-  rintro _ ⟨c, rfl⟩ _ ⟨d, rfl⟩
-  rw [← map_commutatorElement, commutatorElement_eq_one_iff_commute.mpr (Commute.all c d), map_one]
-  exact one_mem _
-
 /-- The antidiagonal elements of `SL₂(K)` form the right coset `T S` of the diagonal torus. -/
 private lemma mem_reflectionCoset_iff {g : SL(2, K)} :
     ((g : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) ↔
@@ -182,14 +182,8 @@ private lemma transvection_mem_mul_mul (hab : a ≠ b) {c : K} (hc : c ≠ 0) :
   have hx : transvection hab c⁻¹ ∈ (transvectionHom hab).range :=
     ⟨Multiplicative.ofAdd c⁻¹, transvectionHom_apply _ _⟩
   refine Set.mem_mul.mpr ⟨_, Set.mem_mul.mpr ⟨_, hx, _, bruhat_apply hab hc, rfl⟩, _, hx, ?_⟩
-  have h₁ := transvection_mul_neg hab c⁻¹
-  have h₂ := transvection_mul_neg hab (-c⁻¹)
-  rw [neg_neg] at h₂
-  calc transvection hab c⁻¹ * (transvection hab (-c⁻¹) * transvection hab.symm c *
-        transvection hab (-c⁻¹)) * transvection hab c⁻¹
-      = (transvection hab c⁻¹ * transvection hab (-c⁻¹)) * transvection hab.symm c *
-        (transvection hab (-c⁻¹) * transvection hab c⁻¹) := by group
-    _ = transvection hab.symm c := by rw [h₁, h₂, one_mul, mul_one]
+  rw [← transvection_inv]
+  group
 
 private lemma conjAct_smul_range_transvectionHom (hab : a ≠ b) {m : SL(2, K)}
     (h0 : (m : Matrix (Fin 2) (Fin 2) K) 0 0 = 0) (h1 : (m : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) :
@@ -217,29 +211,9 @@ private lemma conjAct_smul_range_transvectionHom (hab : a ≠ b) {m : SL(2, K)}
     congr 2
     field_simp
 
-private lemma mul_apply_of_mem (hab : a ≠ b) {u v : SL(2, K)}
-    (hu : u ∈ (transvectionHom (A := K) hab).range)
-    (hv : v ∈ (transvectionHom (A := K) hab).range) :
-    ((u * v : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) a b =
-      (u : Matrix (Fin 2) (Fin 2) K) a b + (v : Matrix (Fin 2) (Fin 2) K) a b := by
-  rw [← (mem_range_transvectionHom_iff hab).mp hu, ← (mem_range_transvectionHom_iff hab).mp hv,
-    ← transvection_add, transvection_apply_self, transvection_apply_self, transvection_apply_self]
-
-private lemma inv_apply_of_mem (hab : a ≠ b) {u : SL(2, K)}
-    (hu : u ∈ (transvectionHom (A := K) hab).range) :
-    ((u⁻¹ : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) a b = -(u : Matrix (Fin 2) (Fin 2) K) a b := by
-  rw [← (mem_range_transvectionHom_iff hab).mp hu,
-    inv_eq_of_mul_eq_one_right (transvection_mul_neg hab _), transvection_apply_self,
-    transvection_apply_self]
-
-private lemma eq_one_iff_of_mem (hab : a ≠ b) {u : SL(2, K)}
-    (hu : u ∈ (transvectionHom (A := K) hab).range) :
-    u = 1 ↔ (u : Matrix (Fin 2) (Fin 2) K) a b = 0 := by
-  refine ⟨fun h ↦ by simp [h, hab], fun h ↦ ?_⟩
-  rw [← (mem_range_transvectionHom_iff hab).mp hu, h, transvection_coeff_zero]
-
-/-- The conjugation constant of (V2): conjugation by an antidiagonal `m` changes the value of
-`1 + d E_{b a}` by the constant `-2 ω (m_{a b})`. -/
+/-- The conjugation constant of (V2): conjugation by an antidiagonal `m` sends `1 + d E_{b a}` to
+an element of the root subgroup of `e_a - e_b` whose value is `ω d + 2 ω (m_{a b})`, so `ω d` is
+that value plus the constant `-2 ω (m_{a b})`. -/
 private lemma exists_apply_transvection_eq_apply_conj_add (ω : AddValuation K (WithTop ℝ))
     (hab : a ≠ b) {m : SL(2, K)} (h0 : (m : Matrix (Fin 2) (Fin 2) K) 0 0 = 0)
     (h1 : (m : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) :
@@ -251,7 +225,7 @@ private lemma exists_apply_transvection_eq_apply_conj_add (ω : AddValuation K (
     rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rintro h <;> simp [h] at hdet
   obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp ((ω.ne_top_iff).mpr hm)
   refine ⟨-(2 * r), fun d ↦ ?_⟩
-  rw [antidiagonal_mul_transvection hab.symm h0 h1, mul_inv_cancel_right, transvection_apply_self,
+  rw [antidiagonal_mul_transvection hab.symm h0 h1, mul_inv_cancel_right, transvection_apply_same,
     AddValuation.map_mul, AddValuation.map_neg, AddValuation.map_pow, ← hr]
   induction ω d using WithTop.recTopCoe with
   | top => simp
@@ -293,7 +267,7 @@ private lemma apply_conj_diagonal (ω : AddValuation K (WithTop ℝ)) (hab : a �
   have hz1 : ω ((z : Matrix (Fin 2) (Fin 2) K) 1 1) = -ω ((z : Matrix (Fin 2) (Fin 2) K) 0 0) := by
     rw [eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv]
   obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp ((ω.ne_top_iff).mpr hz0)
-  rw [diagonal_mul_transvection hab h01 h10, mul_inv_cancel_right, transvection_apply_self,
+  rw [diagonal_mul_transvection hab h01 h10, mul_inv_cancel_right, transvection_apply_same,
     AddValuation.map_mul, AddValuation.map_pow, ← hr, WithTop.untop₀_coe]
   rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · rw [← hr]
@@ -326,13 +300,95 @@ noncomputable def sl2RootPairing : RootPairing (Fin (1 * (1 + 1))) R (Fin 1 → 
   rootPairingBaseChange R (typeASimplyConnectedRootDatum 1)
     toLinearMap_typeASimplyConnectedRootDatum
 
+/-- The root pairing of `SL₂` is the base change of the pinned root datum of `SL₂`. The body of
+`sl2RootPairing` is not exposed to importing modules, so use this equation to apply results on
+base-changed pairings to it. -/
+theorem sl2RootPairing_def :
+    sl2RootPairing R = rootPairingBaseChange R (typeASimplyConnectedRootDatum 1)
+      toLinearMap_typeASimplyConnectedRootDatum :=
+  (rfl)
+
+instance instIsCrystallographicSl2RootPairing : (sl2RootPairing R).IsCrystallographic :=
+  isCrystallographic_rootPairingBaseChange ..
+
+instance instIsReducedSl2RootPairing [IsDomain R] : (sl2RootPairing R).IsReduced :=
+  isReduced_rootPairingBaseChange R _ _
+
 variable {R}
+
+/-- The pairing of the root pairing of `SL₂` is the dot product of `Fin 1 → R` with itself. -/
+@[simp]
+theorem sl2RootPairing_toLinearMap (x y : Fin 1 → R) :
+    (sl2RootPairing R).toLinearMap x y = x ⬝ᵥ y :=
+  toLinearMap_rootPairingBaseChange ..
+
+/-- The reflection permutation of the root pairing of `SL₂` is that of the pinned root datum. -/
+@[simp]
+theorem sl2RootPairing_reflectionPerm :
+    (sl2RootPairing R).reflectionPerm = (typeASimplyConnectedRootDatum 1).reflectionPerm :=
+  reflectionPerm_rootPairingBaseChange ..
+
+/-- The root `e_a - e_b` of `SL₂` is `2` if `a = 0`, and `-2` if `a = 1`. -/
+@[simp]
+theorem sl2RootPairing_root (k : Fin (1 * (1 + 1))) :
+    (sl2RootPairing R).root k =
+      fun _ ↦ if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 2 else -2 := by
+  obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
+  have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
+  ext j
+  rcases this with rfl | rfl <;>
+    simp only [sl2RootPairing_def, root_rootPairingBaseChange, piAlgebraMap_apply,
+      root_typeAIndexEquiv, Equiv.symm_apply_apply, Fin.fin_one_eq_zero j] <;> norm_num
+
+/-- The coroot of `e_a - e_b` of `SL₂` is `1` if `a = 0`, and `-1` if `a = 1`. -/
+@[simp]
+theorem sl2RootPairing_coroot (k : Fin (1 * (1 + 1))) :
+    (sl2RootPairing R).coroot k =
+      fun _ ↦ if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 1 else -1 := by
+  obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
+  have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
+  ext j
+  rcases this with rfl | rfl <;>
+    simp only [sl2RootPairing_def, coroot_rootPairingBaseChange, piAlgebraMap_apply,
+      coroot_typeAIndexEquiv, Equiv.symm_apply_apply, Fin.fin_one_eq_zero j] <;> norm_num
+
+/-- The root pairing of `SL₂` has Cartan integer `2` between equal roots and `-2` between
+opposite ones. -/
+@[simp]
+theorem sl2RootPairing_pairing (k l : Fin (1 * (1 + 1))) :
+    (sl2RootPairing R).pairing k l = if k = l then 2 else -2 := by
+  rw [sl2RootPairing_def, pairing_rootPairingBaseChange]
+  obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
+  obtain ⟨q, rfl⟩ := (typeAIndexEquiv 1).surjective l
+  have hp : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
+  have hq : q = ⟨(0, 1), by decide⟩ ∨ q = ⟨(1, 0), by decide⟩ := by revert q; decide
+  rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;>
+    rw [pairing_typeAIndexEquiv] <;> simp [(typeAIndexEquiv 1).injective.eq_iff]
+
+/-- Over a ring in which `2` is invertible, the roots `±2` of `SL₂` span `Fin 1 → R`, so the root
+pairing of `SL₂` is a root system. -/
+instance instIsRootSystemSl2RootPairing [Invertible (2 : R)] :
+    (sl2RootPairing R).IsRootSystem where
+  span_root_eq_top := by
+    refine eq_top_iff.mpr fun v _ ↦ ?_
+    have hv : v =
+        (⅟2 * v 0) • (sl2RootPairing R).root (typeAIndexEquiv 1 ⟨(0, 1), by decide⟩) := by
+      ext j
+      rw [Fin.fin_one_eq_zero j, Pi.smul_apply, sl2RootPairing_root, Equiv.symm_apply_apply]
+      simp only [smul_eq_mul, ite_true]
+      linear_combination (-v 0) * invOf_mul_self (2 : R)
+    rw [hv]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩)
+  span_coroot_eq_top := by
+    rw [sl2RootPairing_def]
+    exact span_range_coroot_rootPairingBaseChange_eq_top R _ _
+      (corootSpan_typeASimplyConnectedRootDatum_eq_top 1)
 
 /-- The root `e_a - e_b` of `SL₂` takes the value `2 v` at `v` if `a = 0`, and `-2 v` if
 `a = 1`. -/
 theorem sl2RootPairing_root'_apply (k : Fin (1 * (1 + 1))) (v : Fin 1 → R) :
     (sl2RootPairing R).root' k v =
-      (if ((typeAIndexEquiv 1).symm k).1.1 = 0 then 2 else -2) * v 0 := by
+      (if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 2 else -2) * v 0 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
   have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
   rcases this with rfl | rfl <;>
@@ -342,8 +398,8 @@ theorem sl2RootPairing_root'_apply (k : Fin (1 * (1 + 1))) (v : Fin 1 → R) :
 
 /-- The reflection in either root of `SL₂` sends each root `e_a - e_b` to `e_b - e_a`. -/
 theorem typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm (k l : Fin (1 * (1 + 1))) :
-    ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm k l)).1 =
-      (((typeAIndexEquiv 1).symm l).1.2, ((typeAIndexEquiv 1).symm l).1.1) := by
+    ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm k l)).val =
+      (((typeAIndexEquiv 1).symm l).val.2, ((typeAIndexEquiv 1).symm l).val.1) := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
   obtain ⟨q, rfl⟩ := (typeAIndexEquiv 1).surjective l
   rw [sl2RootPairing, reflectionPerm_rootPairingBaseChange, typeAIndexEquiv_symm_reflectionPerm,
@@ -383,61 +439,61 @@ private lemma root_ne_neg_smul_iff {i j : Fin (1 * (1 + 1))} :
 
 /-- The root system of `SL₂` is reduced, so (DR3) and (V4) are vacuous. -/
 private lemma root_ne_two_smul (i j : Fin (1 * (1 + 1))) :
-    (sl2RootPairing R).root j ≠ (2 : R) • (sl2RootPairing R).root i := by
-  intro h
-  rcases sl2RootPairing_eq_or_eq_reflectionPerm_self (R := R) i j with rfl | rfl
-  · have h' : (1 : R) • (sl2RootPairing R).root j = 0 := by
-      linear_combination (norm := module) -h
-    exact (sl2RootPairing R).ne_zero j (by simpa using h')
-  · simp only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] at h
-    have h' : (3 : R) • (sl2RootPairing R).root i = 0 := by
-      linear_combination (norm := module) -h
-    exact (sl2RootPairing R).ne_zero i ((smul_eq_zero.mp h').resolve_left (by norm_num))
+    (sl2RootPairing R).root j ≠ (2 : R) • (sl2RootPairing R).root i := fun h ↦ by
+  have : HasUniqueDiv (Fin 1 → R) := .of_isTorsionFree R _
+  exact (sl2RootPairing R).nsmul_notMem_range_root (n := 2)
+    ⟨j, h.trans (ofNat_smul_eq_nsmul R 2 _)⟩
 
 private lemma range_transvectionHom_eq {k : Fin (1 * (1 + 1))} (hab : a ≠ b)
-    (hk : ((typeAIndexEquiv 1).symm k).1 = (a, b)) :
-    (transvectionHom (A := K) ((typeAIndexEquiv 1).symm k).2).range =
+    (hk : ((typeAIndexEquiv 1).symm k).val = (a, b)) :
+    (transvectionHom (A := K) ((typeAIndexEquiv 1).symm k).property).range =
       (transvectionHom hab).range := by
   generalize (typeAIndexEquiv 1).symm k = p at hk ⊢
   obtain ⟨⟨a', b'⟩, h⟩ := p
   obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp hk
   rfl
 
-private lemma typeAIndex_one_eq_of_fst_eq_zero (p : TypeAIndex 1) (h : p.1.1 = 0) :
-    p.1 = (0, 1) := by
+private lemma typeAIndex_one_eq_of_fst_eq_zero (p : TypeAIndex 1) (h : p.val.1 = 0) :
+    p.val = (0, 1) := by
   revert p; decide
 
-private lemma typeAIndex_one_eq_of_fst_ne_zero (p : TypeAIndex 1) (h : p.1.1 ≠ 0) :
-    p.1 = (1, 0) := by
+private lemma typeAIndex_one_eq_of_fst_ne_zero (p : TypeAIndex 1) (h : p.val.1 ≠ 0) :
+    p.val = (1, 0) := by
   revert p; decide
+
+/-- The root subgroups of the positive roots of `SL₂` lie in the upper unipotent subgroup. -/
+private lemma iSup_pos_le_range_transvectionHom :
+    ⨆ (i) (_ : 0 < (sl2RootPairing R).root' i (fun _ ↦ 1)),
+      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).property).range ≤
+        (transvectionHom (A := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).range := by
+  refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
+  rw [sl2RootPairing_root'_apply] at hi
+  split_ifs at hi with h
+  · exact typeAIndex_one_eq_of_fst_eq_zero _ h
+  · norm_num at hi
+
+/-- The root subgroups of the negative roots of `SL₂` lie in the lower unipotent subgroup. -/
+private lemma iSup_neg_le_range_transvectionHom :
+    ⨆ (i) (_ : (sl2RootPairing R).root' i (fun _ ↦ 1) < 0),
+      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).property).range ≤
+        (transvectionHom (A := K) (one_ne_zero : (1 : Fin 2) ≠ 0)).range := by
+  refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
+  rw [sl2RootPairing_root'_apply] at hi
+  split_ifs at hi with h
+  · norm_num at hi
+  · exact typeAIndex_one_eq_of_fst_ne_zero _ h
 
 /-- The axiom (DR6) for `SL₂`: `U⁺` is the upper and `U⁻` the lower unipotent subgroup, and an
 upper triangular element of the lower unipotent subgroup is trivial. -/
 private lemma mul_eq_one_of_mem_of_mem {t u : SL(2, K)}
     (ht : t ∈ SpecialLinearGroup.diagonalTorus K 2)
     (hu : u ∈ ⨆ (i) (_ : 0 < (sl2RootPairing R).root' i (fun _ ↦ 1)),
-      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).2).range)
+      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).property).range)
     (htu : t * u ∈ ⨆ (i) (_ : (sl2RootPairing R).root' i (fun _ ↦ 1) < 0),
-      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).2).range) :
+      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).property).range) :
     t * u = 1 := by
-  have hpos : ⨆ (i) (_ : 0 < (sl2RootPairing R).root' i (fun _ ↦ 1)),
-      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).2).range ≤
-        (transvectionHom (A := K) (by decide : (0 : Fin 2) ≠ 1)).range := by
-    refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
-    rw [sl2RootPairing_root'_apply] at hi
-    split_ifs at hi with h
-    · exact typeAIndex_one_eq_of_fst_eq_zero _ h
-    · norm_num at hi
-  have hneg : ⨆ (i) (_ : (sl2RootPairing R).root' i (fun _ ↦ 1) < 0),
-      (transvectionHom (A := K) ((typeAIndexEquiv 1).symm i).2).range ≤
-        (transvectionHom (A := K) (by decide : (1 : Fin 2) ≠ 0)).range := by
-    refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
-    rw [sl2RootPairing_root'_apply] at hi
-    split_ifs at hi with h
-    · norm_num at hi
-    · exact typeAIndex_one_eq_of_fst_ne_zero _ h
-  have hu' := (mem_range_transvectionHom_iff _).mp (hpos hu)
-  have htu' := (mem_range_transvectionHom_iff _).mp (hneg htu)
+  have hu' := (mem_range_transvectionHom_iff _).mp (iSup_pos_le_range_transvectionHom hu)
+  have htu' := (mem_range_transvectionHom_iff _).mp (iSup_neg_le_range_transvectionHom htu)
   have ht' : (t : Matrix (Fin 2) (Fin 2) K) 1 0 = 0 :=
     (_root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp ht) (by decide)
   have hu10 : (u : Matrix (Fin 2) (Fin 2) K) 1 0 = 0 := by
@@ -456,25 +512,25 @@ coroot of `e₀ - e₁`, so the upper unipotent subgroup is the positive one. -/
 noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictOrderedRing R]
     (K : Type*) [Field K] : RootDatum (sl2RootPairing R) SL(2, K) where
   T := SpecialLinearGroup.diagonalTorus K 2
-  U k := (transvectionHom ((typeAIndexEquiv 1).symm k).2).range
+  U k := (transvectionHom ((typeAIndexEquiv 1).symm k).property).range
   reflectionCoset _ :=
     {g | (g : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) K) 1 1 = 0}
   positiveVector _ := 1
   U_ne_bot k := by
     rw [Ne, Subgroup.eq_bot_iff_forall]
-    exact fun h ↦ transvection_ne_one (K := K) ((typeAIndexEquiv 1).symm k).2 one_ne_zero
-      (h _ (MonoidHom.mem_range.mpr ⟨Multiplicative.ofAdd 1, transvectionHom_apply _ _⟩))
+    exact fun h ↦ one_ne_zero ((transvection_eq_one_iff ((typeAIndexEquiv 1).symm k).property).mp
+      (h _ (MonoidHom.mem_range.mpr ⟨Multiplicative.ofAdd 1, transvectionHom_apply _ _⟩)))
   commutator_le i j hij := by
     obtain rfl := root_ne_neg_smul_iff.mp hij
-    rw [commutator_range_transvectionHom]
+    rw [Subgroup.commutator_self_eq_bot_iff.mpr inferInstance]
     exact bot_le
   le_of_root_eq_two_smul i j h := absurd h (root_ne_two_smul i j)
   ne_of_root_eq_two_smul i j h := absurd h (root_ne_two_smul i j)
   reflectionCoset_eq _ := ⟨_, Set.ext fun _ ↦ mem_reflectionCoset_iff⟩
   bruhat i := by
     obtain ⟨⟨⟨a, b⟩, hab⟩, hp⟩ : ∃ p, (typeAIndexEquiv 1).symm i = p := ⟨_, rfl⟩
-    have hi : ((typeAIndexEquiv 1).symm i).1 = (a, b) := by rw [hp]
-    have hi' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).1 = (b, a) := by
+    have hi : ((typeAIndexEquiv 1).symm i).val = (a, b) := by rw [hp]
+    have hi' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).val = (b, a) := by
       rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm, hi]
     rw [range_transvectionHom_eq hab hi, range_transvectionHom_eq hab.symm hi']
     rintro _ ⟨⟨c, rfl⟩, hc⟩
@@ -484,8 +540,8 @@ noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictO
     exact Set.mem_singleton 1
   reflection_conjugates i m hm j := by
     obtain ⟨⟨⟨a, b⟩, hab⟩, hp⟩ : ∃ p, (typeAIndexEquiv 1).symm j = p := ⟨_, rfl⟩
-    have hj : ((typeAIndexEquiv 1).symm j).1 = (a, b) := by rw [hp]
-    have hj' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i j)).1 = (b, a) := by
+    have hj : ((typeAIndexEquiv 1).symm j).val = (a, b) := by rw [hp]
+    have hj' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i j)).val = (b, a) := by
       rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm, hj]
     rw [range_transvectionHom_eq hab hj, range_transvectionHom_eq hab.symm hj']
     exact conjAct_smul_range_transvectionHom hab hm.1 hm.2
@@ -508,14 +564,14 @@ theorem sl2_T : (sl2 R K).T = SpecialLinearGroup.diagonalTorus K 2 :=
 
 /-- The root subgroup of the root of index `k` of `SL₂(K)`. -/
 theorem sl2_U (k : Fin (1 * (1 + 1))) :
-    (sl2 R K).U k = (transvectionHom ((typeAIndexEquiv 1).symm k).2).range :=
+    (sl2 R K).U k = (transvectionHom ((typeAIndexEquiv 1).symm k).property).range :=
   (rfl)
 
 /-- The root subgroup of the root `e_a - e_b` of `SL₂(K)` consists of the transvections
 `1 + c E_{a b}`. -/
 @[simp]
 theorem sl2_U_typeAIndexEquiv (p : TypeAIndex 1) :
-    (sl2 R K).U (typeAIndexEquiv 1 p) = (transvectionHom p.2).range := by
+    (sl2 R K).U (typeAIndexEquiv 1 p) = (transvectionHom p.property).range := by
   rw [sl2_U, Equiv.symm_apply_apply]
 
 /-- Both reflection cosets of the root datum of `SL₂(K)` consist of the antidiagonal
@@ -538,14 +594,14 @@ variable {R K}
 `1 + c E_{a b}` by its own `(a, b)` entry `c`. -/
 theorem mem_sl2_U_iff {k : Fin (1 * (1 + 1))} {g : SL(2, K)} :
     g ∈ (sl2 R K).U k ↔
-      transvection ((typeAIndexEquiv 1).symm k).2
-        ((g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm k).1.1
-          ((typeAIndexEquiv 1).symm k).1.2) = g :=
+      transvection ((typeAIndexEquiv 1).symm k).property
+        ((g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm k).val.1
+          ((typeAIndexEquiv 1).symm k).val.2) = g :=
   mem_range_transvectionHom_iff _
 
 /-- The transvection `1 + c E_{a b}` lies in the root subgroup of `e_a - e_b`. -/
 theorem transvection_mem_sl2_U (p : TypeAIndex 1) (c : K) :
-    transvection p.2 c ∈ (sl2 R K).U (typeAIndexEquiv 1 p) := by
+    transvection p.property c ∈ (sl2 R K).U (typeAIndexEquiv 1 p) := by
   rw [sl2_U_typeAIndexEquiv]
   exact ⟨Multiplicative.ofAdd c, transvectionHom_apply _ _⟩
 
@@ -562,6 +618,56 @@ theorem iSup_sl2_U : ⨆ k, (sl2 R K).U k = ⊤ :=
 theorem isGenerating_sl2 : (sl2 R K).IsGenerating := by
   rw [isGenerating_iff, iSup_sl2_U, sup_top_eq]
 
+/-- The positive unipotent subgroup of the root datum of `SL₂(K)` is the upper unipotent
+subgroup of the transvections `1 + c E_{0 1}`. -/
+@[simp]
+theorem sl2_positiveSubgroup :
+    (sl2 R K).positiveSubgroup = (transvectionHom (zero_ne_one : (0 : Fin 2) ≠ 1)).range := by
+  refine le_antisymm (by rw [positiveSubgroup_def]; exact SL2.iSup_pos_le_range_transvectionHom)
+    ((sl2_U_typeAIndexEquiv R K ⟨(0, 1), zero_ne_one⟩).symm.le.trans (U_le_positiveSubgroup ?_))
+  rw [sl2_positiveVector, sl2RootPairing_root'_apply, Equiv.symm_apply_apply]
+  norm_num
+
+/-- The negative unipotent subgroup of the root datum of `SL₂(K)` is the lower unipotent
+subgroup of the transvections `1 + c E_{1 0}`. -/
+@[simp]
+theorem sl2_negativeSubgroup :
+    (sl2 R K).negativeSubgroup = (transvectionHom (one_ne_zero : (1 : Fin 2) ≠ 0)).range := by
+  refine le_antisymm (by rw [negativeSubgroup_def]; exact SL2.iSup_neg_le_range_transvectionHom)
+    ((sl2_U_typeAIndexEquiv R K ⟨(1, 0), one_ne_zero⟩).symm.le.trans (U_le_negativeSubgroup ?_))
+  rw [sl2_positiveVector, sl2RootPairing_root'_apply, Equiv.symm_apply_apply]
+  norm_num
+
+variable {R K} in
+/-- The subgroup `N` of the root datum of `SL₂(K)` consists of the diagonal and the antidiagonal
+matrices. -/
+theorem mem_sl2_weylNormalizer_iff {g : SL(2, K)} :
+    g ∈ (sl2 R K).weylNormalizer ↔
+      ((g : Matrix (Fin 2) (Fin 2) K) 0 1 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) K) 1 0 = 0) ∨
+        ((g : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) := by
+  constructor
+  · intro hg
+    rw [weylNormalizer_def] at hg
+    induction hg using Subgroup.closure_induction with
+    | mem x hx =>
+      rcases hx with hx | hx
+      · have hx' := _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp hx
+        exact Or.inl ⟨hx' (by decide), hx' (by decide)⟩
+      · obtain ⟨_, hx⟩ := Set.mem_iUnion.mp hx
+        exact Or.inr hx
+    | one => simp
+    | mul x y _ _ hx hy =>
+      rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rcases hy with ⟨h3, h4⟩ | ⟨h3, h4⟩ <;>
+        simp [Matrix.mul_apply, Fin.sum_univ_two, h1, h2, h3, h4]
+    | inv x _ hx =>
+      rw [_root_.Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
+      rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp [h1, h2]
+  · rintro (⟨h1, h2⟩ | h)
+    · refine T_le_weylNormalizer (_root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mpr ?_)
+      intro i j hij
+      fin_cases i <;> fin_cases j <;> simp_all
+    · exact reflectionCoset_subset_weylNormalizer (typeAIndexEquiv 1 ⟨(0, 1), zero_ne_one⟩) h
+
 end RootDatum
 
 /-! ### The standard valuation -/
@@ -573,25 +679,25 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {K : Type
 /-- An element of the root subgroup of `-a` is a transvection in the transposed position. -/
 private lemma transvection_eq_of_mem_U_reflectionPerm_self {i : Fin (1 * (1 + 1))}
     {g : SL(2, K)} (hg : g ∈ (RootDatum.sl2 R K).U ((sl2RootPairing R).reflectionPerm i i)) :
-    transvection ((typeAIndexEquiv 1).symm i).2.symm
-      ((g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm i).1.2
-        ((typeAIndexEquiv 1).symm i).1.1) = g := by
+    transvection ((typeAIndexEquiv 1).symm i).property.symm
+      ((g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm i).val.2
+        ((typeAIndexEquiv 1).symm i).val.1) = g := by
   have key (a b a' b' : Fin 2) (h : a' ≠ b') (h' : a ≠ b) (ha : a' = b) (hb : b' = a)
       (hg : transvection h ((g : Matrix (Fin 2) (Fin 2) K) a' b') = g) :
       transvection h'.symm ((g : Matrix (Fin 2) (Fin 2) K) b a) = g := by
     subst ha hb
     exact hg
   have hr := typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm (R := R) i i
-  exact key _ _ _ _ _ ((typeAIndexEquiv 1).symm i).2 (congrArg Prod.fst hr)
+  exact key _ _ _ _ _ ((typeAIndexEquiv 1).symm i).property (congrArg Prod.fst hr)
     (congrArg Prod.snd hr) (RootDatum.mem_sl2_U_iff.mp hg)
 
 /-- The coordinate of the root `-a` is the transposed coordinate of `a`. -/
 private lemma apply_reflectionPerm_self (i : Fin (1 * (1 + 1))) (g : SL(2, K)) :
     (g : Matrix (Fin 2) (Fin 2) K)
-        ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).1.1
-        ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).1.2 =
-      (g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm i).1.2
-        ((typeAIndexEquiv 1).symm i).1.1 := by
+        ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).val.1
+        ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).val.2 =
+      (g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm i).val.2
+        ((typeAIndexEquiv 1).symm i).val.1 := by
   rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm]
 
 /-- The axiom (V0) for the standard valuation of `SL₂`: the values `ω 0 = ⊤`, `ω 1 = 0` and
@@ -599,12 +705,12 @@ private lemma apply_reflectionPerm_self (i : Fin (1 * (1 + 1))) (g : SL(2, K)) :
 private lemma three_le_encard_range_sl2 (ω : AddValuation K (WithTop ℝ))
     (hω : ∃ x : K, x ≠ 0 ∧ ω x ≠ 0) (k : Fin (1 * (1 + 1))) :
     3 ≤ (Set.range fun u : (RootDatum.sl2 R K).U k ↦ ω (((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-      ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2)).encard := by
+      ((typeAIndexEquiv 1).symm k).val.1 ((typeAIndexEquiv 1).symm k).val.2)).encard := by
   obtain ⟨x, hx0, hx⟩ := hω
   have he (c : K) : ω c ∈ Set.range fun u : (RootDatum.sl2 R K).U k ↦
       ω (((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-        ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2) :=
-    ⟨⟨transvection ((typeAIndexEquiv 1).symm k).2 c,
+        ((typeAIndexEquiv 1).symm k).val.1 ((typeAIndexEquiv 1).symm k).val.2) :=
+    ⟨⟨transvection ((typeAIndexEquiv 1).symm k).property c,
       ⟨Multiplicative.ofAdd c, transvectionHom_apply _ _⟩⟩, by simp⟩
   calc (3 : ℕ∞) = ({ω 0, ω 1, ω x} : Set (WithTop ℝ)).encard := by
         refine (Set.encard_eq_three.mpr ⟨_, _, _, ?_, ?_, ?_, rfl⟩).symm
@@ -627,31 +733,28 @@ open SL2 in
 noncomputable def Valuation.sl2 (ω : AddValuation K (WithTop ℝ))
     (hω : ∃ x : K, x ≠ 0 ∧ ω x ≠ 0) : Valuation (RootDatum.sl2 R K) where
   toFun k u := ω (((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-    ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2)
+    ((typeAIndexEquiv 1).symm k).val.1 ((typeAIndexEquiv 1).symm k).val.2)
   three_le_encard_range := three_le_encard_range_sl2 ω hω
   min_le_apply_mul k u v := by
-    rw [Subgroup.coe_mul, mul_apply_of_mem _ u.2 v.2]
+    rw [Subgroup.coe_mul, mul_apply_of_mem_range_transvectionHom _ u.property v.property]
     exact ω.map_add _ _
   apply_le_apply_inv k u := by
-    rw [Subgroup.coe_inv, inv_apply_of_mem _ u.2, AddValuation.map_neg]
+    rw [Subgroup.coe_inv, inv_apply_of_mem_range_transvectionHom _ u.property, AddValuation.map_neg]
   apply_eq_top_iff k u := by
-    rw [AddValuation.top_iff, ← OneMemClass.coe_eq_one, eq_one_iff_of_mem _ u.2]
+    rw [AddValuation.top_iff, ← OneMemClass.coe_eq_one,
+      eq_one_iff_of_mem_range_transvectionHom _ u.property]
   exists_apply_eq_apply_conj_add i m hm := by
     obtain ⟨c, hc⟩ :=
-      exists_apply_transvection_eq_apply_conj_add ω ((typeAIndexEquiv 1).symm i).2 hm.1 hm.2
+      exists_apply_transvection_eq_apply_conj_add ω ((typeAIndexEquiv 1).symm i).property hm.1 hm.2
     refine ⟨c, fun u _ ↦ ?_⟩
     obtain ⟨g, hg⟩ := u
     dsimp only
     rw [apply_reflectionPerm_self, hc, transvection_eq_of_mem_U_reflectionPerm_self hg]
   commutator_mem i j hij k l u v _ _ := by
     obtain rfl := root_ne_neg_smul_iff.mp hij
-    have hc : ⁅(u : SL(2, K)), (v : SL(2, K))⁆ = 1 := by
-      rw [commutatorElement_eq_one_iff_commute]
-      obtain ⟨c, hc⟩ := u.2
-      obtain ⟨d, hd⟩ := v.2
-      rw [← hc, ← hd]
-      exact (Commute.all c d).map _
-    rw [hc]
+    rw [commutatorElement_eq_one_iff_mul_comm.mpr
+      (setLike_mul_comm (s := (transvectionHom ((typeAIndexEquiv 1).symm j).property).range)
+        u.property v.property)]
     exact one_mem _
   apply_eq_two_smul i j h := absurd h (root_ne_two_smul i j)
   apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset i u u' u'' h := by
@@ -671,27 +774,29 @@ variable (ω : AddValuation K (WithTop ℝ)) (hω : ∃ x : K, x ≠ 0 ∧ ω x 
 /-- The standard valuation of `SL₂(K)` is `ω` of the coordinate of the root subgroup. -/
 theorem sl2_apply (k : Fin (1 * (1 + 1))) (u : (RootDatum.sl2 R K).U k) :
     sl2 R ω hω k u = ω (((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-      ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2) :=
+      ((typeAIndexEquiv 1).symm k).val.1 ((typeAIndexEquiv 1).symm k).val.2) :=
   (rfl)
 
 /-- The standard valuation of `SL₂(K)` takes the value `ω c` at the transvection `1 + c E_{a b}`
 of the root subgroup of `e_a - e_b`. -/
 @[simp]
 theorem sl2_apply_transvection (p : TypeAIndex 1) (c : K) :
-    sl2 R ω hω (typeAIndexEquiv 1 p) ⟨transvection p.2 c, RootDatum.transvection_mem_sl2_U p c⟩ =
+    sl2 R ω hω (typeAIndexEquiv 1 p)
+        ⟨transvection p.property c, RootDatum.transvection_mem_sl2_U p c⟩ =
       ω c := by
   rw [sl2_apply]
   simp
 
 /-- An element `1 + c E_{a b}` of the root subgroup of `e_a - e_b` lies in the filtration
 subgroup `U (e_a - e_b, r)` exactly when `r ≤ ω c`. -/
-theorem transvection_mem_sl2_filtration_iff (p : TypeAIndex 1) (c : K) (r : ℝ) :
-    transvection p.2 c ∈ (sl2 R ω hω).filtration (typeAIndexEquiv 1 p) r ↔
+theorem transvection_mem_filtration_sl2_iff (p : TypeAIndex 1) (c : K) (r : ℝ) :
+    transvection p.property c ∈ (sl2 R ω hω).filtration (typeAIndexEquiv 1 p) r ↔
       (r : WithTop ℝ) ≤ ω c := by
   rw [← sl2_apply_transvection R ω hω p c]
   exact (sl2 R ω hω).coe_mem_filtration_iff ⟨_, RootDatum.transvection_mem_sl2_U p c⟩
 
 /-- The value set of either root of `SL₂(K)` is the value set `ω (Kˣ)` of `ω`. -/
+@[simp]
 theorem valueSet_sl2 (k : Fin (1 * (1 + 1))) :
     (sl2 R ω hω).valueSet k = {r : ℝ | ∃ x : K, x ≠ 0 ∧ ω x = r} := by
   ext r
@@ -699,31 +804,26 @@ theorem valueSet_sl2 (k : Fin (1 * (1 + 1))) :
   refine ⟨fun ⟨u, hu⟩ ↦ ⟨_, fun h ↦ ?_, hu⟩, fun ⟨x, _, hx⟩ ↦ ?_⟩
   · rw [sl2_apply, h, AddValuation.map_zero] at hu
     exact WithTop.top_ne_coe hu
-  · exact ⟨⟨transvection ((typeAIndexEquiv 1).symm k).2 x,
+  · exact ⟨⟨transvection ((typeAIndexEquiv 1).symm k).property x,
       ⟨Multiplicative.ofAdd x, transvectionHom_apply _ _⟩⟩,
-      by rw [sl2_apply, transvection_apply_self, hx]⟩
+      by rw [sl2_apply, transvection_apply_same, hx]⟩
 
 variable {R} in
 /-- The nontriviality hypothesis of `Valuation.sl2` is necessary: if a valuation of the root
 datum of `SL₂(K)` takes the value `ω c` at every transvection `1 + c E_{a b}` of one root
 subgroup, then `ω` takes a value other than `0` and `⊤`. In particular the trivial valuation of
 `K` gives no valuation of this root datum. -/
-theorem exists_ne_zero_and_ne_zero_of_apply_eq (φ : Valuation (RootDatum.sl2 R K))
+theorem exists_ne_zero_and_map_ne_zero_of_sl2_apply_eq (φ : Valuation (RootDatum.sl2 R K))
     (k : Fin (1 * (1 + 1)))
     (h : ∀ u : (RootDatum.sl2 R K).U k, φ k u = ω (((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-      ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2)) :
+      ((typeAIndexEquiv 1).symm k).val.1 ((typeAIndexEquiv 1).symm k).val.2)) :
     ∃ x : K, x ≠ 0 ∧ ω x ≠ 0 := by
-  by_contra! hω
-  have hsub : Set.range (φ k) ⊆ {⊤, 0} := by
-    rintro _ ⟨u, rfl⟩
-    rw [h]
-    by_cases hx : ((u : SL(2, K)) : Matrix (Fin 2) (Fin 2) K)
-      ((typeAIndexEquiv 1).symm k).1.1 ((typeAIndexEquiv 1).symm k).1.2 = 0
-    · simp [hx]
-    · simp [hω _ hx]
-  have := (φ.three_le_encard_range k).trans ((Set.encard_le_encard hsub).trans
-    (Set.encard_pair WithTop.top_ne_zero).le)
-  exact absurd this (by decide)
+  obtain ⟨r, hr0, hr⟩ := (φ.valueSet_nontrivial k).exists_ne 0
+  obtain ⟨u, hu⟩ := φ.mem_valueSet_iff.mp hr0
+  rw [h] at hu
+  refine ⟨_, (ω.ne_top_iff).mp (hu ▸ WithTop.coe_ne_top), ?_⟩
+  rw [hu]
+  exact_mod_cast hr
 
 end Valuation
 
@@ -736,10 +836,67 @@ noncomputable def sl2TorusValuationMap (ω : AddValuation K (WithTop ℝ)) :
   fun z _ ↦ -(ω (((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0)).untop₀
 
 /-- The valuation map of the diagonal torus sends `diag(t, t⁻¹)` to `-ω t`. -/
+@[simp]
 theorem sl2TorusValuationMap_apply (ω : AddValuation K (WithTop ℝ)) (z : (RootDatum.sl2 ℝ K).T)
     (j : Fin 1) :
     sl2TorusValuationMap ω z j = -(ω (((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0)).untop₀ :=
   (rfl)
+
+/-- The first diagonal entry of an element of the diagonal torus of `SL₂(K)` is nonzero. -/
+private lemma SL2.apply_zero_zero_ne_zero_of_mem {z : SL(2, K)}
+    (hz : z ∈ SpecialLinearGroup.diagonalTorus K 2) :
+    (z : Matrix (Fin 2) (Fin 2) K) 0 0 ≠ 0 := by
+  have hz' := _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp hz
+  have hdet := fin_two_mul_sub_mul_eq_one z
+  rw [hz' (by decide : (1 : Fin 2) ≠ 0), mul_zero, sub_zero] at hdet
+  exact left_ne_zero_of_mul_eq_one hdet
+
+/-- Read in `WithTop ℝ`, the valuation map of the diagonal torus sends `diag(t, t⁻¹)` to
+`-ω t`. -/
+theorem coe_sl2TorusValuationMap_apply (ω : AddValuation K (WithTop ℝ))
+    (z : (RootDatum.sl2 ℝ K).T) (j : Fin 1) :
+    (sl2TorusValuationMap ω z j : WithTop ℝ) =
+      -ω (((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0) := by
+  rw [sl2TorusValuationMap_apply, WithTop.LinearOrderedAddCommGroup.coe_neg,
+    WithTop.coe_untop₀_of_ne_top
+      ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem z.property))]
+
+/-- The valuation map of the diagonal torus sends `1` to `0`. -/
+@[simp]
+theorem sl2TorusValuationMap_one (ω : AddValuation K (WithTop ℝ)) :
+    sl2TorusValuationMap ω 1 = 0 := by
+  ext j
+  simp
+
+/-- The valuation map of the diagonal torus is additive. -/
+@[simp]
+theorem sl2TorusValuationMap_mul (ω : AddValuation K (WithTop ℝ)) (z w : (RootDatum.sl2 ℝ K).T) :
+    sl2TorusValuationMap ω (z * w) = sl2TorusValuationMap ω z + sl2TorusValuationMap ω w := by
+  ext j
+  have hz := _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp z.property
+  have h : (((z * w : (RootDatum.sl2 ℝ K).T) : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0 =
+      ((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0 *
+        ((w : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0 := by
+    rw [Subgroup.coe_mul, _root_.Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply,
+      Fin.sum_univ_two, hz (by decide : (0 : Fin 2) ≠ 1), zero_mul, add_zero]
+  rw [Pi.add_apply, sl2TorusValuationMap_apply, sl2TorusValuationMap_apply,
+    sl2TorusValuationMap_apply, h, AddValuation.map_mul,
+    WithTop.untop₀_add ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem z.property))
+      ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem w.property)), neg_add]
+
+/-- The valuation map of the diagonal torus sends inverses to negatives. -/
+@[simp]
+theorem sl2TorusValuationMap_inv (ω : AddValuation K (WithTop ℝ)) (z : (RootDatum.sl2 ℝ K).T) :
+    sl2TorusValuationMap ω z⁻¹ = -sl2TorusValuationMap ω z := by
+  ext j
+  have hz := _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp z.property
+  have hdet := fin_two_mul_sub_mul_eq_one (z : SL(2, K))
+  rw [hz (by decide : (1 : Fin 2) ≠ 0), mul_zero, sub_zero] at hdet
+  have hinv : (((z⁻¹ : (RootDatum.sl2 ℝ K).T) : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0 =
+      ((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 1 1 := by
+    simp
+  rw [Pi.neg_apply, sl2TorusValuationMap_apply, sl2TorusValuationMap_apply, hinv,
+    eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv, WithTop.untop₀_neg]
 
 /-- The standard valuation of `SL₂(K)` is compatible with the valuation map of the diagonal
 torus: conjugation by `diag(t, t⁻¹)` raises the values on the root subgroup of `e₀ - e₁` by
@@ -754,7 +911,7 @@ theorem Valuation.isCompatible_sl2 (ω : AddValuation K (WithTop ℝ))
     sl2TorusValuationMap_apply]
   dsimp only
   rw [← RootDatum.mem_sl2_U_iff.mp hg,
-    SL2.apply_conj_diagonal ω _ (hz (by decide)) (hz (by decide)), transvection_apply_self]
+    SL2.apply_conj_diagonal ω _ (hz (by decide)) (hz (by decide)), transvection_apply_same]
 
 end Valuation
 
