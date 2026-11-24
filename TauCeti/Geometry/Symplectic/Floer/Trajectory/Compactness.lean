@@ -38,7 +38,8 @@ discs about the integer points cover the plane (`Prod.dist_round_le`). A diagona
 (`TauCeti.extraction_forall_of_antitone`) gives one subsequence that converges on each of these
 countably many discs off finitely many bubbling points. Floer energy at least `δ` concentrates at
 each bubbling point, and the set of such concentration points is invariant under the period
-`(0, 1)`, so it is determined by its points in the fundamental strip. There are at most `2E / δ` of
+`(0, 1)` (`TauCeti.forall_eventually_le_setIntegral_ball_toIcoMod_of_periodic`), so it is
+determined by its points in the fundamental strip. There are at most `2E / δ` of
 them (`TauCeti.card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic`,
 `TauCeti.finite_of_forall_eventually_le_setIntegral_ball_of_periodic`), so the theorems state the
 threshold `δ / 2`. Off their translates the limit is the pointwise limit, which on each disc is
@@ -75,6 +76,133 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
+
+/-- The windows of `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic`:
+for data invariant under integer translations, the threshold `δ` of the closed unit disc serves for
+the open unit disc about every integer point `c = (m, n)`. Solutions with energy at most `E` over
+each of these discs have a subsequence and a finite set `Z` in the unit disc `ball 0 1` such that,
+off the translate `Z + c` of `Z`, the differentials are uniformly bounded on compact subsets of the
+disc about `c` and the solutions converge locally uniformly there, and energy at least `δ`
+concentrates at the points of `Z + c`. -/
+private lemma exists_pos_forall_subseq_ball_add_int (ω : SymplecticForm V) {K : Set V}
+    (hKs : ContDiff ℝ 3 (uncurry Ks)) (hKt : ContDiff ℝ 3 (uncurry Kt))
+    (hJ : ContDiff ℝ 2 (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap))
+    (hK : IsCompact K) (hJt : ∀ z, ∀ x ∈ K, ω.Tames (J z x))
+    (hKsper : ∀ (m n : ℤ) z, Ks (z + ((m : ℝ), (n : ℝ))) = Ks z)
+    (hKtper : ∀ (m n : ℤ) z, Kt (z + ((m : ℝ), (n : ℝ))) = Kt z)
+    (hJper : ∀ (m n : ℤ) z, J (z + ((m : ℝ), (n : ℝ))) = J z) :
+    ∃ δ > 0, ∀ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, (∀ k, ContDiff ℝ 3 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedFDeriv Ks Kt (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k z, u k z ∈ K) →
+      (∀ k (m n : ℤ), ∫ z in ball ((m : ℝ), (n : ℝ)) 1, ω.floerEnergyDensity Ks Kt (u k) z ≤ E) →
+      ∀ m n : ℤ, ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono ψ ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ k in atTop, δ ≤
+          ∫ y in ball (z + ((m : ℝ), (n : ℝ))) ε, ω.floerEnergyDensity Ks Kt (u (ψ k)) y) ∧
+        (∀ C, IsCompact C → C ⊆ (· - ((m : ℝ), (n : ℝ))) ⁻¹' (ball 0 1 \ ↑Z) →
+          ∃ M, ∀ k, ∀ y ∈ C, ‖fderiv ℝ (u (ψ k)) y‖ ≤ M) ∧
+        TendstoLocallyUniformlyOn (fun k ↦ u (ψ k)) v atTop
+          ((· - ((m : ℝ), (n : ℝ))) ⁻¹' (ball 0 1 \ ↑Z)) := by
+  -- The compactness theorem on the closed unit disc gives the threshold.
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
+    isOpen_univ hKs.contDiffOn hKt.contDiffOn hJ.contDiffOn (isCompact_closedBall 0 1) hK
+    (subset_univ _) fun z _ x hx ↦ hJt z x hx
+  refine ⟨δ, hδ, fun u E hu hfl huK hE m n ↦ ?_⟩
+  set c : ℝ × ℝ := ((m : ℝ), (n : ℝ))
+  -- Lebesgue measure on the plane is the product measure, which is translation invariant.
+  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
+    rw [Measure.volume_eq_prod]
+    infer_instance
+  -- The window `z ↦ u k (z + c)` solves the Floer equation, and its energy density is a translate.
+  have hKs' : (fun z ↦ Ks (z + c)) = Ks := funext (hKsper m n)
+  have hKt' : (fun z ↦ Kt (z + c)) = Kt := funext (hKtper m n)
+  have hflw (k : ℕ) (z : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z (u k (z + c))) (ω.perturbedFDeriv Ks Kt (fun y ↦ u k (y + c)) z : ℝ × ℝ →ₗ[ℝ] V) := by
+    have h := ω.perturbedFDeriv_comp_add_right Ks Kt (u k) c z
+    rw [hKs', hKt'] at h
+    rw [h, ← hJper m n z]
+    exact hfl k (z + c)
+  have hfw (k : ℕ) (z : ℝ × ℝ) : ω.floerEnergyDensity Ks Kt (fun y ↦ u k (y + c)) z =
+      ω.floerEnergyDensity Ks Kt (u k) (z + c) := by
+    have h := ω.floerEnergyDensity_comp_add_right Ks Kt (u k) c z
+    rwa [hKs', hKt'] at h
+  have hint (k : ℕ) (z : ℝ × ℝ) (ε : ℝ) :
+      IntegrableOn (fun y ↦ ω.floerEnergyDensity Ks Kt (u k) (y + c)) (ball z ε) :=
+    ((continuousOn_univ.1 (ω.continuousOn_floerEnergyDensity isOpen_univ
+      ((hu k).of_le (by norm_num)).contDiffOn (hKs.of_le (by norm_num)).contDiffOn
+      (hKt.of_le (by norm_num)).contDiffOn)).comp (continuous_id.add continuous_const)
+      |>.continuousOn.integrableOn_compact (isCompact_closedBall z ε)).mono_set
+        ball_subset_closedBall
+  obtain ⟨ψ, Z, v, hψ, -, -, hconc, hbd, -, -, hlim⟩ :=
+    hconv (Ω := ball 0 1) (u := fun k y ↦ u k (y + c)) (E := E) isOpen_ball
+      ball_subset_closedBall (fun k ↦ ((hu k).comp (contDiff_id.add contDiff_const)).contDiffOn)
+      (fun k z _ ↦ hflw k z) (fun k z _ ↦ huK k _)
+      (fun k ↦ (hint k 0 1).congr_fun (fun z _ ↦ (hfw k z).symm) isOpen_ball.measurableSet)
+      (fun k ↦ by
+        rw [setIntegral_congr_fun isOpen_ball.measurableSet fun z _ ↦ hfw k z,
+          setIntegral_ball_comp_add_right, zero_add]
+        exact hE k m n)
+  -- Carry the conclusions back from the window to the plane.
+  refine ⟨ψ, Z, fun y ↦ v (y - c), hψ, fun z hz ε hε ↦ (hconc z hz ε hε).mono fun k hk ↦ ?_,
+    fun C hC hCZ ↦ ?_, (hlim.comp (· - c) (mapsTo_preimage _ _)
+      (continuous_sub_right _).continuousOn).congr fun k y _ ↦ ?_⟩
+  · rw [setIntegral_congr_fun (measurableSet_ball.inter isOpen_ball.measurableSet)
+      fun y _ ↦ hfw (ψ k) y] at hk
+    refine (hk.trans (setIntegral_mono_set (hint _ z ε) (Eventually.of_forall fun y ↦
+      ω.floerEnergyDensity_nonneg (hJt _ _ (huK _ _)) (hfl _ _))
+      inter_subset_left.eventuallySubset)).trans_eq (setIntegral_ball_comp_add_right _ z c ε)
+  · obtain ⟨M, hM⟩ := hbd _ (hC.image (continuous_sub_right c)) (image_subset_iff.2 hCZ)
+    refine ⟨M, fun k y hy ↦ ?_⟩
+    simpa [fderiv_comp_add_right] using hM k (y - c) (mem_image_of_mem _ hy)
+  · simp
+
+/-- A diagonal extraction over the windows of
+`exists_pos_forall_subseq_ball_add_int`: solutions with energy at most `E` over the open unit disc
+about every integer point `m` have one subsequence `φ` such that, for every `m`, the conclusions of
+that lemma hold eventually along `φ` for some finite set `Z` in `ball 0 1`. -/
+private lemma exists_pos_forall_subseq_forall_ball_add_int (ω : SymplecticForm V) {K : Set V}
+    (hKs : ContDiff ℝ 3 (uncurry Ks)) (hKt : ContDiff ℝ 3 (uncurry Kt))
+    (hJ : ContDiff ℝ 2 (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap))
+    (hK : IsCompact K) (hJt : ∀ z, ∀ x ∈ K, ω.Tames (J z x))
+    (hKsper : ∀ (m n : ℤ) z, Ks (z + ((m : ℝ), (n : ℝ))) = Ks z)
+    (hKtper : ∀ (m n : ℤ) z, Kt (z + ((m : ℝ), (n : ℝ))) = Kt z)
+    (hJper : ∀ (m n : ℤ) z, J (z + ((m : ℝ), (n : ℝ))) = J z) :
+    ∃ δ > 0, ∀ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, (∀ k, ContDiff ℝ 3 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedFDeriv Ks Kt (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k z, u k z ∈ K) →
+      (∀ k (m n : ℤ), ∫ z in ball ((m : ℝ), (n : ℝ)) 1, ω.floerEnergyDensity Ks Kt (u k) z ≤ E) →
+      ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ m : ℤ × ℤ, ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V),
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ k in map φ atTop, δ ≤
+          ∫ y in ball (z + ((m.1 : ℝ), (m.2 : ℝ))) ε, ω.floerEnergyDensity Ks Kt (u k) y) ∧
+        (∀ C, IsCompact C → C ⊆ (· - ((m.1 : ℝ), (m.2 : ℝ))) ⁻¹' (ball 0 1 \ ↑Z) →
+          ∃ M, ∀ᶠ k in map φ atTop, ∀ y ∈ C, ‖fderiv ℝ (u k) y‖ ≤ M) ∧
+        TendstoLocallyUniformlyOn u v (map φ atTop)
+          ((· - ((m.1 : ℝ), (m.2 : ℝ))) ⁻¹' (ball 0 1 \ ↑Z)) := by
+  obtain ⟨δ, hδ, hwin⟩ :=
+    exists_pos_forall_subseq_ball_add_int ω hKs hKt hJ hK hJt hKsper hKtper hJper
+  refine ⟨δ, hδ, fun u E hu hfl huK hE ↦ ?_⟩
+  -- On each window, every subsequence has a further subsequence converging off finitely many
+  -- bubbling points, and these properties pass to finer filters. Enumerate the windows.
+  set e : ℕ ≃ ℤ × ℤ := (Denumerable.eqv (ℤ × ℤ)).symm
+  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V),
+      (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ k in l, δ ≤
+        ∫ y in ball (z + (((e j).1 : ℝ), ((e j).2 : ℝ))) ε, ω.floerEnergyDensity Ks Kt (u k) y) ∧
+      (∀ C, IsCompact C → C ⊆ (· - (((e j).1 : ℝ), ((e j).2 : ℝ))) ⁻¹' (ball 0 1 \ ↑Z) →
+        ∃ M, ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) y‖ ≤ M) ∧
+      TendstoLocallyUniformlyOn u v l ((· - (((e j).1 : ℝ), ((e j).2 : ℝ))) ⁻¹' (ball 0 1 \ ↑Z))
+  obtain ⟨φ, hφ, hP⟩ := extraction_forall_of_antitone (P := P)
+    (fun j _ _ hl ⟨Z, v, hconc, hbd, hlim⟩ ↦ ⟨Z, v,
+      fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
+      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl,
+      hlim.comp_tendsto (tendsto_id'.2 hl)⟩) fun j ψ _ ↦ by
+      obtain ⟨ψ', Z, v, hψ', hconc, hbd, hlim⟩ := hwin (u := fun k ↦ u (ψ k)) (fun k ↦ hu _)
+        (fun k ↦ hfl _) (fun k ↦ huK _) (fun k ↦ hE _) (e j).1 (e j).2
+      exact ⟨ψ', hψ', Z, v, fun z hz ε hε ↦ eventually_map.2 (hconc z hz ε hε),
+        fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ eventually_map.2 (Eventually.of_forall hM),
+        tendstoLocallyUniformlyOn_map_iff.2 hlim⟩
+  refine ⟨φ, hφ, fun m ↦ ?_⟩
+  simpa only [P, Equiv.apply_symm_apply] using hP (e.symm m)
 
 /-- **Floer cylinders with doubly periodic data converge off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on `(ℝ × ℝ) × V`, invariant under the
@@ -114,151 +242,62 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
         (∀ s t, v (s, t + 1) = v (s, t)) ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop
           {y : ℝ × ℝ | (y.1, Int.fract y.2) ∉ Z} := by
-  set B : Set (ℝ × ℝ) := ball 0 1 with hB
-  -- The compactness theorem on the closed unit disc gives the threshold.
-  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    isOpen_univ hKs.contDiffOn hKt.contDiffOn hJ.contDiffOn (isCompact_closedBall 0 1) hK
-    (subset_univ _) fun z _ x hx ↦ hJt z x hx
+  obtain ⟨δ, hδ, hdiag⟩ :=
+    exists_pos_forall_subseq_forall_ball_add_int ω hKs hKt hJ hK hJt hKsper hKtper hJper
   refine ⟨δ / 2, half_pos hδ, fun u E hu hper hfl huK hint hE ↦ ?_⟩
-  -- The windows: the translates of `u` by the integer points `c j`, read on the unit disc `B`.
-  set e : ℕ ≃ ℤ × ℤ := (Denumerable.eqv (ℤ × ℤ)).symm
-  set c : ℕ → ℝ × ℝ := fun j ↦ (((e j).1 : ℝ), ((e j).2 : ℝ)) with hc
   set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity Ks Kt (u k)
   set S : Set (ℝ × ℝ) := univ ×ˢ Ico 0 1
   have hf0 (k : ℕ) (y : ℝ × ℝ) : 0 ≤ f k y :=
     ω.floerEnergyDensity_nonneg (hJt y _ (huK k y)) (hfl k y)
-  have hfc (k : ℕ) : Continuous (f k) :=
-    continuousOn_univ.1 (ω.continuousOn_floerEnergyDensity isOpen_univ
-      ((hu k).of_le (by norm_num)).contDiffOn (hKs.of_le (by norm_num)).contDiffOn
-      (hKt.of_le (by norm_num)).contDiffOn)
-  have hintball {g : ℝ × ℝ → ℝ} (hg : Continuous g) (z : ℝ × ℝ) (ε : ℝ) :
-      IntegrableOn g (ball z ε) :=
-    (hg.continuousOn.integrableOn_compact (isCompact_closedBall z ε)).mono_set
-      ball_subset_closedBall
-  -- Lebesgue measure on the plane is the product measure, which is translation invariant.
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
-  have hfa (k : ℕ) (a : ℝ × ℝ) : Continuous fun z ↦ f k (z + a) :=
-    (hfc k).comp (continuous_id.add continuous_const)
-  have hKsc (j : ℕ) : (fun z ↦ Ks (z + c j)) = Ks := funext fun z ↦ hKsper _ _ z
-  have hKtc (j : ℕ) : (fun z ↦ Kt (z + c j)) = Kt := funext fun z ↦ hKtper _ _ z
-  -- The windows solve the Floer equation, and their energy densities are translates.
-  have hflw (j k : ℕ) (z : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u k (z + c j)))
-      (ω.perturbedFDeriv Ks Kt (fun y ↦ u k (y + c j)) z : ℝ × ℝ →ₗ[ℝ] V) := by
-    have h := ω.perturbedFDeriv_comp_add_right Ks Kt (u k) (c j) z
-    rw [hKsc, hKtc] at h
-    rw [h, ← hJper (e j).1 (e j).2 z]
-    exact hfl k (z + c j)
-  have hfw (j k : ℕ) (z : ℝ × ℝ) :
-      ω.floerEnergyDensity Ks Kt (fun y ↦ u k (y + c j)) z = f k (z + c j) := by
-    have h := ω.floerEnergyDensity_comp_add_right Ks Kt (u k) (c j) z
-    rwa [hKsc, hKtc] at h
-  have hintw (j k : ℕ) : IntegrableOn (fun z ↦ f k (z + c j)) B :=
-    hintball (hfa k (c j)) 0 1
   -- The energy densities are `1`-periodic in `t`.
-  have hfper (k : ℕ) (n : ℤ) : Periodic (f k) (0, (n : ℝ)) :=
-    ω.periodic_floerEnergyDensity (fun w ↦ by simpa using hKsper 0 n w)
-      (fun w ↦ by simpa using hKtper 0 n w) fun ⟨s, t⟩ ↦ by
-        -- `Periodic g 1` is by definition `∀ t, g (t + 1) = g t`, which is `hper k s`.
-        have hp : Periodic (fun t ↦ u k (s, t)) 1 := fun t ↦ hper k s t
-        simpa using hp.int_mul n t
-  have hfk (k : ℕ) (s t : ℝ) : f k (s, t + 1) = f k (s, t) := by simpa using hfper k 1 (s, t)
+  have hfk (k : ℕ) (s t : ℝ) : f k (s, t + 1) = f k (s, t) := by
+    have h : Periodic (f k) (0, 1) := ω.periodic_floerEnergyDensity
+      (fun w ↦ by simpa using hKsper 0 1 w) (fun w ↦ by simpa using hKtper 0 1 w)
+      fun ⟨s, t⟩ ↦ by simpa using hper k s t
+    simpa using h (s, t)
   have hk (k : ℕ) : IntegrableOn (f k) (univ ×ˢ Ico 0 (0 + 1)) := by simpa using hint k
   have hEk (k : ℕ) : ∫ z in univ ×ˢ Ico 0 (0 + 1), f k z ≤ E := by simpa using hE k
   have hS : S ⊆ univ ×ˢ Ico 0 (0 + 1) := by rw [zero_add]
-  -- The energy of each window, a unit disc about an integer point, is at most `2 * E`.
-  have hwin (j k : ℕ) : ∫ z in B, f k (z + c j) ≤ 2 * E := by
-    have h := setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k)
-      ((e j).1 : ℝ) (e j).2
+  -- The energy over the unit disc about each integer point is at most `2 * E`, so one subsequence
+  -- converges on all of these windows.
+  have hE2 (k : ℕ) (m n : ℤ) : ∫ z in ball ((m : ℝ), (n : ℝ)) 1, f k z ≤ 2 * E := by
+    have h := setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k) (m : ℝ) n
     rw [zero_add, mul_one] at h
-    rw [hB, setIntegral_ball_comp_add_right, zero_add]
     exact h.trans (mul_le_mul_of_nonneg_left (hEk k) two_pos.le)
-  -- On each window, every subsequence has a further subsequence converging off finitely many
-  -- bubbling points, and these properties pass to finer filters. A diagonal extraction gives one
-  -- subsequence that does so on every window.
-  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V),
-      (∀ z ∈ Z', ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y in ball z ε ∩ B, f k (y + c j)) ∧
-      (∀ C, IsCompact C → C ⊆ B \ ↑Z' →
-        ∃ M, ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) (y + c j)‖ ≤ M) ∧
-      TendstoLocallyUniformlyOn (fun k y ↦ u k (y + c j)) v' l (B \ ↑Z')
-  obtain ⟨φ, hφ, hP⟩ := extraction_forall_of_antitone (P := P)
-    (fun j _ _ hl ⟨Z', v', hconc, hbd, hlim⟩ ↦ ⟨Z', v',
-      fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
-      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl,
-      hlim.comp_tendsto (tendsto_id'.2 hl)⟩) fun j ψ _ ↦ by
-      obtain ⟨ψ', Z', v', hψ', -, -, hconc, hbd, -, -, hlim⟩ :=
-        hconv (Ω := B) (u := fun k y ↦ u (ψ k) (y + c j)) (E := 2 * E) isOpen_ball
-          ball_subset_closedBall
-          (fun k ↦ ((hu (ψ k)).comp (contDiff_id.add contDiff_const)).contDiffOn)
-          (fun k z _ ↦ hflw j (ψ k) z) (fun k z _ ↦ huK (ψ k) _)
-          (fun k ↦ (hintw j (ψ k)).congr_fun (fun z _ ↦ (hfw j (ψ k) z).symm)
-            isOpen_ball.measurableSet)
-          (fun k ↦ by
-            rw [setIntegral_congr_fun isOpen_ball.measurableSet fun z _ ↦ hfw j (ψ k) z]
-            exact hwin j (ψ k))
-      refine ⟨ψ', hψ', Z', v', fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
-        tendstoLocallyUniformlyOn_map_iff.2 hlim⟩
-      · refine eventually_map.2 ((hconc z hz ε hε).mono fun n hn ↦ ?_)
-        rwa [setIntegral_congr_fun (measurableSet_ball.inter isOpen_ball.measurableSet)
-          fun y _ ↦ hfw j (ψ (ψ' n)) y] at hn
-      · obtain ⟨M, hM⟩ := hbd C hC hCZ
-        refine ⟨M, eventually_map.2 (Eventually.of_forall fun n y hy ↦ ?_)⟩
-        simpa [fderiv_comp_add_right] using hM n y hy
+  obtain ⟨φ, hφ, hP⟩ := hdiag hu hfl huK hE2
   choose Z v hconc hbd hlim using hP
   set l : Filter ℕ := map φ atTop
-  -- The bubbling points of all windows, carried back to the plane.
-  set Zall : Set (ℝ × ℝ) := ⋃ j, (· + c j) '' (Z j : Set (ℝ × ℝ)) with hZall
-  -- The points at which energy at least `δ` concentrates; they include the bubbling points, and
-  -- they are invariant under the period `(0, 1)`.
+  set c : ℤ × ℤ → ℝ × ℝ := fun m ↦ ((m.1 : ℝ), (m.2 : ℝ))
+  -- The bubbling points of all windows, and the good parts of the windows, in the plane.
+  set Zall : Set (ℝ × ℝ) := ⋃ m, (· + c m) '' (Z m : Set (ℝ × ℝ))
+  set G : ℤ × ℤ → Set (ℝ × ℝ) := fun m ↦ (· - c m) ⁻¹' (ball 0 1 \ ↑(Z m))
+  -- The points at which energy at least `δ` concentrates; finitely many lie in the strip `S`.
   set Zc : Set (ℝ × ℝ) := {y | ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y' in ball y ε, f k y'}
-  have hZallc : Zall ⊆ Zc := by
-    intro y hy ε hε
-    obtain ⟨j, z, hz, rfl⟩ := mem_iUnion.1 hy
-    filter_upwards [hconc j z hz ε hε] with k hk
-    exact (hk.trans (setIntegral_mono_set (hintball (hfa k (c j)) z ε)
-      (Eventually.of_forall fun y ↦ hf0 _ _) inter_subset_left.eventuallySubset)).trans_eq
-        (setIntegral_ball_comp_add_right (f k) z (c j) ε)
-  have hZcper (y : ℝ × ℝ) (n : ℤ) (hy : y ∈ Zc) : y + (0, (n : ℝ)) ∈ Zc := by
-    intro ε hε
-    filter_upwards [hy ε hε] with k hk
-    rw [← setIntegral_ball_comp_add_right (f k) y (0, (n : ℝ)) ε]
-    simpa only [show ∀ y, f k (y + (0, (n : ℝ))) = f k y from hfper k n] using hk
-  -- Finitely many of them lie in the strip `S`.
   have hfin : (Zc ∩ S).Finite :=
     finite_of_forall_eventually_le_setIntegral_ball_of_periodic (μ := volume) (l := l) hδ hf0
       hfk hk hEk (inter_subset_right.trans hS) fun z hz ↦ hz.1
-  -- Off the translates of the points of `Zc ∩ S`, there are no bubbling points.
+  -- Each bubbling point is a translate of one of them, since concentration is periodic in `t`.
   have hgood : {y : ℝ × ℝ | (y.1, Int.fract y.2) ∉ hfin.toFinset} ⊆ Zallᶜ := by
     intro y hy hyZ
-    refine hy (hfin.mem_toFinset.2 ⟨?_, mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩)
-    convert hZcper y (-⌊y.2⌋) (hZallc hyZ) using 1
-    rw [← Int.self_sub_floor]
-    refine Prod.ext (add_zero y.1).symm ?_
-    simp only [Prod.snd_add]
-    push_cast
-    ring
-  -- The good parts of the windows, carried back to the plane, cover the complement of `Zall`.
-  set G : ℕ → Set (ℝ × ℝ) := fun j ↦ (· - c j) ⁻¹' (B \ ↑(Z j)) with hG
-  have hGopen (j : ℕ) : IsOpen (G j) :=
-    (isOpen_ball.sdiff (Z j).finite_toSet.isClosed).preimage (continuous_sub_right _)
-  have hcover (y : ℝ × ℝ) (hy : y ∉ Zall) : ∃ j, y ∈ G j := by
-    -- The integer point nearest to `y` is at distance at most `1 / 2`.
-    set m : ℤ × ℤ := (round y.1, round y.2)
-    have hm : y - c (e.symm m) ∈ B := by
-      rw [hB, mem_ball_zero_iff, ← dist_eq_norm]
-      simp only [hc, Equiv.apply_symm_apply, m]
+    obtain ⟨m, z, hz, rfl⟩ := mem_iUnion.1 hyZ
+    have h := forall_eventually_le_setIntegral_ball_toIcoMod_of_periodic (μ := volume) (a := 0)
+      zero_lt_one hfk (hconc m z hz)
+    rw [toIcoMod_zero_one] at h
+    exact hy (hfin.mem_toFinset.2 ⟨h, mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩)
+  -- The good parts of the windows are open and cover the complement of `Zall`: the integer point
+  -- nearest to `y` is at distance at most `1 / 2`.
+  have hGopen (m : ℤ × ℤ) : IsOpen (G m) :=
+    (isOpen_ball.sdiff (Z m).finite_toSet.isClosed).preimage (continuous_sub_right _)
+  have hcover (y : ℝ × ℝ) (hy : y ∉ Zall) : ∃ m, y ∈ G m := by
+    have hm : y - c (round y.1, round y.2) ∈ ball 0 1 := by
+      rw [mem_ball_zero_iff, ← dist_eq_norm]
       exact (Prod.dist_round_le y).trans_lt (by norm_num)
-    refine ⟨e.symm m, hm, fun hZ ↦ hy ?_⟩
-    rw [hZall, mem_iUnion]
-    exact ⟨e.symm m, y - c (e.symm m), hZ, sub_add_cancel _ _⟩
+    exact ⟨_, hm, fun hZ ↦ hy (mem_iUnion.2 ⟨_, _, hZ, sub_add_cancel _ _⟩)⟩
   -- The limits of the windows glue to the pointwise limit, off the translates of `Zc ∩ S`.
   set v' : ℝ × ℝ → V := fun y ↦ limUnder l fun k ↦ u k y
   have hlimv : TendstoLocallyUniformlyOn u v' l {y | (y.1, Int.fract y.2) ∉ hfin.toFinset} :=
-    (tendstoLocallyUniformlyOn_iUnion_limUnder hGopen fun j ↦
-      ((hlim j).comp (· - c j) (mapsTo_preimage _ _) (continuous_sub_right _).continuousOn).congr
-        fun k y _ ↦ by simp).mono fun y hy ↦ mem_iUnion.2 (hcover y (hgood hy))
+    (tendstoLocallyUniformlyOn_iUnion_limUnder hGopen hlim).mono fun y hy ↦
+      mem_iUnion.2 (hcover y (hgood hy))
   refine ⟨φ, hfin.toFinset, v', hφ, fun z hz ↦ (hfin.mem_toFinset.1 hz).2, ?_,
     fun z hz ε hε ↦ (eventually_map.1 ((hfin.mem_toFinset.1 hz).1 ε hε)).mono fun n hn ↦
       (half_le_self hδ.le).trans hn, fun C hC hCZ ↦ ?_,
@@ -271,22 +310,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       (μ := volume) (l := l) hf0 hfk hk hEk (Z := hfin.toFinset)
       (fun z hz ↦ hS (hfin.mem_toFinset.1 hz).2) fun z hz ↦ (hfin.mem_toFinset.1 hz).1
     linarith
-  -- Each point of `C` has a closed disc in a good part of some window, on which that window
-  -- eventually bounds the differentials.
+  -- Each point of `C` has a closed disc in the good part of some window, on which the
+  -- differentials are eventually bounded.
   refine hC.exists_forall_le_of_eventually_nhds
     (fun n ↦ ((hu (φ n)).continuous_fderiv (by norm_num)).norm.continuousOn) fun x hx ↦ ?_
-  obtain ⟨j, hj⟩ := hcover x (hgood (hCZ hx))
-  obtain ⟨r, hr, hsub⟩ := nhds_basis_closedBall.mem_iff.1 ((hGopen j).mem_nhds hj)
-  have hsub' : closedBall (x - c j) r ⊆ B \ ↑(Z j) := fun y hy ↦ by
-    have hy' : y + c j ∈ closedBall x r := by
-      rw [mem_closedBall] at hy ⊢
-      rwa [← dist_add_right y (x - c j) (c j), sub_add_cancel] at hy
-    simpa [hG] using hsub hy'
-  obtain ⟨M, hM⟩ := hbd j _ (isCompact_closedBall _ _) hsub'
-  refine ⟨closedBall x r, closedBall_mem_nhds x hr, M,
-    (eventually_map.1 hM).mono fun n hn y hy ↦ ?_⟩
-  have h := hn (y - c j) (by rwa [mem_closedBall, dist_sub_right])
-  rwa [sub_add_cancel] at h
+  obtain ⟨m, hm⟩ := hcover x (hgood (hCZ hx))
+  obtain ⟨r, hr, hsub⟩ := nhds_basis_closedBall.mem_iff.1 ((hGopen m).mem_nhds hm)
+  obtain ⟨M, hM⟩ := hbd m _ (isCompact_closedBall _ _) hsub
+  exact ⟨closedBall x r, closedBall_mem_nhds x hr, M, eventually_map.1 hM⟩
 
 /-- **Floer trajectories converge off finitely many bubbling points.** Let `H` be a `C³`
 Hamiltonian, `1`-periodic in time, and `J_t(x)` a `C²` family of almost complex structures,
