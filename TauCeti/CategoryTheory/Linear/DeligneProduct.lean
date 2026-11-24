@@ -60,8 +60,9 @@ morphisms between distinct members; this is the semisimplicity of the Deligne pr
 * `TauCeti.LinearTensor.biconeTmul` and `TauCeti.LinearTensor.isBilimitBiconeTmul`: the pair of
   two biproducts is the biproduct of the pairs;
 * `TauCeti.DeligneProduct`, with `TauCeti.DeligneProduct.bifunctor`, `TauCeti.DeligneProduct.lift`,
-  `TauCeti.DeligneProduct.bifunctorCompLiftIso`, `TauCeti.DeligneProduct.ext` and
-  `TauCeti.DeligneProduct.liftUnique`;
+  `TauCeti.DeligneProduct.bifunctorCompLiftIso`, `TauCeti.DeligneProduct.ext` (with its components
+  `TauCeti.DeligneProduct.ext_hom_app`) and `TauCeti.DeligneProduct.liftUnique`;
+* `TauCeti.DeligneProduct.biproductIso`: `(⨁ f) ⊠ (⨁ g)` is the biproduct of the `f j ⊠ g j'`;
 * `TauCeti.IsSplitSimpleFamily.deligneProduct`: products of split simple families.
 
 ## References
@@ -99,25 +100,14 @@ variable {k : Type w} [CommSemiring k]
 
 /-- The morphisms `(X, Y) ⟶ (X', Y')` of `LinearTensor k C D`: the tensor product over `k` of the
 morphism modules `X ⟶ X'` and `Y ⟶ Y'`. -/
-def Hom (P Q : LinearTensor k C D) : Type (max v₁ v₂) :=
+abbrev Hom (P Q : LinearTensor k C D) : Type (max v₁ v₂) :=
   (P.fst ⟶ Q.fst) ⊗[k] (P.snd ⟶ Q.snd)
 
-instance (P Q : LinearTensor k C D) : AddCommGroup (Hom P Q) :=
-  inferInstanceAs <| AddCommGroup ((P.fst ⟶ Q.fst) ⊗[k] (P.snd ⟶ Q.snd))
-
-instance (P Q : LinearTensor k C D) : Module k (Hom P Q) :=
-  inferInstanceAs <| Module k ((P.fst ⟶ Q.fst) ⊗[k] (P.snd ⟶ Q.snd))
-
-/-- The pure tensor `f ⊗ g` in `Hom (X, Y) (X', Y')`. -/
-def Hom.tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
-    Hom (k := k) ⟨X, Y⟩ ⟨X', Y'⟩ :=
-  f ⊗ₜ g
-
-/-- Induction on `Hom P Q`: a property which holds for pure tensors and is stable under addition
-holds for all elements. -/
+/-- Induction on `Hom P Q`, used to build the category structure before the morphisms
+`P ⟶ Q` exist; afterwards `hom_induction_on` is the public induction principle. -/
 @[elab_as_elim]
-theorem Hom.induction_on {P Q : LinearTensor k C D} {motive : Hom P Q → Prop} (t : Hom P Q)
-    (tmul : ∀ (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd), motive (Hom.tmul f g))
+private theorem Hom.induction_on {P Q : LinearTensor k C D} {motive : Hom P Q → Prop}
+    (t : Hom P Q) (tmul : ∀ (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd), motive (f ⊗ₜ g))
     (add : ∀ t t', motive t → motive t' → motive (t + t')) : motive t :=
   TensorProduct.inductionOn t tmul add
 
@@ -126,37 +116,28 @@ componentwise. -/
 def compₗ (P Q R : LinearTensor k C D) : Hom P Q →ₗ[k] Hom Q R →ₗ[k] Hom P R :=
   TensorProduct.map₂ (Linear.comp P.fst Q.fst R.fst) (Linear.comp P.snd Q.snd R.snd)
 
-/-- Composition of pure tensors in `LinearTensor k C D` is componentwise. -/
-@[simp]
-theorem compₗ_tmul {X X' X'' : C} {Y Y' Y'' : D} (f : X ⟶ X') (g : Y ⟶ Y') (f' : X' ⟶ X'')
-    (g' : Y' ⟶ Y'') :
-    compₗ ⟨X, Y⟩ ⟨X', Y'⟩ ⟨X'', Y''⟩ (Hom.tmul (k := k) f g) (Hom.tmul f' g') =
-      Hom.tmul (f ≫ f') (g ≫ g') :=
+/-- `compₗ` composes pure tensors componentwise; after the category structure is built this is
+the public `tmul_comp_tmul`. -/
+private theorem compₗ_tmul {P Q R : LinearTensor k C D} (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd)
+    (f' : Q.fst ⟶ R.fst) (g' : Q.snd ⟶ R.snd) :
+    compₗ P Q R (f ⊗ₜ g) (f' ⊗ₜ g') = (f ≫ f') ⊗ₜ (g ≫ g') :=
   rfl
 
 /-- The `k`-linear tensor product of `C` and `D` is a category, with identities `𝟙 X ⊗ 𝟙 Y` and
 composition `compₗ`. -/
 instance : Category.{max v₁ v₂} (LinearTensor k C D) where
   Hom := Hom
-  id P := Hom.tmul (𝟙 P.fst) (𝟙 P.snd)
+  id P := (𝟙 P.fst ⊗ₜ 𝟙 P.snd : Hom P P)
   comp t t' := compₗ _ _ _ t t'
   id_comp {P Q} t := by
-    obtain ⟨X, Y⟩ := P
-    obtain ⟨X', Y'⟩ := Q
     induction t using Hom.induction_on with
-    | tmul f g => simp
+    | tmul f g => rw [compₗ_tmul, Category.id_comp, Category.id_comp]
     | add t t' ht ht' => simp only [map_add, ht, ht']
   comp_id {P Q} t := by
-    obtain ⟨X, Y⟩ := P
-    obtain ⟨X', Y'⟩ := Q
     induction t using Hom.induction_on with
-    | tmul f g => simp
+    | tmul f g => rw [compₗ_tmul, Category.comp_id, Category.comp_id]
     | add t t' ht ht' => simp only [map_add, LinearMap.add_apply, ht, ht']
   assoc {P Q R S} t t' t'' := by
-    obtain ⟨X₁, Y₁⟩ := P
-    obtain ⟨X₂, Y₂⟩ := Q
-    obtain ⟨X₃, Y₃⟩ := R
-    obtain ⟨X₄, Y₄⟩ := S
     induction t using Hom.induction_on with
     | add t₁ t₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
     | tmul f g =>
@@ -165,7 +146,8 @@ instance : Category.{max v₁ v₂} (LinearTensor k C D) where
       | tmul f' g' =>
         induction t'' using Hom.induction_on with
         | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-        | tmul f'' g'' => simp
+        | tmul f'' g'' =>
+          rw [compₗ_tmul, compₗ_tmul, compₗ_tmul, compₗ_tmul, Category.assoc, Category.assoc]
 
 instance (P Q : LinearTensor k C D) : AddCommGroup (P ⟶ Q) :=
   inferInstanceAs <| AddCommGroup (Hom P Q)
@@ -197,7 +179,7 @@ def homEquiv (P Q : LinearTensor k C D) :
 /-- The pure tensor `f ⊗ g : (X, Y) ⟶ (X', Y')` of morphisms `f : X ⟶ X'` and `g : Y ⟶ Y'`. -/
 def tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
     (⟨X, Y⟩ : LinearTensor k C D) ⟶ ⟨X', Y'⟩ :=
-  Hom.tmul f g
+  f ⊗ₜ g
 
 @[simp]
 theorem homEquiv_tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
@@ -269,7 +251,7 @@ theorem hom_induction_on {X X' : C} {Y Y' : D}
     (t : (⟨X, Y⟩ : LinearTensor k C D) ⟶ ⟨X', Y'⟩)
     (tmul : ∀ (f : X ⟶ X') (g : Y ⟶ Y'), motive (tmul f g))
     (add : ∀ t t', motive t → motive t' → motive (t + t')) : motive t :=
-  Hom.induction_on (motive := motive) t tmul add
+  TensorProduct.inductionOn (motive := motive) t tmul add
 
 /-- The isomorphism of pairs `(X, Y) ≅ (X', Y')` built from isomorphisms of the components. -/
 @[simps]
@@ -302,10 +284,15 @@ theorem bijective_algebraMap_mk {X : C} {Y : D} (hX : Function.Bijective (algebr
       (End.linearEquiv (R := k)).symm
   convert e.bijective
   ext r : 2
-  -- Both sides are `r • (𝟙 X ⊗ 𝟙 Y)`; the right-hand side is the identity written through
-  -- `homEquiv`, which is the identity linear equivalence.
-  simp [e, eX, eY]
-  rfl
+  -- Both sides reduce to `r • 𝟙 (X, Y)`: the right-hand side to `r` times the identity written
+  -- through `homEquiv`, which `homEquiv_symm_tmul` and `tmul_id_id` turn into `𝟙 (X, Y)`.
+  simp only [e, eX, eY, End.algebraMap_asHom, LinearEquiv.trans_apply, lid_symm_apply, congr_tmul,
+    LinearEquiv.ofBijective_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    Algebra.linearMap_apply, map_one, End.linearEquiv_apply, AddEquiv.toEquiv_eq_coe,
+    Equiv.toFun_as_coe, EquivLike.coe_coe, End.addEquiv_apply, End.one_asHom,
+    TensorProduct.tmul_smul, map_smul, End.linearEquiv_symm_apply, Equiv.invFun_as_coe,
+    AddEquiv.coe_toEquiv_symm, End.smul_asHom, End.addEquiv_symm_apply_asHom]
+  rw [homEquiv_symm_tmul, tmul_id_id]
 
 end Category
 
@@ -349,11 +336,13 @@ instance (X : C) : ((bifunctor k C D).obj X).Linear k where
 instance : (bifunctor k C D).Additive where
   map_add {_ _ f f'} := by
     ext Y
+    rw [NatTrans.app_add, bifunctor_map_app, bifunctor_map_app, bifunctor_map_app]
     exact add_tmul f f' (𝟙 Y)
 
 instance : (bifunctor k C D).Linear k where
   map_smul f r := by
     ext Y
+    rw [NatTrans.app_smul, bifunctor_map_app, bifunctor_map_app]
     exact smul_tmul r f (𝟙 Y)
 
 variable {E : Type u₃} [Category.{v₃} E] [Preadditive E]
@@ -363,29 +352,19 @@ section Lift
 variable [Linear k E] (F : C ⥤ D ⥤ E) [F.Additive] [F.Linear k] [∀ X, (F.obj X).Additive]
   [∀ X, (F.obj X).Linear k]
 
-/-- The `k`-linear map on morphisms underlying `LinearTensor.lift k F`: it sends a pure tensor
-`f ⊗ g` to `F f ≫ F g`. -/
-def liftHom (P Q : LinearTensor k C D) :
-    (P ⟶ Q) →ₗ[k] ((F.obj P.fst).obj P.snd ⟶ (F.obj Q.fst).obj Q.snd) :=
-  TensorProduct.lift (LinearMap.mk₂ k (fun f g ↦ (F.map f).app P.snd ≫ (F.obj Q.fst).map g)
-      (fun f f' g ↦ by simp) (fun r f g ↦ by simp) (fun f g g' ↦ by simp) (fun r f g ↦ by simp)) ∘ₗ
-    (homEquiv P Q).toLinearMap
-
-@[simp]
-theorem liftHom_tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
-    liftHom F ⟨X, Y⟩ ⟨X', Y'⟩ (tmul (k := k) f g) = (F.map f).app Y ≫ (F.obj X').map g :=
-  rfl
-
 variable (k) in
 /-- The extension of a bifunctor `F : C ⥤ D ⥤ E`, additive and `k`-linear in each variable, to a
 `k`-linear functor `LinearTensor k C D ⥤ E`: it sends `(X, Y)` to `F X Y` and a pure tensor
 `f ⊗ g` to `F f ≫ F g`. -/
 def lift : LinearTensor k C D ⥤ E where
   obj P := (F.obj P.fst).obj P.snd
-  map {P Q} t := liftHom F P Q t
+  map {P Q} := TensorProduct.lift (LinearMap.mk₂ k
+    (fun (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd) ↦ (F.map f).app P.snd ≫ (F.obj Q.fst).map g)
+    (fun f f' g ↦ by simp) (fun r f g ↦ by simp) (fun f g g' ↦ by simp) (fun r f g ↦ by simp))
   map_id P := by
     obtain ⟨X, Y⟩ := P
-    exact (liftHom_tmul F (𝟙 X) (𝟙 Y)).trans (by simp)
+    rw [← tmul_id_id, tmul, TensorProduct.lift.tmul, LinearMap.mk₂_apply]
+    simp
   map_comp {P Q R} t t' := by
     obtain ⟨X₁, Y₁⟩ := P
     obtain ⟨X₂, Y₂⟩ := Q
@@ -396,7 +375,8 @@ def lift : LinearTensor k C D ⥤ E where
       induction t' using hom_induction_on with
       | add t₁ t₂ h₁ h₂ => simp only [Preadditive.comp_add, map_add, h₁, h₂]
       | tmul f' g' =>
-        rw [tmul_comp_tmul, liftHom_tmul, liftHom_tmul, liftHom_tmul]
+        rw [tmul_comp_tmul]
+        simp only [tmul, TensorProduct.lift.tmul, LinearMap.mk₂_apply]
         simp
 
 @[simp]
@@ -406,38 +386,26 @@ theorem lift_obj (P : LinearTensor k C D) : (lift k F).obj P = (F.obj P.fst).obj
 @[simp]
 theorem lift_map_tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
     (lift k F).map (tmul (k := k) f g) = (F.map f).app Y ≫ (F.obj X').map g :=
-  liftHom_tmul F f g
+  rfl
 
 instance : (lift k F).Additive where
-  map_add {P Q} t t' := map_add (liftHom F P Q) t t'
+  map_add {P Q} t t' := map_add
+    (TensorProduct.lift _ : _ →ₗ[k] ((F.obj P.fst).obj P.snd ⟶ (F.obj Q.fst).obj Q.snd)) t t'
 
 instance : (lift k F).Linear k where
-  map_smul {P Q} t r := map_smul (liftHom F P Q) r t
+  map_smul {P Q} t r := map_smul
+    (TensorProduct.lift _ : _ →ₗ[k] ((F.obj P.fst).obj P.snd ⟶ (F.obj Q.fst).obj Q.snd)) r t
 
 variable (k) in
 /-- The extension `lift k F` restricts along `bifunctor` to `F`. -/
 def bifunctorCompLiftIso :
-    bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj (lift k F) ≅ F where
-  hom :=
-    { app X :=
-        { app Y := 𝟙 ((F.obj X).obj Y)
-          naturality _ _ g := by
-            dsimp
-            simp }
-      naturality _ _ f := by
-        ext Y
-        dsimp
-        simp }
-  inv :=
-    { app X :=
-        { app Y := 𝟙 ((F.obj X).obj Y)
-          naturality _ _ g := by
-            dsimp
-            simp }
-      naturality _ _ f := by
-        ext Y
-        dsimp
-        simp }
+    bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj (lift k F) ≅ F :=
+  NatIso.ofComponents (fun X ↦ NatIso.ofComponents (fun Y ↦ Iso.refl _) fun g ↦ by simp)
+    fun f ↦ by
+      ext Y
+      -- `NatIso.ofComponents_hom_app` does not fire: the source objects of the components are
+      -- `(lift k F).obj (X, Y)`, equal to `(F.obj X).obj Y` only after unfolding `lift`.
+      simp [NatIso.ofComponents]
 
 @[simp]
 theorem bifunctorCompLiftIso_hom_app_app (X : C) (Y : D) :
@@ -532,13 +500,13 @@ bicones over finite index types, so is `biconeTmul b c`. -/
 def isBilimitBiconeTmul [Fintype J] [Fintype J'] {b : Bicone f} {c : Bicone g} (hb : b.IsBilimit)
     (hc : c.IsBilimit) : (biconeTmul (k := k) b c).IsBilimit :=
   isBilimitOfTotal _ <| by
-    have h : ∑ p : J × J', tmul (k := k) (b.π p.1 ≫ b.ι p.1) (c.π p.2 ≫ c.ι p.2) =
-        tmul (𝟙 b.pt) (𝟙 c.pt) := by
-      rw [Fintype.sum_prod_type]
-      simp only [← tmul_sum, ← sum_tmul, IsBilimit.total hb, IsBilimit.total hc]
-    -- The total of `biconeTmul b c` is `h` with `tmul_comp_tmul` and `tmul_id_id`, both of which
-    -- hold by definition.
-    exact h
+    simp only [biconeTmul_π, biconeTmul_ι]
+    -- Restate the goal with the cone point `(biconeTmul b c).pt` written as `⟨b.pt, c.pt⟩`
+    -- (`biconeTmul_pt`).
+    change ∑ p : J × J', tmul (k := k) (b.π p.1) (c.π p.2) ≫ tmul (b.ι p.1) (c.ι p.2) =
+      𝟙 (⟨b.pt, c.pt⟩ : LinearTensor k C D)
+    rw [← tmul_id_id, ← IsBilimit.total hb, ← IsBilimit.total hc, sum_tmul, Fintype.sum_prod_type]
+    simp only [tmul_sum, tmul_comp_tmul]
 
 end Biproduct
 
@@ -550,6 +518,26 @@ biproducts of pairs `X ⊠ Y`; its category, preadditive and `k`-linear structur
 `Mat_` over the `k`-linear category `LinearTensor k C D`. -/
 abbrev DeligneProduct (k : Type w) (C : Type u₁) (D : Type u₂) :=
   Mat_ (LinearTensor k C D)
+
+/-- The components of Mathlib's `Mat_.ext α`: on `M`, decompose `G M` as the biproduct of the
+`G` of the entries of `M`, apply `α` entrywise, and reassemble. -/
+private theorem _root_.CategoryTheory.Mat_.ext_hom_app {C' : Type u₃} [Category.{v₃} C']
+    [Preadditive C'] {E' : Type u₃} [Category.{v₃} E'] [Preadditive E'] [HasFiniteBiproducts E']
+    {G G' : Mat_ C' ⥤ E'} [G.Additive] [G'.Additive]
+    (α : Mat_.embedding C' ⋙ G ≅ Mat_.embedding C' ⋙ G') (M : Mat_ C') :
+    (Mat_.ext α).hom.app M = (Mat_.additiveObjIsoBiproduct G M).hom ≫
+      biproduct.map (fun i ↦ α.hom.app (M.X i)) ≫ (Mat_.additiveObjIsoBiproduct G' M).inv := by
+  simp only [Mat_.ext, Mat_.liftUnique, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, Iso.trans_inv, Iso.symm_inv,
+    Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id_assoc, Iso.cancel_iso_hom_left]
+  simp only [biproduct.mapIso_hom, biproduct.mapIso_inv, Iso.app_hom, Iso.app_inv, Iso.refl_inv,
+    NatTrans.id_app]
+  -- The remaining middle factor is the biproduct of identities.
+  congr 1
+  conv_rhs => rw [← Category.id_comp (Mat_.additiveObjIsoBiproduct G' M).inv]
+  congr 1
+  ext j
+  simp
 
 namespace DeligneProduct
 
@@ -591,14 +579,24 @@ instance (X : C) : ((bifunctor k C D).obj X).Linear k :=
 instance : (bifunctor k C D).Additive where
   map_add {_ _ f f'} := by
     ext Y : 2
-    exact (congrArg (Mat_.embedding (LinearTensor k C D)).map
-      (LinearTensor.add_tmul f f' (𝟙 Y))).trans (Functor.map_add _)
+    rw [NatTrans.app_add, bifunctor_map_app, bifunctor_map_app, bifunctor_map_app,
+      LinearTensor.add_tmul]
+    exact Functor.map_add _
 
 instance : (bifunctor k C D).Linear k where
   map_smul f r := by
     ext Y : 2
-    exact (congrArg (Mat_.embedding (LinearTensor k C D)).map
-      (LinearTensor.smul_tmul r f (𝟙 Y))).trans (Functor.map_smul _ _ _)
+    rw [NatTrans.app_smul, bifunctor_map_app, bifunctor_map_app, LinearTensor.smul_tmul]
+    exact Functor.map_smul _ _ _
+
+/-- **`⊠` preserves finite biproducts in both variables**: for finite families `f` in `C` and `g`
+in `D`, the object `(⨁ f) ⊠ (⨁ g)` is the biproduct of the objects `f j ⊠ g j'`. -/
+def biproductIso {J J' : Type} [Fintype J] [Fintype J'] (f : J → C) (g : J' → D)
+    [HasBiproduct f] [HasBiproduct g] :
+    ((bifunctor k C D).obj (⨁ f)).obj (⨁ g) ≅
+      ⨁ fun p : J × J' ↦ ((bifunctor k C D).obj (f p.1)).obj (g p.2) :=
+  biproduct.uniqueUpToIso _ (isBilimitOfPreserves (Mat_.embedding (LinearTensor k C D))
+    (LinearTensor.isBilimitBiconeTmul (biproduct.isBilimit f) (biproduct.isBilimit g)))
 
 variable {E : Type (max u₁ u₂)} [Category.{max v₁ v₂} E] [Preadditive E] [HasFiniteBiproducts E]
 
@@ -620,12 +618,44 @@ instance : (lift k F).Additive :=
 instance : (lift k F).Linear k :=
   inferInstanceAs <| Functor.Linear k (Mat_.lift (LinearTensor.lift k F))
 
+/-- `lift k F` sends a formal biproduct of pairs `X ⊠ Y` to the biproduct of the objects
+`F X Y`. -/
+@[simp]
+theorem lift_obj (M : DeligneProduct k C D) :
+    (lift k F).obj M = ⨁ fun i ↦ (F.obj (M.X i).fst).obj (M.X i).snd :=
+  rfl
+
+/-- `lift k F` sends a matrix of morphisms to the matrix of their images under
+`LinearTensor.lift k F`. -/
+@[simp]
+theorem lift_map {M N : DeligneProduct k C D} (t : M ⟶ N) :
+    (lift k F).map t = biproduct.matrix fun i j ↦ (LinearTensor.lift k F).map (t i j) :=
+  rfl
+
 variable (k) in
 /-- The extension `lift k F` restricts along `bifunctor` to `F`. -/
 def bifunctorCompLiftIso : bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj (lift k F) ≅ F :=
   Functor.isoWhiskerLeft (LinearTensor.bifunctor k C D)
       ((Functor.whiskeringRight D _ E).mapIso (Mat_.embeddingLiftIso (LinearTensor.lift k F))) ≪≫
     LinearTensor.bifunctorCompLiftIso k F
+
+/-- The component of `bifunctorCompLiftIso k F` at `X ⊠ Y` is the identity of `F X Y`, seen as a
+map out of the one-term biproduct `(lift k F).obj (X ⊠ Y)`. -/
+@[simp]
+theorem bifunctorCompLiftIso_hom_app_app (X : C) (Y : D) :
+    ((bifunctorCompLiftIso k F).hom.app X).app Y = biproduct.desc fun _ ↦ 𝟙 ((F.obj X).obj Y) :=
+  -- By definition, the component is that of `Mat_.embeddingLiftIso`, which is this
+  -- `biproduct.desc`, followed by the identity component of `LinearTensor.bifunctorCompLiftIso`.
+  Category.comp_id _
+
+/-- The inverse component of `bifunctorCompLiftIso k F` at `X ⊠ Y` is the identity of `F X Y`, seen
+as a map into the one-term biproduct `(lift k F).obj (X ⊠ Y)`. -/
+@[simp]
+theorem bifunctorCompLiftIso_inv_app_app (X : C) (Y : D) :
+    ((bifunctorCompLiftIso k F).inv.app X).app Y = biproduct.lift fun _ ↦ 𝟙 ((F.obj X).obj Y) :=
+  -- By definition, the identity component of `LinearTensor.bifunctorCompLiftIso` followed by the
+  -- inverse component of `Mat_.embeddingLiftIso`, which is this `biproduct.lift`.
+  Category.id_comp _
 
 end Lift
 
@@ -636,6 +666,19 @@ def ext {G G' : DeligneProduct k C D ⥤ E} [G.Additive] [G'.Additive]
       bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj G') :
     G ≅ G' :=
   Mat_.ext (LinearTensor.ext α)
+
+/-- The components of `ext α`: on a formal biproduct `M` of pairs, decompose `G M` as the
+biproduct of the `G (X ⊠ Y)` over the entries `(X, Y)` of `M`, apply the components of `α`, and
+reassemble. -/
+theorem ext_hom_app {G G' : DeligneProduct k C D ⥤ E} [G.Additive] [G'.Additive]
+    (α : bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj G ≅
+      bifunctor k C D ⋙ (Functor.whiskeringRight D _ E).obj G') (M : DeligneProduct k C D) :
+    (ext α).hom.app M = (Mat_.additiveObjIsoBiproduct G M).hom ≫
+      biproduct.map (fun i ↦ (α.hom.app (M.X i).fst).app (M.X i).snd) ≫
+        (Mat_.additiveObjIsoBiproduct G' M).inv :=
+  -- `ext α` is `Mat_.ext (LinearTensor.ext α)`, and the components of `LinearTensor.ext α` are
+  -- those of `α` (`LinearTensor.ext_hom_app`, which holds by `rfl`).
+  Mat_.ext_hom_app (LinearTensor.ext α) M
 
 /-- **Uniqueness of the extension**: an additive functor `L` out of `DeligneProduct k C D` whose
 restriction along `bifunctor` is isomorphic to `F` is isomorphic to `lift k F`. -/
@@ -652,14 +695,6 @@ variable {k : Type w} [CommSemiring k]
   {C : Type u₁} [Category.{v₁} C] [Preadditive C] [Linear k C] [HasFiniteBiproducts C]
   {D : Type u₂} [Category.{v₂} D] [Preadditive D] [Linear k D] [HasFiniteBiproducts D]
   {ι : Type*} {ι' : Type*} {S : ι → C} {T : ι' → D}
-
-/-- The pair `(⨁ S ∘ a, ⨁ T ∘ b)` of two finite biproducts of members is, in the Deligne product,
-the biproduct of the pairs `S (a x) ⊠ T (b y)`. -/
-private def pairIsoBiproduct {κ κ' : Type} [Fintype κ] [Fintype κ'] (a : κ → ι) (b : κ' → ι') :
-    (Mat_.embedding (LinearTensor k C D)).obj ⟨⨁ fun x ↦ S (a x), ⨁ fun y ↦ T (b y)⟩ ≅
-      ⨁ fun p : κ × κ' ↦ ((DeligneProduct.bifunctor k C D).obj (S (a p.1))).obj (T (b p.2)) :=
-  biproduct.uniqueUpToIso _ (isBilimitOfPreserves (Mat_.embedding (LinearTensor k C D))
-    (LinearTensor.isBilimitBiconeTmul (biproduct.isBilimit _) (biproduct.isBilimit _)))
 
 /-- **Products of split simple families**: if `S` and `T` are split simple families in `C` and
 `D`, then the objects `S i ⊠ T j` form a split simple family in the Deligne product
@@ -693,7 +728,8 @@ theorem deligneProduct (hS : IsSplitSimpleFamily k S) (hT : IsSplitSimpleFamily 
     refine ⟨Σ i, κ i × κ' i, inferInstance, fun x ↦ (a x.1 x.2.1, b x.1 x.2.2), ⟨?_⟩⟩
     exact M.isoBiproductEmbedding ≪≫
       biproduct.mapIso (fun i ↦ (Mat_.embedding _).mapIso
-        (LinearTensor.isoMk (ha i).some (hb i).some) ≪≫ pairIsoBiproduct (a i) (b i)) ≪≫
+        (LinearTensor.isoMk (ha i).some (hb i).some) ≪≫
+          DeligneProduct.biproductIso (fun x ↦ S (a i x)) (fun y ↦ T (b i y))) ≪≫
       biproductBiproductIso _ _
 
 end IsSplitSimpleFamily
