@@ -19,9 +19,10 @@ mass, so the local mass bounds of Federer and Fleming are automatic, and locally
 are locally normal (`Distribution.IsLocallyIntegral.isLocallyNormal`).
 
 An *integral current* (`Distribution.IsIntegralCurrent`) is a locally integral current of finite
-mass whose boundary has finite mass, that is a locally integral normal current. A *compactly
-supported integral current* (`Distribution.IsCompactlySupportedIntegralCurrent`) is an integral
-current whose support is a compact subset of `Ω`; a compactly supported locally integral current
+mass whose boundary has finite mass, that is a locally integral normal current; unlike Federer's
+integral currents, it carries no support condition. A *compactly supported integral current*
+(`Distribution.IsCompactlySupportedIntegralCurrent`) is an integral current whose support is a
+compact subset of `Ω`; a compactly supported locally integral current
 is automatically one (`Distribution.IsLocallyIntegral.isCompactlySupportedIntegralCurrent`). The
 three classes are nested, are additive subgroups of the real `k`-currents (not real subspaces), and
 are preserved by the boundary, since `∂∂T = 0`.
@@ -38,7 +39,10 @@ are preserved by the boundary, since `∂∂T = 0`.
 
 ## References
 
-* H. Federer, *Geometric Measure Theory*, §4.1.24 (integral currents).
+* H. Federer, *Geometric Measure Theory*, §4.1.24 (integral currents). Federer's `I_m(U)`, whose
+  elements have compact support, corresponds to `Distribution.IsCompactlySupportedIntegralCurrent`
+  and his `I_{m,loc}(U)` to `Distribution.IsLocallyIntegral`; `Distribution.IsIntegralCurrent`
+  is the intermediate class of finite mass without the compact-support condition.
 * H. Federer and W. H. Fleming, *Normal and integral currents*, Ann. of Math. **72** (1960),
   458–520.
 * L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §3.
@@ -67,7 +71,9 @@ def IsLocallyIntegral : {k : ℕ} → (𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L
   | _ + 1, T => IsIntegerRectifiable T ∧ IsIntegerRectifiable (T ∘L extDerivCLM)
 
 /-- A `k`-current `T` on `Ω` is an **integral current** if it is locally integral and both `T` and
-its boundary have finite mass. -/
+its boundary have finite mass. No support condition is imposed: Federer's integral currents
+`I_m(U)` (*Geometric Measure Theory*, §4.1.24) are compactly supported and correspond to
+`Distribution.IsCompactlySupportedIntegralCurrent`. -/
 def IsIntegralCurrent (T : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) : Prop :=
   IsLocallyIntegral T ∧ IsNormal T
 
@@ -144,6 +150,7 @@ section Group
 variable {T S : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
 
 /-- The zero current is locally integral. -/
+@[simp]
 theorem isLocallyIntegral_zero : IsLocallyIntegral (0 : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) := by
   cases k with
   | zero => exact isIntegerRectifiable_zero
@@ -162,7 +169,13 @@ theorem IsLocallyIntegral.neg (hT : IsLocallyIntegral T) : IsLocallyIntegral (-T
   | zero => exact IsIntegerRectifiable.neg hT
   | succ k => exact ⟨hT.1.neg, by simpa [neg_comp] using hT.2.neg⟩
 
+/-- Locally integral currents are closed under subtraction. -/
+theorem IsLocallyIntegral.sub (hT : IsLocallyIntegral T) (hS : IsLocallyIntegral S) :
+    IsLocallyIntegral (T - S) := by
+  simpa [sub_eq_add_neg] using hT.add hS.neg
+
 /-- The zero current is an integral current. -/
+@[simp]
 theorem isIntegralCurrent_zero :
     IsIntegralCurrent (0 : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
   ⟨isLocallyIntegral_zero, isNormal_zero⟩
@@ -176,7 +189,13 @@ theorem IsIntegralCurrent.add (hT : IsIntegralCurrent T) (hS : IsIntegralCurrent
 theorem IsIntegralCurrent.neg (hT : IsIntegralCurrent T) : IsIntegralCurrent (-T) :=
   ⟨hT.1.neg, hT.2.neg⟩
 
+/-- Integral currents are closed under subtraction. -/
+theorem IsIntegralCurrent.sub (hT : IsIntegralCurrent T) (hS : IsIntegralCurrent S) :
+    IsIntegralCurrent (T - S) := by
+  simpa [sub_eq_add_neg] using hT.add hS.neg
+
 /-- The zero current is a compactly supported integral current. -/
+@[simp]
 theorem isCompactlySupportedIntegralCurrent_zero :
     IsCompactlySupportedIntegralCurrent (0 : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
   ⟨isIntegralCurrent_zero, by simp, by simp⟩
@@ -193,6 +212,11 @@ theorem IsCompactlySupportedIntegralCurrent.neg (hT : IsCompactlySupportedIntegr
     IsCompactlySupportedIntegralCurrent (-T) := by
   have h : dsupport (⇑(-T)) = dsupport T := dsupport_neg _
   exact ⟨hT.1.neg, h ▸ hT.2.1, h ▸ hT.2.2⟩
+
+/-- Compactly supported integral currents are closed under subtraction. -/
+theorem IsCompactlySupportedIntegralCurrent.sub (hT : IsCompactlySupportedIntegralCurrent T)
+    (hS : IsCompactlySupportedIntegralCurrent S) : IsCompactlySupportedIntegralCurrent (T - S) := by
+  simpa [sub_eq_add_neg] using hT.add hS.neg
 
 variable (Ω k)
 
