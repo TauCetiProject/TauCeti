@@ -40,9 +40,10 @@ When the compact coordinate pieces have relative interiors covering `B`:
   of the finite-atlas `C^k` topologies over `k : ℕ`
   (`Bundle.ContMDiffRiemannianMetric.frameTopology_infty_eq_iInf_finiteAtlasTopology`).
 
-On a boundaryless manifold modelled on a locally compact space, this identifies the chart `C^k` and
-`C²` topologies `chartCkTopology k` and `chartC2Topology` with the finite-atlas topologies, and
-`chartCInftyTopology` with their infimum over `k : ℕ`. When the model fibre `F` is
+On a boundaryless manifold, this identifies the chart `C^k` and `C²` topologies `chartCkTopology k`
+and `chartC2Topology` with the finite-atlas topologies, and `chartCInftyTopology` with their
+infimum over `k : ℕ` (with no separate local compactness assumption on the model space, since a
+covering finite atlas with compact pieces already forces it). When the model fibre `F` is
 finite-dimensional and a finite chart-frame atlas covers `B`, the positive-definite cone of `C^n`
 symmetric sections admits uniform finite-atlas `C^k` margins
 (`TauCeti.Manifold.exists_pos_mem_positiveDefiniteSymmetricSections_of_finiteAtlasSeminorm_lt`), is
@@ -212,8 +213,8 @@ theorem isOpenEmbedding_toSymmetricSection_finiteAtlas
   let _ := frameTopology IB k e U hU
   let _ := ContMDiffSection.finiteAtlasNormedAddCommGroup (𝕜 := ℝ) k e U hU hK
   refine ⟨?_, ?_⟩
-  · convert isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := k) e U hU
-    exact ContMDiffSection.topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK
+  · have hemb := isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := k) e U hU
+    rwa [← ContMDiffSection.topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK] at hemb
   · rw [range_toSymmetricSection]
     exact isOpen_positiveDefiniteSymmetricSections_finiteAtlas k e U hU hK
 
@@ -343,10 +344,7 @@ theorem tendsto_finiteAtlasTopology_iff (k : ℕ) {P : Type*} {l : Filter P}
     Tendsto g l (𝓝 g₀) ↔
       Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
   let _ := finiteAtlasPseudoMetricSpace e U hU c K k
-  rw [← topologicalSpace_finiteAtlasPseudoMetricSpace, Metric.tendsto_nhds, Metric.tendsto_nhds]
-  refine forall₂_congr fun ε _ ↦ eventually_congr (Eventually.of_forall fun p ↦ ?_)
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (finiteAtlasDist_nonneg e U hU c K k _ _),
-    dist_finiteAtlasPseudoMetricSpace]
+  exact tendsto_iff_dist_tendsto_zero
 
 /-- Open sets in `finiteAtlasTopology` are characterized by positive `finiteAtlasDist` balls. -/
 theorem isOpen_finiteAtlasTopology_iff (k : ℕ)
@@ -368,21 +366,7 @@ theorem antitone_finiteAtlasTopology : Antitone (finiteAtlasTopology IB e U hU c
   obtain ⟨δ, hδ, hball⟩ := hS g₀ hg₀
   exact ⟨δ, hδ, fun g hg ↦ hball g ((finiteAtlasDist_le_of_le e U hU c K hkl g g₀).trans_lt hg)⟩
 
-variable {c K}
-
-/-- When the compact pieces cover `B`, `finiteAtlasDist` separates smooth metrics. -/
-theorem finiteAtlasDist_eq_zero_iff
-    (hK : ∀ y : B, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt IB (c i)).source,
-        (⟨extChartAt IB (c i) ⟨y, hyU⟩, (extChartAt IB (c i)).map_source hy⟩ :
-          (extChartAt IB (c i)).target) ∈ K i)
-    (k : ℕ) (g₁ g₂ : ContMDiffRiemannianMetric IB ∞ F V) :
-    finiteAtlasDist e U hU c K k g₁ g₂ = 0 ↔ g₁ = g₂ := by
-  rw [finiteAtlasDist_def, ContMDiffSection.finiteAtlasSeminorm_eq_zero_iff e U hU hK k (by simp),
-    sub_eq_zero, toSymmetricSection_injective.eq_iff]
-
-private theorem finiteAtlasSeminorm_ofLE_sub (c : ∀ i, U i)
-    (K : ∀ i, Compacts (extChartAt IB (c i)).target) (k : ℕ)
+private theorem finiteAtlasSeminorm_ofLE_sub (k : ℕ)
     (g₁ g₂ : ContMDiffRiemannianMetric IB ∞ F V) :
     ContMDiffSection.finiteAtlasSeminorm (n := k) e U hU c K k le_rfl
         ((g₁.ofLE (m := k) (by simp)).toSymmetricSection -
@@ -416,6 +400,19 @@ private theorem finiteAtlasSeminorm_ofLE_sub (c : ∀ i, U i)
     exact (ContMDiffSection.finiteAtlasSeminorm_le_iff e U hU c K k le_rfl _
       (apply_nonneg _ _)).mp le_rfl i m hm z hz
 
+variable {c K}
+
+/-- When the compact pieces cover `B`, `finiteAtlasDist` separates smooth metrics. -/
+theorem finiteAtlasDist_eq_zero_iff
+    (hK : ∀ y : B, ∃ i, ∃ hyU : y ∈ U i,
+      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt IB (c i)).source,
+        (⟨extChartAt IB (c i) ⟨y, hyU⟩, (extChartAt IB (c i)).map_source hy⟩ :
+          (extChartAt IB (c i)).target) ∈ K i)
+    (k : ℕ) (g₁ g₂ : ContMDiffRiemannianMetric IB ∞ F V) :
+    finiteAtlasDist e U hU c K k g₁ g₂ = 0 ↔ g₁ = g₂ := by
+  rw [finiteAtlasDist_def, ContMDiffSection.finiteAtlasSeminorm_eq_zero_iff e U hU hK k (by simp),
+    sub_eq_zero, toSymmetricSection_injective.eq_iff]
+
 section Cover
 
 variable (hK : ∀ y : B, ∃ i, ∃ hyU : y ∈ U i,
@@ -423,7 +420,8 @@ variable (hK : ∀ y : B, ∃ i, ∃ hyU : y ∈ U i,
     (⟨extChartAt IB (c i) ⟨y, hyU⟩, (extChartAt IB (c i)).map_source hy⟩ :
       (extChartAt IB (c i)).target) ∈ interior (K i : Set (extChartAt IB (c i)).target))
 
-include hK in
+include hK
+
 /-- **Lipschitz equivalence across finite chart-frame atlases.** If the compact pieces `K i` have
 relative interiors covering `B` (boundary and corner charts included), the `C^k` distance of any
 other finite chart-frame atlas is bounded by a positive multiple of
@@ -441,7 +439,6 @@ theorem exists_finiteAtlasDist_le
     e U hU hK e' U' hU' c' K' k (by simp)
   exact ⟨C, hC, fun g₁ g₂ ↦ hbound (g₁.toSymmetricSection - g₂.toSymmetricSection)⟩
 
-include hK in
 private theorem finiteAtlasTopology_le_of_cover
     {ι' : Type*} [Fintype ι']
     (e' : ι' → Trivialization (symmetricBilinearMaps ℝ F ℝ)
@@ -459,7 +456,6 @@ private theorem finiteAtlasTopology_le_of_cover
   refine ⟨δ / C, div_pos hδ hC, fun g hg ↦ hball g ?_⟩
   exact (hbound g g₀).trans_lt ((lt_div_iff₀' hC).mp hg)
 
-include hK in
 /-- **Atlas independence of the finite-atlas `C^k` topology on smooth metrics.** Any two finite
 chart-frame atlases whose compact coordinate pieces have relative interiors covering `B` define the
 same `C^k` topology on smooth metrics, with boundary and corner charts included and without any
@@ -480,7 +476,6 @@ theorem finiteAtlasTopology_eq_of_covers
   le_antisymm (finiteAtlasTopology_le_of_cover e U hU hK e' U' hU' c' K' k)
     (finiteAtlasTopology_le_of_cover e' U' hU' hK' e U hU c K k)
 
-include hK in
 /-- **The finite-atlas `C^k` topology coincides with `frameCkTopology`.** Whenever the compact
 coordinate pieces have relative interiors covering `B` (boundary and corner charts included),
 `finiteAtlasTopology` equals the finite-order section topology `frameCkTopology`. -/
@@ -500,11 +495,6 @@ theorem finiteAtlasTopology_eq_frameCkTopology (k : ℕ) :
       ((g₂.ofLE (m := k) (by simp)).toSymmetricSection)
     rw [finiteAtlasSeminorm_ofLE_sub e U hU c K k g₁ g₂] at hd
     exact hd.symm
-  have hframe : frameTopology IB k e U hU =
-      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := k) e U hU) := by
-    let _ := ContMDiffSection.frameTopology (I := IB) (n := k) e U hU
-    let _ := frameTopology IB k e U hU
-    exact (isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := k) e U hU).eq_induced
   calc finiteAtlasTopology IB e U hU c K k
       = (PseudoMetricSpace.induced φ mS.toPseudoMetricSpace).toUniformSpace.toTopologicalSpace :=
         congrArg (fun m ↦ m.toUniformSpace.toTopologicalSpace) hm
@@ -513,13 +503,15 @@ theorem finiteAtlasTopology_eq_frameCkTopology (k : ℕ) :
     _ = .induced φ (ContMDiffSection.frameTopology (I := IB) (n := k) e U hU) := by
         rw [ContMDiffSection.topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK]
     _ = frameCkTopology IB e U hU k := by
-        rw [frameCkTopology_def, hframe, induced_compose]
+        let _ := ContMDiffSection.frameTopology (I := IB) (n := k) e U hU
+        let _ := frameTopology IB k e U hU
+        rw [frameCkTopology_def,
+          (isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := k) e U hU).eq_induced,
+          induced_compose]
 
-include hK in
-/-- On a locally compact model space (such as Euclidean half-space), any finite chart-frame atlas
-with covering relative interiors generates `frameCkTopology` for *any* covering smooth frame
-system. -/
-theorem finiteAtlasTopology_eq_frameCkTopology_of_cover [LocallyCompactSpace EB]
+/-- Any finite chart-frame atlas with covering relative interiors generates `frameCkTopology` for
+*any* covering smooth frame system (boundary and corner charts included). -/
+theorem finiteAtlasTopology_eq_frameCkTopology_of_cover
     {κ : Type*}
     (e' : κ → Trivialization (symmetricBilinearMaps ℝ F ℝ)
       (π (symmetricBilinearMaps ℝ F ℝ) (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ)))
@@ -527,10 +519,19 @@ theorem finiteAtlasTopology_eq_frameCkTopology_of_cover [LocallyCompactSpace EB]
     (U' : κ → Opens B) (hU' : ∀ j, (U' j : Set B) ⊆ (e' j).baseSet)
     (hcover' : ∀ x, ∃ j, x ∈ U' j) (k : ℕ) :
     finiteAtlasTopology IB e U hU c K k = frameCkTopology IB e' U' hU' k := by
-  rw [finiteAtlasTopology_eq_frameCkTopology e U hU hK k,
-    frameCkTopology_eq_of_covers e U hU k (TauCeti.cover_of_extChartAt_cover hK) e' U' hU' hcover']
+  rw [finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
+  by_cases hB : Nonempty B
+  · obtain ⟨y⟩ := hB
+    obtain ⟨i, _, _, hz⟩ := hK y
+    have : LocallyCompactSpace EB :=
+      TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target IB (K i).isCompact ⟨_, hz⟩
+    exact frameCkTopology_eq_of_covers e U hU k (TauCeti.cover_of_extChartAt_cover hK)
+      e' U' hU' hcover'
+  · have : IsEmpty B := not_nonempty_iff.mp hB
+    have : Subsingleton (ContMDiffRiemannianMetric IB ∞ F V) :=
+      ⟨fun _ _ ↦ toSymmetricSection_injective (ContMDiffSection.ext fun x ↦ isEmptyElim x)⟩
+    exact Subsingleton.elim _ _
 
-include hK in
 /-- The metric space structure on smooth Riemannian metrics for a finite chart-frame atlas with
 covering relative interiors, carrying `frameCkTopology` as its underlying topology and
 `finiteAtlasDist` as its distance. -/
@@ -556,7 +557,6 @@ theorem topologicalSpace_finiteAtlasMetricSpace (k : ℕ) :
       frameCkTopology IB e U hU k :=
   (rfl)
 
-include hK in
 /-- Convergence in `frameCkTopology` is convergence in `finiteAtlasDist`. -/
 theorem tendsto_frameCkTopology_iff_finiteAtlasDist (k : ℕ) {P : Type*} {l : Filter P}
     {g : P → ContMDiffRiemannianMetric IB ∞ F V} {g₀ : ContMDiffRiemannianMetric IB ∞ F V} :
@@ -566,7 +566,6 @@ theorem tendsto_frameCkTopology_iff_finiteAtlasDist (k : ℕ) {P : Type*} {l : F
   rw [← finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
   exact tendsto_finiteAtlasTopology_iff e U hU c K k
 
-include hK in
 /-- Openness in `frameCkTopology` is characterized by positive `finiteAtlasDist` margins. -/
 theorem isOpen_frameCkTopology_iff_finiteAtlasDist
     (k : ℕ) {S : Set (ContMDiffRiemannianMetric IB ∞ F V)} :
@@ -576,24 +575,43 @@ theorem isOpen_frameCkTopology_iff_finiteAtlasDist
   rw [← finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
   exact isOpen_finiteAtlasTopology_iff e U hU c K k
 
-include hK in
+variable {e U hU} in
 /-- **Uniform `C^k` margin around a compact set of metrics.** If `L` is compact in
 `frameCkTopology` and contained in a `frameCkTopology`-open set `S` of smooth metrics (for instance
 on a compact manifold with boundary on the half-space model), there is a uniform `δ > 0` such that
 every smooth metric within `finiteAtlasDist ... k < δ` of any metric in `L` belongs to `S`. -/
 theorem _root_.IsCompact.exists_pos_forall_mem_of_isOpen_frameCkTopology
-    (k : ℕ) {L S : Set (ContMDiffRiemannianMetric IB ∞ F V)}
+    {k : ℕ} {L S : Set (ContMDiffRiemannianMetric IB ∞ F V)}
     (hL : @IsCompact _ (frameCkTopology IB e U hU k) L)
     (hS : @IsOpen _ (frameCkTopology IB e U hU k) S) (hLS : L ⊆ S) :
     ∃ δ : ℝ, 0 < δ ∧ ∀ g₀ ∈ L, ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
   let _ := finiteAtlasMetricSpace e U hU hK k
   obtain ⟨δ, hδ, hthick⟩ := hL.exists_thickening_subset_open hS hLS
-  refine ⟨δ, hδ, fun g₀ hg₀ g hdist ↦ hthick ?_⟩
-  exact Metric.mem_thickening_iff.mpr ⟨g₀, hg₀, hdist⟩
+  exact ⟨δ, hδ, fun g₀ hg₀ g hdist ↦ hthick (Metric.mem_thickening_iff.mpr ⟨g₀, hg₀, hdist⟩)⟩
 
 /-! ### Comparison of the `C^∞` topology with finite-atlas `C^k` distances -/
 
-include hK in
+/-- **The `C^∞` section topology on smooth metrics is the infimum of the finite-atlas `C^k`
+topologies.** -/
+theorem frameTopology_infty_eq_iInf_finiteAtlasTopology :
+    frameTopology IB ∞ e U hU = ⨅ k : ℕ, finiteAtlasTopology IB e U hU c K k := by
+  let _ := ContMDiffSection.frameTopology (I := IB) (n := ∞) e U hU
+  let _ := frameTopology IB ∞ e U hU
+  have hp := ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty e U hU hK
+  rw [(isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := ∞) e U hU).eq_induced,
+    hp.topologicalSpace_eq_iInf, induced_iInf]
+  refine iInf_congr fun k ↦ ?_
+  have hm : finiteAtlasPseudoMetricSpace e U hU c K k =
+      PseudoMetricSpace.induced toSymmetricSection
+        (ContMDiffSection.finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)
+          |>.toSeminormedAddCommGroup.toPseudoMetricSpace) := by
+    refine PseudoMetricSpace.ext ?_
+    ext g₁ g₂
+    let _ := (ContMDiffSection.finiteAtlasSeminorm (n := ∞) e U hU c K k
+      (by simp)).toSeminormedAddCommGroup
+    exact (dist_eq_norm g₁.toSymmetricSection g₂.toSymmetricSection).symm
+  rw [finiteAtlasTopology, hm, UniformSpace.toTopologicalSpace_comap]
+
 /-- Convergence of smooth metrics in `frameTopology IB ∞` is convergence in `finiteAtlasDist ... k`
 for every finite derivative order `k : ℕ`. -/
 theorem tendsto_frameTopology_infty_iff_finiteAtlasDist {P : Type*} {l : Filter P}
@@ -601,73 +619,28 @@ theorem tendsto_frameTopology_infty_iff_finiteAtlasDist {P : Type*} {l : Filter 
     letI := frameTopology IB ∞ e U hU
     Tendsto g l (𝓝 g₀) ↔
       ∀ k : ℕ, Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
-  let _ := ContMDiffSection.frameTopology (I := IB) (n := ∞) e U hU
-  let _ := frameTopology IB ∞ e U hU
-  have hp := ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty e U hU hK
-  let _ := hp.isTopologicalAddGroup
-  refine (tendsto_frameTopology_iff (IB := IB) (n := ∞) e U hU).trans ?_
-  rw [hp.tendsto_nhds]
-  refine forall_congr' fun k ↦ ?_
-  rw [Metric.tendsto_nhds]
-  refine forall₂_congr fun ε _ ↦ eventually_congr (Eventually.of_forall fun p ↦ ?_)
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (finiteAtlasDist_nonneg e U hU c K k _ _),
-    finiteAtlasDist_def]
+  rw [frameTopology_infty_eq_iInf_finiteAtlasTopology e U hU hK, nhds_iInf, tendsto_iInf]
+  exact forall_congr' fun k ↦ tendsto_finiteAtlasTopology_iff e U hU c K k
 
-include hK in
 /-- Open sets in `frameTopology IB ∞` are characterized by finite-order `finiteAtlasDist` balls. -/
 theorem isOpen_frameTopology_infty_iff_finiteAtlasDist
     {S : Set (ContMDiffRiemannianMetric IB ∞ F V)} :
     letI := frameTopology IB ∞ e U hU
     IsOpen S ↔ ∀ g₀ ∈ S, ∃ (k : ℕ) (δ : ℝ), 0 < δ ∧
       ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
-  let _ := ContMDiffSection.frameTopology (I := IB) (n := ∞) e U hU
-  let _ := frameTopology IB ∞ e U hU
-  let p : ℕ → Seminorm ℝ Cₛ^∞⟮IB; symmetricBilinearMaps ℝ F ℝ,
-      fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯ :=
-    fun k ↦ ContMDiffSection.finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)
-  have hp : WithSeminorms p := ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty e U hU hK
-  have hemb := isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := ∞) e U hU
+  rw [frameTopology_infty_eq_iInf_finiteAtlasTopology e U hU hK]
+  let _ : TopologicalSpace (ContMDiffRiemannianMetric IB ∞ F V) :=
+    ⨅ k : ℕ, finiteAtlasTopology IB e U hU c K k
   rw [isOpen_iff_mem_nhds]
   refine forall₂_congr fun g₀ _ ↦ ?_
-  rw [hemb.isInducing.nhds_eq_comap, Filter.mem_comap]
-  constructor
-  · rintro ⟨T, hT, hpre⟩
-    obtain ⟨s, δ, hδ, hball⟩ := (hp.mem_nhds_iff g₀.toSymmetricSection T).mp hT
-    refine ⟨s.sup id, δ, hδ, fun g hg ↦ hpre (hball ?_)⟩
-    rw [Seminorm.mem_ball]
-    have hsup : s.sup p ≤ p (s.sup id) := Finset.sup_le fun j hj ↦
-      ContMDiffSection.finiteAtlasSeminorm_le_of_le e U hU c K
-        (Finset.le_sup (f := id) hj) (by simp)
-    exact (hsup _).trans_lt hg
-  · rintro ⟨k, δ, hδ, hball⟩
-    refine ⟨(p k).ball g₀.toSymmetricSection δ, ?_, fun g hg ↦ ?_⟩
-    · exact (hp.mem_nhds_iff g₀.toSymmetricSection _).mpr
-        ⟨{k}, δ, hδ, by simp only [Finset.sup_singleton, Subset.rfl]⟩
-    · rw [Set.mem_preimage, Seminorm.mem_ball] at hg
-      exact hball g hg
-
-include hK in
-/-- **The `C^∞` section topology on smooth metrics is the infimum of the finite-atlas `C^k`
-topologies.** -/
-theorem frameTopology_infty_eq_iInf_finiteAtlasTopology :
-    frameTopology IB ∞ e U hU = ⨅ k : ℕ, finiteAtlasTopology IB e U hU c K k := by
-  apply le_antisymm
-  · exact le_iInf fun k ↦ (frameTopology_le_frameCkTopology e U hU k).trans_eq
-      (finiteAtlasTopology_eq_frameCkTopology e U hU hK k).symm
-  · rw [TopologicalSpace.le_def]
-    intro S hS
-    let _ : TopologicalSpace (ContMDiffRiemannianMetric IB ∞ F V) :=
-      ⨅ k : ℕ, finiteAtlasTopology IB e U hU c K k
-    rw [isOpen_iff_mem_nhds]
-    intro g₀ hg₀
-    obtain ⟨k, δ, hδ, hball⟩ :=
-      (isOpen_frameTopology_infty_iff_finiteAtlasDist e U hU hK).mp hS g₀ hg₀
-    have hopen : @IsOpen _ (finiteAtlasTopology IB e U hU c K k)
-        {g | finiteAtlasDist e U hU c K k g g₀ < δ} := by
-      let _ := finiteAtlasPseudoMetricSpace e U hU c K k
-      exact Metric.isOpen_ball
-    exact Filter.mem_of_superset
-      ((hopen.mono (iInf_le _ k)).mem_nhds (by simp [hδ])) fun g hg ↦ hball g hg
+  rw [nhds_iInf, Filter.mem_iInf_of_directed]
+  · refine exists_congr fun k ↦ ?_
+    let _ := finiteAtlasPseudoMetricSpace e U hU c K k
+    simp only [Metric.mem_nhds_iff, subset_def, Metric.mem_ball, dist_finiteAtlasPseudoMetricSpace]
+  · intro k l
+    exact ⟨max k l,
+      nhds_mono (antitone_finiteAtlasTopology e U hU c K (le_max_left k l)),
+      nhds_mono (antitone_finiteAtlasTopology e U hU c K (le_max_right k l))⟩
 
 end Cover
 
@@ -681,22 +654,20 @@ a locally compact space (including compact manifolds with boundary on the half-s
 theorem metrizableSpace_frameCkTopology_of_compactSpace
     [IsManifold IB ∞ B] [ContMDiffVectorBundle ∞ F V IB]
     [CompactSpace B] [LocallyCompactSpace EB]
-    {κ : Type*}
-    (e' : κ → Trivialization (symmetricBilinearMaps ℝ F ℝ)
+    {ι : Type*}
+    (e : ι → Trivialization (symmetricBilinearMaps ℝ F ℝ)
       (π (symmetricBilinearMaps ℝ F ℝ) (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ)))
-    [∀ j, MemTrivializationAtlas (e' j)]
-    (U' : κ → Opens B) (hU' : ∀ j, (U' j : Set B) ⊆ (e' j).baseSet)
-    (hcover' : ∀ x, ∃ j, x ∈ U' j) (k : ℕ) :
-    letI := frameCkTopology IB e' U' hU' k
+    [∀ j, MemTrivializationAtlas (e j)]
+    (U : ι → Opens B) (hU : ∀ j, (U j : Set B) ⊆ (e j).baseSet)
+    (hcover : ∀ x, ∃ j, x ∈ U j) (k : ℕ) :
+    letI := frameCkTopology IB e U hU k
     MetrizableSpace (ContMDiffRiemannianMetric IB ∞ F V) := by
   let _ := IB.locallyCompactSpace
   obtain ⟨N, r, c₀, K₀, hK₀⟩ :=
-    TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := IB) U' hcover'
-  have heq := finiteAtlasTopology_eq_frameCkTopology_of_cover
-    (fun i ↦ e' (r i)) (fun i ↦ U' (r i)) (fun i ↦ hU' (r i)) hK₀ e' U' hU' hcover' k
-  let m := finiteAtlasMetricSpace (fun i ↦ e' (r i)) (fun i ↦ U' (r i)) (fun i ↦ hU' (r i)) hK₀ k
-  have hm : m.toUniformSpace.toTopologicalSpace = frameCkTopology IB e' U' hU' k :=
-    (finiteAtlasTopology_eq_frameCkTopology _ _ _ hK₀ k).symm.trans heq
+    TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := IB) U hcover
+  let m := finiteAtlasMetricSpace (fun i ↦ e (r i)) (fun i ↦ U (r i)) (fun i ↦ hU (r i)) hK₀ k
+  have hm : m.toUniformSpace.toTopologicalSpace = frameCkTopology IB e U hU k :=
+    frameCkTopology_eq_of_covers _ _ _ k (TauCeti.cover_of_extChartAt_cover hK₀) e U hU hcover
   let _ := m
   have : MetrizableSpace (ContMDiffRiemannianMetric IB ∞ F V) := inferInstance
   rwa [hm] at this
@@ -710,7 +681,7 @@ end Bundle
 section BoundarylessChartComparison
 
 variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {ι : Type*} [Fintype ι]
@@ -724,31 +695,51 @@ variable
       (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
         (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-include hK in
+include hK
+
 /-- **The boundaryless chart `C^k` topology agrees with `finiteAtlasTopology`.** On a manifold
-without boundary modelled on a locally compact space, `chartCkTopology k` equals the finite-atlas
-`C^k` topology of any finite chart-frame atlas of `Sym²(T*M)` whose compact pieces have relative
-interiors covering `M`. -/
+without boundary, `chartCkTopology k` equals the finite-atlas `C^k` topology of any finite
+chart-frame atlas of `Sym²(T*M)` whose compact pieces have relative interiors covering `M`. -/
 theorem chartCkTopology_eq_finiteAtlasTopology (k : ℕ) :
     chartCkTopology (I := I) (M := M) k = finiteAtlasTopology I e U hU c K k := by
-  rw [chartCkTopology_eq_frameCkTopology k e U hU (TauCeti.cover_of_extChartAt_cover hK),
-    finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
+  by_cases hM : Nonempty M
+  · obtain ⟨y⟩ := hM
+    obtain ⟨i, _, _, hz⟩ := hK y
+    have : LocallyCompactSpace E :=
+      TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target I (K i).isCompact ⟨_, hz⟩
+    rw [chartCkTopology_eq_frameCkTopology k e U hU (TauCeti.cover_of_extChartAt_cover hK),
+      finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
+  · have : IsEmpty M := not_nonempty_iff.mp hM
+    have : Subsingleton (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+      ⟨fun _ _ ↦ toSymmetricSection_injective (ContMDiffSection.ext fun x ↦ isEmptyElim x)⟩
+    exact Subsingleton.elim _ _
 
-include hK in
 /-- **The boundaryless chart `C²` topology agrees with the finite-atlas `C²` topology.** -/
 theorem chartC2Topology_eq_finiteAtlasTopology :
     chartC2Topology (I := I) (M := M) = finiteAtlasTopology I e U hU c K 2 :=
   chartCkTopology_eq_finiteAtlasTopology e U hU hK 2
 
-include hK in
+omit [Fintype ι] in
+private theorem chartCInftyTopology_eq_frameTopology_of_cover :
+    chartCInftyTopology (I := I) (M := M) = frameTopology I ∞ e U hU := by
+  by_cases hM : Nonempty M
+  · obtain ⟨y⟩ := hM
+    obtain ⟨i, _, _, hz⟩ := hK y
+    have : LocallyCompactSpace E :=
+      TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target I (K i).isCompact ⟨_, hz⟩
+    exact chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK)
+  · have : IsEmpty M := not_nonempty_iff.mp hM
+    have : Subsingleton (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+      ⟨fun _ _ ↦ toSymmetricSection_injective (ContMDiffSection.ext fun x ↦ isEmptyElim x)⟩
+    exact Subsingleton.elim _ _
+
 /-- **The boundaryless chart `C^∞` topology is the infimum of the finite-atlas `C^k`
 topologies.** -/
 theorem chartCInftyTopology_eq_iInf_finiteAtlasTopology :
     chartCInftyTopology (I := I) (M := M) = ⨅ k : ℕ, finiteAtlasTopology I e U hU c K k := by
-  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK),
+  rw [chartCInftyTopology_eq_frameTopology_of_cover e U hU hK,
     frameTopology_infty_eq_iInf_finiteAtlasTopology e U hU hK]
 
-include hK in
 /-- Convergence of smooth metrics in `chartCInftyTopology` is convergence in `finiteAtlasDist ... k`
 for every `k : ℕ`. -/
 theorem tendsto_chartCInftyTopology_iff_finiteAtlasDist {P : Type*} {l : Filter P}
@@ -757,17 +748,16 @@ theorem tendsto_chartCInftyTopology_iff_finiteAtlasDist {P : Type*} {l : Filter 
     letI := chartCInftyTopology (I := I) (M := M)
     Tendsto g l (𝓝 g₀) ↔
       ∀ k : ℕ, Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
-  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK)]
+  rw [chartCInftyTopology_eq_frameTopology_of_cover e U hU hK]
   exact tendsto_frameTopology_infty_iff_finiteAtlasDist e U hU hK
 
-include hK in
 /-- Open sets in `chartCInftyTopology` are characterized by finite-order `finiteAtlasDist` balls. -/
 theorem isOpen_chartCInftyTopology_iff_finiteAtlasDist
     {S : Set (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))} :
     letI := chartCInftyTopology (I := I) (M := M)
     IsOpen S ↔ ∀ g₀ ∈ S, ∃ (k : ℕ) (δ : ℝ), 0 < δ ∧
       ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
-  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK)]
+  rw [chartCInftyTopology_eq_frameTopology_of_cover e U hU hK]
   exact isOpen_frameTopology_infty_iff_finiteAtlasDist e U hU hK
 
 end BoundarylessChartComparison
