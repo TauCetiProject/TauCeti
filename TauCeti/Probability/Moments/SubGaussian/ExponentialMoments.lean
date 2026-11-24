@@ -10,30 +10,24 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
-public import TauCeti.Probability.Moments.SubGaussian.Vector
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
-import TauCeti.Probability.Concentration.SubgaussianTail
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.SubExponential
+import TauCeti.Probability.Moments.SubGaussian.Vector
 
 /-!
-# Sub-Gaussian linear forms and squared and directional exponential moments
+# Squared and directional exponential moments of sub-Gaussian variables
 
-For independent sub-Gaussian coordinates, a fixed linear form has a sub-Gaussian tail with
-variance proxy equal to the sum of the coordinate proxies weighted by the squared coefficients.
-Applying this to coefficients of the form `u i * v j` gives the fixed-bilinear-form estimate
-used in the operator-norm tail bound for random matrices.
-
-We also develop squared-variable exponential moment bounds for
+We develop squared-variable exponential moment bounds for
 `ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
-`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, exponential moment bounds for dot
-products of independent real and complex vectors, and
+`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, and
 Gaussianization and decoupled bilinear MGF bounds for jointly sub-Gaussian vectors
 (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
 `TauCeti.mgf_dotProduct_mulVec_prod_le`; Vershynin 2018, §2.5–2.7, §6.2; Rudelson–Vershynin 2013).
+The exponential moment bounds for dot products of independent real and complex coordinates are in
+`TauCeti.Probability.Moments.SubGaussian.LinearForms`.
 -/
 
 public section
@@ -175,24 +169,15 @@ theorem hasSubgaussianMGF_im_of_star_mul
 /-- Every directionally sub-Gaussian complex random variable is Bochner integrable. -/
 theorem integrable_of_hasSubgaussianMGF_re_star_mul
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
-    Integrable Z μ := by
-  have hZ_eq : Z = fun ω ↦ ((Z ω).re : ℂ) + ((Z ω).im : ℂ) * Complex.I :=
-    funext fun ω ↦ (Complex.re_add_im (Z ω)).symm
-  rw [hZ_eq]
-  exact (hasSubgaussianMGF_re_of_star_mul hZ).integrable.ofReal.add
-    ((hasSubgaussianMGF_im_of_star_mul hZ).integrable.ofReal.mul_const Complex.I)
+    Integrable Z μ :=
+  (TauCeti.isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul.2 hZ).integrable
 
 /-- Under a zero or probability measure, every directionally sub-Gaussian complex random variable
 has expectation zero. -/
 theorem integral_eq_zero_of_hasSubgaussianMGF_re_star_mul [IsZeroOrProbabilityMeasure μ]
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
-    ∫ ω, Z ω ∂μ = 0 := by
-  have hZ_int := integrable_of_hasSubgaussianMGF_re_star_mul hZ
-  apply Complex.ext
-  · simpa using (Complex.reCLM.integral_comp_comm hZ_int).symm.trans
-      (hasSubgaussianMGF_re_of_star_mul hZ).integral_eq_zero
-  · simpa using (Complex.imCLM.integral_comp_comm hZ_int).symm.trans
-      (hasSubgaussianMGF_im_of_star_mul hZ).integral_eq_zero
+    ∫ ω, Z ω ∂μ = 0 :=
+  (TauCeti.isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul.2 hZ).integral_eq_zero
 
 /-- **Sub-exponential MGF bound for the centred squared norm of a directionally `K`-sub-Gaussian
 complex variable.** -/
@@ -250,49 +235,6 @@ theorem hasSubgaussianMGF_re_star_mul_of_indepFun_re_im
 
 end ComplexSubGaussian
 
-namespace iIndepFun
-
-variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
-
-/-- Exponential moment bound for the dot product of independent `K`-sub-Gaussian random variables
-with a deterministic vector `w`. -/
-theorem integral_exp_mul_dotProduct_le {X : ι → Ω → ℝ} (hindep : iIndepFun X P) {K : ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) K P) (w : ι → ℝ) (r : ℝ) :
-    Integrable (fun ω ↦ exp (r * ((fun i ↦ X i ω) ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * ((fun i ↦ X i ω) ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ i, w i ^ 2) := by
-  have hsub := hindep.hasSubgaussianMGF_dotProduct hX w
-  refine ⟨hsub.integrable_exp_mul r, ?_⟩; rw [← mgf]; refine (hsub.mgf_le r).trans_eq ?_
-  congr 1; push_cast; simp only [Real.norm_eq_abs, sq_abs, ← Finset.sum_mul]; ring
-
-/-- Exponential moment bound for the split-coordinate dot product of independent directionally
-`K`-sub-Gaussian complex random variables with `w : ι ⊕ ι → ℝ`. -/
-theorem integral_exp_mul_sum_elim_re_im_dotProduct_le {Z : ι → Ω → ℂ} (hindep : iIndepFun Z P)
-    {K : ℝ≥0}
-    (hZ : ∀ i (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Z i ω).re) (‖u‖₊ ^ 2 * K) P)
-    (w : ι ⊕ ι → ℝ) (r : ℝ) :
-    Integrable (fun ω ↦ exp (r * (Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * (Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w)) ∂P ≤
-        exp ((K : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2) := by
-  let u : ι → ℂ := fun i ↦ ⟨w (.inl i), w (.inr i)⟩
-  have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i, (star (u i) * Z i ω).re)
-      (∑ i, ‖u i‖₊ ^ 2 * K) P :=
-    HasSubgaussianMGF.sum_of_iIndepFun
-      (hindep.comp (fun i z ↦ (star (u i) * z).re) fun _ ↦ by fun_prop) fun i _ ↦ hZ i (u i)
-  have hdot (ω : Ω) : Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w =
-      ∑ i, (star (u i) * Z i ω).re := by
-    simp only [dotProduct, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr,
-      ← Finset.sum_add_distrib, u, Complex.mul_re, Complex.star_def, Complex.conj_re,
-      Complex.conj_im]
-    exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hsub : HasSubgaussianMGF
-      (fun ω ↦ Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w)
-      (∑ i, ‖u i‖₊ ^ 2 * K) P := by simpa only [hdot] using hsum
-  refine ⟨hsub.integrable_exp_mul r, ?_⟩; rw [← mgf]; refine (hsub.mgf_le r).trans_eq ?_
-  congr 1; push_cast
-  simp only [Complex.sq_norm, Complex.normSq_apply, u, Fintype.sum_sum_type, ← sq,
-    Finset.sum_add_distrib, ← Finset.sum_mul]; ring
-
-end iIndepFun
 end ProbabilityTheory
 
 namespace TauCeti

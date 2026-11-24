@@ -12,6 +12,7 @@ public import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 import TauCeti.Analysis.Complex.Euclidean.Matrix
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
+import TauCeti.Probability.Moments.SubGaussian.LinearForms
 import TauCeti.Probability.Moments.SubExponential
 
 /-!

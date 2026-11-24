@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
-import TauCeti.Probability.Concentration.SubgaussianTail
+import TauCeti.Analysis.Normed.Group.Real
 
 /-!
 # Sub-Gaussian random vectors
@@ -37,12 +37,16 @@ whose variance is `2`.
 * `TauCeti.IsSubgaussianVector.integrable`: a sub-Gaussian vector in a finite-dimensional space
   is integrable.
 * `TauCeti.IsSubgaussianVector.integral_eq_zero`: under a zero or probability measure, a
-  sub-Gaussian vector in a complete space has mean zero.
+  sub-Gaussian vector has mean zero.
 * `TauCeti.IsSubgaussianVector.continuousLinearMap_comp`: for a complete source space, the image
   under a continuous linear map `A` of a sub-Gaussian vector with proxy `c` has proxy
   `‖A‖₊ ^ 2 * c`.
-* `ProbabilityTheory.iIndepFun.isSubgaussianVector`: a vector of `EuclideanSpace ℝ ι` with
-  independent coordinates of proxy `c` is a sub-Gaussian vector with proxy `c`.
+* `TauCeti.isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul`: in `ℂ`, a sub-Gaussian vector
+  is a directionally sub-Gaussian complex random variable, with every projection
+  `(star u * Z).re` of proxy `‖u‖₊ ^ 2 * K`.
+
+Independent coordinates are treated in `TauCeti.Probability.Moments.SubGaussian.LinearForms`
+(`ProbabilityTheory.iIndepFun.isSubgaussianVector`).
 
 Centred Gaussian vectors are treated in
 `TauCeti.Probability.Moments.SubGaussian.Gaussian.Multivariate`
@@ -98,8 +102,7 @@ theorem isSubgaussianVector_iff_forall_norm_eq_one (hμ : μ Set.univ ≤ 1) {x 
   refine (((h _ (norm_smul_inv_norm (𝕜 := ℝ) hu)).const_mul ‖u‖).congr
     (ae_of_all _ fun ω ↦ ?_)).mono (le_of_eq ?_)
   · simp [real_inner_smul_left, hu]
-  · rw [mul_comm]
-    exact congrArg (· * c) (Subtype.ext (by simp))
+  · rw [mul_comm, ← Real.nnNorm_sq, nnNorm_norm]
 
 /-- The zero random vector is sub-Gaussian, with any variance proxy, exactly when the total mass
 is at most `1`. -/
@@ -125,6 +128,14 @@ theorem isSubgaussianVector_zero_proxy_iff [SecondCountableTopology E] {x : Ω �
     fun ⟨hx, hμ⟩ ↦ ?_⟩
   · exact ((h u).mono (zero_mul _).le).ae_eq_zero_of_hasSubgaussianMGF_zero
   · exact fun u ↦ (isSubgaussianVector_zero_iff.2 hμ u).congr (hx.mono fun ω hω ↦ by simp [hω])
+
+/-- A complex random variable is a sub-Gaussian vector of the real inner product space `ℂ` with
+proxy `K` exactly when it is directionally `K`-sub-Gaussian: every projection `(star u * Z).re`
+has proxy `‖u‖₊ ^ 2 * K`, since the real inner product `⟪u, z⟫` is `(star u * z).re`. -/
+theorem isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul {Z : Ω → ℂ} {K : ℝ≥0} :
+    IsSubgaussianVector Z K μ ↔
+      ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ := by
+  simp only [isSubgaussianVector_def, Complex.inner, Complex.star_def, mul_comm]
 
 namespace IsSubgaussianVector
 
@@ -159,10 +170,11 @@ theorem integrable [FiniteDimensional ℝ E] (h : IsSubgaussianVector x c μ) : 
   rw [funext fun ω ↦ (b.sum_repr' (x ω)).symm]
   exact integrable_finsetSum _ fun i _ ↦ (h (b i)).integrable.smul_const (b i)
 
-/-- Under a zero or probability measure, a sub-Gaussian vector in a complete space has mean zero.
--/
-theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] [CompleteSpace E]
-    (h : IsSubgaussianVector x c μ) : ∫ ω, x ω ∂μ = 0 := by
+/-- Under a zero or probability measure, a sub-Gaussian vector has mean zero. -/
+theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] (h : IsSubgaussianVector x c μ) :
+    ∫ ω, x ω ∂μ = 0 := by
+  by_cases hE : CompleteSpace E; swap
+  · exact integral_of_not_completeSpace hE
   by_cases hx : Integrable x μ
   · exact integral_eq_zero_of_forall_integral_inner_eq_zero ℝ x hx fun u ↦ (h u).integral_eq_zero
   · exact integral_undef hx
@@ -186,24 +198,3 @@ theorem continuousLinearMap_comp [CompleteSpace E] {F : Type*} [NormedAddCommGro
 end IsSubgaussianVector
 
 end TauCeti
-
-namespace ProbabilityTheory.iIndepFun
-
-variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
-
-/-- A random vector of `EuclideanSpace ℝ ι` with independent coordinates, each with variance
-proxy `c`, is a sub-Gaussian vector (`TauCeti.IsSubgaussianVector`) with proxy `c`: the form
-`⟪u, x⟫` has proxy `∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2`. In particular every unit direction has
-the same proxy `c` as the coordinates, so the coordinate bound passes to all linear forms. -/
-theorem isSubgaussianVector {x : Ω → EuclideanSpace ℝ ι} {c : ℝ≥0}
-    (hindep : iIndepFun (fun i ω ↦ x ω i) P) (hx : ∀ i, HasSubgaussianMGF (fun ω ↦ x ω i) c P) :
-    TauCeti.IsSubgaussianVector x c P := by
-  refine TauCeti.isSubgaussianVector_def.2 fun u ↦ ?_
-  have hproxy : ∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2 := by
-    rw [← Finset.sum_mul, EuclideanSpace.nnNorm_eq]
-    simp [mul_comm]
-  rw [← hproxy]
-  refine (hindep.hasSubgaussianMGF_dotProduct hx u).congr (ae_of_all _ fun ω ↦ ?_)
-  simp only [EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
-
-end ProbabilityTheory.iIndepFun

@@ -49,6 +49,12 @@ theorem isFiniteMeasure {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X :
     {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : IsFiniteMeasure μ :=
   ⟨h.measure_univ_le_one.trans_lt ENNReal.one_lt_top⟩
 
+/-- A sub-Gaussian moment-generating function bound forces the real-valued total mass to be at
+most `1`: it is the moment-generating function at `0`. -/
+theorem measureReal_univ_le_one {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : μ.real Set.univ ≤ 1 := by
+  simpa using h.mgf_le 0
+
 /-- Under a zero or probability measure, a sub-Gaussian MGF bound forces the expectation to
 vanish. -/
 theorem integral_eq_zero {Ω : Type*} [MeasurableSpace Ω]
