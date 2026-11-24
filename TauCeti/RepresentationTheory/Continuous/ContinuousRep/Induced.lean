@@ -108,10 +108,17 @@ noncomputable def transversalExtend (u : S → U) (x : Γ) : U :=
   σ (hS.equiv x).1 (u (hS.equiv x).2)
 
 omit [IsTopologicalGroup Γ] in
+/-- The extension from a right transversal at `x` is `σ h (u s)`, where `x = h * s` is the
+decomposition of `x` along `H` and the transversal. -/
+theorem transversalExtend_apply (u : S → U) (x : Γ) :
+    transversalExtend σ hS u x = σ (hS.equiv x).1 (u (hS.equiv x).2) := (rfl)
+
+omit [IsTopologicalGroup Γ] in
 /-- The extension from a right transversal is `H`-equivariant. -/
 theorem transversalExtend_mul (u : S → U) (h : H) (x : Γ) :
     transversalExtend σ hS u (h * x) = σ h (transversalExtend σ hS u x) := by
-  rw [transversalExtend, transversalExtend, hS.equiv_mul_left h x, map_mul, mul_apply_eq_comp]
+  rw [transversalExtend_apply, transversalExtend_apply, hS.equiv_mul_left h x, map_mul,
+    mul_apply_eq_comp]
 
 omit [IsTopologicalGroup Γ] in
 /-- The extension from a right transversal takes the prescribed values on the transversal. -/
@@ -119,7 +126,7 @@ theorem transversalExtend_apply_of_mem (u : S → U) {s : Γ} (hs : s ∈ S) :
     transversalExtend σ hS u s = u ⟨s, hs⟩ := by
   have h1 := Subgroup.IsComplement.equiv_fst_eq_one_of_mem_of_one_mem hS H.one_mem hs
   have h2 := Subgroup.IsComplement.equiv_snd_eq_self_of_mem_of_one_mem hS H.one_mem hs
-  rw [transversalExtend, h1, h2]
+  rw [transversalExtend_apply, h1, h2]
   exact congr($(map_one σ) (u ⟨s, hs⟩))
 
 omit [IsTopologicalGroup Γ] in
