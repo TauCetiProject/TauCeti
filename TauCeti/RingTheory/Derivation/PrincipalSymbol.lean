@@ -818,12 +818,14 @@ theorem pointPrincipalSymbol_comp {k : ℕ} [Invertible (k.factorial : 𝕜)]
     exact_mod_cast congrArg (Nat.cast : ℕ → 𝕜) <| Nat.add_choose_mul_factorial_mul_factorial m k
   have hc :
       ⅟((m + k).factorial : 𝕜) * (m + k).choose m = ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) := by
-    linear_combination (-(⅟((m + k).factorial : 𝕜) * (m + k).choose m)) *
-        mul_invOf_self (m.factorial : 𝕜) +
-      (-(⅟((m + k).factorial : 𝕜) * (m + k).choose m * m.factorial * ⅟(m.factorial : 𝕜))) *
-        mul_invOf_self (k.factorial : 𝕜) +
-      ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) * ⅟((m + k).factorial : 𝕜) * h +
-      ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) * mul_invOf_self ((m + k).factorial : 𝕜)
+    -- Insert `m! * ⅟m! = 1` and `k! * ⅟k! = 1`, regroup, then cancel `(m + k)!` using `h`.
+    calc ⅟((m + k).factorial : 𝕜) * (m + k).choose m
+        = ⅟((m + k).factorial : 𝕜) * (m + k).choose m *
+            ((m.factorial * ⅟(m.factorial : 𝕜)) * (k.factorial * ⅟(k.factorial : 𝕜))) := by
+          simp
+      _ = ⅟((m + k).factorial : 𝕜) * ((m + k).choose m * m.factorial * k.factorial) *
+            (⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜)) := by ring
+      _ = ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) := by rw [h, invOf_mul_self, one_mul]
   simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_comp_const]
   linear_combination
     ((pointCommutatorSymbol φ hJ e P fun _ ↦ v) * pointCommutatorSymbol φ hJ e Q fun _ ↦ v) * hc
