@@ -49,20 +49,20 @@ def cellEquiv (n : ℕ) : RealizationCell K n ≃ RealizationCell L n := by
   have hf := injective_of_comp_eq_id f g hgf
   have hg := injective_of_comp_eq_id g f hfg
   exact
-    { toFun := fun c => ⟨faceOrderHom f c.1, by
-        rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hf, c.2]⟩
-      invFun := fun c => ⟨faceOrderHom g c.1, by
-        rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hg, c.2]⟩
-      left_inv := fun c => Subtype.ext (congrArg (fun m => m c.1)
+    { toFun := fun c => ⟨faceOrderHom f c.val, by
+        rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hf, c.property]⟩
+      invFun := fun c => ⟨faceOrderHom g c.val, by
+        rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hg, c.property]⟩
+      left_inv := fun c => Subtype.ext (congrArg (fun m => m c.val)
         ((faceOrderHom_comp g f).symm.trans (by rw [hgf, faceOrderHom_id])))
-      right_inv := fun c => Subtype.ext (congrArg (fun m => m c.1)
+      right_inv := fun c => Subtype.ext (congrArg (fun m => m c.val)
         ((faceOrderHom_comp f g).symm.trans (by rw [hfg, faceOrderHom_id]))) }
 
 /-- The face of the image cell is the image of its vertices. -/
 @[simp]
 theorem cellEquiv_face {n : ℕ} (c : RealizationCell K n) :
-    (cellEquiv f g hgf hfg n c).1.1 = c.1.1.image f :=
-  coe_faceOrderHom_apply f c.1
+    (cellEquiv f g hgf hfg n c).val.val = c.val.val.image f :=
+  coe_faceOrderHom_apply f c.val
 
 /-- The inverse cell equivalence is obtained by exchanging the two simplicial maps. -/
 theorem cellEquiv_symm (n : ℕ) :
@@ -75,7 +75,7 @@ theorem cellEquiv_symm (n : ℕ) :
 /-- The face of an inverse image cell is the image under the inverse vertex map. -/
 @[simp]
 theorem cellEquiv_symm_face {n : ℕ} (c : RealizationCell L n) :
-    ((cellEquiv f g hgf hfg n).symm c).1.1 = c.1.1.image g := by
+    ((cellEquiv f g hgf hfg n).symm c).val.val = c.val.val.image g := by
   rw [cellEquiv_symm, cellEquiv_face]
 
 /-- The identity simplicial map fixes every cell. -/
@@ -123,7 +123,7 @@ theorem image_realizationMap_openCell {n : ℕ} (c : RealizationCell K n) :
   rw [openCell_realizationCellEquiv_symm, openCell_realizationCellEquiv_symm]
   apply image_realizationMap_ofPred_support f
     (f.realizationMap_surjective g hfg)
-    (P := (· = c.1.1)) (Q := (· = (cellEquiv f g hgf hfg n c).1.1))
+    (P := (· = c.val.val)) (Q := (· = (cellEquiv f g hgf hfg n c).val.val))
   simp only [cellEquiv_face, Finset.image_inj (injective_of_comp_eq_id f g hgf), implies_true]
 
 /-- A simplicial isomorphism carries a closed CW cell onto the closed cell of the image face. -/
@@ -136,7 +136,7 @@ theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
   rw [closedCell_realizationCellEquiv_symm, closedCell_realizationCellEquiv_symm]
   apply image_realizationMap_ofPred_support f
     (f.realizationMap_surjective g hfg)
-    (P := (· ⊆ c.1.1)) (Q := (· ⊆ (cellEquiv f g hgf hfg n c).1.1))
+    (P := (· ⊆ c.val.val)) (Q := (· ⊆ (cellEquiv f g hgf hfg n c).val.val))
   simp only [cellEquiv_face, Finset.image_subset_image_iff (injective_of_comp_eq_id f g hgf),
     implies_true]
 
@@ -150,7 +150,7 @@ theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
   rw [cellFrontier_realizationCellEquiv_symm, cellFrontier_realizationCellEquiv_symm]
   apply image_realizationMap_ofPred_support f
     (f.realizationMap_surjective g hfg)
-    (P := (· ⊂ c.1.1)) (Q := (· ⊂ (cellEquiv f g hgf hfg n c).1.1))
+    (P := (· ⊂ c.val.val)) (Q := (· ⊂ (cellEquiv f g hgf hfg n c).val.val))
   simp only [cellEquiv_face, Finset.image_ssubset_image (injective_of_comp_eq_id f g hgf),
     implies_true]
 

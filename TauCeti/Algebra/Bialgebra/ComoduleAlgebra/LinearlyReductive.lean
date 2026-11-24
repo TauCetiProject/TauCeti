@@ -91,13 +91,13 @@ theorem comap_map_coinvariants (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H
   rw [Ideal.mem_comap, ← Ideal.span_eq J, Ideal.map_span, ← Ideal.submodule_span_eq,
     Submodule.mem_span_set'] at hx
   obtain ⟨n, c, g, hcg⟩ := hx
-  choose j hjJ hjg using fun i ↦ (g i).2
+  choose j hjJ hjg using fun i ↦ (g i).property
   have hx : (x : A) ∈ Comodule.fixedSubcomodule k H A := by
     rw [Comodule.mem_fixedSubcomodule, ← mem_coinvariants]
-    exact x.2
+    exact x.property
   -- Lift `x = ∑ cᵢ jᵢ` to a combination with invariant coefficients.
   obtain ⟨q, hqfixed, hq⟩ := Comodule.Hom.exists_fixed_sum_eq_of_isLinearlyReductive hH
-    Finset.univ (fun i ↦ mulLeftHom (j i : A) (j i).2) hx
+    Finset.univ (fun i ↦ mulLeftHom (j i : A) (j i).property) hx
     ⟨c, by simpa [← hjg, mul_comm] using hcg⟩
   have hq' (i : Fin n) : q i ∈ coinvariants k H A :=
     mem_coinvariants.2 (Comodule.mem_fixedSubcomodule.1 (hqfixed i (Finset.mem_univ i)))

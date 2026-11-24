@@ -72,9 +72,9 @@ universe u v
 
 variable {X : Scheme.{u}} {G : Type v} [Group G] [Finite G] {σ : G →* Aut X}
   (hσ : HasInvariantAffineCover σ)
-  (hG : ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.1 ∧
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : Γ(X, U.1) ↦ g • a - a) = ⊤)
+  (hG : ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.val ∧
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : Γ(X, U.val) ↦ g • a - a) = ⊤)
 
 include hG
 
@@ -82,11 +82,11 @@ include hG
 free. -/
 private noncomputable def freeCover : X.OpenCover :=
   Scheme.Cover.mkOfCovers {U : InvariantAffineOpens σ //
-      letI := Scheme.sectionsMulSemiringAction σ U.2.2
-      ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : Γ(X, U.1) ↦ g • a - a) = ⊤}
-    (fun U ↦ Spec Γ(X, U.1.1)) (fun U ↦ U.1.2.1.fromSpec) fun x ↦ by
+      letI := Scheme.sectionsMulSemiringAction σ U.property.2
+      ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : Γ(X, U.val) ↦ g • a - a) = ⊤}
+    (fun U ↦ Spec Γ(X, U.val.val)) (fun U ↦ U.val.property.1.fromSpec) fun x ↦ by
       obtain ⟨U, hxU, hU⟩ := hG x
-      obtain ⟨p, rfl⟩ := U.2.1.range_fromSpec.ge hxU
+      obtain ⟨p, rfl⟩ := U.property.1.range_fromSpec.ge hxU
       exact ⟨⟨U, hU⟩, p, rfl⟩
 
 /-- For a free action, the quotient projection `X ⟶ X/G` is étale. -/
@@ -94,7 +94,7 @@ theorem etale_projection_of_free : Etale (projection σ hσ) := by
   have := HasRingHomProperty.instIsZariskiLocalAtTarget @Etale.{u} (Q := RingHom.Etale)
   refine projection_of_forall_exists hσ (P := @Etale) fun x ↦ ?_
   obtain ⟨U, hxU, hU⟩ := hG x
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   exact ⟨U, hxU, AffineInvariantQuotient.etale_projection hU⟩
 
 /-- For a free action, the quotient projection `X ⟶ X/G` is finite. -/
@@ -109,23 +109,25 @@ theorem isPullback_projection_of_free :
     IsPullback (Sigma.desc fun _ : G ↦ 𝟙 X) (Sigma.desc fun g : G ↦ (σ g).asIso.hom)
       (projection σ hσ) (projection σ hσ) := by
   refine Scheme.isPullback_of_openCover _ _ _ _ (freeCover hG) fun ⟨U, hU⟩ ↦ ?_
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   -- The base change of `∐_g X` along the chart over `U` is `∐_g` of the chart.
-  have hb : IsPullback (Limits.Sigma.map fun _ : G ↦ U.2.1.fromSpec)
-      (Sigma.desc fun _ : G ↦ 𝟙 (Spec Γ(X, U.1))) (Sigma.desc fun _ : G ↦ 𝟙 X) U.2.1.fromSpec :=
-    FinitaryPreExtensive.isPullback_sigmaMap_sigmaDesc_id U.2.1.fromSpec
+  have hb : IsPullback (Limits.Sigma.map fun _ : G ↦ U.property.1.fromSpec)
+      (Sigma.desc fun _ : G ↦ 𝟙 (Spec Γ(X, U.val)))
+          (Sigma.desc fun _ : G ↦ 𝟙 X) U.property.1.fromSpec :=
+    FinitaryPreExtensive.isPullback_sigmaMap_sigmaDesc_id U.property.1.fromSpec
   -- Over the chart, the square is the affine torsor square followed by the chart square of the
   -- quotient projection.
-  have hpaste := (AffineInvariantQuotient.isPullback_specAction_of_free Γ(X, U.1) G
+  have hpaste := (AffineInvariantQuotient.isPullback_specAction_of_free Γ(X, U.val) G
     hU).flip.paste_horiz (isPullback_projection_fromSpec hσ U).flip
   refine hpaste.flip.of_iso hb.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
   · exact (Category.comp_id _).trans hb.isoPullback_hom_snd.symm
   · -- The components of the pulled-back cover are the first projections.
     refine Sigma.hom_ext _ _ fun g ↦ ?_
-    calc _ = (AffineInvariantQuotient.specAction Γ(X, U.1) G g).asIso.hom ≫ U.2.1.fromSpec := by
+    calc _ = (AffineInvariantQuotient.specAction Γ(X, U.val) G g).asIso.hom ≫ U.property.1.fromSpec
+        := by
           simp
-      _ = U.2.1.fromSpec ≫ (σ g).asIso.hom := specAction_fromSpec U.2.1 U.2.2 g
-      _ = Sigma.ι _ g ≫ (hb.isoPullback.hom ≫ pullback.fst _ U.2.1.fromSpec) ≫
+      _ = U.property.1.fromSpec ≫ (σ g).asIso.hom := specAction_fromSpec U.property.1 U.property.2 g
+      _ = Sigma.ι _ g ≫ (hb.isoPullback.hom ≫ pullback.fst _ U.property.1.fromSpec) ≫
           Sigma.desc fun g ↦ (σ g).asIso.hom := by
         rw [hb.isoPullback_hom_fst]; simp
       _ = _ := by

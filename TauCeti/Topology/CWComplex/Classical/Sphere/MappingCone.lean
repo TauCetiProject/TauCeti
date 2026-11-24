@@ -315,7 +315,7 @@ private theorem mapsTo_mappingConeCellMap (m : ℕ) (i : MappingConeCell h m) :
     ((EuclideanSpace.equiv _ ℝ).norm_unitBallHomeomorph_symm_eq_one_iff.2
       (mem_sphere_zero_iff_norm.1 hy))
   have hfx : (f ⟨x, hx⟩ : EuclideanSpace ℝ ι) ∈ ⋃ (k : ℕ) (j : cell (sphere 0 1) k), closedCell k j
-    := by rw [CWComplex.union]; exact (f ⟨x, hx⟩).2
+    := by rw [CWComplex.union]; exact (f ⟨x, hx⟩).property
   obtain ⟨k, j, hj⟩ := mem_iUnion₂.1 hfx
   have hk : k < n + 1 := by
     by_contra hk
@@ -482,14 +482,14 @@ def sphereMappingConeSkeletonHomeomorph :
     letI := sphereMappingConeCWComplex h f
     sphere (0 : EuclideanSpace ℝ ι) 1 ≃ₜ skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) where
   toFun a := ⟨((a : EuclideanSpace ℝ ι), 0),
-    (mem_skeletonLT_sphereMappingCone_iff h f).2 ⟨a.2, rfl⟩⟩
+    (mem_skeletonLT_sphereMappingCone_iff h f).2 ⟨a.property, rfl⟩⟩
   invFun p := ⟨(p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))).1,
-    ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.2).1⟩
+    ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.property).1⟩
   left_inv _ := rfl
   right_inv p :=
-    Subtype.ext (Prod.ext rfl ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.2).2.symm)
-  continuous_toFun := (continuous_subtype_val.prodMk continuous_const).subtype_mk _
-  continuous_invFun := (continuous_fst.comp continuous_subtype_val).subtype_mk _
+    Subtype.ext (Prod.ext rfl ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.property).2.symm)
+  continuous_toFun := (continuous_subtypeVal.prodMk continuous_const).subtype_mk _
+  continuous_invFun := (continuous_fst.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_sphereMappingConeSkeletonHomeomorph_apply (a : sphere (0 : EuclideanSpace ℝ ι) 1) :

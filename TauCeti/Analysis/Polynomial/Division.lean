@@ -79,7 +79,7 @@ theorem analyticAt_coeff_divByMonic
   have hc (i) : AnalyticAt 𝕜 (fun x ↦ c x i) x₀ := by
     cases i with
     | inl i => exact hF i (by omega)
-    | inr i => exact hG i i.2
+    | inr i => exact hG i i.isLt
   have ha := AnalyticAt.aeval_mvPolynomial hc ((P /ₘ Q).coeff k)
   apply ha.congr
   filter_upwards [hdegF, hGmonic] with x hFx hGx

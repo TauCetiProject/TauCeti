@@ -126,7 +126,7 @@ def isColimitCechCocone (hU : IsOpenCover U) : IsColimit (cechCocone U) where
   desc c := glue (exists_cechIntersection_singleton_mem_nhds hU)
     (fun i ↦ coconeLeg U c (CechIndex.singleton i)) (coconeLeg_singleton_compat c)
   fac c s := by
-    obtain ⟨i, hi⟩ := (OrderDual.ofDual s).2
+    obtain ⟨i, hi⟩ := (OrderDual.ofDual s).property
     let f : s ⟶ CechIndex.singleton i := homOfLE (CechIndex.le_iff.2
       (by rw [CechIndex.coe_singleton]; exact Finset.singleton_subset_iff.2 hi))
     -- The glued functor, viewed as a morphism of groupoids.

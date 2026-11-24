@@ -45,7 +45,9 @@ point (for a vector space target, `M = V`).
   `TauCeti.Floer.compatible_continuationAlmostComplex`: tameness and compatibility.
 * `TauCeti.Floer.continuationAlmostComplex_of_nonpos`,
   `TauCeti.Floer.continuationAlmostComplex_of_one_le`: its two ends.
-* `TauCeti.Floer.contMDiff_continuationAlmostComplex`: joint smoothness.
+* `TauCeti.Floer.contMDiff_continuationAlmostComplex`,
+  `TauCeti.Floer.contDiff_continuationAlmostComplex`: joint smoothness, over a manifold and over a
+  normed space of external points.
 
 ## References
 
@@ -89,7 +91,7 @@ def continuationAlmostComplex (h₀ : ω.Compatible J₀) (J₁ J₂ : ℝ → M
 /-- The continuation homotopy is tamed by `ω`. -/
 theorem tames_continuationAlmostComplex (h₀ : ω.Compatible J₀) (z : ℝ × ℝ) (x : M) :
     ω.Tames (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley transform of the continuation homotopy, relative to `J₀`, at `z = (s, t)` is
 `(1 - β(s)) • cayley (J₁ t x) + β(s) • cayley (J₂ t x)`. This characterizes the structure, since
@@ -126,12 +128,17 @@ theorem continuationAlmostComplex_of_one_le (h₀ : ω.Compatible J₀) {z : ℝ
   h₀.eq_of_cayley_eq (tames_continuationAlmostComplex h₀ z x) (hJ₂ z.2 x) (by
     simp [smoothTransition.one_of_one_le hz])
 
+/-- Where the two families agree, the continuation homotopy is their common value, at every `s`. -/
+theorem continuationAlmostComplex_of_eq (h₀ : ω.Compatible J₀) {z : ℝ × ℝ} {x : M}
+    (h : J₁ z.2 x = J₂ z.2 x) : continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x = J₁ z.2 x :=
+  h₀.eq_of_cayley_eq (tames_continuationAlmostComplex h₀ z x) (hJ₁ z.2 x) (by
+    rw [cayley_continuationAlmostComplex, h, ← add_smul, sub_add_cancel, one_smul])
+
 /-- The continuation homotopy from a family to itself is that family at every `s`. -/
 @[simp]
 theorem continuationAlmostComplex_self (h₀ : ω.Compatible J₀) (z : ℝ × ℝ) (x : M) :
     continuationAlmostComplex h₀ J₁ J₁ hJ₁ hJ₁ z x = J₁ z.2 x :=
-  h₀.eq_of_cayley_eq (tames_continuationAlmostComplex h₀ z x) (hJ₁ z.2 x) (by
-    rw [cayley_continuationAlmostComplex, ← add_smul, sub_add_cancel, one_smul])
+  continuationAlmostComplex_of_eq h₀ rfl
 
 /-- The continuation homotopy of two families of period one in `t` has period one in `t`. -/
 theorem periodic_continuationAlmostComplex (h₀ : ω.Compatible J₀) (hJ₁p : Periodic J₁ 1)
@@ -189,6 +196,20 @@ theorem contMDiff_continuationAlmostComplex (h₀ : ω.Compatible J₀)
   have h₂ := (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J₂ p.1 p.2)
     (fun p => hJ₂ p.1 p.2) hJ₂s).comp hst
   exact ((contMDiff_const.sub hβ).smul h₁).add (hβ.smul h₂)
+
+/-- **The continuation homotopy over a vector space is smooth.** For families `J₁ t x` and
+`J₂ t x` of `ω`-tame structures depending on a point `x` of a normed space `F`, which are `C^n`
+on `ℝ × F`, the continuation homotopy is `C^n` jointly in `z = (s, t)` and `x`. -/
+theorem contDiff_continuationAlmostComplex {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (h₀ : ω.Compatible J₀) {J₁ J₂ : ℝ → F → AlmostComplexStructure V}
+    {hJ₁ : ∀ t x, ω.Tames (J₁ t x)} {hJ₂ : ∀ t x, ω.Tames (J₂ t x)} {n : ℕ∞}
+    (hJ₁s : ContDiff ℝ n fun p : ℝ × F => (J₁ p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ₂s : ContDiff ℝ n fun p : ℝ × F => (J₂ p.1 p.2).toLinearMap.toContinuousLinearMap) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × F =>
+      LinearMap.toContinuousLinearMap
+        (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ p.1 p.2).toLinearMap := by
+  rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at hJ₁s hJ₂s ⊢
+  exact contMDiff_continuationAlmostComplex h₀ hJ₁s hJ₂s
 
 end Smooth
 

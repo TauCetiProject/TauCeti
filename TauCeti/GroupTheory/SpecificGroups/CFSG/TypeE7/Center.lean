@@ -42,10 +42,10 @@ variable (d : TypeE7LieIndex)
 theorem mem_center_commutator_fixedSubgroup_steinberg_iff
     (g : commutator (fixedSubgroup d.steinberg)) :
     g ∈ Subgroup.center (commutator (fixedSubgroup d.steinberg)) ↔
-      ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-          Matrix (Fin 56) (Fin 56) d.1.Closure) =
-        ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-          Matrix (Fin 56) (Fin 56) d.1.Closure) 0 0 • 1 := by
+      ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+          Matrix (Fin 56) (Fin 56) d.val.Closure) =
+        ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+          Matrix (Fin 56) (Fin 56) d.val.Closure) 0 0 • 1 := by
   revert g
   rw [steinberg_def]
   exact E7Minuscule.mem_center_commutator_fixedSubgroup_frobenius_iff _ _ _
@@ -55,9 +55,9 @@ in the field of definition. -/
 theorem exists_scalar_mem_fixedField_of_mem_center_commutator_fixedSubgroup_steinberg
     (g : commutator (fixedSubgroup d.steinberg))
     (hg : g ∈ Subgroup.center (commutator (fixedSubgroup d.steinberg))) :
-    ∃ c : d.1.fixedField,
-      ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) = (c : d.1.Closure) • 1 := by
+    ∃ c : d.val.fixedField,
+      ((g.val.val : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) = (c : d.val.Closure) • 1 := by
   have hfixed := (d.mem_fixedSubgroup_steinberg_iff g.val.val).mp g.val.property 0 0
   exact ⟨⟨_, hfixed⟩, (d.mem_center_commutator_fixedSubgroup_steinberg_iff g).mp hg⟩
 

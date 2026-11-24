@@ -95,7 +95,7 @@ theorem isIntegrallyClosedIn_ofPrime (R : Subring K) [IsIntegrallyClosedIn R K]
     rw [← Subring.coe_mul, u.inv_mul, Subring.coe_one]
   have hx_eq : x = ((↑u⁻¹ : L) : K) * (m • x) := by
     rw [Algebra.smul_def, ← hval, ← mul_assoc, hinv, one_mul]
-  exact hx_eq ▸ L.mul_mem (↑u⁻¹ : L).2 hmx_L
+  exact hx_eq ▸ L.mul_mem (↑u⁻¹ : L).property hmx_L
 
 /-- **A point survives the localisation as long as all its denominators lie in `𝔪`.** Writing
 `z = a / s` with `s ∉ 𝔪` exhibits `s` as a denominator of `z`, hence puts `s` in `𝔪`. -/
@@ -143,7 +143,7 @@ theorem exists_le_valuationSubring_notMem_valuation_lt_one (R : Subring K)
     (LocalSubring.notMem_ofPrime_of_denIdeal_le R 𝔪 (le_sup_left.trans hle))
   refine ⟨V, (LocalSubring.le_ofPrime R 𝔪).trans hVdom.1, hzV, fun a ha ↦ ?_⟩
   -- domination carries the maximal ideal of the localisation into that of `V`
-  have haL : (⟨(a : K), LocalSubring.le_ofPrime R 𝔪 a.2⟩ :
+  have haL : (⟨(a : K), LocalSubring.le_ofPrime R 𝔪 a.property⟩ :
       (LocalSubring.ofPrime R 𝔪).toSubring) ∈
       IsLocalRing.maximalIdeal (LocalSubring.ofPrime R 𝔪).toSubring :=
     (IsLocalization.AtPrime.to_map_mem_maximal_iff _ 𝔪 a).mpr (hJ𝔪 ha)
@@ -169,7 +169,7 @@ theorem exists_le_valuationSubring_notMem_valuation_lt_one_of_pow_mul_mem (R : S
     have hzt : z = (t : K) := by
       simpa [Algebra.algebraMap_ofSubsemiring_apply] using ht
     rw [hzt]
-    exact t.2)
+    exact t.property)
   obtain ⟨𝔪, h𝔪, hS𝔪⟩ := Ideal.exists_le_maximal _ hS_ne_top
   have : 𝔪.IsPrime := h𝔪.isPrime
   -- a power of `J` consists of denominators, so primality puts `J` itself inside `𝔪`

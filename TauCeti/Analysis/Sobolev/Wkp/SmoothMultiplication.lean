@@ -66,14 +66,16 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 private def contDiffOnSMulAux (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (hpsi : ContDiffOn ℝ ∞ psi U)
     (u : Wkp mu Omega p k) : Wkp mu Omega p k :=
-  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k hpsi u).choose
+  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k (hpsi.of_le (by exact_mod_cast le_top))
+    u).choose
 
 private theorem value_contDiffOnSMulAux (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (hpsi : ContDiffOn ℝ ∞ psi U) (u : Wkp mu Omega p k) :
     (value k (contDiffOnSMulAux hU hΩ hΩU k hpsi u) : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x => psi x * value k u x :=
-  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k hpsi u).choose_spec
+  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k (hpsi.of_le (by exact_mod_cast le_top))
+    u).choose_spec
 
 /-- An element of `W^{k,p}(Ω)` is determined by having value `ψ u` almost everywhere. -/
 private theorem eq_of_value_ae_eq_mul {k : ℕ} {u w w' : Wkp mu Omega p k}
@@ -136,10 +138,7 @@ def contDiffOnSMulL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega :
         (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hC')
         (value_contDiffOnSMulAux hU hΩ hΩU k hpsi (u n - x))).trans
         (mul_le_mul_of_nonneg_left (norm_value_le k _) (le_max_right _ _))
-    have hy' : Tendsto (fun n => value k (L (u n))) atTop (𝓝 (value k y)) := by
-      simpa only [Function.comp_def, valueL_apply] using
-        ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto y).comp hy
-    exact ext k (tendsto_nhds_unique hy' hval)
+    exact ext k (tendsto_nhds_unique (tendsto_value hy) hval)
 
 /-- The value of smooth multiplication is the pointwise product almost everywhere on `Ω`. -/
 theorem value_contDiffOnSMulL_ae (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))

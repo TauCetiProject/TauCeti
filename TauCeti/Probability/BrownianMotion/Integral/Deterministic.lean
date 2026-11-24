@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Deterministic integrands in the predictable Brownian integral

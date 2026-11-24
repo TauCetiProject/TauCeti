@@ -48,11 +48,8 @@ theorem exists_localWeightBasis_spanning_sublevels {L : ι → Dual K V}
       span K ((fun i ↦ (L i).comp U.subtype) '' {i | c i ≤ a j}) := by
   classical
   let f : ι → Dual K U := fun i ↦ (L i).comp U.subtype
-  have hf : span K (range f) = ⊤ := by
-    have heq : range f = U.subtype.dualMap '' range L := by
-      exact Set.range_comp U.subtype.dualMap L
-    rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
-    exact LinearMap.dualMap_surjective_of_injective U.injective_subtype
+  have hf : span K (range f) = ⊤ :=
+    Module.Dual.span_range_comp_eq_top_of_injective hL U.injective_subtype
   obtain ⟨b, -, hbi, hbsp, hb⟩ := exists_linearIndepOn_inter_span_eq (K := K) f
     (fun j ↦ {i | c i ≤ a j}) (fun j k hjk i hi ↦ hi.trans (ha hjk))
     univ (fun _ ↦ subset_univ _)
@@ -78,7 +75,7 @@ private theorem localWeightBasis_card_filter {L : ι → Dual K V} {U : Submodul
   have ht : t ⊆ b := Finset.filter_subset _ _
   have hli : LinearIndependent K (fun i : t ↦ (L i).comp U.subtype) :=
     (mem_localWeightBases.mp hb).1.comp
-      (fun i : t ↦ (⟨i, ht i.2⟩ : b)) (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+      (fun i : t ↦ (⟨i, ht i.property⟩ : b)) (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
   have heq : {i | i ∈ b ∧ c i ≤ r} = (t : Set ι) := by ext i; simp [t]
   have hset : range (fun i : t ↦ (L i).comp U.subtype) =
       (fun i ↦ (L i).comp U.subtype) '' (t : Set ι) := by

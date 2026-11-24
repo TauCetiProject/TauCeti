@@ -79,6 +79,8 @@ monotone in `W`.
   characteristics are invariant under symplectic diffeomorphisms, and by its variant
   `IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullback_eq_smul` under
   conformally symplectic ones.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_image_iff`: so is the
+  contractible almost existence property.
 
 ## References
 
@@ -348,7 +350,7 @@ theorem HasContractibleClosedCharacteristic.image (hσ₂ : σ₂.IsNondegenerat
   obtain ⟨T, γ, hT, hγ, hper, ⟨t₀, ht₀⟩, hlev, g, hg, hgγ⟩ := h
   have hFψ : (F ∘ ψ.symm) ∘ ψ = F := funext fun x ↦ by simp
   refine ⟨T, ψ ∘ γ, hT, ?_, hper.comp ψ, ⟨t₀, fun h ↦ ht₀ (ψ.injective h)⟩,
-    fun t ↦ by simp [hlev], (⟨fun x ↦ ⟨ψ x, mem_image_of_mem ψ x.2⟩, by fun_prop⟩ :
+    fun t ↦ by simp [hlev], (⟨fun x ↦ ⟨ψ x, mem_image_of_mem ψ x.property⟩, by fun_prop⟩ :
       C(W, ψ '' W)).comp g, hg.comp_right _, fun t ↦ by simp [hgγ]⟩
   refine hσ.isMIntegralCurve_comp_hamiltonianVectorField hσ₂ ψ.contMDiff hψ
     (fun _ ↦ (ψ.isInvertible_mfderiv (by simp)).surjective) (fun t ↦ ?_) (by rwa [hFψ])
@@ -393,6 +395,22 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullba
   have hσ : σ.IsNondegenerate := (isNondegenerate_smul_iff a ha).1 haσ
   rw [hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ hF,
     hσ.hasContractibleClosedCharacteristic_smul_iff ha]
+
+/-- **Almost existence is symplectically invariant.** If a diffeomorphism `ψ : M → M₂` pulls a
+nondegenerate form `σ₂` back to `σ`, then the level `c` of `F ∘ ψ⁻¹` has the contractible almost
+existence property in `ψ(W)` for `σ₂` exactly when `F⁻¹(c)` has it in `W` for `σ`. The regular
+values of `F ∘ ψ⁻¹` are those of `F`, and `F` is differentiable along its regular levels, so no
+smoothness of `F` is assumed. -/
+theorem IsNondegenerate.hasContractibleAlmostExistence_image_iff
+    (hσ₂ : σ₂.IsNondegenerate) (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
+    σ₂.HasContractibleAlmostExistence (ψ '' W) (F ∘ ψ.symm) c ↔
+      σ.HasContractibleAlmostExistence W F c := by
+  simp only [hasContractibleAlmostExistence_iff, ψ.symm.isRegularValue_comp_iff (by simp)]
+  refine exists_congr fun ε ↦ and_congr_right fun _ ↦ Filter.eventually_congr
+    (Filter.Eventually.of_forall fun c' ↦ imp_congr_right fun _ ↦ imp_congr_right fun hc' ↦ ?_)
+  exact hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ fun x hx ↦
+    (hc'.isRegularPoint hx).mdifferentiableAt
 
 end Invariance
 

@@ -89,7 +89,7 @@ zero-based sheets. -/
 /-- The stored triple of `3T2-3_2.1_2.1-a` does not satisfy `σinf * σ1 * σ0 = 1`: read without
 the translation, it is not a permutation triple. -/
 theorem mul_mul_ne_one_s3StoredTriple :
-    s3StoredTriple.1.2.2 * s3StoredTriple.1.2.1 * s3StoredTriple.1.1 ≠ 1 := by
+    s3StoredTriple.val.2.2 * s3StoredTriple.val.2.1 * s3StoredTriple.val.1 ≠ 1 := by
   decide
 
 /-- The stored triple of `3T2-3_2.1_2.1-a` denotes the triple with components `(finRotate 3)⁻¹`

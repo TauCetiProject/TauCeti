@@ -167,7 +167,7 @@ variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [IsSemisimpleModul
 /-- **A semisimple module is the direct sum of its isotypic components.** The equivalence sends
 an element to its family of components, and its inverse adds the components up. This is the
 module-level counterpart of `IsSemisimpleModule.endAlgEquiv`. -/
-noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.1 :=
+noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.val :=
   .symm <| ((sSupIndep_iff _).mp <| sSupIndep_isotypicComponents R M).linearEquiv <|
     (sSup_eq_iSup' _).symm.trans <| sSup_isotypicComponents R M
 
@@ -176,14 +176,14 @@ variable {R M}
 /-- The inverse of `linearEquivIsotypicComponents` sends the family that is `x` at the isotypic
 component `c` and zero elsewhere to `x`, viewed as an element of `M`. -/
 @[simp]
-theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.1) :
+theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.val) :
     (linearEquivIsotypicComponents R M).symm (DFinsupp.single c x) = x := by
   simp [linearEquivIsotypicComponents]
 
 /-- `linearEquivIsotypicComponents` sends an element `x` of an isotypic component `c`, viewed as an
 element of `M`, to the family that is `x` at `c` and zero elsewhere. -/
 @[simp]
-theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.1) :
+theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.val) :
     linearEquivIsotypicComponents R M x = DFinsupp.single c x := by
   rw [← linearEquivIsotypicComponents_symm_single, LinearEquiv.apply_symm_apply]
 
@@ -194,7 +194,7 @@ theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x 
 /-- An element `x` of `M` lying in an isotypic component `c` is sent by
 `linearEquivIsotypicComponents` to the family that is `x` at `c` and zero elsewhere. -/
 theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} {x : M}
-    (hx : x ∈ c.1) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
+    (hx : x ∈ c.val) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end IsSemisimpleModule
@@ -297,7 +297,7 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
     exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
   rw [← iSupIndep_ne_bot]
   refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
-    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.val j.property⟩) ?_
   intro ⟨i, hi⟩ ⟨j, _⟩ hij
   -- A simple submodule of the common component is a copy of both `S i` and `S j`.
   obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi

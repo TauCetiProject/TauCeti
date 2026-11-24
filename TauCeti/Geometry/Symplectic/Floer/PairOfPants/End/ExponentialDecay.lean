@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
@@ -47,10 +48,12 @@ half-cylinder for the Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
 (`TauCeti.Floer.positiveEndHamiltonian`), asymptotic to the orbit `t ↦ y_q(±t)` of `H'_q`. The
 half-cylinder estimate `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp` asks the
 return map `Ψ'(1)` of the linearized equation `ζ' = S'_t ζ` along this orbit to have no nonzero
-fixed vector. Here `S'_{±t} = ±S_t`, where `S_t = dX_{H_{q,t}}(y_q(t))`, so `t ↦ ζ(±t)` turns a
-periodic solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ`. Nondegeneracy of `y_q(0)` as a fixed
-point of the time-one map of `H_q` therefore gives the hypothesis
-(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`).
+fixed vector. On the input ends `H'_q = H_q`, and nondegeneracy of `y_q(0)` as a fixed point of
+the time-one map of `H_q` gives this directly
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_apply_eq_self`). On the output end `H'_q` is
+the reversed Hamiltonian `-H_q(-t)`, for which time reversal carries nondegeneracy over
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self`); together these give
+`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`.
 
 **`C¹` convergence.** In the positive end chart a cylindrical end is a finite-energy Floer
 half-cylinder for `H'_q` and the structure `J'_q(t, x) = J_q(±t, x)`
@@ -119,39 +122,15 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
     {v : V} (hv : dysonSeriesLeft (fun t ↦ fderiv ℝ
       (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))) 1 v = v) :
     v = 0 := by
-  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H q t)) (y t)
-  set S' : ℝ → V →L[ℝ] V := fun t ↦
-    fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))
-  have hyc : Continuous y := continuous_iff_continuousAt.2 fun t ↦ (hy t).continuousAt
-  have hSc : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hHs hyc
-  have hS'c : Continuous S' := ω.continuous_fderiv_hamiltonianVectorField_comp
-    (contDiff_uncurry_positiveEndHamiltonian hHs) (hyc.comp (continuous_const.mul continuous_id))
-  have hS'p : Periodic S' 1 := fun t ↦ by
-    simp only [S', periodic_positiveEndHamiltonian hH t]
-    exact congrArg _ (periodic_comp_endSign_mul hyper t)
-  -- The linearization in the positive end chart is `S'_{±t} = ±S_t`.
-  have hS' (t : ℝ) : S' (q.endSign * t) = q.endSign • S t := by
-    simp only [S', S, hamiltonianVectorField_positiveEndHamiltonian_endSign_mul,
-      fderiv_const_smul_field, Pi.smul_apply, endSign_mul_endSign_mul]
-  -- The periodic solution `ζ' t = Ψ'(t) v` of `ζ' = S'_t ζ`, read with the time `±t`, is a periodic
-  -- solution of `ζ' = S_t ζ` starting at `v`.
-  set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (q.endSign * t) v
-  have hζ (t : ℝ) : HasDerivAt ζ (S t (ζ t)) t := by
-    have h := (hasDerivAt_dysonSeriesLeft_apply hS'c v (q.endSign * t)).scomp t
-      ((hasDerivAt_id' t).const_mul q.endSign)
-    rw [hS', mul_one, smul_apply, smul_smul, endSign_mul_self, one_smul] at h
-    exact h
-  have hζp : Periodic ζ 1 :=
-    periodic_comp_endSign_mul ((periodic_dysonSeriesLeft_apply_iff hS'c hS'p v).2 hv)
-  have hζ0 : ζ 0 = v := by simp [ζ, dysonSeriesLeft_zero]
-  -- So `v` is fixed by the return map `Ψ(1)` of `H_q`, the derivative of the time-one map.
-  have hΨ : dysonSeriesLeft S 1 v = v := by
-    rw [← hζ0, ← eq_dysonSeriesLeft_apply hSc hζ, ← zero_add (1 : ℝ), hζp 0]
-  have hD := (ω.differentiable_timeDependentHamiltonianFlow hL hHs 0 1 (y 0)).hasFDerivAt
-  refine (isNondegenerateFixedPt_iff.1 hnd).2.2 v ?_
-  rw [hD.hasMFDerivAt.mfderiv, fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft ω hL hHs hy]
-  simp only [zero_add, sub_zero]
-  exact hΨ
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · simp only [positiveEndHamiltonian_of_endSign_eq_one H h, h, one_mul] at hv
+    exact ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs hy hnd hv
+  -- On the output end `H'_q` is the reversed Hamiltonian `-H_q(-t)`, with the orbit `t ↦ y(-t)`.
+  simp only [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h, neg_one_mul] at hv
+  refine ω.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self hL hHs hH hyper.comp_neg
+    (fun t ↦ ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg ?_)
+    (by simpa only [neg_zero] using hnd) hv
+  simpa only [Pi.neg_def, neg_neg] using hy (-t)
 
 /-- Read in the end chart at `(±s, t)`, the distance of the derivative of `u` from that of the
 stationary cylinder of `y` is the distance of the derivative of `u ∘ φ'_q` at `(s, ±t)` from that

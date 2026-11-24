@@ -275,7 +275,7 @@ theorem map_mk (p : ℕ) {d : M →ₗ[R] M} {e : N →ₗ[R] N} (f : M →ₗ[R
     (hf : f ∘ₗ d = e ∘ₗ f) (j : ℕ) (z : LinearMap.ker (d ^ (j + 1))) :
     map p f hf j (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨f z, LinearMap.map_mem_ker_of_comp_eq f
-        (Module.End.commute_pow_left_of_commute hf.symm (j + 1)).symm z.2⟩ :=
+        (Module.End.commute_pow_left_of_commute hf.symm (j + 1)).symm z.property⟩ :=
   (rfl)
 
 /-- The identity map induces the identity on slash homology. -/
@@ -377,10 +377,12 @@ noncomputable def prodEquiv (p : ℕ) (d : M →ₗ[R] M) (e : N →ₗ[R] N) (j
 theorem prodEquiv_mk (p : ℕ) (d : M →ₗ[R] M) (e : N →ₗ[R] N) (j : ℕ)
     (z : LinearMap.ker ((d.prodMap e) ^ (j + 1))) :
     prodEquiv p d e j (Submodule.Quotient.mk z) =
-      (Submodule.Quotient.mk ⟨z.1.1, LinearMap.map_mem_ker_of_comp_eq (LinearMap.fst R M N)
-          (Module.End.commute_pow_left_of_commute (by ext <;> simp) (j + 1)).symm z.2⟩,
-        Submodule.Quotient.mk ⟨z.1.2, LinearMap.map_mem_ker_of_comp_eq (LinearMap.snd R M N)
-          (Module.End.commute_pow_left_of_commute (by ext <;> simp) (j + 1)).symm z.2⟩) := by
+      (Submodule.Quotient.mk ⟨z.val.1, LinearMap.map_mem_ker_of_comp_eq (LinearMap.fst R M N)
+          (Module.End.commute_pow_left_of_commute (by ext <;> simp) (j + 1)).symm
+          z.property⟩,
+        Submodule.Quotient.mk ⟨z.val.2, LinearMap.map_mem_ker_of_comp_eq (LinearMap.snd R M N)
+          (Module.End.commute_pow_left_of_commute (by ext <;> simp) (j + 1)).symm
+          z.property⟩) := by
   simp [prodEquiv]
 
 /-- The inverse of `SlashHomology.prodEquiv` sends a pair of cycle classes to their product
@@ -395,9 +397,9 @@ theorem prodEquiv_symm_mk (p : ℕ) (d : M →ₗ[R] M) (e : N →ₗ[R] N) (j :
         have hinr : (d.prodMap e) ∘ₗ LinearMap.inr R M N = LinearMap.inr R M N ∘ₗ e := by
           ext <;> simp
         have hx := LinearMap.map_mem_ker_of_comp_eq (LinearMap.inl R M N)
-          (Module.End.commute_pow_left_of_commute hinl (j + 1)).symm x.2
+          (Module.End.commute_pow_left_of_commute hinl (j + 1)).symm x.property
         have hy := LinearMap.map_mem_ker_of_comp_eq (LinearMap.inr R M N)
-          (Module.End.commute_pow_left_of_commute hinr (j + 1)).symm y.2
+          (Module.End.commute_pow_left_of_commute hinr (j + 1)).symm y.property
         simpa using add_mem hx hy⟩ := by
   apply (prodEquiv p d e j).injective
   simp only [LinearEquiv.apply_symm_apply, prodEquiv_mk]
@@ -417,7 +419,7 @@ class. -/
 theorem twoZeroEquivHomology_mk (d : M →ₗ[R] M) (hd : d ∘ₗ d = 0)
     (z : LinearMap.ker (d ^ (0 + 1))) :
     twoZeroEquivHomology d hd (Submodule.Quotient.mk z) =
-      d.homologyπ hd ⟨z.1, by simpa using z.2⟩ := by
+      d.homologyπ hd ⟨z.val, by simpa using z.property⟩ := by
   simp only [twoZeroEquivHomology, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
     LinearMap.homologyπ_apply]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (LinearEquiv.coe_ofEq_apply _ z))
@@ -432,7 +434,7 @@ theorem map_nullHomotopicMap {p : ℕ} {d : M →ₗ[R] M} {e : N →ₗ[R] N}
   ext z
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply, map_mk, LinearMap.zero_apply]
   exact (Submodule.Quotient.mk_eq_zero _).mpr
-    (Submodule.mem_sup_left (nullHomotopicMap_mem_range e h j z.2))
+    (Submodule.mem_sup_left (nullHomotopicMap_mem_range e h j z.property))
 
 /-- Two linear maps `f, g : M → N` are **`p`-homotopic** when their difference is of the form
 `∑_{i = 0}^{p - 1} e ^ i ∘ h ∘ d ^ (p - 1 - i)` for some `R`-linear `h : M → N`. -/

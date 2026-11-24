@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Bialgebra.Module.TensorProduct
 public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
 public import TauCeti.Algebra.Homology.SlashHomology
 public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.PowIdeal
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Polynomial
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.RankOne
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
@@ -282,14 +282,15 @@ noncomputable def algEquivAdjoinRoot :
     TruncatedPrimitiveAlg R n ≃ₐ[R] AdjoinRoot (X ^ n : R[X]) :=
   Ideal.quotientEquivAlg
     (Ideal.span {(SymmetricAlgebra.ι R R 1 : SymmetricAlgebra R R) ^ n})
-    (Ideal.span {(X ^ n : R[X])}) (SymmetricAlgebra.equivPolynomial R) (by simp [Ideal.map_span])
+    (Ideal.span {(X ^ n : R[X])}) (SymmetricAlgebra.equivPolynomial (R := R))
+    (by simp [Ideal.map_span])
 
 /-- `algEquivAdjoinRoot` sends the class of `z` to the class of
-`SymmetricAlgebra.equivPolynomial R z`. -/
+`SymmetricAlgebra.equivPolynomial z`. -/
 @[simp]
 theorem algEquivAdjoinRoot_mk (z : SymmetricAlgebra R R) :
     algEquivAdjoinRoot R n (Ideal.Quotient.mk _ z) =
-      AdjoinRoot.mk (X ^ n : R[X]) (SymmetricAlgebra.equivPolynomial R z) :=
+      AdjoinRoot.mk (X ^ n : R[X]) (SymmetricAlgebra.equivPolynomial z) :=
   Ideal.quotientEquivAlg_mk _ _ _ z
 
 /-- `algEquivAdjoinRoot` sends `d R n` to the root `X` of `AdjoinRoot (X ^ n)`. -/
@@ -536,7 +537,7 @@ theorem slashHomologyMap_mk (P : TruncatedPrimitive (k := k) H p) (f : M →ₗ[
     P.slashHomologyMap f j (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨f z, LinearMap.map_mem_ker_of_comp_eq (f.restrictScalars k)
         (Module.End.commute_pow_left_of_commute (P.comp_moduleDifferential f).symm (j + 1)).symm
-        z.2⟩ :=
+        z.property⟩ :=
   SlashHomology.map_mk p (f.restrictScalars k) (P.comp_moduleDifferential f) j z
 
 /-- The identity `H`-linear map induces the identity on slash homology. -/
@@ -696,7 +697,7 @@ noncomputable def slashHomologyZeroTrivialEquiv (P : TruncatedPrimitive (k := k)
 theorem slashHomologyZeroTrivialEquiv_mk (P : TruncatedPrimitive (k := k) H p) (hp : 2 ≤ p)
     (z : LinearMap.ker ((P.moduleDifferential (M := BialgebraModule.Trivial k H)) ^ (0 + 1))) :
     P.slashHomologyZeroTrivialEquiv hp (Submodule.Quotient.mk z) =
-      BialgebraModule.trivialEquiv k H z.1 := by
+      BialgebraModule.trivialEquiv k H z.val := by
   simp [slashHomologyZeroTrivialEquiv]
 
 /-- The inverse of `slashHomologyZeroTrivialEquiv` sends `c : k` to the slash-homology class of
@@ -841,7 +842,7 @@ private noncomputable def slashHomologyAdjoinRootEquiv {r j : ℕ} (hr : r < p) 
   refine LinearEquiv.ofLinearMap φ ψ (LinearMap.ext_ring <| by simp [φ, ψ]) ?_
   ext z
   have hz_ker : x ^ (j + 1) * (z : A_r) = 0 := by
-    have h := LinearMap.mem_ker.mp z.2; rwa [hD_pow] at h
+    have h := LinearMap.mem_ker.mp z.property; rwa [hD_pow] at h
   obtain ⟨w, hw⟩ := (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (n := r) (i := j + 1) (z : A_r)).mp
     hz_ker
   obtain ⟨f, rfl⟩ := AdjoinRoot.mk_surjective w

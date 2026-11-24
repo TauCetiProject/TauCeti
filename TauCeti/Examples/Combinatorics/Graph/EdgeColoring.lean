@@ -123,9 +123,9 @@ private theorem path_bipartition : pathGraph.IsBipartition pathLeft pathRight :=
   · rintro ⟨x, hx⟩
     fin_cases x <;> simp [pathLeft, pathRight, pathZero, pathOne, pathTwo]
   · intro e x y he
-    have hleft (z : V(pathGraph)) : z ∈ pathLeft ↔ z.1 = 0 ∨ z.1 = 2 := by
+    have hleft (z : V(pathGraph)) : z ∈ pathLeft ↔ z.val = 0 ∨ z.val = 2 := by
       simp [pathLeft, pathZero, pathTwo, Subtype.ext_iff]
-    have hright (z : V(pathGraph)) : z ∈ pathRight ↔ z.1 = 1 := by
+    have hright (z : V(pathGraph)) : z ∈ pathRight ↔ z.val = 1 := by
       simp [pathRight, pathOne, Subtype.ext_iff]
     rcases x with ⟨x, hx⟩
     rcases y with ⟨y, hy⟩
@@ -167,7 +167,7 @@ example :
       pathGraph.incidenceCount 0 = 1 ∧ pathGraph.incidenceCount 1 = 2 ∧
         pathGraph.incidenceCount 2 = 1 ∧ Nonempty (pathGraph.EdgeColoring (Fin 2)) ∧
         ∀ e : E(pathGraph), hC.restrictEdgeColoring c e =
-          c ⟨.inl e, (hC.inl_mem_edgeSet_iff e).2 e.2⟩ := by
+          c ⟨.inl e, (hC.inl_mem_edgeSet_iff e).2 e.property⟩ := by
   obtain ⟨G', L', R', hC⟩ := path_bipartition.exists_isRegularCompletion
     path_incidenceCount_le_two
   let _ : Finite E(G') := hC.finite_edgeSet
@@ -210,7 +210,7 @@ private abbrev emptyRight : Finset V(emptyGraph) := ∅
 private theorem empty_bipartition : emptyGraph.IsBipartition emptyLeft emptyRight := by
   refine ⟨Finset.disjoint_empty_left emptyRight, ?_, ?_⟩
   · intro x
-    exact x.2.elim
+    exact x.property.elim
   · intro e
     exact e.elim
 
@@ -232,10 +232,10 @@ example :
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rintro ⟨M, hM⟩
     obtain ⟨e, -, -⟩ := (Graph.isPerfectMatching_def.mp hM).2 isolatedVertex
-    exact e.1.elim
+    exact e.val.elim
   · exact isolated_bipartition.exists_perfectMatching_decomposition isolated_regular
-  · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.1.elim) fun e ↦ e.1.elim⟩
+  · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.val.elim) fun e ↦ e.val.elim⟩
   · exact empty_bipartition.exists_perfectMatching_decomposition empty_regular
-  · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.1.elim) fun e ↦ e.1.elim⟩
+  · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.val.elim) fun e ↦ e.val.elim⟩
 
 end TauCeti.Examples.BipartiteEdgeColoring

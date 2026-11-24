@@ -84,7 +84,7 @@ theorem continuous_toLinearIsometryEquiv :
         _ = ‖v‖ • Φ.toLinearIsometryEquiv (x : E) := map_smul _ _ _
         _ = ‖v‖ • (Φ x : F) := by rw [toLinearIsometryEquiv_apply]
     simp_rw [hvalue]
-    exact (continuous_subtype_val.comp (continuous_eval_const x)).const_smul ‖v‖
+    exact (continuous_subtypeVal.comp (continuous_eval_const x)).const_smul ‖v‖
 
 end TauCeti.RiemannianIsometry
 

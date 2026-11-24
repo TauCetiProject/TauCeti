@@ -292,15 +292,15 @@ theorem nonempty_equiv_rationalWeylSLRep_iff {l l' : DominantWeight n} :
         (ha : weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
           (rationalWeylRep k n l) (a - fun _ => t) ≠ ⊥) (m : ℕ) :
         ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
-          ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (l.1 j + t) := by
+          ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (l.val j + t) := by
       have h := sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha m
       simp only [Pi.sub_apply, Finset.sum_sub_distrib] at h
       rw [Finset.sum_add_distrib]
       linarith
     have hl : weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
         (Representation.charTwist ((Matrix.GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ t)
-          (rationalWeylRep k n l)) (fun j => l.1 j + t) ≠ ⊥ := by
-      have h : ((fun j => l.1 j + t) - fun _ => t) = l.1 := by
+          (rationalWeylRep k n l)) (fun j => l.val j + t) ≠ ⊥ := by
+      have h : ((fun j => l.val j + t) - fun _ => t) = l.val := by
         funext j
         simp
       rw [weightSpace_charTwist_detPow, h]

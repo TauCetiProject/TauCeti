@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.GroupWithZero.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Primary
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 
 /-!
 # The supplementary laws for `i` and `-1` in quartic reciprocity
@@ -41,6 +42,9 @@ are read in `K`, where the integer powers of `i` and `-1` live.
   `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd`:
   `(i / m)_4 = (-1) ^ ((m - 1) / 4)` for a rational integer `m ≡ 1 (mod 4)`, and
   `(i / m)_4 = (-1) ^ ((m ^ 2 - 1) / 8)` for every odd rational integer `m`.
+* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd`:
+  `((x + y i) / n)_4 = (-1) ^ ((n ^ 2 - 1) / 8)` for an odd rational integer `n` with `n ∣ x` and
+  `gcd(y, n) = 1`.
 * `TauCeti.powerResidueSymbolIdeal_span_intCast_mk_neg_one`: `(-1 / m)_4 = 1` for an odd
   rational integer `m`.
 
@@ -131,6 +135,21 @@ theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger
     rw [hsq, Int.mul_ediv_cancel_left _ (by decide)]
   rw [hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger hm₁, h4, h8]
   exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num) (Int.modEq_iff_dvd.mpr ⟨k ^ 2, by ring⟩)
+
+/-- For an odd integer `n`, `x` divisible by `n`, and `y` coprime to `n`,
+`((x + y i) / n)_4 = (-1) ^ ((n ^ 2 - 1) / 8)`, read in `K`. -/
+theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd
+    (hζ : IsPrimitiveRoot ζ 4) {n x y : ℤ} (hn : Odd n) (hxn : n ∣ x) (hyn : IsCoprime y n) :
+    ((powerResidueSymbolIdeal (span {(n : 𝓞 K)}) 4
+        (Ideal.Quotient.mk _ ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger)) : 𝓞 K) : K) =
+      (-1) ^ ((n ^ 2 - 1) / 8) := by
+  obtain ⟨q, rfl⟩ := hxn
+  have hmk : Ideal.Quotient.mk (span {(n : 𝓞 K)})
+      (((n * q : ℤ) : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger) =
+      Ideal.Quotient.mk (span {(n : 𝓞 K)}) ((y : 𝓞 K) * hζ.toInteger) :=
+    Ideal.Quotient.eq.mpr (mem_span_singleton.mpr ⟨q, by push_cast; ring⟩)
+  rw [hmk, map_mul, map_mul, map_intCast, powerResidueSymbolIdeal_intCast_four hyn, one_mul]
+  exact hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd hn
 
 /-- **The supplementary law for `-1` at a rational integer.** If `m` is odd, then
 `(-1 / m)_4 = 1`, the symbol being taken at the ideal `m 𝓞 K`. -/

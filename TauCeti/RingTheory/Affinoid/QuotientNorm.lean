@@ -30,13 +30,13 @@ and the Banach open mapping theorem. Equivalent norms need not be equal or isome
   quotient map, so the target carries the quotient topology.
 * `TauCeti.IsAffinoidAlgebra.quotientKerContinuousAlgEquiv`: for such a surjection `f : A → B`,
   the first isomorphism theorem `A ⧸ ker f ≃ B` is a homeomorphism.
-* `TauCeti.IsAffinoidAlgebra.toContinuousAlgEquiv`: every algebra isomorphism between completely
-  normed affinoid algebras is a homeomorphism; in particular complete ultrametric algebra norms on
-  an affinoid algebra are equivalent.
 * `TauCeti.IsAffinoidAlgebra.presentationContinuousAlgEquiv`: two Tate presentations of the same
   algebra give homeomorphic residue algebras for their quotient Gauss norms.
 * `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`: every affinoid algebra carries a complete
   ultrametric algebra norm, transported from the residue algebra of a chosen Tate presentation.
+* `TauCeti.IsAffinoidAlgebra.algHom_ext_of_denseRange`: two `K`-algebra homomorphisms from a
+  noetherian ultrametric Banach algebra into an affinoid algebra (with no chosen norm) agreeing on
+  a map with dense range are equal.
 
 ## References
 
@@ -91,29 +91,6 @@ theorem toAlgEquiv_quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f
   ContinuousAlgHom.toAlgEquiv_quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 end Surjective
-
-/-- **Equivalence of complete affinoid norms.** An algebra isomorphism between completely normed
-affinoid algebras is a homeomorphism, whatever complete ultrametric algebra norms they carry.
-Applied to two such norms on one algebra, this says that they define the same topology. -/
-noncomputable def toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    A ≃A[K] B :=
-  have hA : IsAffinoidAlgebra K A := hB.of_surjective e.symm.toAlgHom e.symm.surjective
-  have := hA.isNoetherianRing
-  have := hB.isNoetherianRing
-  { e with
-    continuous_toFun := hB.continuous_algHom e.toAlgHom
-    continuous_invFun := hA.continuous_algHom e.symm.toAlgHom }
-
-/-- The homeomorphism attached to an algebra isomorphism has the same underlying function. -/
-@[simp]
-theorem coe_toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    ⇑(hB.toContinuousAlgEquiv e) = e := (rfl)
-
-/-- The homeomorphism attached to an algebra isomorphism has that isomorphism as its underlying
-algebra isomorphism. -/
-@[simp]
-theorem toAlgEquiv_toContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
-    (hB.toContinuousAlgEquiv e).toAlgEquiv = e := (rfl)
 
 section Presentation
 
@@ -199,6 +176,19 @@ theorem completeSpace_residueNormedCommRing :
       isometry_toFun := AddMonoidHomClass.isometry_of_norm hD.residueAlgEquiv
         hD.norm_residueAlgEquiv }
   e.completeSpace_iff.mpr inferInstance
+
+include hD in
+/-- Two `K`-algebra homomorphisms from a noetherian ultrametric Banach algebra into an affinoid
+algebra (with no norm or continuity assumed on the target) that agree on a map with dense range are
+equal. -/
+theorem algHom_ext_of_denseRange [IsNoetherianRing A] {ι : Type*} {g : ι → A} (hg : DenseRange g)
+    {Φ₁ Φ₂ : A →ₐ[K] D} (h : ∀ i, Φ₁ (g i) = Φ₂ (g i)) : Φ₁ = Φ₂ := by
+  let := hD.residueNormedCommRing
+  let := hD.residueNormedAlgebra
+  have := hD.isUltrametricDist_residueNormedCommRing
+  have := hD.completeSpace_residueNormedCommRing
+  exact AlgHom.coe_fn_injective <|
+    hg.equalizer (hD.continuous_algHom Φ₁) (hD.continuous_algHom Φ₂) (funext h)
 
 end ResidueNorm
 

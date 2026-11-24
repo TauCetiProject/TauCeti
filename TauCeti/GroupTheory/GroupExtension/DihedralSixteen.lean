@@ -253,7 +253,7 @@ def wreathTautological : wreathBase →* Multiplicative (ZMod 2) where
   toFun g := ofAdd (coordA (g : WreathC2))
   map_one' := by simp
   map_mul' g h := by
-    simp [mem_wreathBase_iff.1 g.2, ofAdd_add]
+    simp [mem_wreathBase_iff.1 g.property, ofAdd_add]
 
 /-- The tautological character of an element of the base group is its first coordinate. -/
 @[simp]

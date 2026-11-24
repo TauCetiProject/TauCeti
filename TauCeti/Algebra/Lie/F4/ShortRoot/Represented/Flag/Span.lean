@@ -129,8 +129,12 @@ private theorem f4ShortRootAdjointMatrixBaseChangeLinearMap_apply
     f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A) X =
       f4ShortRootAdjointMatrixBaseChange (A := A) X := by
   ext i j
-  simp [f4ShortRootAdjointMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
-    LinearMap.toMatrix_apply, f4ShortRootLieIdealBasis_repr_apply]
+  delta f4ShortRootAdjointMatrixBaseChangeLinearMap
+  rw [f4ShortRootAdjointMatrixBaseChange_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.mapMatrix_apply, Matrix.map_apply, Algebra.linearMap_apply, LinearEquiv.coe_coe,
+    f4ShortRootAdjointMatrix_apply, LinearMap.toMatrix_apply,
+    f4ShortRootLieIdealBasis_repr_apply, ← coe_f4ShortRootAdjoint_apply]
+  rfl
 
 private noncomputable def f4ShortRootIdealAdjointMatrixBaseChangeLinearMap :
     f4ShortRootLieIdeal →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=

@@ -68,7 +68,7 @@ theorem eq_zero_of_sum_pow_eq_zero (d : Module.End R M) {W : Submodule R M}
     (hker : LinearMap.ker (d ^ (p - 1)) ≤ LinearMap.range d)
     {w : Fin p → W} (hsum : ∑ r : Fin p, (d ^ (r : ℕ)) (w r : M) = 0) (r : Fin p) :
     w r = 0 := by
-  suffices h : ∀ n (hn : n < p), w ⟨n, hn⟩ = 0 from h r.1 r.2
+  suffices h : ∀ n (hn : n < p), w ⟨n, hn⟩ = 0 from h r.val r.isLt
   intro n
   induction n using Nat.strong_induction_on with
   | ind n ih =>
@@ -81,14 +81,15 @@ theorem eq_zero_of_sum_pow_eq_zero (d : Module.End R M) {W : Submodule R M}
       · rw [← mul_apply_eq_comp, ← pow_add, show p - 1 - n + n = p - 1 by omega]
       · intro t _ htne
         rcases lt_trichotomy (t : ℕ) n with hlt | heq | hgt
-        · simp [ih t hlt t.2]
+        · simp [ih t hlt t.isLt]
         · exact absurd (Fin.ext heq) htne
         · rw [← mul_apply_eq_comp, ← pow_add,
             pow_eq_zero_of_le (by omega : p ≤ p - 1 - n + t) hd, LinearMap.zero_apply]
       · simp
     rw [hsingle] at happ
     exact Subtype.ext <| (Submodule.mem_bot R).mp <| hW.eq_bot ▸
-      (⟨hker (LinearMap.mem_ker.mpr happ), (w ⟨n, hn⟩).2⟩ : (w ⟨n, hn⟩ : M) ∈ LinearMap.range d ⊓ W)
+      (⟨hker (LinearMap.mem_ker.mpr happ), (w ⟨n, hn⟩).property⟩ :
+        (w ⟨n, hn⟩ : M) ∈ LinearMap.range d ⊓ W)
 
 end Semiring
 

@@ -101,7 +101,8 @@ theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero
   let A := Subgroup.normalClosure ({x} : Set G)
   have hA (a b : A) : Commute (W.ρ a) (W.ρ b) :=
     W.ρ.commutatorElement_mem_ker_iff.mp <|
-      commutator_normalClosure_singleton_le hx (Subgroup.commutator_mem_commutator a.2 b.2)
+      commutator_normalClosure_singleton_le hx (Subgroup.commutator_mem_commutator a.property
+          b.property)
   obtain ⟨σ, hσ⟩ := Representation.exists_isAtom (W.ρ.comp A.subtype)
   let V : FDRep k A := FDRep.of σ.toRepresentation
   have hV : Representation.IsIrreducible V.ρ :=

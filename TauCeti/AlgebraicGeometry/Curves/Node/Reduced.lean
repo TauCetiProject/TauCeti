@@ -13,8 +13,8 @@ import TauCeti.RingTheory.Node.Reduced
 /-!
 # Nodal curves have geometrically reduced fibres
 
-A nodal relative curve over a reduced base is reduced. On the smooth locus this follows
-from smoothness. At every remaining point, an étale neighbourhood maps étale to a standard
+A nodal relative curve over a reduced base is reduced. At every point, an étale
+neighbourhood maps étale to a standard
 node `xy = a`; these charts are reduced over a reduced base, and reducedness descends to the
 original stalk by faithful flatness. Base change to fields then shows that a nodal relative
 curve over an arbitrary base has geometrically reduced fibres.
@@ -45,17 +45,11 @@ private theorem isReduced_of_nodal_toSpec {R : Type u} [CommRing R] [_root_.IsRe
   let _ : X.Over (Spec (.of R)) := ⟨f⟩
   have : SyntomicOfRelativeDimension 1 f := h.syntomic
   have (x : X) : _root_.IsReduced (X.presheaf.stalk x) := by
-    by_cases hx : x ∈ f.smoothLocus
-    · have : IsReduced (f.smoothLocus : Scheme) :=
-        (f.smoothLocus.ι ≫ f).isReduced_of_smooth
-      -- Stalk instance synthesis does not recover the smooth-locus scheme argument here.
-      have := isReduced_stalk_of_isReduced (f.smoothLocus : Scheme) ⟨x, hx⟩
-      exact f.smoothLocus.ι.isReduced_stalk_of_flat ⟨x, hx⟩
-    · obtain ⟨R', _, _, _, T, _, a, g, ψ, y, hg, hψ, hy, -⟩ :=
-        X.exists_etale_nodeAlgebra (R := R) h hx
-      have : _root_.IsReduced R' := TauCeti.isReduced_of_smooth R R'
-      have : IsReduced (Spec (.of T)) := ψ.isReduced_of_smooth
-      exact hy ▸ g.isReduced_stalk_of_flat y
+    obtain ⟨R', _, _, _, T, _, a, g, ψ, y, hg, hψ, hy, -⟩ :=
+      X.exists_etale_nodeAlgebra (R := R) h x
+    have : _root_.IsReduced R' := TauCeti.isReduced_of_smooth R R'
+    have : IsReduced (Spec (.of T)) := ψ.isReduced_of_smooth
+    exact hy ▸ g.isReduced_stalk_of_flat y
   exact isReduced_of_isReduced_stalk X
 
 /-- A nodal relative curve over a reduced base is reduced. -/

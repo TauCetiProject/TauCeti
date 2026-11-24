@@ -31,10 +31,12 @@ which are the values of the cocycle representing the cyclic class.
 Every class of `H²(Gal(E/K), Eˣ)` is a cyclic class, so every Brauer class split by `E` is the
 carry class of `χ` and some `a ∈ Kˣ` (`exists_characterCarryCocycle_eq_relBrInfl`), and that carry
 class vanishes exactly when `a` is a norm from `E`
-(`unitsRepH2Equiv_characterCarryCocycle_eq_zero_iff`). This is how the character formula
-`inv (a ∪ δχ) = χ (Art a)` reaches every class split by a cyclic extension: over a number field it
-turns a product formula for the local Artin symbols of a cyclic extension into the vanishing of the
-sum of the local invariants of the classes it splits.
+(`unitsRepH2Equiv_characterCarryCocycle_eq_zero_iff`). These two statements need only
+`χ(g) = 1 / [E : K]`, which already forces `g` to generate `Gal(E/K)`
+(`AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div`). This is how the character
+formula `inv (a ∪ δχ) = χ (Art a)` reaches every class split by a cyclic extension: over a number
+field it turns a product formula for the local Artin symbols of a cyclic extension into the
+vanishing of the sum of the local invariants of the classes it splits.
 
 ## Main results
 
@@ -96,10 +98,10 @@ theorem relBrInfl_cyclicClass
   rw [characterCarry_eq_ite _ hi hj (hpow i) (hpow j)]
   split_ifs <;> simp [b]
 
-include hg in
-/-- **Every Brauer class split by a cyclic extension is a carry class.** If `E/K` is cyclic with
-generator `g` and `χ(g) = 1 / [E : K]`, every class inflated from `H²(Gal(E/K), Eˣ)` to `Br K` is
-the carry class of `χ`, read on `G_K`, and some `a ∈ Kˣ`. -/
+/-- **Every Brauer class split by a cyclic extension is a carry class.** If a character `χ` of
+`Gal(E/K)` takes the value `1 / [E : K]` at `g` (so `g` generates `Gal(E/K)` and `E/K` is cyclic),
+every class inflated from `H²(Gal(E/K), Eˣ)` to `Br K` is the carry class of `χ`, read on `G_K`,
+and some `a ∈ Kˣ`. -/
 theorem exists_characterCarryCocycle_eq_relBrInfl
     (hχ : χ (.ofMul g) = ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ)))
     (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2) :
@@ -107,19 +109,23 @@ theorem exists_characterCarryCocycle_eq_relBrInfl
         (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
         (E.isOpen_ker_comp_restrictNormalHom χ) (baseUnitsEquivInvariants K (.ofMul a))) =
       relBrInfl K E E.val y := by
+  have hg := AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div (1 : ℚ)
+    (IsGalois.card_aut_eq_finrank K E).le hχ
   obtain ⟨a, rfl⟩ := cyclicClass_surjective hg y
   exact ⟨a.toMul, (relBrInfl_cyclicClass E hg hχ a.toMul).symm⟩
 
-include hg in
-/-- **The carry class of a generating character vanishes exactly on norms.** If `E/K` is cyclic
-with generator `g` and `χ(g) = 1 / [E : K]`, the carry class of `χ`, read on `G_K`, and `a ∈ Kˣ`
-is zero in `Br K` exactly when `a` is a norm from `E`. -/
+/-- **The carry class of a generating character vanishes exactly on norms.** If a character `χ` of
+`Gal(E/K)` takes the value `1 / [E : K]` at `g` (so `g` generates `Gal(E/K)` and `E/K` is cyclic),
+the carry class of `χ`, read on `G_K`, and `a ∈ Kˣ` is zero in `Br K` exactly when `a` is a norm
+from `E`. -/
 theorem unitsRepH2Equiv_characterCarryCocycle_eq_zero_iff
     (hχ : χ (.ofMul g) = ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ))) {a : Kˣ} :
     unitsRepH2Equiv K (characterCarryCocycle
         (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
         (E.isOpen_ker_comp_restrictNormalHom χ) (baseUnitsEquivInvariants K (.ofMul a))) = 0 ↔
       a ∈ normGroup K E := by
+  have hg := AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div (1 : ℚ)
+    (IsGalois.card_aut_eq_finrank K E).le hχ
   rw [← relBrInfl_cyclicClass E hg hχ, map_eq_zero_iff _ (relBrInfl_injective K E E.val),
     cyclicClass_eq_zero_iff]
 

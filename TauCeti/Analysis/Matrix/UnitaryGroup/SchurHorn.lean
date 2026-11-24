@@ -203,7 +203,7 @@ theorem range_re_diag_unitary_mul_diagonal_mul_star (w : ι → ℝ) :
   ext d
   refine ⟨?_, fun hd ↦ ?_⟩
   · rintro ⟨U, rfl⟩
-    exact re_diag_mul_diagonal_mul_star_mem_convexHull U.2 w
+    exact re_diag_mul_diagonal_mul_star_mem_convexHull U.property w
   · obtain ⟨U, hU, hUd⟩ := exists_mem_unitaryGroup_re_diag_mul_diagonal_mul_star_eq (𝕜 := 𝕜) hd
     exact ⟨⟨U, hU⟩, funext hUd⟩
 

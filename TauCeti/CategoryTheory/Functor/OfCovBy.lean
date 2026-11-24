@@ -147,6 +147,7 @@ private theorem chain_succ_eq (k : ℕ) {S T : Finset ι} (h : S ⊆ T) (hk : #(
     rw [comp_chain_zero f hST, chain, comp_chain_zero f hST]
   | succ k ih =>
     rw [chain]
+    dsimp only
     have hne : ∃ a, a ∈ T \ S := card_pos.1 (by omega)
     set m := Classical.choose hne
     have hm : m ∈ T \ S := Classical.choose_spec hne

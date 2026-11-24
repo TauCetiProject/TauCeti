@@ -48,11 +48,13 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`.
 
 At `c = 0` it is the capping family at `0`
-(`TauCeti.Floer.cappedExchangePerturbation_zero`). At `c = 1` it is the pullback along the
-exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with exchanged inputs
-(`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing at `0` to the
-plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
-coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
+(`TauCeti.Floer.cappedExchangePerturbation_zero`), which is cylindrical on all three ends: beyond
+the height `L` of each end it is `H_1(t) dt`, `H_∞(t) dt` or, on the capped end at `0`, zero
+(`TauCeti.Floer.cappedExchangePerturbation_zero_eq_smul_endAngularForm`). At `c = 1` it is the
+pullback along the exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with
+exchanged inputs (`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing
+at `0` to the plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the
+cylinder coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
 exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
@@ -90,13 +92,6 @@ theorem cappedExchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (L c
       plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L w x +
         negativePlanePerturbation (H inf) (w - c) x :=
   (rfl)
-
-/-- For `L ≥ 2`, at distance at least `1/2` from `0` the longitudinal coordinate of the end at `0`
-is at most `L / 2`, so the plumbing at `0` leaves the receiving datum unchanged there. -/
-private theorem re_endCoord_zero_le_half (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
-    (zero.endCoord w).re ≤ L / 2 := by
-  have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
 
 /-- The translated output datum vanishes within distance `1/2` of `0`, for `0 ≤ c ≤ 1`. -/
 private theorem negativePlanePerturbation_sub_eq_zero_of_norm_le {H : ℝ → M → ℝ} (hc₀ : 0 ≤ c)
@@ -249,6 +244,35 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
   rw [cappedExchangePerturbation_def,
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
+
+/-- **The capping datum at `0` is cylindrical on the three ends.** For `L > 2`, beyond the height
+`L` of each end `q` of `ℂ ∖ {0, 1}`, the capping datum at `0` is `H_q(t) dt` for the Hamiltonians
+`H` with the end at `0` set to `0`: it is `H_1(t) dt` and `H_∞(t) dt` on the ends at `1` and `∞`,
+and it vanishes on the end at `0`, the capped one. -/
+theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 2 < L)
+    (q : Puncture) (w : ℂ) (x : M) (hw : L ≤ q.endSign * (q.endCoord w).re) :
+    cappedExchangePerturbation H L 0 w x = update H zero 0 q (q.endCoord w).im x •
+      q.endAngularForm w := by
+  rcases eq_or_ne q zero with rfl | hq
+  · -- Beyond the height `L` of the end at `0` lies the pole disc of the plane.
+    rw [update_self, Pi.zero_apply, Pi.zero_apply, zero_smul]
+    rw [endSign_zero, one_mul] at hw
+    refine cappedExchangePerturbation_eq_zero (by linarith) le_rfl zero_le_one ?_ x
+    rcases eq_or_ne w zero.endCenter with rfl | hw₀
+    · rw [endCenter_zero, norm_zero]
+      positivity
+    · have h := (re_endCoord_le_iff (q := zero) (by decide) (r := L - 1) hw₀).not.1
+        (by linarith)
+      rw [endCenter_zero, sub_zero] at h
+      exact (not_le.1 h).le
+  · -- On the other ends the longitudinal coordinate of the end at `0` is nonpositive, where the
+    -- datum is the pair-of-pants datum.
+    have hre : (zero.endCoord w).re ≤ L / 2 := by
+      have h := endSign_mul_re_endCoord_nonpos (q := q) (r := zero) hq (w := w) (by linarith)
+      rw [endSign_zero, one_mul] at h
+      linarith
+    rw [cappedExchangePerturbation_of_re_endCoord_le hre, exchangePerturbation_zero,
+      pairOfPantsPerturbation_eq_smul_endAngularForm (by linarith), update_of_ne hq]
 
 /-- The inserted Hamiltonian of the capped part is the value at `0` of its receiving Hamiltonians
 `update H inf 0`, the form used by the capping-family API. -/

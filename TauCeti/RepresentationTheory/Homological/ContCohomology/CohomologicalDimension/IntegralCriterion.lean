@@ -129,7 +129,7 @@ private theorem primaryComponent_eq_bot_of_cyclic_aux (U : OpenSubgroup G)
       proj_equivariant := hθ
       incl_injective := θ.ker.subtype_injective
       proj_surjective := hθsurj
-      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.2⟩ }
+      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.property⟩ }
   refine S.primaryComponent_right_eq_bot hp ?_
     (strictCohomologicalDimensionLE_iff.1 hs θ.ker (n + 2) (by omega))
   -- Shapiro's lemma: `Hⁿ⁺¹(G, Coind_U^G Z) ≅ Hⁿ⁺¹(U, Z)`
@@ -164,7 +164,8 @@ private theorem primaryComponent_eq_bot_of_cyclic (Q : Type u) [AddCommGroup Q]
   let U : OpenSubgroup G :=
     ⟨MulAction.stabilizer G q, continuousSMul_iff_stabilizer_isOpen.1 inferInstance q⟩
   primaryComponent_eq_bot_of_cyclic_aux hp hs U _ (isSmoothDiscrete_trivial ℤ (ULift.{u} ℤ))
-    (fun u a ↦ ContRepresentation.trivial_apply u a) AddEquiv.ulift (hZ U) Q q (fun u ↦ u.2) hq
+    (fun u a ↦ ContRepresentation.trivial_apply u a) AddEquiv.ulift (hZ U) Q q
+        (fun u ↦ u.property) hq
 
 end Cyclic
 
