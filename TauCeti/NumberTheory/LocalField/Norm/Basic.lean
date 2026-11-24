@@ -20,6 +20,7 @@ import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Map
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.Norm
 import TauCeti.RingTheory.Norm.Quotient
 
 /-!
@@ -498,26 +499,7 @@ the additive valuations of the discrete valuation rings `𝒪[K]` and `𝒪[L]`.
 theorem addVal_norm (z : 𝒪[L]) :
     IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.norm 𝒪[K] z) =
       inertiaDegree K L • IsDiscreteValuationRing.addVal 𝒪[L] z := by
-  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  -- The norm of a uniformizer of `L` is associated to `π ^ f`.
-  have hN : IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.norm 𝒪[K] ϖ) = inertiaDegree K L := by
-    rw [(IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2
-      (associated_norm_irreducible_pow K L hπ hϖ)]
-    simp only [IsDiscreteValuationRing.addVal_pow,
-      IsDiscreteValuationRing.addVal_uniformizer hπ, nsmul_one]
-  rcases eq_or_ne z 0 with rfl | hz
-  · have hf : (inertiaDegree K L : ENat) ≠ 0 := by
-      exact_mod_cast (inertiaDegree_pos (K := K) (L := L)).ne'
-    simp [Algebra.norm_zero, nsmul_eq_mul, hf]
-  obtain ⟨k, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hz hϖ
-  have hu := IsDiscreteValuationRing.addVal_eq_zero_of_unit
-    (Units.map (Algebra.norm 𝒪[K] : 𝒪[L] →* 𝒪[K]) u)
-  rw [Units.coe_map] at hu
-  simp only [map_mul, map_pow, IsDiscreteValuationRing.addVal_mul, hu,
-    IsDiscreteValuationRing.addVal_pow, hN, IsDiscreteValuationRing.addVal_def' u hϖ k, zero_add,
-    nsmul_eq_mul, mul_comm]
+  rw [IsDiscreteValuationRing.addVal_norm, inertiaDegree_eq_inertiaDeg]
 
 -- `normGroup K L` and the sums over `L ≃ₐ[K] L` below need `FiniteDimensional K L` in their
 -- statements.
