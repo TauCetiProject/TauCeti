@@ -49,59 +49,6 @@ namespace TauCeti
 open MeasureTheory TopologicalSpace
 open scoped ENNReal ContDiff
 
-section Classical
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
-taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
-theorem norm_iteratedFDeriv_iteratedGradientChain (f : E → ℝ) (i k : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
-      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
-  induction k generalizing i with
-  | zero =>
-      rw [iteratedGradientChain_zero]
-      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
-      exact ((InnerProductSpace.toDual ℝ E).symm.norm_iteratedFDeriv_comp_left
-        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
-  | succ k ih =>
-      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
-      exact (ih (i + 1)).trans (congrArg
-        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
-
-/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
-derivative of the scalar function. -/
-@[simp]
-theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
-    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
-  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).norm_map,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
-
-/-- Iterated-gradient fields through order `k + 1` preserve subtraction of scalar functions
-that are `C^{k+1}` at the point of evaluation. -/
-@[simp]
-theorem iteratedGradientChain_sub {f g : E → ℝ} {x : E}
-    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
-    iteratedGradientChain (f - g) k x =
-      iteratedGradientChain f k x - iteratedGradientChain g k x := by
-  refine (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).injective ?_
-  rw [map_sub, IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
-  exact fun_iteratedFDeriv_sub_apply (hf.of_le (by simp)) (hg.of_le (by simp))
-
-/-- The order-`k + 1` iterated-gradient fields of two scalar functions have the same difference
-norm at any point as their multilinear derivatives. This identifies the error seminorms in smooth
-approximation. -/
-theorem norm_iteratedGradientChain_sub {f g : E → ℝ} {x : E} (k : ℕ) :
-    ‖iteratedGradientChain f k x - iteratedGradientChain g k x‖ =
-      ‖iteratedFDeriv ℝ (k + 1) f x - iteratedFDeriv ℝ (k + 1) g x‖ := by
-  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).norm_map, map_sub,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
-
-end Classical
-
 section Sobolev
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]

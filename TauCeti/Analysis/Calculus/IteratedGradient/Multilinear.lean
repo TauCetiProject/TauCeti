@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Multilinear evaluation and orthonormal-basis bounds for iterated gradients
@@ -18,7 +19,10 @@ Riesz representation and left uncurrying assemble this evaluation into a linear 
 equivalence `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ` between
 `TauCeti.IteratedGradient E j` and the space `E [×(j + 1)]→L[ℝ] ℝ` of scalar continuous multilinear
 maps, sending `TauCeti.iteratedGradientChain f j x` to `iteratedFDeriv ℝ (j + 1) f x` without any
-differentiability hypothesis.
+differentiability hypothesis. Consequently, `TauCeti.iteratedGradientChain f k x` and
+`iteratedFDeriv ℝ (k + 1) f x` have the same norm (`TauCeti.norm_iteratedGradientChain`) and the
+same difference norm
+(`TauCeti.norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub`).
 
 Precomposing with a single outer contraction `TauCeti.IteratedGradient.contractL j 1 h` curries `h`
 into the first argument of the corresponding continuous multilinear map
@@ -32,6 +36,10 @@ entries are comparable with explicit constants (`1` and `(card ι) ^ (j + 1)`).
   `IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)` when `E` is complete.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain`: under this
   equivalence, `iteratedGradientChain f j x` corresponds to `iteratedFDeriv ℝ (j + 1) f x`.
+* `TauCeti.norm_iteratedFDeriv_iteratedGradientChain`, `TauCeti.norm_iteratedGradientChain`,
+  `TauCeti.iteratedGradientChain_sub`, and
+  `TauCeti.norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub`:
+  pointwise norm and difference comparisons between `iteratedGradientChain` and `iteratedFDeriv`.
 * `TauCeti.IteratedGradient.norm_le_sum_norm_evalL_apply_orthonormalBasis` and
   `TauCeti.IteratedGradient.sum_norm_evalL_apply_orthonormalBasis_le`: equivalence between the
   operator norm of an iterated gradient and the `ℓ¹` sum of its entries along a finite orthonormal
@@ -82,13 +90,9 @@ variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 theorem toContinuousMultilinearMap_surjective :
     (j : ℕ) → Function.Surjective (toContinuousMultilinearMap E j)
   | 0 => by
-      have h : ⇑(toContinuousMultilinearMap E 0) =
-          ⇑(continuousMultilinearCurryFin1 ℝ E ℝ).symm ∘ ⇑(InnerProductSpace.toDual ℝ E) := by
-        ext G m
-        rw [Function.comp_apply, continuousMultilinearCurryFin1_symm_apply,
-          toContinuousMultilinearMap_apply, evalL_zero_apply, real_inner_comm,
-          InnerProductSpace.toDual_apply_apply]
-      rw [h]
+      rw [toContinuousMultilinearMap_zero, LinearIsometry.coe_comp,
+        ← InnerProductSpace.toLinearIsometry_toDual,
+        LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.coe_toLinearIsometry]
       exact (continuousMultilinearCurryFin1 ℝ E ℝ).symm.surjective.comp
         (InnerProductSpace.toDual ℝ E).surjective
   | j + 1 => by
@@ -117,27 +121,27 @@ def toContinuousMultilinearMapₗᵢ (j : ℕ) :
 
 variable {E}
 
-/-- Unfolding `toContinuousMultilinearMapₗᵢ` at a successor index curries `m 0` into `G` and
-applies `toContinuousMultilinearMapₗᵢ E j` to the remaining directions `Fin.tail m`. -/
-theorem toContinuousMultilinearMapₗᵢ_succ_apply (j : ℕ) (G : IteratedGradient E (j + 1))
-    (m : Fin (j + 1 + 1) → E) :
-    toContinuousMultilinearMapₗᵢ E (j + 1) G m =
-      toContinuousMultilinearMapₗᵢ E j (G (m 0)) (Fin.tail m) :=
-  toContinuousMultilinearMap_succ_apply j G m
-
-/-- Evaluating `toContinuousMultilinearMapₗᵢ E j G` at `m` agrees with `evalL j m G`. -/
+/-- As a function, `toContinuousMultilinearMapₗᵢ E j` agrees with
+`toContinuousMultilinearMap E j`. -/
 @[simp]
-theorem toContinuousMultilinearMapₗᵢ_apply (j : ℕ) (G : IteratedGradient E j)
-    (m : Fin (j + 1) → E) :
-    toContinuousMultilinearMapₗᵢ E j G m = evalL j m G :=
-  toContinuousMultilinearMap_apply j G m
+theorem coe_toContinuousMultilinearMapₗᵢ (j : ℕ) :
+    ⇑(toContinuousMultilinearMapₗᵢ E j) = toContinuousMultilinearMap E j :=
+  LinearIsometryEquiv.coe_ofSurjective _ _
+
+/-- The underlying linear isometry of `toContinuousMultilinearMapₗᵢ E j` is
+`toContinuousMultilinearMap E j`. -/
+@[simp]
+theorem toLinearIsometry_toContinuousMultilinearMapₗᵢ (j : ℕ) :
+    (toContinuousMultilinearMapₗᵢ E j).toLinearIsometry = toContinuousMultilinearMap E j :=
+  LinearIsometry.ext fun G => congrFun (coe_toContinuousMultilinearMapₗᵢ j) G
 
 /-- Evaluating `(toContinuousMultilinearMapₗᵢ E j).symm M` along `m` recovers `M m`. -/
 @[simp]
 theorem evalL_toContinuousMultilinearMapₗᵢ_symm (j : ℕ) (m : Fin (j + 1) → E)
     (M : E [×(j + 1)]→L[ℝ] ℝ) :
     evalL j m ((toContinuousMultilinearMapₗᵢ E j).symm M) = M m := by
-  rw [← toContinuousMultilinearMapₗᵢ_apply, LinearIsometryEquiv.apply_symm_apply]
+  rw [← toContinuousMultilinearMap_apply, ← coe_toContinuousMultilinearMapₗᵢ,
+    LinearIsometryEquiv.apply_symm_apply]
 
 /-- Contracting one outer slot of `G` at `h` curries `h` into the first argument of the
 corresponding continuous multilinear map. -/
@@ -146,8 +150,9 @@ theorem toContinuousMultilinearMapₗᵢ_contractL_one (j : ℕ) (h : E)
     toContinuousMultilinearMapₗᵢ E j (contractL j 1 h G) =
       (toContinuousMultilinearMapₗᵢ E (j + 1) G).curryLeft h := by
   ext m
-  rw [toContinuousMultilinearMapₗᵢ_apply, ContinuousMultilinearMap.curryLeft_apply,
-    toContinuousMultilinearMapₗᵢ_apply, evalL_contractL_one_apply]
+  rw [coe_toContinuousMultilinearMapₗᵢ, toContinuousMultilinearMap_apply,
+    ContinuousMultilinearMap.curryLeft_apply, coe_toContinuousMultilinearMapₗᵢ,
+    toContinuousMultilinearMap_apply, evalL_contractL_one_apply]
 
 /-- Under `toContinuousMultilinearMapₗᵢ`, the classical `j`th iterated-gradient field of any
 scalar function `f` at `x` is `iteratedFDeriv ℝ (j + 1) f x`. No differentiability assumption is
@@ -159,24 +164,28 @@ theorem toContinuousMultilinearMapₗᵢ_iteratedGradientChain (f : E → ℝ) (
   induction j generalizing x with
   | zero =>
       ext m
-      rw [toContinuousMultilinearMapₗᵢ_apply, evalL_zero_apply, iteratedGradientChain_zero,
-        iteratedFDeriv_one_apply, gradient, real_inner_comm, InnerProductSpace.toDual_symm_apply]
+      rw [coe_toContinuousMultilinearMapₗᵢ, toContinuousMultilinearMap_apply, evalL_zero_apply,
+        iteratedGradientChain_zero, iteratedFDeriv_one_apply, gradient, real_inner_comm,
+        InnerProductSpace.toDual_symm_apply]
   | succ j ih =>
       have hfun : (toContinuousMultilinearMapₗᵢ E j ∘ iteratedGradientChain f j) =
           iteratedFDeriv ℝ (j + 1) f := funext ih
       ext m
       have hfd := congrArg (fun g : E → E [×(j + 1)]→L[ℝ] ℝ => fderiv ℝ g x (m 0) (Fin.tail m)) hfun
       rw [LinearIsometryEquiv.comp_fderiv] at hfd
-      rw [toContinuousMultilinearMapₗᵢ_apply, evalL_succ_apply, iteratedGradientChain_succ,
-        iteratedFDeriv_succ_eq_comp_left, Function.comp_apply,
+      rw [coe_toContinuousMultilinearMapₗᵢ, toContinuousMultilinearMap_apply, evalL_succ_apply,
+        iteratedGradientChain_succ, iteratedFDeriv_succ_eq_comp_left, Function.comp_apply,
         continuousMultilinearCurryLeftEquiv_symm_apply]
-      exact (toContinuousMultilinearMapₗᵢ_apply j
-        (fderiv ℝ (iteratedGradientChain f j) x (m 0)) (Fin.tail m)).symm.trans hfd
+      exact (toContinuousMultilinearMap_apply j
+        (fderiv ℝ (iteratedGradientChain f j) x (m 0)) (Fin.tail m)).symm.trans
+        ((congrFun (congrArg DFunLike.coe (congrFun (coe_toContinuousMultilinearMapₗᵢ j) _))
+          (Fin.tail m)).symm.trans hfd)
 
 /-- Evaluating `iteratedGradientChain f j x` along `m` gives `iteratedFDeriv ℝ (j + 1) f x m`. -/
 theorem evalL_iteratedGradientChain (f : E → ℝ) (j : ℕ) (x : E) (m : Fin (j + 1) → E) :
     evalL j m (iteratedGradientChain f j x) = iteratedFDeriv ℝ (j + 1) f x m := by
-  rw [← toContinuousMultilinearMapₗᵢ_apply, toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
+  rw [← toContinuousMultilinearMap_apply, ← coe_toContinuousMultilinearMapₗᵢ,
+    toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
 
 end CompleteSpace
 
@@ -197,3 +206,61 @@ theorem norm_le_sum_norm_evalL_apply_orthonormalBasis {ι : Type*} [Fintype ι] 
 end OrthonormalBasisLowerBound
 
 end TauCeti.IteratedGradient
+
+namespace TauCeti
+
+section Classical
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
+taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
+theorem norm_iteratedFDeriv_iteratedGradientChain (f : E → ℝ) (i k : ℕ) (x : E) :
+    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
+      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
+  induction k generalizing i with
+  | zero =>
+      rw [iteratedGradientChain_zero]
+      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
+      exact ((InnerProductSpace.toDual ℝ E).symm.norm_iteratedFDeriv_comp_left
+        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
+  | succ k ih =>
+      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
+      exact (ih (i + 1)).trans (congrArg
+        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
+
+/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
+derivative of the scalar function. -/
+@[simp]
+theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
+    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
+  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).norm_map,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
+
+/-- Iterated-gradient fields through order `k + 1` preserve subtraction of scalar functions
+that are `C^{k+1}` at the point of evaluation. -/
+@[simp]
+theorem iteratedGradientChain_sub {f g : E → ℝ} {x : E}
+    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
+    iteratedGradientChain (f - g) k x =
+      iteratedGradientChain f k x - iteratedGradientChain g k x := by
+  refine (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).injective ?_
+  rw [map_sub, IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
+  exact fun_iteratedFDeriv_sub_apply (hf.of_le (by simp)) (hg.of_le (by simp))
+
+/-- The order-`k + 1` iterated-gradient fields of two scalar functions have the same difference
+norm at any point as their multilinear derivatives. This identifies the error seminorms in smooth
+approximation. -/
+theorem norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub
+    {f g : E → ℝ} {x : E} (k : ℕ) :
+    ‖iteratedGradientChain f k x - iteratedGradientChain g k x‖ =
+      ‖iteratedFDeriv ℝ (k + 1) f x - iteratedFDeriv ℝ (k + 1) g x‖ := by
+  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E k).norm_map, map_sub,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
+
+end Classical
+
+end TauCeti

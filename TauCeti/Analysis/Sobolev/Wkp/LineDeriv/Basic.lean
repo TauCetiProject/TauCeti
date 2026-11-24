@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
@@ -71,9 +70,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
   orthogonal to `ν` and the purely normal one `∂_ν ∂_ν ∂_ν u` do.
 * `TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`: weak directional differentiation commutes
   with `Wkp.iteratedGradient`.
-* `TauCeti.Wkp.toOrderL_lineDerivL` and `TauCeti.Wkp.iteratedGradient_toOrderL_lineDerivL`:
-  commutation of `lineDerivL` with order truncation `Wkp.toOrderL` and contraction of arbitrary
-  lower-order components.
+* `TauCeti.Wkp.toOrderL_lineDerivL`: commutation of `lineDerivL` with order truncation
+  `Wkp.toOrderL`.
 * `TauCeti.Wkp.iteratedGradient_lineDerivL` and `TauCeti.Wkp.iteratedGradient_lineDerivL_ae`:
   the top weak derivative of `Wkp.lineDerivL v (j + 1) u` evaluates the outermost slot of
   `Wkp.iteratedGradient (j + 1) u` at `v`.
@@ -764,24 +762,6 @@ theorem Wkp.iteratedGradient_lineDerivL_ae (v : E) (j : ℕ) (u : Wkp mu Omega p
     (Wkp.iteratedGradient (j + 1) u)] with x hx
   rw [hx, ContinuousLinearMap.apply_apply]
 
-/-- Weak derivative of order `j + 1` of `Wkp.lineDerivL v k u` for `j + 1 ≤ k`, obtained by
-evaluating the outermost slot of the order-`(j + 2)` weak derivative of `u` at `v`. -/
-theorem Wkp.iteratedGradient_toOrderL_lineDerivL (v : E) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p (k + 1)) :
-    Wkp.iteratedGradient j (Wkp.toOrderL h (Wkp.lineDerivL v k u)) =
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).compLp
-        (Wkp.iteratedGradient (j + 1) (Wkp.toOrderL (Nat.succ_le_succ h) u)) := by
-  rw [Wkp.toOrderL_lineDerivL, Wkp.iteratedGradient_lineDerivL]
-
-/-- Almost-everywhere pointwise form of `TauCeti.Wkp.iteratedGradient_toOrderL_lineDerivL`. -/
-theorem Wkp.iteratedGradient_toOrderL_lineDerivL_ae (v : E) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p (k + 1)) :
-    ∀ᵐ x ∂mu.restrict Omega,
-      Wkp.iteratedGradient j (Wkp.toOrderL h (Wkp.lineDerivL v k u)) x =
-        Wkp.iteratedGradient (j + 1) (Wkp.toOrderL (Nat.succ_le_succ h) u) x v := by
-  rw [Wkp.toOrderL_lineDerivL]
-  exact Wkp.iteratedGradient_lineDerivL_ae v j _
-
 /-! ### Symmetry of the weak Hessian -/
 
 /-- **The weak Hessian is symmetric.** For `u ∈ W^{2,p}(Ω)` and directions `v` and `w`, the mixed
@@ -896,19 +876,11 @@ theorem Wkp.norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Om
     ‖Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u)‖ ≤
       ‖v‖ * ‖Wkp.iteratedGradient (j + 1) u‖ := by
   rw [Wkp.iteratedGradient_lineDerivL]
-  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ := by
-    simpa only [IteratedGradient.contractL_one, pow_one] using
-      IteratedGradient.norm_contractL_le j 1 v
+  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun G =>
+      (G.le_opNorm v).trans_eq (mul_comm _ _)
   exact ((ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
-
-/-- Componentwise `Lᵖ` bound on an arbitrary lower-order weak derivative of `lineDerivL v k u`. -/
-theorem Wkp.norm_iteratedGradient_toOrderL_lineDerivL_le (v : E) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p (k + 1)) :
-    ‖Wkp.iteratedGradient j (Wkp.toOrderL h (Wkp.lineDerivL v k u))‖ ≤
-      ‖v‖ * ‖Wkp.iteratedGradient (j + 1) (Wkp.toOrderL (Nat.succ_le_succ h) u)‖ := by
-  rw [Wkp.toOrderL_lineDerivL]
-  exact Wkp.norm_iteratedGradient_lineDerivL_le v j _
 
 /-- Euclidean-stage induction step for `lineDerivL` graph-norm bounds. -/
 private theorem Wkp.norm_lineDerivL_succ_apply_le_of_norm_sq {C : ℝ} (hC : 1 ≤ C) (v : E) (k : ℕ)

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -245,8 +245,8 @@ theorem seminorm_lineDerivL_le (v : E) {j k : ℕ} (h : j ≤ k)
         toOrderL_lineDerivL, value_zero]
       exact norm_lineDerivL_zero_apply_le v _
   | succ j =>
-      rw [seminorm_succ_apply, seminorm_succ_apply]
-      exact norm_iteratedGradient_toOrderL_lineDerivL_le v h u
+      rw [seminorm_succ_apply, seminorm_succ_apply, toOrderL_lineDerivL]
+      exact norm_iteratedGradient_lineDerivL_le v j _
 
 /-- If `u ∈ W^{k,p}(Ω)` is represented almost everywhere on `Ω` by a `C^j` function `f` with
 `j ≤ k`, then its order-`j` Sobolev seminorm equals the classical `Lᵖ` derivative seminorm

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothDensity
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.Sobolev.SmoothCutoff
 
 /-!
@@ -114,7 +115,7 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiffOn {I : Type*} {l : Filter I}
               (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet))
         filter_upwards [htest, hgrad] with x hx hy
         simp only [Pi.sub_apply, hx, hy]
-        exact norm_iteratedGradientChain_sub k
+        exact norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub k
 
 /-- Every whole-space higher-order Sobolev function with a smooth representative belongs to
 the closure of test functions in the full Sobolev norm, for finite `p`. -/
