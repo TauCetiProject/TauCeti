@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 import Mathlib.Tactic.FinCases
 
@@ -108,11 +109,8 @@ theorem splitEvenTwoToMatrixAdj_eq_adjugate (m : SplitEvenSpace R 2) :
 
 private theorem splitEvenForm_two_apply (m : SplitEvenSpace R 2) :
     splitEvenForm R 2 m = m.1 (Pi.single 0 1) * m.2 0 + m.1 (Pi.single 1 1) * m.2 1 := by
-  have h : m.2 = m.2 0 • Pi.single 0 1 + m.2 1 • Pi.single 1 1 := by
-    ext i
-    fin_cases i <;> simp
   rw [splitEvenForm_apply]
-  conv_lhs => rw [h]
+  conv_lhs => rw [pi_eq_sum_univ' m.2, Fin.sum_univ_two]
   simp [mul_comm]
 
 /-- The determinant of the matrix of `(φ, x)` is `q₄(φ, x) = φ x`. -/
@@ -183,12 +181,11 @@ private theorem eq_vec (m : SplitEvenSpace R 2) :
   obtain ⟨φ, x⟩ := m
   refine Prod.ext ?_ ?_
   · refine LinearMap.ext fun y ↦ ?_
-    have hy : y = y 0 • Pi.single 0 1 + y 1 • Pi.single 1 1 := by
-      ext i
-      fin_cases i <;> simp
     simp only [vecA, vecB, Prod.fst_add, Prod.smul_fst, smul_zero, zero_add,
       LinearMap.add_apply, LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
-    conv_lhs => rw [hy, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
+    conv_lhs =>
+      rw [pi_eq_sum_univ' y, Fin.sum_univ_two, map_add, map_smul, map_smul, smul_eq_mul,
+        smul_eq_mul]
     ring
   · ext i
     fin_cases i <;> simp [vecA, vecB]
@@ -197,11 +194,6 @@ private theorem eq_vec (m : SplitEvenSpace R 2) :
 private noncomputable def cA (i : Fin 2) : CliffordAlgebra (splitEvenForm R 2) := ι _ (vecA R i)
 /-- The generator `bᵢ = ι (εᵢ, 0)`. -/
 private noncomputable def cB (i : Fin 2) : CliffordAlgebra (splitEvenForm R 2) := ι _ (vecB R i)
-
-private theorem coe_even_ι (m₁ m₂ : SplitEvenSpace R 2) :
-    ((even.ι (splitEvenForm R 2)).bilin m₁ m₂ : CliffordAlgebra (splitEvenForm R 2)) =
-      ι _ m₁ * ι _ m₂ :=
-  rfl
 
 private theorem ι_vecA (i : Fin 2) : ι (splitEvenForm R 2) (vecA R i) = cA R i := rfl
 private theorem ι_vecB (i : Fin 2) : ι (splitEvenForm R 2) (vecB R i) = cB R i := rfl
@@ -272,14 +264,10 @@ private theorem mul_cB_one_mul_cA_zero (x : CliffordAlgebra (splitEvenForm R 2))
     x * cB R 1 * cA R 0 = -(x * cA R 0 * cB R 1) := by
   rw [mul_assoc, cB_one_mul_cA_zero, mul_neg, mul_assoc]
 
-private theorem cl_mul_assoc (a b c : CliffordAlgebra (splitEvenForm R 2)) :
-    a * (b * c) = a * b * c :=
-  (mul_assoc a b c).symm
-
-attribute [local simp] coe_even_ι ι_vecA ι_vecB cA_mul_cA cB_mul_cB cA_one_mul_cA_zero
+attribute [local simp] ι_vecA ι_vecB cA_mul_cA cB_mul_cB cA_one_mul_cA_zero
   cB_one_mul_cB_zero cB_mul_cA_self cB_zero_mul_cA_one cB_one_mul_cA_zero mul_cA_mul_cA
   mul_cB_mul_cB mul_cA_one_mul_cA_zero mul_cB_one_mul_cB_zero mul_cB_mul_cA_self
-  mul_cB_zero_mul_cA_one mul_cB_one_mul_cA_zero cl_mul_assoc mul_add add_mul mul_sub sub_mul
+  mul_cB_zero_mul_cA_one mul_cB_one_mul_cA_zero mul_add add_mul mul_sub sub_mul
 
 /-! ### Matrix units -/
 
@@ -303,13 +291,13 @@ private theorem unit_mul_unit (s i j t k l : Fin 2) :
     unit R s i j * unit R t k l = if s = t ∧ j = k then unit R s i l else 0 := by
   apply Subtype.ext
   fin_cases s <;> fin_cases i <;> fin_cases j <;> fin_cases t <;> fin_cases k <;> fin_cases l <;>
-    simp [unit]
+    simp [unit, ← mul_assoc]
   abel
 
 private theorem sum_unit :
     unit R 0 0 0 + unit R 0 1 1 + unit R 1 0 0 + unit R 1 1 1 = 1 := by
   apply Subtype.ext
-  simp [unit]
+  simp [unit, ← mul_assoc]
   abel
 
 /-- The inverse map, sending the matrix units of the two factors to the matrix units `unit 0` and
@@ -360,7 +348,7 @@ private theorem inv_comp_splitEvenTwoEvenToMatrixProd :
   simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
     AlgHom.comp_apply, AlgHom.id_apply, splitEvenTwoEvenToMatrixProd_ι]
   conv_rhs => rw [eq_vec R m₁, eq_vec R m₂]
-  simp [splitEvenTwoMatrixProdToEven, Fin.sum_univ_two, unit]
+  simp [splitEvenTwoMatrixProdToEven, Fin.sum_univ_two, unit, ← mul_assoc]
   module
 
 /-- **The even Clifford algebra of the split quaternary form is `M₂(R) × M₂(R)`**, over any
