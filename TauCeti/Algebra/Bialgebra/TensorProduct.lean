@@ -15,8 +15,8 @@ This file packages the canonical inclusions into and projections out of a tensor
 bialgebras as bialgebra morphisms, and records their action on pure tensors. The projections are
 obtained by applying the counit to the other tensor factor.
 
-Tensor products of bialgebra maps commute with the inclusions, and compose to the identity when
-both factors do, which is the input for transporting isomorphisms along tensor products.
+Tensor products of bialgebra maps commute with the inclusions, and compose to the identity exactly
+when both factors do, which is the input for transporting isomorphisms along tensor products.
 
 Scalar extension also commutes with tensor products of bialgebras. The resulting bialgebra
 equivalence upgrades `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv` and records its
@@ -137,13 +137,20 @@ theorem map_comp_includeRight {A B C D : Type*} [Semiring A] [Semiring B] [Semir
   simp only [BialgHom.comp_toAlgHom, _root_.Bialgebra.TensorProduct.map_toAlgHom,
     includeRight_toAlgHom, Algebra.TensorProduct.map_comp_includeRight]
 
-/-- Tensor products of bialgebra maps compose to the identity when both factors do. -/
-theorem map_comp_map_eq_id {A B C D : Type*} [Semiring A] [Semiring B] [Semiring C] [Semiring D]
-    [_root_.Bialgebra R A] [_root_.Bialgebra R B] [_root_.Bialgebra R C] [_root_.Bialgebra R D]
-    {φ : A →ₐc[R] B} {φ' : B →ₐc[R] A} {ψ : C →ₐc[R] D} {ψ' : D →ₐc[R] C}
-    (hφ : φ'.comp φ = BialgHom.id R A) (hψ : ψ'.comp ψ = BialgHom.id R C) :
+/-- Tensor products of bialgebra maps compose to the identity exactly when both factors do. The
+factors are recovered by restricting along the inclusions, which the counit projections retract. -/
+theorem map_comp_map_eq_id_iff {A B C D : Type*} [Semiring A] [Semiring B] [Semiring C]
+    [Semiring D] [_root_.Bialgebra R A] [_root_.Bialgebra R B] [_root_.Bialgebra R C]
+    [_root_.Bialgebra R D] {φ : A →ₐc[R] B} {φ' : B →ₐc[R] A} {ψ : C →ₐc[R] D}
+    {ψ' : D →ₐc[R] C} :
     (_root_.Bialgebra.TensorProduct.map φ' ψ').comp (_root_.Bialgebra.TensorProduct.map φ ψ) =
-      BialgHom.id R (A ⊗[R] C) := by
+        BialgHom.id R (A ⊗[R] C) ↔
+      φ'.comp φ = BialgHom.id R A ∧ ψ'.comp ψ = BialgHom.id R C := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hφ, hψ⟩ ↦ ?_⟩
+  · ext x
+    simpa using congrArg (projectLeft (H₂ := C)) (DFunLike.congr_fun h (x ⊗ₜ[R] 1))
+  · ext y
+    simpa using congrArg (projectRight (H₁ := A)) (DFunLike.congr_fun h (1 ⊗ₜ[R] y))
   apply BialgHom.coe_toAlgHom_injective
   rw [BialgHom.comp_toAlgHom, _root_.Bialgebra.TensorProduct.map_toAlgHom,
     _root_.Bialgebra.TensorProduct.map_toAlgHom, ← Algebra.TensorProduct.map_comp,

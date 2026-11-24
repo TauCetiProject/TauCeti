@@ -16,6 +16,10 @@ import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Stokes' formula for one-forms on rectangles and annuli
@@ -50,7 +54,10 @@ provide the area calculation used to exclude holomorphic discs with exact Lagran
 The proofs use Mathlib's rectangular divergence theorem, naturality of the exterior
 derivative, and the polar change of variables. Applying the rectangle formula to the polar
 pullback gives the annulus formula: the seam edges cancel, and the radial Jacobian is given by
-`extDeriv_pullback_polarCoord_symm_apply`. The bilinear Green formulas in
+`extDeriv_pullback_polarCoord_symm_apply`. On an open disc, a one-form which is `C¹` inside and
+only continuous up to the boundary circle still satisfies Stokes' formula when its exterior
+derivative is integrable (`TauCeti.integral_extDeriv_ball`): apply the closed-disc formula on the
+concentric discs of radius `s < r` and let `s` tend to `r`. The bilinear Green formulas in
 `TauCeti.MeasureTheory.Integral.DivergenceTheorem` are special cases.
 
 ## References
@@ -398,6 +405,38 @@ theorem integral_extDeriv_closedBall
     exact (ω z₀).map_coord_zero 0 rfl
   rw [hz, intervalIntegral.integral_zero, sub_zero] at h
   exact h
+
+/-- Stokes' formula on an open disc, for a one-form which is `C¹` inside the disc and only
+continuous up to its boundary circle, with integrable exterior derivative. -/
+theorem integral_extDeriv_ball
+    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r)
+    (hω : ∀ z ∈ Metric.ball z₀ r, ContDiffAt ℝ 1 ω z)
+    (hωc : ContinuousOn ω (Metric.closedBall z₀ r))
+    (hint : IntegrableOn (fun z ↦ extDeriv ω z ![1, I]) (Metric.ball z₀ r)) :
+    (∫ z in Metric.ball z₀ r, extDeriv ω z ![1, I]) =
+      ∫ θ in -π..π, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · have h0 : (ω z₀ fun _ ↦ 0) = 0 := (ω z₀).map_coord_zero 0 rfl
+    simp [h0]
+  -- Stokes' formula holds on the smaller closed discs, which lie inside the open disc.
+  have hsmall : ∀ s ∈ Ioo 0 r, (∫ z in Metric.ball z₀ s, extDeriv ω z ![1, I]) =
+      ∫ θ in -π..π, ω (circleMap z₀ s θ) (fun _ ↦ circleMap 0 s θ * I) := fun s hs ↦ by
+    rw [setIntegral_congr_set (volume.addHaar_closedBall_ae_eq_ball z₀ s).symm]
+    exact integral_extDeriv_closedBall hs.1.le fun z hz ↦
+      hω z (Metric.closedBall_subset_ball hs.2 hz)
+  -- The boundary integrals depend continuously on the radius, up to the boundary circle.
+  have hcont : ContinuousOn
+      (fun s ↦ ∫ θ in -π..π, ω (circleMap z₀ s θ) (fun _ ↦ circleMap 0 s θ * I)) (Icc 0 r) :=
+    continuousOn_parametric_intervalIntegral_of_continuousOn <|
+      (hωc.comp (continuous_circleMap_uncurry z₀).continuousOn
+        fun (p : ℝ × ℝ) (hp : p ∈ Icc 0 r ×ˢ uIcc (-π) π) ↦
+        Metric.closedBall_subset_closedBall hp.1.2
+        (circleMap_mem_closedBall z₀ hp.1.1 p.2)).eval
+        (continuous_pi fun _ ↦ (continuous_circleMap_uncurry 0).mul continuous_const).continuousOn
+  exact tendsto_nhds_unique_of_eventuallyEq hint.tendsto_integral_ball_nhdsLT
+    ((hcont r ⟨hr.le, le_rfl⟩).tendsto.mono_left
+      (nhdsWithin_le_of_mem (Filter.mem_of_superset (Ioo_mem_nhdsLT hr) Ioo_subset_Icc_self)))
+    (by filter_upwards [Ioo_mem_nhdsLT hr] with s hs using hsmall s hs)
 
 /-- **Stokes' formula on a closed upper half-annulus.** Let `S` be the closed upper half
 `{z | z₀.im ≤ z.im}` of the annulus of radii `0 ≤ a ≤ b` about `z₀`. If a one-form `ω` is continuous
