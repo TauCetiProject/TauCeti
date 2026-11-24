@@ -80,8 +80,7 @@ def compression : D →⋆ₐ[ℂ] (K →L[ℂ] K) where
   map_zero' := map_zero (ρ.toNonUnitalStarAlgHom.compression V hV)
   map_add' := map_add (ρ.toNonUnitalStarAlgHom.compression V hV)
   commutes' r := by
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one, ContinuousLinearMap.compression_smul,
-      ContinuousLinearMap.compression_one, Algebra.algebraMap_eq_smul_one]
+    simp [Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.compression_smul]
   map_star' := map_star (ρ.toNonUnitalStarAlgHom.compression V hV)
 
 theorem compression_apply (x : D) :

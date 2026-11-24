@@ -90,9 +90,7 @@ instance instStarRing : StarRing (MonoidAlgebra k G) where
 
 /-- A group element `single g 1` is unitary in the group algebra. -/
 theorem single_one_mem_unitary (g : G) : single g (1 : k) ∈ unitary (MonoidAlgebra k G) := by
-  rw [Unitary.mem_iff, star_single, star_one, single_mul_single, single_mul_single, inv_mul_cancel,
-    mul_inv_cancel, mul_one, ← one_def]
-  exact ⟨rfl, rfl⟩
+  simp [Unitary.mem_iff, single_mul_single, one_def]
 
 end Star
 
