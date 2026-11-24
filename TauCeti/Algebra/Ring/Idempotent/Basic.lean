@@ -47,6 +47,8 @@ operator and restricts it to a scalar.
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
+* `IsIdempotentElem.compress_sub_compress_mul_compress`:
+  `p x p - (p y p)(p z p) = p (x - y z) p + p y (1 - p) · (1 - p) z p`.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -88,6 +90,17 @@ variable {R : Type*} [Ring R] {p : R}
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
+  abel
+
+/-- **Compressing a product by an idempotent.** For an idempotent `p`, the compression of `x`
+differs from the product of the compressions of `y` and `z` by the compression of `x - y z` plus
+the cross term through `1 - p`:
+`p x p - (p y p)(p z p) = p (x - y z) p + p y (1 - p) · (1 - p) z p`. -/
+theorem compress_sub_compress_mul_compress (hp : IsIdempotentElem p) (x y z : R) :
+    p * x * p - p * y * p * (p * z * p) =
+      p * (x - y * z) * p + p * y * (1 - p) * ((1 - p) * z * p) := by
+  have hp' (w : R) : p * (p * w) = p * w := by rw [← mul_assoc, hp.eq]
+  simp only [mul_sub, sub_mul, mul_one, one_mul, mul_assoc, hp']
   abel
 
 end Ring

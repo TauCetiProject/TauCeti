@@ -25,6 +25,9 @@ are what that count needs.
 * A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the submonoid by `P`, so its
   cardinality does not depend on the basis. Neither does it change under reindexing or under a
   ring isomorphism of the coefficients.
+* The invertible elements of the submonoid are the solutions of unit determinant. When the
+  determinant of `A` is a non-zero-divisor, as for a nonsingular Gram matrix over `ℤ`, every
+  solution has determinant a square root of `1`, so every solution is invertible.
 * When every solution has unit determinant, the solutions form a group, so for any ring
   homomorphism `f` their number is the number of their images under `f` times the number of
   solutions sent to `1`.
@@ -46,6 +49,10 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   `A ↦ Pᵀ * A * P` for invertible `P`.
 * `Matrix.natCard_isometryMatrices_reindex`, `Matrix.natCard_isometryMatrices_map_ringEquiv`: the
   count is invariant under reindexing and under ring isomorphisms.
+* `Matrix.isUnit_isometryMatrices_iff`: a solution is invertible in the submonoid exactly when its
+  determinant is a unit; `Matrix.isUnit_isometryMatrices_of_isRegular_det` and
+  `Matrix.natCard_units_isometryMatrices`: when the determinant of `A` is a non-zero-divisor,
+  every solution is invertible.
 * `Matrix.natCard_isometryMatrices_eq_mul`: the count is the number of images under a ring
   homomorphism times the size of the fibre above `1`, when all solutions are invertible.
 * `Matrix.transposeMulMulEquiv`: the solutions of `Yᵀ * A * Y = B` only depend on `A` and `B` up
@@ -146,14 +153,15 @@ theorem add_transpose_mul_mul_add_of_sq_eq_bot {I : Ideal R} (hI : I ^ 2 = ⊥)
           transpose_transpose, hA]
         simp only [mul_assoc]
 
-/-- A matrix preserving a Gram matrix with unit determinant has unit determinant, its square
-being `1`. -/
-theorem isUnit_det_of_mem_isometryMatrices {A X : Matrix n n R} (hA : IsUnit A.det)
+/-- A matrix preserving a Gram matrix whose determinant is a non-zero-divisor has unit
+determinant, its square being `1`. Over `ℤ` this applies to every Gram matrix of nonzero
+determinant, and the determinant of the matrix is then `1` or `-1`. -/
+theorem isUnit_det_of_mem_isometryMatrices {A X : Matrix n n R} (hA : IsRegular A.det)
     (hX : X ∈ isometryMatrices A) : IsUnit X.det := by
   have h := congrArg det (mem_isometryMatrices.mp hX)
   rw [det_mul, det_mul, det_transpose] at h
   have h' : X.det * X.det * A.det = 1 * A.det := by linear_combination h
-  exact IsUnit.of_mul_eq_one _ (hA.mul_left_injective h')
+  exact IsUnit.of_mul_eq_one _ (hA.right h')
 
 /-- The inverse of a matrix with unit determinant preserving `A` also preserves `A`. -/
 theorem nonsing_inv_mem_isometryMatrices {A X : Matrix n n R} (hX : X ∈ isometryMatrices A)
@@ -162,6 +170,27 @@ theorem nonsing_inv_mem_isometryMatrices {A X : Matrix n n R} (hX : X ∈ isomet
   calc X⁻¹ᵀ * A * X⁻¹ = X⁻¹ᵀ * (Xᵀ * A * X) * X⁻¹ := by rw [hX]
     _ = (X * X⁻¹)ᵀ * A * (X * X⁻¹) := by simp only [transpose_mul, mul_assoc]
     _ = A := by rw [mul_nonsing_inv X hdet, transpose_one, one_mul, mul_one]
+
+/-- **The invertible elements of `isometryMatrices A`** are the matrices of unit determinant: the
+inverse of such a matrix preserves `A` again, so it is an inverse inside the submonoid. -/
+theorem isUnit_isometryMatrices_iff {A : Matrix n n R} {X : isometryMatrices A} :
+    IsUnit X ↔ IsUnit (X : Matrix n n R).det := by
+  refine ⟨fun h ↦ (isUnit_iff_isUnit_det _).mp (h.map (isometryMatrices A).subtype), fun h ↦ ?_⟩
+  exact ⟨⟨X, ⟨_, nonsing_inv_mem_isometryMatrices X.property h⟩,
+    Subtype.ext (mul_nonsing_inv _ h), Subtype.ext (nonsing_inv_mul _ h)⟩, rfl⟩
+
+/-- If the determinant of `A` is a non-zero-divisor, every element of `isometryMatrices A` is
+invertible in it, so the submonoid is a group. -/
+theorem isUnit_isometryMatrices_of_isRegular_det {A : Matrix n n R} (hA : IsRegular A.det)
+    (X : isometryMatrices A) : IsUnit X :=
+  isUnit_isometryMatrices_iff.mpr (isUnit_det_of_mem_isometryMatrices hA X.property)
+
+/-- If the determinant of `A` is a non-zero-divisor, the group of units of `isometryMatrices A`
+has as many elements as the submonoid itself. -/
+theorem natCard_units_isometryMatrices {A : Matrix n n R} (hA : IsRegular A.det) :
+    Nat.card (isometryMatrices A)ˣ = Nat.card (isometryMatrices A) :=
+  Nat.card_congr <| Equiv.ofBijective Units.val
+    ⟨Units.val_injective, fun X ↦ ⟨(isUnit_isometryMatrices_of_isRegular_det hA X).unit, rfl⟩⟩
 
 /-- **Counting matrices preserving a Gram matrix fibrewise.** If every matrix preserving `A` has
 unit determinant, these matrices form a group, so the fibres of a ring homomorphism `f` on them
@@ -341,7 +370,7 @@ noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A
       {K : Matrix n n R // (∀ i j, K i j ∈ I) ∧ Kᵀ = -K} :=
   have hB : IsUnit (X₀ᵀ * A).det := by
     rw [det_mul, det_transpose]
-    exact (isUnit_det_of_mem_isometryMatrices hdet hX₀).mul hdet
+    exact (isUnit_det_of_mem_isometryMatrices hdet.isRegular hX₀).mul hdet
   have hinv : ∀ K : Matrix n n R, (∀ i j, K i j ∈ I) → ∀ i j, ((X₀ᵀ * A)⁻¹ * K) i j ∈ I :=
     fun _ hK => (I.matrix n).mul_mem_left _ hK
   { toFun := fun X => ⟨X₀ᵀ * A * (X.val.val - X₀), (I.matrix n).mul_mem_left _ X.property, by

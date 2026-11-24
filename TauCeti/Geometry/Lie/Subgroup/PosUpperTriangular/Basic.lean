@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Positive upper-triangular matrices as a real Lie group
@@ -24,6 +25,7 @@ subgroup in the ambient general linear Lie algebra.
 * `TauCeti.Lie.posUpperTriangularEmbeddedLieSubgroupData`: native closed-subgroup data.
 * `TauCeti.Lie.posUpperTriangularChartedSpace`: the closed-subgroup charts.
 * `TauCeti.Lie.posUpperTriangularLieGroup`: the smooth real Lie-group structure.
+* `TauCeti.Lie.secondCountableTopology_posUpperTriangularGroup`: the group is second countable.
 
 ## References
 
@@ -61,5 +63,10 @@ instance posUpperTriangularChartedSpace : ChartedSpace ANModel AN :=
 /-- The positive upper-triangular group is a smooth real Lie group on its subspace topology. -/
 instance posUpperTriangularLieGroup : LieGroup 𝓘(ℝ, ANModel) ∞ AN :=
   (posUpperTriangularEmbeddedLieSubgroupData (ι := ι) (𝕜 := 𝕜)).lieGroup
+
+/-- The positive upper-triangular group is second countable, as a subspace of the
+second-countable general linear group. -/
+instance secondCountableTopology_posUpperTriangularGroup : SecondCountableTopology AN :=
+  TopologicalSpace.Subtype.secondCountableTopology (AN : Set (GL ι 𝕜))
 
 end TauCeti.Lie

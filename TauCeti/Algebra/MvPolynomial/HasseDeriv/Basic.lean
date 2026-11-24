@@ -130,7 +130,7 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
       intro h'
       by_cases hdn : d ≤ n
       · exact absurd ((tsub_eq_iff_eq_add_of_le hdn).1 h') h
-      · simp [prod_choose_eq_zero hdn]
+      · simp [prod_choose_eq_zero_iff.2 hdn]
   | add p q hp hq => simp [hp, hq, mul_add]
 
 /-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
@@ -188,7 +188,7 @@ theorem hasseDeriv_zero :
 @[simp]
 theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
   rw [← monomial_zero', hasseDeriv_monomial,
-    prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
+    prod_choose_eq_zero_iff.2 (by simpa [nonpos_iff_eq_zero] using hd)]
   simp
 
 /-- Every Hasse derivative of positive order kills the constant polynomial `1`. -/
@@ -316,7 +316,8 @@ theorem hasseDeriv_toMvPolynomial_eq_zero {d : σ →₀ ℕ} {i j : σ} (hij : 
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | monomial n a =>
-    rw [Polynomial.toMvPolynomial_monomial, hasseDeriv_monomial, prod_choose_eq_zero fun h ↦ hd ?_]
+    rw [Polynomial.toMvPolynomial_monomial, hasseDeriv_monomial,
+      prod_choose_eq_zero_iff.2 fun h ↦ hd ?_]
     · simp
     · simpa [hij, hij.symm] using Finsupp.le_def.1 h j
 
@@ -366,7 +367,7 @@ theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
           monomial e' (((d'.prod fun j k ↦ (n j).choose k : ℕ) : R) * a) := by
       by_cases hd : d' ≤ n
       · rw [h hd]
-      · rw [prod_choose_eq_zero hd, Nat.cast_zero, zero_mul, monomial_zero, monomial_zero]
+      · rw [prod_choose_eq_zero_iff.2 hd, Nat.cast_zero, zero_mul, monomial_zero, monomial_zero]
     rw [← pow_one (X i), ← monomial_add_single, hasseDeriv_monomial, hasseDeriv_monomial,
       hasseDeriv_monomial, ← monomial_add_single, prod_choose_add_single]
     split_ifs with hi

@@ -59,6 +59,8 @@ immersion.
 * `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_comp_eq_and_isMomentMap`: a moment map whose
   restriction is constant on the fibres of a surjective submersion induces a unique reduced
   moment map.
+* `TauCeti.SmoothTwoForm.IsMomentMap.differential_mfderiv_eq_of_comp_eq`: the differential of a
+  reduced moment map.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.of_mpullback_eq`: group-level moment maps descend
   along equivariant reduction data.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.existsUnique_comp_eq_and_isEquivariantMomentMap`:
@@ -161,6 +163,23 @@ theorem of_comp_eq [I₀.Boundaryless] (hν : σ.IsMomentMap a ν) (hi : ContMDi
     funext fun z ↦ congrArg (· ξ) (congrFun hνν' z).symm
   rw [hcomp]
   exact (hν.contMDiff ξ).comp hi
+
+omit [IsManifold I₀ ∞ Z] in
+/-- **Differentials of related moment maps.** If `ν` and `ν'` are moment maps on `M` and on `Q`
+with `ν' ∘ p = ν ∘ i`, then their differentials agree along `Z`:
+`dν'_(p z) (dp v) = dν_(i z) (di v)` for every tangent vector `v` of `Z` at `z`. For the moment
+map of a symmetry descended to a reduced space, this computes the differential of the reduced
+moment map. -/
+theorem differential_mfderiv_eq_of_comp_eq (hν : σ.IsMomentMap a ν) (hν' : η.IsMomentMap b ν')
+    (hνν' : ν' ∘ p = ν ∘ i) (z : Z) (hi : MDifferentiableAt I₀ I i z)
+    (hp : MDifferentiableAt I₀ J p z) (v : TangentSpace I₀ z) :
+    hν'.differential (p z) (mfderiv I₀ J p z v) = hν.differential (i z) (mfderiv I₀ I i z v) := by
+  ext ξ
+  have hcomp : (fun q ↦ ν' q ξ) ∘ p = (fun x ↦ ν x ξ) ∘ i :=
+    funext fun y ↦ congrArg (· ξ) (congrFun hνν' y)
+  rw [differential_apply, differential_apply,
+    ← mvfderiv_comp_apply z (hν'.mdifferentiableAt ξ (p z)) hp, hcomp,
+    mvfderiv_comp_apply z (hν.mdifferentiableAt ξ (i z)) hi]
 
 /-- **The reduced moment map.** Let `p^* η = i^* σ`, where `p` is a surjective smooth submersion
 out of a boundaryless manifold, let `ν` be a moment map of an infinitesimal action `a` on `M`, and

@@ -218,6 +218,11 @@ theorem center_smul_mk (c : Subgroup.center G) (e : E) (a : A) :
     c • mk G e a = mk G e ((c : G) • a) :=
   (rfl)
 
+/-- Translating the point by a central element `c` translates the class by `c⁻¹`. -/
+theorem mk_center_smul_left (c : Subgroup.center G) (e : E) (a : A) :
+    mk G ((c : G) • e) a = c⁻¹ • mk G e a := by
+  rw [mk_smul_left, center_smul_mk, Subgroup.coe_inv]
+
 /-- Along a path of labels `a 0, …, a n` in which the step `i` is carried by `g i` to a central
 translate, `g i • a (i + 1) = l • a i`, the class of the endpoint, paired with `e` translated by the
 inverse of the product of the `g i`, is `l ^ n` times the class of the starting point. -/
@@ -229,16 +234,14 @@ theorem mk_inv_prod_ofFn_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G
     ← Subgroup.coe_pow, ← center_smul_mk]
 
 /-- The form of `TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul` in which `e` is first translated by
-`l ^ (n - 1)`: along a path of `n` steps, the class of the endpoint is then `l` times the class of
-the starting point. -/
-theorem mk_inv_prod_ofFn_zpow_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G)
+`l ^ n k⁻¹` for a central `k`: along a path of `n` steps, the class of the endpoint is then `k`
+times the class of the starting point. -/
+theorem mk_inv_prod_ofFn_pow_mul_inv_smul {n : ℕ} (l k : Subgroup.center G) (g : Fin n → G)
     (a : Fin (n + 1) → A) (h : ∀ i, g i • a i.succ = (l : G) • a i.castSucc) (e : E) :
-    mk G ((List.ofFn g).prod⁻¹ • (l : G) ^ ((n : ℤ) - 1) • e) (a (Fin.last n)) =
-      l • mk G e (a 0) := by
-  rw [mk_inv_prod_ofFn_smul l g a h, mk_smul_left, ← Subgroup.coe_zpow, ← Subgroup.coe_inv,
-    ← center_smul_mk, smul_smul]
-  congr 1
-  group
+    mk G ((List.ofFn g).prod⁻¹ • (l : G) ^ n • (k : G)⁻¹ • e) (a (Fin.last n)) =
+      k • mk G e (a 0) := by
+  rw [mk_inv_prod_ofFn_smul l g a h, ← Subgroup.coe_pow, ← Subgroup.coe_inv, mk_center_smul_left,
+    mk_center_smul_left, smul_inv_smul, inv_inv]
 
 /-- The map induced by a continuous equivariant label map is continuous. -/
 theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
