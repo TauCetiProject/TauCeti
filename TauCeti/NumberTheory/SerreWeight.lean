@@ -478,13 +478,22 @@ lemma twist_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β 
         (by split_ifs <;> omega) (by split_ifs <;> omega) (by split_ifs <;> omega) tres
         (fun h => by have := htres h; split_ifs <;> omega) := (rfl)
 
+/-- The twist of unramified data is niveau one with exponents `(1, 1)`, unless `p ≤ 2`, where
+the mod `p` cyclotomic character is trivial. -/
+@[simp]
+lemma twist_unramified :
+    (unramified p).twist =
+      if h : 1 ≤ p - 2 then niveauOne 1 1 le_rfl h else unramified p := by
+  rw [unramified_def, twist_niveauOne]
+  split_ifs <;> rfl
+
 /-- Twisting preserves the extension type. -/
 @[simp]
 lemma isTresRamifiee_twist (d : SerreWeightData p) :
     d.twist.IsTresRamifiee ↔ d.IsTresRamifiee := by
   cases d with
   | niveauOne a b hab hb =>
-    simp only [twist_niveauOne, unramified_def]
+    simp only [twist_niveauOne]
     split_ifs <;> simp
   | niveauTwo a b hab hb =>
     simp only [twist_niveauTwo]
@@ -497,8 +506,9 @@ theorem detExponent_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
   -- In every case the exponents wrap around `k ∈ {0, 1, 2}` times modulo `p - 1`.
   have wrap (k : ℕ) {x y : ℕ} (h : x + (p - 1) * k = y) : x ≡ y [MOD p - 1] :=
     Nat.add_modulus_mul_modEq_iff.1 (by rw [h])
-  cases d <;> simp only [twist_niveauOne, twist_niveauTwo, twist_wild, unramified_def] <;>
-    split_ifs <;> simp only [detExponent_niveauOne, detExponent_niveauTwo, detExponent_wild] <;>
+  cases d <;> simp only [twist_niveauOne, twist_niveauTwo, twist_wild] <;>
+    split_ifs <;> simp only [detExponent_niveauOne, detExponent_niveauTwo, detExponent_wild,
+      detExponent_unramified] <;>
     first | exact wrap 0 (by omega) | exact wrap 1 (by omega) | exact wrap 2 (by omega)
 
 /-- At `p = 2` the mod `2` cyclotomic character is trivial, so twisting changes nothing. -/
@@ -550,6 +560,10 @@ lemma charExponents_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
 lemma charExponents_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β ≤ p - 1} {tres : Bool}
     {htres : tres = true → β = α + 1} :
     (wild α β hα hβ hβp tres htres).charExponents = .inr (.inr (α, β, tres)) := (rfl)
+
+@[simp]
+lemma charExponents_unramified : (unramified p).charExponents = .inl s(0, 0) := by
+  simp [unramified_def]
 
 /-- The effect of `n` twists by `χ = ψ ^ (p + 1)` on the exponents of the inertial characters:
 powers of `χ` increase by `n` and powers of `ψ` by `n * (p + 1)`. -/
@@ -612,7 +626,7 @@ theorem charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
     rw [← Nat.cast_add_one, h, ZMod.natCast_self]
   cases d with
   | niveauOne a b hab hb =>
-    simp only [twist_niveauOne, unramified_def]
+    simp only [twist_niveauOne]
     split_ifs
     · simp
     · simp [key b (by omega), Sym2.eq_swap]
