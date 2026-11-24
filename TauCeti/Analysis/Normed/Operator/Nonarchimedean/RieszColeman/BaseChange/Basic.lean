@@ -98,7 +98,7 @@ theorem IsRowCompact.rieszColemanProjection_mapCoeffs [IsUltrametricDist R]
   rcases subsingleton_or_nontrivial S with hS | hS
   · ext x i; exact Subsingleton.elim _ _
   obtain ⟨-, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop f hf.choose_spec
+    IsEntire.map_factorization hQ hS' hQS' hcop f hf.choose_spec
   rw [← hu.charPowerSeries_map f hf] at hHS
   exact (((hu.isRieszColemanProjection_rieszColemanProjection hQ hS' hQS' hcop).mapCoeffs
     hQ f hf).eq_rieszColemanProjection (hu.mapCoeffs f hf) hQlc hFS hHS hcopS).symm
@@ -117,7 +117,7 @@ theorem IsRieszColemanProjection.rankAtStalk_range_mapCoeffs [IsUltrametricDist 
     Module.rankAtStalk (R := S) (E.mapCoeffs f hf).range q = Q.natDegree := by
   have : Nontrivial S := q.nontrivial
   obtain ⟨hQdeg, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop f hf.choose_spec
+    IsEntire.map_factorization hQ hS' hQS' hcop f hf.choose_spec
   rw [← hu.charPowerSeries_map f hf] at hHS
   rw [← hQdeg]
   exact (hE.mapCoeffs hQ f hf).rankAtStalk_range (hu.mapCoeffs f hf) hQlc hFS hHS hcopS q
@@ -144,7 +144,7 @@ theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs {u : C₀(I, K) →L[K]
   have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul
     (Matrix.constantCoeff_charPowerSeries _) hQS
   obtain ⟨hQdeg, -, hLS, hHS, hcopL⟩ :=
-    IsEntire.map_factorisation hQ hS hQS hcop f hf.choose_spec
+    IsEntire.map_factorization hQ hS hQS hcop f hf.choose_spec
   rw [← hu.charPowerSeries_map f hf] at hHS
   rw [(hu.mapCoeffs f hf).finrank_ker_aeval_reverse hLS hHS hcopL, hQdeg,
     hu.finrank_ker_aeval_reverse hS hQS hcop]

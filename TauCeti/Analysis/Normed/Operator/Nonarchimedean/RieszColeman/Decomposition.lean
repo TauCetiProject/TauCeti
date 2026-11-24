@@ -185,51 +185,6 @@ private theorem isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse
     colemanDSeries_one_sub_C_mul_reverse_self hQ0 hc, hpow]
   exact hg.isGoodZero_X_sub_C_pow_mul_iff.mpr hgu
 
-omit [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
-/-- For a commuting idempotent `E` such that `Q*(u)` has a complementary inverse modulo `E`,
-the operator `Q*(u * (1 - E))` is invertible when `Q.leadingCoeff` is a unit. -/
-private theorem isUnit_aeval_mul_one_sub_reverse
-    {M : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-    {u E w : M →L[R] M} {Q : R[X]}
-    (hQ : IsUnit Q.leadingCoeff) (hE : IsIdempotentElem E) (hEu : Commute u E)
-    (hw₁ : Polynomial.aeval u Q.reverse * w = 1 - E)
-    (hw₂ : w * Polynomial.aeval u Q.reverse = 1 - E) :
-    IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) := by
-  set c := Ring.inverse Q.leadingCoeff
-  have hcq : Q.leadingCoeff * c = 1 := mul_comm c _ ▸ Ring.inverse_mul_cancel _ hQ
-  have hunit := hE.isUnit_add_mul_one_sub hw₁ hw₂
-  have hCE : Commute (Polynomial.aeval u Q.reverse) E := by
-    have hCw : Commute (Polynomial.aeval u Q.reverse) w := hw₁.trans hw₂.symm
-    have h1 : Commute (Polynomial.aeval u Q.reverse) (1 - E) :=
-      hw₂ ▸ hCw.mul_right (Commute.refl _)
-    simpa using (Commute.one_right _).sub_right h1
-  have hscale : IsUnit (1 + (Q.leadingCoeff - 1) • E) := by
-    have hcoeff : ∀ x y : R, x * y = 1 → (x - 1) + (y - 1) + (x - 1) * (y - 1) = 0 := by
-      intro x y hxy
-      rw [sub_mul, mul_sub, mul_sub, one_mul, mul_one, mul_one, hxy]
-      abel
-    have hmul : ∀ x y : R, x * y = 1 → (1 + (x - 1) • E) * (1 + (y - 1) • E) = 1 := by
-      intro x y hxy
-      rw [add_mul, mul_add, mul_add, one_mul, mul_one, mul_smul_comm, smul_mul_assoc,
-        mul_smul_comm, smul_smul, hE.eq, one_mul, add_assoc, ← add_smul, ← add_smul,
-        add_left_comm, ← add_assoc, hcoeff x y hxy, zero_smul, add_zero]
-    exact isUnit_iff_exists.mpr
-      ⟨1 + (c - 1) • E, hmul _ _ hcq, hmul _ _ (Ring.inverse_mul_cancel _ hQ)⟩
-  have hE_mul : E * (Polynomial.aeval u Q.reverse * (1 - E)) = 0 := by
-    rw [← mul_assoc, ← hCE.eq, mul_assoc]
-    simp [mul_sub, hE.eq]
-  have heq : (1 + (Q.leadingCoeff - 1) • E) *
-      (E + Polynomial.aeval u Q.reverse * (1 - E)) =
-      Polynomial.aeval (u * (1 - E)) Q.reverse := by
-    rw [aeval_mul_one_sub_of_isIdempotentElem hE hEu, coeff_zero_reverse, add_mul, one_mul,
-      mul_add, smul_mul_assoc, hE.eq, smul_mul_assoc, hE_mul, smul_zero, add_zero]
-    calc E + Polynomial.aeval u Q.reverse * (1 - E) + (Q.leadingCoeff - 1) • E
-        = Polynomial.aeval u Q.reverse * (1 - E) + (E + (Q.leadingCoeff - 1) • E) := by abel
-      _ = Polynomial.aeval u Q.reverse * (1 - E) + Q.leadingCoeff • E := by
-        conv_lhs => rhs; lhs; rw [← one_smul R E]
-        rw [← add_smul, add_sub_cancel]
-  exact heq ▸ hscale.mul hunit
-
 omit [IsUltrametricDist R] [CompleteSpace R] in
 /-- For a Riesz projection `E` of `1 - lc(Q)⁻¹ Q*(u)` at `1`, scaling `hEv.inverse` by
 `lc(Q)⁻¹` provides a complementary inverse of `Q*(u)` on `ker E` lying in the closure of `R[u]`.
@@ -352,7 +307,9 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
   have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv fun _ hx ↦ hclosure hx
   have hunit_compl : IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) := by
     obtain ⟨w, hw₁, hw₂, _⟩ := hex
-    exact isUnit_aeval_mul_one_sub_reverse hQ hEv.isIdempotentElem hEu hw₁ hw₂
+    -- `Q*(u) * E = 0` is proved below from `hunit_compl`, so use the idempotent criterion directly.
+    exact Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem (u := u) (e := E) (w := w)
+      (P := Q.reverse) hEv.isIdempotentElem hEu (Polynomial.coeff_zero_reverse Q ▸ hQ) hw₁ hw₂
   have hE_rc := hEv.isRowCompact hv
   have hrank := hEv.rankAtStalk_range hv hv_good
   obtain ⟨hcharE, hcharCompl, hzero⟩ :=
@@ -376,11 +333,11 @@ private theorem rieszColemanProjection_spec
         ((Polynomial.C (Ring.inverse (Q.coeff 0)) * Q : R[X]) : R⟦X⟧) ∧
       (u * (1 - E)).matrixCoeff.charPowerSeries = PowerSeries.C (Q.coeff 0) * S := by
   obtain ⟨hb, hS₁, hQ₁0, hQ₁lc, hQ₁deg, hQS₁, hcop₁⟩ :=
-    IsEntire.normalised_factorisation (Matrix.constantCoeff_charPowerSeries _) hQ hS hQS hcop
+    IsEntire.normalized_factorization (Matrix.constantCoeff_charPowerSeries _) hQ hS hQS hcop
   obtain ⟨hE₁, hrank₁, hcharE, hcharCompl⟩ :=
     rieszColemanProjection_aux hu hQ₁0 hQ₁lc hS₁ hQS₁ hcop₁
   rw [rieszColemanProjection_C_mul u hb] at hE₁ hrank₁ hcharE hcharCompl
-  exact ⟨(IsRieszColemanProjection.iff_C_mul hb).mp hE₁,
+  exact ⟨(isRieszColemanProjection_C_mul_iff hb).mp hE₁,
     fun p ↦ (hrank₁ p).trans hQ₁deg, hcharE, hcharCompl⟩
 
 /-- **The Riesz–Coleman projector at a coprime polynomial factor.** Let `u` be row compact on

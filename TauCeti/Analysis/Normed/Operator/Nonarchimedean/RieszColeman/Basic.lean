@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.SpectralIdempotent
 
@@ -38,11 +39,13 @@ second (`ContinuousLinearMap.IsRieszColemanProjection.equivKer`). Such a project
 (`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
 `ContinuousLinearMap.IsRieszColemanProjection.eq_zero_of_one`,
 `ContinuousLinearMap.isRieszColemanProjection_one_zero`); scaling `Q` by a unit constant leaves
-the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.of_C_mul`,
-`ContinuousLinearMap.IsRieszColemanProjection.iff_C_mul`).
+the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.C_mul`,
+`ContinuousLinearMap.isRieszColemanProjection_C_mul_iff`).
 
 When the leading coefficient of `Q` is a unit, the constant term of `Q*` is `Q.leadingCoeff`, so
-dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`. Consequently:
+dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`, and
+`Q*(u * (1 - E))` is invertible
+(`ContinuousLinearMap.IsRieszColemanProjection.isUnit_aeval_mul_one_sub_reverse`). Consequently:
 
 * `u` restricts to a continuous linear automorphism of `range E = ker Q*(u)`
   (`ContinuousLinearMap.IsRieszColemanProjection.equivRange`);
@@ -235,7 +238,7 @@ theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
-private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+private theorem C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
     ∃ hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E,
       hE'.inverse = Ring.inverse c • hE.inverse := by
   have haeval := Polynomial.aeval_C_mul_reverse u hc Q
@@ -258,25 +261,32 @@ private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc :
   exact ⟨hE', (hE'.eq_inverse hinv₁ hinv₃).symm⟩
 
 /-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
-theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+theorem C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
     IsRieszColemanProjection u (Polynomial.C c * Q) E :=
-  (of_C_mul_aux hE hc).1
-
-/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
-@[simp]
-theorem iff_C_mul {c : R} (hc : IsUnit c) :
-    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
-  obtain ⟨c', hc'⟩ := hc.exists_left_inv
-  refine ⟨fun h ↦ ?_, fun h ↦ h.of_C_mul hc⟩
-  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
-    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
-  simpa only [hQ] using h.of_C_mul (IsUnit.of_mul_eq_one _ hc')
+  (C_mul_aux hE hc).1
 
 /-- Rescaling `Q` by a unit scalar `c` scales the complementary inverse by `Ring.inverse c`. -/
 @[simp]
-theorem inverse_of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
-    (hE.of_C_mul hc).inverse = Ring.inverse c • hE.inverse :=
-  (of_C_mul_aux hE hc).2
+theorem inverse_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    (hE.C_mul hc).inverse = Ring.inverse c • hE.inverse :=
+  (C_mul_aux hE hc).2
+
+end IsRieszColemanProjection
+
+/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
+@[simp]
+theorem isRieszColemanProjection_C_mul_iff {u E : M →L[R] M} {Q : R[X]} {c : R}
+    (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
+  obtain ⟨c', hc'⟩ := hc.exists_left_inv
+  refine ⟨fun h ↦ ?_, fun h ↦ h.C_mul hc⟩
+  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
+    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
+  simpa only [hQ] using h.C_mul (IsUnit.of_mul_eq_one _ hc')
+
+namespace IsRieszColemanProjection
+
+variable {u E : M →L[R] M} {Q : R[X]}
 
 /-- The complementary inverse preserves `ker E`. -/
 theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
@@ -465,6 +475,14 @@ theorem isUnit_toLinearMap_restrict_range (hE : IsRieszColemanProjection u Q E)
     IsUnit ((u : M →ₗ[R] M).restrict hE.mapsTo_range) :=
   (hE.isUnit_restrict_range hQ).map toLinearMapRingHom
 
+/-- When `Q.leadingCoeff` is a unit, `Q*(u * (1 - E))` is invertible on `M`. -/
+theorem isUnit_aeval_mul_one_sub_reverse (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) :
+    IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) :=
+  Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem hE.isIdempotentElem hE.commute
+    (Polynomial.coeff_zero_reverse Q ▸ hQ) hE.aeval_reverse_mul_inverse
+    hE.inverse_mul_aeval_reverse
+
 end IsRieszColemanProjection
 
 end Module
@@ -577,7 +595,7 @@ theorem IsRieszColemanProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ �
     IsRieszColemanProjection (Φ u) Q' (Φ E) :=
   ⟨hE.isIdempotentElem.map Φ, hE.commute.map Φ, hclosure hE.mem_closure_adjoin,
     by rw [haeval, ← map_mul, hE.aeval_reverse_mul_eq_zero, map_zero],
-    TauCeti.exists_complementaryInverse_map Φ haeval.symm hE.exists_inverse hclosure⟩
+    Φ.exists_mul_eq_one_sub_map haeval.symm hE.exists_inverse hclosure⟩
 
 /-- **Transport of the complementary inverse along a ring homomorphism.** Under the hypotheses of
 `IsRieszColemanProjection.map`, the complementary inverse of the transported projection `Φ E` is
@@ -590,7 +608,7 @@ theorem IsRieszColemanProjection.inverse_map (Φ : (M₁ →L[R₁] M₁) →+* 
       v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
       Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
     (hE.map Φ haeval hclosure).inverse = Φ hE.inverse := by
-  have hinv := TauCeti.map_complementaryInverse Φ haeval.symm
+  have hinv := Φ.map_mul_eq_one_sub_and_mul_eq_zero haeval.symm
     hE.aeval_reverse_mul_inverse hE.inverse_mul_aeval_reverse
     hE.mul_inverse_eq_zero hE.inverse_mul_eq_zero
   exact ((hE.map Φ haeval hclosure).eq_inverse hinv.1 hinv.2.2.1).symm

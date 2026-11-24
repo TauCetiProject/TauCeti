@@ -18,14 +18,14 @@ This file provides tools for manipulating coprime polynomial factorisations `H =
 When `H(0) = 1`, the constant coefficient `Q(0)` is a unit, so rescaling by
 `b = Ring.inverse (Q.coeff 0)` reduces to the normalised factorisation
 `H = (C b * Q) * (C (Q.coeff 0) * S)` with `(C b * Q)(0) = 1`
-(`PowerSeries.IsEntire.normalised_factorisation`). Bounded ring homomorphisms transport coprime
-polynomial factorisations along `IsEntire.mapHom` (`PowerSeries.IsEntire.map_factorisation`).
+(`PowerSeries.IsEntire.normalized_factorization`). Bounded ring homomorphisms transport coprime
+polynomial factorisations along `IsEntire.mapHom` (`PowerSeries.IsEntire.map_factorization`).
 
 ## Main results
 
-* `PowerSeries.IsEntire.normalised_factorisation`: rescales a coprime polynomial factorisation
+* `PowerSeries.IsEntire.normalized_factorization`: rescales a coprime polynomial factorisation
   `u_series = Q * S` with `u_series(0) = 1` to the normalised case `(C b * Q)(0) = 1`.
-* `PowerSeries.IsEntire.map_factorisation`: transports a coprime polynomial factorisation along a
+* `PowerSeries.IsEntire.map_factorization`: transports a coprime polynomial factorisation along a
   bounded ring homomorphism into a nontrivial normed commutative ring.
 -/
 
@@ -38,7 +38,7 @@ section Factorisation
 /-- Rescales a general coprime factorisation `u_series = Q * S` (with `u_series(0) = 1`) to the
 normalised case `(C b * Q)(0) = 1` via `b = Ring.inverse (Q.coeff 0)` and `S₁ = C (Q.coeff 0) * S`.
 -/
-theorem IsEntire.normalised_factorisation {R : Type*} [NormedCommRing R]
+theorem IsEntire.normalized_factorization {R : Type*} [NormedCommRing R]
     {u_series : R⟦X⟧} (hu0 : constantCoeff u_series = 1)
     {Q : Polynomial R} {S : R⟦X⟧} (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u_series = (Q : R⟦X⟧) * S)
@@ -83,7 +83,7 @@ theorem IsEntire.normalised_factorisation {R : Type*} [NormedCommRing R]
 
 /-- Transports a coprime polynomial factorisation `H = Q * S'` in entire power series along a
 bounded ring homomorphism `f : R →+* S` into a nontrivial normed commutative ring `S`. -/
-theorem IsEntire.map_factorisation {R S : Type*} [NormedCommRing R] [NormedCommRing S]
+theorem IsEntire.map_factorization {R S : Type*} [NormedCommRing R] [NormedCommRing S]
     [Nontrivial S] {H : R⟦X⟧} {Q : Polynomial R} {S' : R⟦X⟧}
     (hQ : IsUnit Q.leadingCoeff) (hS' : S'.IsEntire) (hQS' : H = (Q : R⟦X⟧) * S')
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S', IsEntire.mem_subring.mpr hS'⟩)

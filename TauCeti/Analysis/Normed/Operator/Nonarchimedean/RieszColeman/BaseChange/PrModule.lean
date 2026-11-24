@@ -115,7 +115,7 @@ theorem IsRieszColemanProjection.rankAtStalk_range_completedBaseChange
   have : Nontrivial S := q.nontrivial
   obtain ⟨C, hC⟩ := exists_norm_algebraMap_le_of_norm_smul_le hS
   obtain ⟨hQdeg, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop (algebraMap R S) hC
+    IsEntire.map_factorization hQ hS' hQS' hcop (algebraMap R S) hC
   rw [← hu.charPowerSeries_completedBaseChange hS α] at hHS
   rw [← hQdeg]
   exact (hE.completedBaseChange hS hu.hasPr_source α hQ).rankAtStalk_range_of_isPrCompact
@@ -147,7 +147,7 @@ theorem IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange
   have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul u.constantCoeff_charPowerSeries hQS
   obtain ⟨C, hC⟩ := exists_norm_algebraMap_le_of_norm_smul_le hL
   obtain ⟨hQdeg, -, hLS, hHS, hcopL⟩ :=
-    IsEntire.map_factorisation hQ hS hQS hcop (algebraMap K L) hC
+    IsEntire.map_factorization hQ hS hQS hcop (algebraMap K L) hC
   rw [← hu.charPowerSeries_completedBaseChange hL α] at hHS
   rw [(hu.completedBaseChange hL α α).finrank_ker_aeval_reverse hLS hHS hcopL, hQdeg,
     hu.finrank_ker_aeval_reverse hS hQS hcop]

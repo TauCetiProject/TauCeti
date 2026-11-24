@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
-import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
 # Completed-tensor base change of `(Pr)` modules, Fredholm series and Riesz projections
@@ -543,24 +542,12 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
     {u E : M₁ →L[R] M₁} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E) :
     IsRieszProjection (u.completedBaseChange α α) (algebraMap R S a) h
       (E.completedBaseChange α α) := by
-  let Φ := completedBaseChangeRingHom α
-  have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
-    simp only [Φ, map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul]
-  have hidem : IsIdempotentElem (E.completedBaseChange α α) := by
-    simpa only [Φ, completedBaseChangeRingHom_apply] using hE.isIdempotentElem.map Φ
-  have hcomm : Commute (u.completedBaseChange α α) (E.completedBaseChange α α) := by
-    simpa only [Φ, completedBaseChangeRingHom_apply] using hE.commute.map Φ
-  have hpow : (1 - algebraMap R S a • u.completedBaseChange α α) ^ h *
-      E.completedBaseChange α α = 0 := by
-    simpa only [Φ, map_mul, map_pow, h1sub, map_zero, completedBaseChangeRingHom_apply] using
-      congrArg Φ hE.pow_mul_eq_zero
-  have hinv := TauCeti.exists_complementaryInverse_map Φ h1sub hE.exists_inverse
-    (fun hw ↦ by
-      simpa only [Φ, completedBaseChangeRingHom_apply] using
-        completedBaseChange_mem_closure_adjoin hS hM α hw)
-  simp only [Φ, completedBaseChangeRingHom_apply] at hinv
-  exact ⟨hidem, hcomm, completedBaseChange_mem_closure_adjoin hS hM α hE.mem_closure_adjoin,
-    hpow, hinv⟩
+  simpa only [completedBaseChangeRingHom_apply] using
+    hE.map (completedBaseChangeRingHom α)
+      (by simp only [map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul])
+      (fun {v} hv ↦ by
+        simpa only [completedBaseChangeRingHom_apply] using
+          completedBaseChange_mem_closure_adjoin hS hM α hv)
 
 end PrTransport
 

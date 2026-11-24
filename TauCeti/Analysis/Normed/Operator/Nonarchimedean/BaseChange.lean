@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Basic
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
-import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
 # Coefficientwise base change of Fredholm series, resolvents and Riesz projectors
@@ -164,19 +163,9 @@ theorem IsRieszProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) := by
-  let Φ := mapCoeffsRingHom (J := J) f hf
-  have h1sub : Φ (1 - a • u) = 1 - f a • u.mapCoeffs f hf := by
-    simp [Φ]
-  have hex := TauCeti.exists_complementaryInverse_map Φ h1sub
-    (P := fun w ↦ w ∈ closure (Algebra.adjoin R {u} : Set (C₀(J, R) →L[R] C₀(J, R))))
-    (Q := fun w ↦ w ∈ closure (Algebra.adjoin S {u.mapCoeffs f hf} : Set (C₀(J, S) →L[S] C₀(J, S))))
-    hE.exists_inverse
-    (fun {v} hv ↦ by
-      simpa only [Φ, mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
-  simp only [Φ, mapCoeffsRingHom_apply] at hex
-  exact ⟨by simpa only [Φ, mapCoeffsRingHom_apply] using hE.isIdempotentElem.map Φ,
-    by simpa only [Φ, mapCoeffsRingHom_apply] using hE.commute.map Φ,
-    mapCoeffs_mem_closure_adjoin f hf hE.mem_closure_adjoin,
-    by simpa [Φ, h1sub] using congrArg Φ hE.pow_mul_eq_zero, hex⟩
+  simpa only [mapCoeffsRingHom_apply] using
+    hE.map (mapCoeffsRingHom f hf) (by simp)
+      (fun {v} hv ↦ by
+        simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 
 end ContinuousLinearMap
