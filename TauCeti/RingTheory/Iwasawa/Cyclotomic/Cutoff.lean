@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Iwasawa.GrowthFormula
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Iwasawa.EulerQuotient
@@ -50,9 +51,13 @@ This file characterizes the cutoff levels `n₀` above which every transition qu
 3. Since `M_δ = M[ω_m]` for some `m` on the noetherian module `M`, taking `n₀ = m + 1` makes
    `(∏_{j < n₀} ν_{j,j}) • M_δ = ω_m • M[ω_m] = 0`, so every finitely generated torsion module in
    characteristic zero admits a cutoff `n₀`
-   (`TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`), discharging the finiteness
-   hypothesis of Iwasawa's growth formula
-   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`).
+   (`TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`). Combining this cutoff with
+   Iwasawa's conditional growth formula
+   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`) yields the
+   unconditional mixed-characteristic growth formula for every finitely generated torsion module
+   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion`, and
+   `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_isTorsion`
+   over `ℤ_p`).
 
 Two equal-characteristic `𝔽_p⟦ϖ⟧` examples at the end show that `[CharZero O]` is essential:
 `ξ_1 = X ^ (p - 1)` is not coprime to `ξ_0 = X`, so on `M = 𝔽_p⟦ϖ⟧⟦X⟧ ⧸ (X)` the element
@@ -70,6 +75,10 @@ Two equal-characteristic `𝔽_p⟦ϖ⟧` examples at the end show that `[CharZe
   `M ⧸ ν_{n₀,k} M` (`k ≥ n₀`) are finite iff `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite.
 * `TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`: in characteristic zero, every
   finitely generated torsion module has a cutoff `n₀` above which all `M ⧸ ν_{n₀,k} M` are finite.
+* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion` and
+  `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_isTorsion`:
+  the unconditional growth formula `#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)` for every
+  finitely generated torsion module over a mixed-characteristic coefficient ring (and over `ℤ_p`).
 
 ## References
 
@@ -389,6 +398,58 @@ theorem exists_finite_quotSMulTop_growthTransition (p : ℕ) [Fact p.Prime] {O :
   rw [hm, hprod, eq_bot_iff]
   rintro _ ⟨x, hx, rfl⟩
   exact (mem_torsionBy_iff _ _).mp hx
+
+/-- **Unconditional Iwasawa growth formula.** Let `O` be a complete discrete valuation ring with
+finite residue field of cardinality `q`, in which `(p) = 𝔪 ^ e` for a prime `p` and some `e > 0`,
+and let `M` be a finitely generated torsion `O⟦X⟧`-module with Iwasawa invariants `μ = μ(M)` and
+`λ = λ(M)`. Then there exist a cutoff level `n₀` and an integer `ν` such that
+`#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)` for all sufficiently large `k`. -/
+theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion {p : ℕ}
+    [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+    [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)] {e : ℕ} (he : 0 < e)
+    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) {M : Type*} [AddCommGroup M]
+    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
+    ∃ n₀ : ℕ, ∃ ν : ℤ, ∀ᶠ k in Filter.atTop,
+      (Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) : ℚ) =
+        (Nat.card (ResidueField O) : ℚ) ^
+          (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
+  have : CharZero O := by
+    rcases CharP.char_is_prime_or_zero O (ringChar O) with hq | h0
+    · exfalso
+      by_cases hdvd : ringChar O ∣ p
+      · have hp0 : (p : O) = 0 := (ringChar.spec O p).mpr hdvd
+        obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
+        have hϖ_mem : ϖ ∈ maximalIdeal O :=
+          (mem_maximalIdeal ϖ).mpr (mem_nonunits_iff.mpr hϖ.not_isUnit)
+        have hmem : ϖ ^ e ∈ Ideal.span {(p : O)} := hpe ▸ Ideal.pow_mem_pow hϖ_mem e
+        obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (hp0 ▸ hmem)
+        rw [zero_mul] at hc
+        exact pow_ne_zero e hϖ.ne_zero hc
+      · have : Fact (ringChar O).Prime := ⟨hq⟩
+        have hu : IsUnit (p : O) := by
+          simpa using ((isUnit_iff_ne_zero.mpr
+            ((ZMod.natCast_eq_zero_iff p (ringChar O)).not.mpr hdvd)).map
+              (ZMod.castHom dvd_rfl O))
+        exact notMem_maximalIdeal.mpr hu
+          (Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _))
+    · have := ringChar.of_eq h0
+      exact CharP.charP_to_charZero O
+  obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p hM
+  exact ⟨n₀, exists_eventually_natCard_quotSMulTop_growthTransition_eq he hpe n₀
+    (Filter.eventually_atTop.mpr ⟨n₀, hn₀⟩)⟩
+
+/-- **Unconditional Iwasawa growth formula over `ℤ_p`.** For any finitely generated torsion
+`ℤ_p⟦X⟧`-module `M`, there exist a cutoff level `n₀` and an integer `ν` such that
+`#(M ⧸ ν_{n₀,k} M) = p ^ (μ(M) p ^ k + λ(M) k + ν)` for all sufficiently large `k`. -/
+theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_isTorsion (p : ℕ)
+    [Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p]⟦X⟧ M] [Module.Finite ℤ_[p]⟦X⟧ M]
+    (hM : Module.IsTorsion ℤ_[p]⟦X⟧ M) :
+    ∃ n₀ : ℕ, ∃ ν : ℤ, ∀ᶠ k in Filter.atTop,
+      (Nat.card (QuotSMulTop (growthTransition p ℤ_[p] n₀ k : ℤ_[p]⟦X⟧) M) : ℚ) =
+        (p : ℚ) ^ (((muInvariant ℤ_[p] M * p ^ k + lambdaInvariant ℤ_[p] M * k : ℕ) : ℤ) + ν) := by
+  simpa [PadicInt.card_residueField p] using
+    exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion one_pos
+      (by rw [pow_one, PadicInt.maximalIdeal_eq_span_p]) hM
 
 -- Equal characteristic: over `O = 𝔽_p⟦ϖ⟧` and `M = O⟦X⟧ ⧸ (X)`, `ω_0 = X` kills `M_δ = M`, yet
 -- `M ⧸ ξ_1 M = M` is infinite, since `ξ_1 = X ^ (p - 1)`: the cutoff criterion needs

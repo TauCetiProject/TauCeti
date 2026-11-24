@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.Algebra.Polynomial.RingDivision
 
 /-!
 # Resultant lemmas
@@ -43,8 +44,8 @@ Finally, the entries of the Sylvester matrix are written out explicitly, column 
 expanding its determinant term by term.
 
 Since a resultant with a monic left argument is a unit exactly when the two polynomials are
-coprime, coprimality can be read off a unit resultant: against `X - C a` this is a unit value at
-`a`, and modulo an ideal in the Jacobson radical it lifts from the reductions.
+coprime, coprimality can be read off a unit resultant; in particular, coprimality with a monic
+polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
 
 ## Main results
 
@@ -68,8 +69,6 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   irreducible `f`, `f.resultant g = 0` iff `f ∣ g`.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
-* `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
-  at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 * `Polynomial.IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero`: a polynomial distinguished
@@ -318,16 +317,6 @@ protected theorem Monic.resultant_eq_zero_iff_dvd [IsDomain R] [IsIntegrallyClos
     resultant_eq_zero_iff, and_iff_right (Or.inl (hf.map φ).ne_zero),
     ← hirr'.dvd_iff_not_isCoprime, map_dvd_map φ hφ hf]
 
-/-- `X - C a` is coprime to every polynomial whose value at `a` is a unit, over any commutative
-ring: the resultant of the two is that value. -/
-theorem isCoprime_X_sub_C_of_isUnit_eval {p : R[X]} {a : R} (h : IsUnit (p.eval a)) :
-    IsCoprime (X - C a) p := by
-  cases subsingleton_or_nontrivial R with
-  | inl _ => rw [Subsingleton.elim (X - C a) 1]; exact isCoprime_one_left
-  | inr _ =>
-    rwa [← isUnit_resultant_iff_isCoprime (monic_X_sub_C a), natDegree_X_sub_C,
-      resultant_X_sub_C_left (hg := le_rfl)]
-
 /-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
 and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/
 theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g h : R[X]}
@@ -356,7 +345,7 @@ theorem IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero {I : Ideal R} {P
   have heval : IsUnit ((Q.map (Ideal.Quotient.mk I)).eval 0) := by
     rw [← coeff_zero_eq_eval_zero, coeff_map]
     exact hQ.map _
-  simpa using (isCoprime_X_sub_C_of_isUnit_eval (a := 0) heval).pow_left
+  simpa using ((isCoprime_X_sub_C_iff_isUnit_eval _ (a := 0)).mpr heval).pow_left
 
 /-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
 `m` of the first polynomial and at most `n` of the second. -/
