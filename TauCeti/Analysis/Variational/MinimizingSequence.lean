@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Variational.BoundedSublevels
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Topology.Algebra.Module.WeakSpace
-import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Minimizing sequences and the sequential direct method
@@ -256,9 +255,9 @@ theorem isCompact_toWeakSpace_sublevel_of_isSeqClosed
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
-      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} :=
-    image_inter_preimage (toWeakSpace 𝕜 V) S
-      ((fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b)
+      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} := by
+    ext w
+    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage, mem_ofPred_eq]
   have hseq : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
     rw [heq]
     exact hE.isSeqClosed_sublevel hS b
@@ -284,7 +283,9 @@ theorem exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel
   have hlsc : LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
     (lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2 (hE.mono hsubset)
-  exact exists_isMinOn_of_isCompact_toWeakSpace_sublevel hlsc hne hcompact
+  obtain ⟨u, hu, hmin⟩ :=
+    exists_isMinOn_of_weak_closed hV hne hcompact.isClosed hlsc (hb.hasBoundedSublevelsOn E)
+  exact ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 hmin⟩
 
 /-- **The sequential direct method under bounded sublevels.** A sequentially weakly lower
 semicontinuous energy with norm-bounded sublevels on a nonempty sequentially weakly closed set in
@@ -308,10 +309,11 @@ theorem isCompact_toWeakSpace_minimizers_of_isSeqClosed_of_isBounded
     (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
-    isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE (E u)
-      (hmin.minimizers_eq_sublevel hu ▸ hb)
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) := by
+  obtain hempty | ⟨u, hu, hmin⟩ := {u ∈ S | IsMinOn E S u}.eq_empty_or_nonempty
+  · simp [hempty]
+  · rw [hmin.minimizers_eq_sublevel hu] at hb ⊢
+    exact isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE (E u) hb
 
 /-- For a sequentially weakly lower semicontinuous energy with bounded sublevels on a sequentially
 weakly closed set in a reflexive normed space, the set of minimizers is weakly compact. -/

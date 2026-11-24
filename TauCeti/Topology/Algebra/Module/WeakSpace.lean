@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sequences
-import Mathlib.RingTheory.Finiteness.Cofinite
-import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.Topology.Sequences.Basic
 
 /-!
-# Convergence and neighbourhoods in the weak topology
+# Convergence in the weak topology
 
 A family converges in `WeakSpace 𝕜 E` exactly when its values under every continuous linear
 functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
@@ -29,20 +27,14 @@ When the weak topology is Hausdorff, weak convergence implies convergence in the
 for families that eventually stay in a compact set
 (`TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact`): on a compact set the two topologies agree.
 
-Every weak neighbourhood of a point `x` in a topological vector space over a field contains an
-entire affine subspace `x + K` of finite codimension
-(`TauCeti.exists_submodule_finiteDimensional_quotient_forall_toWeakSpace_add_mem_of_mem_nhds`).
-Consequently, for any linear map `L` of infinite-dimensional range it contains an affine line
-`x + c • v` with `L v ≠ 0`
-(`LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds`), and in an
-infinite-dimensional space it contains an affine line in a nonzero direction
-(`TauCeti.exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds`, specialized at `x := 0` for
-neighbourhoods of `0`).
+In an infinite-dimensional space every weak neighbourhood of `0` contains a line through a nonzero
+vector (`TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`): it contains the
+common kernel of finitely many continuous linear functionals, which is nonzero.
 -/
 
 public section
 
-open Filter Set Topology
+open Filter Topology
 
 namespace TauCeti
 
@@ -95,59 +87,35 @@ theorem tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq {u : ℕ → E
 
 end Uniform
 
-/-- **Finite-codimensional affine subspaces in weak neighbourhoods.** Every neighbourhood of
-`toWeakSpace 𝕜 E x` in a topological vector space over a field contains an affine subspace
-`{toWeakSpace 𝕜 E (x + v) | v ∈ K}` for a submodule `K` of finite codimension. -/
-theorem exists_submodule_finiteDimensional_quotient_forall_toWeakSpace_add_mem_of_mem_nhds
-    {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] {x : E} {U : Set (WeakSpace 𝕜 E)}
-    (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
-    ∃ K : Submodule 𝕜 E, FiniteDimensional 𝕜 (E ⧸ K) ∧
-      ∀ v ∈ K, toWeakSpace 𝕜 E (x + v) ∈ U := by
-  let eval : E → StrongDual 𝕜 E → 𝕜 := fun y f ↦ f y
-  have htend : Tendsto (toWeakSpace 𝕜 E) (comap eval (𝓝 (eval x))) (𝓝 (toWeakSpace 𝕜 E x)) :=
-    tendsto_toWeakSpace_iff_forall_eval_tendsto.2 fun f ↦
-      ((continuous_apply f).tendsto (eval x)).comp tendsto_comap
-  obtain ⟨W, hW, hWU⟩ := mem_comap.1 (htend hU)
-  rw [nhds_pi, Filter.mem_pi'] at hW
-  obtain ⟨I, t, ht, hIW⟩ := hW
-  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun i : I ↦ (i.val : StrongDual 𝕜 E).toLinearMap
-  refine ⟨LinearMap.ker Φ, Submodule.CoFG.ker Φ, fun v hv ↦ ?_⟩
-  have hmem : eval (x + v) ∈ W := hIW fun f hf ↦ by
-    have hfv : f v = 0 := congrFun (LinearMap.mem_ker.1 hv) ⟨f, hf⟩
-    simpa only [eval, map_add, hfv, add_zero] using mem_of_mem_nhds (ht f)
-  exact hWU hmem
+section Field
 
-/-- **Affine lines in weak neighbourhoods for linear maps of infinite rank.** If a linear map
-`L : E →ₗ[𝕜] F` has infinite-dimensional range, then every weak neighbourhood of
-`toWeakSpace 𝕜 E x` contains an entire affine line `{toWeakSpace 𝕜 E (x + c • v) | c : 𝕜}` along a
-direction `v` with `L v ≠ 0`. -/
-theorem _root_.LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds
-    {𝕜 E F : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [AddCommGroup F] [Module 𝕜 F]
-    (L : E →ₗ[𝕜] F) (hL : ¬ FiniteDimensional 𝕜 (LinearMap.range L)) {x : E}
-    {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
-    ∃ v : E, L v ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (x + c • v) ∈ U := by
-  obtain ⟨K, hK, hKU⟩ :=
-    exists_submodule_finiteDimensional_quotient_forall_toWeakSpace_add_mem_of_mem_nhds hU
-  have hnotle : ¬ K ≤ LinearMap.ker L := fun hle ↦
-    hL (Module.Finite.iff_fg.mpr
-      (Submodule.range_fg_iff_ker_cofg.mpr (Submodule.CoFG.of_le hle hK)))
-  obtain ⟨v, hvK, hv_not_ker⟩ := IsConcreteLE.not_le_iff_exists.1 hnotle
-  exact ⟨v, LinearMap.mem_ker.not.1 hv_not_ker, fun c ↦ hKU (c • v) (K.smul_mem c hvK)⟩
+variable {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
 
-/-- **Affine lines in weak neighbourhoods.** Every neighbourhood of `toWeakSpace 𝕜 E x` in an
-infinite-dimensional topological vector space over a field contains the entire affine line
-`{toWeakSpace 𝕜 E (x + c • v) | c : 𝕜}` in some nonzero direction `v`. -/
-theorem exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds {𝕜 E : Type*} [Field 𝕜]
-    [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] (hE : ¬ FiniteDimensional 𝕜 E) {x : E}
-    {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
-    ∃ v : E, v ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (x + c • v) ∈ U := by
-  have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := E))) := by
-    simpa only [LinearMap.moduleFinite_range_id_iff] using hE
-  simpa only [LinearMap.id_apply] using
-    LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds
-      (LinearMap.id (R := 𝕜) (M := E)) hid hU
+/-- In an infinite-dimensional space, every weak neighbourhood of `0` contains the line through
+some nonzero vector. -/
+theorem exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero
+    (hE : ¬ FiniteDimensional 𝕜 E) {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 0) :
+    ∃ x : E, x ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (c • x) ∈ U := by
+  -- The weak topology is induced by the evaluations at continuous linear functionals, so `U`
+  -- contains the points where finitely many functionals `f ∈ I` are close to `0`.
+  have hnhds : 𝓝 (0 : WeakSpace 𝕜 E) =
+      comap (fun (x : WeakSpace 𝕜 E) (f : StrongDual 𝕜 E) ↦ f ((toWeakSpace 𝕜 E).symm x))
+        (𝓝 fun f ↦ f ((toWeakSpace 𝕜 E).symm 0)) :=
+    nhds_induced _ _
+  rw [hnhds] at hU
+  obtain ⟨t, ht, htU⟩ := mem_comap.1 hU
+  rw [nhds_pi] at ht
+  obtain ⟨I, s, hs, hst⟩ := Filter.mem_pi'.1 ht
+  -- The common kernel of the functionals in `I` has finite codimension, so it is nonzero.
+  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun f ↦ (f.val : E →L[𝕜] 𝕜).toLinearMap
+  obtain ⟨x, hx, hx0⟩ : ∃ x ∈ LinearMap.ker Φ, x ≠ 0 :=
+    Submodule.exists_mem_ne_zero_of_ne_bot fun hker ↦
+      hE (FiniteDimensional.of_injective Φ (LinearMap.ker_eq_bot.1 hker))
+  refine ⟨x, hx0, fun c ↦ htU (hst fun f hf ↦ ?_)⟩
+  have hfx : (f : E →L[𝕜] 𝕜) x = 0 := congr_fun (LinearMap.mem_ker.1 hx) ⟨f, hf⟩
+  simpa [hfx] using mem_of_mem_nhds (hs f)
+
+end Field
 
 end TauCeti

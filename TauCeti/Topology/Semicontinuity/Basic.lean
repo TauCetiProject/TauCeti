@@ -7,32 +7,26 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-import TauCeti.Order.Filter.Extr
 
 /-!
-# Basic properties of lower semicontinuous functions
+# Lower semicontinuity of suprema over neighbourhoods
 
-This file collects general topological properties of lower semicontinuous functions:
+A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s`, for an arbitrary `G : Set X → β` with values in a
+complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict
+lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
+interior. Lower envelopes and lower and upper Γ-limits are of this form.
 
-* A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s`, for an arbitrary `G : Set X → β` with values in a
-  complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict
-  lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
-  interior. Lower envelopes and lower and upper Γ-limits are of this form.
-* The sublevels of a lower semicontinuous function on a closed set are closed
-  (`LowerSemicontinuousOn.isClosed_inter_preimage_Iic`), and a function lower semicontinuous on a
-  nonempty compact sublevel `{x ∈ s | f x ≤ b}` attains its minimum on `s`
-  (`LowerSemicontinuousOn.exists_isMinOn_of_isCompact_sublevel`).
-* A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and `A 0 = 0`, such as a
-  lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
-  `A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is
-  needed, because the bound on the partial sums passes to their limit through the closed sublevel
-  set. In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending
-  to `0`, passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
+A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and `A 0 = 0`, such as a
+lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
+`A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is needed,
+because the bound on the partial sums passes to their limit through the closed sublevel set.
+In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending to `0`,
+passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
 -/
 
 public section
 
-open Filter Set Topology
+open Topology
 
 namespace TauCeti
 
@@ -48,26 +42,6 @@ theorem lowerSemicontinuous_iSup_nhds (G : Set X → β) :
   exact hcs.trans_le (le_iSup₂_of_le s hy le_rfl)
 
 end TauCeti
-
-namespace LowerSemicontinuousOn
-
-/-- The sublevel sets of a lower semicontinuous function on a closed set are closed. -/
-theorem isClosed_inter_preimage_Iic {α β : Type*} [TopologicalSpace α] [LinearOrder β]
-    {f : α → β} {s : Set α} (hfs : LowerSemicontinuousOn f s) (hs : IsClosed s) (b : β) :
-    IsClosed (s ∩ f ⁻¹' Iic b) := by
-  obtain ⟨v, hv, hv'⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hfs b
-  exact hv' ▸ hs.inter hv
-
-/-- A function lower semicontinuous on a nonempty compact sublevel `{x ∈ s | f x ≤ b}` attains
-its minimum on `s`. -/
-theorem exists_isMinOn_of_isCompact_sublevel {α β : Type*} [TopologicalSpace α] [LinearOrder β]
-    {f : α → β} {s : Set α} {b : β} (hf : LowerSemicontinuousOn f {x ∈ s | f x ≤ b})
-    (hne : {x ∈ s | f x ≤ b}.Nonempty) (hcpt : IsCompact {x ∈ s | f x ≤ b}) :
-    ∃ x ∈ s, IsMinOn f s x := by
-  obtain ⟨x, hx, hmin⟩ := hf.exists_isMinOn hne hcpt
-  exact ⟨x, hx.1, (TauCeti.isMinOn_sublevel_iff hx.2).1 hmin⟩
-
-end LowerSemicontinuousOn
 
 open scoped ENNReal
 

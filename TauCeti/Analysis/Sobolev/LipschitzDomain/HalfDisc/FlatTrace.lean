@@ -9,7 +9,6 @@ public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.SurfaceMeasure
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 public import TauCeti.Analysis.Sobolev.W1p.Translation
-import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
 import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
@@ -210,9 +209,10 @@ theorem W1p.isClosed_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0�
 `W^{1,p}(halfDisc r)` is closed, since it is a closed convex set. -/
 theorem W1p.isClosed_toWeakSpace_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
     IsClosed (toWeakSpace ℝ (W1p volume (halfDisc r) p) ''
-      (W1p.halfDiscFlatTraceZeroSubmodule hp r : Set (W1p volume (halfDisc r) p))) :=
-  (W1p.halfDiscFlatTraceZeroSubmodule hp r).isClosed_toWeakSpace
-    (W1p.isClosed_halfDiscFlatTraceZeroSubmodule hp r)
+      (W1p.halfDiscFlatTraceZeroSubmodule hp r : Set (W1p volume (halfDisc r) p))) := by
+  rw [← (W1p.isClosed_halfDiscFlatTraceZeroSubmodule hp r).closure_eq,
+    (W1p.halfDiscFlatTraceZeroSubmodule hp r).convex.toWeakSpace_closure ℝ]
+  exact isClosed_closure
 
 /-- **The pointwise reading of the zero-trace condition.** If `u ∈ W^{1,p}(halfDisc r)` agrees
 almost everywhere with a function `f` continuous on the closed half-disc, then the trace of `u`

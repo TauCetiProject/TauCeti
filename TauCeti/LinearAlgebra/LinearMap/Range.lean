@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # Ranges in commuting squares of linear maps
@@ -66,11 +65,5 @@ theorem range_le_comap_range_of_comp_eq
     range i ≤ (range i').comap g := by
   rintro _ ⟨x, rfl⟩
   exact ⟨f x, (LinearMap.congr_fun h x).symm⟩
-
-/-- The range of the identity linear map on a module is finitely generated if and only if the
-module is finitely generated. -/
-theorem moduleFinite_range_id_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] :
-    Module.Finite R (range (id : M →ₗ[R] M)) ↔ Module.Finite R M := by
-  rw [range_id, Module.Finite.equiv_iff Submodule.topEquiv]
 
 end LinearMap

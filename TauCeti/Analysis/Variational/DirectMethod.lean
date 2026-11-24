@@ -10,10 +10,8 @@ public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Order.Filter.Extr
-import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
-import TauCeti.Topology.Algebra.Module.WeakSpace
-import TauCeti.Topology.Compactness.Compact
-import TauCeti.Topology.Semicontinuity.Basic
+import Mathlib.Analysis.LocallyConvex.WeakSpace
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # The direct method in the weak topology
@@ -23,14 +21,9 @@ closed admissible set attains its minimum if its sublevels are norm bounded and 
 bidual map is surjective. No lower bound on the energy is assumed: compactness of one nonempty
 sublevel provides it. Every sublevel and the entire set of minimizers are weakly compact.
 
-More generally, the same conclusions hold whenever the admissible set `S` is only weakly closed on
-every closed norm ball `S ∩ closedBall 0 R`
-(`TauCeti.exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall`,
-`TauCeti.isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBall`), without
-requiring `S` itself to be globally weakly closed. Over `ℝ` or `ℂ`, an energy with norm-bounded
-sublevels on `S` is globally weakly lower semicontinuous on `S` as soon as it is weakly lower
-semicontinuous on every norm-bounded subset of `S`
-(`TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`).
+Over `ℝ` or `ℂ`, an energy with norm-bounded sublevels on `S` is globally weakly lower
+semicontinuous on `S` as soon as it is weakly lower semicontinuous on every norm-bounded subset
+of `S` (`TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`).
 
 The reflexivity hypothesis is surjectivity of the continuous bidual inclusion, not
 algebraic reflexivity. Completeness is not needed as a separate hypothesis. Except for the
@@ -45,71 +38,9 @@ bounded-sublevel localization of weak lower semicontinuity (which uses geometric
 
 public section
 
-open Set Bornology Metric NormedSpace
+open Set Bornology NormedSpace
 
 namespace TauCeti
-
-section WeakTopology
-
-variable {𝕜 V : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
-
-/-- On a weakly closed admissible set `S`, every sublevel of a weakly lower semicontinuous energy
-is weakly closed. -/
-theorem isClosed_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
-    (hS : IsClosed (toWeakSpace 𝕜 V '' S))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (b : β) :
-    IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  rw [show {u ∈ S | E u ≤ b} = S ∩ toWeakSpace 𝕜 V ⁻¹'
-      ((fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b) from rfl,
-    image_inter_preimage]
-  exact hE.isClosed_inter_preimage_Iic hS b
-
-/-- An energy weakly lower semicontinuous on a nonempty weakly compact sublevel
-`{u ∈ S | E u ≤ b}` attains its minimum on `S`. -/
-theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V → β}
-    {S : Set V} {b : β}
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}))
-    (hne : {u ∈ S | E u ≤ b}.Nonempty)
-    (hcpt : IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :
-    ∃ u ∈ S, IsMinOn E S u := by
-  have heq : {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} =
-      toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
-    (image_inter_preimage (toWeakSpace 𝕜 V) S
-      ((fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b)).symm
-  obtain ⟨w, hw, hmin⟩ :=
-    (heq ▸ hE).exists_isMinOn_of_isCompact_sublevel (heq ▸ hne.image _) (heq ▸ hcpt)
-  obtain ⟨u, hu, rfl⟩ := hw
-  exact ⟨u, hu, by
-    simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using
-      hmin.comp_of_mapsTo (mapsTo_image (toWeakSpace 𝕜 V) S) rfl⟩
-
-end WeakTopology
-
-section ClosedBallSublevel
-
-variable {𝕜 V : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-  [ContinuousConstSMul 𝕜 𝕜] [SeminormedAddCommGroup V] [Module 𝕜 V]
-  {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
-
-/-- If `S ∩ closedBall 0 R` is weakly closed for every `R : ℝ` and `E` is weakly lower
-semicontinuous on `S`, then every norm-bounded sublevel `{u ∈ S | E u ≤ b}` is weakly closed. -/
-theorem isClosed_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall
-    (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
-    IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall (0 : V)).1 hb
-  rw [← sublevel_inter_eq hR]
-  exact isClosed_toWeakSpace_sublevel (hS R) (hE.mono (image_mono inter_subset_left)) b
-
-end ClosedBallSublevel
-
-section Reflexive
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
   [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -124,7 +55,16 @@ theorem isCompact_toWeakSpace_sublevel
       (toWeakSpace 𝕜 V '' S))
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  have hclosed := isClosed_toWeakSpace_sublevel hS hE b
+  have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
+      (toWeakSpace 𝕜 V '' S) ∩
+        (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b := by
+    ext u
+    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage,
+      mem_ofPred_eq, mem_inter_iff, mem_Iic]
+  obtain ⟨C, hC, hEC⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hE b
+  have hclosed : IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
+    rw [heq, hEC]
+    exact hS.inter hC
   simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_of_isBounded hV hb
 
 /-- A single nonempty bounded sublevel suffices for the direct method on a weakly
@@ -135,9 +75,16 @@ theorem exists_isMinOn_of_weak_closed_of_isBounded_sublevel
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
       (toWeakSpace 𝕜 V '' S))
     {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
-    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
-  exists_isMinOn_of_isCompact_toWeakSpace_sublevel (hE.mono (image_mono (sep_subset S _))) hne
-    (isCompact_toWeakSpace_sublevel hV hS hE b hb)
+    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u := by
+  have hcompact := isCompact_toWeakSpace_sublevel hV hS hE b hb
+  have hsubset : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} ⊆ toWeakSpace 𝕜 V '' S :=
+    image_mono fun _ hx ↦ hx.1
+  obtain ⟨w, hw, hmin⟩ :=
+    LowerSemicontinuousOn.exists_isMinOn (hne.image _) hcompact (hE.mono hsubset)
+  obtain ⟨u, hu, rfl⟩ := hw
+  refine ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 fun x hx ↦ ?_⟩
+  simpa only [mem_ofPred_eq, LinearEquiv.symm_apply_apply] using
+    hmin (mem_image_of_mem (toWeakSpace 𝕜 V) hx)
 
 /-- **The direct method.** A weakly lower semicontinuous energy with bounded sublevels on
 a nonempty weakly closed set in a reflexive space attains its minimum. -/
@@ -159,9 +106,11 @@ theorem isCompact_toWeakSpace_minimizers_of_isBounded
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
-    isCompact_toWeakSpace_sublevel hV hS hE (E u) (hmin.minimizers_eq_sublevel hu ▸ hb)
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) := by
+  obtain hempty | ⟨u, hu, hmin⟩ := {u ∈ S | IsMinOn E S u}.eq_empty_or_nonempty
+  · simp [hempty]
+  · rw [hmin.minimizers_eq_sublevel hu] at hb ⊢
+    exact isCompact_toWeakSpace_sublevel hV hS hE (E u) hb
 
 /-- For a weakly lower semicontinuous energy with bounded sublevels on a weakly closed set
 in a reflexive space, the set of minimizers is weakly compact, including when the admissible
@@ -174,76 +123,6 @@ theorem isCompact_toWeakSpace_minimizers
     (hb : HasBoundedSublevelsOn E S) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
   isCompact_toWeakSpace_minimizers_of_isBounded hV hS hE hb.isBounded_minimizers
-
-/-- In a reflexive seminormed space over a proper field, if `S ∩ closedBall 0 R` is weakly closed
-for every `R : ℝ` and `E` is weakly lower semicontinuous on `S`, then every norm-bounded sublevel
-`{u ∈ S | E u ≤ b}` is weakly compact. -/
-theorem isCompact_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  have hclosed := isClosed_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall hS hE b hb
-  simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_of_isBounded hV hb
-
-/-- **Single-sublevel direct method with bounded-ball weak closedness.** In a reflexive seminormed
-space over a proper field, if `S ∩ closedBall 0 R` is weakly closed for every `R : ℝ` and `E` is
-weakly lower semicontinuous on `S`, then a single nonempty norm-bounded sublevel `{u ∈ S | E u ≤ b}`
-suffices for `E` to attain its minimum on `S`. -/
-theorem exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall_of_isBounded_sublevel
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
-    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
-  exists_isMinOn_of_isCompact_toWeakSpace_sublevel (hE.mono (image_mono (sep_subset S _))) hne
-    (isCompact_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall hV hS hE b hb)
-
-/-- **Direct method with bounded-ball weak closedness.** In a reflexive seminormed space over a
-proper field, if `S` is nonempty, `S ∩ closedBall 0 R` is weakly closed for every `R : ℝ`, and `E`
-is weakly lower semicontinuous with norm-bounded sublevels on `S`, then `E` attains its minimum on
-`S`. -/
-theorem exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hne : S.Nonempty) (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (hb : HasBoundedSublevelsOn E S) : ∃ u ∈ S, IsMinOn E S u := by
-  obtain ⟨v, hv⟩ := hne
-  exact exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall_of_isBounded_sublevel hV hS hE
-    ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
-
-/-- In a reflexive seminormed space over a proper field, if `S ∩ closedBall 0 R` is weakly closed
-for every `R : ℝ`, `E` is weakly lower semicontinuous on `S`, and the set of minimizers of `E` on
-`S` is norm-bounded, then that set of minimizers is weakly compact. -/
-theorem isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBall_of_isBounded
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
-    isCompact_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall hV hS hE (E u)
-      (hmin.minimizers_eq_sublevel hu ▸ hb)
-
-/-- In a reflexive seminormed space over a proper field, if `S ∩ closedBall 0 R` is weakly closed
-for every `R : ℝ` and `E` is weakly lower semicontinuous with norm-bounded sublevels on `S`, then
-the set of minimizers of `E` on `S` is weakly compact, including when `S` is empty. -/
-theorem isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBall
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hS : ∀ R : ℝ, IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall 0 R)))
-    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    (hb : HasBoundedSublevelsOn E S) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBall_of_isBounded hV hS hE
-    hb.isBounded_minimizers
-
-end Reflexive
 
 section RCLike
 
@@ -264,22 +143,31 @@ theorem lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn {�
   intro b
   -- Every point of `S` with `E u ≤ b` lies in a closed norm ball `closedBall 0 R`, which is weakly
   -- closed by Hahn–Banach.
-  obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall (0 : V)).1 (hb.isBounded_sublevel b)
-  let B : Set V := S ∩ closedBall 0 R
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall (0 : V)).1 (hb.isBounded_sublevel b)
+  let B : Set V := S ∩ Metric.closedBall 0 R
   have hB_lsc : LowerSemicontinuousOn f (toWeakSpace 𝕜 V '' B) :=
-    hloc inter_subset_left (isBounded_closedBall.subset inter_subset_right)
+    hloc inter_subset_left (Metric.isBounded_closedBall.subset inter_subset_right)
   obtain ⟨v₀, hv₀, hBv₀⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hB_lsc b
-  refine ⟨(toWeakSpace 𝕜 V '' closedBall 0 R) ∩ v₀,
-    (isClosed_toWeakSpace_closedBall (0 : V) R).inter hv₀, ?_⟩
-  have hinter : (toWeakSpace 𝕜 V '' S) ∩ ((toWeakSpace 𝕜 V '' closedBall 0 R) ∩ v₀) =
+  have hball : IsClosed (toWeakSpace 𝕜 V '' Metric.closedBall (0 : V) R) := by
+    let : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
+    let : Module ℝ V := .restrictScalars ℝ 𝕜 V
+    have : IsScalarTower ℝ 𝕜 V := .restrictScalars ℝ 𝕜 V
+    have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace
+    rw [← Metric.isClosed_closedBall.closure_eq,
+      (convex_closedBall (0 : V) R).toWeakSpace_closure 𝕜]
+    exact isClosed_closure
+  refine ⟨(toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀, hball.inter hv₀, ?_⟩
+  have hinter : (toWeakSpace 𝕜 V '' S) ∩ ((toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀) =
       (toWeakSpace 𝕜 V '' B) ∩ v₀ := by
     rw [← inter_assoc, ← image_inter (toWeakSpace 𝕜 V).injective]
   rw [hinter, ← hBv₀]
+  have hsub : {u ∈ S | E u ≤ b} = {u ∈ B | E u ≤ b} :=
+    ((inter_right_comm S (Metric.closedBall (0 : V) R) {u | E u ≤ b}).trans
+      (inter_eq_left.2 hR)).symm
   calc (toWeakSpace 𝕜 V '' S) ∩ (f ⁻¹' Iic b)
       = toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
         (image_inter_preimage (toWeakSpace 𝕜 V) S (f ⁻¹' Iic b)).symm
-    _ = toWeakSpace 𝕜 V '' {u ∈ S ∩ closedBall 0 R | E u ≤ b} := by
-        rw [sublevel_inter_eq hR]
+    _ = toWeakSpace 𝕜 V '' {u ∈ B | E u ≤ b} := by rw [hsub]
     _ = (toWeakSpace 𝕜 V '' B) ∩ (f ⁻¹' Iic b) :=
         image_inter_preimage (toWeakSpace 𝕜 V) B (f ⁻¹' Iic b)
 

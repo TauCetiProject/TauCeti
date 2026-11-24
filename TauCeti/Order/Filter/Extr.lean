@@ -34,13 +34,6 @@ theorem isMinOn_sublevel_iff {X β : Type*} [LinearOrder β] {f : X → β}
   · exact h ⟨hx, hb⟩
   · exact hu.trans (le_of_not_ge hb)
 
-/-- Intersecting the domain `S` with a set `T` containing the sublevel `{x ∈ S | f x ≤ b}` does
-not change that sublevel. -/
-theorem sublevel_inter_eq {X β : Type*} [LE β] {f : X → β} {S T : Set X} {b : β}
-    (h : {x ∈ S | f x ≤ b} ⊆ T) :
-    {x ∈ S ∩ T | f x ≤ b} = {x ∈ S | f x ≤ b} :=
-  (inter_right_comm S T {x | f x ≤ b}).trans (inter_eq_left.2 h)
-
 /-- If some point attains an upper bound `M` of `f`, then `s` is a global maximizer of `f` exactly
 when it attains `M`. -/
 theorem isMaxOn_univ_iff_eq {X β : Type*} [PartialOrder β] {f : X → β} {M : β} {s : X}

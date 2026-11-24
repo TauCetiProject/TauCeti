@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Filter.Extr
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
-import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Maps.IsInducing
 import TauCeti.Topology.Separation.InvFunOn
 
@@ -33,9 +31,7 @@ embedding of `K` (`IsCompact.isClosedEmbedding_domRestrict`). So neighbourhoods 
 eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) and limits of maps whose values
 eventually lie in `K` (`IsCompact.exists_tendsto_of_tendsto_comp`) can be read through it. These
 are the versions, for compact sets, of the results for an inducing restriction in
-`TauCeti.Topology.Maps.IsInducing`. Also, if every minimizer sublevel of a function has compact
-image under a map `p`, then the image of the full minimizer set is compact
-(`TauCeti.isCompact_image_minimizers_of_isCompact_sublevel`).
+`TauCeti.Topology.Maps.IsInducing`.
 -/
 
 public section
@@ -351,18 +347,6 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
-
-/-- If the image under `p : α → X` of the sublevel at every minimizer of `E` on `S` is compact,
-then the image of the full set of minimizers of `E` on `S` is compact (including when it is
-empty). -/
-theorem isCompact_image_minimizers_of_isCompact_sublevel {α β : Type*} [Preorder β]
-    {p : α → X} {E : α → β} {S : Set α}
-    (h : ∀ u ∈ S, IsMinOn E S u → IsCompact (p '' {x ∈ S | E x ≤ E u})) :
-    IsCompact (p '' {x ∈ S | IsMinOn E S x}) := by
-  obtain hempty | ⟨u, hu, hmin⟩ := {x ∈ S | IsMinOn E S x}.eq_empty_or_nonempty
-  · simp [hempty]
-  · rw [hmin.minimizers_eq_sublevel hu]
-    exact h u hu hmin
 
 end TauCeti
 

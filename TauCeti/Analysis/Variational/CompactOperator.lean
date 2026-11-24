@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Semicontinuity.Defs
 public import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 public import TauCeti.Analysis.Variational.BoundedSublevels
+import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Variational.DirectMethod
 
 /-!
@@ -16,9 +18,9 @@ In infinite dimensions, compact operators and nonlinear lower-order terms `g ∘
 globally weakly continuous, and compactly defined constraint sets such as `{u ∈ S | J u ∈ C}` (for
 example, Rayleigh normalization spheres `{u | ‖J u‖ = 1}`) need not be weakly closed in general.
 Nevertheless, once an energy controls norm sublevels (`TauCeti.HasBoundedSublevelsOn`), every
-variational argument localizes to closed norm balls, which are weakly closed over `ℝ` or `ℂ`
-(`TauCeti.isClosed_toWeakSpace_closedBall`) and on which a compact operator `J` is weak-to-norm
-continuous (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
+variational argument localizes to closed norm balls, which are weakly closed over `ℝ` or `ℂ` and on
+which a compact operator `J` is weak-to-norm continuous
+(`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
 
 This file provides weak lower semicontinuity inputs for compactly perturbed energies:
 * `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`: if `E₀` is
@@ -27,15 +29,15 @@ This file provides weak lower semicontinuity inputs for compactly perturbed ener
   semicontinuous on `S`.
 * `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`:
   over `ℝ` or `ℂ`, if `u ↦ E₀ u + g (J u)` additionally has bounded sublevels on `S`, then it is
-  globally weakly lower semicontinuous on `S`.
+  globally weakly lower semicontinuous on `S` via
+  `TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`.
 
-Together with bounded-ball constraint weak closedness
-(`IsCompactOperator.isClosed_toWeakSpace_inter_preimage_inter_closedBall` in
-`TauCeti.Analysis.Normed.Operator.Compact.WeakSpace`), this supplies the hypotheses for the general
-direct-method theorems in `TauCeti.Analysis.Variational.DirectMethod` (such as
-`TauCeti.exists_isMinOn_of_weak_closed`,
-`TauCeti.exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall`, and
-`TauCeti.isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBall`).
+Together with weak closedness on bounded sets
+(`IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded` and
+`IsCompactOperator.isSeqClosed_toWeakSpace_preimage` in
+`TauCeti.Analysis.Normed.Operator.Compact.WeakSpace`), this supplies the semicontinuity hypotheses
+for the direct-method theorems in `TauCeti.Analysis.Variational.DirectMethod` (such as
+`TauCeti.exists_isMinOn_of_weak_closed` and `TauCeti.isCompact_toWeakSpace_minimizers`).
 
 ## References
 

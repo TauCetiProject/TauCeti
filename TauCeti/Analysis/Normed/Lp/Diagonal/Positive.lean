@@ -29,9 +29,8 @@ order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²
 * `lp.isSelfAdjoint_diagonalCLM_iff`: `lp.diagonalCLM d` on `ℓ²` is self-adjoint iff
   `∀ i, star (d i) = d i`.
 * `lp.isPositive_diagonalCLM_iff`, `lp.diagonalCLM_le_diagonalCLM_iff`,
-  `lp.isPositive_diagonalCLM_ofAntitone`, `lp.isPositive_diagonalCLM_invNatSucc`:
-  characterizations of positivity and the Loewner order on `ℓ²` diagonal operators, and
-  positivity for antitone `ℝ≥0` sequences and the harmonic sequence.
+  `lp.isPositive_diagonalCLM_ofAntitone`: characterizations of positivity and the Loewner order on
+  `ℓ²` diagonal operators, and positivity for antitone `ℝ≥0` sequences.
 * `lp.isPositive_diagonalTruncation_iff`, `lp.diagonalTruncation_mono`,
   `lp.diagonalTruncation_le_diagonalCLM`: positivity and monotonicity of finite coordinate
   truncations.
@@ -89,13 +88,6 @@ theorem isPositive_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
 theorem isPositive_diagonalCLM_ofAntitone {c : ℕ → ℝ≥0} (hc : Antitone c) :
     (diagonalCLM (p := 2) (ofAntitone 𝕜 hc)).IsPositive :=
   (isPositive_diagonalCLM_iff _).2 (ofAntitone_apply_nonneg 𝕜 hc)
-
-/-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc 𝕜)` on `ℓ²(ℕ, 𝕜)` is
-positive. -/
-theorem isPositive_diagonalCLM_invNatSucc (𝕜 : Type*) [RCLike 𝕜] :
-    (diagonalCLM (p := 2) (invNatSucc 𝕜)).IsPositive := by
-  rw [invNatSucc_eq_ofAntitone]
-  exact isPositive_diagonalCLM_ofAntitone _
 
 /-- The Loewner order between diagonal operators on `ℓ²(ι, 𝕜)` is the pointwise order on their
 coefficients. -/

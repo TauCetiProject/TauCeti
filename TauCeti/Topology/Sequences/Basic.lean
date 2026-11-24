@@ -12,20 +12,13 @@ public import Mathlib.Topology.Sequences
 
 For any bijection `e : X ≃ Y` into a topological space `Y`, sequential closedness of an image
 `e '' s` translates directly to closure of `s` under sequences whose images under `e` converge
-(`Equiv.isSeqClosed_image_iff`), without requiring a topology on `X`. Composition of sequentially
-continuous maps is sequentially continuous (`SeqContinuous.comp`). In a Hausdorff space, every
+(`Equiv.isSeqClosed_image_iff`), without requiring a topology on `X`. In a Hausdorff space, every
 sequentially compact set is sequentially closed (`IsSeqCompact.isSeqClosed`).
 -/
 
 public section
 
 open Filter Set Topology
-
-/-- The composition of two sequentially continuous maps is sequentially continuous. -/
-protected theorem SeqContinuous.comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [TopologicalSpace Z] {g : Y → Z} {f : X → Y} (hg : SeqContinuous g) (hf : SeqContinuous f) :
-    SeqContinuous (g ∘ f) :=
-  fun _ _ hx ↦ hg (hf hx)
 
 /-- Sequential closedness of `e '' s` under an equivalence `e : X ≃ Y` into a topological space
 `Y` is equivalent to closure of `s` under limits of sequences whose images under `e` converge. -/
