@@ -83,7 +83,9 @@ theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
     rw [map_sub, map_one_of_mem_stateSpace hφ, sub_eq_zero] at hφp
     exact hφp.symm
   obtain ⟨f, -, hf⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hφf (x : A) : φ x = f x := by rw [← hf]; rfl
+  have hφf (x : A) : φ x = f x := by
+    rw [← hf, StrongDual.toWeakDual_apply, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      PositiveContinuousLinearMap.coe_ofClass]
   have hfq : f (1 - p) = 0 := by rw [← hφf, hφp]
   refine DFunLike.ext _ _ fun a ↦ ?_
   have ha : a * p = p * a * p + (1 - p) * (a * p) := by noncomm_ring
