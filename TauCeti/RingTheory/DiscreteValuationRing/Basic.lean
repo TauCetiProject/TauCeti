@@ -30,6 +30,8 @@ extension of a ring of dimension at most one in it is injective.
 
 ## Main results
 
+* `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ`: if
+  `c * ϖ ^ n ∈ 𝔪 ^ (n + 1)` for a uniformizer `ϖ`, then `c ∈ 𝔪`.
 * `TauCeti.IsDiscreteValuationRing.pow_mul_mem_maximalIdeal_pow_add_iff` and
   `TauCeti.IsDiscreteValuationRing.mul_mem_maximalIdeal_pow_succ_iff`: multiplying by a power of a
   uniformizer shifts membership in powers of the maximal ideal.
@@ -84,6 +86,14 @@ theorem mul_mem_maximalIdeal_pow_succ_iff {ϖ : S} (hϖ : Irreducible ϖ) {k : �
     ϖ * x ∈ maximalIdeal S ^ (k + 1) ↔ x ∈ maximalIdeal S ^ k := by
   simpa only [pow_one, add_comm 1 k] using
     pow_mul_mem_maximalIdeal_pow_add_iff hϖ 1 (k := k) (x := x)
+
+/-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
+the coefficient in the maximal ideal. -/
+theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
+    (hϖ : Irreducible ϖ) (h : c * ϖ ^ n ∈ maximalIdeal S ^ (n + 1)) :
+    c ∈ maximalIdeal S := by
+  rw [mul_comm] at h
+  simpa only [pow_one] using (pow_mul_mem_maximalIdeal_pow_add_iff hϖ n (k := 1)).mp h
 
 /-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
 valuation. -/

@@ -37,7 +37,7 @@ additive homomorphism `G_{n+1} / G_{n+2} →+ k` whose dependence on `ϖ` is mul
 When `B` is a local algebra over a local ring `A` whose elements `G` fixes and the residue
 extension `ResidueField B / ResidueField A` is separable, membership of an element of `G_0` in
 `G_i` is decided at `ϖ` alone
-(`TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal`), so the
+(`TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_eq_maximalIdeal`), so the
 kernel of the `i`-th homomorphism is *equal* to `G_{i+1}` and all graded maps `θ_i`,
 `tameCharacterGraded`, and `ramificationGroupGradedToResidueField` are injective. Together with the
 local-ring positive-depth results from `TauCeti/RingTheory/LocalRing/RamificationGroup.lean`, this
@@ -527,8 +527,9 @@ theorem mem_ramificationGroup_natCast_iff_smul_sub_mem (A : Type*) [CommRing A] 
     [Algebra A B] [IsLocalHom (algebraMap A B)] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] {ϖ : B} (hϖ : Irreducible ϖ) {n : ℕ}
     {σ : G} (hσ : σ ∈ ramificationGroup G B 0) :
-    σ ∈ ramificationGroup G B n ↔ σ • ϖ - ϖ ∈ maximalIdeal B ^ (n + 1) :=
-  mem_ramificationGroup_natCast_iff_of_span_singleton_eq_maximalIdeal A hϖ.maximalIdeal_eq.symm hσ
+    σ ∈ ramificationGroup G B n ↔ σ • ϖ - ϖ ∈ maximalIdeal B ^ (n + 1) := by
+  rw [mem_ramificationGroup_iff_of_span_eq_maximalIdeal A hϖ.maximalIdeal_eq.symm hσ,
+    Set.forall_mem_singleton, show ((n : ℤ) + 1).toNat = n + 1 by omega]
 
 /-- When `B` is a local `A`-algebra on which `G` acts by `A`-algebra automorphisms with separable
 residue extension, Serre's lower index on the inertia group `G_0` is read at any uniformizer `ϖ`:
