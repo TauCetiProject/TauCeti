@@ -10,7 +10,6 @@ public import TauCeti.Probability.Finance.BlackScholes.Basic
 public import TauCeti.Probability.Finance.MarketImpact.Clearing
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Probability.Finance.BlackScholes.Greeks
 
 /-!
 # Feedback volatility of market clearing with program trading
@@ -36,16 +35,16 @@ Black–Scholes coefficient `σ x`. The second derivative `ψ''`, which enters t
 Replicating a claim of price `C(x, t)` in this market leads to the Black–Scholes equation with
 `σ_fb` in place of `σ x`. Its residual is `TauCeti.Finance.linearFeedbackResidual`; with no
 program trading it is the Black–Scholes residual `TauCeti.Finance.blackScholesResidual`
-(`TauCeti.Finance.linearFeedbackResidual_zero`), solved for example by the call price
-(`TauCeti.Finance.blackScholesResidual_callPrice`). For a single hedged claim, `H = ρ C_x`, so
+(`TauCeti.Finance.linearFeedbackResidual_zero`), whose unfolded form the call price solves
+(`TauCeti.BlackScholes.callPrice_pde`). For a single hedged claim, `H = ρ C_x`, so
 `k = ρ C_xx` and the diffusion term `σ_fb² C_xx / 2` is a nonlinear function of the gamma
 `Γ = C_xx`. Its derivative in `Γ` is
 
 `σ² x² (1 - h)² (1 - h + ρ x Γ) / (2 (1 - h - ρ x Γ) ³)`
 
 (`TauCeti.Finance.hasDerivAt_linearFeedbackVolatility_sq_div_two_mul`). Where both `1 - h - ρ x Γ`
-and `1 - h + ρ x Γ` are positive the equation is therefore parabolic: the diffusion term is
-strictly increasing in `Γ` there
+and `1 - h + ρ x Γ` are positive, and `σ x (1 - h) ≠ 0`, the equation is therefore parabolic:
+the diffusion term is strictly increasing in `Γ` there
 (`TauCeti.Finance.strictMonoOn_linearFeedbackVolatility_sq_div_two_mul`). For `σ x > 0`, the
 feedback volatility then also exceeds half the no-feedback volatility
 (`TauCeti.Finance.mul_div_two_lt_linearFeedbackVolatility`).
@@ -133,18 +132,33 @@ namespace FeedbackParabolicMargins
 variable {δ : ℝ} (hm : FeedbackParabolicMargins δ x h k)
 include hm
 
+/-- Under the parabolic margins the asset price is positive. -/
+theorem x_pos : 0 < x :=
+  hm.2.1
+
+/-- Under the parabolic margins the clearing factor `1 - h` is positive. -/
+theorem one_sub_pos : 0 < 1 - h :=
+  hm.1.trans_le hm.2.2.1
+
+/-- Under the parabolic margins the clearing derivative `1 - h - x k` is positive. -/
+theorem clearing_pos : 0 < 1 - h - x * k :=
+  hm.1.trans_le hm.2.2.2.1
+
+/-- Under the parabolic margins the parabolic factor `1 - h + x k` is positive. -/
+theorem parabolic_pos : 0 < 1 - h + x * k :=
+  hm.1.trans_le hm.2.2.2.2
+
 /-- Under the parabolic margins, the feedback volatility for a positive no-feedback volatility
 `σ` is positive. -/
 theorem linearFeedbackVolatility_pos (hσ : 0 < σ) : 0 < linearFeedbackVolatility σ x h k :=
-  TauCeti.Finance.linearFeedbackVolatility_pos hσ hm.2.1 (hm.1.trans_le hm.2.2.1)
-    (hm.1.trans_le hm.2.2.2.1)
+  TauCeti.Finance.linearFeedbackVolatility_pos hσ hm.x_pos hm.one_sub_pos hm.clearing_pos
 
 /-- Under the parabolic margins, the feedback volatility exceeds half the no-feedback volatility
 `σ x`, for `σ > 0`. -/
 theorem mul_div_two_lt_linearFeedbackVolatility (hσ : 0 < σ) :
     σ * x / 2 < linearFeedbackVolatility σ x h k :=
-  TauCeti.Finance.mul_div_two_lt_linearFeedbackVolatility (mul_pos hσ hm.2.1)
-    (hm.1.trans_le hm.2.2.2.1) (hm.1.trans_le hm.2.2.2.2)
+  TauCeti.Finance.mul_div_two_lt_linearFeedbackVolatility (mul_pos hσ hm.x_pos) hm.clearing_pos
+    hm.parabolic_pos
 
 end FeedbackParabolicMargins
 
@@ -281,13 +295,6 @@ theorem blackScholesResidual_def (r σ : ℝ) (C : ℝ → ℝ → ℝ) (x t : �
         r * (x * deriv (fun z ↦ C z t) x - C x t) :=
   (rfl)
 
-/-- The Black–Scholes call price `C(s, t)` of strike `K > 0` and maturity `T` solves the
-Black–Scholes equation at every positive spot before maturity. -/
-theorem blackScholesResidual_callPrice (r σ : ℝ) {K T s t : ℝ} (hs : 0 < s) (hK : 0 < K)
-    (ht : t < T) :
-    blackScholesResidual r σ (fun x u ↦ BlackScholes.callPrice x r σ K (T - u)) s t = 0 :=
-  BlackScholes.callPrice_pde hs hK ht
-
 /-- The residual of the feedback pricing equation
 
 `C_t + σ_fb² C_xx / 2 + r (x C_x - C)`
@@ -327,7 +334,7 @@ theorem linearFeedbackResidual_const_mul_deriv (r σ ρ : ℝ) (C : ℝ → ℝ 
           deriv (deriv fun z ↦ C z t) x +
         r * (x * deriv (fun z ↦ C z t) x - C x t) := by
   simp only [linearFeedbackResidual_def, linearFeedbackVolatility_def, deriv_const_mul_field]
-  ring_nf
+  ring
 
 /-! ### Parabolicity of the single-claim equation -/
 
@@ -392,10 +399,10 @@ theorem strictMonoOn_linearFeedbackVolatility_sq_div_two_mul_of_margins {ρ δ :
     StrictMonoOn (fun Γ ↦ linearFeedbackVolatility σ x h (ρ * Γ) ^ 2 / 2 * Γ)
       {Γ | FeedbackParabolicMargins δ x h (ρ * Γ)} := by
   intro a ha b hb hab
+  rw [mem_ofPred_eq] at ha hb
   have hσx : σ * x * (1 - h) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero hσ ha.2.1.ne') (ha.1.trans_le ha.2.2.1).ne'
+    mul_ne_zero (mul_ne_zero hσ ha.x_pos.ne') ha.one_sub_pos.ne'
   exact strictMonoOn_linearFeedbackVolatility_sq_div_two_mul hσx
-    ⟨ha.1.trans_le ha.2.2.2.1, ha.1.trans_le ha.2.2.2.2⟩
-    ⟨hb.1.trans_le hb.2.2.2.1, hb.1.trans_le hb.2.2.2.2⟩ hab
+    ⟨ha.clearing_pos, ha.parabolic_pos⟩ ⟨hb.clearing_pos, hb.parabolic_pos⟩ hab
 
 end TauCeti.Finance
