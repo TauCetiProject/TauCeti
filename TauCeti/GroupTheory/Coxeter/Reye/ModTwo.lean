@@ -220,10 +220,16 @@ theorem reyeQuadratic_smul_add_smul (a b : ZMod 2) :
 
 /-- The norm `q(eᵢ) = 1` of a simple root is invertible, so that the orthogonal reflection of
 `reyeQuadratic` in `eᵢ` is defined. -/
-instance (i : Fin 10) : Invertible (reyeQuadratic (Pi.single i 1)) where
+instance invertibleReyeQuadraticSingle (i : Fin 10) :
+    Invertible (reyeQuadratic (Pi.single i 1)) where
   invOf := 1
   invOf_mul_self := by rw [reyeQuadratic_single, mul_one]
   mul_invOf_self := by rw [reyeQuadratic_single, mul_one]
+
+/-- The inverse of the norm `q(eᵢ) = 1` of a simple root is `1`. -/
+@[simp]
+theorem invOf_reyeQuadratic_single (i : Fin 10) : ⅟(reyeQuadratic (Pi.single i 1)) = 1 :=
+  rfl
 
 /-- The orthogonal reflection of `reyeQuadratic` in the simple root `eᵢ` is the transvection
 `x ↦ x + b(x, eᵢ) eᵢ`. -/
@@ -231,9 +237,7 @@ instance (i : Fin 10) : Invertible (reyeQuadratic (Pi.single i 1)) where
 theorem reflection_reyeQuadratic_single_apply (i : Fin 10) (x : ReyeReduction) :
     reflection reyeQuadratic (Pi.single i 1) x =
       x + polar reyeQuadratic x (Pi.single i 1) • Pi.single i 1 := by
-  rw [reflection_apply_of_charTwo, polar_comm]
-  congr 2
-  exact one_mul _
+  rw [reflection_apply_of_charTwo, invOf_reyeQuadratic_single, one_mul, polar_comm]
 
 /-- In the coordinates `Fin 10 →₀ ZMod 2`, the reflection of `reyeQuadratic` in `eᵢ` is the
 `i`-th reflection of the integral Gram matrix of T246 reduced modulo `2`. -/
@@ -266,6 +270,10 @@ theorem isLiftable_reflectionOrthogonal_reyeQuadratic :
   let ψ : orthogonalGroup reyeQuadratic →* Module.End (ZMod 2) (Fin 10 →₀ ZMod 2) :=
     (e.symm.conjRingEquiv : Module.End (ZMod 2) ReyeReduction →* _).comp
       (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp (orthogonalGroup _).subtype)
+  -- `ψ g` is the conjugate `e.symm ∘ g ∘ e` of `g`, and `e y` is the function `⇑y`.
+  have hψ_apply (g : orthogonalGroup reyeQuadratic) (y : Fin 10 →₀ ZMod 2) :
+      ψ g y = e.symm ((g : ReyeReduction ≃ₗ[ZMod 2] ReyeReduction) y) :=
+    rfl
   have hψ : Function.Injective ψ := by
     intro g h hgh
     refine Subtype.ext (LinearEquiv.ext fun y ↦ ?_)
@@ -273,11 +281,9 @@ theorem isLiftable_reflectionOrthogonal_reyeQuadratic :
   have hψi (i : Fin 10) : ψ (reflectionOrthogonal reyeQuadratic (Pi.single i 1)) =
       Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination (ZMod 2)
         (reyeDiagram.integralGramMatrix.map (Int.castRingHom (ZMod 2)) i)) := by
-    refine LinearMap.ext fun y ↦ DFunLike.coe_injective ?_
-    change ⇑(e.symm ((reflectionOrthogonal reyeQuadratic (Pi.single i 1) :
-      ReyeReduction ≃ₗ[ZMod 2] ReyeReduction) (e y))) = _
-    rw [coe_reflectionOrthogonal]
-    exact reflection_reyeQuadratic_single_coe i y
+    refine LinearMap.ext fun y ↦ ?_
+    rw [hψ_apply, coe_reflectionOrthogonal, reflection_reyeQuadratic_single_coe,
+      Finsupp.linearEquivFunOnFinite_symm_coe]
   intro i j
   apply hψ
   rw [map_pow, map_mul, map_one, hψi, hψi]
