@@ -14,11 +14,29 @@ A polynomial fixed by the substitution `X ↦ -X`, over a coefficient ring witho
 is a polynomial in `X²`. This is the invariant theory of the group of order two acting on a line.
 Translating by `1` gives the same statement for the reflection `X ↦ -X - 2`, whose invariant is
 `X² + 2X`.
+
+The polynomials `X² - μ`, and their products, are even (`Polynomial.X_sq_sub_C_comp_neg_X`,
+`Polynomial.prod_X_sq_sub_C_comp_neg_X`).
 -/
 
 public section
 
 namespace Polynomial
+
+section Ring
+
+variable {R : Type*} [CommRing R]
+
+/-- The polynomial `X² - μ` is even. -/
+theorem X_sq_sub_C_comp_neg_X (μ : R) : (X ^ 2 - C μ : R[X]).comp (-X) = X ^ 2 - C μ := by
+  simp [sub_comp]
+
+/-- A product of polynomials `X² - μᵢ` is even. -/
+theorem prod_X_sq_sub_C_comp_neg_X {ι : Type*} (s : Finset ι) (μ : ι → R) :
+    (∏ i ∈ s, (X ^ 2 - C (μ i)) : R[X]).comp (-X) = ∏ i ∈ s, (X ^ 2 - C (μ i)) := by
+  simp [prod_comp, sub_comp]
+
+end Ring
 
 variable {R : Type*} [CommRing R] [IsAddTorsionFree R]
 

@@ -22,7 +22,8 @@ the spectral mapping theorem for the characteristic roots of `p(f)`.
 
 Along a divisibility `p ∣ q`, a vector killed by a power of `p(f)` is killed by the same power of
 `q(f)` (`Module.End.genEigenspace_aeval_zero_le_of_dvd`,
-`Module.End.maxGenEigenspace_aeval_zero_le_of_dvd`).
+`Module.End.maxGenEigenspace_aeval_zero_le_of_dvd`). An eigenvector of `f²` for `μ` is killed by
+`f² - μ` (`Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C`).
 
 ## References
 
@@ -79,5 +80,11 @@ theorem maxGenEigenspace_aeval_zero_le_of_dvd {R M : Type*} [CommRing R] [AddCom
     [Module R M] (f : End R M) {p q : R[X]} (hpq : p ∣ q) :
     (aeval f p).maxGenEigenspace 0 ≤ (aeval f q).maxGenEigenspace 0 :=
   genEigenspace_aeval_zero_le_of_dvd f hpq ⊤
+
+/-- An eigenvector of `f²` for `μ` is killed by `f² - μ`. -/
+theorem mem_maxGenEigenspace_aeval_X_sq_sub_C {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {f : End R M} {μ : R} {v : M} (hv : f (f v) = μ • v) :
+    v ∈ (aeval f (X ^ 2 - C μ)).maxGenEigenspace 0 :=
+  (mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
 
 end Module.End

@@ -15,7 +15,6 @@ import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Spectrum
-import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
@@ -81,9 +80,10 @@ For an eigenvalue `a + bi`, `a, b > 0`, of `A = A_P`, the vectors killed by a po
 the family restricts to a nondegenerate family on `G`
 (`TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`).
 Distinct eigenvalues in the first quadrant give coprime polynomials `f`
-(`TauCeti.SymplecticForm.isCoprime_focusFocusPoly_comp_neg_X`), so the subspaces `G` are pairwise
-`ω`-orthogonal. Each has dimension at least four, because on a plane `A²` is a homothety and `f(A)`
-would be invertible
+(`TauCeti.SymplecticForm.isCoprime_focusFocusPoly_focusFocusPoly_comp_neg_X`), so the subspaces
+`G` are pairwise `ω`-orthogonal
+(`TauCeti.SymplecticForm.apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly`). Each has
+dimension at least four, because on a plane `A²` is a homothety and `f(A)` would be invertible
 (`TauCeti.SymplecticForm.four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly`); as there are
 `dim V / 4` of them, each has dimension exactly four.
 Since `A` is semisimple, `f(A)` vanishes on `G`, and there the odd polynomials
@@ -355,8 +355,8 @@ theorem abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPoly_eq_zero {a b : ℝ} (hb 
 /-- For distinct points `a + bi` and `a' + b'i` of the open first quadrant, the polynomial
 `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` and the reflection of its analogue for `(a', b')` are
 coprime. -/
-theorem isCoprime_focusFocusPoly_comp_neg_X {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha' : 0 < a')
-    (hb' : 0 < b') (hne : a ≠ a' ∨ b ≠ b') :
+theorem isCoprime_focusFocusPoly_focusFocusPoly_comp_neg_X {a b a' b' : ℝ} (ha : 0 < a)
+    (hb : 0 < b) (ha' : 0 < a') (hb' : 0 < b') (hne : a ≠ a' ∨ b ≠ b') :
     IsCoprime (focusFocusPoly a b) ((focusFocusPoly a' b').comp (-X)) := by
   rw [focusFocusPoly_comp_neg_X]
   refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun w ↦ ?_
@@ -370,6 +370,20 @@ theorem isCoprime_focusFocusPoly_comp_neg_X {a b a' b' : ℝ} (ha : 0 < a) (hb :
   rcases hne with h | h
   · exact h (h₁.symm.trans h₁')
   · exact h (h₂.symm.trans h₂')
+
+omit [FiniteDimensional ℝ V] in
+/-- For `A ∈ sp(V, ω)` and distinct points `z` and `z'` of the open first quadrant, `ω` pairs the
+vectors killed by a power of `focusFocusPoly z.re z.im` evaluated at `A` trivially with those
+killed by a power of `focusFocusPoly z'.re z'.im` evaluated at `A`. -/
+theorem apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {z z' : ℂ} (hz : 0 < z.re ∧ 0 < z.im)
+    (hz' : 0 < z'.re ∧ 0 < z'.im) (hzz' : z ≠ z') {v w : V}
+    (hv : v ∈ (aeval A (focusFocusPoly z.re z.im)).maxGenEigenspace 0)
+    (hw : w ∈ (aeval A (focusFocusPoly z'.re z'.im)).maxGenEigenspace 0) : ω v w = 0 := by
+  refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
+    (isCoprime_focusFocusPoly_focusFocusPoly_comp_neg_X hz.1 hz.2 hz'.1 hz'.2 ?_) hv hw
+  by_contra! h
+  exact hzz' (Complex.ext h.1 h.2)
 
 /-- **The focus-focus pair as odd polynomials.** For `a, b > 0` there are odd polynomials `p₁`,
 `p₂` with `p₁² ≡ 1` and `p₂² ≡ -1` modulo `f = (X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, namely
@@ -456,8 +470,7 @@ private theorem finrank_eq_four_of_four_le {k : ℕ} (hk : k * 4 = finrank ℝ V
     (horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0)
     (h4 : ∀ j, 4 ≤ finrank ℝ (G j)) (j : Fin k) : finrank ℝ (G j) = 4 := by
   have hsum : ∑ j, finrank ℝ (G j) ≤ finrank ℝ V := by
-    rw [← finrank_iSup_eq_sum_finrank_of_iSupIndep (iSupIndep_of_pairwise_apply_eq_zero hGs horth)]
-    exact Submodule.finrank_le _
+    simpa using sum_finrank_le_finrank_of_pairwise_apply_eq_zero hGs horth (W := ⊤) fun _ ↦ le_top
   refine le_antisymm (not_lt.1 fun hlt ↦ ?_) (h4 j)
   have := Finset.sum_lt_sum (s := Finset.univ) (fun j _ ↦ h4 j) ⟨j, Finset.mem_univ _, hlt⟩
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at this
@@ -597,12 +610,10 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
   set G : Fin k → Submodule ℝ V := fun j ↦ (aeval A (focusFocusPoly (a j) (c j))).maxGenEigenspace 0
   have hGs (j : Fin k) : ω.IsSymplectic (G j) :=
     ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPoly_comp_neg_X _ _)
-  have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 := by
-    intro j j' hjj' v hv w hw
-    refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-      (isCoprime_focusFocusPoly_comp_neg_X (ha j) (hc j) (ha j') (hc j') ?_) hv hw
-    by_contra! hre
-    exact hjj' (e.injective (Subtype.ext (Complex.ext hre.1 hre.2)))
+  have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 :=
+    fun j j' hjj' _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly hA
+      (hs0 _ (e j).property) (hs0 _ (e j').property)
+      (fun h ↦ hjj' (e.injective (Subtype.ext h))) hv hw
   have hG4 : ∀ j, finrank ℝ (G j) = 4 := finrank_eq_four_of_four_le hs hGs horth fun j ↦ by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hPs _ (e j).property
     exact four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly hA (ha j).ne' (hc j).ne' hv hAv hAw
