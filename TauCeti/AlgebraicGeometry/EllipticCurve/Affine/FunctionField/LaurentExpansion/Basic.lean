@@ -97,6 +97,27 @@ theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
   rw [map_div₀, map_neg, hx, neg_neg, mul_div_cancel_right₀ _ hy]
 
+-- Not `@[simp]`: `W.functionFieldLaurentExpansion_genericY` gives the unit-part expansion.
+/-- The Laurent expansion of `genericY` in terms of `formalW`: `y = -1 / w(z)`. -/
+theorem functionFieldLaurentExpansion_genericY_eq_div_formalW :
+    W.functionFieldLaurentExpansion W.toAffine.genericY = -1 / (formalW W : K⸨X⸩) := by
+  have h := W.functionFieldLaurentExpansion_neg_inv_genericY
+  rw [map_neg, map_inv₀] at h
+  rw [← h]
+  field_simp [W.functionFieldLaurentExpansion_genericY_ne_zero]
+
+-- Not `@[simp]`: `W.functionFieldLaurentExpansion_genericX` gives the unit-part expansion.
+/-- The Laurent expansion of `genericX` in terms of `formalW`: `x = z / w(z)`. -/
+theorem functionFieldLaurentExpansion_genericX_eq_div_formalW :
+    W.functionFieldLaurentExpansion W.toAffine.genericX =
+      ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) / (formalW W : K⸨X⸩) := by
+  have hw0 : (formalW W : K⸨X⸩) ≠ 0 :=
+    (map_ne_zero_iff (ofPowerSeries ℤ K) ofPowerSeries_injective).mpr W.formalW_ne_zero
+  have h := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
+  rw [map_div₀, map_neg, W.functionFieldLaurentExpansion_genericY_eq_div_formalW] at h
+  rw [← h]
+  field_simp
+
 /-- Laurent expansion at infinity commutes with base change along a field homomorphism `σ`. -/
 theorem functionFieldLaurentExpansion_map {L : Type*} [Field L] (σ : K →+* L)
     (f : W.toAffine.FunctionField) :
