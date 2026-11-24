@@ -79,7 +79,7 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
   `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
 * `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`,
-  `Module.exists_forall_smul_ne_zero_of_not_isTorsion'_of_imp`: elementwise characterizations of
+  `Module.exists_forall_smul_ne_zero_of_imp_of_not_isTorsion'`: elementwise characterizations of
   `S`-torsion, its negation, and extracting a witness from a torsion implication.
 * `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
 * `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.

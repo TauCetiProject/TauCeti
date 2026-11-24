@@ -364,6 +364,7 @@ def hurewiczRatLinearEquiv
     (fun m hm ↦ isAddTorsion_iff_isTorsion_int.1 (hπ m hm)) ℚ
 
 /-- Action of `HomotopyGroup.hurewiczRatLinearEquiv` on a pure tensor `a ⊗ₜ[ℤ] x`. -/
+@[simp]
 theorem hurewiczRatLinearEquiv_tmul
     (hπ : ∀ m < n, IsAddTorsion (Additive (HomotopyGroup (Fin (m + 2)) Y y)))
     (a : ℚ) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
@@ -401,6 +402,7 @@ def hurewiczRatLinearEquivOfSubsingleton
 
 /-- Action of `HomotopyGroup.hurewiczRatLinearEquivOfSubsingleton` on a pure tensor
 `a ⊗ₜ[ℤ] x`. -/
+@[simp]
 theorem hurewiczRatLinearEquivOfSubsingleton_tmul
     (hH : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of Y)).homology (m + 2)))
     (a : ℚ) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
