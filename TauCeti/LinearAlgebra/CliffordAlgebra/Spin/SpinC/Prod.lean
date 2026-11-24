@@ -29,6 +29,7 @@ nondegenerate forms its kernel is the antidiagonal circle
 
 ## Main results
 
+* `CliffordAlgebra.spinCGroupProd_apply`: it multiplies the images of the two factors.
 * `CliffordAlgebra.spinCGroupProd_mk_mk`: its value on representatives.
 * `CliffordAlgebra.spinCGroupProd_comp_inl`, `CliffordAlgebra.spinCGroupProd_comp_inr`: its
   restrictions to the two factors are the `Spinᶜ` maps of the orthogonal inclusions.
@@ -70,6 +71,14 @@ def spinCGroupProd :
   ((QuadraticMap.Isometry.inl Q₁ Q₂).spinCGroupMap hQ₁ _).noncommCoprod
     ((QuadraticMap.Isometry.inr Q₁ Q₂).spinCGroupMap hQ₂ _)
     (commute_spinCGroupMap_inl_spinCGroupMap_inr Q₁ Q₂ hQ₁ hQ₂)
+
+/-- `spinCGroupProd` multiplies the images of the two factors under the `Spinᶜ` maps of the
+orthogonal inclusions. -/
+theorem spinCGroupProd_apply (x : spinCGroup Q₁ hQ₁ × spinCGroup Q₂ hQ₂) :
+    spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ x =
+      (QuadraticMap.Isometry.inl Q₁ Q₂).spinCGroupMap hQ₁ (prod_ne_zero_left hQ₁) x.1 *
+        (QuadraticMap.Isometry.inr Q₁ Q₂).spinCGroupMap hQ₂ (prod_ne_zero_left hQ₁) x.2 :=
+  MonoidHom.noncommCoprod_apply ..
 
 /-- `spinCGroupProd` on representatives. -/
 @[simp]

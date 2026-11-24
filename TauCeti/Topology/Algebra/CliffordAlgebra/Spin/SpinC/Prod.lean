@@ -72,4 +72,10 @@ theorem coeMonoidHom_spinCGroupProdContinuousMonoidHom :
       spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ :=
   (rfl)
 
+/-- Evaluating `spinCGroupProdContinuousMonoidHom` applies `spinCGroupProd`. -/
+@[simp]
+theorem spinCGroupProdContinuousMonoidHom_apply (x : spinCGroup Q₁ hQ₁ × spinCGroup Q₂ hQ₂) :
+    spinCGroupProdContinuousMonoidHom Q₁ Q₂ hQ₁ hQ₂ x = spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ x :=
+  (rfl)
+
 end CliffordAlgebra
