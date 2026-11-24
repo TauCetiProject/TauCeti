@@ -35,6 +35,9 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   label masses and cumulative masses are proportions of inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
+* `Equiv.measurePreserving_uniformOn_univ`: a measurable bijection is measure preserving
+  between the `uniformOn univ` measures on its domain and codomain (both are zero when the
+  carriers are infinite or empty).
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -184,17 +187,31 @@ namespace Equiv
 
 variable [MeasurableSpace β]
 
-/-- A bijection transports the uniform law on a type to the uniform law on its codomain. -/
-theorem map_uniformOn_univ (e : α ≃ β) :
-    (uniformOn (_root_.Set.univ : Set α)).map e = uniformOn (_root_.Set.univ : Set β) := by
+omit [MeasurableSingletonClass α] in
+/-- A measurable bijection is measure preserving from the `uniformOn univ` measure on its domain
+to the `uniformOn univ` measure on its codomain, for arbitrary measurable-space structures on
+both types. When the carriers are infinite or empty, both measures are zero. -/
+theorem measurePreserving_uniformOn_univ (e : α ≃ β) (he : Measurable e) :
+    MeasurePreserving e (uniformOn (_root_.Set.univ : Set α))
+      (uniformOn (_root_.Set.univ : Set β)) := by
+  refine ⟨he, ?_⟩
   by_cases hα : Finite α
-  · have he : Measurable e := .of_discrete
-    ext t ht
+  · ext t ht
     rw [Measure.map_apply he ht]
     simp only [uniformOn, cond_apply .univ, _root_.Set.univ_inter, Measure.count_apply .univ,
       Measure.count_apply ht, Measure.count_apply (he ht)]
     rw [Set.encard_univ, Set.encard_univ, ENat.card_congr e,
       Set.encard_preimage_of_injective_subset_range e.injective (by simp)]
+  · have hα' : Infinite α := not_finite_iff_infinite.mp hα
+    have hβ : Infinite β := Infinite.of_injective e e.injective
+    rw [(uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ),
+      (uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ), Measure.map_zero]
+
+/-- A bijection transports the uniform law on a type to the uniform law on its codomain. -/
+theorem map_uniformOn_univ (e : α ≃ β) :
+    (uniformOn (_root_.Set.univ : Set α)).map e = uniformOn (_root_.Set.univ : Set β) := by
+  by_cases hα : Finite α
+  · exact (e.measurePreserving_uniformOn_univ .of_discrete).map_eq
   · have hα' : Infinite α := not_finite_iff_infinite.mp hα
     have hβ : Infinite β := Infinite.of_injective e e.injective
     rw [(uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ),
