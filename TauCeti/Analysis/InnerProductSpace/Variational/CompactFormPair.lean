@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Variational.BoundedSublevels
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import TauCeti.Topology.Semicontinuity.Sequences
 import TauCeti.Analysis.Convex.Uniform.Basic
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
