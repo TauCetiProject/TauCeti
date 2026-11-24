@@ -55,8 +55,9 @@ disconnected group needs in addition a component condition: by
 equivariance holds exactly when the cocycle vanishes and the defect vanishes at one element of each
 connected component.
 
-None of this needs `M` to be connected, provided the cocycle vanishes at every point. For an
-element `g` acting by a symplectomorphism, the defect `θ(g, ·)` always has vanishing differential
+The criteria for equivariance do not need `M` to be connected, provided the cocycle vanishes at
+every point, although `θ(g, x)` is then only locally constant in `x`. For an element `g` acting by
+a symplectomorphism, the defect `θ(g, ·)` always has vanishing differential
 (`TauCeti.SmoothTwoForm.IsMomentMap.mfderiv_momentDefect_apply_eq_zero`). Differentiating the
 cocycle identity `θ(g k, x) = θ(g, k • x) + Ad*_g θ(k, x)` in `k` at `k = 1` then shows that
 `θ(·, x)` is constant on each connected component of `G` as soon as the cocycle vanishes at `x`
