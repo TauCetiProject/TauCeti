@@ -138,7 +138,8 @@ theorem cornerEmbedding_apply (c : Fin 2) (x : Unit → CStarMatrix (Fin 1) (Fin
 theorem multiplicityMatrix_cornerEmbedding (c : Fin 2) :
     (cornerEmbedding c).multiplicityMatrix = 1 := by
   rw [cornerEmbedding, TauCeti.multiplicityMatrix_cstarMatrixPiBlockHom]
-  ext ⟨⟩ ⟨⟩; rfl
+  ext ⟨⟩ ⟨⟩
+  simp
 
 /-- The upper-left (`c = 0`) and lower-right (`c = 1`) corner embeddings `M₁(ℂ) → M₂(ℂ)` are
 unitarily conjugate in `M₂(ℂ)`. -/

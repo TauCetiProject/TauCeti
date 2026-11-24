@@ -281,6 +281,21 @@ theorem sum_multiplicityMatrix_mul_card_le [Fintype ι]
   rw [sum_multiplicityMatrix_mul_card_eq_rank_map_one φ j]
   exact Matrix.rank_le_card_width _
 
+private theorem eq_zero_of_isIdempotentElem_of_trace_eq_zero {M : Type*} [Fintype M]
+    {P : CStarMatrix M M ℂ} (hP : IsIdempotentElem P)
+    (htr : Matrix.trace (CStarMatrix.ofMatrix.symm P) = 0) : P = 0 := by
+  apply CStarMatrix.ofMatrix.symm.injective
+  rw [CStarMatrix.ofMatrix_symm_zero]
+  refine Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero ?_ htr
+  rw [IsIdempotentElem, ← CStarMatrix.ofMatrix_symm_mul, hP.eq]
+
+private theorem map_eq_zero_of_trace_eq_zero
+    (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
+    {x : ∀ i, CStarMatrix (n i) (n i) ℂ} (j : κ) (hx : IsIdempotentElem x)
+    (htr : Matrix.trace (CStarMatrix.ofMatrix.symm (φ x j)) = 0) : φ x j = 0 :=
+  eq_zero_of_isIdempotentElem_of_trace_eq_zero
+    (by rw [IsIdempotentElem, ← Pi.mul_apply, ← map_mul, hx.eq]) htr
+
 /-- **Unitality criterion**: `φ` preserves the unit (`φ 1 = 1`) if and only if equality holds in
 the block-size inequality at every target block `j`. -/
 theorem map_one_eq_one_iff_sum_multiplicityMatrix_eq [Fintype ι]
@@ -290,15 +305,12 @@ theorem map_one_eq_one_iff_sum_multiplicityMatrix_eq [Fintype ι]
   refine ⟨fun h j ↦ ?_, fun h ↦ funext fun j ↦ ?_⟩
   · rw [sum_multiplicityMatrix_mul_card_eq_rank_map_one φ j, h]
     rw [Pi.one_apply, CStarMatrix.ofMatrix_symm_one, Matrix.rank_one]
-  · set P : Matrix (m j) (m j) ℂ := CStarMatrix.ofMatrix.symm (φ 1 j)
-    have hP : IsIdempotentElem P := isIdempotentElem_ofMatrix_symm_map φ .one j
-    have hQ : IsIdempotentElem (1 - P) := hP.one_sub
-    have htr : (1 - P).trace = 0 := by
-      rw [Matrix.trace_sub, Matrix.trace_one, trace_map_one_eq_sum φ j, ← Nat.cast_sum, h j,
-        sub_self]
-    have hzero := Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero hQ htr
-    apply CStarMatrix.ofMatrix.symm.injective
-    rw [Pi.one_apply, CStarMatrix.ofMatrix_symm_one]
+  · rw [Pi.one_apply]
+    have hP : IsIdempotentElem (φ 1 j) := by
+      rw [IsIdempotentElem, ← Pi.mul_apply, ← map_mul, mul_one]
+    have hzero := eq_zero_of_isIdempotentElem_of_trace_eq_zero hP.one_sub <| by
+      rw [CStarMatrix.ofMatrix_symm_sub, CStarMatrix.ofMatrix_symm_one, Matrix.trace_sub,
+        Matrix.trace_one, trace_map_one_eq_sum φ j, ← Nat.cast_sum, h j, sub_self]
     exact (sub_eq_zero.mp hzero).symm
 
 /-- Row `j` of `φ.multiplicityMatrix` vanishes if and only if the `j`-th target component of `φ`
@@ -309,14 +321,9 @@ theorem multiplicityMatrix_row_eq_zero_iff [Finite ι]
   classical
   cases nonempty_fintype ι
   refine ⟨fun hj x ↦ ?_, fun hj i ↦ by simp [multiplicityMatrix_apply, hj]⟩
-  have htr1 : (CStarMatrix.ofMatrix.symm (φ 1 j)).trace = 0 := by
+  have h1 : φ 1 j = 0 := map_eq_zero_of_trace_eq_zero φ j .one <| by
     rw [trace_map_one_eq_sum φ j]
     simp [hj]
-  have h1 : φ 1 j = 0 := by
-    apply CStarMatrix.ofMatrix.symm.injective
-    rw [CStarMatrix.ofMatrix_symm_zero]
-    exact Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero
-      (isIdempotentElem_ofMatrix_symm_map φ .one j) htr1
   rw [← mul_one x, map_mul, Pi.mul_apply, h1, mul_zero]
 
 /-- Column `i` of `φ.multiplicityMatrix` vanishes if and only if `φ` vanishes on the `i`-th source
@@ -326,13 +333,9 @@ theorem multiplicityMatrix_col_eq_zero_iff [DecidableEq ι]
     (∀ j, φ.multiplicityMatrix j i = 0) ↔ ∀ a, φ (Pi.single i a) = 0 := by
   classical
   refine ⟨fun hi a ↦ funext fun j ↦ ?_, fun hi j ↦ by simp [multiplicityMatrix_apply, hi]⟩
-  have htr : (CStarMatrix.ofMatrix.symm (φ (Pi.single i 1) j)).trace = 0 := by
-    rw [← natCast_multiplicityMatrix_mul_card_eq_trace φ j i, hi j, zero_mul, Nat.cast_zero]
-  have he : φ (Pi.single i 1) j = 0 := by
-    apply CStarMatrix.ofMatrix.symm.injective
-    rw [CStarMatrix.ofMatrix_symm_zero]
-    exact Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero
-      (isIdempotentElem_ofMatrix_symm_map φ (IsIdempotentElem.piSingle_one i) j) htr
+  have he : φ (Pi.single i 1) j = 0 :=
+    map_eq_zero_of_trace_eq_zero φ j (IsIdempotentElem.piSingle_one i) <| by
+      rw [← natCast_multiplicityMatrix_mul_card_eq_trace φ j i, hi j, zero_mul, Nat.cast_zero]
   have hmul : (Pi.single i a : ∀ i', CStarMatrix (n i') (n i') ℂ) =
       Pi.single i 1 * Pi.single i a := by rw [← Pi.single_mul, one_mul]
   rw [hmul, map_mul, Pi.mul_apply, he, zero_mul, Pi.zero_apply]
@@ -438,151 +441,104 @@ private def rawBlockDiag [DecidableEq ι] (r : ι → ℕ)
   Matrix.blockDiagonal' fun i ↦
     Matrix.blockDiagonal fun _ : Fin (r i) ↦ CStarMatrix.ofMatrix.symm (x i)
 
-private theorem rawBlockDiag_zero [DecidableEq ι] (r : ι → ℕ) :
-    rawBlockDiag r (0 : ∀ i, CStarMatrix (n i) (n i) ℂ) = 0 := by
-  simp [rawBlockDiag, ← Pi.zero_def]
-
-private theorem rawBlockDiag_add [DecidableEq ι] (r : ι → ℕ)
-    (x y : ∀ i, CStarMatrix (n i) (n i) ℂ) :
-    rawBlockDiag r (x + y) = rawBlockDiag r x + rawBlockDiag r y := by
-  rw [rawBlockDiag, rawBlockDiag, rawBlockDiag, ← Matrix.blockDiagonal'_add]
-  refine congrArg Matrix.blockDiagonal' (funext fun i ↦ ?_)
-  simp only [Pi.add_apply, CStarMatrix.ofMatrix_symm_add, ← Pi.add_def, Matrix.blockDiagonal_add]
-
-private theorem rawBlockDiag_smul [DecidableEq ι] (r : ι → ℕ)
-    (c : ℂ) (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
-    rawBlockDiag r (c • x) = c • rawBlockDiag r x := by
-  rw [rawBlockDiag, rawBlockDiag, ← Matrix.blockDiagonal'_smul]
-  refine congrArg Matrix.blockDiagonal' (funext fun i ↦ ?_)
-  simp only [Pi.smul_apply, CStarMatrix.ofMatrix_symm_smul, ← Pi.smul_def,
-    Matrix.blockDiagonal_smul]
-
-private theorem rawBlockDiag_mul [DecidableEq ι] [∀ i, Fintype (n i)] (r : ι → ℕ)
-    [Fintype (Σ i, n i × Fin (r i))] (x y : ∀ i, CStarMatrix (n i) (n i) ℂ) :
-    rawBlockDiag r (x * y) = rawBlockDiag r x * rawBlockDiag r y := by
-  ext ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩
-  let emb : n i₁ ↪ Σ i, n i × Fin (r i) := ⟨fun q ↦ ⟨i₁, q, t₁⟩, fun _ _ h ↦ by grind⟩
-  have hemb (q : n i₁) : emb q = ⟨i₁, q, t₁⟩ := rfl
-  have hsub : (rawBlockDiag r x * rawBlockDiag r y) ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩ =
-      ∑ q : n i₁, x i₁ p₁ q * rawBlockDiag r y ⟨i₁, q, t₁⟩ ⟨i₂, p₂, t₂⟩ := by
-    rw [Matrix.mul_apply, ← Finset.sum_subset (Finset.subset_univ (Finset.univ.map emb)),
-      Finset.sum_map]
-    · refine Finset.sum_congr rfl fun q _ ↦ ?_
-      rw [hemb]
-      exact congrArg (· * _) (by simp [rawBlockDiag])
-    · rintro ⟨i', q, t'⟩ _ hnot
-      have hz : rawBlockDiag r x ⟨i₁, p₁, t₁⟩ ⟨i', q, t'⟩ = 0 := by
-        by_cases hi : i₁ = i'
-        · subst hi
-          have ht : t₁ ≠ t' := fun ht ↦
-            hnot (Finset.mem_map.mpr ⟨q, Finset.mem_univ _, by simp [hemb, ht]⟩)
-          rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq,
-            Matrix.blockDiagonal_apply_ne _ _ _ ht]
-        · rw [rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ hi]
-      rw [hz, zero_mul]
-  rw [hsub]
-  by_cases hi : i₁ = i₂
-  · subst hi
-    by_cases ht : t₁ = t₂
-    · subst ht
-      rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq, Matrix.blockDiagonal_apply_eq,
-        Pi.mul_apply, CStarMatrix.ofMatrix_symm_mul, Matrix.mul_apply]
-      simp [rawBlockDiag]
-    · rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq, Matrix.blockDiagonal_apply_ne _ _ _ ht]
-      refine (Finset.sum_eq_zero fun q _ ↦ ?_).symm
-      rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq,
-        Matrix.blockDiagonal_apply_ne _ _ _ ht, mul_zero]
-  · simp [rawBlockDiag, fun M a b ↦ Matrix.blockDiagonal'_apply_ne M a b hi]
-
 /-- The **block-diagonal `⋆`-homomorphism** into a single matrix C⋆-algebra `CStarMatrix M M ℂ`
 determined by multiplicities `r : ι → ℕ` and an injection
 `f : (Σ i, n i × Fin (r i)) ↪ M`: each source block `x i` is repeated `r i` times along the
 coordinates in the image of `f`, with zeros in the complementary corner. -/
-def cstarMatrixBlockHom [∀ i, Fintype (n i)] [Fintype M]
+def cstarMatrixBlockHom [Fintype ι] [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) :
     (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] CStarMatrix M M ℂ :=
   letI := Classical.decEq ι
   letI := Classical.decEq M
   letI : DecidableEq (Σ i, n i × Fin (r i)) := Classical.decEq _
-  haveI : Finite (Σ i, n i × Fin (r i)) := Finite.of_injective f f.injective
-  letI : Fintype (Σ i, n i × Fin (r i)) := Fintype.ofFinite _
   { toFun x := CStarMatrix.ofMatrix (glEmbedding ℂ f (rawBlockDiag r x))
-    map_smul' c x := CStarMatrix.ofMatrix.symm.injective <| by simp [rawBlockDiag_smul]
-    map_zero' := CStarMatrix.ofMatrix.symm.injective <| by simp [rawBlockDiag_zero]
-    map_add' x y := CStarMatrix.ofMatrix.symm.injective <| by simp [rawBlockDiag_add]
+    map_smul' c x := CStarMatrix.ofMatrix.symm.injective <| by
+      simp only [Equiv.symm_apply_apply, CStarMatrix.ofMatrix_symm_smul, rawBlockDiag,
+        Pi.smul_apply, ← Pi.smul_def, Matrix.blockDiagonal_smul, Matrix.blockDiagonal'_smul,
+        map_smul, MonoidHom.id_apply]
+    map_zero' := CStarMatrix.ofMatrix.symm.injective <| by
+      simp only [Equiv.symm_apply_apply, CStarMatrix.ofMatrix_symm_zero, rawBlockDiag,
+        Pi.zero_apply, ← Pi.zero_def, Matrix.blockDiagonal_zero, Matrix.blockDiagonal'_zero,
+        map_zero]
+    map_add' x y := CStarMatrix.ofMatrix.symm.injective <| by
+      simp only [Equiv.symm_apply_apply, CStarMatrix.ofMatrix_symm_add, rawBlockDiag, Pi.add_apply,
+        ← Pi.add_def, Matrix.blockDiagonal_add, Matrix.blockDiagonal'_add, map_add]
     map_mul' x y := CStarMatrix.ofMatrix.symm.injective <| by
       simp only [Equiv.symm_apply_apply, CStarMatrix.ofMatrix_symm_mul, glEmbedding_apply,
-        rawBlockDiag_mul, Matrix.mul_assoc]
+        rawBlockDiag, Pi.mul_apply, Matrix.blockDiagonal_mul, Matrix.blockDiagonal'_mul,
+        Matrix.mul_assoc]
       rw [← Matrix.mul_assoc ((1 : Matrix M M ℂ).submatrix f id),
         Matrix.submatrix_one_mul_submatrix_one f, Matrix.one_mul]
     map_star' x := CStarMatrix.ofMatrix.symm.injective <| by
       simp [rawBlockDiag, glEmbedding_apply, Matrix.mul_assoc] }
 
-private theorem cstarMatrixBlockHom_apply_map_map [∀ i, Fintype (n i)] [Fintype M]
+private theorem cstarMatrixBlockHom_eq_ofMatrix_glEmbedding [Fintype ι] [DecidableEq ι]
+    [∀ i, Fintype (n i)] [Fintype M] [DecidableEq M]
+    (r : ι → ℕ) [DecidableEq (Σ i, n i × Fin (r i))]
+    (f : (Σ i, n i × Fin (r i)) ↪ M) (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
+    cstarMatrixBlockHom r f x = CStarMatrix.ofMatrix (glEmbedding ℂ f (rawBlockDiag r x)) := by
+  simp only [cstarMatrixBlockHom, NonUnitalStarAlgHom.coe_mk', NonUnitalAlgHom.coe_mk]
+  congr!
+
+private theorem cstarMatrixBlockHom_apply_map_map [Fintype ι] [DecidableEq ι]
+    [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) (x : ∀ i, CStarMatrix (n i) (n i) ℂ)
     (a b : Σ i, n i × Fin (r i)) :
-    cstarMatrixBlockHom r f x (f a) (f b) = @rawBlockDiag ι n (Classical.decEq ι) r x a b := by
-  simp [cstarMatrixBlockHom]
+    cstarMatrixBlockHom r f x (f a) (f b) = rawBlockDiag r x a b := by
+  classical
+  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, CStarMatrix.ofMatrix_apply,
+    glEmbedding_apply_apply]
 
 /-- Evaluating `cstarMatrixBlockHom r f x` at matching block `i` and copy `t` along `f` recovers
 the `(p, q)` entry of `x i`. -/
 @[simp]
-theorem cstarMatrixBlockHom_apply_same [∀ i, Fintype (n i)] [Fintype M]
+theorem cstarMatrixBlockHom_apply_same [Fintype ι] [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) (i : ι) (p q : n i) (t : Fin (r i)) :
     cstarMatrixBlockHom r f x (f ⟨i, p, t⟩) (f ⟨i, q, t⟩) = x i p q := by
-  let _ := Classical.decEq ι
+  classical
   rw [cstarMatrixBlockHom_apply_map_map]
-  have hdec : @rawBlockDiag ι n (Classical.decEq ι) r = rawBlockDiag r := by congr!
-  rw [hdec]; simp [rawBlockDiag]
+  simp [rawBlockDiag]
 
 /-- Entries of `cstarMatrixBlockHom r f x` between distinct source blocks `i₁ ≠ i₂` vanish. -/
-theorem cstarMatrixBlockHom_apply_of_block_ne [∀ i, Fintype (n i)] [Fintype M]
+theorem cstarMatrixBlockHom_apply_of_block_ne [Fintype ι] [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) {i₁ i₂ : ι} (h : i₁ ≠ i₂)
     (p : n i₁) (q : n i₂) (t₁ : Fin (r i₁)) (t₂ : Fin (r i₂)) :
     cstarMatrixBlockHom r f x (f ⟨i₁, p, t₁⟩) (f ⟨i₂, q, t₂⟩) = 0 := by
-  let _ := Classical.decEq ι
-  rw [cstarMatrixBlockHom_apply_map_map]
-  have hdec : @rawBlockDiag ι n (Classical.decEq ι) r = rawBlockDiag r := by congr!
-  rw [hdec, rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ h]
+  classical
+  rw [cstarMatrixBlockHom_apply_map_map, rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ h]
 
 /-- Entries of `cstarMatrixBlockHom r f x` between distinct copies `t₁ ≠ t₂` of block `i` vanish. -/
-theorem cstarMatrixBlockHom_apply_of_copy_ne [∀ i, Fintype (n i)] [Fintype M]
+theorem cstarMatrixBlockHom_apply_of_copy_ne [Fintype ι] [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) (i : ι) (p q : n i) {t₁ t₂ : Fin (r i)} (h : t₁ ≠ t₂) :
     cstarMatrixBlockHom r f x (f ⟨i, p, t₁⟩) (f ⟨i, q, t₂⟩) = 0 := by
-  let _ := Classical.decEq ι
-  rw [cstarMatrixBlockHom_apply_map_map]
-  have hdec : @rawBlockDiag ι n (Classical.decEq ι) r = rawBlockDiag r := by congr!
-  rw [hdec, rawBlockDiag, Matrix.blockDiagonal'_apply_eq,
+  classical
+  rw [cstarMatrixBlockHom_apply_map_map, rawBlockDiag, Matrix.blockDiagonal'_apply_eq,
     Matrix.blockDiagonal_apply_ne _ _ _ h]
 
 /-- Rows of `cstarMatrixBlockHom r f x` outside `Set.range f` vanish. -/
-theorem cstarMatrixBlockHom_apply_of_notMem_range_left [∀ i, Fintype (n i)] [Fintype M]
+theorem cstarMatrixBlockHom_apply_of_notMem_range_left [Fintype ι] [∀ i, Fintype (n i)] [Fintype M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) {z₁ : M} (hz₁ : z₁ ∉ Set.range f) (z₂ : M) :
     cstarMatrixBlockHom r f x z₁ z₂ = 0 := by
-  have : Finite (Σ i, n i × Fin (r i)) := Finite.of_injective f f.injective
-  let _ : Fintype (Σ i, n i × Fin (r i)) := Fintype.ofFinite _
-  let _ := Classical.decEq M
-  let _ : DecidableEq (Σ i, n i × Fin (r i)) := Classical.decEq _
-  simp [cstarMatrixBlockHom, glEmbedding_apply_apply_of_notMem_range_left f _ hz₁]
+  classical
+  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, CStarMatrix.ofMatrix_apply,
+    glEmbedding_apply_apply_of_notMem_range_left f _ hz₁]
 
 /-- Columns of `cstarMatrixBlockHom r f x` outside `Set.range f` vanish. -/
-theorem cstarMatrixBlockHom_apply_of_notMem_range_right [∀ i, Fintype (n i)] [Fintype M]
-    (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
+theorem cstarMatrixBlockHom_apply_of_notMem_range_right [Fintype ι] [∀ i, Fintype (n i)]
+    [Fintype M] (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) (z₁ : M) {z₂ : M} (hz₂ : z₂ ∉ Set.range f) :
     cstarMatrixBlockHom r f x z₁ z₂ = 0 := by
-  have : Finite (Σ i, n i × Fin (r i)) := Finite.of_injective f f.injective
-  let _ : Fintype (Σ i, n i × Fin (r i)) := Fintype.ofFinite _
-  let _ := Classical.decEq M
-  let _ : DecidableEq (Σ i, n i × Fin (r i)) := Classical.decEq _
-  simp [cstarMatrixBlockHom, glEmbedding_apply_apply_of_notMem_range_right f _ _ hz₂]
+  classical
+  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, CStarMatrix.ofMatrix_apply,
+    glEmbedding_apply_apply_of_notMem_range_right f _ _ hz₂]
 
 /-- `cstarMatrixBlockHom r f` preserves the identity if and only if `f` is surjective. -/
-theorem cstarMatrixBlockHom_one_eq_one_iff [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
-    [Fintype M] [DecidableEq M]
+theorem cstarMatrixBlockHom_one_eq_one_iff [Fintype ι] [∀ i, Fintype (n i)]
+    [∀ i, DecidableEq (n i)] [Fintype M] [DecidableEq M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) :
     cstarMatrixBlockHom r f 1 = 1 ↔ Function.Surjective f := by
   refine ⟨fun h z ↦ ?_, fun hf ↦ ?_⟩
@@ -605,15 +561,12 @@ theorem cstarMatrixBlockHom_one_eq_one_iff [∀ i, Fintype (n i)] [∀ i, Decida
 /-- Action of `TauCeti.cstarMatrixBlockHom` on a matrix unit `Matrix.single p q c` in source block
 `i`: it is the sum of the `r i` orthogonal matrix units
 `Matrix.single (f ⟨i, p, t⟩) (f ⟨i, q, t⟩) c` in `CStarMatrix M M ℂ`. -/
-theorem cstarMatrixBlockHom_piSingle_single [DecidableEq ι]
+theorem cstarMatrixBlockHom_piSingle_single [Fintype ι] [DecidableEq ι]
     [∀ i, Fintype (n i)] [Fintype M] [DecidableEq M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) (i : ι) [DecidableEq (n i)] (p q : n i) (c : ℂ) :
     cstarMatrixBlockHom r f (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q c))) =
       CStarMatrix.ofMatrix (∑ t : Fin (r i), Matrix.single (f ⟨i, p, t⟩) (f ⟨i, q, t⟩) c) := by
-  let _ : DecidableEq (Σ i', n i' × Fin (r i')) := Classical.decEq _
-  have : Finite (Σ i', n i' × Fin (r i')) := Finite.of_injective f f.injective
-  let _ : Fintype (Σ i', n i' × Fin (r i')) := Fintype.ofFinite _
-  have hdec : @rawBlockDiag ι n (Classical.decEq ι) r = rawBlockDiag r := by congr!
+  classical
   have hraw : rawBlockDiag r (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q c))) =
       ∑ t : Fin (r i), Matrix.single (⟨i, p, t⟩ : Σ i', n i' × Fin (r i')) ⟨i, q, t⟩ c := by
     ext ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩
@@ -631,13 +584,12 @@ theorem cstarMatrixBlockHom_piSingle_single [DecidableEq ι]
           ite_eq_right fun h ↦ hii (congrArg Sigma.fst h.1).symm).symm
     · rw [rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ hi]
       exact (Finset.sum_eq_zero fun _ _ ↦ by grind).symm
-  simp only [cstarMatrixBlockHom, NonUnitalStarAlgHom.coe_mk', NonUnitalAlgHom.coe_mk, hdec,
-    hraw, map_sum, glEmbedding_single]
-  congr!
+  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, hraw, map_sum]
+  simp
 
 /-- The **product block-diagonal `⋆`-homomorphism** realizing a multiplicity matrix
 `H : Matrix κ ι ℕ` along a family of injections `f j : (Σ i, n i × Fin (H j i)) ↪ m j`. -/
-def cstarMatrixPiBlockHom [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
+def cstarMatrixPiBlockHom [Fintype ι] [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j) :
     (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ) where
   toFun x j := cstarMatrixBlockHom (H j) (f j) x
@@ -649,7 +601,7 @@ def cstarMatrixPiBlockHom [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
 
 /-- Coordinate evaluation of `TauCeti.cstarMatrixPiBlockHom`. -/
 @[simp]
-theorem cstarMatrixPiBlockHom_apply [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
+theorem cstarMatrixPiBlockHom_apply [Fintype ι] [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j)
     (x : ∀ i, CStarMatrix (n i) (n i) ℂ) (j : κ) :
     cstarMatrixPiBlockHom H f x j = cstarMatrixBlockHom (H j) (f j) x :=
@@ -657,8 +609,8 @@ theorem cstarMatrixPiBlockHom_apply [∀ i, Fintype (n i)] [∀ j, Fintype (m j)
 
 /-- `cstarMatrixPiBlockHom H f` preserves the identity if and only if every coordinate embedding
 `f j` is surjective. -/
-theorem cstarMatrixPiBlockHom_one_eq_one_iff [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
-    [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
+theorem cstarMatrixPiBlockHom_one_eq_one_iff [Fintype ι] [∀ i, Fintype (n i)]
+    [∀ i, DecidableEq (n i)] [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j) :
     cstarMatrixPiBlockHom H f 1 = 1 ↔ ∀ j, Function.Surjective (f j) := by
   simp_rw [funext_iff, cstarMatrixPiBlockHom_apply, Pi.one_apply,
@@ -666,7 +618,8 @@ theorem cstarMatrixPiBlockHom_one_eq_one_iff [∀ i, Fintype (n i)] [∀ i, Deci
 
 /-- Entry `(j, i)` of the multiplicity matrix of `cstarMatrixPiBlockHom H f` equals `H j i` whenever
 `n i` is nonempty, and `0` when `n i` is empty. -/
-theorem multiplicityMatrix_cstarMatrixPiBlockHom_apply [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
+theorem multiplicityMatrix_cstarMatrixPiBlockHom_apply [Fintype ι] [∀ i, Fintype (n i)]
+    [∀ j, Fintype (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j) (j : κ) (i : ι) :
     (cstarMatrixPiBlockHom H f).multiplicityMatrix j i =
       if Fintype.card (n i) ≠ 0 then H j i else 0 := by
@@ -684,7 +637,7 @@ theorem multiplicityMatrix_cstarMatrixPiBlockHom_apply [∀ i, Fintype (n i)] [�
 /-- When `H` vanishes on empty source blocks, `cstarMatrixPiBlockHom H f` has multiplicity matrix
 `H`. -/
 theorem multiplicityMatrix_cstarMatrixPiBlockHom_of_forall_isEmpty_eq_zero
-    [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
+    [Fintype ι] [∀ i, Fintype (n i)] [∀ j, Fintype (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j)
     (hEmpty : ∀ j i, IsEmpty (n i) → H j i = 0) :
     (cstarMatrixPiBlockHom H f).multiplicityMatrix = H := by
@@ -698,8 +651,8 @@ theorem multiplicityMatrix_cstarMatrixPiBlockHom_of_forall_isEmpty_eq_zero
 /-- When every source block `n i` is nonempty, `cstarMatrixPiBlockHom H f` has multiplicity matrix
 `H`. -/
 @[simp]
-theorem multiplicityMatrix_cstarMatrixPiBlockHom [∀ i, Fintype (n i)] [∀ i, Nonempty (n i)]
-    [∀ j, Fintype (m j)]
+theorem multiplicityMatrix_cstarMatrixPiBlockHom [Fintype ι] [∀ i, Fintype (n i)]
+    [∀ i, Nonempty (n i)] [∀ j, Fintype (m j)]
     (H : Matrix κ ι ℕ) (f : ∀ j, (Σ i, n i × Fin (H j i)) ↪ m j) :
     (cstarMatrixPiBlockHom H f).multiplicityMatrix = H :=
   multiplicityMatrix_cstarMatrixPiBlockHom_of_forall_isEmpty_eq_zero H f fun _ _ hE ↦

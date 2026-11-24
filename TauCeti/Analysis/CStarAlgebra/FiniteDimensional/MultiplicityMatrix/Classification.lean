@@ -200,7 +200,7 @@ private theorem evalEuclideanHom_eq_zero_of_notMem_range [Finite ι] [DecidableE
     exact Submodule.mem_orthogonal_singleton_iff_inner_left.mp (horth h1_mem)
   rw [← mul_one x, map_mul, mul_apply_eq_comp, inner_self_eq_zero.mp h1_self, map_zero]
 
-private theorem toEuclideanCLM_blockHom_single_basisFun [DecidableEq ι]
+private theorem toEuclideanCLM_blockHom_single_basisFun [Fintype ι] [DecidableEq ι]
     [∀ i, Fintype (n i)] {M : Type*} [Fintype M] [DecidableEq M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) (i : ι) [DecidableEq (n i)]
     (p q : n i) (z : M) :
@@ -214,7 +214,7 @@ private theorem toEuclideanCLM_blockHom_single_basisFun [DecidableEq ι]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   rw [Matrix.toEuclideanCLM_single_basisFun, one_smul]
 
-private theorem intertwine_single_of_basis [Finite ι] [DecidableEq ι]
+private theorem intertwine_single_of_basis [Fintype ι] [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
@@ -246,7 +246,7 @@ private theorem intertwine_single_of_basis [Finite ι] [DecidableEq ι]
   · rw [Finset.sum_eq_zero fun _ _ ↦ by grind, map_zero,
       evalEuclideanHom_eq_zero_of_notMem_range φ j hb hz]
 
-private theorem intertwine_of_basis [Finite ι] [DecidableEq ι]
+private theorem intertwine_of_basis [Fintype ι] [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
@@ -258,7 +258,6 @@ private theorem intertwine_of_basis [Finite ι] [DecidableEq ι]
           (TauCeti.cstarMatrixBlockHom (φ.multiplicityMatrix j) f x) =
       evalEuclideanHom φ j x *
         (b.repr.symm : EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) := by
-  cases nonempty_fintype ι
   ext w
   have key (i : ι) (p q : n i) :=
     congrFun (congrArg DFunLike.coe (intertwine_single_of_basis φ j hb i p q)) w
@@ -288,7 +287,7 @@ private theorem exists_orthonormalBasis_partialBasisVec [DecidableEq ι]
     (finrank_euclideanSpace (𝕜 := ℂ) (ι := m j)) hv_orth
   exact ⟨b, fun a ↦ (hb_mem (f a) ⟨a, rfl⟩).trans (hv_apply a)⟩
 
-private theorem exists_unitary_conj_cstarMatrixBlockHom [Finite ι]
+private theorem exists_unitary_conj_cstarMatrixBlockHom [Fintype ι]
     [∀ i, Fintype (n i)] [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     (j : κ) (f : (Σ i, n i × Fin (φ.multiplicityMatrix j i)) ↪ m j) :
@@ -321,7 +320,7 @@ private theorem exists_unitary_conj_cstarMatrixBlockHom [Finite ι]
 /-- **Standard block-diagonal form up to unitary conjugacy**: every `⋆`-homomorphism `φ` is
 unitarily conjugate in the target to `TauCeti.cstarMatrixPiBlockHom φ.multiplicityMatrix f` for any
 family of injections `f j : (Σ i, n i × Fin (φ.multiplicityMatrix j i)) ↪ m j`. -/
-theorem exists_unitary_conj_cstarMatrixPiBlockHom [Finite ι]
+theorem exists_unitary_conj_cstarMatrixPiBlockHom [Fintype ι]
     [∀ i, Fintype (n i)] [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     (f : ∀ j, (Σ i, n i × Fin (φ.multiplicityMatrix j i)) ↪ m j) :
@@ -551,10 +550,9 @@ theorem multiplicityMatrix_comp [Fintype κ]
     (NonUnitalStarAlgHom.single ℂ _ i).comp
       (StarAlgEquiv.funUnique ℂ Unit (CStarMatrix (n i) (n i) ℂ)).toNonUnitalStarAlgHom
   have hι : ιHom (Pi.single () 1) = Pi.single i 1 := by simp [ιHom]
-  have hassoc : (ψ.comp φ).comp ιHom = ψ.comp (φ.comp ιHom) := NonUnitalStarAlgHom.ext fun _ ↦ rfl
   have hunit := congrFun (congrFun (multiplicityMatrix_comp_of_finite ψ (φ.comp ιHom)) k) ()
   rw [(ψ.comp φ).multiplicityMatrix_apply k i, ← hι, ← comp_apply,
-    ← ((ψ.comp φ).comp ιHom).multiplicityMatrix_apply k (), hassoc, hunit,
+    ← ((ψ.comp φ).comp ιHom).multiplicityMatrix_apply k (), comp_assoc, hunit,
     Matrix.mul_apply, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [φ.multiplicityMatrix_apply j i, ← hι, ← comp_apply,

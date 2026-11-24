@@ -230,13 +230,22 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
+/-- `CStarMatrix.ofMatrixₗ` is `CStarMatrix.ofMatrix`. -/
+@[simp]
+lemma ofMatrixₗ_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : Matrix m n A) : ofMatrixₗ (R := R) M = ofMatrix M := (rfl)
+
+/-- The inverse of `CStarMatrix.ofMatrixₗ` is the inverse of `CStarMatrix.ofMatrix`. -/
+@[simp]
+lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
+
 /-- Reading a finite sum of C⋆-matrices as an ordinary matrix distributes over the sum. -/
 @[simp]
 lemma ofMatrix_symm_sum {m α : Type*} [AddCommMonoid A] (s : Finset α)
     (f : α → CStarMatrix m n A) :
-    ofMatrix.symm (∑ x ∈ s, f x) = ∑ x ∈ s, ofMatrix.symm (f x) :=
-  map_sum ({ ofMatrix.symm with map_add' := fun _ _ => rfl } : CStarMatrix m n A ≃+ Matrix m n A)
-    f s
+    ofMatrix.symm (∑ x ∈ s, f x) = ∑ x ∈ s, ofMatrix.symm (f x) := by
+  simpa only [ofMatrixₗ_symm_apply] using map_sum (ofMatrixₗ (R := ℕ)).symm f s
 
 /-- Rectangular matrix multiplication is associative. -/
 lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
@@ -351,16 +360,6 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] 
     MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, star_mul, star_star,
     ofMatrix_symm_apply] at this
   rw [star_apply, mul_sub, sub_mul, this, mul_assoc, sub_self]
-
-/-- `CStarMatrix.ofMatrixₗ` is `CStarMatrix.ofMatrix`. -/
-@[simp]
-lemma ofMatrixₗ_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
-    (M : Matrix m n A) : ofMatrixₗ (R := R) M = ofMatrix M := (rfl)
-
-/-- The inverse of `CStarMatrix.ofMatrixₗ` is the inverse of `CStarMatrix.ofMatrix`. -/
-@[simp]
-lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
-    (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
 
@@ -486,11 +485,9 @@ theorem eq_sum_piSingle_ofMatrix_single {ι : Type*} [Fintype ι] [DecidableEq �
       Pi.single i (ofMatrix (Matrix.single p q (x i p q))) := by
   conv_lhs => rw [← Finset.univ_sum_single x]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  let f := AddMonoidHom.single (fun i' ↦ CStarMatrix (n i') (n i') A) i
-  change f (x i) = ∑ p : n i, ∑ q : n i, f (ofMatrix (Matrix.single p q (x i p q)))
+  simp only [← AddMonoidHom.single_apply (f := fun i' ↦ CStarMatrix (n i') (n i') A)]
   conv_lhs => rw [eq_sum_ofMatrix_single (x i)]
-  rw [map_sum]
-  simp_rw [map_sum]
+  simp only [map_sum]
 
 /-- Every element of a finite product of C⋆-matrix algebras over a semiring expands as a linear
 combination of the unit single-block matrix units
