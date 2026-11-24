@@ -178,11 +178,7 @@ private theorem dvd_of_irreducible_prod {x₀ : E} {w₀ : ℂ}
   have hprime : Prime (evalVertical x₀ w₀ P) := hu ▸
     (associated_unit_mul_left (α s) _ u.isUnit).symm.prime
       (UniqueFactorizationMonoid.irreducible_iff_prime.1 ((MulEquiv.irreducible_iff α).2 hs))
-  have hPprime : Prime P := by
-    refine ⟨hP.monic.ne_zero, fun h ↦ hprime.not_isUnit (h.map _), fun A B hAB ↦ ?_⟩
-    rcases hprime.dvd_or_dvd (by simpa using map_dvd (evalVertical x₀ w₀) hAB) with h | h
-    · exact .inl ((evalVertical_dvd_iff_of_isDistinguishedAt hP).2 h)
-    · exact .inr ((evalVertical_dvd_iff_of_isDistinguishedAt hP).2 h)
+  have hPprime : Prime P := (isRueckert_evalVertical x₀ w₀).prime_of_prime_apply hP hprime
   -- Read the vanishing hypothesis in the new coordinates.
   obtain ⟨U, hUc, hU⟩ := exists_toFilterGerm_eq (x₀, w₀)
     (u : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀))
