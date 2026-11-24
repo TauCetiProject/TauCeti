@@ -26,7 +26,8 @@ the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm
 sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 An open set containing `K × {0}`, for a compact set `K`, contains a whole tube
-`{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it.
+`{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it; in particular a neighbourhood of `0` contains
+every pair whose two components are small.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
@@ -53,7 +54,8 @@ linear maps is identified with the product of their sources.
 * `WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero`, `WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero` —
   a pair with one vanishing component has the norm of the other.
 * `IsCompact.exists_pos_forall_toLp_mem` — an open set containing `K × {0}`, for a compact set
-  `K`, contains a tube `{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it.
+  `K`, contains a tube `{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it, and
+  `WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero` is its case `K = {0}`.
 * `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
@@ -142,6 +144,19 @@ theorem _root_.IsCompact.exists_pos_forall_toLp_mem [SeminormedAddCommGroup α]
   refine (WithLp.prod_norm_le_norm_fst_add_norm_snd _).trans ?_
   rw [WithLp.toLp_fst, WithLp.toLp_snd, ← dist_eq_norm]
   linarith
+
+open scoped Topology in
+/-- A neighbourhood of `0` in `WithLp p (α × β)` contains every pair whose two components have
+norm less than some `δ > 0`. This is the case `K = {0}` of
+`IsCompact.exists_pos_forall_toLp_mem`. -/
+theorem _root_.WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {G : Set (WithLp p (α × β))} (hG : G ∈ 𝓝 0) :
+    ∃ δ > 0, ∀ (x : α) (y : β), ‖x‖ < δ → ‖y‖ < δ → WithLp.toLp p (x, y) ∈ G := by
+  obtain ⟨δ, hδ, h⟩ := (isCompact_singleton (x := (0 : α))).exists_pos_forall_toLp_mem (β := β)
+    isOpen_interior fun x hx ↦ by
+      rw [hx, Prod.mk_zero_zero, WithLp.toLp_zero]
+      exact mem_interior_iff_mem_nhds.2 hG
+  exact ⟨δ, hδ, fun x y hx hy ↦ interior_subset (h 0 rfl x y (by rwa [dist_zero_right]) hy)⟩
 
 /-- The `ℓ^p` norm of a pair is nonnegative, in any seminormed additive groups, which need not be
 commutative. -/

@@ -757,9 +757,71 @@ private theorem eq_of_toChart_symm_eq_of_norm_fst_eq {q : M} (φ : MorseChart E 
   rw [← hzz', hzl] at hzl'
   exact mul_right_cancel₀ hε.ne' hzl'
 
+/-- **The glued arc through the centre.** Let `φ` be a Morse chart at `q` in which `X` is linear
+and whose coordinate cube of radius `2 ε` lies in the chart, let `g` and `k` be continuous on sets
+`s₁` and `s₂`, and let `v` be continuous on `[0, l₀]`, with `l₀ ≤ 1`, where each `v l` is a solution
+in `s₁` of the gluing equation `l • k (l • g y) = y` with `l • g (v l) ∈ s₂`, `‖g (v l)‖ = ε`,
+`‖v l‖ ≤ ε` and `‖k (l • g (v l))‖ ≤ ε`. Let `B` send `l` to the entrance point `(g (v l), v l)` and
+the point `(l • g (v l), k (l • g (v l)))` of the graph of `k`, read on `M`. Then `B` is
+continuous, for `l ≠ 0` its entrance point flows in time `-log l` to its point on the graph of `k`,
+and distinct rates give distinct points on the graph of `k`. -/
+private theorem continuous_and_flow_neg_log_eq_of_smul_comp_smul_eq
+    (hX : IsAdaptedPseudoGradient f X) {q : M} (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
+    {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ}
+    {s₁ : Set ({i // ¬φ.weight i = 1} → ℝ)} {s₂ : Set ({i // φ.weight i = 1} → ℝ)}
+    (hg : ContinuousOn g s₁) (hk : ContinuousOn k s₂) {l₀ : ℝ} (hl₀ : l₀ ≤ 1)
+    {v : ℝ → {i // ¬φ.weight i = 1} → ℝ} (hvc : ContinuousOn v (Icc 0 l₀))
+    (hv : ∀ l ∈ Icc 0 l₀, v l ∈ s₁ ∧ l • g (v l) ∈ s₂ ∧ ‖g (v l)‖ = ε ∧ ‖v l‖ ≤ ε ∧
+      ‖k (l • g (v l))‖ ≤ ε ∧ l • k (l • g (v l)) = v l)
+    {B : Icc (0 : ℝ) l₀ → M × M}
+    (hB : ∀ s : Icc (0 : ℝ) l₀, B s =
+      (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g (v s), v s)))),
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
+          (WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s)))))))) :
+    Continuous B ∧
+      (∀ s : Icc (0 : ℝ) l₀, (s : ℝ) ≠ 0 → hX.flow (-Real.log s) (B s).1 = (B s).2) ∧
+      ∀ s s' : Icc (0 : ℝ) l₀, (B s).2 = (B s').2 → s = s' := by
+  obtain rfl := funext hB
+  have hnorm_g {l : ℝ} (hl : l ∈ Icc 0 l₀) : ‖l • g (v l)‖ = l * ε := by
+    rw [norm_smul, Real.norm_of_nonneg hl.1, (hv l hl).2.2.1]
+  -- Both points lie in the cube of radius `2 ε`.
+  have hB₁ε (s : Icc (0 : ℝ) l₀) : ‖(WithLp.toLp 2 (g (v s), v s)).fst‖ ≤ 2 * ε ∧
+      ‖(WithLp.toLp 2 (g (v s), v s)).snd‖ ≤ 2 * ε := by
+    rw [WithLp.toLp_fst, WithLp.toLp_snd, (hv s s.property).2.2.1]
+    exact ⟨by linarith, by linarith [(hv s s.property).2.2.2.1]⟩
+  have hB₂ε (s : Icc (0 : ℝ) l₀) :
+      ‖(WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s)))).fst‖ ≤ 2 * ε ∧
+        ‖(WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s)))).snd‖ ≤ 2 * ε := by
+    rw [WithLp.toLp_fst, WithLp.toLp_snd, hnorm_g s.property]
+    exact ⟨by nlinarith [s.property.1, s.property.2], by linarith [(hv s s.property).2.2.2.2.1]⟩
+  have hvc' : Continuous fun s : Icc (0 : ℝ) l₀ ↦ v s :=
+    hvc.comp_continuous continuous_subtypeVal fun s ↦ s.property
+  have hgc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ g (v s) :=
+    hg.comp_continuous hvc' fun s ↦ (hv s s.property).1
+  have hsgc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ (s : ℝ) • g (v s) :=
+    continuous_subtypeVal.smul hgc
+  have hkc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ k ((s : ℝ) • g (v s)) :=
+    hk.comp_continuous hsgc fun s ↦ (hv s s.property).2.1
+  -- The point on the graph of `k` determines the rate, through the norm `l ε` of its first
+  -- coordinate.
+  refine ⟨(continuous_toChart_symm_coord_symm_splitCoord_symm_comp φ hε₂
+      ((WithLp.prod_continuous_toLp 2 _ _).comp (hgc.prodMk hvc')) hB₁ε).prodMk
+      (continuous_toChart_symm_coord_symm_splitCoord_symm_comp φ hε₂
+        ((WithLp.prod_continuous_toLp 2 _ _).comp (hsgc.prodMk hkc)) hB₂ε), fun s hs ↦ ?_,
+    fun s s' h ↦ Subtype.ext (eq_of_toChart_symm_eq_of_norm_fst_eq φ hε hε₂ (hB₂ε s) (hB₂ε s')
+      (hnorm_g s.property) (hnorm_g s'.property) h)⟩
+  -- For `l > 0`, the entrance point flows in time `-log l` to the point of the graph of `k`.
+  exact hX.flow_neg_log_eq_of_smul_comp_smul_eq φ hφ (fun z hz ↦ hε₂ z (by linarith))
+    (lt_of_le_of_ne s.property.1 (Ne.symm hs)) (s.property.2.trans hl₀)
+    (hv s s.property).2.2.1.le (hv s s.property).2.2.2.2.2 (hv s s.property).2.2.2.2.1
+
 /-- **The pairs recorded near a configuration broken at the centre lie on the glued family.** Let
 `φ` be a Morse chart at `q` in which `X` is linear and whose coordinate cube of radius `2 ε` lies
-in the chart, and let `v l` be the solutions in the closed ball of radius `δ ≤ ε` of the gluing
+in the chart, and let `v l` be the solutions in the closed ball of radius `δ` of the gluing
 equation `l • k (l • g y) = y`, for rates `l ∈ [0, l₀]` with `l₀ ≤ 1` and `k 0 = 0`. Let `y₁` be a
 point near which the points lie in the box near its entrance face and the orbits of the points of
 `W^u(p)` on the level of `y₁` enter the box on the graph of `g`, with `‖u‖ ‖v‖ → 0` at `y₁`, and
@@ -775,7 +837,7 @@ private theorem eventually_exists_flow_splitEntryTime_eq_and_eq_of_centre
     {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
     {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
     {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ}
-    {δ l₀ : ℝ} (hδ : 0 < δ) (hδε : δ ≤ ε) (hl₀ : 0 < l₀) (hl₀₁ : l₀ ≤ 1)
+    {δ l₀ : ℝ} (hδ : 0 < δ) (hl₀ : 0 < l₀) (hl₀₁ : l₀ ≤ 1)
     {v : ℝ → {i // ¬φ.weight i = 1} → ℝ}
     (hv : ∀ l ∈ Icc 0 l₀, ∀ y ∈ closedBall 0 δ, l • k (l • g y) = y → y = v l) (hk₀ : k 0 = 0)
     (hA₁ : ∀ᶠ w in 𝓝 y₁, w ∈ φ.toChart.source ∧
@@ -798,7 +860,7 @@ private theorem eventually_exists_flow_splitEntryTime_eq_and_eq_of_centre
         w.2 = φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
           (WithLp.toLp 2 (l • g (v l), k (l • g (v l)))))) := by
   -- A bound `r₁ ε ≤ δ` on the entrance points, small enough for the entrance-face uniqueness.
-  obtain ⟨r₁, hr₁, hr₁δ, -, hsmall₁⟩ :=
+  obtain ⟨r₁, hr₁, hr₁δ, hr₁₁, hsmall₁⟩ :=
     exists_pos_forall_mul_sq_lt_sq (n := (Module.finrank ℝ E : ℝ)) (Nat.cast_nonneg _) hε
       (div_pos hδ hε)
   have hcδ : r₁ * ε ≤ δ := by rwa [le_div_iff₀ hε] at hr₁δ
@@ -825,7 +887,7 @@ private theorem eventually_exists_flow_splitEntryTime_eq_and_eq_of_centre
     ⟨⟨⟨⟨hw₁src, hw₁f0, hw₁f, hw₁s⟩, hκw₁⟩, hg₁w⟩, ⟨hw₂src, hw₂f⟩, hw₂s, hκw₂, hk₂, hw₂p⟩
     hw1u hw1f hw2Z ⟨t, ht⟩
   obtain ⟨h₁, h₂⟩ := flow_splitEntryTime_eq_and_eq_of_mem_unstableSet hX hf hpq hq φ hφ hε hε₂
-    (hcδ.trans hδε) hcn hl₀₁
+    (mul_le_of_le_one_left hε.le hr₁₁) hcn hl₀₁
     (fun l hl y hy hfix ↦ hv l hl y (closedBall_subset_closedBall hcδ hy) hfix) hk₀ hw₁src
     (norm_pos_iff.1 hw₁f0) hw₁f hw₁s hκw₁.le (hg₁w hw1u hw1f) hw1u hw₂src hw₂f.le hw₂s hκw₂.le
     (hk₂ hw2Z) hw₂p le_rfl ht
@@ -903,23 +965,16 @@ private theorem IsMorseSmale.exists_centreGluingArc {hX : IsAdaptedPseudoGradien
     filter_upwards [hι₁.preimage_mem_nhds
       (by rw [hι₁0]; exact φ.toChart.open_source.mem_nhds hy₁φ), hι₁s] with z hzs hzu
     exact ⟨by simpa [hΦdef] using φ.toChart.map_source hzs, by rw [hΨΦ _ hzs]; exact hzu.1⟩
-  obtain ⟨δ₀, hδ₀, Kg, g, hg₀', hg0, hgpts, hgexh⟩ :=
+  obtain ⟨δ, hδ, Kg, g, hg, hg0, hgpts, hgexh⟩ :=
     hX.exists_lipschitzOnWith_entranceFace_graph φ hφ hε hε₂ hy₁φ hy₁s hy₁f hψ hψ'
       (by simp only [hι₁0]) hψs univ_mem
-  -- Restrict the graph to entrance points of expanding coordinate at most `ε`.
-  set δ := min δ₀ ε
-  have hδ : 0 < δ := lt_min hδ₀ hε
-  have hδε : δ ≤ ε := min_le_right _ _
-  have hballδ : closedBall (0 : {i // ¬φ.weight i = 1} → ℝ) δ ⊆ closedBall 0 δ₀ :=
-    closedBall_subset_closedBall (min_le_left _ _)
-  have hg : LipschitzOnWith Kg g (closedBall 0 δ) := hg₀'.mono hballδ
   have hgε : ∀ v ∈ closedBall (0 : {i // ¬φ.weight i = 1} → ℝ) δ, ‖g v‖ = ε := fun v hv ↦
-    (hgpts v (hballδ hv)).1
+    (hgpts v hv).1
   -- The points of the graph of `g` lie in `W^u(p)`.
   have hgu : ∀ v ∈ closedBall (0 : {i // ¬φ.weight i = 1} → ℝ) δ,
       Ψ (WithLp.toLp 2 (g v, v)) ∈ hX.flow.unstableSet p := by
     intro v hv
-    obtain ⟨-, u, ⟨hu, -⟩, τ, hτ⟩ := hgpts v (hballδ hv)
+    obtain ⟨-, u, ⟨hu, -⟩, τ, hτ⟩ := hgpts v hv
     have h := (Flow.apply_mem_unstableSet_iff hX.flow τ).2 hu
     rwa [hτ] at h
   -- `Z` near the centre is a graph `u ↦ (u, k u)` through the centre.
@@ -933,11 +988,7 @@ private theorem IsMorseSmale.exists_centreGluingArc {hX : IsAdaptedPseudoGradien
   have hW : ∀ᶠ z in 𝓝 (0 : WithLp 2 (({i // φ.weight i = 1} → ℝ) ×
       ({i // ¬φ.weight i = 1} → ℝ))), f (Ψ z) < f a₁ :=
     hΨc0.tendsto.eventually (p := fun w ↦ f w < f a₁) (by rw [hΨ0]; exact hfq)
-  obtain ⟨r, hr, hW'⟩ :=
-    (isCompact_singleton (x := (0 : {i // φ.weight i = 1} → ℝ))).exists_pos_forall_toLp_mem
-      (β := {i // ¬φ.weight i = 1} → ℝ) isOpen_interior fun x hx ↦ by
-      rw [hx, Prod.mk_zero_zero, WithLp.toLp_zero]
-      exact mem_interior_iff_mem_nhds.2 (Filter.eventually_iff.1 hW)
+  obtain ⟨r, hr, hW'⟩ := WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero hW
   -- The gluing rates `l ∈ [0, l₀]`, with the solution `v l` of the gluing equation.
   have hsmall₀ : ∀ᶠ l₀ in 𝓝[>] (0 : ℝ), 0 < l₀ ∧ l₀ * ε < ε ∧ l₀ * ε < r ∧
       l₀ * (Kk * ε) < r ∧ l₀ * (Kk * ε) < ε :=
@@ -958,62 +1009,33 @@ private theorem IsMorseSmale.exists_centreGluingArc {hX : IsAdaptedPseudoGradien
     rw [norm_smul, Real.norm_of_nonneg hl.1, hgε _ (hv l hl).1]
   have hnorm_k {l : ℝ} (hl : l ∈ Icc 0 l₀) : ‖k (l • g (v l))‖ ≤ Kk * (l₀ * ε) :=
     (hv l hl).2.2.1.trans (by gcongr; exact hl.2)
-  have hnorm_v {l : ℝ} (hl : l ∈ Icc 0 l₀) : ‖v l‖ ≤ ε :=
-    (mem_closedBall_zero_iff.1 (hv l hl).1).trans hδε
+  have hnorm_v {l : ℝ} (hl : l ∈ Icc 0 l₀) : ‖v l‖ ≤ ε := by
+    rw [← hfixed hl, norm_smul, Real.norm_of_nonneg hl.1]
+    exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [hl.2])).trans
+      ((hnorm_k hl).trans hl₀kε.le)
   -- The arc: the entrance point `(g (v l), v l)` and the point `(l • g (v l), k (l • g (v l)))`
   -- of the graph of `k` on its orbit, read on `M`; both lie in the cube of radius `2 ε`.
   set B : Icc (0 : ℝ) l₀ → M × M := fun s ↦ (Ψ (WithLp.toLp 2 (g (v s), v s)),
     Ψ (WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s))))) with hBdef
-  have hB₁ε (s : Icc (0 : ℝ) l₀) : ‖(WithLp.toLp 2 (g (v s), v s)).fst‖ ≤ 2 * ε ∧
-      ‖(WithLp.toLp 2 (g (v s), v s)).snd‖ ≤ 2 * ε := by
-    rw [WithLp.toLp_fst, WithLp.toLp_snd, hgε _ (hv s s.property).1]
-    exact ⟨by linarith, by linarith [hnorm_v s.property]⟩
-  have hB₂ε (s : Icc (0 : ℝ) l₀) :
-      ‖(WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s)))).fst‖ ≤ 2 * ε ∧
-        ‖(WithLp.toLp 2 ((s : ℝ) • g (v s), k ((s : ℝ) • g (v s)))).snd‖ ≤ 2 * ε := by
-    rw [WithLp.toLp_fst, WithLp.toLp_snd, hnorm_g s.property]
-    exact ⟨by nlinarith [s.property.1, s.property.2], by linarith [hnorm_k s.property]⟩
-  have hvc' : Continuous fun s : Icc (0 : ℝ) l₀ ↦ v s :=
-    hvc.comp_continuous continuous_subtypeVal fun s ↦ s.property
-  have hgc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ g (v s) :=
-    hg.continuousOn.comp_continuous hvc' fun s ↦ (hv s s.property).1
-  have hsgc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ (s : ℝ) • g (v s) :=
-    continuous_subtypeVal.smul hgc
-  have hkc : Continuous fun s : Icc (0 : ℝ) l₀ ↦ k ((s : ℝ) • g (v s)) :=
-    hk.continuousOn.comp_continuous hsgc fun s ↦ (hv s s.property).2.1
-  have hBc : Continuous B :=
-    (continuous_toChart_symm_coord_symm_splitCoord_symm_comp φ hε₂
-      ((WithLp.prod_continuous_toLp 2 _ _).comp (hgc.prodMk hvc')) hB₁ε).prodMk
-      (continuous_toChart_symm_coord_symm_splitCoord_symm_comp φ hε₂
-        ((WithLp.prod_continuous_toLp 2 _ _).comp (hsgc.prodMk hkc)) hB₂ε)
+  obtain ⟨hBc, hflowB, hBinj⟩ := hX.continuous_and_flow_neg_log_eq_of_smul_comp_smul_eq φ hφ hε
+    hε₂ hg.continuousOn hk.continuousOn hl₀₁'.le hvc (B := B) (fun l hl ↦ ⟨(hv l hl).1,
+      (hv l hl).2.1, hgε _ (hv l hl).1, hnorm_v hl, (hnorm_k hl).trans hl₀kε.le, hfixed hl⟩)
+    fun _ ↦ rfl
   have hB₀ : B ⟨0, left_mem_Icc.2 hl₀.le⟩ = (y₁, q) := by
     simp only [hBdef, hv₀, hg0, zero_smul, hk₀]
     rw [← hy₁Φ, hΨΦ y₁ hy₁φ, Prod.mk_zero_zero, WithLp.toLp_zero, hΨ0]
-  -- For `l > 0`, the entrance point flows in time `-log l` to the point of the graph of `k`.
-  have hflowB : ∀ s : Icc (0 : ℝ) l₀, (s : ℝ) ≠ 0 →
-      hX.flow (-Real.log s) (B s).1 = (B s).2 := fun s hs ↦
-    hX.flow_neg_log_eq_of_smul_comp_smul_eq φ hφ hε₁
-      (lt_of_le_of_ne s.property.1 (Ne.symm hs)) (by linarith [s.property.2])
-      (hgε _ (hv s s.property).1).le (hfixed s.property)
-      ((hnorm_k s.property).trans hl₀kε.le)
   have hBS : ∀ s : Icc (0 : ℝ) l₀, (s : ℝ) ≠ 0 → (B s).1 ∈ hX.flow.unstableSet p ∧
       (B s).2 ∈ Z ∧ ∃ t, hX.flow t (B s).1 = (B s).2 :=
     fun s hs ↦ ⟨hgu _ (hv s s.property).1, hkZ _ (hv s s.property).2.1, _, hflowB s hs⟩
   have hBq : ∀ s : Icc (0 : ℝ) l₀, f (B s).2 < f a₁ := fun s ↦
-    interior_subset (hW' 0 rfl _ _
-      (by rw [dist_zero_right, hnorm_g s.property]; nlinarith [s.property.1, s.property.2])
-      ((hnorm_k s.property).trans_lt hl₀k))
-  -- The point on the graph of `k` determines the rate, through the norm `l ε` of its first
-  -- coordinate.
-  have hBinj : ∀ s s' : Icc (0 : ℝ) l₀, (B s).2 = (B s').2 → s = s' := fun s s' h ↦
-    Subtype.ext (eq_of_toChart_symm_eq_of_norm_fst_eq φ hε hε₂ (hB₂ε s) (hB₂ε s')
-      (hnorm_g s.property) (hnorm_g s'.property) h)
+    hW' _ _ (by rw [hnorm_g s.property]; nlinarith [s.property.1, s.property.2])
+      ((hnorm_k s.property).trans_lt hl₀k)
   -- Every recorded pair near `(y₁, q)` is a point of the arc.
   have hfwd : ∀ᶠ w : M × M in 𝓝 (y₁, q),
       w.1 ∈ hX.flow.unstableSet p → f w.1 = f y₁ → w.2 ∈ Z → (∃ t, hX.flow t w.1 = w.2) →
       ∃ s : Icc (0 : ℝ) l₀, (s : ℝ) < l₀ ∧ (∃ t, hX.flow t w.1 = (B s).1) ∧ w.2 = (B s).2 := by
     filter_upwards [eventually_exists_flow_splitEntryTime_eq_and_eq_of_centre hX hf hpq' hqq.1
-      (hfa₁.1.trans hfa₁.2) φ hφ hε hε₂ hδ hδε hl₀ hl₀₁'.le
+      (hfa₁.1.trans hfa₁.2) φ hφ hε hε₂ hδ hl₀ hl₀₁'.le
       (fun l hl y hy hfix ↦ ((hv l hl).2.2.2 y hy).1 hfix) hk₀
       (hA₁.mono fun w hw ↦ ⟨hw.1, hw.2.1, hw.2.2.1, hw.2.2.2.1⟩) hy₁κ
       ((hexh₁ _ (Filter.eventually_iff.1 hgexh)).mono fun w hw hwu hwf ↦ by

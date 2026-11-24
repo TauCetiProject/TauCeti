@@ -68,7 +68,8 @@ the `L²` product norm carried by `WithLp 2` plays no role.
   explicit form, and `TauCeti.fst_splitPassage_symm`, `TauCeti.snd_splitPassage_symm`,
   `TauCeti.norm_snd_splitPassage_symm`: that of its inverse.
 * `TauCeti.tendsto_splitExitTime_atTop`, `TauCeti.tendsto_fst_splitPassage_nhds_zero`: breaking.
-* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma.
+* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma, along gluing parameters
+  `r → 0⁺`, for which `TauCeti.tendsto_mul_const_nhdsGT_zero` gives `r c → 0`.
 * `TauCeti.toLp_smul_mem_splitPassage_source`, `TauCeti.splitPassage_toLp_smul`,
   `TauCeti.splitPassage_symm_toLp_smul`, `TauCeti.setOf_mem_splitPassage_source_eq_image`: gluing.
 
@@ -483,6 +484,12 @@ theorem setOf_mem_splitPassage_source_eq_image {x₀ : Eₛ} {y₀ : Eᵤ} (hx�
     refine ⟨toLp_smul_mem_splitPassage_source hx₀ hy₀ hε hr, rfl, ?_⟩
     simp [splitPassage_toLp_smul x₀ hy₀ hε hr.1]
 
+/-- A linear function of the gluing parameter tends to `0` as the parameter tends to `0` from
+above. -/
+theorem tendsto_mul_const_nhdsGT_zero (c : ℝ) :
+    Tendsto (fun r : ℝ ↦ r * c) (𝓝[>] 0) (𝓝 0) :=
+  ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul c)).mono_left nhdsWithin_le_nhds
+
 /-- **The linear λ-lemma.** Let `x r` be points of norm `ε` in the first factor, for instance the
 first coordinates `g (r • y₀)` of a disc `y ↦ (g y, y)` in the entrance face transverse to the
 stable set. As `r → 0⁺`, the points `(x r, r • y₀)` approach the stable set, and their exit points
@@ -505,9 +512,7 @@ theorem tendsto_splitPassage_toLp_smul {x : ℝ → Eₛ} {y₀ : Eᵤ}
   refine Tendsto.congr' hpass ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp
     (Tendsto.prodMk_nhds ?_ tendsto_const_nhds))
   refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
-  have h : Tendsto (fun r : ℝ ↦ r * ε) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).mul_const ε)
-  refine h.congr' ?_
+  refine (tendsto_mul_const_nhdsGT_zero ε).congr' ?_
   filter_upwards [self_mem_nhdsWithin, hx] with r hr hxr
   rw [norm_smul, Real.norm_of_nonneg (le_of_lt hr), hxr]
 

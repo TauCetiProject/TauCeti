@@ -123,11 +123,6 @@ theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
     filter_upwards [hleft, hat (closedBall_mem_nhds 0 hη)] with z hz hzη
     exact ⟨hzη, by simp only [k, ha_def] at hz ⊢; rw [hz]⟩
 
-/-- A linear function of the rate tends to `0` as the rate tends to `0` from above. -/
-theorem tendsto_mul_const_nhdsGT_zero (c : ℝ) :
-    Tendsto (fun l : ℝ ↦ l * c) (𝓝[>] 0) (𝓝 0) :=
-  ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul c)).mono_left nhdsWithin_le_nhds
-
 omit [NormedSpace ℝ Eᵤ] in
 /-- Along the entrance graph `y ↦ (g y, y)` in the face `‖x‖ = ε`, scaled by a rate `l` with
 `l ε ≤ η`, the contracting component stays over the ball of radius `η` on which the graph `k`
@@ -164,23 +159,23 @@ private theorem dist_smul_comp_smul_le {ε δ η l : ℝ} {Kg Kk : ℝ≥0} {g :
 omit [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ]
   [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ] in
 /-- **The fixed points of a uniformly contracting family depend continuously on the parameter.**
-If every map `F a`, for `a ∈ S`, is Lipschitz on `s` with one constant `K < 1` and fixes a point
-`v a` of `s`, and `a ↦ F a y` is continuous on `S` for every `y ∈ s`, then `v` is continuous on
-`S`: `dist (v a) (v a')` is at most `dist (F a (v a')) (F a' (v a')) / (1 - K)`. -/
-private theorem continuousOn_of_isFixedPt_of_dist_le_mul {α X : Type*} [TopologicalSpace α]
-    [PseudoMetricSpace X] {S : Set α} {s : Set X} {F : α → X → X} {v : α → X} {K : ℝ}
-    (hK : K < 1) (hF : ∀ a ∈ S, ∀ x ∈ s, ∀ y ∈ s, dist (F a x) (F a y) ≤ K * dist x y)
+If every map `F a`, for `a ∈ S`, maps `s` to itself as a contraction with one constant `K` and
+fixes a point `v a` of `s`, and `a ↦ F a y` is continuous on `S` for every `y ∈ s`, then `v` is
+continuous on `S`: by the a posteriori estimate `ContractingWith.dist_le_of_fixedPoint`,
+`dist (v a) (v a')` is at most `dist (F a (v a')) (F a' (v a')) / (1 - K)`. -/
+private theorem continuousOn_of_forall_contractingWith {α X : Type*} [TopologicalSpace α]
+    [MetricSpace X] {S : Set α} {s : Set X} {F : α → X → X} {v : α → X} {K : ℝ≥0}
+    (hmaps : ∀ a ∈ S, MapsTo (F a) s s)
+    (hF : ∀ a (ha : a ∈ S), ContractingWith K ((hmaps a ha).restrict _ _ _))
     (hv : ∀ a ∈ S, v a ∈ s ∧ F a (v a) = v a)
     (hc : ∀ y ∈ s, ContinuousOn (fun a ↦ F a y) S) : ContinuousOn v S := by
   intro a' ha'
   have hdist : ∀ a ∈ S, dist (v a) (v a') ≤ dist (F a (v a')) (F a' (v a')) / (1 - K) := by
     intro a ha
-    rw [le_div_iff₀ (sub_pos.2 hK)]
-    have h := hF a ha _ (hv a ha).1 _ (hv a' ha').1
-    have htri : dist (v a) (v a') ≤ dist (v a) (F a (v a')) + dist (F a (v a')) (F a' (v a')) := by
-      simpa only [(hv a' ha').2] using dist_triangle (v a) (F a (v a')) (v a')
-    rw [(hv a ha).2] at h
-    nlinarith
+    have h := (hF a ha).dist_le_of_fixedPoint ⟨v a', (hv a' ha').1⟩
+      (y := ⟨v a, (hv a ha).1⟩) (Subtype.ext (hv a ha).2)
+    rw [(hv a' ha').2, dist_comm, dist_comm (F a _)]
+    simpa only [Subtype.dist_eq, MapsTo.val_restrict_apply] using h
   have hlim : Tendsto (fun a ↦ dist (F a (v a')) (F a' (v a')) / (1 - K)) (𝓝[S] a') (𝓝 0) := by
     simpa using ((hc _ (hv a' ha').1 a' ha').tendsto.dist
       (tendsto_const_nhds (x := F a' (v a')))).div_const (1 - K)
@@ -261,8 +256,8 @@ theorem eventually_exists_continuousOn_smul_comp_smul_eq_iff [CompleteSpace Eᵤ
   have hv₀ : v 0 = 0 :=
     (huniq (left_mem_Icc.2 hl₀.le) (mem_closedBall_self hδ.le) (by simp)).symm
   -- The fixed points depend continuously on `l`, since the maps do.
-  refine ⟨v, continuousOn_of_isFixedPt_of_dist_le_mul hK₁
-      (fun l hl y hy y' hy' ↦ hlip hl hy hy') hv fun y hy ↦ ?_, hv₀,
+  refine ⟨v, continuousOn_of_forall_contractingWith (F := fun l y ↦ l • k (l • g y))
+      (fun l hl ↦ hmaps hl) (fun l hl ↦ hcontr hl) hv fun y hy ↦ ?_, hv₀,
     fun l hl ↦ ⟨(hv l hl).1, (hkg hl (hv l hl).1).1, (hkg hl (hv l hl).1).2,
       fun y hy ↦ ⟨huniq hl hy, fun h ↦ h ▸ (hv l hl).2⟩⟩⟩
   exact continuousOn_id.smul (hk.continuousOn.comp (continuousOn_id.smul continuousOn_const)
@@ -332,10 +327,7 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst := by
   have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- `W` contains the points whose two components are smaller than some `r`.
-  obtain ⟨r, hr, hW'⟩ := (isCompact_singleton (x := (0 : Eₛ))).exists_pos_forall_toLp_mem
-    (β := Eᵤ) isOpen_interior fun x hx ↦ by
-      rw [hx, Prod.mk_zero_zero, WithLp.toLp_zero]
-      exact mem_interior_iff_mem_nhds.2 hW
+  obtain ⟨r, hr, hW'⟩ := WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero hW
   -- A bound `l₀` on the rates for which the gluing equation has its solutions `v l`, and for
   -- which the glued points lie in `W`.
   have hlin := tendsto_mul_const_nhdsGT_zero
@@ -360,8 +352,8 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   rw [hlT] at hT' hbox
   refine ⟨y, hy, hbox, ?_, ?_, ?_⟩
   · rw [hT']
-    refine interior_subset (hW' 0 rfl _ _ ?_ ?_)
-    · rw [dist_zero_right, norm_smul, Real.norm_of_nonneg hl.1, hgε y hy]
+    refine hW' _ _ ?_ ?_
+    · rw [norm_smul, Real.norm_of_nonneg hl.1, hgε y hy]
       nlinarith [hl.2]
     · exact hkg.trans_lt (by nlinarith [hl.2, mul_nonneg (Kk.coe_nonneg) hε])
   · rw [hT', WithLp.toLp_fst]
