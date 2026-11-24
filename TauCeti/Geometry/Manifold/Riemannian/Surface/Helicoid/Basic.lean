@@ -51,7 +51,7 @@ theorem contDiff_parametrization (a : ℝ) {n : ℕ∞ω} : ContDiff ℝ n (para
     ((contDiff_const.mul contDiff_fst).smul contDiff_const)
 
 /-- The helicoid differential is the planar polar differential plus the height differential. -/
-theorem fderiv_parametrization_apply_eq_add (a : ℝ) (p w : P) :
+private theorem fderiv_parametrization_apply_eq_add (a : ℝ) (p w : P) :
     fderiv ℝ (parametrization a) p w =
       fderiv ℝ (SurfaceOfRevolution.parametrization id (fun _ ↦ 0)) p w +
       (a * w.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
@@ -96,13 +96,22 @@ theorem fderiv_parametrization (a : ℝ) (p w : P) :
     SurfaceOfRevolution.profileSpeedSq_def]
   ring
 
-/-- The metric is positive on a tangent vector exactly when its radial component is nonzero
+/-- The squared norm of the differential is given by the diagonal first fundamental form. -/
+@[simp] theorem norm_fderiv_parametrization_sq (a : ℝ) (p w : P) :
+    ‖fderiv ℝ (parametrization a) p w‖ ^ 2 =
+      (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 + w.2 ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, inner_fderiv_parametrization]
+  ring
+
+/-- The differential has positive norm exactly when the tangent vector's radial component is nonzero
 or its angular component is nonzero at a regular parameter point. -/
-theorem inner_fderiv_parametrization_self_pos_iff (a : ℝ) (p w : P) :
-    0 < inner ℝ (fderiv ℝ (parametrization a) p w)
-        (fderiv ℝ (parametrization a) p w) ↔
+theorem norm_fderiv_parametrization_pos_iff (a : ℝ) (p w : P) :
+    0 < ‖fderiv ℝ (parametrization a) p w‖ ↔
       ((a ≠ 0 ∨ p.2 ≠ 0) ∧ w.1 ≠ 0) ∨ w.2 ≠ 0 := by
-  simp only [inner_fderiv_parametrization, mul_assoc, ← sq]
+  have hnorm : 0 < ‖fderiv ℝ (parametrization a) p w‖ ↔
+      0 < ‖fderiv ℝ (parametrization a) p w‖ ^ 2 := by
+    simp only [sq_pos_iff, norm_pos_iff, norm_ne_zero_iff]
+  rw [hnorm, norm_fderiv_parametrization_sq]
   have h : 0 ≤ (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 := by positivity
   rw [(add_nonneg h (sq_nonneg _)).lt_iff_ne, ne_comm]
   simp only [ne_eq, add_eq_zero_iff_of_nonneg h (sq_nonneg _), mul_eq_zero,
@@ -120,11 +129,11 @@ theorem inner_fderiv_parametrization_self_pos_iff (a : ℝ) (p w : P) :
     simpa using congrArg Prod.fst he
   · intro h w hw
     by_contra hn
-    have hpos := (inner_fderiv_parametrization_self_pos_iff a p w).2 (by
+    have hpos := (norm_fderiv_parametrization_pos_iff a p w).2 (by
       by_cases h₂ : w.2 = 0
       · exact Or.inl ⟨h, fun h₁ ↦ hn (Prod.ext h₁ h₂)⟩
       · exact Or.inr h₂)
-    rw [hw, inner_zero_left] at hpos
+    rw [hw, norm_zero] at hpos
     exact (lt_irrefl 0) hpos
 
 end TauCeti.Helicoid
