@@ -1123,17 +1123,6 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Sym
   simpa using ω.constSmooth.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH
     (contMDiff_uncurry_of_contDiff hHs) hz hq x
 
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
-of `S` and the target point. -/
-private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
-
 /-- The Floer energy density, the symplectic area density and the curvature of the pair-of-pants
 perturbation, along a map that is `C¹` on `S`, are integrable over every truncation. -/
 theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
@@ -1152,8 +1141,8 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
         (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   have hT := isCompact_preimage_truncation R
   have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
-  have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
-  have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
+  have hKs := contDiffOn_uncurry_pairOfPantsPerturbation hH hHs 1
+  have hKt := contDiffOn_uncurry_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl
   refine ⟨?_, ?_, ?_⟩
   · exact ((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu hKs hKt).mono
