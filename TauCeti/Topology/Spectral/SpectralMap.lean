@@ -52,8 +52,6 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
 * `IsSpectralMap.isConstructible_preimage` : constructible sets pull back along spectral maps
   from quasiseparated spaces to compact spaces.
-* `Homeomorph.spectralSpace`, `Homeomorph.spectralSpace_iff` : spectrality transports along a
-  homeomorphism.
 
 ## References
 
@@ -156,17 +154,6 @@ theorem isSpectralMap_prodMk_left (y : Y) :
     IsSpectralMap (fun x : X ↦ (x, y)) :=
   (Homeomorph.prodComm Y X).isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right y)
 
-/-- Spectrality transports along a homeomorphism. -/
-protected theorem _root_.Homeomorph.spectralSpace [SpectralSpace X] (e : X ≃ₜ Y) :
-    SpectralSpace Y := by
-  have : CompactSpace Y := e.compactSpace
-  exact e.symm.isOpenEmbedding.spectralSpace
-
-/-- Two homeomorphic topological spaces are spectral simultaneously. -/
-protected theorem _root_.Homeomorph.spectralSpace_iff (e : X ≃ₜ Y) :
-    SpectralSpace X ↔ SpectralSpace Y :=
-  ⟨fun _ ↦ e.spectralSpace, fun _ ↦ e.symm.spectralSpace⟩
-
 /-- **Spectrality transports along an embedding.** A subset of the target contained in the range
 of an embedding is spectral if and only if its preimage is: the embedding restricts to a
 homeomorphism between the two.
@@ -176,8 +163,15 @@ It is worth stating separately because the *reason* one works on the subspace is
 inclusion is not a spectral map, which makes the general preservation theorems unavailable along
 it; this lemma supplies the homeomorphism route instead. -/
 theorem _root_.Topology.IsEmbedding.spectralSpace_preimage_iff {f : X → Y} (hf : IsEmbedding f)
-    {S : Set Y} (hS : S ⊆ range f) : SpectralSpace (f ⁻¹' S) ↔ SpectralSpace S :=
-  (hf.homeomorphOfSubsetRange hS).spectralSpace_iff
+    {S : Set Y} (hS : S ⊆ range f) : SpectralSpace (f ⁻¹' S) ↔ SpectralSpace S := by
+  -- The embedding restricts to a homeomorphism `f ⁻¹' S ≃ₜ S`.
+  let e := hf.homeomorphOfSubsetRange hS
+  -- Transfer compactness along it, then spectrality; a homeomorphism is an open embedding.
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have : CompactSpace S := e.compactSpace
+    exact e.symm.isOpenEmbedding.spectralSpace
+  · have : CompactSpace (f ⁻¹' S) := e.symm.compactSpace
+    exact e.isOpenEmbedding.spectralSpace
 
 /-- Inside a spectral open subset `V`, every point of an open set `O` has a compact spectral open
 neighbourhood contained in `V ∩ O`. -/
@@ -233,8 +227,9 @@ theorem _root_.Topology.IsOpenEmbedding.isSpectralMap [CompactSpace X] [QuasiSep
     hso hf.isOpen_range
 
 /-- The full subspace of a spectral space is spectral. -/
-theorem spectralSpace_univ [SpectralSpace X] : SpectralSpace (Set.univ : Set X) :=
-  (Homeomorph.Set.univ X).symm.spectralSpace
+theorem spectralSpace_univ [SpectralSpace X] : SpectralSpace (Set.univ : Set X) := by
+  let _ : CompactSpace (univ : Set X) := (Homeomorph.Set.univ X).symm.compactSpace
+  exact isOpen_univ.isOpenEmbedding_subtypeVal.spectralSpace
 
 end TauCeti
 

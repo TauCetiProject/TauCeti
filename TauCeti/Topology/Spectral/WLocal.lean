@@ -355,7 +355,8 @@ theorem _root_.Topology.IsClosedEmbedding.isWLocalSpace {X : Type u} {Y : Type v
     (hY : IsWLocalSpace Y) : IsWLocalSpace X := by
   have := hY.spectralSpace
   have : SpectralSpace (Set.range f) := hf.isClosed_range.spectralSpace
-  refine ⟨hf.toHomeomorph.symm.spectralSpace, hf.openCoversSplit hY.openCoversSplit, ?_⟩
+  have : CompactSpace X := hf.compactSpace
+  refine ⟨hf.toHomeomorph.isOpenEmbedding.spectralSpace, hf.openCoversSplit hY.openCoversSplit, ?_⟩
   rw [← hf.preimage_closedPoints]
   exact hY.isClosed_closedPoints.preimage hf.continuous
 

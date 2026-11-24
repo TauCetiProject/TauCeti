@@ -151,7 +151,9 @@ theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralSpace {Z : Type*} [Topo
     hX.isTopologicalBasis.exists_subset_of_mem_open (mem_range_self z) he.isOpen_range
   refine ⟨e ⁻¹' W, hWo.preimage he.continuous, hzW, ?_⟩
   -- `e` restricts to a homeomorphism from `e ⁻¹' W` onto the spectral space `W`.
-  exact (he.isEmbedding.homeomorphOfSubsetRange hWe).symm.spectralSpace
+  let h := he.isEmbedding.homeomorphOfSubsetRange hWe
+  have : CompactSpace (e ⁻¹' W) := h.symm.compactSpace
+  exact h.isOpenEmbedding.spectralSpace
 
 /-- The product of two locally spectral spaces is locally spectral. -/
 theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
@@ -337,7 +339,8 @@ theorem _root_.Homeomorph.isLocallySpectralMap_comp {Z : Type*} [TopologicalSpac
   have := hUs
   have := hVs
   let hU := e.image U
-  have : SpectralSpace (e '' U) := hU.spectralSpace
+  have : CompactSpace (e '' U) := hU.compactSpace
+  have : SpectralSpace (e '' U) := hU.symm.isOpenEmbedding.spectralSpace
   have hUV' : MapsTo f (e '' U) V := by
     rintro _ ⟨z, hzU, rfl⟩
     exact hUV hzU

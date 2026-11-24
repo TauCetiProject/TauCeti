@@ -76,8 +76,10 @@ instance spectralSpace_prod {X Y : Type*} [tX : TopologicalSpace X] [tY : Topolo
 /-- The product `U ×ˢ V` of two spectral subspaces is spectral. -/
 theorem spectralSpace_set_prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     {U : Set X} {V : Set Y} [SpectralSpace U] [SpectralSpace V] :
-    SpectralSpace (U ×ˢ V : Set (X × Y)) :=
-  (Homeomorph.Set.prod U V).symm.spectralSpace
+    SpectralSpace (U ×ˢ V : Set (X × Y)) := by
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace (U ×ˢ V : Set (X × Y)) := e.symm.compactSpace
+  exact e.isOpenEmbedding.spectralSpace
 
 /-- The first projection from a pro-constructible subset of a product of two spectral spaces is a
 spectral map. -/
@@ -140,7 +142,8 @@ theorem isSpectralMap_limitCone_π (j : J) : IsSpectralMap ((limitCone F).π.app
 theorem spectralSpace_of_isLimit (c : Cone F) (hc : IsLimit c) : SpectralSpace c.pt := by
   have := spectralSpace_limitCone F hF
   let e := homeoOfIso (hc.conePointUniqueUpToIso (limitConeIsLimit F))
-  exact e.symm.spectralSpace
+  have : CompactSpace c.pt := e.symm.compactSpace
+  exact e.isOpenEmbedding.spectralSpace
 
 /-- The projections of any limiting cone of spectral spaces and spectral maps are spectral. -/
 theorem isSpectralMap_of_isLimit_π (c : Cone F) (hc : IsLimit c) (j : J) :

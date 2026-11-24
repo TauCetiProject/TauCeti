@@ -117,10 +117,8 @@ example :
     exact (isClosed_diagonal.union isClosed_singleton).union isClosed_singleton
   have hR : IsProConstructible {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} :=
     hR_closed.isProConstructible
-  have hs_gen : GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.val.1) := by
-    intro q b hbq
-    have hb : b = q.val.1 := t1Space_iff_specializes_imp_eq.mp inferInstance hbq
-    exact ⟨q, specializes_rfl, hb.symm⟩
+  have hs_gen : GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.val.1) :=
+    generalizingMap_of_t1Space
   refine ⟨hR, hs_gen, hR.isSpectralMap_fst, fun hopen ↦ ?_⟩
   have hsat : Quotient.mk r ⁻¹' (Quotient.mk r '' {((0 : ℕ) : OnePoint ℕ)}) =
       {((0 : ℕ) : OnePoint ℕ), (∞ : OnePoint ℕ)} := by
@@ -272,7 +270,7 @@ example :
     fun hspec ↦ ?_⟩
   have hf_surj : Function.Surjective f := fun y ↦ ⟨pure y, ultrafilter_extend_pure id y⟩
   have hf_quot : IsQuotientMap f := IsQuotientMap.of_surjective_continuous hf_surj f.continuous
-  have : SpectralSpace unitInterval := hf_quot.homeomorph.spectralSpace
+  have : SpectralSpace unitInterval := hf_quot.homeomorph.symm.isOpenEmbedding.spectralSpace
   exact zero_ne_one ((subsingleton_of_preconnected_totallyDisconnected (α := unitInterval)).elim
     0 1)
 

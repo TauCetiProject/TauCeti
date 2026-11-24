@@ -74,7 +74,8 @@ theorem IsLocallyProConstructible.preimage_of_isOpenEmbedding {f : X → Y} {s :
   let g : U → Y := f ∘ Subtype.val
   have hg : IsOpenEmbedding g := hf.comp hU.isOpenEmbedding_subtypeVal
   let h := hg.isEmbedding.toHomeomorph
-  have : SpectralSpace (range g) := h.spectralSpace
+  have : CompactSpace (range g) := h.compactSpace
+  have : SpectralSpace (range g) := h.symm.isOpenEmbedding.spectralSpace
   have htrace := hs.isProConstructible_preimage hg.isOpen_range
   convert htrace.preimage h.isOpenEmbedding.isSpectralMap using 1
   ext x
@@ -319,7 +320,9 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
         ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
       continuous_invFun :=
         ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _ }
-  have : SpectralSpace O := eOP.symm.spectralSpace
+  have : SpectralSpace O := by
+    have : CompactSpace O := eOP.symm.compactSpace
+    exact eOP.isOpenEmbedding.spectralSpace
   obtain ⟨U', hU'sub, hU'o, hqU', hU'c, -⟩ :=
     hUo.exists_spectralSpace_subset_inter hUs hOo hqU hqO
   refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hqU', ?_⟩

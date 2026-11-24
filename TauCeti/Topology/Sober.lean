@@ -14,9 +14,9 @@ import TauCeti.Topology.Closure
 # Generic points and generizations
 
 In a sober space, the generic points of irreducible components are precisely the points
-with no proper generization. Every point of a quasi-sober space (and in particular of any closed
-subset) is a specialization of a generic point of an irreducible component. These facts let one
-choose component-generic points without Noetherianity or a dimension argument.
+with no proper generization. Every point of a closed subset is a specialization of such a
+generic point of that subset. These facts let one choose component-generic points without
+Noetherianity or a dimension argument.
 
 In a quasi-sober space where the closure of every component-generic point has nonempty
 interior, a generization-stable subset is dense exactly when it contains all component-generic
@@ -45,17 +45,6 @@ theorem Specializes.closure_eq_of_mem_genericPoints {x y : X}
 
 namespace TauCeti
 
-/-- Every point of a quasi-sober space is a specialization of a generic point of an irreducible
-component. -/
-theorem exists_genericPoint_specializes [QuasiSober X]
-    (x : X) : ∃ z ∈ genericPoints X, z ⤳ x := by
-  let C : irreducibleComponents X :=
-    ⟨irreducibleComponent x, irreducibleComponent_mem_irreducibleComponents x⟩
-  exact ⟨(genericPoints.ofComponent C).val, (genericPoints.ofComponent C).property,
-    (genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent⟩
-
-section
-
 variable [QuasiSober X] [T0Space X]
 
 /-- In a sober space, the generic points of irreducible components are exactly the points
@@ -83,8 +72,6 @@ theorem bijOn_closure_singleton_genericPoints :
   Equiv.bijOn_of_coe_eq genericPoints.equiv fun z ↦ by
     rw [genericPoints.equiv_apply]
     exact (genericPoints.isGenericPoint z).def.symm
-
-end
 
 end TauCeti
 
@@ -120,8 +107,11 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
     [QuasiSober X] {s : Set X} (hs : IsClosed s) {x : X} (hx : x ∈ s) :
     ∃ z : s, z ∈ genericPoints s ∧ (z : X) ⤳ x := by
   let : QuasiSober s := hs.isClosedEmbedding_subtypeVal.quasiSober
-  obtain ⟨z, hz, hzx⟩ := TauCeti.exists_genericPoint_specializes (⟨x, hx⟩ : s)
-  exact ⟨z, hz, hzx.map continuous_subtypeVal⟩
+  let C : irreducibleComponents s :=
+    ⟨irreducibleComponent (⟨x, hx⟩ : s), irreducibleComponent_mem_irreducibleComponents _⟩
+  refine ⟨(genericPoints.ofComponent C).val, (genericPoints.ofComponent C).property, ?_⟩
+  exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
+    continuous_subtypeVal
 
 section Maps
 
