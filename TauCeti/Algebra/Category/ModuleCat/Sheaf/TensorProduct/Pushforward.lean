@@ -439,7 +439,7 @@ lemma pullback_δ_app_unit_tmul (M N : SheafOfModules.{u} (ringCatSheaf S)) (U :
     (Functor.LaxMonoidal.μ (SheafOfModules.forget (ringCatSheaf S)) M N) ≫
       (SheafOfModules.forget (ringCatSheaf S)).map k) h
   simp only [Functor.map_comp] at hh
-  erw [← Functor.LaxMonoidal.μ_natural_assoc] at hh
+  rw [← Functor.LaxMonoidal.μ_natural_assoc] at hh
   have he := congrArg (fun k ↦ k.app U (m ⊗ₜ[S.obj.obj U] n)) hh
   -- Pushforward leaves the section carriers unchanged and restricts their scalars.
   change _ = (Functor.LaxMonoidal.μ (pushforward φ) _ _).val.app U

@@ -106,6 +106,8 @@ private lemma pullback_δ_stalk_germ (y : Y) (a : ↑(TopCat.Presheaf.stalk 𝒪
       ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf 𝒪X)) M N).app
         (op U) (m ⊗ₜ[𝒪X.obj.obj (op U)] n)))
   refine (congrArg (fun t ↦ a • β t) hd).trans ?_
+  -- Germs use `.val.presheaf.obj`, while the section equation uses `.val.obj`;
+  -- `erw` unfolds `PresheafOfModules.presheaf` and the `pullbackUnitApp` abbreviation.
   erw [_root_.SheafOfModules.pullback_δ_app_unit_tmul φ M N (op U) m n]
   exact congrArg (a • ·) (tensorStalkEquivMonoidal_germ 𝒪Y
     ((_root_.SheafOfModules.pullback φ).obj M)
@@ -223,9 +225,9 @@ instance _root_.SheafOfModules.isIso_pullback_δ :
 and unit maps inverse to the canonical oplax comparisons. -/
 instance _root_.SheafOfModules.pullbackBraided :
     (_root_.SheafOfModules.pullback.{u} φ).Braided := by
-  have : IsIso (Functor.OplaxMonoidal.η (_root_.SheafOfModules.pullback.{u} φ)) :=
-    (_root_.SheafOfModules.pullback_η φ).symm ▸
-      _root_.SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal φ
+  have : IsIso (Functor.OplaxMonoidal.η (_root_.SheafOfModules.pullback.{u} φ)) := by
+    rw [_root_.SheafOfModules.pullback_η φ]
+    infer_instance
   letI : (_root_.SheafOfModules.pullback.{u} φ).Monoidal :=
     Functor.Monoidal.ofOplaxMonoidal _
   exact (_root_.SheafOfModules.pullbackPushforwardAdjunction φ).leftAdjointBraided
@@ -234,10 +236,10 @@ instance _root_.SheafOfModules.pullbackBraided :
 from the pullback of the structure sheaf to the structure sheaf. -/
 @[simp]
 theorem _root_.SheafOfModules.pullback_ε :
-    haveI := _root_.SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal φ
+    haveI : IsIso (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by infer_instance
     Functor.LaxMonoidal.ε (_root_.SheafOfModules.pullback.{u} φ) =
       inv (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by
-  have := _root_.SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal φ
+  have : IsIso (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by infer_instance
   refine (Functor.Monoidal.inv_η (_root_.SheafOfModules.pullback.{u} φ)).symm.trans ?_
   congr 1
   exact _root_.SheafOfModules.pullback_η φ
