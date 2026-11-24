@@ -66,8 +66,10 @@ made for a map `ρ : Q → B` with the properties of the orbit projection that t
   (`TauCeti.CotangentBundle.mpullback_vectorBundleTranslateDiffeomorph_symplecticForm`).
 
 For the orbit projection of a free proper action all the hypotheses on `ρ` hold, and the results
-are restated in the namespace `ProperSMul`. The construction of a principal connection and of the
-reduced space `μ⁻¹(ν) ⧸ G` as a manifold are not part of this file.
+are restated in the namespace `ProperSMul`. The construction of a principal connection is not part
+of this file. The identification of the reduced space `μ⁻¹(ν) / G_ν`, as a manifold, with
+`T*(Q ⧸ G)` and its twisted form is
+`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Magnetic.ReducedSpace`.
 
 ## Main definitions
 
