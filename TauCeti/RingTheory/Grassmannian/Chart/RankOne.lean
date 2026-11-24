@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Grassmannian.Chart.Basic
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
-public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.HomogeneousLocalization
 
 /-!
 # Rank-one charts of the Grassmannian are standard charts of `Proj (Sym M)`
@@ -24,7 +23,9 @@ localization `Sym(M)_(x)`, the degree-zero part of
 `Module.Grassmannian.ChartAlgebra.awayEquiv R x : C_x ≃ₐ[R] Sym(M)_(x)`
 
 sends the universal linear form `m ↦ ψ m` to `m ↦ m / x`
-(`Module.Grassmannian.ChartAlgebra.awayEquiv_universalLinearMap`), and its inverse sends a fraction
+(`Module.Grassmannian.ChartAlgebra.awayEquiv_universalLinearMap`) and the value of `a ∈ Sym M` of
+degree `n` at the universal linear form to `a / xⁿ`
+(`Module.Grassmannian.ChartAlgebra.awayEquiv_evalUniversal`); its inverse sends a fraction
 `a / xⁿ` to the value of `a` at the universal linear form
 (`Module.Grassmannian.ChartAlgebra.awayEquiv_symm_mk`). This is the chart-by-chart identification of
 the rank-one Grassmannian with the projective spectrum of the symmetric algebra, with the chart at
@@ -33,8 +34,8 @@ the rank-one Grassmannian with the projective spectrum of the symmetric algebra,
 The inverse is `HomogeneousLocalization.Away.lift` of the evaluation `Sym M → C_x` at the universal
 linear form, which inverts `x`. That the two composites are identities is checked on the universal
 linear form (`Module.Grassmannian.ChartAlgebra.hom_ext`) and on fractions `a / xⁿ` with `a`
-homogeneous of degree `n`, where the evaluation at `m ↦ m / x` scales by `x⁻ⁿ`
-(`AlgHom.apply_eq_pow_mul_of_forall_ι_eq`).
+homogeneous of degree `n`, where the evaluation at `m ↦ m / x` is `a / xⁿ`
+(`AlgHom.apply_awayMk_eq_lift`).
 -/
 
 public section
@@ -46,31 +47,6 @@ open TauCeti.SymmetricAlgebra HomogeneousLocalization
 namespace Module.Grassmannian.ChartAlgebra
 
 variable (R : Type u) [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] (x : M)
-
-/-- Each generator `ι m` of `Sym M` is homogeneous of degree `1 • 1`, the degree in which
-`Away.mk` takes numerators over a degree-one denominator. -/
-theorem ι_mem_homogeneousSubmodule_one_smul (m : M) :
-    SymmetricAlgebra.ι R M m ∈ homogeneousSubmodule R M (1 • 1) := by
-  simp
-
-/-- The linear form `m ↦ m / x` on `M` with values in the homogeneous localization `Sym(M)_(x)`. -/
-noncomputable def awayLinearMap :
-    M →ₗ[R] Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) :=
-  Away.mkLinearMap (ι_mem_homogeneousSubmodule R M x) 1 ∘ₗ
-    (SymmetricAlgebra.ι R M).codRestrict _ (ι_mem_homogeneousSubmodule_one_smul R)
-
-@[simp]
-theorem awayLinearMap_apply (m : M) :
-    awayLinearMap R x m = Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) 1
-      (SymmetricAlgebra.ι R M m) (ι_mem_homogeneousSubmodule_one_smul R m) := by
-  rw [awayLinearMap, LinearMap.comp_apply, Away.mkLinearMap_apply]
-  rfl
-
-/-- The fraction `x / x` is one. -/
-theorem awayLinearMap_self : awayLinearMap R x x = 1 := by
-  apply val_injective
-  rw [awayLinearMap_apply, Away.val_mk, val_one]
-  simp
 
 /-- The evaluation `Sym M → ChartAlgebra R (fun _ : Fin 1 ↦ x)` of the symmetric algebra at the
 universal linear form of the chart at `x`. -/
@@ -93,7 +69,7 @@ theorem universalLinearMap_self_zero : universalLinearMap R (fun _ : Fin 1 ↦ x
 
 /-- The map `ChartAlgebra R (fun _ : Fin 1 ↦ x) → Sym(M)_(x)` classifying the linear form
 `m ↦ m / x`. -/
-noncomputable def toAway :
+private noncomputable def toAway :
     ChartAlgebra R (fun _ : Fin 1 ↦ x) →ₐ[R]
       Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) :=
   (homEquiv R (fun _ : Fin 1 ↦ x)).symm
@@ -102,62 +78,51 @@ noncomputable def toAway :
       rw [Subsingleton.elim i 0, Subsingleton.elim j 0]
       simp⟩
 
-@[simp]
-theorem toAway_universalLinearMap (m : M) (j : Fin 1) :
+private theorem toAway_universalLinearMap (m : M) (j : Fin 1) :
     toAway R x (universalLinearMap R (fun _ : Fin 1 ↦ x) m j) = awayLinearMap R x m := by
   simp [toAway]
 
 /-- The map `Sym(M)_(x) → ChartAlgebra R (fun _ : Fin 1 ↦ x)` sending `a / xⁿ` to the value of
 `a` at the universal linear form. -/
-noncomputable def ofAway :
+private noncomputable def ofAway :
     Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) →ₐ[R]
       ChartAlgebra R (fun _ : Fin 1 ↦ x) :=
-  { Away.lift (homogeneousSubmodule R M) (evalUniversal R x).toRingHom (by simp) with
-    commutes' r := by
+  AlgHom.mk (Away.lift (homogeneousSubmodule R M) (evalUniversal R x).toRingHom (by simp))
+    fun r ↦ by
       rw [algebraMap_eq_comp, RingHom.comp_apply]
-      exact (Away.lift_algebraMap _ _ _).trans ((evalUniversal R x).commutes r) }
+      exact (Away.lift_algebraMap _ _ _).trans ((evalUniversal R x).commutes r)
 
-@[simp]
-theorem ofAway_mk (n : ℕ) (a : SymmetricAlgebra R M) (ha : a ∈ homogeneousSubmodule R M (n • 1)) :
+private theorem ofAway_mk (n : ℕ) (a : SymmetricAlgebra R M)
+    (ha : a ∈ homogeneousSubmodule R M (n • 1)) :
     ofAway R x (Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) n a ha) =
       evalUniversal R x a := by
-  change Away.lift _ _ _ _ = _
-  rw [Away.lift_mk]
+  simp only [ofAway, AlgHom.coe_mk, Away.lift_mk]
   simp
 
 /-- `ofAway` is a left inverse of `toAway`. -/
-theorem ofAway_comp_toAway :
+private theorem ofAway_comp_toAway :
     (ofAway R x).comp (toAway R x) = AlgHom.id R (ChartAlgebra R (fun _ : Fin 1 ↦ x)) := by
   refine hom_ext R _ fun m j ↦ ?_
   rw [Subsingleton.elim j 0, AlgHom.comp_apply, toAway_universalLinearMap, awayLinearMap_apply,
     ofAway_mk, evalUniversal_ι, AlgHom.id_apply]
 
+/-- `toAway` after the evaluation at the universal linear form is the evaluation at the linear
+form `m ↦ m / x`. -/
+private theorem toAway_comp_evalUniversal :
+    (toAway R x).comp (evalUniversal R x) = SymmetricAlgebra.lift (awayLinearMap R x) :=
+  SymmetricAlgebra.algHom_ext (LinearMap.ext fun m ↦ by simp [toAway_universalLinearMap])
+
 /-- The value of `a ∈ Sym M` of degree `n` at the linear form `m ↦ m / x` is `a / xⁿ`. -/
-theorem toAway_evalUniversal {n : ℕ} {a : SymmetricAlgebra R M}
+private theorem toAway_evalUniversal {n : ℕ} {a : SymmetricAlgebra R M}
     (ha : a ∈ homogeneousSubmodule R M (n • 1)) :
     toAway R x (evalUniversal R x a) =
       Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) n a ha := by
-  apply val_injective
-  have key := AlgHom.apply_eq_pow_mul_of_forall_ι_eq (IsScalarTower.toAlgHom R _
-    (Localization.Away (SymmetricAlgebra.ι R M x)))
-    ((IsScalarTower.toAlgHom R (Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x))
-      (Localization.Away (SymmetricAlgebra.ι R M x))).comp
-      ((toAway R x).comp (evalUniversal R x)))
-    (Localization.mk 1 ⟨SymmetricAlgebra.ι R M x, Submonoid.mem_powers _⟩) (fun m ↦ by
-      simp only [AlgHom.comp_apply, evalUniversal_ι, toAway_universalLinearMap,
-        awayLinearMap_apply, IsScalarTower.coe_toAlgHom', HomogeneousLocalization.algebraMap_apply,
-        Away.val_mk]
-      rw [← Localization.mk_one_eq_algebraMap, Localization.mk_mul, one_mul, mul_one]
-      exact congrArg _ (Subtype.ext (pow_one _)))
-    (by simpa using ha)
-  simp only [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
-    HomogeneousLocalization.algebraMap_apply] at key
-  rw [key, Away.val_mk, ← Localization.mk_one_eq_algebraMap, Localization.mk_pow,
-    Localization.mk_mul, one_pow, one_mul, mul_one]
-  rfl
+  rw [← AlgHom.comp_apply, toAway_comp_evalUniversal]
+  exact ((AlgHom.id R _).apply_awayMk_eq_lift (awayLinearMap R x) (fun m ↦ by simp)
+    (by simpa using ha)).symm
 
 /-- `toAway` is a left inverse of `ofAway`. -/
-theorem toAway_comp_ofAway :
+private theorem toAway_comp_ofAway :
     (toAway R x).comp (ofAway R x) =
       AlgHom.id R (Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x)) := by
   refine AlgHom.ext fun z ↦ ?_
@@ -179,8 +144,16 @@ noncomputable def awayEquiv :
 theorem awayEquiv_universalLinearMap (m : M) (j : Fin 1) :
     awayEquiv R x (universalLinearMap R (fun _ : Fin 1 ↦ x) m j) =
       Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) 1
-        (SymmetricAlgebra.ι R M m) (ι_mem_homogeneousSubmodule_one_smul R m) :=
+        (SymmetricAlgebra.ι R M m) (ι_mem_homogeneousSubmodule_one_smul R M m) :=
   (toAway_universalLinearMap R x m j).trans (awayLinearMap_apply R x m)
+
+/-- `awayEquiv` sends the value of `a ∈ Sym M` of degree `n` at the universal linear form to
+`a / xⁿ`. -/
+theorem awayEquiv_evalUniversal {n : ℕ} {a : SymmetricAlgebra R M}
+    (ha : a ∈ homogeneousSubmodule R M (n • 1)) :
+    awayEquiv R x (evalUniversal R x a) =
+      Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) n a ha :=
+  toAway_evalUniversal R x ha
 
 /-- The inverse of `awayEquiv` sends `a / xⁿ` to the value of `a` at the universal linear form. -/
 @[simp]
