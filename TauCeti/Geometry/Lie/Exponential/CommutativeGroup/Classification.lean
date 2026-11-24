@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Topology.Circle.AddCircle
 
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Compact connected commutative Lie groups are products of circles

@@ -17,12 +17,20 @@ submonoid `T`, then so is the induced map `M' → N'`: localizations at `S` and 
 the module of sections of a quasi-coherent sheaf this says that restricting from `D(s)` to
 `D(s t)` is a localization away from `t`.
 
+Injectivity and surjectivity of a map `g : M → N` can partly be read off from its localization
+`M' → N'`: when `S` acts regularly on `M`, `g` is injective if its localization is, and the
+cokernel of `g` is `S`-torsion when the localization is surjective.
+
 ## Main statements
 
 * `IsLocalizedModule.isUnit_algebraMap_of_isUnit`: invertible scalars stay invertible on a
   localization.
 * `IsLocalizedModule.isLocalizedModule_map`: the map induced on localizations at `S` by a
   localization at `T` is a localization at `T`.
+* `IsLocalizedModule.injective_of_map_injective`: a map out of a module on which `S` acts
+  regularly is injective if its localization is.
+* `IsLocalizedModule.exists_smul_mem_range_of_map_surjective`: a map whose localization is
+  surjective has `S`-torsion cokernel.
 * `IsLocalizedModule.iff_of_bijective_semilinearMap`: a linear map identified, along a ring
   homomorphism `σ : R →+* A`, with an `A`-linear map is a localization at `S` exactly when the
   `A`-linear map is a localization at the image of `S`.
@@ -72,6 +80,26 @@ theorem isLocalizedModule_map (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂]
     obtain ⟨t, ht⟩ := IsLocalizedModule.exists_of_eq (S := T) (f := g) hc
     simp only [Function.uncurry_apply_pair, Submonoid.smul_def, ← mk'_smul, mk'_eq_mk'_iff]
     exact ⟨t, c, by simpa only [Submonoid.smul_def, smul_comm (t : R)] using ht⟩
+
+variable (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂] {g : M →ₗ[R] N}
+
+/-- If every element of `S` is regular on `M` and the localization of `g : M → N` at `S` is
+injective, then `g` is injective. -/
+theorem injective_of_map_injective (hS : ∀ s : S, IsSMulRegular M (s : R))
+    (h : Function.Injective (map S f f₂ g)) : Function.Injective g := by
+  refine Function.Injective.of_comp (f := f₂) ?_
+  rw [← LinearMap.coe_comp, ← map_comp S f f₂ g, LinearMap.coe_comp]
+  exact h.comp ((injective_iff_isRegular S f).mpr hS)
+
+/-- If the localization of `g : M → N` at `S` is surjective, then the cokernel of `g` is
+`S`-torsion: some element of `S` carries each `y : N` into the range of `g`. -/
+theorem exists_smul_mem_range_of_map_surjective (h : Function.Surjective (map S f f₂ g))
+    (y : N) : ∃ s : S, s • y ∈ LinearMap.range g := by
+  obtain ⟨p, hp⟩ := h (f₂ y)
+  obtain ⟨⟨x, s⟩, rfl⟩ := mk'_surjective S f p
+  rw [Function.uncurry_apply_pair, map_mk', mk'_eq_iff, ← LinearMap.map_smul_of_tower] at hp
+  obtain ⟨c, hc⟩ := exists_of_eq (S := S) hp
+  exact ⟨c * s, c • x, by rw [LinearMap.map_smul_of_tower, hc, mul_smul]⟩
 
 end Map
 
