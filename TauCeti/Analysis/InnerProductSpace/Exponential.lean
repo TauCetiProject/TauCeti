@@ -44,25 +44,16 @@ theorem norm_exp_smul_I_sub_exp_smul_I_apply_le {Sm Sn : H →L[ℂ] H}
     (t : ℝ) (ψ : H) :
     ‖exp (t • (I • Sm)) ψ - exp (t • (I • Sn)) ψ‖
       ≤ |t| * ‖(Sm - Sn) ψ‖ := by
-  have hexp (S : H →L[ℂ] H) (s : ℝ) :
-      exp (s • (t • (I • S)).restrictScalars ℝ) =
-        (exp ((s * t) • (I • S))).restrictScalars ℝ := by
-    rw [Semigroups.StronglyContinuousGroup.restrictScalars_exp]
-    simp only [Complex.coe_smul, smul_smul]
   have hbound (S : H →L[ℂ] H) (hS : IsSelfAdjoint S) (s : ℝ) (_hs : 0 ≤ s) :
-      ‖exp (s • (t • (I • S)).restrictScalars ℝ)‖ ≤ (1 : ℝ) := by
-    rw [hexp, norm_restrictScalars]
+      ‖exp (s • (t • (I • S)))‖ ≤ (1 : ℝ) := by
+    rw [smul_smul]
     exact Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le S hS (s * t)
-  have hc : Commute ((t • (I • Sm)).restrictScalars ℝ) ((t • (I • Sn)).restrictScalars ℝ) := by
-    ext x
-    exact congrArg (fun C : H →L[ℂ] H => C x)
-      ((((hcomm.smul_left I).smul_right I).smul_left t).smul_right t).eq
+  have hc := (((hcomm.smul_left I).smul_right I).smul_left t).smul_right t
   have h := Semigroups.norm_exp_smul_sub_exp_smul_apply_le_of_commute
-    ((t • (I • Sm)).restrictScalars ℝ) ((t • (I • Sn)).restrictScalars ℝ) hc
-    (hbound Sm hm) (hbound Sn hn) (by norm_num : (0 : ℝ) ≤ 1) ψ
-  simpa only [one_mul, hexp, ← smul_sub, sub_apply, coe_restrictScalars', smul_apply,
-    norm_smul, Real.norm_eq_abs, norm_I] using h
-
-
+    (t • (I • Sm)) (t • (I • Sn)) hc
+    (by simpa only [← Complex.coe_smul] using! hbound Sm hm)
+    (by simpa only [← Complex.coe_smul] using! hbound Sn hn) (by norm_num : (0 : ℝ) ≤ 1) ψ
+  simpa only [RCLike.ofReal_one, one_smul, one_mul, ← smul_sub, sub_apply,
+    smul_apply, norm_smul, Real.norm_eq_abs, norm_I] using! h
 
 end ContinuousLinearMap

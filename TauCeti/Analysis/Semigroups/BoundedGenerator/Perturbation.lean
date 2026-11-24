@@ -48,7 +48,8 @@ open NormedSpace Set
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [CompleteSpace X]
 
 /-- If `A` and `B` commute and their bounded-generator semigroups obey the uniform bounds `M` and
 `N` at nonnegative times, then their orbits differ by at most
@@ -56,21 +57,24 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 `‖exp (t A) x - exp (t B) x‖ ≤ M * N * t * ‖(A - B) x‖` for `t ≥ 0`.
 
 This is the bounded Duhamel estimate in the commuting case; the contraction case is `M = N = 1`. -/
-theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N : ℝ} (A B : X →L[ℝ] X)
+theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N : ℝ} (A B : X →L[𝕜] X)
     (hcomm : Commute A B)
-    (hA : ∀ s : ℝ, 0 ≤ s → ‖exp (s • A)‖ ≤ M)
-    (hB : ∀ s : ℝ, 0 ≤ s → ‖exp (s • B)‖ ≤ N)
+    (hA : ∀ s : ℝ, 0 ≤ s → ‖exp ((s : 𝕜) • A)‖ ≤ M)
+    (hB : ∀ s : ℝ, 0 ≤ s → ‖exp ((s : 𝕜) • B)‖ ≤ N)
     {t : ℝ} (ht : 0 ≤ t) (x : X) :
-    ‖exp (t • A) x - exp (t • B) x‖ ≤ M * N * t * ‖(A - B) x‖ := by
-  let +nondep : NormedAlgebra ℚ (X →L[ℝ] X) := .restrictScalars ℚ ℝ _
+    ‖exp ((t : 𝕜) • A) x - exp ((t : 𝕜) • B) x‖ ≤ M * N * t * ‖(A - B) x‖ := by
+  let : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
+  let : NormedAlgebra ℝ (X →L[𝕜] X) := .restrictScalars ℝ 𝕜 _
+  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
+  simp only [← RCLike.real_smul_eq_coe_smul] at hA hB ⊢
   have hN : 0 ≤ N := (norm_nonneg _).trans (hB 0 le_rfl)
   have hsum : t • A + t • (B - A) = t • B := by module
   have hint := TauCeti.intervalIntegrable_exp_smul_mul_mul_exp_smul
     (t • A + t • (B - A)) (t • (B - A)) (t • A)
   have hduhamel := TauCeti.exp_add_sub_exp_eq_integral (t • A) (t • (B - A))
   rw [hsum] at hint hduhamel
-  have happly := congrArg (fun C : X →L[ℝ] X => C x) hduhamel
-  rw [ContinuousLinearMap.intervalIntegral_apply hint x] at happly
+  have happly := congrArg (fun C : X →L[𝕜] X => C x) hduhamel
+  rw [ContinuousLinearMap.intervalIntegral_apply (𝕜 := 𝕜) hint x] at happly
   simp only [sub_apply] at happly
   rw [norm_sub_rev, happly]
   refine (intervalIntegral.norm_integral_le_of_norm_le_const

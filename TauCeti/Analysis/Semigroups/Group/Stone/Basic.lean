@@ -36,7 +36,7 @@ def ofBoundedExp (A : H →L[ℂ] H) : StronglyContinuousGroup H :=
   ofBounded ((Complex.I • A).restrictScalars ℝ)
 
 /-- Restricting complex operators to real scalars commutes with the exponential. -/
-theorem restrictScalars_exp (A : H →L[ℂ] H) (t : ℝ) :
+private theorem restrictScalars_exp (A : H →L[ℂ] H) (t : ℝ) :
     NormedSpace.exp (t • A.restrictScalars ℝ) =
       (NormedSpace.exp ((t : ℂ) • A)).restrictScalars ℝ := by
   let _i : Module ℚ H := Module.compHom H (algebraMap ℚ ℂ)
