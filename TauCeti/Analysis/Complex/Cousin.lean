@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.Geometry.Manifold.Instances.Real
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.PartitionOfUnity.CechSplitting
@@ -96,14 +95,10 @@ theorem exists_differentiableOn_sub_eq_of_cocycle (hU : ∀ i, IsOpen (U i)) {c 
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   have hmem {i : ι} {z : ℂ} (hz : z ∈ U i) : z ∈ Ω := mem_iUnion.2 ⟨i, hz⟩
   -- The cocycle relation in the form `c i j + c j k = c i k`.
-  have hcii (i : ι) {z : ℂ} (hz : z ∈ U i) : c i i z = 0 := by
-    have h3 := hcocycle i i i z ⟨⟨hz, hz⟩, hz⟩
-    have : (3 : ℂ) • c i i z = 0 := by rw [← h3]; module
-    simpa using this
   have hadd (i j k : ι) {z : ℂ} (hz : z ∈ U i ∩ U j ∩ U k) : c i j z + c j k z = c i k z := by
-    have hik := hcocycle i k i z ⟨⟨hz.1.1, hz.2⟩, hz.1.1⟩
-    rw [hcii i hz.1.1, add_zero] at hik
-    rw [eq_neg_of_add_eq_zero_left (hcocycle i j k z hz), eq_neg_of_add_eq_zero_right hik, neg_neg]
+    linear_combination (norm := module) hcocycle i j k z hz -
+      hcocycle i k i z ⟨⟨hz.1.1, hz.2⟩, hz.1.1⟩ +
+      (1 / 3 : ℂ) • hcocycle i i i z ⟨⟨hz.1.1, hz.1.1⟩, hz.1.1⟩
   -- Split the cocycle smoothly on `Ω`: `c i j = g j - g i` with `g i` smooth on `U i`.
   let V : ι → Set Ω := fun i ↦ Subtype.val ⁻¹' U i
   have hV (i : ι) : IsOpen (V i) := (hU i).preimage continuous_subtypeVal
@@ -135,6 +130,6 @@ theorem exists_differentiableOn_sub_eq_of_cocycle (hU : ∀ i, IsOpen (U i)) {c 
   refine ⟨fun i ↦ f - G i, fun i ↦ (hf i).mono fun z hz ↦ ⟨hmem hz, hz⟩, fun i j z hz ↦ ?_⟩
   have := hGc i j hz
   simp only [Pi.sub_apply, Pi.neg_apply] at this ⊢
-  rw [sub_sub_sub_cancel_left, ← neg_sub, this, neg_neg]
+  linear_combination (norm := module) -this
 
 end TauCeti
