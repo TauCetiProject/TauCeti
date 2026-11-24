@@ -71,6 +71,8 @@ theorem finsum_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord {a : A} (ha
   have hab : algebraMap A B a ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr ha
   have hrange : LinearMap.range (LinearMap.lsmul A B a) =
       (Ideal.span {algebraMap A B a}).restrictScalars A := by
+    -- `LinearMap.lsmul A B a` is defeq to `Algebra.lsmul A A B a`, the form that
+    -- `Algebra.lmul_algebraMap` rewrites into multiplication by `algebraMap A B a`.
     change LinearMap.range (Algebra.lsmul A A B a) = _
     rw [← Algebra.lmul_algebraMap]
     exact Ideal.range_mul B _
