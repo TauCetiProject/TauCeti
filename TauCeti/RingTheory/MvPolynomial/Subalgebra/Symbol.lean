@@ -222,9 +222,9 @@ theorem ker_weightReesSymbolToInitial (A : Subalgebra R (MvPolynomial σ R)) (w 
   have hcomp : (A.weightInitialAlgebra w).val.toRingHom.comp
       (A.weightReesSymbolToInitial w).toRingHom = (A.weightReesSymbol w).toRingHom :=
     RingHom.ext fun g ↦ by simp
-  change RingHom.ker (A.weightReesSymbolToInitial w).toRingHom =
-    RingHom.ker (A.weightReesSymbol w).toRingHom
-  rw [← hcomp, ← RingHom.comap_ker,
+  rw [← RingHom.ker_coe_toRingHom (A.weightReesSymbolToInitial w),
+    ← RingHom.ker_coe_toRingHom (A.weightReesSymbol w),
+    ← AlgHom.toRingHom_eq_coe, ← AlgHom.toRingHom_eq_coe, ← hcomp, ← RingHom.comap_ker,
     RingHom.ker_eq_comap_bot (f := (A.weightInitialAlgebra w).val.toRingHom),
     Ideal.comap_bot_of_injective _ Subtype.val_injective, ← RingHom.ker_eq_comap_bot]
 

@@ -384,10 +384,11 @@ theorem ker_weightReesAevalLift :
   have hcomp : j.toRingHom.comp (weightReesAevalLift hcA hc).toRingHom =
       (weightReesAeval c d).toRingHom :=
     congrArg AlgHom.toRingHom (val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc)
-  change RingHom.ker (weightReesAevalLift hcA hc).toRingHom =
-    RingHom.ker (weightReesAeval c d).toRingHom
-  rw [← hcomp, ← RingHom.comap_ker, RingHom.ker_eq_comap_bot (f := j.toRingHom),
-    Ideal.comap_bot_of_injective _ hinj, ← RingHom.ker_eq_comap_bot]
+  rw [← RingHom.ker_coe_toRingHom (weightReesAevalLift hcA hc),
+    ← RingHom.ker_coe_toRingHom (weightReesAeval c d),
+    ← AlgHom.toRingHom_eq_coe, ← AlgHom.toRingHom_eq_coe, ← hcomp, ← RingHom.comap_ker,
+    RingHom.ker_eq_comap_bot (f := j.toRingHom), Ideal.comap_bot_of_injective _ hinj,
+    ← RingHom.ker_eq_comap_bot]
 
 end ReesLift
 
