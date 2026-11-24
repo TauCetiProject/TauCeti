@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.InductiveLimit
+public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!

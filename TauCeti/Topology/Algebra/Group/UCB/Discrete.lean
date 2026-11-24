@@ -12,10 +12,11 @@ public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 # Bounded functions on a discrete group
 
 On a discrete group every bounded continuous function is uniformly continuous for the right
-uniformity. Thus `TauCeti.UCB G` is the entire algebra `G →ᵇ ℝ`. The identification preserves
-the supremum norm, pointwise order, constants, and left and right translations. Since every
-function on a discrete space is continuous, this is the bounded-function space used for
-finitely additive probabilities and discrete invariant means.
+uniformity. Thus `TauCeti.UCB G` is the entire algebra `G →ᵇ ℝ`, and additively
+`TauCeti.AddUCB A` is `A →ᵇ ℝ`. The identification preserves the supremum norm, pointwise order,
+constants, and left and right translations. Since every function on a discrete space is continuous,
+this is the bounded-function space used for finitely additive probabilities and discrete invariant
+means.
 
 For the same reason, precomposition `f ↦ f ∘ r` with an arbitrary map `r : G → H` into a
 topological group sends `UCB H` to `UCB G`; this is `TauCeti.UCB.compRightAlgHomOfDiscrete r`.
@@ -40,7 +41,9 @@ namespace TauCeti
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- On a discrete group the UCB subalgebra is the entire bounded-function algebra. -/
-@[simp]
+@[to_additive (attr := simp) addUcb_eq_top
+  /-- On a discrete additive group the `addUcb` subalgebra is the entire bounded-function
+  algebra. -/]
 theorem ucb_eq_top : ucb G = ⊤ := by
   ext f
   simp [mem_ucb_iff, nhds_discrete]
@@ -49,14 +52,17 @@ namespace UCB
 
 variable (G) in
 /-- The canonical algebra equivalence from UCB to all bounded functions on a discrete group. -/
+@[to_additive
+  /-- The canonical algebra equivalence from `AddUCB A` to all bounded functions on a discrete
+  additive group. -/]
 def discreteAlgEquiv : UCB G ≃ₐ[ℝ] (G →ᵇ ℝ) :=
   (Subalgebra.equivOfEq _ _ ucb_eq_top).trans Subalgebra.topEquiv
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteAlgEquiv_apply (f : UCB G) : discreteAlgEquiv G f = (f : G →ᵇ ℝ) :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
     ((discreteAlgEquiv G).symm f : G →ᵇ ℝ) = f :=
   (discreteAlgEquiv G).apply_symm_apply f
@@ -78,23 +84,26 @@ theorem discreteAlgEquiv_symm_compContinuous_mulRight (g : G) (f : G →ᵇ ℝ)
   simp [coe_rightTranslation]
 
 /-- The inverse discrete identification preserves and reflects the pointwise order. -/
-@[simp]
+@[to_additive (attr := simp)
+  /-- The inverse discrete identification preserves and reflects the pointwise order. -/]
 theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
     (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h :=
   Iff.rfl
 
 variable (G) in
 /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/
+@[to_additive
+  /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/]
 def discreteLinearIsometryEquiv : UCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ) where
   toLinearEquiv := (discreteAlgEquiv G).toLinearEquiv
   norm_map' _ := rfl
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteLinearIsometryEquiv_apply (f : UCB G) :
     discreteLinearIsometryEquiv G f = (f : G →ᵇ ℝ) :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteLinearIsometryEquiv_symm_apply (f : G →ᵇ ℝ) :
     (discreteLinearIsometryEquiv G).symm f = (discreteAlgEquiv G).symm f :=
   (rfl)
@@ -153,5 +162,30 @@ theorem compRightAlgHomOfDiscrete_leftTranslation (φ : H →* G) {r : G → H}
 end CompRight
 
 end UCB
+
+namespace AddUCB
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
+-- `UCB.leftTranslation` and `UCB.rightTranslation` are `MonoidHom`s, so `@[to_additive]` cannot
+-- generate these translation intertwining lemmas directly.
+
+/-- The inverse discrete identification intertwines left translation. -/
+@[simp]
+theorem discreteAlgEquiv_symm_compContinuous_addLeft (a : A) (f : A →ᵇ ℝ) :
+    (discreteAlgEquiv A).symm (f.compContinuous (ContinuousMap.addLeft (-a))) =
+      leftTranslation a ((discreteAlgEquiv A).symm f) := by
+  apply (discreteAlgEquiv A).injective
+  simp [coe_leftTranslation]
+
+/-- The inverse discrete identification intertwines right translation. -/
+@[simp]
+theorem discreteAlgEquiv_symm_compContinuous_addRight (a : A) (f : A →ᵇ ℝ) :
+    (discreteAlgEquiv A).symm (f.compContinuous (ContinuousMap.addRight a)) =
+      rightTranslation a ((discreteAlgEquiv A).symm f) := by
+  apply (discreteAlgEquiv A).injective
+  simp [coe_rightTranslation]
+
+end AddUCB
 
 end TauCeti

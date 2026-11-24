@@ -28,8 +28,8 @@ is the coordinate Haar measure weighted by `TauCeti.chartVolumeDensity` on each 
 the pointwise form of the variation of the Riemannian volume measure.
 
 Each metric `g_τ` is installed in turn as the `RiemannianBundle` instance of the tangent bundle,
-so that `TauCeti.chartVolumeDensity` and `TauCeti.bilinFormTrace` are computed for it. Only the
-inner products at the single point `x` need to be differentiable in the parameter, and
+so that `TauCeti.chartVolumeDensity` and `LinearMap.BilinMap.metricTrace` are computed for it. Only
+the inner products at the single point `x` need to be differentiable in the parameter, and
 derivatives within a set of parameters cover one-sided derivatives at the ends of an interval.
 
 For a conformal variation `h = μ g` this gives `∂_τ ρ = (n μ / 2) ρ` in real dimension `n`. Along
@@ -81,7 +81,7 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
       (fun τ ↦ letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g τ⟩;
         chartVolumeDensity (I := I) α x)
       (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g t⟩;
-        2⁻¹ * bilinFormTrace h * chartVolumeDensity (I := I) α x) s t := by
+        2⁻¹ * LinearMap.BilinMap.metricTrace h * chartVolumeDensity (I := I) α x) s t := by
   have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
   -- `G τ` is the Gram matrix of `g τ` in the chart frame `e`, and `G'` that of `h`.
@@ -105,16 +105,18 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
   have hdet : 0 < (G t).det := hGt ▸ chartGramMatrix_det_pos α hx'
   have hsqrt := HasDerivWithinAt.sqrt (Matrix.hasDerivWithinAt_det_of_entries (A := G)
     (A' := G') (fun i j ↦ hg _ _) hdet.ne'.isUnit) hdet.ne'
-  -- The trace of `G⁻¹ G'` is the metric trace of `h`, since `G⁻¹` is symmetric.
-  have htr : ((G t)⁻¹ * G').trace = bilinFormTrace h := by
-    have hsymm := (posDef_chartGramMatrix (I := I) α hx').inv.isHermitian
-    rw [← hGt] at hsymm
-    rw [bilinFormTrace_eq_sum_chartInvGramMatrix α hx, chartInvGramMatrix_def, ← hGt,
-      Matrix.trace_mul_comm]
-    simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, G', Matrix.of_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [show (G t)⁻¹ j i = (G t)⁻¹ i j by simpa using hsymm.apply i j]
-    ring
+  -- The chart frame `e` is the basis `b` of the tangent space given by the trivialization, in
+  -- which `G t` is the Gram matrix and `G'` the matrix of `h`, so `tr (G⁻¹ G')` is `tr_g h`.
+  have htr : ((G t)⁻¹ * G').trace = LinearMap.BilinMap.metricTrace h := by
+    let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
+    have hb (i) : b i = e i := (chartLocalFrame_apply_of_mem_chart_source α hx i).symm
+    have hgram : Matrix.gram ℝ b = G t := by
+      rw [hGt]
+      simpa using Riemannian.Tensor.gram_basisAt_finBasis_reindex (I := I) (Equiv.refl _) α hx'
+    have hmat : LinearMap.BilinForm.toMatrix b h = G' := by
+      ext i j
+      simp only [LinearMap.BilinForm.toMatrix_apply, hb, G', Matrix.of_apply]
+    rw [LinearMap.BilinMap.metricTrace_eq_trace_inv_gram_mul_toMatrix h b, hgram, hmat]
   convert hsqrt using 1
   · exact funext hρ
   rw [htr, hρ t]
@@ -131,7 +133,7 @@ theorem hasDerivAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).source
       (fun τ ↦ letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g τ⟩;
         chartVolumeDensity (I := I) α x)
       (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g t⟩;
-        2⁻¹ * bilinFormTrace h * chartVolumeDensity (I := I) α x) t :=
+        2⁻¹ * LinearMap.BilinMap.metricTrace h * chartVolumeDensity (I := I) α x) t :=
   hasDerivWithinAt_univ.1 <|
     hasDerivWithinAt_chartVolumeDensity α hx fun v w ↦ (hg v w).hasDerivWithinAt
 
@@ -151,7 +153,7 @@ theorem hasDerivWithinAt_chartVolumeDensity_of_conformal (α : M)
     using 1
   -- The tangent space `T_x M` is the model space `E` by definition.
   have hn : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := (rfl)
-  rw [map_smul, bilinFormTrace_inner, smul_eq_mul, hn]
+  rw [map_smul, LinearMap.BilinMap.metricTrace_inner, smul_eq_mul, hn]
   ring
 
 end Variation
