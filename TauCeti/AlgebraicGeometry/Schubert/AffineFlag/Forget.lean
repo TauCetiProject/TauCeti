@@ -93,11 +93,11 @@ theorem flagGrassmannianProductMap_id : flagGrassmannianProductMap R M q id = �
 theorem flagGrassmannianProductMap_comp {l : ℕ} (e : Fin m → Fin n) (e' : Fin l → Fin m) :
     flagGrassmannianProductMap R M q e ≫ flagGrassmannianProductMap R M (q ∘ e) e' =
       flagGrassmannianProductMap R M q (e ∘ e') :=
-  flagGrassmannianProduct_hom_ext R M (q ∘ e ∘ e') fun i ↦ by
-    rw [Over.comp_left, Category.assoc]
-    exact (congrArg _ (flagGrassmannianProductMap_π R M (q ∘ e) e' i)).trans
-      ((flagGrassmannianProductMap_π R M q e (e' i)).trans
-        (flagGrassmannianProductMap_π R M q (e ∘ e') i).symm)
+  -- The ranks `(q ∘ e) ∘ e'` and `q ∘ (e ∘ e')` agree only by unfolding `Function.comp`, which
+  -- `simp` does not do, so the projection lemma for `e ∘ e'` is applied directly.
+  flagGrassmannianProduct_hom_ext R M _ fun i ↦
+    (by simp : _ = flagGrassmannianProductπ R M q (e (e' i))).trans
+      (flagGrassmannianProductMap_π R M q (e ∘ e') i).symm
 
 variable {R M q}
 variable {A : Type u} [CommRing A] [Algebra R A]
@@ -169,9 +169,7 @@ theorem flagSchemeForget_flagSchemeι {e : Fin m → Fin n} (he : Monotone e) :
 @[reassoc (attr := simp)]
 theorem flagSchemeForget_π {e : Fin m → Fin n} (he : Monotone e) (i : Fin m) :
     (flagSchemeForget R M q he).left ≫ flagSchemeπ R M (q ∘ e) i = flagSchemeπ R M q (e i) := by
-  rw [← flagSchemeι_comp_flagGrassmannianProductπ, ← Category.assoc, ← Over.comp_left,
-    flagSchemeForget_flagSchemeι, Over.comp_left, Category.assoc, flagGrassmannianProductMap_π,
-    flagSchemeι_comp_flagGrassmannianProductπ]
+  simp [← flagSchemeι_comp_flagGrassmannianProductπ, ← Over.comp_left_assoc]
 
 /-- Forgetting along the identity is the identity. -/
 @[simp]
@@ -187,10 +185,10 @@ theorem flagSchemeForget_comp {l : ℕ} {e : Fin m → Fin n} (he : Monotone e) 
     flagSchemeForget R M q he ≫ flagSchemeForget R M (q ∘ e) he' =
       flagSchemeForget R M q (he.comp he') := by
   ext1
-  refine flagScheme_hom_ext (by simp) fun i ↦ ?_
-  rw [Over.comp_left, Category.assoc]
-  exact (congrArg _ (flagSchemeForget_π R M (q ∘ e) he' i)).trans
-    ((flagSchemeForget_π R M q he (e' i)).trans (flagSchemeForget_π R M q (he.comp he') i).symm)
+  -- The ranks `(q ∘ e) ∘ e'` and `q ∘ (e ∘ e')` agree only by unfolding `Function.comp`, which
+  -- `simp` does not do, so the projection lemma for `e ∘ e'` is applied directly.
+  exact flagScheme_hom_ext (by simp) fun i ↦ (by simp : _ = flagSchemeπ R M q (e (e' i))).trans
+    (flagSchemeForget_π R M q (he.comp he') i).symm
 
 variable {R M q}
 
@@ -210,14 +208,8 @@ theorem flagSchemeHomEquiv_comp_flagSchemeForget {e : Fin m → Fin n} (he : Mon
 theorem flagBaseChangeHom_flagSchemeForget (R' : Type u) [CommRing R'] [Algebra R R']
     {e : Fin m → Fin n} (he : Monotone e) :
     flagBaseChangeHom R R' M q ≫ (flagSchemeForget R M q he).left =
-      (flagSchemeForget R' (R' ⊗[R] M) q he).left ≫ flagBaseChangeHom R R' M (q ∘ e) := by
-  refine flagScheme_hom_ext ?_ fun i ↦ ?_
-  · rw [Category.assoc, Over.w, flagBaseChangeHom_toSpec, Category.assoc,
-      flagBaseChangeHom_toSpec, ← Category.assoc, Over.w]
-  · rw [Category.assoc, flagSchemeForget_π, flagBaseChangeHom_π, Category.assoc,
-      flagBaseChangeHom_π, ← Category.assoc, flagSchemeForget_π]
-    -- The ranks `(q ∘ e) i` and `q (e i)` agree by unfolding `Function.comp`.
-    rfl
+      (flagSchemeForget R' (R' ⊗[R] M) q he).left ≫ flagBaseChangeHom R R' M (q ∘ e) :=
+  flagScheme_hom_ext (by simp) fun i ↦ by simp
 
 /-! ### Properness -/
 
