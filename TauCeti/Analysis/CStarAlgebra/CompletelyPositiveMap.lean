@@ -199,6 +199,11 @@ theorem IsNPositive.toLinearMap_toPositiveLinearMap {n : ℕ} {φ : A →ₗ[ℂ
     (hφ : IsNPositive n φ) (hn : 0 < n) : (hφ.toPositiveLinearMap hn).toLinearMap = φ :=
   (rfl)
 
+/-- An `n`-positive map with `0 < n` is continuous. -/
+theorem IsNPositive.continuous {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n) :
+    Continuous φ :=
+  map_continuous (hφ.toPositiveLinearMap hn)
+
 /-- An `n`-positive map with `0 < n` preserves `star`. -/
 theorem IsNPositive.map_star {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n)
     (a : A) : φ (star a) = star (φ a) :=

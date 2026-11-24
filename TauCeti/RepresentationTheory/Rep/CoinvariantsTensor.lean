@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
+import TauCeti.RepresentationTheory.Rep.Free
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
@@ -343,14 +344,7 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     (hS : S.ShortExact) (P : Rep.{u} k G) [Projective P] :
     (S.map ((coinvariantsTensor k G).flip.obj P)).ShortExact := by
   classical
-  -- Split the canonical free cover using projectivity.
-  let ε : Rep.free k G P ⟶ P := Rep.freeLift k G P id
-  have hε : Function.Surjective ε.hom := fun x ↦
-    ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by
-      simp [ε, Rep.freeLift, Representation.freeLift_single_single]⟩
-  have : Epi ε := (Rep.epi_iff_surjective ε).mpr hε
-  let r : Retract P (Rep.free k G P) :=
-    ⟨Projective.factorThru (𝟙 P) ε, ε, Projective.factorThru_comp _ _⟩
+  let r := Rep.retractFree P
   let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
   let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
   have hip : i ≫ p = 𝟙 _ := by
