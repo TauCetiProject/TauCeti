@@ -304,6 +304,22 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
 
 /-! ### The moduli property of `Y₁(N)` -/
 
+/-- **The pullbacks classified by `Y₁(N)`.** Let `g` exhibit an elliptic curve `E` over `S` as the
+pullback of the universal Tate normal form along `t : S ⟶ Spec ℤ[A, B][Δ⁻¹]`, carrying the zero
+section to the zero section and the `S`-point `P` to the point `(0, 0)`. Then `t` factors through
+`Y₁(N)` exactly when `N • P = 0` and none of `P, 2P, …, (N - 1)P` meets the zero section at any
+point of `S`. -/
+theorem exists_comp_yOneι_eq_iff_of_isPullback
+    {t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))} {g : E.carrier ⟶ curveGeom.{u}.carrier}
+    (hg : IsPullback g E.structureMap curveGeom.structureMap t)
+    (h₀ : E.zero ≫ g = t ≫ curveGeom.zero) (hP : P.left ≫ g = t ≫ pointHom.left) (N : ℕ) :
+    (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
+      P ^ N = 1 ∧ ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s := by
+  rw [exists_comp_yOneι_eq_iff, pow_eq_one_iff_of_isPullback hg h₀ hP N]
+  refine and_congr_right fun _ ↦ ⟨fun ht k hk hkN s hs ↦ ?_, fun hk s k hk' hkN hs ↦ ?_⟩
+  · exact ht s k hk hkN ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mp hs)
+  · exact hk k hk' hkN s ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mpr hs)
+
 /-- **`Y₁(N)` is a fine moduli scheme for points of exact order `N`.** Let `N ≥ 4` and let `P` be
 an `S`-point of an elliptic curve `E` over `S` with `N • P = 0` such that none of
 `P, 2P, …, (N - 1)P` meets the zero section at any point of `S`. Then there are a unique morphism
@@ -327,9 +343,7 @@ theorem existsUnique_yOne {N : ℕ} (hN : 4 ≤ N) (hPN : P ^ N = 1)
   obtain ⟨⟨f, g⟩, ⟨hg, h₀, hgP⟩, huniq⟩ :=
     E.existsUnique_tateNormalForm_curveGeom (left_comp_structureMap P) h₁ h₂ h₃
   -- the classifying morphism factors through `Y₁(N)`
-  obtain ⟨h, rfl⟩ := (exists_comp_yOneι_eq_iff f N).mpr
-    ⟨(pow_eq_one_iff_of_isPullback hg h₀ hgP N).mp hPN, fun s k hk hkN hs ↦
-      hPk k hk hkN s ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hgP k s).mpr hs)⟩
+  obtain ⟨h, rfl⟩ := (exists_comp_yOneι_eq_iff_of_isPullback hg h₀ hgP N).mpr ⟨hPN, hPk⟩
   refine ⟨(h, g), ⟨hg, h₀, hgP⟩, ?_⟩
   -- a second classifying pair through `Y₁(N)` is a second Tate normal form
   rintro ⟨h', g'⟩ hfg'
@@ -348,12 +362,8 @@ theorem exists_yOne_iff {N : ℕ} (hN : 4 ≤ N) :
         E.zero ≫ g = (f ≫ yOneι N) ≫ curveGeom.zero ∧
         P.left ≫ g = (f ≫ yOneι N) ≫ pointHom.left) ↔
       P ^ N = 1 ∧ ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s := by
-  refine ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ ?_, fun ⟨hPN, hPk⟩ ↦
-    let ⟨⟨f, g⟩, h, _⟩ := existsUnique_yOne hN hPN hPk; ⟨f, g, h⟩⟩
-  -- the classifying morphism `f ≫ yOneι N` satisfies the conditions defining `Y₁(N)`
-  obtain ⟨hN', hk⟩ := (exists_comp_yOneι_eq_iff (f ≫ yOneι N) N).mp ⟨f, rfl⟩
-  exact ⟨(pow_eq_one_iff_of_isPullback hg h₀ hgP N).mpr hN', fun k hk' hkN s hs ↦
-    hk s k hk' hkN ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hgP k s).mp hs)⟩
+  exact ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ (exists_comp_yOneι_eq_iff_of_isPullback hg h₀ hgP N).mp
+    ⟨f, rfl⟩, fun ⟨hPN, hPk⟩ ↦ let ⟨⟨f, g⟩, h, _⟩ := existsUnique_yOne hN hPN hPk; ⟨f, g, h⟩⟩
 
 /-- **`Y₁(N)` classifies naive `[Γ₁(N)]`-structures.** For `N ≥ 4`, let `φ : ℤ/Nℤ →* E(S)` be a
 homomorphism injective on every fibre of `E` over `S`. Then there are a unique morphism
