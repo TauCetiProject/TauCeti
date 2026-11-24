@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Subdifferential
+public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.MeasureTheory.Measure.Basic
+public import TauCeti.Analysis.Convex.Subdifferential
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # Lipschitz graphs covering multivalued subgradients
@@ -24,6 +26,13 @@ separations and natural norm bounds give the countable cover. Mathlib's McShane 
 vanishing on every Lipschitz graph sees at most one vertical subgradient component almost
 everywhere.
 
+In an arbitrary real inner product space, splitting orthogonally along `(ℝ ∙ v)ᗮ` and a unit vector
+`v` via `TauCeti.orthogonalLineEquiv` reduces directional subgradient separation to the vertical
+case: points admitting two subgradients with different inner products along `v` lie in a countable
+union of globally Lipschitz graphs over `(ℝ ∙ v)ᗮ`
+(`TauCeti.exists_lipschitzWith_graphs_cover_subdifferential_inner_ne`), without assuming convexity
+or finite dimensionality.
+
 ## References
 
 * L. Zajíček, *On the differentiation of convex functions in finite and infinite dimensional
@@ -39,6 +48,8 @@ open Set
 open scoped NNReal
 
 namespace TauCeti
+
+section Vertical
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f : E × ℝ → EReal}
@@ -191,5 +202,50 @@ theorem ae_subdifferential_vertical_eq_of_null_lipschitz_graphs
   by_contra hne
   obtain ⟨i, hi⟩ := hcover x α β hα hβ hne
   exact hx (mem_iUnion.mpr ⟨i, hi⟩)
+
+end Vertical
+
+section InnerProduct
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Points where `f : E → EReal` admits two subgradients with different inner products along a unit
+vector `v` are covered by countably many globally Lipschitz graphs over `(ℝ ∙ v)ᗮ`. Neither
+convexity of `f` nor finite dimensionality of `E` is needed. -/
+theorem exists_lipschitzWith_graphs_cover_subdifferential_inner_ne (f : E → EReal)
+    {v : E} (hv : ‖v‖ = 1) :
+    ∃ (K : ℚ × ℚ × ℕ → ℝ≥0) (g : (ℚ × ℚ × ℕ) → (ℝ ∙ v)ᗮ → ℝ),
+      (∀ i, LipschitzWith (K i) (g i)) ∧
+      ∀ (x y₁ y₂ : E),
+        y₁ ∈ subdifferential (innerₗ E) f x →
+        y₂ ∈ subdifferential (innerₗ E) f x →
+        inner ℝ y₁ v ≠ inner ℝ y₂ v →
+        ∃ i, x ∈ range fun w : (ℝ ∙ v)ᗮ => (w : E) + g i w • v := by
+  let Φ : (ℝ ∙ v)ᗮ × ℝ →L[ℝ] E := (orthogonalLineEquiv v hv).toContinuousLinearMap
+  obtain ⟨K, g, hg, hcover⟩ :=
+    exists_lipschitzWith_graphs_cover_subdifferential_vertical_ne (f ∘ Φ)
+  refine ⟨K, g, hg, fun x y₁ y₂ hy₁ hy₂ hne => ?_⟩
+  let p : (ℝ ∙ v)ᗮ × ℝ := (orthogonalLineEquiv v hv).symm x
+  have hp : Φ p = x := (orthogonalLineEquiv v hv).apply_symm_apply x
+  have hpull {y : E} (hy : y ∈ subdifferential (innerₗ E) f x) :
+      (innerSL ℝ y).comp Φ ∈
+        subdifferential (topDualPairing ℝ ((ℝ ∙ v)ᗮ × ℝ)).flip (f ∘ Φ) p := by
+    rw [mem_subdifferential_iff]
+    refine ⟨by simpa only [Function.comp_apply, hp] using
+        ne_bot_of_mem_subdifferential (innerₗ E) hy,
+      by simpa only [Function.comp_apply, hp] using
+        ne_top_of_mem_subdifferential (innerₗ E) hy, fun q => ?_⟩
+    simp only [Function.comp_apply, hp, LinearMap.flip_apply, topDualPairing_apply,
+      ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+    rw [map_sub Φ q p, hp, real_inner_comm (Φ q - x) y, ← innerₗ_apply_apply]
+    exact add_le_of_mem_subdifferential (innerₗ E) hy (Φ q)
+  have hne' : ((innerSL ℝ y₁).comp Φ) (0, 1) ≠ ((innerSL ℝ y₂).comp Φ) (0, 1) := by
+    simpa [Φ, innerSL_apply_apply] using hne
+  obtain ⟨i, hi⟩ := hcover p _ _ (hpull hy₁) (hpull hy₂) hne'
+  refine ⟨i, p.1, ?_⟩
+  dsimp only [Φ] at hp
+  rwa [ContinuousLinearEquiv.coe_coe, ← Prod.eta (p := p), orthogonalLineEquiv_apply, hi] at hp
+
+end InnerProduct
 
 end TauCeti

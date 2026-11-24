@@ -94,13 +94,13 @@ theorem specialLinear_mem_fixedSubgroup_frobenius_iff
   constructor
   · intro hg i j
     have hentry := congrArg (fun A : SpecialLinearGroup ι d.Closure => A i j) hg
-    rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
+    rw [SpecialLinearGroup.map_apply_coe, Matrix.map_apply]
       at hentry
     simpa only [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow] using hentry
   · intro hg
     apply Subtype.ext
     ext i j
-    rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
+    rw [SpecialLinearGroup.map_apply_coe, Matrix.map_apply]
     simpa only [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow] using hg i j
 
 /-- The range of the coefficient embedding of the special linear group is the fixed subgroup of

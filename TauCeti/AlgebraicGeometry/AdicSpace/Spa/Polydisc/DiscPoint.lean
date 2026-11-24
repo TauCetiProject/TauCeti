@@ -228,9 +228,9 @@ noncomputable def discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ 
 /-- The underlying point in `Spv K⟨T⟩` is the pullback of the Gauss point `η_r` along the
 translation `T ↦ T + a`. -/
 theorem discPoint_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (discPoint a ha hr₀ hr₁).1 =
+    (discPoint a ha hr₀ hr₁).val =
       comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
-        (gaussPoint hr₀ hr₁).1 :=
+        (gaussPoint hr₀ hr₁).val :=
   spaComap_val _ _ _ _ _ _
 
 /-- The point `η_{a,r}` compares `f` and `g` by the Gauss norms of radius `r` of `f(T + a)` and
@@ -238,7 +238,7 @@ theorem discPoint_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r �
 @[simp]
 theorem discPoint_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (discPoint a ha hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (discPoint a ha hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuation hr₀ hr₁
           (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) f) ≤
         closedDiscGaussValuation hr₀ hr₁
@@ -277,7 +277,7 @@ theorem discPoint_zero (ha : ‖(0 : K)‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤
 theorem comap_taylorHom_discPoint {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) (hcb : ‖c + b‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     comap (taylorHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
-        (discPoint c hc hr₀ hr₁).1 = (discPoint (c + b) hcb hr₀ hr₁).1 := by
+        (discPoint c hc hr₀ hr₁).val = (discPoint (c + b) hcb hr₀ hr₁).val := by
   rw [discPoint_val, discPoint_val, ← Function.comp_apply (f := comap _), ← comap_comp,
     taylorHom_comp_taylorHom]
   -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
@@ -304,7 +304,7 @@ theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
   intro h
   have har : ‖a‖ ≤ r := by
     by_contra! hlt
-    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
       (weightedC _ isWeightFamily_one_weight a)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight a)) h
@@ -344,14 +344,14 @@ theorem discPoint_radius_one (a : K) (ha : ‖a‖ ≤ 1) :
 /-- A point `η_{a,r}` kills only the zero series. -/
 theorem discPoint_vle_zero_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight} :
-    (discPoint a ha hr₀ hr₁).1.toValuativeRel.vle f 0 ↔ f = 0 := by
+    (discPoint a ha hr₀ hr₁).val.toValuativeRel.vle f 0 ↔ f = 0 := by
   rw [discPoint_val, comap_vle, map_zero, gaussPoint_vle_zero_iff,
     map_eq_zero_iff _ (taylorHom_injective _ _)]
 
 /-- **The support of `η_{a,r}` is trivial.** -/
 @[simp]
 theorem supp_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (discPoint a ha hr₀ hr₁).1.supp = ⊥ :=
+    (discPoint a ha hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by rw [mem_supp_iff, discPoint_vle_zero_iff, Ideal.mem_bot]
 
 /-- **The points `η_{a,r}` are not classical points.** -/
@@ -387,17 +387,17 @@ noncomputable def discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (h
 /-- The underlying point of `η_{a,r⁺}` in `Spv K⟨T⟩` is the pullback of `η_{r⁺}` along the
 translation `T ↦ T + a`. -/
 theorem discPointAbove_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1) :
-    (discPointAbove a ha hr₀ hr₁).1 =
+    (discPointAbove a ha hr₀ hr₁).val =
       comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
-        (gaussPointAbove hr₀ hr₁).1 :=
+        (gaussPointAbove hr₀ hr₁).val :=
   spaComap_val _ _ _ _ _ _
 
 /-- The underlying point of `η_{a,r⁻}` in `Spv K⟨T⟩` is the pullback of `η_{r⁻}` along the
 translation `T ↦ T + a`. -/
 theorem discPointBelow_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (discPointBelow a ha hr₀ hr₁).1 =
+    (discPointBelow a ha hr₀ hr₁).val =
       comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
-        (gaussPointBelow hr₀ hr₁).1 :=
+        (gaussPointBelow hr₀ hr₁).val :=
   spaComap_val _ _ _ _ _ _
 
 /-- The point `η_{a,r⁺}` compares `f` and `g` by the Gauss valuations just above `r` of
@@ -405,7 +405,7 @@ theorem discPointBelow_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ :
 @[simp]
 theorem discPointAbove_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (discPointAbove a ha hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (discPointAbove a ha hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuationAbove hr₀ hr₁.le
           (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) f) ≤
         closedDiscGaussValuationAbove hr₀ hr₁.le
@@ -417,7 +417,7 @@ theorem discPointAbove_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr�
 @[simp]
 theorem discPointBelow_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (discPointBelow a ha hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (discPointBelow a ha hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuationBelow hr₀ hr₁
           (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) f) ≤
         closedDiscGaussValuationBelow hr₀ hr₁
@@ -448,7 +448,7 @@ theorem discPointBelow_zero (ha : ‖(0 : K)‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : 
 `T - a` lies just above the constants of norm `r`. -/
 theorem discPointAbove_vle_weightedC_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (c : K) :
-    (discPointAbove a ha hr₀ hr₁).1.toValuativeRel.vle
+    (discPointAbove a ha hr₀ hr₁).val.toValuativeRel.vle
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) (weightedC _ isWeightFamily_one_weight c) ↔
       r < ‖c‖ := by
@@ -459,7 +459,7 @@ theorem discPointAbove_vle_weightedC_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
 /-- **`η_{a,r⁺}` finds a constant `c` at most `T - a` exactly when `‖c‖ ≤ r`.** -/
 theorem discPointAbove_weightedC_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (c : K) :
-    (discPointAbove a ha hr₀ hr₁).1.toValuativeRel.vle (weightedC _ isWeightFamily_one_weight c)
+    (discPointAbove a ha hr₀ hr₁).val.toValuativeRel.vle (weightedC _ isWeightFamily_one_weight c)
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) ↔
       ‖c‖ ≤ r := by
@@ -470,7 +470,7 @@ theorem discPointAbove_weightedC_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
 /-- **`η_{a,r⁻}` finds `T - a` at most a constant `c` exactly when `r ≤ ‖c‖`.** -/
 theorem discPointBelow_vle_weightedC_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (c : K) :
-    (discPointBelow a ha hr₀ hr₁).1.toValuativeRel.vle
+    (discPointBelow a ha hr₀ hr₁).val.toValuativeRel.vle
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) (weightedC _ isWeightFamily_one_weight c) ↔
       r ≤ ‖c‖ := by
@@ -482,7 +482,7 @@ theorem discPointBelow_vle_weightedC_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
 `T - a` lies just below the constants of norm `r`. -/
 theorem discPointBelow_weightedC_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (c : K) :
-    (discPointBelow a ha hr₀ hr₁).1.toValuativeRel.vle (weightedC _ isWeightFamily_one_weight c)
+    (discPointBelow a ha hr₀ hr₁).val.toValuativeRel.vle (weightedC _ isWeightFamily_one_weight c)
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) ↔
       ‖c‖ < r := by
@@ -497,20 +497,20 @@ theorem valuation_weightedX_sub_weightedC_of_lt {A : Type*} [CommRing A] [Topolo
     [NonarchimedeanRing A] {x : closedPolydisc 1 A} {a : A}
     (Q : A → Prop) [DecidablePred Q]
     (hlt : ∀ c : A, Q c →
-      x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c) <
-        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+      x.val.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c) <
+        x.val.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a))
     (hgt : ∀ c : A, ¬ Q c →
-      x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+      x.val.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) <
-        x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c))
+        x.val.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c))
     (b : A) :
-    x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+    x.val.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight b) =
       if Q (b - a) then
-        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+        x.val.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a)
-      else x.1.valuation (weightedC _ isWeightFamily_one_weight (b - a)) := by
+      else x.val.valuation (weightedC _ isWeightFamily_one_weight (b - a)) := by
   have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
       weightedC _ isWeightFamily_one_weight b =
       (weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) -
@@ -527,15 +527,15 @@ value of the constant `b - a` otherwise: `T - b = (T - a) - (b - a)`, and `T - a
 larger than the constants of norm at most `r` and strictly smaller than the others. -/
 theorem valuation_weightedX_sub_weightedC_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r < 1) (b : K) :
-    (discPointAbove a ha hr₀ hr₁).1.valuation
+    (discPointAbove a ha hr₀ hr₁).val.valuation
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight b) =
       if ‖b - a‖ ≤ r then
-        (discPointAbove a ha hr₀ hr₁).1.valuation
+        (discPointAbove a ha hr₀ hr₁).val.valuation
           (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
             weightedC _ isWeightFamily_one_weight a)
       else
-        (discPointAbove a ha hr₀ hr₁).1.valuation
+        (discPointAbove a ha hr₀ hr₁).val.valuation
           (weightedC _ isWeightFamily_one_weight (b - a)) := by
   exact valuation_weightedX_sub_weightedC_of_lt (fun c ↦ ‖c‖ ≤ r)
     (fun c hc ↦ lt_of_not_ge fun h ↦
@@ -549,15 +549,15 @@ value of the constant `b - a` otherwise: `T - b = (T - a) - (b - a)`, and `T - a
 larger than the constants of norm less than `r` and strictly smaller than the others. -/
 theorem valuation_weightedX_sub_weightedC_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r ≤ 1) (b : K) :
-    (discPointBelow a ha hr₀ hr₁).1.valuation
+    (discPointBelow a ha hr₀ hr₁).val.valuation
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight b) =
       if ‖b - a‖ < r then
-        (discPointBelow a ha hr₀ hr₁).1.valuation
+        (discPointBelow a ha hr₀ hr₁).val.valuation
           (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
             weightedC _ isWeightFamily_one_weight a)
       else
-        (discPointBelow a ha hr₀ hr₁).1.valuation
+        (discPointBelow a ha hr₀ hr₁).val.valuation
           (weightedC _ isWeightFamily_one_weight (b - a)) := by
   exact valuation_weightedX_sub_weightedC_of_lt (fun c ↦ ‖c‖ < r)
     (fun c hc ↦ lt_of_not_ge fun h ↦
@@ -571,7 +571,7 @@ theorem valuation_weightedX_sub_weightedC_discPointBelow (a : K) (ha : ‖a‖ �
 theorem comap_taylorHom_discPointAbove {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1)
     (hcb : ‖c + b‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1) :
     comap (taylorHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
-        (discPointAbove c hc hr₀ hr₁).1 = (discPointAbove (c + b) hcb hr₀ hr₁).1 := by
+        (discPointAbove c hc hr₀ hr₁).val = (discPointAbove (c + b) hcb hr₀ hr₁).val := by
   rw [discPointAbove_val, discPointAbove_val, ← Function.comp_apply (f := comap _), ← comap_comp,
     taylorHom_comp_taylorHom]
   -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
@@ -582,7 +582,7 @@ theorem comap_taylorHom_discPointAbove {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c
 theorem comap_taylorHom_discPointBelow {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1)
     (hcb : ‖c + b‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     comap (taylorHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
-        (discPointBelow c hc hr₀ hr₁).1 = (discPointBelow (c + b) hcb hr₀ hr₁).1 := by
+        (discPointBelow c hc hr₀ hr₁).val = (discPointBelow (c + b) hcb hr₀ hr₁).val := by
   rw [discPointBelow_val, discPointBelow_val, ← Function.comp_apply (f := comap _), ← comap_comp,
     taylorHom_comp_taylorHom]
   -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
@@ -607,7 +607,7 @@ theorem discPointAbove_eq_gaussPointAbove_iff {a : K} (ha : ‖a‖ ≤ 1) (hr�
   intro h
   have har : ‖a‖ ≤ r := by
     by_contra! hlt
-    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
       (weightedC _ isWeightFamily_one_weight a)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight a)) h
@@ -647,7 +647,7 @@ theorem discPointBelow_eq_gaussPointBelow_iff {a : K} (ha : ‖a‖ ≤ 1) (hr�
   intro h
   have har : ‖a‖ < r := by
     by_contra! hle
-    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
       (weightedC _ isWeightFamily_one_weight a)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight a)) h
@@ -756,18 +756,18 @@ theorem discPointBelow_ne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
 /-- **The support of `η_{a,r⁺}` is trivial.** -/
 @[simp]
 theorem supp_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1) :
-    (discPointAbove a ha hr₀ hr₁).1.supp = ⊥ :=
+    (discPointAbove a ha hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, discPointAbove_vle_iff, map_zero, map_zero, le_zero_iff,
+    rw [mem_supp_iff, discPointAbove_vle_iff, map_zero, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationAbove_eq_zero_iff, map_eq_zero_iff _ (taylorHom_injective _ _),
       Ideal.mem_bot]
 
 /-- **The support of `η_{a,r⁻}` is trivial.** -/
 @[simp]
 theorem supp_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (discPointBelow a ha hr₀ hr₁).1.supp = ⊥ :=
+    (discPointBelow a ha hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, discPointBelow_vle_iff, map_zero, map_zero, le_zero_iff,
+    rw [mem_supp_iff, discPointBelow_vle_iff, map_zero, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationBelow_eq_zero_iff, map_eq_zero_iff _ (taylorHom_injective _ _),
       Ideal.mem_bot]
 

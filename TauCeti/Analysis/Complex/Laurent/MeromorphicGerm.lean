@@ -47,7 +47,7 @@ theorem eventually_coeff_laurentSeries_eq_circleLaurentCoeff {φ : meromorphicGe
   -- `h`. For `n + N ≥ 0` it is a coefficient of the Cauchy power series of `h`, which is the power
   -- series of `h` at `a`; for `n + N < 0` the integrand is holomorphic on the closed disc and the
   -- integral vanishes by the Cauchy–Goursat theorem.
-  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
+  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.property)
   set h : ℂ → ℂ := fun z ↦ (z - a) ^ N • f z
   have hfh : ∀ z ≠ a, f z = ((z - a) ^ N)⁻¹ * h z := fun z hz ↦ by
     simp only [h, smul_eq_mul, inv_mul_cancel_left₀ (pow_ne_zero N (sub_ne_zero.2 hz))]

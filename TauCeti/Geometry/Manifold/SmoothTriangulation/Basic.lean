@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Convex.SecantEstimate
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -103,7 +103,7 @@ Because `F` is a total map, for the empty vertex set `σ = ∅` (the empty coord
 holds exactly when `M` is nonempty. The convention is harmless: faces of an abstract simplicial
 complex are nonempty, so `IsSmoothTriangulation` never involves `σ = ∅`. -/
 def IsSimplexImmersion {σ : Finset ι} (g : StandardSimplex σ → M) : Prop :=
-  ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) ∧
+  ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.val a) = g x) ∧
     ContMDiffOn 𝓘(ℝ, σ → ℝ) I n F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) ∧
     ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : (σ → ℝ) →L[ℝ] E,
       HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
@@ -113,13 +113,66 @@ def IsSimplexImmersion {σ : Finset ι} (g : StandardSimplex σ → M) : Prop :=
 /-- Unfold `TauCeti.IsSimplexImmersion` into its defining witness. -/
 theorem isSimplexImmersion_iff {σ : Finset ι} {g : StandardSimplex σ → M} :
     IsSimplexImmersion I n g ↔
-      ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) ∧
+      ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.val a) = g x) ∧
         ContMDiffOn 𝓘(ℝ, σ → ℝ) I n F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) ∧
         ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : (σ → ℝ) →L[ℝ] E,
           HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F
             (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) t.weights F' ∧
             ∀ v : σ → ℝ, ∑ a, v a = 0 → F' v = 0 → v = 0 :=
   Iff.rfl
+
+/-- Composing a linear map from simplex coordinates with a map smooth within a set gives a
+simplex immersion if the composite derivatives are injective on zero-sum directions. -/
+theorem _root_.LinearMap.isSimplexImmersion_comp
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {σ : Finset ι}
+    (L : (σ → ℝ) →ₗ[ℝ] V) {F : V → M} {s : Set V}
+    (hL : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s)
+    (hF : ContMDiffOn 𝓘(ℝ, V) I n F s)
+    (hF' : ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : V →L[ℝ] E,
+      HasMFDerivWithinAt 𝓘(ℝ, V) I F s (L t.weights) F' ∧
+        ∀ v : σ → ℝ, ∑ a, v a = 0 → F' (L v) = 0 → v = 0) :
+    IsSimplexImmersion I n (fun x : StandardSimplex σ => F (L fun a => x.val a)) := by
+  -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
+  rw [← LinearMap.coe_toContinuousLinearMap' L] at hL hF' ⊢
+  refine ⟨F ∘ L.toContinuousLinearMap, fun _ => rfl,
+    hF.comp L.toContinuousLinearMap.contMDiff.contMDiffOn hL, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' t
+  refine ⟨F'.comp L.toContinuousLinearMap,
+    hFt.comp (⇑t.weights) L.toContinuousLinearMap.hasMFDerivWithinAt hL.subset_preimage,
+    fun v hv hv0 => hinj v hv ?_⟩
+  rwa [ContinuousLinearMap.comp_apply] at hv0
+
+/-- Composing the barycentric map of an affinely independent vertex family with a map smooth
+within its convex hull gives an immersion if the derivative is injective along its affine span. -/
+theorem isSimplexImmersion_comp_linearCombination
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {σ : Finset ι} {p : σ → V} (hp : AffineIndependent ℝ p) {F : V → M}
+    (hF : ContMDiffOn 𝓘(ℝ, V) I n F (convexHull ℝ (range p)))
+    (hF' : ∀ x ∈ convexHull ℝ (range p), ∃ F' : V →L[ℝ] E,
+      HasMFDerivWithinAt 𝓘(ℝ, V) I F (convexHull ℝ (range p)) x F' ∧
+        ∀ v ∈ vectorSpan ℝ (range p), F' v = 0 → v = 0) :
+    IsSimplexImmersion I n (fun y : StandardSimplex σ =>
+      F (Fintype.linearCombination ℝ p fun a => y.val a)) := by
+  -- The barycentric map is the linear combination of the vertices.
+  let L : (σ → ℝ) →ₗ[ℝ] V := Fintype.linearCombination ℝ p
+  have hL (v : σ → ℝ) : L v = ∑ a, v a • p a := Fintype.linearCombination_apply ℝ p v
+  have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
+      (convexHull ℝ (range p)) := by
+    rw [← Finset.range_standardSimplex_coordinates,
+      ← Finset.range_linearCombination_standardSimplex]
+    rintro _ ⟨y, rfl⟩
+    exact ⟨y, by simp only [hL, Fintype.linearCombination_apply]⟩
+  refine L.isSimplexImmersion_comp hmaps hF fun t => ?_
+  obtain ⟨F', hFt, hinj⟩ := hF' _ (hmaps ⟨t, rfl⟩)
+  refine ⟨F', hFt, fun v hv hv0 => ?_⟩
+  -- A direction of the simplex is sent into the vector span of its vertices.
+  have hLv : L v ∈ vectorSpan ℝ (range p) := by
+    have h := weightedVSub_mem_vectorSpan (s := Finset.univ) (w := v) hv p
+    rwa [Finset.weightedVSub_eq_linear_combination _ hv, ← hL] at h
+  have hL0 := hinj _ hLv hv0
+  rw [hL] at hL0
+  exact funext fun a => hp.eq_zero_of_sum_eq_zero
+    (s := Finset.univ) hv hL0 a (Finset.mem_univ a)
 
 namespace IsSimplexImmersion
 
@@ -169,7 +222,7 @@ theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J 
 coordinates, and injective on the directions of its domain, gives an immersion of the simplex. -/
 theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
     {φ : StandardSimplex τ → StandardSimplex σ} (L : (τ → ℝ) →ₗ[ℝ] (σ → ℝ))
-    (hφ : ∀ x : StandardSimplex τ, (fun a : σ => (φ x).1 a) = L fun a : τ => x.1 a)
+    (hφ : ∀ x : StandardSimplex τ, (fun a : σ => (φ x).val a) = L fun a : τ => x.val a)
     (hL : ∀ v : τ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
     IsSimplexImmersion I n (g ∘ φ) := by
   obtain ⟨F, hFg, hF, hF'⟩ := h
@@ -180,18 +233,16 @@ theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
     rw [← Finset.range_standardSimplex_coordinates, ← Finset.range_standardSimplex_coordinates]
     exact mapsTo_range_iff.mpr fun x => ⟨φ x, hφ x⟩
   have hsum := L.sum_apply_eq_of_mapsTo_range_weights hmaps
-  -- The domain of `L` is finite dimensional, so `L` is continuous.
-  let L' : (τ → ℝ) →L[ℝ] (σ → ℝ) := L.toContinuousLinearMap
-  refine ⟨F ∘ L', fun x => by rw [comp_apply, LinearMap.coe_toContinuousLinearMap', ← hφ, hFg,
-    comp_apply], hF.comp L'.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  suffices IsSimplexImmersion I n (fun x : StandardSimplex τ => F (L fun a => x.val a)) by
+    simpa only [← hφ, hFg, comp_def] using this
+  refine L.isSimplexImmersion_comp hmaps hF fun t => ?_
   obtain ⟨s, hs⟩ := hmaps ⟨t, rfl⟩
   obtain ⟨F', hFs, hinj⟩ := hF' s
   have hFt : HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F
       (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) (L t.weights) F' := by
     rw [← hs]
     exact hFs
-  exact ⟨F'.comp L', hFt.comp (⇑t.weights) L'.hasMFDerivWithinAt hmaps.subset_preimage,
-    fun v hv hv0 => hL v hv (hinj (L v) ((hsum v).trans hv) hv0)⟩
+  exact ⟨F', hFt, fun v hv hv0 => hL v hv (hinj (L v) ((hsum v).trans hv) hv0)⟩
 
 end IsSimplexImmersion
 
@@ -240,10 +291,11 @@ theorem realizationHomeomorph_trans {κ : Type*} [DecidableEq ι] [DecidableEq �
   have hφ : Injective φ := LeftInverse.injective (g := ψ) fun a => by
     rw [← _root_.PreAbstractSimplicialComplex.SimplicialMap.comp_apply, hψφ,
       _root_.PreAbstractSimplicialComplex.SimplicialMap.id_apply]
-  let φσ : σ.1 → σ.1.image φ := fun a => ⟨φ a, Finset.mem_image_of_mem φ a.2⟩
+  let φσ : σ.val → σ.val.image φ := fun a => ⟨φ a, Finset.mem_image_of_mem φ a.property⟩
   have hφσ : Injective φσ := fun a b hab => Subtype.ext (hφ (congrArg Subtype.val hab))
   have hfactor : (φ.realizationHomeomorph ψ hψφ hφψ).trans f ∘ faceInclusion K σ =
-      (f ∘ faceInclusion L ⟨σ.1.image φ, φ.map_face σ.2⟩) ∘ fun x => StandardSimplex.map x φ := by
+      (f ∘ faceInclusion L ⟨σ.val.image φ, φ.map_face σ.property⟩) ∘ fun x => StandardSimplex.map x
+          φ := by
     funext x
     simp only [comp_apply, Homeomorph.trans_apply,
       _root_.PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
@@ -252,7 +304,7 @@ theorem realizationHomeomorph_trans {κ : Type*} [DecidableEq ι] [DecidableEq �
   -- In barycentric coordinates, the map of simplices extends the coordinates by zero along `φ`.
   refine (h _).comp_linear (Function.ExtendByZero.linearMap ℝ ℝ φσ) (fun x => funext fun b => ?_)
     (fun v _ hv => funext fun a => ?_)
-  · obtain ⟨a, ha, hab⟩ := Finset.mem_image.mp b.2
+  · obtain ⟨a, ha, hab⟩ := Finset.mem_image.mp b.property
     obtain rfl : b = φσ ⟨a, ha⟩ := Subtype.ext hab.symm
     rw [StandardSimplex.map_val, Finsupp.coe_mapDomain_eq_extend hφ,
       Function.ExtendByZero.linearMap_apply, hφσ.extend_apply, hφ.extend_apply]
@@ -271,7 +323,7 @@ private def coordOne (σ : Finset (Fin 2)) : (σ → ℝ) →L[ℝ] ℝ :=
   if h : (1 : Fin 2) ∈ σ then ContinuousLinearMap.proj (⟨1, h⟩ : σ) else 0
 
 private theorem coordOne_apply_coe {σ : Finset (Fin 2)} (x : StandardSimplex σ) :
-    coordOne σ (fun a => x.1 a) = x.1 1 := by
+    coordOne σ (fun a => x.val a) = x.val 1 := by
   by_cases h : (1 : Fin 2) ∈ σ
   · simp [coordOne, h]
   · simpa [coordOne, h] using
@@ -289,7 +341,7 @@ private theorem eq_zero_of_coordOne_eq_zero {σ : Finset (Fin 2)} {v : σ → �
     (hv : ∑ a, v a = 0) (hv1 : coordOne σ v = 0) : v = 0 := by
   have h1 : ∀ b : σ, (b : Fin 2) = 1 → v b = 0 := by
     intro b hb
-    have h : (1 : Fin 2) ∈ σ := hb ▸ b.2
+    have h : (1 : Fin 2) ∈ σ := hb ▸ b.property
     obtain rfl : b = ⟨1, h⟩ := Subtype.ext hb
     simpa [coordOne, h] using hv1
   have key : ∀ c d : Fin 2, c ≠ 1 → d ≠ c → d = 1 := by decide
@@ -328,7 +380,7 @@ coordinate, is a `Cⁿ` triangulation of the unit interval for every `n`. -/
 theorem isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval :
     IsSmoothTriangulation (𝓡∂ 1) n realizationOneSimplexHomeomorphUnitInterval := by
   intro σ
-  refine ⟨fun y => projIcc 0 1 zero_le_one (coordOne σ.1 y), fun x => ?_, ?_, fun t => ?_⟩
+  refine ⟨fun y => projIcc 0 1 zero_le_one (coordOne σ.val y), fun x => ?_, ?_, fun t => ?_⟩
   · apply Subtype.ext
     dsimp only
     rw [coordOne_apply_coe, comp_apply, realizationOneSimplexHomeomorphUnitInterval_coe,
@@ -336,22 +388,22 @@ theorem isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval :
     have hle := Realization.le_one _ (faceInclusion _ σ x) 1
     rw [faceInclusion_val] at hle
     exact ⟨StandardSimplex.nonneg x 1, hle⟩
-  · exact contMDiffOn_projIcc.comp (coordOne σ.1).contMDiff.contMDiffOn
+  · exact contMDiffOn_projIcc.comp (coordOne σ.val).contMDiff.contMDiffOn
       (by rintro _ ⟨t, rfl⟩; exact coordOne_weights_mem_Icc t)
   · have hz := coordOne_weights_mem_Icc t
     have hp := ((contMDiffOn_projIcc (n := 1) _ hz).mdifferentiableWithinAt one_ne_zero)
     refine ⟨(mfderivWithin 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) (Icc 0 1)
-      (coordOne σ.1 t.weights)).comp (coordOne σ.1),
-      hp.hasMFDerivWithinAt.comp _ (coordOne σ.1).hasMFDerivWithinAt
+      (coordOne σ.val t.weights)).comp (coordOne σ.val),
+      hp.hasMFDerivWithinAt.comp _ (coordOne σ.val).hasMFDerivWithinAt
         (by rintro _ ⟨t, rfl⟩; exact coordOne_weights_mem_Icc t), fun v hv hv0 => ?_⟩
     exact eq_zero_of_mfderivWithin_projIcc_comp_coordOne t hv hv0
 
 /-- Squaring, as a self-homeomorphism of the unit interval. -/
 private def sqHomeomorph : unitInterval ≃ₜ unitInterval where
-  toFun t := ⟨(t : ℝ) ^ 2, by simpa [sq] using unitInterval.mul_mem t.2 t.2⟩
-  invFun t := ⟨√(t : ℝ), Real.sqrt_nonneg _, Real.sqrt_le_one.mpr t.2.2⟩
-  left_inv t := Subtype.ext (Real.sqrt_sq t.2.1)
-  right_inv t := Subtype.ext (Real.sq_sqrt t.2.1)
+  toFun t := ⟨(t : ℝ) ^ 2, by simpa [sq] using unitInterval.mul_mem t.property t.property⟩
+  invFun t := ⟨√(t : ℝ), Real.sqrt_nonneg _, Real.sqrt_le_one.mpr t.property.2⟩
+  left_inv t := Subtype.ext (Real.sqrt_sq t.property.1)
+  right_inv t := Subtype.ext (Real.sq_sqrt t.property.1)
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
@@ -364,11 +416,11 @@ private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n sqH
 `σ`, then, read in `ℝ`, `F` is the square of the barycentric coordinate at the vertex `1` on the
 standard simplex. -/
 private theorem eqOn_sq_of_trans_sqHomeomorph {σ : Face (⊤ : AbstractSimplicialComplex (Fin 2))}
-    {F : (σ.1 → ℝ) → unitInterval} (hFg : ∀ x : StandardSimplex σ.1, F (fun a => x.1 a) =
+    {F : (σ.val → ℝ) → unitInterval} (hFg : ∀ x : StandardSimplex σ.val, F (fun a => x.val a) =
       (realizationOneSimplexHomeomorphUnitInterval.trans sqHomeomorph ∘ faceInclusion ⊤ σ) x)
-    (i₁ : σ.1) (hi₁ : (i₁ : Fin 2) = 1) :
+    (i₁ : σ.val) (hi₁ : (i₁ : Fin 2) = 1) :
     EqOn (fun y => (y i₁) ^ 2) (Subtype.val ∘ F)
-      (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
+      (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) := by
   rw [← Finset.range_standardSimplex_coordinates]
   rintro _ ⟨x, rfl⟩
   simp [hFg, sqHomeomorph, hi₁]
@@ -384,23 +436,24 @@ theorem exists_contMDiff_not_isSmoothTriangulation_trans :
         (realizationOneSimplexHomeomorphUnitInterval.trans h) := by
   refine ⟨sqHomeomorph, contMDiff_sqHomeomorph, fun n hT => ?_⟩
   let σ : Face (⊤ : AbstractSimplicialComplex (Fin 2)) := ⟨Finset.univ, Finset.univ_nonempty⟩
-  let S := range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights
-  let i₀ : σ.1 := ⟨0, Finset.mem_univ _⟩
-  let i₁ : σ.1 := ⟨1, Finset.mem_univ _⟩
-  let t₀ : Convexity.StdSimplex ℝ σ.1 := .single i₀
-  let t₁ : Convexity.StdSimplex ℝ σ.1 := .single i₁
+  let S := range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights
+  let i₀ : σ.val := ⟨0, Finset.mem_univ _⟩
+  let i₁ : σ.val := ⟨1, Finset.mem_univ _⟩
+  let t₀ : Convexity.StdSimplex ℝ σ.val := .single i₀
+  let t₁ : Convexity.StdSimplex ℝ σ.val := .single i₁
   obtain ⟨F, hFg, -, hF'⟩ := hT σ
   obtain ⟨F', hFt₀, hinj⟩ := hF' t₀
   -- Read in `ℝ`, the map is `y ↦ (y i₁) ^ 2` on the simplex.
   have hformula : EqOn (fun y => (y i₁) ^ 2) (Subtype.val ∘ F) S :=
     eqOn_sq_of_trans_sqHomeomorph hFg i₁ rfl
   -- Its derivative at the vertex `i₀` is zero within the simplex.
-  have hzero : HasFDerivWithinAt (Subtype.val ∘ F) (0 : (σ.1 → ℝ) →L[ℝ] ℝ) S t₀.weights := by
+  have hzero : HasFDerivWithinAt (Subtype.val ∘ F) (0 : (σ.val → ℝ) →L[ℝ] ℝ) S t₀.weights := by
     simpa [t₀, i₀, i₁] using ((hasFDerivWithinAt_apply (𝕜 := ℝ) i₁ (⇑t₀.weights) S).pow 2).congr
       hformula.symm (hformula ⟨t₀, rfl⟩).symm
-  -- The derivative supplied by `hT`, read in `ℝ`, is a second derivative there.
+  -- The derivative supplied by `hT`, read in `ℝ`, is another derivative of the same function
+  -- within the simplex there.
   -- Typed into `ℝ` rather than a tangent space of `ℝ`, so that `ℝ`'s own instances are used.
-  let L : (σ.1 → ℝ) →L[ℝ] ℝ := (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val (F t₀.weights)).comp F'
+  let L : (σ.val → ℝ) →L[ℝ] ℝ := (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val (F t₀.weights)).comp F'
   have hG : HasFDerivWithinAt (Subtype.val ∘ F) L S t₀.weights :=
     ((((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := 1)) (F t₀.weights)).mdifferentiableAt
       one_ne_zero).hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt₀).hasFDerivWithinAt

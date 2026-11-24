@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
+public import TauCeti.NumberTheory.ModularForms.DiamondOperators
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Basic
 
 /-!
 # The twisted slash sum preserves the character space
@@ -13,8 +14,13 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
 `HeckeSlash/Nebentypus/Basic.lean` defines `twistedHeckeSlashSum`, weighting each summand of a
 double-coset sum by `delta0NebentypusChar χ` of its own representative, and says twice over that
 the point of the weighting is left unproved: the sum is meant to be well defined on, and to
-preserve, the `χ`-invariant functions. `HeckeSlash/Nebentypus/Ring.lean` names that subspace,
-`functionCharSpace`, and repeats the omission. This file supplies what both defer.
+preserve, the `χ`-invariant functions. `ModularForms/DiamondOperators.lean` names that subspace,
+`functionCharSpace`, and `HeckeSlash/Nebentypus/Ring.lean` repeats the omission for the `ℤ`-linear
+extension. This file proves the invariance one double coset at a time: the twisted slash sum of a
+single double coset preserves `functionCharSpace` (`twistedHeckeSlashSum_mem_functionCharSpace`)
+and so restricts to it (`twistedHeckeSlashSumCharEnd`). The `ℤ`-linear extension of that
+restriction over the Hecke ring is `twistedHeckeSlashRingCharLinearMap`, in
+`HeckeSlash/Nebentypus/CharRing.lean`.
 
 ## Why the weights are exactly right
 
@@ -77,7 +83,7 @@ ported.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm
@@ -126,7 +132,7 @@ variable (D : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map
 is the generality the reindexing step below needs; that lemma is the case `h = τᵥ`. -/
 lemma mul_inv_mem_Delta0 {h : GL (Fin 2) ℚ} (hh : h ∈ (Gamma0 N).map (mapGL ℚ)) :
     (D.out : GL (Fin 2) ℚ) * h⁻¹ ∈ Delta0 N :=
-  mul_mem D.out.2 (Gamma0Image_le_Delta0 N (by
+  mul_mem D.out.property (Gamma0Image_le_Delta0 N (by
     rw [Subgroup.mem_toSubmonoid, Gamma0Image_def]
     exact inv_mem hh))
 
@@ -153,7 +159,7 @@ private lemma nebentypusWeight_eq_char_mul_delta0NebentypusChar (γ : ↥(Gamma0
       (delta0NebentypusChar N χ ⟨(D.out : GL (Fin 2) ℚ) *
         ((mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ)⁻¹ * (v.out : GL (Fin 2) ℚ))⁻¹,
         mul_inv_mem_Delta0 D
-          (mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.2)⟩ :
+          (mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.property)⟩ :
         ℂ) := by
   -- `delta0NebentypusChar` is a `MonoidHom` on the subtype `Δ₀(N)`, so reaching `map_mul` needs
   -- the factorisation as an equality of *subtype* elements, not of matrices: the two sides carry
@@ -162,7 +168,7 @@ private lemma nebentypusWeight_eq_char_mul_delta0NebentypusChar (γ : ↥(Gamma0
   have hfactor : (⟨(D.out : GL (Fin 2) ℚ) *
         ((mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ)⁻¹ * (v.out : GL (Fin 2) ℚ))⁻¹,
       mul_inv_mem_Delta0 D
-        (mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.2)⟩ :
+        (mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.property)⟩ :
       Delta0 N) =
       ⟨rightCosetRep D v, rightCosetRep_mem_Delta0 D v⟩ * ⟨_, mapGL_mem_Delta0 N γ⟩ :=
     Subtype.ext (rightCosetRep_mul_eq_mul_inv D (mapGL ℚ (γ : SL(2, ℤ))) v).symm
@@ -230,7 +236,7 @@ private lemma nebentypusWeight_smul_slash_slash_eq_char_smul (f : ℍ → ℂ)
             ↥((Gamma0 N).map (mapGL ℚ)))⁻¹ • v))) := by
   have hh : ((mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ)⁻¹ * (v.out : GL (Fin 2) ℚ)) ∈
       (Gamma0 N).map (mapGL ℚ) :=
-    mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.2
+    mul_mem (inv_mem (Subgroup.apply_coe_mem_map (mapGL ℚ) (Gamma0 N) γ)) v.out.property
   -- pull `γ` out of the slash on the right, rewrite the product of representatives as the
   -- unnormalised representative of `γ⁻¹ • v`, then take `χ (d_γ)` out of the weight
   rw [ModularForm.rat_smul_slash_of_det_pos k

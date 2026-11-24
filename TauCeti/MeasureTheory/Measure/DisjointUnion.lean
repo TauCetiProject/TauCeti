@@ -64,7 +64,7 @@ theorem measure_le_mul_measure_biUnion {s : Set ι} {A : Set α} {δ : ℝ≥0�
   calc μ A ≤ μ (A ∩ ⋃ i ∈ s, f i) + 0 := hA ▸ measure_le_inter_add_sdiff _ _ _
     _ = μ (⋃ i ∈ s, A ∩ f i) := by rw [add_zero, inter_iUnion₂]
     _ ≤ ∑' i : s, μ (A ∩ f i) := measure_biUnion_le _ hs _
-    _ ≤ ∑' i : s, δ * μ (f i) := tsum_le_tsum fun i => hδ i i.2
+    _ ≤ ∑' i : s, δ * μ (f i) := tsum_le_tsum fun i => hδ i i.property
     _ = δ * μ (⋃ i ∈ s, f i) := by rw [ENNReal.tsum_mul_left, measure_biUnion₀ hs hdisj hf]
 
 end MeasureTheory

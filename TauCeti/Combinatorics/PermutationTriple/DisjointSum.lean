@@ -146,7 +146,7 @@ theorem not_isConnected_disjointSum (hm : m ≠ 0) (hn : n ≠ 0) :
   obtain ⟨j⟩ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   obtain ⟨g, hg⟩ := htrans.exists_smul_eq (Fin.castAdd n i) (Fin.natAdd m j)
   obtain ⟨i', hi'⟩ :=
-    apply_castAdd_mem_range_castAdd_of_mem_monodromyGroup s t g.2 i
+    apply_castAdd_mem_range_castAdd_of_mem_monodromyGroup s t g.property i
   have hval : (Fin.castAdd n i' : Fin (m + n)).val = (Fin.natAdd m j : Fin (m + n)).val := by
     rw [hi']
     exact congrArg Fin.val (hg : (g : Perm (Fin (m + n))) (Fin.castAdd n i) = Fin.natAdd m j)

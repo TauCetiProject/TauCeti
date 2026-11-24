@@ -326,7 +326,7 @@ private theorem
     rw [← spanSingletonHomEquivRange_symm_apply_smul_generator]
     exact hx
   have hcw : ρ.asAlgebraHom (μ.youngSymmetrizer k) w = κ • (w : M) := by
-    obtain ⟨m, hm⟩ := w.2
+    obtain ⟨m, hm⟩ := w.property
     rw [← hm, ← mul_apply_eq_comp, ← map_mul, ha, map_smul, LinearMap.smul_apply]
   -- so the evaluation of `r c_μ ⊗ w` vanishes, and evaluation is injective
   have heval : ρ.youngSymmetrizerEval (DirectSum.lof k d.Partition _ μ

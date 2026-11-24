@@ -75,7 +75,7 @@ theorem exists_isProP_closedZpowers_and_exponent_eq_iff (w : ℤ_[p]ˣ) :
   · rintro ⟨q, hQ, rfl⟩
     -- the exponent restricted to the pro-`p` group `closedZpowers q`, evaluated at `q`
     exact hQ.mem_unitsPrincipal_one ((exponentHom hF e hr).comp
-      ⟨(closedZpowers q).subtype, continuous_subtype_val⟩) ⟨q, mem_closedZpowers q⟩
+      ⟨(closedZpowers q).subtype, continuous_subtypeVal⟩) ⟨q, mem_closedZpowers q⟩
   · intro hw
     -- the `p`-part of a peripheral automorphism of exponent `w` still has exponent `w`
     obtain ⟨φ, hφ⟩ := exponent_surjective hF e hr w
@@ -98,9 +98,9 @@ theorem exists_section_principalUnits {k : ℕ} (hk : 0 < k) (hk₂ : p = 2 → 
   obtain ⟨q, hQ, hq⟩ := (exists_isProP_closedZpowers_and_exponent_eq_iff hF e hr w).mpr
     (unitsPrincipal_antitone p hk hw)
   let ρ := principalUnitsEquiv hk hk₂ hw hw'
-  let ι : unitsPrincipal p k →ₜ* ℤ_[p]ˣ := ⟨(unitsPrincipal p k).subtype, continuous_subtype_val⟩
+  let ι : unitsPrincipal p k →ₜ* ℤ_[p]ˣ := ⟨(unitsPrincipal p k).subtype, continuous_subtypeVal⟩
   let j : closedZpowers q →ₜ* peripheralAut hF (basis e) :=
-    ⟨(closedZpowers q).subtype, continuous_subtype_val⟩
+    ⟨(closedZpowers q).subtype, continuous_subtypeVal⟩
   -- the bundled inclusions evaluate as coercions
   have hι (v : unitsPrincipal p k) : ι v = v := rfl
   have hj (x : closedZpowers q) : j x = x := rfl

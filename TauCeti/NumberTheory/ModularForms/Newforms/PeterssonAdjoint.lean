@@ -28,6 +28,9 @@ the nebentypus decomposition is orthogonal.
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`: at a good prime `p`, the
   eigenvalue of a good Hecke eigenform satisfies `λ_p = χ(p) · conj λ_p`.
+* `HeckeRing.GL2.EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq`: good Hecke
+  eigenforms with the same nonzero eigenvalue at a good prime `p` have the same nebentypus value
+  at `p`.
 * `HeckeRing.GL2.EigenformAwayFromLevel.peterssonInnerCosets_eq_zero_of_eigenvalue_ne`: good
   Hecke eigenforms with distinct eigenvalues at a good prime are orthogonal.
 
@@ -106,6 +109,20 @@ theorem eigenvalue_eq_mul_conj (f : EigenformAwayFromLevel N k) {p : ℕ} (hp : 
     rw [MulChar.ofUnitHom_coe] at h
     rw [map_inv₀, ← Complex.inv_eq_conj h, inv_inv]
   conv_lhs => rw [← conj_inv_mul_eigenvalue f hp hpN, map_mul, hu]
+
+/-- **At a good prime with a nonzero eigenvalue, the eigenvalue determines the nebentypus.** If
+good Hecke eigenforms `f` and `g` of levels `N` and `M` have the same eigenvalue `λ_p ≠ 0` at a
+prime `p ∤ N M`, their nebentypes agree at `p`: by `EigenformAwayFromLevel.eigenvalue_eq_mul_conj`
+both values are `λ_p / conj λ_p`. -/
+theorem χ_unitOfCoprime_eq_of_eigenvalue_eq {M : ℕ} [NeZero M] {k' : ℤ}
+    (f : EigenformAwayFromLevel N k) (g : EigenformAwayFromLevel M k') {p : ℕ} (hp : p.Prime)
+    (hpN : p.Coprime N) (hpM : p.Coprime M)
+    (h : f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM)
+    (h0 : f.eigenvalue ⟨p, hp.pos⟩ hpN ≠ 0) :
+    f.χ (ZMod.unitOfCoprime p hpN) = g.χ (ZMod.unitOfCoprime p hpM) := by
+  refine Units.ext (mul_right_cancel₀ ((map_ne_zero (starRingEnd ℂ)).mpr h0) ?_)
+  rw [← f.eigenvalue_eq_mul_conj hp hpN, h]
+  exact g.eigenvalue_eq_mul_conj hp hpM
 
 /-- **Good Hecke eigenforms with distinct eigenvalues are orthogonal.** Two good Hecke
 eigenforms whose eigenvalues differ at a prime `p` not dividing `N` are Petersson-orthogonal. -/

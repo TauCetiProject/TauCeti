@@ -131,7 +131,7 @@ the open set of characters that do not annihilate every integrated operator. -/
 private lemma continuousOn_dual : ContinuousOn (dual π hcont hπ) (support π hcont hπ) := by
   rw [continuousOn_iff_continuous_domRestrict]
   refine (π.continuous_integratedCharacterToPontryaginDual hcont _ _ _ hπ).congr fun ω ↦ ?_
-  simp [dual, ω.2]
+  simp [dual, ω.property]
 
 /-- The integrated operator `π(f) - 1` sends `ξ` to `π(f) ξ - ξ`. -/
 private lemma op_sub_one_apply (f : G →₁[Measure.addHaar] ℂ) (ξ : H) :

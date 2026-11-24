@@ -51,7 +51,7 @@ include hoff
 theorem isSl2Triple_normalizedRoot (a : B.normTwoShell) :
     letI := lieRing hB hev
     IsSl2Triple (cartan B a) (normalizedRoot B a)
-      (normalizedRoot B ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.2⟩) := by
+      (normalizedRoot B ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.property⟩) := by
   let _ := lieRing hB hev
   refine
     { h_ne_zero := ?_
@@ -61,11 +61,11 @@ theorem isSl2Triple_normalizedRoot (a : B.normTwoShell) :
       lie_h_f_nsmul := ?_ }
   · intro h
     have hz := congrArg (fun x ↦ (equivProd B x).1) h
-    exact ne_zero_of_mem_normTwoShell a.2 (by simpa using hz)
-  · rw [cartan_lie_normalizedRoot, mem_normTwoShell.mp a.2]
+    exact ne_zero_of_mem_normTwoShell a.property (by simpa using hz)
+  · rw [cartan_lie_normalizedRoot, mem_normTwoShell.mp a.property]
     simp only [two_smul]
   · rw [cartan_lie_normalizedRoot, mulVec_neg, dotProduct_neg,
-      mem_normTwoShell.mp a.2, neg_smul]
+      mem_normTwoShell.mp a.property, neg_smul]
     simp only [two_smul]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -79,10 +79,10 @@ theorem dividedPower_normalizedRoot_mul_dividedPower_normalizedRoot_neg
     (a : B.normTwoShell) (m n : ℕ) :
     dividedPower m (φ (normalizedRoot B a)) *
         dividedPower n (φ (normalizedRoot B
-          ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.2⟩)) =
+          ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.property⟩)) =
       ∑ k ∈ Finset.range (min m n + 1),
         dividedPower (n - k) (φ (normalizedRoot B
-            ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.2⟩)) *
+            ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.property⟩)) *
           Ring.choose (φ (cartan B a) - (m + n : ℕ) + (2 * k : ℕ)) k *
             dividedPower (m - k) (φ (normalizedRoot B a)) := by
   let _ := lieRing hB hev

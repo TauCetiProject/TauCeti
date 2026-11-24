@@ -5,271 +5,357 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import Mathlib.Topology.LocallyFinite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+public import TauCeti.AlgebraicTopology.SimplicialComplex.VertexScheme
 public import TauCeti.Topology.Triangulable.Basic
-import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 /-!
-# Geometric simplicial complexes as realizations of their vertex schemes
+# Realizations of geometric simplicial complexes
 
-A geometric simplicial complex `K` in a real vector space `E` has an underlying abstract
-simplicial complex, its *vertex scheme* `K.vertexScheme`: the vertices are the vertices of `K`,
-and a finite set of vertices is a face when it spans a face of `K`. The point of the abstract
-realization `|K.vertexScheme|` with barycentric coordinates `x` is sent to the point
-`∑ v, x v • v` of `E`. This map `K.realizationToSpace` takes values in the underlying space
-`K.space` and carries each closed coordinate simplex onto the corresponding closed geometric
-simplex (`Geometry.SimplicialComplex.range_realizationToSpace_faceInclusion`).
+A geometric simplicial complex `K` in a real vector space `E` (Mathlib's
+`Geometry.SimplicialComplex`) determines an abstract simplicial complex, its vertex scheme
+`K.vertexScheme` (`TauCeti.AlgebraicTopology.SimplicialComplex.VertexScheme`). This file compares
+the weak realization of the vertex scheme with the underlying space `K.space ⊆ E`.
 
-The map is a continuous bijection onto `K.space` with its subspace topology from `E`. Its inverse
-need not be continuous: the realization carries the weak topology, which is finer than the
-subspace topology when infinitely many simplices accumulate at a point of `K.space`. When the
-closed simplices of `K` form a locally finite family in `E`, the map is closed, hence a
-homeomorphism `K.realizationHomeomorph`. Thus a locally finite geometric complex triangulates
-its underlying space in the abstract sense of `TauCeti.IsTriangulable`. This is how a
-triangulation of a subset of an affine space by a locally finite geometric complex is turned
-into a homeomorphism from the realization of an abstract simplicial complex.
+The comparison map `K.realizationToAmbient : |K.vertexScheme| → E` sends a point with barycentric
+coordinates `x` to the combination `∑ v, x v • v` of the vertices: it is the linear extension of
+the inclusion of the vertices. It is linear in barycentric coordinates on every closed simplex,
+injective, and has range `K.space`; it is continuous when addition and real scalar multiplication
+on `E` are continuous. Injectivity combines the affine independence of the vertices of each face
+with the fact that the closed simplices of `K` meet in common faces. Assuming these continuity
+hypotheses, when `K.space` is Hausdorff
+and the closed simplices of `K` form a locally finite family in `K.space`, the map is a closed map
+onto `K.space` and gives a homeomorphism `K.realizationHomeomorph hK : |K.vertexScheme| ≃ₜ K.space`;
+this covers complexes such as the dyadic subdivision of an open ray, which accumulate only outside
+their underlying space. When `E` is Hausdorff and the family is locally finite in `E` itself, the
+map is moreover a closed embedding into `E`. Without local finiteness the weak topology is in
+general strictly finer than the subspace topology of `K.space`: for the infinitely many edges
+`[0, eᵢ]` of a fan in `ℓ²`, the points at parameter `1 / i` on the `i`-th edge converge to `0` in
+`E`, but form a closed set in the weak topology. For a subcomplex `K ≤ L`, the comparison map of
+`K` factors through the realization of the inclusion of vertex schemes and the comparison map of
+`L`.
+
+This is how polyhedra built inside a vector space, by subdividing, intersecting or gluing geometric
+complexes, become triangulations in the sense of `TauCeti.IsTriangulable`, whose domain is the
+realization of an abstract complex. In particular the rectilinear complexes in coordinate charts
+from which a smooth triangulation of a manifold is assembled are read as abstract complexes this
+way.
 
 ## Main definitions
 
-* `Geometry.SimplicialComplex.vertexScheme`: the abstract simplicial complex of a geometric one.
-* `Geometry.SimplicialComplex.realizationToSpace`: the map from its realization to `K.space`.
-* `Geometry.SimplicialComplex.realizationHomeomorph`: the homeomorphism onto `K.space`, for a
-  locally finite complex.
+* `Geometry.SimplicialComplex.realizationToAmbient`: the map from the realization of the vertex
+  scheme into the ambient space.
+* `Geometry.SimplicialComplex.realizationHomeomorph`: for a complex with Hausdorff underlying
+  space, locally finite in that space, and continuous ambient addition and real scalar
+  multiplication, the homeomorphism from the realization of its vertex scheme
+  onto that space.
 
 ## Main results
 
-* `Geometry.SimplicialComplex.continuous_realizationToSpace`,
-  `Geometry.SimplicialComplex.bijective_realizationToSpace`: the map is a continuous bijection.
-* `Geometry.SimplicialComplex.isClosedMap_realizationToSpace`: it is closed if `K` is locally
-  finite.
-* `Geometry.SimplicialComplex.isTriangulable_space`: the space of a locally finite complex is
-  triangulable.
+* `Geometry.SimplicialComplex.realizationToAmbient_injective`,
+  `Geometry.SimplicialComplex.range_realizationToAmbient`: the comparison map is a bijection onto
+  `K.space`.
+* `Geometry.SimplicialComplex.secantMap_realizationToAmbient`: the comparison map is its own secant
+  map.
+* `Geometry.SimplicialComplex.realizationToAmbient_comp_realizationMap_vertexSchemeInclusion`:
+  the comparison maps are compatible with the inclusion of a subcomplex.
+* `Geometry.SimplicialComplex.isClosedMap_codRestrict_realizationToAmbient`: for a complex with
+  Hausdorff underlying space, locally finite in that space, and continuous ambient addition and
+  real scalar multiplication, the comparison map onto `K.space` is
+  closed.
+* `Geometry.SimplicialComplex.isClosedEmbedding_realizationToAmbient`: for a complex locally
+  finite in a Hausdorff space `E` with continuous addition and real scalar multiplication, the
+  comparison map is a closed embedding.
+* `Geometry.SimplicialComplex.isTriangulable_space`: under the hypotheses of
+  `realizationHomeomorph`, the underlying space is triangulable.
 
 ## References
 
-* J. R. Munkres, *Elements of Algebraic Topology*, Addison-Wesley (1984), §2 and §3.
+* C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer (1972),
+  Chapter 2 (simplicial complexes, their vertex schemes and their polyhedra).
+* E. H. Spanier, *Algebraic Topology*, McGraw-Hill (1966), Chapter 3, Section 1 (the vertex scheme
+  of a geometric complex and its realization).
 -/
 
 public section
 
 noncomputable section
 
-open Set Finsupp AbstractSimplicialComplex TauCeti.SetLike
+open Set Function Topology AbstractSimplicialComplex TauCeti.SetLike
 
 namespace Geometry.SimplicialComplex
 
 universe u
 
-variable {E : Type u} [AddCommGroup E] [Module ℝ E] (K : SimplicialComplex ℝ E)
+variable {E : Type u} [AddCommGroup E] [Module ℝ E] {K : SimplicialComplex ℝ E}
 
-/-- The vertex scheme of a geometric simplicial complex `K`: the abstract simplicial complex on
-the vertices of `K` whose faces are the vertex sets of the faces of `K`. -/
-def vertexScheme : AbstractSimplicialComplex K.vertices where
-  faces := {σ | σ.map (Function.Embedding.subtype _) ∈ K.faces}
-  isRelLowerSet_faces σ hσ :=
-    ⟨Finset.map_nonempty.1 (K.nonempty_of_mem_faces hσ), fun _ hτσ hτ =>
-      K.down_closed hσ (Finset.map_subset_map.2 hτσ) (hτ.map)⟩
-  singleton_mem v := by
-    rw [mem_ofPred_eq, Finset.map_singleton]
-    exact v.2
-
-variable {K}
-
-/-- A finite set of vertices is a face of the vertex scheme exactly when it spans a face. -/
-@[simp]
-theorem mem_vertexScheme {σ : Finset K.vertices} :
-    σ ∈ K.vertexScheme ↔ σ.map (Function.Embedding.subtype _) ∈ K.faces :=
-  (Iff.rfl)
-
-/-- Every face of a geometric simplicial complex is spanned by a face of its vertex scheme. -/
-theorem exists_mem_vertexScheme_map_eq {s : Finset E} (hs : s ∈ K.faces) :
-    ∃ σ ∈ K.vertexScheme, σ.map (Function.Embedding.subtype _) = s := by
-  classical
-  have h : ∀ x ∈ s, x ∈ K.vertices := fun x hx =>
-    K.down_closed hs (Finset.singleton_subset_iff.2 hx) (Finset.singleton_nonempty x)
-  exact ⟨s.subtype (· ∈ K.vertices), by rwa [mem_vertexScheme, Finset.subtype_map_of_mem h],
-    Finset.subtype_map_of_mem h⟩
-
-/-- The vertices of a face of the vertex scheme are affinely independent. -/
-private theorem affineIndependent_coe {σ : Finset K.vertices} (hσ : σ ∈ K.vertexScheme) :
-    AffineIndependent ℝ (fun a : σ => (a.1 : E)) :=
-  (K.indep hσ).comp_embedding ⟨fun a => ⟨a.1.1, Finset.mem_map_of_mem _ a.2⟩,
-    fun _ _ h => Subtype.ext (Subtype.ext (Subtype.mk.inj h))⟩
-
-/-- On a closed coordinate simplex, the vertex combination is a finite sum over its vertices. -/
-private theorem linearCombination_eq_fintype {σ : Finset K.vertices} (y : StandardSimplex σ) :
-    linearCombination ℝ ((↑) : K.vertices → E) y.1 =
-      Fintype.linearCombination ℝ (fun a : σ => (a.1 : E)) fun a => y.1 a := by
-  rw [linearCombination_apply_of_mem_supported ℝ
-      ((mem_supported ℝ _).2 (Finset.coe_subset.2 (StandardSimplex.support_subset y))),
-    Fintype.linearCombination_apply, ← Finset.sum_coe_sort σ]
-
-/-- The vertex combination maps a closed coordinate simplex onto the closed geometric simplex
-spanned by the same vertices. -/
-private theorem range_linearCombination (σ : Finset K.vertices) :
-    range (fun y : StandardSimplex σ => linearCombination ℝ ((↑) : K.vertices → E) y.1) =
-      convexHull ℝ (σ.map (Function.Embedding.subtype _) : Set E) := by
-  have h : range (fun a : σ => (a.1 : E)) = (σ.map (Function.Embedding.subtype _) : Set E) := by
-    ext x
-    simp
-  simp_rw [linearCombination_eq_fintype, ← h]
-  exact Finset.range_linearCombination_standardSimplex _
-
-/-- The vertex combination is injective on the closed coordinate simplex of a face. -/
-private theorem injective_linearCombination {σ : Finset K.vertices} (hσ : σ ∈ K.vertexScheme) :
-    Function.Injective
-      fun y : StandardSimplex σ => linearCombination ℝ ((↑) : K.vertices → E) y.1 := by
-  simp_rw [linearCombination_eq_fintype]
-  exact Finset.injective_linearCombination_standardSimplex (affineIndependent_coe hσ)
-
-/-- A point of the realization lies in the closed coordinate simplex of its carrier. -/
-private def toCarrier (x : Realization K.vertexScheme) :
-    StandardSimplex (carrier K.vertexScheme x).1 :=
-  ⟨x.1, mem_convexHull_carrier K.vertexScheme x⟩
+/-! ### The comparison map -/
 
 variable (K) in
-/-- The map from the realization of the vertex scheme of `K` to the underlying space of `K`,
-sending the point with barycentric coordinates `x` to `∑ v, x v • v`. -/
-def realizationToSpace (x : Realization K.vertexScheme) : K.space :=
-  ⟨linearCombination ℝ ((↑) : K.vertices → E) x.1,
-    convexHull_subset_space (carrier K.vertexScheme x).2 <|
-      range_linearCombination (carrier K.vertexScheme x).1 ▸ mem_range_self (toCarrier x)⟩
+/-- The map from the realization of the vertex scheme of `K` to the ambient space, sending a point
+with barycentric coordinates `x` to the combination `∑ v, x v • v` of the vertices: the linear
+extension of the inclusion of the vertices. Its values lie in `K.space`
+(`Geometry.SimplicialComplex.range_realizationToAmbient`); `K.realizationHomeomorph` is its
+corestriction to `K.space` when that space is Hausdorff, `K` is locally finite in it, and ambient
+addition and real scalar multiplication are continuous. -/
+def realizationToAmbient : Realization K.vertexScheme → E :=
+  K.vertexScheme.linearExtension Subtype.val
 
-/-- A point of the realization goes to the combination of the vertices with its barycentric
-coordinates as weights. -/
+/-- The comparison map evaluates barycentric coordinates as a combination of the vertices. -/
+theorem realizationToAmbient_apply (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x = Finsupp.linearCombination ℝ (Subtype.val : K.vertices → E) x.val :=
+  linearExtension_apply _ x
+
+/-- The comparison map sends each vertex of the realization to the corresponding point. -/
 @[simp]
-theorem coe_realizationToSpace (x : Realization K.vertexScheme) :
-    (K.realizationToSpace x : E) = linearCombination ℝ ((↑) : K.vertices → E) x.1 :=
-  (rfl)
+theorem realizationToAmbient_vertex (v : K.vertices) :
+    K.realizationToAmbient (vertex K.vertexScheme v) = v :=
+  linearExtension_vertex _ v
 
-/-- Each vertex of the realization goes to the corresponding vertex of `K`. -/
+/-- On a closed simplex, the comparison map is the combination of the vertices of that simplex,
+weighted by the barycentric coordinates. -/
+theorem realizationToAmbient_faceInclusion (σ : Face K.vertexScheme) (y : StandardSimplex σ.val) :
+    K.realizationToAmbient (faceInclusion K.vertexScheme σ y) =
+      Fintype.linearCombination ℝ (fun a : σ.val => ((a : K.vertices) : E)) fun a => y.val a := by
+  rw [Fintype.linearCombination_apply]
+  exact linearExtension_faceInclusion _ σ y
+
+/-- The comparison map carries the closed simplex of a face of the vertex scheme onto the convex
+hull of that face in `E`. -/
 @[simp]
-theorem realizationToSpace_vertex (v : K.vertices) :
-    K.realizationToSpace (vertex K.vertexScheme v) = ⟨v, vertices_subset_space v.2⟩ := by
-  ext
-  simp
+theorem range_realizationToAmbient_comp_faceInclusion (σ : Face K.vertexScheme) :
+    range (K.realizationToAmbient ∘ faceInclusion K.vertexScheme σ) =
+      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
+  rw [← range_vertexScheme_face_coe]
+  exact range_linearExtension_comp_faceInclusion _ σ
 
-/-- The closed coordinate simplex of a face of the vertex scheme goes onto the closed geometric
-simplex spanned by the same vertices. -/
-theorem range_realizationToSpace_faceInclusion (σ : Face K.vertexScheme) :
-    range (fun y => (K.realizationToSpace (faceInclusion K.vertexScheme σ y) : E)) =
-      convexHull ℝ (σ.1.map (Function.Embedding.subtype _) : Set E) := by
-  simp_rw [coe_realizationToSpace, faceInclusion_val]
-  exact range_linearCombination σ.1
+/-- The comparison map sends each point of the closed simplex of a face of the vertex scheme into
+the convex hull of that face in `E`. -/
+theorem realizationToAmbient_faceInclusion_mem_convexHull (σ : Face K.vertexScheme)
+    (y : StandardSimplex σ.val) :
+    K.realizationToAmbient (faceInclusion K.vertexScheme σ y) ∈
+      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
+  rw [← range_realizationToAmbient_comp_faceInclusion σ]
+  exact mem_range_self y
 
-/-- The map from the realization of the vertex scheme to the space of `K` is bijective. -/
-theorem bijective_realizationToSpace : Function.Bijective K.realizationToSpace := by
+/-- The comparison map sends a point of the realization into the closed simplex of `K` spanned by
+the carrier of the point. -/
+private theorem realizationToAmbient_mem_convexHull_carrier (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈ convexHull ℝ
+      ((carrier K.vertexScheme x).val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
+  obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K.vertexScheme x
+  simpa only [hy] using realizationToAmbient_faceInclusion_mem_convexHull _ y
+
+/-- Two points of the realization whose barycentric supports lie in a common face and which have
+the same image under the comparison map are equal. -/
+private theorem eq_of_realizationToAmbient_eq {σ : Face K.vertexScheme}
+    {x y : Realization K.vertexScheme} (hx : x.val.support ⊆ σ.val) (hy : y.val.support ⊆ σ.val)
+    (hxy : K.realizationToAmbient x = K.realizationToAmbient y) : x = y := by
+  -- Both points lie in the closed simplex of `σ`, on which the comparison map is injective.
+  obtain ⟨x', rfl⟩ := (mem_range_faceInclusion_iff _ σ x).mpr hx
+  obtain ⟨y', rfl⟩ := (mem_range_faceInclusion_iff _ σ y).mpr hy
+  rw [realizationToAmbient_faceInclusion, realizationToAmbient_faceInclusion] at hxy
+  exact congrArg (faceInclusion K.vertexScheme σ)
+    (Finset.injective_linearCombination_standardSimplex (affineIndependent_vertexScheme_face σ) hxy)
+
+/-- The comparison map is injective: distinct points of the realization of the vertex scheme
+have distinct images in `E`. -/
+theorem realizationToAmbient_injective : Injective K.realizationToAmbient := by
   classical
-  -- The coordinate simplices are spanned using classical equality of vertices.
-  let : DecidableEq K.vertices := Classical.decEq _
-  refine ⟨fun x x' hxx' => ?_, fun y => ?_⟩
-  · -- Both points are carried by the face spanned by the intersection of their carriers.
-    let σ := carrier K.vertexScheme x
-    let τ := carrier K.vertexScheme x'
-    have hxx'' : linearCombination ℝ ((↑) : K.vertices → E) x.1 =
-        linearCombination ℝ ((↑) : K.vertices → E) x'.1 :=
-      congrArg Subtype.val hxx'
-    have hy : linearCombination ℝ ((↑) : K.vertices → E) x.1 ∈
-        convexHull ℝ ((σ.1 ∩ τ.1).map (Function.Embedding.subtype _) : Set E) := by
-      rw [Finset.map_inter, Finset.coe_inter, ← K.convexHull_inter_convexHull σ.2 τ.2]
-      refine ⟨range_linearCombination σ.1 ▸ mem_range_self (toCarrier x), ?_⟩
-      rw [← range_linearCombination τ.1, hxx'']
-      exact mem_range_self (toCarrier x')
-    obtain ⟨z, hz⟩ := range_linearCombination (σ.1 ∩ τ.1) ▸ hy
-    have hσ : x.1 = z.1 := congrArg Subtype.val <| injective_linearCombination σ.2
-      (a₁ := toCarrier x) (a₂ := ⟨z.1, convexHull_mono
-        (Finset.coe_subset.2 (Finset.image_subset_image Finset.inter_subset_left)) z.2⟩) hz.symm
-    have hτ : x'.1 = z.1 := congrArg Subtype.val <| injective_linearCombination τ.2
-      (a₁ := toCarrier x') (a₂ := ⟨z.1, convexHull_mono
-        (Finset.coe_subset.2 (Finset.image_subset_image Finset.inter_subset_right)) z.2⟩)
-      (hz.trans hxx'').symm
-    exact Subtype.ext (hσ.trans hτ.symm)
-  · obtain ⟨s, hs, hys⟩ := mem_space_iff.1 y.2
-    obtain ⟨σ, hσ, rfl⟩ := exists_mem_vertexScheme_map_eq hs
-    obtain ⟨z, hz⟩ := range_realizationToSpace_faceInclusion ⟨σ, hσ⟩ ▸ hys
-    exact ⟨_, Subtype.ext hz⟩
+  intro x y hxy
+  have hσ := carrier_val K.vertexScheme x
+  have hτ := carrier_val K.vertexScheme y
+  -- The common image lies in the convex hull of the common face `ρ` of the two carriers.
+  have hρ := K.inter_subset_convexHull
+    (mem_vertexScheme_iff.mp (carrier K.vertexScheme x).property)
+    (mem_vertexScheme_iff.mp (carrier K.vertexScheme y).property)
+    ⟨realizationToAmbient_mem_convexHull_carrier x,
+      hxy ▸ realizationToAmbient_mem_convexHull_carrier y⟩
+  rw [← Finset.coe_inter, ← Finset.map_inter] at hρ
+  have hne : ((carrier K.vertexScheme x).val ∩ (carrier K.vertexScheme y).val).Nonempty :=
+    Finset.map_nonempty.mp (Finset.coe_nonempty.mp (convexHull_nonempty_iff.mp ⟨_, hρ⟩))
+  let ρ : Face K.vertexScheme :=
+    ⟨_, K.vertexScheme.isRelLowerSet_faces.mem_of_le (carrier K.vertexScheme x).property
+      Finset.inter_subset_left hne⟩
+  rw [← range_realizationToAmbient_comp_faceInclusion ρ] at hρ
+  obtain ⟨z, hz⟩ := hρ
+  -- The point of `ρ` with the common image lies in both carriers, so it is `x` and it is `y`.
+  have hzρ := (mem_range_faceInclusion_iff _ ρ _).mp (mem_range_self z)
+  have hxz := eq_of_realizationToAmbient_eq hσ.symm.subset
+    (hzρ.trans Finset.inter_subset_left) hz.symm
+  have hyz := eq_of_realizationToAmbient_eq hτ.symm.subset
+    (hzρ.trans Finset.inter_subset_right) (hz.trans hxy).symm
+  exact hxz.trans hyz.symm
+
+/-- The range of the comparison map is the underlying space of `K`. -/
+@[simp]
+theorem range_realizationToAmbient : range K.realizationToAmbient = K.space := by
+  apply Subset.antisymm
+  · rintro _ ⟨x, rfl⟩
+    exact convexHull_subset_space (mem_vertexScheme_iff.mp (carrier K.vertexScheme x).property)
+      (realizationToAmbient_mem_convexHull_carrier x)
+  · intro p hp
+    obtain ⟨s, hs, hps⟩ := mem_space_iff.mp hp
+    obtain ⟨σ, hσ, rfl⟩ := mem_faces_iff_exists_mem_vertexScheme.mp hs
+    rw [← range_realizationToAmbient_comp_faceInclusion ⟨σ, hσ⟩] at hps
+    exact range_comp_subset_range _ _ hps
+
+/-- The comparison map takes values in the underlying space of `K`. -/
+@[simp]
+theorem realizationToAmbient_mem_space (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈ K.space :=
+  range_realizationToAmbient (K := K) ▸ mem_range_self x
+
+/-- The comparison point belongs to the convex hull of the image in `E` of a face of the vertex
+scheme exactly when its barycentric support is contained in that face. -/
+theorem realizationToAmbient_mem_convexHull_map_iff (σ : Face K.vertexScheme)
+    (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈
+      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) ↔
+        x.val.support ⊆ σ.val := by
+  rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
+    realizationToAmbient_injective.mem_set_image, mem_range_faceInclusion_iff]
+
+/-- The comparison point belongs to the convex hull of a face exactly when its barycentric
+support is contained in that face. -/
+@[simp]
+theorem realizationToAmbient_mem_convexHull_iff (σ : Face K.vertexScheme)
+    (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈
+      convexHull ℝ (Subtype.val '' (σ.val : Set K.vertices)) ↔
+        x.val.support ⊆ σ.val := by
+  simpa only [Finset.coe_map, Embedding.coe_subtype] using
+    realizationToAmbient_mem_convexHull_map_iff σ x
+
+/-- The comparison point belongs to the convex hull of a face of `K` exactly when its barycentric
+support is contained in the corresponding face of the vertex scheme. -/
+@[simp]
+theorem realizationToAmbient_mem_convexHull_face_iff (s : K.faces)
+    (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈ convexHull ℝ (s : Set E) ↔
+      x.val.support ⊆ (K.vertexSchemeFaceEquiv.symm s).val := by
+  rw [← realizationToAmbient_mem_convexHull_map_iff, map_vertexSchemeFaceEquiv_symm_apply_coe]
+
+/-- The comparison map is its own secant map, since it linearly extends the vertex inclusion. -/
+@[simp]
+theorem secantMap_realizationToAmbient :
+    K.vertexScheme.secantMap K.realizationToAmbient = K.realizationToAmbient :=
+  secantMap_linearExtension _
+
+/-! ### Subcomplexes -/
+
+/-- For a subcomplex `K ≤ L`, the realization of the inclusion of vertex schemes followed by the
+comparison map of `L` is the comparison map of `K`. -/
+@[simp]
+theorem realizationToAmbient_realizationMap_vertexSchemeInclusion
+    {L : SimplicialComplex ℝ E} [DecidableEq L.vertices] (h : K ≤ L)
+    (x : Realization K.vertexScheme) :
+    L.realizationToAmbient ((vertexSchemeInclusion h).realizationMap x) =
+      K.realizationToAmbient x := by
+  simp only [realizationToAmbient, linearExtension_realizationMap, coe_vertexSchemeInclusion,
+    val_comp_inclusion]
+
+/-- For a subcomplex `K ≤ L`, the comparison map of `K` factors through the realization of the
+inclusion of vertex schemes and the comparison map of `L`. -/
+theorem realizationToAmbient_comp_realizationMap_vertexSchemeInclusion
+    {L : SimplicialComplex ℝ E} [DecidableEq L.vertices] (h : K ≤ L) :
+    L.realizationToAmbient ∘ (vertexSchemeInclusion h).realizationMap = K.realizationToAmbient :=
+  funext (realizationToAmbient_realizationMap_vertexSchemeInclusion h)
+
+/-! ### Topology -/
 
 variable [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E]
 
-/-- The map from the realization of the vertex scheme to the space of `K` is continuous for the
-weak topology on the realization. -/
-@[fun_prop]
-theorem continuous_realizationToSpace : Continuous K.realizationToSpace := by
-  refine continuous_iff_faceInclusion.2 fun σ => continuous_induced_rng.2 ?_
-  have h : Subtype.val ∘ K.realizationToSpace ∘ faceInclusion K.vertexScheme σ =
-      fun y => ∑ a : σ.1, y.1 a • (a.1 : E) := by
-    ext y
-    simp [linearCombination_eq_fintype, Fintype.linearCombination_apply]
-  have hc (v : K.vertices) : Continuous fun y : StandardSimplex σ.1 => y.1 v :=
-    (continuous_apply v).comp continuous_induced_dom
-  rw [h]
-  exact continuous_finsetSum _ fun a _ => (hc a).smul continuous_const
+/-- If addition and real scalar multiplication on `E` are continuous, the comparison map is
+continuous for the weak topology on the realization. -/
+theorem continuous_realizationToAmbient : Continuous K.realizationToAmbient :=
+  continuous_linearExtension _
 
-variable [T2Space E]
+/-- If ambient addition and real scalar multiplication are continuous, `K.space` is Hausdorff,
+and the closed simplices of `K` form a locally finite family in
+`K.space`, the comparison map, read as a map onto `K.space`, is closed. -/
+theorem isClosedMap_codRestrict_realizationToAmbient [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
+    IsClosedMap (codRestrict K.realizationToAmbient K.space realizationToAmbient_mem_space) := by
+  refine isClosedMap_of_locallyFinite_faceInclusion (continuous_realizationToAmbient.codRestrict _)
+    ((hK.comp_injective K.vertexSchemeFaceEquiv.injective).subset fun σ => ?_)
+  -- Each closed simplex is carried into the closed simplex of the corresponding face of `K`.
+  rintro _ ⟨y, rfl⟩
+  simp only [comp_apply, mem_preimage, val_codRestrict_apply, vertexSchemeFaceEquiv_apply_coe]
+  exact realizationToAmbient_faceInclusion_mem_convexHull σ y
 
-/-- If the closed simplices of `K` form a locally finite family, then the map from the
-realization of the vertex scheme to the space of `K` is closed. -/
-theorem isClosedMap_realizationToSpace
+/-- If addition and real scalar multiplication on `E` are continuous, `E` is Hausdorff, and the
+closed simplices of `K` form a locally finite family in `E`, the
+comparison map is closed. -/
+theorem isClosedMap_realizationToAmbient [T2Space E]
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
-    IsClosedMap K.realizationToSpace := by
-  intro C hC
-  let g (σ : Face K.vertexScheme) := K.realizationToSpace ∘ faceInclusion K.vertexScheme σ
-  -- The image of `C` is the union of the images of its traces on the closed simplices.
-  have hunion : K.realizationToSpace '' C =
-      ⋃ σ : Face K.vertexScheme, g σ '' (faceInclusion K.vertexScheme σ ⁻¹' C) := by
-    refine Subset.antisymm ?_ (iUnion_subset fun σ => ?_)
-    · rintro _ ⟨x, hx, rfl⟩
-      have hx' : faceInclusion K.vertexScheme _ (toCarrier x) = x :=
-        Subtype.ext (faceInclusion_val _ _ _)
-      exact mem_iUnion.2 ⟨carrier K.vertexScheme x, toCarrier x, by rwa [mem_preimage, hx'],
-        by simp only [g, Function.comp_apply, hx']⟩
-    · rw [image_comp]
-      exact image_mono (image_preimage_subset _ _)
-  -- Each trace lands in the closed geometric simplex of its face, and these are locally finite.
-  have hlf : LocallyFinite fun σ : Face K.vertexScheme =>
-      ((↑) : K.space → E) ⁻¹' convexHull ℝ (σ.1.map (Function.Embedding.subtype _) : Set E) := by
-    have hinj : Function.Injective fun σ : Face K.vertexScheme =>
-        (⟨σ.1.map (Function.Embedding.subtype _), mem_vertexScheme.1 σ.2⟩ : K.faces) :=
-      fun σ τ h => Subtype.ext (Finset.map_injective _ (congrArg Subtype.val h))
-    exact (hK.comp_injective hinj).preimage_continuous continuous_subtype_val
-  rw [hunion]
-  refine (hlf.subset fun σ => ?_).isClosed_iUnion fun σ => ?_
-  · rintro _ ⟨y, -, rfl⟩
-    rw [mem_preimage, ← range_realizationToSpace_faceInclusion σ]
-    exact mem_range_self y
-  · have : CompactSpace (StandardSimplex σ.1) :=
-      (Finset.standardSimplexHomeomorph σ.1).symm.compactSpace
-    exact ((hC.preimage (continuous_faceInclusion _ σ)).isCompact.image
-      (continuous_realizationToSpace.comp (continuous_faceInclusion _ σ))).isClosed
+    IsClosedMap K.realizationToAmbient := by
+  refine isClosedMap_of_locallyFinite_faceInclusion continuous_realizationToAmbient
+    ((hK.comp_injective K.vertexSchemeFaceEquiv.injective).subset fun σ => ?_)
+  -- Each closed simplex is carried onto the closed simplex of the corresponding face of `K`.
+  rw [range_realizationToAmbient_comp_faceInclusion, comp_apply, vertexSchemeFaceEquiv_apply_coe]
+
+/-- If addition and real scalar multiplication on `E` are continuous, `E` is Hausdorff, and the
+closed simplices of `K` form a locally finite family in `E`, the
+comparison map is a closed embedding of the realization of the vertex scheme into `E`. -/
+theorem isClosedEmbedding_realizationToAmbient [T2Space E]
+    (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
+    IsClosedEmbedding K.realizationToAmbient :=
+  .of_continuous_injective_isClosedMap continuous_realizationToAmbient
+    realizationToAmbient_injective (isClosedMap_realizationToAmbient hK)
 
 variable (K) in
-/-- A locally finite geometric simplicial complex is homeomorphic to the realization of its
-vertex scheme, with the subspace topology on its space. -/
-def realizationHomeomorph (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
+/-- For a geometric complex in a space with continuous addition and real scalar multiplication,
+with Hausdorff underlying space, whose closed simplices form a locally
+finite family in that space, the homeomorphism from the realization of its vertex scheme onto its
+underlying space. A family locally finite in `E` is locally finite in `K.space`, by
+`LocallyFinite.preimage_continuous` along `continuous_subtypeVal`. -/
+def realizationHomeomorph [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     Realization K.vertexScheme ≃ₜ K.space :=
-  (Equiv.ofBijective _ bijective_realizationToSpace).toHomeomorphOfContinuousClosed
-    continuous_realizationToSpace (isClosedMap_realizationToSpace hK)
+  (Equiv.ofBijective _ ⟨(injective_codRestrict _).mpr realizationToAmbient_injective,
+    (surjective_codRestrict _).mpr range_realizationToAmbient⟩).toHomeomorphOfContinuousClosed
+    (continuous_realizationToAmbient.codRestrict _)
+    (isClosedMap_codRestrict_realizationToAmbient hK)
 
-/-- The homeomorphism is the map `K.realizationToSpace`. -/
+/-- The homeomorphism onto the underlying space is the comparison map. -/
 @[simp]
-theorem coe_realizationHomeomorph
-    (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
-    ⇑(K.realizationHomeomorph hK) = K.realizationToSpace :=
-  (rfl)
+theorem coe_realizationHomeomorph_apply [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
+    (x : Realization K.vertexScheme) :
+    (K.realizationHomeomorph hK x : E) = K.realizationToAmbient x := by
+  unfold realizationHomeomorph
+  rw [Equiv.toHomeomorphOfContinuousClosed_apply]
+  exact (congrArg Subtype.val (congrFun (Equiv.coe_ofBijective _ _) x)).trans
+    (val_codRestrict_apply _ _ _ _)
+
+/-- Transporting a point of the underlying space back to the realization preserves its ambient
+coordinates. -/
+@[simp]
+theorem realizationToAmbient_realizationHomeomorph_symm_apply [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
+    (p : K.space) :
+    K.realizationToAmbient ((K.realizationHomeomorph hK).symm p) = (p : E) := by
+  rw [← coe_realizationHomeomorph_apply hK, Homeomorph.apply_symm_apply]
 
 /-- The inverse homeomorphism sends each vertex of `K` to the corresponding vertex of the
 realization. -/
 @[simp]
-theorem realizationHomeomorph_symm_apply_vertex
-    (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) (v : K.vertices) :
-    (K.realizationHomeomorph hK).symm ⟨v, vertices_subset_space v.2⟩ =
-      vertex K.vertexScheme v :=
-  (Homeomorph.symm_apply_eq _).2 (realizationToSpace_vertex v).symm
+theorem realizationHomeomorph_symm_apply_vertex [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
+    (v : K.vertices) :
+    (K.realizationHomeomorph hK).symm ⟨v, vertices_subset_space v.property⟩ =
+      vertex K.vertexScheme v := by
+  rw [Homeomorph.symm_apply_eq]
+  ext
+  rw [coe_realizationHomeomorph_apply, realizationToAmbient_vertex]
 
 variable (K) in
-/-- The underlying space of a locally finite geometric simplicial complex is triangulable. -/
-theorem isTriangulable_space (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
+/-- For a geometric complex in a space with continuous addition and real scalar multiplication,
+with Hausdorff underlying space, whose closed simplices form a locally finite family in that
+space, the underlying space is triangulable. -/
+theorem isTriangulable_space [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     TauCeti.IsTriangulable.{u} K.space :=
   (TauCeti.isTriangulable_iff _).2 ⟨K.vertices, K.vertexScheme, ⟨K.realizationHomeomorph hK⟩⟩
 

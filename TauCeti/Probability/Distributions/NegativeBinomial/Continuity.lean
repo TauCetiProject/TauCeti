@@ -42,7 +42,7 @@ and success probability in `(0, 1]`, including both Dirac boundaries. -/
 theorem continuous_negativeBinomialMeasure :
     Continuous (Y := ProbabilityMeasure ℕ) (fun q : ℝ≥0 × Ioc (0 : ℝ) 1 ↦
       (⟨negativeBinomialMeasure q.1 q.2,
-        isProbabilityMeasure_negativeBinomialMeasure q.1.2 q.2.2.1 q.2.2.2⟩ :
+        isProbabilityMeasure_negativeBinomialMeasure q.1.property q.2.property.1 q.2.property.2⟩ :
           ProbabilityMeasure ℕ)) := by
   apply ProbabilityMeasure.continuous_iff_forall_continuous_singleton.2
   intro k
@@ -52,8 +52,8 @@ theorem continuous_negativeBinomialMeasure :
         (ascPochhammer ℝ k).eval (q.1 : ℝ) / k.factorial *
           (q.2 : ℝ) ^ (q.1 : ℝ) * (1 - (q.2 : ℝ)) ^ k := by
     rw [negativeBinomialMeasure_real_singleton (r := (q.1 : ℝ)) (p := (q.2 : ℝ))
-      q.1.2 q.2.2.1 q.2.2.2 k, negativeBinomialWeightReal_eq_coeff
-        (r := (q.1 : ℝ)) (p := (q.2 : ℝ)) q.1.2 k]
+      q.1.property q.2.property.1 q.2.property.2 k, negativeBinomialWeightReal_eq_coeff
+        (r := (q.1 : ℝ)) (p := (q.2 : ℝ)) q.1.property k]
     have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer (q.1 : ℝ) k
     rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
     rw [← h, mul_div_cancel_left₀ _ (by positivity : (k.factorial : ℝ) ≠ 0),
@@ -63,9 +63,9 @@ theorem continuous_negativeBinomialMeasure :
   have hr : Continuous fun q : ℝ≥0 × Ioc (0 : ℝ) 1 ↦ (q.1 : ℝ) :=
     NNReal.continuous_coe.comp continuous_fst
   have hp : Continuous fun q : ℝ≥0 × Ioc (0 : ℝ) 1 ↦ (q.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   exact ((((Polynomial.continuous _).comp hr).div_const _).mul
-    (hp.rpow hr fun q ↦ Or.inl q.2.2.1.ne')).mul
+    (hp.rpow hr fun q ↦ Or.inl q.2.property.1.ne')).mul
       ((continuous_const.sub hp).pow k)
 
 /-- Continuous valid parameters give a weakly continuous family of native negative-binomial

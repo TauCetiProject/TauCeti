@@ -84,14 +84,14 @@ theorem monic_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).Monic :=
 `TauCeti.Polynomial.monicOfCoeff`. -/
 @[simp]
 theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coeff (i : ℕ) = c i := by
-  have hne : (i : ℕ) ≠ n := i.2.ne
+  have hne : (i : ℕ) ≠ n := i.isLt.ne
   simp [monicOfCoeff, coeff_X_pow, Finsupp.single_apply, hne, Fin.val_eq_val]
 
 /-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
 `1`. -/
 @[simp]
 theorem coeff_monicOfCoeff_self (c : Fin n → R) : (monicOfCoeff c).coeff n = 1 := by
-  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.2.ne]
+  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.isLt.ne]
 
 /-- Monic polynomials with prescribed lower coefficients agree exactly when their
 coefficient tuples agree. -/

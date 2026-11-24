@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -144,7 +145,7 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
       exact (congrArg (integerUnitsEquivProd (K := K)).symm hp).trans
         ((integerUnitsEquivProd (K := K)).symm_apply_apply u)
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
-      (integerUnitsEquivProd u).2.2
+      (integerUnitsEquivProd u).2.property
     rw [powMonoidHom_apply] at hz
     have hpow : TauCeti.teichmuller 𝒪[K] α ^ n =
         TauCeti.teichmuller 𝒪[K] (α ^ n) :=
@@ -253,7 +254,7 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
       (disjoint_rootsOfUnity_unitFiltration hn hdepth)
       ((mem_rootsOfUnity n _).mpr
         (by simpa using congrArg (fun y : U ↦ ((y : G) : Kˣ)) (MonoidHom.mem_ker.mp hx)))
-      x.2
+      x.property
     exact Subgroup.mem_bot.mpr (Subtype.ext (Subtype.ext h1))
   have hidxU : (powMonoidHom n : U →* U).range.index = Nat.card 𝓀[K] ^ v := by
     let f : U ≃* unitFiltration K (v + 1) :=
@@ -305,6 +306,34 @@ instance finite_powerClassQuotient_units {n : ℕ} [NeZero (n : K)] :
   have : (powerSubgroup Kˣ n).FiniteIndex :=
     powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ finiteIndex_range_powMonoidHom (NeZero.ne (n : K))
   Subgroup.finite_quotient_of_finiteIndex
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), `(Kˣ)ⁿ` has finite index in `Kˣ`. -/
+instance finiteIndex_range_powMonoidHom_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] :
+    (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
+  finiteIndex_range_powMonoidHom
+    (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'.out
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), every subgroup `B ≤ Kˣ` has finite
+relative index over `B ∩ (Kˣ)ⁿ`. -/
+instance isFiniteRelIndex_range_powMonoidHom_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] (B : Subgroup Kˣ) :
+    (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex B :=
+  Subgroup.isFiniteRelIndex_of_finiteIndex
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), `powerSubgroup Kˣ n` has finite index in
+`Kˣ`. -/
+instance finiteIndex_powerSubgroup_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] :
+    (powerSubgroup Kˣ n).FiniteIndex :=
+  powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ inferInstance
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), every subgroup `B ≤ Kˣ` has finite
+relative index over `B ∩ powerSubgroup Kˣ n`. -/
+instance isFiniteRelIndex_powerSubgroup_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] (B : Subgroup Kˣ) :
+    (powerSubgroup Kˣ n).IsFiniteRelIndex B :=
+  Subgroup.isFiniteRelIndex_of_finiteIndex
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the

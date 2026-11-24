@@ -11,15 +11,14 @@ import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Data.Nat.Choose.Vandermonde
-import Mathlib.FieldTheory.Perfect
+public import Mathlib.FieldTheory.Perfect
 import Mathlib.Tactic.NormDet
 import Mathlib.Tactic.NormNum.IsSquare
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerBasis
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
@@ -59,6 +58,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   power of the leading coefficient, with an arbitrary commutative coefficient ring.
 * `TauCeti.leadingCoeff_pow_mul_discrSqrt_sq`: the corresponding scaled root-difference product
   is a square root of the discriminant, including degree zero and annihilating base change.
+* `Polynomial.Monic.discr_eq_neg_one_pow_mul_resultant_deriv`: for a monic polynomial, the
+  discriminant is `(-1) ^ (n * (n - 1) / 2)` times the resultant of `f` and its derivative.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
@@ -83,8 +84,17 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is squarefree.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
-* `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
-  has nonzero discriminant.
+* `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over a
+  commutative ring, the discriminant of `∏_{w ∈ R} (X - w)` is up to sign the product
+  `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
+* `Multiset.discr_prod_X_sub_C_ne_zero_iff`: over an integral domain, that discriminant vanishes
+  exactly when `R` has a repeated element.
+* `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
+  `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
+* `Squarefree.discr_ne_zero`, `Squarefree.resultant_derivative_ne_zero`: a squarefree polynomial
+  over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
+  (such as a GCD domain of characteristic zero) has nonzero discriminant, and nonzero resultant with
+  its derivative.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -152,6 +162,14 @@ theorem resultant_deriv {f : R[X]} (hf : f.Monic) :
     simp [h1]
   · rw [Polynomial.resultant_deriv (natDegree_pos_iff_degree_pos.mp h), hf.leadingCoeff,
       mul_one]
+
+/-- The discriminant of a monic polynomial is, up to the sign `(-1) ^ (n * (n - 1) / 2)`, the
+resultant of `f` and `f.derivative` at the degree bounds `f.natDegree` and `f.natDegree - 1`. -/
+theorem discr_eq_neg_one_pow_mul_resultant_deriv {f : R[X]} (hf : f.Monic) :
+    f.discr = (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) *
+      f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
+  rw [hf.resultant_deriv, ← mul_assoc, ← mul_pow]
+  simp
 
 end Monic
 
@@ -767,15 +785,31 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero discriminant. -/
 theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    p.discr ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
-  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
   apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
   apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
-  · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
+  · exact PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
+
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero resultant with
+its derivative: over the fraction field the polynomial is separable, that is, coprime to its
+derivative. -/
+theorem _root_.Squarefree.resultant_derivative_ne_zero {D : Type*} [CommRing D] [IsDomain D]
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    resultant p (derivative p) ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have hsep : (p.map (algebraMap D (FractionRing D))).Separable :=
+    PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
+  have h := resultant_ne_zero _ _ hsep
+  rw [derivative_map, natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj,
+    resultant_map_map] at h
+  exact (map_ne_zero_iff _ hinj).mp h
 
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/
@@ -1084,3 +1118,86 @@ theorem discr_depressedQuartic (p q r : R) :
   ring
 
 end TauCeti
+
+namespace Multiset
+
+/-- The product `∏_{w ∈ S} ∏_{u ∈ S ∖ w} (w - u)` commutes with ring homomorphisms. -/
+private theorem map_prod_map_prod_map_sub_erase {A K : Type*} [CommRing A] [CommRing K]
+    [DecidableEq A] [DecidableEq K] (φ : A →+* K) (S : Multiset A) :
+    φ (S.map fun w ↦ ((S.erase w).map fun u ↦ w - u).prod).prod =
+      ((S.map φ).map fun w ↦ (((S.map φ).erase w).map fun u ↦ w - u).prod).prod := by
+  rw [map_multiset_prod, Multiset.map_map, Multiset.map_map]
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun w hw ↦ ?_)
+  simp only [Function.comp_apply, map_multiset_prod, ← Multiset.map_erase_of_mem _ _ hw,
+    Multiset.map_map, map_sub]
+
+/-- The product formula over an integral domain, where the derivative of `∏_{w ∈ R} (X - w)` may
+be evaluated over its roots. -/
+private theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr_of_isDomain {K : Type*}
+    [CommRing K] [IsDomain K] [DecidableEq K] (R : Multiset K) :
+    (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
+      (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
+  have h := (monic_multisetProd_X_sub_C R).prod_roots_eval_derivative (by simp)
+  rw [roots_multiset_prod_X_sub_C, natDegree_multiset_prod_X_sub_C_eq_card] at h
+  rw [← h]
+  exact congrArg Multiset.prod
+    (Multiset.map_congr rfl fun w hw ↦ (eval_multiset_prod_X_sub_C_derivative hw).symm)
+
+variable {K : Type*} [CommRing K]
+
+/-- **The discriminant as a product of differences.** For a multiset `R` of `m` elements,
+`∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u) = (-1)^(m (m - 1) / 2) discr (∏_{w ∈ R} (X - w))`. The left side
+is the product of the derivative of `∏_{w ∈ R} (X - w)` over its roots. This is a universal
+polynomial identity, so it holds over any commutative ring. -/
+theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R : Multiset K) :
+    (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
+      (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
+  classical
+  -- `R` is the image of the multiset of variables `X_w`, `w ∈ R`, of a polynomial ring over `ℤ`.
+  set φ : MvPolynomial K ℤ →+* K := MvPolynomial.eval₂Hom (Int.castRingHom K) id with hφ
+  have hR : (R.map MvPolynomial.X).map φ = R := by simp [hφ, Multiset.map_map]
+  have h := congrArg φ
+    (prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr_of_isDomain (R.map MvPolynomial.X))
+  rw [map_prod_map_prod_map_sub_erase, hR, map_mul, map_pow, map_neg, map_one,
+    ← (monic_multisetProd_X_sub_C _).discr_map, Polynomial.map_multiset_prod, Multiset.map_map,
+    Multiset.card_map] at h
+  convert h using 4
+  simp [hφ, Multiset.map_map]
+
+/-- The discriminant of `∏_{w ∈ R} (X - w)` is nonzero exactly when `R` has no repeated
+element. -/
+theorem discr_prod_X_sub_C_ne_zero_iff [IsDomain K] (R : Multiset K) :
+    (R.map fun w ↦ X - C w).prod.discr ≠ 0 ↔ R.Nodup := by
+  classical
+  -- Up to a sign, the discriminant is the product of the differences `w - u`, `u ∈ R ∖ w`.
+  rw [← mul_ne_zero_iff_left (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)),
+    ← prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr]
+  simp only [ne_eq, Multiset.prod_eq_zero_iff, Multiset.mem_map, sub_eq_zero]
+  refine ⟨fun h ↦ Multiset.nodup_iff_count_le_one.2 fun w ↦ ?_, fun hR ⟨w, _, u, hu, hwu⟩ ↦
+    hR.notMem_erase (by subst hwu; exact hu)⟩
+  by_contra hw
+  exact h ⟨w, Multiset.count_pos.1 (by omega), w,
+    Multiset.count_pos.1 (by rw [Multiset.count_erase_self]; omega), rfl⟩
+
+end Multiset
+
+namespace Finset
+
+variable {K ι : Type*} [CommRing K] [DecidableEq ι]
+
+/-- **The discriminant as a product of differences, indexed by a finite set.** For a finite set
+`s` and values `g w`,
+`∏_{w ∈ s} ∏_{u ∈ s ∖ w} (g w - g u) = (-1)^(#s (#s - 1) / 2) discr (∏_{w ∈ s} (X - g w))`. -/
+theorem prod_prod_erase_sub_eq_neg_one_pow_mul_discr (s : Finset ι) (g : ι → K) :
+    ∏ w ∈ s, ∏ u ∈ s.erase w, (g w - g u) =
+      (-1) ^ (#s * (#s - 1) / 2) * (∏ w ∈ s, (X - C (g w))).discr := by
+  classical
+  have h := Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr (s.val.map g)
+  rw [Multiset.card_map, Finset.card_val, Multiset.map_map, Multiset.map_map] at h
+  refine Eq.trans ?_ h
+  rw [Finset.prod_eq_multiset_prod]
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun w hw ↦ ?_)
+  rw [Function.comp_apply, ← Multiset.map_erase_of_mem _ _ hw, Multiset.map_map,
+    Finset.prod_eq_multiset_prod, Finset.erase_val, Function.comp_def]
+
+end Finset

@@ -38,10 +38,11 @@ which holds whenever the untruncated operator `f ↦ ∫ K(·, s) f(s) ds` is bo
 This is how retarded (Duhamel) estimates `‖∫_{s < t} K(t, s) F(s) ds‖_{L^q_t} ≲ ‖F‖_{L^{p}_t}` are
 deduced from bounds on the corresponding untruncated operators, for instance the inhomogeneous
 Strichartz estimates with two different admissible pairs from the homogeneous ones. The functions
-`f` and `g` take values in arbitrary normed groups, so mixed norms `L^p_t L^a_x` are covered by
-taking `f : ℝ → Lᵃ`. The hypothesis `p < r'` cannot be dropped: the Hilbert transform, with kernel
-`1 / (π (t - s))`, is bounded on `L²(ℝ)`, while its truncation `∫_{s < t} f(s) / (π (t - s)) ds`
-diverges at every `t ∈ (0, 1)` for `f = 1_{[0, 1]}`.
+`f` and `g` take values in any type with an extended norm, such as a normed group or `ℝ≥0∞`, so
+mixed norms `L^p_t L^a_x` are covered by taking `f : ℝ → Lᵃ` or `f(s) = ‖F(s)‖_{L^a}`. The
+hypothesis `p < r'` cannot be dropped: the Hilbert transform, with kernel `1 / (π (t - s))`, is
+bounded on `L²(ℝ)`, while its truncation `∫_{s < t} f(s) / (π (t - s)) ds` diverges at every
+`t ∈ (0, 1)` for `f = 1_{[0, 1]}`.
 
 ## The argument
 
@@ -60,6 +61,10 @@ for the `2ⁿ` disjoint pieces `J_k` gives `∑_k ‖1_{J_k} g‖_r ≤ 2^{n (1 
 ## Main declarations
 
 * `TauCeti.eNorm_setIntegral_fst_lt_snd_le`: the Christ–Kiselev lemma, in bilinear form.
+* `TauCeti.inv_one_sub_two_rpow_neg_ne_top`: the constant `(1 - 2^{-δ})⁻¹` of the lemma is
+  finite.
+* `TauCeti.inv_one_sub_two_rpow_neg_toReal_inv_ne_top`: its case `r = 1`, the constant
+  `(1 - 2^{-1/p})⁻¹`.
 
 ## References
 
@@ -145,8 +150,9 @@ private theorem hasSum_setIntegral_box {G : Type*} [NormedAddCommGroup G] [Norme
 
 /-- **The Whitney bound.** The rectangle bounds of the Christ–Kiselev lemma, summed over the
 Whitney rectangles of a strictly increasing `φ : ℝ → [0, 1)`. -/
-private theorem eNorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
+private theorem eNorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] [TopologicalSpace F] [ESeminormedAddMonoid F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hφ : StrictMono φ) (h0 : ∀ s, 0 ≤ φ s) (h1 : ∀ s, φ s < 1) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
     (hA : ∀ I J : Set ℝ, I.OrdConnected → J.OrdConnected → (∀ s ∈ I, ∀ t ∈ J, s < t) →
@@ -248,7 +254,8 @@ private theorem exists_strictMono_setLIntegral_level_le {h : ℝ → ℝ≥0∞}
 
 /-- **The level-`n` bound.** If the dyadic pieces of `φ` carry at most `X 2^{-n}` of `‖f‖^p`, the
 Whitney rectangles at level `n` contribute at most `A X^{1/p} ‖g‖_r (2^{1 - 1/p - 1/r})ⁿ`. -/
-private theorem sum_mul_eLpNorm_level_le {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+private theorem sum_mul_eLpNorm_level_le {E F : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] [TopologicalSpace F] [ESeminormedAddMonoid F]
     {p r : ℝ≥0∞} (hp : p ≠ 0) (hp_top : p ≠ ∞) (hr : 1 ≤ r) (hφ : Monotone φ) {f : ℝ → E}
     (hf : AEStronglyMeasurable f) {X : ℝ≥0∞}
     (hX : ∀ n j, ∫⁻ x in level φ n j, ‖f x‖ₑ ^ p.toReal ≤ X / 2 ^ n) (g : ℝ → F) (A : ℝ≥0∞)
@@ -286,8 +293,9 @@ private theorem sum_mul_eLpNorm_level_le {E F : Type*} [NormedAddCommGroup E] [N
 
 /-- The Christ–Kiselev bound with `‖f‖_p^p` replaced by `‖f‖_p^p + ε`, from the Whitney
 decomposition along the cumulative mass of `f`. -/
-private theorem eNorm_setIntegral_fst_lt_snd_le_add {E F G : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
+private theorem eNorm_setIntegral_fst_lt_snd_le_add {E F G : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] [TopologicalSpace F] [ESeminormedAddMonoid F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hp : p ≠ 0) (hp_top : p ≠ ∞) (hr : 1 ≤ r) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) {f : ℝ → E} (hf : AEStronglyMeasurable f)
     (hm : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ≠ ∞) (g : ℝ → F) {A : ℝ≥0∞}
@@ -324,10 +332,29 @@ private theorem ne_top_and_toReal_inv_add_inv_sub_one {p r : ℝ≥0∞} (hp : p
   · rw [← hδ]
     exact neg_neg_of_pos (ENNReal.toReal_pos (tsub_pos_of_lt hpr).ne' (ENNReal.sub_ne_top hsum_ne))
 
+/-- The constant `(1 - 2^{-δ})⁻¹` of the Christ–Kiselev lemma is finite: for `p ≠ 0`, `1 ≤ r` and
+`1 / p + 1 / r > 1`, the exponent `δ = 1 / p + 1 / r - 1` is positive. -/
+theorem inv_one_sub_two_rpow_neg_ne_top {p r : ℝ≥0∞} (hp : p ≠ 0) (hr : 1 ≤ r)
+    (hpr : 1 < p⁻¹ + r⁻¹) : (1 - 2 ^ (-(p⁻¹ + r⁻¹ - 1).toReal))⁻¹ ≠ ∞ := by
+  obtain ⟨-, hδ, hδ0⟩ := ne_top_and_toReal_inv_add_inv_sub_one hp hr hpr
+  exact ENNReal.inv_ne_top.2 (tsub_pos_of_lt
+    (ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (hδ ▸ hδ0))).ne'
+
+/-- The constant `(1 - 2^{-1/p})⁻¹` of the Christ–Kiselev lemma for the time exponents `p` and
+`r = 1` is finite for `0 < p < ∞`. -/
+theorem inv_one_sub_two_rpow_neg_toReal_inv_ne_top {p : ℝ≥0∞} (hp : p ≠ 0) (hp_top : p ≠ ∞) :
+    (1 - 2 ^ (-p⁻¹.toReal))⁻¹ ≠ ∞ := by
+  have hp1 : 1 < p⁻¹ + 1⁻¹ := by
+    rw [inv_one, add_comm]
+    exact ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 hp_top)
+  simpa only [inv_one, ENNReal.add_sub_cancel_right ENNReal.one_ne_top] using
+    inv_one_sub_two_rpow_neg_ne_top hp le_rfl hp1
+
 /-- If the bound of the Christ–Kiselev lemma vanishes, so does the integral over `{s < t}`: the
 integral over every Whitney rectangle vanishes. -/
-private theorem eNorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞} {β : ℝ × ℝ → G}
+private theorem eNorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] [TopologicalSpace F] [ESeminormedAddMonoid F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {p r : ℝ≥0∞} {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
     (hA : ∀ I J : Set ℝ, I.OrdConnected → J.OrdConnected → (∀ s ∈ I, ∀ t ∈ J, s < t) →
       ‖∫ z in I ×ˢ J, β z‖ₑ ≤ A * eLpNorm (I.indicator f) p * eLpNorm (J.indicator g) r)
@@ -357,8 +384,9 @@ Then `‖∫_{s < t} β‖ ≤ (1 - 2^{-δ})⁻¹ A ‖f‖_p ‖g‖_r`, where 
 For `β (s, t) = ⟪K(t, s) f(s), g(t)⟫`, the hypothesis follows from boundedness of the operator
 `f ↦ ∫ K(·, s) f(s) ds` from `Lᵖ` to `L^{r'}`, and the conclusion is the boundedness of its
 truncation `f ↦ ∫_{s < ·} K(·, s) f(s) ds` in weak form. -/
-theorem eNorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
+theorem eNorm_setIntegral_fst_lt_snd_le {E F G : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] [TopologicalSpace F] [ESeminormedAddMonoid F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hr : 1 ≤ r) (hpr : 1 < p⁻¹ + r⁻¹) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
     (hA : ∀ I J : Set ℝ, I.OrdConnected → J.OrdConnected → (∀ s ∈ I, ∀ t ∈ J, s < t) →
@@ -388,9 +416,8 @@ theorem eNorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
     rw [h, ENNReal.mul_top (left_ne_zero_of_mul h0)])
   have hfm := aestronglyMeasurable_of_eLpNorm_ne_top hftop
   have hp : p ≠ 0 := fun h => hf0 (h ▸ eLpNorm_exponent_zero hfm)
-  obtain ⟨hp_top, hδ, hδ0⟩ := ne_top_and_toReal_inv_add_inv_sub_one hp hr hpr
-  have hCtop : C ≠ ∞ := ENNReal.inv_ne_top.2 (tsub_pos_of_lt
-    (ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (hδ ▸ hδ0))).ne'
+  obtain ⟨hp_top, hδ, -⟩ := ne_top_and_toReal_inv_add_inv_sub_one hp hr hpr
+  have hCtop : C ≠ ∞ := inv_one_sub_two_rpow_neg_ne_top hp hr hpr
   have hf_eq : eLpNorm f p = (∫⁻ x, ‖f x‖ₑ ^ p.toReal) ^ p.toReal⁻¹ := by
     rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp hp_top hfm, one_div]
   have hp₀ : 0 < p.toReal := ENNReal.toReal_pos hp hp_top

@@ -469,7 +469,7 @@ theorem _root_.ContRepresentation.mem_closure_range_integratedOperatorL1_apply
     v ∈ closure (Set.range fun f : G →₁[μ] 𝕜 ↦ π.integratedOperatorL1 hcont hbdd μ f v) := by
   -- One normalized weight inside each neighbourhood of `0`, indexed as a net shrinking to `0`.
   choose f hf using fun U : {U : Set G // U ∈ 𝓝 (0 : G)} ↦
-    exists_integral_eq_one_norm_eq_one 𝕜 μ U.2
+    exists_integral_eq_one_norm_eq_one 𝕜 μ U.property
   refine mem_closure_of_tendsto (ContRepresentation.tendsto_integratedOperatorL1_apply
     (l := atBot) (C := 1) (.of_forall fun U ↦ (hf U).1)
     (.of_forall fun U ↦ (hf U).2.1.le) (fun V hV ↦ ?_) v)

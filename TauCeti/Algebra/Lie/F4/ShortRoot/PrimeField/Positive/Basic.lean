@@ -141,7 +141,7 @@ def closedSubgroup : ClosedSubgroupScheme PrimeField.groupScheme :=
 
 /-- The positive closed subgroup is represented by its named inclusion. -/
 @[simp]
-theorem coe_closedSubgroup : closedSubgroup.1 = Subobject.mk inclusion :=
+theorem coe_closedSubgroup : closedSubgroup.val = Subobject.mk inclusion :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- A positive simple-root subgroup factored through the positive subgroup. -/

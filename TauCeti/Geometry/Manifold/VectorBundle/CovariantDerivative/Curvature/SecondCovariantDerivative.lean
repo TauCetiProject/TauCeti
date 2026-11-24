@@ -24,9 +24,9 @@ of `∇` and the torsion `T` of `∇ᵀ`:
 
 where `T(X, Y) = ∇ᵀ_X Y - ∇ᵀ_Y X - [X, Y]` is Mathlib's `CovariantDerivative.torsion`.
 For a torsion-free `∇ᵀ`, such as a Levi-Civita connection, the torsion term disappears and the
-antisymmetric part of `∇²σ` is the curvature `R(u, v) σ`. For `V` the tangent bundle this is the
-Ricci identity for vector fields. It is the rule for commuting covariant derivatives used in
-Bochner and Weitzenböck formulas.
+antisymmetrized difference `∇²σ(u, v) - ∇²σ(v, u)` is the curvature `R(u, v) σ`. For `V` the
+tangent bundle this is the Ricci identity for vector fields. It is the rule for commuting
+covariant derivatives used in Bochner and Weitzenböck formulas.
 
 ## Main results
 
@@ -43,10 +43,8 @@ Bochner and Weitzenböck formulas.
 
 public section
 
-open Bundle FiberBundle VectorField
+open Bundle FiberBundle
 open scoped ContDiff Manifold
-
-noncomputable section
 
 namespace CovariantDerivative
 
@@ -69,7 +67,8 @@ section RicciIdentity
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
 
 /-- **The Ricci identity**, with its torsion correction. For a smooth section `σ`, the
-antisymmetric part of its second covariant derivative is the curvature of `∇` applied to `σ`,
+antisymmetrized difference `∇²σ(u, v) - ∇²σ(v, u)` of its second covariant derivative is the
+curvature of `∇` applied to `σ`,
 corrected by the covariant derivative of `σ` along the torsion of `∇ᵀ`:
 
 `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ - ∇_{T(u, v)} σ`. -/
@@ -87,8 +86,8 @@ theorem secondCovariantDerivative_sub_swap (hσ : CMDiff ∞ (T% σ)) (x : M)
   abel
 
 /-- **The Ricci identity.** For a torsion-free connection `∇ᵀ` on the tangent bundle, the
-antisymmetric part of the second covariant derivative of a smooth section `σ` is the curvature
-of `∇` applied to `σ`: `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ`. -/
+antisymmetrized difference of the second covariant derivative of a smooth section `σ` is the
+curvature of `∇` applied to `σ`: `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ`. -/
 theorem secondCovariantDerivative_sub_swap_of_isTorsionFree (ht : covT.IsTorsionFree)
     (hσ : CMDiff ∞ (T% σ)) (x : M) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v - cov.secondCovariantDerivative covT σ x v u =

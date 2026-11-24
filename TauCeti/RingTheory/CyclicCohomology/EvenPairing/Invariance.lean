@@ -170,9 +170,9 @@ theorem evenPairing_eval_algebraMap_eq {e : A[X]} (he : IsIdempotentElem e) (s t
     evenPairing (R := R) (M := M) (e.eval (algebraMap R A s)) hs m =
       evenPairing (e.eval (algebraMap R A t)) ht m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff R A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff R A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
-  rw [apply_const_eval_algebraMap_eq (even_two_mul m) φ.1.2 hb he s t]
+  rw [apply_const_eval_algebraMap_eq (even_two_mul m) φ.val.property hb he s t]
 
 /-- **Conjugation invariance of the even pairing.** Conjugating an idempotent by a unit does not
 change its even pairing with cyclic cohomology. -/
@@ -180,9 +180,9 @@ theorem evenPairing_units_conj (u : Aˣ) {e : A} (he : IsIdempotentElem e)
     (hue : IsIdempotentElem (↑u * e * ↑u⁻¹)) (m : ℕ) :
     evenPairing (R := R) (M := M) (↑u * e * ↑u⁻¹) hue m = evenPairing e he m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff R A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff R A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
-  rw [apply_const_units_conj (even_two_mul m) φ.1.2 hb u he]
+  rw [apply_const_units_conj (even_two_mul m) φ.val.property hb u he]
 
 /-- **Murray–von Neumann invariance of the even pairing.** If idempotent matrices `e` and `f`,
 possibly of different sizes, factor as `e = a * b` and `f = b * a` through rectangular matrices,
