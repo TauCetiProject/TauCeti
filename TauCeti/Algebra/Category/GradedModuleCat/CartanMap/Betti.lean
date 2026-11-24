@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Betti
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
-public import TauCeti.Algebra.Homology.ChainComplex.Exact
 public import TauCeti.CategoryTheory.Exact.Resolution.OfChainComplex
 
 /-!
