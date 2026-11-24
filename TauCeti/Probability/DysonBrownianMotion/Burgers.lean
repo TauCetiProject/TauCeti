@@ -153,7 +153,8 @@ theorem isBurgersFlow_iff_integral_inv_sub : IsBurgersFlow μ ↔ ∀ z : ℂ, 0
     ∫ x, (z - x)⁻¹ ∂μ t = ∫ x, (z - x)⁻¹ ∂μ 0 -
       ∫ s in (0 : ℝ)..t, (∫ x, (z - x)⁻¹ ∂μ s.toNNReal) *
         deriv (fun w : ℂ ↦ ∫ x : ℝ, (w - x)⁻¹ ∂μ s.toNNReal) z := by
-  simp_rw [Measure.integral_inv_sub_eq_neg_resolventTransform, deriv.fun_neg', neg_mul_neg]
+  simp_rw [fun ν w ↦ neg_eq_iff_eq_neg.1 (resolventTransform_eq_neg_integral_inv_sub ν w).symm,
+    deriv.fun_neg', neg_mul_neg]
   refine forall₂_congr fun z _ ↦ forall_congr' fun t ↦ and_congr Iff.rfl ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · linear_combination -h
   · linear_combination -h
@@ -170,7 +171,8 @@ theorem IsBurgersFlow.integral_inv_sub_eq (hμ : IsBurgersFlow μ) {z : ℂ} (hz
   · have h := congrArg conj (hμ.resolventTransform_eq (z := conj z) (by simpa using hz) t)
     simp only [Measure.resolventTransform_conj, Measure.deriv_resolventTransform_conj, ← map_mul,
       intervalIntegral.intervalIntegral_conj, map_add, conj_conj] at h
-    simp_rw [Measure.integral_inv_sub_eq_neg_resolventTransform, deriv.fun_neg', neg_mul_neg]
+    simp_rw [fun ν w ↦ neg_eq_iff_eq_neg.1 (resolventTransform_eq_neg_integral_inv_sub ν w).symm,
+      deriv.fun_neg', neg_mul_neg]
     linear_combination -h
   · exact (isBurgersFlow_iff_integral_inv_sub.1 hμ z hz t).2
 

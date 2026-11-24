@@ -258,7 +258,7 @@ private theorem cubicalChainDifferential_koszulTwist (a : loopChainAlgebra B b R
       -(InternalGrading.ofDecomposition
         (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1
           (cubicalChainDifferential (MooreLoopSpace B b) R a) := by
-  rw [(loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.koszulTwist_map, neg_neg]
+  rw [(loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.koszulTwist_one_map, neg_neg]
 
 /-- A cycle `α` of augmentation zero which is, up to a boundary, a right multiple `β x` of a cycle
 `β` gives a boundary `α e₀` of the free module of `TauCeti.cycleCellCocycle R n x`: if
