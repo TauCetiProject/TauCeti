@@ -486,10 +486,31 @@ theorem gSpinGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂) (x : gSpinGroup Q₁
     e.gSpinGroupEquiv x = e.toIsometry.gSpinGroupMap x :=
   (rfl)
 
-/-- The inverse of the equivalence induced on `GSpin` is induced by the inverse isometry. -/
-@[simp]
+/-- The inverse of the equivalence induced on `GSpin` agrees with the map induced by the inverse
+isometry. -/
 theorem gSpinGroupEquiv_symm_apply (e : Q₁.IsometryEquiv Q₂) (x : gSpinGroup Q₂) :
     e.gSpinGroupEquiv.symm x = e.symm.toIsometry.gSpinGroupMap x :=
   (rfl)
+
+/-- The inverse of the equivalence induced on `GSpin` is induced by the inverse isometry. -/
+@[simp]
+theorem gSpinGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
+    e.gSpinGroupEquiv.symm = e.symm.gSpinGroupEquiv :=
+  MulEquiv.ext fun _ ↦ rfl
+
+/-- The identity isometry induces the identity equivalence of `GSpin`. -/
+@[simp]
+theorem gSpinGroupEquiv_refl (Q₁ : QuadraticForm R M₁) :
+    (QuadraticMap.IsometryEquiv.refl Q₁).gSpinGroupEquiv = MulEquiv.refl (gSpinGroup Q₁) :=
+  MulEquiv.ext fun x ↦ DFunLike.congr_fun (QuadraticMap.Isometry.gSpinGroupMap_id Q₁) x
+
+/-- The equivalences induced on `GSpin` respect composition of quadratic isometry
+equivalences. -/
+@[simp]
+theorem gSpinGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (e₁₂.trans e₂₃).gSpinGroupEquiv = e₁₂.gSpinGroupEquiv.trans e₂₃.gSpinGroupEquiv :=
+  MulEquiv.ext fun x ↦
+    (DFunLike.congr_fun (e₂₃.toIsometry.gSpinGroupMap_comp e₁₂.toIsometry) x).symm
 
 end QuadraticMap.IsometryEquiv
