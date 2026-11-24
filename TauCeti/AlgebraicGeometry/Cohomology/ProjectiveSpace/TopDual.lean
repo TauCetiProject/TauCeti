@@ -30,8 +30,8 @@ dual of `Symʲ M` (Stacks, Lemma 30.8.1 (01XT)).
   isomorphism is singled out.
 * `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card`: for `n ≥ 1`,
   `Hⁿ(ℙⁿ_R, 𝒪(-n-1)) ≅ R`.
-* `Module.Basis.nontrivial_cohomology_top_twistingSheaf`: for `n ≥ 1`, `R ≠ 0` and
-  `m ≤ -n - 1`, `Hⁿ(ℙⁿ_R, 𝒪(m)) ≠ 0`.
+* `Module.Basis.nontrivial_cohomology_top_twistingSheaf_of_le_neg_card`: for `n ≥ 1`, `R ≠ 0`
+  and `m ≤ -n - 1`, `Hⁿ(ℙⁿ_R, 𝒪(m)) ≠ 0`.
 
 ## References
 
@@ -121,10 +121,11 @@ theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_dual {κ : Type*} [Fin
     (Sym.equivFinsuppDegree κ j).symm)).trans
       (b.symmetricAlgebraHomogeneous j).dualBasis.repr.symm)⟩
 
-/-- **The top cohomology of `𝒪(-n-1)` on `ℙⁿ` is free of rank one.** For a free `R`-module `M`
-with a basis indexed by `κ` of cardinality `n + 2`, `H^{n+1}(Proj (Sym M), 𝒪(-(n + 2)))` is
-isomorphic to `R`, over any commutative ring `R`: it is the dual of the forms of degree zero.
-No isomorphism is singled out. -/
+/-- **The top cohomology of `𝒪(-(n + 2))` on projective space of dimension `n + 1` is free of
+rank one.** For a free `R`-module `M` with a basis indexed by `κ` of cardinality `n + 2`, so that
+`Proj (Sym M)` is projective space of dimension `n + 1` over `R`,
+`H^{n+1}(Proj (Sym M), 𝒪(-(n + 2)))` is isomorphic to `R`, over any commutative ring `R`: it is
+the dual of the forms of degree zero. No isomorphism is singled out. -/
 theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card {κ : Type*} [Fintype κ]
     (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) :
     Nonempty (Cohomology (Proj.twistingSheaf 𝒜 (-((n + 2 : ℕ) : ℤ))) (n + 1) ≃ₗ[R] R) := by
@@ -133,12 +134,13 @@ theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card {κ : Type*} 
   exact ⟨φ.trans ((TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv R M).dualMap.symm.trans
     (LinearMap.ringLmapEquivSelf R R R))⟩
 
-/-- **The top cohomology of `𝒪(m)` on `ℙⁿ` is nonzero for `m ≤ -n - 1`.** For a nonzero ring `R`
-and a free `R`-module `M` with a basis indexed by `κ` of cardinality `n + 2`,
+/-- **The top cohomology of `𝒪(m)` on projective space of dimension `n + 1` is nonzero for
+`m ≤ -(n + 2)`.** For a nonzero ring `R` and a free `R`-module `M` with a basis indexed by `κ` of
+cardinality `n + 2`, so that `Proj (Sym M)` is projective space of dimension `n + 1` over `R`,
 `H^{n+1}(Proj (Sym M), 𝒪(m))` is nontrivial when `m ≤ -(n + 2)`: it is the dual of the free
 module of forms of degree `-m - (n + 2)`, which has a monomial basis. -/
-theorem nontrivial_cohomology_top_twistingSheaf [Nontrivial R] {κ : Type*} [Fintype κ]
-    (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) {m : ℤ}
+theorem nontrivial_cohomology_top_twistingSheaf_of_le_neg_card [Nontrivial R] {κ : Type*}
+    [Fintype κ] (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) {m : ℤ}
     (hm : m ≤ -((n + 2 : ℕ) : ℤ)) :
     Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) := by
   classical
