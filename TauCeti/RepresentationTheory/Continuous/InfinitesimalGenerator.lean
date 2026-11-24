@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Group.ComplexLinear
 public import TauCeti.Analysis.Semigroups.Group.Rescale
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
-public import TauCeti.RepresentationTheory.Continuous.OneParameter
+public import TauCeti.RepresentationTheory.Continuous.OneParameter.Basic
 
 /-!
 # Infinitesimal generators of a strongly continuous representation of a Lie group
