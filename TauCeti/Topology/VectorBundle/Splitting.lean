@@ -9,8 +9,6 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Section
 
-import Mathlib.Algebra.Exact.Basic
-
 /-!
 # Splitting exact sequences of vector bundles
 
@@ -82,6 +80,26 @@ variable {𝕜 B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [TopologicalS
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
   [TopologicalSpace (TotalSpace F₂ E₂)] [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
 
+/-- An endomorphism Hom-bundle section `q` of `E₁`, continuous on a neighbourhood `W` of `x₀` and
+the identity at `x₀`, is invertible on a smaller neighbourhood of `x₀`, where its fibrewise
+inverse is again continuous. This is the common local step of the two one-sided inverse
+theorems below. -/
+private theorem ContinuousOn.exists_continuousOn_clm_bundle_inverse_of_eq_id [CompleteSpace F₁]
+    {q : ∀ x, E₁ x →L[𝕜] E₁ x} {W : Set B} {x₀ : B}
+    (hq : ContinuousOn (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁)
+      (E := fun x ↦ E₁ x →L[𝕜] E₁ x) x (q x)) W) (hW : W ∈ 𝓝 x₀)
+    (hq₀ : q x₀ = ContinuousLinearMap.id 𝕜 (E₁ x₀)) :
+    ∃ U ∈ 𝓝 x₀, U ⊆ W ∧ (∀ x ∈ U, (q x).IsInvertible) ∧
+      ContinuousOn (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁)
+        (E := fun x ↦ E₁ x →L[𝕜] E₁ x) x (q x).inverse) U := by
+  have hinv : (q x₀).IsInvertible := by
+    rw [hq₀, ← ContinuousLinearEquiv.coe_refl]
+    exact ContinuousLinearMap.isInvertible_equiv
+  exact ⟨W ∩ {x | (q x).IsInvertible},
+    inter_mem hW ((hq.continuousAt hW).eventually_clm_bundle_isInvertible hinv),
+    inter_subset_left, fun _ hx ↦ hx.2,
+    (hq.mono inter_subset_left).clm_bundle_inverse fun _ hx ↦ hx.2⟩
+
 /-- Let `p : E₁ → E₂` be a Hom-bundle section which is continuous on a neighbourhood `u` of `x₀`,
 and whose fibre map at `x₀` has a continuous right inverse. Then `p` has a right inverse which is
 a Hom-bundle section continuous on a neighbourhood of `x₀`. The model fibre of `E₂` must be
@@ -95,34 +113,22 @@ theorem ContinuousOn.exists_continuousOn_clm_bundle_rightInverse [CompleteSpace 
       ContinuousOn (fun x ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁)
         (E := fun x ↦ E₂ x →L[𝕜] E₁ x) x (s x)) U ∧
       ∀ x ∈ U, (p x).comp (s x) = ContinuousLinearMap.id 𝕜 (E₂ x) := by
-  -- Extend the fibre inverse at `x₀` to a Hom-bundle section continuous near `x₀`.
+  -- Extend the fibre inverse at `x₀` to a Hom-bundle section `r` continuous near `x₀`.
   let r := FiberBundle.extend (F₂ →L[𝕜] F₁) (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.rightInverse
-  have hr₀ : r x₀ = h.rightInverse := FiberBundle.extend_apply_self _ _
   let e := trivializationAt (F₂ →L[𝕜] F₁) (fun x ↦ E₂ x →L[𝕜] E₁ x) x₀
-  set V := interior u ∩ e.baseSet
-  have hV : IsOpen V := isOpen_interior.inter e.open_baseSet
-  have hx₀ : x₀ ∈ V :=
-    ⟨mem_interior_iff_mem_nhds.2 hu, FiberBundle.mem_baseSet_trivializationAt' x₀⟩
+  have hW : u ∩ e.baseSet ∈ 𝓝 x₀ :=
+    inter_mem hu (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x₀))
   have hr := (FiberBundle.continuousOn_extend (F₂ →L[𝕜] F₁)
-    (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.rightInverse).mono
-    (inter_subset_right (s := interior u))
-  -- `p ∘ r` is a continuous endomorphism section of `E₂` near `x₀`, the identity at `x₀`.
-  have hq :=
-    (hp.mono ((inter_subset_left (t := e.baseSet)).trans interior_subset)).clm_bundle_comp hr
-  have hq₀ : ((p x₀).comp (r x₀)).IsInvertible := by
-    have : (p x₀).comp (r x₀) = ContinuousLinearMap.id 𝕜 (E₂ x₀) := by
-      ext w
-      simp [hr₀, h.rightInverse_rightInverse w]
-    rw [this, ← ContinuousLinearEquiv.coe_refl]
-    exact ContinuousLinearMap.isInvertible_equiv
-  have hV₀ := hV.mem_nhds hx₀
-  refine ⟨V ∩ {x | ((p x).comp (r x)).IsInvertible},
-    inter_mem hV₀ ((hq.continuousAt hV₀).eventually_clm_bundle_isInvertible hq₀),
-    fun x ↦ (r x).comp ((p x).comp (r x)).inverse,
-    (hr.mono inter_subset_left).clm_bundle_comp
-      ((hq.mono inter_subset_left).clm_bundle_inverse fun _ hx ↦ hx.2), fun x hx ↦ ?_⟩
+    (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.rightInverse).mono (inter_subset_right (s := u))
+  -- `p ∘ r` is the identity at `x₀`, so it is invertible near `x₀`, and `r ∘ (p ∘ r)⁻¹` works.
+  obtain ⟨U, hU, hUW, hinv, hcont⟩ :=
+    ((hp.mono inter_subset_left).clm_bundle_comp hr).exists_continuousOn_clm_bundle_inverse_of_eq_id
+      hW (ContinuousLinearMap.ext fun w ↦ by
+        simp [FiberBundle.extend_apply_self, h.rightInverse_rightInverse w])
+  refine ⟨U, hU, fun x ↦ (r x).comp ((p x).comp (r x)).inverse,
+    (hr.mono hUW).clm_bundle_comp hcont, fun x hx ↦ ?_⟩
   rw [← ContinuousLinearMap.comp_assoc]
-  exact hx.2.self_comp_inverse
+  exact (hinv x hx).self_comp_inverse
 
 /-- Let `i : E₁ → E₂` be a Hom-bundle section which is continuous on a neighbourhood `u` of `x₀`,
 and whose fibre map at `x₀` has a continuous left inverse. Then `i` has a left inverse which is
@@ -138,34 +144,22 @@ theorem ContinuousOn.exists_continuousOn_clm_bundle_leftInverse [CompleteSpace F
       ContinuousOn (fun x ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁)
         (E := fun x ↦ E₂ x →L[𝕜] E₁ x) x (t x)) U ∧
       ∀ x ∈ U, (t x).comp (i x) = ContinuousLinearMap.id 𝕜 (E₁ x) := by
-  -- Extend the fibre inverse at `x₀` to a Hom-bundle section continuous near `x₀`.
+  -- Extend the fibre inverse at `x₀` to a Hom-bundle section `l` continuous near `x₀`.
   let l := FiberBundle.extend (F₂ →L[𝕜] F₁) (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.leftInverse
-  have hl₀ : l x₀ = h.leftInverse := FiberBundle.extend_apply_self _ _
   let e := trivializationAt (F₂ →L[𝕜] F₁) (fun x ↦ E₂ x →L[𝕜] E₁ x) x₀
-  set V := interior u ∩ e.baseSet
-  have hV : IsOpen V := isOpen_interior.inter e.open_baseSet
-  have hx₀ : x₀ ∈ V :=
-    ⟨mem_interior_iff_mem_nhds.2 hu, FiberBundle.mem_baseSet_trivializationAt' x₀⟩
+  have hW : u ∩ e.baseSet ∈ 𝓝 x₀ :=
+    inter_mem hu (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x₀))
   have hl := (FiberBundle.continuousOn_extend (F₂ →L[𝕜] F₁)
-    (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.leftInverse).mono
-    (inter_subset_right (s := interior u))
-  -- `l ∘ i` is a continuous endomorphism section of `E₁` near `x₀`, the identity at `x₀`.
-  have hq :=
-    hl.clm_bundle_comp (hi.mono ((inter_subset_left (t := e.baseSet)).trans interior_subset))
-  have hq₀ : ((l x₀).comp (i x₀)).IsInvertible := by
-    have : (l x₀).comp (i x₀) = ContinuousLinearMap.id 𝕜 (E₁ x₀) := by
-      ext v
-      simp [hl₀, h.leftInverse_leftInverse v]
-    rw [this, ← ContinuousLinearEquiv.coe_refl]
-    exact ContinuousLinearMap.isInvertible_equiv
-  have hV₀ := hV.mem_nhds hx₀
-  refine ⟨V ∩ {x | ((l x).comp (i x)).IsInvertible},
-    inter_mem hV₀ ((hq.continuousAt hV₀).eventually_clm_bundle_isInvertible hq₀),
-    fun x ↦ ((l x).comp (i x)).inverse.comp (l x),
-    ((hq.mono inter_subset_left).clm_bundle_inverse fun _ hx ↦ hx.2).clm_bundle_comp
-      (hl.mono inter_subset_left), fun x hx ↦ ?_⟩
+    (E := fun x ↦ E₂ x →L[𝕜] E₁ x) h.leftInverse).mono (inter_subset_right (s := u))
+  -- `l ∘ i` is the identity at `x₀`, so it is invertible near `x₀`, and `(l ∘ i)⁻¹ ∘ l` works.
+  obtain ⟨U, hU, hUW, hinv, hcont⟩ :=
+    (hl.clm_bundle_comp (hi.mono inter_subset_left)).exists_continuousOn_clm_bundle_inverse_of_eq_id
+      hW (ContinuousLinearMap.ext fun v ↦ by
+        simp [FiberBundle.extend_apply_self, h.leftInverse_leftInverse v])
+  refine ⟨U, hU, fun x ↦ ((l x).comp (i x)).inverse.comp (l x),
+    hcont.clm_bundle_comp (hl.mono hUW), fun x hx ↦ ?_⟩
   rw [ContinuousLinearMap.comp_assoc]
-  exact hx.2.inverse_comp_self
+  exact (hinv x hx).inverse_comp_self
 
 variable [NormedAlgebra ℝ 𝕜] [NormalSpace B] [ParacompactSpace B]
 
@@ -245,15 +239,15 @@ theorem exists_bundleHomeomorph_prod_of_rightInverse
     (continuous_snd.comp hdiag)
   -- Fibrewise, `(v, w) ↦ i v + s w` is the splitting isomorphism of the exact sequence.
   have hbij (x : B) : Bijective ((i x).coprod (s x)) := by
-    let e := ((LinearMap.exact_iff.2 (hexact x).symm).splitSurjectiveEquiv (hinj x)
-      ⟨s x, congr(ContinuousLinearMap.toLinearMap $(hps x))⟩).val.symm
-    have he : ⇑e = (i x).coprod (s x) := by
-      ext q
-      -- Mathlib has no application lemma for `splitSurjectiveEquiv`, so unfold it to the
-      -- `LinearEquiv.ofBijective` it is built from and use that constructor's `apply` lemma.
-      simp only [e, Function.Exact.splitSurjectiveEquiv, Equiv.coe_fn_mk, LinearEquiv.symm_symm]
-      exact (LinearEquiv.ofBijective_apply _ _).trans (by simp)
-    exact he ▸ e.bijective
+    have hpi (v : E₁ x) : p x (i x v) = 0 := (hexact x).le ⟨v, rfl⟩
+    have hps' (w : E₃ x) : p x (s x w) = w := congr($(hps x) w)
+    refine ⟨fun a b hab ↦ ?_, fun u ↦ ?_⟩
+    · rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.coprod_apply] at hab
+      have h₂ : a.2 = b.2 := by simpa [hpi, hps'] using congr(p x $hab)
+      exact Prod.ext (hinj x (by rwa [h₂, add_left_inj] at hab)) h₂
+    · obtain ⟨v, hv⟩ : u - s x (p x u) ∈ (i x).range := (hexact x).ge (by simp [hps'])
+      exact ⟨(v, p x u), by
+        rw [ContinuousLinearMap.coprod_apply, ← ContinuousLinearMap.coe_coe, hv, sub_add_cancel]⟩
   obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (i x).coprod (s x))
     ((h₁.add_totalSpace 𝕜 h₃).congr fun q ↦ by rw [ContinuousLinearMap.coprod_apply]) hbij
   exact ⟨h, fun x v w ↦ by rw [hh, ContinuousLinearMap.coprod_apply]⟩
@@ -283,14 +277,15 @@ theorem exists_bundleHomeomorph_prod_of_leftInverse [FiniteDimensional 𝕜 F₂
     (FiberBundle.Prod.isInducing_diag F₁ E₁ F₃ E₃).continuous_iff.2 (h₁.prodMk h₃)
   -- Fibrewise, `u ↦ (t u, p u)` is the splitting isomorphism of the exact sequence.
   have hbij (x : B) : Bijective ((t x).prod (p x)) := by
-    let e := ((LinearMap.exact_iff.2 (hexact x).symm).splitInjectiveEquiv (hsurj x)
-      ⟨t x, congr(ContinuousLinearMap.toLinearMap $(hti x))⟩).val
-    have he : ⇑e = (t x).prod (p x) := by
-      funext u
-      -- As above, unfold `splitInjectiveEquiv` to the `LinearEquiv.ofBijective` it is built from.
-      simp only [e, Function.Exact.splitInjectiveEquiv, Equiv.coe_fn_mk]
-      exact (LinearEquiv.ofBijective_apply _ _).trans (by simp)
-    exact he ▸ e.bijective
+    have hpi (v : E₁ x) : p x (i x v) = 0 := (hexact x).le ⟨v, rfl⟩
+    have hti' (v : E₁ x) : t x (i x v) = v := congr($(hti x) v)
+    refine ⟨fun a b hab ↦ ?_, fun ⟨v, w⟩ ↦ ?_⟩
+    · simp only [ContinuousLinearMap.prod_apply, Prod.mk.injEq] at hab
+      obtain ⟨c, hc⟩ : a - b ∈ (i x).range := (hexact x).ge (by simp [hab.2])
+      rw [ContinuousLinearMap.coe_coe] at hc
+      rw [← sub_eq_zero, ← hc, ← hti' c, hc, map_sub, hab.1, sub_self, map_zero]
+    · obtain ⟨u, rfl⟩ := hsurj x w
+      exact ⟨i x v + u - i x (t x u), by simp [hpi, hti']⟩
   obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (t x).prod (p x)) hc hbij
   exact ⟨h, fun x u ↦ by rw [hh, ContinuousLinearMap.prod_apply]⟩
 
