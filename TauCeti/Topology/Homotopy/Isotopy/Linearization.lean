@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.UnitInterval
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
@@ -159,7 +160,11 @@ theorem continuousOn_zeroSectionRescale {h : S × V → S × W}
     rw [zeroSectionRescale_of_ne_zero hp]
     have := hδε p.2.1 _ hpU (by rwa [norm_smul, Real.norm_of_nonneg hp0.le])
     calc ‖(p.1 : ℝ)⁻¹ • (h (p.2.1, (p.1 : ℝ) • p.2.2)).2 - L p.2.1 p.2.2‖
-        ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := ContinuousLinearMap.norm_inv_smul_sub_le hp this
+        = ‖(p.1 : ℝ)‖⁻¹ * ‖(h (p.2.1, (p.1 : ℝ) • p.2.2)).2 - L p.2.1 ((p.1 : ℝ) • p.2.2)‖ :=
+          (L p.2.1).toLinearMap.norm_inv_smul_sub_apply hp _ _
+      _ ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := by
+          rw [norm_smul, ← mul_assoc, mul_comm _ ‖(p.1 : ℝ)‖, mul_assoc] at this
+          exact (inv_mul_le_iff₀ (norm_pos_iff.2 hp)).2 this
       _ ≤ ε / 2 / (‖q.2.2‖ + 1) * (‖q.2.2‖ + 1) := by gcongr
       _ = ε / 2 := div_mul_cancel₀ _ (by positivity)
       _ < ε := half_lt_self hε
@@ -224,7 +229,8 @@ theorem exists_norm_snd_inverse_sub_le [CompactSpace S] {g g' : S × V → S × 
     calc 2 * K ^ 2 * ε' ≤ 2 * K ^ 2 * (ε / (4 * K ^ 2)) := by gcongr; exact min_le_right _ _
       _ = ε / 2 := by field_simp; ring
   calc ‖v - (↑(A x)⁻¹ : V →L[ℝ] V) u‖ ≤ (2 * K ^ 2 * ε' + ε / 2) * ‖u‖ :=
-        ContinuousLinearMap.norm_sub_apply_le_of_apply_eq hBv (hAK y) hKε (by positivity) h₁ h₃.le
+        ContinuousLinearMap.norm_sub_apply_le_of_apply_eq _ hBv (hAK y) hKε (by positivity) h₁
+          h₃.le
     _ ≤ ε * ‖u‖ := by nlinarith [norm_nonneg u]
 
 /-- **The isotopy of an open embedding to its linearization.** Let `g` be an open embedding of

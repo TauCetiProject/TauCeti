@@ -49,6 +49,9 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
   the common testing step against `ψ² u`, for any right-hand side.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
+* `TauCeti.PDE.exists_norm_gradient_restrictL_ball_le`: the homogeneous concentric-ball
+  estimate for additive Haar measures in native Sobolev norms, with multiplier
+  `(2Λ/λ) c / (R - ρ)`, where `c > 0` depends only on the dimension.
 
 ## References
 
@@ -58,6 +61,9 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
   §8.2 and §8.6.
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, Theorem 4.4.
+* The native Sobolev norm estimate is adapted from Otis Chodosh's formalization,
+  `exists_norm_gradient_restrictL_ball_le` in
+  [`ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/fe6fa284d9cc53f70c80ba9c9be619cb13ab1b89/ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean).
 -/
 
 public section
@@ -441,6 +447,62 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
     rw [hx]
     ring
   rwa [hF] at hstep
+
+local notation "E" => EuclideanSpace ℝ ι
+
+open Metric in
+/-- **The homogeneous Caccioppoli estimate in native Sobolev norms.** For concentric balls
+`B(p, ρ) ⊆ B(p, R) ⊆ Ω` with `ρ < R`, an additive Haar measure, and a uniformly elliptic
+coefficient field that is a.e. strongly measurable on `Ω`, a homogeneous weak solution satisfies
+
+`‖∇w‖_{L²(B(p, ρ))} ≤ (2Λ/λ) c / (R - ρ) * ‖w‖_{L²(B(p, R))}`.
+
+Here `c > 0` depends only on the dimension. The same constant works for all additive Haar
+measures, coefficient fields satisfying these hypotheses, solutions, domains and radii;
+the full multiplier also contains the ellipticity factor `2Λ/λ`.
+Both norms are those of the native Sobolev restrictions. This is the homogeneous specialization
+of `TauCeti.PDE.UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1`
+and `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`. -/
+theorem exists_norm_gradient_restrictL_ball_le :
+    ∃ c : ℝ, 0 < c ∧ ∀ {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
+      {a : E → Matrix ι ι ℝ} {lam Lam : ℝ} {w : W1p μ Ω 2} {p : E} {ρ R : ℝ},
+      UniformlyEllipticOn (Ω : Set E) a lam Lam →
+      AEStronglyMeasurable a (μ.restrict Ω) →
+      (∀ v : W1p0 μ Ω 2, energyFormH1 a 0 0 w (v : W1p μ Ω 2) = 0) →
+      ∀ (hρR : ρ < R) (hR : (⟨ball p R, isOpen_ball⟩ : Opens E) ≤ Ω),
+      ‖W1p.gradient (W1p.restrictL (U := ⟨ball p ρ, isOpen_ball⟩)
+        (by
+          apply SetLike.coe_subset_coe.mp
+          simpa only [Opens.coe_mk] using
+            (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)) w)‖ ≤
+        (2 * Lam / lam) * c / (R - ρ) * ‖W1p.value (W1p.restrictL hR w)‖ := by
+  classical
+  obtain ⟨c, hc, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  refine ⟨c, hc, ?_⟩
+  intro μ _ Ω a lam Lam w p ρ R hell ha hw hρR hR
+  have hbound := hC w (A := (2 * Lam / lam) ^ 2) (B := 0) (x₀ := p)
+    (r := ρ) (R := R) (sq_nonneg _) le_rfl hρR
+    (SetLike.coe_subset_coe.mpr hR) (fun ψ hψ hcpt hts ↦ by
+      obtain ⟨v, -, -, hstep⟩ :=
+        hell.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha w hψ hcpt (.inl hts)
+      simpa only [hw v, mul_zero, add_zero, zero_mul] using hstep)
+  have hinnerLe : (⟨ball p ρ, isOpen_ball⟩ : Opens E) ≤ Ω := by
+    apply SetLike.coe_subset_coe.mp
+    simpa only [Opens.coe_mk] using
+      (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)
+  have hinner :=
+    W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow hinnerLe (by simp) w
+  have houter := W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow hR (by simp) w
+  simp only [Opens.coe_mk, ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
+    sq_abs] at hinner houter
+  rw [hinner, houter] at hbound
+  simp only [add_zero] at hbound
+  have hlam := hell.pos
+  have hLam := hell.upper_nonneg
+  apply (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp
+  calc
+    _ ≤ _ := hbound
+    _ = _ := by ring
 
 end PDE
 
