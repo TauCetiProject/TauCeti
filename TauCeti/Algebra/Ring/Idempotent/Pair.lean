@@ -78,6 +78,15 @@ theorem commute_sub_sq_right (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
   rw [← neg_sub, neg_sq]
   exact hq.commute_sub_sq_left hp
 
+/-- The intertwiner of an idempotent with itself is `1`. -/
+@[simp]
+theorem intertwiner_self (hp : IsIdempotentElem p) : intertwiner p p = 1 := by
+  rw [intertwiner_def, hp.eq, hp.one_sub.eq, add_sub_cancel]
+
+/-- The intertwiner of an idempotent with itself is invertible. -/
+theorem isUnit_intertwiner_self (hp : IsIdempotentElem p) : IsUnit (intertwiner p p) :=
+  hp.intertwiner_self ▸ isUnit_one
+
 /-- **Intertwining.** The intertwiner `q * p + (1 - q) * (1 - p)` carries the idempotent `p` to the
 idempotent `q`. -/
 theorem intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :

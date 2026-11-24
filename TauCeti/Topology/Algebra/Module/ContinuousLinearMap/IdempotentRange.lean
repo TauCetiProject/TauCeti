@@ -42,8 +42,6 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
   fixes every vector of its range.
 * `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
   continuous linear map on a complete space is complete.
-* `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
-  `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
   along a retract is idempotent.
 * `ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`: if `g` is a pseudo-inverse
@@ -89,18 +87,6 @@ theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
 variable [IsTopologicalAddGroup M]
-
-/-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
-the identity. -/
-theorem mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
-    p * p + (1 - p) * (1 - p) = 1 := by
-  rw [hp.eq, hp.one_sub.eq, add_sub_cancel]
-
-/-- The operator `p * p + (1 - p) * (1 - p)` is invertible for an idempotent `p`. -/
-theorem isUnit_mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
-    IsUnit (p * p + (1 - p) * (1 - p)) := by
-  rw [mul_self_add_one_sub_mul_one_sub hp]
-  exact isUnit_one
 
 /-- Where the intertwiner is invertible, its inverse intertwines `q` with `p`. -/
 private theorem inverse_intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
