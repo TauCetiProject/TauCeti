@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import TauCeti.Algebra.Polynomial.Laurent.Power
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.MultiplicativeGroup
 
@@ -21,43 +21,32 @@ global sections would be integral over `Γ(S, 𝒪_S)` (Mathlib's
 scheme `T` over `S` is the image of `u` along the point `T ⟶ 𝔾_{m,S}` that `a` defines
 (`TauCeti.GroupScheme.Gm.pointsMulEquiv_naturality`), so every such unit would be integral over
 `Γ(S, 𝒪_S)` (`TauCeti.GroupScheme.Gm.isIntegralElem_of_universallyClosed`). The unit `T` of the
-Laurent polynomial ring `Γ(S, 𝒪_S)[T, T⁻¹]` is not.
+Laurent polynomial ring `Γ(S, 𝒪_S)[T, T⁻¹]` is not (`LaurentPolynomial.not_isIntegral_T`).
 
 In particular `𝔾_m` over a field is not an abelian scheme
-(`TauCeti.AlgebraicGeometry.AbelianScheme.toOver_ne_Gm`), although it is a smooth commutative group
-scheme with geometrically connected fibres: properness is the axiom it fails.
+(`TauCeti.AlgebraicGeometry.AbelianScheme.isEmpty_toOver_iso_Gm`), although it is a smooth
+commutative group scheme with geometrically connected fibres: properness is the axiom it fails.
 
 ## Main results
 
 * `TauCeti.GroupScheme.Gm.not_universallyClosed`, `TauCeti.GroupScheme.Gm.not_isProper`:
   `𝔾_{m,S} ⟶ S` is neither universally closed nor proper for affine `S` with nonzero global
   sections.
-* `TauCeti.GroupScheme.Gm.not_isProper_spec`: `𝔾_m` over `Spec R`, `R` a nonzero ring (for
+* `TauCeti.GroupScheme.Gm.not_isProper_Spec`: `𝔾_m` over `Spec R`, `R` a nonzero ring (for
   instance a field), is not proper.
-* `TauCeti.AlgebraicGeometry.AbelianScheme.toOver_ne_Gm`: no abelian scheme over `Spec R` has
-  `𝔾_m` as its underlying group scheme.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isEmpty_toOver_iso_Gm`: over an affine scheme with
+  nonzero global sections, the underlying object of an abelian scheme is never isomorphic to
+  `𝔾_m`.
 -/
 
 public section
 
-open CategoryTheory AlgebraicGeometry LaurentPolynomial Polynomial
+open CategoryTheory AlgebraicGeometry LaurentPolynomial
 open scoped CategoryTheory.MonObj CategoryTheory.Obj
 
 universe u
 
 namespace TauCeti.GroupScheme.Gm
-
-/-- The unit `T` of the Laurent polynomial ring over a nonzero ring is not integral. -/
-private theorem not_isIntegralElem_T (R : Type*) [CommRing R] [Nontrivial R] :
-    ¬ (algebraMap R R[T;T⁻¹]).IsIntegralElem (T 1) := by
-  rintro ⟨p, hp, h⟩
-  have hc := congr_arg (fun f : R[T;T⁻¹] ↦ f.coeff (p.natDegree : ℤ)) h
-  simp only [eval₂_eq_sum_range, T_pow, mul_one, ← LaurentPolynomial.C_eq_algebraMap,
-    ← single_eq_C_mul_T, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
-    Finsupp.coe_finsetSum, Finset.sum_apply, Finsupp.single_apply, Nat.cast_inj] at hc
-  rw [Finset.sum_ite_eq', ite_eq_left (Finset.mem_range.2 p.natDegree.lt_succ_self),
-    hp.coeff_natDegree] at hc
-  exact one_ne_zero hc
 
 variable {S : Scheme.{u}}
 
@@ -93,7 +82,8 @@ theorem not_universallyClosed [IsAffine S] [Nontrivial Γ(S, ⊤)] :
   have ha := (isIntegralElem_of_universallyClosed T' a).map
     (Scheme.ΓSpecIso (CommRingCat.of R[T;T⁻¹])).hom.hom
   rw [← CommRingCat.hom_comp, hcomp, CommRingCat.hom_comp] at ha
-  apply not_isIntegralElem_T R
+  apply not_isIntegral_T (R := R) one_ne_zero
+  change φ.hom.IsIntegralElem _
   convert RingHom.IsIntegralElem.of_comp ha using 1
   simp [a]
 
@@ -103,7 +93,7 @@ theorem not_isProper [IsAffine S] [Nontrivial Γ(S, ⊤)] : ¬ IsProper (Gm S).X
   fun _ ↦ not_universallyClosed (S := S) inferInstance
 
 /-- **`𝔾_m` over a nonzero ring is not proper**, for instance over a field. -/
-theorem not_isProper_spec (R : Type u) [CommRing R] [Nontrivial R] :
+theorem not_isProper_Spec (R : Type u) [CommRing R] [Nontrivial R] :
     ¬ IsProper (Gm (Spec (CommRingCat.of R))).X.hom :=
   have : Nontrivial Γ(Spec (CommRingCat.of R), ⊤) :=
     (Scheme.ΓSpecIso (CommRingCat.of R)).commRingCatIsoToRingEquiv.toEquiv.nontrivial
@@ -113,12 +103,11 @@ end TauCeti.GroupScheme.Gm
 
 namespace TauCeti.AlgebraicGeometry.AbelianScheme
 
-/-- **`𝔾_m` is not an abelian scheme.** Over `Spec R` for a nonzero ring `R`, for instance a field,
-no abelian scheme has the multiplicative group scheme as its underlying group scheme, because
-`𝔾_m` is not proper. -/
-theorem toOver_ne_Gm (R : Type u) [CommRing R] [Nontrivial R]
-    (A : AbelianScheme (Spec (CommRingCat.of R))) :
-    A.toOver ≠ (GroupScheme.Gm (Spec (CommRingCat.of R))).X := fun h ↦
-  GroupScheme.Gm.not_isProper_spec R (h ▸ A.isProper)
+/-- **`𝔾_m` is not an abelian scheme.** Over an affine scheme `S` with nonzero global sections,
+for instance `Spec` of a field, the underlying object over `S` of an abelian scheme is not
+isomorphic to the multiplicative group scheme, because `𝔾_m` is not proper. -/
+theorem isEmpty_toOver_iso_Gm {S : Scheme.{u}} [IsAffine S] [Nontrivial Γ(S, ⊤)]
+    (A : AbelianScheme S) : IsEmpty (A.toOver ≅ (GroupScheme.Gm S).X) :=
+  ⟨fun e ↦ GroupScheme.Gm.not_isProper (by rw [← Over.w e.inv]; infer_instance)⟩
 
 end TauCeti.AlgebraicGeometry.AbelianScheme
