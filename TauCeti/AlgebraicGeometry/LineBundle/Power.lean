@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
+import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 
 /-!
 # Tensor powers of line bundles
@@ -214,8 +215,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow (L : X.M
     [SheafOfModules.isInvertible X L] (n : ℕ) :
     SheafOfModules.isInvertible X (TauCeti.tensorPow L n) := by
   induction n with
-  | zero => exact SheafOfModules.isInvertible_tensorUnit X
-  | succ n ih => exact _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj L _
+  | zero => exact ObjectProperty.prop_unit (SheafOfModules.isInvertible X)
+  | succ n ih => exact ObjectProperty.prop_tensor ‹_› ih
 
 /-- The underlying sheaf of `InvertibleSheaf.tensorPow L n` is isomorphic to the monoidal tensor
 power `TauCeti.tensorPow L.obj n`. -/
@@ -248,14 +249,6 @@ lemma tensorPowObjIso_succ (L : InvertibleSheaf X) (n : ℕ) :
         tensorPowSuccIso L.obj n :=
   (rfl)
 
-/-- The underlying morphism of an `eqToHom` in a full subcategory is `eqToHom` on the
-underlying objects. -/
-private lemma fullSubcategory_eqToHom_hom {C : Type*} [Category C] {P : ObjectProperty C}
-    {a b : P.FullSubcategory} (h : a = b) :
-    (eqToHom h).hom = eqToHom (congrArg (·.obj) h) := by
-  subst h
-  rfl
-
 /-- Read through `tensorPowObjIso`, the induced isomorphism `tensorPowCongr e n` corresponds to
 the monoidal map `TauCeti.tensorPowMap e.hom.hom n`. -/
 @[reassoc]
@@ -269,7 +262,7 @@ lemma tensorPowCongr_hom_hom_comp_tensorPowObjIso_hom {L K : InvertibleSheaf X} 
   | succ n ih =>
     rw [tensorPowCongr_succ, tensorPowObjIso_succ, tensorPowObjIso_succ]
     simp only [ObjectProperty.FullSubcategory.comp_hom, Iso.trans_hom, Category.assoc,
-      whiskerRightIso_hom, eqToIso.hom, fullSubcategory_eqToHom_hom, eqToHom_trans_assoc,
+      whiskerRightIso_hom, eqToIso.hom, ObjectProperty.eqToHom_hom, eqToHom_trans_assoc,
       eqToHom_refl, Category.id_comp,
       tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc,
       tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc]

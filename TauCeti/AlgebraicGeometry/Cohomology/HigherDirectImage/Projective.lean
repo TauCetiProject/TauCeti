@@ -89,7 +89,12 @@ theorem exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor
     (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) n) ⊗ F
   have : G.IsQuasicoherent := isQuasicoherent_tensorObj X _ F
   have : Subsingleton (Cohomology G q) := hn₀ n hn q hq
-  exact (isZero_tilde_of_subsingleton (ModuleCat.of (CommRingCat.of R) (Cohomology G q))).of_iso
+  -- Synthesize `PreservesZeroMorphisms` before specializing to `.of R` so Lean's discrimination
+  -- tree matches `tilde.functor _`.
+  let _ : (tilde.functor (.of R)).PreservesZeroMorphisms :=
+    (inferInstance : (tilde.functor _).PreservesZeroMorphisms)
+  exact ((tilde.functor (.of R)).map_isZero
+    (ModuleCat.isZero_of_subsingleton (ModuleCat.of (CommRingCat.of R) (Cohomology G q)))).of_iso
     (tildeCohomologyIsoHigherDirectImage R G q).symm
 
 end AlgebraicGeometry.Scheme.Modules

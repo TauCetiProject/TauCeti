@@ -393,13 +393,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti.AlgebraicGeometry.Scheme.Modules
 
-/-- Scalar multiplication under `Module.compHom` acts through the ring homomorphism. -/
-private lemma module_compHom_smul {R S M : Type*} [Ring R] [Ring S] [AddCommMonoid M]
-    [Module S M] (φ : R →+* S) (r : R) (x : M) :
-    letI : Module R M := Module.compHom M φ
-    r • x = φ r • x :=
-  (rfl)
-
 /-- For `Spec R` viewed as a scheme over itself, `baseRingToGlobalSections` is
 `(Scheme.ΓSpecIso (.of R)).inv`. -/
 private lemma baseRingToGlobalSections_eq_ΓSpecIso_inv (R : Type u) [CommRing R] (r : R) :
@@ -448,7 +441,8 @@ def cohomologyEquivHigherDirectImageSections (R : Type u) [CommRing R] {X : Sche
   letI : IsScalarTower R Γ(Spec (.of R), ⊤) (Cohomology M n) :=
     .of_algebraMap_smul fun r x ↦ by
       rw [RingHom.algebraMap_toAlgebra, base_smul_cohomology, baseRingToGlobalSections_apply,
-        module_compHom_smul]
+        MulAction.compHom_smul_def]
+      rfl
   letI : IsScalarTower R Γ(Spec (.of R), ⊤) Γ((f.higherDirectImage n).obj M, ⊤) :=
     .of_algebraMap_smul fun r y ↦ by
       rw [RingHom.algebraMap_toAlgebra, base_smul_globalSections,
@@ -469,7 +463,7 @@ theorem cohomologyEquivHigherDirectImageSections_apply (R : Type u) [CommRing R]
   simp only [cohomologyEquivHigherDirectImageSections, LinearEquiv.trans_apply,
     globalSectionsBaseEquivSpecΓ_apply, LinearEquiv.restrictScalars_apply,
     Scheme.Hom.higherDirectImageGlobalSectionsLinearEquiv_apply]
-  exact rfl
+  rfl
 
 /-- `cohomologyEquivHigherDirectImageSections` is natural in the coefficient sheaf `M`. -/
 theorem cohomologyEquivHigherDirectImageSections_naturality (R : Type u) [CommRing R]
@@ -515,6 +509,9 @@ theorem tildeCohomologyIsoHigherDirectImage_naturality (R : Type u) [CommRing R]
         (moduleSpecΓFunctor (R := .of R)).map ((f.higherDirectImage n).map φ) := by
     ext x
     exact cohomologyEquivHigherDirectImageSections_naturality R φ n x
+  -- `simp`/`rw` on `Iso.trans_hom` fails at `implicit` transparency because `fromTildeΓ` is typed
+  -- in `SheafOfModules (Spec (.of R)).ringCatSheaf` rather than `(Spec (.of R)).Modules`, so we
+  -- assemble the square-plus-counit-naturality `calc` directly.
   have h1 :
       (tilde.functor (.of R)).map (ModuleCat.ofHom (cohomologyMapBaseLinear R X φ n)) ≫
           (tilde.functor (.of R)).map
@@ -530,7 +527,7 @@ theorem tildeCohomologyIsoHigherDirectImage_naturality (R : Type u) [CommRing R]
           ((f.higherDirectImage n).obj N).fromTildeΓ =
         ((f.higherDirectImage n).obj M).fromTildeΓ ≫ (f.higherDirectImage n).map φ :=
     (tilde.adjunction (R := .of R)).counit.naturality ((f.higherDirectImage n).map φ)
-  have h := calc
+  calc
     (tilde.functor (.of R)).map (ModuleCat.ofHom (cohomologyMapBaseLinear R X φ n)) ≫
         ((tilde.functor (.of R)).map
             (cohomologyEquivHigherDirectImageSections R N n).toModuleIso.hom ≫
@@ -554,6 +551,5 @@ theorem tildeCohomologyIsoHigherDirectImage_naturality (R : Type u) [CommRing R]
             (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫
           ((f.higherDirectImage n).obj M).fromTildeΓ) ≫ (f.higherDirectImage n).map φ :=
         (Category.assoc _ _ _).symm
-  exact h
 
 end AlgebraicGeometry.Scheme.Modules
