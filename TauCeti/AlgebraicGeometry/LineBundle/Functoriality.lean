@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!

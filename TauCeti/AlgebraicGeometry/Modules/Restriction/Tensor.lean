@@ -16,12 +16,6 @@ Restriction along an open immersion `j : U ⟶ Y` is lax monoidal with invertibl
 The restriction--pullback isomorphism identifies this tensor map with the inverse of the
 canonical pullback comparison (`Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor`).
 
-Pullback along every scheme morphism preserves tensor products of arbitrary module sheaves
-(`Scheme.Modules.isIso_pullback_δ`); no quasicoherence, flatness or finiteness is required.
-In particular, it preserves tensor products of line bundles, giving multiplicative pullback on
-line-bundle classes (`LineBundleClass.pullback_mul`) and the Picard group homomorphism
-`Pic(Y) →* Pic(X)` (`LineBundleClass.pullbackHom`).
-
 ## References
 
 * The Stacks Project, *Sheaves of Modules*, Lemma 03EL (pullback of tensor products).

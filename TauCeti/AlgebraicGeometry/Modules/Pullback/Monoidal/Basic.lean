@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
@@ -25,9 +25,11 @@ In particular, arbitrary pullback preserves both left and right dualizability in
 quasicoherent subcategories. This lets dualizability be transported to affine charts, where
 it is equivalent to finite projectivity of the module of global sections.
 
-The monoidal structure is obtained from the invertibility of the existing oplax comparisons,
-using Mathlib's `Functor.Monoidal.ofOplaxMonoidal`. Dual preservation then follows from
-`Functor.mapHasLeftDual` and `Functor.mapHasRightDual`.
+The monoidal structure on pullback to modules is the composite of the strong symmetric
+monoidal full-subcategory inclusion and module pullback. The structure on quasicoherent
+pullback is lifted from this composite and transported along the canonical underlying-object
+identifications. Dual preservation then follows from `Functor.mapHasLeftDual` and
+`Functor.mapHasRightDual`.
 
 ## References
 
@@ -51,11 +53,11 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 
-/-- Pullback from quasicoherent sheaves to modules inherits symmetry from the inclusion and
-module pullback. The scheme module carriers are explicit because typeclass search does not
-unfold them when matching Mathlib's composite instance. -/
+/-- Pullback from quasicoherent sheaves to modules is the composite of the strong symmetric
+monoidal inclusion and module pullback. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
     ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided := by
+  -- Explicit module carriers let typeclass search match Mathlib's composite instance.
   let F : QuasicoherentSheaf Y ⥤ Y.Modules := ObjectProperty.ι _
   let G : Y.Modules ⥤ X.Modules := pullback f
   letI : F.Braided := ObjectProperty.instBraidedFullSubcategoryι (C := Y.Modules) _
