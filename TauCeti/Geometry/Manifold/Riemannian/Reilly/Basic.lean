@@ -76,23 +76,56 @@ theorem inner_reillyField (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (w : TangentSpace
 
 end Field
 
+section Regularity
+
+variable {n : ℕ∞ω} [IsManifold I 2 M] [IsManifold I (n + 1) M]
+  [IsManifold I (n + 1 + 1) M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I (n + 1) E (fun x : M ↦ TangentSpace I x)]
+  {f : M → ℝ}
+
+private theorem contMDiff_laplaceBeltrami_smul_mgradient
+    (hf : ContMDiff I 𝓘(ℝ) (n + 2) f) :
+    CMDiff n (T% (laplaceBeltrami I f • mgradient I f)) := by
+  let _ : IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := n + 1) (by simp)
+  exact (contMDiff_laplaceBeltrami (m := n + 1 + 1) (k := n + 1)
+    (by simp [add_assoc, one_add_one_eq_two]) le_rfl hf).smul_section
+    (contMDiff_mgradient (hf.of_le (by gcongr; norm_num)))
+
+omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+private theorem contMDiff_const_smul_mgradient_norm_sq_mgradient
+    (hf : ContMDiff I 𝓘(ℝ) (n + 2) f) (c : ℝ) :
+    CMDiff n (T% (c • mgradient I (fun y ↦ ‖mgradient I f y‖ ^ 2))) := by
+  let _ : IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := n + 1) (by simp)
+  have hN : ContMDiff I 𝓘(ℝ) (n + 1) (fun y ↦ ‖mgradient I f y‖ ^ 2) :=
+    contMDiff_norm_sq_mgradient (by simpa only [add_assoc, one_add_one_eq_two] using hf)
+  exact (contMDiff_mgradient hN).const_smul_section
+
+end Regularity
+
+/-- On a `C^m` manifold with a `C^k` metric, Reilly's vector field of a `C^(n + 2)` function
+is `C^n` when `n + 2 ≤ m` and `n + 1 ≤ k`. -/
+theorem contMDiff_reillyField {n m k : ℕ∞ω} [IsManifold I 2 M] [IsManifold I m M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 2) f) : CMDiff n (T% (reillyField I f)) := by
+  let _ : IsManifold I (n + 1 + 1) M := IsManifold.of_le (n := m) (by
+    simpa only [add_assoc, one_add_one_eq_two] using hm)
+  let _ : IsManifold I (n + 1) M := IsManifold.of_le (n := n + 1 + 1) (by simp)
+  let _ : IsContMDiffRiemannianBundle I (n + 1) E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := k) hk
+  exact (contMDiff_laplaceBeltrami_smul_mgradient hf).sub_section
+    (contMDiff_const_smul_mgradient_norm_sq_mgradient hf (1 / 2))
+
 section Divergence
 
 variable [T2Space M] [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ}
-
-omit [T2Space M] in
-/-- Reilly's vector field of a smooth function is smooth. -/
-theorem contMDiff_reillyField (hf : ContMDiff I 𝓘(ℝ) ∞ f) :
-    CMDiff ∞ (T% (reillyField I f)) := by
-  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : CMDiff ∞ (T% (mgradient I f)) := contMDiff_mgradient hf
-  have hL : ContMDiff I 𝓘(ℝ) ∞ (laplaceBeltrami I f) :=
-    contMDiff_laplaceBeltrami (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) hf
-  have hN := contMDiff_norm_sq_mgradient (n := ∞) hf
-  have hGN : CMDiff ∞ (T% (mgradient I (fun x ↦ ‖mgradient I f x‖ ^ 2))) := contMDiff_mgradient hN
-  exact (hL.smul_section hG).sub_section (contMDiff_const.smul_section hGN)
 
 /-- **The divergence of Reilly's vector field**: for a smooth function `f` and every orthonormal
 basis `eᵢ` of the tangent space at `x`,
@@ -103,25 +136,29 @@ theorem divergence_reillyField (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
       laplaceBeltrami I f x ^ 2 - ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 -
         (leviCivitaConnection I M).ricciTensor x (mgradient I f x) (mgradient I f x) := by
   let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : CMDiff ∞ (T% (mgradient I f)) := contMDiff_mgradient hf
-  have hL : ContMDiff I 𝓘(ℝ) ∞ (laplaceBeltrami I f) :=
-    contMDiff_laplaceBeltrami (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) hf
-  have hN := contMDiff_norm_sq_mgradient (n := ∞) hf
-  have hGN : CMDiff ∞ (T% (mgradient I (fun x ↦ ‖mgradient I f x‖ ^ 2))) := contMDiff_mgradient hN
-  have hGd : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiable (by simp) x
-  have hGNd : MDiffAt (T% (mgradient I (fun x ↦ ‖mgradient I f x‖ ^ 2))) x :=
-    hGN.mdifferentiable (by simp) x
-  have hLd : MDifferentiableAt I 𝓘(ℝ) (laplaceBeltrami I f) x := hL.mdifferentiable (by simp) x
+  let _ : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let _ : IsContMDiffRiemannianBundle I (∞ + 1) E (fun x : M ↦ TangentSpace I x) := by
+    simpa using (inferInstance : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x))
+  have hGd : MDiffAt (T% (mgradient I f)) x :=
+    mdifferentiable_mgradient (hf.of_le (by simp)) x
+  have hGNd : MDiffAt (T% (mgradient I (fun y ↦ ‖mgradient I f y‖ ^ 2))) x := by
+    simpa only [one_smul] using
+      (contMDiff_const_smul_mgradient_norm_sq_mgradient (n := ∞) hf 1).mdifferentiable
+        (by simp) x
+  have hLd : MDifferentiableAt I 𝓘(ℝ) (laplaceBeltrami I f) x :=
+    (contMDiff_laplaceBeltrami (n := ∞) (m := ∞) (k := ∞)
+      (by simp) (by simp) hf).mdifferentiable (by simp) x
   have hX : reillyField I f = laplaceBeltrami I f • mgradient I f +
       (-(1 / 2 : ℝ)) • mgradient I (fun y ↦ ‖mgradient I f y‖ ^ 2) := by
     funext y
     simp only [reillyField_def, Pi.add_apply, Pi.smul_apply', neg_smul]
     exact sub_eq_add_neg _ _
   have hA : MDiffAt (T% (laplaceBeltrami I f • mgradient I f)) x :=
-    (hL.smul_section hG).mdifferentiable (by simp) x
+    (contMDiff_laplaceBeltrami_smul_mgradient (n := ∞) hf).mdifferentiable (by simp) x
   have hB : MDiffAt
       (T% ((-(1 / 2 : ℝ)) • mgradient I (fun y ↦ ‖mgradient I f y‖ ^ 2))) x :=
-    (contMDiff_const.smul_section hGN).mdifferentiable (by simp) x
+    (contMDiff_const_smul_mgradient_norm_sq_mgradient (n := ∞) hf (-(1 / 2))).mdifferentiable
+      (by simp) x
   rw [hX, divergence_add I _ _ x hA hB, divergence_smul_function I _ _ x hLd hGd,
     divergence_smul I _ _ x hGNd, ← laplaceBeltrami_def, ← laplaceBeltrami_def,
     laplaceBeltrami_norm_sq_mgradient hf x b]
