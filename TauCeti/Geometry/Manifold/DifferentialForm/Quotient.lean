@@ -116,7 +116,7 @@ omit [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M
 /-- A smooth form invariant under `G` is invariant as a rough form. -/
 private theorem coe_invariant {α : SmoothForm I M F k}
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) (g : G) :
-    TauCeti.mpullback (F := F) I I (g • ·) α.1 = α.1 := by
+    TauCeti.mpullback (F := F) I I (g • ·) α.val = α.val := by
   rw [← coe_mpullback _ (contMDiff_const_smul g), hα g]
 
 variable {α : SmoothForm I M F k}
@@ -127,7 +127,7 @@ smooth form whose pullback along the orbit projection is `α` (`TauCeti.SmoothFo
 def descend (α : SmoothForm I M F k)
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) :
     SmoothForm I (MulAction.orbitRel.Quotient G M) F k :=
-  ⟨RoughForm.descend G α.1, IsSmoothForm.mem_smoothBundleForms <|
+  ⟨RoughForm.descend G α.val, IsSmoothForm.mem_smoothBundleForms <|
     ((isLocalDiffeomorph_quotientMk (n := ∞)).isSmoothForm_mpullback_iff (m := ∞)
       Quotient.mk_surjective (by simp)).mp <| by
       rw [RoughForm.mpullback_quotientMk_descend (n := ∞) (by simp) (coe_invariant hα)]
@@ -137,7 +137,7 @@ variable {hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α
 
 /-- The underlying rough form of the descent of a smooth form is its rough descent. -/
 @[simp]
-theorem coe_descend : (descend α hα).1 = RoughForm.descend G α.1 := (rfl)
+theorem coe_descend : (descend α hα).val = RoughForm.descend G α.val := (rfl)
 
 /-- An invariant smooth form is the pullback of its descent along the orbit projection. -/
 @[simp]

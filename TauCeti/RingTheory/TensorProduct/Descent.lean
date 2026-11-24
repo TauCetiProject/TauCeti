@@ -43,14 +43,9 @@ theorem tensorProduct_map
     [Algebra R S] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B)
     (hf : P f.toRingHom) :
     P (Algebra.TensorProduct.map (AlgHom.id R S) f).toRingHom := by
-  -- Equip the scalar-extension square with its edge algebra structures.
-  let : Algebra A B := f.toAlgebra
-  let : Algebra A (S ⊗[R] B) := ((Algebra.TensorProduct.includeRight :
-    B →ₐ[R] S ⊗[R] B).comp f).toAlgebra
-  let : Algebra (S ⊗[R] A) (S ⊗[R] B) :=
-    (Algebra.TensorProduct.map (AlgHom.id R S) f).toAlgebra
-  have : IsScalarTower R A B := IsScalarTower.of_algHom f
-  have : IsScalarTower A B (S ⊗[R] B) := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  -- Equip the scalar-extension square with the algebra structures of its four edges.
+  algebraize [f.toRingHom, (Algebra.TensorProduct.map (AlgHom.id R S) f).toRingHom,
+    (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom.comp f.toRingHom]
   have : IsScalarTower A (S ⊗[R] A) (S ⊗[R] B) :=
     IsScalarTower.of_algebraMap_eq fun a ↦ by simp [RingHom.algebraMap_toAlgebra]
   have : IsScalarTower S (S ⊗[R] A) (S ⊗[R] B) :=
@@ -77,13 +72,8 @@ theorem of_tensorProduct_map
     (hf : P (Algebra.TensorProduct.map (AlgHom.id R S) f).toRingHom) :
     P f.toRingHom := by
   -- Equip the scalar-extension square with the algebra structures of its four edges.
-  let : Algebra A B := f.toAlgebra
-  let : Algebra A (S ⊗[R] B) := ((Algebra.TensorProduct.includeRight :
-    B →ₐ[R] S ⊗[R] B).comp f).toAlgebra
-  let : Algebra (S ⊗[R] A) (S ⊗[R] B) :=
-    (Algebra.TensorProduct.map (AlgHom.id R S) f).toAlgebra
-  have : IsScalarTower R A B := IsScalarTower.of_algHom f
-  have : IsScalarTower A B (S ⊗[R] B) := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  algebraize [f.toRingHom, (Algebra.TensorProduct.map (AlgHom.id R S) f).toRingHom,
+    (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom.comp f.toRingHom]
   have : IsScalarTower A (S ⊗[R] A) (S ⊗[R] B) :=
     IsScalarTower.of_algebraMap_eq fun a ↦ by simp [RingHom.algebraMap_toAlgebra]
   have : IsScalarTower S (S ⊗[R] A) (S ⊗[R] B) :=

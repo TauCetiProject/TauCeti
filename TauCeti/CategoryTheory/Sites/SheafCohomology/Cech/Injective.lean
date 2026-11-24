@@ -97,7 +97,7 @@ theorem exactAt_cechComplexFunctor_obj_free_op (n : ℕ) :
     have : IsEmpty (∏ᶜ fun j ↦ S (a j)) :=
       ⟨fun x ↦ (h (a 0)).false ((Pi.π (fun j ↦ S (a j)) 0).hom x)⟩
     have : Subsingleton (AddCommGrpCat.free.obj (∏ᶜ fun j ↦ S (a j))) :=
-      inferInstanceAs (Subsingleton (FreeAbelianGroup (∏ᶜ fun j ↦ S (a j))))
+      inferInstanceAs (Subsingleton (FreeAddCommGroup (∏ᶜ fun j ↦ S (a j))))
     exact (AddCommGrpCat.isZero_of_subsingleton _).op
 
 end Types

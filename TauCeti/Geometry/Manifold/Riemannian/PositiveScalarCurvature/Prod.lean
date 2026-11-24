@@ -91,7 +91,7 @@ theorem IsCompact.exists_pos_forall_hasPositiveScalarCurvature_prodTangentSpace_
   obtain ⟨ε, hε, hfε⟩ :=
     exists_pos_forall_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall_le
       (f := fun g : K ↦ (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)))
-      (fun g x ↦ hm ⟨(g, x), ⟨g.2, mem_univ x⟩, rfl⟩) hδ hδg
+      (fun g x ↦ hm ⟨(g, x), ⟨g.property, mem_univ x⟩, rfl⟩) hδ hδg
   exact ⟨ε, hε, fun c hc hcε g hg ↦ hfε c hc hcε ⟨g, hg⟩⟩
 
 /-- **A small factor of positive scalar curvature turns paths into isotopies.** On compact

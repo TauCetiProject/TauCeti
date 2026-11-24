@@ -99,15 +99,15 @@ noncomputable def suspensionTaylor (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) :
     ReducedTensorWords R A →ₗ[R] A :=
   DirectSum.toModule R {n : ℕ // 0 < n} A fun n ↦
-    PiTensorProduct.lift ((m n.1).compLinearMap fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i))
+    PiTensorProduct.lift ((m n.val).compLinearMap fun i ↦ G.koszulTwist ((n.val : ℤ) - 1 - i))
 
 /-- The suspension Taylor map on a pure tensor word. -/
 @[simp]
 theorem suspensionTaylor_of_tprod (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → A) :
+    (x : Fin n.val → A) :
     suspensionTaylor G m (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
-      m n.1 fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i) (x i) := by
+      m n.val fun i ↦ G.koszulTwist ((n.val : ℤ) - 1 - i) (x i) := by
   rw [suspensionTaylor, ReducedTensorWords.toModule_of, PiTensorProduct.lift.tprod,
     MultilinearMap.compLinearMap_apply]
 
@@ -137,14 +137,14 @@ theorem IsSuspension.taylor_eq {G : InternalGrading R A ℤ}
       F' ∘ₗ ReducedTensorWords.of R A n := by
     apply InternalGrading.piTensorProduct_ext (fun _ ↦ G)
     intro q
-    let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
-    let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
-    have hx : ∀ i < n.1, x i ∈ G.piece (d i) := by
+    let d : ℕ → ℤ := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).1 else 0
+    let x : ℕ → A := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).2 else 0
+    have hx : ∀ i < n.val, x i ∈ G.piece (d i) := by
       intro i hi
       simp only [x, d, hi, dite_true]
       exact (q ⟨i, hi⟩).2.property
-    have hleft := (isSuspension_def G F m).1 hF n.1 n.2 d x hx
-    have hright := (isSuspension_def G F' m).1 hF' n.1 n.2 d x hx
+    have hleft := (isSuspension_def G F m).1 hF n.val n.property d x hx
+    have hright := (isSuspension_def G F' m).1 hF' n.val n.property d x hx
     simpa only [LinearMap.comp_apply, x, Fin.isLt, dite_true] using hleft.trans hright.symm
   exact LinearMap.congr_fun hn (PiTensorProduct.tprod R z)
 
@@ -226,7 +226,7 @@ theorem desuspension_apply (G : InternalGrading R A ℤ) (F : ReducedTensorWords
 theorem suspensionTaylor_desuspension (G : InternalGrading R A ℤ)
     (F : ReducedTensorWords R A →ₗ[R] A) : suspensionTaylor G (desuspension G F) = F := by
   refine ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_
-  rw [suspensionTaylor_of_tprod, desuspension_apply G F n.2]
+  rw [suspensionTaylor_of_tprod, desuspension_apply G F n.property]
   congr 3
   funext i
   rw [← LinearMap.comp_apply (G.koszulTwist _), InternalGrading.koszulTwist_comp_self,
@@ -507,16 +507,16 @@ theorem IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero {G : Inter
     intro n
     apply InternalGrading.piTensorProduct_ext (fun _ ↦ G)
     intro q
-    let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
-    let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
-    have hx : ∀ i < n.1, x i ∈ G.piece (d i) := by
+    let d : ℕ → ℤ := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).1 else 0
+    let x : ℕ → A := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).2 else 0
+    have hx : ∀ i < n.val, x i ∈ G.piece (d i) := by
       intro i hi
       simp only [x, d, hi, dite_true]
       exact (q ⟨i, hi⟩).2.property
-    have hcomponent := hFm.taylorComponent_comp_self_apply (fun s hs _ ↦ hm s hs) n.2 d x hx
-    have hsuspended : suspendedStasheffSum m d x n.1 = 0 :=
-      (suspendedStasheffSum_eq_zero_iff m d x n.1).2
-        (hstasheff n.1 n.2 d x hx)
+    have hcomponent := hFm.taylorComponent_comp_self_apply (fun s hs _ ↦ hm s hs) n.property d x hx
+    have hsuspended : suspendedStasheffSum m d x n.val = 0 :=
+      (suspendedStasheffSum_eq_zero_iff m d x n.val).2
+        (hstasheff n.val n.property d x hx)
     rw [hsuspended] at hcomponent
     simpa only [b, LinearMap.zero_apply, x, Fin.isLt, dite_true] using hcomponent
 

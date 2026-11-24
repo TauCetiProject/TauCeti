@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Series
-import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 
 /-!
 # Power series of `H^s` functions, `s > n / 2`

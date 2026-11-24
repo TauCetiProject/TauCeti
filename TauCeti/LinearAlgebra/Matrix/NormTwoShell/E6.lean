@@ -7,12 +7,12 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Coeff
 -- The finite certificates evaluate the existing private coordinate table and numbered permutation.
 import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic
-import all TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+import all TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Signed root orbits of the E₆ diagram reversal
@@ -79,7 +79,7 @@ theorem mem_normTwoShell_iff {a : Fin 6 → ℤ} :
 noncomputable def rootEquiv : Fin 72 ≃ (CartanMatrix.E 6).normTwoShell :=
   Equiv.ofBijective (fun i ↦ ⟨e6Coroot i, coroot_mem_normTwoShell i⟩)
     ⟨fun _ _ h ↦ e6Coroot.injective (congrArg Subtype.val h), fun a ↦ by
-      obtain ⟨i, hi⟩ := mem_normTwoShell_iff.mp a.2
+      obtain ⟨i, hi⟩ := mem_normTwoShell_iff.mp a.property
       exact ⟨i, Subtype.ext hi⟩⟩
 
 @[simp]

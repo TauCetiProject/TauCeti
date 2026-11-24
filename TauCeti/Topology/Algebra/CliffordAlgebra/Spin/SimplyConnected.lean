@@ -104,7 +104,7 @@ theorem continuous_realSpinThreeEquivQuaternionUnitary :
         CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
       rfl
     rw [hinnerFun]
-    exact continuous_subtype_val
+    exact continuous_subtypeVal
   exact realCliffordThreeZeroEvenEquivQuaternion.toLinearMap.continuous_of_finiteDimensional.comp
     hinner
 

@@ -289,8 +289,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         intro P P' h
         simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_obj_map,
           bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_obj_map,
-          bimoduleModuleTensor_obj_map, bimoduleTensor_obj_obj,
-          eqToHom_refl, Category.id_comp, Category.comp_id]
+          bimoduleModuleTensor_obj_map, bimoduleTensor_obj_obj]
         simpa only [bimoduleTensorMap_id] using
           bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) (𝟙 N) h))
     (by
@@ -301,8 +300,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_map_app,
         bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_map_app,
         bimoduleTensor_obj_map, bimoduleModuleTensor_map_app, bimoduleModuleTensor_obj_map,
-        bimoduleTensor_obj_obj,
-        eqToHom_refl, Category.id_comp, Category.comp_id]
+        bimoduleTensor_obj_obj]
       exact bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) g (𝟙 P)))
     (by
       intro M M' f
@@ -314,8 +312,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂_map_app_app,
         bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃_map_app_app,
         bimoduleTensor_map_app, bimoduleModuleTensor_map_app,
-        bimoduleTensor_obj_obj,
-        eqToHom_refl, Category.id_comp, Category.comp_id]
+        bimoduleTensor_obj_obj]
       simpa only [bimoduleModuleTensor, bimoduleModuleTensorMap_id] using
         bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P f (𝟙 N) (𝟙 P))
 

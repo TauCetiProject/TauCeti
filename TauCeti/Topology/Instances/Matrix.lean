@@ -16,7 +16,10 @@ public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.Topology.Algebra.IsOpenUnits
+public import TauCeti.Topology.PiCurry
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
 /-!
 # Topological properties of matrices
@@ -27,7 +30,8 @@ of pointwise limits of measurable maps, available for matrix-valued functions wi
 matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are, and
-matrices with finitely many rows and columns are σ-compact when their entries are.
+matrices with finitely many rows and columns are σ-compact when their entries are. Matrices over
+a compact space are compact.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -54,13 +58,27 @@ for the subspace topology, already for `n = 1`.
 Each characteristic coefficient is continuous over a commutative topological ring
 (`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
 `Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
+Hence two continuous maps `ρ ρ' : Γ → Mₙ(A)` into a Hausdorff topological ring whose
+characteristic polynomials agree on a dense subset of `Γ` have the same characteristic polynomial
+everywhere (`Matrix.charpoly_eq_of_dense`). In size two the characteristic polynomial is
+determined by the trace and the determinant (`Matrix.charpoly_eq_charpoly_iff_fin_two`), so for
+maps `ρ ρ' : Γ → M₂(A)`, such as continuous representations `Γ → GL₂(A)` composed with
+`Units.val`, it suffices that the traces and determinants agree on the dense subset
+(`Matrix.charpoly_eq_of_dense_fin_two`).
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
 both partial traces of a continuously varying matrix on a product index.
 
-The matrices with nonnegative diagonal form a closed set
+A matrix-valued function converges exactly when each of its entries does
+(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
+
+`Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
+Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
+homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
+`TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
+its inverse.
 
 ## References
 
@@ -91,10 +109,102 @@ instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaComp
     SigmaCompactSpace (Matrix m n α) :=
   inferInstanceAs (SigmaCompactSpace (m → n → α))
 
+/-- Matrices over a compact space form a compact space (Tychonoff). -/
+instance {m n α : Type*} [TopologicalSpace α] [CompactSpace α] :
+    CompactSpace (Matrix m n α) :=
+  inferInstanceAs (CompactSpace (m → n → α))
+
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
     [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
   ⟨continuous_fst.matrix_mulVec continuous_snd⟩
+
+end TauCeti
+
+namespace Matrix
+
+/-- `Matrix.of` bundled as a homeomorphism between curried functions `m → n → α` and matrices
+`Matrix m n α` with the entrywise product topology. -/
+def ofHomeomorph {m n α : Type*} [TopologicalSpace α] : (m → n → α) ≃ₜ Matrix m n α where
+  toEquiv := of
+  continuous_toFun := continuous_id.matrixOf
+  continuous_invFun := continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_id.matrix_elem i j
+
+@[simp]
+theorem ofHomeomorph_toEquiv {m n α : Type*} [TopologicalSpace α] :
+    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of := (rfl)
+
+@[simp]
+theorem ofHomeomorph_apply {m n α : Type*} [TopologicalSpace α] (f : m → n → α) :
+    ofHomeomorph f = of f := (rfl)
+
+@[simp]
+theorem ofHomeomorph_symm_apply {m n α : Type*} [TopologicalSpace α] (A : Matrix m n α) :
+    ofHomeomorph.symm A = of.symm A := (rfl)
+
+end Matrix
+
+namespace TauCeti
+
+section MatrixCoordinates
+
+variable {ι : Type*} (κ μ : ι → Type*) (α : Type*) [TopologicalSpace α]
+
+/-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
+indexed by `Σ i, κ i × μ i`, as a homeomorphism for the entrywise product topologies. -/
+def piMatrixHomeomorph :
+    ((i : ι) → Matrix (κ i) (μ i) α) ≃ₜ ((p : Σ i, κ i × μ i) → α) :=
+  (Homeomorph.piCongrRight fun _ ↦
+      Matrix.ofHomeomorph.symm.trans Homeomorph.piCurry.symm).trans
+    (piCurryHomeomorph fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
+
+@[simp]
+theorem piMatrixHomeomorph_apply (A : (i : ι) → Matrix (κ i) (μ i) α) (p : Σ i, κ i × μ i) :
+    piMatrixHomeomorph κ μ α A p = A p.1 p.2.1 p.2.2 := by
+  simp [piMatrixHomeomorph, Function.uncurry]
+
+@[simp]
+theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α) (i : ι) (j : κ i) (k : μ i) :
+    (piMatrixHomeomorph κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
+  simp [piMatrixHomeomorph, Function.curry]
+
+/-- As an underlying equivalence, `TauCeti.piMatrixHomeomorph` agrees with
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem piMatrixHomeomorph_toEquiv (R : Type*) [Semiring R] [AddCommMonoid α] [Module R α] :
+    (piMatrixHomeomorph κ μ α).toEquiv = (piMatrixLinearEquiv R κ μ α).toEquiv := by
+  ext A p; simp
+
+/-- The forward map of `TauCeti.piMatrixHomeomorph` agrees with `TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α) = ⇑(piMatrixLinearEquiv R κ μ α) := by
+  ext A p; simp
+
+/-- The inverse map of `TauCeti.piMatrixHomeomorph` agrees with the inverse of
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α).symm = ⇑(piMatrixLinearEquiv R κ μ α).symm := by
+  ext a i j k; simp
+
+variable {κ μ α}
+
+/-- The linear equivalence `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv {R : Type*} [Semiring R] [AddCommMonoid α] [Module R α] :
+    Continuous (piMatrixLinearEquiv R κ μ α) :=
+  coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ μ α R ▸ (piMatrixHomeomorph κ μ α).continuous
+
+/-- The inverse of `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv_symm {R : Type*} [Semiring R]
+    [AddCommMonoid α] [Module R α] : Continuous (piMatrixLinearEquiv R κ μ α).symm :=
+  coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm κ μ α R ▸
+    (piMatrixHomeomorph κ μ α).symm.continuous
+
+end MatrixCoordinates
 
 end TauCeti
 
@@ -180,6 +290,29 @@ theorem continuous_charpoly_coeff (k : ℕ) :
     rfl
   simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
 
+/-- **Recognition on a dense subset.** Two continuous matrix-valued maps `ρ ρ' : Γ → Mₙ(A)` into a
+Hausdorff topological ring whose characteristic polynomials agree on a dense subset of `Γ` have
+the same characteristic polynomial at every point. -/
+theorem charpoly_eq_of_dense [T2Space R] {Γ : Type*} [TopologicalSpace Γ]
+    {ρ ρ' : Γ → Matrix n n R} (hρ : Continuous ρ) (hρ' : Continuous ρ') {S : Set Γ}
+    (hS : Dense S) (h : ∀ g ∈ S, (ρ g).charpoly = (ρ' g).charpoly) (g : Γ) :
+    (ρ g).charpoly = (ρ' g).charpoly := by
+  ext k
+  exact congrFun (((continuous_charpoly_coeff k).comp hρ).ext_on hS
+    ((continuous_charpoly_coeff k).comp hρ') fun x hx ↦ by simp [h x hx]) g
+
+/-- **Recognition on a dense subset in rank two.** Two continuous maps `ρ ρ' : Γ → M₂(A)` into a
+Hausdorff topological ring, such as continuous representations into `GL₂(A)` composed with
+`Units.val`, whose traces and determinants agree on a dense subset of `Γ` have the same
+characteristic polynomial at every point. -/
+theorem charpoly_eq_of_dense_fin_two [T2Space R] {Γ : Type*} [TopologicalSpace Γ]
+    {ρ ρ' : Γ → Matrix (Fin 2) (Fin 2) R} (hρ : Continuous ρ) (hρ' : Continuous ρ') {S : Set Γ}
+    (hS : Dense S) (htr : ∀ g ∈ S, (ρ g).trace = (ρ' g).trace)
+    (hdet : ∀ g ∈ S, (ρ g).det = (ρ' g).det) (g : Γ) :
+    (ρ g).charpoly = (ρ' g).charpoly :=
+  charpoly_eq_of_dense hρ hρ' hS
+    (fun x hx ↦ (charpoly_eq_charpoly_iff_fin_two _ _).2 ⟨htr x hx, hdet x hx⟩) g
+
 variable [IsOpenUnits R]
 
 /-- Square matrices over a commutative topological ring with open units have open units: the
@@ -259,6 +392,13 @@ theorem continuous_oneKroneckerStarAlgHom :
 end Matrix
 
 namespace Matrix
+
+open Filter Topology in
+/-- Convergence of a matrix-valued function is entrywise convergence. -/
+theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : Filter α}
+    {M : α → Matrix m n R} {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
+  tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]

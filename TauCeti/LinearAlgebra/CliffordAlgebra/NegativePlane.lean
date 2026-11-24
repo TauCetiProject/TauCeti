@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
+import TauCeti.Algebra.Ring.Commute
 
 /-!
 # The negative-plane recurrence for real Clifford algebras
@@ -344,27 +345,10 @@ private theorem negativePlaneBaseInclusion_commute
         rw [(negativePlaneRightInclusion Q).commutes]
         exact (Algebra.commutes r _).symm
     | ι v =>
-        rw [negativePlaneBaseInclusion_ι, negativePlaneRightInclusion_ι, Commute]
-        have hic := ι_mul_ι_comm_of_isOrtho
-          (IsOrtho.inl_inr (Q₁ := Q)
-            (Q₂ := realCliffordForm 0 2) m v)
-        have hoc : negativePlaneVolume Q * ι _ (0, v) =
-            -(ι _ (0, v) * negativePlaneVolume Q) :=
-          eq_neg_of_add_eq_zero_left (negativePlaneVolume_anticomm Q v)
-        calc
-          -(ι _ (m, 0) * negativePlaneVolume Q) *
-              ι _ (0, v)
-              = -(ι _ (m, 0) *
-                (negativePlaneVolume Q * ι _ (0, v))) := by
-                noncomm_ring
-          _ = ι _ (m, 0) *
-                ι _ (0, v) * negativePlaneVolume Q := by
-                rw [hoc]; noncomm_ring
-          _ = -(ι _ (0, v) *
-                ι _ (m, 0)) * negativePlaneVolume Q := by rw [hic]
-          _ = ι _ (0, v) *
-                -(ι _ (m, 0) * negativePlaneVolume Q) := by
-                noncomm_ring
+        rw [negativePlaneBaseInclusion_ι, negativePlaneRightInclusion_ι]
+        exact (commute_mul_of_mul_eq_neg_mul
+          (ι_mul_ι_comm_of_isOrtho (IsOrtho.inl_inr (Q₁ := Q) (Q₂ := realCliffordForm 0 2) m v))
+          (eq_neg_of_add_eq_zero_left (negativePlaneVolume_anticomm Q v))).neg_left
     | mul a b ha hb => simpa only [map_mul] using ha.mul_right hb
     | add a b ha hb => simpa only [map_add] using ha.add_right hb
   induction x using induction with

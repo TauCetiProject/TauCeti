@@ -116,21 +116,21 @@ private noncomputable def primeOfFactor {d : (R ⧸ 𝔭.asIdeal)[X]}
     HeightOneSpectrum S :=
   have := FaithfulSMul.of_field_isFractionRing R S F F'
   ⟨_, ((KummerDedekind.primesOverEquivNormalizedFactorsMinPolyMk
-      𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).2.1,
+      𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).property.1,
     Ideal.ne_bot_of_mem_primesOver 𝔭.ne_bot
       ((KummerDedekind.primesOverEquivNormalizedFactorsMinPolyMk
-        𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).2⟩
+        𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).property⟩
 
 open scoped Classical in
 /-- The place attached to a factor is the place of the prime attached to it. -/
 private theorem coe_restrictOfPrimeEquivNormalizedFactors_symm_apply {d : (R ⧸ 𝔭.asIdeal)[X]}
     (hd : d ∈ normalizedFactors ((minpoly R y).map (Ideal.Quotient.mk 𝔭.asIdeal))) :
-    ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm ⟨d, hd⟩).1 =
+    ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm ⟨d, hd⟩).val =
       ofPrime k' F' (primeOfFactor (F' := F') F 𝔭 hy hy' hd) :=
   have := FaithfulSMul.of_field_isFractionRing R S F F'
   restrictOfPrimeEquivPrimesOver_symm_apply_coe k F 𝔭 (primeOfFactor (F' := F') F 𝔭 hy hy' hd)
     ((KummerDedekind.primesOverEquivNormalizedFactorsMinPolyMk
-      𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).2
+      𝔭.isMaximal 𝔭.ne_bot hy hy').symm ⟨d, hd⟩).property
 
 omit [IsFractionRing S F'] [Algebra.IsIntegral F F'] [Module.Finite R S] in
 open scoped Classical in
@@ -154,7 +154,7 @@ theorem restrictOfPrimeEquivNormalizedFactors_symm_apply_coe_eq_ofPrime {Q : R[X
     (𝔓 : HeightOneSpectrum S)
     (h𝔓 : 𝔓.asIdeal = Ideal.span (𝔭.asIdeal.map (algebraMap R S) ∪ {aeval y Q})) :
     ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm
-        ⟨Q.map (Ideal.Quotient.mk 𝔭.asIdeal), hQ⟩).1 = ofPrime k' F' 𝔓 := by
+        ⟨Q.map (Ideal.Quotient.mk 𝔭.asIdeal), hQ⟩).val = ofPrime k' F' 𝔓 := by
   have h : primeOfFactor (F' := F') F 𝔭 hy hy' hQ = 𝔓 :=
     HeightOneSpectrum.ext ((asIdeal_primeOfFactor F 𝔭 hy hy' hQ).trans h𝔓.symm)
   rw [coe_restrictOfPrimeEquivNormalizedFactors_symm_apply, h]
@@ -168,7 +168,7 @@ theorem valuation_restrictOfPrimeEquivNormalizedFactors_symm_apply_lt_one {Q : R
     (hQ : Q.map (Ideal.Quotient.mk 𝔭.asIdeal) ∈
       normalizedFactors ((minpoly R y).map (Ideal.Quotient.mk 𝔭.asIdeal))) :
     ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm
-        ⟨Q.map (Ideal.Quotient.mk 𝔭.asIdeal), hQ⟩).1.valuation
+        ⟨Q.map (Ideal.Quotient.mk 𝔭.asIdeal), hQ⟩).val.valuation
       (algebraMap S F' (aeval y Q)) < 1 := by
   rw [coe_restrictOfPrimeEquivNormalizedFactors_symm_apply, valuation_ofPrime_algebraMap_lt_one_iff,
     asIdeal_primeOfFactor]
@@ -182,7 +182,7 @@ theorem relativeDegree_restrictOfPrimeEquivNormalizedFactors_symm_apply {d : (R 
     (hd : d ∈ normalizedFactors ((minpoly R y).map (Ideal.Quotient.mk 𝔭.asIdeal))) :
     relativeDegree k F
         ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm
-          ⟨d, hd⟩).1 =
+          ⟨d, hd⟩).val =
       d.natDegree := by
   have := FaithfulSMul.of_field_isFractionRing R S F F'
   rw [coe_restrictOfPrimeEquivNormalizedFactors_symm_apply, relativeDegree_ofPrime (R := R) k F]
@@ -198,7 +198,7 @@ theorem ramificationIdx_restrictOfPrimeEquivNormalizedFactors_symm_apply {d : (R
     (hd : d ∈ normalizedFactors ((minpoly R y).map (Ideal.Quotient.mk 𝔭.asIdeal))) :
     ramificationIdx F
         ((restrictOfPrimeEquivNormalizedFactors (k' := k') (F' := F') k F 𝔭 hy hy').symm
-          ⟨d, hd⟩).1 =
+          ⟨d, hd⟩).val =
       multiplicity d ((minpoly R y).map (Ideal.Quotient.mk 𝔭.asIdeal)) := by
   have := FaithfulSMul.of_field_isFractionRing R S F F'
   rw [coe_restrictOfPrimeEquivNormalizedFactors_symm_apply, ramificationIdx_ofPrime (R := R) k F]

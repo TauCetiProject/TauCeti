@@ -199,6 +199,21 @@ theorem mk_basePointsRepresentation (g : WithConv (H →ₐ[k] k)) (v : M) :
     (mk (basePointsRepresentation M g v) : VectorOrbit k H M) = mk v :=
   (mk_eq_mk_iff.mpr ⟨g, rfl⟩).symm
 
+/-- Only `0` lies in the zero rational orbit of a linear representation. -/
+@[simp]
+theorem mk_eq_mk_zero_iff {v : M} :
+    (mk v : VectorOrbit k H M) = mk 0 ↔ v = 0 := by
+  rw [mk_eq_mk_iff]
+  refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun hv ↦ ⟨1, by simp [hv]⟩⟩
+  have hinv := congrArg (basePointsRepresentation M g⁻¹) hg
+  simpa [Representation.inv_self_apply] using hinv
+
+/-- Only `0` lies in the zero rational orbit of a linear representation (symmetric orientation). -/
+@[simp]
+theorem mk_zero_eq_mk_iff {v : M} :
+    (mk 0 : VectorOrbit k H M) = mk v ↔ v = 0 := by
+  rw [eq_comm, mk_eq_mk_zero_iff]
+
 /-- Descend a function on vectors that is invariant under the rational points of `G` to a
 function on rational orbits. -/
 def lift {α : Sort*} (f : M → α)

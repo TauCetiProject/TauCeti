@@ -120,8 +120,8 @@ theorem dense_domain_of_surjective_pairShift [CompleteSpace E] (hB : B.IsFormalA
   intro w hw
   obtain ⟨⟨x, y⟩, hxy⟩ := h (w, w)
   have hre := hB.re_inner_pairShift μ x y
-  simp only [hxy, Submodule.inner_right_of_mem_orthogonal x.2 hw,
-    Submodule.inner_right_of_mem_orthogonal y.2 hw, add_zero, _root_.map_zero] at hre
+  simp only [hxy, Submodule.inner_right_of_mem_orthogonal x.property hw,
+    Submodule.inner_right_of_mem_orthogonal y.property hw, add_zero, _root_.map_zero] at hre
   obtain ⟨hx, hy⟩ := sq_add_sq_eq_zero.1 ((mul_eq_zero.1 hre.symm).resolve_left hμ)
   rw [norm_eq_zero, ZeroMemClass.coe_eq_zero] at hx hy
   subst hx hy
@@ -160,7 +160,7 @@ theorem isSelfAdjoint_of_surjective_pairShift [CompleteSpace E] (hB : B.IsFormal
     ring
   have hn := congrArg RCLike.re hkey
   rw [_root_.map_add, inner_self_eq_norm_sq, inner_self_eq_norm_sq, _root_.map_zero] at hn
-  exact sub_eq_zero.1 (norm_eq_zero.1 (sq_add_sq_eq_zero.1 hn).1) ▸ x.2
+  exact sub_eq_zero.1 (norm_eq_zero.1 (sq_add_sq_eq_zero.1 hn).1) ▸ x.property
 
 end IsFormalAdjoint
 

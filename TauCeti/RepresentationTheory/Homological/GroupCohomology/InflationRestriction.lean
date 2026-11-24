@@ -86,10 +86,10 @@ private theorem mono_HInfRes_f_and_exact (n : ℕ) : ∀ A : Rep k G,
     -- The upward dimension-shifting sequence `0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0`.
     let X := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A)
-    have hX : X.ShortExact := by
-      simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A
-    have hXS : (X.map (resFunctor S.subtype)).ShortExact := by
-      simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_res_shortExact A S.subtype
+    have hX : X.ShortExact :=
+      dimensionShiftUpSES_shortExact A
+    have hXS : (X.map (resFunctor S.subtype)).ShortExact :=
+      dimensionShiftUpSES_res_shortExact A S.subtype
     have hY : (X.map (quotientToInvariantsFunctor k S)).ShortExact :=
       shortExact_map_quotientToInvariantsFunctor S hX (hA 0 n.succ_pos)
     obtain ⟨hmono, hexact⟩ := ih (dimensionShiftUp A) fun i hi =>

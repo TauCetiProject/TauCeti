@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 public import TauCeti.Topology.VectorBundle.Subbundle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -80,6 +80,9 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
 * `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of
   operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
   frames.
+* `TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`: the ranges of a `C^n`
+  fibrewise linear map of constant rank from a `C^n` vector bundle to a vector bundle of finite
+  rank have `C^n` local frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -125,7 +128,7 @@ theorem contMDiffAt_trivOperator {X : ι → Π x, E x} {y₀ y : B}
     ContMDiffAt IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜'] F) n (trivOperator 𝕜' F X y₀) y := by
   have h (i : ι) := ((trivializationAt F E y₀).contMDiffAt_section_iff hy).mp (hX i)
   rw [funext (trivOperator_eq_sum (𝕜 := 𝕜') (F := F) (X := X) y₀)]
-  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜' (ι → 𝕜') F
+  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜' 𝕜' 𝕜' (ι → 𝕜') F
     (ContinuousLinearMap.proj i)).restrictScalars 𝕜 |>.contDiff.contDiffAt).comp_contMDiffAt (h i)
 
 variable [∀ x, Module 𝕜' (E x)] [VectorBundle 𝕜' F E]
@@ -195,7 +198,7 @@ theorem contMDiffAt_totalSpace_subbundle {X : ι → Π x, E x} {U : Set B}
     {p : TotalSpace (ι → 𝕜') (fun x ↦ V x)} (hp : p.proj ∈ U) :
     letI := subbundleTopology F (F' := ι → 𝕜') V
     ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) p := by
+      (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨q.proj, q.snd⟩ : TotalSpace F E)) p := by
   let := subbundleTopology F (F' := ι → 𝕜') V
   have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) IB n
       (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ q.proj) p :=
@@ -362,7 +365,7 @@ theorem contMDiff_totalSpace_inclusion [Fintype ι] [ContMDiffVectorBundle n F E
     letI := hV.vectorBundle
     letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
     ContMDiff (IB.prod 𝓘(𝕜, ι → 𝕜')) (IB.prod 𝓘(𝕜, F)) n
-      (fun v : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨v.proj, v.2⟩ : TotalSpace F E)) := by
+      (fun v : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨v.proj, v.snd⟩ : TotalSpace F E)) := by
   let := subbundleTopology F (F' := ι → 𝕜') V
   let := hV.fiberBundle
   let := hV.vectorBundle
@@ -374,59 +377,125 @@ theorem contMDiff_totalSpace_inclusion [Fintype ι] [ContMDiffVectorBundle n F E
     ⟨(mem_trivializationAtlas_fiberBundle_iff hV _).mpr ⟨U, hU, Y, hY, hYn, rfl⟩⟩
   exact hY.contMDiffAt_totalSpace_subbundle hU hYn hp
 
-/-- A `C^n` map into the total space of `E` with values in a subbundle given by `C^n` local frames
-is `C^n` as a map into the subbundle. The frame coordinates are recovered from the ambient vector
-by a `C^n` left inverse of the frame (`ContMDiffAt.exists_contMDiffAt_leftInverse`). -/
-theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+/-- A map into the total space of `E` with values in a subbundle given by `C^n` local frames,
+which is `C^k` within `s` at `m₀` for some `k ≤ n`, is `C^k` within `s` at `m₀` as a map into the
+subbundle, with the structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiffWithinAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
     {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
     {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
-    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) {b : M → B} {w : ∀ m, E (b m)} {m₀ : M}
-    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) n (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)} {s : Set M} {m₀ : M}
+    (hw : ContMDiffWithinAt J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) s m₀)
     (hmem : ∀ m, w m ∈ V (b m)) :
     letI := subbundleTopology F (F' := ι → 𝕜') V
     letI := hV.fiberBundle
     letI := hV.vectorBundle
     letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
-    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) n
-      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ := by
+    ContMDiffWithinAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) s m₀ := by
   let := subbundleTopology F (F' := ι → 𝕜') V
   let := hV.fiberBundle
   let := hV.vectorBundle
   let := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
-  let := hV.contMDiffVectorBundle
+  have := hV.contMDiffVectorBundle
+  have : ContMDiffVectorBundle k (ι → 𝕜') (fun x ↦ V x) IB := .of_le hk
+  have : ContMDiffVectorBundle k F E IB := .of_le hk
   have : CompleteSpace 𝕜' := by
     let := IsRCLikeNormedField.rclike 𝕜'
     infer_instance
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp hw
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace_iff.mp hw
   obtain ⟨U, hU, hbU, Y, hY, hYn⟩ := hV (b m₀)
   let eV := hY.trivialization hU
   have : MemTrivializationAtlas eV :=
     ⟨(mem_trivializationAtlas_fiberBundle_iff hV _).mpr ⟨U, hU, Y, hY, hYn, rfl⟩⟩
-  refine (eV.contMDiffAt_iff (IM := J) (f := fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ :
+  refine (eV.contMDiffWithinAt_iff (IM := J) (f := fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ :
     TotalSpace (ι → 𝕜') fun x ↦ V x)) (eV.mem_source.mpr (by simpa [eV] using hbU))).mpr
     ⟨hb, ?_⟩
   let eE := trivializationAt F E (b m₀)
   have hbE : b m₀ ∈ eE.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
   obtain ⟨L, hL, hLinv⟩ := ContMDiffAt.exists_contMDiffAt_leftInverse
     (IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜') (y₀ := b m₀)
-      (fun i ↦ (hYn i).contMDiffAt (hU.mem_nhds hbU)) hbE)
+      (fun i ↦ ((hYn i).of_le hk).contMDiffAt (hU.mem_nhds hbU)) hbE)
     (.of_injective_of_finiteDimensional_domain (hY.injective_trivOperator hbU))
-  have hLr : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] ι → 𝕜') n (fun m ↦ (L (b m)).restrictScalars 𝕜) m₀ :=
+  have hLr : ContMDiffWithinAt J 𝓘(𝕜, F →L[𝕜] ι → 𝕜') k
+      (fun m ↦ (L (b m)).restrictScalars 𝕜) s m₀ :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F (ι → 𝕜') 𝕜 𝕜
-      ).toContinuousLinearMap.contDiff.comp_contMDiffAt (hL.comp m₀ hb)
-  refine (hLr.clm_apply hv).congr_of_eventuallyEq ?_
-  filter_upwards [hb.continuousAt.eventually hLinv, hb.continuousAt.eventually
-    (hU.mem_nhds hbU), hb.continuousAt.eventually (eE.open_baseSet.mem_nhds hbE)]
-    with m hmL hmU hmE
+      ).toContinuousLinearMap.contDiff.comp_contMDiffWithinAt (hL.comp_contMDiffWithinAt m₀ hb)
   -- Read in `E`, the frame sends the coordinates `c` of `w m` back to `w m`; `L` undoes this.
-  set c := (hY.basis hmU).equivFun ⟨w m, hmem m⟩
-  have hc : IsSubbundleFrameOn.trivOperator 𝕜' F Y (b m₀) (b m) c = (eE ⟨b m, w m⟩).2 := by
-    rw [IsSubbundleFrameOn.trivOperator_apply hmE, ← hY.coe_basis_equivFun_symm hmU,
-      LinearEquiv.symm_apply_apply]
-  rw [IsSubbundleFrameOn.trivialization_apply hY hU (p := ⟨b m, ⟨w m, hmem m⟩⟩) hmU]
-  dsimp only
-  rw [ContinuousLinearMap.coe_restrictScalars', ← hc, hmL c]
+  have key (m : M) (hmL : ∀ c, L (b m) (IsSubbundleFrameOn.trivOperator 𝕜' F Y (b m₀) (b m) c) = c)
+      (hmU : b m ∈ U) (hmE : b m ∈ eE.baseSet) :
+      (eV ⟨b m, ⟨w m, hmem m⟩⟩).2 = (L (b m)).restrictScalars 𝕜 (eE ⟨b m, w m⟩).2 := by
+    set c := (hY.basis hmU).equivFun ⟨w m, hmem m⟩
+    have hc : IsSubbundleFrameOn.trivOperator 𝕜' F Y (b m₀) (b m) c = (eE ⟨b m, w m⟩).2 := by
+      rw [IsSubbundleFrameOn.trivOperator_apply hmE, ← hY.coe_basis_equivFun_symm hmU,
+        LinearEquiv.symm_apply_apply]
+    rw [IsSubbundleFrameOn.trivialization_apply hY hU (p := ⟨b m, ⟨w m, hmem m⟩⟩) hmU]
+    dsimp only
+    rw [ContinuousLinearMap.coe_restrictScalars', ← hc, hmL c]
+  refine (hLr.clm_apply hv).congr_of_eventuallyEq ?_ (key m₀ hLinv.self_of_nhds hbU hbE)
+  filter_upwards [Filter.Tendsto.eventually hb.continuousWithinAt hLinv,
+    Filter.Tendsto.eventually hb.continuousWithinAt (hU.mem_nhds hbU),
+    Filter.Tendsto.eventually hb.continuousWithinAt (eE.open_baseSet.mem_nhds hbE)]
+    with m hmL hmU hmE
+  exact key m hmL hmU hmE
+
+/-- A map into the total space of `E` with values in a subbundle given by `C^n` local frames,
+which is `C^k` at `m₀` for some `k ≤ n`, is `C^k` at `m₀` as a map into the subbundle, with the
+structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)} {m₀ : M}
+    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ :=
+  hV.contMDiffWithinAt_totalSpace_mk hk hw hmem
+
+/-- A map into the total space of `E` with values in a subbundle given by `C^n` local frames,
+which is `C^k` on `s` for some `k ≤ n`, is `C^k` on `s` as a map into the subbundle, with the
+structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiffOn_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)} {s : Set M}
+    (hw : ContMDiffOn J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) s)
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffOn J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) s :=
+  fun m₀ hm₀ ↦ hV.contMDiffWithinAt_totalSpace_mk hk (hw m₀ hm₀) hmem
+
+/-- A `C^k` map into the total space of `E` with values in a subbundle given by `C^n` local
+frames, for some `k ≤ n`, is `C^k` as a map into the subbundle, with the structures
+`hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiff_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)}
+    (hw : ContMDiff J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)))
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiff J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) :=
+  fun m₀ ↦ hV.contMDiffAt_totalSpace_mk hk (hw m₀) hmem
 
 end HasLocalContMDiffSubbundleFrames
 
@@ -463,13 +532,13 @@ theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → �
     continuousOn_pi.mpr fun k ↦ hP.continuousOn.clm_apply continuousOn_const
   have hY₀ : LinearIndependent ℝ (Y x₀) := by
     have hY : Y x₀ = fun k ↦ ((β k : W x₀) : EuclideanSpace ℝ (Fin d)) :=
-      funext fun k ↦ Submodule.starProjection_eq_self_iff.mpr (β k).2
+      funext fun k ↦ Submodule.starProjection_eq_self_iff.mpr (β k).property
     rw [hY]
     exact β.linearIndependent.map' (W x₀).subtype (Submodule.ker_subtype _)
   -- The rank of a continuous family of projections is locally constant.
   set S := Subtype.val '' {y : U₀ | finrank ℝ (W y).starProjection.range = r}
   have hS : IsOpen S :=
-    hU₀.isOpenMap_subtype_val _ ((isLocallyConstant_finrank_range
+    hU₀.isOpenMap_subtypeVal _ ((isLocallyConstant_finrank_range
       (p := fun y : U₀ ↦ (W y).starProjection) hP.continuousOn.domRestrict
       fun y ↦ (W y).isIdempotentElem_starProjection).isOpen_fiber _)
   -- Synthesizing `C^n` coordinates against the `C^n` sections `ε i` gives `C^n` sections.
@@ -524,7 +593,7 @@ theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : 
       IsSubbundleFrameOn F (fun y ↦ (A y).range.map (e.symmₗ 𝕜 y)) X U ∧
       ∀ i, CMDiff[U] n (T% (X i)) := by
   let β := Module.finBasisOfFinrankEq 𝕜 (A x₀).range (hr x₀ hx₀)
-  choose u hu using fun k ↦ LinearMap.mem_range.mp (β k).2
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (β k).property
   set Y : B → Fin r → F := fun y k ↦ A y (u k)
   have hYc : ContinuousOn Y U₀ :=
     continuousOn_pi.mpr fun k ↦ hA.continuousOn.clm_apply continuousOn_const
@@ -547,6 +616,84 @@ theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : 
       comp_def]
 
 end Operators
+
+section FibrewiseProjections
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [CompleteSpace 𝕜']
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] {E₁ : B → Type*}
+  [∀ x, AddCommMonoid (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [∀ x, Module 𝕜' (E₁ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+  [VectorBundle 𝕜 F₁ E₁] [ContMDiffVectorBundle n F₁ E₁ IB]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedSpace 𝕜' F₂]
+  [FiniteDimensional 𝕜' F₂] {E₂ : B → Type*} [∀ x, AddCommMonoid (E₂ x)] [∀ x, Module 𝕜' (E₂ x)]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+  [VectorBundle 𝕜' F₂ E₂]
+
+/-- **Local frames from a smooth fibrewise linear map of constant rank.** Let `P x` be
+`𝕜'`-linear maps from the fibres `E₁ x` of a `C^n` vector bundle to the fibres `E₂ x` of a
+vector bundle over `𝕜'` with finite-dimensional model fibre `F₂`, whose ranges `V x` all have
+dimension `r`, and such that `p ↦ ⟨p.proj, P p.proj p.2⟩` is a `C^n` map of total spaces. Then
+`V` has `C^n` local frames of size `r`. Typical examples of `P` are fibrewise orthogonal
+projections. -/
+theorem hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range {r : ℕ}
+    {V : Π x, Submodule 𝕜' (E₂ x)} (P : Π x, E₁ x →ₗ[𝕜'] E₂ x)
+    (hP : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ E₁ ↦ (⟨p.proj, P p.proj p.snd⟩ : TotalSpace F₂ E₂)))
+    (hPV : ∀ x, LinearMap.range (P x) = V x) (hV : ∀ x, finrank 𝕜' (V x) = r) :
+    HasLocalContMDiffSubbundleFrames IB n F₂ (Fin r) V := by
+  -- A module over a ring is an additive group, with negation `(-1) • ·`.
+  let := fun x ↦ Module.addCommMonoidToAddCommGroup 𝕜' (M := E₂ x)
+  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
+  let e₁ := trivializationAt F₁ E₁ x₀
+  let e₂ := trivializationAt F₂ E₂ x₀
+  have hx₁ : x₀ ∈ e₁.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  have hx₂ : x₀ ∈ e₂.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  -- A basis of `V x₀` and preimages of it under `P x₀`.
+  have : FiniteDimensional 𝕜' (E₂ x₀) := (e₂.linearEquivAt 𝕜' x₀ hx₂).symm.finiteDimensional
+  let β := Module.finBasisOfFinrankEq 𝕜' (V x₀) (hV x₀)
+  have hβ (k : Fin r) : (β k : E₂ x₀) ∈ LinearMap.range (P x₀) := by
+    rw [hPV]
+    exact (β k).property
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (hβ k)
+  -- Apply `P` to the sections of `E₁` with constant coordinates `u k` in `e₁`.
+  let Y : Fin r → Π x, E₂ x := fun k x ↦ P x (e₁.symm x (e₁ ⟨x₀, u k⟩).2)
+  have hY (k : Fin r) : CMDiff[e₁.baseSet] n (T% (Y k)) :=
+    hP.comp_contMDiffOn (e₁.contMDiffOn_section_symm e₁.open_baseSet subset_rfl contMDiffOn_const)
+  -- Read through `e₂`, the frame stays a basis of `V` near `x₀`.
+  let L := fun x ↦ e₂.linearMapAt 𝕜' x
+  have hL {x : B} (hx : x ∈ e₂.baseSet) : Function.Injective (L x) := by
+    simp only [L, e₂.linearMapAt_def_of_mem hx, LinearEquiv.coe_coe]
+    exact (e₂.linearEquivAt 𝕜' x hx).injective
+  let T : B → Fin r → F₂ := fun x k ↦ L x (Y k x)
+  have hT : ContinuousOn T (e₁.baseSet ∩ e₂.baseSet) := by
+    refine continuousOn_pi.mpr fun k ↦ ?_
+    refine (continuous_snd.comp_continuousOn ((e₂.continuousOn).comp
+      ((hY k).continuousOn.mono inter_subset_left) fun x hx ↦ e₂.mem_source.mpr hx.2)).congr
+      fun x hx ↦ ?_
+    simp [T, L, e₂.coe_linearMapAt_of_mem hx.2]
+  have hT₀ : LinearIndependent 𝕜' (T x₀) := by
+    have : T x₀ = (L x₀ ∘ₗ (V x₀).subtype) ∘ β :=
+      funext fun k ↦ by simp [T, Y, e₁.symm_apply_apply_mk hx₁, hu]
+    rw [this]
+    exact β.linearIndependent.map' _
+      (LinearMap.ker_eq_bot.mpr ((hL hx₂).comp Subtype.val_injective))
+  obtain ⟨U, hUU₀, hU, hx₀U, hTU⟩ := exists_isOpen_linearIndependent_span_range_eq
+    (e₁.open_baseSet.inter e₂.open_baseSet) hT (W := fun x ↦ (V x).map (L x))
+    (fun x _ k ↦ Submodule.mem_map_of_mem (hPV x ▸ LinearMap.mem_range_self _ _))
+    (fun x hx ↦ by
+      rw [← hV x]
+      exact (Submodule.equivMapOfInjective _ (hL hx.2) _).finrank_eq.symm) ⟨hx₁, hx₂⟩ hT₀
+  have hUe : U ⊆ e₁.baseSet := hUU₀.trans inter_subset_left
+  refine ⟨U, hU, hx₀U, Y, ⟨fun k ↦ ((hY k).mono hUe).continuousOn,
+    fun {x} hx ↦ (hTU x hx).1.of_comp (L x), fun {x} hx ↦ ?_⟩, fun k ↦ (hY k).mono hUe⟩
+  apply Submodule.map_injective_of_injective (hL (hUU₀ hx).2)
+  rw [Submodule.map_span, ← range_comp]
+  exact (hTU x hx).2
+
+end FibrewiseProjections
 
 section SubbundleInclusion
 
@@ -572,7 +719,7 @@ private theorem contMDiffOn_subbundleCoord_apply
     [TopologicalSpace (TotalSpace F' (fun x ↦ V x))] [FiberBundle F' (fun x ↦ V x)]
     [VectorBundle 𝕜 F' (fun x ↦ V x)] [ContMDiffVectorBundle n F' (fun x ↦ V x) IB']
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.2⟩ : TotalSpace F E)))
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.snd⟩ : TotalSpace F E)))
     (x₀ : B') (w : F') :
     let eV := trivializationAt F' (fun x ↦ V x) x₀
     let eE := trivializationAt F E (f x₀)
@@ -604,7 +751,7 @@ private theorem exists_contMDiffOn_subbundleCoord [FiniteDimensional 𝕜 F']
     [TopologicalSpace (TotalSpace F' (fun x ↦ V x))] [FiberBundle F' (fun x ↦ V x)]
     [VectorBundle 𝕜 F' (fun x ↦ V x)] [ContMDiffVectorBundle n F' (fun x ↦ V x) IB']
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.2⟩ : TotalSpace F E)))
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.snd⟩ : TotalSpace F E)))
     (x₀ : B') :
     let eV := trivializationAt F' (fun x ↦ V x) x₀
     let eE := trivializationAt F E (f x₀)
@@ -616,7 +763,7 @@ private theorem exists_contMDiffOn_subbundleCoord [FiniteDimensional 𝕜 F']
   intro eV eE
   let U : Set B' := eV.baseSet ∩ f ⁻¹' eE.baseSet
   let subL (x : B') : V x →L[𝕜] E (f x) :=
-    { toLinearMap := (V x).subtype, cont := continuous_subtype_val }
+    { toLinearMap := (V x).subtype, cont := continuous_subtypeVal }
   let A : B' → F' →L[𝕜] F := fun x ↦
     ContinuousLinearMap.inCoordinates F' (fun x ↦ V x) F E x₀ x (f x₀) (f x) (subL x)
   have hAeq : ∀ x ∈ U, ∀ w : F', (eE ⟨f x, ((eV.symm x w : V x) : E (f x))⟩).2 = A x w := by
@@ -662,7 +809,7 @@ private theorem symm_fiberwiseLinearPartialDiffeomorph_subbundle_eventuallyEq [C
     let eE := trivializationAt F E (f p.proj)
     let Φ := fiberwiseLinearPartialDiffeomorph L hW hL hL_inv
     (⇑eE.toOpenPartialHomeomorph.symm ∘ ⇑Φ ∘ Prod.map f inl₀) ∘ ⇑eV =ᶠ[𝓝 p]
-      fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E) := by
+      fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E) := by
   intro eV eE Φ
   have hp_eV : p ∈ eV.source :=
     eV.mem_source.mpr (FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) p.proj)
@@ -676,8 +823,8 @@ private theorem symm_fiberwiseLinearPartialDiffeomorph_subbundle_eventuallyEq [C
   have hΦq : Φ (f (eV q).1, inl₀ (eV q).2) = (f q.proj, A q.proj (eV q).2) := by
     rw [eV.coe_fst' hq_base, fiberwiseLinearPartialDiffeomorph_apply, hL_inl _ hfqW,
       hrW q.proj hfqW]
-  rw [hΦq, ← hAeq q.proj ⟨hq_base, hfq_base⟩ (eV q).2, eV.symm_apply_apply_mk hq_base q.2]
-  let zE : TotalSpace F E := ⟨f q.proj, q.2⟩
+  rw [hΦq, ← hAeq q.proj ⟨hq_base, hfq_base⟩ (eV q).2, eV.symm_apply_apply_mk hq_base q.snd]
+  let zE : TotalSpace F E := ⟨f q.proj, q.snd⟩
   rw [show (f q.proj, (eE zE).2) = eE zE from Prod.ext (eE.coe_fst' (x := zE) hfq_base).symm rfl]
   exact eE.toOpenPartialHomeomorph.left_inv (eE.mem_source.mpr hfq_base)
 
@@ -694,10 +841,10 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
     {Vr : Set B} (hVr : IsOpen Vr) (hfp : f p.proj ∈ Vr)
     {r : B → B'} (hr : ContMDiffOn IB IB' n r Vr) (hr_inv : ∀ x, f x ∈ Vr → r (f x) = x)
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E))) :
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E))) :
     ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
       IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-        (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p := by
+        (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) p := by
   have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let eV := trivializationAt F' (fun x ↦ V x) p.proj
   let eE := trivializationAt F E (f p.proj)
@@ -758,9 +905,9 @@ private theorem isImmersion_of_forall_exists_complement [FiniteDimensional 𝕜 
     (h : ∀ p : TotalSpace F' (fun x ↦ V x),
       ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
         IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-          (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p) :
+          (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) p) :
     IsImmersion (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) := by
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) := by
   rcases isEmpty_or_nonempty (TotalSpace F' (fun x ↦ V x)) with _ | ⟨⟨p₀⟩⟩
   · exact IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun p ↦ isEmptyElim p
   obtain ⟨Q₀, ⟨e₀⟩, _⟩ := h p₀
@@ -781,10 +928,10 @@ variable [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 F'] [IsManifold IB n
 model need be boundaryless or finite-dimensional. -/
 theorem isImmersionAt_totalSpace_subbundle
     (hinc : ContMDiff (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)))
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E)))
     (p : TotalSpace F' (fun x ↦ V x)) :
     IsImmersionAt (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) p := by
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.snd⟩ : TotalSpace F E)) p := by
   obtain ⟨Q, _, h⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
     (P := PUnit.{1}) (f := fun x ↦ x) (V := V) (IsImmersionOfComplement.id p.proj) continuous_id
     isOpen_univ (mem_univ _) contMDiffOn_id (fun _ _ ↦ rfl) hinc
@@ -795,9 +942,9 @@ theorem isImmersionAt_totalSpace_subbundle
 boundaryless or finite-dimensional. -/
 theorem isImmersion_totalSpace_subbundle
     (hinc : ContMDiff (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))) :
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))) :
     IsImmersion (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) :=
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.snd⟩ : TotalSpace F E)) :=
   isImmersion_of_forall_exists_complement (P := PUnit.{1}) (f := fun x ↦ x) (V := V) fun p ↦
     exists_isImmersionAtOfComplement_subbundle_of_retraction (IsImmersionOfComplement.id p.proj)
       continuous_id isOpen_univ (mem_univ _) contMDiffOn_id (fun _ _ ↦ rfl) hinc
@@ -815,10 +962,10 @@ theorem isSmoothEmbedding_totalSpace_subbundle [FiniteDimensional 𝕜 F] [Finit
     (hinc :
       letI := subbundleTopology F (F' := F') V
       ContMDiff (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-        (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))) :
+        (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))) :
     letI := subbundleTopology F (F' := F') V
     IsSmoothEmbedding (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) := by
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.snd⟩ : TotalSpace F E)) := by
   let := subbundleTopology F (F' := F') V
   exact ⟨isImmersion_totalSpace_subbundle hinc, isEmbedding_totalSpace_subbundle F F' V⟩
 
@@ -838,9 +985,9 @@ theorem isImmersionAt_lift_totalSpace_subbundle {f : B' → B}
     {p : TotalSpace F' (fun x ↦ V x)}
     (hf_imm : IsImmersionAt IB' IB n f p.proj) (hf_emb : IsEmbedding f)
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E))) :
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E))) :
     IsImmersionAt (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p := by
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) p := by
   obtain ⟨Vr, hVr, hfp, r, hr, hr_inv⟩ := hf_imm.exists_contMDiffOn_retraction hf_emb
   obtain ⟨Q, _, h⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
     hf_imm.isImmersionAtOfComplement_complement hf_emb.continuous hVr hfp hr hr_inv hinc
@@ -855,9 +1002,9 @@ theorem isImmersion_lift_totalSpace_subbundle {f : B' → B}
     [VectorBundle 𝕜 F' (fun x ↦ V x)] [ContMDiffVectorBundle n F' (fun x ↦ V x) IB']
     (hf : IsSmoothEmbedding IB' IB n f)
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E))) :
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E))) :
     IsImmersion (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) :=
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) :=
   isImmersion_of_forall_exists_complement (P := hf.isImmersion.complement) (f := f) (V := V)
     fun p ↦ by
       let hfc := hf.isImmersion.isImmersionOfComplement_complement p.proj
@@ -875,11 +1022,11 @@ theorem isSmoothEmbedding_lift_totalSpace_subbundle {f : B' → B}
     [VectorBundle 𝕜 F' (fun x ↦ V x)] [ContMDiffVectorBundle n F' (fun x ↦ V x) IB']
     (hf : IsSmoothEmbedding IB' IB n f)
     (hemb : IsEmbedding
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)))
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)))
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.2⟩ : TotalSpace F E))) :
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨f p.proj, p.snd⟩ : TotalSpace F E))) :
     IsSmoothEmbedding (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) :=
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.snd⟩ : TotalSpace F E)) :=
   ⟨isImmersion_lift_totalSpace_subbundle hf hinc, hemb⟩
 
 end AlongEmbedding

@@ -182,13 +182,13 @@ variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 theorem eventually_isUnramifiedAt_liesOver :
     ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := by
   classical
   refine Filter.eventually_cofinite.mpr
     ((NumberField.Chebotarev.ramifiedPrimes K L).finite_toSet.subset ?_)
   intro v hv
   apply (NumberField.Chebotarev.mem_ramifiedPrimes_iff v).mpr
   intro h
-  exact hv fun w ↦ @h w.1.asIdeal w.1.isPrime w.2
+  exact hv fun w ↦ @h w.val.asIdeal w.val.isPrime w.property
 
 end TauCeti

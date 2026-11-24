@@ -117,7 +117,7 @@ this is the closedness of the symplectomorphism group `Symp(M, ω)` in `Diff(M)`
 theorem isClosed_diffeomorphStabilizer (σ : SmoothForm I M F k) :
     IsClosed (diffeomorphStabilizer σ : Set (M ≃ₘ⟮I, I⟯ M)) := by
   have hset : (diffeomorphStabilizer σ : Set (M ≃ₘ⟮I, I⟯ M)) =
-      ⋂ x, {φ : M ≃ₘ⟮I, I⟯ M | TauCeti.mpullback I I φ σ.1 x = σ.1 x} := by
+      ⋂ x, {φ : M ≃ₘ⟮I, I⟯ M | TauCeti.mpullback I I φ σ.val x = σ.val x} := by
     ext φ
     simp only [SetLike.mem_coe, mem_diffeomorphStabilizer_iff_forall, mem_iInter, mem_ofPred_eq]
   rw [hset]

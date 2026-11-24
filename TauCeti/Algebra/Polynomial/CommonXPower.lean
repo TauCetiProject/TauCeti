@@ -83,7 +83,7 @@ theorem exists_polynomial_relation_of_sum_smul_eq_zero {R A : Type*} [CommSemiri
   have hrange : ∀ y : A, y ∈ Algebra.adjoin R ({x} : Set A) → ∃ p : R[X], aeval x p = y := by
     intro y hy
     rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hy
-  choose p hp using fun i ↦ hrange (g i : A) (g i).2
+  choose p hp using fun i ↦ hrange (g i : A) (g i).property
   have hpne : p i₁ ≠ 0 := by
     intro h
     exact hg0 (Subtype.ext (by simpa [h] using (hp i₁).symm))

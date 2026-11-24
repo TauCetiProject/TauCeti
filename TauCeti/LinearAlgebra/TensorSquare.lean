@@ -821,7 +821,7 @@ noncomputable def symmetricTensorsEquivSymmetricPower :
       have hz : tensorSwap R M (tensorProductEquivTensorSquare R M (z : M ⊗[R] M)) =
           tensorProductEquivTensorSquare R M (z : M ⊗[R] M) := by
         rw [← tensorProductEquivTensorSquare_comm]
-        exact congrArg _ (mem_symmetricTensors.mp z.2)
+        exact congrArg _ (mem_symmetricTensors.mp z.property)
       refine Subtype.ext ?_
       simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, Submodule.subtype_apply,
         LinearEquiv.coe_coe, LinearMap.id_apply,
@@ -901,7 +901,7 @@ noncomputable def antisymmetricTensorsEquivExteriorPower :
       refine LinearMap.ext fun z ↦ ?_
       have hz : tensorSwap R M (tensorProductEquivTensorSquare R M (z : M ⊗[R] M)) =
           -tensorProductEquivTensorSquare R M (z : M ⊗[R] M) := by
-        rw [← tensorProductEquivTensorSquare_comm, mem_antisymmetricTensors.mp z.2, map_neg]
+        rw [← tensorProductEquivTensorSquare_comm, mem_antisymmetricTensors.mp z.property, map_neg]
       refine Subtype.ext ?_
       simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, Submodule.subtype_apply,
         LinearEquiv.coe_coe, LinearMap.id_apply,

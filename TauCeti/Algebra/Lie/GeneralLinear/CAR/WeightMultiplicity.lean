@@ -88,17 +88,17 @@ private noncomputable def carOccupationEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
   Module.toModuleEnd K (carAlgebra K N)
-    (carOccupationElement (K := K) a.1.1 a.1.2)
+    (carOccupationElement (K := K) a.val.1 a.val.2)
 
 private noncomputable def carLoweringEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) (carGenerator (R := K) a.1.2 a.1.1)
+  Module.toModuleEnd K (carAlgebra K N) (carGenerator (R := K) a.val.2 a.val.1)
 
 private noncomputable def carScaledRaisingEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (R := K) a.1.1 a.1.2)
+  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (R := K) a.val.1 a.val.2)
 
 private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
@@ -116,10 +116,10 @@ private theorem carOccupationElement_mul_carGenerator_fst
 
 private theorem carPositiveRootPair_ne_reverse {N : ℕ}
     (a b : ↥(carPositiveRootPairs (Fin N))) :
-    (a.1.1, a.1.2) ≠ (b.1.2, b.1.1) := by
+    (a.val.1, a.val.2) ≠ (b.val.2, b.val.1) := by
   intro h
-  have ha : a.1.1 < a.1.2 := mem_carPositiveRootPairs.mp a.2
-  have hb : b.1.1 < b.1.2 := mem_carPositiveRootPairs.mp b.2
+  have ha : a.val.1 < a.val.2 := mem_carPositiveRootPairs.mp a.property
+  have hb : b.val.1 < b.val.2 := mem_carPositiveRootPairs.mp b.property
   have hfst := congrArg Prod.fst h
   have hsnd := congrArg Prod.snd h
   exact lt_asymm ha (hfst ▸ hsnd ▸ hb)
@@ -130,7 +130,7 @@ private theorem commute_carOccupationEnd_carLoweringEnd
     {K : Type*} [Field K] {N : ℕ} {i a : ↥(carPositiveRootPairs (Fin N))} (hia : i ≠ a) :
     Commute (carOccupationEnd (K := K) i) (carLoweringEnd a) := by
   apply (commute_carOccupationElement_carGenerator (K := K)
-    (i := i.1.1) (j := i.1.2) (k := a.1.2) (l := a.1.1) ?_ ?_).map
+    (i := i.val.1) (j := i.val.2) (k := a.val.2) (l := a.val.1) ?_ ?_).map
       (Module.toModuleEnd K (carAlgebra K N))
   · exact (carPositiveRootPair_ne_reverse i a).symm
   · intro h
@@ -144,7 +144,7 @@ private theorem commute_carOccupationEnd_carScaledRaisingEnd
     {K : Type*} [Field K] {N : ℕ} {i a : ↥(carPositiveRootPairs (Fin N))} (hia : i ≠ a) :
     Commute (carOccupationEnd (K := K) i) (carScaledRaisingEnd a) := by
   have hcomm := ((commute_carOccupationElement_carGenerator (K := K)
-    (i := i.1.1) (j := i.1.2) (k := a.1.1) (l := a.1.2) ?_ ?_).smul_right
+    (i := i.val.1) (j := i.val.2) (k := a.val.1) (l := a.val.2) ?_ ?_).smul_right
       (2 : K)⁻¹).map (Module.toModuleEnd K (carAlgebra K N))
   · exact hcomm
   · intro h
@@ -160,7 +160,7 @@ private theorem carOccupationEnd_carLoweringEnd_apply
   dsimp only [carOccupationEnd, carLoweringEnd]
   simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul]
   rw [← mul_assoc, carOccupationElement_mul_carGenerator_snd
-    (ne_of_lt (mem_carPositiveRootPairs.mp a.2)), zero_mul]
+    (ne_of_lt (mem_carPositiveRootPairs.mp a.property)), zero_mul]
 
 /-- The scaled raising operator of a positive root pair lands in the fixed space of its
 occupation operator. -/
@@ -172,7 +172,7 @@ private theorem carOccupationEnd_carScaledRaisingEnd_apply
   simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul]
   rw [← mul_assoc, mul_smul_comm,
     carOccupationElement_mul_carGenerator_fst
-      (ne_of_lt (mem_carPositiveRootPairs.mp a.2))]
+      (ne_of_lt (mem_carPositiveRootPairs.mp a.property))]
 
 /-- Lowering then scaled raising is the identity on the fixed space of the occupation operator. -/
 private theorem carScaledRaisingEnd_carLoweringEnd_of_fixed
@@ -195,7 +195,7 @@ private theorem carLoweringEnd_carScaledRaisingEnd_of_zero
   rw [← mul_assoc, mul_smul_comm]
   rw [smul_mul_assoc, ← smul_mul_assoc]
   rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
-  have hswap := carOccupationElement_swap (K := K) (n := Fin N) a.1.1 a.1.2
+  have hswap := carOccupationElement_swap (K := K) (n := Fin N) a.val.1 a.val.2
   rw [carOccupationElement_def (K := K) (n := Fin N),
     carOccupationElement_def (K := K) (n := Fin N)] at hswap
   have hswap' := congrArg (fun z => z * x) hswap
@@ -221,7 +221,7 @@ private theorem pow_card_mul_finrank_carOccupationFixed
     (fun a _ x hx => carScaledRaisingEnd_carLoweringEnd_of_fixed a x hx)
     (fun a _ x hx => carLoweringEnd_carScaledRaisingEnd_of_zero a x hx)
   · exact (isIdempotentElem_carOccupationElement (K := K)
-      (ne_of_lt (mem_carPositiveRootPairs.mp a.2))).map
+      (ne_of_lt (mem_carPositiveRootPairs.mp a.property))).map
         (Module.toModuleEnd K (carAlgebra K N))
   · exact (commute_carOccupationElement (K := K)).map
       (Module.toModuleEnd K (carAlgebra K N))

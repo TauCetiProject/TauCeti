@@ -89,7 +89,7 @@ theorem δ_H1IsoOfIsTrivial_inv_eq_groupCohomologyπEven
     (hχ : χ (Additive.ofMul (Group.Abelianization.of g)) = ((1 / orderOf g : ℚ) : AddCircle (1 :
         ℚ)))
     (x : LinearMap.ker (Rep.applyAsHom (Rep.trivial ℤ G ℤ) g - 𝟙 _).hom.toLinearMap)
-    (hx : x.1 = (1 : ℤ)) :
+    (hx : x.val = (1 : ℤ)) :
     δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2 rfl
         ((H1IsoOfIsTrivial (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv
           (χ.comp Group.Abelianization.of.toAdditive)) =
@@ -136,7 +136,7 @@ theorem characterConnectingClass_eq_groupCohomologyπEven
     (hχ : χ (Additive.ofMul (Group.Abelianization.of g)) = ((1 / orderOf g : ℚ) : AddCircle (1 :
         ℚ)))
     (x : LinearMap.ker (Rep.applyAsHom (Rep.trivial ℤ G ℤ) g - 𝟙 _).hom.toLinearMap)
-    (hx : x.1 = (1 : ℤ)) :
+    (hx : x.val = (1 : ℤ)) :
     characterConnectingClass G χ =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app _
         (groupCohomologyπEven (Rep.trivial ℤ G ℤ) g hg 2 even_two x) := by
@@ -152,7 +152,7 @@ theorem cup_characterConnectingClass_eq_groupCohomologyπEven
     (hχ : χ (Additive.ofMul (Group.Abelianization.of g)) = ((1 / orderOf g : ℚ) : AddCircle (1 :
         ℚ)))
     (A : Rep ℤ G) (a : A.ρ.invariants)
-    (x : LinearMap.ker (Rep.applyAsHom A g - 𝟙 A).hom.toLinearMap) (hx : x.1 = a) :
+    (x : LinearMap.ker (Rep.applyAsHom A g - 𝟙 A).hom.toLinearMap) (hx : x.val = a) :
     (tateCohomologyFunctor 2).map (ρ_ A).hom
         (cup A (Rep.trivial ℤ G ℤ) 0 2 2 (zero_add 2) (H0π A a) (characterConnectingClass G χ)) =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app A
