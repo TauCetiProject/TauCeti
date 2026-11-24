@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 public import TauCeti.Analysis.Normed.Module.Quotient
-public import TauCeti.Analysis.Normed.Group.Submodule
 public import TauCeti.Analysis.Normed.Group.Quotient
+public import TauCeti.Topology.MetricSpace.Algebra
 import TauCeti.Analysis.Normed.Group.OpenMapping
 
 /-!
@@ -43,7 +43,7 @@ def restrictedFamilySubtype :
 
 @[simp]
 theorem restrictedFamilySubtype_apply (a : IsRestrictedFamily.addSubgroup N c) (t : σ →₀ ℕ) :
-    (restrictedFamilySubtype N a).1 t = (a.1 t : E) := by
+    (restrictedFamilySubtype N a).val t = (a.val t : E) := by
   exact congrFun (coe_mapLinearMap N.subtype (C := 1) (fun _ ↦ by simp) a) t
 
 /-- Apply the coefficient quotient map to a restricted family. -/
@@ -53,7 +53,7 @@ def restrictedFamilyMkQ :
 
 @[simp]
 theorem restrictedFamilyMkQ_apply (a : IsRestrictedFamily.addSubgroup E c) (t : σ →₀ ℕ) :
-    (restrictedFamilyMkQ N a).1 t = Submodule.Quotient.mk (a.1 t) := by
+    (restrictedFamilyMkQ N a).val t = Submodule.Quotient.mk (a.val t) := by
   simp [restrictedFamilyMkQ]
 
 /-- Inclusion of a coefficient submodule remains injective on restricted families. -/
@@ -71,13 +71,13 @@ theorem range_restrictedFamilySubtype :
     apply (mapLinearMap_eq_zero_iff _ _ _).mpr
     intro t
     simpa only [restrictedFamilySubtype_apply, Submodule.mkQ_apply]
-      using (Submodule.Quotient.mk_eq_zero N).mpr (a.1 t).2
+      using (Submodule.Quotient.mk_eq_zero N).mpr (a.val t).property
   · intro a ha
-    have hcoeff (t : σ →₀ ℕ) : a.1 t ∈ N :=
+    have hcoeff (t : σ →₀ ℕ) : a.val t ∈ N :=
       (Submodule.Quotient.mk_eq_zero N).mp
         ((mapLinearMap_eq_zero_iff _ _ _).mp ha t)
-    refine ⟨⟨fun t ↦ ⟨a.1 t, hcoeff t⟩, ?_⟩, IsRestrictedFamily.ext fun _ ↦ by simp⟩
-    exact mem_addSubgroup.mpr ((mem_addSubgroup.mp a.2).of_norm_le (C := 1) fun _ ↦ by simp)
+    refine ⟨⟨fun t ↦ ⟨a.val t, hcoeff t⟩, ?_⟩, IsRestrictedFamily.ext fun _ ↦ by simp⟩
+    exact mem_addSubgroup.mpr ((mem_addSubgroup.mp a.property).of_norm_le (C := 1) fun _ ↦ by simp)
 
 /-- A family with coefficients in the submodule maps to zero in the quotient. -/
 @[simp]
@@ -89,7 +89,7 @@ theorem restrictedFamilyMkQ_restrictedFamilySubtype (a : IsRestrictedFamily.addS
 coefficient bound greater than one, at every polyradius. -/
 theorem exists_restrictedFamilyMkQ_eq_and_norm_coeff_le [IsClosed (N : Set E)] {L : ℝ}
     (hL : 1 < L) (b : IsRestrictedFamily.addSubgroup (E ⧸ N) c) :
-    ∃ a, restrictedFamilyMkQ N a = b ∧ ∀ t, ‖a.1 t‖ ≤ L * ‖b.1 t‖ := by
+    ∃ a, restrictedFamilyMkQ N a = b ∧ ∀ t, ‖a.val t‖ ≤ L * ‖b.val t‖ := by
   apply exists_mapLinearMap_eq_and_norm_coeff_le N.mkQ _
   intro y
   by_cases hy : y = 0

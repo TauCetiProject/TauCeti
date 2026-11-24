@@ -263,7 +263,7 @@ theorem exists_continuousLinearMap_of_doubleDual [FiniteDimensional 𝕜 V]
   -- A finite `δ`-net `t` of the unit sphere of `V`.
   obtain ⟨t, hts, htf, hcover⟩ := finite_cover_balls_of_compact (isCompact_sphere (0 : V) 1) hδ
   have := htf.to_subtype
-  have hnorm : ∀ v : t, ‖(v : V)‖ = 1 := fun v ↦ mem_sphere_zero_iff_norm.1 (hts v.2)
+  have hnorm : ∀ v : t, ‖(v : V)‖ = 1 := fun v ↦ mem_sphere_zero_iff_norm.1 (hts v.property)
   -- Functionals of norm less than one almost norming the net points.
   have hnorming : ∀ v : t, ∃ h : StrongDual 𝕜 E, ‖h‖ < 1 ∧ 1 - δ < ‖ι v h‖ := fun v ↦
     (ι v).exists_lt_apply_of_lt_opNorm (by rw [ι.norm_map, hnorm v]; linarith)

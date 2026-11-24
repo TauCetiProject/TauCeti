@@ -314,6 +314,13 @@ lemma isUnit_one_sub_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End
   rw [hCv] at this
   exact this.false
 
+/-- An element `C` of the Cayley ball has `1 + C` invertible: conjugation by `J₀` exchanges `1 + C`
+and `1 - C`, since `C` anticommutes with `J₀`. -/
+lemma isUnit_one_add_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End ℝ V}
+    (hC : C ∈ ω.cayleyBall J₀) : IsUnit (1 + C) :=
+  (isUnit_one_add_iff_isUnit_one_sub J₀.toLinearMap_mul_self hC.1).2
+    (isUnit_one_sub_of_mem_cayleyBall hC)
+
 /-- The inverse Cayley transform `J₀ (1 + C)(1 - C)⁻¹` of an element of the Cayley ball squares
 to `-1`. -/
 private lemma inverseCayley_mul_self [FiniteDimensional ℝ V] {C : Module.End ℝ V}
@@ -325,8 +332,7 @@ private lemma inverseCayley_mul_self [FiniteDimensional ℝ V] {C : Module.End �
   -- Anticommutation gives `(1 - C) J₀ = J₀ (1 + C)` and `(1 + C) J₀ = J₀ (1 - C)`.
   have hQj : (1 - C) * j = j * (1 + C) := by
     rw [sub_mul, mul_add, hC.1, one_mul, mul_one, sub_neg_eq_add]
-  have hRj : (1 + C) * j = j * (1 - C) := by
-    rw [add_mul, mul_sub, hC.1, one_mul, mul_one, sub_eq_add_neg]
+  have hRj : (1 + C) * j = j * (1 - C) := one_add_mul_eq_mul_one_sub hC.1
   have h₁ : Ring.inverse (1 - C) * j * (1 + C) = j := by
     rw [mul_assoc, ← hQj, ← mul_assoc, Ring.inverse_mul_cancel _ hQ, one_mul]
   calc j * (1 + C) * Ring.inverse (1 - C) * (j * (1 + C) * Ring.inverse (1 - C))
@@ -405,11 +411,11 @@ from the `ω`-tame complex structures onto the Cayley ball of `J₀`. Its invers
 `C ↦ J₀ (1 + C)(1 - C)⁻¹`. -/
 def Compatible.cayleyEquiv (h₀ : ω.Compatible J₀) :
     {J : AlmostComplexStructure V // ω.Tames J} ≃ ω.cayleyBall J₀ where
-  toFun J := ⟨J₀.cayley J, h₀.cayley_mem_cayleyBall J.2⟩
-  invFun C := ⟨inverseCayley C.2, h₀.tames_inverseCayley C.2⟩
+  toFun J := ⟨J₀.cayley J, h₀.cayley_mem_cayleyBall J.property⟩
+  invFun C := ⟨inverseCayley C.property, h₀.tames_inverseCayley C.property⟩
   left_inv J := Subtype.ext <| AlmostComplexStructure.toLinearMap_injective <|
-    h₀.inverseCayley_cayley J.2
-  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.2
+    h₀.inverseCayley_cayley J.property
+  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.property
 
 /-- The Cayley equivalence is the Cayley transform. -/
 @[simp]
@@ -520,13 +526,13 @@ from the `ω`-compatible complex structures onto the compatible Cayley ball of `
 transform of `J₀`, this exhibits the compatible structures as a convex set in a linear chart. -/
 def Compatible.compatibleCayleyEquiv (h₀ : ω.Compatible J₀) :
     {J : AlmostComplexStructure V // ω.Compatible J} ≃ ω.compatibleCayleyBall J₀ where
-  toFun J := ⟨J₀.cayley J, (h₀.cayley_mem_compatibleCayleyBall_iff J.2.tames).mpr J.2⟩
-  invFun C := ⟨inverseCayley C.2.1,
-    (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_inverseCayley C.2.1)).mp
-      (by rw [h₀.cayley_inverseCayley]; exact C.2)⟩
+  toFun J := ⟨J₀.cayley J, (h₀.cayley_mem_compatibleCayleyBall_iff J.property.tames).mpr J.property⟩
+  invFun C := ⟨inverseCayley C.property.1,
+    (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_inverseCayley C.property.1)).mp
+      (by rw [h₀.cayley_inverseCayley]; exact C.property)⟩
   left_inv J := Subtype.ext <| AlmostComplexStructure.toLinearMap_injective <|
-    h₀.inverseCayley_cayley J.2.tames
-  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.2.1
+    h₀.inverseCayley_cayley J.property.tames
+  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.property.1
 
 /-- The compatible Cayley equivalence is the Cayley transform. -/
 @[simp]

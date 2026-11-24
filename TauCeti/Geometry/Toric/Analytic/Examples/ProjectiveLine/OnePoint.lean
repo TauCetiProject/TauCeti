@@ -128,13 +128,13 @@ theorem projectiveLinePositiveChartMap_eq_negativeChartMap_iff (z w : ℂ) :
     -- the same topology used by the affine-ray coordinate lemma.
     have hp : affineRayPointHomeomorph gp
         (faceAffinePointMap projectiveLineFan.lattice
-          (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-            projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) x) = z :=
+          (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.property
+            projectiveLineZeroCone.property projectiveLineZeroCone_le_positiveCone) x) = z :=
       affineRayPointHomeomorph_faceAffinePointMap_symm gp g₀ (Units.mk0 z hz)
     have hn : negativeRayPointHomeomorph gn
         (faceAffinePointMap projectiveLineFan.lattice
-          (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.2
-            projectiveLineZeroCone.2 projectiveLineZeroCone_le_negativeCone) x) = w := by
+          (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.property
+            projectiveLineZeroCone.property projectiveLineZeroCone_le_negativeCone) x) = w := by
       have hm := projectiveLine_chart_coordinates_mul («gp» := gp) (g := gn) x
       rw [hp] at hm
       exact mul_left_cancel₀ hz (hm.trans h.symm)

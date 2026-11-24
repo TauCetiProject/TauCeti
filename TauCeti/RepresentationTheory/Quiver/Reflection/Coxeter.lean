@@ -238,18 +238,18 @@ dimension-vector lattice; over a repetition-free word running through all the ve
 Coxeter transformation. -/
 noncomputable def vertexReflectionList {l : List Q} (hl : ∀ i ∈ l, IsEmpty (i ⟶ i)) :
     (Q → ℤ) ≃ₗ[ℤ] (Q → ℤ) :=
-  ((l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.1 i.2)).reverse).prod
+  ((l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.val i.property)).reverse).prod
 
 private theorem map_vertexReflection_toLinearMap {l : List Q}
     (hl : ∀ i ∈ l, IsEmpty (i ⟶ i)) :
-    (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.1 i.2)).map
+    (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.val i.property)).map
         (fun e ↦ e.toLinearMap)
       = l.map (vertexPreReflection Q) := by
   rw [List.map_map, ← List.attach_map_val (f := vertexPreReflection Q)]
   apply List.map_congr_left
   intro i _
   apply LinearMap.coe_injective
-  exact coe_vertexReflection Q (hl i.1 i.2)
+  exact coe_vertexReflection Q (hl i.val i.property)
 
 omit [Quiver Q] [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] [DecidableEq Q] in
 private theorem toLinearMap_list_prod
@@ -287,18 +287,18 @@ theorem vertexPreReflectionList_bijective {l : List Q} (hl : ∀ i ∈ l, IsEmpt
 theorem coe_vertexReflectionList_symm {l : List Q} (hl : ∀ i ∈ l, IsEmpty (i ⟶ i)) :
     ⇑(vertexReflectionList Q hl).symm = ⇑(vertexPreReflectionList Q l.reverse) := by
   have hinv : (vertexReflectionList Q hl).symm =
-      (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.1 i.2)).prod := by
+      (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.val i.property)).prod := by
     rw [vertexReflectionList]
     -- `LinearEquiv.automorphismGroup` defines group inversion as `LinearEquiv.symm`; exposing that
     -- operation lets `List.prod_reverse_noncomm` compute the inverse of the reversed product.
     change ((l.attach.map fun i : {i // i ∈ l} ↦
-      vertexReflection Q (hl i.1 i.2)).reverse.prod)⁻¹ = _
+      vertexReflection Q (hl i.val i.property)).reverse.prod)⁻¹ = _
     rw [List.prod_reverse_noncomm]
     simp only [inv_inv, List.map_map]
     congr 1
     apply List.map_congr_left
     intro i _
-    exact vertexReflection_symm Q (hl i.1 i.2)
+    exact vertexReflection_symm Q (hl i.val i.property)
   have h : (vertexReflectionList Q hl).symm.toLinearMap =
       vertexPreReflectionList Q l.reverse := by
     rw [hinv, vertexPreReflectionList, List.reverse_reverse, toLinearMap_list_prod,

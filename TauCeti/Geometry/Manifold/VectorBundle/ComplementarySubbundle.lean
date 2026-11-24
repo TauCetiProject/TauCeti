@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Complementary smooth subbundles
@@ -67,7 +67,7 @@ theorem contMDiff_totalSpace_add (hV : HasLocalContMDiffSubbundleFrames IB n F �
     letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι' → 𝕜') fun x ↦ W x
     ContMDiff (IB.prod 𝓘(𝕜, (ι → 𝕜') × (ι' → 𝕜'))) (IB.prod 𝓘(𝕜, F)) n
       (fun v : TotalSpace ((ι → 𝕜') × (ι' → 𝕜')) ((fun x ↦ V x) ×ᵇ fun x ↦ W x) ↦
-        (⟨v.proj, (v.2.1 : E v.proj) + v.2.2⟩ : TotalSpace F E)) := by
+        (⟨v.proj, (v.snd.1 : E v.proj) + v.snd.2⟩ : TotalSpace F E)) := by
   let := subbundleTopology F (F' := ι → 𝕜') V
   let := hV.fiberBundle
   let := hV.vectorBundle
@@ -109,7 +109,7 @@ theorem exists_bundleDiffeomorph_prod_of_isCompl [Fintype ι']
     letI := hW.fiberBundle
     ∃ Φ : TotalSpace ((ι → 𝕜) × (ι' → 𝕜)) ((fun x ↦ V x) ×ᵇ fun x ↦ W x)
         ≃ₘ^n⟮IB.prod 𝓘(𝕜, (ι → 𝕜) × (ι' → 𝕜)), IB.prod 𝓘(𝕜, F)⟯ TotalSpace F E,
-      ∀ v, Φ v = ⟨v.proj, (v.2.1 : E v.proj) + v.2.2⟩ := by
+      ∀ v, Φ v = ⟨v.proj, (v.snd.1 : E v.proj) + v.snd.2⟩ := by
   let := subbundleTopology F (F' := ι → 𝕜) V
   let := hV.fiberBundle
   have := hV.vectorBundle
@@ -144,7 +144,7 @@ theorem contMDiff_totalSpace_projectionOnto_of_isCompl [Finite ι']
     letI := subbundleTopology F (F' := ι → 𝕜) V
     letI := hV.fiberBundle
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, ι → 𝕜)) n
-      (fun w : TotalSpace F E ↦ (⟨w.proj, (V w.proj).projectionOnto (W w.proj) (hVW w.proj) w.2⟩ :
+      (fun w : TotalSpace F E ↦ (⟨w.proj, (V w.proj).projectionOnto (W w.proj) (hVW w.proj) w.snd⟩ :
         TotalSpace (ι → 𝕜) fun x ↦ V x)) := by
   have := Fintype.ofFinite ι'
   let := subbundleTopology F (F' := ι → 𝕜) V
@@ -154,7 +154,7 @@ theorem contMDiff_totalSpace_projectionOnto_of_isCompl [Finite ι']
   obtain ⟨Φ, hΦ⟩ := exists_bundleDiffeomorph_prod_of_isCompl hV hW hVW
   -- `Φ⁻¹` splits a vector of `E` into its components along `V` and `W`.
   have hΦs (w : TotalSpace F E) : Φ.symm w =
-      ⟨w.proj, (Submodule.prodEquivOfIsCompl _ _ (hVW w.proj)).symm w.2⟩ := by
+      ⟨w.proj, (Submodule.prodEquivOfIsCompl _ _ (hVW w.proj)).symm w.snd⟩ := by
     refine Φ.toEquiv.symm_apply_eq.mpr ?_
     rw [Diffeomorph.coe_toEquiv, hΦ, ← Submodule.coe_prodEquivOfIsCompl' _ _ (hVW w.proj),
       LinearEquiv.apply_symm_apply]

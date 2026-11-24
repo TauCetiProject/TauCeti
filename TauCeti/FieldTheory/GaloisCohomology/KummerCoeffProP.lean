@@ -55,7 +55,7 @@ theorem smul_kummerCoeff_eq_self_of_isProP (hℓ : IsUnit (ℓ : K))
   have hker : IsOpen (f.ker : Set P) := by
     refine Subgroup.isOpen_mono (H₁ := (MulAction.stabilizer (AbsoluteGaloisGroup K) ζ).comap
       P.subtype) (fun g hg => ?_) ((stabilizer_isOpen_of_isIntegral ζ).preimage
-        continuous_subtype_val)
+        continuous_subtypeVal)
     rw [MonoidHom.mem_ker]
     refine Units.ext (modularCyclotomicCharacter.unique L hcard (ρ g) (c := 1) fun t ht => ?_).symm
     obtain ⟨i, -, rfl⟩ := hζu.eq_pow_of_mem_rootsOfUnity ht
@@ -79,7 +79,7 @@ theorem smul_kummerCoeff_eq_self_of_isProP (hℓ : IsUnit (ℓ : K))
   -- unfolding `f` and the two compositions, `f g` is `χ (ρ g)`
   have hχ : χ (ρ g) = 1 := by simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hf g
   refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
-  have h := modularCyclotomicCharacter.spec L hcard (ρ g) x.toMul.2
+  have h := modularCyclotomicCharacter.spec L hcard (ρ g) x.toMul.property
   rw [hχ, Units.val_one, hℓ1, pow_one] at h
   -- `MulSemiringAction.toRingAut` is the action of `g` on `Kˢ`, which is evaluation
   have hρ : ∀ y, ρ g y = (g : AbsoluteGaloisGroup K) y := fun y => AlgEquiv.smul_def _ y

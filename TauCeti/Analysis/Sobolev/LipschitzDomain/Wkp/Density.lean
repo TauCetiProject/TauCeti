@@ -225,7 +225,7 @@ theorem Wkp.denseRange_restrictL_ofTestFunctionₗ_top_of_isLipschitzDomainWith 
   have hpiece : ∀ x : t, ∃ w : Wkp mu Ω p k,
       (Wkp.value k w : WithLp 2 (ℝ × E) → ℝ) =ᵐ[mu.restrict Ω]
         fun y => ψ x y * Wkp.value k u y := fun x =>
-    Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k (hψ x x.2).1 (hψ x x.2).2.2.1 u
+    Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k (hψ x x.property).1 (hψ x x.property).2.2.1 u
   choose w hw using hpiece
   have hvanish : ∀ {c : WithLp 2 (ℝ × E) → ℝ} {v : Wkp mu Ω p k},
       (Wkp.value k v : WithLp 2 (ℝ × E) → ℝ) =ᵐ[mu.restrict Ω]
@@ -248,8 +248,8 @@ theorem Wkp.denseRange_restrictL_ofTestFunctionₗ_top_of_isLipschitzDomainWith 
   refine Submodule.add_mem _ (mem_restrictTestFunctionClosure_of_subset hp hψ₀c hψ₀Ω k w₀
       (hvanish hw₀))
     (Submodule.sum_mem _ fun x _ => ?_)
-  obtain ⟨-, -, hc, _⟩ := hchart x x.2
-  obtain ⟨-, -, hcpt, hts⟩ := hψ x x.2
+  obtain ⟨-, -, hc, _⟩ := hchart x x.property
+  obtain ⟨-, -, hcpt, hts⟩ := hψ x x.property
   refine mem_restrictTestFunctionClosure_of_chart hp hc hcpt (hts.trans (preimage_mono
     (normalCylinder_mono ?_ le_rfl))) k (w x) (hvanish (hw x))
   have : (0 : ℝ) ≤ 2 * L * b x := by

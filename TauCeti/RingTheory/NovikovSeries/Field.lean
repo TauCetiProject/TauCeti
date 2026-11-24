@@ -81,12 +81,11 @@ theorem exists_single_mul_one_sub_of_injective (hN : Function.Injective N)
 
 /-- **Leading-term factorization with injective periods.** Over a division ring `R` and an
 injective period map `N`, every nonzero series `a` factors at its least-period exponent `h`
-(`N h = a.order`) as `single h (a.coeff h) * (1 + b)` with `b ∈ posIdeal R N` and `1 + b` a unit of
-`nonnegSubring R N`. -/
+(`N h = a.order`) as `single h (a.coeff h) * (1 + b)` with `b ∈ posIdeal R N`. -/
 theorem exists_mem_posIdeal_and_eq_single_mul_one_add_of_injective
     (hN : Function.Injective N) {a : NovikovSeries R H N} (ha : a ≠ 0) :
     ∃ h : H, N h = a.order ∧ ∃ b : nonnegSubring R N, b ∈ posIdeal R N ∧
-      a = single h (a.coeff h) * (1 + (b : NovikovSeries R H N)) ∧ IsUnit (1 + b) := by
+      a = single h (a.coeff h) * (1 + (b : NovikovSeries R H N)) := by
   obtain ⟨h, r, c, hc, ha_eq⟩ := exists_single_mul_one_sub_of_injective hN ha
   have hrc : a.coeff h = r := by
     rw [ha_eq, coeff_single_mul, neg_add_cancel, coeff_sub, one_def, coeff_single_same,
@@ -99,22 +98,19 @@ theorem exists_mem_posIdeal_and_eq_single_mul_one_add_of_injective
         rw [mem_support, ha_eq, coeff_single_mul, coeff_sub, one_def, coeff_single_of_ne hne,
           mem_posIdeal.1 hc (-h + u) hlt'.le, sub_self, mul_zero] at hu
         exact hu rfl⟩).symm
-  exact ⟨h, hord, -c, neg_mem hc, by simpa [hrc, ← sub_eq_add_neg] using ha_eq,
-    by simpa [← sub_eq_add_neg] using isUnit_one_sub_of_mem_posIdeal hc⟩
+  exact ⟨h, hord, -c, neg_mem hc, by simpa [hrc, ← sub_eq_add_neg] using ha_eq⟩
 
 /-- **Leading-term factorization in the real Novikov division ring.** Over a division ring `R`,
 every nonzero series `a` in `NovikovSeries R ℝ (AddMonoidHom.id ℝ)` factors at `a.order` as
-`single a.order (a.coeff a.order) * (1 + b)` with `b ∈ posIdeal R (AddMonoidHom.id ℝ)` and `1 + b`
-a unit of `nonnegSubring R (AddMonoidHom.id ℝ)`. -/
+`single a.order (a.coeff a.order) * (1 + b)` with `b ∈ posIdeal R (AddMonoidHom.id ℝ)`. -/
 theorem exists_mem_posIdeal_and_eq_single_order_mul_one_add
     {a : NovikovSeries R ℝ (AddMonoidHom.id ℝ)} (ha : a ≠ 0) :
     ∃ b : nonnegSubring R (AddMonoidHom.id ℝ), b ∈ posIdeal R (AddMonoidHom.id ℝ) ∧
-      a = single a.order (a.coeff a.order) * (1 + (b : NovikovSeries R ℝ (AddMonoidHom.id ℝ))) ∧
-      IsUnit (1 + b) := by
-  obtain ⟨t, ht, b, hb, ha_eq, hu⟩ :=
+      a = single a.order (a.coeff a.order) * (1 + (b : NovikovSeries R ℝ (AddMonoidHom.id ℝ))) := by
+  obtain ⟨t, ht, b, hb, ha_eq⟩ :=
     exists_mem_posIdeal_and_eq_single_mul_one_add_of_injective Function.injective_id ha
   rw [AddMonoidHom.id_apply] at ht
-  exact ⟨b, hb, ht ▸ ha_eq, hu⟩
+  exact ⟨b, hb, ht ▸ ha_eq⟩
 
 /-- A nonzero series over a division ring is invertible when the period map is injective. -/
 theorem isUnit_of_injective (hN : Function.Injective N)

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
+public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import Mathlib.Algebra.MonoidAlgebra.Grading
-public import Mathlib.Topology.Algebra.Algebra
+public import Mathlib.Algebra.Group.Torsion
 
 /-!
 # Homogeneous Novikov series
@@ -16,45 +16,35 @@ Let `f : H → ι` be a degree function on the exponents of Novikov series. A No
 *homogeneous of degree `i`* when its support lies in the fibre `f ⁻¹' {i}`. These series form the
 submodule `TauCeti.NovikovSeries.gradeBy R N f i`, the Novikov analogue of Mathlib's
 `AddMonoidAlgebra.gradeBy`. For an additive degree function the pieces multiply as a graded
-monoid, and they are independent. Each homogeneous piece is closed in the period topology, and the
-sum of the homogeneous pieces is dense.
+monoid, and they are independent.
 
-Intersecting with `TauCeti.NovikovSeries.nonnegSubring` gives the closed homogeneous submodules
-`TauCeti.NovikovSeries.nonnegGradeBy S R N f i`. For `f : H →+ ι`, these form a graded monoid and
-`DirectSum.coeAlgHom` embeds `⨁ i, nonnegGradeBy S R N f i` injectively and densely into
-`nonnegSubring R N`.
-
-Unlike the group ring, neither `NovikovSeries` nor `nonnegSubring` is in general the algebraic
-direct sum of its homogeneous pieces: finite sums meet only finitely many fibres of `f`, whereas a
-completed series may meet infinitely many with periods tending to `+∞`. The homogeneous pieces of
-`NovikovSeries` span exactly the finitely supported series as soon as `N` is bounded above on every
-fibre of `f` (e.g. when `f` is injective), in which case the Novikov ring is the period completion
-of `R[H]` (as in capped Hamiltonian Floer theory on a spherically monotone symplectic manifold).
+Unlike the group ring, the Novikov ring is in general *not* the direct sum of its homogeneous
+pieces: a series whose support meets infinitely many fibres is not a finite sum of homogeneous
+series. The homogeneous pieces span exactly the finitely supported series as soon as the period
+`N` is bounded above on every fibre of `f`, for instance when `f` is injective. In that case the
+graded ring spanned by homogeneous series is the group ring `R[H]`, and the Novikov ring is its
+period completion. This is the situation of the coefficient ring of capped Hamiltonian Floer
+theory on a spherically monotone symplectic manifold, graded by twice the first Chern number.
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.supported R N s`, `TauCeti.NovikovSeries.gradeBy R N f i`: Novikov series
-  supported in `s` or homogeneous of degree `i`.
+* `TauCeti.NovikovSeries.supported R N s`: the Novikov series supported in the set `s`.
 * `TauCeti.NovikovSeries.supportedSubalgebra S R N s`: the subalgebra of series supported in an
   additive submonoid or subgroup `s`.
-* `TauCeti.NovikovSeries.nonnegSupported S R N s`, `TauCeti.NovikovSeries.nonnegGradeBy S R N f i`:
-  the corresponding `S`-submodules of `nonnegSubring R N`.
+* `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
+  function `f`.
+* `TauCeti.NovikovSeries.gradeProj R N f i`: the homogeneous component of degree `i` of a
+  series.
+* `TauCeti.NovikovSeries.gradeByCoeff N 𝒱 δ D`: for coefficients in a module `V` graded by `𝒱`
+  and a degree `δ` on the exponents, the series of degree `D`, those whose coefficient at `A` has
+  degree `D - δ A`. For `R` itself concentrated in degree `0` these are the pieces `gradeBy`
+  (`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`).
 
 ## Main results
 
-* `TauCeti.NovikovSeries.gradeBy.gradedMonoid`, `TauCeti.NovikovSeries.nonnegGradeBy.gradedMonoid`:
-  graded monoid structures for additive `f`.
-* `TauCeti.NovikovSeries.iSupIndep_gradeBy`, `TauCeti.NovikovSeries.iSupIndep_nonnegGradeBy`:
-  independence of the homogeneous pieces.
-* `TauCeti.NovikovSeries.isClosed_gradeBy`, `TauCeti.NovikovSeries.isClosed_nonnegGradeBy`:
-  closedness of each homogeneous piece in the period topology.
-* `TauCeti.NovikovSeries.coeAlgHom_nonnegGradeBy_injective`,
-  `TauCeti.NovikovSeries.denseRange_coeAlgHom_nonnegGradeBy`,
-  `TauCeti.NovikovSeries.topologicalClosure_range_coeAlgHom_nonnegGradeBy`: injective dense graded
-  algebra embedding into `nonnegSubring R N`.
-* `TauCeti.NovikovSeries.finite_image_support_of_mem_iSup_gradeBy`,
-  `TauCeti.NovikovSeries.finite_image_support_of_mem_iSup_nonnegGradeBy`: finite sums of homogeneous
-  series meet only finitely many degrees.
+* `TauCeti.NovikovSeries.gradeBy.gradedMonoid`: for an additive degree function, the homogeneous
+  pieces form a graded monoid.
+* `TauCeti.NovikovSeries.iSupIndep_gradeBy`: the homogeneous pieces are independent.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_mem_gradeBy_iff`: the inclusion of the group ring
   preserves and reflects the degree.
 * `TauCeti.NovikovSeries.finite_support_of_mem_gradeBy`: a homogeneous series is finitely
@@ -63,6 +53,14 @@ of `R[H]` (as in capped Hamiltonian Floer theory on a spherically monotone sympl
   the homogeneous pieces span exactly the finitely supported series.
 * `TauCeti.NovikovSeries.eq_single_of_mem_gradeBy`: for an injective degree function, every
   homogeneous series is a monomial.
+* `TauCeti.NovikovSeries.mem_iSup_gradeBy_iff_finite`: a series is a finite sum of homogeneous
+  series exactly when its support meets finitely many degrees.
+* `TauCeti.NovikovSeries.isInternal_gradeBy_iff`: the Novikov ring is the internal direct sum of
+  its homogeneous pieces exactly when every series meets finitely many degrees.
+* `TauCeti.NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_eq_zero`: for an additive degree with
+  values in a torsion-free group and nontrivial coefficients, this happens exactly when the period
+  or the degree vanishes. Otherwise some class `C` has positive period and nonzero degree, and the
+  geometric series `∑ₙ e^(n C)` meets the infinitely many degrees `n δ(C)`.
 
 ## References
 
@@ -70,8 +68,6 @@ of `R[H]` (as in capped Hamiltonian Floer theory on a spherically monotone sympl
   volume*, Progr. Math. 133 (1995), 483–524.
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, the construction of
   the Novikov ring in the chapter on quantum cohomology.
-* K. Fukaya, Y.-G. Oh, H. Ohta, and K. Ono, *Lagrangian Intersection Floer Theory: Anomaly and
-  Obstruction*, AMS/IP Studies in Advanced Mathematics 46, 2009, Chapter 2.
 -/
 
 public section
@@ -79,6 +75,7 @@ public section
 noncomputable section
 
 open Function Set
+open scoped DirectSum
 
 namespace TauCeti
 
@@ -183,17 +180,6 @@ theorem iSupIndep_gradeBy (f : H → ι) : iSupIndep (gradeBy R N f) := by
   refine (Submodule.disjoint_def.2 fun a ha ha' => support_eq_empty.1 ?_).mono_right hle
   exact eq_empty_of_forall_notMem fun h hh => ha' hh (ha hh)
 
-/-- Every finite sum of homogeneous Novikov series has support meeting only finitely many
-degrees. -/
-theorem finite_image_support_of_mem_iSup_gradeBy {f : H → ι} {a : NovikovSeries R H N}
-    (ha : a ∈ ⨆ i, gradeBy R N f i) : (f '' a.support).Finite :=
-  Submodule.iSup_induction (motive := fun b => (f '' b.support).Finite) _ ha
-    (fun i _ hb => (finite_singleton i).subset
-      ((image_mono hb).trans (image_preimage_subset f {i})))
-    (by simp)
-    fun b c hb hc => (hb.union hc).subset
-      ((image_mono (support_add_subset b c)).trans (image_union f _ _).le)
-
 /-- A homogeneous series is finitely supported if the period is bounded above on its fibre. -/
 theorem finite_support_of_mem_gradeBy {f : H → ι} {i : ι} (hf : BddAbove (N '' (f ⁻¹' {i})))
     {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f i) : a.support.Finite :=
@@ -230,6 +216,125 @@ theorem eq_single_of_mem_gradeBy {f : H → ι} (hf : Injective f) {h : H}
     by_contra hag
     exact hg (hf (ha (mem_support.2 hag)))
 
+section Proj
+
+variable [DecidableEq ι]
+
+variable (R N) in
+/-- The homogeneous component of degree `i` of a Novikov series for the degree function `f`: the
+coefficients at exponents of degree `i`, with all other coefficients set to zero. -/
+def gradeProj (f : H → ι) (i : ι) : NovikovSeries R H N →ₗ[R] NovikovSeries R H N where
+  toFun a := ⟨fun h => if f h = i then a.coeff h else 0, fun C => (a.finite_lt C).subset
+    fun h hh => ⟨fun ha => hh.1 (by simp [ha]), hh.2⟩⟩
+  map_add' a b := by
+    ext h
+    by_cases hh : f h = i <;> simp [hh, coeff_add]
+  map_smul' r a := by
+    ext h
+    by_cases hh : f h = i <;> simp [hh, coeff_smul]
+
+/-- The coefficients of the homogeneous component of degree `i`. -/
+@[simp]
+theorem coeff_gradeProj (f : H → ι) (i : ι) (a : NovikovSeries R H N) (h : H) :
+    (gradeProj R N f i a).coeff h = if f h = i then a.coeff h else 0 :=
+  (rfl)
+
+/-- The homogeneous component of degree `i` is homogeneous of degree `i`. -/
+theorem gradeProj_mem_gradeBy (f : H → ι) (i : ι) (a : NovikovSeries R H N) :
+    gradeProj R N f i a ∈ gradeBy R N f i := mem_gradeBy_iff.2 fun h hh => by
+  rw [mem_support, coeff_gradeProj] at hh
+  by_contra hne
+  exact hh (ite_eq_right hne)
+
+/-- A series of degree `i` is its own homogeneous component of degree `i`. -/
+theorem gradeProj_eq_self_of_mem_gradeBy {f : H → ι} {i : ι} {a : NovikovSeries R H N}
+    (ha : a ∈ gradeBy R N f i) : gradeProj R N f i a = a := by
+  ext h
+  rw [coeff_gradeProj]
+  split_ifs with hh
+  · rfl
+  · by_contra hne
+    exact hh (mem_gradeBy_iff.1 ha (mem_support.2 (Ne.symm hne)))
+
+/-- A series of degree `j` has no homogeneous component of a different degree `i`. -/
+theorem gradeProj_eq_zero_of_mem_gradeBy {f : H → ι} {i j : ι} (hij : j ≠ i)
+    {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f j) : gradeProj R N f i a = 0 := by
+  ext h
+  rw [coeff_gradeProj, coeff_zero]
+  split_ifs with hh
+  · by_contra hne
+    exact hij ((mem_gradeBy_iff.1 ha (mem_support.2 hne) : f h = j).symm.trans hh)
+  · rfl
+
+/-- The sum of the homogeneous components of the degrees in a finite set `s` keeps the
+coefficients at the exponents whose degree lies in `s`. -/
+theorem coeff_sum_gradeProj (f : H → ι) (s : Finset ι) (a : NovikovSeries R H N) (h : H) :
+    (∑ i ∈ s, gradeProj R N f i a).coeff h = if f h ∈ s then a.coeff h else 0 := by
+  simp [coeff_sum, Finset.sum_ite_eq]
+
+/-- If the degrees of the support of `a` lie in the finite set `s`, then `a` is the sum of its
+homogeneous components of the degrees in `s`. -/
+theorem sum_gradeProj_eq_self {f : H → ι} {s : Finset ι} {a : NovikovSeries R H N}
+    (hs : f '' a.support ⊆ s) : ∑ i ∈ s, gradeProj R N f i a = a := by
+  ext h
+  rw [coeff_sum_gradeProj]
+  split_ifs with hh
+  · rfl
+  · by_contra hne
+    exact hh (hs ⟨h, mem_support.2 (Ne.symm hne), rfl⟩)
+
+/-- The homogeneous component of degree `i` of a sum of homogeneous series, one of each degree, is
+the summand of degree `i`. -/
+theorem gradeProj_coeAddMonoidHom (f : H → ι) (x : ⨁ i, gradeBy R N f i) (i : ι) :
+    gradeProj R N f i (DirectSum.coeAddMonoidHom (gradeBy R N f) x) = x i := by
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of j y =>
+    rw [DirectSum.coeAddMonoidHom_of]
+    by_cases hji : j = i
+    · subst hji
+      rw [DirectSum.of_eq_same, gradeProj_eq_self_of_mem_gradeBy y.property]
+    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hji),
+        gradeProj_eq_zero_of_mem_gradeBy hji y.property, ZeroMemClass.coe_zero]
+  | add x y hx hy => simp only [map_add, hx, hy, DirectSum.add_apply, AddMemClass.coe_add]
+
+end Proj
+
+/-- A series is a finite sum of homogeneous series exactly when its support meets only finitely
+many degrees. -/
+theorem mem_iSup_gradeBy_iff_finite {f : H → ι} {a : NovikovSeries R H N} :
+    a ∈ ⨆ i, gradeBy R N f i ↔ (f '' a.support).Finite := by
+  classical
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · exact Submodule.iSup_induction (motive := fun b => (f '' b.support).Finite) _ ha
+      (fun i b hb => (finite_singleton i).subset (image_subset_iff.2 (mem_gradeBy_iff.1 hb)))
+      (by simp)
+      fun b c hb hc => (hb.union hc).subset
+        ((image_mono (support_add_subset b c)).trans (image_union f _ _).subset)
+  · rw [← sum_gradeProj_eq_self (f := f) (s := ha.toFinset) (a := a) (by simp)]
+    exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i (gradeProj_mem_gradeBy f i a)
+
+/-- The homogeneous series span all Novikov series exactly when every series meets only finitely
+many degrees. -/
+theorem iSup_gradeBy_eq_top_iff {f : H → ι} :
+    ⨆ i, gradeBy R N f i = ⊤ ↔ ∀ a : NovikovSeries R H N, (f '' a.support).Finite := by
+  simp only [Submodule.eq_top_iff', mem_iSup_gradeBy_iff_finite]
+
+/-- The Novikov series form the internal direct sum of their homogeneous pieces exactly when
+every series meets only finitely many degrees. -/
+theorem isInternal_gradeBy_iff [DecidableEq ι] {f : H → ι} :
+    DirectSum.IsInternal (gradeBy R N f) ↔ ∀ a : NovikovSeries R H N, (f '' a.support).Finite := by
+  refine ⟨fun h => iSup_gradeBy_eq_top_iff.1 h.submodule_iSup_eq_top,
+    fun h => ⟨fun x y hxy => DirectSum.ext fun i => Subtype.ext ?_, fun a => ?_⟩⟩
+  · -- The summands are recovered as homogeneous components.
+    rw [← gradeProj_coeAddMonoidHom, ← gradeProj_coeAddMonoidHom, hxy]
+  · -- `a` is the sum of its finitely many homogeneous components.
+    refine ⟨∑ i ∈ (h a).toFinset, DirectSum.of (fun i => gradeBy R N f i) i
+      ⟨gradeProj R N f i a, gradeProj_mem_gradeBy f i a⟩, ?_⟩
+    rw [map_sum]
+    simp only [DirectSum.coeAddMonoidHom_of]
+    exact sum_gradeProj_eq_self (by simp)
+
 end AddZeroClass
 
 /-- For an additive degree function, the homogeneous Novikov series form a graded monoid. -/
@@ -243,6 +348,53 @@ instance gradeBy.gradedMonoid [AddMonoid H] {N : H →+ ℝ} [AddMonoid ι] (f :
     obtain ⟨u, hu, v, hv, rfl⟩ := support_mul_subset a b hh
     rw [mem_preimage, mem_singleton_iff, map_add, (ha hu : f u = i), (hb hv : f v = j)]
 
+section Additive
+
+variable [Nontrivial R] [AddGroup H] {N : H →+ ℝ} [AddGroup ι] (δ : H →+ ι)
+
+/-- For an additive degree with values in a torsion-free group, every Novikov series meets only
+finitely many degrees exactly when the period or the degree vanishes. -/
+theorem forall_finite_image_support_iff [IsAddTorsionFree ι] :
+    (∀ a : NovikovSeries R H N, (δ '' a.support).Finite) ↔ N = 0 ∨ δ = 0 := by
+  refine ⟨fun h => ?_, fun h a => ?_⟩
+  · by_contra hNδ
+    push Not at hNδ
+    -- Some exponent has nonzero period and nonzero degree: if `δ A ≠ 0` and `N B ≠ 0`, take `A`
+    -- unless `N A = 0`, then `B` unless `δ B = 0`, and otherwise `A + B`.
+    have hC : ∃ C, N C ≠ 0 ∧ δ C ≠ 0 := by
+      obtain ⟨A, hA⟩ := DFunLike.ne_iff.1 hNδ.2
+      obtain ⟨B, hB⟩ := DFunLike.ne_iff.1 hNδ.1
+      rw [AddMonoidHom.zero_apply] at hA hB
+      by_cases hNA : N A = 0
+      · by_cases hδB : δ B = 0
+        · exact ⟨A + B, by simpa [hNA] using hB, by simpa [hδB] using hA⟩
+        · exact ⟨B, hB, hδB⟩
+      · exact ⟨A, hNA, hA⟩
+    -- Replacing it by its negative if necessary, its period is positive. The geometric series
+    -- `∑ₙ e^(n C)` then meets the infinitely many degrees `n δ(C)`.
+    obtain ⟨C, hNC, hδC⟩ : ∃ C, 0 < N C ∧ δ C ≠ 0 := by
+      obtain ⟨C, hNC, hδC⟩ := hC
+      rcases hNC.lt_or_gt with hlt | hlt
+      · exact ⟨-C, by simpa using hlt, by simpa using hδC⟩
+      · exact ⟨C, hlt, hδC⟩
+    refine infinite_range_of_injective (IsAddTorsionFree.nsmul_left_injective hδC) ?_
+    have himage : δ '' (geometric N hNC (1 : R)).support = range fun n : ℕ => n • δ C := by
+      rw [support_geometric hNC one_ne_zero, ← range_comp]
+      exact congrArg range (funext fun n => map_nsmul δ n C)
+    exact himage ▸ h _
+  · rcases h with rfl | rfl
+    · exact (finite_support_of_bddAbove_image ⟨0, by simp [upperBounds]⟩).image _
+    · exact (finite_singleton 0).subset (by simp)
+
+/-- **Criterion for an internally graded Novikov ring.** For an additive degree with values in a
+torsion-free group and nontrivial coefficients, the Novikov series form the internal direct sum of
+their homogeneous pieces exactly when the period or the degree vanishes. -/
+theorem isInternal_gradeBy_iff_eq_zero_or_eq_zero [IsAddTorsionFree ι] [DecidableEq ι] :
+    DirectSum.IsInternal (gradeBy R N δ) ↔ N = 0 ∨ δ = 0 := by
+  rw [isInternal_gradeBy_iff, forall_finite_image_support_iff]
+
+end Additive
+
 end Semiring
 
 /-- The inclusion of the group ring into the Novikov series preserves and reflects the degree. -/
@@ -253,182 +405,43 @@ theorem ofAddMonoidAlgebra_mem_gradeBy_iff [CommSemiring R] [AddMonoid H] {N : H
   simp only [mem_gradeBy_iff, AddMonoidAlgebra.mem_gradeBy_iff, subset_def, mem_support,
     coeff_ofAddMonoidAlgebra, Finset.mem_coe, Finsupp.mem_support_iff]
 
-section Topology
+section GradeByCoeff
 
-variable [AddZeroClass H] {N : H →+ ℝ} [Ring R]
+variable {Γ : Type*} [AddGroup Γ] [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V : Type*}
+  [AddCommMonoid V] [Module R V]
 
-/-- The Novikov series supported in a given set of exponents form a closed subset for the period
-topology. -/
-theorem isClosed_supported (s : Set H) :
-    IsClosed (supported R N s : Set (NovikovSeries R H N)) :=
-  isClosed_setOf_support_subset s
+variable (N) in
+/-- The Novikov series of degree `D` with coefficients in a graded module: for a grading `𝒱` of
+`V` and a degree `δ A` of the exponents, those `v` with `v_A ∈ 𝒱 (D - δ A)` for every `A`. For
+`V = R` concentrated in degree `0` these are the series supported on `δ⁻¹ {D}`
+(`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`). -/
+def gradeByCoeff (𝒱 : Γ → Submodule R V) (δ : H → Γ) (D : Γ) :
+    Submodule R (NovikovSeries V H N) where
+  carrier := {v | ∀ A, v.coeff A ∈ 𝒱 (D - δ A)}
+  zero_mem' A := by simp
+  add_mem' hv hw A := by simpa using add_mem (hv A) (hw A)
+  smul_mem' c v hv A := by simpa using Submodule.smul_mem _ c (hv A)
 
-/-- Every homogeneous piece of `NovikovSeries` is closed in the period topology. -/
-theorem isClosed_gradeBy (f : H → ι) (i : ι) :
-    IsClosed (gradeBy R N f i : Set (NovikovSeries R H N)) :=
-  isClosed_supported (f ⁻¹' {i})
-
-/-- The algebraic sum of the homogeneous pieces is dense in `NovikovSeries`. -/
-theorem dense_iSup_gradeBy (f : H → ι) :
-    Dense ((⨆ i, gradeBy R N f i : Submodule R (NovikovSeries R H N)) :
-      Set (NovikovSeries R H N)) :=
-  denseRange_ofFinsupp.mono (range_subset_iff.2 (ofFinsupp_mem_iSup_gradeBy f))
-
-end Topology
-
-section NonnegSubring
-
-variable [CommSemiring S] [Ring R] [Algebra S R] [AddMonoid H] {N : H →+ ℝ}
-
-variable (S R N) in
-/-- The `S`-submodule of the nonnegative Novikov subring consisting of series supported in `s`. -/
-def nonnegSupported (s : Set H) : Submodule S (nonnegSubring R N) where
-  carrier := {a | (a : NovikovSeries R H N).support ⊆ s}
-  zero_mem' := by simp
-  add_mem' ha hb := (support_add_subset _ _).trans (union_subset ha hb)
-  smul_mem' c a ha := (support_smul_subset c (a : NovikovSeries R H N)).trans ha
-
+/-- A series has degree `D` exactly when each coefficient `v_A` has degree `D - δ A`. -/
 @[simp]
-theorem mem_nonnegSupported {s : Set H} {a : nonnegSubring R N} :
-    a ∈ nonnegSupported S R N s ↔ (a : NovikovSeries R H N).support ⊆ s := Iff.rfl
+theorem mem_gradeByCoeff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ}
+    {v : NovikovSeries V H N} : v ∈ gradeByCoeff N 𝒱 δ D ↔ ∀ A, v.coeff A ∈ 𝒱 (D - δ A) :=
+  Iff.rfl
 
-theorem coe_mem_supported_iff {s : Set H} {a : nonnegSubring R N} :
-    (a : NovikovSeries R H N) ∈ supported R N s ↔ a ∈ nonnegSupported S R N s := Iff.rfl
+/-- For `R` itself concentrated in degree `0`, the series of degree `D` are those supported on
+the exponents of degree `D`, the pieces `TauCeti.NovikovSeries.gradeBy` of the Novikov ring. -/
+theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
+    gradeByCoeff N (fun k => if k = 0 then ⊤ else ⊥ : Γ → Submodule R R) δ D =
+      gradeBy R N δ D := by
+  ext v
+  simp only [mem_gradeByCoeff, mem_gradeBy_iff, Set.subset_def, mem_support, Set.mem_preimage,
+    Set.mem_singleton_iff, sub_eq_zero]
+  refine forall_congr' fun A => ?_
+  by_cases hA : D = δ A
+  · simp [hA]
+  · simp [hA, Ne.symm hA]
 
-/-- The series of the nonnegative subring supported in `s` form a closed subset. -/
-theorem isClosed_nonnegSupported (s : Set H) :
-    IsClosed (nonnegSupported S R N s : Set (nonnegSubring R N)) :=
-  (isClosed_supported (R := R) (N := N) s).preimage continuous_subtype_val
-
-variable (S R N) in
-/-- The `S`-submodule of homogeneous series of degree `i` in the nonnegative Novikov subring. -/
-def nonnegGradeBy (f : H → ι) (i : ι) : Submodule S (nonnegSubring R N) :=
-  nonnegSupported S R N (f ⁻¹' {i})
-
-@[simp]
-theorem mem_nonnegGradeBy_iff {f : H → ι} {i : ι} {a : nonnegSubring R N} :
-    a ∈ nonnegGradeBy S R N f i ↔ (a : NovikovSeries R H N).support ⊆ f ⁻¹' {i} := Iff.rfl
-
-theorem coe_mem_gradeBy_iff {f : H → ι} {i : ι} {a : nonnegSubring R N} :
-    (a : NovikovSeries R H N) ∈ gradeBy R N f i ↔ a ∈ nonnegGradeBy S R N f i := Iff.rfl
-
-/-- A nonnegative-period monomial `r e^h` lies in the homogeneous piece of degree `f h` of the
-nonnegative subring. -/
-theorem single_mem_nonnegGradeBy (f : H → ι) {h : H} (hh : 0 ≤ N h) (r : R) :
-    ⟨single h r, single_mem_nonnegSubring hh r⟩ ∈ nonnegGradeBy S R N f (f h) :=
-  single_mem_gradeBy f h r
-
-/-- A degree outside the range of `f` has trivial nonnegative homogeneous piece. -/
-theorem nonnegGradeBy_eq_bot {f : H → ι} {i : ι} (hi : i ∉ range f) :
-    nonnegGradeBy S R N f i = ⊥ :=
-  (Submodule.eq_bot_iff _).2 fun a ha =>
-    Subtype.ext <| (Submodule.eq_bot_iff _).1 (gradeBy_eq_bot hi) a.1 ha
-
-/-- Every nonnegative homogeneous piece is closed in the subspace topology on
-`nonnegSubring R N`. -/
-theorem isClosed_nonnegGradeBy (f : H → ι) (i : ι) :
-    IsClosed (nonnegGradeBy S R N f i : Set (nonnegSubring R N)) :=
-  isClosed_nonnegSupported (f ⁻¹' {i})
-
-/-- Homogeneous pieces of the nonnegative subring of distinct degrees are independent. -/
-theorem iSupIndep_nonnegGradeBy (f : H → ι) : iSupIndep (nonnegGradeBy S R N f) := fun i => by
-  have hle : ⨆ (j) (_ : j ≠ i), nonnegGradeBy S R N f j ≤ nonnegSupported S R N (f ⁻¹' {i})ᶜ :=
-    iSup₂_le fun j hj _ ha _ hh hhi => hj ((mem_nonnegGradeBy_iff.1 ha hh).symm.trans hhi)
-  exact Disjoint.mono_right hle <| Submodule.disjoint_def.2 fun _ ha ha' =>
-    Subtype.ext <| support_eq_empty.1 <| eq_empty_of_forall_notMem fun _ hh =>
-      mem_nonnegSupported.1 ha' hh (mem_nonnegGradeBy_iff.1 ha hh)
-
-/-- Every finite sum of homogeneous series in `nonnegSubring R N` meets only finitely many
-degrees. -/
-theorem finite_image_support_of_mem_iSup_nonnegGradeBy {f : H → ι} {a : nonnegSubring R N}
-    (ha : a ∈ ⨆ i, nonnegGradeBy S R N f i) : (f '' (a : NovikovSeries R H N).support).Finite :=
-  finite_image_support_of_mem_iSup_gradeBy <|
-    Submodule.iSup_induction (motive := fun b => (b : NovikovSeries R H N) ∈ ⨆ i, gradeBy R N f i)
-      (nonnegGradeBy S R N f) ha (fun i _ hb => Submodule.mem_iSup_of_mem i hb) (by simp)
-      fun _ _ hb hc => by simpa using add_mem hb hc
-
-/-- For an additive degree homomorphism, the homogeneous pieces of the nonnegative subring form a
-graded monoid, equipping `⨁ i, nonnegGradeBy S R N f i` with a `DirectSum.GAlgebra S` structure. -/
-instance nonnegGradeBy.gradedMonoid [AddMonoid ι] (f : H →+ ι) :
-    SetLike.GradedMonoid (nonnegGradeBy S R N f) where
-  one_mem := SetLike.GradedOne.one_mem (A := gradeBy R N f)
-  mul_mem i j _ _ ha hb := SetLike.GradedMul.mul_mem (A := gradeBy R N f) (i := i) (j := j) ha hb
-
-/-- A finitely supported series in `nonnegSubring R N` is a finite sum of nonnegative homogeneous
-series. -/
-theorem ofFinsupp_mem_iSup_nonnegGradeBy (f : H → ι) {x : H →₀ R}
-    (hx0 : ofFinsupp x ∈ nonnegSubring R N) :
-    (⟨ofFinsupp x, hx0⟩ : nonnegSubring R N) ∈ ⨆ i, nonnegGradeBy S R N f i := by
-  classical
-  induction x using Finsupp.induction with
-  | zero => convert zero_mem (⨆ i, nonnegGradeBy S R N f i); ext1; simp
-  | single_add h r y hhy hr ih =>
-    have hh0 : 0 ≤ N h := not_lt.1 fun hlt => hr <| by
-      simpa [Finsupp.notMem_support_iff.1 hhy] using mem_nonnegSubring.1 hx0 h hlt
-    have hy0 : ofFinsupp (N := N) y ∈ nonnegSubring R N := by
-      simpa [map_add, ofFinsupp_single] using sub_mem hx0 (single_mem_nonnegSubring hh0 r)
-    have heq : (⟨ofFinsupp (Finsupp.single h r + y), hx0⟩ : nonnegSubring R N) =
-        ⟨single h r, single_mem_nonnegSubring hh0 r⟩ + ⟨ofFinsupp y, hy0⟩ :=
-      Subtype.ext (by simp)
-    exact heq ▸ add_mem (Submodule.mem_iSup_of_mem (f h) (single_mem_nonnegGradeBy f hh0 r))
-      (ih hy0)
-
-/-- Every truncation of a series in the nonnegative subring is a finite sum of nonnegative
-homogeneous series. -/
-theorem ofFinsupp_trunc_mem_iSup_nonnegGradeBy (f : H → ι) (C : ℝ) (a : nonnegSubring R N) :
-    (⟨ofFinsupp (trunc C (a : NovikovSeries R H N)),
-      ofFinsupp_trunc_mem_nonnegSubring C a⟩ : nonnegSubring R N) ∈
-      ⨆ i, nonnegGradeBy S R N f i :=
-  ofFinsupp_mem_iSup_nonnegGradeBy f (ofFinsupp_trunc_mem_nonnegSubring C a)
-
-/-- The algebraic sum of the nonnegative homogeneous pieces is dense in `nonnegSubring R N`. -/
-theorem dense_iSup_nonnegGradeBy (f : H → ι) :
-    Dense ((⨆ i, nonnegGradeBy S R N f i : Submodule S (nonnegSubring R N)) :
-      Set (nonnegSubring R N)) := fun a =>
-  mem_closure_of_tendsto (f := fun C : ℝ => (⟨ofFinsupp (trunc C (a : NovikovSeries R H N)),
-      ofFinsupp_trunc_mem_nonnegSubring C a⟩ : nonnegSubring R N)) (b := Filter.atTop)
-    (Topology.IsInducing.subtypeVal.tendsto_nhds_iff.2 (tendsto_ofFinsupp_trunc a.1))
-    (Filter.Eventually.of_forall fun C => ofFinsupp_trunc_mem_iSup_nonnegGradeBy (S := S) f C a)
-
-/-- The canonical graded algebra homomorphism
-`⨁ i, nonnegGradeBy S R N f i →ₐ[S] nonnegSubring R N` is injective. -/
-theorem coeAlgHom_nonnegGradeBy_injective [DecidableEq ι] [AddMonoid ι] (f : H →+ ι) :
-    Injective (DirectSum.coeAlgHom (nonnegGradeBy S R N f)) := by
-  -- `iSupIndep.dfinsupp_lsum_injective` requires a `Ring` of scalars, so we transport through the
-  -- same homogeneous pieces viewed as `ℤ`-submodules.
-  let e : (DirectSum ι fun i => nonnegGradeBy S R N f i) →+
-      DirectSum ι fun i => nonnegGradeBy ℤ R N f i :=
-    DirectSum.map fun _ => ⟨⟨fun a => ⟨a.1, a.2⟩, rfl⟩, fun _ _ => rfl⟩
-  have he_inj : Injective e :=
-    (DirectSum.map_injective _).2 fun _ _ _ h => Subtype.ext (congrArg Subtype.val h)
-  have he_coe : (DirectSum.coeLinearMap (nonnegGradeBy ℤ R N f)).toAddMonoidHom.comp e =
-      (DirectSum.coeAlgHom (nonnegGradeBy S R N f)).toAddMonoidHom :=
-    DirectSum.addHom_ext' fun _ => AddMonoidHom.ext fun _ => by simp [e]
-  have hcoe_inj : Injective (DirectSum.coeLinearMap (nonnegGradeBy ℤ R N f)) :=
-    (iSupIndep_nonnegGradeBy (S := ℤ) (R := R) (N := N) f).dfinsupp_lsum_injective
-  intro x y hxy
-  exact he_inj <| hcoe_inj <| by
-    simpa only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, AlgHom.coe_toAddMonoidHom]
-      using (DFunLike.congr_fun he_coe x).trans (hxy.trans (DFunLike.congr_fun he_coe y).symm)
-
-/-- The canonical graded algebra homomorphism from the direct sum of the nonnegative homogeneous
-pieces into `nonnegSubring R N` has dense range. -/
-theorem denseRange_coeAlgHom_nonnegGradeBy [DecidableEq ι] [AddMonoid ι] (f : H →+ ι) :
-    DenseRange (DirectSum.coeAlgHom (nonnegGradeBy S R N f)) := by
-  simp only [DenseRange, ← AlgHom.coe_range, ← Subalgebra.coe_toSubmodule,
-    ← Submodule.iSup_eq_toSubmodule_range]
-  exact dense_iSup_nonnegGradeBy (S := S) f
-
-/-- The topological closure in `nonnegSubring R N` of the graded subalgebra spanned by the
-homogeneous pieces is the whole nonnegative subring. -/
-@[simp]
-theorem topologicalClosure_range_coeAlgHom_nonnegGradeBy [DecidableEq ι] [AddMonoid ι]
-    (f : H →+ ι) : (DirectSum.coeAlgHom (nonnegGradeBy S R N f)).range.topologicalClosure = ⊤ :=
-  SetLike.ext' <| by
-    simpa [Subalgebra.topologicalClosure_coe] using
-      (denseRange_coeAlgHom_nonnegGradeBy (S := S) (R := R) (N := N) f).closure_eq
-
-end NonnegSubring
+end GradeByCoeff
 
 end NovikovSeries
 
