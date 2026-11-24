@@ -167,17 +167,19 @@ private theorem mul_abs_sub_le_norm_sub {p q : E} {t t' : ℝ}
     (hp : ‖p - (c' + t • (c - c'))‖ = R - t * (R - r))
     (hq : ‖q - (c' + t' • (c - c'))‖ = R - t' * (R - r)) :
     (R - r - dist c c') * |t - t'| ≤ ‖p - q‖ := by
-  rcases le_total t t' with htt | htt
-  · have h₁ := mul_le_sub_of_le (r := r) (R := R) (c := c) (c' := c') p htt
-    have h₂ := norm_sub_norm_le (p - (c' + t' • (c - c'))) (q - (c' + t' • (c - c')))
-    rw [sub_sub_sub_cancel_right, hq] at h₂
-    rw [abs_of_nonpos (sub_nonpos.2 htt)]
-    linarith
-  · have h₁ := mul_le_sub_of_le (r := r) (R := R) (c := c) (c' := c') q htt
-    have h₂ := norm_sub_norm_le (q - (c' + t • (c - c'))) (p - (c' + t • (c - c')))
-    rw [sub_sub_sub_cancel_right, hp, norm_sub_rev q p] at h₂
-    rw [abs_of_nonneg (sub_nonneg.2 htt)]
-    linarith
+  wlog htt : t ≤ t' generalizing p q t t'
+  · rw [abs_sub_comm, norm_sub_rev]
+    exact this hq hp (le_of_not_ge htt)
+  have h₁ := mul_le_sub_of_le (r := r) (R := R) (c := c) (c' := c') p htt
+  have h₂ := norm_sub_norm_le (p - (c' + t' • (c - c'))) (q - (c' + t' • (c - c')))
+  rw [sub_sub_sub_cancel_right, hq] at h₂
+  rw [abs_of_nonpos (sub_nonpos.2 htt)]
+  linarith
+
+omit [NormedSpace ℝ E] in
+/-- The inner radius is less than the outer one. -/
+private theorem lt_of_dist_add_lt (hcR : dist c c' + r < R) : r < R := by
+  linarith [dist_nonneg (x := c) (y := c')]
 
 /-- The radius of the moving sphere stays at least `r`. -/
 private theorem le_radius (hrR : r ≤ R) (t : I) : r ≤ R - t * (R - r) := by
@@ -192,7 +194,7 @@ private theorem norm_roundAnnulusMap_sub (hr : 0 < r) (hrR : r ≤ R) (p : spher
 /-- The interpolation sweeps out exactly the closed region between the two spheres. -/
 private theorem range_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' + r < R) :
     range (roundAnnulusMap c c' r R) = closedBall c' R \ (closedBall c r \ sphere c r) := by
-  have hrR : r ≤ R := by linarith [dist_nonneg (x := c) (y := c')]
+  have hrR : r ≤ R := (lt_of_dist_add_lt hcR).le
   have hκ : 0 ≤ R - r - dist c c' := by linarith
   ext y
   simp only [mem_sdiff, mem_closedBall, mem_sphere, dist_eq_norm_sub, not_and, not_not]
@@ -228,7 +230,7 @@ private theorem range_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' + r < R) :
 /-- The interpolation is injective. -/
 private theorem injective_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' + r < R) :
     Function.Injective (roundAnnulusMap c c' r R) := by
-  have hrR : r ≤ R := by linarith [dist_nonneg (x := c) (y := c')]
+  have hrR : r ≤ R := (lt_of_dist_add_lt hcR).le
   rintro p q hpq
   have h := mul_abs_sub_le_norm_sub (norm_roundAnnulusMap_sub (c := c) (c' := c') hr hrR p)
     (norm_roundAnnulusMap_sub hr hrR q)
@@ -246,7 +248,7 @@ private theorem injective_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' + r < R)
 private theorem antilipschitzWith_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' + r < R) :
     AntilipschitzWith ((R - r + dist c c' + R) / ((R - r - dist c c') * r)).toNNReal
       (roundAnnulusMap c c' r R) := by
-  have hrR : r ≤ R := by linarith [dist_nonneg (x := c) (y := c')]
+  have hrR : r ≤ R := (lt_of_dist_add_lt hcR).le
   have hκ : 0 < R - r - dist c c' := by linarith
   have hd : dist c c' = ‖c - c'‖ := dist_eq_norm_sub c c'
   have hpos : 0 < (R - r - dist c c') * r := mul_pos hκ hr
@@ -271,12 +273,11 @@ private theorem antilipschitzWith_roundAnnulusMap (hr : 0 < r) (hcR : dist c c' 
       _ ≤ ‖roundAnnulusMap c c' r R p - roundAnnulusMap c c' r R q‖ + ‖Δ • (c - c')‖ +
             ‖(Δ * (R - r)) • (q.1 : E)‖ := norm_add_le_of_le (norm_sub_le _ _) le_rfl
       _ = D + |Δ| * dist c c' + |Δ| * (R - r) := by
-          rw [norm_smul, norm_smul, norm_eq_of_mem_sphere q.1, Real.norm_eq_abs, Real.norm_eq_abs,
-            abs_mul, abs_of_nonneg (sub_nonneg.2 hrR), mul_one, hd, hD, dist_eq_norm_sub]
-  rw [Real.coe_toNNReal _ (div_nonneg (by linarith [dist_nonneg (x := c) (y := c')]) hpos.le),
-    Prod.dist_eq, Subtype.dist_eq, Subtype.dist_eq, Real.dist_eq, dist_eq_norm_sub]
+          simp [norm_smul, abs_of_nonneg (sub_nonneg.2 hrR), hd, hD, dist_eq_norm_sub]
   have hD0 : 0 ≤ D := dist_nonneg
   have hd0 : 0 ≤ dist c c' := dist_nonneg
+  rw [Real.coe_toNNReal _ (div_nonneg (by linarith) hpos.le)]
+  simp only [Prod.dist_eq, Subtype.dist_eq, Real.dist_eq, dist_eq_norm_sub (p.1 : E)]
   have h₁ : (R - r - dist c c') * (r * ‖(p.1 : E) - q.1‖) ≤
       (R - r - dist c c') * (D + |Δ| * dist c c' + |Δ| * (R - r)) :=
     mul_le_mul_of_nonneg_left ((mul_le_mul_of_nonneg_right hρ (norm_nonneg _)).trans hx) hκ.le
@@ -295,7 +296,7 @@ swept out by the segments from `c' + R • u` to `c + r • u`, `u` a unit vecto
 theorem coboundAnnulus_of_range_eq_sphere {f g : sphere (0 : E) 1 → E}
     (hf : range f = sphere c' R) (hg : range g = sphere c r) (hr : 0 < r)
     (hcR : dist c c' + r < R) : CoboundAnnulus f g := by
-  have hR : 0 < R := by linarith [dist_nonneg (x := c) (y := c')]
+  have hR : 0 < R := hr.trans (lt_of_dist_add_lt hcR)
   have hcont : Continuous (roundAnnulusMap c c' r R) := by
     unfold roundAnnulusMap
     fun_prop
