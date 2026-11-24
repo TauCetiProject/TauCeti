@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.PDE.Wave.Endpoint
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -22,9 +23,11 @@ with zero data at `t = -∞` is the retarded Duhamel integral
 `u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`
 
 (`TauCeti.waveSinPropagator`). Let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
-with `2 < q < ∞`, and let `(q₁, r₁)` be wave-admissible with `2 < q₁ ≤ ∞`, with Hölder conjugates
-`p₁` and `r₁'`. Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file proves
-the **retarded Strichartz estimate** for every integrable forcing term `F : ℝ → L²(E)`:
+with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates
+`p₁` and `r₁'`, where the time exponent `2` is allowed only at the endpoint
+`1 + (n - 1) / r = (n - 1) / 2` in dimension `n ≥ 4`, on either side or on both. Put
+`γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file proves the **retarded
+Strichartz estimate** for every integrable forcing term `F : ℝ → L²(E)`:
 
 `‖u‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Pⱼ F‖_{L^{p₁}_t L^{r₁'}_x}`
 
@@ -125,22 +128,28 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
 /-- **The retarded Strichartz estimate for the wave equation with Besov forcing.** Let `E` be
 nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley
 cutoff `ψⱼ` built from `φ` as symbol, let `(q, r)` be wave-admissible,
-`2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞`, and let `(q₁, r₁)` be wave-admissible with
-`2 < q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`. Put `γ = n / 2 - n / r - 1 / q` and
-`γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every integrable forcing term
-`F : ℝ → L²(E)`, the retarded Duhamel integral `u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`,
-the solution of `∂ₜ²u - Δu = F` with zero data at `t = -∞`, satisfies
+`2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with
+`2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where the time exponent `2` is allowed only at
+the endpoint `1 + (n - 1) / r = (n - 1) / 2` in dimension `n ≥ 4`, on either side or on
+both. Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that
+for every integrable forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
+`u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`, the solution of `∂ₜ²u - Δu = F` with zero data at
+`t = -∞`, satisfies
 
 `‖u‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Pⱼ F‖_{L^{p₁}_t L^{r₁'}_x}`.
 
 Here `u(t)` is a Bochner integral, taken to be `0` where it does not exist. -/
 theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
-    {q r : ℝ≥0∞} (hq : 2 < q) (hq_top : q ≠ ∞)
+    {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 < q₁)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
     (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
-      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
@@ -153,12 +162,12 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
               volume := by
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
-  obtain ⟨hq2, hqr'⟩ := waveAdmissible_toNNReal hq hq_top hqr
-  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq2 hr0 hqr' Module.finrank_pos
+  obtain ⟨-, hr2⟩ :=
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hq2 Module.finrank_pos
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
-      (p₁ := p₁) (r₁' := r₁') hq hq_top hqr hq₁ hqr₁
+      (p₁ := p₁) (r₁' := r₁') hq hq_top hqr hq2 hq₁ hqr₁ hq₁2
   have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
   set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
   set S := Finset.Ioo (-(L : ℤ)) L
@@ -184,10 +193,10 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
         (eLpNorm_tsum_le (fun l ↦ Finset.aemeasurable_fun_sum _ fun d _ ↦
           (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub ((Lp.fourierMultiplierCLM ℂ
             _ ∘L Lp.fourierMultiplierCLM ℂ _).integrable_comp (hH l)).aestronglyMeasurable
-              ).aemeasurable_eLpNorm_Lp .rfl r) (one_le_two.trans hq.le)).trans
+              ).aemeasurable_eLpNorm_Lp .rfl r) (one_le_two.trans hq)).trans
           (tsum_le_tsum fun l ↦ by
             rw [← Finset.sum_fn]
-            exact eLpNorm_sum_le (one_le_two.trans hq.le))
+            exact eLpNorm_sum_le (one_le_two.trans hq))
     -- The frequency-localized estimate and the bound for `Qₗ`.
     _ ≤ ∑' l, ∑ d ∈ S, C * K * (ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * eLpNorm (fun s ↦
           eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume) :=
