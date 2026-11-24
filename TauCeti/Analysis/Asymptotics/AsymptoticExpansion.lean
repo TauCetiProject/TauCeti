@@ -47,7 +47,9 @@ elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO
 * `Asymptotics.HasAsymptoticExpansion.add`, `const_smul`, `neg`, `sub`: linearity.
 * `Asymptotics.HasAsymptoticExpansion.smul_left`: multiplication of the function and of the scale
   by a common scalar function.
-* `Asymptotics.HasAsymptoticExpansion.comp_tendsto`: composition with `Tendsto g l' l`.
+* `Asymptotics.HasAsymptoticExpansion.comp_tendsto`: composition with `Tendsto g l' l`, and
+  `comp_inv_atTop`: the substitution `t ↦ t⁻¹` turns an expansion at `+∞` in the powers
+  `t ^ (-w k)` into one at `0+` in the powers `t ^ w k`.
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
@@ -219,6 +221,17 @@ theorem comp_tendsto {β : Type*} {l' : Filter β} {g : β → α}
     (hf : HasAsymptoticExpansion l φ a f) (hg : Tendsto g l' l) :
     HasAsymptoticExpansion l' (fun n x => φ n (g x)) a (f ∘ g) :=
   fun N => (hf N).comp_tendsto hg
+
+/-- An expansion at `+∞` in the powers `t ^ (-w k)` becomes, under `t ↦ t⁻¹`, an expansion at
+`0+` in the powers `t ^ w k`, with the same coefficients. -/
+theorem comp_inv_atTop {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {w : ℕ → ℂ}
+    {c : ℕ → F} {h : ℝ → F}
+    (hh : HasAsymptoticExpansion atTop (fun k (t : ℝ) => (t : ℂ) ^ (-w k)) c h) :
+    HasAsymptoticExpansion (𝓝[>] 0) (fun k (t : ℝ) => (t : ℂ) ^ w k) c fun t => h t⁻¹ :=
+  (hh.comp_tendsto tendsto_inv_nhdsGT_zero).congr_scale fun k => by
+    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+    simp only [Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg ht.le, Complex.cpow_neg,
+      inv_inv]
 
 /-- Expansions in a common scale add coefficientwise: `f + g` has coefficients `a + b`. -/
 theorem add (hf : HasAsymptoticExpansion l φ a f) (hg : HasAsymptoticExpansion l φ b g) :

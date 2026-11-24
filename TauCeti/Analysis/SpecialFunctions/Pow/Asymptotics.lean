@@ -41,6 +41,11 @@ rates in a small scale `h` become inequalities for all small `h`. Power laws mul
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
 `f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
 
+## Complex powers of a positive real variable
+
+Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
+`O(t ^ Re w)`.
+
 ## Families bounded by integer powers
 
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
@@ -138,6 +143,13 @@ theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
     ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c :=
   eventually_lt_of_isBigO_rpow hθ (isBigO_const_mul_self A _ _) hc
+
+/-- Along a filter eventually in `(0, ∞)`, the complex power `t ^ w` is `O(t ^ Re w)`. -/
+theorem isBigO_ofReal_cpow_rpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) (w : ℂ) :
+    (fun t : ℝ ↦ (t : ℂ) ^ w) =O[l] fun t ↦ t ^ w.re :=
+  IsBigO.of_bound 1 <| hl.mono fun t ht ↦ by
+    rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _),
+      one_mul]
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 
