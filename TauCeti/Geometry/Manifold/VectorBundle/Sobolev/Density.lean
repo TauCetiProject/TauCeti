@@ -9,7 +9,7 @@ import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.AEZeroOff
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer

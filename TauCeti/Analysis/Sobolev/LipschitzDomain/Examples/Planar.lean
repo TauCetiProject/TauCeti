@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import TauCeti.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Planar examples and non-examples of Lipschitz domains

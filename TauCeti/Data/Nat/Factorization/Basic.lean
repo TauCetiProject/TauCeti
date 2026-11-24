@@ -10,20 +10,21 @@ public import Mathlib.Data.Nat.Factorization.Basic
 /-!
 # Removing prime-power factors
 
-The least prime belongs to the prime factors of a natural number greater than one, and removing
-its full multiplicity gives a smaller number. Removing the `p`-part erases `p` from the prime
-factors; coprimality excludes prime factors of one number from dividing the other, and a natural
-number has no prime divisor distinct from a prime `p` if and only if it is a power of `p`. These
-facts support induction by successively removing prime-power blocks. For a
-divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
-ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
-of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
-same `p`-free part as `k` either divides `k` or is `p * k`, and a divisor of `n` that does not
-divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`. The product of any set of
-prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the
-prime factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family
-of primes (or fixed positive powers of their casts in characteristic zero) are injective on
-finitely supported exponent tuples.
+For a natural number `n`, `n.minFac` lies in `n.primeFactors` exactly when `1 < n` (at `n = 1`,
+`Nat.minFac` returns `1`, which is not prime). Removing the full multiplicity of `p` makes `n`
+strictly smaller exactly when `p ∈ n.primeFactors`. This is prime-factor membership, not prime
+divisibility: `Nat.primeFactors 0` is empty, and `ordCompl[p] 0 = 0` although every prime divides
+`0`. Removing the `p`-part erases `p` from the prime factors, and coprimality excludes prime factors
+of one number from dividing the other. These facts support induction by successively removing
+prime-power blocks. For a divisor `n ∣ m`, the `p`-free parts are related by
+`m / n * ordCompl[p] n = ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map
+`x ↦ x ^ (m / n)` between groups of roots of unity acts on their `p`-primary parts. For a prime `p`,
+a divisor of `p * k` with the same `p`-free part as `k` either divides `k` or is `p * k`, and a
+divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`.
+The product of any set of prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to
+the product of all the prime factors of `n` exactly when it is coprime to `n`. Monomial products of
+an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
+injective on finitely supported exponent tuples.
 
 ## Provenance
 
@@ -35,10 +36,6 @@ Apache-2.0, commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, file `StrongMulti
 public section
 
 namespace Nat
-
-/-- For `1 < n` the least prime factor of `n` is one of its primes. -/
-theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFactors :=
-  Nat.mem_primeFactors.2 ⟨Nat.minFac_prime hn.ne', n.minFac_dvd, by omega⟩
 
 /-- The product of a set of prime factors of `n` divides `n`. -/
 theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.primeFactors) :
@@ -60,12 +57,6 @@ theorem coprime_prod_primeFactors_left_iff {n L : ℕ} (hL : L ≠ 0) :
     Coprime (∏ p ∈ L.primeFactors, p) n ↔ Coprime L n := by
   rw [coprime_comm, coprime_prod_primeFactors_right_iff hL, coprime_comm]
 
-/-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
-theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=
-  Nat.div_lt_self (by omega) (Nat.one_lt_pow
-    ((Nat.minFac_prime hn.ne').factorization_pos_of_dvd (by omega) n.minFac_dvd).ne'
-    (Nat.minFac_prime hn.ne').one_lt)
-
 /-- Removing the `p`-part of a natural number removes `p` from its prime factors. -/
 @[simp]
 theorem primeFactors_ordCompl (n p : ℕ) :
@@ -76,36 +67,33 @@ theorem primeFactors_ordCompl (n p : ℕ) :
 /-- For a divisor `n ∣ m`, the cofactor `m / n` times the `p`-free part of `n` is the `p`-free
 part of `m` times the power of `p` by which the `p`-parts of `m` and `n` differ. -/
 theorem div_mul_ordCompl_of_dvd {m n : ℕ} (p : ℕ) (h : n ∣ m) :
-    m / n * ordCompl[p] n = ordCompl[p] m * p ^ (m.factorization p - n.factorization p) := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  have hn : n ≠ 0 := ne_zero_of_dvd_ne_zero hm h
-  have hle : n.factorization p ≤ m.factorization p := (factorization_le_iff_dvd hn hm).2 h p
-  refine Nat.eq_of_mul_eq_mul_right (ordProj_pos n p) ?_
-  rw [mul_assoc, mul_comm (ordCompl[p] n), ordProj_mul_ordCompl_eq_self, Nat.div_mul_cancel h,
-    mul_assoc, ← pow_add, Nat.sub_add_cancel hle, mul_comm, ordProj_mul_ordCompl_eq_self]
+    m / n * ordCompl[p] n = ordCompl[p] m * p ^ (m.factorization p - n.factorization p) :=
+  calc m / n * ordCompl[p] n
+      = ordProj[p] (m / n) * ordCompl[p] (m / n) * ordCompl[p] n :=
+        congrArg (· * ordCompl[p] n) (ordProj_mul_ordCompl_eq_self (m / n) p).symm
+    _ = ordCompl[p] (m / n * n) * ordProj[p] (m / n) := by rw [ordCompl_mul]; ac_rfl
+    _ = ordCompl[p] m * p ^ (m.factorization p - n.factorization p) := by
+        rw [Nat.div_mul_cancel h, factorization_div h, Finsupp.tsub_apply]
 
 /-- For a prime `p`, a divisor `d` of `p * k` with the same `p`-free part as `k` that does not
 divide `k` is `p * k`. -/
 theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.Prime)
     (hd : d ∣ p * k) (hdk : ¬d ∣ k) (h : ordCompl[p] d = ordCompl[p] k) : d = p * k := by
-  have hk : k ≠ 0 := by
-    rintro rfl
-    exact hdk (dvd_zero d)
+  have hk : k ≠ 0 := fun hk ↦ hdk (hk ▸ dvd_zero d)
   have hd0 : d ≠ 0 := ne_zero_of_dvd_ne_zero (mul_ne_zero hp.ne_zero hk) hd
-  have hpk : (p * k).factorization p = k.factorization p + 1 := by
-    simp [factorization_mul hp.ne_zero hk, hp.factorization_self, add_comm]
-  have hle : d.factorization p ≤ k.factorization p + 1 :=
-    hpk ▸ (factorization_le_iff_dvd hd0 (mul_ne_zero hp.ne_zero hk)).2 hd p
+  have hle : d.factorization p ≤ k.factorization p + 1 := by
+    simpa [factorization_mul hp.ne_zero hk, hp.factorization_self, add_comm] using
+      (factorization_le_iff_dvd hd0 (mul_ne_zero hp.ne_zero hk)).2 hd p
   -- If the `p`-part of `d` were at most that of `k`, then `d` would divide `k`.
   have hlt : k.factorization p < d.factorization p := by
     by_contra hge
     refine hdk ?_
     rw [← ordProj_mul_ordCompl_eq_self d p, ← ordProj_mul_ordCompl_eq_self k p, h]
     exact mul_dvd_mul_right (Nat.pow_dvd_pow p (not_lt.1 hge)) _
-  rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
-    ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
-  simp [hp.factorization_self, Nat.div_self hp.pos]
+  -- So the `p`-part of `d` is `p` times that of `k`, while the `p`-free parts agree.
+  have hdp : d.factorization p = k.factorization p + 1 := by omega
+  rw [← ordProj_mul_ordCompl_eq_self d p, h, hdp, pow_succ', mul_assoc,
+    ordProj_mul_ordCompl_eq_self]
 
 /-- For a prime `p`, a divisor `d` of `n` that does not divide `n / p` is divisible by
 `p ^ v_p(n)`. -/
@@ -118,20 +106,6 @@ theorem Prime.pow_multiplicity_dvd_of_dvd_of_not_dvd_div {p n d : ℕ} (hp : p.P
   exact (Nat.Coprime.pow_left _ ((Nat.Prime.coprime_iff_not_dvd hp).2 hc)).dvd_of_dvd_mul_right
     (pow_multiplicity_dvd p (d * c))
 
-/-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
-`p`. -/
-theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prime) :
-    (∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) ↔ ∃ n : ℕ, p ^ n = k := by
-  refine ⟨fun hno ↦ ?_, fun ⟨n, hn⟩ q hq hqp hqd ↦
-    hqp (Nat.prime_eq_prime_of_dvd_pow hq hp (hn ▸ hqd))⟩
-  rcases eq_or_ne k 0 with rfl | hk
-  · by_cases hp2 : p = 2
-    · exact (hno 3 Nat.prime_three (by omega) (dvd_zero 3)).elim
-    · exact (hno 2 Nat.prime_two (Ne.symm hp2) (dvd_zero 2)).elim
-  · exact ⟨_, (Nat.eq_prime_pow_of_unique_prime_dvd hk fun {q} hq hqk ↦ by
-      by_contra hqp
-      exact hno q hq hqp hqk).symm⟩
-
 /-- No prime factor of `n` divides `p` when `n` and `p` are coprime. -/
 theorem Coprime.not_dvd_of_mem_primeFactors {n p q : ℕ} (hcop : n.Coprime p)
     (hq : q ∈ n.primeFactors) : ¬ q ∣ p :=
@@ -141,12 +115,31 @@ theorem Coprime.not_dvd_of_mem_primeFactors {n p q : ℕ} (hcop : n.Coprime p)
 /-- A natural number `n > 1` coprime to `p` has a prime factor not dividing `p`. -/
 theorem Coprime.exists_mem_primeFactors_not_dvd {n p : ℕ} (hcop : n.Coprime p) (hn : 1 < n) :
     ∃ q ∈ n.primeFactors, ¬ q ∣ p :=
-  ⟨n.minFac, minFac_mem_primeFactors hn,
-    hcop.not_dvd_of_mem_primeFactors (minFac_mem_primeFactors hn)⟩
+  let ⟨q, hq⟩ := nonempty_primeFactors.2 hn
+  ⟨q, hq, hcop.not_dvd_of_mem_primeFactors hq⟩
 
 end Nat
 
 namespace TauCeti
+
+/-- `n.minFac` lies in `n.primeFactors` exactly when `1 < n`. At `n = 1`, `Nat.minFac` returns `1`,
+which is not prime, and `Nat.primeFactors 0` is empty. -/
+theorem minFac_mem_primeFactors_iff {n : ℕ} : n.minFac ∈ n.primeFactors ↔ 1 < n := by
+  rw [Nat.mem_primeFactors, Nat.minFac_prime_iff]
+  simp only [Nat.minFac_dvd, true_and]
+  omega
+
+/-- Removing the `p`-part of `n` makes `n` strictly smaller exactly when `p ∈ n.primeFactors`.
+This is stronger than `p` being a prime divisor of `n`: every prime divides `0`, but
+`ordCompl[p] 0 = 0` and `Nat.primeFactors 0` is empty. -/
+@[simp]
+theorem ordCompl_lt_self_iff {n p : ℕ} : ordCompl[p] n < n ↔ p ∈ n.primeFactors := by
+  by_cases hp : p.Prime
+  · rw [(Nat.ordCompl_le n p).lt_iff_ne, Ne, Nat.ordCompl_eq_self_iff_zero_or_not_dvd n hp,
+      Nat.mem_primeFactors]
+    tauto
+  · rw [Nat.ordCompl_of_not_prime n p hp]
+    simp [hp]
 
 /-- Monomial products of an injective family of prime natural numbers are injective on finitely
 supported exponent tuples. -/
@@ -173,14 +166,11 @@ theorem finsuppProd_natCast_prime_pow_injective {R ι : Type*} [CommSemiring R] 
   have hcast (d : ι →₀ ℕ) :
       (d.prod fun i k ↦ ((p i : R) ^ m) ^ k) =
         (((d.mapRange (m * ·) (mul_zero m)).prod fun i k ↦ p i ^ k : ℕ) : R) := by
-    have hhom := map_finsuppProd (Nat.castRingHom R) d fun i k ↦ p i ^ (m * k)
-    simp only [Nat.coe_castRingHom] at hhom
-    rw [Finsupp.prod_mapRange_index (fun _ ↦ rfl), hhom]
+    rw [Finsupp.prod_mapRange_index (fun _ ↦ rfl), Nat.cast_finsuppProd]
     exact Finsupp.prod_congr fun i _ ↦ by simp [pow_mul]
   intro d₁ d₂ h
-  have hmap := finsuppProd_prime_pow_injective hp hinj
-    (Nat.cast_injective ((hcast d₁).symm.trans (h.trans (hcast d₂))))
-  ext i
-  exact mul_left_cancel₀ hm (DFunLike.congr_fun hmap i)
+  exact Finsupp.mapRange_injective (m * ·) (mul_zero m) (mul_right_injective₀ hm)
+    (finsuppProd_prime_pow_injective hp hinj
+      (Nat.cast_injective ((hcast d₁).symm.trans (h.trans (hcast d₂)))))
 
 end TauCeti

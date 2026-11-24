@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!

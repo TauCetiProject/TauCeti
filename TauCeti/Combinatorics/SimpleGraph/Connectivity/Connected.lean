@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Connectedness and connected components
@@ -30,8 +29,6 @@ Deleting any vertex leaves each connected component not containing it as a singl
   every vertex is adjacent to another vertex of the component.
 * `SimpleGraph.ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one`: deleting a
   vertex leaves each other connected component intact.
-* `SimpleGraph.Preconnected.finite_of_finite_edgeSet`: a preconnected simple graph with finitely
-  many edges has a finite vertex type.
 -/
 
 public section
@@ -135,23 +132,5 @@ theorem connected_of_exists_adj_lt (v₀ : V) (h : ∀ v ≠ v₀, ∃ w < v, G.
       exact (ih w hwv).trans hadj.reachable
 
 end
-
-/-- Every preconnected simple graph with finitely many edges has a finite vertex type: either `V` is
-a subsingleton, or every vertex is incident to at least one edge of `G`. -/
-theorem Preconnected.finite_of_finite_edgeSet {V : Type*} {G : SimpleGraph V} [Finite G.edgeSet]
-    (hG : G.Preconnected) : Finite V := by
-  by_cases hsub : Subsingleton V
-  · exact Finite.of_subsingleton
-  · rw [not_subsingleton_iff_nontrivial] at hsub
-    have hf : (⋃ e : G.edgeSet, {x : V | x ∈ (e : Sym2 V)}).Finite :=
-      Set.finite_iUnion fun e ↦ Sym2.ind
-        (fun u v ↦ ((Set.finite_singleton v).insert u).subset fun _ ↦ Sym2.mem_iff.mp) e.val
-    refine Set.finite_univ_iff.mp (hf.subset fun x _ ↦ ?_)
-    obtain ⟨y, hyx⟩ := exists_ne x
-    obtain ⟨p⟩ := hG x y
-    cases p with
-    | nil => exact (hyx rfl).elim
-    | @cons _ z _ hadj _ =>
-      exact Set.mem_iUnion.mpr ⟨⟨s(x, z), G.mem_edgeSet.mpr hadj⟩, Sym2.mem_mk_left x z⟩
 
 end SimpleGraph

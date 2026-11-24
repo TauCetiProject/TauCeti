@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Analysis.Distribution.ComplexPairing
@@ -58,6 +59,8 @@ continuously on `T` (`Distribution.innerPairingCLM`); conversely a complex-value
   `T`, as a continuous complex-linear function of `T`.
 * `Distribution.innerPairing_postcompCLM_toSpanSingleton`: its value on `φ • v`, and
   `Distribution.innerPairing_eq_sum_basis`: its formula in an arbitrary real basis of `V`.
+* `Distribution.innerPairing_mapCLM`: a complex-linear map `K` of the values moves to the test
+  function as its adjoint, `⟪g, K ∘ T⟫ = ⟪K† ∘ g, T⟫`.
 * `Distribution.innerPairing_eq_complexPairing`: for `V = ℂ` it is `T.complexPairing (conj g)`.
 * `Distribution.innerPairing_ofFun`: on a locally integrable function it is an integral.
 * `Distribution.innerPairing_eq_zero_of_disjoint`: it vanishes on test functions supported away
@@ -206,6 +209,26 @@ theorem innerPairing_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι
   conv_lhs => rw [← sum_postcompCLM_toSpanSingleton_coord b g]
   simp only [innerPairing_sum_right, innerPairing_postcompCLM_toSpanSingleton]
 
+/-- **Maps of the values move to the test function as their adjoints.** For a complex-linear map
+`K : V →L[ℂ] V'` between finite-dimensional complex inner product spaces, the pairing of the
+`V'`-valued distribution `K ∘ T` with `g` is the pairing of `T` with `K† ∘ g`. -/
+theorem innerPairing_mapCLM {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℂ V']
+    [FiniteDimensional ℂ V'] (K : V →L[ℂ] V') (T : 𝓓'^{n}(Ω, V)) (g : 𝓓^{n}(Ω, V')) :
+    (mapCLM (K.restrictScalars ℝ) T).innerPairing g =
+      T.innerPairing (postcompCLM ((ContinuousLinearMap.adjoint K).restrictScalars ℝ) g) := by
+  set b := Module.finBasis ℝ V'
+  have hK (v : V') (φ : 𝓓^{n}(Ω, ℝ)) :
+      postcompCLM ((ContinuousLinearMap.adjoint K).restrictScalars ℝ)
+        (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) =
+          postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (ContinuousLinearMap.adjoint K v))
+            φ := by
+    ext x
+    simp
+  conv_lhs => rw [← sum_postcompCLM_toSpanSingleton_coord b g]
+  conv_rhs => rw [← sum_postcompCLM_toSpanSingleton_coord b g]
+  simp only [innerPairing_sum_right, map_sum, hK, innerPairing_postcompCLM_toSpanSingleton,
+    mapCLM_apply, ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_left]
+
 /-- For complex-valued distributions the pairing is the complex-linear extension of `T` applied to
 the conjugate of the test function. -/
 theorem innerPairing_eq_complexPairing (T : 𝓓'^{n}(Ω, ℂ)) (g : 𝓓^{n}(Ω, ℂ)) :
@@ -284,7 +307,7 @@ def smulRightCLM (w : W) : 𝓓'^{n}(Ω, ℂ) →L[ℂ] 𝓓'^{n}(Ω, W) where
   map_add' := map_add _
   map_smul' c T := by
     ext φ
-    simp [mul_smul]
+    simp
   cont := (mapCLM _).continuous
 
 @[simp]
@@ -307,14 +330,14 @@ theorem innerPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E �
   have hcomp (i : Fin _) (φ : 𝓓^{n}(Ω, ℝ)) :
       innerComponent (b i) (ofFun Ω f μ n) φ = ∫ x, φ x • ⟪b i, f x⟫_ℂ ∂μ := by
     rw [innerComponent_apply, ofFun_apply hf, ← integral_inner
-      (LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport hf φ.continuous
-        φ.hasCompactSupport φ.tsupport_subset)]
+      (LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport hf
+        φ.continuous.continuousOn φ.hasCompactSupport φ.tsupport_subset)]
     simp only [← Complex.coe_smul, inner_smul_right, smul_eq_mul]
   -- The integrand of each term is integrable.
   have hint (i : Fin _) : Integrable (fun x ↦ postcompCLM (𝕜 := ℝ) (conjInner (b i)) g x *
       ⟪b i, f x⟫_ℂ) μ := by
     simpa [smul_eq_mul] using LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport (hfi i)
-      (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).continuous
+      (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).continuous.continuousOn
       (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).hasCompactSupport
       (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).tsupport_subset
   rw [innerPairing, hb, Finset.sum_congr rfl fun i _ ↦ complexPairing_eq_integral (hfi i)

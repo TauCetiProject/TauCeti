@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
@@ -27,17 +28,25 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
+* `ContinuousLinearMap.uniqueDiffOn_halfSpace`: a closed half-space `{a ≤ ℓ}` of a real normed
+  space is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.uniqueDiffOn_closedBall`: a closed ball of positive radius is a set of unique
+  differentiability.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
+* `ContinuousLinearEquiv.mem_posTangentConeAt_image_iff`: a continuous linear equivalence carries
+  positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
+* `TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt`: a map fixing a set has derivative the
+  identity on the tangent cone of that set.
 -/
 
 public section
@@ -98,6 +107,21 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
   exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
     fun x hx ↦ hx.le
 
+/-- A closed half-space `{x | a ≤ ℓ x}` of a real normed space has unique derivatives, including
+on its boundary hyperplane. -/
+theorem ContinuousLinearMap.uniqueDiffOn_halfSpace {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) (a : ℝ) : UniqueDiffOn ℝ {x | a ≤ ℓ x} := by
+  by_cases hℓ : ℓ = 0
+  · by_cases ha : a ≤ 0
+    · simp [hℓ, ha]
+    · simp [hℓ, ha, uniqueDiffOn_empty]
+  obtain ⟨w, hw⟩ := ContinuousLinearMap.exists_ne_zero hℓ
+  -- The point `((a + 1) / ℓ w) • w` lies in the open half-space `{a < ℓ}`.
+  refine uniqueDiffOn_convex ((convex_Ici a).linear_preimage ℓ.toLinearMap)
+    ⟨((a + 1) / ℓ w) • w, mem_interior_iff_mem_nhds.2 <| mem_of_superset
+      ((isOpen_lt continuous_const ℓ.continuous).mem_nhds ?_) fun x (hx : a < ℓ x) ↦ hx.le⟩
+  simp [div_mul_cancel₀ _ hw]
+
 /-- A closed coordinate orthant `{x | ∀ i, a i ≤ x i}` has unique derivatives, including at its
 corners. -/
 theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn ℝ (Ici a) := by
@@ -108,6 +132,13 @@ theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
+
+/-- A closed ball of positive radius in a real normed space has unique derivatives, including on
+its boundary sphere. -/
+theorem TauCeti.uniqueDiffOn_closedBall {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x : E) {r : ℝ} (hr : 0 < r) : UniqueDiffOn ℝ (Metric.closedBall x r) :=
+  uniqueDiffOn_convex (convex_closedBall x r)
+    ⟨x, mem_interior_iff_mem_nhds.mpr (Metric.closedBall_mem_nhds x hr)⟩
 
 /-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
 points. -/
@@ -141,6 +172,15 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
 
+/-- A continuous linear equivalence `e` identifies the positive tangent cone of `e '' s` at `e x`
+with the image of the positive tangent cone of `s` at `x`. -/
+@[simp]
+theorem ContinuousLinearEquiv.mem_posTangentConeAt_image_iff {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E ≃L[ℝ] F) {s : Set E}
+    {x y : E} : e y ∈ posTangentConeAt (e '' s) (e x) ↔ y ∈ posTangentConeAt s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ e.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h⟩
+  simpa [e.symm_image_image] using e.symm.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h
+
 /-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
 `t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
 theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
@@ -152,3 +192,11 @@ theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
       fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
   refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
     (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)
+
+/-- A map that is differentiable at `x ∈ s` and fixes every point of `s` has derivative the
+identity on the tangent cone of `s` at `x`. -/
+theorem TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {s : Set E} {r : E → E} {x v : E} (hr : DifferentiableAt 𝕜 r x)
+    (hrs : EqOn r id s) (hx : x ∈ s) (hv : v ∈ tangentConeAt 𝕜 s x) : fderiv 𝕜 r x v = v :=
+  hr.hasFDerivAt.hasFDerivWithinAt.unique_on
+    ((hasFDerivWithinAt_id x s).congr (fun _ hy ↦ hrs hy) (hrs hx)) hv

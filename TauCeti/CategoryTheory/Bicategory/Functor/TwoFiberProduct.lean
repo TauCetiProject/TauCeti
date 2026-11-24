@@ -10,6 +10,8 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Categorical.Basic
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Equivalence
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Groupoid
 
 /-!
 # The 2-fiber product of pseudofunctors
@@ -25,7 +27,9 @@ along `f` is `(f^* x, f^* y, f^* e)`, with `f^* e` transported along the natural
 and it has the 2-universal property of the 2-fiber product: strong transformations into it are
 induced by pairs of strong transformations into `F` and `G` with an invertible modification
 between their composites to `H` (`twoFiberProduct.lift`), and modifications between them are
-determined by their projections (`twoFiberProduct.homMk`, `twoFiberProduct.hom_ext`).
+determined by their projections (`twoFiberProduct.homMk`, `twoFiberProduct.hom_ext`). Its fibers
+are groupoids when those of `F` and `G` are (`twoFiberProduct.isGroupoid_obj`), and its second
+projection is a fiberwise equivalence when `α` is (`twoFiberProduct.isEquivalence_snd_app`).
 
 The construction uses no topology; that the 2-fiber product of stacks is a stack is proved in
 `TauCeti.CategoryTheory.Sites.Descent.TwoFiberProduct`.
@@ -48,6 +52,10 @@ values in `Cat.{v', max u' v'}`. For pseudofunctors with values in `Cat.{u, u + 
   and `whiskerLeft_lift_iso_hom`.
 * `TauCeti.Stack.twoFiberProduct.homMk`, `TauCeti.Stack.twoFiberProduct.isoMk`,
   `TauCeti.Stack.twoFiberProduct.hom_ext`: modifications into the 2-fiber product.
+* `TauCeti.Stack.twoFiberProduct.isGroupoid_obj`: the fibers are groupoids when those of `F` and
+  `G` are.
+* `TauCeti.Stack.twoFiberProduct.isEquivalence_snd_app`: equivalences are stable under 2-base
+  change.
 
 ## References
 
@@ -763,6 +771,18 @@ def isoMk (e₁ : φ ≫ fst α β ≅ ψ ≫ fst α β) (e₂ : φ ≫ snd α �
   inv_hom_id := hom_ext α β (by simp) (by simp)
 
 end homMk
+
+/-- The fibers of the 2-fiber product of transformations between pseudofunctors with groupoid
+fibers are groupoids. -/
+instance isGroupoid_obj (X : LocallyDiscrete Cᵒᵖ) [IsGroupoid (F.obj X)]
+    [IsGroupoid (G.obj X)] : IsGroupoid ((twoFiberProduct α β).obj X) :=
+  inferInstanceAs (IsGroupoid ((α.app X).toFunctor ⊡ (β.app X).toFunctor))
+
+/-- The second projection of a 2-fiber product along a fiberwise equivalence `α` is a fiberwise
+equivalence: equivalences are stable under 2-base change. -/
+instance isEquivalence_snd_app (X : LocallyDiscrete Cᵒᵖ) [(α.app X).toFunctor.IsEquivalence] :
+    ((snd α β).app X).toFunctor.IsEquivalence :=
+  inferInstanceAs (π₂ (α.app X).toFunctor (β.app X).toFunctor).IsEquivalence
 
 end twoFiberProduct
 

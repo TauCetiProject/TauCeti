@@ -44,6 +44,8 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field`:
   the dimension condition holds for all fibres over fields, not just over residue fields: if
   `R → K` is a ring map to a field and `K ⊗[R] S` is nontrivial, it has Krull dimension `n`.
+* `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_of_field`: over a field, a
+  nonzero standard syntomic algebra of relative dimension `n` has Krull dimension `n`.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.isPureDimensional_primeSpectrum`: over a
   field, the spectrum of a standard syntomic algebra of relative dimension `n` is pure-dimensional
   of dimension `n`, since it is a global complete intersection.
@@ -182,6 +184,24 @@ theorem ringKrullDim_tensorProduct_of_field (K : Type w) [Field K] [Algebra R K]
   | inr hF => rw [hdim, h.ringKrullDim_fiber p]
 
 variable (n) in
+/-- Over a field `k`, a nonzero standard syntomic algebra of relative dimension `n` has Krull
+dimension `n`. -/
+theorem ringKrullDim_of_field (k : Type u) (A : Type v) [Field k] [CommRing A] [Algebra k A]
+    [hA : IsStandardSyntomicOfRelativeDimension n k A] [Nontrivial A] : ringKrullDim A = n := by
+  let e := _root_.Algebra.TensorProduct.lid k A
+  have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
+  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, hA.ringKrullDim_tensorProduct_of_field k]
+
+variable (n) in
+/-- Over a field `k`, a standard syntomic algebra of relative dimension `n` has Krull dimension at
+most `n`; the zero algebra has dimension `⊥`. -/
+theorem ringKrullDim_le_of_field (k : Type u) (A : Type v) [Field k] [CommRing A] [Algebra k A]
+    [IsStandardSyntomicOfRelativeDimension n k A] : ringKrullDim A ≤ n := by
+  cases subsingleton_or_nontrivial A with
+  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
+  | inr _ => exact (ringKrullDim_of_field n k A).le
+
+variable (n) in
 /-- Over a field `k`, the spectrum of a standard syntomic algebra of relative dimension `n` is
 pure-dimensional of dimension `n`: every irreducible component has dimension `n`. -/
 theorem isPureDimensional_primeSpectrum (k : Type u) (A : Type v) [Field k] [CommRing A]
@@ -194,12 +214,7 @@ theorem isPureDimensional_primeSpectrum (k : Type u) (A : Type v) [Field k] [Com
   rw [← hdim]
   refine P.isPureDimensional_primeSpectrum ?_
   rw [hdim]
-  cases subsingleton_or_nontrivial A with
-  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
-  | inr _ =>
-    let e := _root_.Algebra.TensorProduct.lid k A
-    have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
-    rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, hA.ringKrullDim_tensorProduct_of_field k]
+  exact ringKrullDim_le_of_field n k A
 
 include h in
 /-- Standard syntomic algebras of relative dimension `n` are invariant under isomorphism. -/

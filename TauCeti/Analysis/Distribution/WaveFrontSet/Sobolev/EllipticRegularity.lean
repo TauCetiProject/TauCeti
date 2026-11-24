@@ -30,8 +30,10 @@ for every real `s` and every distribution `T`, where `Char(P)` is the set
 vanishes. So `P T` is microlocally `H^s` at a noncharacteristic `(x, ξ)` exactly when `T` is
 microlocally `H^(s + M)` there, and an elliptic operator shifts the `H^s` wave front set exactly
 by its order: `WF_s(P T) = WF_(s + M)(T)`. For the Laplacian this is
-`WF_s(Δ T) = WF_(s + 2)(T)` (`Distribution.sobolevWaveFrontSet_laplacianCLM`). This is the `H^s`
-refinement of `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`.
+`WF_s(Δ T) = WF_(s + 2)(T)` (`Distribution.sobolevWaveFrontSet_laplacianCLM`). Projecting to
+the base gives local elliptic regularity `P T ∈ H^s_loc ⇒ T ∈ H^(s + M)_loc` on open subsets
+of `E`, for distributions of arbitrary order. This is the `H^s` refinement of
+`Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`.
 
 ## The argument
 
@@ -63,6 +65,12 @@ the weighted localized Fourier transforms of `T` are square integrable on `Γ` w
   `WF_(s + M)(T) ⊆ WF_s(P T) ∪ Char(P)`.
 * `Distribution.sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`: an elliptic
   operator satisfies `WF_s(P T) = WF_(s + M)(T)`.
+* `Distribution.sobolevSingularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`: an
+  elliptic operator satisfies `singsupp_s(P T) = singsupp_(s + M)(T)`.
+* `Distribution.IsLocallySobolevAt.of_sum_smul_iteratedLineDerivOp`: **local elliptic
+  regularity**, if `P` is elliptic and `P T` is `H^s` near `x`, then `T` is `H^(s + M)` near `x`.
+* `Distribution.isLocallySobolevAt_sum_smul_iteratedLineDerivOp_iff`: for elliptic `P`, `P T` is
+  `H^s` near `x` exactly when `T` is `H^(s + M)` near `x`.
 * `Distribution.sobolevWaveFrontSet_laplacianCLM`: `WF_s(Δ T) = WF_(s + 2)(T)`.
 
 ## References
@@ -323,6 +331,39 @@ theorem sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero {ι :
   exact ⟨fun ⟨hξ, h⟩ ↦ ⟨hξ, fun h' ↦ h ((isMicrolocallySobolevAt_sum_smul_iteratedLineDerivOp_iff
     hk (hσ ξ hξ)).2 h')⟩, fun ⟨hξ, h⟩ ↦ ⟨hξ, fun h' ↦
       h ((isMicrolocallySobolevAt_sum_smul_iteratedLineDerivOp_iff hk (hσ ξ hξ)).1 h')⟩⟩
+
+/-- **An elliptic constant-coefficient operator shifts the `H^s` singular support by its
+order.** If the principal symbol of `P = ∑ i ∈ t, c i ∂^(m i)` of order `M` vanishes at no
+`ξ ≠ 0`, then `P T` is `H^s` near exactly the points near which `T` is `H^(s + M)`. -/
+theorem sobolevSingularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero {ι : Type*}
+    (s : ℝ) (t : Finset ι) (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
+    (hk : ∀ i ∈ t, k i ≤ M) (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol t c m M ξ ≠ 0)
+    (T : 𝓓'(Ω, ℂ)) :
+    (∑ i ∈ t, c i • ∂^{m i} T).sobolevSingularSupport s = T.sobolevSingularSupport (s + M) := by
+  rw [← fst_image_sobolevWaveFrontSet, ← fst_image_sobolevWaveFrontSet,
+    sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s t c m hk hσ]
+
+/-- **Local elliptic regularity for constant-coefficient operators**:
+`P T ∈ H^s_loc ⇒ T ∈ H^(s + M)_loc`. If the principal symbol of `P = ∑ i ∈ t, c i ∂^(m i)` of
+order `M` vanishes at no `ξ ≠ 0` and `P T` is `H^s` near `x`, then `T` is `H^(s + M)` near `x`. -/
+theorem IsLocallySobolevAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {t : Finset ι}
+    {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol t c m M ξ ≠ 0) {T : 𝓓'(Ω, ℂ)} {s : ℝ}
+    {x : E} (hP : (∑ i ∈ t, c i • ∂^{m i} T).IsLocallySobolevAt s x) :
+    T.IsLocallySobolevAt (s + M) x :=
+  (isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt hP.mem).2 fun ξ hξ ↦
+    (hP.isMicrolocallySobolevAt ξ).of_sum_smul_iteratedLineDerivOp hk (hσ ξ hξ)
+
+/-- If the principal symbol of `P = ∑ i ∈ t, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`,
+then `P T` is `H^s` near `x` exactly when `T` is `H^(s + M)` near `x`. -/
+theorem isLocallySobolevAt_sum_smul_iteratedLineDerivOp_iff {ι : Type*} {t : Finset ι}
+    {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol t c m M ξ ≠ 0) {T : 𝓓'(Ω, ℂ)} {s : ℝ}
+    {x : E} :
+    (∑ i ∈ t, c i • ∂^{m i} T).IsLocallySobolevAt s x ↔ T.IsLocallySobolevAt (s + M) x := by
+  refine ⟨fun h ↦ h.of_sum_smul_iteratedLineDerivOp hk hσ, fun h ↦ ?_⟩
+  simpa using h.sum_smul_smulLeftCLM_iteratedLineDerivOp t c (g := fun _ _ ↦ 1)
+    (fun _ ↦ contDiff_const) m hk
 
 /-- **The Laplacian shifts the `H^s` wave front set by two.** The Laplacian
 `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)` satisfies `WF_s(Δ T) = WF_(s + 2)(T)`. -/
