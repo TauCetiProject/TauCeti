@@ -59,6 +59,11 @@ coordinate face and composed with linear coordinate maps, so it is `C^r`.
   `ModelWithCorners.depthStratum_modelWithCornersEuclideanHalfSpace_eq_empty_of_one_lt`: on a
   manifold modelled on the half-space, the depth-one stratum is the boundary and there are no
   strata of higher depth.
+* `TauCeti.card_filter_chartAt_eq_depth`: on a `C^1` manifold modelled on the quadrant, the depth
+  of a point counts the vanishing coordinates of its image in its preferred chart.
+* `TauCeti.depthStratumChartedSpace_atlas`, `TauCeti.depthStratumChartedSpace_chartAt_source` and
+  its companions: the atlas of the stratum is the range of its preferred charts, which read the
+  ambient preferred charts with the vanishing coordinates deleted.
 * `TauCeti.isManifold_depthStratum`: the depth-`k` stratum of a `C^1` manifold modelled on the
   quadrant that is `C^r` is a `C^r` manifold without boundary.
 * `TauCeti.isImmersion_subtypeVal_depthStratum`,
@@ -105,7 +110,7 @@ theorem mem_depthStratum {k : ℕ} {x : M} : x ∈ I.depthStratum M k ↔ I.dept
 
 /-- A point of the depth-`k` stratum has depth `k`. -/
 @[simp, grind =]
-theorem depth_coe {k : ℕ} (p : I.depthStratum M k) : I.depth (p : M) = k :=
+theorem depth_subtypeVal_depthStratum {k : ℕ} (p : I.depthStratum M k) : I.depth (p : M) = k :=
   p.prop
 
 /-- Every point lies in the stratum of its depth. -/
@@ -283,8 +288,14 @@ private theorem depth_eq_card {x y : M} (hy : y ∈ (chartAt (EuclideanQuadrant 
   rw [ModelWithCorners.depth_modelWithCornersEuclideanQuadrant one_ne_zero
     (IsManifold.chart_mem_maximalAtlas x) hy, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
-private theorem card_zeroCoords (x : M) : #(zeroCoords n x) = (𝓡c n).depth x :=
+/-- On a `C^1` manifold modelled on the quadrant, the depth of `x` is the number of coordinates
+vanishing at the image of `x` in its preferred chart. -/
+theorem card_filter_chartAt_eq_depth (x : M) :
+    #{i | (chartAt (EuclideanQuadrant n) x x).val i = 0} = (𝓡c n).depth x :=
   (depth_eq_card (mem_chart_source _ x)).symm
+
+private theorem card_zeroCoords (x : M) : #(zeroCoords n x) = (𝓡c n).depth x :=
+  card_filter_chartAt_eq_depth x
 
 /-- On `stratumDomain n x`, the points of the depth of `x` are those whose image in the chart at
 `x` vanishes on `zeroCoords n x`. -/
@@ -409,8 +420,9 @@ private theorem contDiffOn_stratumChart_symm_trans {r : WithTop ℕ∞} [IsManif
 on the quadrant `[0, ∞)ⁿ`, modelled on `ℝⁿ⁻ᵏ`. The chart at `p` is the preferred ambient chart at
 `p`, restricted to the points near `p` where the coordinates positive at `p` stay positive, with
 the `k` coordinates vanishing at `p` deleted. The implementation is opaque; use
-`TauCeti.depthStratumChartedSpace_atlas`, `TauCeti.isManifold_depthStratum` and
-`TauCeti.isImmersion_subtypeVal_depthStratum`. -/
+`TauCeti.depthStratumChartedSpace_atlas`, `TauCeti.depthStratumChartedSpace_chartAt_source` and
+its companions, `TauCeti.isManifold_depthStratum` and `TauCeti.isImmersion_subtypeVal_depthStratum`.
+-/
 @[irreducible, instance] noncomputable def depthStratumChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin (n - k))) ((𝓡c n).depthStratum M k) where
   atlas := range stratumChart
@@ -432,6 +444,61 @@ theorem depthStratumChartedSpace_atlas :
       range (chartAt (EuclideanSpace ℝ (Fin (n - k)))) := by
   unfold atlas chartAt depthStratumChartedSpace
   rfl
+
+/-- The source of the preferred chart of the depth-`k` stratum at `p` is the part of the stratum
+that the preferred ambient chart at `p` sees and on which the coordinates not vanishing at `p` stay
+positive. -/
+theorem depthStratumChartedSpace_chartAt_source (p : (𝓡c n).depthStratum M k) :
+    (chartAt (EuclideanSpace ℝ (Fin (n - k))) p).source =
+      Subtype.val ⁻¹' ((chartAt (EuclideanQuadrant n) p.val).source ∩
+        {y | ∀ i ∉ ({i | (chartAt (EuclideanQuadrant n) p.val p.val).val i = 0} : Finset (Fin n)),
+          0 < (chartAt (EuclideanQuadrant n) p.val y).val i}) := by
+  rw [depthStratumChartedSpace_chartAt, stratumChart_source]
+  rfl
+
+/-- The target of the preferred chart of the depth-`k` stratum at `p`: the vectors with positive
+coordinates whose insertion outside the `k` coordinates vanishing at `p` lies in the target of the
+preferred ambient chart at `p`. -/
+theorem depthStratumChartedSpace_chartAt_target (p : (𝓡c n).depthStratum M k)
+    (hZ : #{i | (chartAt (EuclideanQuadrant n) p.val p.val).val i = 0} = k) :
+    (chartAt (EuclideanSpace ℝ (Fin (n - k))) p).target =
+      {w | (∀ j, 0 < w j) ∧ (𝓡c n).symm ((finsetComplEquivProd ℝ _ hZ).symm (w, 0)) ∈
+        (chartAt (EuclideanQuadrant n) p.val).target} := by
+  ext w
+  rw [depthStratumChartedSpace_chartAt, stratumChart_target, mem_preimage]
+  refine ⟨fun hw ↦ ⟨pos_of_mem_target hw, (mem_stratumAmbientChart_target.1 hw).1⟩,
+    fun ⟨hpos, hw⟩ ↦ mem_stratumAmbientChart_target.2
+      ⟨hw, (chartAt (EuclideanQuadrant n) p.val).map_target hw, fun i hi ↦ ?_⟩⟩
+  have hw' : stratumParam k p.val (card_zeroCoords_eq p) w ∈
+      (chartAt (EuclideanQuadrant n) p.val).target := hw
+  rw [(chartAt (EuclideanQuadrant n) p.val).right_inv hw']
+  have h := congrFun (congrArg (⇑) (stratumParam_eq_of_nonneg (x := p.val)
+    (hx := card_zeroCoords_eq p) fun j ↦ (hpos j).le)) i
+  rw [modelWithCornersEuclideanQuadrant_apply] at h
+  rw [h]
+  exact (forall_finsetComplEquivProd_symm_mk_zero_iff (0 < ·) w).2 hpos i hi
+
+/-- The preferred chart of the depth-`k` stratum at `p` reads a point through the preferred
+ambient chart at `p` and deletes the `k` coordinates vanishing at `p`. -/
+theorem depthStratumChartedSpace_chartAt_apply (p q : (𝓡c n).depthStratum M k)
+    (hZ : #{i | (chartAt (EuclideanQuadrant n) p.val p.val).val i = 0} = k) :
+    chartAt (EuclideanSpace ℝ (Fin (n - k))) p q =
+      (finsetComplEquivProd ℝ _ hZ ((𝓡c n) (chartAt (EuclideanQuadrant n) p.val q.val))).1 := by
+  rw [depthStratumChartedSpace_chartAt, stratumChart_apply]
+  rfl
+
+/-- On its target, the inverse of the preferred chart of the depth-`k` stratum at `p` inserts zeros
+at the `k` coordinates vanishing at `p` and applies the inverse of the preferred ambient chart at
+`p`. -/
+theorem depthStratumChartedSpace_chartAt_symm_apply (p : (𝓡c n).depthStratum M k)
+    (hZ : #{i | (chartAt (EuclideanQuadrant n) p.val p.val).val i = 0} = k)
+    {w : EuclideanSpace ℝ (Fin (n - k))}
+    (hw : w ∈ (chartAt (EuclideanSpace ℝ (Fin (n - k))) p).target) :
+    ((chartAt (EuclideanSpace ℝ (Fin (n - k))) p).symm w : M) =
+      (chartAt (EuclideanQuadrant n) p.val).symm
+        ((𝓡c n).symm ((finsetComplEquivProd ℝ _ hZ).symm (w, 0))) := by
+  rw [depthStratumChartedSpace_chartAt] at hw ⊢
+  exact coe_stratumChart_symm_apply p hw
 
 /-- **The depth-`k` stratum of a `C^1` manifold modelled on the quadrant `[0, ∞)ⁿ` that is `C^r`
 is a `C^r` manifold without boundary**, modelled on `ℝⁿ⁻ᵏ`. Both `[IsManifold (𝓡c n) 1 M]` and
