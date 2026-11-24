@@ -79,6 +79,28 @@ namespace TauCeti
 
 namespace ContinuousRep
 
+-- Every construction below installs the same local structures before calling main's base change
+-- API, and its evaluation lemmas typecheck only if they install exactly the same ones. This
+-- tactic installs, for `f : A →+* B` continuous by `hf` and an `A`-module `X`, the algebra
+-- structure `f.toAlgebra`, its `ContinuousSMul A B` instance and the `B`-module topology on
+-- `B ⊗[A] X`, so that each declaration shares one copy.
+local macro "along_instances " f:term:max hf:term:max A:term:max B:term:max X:term:max :
+    tactic =>
+  `(tactic| (
+    let := RingHom.toAlgebra $f
+    have : ContinuousSMul $A $B := continuousSMul_of_algebraMap $A $B $hf
+    let : TopologicalSpace ($B ⊗[$A] $X) := moduleTopology $B _
+    have : IsModuleTopology $B ($B ⊗[$A] $X) := ⟨rfl⟩))
+
+-- The local structures for extending along `f : A →+* B` and then along `g : B →+* C`.
+local macro "along_comp_instances " f:term:max g:term:max hf:term:max hg:term:max A:term:max
+    B:term:max C:term:max M:term:max : tactic =>
+  `(tactic| (
+    along_instances $f $hf $A $B $M
+    along_instances $g $hg $B $C ($B ⊗[$A] $M)
+    along_instances (RingHom.comp $g $f) (Continuous.comp $hg $hf :) $A $C $M
+    have : IsScalarTower $A $B $C := IsScalarTower.of_algebraMap_eq fun _ => rfl))
+
 section BaseChangeAlong
 
 variable {Γ A B M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
@@ -89,12 +111,9 @@ variable {Γ A B M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [
 homomorphism** `f : A →+* B`: `ContinuousRep.baseChange` for the `A`-algebra structure
 `f.toAlgebra` on `B`, acting on `B ⊗[A, f] M` by `b ⊗ m ↦ b ⊗ ρ(g) m`. -/
 def baseChangeAlong (f : A →+* B) (hf : Continuous f) (ρ : ContinuousRep Γ A M) :
-    ContinuousRep Γ B (TensorAlong f M) :=
-  letI := f.toAlgebra
-  haveI : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  letI : TopologicalSpace (B ⊗[A] M) := moduleTopology B _
-  haveI : IsModuleTopology B (B ⊗[A] M) := ⟨rfl⟩
-  ρ.baseChange B
+    ContinuousRep Γ B (TensorAlong f M) := by
+  along_instances f hf A B M
+  exact ρ.baseChange B
 
 variable (f : A →+* B) (hf : Continuous f) (ρ : ContinuousRep Γ A M)
 
@@ -104,10 +123,7 @@ theorem baseChangeAlong_apply (g : Γ) :
     ρ.baseChangeAlong f hf g =
       letI := f.toAlgebra
       ((ρ g).baseChange B : TensorAlong f M →ₗ[B] TensorAlong f M) := by
-  let := f.toAlgebra
-  have : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  let : TopologicalSpace (B ⊗[A] M) := moduleTopology B _
-  have : IsModuleTopology B (B ⊗[A] M) := ⟨rfl⟩
+  along_instances f hf A B M
   exact ρ.baseChange_apply B g
 
 /-- The extension of scalars along `f` acts on pure tensors by `b ⊗ m ↦ b ⊗ ρ(g) m`. -/
@@ -179,21 +195,9 @@ def baseChangeAlongCompIso [AddCommMonoid M] [Module A M] [TopologicalSpace M]
     [IsTopologicalSemiring C] (f : A →+* B) (g : B →+* C) (hf : Continuous f)
     (hg : Continuous g) :
     Iso ((ρ.baseChangeAlong f hf).baseChangeAlong g hg)
-      (ρ.baseChangeAlong (g.comp f) (hg.comp hf)) :=
-  letI := f.toAlgebra
-  letI := g.toAlgebra
-  letI := (g.comp f).toAlgebra
-  haveI : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  haveI : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  haveI : ContinuousSMul B C := continuousSMul_of_algebraMap B C hg
-  haveI : ContinuousSMul A C := continuousSMul_of_algebraMap A C (hg.comp hf)
-  letI : TopologicalSpace (B ⊗[A] M) := moduleTopology B _
-  haveI : IsModuleTopology B (B ⊗[A] M) := ⟨rfl⟩
-  letI : TopologicalSpace (C ⊗[A] M) := moduleTopology C _
-  haveI : IsModuleTopology C (C ⊗[A] M) := ⟨rfl⟩
-  letI : TopologicalSpace (C ⊗[B] (B ⊗[A] M)) := moduleTopology C _
-  haveI : IsModuleTopology C (C ⊗[B] (B ⊗[A] M)) := ⟨rfl⟩
-  ρ.baseChangeTransIso B C
+      (ρ.baseChangeAlong (g.comp f) (hg.comp hf)) := by
+  along_comp_instances f g hf hg A B C M
+  exact ρ.baseChangeTransIso B C
 
 section CompIso
 
@@ -206,38 +210,14 @@ variable [AddCommMonoid M] [Module A M] [TopologicalSpace M] [IsModuleTopology A
 theorem baseChangeAlongCompIso_tmul (c : C) (b : B) (m : M) :
     ρ.baseChangeAlongCompIso f g hf hg (TensorAlong.tmul c (TensorAlong.tmul b m)) =
       TensorAlong.tmul (g b * c) m := by
-  let := f.toAlgebra
-  let := g.toAlgebra
-  let := (g.comp f).toAlgebra
-  have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  have : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  have : ContinuousSMul B C := continuousSMul_of_algebraMap B C hg
-  have : ContinuousSMul A C := continuousSMul_of_algebraMap A C (hg.comp hf)
-  let : TopologicalSpace (B ⊗[A] M) := moduleTopology B _
-  have : IsModuleTopology B (B ⊗[A] M) := ⟨rfl⟩
-  let : TopologicalSpace (C ⊗[A] M) := moduleTopology C _
-  have : IsModuleTopology C (C ⊗[A] M) := ⟨rfl⟩
-  let : TopologicalSpace (C ⊗[B] (B ⊗[A] M)) := moduleTopology C _
-  have : IsModuleTopology C (C ⊗[B] (B ⊗[A] M)) := ⟨rfl⟩
+  along_comp_instances f g hf hg A B C M
   exact ρ.baseChangeTransIso_tmul B C c b m
 
 @[simp]
 theorem baseChangeAlongCompIso_symm_tmul (c : C) (m : M) :
     (ρ.baseChangeAlongCompIso f g hf hg).symm (TensorAlong.tmul c m) =
       TensorAlong.tmul c (TensorAlong.tmul 1 m) := by
-  let := f.toAlgebra
-  let := g.toAlgebra
-  let := (g.comp f).toAlgebra
-  have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  have : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  have : ContinuousSMul B C := continuousSMul_of_algebraMap B C hg
-  have : ContinuousSMul A C := continuousSMul_of_algebraMap A C (hg.comp hf)
-  let : TopologicalSpace (B ⊗[A] M) := moduleTopology B _
-  have : IsModuleTopology B (B ⊗[A] M) := ⟨rfl⟩
-  let : TopologicalSpace (C ⊗[A] M) := moduleTopology C _
-  have : IsModuleTopology C (C ⊗[A] M) := ⟨rfl⟩
-  let : TopologicalSpace (C ⊗[B] (B ⊗[A] M)) := moduleTopology C _
-  have : IsModuleTopology C (C ⊗[B] (B ⊗[A] M)) := ⟨rfl⟩
+  along_comp_instances f g hf hg A B C M
   exact ρ.baseChangeTransIso_symm_tmul B C c m
 
 end CompIso
@@ -251,20 +231,14 @@ variable [IsTopologicalSemiring A] {B : Type*} [CommRing B] [TopologicalSpace B]
 character** `f ∘ χ`, by `baseChangeOfCharacterIso`. -/
 def baseChangeAlongOfCharacterIso :
     Iso ((ofCharacter χ).baseChangeAlong f hf)
-      (ofCharacter ((ContinuousMonoidHom.unitsMap ⟨(f : A →* B), hf⟩).comp χ)) :=
-  letI := f.toAlgebra
-  haveI : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  letI : TopologicalSpace (B ⊗[A] A) := moduleTopology B _
-  haveI : IsModuleTopology B (B ⊗[A] A) := ⟨rfl⟩
-  baseChangeOfCharacterIso B χ
+      (ofCharacter ((ContinuousMonoidHom.unitsMap ⟨(f : A →* B), hf⟩).comp χ)) := by
+  along_instances f hf A B A
+  exact baseChangeOfCharacterIso B χ
 
 @[simp]
 theorem baseChangeAlongOfCharacterIso_tmul (b : B) (a : A) :
     baseChangeAlongOfCharacterIso f hf χ (TensorAlong.tmul b a) = f a * b := by
-  let := f.toAlgebra
-  have : ContinuousSMul A B := continuousSMul_of_algebraMap A B hf
-  let : TopologicalSpace (B ⊗[A] A) := moduleTopology B _
-  have : IsModuleTopology B (B ⊗[A] A) := ⟨rfl⟩
+  along_instances f hf A B A
   exact (baseChangeOfCharacterIso_tmul B χ b a).trans (Algebra.smul_def a b)
 
 end OfCharacter
@@ -515,7 +489,7 @@ theorem charpoly_frobTwist_apply (g : Γ) :
     (ρ.frobTwist p g).charpoly = (ρ g).charpoly.map (frobenius A p) := by
   -- `frobeniusEquiv A p` is `frobenius A p` as a ring homomorphism.
   have hfrob : (frobeniusEquiv A p : A →+* A) = frobenius A p :=
-    RingHom.ext fun x => (frobeniusEquiv_def A p x).trans (frobenius_def p x).symm
+    RingHom.ext (congrFun (coe_frobeniusEquiv A p))
   rw [frobTwist_eq_coeffTwist, charpoly_coeffTwist_apply, hfrob]
 
 /-- The determinant of `ρ^{(p)}(g)` is the `p`-th power of that of `ρ(g)`. -/
