@@ -134,11 +134,9 @@ theorem normalizedTrace_one [DecidableEq n] [Nonempty n] :
 @[simp]
 theorem normalizedTrace_matrixUnit [DecidableEq n] (i j : n) :
     normalizedTrace (matrixUnit i j) = if i = j then (Fintype.card n : ℂ)⁻¹ else 0 := by
-  rw [matrixUnit_eq_ofMatrixStarAlgEquiv, ← ofMatrix_eq_ofMatrixStarAlgEquiv, normalizedTrace_def,
-    Equiv.symm_apply_apply]
   split_ifs with h
-  · rw [h, trace_single_eq_same, mul_one]
-  · rw [trace_single_eq_of_ne _ _ _ h, mul_zero]
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, h]
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, Ne.symm h]
 
 /-- On matrices with an empty index type the normalized trace vanishes. -/
 @[simp]

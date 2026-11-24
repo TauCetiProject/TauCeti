@@ -380,13 +380,13 @@ theorem matrixUnit_apply (i j k l : n) :
 
 /-- The `(i, j)` entry of `e_ij` is `1`. -/
 @[simp]
-theorem matrixUnit_apply_same (i j : n) : matrixUnit i j i j = 1 :=
-  Matrix.single_apply_same i j 1
+theorem matrixUnit_apply_same (i j : n) : matrixUnit i j i j = 1 := by
+  simp [matrixUnit_apply]
 
 /-- The entries of `e_ij` away from `(i, j)` vanish. -/
 @[simp]
-theorem matrixUnit_apply_of_ne {i j k l : n} (h : ¬(i = k ∧ j = l)) : matrixUnit i j k l = 0 :=
-  Matrix.single_apply_of_ne i j 1 k l h
+theorem matrixUnit_apply_of_ne {i j k l : n} (h : ¬(i = k ∧ j = l)) : matrixUnit i j k l = 0 := by
+  simp [matrixUnit_apply, h]
 
 /-- The adjoint of `e_ij` is `e_ji`. -/
 @[simp]
