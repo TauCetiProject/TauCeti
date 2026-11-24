@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.LeviFormLaplacian
+public import TauCeti.Analysis.Complex.LeviForm.Laplacian
 public import TauCeti.Analysis.Complex.QuadraticLeviForm
 
 /-!
