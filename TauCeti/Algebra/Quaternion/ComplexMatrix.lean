@@ -21,9 +21,10 @@ public import TauCeti.Algebra.Quaternion.NormForm
 -- `TauCeti.LinearAlgebra.UnitaryGroup` supplies `Matrix.specialUnitaryGroup.star_eq_adjugate`,
 -- which turns the unitarity of a special unitary matrix into four entry identities.
 public import TauCeti.LinearAlgebra.UnitaryGroup
--- `TauCeti.Analysis.Matrix.UnitaryGroup.Basic` supplies `Circle.coe_mem_unitary` and the
--- decomposition `U(n) = Circle · SU(n)` used for `U(2)` below.
+-- `TauCeti.Analysis.Matrix.UnitaryGroup.Basic` supplies the decomposition `U(n) = Circle · SU(n)`
+-- (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`) used for `U(2)` below.
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+-- `TauCeti.Analysis.Complex.Circle.Basic` supplies `Circle.coe_mem_unitary`.
 import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!

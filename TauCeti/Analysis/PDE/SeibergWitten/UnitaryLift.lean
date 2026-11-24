@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
 
@@ -78,7 +79,8 @@ negative half-spinors with determinant its determinant character
 (`CliffordAlgebra.det_spinCGroupHalfSpinRep`).
 
 **The frame model.** Reading `V` as `ℂ²` through the complex coordinates of the unitary frame
-(`OrthonormalBasis.complexCoords`), the canonical lift is the explicit quaternionic lift
+(`OrthonormalBasis.complexCoords`), which are `ℂ`-linear for `J`
+(`OrthonormalBasis.complexLinearCoords`), the canonical lift is the explicit quaternionic lift
 `OrthonormalBasis.spinCUnitary` of `U(2)`
 (`TauCeti.SeibergWitten.unitaryLift_toSpecialOrthogonal_spinCUnitary`). Both lift
 `g ↦ (g, det g)` along `Spinᶜ(4) → SO(4) × U(1)`, and such a lift is unique because every element
@@ -637,21 +639,6 @@ end ComplexDeterminant
 
 section FrameModel
 
-omit [Fact (finrank ℝ V = 4)] in
-include h₀ h₂ in
-/-- In the complex coordinates of the unitary frame `e`, the complex structure `J` is
-multiplication by `i`. -/
-private theorem complexCoords_two_apply_eq_I_smul (v : V) :
-    e.complexCoords 2 (J v) = Complex.I • e.complexCoords 2 v := by
-  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
-  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  obtain ⟨z, rfl⟩ := (e.complexCoords 2).symm.surjective v
-  rw [LinearEquiv.apply_symm_apply, ← LinearEquiv.eq_symm_apply,
-    OrthonormalBasis.complexCoords_two_symm_apply, OrthonormalBasis.complexCoords_two_symm_apply]
-  simp only [map_add, map_smul, h₀, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul, Complex.mul_re,
-    Complex.mul_im, Complex.I_re, Complex.I_im]
-  module
-
 variable (hQ₀ : Q ≠ 0)
 
 omit [Fact (finrank ℝ V = 4)] in
@@ -661,7 +648,8 @@ theorem toSpecialOrthogonal_spinCUnitary_mem_unitaryGroup (g : Matrix.unitaryGro
     spinCGroup.toSpecialOrthogonal Q hQ₀ (e.spinCUnitary hQ hQ₀ g) ∈ J.unitaryGroup Q := by
   refine AlmostComplexStructure.mem_unitaryGroup_iff.2 fun v ↦ (e.complexCoords 2).injective ?_
   rw [e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply,
-    complexCoords_two_apply_eq_I_smul h₀ h₂, complexCoords_two_apply_eq_I_smul h₀ h₂,
+    e.complexCoords_two_almostComplexStructure_apply h₀ h₂,
+    e.complexCoords_two_almostComplexStructure_apply h₀ h₂,
     e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply, Matrix.mulVec_smul]
 
 variable (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
@@ -681,15 +669,7 @@ theorem unitaryLift_toSpecialOrthogonal_spinCUnitary (g : Matrix.unitaryGroup (F
   let := J.complexModule
   have := J.complexModule_isScalarTower
   -- The complex coordinates of `e` are `ℂ`-linear for the complex structure `J` on `V`.
-  let C : V ≃ₗ[ℂ] (Fin 2 → ℂ) :=
-    { e.complexCoords 2 with
-      map_smul' z v := by
-        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-          J.complexModule_smul_def, map_add, map_smul, complexCoords_two_apply_eq_I_smul h₀ h₂,
-          RingHom.id_apply]
-        conv_rhs => rw [← Complex.re_add_im z]
-        rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul] }
-  have hC (v : V) : C v = e.complexCoords 2 v := rfl
+  let C := e.complexLinearCoords h₀ h₂
   let ψ : Matrix.unitaryGroup (Fin 2) ℂ →* J.unitaryGroup Q :=
     ((spinCGroup.toSpecialOrthogonal Q hQ₀).comp (e.spinCUnitary hQ hQ₀)).codRestrict _
       (toSpecialOrthogonal_spinCUnitary_mem_unitaryGroup hQ h₀ h₂ hQ₀)
@@ -706,7 +686,7 @@ theorem unitaryLift_toSpecialOrthogonal_spinCUnitary (g : Matrix.unitaryGroup (F
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
     LinearEquiv.apply_symm_apply, IsComplexLinearMap.toComplexLinearMap_apply,
     Matrix.toLin'_apply]
-  rw [hC, hC]
+  rw [OrthonormalBasis.complexLinearCoords_apply, OrthonormalBasis.complexLinearCoords_apply]
   exact e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply hQ hQ₀ k v
 
 end FrameModel

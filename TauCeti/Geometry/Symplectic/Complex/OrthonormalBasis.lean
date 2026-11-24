@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
@@ -68,6 +70,10 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   existence of oriented unitary frames and completion of a unit vector in dimension four.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
   an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+* `OrthonormalBasis.complexCoords_two_almostComplexStructure_apply`,
+  `OrthonormalBasis.complexLinearCoords`: for such a unitary frame, the complex coordinates
+  `OrthonormalBasis.complexCoords` turn `J` into multiplication by `i`, so they are a `ℂ`-linear
+  equivalence from the complex vector space `(V, J)` to `ℂ²`.
 * `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
   `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
@@ -487,6 +493,49 @@ theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ 
     intro i
     fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
   exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+section ComplexCoords
+
+variable {J : TauCeti.AlmostComplexStructure V} {e : OrthonormalBasis (Fin 4) ℝ V}
+
+/-- In the complex coordinates `OrthonormalBasis.complexCoords` of a unitary frame `e`,
+`J e₀ = e₁` and `J e₂ = e₃`, the complex structure `J` is multiplication by `i`. -/
+theorem complexCoords_two_almostComplexStructure_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (v : V) : e.complexCoords 2 (J v) = Complex.I • e.complexCoords 2 v := by
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  obtain ⟨z, rfl⟩ := (e.complexCoords 2).symm.surjective v
+  rw [LinearEquiv.apply_symm_apply, ← LinearEquiv.eq_symm_apply, complexCoords_two_symm_apply,
+    complexCoords_two_symm_apply]
+  simp only [map_add, map_smul, h₀, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul, Complex.mul_re,
+    Complex.mul_im, Complex.I_re, Complex.I_im]
+  module
+
+/-- **Complex coordinates of a unitary frame.** For a unitary frame `e`, `J e₀ = e₁` and
+`J e₂ = e₃`, the complex coordinates `e.complexCoords 2` as a `ℂ`-linear equivalence from the
+complex vector space `(V, J)` (`TauCeti.AlmostComplexStructure.complexModule`) to `ℂ²`. -/
+noncomputable def complexLinearCoords (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    V ≃ₗ[ℂ] (Fin 2 → ℂ) :=
+  letI := J.complexModule
+  { e.complexCoords 2 with
+    map_smul' z v := by
+      have := J.complexModule_isScalarTower
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        J.complexModule_smul_def, map_add, map_smul,
+        complexCoords_two_almostComplexStructure_apply h₀ h₂, RingHom.id_apply]
+      conv_rhs => rw [← Complex.re_add_im z]
+      rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul] }
+
+/-- The `ℂ`-linear equivalence `complexLinearCoords` is given by the complex coordinates
+`complexCoords 2`. -/
+@[simp]
+theorem complexLinearCoords_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (v : V) :
+    letI := J.complexModule
+    e.complexLinearCoords h₀ h₂ v = e.complexCoords 2 v :=
+  (rfl)
+
+end ComplexCoords
 
 section UnitaryToAdaptedFourBasis
 
