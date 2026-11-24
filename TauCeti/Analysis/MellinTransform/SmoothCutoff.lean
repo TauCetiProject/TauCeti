@@ -25,9 +25,10 @@ Mellin convolution with them is an approximate identity for `dx/x`: for `ν ≥ 
 the bound `‖(ν_ε ⋆ f)(x) - f(x)‖ ≤ sup_{y ∈ [a^ε, b^ε]} ‖f(x/y) - f(x)‖`.
 
 The *smoothed cutoff* `χ_ε(x) = ∫_{(x,∞)} ν_ε(z) dz/z` (for `x > 0`, and `0` for `x ≤ 0`) is
-the Mellin convolution of the sharp cutoff `1_(0,1]` with `ν_ε`. It takes values in `[0, 1]`,
-equals `1` on `(0, 2^{-ε}]` and `0` on `[2^ε, ∞)`, is antitone on `(0, ∞)`, takes the value
-`1/2` at `1` when `ν(1/x) = ν(x)`, and its Mellin transform is
+the Mellin convolution of the sharp cutoff `1_(0,1]` with `ν_ε`. For a bump `ν` (in particular
+of `dx/x`-mass `1`) it takes values in `[0, 1]`, equals `1` on `(0, 2^{-ε}]` and `0` on
+`[2^ε, ∞)`, is antitone on `(0, ∞)`, takes the value `1/2` at `1` when also `ν(1/x) = ν(x)` for
+`x > 0`, and its Mellin transform is
 `mellin ν (εs) / s` on `Re s > 0`: the transform `1/s` of the sharp cutoff, times the factor
 `mellin ν (εs)`, whose value `mellin ν ε` at `s = 1` is within `2 log 2 · ε` of `mellin ν 0 = 1`.
 For `ν` of class `C^k` the transform decays like `|s|⁻¹ (1 + ε|s|)⁻ᵏ` on vertical strips,
