@@ -8,40 +8,17 @@ module
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 
 /-!
-# Continuity and universe-polymorphic transfer for compactly generated topologies
+# Continuity out of the compactly generated topology
 
-Mathlib's `TopologicalSpace.compactlyGenerated X` is the topology on `X` coinduced by continuous
-maps from compact Hausdorff spaces in `Type u`, and `UCompactlyGeneratedSpace.{u} X` asserts that
-the topology of `X` agrees with `TopologicalSpace.compactlyGenerated.{u} X` (with `u` independent
-of the universe of `X`). This file provides basic continuity and transfer lemmas:
-
-* `TauCeti.continuous_compactlyGenerated_iff`: a map out of
-  `TopologicalSpace.compactlyGenerated.{u} X` is continuous if and only if its composites with the
-  continuous maps from compact Hausdorff spaces in `Type u` are, complementing Mathlib's
-  `continuous_from_compactlyGenerated`.
-* `Homeomorph.uCompactlyGeneratedSpace` and `Homeomorph.uCompactlyGeneratedSpace_iff`:
-  `u`-compact generation transfers across homeomorphisms between arbitrary universes.
+Mathlib's `continuous_from_compactlyGenerated` shows that a map out of the compactly generated
+topology `TopologicalSpace.compactlyGenerated X` is continuous when its composites with the
+continuous maps from compact Hausdorff spaces are. Here we record the converse, giving the
+characterization `TauCeti.continuous_compactlyGenerated_iff`.
 -/
 
 public section
 
 universe u v w
-
-namespace Homeomorph
-
-variable {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- Compact generation with test spaces in `Type u` transfers along homeomorphisms. -/
-theorem uCompactlyGeneratedSpace [UCompactlyGeneratedSpace.{u} X] (e : X ≃ₜ Y) :
-    UCompactlyGeneratedSpace.{u} Y :=
-  uCompactlyGeneratedSpace_of_coinduced e.continuous e.isQuotientMap.eq_coinduced
-
-/-- Homeomorphic spaces are `u`-compactly generated for the same universes `u`. -/
-theorem uCompactlyGeneratedSpace_iff (e : X ≃ₜ Y) :
-    UCompactlyGeneratedSpace.{u} X ↔ UCompactlyGeneratedSpace.{u} Y :=
-  ⟨fun _ ↦ e.uCompactlyGeneratedSpace, fun _ ↦ e.symm.uCompactlyGeneratedSpace⟩
-
-end Homeomorph
 
 namespace TauCeti
 

@@ -361,21 +361,6 @@ instance instIsIsoProdComparisonToTopCat [IsGeneratedBy G (Y × Z)] :
     IsIso (CartesianMonoidalCategory.prodComparison toTopCat Y Z) :=
   (isIso_prodComparison_toTopCat_iff Y Z).2 inferInstance
 
-/-- When `Y × Z` is `G`-generated, the convenient product `Y ⊗ Z` is homeomorphic to the ordinary
-product `Y × Z` via `WithGeneratedByTopology.equiv`. -/
-@[expose]
-def tensorHomeomorphProd [IsGeneratedBy G (Y × Z)] : ↑(Y ⊗ Z) ≃ₜ Y × Z :=
-  IsGeneratedBy.homeomorph (X := G) (Y := Y × Z)
-
-@[simp]
-theorem coe_tensorHomeomorphProd [IsGeneratedBy G (Y × Z)] :
-    ⇑(tensorHomeomorphProd Y Z) = WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) := rfl
-
-@[simp]
-theorem coe_tensorHomeomorphProd_symm [IsGeneratedBy G (Y × Z)] :
-    ⇑(tensorHomeomorphProd Y Z).symm =
-      (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm := rfl
-
 end ProdComparison
 
 section Closed

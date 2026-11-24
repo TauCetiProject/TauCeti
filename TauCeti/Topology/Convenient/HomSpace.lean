@@ -126,17 +126,6 @@ theorem toContinuousMap_apply [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy 
 theorem coe_toContinuousMap [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy G Y Z) :
     (f.toContinuousMap : Y → Z) = f := rfl
 
-@[simp]
-theorem toContinuousMap_toContinuousMapGeneratedBy [IsGeneratedBy G Y] (g : C(Y, Z)) :
-    (g.toContinuousMapGeneratedBy G).toContinuousMap = g := by
-  ext y; rfl
-
-@[simp]
-theorem toContinuousMapGeneratedBy_toContinuousMap [IsGeneratedBy G Y]
-    (g : ContinuousMapGeneratedBy G Y Z) :
-    g.toContinuousMap.toContinuousMapGeneratedBy G = g :=
-  DFunLike.ext _ _ fun _ ↦ rfl
-
 /-- When `Y` is `G`-generated, `G`-continuous maps `Y → Z` coincide with continuous maps `Y → Z`. -/
 @[expose]
 def equivContinuousMap [IsGeneratedBy G Y] : ContinuousMapGeneratedBy G Y Z ≃ C(Y, Z) where
