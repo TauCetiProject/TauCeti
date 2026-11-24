@@ -6,34 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.HopfAlgebroid
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.SemidirectProduct
 public import TauCeti.RingTheory.MvPolynomial.Pushout
 import Mathlib.Algebra.MvPolynomial.Monad
 
 /-!
 # The strict Weierstrass Hopf algebroid
 
-An admissible Weierstrass change `C = (u, r, s, t)` is *strict* when `u = 1`. Strict changes over
-`R` form `TauCeti.HeisenbergGroup R`, classified over `B` by
-`StrictChangeRing B = B[r, s, t] = MvPolynomial (Fin 3) B` (`StrictChangeRing.lift`,
-`MvPolynomial.pushoutLift`, `StrictChangeRing.fromChangeRing`).
+Over `A = ℤ[a₁, a₂, a₃, a₄, a₆]`, the strict coordinate-change ring
+`StrictChangeRing A = A[r, s, t]` from `VariableChange.Representable` forms Bauer's cubic Hopf
+algebroid `(A, A[r, s, t])` (`TauCeti.WeierstrassHopfAlgebroid.Strict`), with `MvPolynomial.C`,
+`Strict.rightUnit`, `Strict.counit`, `Strict.coproduct` (`Δr = r₁ + r₂`, `Δs = s₁ + s₂`,
+`Δt = t₁ + t₂ + s₁ r₂`), and `Strict.conjugation` (`(r, s, t) ↦ (-r, -s, r s - t)`). Setting
+`u = 1` gives `(id_A, toStrict) : (A, Γ) → (A, A[r, s, t])` and
+`isIntegralModularForm_iff_strictRightUnit`.
 
-Over `A = ℤ[a₁, a₂, a₃, a₄, a₆]` this gives Bauer's cubic Hopf algebroid `(A, A[r, s, t])`
-(`TauCeti.WeierstrassHopfAlgebroid.Strict`), with `MvPolynomial.C`, `Strict.rightUnit`,
-`Strict.counit`, `Strict.coproduct` (`Δr = r₁ + r₂`, `Δs = s₁ + s₂`, `Δt = t₁ + t₂ + s₁ r₂`), and
-`Strict.conjugation` (`(r, s, t) ↦ (-r, -s, r s - t)`). Setting `u = 1` gives `(id_A, toStrict) :
-(A, Γ) → (A, A[r, s, t])` and `isIntegralModularForm_iff_strictRightUnit`.
-
-`StrictChangeRing` and `WeierstrassHopfAlgebroid.Strict` adapt the representable-ring and Hopf
-algebroid templates in `TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Representable.lean`,
-`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/HopfAlgebroid.lean`, and
+`WeierstrassHopfAlgebroid.Strict` adapts the Hopf-algebroid templates in
+`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/HopfAlgebroid.lean` and
 `TauCeti/RingTheory/FormalGroup/CoordinateChange/HopfAlgebroid.lean` (via
 `MvPolynomial.pushoutLift`).
 
 ## Main definitions and results
 
-* `TauCeti.WeierstrassChange.StrictChangeRing`: `universalHeisenberg`, `universalChange`, `lift`,
-  `fromChangeRing`.
 * `TauCeti.WeierstrassHopfAlgebroid.Strict`: `ArrowRing`, `rightUnit`, `counit`, `coproduct`,
   `conjugation` and their Hopf-algebroid laws (`coproduct_coassoc`, counit and antipode laws).
 * `TauCeti.WeierstrassHopfAlgebroid.toStrict`, `toStrictTensor`,
@@ -49,125 +42,10 @@ public section
 
 noncomputable section
 
-open WeierstrassCurve WeierstrassCurve.VariableChange
-
-namespace TauCeti.WeierstrassChange
-
-open MvPolynomial
-
-variable {B B' R : Type*} [CommRing B] [CommRing B'] [CommRing R]
-
-/-! ### The ring `B[r, s, t]` of strict Weierstrass coordinate changes -/
-
-variable (B) in
-/-- The polynomial ring `B[r, s, t] = MvPolynomial (Fin 3) B` classifying strict Weierstrass
-changes `(1, r, s, t)` over `B`-algebras. -/
-abbrev StrictChangeRing : Type _ := MvPolynomial (Fin 3) B
-
-namespace StrictChangeRing
-
-section
-variable (B)
-
-/-- The universal Heisenberg element `(r, s, t) = (X 0, X 1, X 2)` over `B[r, s, t]`. -/
-def universalHeisenberg : HeisenbergGroup (StrictChangeRing B) := ⟨X 0, X 1, X 2⟩
-@[simp] theorem universalHeisenberg_x : (universalHeisenberg B).x = X 0 := (rfl)
-@[simp] theorem universalHeisenberg_y : (universalHeisenberg B).y = X 1 := (rfl)
-@[simp] theorem universalHeisenberg_z : (universalHeisenberg B).z = X 2 := (rfl)
-
-/-- The universal strict change of variables `(1, r, s, t)` over `B[r, s, t]`. -/
-def universalChange : VariableChange (StrictChangeRing B) :=
-  heisenbergHom (StrictChangeRing B) (universalHeisenberg B)
-theorem universalChange_eq_heisenbergHom :
-    universalChange B = heisenbergHom (StrictChangeRing B) (universalHeisenberg B) := (rfl)
-@[simp] theorem universalChange_u : (universalChange B).u = 1 := by simp [universalChange]
-@[simp] theorem universalChange_r : (universalChange B).r = X 0 := by simp [universalChange]
-@[simp] theorem universalChange_s : (universalChange B).s = X 1 := by simp [universalChange]
-@[simp] theorem universalChange_t : (universalChange B).t = X 2 := by simp [universalChange]
-
-end
-
-/-- **Ring homomorphisms out of `B[r, s, t]`** classify pairs of a ring homomorphism out of `B`
-and an element of `HeisenbergGroup R`, i.e. a strict change of variables `(1, r, s, t)` over `R`. -/
-def lift : (B →+* R) × HeisenbergGroup R ≃ (StrictChangeRing B →+* R) where
-  toFun p := eval₂Hom p.1 ![p.2.x, p.2.y, p.2.z]
-  invFun k := (k.comp C, HeisenbergGroup.map k (universalHeisenberg B))
-  left_inv p := Prod.ext (RingHom.ext fun _ ↦ by simp) (by ext <;> simp)
-  right_inv k := MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by
-    fin_cases i <;> simp
-@[simp] theorem lift_comp_C (p : (B →+* R) × HeisenbergGroup R) : (lift p).comp C = p.1 :=
-  congrArg Prod.fst (lift.left_inv p)
-@[simp] theorem lift_C (p : (B →+* R) × HeisenbergGroup R) (b : B) : lift p (C b) = p.1 b :=
-  RingHom.congr_fun (lift_comp_C p) b
-@[simp] theorem lift_X (p : (B →+* R) × HeisenbergGroup R) (i : Fin 3) :
-    lift p (X i) = ![p.2.x, p.2.y, p.2.z] i := by simp [lift]
-theorem map_lift_universalHeisenberg (p : (B →+* R) × HeisenbergGroup R) :
-    HeisenbergGroup.map (lift p) (universalHeisenberg B) = p.2 :=
-  congrArg Prod.snd (lift.left_inv p)
-@[simp] theorem map_lift_universalChange (p : (B →+* R) × HeisenbergGroup R) :
-    (universalChange B).map (lift p) = heisenbergHom R p.2 := by
-  rw [universalChange_eq_heisenbergHom, map_heisenbergHom, map_lift_universalHeisenberg]
-@[simp] theorem lift_symm_apply (k : StrictChangeRing B →+* R) :
-    lift.symm k = (k.comp C, HeisenbergGroup.map k (universalHeisenberg B)) := (rfl)
-
-/-- A ring homomorphism out of `B[r, s, t]` is determined by its restriction to `B` and the
-Heisenberg element it classifies. -/
-theorem ringHom_ext {k k' : StrictChangeRing B →+* R} (h₁ : k.comp C = k'.comp C)
-    (h₂ : HeisenbergGroup.map k (universalHeisenberg B) =
-      HeisenbergGroup.map k' (universalHeisenberg B)) : k = k' :=
-  lift.symm.injective (Prod.ext h₁ h₂)
-
-/-- Coefficient extension `MvPolynomial.map f` carries `universalHeisenberg B` to
-`universalHeisenberg B'`. -/
-theorem map_map_universalHeisenberg (f : B →+* B') :
-    HeisenbergGroup.map (MvPolynomial.map f) (universalHeisenberg B) = universalHeisenberg B' := by
-  ext <;> simp
-@[simp] theorem universalChange_map_map (f : B →+* B') :
-    (universalChange B).map (MvPolynomial.map f) = universalChange B' := by
-  rw [universalChange_eq_heisenbergHom, map_heisenbergHom, map_map_universalHeisenberg,
-    ← universalChange_eq_heisenbergHom]
-
-section
-variable (B)
-
-/-- The specialization homomorphism `B[u, u⁻¹, r, s, t] →+* B[r, s, t]` setting `u = 1` and fixing
-`r, s, t`, corresponding to the inclusion of `HeisenbergGroup` into `VariableChange`. -/
-def fromChangeRing : ChangeRing B →+* StrictChangeRing B := ChangeRing.lift (C, universalChange B)
-@[simp] theorem fromChangeRing_comp_algebraMap :
-    (fromChangeRing B).comp (algebraMap B (ChangeRing B)) = C := ChangeRing.lift_comp_algebraMap _
-@[simp] theorem fromChangeRing_algebraMap (b : B) :
-    fromChangeRing B (algebraMap B (ChangeRing B) b) = C b := ChangeRing.lift_algebraMap _ b
-@[simp] theorem universalChange_map_fromChangeRing :
-    (ChangeRing.universalChange B).map (fromChangeRing B) = universalChange B :=
-  ChangeRing.map_lift _
-@[simp] theorem fromChangeRing_algebraMap_X (i : Fin 4) :
-    fromChangeRing B (algebraMap (MvPolynomial (Fin 4) B) (ChangeRing B) (X i)) =
-      ![1, X 0, X 1, X 2] i := by fin_cases i <;> simp [fromChangeRing]
-@[simp] theorem fromChangeRing_universalChange_u_inv :
-    fromChangeRing B ((ChangeRing.universalChange B).u⁻¹ : (ChangeRing B)ˣ) = 1 := by
-  simp [fromChangeRing]
-
-end
-
-@[simp] theorem lift_comp_fromChangeRing (q : (B →+* R) × HeisenbergGroup R) :
-    (lift q).comp (fromChangeRing B) = ChangeRing.lift (q.1, heisenbergHom R q.2) :=
-  ChangeRing.ringHom_ext
-    (by rw [RingHom.comp_assoc, fromChangeRing_comp_algebraMap, lift_comp_C,
-      ChangeRing.lift_comp_algebraMap])
-    (by rw [← VariableChange.map_map, universalChange_map_fromChangeRing, map_lift_universalChange,
-      ChangeRing.map_lift])
-theorem fromChangeRing_comp_map (g : B →+* B') :
-    (fromChangeRing B').comp (ChangeRing.map g) = (MvPolynomial.map g).comp (fromChangeRing B) :=
-  ChangeRing.ringHom_ext (RingHom.ext fun _ ↦ by simp) (by simp [← VariableChange.map_map])
-
-end StrictChangeRing
-
-end TauCeti.WeierstrassChange
-
 namespace TauCeti.WeierstrassHopfAlgebroid
 
-open MvPolynomial _root_.WeierstrassCurve TauCeti.WeierstrassChange
-open TauCeti.WeierstrassChange.StrictChangeRing
+open MvPolynomial _root_.WeierstrassCurve _root_.WeierstrassCurve.VariableChange
+open TauCeti.WeierstrassChange TauCeti.WeierstrassChange.StrictChangeRing
 
 namespace Strict
 
@@ -418,10 +296,10 @@ def toStrict : ArrowRing →+* Strict.ArrowRing := fromChangeRing (MvPolynomial 
   universalChange_map_fromChangeRing _
 theorem toStrict_u :
     toStrict ((ChangeRing.universalChange (MvPolynomial Coeff ℤ)).u : ArrowRing) = 1 := by
-  simp [toStrict, fromChangeRing, ChangeRing.universalChange_u]
+  simp [toStrict, ChangeRing.universalChange_u]
 @[simp] theorem toStrict_u_inv :
     toStrict ((ChangeRing.universalChange (MvPolynomial Coeff ℤ)).u⁻¹ : ArrowRingˣ) = 1 := by
-  simp [toStrict, fromChangeRing]
+  simp [toStrict]
 @[simp] theorem toStrict_comp_rightUnit : toStrict.comp rightUnit = Strict.rightUnit :=
   Universal.map_curve_injective (by simp [map_comp_rightUnit])
 @[simp] theorem toStrict_rightUnit (a : MvPolynomial Coeff ℤ) :

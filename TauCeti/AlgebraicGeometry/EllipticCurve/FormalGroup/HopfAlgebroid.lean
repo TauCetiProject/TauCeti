@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Grading
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Coproduct
-import Mathlib.Algebra.MvPolynomial.Monad
 
 /-!
 # The graded Hopf-algebroid homomorphism `(L, L[b₁, b₂, …]) → (A, A[r, s, t])`
@@ -39,23 +38,6 @@ namespace TauCeti.WeierstrassHopfAlgebroid.Strict
 
 open MvPolynomial _root_.WeierstrassCurve _root_.WeierstrassCurve.VariableChange
 open TauCeti.WeierstrassChange.StrictChangeRing
-
-/-! ### Compatibility of `Strict.formalCoordinate` with counit, coproduct and conjugation -/
-
-@[simp] theorem map_counit_formalCoordinate : formalCoordinate.map counit = 1 := by
-  simp [Strict.map_formalCoordinate]
-@[simp] theorem map_coproduct_formalCoordinate :
-    formalCoordinate.map coproduct =
-      formalCoordinate.map (MvPolynomial.map rightUnit) * formalCoordinate.map C := by
-  rw [Strict.map_formalCoordinate, universalChange_map_coproduct, coproduct_comp_C,
-    formalCoordinate_mul, mul_inv_rev,
-    ← map_comp_rightUnit (C : ArrowRing →+* WeierstrassChange.StrictChangeRing ArrowRing),
-    ← MvPolynomial.map_comp_C, ← universalChange_map_map (f := rightUnit),
-    ← Strict.map_formalCoordinate, ← Strict.map_formalCoordinate]
-@[simp] theorem map_conjugation_formalCoordinate :
-    formalCoordinate.map conjugation = formalCoordinate⁻¹ := by
-  rw [Strict.map_formalCoordinate, universalChange_map_conjugation, conjugation_comp_C,
-    ← formalCoordinate_eq_formalCoordinate_inv]
 
 /-! ### The graded base homomorphism `L → A` -/
 

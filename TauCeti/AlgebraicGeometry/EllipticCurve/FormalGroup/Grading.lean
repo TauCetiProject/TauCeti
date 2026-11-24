@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.StrictVariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Grading
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Graded
 import TauCeti.RingTheory.FormalGroup.CoordinateChange.Graded
@@ -29,7 +29,6 @@ differentials, and formal coordinate transitions
 * `WeierstrassCurve.Universal.coeff_*_mem_baseGrading`, `isWeightedHomogeneous_coeff_*`, and
   general `WeierstrassCurve.coeff_*_mem`.
 * `WeierstrassCurve.VariableChange.formalCoordinate_mem_gradedSubgroup`,
-  `TauCeti.WeierstrassHopfAlgebroid.Strict.formalCoordinate`,
   `TauCeti.WeierstrassHopfAlgebroid.Strict.formalCoordinate_mem_gradedSubgroup`.
 
 ## References
@@ -113,21 +112,18 @@ theorem coeff_formalGroup_mem_baseGrading (d : Fin 2 →₀ ℕ) :
   have h := congrArg formalGroup map_toLaurent_toPolynomial_curve
   rwa [map_formalGroup, formalGroup_scaling_smul, map_formalGroup,
     ← FormalGroup.homothety_smul] at h
-
 /-- **Weighted homogeneity of the universal Weierstrass formal group law**. -/
 theorem isWeightedHomogeneous_coeff_formalGroup (d : Fin 2 →₀ ℕ) :
     (MvPowerSeries.coeff d (formalGroup Universal.curve).toPowerSeries).IsWeightedHomogeneous
       coefficientWeight (d.degree - 1) :=
   Strict.mem_baseGrading_two_mul_iff.mp (coeff_formalGroup_mem_baseGrading d)
 
-/-- The coefficient of `zᵐ` in `[k](z)` on `Universal.curve` has homological degree `2 * (m - 1)`.
--/
+/-- Coefficient `m` of `[k](z)` on `Universal.curve` has homological degree `2 * (m - 1)`. -/
 theorem coeff_nsmulSeries_formalGroup_mem_baseGrading (k m : ℕ) :
     PowerSeries.coeff m ((formalGroup Universal.curve).nsmulSeries k) ∈
       Strict.baseGrading (2 * (m - 1)) :=
   FormalGroup.coeff_nsmulSeries_mem (formalGroup Universal.curve) coeff_formalGroup_mem_baseGrading
     k m
-
 /-- The coefficient of `zᵐ` in `[k](z)` on `Universal.curve` has modular weight `m - 1`. -/
 theorem isWeightedHomogeneous_coeff_nsmulSeries_formalGroup (k m : ℕ) :
     (PowerSeries.coeff m ((formalGroup Universal.curve).nsmulSeries k)).IsWeightedHomogeneous
@@ -147,15 +143,13 @@ theorem coeff_formalW_mem_baseGrading (n : ℕ) :
     rw [map_formalW, formalW_scaling_smul, map_formalW] at h
     simpa [val_degreeUnit, val_inv_degreeUnit, ← mul_assoc, ← LaurentPolynomial.T_add] using
       congrArg (PowerSeries.coeff (n + 3)) h
-
 /-- The coefficient of `zⁿ` in `formalW Universal.curve` has modular weight `n - 3`. -/
 theorem isWeightedHomogeneous_coeff_formalW (n : ℕ) :
     (PowerSeries.coeff n (formalW Universal.curve)).IsWeightedHomogeneous
       coefficientWeight (n - 3) :=
   Strict.mem_baseGrading_two_mul_iff.mp (coeff_formalW_mem_baseGrading n)
 
-/-- The coefficient of `zⁿ` in `Universal.curve.formalInvariantDifferentialDenom` has homological
-degree `2 * n`. -/
+/-- Coefficient `n` of `Universal.curve.formalInvariantDifferentialDenom` has degree `2 * n`. -/
 theorem coeff_formalInvariantDifferentialDenom_mem_baseGrading (n : ℕ) :
     PowerSeries.coeff n Universal.curve.formalInvariantDifferentialDenom ∈
       Strict.baseGrading (2 * n) :=
@@ -163,16 +157,13 @@ theorem coeff_formalInvariantDifferentialDenom_mem_baseGrading (n : ℕ) :
     have h := congrArg formalInvariantDifferentialDenom map_toLaurent_toPolynomial_curve
     rwa [map_formalInvariantDifferentialDenom, formalInvariantDifferentialDenom_scaling_smul,
       map_formalInvariantDifferentialDenom] at h) n
-
-/-- The coefficient of `zⁿ` in `Universal.curve.formalInvariantDifferentialDenom` has modular weight
-`n`. -/
+/-- Coefficient `n` of `Universal.curve.formalInvariantDifferentialDenom` has modular weight `n`. -/
 theorem isWeightedHomogeneous_coeff_formalInvariantDifferentialDenom (n : ℕ) :
     (PowerSeries.coeff n Universal.curve.formalInvariantDifferentialDenom).IsWeightedHomogeneous
       coefficientWeight n :=
   Strict.mem_baseGrading_two_mul_iff.mp (coeff_formalInvariantDifferentialDenom_mem_baseGrading n)
 
-/-- The coefficient of `zⁿ` in `(formalGroup Universal.curve).invariantDifferential` has
-homological degree `2 * n`. -/
+/-- Coefficient `n` of `(formalGroup Universal.curve).invariantDifferential` has degree `2 * n`. -/
 theorem coeff_invariantDifferential_formalGroup_mem_baseGrading (n : ℕ) :
     PowerSeries.coeff n (formalGroup Universal.curve).invariantDifferential ∈
       Strict.baseGrading (2 * n) :=
@@ -182,9 +173,7 @@ theorem coeff_invariantDifferential_formalGroup_mem_baseGrading (n : ℕ) :
     rwa [invariantDifferential_formalGroup_scaling_smul, map_formalGroup,
       ← FormalGroup.map_invariantDifferential, map_formalGroup,
       ← FormalGroup.map_invariantDifferential] at h) n
-
-/-- The coefficient of `zⁿ` in `(formalGroup Universal.curve).invariantDifferential` has modular
-weight `n`. -/
+/-- Coefficient `n` of `(formalGroup Universal.curve).invariantDifferential` has weight `n`. -/
 theorem isWeightedHomogeneous_coeff_invariantDifferential_formalGroup (n : ℕ) :
     (PowerSeries.coeff n
       (formalGroup Universal.curve).invariantDifferential).IsWeightedHomogeneous
@@ -221,8 +210,7 @@ theorem coeff_nsmulSeries_formalGroup_mem
   exact specialize_mem_of_isWeightedHomogeneous 𝒜 e hW
     (Universal.isWeightedHomogeneous_coeff_nsmulSeries_formalGroup k m)
 
-/-- Homogeneity of the `w`-expansion of a graded Weierstrass curve (`coeff n` in `𝒜 (e (n - 3))`).
--/
+/-- Homogeneity of `formalW W` for a graded Weierstrass curve (`coeff n` in `𝒜 (e (n - 3))`). -/
 theorem coeff_formalW_mem
     (hW : ∀ i, W.specialize (MvPolynomial.X i) ∈ 𝒜 (e (coefficientWeight i))) (n : ℕ) :
     PowerSeries.coeff n (formalW W) ∈ 𝒜 (e (n - 3)) := by
@@ -285,77 +273,7 @@ end WeierstrassCurve
 
 namespace TauCeti.WeierstrassHopfAlgebroid.Strict
 
-open MvPolynomial _root_.WeierstrassCurve _root_.WeierstrassCurve.VariableChange
-open TauCeti.WeierstrassChange.StrictChangeRing
-
-/-- The universal strict formal coordinate transition over `A[r, s, t]`, carrying
-`formalGroup (WeierstrassCurve.map Universal.curve C)` to
-`formalGroup (WeierstrassCurve.map Universal.curve rightUnit)`. -/
-def formalCoordinate : TauCeti.FormalCoordinate ArrowRing :=
-  ((universalChange (MvPolynomial Coeff ℤ)).formalCoordinate
-    (WeierstrassCurve.map Universal.curve C))⁻¹
-
-theorem formalCoordinate_def : formalCoordinate =
-    ((universalChange (MvPolynomial Coeff ℤ)).formalCoordinate
-      (WeierstrassCurve.map Universal.curve C))⁻¹ := (rfl)
-
-/-- `Strict.formalCoordinate` equals the formal coordinate transition of `(universalChange _)⁻¹`
-from `WeierstrassCurve.map Universal.curve rightUnit`. -/
-theorem formalCoordinate_eq_formalCoordinate_inv : formalCoordinate =
-    (universalChange (MvPolynomial Coeff ℤ))⁻¹.formalCoordinate
-      (WeierstrassCurve.map Universal.curve rightUnit) := by
-  rw [formalCoordinate_def, map_rightUnit, formalCoordinate_inv]
-
-@[simp] theorem linearCoeff_formalCoordinate :
-    TauCeti.FormalCoordinate.linearCoeff formalCoordinate = 1 := by simp [formalCoordinate]
-theorem formalCoordinate_mem_ker_linearCoeff :
-    formalCoordinate ∈ (TauCeti.FormalCoordinate.linearCoeff (R := ArrowRing)).ker :=
-  MonoidHom.mem_ker.mpr linearCoeff_formalCoordinate
-
-/-- `Strict.formalCoordinate` transports `formalGroup (WeierstrassCurve.map Universal.curve C)` to
-`formalGroup (WeierstrassCurve.map Universal.curve rightUnit)`. -/
-theorem formalCoordinate_smul_formalGroup :
-    formalCoordinate • formalGroup (WeierstrassCurve.map Universal.curve C) =
-      formalGroup (WeierstrassCurve.map Universal.curve rightUnit) := by
-  rw [formalCoordinate_def, map_rightUnit, formalGroup_smul]
-
-/-- Base change of `Strict.formalCoordinate` along `k : ArrowRing →+* R`. -/
-theorem map_formalCoordinate {R : Type*} [CommRing R] (k : ArrowRing →+* R) :
-    formalCoordinate.map k =
-      (((universalChange (MvPolynomial Coeff ℤ)).map k).formalCoordinate
-        (WeierstrassCurve.map Universal.curve (k.comp C)))⁻¹ := by
-  rw [formalCoordinate_def, _root_.map_inv, ← VariableChange.map_formalCoordinate,
-    WeierstrassCurve.map_map]
-
-@[simp] theorem map_lift_formalCoordinate {R : Type*} [CommRing R] (W : WeierstrassCurve R)
-    (a : TauCeti.HeisenbergGroup R) :
-    formalCoordinate.map (lift (W.specialize, a)) = ((heisenbergHom R a).formalCoordinate W)⁻¹ := by
-  simp [map_formalCoordinate, WeierstrassCurve.map_specialize]
-
-/-- The linear coefficient of `Strict.formalCoordinate` is `1`. -/
-@[simp] theorem coeff_one_formalCoordinate :
-    PowerSeries.coeff 1 formalCoordinate.toPowerSeries = 1 := by
-  rw [formalCoordinate_eq_formalCoordinate_inv, VariableChange.coeff_one_formalCoordinate]
-  simp [inv_def]
-
-/-- The coefficient of `z²` in `Strict.formalCoordinate` is `-s` (`-X 1`). -/
-@[simp] theorem coeff_two_formalCoordinate :
-    PowerSeries.coeff 2 formalCoordinate.toPowerSeries = -(X 1 : ArrowRing) := by
-  rw [formalCoordinate_eq_formalCoordinate_inv, VariableChange.coeff_two_formalCoordinate]
-  simp [inv_def]
-
-/-- The coefficient of `z³` in `Strict.formalCoordinate` is `s² - r` (`X 1 ^ 2 - X 0`). -/
-@[simp] theorem coeff_three_formalCoordinate :
-    PowerSeries.coeff 3 formalCoordinate.toPowerSeries = X 1 ^ 2 - (X 0 : ArrowRing) := by
-  rw [formalCoordinate_eq_formalCoordinate_inv, VariableChange.coeff_three_formalCoordinate]
-  simp [inv_def]; ring
-
-/-- The coefficient of `z⁴` in `Strict.formalCoordinate` is `-t - s³ + 2 r s - a₁ r`. -/
-@[simp] theorem coeff_four_formalCoordinate :
-    PowerSeries.coeff 4 formalCoordinate.toPowerSeries =
-      -X 2 - X 1 ^ 3 + 2 * X 0 * X 1 - C (X .A₁) * (X 0 : ArrowRing) := by
-  rw [formalCoordinate_eq_formalCoordinate_inv, VariableChange.coeff_four_formalCoordinate]
-  simp [inv_def, variableChange_a₁]; ring
+open MvPolynomial _root_.WeierstrassCurve
 
 /-- **Homological homogeneity of the universal strict Weierstrass formal coordinate**. -/
 theorem formalCoordinate_mem_gradedSubgroup :
