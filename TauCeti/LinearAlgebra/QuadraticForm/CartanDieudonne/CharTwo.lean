@@ -86,14 +86,6 @@ private theorem tv_apply_of_polar_eq_zero (a : V) (ha : Q a ≠ 0) {x : V}
   rw [tv, coe_reflectionOrthogonal]
   exact reflection_apply_of_polar_eq_zero Q a hx
 
-private theorem polar_self_eq_zero (x : V) : polar Q x x = 0 := by
-  simpa [polarBilin_apply_apply] using Q.isAlt_polarBilin x
-
-omit [CharP K 2] in
-private theorem coe_mul_apply (g h : orthogonalGroup Q) (x : V) :
-    ((g * h : orthogonalGroup Q) : V ≃ₗ[K] V) x = (g : V ≃ₗ[K] V) ((h : V ≃ₗ[K] V) x) := by
-  rw [Subgroup.coe_mul, mul_apply_eq_comp]
-
 private theorem map_add_ne_zero_of_polar_ne_zero {x y : V} (hxy : Q x = Q y)
     (hp : polar Q x y ≠ 0) : Q (x + y) ≠ 0 := by
   rwa [map_add_eq_polar_of_map_eq Q hxy]
@@ -135,10 +127,11 @@ private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H) {e f f'
       simp only [hz, QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, polar_smul_right, hfe,
         smul_eq_mul, h, mul_one, add_assoc, CharTwo.add_self_eq_zero, add_zero]
     have hze : polar Q z e = 1 := by
-      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, smul_zero, add_zero, hfe]
+      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero_of_charTwo, smul_zero,
+        add_zero, hfe]
     have hzf : polar Q z f = (Q e)⁻¹ := by
-      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, hf, smul_eq_mul, mul_one,
-        zero_add]
+      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero_of_charTwo, hf,
+        smul_eq_mul, mul_one, zero_add]
     have hf'z : polar Q f' z = (Q e)⁻¹ := by
       simp only [hz, polar_add_right, polar_smul_right, hp, hf'e, smul_eq_mul, mul_one, zero_add]
     have hinv : (Q e)⁻¹ ≠ 0 := inv_ne_zero he
@@ -147,8 +140,8 @@ private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H) {e f f'
     obtain ⟨h₂, hh₂, hh₂z, hh₂e⟩ :=
       exists_mem_apply_eq_of_polar_ne_zero H hH hQz (hzf ▸ hinv)
     refine ⟨h₂ * h₁, H.mul_mem hh₂ hh₁, ?_, ?_⟩
-    · rw [coe_mul_apply, hh₁e e (by rw [hf'e, hze]), hh₂e e (by rw [hze, hfe])]
-    · rw [coe_mul_apply, hh₁f', hh₂z]
+    · rw [orthogonalGroup.coe_mul_apply, hh₁e e (by rw [hf'e, hze]), hh₂e e (by rw [hze, hfe])]
+    · rw [orthogonalGroup.coe_mul_apply, hh₁f', hh₂z]
   · obtain ⟨h, hh, hhf', hhe⟩ := exists_mem_apply_eq_of_polar_ne_zero H hH hff hp
     exact ⟨h, hh, hhe e (by rw [hf'e, hfe]), hhf'⟩
 
@@ -169,7 +162,8 @@ private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
     set z := (tv Q w hw : V ≃ₗ[K] V) x
     have hQz : Q x = Q z := (map_app_of_mem_orthogonalGroup (tv Q w hw).property x).symm
     have hxz : polar Q x z ≠ 0 := by
-      simp only [hz, polar_add_right, polar_smul_right, polar_self_eq_zero, zero_add, smul_eq_mul]
+      simp only [hz, polar_add_right, polar_smul_right, polar_self_eq_zero_of_charTwo, zero_add,
+        smul_eq_mul]
       exact mul_ne_zero hc0 hxw
     have hzy : polar Q z y ≠ 0 := by
       simp only [hz, polar_add_left, polar_smul_left, hp, zero_add, smul_eq_mul,
@@ -178,7 +172,7 @@ private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
     obtain ⟨h₁, hh₁, hh₁x, -⟩ := exists_mem_apply_eq_of_polar_ne_zero H hH hQz hxz
     obtain ⟨h₂, hh₂, hh₂z, -⟩ :=
       exists_mem_apply_eq_of_polar_ne_zero H hH (hQz.symm.trans hxy) hzy
-    exact ⟨h₂ * h₁, H.mul_mem hh₂ hh₁, by rw [coe_mul_apply, hh₁x, hh₂z]⟩
+    exact ⟨h₂ * h₁, H.mul_mem hh₂ hh₁, by rw [orthogonalGroup.coe_mul_apply, hh₁x, hh₂z]⟩
   · obtain ⟨h, hh, hhx, -⟩ := exists_mem_apply_eq_of_polar_ne_zero H hH hxy hp
     exact ⟨h, hh, hhx⟩
 
@@ -200,7 +194,7 @@ private theorem exists_frame [CharP K 2] [Nontrivial V] (hB : Q.polarBilin.Nonde
   by_cases hQx : Q x = 0
   · by_cases hQy : Q y = 0
     · refine ⟨x + y, y, by rw [QuadraticMap.map_add (⇑Q), hQx, hQy, hxy]; simp, ?_⟩
-      rw [polar_add_left, hxy, polar_self_eq_zero, add_zero]
+      rw [polar_add_left, hxy, polar_self_eq_zero_of_charTwo, add_zero]
     · exact ⟨y, x, hQy, by rw [polar_comm, hxy]⟩
   · exact ⟨x, y, hQx, hxy⟩
 
@@ -277,8 +271,8 @@ private theorem exists_isTotallyIsotropic_finrank_eq_two [CharP K 2] {x y f : V}
     rw [LinearIndependent.pair_iff]
     intro a b hab
     have h1 := congrArg (polar Q x) hab
-    simp only [polar_add_right, polar_smul_right, polar_self_eq_zero, hp, add_zero, mul_zero,
-      polar_zero_right, smul_eq_mul] at h1
+    simp only [polar_add_right, polar_smul_right, polar_self_eq_zero_of_charTwo, hp, add_zero,
+      mul_zero, polar_zero_right, smul_eq_mul] at h1
     have ha : a = 0 := (mul_eq_zero.mp h1).resolve_right hxf
     refine ⟨ha, ?_⟩
     rw [ha, zero_smul, zero_add] at hab
@@ -311,7 +305,7 @@ private theorem exists_good [CharP K 2] [FiniteDimensional K V]
   have hcand (c : K) : Q (f + c • x) = 0 := by
     by_contra hc
     have h := hno _ hc (by
-      rwa [polar_add_right, polar_smul_right, polar_self_eq_zero, smul_zero, add_zero])
+      rwa [polar_add_right, polar_smul_right, polar_self_eq_zero_of_charTwo, smul_zero, add_zero])
     rw [polar_add_right, polar_smul_right, polar_comm _ y x, hp, smul_zero, add_zero] at h
     exact hyf h
   have hK := eq_zero_or_eq_one_of_forall_map_add_smul_eq_zero hx hfx hcand
@@ -338,11 +332,6 @@ section Restriction
 variable [CharP K 2] {Q : QuadraticForm K V}
 
 omit [CharP K 2] in
-private theorem inv_apply_eq_of_apply_eq {g : orthogonalGroup Q} {x y : V}
-    (h : (g : V ≃ₗ[K] V) x = y) : ((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[K] V) y = x := by
-  rw [← h, ← coe_mul_apply, inv_mul_cancel, Subgroup.coe_one, one_apply_eq_self]
-
-omit [CharP K 2] in
 /-- The orthogonal maps of the restriction of `Q` to `W` that extend to an element of `H` fixing
 `P` pointwise. -/
 private def extensionSubgroup (H : Subgroup (orthogonalGroup Q)) (W P : Submodule K V) :
@@ -352,15 +341,15 @@ private def extensionSubgroup (H : Subgroup (orthogonalGroup Q)) (W P : Submodul
   mul_mem' := by
     rintro k₁ k₂ ⟨g₁, hg₁, hg₁W, hg₁P⟩ ⟨g₂, hg₂, hg₂W, hg₂P⟩
     refine ⟨g₁ * g₂, H.mul_mem hg₁ hg₂, fun u ↦ ?_, fun z hz ↦ ?_⟩
-    · rw [coe_mul_apply, hg₂W, hg₁W, coe_mul_apply]
-    · rw [coe_mul_apply, hg₂P z hz, hg₁P z hz]
+    · rw [orthogonalGroup.coe_mul_apply, hg₂W, hg₁W, orthogonalGroup.coe_mul_apply]
+    · rw [orthogonalGroup.coe_mul_apply, hg₂P z hz, hg₁P z hz]
   one_mem' := ⟨1, H.one_mem, fun _ ↦ by simp only [Subgroup.coe_one, one_apply_eq_self],
     fun _ _ ↦ by rw [Subgroup.coe_one, one_apply_eq_self]⟩
   inv_mem' := by
     rintro k ⟨g, hg, hgW, hgP⟩
-    refine ⟨g⁻¹, H.inv_mem hg, fun u ↦ inv_apply_eq_of_apply_eq ?_, fun z hz ↦
-      inv_apply_eq_of_apply_eq (hgP z hz)⟩
-    rw [hgW, ← coe_mul_apply, mul_inv_cancel, Subgroup.coe_one, one_apply_eq_self]
+    refine ⟨g⁻¹, H.inv_mem hg, fun u ↦ orthogonalGroup.inv_apply_eq_of_apply_eq ?_, fun z hz ↦
+      orthogonalGroup.inv_apply_eq_of_apply_eq (hgP z hz)⟩
+    rw [hgW, ← orthogonalGroup.coe_mul_apply, mul_inv_cancel, Subgroup.coe_one, one_apply_eq_self]
 
 /-- The transvections of the restriction of `Q` to `W` extend to transvections of `Q` fixing every
 vector polar orthogonal to `W`. -/
@@ -572,8 +561,8 @@ private theorem exists_singular_pair_of_exc [FiniteDimensional K V] {Q : Quadrat
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons] at hg
   have h1 := congrArg (polar Q e) hg
   have h2 := congrArg (polar Q f) hg
-  simp only [polar_add_right, polar_smul_right, polar_self_eq_zero, hef, hfe, hes₁, hes₂, hfs₁,
-    hfs₂, polar_zero_right, smul_eq_mul, mul_zero, mul_one, zero_add, add_zero] at h1 h2
+  simp only [polar_add_right, polar_smul_right, polar_self_eq_zero_of_charTwo, hef, hfe, hes₁, hes₂,
+    hfs₁, hfs₂, polar_zero_right, smul_eq_mul, mul_zero, mul_one, zero_add, add_zero] at h1 h2
   rw [h1, h2, zero_smul, zero_smul, zero_add, zero_add] at hg
   obtain ⟨h3, h4⟩ := LinearIndependent.pair_iff.mp hli₂ (g 2) (g 3) hg
   intro i
@@ -591,10 +580,10 @@ private theorem exists_hyperbolic_partners [FiniteDimensional K V] {Q : Quadrati
       polar Q e s₂' = 0 ∧ polar Q f s₂' = 0 ∧ polar Q s₁ s₁' = 1 ∧ polar Q s₂ s₁' = 0 ∧
       polar Q s₁ s₂' = 0 ∧ polar Q s₂ s₂' = 1 ∧ polar Q s₁' s₂' = 0 := by
   obtain ⟨s₁', hQs₁', hs₁'⟩ := exists_hyperbolic_partner hB hli 2 hQs₁ fun j ↦ by
-    fin_cases j <;> simp [hes₁, hfs₁, polar_self_eq_zero Q,
+    fin_cases j <;> simp [hes₁, hfs₁, polar_self_eq_zero_of_charTwo Q,
       polar_comm (⇑Q) s₂ s₁, hs₁s₂]
   obtain ⟨t, hQt, ht⟩ := exists_hyperbolic_partner hB hli 3 hQs₂ fun j ↦ by
-    fin_cases j <;> simp [hes₂, hfs₂, polar_self_eq_zero Q, hs₁s₂]
+    fin_cases j <;> simp [hes₂, hfs₂, polar_self_eq_zero_of_charTwo Q, hs₁s₂]
   have hes₁' : polar Q e s₁' = 0 := by simpa using hs₁' 0
   have hfs₁' : polar Q f s₁' = 0 := by simpa using hs₁' 1
   have hs₁s₁' : polar Q s₁ s₁' = 1 := by simpa using hs₁' 2
@@ -610,7 +599,7 @@ private theorem exists_hyperbolic_partners [FiniteDimensional K V] {Q : Quadrati
     simp
   · simp [polar_add_right, polar_smul_right, het, hes₁]
   · simp [polar_add_right, polar_smul_right, hft, hfs₁]
-  · simp [polar_add_right, polar_smul_right, hs₁t, polar_self_eq_zero Q]
+  · simp [polar_add_right, polar_smul_right, hs₁t, polar_self_eq_zero_of_charTwo Q]
   · simp [polar_add_right, polar_smul_right, hs₂t, polar_comm (⇑Q) s₂ s₁, hs₁s₂]
   · rw [polar_add_right, polar_smul_right, polar_comm _ s₁' s₁, hs₁s₁', smul_eq_mul, mul_one,
       CharTwo.add_self_eq_zero]
@@ -645,10 +634,10 @@ private theorem exists_frame_not_exc_of_exc [FiniteDimensional K V]
       fin_cases i <;> fin_cases j <;> simp [hef, hes₁', hes₂', polar_comm (⇑Q) s₁ f, hfs₁,
         hs₁s₁', hs₁s₂', polar_comm (⇑Q) s₂ f, hfs₂, hs₂s₁', hs₂s₂'])
     (fun i j ↦ by
-      fin_cases i <;> fin_cases j <;> simp [polar_self_eq_zero Q, hes₁,
+      fin_cases i <;> fin_cases j <;> simp [polar_self_eq_zero_of_charTwo Q, hes₁,
         hes₂, polar_comm (⇑Q) s₁ e, polar_comm (⇑Q) s₂ e, polar_comm (⇑Q) s₂ s₁, hs₁s₂])
     (fun i j ↦ by
-      fin_cases i <;> fin_cases j <;> simp [polar_self_eq_zero Q, hfs₁',
+      fin_cases i <;> fin_cases j <;> simp [polar_self_eq_zero_of_charTwo Q, hfs₁',
         hfs₂', polar_comm (⇑Q) s₁' f, polar_comm (⇑Q) s₂' f, polar_comm (⇑Q) s₂' s₁', hs₁'s₂'])
     (by simpa using (natCard_eq_two_iff_forall_eq_zero_or_eq_one.mp hcard _).resolve_left he)
     hQs₁ hQs₂ hQs₁' hQs₂'
@@ -683,7 +672,7 @@ private theorem eq_top_of_finrank_eq (n : ℕ) :
     obtain ⟨h₁, hh₁, hh₁e⟩ := exists_mem_apply_eq H hH
       (fun x y hxy hx hp hne ↦ exists_good hB hexc hxy hx hp hne) hge (by rwa [hge])
     have hg₁e : ((h₁ * g : orthogonalGroup Q) : W ≃ₗ[K] W) e = e := by
-      rw [coe_mul_apply, hh₁e]
+      rw [orthogonalGroup.coe_mul_apply, hh₁e]
     have hg₁f : polar Q e (((h₁ * g : orthogonalGroup Q) : W ≃ₗ[K] W) f) = 1 := by
       conv_lhs => rw [← hg₁e]
       rw [polar_apply_of_mem_orthogonalGroup (h₁ * g).property, hef]
@@ -699,8 +688,8 @@ private theorem eq_top_of_finrank_eq (n : ℕ) :
     have hmem : h₂ * (h₁ * g) ∈ H := by
       refine mem_of_apply_eq_self hef (fun H' hH' ↦ ih _ (by omega) rfl _ hnd hexc' H' hH') H hH
         _ ?_ ?_
-      · rw [coe_mul_apply, hg₁e, hh₂e]
-      · rw [coe_mul_apply, hh₂f]
+      · rw [orthogonalGroup.coe_mul_apply, hg₁e, hh₂e]
+      · rw [orthogonalGroup.coe_mul_apply, hh₂f]
     have hg : g = h₁⁻¹ * (h₂⁻¹ * (h₂ * (h₁ * g))) := by group
     rw [hg]
     exact H.mul_mem (H.inv_mem hh₁) (H.mul_mem (H.inv_mem hh₂) hmem)

@@ -79,6 +79,9 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   `LinearMap.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
   determinant-one counterpart is
   `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
+* `TauCeti.QuadraticMap.orthogonalGroup.coe_mul_apply` and
+  `TauCeti.QuadraticMap.orthogonalGroup.inv_apply_eq_of_apply_eq`: the group operations of
+  `orthogonalGroup Q` act on vectors by composition and inversion.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
   group is Mathlib's type of self-isometries `Q.IsometryEquiv Q`. This is the compatibility with the
   Mathlib vocabulary; the point of `orthogonalGroup` is the group structure, which
@@ -215,6 +218,16 @@ theorem map_app_of_mem_orthogonalGroup {f : M ≃ₗ[R] M} (hf : f ∈ orthogona
 theorem isOrtho_iff_of_mem_orthogonalGroup {f : M ≃ₗ[R] M} (hf : f ∈ orthogonalGroup Q) (x y : M) :
     Q.IsOrtho (f x) (f y) ↔ Q.IsOrtho x y := by
   simp only [isOrtho_def, ← map_add, map_app_of_mem_orthogonalGroup hf]
+
+/-- The product in `orthogonalGroup Q` acts on vectors by composition. -/
+theorem orthogonalGroup.coe_mul_apply (g h : orthogonalGroup Q) (x : M) :
+    ((g * h : orthogonalGroup Q) : M ≃ₗ[R] M) x = (g : M ≃ₗ[R] M) ((h : M ≃ₗ[R] M) x) := by
+  rw [Subgroup.coe_mul, mul_apply_eq_comp]
+
+/-- An orthogonal automorphism sending `x` to `y` has inverse sending `y` back to `x`. -/
+theorem orthogonalGroup.inv_apply_eq_of_apply_eq {g : orthogonalGroup Q} {x y : M}
+    (h : (g : M ≃ₗ[R] M) x = y) : ((g⁻¹ : orthogonalGroup Q) : M ≃ₗ[R] M) y = x := by
+  rw [← h, ← orthogonalGroup.coe_mul_apply, inv_mul_cancel, Subgroup.coe_one, one_apply_eq_self]
 
 /-- The orthogonal group of `Q`, as a set, is Mathlib's type of self-isometries of `Q`. The content
 of `orthogonalGroup` is the group structure, which `QuadraticMap.IsometryEquiv` does not carry. -/
