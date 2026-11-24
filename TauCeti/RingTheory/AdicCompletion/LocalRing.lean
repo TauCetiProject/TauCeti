@@ -52,9 +52,10 @@ completions of `S` and `S'`.
 * `TauCeti.AdicCompletion.isLocalHom_evalOneₐ_of_le_maximalIdeal`,
   `TauCeti.AdicCompletion.isLocalHom_algebraMap_of_le_maximalIdeal`: local homomorphisms into and
   out of `AdicCompletion I R` for any ideal `I ≤ 𝔪`.
-* `TauCeti.AdicCompletion.mapₐ_maximalIdeal_bijective`,
-  `TauCeti.AdicCompletion.maximalIdealEquivOfQuotientMap`,
-  `TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap`: the induced isomorphism between
+* `RingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective`,
+  `AlgHom.mapₐ_maximalIdeal_bijective`,
+  `AlgHom.maximalIdealEquivOfQuotientMap`,
+  `RingHom.maximalIdealRingEquivOfQuotientMap`: the induced isomorphism between
   maximal-ideal completions.
 
 ## References
@@ -125,12 +126,13 @@ theorem isRegularLocalRing_iff (hI : I ≤ maximalIdeal R) :
 /-- The completion of a Noetherian local ring along an ideal contained in the maximal ideal is
 Cohen–Macaulay if and only if the ring is. -/
 @[stacks 07NX]
-theorem isCohenMacaulay_self_iff (hI : I ≤ maximalIdeal R) [IsLocalRing (AdicCompletion I R)] :
+theorem isCohenMacaulay_self_iff (hI : I ≤ maximalIdeal R) :
+    haveI := isLocalRing_of_le hI (IsNoetherian.noetherian I)
     Module.IsCohenMacaulay (AdicCompletion I R) (AdicCompletion I R) ↔
-      Module.IsCohenMacaulay R R := by
-  have hmax := maximalIdeal_eq_map_of_le hI (IsNoetherian.noetherian I)
-  rw [Subsingleton.elim (isLocalRing_of_le hI (IsNoetherian.noetherian I)) ‹_›] at hmax
-  exact Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq hmax.symm
+      Module.IsCohenMacaulay R R :=
+  haveI := isLocalRing_of_le hI (IsNoetherian.noetherian I)
+  Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq
+    (maximalIdeal_eq_map_of_le hI (IsNoetherian.noetherian I)).symm
 
 end
 
@@ -194,9 +196,24 @@ theorem isLocalHom_algebraMap_of_le_maximalIdeal (hI : I ≤ maximalIdeal R) :
 
 end LeMaximalIdeal
 
+/-- Completing a Noetherian ring `R` at a maximal ideal `p` yields a regular local ring if and only
+if any localization `Rₚ` of `R` at `p` is a regular local ring. -/
+theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetherianRing R]
+    (p : Ideal R) [p.IsMaximal] (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ]
+    [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ] :
+    IsRegularLocalRing (AdicCompletion p R) ↔ IsRegularLocalRing Rₚ := by
+  have : IsNoetherianRing Rₚ := IsLocalization.isNoetherianRing p.primeCompl Rₚ ‹_›
+  let e := (_root_.AdicCompletion.equivMaximalIdealOfAtPrime p Rₚ).toRingEquiv
+  exact ⟨fun _ ↦ (isRegularLocalRing_iff le_rfl).mp (.of_ringEquiv e),
+    fun _ ↦ .of_ringEquiv (R := AdicCompletion (maximalIdeal Rₚ) Rₚ) e.symm⟩
+
+end TauCeti.AdicCompletion
+
 section MaximalIdealComparison
 
-section RingHomBase
+open AdicCompletion IsLocalRing
+
+namespace RingHom
 
 variable {S S' : Type*} [CommRing S] [CommRing S'] [IsLocalRing S] [IsLocalRing S']
 
@@ -208,11 +225,13 @@ theorem maximalIdeal_le_comap_of_quotientMap_pow_bijective (f : S →+* S') {J :
       Function.Bijective (Ideal.quotientMap ((J.map f) ^ n) f
         ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n)))) :
     maximalIdeal S ≤ (maximalIdeal S').comap f :=
-  (TauCeti.IsLocalRing.map_maximalIdeal_eq_of_quotientMap_bijective f hJ
-    (Ideal.quotientMap_bijective_congr f (pow_one J) (pow_one _) (hbij 1 le_rfl)
+  (f.map_maximalIdeal_eq_of_quotientMap_bijective hJ
+    (f.quotientMap_bijective_congr (pow_one J) (pow_one _) (hbij 1 le_rfl)
       (H₂ := Ideal.le_comap_map))) ▸ Ideal.le_comap_map
 
-end RingHomBase
+end RingHom
+
+namespace AlgHom
 
 variable {R S S' : Type*} [CommRing R] [CommRing S] [CommRing S']
   [Algebra R S] [Algebra R S'] [IsLocalRing S] [IsLocalRing S']
@@ -233,12 +252,12 @@ theorem mapₐ_maximalIdeal_bijective (hf : maximalIdeal S ≤ (maximalIdeal S')
     Function.Bijective (mapₐ f hf) := by
   refine mapₐ_bijective f hf fun n ↦ ?_
   rcases n with _ | n
-  · exact TauCeti.IsLocalRing.quotientMap_maximalIdeal_pow_bijective f.toRingHom
-      (K := J ^ 1) (by simp) (Ideal.quotientMap_bijective_congr f.toRingHom rfl
+  · exact f.toRingHom.quotientMap_maximalIdeal_pow_bijective
+      (K := J ^ 1) (by simp) (f.toRingHom.quotientMap_bijective_congr rfl
         (Ideal.map_pow f.toRingHom J 1).symm (hbij 1 le_rfl) (H₂ := Ideal.le_comap_map))
-  · exact TauCeti.IsLocalRing.quotientMap_maximalIdeal_pow_bijective f.toRingHom
+  · exact f.toRingHom.quotientMap_maximalIdeal_pow_bijective
       (Ideal.pow_right_mono hJ (n + 1))
-      (Ideal.quotientMap_bijective_congr f.toRingHom rfl (Ideal.map_pow f.toRingHom J (n + 1)).symm
+      (f.toRingHom.quotientMap_bijective_congr rfl (Ideal.map_pow f.toRingHom J (n + 1)).symm
         (hbij (n + 1) (Nat.succ_pos n)) (H₂ := Ideal.le_comap_map))
 
 /-- The canonical isomorphism between the maximal-ideal-adic completions of local rings `S` and
@@ -247,24 +266,24 @@ for an ideal `J ≤ 𝔪_S` and every `n ≥ 1`. -/
 noncomputable def maximalIdealEquivOfQuotientMap :
     AdicCompletion (maximalIdeal S) S ≃ₐ[R] AdicCompletion (maximalIdeal S') S' :=
   AlgEquiv.ofBijective
-    (mapₐ f (maximalIdeal_le_comap_of_quotientMap_pow_bijective f.toRingHom hJ hbij))
-    (mapₐ_maximalIdeal_bijective f hJ hbij _)
+    (mapₐ f (f.toRingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective hJ hbij))
+    (f.mapₐ_maximalIdeal_bijective hJ hbij _)
 
 /-- As an algebra homomorphism, `maximalIdealEquivOfQuotientMap f` is `AdicCompletion.mapₐ f`. -/
 @[simp]
 theorem toAlgHom_maximalIdealEquivOfQuotientMap :
-    (maximalIdealEquivOfQuotientMap f hJ hbij :
+    (f.maximalIdealEquivOfQuotientMap hJ hbij :
         AdicCompletion (maximalIdeal S) S →ₐ[R] AdicCompletion (maximalIdeal S') S') =
-      mapₐ f (maximalIdeal_le_comap_of_quotientMap_pow_bijective f.toRingHom hJ hbij) := by
+      mapₐ f (f.toRingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective hJ hbij) := by
   ext; rfl
 
 /-- Modulo `𝔪_{S'} ^ n`, `maximalIdealEquivOfQuotientMap f` is the quotient map induced by `f`. -/
 @[simp]
 theorem evalₐ_maximalIdealEquivOfQuotientMap (n : ℕ) (x : AdicCompletion (maximalIdeal S) S) :
-    evalₐ (maximalIdeal S') n (maximalIdealEquivOfQuotientMap f hJ hbij x) =
+    evalₐ (maximalIdeal S') n (f.maximalIdealEquivOfQuotientMap hJ hbij x) =
       Ideal.quotientMap (maximalIdeal S' ^ n) (f : S →+* S')
         ((Ideal.pow_right_mono
-          (maximalIdeal_le_comap_of_quotientMap_pow_bijective f.toRingHom hJ hbij) n).trans
+          (f.toRingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective hJ hbij) n).trans
           (Ideal.le_comap_pow _ n))
         (evalₐ (maximalIdeal S) n x) := by
   exact evalₐ_mapₐ f _ n x
@@ -272,14 +291,14 @@ theorem evalₐ_maximalIdealEquivOfQuotientMap (n : ℕ) (x : AdicCompletion (ma
 /-- On elements of `S`, `maximalIdealEquivOfQuotientMap f` applies `f`. -/
 @[simp]
 theorem maximalIdealEquivOfQuotientMap_of (x : S) :
-    maximalIdealEquivOfQuotientMap f hJ hbij (of (maximalIdeal S) S x) =
+    f.maximalIdealEquivOfQuotientMap hJ hbij (of (maximalIdeal S) S x) =
       of (maximalIdeal S') S' (f x) := by
   exact mapₐ_of f _ x
 
 /-- The underlying map of `maximalIdealEquivOfQuotientMap f` is `AdicCompletion.mapₐ f`. -/
 theorem maximalIdealEquivOfQuotientMap_apply (x : AdicCompletion (maximalIdeal S) S) :
-    maximalIdealEquivOfQuotientMap f hJ hbij x =
-      mapₐ f (maximalIdeal_le_comap_of_quotientMap_pow_bijective f.toRingHom hJ hbij) x := by
+    f.maximalIdealEquivOfQuotientMap hJ hbij x =
+      mapₐ f (f.toRingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective hJ hbij) x := by
   rfl
 
 end Equiv
@@ -299,16 +318,18 @@ theorem maximalIdealEquivOfQuotientMap_trans {S'' : Type*} [CommRing S''] [Algeb
     (hbijh : ∀ n : ℕ, 1 ≤ n →
       Function.Bijective (Ideal.quotientMap ((K.map h.toRingHom) ^ n) h.toRingHom
         ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n)))) :
-    (maximalIdealEquivOfQuotientMap f hJ hbijf).trans
-        (maximalIdealEquivOfQuotientMap g hJ' hbijg) =
-      maximalIdealEquivOfQuotientMap h hK hbijh := by
+    (f.maximalIdealEquivOfQuotientMap hJ hbijf).trans
+        (g.maximalIdealEquivOfQuotientMap hJ' hbijg) =
+      h.maximalIdealEquivOfQuotientMap hK hbijh := by
   subst hfg
   exact AlgEquiv.ext fun x ↦ by
-    rw [AlgEquiv.trans_apply, maximalIdealEquivOfQuotientMap_apply,
-      maximalIdealEquivOfQuotientMap_apply, maximalIdealEquivOfQuotientMap_apply]
+    rw [AlgEquiv.trans_apply, AlgHom.maximalIdealEquivOfQuotientMap_apply,
+      AlgHom.maximalIdealEquivOfQuotientMap_apply, AlgHom.maximalIdealEquivOfQuotientMap_apply]
     exact mapₐ_mapₐ _ _ _ _ x
 
-section RingEquiv
+end AlgHom
+
+namespace RingHom
 
 variable {T T' : Type*} [CommRing T] [CommRing T'] [IsLocalRing T] [IsLocalRing T']
   (f : T →+* T') {J : Ideal T} (hJ : J ≤ maximalIdeal T)
@@ -322,29 +343,29 @@ for an ideal `J ≤ 𝔪_T` and every `n ≥ 1`. -/
 noncomputable def maximalIdealRingEquivOfQuotientMap :
     AdicCompletion (maximalIdeal T) T ≃+* AdicCompletion (maximalIdeal T') T' :=
   letI : Algebra T T' := f.toAlgebra
-  (maximalIdealEquivOfQuotientMap (Algebra.ofId T T') hJ hbij).toRingEquiv
+  ((Algebra.ofId T T').maximalIdealEquivOfQuotientMap hJ hbij).toRingEquiv
 
 /-- Modulo `𝔪_{T'} ^ n`, `maximalIdealRingEquivOfQuotientMap f` is the quotient map induced by
 `f`. -/
 @[simp]
 theorem evalₐ_maximalIdealRingEquivOfQuotientMap (n : ℕ)
     (x : AdicCompletion (maximalIdeal T) T) :
-    evalₐ (maximalIdeal T') n (maximalIdealRingEquivOfQuotientMap f hJ hbij x) =
+    evalₐ (maximalIdeal T') n (f.maximalIdealRingEquivOfQuotientMap hJ hbij x) =
       Ideal.quotientMap (maximalIdeal T' ^ n) f
         ((Ideal.pow_right_mono
-          (maximalIdeal_le_comap_of_quotientMap_pow_bijective f hJ hbij) n).trans
+          (f.maximalIdeal_le_comap_of_quotientMap_pow_bijective hJ hbij) n).trans
           (Ideal.le_comap_pow _ n))
         (evalₐ (maximalIdeal T) n x) := by
   let : Algebra T T' := f.toAlgebra
-  exact evalₐ_maximalIdealEquivOfQuotientMap (Algebra.ofId T T') hJ hbij n x
+  exact (Algebra.ofId T T').evalₐ_maximalIdealEquivOfQuotientMap hJ hbij n x
 
 /-- On elements of `T`, `maximalIdealRingEquivOfQuotientMap f` applies `f`. -/
 @[simp]
 theorem maximalIdealRingEquivOfQuotientMap_of (x : T) :
-    maximalIdealRingEquivOfQuotientMap f hJ hbij (of (maximalIdeal T) T x) =
+    f.maximalIdealRingEquivOfQuotientMap hJ hbij (of (maximalIdeal T) T x) =
       of (maximalIdeal T') T' (f x) := by
   let : Algebra T T' := f.toAlgebra
-  exact maximalIdealEquivOfQuotientMap_of (Algebra.ofId T T') hJ hbij x
+  exact (Algebra.ofId T T').maximalIdealEquivOfQuotientMap_of hJ hbij x
 
 /-- Composing two maximal-ideal completion ring isomorphisms induced by `f` and `g` yields the
 isomorphism induced by `h = g.comp f`. -/
@@ -361,28 +382,15 @@ theorem maximalIdealRingEquivOfQuotientMap_trans {T'' : Type*} [CommRing T''] [I
     (hbijh : ∀ n : ℕ, 1 ≤ n →
       Function.Bijective (Ideal.quotientMap ((K.map h) ^ n) h
         ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n)))) :
-    (maximalIdealRingEquivOfQuotientMap f hJ hbijf).trans
-        (maximalIdealRingEquivOfQuotientMap g hJ' hbijg) =
-      maximalIdealRingEquivOfQuotientMap h hK hbijh := by
+    (f.maximalIdealRingEquivOfQuotientMap hJ hbijf).trans
+        (g.maximalIdealRingEquivOfQuotientMap hJ' hbijg) =
+      h.maximalIdealRingEquivOfQuotientMap hK hbijh := by
   subst hfg
   refine RingEquiv.ext fun x ↦ ext_evalₐ fun n ↦ ?_
   obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (evalₐ (maximalIdeal T) n x)
-  simp only [RingEquiv.trans_apply, evalₐ_maximalIdealRingEquivOfQuotientMap, ← hs,
+  simp only [RingEquiv.trans_apply, RingHom.evalₐ_maximalIdealRingEquivOfQuotientMap, ← hs,
     Ideal.quotientMap_mk, RingHom.comp_apply]
 
-end RingEquiv
+end RingHom
 
 end MaximalIdealComparison
-
-/-- Completing a Noetherian ring `R` at a maximal ideal `p` yields a regular local ring if and only
-if any localization `Rₚ` of `R` at `p` is a regular local ring. -/
-theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetherianRing R]
-    (p : Ideal R) [p.IsMaximal] (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ]
-    [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ] :
-    IsRegularLocalRing (AdicCompletion p R) ↔ IsRegularLocalRing Rₚ := by
-  have : IsNoetherianRing Rₚ := IsLocalization.isNoetherianRing p.primeCompl Rₚ ‹_›
-  let e := (_root_.AdicCompletion.equivMaximalIdealOfAtPrime p Rₚ).toRingEquiv
-  exact ⟨fun _ ↦ (isRegularLocalRing_iff le_rfl).mp (.of_ringEquiv e),
-    fun _ ↦ .of_ringEquiv (R := AdicCompletion (maximalIdeal Rₚ) Rₚ) e.symm⟩
-
-end TauCeti.AdicCompletion

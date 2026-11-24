@@ -7,13 +7,13 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedAtPrime.Stalk
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.Basic
 
 import Mathlib.RingTheory.Localization.AtPrime.Basic
 import TauCeti.RingTheory.AdicCompletion.LocalRing
 import TauCeti.RingTheory.AdicCompletion.Pow
-import TauCeti.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Localization.AtPrime.Basic
 import TauCeti.RingTheory.Localization.AtPrime.Quotient
 
 /-!
@@ -21,23 +21,21 @@ import TauCeti.RingTheory.Localization.AtPrime.Quotient
 
 Let `A` be a complete separated adic ring of finite ideal type, and let `p` be an open prime of
 `A`, a point of the formal spectrum `Spf A` with underlying prime ideal `𝔭`. Building on the
-canonical maps `A_𝔭 → 𝒪_{Spf A, p}` (`TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk`) and
+canonical maps `A_𝔭 → 𝒪_{Spf A, p}` (`TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.Basic`) and
 `𝒪_{Spf A, p} → Â_𝔭` (`TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedAtPrime.Stalk`), this
 module proves without any noetherian hypothesis on `A`:
 
-* the canonical completion map `A_𝔭 → Â_𝔭` is a local homomorphism compatible with
-  `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭`;
+* `stalkToCompletedAtPrime p` is compatible with `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭`;
 * for every open ideal `J` of `A` (in particular every power `I ^ n` of an ideal of definition
   `I`), both maps induce ring isomorphisms
-  `A_𝔭 ⧸ J A_𝔭 ≃+* 𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p} ≃+* Â_𝔭 ⧸ J Â_𝔭`, and for any prime `Q` of
-  `A ⧸ J` lying over `𝔭` (in particular `(homeomorphSpecQuotient hJ p).asIdeal` when `J` is an
-  ideal of definition), both `A_𝔭 ⧸ J A_𝔭` and `𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p}` are canonically
-  isomorphic to `(A ⧸ J)_Q`;
+  `A_𝔭 ⧸ J A_𝔭 ≃+* 𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p} ≃+* Â_𝔭 ⧸ J Â_𝔭`, compatible with reduction
+  between open ideals `J ≤ K`, and for any prime `Q` of `A ⧸ J` lying over `𝔭` (in particular
+  `(homeomorphSpecQuotient hJ p).asIdeal` when `J` is an ideal of definition), both
+  `A_𝔭 ⧸ J A_𝔭` and `𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p}` are canonically isomorphic to `(A ⧸ J)_Q`;
 * for every ideal of definition `I` of `A`, `stalkToCompletedAtPrime p` identifies `Â_𝔭` with the
   `I`-adic completion of `𝒪_{Spf A, p}`.
 
-For maximal-ideal-adic completion comparisons, discrete and complete local special cases, and
-noetherian flatness and invariant transfers, see
+For maximal-ideal-adic completion comparisons and discrete and complete local special cases, see
 `TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.Comparison`.
 
 ## References
@@ -59,24 +57,9 @@ open AdicRing
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
   (p : carrier A)
 
-/-! ### Compatibility and locality of `A_𝔭 → Â_𝔭` -/
+/-! ### Compatibility of `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭` -/
 
 section Compatibility
-
-omit [IsTopologicalRing A] [IsAdicRing A] in
-/-- The extension of any ideal of definition `I` to `A_𝔭` lies in the maximal ideal of `A_𝔭`. -/
-theorem ideal_map_le_maximalIdeal_localization {I : Ideal A} (hI : IsAdic I) :
-    I.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) ≤
-      maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
-  rw [← IsLocalization.AtPrime.map_eq_maximalIdeal (p : PrimeSpectrum A).asIdeal]
-  exact Ideal.map_mono ((mem_carrier_iff_le hI).mp p.property)
-
-/-- The canonical completion map `A_𝔭 → Â_𝔭` is a local homomorphism. -/
-instance isLocalHom_algebraMap_completedAtPrime :
-    IsLocalHom
-      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) :=
-  TauCeti.AdicCompletion.isLocalHom_algebraMap_of_le_maximalIdeal
-    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
 
 /-- On images of elements of `A`, `stalkToCompletedAtPrime p` is `algebraMap A Â_𝔭`. -/
 @[simp]
@@ -114,20 +97,17 @@ end Compatibility
 
 section Quotients
 
-private noncomputable def awayToAtPrime (f : BasicNeighbourhood p) :
-    Localization.Away f.elem →+* Localization.AtPrime (p : PrimeSpectrum A).asIdeal :=
-  IsLocalization.map (T := (p : PrimeSpectrum A).asIdeal.primeCompl) _ (RingHom.id A)
-    (Submonoid.powers_le.mpr f.notMem)
-
 private theorem localizationToStalk_away (f : BasicNeighbourhood p)
     (y : Localization.Away f.elem) :
-    localizationToStalk p (awayToAtPrime p f y) =
+    localizationToStalk p
+        ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y) =
       (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
         (IsAdicRing.ideal_spec A).1).hom
         (colimit.ι (completedNeighbourhoodDiagram p) f
           (algebraMap (Localization.Away f.elem) (CompletedAway A f.elem) y)) := by
   let lhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
-    (localizationToStalk p).comp (awayToAtPrime p f)
+    (localizationToStalk p).comp
+      ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem)
   let rhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
     ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
       (IsAdicRing.ideal_spec A).1).hom.hom.comp
@@ -137,7 +117,7 @@ private theorem localizationToStalk_away (f : BasicNeighbourhood p)
     (IsLocalization.ringHom_ext (Submonoid.powers f.elem) (j := lhs) (k := rhs)
       (RingHom.ext fun a ↦ ?_)) y
   have hl : lhs (algebraMap A _ a) = toStalk p a := by
-    simp only [lhs, RingHom.comp_apply, awayToAtPrime, IsLocalization.map_eq, RingHom.id_apply,
+    simp only [lhs, RingHom.comp_apply, Ideal.localizationAwayToAtPrime_algebraMap,
       localizationToStalk_algebraMap_eq_toStalk]
   have hr : rhs (algebraMap A _ a) =
       (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
@@ -189,13 +169,15 @@ private theorem quotientMap_localizationToStalk_surjective_ideal_pow (n : ℕ) :
       Ideal.map_map, AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap_of_tower,
       ← IsScalarTower.algebraMap_eq] at hmem
     exact hmem
-  refine ⟨Ideal.Quotient.mk _ (awayToAtPrime p f y), ?_⟩
+  refine ⟨Ideal.Quotient.mk _
+    ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y), ?_⟩
   rw [Ideal.quotientMap_mk]
   have hcomp : φ.comp (algebraMap A (CompletedAway A f.elem)) = toStalk p :=
     RingHom.ext fun a ↦ (toStalk_eq_completedNeighbourhoodColimitIso p f a).symm
   have hmem := Ideal.mem_map_of_mem φ hy'
   rw [Ideal.map_map, hcomp] at hmem
-  have hsub : localizationToStalk p (awayToAtPrime p f y) - φ x =
+  have hsub : localizationToStalk p
+        ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y) - φ x =
       -φ (x - algebraMap (Localization.Away f.elem) (CompletedAway A f.elem) y) := by
     rw [map_sub, neg_sub]
     exact congrArg (· - φ x) (localizationToStalk_away p f y)
@@ -216,7 +198,7 @@ private theorem quotientMap_ideal_pow_bijective (n : ℕ) :
     (stalkToCompletedAtPrime p)
     (map_stalkToCompletedAtPrime_map p (IsAdicRing.ideal A ^ n) ▸ Ideal.le_comap_map)
   have hcomp_bij : Function.Bijective (q₂ ∘ q₁) := by
-    have hbij' := Ideal.quotientMap_bijective_congr
+    have hbij' := RingHom.quotientMap_bijective_congr
       (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p))
       (Ideal.map_pow _ _ _).symm
       (by rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq, ← Ideal.map_pow])
@@ -241,10 +223,10 @@ theorem quotientMap_localizationToStalk_bijective_of_isOpen {J : Ideal A} (hJ : 
     Function.Bijective (Ideal.quotientMap (J.map (toStalk p)) (localizationToStalk p) H) := by
   obtain ⟨n, hn⟩ :=
     (isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).2 (J : Set A) (hJ.mem_nhds J.zero_mem)
-  exact Ideal.quotientMap_bijective_congr (localizationToStalk p) rfl
+  exact RingHom.quotientMap_bijective_congr (localizationToStalk p) rfl
     (map_localizationToStalk_map p J)
-    (Ideal.quotientMap_bijective_of_le (localizationToStalk p) (Ideal.map_mono hn)
-      (Ideal.quotientMap_bijective_congr (localizationToStalk p) rfl
+    (RingHom.quotientMap_bijective_of_le (localizationToStalk p) (Ideal.map_mono hn)
+      (RingHom.quotientMap_bijective_congr (localizationToStalk p) rfl
         (map_localizationToStalk_map p (IsAdicRing.ideal A ^ n)).symm
         (quotientMap_ideal_pow_bijective p n).1 (H₂ := Ideal.le_comap_map))
       (HJ := Ideal.le_comap_map))
@@ -260,10 +242,10 @@ theorem quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen {J : Ideal A}
         (stalkToCompletedAtPrime p) H) := by
   obtain ⟨n, hn⟩ :=
     (isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).2 (J : Set A) (hJ.mem_nhds J.zero_mem)
-  exact Ideal.quotientMap_bijective_congr (stalkToCompletedAtPrime p) rfl
+  exact RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) rfl
     (map_stalkToCompletedAtPrime_map p J)
-    (Ideal.quotientMap_bijective_of_le (stalkToCompletedAtPrime p) (Ideal.map_mono hn)
-      (Ideal.quotientMap_bijective_congr (stalkToCompletedAtPrime p) rfl
+    (RingHom.quotientMap_bijective_of_le (stalkToCompletedAtPrime p) (Ideal.map_mono hn)
+      (RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) rfl
         (map_stalkToCompletedAtPrime_map p (IsAdicRing.ideal A ^ n)).symm
         (quotientMap_ideal_pow_bijective p n).2 (H₂ := Ideal.le_comap_map))
       (HJ := Ideal.le_comap_map))
@@ -303,6 +285,29 @@ theorem localizationQuotientEquivStalkQuotient_mk {J : Ideal A} (hJ : IsOpen (J 
       Ideal.Quotient.mk _ (localizationToStalk p x) := by
   rfl
 
+/-- For open ideals `J ≤ K` of `A`, `localizationQuotientEquivStalkQuotient` commutes with the
+canonical reduction maps `Ideal.Quotient.factor`. -/
+@[simp]
+theorem factor_localizationQuotientEquivStalkQuotient {J K : Ideal A} (hJ : IsOpen (J : Set A))
+    (hK : IsOpen (K : Set A)) (hJK : J ≤ K)
+    (x : Localization.AtPrime (p : PrimeSpectrum A).asIdeal ⧸
+      J.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))) :
+    Ideal.Quotient.factor (Ideal.map_mono hJK)
+        (localizationQuotientEquivStalkQuotient p hJ x) =
+      localizationQuotientEquivStalkQuotient p hK
+        (Ideal.Quotient.factor (Ideal.map_mono hJK) x) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
+
+/-- Ring-homomorphism form of `factor_localizationQuotientEquivStalkQuotient`. -/
+theorem factor_comp_localizationQuotientEquivStalkQuotient {J K : Ideal A}
+    (hJ : IsOpen (J : Set A)) (hK : IsOpen (K : Set A)) (hJK : J ≤ K) :
+    (Ideal.Quotient.factor (Ideal.map_mono hJK)).comp
+        (localizationQuotientEquivStalkQuotient p hJ).toRingHom =
+      (localizationQuotientEquivStalkQuotient p hK).toRingHom.comp
+        (Ideal.Quotient.factor (Ideal.map_mono hJK)) :=
+  RingHom.ext (factor_localizationQuotientEquivStalkQuotient p hJ hK hJK)
+
 /-- For every open ideal `J` of `A`, the canonical ring isomorphism
 `𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p} ≃+* Â_𝔭 ⧸ J Â_𝔭`. In particular this applies to `J = I ^ n` for
 every ideal of definition `I` of `A` and every `n : ℕ`. -/
@@ -321,6 +326,28 @@ theorem stalkQuotientEquivCompletedAtPrimeQuotient_mk {J : Ideal A} (hJ : IsOpen
       Ideal.Quotient.mk _ (stalkToCompletedAtPrime p x) := by
   rfl
 
+/-- For open ideals `J ≤ K` of `A`, `stalkQuotientEquivCompletedAtPrimeQuotient` commutes with the
+canonical reduction maps `Ideal.Quotient.factor`. -/
+@[simp]
+theorem factor_stalkQuotientEquivCompletedAtPrimeQuotient {J K : Ideal A}
+    (hJ : IsOpen (J : Set A)) (hK : IsOpen (K : Set A)) (hJK : J ≤ K)
+    (x : (Spf A).presheaf.stalk p ⧸ J.map (toStalk p)) :
+    Ideal.Quotient.factor (Ideal.map_mono hJK)
+        (stalkQuotientEquivCompletedAtPrimeQuotient p hJ x) =
+      stalkQuotientEquivCompletedAtPrimeQuotient p hK
+        (Ideal.Quotient.factor (Ideal.map_mono hJK) x) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
+
+/-- Ring-homomorphism form of `factor_stalkQuotientEquivCompletedAtPrimeQuotient`. -/
+theorem factor_comp_stalkQuotientEquivCompletedAtPrimeQuotient {J K : Ideal A}
+    (hJ : IsOpen (J : Set A)) (hK : IsOpen (K : Set A)) (hJK : J ≤ K) :
+    (Ideal.Quotient.factor (Ideal.map_mono hJK)).comp
+        (stalkQuotientEquivCompletedAtPrimeQuotient p hJ).toRingHom =
+      (stalkQuotientEquivCompletedAtPrimeQuotient p hK).toRingHom.comp
+        (Ideal.Quotient.factor (Ideal.map_mono hJK)) :=
+  RingHom.ext (factor_stalkQuotientEquivCompletedAtPrimeQuotient p hJ hK hJK)
+
 omit [IsTopologicalRing A] [IsAdicRing A] in
 /-- For any ideal `J` of `A` and prime ideal `Q` of `A ⧸ J` lying over `𝔭`, the quotient
 `A_𝔭 ⧸ J A_𝔭` is canonically `(A ⧸ J)`-algebra isomorphic to the localisation `(A ⧸ J)_Q`. -/
@@ -332,7 +359,7 @@ noncomputable def localizationQuotientEquivQuotientLocalization {J : Ideal A}
       Localization.AtPrime Q :=
   haveI : IsLocalization.AtPrime (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
       (Q.comap (Ideal.Quotient.mk J)) := by simp only [hQ]; infer_instance
-  TauCeti.IsLocalization.AtPrime.quotientEquiv J Q
+  J.quotientLocalizationAtPrimeEquiv Q
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
 /-- On elements of `A`, `localizationQuotientEquivQuotientLocalization` sends the image of `a` in
@@ -348,7 +375,7 @@ theorem localizationQuotientEquivQuotientLocalization_algebraMap {J : Ideal A}
       algebraMap (A ⧸ J) (Localization.AtPrime Q) (Ideal.Quotient.mk J a) := by
   have : IsLocalization.AtPrime (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
       (Q.comap (Ideal.Quotient.mk J)) := by simp only [hQ]; infer_instance
-  exact TauCeti.IsLocalization.AtPrime.quotientEquiv_algebraMap J Q a
+  exact J.quotientLocalizationAtPrimeEquiv_algebraMap Q a
 
 /-- For every open ideal `J` of `A` and prime ideal `Q` of `A ⧸ J` lying over `𝔭`, the quotient
 `𝒪_{Spf A, p} ⧸ J 𝒪_{Spf A, p}` is canonically isomorphic to `(A ⧸ J)_Q`. -/
@@ -376,14 +403,6 @@ theorem stalkQuotientEquivQuotientLocalization_mk_toStalk {J : Ideal A} (hJ : Is
   rw [stalkQuotientEquivQuotientLocalization, RingEquiv.trans_apply, hsymm]
   exact localizationQuotientEquivQuotientLocalization_algebraMap p Q hQ a
 
-/-- For every ideal of definition `I` of `A`, `Â_𝔭` is `I Â_𝔭`-adically complete. -/
-theorem isAdicComplete_completedAtPrime {I : Ideal A} (hI : IsAdic I) :
-    IsAdicComplete (I.map (algebraMap A (CompletedAtPrime p))) (CompletedAtPrime p) :=
-  (IsAdicComplete.map_algebraMap_iff I (CompletedAtPrime p)).mpr <|
-    ((IsAdicRing.ideal_spec A).2.1.isAdicComplete_iff_of_isAdic hI).mp <|
-      (IsAdicComplete.map_algebraMap_iff (IsAdicRing.ideal A) (CompletedAtPrime p)).mp
-        (AdicCompletion.isAdicComplete ((IsAdicRing.ideal_spec A).1.map _))
-
 /-- For every ideal of definition `I` of `A`, the map `𝒪_{Spf A, p} → Â_𝔭` identifies `Â_𝔭` with
 the `I`-adic completion of `𝒪_{Spf A, p}` (EGA I, Ch. 0, 7.6.17). -/
 noncomputable def stalkAdicCompletionEquivCompletedAtPrime {I : Ideal A} (hI : IsAdic I) :
@@ -401,7 +420,7 @@ noncomputable def stalkAdicCompletionEquivCompletedAtPrime {I : Ideal A} (hI : I
       (Algebra.ofId ((Spf A).presheaf.stalk p) (CompletedAtPrime p)) hle fun n ↦ by
     have hq := quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p ((isAdic_iff.mp hI).1 n)
       (H := map_stalkToCompletedAtPrime_map p (I ^ n) ▸ Ideal.le_comap_map)
-    exact Ideal.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
+    exact RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
       (Ideal.map_pow _ _ _) hq
   (AlgEquiv.ofBijective _ hbij).toRingEquiv.trans
     (RingEquiv.ofBijective

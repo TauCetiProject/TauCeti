@@ -47,9 +47,9 @@ is bijective.
 * `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
   `𝔪_R S = 𝔪_S`, the residue field extension has degree `[S : R]`, by Mathlib's
   `IsLocalRing.finrank_quotient_map`.
-* `TauCeti.IsLocalRing.map_maximalIdeal_eq_of_quotientMap_bijective`,
-  `TauCeti.IsLocalRing.isLocalHom_of_quotientMap_bijective`,
-  `TauCeti.IsLocalRing.quotientMap_maximalIdeal_pow_bijective`: bijective quotient maps modulo
+* `RingHom.map_maximalIdeal_eq_of_quotientMap_bijective`,
+  `RingHom.isLocalHom_of_quotientMap_bijective`,
+  `RingHom.quotientMap_maximalIdeal_pow_bijective`: bijective quotient maps modulo
   ideals inside `𝔪_R` or `𝔪_R ^ n` force `𝔪_R S = 𝔪_S`, locality of `f`, and bijectivity modulo
   `𝔪 ^ n`.
 -/
@@ -225,7 +225,11 @@ theorem finrank_residueField_eq_finrank [Module.Free R S] [Module.Finite R S]
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   rfl
 
-section QuotientMap
+end TauCeti.IsLocalRing
+
+namespace RingHom
+
+open _root_.IsLocalRing
 
 variable {R S : Type*} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
 
@@ -262,7 +266,7 @@ theorem isLocalHom_of_quotientMap_bijective (f : R →+* S) {J : Ideal R}
     (hJ : J ≤ maximalIdeal R) {H : J ≤ (J.map f).comap f}
     (hbij : Function.Bijective (Ideal.quotientMap (J.map f) f H)) :
     IsLocalHom f :=
-  ((local_hom_tfae f).out 1 3).mpr (map_maximalIdeal_eq_of_quotientMap_bijective f hJ hbij).le
+  ((local_hom_tfae f).out 1 3).mpr (f.map_maximalIdeal_eq_of_quotientMap_bijective hJ hbij).le
 
 /-- If `f : R →+* S` is a homomorphism of local rings and `K ≤ 𝔪_R ^ n` is an ideal such that
 `R ⧸ K → S ⧸ K S` is bijective, then `R ⧸ 𝔪_R ^ n → S ⧸ 𝔪_S ^ n` is bijective. -/
@@ -277,11 +281,9 @@ theorem quotientMap_maximalIdeal_pow_bijective (f : R →+* S) {K : Ideal R} {n 
     have : Subsingleton (S ⧸ maximalIdeal S ^ 0) :=
       Ideal.Quotient.subsingleton_iff.mpr (by rw [pow_zero, Ideal.one_eq_top])
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  · have hm := map_maximalIdeal_eq_of_quotientMap_bijective f
+  · have hm := f.map_maximalIdeal_eq_of_quotientMap_bijective
       (hK.trans (Ideal.pow_le_self (Nat.succ_ne_zero n))) hbij
-    exact Ideal.quotientMap_bijective_congr f rfl (by rw [Ideal.map_pow, hm])
-      (Ideal.quotientMap_bijective_of_le f hK hbij (HJ := Ideal.le_comap_map))
+    exact f.quotientMap_bijective_congr rfl (by rw [Ideal.map_pow, hm])
+      (f.quotientMap_bijective_of_le hK hbij (HJ := Ideal.le_comap_map))
 
-end QuotientMap
-
-end TauCeti.IsLocalRing
+end RingHom

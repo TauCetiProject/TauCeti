@@ -18,21 +18,22 @@ quotient `S ⧸ J S` is a localization of `R ⧸ J` at `Q`, and is therefore can
 
 ## Main results
 
-* `TauCeti.IsLocalization.AtPrime.quotient`: `S ⧸ J S` is a localization of `R ⧸ J` at `Q`.
-* `TauCeti.IsLocalization.AtPrime.quotientEquiv`: the canonical `(R ⧸ J)`-algebra equivalence
+* `Ideal.isLocalization_atPrime_quotient`: `S ⧸ J S` is a localization of `R ⧸ J` at `Q`.
+* `Ideal.quotientLocalizationAtPrimeEquiv`: the canonical `(R ⧸ J)`-algebra equivalence
   `S ⧸ J S ≃ₐ[R ⧸ J] Localization.AtPrime Q`.
+* `Ideal.quotientLocalizationAtPrimeEquiv_algebraMap`: evaluation on elements of `R`.
 -/
 
 public section
 
-namespace TauCeti.IsLocalization.AtPrime
+namespace Ideal
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 /-- Localization at a prime commutes with quotients: if `Q` is a prime ideal of `R ⧸ J` and `S` is
 a localization of `R` at the preimage of `Q`, then `S ⧸ J S` is a localization of `R ⧸ J` at
 `Q`. -/
-instance quotient (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
+instance isLocalization_atPrime_quotient (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
     [IsLocalization.AtPrime S (Q.comap (Ideal.Quotient.mk J))] :
     IsLocalization.AtPrime (S ⧸ J.map (algebraMap R S)) Q := by
   have h := (inferInstance : IsLocalization
@@ -43,20 +44,21 @@ instance quotient (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
 
 /-- For a prime ideal `Q` of `R ⧸ J` and a localization `S` of `R` at the preimage of `Q`, the
 canonical `(R ⧸ J)`-algebra isomorphism `S ⧸ J S ≃ₐ[R ⧸ J] Localization.AtPrime Q`. -/
-noncomputable def quotientEquiv (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
+noncomputable def quotientLocalizationAtPrimeEquiv (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
     [IsLocalization.AtPrime S (Q.comap (Ideal.Quotient.mk J))] :
     (S ⧸ J.map (algebraMap R S)) ≃ₐ[R ⧸ J] Localization.AtPrime Q :=
   IsLocalization.algEquiv Q.primeCompl (S ⧸ J.map (algebraMap R S)) (Localization.AtPrime Q)
 
-/-- On elements of `R`, `quotientEquiv` sends the image of `r` in `S ⧸ J S` to the image of
-`r mod J` in `(R ⧸ J)_Q`. -/
+/-- On elements of `R`, `quotientLocalizationAtPrimeEquiv` sends the image of `r` in `S ⧸ J S` to
+the image of `r mod J` in `(R ⧸ J)_Q`. -/
 @[simp]
-theorem quotientEquiv_algebraMap (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
+theorem quotientLocalizationAtPrimeEquiv_algebraMap (J : Ideal R) (Q : Ideal (R ⧸ J)) [Q.IsPrime]
     [IsLocalization.AtPrime S (Q.comap (Ideal.Quotient.mk J))] (r : R) :
-    quotientEquiv (S := S) J Q (algebraMap R (S ⧸ J.map (algebraMap R S)) r) =
+    J.quotientLocalizationAtPrimeEquiv (S := S) Q
+        (algebraMap R (S ⧸ J.map (algebraMap R S)) r) =
       algebraMap (R ⧸ J) (Localization.AtPrime Q) (Ideal.Quotient.mk J r) := by
   rw [IsScalarTower.algebraMap_apply R (R ⧸ J) (S ⧸ J.map (algebraMap R S)),
     Ideal.Quotient.algebraMap_eq]
-  exact (quotientEquiv (S := S) J Q).commutes (Ideal.Quotient.mk J r)
+  exact (J.quotientLocalizationAtPrimeEquiv (S := S) Q).commutes (Ideal.Quotient.mk J r)
 
-end TauCeti.IsLocalization.AtPrime
+end Ideal

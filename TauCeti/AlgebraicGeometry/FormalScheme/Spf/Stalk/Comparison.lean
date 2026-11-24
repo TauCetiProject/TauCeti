@@ -6,38 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Height
-public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.CompletedAtPrime
-public import TauCeti.RingTheory.CohenMacaulay.Basic
 
 import TauCeti.RingTheory.AdicCompletion.LocalRing
-import TauCeti.RingTheory.CohenMacaulay.Flat
 import TauCeti.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
-# Completion comparisons and noetherian invariants for stalks of `Spf A`
+# Completion comparisons and special cases for stalks of `Spf A`
 
 Building on `TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.CompletedAtPrime`, this module
-establishes the deeper comparison properties of the canonical homomorphisms
-`A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭`:
+establishes comparison properties of the canonical homomorphisms `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭`:
 
 * both maps induce a commutative triangle of ring isomorphisms between the maximal-ideal-adic
   completions of `A_𝔭`, `𝒪_{Spf A, p}`, and `Â_𝔭`;
 * when `A` is discrete, or when `A` is a complete local adic ring and `p` is its closed point, both
   comparison homomorphisms are bijective;
-* when `A` is noetherian, `ringKrullDim ((Spf A).presheaf.stalk p) = ht 𝔭`, and `A_𝔭`,
-  `𝒪_{Spf A, p}`, and `Â_𝔭` are simultaneously Cohen–Macaulay (EGA I, Ch. 0, 7.6.15–7.6.18;
-  Ch. I, 10.1.5–10.1.6).
+* when `A` is noetherian, `ringKrullDim ((Spf A).presheaf.stalk p) = ht 𝔭` (EGA I, Ch. 0,
+  7.6.15–7.6.18; Ch. I, 10.1.5–10.1.6).
 
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.6.15–7.6.18,
   and Ch. I, 10.1.5–10.1.6.
-* H. Matsumura, *Commutative Ring Theory*, Theorems 23.3 and 23.7 (flat local-homomorphism transfer
-  of Krull dimension, regularity, and the Cohen–Macaulay property).
-* [Stacks Project, Lemma 15.44.2](https://stacks.math.columbia.edu/tag/07NX) (Cohen–Macaulay
-  invariance under completion).
 -/
 
 public section
@@ -69,7 +60,7 @@ private theorem pow_quotientMap_localizationToStalk_bijective (n : ℕ) (_ : 1 �
           (localizationToStalk p)) ^ n)
       (localizationToStalk p)
       ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n))) :=
-  Ideal.quotientMap_bijective_congr (localizationToStalk p) (Ideal.map_pow _ _ _)
+  RingHom.quotientMap_bijective_congr (localizationToStalk p) (Ideal.map_pow _ _ _)
     (by rw [map_localizationToStalk_map, Ideal.map_pow])
     (quotientMap_localizationToStalk_bijective_of_isOpen p
       ((isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 n)
@@ -80,7 +71,7 @@ private theorem pow_quotientMap_stalkToCompletedAtPrime_bijective (n : ℕ) (_ :
       ((((IsAdicRing.ideal A).map (toStalk p)).map (stalkToCompletedAtPrime p)) ^ n)
       (stalkToCompletedAtPrime p)
       ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n))) :=
-  Ideal.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
+  RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
     (by rw [map_stalkToCompletedAtPrime_map, Ideal.map_pow])
     (quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p
       ((isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 n)
@@ -101,7 +92,7 @@ noncomputable def maximalIdealCompletionLocalizationEquivStalk :
     AdicCompletion (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))
         (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) ≃+*
       AdicCompletion (maximalIdeal ((Spf A).presheaf.stalk p)) ((Spf A).presheaf.stalk p) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap (localizationToStalk p)
+  (localizationToStalk p).maximalIdealRingEquivOfQuotientMap
     (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
     (pow_quotientMap_localizationToStalk_bijective p)
 
@@ -112,7 +103,7 @@ theorem maximalIdealCompletionLocalizationEquivStalk_of
     (x : Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :
     maximalIdealCompletionLocalizationEquivStalk p (AdicCompletion.of _ _ x) =
       AdicCompletion.of _ _ (localizationToStalk p x) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap_of _ _ _ x
+  (localizationToStalk p).maximalIdealRingEquivOfQuotientMap_of _ _ x
 
 /-- Modulo `𝔪 ^ n`, `maximalIdealCompletionLocalizationEquivStalk` is the quotient map induced by
 `localizationToStalk p`. -/
@@ -128,14 +119,14 @@ theorem evalₐ_maximalIdealCompletionLocalizationEquivStalk (n : ℕ)
           (Ideal.le_comap_pow _ n))
         (AdicCompletion.evalₐ
           (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) n x) :=
-  TauCeti.AdicCompletion.evalₐ_maximalIdealRingEquivOfQuotientMap _ _ _ n x
+  (localizationToStalk p).evalₐ_maximalIdealRingEquivOfQuotientMap _ _ n x
 
 /-- The canonical isomorphism between the maximal-ideal-adic completions of `𝒪_{Spf A, p}` and
 `Â_𝔭`. -/
 noncomputable def maximalIdealCompletionStalkEquivCompletedAtPrime :
     AdicCompletion (maximalIdeal ((Spf A).presheaf.stalk p)) ((Spf A).presheaf.stalk p) ≃+*
       AdicCompletion (maximalIdeal (CompletedAtPrime p)) (CompletedAtPrime p) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap (stalkToCompletedAtPrime p)
+  (stalkToCompletedAtPrime p).maximalIdealRingEquivOfQuotientMap
     (ideal_map_toStalk_le_maximalIdeal p)
     (pow_quotientMap_stalkToCompletedAtPrime_bijective p)
 
@@ -146,7 +137,7 @@ theorem maximalIdealCompletionStalkEquivCompletedAtPrime_of
     (x : (Spf A).presheaf.stalk p) :
     maximalIdealCompletionStalkEquivCompletedAtPrime p (AdicCompletion.of _ _ x) =
       AdicCompletion.of _ _ (stalkToCompletedAtPrime p x) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap_of _ _ _ x
+  (stalkToCompletedAtPrime p).maximalIdealRingEquivOfQuotientMap_of _ _ x
 
 /-- Modulo `𝔪 ^ n`, `maximalIdealCompletionStalkEquivCompletedAtPrime` is the quotient map induced
 by `stalkToCompletedAtPrime p`. -/
@@ -160,15 +151,15 @@ theorem evalₐ_maximalIdealCompletionStalkEquivCompletedAtPrime (n : ℕ)
           (map_maximalIdeal_stalkToCompletedAtPrime p ▸ Ideal.le_comap_map) n).trans
           (Ideal.le_comap_pow _ n))
         (AdicCompletion.evalₐ (maximalIdeal ((Spf A).presheaf.stalk p)) n x) :=
-  TauCeti.AdicCompletion.evalₐ_maximalIdealRingEquivOfQuotientMap _ _ _ n x
+  (stalkToCompletedAtPrime p).evalₐ_maximalIdealRingEquivOfQuotientMap _ _ n x
 
 /-- The canonical isomorphism between the maximal-ideal-adic completions of `A_𝔭` and `Â_𝔭`. -/
 noncomputable def maximalIdealCompletionLocalizationEquivCompletedAtPrime :
     AdicCompletion (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))
         (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) ≃+*
       AdicCompletion (maximalIdeal (CompletedAtPrime p)) (CompletedAtPrime p) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap
-    (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p))
+  (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
+      (CompletedAtPrime p)).maximalIdealRingEquivOfQuotientMap
     (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
     (pow_quotientMap_algebraMap_completedAtPrime_bijective p)
 
@@ -180,7 +171,8 @@ theorem maximalIdealCompletionLocalizationEquivCompletedAtPrime_of
     maximalIdealCompletionLocalizationEquivCompletedAtPrime p (AdicCompletion.of _ _ x) =
       AdicCompletion.of _ _
         (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p) x) :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap_of _ _ _ x
+  (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
+      (CompletedAtPrime p)).maximalIdealRingEquivOfQuotientMap_of _ _ x
 
 /-- Modulo `𝔪 ^ n`, `maximalIdealCompletionLocalizationEquivCompletedAtPrime` is the quotient map
 induced by `algebraMap A_𝔭 Â_𝔭`. -/
@@ -197,7 +189,8 @@ theorem evalₐ_maximalIdealCompletionLocalizationEquivCompletedAtPrime (n : ℕ
           (Ideal.le_comap_pow _ n))
         (AdicCompletion.evalₐ
           (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) n x) :=
-  TauCeti.AdicCompletion.evalₐ_maximalIdealRingEquivOfQuotientMap _ _ _ n x
+  (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
+      (CompletedAtPrime p)).evalₐ_maximalIdealRingEquivOfQuotientMap _ _ n x
 
 /-- The three maximal-ideal-adic completion isomorphisms form a commutative triangle. -/
 @[simp]
@@ -205,7 +198,7 @@ theorem maximalIdealCompletionLocalizationEquivStalk_trans :
     (maximalIdealCompletionLocalizationEquivStalk p).trans
         (maximalIdealCompletionStalkEquivCompletedAtPrime p) =
       maximalIdealCompletionLocalizationEquivCompletedAtPrime p :=
-  TauCeti.AdicCompletion.maximalIdealRingEquivOfQuotientMap_trans
+  RingHom.maximalIdealRingEquivOfQuotientMap_trans
     (localizationToStalk p) _ _ (stalkToCompletedAtPrime p) _ _
     (stalkToCompletedAtPrime_comp_localizationToStalk p) _ _
 
@@ -228,36 +221,50 @@ section SpecialCases
 /-- For a discrete ring `A`, `A_𝔭 → 𝒪_{Spf A, p}` is bijective. -/
 theorem localizationToStalk_bijective_of_discreteTopology [DiscreteTopology A] :
     Function.Bijective (localizationToStalk p) :=
-  Ideal.bijective_of_quotientMap_bot_bijective (localizationToStalk p) Ideal.map_bot Ideal.map_bot
+  (localizationToStalk p).bijective_of_quotientMap_bot_bijective Ideal.map_bot Ideal.map_bot
     (quotientMap_localizationToStalk_bijective_of_isOpen p (J := ⊥) (isOpen_discrete _)
       (H := map_localizationToStalk_map p ⊥ ▸ Ideal.le_comap_map))
 
 /-- For a discrete ring `A`, `𝒪_{Spf A, p} → Â_𝔭` is bijective. -/
 theorem stalkToCompletedAtPrime_bijective_of_discreteTopology [DiscreteTopology A] :
     Function.Bijective (stalkToCompletedAtPrime p) :=
-  Ideal.bijective_of_quotientMap_bot_bijective (stalkToCompletedAtPrime p) Ideal.map_bot
+  (stalkToCompletedAtPrime p).bijective_of_quotientMap_bot_bijective Ideal.map_bot
     Ideal.map_bot (quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p (J := ⊥)
       (isOpen_discrete _) (H := map_stalkToCompletedAtPrime_map p ⊥ ▸ Ideal.le_comap_map))
 
-private noncomputable def atPrimeAlgEquivOfIsLocalRing [IsLocalRing A]
+omit [IsTopologicalRing A] [IsAdicRing A] in
+private lemma bijective_algebraMap_atPrime_of_eq_maximalIdeal [IsLocalRing A]
     (hp : (p : PrimeSpectrum A).asIdeal = maximalIdeal A) :
-    A ≃ₐ[A] Localization.AtPrime (p : PrimeSpectrum A).asIdeal :=
-  IsLocalization.atUnits A (p : PrimeSpectrum A).asIdeal.primeCompl fun _ hx ↦ by
-    rw [IsUnit.mem_submonoid_iff, ← notMem_maximalIdeal, ← hp]; exact hx
+    Function.Bijective (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) := by
+  have : IsLocalization (maximalIdeal A).primeCompl
+      (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
+    convert (inferInstance : IsLocalization.AtPrime
+      (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (p : PrimeSpectrum A).asIdeal)
+    exact hp.symm
+  exact bijective_algebraMap_of_linearEquiv
+    ((IsLocalRing.algEquivLocalizationAtMaximalIdeal A A).trans
+      (IsLocalization.algEquiv (maximalIdeal A).primeCompl _ _)).toLinearEquiv
 
 private lemma algebraMap_completedAtPrime_bijective_of_isLocalRing [IsLocalRing A]
     (hp : (p : PrimeSpectrum A).asIdeal = maximalIdeal A) :
     Function.Bijective
       (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) :=
-  have he : ((atPrimeAlgEquivOfIsLocalRing p hp).toRingEquiv :
+  have : IsLocalization (maximalIdeal A).primeCompl
+      (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
+    convert (inferInstance : IsLocalization.AtPrime
+      (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (p : PrimeSpectrum A).asIdeal)
+    exact hp.symm
+  let e : A ≃ₐ[A] Localization.AtPrime (p : PrimeSpectrum A).asIdeal :=
+    (IsLocalRing.algEquivLocalizationAtMaximalIdeal A A).trans
+      (IsLocalization.algEquiv (maximalIdeal A).primeCompl _ _)
+  have he : (e.toRingEquiv :
       A →+* Localization.AtPrime (p : PrimeSpectrum A).asIdeal) = algebraMap A _ :=
-    RingHom.ext (atPrimeAlgEquivOfIsLocalRing p hp).commutes
+    RingHom.ext e.commutes
   have : IsAdicComplete
       ((IsAdicRing.ideal A).map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)))
       (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
     congrArg (IsAdicRing.ideal A).map he ▸
-      (IsAdicComplete.congr_ringEquiv (IsAdicRing.ideal A)
-        (atPrimeAlgEquivOfIsLocalRing p hp).toRingEquiv).mpr
+      (IsAdicComplete.congr_ringEquiv (IsAdicRing.ideal A) e.toRingEquiv).mpr
         (IsAdicRing.ideal_spec A).2.2
   AdicCompletion.of_bijective _ _
 
@@ -268,7 +275,7 @@ theorem toStalk_bijective_of_isLocalRing [IsLocalRing A]
     Function.Bijective (toStalk p) := by
   have hcomp_bij : Function.Bijective (stalkToCompletedAtPrime p ∘ toStalk p) := by
     convert (algebraMap_completedAtPrime_bijective_of_isLocalRing p hp).comp
-      (bijective_algebraMap_of_linearEquiv (atPrimeAlgEquivOfIsLocalRing p hp).toLinearEquiv)
+      (bijective_algebraMap_atPrime_of_eq_maximalIdeal p hp)
     exact funext fun _ ↦ by simp [← IsScalarTower.algebraMap_apply]
   refine ⟨Function.Injective.of_comp hcomp_bij.1, fun s ↦ ?_⟩
   obtain ⟨f, x, rfl⟩ := exists_completedAway_rep p s
@@ -282,7 +289,7 @@ theorem localizationToStalk_bijective_of_isLocalRing [IsLocalRing A]
     (hp : (p : PrimeSpectrum A).asIdeal = maximalIdeal A) :
     Function.Bijective (localizationToStalk p) := by
   refine (Function.Bijective.of_comp_iff (localizationToStalk p)
-    (bijective_algebraMap_of_linearEquiv (atPrimeAlgEquivOfIsLocalRing p hp).toLinearEquiv)).mp ?_
+    (bijective_algebraMap_atPrime_of_eq_maximalIdeal p hp)).mp ?_
   convert toStalk_bijective_of_isLocalRing p hp
   exact funext (localizationToStalk_algebraMap_eq_toStalk p)
 
@@ -298,39 +305,17 @@ theorem stalkToCompletedAtPrime_bijective_of_isLocalRing [IsLocalRing A]
 
 end SpecialCases
 
-/-! ### Flatness, dimension height, and Cohen–Macaulay transfer for noetherian `A` -/
+/-! ### Dimension height for noetherian `A` -/
 
 section Noetherian
 
-variable [IsNoetherianRing A]
-
-/-- For noetherian `A`, `𝒪_{Spf A, p} → Â_𝔭` is flat (EGA I, Ch. 0, 7.6.17). -/
-theorem flat_stalkToCompletedAtPrime : (stalkToCompletedAtPrime p).Flat :=
-  (faithfullyFlat_stalkToCompletedAtPrime p).flat
-
 /-- For noetherian `A`, the Krull dimension of the stalk `𝒪_{Spf A, p}` is the height of the prime
 ideal `𝔭`. -/
-theorem ringKrullDim_stalk_eq_height :
+theorem ringKrullDim_stalk_eq_height [IsNoetherianRing A] :
     ringKrullDim ((Spf A).presheaf.stalk p) =
       ((p : PrimeSpectrum A).asIdeal.height : WithBot ℕ∞) :=
   (ringKrullDim_stalk p).trans
     (IsLocalization.AtPrime.ringKrullDim_eq_height (p : PrimeSpectrum A).asIdeal _)
-
-/-- For noetherian `A`, `Â_𝔭` is Cohen–Macaulay if and only if `𝒪_{Spf A, p}` is. -/
-theorem isCohenMacaulay_completedAtPrime_iff_stalk :
-    Module.IsCohenMacaulay (CompletedAtPrime p) (CompletedAtPrime p) ↔
-      Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p) := by
-  algebraize [stalkToCompletedAtPrime p]
-  have : Module.Flat _ _ := flat_stalkToCompletedAtPrime p
-  exact Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq
-    (map_maximalIdeal_stalkToCompletedAtPrime p)
-
-/-- For noetherian `A`, `Â_𝔭` is Cohen–Macaulay if and only if `A_𝔭` is. -/
-theorem isCohenMacaulay_completedAtPrime_iff :
-    Module.IsCohenMacaulay (CompletedAtPrime p) (CompletedAtPrime p) ↔
-      Module.IsCohenMacaulay (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-        (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
-  (isCohenMacaulay_completedAtPrime_iff_stalk p).trans (isCohenMacaulay_stalk_iff p)
 
 end Noetherian
 

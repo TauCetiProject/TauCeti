@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood.Noetherian
+public import TauCeti.RingTheory.CohenMacaulay.Basic
 
+import TauCeti.RingTheory.CohenMacaulay.Flat
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.RegularLocalRing.Flat
 
@@ -24,14 +27,16 @@ and the maps `A_{f} → Â_𝔭` induce a canonical map `O_{Spf A, p} → Â_�
 Ch. I, 10.1.5–10.1.6).
 
 This file shows that `O_{Spf A, p} → Â_𝔭` is a local homomorphism under which the maximal ideal of
-the stalk generates the maximal ideal of `Â_𝔭`, and that for noetherian `A` it is faithfully flat.
-Its closed fibre is then the residue field of `Â_𝔭`, so the stalk and `Â_𝔭` have the same Krull
-dimension, and one is regular exactly when the other is. Completion of the noetherian local ring
-`A_𝔭` along `I A_𝔭 ⊆ 𝔭 A_𝔭` likewise preserves the dimension and regularity
+the stalk generates the maximal ideal of `Â_𝔭`, and that for noetherian `A` it is flat and
+faithfully flat. Its closed fibre is then the residue field of `Â_𝔭`, so the stalk and `Â_𝔭` have
+the same Krull dimension, and regularity and the Cohen–Macaulay property agree for both. Completion
+of the noetherian local ring `A_𝔭` along `I A_𝔭 ⊆ 𝔭 A_𝔭` likewise preserves the dimension,
+regularity, and the Cohen–Macaulay property
 (`TauCeti.FormalScheme.Spf.ringKrullDim_completedAtPrime`,
-`TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff`), so `A_𝔭`, the stalk and `Â_𝔭`
-share these invariants. This is how the local dimension and regularity at a point of a formal
-spectrum are computed from its ring.
+`TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff`,
+`TauCeti.FormalScheme.Spf.isCohenMacaulay_completedAtPrime_iff`), so `A_𝔭`, the stalk and `Â_𝔭`
+share these invariants. This is how the local dimension, regularity and the Cohen–Macaulay
+property at a point of a formal spectrum are computed from its ring.
 
 ## Main definitions
 
@@ -43,19 +48,22 @@ spectrum are computed from its ring.
   the map `O_{Spf A, p} → Â_𝔭` is the map `A_{f} → Â_𝔭`.
 * `TauCeti.FormalScheme.Spf.map_maximalIdeal_stalkToCompletedAtPrime`: the maximal ideal of the
   stalk generates the maximal ideal of `Â_𝔭`.
-* `TauCeti.FormalScheme.Spf.faithfullyFlat_stalkToCompletedAtPrime`: for noetherian `A`, the map
-  `O_{Spf A, p} → Â_𝔭` is faithfully flat.
+* `TauCeti.FormalScheme.Spf.flat_stalkToCompletedAtPrime`,
+  `TauCeti.FormalScheme.Spf.faithfullyFlat_stalkToCompletedAtPrime`: for noetherian `A`, the map
+  `O_{Spf A, p} → Â_𝔭` is flat and faithfully flat.
 * `TauCeti.FormalScheme.Spf.ringKrullDim_completedAtPrime_eq_stalk`,
-  `TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff_stalk`: for noetherian `A`,
-  the rings `Â_𝔭` and `O_{Spf A, p}` have the same Krull dimension, and one is regular if and only
-  if the other is.
+  `TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff_stalk`,
+  `TauCeti.FormalScheme.Spf.isCohenMacaulay_completedAtPrime_iff_stalk`: for noetherian `A`,
+  the rings `Â_𝔭` and `O_{Spf A, p}` have the same Krull dimension, and regularity and the
+  Cohen–Macaulay property agree for both.
 
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.6.15–7.6.18,
   and Ch. I, 10.1.5–10.1.6.
-* H. Matsumura, *Commutative Ring Theory*, Theorems 15.1 and 23.7, for the invariance of the
-  dimension and of regularity along a flat local homomorphism whose closed fibre is a field.
+* H. Matsumura, *Commutative Ring Theory*, Theorems 15.1, Theorem 23.7 and the Corollary of
+  Theorem 23.3, for the invariance of the dimension, of regularity and of the Cohen–Macaulay
+  property along a flat local homomorphism whose closed fibre is a field.
 -/
 
 public section
@@ -143,7 +151,12 @@ theorem faithfullyFlat_stalkToCompletedAtPrime [IsNoetherianRing A] :
       (ConcreteCategory.bijective_of_isIso (colimitIso p).inv))
     (faithfullyFlat_colimitToCompletedAtPrime p)
 
-/-! ### Dimension and regularity of the stalk -/
+/-- For a noetherian adic ring `A`, the map `O_{Spf A, p} → Â_𝔭` is flat. -/
+theorem flat_stalkToCompletedAtPrime [IsNoetherianRing A] :
+    (stalkToCompletedAtPrime p).Flat :=
+  (faithfullyFlat_stalkToCompletedAtPrime p).flat
+
+/-! ### Dimension, regularity, and Cohen–Macaulay property of the stalk -/
 
 /-- The map `O_{Spf A, p} → Â_𝔭` as an algebra structure, used to apply results about flat local
 algebras to it. -/
@@ -160,7 +173,7 @@ private theorem isNoetherianRing_stalk [IsNoetherianRing A] :
 
 private theorem flat_stalkAlgebra [IsNoetherianRing A] :
     Module.Flat ((Spf A).presheaf.stalk p) (CompletedAtPrime p) :=
-  (faithfullyFlat_stalkToCompletedAtPrime p).flat
+  flat_stalkToCompletedAtPrime p
 
 /-- For a noetherian adic ring `A`, the completed localisation `Â_𝔭` has the Krull dimension of the
 stalk `O_{Spf A, p}`. -/
@@ -179,6 +192,16 @@ theorem isRegularLocalRing_completedAtPrime_iff_stalk [IsNoetherianRing A] :
   haveI := (Spf A).isLocalRing p
   haveI := flat_stalkAlgebra p
   isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq
+    (map_maximalIdeal_stalkToCompletedAtPrime p)
+
+/-- For a noetherian adic ring `A`, `Â_𝔭` is Cohen–Macaulay if and only if `𝒪_{Spf A, p}` is. -/
+theorem isCohenMacaulay_completedAtPrime_iff_stalk [IsNoetherianRing A] :
+    Module.IsCohenMacaulay (CompletedAtPrime p) (CompletedAtPrime p) ↔
+      Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p) :=
+  haveI := (Spf A).isLocalRing p
+  haveI := isNoetherianRing_stalk p
+  haveI := flat_stalkAlgebra p
+  Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq
     (map_maximalIdeal_stalkToCompletedAtPrime p)
 
 end TauCeti.FormalScheme.Spf
