@@ -77,7 +77,7 @@ theorem preservesDistribution_kerDistribution_of_mfderiv_flowOf_mem (hα : ∀ x
     filter_upwards [((isOpen_flowDomain hX).preimage
       (continuous_id.prodMk continuous_const)).mem_nhds (mem_flowDomain_zero hX x)] with s hs
     have hs' := mem_kerDistribution.1 (h s x hs v hv)
-    simp only [TauCeti.mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const]
+    rw [TauCeti.mpullback_apply_one]
     exact hs'.symm
   exact (hd.congr_of_eventuallyEq hev).unique (hasDerivAt_const (0 : ℝ) (0 : ℝ))
 
@@ -92,8 +92,8 @@ theorem mfderiv_flowOf_mem_kerDistribution_of_mlieDerivForm_eq_smul
   have h := congrArg (fun β ↦ β ![v])
     (mpullback_flowOf_apply_eq_exp_integral_smul hX hg α.mdifferentiable hL hx)
   rw [mem_kerDistribution] at hv ⊢
-  simpa only [TauCeti.mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
-    ContinuousAlternatingMap.smul_apply, hv, smul_zero] using h
+  simpa only [TauCeti.mpullback_apply_one, ContinuousAlternatingMap.smul_apply, hv,
+    smul_zero] using h
 
 namespace IsContactForm
 
