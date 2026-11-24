@@ -121,6 +121,12 @@ theorem finiteInclusion_comp_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n :
       b.finiteProjection n :=
   (rfl)
 
+/-- Extending the finite identity operator by zero gives `b.finiteProjection n`. -/
+theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (b.finiteInclusion n).cornerEmbedding
+      (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
+  simp
+
 /-- The projection is the partial Hilbert expansion. -/
 theorem finiteProjection_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     b.finiteProjection n x = ∑ i : Fin (n + 1), b.repr x i • b i := by
@@ -314,6 +320,12 @@ theorem finiteSection_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
       ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) := by
   ext x
   simp [finiteSection]
+
+/-- Compression preserves the multiplicative identity operator. -/
+@[simp]
+theorem finiteSection_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (1 : H →L[𝕜] H).finiteSection b n = 1 :=
+  finiteSection_id b n
 
 /-- Compression commutes with the Hilbert adjoint. -/
 @[simp]

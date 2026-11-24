@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Corn
 public import TauCeti.Analysis.InnerProductSpace.StableSequence
 public import TauCeti.Analysis.Normed.Lp.StableSequence
 import Mathlib.Data.Nat.Bitwise
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Stability of the finite-section method
@@ -105,9 +106,10 @@ theorem isUnit_and_norm_ringInverse_le_of_finiteSection {M : ℝ}
       (hS : ∀ᶠ n in atTop,
         IsUnit (S.finiteSection b n) ∧ ‖Ring.inverse (S.finiteSection b n)‖ ≤ M) (x : H) :
       ‖x‖ ≤ M * ‖S x‖ :=
-    norm_le_mul_norm_apply_of_finiteSection (hS.mono fun _ ⟨hu, hn⟩ y ↦
-      (norm_le_norm_ringInverse_mul_norm_apply hu y).trans
-        (mul_le_mul_of_nonneg_right hn (norm_nonneg _))) x
+    norm_le_mul_norm_apply_of_finiteSection (hS.mono fun _ ⟨hu, hn⟩ y ↦ by
+      have hy := (isInvertible_iff_isUnit.mpr hu).norm_le_norm_inverse_mul_norm y
+      rw [← ringInverse_eq_inverse] at hy
+      exact hy.trans (mul_le_mul_of_nonneg_right hn (norm_nonneg _))) x
   obtain ⟨n, -, hn⟩ := hM.exists
   exact isUnit_and_norm_ringInverse_le_of_forall_norm_le ((norm_nonneg _).trans hn) (lower hM)
     (injective_of_forall_norm_le (lower hM'))
@@ -341,11 +343,8 @@ theorem finiteSection_finiteInverseExtension (T : H →L[𝕜] H) (b : HilbertBa
 theorem finiteProjection_comp_finiteInverseExtension (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H)
     (n : ℕ) :
     b.finiteProjection n ∘L T.finiteInverseExtension b n = T.finiteInverseExtension b n := by
-  have hP : (b.finiteInclusion n).cornerEmbedding
-      (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
-    simp
-  rw [← hP, finiteInverseExtension, ← LinearIsometry.cornerEmbedding_comp,
-    ContinuousLinearMap.id_comp]
+  rw [← b.cornerEmbedding_finiteInclusion_id n, finiteInverseExtension,
+    ← LinearIsometry.cornerEmbedding_comp, ContinuousLinearMap.id_comp]
 
 /-- `T.finiteInverseExtension b n` vanishes on the orthogonal complement of the first `n + 1`
 coordinates. -/
@@ -353,11 +352,8 @@ coordinates. -/
 theorem finiteInverseExtension_comp_finiteProjection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H)
     (n : ℕ) :
     T.finiteInverseExtension b n ∘L b.finiteProjection n = T.finiteInverseExtension b n := by
-  have hP : (b.finiteInclusion n).cornerEmbedding
-      (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
-    simp
-  rw [← hP, finiteInverseExtension, ← LinearIsometry.cornerEmbedding_comp,
-    ContinuousLinearMap.comp_id]
+  rw [← b.cornerEmbedding_finiteInclusion_id n, finiteInverseExtension,
+    ← LinearIsometry.cornerEmbedding_comp, ContinuousLinearMap.comp_id]
 
 /-- When `T.finiteSection b n` is invertible, `T.finiteInverseExtension b n` is a right inverse of
 `T.zeroExtendedFiniteSection b n` on the finite-coordinate corner. -/
@@ -387,27 +383,14 @@ theorem finiteInverseExtension_zero (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem finiteInverseExtension_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (1 : H →L[𝕜] H).finiteInverseExtension b n = b.finiteProjection n := by
-  rw [finiteInverseExtension, ContinuousLinearMap.one_def, finiteSection_id,
-    ← ContinuousLinearMap.one_def, Ring.inverse_one, LinearIsometry.cornerEmbedding_one,
-    HilbertBasis.adjoint_finiteInclusion, HilbertBasis.finiteInclusion_comp_coordinateCutoff]
+  simp [finiteInverseExtension]
 
 /-- Scaling an operator by `c` scales its extended finite-section inverse by `c⁻¹`. -/
 @[simp]
 theorem finiteInverseExtension_smul (c : 𝕜) (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (c • T).finiteInverseExtension b n = c⁻¹ • T.finiteInverseExtension b n := by
-  by_cases hc : c = 0
-  · subst hc
-    simp [finiteInverseExtension]
-  · set A := T.finiteSection b n
-    let R := EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))
-    let u : Rˣ := (Units.mk0 c hc).map (algebraMap 𝕜 R).toMonoidHom
-    have hsmul : c • A = (u : R) * A := Algebra.smul_def c A
-    have huinv : Ring.inverse (u : R) = algebraMap 𝕜 R c⁻¹ :=
-      (Ring.inverse_unit u).trans (by simp [u])
-    have hinv : Ring.inverse (c • A) = c⁻¹ • Ring.inverse A := by
-      rw [hsmul, Ring.inverse_mul (Or.inl u.isUnit), huinv, ← Algebra.commutes,
-        ← Algebra.smul_def]
-    simp [finiteInverseExtension, A, hinv]
+  simp only [finiteInverseExtension, finiteSection_smul, ringInverse_eq_inverse, inverse_smul,
+    map_smul]
 
 /-- Transporting a Hilbert basis across a linear isometric equivalence conjugates
 `ContinuousLinearMap.finiteInverseExtension`. -/

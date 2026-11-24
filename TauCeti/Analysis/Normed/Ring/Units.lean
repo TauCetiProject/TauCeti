@@ -92,6 +92,17 @@ theorem isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt {a b : R}
   rw [← hu_val, Ring.inverse_unit, hu_inv, le_div_iff₀ (sub_pos.mpr hr)]
   linarith
 
+/-- A two-sided `1 / 2`-approximate inverse in a normed ring with summable geometric series makes
+an element invertible with inverse norm at most `2 * ‖b‖`. -/
+theorem isUnit_and_norm_inverse_le_two_mul_of_norm_one_sub_mul_lt {a b : R}
+    (hr : ‖1 - a * b‖ < 1 / 2) (hl : ‖1 - b * a‖ < 1 / 2) :
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ 2 * ‖b‖ := by
+  obtain ⟨hu, hle⟩ := isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
+    (hr.trans (by norm_num)) (hl.trans (by norm_num))
+  refine ⟨hu, hle.trans ?_⟩
+  calc ‖b‖ / (1 - ‖1 - a * b‖) ≤ ‖b‖ / (1 / 2) := by gcongr; linarith
+    _ = 2 * ‖b‖ := by ring
+
 omit [HasSummableGeomSeries R] in
 /-- In a normed ring, perturbing a unit `u` by `t` with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose
 inverse has norm at most `‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. No completeness or summability hypothesis is

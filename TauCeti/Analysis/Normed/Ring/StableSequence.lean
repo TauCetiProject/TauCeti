@@ -98,25 +98,31 @@ theorem conditionNumber_star [StarRing R] [NormedStarGroup R] (a : R) :
     conditionNumber (star a) = conditionNumber a := by
   simp [conditionNumber, Ring.inverse_star]
 
+private theorem ringInverse_smul {G₀ M₀ : Type*} [GroupWithZero G₀] [MonoidWithZero M₀]
+    [MulActionWithZero G₀ M₀] [IsScalarTower G₀ M₀ M₀] [SMulCommClass G₀ M₀ M₀]
+    (c : G₀) (a : M₀) : Ring.inverse (c • a) = c⁻¹ • Ring.inverse a := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  by_cases ha : IsUnit a
+  · obtain ⟨u, rfl⟩ := ha
+    let v : M₀ˣ :=
+      { val := c • (u : M₀)
+        inv := c⁻¹ • (↑u⁻¹ : M₀)
+        val_inv := by rw [smul_mul_smul_comm, Units.mul_inv, mul_inv_cancel₀ hc, one_smul]
+        inv_val := by rw [smul_mul_smul_comm, Units.inv_mul, inv_mul_cancel₀ hc, one_smul] }
+    simpa [v] using Ring.inverse_unit v
+  · have hca : ¬IsUnit (c • a) := by
+      rw [← Units.val_mk0 hc, ← Units.smul_def, isUnit_smul_iff]
+      exact ha
+    simp [Ring.inverse_non_unit _ ha, Ring.inverse_non_unit _ hca]
+
 /-- Scaling by a nonzero scalar over a normed field leaves the condition number unchanged. -/
 theorem conditionNumber_smul {𝕜 : Type*} [NormedField 𝕜] [Module 𝕜 R] [NormSMulClass 𝕜 R]
     [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] {c : 𝕜} (hc : c ≠ 0) (a : R) :
     conditionNumber (c • a) = conditionNumber a := by
-  by_cases ha : IsUnit a
-  · obtain ⟨u, rfl⟩ := ha
-    let v : Rˣ :=
-      { val := c • (u : R)
-        inv := c⁻¹ • (↑u⁻¹ : R)
-        val_inv := by rw [smul_mul_smul_comm, Units.mul_inv, mul_inv_cancel₀ hc, one_smul]
-        inv_val := by rw [smul_mul_smul_comm, Units.inv_mul, inv_mul_cancel₀ hc, one_smul] }
-    have hv : Ring.inverse (c • (u : R)) = c⁻¹ • (↑u⁻¹ : R) := Ring.inverse_unit v
-    have hcn : ‖c‖ ≠ 0 := norm_ne_zero_iff.mpr hc
-    rw [conditionNumber, hv, norm_smul, norm_smul, norm_inv, conditionNumber, Ring.inverse_unit]
-    field_simp [hcn]
-  · have hca : ¬IsUnit (c • a) := by
-      rw [← Units.val_mk0 hc, ← Units.smul_def, isUnit_smul_iff]
-      exact ha
-    rw [conditionNumber_of_not_isUnit hca, conditionNumber_of_not_isUnit ha]
+  have hcn : ‖c‖ ≠ 0 := norm_ne_zero_iff.mpr hc
+  rw [conditionNumber, ringInverse_smul, norm_smul, norm_smul, norm_inv, conditionNumber]
+  field_simp [hcn]
 
 /-- Submultiplicativity of the condition number when at least one factor is a unit. In a
 noncommutative ring, some unit hypothesis is needed: a unilateral shift and its adjoint can satisfy
@@ -217,11 +223,8 @@ theorem IsStableSequence.of_tendsto_sub_zero [∀ n, HasSummableGeomSeries (R n)
     rw [← Ring.inverse_mul_cancel (a n) hu, ← mul_sub]
     exact (norm_mul_le _ _).trans_lt (by rwa [mul_comm])
   obtain ⟨hub, hnb⟩ :=
-    NormedRing.isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
-      (hr.trans (by norm_num)) (hl.trans (by norm_num))
-  refine ⟨hub, hnb.trans ?_⟩
-  rw [div_le_iff₀ (by linarith)]
-  nlinarith
+    NormedRing.isUnit_and_norm_inverse_le_two_mul_of_norm_one_sub_mul_lt hr hl
+  exact ⟨hub, hnb.trans (mul_le_mul_of_nonneg_left hinv zero_le_two)⟩
 
 /-- Two sequences in normed rings with summable geometric series whose difference tends to zero in
 norm are simultaneously stable or unstable. -/

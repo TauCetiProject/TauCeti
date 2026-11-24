@@ -7,9 +7,14 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
-# Hölder's inequality for a function supported in a set
+# Hölder-type bounds for Bochner integrals
+
+For `r ≥ 1`, Hölder's inequality against the constant function `1` bounds the `r`-th power of the
+extended norm of a Bochner integral: `‖∫ f‖ₑ ^ r ≤ μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r`. Under a measure
+of mass at most one this is Jensen's inequality `‖∫ f‖ₑ ^ r ≤ ∫⁻ ‖f‖ₑ ^ r`.
 
 Let `w` vanish almost everywhere off a set `A` of finite measure. For exponents `r, s > 0` with
 `1/r + 1/s ≤ 1`, Hölder's inequality with the three exponents `r`, `s` and
@@ -24,8 +29,9 @@ iteration.
 
 ## Main declarations
 
+* `TauCeti.enorm_integral_rpow_le_measure_univ_rpow_mul`: the bound on `‖∫ f‖ₑ ^ r`.
 * `TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow`: the
-  inequality.
+  inequality for a function vanishing off a set.
 -/
 
 public section
@@ -37,6 +43,16 @@ open MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
+
+/-- **Jensen's inequality for the norm of a Bochner integral**: for `r ≥ 1`, the `r`-th power of
+the extended norm of `∫ f ∂μ` is at most `μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r ∂μ`. In particular it is
+at most `∫⁻ ‖f‖ₑ ^ r ∂μ` when `μ` has mass at most one. No integrability or finiteness is
+assumed: a non-integrable `f`, or a codomain that is not complete, has integral `0`. -/
+theorem enorm_integral_rpow_le_measure_univ_rpow_mul {α E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedSpace ℝ E] (f : α → E) {r : ℝ} (hr : 1 ≤ r) :
+    ‖∫ x, f x ∂μ‖ₑ ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, ‖f x‖ₑ ^ r ∂μ :=
+  (ENNReal.rpow_le_rpow (eNorm_integral_le_lintegral_eNorm f) (zero_le_one.trans hr)).trans
+    (rpow_lintegral_le_measure_univ_rpow_mul hr)
 
 namespace MeasureTheory
 

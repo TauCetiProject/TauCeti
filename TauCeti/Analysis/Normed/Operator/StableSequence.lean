@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Ring.StableSequence
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Stable sequences of operators
@@ -53,39 +54,29 @@ section Single
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+private theorem isUnit_continuousLinearEquiv_comp_iff (e₁ : F ≃L[𝕜] E) (e₂ : E ≃L[𝕜] F)
+    (T : E →L[𝕜] E) :
+    IsUnit ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) ↔ IsUnit T := by
+  simp [← ContinuousLinearMap.isInvertible_iff_isUnit]
+
+private theorem ringInverse_continuousLinearEquiv_comp (e₁ : F ≃L[𝕜] E) (e₂ : E ≃L[𝕜] F)
+    (T : E →L[𝕜] E) :
+    Ring.inverse ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) =
+      (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E) := by
+  simp [ContinuousLinearMap.ringInverse_eq_inverse, ContinuousLinearMap.comp_assoc]
+
 /-- Transporting an operator on both sides by linear isometric equivalences preserves its condition
 number. -/
 @[simp]
 theorem conditionNumber_linearIsometryEquiv_comp (e₁ : F ≃ₗᵢ[𝕜] E) (e₂ : E ≃ₗᵢ[𝕜] F)
     (T : E →L[𝕜] E) :
     conditionNumber ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) = conditionNumber T := by
-  set B : F →L[𝕜] F := (e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)
-  by_cases hT : IsUnit T
-  · let B' : F →L[𝕜] F :=
-      (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E)
-    let u : (F →L[𝕜] F)ˣ :=
-      { val := B
-        inv := B'
-        val_inv := ContinuousLinearMap.ext fun y ↦ by
-          simp [B, B', ContinuousLinearMap.apply_ringInverse_apply hT]
-        inv_val := ContinuousLinearMap.ext fun y ↦ by
-          simp [B, B', ContinuousLinearMap.ringInverse_apply_apply hT] }
-    have hinv : Ring.inverse B = B' := Ring.inverse_unit u
-    rw [conditionNumber_def, hinv, conditionNumber_def]
-    simp only [B, B', ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-      ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
-  · have hB : ¬IsUnit B := fun hu ↦ hT <| by
-      let A' : E →L[𝕜] E :=
-        (e₁ : F →L[𝕜] E) ∘L Ring.inverse B ∘L (e₂ : E →L[𝕜] F)
-      exact ⟨{ val := T
-               inv := A'
-               val_inv := ContinuousLinearMap.ext fun x ↦ by
-                 have := ContinuousLinearMap.apply_ringInverse_apply hu (e₂ x)
-                 simpa [B, A'] using congrArg e₂.symm this
-               inv_val := ContinuousLinearMap.ext fun x ↦ by
-                 have := ContinuousLinearMap.ringInverse_apply_apply hu (e₁.symm x)
-                 simpa [B, A'] using congrArg e₁ this }, rfl⟩
-    rw [conditionNumber_of_not_isUnit hB, conditionNumber_of_not_isUnit hT]
+  have hinv : Ring.inverse ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) =
+      (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E) :=
+    ringInverse_continuousLinearEquiv_comp e₁.toContinuousLinearEquiv e₂.toContinuousLinearEquiv T
+  rw [conditionNumber_def, hinv, conditionNumber_def]
+  simp only [ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
 end Single
 
@@ -98,8 +89,9 @@ theorem IsStableSequence.exists_forall_norm_le {A : ∀ n, E n →L[𝕜] E n}
     (hA : IsStableSequence A) : ∃ M : ℝ, ∀ᶠ n in atTop, ∀ x, ‖x‖ ≤ M * ‖A n x‖ := by
   obtain ⟨M, hM⟩ := (isStableSequence_def _).mp hA
   refine ⟨M, hM.mono fun n ⟨hu, hn⟩ x ↦ ?_⟩
-  exact (ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply hu x).trans
-    (mul_le_mul_of_nonneg_right hn (norm_nonneg _))
+  have hx := (ContinuousLinearMap.isInvertible_iff_isUnit.mpr hu).norm_le_norm_inverse_mul_norm x
+  rw [← ContinuousLinearMap.ringInverse_eq_inverse] at hx
+  exact hx.trans (mul_le_mul_of_nonneg_right hn (norm_nonneg _))
 
 /-- A sequence of operators on finite-dimensional spaces is stable exactly when its members are
 eventually uniformly bounded below. -/
@@ -129,32 +121,14 @@ theorem IsStableSequence.continuousLinearEquiv_comp {e₁ : ∀ n, F n ≃L[𝕜
   obtain ⟨C₁, hC₁⟩ := he₁
   obtain ⟨C₂, hC₂⟩ := he₂
   refine (isStableSequence_def _).mpr
-    ⟨C₁ * (max M 0 * C₂), (hM.and (hC₁.and hC₂)).mono fun n ⟨⟨hu, hn⟩, hn₁, hn₂⟩ ↦ ?_⟩
-  let B : F n →L[𝕜] F n := (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)
-  let B' : F n →L[𝕜] F n :=
-    ((e₁ n).symm : E n →L[𝕜] F n) ∘L Ring.inverse (A n) ∘L ((e₂ n).symm : F n →L[𝕜] E n)
-  let u : (F n →L[𝕜] F n)ˣ :=
-    { val := B
-      inv := B'
-      val_inv := ContinuousLinearMap.ext fun y ↦ by
-        simp [B, B', ContinuousLinearMap.apply_ringInverse_apply hu]
-      inv_val := ContinuousLinearMap.ext fun y ↦ by
-        simp [B, B', ContinuousLinearMap.ringInverse_apply_apply hu] }
-  have hinv : Ring.inverse B = B' := Ring.inverse_unit u
-  refine ⟨⟨u, rfl⟩, ?_⟩
-  rw [hinv]
+    ⟨C₁ * max M 0 * C₂, (hM.and (hC₁.and hC₂)).mono fun n ⟨⟨hu, hn⟩, hn₁, hn₂⟩ ↦
+      ⟨(isUnit_continuousLinearEquiv_comp_iff (e₁ n) (e₂ n) (A n)).mpr hu, ?_⟩⟩
+  rw [ringInverse_continuousLinearEquiv_comp]
   have hM0 : ‖Ring.inverse (A n)‖ ≤ max M 0 := hn.trans (le_max_left _ _)
   have hC₁0 : 0 ≤ C₁ := (norm_nonneg _).trans hn₁
-  calc
-    ‖B'‖ ≤ ‖((e₁ n).symm : E n →L[𝕜] F n)‖ *
-        ‖Ring.inverse (A n) ∘L ((e₂ n).symm : F n →L[𝕜] E n)‖ :=
-      ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ ‖((e₁ n).symm : E n →L[𝕜] F n)‖ *
-        (‖Ring.inverse (A n)‖ * ‖((e₂ n).symm : F n →L[𝕜] E n)‖) :=
-      mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
-    _ ≤ C₁ * (max M 0 * C₂) :=
-      mul_le_mul hn₁ (mul_le_mul hM0 hn₂ (norm_nonneg _) (le_max_right _ _))
-        (mul_nonneg (norm_nonneg _) (norm_nonneg _)) hC₁0
+  refine (ContinuousLinearMap.opNorm_comp_comp_le _ _ _).trans ?_
+  exact mul_le_mul (mul_le_mul hn₁ hM0 (norm_nonneg _) hC₁0) hn₂ (norm_nonneg _)
+    (mul_nonneg hC₁0 (le_max_right _ _))
 
 /-- Uniformly bounded invertible coordinate changes with uniformly bounded inverses preserve
 stability of operator sequences. -/
