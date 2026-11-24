@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Algebra.Order.ToIntervalMod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Topology.JordanCurve.Interval
@@ -183,11 +184,8 @@ theorem range_circleParam : range T.circleParam = range T := by
   rw [← QuotientAddGroup.mk_surjective.range_comp]
   exact congrArg range (funext T.circleParam_coe)
 
-theorem circleParam_injective : Injective T.circleParam := by
-  intro x y hxy
-  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y
-  exact T.apply_eq_apply_iff.1 (by simpa using hxy)
+theorem circleParam_injective : Injective T.circleParam :=
+  T.periodic.lift_injective Fact.out (by simpa using T.injOn_Ico 0)
 
 theorem continuous_circleParam : Continuous T.circleParam :=
   (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| by
