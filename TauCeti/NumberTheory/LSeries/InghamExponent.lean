@@ -48,6 +48,10 @@ nonnegative on `[3, ∞)` and `x ≥ 1`, where the infimum is bounded below by `
 * D. J. Platt, T. S. Trudgian, *The error term in the prime number theorem*, Math. Comp. 90
   (2021), §1.
 * H. L. Montgomery, R. C. Vaughan, *Multiplicative Number Theory I*, Chapter 6.
+* The choice of height in `TauCeti.exists_rpow_eq_and_inghamExponent_le` follows the lemma
+  `GenStrengthPNT` in the formalization
+  [PrimeNumberTheoremAnd, revision df0ccba](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/df0ccba486bb86e273ecab565b6ab222c37f8320/PrimeNumberTheoremAnd/MediumPNT.lean),
+  file `PrimeNumberTheoremAnd/MediumPNT.lean`.
 -/
 
 public section
