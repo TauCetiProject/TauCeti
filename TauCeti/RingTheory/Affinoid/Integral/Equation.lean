@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
 import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.Algebra.Polynomial.Coeff.Nonarchimedean
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
@@ -170,12 +170,13 @@ theorem exists_monic_aeval_eq_zero_supSeminorm_coeff_le (hA : IsAffinoidAlgebra 
     exact hA.isNonarchimedean_supSeminorm
   have hQc (i : ℕ) : hA.supRingSeminorm (Q.coeff i) ≤ supSeminorm K f ^ (Q.natDegree - i) := by
     rw [natDegree_prod_of_monic _ _ fun 𝔮 _ ↦ hqm 𝔮]
-    exact apply_coeff_prod_le_pow hf1 hna _ _
+    exact apply_coeff_prod_le_pow (apply_nonneg _) (map_mul_le_mul _)
+      ((map_zero _).trans_le zero_le_one) hf1 hna _ _ _ (fun _ _ ↦ le_rfl)
       (fun 𝔮 _ ↦ by simpa only [coe_supRingSeminorm] using hqc 𝔮) i
   refine ⟨Q ^ N, hQm.pow N, by rw [map_pow, hN], fun i ↦ ?_⟩
   rw [hQm.natDegree_pow]
   simpa only [coe_supRingSeminorm] using
-    apply_coeff_pow_le_pow hf1 hna hQc N i
+    apply_coeff_pow_le_pow (apply_nonneg _) (map_mul_le_mul _) hf1 hna le_rfl hQc N i
 
 /-- **An integral equation attaining the spectral value.** Let `B` be an affinoid algebra
 integral over an affinoid algebra `A`. Every `f : B` is a root of a monic polynomial

@@ -47,6 +47,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
 
 * `PowerSeries.newtonSlopeMultiplicity_eq_of_isFiniteFace`: the multiplicity is the width of the
   finite face.
+* `PowerSeries.newtonSlopeMultiplicity_eq_ncard_of_heights_eq`: for a polygon given by infinite
+  slope data, the multiplicity counts the indices of that slope.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
@@ -108,6 +110,25 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- If the Newton polygon of `f` is represented by infinite slope data `d`, the multiplicity of a
+slope `σ` is the number of indices `i` with `d.slope i = σ`. -/
+theorem newtonSlopeMultiplicity_eq_ncard_of_heights_eq {d : InfiniteSlopeData ℝ}
+    (hd : d.heights = f.newtonPolygon v) (σ : ℝ) :
+    f.newtonSlopeMultiplicity v σ = {i | d.slope i = σ}.ncard := by
+  -- The finite unit edges of slope `σ` are the translates by `d.start` of the indices of slope `σ`.
+  have himage : {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n = σ} =
+      (d.start + ·) '' {i | d.slope i = σ} := by
+    ext n
+    simp only [← hd, mem_finiteEdges, ne_eq, InfiniteSlopeData.heights_eq_top_iff, not_lt,
+      Set.mem_ofPred_eq, Set.mem_image]
+    constructor
+    · rintro ⟨⟨hn, -⟩, hσ⟩
+      obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hn
+      exact ⟨i, by rwa [InfiniteSlopeData.unitSlope_heights] at hσ, rfl⟩
+    · rintro ⟨i, hi, rfl⟩
+      exact ⟨⟨by omega, by omega⟩, by rwa [InfiniteSlopeData.unitSlope_heights]⟩
+  rw [newtonSlopeMultiplicity_def, himage, Set.ncard_image_of_injective _ (add_right_injective _)]
 
 /-- **Cutoff counts.** If only finitely many finite unit edges of the Newton polygon of `f` have
 slope at most `c`, their number is the sum of the multiplicities of the slopes at most `c`. -/

@@ -53,6 +53,8 @@ so it also applies to the chains of a space with a left action alone.
 ## Main results
 
 * `TauCeti.cubicalChainModuleAugmentation_differential`: `ε ∘ d = 0`.
+* `TauCeti.cubicalChainModuleAugmentation_mem`: `ε` preserves degrees, so it vanishes on the
+  chains of positive dimension.
 * `TauCeti.cubicalChainModuleAugmentation_smul`: `ε (a · m) = ε(a) ε(m)` for a left action.
 * `TauCeti.cubicalChainModuleAugmentation_surjective`: `ε` is onto when `Y` has a point.
 * `TauCeti.point_smul_cubicalChainModulePoint`: for a left action, `[g] · [y] = [g • y]`.
@@ -118,6 +120,19 @@ theorem cubicalChainModuleAugmentation_differential (m : cubicalChainModule Y G 
       · rw [cubicalChainModuleAugmentation_lof_zero, ← LinearMap.comp_apply, augment_boundary,
           LinearMap.zero_apply]
       · rw [cubicalChainModuleAugmentation_lof_succ]
+
+/-- **The augmentation preserves degrees**: it sends the chains of cohomological degree `i` to the
+degree-`i` part of the trivially graded ground ring, so it vanishes outside degree zero. -/
+theorem cubicalChainModuleAugmentation_mem {i : ℤ} {m : cubicalChainModule Y G R}
+    (hm : m ∈ cubicalChainModuleGrading Y G R i) :
+    cubicalChainModuleAugmentation Y G R m ∈ trivialGrading R R i := by
+  rcases mem_cubicalChainModuleGrading_iff.1 hm with rfl | ⟨n, c, hn, rfl⟩
+  · rw [map_zero]
+    exact zero_mem _
+  · rw [cubicalChainModuleAugmentation_lof, mem_trivialGrading_iff]
+    rcases Nat.eq_zero_or_pos n with rfl | hn'
+    · exact Or.inl (by omega)
+    · exact Or.inr (cubicalChainAugmentLof_of_ne_zero (by omega) c)
 
 /-- The augmentation is onto as soon as the space has a point. -/
 theorem cubicalChainModuleAugmentation_surjective (y : Y) :

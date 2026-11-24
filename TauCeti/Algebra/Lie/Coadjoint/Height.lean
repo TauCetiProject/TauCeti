@@ -152,6 +152,14 @@ theorem isSymm_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
   simp only [heightHessian_apply, neg_inj]
   exact hB.apply_lie_lie_comm hXp A C
 
+/-- **The height Hessian as a form on generators of the coadjoint orbit.** For an invariant form,
+`h_(p,X)(A, C) = (B p)(⁅⁅X, C⁆, A⁆)`. When `⁅X, p⁆ = 0`, the right side is the Hessian of the
+height `f_X` at the critical point `B p` of the coadjoint orbit, evaluated on the generators of `A`
+and `C`. -/
+theorem heightHessian_apply_eq_apply_lie_lie (hB : B.lieInvariant L) (A C : L) :
+    B.heightHessian p X A C = B p ⁅⁅X, C⁆, A⁆ := by
+  rw [heightHessian_apply, ← lie_skew C X, map_neg, hB A p, ← lie_skew ⁅X, C⁆ A, map_neg, neg_neg]
+
 end LinearMap.BilinForm
 
 namespace TauCeti

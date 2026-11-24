@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Integrability criteria
@@ -39,7 +40,10 @@ By Hölder's inequality, a finite product of functions, the `i`th in `L^(p i)`, 
 `∑ i, (p i)⁻¹ = 1` (`TauCeti.integrable_fun_prod_of_memLp`); in particular a product of `k`
 functions in `Lᵏ` is integrable when `k ≠ 0`
 (`TauCeti.integrable_fun_prod_of_memLp_card_of_nonempty`), and on a finite measure space for
-every `k` (`TauCeti.integrable_fun_prod_of_memLp_card`).
+every `k` (`TauCeti.integrable_fun_prod_of_memLp_card`). Against a finite measure, every power of
+an almost everywhere strongly measurable, almost everywhere bounded function into a normed ring is
+integrable (`TauCeti.integrable_pow_of_ae_norm_le`); in particular, a finite measure on `ℝ`
+concentrated on `[-R, R]` has finite moments of every order (`TauCeti.integrable_pow_of_ae_abs_le`).
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
@@ -239,9 +243,9 @@ theorem integrable_of_forall_notMem_eq_zero_of_norm_le {α E : Type*} [Measurabl
 
 end MeasureTheory
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 /-- On a finite measure, `Lᵖ` membership of the identity gives integrability of its norm
 power, including for seminormed groups and order zero. -/
@@ -278,7 +282,8 @@ theorem integrable_fun_prod_of_memLp_card_of_nonempty {X ι 𝕜 : Type*} [Measu
     [NormedCommRing 𝕜] {μ : Measure X} {f : ι → X → 𝕜} {s : Finset ι} (hs : s.Nonempty)
     (hf : ∀ i ∈ s, MemLp (f i) s.card μ) :
     Integrable (fun x ↦ ∏ i ∈ s, f i x) μ :=
-  integrable_fun_prod_of_memLp hf <| by simp [nsmul_eq_mul, ENNReal.mul_inv_cancel, hs.ne_empty]
+  memLp_one_iff_integrable.1 <| memLp_fun_prod_of_memLp_mul_card hs fun i hi ↦ by
+    simpa only [one_mul] using hf i hi
 
 /-- On a finite measure space, a product of functions indexed by a finset `s` is integrable when
 every factor lies in `L^(s.card)`. The finite measure is needed only for the empty product; see
@@ -290,5 +295,26 @@ theorem integrable_fun_prod_of_memLp_card {X ι 𝕜 : Type*} [MeasurableSpace X
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   exact integrable_fun_prod_of_memLp_card_of_nonempty hs hf
+
+/-- Against a finite measure, every power of an almost everywhere strongly measurable function
+into a normed ring that is almost everywhere bounded in norm by `R` is integrable. For `g = id`,
+when the identity is almost everywhere strongly measurable (as on `ℝ` with its Borel σ-algebra),
+this says that a finite measure concentrated on a ball has finite moments of every order. -/
+theorem integrable_pow_of_ae_norm_le {Ω A : Type*} [MeasurableSpace Ω] [NormedRing A]
+    {μ : Measure Ω} [IsFiniteMeasure μ] {g : Ω → A} (hg : AEStronglyMeasurable g μ) {R : ℝ}
+    (h : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ R) (n : ℕ) :
+    Integrable (fun ω => g ω ^ n) μ := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simpa only [pow_zero] using integrable_const (1 : A)
+  refine .of_bound (hg.pow n) (R ^ n) ?_
+  filter_upwards [h] with ω hω
+  exact (norm_pow_le' (g ω) hn).trans (pow_le_pow_left₀ (norm_nonneg _) hω n)
+
+/-- A finite measure on `ℝ` concentrated on `[-R, R]` has finite moments of every order: every
+monomial `x ↦ xⁿ` is integrable. -/
+theorem integrable_pow_of_ae_abs_le {μ : Measure ℝ} [IsFiniteMeasure μ] {R : ℝ}
+    (hae : ∀ᵐ x ∂μ, |x| ≤ R) (n : ℕ) : Integrable (fun x : ℝ => x ^ n) μ :=
+  integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id
+    (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx) n
 
 end TauCeti
