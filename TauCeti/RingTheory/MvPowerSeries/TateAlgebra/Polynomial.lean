@@ -52,8 +52,8 @@ constants and variables, and commutes with bounded coefficient maps by
   uniform structure on polynomials are given by the Gauss norm of differences.
 
 Dense coefficient subsets give dense polynomials with coefficients in them by
-`MvPowerSeries.dense_setOf_coe_eq_sum_monomial`, and injectivity of the polynomial embedding is
-Mathlib's `MvPolynomial.toRestricted_injective`.
+`MvPowerSeries.dense_setOfPred_coe_eq_sum_monomial`, and injectivity of the polynomial embedding
+is Mathlib's `MvPolynomial.toRestricted_injective`.
 
 The packaging as an `AbstractCompletion` follows Mathlib's `LaurentSeries.LaurentSeriesPkg` in
 `Mathlib/RingTheory/LaurentSeries.lean`, as does `TauCeti.NovikovSeries.completionPkg`.
@@ -92,11 +92,14 @@ theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
       polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) atTop (𝓝 f) := by
   classical
   -- Transport the module statement along the isometric coefficient comparison `Φ`.
-  let Φ (g : IsRestricted.subring (R := R) c) : IsRestrictedFamily.Gauss c R :=
-    .ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv g)
+  let Φ : IsRestricted.subring (R := R) c ≃ₗ[R] IsRestrictedFamily.Gauss c R :=
+    (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
+      (IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv R).symm
   have hdist (g h : IsRestricted.subring (R := R) c) : dist g h = dist (Φ g) (Φ h) := by
-    rw [dist_eq_norm, dist_eq_norm, ← IsRestrictedFamily.Gauss.norm_subringLinearEquiv, map_sub]
-    rfl
+    rw [dist_eq_norm, dist_eq_norm, ← map_sub]
+    simp only [Φ, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+      IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
+      IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
   have hΦ (s : Finset (σ →₀ ℕ)) :
       Φ (polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) =
         ∑ t ∈ s, IsRestrictedFamily.Gauss.ofFinsupp R c (Finsupp.single t (Φ f t)) := by
