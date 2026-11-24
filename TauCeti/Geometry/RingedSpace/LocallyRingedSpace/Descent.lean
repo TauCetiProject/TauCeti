@@ -5,21 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace
+public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
-# Epimorphisms and descent for locally ringed spaces determined by sections
+# Descent of morphisms of locally ringed spaces along contractions
 
-A morphism `f : X ⟶ Y` of locally ringed spaces which is surjective on points and whose maps on
-sections `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)` are all monomorphisms is an epimorphism. A morphism of locally
-ringed spaces is determined by its underlying morphism of presheafed spaces, so this follows from
-the presheafed-space criterion
-`AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`. It applies when
-`𝒪_Y ⟶ f_* 𝒪_X` is an isomorphism.
-
-Let now `c : X ⟶ Y` be a morphism of locally ringed spaces which is a topological quotient map and
+Let `c : X ⟶ Y` be a morphism of locally ringed spaces which is a topological quotient map and
 for which `𝒪_Y → c_* 𝒪_X` is an isomorphism, that is, every `Γ(Y, U) ⟶ Γ(X, c⁻¹ U)` is an
 isomorphism. Then `c` is a categorical quotient for maps which are constant on its fibres: a
 morphism `h : X ⟶ Z` to an arbitrary locally ringed space `Z` whose underlying map is constant on
@@ -45,9 +38,6 @@ which apply to contractions of curves, are in `TauCeti.AlgebraicGeometry.Descent
 
 ## Main results
 
-* `AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism of
-  locally ringed spaces which is surjective on points and a monomorphism on sections over every
-  open is an epimorphism.
 * `AlgebraicGeometry.LocallyRingedSpace.Hom.comp_descOfIsQuotientMap`: the descended morphism
   factors `h`.
 * `AlgebraicGeometry.LocallyRingedSpace.Hom.eq_descOfIsQuotientMap`: it is the only such
@@ -69,23 +59,9 @@ public section
 
 open CategoryTheory Opposite Topology TopologicalSpace
 
-namespace AlgebraicGeometry
-
-namespace LocallyRingedSpace
-
-/-- **A morphism of locally ringed spaces which is surjective on points and a monomorphism on
-sections is an epimorphism.** -/
-theorem epi_of_base_surjective_of_c_app_mono {X Y : LocallyRingedSpace} (f : X ⟶ Y)
-    (h₁ : Function.Surjective f.base) (h₂ : ∀ U, Mono (f.c.app U)) : Epi f := by
-  apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
-  apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
-  exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ h₁ h₂
-
-end LocallyRingedSpace
-
 universe u
 
-namespace LocallyRingedSpace.Hom
+namespace AlgebraicGeometry.LocallyRingedSpace.Hom
 
 variable {X Y Z : LocallyRingedSpace.{u}}
 
@@ -134,20 +110,9 @@ private theorem comp_descPsh : c.toHom ≫ descPsh c hq hc h hh = h.toHom := by
 
 private theorem isLocalHom_stalkMap_descPsh (y : Y) :
     IsLocalHom ((descPsh c hq hc h hh).stalkMap y).hom := by
-  obtain ⟨x, rfl⟩ := hq.surjective y
-  have : IsLocalHom ((c.toHom ≫ descPsh c hq hc h hh).stalkMap x).hom := by
-    rw [PresheafedSpace.stalkMap.congr_hom _ _ (comp_descPsh c hq hc h hh) x,
-      CommRingCat.hom_comp]
-    have := isLocalHom_of_isIso (eqToHom (comp_descPsh c hq hc h hh ▸ rfl :
-      Z.presheaf.stalk ((c.toHom ≫ descPsh c hq hc h hh).base x) =
-        Z.presheaf.stalk (h.base x)))
-    exact CommRingCat.isLocalHom_comp _ _
-  rw [PresheafedSpace.stalkMap.comp] at this
-  -- `rw [CommRingCat.hom_comp] at this` fails: the stalk map of `descPsh` has codomain stated at
-  -- `(c.toHom ≫ descPsh c hq hc h hh).base x`, only definitionally equal to `descPsh` at `c x`.
-  have : IsLocalHom ((c.toHom.stalkMap x).hom.comp
-      ((descPsh c hq hc h hh).stalkMap (c.base x)).hom) := this
-  exact isLocalHom_of_comp _ (c.toHom.stalkMap x).hom
+  obtain ⟨x, hx⟩ := hq.surjective y
+  exact LocallyRingedSpace.isLocalHom_stalkMap_of_comp_eq c (descPsh c hq hc h hh) h
+    (comp_descPsh c hq hc h hh) hx
 
 /-- **Descent along a contraction.** Let `c : X ⟶ Y` be a topological quotient map for which
 `𝒪_Y → c_* 𝒪_X` is an isomorphism. A morphism `h : X ⟶ Z` of locally ringed spaces whose
@@ -219,6 +184,4 @@ theorem descOfIsQuotientMap_of_commSq {X' Y' : LocallyRingedSpace.{u}} {c' : X' 
 
 end Desc
 
-end LocallyRingedSpace.Hom
-
-end AlgebraicGeometry
+end AlgebraicGeometry.LocallyRingedSpace.Hom
