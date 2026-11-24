@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
-import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Finiteness.Projective
+import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.AdicCompletion.Idempotent
-import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -44,7 +45,7 @@ When `r` lies in the Jacobson radical of `A`, the lift is unique up to isomorphi
 Over a commutative ring complete for any ideal `I`, finite projective modules over `R ⧸ I`
 lift to finite projective `R`-modules without a Noetherian hypothesis. The proof uses a finite
 free presentation and lifts its splitting idempotent; its endomorphism ring is complete because
-it is a finite product of copies of `R`.
+it is finite free over `R`, by `IsAdicComplete.of_finite_projective`.
 
 ## Main results
 
@@ -52,6 +53,10 @@ it is a finite product of copies of `R`.
   idempotent endomorphisms of `N`.
 * `TauCeti.exists_projective_quotient_smul_top_linearEquiv`: every direct summand of
   `N ⧸ r • N` is the reduction of a projective submodule of `N`.
+* `TauCeti.exists_isIdempotentElem_endMapQ_eq_of_finite_free`: idempotents lift on reductions
+  of finite free modules over an adically complete commutative ring.
+* `TauCeti.exists_projective_lift_of_finite_free`: direct summands lift on reductions of finite
+  free modules over an adically complete commutative ring.
 * `TauCeti.exists_finite_projective_lift`: finite projective modules over `R ⧸ I` lift over an
   `I`-adically complete commutative ring.
 
@@ -157,15 +162,15 @@ theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*}
 section ArbitraryIdeal
 
 variable {S : Type*} [CommRing S] (I : Ideal S) {M : Type*}
-  [AddCommGroup M] [Module S M]
+  [AddCommGroup M] [Module S M] [Module.Free S M] [Module.Finite S M] [IsAdicComplete I S]
 
-/-- Idempotent endomorphisms lift modulo an arbitrary ideal for a module with a finite basis
-and an adically complete endomorphism ring. -/
-theorem exists_isIdempotentElem_endMapQ_eq_of_basis {ι : Type*} [Finite ι]
-    (b : Module.Basis ι S M) [IsAdicComplete I (Module.End S M)]
+/-- Idempotent endomorphisms of the reduction of a finite free module over an adically complete
+commutative ring lift to idempotent endomorphisms of the module. -/
+theorem exists_isIdempotentElem_endMapQ_eq_of_finite_free
     {e : Module.End S (M ⧸ I • (⊤ : Submodule S M))} (he : IsIdempotentElem e) :
     ∃ f : Module.End S M, IsIdempotentElem f ∧ Ideal.endMapQ I M f = e := by
-  let := Module.Projective.of_basis b
+  let b := Module.Free.chooseBasis S M
+  have : IsAdicComplete I (Module.End S M) := IsAdicComplete.of_finite_projective I _
   refine IsAdicComplete.exists_isIdempotentElem_eq I _ (fun f ↦ ?_)
     (Ideal.endMapQ_surjective I M e) he
   rw [← RingHom.mem_ker, Ideal.mem_ker_endMapQ_iff, b.mem_smul_top_linearMap_iff]
@@ -174,17 +179,15 @@ theorem exists_isIdempotentElem_endMapQ_eq_of_basis {ι : Type*} [Finite ι]
     exact LinearMap.apply_mem_smul_top_of_mem_smul_top
       (b.mem_smul_top_linearMap_iff.mpr h) y⟩
 
-/-- A direct summand of a reduction lifts to a projective submodule when the ambient module
-has a finite basis and its endomorphism ring is adically complete. -/
-theorem exists_projective_lift_of_basis {ι : Type*} [Finite ι] (b : Module.Basis ι S M)
-    [IsAdicComplete I (Module.End S M)] {Y : Type*} [AddCommGroup Y] [Module S Y]
+/-- A direct summand of the reduction of a finite free module over an adically complete
+commutative ring lifts to a finite projective submodule. The lift map is surjective with kernel
+`I • X`. -/
+theorem exists_projective_lift_of_finite_free {Y : Type*} [AddCommGroup Y] [Module S Y]
     (i : Y →ₗ[S] M ⧸ I • (⊤ : Submodule S M))
     (q : (M ⧸ I • (⊤ : Submodule S M)) →ₗ[S] Y) (hqi : q ∘ₗ i = LinearMap.id) :
     ∃ X : Submodule S M, Module.Finite S X ∧ Module.Projective S X ∧
       ∃ f : X →ₗ[S] Y, Function.Surjective f ∧ LinearMap.ker f = I • ⊤ := by
-  let := Module.Projective.of_basis b
-  let := Module.Finite.of_basis b
-  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq_of_basis I b (e := i ∘ₗ q)
+  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq_of_finite_free I (e := i ∘ₗ q)
     (LinearMap.ext fun x ↦ congrArg i (LinearMap.congr_fun hqi (q x)))
   have hfix (x : LinearMap.range e) : e x = x :=
     (LinearMap.IsIdempotentElem.mem_range_iff he).mp x.property
@@ -210,13 +213,6 @@ theorem exists_finite_projective_lift {S : Type u} [CommRing S] (I : Ideal S)
   obtain ⟨n, q, i, _, _, hqi⟩ :=
     Module.Finite.exists_comp_eq_id_of_projective (S ⧸ I) Y
   let b := Pi.basisFun S (Fin n)
-  let c : Module.End S (Fin n → S) ≃ₗ[S] (Fin n → Fin n → S) := (b.constr S).symm
-  have : IsAdicComplete I (Module.End S (Fin n → S)) := by
-    apply AdicCompletion.of_bijective_iff.mp
-    have hc : AdicCompletion.of I (Fin n → Fin n → S) ∘ c =
-        AdicCompletion.congr I c ∘ AdicCompletion.of I (Module.End S (Fin n → S)) := rfl
-    exact (Function.Bijective.of_comp_iff' (AdicCompletion.congr I c).bijective _).mp
-      (hc ▸ (AdicCompletion.of_bijective I _).comp c.bijective)
   let p : (Fin n → S) →ₗ[S] (Fin n → S ⧸ I) :=
     LinearMap.pi fun j ↦ (Algebra.linearMap S (S ⧸ I)).comp (LinearMap.proj j)
   have hp : Function.Surjective p := fun x ↦ by
@@ -231,7 +227,7 @@ theorem exists_finite_projective_lift {S : Type u} [CommRing S] (I : Ideal S)
   let d : ((Fin n → S) ⧸ I • (⊤ : Submodule S (Fin n → S))) ≃ₗ[S]
       (Fin n → S ⧸ I) :=
     (Submodule.quotEquivOfEq _ _ hker.symm).trans (p.quotKerEquivOfSurjective hp)
-  obtain ⟨X, hfin, hproj, f, hf, hkerf⟩ := exists_projective_lift_of_basis I b
+  obtain ⟨X, hfin, hproj, f, hf, hkerf⟩ := exists_projective_lift_of_finite_free I
     (d.symm.toLinearMap.comp (i.restrictScalars S))
     ((q.restrictScalars S).comp d.toLinearMap) (by
       ext y

@@ -143,7 +143,6 @@ theorem isUnit_of_endMapQ_eq_one (hI : IsNilpotent I) {f : Module.End R M}
 variable {M}
 
 /-- A map to a projective module is bijective if it becomes bijective modulo a nilpotent ideal.
-Lift the inverse of the reduction and apply `isUnit_of_endMapQ_eq_one` to both composites.
 This is the nilpotent-ideal case of
 [Stacks, Lemma 15.3.5](https://stacks.math.columbia.edu/tag/0BC6), with only target projectivity. -/
 theorem bijective_of_mapQ_bijective {N : Type*} [AddCommGroup N] [Module R N]

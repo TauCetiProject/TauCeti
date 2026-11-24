@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 public import Mathlib.Algebra.Module.Projective
 import TauCeti.Algebra.Module.Projective.Lift
+import TauCeti.LinearAlgebra.Quotient.Map
 import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
@@ -36,28 +37,6 @@ variable {R : Type u} [CommRing R] (I : Ideal R)
   {A : Type w} [AddCommGroup A] [Module R A]
   {B : Type z} [AddCommGroup B] [Module R B]
 
-private theorem mem_smul_quotient_iff (n : ℕ) (x : P) :
-    Submodule.Quotient.mk (p := (I ^ (n + 2) • ⊤ : Submodule R P)) x ∈
-      (I ^ (n + 1)).map (Ideal.Quotient.mk (I ^ (n + 2))) •
-        (⊤ : Submodule (R ⧸ I ^ (n + 2)) (P ⧸ (I ^ (n + 2) • ⊤ : Submodule R P))) ↔
-      x ∈ I ^ (n + 1) • (⊤ : Submodule R P) := by
-  let K : Submodule R P := I ^ (n + 2) • ⊤
-  have hK : K ≤ I ^ (n + 1) • ⊤ :=
-    Submodule.smul_mono (Ideal.pow_le_pow_right (by omega)) le_rfl
-  rw [← Submodule.restrictScalars_mem R, ← Ideal.Quotient.algebraMap_eq,
-    Submodule.restrictScalars_map_smul_eq]
-  -- Express quotient membership through the comap of the quotient map.
-  change x ∈ Submodule.comap K.mkQ (I ^ (n + 1) • ⊤) ↔ _
-  rw [← Submodule.range_mkQ K, ← Submodule.map_top,
-    ← Submodule.map_smul'', Submodule.comap_map_mkQ, sup_eq_right.mpr hK]
-
-private theorem map_pow_isNilpotent (n : ℕ) :
-    IsNilpotent ((I ^ (n + 1)).map (Ideal.Quotient.mk (I ^ (n + 2)))) := by
-  refine ⟨2, le_bot_iff.mp ?_⟩
-  rw [← Ideal.map_pow, ← pow_mul]
-  exact (Ideal.map_mono (Ideal.pow_le_pow_right (by omega))).trans_eq
-    (Ideal.map_quotient_self _)
-
 private theorem stage_surjective_and_ker (n : ℕ)
     [Module (R ⧸ I ^ (n + 2)) B] [IsScalarTower R (R ⧸ I ^ (n + 2)) B]
     [Module.Projective (R ⧸ I ^ (n + 2)) B]
@@ -76,19 +55,22 @@ private theorem stage_surjective_and_ker (n : ℕ)
     (S := R ⧸ I ^ (n + 2)) Ideal.Quotient.mk_surjective
   have hmem (y : B) : y ∈ J • (⊤ : Submodule (R ⧸ I ^ (n + 2)) B) ↔ f y = 0 := by
     dsimp only [J]
-    rw [← Submodule.restrictScalars_mem R, ← Ideal.Quotient.algebraMap_eq,
-      Submodule.restrictScalars_map_smul_eq]
-    rw [Submodule.restrictScalars_top]
-    rw [← hfk, LinearMap.mem_ker]
+    rw [Submodule.mem_map_quotient_mk_smul_top_iff, ← hfk, LinearMap.mem_ker]
   have hbij : Function.Bijective hb := by
-    apply Ideal.bijective_of_mapQ_bijective J (map_pow_isNilpotent I n)
+    have hJ : IsNilpotent J := by
+      refine ⟨2, ?_⟩
+      dsimp only [J]
+      rw [← Ideal.map_pow, ← pow_mul, Ideal.zero_eq_bot]
+      exact Ideal.map_mk_eq_bot_of_le (Ideal.pow_le_pow_right (by omega))
+    apply Ideal.bijective_of_mapQ_bijective J hJ
     constructor
     · apply LinearMap.ker_eq_bot.mp
       apply le_antisymm _ bot_le
       rintro ⟨x⟩ hx
       obtain ⟨p, rfl⟩ := Submodule.mkQ_surjective K x
       apply (Submodule.Quotient.mk_eq_zero _).mpr
-      apply (mem_smul_quotient_iff I n p).mpr
+      apply (Submodule.Quotient.mk_mem_map_ideal_smul_top_iff
+        (Ideal.pow_le_pow_right (by omega)) p).mpr
       rw [← hgk, LinearMap.mem_ker]
       have hx' : hb (Submodule.Quotient.mk p) ∈ J • ⊤ :=
         (Submodule.Quotient.mk_eq_zero _).mp hx
