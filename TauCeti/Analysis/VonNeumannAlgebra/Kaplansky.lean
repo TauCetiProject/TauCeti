@@ -28,8 +28,18 @@ theorem** sharpens this to the unit balls: the strong operator closure of the cl
 self-adjoint parts of the unit balls
 (`StarSubalgebra.closure_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer`) and
 for their positive parts
-(`StarSubalgebra.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer`). All closures
+(`StarSubalgebra.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer`). These closures
 are taken in Mathlib's strong operator copy `H →Lₚₜ[ℂ] H`.
+
+Two further forms follow. Since the double commutant of a matrix amplification `Mᵢ(S)` consists of
+the operators with entries in `S''`, the unit ball of `Mᵢ(S)` is strongly dense in the
+contractions with entries in `S''`
+(`StarSubalgebra.closure_unitBall_piLpMatrix_eq_unitBall_double_centralizer`). In the strong-star
+topology of `TauCeti.ContinuousLinearMapStrongStar`, where adjoints converge as well, each of the
+three closures is again the corresponding part of the unit ball of `S''`
+(`StarSubalgebra.closure_strongStar_unitBall_eq_unitBall_double_centralizer`,
+`StarSubalgebra.closure_strongStar_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer`,
+`StarSubalgebra.closure_strongStar_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer`).
 
 In each case the inclusion `⊆` holds because the right-hand side is weak operator closed, hence
 strong operator closed. For the inclusion `⊇`:
@@ -50,6 +60,11 @@ strong operator closed. For the inclusion `⊇`:
   (`StarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff`). Approximate it by self-adjoint
   contractions of `M₂(S)`; their `(0, 1)` entries are contractions in `S` converging strongly
   to `x`.
+* *Strong-star forms.* Self-adjoint and positive operators are normal, and on normal operators the
+  strong-star and strong operator topologies agree, so the self-adjoint and positive forms carry
+  over unchanged. For the unit ball, the approximants `Yᵢ` of `[[0, x], [x⋆, 0]]` above are
+  self-adjoint, so the adjoint of the `(0, 1)` entry of `Yᵢ` is its `(1, 0)` entry, which converges
+  strongly to `x⋆`.
 
 ## References
 
@@ -185,6 +200,31 @@ private theorem norm_offDiag_le {x : H →L[ℂ] H} (hx : ‖x‖ ≤ 1) : ‖of
     zero_apply, zero_add, add_zero]
   gcongr
 
+/-- For a contraction `x` of `S''`, the operator `[[0, x], [x⋆, 0]]` is a strong limit of
+self-adjoint contractions of the matrix amplification `M₂(S)`, so that their matrix entries converge
+strongly to those of `[[0, x], [x⋆, 0]]`. -/
+private theorem exists_tendsto_offDiag {S : StarSubalgebra ℂ (H →L[ℂ] H)} {x : H →L[ℂ] H}
+    (hx : x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer) (hx₁ : ‖x‖ ≤ 1) :
+    ∃ l : Filter (PiLp 2 (fun _ : Fin 2 => H) →L[ℂ] PiLp 2 (fun _ : Fin 2 => H)), l.NeBot ∧
+      (∀ᶠ Y in l, Y ∈ S.piLpMatrix (Fin 2) ∧ IsSelfAdjoint Y ∧ ‖Y‖ ≤ 1) ∧
+      ∀ i j v, Tendsto (fun Y => Y.piLpEntry i j v) l (𝓝 ((offDiag x).piLpEntry i j v)) := by
+  -- `[[0, x], [x⋆, 0]]` is a self-adjoint contraction in the double commutant of `M₂(S)`.
+  have hX : offDiag x ∈ ((S.piLpMatrix (Fin 2) : Set _)).centralizer.centralizer := by
+    refine (S.mem_centralizer_centralizer_piLpMatrix_iff).mpr fun i j => ?_
+    fin_cases i <;> fin_cases j <;>
+      simp [offDiag, hx, StarMemClass.star_mem_centralizer_centralizer S hx,
+        Set.zero_mem_centralizer]
+  have hXS : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ (offDiag x) ∈
+      closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ ''
+        {Y | Y ∈ S.piLpMatrix (Fin 2) ∧ IsSelfAdjoint Y ∧ ‖Y‖ ≤ 1}) :=
+    (S.piLpMatrix (Fin 2)).closure_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer
+      ▸ ⟨offDiag x, ⟨hX, isSelfAdjoint_offDiag x, norm_offDiag_le hx₁⟩, rfl⟩
+  obtain ⟨l, hl, hlS, hlim⟩ :=
+    ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hXS
+  refine ⟨l, hl, hlS, fun i j v => ?_⟩
+  simp only [ContinuousLinearMap.piLpEntry_apply]
+  exact ((PiLp.continuous_apply 2 _ i).tendsto _).comp (hlim _)
+
 /-- **The Kaplansky density theorem.** For a unital star subalgebra `S` of `B(H)`, the strong
 operator closure of the closed unit ball of `S` is the closed unit ball of its double commutant
 `S''`. -/
@@ -199,27 +239,90 @@ theorem closure_unitBall_eq_unitBall_double_centralizer (S : StarSubalgebra ℂ 
   refine subset_antisymm (closure_minimal
     (Set.image_mono fun x ⟨hx, hx₁⟩ => ⟨Set.subset_centralizer_centralizer hx, hx₁⟩) hball) ?_
   rintro _ ⟨x, ⟨hx, hx₁⟩, rfl⟩
-  -- `[[0, x], [x⋆, 0]]` is a self-adjoint contraction in the double commutant of `M₂(S)`.
-  have hX : offDiag x ∈ ((S.piLpMatrix (Fin 2) : Set _)).centralizer.centralizer := by
-    refine (S.mem_centralizer_centralizer_piLpMatrix_iff).mpr fun i j => ?_
-    fin_cases i <;> fin_cases j <;>
-      simp [offDiag, hx, StarMemClass.star_mem_centralizer_centralizer S hx,
-        Set.zero_mem_centralizer]
-  have hXS : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ (offDiag x) ∈
-      closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ ''
-        {Y | Y ∈ S.piLpMatrix (Fin 2) ∧ IsSelfAdjoint Y ∧ ‖Y‖ ≤ 1}) :=
-    (S.piLpMatrix (Fin 2)).closure_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer
-      ▸ ⟨offDiag x, ⟨hX, isSelfAdjoint_offDiag x, norm_offDiag_le hx₁⟩, rfl⟩
-  obtain ⟨l, hl, hlS, hlim⟩ :=
-    ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hXS
+  obtain ⟨l, hl, hlS, hlim⟩ := exists_tendsto_offDiag hx hx₁
   -- The `(0, 1)` entries of the approximants are contractions of `S` converging strongly to `x`.
   refine ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mpr
     ⟨l.map fun Y => Y.piLpEntry 0 1, hl.map _, eventually_map.mpr ?_, fun v => ?_⟩
   · filter_upwards [hlS] with Y ⟨hY, _, hY₁⟩
     exact ⟨mem_piLpMatrix.mp hY 0 1, (Y.norm_piLpEntry_le 0 1).trans hY₁⟩
-  · have hx01 : (offDiag x).piLpEntry 0 1 = x := by simp [offDiag]
-    rw [tendsto_map'_iff, ← hx01]
-    simp only [Function.comp_def, ContinuousLinearMap.piLpEntry_apply]
-    exact ((PiLp.continuous_apply 2 _ 0).tendsto _).comp (hlim _)
+  · simpa [tendsto_map'_iff, Function.comp_def, offDiag] using hlim 0 1 v
+
+/-- **The Kaplansky density theorem for matrix amplifications.** For a unital star subalgebra `S`
+of `B(H)` and a finite index type `ι`, the strong operator closure of the closed unit ball of the
+matrix amplification `Mᵢ(S)` consists of the contractions on the Hilbert sum
+`PiLp 2 (fun _ : ι => H)` all of whose matrix entries lie in the double commutant `S''`, that is,
+of the closed unit ball of `Mᵢ(S'')`. -/
+theorem closure_unitBall_piLpMatrix_eq_unitBall_double_centralizer {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ ''
+        {X | X ∈ S.piLpMatrix ι ∧ ‖X‖ ≤ 1}) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ ''
+        {X : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H) |
+          (∀ i j, X.piLpEntry i j ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer) ∧
+            ‖X‖ ≤ 1} := by
+  simp_rw [closure_unitBall_eq_unitBall_double_centralizer,
+    mem_centralizer_centralizer_piLpMatrix_iff]
+
+/-! ### Strong-star forms -/
+
+/-- **The Kaplansky density theorem for self-adjoint parts, strong-star form.** For a unital star
+subalgebra `S` of `B(H)`, the strong-star closure of the self-adjoint contractions of `S` is the
+set of self-adjoint contractions of its double commutant `S''`. -/
+theorem closure_strongStar_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer
+    (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM '' {x | x ∈ S ∧ IsSelfAdjoint x ∧ ‖x‖ ≤ 1}) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        {x | x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer ∧ IsSelfAdjoint x ∧ ‖x‖ ≤ 1} :=
+  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
+    (fun _ hx => hx.2.1.isStarNormal)
+    S.closure_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer
+
+/-- **The Kaplansky density theorem for positive parts, strong-star form.** For a unital star
+subalgebra `S` of `B(H)`, the strong-star closure of the positive contractions of `S` is the set
+of positive contractions of its double commutant `S''`. -/
+theorem closure_strongStar_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
+    (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM '' {x | x ∈ S ∧ 0 ≤ x ∧ ‖x‖ ≤ 1}) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        {x | x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer ∧ 0 ≤ x ∧ ‖x‖ ≤ 1} :=
+  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
+    (fun _ hx => hx.2.1.isSelfAdjoint.isStarNormal)
+    S.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
+
+/-- **The Kaplansky density theorem, strong-star form.** For a unital star subalgebra `S` of
+`B(H)`, the strong-star closure of the closed unit ball of `S` is the closed unit ball of its
+double commutant `S''`: every contraction `x ∈ S''` is the limit of a net of contractions
+`aᵢ ∈ S` with `aᵢ → x` and `aᵢ⋆ → x⋆` strongly. -/
+theorem closure_strongStar_unitBall_eq_unitBall_double_centralizer
+    (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM '' {x | x ∈ S ∧ ‖x‖ ≤ 1}) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        {x | x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer ∧ ‖x‖ ≤ 1} := by
+  refine subset_antisymm (fun A hA => ?_) ?_
+  · -- The strong-star topology is finer than the strong operator topology, in which the
+    -- right-hand side is the closure of the left-hand side.
+    have h := mem_closure_image
+      ContinuousLinearMapStrongStar.continuous_toPointwiseConvergenceCLM.continuousAt hA
+    rw [Set.image_image, S.closure_unitBall_eq_unitBall_double_centralizer] at h
+    exact ⟨A.toCLM, ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image.mp h,
+      rfl⟩
+  rintro _ ⟨x, ⟨hx, hx₁⟩, rfl⟩
+  obtain ⟨l, hl, hlS, hlim⟩ := exists_tendsto_offDiag hx hx₁
+  -- The `(0, 1)` entries `aᵢ` of the self-adjoint approximants `Yᵢ` are contractions of `S`
+  -- converging strongly to `x`, and their adjoints are the `(1, 0)` entries of the `Yᵢ`, which
+  -- converge strongly to `x⋆`.
+  have hadj : ∀ᶠ Y in l, (Y.piLpEntry 0 1).adjoint = Y.piLpEntry 1 0 :=
+    hlS.mono fun Y ⟨_, hYsa, _⟩ => by
+      rw [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star,
+        hYsa.star_eq]
+  have := hl
+  refine mem_closure_of_tendsto (f := fun Y => ContinuousLinearMapStrongStar.ofCLM
+    (Y.piLpEntry 0 1)) (b := l) (ContinuousLinearMapStrongStar.tendsto_iff_forall_tendsto.mpr
+      ⟨fun v => by simpa [offDiag] using hlim 0 1 v, fun w => ?_⟩) ?_
+  · have h10 : Tendsto (fun Y => Y.piLpEntry 1 0 w) l (𝓝 (x.adjoint w)) := by
+      simpa [offDiag, ContinuousLinearMap.star_eq_adjoint] using hlim 1 0 w
+    exact h10.congr' (hadj.mono fun Y hY => by dsimp only; rw [hY])
+  · filter_upwards [hlS] with Y ⟨hY, _, hY₁⟩
+    exact ⟨_, ⟨mem_piLpMatrix.mp hY 0 1, (Y.norm_piLpEntry_le 0 1).trans hY₁⟩, rfl⟩
 
 end StarSubalgebra
