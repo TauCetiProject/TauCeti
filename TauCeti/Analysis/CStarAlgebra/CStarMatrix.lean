@@ -9,6 +9,9 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Analysis.CStarAlgebra.Unitization
+import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
@@ -50,12 +53,16 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices.
+  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
+  `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
+* `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
+  image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
-  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
+  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
+  `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -508,6 +515,55 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+/-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
+@[simp]
+theorem norm_toOneByOne {ι : Type*} [Unique ι] (a : A) : ‖toOneByOne ι ℂ A a‖ = ‖a‖ :=
+  StarAlgEquiv.norm_map (toOneByOne ι ℂ A) a
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- Reindexing a square matrix does not change the norm of its entrywise image under a linear
+map. -/
+theorem norm_map_reindexₐ_linearMap {κ ι B : Type*} [Fintype κ] [Fintype ι]
+    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B] (x : CStarMatrix κ κ A)
+    (e : κ ≃ ι) (φ : A →ₗ[ℂ] B) : ‖(reindexₐ ℂ A e x).map φ‖ = ‖x.map φ‖ := by
+  classical
+  have hmap : reindexₐ ℂ B e (x.map φ) = (reindexₐ ℂ A e x).map φ := by
+    simpa using mapₗ_reindexₐ (M := x) (e := e) φ
+  rw [← hmap, StarAlgEquiv.norm_map]
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- The entrywise image of the `1 × 1` C⋆-matrix `[a]` under a linear map `φ` has norm
+`‖φ a‖`. -/
+@[simp]
+theorem norm_map_toOneByOne_linearMap {ι B : Type*} [Unique ι] [NonUnitalCStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] (a : A) (φ : A →ₗ[ℂ] B) :
+    ‖(toOneByOne ι ℂ A a).map φ‖ = ‖φ a‖ := by
+  have hmap : (toOneByOne ι ℂ A a).map φ = toOneByOne ι ℂ B (φ a) := by
+    ext
+    simp
+  rw [hmap, norm_toOneByOne]
+
+open scoped ComplexOrder in
+/-- The entrywise image of the scalar matrix `x` under `z ↦ z • a` has norm at most `‖x‖ ‖a‖`.
+In matrices over the unitization of `A` it is the product of `x` and `diag(a, …, a)`, and the
+inclusion of `A` in its unitization is isometric on matrices. -/
+theorem norm_map_toSpanSingleton_le (a : A) (x : CStarMatrix n n ℂ) :
+    ‖x.map (LinearMap.toSpanSingleton ℂ A a)‖ ≤ ‖x‖ * ‖a‖ := by
+  classical
+  let ι : A →⋆ₙₐ[ℂ] Unitization ℂ A := Unitization.inrNonUnitalStarAlgHom ℂ A
+  let ιₙ := mapₙₐ (n := n) ι
+  have hιₙ : Function.Injective ιₙ := map_injective Unitization.inr_injective
+  let α := mapₙₐ (n := n) ((StarAlgHom.ofId ℂ (Unitization ℂ A)).toNonUnitalStarAlgHom)
+  have hfac : ιₙ (x.map (LinearMap.toSpanSingleton ℂ A a)) =
+      α x * diagonalNonUnitalStarAlgHom ℂ n _ (ι a) := by
+    refine ext fun i j ↦ ?_
+    simp [ιₙ, α, ι, mul_apply, Unitization.algebraMap_eq_inl, Unitization.inl_mul_inr,
+      Unitization.inr_smul]
+  rw [← NonUnitalStarAlgHom.norm_map ιₙ hιₙ, hfac]
+  refine (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le α x) ?_
+    (norm_nonneg _) (norm_nonneg _))
+  exact (norm_diagonalNonUnitalStarAlgHom_le _).trans (Unitization.norm_inr a).le
 
 section Compression
 
