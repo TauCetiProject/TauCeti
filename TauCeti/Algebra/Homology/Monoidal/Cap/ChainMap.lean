@@ -165,8 +165,7 @@ lemma capChainMap_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} [A'.HasTens
     rw [← Category.assoc (capChain k D' a' p q (p + q) rfl (f.f p ≫ φ)),
       capChain_naturality D a D' a' e f g g' hD ha p q (p + q) rfl φ, Category.assoc]
   · -- Below `p` the shifted complex is zero.
-    exact (B'.isZero_extend_X (embeddingDownNatAdd p) n fun j ↦ by
-      rw [embeddingDownNatAdd_f]; omega).eq_of_tgt _ _
+    exact (B'.isZero_extend_embeddingDownNatAdd_X (by omega)).eq_of_tgt _ _
 
 end Chain
 
