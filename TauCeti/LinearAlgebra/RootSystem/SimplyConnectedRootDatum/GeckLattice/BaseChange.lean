@@ -80,7 +80,7 @@ variable (A : Type v) [CommRing A]
 
 /-- The Hopf ideal in `O(GLₙ/A)` obtained by transporting the defining ideal of the integral Geck
 carrier along `ℤ → A`. -/
-noncomputable def geckBaseChangeDefiningIdeal :
+def geckBaseChangeDefiningIdeal :
     HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht)) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralBaseChangePresentationIdeal
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -91,7 +91,7 @@ noncomputable def geckBaseChangeDefiningIdeal :
 
 /-- The coordinate Hopf algebra cut out over `A` by the transported Geck defining ideal is
 canonically the scalar extension of the integral coordinate Hopf algebra. -/
-noncomputable def geckBaseChangeCoordinateIso :
+def geckBaseChangeCoordinateIso :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
         (t.geckBaseChangeDefiningIdeal ht A) ≅
       CommHopfAlgCat.baseChange (K := A)
@@ -139,7 +139,7 @@ choosing a new carrier over `A`.
 The value algebra `B` is an arbitrary commutative `A`-algebra, so this identifies the points of
 the specialized carrier at every value algebra rather than only at `A`; taking `B` to be
 `CommAlgCat.of A A` reads its `A`-points. -/
-noncomputable def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
+def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
     HopfAlgebra.points (R := A)
         (H := CommHopfAlgCat.quotient
           (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
@@ -150,8 +150,10 @@ noncomputable def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
       (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- Under `geckBaseChangePointsMulEquiv`, a quotient point has the same ambient invertible matrix
-as its composite with the quotient map over `A`. -/
-@[simp]
+as its composite with the quotient map over `A`.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem coe_geckBaseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A)
       (H := CommHopfAlgCat.quotient
@@ -171,8 +173,10 @@ theorem coe_geckBaseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
     (t.mkQuotient_comp_geckBaseChangeCoordinateIso_hom ht A) B q
 
 /-- Under the inverse of `geckBaseChangePointsMulEquiv`, the ambient point of the quotient point
-attached to a Geck point is the one read off its invertible matrix. -/
-@[simp]
+attached to a Geck point is the one read off its invertible matrix.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem quotientPointsHom_geckBaseChangePointsMulEquiv_symm (B : CommAlgCat.{w} A)
     (g : t.geckPoints ht B) :
     CommHopfAlgCat.quotientPointsHom
@@ -190,8 +194,10 @@ theorem quotientPointsHom_geckBaseChangePointsMulEquiv_symm (B : CommAlgCat.{w} 
 algebra.** A morphism `χ : B ⟶ C` of value `A`-algebras acts on the specialized carrier's points
 by `HopfAlgebra.mapPoints` and on the Geck points by the shared presentation map along the same
 morphism with its scalars restricted to `ℤ`, and the equivalence intertwines the two. A consumer
-can therefore use it functorially without unfolding its composite implementation. -/
-@[simp]
+can therefore use it functorially without unfolding its composite implementation.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B ⟶ C)
     (q : HopfAlgebra.points (R := A)
       (H := CommHopfAlgCat.quotient
@@ -216,7 +222,7 @@ theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B 
 
 /-- The base change to `A` of a numbered integral Geck root-subgroup coordinate map, transported
 to the coordinate Hopf algebras constructed directly over `A`. -/
-noncomputable def geckRootSubgroupBaseChangeCoordinateMap
+def geckRootSubgroupBaseChangeCoordinateMap
     (i : Fin t.rank ⊕ Fin t.rank) :
     GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶
       AdditiveGroup.coordinateHopfAlgebra A :=
@@ -241,7 +247,7 @@ theorem geckRootSubgroupBaseChangeCoordinateMap_def (i : Fin t.rank ⊕ Fin t.ra
 
 /-- The base-changed `i`th Geck root-subgroup coordinate map factored through the transported
 Geck carrier. -/
-noncomputable def geckRootSubgroupToBaseChangeCoordinateMap
+def geckRootSubgroupToBaseChangeCoordinateMap
     (i : Fin t.rank ⊕ Fin t.rank) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
         (t.geckBaseChangeDefiningIdeal ht A) ⟶
@@ -341,7 +347,7 @@ theorem geckRootSubgroupToBaseChangeCoordinateMap_surjective
 
 /-- The base change to `A` of the integral Geck weight-torus coordinate map, transported to the
 coordinate Hopf algebras constructed directly over `A`. -/
-noncomputable def geckWeightTorusBaseChangeCoordinateMap :
+def geckWeightTorusBaseChangeCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶
       (DiagonalizableGroup.coordinateRing A
         (SplitTorus.characterGroup (Fin t.rank))).obj :=
@@ -355,7 +361,7 @@ theorem geckWeightTorusBaseChangeCoordinateMap_def :
 
 /-- The integral weight-torus coordinate map, with source expressed using the named Geck defining
 ideal. -/
-noncomputable def geckWeightTorusIntegralCoordinateMap :
+def geckWeightTorusIntegralCoordinateMap :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
         (t.geckDefiningIdeal ht) ⟶
       (DiagonalizableGroup.coordinateRing ℤ
@@ -429,7 +435,7 @@ theorem geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom :
 
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/
-noncomputable def geckWeightTorusToBaseChangeCoordinateMap :
+def geckWeightTorusToBaseChangeCoordinateMap :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
         (t.geckBaseChangeDefiningIdeal ht A) ⟶
       (DiagonalizableGroup.coordinateRing A
@@ -480,7 +486,7 @@ theorem geckBaseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
 /-- The coordinate algebras of the transported numbered Geck root subgroups and the transported
 Geck weight torus: an affine line for each numbered root subgroup, and the split torus of rank
 `t.rank`. -/
-noncomputable abbrev geckGeneratorCoordinateAlgebra :
+abbrev geckGeneratorCoordinateAlgebra :
     Sum (Fin t.rank ⊕ Fin t.rank) Unit → CommHopfAlgCat A
   | .inl _ => AdditiveGroup.coordinateHopfAlgebra A
   | .inr _ => (DiagonalizableGroup.coordinateRing A
@@ -488,7 +494,7 @@ noncomputable abbrev geckGeneratorCoordinateAlgebra :
 
 /-- The coordinate maps of the transported numbered Geck root subgroups and the transported Geck
 weight torus into `GLₙ/A`, as one family. -/
-noncomputable def geckGeneratorCoordinateMap (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+def geckGeneratorCoordinateMap (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
     GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶
       t.geckGeneratorCoordinateAlgebra A j :=
   match j with
@@ -540,7 +546,7 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 /-- The coordinate Hopf algebras of the Geck generators over `K` are the scalar extensions of
 those over `k`: the affine line for a numbered root subgroup, and the split torus of rank
 `t.rank` for the weight torus. -/
-noncomputable def geckGeneratorCoordinateAlgebraBaseChangeIso :
+def geckGeneratorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (t.geckGeneratorCoordinateAlgebra k j) ≅
       t.geckGeneratorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K

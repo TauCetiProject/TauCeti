@@ -41,6 +41,8 @@ of determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
 * `TauCeti.BinaryQuadraticForm.ofMatrix_conj`: `Q_{γ M γ⁻¹} = γ • Q_M` for `γ ∈ SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.ofMatrix_inj_of_trace_eq`: when `2` is not a zero divisor, a
   `2 × 2` matrix is determined by its trace and its form `Q_M`.
+* `TauCeti.BinaryQuadraticForm.mem_stabilizer_ofMatrix_iff_commute`: when `2` is not a zero
+  divisor, the automorphs of `Q_M` in `SL(2, R)` are the elements commuting with `M`.
 
 ## References
 
@@ -130,6 +132,31 @@ theorem ofMatrix_inj_of_trace_eq (h2 : IsLeftRegular (2 : R)) {M N : Matrix (Fin
   fin_cases i <;> fin_cases j
   exacts [h₀₀, h₀₁, h₁₀, h₁₁']
 
+/-- An element `γ ∈ SL(2, R)` commuting with `M` fixes the form `Q_M`. -/
+theorem smul_ofMatrix_eq_self_of_commute {γ : SL(2, R)} {M : Matrix (Fin 2) (Fin 2) R}
+    (h : Commute (γ : Matrix (Fin 2) (Fin 2) R) M) : γ • ofMatrix M = ofMatrix M := by
+  rw [← ofMatrix_conj, h.eq, Matrix.mul_assoc, ← SpecialLinearGroup.coe_mul, mul_inv_cancel,
+    SpecialLinearGroup.coe_one, Matrix.mul_one]
+
+/-- When `2` is not a zero divisor in `R`, an element `γ ∈ SL(2, R)` fixes the form `Q_M` exactly
+when it commutes with `M`: conjugation by `γ` preserves the trace, and a matrix is determined by
+its trace and its form. -/
+theorem mem_stabilizer_ofMatrix_iff_commute (h2 : IsLeftRegular (2 : R)) {γ : SL(2, R)}
+    {M : Matrix (Fin 2) (Fin 2) R} :
+    γ ∈ MulAction.stabilizer SL(2, R) (ofMatrix M) ↔ Commute (γ : Matrix (Fin 2) (Fin 2) R) M := by
+  rw [MulAction.mem_stabilizer_iff]
+  refine ⟨fun hγ ↦ ?_, smul_ofMatrix_eq_self_of_commute⟩
+  have hinv : ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) * γ = 1 := by
+    rw [← SpecialLinearGroup.coe_mul, inv_mul_cancel, SpecialLinearGroup.coe_one]
+  have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * M * ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
+      M := by
+    refine (ofMatrix_inj_of_trace_eq h2 ?_).mp ?_
+    · rw [trace_mul_cycle, hinv, Matrix.one_mul]
+    · rw [ofMatrix_conj, hγ]
+  rw [commute_iff_eq]
+  conv_rhs => rw [← hconj]
+  rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), hinv, Matrix.mul_one]
+
 /-- If an integral form has discriminant `t² - 4 n`, then `t` and its middle coefficient have the
 same parity. -/
 theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
@@ -145,10 +172,10 @@ theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
 lower right entry is `(t + b) / 2`. -/
 def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n} ≃
     {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n} where
-  toFun M := ⟨ofMatrix M.1, by rw [discrim_ofMatrix, M.2.1, M.2.2]⟩
-  invFun f := ⟨!![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2], by
+  toFun M := ⟨ofMatrix M.val, by rw [discrim_ofMatrix, M.property.1, M.property.2]⟩
+  invFun f := ⟨!![(t - f.val.b) / 2, -f.val.c; f.val.a, t - (t - f.val.b) / 2], by
     rw [trace_fin_two_of, det_fin_two_of]
-    grind [two_mul_ediv_two_of_discrim_eq f.2, discrim_def, discrim]⟩
+    grind [two_mul_ediv_two_of_discrim_eq f.property, discrim_def, discrim]⟩
   left_inv M := by
     obtain ⟨M, rfl, -⟩ := M
     ext i j
@@ -156,7 +183,7 @@ def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t �
       simp only [trace_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg, Fin.zero_eta,
         Fin.mk_one, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> omega
   right_inv f := by
-    ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.2]
+    ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.property]
 
 /-- `ofMatrixEquiv t n` sends a matrix `M` to its form `Q_M`. -/
 @[simp]
@@ -171,7 +198,7 @@ theorem coe_ofMatrixEquiv_apply {t n : ℤ}
 theorem coe_ofMatrixEquiv_symm_apply {t n : ℤ}
     (f : {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n}) :
     ((ofMatrixEquiv t n).symm f : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2] :=
+      !![(t - f.val.b) / 2, -f.val.c; f.val.a, t - (t - f.val.b) / 2] :=
   (rfl)
 
 end BinaryQuadraticForm

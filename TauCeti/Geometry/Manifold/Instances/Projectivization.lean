@@ -50,7 +50,7 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * The atlas `range affineOpenPartialHomeomorph`, the choice of `chartAt` through
   `exists_mem_affineOpen`, and the proof of the manifold instance by `isManifold_of_contDiffOn`
   are adapted from the sphere-quotient construction of `TauCeti.ComplexProjectiveSpace` in
-  `TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace`.
+  `TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Basic`.
 -/
 
 public section

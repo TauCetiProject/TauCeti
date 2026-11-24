@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
+import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
 # Coset theta series on the discriminant group
@@ -29,19 +31,27 @@ full lattice, the modular translation `T : τ ↦ τ + 1` acts on `θ_γ` with e
 `ZLattice.IsEven.discriminantQuadraticChar`, and `level L` is the least positive exponent killing
 all of these eigenvalues (`ZLattice.IsEven.level_dvd_iff_discriminantQuadraticChar_pow_eq_one`).
 
-For a discrete subgroup `L` of a finite-dimensional real inner product space `E` with finite
-discriminant group `A_L = L^∨ ⧸ (L ∩ L^∨)`, `L ⊔ L^∨` is discrete
-(`ZLattice.discreteTopology_sup_dual`) and splitting `L ⊔ L^∨` into cosets of `L` via
-`(L ⊔ L^∨) ⧸ L ≃ A_L` identifies the coset sum as `∑_{γ ∈ A_L} θ_γ = Θ_{L ⊔ L^∨}`
-(`ZLattice.sum_thetaCosetClass`). For an integral lattice (`L ≤ L^∨`), this gives the dual coset
-decomposition `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` (`ZLattice.IsIntegral.thetaSeries_dual_eq_sum`). By
-strict monotonicity of `Θ` on the imaginary axis (`ZLattice.re_thetaSeries_strictMono`) applied to
-`L^∨ ≤ L ⊔ L^∨`, integrality is also necessary: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` holds if and only if
-`L` is integral (`ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral`). In particular, when `L^∨ ≤ L`
-(for instance `L = m⁻¹ • M` for unimodular `M` in finite positive dimension and `m > 1`), `A_L` is
-trivial so `∑_{γ ∈ A_L} θ_γ = Θ_L`; for `L = ½ ℤ ⊆ ℝ` with `L^∨ = 2 ℤ`,
-`Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` (`ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_div_two_I`) and
-`Θ_{(½ℤ)^∨} ≠ ∑_{γ ∈ A_{½ℤ}} θ_γ` (`ZLattice.thetaSeries_dual_span_one_div_two_ne_sum`).
+When `E` is finite-dimensional, `L` is discrete, and `A_L` is finite, the sum lattice `L ⊔ L^∨` is
+discrete and splitting `L ⊔ L^∨` into cosets of `L` via `ZLattice.discriminantGroupEquivQuotientSup`
+gives `Θ_{L ⊔ L^∨} = ∑_{γ ∈ A_L} θ_γ` (`ZLattice.thetaSeries_sup_dual_eq_sum`). When `L` is
+integral with finite `A_L` (automatic when `L` is full), `L ⊔ L^∨ = L^∨`, recovering
+`Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` (`ZLattice.IsIntegral.thetaSeries_dual_eq_sum`).
+Conversely, on the imaginary axis `re τ = 0` (still for discrete `L` with finite `A_L` in
+finite-dimensional `E`), sublattice monotonicity yields
+`re Θ_{L^∨}(τ) ≤ ∑_{γ ∈ A_L} re θ_γ(τ)` (`ZLattice.re_thetaSeries_dual_le_sum`), and the identity
+`Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` holds if and only if `L` is integral
+(`ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`), so the identity holds for every
+`τ` if and only if `L` is integral (`ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`).
+Whenever `L^∨ ≤ L` the discriminant group is trivial, so the sum over `A_L` reduces to
+`θ_0 = Θ_L`, and without assuming `L` discrete the identity fails at every point of the imaginary
+axis whenever `L^∨ < L` (`ZLattice.thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt`,
+`ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`). In particular, in finite positive
+dimension, down-scaling a unimodular lattice `L` by `m > 1` yields a sub-dual lattice `m⁻¹ • L` on
+which the dual decomposition fails
+(`ZLattice.IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum_of_re_eq_zero`); for `L = ℤ` and
+`m = 2` this is `½ ℤ ⊆ ℝ` with dual `2 ℤ`, where `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
+(`ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
+`ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`).
 
 ## Main definitions
 
@@ -56,26 +66,38 @@ trivial so `∑_{γ ∈ A_L} θ_γ = Θ_L`; for `L = ½ ℤ ⊆ ℝ` with `L^∨
   every weight.
 * `ZLattice.IsEven.thetaCosetClass_slash_T`, `ZLattice.IsEven.thetaCosetClass_slash_T_zpow`:
   `θ_γ ∣[k] T ^ n = e(q_L(γ))^n • θ_γ` for an even full lattice `L`.
-* `ZLattice.IsIntegral.thetaSeries_dual_eq_sum`: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` for integral `L`.
-* `ZLattice.sum_thetaCosetClass`,
-  `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`,
-  `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral`: for a discrete subgroup `L` of a
-  finite-dimensional space with finite `A_L`, `∑_{γ ∈ A_L} θ_γ = Θ_{L ⊔ L^∨}`, so
-  `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` holds if and only if `L` is integral.
-* `ZLattice.IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum`,
-  `ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_div_two_I`,
-  `ZLattice.thetaSeries_dual_span_one_div_two_ne_sum`: failure of the dual coset decomposition on
-  sub-dual down-scaled lattices `m⁻¹ • L` (`L` unimodular in finite positive dimension, `m > 1`)
-  and on `L = ½ ℤ`.
+* `ZLattice.thetaSeries_sup_dual_eq_sum`: in finite-dimensional `E`,
+  `Θ_{L ⊔ L^∨} = ∑_{γ ∈ A_L} θ_γ` whenever `L` is discrete and `A_L` is finite.
+* `ZLattice.IsIntegral.thetaSeries_dual_eq_sum`: in finite-dimensional `E`,
+  `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` for integral `L` with finite `A_L` (automatic when `L` is full).
+* `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`,
+  `ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`: in finite-dimensional `E`, for
+  discrete `L` with finite `A_L`, the dual decomposition `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` (at a point
+  of the imaginary axis, or for all `τ`) holds if and only if `L` is integral.
+* `ZLattice.thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt`,
+  `ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`: in finite-dimensional `E`, when
+  `L^∨ < L` (with `L` not necessarily discrete), `Θ_{L^∨}(τ) ≠ ∑_{γ ∈ A_L} θ_γ(τ)` on the imaginary
+  axis.
+* `ZLattice.finsum_thetaCosetClass_of_dual_le`, `ZLattice.sum_thetaCosetClass_of_dual_le`,
+  `ZLattice.forall_thetaSeries_dual_eq_finsum_iff_isIntegral`: when `L^∨ ≤ L`, the sum of `θ_γ`
+  over `A_L` reduces to `Θ_L`, and equals `Θ_{L^∨}` if and only if `L` is integral.
+* `ZLattice.IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_finsum_of_re_eq_zero`,
+  `ZLattice.IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum_of_re_eq_zero`: in finite positive
+  dimension, for unimodular `L` and `m > 1`, the dual decomposition fails on `m⁻¹ • L` along the
+  imaginary axis.
+* `ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
+  `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`: for `L = ½ ℤ ⊆ ℝ`, `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
+  and `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`.
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, 3rd ed., Springer, 2013, Chapter 2.
+* J.-P. Serre, *A Course in Arithmetic*, Springer, 1973, Chapter VII, §6.
 -/
 
 public section
 
-open Complex
+open Complex Submodule
 open scoped Pointwise Real ModularForm UpperHalfPlane
 
 namespace ZLattice
@@ -111,14 +133,6 @@ theorem thetaCosetClass_neg (γ : DiscriminantGroup L) :
   | H x => rw [← Submodule.Quotient.mk_neg, thetaCosetClass_mk, thetaCosetClass_mk,
       NegMemClass.coe_neg, thetaCoset_neg]
 
-variable {L} in
-/-- When `dual L ≤ L` (without discreteness or finite-dimensionality), the discriminant group `A_L`
-is trivial and the sum of `θ_γ` over `A_L` collapses to the single `γ = 0` term `Θ_L`. -/
-theorem sum_thetaCosetClass_of_dual_le (h : dual L ≤ L) [Fintype (DiscriminantGroup L)] :
-    (∑ γ : DiscriminantGroup L, thetaCosetClass L γ) = thetaSeries L := by
-  have : Subsingleton (DiscriminantGroup L) := subsingleton_discriminantGroup_iff.mpr h
-  rw [Fintype.sum_subsingleton _ 0, thetaCosetClass_zero]
-
 /-! ### Translation invariance at the level -/
 
 section LevelTranslation
@@ -133,7 +147,7 @@ theorem thetaCosetClass_intCast_vadd_of_level_dvd (hL : IsEven L) (γ : Discrimi
     {N : ℤ} (hN : (level L : ℤ) ∣ N) (τ : ℍ) :
     thetaCosetClass L γ ((N : ℝ) +ᵥ τ) = thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.2 hN τ
+  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.property hN τ
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` has period `level L`. -/
 @[simp]
@@ -147,7 +161,7 @@ theorem thetaCosetClass_slash_T_zpow_of_level_dvd (hL : IsEven L) (γ : Discrimi
     (k : ℤ) {N : ℤ} (hN : (level L : ℤ) ∣ N) :
     thetaCosetClass L γ ∣[k] (ModularGroup.T ^ N) = thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.2 k hN
+  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.property k hN
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under
 `T ^ (level L : ℤ)` in every weight. -/
@@ -166,19 +180,134 @@ end IsEven
 
 end LevelTranslation
 
-/-! ### Full lattices -/
+/-! ### Coset decomposition and integrality -/
 
-variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] {L}
+section DualDecomposition
 
-/-- For an integral lattice `L`, the theta series of the dual lattice is the sum of the coset theta
-series over the finite discriminant group `L^∨ ⧸ L`: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ`. The discriminant
-group of an integral lattice is finite (`IsIntegral.finite_discriminantGroup`), so a `Fintype`
+variable {L}
+
+/-- When `L^∨ ≤ L`, the finitely supported sum of the coset theta series over `A_L` is `Θ_L`. -/
+theorem finsum_thetaCosetClass_of_dual_le (h : dual L ≤ L) (τ : ℍ) :
+    ∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ = thetaSeries L τ := by
+  have : Subsingleton (DiscriminantGroup L) := subsingleton_discriminantGroup_iff.mpr h
+  rw [finsum_eq_single _ (0 : DiscriminantGroup L) fun γ hγ => (hγ (Subsingleton.elim γ 0)).elim,
+    thetaCosetClass_zero]
+
+/-- When `L^∨ ≤ L`, the finite sum of the coset theta series over `A_L` is `Θ_L`. -/
+theorem sum_thetaCosetClass_of_dual_le [Fintype (DiscriminantGroup L)] (h : dual L ≤ L) (τ : ℍ) :
+    ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ = thetaSeries L τ := by
+  rw [← finsum_eq_sum_of_fintype, finsum_thetaCosetClass_of_dual_le h]
+
+variable [FiniteDimensional ℝ E]
+
+/-- In a finite-dimensional real inner product space `E`, whenever `L` is discrete and its
+discriminant group `A_L = L^∨ ⧸ (L ∩ L^∨)` is finite, the sum lattice `L ⊔ L^∨` is discrete and
+its theta series is the sum of the coset theta series over `A_L`:
+`Θ_{L ⊔ L^∨} = ∑_{γ ∈ A_L} θ_γ`. -/
+theorem thetaSeries_sup_dual_eq_sum [DiscreteTopology L] [Fintype (DiscriminantGroup L)] (τ : ℍ) :
+    thetaSeries (L ⊔ dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+  have : Fintype (↥(L ⊔ dual L) ⧸ L.submoduleOf (L ⊔ dual L)) :=
+    Fintype.ofEquiv _ (discriminantGroupEquivQuotientSup L).toEquiv
+  rw [← (hasSum_thetaCoset_out (L ⊔ dual L) le_sup_left τ).tsum_eq, tsum_fintype,
+    ← (discriminantGroupEquivQuotientSup L).toEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun γ _ ↦ ?_
+  induction γ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [LinearEquiv.coe_toEquiv, discriminantGroupEquivQuotientSup_mk, thetaCosetClass_mk]
+    refine congrFun (thetaCoset_eq_of_sub_mem L ?_) τ
+    have hq : Submodule.Quotient.mk
+        (Quotient.out (Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :
+          ↥(L ⊔ dual L) ⧸ L.submoduleOf (L ⊔ dual L))) =
+        Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :=
+      Submodule.Quotient.mk_out _
+    simpa [submoduleOf] using (Submodule.Quotient.eq _).mp hq
+
+/-- For an integral lattice `L` in a finite-dimensional real inner product space `E` with finite
+discriminant group `A_L = L^∨ ⧸ L`, the theta series of the dual lattice is the sum of the coset
+theta series over `A_L`: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ`. For an integral full lattice the
+discriminant group is automatically finite (`IsIntegral.finite_discriminantGroup`), so a `Fintype`
 instance is always available. -/
 theorem IsIntegral.thetaSeries_dual_eq_sum (h : IsIntegral L) [Fintype (DiscriminantGroup L)]
     (τ : ℍ) : thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
-  rw [← (hasSum_thetaCoset_out (dual L) (isIntegral_iff_le_dual.mp h) τ).tsum_eq, tsum_fintype]
-  refine Finset.sum_congr rfl fun γ _ => ?_
-  rw [← thetaCosetClass_mk, Submodule.Quotient.mk_out]
+  have := h.discreteTopology
+  rw [← sup_eq_right.mpr (isIntegral_iff_le_dual.mp h), thetaSeries_sup_dual_eq_sum]
+
+/-- For a discrete lattice `L` in a finite-dimensional real inner product space `E` with finite
+discriminant group `A_L`, on the imaginary axis the real part of `Θ_{L^∨}(τ)` is at most the sum
+of the real parts of the coset theta series over `A_L`. -/
+theorem re_thetaSeries_dual_le_sum [DiscreteTopology L] [Fintype (DiscriminantGroup L)]
+    {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries (dual L) τ).re ≤ ∑ γ : DiscriminantGroup L, (thetaCosetClass L γ τ).re := by
+  refine (re_thetaSeries_mono (L := L ⊔ dual L) le_sup_right hτ).trans_eq ?_
+  rw [thetaSeries_sup_dual_eq_sum, Complex.re_sum]
+
+/-- For a discrete lattice `L` in a finite-dimensional real inner product space `E` with finite
+discriminant group `A_L`, on the imaginary axis
+`(thetaSeries (dual L) τ).re < ∑_{γ ∈ A_L} (thetaCosetClass L γ τ).re` holds if and only if `L`
+is not integral. -/
+theorem re_thetaSeries_dual_lt_sum_iff_not_isIntegral [DiscreteTopology L]
+    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries (dual L) τ).re < ∑ γ : DiscriminantGroup L, (thetaCosetClass L γ τ).re ↔
+      ¬ IsIntegral L := by
+  rw [← Complex.re_sum, ← thetaSeries_sup_dual_eq_sum,
+    re_thetaSeries_lt_iff_lt_of_le (L := L ⊔ dual L) le_sup_right hτ, le_sup_right.lt_iff_ne, ne_eq,
+    eq_comm, sup_eq_right, ← isIntegral_iff_le_dual]
+
+/-- For a discrete lattice `L` in a finite-dimensional real inner product space `E` with finite
+discriminant group `A_L`, on the imaginary axis the dual decomposition
+`Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` holds if and only if `L` is integral. -/
+theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [DiscreteTopology L]
+    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ ↔ IsIntegral L := by
+  rw [← thetaSeries_sup_dual_eq_sum,
+    thetaSeries_eq_iff_eq_of_le_of_re_eq_zero (L := L ⊔ dual L) le_sup_right hτ, eq_comm,
+    sup_eq_right, ← isIntegral_iff_le_dual]
+
+/-- For a discrete lattice `L` in a finite-dimensional real inner product space `E` with finite
+discriminant group `A_L`, the dual decomposition `∀ τ, Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` holds if
+and only if `L` is integral. -/
+theorem forall_thetaSeries_dual_eq_sum_iff_isIntegral [DiscreteTopology L]
+    [Fintype (DiscriminantGroup L)] :
+    (∀ τ : ℍ, thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ) ↔
+      IsIntegral L :=
+  ⟨fun hall ↦ (thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero UpperHalfPlane.I_re).mp
+      (hall UpperHalfPlane.I),
+    fun hL τ ↦ hL.thetaSeries_dual_eq_sum τ⟩
+
+/-- When `L^∨ < L` in a finite-dimensional real inner product space `E` (with `L` not necessarily
+discrete), the dual decomposition `Θ_{L^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` fails at every point `τ` of the
+imaginary axis: the sum over the trivial discriminant group is `Θ_L`, and `Θ_{L^∨}(τ) ≠ Θ_L(τ)`,
+by sublattice monotonicity when `L` is discrete and because `Θ_L = 0 ≠ Θ_{L^∨}(τ)` otherwise. -/
+theorem thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt (h : dual L < L) {τ : ℍ}
+    (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ ≠ ∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+  rw [finsum_thetaCosetClass_of_dual_le h.le]
+  by_cases hL : DiscreteTopology L
+  · exact thetaSeries_ne_of_lt_of_re_eq_zero h hτ
+  · have : DiscreteTopology (dual L) :=
+      IsIntegral.discreteTopology (isIntegral_iff_le_dual.mpr (dual_anti h.le))
+    have h0 : thetaCoset L 0 = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L 0 fun y hy hs ↦
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L 0 (by positivity) hs)
+    rw [← thetaCoset_zero L, h0, Pi.zero_apply]
+    exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ
+
+/-- When `L^∨ < L` in a finite-dimensional real inner product space `E` (with `L` not necessarily
+discrete), the dual decomposition `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` fails at every point `τ` of
+the imaginary axis. -/
+theorem thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (h : dual L < L)
+    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ ≠ ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+  rw [← finsum_eq_sum_of_fintype]
+  exact thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt h hτ
+
+end DualDecomposition
+
+/-! ### Even full lattices -/
+
+section EvenFull
+
+variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] {L}
 
 namespace IsEven
 
@@ -189,8 +318,8 @@ theorem thetaCosetClass_intCast_vadd (hL : IsEven L) (γ : DiscriminantGroup L) 
       hL.discriminantQuadraticChar γ ^ n * thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
@@ -208,8 +337,8 @@ theorem thetaCosetClass_slash_T_zpow (hL : IsEven L) (γ : DiscriminantGroup L) 
       (hL.discriminantQuadraticChar γ ^ n) • thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
@@ -222,157 +351,126 @@ theorem thetaCosetClass_slash_T (hL : IsEven L) (γ : DiscriminantGroup L) (k : 
 
 end IsEven
 
-/-! ### Coset sum over the discriminant group and sharpness of integrality -/
+end EvenFull
 
-section DualSum
+/-! ### Dual contained in the lattice -/
 
-omit [IsZLattice ℝ L] in
-/-- For a discrete subgroup `L` of a finite-dimensional space with finite discriminant group
-`A_L = L^∨ ⧸ (L ∩ L^∨)`, the sum of the coset theta series `θ_γ(τ)` over `γ ∈ A_L` equals
-`Θ_{L ⊔ L^∨}(τ)`. -/
-theorem sum_thetaCosetClass_apply [Fintype (DiscriminantGroup L)] (τ : ℍ) :
-    (∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ) = thetaSeries (L ⊔ dual L) τ := by
-  have : DiscreteTopology (dual L ⊔ L : Submodule ℤ E) :=
-    sup_comm L (dual L) ▸ discreteTopology_sup_dual L
-  have hsub : L.submoduleOf (dual L) =
-      Submodule.comap (dual L).subtype (dual L) ⊓ Submodule.comap (dual L).subtype L := by
-    simp [Submodule.submoduleOf]
-  let e : DiscriminantGroup L ≃ₗ[ℤ]
-      (dual L ⊔ L : Submodule ℤ E) ⧸ L.submoduleOf (dual L ⊔ L) :=
-    (Submodule.quotEquivOfEq _ _ hsub).trans
-      (LinearMap.quotientInfEquivSupQuotient (dual L) L)
-  have hs := e.toEquiv.hasSum_iff.mpr (hasSum_thetaCoset_out (dual L ⊔ L) le_sup_right τ)
-  rw [sup_comm, ← hs.tsum_eq, tsum_fintype]
-  refine Finset.sum_congr rfl fun γ _ => ?_
-  induction γ using Submodule.Quotient.induction_on with
-  | H x =>
-    simp only [LinearEquiv.coe_toEquiv, thetaCosetClass_mk]
-    refine congrFun (thetaCoset_eq_of_sub_mem L ?_).symm τ
-    have he : e (Submodule.Quotient.mk x) =
-        Submodule.Quotient.mk (Submodule.inclusion (le_sup_left : dual L ≤ dual L ⊔ L) x) :=
-      (congrArg (LinearMap.quotientInfEquivSupQuotient (dual L) L)
-        (Submodule.quotEquivOfEq_mk _ _ hsub x)).trans
-        (LinearMap.quotientInfEquivSupQuotient_apply_mk (dual L) L x)
-    have hout : Quotient.out (e (Submodule.Quotient.mk x)) -
-        Submodule.inclusion (le_sup_left : dual L ≤ dual L ⊔ L) x ∈
-          L.submoduleOf (dual L ⊔ L) := by
-      rw [← Submodule.Quotient.eq, Submodule.Quotient.mk_out, he]
-    simpa [Submodule.submoduleOf] using hout
+section DualLe
 
-omit [IsZLattice ℝ L] in
-/-- For a discrete subgroup `L` of a finite-dimensional space with finite discriminant group
-`A_L = L^∨ ⧸ (L ∩ L^∨)`, the sum of the coset theta series `θ_γ` over `γ ∈ A_L` equals
-`Θ_{L ⊔ L^∨}`. -/
-theorem sum_thetaCosetClass [Fintype (DiscriminantGroup L)] :
-    (∑ γ : DiscriminantGroup L, thetaCosetClass L γ) = thetaSeries (L ⊔ dual L) := by
-  ext τ
-  rw [Finset.sum_apply, sum_thetaCosetClass_apply]
+variable {L}
 
-omit [IsZLattice ℝ L] in
-/-- **Sharpness of integrality in the dual coset decomposition (pointwise on the imaginary axis).**
-For a discrete subgroup `L` of a finite-dimensional space with finite discriminant group `A_L`, the
-identity `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` at a point `τ` on the imaginary axis holds if and only if
-`L` is integral. -/
-theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero
-    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ ↔ IsIntegral L := by
-  have : DiscreteTopology (L ⊔ dual L : Submodule ℤ E) := discreteTopology_sup_dual L
-  rw [sum_thetaCosetClass_apply,
-    thetaSeries_eq_iff_of_le_of_re_eq_zero (le_sup_right : dual L ≤ L ⊔ dual L) hτ,
-    eq_comm, sup_eq_right, ← isIntegral_iff_le_dual]
+variable [FiniteDimensional ℝ E] [DiscreteTopology L]
 
-omit [IsZLattice ℝ L] in
-/-- **Sharpness of integrality in the dual coset decomposition.** For a discrete subgroup `L` of a
-finite-dimensional space with finite discriminant group `A_L`, the function identity
-`Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` holds if and only if `L` is integral. -/
-theorem thetaSeries_dual_eq_sum_iff_isIntegral [Fintype (DiscriminantGroup L)] :
-    thetaSeries (dual L) = (∑ γ : DiscriminantGroup L, thetaCosetClass L γ) ↔ IsIntegral L := by
-  have : DiscreteTopology (L ⊔ dual L : Submodule ℤ E) := discreteTopology_sup_dual L
-  rw [sum_thetaCosetClass, thetaSeries_eq_iff_of_le (le_sup_right : dual L ≤ L ⊔ dual L),
-    eq_comm, sup_eq_right, ← isIntegral_iff_le_dual]
-
-omit [IsZLattice ℝ L] in
-/-- For a non-integral discrete subgroup `L` of a finite-dimensional space with finite discriminant
-group `A_L`, the dual coset decomposition `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` fails at every point
-`τ` on the imaginary axis. -/
-theorem thetaSeries_dual_ne_sum_of_not_isIntegral_of_re_eq_zero (hni : ¬ IsIntegral L)
-    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (dual L) τ ≠ ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ :=
-  mt (thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero hτ).mp hni
-
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the down-scaled lattice
-`m⁻¹ • L` satisfies `Θ_{(m⁻¹ • L)^∨}(τ) ≠ Θ_{m⁻¹ • L}(τ)` at every point `τ` on the imaginary
+/-- If `L^∨ ≤ L` and `L` is not integral, then `re Θ_{L^∨}(τ) < re Θ_L(τ)` on the imaginary
 axis. -/
-theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_of_re_eq_zero [Nontrivial E]
+theorem re_thetaSeries_dual_lt_of_dual_le_of_not_isIntegral (h : dual L ≤ L)
+    (hL : ¬ IsIntegral L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries (dual L) τ).re < (thetaSeries L τ).re :=
+  re_thetaSeries_lt_of_lt ((dual_lt_iff_not_isIntegral_of_dual_le h).mpr hL) hτ
+
+/-- For a discrete subgroup `L` with `L^∨ ≤ L`, at any point `τ` of the imaginary axis the identity
+`Θ_{L^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` holds if and only if `L` is integral. -/
+theorem thetaSeries_dual_eq_finsum_iff_isIntegral_of_re_eq_zero (h : dual L ≤ L) {τ : ℍ}
+    (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ = (∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ) ↔
+      IsIntegral L := by
+  rw [finsum_thetaCosetClass_of_dual_le h, thetaSeries_eq_iff_eq_of_le_of_re_eq_zero h hτ,
+    eq_comm, ← isUnimodular_iff_eq_dual, isIntegral_iff_isUnimodular_of_dual_le h]
+
+/-- For a discrete subgroup `L` with `L^∨ ≤ L`, the dual decomposition
+`∀ τ, Θ_{L^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` holds if and only if `L` is integral. -/
+theorem forall_thetaSeries_dual_eq_finsum_iff_isIntegral (h : dual L ≤ L) :
+    (∀ τ : ℍ, thetaSeries (dual L) τ = ∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ) ↔
+      IsIntegral L :=
+  ⟨fun hall => (thetaSeries_dual_eq_finsum_iff_isIntegral_of_re_eq_zero h UpperHalfPlane.I_re).mp
+    (hall UpperHalfPlane.I),
+    fun hL τ => by
+      rw [finsum_thetaCosetClass_of_dual_le h, h.antisymm (isIntegral_iff_le_dual.mp hL)]⟩
+
+end DualLe
+
+section DownScaledUnimodular
+
+variable {L} [FiniteDimensional ℝ E] [Nontrivial E]
+
+/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the down-scaled lattice
+`m⁻¹ • L` satisfies `Θ_{(m⁻¹ • L)^∨}(τ) ≠ Θ_{m⁻¹ • L}(τ)` at every point `τ` of the imaginary
+axis. -/
+theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_of_re_eq_zero
     (h : IsUnimodular L) {m : ℕ} (hm : 1 < m) {τ : ℍ} (hτ : τ.re = 0) :
     thetaSeries (dual ((m : ℝ)⁻¹ • L)) τ ≠ thetaSeries ((m : ℝ)⁻¹ • L) τ := by
   have := h.isIntegral.discreteTopology
   have : NeZero (m : ℝ)⁻¹ := ⟨inv_ne_zero (Nat.cast_ne_zero.mpr (by omega))⟩
-  exact fun heq => (re_thetaSeries_strictMono (h.dual_inv_natCast_smul_lt hm) hτ).ne
-    (congrArg Complex.re heq)
+  exact thetaSeries_ne_of_lt_of_re_eq_zero (h.dual_inv_natCast_smul_lt hm) hτ
 
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the dual coset
-decomposition fails on `m⁻¹ • L` at every point `τ` on the imaginary axis. -/
-theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum_of_re_eq_zero [Nontrivial E]
+/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`,
+`Θ_{(m⁻¹ • L)^∨} ≠ Θ_{m⁻¹ • L}` as functions on `ℍ`. -/
+theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne
+    (h : IsUnimodular L) {m : ℕ} (hm : 1 < m) :
+    thetaSeries (dual ((m : ℝ)⁻¹ • L)) ≠ thetaSeries ((m : ℝ)⁻¹ • L) := by
+  have := h.isIntegral.discreteTopology
+  have : NeZero (m : ℝ)⁻¹ := ⟨inv_ne_zero (Nat.cast_ne_zero.mpr (by omega))⟩
+  exact thetaSeries_ne_of_lt (h.dual_inv_natCast_smul_lt hm)
+
+/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the dual decomposition
+`Θ_{M^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` fails on `M = m⁻¹ • L` at every point `τ` of the imaginary axis. -/
+theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_finsum_of_re_eq_zero
+    (h : IsUnimodular L) {m : ℕ} (hm : 1 < m) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual ((m : ℝ)⁻¹ • L)) τ ≠
+      ∑ᶠ γ : DiscriminantGroup ((m : ℝ)⁻¹ • L), thetaCosetClass ((m : ℝ)⁻¹ • L) γ τ :=
+  thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt (h.dual_inv_natCast_smul_lt hm) hτ
+
+/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the dual decomposition
+`Θ_{M^∨}(τ) = ∑ γ, θ_γ(τ)` fails on `M = m⁻¹ • L` at every point `τ` of the imaginary axis. -/
+theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum_of_re_eq_zero
     (h : IsUnimodular L) {m : ℕ} (hm : 1 < m)
     [Fintype (DiscriminantGroup ((m : ℝ)⁻¹ • L))] {τ : ℍ} (hτ : τ.re = 0) :
     thetaSeries (dual ((m : ℝ)⁻¹ • L)) τ ≠
-      ∑ γ : DiscriminantGroup ((m : ℝ)⁻¹ • L), thetaCosetClass ((m : ℝ)⁻¹ • L) γ τ := by
-  have := h.isIntegral.discreteTopology
-  have : NeZero (m : ℝ)⁻¹ := ⟨inv_ne_zero (Nat.cast_ne_zero.mpr (by omega))⟩
-  exact thetaSeries_dual_ne_sum_of_not_isIntegral_of_re_eq_zero
-    (h.not_isIntegral_inv_natCast_smul hm) hτ
+      ∑ γ : DiscriminantGroup ((m : ℝ)⁻¹ • L), thetaCosetClass ((m : ℝ)⁻¹ • L) γ τ :=
+  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (h.dual_inv_natCast_smul_lt hm) hτ
 
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- In finite positive dimension, for a unimodular lattice `L` and `m > 1`, the dual coset
-decomposition `Θ_{M^∨} = ∑_{γ ∈ A_M} θ_γ` fails as a function identity for `M = m⁻¹ • L`. -/
-theorem IsUnimodular.thetaSeries_dual_inv_natCast_smul_ne_sum [Nontrivial E]
-    (h : IsUnimodular L) {m : ℕ} (hm : 1 < m)
-    [Fintype (DiscriminantGroup ((m : ℝ)⁻¹ • L))] :
-    thetaSeries (dual ((m : ℝ)⁻¹ • L)) ≠
-      ∑ γ : DiscriminantGroup ((m : ℝ)⁻¹ • L), thetaCosetClass ((m : ℝ)⁻¹ • L) γ := by
-  have := h.isIntegral.discreteTopology
-  have : NeZero (m : ℝ)⁻¹ := ⟨inv_ne_zero (Nat.cast_ne_zero.mpr (by omega))⟩
-  exact mt thetaSeries_dual_eq_sum_iff_isIntegral.mp (h.not_isIntegral_inv_natCast_smul hm)
+end DownScaledUnimodular
+
+/-! ### Non-integral rank-one boundary example -/
+
+section NonIntegralBoundary
 
 /-- On the imaginary axis, `re Θ_{2ℤ}(τ) < re Θ_{½ℤ}(τ)`. -/
-theorem re_thetaSeries_span_two_lt_span_one_div_two {τ : ℍ} (hτ : τ.re = 0) :
-    (thetaSeries (Submodule.span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ).re <
-      (thetaSeries (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) τ).re := by
-  simpa only [dual_span_one_div_two] using re_thetaSeries_strictMono dual_span_one_div_two_lt hτ
+theorem re_thetaSeries_span_two_lt_re_thetaSeries_span_one_half {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries (span ℤ {2} : Submodule ℤ ℝ) τ).re <
+      (thetaSeries (span ℤ {1 / 2} : Submodule ℤ ℝ) τ).re :=
+  re_thetaSeries_lt_of_lt span_two_lt_span_one_half hτ
 
-/-- On the imaginary axis, `Θ_{2ℤ}(τ) ≠ Θ_{½ℤ}(τ)`. -/
-theorem thetaSeries_span_two_ne_thetaSeries_span_one_div_two_of_re_eq_zero {τ : ℍ}
-    (hτ : τ.re = 0) :
-    thetaSeries (Submodule.span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ ≠
-      thetaSeries (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) τ :=
-  fun heq => (re_thetaSeries_span_two_lt_span_one_div_two hτ).ne (congrArg Complex.re heq)
+/-- At `τ = i`, `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
+theorem thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I :
+    thetaSeries (span ℤ {2} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
+      thetaSeries (span ℤ {1 / 2} : Submodule ℤ ℝ) UpperHalfPlane.I := fun h =>
+  (re_thetaSeries_span_two_lt_re_thetaSeries_span_one_half UpperHalfPlane.I_re).ne
+    (congrArg Complex.re h)
 
-/-- At `τ = i`, the theta series of `2 ℤ` and `½ ℤ` are distinct: `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
-theorem thetaSeries_span_two_I_ne_thetaSeries_span_one_div_two_I :
-    thetaSeries (Submodule.span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
-      thetaSeries (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I :=
-  thetaSeries_span_two_ne_thetaSeries_span_one_div_two_of_re_eq_zero UpperHalfPlane.I_re
+/-- The theta series `Θ_{2ℤ}` and `Θ_{½ℤ}` are distinct functions on `ℍ`. -/
+theorem thetaSeries_span_two_ne_thetaSeries_span_one_half :
+    thetaSeries (span ℤ {2} : Submodule ℤ ℝ) ≠
+      thetaSeries (span ℤ {1 / 2} : Submodule ℤ ℝ) := fun h =>
+  thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I (congrFun h UpperHalfPlane.I)
 
-/-- At `τ = i`, the dual coset decomposition `Θ_{L^∨}(i) = ∑_{γ ∈ A_L} θ_γ(i)` fails for the
-non-integral lattice `L = ½ ℤ` (whose dual is `2 ℤ` and whose discriminant group is trivial). -/
-theorem thetaSeries_dual_span_one_div_two_I_ne_sum :
-    thetaSeries (dual (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
-      ∑ γ : DiscriminantGroup (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ),
-        thetaCosetClass (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) γ UpperHalfPlane.I :=
-  thetaSeries_dual_ne_sum_of_not_isIntegral_of_re_eq_zero
-    not_isIntegral_span_one_div_two UpperHalfPlane.I_re
+/-- For `L = ½ ℤ ⊆ ℝ`, `Θ_{L^∨}(i) ≠ ∑ᶠ γ : A_L, θ_γ(i)`: the dual theta decomposition fails
+without integrality of `L`. -/
+theorem thetaSeries_dual_span_one_half_I_ne_finsum :
+    thetaSeries (dual (span ℤ {1 / 2} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
+      ∑ᶠ γ : DiscriminantGroup (span ℤ {1 / 2} : Submodule ℤ ℝ),
+        thetaCosetClass (span ℤ {1 / 2}) γ UpperHalfPlane.I :=
+  thetaSeries_dual_ne_finsum_thetaCosetClass_of_dual_lt dual_span_one_half_lt UpperHalfPlane.I_re
 
-/-- The dual coset decomposition `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` fails for `L = ½ ℤ`, witnessing that
-`IsIntegral L` cannot be omitted in `IsIntegral.thetaSeries_dual_eq_sum`. -/
-theorem thetaSeries_dual_span_one_div_two_ne_sum :
-    thetaSeries (dual (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ)) ≠
-      ∑ γ : DiscriminantGroup (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ),
-        thetaCosetClass (Submodule.span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) γ :=
-  mt thetaSeries_dual_eq_sum_iff_isIntegral.mp not_isIntegral_span_one_div_two
+/-- For `L = ½ ℤ ⊆ ℝ`, `Θ_{L^∨}(i) ≠ ∑ γ : A_L, θ_γ(i)`: `IsIntegral.thetaSeries_dual_eq_sum`
+fails without the hypothesis `IsIntegral L`. -/
+theorem thetaSeries_dual_span_one_half_I_ne_sum :
+    thetaSeries (dual (span ℤ {1 / 2} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
+      ∑ γ : DiscriminantGroup (span ℤ {1 / 2} : Submodule ℤ ℝ),
+        thetaCosetClass (span ℤ {1 / 2}) γ UpperHalfPlane.I := by
+  rw [← finsum_eq_sum_of_fintype]
+  exact thetaSeries_dual_span_one_half_I_ne_finsum
 
-end DualSum
+end NonIntegralBoundary
 
 end ZLattice
