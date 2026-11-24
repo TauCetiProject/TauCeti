@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -33,6 +33,11 @@ over a general nontrivially normed field, it is analyticity.
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `ContDiffOn.spatialFDeriv_of_isOpen`: the spatial derivative of a jointly `C^(n+1)` map is `C^n`.
+* `TauCeti.norm_iteratedFDeriv_spatialFDeriv`: spatial derivative jets have the norms of
+  the next jets of the fixed-parameter slice.
+* `TauCeti.norm_iteratedFDeriv_prodMk_spatialFDeriv`: pairing a slice with its spatial derivative
+  gives the maximum norm of two adjacent jets.
 * `TauCeti.hasDerivAt_parameterCurve_uncurry`, `TauCeti.hasDerivAt_timeSlice_uncurry`: the same
   for a curried function `u`, as directional derivatives of `uncurry u`.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
@@ -66,6 +71,8 @@ over a general nontrivially normed field, it is analyticity.
 
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/FDeriv/Symmetric.lean`, theorem
   `ContDiffAt.isSymmSndFDerivAt`.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -164,6 +171,71 @@ theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
+
+section SpatialRegularity
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- A fixed-parameter slice inherits pointwise smoothness on an open joint domain. -/
+theorem _root_.ContDiffOn.contDiffAt_timeSlice {n : ℕ∞ω} {f : P × E → F'}
+    {W : Set (P × E)} (hf : ContDiffOn 𝕜 n f W) (hW : IsOpen W)
+    {t : P} {p : E} (hz : (t, p) ∈ W) :
+    ContDiffAt 𝕜 n (fun q ↦ f (t, q)) p :=
+  (hf.contDiffAt (hW.mem_nhds hz)).fun_comp p (contDiff_prodMk_right t).contDiffAt
+
+/-- Spatial differentiation loses one derivative at a point. -/
+theorem _root_.ContDiffAt.spatialFDeriv {m n : ℕ∞ω} {f : P × E → F'}
+    {z : P × E} (hf : ContDiffAt 𝕜 n f z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w ↦ spatialFDeriv (𝕜 := 𝕜) f w.2 w.1) z := by
+  simp only [spatialFDeriv_def]
+  exact (hf.fderiv_right hmn).clm_comp contDiffAt_const
+
+/-- Spatial differentiation loses one derivative on an open joint domain. -/
+theorem _root_.ContDiffOn.spatialFDeriv_of_isOpen {m n : ℕ∞ω} {f : P × E → F'}
+    {W : Set (P × E)} (hf : ContDiffOn 𝕜 n f W) (hW : IsOpen W) (hmn : m + 1 ≤ n) :
+    ContDiffOn 𝕜 m (fun z ↦ spatialFDeriv (𝕜 := 𝕜) f z.2 z.1) W := by
+  simp only [spatialFDeriv_def]
+  exact (hf.fderiv_of_isOpen hW hmn).clm_comp contDiffOn_const
+
+/-- The spatial derivative's `k`-th jet norm is the fixed-parameter slice's next jet norm. -/
+theorem norm_iteratedFDeriv_spatialFDeriv {k : ℕ} {f : P × E → F'}
+    {t : P} {p : E} (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f (t, q)) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) p‖ =
+      ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  have heq : (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) =ᶠ[𝓝 p]
+      fderiv 𝕜 (fun q ↦ f (t, q)) := hf.mono fun _ hq ↦ (fderiv_timeSlice hq).symm
+  rw [(heq.iteratedFDeriv 𝕜 k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+
+/-- Pairing a slice with its spatial derivative gives the maximum of adjacent jet norms.
+Only the slice is required to be smooth; joint differentiability is needed near the point
+solely to identify the spatial derivative. -/
+theorem norm_iteratedFDeriv_prodMk_spatialFDeriv {k : ℕ} {n : ℕ∞ω} {f : P × E → F'}
+    {t : P} {p : E} (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f (t, q))
+    (hslice : ContDiffAt 𝕜 n (fun q ↦ f (t, q)) p) (hkn : (k : ℕ∞ω) + 1 ≤ n) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ (f (t, q), spatialFDeriv (𝕜 := 𝕜) f q t)) p‖ =
+      max ‖iteratedFDeriv 𝕜 k (fun q ↦ f (t, q)) p‖
+        ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  have heq : (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) =ᶠ[𝓝 p]
+      fderiv 𝕜 (fun q ↦ f (t, q)) := hf.mono fun _ hq ↦ (fderiv_timeSlice hq).symm
+  rw [iteratedFDeriv_prodMk (hslice.of_le (le_self_add.trans hkn))
+    ((hslice.fderiv_right hkn).congr_of_eventuallyEq heq) le_rfl,
+    ContinuousMultilinearMap.opNorm_prod, norm_iteratedFDeriv_spatialFDeriv hf]
+
+/-- On an open joint domain, the paired slice has the maximum of two adjacent jet norms. -/
+theorem _root_.ContDiffOn.norm_iteratedFDeriv_prodMk_spatialFDeriv
+    {k : ℕ} {f : P × E → F'} {W : Set (P × E)}
+    (hf : ContDiffOn 𝕜 (k + 1) f W) (hW : IsOpen W) {t : P} {p : E}
+    (hz : (t, p) ∈ W) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ (f (t, q), spatialFDeriv (𝕜 := 𝕜) f q t)) p‖ =
+      max ‖iteratedFDeriv 𝕜 k (fun q ↦ f (t, q)) p‖
+        ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  apply TauCeti.norm_iteratedFDeriv_prodMk_spatialFDeriv
+    (hslice := hf.contDiffAt_timeSlice hW hz) (hkn := le_rfl)
+  filter_upwards [(continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+    (hW.mem_nhds hz)] with q hq
+  exact (hf.contDiffAt (hW.mem_nhds hq)).differentiableAt (by simp)
+
+end SpatialRegularity
 
 /-- For a function `u` of a scalar parameter and a spatial variable, the derivative of the
 parameter curve `s ↦ u s x` is the derivative of `uncurry u` in the direction `(1, 0)`. This is

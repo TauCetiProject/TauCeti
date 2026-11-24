@@ -103,16 +103,16 @@ def orbitHomeomorph : (Σ o : MulAction.orbitRel.Quotient G A, BalancedProduct G
   continuous_toFun := by
     apply continuous_sigma
     intro o
-    exact (continuous_mapRight _ _ continuous_subtype_val).congr
+    exact (continuous_mapRight _ _ continuous_subtypeVal).congr
       (fun z => (orbitEquiv_apply o z).symm)
   continuous_invFun := by
     apply isQuotientMap_quotient_mk'.continuous_iff.mpr
     -- Open orbit inclusions make the decomposition of representatives a homeomorphism.
     have hp : Continuous (orbitPairsEquiv (G := G) (E := E) (A := A)).symm :=
       (orbitPairsEquiv.toHomeomorphOfContinuousOpen
-        (continuous_sigma fun _ => continuous_fst.prodMk continuous_snd.subtype_val)
+        (continuous_sigma fun _ => continuous_fst.prodMk continuous_snd.subtypeVal)
         (isOpenMap_sigma.mpr fun o =>
-          IsOpenMap.id.prodMap (hopen o).isOpenMap_subtype_val)).symm.continuous
+          IsOpenMap.id.prodMap (hopen o).isOpenMap_subtypeVal)).symm.continuous
     have hm : Continuous (fun p : Σ o : MulAction.orbitRel.Quotient G A, E × o.orbit =>
         (⟨p.1, @Quotient.mk' (E × p.1.orbit) (MulAction.orbitRel G _) p.2⟩ :
           Σ o : MulAction.orbitRel.Quotient G A, BalancedProduct G E o.orbit)) :=

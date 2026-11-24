@@ -72,7 +72,7 @@ theorem ZeroAtFilter.addRingConvolution
   apply tsum_mem (S := OpenAddSubgroup A) (s := W) W.isClosed
   intro p
   by_contra hp
-  exact hnim ⟨(p.1.1, p.1.2), hp, DiscreteConvolution.mem_addFiber.mp p.2⟩
+  exact hnim ⟨(p.val.1, p.val.2), hp, DiscreteConvolution.mem_addFiber.mp p.property⟩
 
 open DiscreteConvolution in
 /-- In a complete nonarchimedean ring, not necessarily unital or associative, the family
@@ -82,9 +82,10 @@ theorem ZeroAtFilter.summable_sigma_addFiber_mul_mul [NonUnitalNonAssocRing A]
     [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanAddGroup A] [ContinuousMul A]
     [CompleteSpace A] {f g h : ι → A} (hf : ZeroAtFilter cofinite f)
     (hg : ZeroAtFilter cofinite g) (hh : ZeroAtFilter cofinite h) (n : ι) :
-    Summable fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ f σ.2.1.1 * g σ.2.1.2 * h σ.1.1.2 := by
+    Summable fun σ : Σ p : addFiber n, addFiber p.val.1 ↦ f σ.2.val.1 * g σ.2.val.2 * h σ.1.val.2
+        := by
   -- `((a, b), c) ↦ f a * g b * h c` tends to zero cofinitely, and `σ ↦ ((a, b), c)` is injective
-  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ (σ.2.1, σ.1.1.2) :=
+  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.val.1 ↦ (σ.2.val, σ.1.val.2) :=
     fun _ _ _ ↦ by grind
   have ht := (tendsto_mul_cofinite_nhds_zero (tendsto_mul_cofinite_nhds_zero hf hg) hh).comp
     hj.tendsto_cofinite

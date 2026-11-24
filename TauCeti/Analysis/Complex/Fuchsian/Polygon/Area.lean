@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Polygon
 public import TauCeti.Analysis.Complex.Fuchsian.FundamentalPolygon
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CellCount
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
 
 /-!
@@ -33,7 +34,10 @@ stabilizer orders. In the cell decomposition of the compactified quotient given 
 `V` finite cycles, the cusp cycles, and the midpoints of the `k` self-paired sides as vertices,
 `(n + k) / 2` edges and one face, the polygon count `(n - k) / 2 - 1 - V` is `2g - 2 + s` for a
 surface of genus `g` with `s` cusps. The formula then reads `2π (2g - 2 + ∑ₑ (1 - 1 / mₑ) + s)`.
-That identification of the polygon count is not proved here.
+That identification of the polygon count is not proved here. What is proved is the same formula
+with the alternating cell count `χ = SidePairing.cellEulerChar` of that decomposition in place of
+`2 - 2g`, `covolume Γ = 2π (-χ + ∑ₑ (1 - 1 / mₑ) + s)`; the cell count is at most `2` and even,
+as the Euler characteristic of a closed orientable surface is.
 
 ## Main results
 
@@ -42,6 +46,8 @@ That identification of the polygon count is not proved here.
 * `ConvexPolygon.SidePairing.sum_interiorAngle_eq_two_pi_mul`: the angle sum of a fundamental
   polygon in terms of its finite vertex cycles, self-paired sides, and the elliptic orbits.
 * `ConvexPolygon.SidePairing.covolume_eq_two_pi_mul`: the covolume of `Γ` in the same terms.
+* `ConvexPolygon.SidePairing.covolume_eq_two_pi_mul_neg_cellEulerChar_add`: the covolume of `Γ`
+  through the cell count and the number of ideal vertex cycles.
 
 ## References
 
@@ -137,5 +143,23 @@ theorem covolume_eq_two_pi_mul (hmap : ∀ i, σ.map i ∈ Γ)
     σ.sum_interiorAngle_eq_two_pi_mul hmap (σ.iUnion_smul_carrier_eq_univ hmap hlf) hdisj]
   congr 1
   ring
+
+/-- **The orbifold area formula through the cell count.** Under the hypotheses of
+`covolume_eq_two_pi_mul`, the covolume of `Γ` is `2π (-χ + ∑ₑ (1 - 1 / mₑ) + c)`, where `χ` is the
+cell count `σ.cellEulerChar` of the gluing of `P`, `e` runs over the elliptic orbits of `Γ` with
+stabilizer orders `mₑ`, and `c` is the number of ideal vertex cycles. -/
+theorem covolume_eq_two_pi_mul_neg_cellEulerChar_add (hmap : ∀ i, σ.map i ∈ Γ)
+    (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    covolume Γ ℍ = ENNReal.ofReal (2 * π * (-(σ.cellEulerChar : ℝ) +
+      ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) +
+        Nat.card σ.IdealVertexCycle)) := by
+  have h : (2 * Nat.card σ.SideRepresentative : ℝ) = n + Nat.card {i : Fin n // σ.pair i = i} := by
+    exact_mod_cast σ.two_mul_natCard_sideRepresentative
+  rw [σ.covolume_eq_two_pi_mul hmap hlf hdisj, cellEulerChar_def]
+  congr 2
+  push_cast
+  linarith
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

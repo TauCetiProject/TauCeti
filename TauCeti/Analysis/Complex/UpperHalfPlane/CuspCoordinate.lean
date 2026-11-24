@@ -232,8 +232,8 @@ theorem coe_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) (z : ℍ) :
 /-- The logarithmic lift of a point of the punctured unit disc to the upper half-plane. -/
 def invQParamUpperHalfPlane (w : ℝ) (hw : 0 < w) (q : {q : 𝔻 // q ≠ 0}) : ℍ :=
   ⟨Function.Periodic.invQParam w q,
-    Function.Periodic.im_invQParam_pos_of_norm_lt_one hw q.1.norm_lt_one <|
-      fun h ↦ q.2 (Complex.UnitDisc.coe_injective h)⟩
+    Function.Periodic.im_invQParam_pos_of_norm_lt_one hw q.val.norm_lt_one <|
+      fun h ↦ q.property (Complex.UnitDisc.coe_injective h)⟩
 
 @[simp]
 theorem coe_invQParamUpperHalfPlane (w : ℝ) (hw : 0 < w) (q : {q : 𝔻 // q ≠ 0}) :
@@ -248,7 +248,7 @@ theorem qParamPuncturedUnitDisc_invQParamUpperHalfPlane (w : ℝ) (hw : 0 < w)
   apply Complex.UnitDisc.coe_injective
   rw [coe_qParamPuncturedUnitDisc, coe_invQParamUpperHalfPlane]
   exact Function.Periodic.qParam_right_inv hw.ne' fun h ↦
-    q.2 (Complex.UnitDisc.coe_injective h)
+    q.property (Complex.UnitDisc.coe_injective h)
 
 /-- Every nonzero point of the unit disc has a logarithmic lift to the upper half-plane. -/
 theorem qParamPuncturedUnitDisc_surjective (w : ℝ) (hw : 0 < w) :

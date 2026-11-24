@@ -477,7 +477,7 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
       (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure = ⊤ := by
   obtain ⟨t, ht, ht_image, htN⟩ :=
     N.exists_convergesToOne_lift_quotient_topologicallyGenerates hN hs hsg
-  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtype_val), ?_⟩
+  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtypeVal), ?_⟩
   let K : Subgroup G := (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure
   have hK_closed : IsClosed (K : Set G) := by
     dsimp only [K]
@@ -489,7 +489,7 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
     exact Subgroup.le_topologicalClosure _
       (Subgroup.subset_closure (Or.inr ⟨x, hx, rfl⟩))
   have hcomap_closed : IsClosed (K.comap N.subtype : Set N) :=
-    hK_closed.preimage continuous_subtype_val
+    hK_closed.preimage continuous_subtypeVal
   have hcomap_top : K.comap N.subtype = ⊤ := by
     apply eq_top_iff.mpr
     rw [← hug]
@@ -583,14 +583,14 @@ private theorem chain_total {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
   · exact hc ha hb h
 
 private theorem directed_K {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
-    Directed (· ⊇ ·) fun a : c ↦ (a.1.K : Set G) := fun a b ↦ by
-  obtain h | h := chain_total hc a.2 b.2
+    Directed (· ⊇ ·) fun a : c ↦ (a.val.K : Set G) := fun a b ↦ by
+  obtain h | h := chain_total hc a.property b.property
   · exact ⟨b, h.K_le, subset_rfl⟩
   · exact ⟨a, subset_rfl, h.K_le⟩
 
 private theorem directed_S {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
-    Directed (· ⊇ ·) fun a : c ↦ a.1.S := fun a b ↦ by
-  obtain h | h := chain_total hc a.2 b.2
+    Directed (· ⊇ ·) fun a : c ↦ a.val.S := fun a b ↦ by
+  obtain h | h := chain_total hc a.property b.property
   · exact ⟨b, h.S_subset, subset_rfl⟩
   · exact ⟨a, subset_rfl, h.S_subset⟩
 
@@ -598,9 +598,9 @@ private theorem directed_S {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
 outside it, agree modulo every member's subgroup. -/
 private theorem mem_K_of_mem_iInter {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
     {a : ConvergingGenData G} (ha : a ∈ c) {y y' : G}
-    (hy : ∀ b : c, y ∈ b.1.S) (hy' : ∀ b : c, y' ∈ b.1.S) (hya : y ∉ a.K)
-    (h : y⁻¹ * y' ∈ a.K) (b : c) : y⁻¹ * y' ∈ b.1.K := by
-  rcases chain_total hc ha b.2 with hab | hba
+    (hy : ∀ b : c, y ∈ b.val.S) (hy' : ∀ b : c, y' ∈ b.val.S) (hya : y ∉ a.K)
+    (h : y⁻¹ * y' ∈ a.K) (b : c) : y⁻¹ * y' ∈ b.val.K := by
+  rcases chain_total hc ha b.property with hab | hba
   · exact hab.mem_K y (hy b) y' (hy' b) hya h
   · exact hba.K_le h
 
@@ -610,28 +610,28 @@ variable [CompactSpace G]
 them. -/
 private theorem exists_K_subset {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
     (hne : c.Nonempty) {O : Set G} (hO : IsOpen O)
-    (hKO : ∀ x : G, (∀ a : c, x ∈ a.1.K) → x ∈ O) : ∃ a : c, (a.1.K : Set G) ⊆ O := by
+    (hKO : ∀ x : G, (∀ a : c, x ∈ a.val.K) → x ∈ O) : ∃ a : c, (a.val.K : Set G) ⊆ O := by
   have : Nonempty c := hne.to_subtype
-  refine exists_subset_nhds_of_compactSpace (directed_K hc) (fun a ↦ a.1.isClosed_K) ?_
+  refine exists_subset_nhds_of_compactSpace (directed_K hc) (fun a ↦ a.val.isClosed_K) ?_
   exact hO.mem_nhdsSet.mpr fun x hx ↦ hKO x (Set.mem_iInter.mp hx)
 
 /-- Every element of a member of a chain is congruent, modulo that member's subgroup, to an
 element of the intersection of the chain. This is the compactness step. -/
 private theorem exists_mem_iInter {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
     {a : ConvergingGenData G} (ha : a ∈ c) {x : G} (hx : x ∈ a.S) :
-    ∃ y, (∀ b : c, y ∈ b.1.S) ∧ y⁻¹ * x ∈ a.K := by
+    ∃ y, (∀ b : c, y ∈ b.val.S) ∧ y⁻¹ * x ∈ a.K := by
   have : Nonempty c := ⟨⟨a, ha⟩⟩
-  let C : c → Set G := fun b ↦ {y | y⁻¹ * x ∈ a.K} ∩ b.1.S
+  let C : c → Set G := fun b ↦ {y | y⁻¹ * x ∈ a.K} ∩ b.val.S
   have hdir : Directed (· ⊇ ·) C := fun b b' ↦ by
     obtain ⟨d, hbd, hb'd⟩ := directed_S hc b b'
     exact ⟨d, Set.inter_subset_inter_right _ hbd, Set.inter_subset_inter_right _ hb'd⟩
   have hne : ∀ b, (C b).Nonempty := fun b ↦ by
-    rcases chain_total hc ha b.2 with hab | hba
+    rcases chain_total hc ha b.property with hab | hba
     · obtain ⟨y, hy, hyx⟩ := hab.exists_mem x hx
       exact ⟨y, hyx, hy⟩
     · exact ⟨x, by simp, hba.S_subset hx⟩
   have hclosed : ∀ b, IsClosed (C b) := fun b ↦
-    (a.isClosed_K.preimage (continuous_inv.mul continuous_const)).inter b.1.isClosed_S
+    (a.isClosed_K.preimage (continuous_inv.mul continuous_const)).inter b.val.isClosed_S
   obtain ⟨y, hy⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
     (fun b ↦ (hclosed b).isCompact) hclosed
   rw [Set.mem_iInter] at hy
@@ -643,21 +643,21 @@ variable [TotallyDisconnectedSpace G]
 of the sets. -/
 private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.Nonempty) :
     ConvergingGenData G where
-  K := ⨅ a : c, a.1.K
-  S := ⋂ a : c, a.1.S
+  K := ⨅ a : c, a.val.K
+  S := ⋂ a : c, a.val.S
   isClosed_K := by
     rw [Subgroup.coe_iInf]
-    exact isClosed_iInter fun a ↦ a.1.isClosed_K
-  isClosed_S := isClosed_iInter fun a ↦ a.1.isClosed_S
-  K_subset x hx := Set.mem_iInter.mpr fun a ↦ a.1.K_subset (Subgroup.mem_iInf.mp hx a)
+    exact isClosed_iInter fun a ↦ a.val.isClosed_K
+  isClosed_S := isClosed_iInter fun a ↦ a.val.isClosed_S
+  K_subset x hx := Set.mem_iInter.mpr fun a ↦ a.val.K_subset (Subgroup.mem_iInf.mp hx a)
   mul_mem s hs k hk := Set.mem_iInter.mpr fun a ↦
-    a.1.mul_mem s (Set.mem_iInter.mp hs a) k (Subgroup.mem_iInf.mp hk a)
+    a.val.mul_mem s (Set.mem_iInter.mp hs a) k (Subgroup.mem_iInf.mp hk a)
   dense := by
-    set H := (Subgroup.closure (⋂ a : c, a.1.S)).topologicalClosure
-    have hSH : (⋂ a : c, a.1.S) ⊆ H := fun x hx ↦
+    set H := (Subgroup.closure (⋂ a : c, a.val.S)).topologicalClosure
+    have hSH : (⋂ a : c, a.val.S) ⊆ H := fun x hx ↦
       Subgroup.le_topologicalClosure _ (Subgroup.subset_closure hx)
-    have hKH : ∀ x, (∀ a : c, x ∈ a.1.K) → x ∈ H := fun x hx ↦
-      hSH (Set.mem_iInter.mpr fun a ↦ a.1.K_subset (hx a))
+    have hKH : ∀ x, (∀ a : c, x ∈ a.val.K) → x ∈ H := fun x hx ↦
+      hSH (Set.mem_iInter.mpr fun a ↦ a.val.K_subset (hx a))
     -- `H` is closed, so it is the intersection of its joins with the open normal subgroups;
     -- each join is open, hence contains some member's subgroup, hence all of `G`.
     refine (Subgroup.eq_iInf_sup_openNormalSubgroup H
@@ -666,25 +666,25 @@ private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.N
       Subgroup.isOpen_mono le_sup_right U.isOpen
     obtain ⟨a, haU⟩ := exists_K_subset hc hne hopen fun x hx ↦
       Subgroup.mem_sup_left (hKH x hx)
-    have hS : a.1.S ⊆ ((H ⊔ U.toSubgroup : Subgroup G) : Set G) := fun x hx ↦ by
-      obtain ⟨y, hy, hyx⟩ := exists_mem_iInter hc a.2 hx
+    have hS : a.val.S ⊆ ((H ⊔ U.toSubgroup : Subgroup G) : Set G) := fun x hx ↦ by
+      obtain ⟨y, hy, hyx⟩ := exists_mem_iInter hc a.property hx
       simpa only [SetLike.mem_coe, mul_inv_cancel_left] using (H ⊔ U.toSubgroup).mul_mem
         (Subgroup.mem_sup_left (hSH (Set.mem_iInter.mpr hy))) (haU hyx)
-    rw [← a.1.dense]
+    rw [← a.val.dense]
     exact Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr hS)
       (Subgroup.isClosed_of_isOpen _ hopen)
   finite V hV hKV := by
     obtain ⟨a, haV⟩ := exists_K_subset hc hne hV fun x hx ↦ hKV (Subgroup.mem_iInf.mpr hx)
-    refine Subgroup.finite_image_mk_of_inv_mul_mem (K := a.1.K) ?_ ?_
-    · exact (a.1.finite V hV haV).subset
+    refine Subgroup.finite_image_mk_of_inv_mul_mem (K := a.val.K) ?_ ?_
+    · exact (a.val.finite V hV haV).subset
         (Set.image_mono fun x hx ↦ ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩)
     · intro x hx x' hx' h
-      exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc a.2 (Set.mem_iInter.mp hx.1)
+      exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc a.property (Set.mem_iInter.mp hx.1)
         (Set.mem_iInter.mp hx'.1) (fun h' ↦ hx.2 (haV h')) h
 
 private theorem le_limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.Nonempty)
     {a : ConvergingGenData G} (ha : a ∈ c) : Le a (limit hc hne) := by
-  refine ⟨iInf_le (fun b : c ↦ b.1.K) ⟨a, ha⟩, Set.iInter_subset (fun b : c ↦ b.1.S) ⟨a, ha⟩,
+  refine ⟨iInf_le (fun b : c ↦ b.val.K) ⟨a, ha⟩, Set.iInter_subset (fun b : c ↦ b.val.S) ⟨a, ha⟩,
     fun x hx ↦ ?_, fun y hy y' hy' hya h ↦ ?_⟩
   · obtain ⟨y, hy, hyx⟩ := exists_mem_iInter hc ha hx
     exact ⟨y, Set.mem_iInter.mpr hy, hyx⟩

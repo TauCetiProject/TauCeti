@@ -31,7 +31,7 @@ zero or a positive power of the maximal ideal. These are the two shapes `uv = 0`
 the étale local normal form of a node: for the node chart `R'[u,v]/(uv - h)` the singular
 subscheme is the same closed subscheme `Spec R'/(h)` of the base
 (`TauCeti.NodeAlgebra.singularLocusIso`). That a nodal curve is étale locally such a chart is
-`AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteValuationRing`.
+`Scheme.exists_etale_nodeAlgebra_of_notMem_smoothLocus_of_isDiscreteValuationRing`.
 
 ## Main results
 

@@ -64,7 +64,7 @@ def definingIdeal : HopfIdeal ℤ
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-    (fun i ↦ isNilpotent_rep_rootGenerator n i.1)
+    (fun i ↦ isNilpotent_rep_rootGenerator n i.val)
 
 /-- The positive subgroup ideal is the generic Kostant torus-subsystem ideal for the positive
 simple-root labels. -/
@@ -74,7 +74,7 @@ theorem definingIdeal_def :
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-        (fun i ↦ isNilpotent_rep_rootGenerator n i.1) :=
+        (fun i ↦ isNilpotent_rep_rootGenerator n i.val) :=
   (rfl)
 
 /-- A Hopf ideal is contained in the positive subgroup ideal exactly when the positive simple-root
@@ -117,7 +117,7 @@ def groupScheme : Grp (Over (Spec (CommRingCat.of ℤ))) :=
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-    (fun i ↦ isNilpotent_rep_rootGenerator n i.1)
+    (fun i ↦ isNilpotent_rep_rootGenerator n i.val)
 
 /-- The positive subgroup is the generic Kostant torus-subsystem for the positive simple roots. -/
 theorem groupScheme_eq_kostantTorusSubsystemGroupScheme :
@@ -126,7 +126,7 @@ theorem groupScheme_eq_kostantTorusSubsystemGroupScheme :
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-        (fun i ↦ isNilpotent_rep_rootGenerator n i.1) :=
+        (fun i ↦ isNilpotent_rep_rootGenerator n i.val) :=
   (rfl)
 
 /-- The positive subgroup is the quotient spectrum cut out by `definingIdeal`. -/
@@ -168,7 +168,7 @@ theorem inclusion_comp_carrierι :
           (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
           (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
           (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-          (fun i ↦ isNilpotent_rep_rootGenerator n i.1) := by
+          (fun i ↦ isNilpotent_rep_rootGenerator n i.val) := by
   rw [inclusion_def, TypeBSpinCarrier.carrierι_def]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [kostantTorusSubsystemToToral_comp_ι]
@@ -187,7 +187,7 @@ def closedSubgroup : ClosedSubgroupScheme (TypeBSpinCarrier.groupScheme n) :=
 
 /-- The positive closed subgroup is represented by its named inclusion. -/
 @[simp]
-theorem coe_closedSubgroup : (closedSubgroup n).1 = Subobject.mk (inclusion n) :=
+theorem coe_closedSubgroup : (closedSubgroup n).val = Subobject.mk (inclusion n) :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- The `i`-th positive simple-root subgroup factored through the positive subgroup. -/
@@ -196,7 +196,7 @@ def rootSubgroup (i : Fin (n + 1)) : AdditiveGroup.groupScheme ℤ ⟶ groupSche
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-    (fun j ↦ isNilpotent_rep_rootGenerator n j.1) ⟨i, rfl⟩ ≫
+    (fun j ↦ isNilpotent_rep_rootGenerator n j.val) ⟨i, rfl⟩ ≫
   eqToHom (groupScheme_eq_kostantTorusSubsystemGroupScheme n).symm
 
 /-- The positive simple-root subgroup is the corresponding generic Kostant subsystem map,
@@ -207,7 +207,7 @@ theorem rootSubgroup_def (i : Fin (n + 1)) :
           (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
           (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
           (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-          (fun j ↦ isNilpotent_rep_rootGenerator n j.1) ⟨i, rfl⟩ ≫
+          (fun j ↦ isNilpotent_rep_rootGenerator n j.val) ⟨i, rfl⟩ ≫
         eqToHom (groupScheme_eq_kostantTorusSubsystemGroupScheme n).symm :=
   (rfl)
 
@@ -231,7 +231,7 @@ def weightTorus : SplitTorus.groupScheme ℤ (Fin (n + 1)) ⟶ groupScheme n :=
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-    (fun j ↦ isNilpotent_rep_rootGenerator n j.1) ≫
+    (fun j ↦ isNilpotent_rep_rootGenerator n j.val) ≫
   eqToHom (groupScheme_eq_kostantTorusSubsystemGroupScheme n).symm
 
 /-- The positive weight torus is the generic Kostant subsystem torus map, transported to the
@@ -242,7 +242,7 @@ theorem weightTorus_def :
           (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
           (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
           (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-          (fun j ↦ isNilpotent_rep_rootGenerator n j.1) ≫
+          (fun j ↦ isNilpotent_rep_rootGenerator n j.val) ≫
         eqToHom (groupScheme_eq_kostantTorusSubsystemGroupScheme n).symm :=
   (rfl)
 
@@ -281,7 +281,7 @@ instance isClosedImmersion_weightTorus :
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n) (Set.range Sum.inl)
-    (fun j ↦ isNilpotent_rep_rootGenerator n j.1) (span_range_basisWeight_eq_top n)
+    (fun j ↦ isNilpotent_rep_rootGenerator n j.val) (span_range_basisWeight_eq_top n)
 
 /-- Each positive simple-root closed subgroup of the full carrier lies in the positive subgroup. -/
 theorem rootSubgroupClosedSubgroup_inl_le_closedSubgroup (i : Fin (n + 1)) :
@@ -319,11 +319,11 @@ theorem closedSubgroup_le_iff
     (P : ClosedSubgroupScheme (TypeBSpinCarrier.groupScheme n)) :
     closedSubgroup n ≤ P ↔
       (∀ i : Fin (n + 1), ∃! f : AdditiveGroup.groupScheme ℤ ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = TypeBSpinCarrier.rootSubgroup n (.inl i)) ∧
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = TypeBSpinCarrier.rootSubgroup n (.inl i)) ∧
       ∃! f : SplitTorus.groupScheme ℤ (Fin (n + 1)) ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = TypeBSpinCarrier.weightTorus n := by
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = TypeBSpinCarrier.weightTorus n := by
   -- Transport to the generic Kostant toral group scheme and apply the generic universal property.
   rw [← (ClosedSubgroupScheme.mapIso
       (eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n))).le_iff_le,

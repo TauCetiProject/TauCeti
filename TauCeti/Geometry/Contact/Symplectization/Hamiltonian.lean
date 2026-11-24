@@ -163,7 +163,7 @@ theorem poissonBracket_symplectization_exp_mul {p : ℝ × M} (hf : MDifferentia
     (hg : MDifferentiableAt I 𝓘(ℝ) g p.2) :
     SmoothTwoForm.poissonBracket (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
         (fun q ↦ Real.exp q.1 * f q.2) (fun q ↦ Real.exp q.1 * g q.2) p =
-      Real.exp p.1 * (mextDeriv α.1 p.2 ![α.contactHamiltonianVectorField f p.2,
+      Real.exp p.1 * (mextDeriv α.val p.2 ![α.contactHamiltonianVectorField f p.2,
           α.contactHamiltonianVectorField g p.2] +
         f p.2 * mvfderiv I g p.2 (α.reebVectorField p.2) -
         g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) := by

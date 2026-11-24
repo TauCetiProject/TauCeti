@@ -122,7 +122,7 @@ def ringClassNormSubgroup : GlobalNormSubgroups K :=
 /-- The subgroup underlying `ringClassNormSubgroup O` is the kernel of the ring-class quotient. -/
 @[simp]
 theorem ringClassNormSubgroup_toSubgroup :
-    (ringClassNormSubgroup O).1.toSubgroup = (ringClassIdeleQuotient O).ker :=
+    (ringClassNormSubgroup O).val.toSubgroup = (ringClassIdeleQuotient O).ker :=
   (rfl)
 
 variable {O} in
@@ -139,12 +139,12 @@ kernel of the ring-class quotient `C_K → Pic O` under the global class-field c
 is, the unique finite abelian extension of `K` in `Kˢ` whose idele-class norm group is that kernel
 (`range_ideleClassNormMap_ringClassField`). -/
 def ringClassField : IntermediateField K (SeparableClosure K) :=
-  classField K (globalClassField (ringClassNormSubgroup O)).1
+  classField K (globalClassField (ringClassNormSubgroup O)).val
 
 /-- The ring class field of `O` is the class field of the value of the global correspondence at
 the kernel of the ring-class quotient. -/
 theorem ringClassField_def :
-    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).1 :=
+    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).val :=
   (rfl)
 
 /-- The ring class field of `O` is a finite extension of `K`. -/
@@ -157,7 +157,7 @@ instance numberField_ringClassField : NumberField (ringClassField O) :=
 
 /-- The ring class field of `O` is an abelian extension of `K`. -/
 instance isAbelianGalois_ringClassField : IsAbelianGalois K (ringClassField O) :=
-  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).2
+  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).property
 
 /-- **The norm group of the ring class field is the kernel of the ring-class quotient**: an idele
 class of `K` is a norm from the ring class field of `O` exactly when its ray class modulo the

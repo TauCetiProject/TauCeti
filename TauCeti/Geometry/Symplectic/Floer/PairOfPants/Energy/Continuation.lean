@@ -143,17 +143,13 @@ perturbation with continuation necks agree with those of the pair-of-pants pertu
 outer Hamiltonians. -/
 private theorem pairOfPantsContinuationPerturbation_eventuallyEq {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) {r : Puncture}
-    (h₂ : 2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
-    (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (v : ℂ) :
+    (h₂ : 2 < (positiveEndCoord r z).1) (hL : L r + 1 < (positiveEndCoord r z).1) (v : ℂ) :
     (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x v)
       =ᶠ[𝓝 z] fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v := by
-  have hc : ContinuousAt
-      (fun z : ℝ × ℝ ↦ r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) z :=
-    continuousAt_const.mul ((r.contDiffAt_re_endCoord (n := 0)
-      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) r)).continuousAt.comp
-        Complex.equivRealProdCLM.symm.continuous.continuousAt)
+  have hc := (contDiffAt_fst_positiveEndCoord_of_mem r hz (n := 0)).continuousAt
   filter_upwards [hc.eventually (lt_mem_nhds h₂), hc.eventually (lt_mem_nhds hL)] with w hw₂ hwL
   funext x
+  rw [fst_positiveEndCoord] at hw₂ hwL
   rw [pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le hw₂.le hwL.le]
 
 /-- On `S` outside a truncation `S_R` with `R ≥ 2` and `R ≥ L_q + 1` for all `q`, the perturbation
@@ -165,7 +161,8 @@ private theorem eqOn_pairOfPantsContinuationPerturbation {R : ℝ} (hR : 2 ≤ R
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
       (thricePuncturedSphereReal \ Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   intro z hz
-  obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
+  obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz.1 hz.2
+  rw [fst_positiveEndCoord] at hq
   funext x
   exact congrArg (· v) (pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le
     (G := G) (L := L) (by linarith) (by linarith [hRL q]) x)
@@ -187,9 +184,8 @@ curvature vanishes. -/
 theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
     (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {r : Puncture}
-    (h₂ : 2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
-    (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (x : M) :
+    (hz : z ∈ thricePuncturedSphereReal) {r : Puncture} (h₂ : 2 < (positiveEndCoord r z).1)
+    (hL : L r + 1 < (positiveEndCoord r z).1) (x : M) :
     ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦
@@ -218,8 +214,8 @@ compact part of `S`, which grows with the neck positions. -/
 theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
     [FiniteDimensional ℝ V] (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    {r : Puncture} (h₂ : 2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
-    (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (x : V) :
+    {r : Puncture} (h₂ : 2 < (positiveEndCoord r z).1) (hL : L r + 1 < (positiveEndCoord r z).1)
+    (x : V) :
     ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦
@@ -571,7 +567,8 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKc := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L)
+    (K := pairOfPantsContinuationPerturbation G H L) fun w x ↦
+      contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L w x
   have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsPerturbation hH hHs)
   have hRc := (integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs
@@ -881,7 +878,8 @@ theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq
     L hu.continuousOn
   rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hR
   exact hω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm
-    (fun w x ↦ contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x)
+    (K := pairOfPantsContinuationPerturbation G H L)
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L)
     (fun _ _ x hw ↦ pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le hw x) hH hu
     (fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) hA hR hh
 

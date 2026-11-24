@@ -134,10 +134,10 @@ theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
         (R := R) (H := coordinateHopfAlgebra R N) (CommAlgCat.of R A)) ∈
         Cocharacter.unipotent A (weightCocharacter (R := R) w) := by
       apply Cocharacter.mem_unipotent_iff.mpr
-      refine ⟨p.2, ?_⟩
+      refine ⟨p.property, ?_⟩
       have := congrArg Subtype.val hlimit'
       have hp : (⟨(p : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
-          (CommAlgCat.of R A)), p.2⟩ :
+          (CommAlgCat.of R A)), p.property⟩ :
             Cocharacter.parabolic A (weightCocharacter (R := R) w)) = p :=
         Subtype.ext rfl
       rw [hp]

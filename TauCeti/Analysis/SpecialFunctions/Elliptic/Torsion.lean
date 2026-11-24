@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.LinearAlgebra.FreeModule.ModN
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 
 /-!
 # Division points under complex uniformization
@@ -17,6 +18,7 @@ For a period lattice `Λ` and a positive integer `N`, the Weierstrass point map 
 `l / N`. In the basis of the two periods this gives explicit coordinates in `(ℤ/Nℤ)²`.
 These coordinates retain the actual division points, including the point of `1/N` for
 the period pair `(τ, 1)`, rather than just an abstract classification of the torsion group.
+In particular the zeros of `℘'` are the half-periods (`PeriodPair.derivWeierstrassP_eq_zero_iff`).
 
 The lattice-quotient identification uses `TauCeti.torsionByδEquiv`, the connecting
 isomorphism for multiplication by `N` on the exact sequence
@@ -41,6 +43,15 @@ This includes `n = 0`. -/
 theorem nsmul_weierstrassPoint_eq_zero_iff (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = 0 ↔ n • z ∈ L.lattice := by
   rw [← L.weierstrassPoint_nsmul, L.weierstrassPoint_eq_zero_iff]
+
+/-- **The zeros of `℘'` are the half-periods**: `℘'(z) = 0` exactly when `2 z ∈ Λ`. This includes
+the periods themselves, where Mathlib's `℘'` takes the value `0`. -/
+theorem derivWeierstrassP_eq_zero_iff (z : ℂ) : ℘'[L] z = 0 ↔ 2 * z ∈ L.lattice := by
+  rw [two_mul, ← two_nsmul, ← L.nsmul_weierstrassPoint_eq_zero_iff, two_nsmul]
+  by_cases hz : z ∈ L.lattice
+  · simp [L.weierstrassPoint_of_mem hz, L.derivWeierstrassP_coe ⟨z, hz⟩]
+  · rw [L.weierstrassPoint_of_notMem hz, WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff]
+    simp [WeierstrassCurve.Affine.evalEval_polynomialY]
 
 private theorem exact_lattice_weierstrassPoint :
     Function.Exact L.lattice.subtype L.weierstrassPointHom.toIntLinearMap := by
@@ -78,7 +89,7 @@ theorem coe_torsionEquivLatticeQuotient_symm_mk (l : L.lattice) :
     ⟨L.weierstrassPoint ((l : ℂ) / N), AddSubgroup.torsionBy.nsmul_iff.mpr <| by
       rw [L.nsmul_weierstrassPoint_eq_zero_iff]
       rw [← natCast_zsmul, hmul]
-      exact l.2⟩
+      exact l.property⟩
   have hP : L.torsionEquivLatticeQuotient N P = Submodule.Quotient.mk l := by
     rw [torsionEquivLatticeQuotient, TauCeti.torsionByδEquiv_apply]
     exact TauCeti.torsionByδ_eq L.exact_lattice_weierstrassPoint L.lattice.injective_subtype

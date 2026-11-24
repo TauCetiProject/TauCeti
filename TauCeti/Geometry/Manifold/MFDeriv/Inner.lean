@@ -96,7 +96,7 @@ from `a` has a critical point exactly at `a`. -/
 theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U) :
     mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x = 0 ↔ (x : G) = a := by
   have hval : MDifferentiableAt 𝓘(ℝ, G) 𝓘(ℝ, G) (Subtype.val : U → G) x :=
-    (contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero
+    (contMDiff_subtypeVal (U := U) x).mdifferentiableAt one_ne_zero
   have hd := mvfderiv_norm_sq_comp (hval.sub (mdifferentiableAt_const (c := a)))
   rw [mvfderiv_sub hval mdifferentiableAt_const, mvfderiv_const, sub_zero] at hd
   have hd_apply (v : TangentSpace 𝓘(ℝ, G) x) :

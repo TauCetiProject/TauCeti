@@ -121,12 +121,12 @@ variable {F} in
 object of compatible families in the product of its terms. -/
 def isLimitConeOfTowerDifference {c : KernelFork F.towerDifference} (hc : IsLimit c) :
     IsLimit (coneOfTowerDifference c.ι c.condition) where
-  lift s := (KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).1
+  lift s := (KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).val
   fac s n := by
     rw [coneOfTowerDifference_π_app, ← Category.assoc,
-      (KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).2, Pi.lift_comp_π]
+      (KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).property, Pi.lift_comp_π]
   uniq s m hm := Fork.IsLimit.hom_ext hc <| by
-    rw [(KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).2]
+    rw [(KernelFork.IsLimit.lift' hc _ (F.lift_π_app_towerDifference s)).property]
     exact Pi.hom_ext _ _ fun n ↦ by simpa using hm (op n)
 
 variable {F} in

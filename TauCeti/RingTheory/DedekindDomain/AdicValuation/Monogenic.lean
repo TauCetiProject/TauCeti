@@ -49,9 +49,8 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
   (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
-  [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)]
 
-omit [Finite (R ⧸ v.asIdeal)] in
+variable [Finite (B ⧸ w.asIdeal)] in
 /-- A generator of the completed integer extension also generates the completed field extension. -/
 theorem adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top
     (x : w.adicCompletionIntegers L)
@@ -62,6 +61,7 @@ theorem adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top
     (fun y _ ↦ Algebra.IsAlgebraic.isAlgebraic y)
     (TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top hx)
 
+variable [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)] in
 /-- When both residue fields are finite, the completed integer ring `𝒪_w` is generated over
 `𝒪_v` by an element which is also an integral generator of the field extension. -/
 theorem

@@ -80,12 +80,12 @@ private theorem continuous_prependPath {Y : Type*} [TopologicalSpace Y] {δ γ :
 private theorem prependPath_zero_left {δ γ : C(I, K)} (h : δ 0 = γ 0) (u : I) :
     prependPath δ γ 0 u = γ u := by
   by_cases hu : (u : ℝ) ≤ 0
-  · have hu : u = 0 := Subtype.ext (le_antisymm hu u.2.1)
+  · have hu : u = 0 := Subtype.ext (le_antisymm hu u.property.1)
     simp [prependPath, hu, IccExtend_left, h]
   · simp [prependPath, hu]
 
 private theorem prependPath_zero_right (δ γ : C(I, K)) (s : I) : prependPath δ γ s 0 = δ s := by
-  simp [prependPath, s.2.1]
+  simp [prependPath, s.property.1]
 
 private theorem prependPath_one_right (δ γ : C(I, K)) (s : I) : prependPath δ γ s 1 = γ 1 := by
   simp [prependPath, IccExtend_right]
@@ -148,11 +148,12 @@ theorem projLiftingFunction_lift_one_val_snd (x : MappingPathFiber f k) (β : C(
   rw [projLiftingFunction_lift_val_snd, Path.coe_toContinuousMap, Path.trans_apply]
   simp only [Set.Icc.coe_one]
   split_ifs with h₁ h₂ h₂
-  · rw [IccExtend_of_mem _ _ ⟨by linarith, by linarith [u.2.1]⟩, Path.symm_apply, Path.coe_mk']
+  · rw [IccExtend_of_mem _ _ ⟨by linarith, by linarith [u.property.1]⟩, Path.symm_apply,
+      Path.coe_mk']
     exact congrArg _ (Subtype.ext (by rw [coe_symm_eq]; ring))
   · exact absurd (by linarith) h₂
   · exact absurd (by linarith) h₁
-  · rw [IccExtend_of_mem _ _ ⟨by linarith, by linarith [u.2.2]⟩, Path.coe_mk']
+  · rw [IccExtend_of_mem _ _ ⟨by linarith, by linarith [u.property.2]⟩, Path.coe_mk']
     exact congrArg _ (Subtype.ext (by ring))
 
 /-- The source projection of a mapping-path fibre is a Hurewicz fibration, for test spaces in

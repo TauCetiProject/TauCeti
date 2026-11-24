@@ -49,7 +49,7 @@ theorem isProperMap_source_ineffectiveArrows
     (hclosed : IsClosed (ineffectiveArrows C)) :
     IsProperMap fun a : ineffectiveArrows C ↦ (a : Quiver.Total C).left := by
   apply isProperMap_of_comp_of_inj
-    ((continuous_fst.comp hp.continuous).comp continuous_subtype_val)
+    ((continuous_fst.comp hp.continuous).comp continuous_subtypeVal)
     (continuous_id.prodMk continuous_id) ?_
     (fun _ _ h ↦ congrArg Prod.fst h)
   convert hp.comp hclosed.isClosedEmbedding_subtypeVal.isProperMap using 1

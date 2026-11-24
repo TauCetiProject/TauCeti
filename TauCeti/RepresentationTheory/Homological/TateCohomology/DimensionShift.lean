@@ -64,8 +64,8 @@ section Fintype
 
 variable [Fintype G] (n : ℤ)
 
--- Use the public presentations of the short exact sequences so the endpoints of the connecting
--- maps are visible without unfolding the opaque `dimensionShiftUpSES` and `dimensionShiftDownSES`.
+-- State the connecting maps at the `ShortComplex.mk` presentations of `dimensionShiftUpSES` and
+-- `dimensionShiftDownSES` (their exposed bodies), so that their endpoints are visible.
 
 /-- The upward dimension-shifting sequence identifies Tate cohomology of `dimensionShiftUp A`
 in degree `n` with Tate cohomology of `A` in degree `n + 1`. -/
@@ -74,7 +74,7 @@ def dimensionShiftUpIso :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A))
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)).δIso
+    (dimensionShiftUpSES_shortExact A)).δIso
       n (n + 1) rfl (isZero_coindBot A.V n) (isZero_coindBot A.V (n + 1))
 
 /-- The upward dimension shift is the connecting map of the coinduced short exact sequence. -/
@@ -84,7 +84,7 @@ theorem dimensionShiftUpIso_hom :
       _root_.TateCohomology.δ
         (S := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
           (coindBotUnit_comp_dimensionShiftUpπ A))
-        (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A) n := (rfl)
+        (dimensionShiftUpSES_shortExact A) n := (rfl)
 
 /-- The downward dimension-shifting sequence identifies Tate cohomology of `A` in degree `n`
 with Tate cohomology of `dimensionShiftDown A` in degree `n + 1`. -/
@@ -93,7 +93,7 @@ def dimensionShiftDownIso :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
       (dimensionShiftDownι_comp_indBotCounit A))
-    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact A)).δIso
+    (dimensionShiftDownSES_shortExact A)).δIso
       n (n + 1) rfl (isZero_indBot A.V n) (isZero_indBot A.V (n + 1))
 
 /-- The downward dimension shift is the connecting map of the induced short exact sequence. -/
@@ -103,8 +103,7 @@ theorem dimensionShiftDownIso_hom :
       _root_.TateCohomology.δ
         (S := ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
           (dimensionShiftDownι_comp_indBotCounit A))
-        (by simpa only [dimensionShiftDownSES_def] using
-          dimensionShiftDownSES_shortExact A) n := (rfl)
+        (dimensionShiftDownSES_shortExact A) n := (rfl)
 
 /-- Two upward dimension shifts identify degree-zero Tate cohomology of the twice-shifted
 representation with degree-two Tate cohomology of the representation itself. -/
@@ -130,8 +129,7 @@ theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
   rw [dimensionShiftUpIso_hom, dimensionShiftUpIso_hom]
   simpa only [φ, dimensionShiftUpSESMap_τ₁, dimensionShiftUpSESMap_τ₃] using
     (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact B) φ n).symm
+    (dimensionShiftUpSES_shortExact A) (dimensionShiftUpSES_shortExact B) φ n).symm
 
 variable {A} in
 /-- The inverse upward shift commutes with a coefficient morphism. -/
@@ -154,8 +152,7 @@ theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
   rw [dimensionShiftDownIso_hom, dimensionShiftDownIso_hom]
   simpa only [φ, dimensionShiftDownSESMap_τ₁, dimensionShiftDownSESMap_τ₃] using
     (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact A)
-    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact B) φ n).symm
+    (dimensionShiftDownSES_shortExact A) (dimensionShiftDownSES_shortExact B) φ n).symm
 
 variable {A} in
 /-- The inverse downward shift commutes with a coefficient morphism. -/
@@ -195,8 +192,7 @@ def tensorDimensionShiftUpIso (i j : ℤ) (hij : i + 1 = j) :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A)).map (tensorLeft M))
-    (by simpa only [dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_tensorLeft_shortExact A M)).δIso i j hij
+    (dimensionShiftUpSES_tensorLeft_shortExact A M)).δIso i j hij
         (isZero_tensor_coindBot A.V M i) (isZero_tensor_coindBot A.V M j)
 
 /-- The tensored upward dimension shift is the connecting map of the tensored coinduced short
@@ -207,8 +203,7 @@ theorem tensorDimensionShiftUpIso_hom (i j : ℤ) (hij : i + 1 = j) :
       (_root_.TateCohomology.map_tateComplexFunctor_shortExact
         (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
           (coindBotUnit_comp_dimensionShiftUpπ A)).map (tensorLeft M))
-        (by simpa only [dimensionShiftUpSES_def] using
-          dimensionShiftUpSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
+        (dimensionShiftUpSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
 
 /-- Tensoring the downward dimension-shifting sequence of `A` on the left with `M` identifies Tate
 cohomology of `M ⊗ A` in degree `i` with Tate cohomology of `M ⊗ dimensionShiftDown A` in degree
@@ -218,8 +213,7 @@ def tensorDimensionShiftDownIso (i j : ℤ) (hij : i + 1 = j) :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
       (dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M))
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact A M)).δIso i j hij
+    (dimensionShiftDownSES_tensorLeft_shortExact A M)).δIso i j hij
         (isZero_tensor_indBot A.V M i) (isZero_tensor_indBot A.V M j)
 
 /-- The tensored downward dimension shift is the connecting map of the tensored induced short
@@ -230,8 +224,7 @@ theorem tensorDimensionShiftDownIso_hom (i j : ℤ) (hij : i + 1 = j) :
       (_root_.TateCohomology.map_tateComplexFunctor_shortExact
         (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
           (dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M))
-        (by simpa only [dimensionShiftDownSES_def] using
-          dimensionShiftDownSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
+        (dimensionShiftDownSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
 
 variable {A} in
 /-- The tensored upward dimension shift is natural in its shifting representation. -/
@@ -254,10 +247,8 @@ theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ 
   rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
   simpa only [hφ₁, hφ₃] using
     (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
-      dimensionShiftUpSES_tensorLeft_shortExact A M)
-    (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
-      dimensionShiftUpSES_tensorLeft_shortExact B M)
+    (dimensionShiftUpSES_tensorLeft_shortExact A M)
+    (dimensionShiftUpSES_tensorLeft_shortExact B M)
     ((tensorLeft M).mapShortComplex.map φ) i).symm
 
 variable {A} in
@@ -293,10 +284,8 @@ theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A �
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
   simpa only [hφ₁, hφ₃] using
     (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
-      dimensionShiftDownSES_tensorLeft_shortExact A M)
-    (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
-      dimensionShiftDownSES_tensorLeft_shortExact B M)
+    (dimensionShiftDownSES_tensorLeft_shortExact A M)
+    (dimensionShiftDownSES_tensorLeft_shortExact B M)
     ((tensorLeft M).mapShortComplex.map φ) i).symm
 
 variable {A} in
@@ -381,8 +370,7 @@ def dimensionShiftUpResIso :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A)).map (resFunctor S.subtype))
-    (by simpa only [dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_res_shortExact A S.subtype)).δIso n (n + 1) rfl
+    (dimensionShiftUpSES_res_shortExact A S.subtype)).δIso n (n + 1) rfl
         (isZero_res_coindBot S A.V n) (isZero_res_coindBot S A.V (n + 1))
 
 /-- Restricted upward dimension shifting is the connecting map of the restricted sequence. -/
@@ -392,8 +380,7 @@ theorem dimensionShiftUpResIso_hom :
       _root_.TateCohomology.δ
         (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
           (coindBotUnit_comp_dimensionShiftUpπ A)).map (resFunctor S.subtype))
-        (by simpa only [dimensionShiftUpSES_def] using
-          dimensionShiftUpSES_res_shortExact A S.subtype) n := (rfl)
+        (dimensionShiftUpSES_res_shortExact A S.subtype) n := (rfl)
 
 /-- Downward dimension shifting after restriction to a finite subgroup. The shift is constructed
 over `G`, so the same coefficient representation works for every finite subgroup. -/
@@ -403,8 +390,7 @@ def dimensionShiftDownResIso :
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact
     (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
       (dimensionShiftDownι_comp_indBotCounit A)).map (resFunctor S.subtype))
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_res_shortExact A S.subtype)).δIso n (n + 1) rfl
+    (dimensionShiftDownSES_res_shortExact A S.subtype)).δIso n (n + 1) rfl
         (isZero_res_indBot S A.V n) (isZero_res_indBot S A.V (n + 1))
 
 /-- Restricted downward dimension shifting is the connecting map of the restricted sequence. -/
@@ -414,8 +400,7 @@ theorem dimensionShiftDownResIso_hom :
       _root_.TateCohomology.δ
         (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
           (dimensionShiftDownι_comp_indBotCounit A)).map (resFunctor S.subtype))
-        (by simpa only [dimensionShiftDownSES_def] using
-          dimensionShiftDownSES_res_shortExact A S.subtype) n := (rfl)
+        (dimensionShiftDownSES_res_shortExact A S.subtype) n := (rfl)
 
 /-- Two upward dimension shifts after restriction to a finite subgroup identify Tate cohomology
 of the twice-shifted representation in degree `n` with Tate cohomology of the representation

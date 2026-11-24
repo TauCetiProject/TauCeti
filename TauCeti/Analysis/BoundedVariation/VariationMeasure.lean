@@ -210,7 +210,7 @@ theorem variationMeasure_univ (hu : LocallyIntegrableOn u Ω μ)
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) :
     variationMeasure μ Ω u univ = totalVariationOn μ Ω u := by
   rw [← variationMeasure_preimage_coe hu hfin le_rfl]
-  exact congrArg _ (eq_univ_of_forall fun x => x.2).symm
+  exact congrArg _ (eq_univ_of_forall fun x => x.property).symm
 
 /-- The variation measure is `0` for a function which is not locally integrable on `Ω` or does
 not have locally finite variation there. -/
