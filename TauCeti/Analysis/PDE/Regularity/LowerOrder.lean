@@ -54,7 +54,8 @@ theorem near solutions of the homogeneous equation
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le_drift`) applies
 with the Morrey gain `2`, and passing from the radius `R / (2σ + 1)` back to `R` costs a factor
 depending only on `σ` and the dimension. The sign condition `c ≥ 0` is used only through local
-boundedness (`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`),
+boundedness
+(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`),
 which bounds `|u|` on `B(x, R/2)` by `D (1 + σ²)ⁿ R^(-n/2) ‖u‖_{L²(B(x, R))}`.
 
 ## Main declarations
@@ -361,7 +362,7 @@ theorem exists_holderOnWith_preciseRepresentative_lowerOrder (σ : ℝ) :
     exists_holderOnWith_preciseRepresentative_lowerOrder_of_ae_abs_le (mu := mu) (lam := lam)
       (Lam := Lam) σ
   obtain ⟨D₀, hD₀, hbound⟩ :=
-    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg (mu := mu)
       (lam := lam) (Lam := Lam)
   set n : ℝ := (Fintype.card ι : ℝ)
   set D := D₀ * (1 + σ ^ 2) ^ Fintype.card ι

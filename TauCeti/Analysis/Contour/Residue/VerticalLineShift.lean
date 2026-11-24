@@ -8,33 +8,34 @@ module
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import TauCeti.Analysis.Contour.Residue.Cycle
-import TauCeti.Analysis.Contour.Winding.Number.Rectangle
+import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Shifting a vertical line of integration past poles
 
-Let `F` be holomorphic on a neighbourhood of the closed strip `d ≤ Re t ≤ c` except at a finite
-set `P` of poles inside the open strip, integrable on both boundary lines, and such that
-the horizontal connectors `∫_d^c F(x + iT) dx` tend to `0` as `T → ±∞`. Then
+Let `F` be continuous on the closed strip `d ≤ Re t ≤ c` except at a finite set `P` of poles
+inside the open strip, complex differentiable on the open strip `d < Re t < c` off `P`, integrable
+on both boundary lines, and such that the horizontal connectors `∫_d^c F(x + iT) dx` tend to `0`
+as `T → ±∞`. Then
 
 `∫_ℝ F(c + iy) dy - ∫_ℝ F(d + iy) dy = 2π ∑_{p ∈ P} Res(F, p)`.
 
 This is the line shift behind DLMF 2.5.6–2.5.7 and behind the evaluation of Mellin–Barnes
-integrals by residues. The proof applies Tau Ceti's residue theorem for null-homologous curves to
-the boundary of the rectangle `[d, c] × [-T, T]`, which winds once around every pole, and lets
-`T → ∞`. The line integrals use `dy`, so the factor `i` of `dt = i dy` cancels against the `2πi`
-of the residue theorem.
+integrals by residues. The proof applies Tau Ceti's rectangle residue theorem
+`TauCeti.Contour.rectangle_boundary_integral_eq_residues` to `[d, c] × [-T, T]`, which winds once
+around every pole, and lets `T → ∞`. The line integrals use `dy`, so the factor `i` of `dt = i dy`
+cancels against the `2πi` of the residue theorem. The horizontal connectors vanish when the
+integrand decays uniformly on the strip (`TauCeti.Contour.tendsto_intervalIntegral_horizontal`).
 
 ## Main results
 
 * `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue`: the line shift past
-  meromorphic singularities of any order, and
-  `TauCeti.Contour.tendsto_intervalIntegral_vertical_sub`: its symmetric-limit form, which needs
-  no integrability on the two lines.
-* `TauCeti.Contour.tendsto_intervalIntegral_horizontal`: the horizontal connectors vanish when the
-  integrand decays uniformly on the strip.
+  meromorphic singularities of any order,
+  `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_norm_le`: its norm-bound
+  corollary, and `TauCeti.Contour.tendsto_intervalIntegral_vertical_sub`: its symmetric-limit form,
+  which needs no integrability on the two lines.
 * `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_range_residue`: its iteration across
   finitely many lines with one singularity between consecutive lines, and
   `TauCeti.Contour.tendsto_sum_range_residue`, `TauCeti.Contour.hasSum_residue`: the resulting
@@ -49,59 +50,21 @@ Ceti's rectangle residue theorem instead of lean-DLMF's own contour machinery.
 public section
 
 open Complex Set Filter MeasureTheory
-open scoped Topology Real
+open scoped Topology Real Interval
 
 namespace TauCeti.Contour
 
-/-- The residue theorem on the rectangle `[d, c] × [-T, T]`, written edge by edge. -/
-private theorem rectangle_edges_eq {F : ℂ → ℂ} {c d T : ℝ} (hdc : d ≤ c) (hT : 0 < T)
-    {U : Set ℂ} (hU : IsOpen U) (hstrip : {t : ℂ | d ≤ t.re ∧ t.re ≤ c} ⊆ U)
-    (P : Finset ℂ) (hP : ∀ p ∈ P, d < p.re ∧ p.re < c) (hPT : ∀ p ∈ P, |p.im| < T)
-    (hF : DifferentiableOn ℂ F (U \ (P : Set ℂ))) (hmero : ∀ p ∈ P, MeromorphicAt F p) :
-    (∫ x : ℝ in d..c, F (x + ((-T : ℝ) : ℂ) * I)) - (∫ x : ℝ in d..c, F (x + T * I)) +
-        I • (∫ y : ℝ in (-T)..T, F (c + y * I)) - I • (∫ y : ℝ in (-T)..T, F (d + y * I)) =
-      2 * (π : ℂ) * I * ∑ p ∈ P, residue F p := by
-  set z : ℂ := ⟨d, -T⟩
-  set w : ℂ := ⟨c, T⟩
-  have hre : z.re ≤ w.re := hdc
-  have him : z.im ≤ w.im := by simp only [z, w]; linarith
-  have hrect : Rectangle z w ⊆ U := fun t ht => hstrip ((mem_rectangle_iff hre him).1 ht).1
-  have hPint : ∀ p ∈ P, p ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im := fun p hp =>
-    ⟨hP p hp, abs_lt.mp (hPT p hp)⟩
-  have hfront : ∀ t ∈ frontier (Rectangle z w), t ∉ (P : Set ℂ) := fun t ht htP => by
-    have hi := hPint t htP
-    rw [← interior_rectangle hre him] at hi
-    exact disjoint_left.1 disjoint_interior_frontier hi ht
-  have hoff : ∀ t ∈ uIcc (0 : ℝ) 4, rectBoundary z w t ∉ (P : Set ℂ) := fun t _ =>
-    hfront _ (rectBoundary_mem_frontier t)
-  have hres := classicalResidueTheorem_nullHomologous hU hF (fun s hs _ => hmero s hs)
-    (isPiecewiseC1On_rectBoundary z w) (fun t _ => hrect (rectBoundary_mem_rectangle t))
-    (by rw [rectBoundary_zero, rectBoundary_four]) hoff (isNullHomologous_rectBoundary hrect)
-  rw [Finset.sum_congr rfl fun p hp => by
-    rw [windingNumber_rectBoundary_eq_one (hPint p hp), one_mul]] at hres
-  have hcont : ContinuousOn F (frontier (Rectangle z w)) :=
-    hF.continuousOn.mono fun t ht =>
-      ⟨hrect ((isClosed_rectangle z w).frontier_subset ht), hfront t ht⟩
-  rw [integral_rectBoundary hcont] at hres
-  exact hres
-
-/-- If `H(σ + iT) → 0` as `T` tends along `l`, uniformly for `σ` between `d` and `c`, then the
-horizontal connector `∫_d^c H(σ + iT) dσ` tends to `0` along `l`. -/
-theorem tendsto_intervalIntegral_horizontal {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : ℂ → E} {c d : ℝ} {l : Filter ℝ}
-    (h : Tendsto (fun q : ℝ × ℝ => H (q.2 + q.1 * I)) (l ×ˢ 𝓟 (uIcc d c)) (𝓝 0)) :
-    Tendsto (fun T : ℝ => ∫ σ in d..c, H (σ + T * I)) l (𝓝 0) :=
-  TendstoUniformlyOn.tendsto_intervalIntegral_nhds_zero (tendsto_prod_principal_iff.mp h)
-
-/-- **The symmetric line shift.** Let `F` be holomorphic on an open neighbourhood `U` of the closed
-strip `d ≤ Re t ≤ c` except at a finite set `P` of points of the open strip, at each of which `F`
-is meromorphic, and with horizontal connectors `∫_d^c F(x + iT) dx` tending to `0` as
-`T → ±∞`. Then `∫_{-T}^{T} F(c + iy) dy - ∫_{-T}^{T} F(d + iy) dy → 2π ∑_{p ∈ P} Res(F, p)` as
-`T → ∞`; no integrability on the two lines is needed. -/
-theorem tendsto_intervalIntegral_vertical_sub (F : ℂ → ℂ) {c d : ℝ} (hdc : d ≤ c) {U : Set ℂ}
-    (hU : IsOpen U) (hstrip : {t : ℂ | d ≤ t.re ∧ t.re ≤ c} ⊆ U)
+/-- **The symmetric line shift.** Let `F` be continuous on the closed strip `d ≤ Re t ≤ c` except
+at a finite set `P` of points of the open strip, complex differentiable on the open strip
+`d < Re t < c` off `P`, meromorphic at each point of `P`, and with horizontal connectors
+`∫_d^c F(x + iT) dx` tending to `0` as `T → ±∞`. Then
+`∫_{-T}^{T} F(c + iy) dy - ∫_{-T}^{T} F(d + iy) dy → 2π ∑_{p ∈ P} Res(F, p)` as `T → ∞`; no
+integrability on the two lines is needed. -/
+theorem tendsto_intervalIntegral_vertical_sub (F : ℂ → ℂ) {c d : ℝ} (hdc : d ≤ c)
     (P : Finset ℂ) (hP : ∀ p ∈ P, d < p.re ∧ p.re < c)
-    (hF : DifferentiableOn ℂ F (U \ (P : Set ℂ))) (hmero : ∀ p ∈ P, MeromorphicAt F p)
+    (hFc : ContinuousOn F ({t : ℂ | d ≤ t.re ∧ t.re ≤ c} \ (P : Set ℂ)))
+    (hFd : DifferentiableOn ℂ F ({t : ℂ | d < t.re ∧ t.re < c} \ (P : Set ℂ)))
+    (hmero : ∀ p ∈ P, MeromorphicAt F p)
     (htop : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atTop (𝓝 0))
     (hbot : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atBot (𝓝 0)) :
     Tendsto (fun T : ℝ =>
@@ -116,23 +79,27 @@ theorem tendsto_intervalIntegral_vertical_sub (F : ℂ → ℂ) {c d : ℝ} (hdc
     tendsto_const_nhds.sub (((hbot.comp tendsto_neg_atTop_atBot).sub htop).const_mul _)
   rw [sub_zero, mul_zero, sub_zero] at hlim
   refine hlim.congr' (hev.mono fun T hT => ?_)
-  have h := rectangle_edges_eq hdc hT.1 hU hstrip P hP hT.2 hF hmero
-  simp only [smul_eq_mul] at h
+  have h := rectangle_boundary_integral_eq_residues hdc (by linarith [hT.1] : -T ≤ T)
+    (fun p hp => ⟨hP p hp, abs_lt.mp (hT.2 p hp)⟩)
+    (hFc.mono (sdiff_subset_sdiff_left fun _ hz => hz.1))
+    (hFd.mono (sdiff_subset_sdiff_left fun _ hz => hz.1)) hmero
   linear_combination (-I⁻¹) * h + ((∫ y : ℝ in (-T)..T, F (c + y * I)) -
     (∫ y : ℝ in (-T)..T, F (d + y * I)) - 2 * π * ∑ p ∈ P, residue F p) *
       inv_mul_cancel₀ I_ne_zero
 
-/-- **Shifting the line of integration past meromorphic singularities.** Let `F` be holomorphic
-on an open neighbourhood `U` of the closed strip `d ≤ Re t ≤ c` except at a finite set `P` of
-points of the open strip, at each of which `F` is meromorphic, integrable on the lines
-`Re t = c` and `Re t = d`, and with horizontal connectors `∫_d^c F(x + iT) dx` tending to `0` as
-`T → ±∞`. Then `∫_ℝ F(c + iy) dy - ∫_ℝ F(d + iy) dy = 2π ∑_{p ∈ P} Res(F, p)`. The poles may have
-any order; a simple pole `F(t) = g(t)/(t - p)` with `g` analytic at `p` is meromorphic by
+/-- **Shifting the line of integration past meromorphic singularities.** Let `F` be continuous on
+the closed strip `d ≤ Re t ≤ c` except at a finite set `P` of points of the open strip, complex
+differentiable on the open strip `d < Re t < c` off `P`, meromorphic at each point of `P`,
+integrable on the lines `Re t = c` and `Re t = d`, and with horizontal connectors
+`∫_d^c F(x + iT) dx` tending to `0` as `T → ±∞`. Then
+`∫_ℝ F(c + iy) dy - ∫_ℝ F(d + iy) dy = 2π ∑_{p ∈ P} Res(F, p)`. The poles may have any order;
+a simple pole `F(t) = g(t)/(t - p)` with `g` analytic at `p` is meromorphic by
 `MeromorphicAt.meromorphicAt_congr`. -/
 theorem integral_vertical_sub_eq_two_pi_mul_sum_residue (F : ℂ → ℂ) {c d : ℝ} (hdc : d ≤ c)
-    {U : Set ℂ} (hU : IsOpen U) (hstrip : {t : ℂ | d ≤ t.re ∧ t.re ≤ c} ⊆ U)
     (P : Finset ℂ) (hP : ∀ p ∈ P, d < p.re ∧ p.re < c)
-    (hF : DifferentiableOn ℂ F (U \ (P : Set ℂ))) (hmero : ∀ p ∈ P, MeromorphicAt F p)
+    (hFc : ContinuousOn F ({t : ℂ | d ≤ t.re ∧ t.re ≤ c} \ (P : Set ℂ)))
+    (hFd : DifferentiableOn ℂ F ({t : ℂ | d < t.re ∧ t.re < c} \ (P : Set ℂ)))
+    (hmero : ∀ p ∈ P, MeromorphicAt F p)
     (hc : Integrable fun y : ℝ => F (c + y * I)) (hd : Integrable fun y : ℝ => F (d + y * I))
     (htop : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atTop (𝓝 0))
     (hbot : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atBot (𝓝 0)) :
@@ -141,7 +108,37 @@ theorem integral_vertical_sub_eq_two_pi_mul_sum_residue (F : ℂ → ℂ) {c d :
   tendsto_nhds_unique
     ((intervalIntegral_tendsto_integral hc tendsto_neg_atTop_atBot tendsto_id).sub
       (intervalIntegral_tendsto_integral hd tendsto_neg_atTop_atBot tendsto_id))
-    (tendsto_intervalIntegral_vertical_sub F hdc hU hstrip P hP hF hmero htop hbot)
+    (tendsto_intervalIntegral_vertical_sub F hdc P hP hFc hFd hmero htop hbot)
+
+/-- **Shifting a vertical-line integral under uniform horizontal decay.** If on horizontal
+segments `[d, c] ± i T` the integrand is eventually bounded by `B T` with `B T → 0` as `T → +∞`,
+the horizontal connectors vanish in the limit and
+`integral_vertical_sub_eq_two_pi_mul_sum_residue` applies. -/
+theorem integral_vertical_sub_eq_two_pi_mul_sum_residue_of_norm_le (F : ℂ → ℂ) {c d : ℝ}
+    (hdc : d ≤ c) (P : Finset ℂ) (hP : ∀ p ∈ P, d < p.re ∧ p.re < c)
+    (hFc : ContinuousOn F ({t : ℂ | d ≤ t.re ∧ t.re ≤ c} \ (P : Set ℂ)))
+    (hFd : DifferentiableOn ℂ F ({t : ℂ | d < t.re ∧ t.re < c} \ (P : Set ℂ)))
+    (hmero : ∀ p ∈ P, MeromorphicAt F p)
+    (hc : Integrable fun y : ℝ => F (c + y * I)) (hd : Integrable fun y : ℝ => F (d + y * I))
+    {B : ℝ → ℝ} (hB : Tendsto B atTop (𝓝 0))
+    (hbound : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc d c,
+      ‖F ((x : ℂ) + T * I)‖ ≤ B T ∧ ‖F ((x : ℂ) - T * I)‖ ≤ B T) :
+    (∫ y : ℝ, F (c + y * I)) - ∫ y : ℝ, F (d + y * I) =
+      2 * π * ∑ p ∈ P, residue F p := by
+  have hseg (g : ℝ → ℝ → ℂ)
+      (hg : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc d c, ‖g T x‖ ≤ B T) :
+      Tendsto (fun T : ℝ => ∫ x : ℝ in d..c, g T x) atTop (𝓝 0) :=
+    TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le hB <|
+      hg.mono fun T hTB => Eventually.of_forall fun x hx =>
+        hTB x (Ioc_subset_Icc_self (by rwa [uIoc_of_le hdc] at hx))
+  have htop : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atTop (𝓝 0) :=
+    hseg (fun T x => F ((x : ℂ) + T * I)) (hbound.mono fun T hT x hx => (hT x hx).1)
+  have hbot_neg : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + (-T : ℝ) * I)) atTop (𝓝 0) := by
+    simpa only [ofReal_neg, neg_mul, ← sub_eq_add_neg] using
+      hseg (fun T x => F ((x : ℂ) - T * I)) (hbound.mono fun T hT x hx => (hT x hx).2)
+  have hbot : Tendsto (fun T : ℝ => ∫ x in d..c, F (x + T * I)) atBot (𝓝 0) := by
+    simpa only [Function.comp_def, neg_neg] using hbot_neg.comp tendsto_neg_atBot_atTop
+  exact integral_vertical_sub_eq_two_pi_mul_sum_residue F hdc P hP hFc hFd hmero hc hd htop hbot
 
 /-- **Iterated line shifts.** Let `c₀, c₁, …, c_N` be lines with exactly one singularity `p n` of
 `F`, at which `F` is meromorphic, in each strip `c (n + 1) < Re t < c n` for `n < N`, each strip
@@ -149,10 +146,10 @@ satisfying the hypotheses of `integral_vertical_sub_eq_two_pi_mul_sum_residue`.
 The poles may have any order. Then
 `∫_ℝ F(c₀ + iy) dy - ∫_ℝ F(c_N + iy) dy = 2π ∑_{n < N} Res(F, p n)`. -/
 theorem integral_vertical_sub_eq_two_pi_mul_sum_range_residue (F : ℂ → ℂ) {c : ℕ → ℝ}
-    {p : ℕ → ℂ} (N : ℕ) {U : ℕ → Set ℂ} (hU : ∀ n < N, IsOpen (U n))
-    (hstrip : ∀ n < N, {t : ℂ | c (n + 1) ≤ t.re ∧ t.re ≤ c n} ⊆ U n)
+    {p : ℕ → ℂ} (N : ℕ)
     (hp : ∀ n < N, c (n + 1) < (p n).re ∧ (p n).re < c n)
-    (hF : ∀ n < N, DifferentiableOn ℂ F (U n \ {p n}))
+    (hFc : ∀ n < N, ContinuousOn F ({t : ℂ | c (n + 1) ≤ t.re ∧ t.re ≤ c n} \ {p n}))
+    (hFd : ∀ n < N, DifferentiableOn ℂ F ({t : ℂ | c (n + 1) < t.re ∧ t.re < c n} \ {p n}))
     (hmero : ∀ n < N, MeromorphicAt F (p n))
     (hint : ∀ n ≤ N, Integrable fun y : ℝ => F (c n + y * I))
     (htop : ∀ n < N,
@@ -165,9 +162,9 @@ theorem integral_vertical_sub_eq_two_pi_mul_sum_range_residue (F : ℂ → ℂ) 
       ∫ y : ℝ, F (c (n + 1) + y * I) = 2 * π * residue F (p n) := fun n hn => by
     have hn := Finset.mem_range.mp hn
     have h := integral_vertical_sub_eq_two_pi_mul_sum_residue F
-      ((hp n hn).1.trans (hp n hn).2).le (hU n hn) (hstrip n hn) {p n} (by simpa using hp n hn)
-      (by simpa using hF n hn) (by simpa using hmero n hn) (hint n hn.le) (hint (n + 1) hn)
-      (htop n hn) (hbot n hn)
+      ((hp n hn).1.trans (hp n hn).2).le {p n} (by simpa using hp n hn)
+      (by simpa using hFc n hn) (by simpa using hFd n hn) (by simpa using hmero n hn)
+      (hint n hn.le) (hint (n + 1) hn) (htop n hn) (hbot n hn)
     simpa using h
   rw [← Finset.sum_range_sub' (fun n => ∫ y : ℝ, F (c n + y * I)) N, Finset.mul_sum]
   exact Finset.sum_congr rfl hstep
