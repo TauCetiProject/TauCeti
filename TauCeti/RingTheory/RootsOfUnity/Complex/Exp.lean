@@ -16,7 +16,7 @@ unity. This file records:
   `m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`;
 * characterization of a duplicate-free multiset of complex numbers whose elements are
   `exp(2πi e / h)` over a duplicate-free list `es` of residues `< h`
-  (`TauCeti.multiset_eq_map_exp_of_mem_iff_of_nodup`).
+  (`TauCeti.multiset_eq_map_exp_of_nodup_of_mem_iff`).
 -/
 
 public section
@@ -39,7 +39,7 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
 
 /-- A duplicate-free multiset of complex numbers whose elements are exactly `exp (2πi e / h)` as
 `e` runs over a duplicate-free list `es` of residues `< h` equals `(es : Multiset ℕ).map _`. -/
-theorem multiset_eq_map_exp_of_mem_iff_of_nodup {s : Multiset ℂ} {es : List ℕ} {h : ℕ}
+theorem multiset_eq_map_exp_of_nodup_of_mem_iff {s : Multiset ℂ} {es : List ℕ} {h : ℕ}
     (hh : 0 < h) (hes_nd : es.Nodup) (hes_lt : ∀ e ∈ es, e < h) (hs_nd : s.Nodup)
     (hmem : ∀ ζ : ℂ, ζ ∈ s ↔
       ∃ e ∈ es, Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℕ))) = ζ) :

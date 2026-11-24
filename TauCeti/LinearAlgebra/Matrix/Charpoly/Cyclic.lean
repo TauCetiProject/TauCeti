@@ -42,9 +42,10 @@ theorem charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_pow_mulVec_single {n 
   nontriviality R
   rw [← Matrix.charpoly_toLin']
   have hfin : Module.finrank R (Fin n → R) = n := Module.finrank_fin_fun R
+  have hlin : M.toLin' = Matrix.toLinAlgEquiv' M :=
+    LinearMap.ext fun v => by rw [Matrix.toLin'_apply, Matrix.toLinAlgEquiv'_apply]
   have hann' : aeval M.toLin' p = 0 := by
-    change aeval (Matrix.toLinAlgEquiv' M) p = 0
-    rw [Polynomial.aeval_algHom_apply, hann, map_zero]
+    rw [hlin, Polynomial.aeval_algHom_apply, hann, map_zero]
   have hli : LinearIndependent R fun i : Fin (Module.finrank R (Fin n → R)) ↦
       (M.toLin' ^ (i : ℕ)) (Pi.single ⟨0, hn⟩ 1) := by
     have hvec : (fun i : Fin (Module.finrank R (Fin n → R)) ↦
@@ -52,7 +53,7 @@ theorem charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_pow_mulVec_single {n 
         fun i : Fin (Module.finrank R (Fin n → R)) ↦ Pi.single (Fin.cast hfin i) (1 : R) := by
       ext i j
       rw [← Matrix.toLin'_pow, Matrix.toLin'_apply, hcyc i (Nat.lt_of_lt_of_eq i.isLt hfin)]
-      rfl
+      simp only [Fin.cast]
     rw [hvec]
     exact (Pi.linearIndependent_single_one (Fin n) R).comp (Fin.cast hfin) (Fin.cast_injective hfin)
   exact LinearMap.charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_linearIndependent_pow

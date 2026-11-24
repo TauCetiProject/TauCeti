@@ -165,7 +165,7 @@ theorem card_posRootsFinset_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
     (valid_classifiedDynkinType b)
 
 /-- The sum of fundamental degrees of `classifiedDynkinType b` equals `|Φ⁺| + r`. -/
-theorem sum_degrees_classifiedDynkinType (b : P.Base) :
+theorem sum_degrees_classifiedDynkinType_eq_ncard_posRoots_add_card_support (b : P.Base) :
     (classifiedDynkinType b).degrees.sum = (posRoots P b).ncard + b.support.card :=
   (hasCartanType_classifiedDynkinType b).sum_degrees_eq_ncard_posRoots_add_card_support
     (valid_classifiedDynkinType b)

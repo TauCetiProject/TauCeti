@@ -172,6 +172,21 @@ private lemma roots_charpoly_coxeterElement_D {n : ℕ} (hn : 2 ≤ n) :
   push_cast
   rw [hexp, Complex.exp_pi_mul_I]
 
+private lemma roots_charpoly_coxeterElement_of_eigenvalues {t : DynkinType} {h : ℕ}
+    {exps : List ℕ} {M : Matrix (Fin t.rank) (Fin t.rank) ℤ} (hM : t.cartanMatrix = M)
+    (hh : t.coxeterNumber = h) (hexp : t.exponents = exps) (hh_pos : 0 < h)
+    (ht_nd : exps.Nodup) (ht_lt : ∀ e ∈ exps, e < h)
+    (heig : (∀ ζ : ℂ, ζ ∈ ((coxeterElement M).map (Int.castRingHom ℂ)).charpoly.roots ↔
+      ∃ e ∈ t.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℂ))) = ζ) ∧
+      ((coxeterElement M).map (Int.castRingHom ℂ)).charpoly.roots.Nodup) :
+    ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly.roots =
+      (t.exponents : Multiset ℕ).map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) := by
+  rw [hM, hh]
+  obtain ⟨hmem, hnd_r⟩ := heig
+  rw [hexp] at hmem ⊢
+  exact multiset_eq_map_exp_of_nodup_of_mem_iff hh_pos ht_nd ht_lt hnd_r hmem
+
 /-- **Complex eigenvalue multiset of the canonical Coxeter matrix `Matrix.coxeterElement
 t.cartanMatrix`** for any valid Dynkin type `t`: counted with multiplicity, the eigenvalues are
 `exp (2πi e / h)` as `e` runs over `t.exponents`, where `h = t.coxeterNumber`. -/
@@ -193,35 +208,25 @@ theorem roots_charpoly_coxeterElement {t : DynkinType} (ht : t.Valid) :
     rw [DynkinType.cartanMatrix_D]
     exact roots_charpoly_coxeterElement_D (n := n) (by have := DynkinType.valid_D.mp ht; omega)
   | E6 =>
-    obtain ⟨hmem, hnd_r⟩ := eigenvalues_coxE6
-    rw [DynkinType.cartanMatrix_E6, DynkinType.coxeterNumber_E6]
-    rw [DynkinType.exponents_E6] at hmem ⊢
-    exact multiset_eq_map_exp_of_mem_iff_of_nodup (h := 12) (by norm_num) (by decide) (by decide)
-      hnd_r hmem
+    exact roots_charpoly_coxeterElement_of_eigenvalues DynkinType.cartanMatrix_E6
+      DynkinType.coxeterNumber_E6 DynkinType.exponents_E6 (by norm_num) (by decide) (by decide)
+      eigenvalues_coxE6
   | E7 =>
-    obtain ⟨hmem, hnd_r⟩ := eigenvalues_coxE7
-    rw [DynkinType.cartanMatrix_E7, DynkinType.coxeterNumber_E7]
-    rw [DynkinType.exponents_E7] at hmem ⊢
-    exact multiset_eq_map_exp_of_mem_iff_of_nodup (h := 18) (by norm_num) (by decide) (by decide)
-      hnd_r hmem
+    exact roots_charpoly_coxeterElement_of_eigenvalues DynkinType.cartanMatrix_E7
+      DynkinType.coxeterNumber_E7 DynkinType.exponents_E7 (by norm_num) (by decide) (by decide)
+      eigenvalues_coxE7
   | E8 =>
-    obtain ⟨hmem, hnd_r⟩ := eigenvalues_coxE8
-    rw [DynkinType.cartanMatrix_E8, DynkinType.coxeterNumber_E8]
-    rw [DynkinType.exponents_E8] at hmem ⊢
-    exact multiset_eq_map_exp_of_mem_iff_of_nodup (h := 30) (by norm_num) (by decide) (by decide)
-      hnd_r hmem
+    exact roots_charpoly_coxeterElement_of_eigenvalues DynkinType.cartanMatrix_E8
+      DynkinType.coxeterNumber_E8 DynkinType.exponents_E8 (by norm_num) (by decide) (by decide)
+      eigenvalues_coxE8
   | F4 =>
-    obtain ⟨hmem, hnd_r⟩ := eigenvalues_coxF4
-    rw [DynkinType.cartanMatrix_F4, DynkinType.coxeterNumber_F4]
-    rw [DynkinType.exponents_F4] at hmem ⊢
-    exact multiset_eq_map_exp_of_mem_iff_of_nodup (h := 12) (by norm_num) (by decide) (by decide)
-      hnd_r hmem
+    exact roots_charpoly_coxeterElement_of_eigenvalues DynkinType.cartanMatrix_F4
+      DynkinType.coxeterNumber_F4 DynkinType.exponents_F4 (by norm_num) (by decide) (by decide)
+      eigenvalues_coxF4
   | G2 =>
-    obtain ⟨hmem, hnd_r⟩ := eigenvalues_coxG2
-    rw [DynkinType.cartanMatrix_G2, DynkinType.coxeterNumber_G2]
-    rw [DynkinType.exponents_G2] at hmem ⊢
-    exact multiset_eq_map_exp_of_mem_iff_of_nodup (h := 6) (by norm_num) (by decide) (by decide)
-      hnd_r hmem
+    exact roots_charpoly_coxeterElement_of_eigenvalues DynkinType.cartanMatrix_G2
+      DynkinType.coxeterNumber_G2 DynkinType.exponents_G2 (by norm_num) (by decide) (by decide)
+      eigenvalues_coxG2
 
 /-- **Every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) is an
 eigenvalue of `Matrix.coxeterElement t.cartanMatrix`** for any valid Dynkin type `t`. -/
@@ -240,6 +245,38 @@ variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [AddCommGroup M] [Modu
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] [IsDomain R]
   [CharZero R]
 
+private lemma eigenvalues_of_hasCartanType_of_eigenvalues {t : DynkinType} {hC : ℂ}
+    {M : Matrix (Fin t.rank) (Fin t.rank) ℤ} (hM : t.cartanMatrix = M)
+    (heig : (∀ ζ : ℂ, ζ ∈ ((coxeterElement M).map (Int.castRingHom ℂ)).charpoly.roots ↔
+      ∃ e ∈ t.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / hC)) = ζ) ∧
+      ((coxeterElement M).map (Int.castRingHom ℂ)).charpoly.roots.Nodup)
+    {b : P.Base} (h : HasCartanType P b t) {l : List b.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
+    (hW : b.ActsBy (wordProd P b l) W) :
+    (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
+      ∃ e ∈ t.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / hC)) = ζ) ∧
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
+  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
+  rw [hM] at hcp
+  rw [charpoly_map, hcp, ← charpoly_map]
+  exact heig
+
+private lemma roots_charpoly_of_hasCartanType_of_eq {t : DynkinType}
+    {M : Matrix (Fin t.rank) (Fin t.rank) ℤ} (hM : t.cartanMatrix = M)
+    (ht : ((coxeterElement M).map (Int.castRingHom ℂ)).charpoly.roots =
+      (t.exponents : Multiset ℕ).map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)))
+    {b : P.Base} (h : HasCartanType P b t) {l : List b.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
+    (hW : b.ActsBy (wordProd P b l) W) :
+    (W.map (Int.castRingHom ℂ)).charpoly.roots =
+      (t.exponents : Multiset ℕ).map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) := by
+  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
+  rw [hM] at hcp
+  rw [charpoly_map, hcp, ← charpoly_map]
+  exact ht
+
 /-- **Eigenvalues of the matrix of every Coxeter element of type `E₆` on the simple roots**:
 `exp (2πi e / 12)` for the exponents `e = 1, 4, 5, 7, 8, 11`, each once. -/
 theorem eigenvalues_of_hasCartanType_E6 {b : P.Base} (h : HasCartanType P b .E6)
@@ -247,11 +284,9 @@ theorem eigenvalues_of_hasCartanType_E6 {b : P.Base} (h : HasCartanType P b .E6)
     (hW : b.ActsBy (wordProd P b l) W) :
     (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ DynkinType.E6.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 12)) = ζ) ∧
-      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_E6] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact eigenvalues_coxE6
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup :=
+  eigenvalues_of_hasCartanType_of_eigenvalues DynkinType.cartanMatrix_E6 eigenvalues_coxE6 h hnd
+    hall hW
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `E₇` on the simple roots**:
 `exp (2πi e / 18)` for the exponents `e = 1, 5, 7, 9, 11, 13, 17`, each once. -/
@@ -260,11 +295,9 @@ theorem eigenvalues_of_hasCartanType_E7 {b : P.Base} (h : HasCartanType P b .E7)
     (hW : b.ActsBy (wordProd P b l) W) :
     (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ DynkinType.E7.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 18)) = ζ) ∧
-      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_E7] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact eigenvalues_coxE7
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup :=
+  eigenvalues_of_hasCartanType_of_eigenvalues DynkinType.cartanMatrix_E7 eigenvalues_coxE7 h hnd
+    hall hW
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `E₈` on the simple roots**:
 `exp (2πi e / 30)` for the exponents `e = 1, 7, 11, 13, 17, 19, 23, 29`, each once. -/
@@ -273,11 +306,9 @@ theorem eigenvalues_of_hasCartanType_E8 {b : P.Base} (h : HasCartanType P b .E8)
     (hW : b.ActsBy (wordProd P b l) W) :
     (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ DynkinType.E8.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 30)) = ζ) ∧
-      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_E8] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact eigenvalues_coxE8
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup :=
+  eigenvalues_of_hasCartanType_of_eigenvalues DynkinType.cartanMatrix_E8 eigenvalues_coxE8 h hnd
+    hall hW
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `F₄` on the simple roots**:
 `exp (2πi e / 12)` for the exponents `e = 1, 5, 7, 11`, each once. -/
@@ -286,11 +317,9 @@ theorem eigenvalues_of_hasCartanType_F4 {b : P.Base} (h : HasCartanType P b .F4)
     (hW : b.ActsBy (wordProd P b l) W) :
     (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ DynkinType.F4.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 12)) = ζ) ∧
-      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_F4] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact eigenvalues_coxF4
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup :=
+  eigenvalues_of_hasCartanType_of_eigenvalues DynkinType.cartanMatrix_F4 eigenvalues_coxF4 h hnd
+    hall hW
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `G₂` on the simple roots**:
 `exp (2πi e / 6)` for the exponents `e = 1, 5`, each once. -/
@@ -299,11 +328,9 @@ theorem eigenvalues_of_hasCartanType_G2 {b : P.Base} (h : HasCartanType P b .G2)
     (hW : b.ActsBy (wordProd P b l) W) :
     (∀ ζ : ℂ, ζ ∈ (W.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ DynkinType.G2.exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 6)) = ζ) ∧
-      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_G2] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact eigenvalues_coxG2
+      (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup :=
+  eigenvalues_of_hasCartanType_of_eigenvalues DynkinType.cartanMatrix_G2 eigenvalues_coxG2 h hnd
+    hall hW
 
 /-- **Complex eigenvalue multiset of every Coxeter element of type `Aₙ` on the simple roots**:
 `exp (2πi e / (n + 1))` for `e = 1, …, n`, each with multiplicity one. -/
@@ -312,11 +339,9 @@ theorem roots_charpoly_of_hasCartanType_A_of_actsBy {n : ℕ} {b : P.Base}
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((DynkinType.A n).exponents : Multiset ℕ).map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.A n).coxeterNumber)) := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_A] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact roots_charpoly_coxeterElement_A n
+        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.A n).coxeterNumber)) :=
+  roots_charpoly_of_hasCartanType_of_eq (DynkinType.cartanMatrix_A n)
+    (roots_charpoly_coxeterElement_A n) h hnd hall hW
 
 /-- **Complex eigenvalue multiset of every Coxeter element of type `Bₙ` (`1 ≤ n`) on the simple
 roots**: `exp (2πi e / (2 n))` for `e = 1, 3, …, 2 n - 1`, each with multiplicity one. -/
@@ -325,11 +350,9 @@ theorem roots_charpoly_of_hasCartanType_B_of_actsBy {n : ℕ} (hn : 1 ≤ n) {b 
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((DynkinType.B n).exponents : Multiset ℕ).map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.B n).coxeterNumber)) := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_B] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact roots_charpoly_coxeterElement_B hn
+        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.B n).coxeterNumber)) :=
+  roots_charpoly_of_hasCartanType_of_eq (DynkinType.cartanMatrix_B n)
+    (roots_charpoly_coxeterElement_B hn) h hnd hall hW
 
 /-- **Complex eigenvalue multiset of every Coxeter element of type `Cₙ` (`1 ≤ n`) on the simple
 roots**: `exp (2πi e / (2 n))` for `e = 1, 3, …, 2 n - 1`, each with multiplicity one. -/
@@ -338,11 +361,9 @@ theorem roots_charpoly_of_hasCartanType_C_of_actsBy {n : ℕ} (hn : 1 ≤ n) {b 
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((DynkinType.C n).exponents : Multiset ℕ).map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.C n).coxeterNumber)) := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_C] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact roots_charpoly_coxeterElement_C hn
+        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.C n).coxeterNumber)) :=
+  roots_charpoly_of_hasCartanType_of_eq (DynkinType.cartanMatrix_C n)
+    (roots_charpoly_coxeterElement_C hn) h hnd hall hW
 
 /-- **Complex eigenvalue multiset of every Coxeter element of type `Dₙ` (`2 ≤ n`) on the simple
 roots**: `exp (2πi e / (2 (n - 1)))` for `e = 1, 3, …, 2 n - 3, n - 1` (with `-1` of multiplicity
@@ -352,11 +373,9 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy {n : ℕ} (hn : 2 ≤ n) {b 
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((DynkinType.D n).exponents : Multiset ℕ).map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.D n).coxeterNumber)) := by
-  have hcp := charpoly_of_hasCartanType_of_actsBy h hnd hall hW
-  rw [DynkinType.cartanMatrix_D] at hcp
-  rw [charpoly_map, hcp, ← charpoly_map]
-  exact roots_charpoly_coxeterElement_D hn
+        Complex.exp (2 * Real.pi * Complex.I * (e / (DynkinType.D n).coxeterNumber)) :=
+  roots_charpoly_of_hasCartanType_of_eq (DynkinType.cartanMatrix_D n)
+    (roots_charpoly_coxeterElement_D hn) h hnd hall hW
 
 /-- **Complex eigenvalue multiset of every Coxeter element of a base of valid Cartan type `t`** on
 the simple roots: counted with multiplicity, the eigenvalues are `exp (2πi e / h)` as `e` runs over
@@ -367,9 +386,8 @@ theorem roots_charpoly_of_hasCartanType_of_actsBy {t : DynkinType} (ht : t.Valid
     (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       (t.exponents : Multiset ℕ).map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) := by
-  rw [charpoly_map, charpoly_of_hasCartanType_of_actsBy h hnd hall hW, ← charpoly_map]
-  exact roots_charpoly_coxeterElement ht
+        Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) :=
+  roots_charpoly_of_hasCartanType_of_eq rfl (roots_charpoly_coxeterElement ht) h hnd hall hW
 
 /-- **Every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) is an
 eigenvalue of every Coxeter element of a base of valid Cartan type `t`.** -/
