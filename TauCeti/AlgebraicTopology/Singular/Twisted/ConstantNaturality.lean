@@ -18,7 +18,9 @@ used in the local-coefficient theory.
 
 The restriction and pullback of a constant system are identified with the constant system
 by `LocalCoefficientSystem.pullbackConstantIso`. In particular, the pair-map square retains
-the coefficient comparison on its source rather than treating pullback as a strict equality.
+the coefficient comparison on its source rather than treating pullback as a strict equality
+(`TopPair.twistedChainComplexConstantIso_hom_pair_naturality`, and with the comparisons inverted
+`TopPair.twistedChainComplexConstantIso_inv_pair_naturality`).
 
 ## References
 
@@ -69,6 +71,20 @@ lemma twistedChainComplexConstantIso_hom_pair_naturality (f : P ⟶ Q) :
       erw [TauCeti.singularChainComplexFunctor_obj_map, singularChainComplexπ_pair_naturality]
       erw [Category.assoc]
       rfl
+
+/-- The inverse of the constant-system comparison on relative chains is natural in maps of pairs:
+`TopPair.twistedChainComplexConstantIso_hom_pair_naturality` with the comparisons inverted. -/
+@[reassoc]
+lemma twistedChainComplexConstantIso_inv_pair_naturality (f : P ⟶ Q) :
+    singularChainComplexMap f M ≫ (Q.twistedChainComplexConstantIso M).inv =
+      (P.twistedChainComplexConstantIso M).inv ≫
+        P.twistedChainComplexCoefficientMap
+          (LocalCoefficientSystem.pullbackConstantIso (Hom.fst f).hom M).inv ≫
+        twistedChainComplexMap f ((LocalCoefficientSystem.constantFunctor Q.fst).obj M) := by
+  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
+    twistedChainComplexConstantIso_hom_pair_naturality, ← Category.assoc
+      (P.twistedChainComplexCoefficientMap _), ← twistedChainComplexCoefficientMap_comp,
+    Iso.inv_hom_id, twistedChainComplexCoefficientMap_id, Category.id_comp, Iso.inv_hom_id_assoc]
 
 /-- The constant-system comparison on relative homology is natural in maps of pairs. -/
 @[reassoc]
