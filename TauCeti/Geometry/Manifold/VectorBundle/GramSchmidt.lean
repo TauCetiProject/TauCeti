@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -33,13 +35,15 @@ compatible local trivialization of a finite-rank Riemannian bundle is smooth ove
 
 Orthonormalizing the local frame of a bundle trivialization shows that every point of a `C^n`
 Riemannian vector bundle with finite-dimensional model fibre has a neighbourhood carrying a `C^n`
-orthonormal local frame (`TauCeti.exists_isLocalFrameOn_orthonormal`).
+orthonormal local frame (`TauCeti.exists_isLocalFrameOn_orthonormal`). Cutting such a frame off by
+a bump function gives global smooth sections which form an orthonormal basis of every fibre over a
+neighbourhood of the point (`TauCeti.exists_nhds_orthonormal_sections`).
 -/
 
 public section
 
 open Bundle InnerProductSpace
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -227,6 +231,27 @@ theorem TauCeti.exists_isLocalFrameOn_orthonormal (x₀ : M) :
   · exact (ContMDiffAt.gramSchmidtNormed_bundle i
       (fun j _ ↦ hs.contMDiffAt e.open_baseSet hx j)
       ((hs.linearIndependent hx).linearIndepOn _)).contMDiffWithinAt
+
+/-- Near every point of a smooth Riemannian vector bundle of finite rank over a finite-dimensional
+Hausdorff manifold there are global smooth sections which form an orthonormal basis of every fibre
+over an open neighbourhood of the point: orthonormal local frames cut off by a bump function. -/
+theorem TauCeti.exists_nhds_orthonormal_sections [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+    [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
+    [IsContMDiffRiemannianBundle I ∞ F V] (x : M) :
+    ∃ N ∈ 𝓝 x, IsOpen N ∧ ∃ e : Fin (Module.finrank ℝ F) → Cₛ^∞⟮I; F, V⟯,
+      ∀ y ∈ N, Orthonormal ℝ (e · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (e · y)) := by
+  obtain ⟨U, hU, hxU, u, hu, huo⟩ :=
+    TauCeti.exists_isLocalFrameOn_orthonormal (I := I) (n := ∞) (F := F) (V := V) x
+  obtain ⟨χ, -, hχ⟩ :=
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 (hU.mem_nhds hxU)
+  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.2 χ.eventuallyEq_one, isOpen_interior,
+    fun a ↦ ⟨(χ : M → ℝ) • u a, ContMDiffOn.smul_section_of_tsupport χ.contMDiff.contMDiffOn
+      hU hχ (hu.contMDiffOn a)⟩, fun y hy ↦ ?_⟩
+  have hχy : χ y = 1 := interior_subset hy
+  have hyU : y ∈ U :=
+    hχ (subset_tsupport _ (by rw [Function.mem_support, hχy]; exact one_ne_zero))
+  simp only [ContMDiffSection.coeFn_mk, Pi.smul_apply', hχy, one_smul]
+  exact ⟨huo y hyU, hu.generating hyU⟩
 
 section Differentiable
 

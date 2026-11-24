@@ -39,14 +39,15 @@ unity `ρ_i` subordinate to these neighbourhoods, with compact supports, `t ↦ 
 formal adjoint of `P` of order at most `m`.
 
 The local adjoints reduce to operators on functions. Near `x`, orthonormal local frames of `V` and
-`W` (`TauCeti.exists_isLocalFrameOn_orthonormal`), cut off by a bump function, give global smooth
-sections `e a` of `V` and `f b` of `W` which form orthonormal bases of the fibres over a
-neighbourhood `N` of `x`. For `t` supported in `N`, since `P` is local,
+`W`, cut off by a bump function, give global smooth sections `e a` of `V` and `f b` of `W` which
+form orthonormal bases of the fibres over a neighbourhood `N` of `x`
+(`TauCeti.exists_nhds_orthonormal_sections`). For `t` supported in `N`, since `P` is local,
 
 `⟪P s, t⟫ = ∑ a b, D a b ⟪s, e a⟫ * ⟪t, f b⟫`,   `D a b g = ⟪P (g • e a), f b⟫`,
 
-and each `D a b` is a differential operator of order at most `m` on `C^∞(M)`. It has a formal
-transpose `D' a b` (`LinearMap.exists_isFormalTranspose_of_forall_vectorFieldDerivation`), and
+and each `D a b`, built from the pairing `ContMDiffSection.innerSection`, is a differential operator
+of order at most `m` on `C^∞(M)`. It has a formal transpose `D' a b`
+(`LinearMap.exists_isFormalTranspose_of_forall_vectorFieldDerivation`), and
 `t ↦ ∑ a b, D' a b ⟪t, f b⟫ • e a` is a formal adjoint of `P` for test sections supported in `N`.
 
 ## References
@@ -92,9 +93,9 @@ include hQ in
 of the partition of unity, so they form a locally finite family. -/
 private theorem locallyFinite_glue (t : Cₛ^∞⟮I; F', W⟯) :
     LocallyFinite fun i ↦ {y : M | Q i (ρ i • t) y ≠ 0} :=
-  ρ.locallyFinite.closure.subset fun i y hy ↦
+  ρ.locallyFinite.closure.subset fun i _ hy ↦
     ((hQ i _).trans ((ContMDiffSection.tsupport_smul_function_subset _ t).trans
-      inter_subset_left)) (by rw [ContMDiffSection.tsupport_def]; exact subset_closure hy)
+      inter_subset_left)) (ContMDiffSection.mem_tsupport_of_ne_zero _ hy)
 
 /-- The operator `t ↦ ∑ᶠ i, Q i (ρ i • t)` glued from the operators `Q i` along a smooth
 partition of unity `ρ`. -/
@@ -107,13 +108,15 @@ private def glue : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ wher
     simp only [ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.coeFn_mk]
     rw [← finsum_add_distrib ((locallyFinite_glue ρ Q hQ t₁).point_finite y)
       ((locallyFinite_glue ρ Q hQ t₂).point_finite y)]
-    exact finsum_congr fun i ↦ by rw [smul_add (ρ i) t₁ t₂, map_add]; rfl
+    exact finsum_congr fun i ↦ by
+      rw [smul_add (ρ i) t₁ t₂, map_add, ContMDiffSection.coe_add, Pi.add_apply]
   map_smul' c t := by
     ext y
     simp only [ContMDiffSection.coe_smul, Pi.smul_apply, ContMDiffSection.coeFn_mk,
       RingHom.id_apply]
     rw [smul_finsum]
-    exact finsum_congr fun i ↦ by rw [← smul_comm c (ρ i) t, map_smul]; rfl
+    exact finsum_congr fun i ↦ by
+      rw [← smul_comm c (ρ i) t, map_smul, ContMDiffSection.coe_smul, Pi.smul_apply]
 
 private theorem glue_apply (t : Cₛ^∞⟮I; F', W⟯) (y : M) :
     glue ρ Q hQ t y = ∑ᶠ i, Q i (ρ i • t) y :=
@@ -161,7 +164,7 @@ private theorem isFormalAdjoint_glue [OpensMeasurableSpace M] [IsFiniteMeasureOn
   have hleft (y : M) : ⟪P s y, t y⟫ = ∑ i ∈ S, ⟪P s y, (ρ i • t) y⟫ := by
     by_cases hPs : P s y = 0
     · simp [hPs]
-    have hy := hP s (Not.imp_symm (ContMDiffSection.eq_zero_of_notMem_tsupport _) hPs)
+    have hy := hP s (ContMDiffSection.mem_tsupport_of_ne_zero _ hPs)
     have h1 : t y = ∑ i ∈ S, (ρ i • t) y := by
       have h : t y = ∑ᶠ i, (ρ i • t) y := by
         simp_rw [ContMDiffSection.smul_apply]
@@ -170,15 +173,14 @@ private theorem isFormalAdjoint_glue [OpensMeasurableSpace M] [IsFiniteMeasureOn
       refine finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_
       rw [Function.mem_support, ContMDiffSection.smul_apply] at hi
       exact hS (subset_tsupport _ (left_ne_zero_of_smul hi)) hy
-        (Not.imp_symm (ContMDiffSection.eq_zero_of_notMem_tsupport _) (right_ne_zero_of_smul hi))
+        (ContMDiffSection.mem_tsupport_of_ne_zero _ (right_ne_zero_of_smul hi))
     rw [h1, inner_sum]
   have hright (y : M) : ⟪s y, glue ρ Q hQ t y⟫ = ∑ i ∈ S, ⟪s y, Q i (ρ i • t) y⟫ := by
     by_cases hs : s y = 0
     · simp [hs]
     rw [glue_apply, finsum_eq_sum_of_support_subset (s := S) _ fun i hi ↦ ?_, inner_sum]
-    have hy := (hQ i _).trans (hρt i)
-      (Not.imp_symm (ContMDiffSection.eq_zero_of_notMem_tsupport _) hi)
-    exact hS hy.1 (Not.imp_symm (ContMDiffSection.eq_zero_of_notMem_tsupport _) hs) hy.2
+    have hy := (hQ i _).trans (hρt i) (ContMDiffSection.mem_tsupport_of_ne_zero _ hi)
+    exact hS hy.1 (ContMDiffSection.mem_tsupport_of_ne_zero _ hs) hy.2
   simp_rw [hleft, hright]
   rw [integral_finsetSum _ fun i _ ↦ integrable_inner_apply_left hP (.inr (hcs i)),
     integral_finsetSum _ fun i _ ↦ integrable_inner_apply_right (hQ i) (.inr (hcs i))]
@@ -237,29 +239,8 @@ private theorem smulSection_apply (σ : Cₛ^∞⟮I; F, V⟯) (g : C^∞⟮I, M
     smulSection σ g y = g y • σ y := by
   simp [smulSection]
 
-/-- Pairing with a fixed section, `t ↦ ⟪t, τ⟫`, an operator of order zero from sections to
-functions. -/
-private def innerSection [IsContMDiffRiemannianBundle I ∞ F V] (τ : Cₛ^∞⟮I; F, V⟯) :
-    Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-  LinearMap.restrictScalars ℝ (S := C^∞⟮I, M; ℝ⟯)
-    { toFun t := ⟨fun y ↦ ⟪t y, τ y⟫, t.contMDiff.inner_bundle τ.contMDiff⟩
-      map_add' t₁ t₂ := by ext y; exact inner_add_left _ _ _
-      map_smul' g t := by
-        ext y
-        simp only [ContMDiffSection.smul_apply, real_inner_smul_left]
-        rfl }
-
-private theorem innerSection_apply [IsContMDiffRiemannianBundle I ∞ F V] (τ t : Cₛ^∞⟮I; F, V⟯)
-    (y : M) : innerSection τ t y = ⟪t y, τ y⟫ :=
-  rfl
-
 private theorem smulSection_mem_differentialOperators_zero (σ : Cₛ^∞⟮I; F, V⟯) :
     smulSection σ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ 0 :=
-  LinearMap.restrictScalars_mem_differentialOperators_zero _
-
-private theorem innerSection_mem_differentialOperators_zero [IsContMDiffRiemannianBundle I ∞ F V]
-    (τ : Cₛ^∞⟮I; F, V⟯) :
-    innerSection τ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ C^∞⟮I, M; ℝ⟯ 0 :=
   LinearMap.restrictScalars_mem_differentialOperators_zero _
 
 /-- The scalar coefficient operators `g ↦ ⟪P (g • σ), τ⟫` of an operator `P` of order at most `m`
@@ -268,32 +249,13 @@ private theorem innerSection_comp_comp_smulSection_mem [IsContMDiffRiemannianBun
     {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {m : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     (σ : Cₛ^∞⟮I; F, V⟯) (τ : Cₛ^∞⟮I; F', W⟯) :
-    innerSection τ ∘ₗ P ∘ₗ smulSection σ ∈
+    τ.innerSection.restrictScalars ℝ ∘ₗ P ∘ₗ smulSection σ ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
-  simpa using comp_mem_differentialOperators (innerSection_mem_differentialOperators_zero τ)
+  simpa using comp_mem_differentialOperators
+    τ.innerSection.restrictScalars_mem_differentialOperators_zero
     (comp_mem_differentialOperators hP (smulSection_mem_differentialOperators_zero σ))
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
-
-/-- Near every point of a smooth Riemannian vector bundle of finite rank there are global smooth
-sections which form an orthonormal basis of every fibre over a neighbourhood of the point:
-orthonormal local frames cut off by a bump function. -/
-private theorem exists_nhds_orthonormal_sections [FiniteDimensional ℝ F]
-    [ContMDiffVectorBundle ∞ F V I] [IsContMDiffRiemannianBundle I ∞ F V] (x : M) :
-    ∃ N ∈ 𝓝 x, IsOpen N ∧ ∃ e : Fin (Module.finrank ℝ F) → Cₛ^∞⟮I; F, V⟯,
-      ∀ y ∈ N, Orthonormal ℝ (e · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (e · y)) := by
-  obtain ⟨U, hU, hxU, u, hu, huo⟩ :=
-    exists_isLocalFrameOn_orthonormal (I := I) (n := ∞) (F := F) (V := V) x
-  obtain ⟨χ, -, hχ⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 (hU.mem_nhds hxU)
-  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.2 χ.eventuallyEq_one, isOpen_interior,
-    fun a ↦ ⟨(χ : M → ℝ) • u a, ContMDiffOn.smul_section_of_tsupport χ.contMDiff.contMDiffOn
-      hU hχ (hu.contMDiffOn a)⟩, fun y hy ↦ ?_⟩
-  have hχy : χ y = 1 := interior_subset hy
-  have hyU : y ∈ U :=
-    hχ (subset_tsupport _ (by rw [Function.mem_support, hχy]; exact one_ne_zero))
-  simp only [ContMDiffSection.coeFn_mk, Pi.smul_apply', hχy, one_smul]
-  exact ⟨huo y hyU, hu.generating hyU⟩
 
 variable [IsContMDiffRiemannianBundle I ∞ F V] [IsContMDiffRiemannianBundle I ∞ F' W]
   {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {m : ℕ} {N : Set M}
@@ -308,26 +270,27 @@ private theorem inner_apply_eq_sum
     (hN : IsOpen N) (he : ∀ y ∈ N, Orthonormal ℝ (e · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (e · y)))
     (hf : ∀ y ∈ N, Orthonormal ℝ (f · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (f · y)))
     (s : Cₛ^∞⟮I; F, V⟯) {t : Cₛ^∞⟮I; F', W⟯} (htN : t.tsupport ⊆ N) (y : M) :
-    ⟪P s y, t y⟫ = ∑ a, ∑ b, (innerSection (f b) ∘ₗ P ∘ₗ smulSection (e a))
-      (innerSection (e a) s) y * innerSection (f b) t y := by
+    ⟪P s y, t y⟫ = ∑ a, ∑ b,
+      ((f b).innerSection.restrictScalars ℝ ∘ₗ P ∘ₗ smulSection (e a)) ((e a).innerSection s) y *
+        (f b).innerSection t y := by
   by_cases hy : y ∈ N
   swap
   · have hty : t y = 0 := t.eq_zero_of_notMem_tsupport fun h ↦ hy (htN h)
-    simp [innerSection_apply, hty]
-  have hs : ∀ᶠ z in 𝓝 y, (s - ∑ a, smulSection (e a) (innerSection (e a) s)) z = 0 := by
+    simp [hty]
+  have hs : ∀ᶠ z in 𝓝 y, (s - ∑ a, smulSection (e a) ((e a).innerSection s)) z = 0 := by
     filter_upwards [hN.mem_nhds hy] with z hz
     rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero, ContMDiffSection.coe_sum,
       Finset.sum_apply]
     conv_lhs => rw [← (OrthonormalBasis.mk (he z hz).1 (he z hz).2).sum_repr' (s z)]
-    simp [smulSection_apply, innerSection_apply, real_inner_comm]
-  have hPs : P s y = ∑ a, P (smulSection (e a) (innerSection (e a) s)) y := by
+    simp [smulSection_apply, real_inner_comm]
+  have hPs : P s y = ∑ a, P (smulSection (e a) ((e a).innerSection s)) y := by
     have h0 := differentialOperators_section_apply_eq_zero_of_eventuallyEq hP hs
     rwa [map_sub, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero, map_sum,
       ContMDiffSection.coe_sum, Finset.sum_apply] at h0
   rw [← (OrthonormalBasis.mk (hf y hy).1 (hf y hy).2).sum_inner_mul_inner, Finset.sum_comm]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
   rw [← Finset.sum_mul, OrthonormalBasis.coe_mk, hPs, sum_inner]
-  simp [innerSection_apply, real_inner_comm]
+  simp [real_inner_comm]
 
 variable [MeasurableSpace M] {μ : Measure M}
 
@@ -342,25 +305,33 @@ private theorem integral_inner_eq_sum [OpensMeasurableSpace M] [IsFiniteMeasureO
     {D' : Fin (Module.finrank ℝ F) → Fin (Module.finrank ℝ F') →
       C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD'm : ∀ a b, D' a b ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
-    (hD'T : ∀ a b, (innerSection (f b) ∘ₗ P ∘ₗ smulSection (e a)).IsFormalTranspose (D' a b) μ)
+    (hD'T : ∀ a b, IsFormalTranspose
+      ((f b).innerSection.restrictScalars ℝ ∘ₗ P ∘ₗ smulSection (e a)) (D' a b) μ)
     (s : Cₛ^∞⟮I; F, V⟯) {t : Cₛ^∞⟮I; F', W⟯} (ht : IsCompact t.tsupport) (htN : t.tsupport ⊆ N) :
     ∫ y, ⟪P s y, t y⟫ ∂μ =
-      ∫ y, ⟪s y, (∑ a, ∑ b, smulSection (e a) ∘ₗ D' a b ∘ₗ innerSection (f b)) t y⟫ ∂μ := by
-  have hh b : HasCompactSupport (innerSection (f b) t) :=
-    ContMDiffSection.hasCompactSupport_inner (.inl ht)
+      ∫ y, ⟪s y,
+        (∑ a, ∑ b, smulSection (e a) ∘ₗ D' a b ∘ₗ (f b).innerSection.restrictScalars ℝ) t y⟫
+        ∂μ := by
+  have hh b : HasCompactSupport ((f b).innerSection t) := by
+    rw [show ⇑((f b).innerSection t) = fun y ↦ ⟪t y, f b y⟫ from
+      funext (ContMDiffSection.innerSection_apply _ _)]
+    exact ContMDiffSection.hasCompactSupport_inner (.inl ht)
   have hright (y : M) :
-      ⟪s y, (∑ a, ∑ b, smulSection (e a) ∘ₗ D' a b ∘ₗ innerSection (f b)) t y⟫ =
-        ∑ a, ∑ b, innerSection (e a) s y * D' a b (innerSection (f b) t) y := by
+      ⟪s y,
+        (∑ a, ∑ b, smulSection (e a) ∘ₗ D' a b ∘ₗ (f b).innerSection.restrictScalars ℝ) t y⟫ =
+        ∑ a, ∑ b, (e a).innerSection s y * D' a b ((f b).innerSection t) y := by
     simp only [LinearMap.sum_apply, ContMDiffSection.coe_sum, Finset.sum_apply, inner_sum,
-      LinearMap.comp_apply, smulSection_apply, inner_smul_right, innerSection_apply]
+      LinearMap.comp_apply, smulSection_apply, inner_smul_right,
+      ContMDiffSection.innerSection_apply]
     exact Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ mul_comm _ _
-  have hint₁ a b : Integrable (fun y ↦ (innerSection (f b) ∘ₗ P ∘ₗ smulSection (e a))
-      (innerSection (e a) s) y * innerSection (f b) t y) μ :=
+  have hint₁ a b : Integrable (fun y ↦
+      ((f b).innerSection.restrictScalars ℝ ∘ₗ P ∘ₗ smulSection (e a)) ((e a).innerSection s) y *
+        (f b).innerSection t y) μ :=
     ContMDiffMap.integrable_apply_mul_of_tsupport_subset
       (tsupport_differentialOperators_apply_subset
         (innerSection_comp_comp_smulSection_mem hP (e a) (f b))) (.inr (hh b))
   have hint₂ a b : Integrable
-      (fun y ↦ innerSection (e a) s y * D' a b (innerSection (f b) t) y) μ :=
+      (fun y ↦ (e a).innerSection s y * D' a b ((f b).innerSection t) y) μ :=
     ContMDiffMap.integrable_mul_apply_of_tsupport_subset
       (tsupport_differentialOperators_apply_subset (hD'm a b)) (.inr (hh b))
   rw [integral_congr_ae (.of_forall (inner_apply_eq_sum hP hN he hf s htN)),
@@ -394,7 +365,8 @@ private theorem exists_nhds_integral_inner_eq [OpensMeasurableSpace M]
     fun s t ht htN ↦ integral_inner_eq_sum hP (hN₁o.inter hN₂o) (fun y hy ↦ he y hy.1)
       (fun y hy ↦ hf y hy.2) hD'm hD'T s ht htN⟩
   simpa using comp_mem_differentialOperators (smulSection_mem_differentialOperators_zero _)
-    (comp_mem_differentialOperators (hD'm a b) (innerSection_mem_differentialOperators_zero _))
+    (comp_mem_differentialOperators (hD'm a b)
+      (f b).innerSection.restrictScalars_mem_differentialOperators_zero)
 
 end Frame
 
