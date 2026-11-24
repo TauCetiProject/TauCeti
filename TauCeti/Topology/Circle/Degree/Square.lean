@@ -68,6 +68,8 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
   above.
 * `TauCeti.squareBoundaryDegree_mul_two_pi_eq`: the degree read from continuous lifts of `Γ`
   along the four edges.
+* `TauCeti.squareBoundaryDegree_mul_two_pi_eq_of_edges`: a map constant on three edges and
+  `c' * (g t)⁻¹` on the fourth has minus the winding of `g` as its degree.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
   degree `1`.
 
@@ -348,6 +350,24 @@ theorem squareBoundaryDegree_mul_two_pi_eq (h : ContinuousOn Γ (Cube.boundary (
     pathAngle_eq_sub squareRight (h.mono range_squareRight) hθR hR,
     pathAngle_eq_sub squareTop (h.mono range_squareTop) hθT hT,
     pathAngle_eq_sub squareLeft (h.mono range_squareLeft) hθL hL]
+
+/-- The degree around the boundary of the square of a circle-valued map that is constant, equal
+to `c`, on the bottom, top and left edges and equal to `c' * (g t)⁻¹` on the right edge, is minus
+the winding of `g`: `2π` times it is `θ 0 - θ 1` for every continuous lift `θ` of `g`. -/
+theorem squareBoundaryDegree_mul_two_pi_eq_of_edges (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
+    {c c' : Circle} {g : I → Circle} (hB : ∀ s, Γ ![s, 0] = c) (hT : ∀ s, Γ ![s, 1] = c)
+    (hL : ∀ t, Γ ![0, t] = c) (hR : ∀ t, Γ ![1, t] = c' * (g t)⁻¹) {θ : I → ℝ}
+    (hθ : Continuous θ) (hθg : ∀ t, Circle.exp (θ t) = g t) :
+    (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
+  obtain ⟨θc, hθc⟩ := Circle.exp_surjective c
+  obtain ⟨θc', hθc'⟩ := Circle.exp_surjective c'
+  -- Lifts along the edges: constant on three of them, `θc' - θ` on the right edge.
+  rw [squareBoundaryDegree_mul_two_pi_eq hΓ continuous_const (continuous_const.sub hθ)
+    continuous_const continuous_const (θB := fun _ ↦ θc) (θR := fun t ↦ θc' - θ t)
+    (θT := fun _ ↦ θc) (θL := fun _ ↦ θc) (fun s ↦ by rw [hB, hθc])
+    (fun t ↦ by rw [hR, Circle.exp_sub, hθc', hθg, div_eq_mul_inv]) (fun s ↦ by rw [hT, hθc])
+    (fun t ↦ by rw [hL, hθc])]
+  ring
 
 /-- Along a horizontal edge, the angle swept by `Γ` is the sum of the angles swept by its two
 halves. -/

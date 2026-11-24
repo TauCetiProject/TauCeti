@@ -51,10 +51,13 @@ of the plane onto these edges.
 This is the topological half of the recapping law for the grading of capped orbits. The
 Conley–Zehnder index of a capped orbit, read in a symplectic trivialization over the cap, changes
 by twice the Maslov index of the change of trivialization
-(`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`), and for frames as above that
-change of trivialization along the orbit is the loop `k⁻¹`. The comparison of the Maslov index of
-a loop of unitary maps with the winding of its complex determinant, which turns the statement here
-into the recapping law, is not made in this file.
+(`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`). That theorem takes symplectic
+frames, while the frames here are only complex linear for `J`. When the frames over the two caps
+are moreover symplectic for `σ`, hence unitary for `σ` and `J`, along the orbit, the change of
+trivialization along the orbit is the loop `k⁻¹` of unitary maps. Turning the statement here into
+the recapping law then also needs the comparison of the Maslov index of a loop of unitary maps
+with the winding of its complex determinant. Neither the unitary frames nor this comparison are
+made in this file.
 
 ## Main results
 
@@ -93,59 +96,6 @@ variable {X : Type*} [TopologicalSpace X]
   {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
   [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
-
-/-- The identification of the fibres of `E` over two equal points. -/
-private def fiberCast {a b : X} (h : a = b) : E a ≃L[ℂ] E b :=
-  h ▸ ContinuousLinearEquiv.refl ℂ (E a)
-
-omit [TopologicalSpace X] [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
-  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
-private theorem mk_fiberCast {a b : X} (h : a = b) (w : E a) :
-    TotalSpace.mk' F b (fiberCast h w) = TotalSpace.mk' F a w := by
-  subst h
-  rfl
-
-omit [FiniteDimensional ℂ F] [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)]
-  [∀ x, ContinuousSMul ℂ (E x)] in
-/-- Two frames that agree as families of points of the total space have the same clutching
-function. -/
-private theorem clutchingFunction_eq_of_mk_eq {B B' : Type*} {f : B → X} {g : B' → X}
-    {φ : ∀ y, F ≃L[ℂ] E (f y)} {ψ : ∀ y, F ≃L[ℂ] E (g y)} (e : Trivialization F (π F E))
-    [e.IsLinear ℂ] {y : B} {z : B'}
-    (h : ∀ v, TotalSpace.mk' F (f y) (φ y v) = TotalSpace.mk' F (g z) (ψ z v)) :
-    clutchingFunction f φ e y = clutchingFunction g ψ e z := by
-  have hfg : f y = g z := congrArg TotalSpace.proj (h 0)
-  -- The trivialization at a point reads the second coordinate of `e` on the total space.
-  have key (b : X) (hb : b ∈ e.baseSet) (w : E b) :
-      e.continuousLinearEquivAt ℂ b hb w = (e (TotalSpace.mk' F b w)).2 := by
-    rw [e.apply_eq_prod_continuousLinearEquivAt ℂ b hb w]
-  by_cases hy : f y ∈ e.baseSet
-  · have hz : g z ∈ e.baseSet := hfg ▸ hy
-    rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hz]
-    refine congrArg (fun A : F ≃L[ℂ] F ↦ A.normalizedDet⁻¹) (ContinuousLinearEquiv.ext ?_)
-    funext v
-    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, key, key, h v]
-  · rw [clutchingFunction_of_notMem hy, clutchingFunction_of_notMem (hfg ▸ hy)]
-
-/-- The degree around the boundary of the square of a circle-valued map that is constant, equal
-to `c`, on the bottom, top and left edges and equal to `c' * (g t)⁻¹` on the right edge, is minus
-the winding of `g`: `2π` times it is `θ 0 - θ 1` for every continuous lift `θ` of `g`. -/
-private theorem squareBoundaryDegree_mul_two_pi_eq_of_edges {Γ : (Fin 2 → unitInterval) → Circle}
-    (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) {c c' : Circle} {g : unitInterval → Circle}
-    (hB : ∀ s, Γ ![s, 0] = c) (hT : ∀ s, Γ ![s, 1] = c) (hL : ∀ t, Γ ![0, t] = c)
-    (hR : ∀ t, Γ ![1, t] = c' * (g t)⁻¹) {θ : unitInterval → ℝ} (hθ : Continuous θ)
-    (hθg : ∀ t, Circle.exp (θ t) = g t) :
-    (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
-  obtain ⟨θc, hθc⟩ := Circle.exp_surjective c
-  obtain ⟨θc', hθc'⟩ := Circle.exp_surjective c'
-  -- Lifts along the edges: constant on three of them, `θc' - θ` on the right edge.
-  rw [squareBoundaryDegree_mul_two_pi_eq hΓ continuous_const (continuous_const.sub hθ)
-    continuous_const continuous_const (θB := fun _ ↦ θc) (θR := fun t ↦ θc' - θ t)
-    (θT := fun _ ↦ θc) (θL := fun _ ↦ θc) (fun s ↦ by rw [hB, hθc])
-    (fun t ↦ by rw [hR, Circle.exp_sub, hθc', hθg, div_eq_mul_inv]) (fun s ↦ by rw [hT, hθc])
-    (fun t ↦ by rw [hL, hθc])]
-  ring
 
 omit [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
   [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
@@ -215,6 +165,33 @@ private theorem exists_frame_rectangleTrans {x : X} {u u' : ℝ × ℝ → X}
   rw [ha, hb]
   exact hφk (q.1 1) q.2
 
+omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- If continuous frames `φ` and `φ'` along maps agreeing on the line `s = 0` differ there by
+automorphisms `k t` of `F`, `φ (0, t) = φ' (0, t) ∘ k t`, then `k` is continuous. -/
+private theorem continuous_of_mk_eq_mk {u u' : ℝ × ℝ → X} (hseam : ∀ t, u (0, t) = u' (0, t))
+    {φ : ∀ z, F ≃L[ℂ] E (u z)} {φ' : ∀ z, F ≃L[ℂ] E (u' z)}
+    (hφ : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u q.1) (φ q.1 q.2))
+    (hφ' : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u' q.1) (φ' q.1 q.2))
+    {k : unitInterval → F ≃L[ℂ] F}
+    (hφk : ∀ (t : unitInterval) v, TotalSpace.mk' F (u (0, t)) (φ (0, t) v) =
+      TotalSpace.mk' F (u' (0, t)) (φ' (0, t) (k t v))) :
+    Continuous fun t ↦ (k t : F →L[ℂ] F) := by
+  have hγ : Continuous fun q : unitInterval × F ↦ (((0 : ℝ), (q.1 : ℝ)), q.2) := by fun_prop
+  -- `φ'` along `u' (0, ·)`, read as a frame along `u (0, ·)`.
+  let ψ : ∀ t : unitInterval, F ≃L[ℂ] E (u (0, t)) := fun t ↦
+    (φ' (0, t)).trans (fiberCast (hseam t).symm)
+  have hψ (t : unitInterval) (v : F) :
+      TotalSpace.mk' F (u (0, t)) (ψ t v) = TotalSpace.mk' F (u' (0, t)) (φ' (0, t) v) := by
+    rw [ContinuousLinearEquiv.trans_apply, mk_fiberCast]
+  -- As maps of `F`, `k t = (ψ t)⁻¹ ∘ φ (0, t)` is a change of frame along `u (0, ·)`.
+  refine (continuous_trans_symm_of_continuous_frame (f := fun t : unitInterval ↦ u (0, t))
+    (φ := fun t ↦ φ (0, t)) (ψ := ψ) (hφ.comp hγ)
+    ((hφ'.comp hγ).congr fun q ↦ (hψ q.1 q.2).symm)).congr fun t ↦ ?_
+  ext v
+  rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_eq]
+  exact TotalSpace.mk_inj.1 ((hφk t v).trans (hψ t (k t v)).symm)
+
 omit [FiniteDimensional ℂ F] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
   [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
 /-- On the boundary of the square, the frame of `exists_frame_rectangleTrans` is `φ₀` on the half
@@ -259,7 +236,8 @@ of the plane that agree on the line `s = 0`, and let `p` be the sphere at `x` wh
 `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed by `u'`. Let `φ`
 and `φ'` be continuous frames of `E` along `u` and `u'` that are constant, equal to `φ₀` and `φ₀'`,
 on the three edges `s = 1`, `t = 0` and `t = 1` of the unit square, and let `k` be a continuous
-family of automorphisms of `F` with `φ (0, t) = φ' (0, t) ∘ k t` along the edge `s = 0`. Then for
+family of automorphisms of `F` with `φ (0, t) = φ' (0, t) ∘ k t` along the edge `s = 0`; such a
+family is continuous, since `φ` and `φ'` are. Then for
 every continuous lift `θ` of the normalized determinant of `k` through `Circle.exp`,
 `2π` times the clutching number of `p` is `θ 0 - θ 1`. -/
 theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × ℝ → X}
@@ -273,13 +251,14 @@ theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × �
       TotalSpace.mk' F (u (s, t)) (φ (s, t) v) = TotalSpace.mk' F x (φ₀ v))
     (hφ₀' : ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
       TotalSpace.mk' F (u' (s, t)) (φ' (s, t) v) = TotalSpace.mk' F x (φ₀' v))
-    {k : unitInterval → F ≃L[ℂ] F} (hk : Continuous fun t ↦ (k t : F →L[ℂ] F))
+    {k : unitInterval → F ≃L[ℂ] F}
     (hφk : ∀ (t : unitInterval) v, TotalSpace.mk' F (u (0, t)) (φ (0, t) v) =
       TotalSpace.mk' F (u' (0, t)) (φ' (0, t) (k t v)))
     {θ : unitInterval → ℝ} (hθ : Continuous θ)
     (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
     (clutchingNumber F E p : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
-  obtain ⟨ψ, hψc, hψ⟩ := exists_frame_rectangleTrans hseam hp hφ hφ' hk hφk
+  obtain ⟨ψ, hψc, hψ⟩ :=
+    exists_frame_rectangleTrans hseam hp hφ hφ' (continuous_of_mk_eq_mk hseam hφ hφ' hφk) hφk
   obtain ⟨hleft, hright⟩ := mk_frame_rectangleTrans_of_boundary hφ₀ hφ₀' hψ
   set e := trivializationAt F E x
   have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
@@ -300,7 +279,9 @@ theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × �
   have hR (y : Fin 2 → unitInterval) (hy : ¬(y 0 : ℝ) ≤ 1 / 2)
       (hy' : (y 0 : ℝ) = 1 ∨ (y 1 : ℝ) = 0 ∨ (y 1 : ℝ) = 1) :
       clutchingFunction p ψ e y = c' * (k (y 1)).normalizedDet⁻¹ :=
-    (clutchingFunction_eq_of_mk_eq e fun v ↦ (hright y hy hy' v).trans rfl).trans (hc' _)
+    (clutchingFunction_eq_of_mk_eq e fun v ↦ by
+      rw [ContinuousLinearEquiv.trans_apply]
+      exact hright y hy hy' v).trans (hc' _)
   have hcorner (t : unitInterval) (ht : (t : ℝ) = 0 ∨ (t : ℝ) = 1) :
       c' * (k t).normalizedDet⁻¹ = c := by
     rw [← hc']
@@ -331,39 +312,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ M] {J : SmoothAlmostComplexStructure I M}
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)]
-
-/-- A real frame `χ : G ≃ T_b M` that is complex linear for `J`, as a complex frame of the fibre
-at `b` of the complex vector bundle `(TM, J)`. -/
-private def complexFrame {b : M} (χ : G ≃L[ℝ] TangentSpace I b)
-    (hχ : ∀ v, χ (Complex.I • v) = J b (χ v)) :
-    G ≃L[ℂ] (J.toContMDiff 0).toContinuousComplexStructure.Fiber b where
-  toFun v := ((J.toContMDiff 0).toContinuousComplexStructure.fiberEquiv b).symm (χ v)
-  invFun w := χ.symm ((J.toContMDiff 0).toContinuousComplexStructure.fiberEquiv b w)
-  map_add' v w := by simp
-  map_smul' c v := by
-    apply ((J.toContMDiff 0).toContinuousComplexStructure.fiberEquiv b).injective
-    rw [Bundle.ContinuousComplexStructure.fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
-      ContinuousLinearEquiv.apply_symm_apply, RingHom.id_apply]
-    conv_lhs => rw [← Complex.re_add_im c, add_smul, mul_smul, Complex.coe_smul,
-      Complex.coe_smul]
-    rw [map_add, map_smul, map_smul, hχ]
-    rw [ContMDiffAlmostComplexStructure.toContinuousComplexStructure_apply,
-      SmoothAlmostComplexStructure.toContMDiff_apply]
-  left_inv v := by simp
-  right_inv w := by simp
-  continuous_toFun :=
-    ((J.toContMDiff 0).toContinuousComplexStructure.fiberEquiv b).symm.continuous.comp
-      χ.continuous
-  continuous_invFun :=
-    χ.symm.continuous.comp ((J.toContMDiff 0).toContinuousComplexStructure.fiberEquiv b).continuous
-
-/-- The complex frame of a real frame `χ` is `χ`, read in the tangent bundle. -/
-private theorem totalSpaceHomeomorph_mk_complexFrame {b : M} (χ : G ≃L[ℝ] TangentSpace I b)
-    (hχ : ∀ v, χ (Complex.I • v) = J b (χ v)) (v : G) :
-    (J.toContMDiff 0).toContinuousComplexStructure.totalSpaceHomeomorph G
-      (TotalSpace.mk' G b (complexFrame χ hχ v)) = (⟨b, χ v⟩ : TangentBundle I M) := by
-  rw [Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_apply]
-  exact congrArg (TotalSpace.mk' E b) (ContinuousLinearEquiv.apply_symm_apply _ _)
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
 /-- Tangent vectors at equal points with equal underlying vectors are equal in the tangent
@@ -410,32 +358,36 @@ private theorem IsSmoothBasedCap.exists_genLoop_homotopyClass_vsub_homotopyClass
       · simpa using hw.apply_seam_one (y 0)⟩
   exact ⟨p, fun y ↦ rfl, hu.homotopyClass_vsub_homotopyClass_toMul hu' fun y ↦ rfl⟩
 
-omit [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)] [T2Space M]
-  [SigmaCompactSpace M] in
-/-- If two continuous frames along maps agreeing on the line `s = 0` differ there by complex-linear
-automorphisms `k t` of the model, `χ (0, t) = χ' (0, t) ∘ k t`, then `k` is continuous. -/
-private theorem continuous_of_apply_eq_apply {χ : ∀ z, G ≃L[ℝ] TangentSpace I (u z)}
-    {χ' : ∀ z, G ≃L[ℝ] TangentSpace I (u' z)}
+omit [T2Space M] [SigmaCompactSpace M] in
+/-- A continuous real frame `χ` of the tangent bundle along a smooth based cap `u`, complex linear
+for `J` and constant on the three edges `s = 1`, `t = 0`, `t = 1` of the unit square, gives a
+continuous complex frame of `(TM, J)` along `u` that is constant on these edges, where `u` is at
+the base point. -/
+private theorem IsSmoothBasedCap.complexFrame_of_eq_on_edges (hu : IsSmoothBasedCap I γ u)
+    {χ : ∀ z, G ≃L[ℝ] TangentSpace I (u z)}
     (hχ : Continuous fun q : (ℝ × ℝ) × G ↦ (⟨u q.1, χ q.1 q.2⟩ : TangentBundle I M))
-    (hχ' : Continuous fun q : (ℝ × ℝ) × G ↦ (⟨u' q.1, χ' q.1 q.2⟩ : TangentBundle I M))
-    (hseam : ∀ t, u (0, t) = u' (0, t)) {k : unitInterval → G ≃L[ℂ] G}
-    (hχk : ∀ (t : unitInterval) v, χ (0, t) v = χ' (0, t) (k t v)) :
-    Continuous fun t ↦ (k t : G →L[ℂ] G) := by
-  have hγc : Continuous fun q : unitInterval × G ↦ (((0 : ℝ), (q.1 : ℝ)), q.2) :=
-    (continuous_const.prodMk (continuous_subtypeVal.comp continuous_fst)).prodMk continuous_snd
-  -- As real-linear maps, `k t = χ' (0, t)⁻¹ ∘ χ (0, t)` is a change of frame along `u (0, ·)`.
-  have hA : Continuous fun t : unitInterval ↦
-      (((χ (0, t)).trans (χ' (0, t)).symm : G ≃L[ℝ] G) : G →L[ℝ] G) :=
-    continuous_trans_symm_of_continuous_frame (f := fun t : unitInterval ↦ u (0, t))
-      (φ := fun t ↦ χ (0, t)) (ψ := fun t ↦ χ' (0, t)) (hχ.comp hγc)
-      ((hχ'.comp hγc).congr fun q ↦ (tangentBundle_mk_eq_of_eq (hseam q.1).symm _))
-  refine ((ContinuousLinearMap.restrictScalarsIsometry ℂ G G ℝ ℝ).isometry.isEmbedding
-    |>.continuous_iff).2 (hA.congr fun t ↦ ?_)
-  ext v
-  rw [Function.comp_apply, ContinuousLinearMap.coe_restrictScalarsIsometry,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_coe]
-  exact ((χ' (0, t)).symm_apply_eq).2 (hχk t v)
+    (hχJ : ∀ z v, χ z (Complex.I • v) = J.toContMDiff 0 (u z) (χ z v))
+    (hχ₀ : ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
+      χ (s, t) v = χ (1, 0) v) :
+    (Continuous fun q : (ℝ × ℝ) × G ↦
+      TotalSpace.mk' G (u q.1) ((J.toContMDiff 0).complexFrame (χ q.1) (hχJ q.1) q.2)) ∧
+    ∃ φ₀ : G ≃L[ℂ] (J.toContMDiff 0).toContinuousComplexStructure.Fiber x,
+      ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
+        TotalSpace.mk' G (u (s, t)) ((J.toContMDiff 0).complexFrame (χ (s, t)) (hχJ (s, t)) v) =
+          TotalSpace.mk' G x (φ₀ v) := by
+  set Jc := (J.toContMDiff 0).toContinuousComplexStructure
+  have hx₀ : u (1, 0) = x := by simpa using hu.apply_one 0
+  refine ⟨((Jc.totalSpaceHomeomorph G).symm.continuous.comp hχ).congr fun q ↦ ?_,
+    ((J.toContMDiff 0).complexFrame (χ (1, 0)) (hχJ (1, 0))).trans (fiberCast hx₀),
+    fun s t hs ht hst v ↦ ?_⟩
+  · -- The complex frame is `χ` followed by the identification of `TM` with the fibres of `Jc`.
+    rw [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply,
+      ContMDiffAlmostComplexStructure.complexFrame_apply]
+  · rw [ContinuousLinearEquiv.trans_apply, mk_fiberCast]
+    refine (Jc.totalSpaceHomeomorph G).injective ?_
+    rw [ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame,
+      ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame, hχ₀ s t hs ht hst v]
+    exact tangentBundle_mk_eq_of_eq ((hu.apply_eq_of_edge hs ht hst).trans hx₀.symm) _
 
 /-- **The first Chern number of the sphere bounded by two smooth caps.** Let `u` and `u'` be
 smooth based caps of a loop `γ` at `x`, in a manifold with a fiberwise nondegenerate two-form `σ`
@@ -465,46 +417,21 @@ theorem IsSmoothBasedCap.firstChernHom_homotopyClass_vsub_homotopyClass_mul_two_
   obtain ⟨p, hp, hvsub⟩ := hu.exists_genLoop_homotopyClass_vsub_homotopyClass hu'
   rw [(congrArg (h.firstChernHom x) hvsub).trans (h.firstChernHom_apply_mk G hJ 0 p)]
   -- The complex frames of `(TM, J)` along the two caps.
-  set Jc := (J.toContMDiff 0).toContinuousComplexStructure
-  let φ : ∀ z, G ≃L[ℂ] Jc.Fiber (u z) := fun z ↦ complexFrame (χ z) (hχJ z)
-  let φ' : ∀ z, G ≃L[ℂ] Jc.Fiber (u' z) := fun z ↦ complexFrame (χ' z) (hχJ' z)
-  have hφ : Continuous fun q : (ℝ × ℝ) × G ↦ TotalSpace.mk' G (u q.1) (φ q.1 q.2) :=
-    ((Jc.totalSpaceHomeomorph G).symm.continuous.comp hχ).congr fun q ↦ by
-      -- `complexFrame χ` is `χ` followed by the identification of `T M` with the fibre of `Jc`.
-      rw [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply]
-      rfl
-  have hφ' : Continuous fun q : (ℝ × ℝ) × G ↦ TotalSpace.mk' G (u' q.1) (φ' q.1 q.2) :=
-    ((Jc.totalSpaceHomeomorph G).symm.continuous.comp hχ').congr fun q ↦ by
-      -- `complexFrame χ'` is `χ'` followed by the identification of `T M` with the fibre of `Jc`.
-      rw [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply]
-      rfl
-  have hx₀ : u (1, 0) = x := by simpa using hu.apply_one 0
-  have hx₀' : u' (1, 0) = x := by simpa using hu'.apply_one 0
-  have hmk (z : ℝ × ℝ) (v : G) : Jc.totalSpaceHomeomorph G (TotalSpace.mk' G (u z) (φ z v)) =
-      (⟨u z, χ z v⟩ : TangentBundle I M) :=
-    totalSpaceHomeomorph_mk_complexFrame (χ z) (hχJ z) v
-  have hmk' (z : ℝ × ℝ) (v : G) :
-      Jc.totalSpaceHomeomorph G (TotalSpace.mk' G (u' z) (φ' z v)) =
-        (⟨u' z, χ' z v⟩ : TangentBundle I M) :=
-    totalSpaceHomeomorph_mk_complexFrame (χ' z) (hχJ' z) v
+  have hJ₀ {b : M} (w : TangentSpace I b) : J b w = J.toContMDiff 0 b w :=
+    (J.toContMDiff_apply 0 b w).symm
+  have hχJc (z : ℝ × ℝ) (v : G) := (hχJ z v).trans (hJ₀ _)
+  have hχJc' (z : ℝ × ℝ) (v : G) := (hχJ' z v).trans (hJ₀ _)
+  obtain ⟨hφ, φ₀, hφ₀⟩ := hu.complexFrame_of_eq_on_edges hχ hχJc hχ₀
+  obtain ⟨hφ', φ₀', hφ₀'⟩ := hu'.complexFrame_of_eq_on_edges hχ' hχJc' hχ₀'
   have hseam := hu.apply_zero_eq_apply_zero hu'
-  exact clutchingNumber_mul_two_pi_eq_of_rectangleTrans hseam hp hφ hφ'
-    (φ₀ := (φ (1, 0)).trans (fiberCast (E := Jc.Fiber) hx₀))
-    (φ₀' := (φ' (1, 0)).trans (fiberCast (E := Jc.Fiber) hx₀'))
-    (fun s t hs ht hst v ↦ by
-      rw [ContinuousLinearEquiv.trans_apply, mk_fiberCast]
-      refine (Jc.totalSpaceHomeomorph G).injective ?_
-      rw [hmk, hmk, hχ₀ s t hs ht hst v]
-      exact tangentBundle_mk_eq_of_eq ((hu.apply_eq_of_edge hs ht hst).trans hx₀.symm) _)
-    (fun s t hs ht hst v ↦ by
-      rw [ContinuousLinearEquiv.trans_apply, mk_fiberCast]
-      refine (Jc.totalSpaceHomeomorph G).injective ?_
-      rw [hmk', hmk', hχ₀' s t hs ht hst v]
-      exact tangentBundle_mk_eq_of_eq ((hu'.apply_eq_of_edge hs ht hst).trans hx₀'.symm) _)
-    (continuous_of_apply_eq_apply hχ hχ' hseam hχk) (fun t v ↦
-      (Jc.totalSpaceHomeomorph G).injective <| by
-      rw [hmk, hmk', hχk t v]
-      exact tangentBundle_mk_eq_of_eq (hseam t) _) hθ hθk
+  refine clutchingNumber_mul_two_pi_eq_of_rectangleTrans hseam hp
+    (φ := fun z ↦ (J.toContMDiff 0).complexFrame (χ z) (hχJc z))
+    (φ' := fun z ↦ (J.toContMDiff 0).complexFrame (χ' z) (hχJc' z)) hφ hφ' hφ₀ hφ₀' (k := k)
+    (fun t v ↦ ?_) hθ hθk
+  refine ((J.toContMDiff 0).toContinuousComplexStructure.totalSpaceHomeomorph G).injective ?_
+  rw [ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame,
+    ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame, hχk t v]
+  exact tangentBundle_mk_eq_of_eq (hseam t) _
 
 /-! ### Frames over a cap that are constant on its edges at the base point -/
 
