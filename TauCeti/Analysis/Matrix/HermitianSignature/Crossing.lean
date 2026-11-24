@@ -64,6 +64,11 @@ crossings the path is nondegenerate, so its negative index is constant there by
   trivial kernel, in particular at a nondegenerate form, has signature zero.
 * `ContinuousLinearMap.sigPos_add_sigNeg_add_finrank_ker`: the two indices of a symmetric form and
   the dimension of its kernel add up to the dimension of the space.
+* `ContinuousLinearMap.nondegenerate_crossingForm_of_ker_le_span_singleton`: when the kernel of
+  `B` lies on the line through `v` and `V' (v, v) ≠ 0`, the crossing form is nondegenerate;
+  `ContinuousLinearMap.nondegenerate_crossingForm_iff_of_ker_eq_span` and the sign lemmas
+  `ContinuousLinearMap.sigNeg_crossingForm_of_ker_eq_span_of_neg` (and its variants) compute the
+  crossing form when the kernel is that line.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigNeg_crossingForm`: just after a regular
   crossing, the negative index of `V t` is that of `V t₀` plus that of the crossing form.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigPos_crossingForm`: just before a regular
@@ -182,38 +187,44 @@ section SimpleCrossing
 
 variable {B V' : E →L[ℝ] E →L[ℝ] ℝ} {v : E}
 
-/-- On a kernel spanned by `v`, each vector is `c • v`, at which the crossing form takes the value
-`c * c * V' v v`. -/
-private theorem exists_crossingForm_apply_eq_mul_self (hker : B.ker = ℝ ∙ v) (w : B.ker) :
+/-- If the kernel of `B` lies on the line spanned by `v`, each of its vectors is `c • v`, at which
+the crossing form takes the value `c * c * V' v v`. -/
+private theorem exists_crossingForm_apply_eq_mul_self (hker : B.ker ≤ ℝ ∙ v) (w : B.ker) :
     ∃ c : ℝ, (w : E) = c • v ∧ crossingForm B V' w = c * c * V' v v := by
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (hker ▸ w.property : (w : E) ∈ ℝ ∙ v)
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (hker w.property)
   refine ⟨c, hc.symm, ?_⟩
   rw [crossingForm_apply, ← hc]
   simp only [map_smul, smul_apply, smul_eq_mul]
   ring
+
+/-- **A crossing form on a line is nondegenerate.** If the kernel of `B` lies on the line spanned
+by `v` and `V' v v ≠ 0`, the crossing form of `B` and `V'` is nondegenerate. -/
+theorem nondegenerate_crossingForm_of_ker_le_span_singleton (hker : B.ker ≤ ℝ ∙ v)
+    (hvv : V' v v ≠ 0) : (crossingForm B V').Nondegenerate := by
+  refine QuadraticMap.nondegenerate_iff_radical_eq_bot.2 ((Submodule.eq_bot_iff _).2 fun w hw ↦ ?_)
+  obtain ⟨c, hc, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker w
+  have hc0 : c = 0 := by
+    have h := (QuadraticMap.mem_radical_iff'.1 hw).1
+    rw [hQ] at h
+    simpa [hvv] using h
+  ext
+  simp [hc, hc0]
 
 /-- **A crossing with a one-dimensional kernel is regular exactly when `V' v v ≠ 0`.** If the
 kernel of `B` is the line spanned by `v ≠ 0`, the crossing form of `B` and `V'` is nondegenerate
 exactly when `V' v v ≠ 0`. -/
 theorem nondegenerate_crossingForm_iff_of_ker_eq_span (hker : B.ker = ℝ ∙ v) (hv : v ≠ 0) :
     (crossingForm B V').Nondegenerate ↔ V' v v ≠ 0 := by
-  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot]
+  refine ⟨fun h hvv ↦ hv ?_, nondegenerate_crossingForm_of_ker_le_span_singleton hker.le⟩
+  -- If `V' v v = 0` the crossing form vanishes, so `v` lies in its radical.
+  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot] at h
   have hvker : v ∈ B.ker := hker ▸ Submodule.mem_span_singleton_self v
-  refine ⟨fun h hvv ↦ hv ?_, fun hvv ↦ (Submodule.eq_bot_iff _).2 fun w hw ↦ ?_⟩
-  · -- If `V' v v = 0` the crossing form vanishes, so `v` lies in its radical.
-    have h0 : ∀ w, crossingForm B V' w = 0 := fun w ↦ by
-      obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker w
-      rw [hQ, hvv, mul_zero]
-    have hrad : (⟨v, hvker⟩ : B.ker) ∈ (crossingForm B V').radical :=
-      QuadraticMap.mem_radical_iff'.2 ⟨h0 _, fun w ↦ by rw [h0, h0]⟩
-    simpa using congrArg Subtype.val ((Submodule.eq_bot_iff _).1 h _ hrad)
-  · obtain ⟨c, hc, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker w
-    have hc0 : c = 0 := by
-      have h := (QuadraticMap.mem_radical_iff'.1 hw).1
-      rw [hQ] at h
-      simpa [hvv] using h
-    ext
-    simp [hc, hc0]
+  have h0 : ∀ w, crossingForm B V' w = 0 := fun w ↦ by
+    obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker.le w
+    rw [hQ, hvv, mul_zero]
+  have hrad : (⟨v, hvker⟩ : B.ker) ∈ (crossingForm B V').radical :=
+    QuadraticMap.mem_radical_iff'.2 ⟨h0 _, fun w ↦ by rw [h0, h0]⟩
+  simpa using congrArg Subtype.val ((Submodule.eq_bot_iff _).1 h _ hrad)
 
 /-- At a crossing whose kernel is the line spanned by `v`, with `V' v v < 0`, the crossing form
 has negative index one. -/
@@ -223,7 +234,7 @@ theorem sigNeg_crossingForm_of_ker_eq_span_of_neg (hker : B.ker = ℝ ∙ v) (hv
   have : FiniteDimensional ℝ B.ker := by rw [hker]; infer_instance
   have hpos : sigPos (crossingForm B V') = 0 :=
     (QuadraticForm.forall_nonpos_iff_sigPos_eq_zero _).1 fun w ↦ by
-      obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker w
+      obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker.le w
       rw [hQ]
       nlinarith [mul_self_nonneg c]
   have h := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
@@ -237,7 +248,7 @@ theorem sigNeg_crossingForm_of_ker_eq_span_of_pos (hker : B.ker = ℝ ∙ v) (hv
     sigNeg (crossingForm B V') = 0 := by
   have : FiniteDimensional ℝ B.ker := by rw [hker]; infer_instance
   refine (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).1 fun w ↦ ?_
-  obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker w
+  obtain ⟨c, -, hQ⟩ := exists_crossingForm_apply_eq_mul_self (V' := V') hker.le w
   rw [hQ]
   exact mul_nonneg (mul_self_nonneg c) hvv.le
 
