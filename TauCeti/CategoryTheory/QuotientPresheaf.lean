@@ -89,7 +89,6 @@ noncomputable def quotientPresheaf.π : yoneda.obj U ⟶ quotientPresheaf s t wh
   naturality _ _ _ := rfl
 
 /-- The projection onto the presheaf quotient sends a `T`-point of `U` to its class. -/
-@[simp]
 theorem quotientPresheaf.π_app (T : Cᵒᵖ) (a : unop T ⟶ U) :
     (quotientPresheaf.π s t).app T a =
       Function.Coequalizer.mk (fun r : unop T ⟶ R ↦ r ≫ t) (fun r ↦ r ≫ s) a :=
