@@ -6,17 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Cotangent
+public import TauCeti.RingTheory.LocalRing.ResidueField.Map
 
 /-!
 # Cotangent spaces of local rings under ring equivalences
 
-A ring isomorphism `σ : R ≃+* S` between local rings induces a semilinear equivalence
+A local ring homomorphism induces a map between cotangent spaces compatible with the induced
+scalar action on residue fields (`IsLocalRing.mapCotangent_residue_smul`). In particular, a ring
+isomorphism `σ : R ≃+* S` between local rings induces a semilinear equivalence
 `IsLocalRing.cotangentSpaceEquiv σ : CotangentSpace R ≃ₛₗ[ResidueField.mapEquiv σ] CotangentSpace S`
 between their cotangent spaces over the induced isomorphism of residue fields, and hence preserves
 the residue-field dimension of the cotangent space.
 
 ## Main declarations
 
+* `IsLocalRing.mapCotangent_residue_smul`: `Ideal.mapCotangent` is compatible with scalar
+  multiplication by `IsLocalRing.residue`.
 * `IsLocalRing.cotangentSpaceEquiv`: a ring isomorphism between local rings induces a semilinear
   equivalence between their cotangent spaces over the induced isomorphism of residue fields.
 * `IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv`: a ring isomorphism between local rings
@@ -27,15 +32,10 @@ public section
 
 namespace IsLocalRing
 
-/-- `ResidueField.mapEquiv σ` and `ResidueField.mapEquiv σ.symm` form an inverse pair of ring
-homomorphisms, allowing semilinear equivalences over `ResidueField.mapEquiv σ`. -/
-instance ResidueField.ringHomInvPair_mapEquiv {R S : Type*} [CommRing R] [CommRing S]
-    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
-    RingHomInvPair (ResidueField.mapEquiv σ : ResidueField R →+* ResidueField S)
-      (ResidueField.mapEquiv σ.symm : ResidueField S →+* ResidueField R) :=
-  .of_ringEquiv (ResidueField.mapEquiv σ)
-
-private lemma mapCotangent_residue_smul {R S : Type*} [CommRing R] [CommRing S]
+/-- The cotangent map induced by a local ring homomorphism is compatible with scalar
+multiplication by residues. -/
+@[simp]
+theorem mapCotangent_residue_smul {R S : Type*} [CommRing R] [CommRing S]
     [IsLocalRing R] [IsLocalRing S] (f : R →+* S)
     (h : maximalIdeal R ≤ (maximalIdeal S).comap f.toIntAlgHom)
     (r : R) (v : CotangentSpace R) :
@@ -66,7 +66,7 @@ def cotangentSpaceEquiv {R S : Type*} [CommRing R] [CommRing S]
   map_add' := map_add _
   map_smul' r m := by
     obtain ⟨r, rfl⟩ := residue_surjective r
-    simp [mapCotangent_residue_smul]
+    simp
 
 /-- On `Ideal.toCotangent` representatives, `cotangentSpaceEquiv` acts by applying `σ`. -/
 @[simp]

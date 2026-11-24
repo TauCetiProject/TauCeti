@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Regular
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Regular.Basic
 public import TauCeti.RingTheory.Regular.RegularSequence
 
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
