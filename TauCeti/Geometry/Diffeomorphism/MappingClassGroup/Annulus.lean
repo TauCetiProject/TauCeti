@@ -37,10 +37,11 @@ map `[0, 1] × ℝ → ℝ/ℤ` vanishing at `t = 0`, so by the homotopy lifting
 `ℝ → ℝ/ℤ` it has a unique continuous lift `ℓ_f : [0, 1] × ℝ → ℝ` vanishing at `t = 0`. At `t = 1`
 the displacement vanishes again, so `ℓ_f (1, ·)` is a constant integer: the number of times the
 image of a radial arc winds around the annulus. Lifts compose,
-`ℓ_{f ∘ g} (t, x) = ℓ_f (g (t, [x]), x + ℓ_g (t, x)) + ℓ_g (t, x)`, so the twist number is a
-homomorphism `Diff(A, ∂A) → ℤ`. Lifting the displacements of a whole path of diffeomorphisms at
-once shows that it is constant along paths in `Diff(A, ∂A)`, so it descends to `Mod(A)`
-(`TauCeti.MappingClassGroup.annulusTwistNumber`), where it sends `T` to `1`.
+`ℓ_{f ∘ g} (t, x) = ℓ_f ((g (t, [x])).1, x + ℓ_g (t, x)) + ℓ_g (t, x)`, so the twist number is a
+homomorphism `Diff(A, ∂A) → ℤ`. It is the winding number of the image of a radial arc, so it is
+invariant under homotopy relative to `∂A`. In particular it is constant along paths in
+`Diff(A, ∂A)`, so it descends to `Mod(A)` (`TauCeti.MappingClassGroup.annulusTwistNumber`), where
+it sends `T` to `1`.
 
 No orientation of the annulus is fixed here, and `Mod(A)` does not depend on one. For the
 orientation `dθ ∧ dt` the twist `(t, θ) ↦ (t, θ + t)` is the Dehn twist about the core circle in the
@@ -67,11 +68,13 @@ identity relative to `∂A`. That is not proved here.
 * `TauCeti.annulusTwist_mem_fixingSubgroup_iff`: a twist fixes `∂A` exactly when its profile takes
   integer values at both ends.
 * `TauCeti.mk_annulusTwist`: the class of a twist making `n - m` turns is `T ^ (n - m)`.
-* `TauCeti.toAdd_annulusTwistNumber_eq`: the twist number is the end value of any continuous lift
-  of the angular displacement vanishing at the origin.
+* `TauCeti.toAdd_annulusTwistNumber_eq`: the twist number is `ℓ 1 - ℓ 0` for any continuous lift
+  `ℓ` of the angular coordinate of `f` along a radial arc.
 * `TauCeti.toAdd_annulusTwistNumber_eq_windingNumber`: it is the winding number
   (`AddCircle.windingNumber`) of the angular coordinate of `f` along a radial arc.
-* `TauCeti.annulusTwistNumber_eq_one_of_joined`: the twist number is constant along paths.
+* `TauCeti.annulusTwistNumber_eq_of_homotopicRel`, `TauCeti.annulusTwistNumber_eq_of_joined`:
+  diffeomorphisms homotopic relative to `∂A`, in particular isotopic relative to `∂A`, have the
+  same twist number.
 * `TauCeti.MappingClassGroup.annulusTwistNumber_annulusDehnTwist`: the Dehn twist has twist
   number `1`.
 * `TauCeti.zpow_annulusDehnTwist_injective`, `TauCeti.orderOf_annulusDehnTwist`: the Dehn twist
@@ -102,15 +105,12 @@ abbrev Annulus : Type := I × AddCircle (1 : ℝ)
 
 /-- A point of the annulus lies on its boundary exactly when its radial coordinate is `0` or
 `1`. -/
+@[simp]
 theorem mem_boundary_annulus_iff {p : Annulus} :
     p ∈ ((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus ↔ p.1 = 0 ∨ p.1 = 1 := by
-  rw [ModelWithCorners.boundary_prod, boundary_Icc,
-    ModelWithCorners.Boundaryless.boundary_eq_empty]
-  -- `boundary_prod` is stated with `Set.prod`; restate it with `×ˢ` for the product lemmas
-  change p ∈ univ ×ˢ ∅ ∪ ({⊥, ⊤} : Set I) ×ˢ univ ↔ _
-  simp only [prod_empty, empty_union, mem_prod, mem_insert_iff, mem_singleton_iff, mem_univ,
-    and_true]
-  rfl
+  have htop : (⊤ : I) = 1 := Subtype.ext (by simp)
+  rw [ModelWithCorners.boundary_of_boundaryless_right, boundary_Icc]
+  simp [Set.prod, bot_eq_zero, htop]
 
 /-! ### Twists of the annulus -/
 
@@ -141,6 +141,11 @@ theorem annulusTwist_mul (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ)
     Prod.mk.injEq, true_and]
   abel
 
+/-- The twist by the zero profile is the identity. -/
+@[simp]
+theorem annulusTwist_zero (h : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ (0 : I → ℝ)) : annulusTwist 0 h = 1 :=
+  Diffeomorph.ext fun p ↦ by simp
+
 /-- A twist is the identity exactly when its profile takes integer values everywhere. -/
 theorem annulusTwist_eq_one_iff (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
     annulusTwist κ hκ = 1 ↔ ∀ t, (κ t : AddCircle (1 : ℝ)) = 0 := by
@@ -155,26 +160,38 @@ theorem annulusTwist_inv (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
   rw [annulusTwist_mul]
   exact Diffeomorph.ext fun p ↦ by simp
 
+/-- The inverse diffeomorphism of a twist is the twist by the opposite profile. -/
+@[simp]
+theorem annulusTwist_symm (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
+    (annulusTwist κ hκ).symm = annulusTwist (-κ) hκ.neg :=
+  annulusTwist_inv hκ
+
 /-- The integer powers of a twist are the twists by the integer multiples of its profile. -/
 @[simp]
 theorem annulusTwist_zpow (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (k : ℤ) :
-    annulusTwist κ hκ ^ k = annulusTwist (fun t ↦ k * κ t) (contMDiff_const.mul hκ) := by
+    annulusTwist κ hκ ^ k = annulusTwist ((k : ℝ) • κ) (contMDiff_const.mul hκ) := by
   induction k using Int.induction_on with
-  | zero => exact (zpow_zero _).trans ((annulusTwist_eq_one_iff _).mpr fun _ ↦ by simp).symm
+  | zero => simp
   | succ k ih =>
     rw [zpow_add_one, ih, annulusTwist_mul]
     congr 1
     ext t
-    simp only [Pi.add_apply]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     push_cast
     ring
   | pred k ih =>
     rw [zpow_sub_one, ih, annulusTwist_inv, annulusTwist_mul]
     congr 1
     ext t
-    simp only [Pi.add_apply, Pi.neg_apply]
+    simp only [Pi.add_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]
     push_cast
     ring
+
+/-- The natural powers of a twist are the twists by the natural multiples of its profile. -/
+@[simp]
+theorem annulusTwist_pow (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (k : ℕ) :
+    annulusTwist κ hκ ^ k = annulusTwist ((k : ℝ) • κ) (contMDiff_const.mul hκ) := by
+  rw [← zpow_natCast, annulusTwist_zpow, Int.cast_natCast]
 
 /-- A twist fixes the boundary of the annulus pointwise exactly when its profile takes integer
 values at both ends. -/
@@ -237,6 +254,13 @@ relative to the boundary. It is the class of every twist making one full turn
 def annulusDehnTwist : MappingClassGroup ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus :=
   MappingClassGroup.mk _ _ ⟨_, annulusTwist_subtypeVal_mem_fixingSubgroup⟩
 
+/-- The Dehn twist of the annulus is the class of the twist by `t ↦ t`. -/
+theorem annulusDehnTwist_def :
+    annulusDehnTwist = MappingClassGroup.mk _ _
+      ⟨annulusTwist (fun t : I ↦ (t : ℝ)) contMDiff_subtypeVal_Icc,
+        annulusTwist_subtypeVal_mem_fixingSubgroup⟩ :=
+  (rfl)
+
 /-- A twist whose profile vanishes at both ends is isotopic to the identity relative to the
 boundary, through the twist diffeotopy. -/
 private theorem mk_annulusTwist_eq_one (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ)
@@ -246,8 +270,8 @@ private theorem mk_annulusTwist_eq_one (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) �
   have h := MappingClassGroup.mk_final_eq_one (annulusTwistDiffeotopy κ hκ) fun s p hp ↦ by
     obtain ⟨t, θ⟩ := p
     rcases mem_boundary_annulus_iff.mp hp with rfl | rfl <;> simp [h0, h1]
-  convert h using 3
-  exact (final_annulusTwistDiffeotopy hκ).symm
+  exact (congrArg (MappingClassGroup.mk _ _)
+    (Subtype.ext (final_annulusTwistDiffeotopy hκ).symm)).trans h
 
 /-- **Twists represent powers of the Dehn twist.** A twist whose profile `κ` has integer end
 values `κ 0 = m` and `κ 1 = n` represents `T ^ (n - m)` in `Mod(A)`, for the Dehn twist `T`. In
@@ -257,7 +281,7 @@ theorem mk_annulusTwist (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ)
       (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)) {m n : ℤ} (h0 : κ 0 = m) (h1 : κ 1 = n) :
     MappingClassGroup.mk _ _ ⟨annulusTwist κ hκ, hmem⟩ = annulusDehnTwist ^ (n - m) := by
   -- the profile `κ` differs from `t ↦ (n - m) t + m` by a profile vanishing at both ends
-  set ψ : I → ℝ := fun t ↦ ((n - m : ℤ) : ℝ) * t with hψ
+  set ψ : I → ℝ := ((n - m : ℤ) : ℝ) • fun t : I ↦ (t : ℝ) with hψ
   have hψs : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ ψ := contMDiff_const.mul contMDiff_subtypeVal_Icc
   have hρ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ ((κ - fun _ ↦ (m : ℝ)) - ψ) :=
     (hκ.sub contMDiff_const).sub hψs
@@ -281,31 +305,25 @@ theorem mk_annulusTwist (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ)
     simp only [Subgroup.coe_mul, Subgroup.coe_zpow]
     rw [hsplit, ← hψT, (annulusTwist_eq_one_iff (κ := fun _ ↦ (m : ℝ)) contMDiff_const).mpr
       fun _ ↦ (AddCircle.coe_eq_zero_iff (1 : ℝ)).mpr ⟨m, by simp⟩, mul_one]
-  rw [hrel, map_mul, map_zpow, hρ1, one_mul, annulusDehnTwist]
+  rw [hrel, map_mul, map_zpow, hρ1, one_mul, annulusDehnTwist_def]
 
 /-! ### The twist number -/
 
 variable (f g : RelativeDiff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞
   (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus))
 
-private theorem apply_inner (θ : AddCircle (1 : ℝ)) : f.1 (0, θ) = (0, θ) :=
-  RelativeDiff.apply_eq f (mem_boundary_annulus_iff.mpr (Or.inl rfl))
-
-private theorem apply_outer (θ : AddCircle (1 : ℝ)) : f.1 (1, θ) = (1, θ) :=
-  RelativeDiff.apply_eq f (mem_boundary_annulus_iff.mpr (Or.inr rfl))
-
 /-- The angular displacement `(t, x) ↦ θ (f (t, [x])) - [x]` of a diffeomorphism of the annulus,
 read on the universal cover `[0, 1] × ℝ`. -/
 private def displacement : C(I × ℝ, AddCircle (1 : ℝ)) :=
-  ⟨fun p ↦ (f.1 (p.1, p.2)).2 - p.2, by fun_prop⟩
+  ⟨fun p ↦ (f.val (p.1, p.2)).2 - p.2, by fun_prop⟩
 
 /-- The lift of the angular displacement that vanishes on the inner boundary circle. -/
 private def displacementLift : C(I × ℝ, ℝ) :=
   (AddCircle.isCoveringMap_coe (1 : ℝ)).liftHomotopy (displacement f) (.const ℝ 0) fun x ↦ by
-    simp [displacement, apply_inner]
+    simp [displacement]
 
 private theorem coe_displacementLift (p : I × ℝ) :
-    (displacementLift f p : AddCircle (1 : ℝ)) = (f.1 (p.1, p.2)).2 - p.2 :=
+    (displacementLift f p : AddCircle (1 : ℝ)) = (f.val (p.1, p.2)).2 - p.2 :=
   congr_fun ((AddCircle.isCoveringMap_coe (1 : ℝ)).liftHomotopy_lifts _ _ _) p
 
 private theorem displacementLift_zero (x : ℝ) : displacementLift f (0, x) = 0 :=
@@ -314,7 +332,7 @@ private theorem displacementLift_zero (x : ℝ) : displacementLift f (0, x) = 0 
 /-- Uniqueness of the lift: every continuous lift of the angular displacement vanishing at the
 origin is `displacementLift f`. -/
 private theorem eq_displacementLift {ℓ : I × ℝ → ℝ} (hℓ : Continuous ℓ)
-    (hcoe : ∀ p : I × ℝ, (ℓ p : AddCircle (1 : ℝ)) = (f.1 (p.1, p.2)).2 - p.2)
+    (hcoe : ∀ p : I × ℝ, (ℓ p : AddCircle (1 : ℝ)) = (f.val (p.1, p.2)).2 - p.2)
     (hℓ0 : ℓ (0, 0) = 0) : ℓ = displacementLift f :=
   (AddCircle.isCoveringMap_coe (1 : ℝ)).eq_of_comp_eq hℓ (map_continuous _)
     (funext fun p ↦ by simp [hcoe, coe_displacementLift]) (0, 0)
@@ -325,13 +343,13 @@ private theorem displacementLift_one (x : ℝ) :
     displacementLift f (1, x) = displacementLift f (1, 0) :=
   (AddCircle.isCoveringMap_coe (1 : ℝ)).const_of_comp (g := fun x ↦ displacementLift f (1, x))
     (by fun_prop)
-    (fun a a' ↦ by simp [coe_displacementLift, apply_outer]) x 0
+    (fun a a' ↦ by simp [coe_displacementLift]) x 0
 
 /-- The value of the lift on the outer boundary circle is an integer. -/
 private theorem displacementLift_one_eq_round :
     displacementLift f (1, 0) = round (displacementLift f (1, 0)) := by
   obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (1 : ℝ)).mp
-    ((coe_displacementLift f (1, 0)).trans (by simp [apply_outer]))
+    ((coe_displacementLift f (1, 0)).trans (by simp))
   simp only [zsmul_eq_mul, mul_one] at hk
   rw [← hk, round_intCast]
 
@@ -339,21 +357,21 @@ private theorem displacementLift_one_eq_round :
 of `f` at the image point. -/
 private theorem displacementLift_mul (p : I × ℝ) :
     displacementLift (f * g) p = displacementLift f
-      ((g.1 (p.1, p.2)).1, p.2 + displacementLift g p) + displacementLift g p := by
-  have hg (p : I × ℝ) : (((g.1 (p.1, p.2)).1, ((p.2 + displacementLift g p : ℝ) :
-      AddCircle (1 : ℝ))) : Annulus) = g.1 (p.1, p.2) := by
+      ((g.val (p.1, p.2)).1, p.2 + displacementLift g p) + displacementLift g p := by
+  have hg (p : I × ℝ) : (((g.val (p.1, p.2)).1, ((p.2 + displacementLift g p : ℝ) :
+      AddCircle (1 : ℝ))) : Annulus) = g.val (p.1, p.2) := by
     refine Prod.ext rfl ?_
     dsimp only
     rw [AddCircle.coe_add, coe_displacementLift]
     abel
   refine (congr_fun (eq_displacementLift (f * g) (ℓ := fun p ↦ displacementLift f
-      ((g.1 (p.1, p.2)).1, p.2 + displacementLift g p) + displacementLift g p)
+      ((g.val (p.1, p.2)).1, p.2 + displacementLift g p) + displacementLift g p)
     (by fun_prop) (fun p ↦ ?_) ?_) p).symm
   · rw [AddCircle.coe_add, coe_displacementLift, hg]
     dsimp only
     rw [AddCircle.coe_add, coe_displacementLift, Subgroup.coe_mul, Diffeomorph.mul_apply]
     abel
-  · simp [displacementLift_zero, apply_inner]
+  · simp [displacementLift_zero]
 
 /-- The **twist number** of a diffeomorphism `f` of the annulus fixing its boundary: the number of
 times the image under `f` of a radial arc `[0, 1] × {θ}` winds around the annulus. It is the value
@@ -369,7 +387,9 @@ def annulusTwistNumber :
       eq_displacementLift 1 continuous_const (fun p ↦ by simp) rfl
     simp [← h]
   map_mul' f g := by
-    rw [← ofAdd_add, displacementLift_mul, apply_outer, displacementLift_one,
+    have hg : g.val (1, ((0 : ℝ) : AddCircle (1 : ℝ))) = (1, ((0 : ℝ) : AddCircle (1 : ℝ))) :=
+      RelativeDiff.apply_eq g (by simp)
+    rw [← ofAdd_add, displacementLift_mul, hg, displacementLift_one,
       displacementLift_one_eq_round f, displacementLift_one_eq_round g, ← Int.cast_add,
       round_intCast, round_intCast, round_intCast]
 
@@ -377,58 +397,80 @@ private theorem annulusTwistNumber_apply :
     annulusTwistNumber f = .ofAdd (round (displacementLift f (1, 0))) :=
   rfl
 
-/-- **Characterization of the twist number.** For every continuous lift `ℓ` of the angular
-displacement `(t, x) ↦ θ (f (t, [x])) - [x]` vanishing at the origin, the twist number of `f` is
-`ℓ (1, x)`, for every `x`. -/
-theorem toAdd_annulusTwistNumber_eq {ℓ : I × ℝ → ℝ} (hℓ : Continuous ℓ)
-    (hcoe : ∀ p : I × ℝ, (ℓ p : AddCircle (1 : ℝ)) = (f.1 (p.1, p.2)).2 - p.2)
-    (hℓ0 : ℓ (0, 0) = 0) (x : ℝ) :
-    ((annulusTwistNumber f).toAdd : ℝ) = ℓ (1, x) := by
-  rw [eq_displacementLift f hℓ hcoe hℓ0, displacementLift_one]
-  exact (displacementLift_one_eq_round f).symm
+/-- **Characterization of the twist number.** For every continuous lift `ℓ : [0, 1] → ℝ` of the
+angular coordinate `t ↦ θ (f (t, θ))` along a radial arc `[0, 1] × {θ}`, the twist number of `f`
+is `ℓ 1 - ℓ 0`. -/
+theorem toAdd_annulusTwistNumber_eq {θ : AddCircle (1 : ℝ)} {ℓ : I → ℝ} (hℓ : Continuous ℓ)
+    (hcoe : ∀ t : I, (ℓ t : AddCircle (1 : ℝ)) = (f.val (t, θ)).2) :
+    ((annulusTwistNumber f).toAdd : ℝ) = ℓ 1 - ℓ 0 := by
+  induction θ using QuotientAddGroup.induction_on with
+  | H x =>
+  -- `ℓ` is the lift `t ↦ ℓ 0 + displacementLift f (t, x)`, as both start at `ℓ 0`
+  have h : ℓ = fun t ↦ ℓ 0 + displacementLift f (t, x) :=
+    (AddCircle.isCoveringMap_coe (1 : ℝ)).eq_of_comp_eq hℓ (by fun_prop)
+      (funext fun t ↦ by simp [hcoe, coe_displacementLift]) 0
+      (by simp [displacementLift_zero])
+  have h1 : ℓ 1 = ℓ 0 + displacementLift f (1, x) := congr_fun h 1
+  rw [annulusTwistNumber_apply, toAdd_ofAdd, ← displacementLift_one_eq_round, h1,
+    add_sub_cancel_left, displacementLift_one f x]
 
-/-- **The twist number is a winding number.** The angular coordinate `t ↦ θ (f (t, 0))` along the
-radial arc `[0, 1] × {0}` is a loop at `0` in the circle, and the twist number of `f` is its
+/-- **The twist number is a winding number.** The angular coordinate `t ↦ θ (f (t, θ))` along a
+radial arc `[0, 1] × {θ}` is a loop at `θ` in the circle, and the twist number of `f` is its
 winding number. -/
-theorem toAdd_annulusTwistNumber_eq_windingNumber (γ : Path (0 : AddCircle (1 : ℝ)) 0)
-    (hγ : ∀ t, γ t = (f.1 (t, 0)).2) :
+theorem toAdd_annulusTwistNumber_eq_windingNumber {θ : AddCircle (1 : ℝ)} (γ : Path θ θ)
+    (hγ : ∀ t, γ t = (f.val (t, θ)).2) :
     (annulusTwistNumber f).toAdd = AddCircle.windingNumber (.of (.mk γ)) := by
-  have h := AddCircle.windingNumber_eq_div γ ⟨fun t ↦ displacementLift f (t, 0), by fun_prop⟩
-    (funext fun t ↦ by simp [coe_displacementLift, hγ])
-  simp only [ContinuousMap.coe_mk, displacementLift_zero, sub_zero, div_one] at h
-  exact_mod_cast (toAdd_annulusTwistNumber_eq f (map_continuous _) (coe_displacementLift f)
-    (displacementLift_zero f 0) 0).trans h.symm
+  induction θ using QuotientAddGroup.induction_on with
+  | H x =>
+  let ℓ : C(I, ℝ) := ⟨fun t ↦ x + displacementLift f (t, x), by fun_prop⟩
+  have hℓ : ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ ℓ = γ :=
+    funext fun t ↦ by simp [ℓ, coe_displacementLift, hγ]
+  have h := AddCircle.windingNumber_eq_div γ ℓ hℓ
+  rw [div_one, ← toAdd_annulusTwistNumber_eq f (map_continuous ℓ)
+    fun t ↦ (congr_fun hℓ t).trans (hγ t)] at h
+  exact_mod_cast h.symm
 
-/-- **The twist number is an isotopy invariant.** A diffeomorphism fixing the boundary of the
-annulus and isotopic to the identity relative to the boundary has twist number zero, the unit
-`1 = ofAdd 0` of `Multiplicative ℤ`. -/
-theorem annulusTwistNumber_eq_one_of_joined
-    {f : RelativeDiff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)}
-    (h : Joined 1 f) :
-    annulusTwistNumber f = 1 := by
+/-- **The twist number is a homotopy invariant.** Diffeomorphisms fixing the boundary of the
+annulus that are homotopic relative to the boundary have the same twist number. -/
+theorem annulusTwistNumber_eq_of_homotopicRel
+    {f g : RelativeDiff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)}
+    (h : (f.val : C(Annulus, Annulus)).HomotopicRel g.val
+      (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)) :
+    annulusTwistNumber f = annulusTwistNumber g := by
+  obtain ⟨H⟩ := h
+  -- the angular coordinate along the radial arc `[0, 1] × {0}`, a loop at `0`
+  let α (k : RelativeDiff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)) :
+      Path (0 : AddCircle (1 : ℝ)) 0 :=
+    ⟨⟨fun t ↦ (k.val (t, 0)).2, by fun_prop⟩, by simp, by simp⟩
+  -- `H` restricts to a homotopy of these loops, as it fixes the ends of the arc
+  have hα : (α f).Homotopic (α g) := ⟨{
+    toFun q := (H (q.1, (q.2, 0))).2
+    continuous_toFun := by fun_prop
+    map_zero_left t := by simp [α]
+    map_one_left t := by simp [α]
+    prop' s t ht := by
+      rcases ht with rfl | rfl
+      · simp [α, H.eq_fst (x := (0, 0)) s (by simp)]
+      · simp [α, H.eq_fst (x := (1, 0)) s (by simp)] }⟩
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_annulusTwistNumber_eq_windingNumber f (α f) fun _ ↦ rfl,
+    toAdd_annulusTwistNumber_eq_windingNumber g (α g) fun _ ↦ rfl,
+    Path.Homotopic.Quotient.eq.mpr hα]
+
+/-- **The twist number is an isotopy invariant.** Diffeomorphisms fixing the boundary of the
+annulus that are joined by a path in `Diff(A, ∂A)`, that is isotopic relative to the boundary,
+have the same twist number. -/
+theorem annulusTwistNumber_eq_of_joined
+    {f g : RelativeDiff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)}
+    (h : Joined f g) :
+    annulusTwistNumber f = annulusTwistNumber g := by
   obtain ⟨γ⟩ := h
-  -- lift the displacements of the whole path at once
-  let G : C(I × (I × ℝ), AddCircle (1 : ℝ)) :=
-    ⟨fun q ↦ ((γ q.2.1).1 (q.1, q.2.2)).2 - q.2.2, by fun_prop⟩
-  let L := (AddCircle.isCoveringMap_coe (1 : ℝ)).liftHomotopy G (.const _ 0) fun q ↦ by
-    simp [G, apply_inner]
-  have hL (q : I × (I × ℝ)) : (L q : AddCircle (1 : ℝ)) = G q :=
-    congr_fun ((AddCircle.isCoveringMap_coe (1 : ℝ)).liftHomotopy_lifts G _ _) q
-  -- for each `s`, the slice of `L` is the lift of the displacement of `γ s`
-  have hslice (s : I) : (fun p : I × ℝ ↦ L (p.1, (s, p.2))) = displacementLift (γ s) :=
-    eq_displacementLift (γ s) (by fun_prop) (fun p ↦ hL _)
-      ((AddCircle.isCoveringMap_coe (1 : ℝ)).liftHomotopy_zero G _ _ (s, 0))
-  -- on the outer boundary circle `L` is constant along the path
-  have hconst := (AddCircle.isCoveringMap_coe (1 : ℝ)).const_of_comp
-    (g := fun q : I × ℝ ↦ L (1, q))
-    (by fun_prop) (fun a a' ↦ by simp [hL, G, apply_outer]) (1, 0) (0, 0)
-  have h1 := congr_fun (hslice 1) (1, 0)
-  have h0 := congr_fun (hslice 0) (1, 0)
-  have hid : ⇑(displacementLift 1) = fun _ ↦ 0 :=
-    (eq_displacementLift 1 continuous_const (fun p ↦ by simp) rfl).symm
-  simp only [Path.target, Path.source] at h1 h0
-  rw [hid] at h0
-  rw [annulusTwistNumber_apply, ← h1, hconst, h0, round_zero, ofAdd_zero]
+  refine annulusTwistNumber_eq_of_homotopicRel ⟨{
+    toFun q := (γ q.1).val q.2
+    continuous_toFun := by fun_prop
+    map_zero_left p := by simp
+    map_one_left p := by simp
+    prop' s p hp := by simp [RelativeDiff.apply_eq _ hp] }⟩
 
 /-- The twist number of a twist is its number of turns: for a profile with integer end values
 `κ 0 = m` and `κ 1 = n` it is `n - m`. -/
@@ -436,16 +478,18 @@ theorem annulusTwistNumber_annulusTwist (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) �
     (hmem : annulusTwist κ hκ ∈ fixingSubgroup (Diff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞)
       (((𝓡∂ 1).prod 𝓘(ℝ)).boundary Annulus)) {m n : ℤ} (h0 : κ 0 = m) (h1 : κ 1 = n) :
     annulusTwistNumber ⟨annulusTwist κ hκ, hmem⟩ = .ofAdd (n - m) := by
-  have h := toAdd_annulusTwistNumber_eq ⟨annulusTwist κ hκ, hmem⟩
-    (ℓ := fun p ↦ κ p.1 - κ 0) (hκ.continuous.comp continuous_fst |>.sub continuous_const)
-    (fun p ↦ by simp [h0]) (by simp) 0
+  have h := toAdd_annulusTwistNumber_eq ⟨annulusTwist κ hκ, hmem⟩ (θ := 0) hκ.continuous
+    (fun t ↦ by simp)
   rw [h1, h0] at h
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_ofAdd]
   exact_mod_cast h
 
 /-- The twist number on the mapping class group of the annulus. -/
 def MappingClassGroup.annulusTwistNumber :
     MappingClassGroup ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus →* Multiplicative ℤ :=
-  MappingClassGroup.lift TauCeti.annulusTwistNumber fun _ ↦ annulusTwistNumber_eq_one_of_joined
+  MappingClassGroup.lift TauCeti.annulusTwistNumber fun _ h ↦
+    (annulusTwistNumber_eq_of_joined h).symm.trans (map_one _)
 
 /-- The twist number of a mapping class is that of any representative. -/
 @[simp]
@@ -458,7 +502,7 @@ theorem MappingClassGroup.annulusTwistNumber_mk
 @[simp]
 theorem MappingClassGroup.annulusTwistNumber_annulusDehnTwist :
     annulusTwistNumber annulusDehnTwist = .ofAdd 1 := by
-  rw [annulusDehnTwist, annulusTwistNumber_mk,
+  rw [annulusDehnTwist_def, annulusTwistNumber_mk,
     TauCeti.annulusTwistNumber_annulusTwist _ _ (m := 0) (n := 1) (by simp) (by simp)]
   simp
 
