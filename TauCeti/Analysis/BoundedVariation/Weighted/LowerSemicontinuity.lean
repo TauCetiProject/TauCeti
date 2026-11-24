@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Weighted
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
 
 /-!
 # Lower semicontinuity of the weighted variation
@@ -103,7 +104,7 @@ theorem weightedPerimeter_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Fi
     fun K hK hKΩ => ?_
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun _ =>
-      lintegral_enorm_indicator_one_sub_le volume _ _ hK.isClosed.measurableSet
+      setLIntegral_enorm_indicator_one_sub_le volume _ _ hK.isClosed.measurableSet
 
 /-- **Lower semicontinuity of the Gaussian perimeter.** If `s₀` and eventually the `s i` are
 null-measurable, and the sets `s i` converge to `s₀` locally in measure, that is
