@@ -53,6 +53,16 @@ private theorem locallyConstantFinsuppPairing_apply_apply
     locallyConstantFinsuppPairing R Y T v φ t = (v t).sum fun y r ↦ r * (φ y.down : R) := by
   simp [locallyConstantFinsuppPairing, Finsupp.linearCombination_apply]
 
+/-- Pairing against the characteristic function of a point `y` evaluates at `y`. -/
+private theorem locallyConstantFinsuppPairing_charFn [DiscreteTopology Y]
+    (v : LocallyConstant T (ULift.{u'} Y →₀ R)) (y : Y) (t : T) :
+    locallyConstantFinsuppPairing R Y T v (LocallyConstant.charFn ℤ (isClopen_discrete {y})) t =
+      v t ⟨y⟩ := by
+  classical
+  rw [locallyConstantFinsuppPairing_apply_apply, Finsupp.sum_eq_single ⟨y⟩
+    (fun b _ hb ↦ by simp [LocallyConstant.coe_charFn, ULift.ext_iff.not.mp hb]) (by simp)]
+  simp [LocallyConstant.coe_charFn]
+
 variable [DiscreteTopology Y] [Fintype Y]
 
 /-- For a finite discrete space `Y`, locally constant families `v : T → (Y →₀ R)` are the same as
@@ -66,29 +76,12 @@ noncomputable def locallyConstantFinsuppEquiv :
   left_inv v := by
     classical
     ext t ⟨y⟩
-    simp only [LocallyConstant.charFn, LocallyConstant.finsetSum_apply, Finset.sum_apply']
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LocallyConstant.map_apply,
-      Function.comp_apply, locallyConstantFinsuppPairing_apply_apply,
-      LocallyConstant.indicator_apply, LocallyConstant.coe_one, Set.indicator_singleton,
-      Pi.one_apply, Pi.single_apply, Int.cast_ite, Int.cast_one, Int.cast_zero, mul_ite, mul_one,
-      mul_zero, Finsupp.single_apply, ULift.ext_iff, Finset.sum_ite_eq', Finset.mem_univ,
-      ↓reduceIte]
-    rw [Finsupp.sum_eq_single ⟨y⟩ (fun b _ hb ↦ by simp [ULift.ext_iff] at hb; simp [hb]) (by simp)]
-    simp
+    simp [LocallyConstant.finsetSum_apply, Finset.sum_apply',
+      locallyConstantFinsuppPairing_charFn, Finsupp.single_apply]
   right_inv ψ := by
-    classical
-    have hφ (φ : LocallyConstant Y ℤ) :
-        φ = ∑ x, φ x • LocallyConstant.charFn ℤ (isClopen_discrete {x}) := by
-      ext y
-      rw [LocallyConstant.finsetSum_apply, Finset.sum_eq_single y
-        (fun b _ hb ↦ by simp [LocallyConstant.charFn, Ne.symm hb]) (by simp)]
-      simp only [LocallyConstant.coe_smul, Pi.smul_apply, LocallyConstant.coe_charFn,
-        Set.indicator_of_mem (Set.mem_singleton y), Pi.one_apply, smul_eq_mul, mul_one]
     ext φ t
-    conv_rhs => rw [hφ φ]
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, map_sum, map_zsmul,
-      AddMonoidHom.finsetSum_apply, LocallyConstant.finsetSum_apply, LocallyConstant.coe_smul,
-      Pi.smul_apply]
+    conv_rhs => rw [← LocallyConstant.sum_smul_charFn φ]
+    simp only [map_sum, map_zsmul, LocallyConstant.finsetSum_apply, LocallyConstant.smul_apply]
     simp [locallyConstantFinsuppPairing_apply_apply, Int.cast_comm]
 
 variable {R Y T}

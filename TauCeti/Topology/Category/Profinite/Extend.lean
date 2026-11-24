@@ -42,9 +42,12 @@ theorem exists_structuredArrow_surjective_refinement (S : Profinite.{u})
     StructuredArrow.homMk (FintypeCat.homMk fun q ↦ (f.lift q).1) ?_,
     StructuredArrow.homMk (FintypeCat.homMk fun q ↦ (f.lift q).2) ?_,
     f.discreteQuotient.proj_surjective⟩
+  -- The object of `Extend.functor` at `Q` is the projection `S → Q`, and
+  -- `FintypeCat.toProfinite.map (FintypeCat.homMk g)` applies `g`, both by definition; so both
+  -- triangles reduce to `f.lift ∘ f.discreteQuotient.proj = f`.
   · ext x
-    rfl
+    exact congrArg Prod.fst (congrFun f.lift_comp_proj x)
   · ext x
-    rfl
+    exact congrArg Prod.snd (congrFun f.lift_comp_proj x)
 
 end Profinite

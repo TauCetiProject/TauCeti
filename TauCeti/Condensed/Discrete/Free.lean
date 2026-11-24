@@ -20,10 +20,11 @@ The free condensed module on a discrete condensed set is discrete: both
 `CondensedSet.LocallyConstant.functor ⋙ Condensed.free R` and
 `ModuleCat.free R ⋙ CondensedMod.LocallyConstant.functor R` are left adjoint to taking the
 underlying set of the sections over a point, so they are isomorphic
-(`TauCeti.freeLocallyConstantIso`). Together, the free condensed `R`-module on a finite set `F`
-has sections `LocallyConstant T (F →₀ R)` over `T`; this is the input for the computation of the
-free solid module `R[S]^solid` on a profinite set `S`, defined in Mathlib as a limit of free
-condensed modules on finite sets.
+(`TauCeti.freeLocallyConstantIso`), compatibly with the units of the two adjunctions
+(`TauCeti.unit_app_comp_map_freeLocallyConstantIso_hom_app`). Together, the free condensed
+`R`-module on a finite set `F` has sections `LocallyConstant T (F →₀ R)` over `T`; this is the
+input for the computation of the free solid module `R[S]^solid` on a profinite set `S`, defined
+in Mathlib as a limit of free condensed modules on finite sets.
 -/
 
 public section
@@ -55,6 +56,9 @@ noncomputable def fintypeToCondensedIso :
     FintypeCat.toProfinite ⋙ profiniteToCondensed.{u} ≅
       FintypeCat.incl ⋙ uliftFunctor.{u + 1} ⋙ CondensedSet.LocallyConstant.functor :=
   NatIso.ofComponents (fun F ↦ (fullyFaithfulSheafToPresheaf _ _).preimageIso
+    -- Both naturality squares hold by definition: on sections, both sides act by precomposition
+    -- (with `g : T' ⟶ T`) and postcomposition (with `k : F ⟶ F'`) of the same underlying function,
+    -- and `homFintypeEquiv` does not change that function.
     (NatIso.ofComponents (fun T ↦ (homFintypeEquiv F T.unop).toIso) fun _ ↦ rfl)) fun _ ↦ by
       apply (fullyFaithfulSheafToPresheaf _ _).map_injective
       ext T f
@@ -80,5 +84,19 @@ noncomputable def freeLocallyConstantIso :
   ((CompHausLike.LocallyConstant.adjunction _ _).comp (freeForgetAdjunction R)).leftAdjointUniq
     (((ModuleCat.adj R).comp (CondensedMod.LocallyConstant.adjunction R)).ofNatIsoRight
       (NatIso.ofComponents fun _ ↦ Iso.refl _))
+
+/-- `freeLocallyConstantIso` is compatible with the units of the two adjunctions it compares: the
+unit of `CondensedSet.LocallyConstant.functor ⋙ free R`, followed by the underlying map of
+`freeLocallyConstantIso`, is the unit of
+`ModuleCat.free R ⋙ CondensedMod.LocallyConstant.functor R`. -/
+@[reassoc]
+theorem unit_app_comp_map_freeLocallyConstantIso_hom_app (X : Type (u + 1)) :
+    ((CompHausLike.LocallyConstant.adjunction.{u, u + 1} _ _).comp
+        (freeForgetAdjunction R)).unit.app X ≫
+      (forget R ⋙ (sheafSections _ _).obj _).map ((freeLocallyConstantIso R).hom.app X) =
+    ((ModuleCat.adj R).comp (CondensedMod.LocallyConstant.adjunction R)).unit.app X := by
+  refine (Adjunction.unit_leftAdjointUniq_hom_app _ _ X).trans ?_
+  rw [← Adjunction.homEquiv_id, Adjunction.homEquiv_ofNatIsoRight_apply, Adjunction.homEquiv_id]
+  exact Category.comp_id _
 
 end TauCeti

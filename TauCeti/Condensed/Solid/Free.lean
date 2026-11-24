@@ -87,6 +87,15 @@ noncomputable def finFreeIso : finFree R ≅ finLocallyConstant R :=
   Functor.isoWhiskerRight fintypeToCondensedIso (free R) ≪≫
     Functor.isoWhiskerLeft (FintypeCat.incl ⋙ uliftFunctor.{u + 1}) (freeLocallyConstantIso R)
 
+/-- `finFreeIso` at a finite set `F` is the free condensed module functor applied to
+`fintypeToCondensedIso`, followed by `freeLocallyConstantIso`; the latter is characterized by
+`unit_app_comp_map_freeLocallyConstantIso_hom_app`. -/
+theorem finFreeIso_hom_app (F : FintypeCat.{u}) :
+    (finFreeIso R).hom.app F =
+      (free R).map (fintypeToCondensedIso.hom.app F) ≫
+        (freeLocallyConstantIso R).hom.app (ULift.{u + 1} F) := by
+  simp [finFreeIso]
+
 variable (S : Profinite.{u})
 
 /-- The presheaf `T ↦ Hom_ℤ(C(S, ℤ), C(T, R))` of `R`-valued measures on `S`, where `C(-, -)`
@@ -215,7 +224,9 @@ private theorem comap_liftOfDiscreteQuotient (f : LocallyConstant S ℤ) :
     LocallyConstant.comap
       ((Profinite.Extend.functor S.asLimitCone).obj f.discreteQuotient).hom.hom.hom
       (liftOfDiscreteQuotient S f) = f :=
-  rfl
+  -- The object of `Extend.functor` at `Q` is the projection `S → Q` by definition, so this is
+  -- `f.lift ∘ f.discreteQuotient.proj = f`.
+  LocallyConstant.coe_injective f.lift_comp_proj
 
 omit [Ring R] in
 /-- Every locally constant function on `S` is pulled back from a finite set. -/
