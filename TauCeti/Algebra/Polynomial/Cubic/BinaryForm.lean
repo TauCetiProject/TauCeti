@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Algebra.Polynomial.Cubic.Basic
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 import Mathlib.Tactic.LinearCombination
 
@@ -100,18 +101,16 @@ variables. -/
 theorem isHomogeneous_iff_exists_homogenize_toPoly {p : MvPolynomial (Fin 2) R} :
     p.IsHomogeneous 3 ↔ ∃ P : Cubic R, P.toPoly.homogenize 3 = p := by
   refine ⟨fun hp ↦ ?_, fun ⟨P, hP⟩ ↦ hP ▸ Polynomial.isHomogeneous_homogenize _⟩
-  refine ⟨⟨p.coeff (fun₀ | 0 => 3 | 1 => 0), p.coeff (fun₀ | 0 => 2 | 1 => 1),
-    p.coeff (fun₀ | 0 => 1 | 1 => 2), p.coeff (fun₀ | 0 => 0 | 1 => 3)⟩, ?_⟩
-  ext m
-  rw [Polynomial.coeff_homogenize]
-  split_ifs with hm
-  · have hm' : m = fun₀ | 0 => m 0 | 1 => 3 - m 0 := by
-      ext i; fin_cases i <;> simp; omega
-    have h3 : m 0 ≤ 3 := by omega
-    interval_cases m 0 <;> rw [hm'] <;> simp [toPoly, Polynomial.coeff_X, Polynomial.coeff_C,
-      Polynomial.coeff_X_pow]
-  · refine (hp.coeff_eq_zero fun h ↦ hm ?_).symm
-    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using h
+  have hdeg : (aeval ![(Polynomial.X : Polynomial R), 1] p).degree ≤ 3 := by
+    rw [p.as_sum, map_sum]
+    refine Polynomial.degree_le_of_natDegree_le <|
+      Polynomial.natDegree_sum_le_of_forall_le _ _ fun m hm ↦ ?_
+    have hm3 := hp (mem_support_iff.mp hm)
+    simp [Finsupp.weight_apply, Finsupp.sum_fintype] at hm3
+    simpa [aeval_monomial, Finsupp.prod_fintype, ← Polynomial.C_eq_algebraMap] using
+      (Polynomial.natDegree_C_mul_X_pow_le (p.coeff m) (m 0)).trans (by omega)
+  exact ⟨equiv.symm ⟨_, hdeg⟩, Polynomial.homogenize_eq_of_isHomogeneous hp
+    (congrArg Subtype.val (equiv.apply_symm_apply ⟨_, hdeg⟩)).symm⟩
 
 end BinaryForm
 
@@ -226,7 +225,6 @@ end Discriminant
 
 /-- The scalar matrix `u • 1` multiplies every coefficient by `u`: its substitution multiplies a
 cubic form by `u³` and its determinant is `u²`. -/
-@[simp]
 theorem scalar_smul (u : Rˣ) (P : Cubic R) :
     GeneralLinearGroup.scalar (Fin 2) u • P = ⟨↑u * P.a, ↑u * P.b, ↑u * P.c, ↑u * P.d⟩ := by
   have hu : (↑u⁻¹ : R) ^ 2 * ↑u ^ 3 = ↑u := by
