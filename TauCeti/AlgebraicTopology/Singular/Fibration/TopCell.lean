@@ -504,24 +504,38 @@ every module `M`. -/
 theorem isIso_singularHomologyMap_preimageSkeletonPairToComplFiber (k : ℕ) :
     IsIso ((preimageSkeletonPair p C n).singularHomologyMap
       (preimageSkeletonPairToComplFiber p C n (map_zero_notMem_skeletonLT j)) M k) := by
+  -- `skeletonDiffCenter` is opaque across the `module` boundary of `Skeleton.Puncture`, so its
+  -- equality with `Xⁿ ∖ {χⱼ(0)}` is propositional and acyclicity is transferred along it.
   have hsdiff : skeletonDiffCenter j =
       (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} :=
     Set.ext fun _ ↦ mem_skeletonDiffCenter j
   have hsub : (skeletonLT C n : Set B) ⊆
       (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} :=
     hsdiff ▸ skeletonLT_subset_skeletonDiffCenter j
-  let T := TopTriple.ofInclusions (X := E) (preimage_mono (f := p) hsub)
-    (preimage_mono (f := p)
-      (sdiff_subset : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} ⊆ _))
   have hz (m : ℕ) := (TopPair.isZero_singularHomology_ofInclusion_congr M
     (preimage_mono (f := p) (skeletonLT_subset_skeletonDiffCenter j))
     (preimage_mono (f := p) hsub) (congrArg (p ⁻¹' ·) hsdiff) rfl m).1
     (isZero_singularHomology_preimage_skeletonDiffCenter j hp M m)
-  have h := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero T M k (hz k)
-    fun m _ ↦ hz m
-  have hmap : TopTriple.totalToOuter.app T =
+  -- The pair `(p⁻¹(Xⁿ ∖ {χⱼ(0)}), p⁻¹(Xⁿ⁻¹))` is acyclic, so the triple's outer map is an iso.
+  have h := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
+    (TopTriple.ofInclusions (X := E) (preimage_mono (f := p) hsub)
+      (preimage_mono (f := p)
+        (sdiff_subset : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} ⊆ _)))
+    M k (hz k) fun m _ ↦ hz m
+  rw [TopTriple.totalToOuter_app_ofInclusions] at h
+  -- `preimageSkeletonPair` and `preimageSkeletonComplFiberPair` are `abbrev`s for these
+  -- `TopPair.ofInclusion` pairs, so both maps have the same source, target, and `fst = 𝟙 _`.
+  have hmap : TopPair.ofInclusionMap
+        ((preimage_mono (f := p) hsub).trans (preimage_mono (f := p)
+          (sdiff_subset : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} ⊆ _)))
+        (preimage_mono (f := p)
+          (sdiff_subset : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \ {map n j 0} ⊆ _))
+        (ContinuousMap.id _) (fun _ hx ↦ preimage_mono (f := p) hsub hx) =
       preimageSkeletonPairToComplFiber p C n (map_zero_notMem_skeletonLT j) :=
-    TopPair.hom_ext_of_fst _ rfl
+    TopPair.hom_ext_of_fst _ <| by
+      rw [preimageSkeletonPairToComplFiber_fst, TopPair.ofInclusionMap_fst]
+      -- `𝟙` in `TopCat` is `TopCat.ofHom (ContinuousMap.id _)` by definition.
+      rfl
   rwa [hmap] at h
 
 variable {j} (hB : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) = univ)
