@@ -54,8 +54,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
-* `LieAlgebra.Orthogonal.mem_so'`: membership in the indefinite orthogonal Lie algebra is the
-  matrix equation `Xᵀ J = J (-X)`.
+* `LieAlgebra.Orthogonal.mem_so'` and `LieAlgebra.Orthogonal.mem_so'_iff_forall`: membership in
+  the indefinite orthogonal Lie algebra is the matrix equation `Xᵀ J = J (-X)`, or entrywise.
 * `LieAlgebra.Orthogonal.transpose_mem_so'` and `LieAlgebra.Orthogonal.conjTranspose_mem_so'`: the
   indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
   a star ring.
@@ -183,6 +183,14 @@ theorem mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} :
     X ∈ so' p q R ↔ Xᵀ * indefiniteDiagonal p q R = indefiniteDiagonal p q R * -X := by
   rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
     Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
+
+/-- Membership in the indefinite orthogonal Lie algebra `so' p q R`, entrywise: `Nᵀ D = -(D N)`
+for the diagonal Gram matrix `D = indefiniteDiagonal p q R`. -/
+theorem mem_so'_iff_forall (N : Matrix (p ⊕ q) (p ⊕ q) R) :
+    N ∈ so' p q R ↔
+      ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
+  rw [mem_so', ← Matrix.ext_iff]
+  simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
 
 open Matrix in
 /-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/

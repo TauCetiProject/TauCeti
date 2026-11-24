@@ -14,7 +14,7 @@ import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # The maximal unramified extension
