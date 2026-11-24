@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Dagger.FringePresentation.Basic
 
+import TauCeti.Analysis.Normed.Ring.Finsupp
 import TauCeti.Analysis.Normed.Unbundled.RootBound
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.WeakCompleteness
@@ -229,7 +230,7 @@ private theorem eventually_exists_ofStage_comp_eq_comp_ofRestricted
   filter_upwards [eventually_all.2 fun i : Fin P.n ↦ Q.eventually_exists_ofStage_eq_norm_pow_le
     (washnitzerAlgebra.supSeminorm_apply_X_le_one (ψ.comp P.proj) i) ρ.property.1] with ρ' hρ'
   choose β hβ hβD using hρ'
-  obtain ⟨D, hD⟩ := exists_forall_norm_prod_pow_le_mul_prod (c := fun _ : Fin P.n ↦ (ρ : ℝ)) β
+  obtain ⟨D, hD⟩ := exists_forall_norm_prod_pow_le_mul_prod (c := fun _ : Fin P.n ↦ (ρ : ℝ))
     (fun _ ↦ zero_le_one.trans ρ.property.1.le) hβD
   -- Evaluation at these lifts.
   have hφ (r : K) : ‖algebraMap K (Q.stage ρ') r‖ ≤ ‖(1 : Q.stage ρ')‖ * ‖r‖ := by

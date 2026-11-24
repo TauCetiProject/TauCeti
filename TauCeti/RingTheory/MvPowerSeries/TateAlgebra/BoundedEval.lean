@@ -122,21 +122,31 @@ theorem lipschitzWith_restrictedEval₂OfBound :
 theorem continuous_restrictedEval₂OfBound : Continuous (restrictedEval₂OfBound φ a hφ ha) :=
   (lipschitzWith_restrictedEval₂OfBound φ a hφ ha).continuous
 
+omit [IsUltrametricDist S] [CompleteSpace S] in
+/-- Continuous ring homomorphisms out of `R{X/c}` that agree on constants and variables are
+equal, since the polynomials are dense. -/
+private theorem ringHom_ext_of_continuous {ψ₁ ψ₂ : IsRestricted.subring (R := R) c →+* S}
+    (h₁ : Continuous ψ₁) (h₂ : Continuous ψ₂)
+    (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))
+    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X c i⟩ = ψ₂ ⟨X i, isRestricted_X c i⟩) : ψ₁ = ψ₂ := by
+  have hp : ψ₁.comp (polynomialToRestricted c).toRingHom =
+      ψ₂.comp (polynomialToRestricted c).toRingHom := by
+    apply MvPolynomial.ringHom_ext
+    · intro r
+      simpa [← MvPolynomial.algebraMap_eq] using hC r
+    · intro i
+      simpa using hX i
+  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer h₁ h₂
+    (funext (DFunLike.congr_fun hp)))
+
 /-- A continuous homomorphism with the prescribed values on constants and variables is
 bounded evaluation. Uniqueness requires continuity, but not a supplied norm bound on the map. -/
 theorem eq_restrictedEval₂OfBound (ψ : IsRestricted.subring (R := R) c →+* S)
     (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
-    ψ = restrictedEval₂OfBound φ a hφ ha := by
-  have hp : ψ.comp (polynomialToRestricted c).toRingHom =
-      (restrictedEval₂OfBound φ a hφ ha).comp (polynomialToRestricted c).toRingHom := by
-    apply MvPolynomial.ringHom_ext
-    · intro r
-      simp [← MvPolynomial.algebraMap_eq, hC]
-    · intro i
-      simpa using (hX i).trans (restrictedEval₂OfBound_X φ a hφ ha i).symm
-  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer hψ
-    (continuous_restrictedEval₂OfBound φ a hφ ha) (funext (DFunLike.congr_fun hp)))
+    ψ = restrictedEval₂OfBound φ a hφ ha :=
+  ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfBound φ a hφ ha) (by simp [hC])
+    (by simp [hX])
 
 include hφ ha in
 /-- The universal property at bounded arguments for an arbitrary bounded coefficient map. -/
@@ -191,25 +201,6 @@ The arguments need not lie in the polydisc of radii `c` itself: it suffices that
 are bounded by a constant multiple of the corresponding monomials in the radii,
 `‖∏ i, a i ^ t i‖ ≤ D * ∏ i, c i ^ t i`. For instance a nilpotent element of large norm can be
 substituted for a variable of any radius. -/
-
-omit [IsUltrametricDist S] [CompleteSpace S] in
-/-- Coordinatewise bounds `‖a i ^ j‖ ≤ Dᵢ * c i ^ j` on the powers of the arguments give a bound
-`‖∏ i, a i ^ t i‖ ≤ D * ∏ i, c i ^ t i` on their monomials, as required by
-`RingHom.restrictedEval₂OfPowBound`. -/
-theorem _root_.exists_forall_norm_prod_pow_le_mul_prod (hc : ∀ i, 0 ≤ c i)
-    (h : ∀ i, ∃ Dᵢ, ∀ j, ‖a i ^ j‖ ≤ Dᵢ * c i ^ j) :
-    ∃ D, ∀ t : Fin k →₀ ℕ, ‖∏ i, a i ^ t i‖ ≤ D * t.prod (c · ^ ·) := by
-  choose Dᵢ hDᵢ using h
-  refine ⟨max ‖(1 : S)‖ (∏ i, Dᵢ i), fun t ↦ ?_⟩
-  rw [Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
-  rcases isEmpty_or_nonempty (Fin k) with hk | hk
-  · simp [Finset.univ_eq_empty]
-  calc ‖∏ i, a i ^ t i‖ ≤ ∏ i, ‖a i ^ t i‖ := Finset.norm_prod_le' _ Finset.univ_nonempty _
-    _ ≤ ∏ i, (Dᵢ i * c i ^ t i) :=
-      Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hDᵢ i _
-    _ = (∏ i, Dᵢ i) * ∏ i, c i ^ t i := Finset.prod_mul_distrib
-    _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _)
-      (Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _)
 
 variable {D : ℝ} (hpow : ∀ t : Fin k →₀ ℕ, ‖∏ i, a i ^ t i‖ ≤ D * t.prod (c · ^ ·))
 
@@ -319,16 +310,9 @@ evaluation at arguments with bounded powers. -/
 theorem eq_restrictedEval₂OfPowBound (hC : 0 ≤ C) (ψ : IsRestricted.subring (R := R) c →+* S)
     (hψ : Continuous ψ) (hC' : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
-    ψ = restrictedEval₂OfPowBound φ a hφ hpow := by
-  have hp : ψ.comp (polynomialToRestricted c).toRingHom =
-      (restrictedEval₂OfPowBound φ a hφ hpow).comp (polynomialToRestricted c).toRingHom := by
-    apply MvPolynomial.ringHom_ext
-    · intro r
-      simp [← MvPolynomial.algebraMap_eq, hC']
-    · intro i
-      simpa using (hX i).trans (restrictedEval₂OfPowBound_X φ a hφ hpow i).symm
-  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer hψ
-    (continuous_restrictedEval₂OfPowBound φ a hφ hpow hC) (funext (DFunLike.congr_fun hp)))
+    ψ = restrictedEval₂OfPowBound φ a hφ hpow :=
+  ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfPowBound φ a hφ hpow hC)
+    (by simp [hC']) (by simp [hX])
 
 end PowerBound
 
