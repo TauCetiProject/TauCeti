@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.FractionalIdeal.Norm
 
 import TauCeti.NumberTheory.NumberField.FractionalIdeal
 import TauCeti.RingTheory.FractionalIdeal.Norm
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # The Arakelov degree of a hermitian line
@@ -89,12 +90,9 @@ theorem sectionDegree_rescale [Module.Flat (𝓞 K) E] (c : ℝ) {s : E} (hs : s
 with `s`. -/
 theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map {h' : HermitianMetric K F}
     (e : IsometryEquiv h h') (s : E) : h'.sectionDegree (e s) = h.sectionDegree s := by
-  have hspan : Submodule.span (𝓞 K) {e s} =
-      (Submodule.span (𝓞 K) {s}).map (e.toLinearEquiv : E →ₗ[𝓞 K] F) := by
-    rw [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe, e.coe_toLinearEquiv]
   have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot := by
-    rw [hspan, Submodule.cardQuot_apply, Submodule.cardQuot_apply]
-    exact Nat.card_congr (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl).symm.toEquiv
+    rw [← Submodule.cardQuot_map_linearEquiv e.toLinearEquiv, Submodule.map_span,
+      Set.image_singleton, LinearEquiv.coe_coe, e.coe_toLinearEquiv]
   simp only [sectionDegree_def, hcard, e.norm_tmul_map]
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
