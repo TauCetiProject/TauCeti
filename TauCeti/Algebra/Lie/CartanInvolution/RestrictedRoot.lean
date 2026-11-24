@@ -85,6 +85,12 @@ def restrictedRoots (𝔞 : Submodule R L) : Set (Dual R 𝔞) :=
 
 variable {𝔞 : Submodule R L} {μ ν : Dual R 𝔞} {x y : L}
 
+/-- The restricted root space `𝔤_λ` is the intersection of the eigenspaces of the `ad H`,
+`H ∈ 𝔞`, with eigenvalues `λ(H)`. -/
+theorem restrictedRootSpace_eq_iInf :
+    𝔞.restrictedRootSpace μ = ⨅ H : 𝔞, End.eigenspace (ad R L H) (μ H) := by
+  rw [restrictedRootSpace]
+
 @[simp]
 theorem mem_restrictedRootSpace :
     x ∈ 𝔞.restrictedRootSpace μ ↔ ∀ H : 𝔞, ⁅(H : L), x⁆ = μ H • x := by
@@ -106,8 +112,10 @@ theorem le_restrictedRootSpace_zero (h𝔞 : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅
 
 /-- The bracket carries `𝔤_λ × 𝔤_μ` into `𝔤_{λ + μ}`. -/
 theorem lie_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ)
-    (hy : y ∈ 𝔞.restrictedRootSpace ν) : ⁅x, y⁆ ∈ 𝔞.restrictedRootSpace (μ + ν) :=
-  TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
+    (hy : y ∈ 𝔞.restrictedRootSpace ν) : ⁅x, y⁆ ∈ 𝔞.restrictedRootSpace (μ + ν) := by
+  rw [restrictedRootSpace_eq_iInf] at hx hy ⊢
+  simp only [LinearMap.add_apply]
+  exact TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
 
 /-- The Killing form pairs `𝔤_λ` and `𝔤_μ` trivially unless `λ + μ = 0`. -/
 theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
@@ -117,16 +125,20 @@ theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
   rw [mem_restrictedRootSpace] at hx hy
   have key : (μ + ν) H * killingForm R L x y = 0 := by
     have := traceForm_apply_lie_apply' R L L (H : L) x y
-    rw [hx, hy, map_smul, LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul,
-      eq_neg_iff_add_eq_zero, ← add_mul] at this
-    exact this
+    rw [hx, hy] at this
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
+    rw [LinearMap.add_apply, killingForm]
+    linear_combination this
   exact (mul_eq_zero.mp key).resolve_left hH
 
 /-- The restricted root spaces of `𝔞` are independent. -/
 theorem iSupIndep_restrictedRootSpace [IsDomain R] [IsTorsionFree R L] :
-    iSupIndep 𝔞.restrictedRootSpace :=
-  (TauCeti.iSupIndep_iInf_eigenspace fun H : 𝔞 ↦ ad R L H).comp (f := fun μ : Dual R 𝔞 ↦ ⇑μ)
-    DFunLike.coe_injective
+    iSupIndep 𝔞.restrictedRootSpace := by
+  have h𝔤 : 𝔞.restrictedRootSpace =
+      (fun χ : 𝔞 → R ↦ ⨅ H : 𝔞, End.eigenspace (ad R L H) (χ H)) ∘ (⇑) :=
+    funext fun _ ↦ restrictedRootSpace_eq_iInf
+  rw [h𝔤]
+  exact (TauCeti.iSupIndep_iInf_eigenspace fun H : 𝔞 ↦ ad R L H).comp DFunLike.coe_injective
 
 /-- A Noetherian Lie algebra has finitely many restricted roots for each submodule `𝔞`. -/
 theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
