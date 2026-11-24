@@ -333,14 +333,14 @@ theorem cut_comp_uncut : cut ⋙ uncut = 𝟭 _ := by
 theorem uncut_comp_cut : uncut ⋙ cut = 𝟭 _ := by
   refine CategoryTheory.Functor.hext (fun X ↦ ?_) fun X Y f ↦ ?_
   · obtain ⟨⟨n⟩⟩ := X
-    cases n <;> rfl
+    exact congrArg EndpointPreserving.mk (card_ofCard n)
   · obtain ⟨⟨n⟩⟩ := X
     obtain ⟨⟨m⟩⟩ := Y
     cases n <;> cases m <;> refine heq_of_eq (EndpointPreserving.hom_ext' ?_)
     · ext i : 2
       exact Subsingleton.elim (α := Fin 1) _ _
-    · have h := (EndpointPreserving.hom_toOrderHom_zero f).symm.trans
-        (EndpointPreserving.hom_toOrderHom_last f)
+    · have h := EndpointPreserving.hom_toOrderHom_last f
+      rw [Fin.last_zero, EndpointPreserving.hom_toOrderHom_zero] at h
       simp [Fin.ext_iff] at h
     · ext i : 2
       exact Subsingleton.elim (α := Fin 1) _ _

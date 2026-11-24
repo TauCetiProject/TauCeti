@@ -250,7 +250,7 @@ lemma σ_hom {n : ℕ} (i : Fin (n + 1)) : (σ i).hom = SimplexCategory.σ i := 
 
 /-- The unique morphism of `Δ_∂` to `⦋0⦌`, the constant map. -/
 def toZero (X : EndpointPreserving) : X ⟶ mk 0 :=
-  ⟨const _ _ 0, (preservesEndpoints_iff _).2 ⟨rfl, rfl⟩⟩
+  ⟨const _ _ 0, (preservesEndpoints_iff _).2 ⟨rfl, Subsingleton.elim (α := Fin 1) _ _⟩⟩
 
 instance (X : EndpointPreserving) : Subsingleton (X ⟶ mk 0) where
   allEq _ _ := WideSubcategory.hom_ext _ (Subsingleton.elim _ _)
