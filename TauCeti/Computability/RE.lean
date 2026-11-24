@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
+public import TauCeti.Data.Nat.Pairing
 import TauCeti.Computability.Primrec.FiniteSet
+import TauCeti.Computability.Primrec.Pairing
 
 /-!
 # Closure properties of computable and c.e. predicates
@@ -24,7 +26,8 @@ computable pieces:
   is c.e., by unbounded search;
 * `Computable.rePred_mem_range`: the range of a total computable function is c.e.;
 * `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
-  computable, so every noncomputable set is infinite.
+  computable, so every noncomputable set is infinite;
+* `Nat.computablePred_mem_pairColumn`: membership in a fixed column `e.pairColumn` is computable.
 
 ## References
 
@@ -119,3 +122,7 @@ theorem Infinite.of_not_computablePred {A : Set α} (h : ¬ComputablePred (· �
   fun hfin => h hfin.computablePred
 
 end Set
+
+/-- Membership in a fixed column `e.pairColumn` is computable. -/
+theorem Nat.computablePred_mem_pairColumn (e : ℕ) : ComputablePred (· ∈ e.pairColumn) :=
+  (Primrec.mem_pairColumn.comp (.const e) .id).computablePred

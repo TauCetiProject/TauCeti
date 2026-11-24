@@ -34,7 +34,10 @@ In a unitary trivialization, where the complex structure is constant, the Fredho
 hypotheses (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
 `TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`). For a general loop of compatible
 structures `J_t(y)` the principal part `∂s + J(z, u z) ∂t` of `D_u` differs from those of its end
-models, so the parametrix theorem does not apply directly.
+models, so the parametrix theorem does not apply directly; the Fredholm property for such
+structures follows instead by deforming them to `i`
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible` in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`).
 
 ## References
 

@@ -39,7 +39,10 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
   `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is monotone in `K`
   (`TauCeti.ImplicitAtlas.deformationSupport_mono`), closed when `K` is
   (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`) and invariant under `Γ_B`
-  (`TauCeti.ImplicitAtlas.deformationAction_mem_deformationSupport_iff`).
+  (`TauCeti.ImplicitAtlas.deformationAction_mem_deformationSupport_iff`). For `I ⊆ J`, the
+  supports lie over the intersection `V_I ∩ V_J` of the regular footprints, and every point of
+  `V_I ∩ V_J` lies under one of them, so `Z_K` is nonempty exactly when `K` meets `V_I ∩ V_J`
+  (`TauCeti.ImplicitAtlas.nonempty_deformationSupport_iff`).
 * **The comparison maps** (`TauCeti.ImplicitAtlas.deformationMap`): for `I ⊆ I'`, `I ⊆ J'`,
   `J' ⊆ J ⊆ B ⊆ B'`, the continuous map `D_(I,J,B) × E_(B' \ B) → D_(I',J',B')` that puts the new
   obstruction coordinates in `E_(B' \ B)`, extends `t` by zero and applies `ψ_J'J` to `x`. These
@@ -344,6 +347,70 @@ theorem deformationAction_mem_deformationSupport_iff {I J B : Finset A} {hJB : J
       Homeomorph.one_apply]
   · exact iff_of_false (fun h ↦ h0 (he.1 (mem_deformationSupport.1 h).1))
       fun h ↦ h0 (mem_deformationSupport.1 h).1
+
+/-! ### The supports lie over `V_I ∩ V_J` -/
+
+/-- For `I ⊆ J`, a point `(e, t, x)` of `D_(I,J,B)` with `x` in the zero set `Z_∅J` lies over the
+intersection `V_I ∩ V_J` of the regular footprints. The point `x` is regular, and so is `ψ_IJ(x)`,
+because `ψ_SI(ψ_IJ(x)) = ψ_SJ(x)` is regular for `S = {α | t_α > 0} ⊆ I`. -/
+theorem baseHomeomorph_footprintMap_mem_footprint_inter {I J B : Finset A} (hIJ : I ⊆ J)
+    {hJB : J ⊆ B} {p : ((α : B) → E α) × (B → ℝ) × T J} (hp : p ∈ 𝒜.deformationSpace I hJB)
+    (hx : p.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi ∅ J) :
+    𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset J) ⟨_, hx⟩) ∈
+      𝒜.footprint I ∩ 𝒜.footprint J := by
+  refine ⟨?_, (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff _).2
+    (mem_regLocus_of_mem_deformationSpace hp)⟩
+  obtain ⟨-, htI, -, _, hxS, hreg⟩ := hp
+  have hSI : positiveIndices p.2.1 ⊆ I := positiveIndices_subset htI
+  have hxI : p.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi I J :=
+    kuranishiZeroSet_mono _ (Finset.empty_subset I) J hx
+  have hreg' : 𝒜.footprintMap hIJ ⟨_, hxI⟩ ∈ 𝒜.regLocus I := by
+    refine 𝒜.mem_regLocus_of_footprintMap_mem hSI
+      ⟨_, (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hIJ ⟨_, hxI⟩).1 hxS⟩ ?_
+    rw [𝒜.footprintMap_footprintMap_mk hSI hIJ _ hxS]
+    exact hreg
+  exact (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff_of_subset hIJ ⟨_, hx⟩).2 hreg'
+
+/-- For `I ⊆ J ⊆ B`, every point `y` of `V_I ∩ V_J` lies under a point of the support
+`Z_{y} ⊆ D_(I,J,B)`: the point `(0, t, x)`, with `t` the indicator function of `I` and `x` a
+regular zero of `X_J` over `y`. -/
+theorem exists_mem_deformationSupport_singleton {I J B : Finset A} (hIJ : I ⊆ J) (hJB : J ⊆ B)
+    {y : X} (hy : y ∈ 𝒜.footprint I ∩ 𝒜.footprint J) :
+    ∃ p, p ∈ 𝒜.deformationSupport I hJB {y} := by
+  obtain ⟨x, -, rfl⟩ := 𝒜.mem_footprint.1 hy.2
+  let t : B → ℝ := fun α ↦ if α.val ∈ I then 1 else 0
+  have ht : ∀ α, 0 ≤ t α := fun α ↦ by simp only [t]; split_ifs <;> norm_num
+  have htI : ∀ α : B, α.val ∉ I → t α = 0 := fun α hα ↦ by simp [t, hα]
+  have hs : ∀ α : J, 𝒜.kuranishi J α x.val = t ⟨α, hJB α.property⟩ • (0 : (α : B) → E α)
+      ⟨α, hJB α.property⟩ := fun α ↦ by
+    rw [Pi.zero_apply, smul_zero]
+    exact mem_kuranishiZeroSet.1 x.property α (Finset.notMem_empty _)
+  have hpos : positiveIndices t = I := by
+    ext α
+    simp only [mem_positiveIndices, t]
+    refine ⟨fun ⟨_, h⟩ ↦ by_contra fun hα ↦ by simp [hα] at h, fun hα ↦ ⟨hJB (hIJ hα), ?_⟩⟩
+    simp [hα]
+  -- `ψ_IJ(x)` lies over `y ∈ V_I`, so it is regular.
+  have hreg := (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff_of_subset hIJ x).1 hy.1
+  -- The regularity condition of `D_(I,J,B)` at `S = {α | t_α > 0} = I`. It is transported along
+  -- `hpos` by generalizing `S`: `subst hpos` and `hpos ▸ hreg` fail, since `t` depends on `I`.
+  have hregS : ∀ (S : Finset A) (_ : S = I) (h : S ⊆ J)
+      (hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi S J), 𝒜.footprintMap h ⟨_, hx⟩ ∈ 𝒜.regLocus S := by
+    rintro S rfl _ _
+    exact hreg
+  have hp : ((0 : (α : B) → E α), t, x.val) ∈ 𝒜.deformationSpace I hJB :=
+    mem_deformationSpace_of_footprintMap_mem hIJ hJB ht htI hs (hregS _ hpos _ _)
+  exact ⟨⟨_, hp⟩, (mem_deformationSupport_iff_of_eq_zero (p := ⟨_, hp⟩) rfl).2 rfl⟩
+
+/-- For `I ⊆ J ⊆ B`, the support `Z_K ⊆ D_(I,J,B)` of `K ⊆ X` is nonempty exactly when `K` meets
+`V_I ∩ V_J`. -/
+theorem nonempty_deformationSupport_iff {I J B : Finset A} (hIJ : I ⊆ J) (hJB : J ⊆ B)
+    {K : Set X} :
+    (𝒜.deformationSupport I hJB K).Nonempty ↔ (K ∩ (𝒜.footprint I ∩ 𝒜.footprint J)).Nonempty := by
+  refine ⟨fun ⟨p, _, hx, hK⟩ ↦ ⟨_, hK, baseHomeomorph_footprintMap_mem_footprint_inter hIJ
+    p.property hx⟩, fun ⟨y, hyK, hy⟩ ↦ ?_⟩
+  obtain ⟨p, hp⟩ := exists_mem_deformationSupport_singleton hIJ hJB hy
+  exact ⟨p, deformationSupport_mono (singleton_subset_iff.2 hyK) hp⟩
 
 /-! ### Comparison maps -/
 
