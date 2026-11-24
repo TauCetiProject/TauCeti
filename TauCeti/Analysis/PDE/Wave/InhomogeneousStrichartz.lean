@@ -196,7 +196,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
             rw [mul_assoc, mul_assoc, mul_left_comm K]
             gcongr
             exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l (hPF l).aestronglyMeasurable
-              (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
+              (ENNReal.HolderConjugate.one_le r₁' r₁)
     _ = _ := by
         simp_rw [← Finset.mul_sum]
         rw [ENNReal.tsum_mul_left, tsum_sum_ofReal_two_zpow_add_rpow_mul, ENNReal.coe_mul,

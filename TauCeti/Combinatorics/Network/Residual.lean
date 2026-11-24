@@ -254,7 +254,7 @@ excess of `f` plus the excess of `r` in the residual arrow family. No conservati
 @[simp]
 theorem excessAt_residualUpdate (f : Assignment Q K) (r : Assignment (ResidualHom Q) K)
     (v : V) : excessAt (residualUpdate f r) v = excessAt f v + excessAt r v := by
-  rw [residualUpdate_def, excessAt_add, excessAt_residualNet]
+  rw [residualUpdate_def, excessAt_add_apply, excessAt_residualNet]
 
 /-- A residual circulation preserves every excess. -/
 theorem IsCirculation.excessAt_residualUpdate {r : Assignment (ResidualHom Q) K}

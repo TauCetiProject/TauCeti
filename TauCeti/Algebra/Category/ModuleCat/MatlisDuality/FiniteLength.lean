@@ -52,7 +52,7 @@ preserves and reflects indecomposability.
 ## Main results
 
 * `ModuleCat.bijective_matlisDualMap` and `ModuleCat.bijective_matlisDualOpMap`: dualizing is
-  bijective on morphisms.
+  bijective on morphisms into a module of finite length over `R`.
 * `ModuleCat.nonempty_iso_matlisDualObj_iff` and `ModuleCat.nonempty_iso_matlisDualOpObj_iff`:
   dualizing reflects isomorphisms.
 * `ModuleCat.indecomposable_matlisDualObj_iff` and `ModuleCat.indecomposable_matlisDualOpObj_iff`:
@@ -314,23 +314,23 @@ multiplication, which in turn transfers indecomposability. -/
 variable {M M' : ModuleCat.{max v w} A}
 
 include hE in
-/-- **Matlis duality is bijective on morphisms** between left modules of finite length over `R`. -/
-theorem bijective_matlisDualMap (hM : IsFiniteLength R M) (hM' : IsFiniteLength R M') :
+/-- **Matlis duality is bijective on morphisms** of left modules into a module of finite length over
+`R`. -/
+theorem bijective_matlisDualMap (hM' : IsFiniteLength R M') :
     Function.Bijective
       (matlisDualMap R E : (M ⟶ M') → (matlisDualObj R E M' ⟶ matlisDualObj R E M)) := by
-  let X : ((isFiniteLength.{max v w} R).inverseImage
-      (restrictScalars.{max v w} (algebraMap R A))).FullSubcategory :=
-    ⟨M, (isFiniteLength_inverseImage_restrictScalars_iff M).mpr hM⟩
-  let X' : ((isFiniteLength.{max v w} R).inverseImage
-      (restrictScalars.{max v w} (algebraMap R A))).FullSubcategory :=
-    ⟨M', (isFiniteLength_inverseImage_restrictScalars_iff M').mpr hM'⟩
-  have h := (matlisDuality hE (A := A)).fullyFaithfulFunctor.map_bijective (Opposite.op X')
-    (Opposite.op X)
+  have h := MatlisDual.bijective_map (A := A) (N := M) hE hM'
   refine ⟨fun g g' hg ↦ ?_, fun f ↦ ?_⟩
-  · exact congrArg (fun k ↦ k.unop.hom) (h.1 (a₁ := (ObjectProperty.homMk g : X ⟶ X').op)
-      (a₂ := (ObjectProperty.homMk g' : X ⟶ X').op) (ObjectProperty.hom_ext _ hg))
-  · obtain ⟨k, hk⟩ := h.2 (ObjectProperty.homMk f)
-    exact ⟨k.unop.hom, congrArg (fun k ↦ k.hom) hk⟩
+  · refine ModuleCat.hom_ext (h.1 (LinearMap.ext fun φ ↦ MatlisDual.ext fun x ↦ ?_))
+    simpa using congrArg (fun k ↦ equivLinearMap R E M
+      (matlisDualObjEquiv R E M (k ((matlisDualObjEquiv R E M').symm φ))) x) hg
+  · obtain ⟨g, hg⟩ := h.2 ((matlisDualObjEquiv R E M).toLinearMap ∘ₗ f.hom ∘ₗ
+      (matlisDualObjEquiv R E M').symm.toLinearMap)
+    refine ⟨ofHom g, ?_⟩
+    ext ψ : 2
+    apply (matlisDualObjEquiv R E M).injective
+    ext x
+    simpa using congrArg (fun k ↦ equivLinearMap R E M (k (matlisDualObjEquiv R E M' ψ)) x) hg
 
 include hE in
 /-- **Matlis duality reflects isomorphisms** of left modules of finite length over `R`. -/
@@ -357,7 +357,7 @@ noncomputable def matlisDualEndRingEquiv (hM : IsFiniteLength R M) :
        map_zero' := End.ext ((matlisDual R E).map_zero _ _)
        map_add' _ _ := End.ext (matlisDualMap_add R E _ _) } :
       (End M)ᵐᵒᵖ →+* End (matlisDualObj R E M))
-    (End.homEquiv.symm.bijective.comp ((bijective_matlisDualMap hE hM hM).comp
+    (End.homEquiv.symm.bijective.comp ((bijective_matlisDualMap hE hM).comp
       (End.homEquiv.bijective.comp MulOpposite.unop_bijective)))
 
 @[simp]
@@ -371,29 +371,29 @@ over `R`. -/
 theorem indecomposable_matlisDualObj_iff (hM : IsFiniteLength R M) :
     Indecomposable (matlisDualObj R E M) ↔ Indecomposable M :=
   (TauCeti.indecomposable_iff_of_bijective_of_map_comp (matlisDualMap R E)
-    (bijective_matlisDualMap hE hM hM) ((matlisDual R E).map_id _)
+    (bijective_matlisDualMap hE hM) ((matlisDual R E).map_id _)
     ((matlisDual R E).map_zero _ _) fun f g ↦ (matlisDual R E).map_comp g.op f.op).symm
 
 variable {N N' : ModuleCat.{max v w} Aᵐᵒᵖ}
 
 include hE in
-/-- **Matlis duality is bijective on morphisms** between right modules of finite length over
-`R`. -/
-theorem bijective_matlisDualOpMap (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+/-- **Matlis duality is bijective on morphisms** of right modules into a module of finite length
+over `R`. -/
+theorem bijective_matlisDualOpMap (hN' : IsFiniteLength R N') :
     Function.Bijective
       (matlisDualOpMap R E : (N ⟶ N') → (matlisDualOpObj R E N' ⟶ matlisDualOpObj R E N)) := by
-  let Y : ((isFiniteLength.{max v w} R).inverseImage
-      (restrictScalars.{max v w} (algebraMap R Aᵐᵒᵖ))).FullSubcategory :=
-    ⟨N, (isFiniteLength_inverseImage_restrictScalars_iff N).mpr hN⟩
-  let Y' : ((isFiniteLength.{max v w} R).inverseImage
-      (restrictScalars.{max v w} (algebraMap R Aᵐᵒᵖ))).FullSubcategory :=
-    ⟨N', (isFiniteLength_inverseImage_restrictScalars_iff N').mpr hN'⟩
-  have h := (matlisDuality hE (A := A)).fullyFaithfulInverse.map_bijective Y Y'
+  have h := MatlisDual.bijective_mapOp (A := A) (N := N) hE hN'
   refine ⟨fun g g' hg ↦ ?_, fun f ↦ ?_⟩
-  · exact congrArg (fun k ↦ k.hom) (h.1 (a₁ := (ObjectProperty.homMk g : Y ⟶ Y'))
-      (a₂ := ObjectProperty.homMk g') (Quiver.Hom.unop_inj (ObjectProperty.hom_ext _ hg)))
-  · obtain ⟨k, hk⟩ := h.2 (ObjectProperty.homMk f).op
-    exact ⟨k.hom, congrArg (fun k ↦ k.unop.hom) hk⟩
+  · refine ModuleCat.hom_ext (h.1 (LinearMap.ext fun φ ↦ MatlisDual.ext fun x ↦ ?_))
+    simpa using congrArg (fun k ↦ equivLinearMap R E N
+      (matlisDualOpObjEquiv R E N (k ((matlisDualOpObjEquiv R E N').symm φ))) x) hg
+  · obtain ⟨g, hg⟩ := h.2 ((matlisDualOpObjEquiv R E N).toLinearMap ∘ₗ f.hom ∘ₗ
+      (matlisDualOpObjEquiv R E N').symm.toLinearMap)
+    refine ⟨ofHom g, ?_⟩
+    ext ψ : 2
+    apply (matlisDualOpObjEquiv R E N).injective
+    ext x
+    simpa using congrArg (fun k ↦ equivLinearMap R E N (k (matlisDualOpObjEquiv R E N' ψ)) x) hg
 
 include hE in
 /-- **Matlis duality reflects isomorphisms** of right modules of finite length over `R`. -/
@@ -421,7 +421,7 @@ noncomputable def matlisDualOpEndRingEquiv (hN : IsFiniteLength R N) :
        map_zero' := End.ext ((matlisDualOp R E).map_zero _ _)
        map_add' _ _ := End.ext (matlisDualOpMap_add R E _ _) } :
       (End N)ᵐᵒᵖ →+* End (matlisDualOpObj R E N))
-    (End.homEquiv.symm.bijective.comp ((bijective_matlisDualOpMap hE hN hN).comp
+    (End.homEquiv.symm.bijective.comp ((bijective_matlisDualOpMap hE hN).comp
       (End.homEquiv.bijective.comp MulOpposite.unop_bijective)))
 
 @[simp]
@@ -435,7 +435,7 @@ over `R`. -/
 theorem indecomposable_matlisDualOpObj_iff (hN : IsFiniteLength R N) :
     Indecomposable (matlisDualOpObj R E N) ↔ Indecomposable N :=
   (TauCeti.indecomposable_iff_of_bijective_of_map_comp (matlisDualOpMap R E)
-    (bijective_matlisDualOpMap hE hN hN) ((matlisDualOp R E).map_id _)
+    (bijective_matlisDualOpMap hE hN) ((matlisDualOp R E).map_id _)
     ((matlisDualOp R E).map_zero _ _) fun f g ↦ (matlisDualOp R E).map_comp g.op f.op).symm
 
 end Consequences

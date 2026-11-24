@@ -28,7 +28,8 @@ which converge uniformly, and of `∫ Φ_i(t, y_i(t)) dt` for uniformly convergi
 depends continuously on `x ∈ s` as soon as `f` is jointly continuous on `s ×ˢ uIcc a b`, including
 at boundary points of `s` (such as the endpoints of a closed interval), where Mathlib's
 `intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'` would require continuity
-on the whole space.
+on the whole space. Finally, an almost-everywhere pointwise sum of integrable functions whose
+integrated norms are summable is integrable.
 
 ## Main declarations
 
@@ -55,8 +56,13 @@ on the whole space.
   constant `x`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
+* `TauCeti.tendsto_intervalIntegral_norm_sub_of_dominated`:
+  `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U` when `z ↦ P(t, z)` is
+  continuous on `U` and the norms are dominated on compact subsets of `U`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
+* `TauCeti.integrable_of_hasSum_of_summable_integral_norm`: an a.e. pointwise sum of integrable
+  functions whose integrated norms are summable is integrable.
 * `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable pointwise `tsum` of integrable
   functions with summable `L¹` norms is integrable.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
@@ -83,6 +89,33 @@ theorem aestronglyMeasurable_of_tendsto_ae_of_eventually {ι β : Type*} [Topolo
     (fun n ↦ hN _ (Nat.le_add_left N n)) ?_
   filter_upwards [lim] with x hx
   exact hx.comp (hu.comp (tendsto_add_atTop_nat N))
+
+/-- **Integrability of an a.e. series.** If the integrals of the norms of integrable functions
+`G n` are summable and `g x` is the sum of the `G n x` for almost every `x`, then `g` is
+integrable. Mathlib's `MeasureTheory.hasSum_integral_of_summable_integral_norm` computes the
+integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. When `E` is
+complete the series of the `G n` converges in `L¹`, and the statement also follows from
+`MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`; the proof here does not use completeness. -/
+theorem integrable_of_hasSum_of_summable_integral_norm {E : Type*} [NormedAddCommGroup E]
+    {G : ℕ → α → E} {g : α → E} (hG : ∀ n, Integrable (G n) μ)
+    (hsum : Summable fun n ↦ ∫ x, ‖G n x‖ ∂μ) (hg : ∀ᵐ x ∂μ, HasSum (fun n ↦ G n x) (g x)) :
+    Integrable g μ := by
+  have hmeas : AEStronglyMeasurable g μ :=
+    aestronglyMeasurable_of_tendsto_ae atTop
+      (fun N ↦ (integrable_finsetSum (Finset.range N) fun n _ ↦ hG n).aestronglyMeasurable)
+      (hg.mono fun x hx ↦ hx.tendsto_sum_nat)
+  have hle : ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ ∑' n, ‖G n x‖ₑ := by
+    filter_upwards [hg] with x hx
+    rw [← hx.tsum_eq]
+    exact eNorm_tsum_le_tsum_eNorm
+  refine ⟨hmeas, hasFiniteIntegral_iff_eNorm.2 ?_⟩
+  calc ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ∑' n, ‖G n x‖ₑ ∂μ := lintegral_mono_ae hle
+    _ = ∑' n, ∫⁻ x, ‖G n x‖ₑ ∂μ := lintegral_tsum fun n ↦ (hG n).aestronglyMeasurable.eNorm
+    _ = ∑' n, ENNReal.ofReal (∫ x, ‖G n x‖ ∂μ) :=
+      tsum_congr fun n ↦ (ofReal_integral_norm_eq_lintegral_eNorm (hG n)).symm
+    _ = ENNReal.ofReal (∑' n, ∫ x, ‖G n x‖ ∂μ) :=
+      (ENNReal.ofReal_tsum_of_nonneg (fun n ↦ integral_nonneg fun _ ↦ norm_nonneg _) hsum).symm
+    _ < ⊤ := ENNReal.ofReal_lt_top
 
 /-- **Dominated convergence away from one point.** Suppose `K i` is eventually a.e.-strongly
 measurable, and `K i` is eventually dominated by `K₀` and converges to it away from a point
@@ -382,6 +415,49 @@ theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
   filter_upwards [Lp.coeFn_tsum heNorm,
     ae_all_iff.2 fun i ↦ (hF_int i).coeFn_toL1] with x hx hcoe
   exact hx.trans (tsum_congr fun i ↦ hcoe i)
+
+/-- **`L¹` continuity of a dominated family.** If `P(·, z)` is almost everywhere strongly
+measurable on `[a, b]` for `z ∈ U`, `z ↦ P(t, z)` is continuous on `U` for almost every
+`t ∈ [a, b]`, and on every compact `K ⊆ U` the norms `‖P(t, z)‖` are bounded by one integrable
+function of `t`, then `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U`. The
+domination is only required on compact sets, so this applies on an open set of parameters where
+no single bound holds. -/
+theorem tendsto_intervalIntegral_norm_sub_of_dominated {Z F : Type*} [TopologicalSpace Z]
+    [FirstCountableTopology Z] [NormedAddCommGroup F] {μ : Measure ℝ} {P : ℝ → Z → F}
+    {U : Set Z} {a b : ℝ} (hab : a ≤ b)
+    (hmeas : ∀ z ∈ U, AEStronglyMeasurable (fun t ↦ P t z) (μ.restrict (Icc a b)))
+    (hcont : ∀ᵐ t ∂μ, t ∈ Icc a b → ContinuousOn (P t) U)
+    (hdom : ∀ K ⊆ U, IsCompact K → ∃ m : ℝ → ℝ, IntegrableOn m (Icc a b) μ ∧
+      ∀ z ∈ K, ∀ᵐ t ∂μ, t ∈ Icc a b → ‖P t z‖ ≤ m t) {z₀ : Z} (hz₀ : z₀ ∈ U) :
+    Tendsto (fun z ↦ ∫ t in a..b, ‖P t z - P t z₀‖ ∂μ) (𝓝[U] z₀) (𝓝 0) := by
+  have hIoc : uIoc a b ⊆ Icc a b := by
+    rw [uIoc_of_le hab]
+    exact Ioc_subset_Icc_self
+  -- Test along a sequence `w → z₀` within `U`; from some `N` on it lies in `U`.
+  refine tendsto_iff_seq_tendsto.2 fun w hw ↦ ?_
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hw.eventually self_mem_nhdsWithin)
+  set v : ℕ → Z := fun n ↦ w (n + N)
+  have hvU (n : ℕ) : v n ∈ U := hN _ (Nat.le_add_left N n)
+  have hv : Tendsto v atTop (𝓝 z₀) :=
+    (tendsto_nhdsWithin_iff.1 hw).1.comp (tendsto_add_atTop_nat N)
+  -- The tail of the sequence with its limit is a compact subset of `U`, so it has one bound.
+  obtain ⟨m, hm, hbound⟩ := hdom (insert z₀ (range v))
+    (insert_subset hz₀ (range_subset_iff.2 hvU)) hv.isCompact_insert_range
+  rw [← tendsto_add_atTop_iff_nat N]
+  simpa using intervalIntegral.tendsto_integral_filter_of_dominated_convergence (μ := μ)
+    (F := fun n t ↦ ‖P t (v n) - P t z₀‖) (f := fun _ ↦ (0 : ℝ)) (fun t ↦ m t + m t)
+    (Eventually.of_forall fun n ↦ ((hmeas _ (hvU n)).sub (hmeas z₀ hz₀)).norm.mono_measure
+      (Measure.restrict_mono hIoc le_rfl))
+    (Eventually.of_forall fun n ↦ by
+      filter_upwards [hbound (v n) (mem_insert_of_mem _ (mem_range_self n)),
+        hbound z₀ (mem_insert _ _)] with t ht ht₀ htI
+      rw [norm_norm]
+      exact (norm_sub_le _ _).trans (add_le_add (ht (hIoc htI)) (ht₀ (hIoc htI))))
+    (intervalIntegrable_iff.2 ((hm.add hm).mono_set hIoc))
+    (by
+      filter_upwards [hcont] with t ht htI
+      exact tendsto_iff_norm_sub_tendsto_zero.1 ((ht (hIoc htI) z₀ hz₀).tendsto.comp
+        (tendsto_nhdsWithin_iff.2 ⟨hv, Eventually.of_forall hvU⟩)))
 
 end TauCeti
 
