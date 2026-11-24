@@ -245,29 +245,9 @@ theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
     exact (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
-/-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
-`z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
-direction, where the adjoint has the leading term `-∂s`. -/
-theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
-    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
-    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w.1 • η w) z =
-      β z.1 • ω.floerLinearizationAdjoint J Ks Kt u η z - β' • η z := by
-  have hb : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hd : HasFDerivAt (fun w ↦ β w.1 • η w) _ z := hb.smul hη.hasFDerivAt
-  have hc : (fun w ↦ (β w.1 • η w).comp (J w (u w))) =
-      fun w ↦ β w.1 • (η w).comp (J w (u w)) := by
-    ext w
-    simp
-  have hdc : HasFDerivAt (fun w ↦ β w.1 • (η w).comp (J w (u w))) _ z :=
-    hb.smul (hη.clm_comp hJu).hasFDerivAt
-  rw [floerLinearizationAdjoint_def, hd.fderiv, hc, hdc.fderiv, floerLinearizationAdjoint_def]
-  simp only [add_apply, smul_apply, smulRight_apply, comp_apply, ContinuousLinearMap.coe_fst',
-    toSpanSingleton_apply, stdComplexLineReal_fst, stdComplexLineImag_fst, smul_comp, smul_eq_mul]
-  module
-
-/-- **Multiplying by a function.** If `f` is differentiable at `z`, the formal adjoint sends `f η`
-to `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`: the factor is differentiated by the two leading terms
-`-∂s η` and `-∂t (η ∘ J)` of the adjoint. -/
+/-- **Multiplying by a function.** If `f`, `η` and `w ↦ J(w, u w)` are differentiable at `z`, the
+formal adjoint sends `f η` to `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`: the factor is differentiated
+by the two leading terms `-∂s η` and `-∂t (η ∘ J)` of the adjoint. -/
 theorem floerLinearizationAdjoint_fun_smul {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
     (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
     ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z =
@@ -283,8 +263,20 @@ theorem floerLinearizationAdjoint_fun_smul {f : ℝ × ℝ → ℝ} (hf : Differ
   simp only [add_apply, smul_apply, smulRight_apply, smul_comp]
   module
 
-/-- **The adjoint on a cut-off covector field, pointwise.** At a point where `f` and `η` are
-differentiable, `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`. -/
+/-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
+`z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
+direction, where the adjoint has the leading term `-∂s`. This is the case `f(s, t) = β(s)` of
+`floerLinearizationAdjoint_fun_smul`. -/
+theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w.1 • η w) z =
+      β z.1 • ω.floerLinearizationAdjoint J Ks Kt u η z - β' • η z := by
+  have hb : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  rw [floerLinearizationAdjoint_fun_smul hb.differentiableAt hη hJu, hb.fderiv]
+  simp [stdComplexLineReal_fst, stdComplexLineImag_fst]
+
+/-- **The adjoint on a cut-off covector field, pointwise.** At a point where `f`, `η` and
+`w ↦ J(w, u w)` are differentiable, `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`. -/
 theorem norm_floerLinearizationAdjoint_fun_smul_le {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
     (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
     ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ≤
@@ -306,8 +298,8 @@ theorem norm_floerLinearizationAdjoint_fun_smul_le {f : ℝ × ℝ → ℝ} (hf 
   have h₂ := mul_le_mul hJ him (norm_nonneg _) (by positivity)
   nlinarith [norm_nonneg (fderiv ℝ f z), norm_nonneg (η z), norm_nonneg (J z (u z))]
 
-/-- **The adjoint on a cut-off covector field, squared.** At a point where `f` and `η` are
-differentiable, `‖D^* (f η)‖² ≤ 2 f² ‖D^* η‖² + 2 ‖df‖² (1 + ‖J‖)² ‖η‖²`. -/
+/-- **The adjoint on a cut-off covector field, squared.** At a point where `f`, `η` and
+`w ↦ J(w, u w)` are differentiable, `‖D^* (f η)‖² ≤ 2 f² ‖D^* η‖² + 2 ‖df‖² (1 + ‖J‖)² ‖η‖²`. -/
 theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
     (hf : DifferentiableAt ℝ f z) (hη : DifferentiableAt ℝ η z)
     (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :

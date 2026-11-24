@@ -143,6 +143,15 @@ theorem
 
 /-! ### The formal adjoint -/
 
+/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
+field `η`. -/
+private theorem fderiv_flatEquiv_symm_apply (ω : SymplecticForm V) (η : ℝ × ℝ → V →L[ℝ] ℝ)
+    (z v : ℝ × ℝ) :
+    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
+  rw [show (fun w ↦ ω.flatEquiv.symm (η w)) = ω.flatEquiv.symm ∘ η from rfl,
+    ContinuousLinearEquiv.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+
 /-- **The formal adjoint through `ω`.** Write a covector field as `η = ω♭ ∘ ζ`, where
 `ω♭ v = ω(v, ·)`. At a point where `J(z, u z)` preserves `ω`, the formal adjoint is `-ω♭` of
 
@@ -164,12 +173,10 @@ private theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm 
             stdComplexLineImag -
           ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
             u z) (ω.flatEquiv.symm (η z))) := by
-  have hd : HasFDerivAt (fun w ↦ ω.flatEquiv.symm (η w))
-      ((ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp (fderiv ℝ η z)) z :=
-    ω.flatEquiv.symm.hasFDerivAt.comp z hη.hasFDerivAt
-  rw [floerLinearizationAdjoint_eq_neg hη hJu, hd.fderiv]
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, fderiv_flatEquiv_symm_apply,
+    fderiv_flatEquiv_symm_apply]
   ext w
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, map_neg,
+  simp only [ContinuousLinearMap.comp_apply, map_neg,
     flatEquiv_apply, map_add, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply,
     add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
     LinearMap.coe_toContinuousLinearMap']
@@ -264,11 +271,8 @@ theorem
     exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
   refine ⟨c₁ ^ 2 * C * c₂ ^ 2, by positivity, fun η hη hηK ↦ ?_⟩
   set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w)
-  have hdζ (z : ℝ × ℝ) (v : ℝ × ℝ) : fderiv ℝ ζ z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
-    have hd : HasFDerivAt ζ ((ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp (fderiv ℝ η z)) z :=
-      ω.flatEquiv.symm.hasFDerivAt.comp z (hη.differentiable two_ne_zero z).hasFDerivAt
-    rw [hd.fderiv]
-    rfl
+  have hdζ (z : ℝ × ℝ) (v : ℝ × ℝ) : fderiv ℝ ζ z v = ω.flatEquiv.symm (fderiv ℝ η z v) :=
+    fderiv_flatEquiv_symm_apply ω η z v
   have hDc : ContinuousOn (ω.floerLinearizationAdjoint
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η) K := fun z hz ↦
     (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
