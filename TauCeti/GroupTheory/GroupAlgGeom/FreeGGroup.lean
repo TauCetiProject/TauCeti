@@ -25,9 +25,13 @@ specialisations of the free generators; they label the leaves of Makanin–Razbo
   chosen family of free generators of a free `G`-group.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.homEquiv`: the universal property, `G`-homomorphisms out of a
   free `G`-group correspond to maps out of its free generators.
+* `TauCeti.GroupAlgGeom.GX.mulEquivFreeGroupSum`: for a free group basis `b : FreeGroupBasis A G`,
+  the canonical isomorphism `G[X] ≃* FreeGroup (X ⊕ A)`.
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.GX.eval_eq_lift_mulEquivFreeGroupSum`: under `GX.mulEquivFreeGroupSum`,
+  evaluation in `G[X]` is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_mulEquiv`: a group isomorphic over `G` to `G[Y]`, for a
   type `Y` in any universe, is a free `G`-group.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_unique_lift`: conversely, a group with a family of
@@ -72,6 +76,81 @@ open Monoid.Coprod
 universe u v w
 
 variable {G : Type v} [Group G] {H : Type u} [Group H]
+
+namespace GX
+
+/-- For a free group basis `b : FreeGroupBasis A G`, the free `G`-group `G[X]` is naturally
+isomorphic to `FreeGroup (X ⊕ A)`. -/
+noncomputable def mulEquivFreeGroupSum {A : Type*} (b : FreeGroupBasis A G) (X : Type*) :
+    GX G X ≃* FreeGroup (X ⊕ A) :=
+  MonoidHom.toMulEquiv
+    (lift (b.lift (FreeGroup.of ∘ Sum.inr)) (FreeGroup.map Sum.inl))
+    (FreeGroup.lift (Sum.elim (inr ∘ FreeGroup.of) (inl ∘ b)))
+    (hom_ext (b.ext_hom _ _ fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp))
+    (FreeGroup.ext_hom _ _ fun z => by cases z <;> simp)
+
+/-- `GX.mulEquivFreeGroupSum` sends a coefficient `g` to its representation on the right
+summand. -/
+@[simp]
+theorem mulEquivFreeGroupSum_inl {A : Type*} (b : FreeGroupBasis A G) (X : Type*) (g : G) :
+    mulEquivFreeGroupSum b X (inl g) = FreeGroup.map Sum.inr (b.repr g) := by
+  simp [mulEquivFreeGroupSum, FreeGroup.map_eq_lift]
+
+/-- `GX.mulEquivFreeGroupSum` sends a word `w` in the variables to `FreeGroup.map Sum.inl w`. -/
+@[simp]
+theorem mulEquivFreeGroupSum_inr {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (w : FreeGroup X) : mulEquivFreeGroupSum b X (inr w) = FreeGroup.map Sum.inl w := by
+  simp [mulEquivFreeGroupSum]
+
+/-- `GX.mulEquivFreeGroupSum` sends the coefficient `b c` to `FreeGroup.of (Sum.inr c)`. -/
+theorem mulEquivFreeGroupSum_inl_coe {A : Type*} (b : FreeGroupBasis A G) (X : Type*) (c : A) :
+    mulEquivFreeGroupSum b X (inl (b c)) = FreeGroup.of (Sum.inr c) := by
+  simp
+
+/-- `GX.mulEquivFreeGroupSum` sends the variable `x` to `FreeGroup.of (Sum.inl x)`. -/
+theorem mulEquivFreeGroupSum_inr_of {A : Type*} (b : FreeGroupBasis A G) (X : Type*) (x : X) :
+    mulEquivFreeGroupSum b X (inr (FreeGroup.of x)) = FreeGroup.of (Sum.inl x) := by
+  simp
+
+/-- `(GX.mulEquivFreeGroupSum b X).symm` sends `FreeGroup.of (Sum.inl x)` to the variable `x`. -/
+@[simp]
+theorem mulEquivFreeGroupSum_symm_of_inl {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (x : X) :
+    (mulEquivFreeGroupSum b X).symm (FreeGroup.of (Sum.inl x)) = inr (FreeGroup.of x) := by
+  simp [mulEquivFreeGroupSum]
+
+/-- `(GX.mulEquivFreeGroupSum b X).symm` sends `FreeGroup.of (Sum.inr c)` to the coefficient
+`b c`. -/
+@[simp]
+theorem mulEquivFreeGroupSum_symm_of_inr {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (c : A) : (mulEquivFreeGroupSum b X).symm (FreeGroup.of (Sum.inr c)) = inl (b c) := by
+  simp [mulEquivFreeGroupSum]
+
+/-- `(GX.mulEquivFreeGroupSum b X).symm` sends `FreeGroup.map Sum.inl w` to `inr w`. -/
+@[simp]
+theorem mulEquivFreeGroupSum_symm_map_inl {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (w : FreeGroup X) : (mulEquivFreeGroupSum b X).symm (FreeGroup.map Sum.inl w) = inr w :=
+  (mulEquivFreeGroupSum b X).injective <| by simp
+
+/-- `(GX.mulEquivFreeGroupSum b X).symm` sends `FreeGroup.map Sum.inr w` to `inl (b.repr.symm w)`.
+-/
+@[simp]
+theorem mulEquivFreeGroupSum_symm_map_inr {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (w : FreeGroup A) :
+    (mulEquivFreeGroupSum b X).symm (FreeGroup.map Sum.inr w) = inl (b.repr.symm w) :=
+  (mulEquivFreeGroupSum b X).injective <| by simp
+
+/-- Under `GX.mulEquivFreeGroupSum`, evaluation of a word in `G[X]` is `FreeGroup.lift` sending
+variables along `v` and basis generators along `ι ∘ b`. -/
+theorem eval_eq_lift_mulEquivFreeGroupSum {A X : Type*} (b : FreeGroupBasis A G)
+    (ι : G →* H) (v : X → H) (w : GX G X) :
+    eval ι v w = FreeGroup.lift (Sum.elim v (ι ∘ b)) (mulEquivFreeGroupSum b X w) := by
+  have : eval ι v = (FreeGroup.lift (Sum.elim v (ι ∘ b))).comp
+      (mulEquivFreeGroupSum b X).toMonoidHom :=
+    hom_ext (b.ext_hom _ _ fun c => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
+  exact DFunLike.congr_fun this w
+
+end GX
 
 /-- The coefficient map `ι : G →* H` exhibits `H` as a *free `G`-group*: there are a type `Y` and
 an isomorphism `G[Y] ≃* H` restricting to `ι` on the coefficients. -/
@@ -216,14 +295,9 @@ theorem isFreeGroup_of_subsingleton [Subsingleton G] {ι : G →* H} (h : IsFree
 
 /-- A free `G`-group over a free group `G` is a free group: `G ∗ F(Y)` is free on a basis of `G`
 together with `Y`. -/
-theorem isFreeGroup [IsFreeGroup G] {ι : G →* H} (h : IsFreeGGroup ι) : IsFreeGroup H := by
-  let e : GX G h.Generators ≃* FreeGroup (IsFreeGroup.Generators G ⊕ h.Generators) :=
-    MonoidHom.toMulEquiv
-      (lift (IsFreeGroup.lift (FreeGroup.of ∘ Sum.inl)) (FreeGroup.map Sum.inr))
-      (FreeGroup.lift (Sum.elim (inl ∘ IsFreeGroup.of) (inr ∘ FreeGroup.of)))
-      (hom_ext (IsFreeGroup.ext_hom fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp))
-      (FreeGroup.ext_hom _ _ fun a => by cases a <;> simp)
-  exact (FreeGroupBasis.ofRepr (h.mulEquiv.symm.trans e)).isFreeGroup
+theorem isFreeGroup [IsFreeGroup G] {ι : G →* H} (h : IsFreeGGroup ι) : IsFreeGroup H :=
+  (FreeGroupBasis.ofRepr (h.mulEquiv.symm.trans
+    (GX.mulEquivFreeGroupSum (IsFreeGroup.basis G) h.Generators))).isFreeGroup
 
 end IsFreeGGroup
 

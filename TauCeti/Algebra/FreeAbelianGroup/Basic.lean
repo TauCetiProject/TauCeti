@@ -10,18 +10,18 @@ public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
 /-!
 # Free abelian groups have unique division
 
-The free abelian group `FreeAbelianGroup α` is isomorphic to the group `α →₀ ℤ` of finitely
-supported integer-valued functions (`FreeAbelianGroup.equivFinsupp`), so it has unique division:
+The free abelian group `FreeAddCommGroup α` is isomorphic to the group `α →₀ ℤ` of finitely
+supported integer-valued functions (`FreeAddCommGroup.equivFinsupp`), so it has unique division:
 `n • a = n • b` with `n ≠ 0` forces `a = b`. In particular it is torsion-free.
 
 ## Main results
 
-* `FreeAbelianGroup.instHasUniqueDiv`: a free abelian group has unique division.
+* `FreeAddCommGroup.instHasUniqueDiv`: a free abelian group has unique division.
 -/
 
 public section
 
 /-- A free abelian group has unique division: `n • a = n • b` with `n ≠ 0` forces `a = b`. -/
-instance FreeAbelianGroup.instHasUniqueDiv {α : Type*} : HasUniqueDiv (FreeAbelianGroup α) :=
-  (FreeAbelianGroup.equivFinsupp α).injective.hasUniqueDiv
-    (FreeAbelianGroup.equivFinsupp α).toAddMonoidHom
+instance FreeAddCommGroup.instHasUniqueDiv {α : Type*} : HasUniqueDiv (FreeAddCommGroup α) :=
+  (FreeAddCommGroup.equivFinsupp α).injective.hasUniqueDiv
+    (FreeAddCommGroup.equivFinsupp α).toAddMonoidHom

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.ComplexOrder
+public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import Mathlib.Analysis.Complex.Hadamard
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.Calculus
@@ -50,6 +51,8 @@ are dense, `T` then extends to a bounded operator `H^{s_θ} → H^{t_θ}`
   inequality.
 * `SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`: the
   interpolated operator `H^{s_θ} → H^{t_θ}`.
+* `SchwartzMap.HasSobolevExtension.interpolate`: the same statement for continuous linear maps of
+  Schwartz spaces in the composable form `SchwartzMap.HasSobolevExtension`.
 
 ## References
 
@@ -229,8 +232,13 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E₁,
   -- The common factors `N` and `X` come out of the geometric mean of the boundary bounds.
   have hmean : (N * (M₀ * X)) ^ (1 - θ) * (N * (M₁ * X)) ^ θ =
       N * (M₀ ^ (1 - θ) * M₁ ^ θ * X) := by
-    rw [Real.mul_rpow_one_sub_mul_mul_rpow (norm_nonneg _), mul_comm M₀, mul_comm M₁,
-      Real.mul_rpow_one_sub_mul_mul_rpow hX0, mul_comm X]
+    have hθ1 : 1 - θ + θ = 1 := sub_add_cancel 1 θ
+    calc (N * (M₀ * X)) ^ (1 - θ) * (N * (M₁ * X)) ^ θ
+        = N * ((X * M₀) ^ (1 - θ) * (X * M₁) ^ θ) := by
+          rw [Real.mul_rpow_mul_mul_rpow_of_add_eq_one (norm_nonneg _ : 0 ≤ N) hθ1, mul_comm M₀ X,
+            mul_comm M₁ X]
+      _ = N * (M₀ ^ (1 - θ) * M₁ ^ θ * X) := by
+          rw [Real.mul_rpow_mul_mul_rpow_of_add_eq_one hX0 hθ1, mul_comm X (M₀ ^ (1 - θ) * M₁ ^ θ)]
   simp only [hGθ, Complex.ofReal_re, Complex.norm_real, hmean, sq, Real.norm_eq_abs,
     abs_mul_self] at h3
   -- Divide by `N`.
@@ -260,6 +268,21 @@ theorem exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow
   · exact LinearMap.extendOfNorm_eq hdense ⟨_, hbd⟩ u
   · exact LinearMap.opNorm_extendOfNorm_le hdense
       (mul_nonneg (Real.rpow_nonneg hM₀ _) (Real.rpow_nonneg hM₁ _)) hbd
+
+/-- **Interpolation of Sobolev extensions.** If a continuous linear map `A` of Schwartz spaces
+extends to bounded operators `H^{s₀} → H^{t₀}` and `H^{s₁} → H^{t₁}`, then for `0 ≤ θ ≤ 1` it
+extends to a bounded operator `H^{s_θ} → H^{t_θ}`, where `s_θ = (1 - θ) s₀ + θ s₁` and
+`t_θ = (1 - θ) t₀ + θ t₁`. -/
+theorem HasSobolevExtension.interpolate {A : 𝓢(E₁, V) →L[ℂ] 𝓢(E₁, W)} {s₀ s₁ t₀ t₁ : ℝ}
+    (h₀ : HasSobolevExtension A s₀ t₀) (h₁ : HasSobolevExtension A s₁ t₁) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
+    HasSobolevExtension A ((1 - θ) * s₀ + θ * s₁) ((1 - θ) * t₀ + θ * t₁) := by
+  obtain ⟨M₀, hM₀, h₀⟩ := hasSobolevExtension_iff_exists_norm_le.mp h₀
+  obtain ⟨M₁, hM₁, h₁⟩ := hasSobolevExtension_iff_exists_norm_le.mp h₁
+  exact hasSobolevExtension_iff_exists_norm_le.mpr
+    ⟨_, mul_nonneg (Real.rpow_nonneg hM₀ _) (Real.rpow_nonneg hM₁ _),
+      norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm (T := A.toLinearMap) hM₀ hM₁ h₀ h₁
+        hθ⟩
 
 end Interpolation
 

@@ -141,11 +141,11 @@ private lemma one_sub_single_neg_root_mul_demazureOperator_single (x : M) :
   · have hx : -P.root i + (x - (n : ℤ) • P.root i) = x - (n + 1) • P.root i := by
       rw [natCast_zsmul, succ_nsmul]; abel
     rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn,
-      TauCeti.one_sub_single_neg_mul_sum_sub, hn, hx]
+      AddCommute.one_sub_single_neg_mul_sum_sub (.all _ _), hn, hx]
   · have hx : -P.root i + (x - (-(n : ℤ) - 1) • P.root i) = x + n • P.root i := by
       rw [sub_smul, neg_smul, natCast_zsmul, one_smul]; abel
     rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i hn, mul_neg,
-      TauCeti.one_sub_single_neg_mul_sum_add, neg_sub, hn, hx]
+      AddCommute.one_sub_single_neg_mul_sum_add (.all _ _), neg_sub, hn, hx]
 
 /-- **The localization identity** of the Demazure operator:
 `(1 - e^{-αᵢ}) Dᵢ(f) = f - e^{-αᵢ} sᵢ(f)`, where `sᵢ` reindexes `ℤ[M]` along the reflection of

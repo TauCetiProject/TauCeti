@@ -208,7 +208,7 @@ theorem exists_sum_eq_mul_inv_pow (d : B₀) :
           ((isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit⁻¹ : B₀ˣ) ^ (m - i) := by
   obtain ⟨⟨y, s⟩, rfl⟩ :=
     IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) d
-  obtain ⟨m, hm⟩ := s.2
+  obtain ⟨m, hm⟩ := s.property
   obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul y m
   set t : ℕ → 𝕎 O := fun i ↦ if i < m then teichmuller p (y.teichmullerCoeff i) else b
   let w : Submonoid.powers (teichmuller p ϖ) := ⟨teichmuller p ϖ ^ m, m, rfl⟩

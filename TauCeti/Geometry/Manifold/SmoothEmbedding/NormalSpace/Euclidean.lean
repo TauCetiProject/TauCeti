@@ -105,9 +105,9 @@ The identification sends each class to its orthogonal representative. -/
 def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) :
     TotalSpace F (fun x => f.NormalSpace x hn) ≃ₜ
       TotalSpace F (fun x => normalSubspace I f x) where
-  toFun p := ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.2⟩
+  toFun p := ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.snd⟩
   invFun p := ⟨p.proj, f.normalClass p.proj hn
-    ((NormedSpace.fromTangentSpace (f p.proj)).symm p.2)⟩
+    ((NormedSpace.fromTangentSpace (f p.proj)).symm p.snd)⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
     simp only [← normalSpaceOrthogonalEquiv_symm_apply,
@@ -135,11 +135,11 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
       TotalSpace.toProd, Pullback.lift]
     -- In a Euclidean target the model-space tangent identification is the identity.
     convert congrArg (fun w : normalSubspace I f p.proj => (p.proj, (w : V)))
-      (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.2 : V)) using 1 <;> rfl
+      (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.snd : V)) using 1 <;> rfl
   continuous_invFun := by
     let L : TotalSpace F (fun x => normalSubspace I f x) →
         TotalSpace V ((f : M → V) *ᵖ (TangentSpace 𝓘(ℝ, V))) := fun p =>
-      ⟨p.proj, (NormedSpace.fromTangentSpace (f p.proj)).symm p.2⟩
+      ⟨p.proj, (NormedSpace.fromTangentSpace (f p.proj)).symm p.snd⟩
     have hL : Continuous L := by
       apply (inducing_pullbackTotalSpaceEmbedding V (TangentSpace 𝓘(ℝ, V)) f).continuous_iff.mpr
       have hp := (isEmbedding_totalSpace_normalSubspace (I := I) (F := F) f).continuous
@@ -156,7 +156,7 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
     f.normalBundleHomeomorphOrthogonal hn p =
-      ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.2⟩ := (rfl)
+      ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.snd⟩ := (rfl)
 
 /-- The inverse normal-bundle identification takes the class of the orthogonal vector. -/
 @[simp] theorem normalBundleHomeomorphOrthogonal_symm_apply
@@ -164,7 +164,7 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     (f.normalBundleHomeomorphOrthogonal hn).symm p =
       ⟨p.proj, f.normalClass p.proj hn
-        ((NormedSpace.fromTangentSpace (f p.proj)).symm p.2)⟩ := (rfl)
+        ((NormedSpace.fromTangentSpace (f p.proj)).symm p.snd)⟩ := (rfl)
 
 /-- Taking an ambient normal class and then its orthogonal representative is the normal
 projection, with the base point fixed. -/
@@ -172,10 +172,10 @@ projection, with the base point fixed. -/
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (p : TotalSpace V ((f : M → V) *ᵖ (TangentSpace 𝓘(ℝ, V)))) :
     f.normalBundleHomeomorphOrthogonal hn (f.normalQuotientMap (K := F) hn p) =
-      ⟨p.1, (normalSubspace I f p.1).orthogonalProjectionOnto p.2⟩ := by
+      ⟨p.proj, (normalSubspace I f p.proj).orthogonalProjectionOnto p.snd⟩ := by
   simp only [normalQuotientMap_apply, normalBundleHomeomorphOrthogonal_apply]
   exact congrArg (TotalSpace.mk p.proj)
-    (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.2 : V))
+    (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.snd : V))
 
 /-- The identification sends the intrinsic zero section to the orthogonal zero section. -/
 theorem normalBundleHomeomorphOrthogonal_zeroSection
