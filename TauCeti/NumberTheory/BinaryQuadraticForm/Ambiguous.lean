@@ -89,14 +89,7 @@ theorem exists_eq_smul_reflected_of_b_eq_zero_or_b_eq_a (h : f.b = 0 ∨ f.b = f
   rcases h with h | h
   · exact ⟨1, by ext <;> simp [h]⟩
   · refine ⟨SpecialLinearGroup.map (Int.castRingHom R) ModularGroup.T⁻¹, ?_⟩
-    ext <;>
-      simp only [smul_a, smul_b, smul_c, reflected_a, reflected_b, reflected_c, h, map_inv,
-        SpecialLinearGroup.inv_apply_zero_zero, SpecialLinearGroup.inv_apply_zero_one,
-        SpecialLinearGroup.inv_apply_one_zero, SpecialLinearGroup.inv_apply_one_one,
-        SpecialLinearGroup.map_apply_coe, ModularGroup.coe_T, Int.coe_castRingHom, map_apply,
-        of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, Int.cast_one,
-        Int.cast_zero] <;>
-      ring
+    ext <;> simp [h, ModularGroup.coe_T, two_mul]
 
 end CommRing
 
@@ -175,10 +168,13 @@ theorem exists_smul_b_eq_zero_or_b_eq_a_iff :
   have h₁ := smul_eq_smul_smul_reflected h ρ⁻¹
   have hγ₁ : (ρ⁻¹ * γ * (SpecialLinearGroup.conjJ ρ⁻¹)⁻¹) 1 0 = 0 := by
     rw [SpecialLinearGroup.conjJ_inv, inv_inv]
-    simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv, SpecialLinearGroup.coe_conjJ,
-      adjugate_fin_two, hρ0, hρ1, Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val',
-      cons_val_zero, cons_val_one, cons_val_fin_one]
-    linear_combination huv0 + v * u * hp
+    -- The `(1, 0)` entry, written out in terms of the first column `(u, v)` of `ρ`.
+    have hentry : (ρ⁻¹ * γ * SpecialLinearGroup.conjJ ρ) 1 0 =
+        γ 1 0 * u ^ 2 - (γ 0 0 + γ 1 1) * u * v + γ 0 1 * v ^ 2 := by
+      simp [Matrix.mul_apply, vecMul, dotProduct, Fin.sum_univ_two, adjugate_fin_two, hρ0, hρ1]
+      ring
+    rw [hentry]
+    linear_combination huv0 + u * v * hp
   obtain ⟨k, hk⟩ := exists_T_zpow_smul_b_eq_zero_or_b_eq_a (a_dvd_b_of_eq_smul_reflected h₁ hγ₁)
   exact ⟨ModularGroup.T ^ k * ρ⁻¹, by rwa [mul_smul]⟩
 
