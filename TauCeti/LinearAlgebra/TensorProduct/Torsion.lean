@@ -223,17 +223,11 @@ yields an `S`-torsion module. -/
 theorem tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
     [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
-    Module.IsTorsion' (M ⊗[R] N) S := fun t ↦ by
-  induction t using TensorProduct.inductionOn with
-  | tmul x y =>
-    obtain ⟨s, hs⟩ := @hM x
-    exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
-      TensorProduct.zero_tmul]⟩
-  | add x y hx hy =>
-    obtain ⟨s₁, hs₁⟩ := hx
-    obtain ⟨s₂, hs₂⟩ := hy
-    have h₁ : (s₁ * s₂) • x = 0 := by rw [mul_comm, mul_smul, hs₁, smul_zero]
-    have h₂ : (s₁ * s₂) • y = 0 := by rw [mul_smul, hs₂, smul_zero]
-    exact ⟨s₁ * s₂, by simp [smul_add, h₁, h₂]⟩
+    Module.IsTorsion' (M ⊗[R] N) S := by
+  rw [Submodule.isTorsion'_iff_torsion'_eq_top (R := R₀), eq_top_iff]
+  refine fun t _ ↦ t.inductionOn (fun x y ↦ ?_) fun _ _ ↦ add_mem
+  obtain ⟨s, hs⟩ := @hM x
+  exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
+    TensorProduct.zero_tmul]⟩
 
 end Module.IsTorsion'

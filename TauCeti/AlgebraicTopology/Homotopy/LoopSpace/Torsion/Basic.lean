@@ -82,6 +82,32 @@ private lemma isTorsion'_pi2_of_isTorsion'_homology₀ {Q : Type} [TopologicalSp
     exact Module.isTorsion'_of_zero_mem
       (f.toAddMonoidHom.zero_mem_of_injective_of_isTorsion' hf hH₀)
 
+/-- If a path-connected space `W` has `S`-torsion reduced integral homology up to degree `N`, then
+the map to a point induces an isomorphism on `H_q(-; A)` for all `q ≤ N`, for every localization
+`A` of `ℤ` at `S`. -/
+private lemma isIso_singularHomologyMap_isTerminalPUnit_of_forall_isTorsion'_reducedHomology
+    {W : Type} [TopologicalSpace W] [PathConnectedSpace W] (S : Submonoid ℤ)
+    (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A] (N : ℕ)
+    (hW : ∀ q ≤ N, Module.IsTorsion'
+      ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) q).obj (TopCat.of W)) S)
+    {q : ℕ} (hq : q ≤ N) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} A) q).obj (ModuleCat.of A A)).map
+      (TopCat.isTerminalPUnit.from (TopCat.of W))) := by
+  cases q with
+  | zero =>
+    -- In degree `0`, path-connectedness identifies `H₀(W; A)` with `A ≅ H₀(*; A)`.
+    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε
+      (ModuleCat.of A A) (TopCat.isTerminalPUnit.from (TopCat.of W)))
+  | succ r =>
+    -- In positive degrees, reduced and ordinary homology agree, so flat base change turns
+    -- `S`-torsion in `H~_{r + 1}(W; ℤ)` into vanishing of `H_{r + 1}(W; A)`.
+    have hsub : Subsingleton (((singularChains A).obj (TopCat.of W)).homology (r + 1)) :=
+      (isTorsion'_singularChains_int_homology_iff S A (TopCat.of W) (r + 1)).1 <|
+        ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) r).app
+          (TopCat.of W)).symm.toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hW (r + 1) hq)
+    exact (isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff
+      (ModuleCat.of A A) (TopCat.of W) r).2 hsub
+
 end Helpers
 
 /-! ### Single loop spaces -/
@@ -100,7 +126,10 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology
     Module.IsTorsion' (Additive (π_ (m + 2) X x)) S := by
   have : IsLocalization S (Localization S) := Localization.isLocalization
   by_cases h1 : Subsingleton (π_ 1 X x)
-  · let Y := pathComponent x
+  · -- When `π₁(X, x)` is trivial, restrict to the path component `Y = pathComponent x` (simply
+    -- connected, with `Ω Y y₀ ≃ₜ Ω X x`), transfer `S⁻¹ℤ`-acyclicity from `Ω Y y₀` to `Y`, and
+    -- apply Serre's Hurewicz theorem modulo `S`-torsion.
+    let Y := pathComponent x
     let y₀ : Y := pathComponentSelf x
     have : Subsingleton (π_ 1 Y y₀) :=
       (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset (N := Fin 1)
@@ -108,36 +137,24 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology
     have : PathConnectedSpace (Ω Y y₀) :=
       (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 y₀).2 inferInstance
     let A := Localization S
-    have hΩA : ∀ q, q ≤ m + 2 →
-        IsIso (((singularHomologyFunctor (ModuleCat.{0} A) q).obj (ModuleCat.of A A)).map
-          (TopCat.isTerminalPUnit.from (TopCat.of (Ω Y y₀)))) := by
-      intro q hqm
-      cases q with
-      | zero =>
-        exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε
-          (ModuleCat.of A A) (TopCat.isTerminalPUnit.from (TopCat.of (Ω Y y₀))))
-      | succ r =>
-        have hsub : Subsingleton (((singularChains A).obj (TopCat.of (Ω Y y₀))).homology
-            (r + 1)) :=
-          (isTorsion'_singularChains_int_homology_iff S A (TopCat.of (Ω Y y₀)) (r + 1)).1 <|
-            (((Path.subtypeValHomeomorph (a := y₀) (b := y₀)
-              subset_rfl).toHomotopyEquiv.singularHomologyIso
-              (ModuleCat.of ℤ ℤ) (r + 1)).toLinearEquiv.toAddEquiv.isTorsion'_iff.2 <|
-              ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) r).app
-                (TopCat.of (Ω X x))).symm.toLinearEquiv.toAddEquiv.isTorsion'_iff.2
-                  (hH (r + 1) hqm))
-        exact (isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff
-          (ModuleCat.of A A) (TopCat.of (Ω Y y₀)) r).2 hsub
+    have hΩ : ∀ q ≤ m + 2, Module.IsTorsion'
+        ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) q).obj (TopCat.of (Ω Y y₀))) S :=
+      fun q hq ↦
+        ((Path.subtypeValHomeomorph (a := y₀) (b := y₀)
+          subset_rfl).toHomotopyEquiv.reducedSingularHomologyIso
+          (ModuleCat.of ℤ ℤ) q).toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hH q hq)
     have hπY : Module.IsTorsion' (Additive (π_ (m + 2) Y y₀)) S :=
       (forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology y₀ S A (m + 1)).2
         (fun j hj ↦ (isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff
           (ModuleCat.of A A) (TopCat.of Y) (j + 1)).1
           (isIso_singularHomologyMap_of_isIso_loopSpace A y₀ (j + 2) fun q hq ↦
-            hΩA q (by omega)))
+            isIso_singularHomologyMap_isTerminalPUnit_of_forall_isTorsion'_reducedHomology
+              S A (m + 2) hΩ (by omega)))
         m (Nat.lt_succ_self m)
     exact (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset (N := Fin (m + 2))
       subset_rfl rfl).toAdditive.isTorsion'_iff.1 hπY
-  · have : Nontrivial (π_ 1 X x) := not_subsingleton_iff_nontrivial.1 h1
+  · -- When `π₁(X, x)` is nontrivial, `H~₀(Ω X x; ℤ)` contains a copy of `ℤ`, forcing `0 ∈ S`.
+    have : Nontrivial (π_ 1 X x) := not_subsingleton_iff_nontrivial.1 h1
     obtain ⟨f, hf⟩ := exists_injective_loopSpaceReducedHomology₀ (R := ℤ) x
     exact Module.isTorsion'_of_zero_mem
       (f.toAddMonoidHom.zero_mem_of_injective_of_isTorsion' hf (hH 0 (Nat.zero_le _)))
@@ -195,7 +212,7 @@ theorem exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), ∀ s ∈ S, s • x ≠ 0 :=
-  Module.exists_forall_smul_ne_zero
+  Module.exists_forall_smul_ne_zero_of_not_isTorsion'_of_imp
     (isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomology q S m) hπ
 
 /-- **Power-torsion detection in `H~_*(Ω²Q; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not
@@ -259,7 +276,7 @@ theorem exists_forall_smul_ne_zero_doubleReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), ∀ s ∈ S, s • x ≠ 0 :=
-  Module.exists_forall_smul_ne_zero
+  Module.exists_forall_smul_ne_zero_of_not_isTorsion'_of_imp
     (isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleReducedHomology q S m) hπ
 
 /-- **Power-torsion detection in `H~_*(ΩᴹΩᴹQ; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not

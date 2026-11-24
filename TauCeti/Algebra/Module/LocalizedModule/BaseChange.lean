@@ -60,8 +60,9 @@ and `N ⧸ LinearMap.range f`.
   `LocalizedModule.map T f`.
 * `LinearMap.baseChange_injective_iff_isTorsion'_ker`,
   `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`,
-  `LinearMap.baseChange_bijective_iff`: base change of `f` to a localization at `S` is injective,
-  surjective, or bijective iff `LinearMap.ker f` and/or `N ⧸ LinearMap.range f` are `S`-torsion.
+  `LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range`: base change of `f` to a
+  localization at `S` is injective, surjective, or bijective iff `LinearMap.ker f` and/or
+  `N ⧸ LinearMap.range f` are `S`-torsion.
 -/
 
 public section
@@ -344,8 +345,8 @@ theorem baseChange_surjective_iff_isTorsion'_quotient_range (f : M →ₗ[R] N) 
 
 /-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is bijective if and only
 if both its kernel and its cokernel are `S`-torsion. -/
-theorem baseChange_bijective_iff (f : M →ₗ[R] N) (S : Submonoid R) (A : Type*)
-    [CommRing A] [Algebra R A] [IsLocalization S A] :
+theorem baseChange_bijective_iff_isTorsion'_ker_and_quotient_range (f : M →ₗ[R] N)
+    (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A] :
     Function.Bijective (f.baseChange A) ↔
       Module.IsTorsion' (LinearMap.ker f) S ∧ Module.IsTorsion' (N ⧸ LinearMap.range f) S :=
   and_congr (f.baseChange_injective_iff_isTorsion'_ker S A)

@@ -59,6 +59,13 @@ lemma prop_isSubmonoidTorsion_iff (S : Submonoid ℤ) (M : AddCommGrpCat.{u}) :
     isSubmonoidTorsion S M ↔ Module.IsTorsion' M S :=
   Iff.rfl
 
+/-- An additive homomorphism sends an `S`-torsion element to an `S`-torsion element. -/
+private lemma map_mem_torsion' {M N : Type u} [AddCommGroup M] [AddCommGroup N]
+    (S : Submonoid ℤ) (f : M →+ N) {x : M} (hx : x ∈ Submodule.torsion' ℤ M S) :
+    f x ∈ Submodule.torsion' ℤ N S :=
+  let ⟨s, hs⟩ := hx
+  ⟨s, by rw [Submonoid.smul_def, ← map_zsmul]; exact (congrArg f hs).trans (map_zero f)⟩
+
 /-- `S`-torsion abelian groups contain the zero group and are closed under subgroups, quotients,
 and extensions, so they form a Serre class. -/
 instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
@@ -70,18 +77,13 @@ instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
     exact hs
   prop_of_epi {M N} f hf hM y := by
     obtain ⟨x, rfl⟩ := (AddCommGrpCat.epi_iff_surjective f).1 hf y
-    obtain ⟨s, hs⟩ := @hM x
-    refine ⟨s, ?_⟩
-    rw [Submonoid.smul_def, ← map_zsmul]
-    exact (congrArg f.hom hs).trans (map_zero f.hom)
+    exact map_mem_torsion' S f.hom (@hM x)
   prop_X₂_of_shortExact {C} hC h₁ h₃ x₂ := by
     obtain ⟨s₃, hs₃⟩ := @h₃ (C.g x₂)
     obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff C).1 hC.exact (s₃ • x₂)
       (by rw [Submonoid.smul_def, map_zsmul]; exact hs₃)
-    obtain ⟨s₁, hs₁⟩ := @h₁ x₁
-    refine ⟨s₁ * s₃, ?_⟩
-    rw [mul_smul, ← hx₁, Submonoid.smul_def, ← map_zsmul]
-    exact (congrArg C.f.hom hs₁).trans (map_zero C.f.hom)
+    obtain ⟨s₁, hs₁⟩ := map_mem_torsion' S C.f.hom (@h₁ x₁)
+    exact ⟨s₁ * s₃, by rw [mul_smul, ← hx₁, hs₁]⟩
 
 /-- For the submonoid of nonzero integers, `isSubmonoidTorsion` is the class of torsion abelian
 groups. -/
@@ -96,13 +98,7 @@ lemma isSubmonoidTorsion_nonZeroDivisors :
 lemma isSubmonoidTorsion_le_isTorsion {S : Submonoid ℤ} (h0 : (0 : ℤ) ∉ S) :
     isSubmonoidTorsion.{u} S ≤ isTorsion := fun _ hM ↦ (prop_isTorsion_iff _).2 fun x ↦ by
   obtain ⟨⟨s, hs⟩, hsx⟩ := @hM x
-  refine isOfFinAddOrder_iff_nsmul_eq_zero.2
-    ⟨s.natAbs, Int.natAbs_pos.2 fun h ↦ h0 (h ▸ hs), ?_⟩
-  rw [← natCast_zsmul]
-  rcases Int.natAbs_eq s with h | h
-  · exact h ▸ hsx
-  · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, neg_eq_zero]
-    exact hsx
+  exact isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨s, fun h ↦ h0 (h ▸ hs), hsx⟩
 
 /-- Uniform `d`-power torsion is contained in elementwise `d`-power torsion. -/
 lemma isKilledBySomePower_le_isSubmonoidTorsion (d : ℕ) :
@@ -142,19 +138,11 @@ instance isClosedUnderColimitsOfShape_discrete_inverseImage_isSubmonoidTorsion (
     (ModuleCat.coproductCoconeIsColimit fun j ↦ F.obj ⟨j⟩)
   suffices h : Module.IsTorsion' (DirectSum J fun j ↦ F.obj ⟨j⟩) S from
     ObjectProperty.prop_of_iso _ ((colimit.isColimit F).coconePointUniqueUpToIso hc).symm h
-  intro x
+  rw [Submodule.isTorsion'_iff_torsion'_eq_top (R := ℤ), eq_top_iff]
+  rintro x -
   induction x using DirectSum.induction_on with
-  | zero => exact ⟨1, one_smul _ _⟩
-  | of j a =>
-    obtain ⟨s, hs⟩ := @hF ⟨j⟩ a
-    refine ⟨s, ?_⟩
-    rw [Submonoid.smul_def, ← map_zsmul]
-    exact (congrArg (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j) hs).trans (map_zero _)
-  | add x y hx hy =>
-    obtain ⟨sx, hsx⟩ := hx
-    obtain ⟨sy, hsy⟩ := hy
-    refine ⟨sx * sy, ?_⟩
-    rw [smul_add, mul_smul sx sy y, hsy, smul_zero, add_zero, mul_comm sx sy, mul_smul sy sx x,
-      hsx, smul_zero]
+  | zero => exact zero_mem _
+  | of j a => exact map_mem_torsion' S (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j) (@hF ⟨j⟩ a)
+  | add _ _ hx hy => exact add_mem hx hy
 
 end AddCommGrpCat

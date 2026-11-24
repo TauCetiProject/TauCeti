@@ -181,6 +181,6 @@ theorem isIso_singularHomologyMap_localization_iff {R : Type u} [CommRing R] (M 
           M := by
   have := IsLocalization.flat A M
   rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n,
-    LinearMap.baseChange_bijective_iff _ M A]
+    LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range _ M A]
 
 end TauCeti

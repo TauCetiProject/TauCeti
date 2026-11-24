@@ -90,7 +90,9 @@ private lemma exists_nConnectedCover_of_isTorsion' {Y : Type} [TopologicalSpace 
     (fun _ _ f hf k ↦ hf.isIso_singularHomologyMap (ModuleCat.of A A) k)
     (fun _ _ _ {f g} hf hg k ↦ by
       rw [Functor.map_comp, HomologicalComplex.homologyMap_comp]
-      exact @IsIso.comp_isIso _ _ _ _ _ _ _ (hf k) (hg k))
+      have := hf k
+      have := hg k
+      infer_instance)
     (fun G _ ↦ Module.IsTorsion' (Additive G) S)
     (fun _ _ _ _ e h ↦ e.toAdditive.isTorsion'_iff.1 h)
     (fun _ _ _ _ z m hZ hπZ k ↦ by
@@ -154,6 +156,23 @@ private def hurewiczLocalizationLinearEquivAux
       (bijective_hurewiczModuleCatHom_baseChange hπ A)).trans
     (singularHomologyTensorIso ℤ A (TopCat.of Y) (n + 2)).toLinearEquiv
 
+/-- Action of `hurewiczLocalizationLinearEquivAux` on a pure tensor. -/
+private lemma hurewiczLocalizationLinearEquivAux_tmul
+    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
+    (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A]
+    (a : A) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
+    hurewiczLocalizationLinearEquivAux hπ A
+      (@TensorProduct.tmul ℤ _ A _ _ _ Algebra.toModule _ a x) =
+      (have : @Module.Flat ℤ A _ _ Algebra.toModule := IsLocalization.flat A S
+       (singularHomologyTensorIso ℤ A (TopCat.of Y) (n + 2)).hom.hom
+         (@TensorProduct.tmul ℤ _ A _ _ _ Algebra.toModule _ a
+           ((hurewiczModuleCatHom Y y n).hom x))) := by
+  have : @Module.Flat ℤ A _ _ Algebra.toModule := IsLocalization.flat A S
+  refine (LinearEquiv.trans_apply _).trans ?_
+  refine (CategoryTheory.Iso.toLinearEquiv_apply _ _).trans ?_
+  exact congrArg (singularHomologyTensorIso ℤ A (TopCat.of Y) (n + 2)).hom.hom
+    ((LinearEquiv.ofBijective_apply _ _).trans (LinearMap.baseChange_tmul _ _ _))
+
 /-- **Hurewicz isomorphism modulo `S`-torsion.** Under the hypotheses of
 `HomotopyGroup.bijective_hurewiczModuleCatHom_baseChange`, base change of the integral Hurewicz
 homomorphism composed with `TauCeti.singularHomologyTensorIso` yields an `A`-linear isomorphism
@@ -166,7 +185,7 @@ def hurewiczLocalizationLinearEquiv
   (TensorProduct.congrIntModule A _ (AddCommGroup.toIntModule A) Algebra.toModule).trans
     (hurewiczLocalizationLinearEquivAux hπ A)
 
-@[simp]
+/-- Action of `HomotopyGroup.hurewiczLocalizationLinearEquiv` on a pure tensor `a ⊗ₜ[ℤ] x`. -/
 theorem hurewiczLocalizationLinearEquiv_tmul
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
     (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A]
@@ -176,8 +195,8 @@ theorem hurewiczLocalizationLinearEquiv_tmul
        (singularHomologyTensorIso ℤ A (TopCat.of Y) (n + 2)).hom.hom
          (@TensorProduct.tmul ℤ _ A _ _ _ Algebra.toModule _ a
            ((hurewiczModuleCatHom Y y n).hom x))) := by
-  rw [hurewiczLocalizationLinearEquiv, LinearEquiv.trans_apply, TensorProduct.congrIntModule_tmul]
-  rfl
+  rw [hurewiczLocalizationLinearEquiv, LinearEquiv.trans_apply, TensorProduct.congrIntModule_tmul,
+    hurewiczLocalizationLinearEquivAux_tmul]
 
 /-- **Naturality of the localized Hurewicz isomorphism** with respect to based continuous maps. -/
 theorem singularHomologyMap_hurewiczLocalizationLinearEquiv
@@ -215,8 +234,16 @@ theorem isTorsion'_ker_hurewiczModuleCatHom
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
     Module.IsTorsion' (LinearMap.ker (hurewiczModuleCatHom Y y n).hom) S :=
   have : IsLocalization S (Localization S) := Localization.isLocalization
-  (((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff S (Localization S)).1
-    (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).1
+  (((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
+    S (Localization S)).1 (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).1
+
+/-- Transport `S`-torsion between two `ℤ`-module structures on the same abelian group. -/
+private lemma isTorsion'_of_intModule {G : Type*} [AddCommGroup G]
+    (m₁ m₂ : Module ℤ G) {S : Submonoid ℤ}
+    (h : @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₁.toSMul S)) :
+    @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₂.toSMul S) := by
+  obtain rfl := Subsingleton.elim m₁ m₂
+  exact h
 
 /-- **The cokernel of the integral Hurewicz homomorphism is `S`-torsion** when `Y` is simply
 connected and `π_{m + 2}(Y, y)` is `S`-torsion for all `m < n`. -/
@@ -227,10 +254,12 @@ theorem isTorsion'_quotient_range_hurewiczModuleCatHom
           (TopCat.of Y)) ⧸
         LinearMap.range (hurewiczModuleCatHom Y y n).hom) S := by
   have : IsLocalization S (Localization S) := Localization.isLocalization
-  convert (((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff S (Localization S)).1
-    (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).2
-  exact congrArg (fun m : Module ℤ _ ↦ m.toSMul)
-    (Subsingleton.elim (AddCommGroup.toIntModule _) (Submodule.Quotient.module _))
+  -- `Module.IsTorsion'` synthesizes `AddCommGroup.toIntModule` on the quotient, whereas
+  -- `baseChange_bijective_iff_isTorsion'_ker_and_quotient_range` uses `Submodule.Quotient.module`
+  -- induced from the `ModuleCat ℤ` structure on `H_{n + 2}(Y; ℤ)`.
+  exact isTorsion'_of_intModule (Submodule.Quotient.module _) (AddCommGroup.toIntModule _)
+    ((((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
+      S (Localization S)).1 (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).2)
 
 end Localization
 
@@ -339,7 +368,7 @@ def hurewiczRatLinearEquiv
   hurewiczLocalizationLinearEquiv (S := nonZeroDivisors ℤ)
     (fun m hm ↦ isAddTorsion_iff_isTorsion_int.1 (hπ m hm)) ℚ
 
-@[simp]
+/-- Action of `HomotopyGroup.hurewiczRatLinearEquiv` on a pure tensor `a ⊗ₜ[ℤ] x`. -/
 theorem hurewiczRatLinearEquiv_tmul
     (hπ : ∀ m < n, IsAddTorsion (Additive (HomotopyGroup (Fin (m + 2)) Y y)))
     (a : ℚ) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
@@ -377,7 +406,8 @@ def hurewiczRatLinearEquivOfSubsingleton
     ((forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology y (nonZeroDivisors ℤ) ℚ
       n).2 hH) ℚ
 
-@[simp]
+/-- Action of `HomotopyGroup.hurewiczRatLinearEquivOfSubsingleton` on a pure tensor
+`a ⊗ₜ[ℤ] x`. -/
 theorem hurewiczRatLinearEquivOfSubsingleton_tmul
     (hH : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of Y)).homology (m + 2)))
     (a : ℚ) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
