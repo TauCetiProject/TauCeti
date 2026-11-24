@@ -165,15 +165,9 @@ private theorem zeroModeJetL_mem_H1
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     zeroModeJetL u ∈ H1 V := by
-  have hcl : IsClosed {u : WeakDerivStep volume ⊤ 2
-      (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) |
-      zeroModeJetL u ∈ H1 V} :=
-    (isClosed_jetClosure _).preimage zeroModeJetL.continuous
-  refine closure_minimal (fun v hv ↦ ?_) hcl
-    (dense_setOf_exists_contDiff_hasCompactSupport (E := ℝ) (F := V) (mu := volume)
-      ENNReal.ofNat_ne_top u)
-  obtain ⟨φ, hφ, hφc, hv⟩ := hv
-  simp only [Set.mem_ofPred_eq, zeroModeJetL_eq_jetLp (hφ.of_le (by norm_cast)) hφc hv]
+  refine induction_on_contDiff_hasCompactSupport ENNReal.ofNat_ne_top u
+    ((isClosed_jetClosure _).preimage zeroModeJetL.continuous) fun v φ hφ hφc hv ↦ ?_
+  rw [zeroModeJetL_eq_jetLp (hφ.of_le (by norm_cast)) hφc hv]
   exact jetLp_mem_jetClosure _
 
 variable (V) in
@@ -259,16 +253,11 @@ theorem sliceAverageL_zeroModeL
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     sliceAverageL (zeroModeL V u) = zeroModeL V u := by
-  have hcl : IsClosed {u : WeakDerivStep volume ⊤ 2
-      (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) |
-      sliceAverageL (zeroModeL V u) = zeroModeL V u} :=
-    isClosed_eq (sliceAverageL.continuous.comp (zeroModeL V).continuous) (zeroModeL V).continuous
-  refine closure_minimal (fun v hv ↦ ?_) hcl
-    (dense_setOf_exists_contDiff_hasCompactSupport (E := ℝ) (F := V) (mu := volume)
-      ENNReal.ofNat_ne_top u)
-  obtain ⟨φ, hφ, hφc, hv⟩ := hv
+  refine induction_on_contDiff_hasCompactSupport ENNReal.ofNat_ne_top u
+    (isClosed_eq (sliceAverageL.continuous.comp (zeroModeL V).continuous)
+      (zeroModeL V).continuous) fun v φ hφ hφc hv ↦ ?_
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by norm_cast)
-  simp only [Set.mem_ofPred_eq, zeroModeL_eq_jetLp hφ2 hφc hv, sliceAverageL_jetLp]
+  simp only [Function.comp_apply, zeroModeL_eq_jetLp hφ2 hφc hv, sliceAverageL_jetLp]
   congr 3
   funext z
   simp [sliceAverage_apply]
@@ -297,7 +286,8 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     ((hφ.continuous_fderiv two_ne_zero).memLp_of_hasCompactSupport (hφc.fderiv (𝕜 := ℝ)))
   refine ⟨u, ?_⟩
   have hξ : (jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ =
-      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ := rfl
+      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ :=
+    Subtype.ext (LinearMap.codRestrict_apply _ _ ξ)
   rw [zeroModeL_eq_jetLp hφ hφc hu, hξ, sliceAverageL_jetLp]
   congr 3
   exact hψφ.symm
