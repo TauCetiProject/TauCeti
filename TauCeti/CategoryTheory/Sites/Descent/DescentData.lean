@@ -57,6 +57,25 @@ lemma isoApp_inv {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
     (isoApp e i).inv = e.inv.hom i :=
   (rfl)
 
+/-- Extracting the `i`-th component isomorphism from `Iso.refl D` gives `Iso.refl (D.obj i)`. -/
+@[simp]
+lemma isoApp_refl (D : F.DescentData f) (i : ι) :
+    isoApp (Iso.refl D) i = Iso.refl (D.obj i) :=
+  Iso.ext rfl
+
+/-- Extracting the `i`-th component isomorphism from `e.symm` gives `(isoApp e i).symm`. -/
+@[simp]
+lemma isoApp_symm {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
+    isoApp e.symm i = (isoApp e i).symm :=
+  Iso.ext rfl
+
+/-- Extracting the `i`-th component isomorphism from `e₁ ≪≫ e₂` gives
+`isoApp e₁ i ≪≫ isoApp e₂ i`. -/
+@[simp]
+lemma isoApp_trans {D₁ D₂ D₃ : F.DescentData f} (e₁ : D₁ ≅ D₂) (e₂ : D₂ ≅ D₃) (i : ι) :
+    isoApp (e₁ ≪≫ e₂) i = isoApp e₁ i ≪≫ isoApp e₂ i :=
+  Iso.ext rfl
+
 /-- The component morphisms `(isoApp e i).hom` commute with the descent-data transition maps. -/
 @[reassoc]
 lemma isoApp_hom_comm {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄

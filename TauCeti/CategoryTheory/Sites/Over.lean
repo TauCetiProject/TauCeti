@@ -239,8 +239,15 @@ def PreOneHypercover.over {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left)
 /-- Forgetting the lift of a pre-`1`-hypercover `E` along `Over.forget X` recovers `E`. -/
 @[simp]
 lemma PreOneHypercover.map_over_forget {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left) :
-    (E.over Y).map (Over.forget X) = E :=
-  rfl
+    (E.over Y).map (Over.forget X) = E := by
+  obtain ⟨⟨I₀, X₀, f₀⟩, I₁, Y₀, p₁, p₂, w⟩ := E
+  refine PreOneHypercover.ext_sameIndex (I₀ := I₀) (I₁ := I₁)
+    (fun i ↦ ?_) (fun i ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_)
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · rfl
 
 /-- Lifting the forgetful image of a pre-`1`-hypercover `E` in `Over X` back to `Over X` recovers
 `E`. -/
@@ -248,19 +255,37 @@ lemma PreOneHypercover.map_over_forget {X : C} (Y : Over X) (E : PreOneHypercove
 lemma PreOneHypercover.over_map_forget {X : C} {Y : Over X} (E : PreOneHypercover.{w} Y) :
     (E.map (Over.forget X)).over Y = E := by
   obtain ⟨⟨I₀, X₀, f₀⟩, I₁, Y₀, p₁, p₂, w⟩ := E
+  have hE' : ({ I₀ := I₀, X := X₀, f := f₀, I₁ := I₁, Y := Y₀, p₁ := p₁, p₂ := p₂, w := w } :
+      PreOneHypercover.{w} Y).map (Over.forget X) =
+      ⟨⟨I₀, fun i ↦ (X₀ i).left, fun i ↦ (f₀ i).left⟩,
+        I₁, fun _ _ k ↦ (Y₀ k).left, fun _ _ k ↦ (p₁ k).left, fun _ _ k ↦ (p₂ k).left,
+        fun _ _ k ↦ congrArg CommaMorphism.left (w k)⟩ := by
+    refine PreOneHypercover.ext_sameIndex (I₀ := I₀) (I₁ := I₁)
+      (fun i ↦ ?_) (fun i ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_)
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+  rw [hE']
   have h_over : ∀ {A B : Over X} (g : A ⟶ B) {A' B' : Over X},
       A' = A → B' = B → ∀ {g' : A' ⟶ B'}, g'.left ≍ g.left → g' ≍ g := by
     rintro A B g _ _ rfl rfl g' hg
     exact heq_of_eq (Over.OverMorphism.ext (eq_of_heq hg))
   have hX (i : I₀) : Over.mk ((f₀ i).left ≫ Y.hom) = X₀ i := by
-    rw [Over.w (f₀ i)]; rfl
+    rw [Over.w (f₀ i)]
+    rfl
   have hY ⦃i₁ i₂ : I₀⦄ (k : I₁ i₁ i₂) :
       Over.mk ((p₁ k).left ≫ (f₀ i₁).left ≫ Y.hom) = Y₀ k := by
-    rw [Over.w (f₀ i₁), Over.w (p₁ k)]; rfl
-  exact PreOneHypercover.ext_sameIndex hX
-    (fun i ↦ h_over (f₀ i) (hX i) rfl HEq.rfl) hY
-    (fun _ _ k ↦ h_over (p₁ k) (hY k) (hX _) HEq.rfl)
-    (fun _ _ k ↦ h_over (p₂ k) (hY k) (hX _) HEq.rfl)
+    rw [Over.w (f₀ i₁), Over.w (p₁ k)]
+    rfl
+  refine PreOneHypercover.ext_sameIndex (I₀ := I₀) (I₁ := I₁)
+    (fun i ↦ ?_) (fun i ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_) (fun _ _ k ↦ ?_)
+  · exact hX i
+  · exact h_over (f₀ i) (hX i) rfl (by simp [Over.homMk_left])
+  · exact hY k
+  · exact h_over (p₁ k) (hY k) (hX _) (by simp [Over.homMk_left])
+  · exact h_over (p₂ k) (hY k) (hX _) (by simp [Over.homMk_left])
 
 /-- Lift a `J`-`1`-hypercover of `Y.left` in `C` to a `(J.over X)`-`1`-hypercover of `Y` in
 `Over X`. -/
@@ -277,23 +302,32 @@ def GrothendieckTopology.OneHypercover.over {J : GrothendieckTopology C} {X : C}
     rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_preOneHypercover_sieve₁]
     exact E.mem₁ i₁ i₂ q₁.left q₂.left congr($(hw).left)
 
+private lemma oneHypercover_ext {J : GrothendieckTopology C} {S : C}
+    {E₁ E₂ : J.OneHypercover.{w} S} (h : E₁.toPreOneHypercover = E₂.toPreOneHypercover) :
+    E₁ = E₂ := by
+  cases E₁
+  cases E₂
+  cases h
+  rfl
+
 /-- Forgetting the lift of a `J`-`1`-hypercover `E` along `Over.forget X` recovers `E`. -/
 @[simp]
 lemma GrothendieckTopology.OneHypercover.map_over_forget {J : GrothendieckTopology C} {X : C}
     (Y : Over X) (E : J.OneHypercover.{w} Y.left) :
     (E.over Y).map (Over.forget X) J = E :=
-  rfl
+  oneHypercover_ext <| by
+    rw [OneHypercover.map_toPreOneHypercover, OneHypercover.over_toPreOneHypercover,
+      PreOneHypercover.map_over_forget]
 
 /-- Lifting the forgetful image of a `(J.over X)`-`1`-hypercover `E` back to `Over X` recovers
 `E`. -/
 @[simp]
 lemma GrothendieckTopology.OneHypercover.over_map_forget {J : GrothendieckTopology C} {X : C}
     {Y : Over X} (E : (J.over X).OneHypercover.{w} Y) :
-    (E.map (Over.forget X) J).over Y = E := by
-  cases E
-  dsimp only [GrothendieckTopology.OneHypercover.over, GrothendieckTopology.OneHypercover.map]
-  congr 1
-  exact PreOneHypercover.over_map_forget _
+    (E.map (Over.forget X) J).over Y = E :=
+  oneHypercover_ext <| by
+    rw [OneHypercover.over_toPreOneHypercover, OneHypercover.map_toPreOneHypercover,
+      PreOneHypercover.over_map_forget]
 
 end CategoryTheory
 

@@ -480,7 +480,8 @@ lemma compIso_inv_naturality {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A 
   simpa only [compIso_inv] using
     P.mapComp'_inv_naturality f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
 
-/-- Conjugation by `Pseudofunctor.compIso` recovers iterated pullback along `f` and `g`. -/
+/-- Conjugation by `Pseudofunctor.compIso` recovers the iterated functor map along `f` and `g` (in
+particular, iterated pullback when `B₀` is an opposite category). -/
 @[reassoc]
 lemma compIso_naturality_1 {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
     (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
@@ -490,8 +491,8 @@ lemma compIso_naturality_1 {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A �
   simpa only [compIso_hom, compIso_inv] using
     P.mapComp'_naturality_1 f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
 
-/-- Conjugation of iterated pullback along `f` and `g` by `Pseudofunctor.compIso` recovers
-pullback along `fg`. -/
+/-- Conjugation of the iterated functor map along `f` and `g` by `Pseudofunctor.compIso` recovers
+the functor map along `fg` (in particular, pullback when `B₀` is an opposite category). -/
 @[reassoc]
 lemma compIso_naturality_2 {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
     (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
@@ -593,8 +594,9 @@ lemma compIso_comp_id_inv {A B : B₀} (f : A ⟶ B) (h : f ≫ 𝟙 B = f := by
   rw [P.compIso_comp_id f h M]
   rfl
 
-/-- Two morphisms `M ⟶ N` over `X` have equal iterated pullbacks along `f : X ⟶ Y` and
-`g : Y ⟶ Z` if and only if they have equal pullbacks along `f ≫ g`. -/
+/-- Two morphisms `M ⟶ N` in `P.obj (.mk X)` have equal iterated images under `P.map` along
+`f : X ⟶ Y` and `g : Y ⟶ Z` if and only if they have equal images along `f ≫ g` (in particular,
+for pullbacks when `B₀` is an opposite category). -/
 @[simp]
 lemma map_map_eq_iff_map_comp {X Y Z : B₀} (f : X ⟶ Y) (g : Y ⟶ Z)
     {M N : P.obj (.mk X)} {φ ψ : M ⟶ N} :
