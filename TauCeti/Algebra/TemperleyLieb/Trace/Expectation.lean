@@ -114,6 +114,7 @@ theorem quotientTrace_quotientExpectation (n : ℕ)
   simp [quotientExpectation]
 
 /-- The conditional expectation is right linear over the smaller quotient. -/
+@[simp]
 theorem quotientExpectation_mul_quotientStrandIncl (n : ℕ)
     (a : TemperleyLieb K δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
     (y : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
@@ -129,6 +130,7 @@ private theorem smul_quotientTrace_mul_comm (n : ℕ)
   simp [LinearMap.quotientTrace_mul_comm _ (htr.map_mul_comm (n + 2)) a b]
 
 /-- The conditional expectation is left linear over the smaller quotient. -/
+@[simp]
 theorem quotientExpectation_quotientStrandIncl_mul (n : ℕ)
     (x : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)))
     (a : TemperleyLieb K δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) :

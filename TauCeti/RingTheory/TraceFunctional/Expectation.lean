@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Trace-preserving conditional expectations
@@ -59,31 +58,19 @@ variable {K A B : Type*} [Field K] [Ring A] [Algebra K A] [Ring B] [Algebra K B]
   [FiniteDimensional K B]
   (σ : B →ₗ[K] K) (hσ : ∀ x, (∀ y, σ (x * y) = 0) → x = 0) (τ : A →ₗ[K] K) (f : B →ₐ[K] A)
 
-omit [FiniteDimensional K B] in
-include hσ in
-/-- The pairing `x ↦ (y ↦ σ (x * y))` is injective. -/
-private theorem injective_mul_compr₂ : Function.Injective ((LinearMap.mul K B).compr₂ σ) :=
-  (injective_iff_map_eq_zero _).mpr fun x hx ↦
-    hσ x fun y ↦ by simpa using LinearMap.congr_fun hx y
-
 /-- The trace-preserving conditional expectation `A → B` along `f`: the element `E a` is
 determined by `σ (E a * y) = τ (a * f y)` for every `y : B`. -/
 noncomputable def traceExpectation : A →ₗ[K] B :=
   -- The nondegenerate pairing `x ↦ (y ↦ σ (x * y))` identifies `B` with its dual.
-  (LinearMap.linearEquivOfInjective _ (injective_mul_compr₂ σ hσ)
-    Subspace.dual_finrank_eq.symm).symm.toLinearMap ∘ₗ
+  (BilinForm.toDual ((LinearMap.mul K B).compr₂ σ) (.ofSeparatingLeft hσ)).symm.toLinearMap ∘ₗ
     ((LinearMap.mul K A).compr₂ τ).compl₂ f.toLinearMap
 
 /-- The defining identity of the trace-preserving conditional expectation. -/
 @[simp]
 theorem apply_traceExpectation_mul (a : A) (y : B) :
-    σ (σ.traceExpectation hσ τ f a * y) = τ (a * f y) := by
-  have h := LinearMap.congr_fun ((LinearMap.linearEquivOfInjective _ (injective_mul_compr₂ σ hσ)
-    Subspace.dual_finrank_eq.symm).apply_symm_apply
-      (((LinearMap.mul K A).compr₂ τ).compl₂ f.toLinearMap a)) y
-  rw [LinearMap.linearEquivOfInjective_apply] at h
-  simpa only [traceExpectation, coe_comp, Function.comp_apply, LinearEquiv.coe_coe, compr₂_apply,
-    mul_apply', compl₂_apply, AlgHom.toLinearMap_apply] using h
+    σ (σ.traceExpectation hσ τ f a * y) = τ (a * f y) :=
+  BilinForm.apply_toDual_symm_apply (B := (LinearMap.mul K B).compr₂ σ)
+    (hB := .ofSeparatingLeft hσ) (((LinearMap.mul K A).compr₂ τ).compl₂ f.toLinearMap a) y
 
 /-- The defining identity characterizes the value of the conditional expectation. -/
 theorem traceExpectation_eq_iff {a : A} {b : B} :
@@ -94,6 +81,7 @@ theorem traceExpectation_eq_iff {a : A} {b : B} :
   rw [sub_mul, map_sub, apply_traceExpectation_mul, h, sub_self]
 
 /-- The conditional expectation is right `B`-linear. -/
+@[simp]
 theorem traceExpectation_mul_algHom (a : A) (y : B) :
     σ.traceExpectation hσ τ f (a * f y) = σ.traceExpectation hσ τ f a * y := by
   refine (traceExpectation_eq_iff σ hσ τ f).mpr fun z ↦ ?_
