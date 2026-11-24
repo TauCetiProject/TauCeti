@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 import Mathlib.Analysis.Calculus.ParametricIntegral
 
 /-!
-# Properly supported pseudodifferential operators by localization near the diagonal
+# Localization of pseudodifferential operators near the diagonal
 
 The Schwartz kernel `K_a(x, y)` of the quantization `Op(a)` of a symbol `a` on `ℝⁿ` is smooth off
 the diagonal (`TauCeti.Symbol.offDiagonalKernel`), but it is not supported near the diagonal:
@@ -35,8 +35,10 @@ has, for a compactly supported Schwartz function `u` and `x` outside the support
 kernel `χ(x - y) K_a(x, y)`, which vanishes unless `x - y` lies in the support of `χ`. Hence it
 sends a compactly supported Schwartz function `u` to a smooth function supported in
 `supp u + supp χ`, and it differs from `Op(a)` by the operator with smooth kernel above. This
-support bound holds for every `χ` equal to `1` near `0`; it is compact, so that the localized
-quantization is properly supported, when `χ` also has compact support.
+support bound holds for every `χ` equal to `1` near `0`; when `χ` also has compact support it is
+compact, so the localized quantization preserves compact support. This file proves only that
+direction of proper support: it does not show that the values of the localized quantization on a
+compact set depend only on `u` over a compact set.
 
 ## Main definitions
 
@@ -60,8 +62,8 @@ quantization is properly supported, when `χ` also has compact support.
 * `TauCeti.Symbol.support_properQuantizeValue_subset`: **support bound**, for `χ` equal to `1`
   near `0` the localized quantization of a compactly supported Schwartz function `u` is
   supported in `tsupport u + tsupport χ`.
-* `TauCeti.Symbol.hasCompactSupport_properQuantizeValue`: **proper support**, if moreover `χ` has
-  compact support, the localized quantization of `u` has compact support.
+* `TauCeti.Symbol.hasCompactSupport_properQuantizeValue`: **compact support is preserved**, if
+  moreover `χ` has compact support, the localized quantization of `u` has compact support.
 * `TauCeti.Symbol.contDiff_properQuantizeValue`: the localized quantization of a compactly
   supported Schwartz function is smooth.
 
