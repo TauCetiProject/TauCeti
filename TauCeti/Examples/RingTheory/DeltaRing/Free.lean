@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DeltaRing.Free
+public import Mathlib.Algebra.Polynomial.Eval.Coeff
 
 /-!
 # Checks for free `δ`-rings
@@ -64,9 +65,7 @@ example : X () 1 ∉ Set.range (Polynomial.eval₂RingHom (Int.castRingHom (Free
       (equivMvPolynomial p Unit).toRingHom
   have hev (c : ℤ) : ev c (X () 1) = c := by simp [ev]
   have hq' (c : ℤ) : ev c (X () 1) = q.eval 0 := by
-    rw [← hq, Polynomial.coe_eval₂RingHom, Polynomial.hom_eval₂, RingHom.ext_int
-      ((ev c).comp (Int.castRingHom _)) (RingHom.id ℤ), Polynomial.eval₂_id]
-    simp [ev]
+    simp [← hq, ev, Polynomial.hom_eval₂, Polynomial.coeff_zero_eq_eval_zero]
   have := (hev 0).symm.trans ((hq' 0).trans ((hq' 1).symm.trans (hev 1)))
   exact zero_ne_one this
 

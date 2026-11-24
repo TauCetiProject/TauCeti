@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DeltaRing.Basic
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
-public import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
 # Free `δ`-rings
@@ -26,8 +25,9 @@ ring `ℤ[x_{s,0} | s ∈ S]` is strictly smaller, since `x_{s,1} = δ x_{s,0}`.
 `B` is needed: it may have `p`-torsion or be the zero ring.
 
 The free `δ`-ring is a type synonym for `MvPolynomial (S × ℕ) ℤ` rather than an instance on that
-ring, which carries other natural `δ`-structures, such as the monoid-algebra structure with
-`δ x = 0` on every variable (`TauCeti.DeltaRing.monoidAlgebra`). The identification with the
+ring, which carries other natural `δ`-structures, such as the one with `δ x = 0` on every
+variable, coming from viewing it as the monoid algebra of its monomials (cf.
+`TauCeti.DeltaRing.monoidAlgebra`, via `Multiplicative`). The identification with the
 polynomial ring is `TauCeti.FreeDeltaRing.equivMvPolynomial`.
 
 ## Main definitions
@@ -105,19 +105,11 @@ variable (p S) in
 /-- The generators `x_{s,n}` generate the free `δ`-ring as a ring. -/
 theorem closure_range_X :
     Subring.closure (Set.range fun i : S × ℕ => (X i.1 i.2 : FreeDeltaRing p S)) = ⊤ := by
-  have h : Subring.closure (Set.range (MvPolynomial.X : S × ℕ → MvPolynomial (S × ℕ) ℤ)) = ⊤ := by
-    refine eq_top_iff.mpr ?_
-    rintro x -
-    induction x using MvPolynomial.induction_on with
-    | C a => exact eq_intCast MvPolynomial.C a ▸ intCast_mem _ a
-    | add f g hf hg => exact add_mem hf hg
-    | mul_X f i hf => exact mul_mem hf (Subring.subset_closure ⟨i, rfl⟩)
-  have hrange : (Set.range fun i : S × ℕ => (X i.1 i.2 : FreeDeltaRing p S)) =
-      (equivMvPolynomial p S).symm.toRingHom '' Set.range MvPolynomial.X := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext fun i => (equivMvPolynomial_symm_X i.1 i.2).symm)
-  rw [hrange, ← RingHom.map_closure, h, ← RingHom.range_eq_map, RingHom.range_eq_top]
-  exact (equivMvPolynomial p S).symm.surjective
+  have h : Subring.closure (Set.range (MvPolynomial.X : S × ℕ → MvPolynomial (S × ℕ) ℤ)) = ⊤ :=
+    Algebra.toSubring_eq_top.mpr ((Algebra.adjoin_int _).symm.trans MvPolynomial.adjoin_range_X)
+  simpa [RingHom.map_closure, Subring.map_equiv_eq_comap_symm, ← Set.range_comp,
+    Function.comp_def, ← equivMvPolynomial_symm_X] using congrArg (Subring.map
+      ((equivMvPolynomial p S).symm : MvPolynomial (S × ℕ) ℤ →+* FreeDeltaRing p S)) h
 
 /-- Two ring homomorphisms out of the free `δ`-ring agreeing on every generator `x_{s,n}` are
 equal. -/
@@ -237,6 +229,7 @@ theorem delta_X (s : S) (n : ℕ) : delta p (X s n : FreeDeltaRing p S) = X s (n
   exact h.trans (by ring)
 
 /-- `δ^[k] x_{s,n} = x_{s,n+k}` in the free `δ`-ring. -/
+@[simp]
 theorem delta_iterate_X (s : S) (n k : ℕ) :
     (delta p)^[k] (X s n : FreeDeltaRing p S) = X s (n + k) := by
   induction k with
