@@ -136,12 +136,40 @@ theorem IsCompactlySupportedIntegralCurrent.isIntegralCurrent
     (hT : IsCompactlySupportedIntegralCurrent T) : IsIntegralCurrent T :=
   hT.1
 
+/-- Compactly supported integral currents are locally integral. -/
+theorem IsCompactlySupportedIntegralCurrent.isLocallyIntegral
+    (hT : IsCompactlySupportedIntegralCurrent T) : IsLocallyIntegral T :=
+  hT.1.1
+
+/-- Compactly supported integral currents are normal. -/
+theorem IsCompactlySupportedIntegralCurrent.isNormal
+    (hT : IsCompactlySupportedIntegralCurrent T) : IsNormal T :=
+  hT.1.2
+
+/-- The support of a compactly supported integral current is compact. -/
+theorem IsCompactlySupportedIntegralCurrent.isCompact_dsupport
+    (hT : IsCompactlySupportedIntegralCurrent T) : IsCompact (dsupport T) :=
+  hT.2.1
+
+/-- The support of a compactly supported integral current is contained in `Ω`. -/
+theorem IsCompactlySupportedIntegralCurrent.dsupport_subset
+    (hT : IsCompactlySupportedIntegralCurrent T) : dsupport T ⊆ Ω :=
+  hT.2.2
+
 /-- **A compactly supported locally integral current is a compactly supported integral current**:
 its mass and the mass of its boundary are finite. -/
 theorem IsLocallyIntegral.isCompactlySupportedIntegralCurrent (hT : IsLocallyIntegral T)
     (hc : IsCompact (dsupport T)) (hΩ : dsupport T ⊆ Ω) :
     IsCompactlySupportedIntegralCurrent T :=
   ⟨⟨hT, hT.isLocallyNormal.isNormal hc hΩ⟩, hc, hΩ⟩
+
+/-- For a current whose support is a compact subset of `Ω`, being a compactly supported integral
+current and being locally integral agree. -/
+theorem isCompactlySupportedIntegralCurrent_iff_isLocallyIntegral_of_isCompact_dsupport
+    (hc : IsCompact (dsupport T)) (hΩ : dsupport T ⊆ Ω) :
+    IsCompactlySupportedIntegralCurrent T ↔ IsLocallyIntegral T :=
+  ⟨IsCompactlySupportedIntegralCurrent.isLocallyIntegral,
+    fun hT => hT.isCompactlySupportedIntegralCurrent hc hΩ⟩
 
 end Inclusions
 
@@ -204,14 +232,15 @@ theorem isCompactlySupportedIntegralCurrent_zero :
 theorem IsCompactlySupportedIntegralCurrent.add (hT : IsCompactlySupportedIntegralCurrent T)
     (hS : IsCompactlySupportedIntegralCurrent S) : IsCompactlySupportedIntegralCurrent (T + S) := by
   have hsub := dsupport_add_subset (T : 𝓓(Ω, V [⋀^Fin k]→L[ℝ] ℝ) → ℝ) S
-  exact ⟨hT.1.add hS.1, (hT.2.1.union hS.2.1).of_isClosed_subset isClosed_dsupport hsub,
-    hsub.trans (union_subset hT.2.2 hS.2.2)⟩
+  exact ⟨hT.isIntegralCurrent.add hS.isIntegralCurrent,
+    (hT.isCompact_dsupport.union hS.isCompact_dsupport).of_isClosed_subset isClosed_dsupport hsub,
+    hsub.trans (union_subset hT.dsupport_subset hS.dsupport_subset)⟩
 
 /-- Compactly supported integral currents are closed under negation. -/
 theorem IsCompactlySupportedIntegralCurrent.neg (hT : IsCompactlySupportedIntegralCurrent T) :
     IsCompactlySupportedIntegralCurrent (-T) := by
   have h : dsupport (⇑(-T)) = dsupport T := dsupport_neg _
-  exact ⟨hT.1.neg, h ▸ hT.2.1, h ▸ hT.2.2⟩
+  exact ⟨hT.isIntegralCurrent.neg, h ▸ hT.isCompact_dsupport, h ▸ hT.dsupport_subset⟩
 
 /-- Compactly supported integral currents are closed under subtraction. -/
 theorem IsCompactlySupportedIntegralCurrent.sub (hT : IsCompactlySupportedIntegralCurrent T)
@@ -305,8 +334,8 @@ theorem IsCompactlySupportedIntegralCurrent.comp_extDerivCLM
   have hsub : dsupport (T ∘L extDerivCLM) ⊆ dsupport T := by
     rw [coe_comp]
     exact dsupport_comp_extDerivCLM_subset T
-  exact ⟨hT.1.comp_extDerivCLM, hT.2.1.of_isClosed_subset isClosed_dsupport hsub,
-    hsub.trans hT.2.2⟩
+  exact ⟨hT.isIntegralCurrent.comp_extDerivCLM,
+    hT.isCompact_dsupport.of_isClosed_subset isClosed_dsupport hsub, hsub.trans hT.dsupport_subset⟩
 
 end Boundary
 
