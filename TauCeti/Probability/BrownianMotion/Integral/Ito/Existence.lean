@@ -32,7 +32,7 @@ version. For strongly progressive integrands with finite
 pathwise square energy on every finite horizon, `exists_isItoIntegral_of_isStronglyProgressive`
 extracts a predictable representative agreeing `(timeMeasure T).prod P`-almost everywhere and an
 Itô integral unique up to indistinguishability among all predictable representatives. Every strongly
-progressive `IsItoIntegral` is a native local martingale (`itoIntegral_localMartingale`).
+progressive `IsItoIntegral` is a native local martingale (`locally_martingale_of_isItoIntegral`).
 
 ## References
 
@@ -117,7 +117,7 @@ theorem exists_isItoIntegral_of_isStronglyProgressive
 
 /-- **Local-martingale property of the Brownian Itô integral.** Any strongly progressive process
 satisfying `IsItoIntegral` is a native local martingale on the original raw filtration. -/
-theorem itoIntegral_localMartingale
+theorem locally_martingale_of_isItoIntegral
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hI_prog : IsStronglyProgressive ℱ I) (hI : IsItoIntegral ℱ P W H I) :

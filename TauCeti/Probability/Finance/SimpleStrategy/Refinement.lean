@@ -198,7 +198,7 @@ theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableS
       · exact hb j hj)
   refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
   · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def]
-    rfl
+    simp only [Sum.elim_inl, Sum.elim_inr]
   · rw [hgain, sum_disjSum, simpleGains_def, simpleGains_def]
     simp only [Sum.elim_inl, Sum.elim_inr]
     congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_

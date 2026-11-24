@@ -104,6 +104,17 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
 
+private theorem stronglyMeasurable_section {F : ℝ≥0 → Ω → ℝ}
+    (hF : IsStronglyPredictable ℱ F) (ω : Ω) : StronglyMeasurable (fun s ↦ F s ω) :=
+  (hF.mono ℱ.predictable_le_prod).comp_measurable (measurable_id.prodMk measurable_const)
+
+private theorem aemeasurable_section_enorm_sq_sub {F G : ℝ≥0 → Ω → ℝ}
+    (hF : IsStronglyPredictable ℱ F) (hG : IsStronglyPredictable ℱ G)
+    {μ : Measure ℝ≥0} (ω : Ω) :
+    AEMeasurable (fun s ↦ ‖F s ω - G s ω‖ₑ ^ 2) μ :=
+  (((stronglyMeasurable_section hF ω).sub
+    (stronglyMeasurable_section hG ω)).measurable.eNorm.pow_const 2).aemeasurable
+
 /-- Every integrand admitting an Itô integral belongs to the pathwise square-energy domain
 `LocallyBrownianIntegrable`, directly from the elementary-approximation specification. -/
 theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
@@ -124,9 +135,8 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
   filter_upwards [hae] with ω ⟨k, hk⟩
   have hK_sm : AEStronglyMeasurable (fun s ↦ Finance.simpleHolding (τ k) (m k) (a k) s ω)
       ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
-    (((Finance.isStronglyPredictable_simpleHolding (ha k)).mono
-      ℱ.predictable_le_prod).comp_measurable
-        (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+    (stronglyMeasurable_section (Finance.isStronglyPredictable_simpleHolding (ha k))
+      ω).aestronglyMeasurable
   have hK_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2
       ∂((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) < ∞ := by
     rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def,
@@ -139,9 +149,8 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
   have hdiff_sm : AEStronglyMeasurable (fun s ↦
         Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω)
       ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
-    ((((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-      hI.isStronglyPredictable).mono ℱ.predictable_le_prod).comp_measurable
-        (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+    ((stronglyMeasurable_section (Finance.isStronglyPredictable_simpleHolding (ha k)) ω).sub
+      (stronglyMeasurable_section hI.isStronglyPredictable ω)).aestronglyMeasurable
   have hdiff_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2
       ∂((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) < ∞ := by
     rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
@@ -251,9 +260,8 @@ theorem IsItoIntegral.add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral �
       TauCeti.tendsto_measure_le_lintegral_of_le_two_mul_add (fun k ω ↦ ?_) (fun k s ω ↦ ?_)
         hE₁ hE₂ hε,
       (hG₁.add hG₂).congr_left fun k ↦ .of_forall fun ω ↦ (hgain k W t ω).symm⟩
-    · exact (((((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub
-        hI.isStronglyPredictable).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const
-          2).comp (measurable_id.prodMk measurable_const)).aemeasurable
+    · exact aemeasurable_section_enorm_sq_sub
+        (Finance.isStronglyPredictable_simpleHolding (ha₁ k)) hI.isStronglyPredictable ω
     · rw [hhold k s ω]
       have hpt : Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω +
             Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - (H s ω + K s ω) =
@@ -297,9 +305,8 @@ theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal 
       refine TauCeti.tendsto_measure_le_lintegral_of_le_two_mul_add
         (f₁ := fun k s ω ↦ ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2)
         (f₂ := fun k s ω ↦ ‖Finance.simpleHolding (σ k) (m k) (b k) s ω - H s ω‖ₑ ^ 2)
-        (fun k ω ↦ (((((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-          hI.isStronglyPredictable).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const
-            2).comp (measurable_id.prodMk measurable_const)).aemeasurable)
+        (fun k ω ↦ aemeasurable_section_enorm_sq_sub
+          (Finance.isStronglyPredictable_simpleHolding (ha k)) hI.isStronglyPredictable ω)
         (fun k s ω ↦ ?_) hKH hLH hε
       rw [hhold k s ω, ← mul_add]
       exact TauCeti.eNorm_sub_sq_le_two_mul _ _ (H s ω)

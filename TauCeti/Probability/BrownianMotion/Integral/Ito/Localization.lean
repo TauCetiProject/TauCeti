@@ -76,12 +76,8 @@ public theorem isItoIntegral_of_localized_stages
         (fun _ ↦ bot_le) fun k ↦ (herr k).le
     refine ⟨n, grid, a, fun k ↦ (hgrid k).monotoneOn, ha, fun _ hε ↦
       hloc.tendsto_measure_of_ae_imp_of_lt t
-        (MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm (n := 2)
-          two_ne_zero
-          (g := fun k p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 - Hstage k p.1 p.2)
-          (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-            (hHstage k).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-          (by simpa only [Nat.cast_ofNat] using herr_lim) hε)
+        (tendsto_measure_le_lintegral_simpleHolding_sub (fun k ↦ (hHstage k).isStronglyPredictable)
+          ha herr_lim _ hε)
         fun k ↦ (hstage_eq t).mono fun ω hgood hlt hω ↦ ?_,
       tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_⟩
     · have heq_int : (∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2

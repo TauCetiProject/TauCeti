@@ -321,6 +321,44 @@ private theorem coeFn_l2Integral_ite_lt_simpleFunc_mul_eq_mul_sub
   rw [Finset.sum_ite_eq']
   simp [g.mem_range_self]
 
+private theorem tendstoInMeasure_l2Integral_ite_lt_mul
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
+    (s T : ℝ≥0) {g : ℕ → Ω → ℝ} {ξ : Ω → ℝ}
+    (hg_sm : ∀ n, StronglyMeasurable[ℱ s] (g n)) (hg_bd : ∀ n, MemLp (g n) ∞ P)
+    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ_bd : MemLp ξ ∞ P)
+    (hlim : ∀ ω, Tendsto (fun n ↦ g n ω) atTop (𝓝 (ξ ω)))
+    (hgn_le : ∀ ω n, ‖g n ω - ξ ω‖₊ ≤ ‖ξ ω‖₊) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    TendstoInMeasure P
+      (fun n ↦ hW.l2Integral T ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T))
+      atTop (hW.l2Integral T ((hH.ite_lt_mul s hξ hξ_bd).toPredictableLp T)) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let F (a : Ω → ℝ) (t : ℝ≥0) (ω : Ω) : ℝ := if s < t then a ω * H t ω else 0
+  let hF (n : ℕ) := hH.ite_lt_mul s (hg_sm n) (hg_bd n)
+  let hFξ := hH.ite_lt_mul s hξ hξ_bd
+  have henergy : Tendsto (fun n ↦ eLpNorm
+      (fun p ↦ F (g n) p.1 p.2 - F ξ p.1 p.2) 2 ((timeMeasure T).prod P)) atTop (𝓝 0) := by
+    refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
+      (Eventually.of_forall fun n ↦ ((hF n).memLp_timeMeasure T).aestronglyMeasurable)
+      (hFξ.memLp_timeMeasure T)
+      (Eventually.of_forall fun n ↦ Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
+      (Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
+    · by_cases hps : s < t
+      · simp only [F, hps, ↓reduceIte, ← sub_mul, ENNReal.coe_one, one_mul,
+          Function.uncurry_apply_pair, eNorm_mul]
+        refine mul_le_mul_of_nonneg_right ?_ bot_le
+        simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using hgn_le ω n
+      · simp [F, hps]
+    · by_cases hps : s < t
+      · simpa [F, hps] using (hlim ω).mul_const (H t ω)
+      · simp [F, hps]
+  have hLp : Tendsto (fun n ↦ eLpNorm
+      (fun ω ↦ hW.l2Integral T ((hF n).toPredictableLp T) ω -
+        hW.l2Integral T (hFξ.toPredictableLp T) ω) 2 P) atTop (𝓝 0) :=
+    henergy.congr fun n ↦ (hW.eLpNorm_l2Integral_sub_l2Integral (hF n) hFξ T).symm
+  exact tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hLp
+
 /-- Multiplying a `BrownianIntegrable` integrand after a deterministic time `s` by an
 essentially bounded `ℱ s`-measurable random variable scales the increment of `l2Integral` from
 `min s T` to `T` by that multiplier. -/
@@ -334,7 +372,8 @@ theorem coeFn_l2Integral_ite_lt_mul_eq_mul_sub
         hW.l2Integral (min s T) (hH.toPredictableLp (min s T)) ω) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   by_cases hst : s ≤ T
-  · rw [min_eq_left hst]
+  · -- 1. For `s ≤ T`, approximate `ξ` by `ℱ s`-simple functions and pass to the limit in measure.
+    rw [min_eq_left hst]
     let g (n : ℕ) : @SimpleFunc Ω (ℱ s) ℝ := by
       let : MeasurableSpace Ω := ℱ s
       exact SimpleFunc.approxOn ξ hξ.measurable univ 0 (mem_univ _) n
@@ -345,9 +384,6 @@ theorem coeFn_l2Integral_ite_lt_mul_eq_mul_sub
         (∑ c ∈ @SimpleFunc.range Ω ℝ (ℱ s) (g n), ‖c‖) (Eventually.of_forall fun ω ↦ ?_)
       exact Finset.single_le_sum (f := fun c : ℝ ↦ ‖c‖) (fun _ _ ↦ norm_nonneg _)
         (@SimpleFunc.mem_range_self Ω ℝ (ℱ s) (g n) ω)
-    let F (a : Ω → ℝ) (t : ℝ≥0) (ω : Ω) : ℝ := if s < t then a ω * H t ω else 0
-    let hF (n : ℕ) := hH.ite_lt_mul s (hg_sm n) (hg_bd n)
-    let hFξ := hH.ite_lt_mul s hξ hξ_bd
     have hlim : ∀ ω, Tendsto (fun n ↦ g n ω) atTop (𝓝 (ξ ω)) := fun ω ↦ by
       let : MeasurableSpace Ω := ℱ s
       exact SimpleFunc.tendsto_approxOn hξ.measurable (mem_univ _) (by simp)
@@ -355,39 +391,20 @@ theorem coeFn_l2Integral_ite_lt_mul_eq_mul_sub
       let : MeasurableSpace Ω := ℱ s
       simpa only [sub_zero] using
         SimpleFunc.nnNorm_approxOn_le (s := univ) (y₀ := (0 : ℝ)) hξ.measurable (mem_univ _) ω n
-    have henergy : Tendsto (fun n ↦ eLpNorm
-        (fun p ↦ F (g n) p.1 p.2 - F ξ p.1 p.2) 2 ((timeMeasure T).prod P)) atTop (𝓝 0) := by
-      refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-        (Eventually.of_forall fun n ↦ ((hF n).memLp_timeMeasure T).aestronglyMeasurable)
-        (hFξ.memLp_timeMeasure T)
-        (Eventually.of_forall fun n ↦ Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
-        (Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
-      · by_cases hps : s < t
-        · simp only [F, hps, ↓reduceIte, ← sub_mul, ENNReal.coe_one, one_mul,
-            Function.uncurry_apply_pair, eNorm_mul]
-          refine mul_le_mul_of_nonneg_right ?_ bot_le
-          simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using hgn_le ω n
-        · simp [F, hps]
-      · by_cases hps : s < t
-        · simpa [F, hps] using (hlim ω).mul_const (H t ω)
-        · simp [F, hps]
-    have hLp : Tendsto (fun n ↦ eLpNorm
-        (fun ω ↦ hW.l2Integral T ((hF n).toPredictableLp T) ω -
-          hW.l2Integral T (hFξ.toPredictableLp T) ω) 2 P) atTop (𝓝 0) :=
-      henergy.congr fun n ↦ (hW.eLpNorm_l2Integral_sub_l2Integral (hF n) hFξ T).symm
-    have hout : TendstoInMeasure P (fun n ↦ hW.l2Integral T ((hF n).toPredictableLp T)) atTop
-        (hW.l2Integral T (hFξ.toPredictableLp T)) :=
-      tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hLp
-    have hs (n : ℕ) : hW.l2Integral T ((hF n).toPredictableLp T) =ᵐ[P]
-        fun ω ↦ g n ω * (hW.l2Integral T (hH.toPredictableLp T) ω -
-          hW.l2Integral s (hH.toPredictableLp s) ω) :=
+    have hout := tendstoInMeasure_l2Integral_ite_lt_mul hW hH s T hg_sm hg_bd hξ hξ_bd hlim hgn_le
+    have hs (n : ℕ) :
+        hW.l2Integral T ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T) =ᵐ[P]
+          fun ω ↦ g n ω * (hW.l2Integral T (hH.toPredictableLp T) ω -
+            hW.l2Integral s (hH.toPredictableLp s) ω) :=
       hW.coeFn_l2Integral_ite_lt_simpleFunc_mul_eq_mul_sub hH hst (g n) (hg_bd n)
     exact tendstoInMeasure_ae_unique (hout.congr_left hs)
       (tendstoInMeasure_of_tendsto_ae
-        (fun n ↦ (Lp.memLp (hW.l2Integral T ((hF n).toPredictableLp T))).aestronglyMeasurable.congr
+        (fun n ↦ (Lp.memLp (hW.l2Integral T
+          ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T))).aestronglyMeasurable.congr
           (hs n))
         (Eventually.of_forall fun ω ↦ (hlim ω).mul_const _))
-  · have hTs : T ≤ s := (not_le.mp hst).le
+  · -- 2. For `T < s`, the truncated integrand vanishes on `(0, T]`, so both sides are zero.
+    have hTs : T ≤ s := (not_le.mp hst).le
     rw [min_eq_right hTs]
     have hzero : (hH.ite_lt_mul s hξ hξ_bd).toPredictableLp T =
         (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).toPredictableLp T := by

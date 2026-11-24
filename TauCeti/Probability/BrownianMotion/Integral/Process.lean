@@ -63,19 +63,21 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
-/-- The predictable `L²` Brownian integral process `t ↦ hW.l2Integral t (hH.toPredictableLp t)`
-is continuous in `Lp ℝ 2 P`. -/
-theorem continuous_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    Continuous fun t ↦ hW.l2Integral t (hH.toPredictableLp t) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  refine continuous_iff_continuousAt.mpr fun t₀ ↦ ?_
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  let f (t : ℝ≥0) : Lp ℝ 2 P := hW.l2Integral t (hH.toPredictableLp t)
+private theorem setIntegral_sq_Ioc_prod_le_integral_indicator [SFinite P]
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
+    {a b T : ℝ≥0} (hb : b ≤ T) :
+    ∫ p in Ioc a b ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure b).prod P ≤
+      ∫ p, (Ioc a b ×ˢ Set.univ).indicator (fun q ↦ H q.1 q.2 ^ 2) p ∂(timeMeasure T).prod P := by
+  rw [← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
+  exact integral_mono_measure (Measure.prod_mono (timeMeasure_mono hb) le_rfl)
+    (.of_forall fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
+    ((hH.memLp_timeMeasure T).integrable_sq.indicator (measurableSet_Ioc.prod MeasurableSet.univ))
+
+private theorem tendsto_integral_indicator_Ioc_min_max_sq
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (t₀ : ℝ≥0) :
+    Tendsto (fun t ↦ ∫ p, (Ioc (min t t₀) (max t t₀) ×ˢ Set.univ).indicator
+      (fun q ↦ H q.1 q.2 ^ 2) p ∂(timeMeasure (t₀ + 1)).prod P) (𝓝 t₀) (𝓝 0) := by
   let μ := (timeMeasure (t₀ + 1)).prod P
-  let F (t : ℝ≥0) (p : ℝ≥0 × Ω) : ℝ :=
-    (Ioc (min t t₀) (max t t₀) ×ˢ Set.univ).indicator (fun q ↦ H q.1 q.2 ^ 2) p
   have hsm : StronglyMeasurable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2) :=
     ((hH.isStronglyPredictable.mono ℱ.predictable_le_prod).pow 2)
   have ht₀_null : timeMeasure (t₀ + 1) {t₀} = 0 := by
@@ -88,46 +90,51 @@ theorem continuous_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal �
       ext x
       simp
     exact (Measure.quasiMeasurePreserving_fst (μ := timeMeasure (t₀ + 1)) (ν := P)).ae htime
-  have hF_lim : Tendsto (fun t ↦ ∫ p, F t p ∂μ) (𝓝 t₀) (𝓝 0) := by
-    have hzero : ∫ _ : ℝ≥0 × Ω, (0 : ℝ) ∂μ = 0 := integral_zero _ _
-    rw [← hzero]
-    refine tendsto_integral_filter_of_dominated_convergence (fun p ↦ H p.1 p.2 ^ 2)
-      (.of_forall fun t ↦
-        (hsm.indicator (measurableSet_Ioc.prod MeasurableSet.univ)).aestronglyMeasurable)
-      (.of_forall fun t ↦ .of_forall fun p ↦ ?_)
-      (hH.memLp_timeMeasure (t₀ + 1)).integrable_sq
-      (hne.mono fun ⟨u, ω⟩ hu ↦ ?_)
-    · rw [Real.norm_of_nonneg (Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)]
-      exact Set.indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ sq_nonneg _) _
-    · apply tendsto_const_nhds.congr'
-      rcases lt_or_gt_of_ne hu with hlt | hgt
-      · filter_upwards [eventually_gt_nhds hlt] with t ht
-        have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
-          not_lt_of_ge h.1.le (lt_min ht hlt)
-        simp [F, hnot]
-      · filter_upwards [eventually_lt_nhds hgt] with t ht
-        have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
-          not_lt_of_ge h.2 (max_lt ht hgt)
-        simp [F, hnot]
+  have hzero : ∫ _ : ℝ≥0 × Ω, (0 : ℝ) ∂μ = 0 := integral_zero _ _
+  rw [← hzero]
+  refine tendsto_integral_filter_of_dominated_convergence (fun p ↦ H p.1 p.2 ^ 2)
+    (.of_forall fun t ↦
+      (hsm.indicator (measurableSet_Ioc.prod MeasurableSet.univ)).aestronglyMeasurable)
+    (.of_forall fun t ↦ .of_forall fun p ↦ ?_)
+    (hH.memLp_timeMeasure (t₀ + 1)).integrable_sq
+    (hne.mono fun ⟨u, ω⟩ hu ↦ ?_)
+  · rw [Real.norm_of_nonneg (Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)]
+    exact Set.indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ sq_nonneg _) _
+  · apply tendsto_const_nhds.congr'
+    rcases lt_or_gt_of_ne hu with hlt | hgt
+    · filter_upwards [eventually_gt_nhds hlt] with t ht
+      have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
+        not_lt_of_ge h.1.le (lt_min ht hlt)
+      simp [hnot]
+    · filter_upwards [eventually_lt_nhds hgt] with t ht
+      have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
+        not_lt_of_ge h.2 (max_lt ht hgt)
+      simp [hnot]
+
+/-- The predictable `L²` Brownian integral process `t ↦ hW.l2Integral t (hH.toPredictableLp t)`
+is continuous in `Lp ℝ 2 P`. -/
+theorem continuous_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    Continuous fun t ↦ hW.l2Integral t (hH.toPredictableLp t) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  refine continuous_iff_continuousAt.mpr fun t₀ ↦ ?_
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  let f (t : ℝ≥0) : Lp ℝ 2 P := hW.l2Integral t (hH.toPredictableLp t)
+  -- 1. Bound `‖f t - f t₀‖ ^ 2` by the square energy on `(min t t₀, max t t₀]` in `t₀ + 1`.
   have hsq_lim : Tendsto (fun t ↦ ‖f t - f t₀‖ ^ 2) (𝓝 t₀) (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hF_lim
-      (.of_forall fun t ↦ sq_nonneg _) ?_
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (tendsto_integral_indicator_Ioc_min_max_sq hH t₀) (.of_forall fun _ ↦ sq_nonneg _) ?_
     filter_upwards [eventually_le_nhds (lt_add_one t₀)] with t ht1
-    have hle_int {a b : ℝ≥0} (hb : b ≤ t₀ + 1) :
-        ∫ p in Ioc a b ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure b).prod P ≤
-          ∫ p, (Ioc a b ×ˢ Set.univ).indicator (fun q ↦ H q.1 q.2 ^ 2) p ∂μ := by
-      rw [← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
-      exact integral_mono_measure (Measure.prod_mono (timeMeasure_mono hb) le_rfl)
-        (.of_forall fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
-        ((hH.memLp_timeMeasure (t₀ + 1)).integrable_sq.indicator
-          (measurableSet_Ioc.prod MeasurableSet.univ))
     by_cases ht : t ≤ t₀
     · rw [norm_sub_rev, hW.norm_l2Integral_toPredictableLp_sub_sq_of_le hH ht]
-      simpa only [F, min_eq_left ht, max_eq_right ht] using
-        hle_int (le_add_of_nonneg_right zero_le_one)
+      simpa only [min_eq_left ht, max_eq_right ht] using
+        setIntegral_sq_Ioc_prod_le_integral_indicator hH (le_add_of_nonneg_right zero_le_one)
     · have ht' := (not_le.mp ht).le
       rw [hW.norm_l2Integral_toPredictableLp_sub_sq_of_le hH ht']
-      simpa only [F, min_eq_right ht', max_eq_left ht'] using hle_int ht1
+      simpa only [min_eq_right ht', max_eq_left ht'] using
+        setIntegral_sq_Ioc_prod_le_integral_indicator hH ht1
+  -- 2. Take square roots to pass from `‖f t - f t₀‖ ^ 2 → 0` to `‖f t - f t₀‖ → 0`.
   have hsqrt : Tendsto (fun t ↦ √(‖f t - f t₀‖ ^ 2)) (𝓝 t₀) (𝓝 √0) :=
     Real.continuous_sqrt.continuousAt.tendsto.comp hsq_lim
   simpa only [Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsqrt

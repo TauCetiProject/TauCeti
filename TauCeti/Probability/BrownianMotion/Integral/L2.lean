@@ -296,7 +296,8 @@ theorem eLpNorm_l2Integral_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W 
         rw [Lp.edist_def]
         exact eLpNorm_congr_ae ((hH.coeFn_toPredictableLp T).sub (hK.coeFn_toPredictableLp T))
     _ = eLpNorm (fun p ↦ H p.1 p.2 - K p.1 p.2) 2 ((timeMeasure T).prod P) := by
-        rw [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hsm]; rfl
+        rw [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hsm]
+        simp only [Pi.sub_def, Function.uncurry_def]
 
 /-- Cross-isometry of the finite-horizon predictable `L²` Brownian integral on
 `BrownianIntegrable` processes. -/

@@ -16,8 +16,8 @@ import TauCeti.Probability.Process.Indistinguishable
 For a filtration-relative Brownian motion `W` with almost surely continuous paths, multiplying the
 integrand of a Brownian Itô integral `I` after a deterministic time `s` by an arbitrary
 `ℱ s`-measurable random variable `ξ` scales the post-`s` increment `I t - I (min s t)` by `ξ`
-(`isItoIntegral_ite_lt_mul`, `itoIntegral_ite_lt_mul_indist`), without any boundedness or moment
-assumption on `ξ`.
+(`isItoIntegral_ite_lt_mul`, `indist_mul_sub_of_isItoIntegral_ite_lt_mul`), without any
+boundedness or moment assumption on `ξ`.
 
 ## References
 
@@ -37,66 +37,33 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W H I J : ℝ≥0 → Ω → ℝ}
 
-private theorem isStoppingTime_ite_norm_le (s : ℝ≥0) {ξ : Ω → ℝ}
-    (hξ : StronglyMeasurable[ℱ s] ξ) (m : ℕ) :
-    IsStoppingTime ℱ (fun ω ↦ if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s) := by
-  intro t
-  have hmeas : MeasurableSet[ℱ s] {ω | ‖ξ ω‖ ≤ (m : ℝ)} := by
-    let : MeasurableSpace Ω := ℱ s
-    exact hξ.measurable.norm measurableSet_Iic
-  by_cases hst : s ≤ t
-  · have heq : {ω | (if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s) ≤ (t : WithTop ℝ≥0)} =
-        {ω | ‖ξ ω‖ ≤ (m : ℝ)}ᶜ := by
-      ext ω
-      simp only [Set.mem_ofPred_eq, Set.mem_compl_iff]
-      by_cases h : ‖ξ ω‖ ≤ (m : ℝ)
-      · rw [ite_eq_left h]
-        exact iff_of_false (WithTop.not_top_le_coe t) (not_not.mpr h)
-      · rw [ite_eq_right h]
-        exact iff_of_true (WithTop.coe_le_coe.mpr hst) h
-    rw [heq]
-    exact ℱ.mono hst _ hmeas.compl
-  · have heq : {ω | (if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s) ≤ (t : WithTop ℝ≥0)} =
-        ∅ := by
-      refine Set.eq_empty_iff_forall_notMem.mpr fun ω ↦ ?_
-      simp only [Set.mem_ofPred_eq]
-      by_cases h : ‖ξ ω‖ ≤ (m : ℝ)
-      · rw [ite_eq_left h]
-        exact not_le.mpr (WithTop.coe_lt_top t)
-      · rw [ite_eq_right h]
-        exact not_le.mpr (WithTop.coe_lt_coe.mpr (not_le.mp hst))
-    rw [heq]
-    exact @MeasurableSet.empty Ω (ℱ t)
-
-private theorem isLocalizingSequence_min_ite_norm_le {τ₁ : ℕ → Ω → WithTop ℝ≥0}
-    (hloc₁ : IsLocalizingSequence ℱ τ₁ P) (s : ℝ≥0) {ξ : Ω → ℝ}
+private theorem isLocalizingSequence_ite_norm_le (s : ℝ≥0) {ξ : Ω → ℝ}
     (hξ : StronglyMeasurable[ℱ s] ξ) :
     IsLocalizingSequence ℱ
-      (fun m ω ↦ min (τ₁ m ω) (if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s)) P := by
-  let τ₂ (m : ℕ) (ω : Ω) : WithTop ℝ≥0 := if ‖ξ ω‖ ≤ (m : ℝ) then ⊤ else s
-  have hτ₂_mono (ω : Ω) : Monotone (fun m ↦ τ₂ m ω) := fun m n hmn ↦ by
-    by_cases hm : ‖ξ ω‖ ≤ (m : ℝ)
-    · have hn : ‖ξ ω‖ ≤ (n : ℝ) := hm.trans (by exact_mod_cast hmn)
-      dsimp only [τ₂]
-      rw [ite_eq_left hm, ite_eq_left hn]
-    · simp only [τ₂, ite_eq_right hm]
-      split_ifs
-      · exact le_top
-      · exact le_rfl
-  have hτ₂_top (ω : Ω) : Tendsto (fun m ↦ τ₂ m ω) atTop (𝓝 ⊤) := by
+      (fun m ω ↦ if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s) P := by
+  classical
+  have hmeas (m : ℕ) : MeasurableSet[ℱ s] {ω | ‖ξ ω‖ ≤ (m : ℝ)} := by
+    let : MeasurableSpace Ω := ℱ s
+    exact hξ.measurable.norm measurableSet_Iic
+  have htop : IsStoppingTime ℱ (fun _ : Ω ↦ (⊤ : WithTop ℝ≥0)) := by simp [IsStoppingTime]
+  refine ⟨⟨fun m t ↦ ?_, ?_⟩, ?_⟩
+  · have hm := htop.piecewise_of_le (isStoppingTime_const ℱ s) (fun _ ↦ le_top)
+      (fun _ ↦ le_rfl) (hmeas m) t
+    simpa only [Set.piecewise, Set.mem_ofPred_eq] using hm
+  · refine ae_of_all _ fun ω ↦ ?_
     obtain ⟨N, hN⟩ := exists_nat_ge ‖ξ ω‖
     exact tendsto_const_nhds.congr' ((eventually_ge_atTop N).mono fun m hm ↦ by
       have hle : ‖ξ ω‖ ≤ (m : ℝ) := hN.trans (by exact_mod_cast hm)
-      dsimp only [τ₂]
       exact (ite_eq_left hle).symm)
-  refine ⟨⟨fun m ↦ (hloc₁.isStoppingTime m).min (isStoppingTime_ite_norm_le s hξ m), ?_⟩, ?_⟩
-  · filter_upwards [hloc₁.tendsto_top] with ω hω
-    refine (WithTop.tendsto_nhds_top_iff _).mpr fun t ↦ ?_
-    filter_upwards [(WithTop.tendsto_nhds_top_iff _).mp hω t,
-      (WithTop.tendsto_nhds_top_iff _).mp (hτ₂_top ω) t] with m hm₁ hm₂
-    exact lt_min hm₁ hm₂
-  · filter_upwards [hloc₁.mono] with ω hω m n hmn
-    exact min_le_min (hω hmn) (hτ₂_mono ω hmn)
+  · refine ae_of_all _ fun ω m n hmn ↦ ?_
+    by_cases hm : ‖ξ ω‖ ≤ (m : ℝ)
+    · have hn : ‖ξ ω‖ ≤ (n : ℝ) := hm.trans (by exact_mod_cast hmn)
+      dsimp only
+      rw [ite_eq_left hm, ite_eq_left hn]
+    · simp only [ite_eq_right hm]
+      split_ifs
+      · exact le_top
+      · exact le_rfl
 
 private theorem stoppedProcess_ite_lt_mul_indist {X U : ℝ≥0 → Ω → ℝ} {τ₁ : Ω → WithTop ℝ≥0}
     (hX_cont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
@@ -124,9 +91,8 @@ private theorem stoppedProcess_ite_lt_mul_indist {X U : ℝ≥0 → Ω → ℝ} 
       | coe r =>
         rw [← WithTop.coe_min, ← WithTop.coe_min]
         simp only [WithTop.untopA, WithTop.untopD_coe, min_assoc]
-    dsimp only [stoppedProcess]
-    rw [hτ_eq, ite_eq_left hm, hmin_eq, ← ht, ← hmin]
-    rfl
+    dsimp only [stoppedProcess] at ht hmin ⊢
+    rw [hτ_eq, ite_eq_left hm, hmin_eq, ht, hmin]
   · have hτ_le : min (τ₁ ω) (if ‖ξ ω‖ ≤ (m : ℝ) then (⊤ : WithTop ℝ≥0) else s) ≤
         (s : WithTop ℝ≥0) :=
       (min_le_right _ _).trans_eq (ite_eq_right hm)
@@ -168,7 +134,7 @@ theorem isItoIntegral_ite_lt_mul
   let τ₂ (m : ℕ) (ω : Ω) : WithTop ℝ≥0 := if ‖ξ ω‖ ≤ (m : ℝ) then ⊤ else s
   let τ (m : ℕ) (ω : Ω) : WithTop ℝ≥0 := min (τ₁ m ω) (τ₂ m ω)
   have hloc : IsLocalizingSequence ℱ τ P :=
-    isLocalizingSequence_min_ite_norm_le hH.isLocalizingSequence_energyLocalizer s hξ
+    hH.isLocalizingSequence_energyLocalizer.min (isLocalizingSequence_ite_norm_le s hξ)
   -- 2. Truncate `ξ` to bounded `ξ_m` and match stopped `Y` with the scaled `L²` stage integrals.
   let ξ_m (m : ℕ) (ω : Ω) : ℝ := if ‖ξ ω‖ ≤ (m : ℝ) then ξ ω else 0
   have hξ_m (m : ℕ) : StronglyMeasurable[ℱ s] (ξ_m m) := by
@@ -222,7 +188,7 @@ theorem isItoIntegral_ite_lt_mul
   simp [Y, hω t, hω (min s t)]
 
 /-- Indistinguishability form of `isItoIntegral_ite_lt_mul`. -/
-theorem itoIntegral_ite_lt_mul_indist
+theorem indist_mul_sub_of_isItoIntegral_ite_lt_mul
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hI : IsItoIntegral ℱ P W H I)
