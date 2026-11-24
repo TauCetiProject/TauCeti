@@ -23,7 +23,11 @@ real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
 `(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
 If `cos (2πr) < cos (2πx)` with `r ≥ 0`, then `x` lies within `r` of an integer
-(`TauCeti.exists_abs_sub_int_lt_of_cos_lt`).
+(`TauCeti.exists_abs_sub_int_lt_of_cos_lt`). Shifting by an integer multiple of `π` only changes
+the sign of the sine, so `|sin (π n + x)| ≤ |x|` for `n ∈ ℤ`
+(`Int.abs_sin_pi_mul_intCast_add_le`, used for DLMF 2.1.6). That bound follows the lean-DLMF
+project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -203,3 +207,10 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   field_simp
 
 end TauCeti
+
+/-- `|sin (π n + x)| ≤ |x|` for every integer `n` and real `x`: shifting by `π n` only changes the
+sign of the sine, and `|sin x| ≤ |x|`. -/
+theorem Int.abs_sin_pi_mul_intCast_add_le (n : ℤ) (x : ℝ) : |sin (π * n + x)| ≤ |x| := by
+  -- `sin (π n + x) = (-1) ^ n sin x`.
+  rw [add_comm, mul_comm π]
+  simpa [sin_add_int_mul_pi, abs_mul] using abs_sin_le_abs (x := x)

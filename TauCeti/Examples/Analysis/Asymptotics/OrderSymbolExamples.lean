@@ -5,10 +5,10 @@ Authors: Bastiaan J Braams
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Examples of the order symbols (DLMF 2.1.4–2.1.9)
@@ -18,18 +18,14 @@ The order symbols `∼`, `o` and `O` of DLMF §2.1(i) are Mathlib's `Asymptotics
 for them, including the remark after 2.1.7 that `e^{-z} = o(1)` holds uniformly in a closed
 sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph z| < π/2`.
 
-## Main results
-
-* `Int.abs_sin_pi_mul_intCast_add_le`: `|sin(πn + x)| ≤ |x|` for `n ∈ ℤ` and real `x`.
-* `TauCeti.sin_pi_mul_intCast_add_inv_isBigO_inv`: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ`, hence as
-  `n → ±∞` (DLMF 2.1.6).
-
-The other examples are `example`s citing the general results: DLMF 2.1.4, `tanh z ∼ z` as
-`z → 0`, is `TauCeti.complexTanh_isEquivalent_id` of
-`TauCeti.Analysis.SpecialFunctions.Hyperbolic`; DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is
-Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`; the sector statements are
-`TauCeti.cexp_neg_isLittleO_one_sector` and `TauCeti.not_cexp_neg_isLittleO_one_rightHalfPlane`
-of `TauCeti.Analysis.SpecialFunctions.Exp.Decay`; DLMF 2.1.7, `e^{ix} = O(1)` on `ℝ`, is
+The examples cite the general results. DLMF 2.1.4, `tanh z ∼ z` as `z → 0`, is
+`TauCeti.isEquivalent_complexTanh` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`.
+DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`.
+DLMF 2.1.6, `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, follows from
+`Int.abs_sin_pi_mul_intCast_add_le` of `TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds`.
+The sector statements are `TauCeti.cexp_neg_isLittleO_one_sector` and
+`TauCeti.not_cexp_neg_isLittleO_one_rightHalfPlane` of
+`TauCeti.Analysis.SpecialFunctions.Exp.Decay`. DLMF 2.1.7, `e^{ix} = O(1)` on `ℝ`, is
 `Complex.norm_exp_ofReal_mul_I`. DLMF 2.1.8, that the tail from index `n` of a power series
 converging near `0` is `O(zⁿ)`, is `TauCeti.tsum_tail_isBigO_pow` of
 `TauCeti.Analysis.Analytic.OfScalars`, recorded here for `𝕜 = ℂ`. DLMF 2.1.9,
@@ -45,25 +41,11 @@ public section
 open Filter Asymptotics Complex
 open scoped Topology Real
 
-/-- `|sin(πn + x)| ≤ |x|` for every integer `n` and real `x`: shifting by `πn` only changes the
-sign of the sine, and `|sin x| ≤ |x|`. -/
-theorem Int.abs_sin_pi_mul_intCast_add_le (n : ℤ) (x : ℝ) : |Real.sin (π * n + x)| ≤ |x| := by
-  -- `sin(πn + x) = (−1)ⁿ sin x`.
-  rw [add_comm, mul_comm π]
-  simpa [Real.sin_add_int_mul_pi, abs_mul] using Real.abs_sin_le_abs (x := x)
-
 namespace TauCeti
 
-/-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ` (the filter `⊤`), the case `x = n⁻¹` of
-`Int.abs_sin_pi_mul_intCast_add_le`. -/
-theorem sin_pi_mul_intCast_add_inv_isBigO_inv :
-    (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[⊤] fun n => (n : ℝ)⁻¹ :=
-  IsBigO.of_bound 1 (Eventually.of_forall fun n => by
-    simpa [Real.norm_eq_abs] using n.abs_sin_pi_mul_intCast_add_le (n : ℝ)⁻¹)
-
-/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.complexTanh_isEquivalent_id`. -/
+/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.isEquivalent_complexTanh`. -/
 example : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z :=
-  complexTanh_isEquivalent_id
+  isEquivalent_complexTanh
 
 /-- DLMF 2.1.5: `e^{-x} = o(1)` as `x → +∞` in `ℝ`. -/
 example : (fun x : ℝ => Real.exp (-x)) =o[atTop] fun _ => (1 : ℝ) :=
@@ -83,10 +65,11 @@ example :
       fun _ => (1 : ℂ) :=
   not_cexp_neg_isLittleO_one_rightHalfPlane
 
-/-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, from the global bound
-`TauCeti.sin_pi_mul_intCast_add_inv_isBigO_inv`. -/
+/-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, with constant `1` for every `n` by
+`Int.abs_sin_pi_mul_intCast_add_le`. -/
 example : (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[atTop ⊔ atBot] fun n => (n : ℝ)⁻¹ :=
-  sin_pi_mul_intCast_add_inv_isBigO_inv.mono le_top
+  IsBigO.of_bound 1 (Eventually.of_forall fun n => by
+    simpa [Real.norm_eq_abs] using n.abs_sin_pi_mul_intCast_add_le (n : ℝ)⁻¹)
 
 /-- DLMF 2.1.7: `e^{ix} = O(1)` for `x ∈ ℝ`, on the whole real line (the filter `⊤`). -/
 example : (fun x : ℝ => exp (x * I)) =O[⊤] fun _ => (1 : ℝ) :=
