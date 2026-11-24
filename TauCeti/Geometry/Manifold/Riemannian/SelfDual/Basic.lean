@@ -874,11 +874,7 @@ theorem wedge_self_apply (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
       (alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (selfDualPart o α x) -
         alternatingFormInner (TangentSpace I x) k (antiSelfDualPart o α x)
           (antiSelfDualPart o α x)) * riemannianVolumeForm o x v := by
-  -- Write the second factor as `⋆(⋆α)`, so that `α ∧ ⋆(⋆α) = ⟨α, ⋆α⟩ vol`.
-  have hw : α.wedge α x v = (α x).wedge (hodgeStar o rfl (hodgeStar o rfl α) x) v := by
-    rw [hodgeStar_hodgeStar_of_even o hk, wedge_def, wedgeWith_apply',
-      ContinuousAlternatingMap.wedge_def]
-  rw [hw, wedge_hodgeStar_apply, finCongr_refl, Equiv.coe_refl, Function.comp_id]
+  rw [wedge_self_apply_eq_alternatingFormInner_hodgeStar o hk]
   congr 1
   -- Then `⟨α⁺ + α⁻, α⁺ - α⁻⟩ = |α⁺|² - |α⁻|²` by orthogonality.
   have h := alternatingFormInner_selfDualPart_antiSelfDualPart o hk α α x

@@ -25,7 +25,10 @@ higher direct images from cohomology on inverse images of opens. In particular, 
 provides the module-valued comparison needed to apply localization criteria for
 quasi-coherence.
 
-The comparison with sheafification is natural in the coefficient module. In degree
+The comparison with sheafification is natural in the coefficient module, and so is the
+resulting map from the presheaf to `Rⁿ f_* M` (`higherDirectImagePresheafToSheaf`); maps out of
+`Rⁿ f_* M` are determined by their restrictions along it
+(`higherDirectImagePresheafToSheaf_hom_ext`). In degree
 zero the presheaf is the underlying presheaf of the ordinary direct image. The
 comparison with cohomology is natural in coefficient modules
 (`higherDirectImagePresheafToPresheafIso_naturality`) and uses the flasque abelian
@@ -90,6 +93,50 @@ def higherDirectImagePresheafSheafificationIso (n : ℕ) :
     (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _ ε ≪≫
       Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm) n ≪≫
     Functor.leftUnitor _
+
+/-- The map from the presheaf of modules `V ↦ Hⁿ(f⁻¹ V, M)` to its sheafification `Rⁿ f_* M`,
+natural in `M`. -/
+def higherDirectImagePresheafToSheaf (n : ℕ) :
+    f.higherDirectImagePresheaf n ⟶ f.higherDirectImage n ⋙
+      (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)) :=
+  whiskerLeft (f.higherDirectImagePresheaf n)
+      (PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit ≫
+    whiskerRight (f.higherDirectImagePresheafSheafificationIso n).hom
+      (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj))
+
+/-- The map from `V ↦ Hⁿ(f⁻¹ V, M)` to `Rⁿ f_* M` is the sheafification unit followed by the
+identification of the sheafification with `Rⁿ f_* M`. -/
+lemma higherDirectImagePresheafToSheaf_app (n : ℕ) (M : X.Modules) :
+    (f.higherDirectImagePresheafToSheaf n).app M =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app _ ≫
+        (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
+          ((f.higherDirectImagePresheafSheafificationIso n).hom.app M) :=
+  (rfl)
+
+/-- Maps out of `Rⁿ f_* M` are determined by their restrictions to the presheaf
+`V ↦ Hⁿ(f⁻¹ V, M)` along `higherDirectImagePresheafToSheaf`. -/
+lemma higherDirectImagePresheafToSheaf_hom_ext {n : ℕ} {M : X.Modules} {S : Y.Modules}
+    {α β : (f.higherDirectImage n).obj M ⟶ S}
+    (h : (f.higherDirectImagePresheafToSheaf n).app M ≫
+        (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map α =
+      (f.higherDirectImagePresheafToSheaf n).app M ≫
+        (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
+          β) :
+    α = β := by
+  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)
+  -- Transposing `e ≫ γ` along the sheafification adjunction gives the restriction of `γ`.
+  -- Chain with `Eq.trans`: it identifies `Y.Modules` with `SheafOfModules Y.ringCatSheaf` in the
+  -- objects, which `rw` does not.
+  have key (γ : (f.higherDirectImage n).obj M ⟶ S) :
+      adj.homEquiv _ _ ((f.higherDirectImagePresheafSheafificationIso n).hom.app M ≫ γ) =
+        (f.higherDirectImagePresheafToSheaf n).app M ≫
+          (SheafOfModules.forget _ ⋙
+            PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map γ :=
+    (adj.homEquiv_unit _ _ _).trans ((congrArg _ (Functor.map_comp _ _ _)).trans
+      ((Category.assoc _ _ _).symm.trans
+        (congrArg (· ≫ _) (f.higherDirectImagePresheafToSheaf_app n M).symm)))
+  exact (cancel_epi ((f.higherDirectImagePresheafSheafificationIso n).hom.app M)).mp
+    ((adj.homEquiv _ _).injective ((key α).trans (h.trans (key β).symm)))
 
 /-- Forgetting the module structure of the module cohomology presheaf gives the
 usual cohomology presheaf `U ↦ Hⁿ(f⁻¹ U, M)`. This comparison respects restriction
@@ -170,5 +217,30 @@ lemma higherDirectImagePresheafToPresheafIso_def (M : X.Modules) (n : ℕ) :
         ((whiskeringLeft Y.Opensᵒᵖ X.Opensᵒᵖ AddCommGrpCat.{u}).obj (Opens.map f.base).op).mapIso
           ((injectiveResolution M).cohomologyPresheafIso n) :=
   (rfl)
+
+/-- The identification of `V ↦ Hⁿ(f⁻¹ V, M)` with cohomology is natural in `M`, on elements. -/
+lemma higherDirectImagePresheafToPresheafIso_hom_app_map {M N : X.Modules} (φ : M ⟶ N)
+    (n : ℕ) (V : Y.Opens) (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op V)) :
+    (f.higherDirectImagePresheafToPresheafIso N n).hom.app (.op V)
+        (((f.higherDirectImagePresheaf n).map φ).app (.op V) x) =
+      Scheme.Modules.cohomologyOnMap φ n (f ⁻¹ᵁ V)
+        ((f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op V) x) :=
+  ConcreteCategory.congr_hom
+    (NatTrans.congr_app (f.higherDirectImagePresheafToPresheafIso_naturality φ n) (.op V)) x
+
+/-- The inverse identification of cohomology with `V ↦ Hⁿ(f⁻¹ V, M)` is natural in `M`, on
+elements. -/
+lemma higherDirectImagePresheafToPresheafIso_inv_app_cohomologyOnMap {M N : X.Modules}
+    (φ : M ⟶ N) (n : ℕ) (V : Y.Opens) (x : Scheme.Modules.cohomologyOn M n (f ⁻¹ᵁ V)) :
+    (f.higherDirectImagePresheafToPresheafIso N n).inv.app (.op V)
+        (Scheme.Modules.cohomologyOnMap φ n _ x) =
+      ((f.higherDirectImagePresheaf n).map φ).app (.op V)
+        ((f.higherDirectImagePresheafToPresheafIso M n).inv.app (.op V) x) := by
+  apply (ConcreteCategory.bijective_of_isIso
+    ((f.higherDirectImagePresheafToPresheafIso N n).hom.app (.op V))).injective
+  have h₁ := f.higherDirectImagePresheafToPresheafIso_hom_app_map φ n V
+    ((f.higherDirectImagePresheafToPresheafIso M n).inv.app (.op V) x)
+  simp only [Iso.inv_hom_id_app_apply] at h₁ ⊢
+  exact h₁.symm
 
 end AlgebraicGeometry.Scheme.Hom

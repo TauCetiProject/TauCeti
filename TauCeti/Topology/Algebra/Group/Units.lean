@@ -21,8 +21,8 @@ file records consequences of that definition.
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
   units of a σ-compact monoid are σ-compact.
-* Since `u ↦ (u, u⁻¹)` is an embedding into `M × Mᵐᵒᵖ`, the units of a second-countable monoid
-  are second countable.
+* Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
+  countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
@@ -86,13 +86,13 @@ instance instSigmaCompactSpace [T1Space M] [ContinuousMul M] [SigmaCompactSpace 
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
     isClosedEmbedding_embedProduct |>.sigmaCompactSpace
 
-/-- **The units of a second-countable monoid are second countable.** The map `u ↦ (u, u⁻¹)` embeds
-`Mˣ` into the second-countable space `M × Mᵐᵒᵖ`. -/
+/-- **The units of a second-countable monoid are second countable.** The map `u ↦ (u, u⁻¹)` is an
+embedding of `Mˣ` into `M × Mᵐᵒᵖ`, which is homeomorphic to the second-countable space `M × M`. -/
 @[to_additive /-- The additive units of a second-countable additive monoid are second
 countable. -/]
 instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountableTopology Mˣ :=
-  have : SecondCountableTopology Mᵐᵒᵖ := MulOpposite.opHomeomorph.symm.secondCountableTopology
-  isEmbedding_embedProduct.secondCountableTopology
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
+    isEmbedding_embedProduct |>.secondCountableTopology
 
 end Units
 
