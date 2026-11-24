@@ -294,6 +294,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
   obtain ⟨ρ₀, hρ₀, hρ₀ε, C₀, hC₀⟩ :=
     exists_holderOnWith_closedBall_of_ball_subset (Ω := Ω) hα hα1 hε Lam L M hlam
   set δ : ℝ≥0 := ⟨ρ₀, hρ₀.le⟩
+  have hδ : (δ : ℝ) = ρ₀ := rfl
   refine ⟨max C₀ C₁ + 2 * δ ^ (-(α : ℝ)), fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN0
     hN1 hN2 hV hK => ?_⟩
   have hΩcl : Ω ⊆ closure Ω := subset_closure
@@ -302,7 +303,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
       dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y) ≤
         (max C₀ C₁ * (K + N) : ℝ≥0) * dist x y ^ (α : ℝ) := by
     intro x hx y hy hxy
-    have hxy' : dist y x ≤ ρ₀ := by rw [dist_comm]; exact hxy.le
+    have hxy' : dist y x ≤ ρ₀ := by rw [dist_comm, ← hδ]; exact hxy.le
     by_cases hnear : ∃ w ∈ frontier Ω, dist x w < ε
     · -- Near the boundary: the boundary estimate on `closedBall x ε ∩ closure Ω`.
       obtain ⟨w, hw, hxw⟩ := hnear
@@ -329,7 +330,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
   have hosc : ∀ x ∈ closure Ω, ∀ y ∈ closure Ω,
       dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y) ≤ (2 * N : ℝ≥0) := fun x hx y hy =>
     (dist_le_norm_add_norm _ _).trans (by push_cast; linarith [hN2 x hx, hN2 y hy])
-  refine (HolderOnWith.of_dist_lt_of_dist_le (by exact hρ₀ : (0 : ℝ≥0) < δ) hloc hosc).mono_const ?_
+  refine (HolderOnWith.of_dist_lt_of_dist_le (NNReal.coe_pos.1 (hδ ▸ hρ₀)) hloc hosc).mono_const ?_
   have h : 2 * N * δ ^ (-(α : ℝ)) ≤ 2 * δ ^ (-(α : ℝ)) * (K + N) := by
     rw [mul_assoc, mul_assoc, mul_comm N]
     gcongr
