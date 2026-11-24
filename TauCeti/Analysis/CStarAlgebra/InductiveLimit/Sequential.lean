@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Hom
 public import TauCeti.Algebra.Star.DirectedSystem
-public import TauCeti.Analysis.CStarAlgebra.InductiveLimit
+public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 import Mathlib.Topology.Order.MonotoneConvergence
 
 /-!
