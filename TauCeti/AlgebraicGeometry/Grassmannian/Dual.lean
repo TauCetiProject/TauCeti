@@ -23,10 +23,9 @@ quotient of rank `k`; `N` is then a subbundle of rank `l`
 to the point classifying its annihilator `N^⊥ ⊆ A ⊗[R] M^∨`, the kernel of the restriction
 `(A ⊗[R] M)^∨ → N^∨` (`Module.Grassmannian.toSchemeHom_comp_schemeDualIso_hom`), and its inverse
 sends the point classifying `K` to the point classifying the coannihilator of `K`
-(`Module.Grassmannian.toSchemeHom_comp_schemeDualIso_inv`). So under the isomorphism the
-universal rank-`l` quotient of `M^∨` is the dual of the universal rank-`l` subbundle of `M`, and
-the universal rank-`k` subbundle of `M^∨` is the annihilator of that subbundle, the dual of the
-universal rank-`k` quotient of `M`.
+(`Module.Grassmannian.toSchemeHom_comp_schemeDualIso_inv`). So over every `A`, the point of
+`G(l, M^∨)` classifying `K` is the annihilator of the point of `G(k, M)` classifying `N` exactly
+when `N` is the coannihilator of `K`.
 
 The maps of points are natural in `A` (`Module.Grassmannian.baseChangeDualEquiv_map`), so each is
 composition with a morphism of schemes (`AlgebraicGeometry.Scheme.homOfAffinePoints`), and the
@@ -64,13 +63,11 @@ variable {R : Type u} [CommRing R] {M M' : Type u} [AddCommGroup M] [Module R M]
 
 section OfPoints
 
-/-! The helpers in this section follow the construction of `Module.Grassmannian.baseChangeHom`
-from `baseChangeAux` and `baseChangePoint` in
-`TauCeti/AlgebraicGeometry/Grassmannian/BaseChange.lean`, and repeat
-`Module.Grassmannian.homOfPoints` and `Module.Grassmannian.scheme_hom_ext` of the open
-https://github.com/TauCetiProject/TauCeti/pull/43522 (feat: isomorphism of Grassmannian schemes
-induced by a linear equivalence). They are private so that this file does not depend on that pull
-request, and are to be replaced by its declarations once it is merged. -/
+/-! The helpers in this section build a morphism of Grassmannian schemes from a family of maps
+of points natural in the algebra `A`, and prove that morphisms out of the Grassmannian are
+determined by their values on points. They follow the construction of
+`Module.Grassmannian.baseChangeHom` from `baseChangeAux` and `baseChangePoint` in
+`TauCeti/AlgebraicGeometry/Grassmannian/BaseChange.lean`, over a fixed base ring. -/
 
 /-- Morphisms out of the Grassmannian agree when they agree on the point classifying every `N`. -/
 private theorem hom_ext_of_points {X : Scheme.{u}} {f g : scheme R M k ⟶ X}

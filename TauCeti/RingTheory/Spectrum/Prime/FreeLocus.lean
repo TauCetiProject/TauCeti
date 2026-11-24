@@ -274,12 +274,13 @@ namespace Function.Exact
 
 /-- **Rank is additive on short exact sequences.** If `0 → K → X → Y → 0` is exact, `X` is finite
 flat and `Y` is finite projective, then the rank of `X` at every prime is the sum of the ranks of
-`K` and `Y`: the sequence splits, and `K` is a direct summand of `X`. -/
+`K` and `Y`. -/
 theorem rankAtStalk_eq_add {R K X Y : Type*} [CommRing R] [AddCommGroup K] [Module R K]
     [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Module.Finite R X]
     [Module.Flat R X] [Module.Finite R Y] [Module.Projective R Y] {f : K →ₗ[R] X}
     {g : X →ₗ[R] Y} (hfg : Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     Module.rankAtStalk (R := R) X = Module.rankAtStalk K + Module.rankAtStalk Y := by
+  -- The sequence splits, so `K` is a direct summand of `X`.
   have := hfg.moduleFinite_of_projective hf hg
   obtain ⟨e, -, -⟩ := hfg.exists_linearEquiv_prod_of_projective hf hg
   have : Module.Flat R K := .of_retract (e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y)

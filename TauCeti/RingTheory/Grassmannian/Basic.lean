@@ -177,9 +177,10 @@ end Extreme
 section Subbundle
 
 /-- **Points of a Grassmannian are maximal under inclusion.** If `N₁, N₂ ∈ G(k, M; R)` and
-`N₁ ≤ N₂`, then `N₁ = N₂`: the kernel of the surjection `M ⧸ N₁ → M ⧸ N₂` is a direct summand of
-`M ⧸ N₁`, hence finite projective, of rank `k - k = 0`, hence zero. -/
+`N₁ ≤ N₂`, then `N₁ = N₂`. -/
 theorem eq_of_le {N₁ N₂ : G(k, M; R)} (h : N₁.toSubmodule ≤ N₂.toSubmodule) : N₁ = N₂ := by
+  -- The kernel of the surjection `M ⧸ N₁ → M ⧸ N₂` is a direct summand of `M ⧸ N₁`, hence finite
+  -- projective, of rank `k - k = 0`, hence zero.
   let g := Submodule.factor h
   have hg : Function.Surjective g := fun y ↦ by
     induction y using Submodule.Quotient.induction_on with
@@ -202,13 +203,12 @@ theorem eq_of_le {N₁ N₂ : G(k, M; R)} (h : N₁.toSubmodule ≤ N₂.toSubmo
   exact congrArg Subtype.val (Subsingleton.elim (⟨_, hx'⟩ : LinearMap.ker g) 0)
 
 /-- A point of a Grassmannian of a finite module is a finite module. -/
-theorem finite_toSubmodule [Module.Finite R M] (N : G(k, M; R)) :
+instance finite_toSubmodule [Module.Finite R M] (N : G(k, M; R)) :
     Module.Finite R N.toSubmodule :=
-  (LinearMap.exact_subtype_mkQ _).moduleFinite_of_projective N.toSubmodule.injective_subtype
-    N.toSubmodule.mkQ_surjective
+  Module.Finite.iff_fg.mpr (fg_toSubmodule N)
 
 /-- A point of a Grassmannian of a projective module is a projective module. -/
-theorem projective_toSubmodule [Module.Projective R M] (N : G(k, M; R)) :
+instance projective_toSubmodule [Module.Projective R M] (N : G(k, M; R)) :
     Module.Projective R N.toSubmodule := by
   obtain ⟨T, hT⟩ := N.toSubmodule.mkQ.isComplemented_ker_of_surjective N.toSubmodule.mkQ_surjective
   rw [Submodule.ker_mkQ] at hT
@@ -348,14 +348,6 @@ theorem rTensor_mem_map_iff_of_injective {f : A →ₐ[R] B} (hf : Function.Inje
   have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hf
   simpa using map_eq_zero_iff _
     (Module.Flat.tensorProduct_mk_injective (R := A) (S := B) _) (x := N.mkQ x)
-
-/-- The base change of a finite flat module of constant rank `k + l` has constant rank
-`k + l`. -/
-theorem rankAtStalk_baseChange_eq [Module.Finite R M] [Module.Flat R M] {l : ℕ}
-    (h : ∀ p, rankAtStalk (R := R) M p = k + l) (p : PrimeSpectrum A) :
-    rankAtStalk (R := A) (A ⊗[R] M) p = k + l := by
-  rw [rankAtStalk_baseChange]
-  exact h _
 
 /-- **Base change along an injective map is injective on points.** -/
 theorem map_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :

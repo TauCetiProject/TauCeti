@@ -93,8 +93,6 @@ annihilator `N^⊥ ⊆ P^∨` of `N ∈ G(k, P; A)` is a point of `G(l, P^∨; A
 surjective restriction `P^∨ → N^∨` onto a finite projective module of rank `l`. -/
 noncomputable def dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l) (N : G(k, P; A)) :
     G(l, Module.Dual A P; A) :=
-  have := finite_toSubmodule N
-  have := projective_toSubmodule N
   ofSurjective N.toSubmodule.dualRestrict (dualRestrict_surjective N) fun p ↦ by
     rw [TauCeti.Module.rankAtStalk_dual]
     exact rankAtStalk_toSubmodule h N p
@@ -165,7 +163,7 @@ takes coannihilators (`Module.Grassmannian.mem_baseChangeDualEquiv_symm_iff`). T
 natural in `A` (`Module.Grassmannian.baseChangeDualEquiv_map`). -/
 noncomputable def baseChangeDualEquiv (h : ∀ p, rankAtStalk (R := R) M p = k + l) :
     G(k, A ⊗[R] M; A) ≃ G(l, A ⊗[R] Module.Dual R M; A) :=
-  (dualEquiv (rankAtStalk_baseChange_eq h)).trans
+  (dualEquiv fun p ↦ (rankAtStalk_baseChange p).trans (h _)).trans
     (baseChangeEvaluationEquiv (R := R) (A := A) (M := M)).symm.grassmannianCongr
 
 /-- **`baseChangeDualEquiv` on points.** An element `ξ` of `A ⊗[R] M^∨` lies in the point
