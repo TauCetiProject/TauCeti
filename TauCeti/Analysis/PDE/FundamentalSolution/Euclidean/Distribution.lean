@@ -62,12 +62,6 @@ private lemma newtonianKernel_norm_le_rpow (n : ℕ) (hn : 3 ≤ n) (x : Euclide
     -- Put both powers in the exponent form used by the radial integrability criterion.
     rw [show (2 : ℝ) - n = -((n : ℝ) - 2) by ring]
 
-private lemma newtonianKernel_zero_function : newtonianKernel 0 = 0 := by
-  funext x
-  have hx : x = 0 := Subsingleton.elim _ _
-  rw [hx]
-  exact newtonianKernel_zero 0
-
 /-- The Newtonian kernel is locally integrable in every dimension.
 
 In dimensions zero and two it is identically zero; in dimension one the totalized kernel is
@@ -77,7 +71,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
     LocallyIntegrable (newtonianKernel n) := by
   by_cases h : n = 0 ∨ n = 2
   · rcases h with rfl | rfl
-    · rw [newtonianKernel_zero_function]
+    · rw [newtonianKernel_dim_zero]
       exact locallyIntegrable_zero
     · rw [newtonianKernel_two]
       exact locallyIntegrable_zero
@@ -108,15 +102,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
         intro x
         dsimp [C]
         exact newtonianKernel_norm_le_rpow n hn x
-      · rw [show newtonianKernel n = (fun x : EuclideanSpace ℝ (Fin n) ↦
-            ((n : ℝ) * ((n : ℝ) - 2) *
-              volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-              ‖x‖ ^ (2 - (n : ℝ))) by
-          -- Lift the pointwise defining equation so that measurability can see the radial formula.
-          funext x
-          exact newtonianKernel_def n x]
-        apply AEMeasurable.aestronglyMeasurable
-        measurability
+      · exact (measurable_newtonianKernel n).aestronglyMeasurable
 
 /-- The Fréchet derivative of the Newtonian kernel is locally integrable in dimensions zero
 and two, where the kernel is identically zero. -/
@@ -124,7 +110,7 @@ private lemma locallyIntegrable_fderiv_newtonianKernel_of_eq_zero_or_two (n : �
     (h : n = 0 ∨ n = 2) :
     LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
   rcases h with rfl | rfl
-  · rw [newtonianKernel_zero_function]
+  · rw [newtonianKernel_dim_zero]
     simp only [fderiv_zero]
     simpa only [Pi.zero_apply] using
       (locallyIntegrable_const (μ := volume)

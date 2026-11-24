@@ -317,11 +317,12 @@ theorem map_eq_id_of_inner (n : ℕ) :
       TopModuleCat.hom_id k (K.X i), ContinuousLinearMap.id_apply, Submodule.coe_sub,
       coe_cochainsMap_f_apply,
       resolutionMap_hom_apply_eq_resolutionTranslate g φ hφ f hf,
-      (ContRepresentation.mem_invariants _).1 v.2 g]
+      (ContRepresentation.mem_invariants _).1 v.property g]
     have hh (j : ℕ) (w : K.X (j + 1)) :
-        (h (j + 1) j (ComplexShape.up_mk _ _ rfl) w).1 = translateHomotopy X g (j + 1) w.1 := rfl
+        (h (j + 1) j (ComplexShape.up_mk _ _ rfl) w).val = translateHomotopy X g (j + 1) w.val
+            := rfl
     have hd (j : ℕ) (w : K.X j) :
-        (K.d j (j + 1) w).1 = (d X (j + 1)).hom w.1 :=
+        (K.d j (j + 1) w).val = (d X (j + 1)).hom w.val :=
       homogeneousCochains.d_apply X j w
     cases i with
     | zero =>
@@ -329,7 +330,7 @@ theorem map_eq_id_of_inner (n : ℕ) :
         (ComplexShape.up_mk 0 1 rfl) (by simp)]
       simp only [ConcreteCategory.comp_apply]
       rw [hh, hd]
-      have hid := d_translateHomotopy_add_translateHomotopy_d X g 0 v.1
+      have hid := d_translateHomotopy_add_translateHomotopy_d X g 0 v.val
       simpa only [translateHomotopy_zero, zero_apply, map_zero, zero_add]
         using hid.symm
     | succ i =>
@@ -343,7 +344,7 @@ theorem map_eq_id_of_inner (n : ℕ) :
       rw [ha, add_apply, Submodule.coe_add]
       simp only [ConcreteCategory.comp_apply]
       rw [hh, hd, hd, hh]
-      exact (d_translateHomotopy_add_translateHomotopy_d X g (i + 1) v.1).symm.trans
+      exact (d_translateHomotopy_add_translateHomotopy_d X g (i + 1) v.val).symm.trans
         (add_comm _ _)
   have ho : Homotopy (cochainsMap φ f) (𝟙 K) :=
     Homotopy.equivSubZero.symm
@@ -358,9 +359,8 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-  [DistribMulAction G N] [ContinuousSMul G N]
+  [DistribMulAction G N]
 
-omit [ContinuousSMul G N] in
 /-- **The inner compatible pair on a discrete `G`-module**: the pair `(x ↦ g⁻¹ x g, m ↦ g • m)`
 consisting of conjugation on `G` and the action of `g` on `N` induces the identity on `Hⁿ(G, N)`.
 This packages `TauCeti.ContinuousCohomology.map_eq_id_of_inner` for this pair, for use when the

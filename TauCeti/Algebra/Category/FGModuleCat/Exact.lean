@@ -16,19 +16,18 @@ public import TauCeti.CategoryTheory.Exact.Abelian
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
-# Closure of finitely generated modules under quotients, subobjects and extensions
+# Closure of finitely generated modules under quotients, extensions and Serre classes
 
 Over any ring `R`, `ModuleCat.isFG R` is closed under quotients and extensions (via
 `CategoryTheory.ObjectProperty.IsClosedUnderExtensions`, and equivalently for the canonical exact
 structure of the abelian category `ModuleCat R` via `TauCeti.isExtensionClosed_finiteModules`).
-Over a Noetherian ring `R`, it is also closed under subobjects, making it a Serre class
-(`CategoryTheory.ObjectProperty.IsSerreClass`).
+Combined with subobject closure over a Noetherian ring (`ModuleCat.isFG_isClosedUnderSubobjects`),
+this makes `ModuleCat.isFG R` a Serre class (`CategoryTheory.ObjectProperty.IsSerreClass`).
 
 ## Main statements
 
 * `ModuleCat.isFG R` has instances of `CategoryTheory.ObjectProperty.IsClosedUnderQuotients`,
   `CategoryTheory.ObjectProperty.IsClosedUnderExtensions`, and (over `[IsNoetherianRing R]`)
-  `CategoryTheory.ObjectProperty.IsClosedUnderSubobjects` and
   `CategoryTheory.ObjectProperty.IsSerreClass`.
 * `TauCeti.isExtensionClosed_finiteModules`: `ModuleCat.isFG R` is extension closed for
   `ExactStructure.abelian (ModuleCat R)`.
@@ -50,13 +49,6 @@ instance : (ModuleCat.isFG.{v, u} R).IsClosedUnderQuotients where
     have : Module.Finite R M := (ModuleCat.isFG_iff M).mp hM
     exact (ModuleCat.isFG_iff N).mpr
       (Module.Finite.of_surjective f.hom ((ModuleCat.epi_iff_surjective f).mp inferInstance))
-
-/-- Over a Noetherian ring, submodules of finitely generated modules are finitely generated. -/
-instance [IsNoetherianRing R] : (ModuleCat.isFG.{v, u} R).IsClosedUnderSubobjects where
-  prop_of_mono {M N} f _ hN := by
-    have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
-    exact (ModuleCat.isFG_iff M).mpr
-      (Module.Finite.of_injective f.hom ((ModuleCat.mono_iff_injective f).mp inferInstance))
 
 /-- Extensions of finitely generated modules are finitely generated. -/
 instance : (ModuleCat.isFG.{v, u} R).IsClosedUnderExtensions where

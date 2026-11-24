@@ -35,7 +35,8 @@ holds for a bilinear scalar action over any coefficient ring, at every unit `u`,
 sides equal `1 + u E - u⁻¹ F - E F - F E`. The left-hand side is the triple product computed in
 `triple_product_of_mul_self_eq_zero`, and the right-hand side is the diagonal element
 `1 + (u - 1) E F + (u⁻¹ - 1) F E` rescaling the two root terms of that normal form at parameters
-`(1, -1)`, which is `torus_mul_triple_product_of_mul_self_eq_zero`. Neither step divides by
+`(1, -1)`. That rescaling holds for the normal form at any parameters, which is
+`torus_mul_triple_product_of_mul_self_eq_zero`. Neither step divides by
 anything: the square-zero hypothesis truncates every divided-power exponential after its first
 term, so no denominator is ever introduced. The triple-product calculation does not even require
 associativity of the ambient ring.
@@ -53,8 +54,8 @@ carrier of type `Cₙ` among them.
   relations `E F E = E` and `F E F = F`.
 * `triple_product_of_mul_self_eq_zero`: the normal form of `(1 + α E) (1 + β F) (1 + α E)` when
   `α β = -1`, for bilinear multiplication over an arbitrary coefficient ring.
-* `torus_mul_triple_product_of_mul_self_eq_zero`: multiplying that normal form at `(1, -1)` by a
-  diagonal element rescales its two root terms.
+* `torus_mul_triple_product_of_mul_self_eq_zero`: multiplying the normal form
+  `1 + a E + b F - E F - F E` on the left by a diagonal element rescales its two root terms.
 * `mul_apply_of_eq_zsmul`: an integer eigenvector of `H` has eigenvalue `1`, `0` or `-1`,
   and in the outer two cases it is fixed by one of the two idempotents and killed by the other.
 
@@ -82,13 +83,9 @@ theorem e_mul_f_mul_e_of_mul_self_eq_zero (htwo : IsSMulRegular A (2 : ℕ))
     (hEE : E * E = 0) (hef : E * F - F * E = H)
     (hhe : H * E - E * H = 2 • E) : E * F * E = E := by
   have h1 : E * F * E = H * E := by
-    have h := congrArg (fun T => T * E) hef
-    simp only [sub_mul, mul_assoc F E E, hEE, mul_zero, sub_zero] at h
-    exact h
+    simpa only [sub_mul, mul_assoc F E E, hEE, mul_zero, sub_zero] using congrArg (· * E) hef
   have h2 : E * H = -(E * F * E) := by
-    have h := congrArg (fun T => E * T) hef
-    simp only [mul_sub, ← mul_assoc, hEE, zero_mul, zero_sub] at h
-    exact h.symm
+    simpa only [mul_sub, ← mul_assoc, hEE, zero_mul, zero_sub] using (congrArg (E * ·) hef).symm
   -- Cancel doubling in the additive group.
   apply htwo
   simpa only [← h1, h2, two_nsmul, sub_neg_eq_add] using hhe
@@ -139,27 +136,28 @@ section Torus
 variable {B A : Type*} [Ring B] [Ring A] [Module B A]
   [IsScalarTower B A A] [SMulCommClass B A A] {E F : A}
 
-/-- **The coroot value times the Weyl representative.** Multiplying the normal form at parameters
-`(1, -1)` by the diagonal element `1 + (α - 1) E F + (β - 1) F E` rescales its two root terms.
-The coefficient ring need not be commutative when its scalar action commutes with multiplication. -/
+/-- **The coroot value times the Weyl representative.** Multiplying the normal form
+`1 + a E + b F - E F - F E` on the left by the diagonal element `1 + (α - 1) E F + (β - 1) F E`
+rescales its two root terms to `(α a) E` and `(β b) F`. The coefficient ring need not be
+commutative when its scalar action commutes with multiplication. -/
 theorem torus_mul_triple_product_of_mul_self_eq_zero (hEE : E * E = 0) (hFF : F * F = 0)
-    (hEFE : E * F * E = E) (hFEF : F * E * F = F) (α β : B) :
-    (1 + (α - 1) • (E * F) + (β - 1) • (F * E)) *
-        (1 + (1 : B) • E + (-1 : B) • F - E * F - F * E) =
-      1 + α • E + (-β) • F - E * F - F * E := by
+    (hEFE : E * F * E = E) (hFEF : F * E * F = F) (α β a b : B) :
+    (1 + (α - 1) • (E * F) + (β - 1) • (F * E)) * (1 + a • E + b • F - E * F - F * E) =
+      1 + (α * a) • E + (β * b) • F - E * F - F * E := by
   -- `E F` and `F E` are orthogonal idempotents annihilating `F` respectively `E` on the right.
   have hQE : F * E * E = 0 := by rw [mul_assoc, hEE, mul_zero]
   have hPF : E * F * F = 0 := by rw [mul_assoc, hFF, mul_zero]
   have hPP : E * F * (E * F) = E * F := by rw [← mul_assoc, hEFE]
   have hQQ : F * E * (F * E) = F * E := by rw [← mul_assoc, hFEF]
-  have hPQ : E * F * (F * E) = 0 := by rw [← mul_assoc, mul_assoc E F F, hFF, mul_zero, zero_mul]
-  have hQP : F * E * (E * F) = 0 := by rw [← mul_assoc, mul_assoc F E E, hEE, mul_zero, zero_mul]
-  -- Expand the product and collect every coefficient in front of a monomial in `E` and `F`, ...
-  simp only [add_mul, mul_add, mul_sub, smul_add, one_mul, mul_one, smul_mul_assoc,
-    mul_smul_comm, smul_smul]
+  have hPQ : E * F * (F * E) = 0 := by rw [← mul_assoc, hPF, zero_mul]
+  have hQP : F * E * (E * F) = 0 := by rw [← mul_assoc, hQE, zero_mul]
+  -- Expand the product and collect every coefficient in front of a monomial in `E` and `F`,
+  -- keeping each torus coefficient to the left of the root coefficient it multiplies, ...
+  simp only [add_mul, mul_add, mul_sub, one_mul, mul_one]
+  simp only [↓smul_mul_smul_comm, smul_mul_assoc]
   -- ... then evaluate the monomials and their coefficients.
-  simp only [hEFE, hFEF, hQE, hPF, hPP, hQQ, hPQ, hQP, neg_one_mul, smul_zero, one_smul,
-    sub_smul, neg_smul, add_zero]
+  simp only [hEFE, hFEF, hQE, hPF, hPP, hQQ, hPQ, hQP, sub_mul, one_mul, smul_zero, one_smul,
+    sub_smul, add_zero]
   abel
 
 end Torus
@@ -197,10 +195,10 @@ theorem mul_apply_of_eq_zsmul (hEE : E * E = 0) (hFF : F * F = 0) (hEFE : E * F 
     simp only [map_sub, map_zsmul, ← mul_apply_eq_comp, hQQ, hQP, LinearMap.zero_apply,
       zero_sub] at hap
     rw [add_smul, one_smul, ← hap, add_neg_cancel]
-  have hPv : m ≠ 1 → (E * F) v = 0 := fun hm => by
-    exact (IsAddTorsionFree.zsmul_eq_zero_iff_right (by omega : (1 : ℤ) - m ≠ 0)).1 k1
-  have hQv : m ≠ -1 → (F * E) v = 0 := fun hm => by
-    exact (IsAddTorsionFree.zsmul_eq_zero_iff_right (by omega : (1 : ℤ) + m ≠ 0)).1 k2
+  have hPv : m ≠ 1 → (E * F) v = 0 := fun hm =>
+    (IsAddTorsionFree.zsmul_eq_zero_iff_right (by omega : (1 : ℤ) - m ≠ 0)).1 k1
+  have hQv : m ≠ -1 → (F * E) v = 0 := fun hm =>
+    (IsAddTorsionFree.zsmul_eq_zero_iff_right (by omega : (1 : ℤ) + m ≠ 0)).1 k2
   have hm : m = 1 ∨ m = 0 ∨ m = -1 := by
     by_contra hcon
     push Not at hcon

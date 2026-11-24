@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.ResidueField
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Algebra structures induced by a scheme over an affine base
@@ -138,9 +138,9 @@ lemma isScalarTower_base_section_stalk {U : X.Opens}
   intro r
   -- Expose the chosen section algebra: its map is the base map restricted to `U`.
   change X.baseRingToStalk k x r =
-    X.presheaf.germ U x x.2 ((X.baseRingToStructurePresheaf k).app (.op U) r)
+    X.presheaf.germ U x x.property ((X.baseRingToStructurePresheaf k).app (.op U) r)
   rw [Scheme.baseRingToStalk_apply, Scheme.baseRingToStructurePresheaf_app]
-  exact (X.presheaf.germ_res_apply U.leTop x x.2 _).symm
+  exact (X.presheaf.germ_res_apply U.leTop x x.property _).symm
 
 /-- The residue field at a point is canonically an algebra over its stalk. -/
 instance residueFieldStalkAlgebra (x : X) :

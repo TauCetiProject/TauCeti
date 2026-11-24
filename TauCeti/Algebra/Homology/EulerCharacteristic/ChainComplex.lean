@@ -22,9 +22,9 @@ boundaries `Bₙ = im (Kₙ₊₁ ⟶ Kₙ)` gives
 finrank R Kₙ = finrank R Hₙ(K) + finrank R Bₙ + finrank R Bₙ₋₁,
 ```
 
-(`ChainComplex.finrank_X_zero`, `ChainComplex.finrank_X_succ`), and the alternating sum of these
-identities telescopes: up to degree `n` the alternating sums of the ranks of the terms and of the
-homology differ by `(-1)ⁿ finrank R Bₙ`
+(`ChainComplex.finrank_X_zero`, `ChainComplex.finrank_X_succ`, and `ChainComplex.finrank_X` in
+every degree at once), and the alternating sum of these identities telescopes: up to degree `n` the
+alternating sums of the ranks of the terms and of the homology differ by `(-1)ⁿ finrank R Bₙ`
 (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology_add`). If the differential
 `Kₙ₊₁ ⟶ Kₙ` vanishes, the last boundary term `finrank R Bₙ` vanishes, so the alternating sums of
 the ranks of the terms and of the homology agree up to degree `n`
@@ -34,6 +34,10 @@ the ranks of the terms and of the homology agree up to degree `n`
 For a complex of finitely generated modules that vanishes in all large degrees, specializing
 `HomologicalComplex.eulerChar_eq_homologyEulerChar_of_forall_notMem` gives the equality of Mathlib's
 term and homology Euler characteristics (`ChainComplex.eulerChar_eq_homologyEulerChar`).
+
+Over any ring, both Euler characteristics of a complex indexed by `ℕ` unfold to the alternating
+sums `∑ᶠ i, (-1)ⁱ · finrank` (`ChainComplex.eulerChar_eq_finsum_finrank` and
+`ChainComplex.homologyEulerChar_eq_finsum_finrank`).
 
 ## References
 
@@ -47,6 +51,26 @@ open CategoryTheory Limits Module
 universe u v
 
 namespace ChainComplex
+
+section Ring
+
+variable {R : Type u} [Ring R] (K : ChainComplex (ModuleCat.{v} R) ℕ)
+
+/-- For a chain complex indexed by `ℕ`, Mathlib's Euler characteristic of the terms is the
+alternating sum `∑ᶠ i, (-1)ⁱ · finrank R (Kᵢ)`. -/
+theorem eulerChar_eq_finsum_finrank :
+    K.eulerChar = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R (K.X i) := by
+  simp only [HomologicalComplex.eulerChar, GradedObject.eulerChar,
+    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+
+/-- For a chain complex indexed by `ℕ`, Mathlib's Euler characteristic of the homology is the
+alternating sum `∑ᶠ i, (-1)ⁱ · finrank R (Hᵢ(K))`. -/
+theorem homologyEulerChar_eq_finsum_finrank :
+    K.homologyEulerChar = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R (K.homology i) := by
+  simp only [HomologicalComplex.homologyEulerChar, GradedObject.eulerChar,
+    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+
+end Ring
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
   (K : ChainComplex (ModuleCat.{v} R) ℕ)
@@ -67,6 +91,23 @@ theorem finrank_X_succ (n : ℕ) [Module.Finite R (K.X (n + 1))] :
         finrank R (LinearMap.range (K.d (n + 1) n).hom) := by
   rw [K.finrank_X_eq_finrank_homology_add (n + 1), ChainComplex.prev, ChainComplex.next_nat_succ]
   rfl
+
+/-- In every degree `n`, rank--nullity gives
+`finrank R Kₙ = finrank R Hₙ(K) + finrank R im (Kₙ₊₁ ⟶ Kₙ) + finrank R im (Kₙ ⟶ Kₙ₋₁)`, where in
+degree `0` the last differential is `K.d 0 0 = 0`. This is `ChainComplex.finrank_X_zero` and
+`ChainComplex.finrank_X_succ` in one formula. -/
+theorem finrank_X (n : ℕ) [Module.Finite R (K.X n)] :
+    finrank R (K.X n) = finrank R (K.homology n) +
+      finrank R (LinearMap.range (K.d (n + 1) n).hom) +
+        finrank R (LinearMap.range (K.d n (n - 1)).hom) := by
+  cases n with
+  | zero =>
+    rw [K.finrank_X_zero, Nat.zero_sub, K.shape 0 0 (by simp), ModuleCat.hom_zero,
+      LinearMap.range_zero]
+    simp
+  | succ n =>
+    rw [Nat.add_sub_cancel]
+    exact K.finrank_X_succ n
 
 /-- If the terms of `K` through degree `n` are finitely generated, the alternating sums up to
 degree `n` of the ranks of the terms and of the homology of `K` differ by the rank of the boundaries

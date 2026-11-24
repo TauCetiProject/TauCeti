@@ -33,6 +33,8 @@ The construction of the dense-subsite instances is adapted from
   topologies of open covers.
 * `Topology.IsOpenEmbedding.overPullbackSheafCongrIso`: restricting a sheaf on `Y` to `range f`
   and transporting it along `overEquivalence` is pushforward along the image functor `f(-)`.
+* `TopologicalSpace.Opens.isLeftAdjoint_sheafRestrict`: restriction of sheaves to an open subset
+  is a left adjoint whenever restriction to the over site is a left adjoint.
 -/
 
 public section
@@ -116,3 +118,14 @@ def overPullbackSheafCongrIso (A : Type*) [Category A] :
       ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology Y)
 
 end Topology.IsOpenEmbedding
+
+namespace TopologicalSpace.Opens
+
+/-- Restriction of sheaves to an open subset `U` is a left adjoint whenever restriction to the over
+site `Over U` is a left adjoint. -/
+instance isLeftAdjoint_sheafRestrict {X : TopCat} (U : Opens X) {A : Type*} [Category* A]
+    [((Opens.grothendieckTopology X).overPullback A U).IsLeftAdjoint] :
+    (U.sheafRestrict (C := A)).IsLeftAdjoint :=
+  Functor.isLeftAdjoint_of_iso U.overPullbackSheafEquivOver
+
+end TopologicalSpace.Opens

@@ -36,7 +36,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 ## Main results
 
 * `TauCeti.card_squareClass` and `TauCeti.natCard_squareClassGroup`: if `2` is nonzero, there
-  are `4 · #𝓀[K] ^ v_K(2)` square classes. These read the count `TauCeti.card_squareClasses`
+  are `4 · #𝓀[K] ^ v_K(2)` square classes; in particular they are finite in number
+  (`TauCeti.finite_squareClassGroup`). These read the count `TauCeti.card_squareClasses`
   on `Kˣ ⧸ (powMonoidHom 2).range` on the literal quotient by squares and on the square-class
   group.
 * `TauCeti.card_squareClasses_dyadic`: a finite extension of `ℚ_[2]` has
@@ -93,6 +94,13 @@ theorem natCard_squareClassGroup (h2 : (2 : K) ≠ 0) :
     Nat.card (SquareClassGroup K) = 4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
   rw [← natCard_multiplicativeSquareClassGroup]
   exact card_squareClass h2
+
+/-- A nonarchimedean local field of characteristic different from two has finitely many square
+classes. -/
+theorem finite_squareClassGroup (h2 : (2 : K) ≠ 0) : Finite (SquareClassGroup K) :=
+  Nat.finite_of_card_ne_zero <| by
+    rw [natCard_squareClassGroup h2]
+    exact mul_ne_zero four_ne_zero (pow_ne_zero _ Nat.card_pos.ne')
 
 /-- **The number of square classes of a dyadic local field.** If `K` is a finite compatible
 extension of `ℚ_[2]`, then `Kˣ ⧸ (Kˣ)²` has

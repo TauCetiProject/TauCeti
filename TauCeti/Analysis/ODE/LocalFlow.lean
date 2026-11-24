@@ -39,9 +39,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 `a` admits a flow jointly `C^(n+1)` near `(a, 0)`, solving the equation there. Its initial value
 and flow law hold for all points and times. Away from this neighbourhood it is the global flow
 of a Lipschitz extension, rather than necessarily a solution of the original field. -/
-theorem exists_contDiffAt_localFlow {n : ℕ∞} (v : E → E) {a : E}
+theorem exists_contDiffOn_localFlow {n : ℕ∞} (v : E → E) {a : E}
     {s : Set E} (hv : ContDiffOn ℝ (n + 1) v s) (hs : s ∈ nhds a) :
-    ∃ Φ : E → ℝ → E, ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ Φ p.1 p.2) (a, 0) ∧
+    ∃ (Φ : E → ℝ → E) (U : Set (E × ℝ)), IsOpen U ∧ (a, 0) ∈ U ∧
+      ContDiffOn ℝ (n + 1) (fun p : E × ℝ ↦ Φ p.1 p.2) U ∧
       (∀ x, Φ x 0 = x) ∧ (∀ x t u, Φ x (t + u) = Φ (Φ x t) u) ∧
       ∀ᶠ p in nhds ((a, 0) : E × ℝ), HasDerivAt (Φ p.1) (v (Φ p.1 p.2)) p.2 := by
   obtain ⟨K, t, ht, hvt⟩ := ((hv.contDiffAt hs).of_le (by simp)).exists_lipschitzOnWith
@@ -54,10 +55,10 @@ theorem exists_contDiffAt_localFlow {n : ℕ∞} (v : E → E) {a : E}
       TauCeti.centeredRadialRetraction_of_mem_closedBall (ball_subset_closedBall hx)]
   have hgs : ContDiffOn ℝ (n + 1) g (ball a r) :=
     (hv.mono (fun x hx ↦ (hrt (ball_subset_closedBall hx)).2)).congr hgv
-  have hga : ContDiffAt ℝ (n + 1)
-      (fun p : E × ℝ ↦ globalSolution g hgK p.1 p.2) (a, 0) :=
-    contDiffAt_globalSolution g hgK hgs (ball_mem_nhds a hr)
-  refine ⟨globalSolution g hgK, hga, fun x ↦ globalSolution_zero g hgK x,
+  obtain ⟨U, hU, ha, hflow⟩ :=
+    exists_contDiffOn_globalSolution g hgK hgs (ball_mem_nhds a hr)
+  have hga := hflow.contDiffAt (hU.mem_nhds ha)
+  refine ⟨globalSolution g hgK, U, hU, ha, hflow, fun x ↦ globalSolution_zero g hgK x,
     fun x t u ↦ globalSolution_add g hgK x t u, ?_⟩
   have htends : Tendsto (fun p : E × ℝ ↦ globalSolution g hgK p.1 p.2)
       (nhds ((a, 0) : E × ℝ)) (nhds a) := by

@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
 public import TauCeti.Topology.Category.TopCat.Fiber
 import TauCeti.Algebra.Category.ModuleCat.Colimits
 import TauCeti.Algebra.Category.ModuleCat.Finrank
-import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
+import TauCeti.Algebra.Homology.SpectralObject.Finrank
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 import TauCeti.Algebra.Homology.SpectralSequence.EulerCharacteristic
 import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
@@ -136,18 +136,18 @@ private lemma exists_cell_and_fiber_vanishing_bounds (C : Set B) {D : Set B} [Re
           (p.fiber (map d j 0))) := by
   obtain ⟨M, hM⟩ := Filter.eventually_atTop.1
     (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
-  have hbound : ∀ (d : Fin M) (j : cell C d.1), ∃ Q : ℕ, ∀ q ≥ Q,
+  have hbound : ∀ (d : Fin M) (j : cell C d.val), ∃ Q : ℕ, ∀ q ≥ Q,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
-        (p.fiber (map d.1 j 0))) := fun d j ↦
+        (p.fiber (map d.val j 0))) := fun d j ↦
     Filter.eventually_atTop.1
-      (eventually_isZero_singularHomology_of_finiteCWType (p.fiber (map d.1 j 0))
+      (eventually_isZero_singularHomology_of_finiteCWType (p.fiber (map d.val j 0))
         (ModuleCat.of R R))
   choose Qfn hQfn using hbound
-  have : ∀ d : Fin M, _root_.Finite (cell C d.1) := fun d ↦ FiniteType.finite_cell d.1
-  let _ := Fintype.ofFinite (Σ d : Fin M, cell C d.1)
-  refine ⟨M, Finset.univ.sup (fun dj : Σ d : Fin M, cell C d.1 ↦ Qfn dj.1 dj.2),
+  have : ∀ d : Fin M, _root_.Finite (cell C d.val) := fun d ↦ FiniteType.finite_cell d.val
+  let _ := Fintype.ofFinite (Σ d : Fin M, cell C d.val)
+  refine ⟨M, Finset.univ.sup (fun dj : Σ d : Fin M, cell C d.val ↦ Qfn dj.1 dj.2),
     hM, fun d hd j q hq ↦ hQfn ⟨d, hd⟩ j q ?_⟩
-  exact (Finset.le_sup (f := fun dj : Σ d : Fin M, cell C d.1 ↦ Qfn dj.1 dj.2)
+  exact (Finset.le_sup (f := fun dj : Σ d : Fin M, cell C d.val ↦ Qfn dj.1 dj.2)
     (Finset.mem_univ ⟨⟨d, hd⟩, j⟩)).trans hq
 
 include hp in
@@ -163,7 +163,7 @@ private lemma isZero_serreSpectralSequence_page_two_X_of_notMem (R : Type u) [Ri
     (hpq : pq ∉ (Finset.range M ×ˢ Finset.range Q).image fun dq ↦ serreBideg dq.1 dq.2) :
     IsZero (((serreSpectralSequence C p R).page 2).X pq) := by
   by_cases hb : pq.2 < -1
-  · exact isZero_serreSpectralSequence_page_two_X_of_lt_neg_one p R C pq hb
+  · exact isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two R C pq (by lia)
   · by_cases hq : 0 ≤ pq.1 + 2 * pq.2
     · exact isZero_serreSpectralSequence_page_two_X hp R C pq hq
     · set d := (pq.2 + 1).toNat
@@ -190,7 +190,7 @@ private lemma finite_serreSpectralSequence_page_two_X (R : Type u) [Ring R] [IsN
     Module.Finite R (((serreSpectralSequence C p R).page 2).X pq) := by
   by_cases hb : pq.2 < -1
   · have := _root_.ModuleCat.subsingleton_of_isZero
-      (isZero_serreSpectralSequence_page_two_X_of_lt_neg_one p R C pq hb)
+      (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two (p := p) R C pq (by lia))
     infer_instance
   · by_cases hq : 0 ≤ pq.1 + 2 * pq.2
     · have := _root_.ModuleCat.subsingleton_of_isZero

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
 import Mathlib.Order.SuccPred.Int
-import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
+import TauCeti.Algebra.Homology.SpectralObject.Finrank
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 
@@ -33,7 +33,7 @@ finitely generated terms under `StrongRankCondition` in
 `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0` and
 `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le`).
 
-On the abutment side, `TauCeti.Algebra.Homology.SpectralObject.ModuleCat` supplies finite
+On the abutment side, `TauCeti.Algebra.Homology.SpectralObject.Finrank` supplies finite
 generation and rank additivity for finitely filtered abutments of spectral objects of modules.
 Combining strong convergence on a finite box of bidegrees with total-degree alternating signs
 equates `(E.page r).eulerChar` with the alternating sum of the ranks of `X.abutment`
