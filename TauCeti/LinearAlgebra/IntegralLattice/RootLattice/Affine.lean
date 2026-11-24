@@ -52,6 +52,11 @@ the Picard lattice.
 
 * `TauCeti.AffineDynkinType.rootLattice`: the affine root lattice, with Gram matrix the
   generalized Cartan matrix.
+* `TauCeti.AffineDynkinType.simpleRootBasis` and
+  `TauCeti.AffineDynkinType.gramMatrix_simpleRootBasis`: its simple-root `ℤ`-basis, with Gram
+  matrix the generalized Cartan matrix.
+* `TauCeti.AffineDynkinType.eq_rootLattice`: a lattice with integral coordinates and generalized
+  Cartan Gram matrix is the affine root lattice.
 * `TauCeti.AffineDynkinType.radical_rootLattice`: its radical is the line spanned by the marks.
 * `TauCeti.AffineDynkinType.mem_rootLattice_carrier_and_mem_radical_iff`: the lattice vectors of
   the radical are the integer multiples of the marks.
@@ -98,7 +103,29 @@ For a valid diagram the lattice is degenerate: its radical is spanned by the mar
 noncomputable def rootLattice : IntegralLattice (Fin t.nodes → ℚ) :=
   ofGramMatrix (Pi.basisFun ℚ (Fin t.nodes)) t.cartanMatrix t.isSymm_cartanMatrix
 
+/-- The simple roots, including the affine one, as a `ℤ`-basis of the affine root lattice. -/
+noncomputable def simpleRootBasis : Module.Basis (Fin t.nodes) ℤ t.rootLattice :=
+  ofGramMatrix.basis _ _ _
+
 variable {t}
+
+/-- The carrier of the affine root lattice is the `ℤ`-span of the standard coordinate vectors, the
+simple roots. -/
+theorem rootLattice_carrier :
+    t.rootLattice.carrier = Submodule.span ℤ (Set.range fun i : Fin t.nodes ↦ Pi.single i 1) :=
+  funext (Pi.basisFun_apply ℚ (Fin t.nodes)) ▸ ofGramMatrix_carrier _ _ _
+
+/-- The `i`-th simple root is the `i`-th standard coordinate vector. -/
+@[simp]
+theorem coe_simpleRootBasis (i : Fin t.nodes) :
+    (t.simpleRootBasis i : Fin t.nodes → ℚ) = Pi.single i 1 :=
+  (ofGramMatrix.coe_basis _ _ _ i).trans (Pi.basisFun_apply ℚ _ i)
+
+/-- **The Gram matrix of the affine root lattice in its simple-root basis is the generalized
+Cartan matrix.** -/
+@[simp]
+theorem gramMatrix_simpleRootBasis : t.rootLattice.gramMatrix t.simpleRootBasis = t.cartanMatrix :=
+  gramMatrix_ofGramMatrix _ _ _
 
 /-- A vector belongs to the affine root lattice exactly when all of its simple-root coordinates are
 integers. -/
@@ -119,6 +146,24 @@ theorem rootLattice_form_single_single (i j : Fin t.nodes) :
     t.rootLattice.form (Pi.single i 1) (Pi.single j 1) = t.cartanMatrix i j := by
   have h := form_ofGramMatrix_basisFun_basisFun t.cartanMatrix t.isSymm_cartanMatrix i j
   rwa [Pi.basisFun_apply, Pi.basisFun_apply] at h
+
+/-- Every simple root, including the affine one, has norm `2`. -/
+@[simp]
+theorem rootLattice_norm_single (i : Fin t.nodes) : t.rootLattice.norm (Pi.single i 1) = 2 := by
+  rw [norm_apply, rootLattice_form_single_single, cartanMatrix_apply_same]
+  norm_num
+
+/-- **Characterization of the affine root lattice**: an integral lattice on `Fin t.nodes → ℚ` whose
+carrier is the standard integral lattice `ℤ^{nodes t}`, and whose form pairs the standard basis
+vectors by the entries of the generalized Cartan matrix, is the affine root lattice of `t`. -/
+theorem eq_rootLattice {L : IntegralLattice (Fin t.nodes → ℚ)}
+    (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
+    (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((t.cartanMatrix i j : ℤ) : ℚ)) :
+    L = t.rootLattice := by
+  refine IntegralLattice.ext (Submodule.ext fun x ↦
+    (hcarrier x).trans (mem_rootLattice_carrier_iff x).symm) ?_
+  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ (Fin t.nodes)) fun i j ↦ ?_
+  rw [Pi.basisFun_apply, Pi.basisFun_apply, hform, rootLattice_form_single_single]
 
 /-- The affine root lattice has rank the number of nodes of the diagram. -/
 @[simp]
