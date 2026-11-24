@@ -38,10 +38,14 @@ As consequences of this decomposition:
   `TriangleGroup a b 0 ≃* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b))`.
 * `TauCeti.TriangleGroup.orderOf_x_zero`, `TauCeti.TriangleGroup.orderOf_y_zero`,
   `TauCeti.TriangleGroup.not_isOfFinOrder_z_zero`,
-  `TauCeti.TriangleGroup.orderOf_z_zero_of_ne_one`: exact orders of the three generators.
+  `TauCeti.TriangleGroup.orderOf_z_zero_of_ne_one`,
+  `TauCeti.TriangleGroup.orderOf_z_zero_one_left`,
+  `TauCeti.TriangleGroup.orderOf_z_zero_one_right`,
+  `TauCeti.TriangleGroup.orderOf_z_zero`: exact orders of the three generators.
 * `TauCeti.TriangleGroup.exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder`: torsion classification
   in `Δ(a, b, 0)`.
 * `TauCeti.TriangleGroup.abelianizationZeroAddEquivProd`,
+  `TauCeti.TriangleGroup.abelianizationZeroAddEquivProd_of`,
   `TauCeti.TriangleGroup.abelianizationZeroAddEquivZMod`: additive abelianization of `Δ(a, b, 0)`.
 -/
 
@@ -117,14 +121,14 @@ theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
 /-- The first generator `x a b 0` of `Δ(a, b, 0)` has order `a` (for `a = 0`, infinite order). -/
 @[simp]
 theorem orderOf_x_zero (a b : ℕ) : orderOf (x a b 0) = a := by
-  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_x, Monoid.Coprod.orderOf_inl,
-    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq]
+  simp [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 /-- The second generator `y a b 0` of `Δ(a, b, 0)` has order `b` (for `b = 0`, infinite order). -/
 @[simp]
 theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
-  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_y, Monoid.Coprod.orderOf_inr,
-    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq]
+  simp [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 /-- When `a ≠ 1` and `b ≠ 1`, the third generator `z a b 0 = (y a b 0 * x a b 0)⁻¹` of
 `Δ(a, b, 0)` has infinite order. -/
@@ -138,6 +142,26 @@ theorem not_isOfFinOrder_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
 theorem orderOf_z_zero_of_ne_one {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
     orderOf (z a b 0) = 0 :=
   orderOf_eq_zero (not_isOfFinOrder_z_zero ha hb)
+
+/-- When `a = 1`, `x 1 b 0 = 1`, so `z 1 b 0 = (y 1 b 0)⁻¹` has order `b`. -/
+@[simp]
+theorem orderOf_z_zero_one_left (b : ℕ) : orderOf (z 1 b 0) = b := by
+  have hx : x 1 b 0 = 1 := by simpa using x_pow 1 b 0
+  rw [z_eq, hx, mul_one, orderOf_inv, orderOf_y_zero]
+
+/-- When `b = 1`, `y a 1 0 = 1`, so `z a 1 0 = (x a 1 0)⁻¹` has order `a`. -/
+@[simp]
+theorem orderOf_z_zero_one_right (a : ℕ) : orderOf (z a 1 0) = a := by
+  have hy : y a 1 0 = 1 := by simpa using y_pow a 1 0
+  rw [z_eq, hy, one_mul, orderOf_inv, orderOf_x_zero]
+
+/-- Exact order of the third generator `z a b 0` in `Δ(a, b, 0)` for all `a, b : ℕ`. -/
+theorem orderOf_z_zero (a b : ℕ) :
+    orderOf (z a b 0) = if a = 1 then b else if b = 1 then a else 0 := by
+  split_ifs with ha hb
+  · subst ha; exact orderOf_z_zero_one_left b
+  · subst hb; exact orderOf_z_zero_one_right a
+  · exact orderOf_z_zero_of_ne_one ha hb
 
 /-- Every element of finite order in `Δ(a, b, 0)` is conjugate to an integer power of `x a b 0` or
 of `y a b 0`. -/
@@ -168,17 +192,25 @@ def abelianizationZeroAddEquivProd (a b : ℕ) :
     (MulEquiv.prodMultiplicative (ZMod a) (ZMod b)).symm).toAdditive.trans
     (AddEquiv.additiveMultiplicative (ZMod a × ZMod b))
 
+/-- `abelianizationZeroAddEquivProd` maps the class of an arbitrary element `g` of `Δ(a, b, 0)` to
+the pair of projections of `equivCoprod a b g`. -/
+theorem abelianizationZeroAddEquivProd_of (a b : ℕ) (g : TriangleGroup a b 0) :
+    abelianizationZeroAddEquivProd a b (.ofMul (.of g)) =
+      ((Monoid.Coprod.fst (equivCoprod a b g)).toAdd,
+        (Monoid.Coprod.snd (equivCoprod a b g)).toAdd) := by
+  simp [abelianizationZeroAddEquivProd, MulEquiv.prodCongr]
+
 /-- `abelianizationZeroAddEquivProd` maps the class of `x a b 0` to `(1, 0)`. -/
 @[simp]
 theorem abelianizationZeroAddEquivProd_x (a b : ℕ) :
     abelianizationZeroAddEquivProd a b (.ofMul (.of (x a b 0))) = (1, 0) := by
-  simp [abelianizationZeroAddEquivProd, MulEquiv.prodCongr]
+  simp [abelianizationZeroAddEquivProd_of]
 
 /-- `abelianizationZeroAddEquivProd` maps the class of `y a b 0` to `(0, 1)`. -/
 @[simp]
 theorem abelianizationZeroAddEquivProd_y (a b : ℕ) :
     abelianizationZeroAddEquivProd a b (.ofMul (.of (y a b 0))) = (0, 1) := by
-  simp [abelianizationZeroAddEquivProd, MulEquiv.prodCongr]
+  simp [abelianizationZeroAddEquivProd_of]
 
 /-- `abelianizationZeroAddEquivProd` maps the class of `z a b 0` to `(-1, -1)`. -/
 @[simp]

@@ -262,40 +262,27 @@ instance instGroupBoolFactors (G : Type u) (H : Type v) [Group G] [Group H] :
 and the binary free product `M ∗ N`. -/
 def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
     CoprodI (boolFactors M N) ≃* Coprod M N :=
-  MonoidHom.toMulEquiv
-    (lift fun
-      | false => Coprod.inl.comp (MulEquiv.ulift : boolFactors M N false ≃* M).toMonoidHom
-      | true => Coprod.inr.comp (MulEquiv.ulift : boolFactors M N true ≃* N).toMonoidHom)
-    (Coprod.lift
-      ((of (i := false) (M := boolFactors M N)).comp MulEquiv.ulift.symm.toMonoidHom)
-      ((of (i := true) (M := boolFactors M N)).comp MulEquiv.ulift.symm.toMonoidHom))
-    (by
-      ext i x
-      cases i
-      · exact congrArg (of (i := false)) ((MulEquiv.ulift : ULift.{v} M ≃* M).symm_apply_apply x)
-      · exact congrArg (of (i := true)) ((MulEquiv.ulift : ULift.{u} N ≃* N).symm_apply_apply x))
-    (by
-      ext x
-      · exact congrArg Coprod.inl ((MulEquiv.ulift : ULift.{v} M ≃* M).apply_symm_apply x)
-      · exact congrArg Coprod.inr ((MulEquiv.ulift : ULift.{u} N ≃* N).apply_symm_apply x))
+  (boolEquivCoprod (boolFactors M N)).trans
+    ((MulEquiv.ulift : boolFactors M N false ≃* M).coprodCongr
+      (MulEquiv.ulift : boolFactors M N true ≃* N))
 
 /-- `uliftBoolEquivCoprod` maps the `false` factor inclusion to `Coprod.inl`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (x : ULift.{v} M) :
-    uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down := by
-  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
-    lift_of (M := boolFactors M N) (i := false) _ x]
-  exact congrArg Coprod.inl (MulEquiv.ulift_apply x)
+    uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down :=
+  congrArg ((MulEquiv.ulift : boolFactors M N false ≃* M).coprodCongr
+      (MulEquiv.ulift : boolFactors M N true ≃* N))
+    (boolEquivCoprod_of_false (M := boolFactors M N) x)
 
 /-- `uliftBoolEquivCoprod` maps the `true` factor inclusion to `Coprod.inr`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_true {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (y : ULift.{u} N) :
-    uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down := by
-  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
-    lift_of (M := boolFactors M N) (i := true) _ y]
-  exact congrArg Coprod.inr (MulEquiv.ulift_apply y)
+    uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down :=
+  congrArg ((MulEquiv.ulift : boolFactors M N false ≃* M).coprodCongr
+      (MulEquiv.ulift : boolFactors M N true ≃* N))
+    (boolEquivCoprod_of_true (M := boolFactors M N) y)
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inl x` to the `false` factor
 inclusion. -/
@@ -303,9 +290,8 @@ inclusion. -/
 theorem uliftBoolEquivCoprod_symm_inl {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (x : M) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inl x) =
-      of (i := false) (MulEquiv.ulift.symm x) := by
-  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_symm_apply]
-  exact Coprod.lift_apply_inl _ _ x
+      of (i := false) (MulEquiv.ulift.symm x) :=
+  boolEquivCoprod_symm_inl (M := boolFactors M N) (MulEquiv.ulift.symm x)
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inr y` to the `true` factor
 inclusion. -/
@@ -313,9 +299,8 @@ inclusion. -/
 theorem uliftBoolEquivCoprod_symm_inr {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (y : N) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inr y) =
-      of (i := true) (MulEquiv.ulift.symm y) := by
-  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_symm_apply]
-  exact Coprod.lift_apply_inr _ _ y
+      of (i := true) (MulEquiv.ulift.symm y) :=
+  boolEquivCoprod_symm_inr (M := boolFactors M N) (MulEquiv.ulift.symm y)
 
 /-- The inverse of `uliftBoolEquivCoprod` maps the product of a word `L : List (M ⊕ N)` to the
 product of the lifted factor inclusions along `L`. -/
@@ -328,8 +313,7 @@ theorem uliftBoolEquivCoprod_symm_mk_ofList {M : Type u} {N : Type v} [Monoid M]
   induction L with
   | nil => simp
   | cons s L ih =>
-    rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
-    cases s <;> simp
+    cases s <;> simp [FreeMonoid.ofList_cons, ih]
 
 end ULiftBool
 
@@ -341,18 +325,8 @@ variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
 members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
 `Monoid.Coprod.inr`. -/
 def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
-  MonoidHom.toMulEquiv
-    (lift fun
-      | 0 => Coprod.inl
-      | 1 => Coprod.inr)
-    (Coprod.lift (of (i := 0)) (of (i := 1)))
-    (by
-      ext i x
-      rcases i with ⟨_ | _ | i, hi⟩
-      · simp
-      · simp
-      · omega)
-    (by ext <;> simp)
+  (MulEquiv.coprodICongrLeft M finTwoEquiv.symm).symm.trans
+    (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
 
 variable {M}
 
@@ -360,13 +334,17 @@ variable {M}
 @[simp]
 theorem finTwoEquivCoprod_symm_inl (x : M 0) :
     (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
-  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+  (congrArg (MulEquiv.coprodICongrLeft M finTwoEquiv.symm)
+    (boolEquivCoprod_symm_inl (M := fun b => M (finTwoEquiv.symm b)) x)).trans
+    (MulEquiv.coprodICongrLeft_apply_of M finTwoEquiv.symm (i := false) x)
 
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inr` to the canonical inclusion of `M 1`. -/
 @[simp]
 theorem finTwoEquivCoprod_symm_inr (x : M 1) :
     (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
-  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+  (congrArg (MulEquiv.coprodICongrLeft M finTwoEquiv.symm)
+    (boolEquivCoprod_symm_inr (M := fun b => M (finTwoEquiv.symm b)) x)).trans
+    (MulEquiv.coprodICongrLeft_apply_of M finTwoEquiv.symm (i := true) x)
 
 /-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
 @[simp]
