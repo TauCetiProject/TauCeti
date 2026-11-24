@@ -160,6 +160,14 @@ private def stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
   ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas
     (stereographic'_mem_maximalAtlas (k := 1) v)).symm
 
+omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
+  [BorelSpace (sphere (0 : E) 1)] in
+private theorem coe_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
+    (stereographic'SymmPartialDiffeomorph (n := n) v :
+      EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
+  funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
+    (stereographic'_mem_maximalAtlas (k := 1) v))
+
 /-- **Stereographic pushforward onto the punctured sphere.** The inverse stereographic chart from
 `v` pushes Lebesgue measure on `ℝⁿ` weighted by `(4 / (‖y‖² + 4)) ^ n` forward to the Riemannian
 volume of the unit sphere restricted to `{v}ᶜ`. -/
@@ -172,11 +180,8 @@ theorem map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume
   let b := EuclideanSpace.basisFun (Fin n) ℝ
   have hmap := (stereographic'SymmPartialDiffeomorph (n := n) v).map_withDensity_riemannianJacobian
     one_ne_zero b.toBasis
-  have hcoe : (stereographic'SymmPartialDiffeomorph (n := n) v :
-      EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
-    funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
-      (stereographic'_mem_maximalAtlas (k := 1) v))
-  rw [hcoe, funext (riemannianJacobian_stereographic'_symm v)] at hmap
+  rw [coe_stereographic'SymmPartialDiffeomorph v,
+    funext (riemannianJacobian_stereographic'_symm v)] at hmap
   simpa [stereographic'SymmPartialDiffeomorph, b.addHaar_eq_volume] using hmap
 
 /-- **Stereographic pushforward of the round-sphere volume.** In positive dimension `n > 0`, the
@@ -208,11 +213,8 @@ theorem lintegral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
   let b := EuclideanSpace.basisFun (Fin n) ℝ
   have h := (stereographic'SymmPartialDiffeomorph (n := n) v).setLIntegral_riemannianVolume_eq
     one_ne_zero b.toBasis f
-  have hcoe : (stereographic'SymmPartialDiffeomorph (n := n) v :
-      EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
-    funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
-      (stereographic'_mem_maximalAtlas (k := 1) v))
-  rw [hcoe, funext (riemannianJacobian_stereographic'_symm v)] at h
+  rw [coe_stereographic'SymmPartialDiffeomorph v,
+    funext (riemannianJacobian_stereographic'_symm v)] at h
   simpa [stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
     b.addHaar_eq_volume] using h
 
@@ -234,11 +236,8 @@ theorem integrable_riemannianVolume_sphere_iff_stereographic'
     let b := EuclideanSpace.basisFun (Fin n) ℝ
     have h := (stereographic'SymmPartialDiffeomorph (n := n) v).integrableOn_riemannianVolume_iff
       one_ne_zero b.toBasis f
-    have hcoe : (stereographic'SymmPartialDiffeomorph (n := n) v :
-        EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
-      funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
-        (stereographic'_mem_maximalAtlas (k := 1) v))
-    rw [hcoe, funext (riemannianJacobian_stereographic'_symm v)] at h
+    rw [coe_stereographic'SymmPartialDiffeomorph v,
+      funext (riemannianJacobian_stereographic'_symm v)] at h
     simpa [IntegrableOn, stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
       b.addHaar_eq_volume] using h
 
@@ -257,11 +256,8 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
   let b := EuclideanSpace.basisFun (Fin n) ℝ
   have h := (stereographic'SymmPartialDiffeomorph (n := n) v).setIntegral_riemannianVolume_eq
     one_ne_zero b.toBasis f
-  have hcoe : (stereographic'SymmPartialDiffeomorph (n := n) v :
-      EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
-    funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
-      (stereographic'_mem_maximalAtlas (k := 1) v))
-  rw [hcoe, funext (riemannianJacobian_stereographic'_symm v)] at h
+  rw [coe_stereographic'SymmPartialDiffeomorph v,
+    funext (riemannianJacobian_stereographic'_symm v)] at h
   simpa [stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
     b.addHaar_eq_volume] using h
 

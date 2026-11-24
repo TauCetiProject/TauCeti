@@ -96,6 +96,19 @@ theorem inner_mfderiv_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphere (0
   field_simp
   ring
 
+omit [Fact (finrank ℝ E = n + 1)] in
+private theorem mul_stereographic_density_eq_bubble_rpow (hn : n ≠ 2) {t : ℝ} (ht : 0 < t)
+    (b x : EuclideanSpace ℝ (Fin n)) :
+    (2 / t) ^ n * (4 / (‖(2 / t) • (x - b)‖ ^ 2 + 4)) ^ n =
+      bubble t b x ^ criticalExponent n := by
+  have hU :=
+    bubble_rpow_criticalExponent (E := EuclideanSpace ℝ (Fin n)) (by simpa using hn) ht b x
+  rw [finrank_euclideanSpace_fin] at hU
+  rw [hU, ← mul_pow, norm_smul, Real.norm_of_nonneg (by positivity)]
+  congr 1
+  field_simp
+  ring
+
 /-- **Riemannian Jacobian of rescaled inverse stereographic projection.** In dimension `n ≠ 2`, for
 every `t ≥ 0`, the Riemannian Jacobian of `x ↦ σ⁻¹((2 / t) (x - b))` relative to the standard
 orthonormal basis of `ℝⁿ` is `U_{t,b}(x) ^ pₙ`. -/
@@ -141,17 +154,11 @@ theorem riemannianJacobian_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphe
       ext d
       rw [ContinuousLinearMap.coe_coe, hmf]
       rfl
-    have hU :=
-      bubble_rpow_criticalExponent (E := EuclideanSpace ℝ (Fin n)) (by simpa using hn) ht b x
-    rw [finrank_euclideanSpace_fin] at hU
     rw [riemannianJacobian_eq_normDet e, hJ, LinearMap.normDet_smul, finrank_euclideanSpace_fin,
       Real.norm_of_nonneg (by positivity),
       ← riemannianJacobian_eq_normDet e (stereographic' n v).symm ((2 / t) • (x - b)),
-      riemannianJacobian_stereographic'_symm, hU, ← mul_pow, norm_smul,
-      Real.norm_of_nonneg (by positivity)]
-    congr 1
-    field_simp
-    ring
+      riemannianJacobian_stereographic'_symm]
+    exact mul_stereographic_density_eq_bubble_rpow hn ht b x
 
 end Metric
 
@@ -161,20 +168,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
   [LindelofSpace (sphere (0 : E) 1)]
   [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)]
-
-omit [Fact (finrank ℝ E = n + 1)] [LindelofSpace (sphere (0 : E) 1)]
-  [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)] in
-private theorem mul_stereographic_density_eq_bubble_rpow (hn : n ≠ 2) {t : ℝ} (ht : 0 < t)
-    (b x : EuclideanSpace ℝ (Fin n)) :
-    (2 / t) ^ n * (4 / (‖(2 / t) • (x - b)‖ ^ 2 + 4)) ^ n =
-      bubble t b x ^ criticalExponent n := by
-  have hU :=
-    bubble_rpow_criticalExponent (E := EuclideanSpace ℝ (Fin n)) (by simpa using hn) ht b x
-  rw [finrank_euclideanSpace_fin] at hU
-  rw [hU, ← mul_pow, norm_smul, Real.norm_of_nonneg (by positivity)]
-  congr 1
-  field_simp
-  ring
 
 /-- **Rescaled stereographic pushforward onto the punctured sphere.** In dimension `n ≠ 2`, for
 `t > 0`, `x ↦ σ⁻¹((2 / t) (x - b))` pushes Lebesgue measure weighted by `U_{t,b} ^ pₙ` forward to
