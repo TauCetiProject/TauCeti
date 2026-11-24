@@ -21,8 +21,10 @@ eigenvalue and `‖S‖ ^ k ≤ tr (S ^ k)` for every `k`, not only for even `k`
 `E tr (S n ^ k n) ≤ C n ^ a c ^ k n` for every `c > L`, with orders `k n` of any parity growing
 faster than `log n`, gives almost surely `limsup λ_max (S n) ≤ L`.
 
-For sample covariance matrices this is the upper half of the limit `λ_max(XX*/n) → (1 + √y)²`;
-the lower half follows from the global spectral law. The dimensions of the matrices may vary with
+For sample covariance matrices, combined with a growing-moment bound
+`E tr (S ^ k) ≤ C n ^ a ((1 + √y)² + ε) ^ k`, which is not proved here, this gives the upper half
+of the limit `λ_max(XX*/n) → (1 + √y)²`; the lower half follows from the global spectral law.
+The dimensions of the matrices may vary with
 `n` and must be nonempty; the matrices at different sizes may have any coupling. For Hermitian
 matrices and even orders, see
 `TauCeti.Probability.ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le`.

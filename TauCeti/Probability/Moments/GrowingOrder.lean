@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.Analysis.SpecificLimits.SuperlogarithmicGeometric
-import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -49,6 +49,13 @@ namespace TauCeti
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
   {Y Z : ℕ → Ω → ℝ} {k : ℕ → ℕ} {L : ℝ}
 
+/-- A function that dominates a natural power of an absolute value almost everywhere is almost
+everywhere nonnegative. -/
+private lemma ae_nonneg_of_ae_abs_pow_le {f g : Ω → ℝ} {m : ℕ}
+    (h : ∀ᵐ ω ∂μ, |f ω| ^ m ≤ g ω) : 0 ≤ᵐ[μ] g := by
+  filter_upwards [h] with ω hω
+  exact (by positivity : 0 ≤ |f ω| ^ m).trans hω
+
 /-- **Almost sure upper bounds from summable moments of growing order.** Let
 `|Y n| ^ k n ≤ Z n` almost everywhere with every `Z n` integrable, and `0 ≤ L`. If for every
 `c > L` the normalized moments `(∫ Z n) / c ^ k n` are summable, then almost surely `Y n` is
@@ -57,9 +64,7 @@ theorem ae_forall_eventually_lt_of_summable_integral_div_pow (hL : 0 ≤ L)
     (hYZ : ∀ n, ∀ᵐ ω ∂μ, |Y n ω| ^ k n ≤ Z n ω) (hZ : ∀ n, Integrable (Z n) μ)
     (hsum : ∀ c > L, Summable fun n ↦ (∫ ω, Z n ω ∂μ) / c ^ k n) :
     ∀ᵐ ω ∂μ, ∀ c > L, ∀ᶠ n in atTop, Y n ω < c := by
-  have hZ₀ (n : ℕ) : 0 ≤ᵐ[μ] Z n := by
-    filter_upwards [hYZ n] with ω hω
-    exact (by positivity : 0 ≤ |Y n ω| ^ k n).trans hω
+  have hZ₀ (n : ℕ) : 0 ≤ᵐ[μ] Z n := ae_nonneg_of_ae_abs_pow_le (hYZ n)
   refine TauCeti.MeasureTheory.ae_forall_eventually_lt_of_tsum_ge_ne_top fun c hc ↦ ?_
   have hc₀ : 0 < c := hL.trans_lt hc
   -- Markov's inequality for `Z n` at the level `c ^ k n` bounds each exceedance probability.
@@ -69,9 +74,10 @@ theorem ae_forall_eventually_lt_of_summable_integral_div_pow (hL : 0 ≤ L)
       filter_upwards [hYZ n] with ω hω (hcY : c ≤ Y n ω)
       exact (pow_le_pow_left₀ hc₀.le (hcY.trans (le_abs_self _)) _).trans hω
     refine (measure_mono_ae hsub).trans ?_
-    simpa only [pow_one] using meas_ge_le_integral_pow_div_pow (Y := Z n) 1
-      (by simpa only [pow_one] using hZ n)
-      ((hZ₀ n).mono fun _ h ↦ by simpa only [pow_one, Pi.zero_apply] using h) (pow_pos hc₀ _)
+    rw [← integral_div]
+    exact ((hZ n).div_const _).measure_le_integral
+      ((hZ₀ n).mono fun _ h ↦ div_nonneg h (pow_nonneg hc₀.le _))
+      fun _ hω ↦ (one_le_div (pow_pos hc₀ _)).2 hω
   have hnonneg (n : ℕ) : 0 ≤ (∫ ω, Z n ω ∂μ) / c ^ k n :=
     div_nonneg (integral_nonneg_of_ae (hZ₀ n)) (pow_nonneg hc₀.le _)
   refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hmarkov)
@@ -95,9 +101,8 @@ theorem ae_forall_eventually_lt_of_integral_le_mul_pow (hL : 0 ≤ L)
   have hc'₀ : 0 < c' := hL.trans_lt hLc'
   have hc₀ : 0 < c := hc'₀.trans hc'c
   obtain ⟨C, a, hC⟩ := hmom c' hLc'
-  have hZ₀ (n : ℕ) : 0 ≤ ∫ ω, Z n ω ∂μ := integral_nonneg_of_ae <| by
-    filter_upwards [hYZ n] with ω hω
-    exact (by positivity : 0 ≤ |Y n ω| ^ k n).trans hω
+  have hZ₀ (n : ℕ) : 0 ≤ ∫ ω, Z n ω ∂μ :=
+    integral_nonneg_of_ae (ae_nonneg_of_ae_abs_pow_le (hYZ n))
   have hsum : Summable fun n : ℕ ↦ |C| * ((n : ℝ) ^ a * (c' / c) ^ k n) :=
     (summable_pow_mul_pow_of_tendsto_div_log_atTop hk a (div_pos hc'₀ hc₀).le
       ((div_lt_one hc₀).2 hc'c)).mul_left _
