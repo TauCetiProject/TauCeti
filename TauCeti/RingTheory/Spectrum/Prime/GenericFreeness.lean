@@ -248,8 +248,10 @@ private theorem freeLocus_cokernel_mem_nhds_bot [IsDomain A] {σ ι κ : Type*} 
     ((κ → MvPolynomial σ R₀) ⧸ LinearMap.range W₀.mulVecLin) hbot
   have hcomap : PrimeSpectrum.comap (algebraMap R₀ A) ⟨⊥, Ideal.isPrime_bot⟩ =
       ⟨⊥, hbot.1.1⟩ := by
+    have hinj : Function.Injective (algebraMap R₀ A) := fun x y hxy ↦
+      Subtype.val_injective (by simpa only [Subalgebra.algebraMap_apply] using hxy)
     ext1
-    exact Ideal.comap_bot_of_injective _ Subtype.val_injective
+    exact Ideal.comap_bot_of_injective _ hinj
   refine Filter.mem_of_superset
     ((PrimeSpectrum.continuous_comap (algebraMap R₀ A)).continuousAt.preimage_mem_nhds
       (hcomap ▸ h₀)) fun p hp ↦ ?_
@@ -278,15 +280,14 @@ private theorem freeLocus_mem_nhds_bot_mvPolynomial [IsDomain A] {σ : Type*} [F
     rw [← LinearMap.range_eq_top, Submodule.range_liftQ, LinearMap.range_eq_top]
     exact hπ
   · intro y hy
-    induction y using Submodule.Quotient.induction_on with
-    | H x =>
-      have hx : x ∈ LinearMap.ker π := by
-        simpa only [q, LinearMap.mem_ker, LinearMap.restrictScalars_apply,
-          Submodule.liftQ_apply] using hy
-      obtain ⟨b, hb, hbx⟩ := hs x hx
-      refine (Submodule.mem_torsion_iff _).mpr ⟨⟨b, hb⟩, ?_⟩
-      rw [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, hrange]
-      exact hbx
+    simp only [q, LinearMap.ker_restrictScalars, Submodule.restrictScalars_mem,
+      Submodule.ker_liftQ, Submodule.mem_map] at hy
+    obtain ⟨x, hx, rfl⟩ := hy
+    obtain ⟨b, hb, hbx⟩ := hs x hx
+    refine (Submodule.mem_torsion_iff _).mpr ⟨⟨b, hb⟩, ?_⟩
+    rw [Submonoid.mk_smul, Submodule.mkQ_apply, ← Submodule.Quotient.mk_smul,
+      Submodule.Quotient.mk_eq_zero, hrange]
+    exact hbx
 
 /-- **Generic freeness over a domain.** Let `A` be a domain, `B` a finitely generated `A`-algebra
 and `M` a finite `B`-module. Then `M` is free over `A` on a neighbourhood of the generic point `⊥`

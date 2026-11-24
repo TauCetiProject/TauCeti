@@ -154,25 +154,22 @@ theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGro
     (htors : LinearMap.ker q ≤ Submodule.torsion R M)
     [Module.IsTorsionFree (Localization S) (LocalizedModule S M)] :
     Function.Injective (map S q) := by
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-  intro y hy
-  induction y using induction_on with
-  | h x s =>
-    rw [LinearMap.mem_ker, map_mk, IsLocalizedModule.mk_eq_mk',
-      IsLocalizedModule.mk'_eq_zero'] at hy
-    obtain ⟨u, hu⟩ := hy
-    have hux : (u : R) • x ∈ LinearMap.ker q := by
-      rw [LinearMap.mem_ker, map_smul, ← Submonoid.smul_def]
-      exact hu
-    obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
-    -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
-    have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
-      rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
-      exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.property)
-        (IsLocalization.map_units _ u).mem_nonZeroDivisors
-    have h0 : algebraMap R (Localization S) ((b : R) * u) • mk x s = 0 := by
-      rw [algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx, zero_mk]
-    exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
+  refine IsLocalizedModule.injective_of_map_zero S (mkLinearMap S M) fun x hx ↦ ?_
+  rw [IsLocalizedModule.map_apply, IsLocalizedModule.eq_zero_iff S] at hx
+  obtain ⟨u, hu⟩ := hx
+  have hux : (u : R) • x ∈ LinearMap.ker q := by
+    rw [LinearMap.mem_ker, map_smul, ← Submonoid.smul_def]
+    exact hu
+  obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
+  -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
+  have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
+    rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
+    exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.property)
+      (IsLocalization.map_units _ u).mem_nonZeroDivisors
+  have h0 : algebraMap R (Localization S) ((b : R) * u) • mkLinearMap S M x = 0 := by
+    rw [mkLinearMap_apply, algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx,
+      zero_mk]
+  exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
 
 end LocalizedModule
 
