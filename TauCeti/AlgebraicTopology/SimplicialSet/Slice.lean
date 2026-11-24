@@ -47,6 +47,10 @@ to standard simplices.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
   and composition.
+* `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`: for maps `j : A ⟶ B`,
+  `i : L ⟶ K` and `p : X ⟶ S`, the map `j` lifts against every relative slice map for `i` exactly
+  when the map `(A ⋆ K) ⨿_{A ⋆ L} (B ⋆ L) ⟶ B ⋆ K` from the pushout-join of `j` and `i` lifts
+  against `p`.
 
 ## Implementation notes
 
@@ -502,6 +506,94 @@ instance isIso_restrictionMap (i : L ⟶ K) (p : X ⟶ S) [IsIso p] (σ : K ⟶ 
     rw [restrictionMap_snd]
     infer_instance
   exact IsIso.of_isIso_comp_right _ (Limits.pullback.snd _ _)
+
+/-- Under the universal property of the slice, the first component of the relative slice map
+restricts the map `T ⋆ K ⟶ X` corresponding to a family of cones `F` along `T ⋆ i`. -/
+lemma homEquiv_comp_restrictionMap_fst_coe {T : SSet.{u}} (F : T ⟶ slice σ) (i : L ⟶ K)
+    (p : X ⟶ S) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.fst _ _)).val =
+      join.map (𝟙 T) i ≫ (homEquiv F).val := by
+  rw [restrictionMap_fst, homEquiv_comp_map_coe, Category.comp_id]
+
+/-- Under the universal property of the slice, the second component of the relative slice map
+composes the map `T ⋆ K ⟶ X` corresponding to a family of cones `F` with `p`. -/
+lemma homEquiv_comp_restrictionMap_snd_coe {T : SSet.{u}} (F : T ⟶ slice σ) (i : L ⟶ K)
+    (p : X ⟶ S) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.snd _ _)).val =
+      (homEquiv F).val ≫ p := by
+  rw [restrictionMap_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp]
+
+section lifting
+
+open Limits
+
+variable {A B P : SSet.{u}}
+
+/-- **Lifting problems for relative slices are extension problems along a pushout-join.** Let
+`j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, and let `u : P ⟶ B ⋆ K` be the map induced on a pushout
+`P` of `A ⋆ K ← A ⋆ L → B ⋆ L`. Then `j` lifts against every relative slice map
+`X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}` exactly when `u` lifts against `p`: through
+the universal property of the slice, a lifting problem, ranging over all diagrams `σ`, is a pair
+of maps `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S`
+restricting to their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending
+both. For a fixed `σ`, the map `A ⋆ K ⟶ X` must restrict to `σ` on `K`. -/
+theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) (i : L ⟶ K)
+    (p : X ⟶ S) {f : join A K ⟶ P} {g : join B L ⟶ P}
+    (h : IsPushout (join.map (𝟙 A) i) (join.map j (𝟙 L)) f g) {u : P ⟶ join B K}
+    (hf : f ≫ u = join.map j (𝟙 K)) (hg : g ≫ u = join.map (𝟙 B) i) :
+    (∀ σ : K ⟶ X, HasLiftingProperty j (restrictionMap i p σ)) ↔ HasLiftingProperty u p := by
+  refine ⟨fun H ↦ ⟨fun {t b} sq ↦ ?_⟩, fun H σ ↦ ⟨fun {a b} sq ↦ ?_⟩⟩
+  · -- The restrictions of `t` to `A ⋆ K` and `B ⋆ L`, and the map `b`, form a lifting problem
+    -- for the relative slice map at the restriction `σ : K ⟶ X` of `t`.
+    let σ : K ⟶ X := join.inr A K ≫ f ≫ t
+    have hβ : join.inr B L ≫ g ≫ t = i ≫ σ :=
+      calc join.inr B L ≫ g ≫ t = join.inr A L ≫ join.map j (𝟙 L) ≫ g ≫ t := by
+            rw [join.inr_map_assoc, Category.id_comp]
+        _ = i ≫ σ := by rw [← h.w_assoc, join.inr_map_assoc]
+    have hγ : join.inr B K ≫ b = σ ≫ p := by
+      rw [Category.assoc, Category.assoc, sq.w, reassoc_of% hf, join.inr_map_assoc,
+        Category.id_comp]
+    have sq' : CommSq (homEquiv.symm ⟨f ≫ t, rfl⟩) j (restrictionMap i p σ)
+        (pullback.lift (homEquiv.symm ⟨g ≫ t, hβ⟩) (homEquiv.symm ⟨b, hγ⟩)
+          (hom_ext (by simp [sq.w, reassoc_of% hg]))) :=
+      ⟨pullback.hom_ext (hom_ext (by simp [h.w_assoc]))
+        (hom_ext (by simp [sq.w, reassoc_of% hf]))⟩
+    have := H σ
+    have hl₁ := congrArg (fun F ↦ (homEquiv F).val) sq'.fac_left
+    have hl₂ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.fst _ _)
+    have hl₃ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.snd _ _)
+    simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe,
+      homEquiv_comp_restrictionMap_snd_coe, pullback.lift_fst, pullback.lift_snd,
+      Equiv.apply_symm_apply] at hl₂ hl₃
+    simp only [homEquiv_comp_coe, Equiv.apply_symm_apply] at hl₁
+    exact ⟨⟨⟨(homEquiv sq'.lift).val, h.hom_ext (by rw [reassoc_of% hf, hl₁])
+      (by rw [reassoc_of% hg, hl₂]), hl₃⟩⟩⟩
+  · obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
+      ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
+        pullback.hom_ext (by simp) (by simp)⟩
+    -- The square amounts to maps `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, and a map
+    -- `B ⋆ K ⟶ S` under them. Glue the first two on the pushout and lift against `p`.
+    have h₁ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.fst _ _)
+    have h₂ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.snd _ _)
+    have h₃ := congrArg (fun F ↦ (homEquiv F).val) hb
+    simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe,
+      homEquiv_comp_restrictionMap_snd_coe, pullback.lift_fst, pullback.lift_snd] at h₁ h₂
+    simp only [homEquiv_comp_coe] at h₁ h₂
+    simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id] at h₃
+    have sq' : CommSq (h.desc (homEquiv a).val (homEquiv b₁).val h₁) u p (homEquiv b₂).val :=
+      ⟨h.hom_ext (by simp [reassoc_of% hf, h₂]) (by simp [reassoc_of% hg, h₃])⟩
+    have hl₁ : join.map j (𝟙 K) ≫ sq'.lift = (homEquiv a).val := by
+      rw [← hf, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
+    have hl₂ : join.map (𝟙 B) i ≫ sq'.lift = (homEquiv b₁).val := by
+      rw [← hg, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
+    refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₁]), pullback.hom_ext
+      (hom_ext (by simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe]; simp [hl₂]))
+      (hom_ext (by simp only [Category.assoc, homEquiv_comp_restrictionMap_snd_coe]; simp))⟩⟩⟩
+    calc join.inr B K ≫ sq'.lift = join.inr A K ≫ join.map j (𝟙 K) ≫ sq'.lift := by
+          rw [join.inr_map_assoc, Category.id_comp]
+      _ = σ := by rw [hl₁, (homEquiv a).property]
+
+end lifting
 
 /-- Restriction maps are stable under base change: for a pullback square of simplicial sets
 with sides `t : X' ⟶ X`, `p' : X' ⟶ S'`, `p : X ⟶ S` and `b : S' ⟶ S`, and a diagram

@@ -234,9 +234,9 @@ theorem exists_spinGroup_ne_evenUnitaryGroup_finrank_six :
     intro i
     exact isRegular_iff_ne_zero.mpr (by fin_cases i <;> norm_num)
   refine ⟨QuadraticMap.weightedSumSquares ℚ ![1, -1, 1, -1, 1, -1],
-    QuadraticMap.nondegenerate_weightedSumSquares hw, ?_⟩
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr hw, ?_⟩
   exact range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank _
     (Cardinal.ofNat_lt_aleph0.trans_le (Cardinal.aleph0_le_mk ℚ))
-    (QuadraticMap.nondegenerate_weightedSumSquares hw) (by rw [finrank_fin_fun])
+    (QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr hw) (by rw [finrank_fin_fun])
 
 end CliffordAlgebra

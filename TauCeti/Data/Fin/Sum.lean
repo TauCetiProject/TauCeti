@@ -14,6 +14,7 @@ import TauCeti.Data.Fin.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Finite sums and finite types
@@ -28,6 +29,10 @@ More generally, an embedding of a type `α` into a finite type `β` identifies `
 type along the range of an embedding. Likewise, a dependent sum of blocks `Fin (m i)` over a
 finite index type is equivalent to `Fin n` as soon as the block sizes add up to `n`.
 
+Two copies of a type `ι` are the pairs `(i, 0)` and `(i, 1)` of `ι × Fin 2`. For `ι = Fin n`,
+listing these pairs consecutively through `finProdFinEquiv` interleaves the two copies of `Fin n`
+into `Fin (n + n)`: the first copy goes to the even positions and the second to the odd ones.
+
 The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv` on each summand,
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
 two- or three-variable object can rewrite rather than unfold them.
@@ -38,6 +43,10 @@ two- or three-variable object can rewrite rather than unfold them.
   summand to `0` and the right to `1`.
 * `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
   sending the outer left summand to `0` and the two inner ones to `1` and `2`.
+* `TauCeti.sumEquivProdFinTwo`: the equivalence `ι ⊕ ι ≃ ι × Fin 2`, sending `Sum.inl i` to
+  `(i, 0)` and `Sum.inr i` to `(i, 1)`.
+* `TauCeti.finSumFinEquivInterleave`: the equivalence `Fin n ⊕ Fin n ≃ Fin (n + n)` sending
+  `Sum.inl i` to `2 i` and `Sum.inr i` to `2 i + 1`.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
@@ -129,6 +138,52 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_one :
 @[simp]
 theorem unitSumUnitSumUnitEquivFinThree_symm_two :
     unitSumUnitSumUnitEquivFinThree.symm 2 = Sum.inr (Sum.inr ()) := by decide
+
+/-- The equivalence `ι ⊕ ι ≃ ι × Fin 2` identifying the left and right copies of `i` with the
+pairs `(i, 0)` and `(i, 1)`. -/
+def sumEquivProdFinTwo (ι : Type*) : ι ⊕ ι ≃ ι × Fin 2 where
+  toFun := Sum.elim (·, 0) (·, 1)
+  invFun p := if p.2 = 0 then .inl p.1 else .inr p.1
+  left_inv := by rintro (i | i) <;> simp
+  right_inv := by
+    rintro ⟨i, j⟩
+    fin_cases j <;> simp
+
+variable {ι : Type*}
+
+@[simp]
+theorem sumEquivProdFinTwo_inl (i : ι) : sumEquivProdFinTwo ι (.inl i) = (i, 0) := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_inr (i : ι) : sumEquivProdFinTwo ι (.inr i) = (i, 1) := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_symm_zero (i : ι) : (sumEquivProdFinTwo ι).symm (i, 0) = .inl i := by
+  simp [sumEquivProdFinTwo]
+
+@[simp]
+theorem sumEquivProdFinTwo_symm_one (i : ι) : (sumEquivProdFinTwo ι).symm (i, 1) = .inr i := by
+  simp [sumEquivProdFinTwo]
+
+/-- The interleaving of two copies of `Fin n` into `Fin (n + n)`: the first copy goes to the even
+positions and the second copy to the odd positions, `Sum.inl i ↦ 2 i` and `Sum.inr i ↦ 2 i + 1`
+(`TauCeti.val_finSumFinEquivInterleave_inl`, `TauCeti.val_finSumFinEquivInterleave_inr`). It is
+`TauCeti.sumEquivProdFinTwo` followed by `finProdFinEquiv`, which lists the pairs `(i, 0)` and
+`(i, 1)` consecutively. -/
+def finSumFinEquivInterleave (n : ℕ) : Fin n ⊕ Fin n ≃ Fin (n + n) :=
+  (sumEquivProdFinTwo (Fin n)).trans (finProdFinEquiv.trans (finCongr (Nat.mul_two n)))
+
+@[simp]
+theorem val_finSumFinEquivInterleave_inl {n : ℕ} (i : Fin n) :
+    (finSumFinEquivInterleave n (.inl i) : ℕ) = 2 * i := by
+  simp [finSumFinEquivInterleave]
+
+@[simp]
+theorem val_finSumFinEquivInterleave_inr {n : ℕ} (i : Fin n) :
+    (finSumFinEquivInterleave n (.inr i) : ℕ) = 2 * i + 1 := by
+  simp [finSumFinEquivInterleave, Nat.add_comm]
 
 /-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
 theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}

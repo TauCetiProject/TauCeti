@@ -12,7 +12,7 @@ public import TauCeti.Topology.PunctureFilling
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.ComponentCharts
 import TauCeti.Topology.Covering.Clopen
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 import TauCeti.Analysis.Normed.Module.Connected

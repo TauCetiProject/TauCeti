@@ -7,11 +7,12 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.Adjoin.PowerBasis
 public import TauCeti.RingTheory.RootsOfUnity.CompatibleRoots
 import Mathlib.RingTheory.Norm.Basic
 import TauCeti.FieldTheory.Minpoly
+import TauCeti.NumberTheory.Cyclotomic.IntegralClosure
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
 import TauCeti.RingTheory.PowerBasis
 
@@ -33,12 +34,20 @@ odd `p` the generators `ζ n` and the differences `ζ n - 1` are norm compatible
 a sign appears (`N(ζ 1 - 1) = 2` while `ζ 0 - 1 = -2`). These are the norm relations on which
 norm-compatible systems of cyclotomic units and their Coleman power series are built.
 
+The integral closure of `ℤ_p` in `K n` is `ℤ_p[ζ n - 1]`, free over `ℤ_p` with power basis
+`1, ζ n - 1, …, (ζ n - 1) ^ (p ^ n * (p - 1) - 1)`; the minimal polynomial of `ζ n - 1` over `ℤ_p`
+is `Φ_{p ^ (n + 1)}(X + 1)`. Here `ℤ_p` acts on `K n` through `Ω`, compatibly with `ℚ_p`.
+
 ## Main definitions
 
 * `TauCeti.padicCyclotomicField p Ω n`: the intermediate field `ℚ_p(ρ n)` of `Ω`.
 * `TauCeti.padicCyclotomicField.root p Ω n`: the root `ρ n` as an element of this field.
 * `TauCeti.padicCyclotomicField.relativePowerBasis p Ω n`: the power basis of `K (n + 1)` over
   `K n` with generator `ζ (n + 1)` and dimension `p`.
+* `TauCeti.padicCyclotomicField.integralRoot p Ω n`: the root `ζ n` in the integral closure of
+  `ℤ_p` in `K n`.
+* `TauCeti.padicCyclotomicField.integralPowerBasis p Ω n`: the power basis of that integral
+  closure over `ℤ_p` with generator `ζ n - 1` and dimension `p ^ n * (p - 1)`.
 
 ## Main results
 
@@ -49,6 +58,10 @@ norm-compatible systems of cyclotomic units and their Coleman power series are b
 * `TauCeti.padicCyclotomicField.norm_root_succ` and
   `TauCeti.padicCyclotomicField.norm_root_succ_sub_one`: the relative norms of `ζ (n + 1)` and
   `ζ (n + 1) - 1`.
+* `TauCeti.padicCyclotomicField.integralClosure_eq_adjoin_root_sub_one`: the integral closure of
+  `ℤ_p` in `K n` is `ℤ_p[ζ n - 1]`.
+* `TauCeti.padicCyclotomicField.minpoly_integralRoot_sub_one`: the minimal polynomial of
+  `ζ n - 1` over `ℤ_p` is `Φ_{p ^ (n + 1)}(X + 1)`.
 
 ## References
 
@@ -212,6 +225,67 @@ theorem norm_root_succ_sub_one (n : ℕ) :
   rw [relativePowerBasis_gen, map_one, minpoly_root_succ, relativePowerBasis_dim] at h
   rw [h, eval_sub, eval_pow, eval_X, eval_C, one_pow]
   ring
+
+section Integral
+
+/-! ### The integers of the levels
+
+The `ℤ_p`-algebra structure on each level is the one restricted from `Ω`, which the scalar tower
+hypothesis makes the composite `ℤ_p → ℚ_p → ℚ_p(ρ n)`. -/
+
+variable [Algebra ℤ_[p] Ω] [IsScalarTower ℤ_[p] ℚ_[p] Ω]
+
+/-- The integral closure of `ℤ_p` in `ℚ_p(ρ n)` is `ℤ_p[ζ n - 1]`. -/
+theorem integralClosure_eq_adjoin_root_sub_one (n : ℕ) :
+    integralClosure ℤ_[p] (padicCyclotomicField p Ω n) =
+      Algebra.adjoin ℤ_[p] {root p Ω n - 1} :=
+  (isPrimitiveRoot_root p Ω n).integralClosure_eq_adjoin_sub_one ℤ_[p] ℚ_[p] PadicInt.prime_p
+
+/-- The chosen root `ζ n` is integral over `ℤ_p`. -/
+theorem isIntegral_root (n : ℕ) : IsIntegral ℤ_[p] (root p Ω n) :=
+  ((isPrimitiveRoot_root p Ω n).isIntegral (NeZero.pos _)).tower_top
+
+/-- The element `ζ n - 1` is integral over `ℤ_p`. -/
+theorem isIntegral_root_sub_one (n : ℕ) : IsIntegral ℤ_[p] (root p Ω n - 1) :=
+  (isPrimitiveRoot_root p Ω n).isIntegral_sub_one ℤ_[p] (NeZero.pos _)
+
+/-- The chosen root `ζ n` as an element of the integral closure of `ℤ_p` in `ℚ_p(ρ n)`. -/
+noncomputable def integralRoot (n : ℕ) : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) :=
+  ⟨root p Ω n, isIntegral_root p Ω n⟩
+
+@[simp]
+theorem coe_integralRoot (n : ℕ) :
+    (integralRoot p Ω n : padicCyclotomicField p Ω n) = root p Ω n :=
+  (rfl)
+
+/-- The integral root `ζ n` is a primitive `p ^ (n + 1)`-th root of unity. -/
+theorem isPrimitiveRoot_integralRoot (n : ℕ) :
+    IsPrimitiveRoot (integralRoot p Ω n) (p ^ (n + 1)) :=
+  (isPrimitiveRoot_root p Ω n).of_map_of_injective
+    (f := (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)).val) Subtype.val_injective
+
+/-- The power basis `1, ζ n - 1, …, (ζ n - 1) ^ (p ^ n * (p - 1) - 1)` of the integral closure of
+`ℤ_p` in `ℚ_p(ρ n)` over `ℤ_p`. -/
+noncomputable def integralPowerBasis (n : ℕ) :
+    PowerBasis ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
+  (isPrimitiveRoot_root p Ω n).subOneIntegralClosurePowerBasis ℤ_[p] ℚ_[p] PadicInt.prime_p
+
+@[simp]
+theorem integralPowerBasis_gen (n : ℕ) : (integralPowerBasis p Ω n).gen = integralRoot p Ω n - 1 :=
+  Subtype.ext (by simp [integralPowerBasis])
+
+@[simp]
+theorem integralPowerBasis_dim (n : ℕ) : (integralPowerBasis p Ω n).dim = p ^ n * (p - 1) := by
+  rw [integralPowerBasis, IsPrimitiveRoot.subOneIntegralClosurePowerBasis_dim,
+    Nat.totient_prime_pow_succ Fact.out]
+
+/-- The minimal polynomial of `ζ n - 1` over `ℤ_p` is `Φ_{p ^ (n + 1)}(X + 1)`. -/
+theorem minpoly_integralRoot_sub_one (n : ℕ) :
+    minpoly ℤ_[p] (integralRoot p Ω n - 1) = (cyclotomic (p ^ (n + 1)) ℤ_[p]).comp (X + 1) := by
+  rw [← integralPowerBasis_gen, integralPowerBasis,
+    IsPrimitiveRoot.minpoly_subOneIntegralClosurePowerBasis_gen]
+
+end Integral
 
 end padicCyclotomicField
 

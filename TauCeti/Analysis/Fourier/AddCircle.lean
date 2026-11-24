@@ -16,6 +16,7 @@ public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -99,6 +100,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   `n`-th Fourier coefficient to the conjugate of the `(k - n)`-th one.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
+* `TauCeti.fourierCoeff_comp_add_right`: translation by `θ` multiplies the `n`-th Fourier
+  coefficient by `fourier n θ`; at the half period `fourier n (T / 2) = (-1) ^ n`
+  (`TauCeti.fourier_coe_half_period`).
 * `ContinuousLinearMap.fourierCoeff_comp`, `ContinuousLinearMap.fourierCoeff_compLpL`: Fourier
   coefficients commute with continuous linear maps on integrable and `Lᵖ` functions.
 * `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
@@ -170,6 +174,12 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
     ring
   rw [fourier_coe_apply, this, Complex.exp_mul_I]
   simp [sub_eq_add_neg]
+
+/-- At the half period `T / 2` the Fourier monomial of frequency `n` is `(-1) ^ n`. -/
+theorem fourier_coe_half_period (hT : T ≠ 0) (n : ℤ) :
+    fourier n ((T / 2 : ℝ) : AddCircle T) = (-1) ^ n := by
+  rw [fourier_apply, toCircle_zsmul, toCircle_half_period hT, Circle.coe_zpow, Circle.coe_neg,
+    Circle.coe_one]
 
 /-- The Fourier monomials take values in the unit circle, so they vanish nowhere. -/
 theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 := by
@@ -314,6 +324,19 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   congr 1
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- Translating a circle function by `θ` multiplies its `n`-th Fourier coefficient by
+`fourier n θ`. -/
+theorem fourierCoeff_comp_add_right {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) (θ : AddCircle T) (n : ℤ) :
+    fourierCoeff (fun x ↦ f (x + θ)) n = fourier n θ • fourierCoeff f n := by
+  rw [fourierCoeff, fourierCoeff, ← integral_smul,
+    ← integral_add_right_eq_self (fun x ↦ fourier n θ • fourier (-n) x • f x) θ]
+  congr 1
+  funext x
+  rw [fourier_apply_add, smul_smul]
+  congr 1
+  linear_combination -fourier (-n) x * fourier_neg_mul_fourier n θ
 
 /-- The Fourier coefficients of a difference of integrable functions. -/
 theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
