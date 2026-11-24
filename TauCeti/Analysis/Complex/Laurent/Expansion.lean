@@ -47,7 +47,7 @@ from `TauCeti.Analysis.Complex.Laurent.Series`, this file proves:
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
 * `TauCeti.circleLaurentCoeff_inv_sub_of_lt_norm`: the Laurent coefficients of a simple pole
-  `(a - z)⁻¹` on a circle about `c` of radius less than `‖a - c‖`.
+  `(a - z)⁻¹` on a circle about `c` of radius `ρ` with `0 < ρ < ‖a - c‖`.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
@@ -250,7 +250,7 @@ theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : 
 end HasLaurentSeriesOnAnnulus
 
 /-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` of radius
-less than `‖a - c‖` (so `a` lies outside the disc) are those of its geometric expansion
+`ρ` with `0 < ρ < ‖a - c‖` (so `a` lies outside the disc) are those of its geometric expansion
 `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
 theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
     (n : ℤ) :
