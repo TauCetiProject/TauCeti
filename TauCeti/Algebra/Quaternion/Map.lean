@@ -21,6 +21,8 @@ A ring homomorphism `f : R →+* S` acts on quaternions coordinatewise.
 
 ## Main results
 
+* `TauCeti.QuaternionAlgebra.mem_range_map`: a quaternion lies in the range of `map` exactly when
+  its four coordinates lie in the range of `f`.
 * `TauCeti.QuaternionAlgebra.normForm_map`: the coefficientwise map carries the reduced norm to
   the image of the reduced norm.
 -/
@@ -61,6 +63,17 @@ theorem imJ_map (q : ℍ[R,a,b,c]) : (map a b c f ha hb hc q).imJ = f q.imJ := (
 
 @[simp]
 theorem imK_map (q : ℍ[R,a,b,c]) : (map a b c f ha hb hc q).imK = f q.imK := (rfl)
+
+/-- A quaternion lies in the range of `map` exactly when its four coordinates lie in the range
+of `f`. -/
+theorem mem_range_map {q : ℍ[S,a',b',c']} :
+    q ∈ (map a b c f ha hb hc).range ↔
+      q.re ∈ f.range ∧ q.imI ∈ f.range ∧ q.imJ ∈ f.range ∧ q.imK ∈ f.range := by
+  refine ⟨?_, fun ⟨⟨w, hw⟩, ⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ => ⟨⟨w, x, y, z⟩, ?_⟩⟩
+  · rintro ⟨q, rfl⟩
+    exact ⟨⟨_, (re_map ..).symm⟩, ⟨_, (imI_map ..).symm⟩, ⟨_, (imJ_map ..).symm⟩,
+      ⟨_, (imK_map ..).symm⟩⟩
+  · ext <;> simp [hw, hx, hy, hz]
 
 @[simp]
 theorem map_star (q : ℍ[R,a,b,c]) :

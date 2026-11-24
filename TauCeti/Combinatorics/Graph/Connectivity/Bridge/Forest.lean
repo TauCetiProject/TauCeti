@@ -73,6 +73,13 @@ abbrev BridgeComponent (G : Graph α β) := (G.deleteEdges G.bridgeSet).Connecte
 def bridgeComponentOf (G : Graph α β) (x : α) (hx : x ∈ V(G)) : G.BridgeComponent :=
   (G.deleteEdges G.bridgeSet).connectedComponentOf x (by rwa [vertexSet_deleteEdges])
 
+/-- The underlying simple component of the bridge component of an actual vertex. -/
+@[simp]
+theorem BridgeComponent.toSimple_bridgeComponentOf (hx : x ∈ V(G)) :
+    (G.bridgeComponentOf x hx).toSimple =
+      (G.deleteEdges G.bridgeSet).toSimpleGraph.connectedComponentMk ⟨x, by simpa using hx⟩ :=
+  ConnectedComponent.toSimple_connectedComponentOf _
+
 /-- The bridge component of `x` consists of the vertices reachable from `x` once all bridges are
 deleted. -/
 @[simp]

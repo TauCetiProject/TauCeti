@@ -20,7 +20,8 @@ This file records the carrier-level criterion that a product of evenly many Clif
 norms multiply to one belongs to the Spin group, and its special case for even basis monomials
 of an orthogonal basis, identifies membership in the range of
 `spinGroup.toUnits` with membership of the underlying Clifford value, shows that Spin elements
-are Clifford units, includes the Spin group in the even Clifford subalgebra, writes every Spin
+are Clifford units, includes the Spin group in the even Clifford subalgebra, compares spans of
+families of Spin elements inside the even subalgebra and the Clifford algebra, writes every Spin
 element as a product of an even number of vectors of invertible norm when `2` is invertible, and
 proves that the Spin group of the zero module is trivial. The action and its orthogonal comparison
 are defined in `Spin.Action` and `Pin.Action`.
@@ -70,6 +71,18 @@ theorem coe_spinGroupToEven_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
 theorem spinGroupToEven_mk (x : CliffordAlgebra Q) (hx : x ∈ spinGroup Q) :
     spinGroupToEven Q ⟨x, hx⟩ = ⟨x, spinGroup.mem_even hx⟩ :=
   Subtype.ext (coe_spinGroupToEven_apply Q _)
+
+/-- **A family of Spin elements spans the even subalgebra exactly when it spans the even part of
+the Clifford algebra.** For `f : ι → spinGroup Q`, the images of the `f i` under
+`spinGroupToEven` span `even Q` if and only if the Clifford values `f i` span
+`(even Q).toSubmodule`. -/
+theorem span_range_spinGroupToEven_comp_eq_top_iff {ι : Type*} (f : ι → spinGroup Q) :
+    Submodule.span R (Set.range (spinGroupToEven Q ∘ f)) = ⊤ ↔
+      Submodule.span R (Set.range fun i : ι ↦ (f i : CliffordAlgebra Q)) =
+        (even Q).toSubmodule :=
+  -- `spinGroupToEven Q x` is `⟨x, _⟩` by definition, so this is Mathlib's subtype-family case.
+  Submodule.span_range_subtype_eq_top_iff (even Q).toSubmodule fun i ↦
+    spinGroup.mem_even (f i).property
 
 /-- **A product of evenly many vectors whose norms multiply to one lies in the Spin group.** The
 norms are then units, so the product is a unit of the Lipschitz group, and its Clifford norm
