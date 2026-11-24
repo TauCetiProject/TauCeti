@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
@@ -62,6 +63,8 @@ theorem `TauCeti.Wkp.dense_contDiffOn_representatives`.
   ball inside the domain of a Sobolev function of possibly higher integrability.
 * `TauCeti.W1p.memLp_value_of_convex_of_isBounded_of_finrank_le`: for `n ≤ p₀`, a `W^{1,p₀}(Ω)`
   function lies in `L^q(U)` for every finite `q` on every bounded convex open subset `U ⊆ Ω`.
+* `TauCeti.Wkp.memLp_value_of_convex_of_isBounded_of_finrank_le`: the higher-order extension for
+  `W^{k,p₀}(Ω)` (`1 ≤ k`).
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`: the same with the averages written
   as norms, `‖u - u_B‖_{Lˢ(B)} ≤ K t μ(B)^(-δ) ‖∇u‖_{L^q(B)}`, with the constant
   `K = TauCeti.sobolevPoincareConst n δ`.
@@ -434,6 +437,18 @@ theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
   have hval : W1p.value uV =ᵐ[mu.restrict U] W1p.value u :=
     (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hV u)
   exact (huV.mono_exponent hqq').ae_eq hval
+
+/-- **All finite-exponent `L^q` integrability on a bounded convex open subset for higher-order
+Sobolev functions when `n ≤ p`.** If `1 ≤ k`, `n ≤ p ≤ ∞`, where `n` is the dimension, and `U ⊆ Ω`
+is bounded, convex, and open, then every `u ∈ W^{k,p}(Ω)` lies in `L^q(U)` for every finite
+`q : ℝ≥0∞`. -/
+theorem Wkp.memLp_value_of_convex_of_isBounded_of_finrank_le {k : ℕ} (hk : 1 ≤ k)
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) {U : Set E} (hUo : IsOpen U) (hconv : Convex ℝ U)
+    (hb : Bornology.IsBounded U) (hUΩ : U ⊆ (Omega : Set E)) {q : ℝ≥0∞} (hq : q ≠ ∞)
+    (u : Wkp mu Omega p k) : MemLp (Wkp.value k u) q (mu.restrict U) := by
+  have hu := W1p.memLp_value_of_convex_of_isBounded_of_finrank_le hp hUo hconv hb hUΩ hq
+    (Wkp.toOrderL hk u)
+  rwa [← Wkp.value_one, Wkp.value_toOrderL hk u] at hu
 
 /-- The constant `2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` of the Sobolev–Poincaré inequality on a
 ball in dimension `n`, where `δ = 1/p - 1/q` is the gap between the exponents

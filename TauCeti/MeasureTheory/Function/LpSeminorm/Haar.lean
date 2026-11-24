@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Comparing `Lᵖ` seminorms across Haar measures

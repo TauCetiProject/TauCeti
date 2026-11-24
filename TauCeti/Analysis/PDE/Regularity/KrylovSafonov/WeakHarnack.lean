@@ -368,13 +368,20 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (h
     _ = _ := by ring
 
 omit [DecidableEq ι] in
+private theorem closedBall_half_one_sub_mul_subset_ball {θ R : ℝ}
+    {x₀ c : EuclideanSpace ℝ ι} (hR : 0 < R) (hθ1 : θ < 1) (hc : c ∈ closedBall x₀ (θ * R)) :
+    closedBall c ((1 - θ) / 2 * R) ⊆ ball x₀ R :=
+  closedBall_subset_ball' (by nlinarith [mem_closedBall.1 hc])
+
+omit [DecidableEq ι] in
 private theorem closedBall_eta_mul_subset_ball [Nonempty ι] {θ R : ℝ}
     {x₀ c : EuclideanSpace ℝ ι} (hR : 0 < R) (hθ1 : θ < 1) (hc : c ∈ closedBall x₀ (θ * R)) :
     closedBall c ((16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2) * R) ⊆ ball x₀ R := by
   have hsq : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
   have hησ : (16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2) ≤ (1 - θ) / 2 :=
     mul_le_of_le_one_left (by positivity) (inv_le_one_of_one_le₀ (by linarith))
-  exact closedBall_subset_ball' (by nlinarith [mem_closedBall.1 hc])
+  exact (closedBall_subset_closedBall (mul_le_mul_of_nonneg_right hησ hR.le)).trans
+    (closedBall_half_one_sub_mul_subset_ball hR hθ1 hc)
 
 /-- The localized small-ball weak Harnack contract with exponent `p` and constant `C₁` under
 ellipticity ratio `κ`. -/
@@ -490,7 +497,7 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C�
       (hw : ∃ w ∈ ball c (η₀ * R), u w ≤ A) :
       g c ≤ C₁ * (A + R * F / lam) := by
     have hcb : closedBall c ((1 - θ) / 2 * R) ⊆ ball x₀ R :=
-      closedBall_subset_ball' (by nlinarith [mem_closedBall.1 hc])
+      closedBall_half_one_sub_mul_subset_ball hR hθ1 hc
     have hsub := ball_subset_closedBall.trans hcb
     have h := Hsmall (mul_pos hσ hR) hF (ha.mono_set hsub) hLam
       (hu.continuousOn.mono hcb) (hu.mono hsub)

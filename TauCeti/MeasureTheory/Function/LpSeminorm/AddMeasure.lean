@@ -57,10 +57,6 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
   `‖f‖_{Lᵖ(s)} ≤ card(t) ^ (1 / p) * B` from uniform bounds `≤ B` on the pieces.
 * `MeasureTheory.toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: real-valued
   finite-cover `Lᵖ` bound from uniform `toReal` bounds on the pieces.
-* `MeasureTheory.MemLp.restrict_of_eLpNorm_le_add`: `MemLp` transfer to a subset `S ⊆ U` from a
-  restricted seminorm bound `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + c`.
-* `MeasureTheory.toReal_eLpNorm_restrict_le_add`: real-valued restricted `Lᵖ` comparison on `S ⊆ U`
-  from `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + c`.
 * `MeasureTheory.toReal_eLpNorm_restrict_mono_ae`: real-valued restricted `Lᵖ` monotonicity under
   a.e. norm domination on nested sets.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
@@ -208,32 +204,6 @@ theorem toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion {α ε κ : T
     _ = (t.card : ℝ) ^ p.toReal⁻¹ * B := by
         rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_natCast,
           ENNReal.toReal_ofReal hB]
-
-/-- If `f ∈ Lᵖ(U, μ)`, `S ⊆ U`, `c ≠ ∞`, and `‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(S, μ)} + c`, then
-`g ∈ Lᵖ(S, μ)`. -/
-theorem MemLp.restrict_of_eLpNorm_le_add {α F ε : Type*} [MeasurableSpace α]
-    [TopologicalSpace F] [ENorm F] [TopologicalSpace ε] [ENorm ε] {f : α → F} {g : α → ε}
-    {p : ℝ≥0∞} {μ : Measure α} {S U : Set α} (hf : MemLp f p (μ.restrict U)) (hSU : S ⊆ U)
-    {c : ℝ≥0∞} (hc : c ≠ ∞)
-    (hg : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict S) + c) :
-    MemLp g p (μ.restrict S) :=
-  memLp_iff.2 <| (hg.trans (add_le_add_left (eLpNorm_mono_measure _
-    (Measure.restrict_mono_set μ hSU)) _)).trans_lt
-      (ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩)
-
-/-- Real-valued restricted `Lᵖ` comparison on `S ⊆ U`: if `f ∈ Lᵖ(U, μ)`, `c ≠ ∞`, and
-`‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(S, μ)} + c`, then `‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(U, μ)} + c.toReal`. -/
-theorem toReal_eLpNorm_restrict_le_add {α F ε : Type*} [MeasurableSpace α]
-    [TopologicalSpace F] [ENorm F] [TopologicalSpace ε] [ENorm ε] {f : α → F} (g : α → ε)
-    {p : ℝ≥0∞} {μ : Measure α} {S U : Set α} (hf : MemLp f p (μ.restrict U)) (hSU : S ⊆ U)
-    {c : ℝ≥0∞} (hc : c ≠ ∞)
-    (hg : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict S) + c) :
-    (eLpNorm g p (μ.restrict S)).toReal ≤ (eLpNorm f p (μ.restrict U)).toReal + c.toReal := by
-  have hle : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict U) + c :=
-    hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hSU)) _)
-  have htop : eLpNorm f p (μ.restrict U) + c ≠ ∞ :=
-    (ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩).ne
-  exact (ENNReal.toReal_mono htop hle).trans_eq (ENNReal.toReal_add hf.eLpNorm_ne_top hc)
 
 /-- Real-valued restricted `Lᵖ` seminorm monotonicity under a.e. norm domination on nested sets. -/
 theorem toReal_eLpNorm_restrict_mono_ae {α E F : Type*} [MeasurableSpace α]
