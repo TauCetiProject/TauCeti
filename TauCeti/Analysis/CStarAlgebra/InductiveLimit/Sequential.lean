@@ -26,7 +26,7 @@ universal property `CStarInductiveLimit.lift` to any sequential colimit cocone
 
 ## Main definitions and results
 
-* `TauCeti.antitone_norm_seqTransHom`: contractivity makes `k ↦ ‖seqTransHom α _ a‖` antitone.
+* `TauCeti.norm_seqTransHom_antitone`: contractivity makes `k ↦ ‖seqTransHom α _ a‖` antitone.
 * `TauCeti.IsSeqColimitCocone`: predicate characterizing a sequential C⋆-algebra colimit cocone,
   with the `⨅`-seminorm formula `norm_eq_ciInf` / `of_norm_eq_ciInf`, constructors `of_isometry`,
   `const`, and `of_nonUnitalStarSubalgebra`, and extensionality principles `hom_ext` and
@@ -57,7 +57,7 @@ variable {A : ℕ → Type*} [∀ n, NonUnitalCStarAlgebra (A n)]
 
 /-- For any sequential system of C⋆-algebras, the seminorm `k ↦ ‖seqTransHom α _ a‖` is
 antitone because `⋆`-homomorphisms between C⋆-algebras are contractive. -/
-theorem antitone_norm_seqTransHom (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (n : ℕ) (a : A n) :
+theorem norm_seqTransHom_antitone (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (n : ℕ) (a : A n) :
     Antitone (fun k ↦ ‖seqTransHom α (Nat.le_add_right n k) a‖) := by
   intro i j hij
   dsimp only
@@ -90,18 +90,23 @@ structure IsSeqColimitCocone (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1))
   tendsto_norm (n : ℕ) (a : A n) :
     Tendsto (fun k ↦ ‖seqTransHom α (Nat.le_add_right n k) a‖) atTop (𝓝 ‖ι n a‖)
 
+attribute [simp] IsSeqColimitCocone.comp_eq
+
 namespace IsSeqColimitCocone
 
 variable {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {ι : ∀ n, A n →⋆ₙₐ[ℂ] C}
 
+@[simp]
 theorem comp_apply (hι : IsSeqColimitCocone α ι) (n : ℕ) (a : A n) :
     ι (n + 1) (α n a) = ι n a :=
   DFunLike.congr_fun (hι.comp_eq n) a
 
+@[simp]
 theorem comp_seqTransHom (hι : IsSeqColimitCocone α ι) {m n : ℕ} (h : m ≤ n) :
     (ι n).comp (seqTransHom α h) = ι m :=
   comp_seqTransHom_of_comp_eq hι.comp_eq h
 
+@[simp]
 theorem comp_seqTransHom_apply (hι : IsSeqColimitCocone α ι) {m n : ℕ} (h : m ≤ n) (a : A m) :
     ι n (seqTransHom α h a) = ι m a :=
   DFunLike.congr_fun (hι.comp_seqTransHom h) a
@@ -111,7 +116,7 @@ forward norms along the system. -/
 theorem norm_eq_ciInf (hι : IsSeqColimitCocone α ι) (n : ℕ) (a : A n) :
     ‖ι n a‖ = ⨅ k, ‖seqTransHom α (Nat.le_add_right n k) a‖ := by
   refine tendsto_nhds_unique (hι.tendsto_norm n a) (tendsto_atTop_ciInf
-    (antitone_norm_seqTransHom α n a) ⟨0, ?_⟩)
+    (norm_seqTransHom_antitone α n a) ⟨0, ?_⟩)
   rintro _ ⟨k, rfl⟩
   exact norm_nonneg _
 
@@ -124,7 +129,7 @@ theorem of_norm_eq_ciInf (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
   dense_iUnion_range := hdense
   tendsto_norm n a := by
     rw [hnorm n a]
-    exact tendsto_atTop_ciInf (antitone_norm_seqTransHom α n a)
+    exact tendsto_atTop_ciInf (norm_seqTransHom_antitone α n a)
       ⟨0, by rintro _ ⟨k, rfl⟩; exact norm_nonneg _⟩
 
 /-- Any compatible cocone of isometric `⋆`-homomorphisms whose ranges have dense union is a
@@ -146,7 +151,8 @@ theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
 cocone. -/
 theorem const (C : Type*) [NonUnitalCStarAlgebra C] :
     IsSeqColimitCocone (A := fun _ ↦ C) (fun _ ↦ .id ℂ C) (fun _ ↦ .id ℂ C) :=
-  of_isometry (fun _ ↦ rfl) (by simp [Set.iUnion_const]) (fun _ ↦ isometry_id)
+  of_isometry (fun _ ↦ NonUnitalStarAlgHom.comp_id _) (by simp [Set.iUnion_const])
+    (fun _ ↦ isometry_id)
 
 /-- An increasing sequence of closed non-unital `⋆`-subalgebras with dense union forms a sequential
 colimit cocone under subtype inclusions. -/
@@ -154,7 +160,10 @@ theorem of_nonUnitalStarSubalgebra {S : ℕ → NonUnitalStarSubalgebra ℂ C}
     [∀ n, IsClosed (S n : Set C)] (hS : Monotone S) (hdense : Dense (⋃ n, (S n : Set C))) :
     IsSeqColimitCocone (fun n ↦ NonUnitalStarSubalgebra.inclusion (hS (Nat.le_succ n)))
       (fun n ↦ NonUnitalStarSubalgebraClass.subtype (S n)) := by
-  refine of_isometry (fun _ ↦ rfl) ?_ (fun _ ↦ isometry_subtypeVal)
+  refine of_isometry (fun _ ↦ by
+    ext x
+    simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.subtype_apply,
+      NonUnitalStarSubalgebra.val_inclusion]) ?_ (fun _ ↦ isometry_subtypeVal)
   have hr (n : ℕ) : Set.range ⇑(NonUnitalStarSubalgebraClass.subtype (S n)) = (S n : Set C) := by
     ext x
     simp
@@ -197,26 +206,34 @@ theorem hom_ext {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCocone 
   hι.hom_ext_of_approx (F := fun _ ↦ Set.univ)
     (fun _ a _ hr ↦ ⟨0, a, trivial, by simpa using hr⟩) fun n a _ ↦ h n a
 
-/-- Canonical `⋆`-isomorphism identifying the canonical `CStarInductiveLimit` with `C`. -/
-private noncomputable def equivInductiveLimit (hι : IsSeqColimitCocone α ι) :
-    CStarInductiveLimit A (fun _ _ h ↦ seqTransHom α h) ≃⋆ₐ[ℂ] C :=
-  let Φ : CStarInductiveLimit A (fun _ _ h ↦ seqTransHom α h) →⋆ₙₐ[ℂ] C :=
-    CStarInductiveLimit.lift ι (fun _ _ h a ↦ comp_seqTransHom_apply_of_comp_eq hι.comp_eq h a)
-  have hiso : Isometry Φ := by
+private noncomputable def equivInductiveLimitHom (hι : IsSeqColimitCocone α ι) :
+    CStarInductiveLimit A (fun _ _ h ↦ seqTransHom α h) →⋆ₙₐ[ℂ] C :=
+  CStarInductiveLimit.lift ι (fun _ _ h a ↦ comp_seqTransHom_apply_of_comp_eq hι.comp_eq h a)
+
+private theorem equivInductiveLimitHom_bijective (hι : IsSeqColimitCocone α ι) :
+    Function.Bijective (hι.equivInductiveLimitHom) := by
+  have hiso : Isometry hι.equivInductiveLimitHom := by
     refine AddMonoidHomClass.isometry_of_norm _ fun x ↦ ?_
     induction x using CStarInductiveLimit.induction_on with
     | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih n a =>
-      rw [CStarInductiveLimit.lift_of, CStarInductiveLimit.norm_of,
+      rw [equivInductiveLimitHom, CStarInductiveLimit.lift_of, CStarInductiveLimit.norm_of,
         ciInf_norm_seqTransHom_eq, hι.norm_eq_ciInf]
-  have hsurj : Function.Surjective Φ := by
-    rw [← Set.range_eq_univ, CStarInductiveLimit.range_lift, hι.dense_iUnion_range.closure_eq]
-  StarAlgEquiv.ofBijective Φ ⟨hiso.injective, hsurj⟩
+  have hsurj : Function.Surjective hι.equivInductiveLimitHom := by
+    rw [← Set.range_eq_univ, equivInductiveLimitHom, CStarInductiveLimit.range_lift,
+      hι.dense_iUnion_range.closure_eq]
+  exact ⟨hiso.injective, hsurj⟩
+
+/-- Canonical `⋆`-isomorphism identifying the canonical `CStarInductiveLimit` with `C`. -/
+private noncomputable def equivInductiveLimit (hι : IsSeqColimitCocone α ι) :
+    CStarInductiveLimit A (fun _ _ h ↦ seqTransHom α h) ≃⋆ₐ[ℂ] C :=
+  StarAlgEquiv.ofBijective hι.equivInductiveLimitHom hι.equivInductiveLimitHom_bijective
 
 private theorem equivInductiveLimit_apply (hι : IsSeqColimitCocone α ι) (n : ℕ) (a : A n) :
     hι.equivInductiveLimit (CStarInductiveLimit.of A (fun _ _ h ↦ seqTransHom α h) n a) =
-      ι n a :=
-  CStarInductiveLimit.lift_of ι _ n a
+      ι n a := by
+  rw [equivInductiveLimit, StarAlgEquiv.ofBijective_apply, equivInductiveLimitHom,
+    CStarInductiveLimit.lift_of]
 
 private theorem equivInductiveLimit_symm_apply (hι : IsSeqColimitCocone α ι) (n : ℕ) (a : A n) :
     hι.equivInductiveLimit.symm (ι n a) =
@@ -256,7 +273,7 @@ theorem lift_unique {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCoc
 @[simp]
 theorem lift_self (hι : IsSeqColimitCocone α ι) :
     hι.lift ι hι.comp_eq = .id ℂ C :=
-  (hι.lift_unique hι.comp_eq fun _ _ ↦ rfl).symm
+  (hι.lift_unique hι.comp_eq fun _ _ ↦ by simp only [NonUnitalStarAlgHom.coe_id, id_eq]).symm
 
 /-- Postcomposing `hι.lift ξ hξ` with `Ψ` equals the lift of the postcomposed cocone. -/
 theorem comp_lift {D E : Type*} [NonUnitalCStarAlgebra D] [NonUnitalCStarAlgebra E]

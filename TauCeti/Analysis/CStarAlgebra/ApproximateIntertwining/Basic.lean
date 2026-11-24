@@ -177,19 +177,22 @@ private theorem cauchySeq_offset (hc : IsApproximateCocone α ξ F τ) (n : ℕ)
         (by rw [dist_comm]; exact hclose q hq)
     _ = ε := by ring
 
+private theorem exists_stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) :
+    ∃ Φ : A n →⋆ₙₐ[ℂ] D, ∀ a,
+      Tendsto (fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a)) atTop (𝓝 (Φ a)) :=
+  NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq
+    (f := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
+    dense_univ fun a _ ↦ hc.cauchySeq_offset n a
+
 /-- Stagewise limit `⋆`-homomorphism `A n →⋆ₙₐ[ℂ] D` constructed from an approximate cocone. -/
 private noncomputable def stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) :
     A n →⋆ₙₐ[ℂ] D :=
-  (NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq
-    (f := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
-    dense_univ fun a _ ↦ hc.cauchySeq_offset n a).choose
+  (hc.exists_stageHom n).choose
 
 private theorem tendsto_stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
     Tendsto (fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a))
       atTop (𝓝 (hc.stageHom n a)) :=
-  (NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq
-    (f := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
-    dense_univ fun a _ ↦ hc.cauchySeq_offset n a).choose_spec a
+  (hc.exists_stageHom n).choose_spec a
 
 private theorem stageHom_seqTransHom (hc : IsApproximateCocone α ξ F τ) {m n : ℕ} (h : m ≤ n)
     (a : A m) : hc.stageHom n (seqTransHom α h a) = hc.stageHom m a := by
