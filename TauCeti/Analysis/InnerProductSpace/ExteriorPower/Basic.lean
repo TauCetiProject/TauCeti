@@ -447,12 +447,12 @@ private theorem orthonormal_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) 
 private theorem top_le_span_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) :
     ⊤ ≤ Submodule.span ℝ (Set.range b.wedgeTwoFamily) := by
   intro x _
-  have hmem (i : Fin 6) : b.wedgeTwoFamily i ∈ Submodule.span ℝ (Set.range b.wedgeTwoFamily) :=
-    Submodule.subset_span ⟨i, rfl⟩
-  rw [b.eq_sum_inner_smul_ιMulti_two x]
-  refine add_mem (add_mem (add_mem (add_mem (add_mem ?_ ?_) ?_) ?_) ?_) ?_ <;>
-    refine Submodule.smul_mem _ _ ?_
-  exacts [hmem 0, hmem 1, hmem 2, hmem 3, hmem 4, hmem 5]
+  -- Rewrite the expansion `eq_sum_inner_smul_ιMulti_two` as a sum over the family.
+  have hx : x = ∑ i, ⟪x, b.wedgeTwoFamily i⟫ • b.wedgeTwoFamily i := by
+    rw [Fin.sum_univ_six]
+    simpa only [wedgeTwoFamily, Matrix.cons_val] using b.eq_sum_inner_smul_ιMulti_two x
+  rw [hx]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
 
 /-- The orthonormal basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal basis `b`
 indexed by `Fin 4`, indexed by `Fin 6` in lexicographic order. -/
