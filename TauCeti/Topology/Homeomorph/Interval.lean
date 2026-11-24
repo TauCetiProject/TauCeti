@@ -42,24 +42,20 @@ noncomputable def iooZeroOneOrderIsoPiHalf :
     simp only [Equiv.coe_fn_mk, ← Subtype.coe_le_coe]
     exact ⟨fun _ => by nlinarith [Real.pi_pos], fun _ => by nlinarith [Real.pi_pos]⟩
 
-@[simp]
-theorem coe_iooZeroOneOrderIsoPiHalf (x : Ioo (0 : ℝ) 1) :
+@[simp] theorem coe_iooZeroOneOrderIsoPiHalf (x : Ioo (0 : ℝ) 1) :
     (iooZeroOneOrderIsoPiHalf x : ℝ) = Real.pi * ((x : ℝ) - 2⁻¹) := (rfl)
 
-@[simp]
-theorem coe_iooZeroOneOrderIsoPiHalf_symm (y : Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
+@[simp] theorem coe_iooZeroOneOrderIsoPiHalf_symm (y : Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
     (iooZeroOneOrderIsoPiHalf.symm y : ℝ) = (y : ℝ) / Real.pi + 2⁻¹ := (rfl)
 
 /-- Orientation-preserving homeomorphism `(0, 1) ≃ₜ ℝ` given by `t ↦ tan(π(t - 1/2))`. -/
 noncomputable def iooZeroOneHomeomorphReal : Ioo (0 : ℝ) 1 ≃ₜ ℝ :=
   (iooZeroOneOrderIsoPiHalf.trans Real.tanOrderIso).toHomeomorph
 
-@[simp]
-theorem iooZeroOneHomeomorphReal_apply (x : Ioo (0 : ℝ) 1) :
+@[simp] theorem iooZeroOneHomeomorphReal_apply (x : Ioo (0 : ℝ) 1) :
     iooZeroOneHomeomorphReal x = Real.tan (Real.pi * ((x : ℝ) - 2⁻¹)) := (rfl)
 
-@[simp]
-theorem coe_iooZeroOneHomeomorphReal_symm (y : ℝ) :
+@[simp] theorem coe_iooZeroOneHomeomorphReal_symm (y : ℝ) :
     (iooZeroOneHomeomorphReal.symm y : ℝ) = Real.arctan y / Real.pi + 2⁻¹ := (rfl)
 
 end TauCeti

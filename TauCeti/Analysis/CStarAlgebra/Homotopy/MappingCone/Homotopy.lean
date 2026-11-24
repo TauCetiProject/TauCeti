@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Homotopy.MappingCone
+public import TauCeti.Analysis.CStarAlgebra.Homotopy.MappingCone.Basic
 import Mathlib.Topology.Order.ProjIcc
 
 /-!
@@ -48,34 +48,23 @@ private def scaleClamp : C(I × I, I) where
       (continuous_const.add (continuous_subtypeVal.comp _root_.continuous_snd)))
 
 /-- The real value of `scaleClamp p` is `min (p.1 * (1 + p.2)) 1`. -/
-@[simp]
-private theorem coe_scaleClamp (p : I × I) :
+@[simp] private theorem coe_scaleClamp (p : I × I) :
     (scaleClamp p : ℝ) = min ((p.1 : ℝ) * (1 + (p.2 : ℝ))) 1 := by
   have h0 : 0 ≤ min 1 ((p.1 : ℝ) * (1 + (p.2 : ℝ))) :=
     le_min zero_le_one (mul_nonneg p.1.property.1 (by linarith [p.2.property.1]))
   simp [scaleClamp, Set.coe_projIcc, max_eq_right h0, min_comm]
 
 private theorem scaleClamp_of_ge_one {p : I × I} (hp : 1 ≤ (p.1 : ℝ) * (1 + (p.2 : ℝ))) :
-    scaleClamp p = 1 :=
-  Set.projIcc_of_right_le zero_le_one hp
-
-private theorem coe_scaleClamp_of_le_one {p : I × I} (hp : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ≤ 1) :
-    (scaleClamp p : ℝ) = (p.1 : ℝ) * (1 + (p.2 : ℝ)) := by
-  have hmem : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ∈ I :=
-    ⟨mul_nonneg p.1.property.1 (by linarith [p.2.property.1]), hp⟩
-  exact congrArg Subtype.val (Set.projIcc_of_mem zero_le_one hmem)
+    scaleClamp p = 1 := Set.projIcc_of_right_le zero_le_one hp
 
 @[simp]
-private theorem scaleClamp_zero_left (t : I) : scaleClamp (0, t) = 0 := by
-  simp [scaleClamp]
+private theorem scaleClamp_zero_left (t : I) : scaleClamp (0, t) = 0 := by simp [scaleClamp]
 
-@[simp]
-private theorem scaleClamp_one_left (t : I) : scaleClamp (1, t) = 1 :=
+@[simp] private theorem scaleClamp_one_left (t : I) : scaleClamp (1, t) = 1 :=
   scaleClamp_of_ge_one (by simpa using le_add_of_nonneg_right (a := (1 : ℝ)) t.property.1)
 
 @[simp]
-private theorem scaleClamp_zero_right (s : I) : scaleClamp (s, 0) = s := by
-  simp [scaleClamp]
+private theorem scaleClamp_zero_right (s : I) : scaleClamp (s, 0) = s := by simp [scaleClamp]
 
 /-- Clamped shift `(s, t) ↦ max (s * (1 + t) - 1) 0` on `unitInterval × unitInterval`. -/
 private def shiftClamp : C(I × I, I) where
@@ -86,34 +75,22 @@ private def shiftClamp : C(I × I, I) where
       continuous_const)
 
 /-- The real value of `shiftClamp p` is `max (p.1 * (1 + p.2) - 1) 0`. -/
-@[simp]
-private theorem coe_shiftClamp (p : I × I) :
+@[simp] private theorem coe_shiftClamp (p : I × I) :
     (shiftClamp p : ℝ) = max ((p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1) 0 := by
   have hle : (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 ≤ 1 := by
     nlinarith [p.1.property.1, p.1.property.2, p.2.property.1, p.2.property.2]
   simp [shiftClamp, Set.coe_projIcc, min_eq_right hle, max_comm]
 
 private theorem shiftClamp_of_le_one {p : I × I} (hp : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ≤ 1) :
-    shiftClamp p = 0 :=
-  Set.projIcc_of_le_left zero_le_one (sub_nonpos.mpr hp)
+    shiftClamp p = 0 := Set.projIcc_of_le_left zero_le_one (sub_nonpos.mpr hp)
 
-private theorem coe_shiftClamp_of_ge_one {p : I × I} (hp : 1 ≤ (p.1 : ℝ) * (1 + (p.2 : ℝ))) :
-    (shiftClamp p : ℝ) = (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 := by
-  have hmem : (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 ∈ I :=
-    ⟨sub_nonneg.mpr hp,
-      by nlinarith [p.1.property.1, p.1.property.2, p.2.property.1, p.2.property.2]⟩
-  exact congrArg Subtype.val (Set.projIcc_of_mem zero_le_one hmem)
-
-@[simp]
-private theorem shiftClamp_zero_left (t : I) : shiftClamp (0, t) = 0 :=
+@[simp] private theorem shiftClamp_zero_left (t : I) : shiftClamp (0, t) = 0 :=
   shiftClamp_of_le_one (by norm_num)
 
 @[simp]
-private theorem shiftClamp_one_left (t : I) : shiftClamp (1, t) = t := by
-  simp [shiftClamp]
+private theorem shiftClamp_one_left (t : I) : shiftClamp (1, t) = t := by simp [shiftClamp]
 
-@[simp]
-private theorem shiftClamp_zero_right (s : I) : shiftClamp (s, 0) = 0 :=
+@[simp] private theorem shiftClamp_zero_right (s : I) : shiftClamp (s, 0) = 0 :=
   shiftClamp_of_le_one (by simpa using s.property.2)
 
 /-- Linear homotopy `((r, s), t) ↦ (Set.Icc.convexComb (scaleClamp (s, t)) s r,
@@ -123,29 +100,24 @@ private def warpHomotopy : C((I × I) × I, I × I) where
   toFun q :=
     (Set.Icc.convexComb (scaleClamp (q.1.2, q.2)) q.1.2 q.1.1,
      Set.Icc.convexComb (shiftClamp (q.1.2, q.2)) q.2 q.1.1)
-  continuous_toFun := by
-    refine Continuous.prodMk ?_ ?_ <;> fun_prop
+  continuous_toFun := by refine Continuous.prodMk ?_ ?_ <;> fun_prop
 
 private theorem warpHomotopy_apply (q : (I × I) × I) :
     warpHomotopy q =
       (Set.Icc.convexComb (scaleClamp (q.1.2, q.2)) q.1.2 q.1.1,
        Set.Icc.convexComb (shiftClamp (q.1.2, q.2)) q.2 q.1.1) := (rfl)
 
-@[simp]
-private theorem warpHomotopy_zero_left (s t : I) :
+@[simp] private theorem warpHomotopy_zero_left (s t : I) :
     warpHomotopy ((0, s), t) = (scaleClamp (s, t), shiftClamp (s, t)) := by
   simp [warpHomotopy_apply]
 
-@[simp]
-private theorem warpHomotopy_one_left (s t : I) : warpHomotopy ((1, s), t) = (s, t) := by
+@[simp] private theorem warpHomotopy_one_left (s t : I) : warpHomotopy ((1, s), t) = (s, t) := by
   simp [warpHomotopy_apply]
 
-@[simp]
-private theorem warpHomotopy_fst_zero (r t : I) : (warpHomotopy ((r, 0), t)).1 = 0 := by
+@[simp] private theorem warpHomotopy_fst_zero (r t : I) : (warpHomotopy ((r, 0), t)).1 = 0 := by
   simp [warpHomotopy_apply]
 
-@[simp]
-private theorem warpHomotopy_one_mid (r t : I) : warpHomotopy ((r, 1), t) = (1, t) := by
+@[simp] private theorem warpHomotopy_one_mid (r t : I) : warpHomotopy ((r, 1), t) = (1, t) := by
   simp [warpHomotopy_apply]
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
@@ -164,8 +136,7 @@ theorem fst_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x
 theorem snd_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
     (s : Ioc (0 : ℝ) 1) : (evalZeroMap Φ x).snd s = x.snd s 0 := by simp [evalZeroMap]
 
-@[simp]
-theorem fstHom_comp_evalZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem fstHom_comp_evalZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (fstHom φ₀).comp (evalZeroMap Φ) = fstHom Φ.toHom :=
   (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
 
@@ -187,8 +158,7 @@ theorem fst_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x 
 theorem snd_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
     (s : Ioc (0 : ℝ) 1) : (evalOneMap Φ x).snd s = x.snd s 1 := by simp [evalOneMap]
 
-@[simp]
-theorem fstHom_comp_evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem fstHom_comp_evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (fstHom φ₁).comp (evalOneMap Φ) = fstHom Φ.toHom :=
   (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
 
@@ -284,8 +254,7 @@ theorem snd_inclZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x
   · congr 1; ext; simp [h]
   · congr 1; ext; simp [(not_le.mp h).le]
 
-@[simp]
-theorem evalZeroMap_comp_inclZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem evalZeroMap_comp_inclZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalZeroMap Φ).comp (inclZeroMap Φ) = .id ℂ (MappingCone φ₀) := by
   ext x : 1
   refine ext (by simp) ?_
@@ -380,12 +349,10 @@ def evalZeroHomotopyEquiv (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
   left_inv := ⟨inclZeroCompEvalZeroHomotopy Φ⟩
   right_inv := by rw [evalZeroMap_comp_inclZeroMap]; exact ⟨.refl _⟩
 
-@[simp]
-theorem evalZeroHomotopyEquiv_toFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem evalZeroHomotopyEquiv_toFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalZeroHomotopyEquiv Φ).toFun = evalZeroMap Φ := (rfl)
 
-@[simp]
-theorem evalZeroHomotopyEquiv_invFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem evalZeroHomotopyEquiv_invFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalZeroHomotopyEquiv Φ).invFun = inclZeroMap Φ := (rfl)
 
 /-- Time-reversal `⋆`-isomorphism `MappingCone Φ.toHom ≃⋆ₐ[ℂ] MappingCone Φ.symm.toHom` intertwining
@@ -408,8 +375,7 @@ theorem fst_symmEquiv_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x :
 
 @[simp]
 theorem snd_symmEquiv_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
-    (s : Ioc (0 : ℝ) 1) (t : I) : (symmEquiv Φ x).snd s t = x.snd s (σ t) := by
-  simp [symmEquiv]
+    (s : Ioc (0 : ℝ) 1) (t : I) : (symmEquiv Φ x).snd s t = x.snd s (σ t) := by simp [symmEquiv]
 
 theorem evalOneMap_eq_evalZeroMap_comp_symmEquiv (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     evalOneMap Φ = (evalZeroMap Φ.symm).comp (symmEquiv Φ).toNonUnitalStarAlgHom := by
@@ -428,12 +394,10 @@ def evalOneHomotopyEquiv (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
       left_inv := by rw [← htoFun]; exact e.left_inv
       right_inv := by rw [← htoFun]; exact e.right_inv }
 
-@[simp]
-theorem evalOneHomotopyEquiv_toFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem evalOneHomotopyEquiv_toFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalOneHomotopyEquiv Φ).toFun = evalOneMap Φ := (rfl)
 
-@[simp]
-theorem evalOneHomotopyEquiv_invFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+@[simp] theorem evalOneHomotopyEquiv_invFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalOneHomotopyEquiv Φ).invFun =
       (symmEquiv Φ).symm.toNonUnitalStarAlgHom.comp (inclZeroMap Φ.symm) := by
   simp [evalOneHomotopyEquiv]

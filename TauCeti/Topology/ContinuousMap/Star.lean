@@ -40,8 +40,7 @@ public section
 namespace ContinuousMap
 
 instance instContinuousStar {X A : Type*} [TopologicalSpace X] [TopologicalSpace A] [Star A]
-    [ContinuousStar A] : ContinuousStar C(X, A) :=
-  ⟨continuous_postcomp starContinuousMap⟩
+    [ContinuousStar A] : ContinuousStar C(X, A) := ⟨continuous_postcomp starContinuousMap⟩
 
 section Precomposition
 
@@ -60,12 +59,10 @@ def compNonUnitalStarAlgHom' (f : C(X, Y)) : C(Y, A) →⋆ₙₐ[𝕜] C(X, A) 
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem compNonUnitalStarAlgHom'_apply (f : C(X, Y)) (g : C(Y, A)) :
+@[simp] theorem compNonUnitalStarAlgHom'_apply (f : C(X, Y)) (g : C(Y, A)) :
     compNonUnitalStarAlgHom' 𝕜 A f g = g.comp f := (rfl)
 
-@[simp]
-theorem compNonUnitalStarAlgHom'_id :
+@[simp] theorem compNonUnitalStarAlgHom'_id :
     compNonUnitalStarAlgHom' 𝕜 A (ContinuousMap.id X) = .id 𝕜 C(X, A) :=
   NonUnitalStarAlgHom.ext fun _ => ext fun _ => rfl
 
@@ -99,8 +96,7 @@ def compNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) 
 theorem compNonUnitalStarAlgHom_apply (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) (f : C(X, A)) :
     compNonUnitalStarAlgHom X φ hφ f = (⟨φ, hφ⟩ : C(A, B)).comp f := (rfl)
 
-@[simp]
-theorem compNonUnitalStarAlgHom_id :
+@[simp] theorem compNonUnitalStarAlgHom_id :
     compNonUnitalStarAlgHom X (.id 𝕜 A) continuous_id = .id 𝕜 C(X, A) := (rfl)
 
 theorem compNonUnitalStarAlgHom_comp {C : Type*} [TopologicalSpace C]
@@ -127,8 +123,7 @@ def evalNonUnitalStarAlgHom (x : X) : C(X, A) →⋆ₙₐ[𝕜] A where
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C(X, A)) :
+@[simp] theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C(X, A)) :
     evalNonUnitalStarAlgHom 𝕜 A x f = f x := (rfl)
 
 end Eval
@@ -148,12 +143,10 @@ def constNonUnitalStarAlgHom : A →⋆ₙₐ[𝕜] C(X, A) where
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem constNonUnitalStarAlgHom_apply (a : A) :
+@[simp] theorem constNonUnitalStarAlgHom_apply (a : A) :
     constNonUnitalStarAlgHom 𝕜 X A a = const X a := (rfl)
 
-@[simp]
-theorem evalNonUnitalStarAlgHom_comp_constNonUnitalStarAlgHom (x : X) :
+@[simp] theorem evalNonUnitalStarAlgHom_comp_constNonUnitalStarAlgHom (x : X) :
     (evalNonUnitalStarAlgHom 𝕜 A x).comp (constNonUnitalStarAlgHom 𝕜 X A) = .id 𝕜 A := (rfl)
 
 @[simp]
@@ -182,12 +175,10 @@ def curryStarAlgEquiv : C(X × Y, A) ≃⋆ₐ[𝕜] C(X, C(Y, A)) where
   map_smul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem curryStarAlgEquiv_apply (f : C(X × Y, A)) :
+@[simp] theorem curryStarAlgEquiv_apply (f : C(X × Y, A)) :
     curryStarAlgEquiv 𝕜 X Y A f = f.curry := (rfl)
 
-@[simp]
-theorem curryStarAlgEquiv_symm_apply (g : C(X, C(Y, A))) :
+@[simp] theorem curryStarAlgEquiv_symm_apply (g : C(X, C(Y, A))) :
     (curryStarAlgEquiv 𝕜 X Y A).symm g = g.uncurry := (rfl)
 
 end Curry
@@ -212,8 +203,7 @@ def nonUnitalStarAlgHomOfPointwise (f : A → C(X, B))
   map_mul' a b := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_mul]
   map_star' a := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_star]
 
-@[simp]
-theorem nonUnitalStarAlgHomOfPointwise_apply (f : A → C(X, B))
+@[simp] theorem nonUnitalStarAlgHomOfPointwise_apply (f : A → C(X, B))
     (hf : ∀ x : X, ∃ ψ : A →⋆ₙₐ[𝕜] B, ∀ a, f a x = ψ a) (a : A) :
     nonUnitalStarAlgHomOfPointwise f hf a = f a := (rfl)
 
@@ -239,16 +229,13 @@ def compNonUnitalStarAlgEquiv' (f : X ≃ₜ Y) : C(Y, A) ≃⋆ₐ[𝕜] C(X, A
   map_smul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem compNonUnitalStarAlgEquiv'_apply (f : X ≃ₜ Y) (g : C(Y, A)) :
+@[simp] theorem compNonUnitalStarAlgEquiv'_apply (f : X ≃ₜ Y) (g : C(Y, A)) :
     f.compNonUnitalStarAlgEquiv' 𝕜 A g = g.comp (f : C(X, Y)) := (rfl)
 
-@[simp]
-theorem compNonUnitalStarAlgEquiv'_symm_apply (f : X ≃ₜ Y) (g : C(X, A)) :
+@[simp] theorem compNonUnitalStarAlgEquiv'_symm_apply (f : X ≃ₜ Y) (g : C(X, A)) :
     (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm g = g.comp (f.symm : C(Y, X)) := (rfl)
 
-@[simp]
-theorem compNonUnitalStarAlgEquiv'_refl :
+@[simp] theorem compNonUnitalStarAlgEquiv'_refl :
     (Homeomorph.refl X).compNonUnitalStarAlgEquiv' 𝕜 A = StarAlgEquiv.refl 𝕜 C(X, A) :=
   StarAlgEquiv.ext fun _ => ContinuousMap.ext fun _ => rfl
 

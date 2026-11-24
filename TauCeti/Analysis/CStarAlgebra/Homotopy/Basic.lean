@@ -65,8 +65,7 @@ structure Homotopy (φ₀ φ₁ : A →⋆ₙₐ[𝕜] B) where
   toHom_apply_one : ∀ a, toHom a 1 = φ₁ a
 
 /-- Two non-unital `⋆`-algebra homomorphisms are homotopic if there is a `Homotopy` between them. -/
-abbrev Homotopic (φ₀ φ₁ : A →⋆ₙₐ[𝕜] B) : Prop :=
-  Nonempty (Homotopy φ₀ φ₁)
+abbrev Homotopic (φ₀ φ₁ : A →⋆ₙₐ[𝕜] B) : Prop := Nonempty (Homotopy φ₀ φ₁)
 
 namespace Homotopy
 
@@ -78,15 +77,12 @@ attribute [simp] toHom_apply_zero toHom_apply_one
 def eval (H : Homotopy φ₀ φ₁) (t : I) : A →⋆ₙₐ[𝕜] B :=
   (ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B t).comp H.toHom
 
-@[simp]
-theorem eval_apply (H : Homotopy φ₀ φ₁) (t : I) (a : A) : H.eval t a = H.toHom a t := by
+@[simp] theorem eval_apply (H : Homotopy φ₀ φ₁) (t : I) (a : A) : H.eval t a = H.toHom a t := by
   simp [eval]
 
-@[simp]
-theorem eval_zero (H : Homotopy φ₀ φ₁) : H.eval 0 = φ₀ := by ext a; simp
+@[simp] theorem eval_zero (H : Homotopy φ₀ φ₁) : H.eval 0 = φ₀ := by ext a; simp
 
-@[simp]
-theorem eval_one (H : Homotopy φ₀ φ₁) : H.eval 1 = φ₁ := by ext a; simp
+@[simp] theorem eval_one (H : Homotopy φ₀ φ₁) : H.eval 1 = φ₁ := by ext a; simp
 
 /-- Constant homotopy from `φ` to itself. -/
 def refl (φ : A →⋆ₙₐ[𝕜] B) : Homotopy φ φ where
@@ -104,10 +100,8 @@ def symm (H : Homotopy φ₀ φ₁) : Homotopy φ₁ φ₀ where
   toHom_apply_zero a := by simp
   toHom_apply_one a := by simp
 
-@[simp]
-theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
-    H.symm.toHom a t = H.toHom a (σ t) := by
-  simp [symm]
+@[simp] theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
+    H.symm.toHom a t = H.toHom a (σ t) := by simp [symm]
 
 /-- Pointwise concatenated path used to define `Homotopy.trans`. -/
 private noncomputable def transPath (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) :
@@ -206,16 +200,13 @@ theorem compLeft_toHom_apply {C : Type*} [TopologicalSpace C] [NonUnitalNonAssoc
     [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
     [Star C] [ContinuousStar C]
     (H : Homotopy φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) (a : A) (t : I) :
-    (H.compLeft ψ hψ).toHom a t = ψ (H.toHom a t) := by
-  simp [compLeft]
+    (H.compLeft ψ hψ).toHom a t = ψ (H.toHom a t) := by simp [compLeft]
 
-@[simp]
-theorem eval_compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
+@[simp] theorem eval_compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
     [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
     [Star C] [ContinuousStar C]
     (H : Homotopy φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) (t : I) :
-    (H.compLeft ψ hψ).eval t = ψ.comp (H.eval t) := by
-  ext a; simp
+    (H.compLeft ψ hψ).eval t = ψ.comp (H.eval t) := by ext a; simp
 
 theorem homotopic (H : Homotopy φ₀ φ₁) : Homotopic φ₀ φ₁ := ⟨H⟩
 
@@ -231,30 +222,26 @@ theorem symm {φ₀ φ₁ : A →⋆ₙₐ[𝕜] B} : Homotopic φ₀ φ₁ → 
 
 @[trans]
 theorem trans {φ₀ φ₁ φ₂ : A →⋆ₙₐ[𝕜] B} :
-    Homotopic φ₀ φ₁ → Homotopic φ₁ φ₂ → Homotopic φ₀ φ₂ :=
-  fun ⟨H₀⟩ ⟨H₁⟩ => ⟨H₀.trans H₁⟩
+    Homotopic φ₀ φ₁ → Homotopic φ₁ φ₂ → Homotopic φ₀ φ₂ := fun ⟨H₀⟩ ⟨H₁⟩ => ⟨H₀.trans H₁⟩
 
 theorem equivalence : Equivalence (Homotopic (𝕜 := 𝕜) (A := A) (B := B)) := ⟨refl, symm, trans⟩
 
 theorem compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
     {φ₀ φ₁ : A →⋆ₙₐ[𝕜] B} (h : Homotopic φ₀ φ₁) (ψ : C →⋆ₙₐ[𝕜] A) :
-    Homotopic (φ₀.comp ψ) (φ₁.comp ψ) :=
-  let ⟨H⟩ := h; ⟨H.compRight ψ⟩
+    Homotopic (φ₀.comp ψ) (φ₁.comp ψ) := let ⟨H⟩ := h; ⟨H.compRight ψ⟩
 
 theorem compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
     [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
     [Star C] [ContinuousStar C]
     {φ₀ φ₁ : A →⋆ₙₐ[𝕜] B} (h : Homotopic φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) :
-    Homotopic (ψ.comp φ₀) (ψ.comp φ₁) :=
-  let ⟨H⟩ := h; ⟨H.compLeft ψ hψ⟩
+    Homotopic (ψ.comp φ₀) (ψ.comp φ₁) := let ⟨H⟩ := h; ⟨H.compLeft ψ hψ⟩
 
 theorem comp {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
     [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
     [Star C] [ContinuousStar C]
     {ψ₀ ψ₁ : B →⋆ₙₐ[𝕜] C} {φ₀ φ₁ : A →⋆ₙₐ[𝕜] B}
     (hψ : Homotopic ψ₀ ψ₁) (hφ : Homotopic φ₀ φ₁) (hψ₀ : Continuous ψ₀) :
-    Homotopic (ψ₀.comp φ₀) (ψ₁.comp φ₁) :=
-  (hφ.compLeft ψ₀ hψ₀).trans (hψ.compRight φ₁)
+    Homotopic (ψ₀.comp φ₀) (ψ₁.comp φ₁) := (hφ.compLeft ψ₀ hψ₀).trans (hψ.compRight φ₁)
 
 end Homotopic
 
@@ -324,8 +311,7 @@ def symm (e : StarHomotopyEquiv A B) : StarHomotopyEquiv B A where
   left_inv := e.right_inv
   right_inv := e.left_inv
 
-@[simp]
-theorem symm_symm (e : StarHomotopyEquiv A B) : e.symm.symm = e := (rfl)
+@[simp] theorem symm_symm (e : StarHomotopyEquiv A B) : e.symm.symm = e := (rfl)
 
 /-- Transitivity of C⋆-homotopy equivalence. -/
 def trans (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
@@ -360,26 +346,20 @@ theorem refl_toFun (A : Type*) [NonUnitalCStarAlgebra A] : (refl A).toFun = .id 
 @[simp]
 theorem refl_invFun (A : Type*) [NonUnitalCStarAlgebra A] : (refl A).invFun = .id ℂ A := (rfl)
 
-@[simp]
-theorem symm_toFun (e : StarHomotopyEquiv A B) : e.symm.toFun = e.invFun := (rfl)
+@[simp] theorem symm_toFun (e : StarHomotopyEquiv A B) : e.symm.toFun = e.invFun := (rfl)
 
-@[simp]
-theorem symm_invFun (e : StarHomotopyEquiv A B) : e.symm.invFun = e.toFun := (rfl)
+@[simp] theorem symm_invFun (e : StarHomotopyEquiv A B) : e.symm.invFun = e.toFun := (rfl)
 
-@[simp]
-theorem trans_toFun (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
+@[simp] theorem trans_toFun (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
     (e₁.trans e₂).toFun = e₂.toFun.comp e₁.toFun := (rfl)
 
-@[simp]
-theorem trans_invFun (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
+@[simp] theorem trans_invFun (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
     (e₁.trans e₂).invFun = e₁.invFun.comp e₂.invFun := (rfl)
 
-@[simp]
-theorem ofStarAlgEquiv_toFun (e : A ≃⋆ₐ[ℂ] B) :
+@[simp] theorem ofStarAlgEquiv_toFun (e : A ≃⋆ₐ[ℂ] B) :
     (ofStarAlgEquiv e).toFun = e.toNonUnitalStarAlgHom := (rfl)
 
-@[simp]
-theorem ofStarAlgEquiv_invFun (e : A ≃⋆ₐ[ℂ] B) :
+@[simp] theorem ofStarAlgEquiv_invFun (e : A ≃⋆ₐ[ℂ] B) :
     (ofStarAlgEquiv e).invFun = e.symm.toNonUnitalStarAlgHom := (rfl)
 
 end StarHomotopyEquiv
@@ -393,8 +373,7 @@ namespace IsContractibleCStarAlgebra
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 
 theorem eq_zero_of_isIdempotentElem (hA : IsContractibleCStarAlgebra A) {e : A}
-    (he : IsIdempotentElem e) : e = 0 :=
-  let ⟨H⟩ := hA; H.eq_zero_of_isIdempotentElem he
+    (he : IsIdempotentElem e) : e = 0 := let ⟨H⟩ := hA; H.eq_zero_of_isIdempotentElem he
 
 /-- Contractibility is preserved along `StarHomotopyEquiv`. -/
 theorem of_starHomotopyEquiv (e : StarHomotopyEquiv A B) (hA : IsContractibleCStarAlgebra A) :

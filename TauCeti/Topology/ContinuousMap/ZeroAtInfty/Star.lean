@@ -52,12 +52,10 @@ def compNonUnitalStarAlgHom (g : X →co Y) : C₀(Y, A) →⋆ₙₐ[𝕜] C₀
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem compNonUnitalStarAlgHom_apply (g : X →co Y) (f : C₀(Y, A)) :
+@[simp] theorem compNonUnitalStarAlgHom_apply (g : X →co Y) (f : C₀(Y, A)) :
     compNonUnitalStarAlgHom 𝕜 A g f = f.comp g := (rfl)
 
-@[simp]
-theorem compNonUnitalStarAlgHom_id :
+@[simp] theorem compNonUnitalStarAlgHom_id :
     compNonUnitalStarAlgHom 𝕜 A (CocompactMap.id X) = .id 𝕜 C₀(X, A) :=
   NonUnitalStarAlgHom.ext comp_id
 
@@ -83,8 +81,7 @@ def evalNonUnitalStarAlgHom (x : X) : C₀(X, A) →⋆ₙₐ[𝕜] A where
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C₀(X, A)) :
+@[simp] theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C₀(X, A)) :
     evalNonUnitalStarAlgHom 𝕜 A x f = f x := (rfl)
 
 end Eval
@@ -117,8 +114,7 @@ def compLeftNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous 
 theorem compLeftNonUnitalStarAlgHom_apply (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) (f : C₀(X, A))
     (x : X) : compLeftNonUnitalStarAlgHom X φ hφ f x = φ (f x) := (rfl)
 
-@[simp]
-theorem compLeftNonUnitalStarAlgHom_id :
+@[simp] theorem compLeftNonUnitalStarAlgHom_id :
     compLeftNonUnitalStarAlgHom X (.id 𝕜 A) continuous_id = .id 𝕜 C₀(X, A) :=
   NonUnitalStarAlgHom.ext fun _ => ext fun _ => rfl
 
@@ -150,8 +146,7 @@ noncomputable def extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
   map_mul' := extendByZero_mul he
   map_star' := extendByZero_star he
 
-@[simp]
-theorem coe_extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
+@[simp] theorem coe_extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
     ⇑(extendByZeroNonUnitalStarAlgHom 𝕜 A he) = extendByZero he := (rfl)
 
 theorem extendByZeroNonUnitalStarAlgHom_apply_mem (he : IsOpenEmbedding e) (f : C₀(X, A))
@@ -163,8 +158,7 @@ theorem extendByZeroNonUnitalStarAlgHom_apply_of_notMem (he : IsOpenEmbedding e)
   extendByZero_apply_of_notMem he f hy
 
 theorem extendByZeroNonUnitalStarAlgHom_injective (he : IsOpenEmbedding e) :
-    Function.Injective (extendByZeroNonUnitalStarAlgHom 𝕜 A he) :=
-  extendByZero_injective he
+    Function.Injective (extendByZeroNonUnitalStarAlgHom 𝕜 A he) := extendByZero_injective he
 
 end ExtendByZero
 

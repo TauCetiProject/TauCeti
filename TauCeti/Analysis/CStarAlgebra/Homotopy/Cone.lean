@@ -55,13 +55,11 @@ open scoped CStarAlgebra ZeroAtInfty
 namespace TauCeti
 
 /-- The cone `C₀((0, 1], A)` of a topological space with zero (in particular, a C⋆-algebra). -/
-abbrev CStarCone (A : Type*) [TopologicalSpace A] [Zero A] : Type _ :=
-  C₀(Ioc (0 : ℝ) 1, A)
+abbrev CStarCone (A : Type*) [TopologicalSpace A] [Zero A] : Type _ := C₀(Ioc (0 : ℝ) 1, A)
 
 /-- The suspension `C₀((0, 1), A)` of a topological space with zero (in particular, a C⋆-algebra).
 -/
-abbrev CStarSuspension (A : Type*) [TopologicalSpace A] [Zero A] : Type _ :=
-  C₀(Ioo (0 : ℝ) 1, A)
+abbrev CStarSuspension (A : Type*) [TopologicalSpace A] [Zero A] : Type _ := C₀(Ioo (0 : ℝ) 1, A)
 
 namespace CStarCone
 
@@ -81,14 +79,12 @@ theorem coe_toPath_apply (f : CStarCone A) :
       (ZeroAtInftyContinuousMap.extendByZero isOpenEmbedding_inclusion_Ioc_Icc f : C(I, A)) := by
   ext t; simp [toPath]
 
-@[simp]
-theorem toPath_apply_inclusion (f : CStarCone A) (x : Ioc (0 : ℝ) 1) :
+@[simp] theorem toPath_apply_inclusion (f : CStarCone A) (x : Ioc (0 : ℝ) 1) :
     toPath f (Set.inclusion Ioc_subset_Icc_self x) = f x := by
   rw [coe_toPath_apply]
   exact ZeroAtInftyContinuousMap.extendByZero_apply_mem isOpenEmbedding_inclusion_Ioc_Icc f x
 
-@[simp]
-theorem toPath_apply_zero (f : CStarCone A) : toPath f 0 = 0 := by
+@[simp] theorem toPath_apply_zero (f : CStarCone A) : toPath f 0 = 0 := by
   rw [coe_toPath_apply]
   exact ZeroAtInftyContinuousMap.extendByZero_apply_of_notMem isOpenEmbedding_inclusion_Ioc_Icc f
     ((notMem_range_inclusion_Ioc_Icc_iff 0).mpr rfl)
@@ -107,16 +103,14 @@ noncomputable def equivKerEvalZero :
   ZeroAtInftyContinuousMap.equivKerContinuousMapEvalOfNotMemRangeIff A
     isOpenEmbedding_inclusion_Ioc_Icc notMem_range_inclusion_Ioc_Icc_iff
 
-@[simp]
-theorem coe_equivKerEvalZero_apply (f : CStarCone A) :
+@[simp] theorem coe_equivKerEvalZero_apply (f : CStarCone A) :
     ((equivKerEvalZero f :
       TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I))) : C(I, A)) =
       toPath f := by
   rw [coe_toPath_apply, equivKerEvalZero,
     ZeroAtInftyContinuousMap.coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply]
 
-@[simp]
-theorem equivKerEvalZero_symm_apply
+@[simp] theorem equivKerEvalZero_symm_apply
     (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I)))
     (x : Ioc (0 : ℝ) 1) :
     equivKerEvalZero.symm g x = (g : C(I, A)) (Set.inclusion Ioc_subset_Icc_self x) := by
@@ -128,8 +122,7 @@ abbrev evalOne : CStarCone A →⋆ₙₐ[ℂ] A :=
 
 theorem evalOne_apply (f : CStarCone A) : evalOne f = f iocOne := by simp [evalOne]
 
-@[simp]
-theorem toPath_apply_one (f : CStarCone A) : toPath f 1 = evalOne f := by
+@[simp] theorem toPath_apply_one (f : CStarCone A) : toPath f 1 = evalOne f := by
   rw [← inclusion_Ioc_Icc_iocOne, toPath_apply_inclusion, evalOne_apply]
 
 /-- Restrict any path `g : C(unitInterval, A)` with `g 0 = 0` to `CStarCone A`. -/
@@ -138,16 +131,14 @@ noncomputable def ofPathEqZero (g : C(I, A)) (hg0 : g 0 = 0) : CStarCone A :=
     (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty g) fun t ht => by
       rw [(notMem_range_inclusion_Ioc_Icc_iff t).mp ht]; simpa using hg0
 
-@[simp]
-theorem ofPathEqZero_apply (g : C(I, A)) (hg0 : g 0 = 0) (x : Ioc (0 : ℝ) 1) :
+@[simp] theorem ofPathEqZero_apply (g : C(I, A)) (hg0 : g 0 = 0) (x : Ioc (0 : ℝ) 1) :
     ofPathEqZero g hg0 x = g (Set.inclusion Ioc_subset_Icc_self x) := by simp [ofPathEqZero]
 
 @[simp]
 theorem toPath_ofPathEqZero (g : C(I, A)) (hg0 : g 0 = 0) : toPath (ofPathEqZero g hg0) = g :=
   DFunLike.coe_injective <| eq_of_zero_of_inclusion_Ioc_Icc (by simp [hg0]) (by simp)
 
-@[simp]
-theorem ofPathEqZero_toPath (f : CStarCone A) :
+@[simp] theorem ofPathEqZero_toPath (f : CStarCone A) :
     ofPathEqZero (toPath f) (toPath_apply_zero f) = f :=
   toPath_injective (toPath_ofPathEqZero _ _)
 
@@ -160,14 +151,12 @@ theorem mem_range_toPath_iff {g : C(I, A)} :
 noncomputable def linearPath (a : A) : CStarCone A :=
   ofPathEqZero ⟨fun t : I => (t : ℝ) • a, continuous_subtypeVal.smul continuous_const⟩ (by simp)
 
-@[simp]
-theorem linearPath_apply (a : A) (t : Ioc (0 : ℝ) 1) : linearPath a t = (t : ℝ) • a := by
+@[simp] theorem linearPath_apply (a : A) (t : Ioc (0 : ℝ) 1) : linearPath a t = (t : ℝ) • a := by
   simp [linearPath]
 
 theorem evalOne_linearPath (a : A) : evalOne (linearPath a) = a := by simp
 
-@[simp]
-theorem norm_linearPath (a : A) : ‖linearPath a‖ = ‖a‖ :=
+@[simp] theorem norm_linearPath (a : A) : ‖linearPath a‖ = ‖a‖ :=
   le_antisymm ((ZeroAtInftyContinuousMap.norm_le (norm_nonneg a)).mpr fun t => by
     rw [linearPath_apply, norm_smul, Real.norm_of_nonneg t.property.1.le]
     exact mul_le_of_le_one_left (norm_nonneg a) t.property.2)
@@ -182,22 +171,18 @@ noncomputable def quotientKerEvalOneEquiv :
     CStarCone A ⧸ TwoSidedIdeal.ker (evalOne (A := A)) ≃⋆ₐ[ℂ] A :=
   NonUnitalStarAlgHom.quotientKerEquivOfSurjective evalOne_surjective
 
-@[simp]
-theorem quotientKerEvalOneEquiv_mk (f : CStarCone A) :
+@[simp] theorem quotientKerEvalOneEquiv_mk (f : CStarCone A) :
     quotientKerEvalOneEquiv (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (evalOne (A := A))) f) =
-      f iocOne := by
-  simp [quotientKerEvalOneEquiv]
+      f iocOne := by simp [quotientKerEvalOneEquiv]
 
 /-- Functorial action of a `⋆`-homomorphism `φ : A →⋆ₙₐ[ℂ] B` on cones. -/
 def map (φ : A →⋆ₙₐ[ℂ] B) : CStarCone A →⋆ₙₐ[ℂ] CStarCone B :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom (Ioc (0 : ℝ) 1) φ (map_continuous φ)
 
-@[simp]
-theorem map_apply (φ : A →⋆ₙₐ[ℂ] B) (f : CStarCone A) (t : Ioc (0 : ℝ) 1) :
+@[simp] theorem map_apply (φ : A →⋆ₙₐ[ℂ] B) (f : CStarCone A) (t : Ioc (0 : ℝ) 1) :
     map φ f t = φ (f t) := by simp [map]
 
-@[simp]
-theorem map_id : map (.id ℂ A) = .id ℂ (CStarCone A) :=
+@[simp] theorem map_id : map (.id ℂ A) = .id ℂ (CStarCone A) :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom_id (Ioc (0 : ℝ) 1)
 
 theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
@@ -205,8 +190,7 @@ theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom_comp (Ioc (0 : ℝ) 1) φ ψ
     (map_continuous φ) (map_continuous ψ)
 
-@[simp]
-theorem evalOne_comp_map (φ : A →⋆ₙₐ[ℂ] B) : evalOne.comp (map φ) = φ.comp evalOne := by
+@[simp] theorem evalOne_comp_map (φ : A →⋆ₙₐ[ℂ] B) : evalOne.comp (map φ) = φ.comp evalOne := by
   ext f; simp
 
 theorem toPath_comp_map (φ : A →⋆ₙₐ[ℂ] B) :
@@ -226,22 +210,18 @@ private noncomputable def truncatedShift : C(I × I, I) where
     ((continuous_subtypeVal.comp continuous_snd).sub (continuous_subtypeVal.comp continuous_fst))
 
 /-- The real value of `truncatedShift p` is `max (p.2 - p.1) 0`. -/
-@[simp]
-private theorem coe_truncatedShift (p : I × I) :
+@[simp] private theorem coe_truncatedShift (p : I × I) :
     (truncatedShift p : ℝ) = max ((p.2 : ℝ) - (p.1 : ℝ)) 0 := by
   simp [truncatedShift, Set.coe_projIcc,
     min_eq_right ((sub_le_self _ p.1.property.1).trans p.2.property.2), max_comm]
 
-@[simp]
-private theorem truncatedShift_zero_right (t : I) : truncatedShift (t, 0) = 0 :=
+@[simp] private theorem truncatedShift_zero_right (t : I) : truncatedShift (t, 0) = 0 :=
   Set.projIcc_of_le_left zero_le_one (by simpa using t.property.1)
 
-@[simp]
-private theorem truncatedShift_zero_left (s : I) : truncatedShift (0, s) = s := by
+@[simp] private theorem truncatedShift_zero_left (s : I) : truncatedShift (0, s) = s := by
   simp [truncatedShift]
 
-@[simp]
-private theorem truncatedShift_one_left (s : I) : truncatedShift (1, s) = 0 :=
+@[simp] private theorem truncatedShift_one_left (s : I) : truncatedShift (1, s) = 0 :=
   Set.projIcc_of_le_left zero_le_one (sub_nonpos.mpr s.property.2)
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
@@ -258,8 +238,7 @@ private noncomputable def contractionPath (f : CStarCone A) : C(I, CStarCone A) 
     ext t s
     simp
 
-@[simp]
-private theorem contractionPath_apply (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1) :
+@[simp] private theorem contractionPath_apply (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1) :
     contractionPath f t s = toPath f (truncatedShift (t, Set.inclusion Ioc_subset_Icc_self s)) := by
   simp [contractionPath]
 
@@ -320,20 +299,17 @@ value at `1` to `0`. -/
 noncomputable def toCone : CStarSuspension A →⋆ₙₐ[ℂ] CStarCone A :=
   ZeroAtInftyContinuousMap.extendByZeroNonUnitalStarAlgHom ℂ A isOpenEmbedding_inclusion_Ioo_Ioc
 
-@[simp]
-theorem toCone_apply_inclusion (f : CStarSuspension A) (x : Ioo (0 : ℝ) 1) :
+@[simp] theorem toCone_apply_inclusion (f : CStarSuspension A) (x : Ioo (0 : ℝ) 1) :
     toCone f (Set.inclusion Ioo_subset_Ioc_self x) = f x := by simp [toCone]
 
-@[simp]
-theorem toCone_apply_iocOne (f : CStarSuspension A) : toCone f iocOne = 0 := by
+@[simp] theorem toCone_apply_iocOne (f : CStarSuspension A) : toCone f iocOne = 0 := by
   rw [toCone, ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom]
   exact ZeroAtInftyContinuousMap.extendByZero_apply_of_notMem isOpenEmbedding_inclusion_Ioo_Ioc f
     ((notMem_range_inclusion_Ioo_Ioc_iff iocOne).mpr rfl)
 
 theorem evalOne_toCone (f : CStarSuspension A) : CStarCone.evalOne (toCone f) = 0 := by simp
 
-@[simp]
-theorem evalOne_comp_toCone : (CStarCone.evalOne (A := A)).comp toCone = 0 :=
+@[simp] theorem evalOne_comp_toCone : (CStarCone.evalOne (A := A)).comp toCone = 0 :=
   NonUnitalStarAlgHom.ext evalOne_toCone
 
 theorem toCone_injective : Function.Injective (toCone (A := A)) :=
@@ -349,15 +325,13 @@ noncomputable def equivKerEvalOne :
   ZeroAtInftyContinuousMap.equivKerEvalOfNotMemRangeIff A
     isOpenEmbedding_inclusion_Ioo_Ioc notMem_range_inclusion_Ioo_Ioc_iff
 
-@[simp]
-theorem coe_equivKerEvalOne_apply (f : CStarSuspension A) :
+@[simp] theorem coe_equivKerEvalOne_apply (f : CStarSuspension A) :
     ((equivKerEvalOne f : TwoSidedIdeal.ker (CStarCone.evalOne (A := A))) : CStarCone A) =
       toCone f := by
   rw [equivKerEvalOne, ZeroAtInftyContinuousMap.coe_equivKerEvalOfNotMemRangeIff_apply, toCone,
     ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom]
 
-@[simp]
-theorem equivKerEvalOne_symm_apply
+@[simp] theorem equivKerEvalOne_symm_apply
     (g : TwoSidedIdeal.ker (CStarCone.evalOne (A := A))) (x : Ioo (0 : ℝ) 1) :
     equivKerEvalOne.symm g x = (g : CStarCone A) (Set.inclusion Ioo_subset_Ioc_self x) := by
   simp [equivKerEvalOne]
@@ -370,21 +344,17 @@ noncomputable def ofConeEqZero (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0)
     fun t ht => by
       rw [(notMem_range_inclusion_Ioo_Ioc_iff t).mp ht, ← CStarCone.evalOne_apply]; exact hf1
 
-@[simp]
-theorem ofConeEqZero_apply (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0)
+@[simp] theorem ofConeEqZero_apply (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0)
     (x : Ioo (0 : ℝ) 1) :
     ofConeEqZero f hf1 x = f (Set.inclusion Ioo_subset_Ioc_self x) := by simp [ofConeEqZero]
 
-@[simp]
-theorem toCone_ofConeEqZero (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0) :
+@[simp] theorem toCone_ofConeEqZero (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0) :
     toCone (ofConeEqZero f hf1) = f := by
   rw [toCone, ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom, ofConeEqZero]
   exact ZeroAtInftyContinuousMap.extendByZero_restrictOfEqZero isOpenEmbedding_inclusion_Ioo_Ioc f _
 
-@[simp]
-theorem ofConeEqZero_toCone (g : CStarSuspension A) :
-    ofConeEqZero (toCone g) (evalOne_toCone g) = g :=
-  toCone_injective (toCone_ofConeEqZero _ _)
+@[simp] theorem ofConeEqZero_toCone (g : CStarSuspension A) :
+    ofConeEqZero (toCone g) (evalOne_toCone g) = g := toCone_injective (toCone_ofConeEqZero _ _)
 
 theorem mem_range_toCone_iff {f : CStarCone A} :
     f ∈ range (toCone (A := A)) ↔ CStarCone.evalOne f = 0 :=
@@ -397,25 +367,20 @@ noncomputable def equivReal (A : Type*) [NonUnitalCStarAlgebra A] :
     CStarSuspension A ≃⋆ₐ[ℂ] C₀(ℝ, A) :=
   ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ A iooZeroOneHomeomorphReal
 
-@[simp]
-theorem equivReal_apply (f : CStarSuspension A) (y : ℝ) :
-    equivReal A f y = f (iooZeroOneHomeomorphReal.symm y) := by
-  simp [equivReal]
+@[simp] theorem equivReal_apply (f : CStarSuspension A) (y : ℝ) :
+    equivReal A f y = f (iooZeroOneHomeomorphReal.symm y) := by simp [equivReal]
 
-@[simp]
-theorem equivReal_symm_apply (f : C₀(ℝ, A)) (x : Ioo (0 : ℝ) 1) :
+@[simp] theorem equivReal_symm_apply (f : C₀(ℝ, A)) (x : Ioo (0 : ℝ) 1) :
     (equivReal A).symm f x = f (Real.tan (Real.pi * ((x : ℝ) - 2⁻¹))) := by simp [equivReal]
 
 /-- Functorial action of a `⋆`-homomorphism `φ : A →⋆ₙₐ[ℂ] B` on suspensions. -/
 def map (φ : A →⋆ₙₐ[ℂ] B) : CStarSuspension A →⋆ₙₐ[ℂ] CStarSuspension B :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom (Ioo (0 : ℝ) 1) φ (map_continuous φ)
 
-@[simp]
-theorem map_apply (φ : A →⋆ₙₐ[ℂ] B) (f : CStarSuspension A) (t : Ioo (0 : ℝ) 1) :
+@[simp] theorem map_apply (φ : A →⋆ₙₐ[ℂ] B) (f : CStarSuspension A) (t : Ioo (0 : ℝ) 1) :
     map φ f t = φ (f t) := by simp [map]
 
-@[simp]
-theorem map_id : map (.id ℂ A) = .id ℂ (CStarSuspension A) :=
+@[simp] theorem map_id : map (.id ℂ A) = .id ℂ (CStarSuspension A) :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom_id (Ioo (0 : ℝ) 1)
 
 theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :

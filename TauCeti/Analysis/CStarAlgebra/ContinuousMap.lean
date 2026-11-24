@@ -51,8 +51,7 @@ noncomputable def quotientKerEvalEquiv (X A : Type*) [TopologicalSpace X] [Compa
     (φ := evalNonUnitalStarAlgHom ℂ A x)
     fun a => ⟨const X a, by simp⟩
 
-@[simp]
-theorem quotientKerEvalEquiv_mk {X : Type*} [TopologicalSpace X] [CompactSpace X]
+@[simp] theorem quotientKerEvalEquiv_mk {X : Type*} [TopologicalSpace X] [CompactSpace X]
     (A : Type*) [NonUnitalCStarAlgebra A] (x : X) (f : C(X, A)) :
     quotientKerEvalEquiv X A x
         (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A x)) f) =
@@ -89,8 +88,7 @@ noncomputable def kerContinuousMapEvalEquiv (A : Type*) [NonUnitalCStarAlgebra A
   map_smul' _ _ := Subtype.ext (map_smul _ _ _)
   map_star' _ := Subtype.ext (map_star _ _)
 
-@[simp]
-theorem coe_kerContinuousMapEvalEquiv_apply {A : Type*} [NonUnitalCStarAlgebra A] (y₀ : Y)
+@[simp] theorem coe_kerContinuousMapEvalEquiv_apply {A : Type*} [NonUnitalCStarAlgebra A] (y₀ : Y)
     (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) :
     ((kerContinuousMapEvalEquiv A y₀ g :
       TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) : C₀(Y, A)) =
@@ -139,14 +137,12 @@ noncomputable def equivKerEvalOfNotMemRangeIff (A : Type*) [NonUnitalCStarAlgebr
   map_smul' c f := Subtype.ext (extendByZero_smul he c f)
   map_star' f := Subtype.ext (extendByZero_star he f)
 
-@[simp]
-theorem coe_equivKerEvalOfNotMemRangeIff_apply {A : Type*} [NonUnitalCStarAlgebra A]
+@[simp] theorem coe_equivKerEvalOfNotMemRangeIff_apply {A : Type*} [NonUnitalCStarAlgebra A]
     (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) (f : C₀(X, A)) :
     ((equivKerEvalOfNotMemRangeIff A he hcompl f :
       TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) : C₀(Y, A)) = extendByZero he f := (rfl)
 
-@[simp]
-theorem equivKerEvalOfNotMemRangeIff_symm_apply {A : Type*} [NonUnitalCStarAlgebra A]
+@[simp] theorem equivKerEvalOfNotMemRangeIff_symm_apply {A : Type*} [NonUnitalCStarAlgebra A]
     (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀)
     (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) (x : X) :
     (equivKerEvalOfNotMemRangeIff A he hcompl).symm g x = (g : C₀(Y, A)) (e x) :=
@@ -160,8 +156,7 @@ noncomputable def equivKerContinuousMapEvalOfNotMemRangeIff [CompactSpace Y]
     C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀) :=
   (equivKerEvalOfNotMemRangeIff A he hcompl).trans (kerContinuousMapEvalEquiv A y₀).symm
 
-@[simp]
-theorem coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply [CompactSpace Y]
+@[simp] theorem coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply [CompactSpace Y]
     {A : Type*} [NonUnitalCStarAlgebra A]
     (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) (f : C₀(X, A)) :
     ((equivKerContinuousMapEvalOfNotMemRangeIff A he hcompl f :
@@ -170,8 +165,7 @@ theorem coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply [CompactSpace Y]
   ext y
   simp [equivKerContinuousMapEvalOfNotMemRangeIff]
 
-@[simp]
-theorem equivKerContinuousMapEvalOfNotMemRangeIff_symm_apply [CompactSpace Y]
+@[simp] theorem equivKerContinuousMapEvalOfNotMemRangeIff_symm_apply [CompactSpace Y]
     {A : Type*} [NonUnitalCStarAlgebra A]
     (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀)
     (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) (x : X) :

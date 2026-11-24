@@ -66,10 +66,8 @@ def mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalStarSubalgebra
   star_mem' {p} (hp : φ p.1 = CStarCone.evalOne p.2) := by
     rw [mem_ofPred_eq, Prod.fst_star, Prod.snd_star, map_star, map_star, hp]
 
-@[simp]
-theorem mem_mappingConeSubalgebra_iff (φ : A →⋆ₙₐ[ℂ] B) (p : A × CStarCone B) :
-    p ∈ mappingConeSubalgebra φ ↔ φ p.1 = CStarCone.evalOne p.2 :=
-  Iff.rfl
+@[simp] theorem mem_mappingConeSubalgebra_iff (φ : A →⋆ₙₐ[ℂ] B) (p : A × CStarCone B) :
+    p ∈ mappingConeSubalgebra φ ↔ φ p.1 = CStarCone.evalOne p.2 := Iff.rfl
 
 instance isClosed_mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) :
     IsClosed (mappingConeSubalgebra φ : Set (A × CStarCone B)) :=
@@ -77,21 +75,18 @@ instance isClosed_mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) :
     ((map_continuous CStarCone.evalOne).comp continuous_snd)
 
 /-- The mapping cone C⋆-algebra `{(a, f) ∈ A × CStarCone B | φ a = f 1}` of `φ : A →⋆ₙₐ[ℂ] B`. -/
-def MappingCone (φ : A →⋆ₙₐ[ℂ] B) : Type _ :=
-  mappingConeSubalgebra φ
+def MappingCone (φ : A →⋆ₙₐ[ℂ] B) : Type _ := mappingConeSubalgebra φ
 
 instance (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalCStarAlgebra (MappingCone φ) :=
   inferInstanceAs (NonUnitalCStarAlgebra (mappingConeSubalgebra φ))
 
 /-- Equip `MappingCone φ` with the spectral (C⋆-) partial order so that `A →CP MappingCone φ`
 (`MappingCone.sectionCP`) typechecks. -/
-instance (φ : A →⋆ₙₐ[ℂ] B) : PartialOrder (MappingCone φ) :=
-  CStarAlgebra.spectralOrder _
+instance (φ : A →⋆ₙₐ[ℂ] B) : PartialOrder (MappingCone φ) := CStarAlgebra.spectralOrder _
 
 /-- Equip `MappingCone φ` with the spectral `StarOrderedRing` structure matching its
 `PartialOrder` so that `A →CP MappingCone φ` (`MappingCone.sectionCP`) typechecks. -/
-instance (φ : A →⋆ₙₐ[ℂ] B) : StarOrderedRing (MappingCone φ) :=
-  CStarAlgebra.spectralOrderedRing _
+instance (φ : A →⋆ₙₐ[ℂ] B) : StarOrderedRing (MappingCone φ) := CStarAlgebra.spectralOrderedRing _
 
 end Carrier
 
@@ -113,13 +108,11 @@ theorem eq_evalOne {φ : A →⋆ₙₐ[ℂ] B} (x : MappingCone φ) :
 
 @[ext]
 theorem ext {φ : A →⋆ₙₐ[ℂ] B} {x y : MappingCone φ} (h₁ : x.fst = y.fst) (h₂ : x.snd = y.snd) :
-    x = y :=
-  Subtype.ext (Prod.ext h₁ h₂)
+    x = y := Subtype.ext (Prod.ext h₁ h₂)
 
 /-- Construct an element of `MappingCone φ` from `(a, f)` satisfying `φ a = CStarCone.evalOne f`. -/
 def mk (φ : A →⋆ₙₐ[ℂ] B) (a : A) (f : CStarCone B) (h : φ a = CStarCone.evalOne f) :
-    MappingCone φ :=
-  ⟨(a, f), h⟩
+    MappingCone φ := ⟨(a, f), h⟩
 
 @[simp] theorem fst_mk (φ : A →⋆ₙₐ[ℂ] B) (a : A) (f : CStarCone B)
     (h : φ a = CStarCone.evalOne f) : (mk φ a f h).fst = a := (rfl)
@@ -184,8 +177,7 @@ def fstHom (φ : A →⋆ₙₐ[ℂ] B) : MappingCone φ →⋆ₙₐ[ℂ] A whe
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem fstHom_apply (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) : fstHom φ x = x.fst := (rfl)
+@[simp] theorem fstHom_apply (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) : fstHom φ x = x.fst := (rfl)
 
 /-- Second projection `MappingCone φ →⋆ₙₐ[ℂ] CStarCone B` sending `(a, f)` to `f`. -/
 def sndHom (φ : A →⋆ₙₐ[ℂ] B) : MappingCone φ →⋆ₙₐ[ℂ] CStarCone B where
@@ -196,22 +188,16 @@ def sndHom (φ : A →⋆ₙₐ[ℂ] B) : MappingCone φ →⋆ₙₐ[ℂ] CStar
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp]
-theorem sndHom_apply (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) : sndHom φ x = x.snd := (rfl)
+@[simp] theorem sndHom_apply (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) : sndHom φ x = x.snd := (rfl)
 
-@[simp]
-theorem fst_sum {ι : Type*} {φ : A →⋆ₙₐ[ℂ] B} (s : Finset ι) (f : ι → MappingCone φ) :
-    (∑ i ∈ s, f i).fst = ∑ i ∈ s, (f i).fst :=
-  map_sum (fstHom φ) f s
+@[simp] theorem fst_sum {ι : Type*} {φ : A →⋆ₙₐ[ℂ] B} (s : Finset ι) (f : ι → MappingCone φ) :
+    (∑ i ∈ s, f i).fst = ∑ i ∈ s, (f i).fst := map_sum (fstHom φ) f s
 
-@[simp]
-theorem snd_sum {ι : Type*} {φ : A →⋆ₙₐ[ℂ] B} (s : Finset ι) (f : ι → MappingCone φ) :
-    (∑ i ∈ s, f i).snd = ∑ i ∈ s, (f i).snd :=
-  map_sum (sndHom φ) f s
+@[simp] theorem snd_sum {ι : Type*} {φ : A →⋆ₙₐ[ℂ] B} (s : Finset ι) (f : ι → MappingCone φ) :
+    (∑ i ∈ s, f i).snd = ∑ i ∈ s, (f i).snd := map_sum (sndHom φ) f s
 
 theorem comp_fstHom_eq (φ : A →⋆ₙₐ[ℂ] B) :
-    φ.comp (fstHom φ) = CStarCone.evalOne.comp (sndHom φ) :=
-  NonUnitalStarAlgHom.ext eq_evalOne
+    φ.comp (fstHom φ) = CStarCone.evalOne.comp (sndHom φ) := NonUnitalStarAlgHom.ext eq_evalOne
 
 /-- Pullback universal property of `MappingCone φ`: any pair of `⋆`-homomorphisms
 `α : C →⋆ₙₐ[ℂ] A` and `β : C →⋆ₙₐ[ℂ] CStarCone B` satisfying `φ.comp α = evalOne.comp β` factors
@@ -225,20 +211,16 @@ def lift (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →�
   map_mul' c₁ c₂ := ext (map_mul α c₁ c₂) (map_mul β c₁ c₂)
   map_star' c := ext (map_star α c) (map_star β c)
 
-@[simp]
-theorem fst_lift_apply (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
+@[simp] theorem fst_lift_apply (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
     (h : φ.comp α = CStarCone.evalOne.comp β) (c : C) : (lift φ α β h c).fst = α c := (rfl)
 
-@[simp]
-theorem snd_lift_apply (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
+@[simp] theorem snd_lift_apply (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
     (h : φ.comp α = CStarCone.evalOne.comp β) (c : C) : (lift φ α β h c).snd = β c := (rfl)
 
-@[simp]
-theorem fstHom_comp_lift (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
+@[simp] theorem fstHom_comp_lift (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
     (h : φ.comp α = CStarCone.evalOne.comp β) : (fstHom φ).comp (lift φ α β h) = α := (rfl)
 
-@[simp]
-theorem sndHom_comp_lift (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
+@[simp] theorem sndHom_comp_lift (φ : A →⋆ₙₐ[ℂ] B) (α : C →⋆ₙₐ[ℂ] A) (β : C →⋆ₙₐ[ℂ] CStarCone B)
     (h : φ.comp α = CStarCone.evalOne.comp β) : (sndHom φ).comp (lift φ α β h) = β := (rfl)
 
 theorem lift_unique {φ : A →⋆ₙₐ[ℂ] B} {α : C →⋆ₙₐ[ℂ] A} {β : C →⋆ₙₐ[ℂ] CStarCone B}
@@ -273,8 +255,7 @@ theorem sndHom_comp_map (φ : A →⋆ₙₐ[ℂ] B) (ψ : C →⋆ₙₐ[ℂ] D
     (hsq : ψ.comp α = β.comp φ) :
     (sndHom ψ).comp (map φ ψ α β hsq) = (CStarCone.map β).comp (sndHom φ) := (rfl)
 
-@[simp]
-theorem map_id (φ : A →⋆ₙₐ[ℂ] B)
+@[simp] theorem map_id (φ : A →⋆ₙₐ[ℂ] B)
     (hsq : φ.comp (.id ℂ A) = (NonUnitalStarAlgHom.id ℂ B).comp φ := by ext; rfl) :
     map φ φ (.id ℂ A) (.id ℂ B) hsq = .id ℂ (MappingCone φ) := by
   ext x : 1; refine ext rfl ?_; ext t; simp [NonUnitalStarAlgHom.coe_id]
@@ -288,8 +269,7 @@ theorem map_comp {E F : Type*} [NonUnitalCStarAlgebra E] [NonUnitalCStarAlgebra 
         ext a
         have h₂a : χ (α₂ (α₁ a)) = β₂ (ψ (α₁ a)) := DFunLike.congr_fun h₂ (α₁ a)
         have h₁a : ψ (α₁ a) = β₁ (φ a) := DFunLike.congr_fun h₁ a
-        simp [h₂a, h₁a]) := by
-  ext x : 1; refine ext rfl ?_; ext t; simp
+        simp [h₂a, h₁a]) := by ext x : 1; refine ext rfl ?_; ext t; simp
 
 end Basic
 
@@ -347,12 +327,10 @@ def equivKerFstHom (φ : A →⋆ₙₐ[ℂ] B) :
   map_smul' c g := Subtype.ext (map_smul (inr φ) c g)
   map_star' g := Subtype.ext (map_star (inr φ) g)
 
-@[simp]
-theorem coe_equivKerFstHom_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) :
+@[simp] theorem coe_equivKerFstHom_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) :
     ((equivKerFstHom φ g : TwoSidedIdeal.ker (fstHom φ)) : MappingCone φ) = inr φ g := (rfl)
 
-@[simp]
-theorem equivKerFstHom_symm_apply (φ : A →⋆ₙₐ[ℂ] B) (x : TwoSidedIdeal.ker (fstHom φ))
+@[simp] theorem equivKerFstHom_symm_apply (φ : A →⋆ₙₐ[ℂ] B) (x : TwoSidedIdeal.ker (fstHom φ))
     (t : Ioo (0 : ℝ) 1) :
     (equivKerFstHom φ).symm x t = (x : MappingCone φ).snd (Set.inclusion Ioo_subset_Ioc_self t) :=
   CStarSuspension.ofConeEqZero_apply x.val.snd _ t
@@ -373,8 +351,7 @@ private def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] Mappin
 @[simp] private theorem snd_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionLinearMap φ a).snd = CStarCone.linearPath (φ a) := (rfl)
 
-@[simp]
-private theorem norm_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
+@[simp] private theorem norm_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     ‖sectionLinearMap φ a‖ = ‖a‖ := by
   rw [norm_eq, fst_sectionLinearMap_apply, snd_sectionLinearMap_apply, CStarCone.norm_linearPath]
   exact max_eq_left (NonUnitalStarAlgHom.norm_apply_le φ a)
@@ -391,8 +368,7 @@ def sectionCLM (φ : A →⋆ₙₐ[ℂ] B) : A →L[ℂ] MappingCone φ :=
 @[simp] theorem snd_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionCLM φ a).snd = CStarCone.linearPath (φ a) := (rfl)
 
-@[simp]
-theorem norm_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : ‖sectionCLM φ a‖ = ‖a‖ :=
+@[simp] theorem norm_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : ‖sectionCLM φ a‖ = ‖a‖ :=
   norm_sectionLinearMap_apply φ a
 
 theorem isometry_sectionCLM (φ : A →⋆ₙₐ[ℂ] B) : Isometry (sectionCLM φ) :=
@@ -409,8 +385,7 @@ def quotientKerFstHomEquiv (φ : A →⋆ₙₐ[ℂ] B) :
     MappingCone φ ⧸ TwoSidedIdeal.ker (fstHom φ) ≃⋆ₐ[ℂ] A :=
   NonUnitalStarAlgHom.quotientKerEquivOfSurjective (fstHom_surjective φ)
 
-@[simp]
-theorem quotientKerFstHomEquiv_mk (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) :
+@[simp] theorem quotientKerFstHomEquiv_mk (φ : A →⋆ₙₐ[ℂ] B) (x : MappingCone φ) :
     quotientKerFstHomEquiv φ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (fstHom φ)) x) =
       x.fst :=
   (NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk (fstHom_surjective φ) x).trans
@@ -424,8 +399,7 @@ private def sqrtConePath (b : B) : CStarCone B :=
       (Real.continuous_sqrt.comp continuous_subtypeVal).smul continuous_const⟩
     (by simp)
 
-@[simp]
-private theorem sqrtConePath_apply (b : B) (t : Ioc (0 : ℝ) 1) :
+@[simp] private theorem sqrtConePath_apply (b : B) (t : Ioc (0 : ℝ) 1) :
     sqrtConePath b t = Real.sqrt (t : ℝ) • b := by simp [sqrtConePath]
 
 private theorem evalOne_sqrtConePath (b : B) : CStarCone.evalOne (sqrtConePath b) = b := by simp
@@ -471,12 +445,10 @@ def sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) 
     · rw [map_zero]
     · intro X Y _ _ hX hY; rw [map_add]; exact add_nonneg hX hY
 
-@[simp]
-theorem toLinearMap_sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) :
+@[simp] theorem toLinearMap_sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) :
     (sectionCP φ).toLinearMap = (sectionCLM φ).toLinearMap := (rfl)
 
-@[simp]
-theorem sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
+@[simp] theorem sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     sectionCP φ a = sectionCLM φ a := (rfl)
 
 /-- The linear section `a ↦ (a, t ↦ t • φ a)` preserves the product of `a` and `b` if and only if
@@ -524,8 +496,7 @@ theorem idEquivCone_apply {A : Type*} [NonUnitalCStarAlgebra A] (x : MappingCone
 
 @[simp]
 theorem fst_idEquivCone_symm_apply {A : Type*} [NonUnitalCStarAlgebra A] (f : CStarCone A) :
-    ((idEquivCone A).symm f).fst = f iocOne :=
-  CStarCone.evalOne_apply f
+    ((idEquivCone A).symm f).fst = f iocOne := CStarCone.evalOne_apply f
 
 @[simp]
 theorem snd_idEquivCone_symm_apply {A : Type*} [NonUnitalCStarAlgebra A] (f : CStarCone A) :
@@ -553,13 +524,11 @@ theorem zeroEquivProd_apply (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCS
     (x : MappingCone (0 : A →⋆ₙₐ[ℂ] B)) :
     zeroEquivProd A B x = (x.fst, CStarSuspension.ofConeEqZero x.snd x.eq_evalOne.symm) := (rfl)
 
-@[simp]
-theorem fst_zeroEquivProd_symm_apply (A B : Type*) [NonUnitalCStarAlgebra A]
+@[simp] theorem fst_zeroEquivProd_symm_apply (A B : Type*) [NonUnitalCStarAlgebra A]
     [NonUnitalCStarAlgebra B] (p : A × CStarSuspension B) :
     ((zeroEquivProd A B).symm p).fst = p.1 := (rfl)
 
-@[simp]
-theorem snd_zeroEquivProd_symm_apply (A B : Type*) [NonUnitalCStarAlgebra A]
+@[simp] theorem snd_zeroEquivProd_symm_apply (A B : Type*) [NonUnitalCStarAlgebra A]
     [NonUnitalCStarAlgebra B] (p : A × CStarSuspension B) :
     ((zeroEquivProd A B).symm p).snd = CStarSuspension.toCone p.2 := (rfl)
 
