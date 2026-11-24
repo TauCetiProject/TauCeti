@@ -93,17 +93,6 @@ theorem occurrenceGap_succ_pos_iff {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.occ
     0 < μ.occurrenceGap (n + 1) ↔ μ.occurrenceTime n < μ.occurrenceTime (n + 1) := by
   rw [occurrenceGap_succ_of_ne_top hn, tsub_pos_iff_lt]
 
-/-- The nonnegative-real interarrival gap is the difference of the nonnegative-real occurrence
-times, including when occurrence `n` or occurrence `n + 1` is infinite. -/
-theorem toNNReal_occurrenceGap_succ (μ : Measure ℝ≥0) (n : ℕ) :
-    (μ.occurrenceGap (n + 1)).toNNReal =
-      (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal := by
-  by_cases hn : μ.occurrenceTime n = ∞
-  · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-      top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
-    simp [occurrenceGap_succ_of_eq_top hn, hn, hnext]
-  · rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
-
 /-- For consecutive finite occurrences, the real-valued interarrival gap is the difference of the
 real-valued occurrence times. -/
 theorem toReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
@@ -161,12 +150,6 @@ theorem sum_range_succ_occurrenceGap (μ : Measure ℝ≥0) (n : ℕ) :
       simp [hn, hnext]
     · rw [ite_eq_right hn, add_tsub_cancel_of_le (μ.monotone_occurrenceTime (Nat.le_succ n))]
 
-/-- Every interarrival gap is bounded above by its corresponding occurrence time. -/
-theorem occurrenceGap_le_occurrenceTime (μ : Measure ℝ≥0) (n : ℕ) :
-    μ.occurrenceGap n ≤ μ.occurrenceTime n := by
-  rw [← sum_range_succ_occurrenceGap]
-  exact Finset.single_le_sum (fun _ _ => zero_le) (Finset.self_mem_range_succ n)
-
 /-- When occurrence `n` is finite, casting the sum of the `ℝ≥0`-valued interarrival gaps up to
 index `n` recovers occurrence time `n`. -/
 theorem coe_sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
@@ -179,24 +162,6 @@ theorem coe_sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : �
   exact (μ.occurrenceGap_eq_top_iff i).not.mpr
     (ne_top_of_le_ne_top hn
       (μ.monotone_occurrenceTime (Nat.le_of_lt_succ (Finset.mem_range.mp hi))))
-
-/-- Summing the first `n + 1` nonnegative-real interarrival gaps recovers the nonnegative-real
-occurrence time whenever that occurrence is finite. -/
-@[simp]
-theorem sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
-    (hn : μ.occurrenceTime n ≠ ∞) :
-    ∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toNNReal = (μ.occurrenceTime n).toNNReal := by
-  apply ENNReal.coe_injective
-  rw [coe_sum_range_succ_toNNReal_occurrenceGap hn, ENNReal.coe_toNNReal hn]
-
-/-- Summing the first `n + 1` real-valued interarrival gaps recovers the real-valued occurrence
-time whenever that occurrence is finite. -/
-@[simp]
-theorem sum_range_succ_toReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
-    (hn : μ.occurrenceTime n ≠ ∞) :
-    ∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toReal = (μ.occurrenceTime n).toReal := by
-  simpa only [NNReal.coe_sum, ENNReal.coe_toNNReal_eq_toReal] using
-    congrArg ((↑) : ℝ≥0 → ℝ) (sum_range_succ_toNNReal_occurrenceGap hn)
 
 /-- Interarrival gaps and occurrence times carry the same information for every measure on the
 half-line. -/
@@ -231,23 +196,6 @@ section LocallyFinite
 open TauCeti.Probability
 
 variable {μ ν : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
-
-/-- Restricting to a closed observation window retains the interarrival gaps of occurrences in
-that window and makes all subsequent interarrival gaps infinite. -/
-@[simp]
-theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
-    (b : ℝ≥0) (n : ℕ) :
-    (μ.restrict (Iic b)).occurrenceGap n =
-      if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ := by
-  by_cases hle : μ.occurrenceTime n ≤ b
-  · cases n with
-    | zero => simp [hle]
-    | succ n =>
-      have hn : μ.occurrenceTime n ≤ b :=
-        (μ.monotone_occurrenceTime (Nat.le_succ n)).trans hle
-      have hnfin : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn
-      simp [occurrenceGap_succ_of_ne_top, occurrenceTime_restrict_Iic, hle, hn, hnfin]
-  · simp [hle, occurrenceGap_eq_top_iff, occurrenceTime_restrict_Iic]
 
 /-- For a locally finite measure, the first interarrival gap is positive if and only if the
 origin carries mass strictly less than one. -/
