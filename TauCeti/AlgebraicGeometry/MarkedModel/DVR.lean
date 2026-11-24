@@ -96,15 +96,8 @@ morphism and generic-fibre inclusion are unchanged. -/
 -- requires.
 @[expose] def toModel
     (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
-    Model R K C toK where
-  total := M.total
-  toBase := M.toBase
-  flat := M.flat
-  locallyOfFinitePresentation := M.locallyOfFinitePresentation
-  quasiCompact := M.quasiCompact
-  quasiSeparated := M.quasiSeparated
-  genericFiberIso := Over.isoMk M.isPullback_specMap.isoPullback.symm
-    (IsPullback.isoPullback_inv_snd _)
+    Model R K C toK :=
+  Model.ofIsPullback M.toBase M.isPullback_specMap
 
 variable (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom))
 
@@ -117,9 +110,8 @@ lemma toModel_toBase : M.toModel.toBase = M.toBase :=
   (rfl)
 
 @[simp]
-lemma toModel_genericι : M.toModel.genericι = M.genericι := by
-  simp only [Model.genericι_def, toModel, Over.isoMk_inv_left, Iso.symm_inv]
-  exact IsPullback.isoPullback_hom_fst _
+lemma toModel_genericι : M.toModel.genericι = M.genericι :=
+  (Model.genericι_ofIsPullback _ _).trans (Category.comp_id _)
 
 /-- A proper marked model over the spectrum of a discrete valuation ring is a proper model. -/
 instance isProper_toModel [M.IsProper] : M.toModel.IsProper :=
@@ -191,43 +183,40 @@ lemma ofMarkedModelFunctor_map_hom
     (f : M ⟶ N) : (ofMarkedModelFunctor.map f).hom = f.hom :=
   (rfl)
 
-/-- The model obtained from a model by passing to marked models and back is isomorphic to it
-through the identity of the total space. -/
-private def toModelToMarkedModelIso (M : Model R K C toK) : M ≅ M.toMarkedModel.toModel where
-  hom := ⟨𝟙 _, Category.id_comp _, baseChangeHom_genericFiberIso_hom_left _ _ (by
-    rw [MarkedModel.toModel_genericι, toMarkedModel_genericι]; exact Category.comp_id _)⟩
-  inv := ⟨𝟙 _, Category.id_comp _, baseChangeHom_genericFiberIso_hom_left _ _ (by
-    rw [MarkedModel.toModel_genericι, toMarkedModel_genericι]; exact Category.comp_id _)⟩
-  hom_inv_id := Hom.ext (by rw [comp_hom, id_hom]; exact Category.id_comp _)
-  inv_hom_id := Hom.ext (by rw [comp_hom, id_hom]; exact Category.id_comp _)
-
-@[simp]
-private lemma toModelToMarkedModelIso_hom_hom (M : Model R K C toK) :
-    (toModelToMarkedModelIso M).hom.hom = 𝟙 M.total :=
-  (rfl)
-
 /-- Over a discrete valuation ring `R` with fraction field `K`, models of `C` over `R` are
 equivalent to marked models of `C` over the scheme `Spec R`, with marking `toK` followed by the
 isomorphism `Spec K ≅ Spec K(Spec R)`. Both functors preserve total spaces, structure morphisms
-and generic-fibre inclusions, and act as the identity on maps of total spaces. -/
-def markedModelEquivalence :
+and generic-fibre inclusions, and act as the identity on maps of total spaces; the components of
+the unit and counit are identities of total spaces. -/
+-- The body is exposed so that the components of its unit and counit are stated between total
+-- spaces that agree by definition.
+@[expose] def markedModelEquivalence :
     Model R K C toK ≌
-      MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom) :=
-  .mk toMarkedModelFunctor ofMarkedModelFunctor
-    (NatIso.ofComponents toModelToMarkedModelIso fun f ↦ Hom.ext (by
-      simp only [Functor.id_map, Functor.comp_map, comp_hom, toModelToMarkedModelIso_hom_hom,
-        ofMarkedModelFunctor_map_hom, toMarkedModelFunctor_map_hom]
-      exact (Category.comp_id _).trans (Category.id_comp _).symm))
-    (NatIso.ofComponents
-      (fun M ↦ MarkedModel.isoMk (Iso.refl M.total) (Category.id_comp _)
-        ((Category.comp_id _).trans M.toModel_genericι))
-      fun f ↦ by
-        apply MarkedModel.hom_ext
-        rw [MarkedModel.comp_hom, MarkedModel.comp_hom]
-        -- The components are stated between the objects of the composite functor, which agree
-        -- with the given marked models only up to unfolding the exposed functors.
-        erw [MarkedModel.isoMk_hom_hom, MarkedModel.isoMk_hom_hom]
-        exact (Category.comp_id _).trans (Category.id_comp _).symm)
+      MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom) where
+  functor := toMarkedModelFunctor
+  inverse := ofMarkedModelFunctor
+  unitIso := NatIso.ofComponents
+    (fun M ↦ ({
+      hom := ⟨𝟙 _, Category.id_comp _, baseChangeHom_genericFiberIso_hom_left _ _ (by
+        rw [MarkedModel.toModel_genericι, toMarkedModel_genericι]; exact Category.comp_id _)⟩
+      inv := ⟨𝟙 _, Category.id_comp _, baseChangeHom_genericFiberIso_hom_left _ _ (by
+        rw [MarkedModel.toModel_genericι, toMarkedModel_genericι]; exact Category.comp_id _)⟩
+      hom_inv_id := Hom.ext (by rw [comp_hom, id_hom]; exact Category.id_comp _)
+      inv_hom_id := Hom.ext (by rw [comp_hom, id_hom]; exact Category.id_comp _) } :
+        M ≅ M.toMarkedModel.toModel))
+    fun f ↦ Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm)
+  counitIso := NatIso.ofComponents
+    (fun M ↦ MarkedModel.isoMk (Iso.refl M.total) (Category.id_comp _)
+      ((Category.comp_id _).trans M.toModel_genericι))
+    fun f ↦ by
+      apply MarkedModel.hom_ext
+      rw [MarkedModel.comp_hom, MarkedModel.comp_hom]
+      -- The components are stated between the objects of the composite functor, which agree
+      -- with the given marked models only up to unfolding the exposed functors.
+      erw [MarkedModel.isoMk_hom_hom, MarkedModel.isoMk_hom_hom]
+      exact (Category.comp_id _).trans (Category.id_comp _).symm
+  functor_unitIso_comp M := MarkedModel.hom_ext
+    ((Category.id_comp _).trans (MarkedModel.isoMk_hom_hom _ _ _))
 
 @[simp]
 lemma markedModelEquivalence_functor :
@@ -238,6 +227,28 @@ lemma markedModelEquivalence_functor :
 lemma markedModelEquivalence_inverse :
     markedModelEquivalence.inverse = ofMarkedModelFunctor (R := R) (K := K) (toK := toK) :=
   (rfl)
+
+@[simp]
+lemma markedModelEquivalence_unitIso_hom_app_hom (M : Model R K C toK) :
+    (markedModelEquivalence.unitIso.hom.app M).hom = 𝟙 M.total :=
+  (rfl)
+
+@[simp]
+lemma markedModelEquivalence_unitIso_inv_app_hom (M : Model R K C toK) :
+    (markedModelEquivalence.unitIso.inv.app M).hom = 𝟙 M.total :=
+  (rfl)
+
+@[simp]
+lemma markedModelEquivalence_counitIso_hom_app_hom
+    (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
+    (markedModelEquivalence.counitIso.hom.app M).hom = 𝟙 M.total :=
+  MarkedModel.isoMk_hom_hom _ _ _
+
+@[simp]
+lemma markedModelEquivalence_counitIso_inv_app_hom
+    (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
+    (markedModelEquivalence.counitIso.inv.app M).hom = 𝟙 M.total :=
+  MarkedModel.isoMk_inv_hom _ _ _
 
 end Model
 

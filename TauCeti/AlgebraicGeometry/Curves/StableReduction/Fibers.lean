@@ -131,7 +131,10 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
 fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
 pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
 This is the converse of `TauCeti.Model.isPullback_genericι`. -/
-def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+-- The body is exposed so that the total space of the model is `X` by definition, as
+-- constructions comparing morphisms of total spaces require.
+@[expose] def ofIsPullback
+    (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
     Model R K C toK where
   total := X
   toBase := toBase
