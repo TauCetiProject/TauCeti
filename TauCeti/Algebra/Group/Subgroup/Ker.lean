@@ -14,14 +14,11 @@ This file supplies the characteristic membership equation for the subgroup equal
 invariance of the range of a group homomorphism under precomposition with a surjection, the
 compatibility of ranges and kernels with a commutative square, and the range and kernel of the
 pointwise inverse of a homomorphism into a commutative group, and the kernel of a pointwise
-product of homomorphisms. Membership in the kernel of a bundled homomorphism coerced to a
-`MonoidHom` is stated directly in terms of the bundled map.
+product of homomorphisms.
 
 ## Main results
 
 * `MonoidHom.mem_eqLocus`: membership in the equality locus is pointwise equality.
-* `MonoidHom.mem_ker_ofClass`: membership in the kernel of a bundled homomorphism coerced to a
-  `MonoidHom`, such as a continuous homomorphism, says that the bundled map sends the point to `1`.
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_le_comap_range_of_comp_eq`: in a commutative square, the range of one side is
   carried into the range of the opposite side.
@@ -44,15 +41,6 @@ equality. -/
 @[to_additive (attr := simp)]
 theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :=
   Iff.rfl
-
-/-- A point lies in the kernel of a bundled homomorphism `f`, such as a continuous homomorphism,
-coerced to a monoid homomorphism, exactly when `f` sends it to `1`. -/
-@[to_additive /-- A point lies in the kernel of a bundled additive homomorphism `f`, such as a
-continuous additive homomorphism, coerced to an additive monoid homomorphism, exactly when `f`
-sends it to `0`. -/]
-theorem mem_ker_ofClass {F : Type*} [FunLike F G M] [MonoidHomClass F G M] {f : F} {x : G} :
-    x ∈ (f : G →* M).ker ↔ f x = 1 := by
-  rw [mem_ker, coe_ofClass]
 
 /-- Precomposition with a surjective group homomorphism does not change the range. -/
 @[to_additive /-- Precomposition with a surjective additive group homomorphism does not change the

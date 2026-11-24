@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Module.Matrix
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.Algebra.AddCircle
-import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.LinearAlgebra.FreeModule.Int
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
@@ -98,7 +97,8 @@ theorem coe_mem_ker_smulVecHom_iff (t : ι → K) :
     (fun i ↦ (t i : AddCircle p)) ∈
         (A.smulVecHom (AddCircle p) : (ι → AddCircle p) →+ (κ → AddCircle p)).ker ↔
       ∃ v : κ → ℤ, A.map ((↑) : ℤ → K) *ᵥ t = fun k ↦ (v k : K) * p := by
-  rw [AddMonoidHom.mem_ker_ofClass, smulVecHom_coe_pi, AddCircle.pi_coe_eq_zero_iff]
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_coe_pi,
+    AddCircle.pi_coe_eq_zero_iff]
   simp only [zsmul_eq_mul, eq_comm]
 
 end Ring

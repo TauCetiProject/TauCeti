@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
-import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Topology.Instances.AddCircle.Torus
 
 /-!
