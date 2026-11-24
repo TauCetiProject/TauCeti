@@ -51,7 +51,7 @@ map induces the zero map.
 * `TensorPower.symmetricTensorsMap_zero`: in every positive degree the zero map induces the zero
   map. In degrees `0` and `1`, `TensorPower.coe_symmetricTensorsMap_apply` reduces the induced map
   to the tensor-power map, which `TensorPower.algebraMap₀_symm_map` and
-  `TauCeti.TensorPower.oneEquiv_map` identify with the identity of `R` and with `f`.
+  `TensorPower.oneEquiv_map` identify with the identity of `R` and with `f`.
 
 ## References
 

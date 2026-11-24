@@ -29,7 +29,7 @@ natural with respect to tensor-power maps.
 
 * `TauCeti.TensorPower.mulEquiv_comp_map`: `TensorPower.mulEquiv` intertwines tensor-power maps
   with the tensor-power map of the appended family.
-* `TensorPower.algebraMap₀_symm_map`, `TauCeti.TensorPower.oneEquiv_map`: a tensor-power map along
+* `TensorPower.algebraMap₀_symm_map`, `TensorPower.oneEquiv_map`: a tensor-power map along
   `σ : R →+* S` is `σ` in degree `0` and its unique factor in degree `1`, under the
   identifications of `⨂[R]^0 M` with `R` and of `⨂[R]^1 M` with `M`.
 * `TensorPower.lid_map_algebraMap₀_symm`, `TensorPower.rid_map_algebraMap₀_symm`: an empty
@@ -76,16 +76,6 @@ theorem oneEquiv_symm_comp (f : M →ₗ[R] N) :
       PiTensorProduct.map (fun _ : Fin 1 ↦ f) ∘ₗ (oneEquiv R M).symm.toLinearMap := by
   ext
   simp
-
-/-- Under the length-one identifications `TauCeti.TensorPower.oneEquiv`, a tensor-power map in
-degree `1` is its unique factor. -/
-@[simp]
-theorem oneEquiv_map {S : Type*} [CommSemiring S] {σ : R →+* S} {P : Type*} [AddCommMonoid P]
-    [Module S P] (f : Fin 1 → M →ₛₗ[σ] P) (x : TensorPower R 1 M) :
-    oneEquiv S P (PiTensorProduct.map f x) = f 0 (oneEquiv R M x) := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r v => simp [Fin.fin_one_eq_zero]
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Concatenating tensor powers intertwines the tensor product of two tensor-power maps with the
 tensor-power map of the appended family of factors. -/
@@ -167,6 +157,18 @@ theorem algebraMap₀_symm_map {S : Type*} [CommSemiring S] {σ : R →+* S} {N 
     [AddCommMonoid N] [Module S N] (f : Fin 0 → M →ₛₗ[σ] N) (x : TensorPower R 0 M) :
     algebraMap₀.symm (PiTensorProduct.map f x) = σ (algebraMap₀.symm x) := by
   simp [algebraMap₀]
+
+variable {R M} in
+/-- Under the length-one identifications `TauCeti.TensorPower.oneEquiv`, a tensor-power map in
+degree `1` is its unique factor. -/
+@[simp]
+theorem oneEquiv_map {S : Type*} [CommSemiring S] {σ : R →+* S} {P : Type*} [AddCommMonoid P]
+    [Module S P] (f : Fin 1 → M →ₛₗ[σ] P) (x : TensorPower R 1 M) :
+    TauCeti.TensorPower.oneEquiv S P (PiTensorProduct.map f x) =
+      f 0 (TauCeti.TensorPower.oneEquiv R M x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r v => simp [Fin.fin_one_eq_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Identifying the empty left tensor block with scalars agrees with concatenation. -/
 theorem lid_map_algebraMap₀_symm (n : ℕ) (z : TensorPower R 0 M ⊗[R] TensorPower R n M) :
