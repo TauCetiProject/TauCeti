@@ -269,23 +269,15 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
       (torsionOrder K * (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℂ) ^ (-s) *
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s) := by
   obtain ⟨n, hn', J, hJ⟩ := FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul I
-  have hn : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn'
-  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn'
   -- `J = n I` has the class of `I`, since `(n)` is principal
   have hJc := idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul hI hJ
-  -- multiplication by `n` carries the lattice of `I` onto the lattice of `J`
-  have hmem (x : mixedSpace K) :
-      (n : ℝ) • x ∈ idealLattice K (FractionalIdeal.mk0 K J) ↔ x ∈ idealLattice K I := by
-    rw [hJ, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, ← map_natCast (mixedEmbedding K)]
-    exact mixedEmbedding_mul_mem_idealLattice_iff (Units.mk0 (n : K) hn) I
+  have hI' : (FractionalIdeal.mk0 K J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.spanSingleton (𝓞 K)⁰ ((n : ℚ) : K) * (I : FractionalIdeal (𝓞 K)⁰ K) := by
+    simpa [coe_toPrincipalIdeal] using congrArg Units.val hJ
   let e : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ≃ idealSet K J :=
-    { toFun a := ⟨(n : ℝ) • (a : mixedSpace K), (smul_mem_iff_mem hn0).mpr a.property.1,
-        (hmem _).mpr a.property.2⟩
-      invFun b := ⟨(n : ℝ)⁻¹ • (b : mixedSpace K), (smul_mem_iff_mem
-          (inv_ne_zero hn0)).mpr b.property.1,
-        (hmem _).mp (by rw [smul_inv_smul₀ hn0]; exact b.property.2)⟩
-      left_inv a := Subtype.ext (inv_smul_smul₀ hn0 _)
-      right_inv b := Subtype.ext (smul_inv_smul₀ hn0 _) }
+    (interIdealLatticeEquiv (q := (n : ℚ)) (by exact_mod_cast hn') hI').trans
+      (Equiv.subtypeEquivRight fun x ↦ by
+        rw [idealSet, Set.mem_inter_iff, SetLike.mem_coe, and_comm])
   have hN : (absNorm (J : Ideal (𝓞 K)) : ℂ) =
       (n : ℂ) ^ Module.finrank ℚ K * FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) := by
     have h := congrArg (fun I : (FractionalIdeal (𝓞 K)⁰ K)ˣ ↦
@@ -308,7 +300,8 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
   rw [← LSeries_rayClassCoeff_one_eq_tsum J hJc hs] at h
   convert h using 1
   · ext a
-    simp only [Function.comp_apply, e, Equiv.coe_fn_mk, mixedEmbedding.norm_smul, Nat.abs_cast]
+    simp only [Function.comp_apply, e, Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
+      interIdealLatticeEquiv_apply_coe, Rat.cast_natCast, mixedEmbedding.norm_smul, Nat.abs_cast]
     push_cast
     rw [hscale]
   · rw [hN, ← Complex.ofReal_ratCast, ← mul_assoc, mul_left_comm _ (torsionOrder K : ℂ),
