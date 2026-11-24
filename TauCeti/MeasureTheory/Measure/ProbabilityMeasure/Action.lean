@@ -80,6 +80,7 @@ theorem smul_apply (g : M) (μ : ProbabilityMeasure X) {s : Set X} (hs : Measura
 
 /-- **The action is affine.** Acting on a convex combination of probability measures gives the
 convex combination of the translates. -/
+@[simp]
 theorem smul_convexComb (g : M) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityMeasure X) :
     g • convexComb hab P Q = convexComb hab (g • P) (g • Q) :=
   map_convexComb (measurable_const_smul g) hab P Q

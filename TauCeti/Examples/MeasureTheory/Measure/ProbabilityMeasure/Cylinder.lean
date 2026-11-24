@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.DiracProba
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Probability.UniformOn
-public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cylinder
 
 /-!
 # Checks: the weak topology on spaces of configurations
 
-These examples check the weak topology on probability measures on a closed set of `Bool`-valued
-configurations indexed by `ℤ`. They illustrate that weak convergence can be tested on
+These examples check the weak topology on probability measures on sets of `Bool`-valued
+configurations indexed by `ℤ`: the full shift, the finitely supported configurations, and the two
+constant configurations. They illustrate that weak convergence can be tested on
 correlation functions, that one-point functions do not determine a measure, that point masses on a
 non-closed set of configurations can converge to a point mass outside it, and that the product of
 trivial σ-algebras is too coarse for the weak topology:
@@ -47,24 +47,13 @@ def pt (x : ℤ → Bool) : (univ : Set (ℤ → Bool)) := ⟨x, mem_univ x⟩
 private theorem measurable_pt : Measurable pt :=
   measurable_id.subtype_mk
 
-/-- The correlation functions of a point mass. -/
-private theorem correlationFunction_diracProba (x : ℤ → Bool) (F : Finset ℤ) :
-    (diracProba (pt x)).correlationFunction F = if ∀ i ∈ F, x i = true then 1 else 0 := by
-  rw [ProbabilityMeasure.correlationFunction_def, ← ENNReal.coe_inj,
-    ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
-  simp only [diracProba, ProbabilityMeasure.coe_mk,
-    Measure.dirac_apply' _ (measurableSet_preimage_fullShift_cylinder _ _)]
-  split_ifs with h
-  · simpa [Set.indicator, FullShift.mem_cylinder, pt] using h
-  · simpa [Set.indicator, FullShift.mem_cylinder, pt] using h
-
 -- The point masses at the indicators of `[n, ∞)` converge to the point mass at zero.
 example : Tendsto (fun n : ℕ => diracProba (pt fun i => decide ((n : ℤ) ≤ i))) atTop
     (𝓝 (diracProba (pt fun _ => false))) := by
   refine tendsto_iff_forall_tendsto_correlationFunction.2 fun F => tendsto_const_nhds.congr' ?_
   obtain ⟨N, hN⟩ := F.bddAbove
   filter_upwards [eventually_gt_atTop N.toNat] with n hn
-  simp only [correlationFunction_diracProba]
+  simp only [ProbabilityMeasure.correlationFunction_diracProba, pt]
   rcases F.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
   · simp
   · have : ¬ (n : ℤ) ≤ i := by have := hN hi; omega
@@ -106,12 +95,7 @@ private theorem correlationFunction_bernoulliHalf (F : Finset ℤ) :
 private theorem correlationFunction_constMix (F : Finset ℤ) (hF : F.Nonempty) :
     constMix.correlationFunction F = 2⁻¹ := by
   obtain ⟨i, hi⟩ := hF
-  rw [constMix, ProbabilityMeasure.correlationFunction_def, ProbabilityMeasure.convexComb_apply]
-  have h0 := correlationFunction_diracProba (fun _ => false) F
-  have h1 := correlationFunction_diracProba (fun _ => true) F
-  rw [ProbabilityMeasure.correlationFunction_def] at h0 h1
-  rw [h0, h1]
-  simp [show ¬ ∀ j, j ∉ F from fun h => h i hi, ENNReal.toNNReal_ofNat]
+  simp [constMix, pt, show ¬ ∀ j, j ∉ F from fun h => h i hi, ENNReal.toNNReal_ofNat]
 
 -- One-point functions agree, two-point functions at `{0, 1}` differ.
 example : (∀ i : ℤ, bernoulliHalf.correlationFunction {i} = 2⁻¹ ∧
@@ -151,6 +135,10 @@ private theorem tendsto_segment : Tendsto segment atTop (𝓝 halfLine) := by
   apply propext
   omega
 
+private theorem tendsto_diracProba_segment :
+    Tendsto (fun n => diracProba (segment n)) atTop (𝓝 (diracProba halfLine)) :=
+  (continuous_diracProba.tendsto _).comp tendsto_segment
+
 private theorem measurableSet_finSupp : MeasurableSet finSupp := by
   refine ((countable_range fun s : Finset ℤ => fun i => decide (i ∈ s)).mono ?_).measurableSet
   intro x hx
@@ -164,7 +152,7 @@ example : ¬ IsClosed finSupp := fun h =>
 
 -- The point masses at the indicators of `[0, n]` converge to the point mass at `[0, ∞)`.
 example : Tendsto (fun n => diracProba (segment n)) atTop (𝓝 (diracProba halfLine)) :=
-  (continuous_diracProba.tendsto _).comp tendsto_segment
+  tendsto_diracProba_segment
 
 -- Among the probability measures on the finitely supported configurations, the point masses at
 -- the indicators of `[0, n]` have no limit.
@@ -177,12 +165,12 @@ example : ¬ ∃ μ : ProbabilityMeasure finSupp,
     ProbabilityMeasure.toMeasure_injective (Measure.map_dirac' measurable_subtypeVal _)
   simp only [hδ] at hmap
   have hlim : μ.map (↑) = diracProba halfLine :=
-    tendsto_nhds_unique hmap ((continuous_diracProba.tendsto _).comp tendsto_segment)
+    tendsto_nhds_unique hmap tendsto_diracProba_segment
   have h1 : (μ.map ((↑) : finSupp → ℤ → Bool)) finSupp = 1 := by
     rw [ProbabilityMeasure.map_apply _ measurable_subtypeVal.aemeasurable measurableSet_finSupp]
     simp
   rw [hlim, ← ENNReal.coe_inj, ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure] at h1
-  simp [diracProba, Measure.dirac_apply' _ measurableSet_finSupp, halfLine_notMem] at h1
+  simp [diracProba_toMeasure_apply' _ measurableSet_finSupp, halfLine_notMem] at h1
 
 /-- The two constant configurations. -/
 def constants : Set (ℤ → Bool) := {fun _ => false, fun _ => true}
@@ -197,11 +185,8 @@ def one' : constants := ⟨fun _ => true, by simp [constants]⟩
 abbrev trivialTrace : MeasurableSpace constants :=
   (@MeasurableSpace.pi ℤ (fun _ => Bool) fun _ => ⊥).comap (↑)
 
-private theorem pi_bot : (@MeasurableSpace.pi ℤ (fun _ => Bool) fun _ => ⊥) = ⊥ := by
-  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
-
 private theorem trivialTrace_eq_bot : trivialTrace = ⊥ := by
-  rw [trivialTrace, pi_bot, MeasurableSpace.comap_bot]
+  rw [trivialTrace, MeasurableSpace.pi_bot, MeasurableSpace.comap_bot]
 
 private theorem one'_ne_zero' : one' ≠ zero' := fun h => by
   simpa [one', zero'] using congrFun (congrArg Subtype.val h) 0
@@ -228,7 +213,7 @@ example : (@MeasurableSpace.pi ℤ (fun _ => Bool) fun _ => ⊥) = ⊥ ∧
     rintro (h | h)
     · exact (singleton_nonempty _).ne_empty h
     · exact one'_ne_zero' (mem_singleton_iff.mp (h ▸ mem_univ zero')).symm
-  refine ⟨pi_bot, isClopen_singleton_one', hnot, fun h => hnot ?_, ?_⟩
+  refine ⟨MeasurableSpace.pi_bot, isClopen_singleton_one', hnot, fun h => hnot ?_, ?_⟩
   · rw [h]
     exact MeasurableSpace.measurableSet_generateFrom isClopen_singleton_one'.isOpen
   · rw [trivialTrace_eq_bot]
@@ -246,7 +231,7 @@ example : (inferInstance : MeasurableSpace constants) = borel constants ∧
     exact measurableSet_preimage_fullShift_cylinder _ _
   refine ⟨BorelSpace.measurable_eq, hm, ?_⟩
   rw [ProbabilityMeasure.convexComb_apply, ← ENNReal.coe_inj]
-  simp [diracProba, Measure.dirac_apply' _ hm, Set.indicator,
-    one'_ne_zero'.symm, ENNReal.toNNReal_ofNat]
+  simp [diracProba_toMeasure_apply' _ hm, Set.indicator, one'_ne_zero'.symm,
+    ENNReal.toNNReal_ofNat]
 
 end TauCeti.Examples.WeakTopologyConfigurations
