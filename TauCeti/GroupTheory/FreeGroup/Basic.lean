@@ -70,11 +70,13 @@ theorem mem_invRev_iff {α : Type*} {c : α × Bool} {u : List (α × Bool)} :
   simp [invRev]
 
 /-- The first letter of the formal inverse of `w` is the inverse of the last letter of `w`. -/
+@[simp]
 theorem _root_.TauCeti.FreeGroup.head?_invRev {α : Type*} {w : List (α × Bool)} :
     (invRev w).head? = w.getLast?.map fun a ↦ (a.1, !a.2) := by
   simp [invRev, List.head?_reverse, List.getLast?_map]
 
 /-- The last letter of the formal inverse of `w` is the inverse of the first letter of `w`. -/
+@[simp]
 theorem _root_.TauCeti.FreeGroup.getLast?_invRev {α : Type*} {w : List (α × Bool)} :
     (invRev w).getLast? = w.head?.map fun a ↦ (a.1, !a.2) := by
   simp [invRev, List.getLast?_reverse, List.head?_map]
