@@ -14,7 +14,6 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import Mathlib.Analysis.Calculus.MeanValue
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # Scaling and normalization of Euclidean minimal graphs
@@ -91,8 +90,8 @@ theorem iteratedFDeriv_dilatedHeight (u : E → ℝ) (r : ℝ)
     (x : E) (k : ℕ) :
     iteratedFDeriv ℝ k (dilatedHeight u r) x =
       (r * (r⁻¹) ^ k) • iteratedFDeriv ℝ k u (r⁻¹ • x) := by
-  change iteratedFDeriv ℝ k (fun y ↦ r • u (r⁻¹ • y)) x = _
-  rw [TauCeti.iteratedFDeriv_const_smul,
+  conv_lhs => simp only [funext (dilatedHeight_apply u r), ← smul_eq_mul]
+  rw [TauCeti.iteratedFDeriv_fun_const_smul_apply,
     TauCeti.iteratedFDeriv_comp_const_smul_apply, smul_smul]
 
 /-- Normalizing a graph multiplies its `k`-th iterated derivative by `R⁻¹ * R ^ k` for `1 ≤ k`,
@@ -101,9 +100,9 @@ theorem iteratedFDeriv_normalizedHeight (u : E → ℝ) (p : E) (R : ℝ)
     (x : E) (k : ℕ) (hk : 1 ≤ k) :
     iteratedFDeriv ℝ k (normalizedHeight u p R) x =
       (R⁻¹ * R ^ k) • iteratedFDeriv ℝ k u (p + R • x) := by
-  change iteratedFDeriv ℝ k (fun y ↦ R⁻¹ • (u (p + R • y) - u p)) x = _
+  conv_lhs => simp only [funext (normalizedHeight_apply u p R), ← smul_eq_mul]
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
-  rw [TauCeti.iteratedFDeriv_const_smul]
+  rw [TauCeti.iteratedFDeriv_fun_const_smul_apply]
   simp_rw [sub_eq_add_neg]
   rw [Nat.add_comm 1, TauCeti.iteratedFDeriv_succ_add_const]
   rw [TauCeti.iteratedFDeriv_comp_const_smul_apply (fun z ↦ u (p + z)) R x (j + 1),
@@ -161,14 +160,6 @@ section Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [CompleteSpace E]
-
-private theorem gradient_eq_of_iteratedFDeriv_one {u v : E → ℝ} {x y : E}
-    (h : iteratedFDeriv ℝ 1 v x = iteratedFDeriv ℝ 1 u y) : ∇ v x = ∇ u y := by
-  apply (toDual ℝ E).injective
-  rw [toDual_gradient, toDual_gradient]
-  ext e
-  simpa only [iteratedFDeriv_one_apply] using
-    congrArg (fun A : E [×1]→L[ℝ] ℝ ↦ A (fun _ ↦ e)) h
 
 /-- For `r ≠ 0`, the gradient is unchanged by simultaneous dilation of both axes. -/
 theorem gradient_dilatedHeight (u : E → ℝ) {r : ℝ} (hr : r ≠ 0) (x : E) :

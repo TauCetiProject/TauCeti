@@ -24,6 +24,9 @@ to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` tak
 scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
 is needed.
 
+Multiplying the values of `f` by a scalar multiplies every iterated derivative by that scalar,
+without differentiability assumptions (`TauCeti.iteratedFDeriv_fun_const_smul_apply`).
+
 In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
 of `f` at `a • x`, again without any differentiability of `f`
 (`TauCeti.iteratedFDeriv_comp_const_smul_apply`); for a dilation `z ↦ f (x + a • z)` about `x`
@@ -142,7 +145,7 @@ namespace TauCeti
 /-- Multiplying a function by a scalar multiplies every iterated derivative by that scalar.
 Unlike Mathlib's `iteratedFDeriv_const_smul_apply'`, no differentiability is needed, and the
 scalar may be zero. -/
-theorem iteratedFDeriv_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+theorem iteratedFDeriv_fun_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
     iteratedFDeriv 𝕜 i (fun y ↦ a • f y) x = a • iteratedFDeriv 𝕜 i f x := by
   rcases eq_or_ne a 0 with rfl | ha
   · simp
