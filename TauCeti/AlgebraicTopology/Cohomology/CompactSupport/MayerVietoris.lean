@@ -66,6 +66,8 @@ first two maps do not affect the kernels and images at `Hⁿ_c(X)` and `Hᵐ_c(U
   `Hᵐ_c(U ∩ V)`.
 * `TopCat.isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero`: the middle map is an
   isomorphism when `Hⁿ_c(U ∩ V)` and `Hⁿ⁺¹_c(U ∩ V)` vanish.
+* `TopCat.isZero_compactSupportCohomology_of_sup_eq_top`: `Hⁿ_c(X)` vanishes when `Hⁿ_c(U)`,
+  `Hⁿ_c(V)` and `Hⁿ⁺¹_c(U ∩ V)` do.
 * `TopCat.isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint`: for a cover by two disjoint
   open sets, `Hⁿ_c(U) ⊞ Hⁿ_c(V) ≅ Hⁿ_c(X)`.
 
@@ -659,6 +661,18 @@ lemma isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero (hUV : U �
   have := (compactSupportCohomologyMayerVietoris_exact₃ R k M U V hUV n (n + 1)).epi_f
     (h₁.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
+
+variable (R k M) in
+/-- If `Hⁿ_c(U)`, `Hⁿ_c(V)` and `Hⁿ⁺¹_c(U ∩ V)` vanish, then so does `Hⁿ_c(X)`, for an open cover
+`X = U ∪ V` of a Hausdorff space: it sits between `Hⁿ_c(U) ⊞ Hⁿ_c(V)` and `Hⁿ⁺¹_c(U ∩ V)` in the
+Mayer–Vietoris sequence. -/
+lemma isZero_compactSupportCohomology_of_sup_eq_top (hUV : U ⊔ V = ⊤) (n : ℕ)
+    (hU : IsZero (((Opens.toTopCat X).obj U).compactSupportCohomology R k M n))
+    (hV : IsZero (((Opens.toTopCat X).obj V).compactSupportCohomology R k M n))
+    (hUV₁ : IsZero (((Opens.toTopCat X).obj (U ⊓ V)).compactSupportCohomology R k M (n + 1))) :
+    IsZero (X.compactSupportCohomology R k M n) :=
+  (compactSupportCohomologyMayerVietoris_exact₃ R k M U V hUV n (n + 1)).isZero_X₂
+    (((biprod_isZero_iff _ _).2 ⟨hU, hV⟩).eq_of_src _ _) (hUV₁.eq_of_tgt _ _)
 
 variable (R k M) in
 /-- For a cover of `X` by two disjoint open sets `U` and `V`, the sum
