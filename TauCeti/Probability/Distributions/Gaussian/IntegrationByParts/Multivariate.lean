@@ -59,7 +59,9 @@ is almost surely constant and `c = 0`, so both sides vanish.
 
 The isotropic identities are the functional form for the coordinate functional `x ↦ x i`, whose
 covariance vector under `N(θ, v I)` is `v • eᵢ`. Only the derivative along `eᵢ` enters, which is
-why they need no integrability of the other partial derivatives.
+why they need no integrability of the other partial derivatives. The basis form and the
+isotropic forms share the computation of that covariance vector,
+`ProbabilityTheory.HasGaussianLaw.apply_sum_covariance_smul_eq_covariance`.
 
 ## References
 
@@ -167,6 +169,25 @@ theorem integral_dual_sub_smul_eq_integral_fderiv [CompleteSpace E] [SecondCount
   rw [hc0, integral_eq_zero_of_ae (hae.mono fun ω hω ↦ by simp [hω])]
   simp
 
+/-- The covariance vector of the `k`-th coordinate of a Gaussian random vector `X` in a finite
+basis `b` is `∑ l, cov[X l, X k] • b l`: every continuous linear functional `L'` takes it to
+`cov[L' X, X k]`. -/
+theorem apply_sum_covariance_smul_eq_covariance {ι : Type*} [Fintype ι]
+    (hX : HasGaussianLaw X P) (b : Module.Basis ι ℝ E) (k : ι) (L' : StrongDual ℝ E) :
+    L' (∑ l, cov[fun ω ↦ b.repr (X ω) l, fun ω ↦ b.repr (X ω) k; P] • b l) =
+      cov[fun ω ↦ L' (X ω), fun ω ↦ b.repr (X ω) k; P] := by
+  have := hX.isProbabilityMeasure
+  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  have hmem (l : ι) : MemLp (fun ω ↦ b.repr (X ω) l) 2 P :=
+    (hX.map_fun (LinearMap.toContinuousLinearMap (b.coord l))).memLp_two
+  have hL' : (fun ω ↦ L' (X ω)) = fun ω ↦ ∑ l, b.repr (X ω) l * L' (b l) := by
+    ext ω
+    conv_lhs => rw [← b.sum_repr (X ω)]
+    simp only [map_sum, map_smul, smul_eq_mul]
+  simp only [hL', map_sum, map_smul, smul_eq_mul]
+  rw [covariance_fun_sum_left (fun l ↦ (hmem l).mul_const _) (hmem k)]
+  simp only [covariance_mul_const_left]
+
 /-- **Multivariate Gaussian integration by parts in a basis.** If `X` is a Gaussian random vector
 and `b` a finite basis, then for a differentiable test function `f` such that
 `(X k - 𝔼[X k]) • f X` and each `∂ₗ f X` are integrable,
@@ -186,17 +207,10 @@ theorem integral_repr_sub_smul_eq_sum_covariance_smul_integral_fderiv {ι : Type
   have : SecondCountableTopology E := inferInstance
   let C (l : ι) : StrongDual ℝ E := LinearMap.toContinuousLinearMap (b.coord l)
   have hC (l : ι) (x : E) : C l x = b.repr x l := by simp [C]
-  have hmem (l : ι) : MemLp (fun ω ↦ b.repr (X ω) l) 2 P := (hX.map_fun (C l)).memLp_two
   set c : E := ∑ l, cov[fun ω ↦ b.repr (X ω) l, fun ω ↦ b.repr (X ω) k; P] • b l
   have hc (L' : StrongDual ℝ E) :
       L' c = cov[fun ω ↦ L' (X ω), fun ω ↦ C k (X ω); P] := by
-    have hL' : (fun ω ↦ L' (X ω)) = fun ω ↦ ∑ l, b.repr (X ω) l * L' (b l) := by
-      ext ω
-      conv_lhs => rw [← b.sum_repr (X ω)]
-      simp only [map_sum, map_smul, smul_eq_mul]
-    simp only [hL', hC, c, map_sum, map_smul, smul_eq_mul]
-    rw [covariance_fun_sum_left (fun l ↦ (hmem l).mul_const _) (hmem k)]
-    simp only [covariance_mul_const_left]
+    simpa only [hC] using hX.apply_sum_covariance_smul_eq_covariance b k L'
   have hdc : Integrable (fun ω ↦ fderiv ℝ f (X ω) c) P := by
     simp only [c, map_sum, map_smul]
     exact integrable_finsetSum _ fun l _ ↦ (hdf l).smul _
@@ -275,23 +289,17 @@ theorem integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian {v : ℝ} (
   have hc (L' : StrongDual ℝ (EuclideanSpace ℝ ι)) :
       L' (v • EuclideanSpace.single i 1) =
         cov[fun x ↦ L' x, fun x ↦ EuclideanSpace.proj (𝕜 := ℝ) i x; P] := by
-    have hL' : (fun x : EuclideanSpace ℝ ι ↦ L' x) =
-        fun x ↦ ∑ j, x j * L' (EuclideanSpace.single j 1) := by
-      ext x
-      conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).toBasis.sum_repr x]
-      simp
-    have hmem (j : ι) : MemLp (fun x : EuclideanSpace ℝ ι ↦ x j) 2 P :=
-      (IsGaussian.hasGaussianLaw_id.map_fun (EuclideanSpace.proj (𝕜 := ℝ) j)).memLp_two
-    simp only [EuclideanSpace.coe_proj]
-    rw [hL', covariance_fun_sum_left (fun j ↦ (hmem j).mul_const _) (hmem i)]
-    simp [P, covariance_mul_const_left, covariance_eval_multivariateGaussian hS, Matrix.one_apply]
+    have h := IsGaussian.hasGaussianLaw_id.apply_sum_covariance_smul_eq_covariance (P := P)
+      (EuclideanSpace.basisFun ι ℝ).toBasis i L'
+    simpa [P, covariance_eval_multivariateGaussian hS, Matrix.one_apply] using h
   have h := IsGaussian.hasGaussianLaw_id.integral_dual_sub_smul_eq_integral_fderiv
     (EuclideanSpace.proj i) hc f hf (by simpa [hmean] using hxf)
     (by simpa using hdf.const_mul v)
   simpa [hmean, integral_const_mul] using h
 
 /-- **Stein's identity** for `X ~ N(θ, v I)`, `v ≥ 0`, and a differentiable vector field
-`g ∈ L²` with integrable diagonal partial derivatives: `E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]`. -/
+`g ∈ L²` whose `i`-th diagonal partial derivative `∂ᵢ gᵢ` is integrable:
+`E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]`. -/
 theorem gaussian_integration_by_parts {v : ℝ} (hv : 0 ≤ v) {θ : EuclideanSpace ℝ ι}
     {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : Differentiable ℝ g)
     (hg2 : MemLp g 2 (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)))) (i : ι)

@@ -30,8 +30,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   Gaussian law.
 * `TauCeti.Probability.integral_norm_sub_sq_multivariateGaussian`: `E‖X - m‖² = tr S` for a
   positive-semidefinite covariance parameter `S`.
-* `TauCeti.Probability.integrable_sub_mul_apply_of_memLp`: under a Gaussian law, a centred
-  coordinate times a coordinate of an `L²` vector field is integrable.
+* `TauCeti.Probability.integrable_sub_mul_apply_of_memLp`: under a Gaussian law, a shifted
+  coordinate `x i - θ i`, for any `θ`, times a coordinate of an `L²` vector field is integrable.
 * `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
   Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
@@ -94,8 +94,9 @@ theorem integral_norm_sub_sq_multivariateGaussian [Fintype ι] [DecidableEq ι] 
     IsGaussian.memLp_two_id m, integral_id_multivariateGaussian,
     covMatrix_multivariateGaussian m hS, sub_self, norm_zero, zero_pow two_ne_zero, zero_add]
 
-/-- Under a Gaussian law on `EuclideanSpace ℝ ι`, the product of a centered coordinate
-`x i - θ i` with the coordinate `g x i` of an `L²` vector field `g` is integrable. -/
+/-- Under a Gaussian law on `EuclideanSpace ℝ ι`, the product of a shifted coordinate
+`x i - θ i`, for any `θ`, with the coordinate `g x i` of an `L²` vector field `g` is
+integrable. -/
 theorem integrable_sub_mul_apply_of_memLp [Fintype ι]
     {μ : Measure (EuclideanSpace ℝ ι)} [IsGaussian μ]
     {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ) (θ : EuclideanSpace ℝ ι)
