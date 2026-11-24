@@ -191,20 +191,6 @@ end CommRing
 
 variable (K : Type*) [Field K] (σ : K →+* K)
 
-/-- The isotropic point `[0 : 0 : 1]`, the image of the point at infinity under the Weyl
-representative (`TauCeti.UnitaryRankOne.weyl_smul_infinity`). -/
-def origin : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ :=
-  point K σ ⟨(0, 0), by simp⟩
-
-/-- The isotropic point `[0 : 0 : 1]` is the affine point with coordinates `(0, 0)`. -/
-theorem origin_eq_point : origin K σ = point K σ ⟨(0, 0), by simp⟩ :=
-  (rfl)
-
-/-- The homogeneous coordinates of the isotropic point `[0 : 0 : 1]`. -/
-theorem coe_origin :
-    (origin K σ : ℙ K (Fin 3 → K)) = Projectivization.mk K ![0, 0, 1] (by simp) := by
-  rw [origin_eq_point, coe_point]
-
 /-- The **Borel subgroup**: the stabilizer of the isotropic point at infinity `[1 : 0 : 0]`. -/
 def borel : Subgroup (UnitaryRankOne.Group K σ) :=
   MulAction.stabilizer _ (infinity K σ)
