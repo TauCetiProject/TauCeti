@@ -82,9 +82,8 @@ the fiber comparison of `L` followed by `φ p : actions p ⟶ actions' p`. -/
   isEquivalence_comparison p := by
     have := L.isEquivalence_comparison p
     have := hφ p
-    exact (inferInstance :
-      (((L.comparison p).app ⟨SingleObj.star H⟩).toFunctor ⋙
-        ((φ p).app ⟨SingleObj.star H⟩).toFunctor).IsEquivalence)
+    rw [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor]
+    infer_instance
 
 variable (L : EquivariantGroupoidLift Γ actions) (φ : ∀ p, actions p ⟶ actions' p)
   (hφ : ∀ p, ((φ p).app ⟨SingleObj.star H⟩).toFunctor.IsEquivalence)
@@ -112,6 +111,16 @@ noncomputable def mapActionsInverseFiberIso (p : Γ) :
   (Iso.isoCompInverse (H := (L.mapActions φ hφ).fiberEquivalence p)
     (Iso.inverseCompIso (G := L.fiberEquivalence p) (Iso.refl _))).symm
 
+/-- For equivalences `e : C ≌ D`, `E : C ≌ D'` and an isomorphism `i : E.functor ≅ e.functor ⋙ F`,
+the induced isomorphism `e.inverse ≅ F ⋙ E.inverse` is characterized by the counits. -/
+private lemma functor_map_isoCompInverse_hom_app_comp_counit {C D D' : Type*} [Category* C]
+    [Category* D] [Category* D'] (e : C ≌ D) (E : C ≌ D') (F : D ⥤ D')
+    (i : E.functor ≅ e.functor ⋙ F) (X : D) :
+    E.functor.map ((Iso.isoCompInverse (H := E) (Iso.inverseCompIso (G := e) i)).hom.app X) ≫
+        E.counit.app (F.obj X) =
+      i.hom.app (e.inverse.obj X) ≫ F.map (e.counit.app X) := by
+  simp
+
 /-- The inverse fiber comparison of `L.mapActions φ hφ` is characterized by the counits of the
 two fiber comparisons. -/
 @[reassoc]
@@ -121,13 +130,11 @@ lemma functor_map_mapActionsInverseFiberIso_inv_app_comp_counit (p : Γ) (X : fi
       ((L.mapActions φ hφ).fiberEquivalence p).counit.app
         (((φ p).app ⟨SingleObj.star H⟩).toFunctor.obj X) =
     ((φ p).app ⟨SingleObj.star H⟩).toFunctor.map ((L.fiberEquivalence p).counit.app X) := by
-  -- The fiber comparison of `L.mapActions φ hφ` is `e_p ⋙ φ_p` only after unfolding, so the
-  -- components of the isomorphisms built from it are computed by `erw`.
-  erw [Iso.symm_inv, Iso.isoCompInverse_hom_app, Iso.inverseCompIso_hom_app, Iso.refl_hom,
-    NatTrans.id_app, Category.id_comp, Functor.map_comp, Category.assoc,
-    ((L.mapActions φ hφ).fiberEquivalence p).counit_naturality,
-    ((L.mapActions φ hφ).fiberEquivalence p).functor_unit_comp_assoc]
-  rfl
+  -- `mapActionsInverseFiberIso` is the isomorphism of the general lemma for the identity
+  -- `e_p ⋙ φ_p ≅ e_p ⋙ φ_p`, the fiber comparison of `L.mapActions φ hφ` after unfolding.
+  exact (functor_map_isoCompInverse_hom_app_comp_counit (L.fiberEquivalence p)
+    ((L.mapActions φ hφ).fiberEquivalence p) ((φ p).app ⟨SingleObj.star H⟩).toFunctor
+    (Iso.refl _) X).trans (Category.id_comp _)
 
 /-- The transport functors of `L.mapActions φ hφ` are intertwined with those of `L` by the
 components of `φ`. -/
@@ -284,13 +291,15 @@ lemma mapActionsUnitHom_joint (θ : ∀ p, 𝟙 (actions p) ≅ φ p ≫ ψ p) :
 lemma mapActionsUnitHom_fiberIso_hom_as_app (θ : ∀ p, 𝟙 (actions p) ≅ φ p ≫ ψ p) (p : Γ)
     (a : LocallyDiscrete (SingleObj H)) :
     ((L.mapActionsUnitHom φ hφ ψ hψ θ).fiberIso p).hom.as.app a =
-      (λ_ _).hom ≫ (α_ _ _ _).hom ≫ (L.comparison p).app a ◁ (θ p).inv.as.app a ≫
-        (ρ_ ((L.comparison p).app a)).hom := by
-  -- The target comparison is the composite `(c ≫ φ) ≫ ψ` only after unfolding `mapActions`,
-  -- so the components of the composite isomorphism are computed by `erw`.
-  erw [Iso.trans_hom, homCategory_comp_as_app, Hom.id_fiberIso_hom_as_app, whiskerLeftIso_hom,
-    whiskerLeft_as_app, Iso.trans_hom, Iso.trans_hom, homCategory_comp_as_app,
-    homCategory_comp_as_app, whiskerLeftIso_hom, whiskerLeft_as_app]
+      (λ_ _).hom ≫ (α_ ((L.comparison p).app a) ((φ p).app a) ((ψ p).app a)).hom ≫
+        (L.comparison p).app a ◁ (θ p).inv.as.app a ≫ (ρ_ ((L.comparison p).app a)).hom := by
+  -- The fiber isomorphism is typed against the comparison of the iterated `mapActions`; restate
+  -- it against `(c ≫ φ) ≫ ψ`, where the simp lemmas for its components apply.
+  change ((Prod.sectR p (SingleObj H)).toPseudofunctor.whiskerLeft (Hom.id L).joint ◁ᵢ
+      (α_ (L.comparison p) (φ p) (ψ p) ≪≫ L.comparison p ◁ᵢ (θ p).symm ≪≫
+        ρ_ (L.comparison p)) ≪≫ (Hom.id L).fiberIso p).hom.as.app a = _
+  simp only [Iso.trans_hom, homCategory_comp_as_app, Hom.id_fiberIso_hom_as_app,
+    whiskerLeftIso_hom, whiskerLeft_as_app]
   exact leftUnitor_naturality _
 
 /-- For isomorphisms `ψ p ≫ φ p ≅ 𝟙`, the morphism to a lift `L` of `actions'` from the lift
@@ -321,13 +330,16 @@ lemma mapActionsCounitHom_fiberIso_hom_as_app (L : EquivariantGroupoidLift Γ ac
     (θ : ∀ p, ψ p ≫ φ p ≅ 𝟙 (actions' p)) (p : Γ) (a : LocallyDiscrete (SingleObj H)) :
     ((L.mapActionsCounitHom φ hφ ψ hψ θ).fiberIso p).hom.as.app a =
       (λ_ _).hom ≫ (ρ_ ((L.comparison p).app a)).inv ≫
-        (L.comparison p).app a ◁ (θ p).inv.as.app a ≫ (α_ _ _ _).inv := by
-  -- The target comparison is the composite `(c ≫ ψ) ≫ φ` only after unfolding `mapActions`,
-  -- so the components of the composite isomorphism are computed by `erw`.
-  erw [Iso.trans_hom, homCategory_comp_as_app, Hom.id_fiberIso_hom_as_app, Iso.symm_hom,
-    Iso.trans_inv, Iso.trans_inv, homCategory_comp_as_app, homCategory_comp_as_app,
-    whiskerLeftIso_inv, whiskerLeft_as_app]
-  exact congrArg (_ ≫ ·) (Category.assoc _ _ _)
+        (L.comparison p).app a ◁ (θ p).inv.as.app a ≫
+          (α_ ((L.comparison p).app a) ((ψ p).app a) ((φ p).app a)).inv := by
+  -- The fiber isomorphism is typed against the comparison of the iterated `mapActions`; restate
+  -- it against `(c ≫ ψ) ≫ φ`, where the simp lemmas for its components apply.
+  change ((Hom.id L).fiberIso p ≪≫ (α_ (L.comparison p) (ψ p) (φ p) ≪≫
+      L.comparison p ◁ᵢ θ p ≪≫ ρ_ (L.comparison p)).symm).hom.as.app a = _
+  simp
+  -- The two sides now differ only in implicit arguments, components of composite strong
+  -- transformations that agree after unfolding.
+  rfl
 
 /-- The coherence condition on the naturality isomorphisms of `mapActionsUnit`, in an arbitrary
 bicategory: `F` is the component of a joint transformation, `mf` its fiber isomorphism, and `t`
@@ -353,15 +365,14 @@ noncomputable def mapActionsUnit (θ : ∀ p, 𝟙 (actions p) ≅ φ p ≫ ψ p
     Pseudofunctor.StrongTrans (Pseudofunctor.id (EquivariantGroupoidLift Γ actions))
       ((mapActionsPseudofunctor φ hφ).comp (mapActionsPseudofunctor ψ hψ)) where
   app L := L.mapActionsUnitHom φ hφ ψ hψ θ
-  naturality {L L'} f := Hom.isoMk (ρ_ f.joint ≪≫ (λ_ f.joint).symm) (fun p a ↦ by
-    -- The fiber isomorphisms of composites with `mapActions` reduce only after unfolding.
-    erw [Hom.comp_fiberIso_hom_as_app f (L'.mapActionsUnitHom φ hφ ψ hψ θ) p a,
-      Hom.comp_fiberIso_hom_as_app (L.mapActionsUnitHom φ hφ ψ hψ θ)
-        ((Hom.mapActions φ hφ f).mapActions ψ hψ) p a,
-      mapActionsUnitHom_fiberIso_hom_as_app L φ hφ ψ hψ θ p a,
-      mapActionsUnitHom_fiberIso_hom_as_app L' φ hφ ψ hψ θ p a,
-      Hom.mapActions_fiberIso_hom_as_app ψ hψ (Hom.mapActions φ hφ f) p a,
-      Hom.mapActions_fiberIso_hom_as_app φ hφ f p a]
+  -- The composites of lift morphisms are named explicitly, so that their fiber isomorphisms are
+  -- typed against the lifts `(L.mapActions φ hφ).mapActions ψ hψ` rather than the values of the
+  -- composite pseudofunctor, and the simp lemmas for their components apply.
+  naturality {L L'} f := Hom.isoMk (φ := f.comp (L'.mapActionsUnitHom φ hφ ψ hψ θ))
+      (ψ := (L.mapActionsUnitHom φ hφ ψ hψ θ).comp ((f.mapActions φ hφ).mapActions ψ hψ))
+      (ρ_ f.joint ≪≫ (λ_ f.joint).symm) (fun p a ↦ by
+    simp only [Hom.comp_fiberIso_hom_as_app, mapActionsUnitHom_fiberIso_hom_as_app,
+      Hom.mapActions_fiberIso_hom_as_app]
     exact mapActionsUnit_naturality_comm _ _ _ _ _ _ _)
   naturality_naturality _ := Subsingleton.elim _ _
   naturality_id _ := Subsingleton.elim _ _
@@ -397,15 +408,15 @@ noncomputable def mapActionsCounit (θ : ∀ p, ψ p ≫ φ p ≅ 𝟙 (actions'
       ((mapActionsPseudofunctor ψ hψ).comp (mapActionsPseudofunctor φ hφ))
       (Pseudofunctor.id (EquivariantGroupoidLift Γ actions')) where
   app L := L.mapActionsCounitHom φ hφ ψ hψ θ
-  naturality {L L'} f := Hom.isoMk (ρ_ f.joint ≪≫ (λ_ f.joint).symm) (fun p a ↦ by
-    -- The fiber isomorphisms of composites with `mapActions` reduce only after unfolding.
-    erw [Hom.comp_fiberIso_hom_as_app (L.mapActionsCounitHom φ hφ ψ hψ θ) f p a,
-      Hom.comp_fiberIso_hom_as_app ((Hom.mapActions ψ hψ f).mapActions φ hφ)
-        (L'.mapActionsCounitHom φ hφ ψ hψ θ) p a,
-      mapActionsCounitHom_fiberIso_hom_as_app φ hφ ψ hψ L θ p a,
-      mapActionsCounitHom_fiberIso_hom_as_app φ hφ ψ hψ L' θ p a,
-      Hom.mapActions_fiberIso_hom_as_app φ hφ (Hom.mapActions ψ hψ f) p a,
-      Hom.mapActions_fiberIso_hom_as_app ψ hψ f p a]
+  -- The composites of lift morphisms are named explicitly, so that their fiber isomorphisms are
+  -- typed against the lifts `(L.mapActions ψ hψ).mapActions φ hφ` rather than the values of the
+  -- composite pseudofunctor, and the simp lemmas for their components apply.
+  naturality {L L'} f := Hom.isoMk
+      (φ := ((f.mapActions ψ hψ).mapActions φ hφ).comp (L'.mapActionsCounitHom φ hφ ψ hψ θ))
+      (ψ := (L.mapActionsCounitHom φ hφ ψ hψ θ).comp f)
+      (ρ_ f.joint ≪≫ (λ_ f.joint).symm) (fun p a ↦ by
+    simp only [Hom.comp_fiberIso_hom_as_app, mapActionsCounitHom_fiberIso_hom_as_app,
+      Hom.mapActions_fiberIso_hom_as_app]
     exact mapActionsCounit_naturality_comm _ _ _ _ _ _ _)
   naturality_naturality _ := Subsingleton.elim _ _
   naturality_id _ := Subsingleton.elim _ _
