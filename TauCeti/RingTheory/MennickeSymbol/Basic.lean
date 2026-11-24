@@ -383,9 +383,11 @@ variable {I : Ideal A} {J : Ideal B} {K : Ideal D} {C : Type*} [Group C]
 def of (p : MennickePair I) : MennickeGroup I :=
   PresentedGroup.of p
 
-/-- The generator `[b/a]` is the generator `PresentedGroup.of p` of the underlying presented
-group. -/
-theorem of_def (p : MennickePair I) : of p = PresentedGroup.of p :=
+/-- The raw generator `PresentedGroup.of p` of the underlying presented group is the generator
+`[b/a]`. -/
+@[simp]
+theorem presentedGroupOf_eq_of (p : MennickePair I) :
+    (PresentedGroup.of p : MennickeGroup I) = of p :=
   (rfl)
 
 /-- The image in the universal Mennicke group of the free generator attached to a pair is the
