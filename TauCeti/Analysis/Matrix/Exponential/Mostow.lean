@@ -147,8 +147,8 @@ theorem commutator_mem_of_exp_mul_mul_exp_neg_mem {X : Matrix n n 𝕜} (hX : X.
     simp only [LinearEquiv.coe_coe]
     rw [he_mul, he_mul, he, he (NormedSpace.exp (-X)), h1, h2]
     ext i j
-    simp [diagonal_mul, mul_diagonal, d, Real.exp_sub, div_eq_mul_inv, Real.exp_neg,
-      RCLike.real_smul_eq_coe_mul]
+    simp only [Real.exp_neg, map_inv₀, mul_diagonal, diagonal_mul, Real.exp_sub, div_eq_mul_inv,
+      RCLike.real_smul_eq_coe_mul, map_mul, of_apply, d]
     ring
   have hfin : (Set.range (Function.uncurry fun i j ↦ d i - d j)).Finite :=
     Set.finite_range _

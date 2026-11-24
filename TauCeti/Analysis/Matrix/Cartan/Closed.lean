@@ -82,6 +82,9 @@ noncomputable section
 open scoped MatrixOrder Manifold
 
 open NormedSpace
+open TauCeti.Lie (unitsLieSubalgebraOfSubgroup mem_unitsLieSubalgebraOfSubgroup_iff
+  conj_mem_unitsLieSubalgebraOfSubgroup star_mem_unitsLieSubalgebraOfSubgroup
+  le_of_unitsLieSubalgebraOfSubgroup_le)
 
 namespace Matrix.GeneralLinearGroup
 
@@ -149,10 +152,15 @@ private theorem charFun_exp {M : Matrix n n 𝕜} (hM : Commute M Z) :
   conv_rhs => rw [← hZ.sum_smul_cfc_indicator]
   simp only [Finset.sum_mul, trace_sum, map_sum, smul_mul_assoc, trace_smul, RCLike.smul_re]
 
+/-- The character `charFun` vanishes at the identity. -/
+private theorem charFun_one : charFun hZ 1 = 0 := by
+  simp only [charFun, Matrix.mul_one, add_sub_cancel_left, det_one, norm_one, Real.log_one,
+    mul_zero, Finset.sum_const_zero]
+
 /-- The kernel of the character `charFun` on the centralizer of `Z`. -/
 private def charSubgroup : Subgroup (GL n 𝕜) where
   carrier := {g | Commute (g : Matrix n n 𝕜) Z ∧ charFun hZ g = 0}
-  one_mem' := ⟨Commute.one_left Z, by simp [charFun]⟩
+  one_mem' := ⟨Commute.one_left Z, charFun_one hZ⟩
   mul_mem' {g h} hg hh := ⟨by simpa using hg.1.mul_left hh.1, by
     simp only [Units.val_mul, charFun_mul hZ hg.1 hh.1, hg.2, hh.2, add_zero]⟩
   inv_mem' {g} hg := by
@@ -160,8 +168,8 @@ private def charSubgroup : Subgroup (GL n 𝕜) where
       simpa using hg.1.units_inv_left
     refine ⟨hinv, ?_⟩
     have := charFun_mul hZ hg.1 hinv
-    rw [Units.mul_inv, hg.2, zero_add] at this
-    simpa [charFun] using this.symm
+    rw [Units.mul_inv, hg.2, zero_add, charFun_one] at this
+    exact this.symm
 
 private theorem isClosed_charSubgroup : IsClosed (charSubgroup hZ : Set (GL n 𝕜)) := by
   have hC : IsClosed {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} :=
@@ -185,62 +193,11 @@ section LieAlgebra
 
 variable {H : Subgroup (GL n 𝕜)}
 
-/-- The Lie algebra of a subgroup of `GL n 𝕜` in matrix coordinates. -/
-private abbrev lieAlg (H : Subgroup (GL n 𝕜)) : LieSubalgebra ℝ (Matrix n n 𝕜) :=
-  TauCeti.Lie.unitsLieSubalgebraOfSubgroup H
-
-/-- For a closed subgroup, the Lie algebra is `{Y | ∀ t, exp (t Y) ∈ H}`. -/
-private theorem mem_lieAlg_iff (hH : IsClosed (H : Set (GL n 𝕜))) {Y : Matrix n n 𝕜} :
-    Y ∈ lieAlg H ↔ ∀ t : ℝ, TauCeti.expUnit (t • Y) ∈ H :=
-  TauCeti.Lie.mem_unitsLieSubalgebraOfSubgroup_iff hH Y
-
 /-- The Lie algebra of a subgroup is closed under the commutator. -/
-private theorem commutator_mem_lieAlg {Y W : Matrix n n 𝕜} (hY : Y ∈ lieAlg H)
-    (hW : W ∈ lieAlg H) : Y * W - W * Y ∈ lieAlg H := by
-  simpa only [Ring.lie_def] using (lieAlg H).lie_mem hY hW
-
-/-- A closed connected subgroup lies in every closed subgroup whose Lie algebra contains its own. -/
-private theorem le_of_lieAlg_le (hH : IsClosed (H : Set (GL n 𝕜)))
-    (hconn : IsPreconnected (H : Set (GL n 𝕜))) {L : Subgroup (GL n 𝕜)}
-    (hL : IsClosed (L : Set (GL n 𝕜))) (h : lieAlg H ≤ lieAlg L) : H ≤ L := by
-  refine TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le (I := 𝓘(ℝ, Matrix n n 𝕜)) hH hconn hL
-    fun x hx ↦ ?_
-  rw [← (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm_apply_apply x] at hx ⊢
-  exact (TauCeti.Lie.mem_unitsLieSubalgebraOfSubgroup L _).1
-    (h ((TauCeti.Lie.mem_unitsLieSubalgebraOfSubgroup H _).2 hx))
-
-/-- The unit exponential commutes with conjugation by a unit. -/
-private theorem expUnit_units_conj (g : GL n 𝕜) (Y : Matrix n n 𝕜) :
-    TauCeti.expUnit ((g : Matrix n n 𝕜) * Y * ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)) =
-      g * TauCeti.expUnit Y * g⁻¹ :=
-  Units.ext <| by
-    rw [TauCeti.expUnit_coe, Units.val_mul, Units.val_mul, TauCeti.expUnit_coe,
-      Matrix.exp_units_conj]
-
-/-- The unit exponential commutes with the conjugate transpose. -/
-private theorem expUnit_star (Y : Matrix n n 𝕜) :
-    TauCeti.expUnit (star Y) = star (TauCeti.expUnit Y) :=
-  Units.ext <| by
-    rw [TauCeti.expUnit_coe, Units.coe_star, TauCeti.expUnit_coe, star_eq_conjTranspose,
-      star_eq_conjTranspose, Matrix.exp_conjTranspose]
-
-/-- The Lie algebra of a subgroup is invariant under conjugation by the subgroup. -/
-private theorem conj_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) {g : GL n 𝕜} (hg : g ∈ H)
-    {Y : Matrix n n 𝕜} (hY : Y ∈ lieAlg H) :
-    (g : Matrix n n 𝕜) * Y * ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜) ∈ lieAlg H := by
-  rw [mem_lieAlg_iff hH] at hY ⊢
-  intro t
-  rw [← Matrix.smul_mul, ← Matrix.mul_smul, expUnit_units_conj]
-  exact H.mul_mem (H.mul_mem hg (hY t)) (H.inv_mem hg)
-
-/-- The Lie algebra of a subgroup stable under the conjugate transpose is stable under it. -/
-private theorem star_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜)))
-    (hstar : ∀ g ∈ H, star g ∈ H) {Y : Matrix n n 𝕜} (hY : Y ∈ lieAlg H) :
-    star Y ∈ lieAlg H := by
-  rw [mem_lieAlg_iff hH] at hY ⊢
-  intro t
-  rw [← star_trivial t, ← star_smul, expUnit_star]
-  exact hstar _ (hY t)
+private theorem commutator_mem_lieAlg {Y W : Matrix n n 𝕜}
+    (hY : Y ∈ unitsLieSubalgebraOfSubgroup H) (hW : W ∈ unitsLieSubalgebraOfSubgroup H) :
+    Y * W - W * Y ∈ unitsLieSubalgebraOfSubgroup H := by
+  simpa only [Ring.lie_def] using (unitsLieSubalgebraOfSubgroup H).lie_mem hY hW
 
 end LieAlgebra
 
@@ -254,13 +211,15 @@ variable {H : Subgroup (GL n 𝕜)}
 commuting with the Lie algebra of `H` and orthogonal to it. If `exp Z ∈ H` then `Z = 0`. -/
 private theorem eq_zero_of_expUnit_mem (hH : IsClosed (H : Set (GL n 𝕜)))
     (hconn : IsPreconnected (H : Set (GL n 𝕜))) {Z : Matrix n n 𝕜} (hZ : Z.IsHermitian)
-    (hcomm : ∀ Y ∈ lieAlg H, Commute Y Z) (horth : ∀ Y ∈ lieAlg H, RCLike.re (Z * Y).trace = 0)
+    (hcomm : ∀ Y ∈ unitsLieSubalgebraOfSubgroup H, Commute Y Z)
+    (horth : ∀ Y ∈ unitsLieSubalgebraOfSubgroup H, RCLike.re (Z * Y).trace = 0)
     (hZH : TauCeti.expUnit Z ∈ H) : Z = 0 := by
-  have hle : H ≤ charSubgroup hZ := le_of_lieAlg_le hH hconn (isClosed_charSubgroup hZ)
-    fun Y hY ↦ (mem_lieAlg_iff (isClosed_charSubgroup hZ)).2 fun t ↦
-      ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
-        rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
-          trace_smul, RCLike.smul_re, horth Y hY, mul_zero]⟩
+  have hle : H ≤ charSubgroup hZ :=
+    le_of_unitsLieSubalgebraOfSubgroup_le hH hconn (isClosed_charSubgroup hZ) fun Y hY ↦
+      (mem_unitsLieSubalgebraOfSubgroup_iff (isClosed_charSubgroup hZ) _).2 fun t ↦
+        ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
+          rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
+            trace_smul, RCLike.smul_re, horth Y hY, mul_zero]⟩
   have h := (hle hZH).2
   rw [TauCeti.expUnit_coe, charFun_exp hZ (Commute.refl Z)] at h
   refine re_trace_mul_conjTranspose_self_eq_zero_iff.1 ?_
@@ -271,20 +230,23 @@ connected subgroup of `GL n 𝕜` stable under the conjugate transpose. If `exp 
 Hermitian `X`, then `X` lies in the Lie algebra of `H`. -/
 private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hconn : IsPreconnected (H : Set (GL n 𝕜)))
-    {X : Matrix n n 𝕜} (hX : X.IsHermitian) (hXH : TauCeti.expUnit X ∈ H) : X ∈ lieAlg H := by
+    {X : Matrix n n 𝕜} (hX : X.IsHermitian) (hXH : TauCeti.expUnit X ∈ H) :
+    X ∈ unitsLieSubalgebraOfSubgroup H := by
   -- Mostow's lemma: the commutator with `X` preserves the Lie algebra.
-  have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ (lieAlg H).toSubmodule) :
-      X * Y - Y * X ∈ (lieAlg H).toSubmodule := by
+  have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule) :
+      X * Y - Y * X ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule := by
     refine hX.commutator_mem_of_exp_mul_mul_exp_neg_mem (fun Y hY ↦ ?_) hY
-    have := conj_mem_lieAlg hH hXH hY
+    have := conj_mem_unitsLieSubalgebraOfSubgroup hH hXH hY
     rwa [← TauCeti.expUnit_neg, TauCeti.expUnit_coe, TauCeti.expUnit_coe] at this
   obtain ⟨X₁, hX₁, -, Z, hZ, rfl, horth⟩ :=
-    hX.exists_add_orthogonal (V := (lieAlg H).toSubmodule) fun _ ↦ star_mem_lieAlg hH hstar
+    hX.exists_add_orthogonal (V := (unitsLieSubalgebraOfSubgroup H).toSubmodule) fun _ ↦
+      star_mem_unitsLieSubalgebraOfSubgroup hH hstar
   -- `Z` commutes with the Lie algebra: the commutator lies in it and is orthogonal to it.
-  have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ lieAlg H) : Commute Y Z := by
+  have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ unitsLieSubalgebraOfSubgroup H) : Commute Y Z := by
     set A := Z * Y - Y * Z
-    have hA : A ∈ lieAlg H := by
-      have := (lieAlg H).sub_mem (hXcomm Y hY) (commutator_mem_lieAlg hX₁ hY)
+    have hA : A ∈ unitsLieSubalgebraOfSubgroup H := by
+      have :=
+        (unitsLieSubalgebraOfSubgroup H).sub_mem (hXcomm Y hY) (commutator_mem_lieAlg hX₁ hY)
       convert this using 1
       simp only [A]
       noncomm_ring
@@ -292,11 +254,12 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
     have htr (W : Matrix n n 𝕜) : (A * W).trace = (Z * (Y * W - W * Y)).trace := by
       simp only [A, Matrix.sub_mul, Matrix.mul_sub, trace_sub, Matrix.mul_assoc]
       rw [trace_mul_comm Y, Matrix.mul_assoc]
-    have hAorth (W : Matrix n n 𝕜) (hW : W ∈ lieAlg H) : RCLike.re (A * W).trace = 0 := by
+    have hAorth (W : Matrix n n 𝕜) (hW : W ∈ unitsLieSubalgebraOfSubgroup H) :
+        RCLike.re (A * W).trace = 0 := by
       rw [htr]
       exact horth _ (commutator_mem_lieAlg hY hW)
     have h0 := re_trace_mul_conjTranspose_self_eq_zero_iff.1
-      (hAorth _ (star_mem_lieAlg hH hstar hA))
+      (hAorth _ (star_mem_unitsLieSubalgebraOfSubgroup hH hstar hA))
     exact (sub_eq_zero.1 h0).symm
   -- Hence `exp Z = exp (-X₁) * exp X` lies in `H`, and the character argument gives `Z = 0`.
   have hZH : TauCeti.expUnit Z ∈ H := by
@@ -304,7 +267,8 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
       rw [← TauCeti.expUnit_neg, ← TauCeti.expUnit_add_of_commute
         ((Commute.refl X₁).neg_left.add_right (hcomm X₁ hX₁).neg_left), neg_add_cancel_left]
     rw [this]
-    exact H.mul_mem (H.inv_mem (by simpa using (mem_lieAlg_iff hH).1 hX₁ 1)) hXH
+    exact H.mul_mem
+      (H.inv_mem (by simpa using (mem_unitsLieSubalgebraOfSubgroup_iff hH _).1 hX₁ 1)) hXH
   rw [eq_zero_of_expUnit_mem hH hconn hZ hcomm horth hZH, add_zero]
   exact hX₁
 
@@ -316,31 +280,24 @@ private theorem mem_lieAlg_of_pow_mem (hH : IsClosed (H : Set (GL n 𝕜)))
     (hXH : TauCeti.expUnit X ∈ H)
     (hm : ∃ m : ℕ, 0 < m ∧
       (⟨TauCeti.expUnit X, hXH⟩ : H) ^ m ∈ Subgroup.connectedComponentOfOne H) :
-    X ∈ lieAlg H := by
+    X ∈ unitsLieSubalgebraOfSubgroup H := by
   -- Pass to the identity component, which is closed, connected and stable under `star`.
   set H₀ := H.ambientConnectedComponentOfOne
-  have hstar₀ (g : GL n 𝕜) (hg : g ∈ H₀) : star g ∈ H₀ := by
-    obtain ⟨h, hh, rfl⟩ := Subgroup.mem_ambientConnectedComponentOfOne.1 hg
-    let f : H → H := fun h ↦ ⟨star (h : GL n 𝕜), hstar _ h.property⟩
-    have hf : Continuous f := (continuous_star.comp continuous_subtypeVal).subtype_mk _
-    have hsub := hf.image_connectedComponent_subset (1 : H)
-    have hf1 : f 1 = 1 := Subtype.ext (star_one _)
-    rw [hf1] at hsub
-    exact Subgroup.mem_ambientConnectedComponentOfOne.2 ⟨f h, hsub ⟨h, hh, rfl⟩, rfl⟩
+  have hstar₀ (g : GL n 𝕜) (hg : g ∈ H₀) : star g ∈ H₀ :=
+    H.mapsTo_ambientConnectedComponentOfOne continuous_star (fun g hg ↦ hstar g hg) (star_one _)
+      hg
   obtain ⟨m, hm, hmem⟩ := hm
   -- `exp (m X) = (exp X) ^ m` lies in the identity component.
   have hpow : TauCeti.expUnit ((m : ℝ) • X) ∈ H₀ := by
-    have h := map_pow (TauCeti.expUnitHom X) (Multiplicative.ofAdd (1 : ℝ)) m
-    rw [← ofAdd_nsmul, TauCeti.expUnitHom_apply, TauCeti.expUnitHom_apply, one_smul,
-      nsmul_one] at h
-    rw [h]
+    rw [TauCeti.expUnit_natCast_smul]
     exact Subgroup.mem_ambientConnectedComponentOfOne.2 ⟨_, hmem, rfl⟩
   have hmX : ((m : ℝ) • X).IsHermitian := by
     rw [IsHermitian, conjTranspose_smul, star_trivial, hX.eq]
-  have h := (mem_lieAlg_iff (H.isClosed_ambientConnectedComponentOfOne hH)).1
+  have h :=
+    (mem_unitsLieSubalgebraOfSubgroup_iff (H.isClosed_ambientConnectedComponentOfOne hH) _).1
     (mem_lieAlg_of_isPreconnected (H.isClosed_ambientConnectedComponentOfOne hH) hstar₀
       H.isPreconnected_ambientConnectedComponentOfOne hmX hpow)
-  refine (mem_lieAlg_iff hH).2 fun t ↦ ?_
+  refine (mem_unitsLieSubalgebraOfSubgroup_iff hH _).2 fun t ↦ ?_
   have hm' : (m : ℝ) ≠ 0 := by exact_mod_cast hm.ne'
   have := H.ambientConnectedComponentOfOne_le (h (t / m))
   rwa [smul_smul, div_mul_cancel₀ t hm'] at this
@@ -377,8 +334,8 @@ theorem exists_mem_coe_eq_exp_smul_of_pow_mem_connectedComponentOfOne
     (hm : ∃ m : ℕ, 0 < m ∧ (⟨g, hg⟩ : H) ^ m ∈ Subgroup.connectedComponentOfOne H) (t : ℝ) :
     ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
   obtain rfl : g = TauCeti.expUnit X := Units.ext (by rw [TauCeti.expUnit_coe, hgX])
-  exact ⟨_, (mem_lieAlg_iff hH).1 (mem_lieAlg_of_pow_mem hH hstar hX hg hm) t,
-    TauCeti.expUnit_coe _⟩
+  exact ⟨_, (mem_unitsLieSubalgebraOfSubgroup_iff hH _).1
+    (mem_lieAlg_of_pow_mem hH hstar hX hg hm) t, TauCeti.expUnit_coe _⟩
 
 /-- **The line through a positive element.** Let `H` be a closed subgroup of `GL n 𝕜`, for
 `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose and with finitely many connected components.
@@ -436,7 +393,10 @@ theorem val_cartanHomeomorphOfIsClosed_apply (hH : IsClosed (H : Set (GL n 𝕜)
     ((H.cartanHomeomorphOfIsClosed hH hstar hfin p : GL n 𝕜) : Matrix n n 𝕜) =
       (p.1 : Matrix n n 𝕜) *
         NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.trans_apply, Subgroup.val_cartanHomeomorph_apply]
+  rw [cartanHomeomorphOfIsClosed, Homeomorph.trans_apply, Subgroup.val_cartanHomeomorph_apply,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd, Homeomorph.refl_apply, id_eq]
+  -- The second factor of `cartanHomeomorphOfIsClosed` only changes the membership proof of the
+  -- Hermitian factor, not its value.
   rfl
 
 /-- The unitary factor of the Cartan decomposition of `g ∈ H` is the polar unitary factor of
@@ -456,7 +416,8 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_snd (hH : IsClosed (H : Set (G
     ((((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
         Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply]
+  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply,
+    ← CFC.log]
   exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
 
 /-- **The global Cartan decomposition** `H = K_H exp 𝔭_H` of a closed subgroup `H` of `GL n 𝕜`

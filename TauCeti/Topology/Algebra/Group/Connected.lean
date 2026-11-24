@@ -30,7 +30,9 @@ connected one.
 * `Subgroup.connectedComponentOfOne_le_of_isOpen`: an open subgroup contains the identity
   component.
 * `Subgroup.ambientConnectedComponentOfOne`: the identity component of a subgroup, as a subgroup of
-  the ambient group, with carrier `connectedComponentIn H 1`; it is closed when `H` is.
+  the ambient group, with carrier `connectedComponentIn H 1`; it is closed when `H` is, and
+  preserved by continuous self-maps of `G` that preserve `H` and fix `1`
+  (`Subgroup.mapsTo_ambientConnectedComponentOfOne`).
 * `TauCeti.exists_pow_mem_connectedComponentOfOne`: in a group with finitely many connected
   components, some positive power of each element lies in the identity component.
 * `Subgroup.closure_eq_connectedComponentOfOne_of_mem_nhds_one_of_subset`: a neighbourhood of
@@ -139,6 +141,7 @@ def _root_.Subgroup.ambientConnectedComponentOfOne (H : Subgroup G) : Subgroup G
   (Subgroup.connectedComponentOfOne H).map H.subtype
 
 /-- Membership in the identity component of a subgroup `H`, viewed in the ambient group. -/
+@[simp]
 theorem _root_.Subgroup.mem_ambientConnectedComponentOfOne {H : Subgroup G} {g : G} :
     g ∈ H.ambientConnectedComponentOfOne ↔
       ∃ x ∈ Subgroup.connectedComponentOfOne H, (x : G) = g :=
@@ -146,6 +149,7 @@ theorem _root_.Subgroup.mem_ambientConnectedComponentOfOne {H : Subgroup G} {g :
 
 /-- The carrier of `Subgroup.ambientConnectedComponentOfOne H` is the connected component of `1`
 in `H`. -/
+@[simp]
 theorem _root_.Subgroup.coe_ambientConnectedComponentOfOne (H : Subgroup G) :
     (H.ambientConnectedComponentOfOne : Set G) = connectedComponentIn (H : Set G) 1 := by
   rw [connectedComponentIn_eq_image H.one_mem]
@@ -167,6 +171,18 @@ theorem _root_.Subgroup.isClosed_ambientConnectedComponentOfOne {H : Subgroup G}
     (hH : IsClosed (H : Set G)) : IsClosed (H.ambientConnectedComponentOfOne : Set G) := by
   rw [Subgroup.ambientConnectedComponentOfOne, Subgroup.coe_map]
   exact hH.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_connectedComponent
+
+/-- A continuous self-map of `G` that maps a subgroup `H` into itself and fixes `1` maps the
+identity component of `H` into itself. -/
+theorem _root_.Subgroup.mapsTo_ambientConnectedComponentOfOne {H : Subgroup G} {f : G → G}
+    (hf : Continuous f) (hfH : Set.MapsTo f H H) (hf1 : f 1 = 1) :
+    Set.MapsTo f H.ambientConnectedComponentOfOne H.ambientConnectedComponentOfOne := by
+  rw [Subgroup.coe_ambientConnectedComponentOfOne]
+  refine Set.mapsTo_iff_image_subset.2 <|
+    (isPreconnected_connectedComponentIn.image f hf.continuousOn).subset_connectedComponentIn
+      ⟨1, mem_connectedComponentIn H.one_mem, hf1⟩ ?_
+  rintro _ ⟨x, hx, rfl⟩
+  exact hfH (connectedComponentIn_subset _ _ hx)
 
 open scoped Pointwise in
 /-- In a topological group with finitely many connected components, some positive power of each
