@@ -66,23 +66,13 @@ theorem toDirichletCharacter_eq_one_iff (ψ : PrimitiveRayClassCharacter ℚ) :
     (RayClassCharacter.toDirichletCharacter_eq_one_iff ψ.character).mp h
   rw [← of_character ψ, hchar, of_one]
 
-/-- Along `Ideal.absNorm (of η).conductor.finitePart = η.toDirichletCharacter.conductor`,
-`(of η).toDirichletCharacter` is `η.toDirichletCharacter.primitiveCharacter`. -/
-theorem changeLevel_toDirichletCharacter_of {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) :
-    changeLevel (dvd_of_eq (by rw [conductor_of, RayClassCharacter.conductor_toDirichletCharacter]))
-      (of η).toDirichletCharacter = η.toDirichletCharacter.primitiveCharacter := by
-  apply changeLevel_injective η.toDirichletCharacter.conductor_dvd_level
-  rw [← changeLevel_trans, changeLevel_primitiveCharacter, toDirichletCharacter_def,
-    ← RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η), induced_character_of]
-
 @[simp]
 theorem toDirichletCharacter_of_intCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℤ) :
-    (of η).toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m := by
-  have heq : Ideal.absNorm (of η).conductor.finitePart = η.toDirichletCharacter.conductor := by
-    rw [conductor_of, RayClassCharacter.conductor_toDirichletCharacter]
-  refine apply_intCast_eq_of_forall_isCoprime heq (fun a ha ↦ ?_) m
-  have ha' : IsCoprime a η.toDirichletCharacter.conductor := heq ▸ ha
-  rw [← changeLevel_toDirichletCharacter_of η, changeLevel_eq_cast_of_dvd' _ _ ha']
+    (of η).toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m :=
+  (of η).isPrimitive_toDirichletCharacter.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
+    (map_dvd Ideal.absNorm (Modulus.dvd_iff.mp (conductor_of_dvd η)).1)
+    ((RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η)
+      (of η).character).symm.trans (congrArg _ (induced_character_of η))) m
 
 @[simp]
 theorem toDirichletCharacter_of_natCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℕ) :
@@ -181,14 +171,13 @@ theorem ofDirichletCharacter_inv {N : ℕ} [NeZero N] (χ : DirichletCharacter �
     ofDirichletCharacter χ⁻¹ = (ofDirichletCharacter χ)⁻¹ := by
   rw [ofDirichletCharacter_def, map_inv, of_inv, ← ofDirichletCharacter_def]
 
-/-- Along `Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart = χ.conductor`,
-`(ofDirichletCharacter χ).toDirichletCharacter` is `χ.primitiveCharacter`. -/
+/-- Along `Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart ∣ N`,
+`(ofDirichletCharacter χ).toDirichletCharacter` lifts to `χ`. -/
 theorem changeLevel_toDirichletCharacter_ofDirichletCharacter {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) :
-    changeLevel (dvd_of_eq (absNorm_conductor_ofDirichletCharacter χ))
-      (ofDirichletCharacter χ).toDirichletCharacter = χ.primitiveCharacter := by
-  apply changeLevel_injective χ.conductor_dvd_level
-  rw [← changeLevel_trans, changeLevel_primitiveCharacter]
+    changeLevel (dvd_trans (dvd_of_eq (absNorm_conductor_ofDirichletCharacter χ))
+        χ.conductor_dvd_level)
+      (ofDirichletCharacter χ).toDirichletCharacter = χ := by
   let η₀ := (ratDirichletEquiv N (NeZero.ne N)).symm χ
   have hdvd : Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart ∣
       Ideal.absNorm (ratModulus N (NeZero.ne N)).finitePart :=
@@ -201,28 +190,13 @@ theorem changeLevel_toDirichletCharacter_ofDirichletCharacter {N : ℕ} [NeZero 
   rw [changeLevel_trans _ hdvd (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N))), h1,
     RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus, MulEquiv.apply_symm_apply]
 
-/-- When `χ` is primitive of level `N`, `(ofDirichletCharacter χ).toDirichletCharacter` agrees with
-`χ` along `Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart = N`. -/
-theorem changeLevel_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
-    changeLevel (dvd_of_eq ((absNorm_conductor_ofDirichletCharacter χ).trans
-        ((isPrimitive_def χ).mp hχ)))
-      (ofDirichletCharacter χ).toDirichletCharacter = χ := by
-  rw [changeLevel_trans _
-      (dvd_of_eq (absNorm_conductor_ofDirichletCharacter χ))
-      (dvd_of_eq ((isPrimitive_def χ).mp hχ)),
-    changeLevel_toDirichletCharacter_ofDirichletCharacter, changeLevel_primitiveCharacter]
-
 @[simp]
 theorem toDirichletCharacter_ofDirichletCharacter_intCast {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (m : ℤ) :
-    (ofDirichletCharacter χ).toDirichletCharacter m = χ.primitiveCharacter m := by
-  have h := primitiveCharacter_changeLevel_apply
-    (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N)))
-    ((ratDirichletEquiv N (NeZero.ne N)).symm χ).toDirichletCharacter m
-  rw [RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus,
-    MulEquiv.apply_symm_apply] at h
-  rw [ofDirichletCharacter_def, toDirichletCharacter_of_intCast, ← h]
+    (ofDirichletCharacter χ).toDirichletCharacter m = χ.primitiveCharacter m :=
+  (ofDirichletCharacter χ).isPrimitive_toDirichletCharacter
+    |>.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq _
+      (changeLevel_toDirichletCharacter_ofDirichletCharacter χ) m
 
 @[simp]
 theorem toDirichletCharacter_ofDirichletCharacter_natCast {N : ℕ} [NeZero N]
@@ -234,8 +208,8 @@ theorem toDirichletCharacter_ofDirichletCharacter_intCast_of_isPrimitive {N : �
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (m : ℤ) :
     (ofDirichletCharacter χ).toDirichletCharacter m = χ m := by
   rw [toDirichletCharacter_ofDirichletCharacter_intCast]
-  exact apply_intCast_eq_of_forall_isCoprime ((isPrimitive_def χ).mp hχ)
-    (fun _ ha ↦ primitiveCharacter_apply_of_isCoprime χ ((isPrimitive_def χ).mp hχ ▸ ha)) m
+  exact (hχ.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq dvd_rfl
+    (changeLevel_self χ) m).symm
 
 theorem toDirichletCharacter_ofDirichletCharacter_natCast_of_isPrimitive {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (m : ℕ) :
@@ -263,7 +237,7 @@ def ratEquiv :
         (⟨M, ⟨ψ, hψ⟩⟩ : (K : ℕ+) × {η : DirichletCharacter ℂ K // η.IsPrimitive}) =
           ⟨N, ⟨χ, hχ⟩⟩ from
       this _ _ _ (PNat.eq hlevel)
-        (changeLevel_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ)
+        (changeLevel_toDirichletCharacter_ofDirichletCharacter χ)
     rintro M ψ hψ rfl h
     simpa only [Subtype.mk.injEq, Sigma.mk.inj_iff, heq_eq_eq, true_and, changeLevel_self] using h
 
