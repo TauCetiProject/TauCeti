@@ -128,6 +128,15 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
     Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 :=
   (injective_smul_add_mfderiv_iff_notMem_range himm).2 (h s)
 
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`a Z (ι s) + dι_s w = 0` only for `a = 0` and `w = 0`. -/
+theorem IsTransverseAlong.eq_zero_of_smul_add_eq_zero {Z : (x : M) → TangentSpace I x}
+    {ι : S → M} (h : IsTransverseAlong J Z ι) {s : S}
+    (himm : Function.Injective (mfderiv J I ι s)) {a : ℝ} {w : TangentSpace J s}
+    (hw : a • Z (ι s) + mfderiv J I ι s w = 0) : a = 0 ∧ w = 0 :=
+  Prod.ext_iff.1 <| h.injective_smul_add himm (a₁ := (a, w)) (a₂ := (0, 0)) <|
+    hw.trans (by simp only [zero_smul, zero_add]; exact (map_zero _).symm)
+
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
 If a function `h` vanishes on the slice near `s` and its derivative along `Z` vanishes at `ι s`,
