@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Fourier.Torus.Decay
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!

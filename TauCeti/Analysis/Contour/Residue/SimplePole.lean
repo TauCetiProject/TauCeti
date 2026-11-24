@@ -51,6 +51,8 @@ direction one uses in practice to read off a residue.
   at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
 * `TauCeti.Contour.residue_eq_of_eventuallyEq_div_sub` — a function of the form `φ(z)/(z − z₀)`
   near `z₀`, with `φ` analytic at `z₀`, has residue `φ(z₀)`.
+* `TauCeti.Contour.residue_add_div_sub_mul_of_analyticAt`: for `G` and `H` analytic at `z₀`, the
+  residue of `(G(z) + r/(z − z₀)) · H(z)` at `z₀` is `r · H(z₀)`.
 * `MeromorphicAt.isBigO_sub_inv_smul_residue` — for a function into a complex Banach space,
   subtracting the residue term leaves a bounded remainder whenever the meromorphic pole order is
   at most one, including removable points.
@@ -232,6 +234,17 @@ theorem residue_eq_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : AnalyticA
     (hF : ∀ᶠ z in 𝓝[≠] z₀, F z = φ z / (z - z₀)) : residue F z₀ = φ z₀ := by
   rw [residue_congr_nhdsNE hF]
   simpa using residue_div_sub_pow_of_analyticAt hφ 0
+
+/-- For `G` and `H` analytic at `z₀`, the residue of `(G(z) + r/(z - z₀)) · H(z)` at `z₀` is
+`r · H(z₀)`. -/
+theorem residue_add_div_sub_mul_of_analyticAt {G H : ℂ → ℂ} {r : ℂ} (hG : AnalyticAt ℂ G z₀)
+    (hH : AnalyticAt ℂ H z₀) :
+    residue (fun z ↦ (G z + r / (z - z₀)) * H z) z₀ = r * H z₀ := by
+  have hφ : AnalyticAt ℂ (fun z ↦ ((z - z₀) * G z + r) * H z) z₀ := by fun_prop
+  refine (residue_eq_of_eventuallyEq_div_sub hφ
+    (eventually_nhdsWithin_of_forall fun z hz ↦ ?_)).trans (by simp)
+  have hz' : z - z₀ ≠ 0 := sub_ne_zero.mpr hz
+  field_simp
 
 end TauCeti.Contour
 
