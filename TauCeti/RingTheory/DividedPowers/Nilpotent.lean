@@ -116,7 +116,7 @@ theorem isPDNilpotent_of_eq_bot (h : I = ⊥) : hI.IsPDNilpotent :=
 
 /-- The zero ideal equipped with `dividedPowersBot` is PD-nilpotent (with bound `1`). -/
 @[simp]
-theorem isPDNilpotent_bot (R : Type*) [CommSemiring R] :
+theorem isPDNilpotent_dividedPowersBot (R : Type*) [CommSemiring R] :
     (dividedPowersBot R).IsPDNilpotent :=
   (dividedPowersBot R).isPDNilpotent_of_eq_bot rfl
 

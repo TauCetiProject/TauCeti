@@ -96,9 +96,8 @@ theorem valuation_dpow_p (n : ℕ) :
   have hfac : (n.factorial : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
   have hpow : (p : ℚ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   apply Int.ofNat.inj
-  rw [Int.ofNat_eq_natCast, ← valuation_coe, coe_dpow_p p n,
-    Padic.valuation_mul (inv_ne_zero hfac) hpow, Padic.valuation_inv, Padic.valuation_natCast,
-    Padic.valuation_pow, Padic.valuation_p, mul_one, Int.ofNat_eq_natCast, Nat.cast_sub hle]
+  rw [Int.ofNat_eq_natCast, ← valuation_coe, coe_dpow_p p n]
+  simp [Padic.valuation_mul, hfac, hpow, Nat.cast_sub hle]
   ring
 
 /-- Membership of `γₙ(p)` in `(p ^ e) ⊂ ℤ_[p]` in terms of `multiplicity p n.factorial`. -/
@@ -183,7 +182,8 @@ section Canonical
 
 variable (p : ℕ) [hp : Fact p.Prime] (e : ℕ)
 
-private theorem map_span_p_toZModPow :
+/-- The image of `(p) ⊂ ℤ_[p]` under `PadicInt.toZModPow e` is `(p) ⊂ ZMod (p ^ e)`. -/
+theorem map_span_p_toZModPow :
     (Ideal.span {(p : ℤ_[p])}).map (PadicInt.toZModPow e) =
       Ideal.span {(p : ZMod (p ^ e))} := by
   rw [Ideal.map_span, Set.image_singleton, map_natCast]
@@ -243,7 +243,7 @@ theorem exists_unit_mul_two_eq_dpow_two_pow (e a : ℕ) :
   have h := dividedPowers_dpow_p 2 e (2 ^ a)
   simp only [Nat.cast_ofNat] at h
   rw [h, hu, map_mul, map_ofNat]
-  rfl
+  simp [Units.coe_map]
 
 /-- On the square-zero ideal `(2) ⊂ ZMod (2 ^ 2)` (`ℤ/4ℤ`), `ZMod.dividedPowers 2 2` (with
 `γ₂(2) = 2`) differs from `DividedPowers.OfSquareZero.dividedPowers` (with `γ₂(2) = 0`). -/

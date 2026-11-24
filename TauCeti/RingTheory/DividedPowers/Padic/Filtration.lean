@@ -148,8 +148,7 @@ the divided power filtration of `PadicInt.dividedPowers p`. -/
 theorem pdFiltration_dividedPowers (n : ℕ) :
     (ZMod.dividedPowers p e).pdFiltration n =
       ((PadicInt.dividedPowers p).pdFiltration n).map (PadicInt.toZModPow e) :=
-  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq
-    (by rw [Ideal.map_span, Set.image_singleton, map_natCast]) n).symm
+  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (map_span_p_toZModPow p e) n).symm
 
 /-- Vanishing of the `n`-th divided power filtration step in `ZMod (p ^ e)` is equivalent to
 containment of the `n`-th filtration step in `Ideal.span {(p : ℤ_[p]) ^ e}`. -/
