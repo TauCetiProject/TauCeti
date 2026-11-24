@@ -175,8 +175,7 @@ theorem map_tensorIntegral_add_tensorIntegral_dgTensorDifferential [CharZero K]
       (tensorEval hA b).toGradedAlgHom.toAlgHom.toLinearMap -
         (tensorEval hA a).toGradedAlgHom.toAlgHom.toLinearMap :=
     gradedTensor_linearMap_ext _ _ fun _ _ x _ y _ ↦ by
-      simp [hA.toIsNonUnitalDGAlgebra.koszulTwist_map, integral_inr_derivative,
-        sub_smul]
+      simp [hA.toIsNonUnitalDGAlgebra.koszulTwist_map, sub_smul]
   simpa using LinearMap.congr_fun key z
 
 variable {M : Type*} [Ring M] [Algebra K M] {ℳ : ℤ → Submodule K M} [GradedAlgebra ℳ]
@@ -208,6 +207,13 @@ the two ends of a polynomial homotopy: a morphism `H : M → A ⊗ Λ(t, dt)` wh
 def Homotopic (f₀ f₁ : DGAlgHom hM hA) : Prop :=
   ∃ H : DGAlgHom hM (isDGAlgebra_gradedTensorGrading hA (isDGAlgebra K)),
     (tensorEval hA 0).comp H = f₀ ∧ (tensorEval hA 1).comp H = f₁
+
+/-- Two morphisms `f₀ f₁ : M → A` are homotopic if and only if there is a morphism
+`H : M → A ⊗ Λ(t, dt)` whose evaluations at `t = 0` and `t = 1` are `f₀` and `f₁`. -/
+theorem homotopic_iff {f₀ f₁ : DGAlgHom hM hA} :
+    f₀.Homotopic f₁ ↔ ∃ H : DGAlgHom hM (isDGAlgebra_gradedTensorGrading hA (isDGAlgebra K)),
+      (tensorEval hA 0).comp H = f₀ ∧ (tensorEval hA 1).comp H = f₁ :=
+  Iff.rfl
 
 namespace Homotopic
 

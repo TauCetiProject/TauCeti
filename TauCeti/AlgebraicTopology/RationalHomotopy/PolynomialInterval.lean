@@ -263,6 +263,7 @@ theorem integral_dt (a b : K) : integral a b dt = b - a := by
 
 /-- **The fundamental theorem of calculus** for polynomials: in characteristic zero the integral
 of `p' dt` from `a` to `b` is `p (b) - p (a)`. -/
+@[simp]
 theorem integral_inr_derivative [CharZero K] (a b : K) (p : K[X]) :
     integral a b (inr (derivative p)) = p.eval b - p.eval a := by
   induction p using Polynomial.induction_on' with
@@ -281,7 +282,7 @@ theorem integral_inr_derivative [CharZero K] (a b : K) (p : K[X]) :
 `d x` from `a` to `b` is the difference `x (b) - x (a)` of the values of `x` at the two ends. -/
 theorem integral_trivSqZeroExtDifferential [CharZero K] (a b : K) (x : PolynomialInterval K) :
     integral a b ((derivative' (R := K)).trivSqZeroExtDifferential x) = eval b x - eval a x := by
-  simp [integral_inr_derivative]
+  simp
 
 end PolynomialInterval
 
