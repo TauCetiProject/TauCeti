@@ -37,9 +37,7 @@ none of the further theory built on it.
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
 * `MonoidAlgebra.mem_rangeS_mapRingHom_iff` and its additive form characterize the image of
-  a coefficient homomorphism by the image membership of every coefficient;
-  `MonoidAlgebra.mem_range_mapRingHom_iff` is the same statement for the subring images of ring
-  homomorphisms between rings.
+  a coefficient homomorphism by the image membership of every coefficient.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -172,17 +170,6 @@ theorem _root_.MonoidAlgebra.mem_rangeS_mapRingHom_iff {R : Type*} [Semiring R]
   rw [← SetLike.mem_coe, RingHom.coe_rangeS, MonoidAlgebra.coe_mapRingHom,
     MonoidAlgebra.range_map]
   simp
-
-/-- For rings, a monoid-algebra element lies in the subring image of a coefficient map exactly
-when each coefficient lies in the image of the coefficient map. -/
-@[to_additive (dont_translate := R S)
-/-- For rings, an additive monoid-algebra element lies in the subring image of a coefficient map
-exactly when each coefficient lies in the image of the coefficient map. -/]
-theorem _root_.MonoidAlgebra.mem_range_mapRingHom_iff {R : Type*} [Ring R]
-    {M S : Type*} [Ring S] [Monoid M] (f : R →+* S) (p : MonoidAlgebra S M) :
-    p ∈ (MonoidAlgebra.mapRingHom M f).range ↔ ∀ m, p.coeff m ∈ f.range := by
-  simpa only [RingHom.mem_range, RingHom.mem_rangeS] using
-    MonoidAlgebra.mem_rangeS_mapRingHom_iff f p
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/

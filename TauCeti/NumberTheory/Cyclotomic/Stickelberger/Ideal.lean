@@ -66,13 +66,13 @@ variable (m : ℕ) [NeZero m]
 `x` whose product `x θ_m` with the rational Stickelberger element has integral coefficients. -/
 noncomputable def stickelbergerDenominatorIdeal : Ideal (MonoidAlgebra ℤ (ZMod m)ˣ) where
   carrier := {x | mapRingHom _ (Int.castRingHom ℚ) x * stickelberger m ∈
-    (mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)).range}
+    (mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)).rangeS}
   zero_mem' := ⟨0, by simp⟩
   add_mem' {x y} hx hy := by
-    simpa only [Set.mem_ofPred_eq, map_add, add_mul] using add_mem (S := Subring _) hx hy
+    simpa only [Set.mem_ofPred_eq, map_add, add_mul] using add_mem (S := Subsemiring _) hx hy
   smul_mem' r x hx := by
     simpa only [Set.mem_ofPred_eq, smul_eq_mul, map_mul, mul_assoc] using
-      mul_mem (S := Subring _) (RingHom.mem_range_self _ r) hx
+      mul_mem (S := Subsemiring _) (RingHom.mem_rangeS_self _ r) hx
 
 /-- The **integral Stickelberger ideal** `I_m`: the elements of `ℤ[(ZMod m)ˣ]` which, viewed in
 `ℚ[(ZMod m)ˣ]`, are integral multiples `x θ_m` of the rational Stickelberger element. -/
@@ -93,7 +93,7 @@ variable {m}
 theorem mem_stickelbergerDenominatorIdeal {x : MonoidAlgebra ℤ (ZMod m)ˣ} :
     x ∈ stickelbergerDenominatorIdeal m ↔
       mapRingHom _ (Int.castRingHom ℚ) x * stickelberger m ∈
-        (mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)).range :=
+        (mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)).rangeS :=
   Iff.rfl
 
 /-- Membership in the integral Stickelberger ideal: `y = x θ_m` in `ℚ[(ZMod m)ˣ]` for some
@@ -130,7 +130,7 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
       RingHom.ker (lift ℤ (ZMod m) (ZMod m)ˣ (Units.coeHom (ZMod m))) := by
   ext x
   rw [mem_stickelbergerDenominatorIdeal, RingHom.mem_ker, lift_apply_eq_sum,
-    mem_range_mapRingHom_iff]
+    mem_rangeS_mapRingHom_iff]
   simp only [coeff_mapRingHom_mul_stickelberger]
   -- Each coefficient condition is the vanishing of `c⁻¹ ∑_a n_a a` in `ZMod m`.
   have key : ∀ c : (ZMod m)ˣ, ((m : ℤ) ∣ ∑ a : (ZMod m)ˣ,
@@ -141,8 +141,8 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
     simp only [ZMod.natCast_val, ZMod.cast_id', id, Units.coeHom_apply, zsmul_eq_mul]
     conv_rhs => rw [← (c⁻¹).isUnit.mul_right_eq_zero, Finset.mul_sum]
     exact Iff.of_eq (congrArg (· = 0) (Finset.sum_congr rfl fun a _ ↦ by ring))
-  have hdiv (n : ℤ) : (n : ℚ) / m ∈ (Int.castRingHom ℚ).range ↔ (m : ℤ) ∣ n := by
-    rw [← SetLike.mem_coe, RingHom.coe_range, Int.coe_castRingHom, ← Int.cast_natCast,
+  have hdiv (n : ℤ) : (n : ℚ) / m ∈ (Int.castRingHom ℚ).rangeS ↔ (m : ℤ) ∣ n := by
+    rw [← SetLike.mem_coe, RingHom.coe_rangeS, Int.coe_castRingHom, ← Int.cast_natCast,
       Rat.intCast_div_intCast_mem_range_iff (Int.natCast_ne_zero.2 (NeZero.ne m))]
   simp only [hdiv, key]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
