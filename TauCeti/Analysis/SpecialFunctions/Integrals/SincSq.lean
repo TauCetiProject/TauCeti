@@ -40,19 +40,12 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The integrable majorant `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x`. -/
-private theorem sinc_sq_le (x : ℝ) : sinc x ^ 2 ≤ 2 * (1 + x ^ 2)⁻¹ := by
-  have h1 : sinc x ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one x)
-  have h2 : (x * sinc x) ^ 2 ≤ 1 := by rw [mul_sinc]; exact sin_sq_le_one x
-  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-  nlinarith
-
 /-- The square of the sinc function is Lebesgue integrable on `ℝ`. -/
 theorem integrable_sinc_sq : Integrable fun x : ℝ ↦ sinc x ^ 2 := by
   refine (integrable_inv_one_add_sq.const_mul 2).mono'
     (continuous_sinc.pow 2).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
   rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-  exact sinc_sq_le x
+  exact (sinc_sq_le_two_div_one_add_sq x).trans_eq (div_eq_mul_inv _ _)
 
 /-- Away from `0`, `x ↦ sin x * sinc x` has derivative `2 sinc (2x) - sinc² x`. -/
 private theorem hasDerivAt_sin_mul_sinc {x : ℝ} (hx : x ≠ 0) :

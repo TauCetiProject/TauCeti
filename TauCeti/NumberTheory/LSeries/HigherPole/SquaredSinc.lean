@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Integrals.SincSq
@@ -18,15 +17,16 @@ For real `λ` and `v` this file defines the kernel
 `K_λ(v) = squaredSinc λ v = (λ / π) * sinc (λ v) ^ 2`,
 
 with Mathlib's `Real.sinc` (so `sinc 0 = 1`). For `λ > 0` it is a continuous probability density
-on `ℝ` whose Fourier transform, in angular frequency, is the triangle `1 - |y| / (2λ)` supported on
-`[-2λ, 2λ]`:
+on `ℝ`, and it is the inverse Fourier transform, in angular frequency, of the triangle
+`1 - |y| / (2λ)` supported on `[-2λ, 2λ]`:
 
 `K_λ(v) = (1 / 2π) ∫_{-2λ}^{2λ} (1 - |y| / (2λ)) e^{i y v} dy`.
 
 As `λ → ∞` its mass concentrates at the origin. These are the properties a Tauberian argument
 needs from a smoothing kernel: positivity and concentration let monotonicity remove the smoothing,
-while the compactly supported Fourier transform means that the smoothed function is controlled by
-boundary values of a Laplace transform on a compact segment only.
+while the triangle formula, an integral over the compact frequency range `[-2λ, 2λ]`, means that
+the smoothed function is controlled by boundary values of a Laplace transform on a compact segment
+only.
 
 ## Main definitions
 
@@ -37,7 +37,8 @@ boundary values of a Laplace transform on a compact segment only.
 * `squaredSinc_nonneg`, `squaredSinc_le`, `squaredSinc_neg_right`, `continuous_squaredSinc`,
   `integrable_squaredSinc`: positivity, the bound `K_λ ≤ λ / π`, evenness, continuity and
   integrability.
-* `squaredSinc_intCast_mul_pi_div`: `K_λ` vanishes at the nonzero multiples of `π / λ`.
+* `squaredSinc_intCast_mul_pi_div`, `squaredSinc_pi_div`: `K_λ` vanishes at the nonzero multiples
+  of `π / λ`.
 * `squaredSinc_mass`: `∫ v, K_λ v = 1` for `λ > 0`.
 * `squaredSinc_fourier`: the triangle formula above, for `λ ≥ 0` and every `v`.
 * `tendsto_intervalIntegral_squaredSinc`, `tendsto_integral_squaredSinc_tail`: for `h > 0`, the
@@ -64,9 +65,9 @@ namespace TauCeti.HigherPoleTauberian
 /-- **The normalised squared-sinc kernel** `K_λ(v) = (λ / π) * sinc (λ v) ^ 2`, written
 `squaredSinc ell v` with `ell = λ`.
 
-The definition is total. For `λ > 0` it is a probability density on `ℝ` (`squaredSinc_mass`) whose
-Fourier transform, in angular frequency, is the triangle `1 - |y| / (2λ)` on `[-2λ, 2λ]`
-(`squaredSinc_fourier`). -/
+The definition is total. For `λ > 0` it is a probability density on `ℝ` (`squaredSinc_mass`), and
+for `λ ≥ 0` it is the inverse Fourier transform, in angular frequency, of the triangle
+`1 - |y| / (2λ)` on `[-2λ, 2λ]` (`squaredSinc_fourier`). -/
 def squaredSinc (ell v : ℝ) : ℝ :=
   ell / π * sinc (ell * v) ^ 2
 
@@ -101,8 +102,7 @@ theorem squaredSinc_le (hell : 0 ≤ ell) (v : ℝ) : squaredSinc ell v ≤ ell 
   exact mul_le_of_le_one_right (by positivity)
     ((sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one _))
 
-/-- The kernel vanishes at every nonzero integer multiple of `π / λ`; its first positive zero is
-`π / λ`. -/
+/-- The kernel vanishes at every nonzero integer multiple of `π / λ`. -/
 theorem squaredSinc_intCast_mul_pi_div (ell : ℝ) {n : ℤ} (hn : n ≠ 0) :
     squaredSinc ell (n * π / ell) = 0 := by
   rcases eq_or_ne ell 0 with rfl | hell
@@ -170,10 +170,11 @@ theorem tendsto_integral_squaredSinc_tail (hh : 0 < h) :
     intervalIntegral.integral_of_le (by linarith), integral_Ioc_eq_integral_Ioo,
     add_sub_cancel_right]
 
-/-! ### The Fourier transform -/
+/-! ### The triangle formula -/
 
-/-- **The Fourier transform of the kernel is the triangle.** For `λ ≥ 0` and every `v`,
-`K_λ(v) = (1 / 2π) ∫_{-2λ}^{2λ} (1 - |y| / (2λ)) e^{i y v} dy`. -/
+/-- **The kernel is the inverse Fourier transform of the triangle.** For `λ ≥ 0` and every `v`,
+`K_λ(v) = (1 / 2π) ∫_{-2λ}^{2λ} (1 - |y| / (2λ)) e^{i y v} dy`, the inverse Fourier transform, in
+angular frequency, of the triangle `1 - |y| / (2λ)` supported on `[-2λ, 2λ]`. -/
 theorem squaredSinc_fourier (hell : 0 ≤ ell) (v : ℝ) :
     (squaredSinc ell v : ℂ) = 1 / (2 * π) *
       ∫ y : ℝ in (-(2 * ell))..(2 * ell),

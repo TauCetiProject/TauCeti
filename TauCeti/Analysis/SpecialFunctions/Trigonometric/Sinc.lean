@@ -33,6 +33,13 @@ theorem sinc_two_mul (x : ℝ) : sinc (2 * x) = sinc x * cos x := by
   rw [sinc_of_ne_zero (mul_ne_zero two_ne_zero hx), sinc_of_ne_zero hx, sin_two_mul]
   field_simp
 
+/-- The bound `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x ≤ 1`. -/
+theorem sinc_sq_le_two_div_one_add_sq (x : ℝ) : sinc x ^ 2 ≤ 2 / (1 + x ^ 2) := by
+  have h1 : sinc x ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one x)
+  have h2 : (x * sinc x) ^ 2 ≤ 1 := by rw [mul_sinc]; exact sin_sq_le_one x
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith
+
 /-- For `ω ≠ 0`, `t sinc (ω t) = sin (ω t) / ω`. -/
 theorem mul_sinc_mul_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) (t : ℝ) :
     t * sinc (ω * t) = sin (ω * t) / ω := by
