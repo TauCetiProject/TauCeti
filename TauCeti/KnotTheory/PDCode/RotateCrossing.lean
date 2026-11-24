@@ -156,16 +156,6 @@ variable (D : PDCode n) (i : Fin n)
   congrFun (Function.iterate_invariant (g := fun E : PDCode n ↦ E.overPair j)
     (funext fun E ↦ rotateCrossing_overPair_of_ne E i hj) k) D
 
-/-- Rotating a crossing `k` times shifts the slots of `i` by `k • 1` and keeps every other
-crossing's slots fixed. -/
-theorem iterate_rotateCrossing_halfEdge (k : ℕ) (j : Fin n) (slot : Fin 4) :
-    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (j, slot)) =
-      D.halfEdge (crossingSlotEquiv n (j, if j = i then slot + k • 1 else slot)) := by
-  by_cases hj : j = i
-  · subst hj
-    simp
-  · simp [hj]
-
 /-- Every half-edge of the rotated code is the one in a slot of `D`, read at the same crossing;
 the rotation only shifts the slots of `i`. -/
 private theorem rotateCrossing_halfEdge (j : Fin n) (slot : Fin 4) :

@@ -225,14 +225,12 @@ private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {
   apply Equiv.ext
   intro x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (N + 2)).surjective x
-  rw [readClaspWith, OrientedPDCode.toPDCode_iterate_rotateCrossing,
-    OrientedPDCode.toPDCode_iterate_rotateCrossing,
-    PDCode.iterate_rotateCrossing_halfEdge, PDCode.iterate_rotateCrossing_halfEdge]
   rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · simp [h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last, hf₀]
+  · simp [readClaspWith, h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last,
+      zero_ne_one, hf₀]
   · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · simp [h, crossingSlotEquiv_succ_last, Fin.succ_zero_eq_one, one_ne_zero, hf₁]
-    · simp [h, crossingSlotEquiv_succ_castSucc, Fin.ext_iff]
+    · simp [readClaspWith, h, crossingSlotEquiv_succ_last, Fin.succ_zero_eq_one, one_ne_zero, hf₁]
+    · simp [readClaspWith, h, crossingSlotEquiv_succ_castSucc, Fin.ext_iff]
 
 private theorem readClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1) :
     (readClasp D).halfEdge = 1 :=
