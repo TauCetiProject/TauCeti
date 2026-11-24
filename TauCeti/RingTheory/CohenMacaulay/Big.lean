@@ -34,8 +34,9 @@ over itself.
 For modules that are not finite the two notions differ. Balanced big Cohen–Macaulay modules are
 obtained from big Cohen–Macaulay ones by `𝔪`-adic completion.
 
-On a big Cohen–Macaulay module or algebra, a system of parameters satisfies the monomial property
-of regular sequences (`RingTheory.Sequence.IsRegular.not_prod_pow_smul_top_le` and
+On a big Cohen–Macaulay module or algebra, the system of parameters that is regular on it (every
+system of parameters, for a balanced one) satisfies the monomial property of regular sequences
+(`RingTheory.Sequence.IsRegular.not_prod_pow_smul_top_le` and
 `RingTheory.Sequence.IsRegular.algebraMap_prod_pow_notMem_map_ofList`).
 
 ## Main definitions and results

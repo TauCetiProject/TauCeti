@@ -58,9 +58,10 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
 * `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
   multiplication by `x` on `M` is surjective.
-* `QuotSMulTop.mulPow_injective` and `QuotSMulTop.exact_mulPow`: the sequence
-  `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0` is exact, the first map being injective when `x` is
-  `M`-regular.
+* `QuotSMulTop.exact_mulPow`: the sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, multiplication by
+  `xᵏ` followed by the projection, is exact in the middle. The projection is surjective
+  (`Submodule.factor_surjective`), and `QuotSMulTop.mulPow_injective` gives injectivity of
+  multiplication by `xᵏ` when `x` is `M`-regular.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -242,8 +243,8 @@ theorem mulPow_injective {x : R} (hx : IsSMulRegular M x) (k : ℕ) :
   rw [(hx.pow k).eq_iff.1 hm'.symm, Submodule.Quotient.mk_eq_zero]
   exact Submodule.smul_mem_pointwise_smul _ _ ⊤ Submodule.mem_top
 
-/-- The sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0`, whose first map is multiplication by
-`xᵏ` and whose second map is the projection, is exact. -/
+/-- The sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, whose first map is multiplication by `xᵏ`
+and whose second map is the projection, is exact at `M ⧸ xᵏ⁺¹ M`. -/
 theorem exact_mulPow (x : R) (k : ℕ) :
     Exact (mulPow M x k) (Submodule.factor
       (Submodule.smul_top_le_smul_top_of_dvd (M := M) (pow_dvd_pow x (k.le_add_right 1)))) := by

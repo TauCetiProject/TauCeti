@@ -24,9 +24,9 @@ sequence this says `(x₁ ⋯ x_d)ⁿ ∉ (x₁ⁿ⁺¹, …, x_dⁿ⁺¹)`. Hoc
 same for every system of parameters of a Noetherian local ring. It follows from the existence of a
 big Cohen–Macaulay algebra, on which the system of parameters becomes regular.
 
-Since regular sequences on modules that are not finite cannot be permuted, the proof only ever
-peels off the first element. Two facts about weakly regular sequences, valid for arbitrary
-modules, go into it.
+Since a regular sequence on a module that is not finite need not remain regular after a
+permutation, the proof only ever peels off the first element. Two facts about weakly regular
+sequences, valid for arbitrary modules, go into it.
 
 * Weak regularity is closed under extensions
   (`RingTheory.Sequence.isWeaklyRegular_of_exact`): in a short exact sequence
