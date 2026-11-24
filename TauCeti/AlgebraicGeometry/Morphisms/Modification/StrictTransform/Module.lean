@@ -32,7 +32,8 @@ dies in the strict transform of `M` exactly when it is killed by a power of `(a�
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Hom.strictTransformModule f φ U M`: the strict transform of `M`, with
-  projection `AlgebraicGeometry.Scheme.Hom.strictTransformModuleπ f φ U M` from `pr_X^* M`.
+  projection `AlgebraicGeometry.Scheme.Hom.strictTransformModuleπ f φ U M` from `pr_X^* M` and
+  factorization `AlgebraicGeometry.Scheme.Hom.strictTransformModuleDesc`.
 
 ## Main results
 
@@ -85,6 +86,14 @@ def strictTransformModuleπ :
     (Modules.pullback (pullback.fst f φ)).obj M ⟶ strictTransformModule f φ U M :=
   ((Modules.pullback (pullback.fst f φ)).obj M).supportedQuotientπ (strictTransformOpen f φ U).ι
 
+/-- The projection onto the strict transform of `M` is the projection onto the supported quotient
+of `pr_X^* M` along the open over `U`, transported along `strictTransformModule_def`. -/
+theorem strictTransformModuleπ_def :
+    strictTransformModuleπ f φ U M =
+      ((Modules.pullback (pullback.fst f φ)).obj M).supportedQuotientπ
+        (strictTransformOpen f φ U).ι ≫ eqToHom (strictTransformModule_def f φ U M).symm :=
+  (rfl)
+
 instance epi_strictTransformModuleπ :
     Epi (strictTransformModuleπ f φ U M) :=
   inferInstanceAs (Epi (Modules.supportedQuotientπ _ _))
@@ -96,6 +105,24 @@ theorem supportedKernelι_comp_strictTransformModuleπ :
     ((Modules.pullback (pullback.fst f φ)).obj M).supportedKernelι (strictTransformOpen f φ U).ι ≫
       strictTransformModuleπ f φ U M = 0 :=
   Modules.supportedKernelι_comp_supportedQuotientπ _ _
+
+/-- A morphism out of `pr_X^* M` killing the sections that vanish on the open over `U` factors
+through the strict transform of `M`. -/
+def strictTransformModuleDesc {P : (pullback f φ).Modules}
+    (g : (Modules.pullback (pullback.fst f φ)).obj M ⟶ P)
+    (hg : ((Modules.pullback (pullback.fst f φ)).obj M).supportedKernelι
+      (strictTransformOpen f φ U).ι ≫ g = 0) :
+    strictTransformModule f φ U M ⟶ P :=
+  Modules.supportedQuotientDesc _ _ g hg
+
+/-- The factorization through the strict transform of `M` recovers the original morphism. -/
+@[reassoc (attr := simp)]
+theorem strictTransformModuleπ_desc {P : (pullback f φ).Modules}
+    (g : (Modules.pullback (pullback.fst f φ)).obj M ⟶ P)
+    (hg : ((Modules.pullback (pullback.fst f φ)).obj M).supportedKernelι
+      (strictTransformOpen f φ U).ι ≫ g = 0) :
+    strictTransformModuleπ f φ U M ≫ strictTransformModuleDesc f φ U M g hg = g :=
+  Modules.supportedQuotientπ_desc _ _ g hg
 
 /-- **The strict transform of a quasi-coherent module is quasi-coherent** when the inclusion of
 the open over `U` is quasi-compact. -/
@@ -127,6 +154,7 @@ theorem strictTransformModuleπ_app_eq_zero_iff_mem_primaryComponent [M.IsQuasic
       s ∈ (Ideal.span (G : Set ((pullback f φ).presheaf.obj (.op W)))).primaryComponent
         Γ((Modules.pullback (pullback.fst f φ)).obj M, W) := by
   rw [strictTransformModuleπ_app_eq_zero_iff]
-  exact Modules.mem_range_supportedKernelι_app_iff_mem_primaryComponent_of_inf_eq _ hW G hG s
+  exact Modules.mem_range_supportedKernelι_app_iff_mem_primaryComponent_of_inf_eq _ _ hW G
+    (by rwa [Scheme.Opens.opensRange_ι]) s
 
 end AlgebraicGeometry.Scheme.Hom
