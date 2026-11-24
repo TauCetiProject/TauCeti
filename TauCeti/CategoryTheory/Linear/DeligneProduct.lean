@@ -63,7 +63,9 @@ morphisms between distinct members; this is the semisimplicity of the Deligne pr
 * `TauCeti.DeligneProduct`, with `TauCeti.DeligneProduct.bifunctor`, `TauCeti.DeligneProduct.lift`,
   `TauCeti.DeligneProduct.bifunctorCompLiftIso`, `TauCeti.DeligneProduct.ext` (with its components
   `TauCeti.DeligneProduct.ext_hom_app`) and `TauCeti.DeligneProduct.liftUnique`;
-* `TauCeti.DeligneProduct.biproductIso`: `(⨁ f) ⊠ (⨁ g)` is the biproduct of the `f j ⊠ g j'`;
+* `TauCeti.DeligneProduct.biproductIso`: `(⨁ f) ⊠ (⨁ g)` is the biproduct of the `f j ⊠ g j'`, with
+  components `TauCeti.DeligneProduct.biproductIso_hom_π` and
+  `TauCeti.DeligneProduct.ι_biproductIso_inv`;
 * `TauCeti.IsSplitSimpleFamily.deligneProduct`: products of split simple families.
 
 ## References
@@ -574,10 +576,28 @@ instance : (bifunctor k C D).Linear k where
 in `D`, the object `(⨁ f) ⊠ (⨁ g)` is the biproduct of the objects `f j ⊠ g j'`. -/
 def biproductIso {J J' : Type} [Fintype J] [Fintype J'] (f : J → C) (g : J' → D)
     [HasBiproduct f] [HasBiproduct g] :
-    ((bifunctor k C D).obj (⨁ f)).obj (⨁ g) ≅
-      ⨁ fun p : J × J' ↦ ((bifunctor k C D).obj (f p.1)).obj (g p.2) :=
+    (Mat_.embedding (LinearTensor k C D)).obj ⟨⨁ f, ⨁ g⟩ ≅
+      ⨁ fun p : J × J' ↦ (Mat_.embedding (LinearTensor k C D)).obj ⟨f p.1, g p.2⟩ :=
   biproduct.uniqueUpToIso _ (isBilimitOfPreserves (Mat_.embedding (LinearTensor k C D))
     (LinearTensor.isBilimitBiconeTmul (biproduct.isBilimit f) (biproduct.isBilimit g)))
+
+/-- The components of `biproductIso` towards the summands: the projection onto `f p.1 ⊠ g p.2`
+is the pure tensor of the two projections. -/
+@[reassoc (attr := simp)]
+theorem biproductIso_hom_π {J J' : Type} [Fintype J] [Fintype J'] (f : J → C) (g : J' → D)
+    [HasBiproduct f] [HasBiproduct g] (p : J × J') :
+    (biproductIso (k := k) f g).hom ≫ biproduct.π _ p =
+      (Mat_.embedding _).map (LinearTensor.tmul (biproduct.π f p.1) (biproduct.π g p.2)) :=
+  biproduct.lift_π _ _
+
+/-- The components of `biproductIso` from the summands: the inclusion of `f p.1 ⊠ g p.2` is the
+pure tensor of the two inclusions. -/
+@[reassoc (attr := simp)]
+theorem ι_biproductIso_inv {J J' : Type} [Fintype J] [Fintype J'] (f : J → C) (g : J' → D)
+    [HasBiproduct f] [HasBiproduct g] (p : J × J') :
+    biproduct.ι _ p ≫ (biproductIso (k := k) f g).inv =
+      (Mat_.embedding _).map (LinearTensor.tmul (biproduct.ι f p.1) (biproduct.ι g p.2)) :=
+  biproduct.ι_desc _ _
 
 variable {E : Type (max u₁ u₂)} [Category.{max v₁ v₂} E] [Preadditive E] [HasFiniteBiproducts E]
 
