@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.FractionRing
-public import Mathlib.RingTheory.MvPolynomial.Localization
-public import Mathlib.RingTheory.Polynomial.Basic
+public import Mathlib.RingTheory.MvPolynomial.Basic
 
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.MvPolynomial.Localization
+import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Localization.Finiteness
 
@@ -48,8 +49,12 @@ theorem exists_finset_smul_mem_span_of_isDomain {A : Type*} [CommRing A] [IsDoma
   let PK := MvPolynomial σ F
   let S : Submonoid P := (nonZeroDivisors A).map (MvPolynomial.C (σ := σ))
   let f : (ι → P) →ₗ[P] (ι → PK) := (Algebra.linearMap P PK).compLeft ι
-  have hf : Function.Injective f := fun x y h ↦ funext fun i ↦
-    MvPolynomial.map_injective _ (IsFractionRing.injective A F) (congrFun h i)
+  have hf : Function.Injective f := fun x y h ↦ funext fun i ↦ by
+    have hi :
+        MvPolynomial.map (algebraMap A F) (x i) = MvPolynomial.map (algebraMap A F) (y i) := by
+      simpa only [f, P, PK, LinearMap.compLeft_apply, Function.comp_apply, Algebra.linearMap_apply,
+        MvPolynomial.algebraMap_def] using congrFun h i
+    exact MvPolynomial.map_injective _ (IsFractionRing.injective A F) hi
   -- Over the Noetherian ring `PK`, the image of `K` spans a finitely generated submodule.
   obtain ⟨s, hsK, hs⟩ := exists_finset_smul_mem_span_of_fg_span_image (K := PK) hf S (N := K)
     (IsNoetherian.noetherian _)

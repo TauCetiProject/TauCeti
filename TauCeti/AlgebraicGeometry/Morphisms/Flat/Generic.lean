@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # Generic flatness
@@ -131,20 +131,6 @@ private theorem exists_dense_open_flat_of_target_spec_of_isDomain
     obtain rfl : _ = ⊥ := by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using hp
     exact Module.freeLocus_mem_nhds_bot (B := B) B) f
 
-/-- Generic flatness transfers along an isomorphism of targets. -/
-private theorem exists_dense_open_flat_of_comp_iso {X Y Z : Scheme.{u}} (f : X ⟶ Y) (e : Y ≅ Z)
-    (h : ∃ U : Z.Opens, Dense (U : Set Z) ∧ Flat ((f ≫ e.hom) ∣_ U)) :
-    ∃ U : Y.Opens, Dense (U : Set Y) ∧ Flat (f ∣_ U) := by
-  obtain ⟨U, hU, hflat⟩ := h
-  let V := e.hom ⁻¹ᵁ U
-  refine ⟨V, hU.preimage e.hom.homeomorph.isOpenMap, (flat_restrict_iff f V).mpr ?_⟩
-  intro x hx
-  have h := (flat_restrict_iff (f ≫ e.hom) U).mp hflat x hx
-  have h' : CommRingCat.flat (e.hom.stalkMap (f x) ≫ f.stalkMap x) := by
-    simpa only [Scheme.Hom.stalkMap_comp, CommRingCat.flat_iff] using! h
-  exact (CommRingCat.flat.cancel_left_of_respectsIso
-    (e.hom.stalkMap (f x)) (f.stalkMap x)).mp h'
-
 /-- A finite-type morphism to a reduced locally Noetherian affine scheme is flat
 over a dense open subset of the target. -/
 theorem exists_dense_open_flat_of_isAffine
@@ -153,7 +139,7 @@ theorem exists_dense_open_flat_of_isAffine
     ∃ U : Y.Opens, Dense (U : Set Y) ∧ Flat (f ∣_ U) := by
   have : IsNoetherianRing Γ(Y, ⊤) :=
     IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top Y⟩
-  exact exists_dense_open_flat_of_comp_iso f Y.isoSpec
+  exact f.exists_dense_open_of_comp_iso @Flat Y.isoSpec
     (exists_dense_open_flat_of_target_spec (f ≫ Y.isoSpec.hom))
 
 /-- **Generic flatness.** A finite-type morphism to a reduced locally Noetherian scheme
@@ -192,7 +178,7 @@ theorem exists_dense_open_flat_of_isIntegral
   obtain ⟨A, hA, hy, -⟩ := exists_isAffineOpen_mem_and_subset (x := y) (U := ⊤) trivial
   have : Nonempty A := ⟨⟨y, hy⟩⟩
   -- Generic flatness over the nonempty affine open `A ≅ Spec Γ(Y, A)` of the integral scheme.
-  obtain ⟨V, hV, hflat⟩ := exists_dense_open_flat_of_comp_iso (f ∣_ A) hA.isoSpec
+  obtain ⟨V, hV, hflat⟩ := (f ∣_ A).exists_dense_open_of_comp_iso @Flat hA.isoSpec
     (exists_dense_open_flat_of_target_spec_of_isDomain (f ∣_ A ≫ hA.isoSpec.hom))
   -- A nonempty open subset of the irreducible scheme `Y` is dense.
   refine ⟨A.ι ''ᵁ V, (A.ι ''ᵁ V).isOpen.dense ?_, ?_⟩

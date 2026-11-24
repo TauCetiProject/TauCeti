@@ -11,10 +11,10 @@ public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.Order.CompleteLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
-public import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.LinearAlgebra.Matrix.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -234,7 +234,8 @@ private theorem freeLocus_cokernel_mem_nhds_bot [IsDomain A] {σ ι κ : Type*} 
   choose W hW using hV
   let W₀ : Matrix κ ι (MvPolynomial σ R₀) := Matrix.of W
   have hmap : W₀.map (algebraMap (MvPolynomial σ R₀) (MvPolynomial σ A)) = V :=
-    Matrix.ext fun k i ↦ hW k i
+    Matrix.ext fun k i ↦ by
+      simpa only [W₀, Matrix.map_apply, Matrix.of_apply, MvPolynomial.algebraMap_def] using hW k i
   -- The cokernel of `V` is the base change of the cokernel of `W₀`.
   let e : A ⊗[R₀] ((κ → MvPolynomial σ R₀) ⧸ LinearMap.range W₀.mulVecLin) ≃ₗ[A]
       (κ → MvPolynomial σ A) ⧸
@@ -273,13 +274,16 @@ private theorem freeLocus_mem_nhds_bot_mvPolynomial [IsDomain A] {σ : Type*} [F
   let q := ((LinearMap.range V.mulVecLin).liftQ π hle).restrictScalars A
   refine Filter.mem_of_superset (freeLocus_cokernel_mem_nhds_bot V) fun p hp ↦
     mem_freeLocus_of_surjective_of_ker_le_torsion q ?_ ?_ hp
-  · intro y
-    obtain ⟨x, rfl⟩ := hπ y
-    exact ⟨Submodule.Quotient.mk x, rfl⟩
+  · change Function.Surjective ((LinearMap.range V.mulVecLin).liftQ π hle)
+    rw [← LinearMap.range_eq_top, Submodule.range_liftQ, LinearMap.range_eq_top]
+    exact hπ
   · intro y hy
     induction y using Submodule.Quotient.induction_on with
     | H x =>
-      obtain ⟨b, hb, hbx⟩ := hs x hy
+      have hx : x ∈ LinearMap.ker π := by
+        simpa only [q, LinearMap.mem_ker, LinearMap.restrictScalars_apply,
+          Submodule.liftQ_apply] using hy
+      obtain ⟨b, hb, hbx⟩ := hs x hx
       refine (Submodule.mem_torsion_iff _).mpr ⟨⟨b, hb⟩, ?_⟩
       rw [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, hrange]
       exact hbx

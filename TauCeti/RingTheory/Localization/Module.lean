@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
@@ -159,12 +158,11 @@ theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGro
   intro y hy
   induction y using induction_on with
   | h x s =>
-    simp only [LinearMap.mem_ker, map_mk] at hy
-    rw [← zero_mk (1 : S), mk_eq] at hy
+    rw [LinearMap.mem_ker, map_mk, IsLocalizedModule.mk_eq_mk',
+      IsLocalizedModule.mk'_eq_zero'] at hy
     obtain ⟨u, hu⟩ := hy
-    simp only [one_smul, smul_zero, Submonoid.smul_def] at hu
     have hux : (u : R) • x ∈ LinearMap.ker q := by
-      rw [LinearMap.mem_ker, map_smul]
+      rw [LinearMap.mem_ker, map_smul, ← Submonoid.smul_def]
       exact hu
     obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
     -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
