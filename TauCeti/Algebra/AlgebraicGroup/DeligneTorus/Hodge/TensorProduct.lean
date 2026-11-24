@@ -67,8 +67,8 @@ theorem distribBaseChange_symm_tmul_mem_hodgeComponent {p q p' q' : ℤ} {v : �
     LinearMap.rTensor W
       (IsScalarTower.toAlgHom ℝ ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).toLinearMap w)
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul] at h
-  rw [← h, hv, hw, TensorProduct.smul_tmul_smul, map_smul, MonoidAlgebra.single_mul_single,
-    one_mul, ← ofAdd_add, Prod.mk_add_mk, neg_add, neg_add]
+  rw [← h, hv, hw, TensorProduct.smul_tmul_smul, map_smul]
+  simp [← ofAdd_add, add_comm]
 
 /-- **The Hodge components of a tensor product.** `(V ⊗ W)^{p,q}` is the sum over `(a, b)` of
 the images of `V^{a,b} ⊗ W^{p-a,q-b}` in `ℂ ⊗[ℝ] (V ⊗[ℝ] W)`. -/

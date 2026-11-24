@@ -68,10 +68,7 @@ theorem baseChangeEvaluation_eq_zero_of_mem_hodgeComponent {p q p' q' : ℤ}
     Algebra.algebraMap_self, RingHom.id_apply, MonoidAlgebra.single_mul_single, mul_one,
     one_mul] at h
   have hne : Multiplicative.ofAdd (-p', -q') * Multiplicative.ofAdd (-p, -q) ≠ 1 := by
-    rw [← ofAdd_add, Ne, ← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff]
-    intro h0
-    apply hpq
-    simp only [Prod.ext_iff, Prod.fst_add, Prod.snd_add, Prod.fst_zero, Prod.snd_zero] at h0 ⊢
+    simp [← ofAdd_add, Prod.ext_iff, -not_and] at hpq ⊢
     omega
   by_contra h₀
   exact hne ((MonoidAlgebra.single_left_inj h₀).mp h)
