@@ -12,8 +12,9 @@ public import Mathlib.ModelTheory.Fraisse
 
 For a family `F : I → Bundled L.Structure` of concrete structures, its **isomorphism closure**
 `representativeClass F` is the class of structures isomorphic to some `F i`. It is the least
-isomorphism-invariant class containing every representative, and it does not change under
-surjective reindexing, so permuting or duplicating representatives gives the same class.
+isomorphism-invariant class containing every representative. It does not change when the
+representatives are replaced by isomorphic ones, or under surjective reindexing, so permuting or
+duplicating representatives gives the same class.
 
 The Fraïssé conditions can be read off the representatives. Every member is finitely generated, the
 class is hereditary, and it has joint embedding or amalgamation exactly when the representatives
@@ -34,6 +35,8 @@ decision procedure for isomorphism is needed, and no canonical representative is
 * `FirstOrder.Language.mem_representativeClass_congr`: membership is invariant under isomorphism.
 * `FirstOrder.Language.representativeClass_subset_iff`: the closure is the least
   isomorphism-invariant class containing the representatives.
+* `FirstOrder.Language.representativeClass_congr`: replacing the representatives by isomorphic
+  ones, in both directions, does not change the closure.
 * `FirstOrder.Language.representativeClass_comp_subset` and
   `FirstOrder.Language.representativeClass_comp`: reindexing shrinks the closure, and surjective
   reindexing preserves it.
@@ -109,19 +112,35 @@ theorem representativeClass_eq_empty_iff : representativeClass F = ∅ ↔ IsEmp
 theorem representativeClass_nonempty_iff : (representativeClass F).Nonempty ↔ Nonempty I :=
   ⟨fun ⟨_, i, _⟩ => ⟨i⟩, fun ⟨i⟩ => ⟨F i, mem_representativeClass i⟩⟩
 
+/-- If every representative of `F` is isomorphic to a representative of `G`, the isomorphism
+closure of `F` is contained in that of `G`. -/
+theorem representativeClass_subset_of_forall_exists_equiv {G : J → Bundled.{w} L.Structure}
+    (h : ∀ i, ∃ j, Nonempty (F i ≃[L] G j)) : representativeClass F ⊆ representativeClass G :=
+  fun _ ⟨i, ⟨e⟩⟩ =>
+    let ⟨j, ⟨e'⟩⟩ := h i
+    ⟨j, ⟨e'.comp e⟩⟩
+
+/-- **Replacing representatives.** Two families have the same isomorphism closure when each
+representative of either family is isomorphic to a representative of the other. -/
+theorem representativeClass_congr {G : J → Bundled.{w} L.Structure}
+    (hFG : ∀ i, ∃ j, Nonempty (F i ≃[L] G j)) (hGF : ∀ j, ∃ i, Nonempty (G j ≃[L] F i)) :
+    representativeClass F = representativeClass G :=
+  (representativeClass_subset_of_forall_exists_equiv hFG).antisymm
+    (representativeClass_subset_of_forall_exists_equiv hGF)
+
 /-- **Reindexing.** The isomorphism closure of a reindexed family is contained in the original
 closure. -/
 theorem representativeClass_comp_subset (g : J → I) :
     representativeClass (F ∘ g) ⊆ representativeClass F :=
-  fun _ ⟨j, e⟩ => ⟨g j, e⟩
+  representativeClass_subset_of_forall_exists_equiv fun j => ⟨g j, ⟨Language.Equiv.refl L _⟩⟩
 
 /-- **Surjective reindexing.** Reindexing along a surjection does not change the isomorphism
 closure. In particular, permuting or duplicating representatives gives the same class. -/
 theorem representativeClass_comp {g : J → I} (hg : Function.Surjective g) :
-    representativeClass (F ∘ g) = representativeClass F := by
-  refine (representativeClass_comp_subset g).antisymm fun _ ⟨i, e⟩ => ?_
-  obtain ⟨j, rfl⟩ := hg i
-  exact ⟨j, e⟩
+    representativeClass (F ∘ g) = representativeClass F :=
+  representativeClass_congr (fun j => ⟨g j, ⟨Language.Equiv.refl L _⟩⟩) fun i =>
+    let ⟨j, hj⟩ := hg i
+    ⟨j, ⟨hj ▸ Language.Equiv.refl L _⟩⟩
 
 /-- **Finite generation.** Every member of the isomorphism closure is finitely generated exactly
 when every representative is. -/
