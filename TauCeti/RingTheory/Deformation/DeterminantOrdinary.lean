@@ -15,7 +15,7 @@ import Mathlib.LinearAlgebra.Trace
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.ExtensionBasis
 import TauCeti.LinearAlgebra.Matrix.Triangular.OrderedProduct
-import TauCeti.RepresentationTheory.CharSpace
+import TauCeti.RepresentationTheory.WeightSpace
 
 /-!
 # Determinant-ordinary equations and ordered flags
@@ -254,13 +254,13 @@ private theorem orderedProd_quotient_mkQ {m : ℕ} (ρ : Representation F G V) (
 
 /-- Ordered products for `χ₁, …, χₘ` vanish on the quotient by the vectors on which `G` acts
 through `χ₀`, when all ordered products for `χ₀, …, χₘ` vanish on `V`. -/
-private theorem orderedProd_quotient_charSpace_eq_zero {m : ℕ} (ρ : Representation F G V)
+private theorem orderedProd_quotient_weightSpace_eq_zero {m : ℕ} (ρ : Representation F G V)
     (χ : Fin (m + 1) → G →* F) (h : ∀ g, orderedProd ρ χ g = 0) (g : Fin m → G) :
-    orderedProd (ρ.quotient _ (ρ.charSpace_le_comap (χ 0))) (Fin.tail χ) g = 0 := by
+    orderedProd (ρ.quotient _ (ρ.weightSpace_le_comap (χ 0))) (Fin.tail χ) g = 0 := by
   refine LinearMap.ext fun x ↦ ?_
   obtain ⟨v, rfl⟩ := Submodule.mkQ_surjective _ x
   rw [orderedProd_quotient_mkQ, LinearMap.zero_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero, Representation.mem_charSpace]
+    Submodule.Quotient.mk_eq_zero, Representation.mem_weightSpace]
   intro g₀
   have := LinearMap.congr_fun (h (Fin.cons g₀ g)) v
   rw [orderedProd_succ, mul_apply_eq_comp] at this
@@ -270,7 +270,7 @@ private theorem orderedProd_quotient_charSpace_eq_zero {m : ℕ} (ρ : Represent
 `χ₁, …, χₘ` lifts to a basis of `V` adapted to `χ₀, …, χₘ`. -/
 private theorem exists_basis_of_quotient [FiniteDimensional F V] {m : ℕ}
     (ρ : Representation F G V) (χ : Fin (m + 1) → G →* F) {U : Submodule F V}
-    (hU : ∀ g, U ≤ U.comap (ρ g)) (hχU : U ≤ ρ.charSpace (χ 0)) (hU1 : finrank F U = 1)
+    (hU : ∀ g, U ≤ U.comap (ρ g)) (hχU : U ≤ ρ.weightSpace (χ 0)) (hU1 : finrank F U = 1)
     (b' : Basis (Fin m) F (V ⧸ U))
     (hb' : ∀ g j, ρ.quotient U hU g (b' j) - Fin.tail χ j g • b' j ∈ b'.flag j.castSucc) :
     ∃ b : Basis (Fin (m + 1)) F V, ∀ g j, ρ g (b j) - χ j g • b j ∈ b.flag j.castSucc := by
@@ -292,7 +292,7 @@ private theorem exists_basis_of_quotient [FiniteDimensional F V] {m : ℕ}
   refine ⟨b, fun g j ↦ ?_⟩
   induction j using Fin.cases with
   | zero =>
-      rw [hb0, (Representation.mem_charSpace.mp (hχU u.property)) g, sub_self]
+      rw [hb0, (Representation.mem_weightSpace.mp (hχU u.property)) g, sub_self]
       exact Submodule.zero_mem _
   | succ j =>
       -- the image in `V ⧸ U` lies in `b'.flag j.castSucc`, and `U` lies in the flag of `b`
@@ -336,11 +336,11 @@ private theorem exists_trace_eq_of_orderedProd_eq_zero (m : ℕ) :
   | succ m ih =>
       intro V _ _ _ ρ χ h
       -- pass to the quotient by the vectors on which `G` acts through `χ₀`
-      obtain ⟨c', hc'sum, hc'tr, hc'b⟩ := ih _ (ρ.quotient _ (ρ.charSpace_le_comap (χ 0)))
-        (Fin.tail χ) (orderedProd_quotient_charSpace_eq_zero ρ χ h)
-      refine ⟨Fin.cons (finrank F (ρ.charSpace (χ 0))) c', ?_, fun g ↦ ?_, fun hc ↦ ?_⟩
+      obtain ⟨c', hc'sum, hc'tr, hc'b⟩ := ih _ (ρ.quotient _ (ρ.weightSpace_le_comap (χ 0)))
+        (Fin.tail χ) (orderedProd_quotient_weightSpace_eq_zero ρ χ h)
+      refine ⟨Fin.cons (finrank F (ρ.weightSpace (χ 0))) c', ?_, fun g ↦ ?_, fun hc ↦ ?_⟩
       · rw [Fin.sum_cons, hc'sum, add_comm, Submodule.finrank_quotient_add_finrank]
-      · rw [ρ.trace_eq_finrank_charSpace_mul_add (χ 0), hc'tr, Fin.sum_univ_succ]
+      · rw [ρ.trace_eq_finrank_weightSpace_mul_add (χ 0), hc'tr, Fin.sum_univ_succ]
         simp [Fin.tail]
       · obtain ⟨b', hb'⟩ := hc'b fun i ↦ by simpa using hc i.succ
         exact exists_basis_of_quotient ρ χ _ le_rfl (by simpa using hc 0) b' hb'
