@@ -49,10 +49,6 @@ finite-dimensional space over `𝕜'`, for instance over `ℂ` for real-linear m
 space (`ContinuousLinearMap.finiteDimensional_of_smulCommClass`). No topology on the scalars and
 no relation between `𝕜` and `𝕜'` is needed.
 
-A continuous linear map into a one-dimensional topological vector space over a division ring is
-surjective if and only if it is nonzero
-(`ContinuousLinearMap.surjective_iff_ne_zero_of_finrank_eq_one`).
-
 A multilinear map `f : MultilinearMap (RingHom.id
 𝕜) M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -211,26 +207,6 @@ need not be related: the maps embed `𝕜'`-linearly into the finite-dimensional
 `𝕜' = 𝕜` over a field. -/
 theorem finiteDimensional_of_smulCommClass : FiniteDimensional 𝕜' (E →L[𝕜] F) :=
   .of_injective (coeLM 𝕜' : (E →L[𝕜] F) →ₗ[𝕜'] E →ₗ[𝕜] F) coe_injective
-
-end ContinuousLinearMap
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E F : Type*} [DivisionRing 𝕜]
-  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-
-/-- A continuous linear map into a one-dimensional space is surjective if and only if it is
-nonzero. -/
-theorem surjective_iff_ne_zero_of_finrank_eq_one (hF : Module.finrank 𝕜 F = 1)
-    {L : E →L[𝕜] F} : Function.Surjective L ↔ L ≠ 0 := by
-  let _ : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  refine ⟨fun hsurj hzero ↦ ?_, fun hne ↦
-    _root_.surjective_of_ne_zero_of_finrank_eq_one (f := (L : E →ₗ[𝕜] F)) hF
-      fun h ↦ hne (coe_injective h)⟩
-  obtain ⟨y, hy⟩ := exists_ne (0 : F)
-  obtain ⟨v, hv⟩ := hsurj y
-  exact hy (by simpa [hzero] using hv.symm)
 
 end ContinuousLinearMap
 
