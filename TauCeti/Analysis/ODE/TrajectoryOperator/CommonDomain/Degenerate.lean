@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
+import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.Analysis.Calculus.BumpFunction.Escaping
 import TauCeti.Analysis.Normed.Operator.ClosedRange
-import TauCeti.Analysis.ODE.TrajectoryOperator.Degenerate
 import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -23,7 +25,10 @@ Floer operator, where `A(s) = J₀ ∂ₜ + S(s, t)` acts on paths in `t`, with 
 If `A(s) a → 0` at `+∞` or at `-∞` for some `a ≠ 0`, for instance because `A` converges to an
 operator `B` with `B a = 0`, then `D_A` is not Fredholm
 (`TauCeti.WeakDerivStep.not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop` and
-`..._atBot`). No symmetry of `A`, compactness of `ι` or injectivity of `ι` is needed.
+`..._atBot`). No symmetry of `A`, compactness of `ι` or injectivity of `ι` is needed. In particular,
+if `A` converges in norm to `B` at an end and `D_A` is Fredholm, then `B` is injective
+(`TauCeti.WeakDerivStep.injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop`
+and `..._atBot`).
 
 The proof constructs an escaping approximate kernel, as in the case of bounded operators on one
 Banach space (`TauCeti.Analysis.ODE.TrajectoryOperator.Degenerate`). Take smooth compactly supported
@@ -38,9 +43,10 @@ bounded sequence on which it tends to `0` has a convergent subsequence
 
 Combined with the Fredholm theorem
 `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`, this characterizes the Fredholm
-property for a compact `ι`: if the limits `B±` of `A` at `±∞` are `ι`-symmetric and Fredholm of
-index zero, as for self-adjoint operators with compact resolvent, then `D_A` is Fredholm exactly
-when both limits are invertible
+property for a compact `ι`: if `A` converges in norm to limits `B±` at `±∞` that are `ι`-symmetric
+and Fredholm of index zero, as for self-adjoint operators with compact resolvent, and `A(s) - B⁺`
+is bounded through `ι` on every bounded interval, then `D_A` is Fredholm exactly when both limits
+are invertible
 (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_iff`).
 
 ## Main results
@@ -48,8 +54,13 @@ when both limits are invertible
 * `TauCeti.WeakDerivStep.not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop` and
   `TauCeti.WeakDerivStep.not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot`:
   a nonzero `a` with `A(s) a → 0` at an end shows that `D_A` is not Fredholm.
-* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_iff`: for compact `ι` and
-  `ι`-symmetric limits of index zero, `D_A` is Fredholm iff both limits are invertible.
+* `TauCeti.WeakDerivStep.injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop`
+  and
+  `TauCeti.WeakDerivStep.injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot`:
+  if `D_A` is Fredholm, then every norm limit of `A` at an end is injective.
+* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_iff`: for compact `ι`, `A`
+  converging in norm to `ι`-symmetric Fredholm limits of index zero, and `A(s) - B⁺` bounded
+  through `ι` on bounded intervals, `D_A` is Fredholm iff both limits are invertible.
 
 ## References
 
@@ -85,12 +96,11 @@ private theorem norm_familyDomainTrajectoryOperator_smulRightBaseW1pL_sq_le
     ‖familyDomainTrajectoryOperator ι AL
         (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 φ))‖ ^ 2 ≤
       2 * ‖ι a‖ ^ 2 * (∫ s, deriv φ s ^ 2) + 2 * ε ^ 2 * ∫ s, φ s ^ 2 := by
-  have hφc : Continuous (φ : ℝ → ℝ) := φ.continuous
-  have hφd : Continuous (deriv (φ : ℝ → ℝ)) := φ.contDiff.continuous_deriv (by simp)
-  have hint : Integrable fun s ↦ φ s ^ 2 := (hφc.pow 2).integrable_of_hasCompactSupport
-    (φ.hasCompactSupport.comp_left (zero_pow two_ne_zero))
-  have hintd : Integrable fun s ↦ deriv φ s ^ 2 := (hφd.pow 2).integrable_of_hasCompactSupport
-    (φ.hasCompactSupport.deriv.comp_left (zero_pow two_ne_zero))
+  have hint : Integrable fun s ↦ φ s ^ 2 :=
+    (φ.continuous.memLp_of_hasCompactSupport (p := 2) φ.hasCompactSupport).integrable_sq
+  have hintd : Integrable fun s ↦ deriv φ s ^ 2 :=
+    ((φ.contDiff.continuous_deriv (by simp)).memLp_of_hasCompactSupport (p := 2)
+      φ.hasCompactSupport.deriv).integrable_sq
   have hle : ∀ᵐ s ∂μ₀, ‖familyDomainTrajectoryOperator ι AL
       (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)) s‖ ^ 2 ≤
         2 * ‖ι a‖ ^ 2 * deriv φ s ^ 2 + 2 * ε ^ 2 * φ s ^ 2 := by
@@ -140,8 +150,7 @@ private theorem norm_prev_smulRightBaseW1pL_sub_sq (ι : D →L[ℝ] H) (a : D)
         prev _ (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 ψ))‖ ^ 2 =
       ((∫ s, φ s ^ 2) + ∫ s, ψ s ^ 2) * ‖a‖ ^ 2 := by
   have hint (χ : 𝓓((⊤ : Opens ℝ), ℝ)) : Integrable fun s ↦ χ s ^ 2 :=
-    (χ.continuous.pow 2).integrable_of_hasCompactSupport
-      (χ.hasCompactSupport.comp_left (zero_pow two_ne_zero))
+    (χ.continuous.memLp_of_hasCompactSupport (p := 2) χ.hasCompactSupport).integrable_sq
   simp only [← prevL_apply, ← map_sub]
   rw [prevL_apply, norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq, FunLike.coe_sub,
     integral_congr_ae (g := fun s ↦ φ s ^ 2 + ψ s ^ 2) (.of_forall fun s ↦ by
@@ -235,6 +244,30 @@ theorem not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot (hAL : AL
   exact not_isFredholm_familyDomainTrajectoryOperator_of_seq hAL ha hφ hφc hφ1 hφ' hdisj
     tendsto_one_div_add_atTop_nhds_zero_nat fun n s hs ↦ hS n s (hφS n s hs)
 
+/-- **A Fredholm trajectory operator has an injective limit at `+∞`.** If `A` converges in norm
+to `B` as `s → ∞` and `u ↦ (ι ∘ u)' + A u` is Fredholm, then `B` is injective. -/
+theorem injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop
+    (hAL : AL =ᵐ[μ₀] A) {B : D →L[ℝ] H} (hAB : Tendsto A atTop (𝓝 B))
+    (hF : (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm) : Function.Injective B := by
+  intro x y hxy
+  by_contra hne
+  have h : Tendsto (fun s ↦ A s (x - y)) atTop (𝓝 (B (x - y))) :=
+    ((ContinuousLinearMap.apply ℝ H (x - y)).continuous.tendsto B).comp hAB
+  rw [map_sub, hxy, sub_self] at h
+  exact not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop hAL (sub_ne_zero.2 hne) h hF
+
+/-- **A Fredholm trajectory operator has an injective limit at `-∞`.** If `A` converges in norm
+to `B` as `s → -∞` and `u ↦ (ι ∘ u)' + A u` is Fredholm, then `B` is injective. -/
+theorem injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot
+    (hAL : AL =ᵐ[μ₀] A) {B : D →L[ℝ] H} (hAB : Tendsto A atBot (𝓝 B))
+    (hF : (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm) : Function.Injective B := by
+  intro x y hxy
+  by_contra hne
+  have h : Tendsto (fun s ↦ A s (x - y)) atBot (𝓝 (B (x - y))) :=
+    ((ContinuousLinearMap.apply ℝ H (x - y)).continuous.tendsto B).comp hAB
+  rw [map_sub, hxy, sub_self] at h
+  exact not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot hAL (sub_ne_zero.2 hne) h hF
+
 end Banach
 
 section Hilbert
@@ -259,18 +292,10 @@ theorem isFredholm_familyDomainTrajectoryOperator_iff (hι : IsCompactOperator �
       Bbot.IsInvertible ∧ Btop.IsInvertible := by
   refine ⟨fun hF ↦ ⟨?_, ?_⟩, fun ⟨hb, ht⟩ ↦
     isFredholm_familyDomainTrajectoryOperator hι hSymmbot hb hSymmtop ht hAL hbot htop hc⟩
-  · refine hBbotF.isInvertible_of_injective_of_index_eq_zero (fun x y hxy ↦ ?_) hBbot
-    by_contra hne
-    refine not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot hAL (sub_ne_zero.2 hne)
-      ?_ hF
-    simpa [Function.comp_def, hxy] using ((continuous_id.clm_apply
-      (continuous_const : Continuous fun _ : D →L[ℝ] H ↦ x - y)).tendsto Bbot).comp hbot
-  · refine hBtopF.isInvertible_of_injective_of_index_eq_zero (fun x y hxy ↦ ?_) hBtop
-    by_contra hne
-    refine not_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop hAL (sub_ne_zero.2 hne)
-      ?_ hF
-    simpa [Function.comp_def, hxy] using ((continuous_id.clm_apply
-      (continuous_const : Continuous fun _ : D →L[ℝ] H ↦ x - y)).tendsto Btop).comp htop
+  · exact hBbotF.isInvertible_of_injective_of_index_eq_zero
+      (injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atBot hAL hbot hF) hBbot
+  · exact hBtopF.isInvertible_of_injective_of_index_eq_zero
+      (injective_of_isFredholm_familyDomainTrajectoryOperator_of_tendsto_atTop hAL htop hF) hBtop
 
 end Hilbert
 
