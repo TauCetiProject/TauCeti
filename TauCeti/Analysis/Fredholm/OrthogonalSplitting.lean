@@ -107,13 +107,13 @@ at a smooth family of plane vortices, pass to their parameter derivatives.
   says that near a Fredholm operator that is onto, every operator has its orthogonal kernel
   projection and right inverse.
 * `ContinuousLinearMap.IsFredholm.apply_fderiv_orthogonalKerProjection_apply`,
-  `ContinuousLinearMap.IsFredholm.fderiv_orthogonalKerProjection_apply`,
+  `ContinuousLinearMap.IsFredholm.sub_orthogonalKerProjection_fderiv_orthogonalKerProjection_apply`,
   `ContinuousLinearMap.IsFredholm.inner_fderiv_orthogonalKerProjection_apply` and
   `ContinuousLinearMap.IsFredholm.fderiv_orthogonalKerProjection_apply_eq_iff`: the derivative of
   the orthogonal kernel projections along a real family, through `T x₀ ∘ π' = -T' ∘ π`, its
   splitting and its kernel pairings, which characterize it.
 * `ContinuousLinearMap.IsFredholm.apply_fderiv_orthogonalRightInverse_apply`,
-  `ContinuousLinearMap.IsFredholm.fderiv_orthogonalRightInverse_apply`,
+  `ContinuousLinearMap.IsFredholm.sub_orthogonalKerProjection_fderiv_orthogonalRightInverse_apply`,
   `ContinuousLinearMap.IsFredholm.inner_fderiv_orthogonalRightInverse_apply` and
   `ContinuousLinearMap.IsFredholm.fderiv_orthogonalRightInverse_apply_eq_iff`: the same for the
   orthogonal right inverses.
@@ -728,25 +728,26 @@ theorem IsFredholm.apply_fderiv_orthogonalKerProjection_apply (hι : Injective �
   simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at hv
   exact eq_neg_of_add_eq_zero_left hv
 
-/-- **The orthogonal splitting of the derivative of the kernel projections.** In the setting of
+/-- **The complement component of the derivative of the kernel projections.** In the setting of
 `ContinuousLinearMap.IsFredholm.apply_fderiv_orthogonalKerProjection_apply`, with `Q` the right
-inverse of `T x₀` with values `ι`-orthogonal to its kernel, the derivative `π'` of the kernel
-projections along `v` splits as `π' e = π (π' e) - Q (T' (π e))`: its component in the
-`ι`-orthogonal complement of the kernel is `-Q T' π e`. -/
-theorem IsFredholm.fderiv_orthogonalKerProjection_apply (hι : Injective ι)
-    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hd : DifferentiableAt ℝ T x₀)
-    (v : X) (e : E) :
-    fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e =
-      orthogonalKerProjection ι (T x₀)
-          (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e) -
-        orthogonalRightInverse ι (T x₀) (fderiv ℝ T x₀ v (orthogonalKerProjection ι (T x₀) e)) := by
+inverse of `T x₀` with values `ι`-orthogonal to its kernel, the component of `π' e` in the
+`ι`-orthogonal complement of the kernel is `π' e - π (π' e) = -Q (T' (π e))`, where `π'` is the
+derivative of the kernel projections along `v`. -/
+theorem IsFredholm.sub_orthogonalKerProjection_fderiv_orthogonalKerProjection_apply
+    (hι : Injective ι) (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀))
+    (hd : DifferentiableAt ℝ T x₀) (v : X) (e : E) :
+    fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e -
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e) =
+      -orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ T x₀ v (orthogonalKerProjection ι (T x₀) e)) := by
   have := hT.finite_ker
   have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
   have h := hπ.apply_add_apply_apply_eq_self hι
     (hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj)
     (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e)
   rw [hT.apply_fderiv_orthogonalKerProjection_apply hι hsurj hd, map_neg] at h
-  rw [sub_eq_add_neg, h]
+  exact sub_eq_iff_eq_add'.2 h.symm
 
 /-- Differentiating the orthogonality `⟪ι (e - π x e), ι (π x f)⟫ = 0` of the kernel projections. -/
 private theorem IsFredholm.inner_sub_fderiv_orthogonalKerProjection (hι : Injective ι)
@@ -786,9 +787,10 @@ theorem IsFredholm.inner_fderiv_orthogonalKerProjection_apply (hι : Injective �
   have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
   have hk' : orthogonalKerProjection ι (T x₀) k = k := hπ.apply_of_mem_ker hι hk
   have h := hT.inner_sub_fderiv_orthogonalKerProjection hι hsurj hd v e k
-  rw [hT.fderiv_orthogonalKerProjection_apply hι hsurj hd v k, hk',
-    map_sub ι (orthogonalKerProjection ι (T x₀) _), inner_sub_right,
-    hπ.inner_sub_eq_zero e _ (hπ.mem_ker _), zero_sub] at h
+  rw [eq_add_of_sub_eq'
+      (hT.sub_orthogonalKerProjection_fderiv_orthogonalKerProjection_apply hι hsurj hd v k), hk',
+    map_add ι (orthogonalKerProjection ι (T x₀) _), inner_add_right,
+    hπ.inner_sub_eq_zero e _ (hπ.mem_ker _), zero_add, map_neg, inner_neg_right] at h
   exact h.symm
 
 /-- **Characterization of the derivative of the orthogonal kernel projections.** In the setting of
@@ -834,25 +836,26 @@ theorem IsFredholm.apply_fderiv_orthogonalRightInverse_apply (hι : Injective ι
   simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at hv
   exact eq_neg_of_add_eq_zero_left hv
 
-/-- **The orthogonal splitting of the derivative of the right inverses.** In the setting of
+/-- **The complement component of the derivative of the right inverses.** In the setting of
 `ContinuousLinearMap.IsFredholm.apply_fderiv_orthogonalRightInverse_apply`, with `π` the projection
-onto the kernel of `T x₀` along its `ι`-orthogonal complement, the derivative `Q'` of the right
-inverses along `v` splits as `Q' y = π (Q' y) - Q (T' (Q y))`: its component in the
-`ι`-orthogonal complement of the kernel is `-Q T' Q y`. -/
-theorem IsFredholm.fderiv_orthogonalRightInverse_apply (hι : Injective ι)
-    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hd : DifferentiableAt ℝ T x₀)
-    (v : X) (y : F) :
-    fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y =
-      orthogonalKerProjection ι (T x₀)
-          (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y) -
-        orthogonalRightInverse ι (T x₀) (fderiv ℝ T x₀ v (orthogonalRightInverse ι (T x₀) y)) := by
+onto the kernel of `T x₀` along its `ι`-orthogonal complement, the component of `Q' y` in the
+`ι`-orthogonal complement of the kernel is `Q' y - π (Q' y) = -Q (T' (Q y))`, where `Q'` is the
+derivative of the right inverses along `v`. -/
+theorem IsFredholm.sub_orthogonalKerProjection_fderiv_orthogonalRightInverse_apply
+    (hι : Injective ι) (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀))
+    (hd : DifferentiableAt ℝ T x₀) (v : X) (y : F) :
+    fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y -
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y) =
+      -orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ T x₀ v (orthogonalRightInverse ι (T x₀) y)) := by
   have := hT.finite_ker
   have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
   have h := hπ.apply_add_apply_apply_eq_self hι
     (hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj)
     (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y)
   rw [hT.apply_fderiv_orthogonalRightInverse_apply hι hsurj hd, map_neg] at h
-  rw [sub_eq_add_neg, h]
+  exact sub_eq_iff_eq_add'.2 h.symm
 
 /-- Differentiating the orthogonality `⟪ι (Q x y), ι (π x f)⟫ = 0` of the right inverses to the
 kernels. -/
@@ -893,9 +896,10 @@ theorem IsFredholm.inner_fderiv_orthogonalRightInverse_apply (hι : Injective ι
   have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj
   have hk' : orthogonalKerProjection ι (T x₀) k = k := hπ.apply_of_mem_ker hι hk
   have h := hT.inner_fderiv_orthogonalRightInverse_eq_neg hι hsurj hd v y k
-  rw [hT.fderiv_orthogonalKerProjection_apply hι hsurj hd v k, hk',
-    map_sub ι (orthogonalKerProjection ι (T x₀) _), inner_sub_right,
-    hQ.inner_eq_zero y _ (hπ.mem_ker _), zero_sub, neg_neg] at h
+  rw [eq_add_of_sub_eq'
+      (hT.sub_orthogonalKerProjection_fderiv_orthogonalKerProjection_apply hι hsurj hd v k), hk',
+    map_add ι (orthogonalKerProjection ι (T x₀) _), inner_add_right,
+    hQ.inner_eq_zero y _ (hπ.mem_ker _), zero_add, map_neg, inner_neg_right, neg_neg] at h
   exact h
 
 /-- **Characterization of the derivative of the orthogonal right inverses.** In the setting of
