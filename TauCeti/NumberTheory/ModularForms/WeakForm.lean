@@ -232,8 +232,7 @@ because `f ∣[k] (-1) = -f`. -/
 theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
   funext τ
   have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
-    rw [SL_slash, show ((-1 : SL(2, ℤ)) : GL (Fin 2) ℝ) = -1 from mapGL_neg_one, slash_neg_one,
-      hk.neg_one_zpow, neg_one_mul]
+    rw [ModularForm.SL_slash_neg k f 1, SlashAction.slash_one, hk.neg_one_zpow, neg_one_smul]
   have hτ : -f τ = f τ := congr_fun (hneg.symm.trans h) τ
   simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
 
