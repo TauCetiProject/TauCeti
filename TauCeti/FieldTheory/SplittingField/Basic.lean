@@ -37,10 +37,14 @@ namespace Polynomial.IsSplittingField
 theorem subfield_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L] (f : K[X])
     [IsSplittingField K L f] {S : Subfield L} (hK : ∀ k, algebraMap K L k ∈ S)
     (hroots : f.rootSet L ⊆ S) : S = ⊤ := by
+  -- `S` viewed as a `K`-subalgebra, which has the same elements as `S`.
   let T : Subalgebra K L := { S.toSubsemiring with algebraMap_mem' := hK }
-  have hT : Algebra.adjoin K (f.rootSet L) ≤ T := Algebra.adjoin_le hroots
+  have hmem (x : L) : x ∈ T ↔ x ∈ S := by
+    rw [Subalgebra.mem_mk, Subring.mem_toSubsemiring, Subfield.mem_toSubring]
+  have hT : Algebra.adjoin K (f.rootSet L) ≤ T :=
+    Algebra.adjoin_le fun x hx ↦ (hmem x).2 (hroots hx)
   rw [IsSplittingField.adjoin_rootSet] at hT
-  exact eq_top_iff.2 fun x _ ↦ hT (Algebra.mem_top (x := x))
+  exact eq_top_iff.2 fun x _ ↦ (hmem x).1 (hT (Algebra.mem_top (x := x)))
 
 end Polynomial.IsSplittingField
 

@@ -146,16 +146,23 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
   let ψ : L →+* ℂ := (starRingEnd ℂ).comp φ₀
   -- The conjugate embedding `ψ` takes values in the image of `φ₀`.
   have hrange : ψ.fieldRange ≤ φ₀.fieldRange := by
-    rintro _ ⟨x, rfl⟩
-    exact eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
-      (S := φ₀.fieldRange.comap ψ) (fun k ↦ ⟨_, (star_algebraMap φ₀ k).symm⟩)
-      (fun β hβ ↦ ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩)) (Subfield.mem_top x)
+    intro y hy
+    obtain ⟨x, rfl⟩ := RingHom.mem_fieldRange.1 hy
+    refine Subfield.mem_comap.1 (eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
+      (S := φ₀.fieldRange.comap ψ) (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x))
+    · rw [Subfield.mem_comap, RingHom.mem_fieldRange, RingHom.comp_apply, starRingEnd_apply]
+      exact ⟨_, (star_algebraMap φ₀ k).symm⟩
+    · rw [SetLike.mem_coe, Subfield.mem_comap, RingHom.mem_fieldRange, RingHom.comp_apply,
+        starRingEnd_apply]
+      exact ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩
   -- Hence `ψ = φ₀ ∘ σ` for a field endomorphism `σ` of `L`, which is an automorphism.
   let σ₀ : L →+* L := (φ₀.rangeRestrictFieldEquiv.symm : φ₀.fieldRange →+* L).comp
     ((Subfield.inclusion hrange).comp ψ.rangeRestrictField)
-  -- `Subfield.inclusion` does not change the underlying complex number, by definition.
-  have hσ₀ (x : L) : φ₀ (σ₀ x) = star (φ₀ x) :=
-    (φ₀.rangeRestrictFieldEquiv_apply_symm_apply _).trans (ψ.coe_rangeRestrictField x)
+  have hσ₀ (x : L) : φ₀ (σ₀ x) = star (φ₀ x) := by
+    -- `Subfield.inclusion` does not change the underlying complex number, by definition.
+    have h : φ₀ (σ₀ x) = ψ x :=
+      (φ₀.rangeRestrictFieldEquiv_apply_symm_apply _).trans (ψ.coe_rangeRestrictField x)
+    rw [h, RingHom.comp_apply, starRingEnd_apply]
   let σ : Gal(L/ℚ) := AlgEquiv.ofBijective σ₀.toRatAlgHom
     (Algebra.IsAlgebraic.algHom_bijective _)
   have hσK (k : K) : σ (algebraMap K L k) = algebraMap K L (complexConj K k) :=
@@ -163,11 +170,16 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
   have hσβ {β : L} (hβ : β ∈ (X ^ n - C u).rootSet L) : σ β = β⁻¹ :=
     φ₀.injective ((hσ₀ _).trans (star_eq_inv_of_mem_rootSet hu φ₀ hβ))
   -- `σ` is the conjugation of every complex embedding.
-  refine TauCeti.NumberField.IsCMField.of_forall_isConj L (σ := σ) fun φ ↦ RingHom.ext fun x ↦
-    eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u) (S := RingHom.eqLocusField _ _)
-      (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x)
-  · exact (star_algebraMap φ k).trans (congrArg φ (hσK k).symm)
-  · exact (star_eq_inv_of_mem_rootSet hu φ hβ).trans (congrArg φ (hσβ hβ).symm)
+  refine TauCeti.NumberField.IsCMField.of_forall_isConj L (σ := σ) fun φ ↦ ?_
+  unfold ComplexEmbedding.IsConj
+  ext x
+  refine RingHom.mem_eqLocusField.1 (eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
+    (S := (conjugate φ).eqLocusField (φ.comp σ)) (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x))
+  · rw [RingHom.mem_eqLocusField, conjugate_coe_eq, starRingEnd_apply, RingHom.comp_apply]
+    exact (star_algebraMap φ k).trans (congrArg φ (hσK k).symm)
+  · rw [SetLike.mem_coe, RingHom.mem_eqLocusField, conjugate_coe_eq, starRingEnd_apply,
+      RingHom.comp_apply]
+    exact (star_eq_inv_of_mem_rootSet hu φ hβ).trans (congrArg φ (hσβ hβ).symm)
 
 /-- **Discriminant descent for CM fields.** Let `K` be CM, `a ∈ Kˣ` and `n ≠ 0`, and let `L` be
 the splitting field of `Xⁿ - a / conj a` over `K`. Then `a = z bⁿ` in `L` for a totally real
@@ -181,13 +193,12 @@ theorem exists_mem_maximalRealSubfield_algebraMap_div_eq_pow (a : Kˣ) (hn : n �
   have : Algebra.IsIntegral ℚ L := Algebra.IsIntegral.trans K
   have : IsCMField L := of_isSplittingField_X_pow_sub_C (n := n)
     (u := (a : K) / complexConj K a) (div_complexConj_mul_complexConj_div_complexConj_eq_one a)
-  obtain ⟨β, hβ⟩ :=
-    (IsSplittingField.splits L (X ^ n - C ((a : K) / complexConj K a))).exists_eval_eq_zero (by
-      rw [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C,
-        degree_X_pow_sub_C (Nat.pos_of_ne_zero hn)]
-      exact_mod_cast hn)
-  rw [eval_map_algebraMap, map_sub, aeval_X_pow, aeval_C, sub_eq_zero, map_div₀,
-    ← complexConj_algebraMap K L] at hβ
+  obtain ⟨β, hβ⟩ := Splits.exists_eval_eq_zero
+    (IsSplittingField.splits L (X ^ n - C ((a : K) / complexConj K a)))
+    (by simpa [degree_X_pow_sub_C (Nat.pos_of_ne_zero hn)] using hn)
+  replace hβ : β ∈ (X ^ n - C ((a : K) / complexConj K a)).rootSet L :=
+    (monic_X_pow_sub_C _ hn).mem_rootSet.2 (by rwa [eval_map_algebraMap] at hβ)
+  rw [mem_rootSet_X_pow_sub_C hn, map_div₀, ← complexConj_algebraMap K L] at hβ
   exact (exists_mem_maximalRealSubfield_div_eq_pow_iff (x := Units.map (algebraMap K L) a)).2
     ⟨β, hβ⟩
 
