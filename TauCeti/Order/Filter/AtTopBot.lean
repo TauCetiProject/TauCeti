@@ -51,7 +51,7 @@ Archimedean ordered semiring, truncating a finite `WithTop` element at natural c
 stabilizes (`WithTop.eventually_min_natCast_eq`).
 
 For a subset `I` of an ordered additive group, negation pushes the right-endpoint filter of `-I`
-forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_coe_neg_atTop`), using
+forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_val_neg_atTop`), using
 `Filter.map_ofDual_atTop` (with dual `Filter.map_ofDual_atBot`).
 -/
 
@@ -206,7 +206,7 @@ theorem _root_.Filter.map_ofDual_atBot {β : Type*} [Preorder β] :
 
 /-- Negation pushes the right-endpoint filter of `-I` forward to the left-endpoint filter of
 `I`. -/
-theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder α]
+theorem map_neg_map_val_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder α]
     [IsOrderedAddMonoid α] (I : Set α) :
     map Neg.neg (map ((↑) : (-I : Set α) → α) atTop) = map ((↑) : I → α) atBot := by
   let e : (-I : Set α) ≃o (I : Set α)ᵒᵈ :=
