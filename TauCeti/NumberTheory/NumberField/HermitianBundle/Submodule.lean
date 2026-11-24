@@ -205,7 +205,8 @@ theorem IsOrthogonalFiber.fiberConj {σ : K →+* ℂ} {v : Codomain σ ⊗[𝓞
   | tmul c x =>
     have := congrArg conj (hv (1 ⊗ₜ x))
     rw [← form_fiberConj, fiberConj_baseChange] at this
-    simp at this
+    simp only [fiberConj_tmul, Codomain.conj_one, LinearMap.baseChange_tmul,
+      Submodule.subtype_apply, map_zero] at this
     simp [Codomain.tmul_eq_smul _ c, this]
 
 /-- The lifts at conjugate embeddings are exchanged by complex conjugation of fibres. -/
