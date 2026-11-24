@@ -15,10 +15,11 @@ outward at a bounded angle: `‖G (k + 1) - G k‖ ≤ M (‖G (k + 1)‖ - ‖G
 terms `S k` of a second sequence are asymptotic to the forward differences `G (k + 1) - G k`, then
 the partial sums `∑_{k < n} S k` are `G n + o(G n)`.
 
-This is a discrete Stolz–Cesàro theorem for vector-valued sequences. In the real case the
-angle condition is the monotonicity of `G`. In the complex case it allows models such as
-`G k = e^{c √k}` with `Re c > 0`, whose differences rotate, so that the partial sums do not
-grow like the sums of the norms of their terms.
+This is a discrete Stolz–Cesàro theorem for vector-valued sequences. In the real case, a
+sequence `G` of constant sign whose absolute value `|G|` is monotone satisfies the angle condition
+with `M = 1`. In the complex case it allows models such as `G k = e^{c √k}` with `Re c > 0`, whose
+differences rotate, so that the partial sums do not grow like the sums of the norms of their
+terms.
 -/
 
 public section

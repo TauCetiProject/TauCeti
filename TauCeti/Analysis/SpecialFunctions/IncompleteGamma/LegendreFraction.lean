@@ -9,10 +9,10 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 public import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.KummerLaplace
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
-import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Asymptotics.Sum.Telescoping
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 import TauCeti.Analysis.SpecificLimits.Normed
@@ -39,7 +39,7 @@ follows from the saddle-point asymptotics in
 
 Minimality is proved through the reduction-of-order series
 `∑ (-1)^m (a₁ ⋯ aₘ) / (f(m) f(m + 1))`. With `K_k = K(k, a - 1 - k; z)`, its odd terms are
-`k! / ((1 - a)_{k+1} K_k K(k, a - 2 - k; z))` and its consecutive pairs telescope, by the contiguous
+`k! / ((1 - a)_{k+1} K_k K(k, a - 2 - k; z))` and its consecutive pairs collapse, by the contiguous
 relation `K_k - K(k, a - 2 - k; z) = K_{k+1}`, to `-k! / ((1 - a)_{k+1} K_k K_{k+1})`. The
 saddle-point asymptotic `K_k ~ √π e^{z/2} z^{-a/2-1/4} k^{a/2-1/4} e^{-2√(kz)}` and Euler's limit
 for `Γ(1 - a)` make the pairs asymptotic to the forward differences of a multiple of
@@ -383,13 +383,9 @@ private theorem legendreTerm_pair {a z : ℂ} (hz : z ∈ slitPlane)
 
 /-! #### Asymptotics of the reduction-of-order terms -/
 
-private theorem ofReal_sqrt_natCast (k : ℕ) : (Real.sqrt k : ℂ) = (k : ℂ) ^ (1 / 2 : ℂ) := by
-  rw [Real.sqrt_eq_rpow, ofReal_cpow (Nat.cast_nonneg k)]
-  norm_num
-
 private theorem natCast_mul_cpow_one_half (z : ℂ) (k : ℕ) :
     ((k : ℂ) * z) ^ (1 / 2 : ℂ) = (Real.sqrt k : ℂ) * z ^ (1 / 2 : ℂ) := by
-  rw [natCast_mul_cpow, ofReal_sqrt_natCast]
+  rw [natCast_mul_cpow, ofReal_sqrt_eq_cpow (Nat.cast_nonneg k), ofReal_natCast]
 
 /-- The constant `√π e^{z/2} z^{-a/2 - 1/4}` of the saddle-point asymptotic of
 `K(k, a - 1 - k; z)`. -/
@@ -423,7 +419,7 @@ private theorem kummerLaplace_sub_two_isEquivalent (a : ℂ) {z : ℂ} (hz : z �
   have hk0 : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hk
   rw [legendreConst, legendreConst, show -(a - 1) / 2 - 1 / 4 = (-a / 2 - 1 / 4) + 1 / 2 by ring,
     cpow_add _ _ hz0, show (a - 1) / 2 - 1 / 4 = (a / 2 - 1 / 4) + -(1 / 2) by ring,
-    cpow_add _ _ hk0, cpow_neg, ofReal_sqrt_natCast]
+    cpow_add _ _ hk0, cpow_neg, ofReal_sqrt_eq_cpow (Nat.cast_nonneg k), ofReal_natCast]
   ring
 
 private theorem eventually_kummerLaplace_sub_two_ne_zero (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
@@ -544,22 +540,6 @@ private theorem legendreModel_succ_sub_isEquivalent {z : ℂ} (hz : z ∈ slitPl
   rw [Pi.div_apply, hsplit]
   field_simp
 
-/-- Euler's limit in the form `k! / (1 - a)_{k + 1} ~ Γ(1 - a) k^{a - 1}`. -/
-private theorem factorial_div_ascPochhammer_isEquivalent {a : ℂ} (ha : ∀ m : ℕ, a ≠ m + 1) :
-    (fun k : ℕ => (k ! : ℂ) / (ascPochhammer ℂ (k + 1)).eval (1 - a)) ~[atTop]
-      fun k => Gamma (1 - a) * ((k : ℂ) ^ (1 - a))⁻¹ := by
-  have hΓ : Gamma (1 - a) ≠ 0 := Gamma_ne_zero fun m hm => ha m (by linear_combination -hm)
-  have hprod (n : ℕ) : (ascPochhammer ℂ n).eval (1 - a) = ∏ j ∈ range n, (1 - a + j) := by
-    induction n with
-    | zero => simp
-    | succ n ih => rw [ascPochhammer_succ_eval, ih, prod_range_succ]
-  refine (((isEquivalent_const_iff_tendsto hΓ).2 (GammaSeq_tendsto_Gamma (1 - a))).mul
-    (IsEquivalent.refl (u := fun k : ℕ => ((k : ℂ) ^ (1 - a))⁻¹))).congr_left ?_
-  filter_upwards [eventually_ne_atTop 0] with k hk
-  have hk' : (k : ℂ) ^ (1 - a) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hk))
-  simp only [Pi.mul_apply, GammaSeq, hprod]
-  field_simp
-
 /-- For `k ≥ 1`, `k^{a - 1} / (C k^{a/2 - 1/4} e^{-2 √(k z)})² = e^{4 √(k z)} / (C² √k)`. -/
 private theorem inv_cpow_one_sub_div_sq (a : ℂ) {z : ℂ} (hz : z ≠ 0) {k : ℕ} (hk : k ≠ 0) :
     ((k : ℂ) ^ (1 - a))⁻¹ / (legendreConst a z * (k : ℂ) ^ (a / 2 - 1 / 4) *
@@ -571,7 +551,8 @@ private theorem inv_cpow_one_sub_div_sq (a : ℂ) {z : ℂ} (hz : z ≠ 0) {k : 
   have hC := legendreConst_ne_zero a hz
   have hq : ((k : ℂ) ^ (1 - a))⁻¹ =
       (k : ℂ) ^ (a / 2 - 1 / 4) * (k : ℂ) ^ (a / 2 - 1 / 4) / (Real.sqrt k : ℂ) := by
-    rw [eq_div_iff hρ, ofReal_sqrt_natCast, ← cpow_neg, ← cpow_add _ _ hk0, ← cpow_add _ _ hk0]
+    rw [eq_div_iff hρ, ofReal_sqrt_eq_cpow (Nat.cast_nonneg k), ofReal_natCast, ← cpow_neg,
+      ← cpow_add _ _ hk0, ← cpow_add _ _ hk0]
     congr 1
     ring
   have hH : legendreModel z k = (cexp (-2 * ((Real.sqrt k : ℂ) * z ^ (1 / 2 : ℂ))) ^ 2)⁻¹ := by
@@ -590,11 +571,12 @@ private theorem legendreTerm_two_mul_add_one_isEquivalent {a : ℂ} (ha : ∀ m 
       Gamma (1 - a) / (z ^ (1 / 2 : ℂ) * legendreConst a z ^ 2) * legendreModel z k := by
   have hz0 := slitPlane_ne_zero hz
   have hp := ascPochhammer_eval_one_sub_ne_zero ha
+  have hs : ∀ m : ℕ, 1 - a ≠ -m := fun m hm => ha m (by linear_combination -hm)
   have hs0 : z ^ (1 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
   have hC := legendreConst_ne_zero a hz0
   have hKne := eventually_kummerLaplace_ne_zero a hz
   have hLne := eventually_kummerLaplace_sub_two_ne_zero a hz
-  refine ((factorial_div_ascPochhammer_isEquivalent ha).div
+  refine ((isEquivalent_factorial_div_ascPochhammer_eval_succ hs).div
     ((kummerLaplace_isEquivalent_sqrt a hz).mul (kummerLaplace_sub_two_isEquivalent a hz)))
     |>.congr_left ?_ |>.congr_right ?_
   · filter_upwards [hKne, hLne] with k hK hL
@@ -621,6 +603,7 @@ private theorem legendreTerm_pair_isEquivalent {a : ℂ} (ha : ∀ m : ℕ, a �
         -(Gamma (1 - a) / (2 * z ^ (1 / 2 : ℂ) * legendreConst a z ^ 2)) * legendreModel z k := by
   have hz0 := slitPlane_ne_zero hz
   have hp := ascPochhammer_eval_one_sub_ne_zero ha
+  have hs : ∀ m : ℕ, 1 - a ≠ -m := fun m hm => ha m (by linear_combination -hm)
   have hs0 : z ^ (1 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
   have hC := legendreConst_ne_zero a hz0
   have hKne := eventually_kummerLaplace_ne_zero a hz
@@ -643,8 +626,9 @@ private theorem legendreTerm_pair_isEquivalent {a : ℂ} (ha : ∀ m : ℕ, a �
   have hΔ := (IsEquivalent.refl (u := fun _ : ℕ =>
     -(Gamma (1 - a) / (2 * z ^ (1 / 2 : ℂ) * legendreConst a z ^ 2)))).mul
       (legendreModel_succ_sub_isEquivalent hz)
-  refine (((factorial_div_ascPochhammer_isEquivalent ha).div (hK.mul hK₁)).neg.congr_left ?_).trans
-    ((hΔ.symm.congr_left ?_).congr_right (Eventually.of_forall fun k => ?_))
+  refine (((isEquivalent_factorial_div_ascPochhammer_eval_succ hs).div
+    (hK.mul hK₁)).neg.congr_left ?_).trans
+      ((hΔ.symm.congr_left ?_).congr_right (Eventually.of_forall fun k => ?_))
   · filter_upwards [hKne, hLne, hK₁ne] with k hK hL hK₁
     simp only [Pi.div_apply, Pi.mul_apply, legendreTerm_pair hz hp hK hL hK₁]
   · filter_upwards [eventually_ne_atTop 0] with k hk
