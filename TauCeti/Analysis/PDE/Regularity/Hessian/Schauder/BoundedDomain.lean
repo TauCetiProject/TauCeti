@@ -83,6 +83,8 @@ lower-order terms.
 
 * `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`: the
   global Schauder estimate on a bounded domain with `C^{2,α}` boundary.
+* `exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`: the interpolation
+  inequalities up to the boundary of `Ω`, at every small scale `ε`.
 * `exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv`:
   the same with only `sup |u|` on the right, bounding also `‖Du‖` and `‖D²u‖`.
 * `exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`:
@@ -371,20 +373,23 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
         exact le_add_self
     _ = (A + 2 * δ ^ (-(α : ℝ))) * (K + N) := by ring
 
-/-- Interpolation up to the boundary of a bounded domain with `C^{2,α}` boundary: there are a
-scale `ε₀ > 0` and a constant `c > 0` such that at every scale `0 < ε ≤ ε₀`, every `u` that is
-`C²` near `closure Ω`, with `|u| ≤ N` and `D²u` `α`-Hölder with constant `H` on `closure Ω`, has
-`|u|`, `‖Du‖` and `‖D²u‖` at most `9 (c ε)⁻² N + 5 H ε^α` on `closure Ω`. -/
-private theorem exists_forall_abs_le_and_norm_le {α : ℝ≥0} {Ω : Set E}
+/-- **Interpolation up to the boundary of a bounded domain with `C^{2,α}` boundary.** Let `Ω` be
+a bounded set described at each frontier point by a patch as in
+`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. There are a scale
+`ε₀ > 0` and a constant `0 < c ≤ 1`, depending only on `Ω`, such that at every scale
+`0 < ε ≤ ε₀`, every `u` that is `C²` on an open set containing `closure Ω`, with `|u| ≤ N` and
+`D²u` `α`-Hölder with constant `H` on `closure Ω`, has `‖Du‖` and `‖D²u‖` at most
+`9 (c ε)⁻² N + 5 H ε^α` on `closure Ω` (Gilbarg–Trudinger, Section 6.8). -/
+theorem exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded {α : ℝ≥0}
+    {Ω : Set E}
     (hΩ : Bornology.IsBounded Ω)
     (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
       ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
       (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
       ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
-    ∃ ε₀ > 0, ∃ c > 0, ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ {U : Set E} {u : E → ℝ} {N H : ℝ≥0}, IsOpen U →
-      closure Ω ⊆ U → ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, |u z| ≤ N) →
+    ∃ ε₀ > 0, ∃ c > 0, c ≤ 1 ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ {U : Set E} {u : E → ℝ} {N H : ℝ≥0},
+      IsOpen U → closure Ω ⊆ U → ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, |u z| ≤ N) →
       HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) → ∀ z ∈ closure Ω,
-        |u z| ≤ 9 / (c * ε) ^ 2 * N + 5 * H * ε ^ (α : ℝ) ∧
         ‖fderiv ℝ u z‖ ≤ 9 / (c * ε) ^ 2 * N + 5 * H * ε ^ (α : ℝ) ∧
         ‖iteratedFDeriv ℝ 2 u z‖ ≤ 9 / (c * ε) ^ 2 * N + 5 * H * ε ^ (α : ℝ) := by
   -- The closure of `Ω` satisfies a uniform interior cone condition.
@@ -399,19 +404,15 @@ private theorem exists_forall_abs_le_and_norm_le {α : ℝ≥0} {Ω : Set E}
       ∀ t, 0 < t → t ≤ h₀ → closedBall (z + t • v) (c * t) ⊆ closure Ω := fun z hz => by
     obtain ⟨v, hv, hb⟩ := hcone z hz
     exact ⟨v, hv, fun t ht hth => (hb t ht hth).trans subset_closure⟩
-  refine ⟨min h₀ 1, lt_min hh₀ one_pos, c, hc,
+  refine ⟨min h₀ 1, lt_min hh₀ one_pos, c, hc, hc1,
     fun ε hε hεε₀ {U u N H} hU hΩU hu hN hH z hz => ?_⟩
   have hε1 : ε ≤ 1 := hεε₀.trans (min_le_right _ _)
   obtain ⟨h1, h2⟩ :=
     hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_forall_closedBall_add_smul_subset hU hu
       hΩU (M := N) (fun y hy => by simpa only [Real.norm_eq_abs] using hN y hy) hc hc1 hcone' hε
       (hεε₀.trans (min_le_left _ _))
-  have hcε : 0 < c * ε := mul_pos hc hε
-  have hcε1 : c * ε ≤ 1 := by nlinarith
   have hHε : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
-  have hκN : (N : ℝ) ≤ 9 / (c * ε) ^ 2 * N :=
-    le_mul_of_one_le_left N.coe_nonneg ((one_le_div (by positivity)).2 (by nlinarith))
-  refine ⟨(hN z hz).trans (by linarith), (h1 z hz).trans ?_, (h2 z hz).trans ?_⟩
+  refine ⟨(h1 z hz).trans ?_, (h2 z hz).trans ?_⟩
   · have hpow : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
       Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
     have h9 : 9 * (N : ℝ) / (c ^ 2 * ε) ≤ 9 / (c * ε) ^ 2 * N := by
@@ -460,17 +461,19 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
           ∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 u z‖ ≤ C * (K + N) := by
   obtain ⟨C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
     hα hα1 hΩo hΩ hbdry Lam L M hlam
-  obtain ⟨ε₀, hε₀, c, hc, hint⟩ := exists_forall_abs_le_and_norm_le hΩ hbdry
+  obtain ⟨ε₀, hε₀, c, hc, hc1, hint⟩ :=
+    exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded hΩ hbdry
   -- The interpolation scale `ε`, small enough to absorb the Hölder constant of `D²u`.
   obtain ⟨ρ, hρ, hρ1, hρC⟩ := Real.exists_pos_le_one_mul_rpow_le (5 * C₀)
     (NNReal.coe_pos.2 hα) (by norm_num : (0 : ℝ) < 1 / 2)
   set ε := min ρ ε₀
   have hε : 0 < ε := lt_min hρ hε₀
-  have hεC : 5 * C₀ * ε ^ (α : ℝ) ≤ 1 / 2 := le_trans (by
-    gcongr
-    exact min_le_left _ _) hρC
+  have hεC : 5 * C₀ * ε ^ (α : ℝ) ≤ 1 / 2 := (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow
+    hε.le (min_le_left _ _) α.coe_nonneg) (by positivity)).trans hρC
   have hεα : ε ^ (α : ℝ) ≤ 1 := Real.rpow_le_one hε.le ((min_le_left _ _).trans hρ1) α.coe_nonneg
   set κ : ℝ := 9 / (c * ε) ^ 2
+  have hκ : 1 ≤ κ := (one_le_div (by positivity)).2 <| (pow_le_one₀ (by positivity) <|
+    (mul_le_of_le_one_left hε.le hc1).trans ((min_le_left _ _).trans hρ1)).trans (by norm_num)
   set A : ℝ := 2 * C₀ * (1 + κ)
   refine ⟨(5 * A + κ).toNNReal, fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
   -- The best Hölder constant `H` of `D²u` on `closure Ω`; then `|u|`, `‖Du‖` and `‖D²u‖` are at
@@ -481,19 +484,19 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
   have hb := hint ε hε (min_le_right _ _) hU hΩU hu hN hH
   set N₁ : ℝ := κ * N + 5 * H * ε ^ (α : ℝ)
   have hN₁ : 0 ≤ N₁ := by positivity
+  have hNN₁ : (N : ℝ) ≤ N₁ :=
+    le_add_of_le_of_nonneg (le_mul_of_one_le_left N.coe_nonneg hκ) (by positivity)
   -- The estimate with `N₁` in place of `N`, and absorption of `5 C₀ ε^α H ≤ H / 2`.
   have hHA : (H : ℝ) ≤ A * (K + N) := by
     have h := (hC₀ hEll hEll' hL hM hU hΩU hu hu0
+      (fun z hz => (hN z hz).trans (hNN₁.trans (Real.le_coe_toNNReal _)))
       (fun z hz => (hb z hz).1.trans (Real.le_coe_toNNReal _))
-      (fun z hz => (hb z hz).2.1.trans (Real.le_coe_toNNReal _))
-      (fun z hz => (hb z hz).2.2.trans (Real.le_coe_toNNReal _)) hV hK).holderWith.nnholderNorm_le
+      (fun z hz => (hb z hz).2.trans (Real.le_coe_toNNReal _)) hV hK).holderWith.nnholderNorm_le
     rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at h
     have habs : 5 * C₀ * ε ^ (α : ℝ) * H ≤ 1 / 2 * H :=
       mul_le_mul_of_nonneg_right hεC H.coe_nonneg
-    have hC₀N : 0 ≤ (C₀ : ℝ) * N := by positivity
-    have hC₀K : 0 ≤ (C₀ : ℝ) * κ * K := by positivity
     simp only [A, N₁] at h ⊢
-    nlinarith
+    nlinarith [(by positivity : (0 : ℝ) ≤ C₀ * N), (by positivity : (0 : ℝ) ≤ C₀ * κ * K)]
   -- Collect the bounds: `H` and `N₁` are at most `(5 A + κ) (K + N)`.
   have hC : (5 * A + κ) * (K + N) ≤ ((5 * A + κ).toNNReal : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
@@ -502,8 +505,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
     have hHε : (H : ℝ) * ε ^ (α : ℝ) ≤ H := mul_le_of_le_one_right H.coe_nonneg hεα
     simp only [N₁]
     nlinarith
-  refine ⟨hH.mono_const ?_, fun z hz => (hb z hz).2.1.trans (hN₁A.trans hC),
-    fun z hz => (hb z hz).2.2.trans (hN₁A.trans hC)⟩
+  refine ⟨hH.mono_const ?_, fun z hz => (hb z hz).1.trans (hN₁A.trans hC),
+    fun z hz => (hb z hz).2.trans (hN₁A.trans hC)⟩
   rw [← NNReal.coe_le_coe, NNReal.coe_mul]
   exact le_trans (by nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ κ) N.coe_nonneg]) hC
 

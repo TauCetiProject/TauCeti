@@ -110,6 +110,9 @@ linear approximation error by the difference of the Hessians.
   interpolation inequalities for the first and second derivatives on a ball.
 * `HolderOnWith.norm_fderiv_le_of_contDiffOn` and
   `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`: the same for a `C²` function.
+* `HolderOnWith.norm_iteratedFDeriv_two_le_of_closedBall_add_smul_subset` and
+  `HolderOnWith.norm_fderiv_le_of_forall_closedBall_add_smul_subset`: the bounds on `‖D²u‖` and
+  `‖Du‖` at the vertex of a single cone.
 * `HolderOnWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_forall_closedBall_add_smul_subset`:
   the interpolation inequalities up to the boundary of a set satisfying a uniform interior cone
   condition.
@@ -445,10 +448,12 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
 
-/-- The Hessian bound at the vertex `z ∈ s` of a ball `closedBall (z + ε v) (c ε) ⊆ s`, `‖v‖ = 1`,
-`0 < c ≤ 1`: the bound at the centre of the ball and the Hölder bound between `z` and the
-centre. -/
-private theorem norm_iteratedFDeriv_two_le_of_closedBall_add_smul_subset {U s : Set E}
+/-- **Interpolation of the Hessian of a `C²` function off-centre of a ball.** Let `u` be `C²` on
+an open set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If
+`z ∈ s`, `‖v‖ = 1`, `0 < c ≤ 1`, `ε > 0` and `closedBall (z + ε v) (c ε) ⊆ s`, then
+`‖D²u(z)‖ ≤ 8 M / (c ε)² + 4 H ε^α`: the bound at the centre of the ball and the Hölder bound
+between `z` and the centre. -/
+theorem norm_iteratedFDeriv_two_le_of_closedBall_add_smul_subset {U s : Set E}
     {u : E → F} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {c ε : ℝ} (hc : 0 < c) (hc1 : c ≤ 1) (hε : 0 < ε) {z v : E} (hz : z ∈ s) (hv : ‖v‖ = 1)
@@ -479,10 +484,13 @@ private theorem norm_iteratedFDeriv_two_le_of_closedBall_add_smul_subset {U s : 
         exact hy.trans (by gcongr)
     _ = 8 * M / (c * ε) ^ 2 + 4 * H * ε ^ (α : ℝ) := by ring
 
-/-- The gradient bound at the vertex `z ∈ s` of a cone in `s` with axis `v`, `‖v‖ = 1`, and
-aperture `0 < c ≤ 1`, given the bound `B` on `‖D²u‖` on `s`: the bound at the centre of the ball
-`closedBall (z + ε v) (c ε) ⊆ s` and the mean value inequality along the axis. -/
-private theorem norm_fderiv_le_of_forall_closedBall_add_smul_subset {U s : Set E}
+/-- **Interpolation of the gradient of a `C²` function at the vertex of a cone.** Let `u` be `C²`
+on an open set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s`, `‖u‖ ≤ M` and
+`‖D²u‖ ≤ B` on `s`. If `z ∈ s` is the vertex of a cone in `s` with axis `v`, `‖v‖ = 1`, height
+`h₀` and aperture `c > 0`, that is `closedBall (z + t v) (c t) ⊆ s` for `0 < t ≤ h₀`, then for
+`0 < ε ≤ h₀`, `‖Du(z)‖ ≤ M / (c ε) + H (c ε)^(1 + α) + B ε`: the bound at the centre of the ball
+`closedBall (z + ε v) (c ε)` and the mean value inequality along the axis. -/
+theorem norm_fderiv_le_of_forall_closedBall_add_smul_subset {U s : Set E}
     {u : E → F} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {h₀ c ε B : ℝ} (hε : 0 < ε) (hεh : ε ≤ h₀) (hc : 0 < c) {z v : E} (hz : z ∈ s)
