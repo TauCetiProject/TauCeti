@@ -10,11 +10,17 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
-# Positive integrals and non-concentration on zero sets
+# Lower integrals of functions controlled on their support
+
+This file collects lower Lebesgue integral facts about a function in terms of its support.
+
+## Positive integrals and non-concentration on zero sets
 
 For a zero or probability measure, a function with positive lower Lebesgue integral
 has a zero set of mass strictly less than one. In particular, no zero of the function
 can carry all the mass. No measurability assumption on the function is needed.
+
+## Norm-bounded functions supported in a set
 
 A function supported in a measurable set `s` and bounded in norm by `ε` has lower integral of its
 norm at most `ε μ(s)` (`MeasureTheory.lintegral_enorm_le_ofReal_mul_measure`).
