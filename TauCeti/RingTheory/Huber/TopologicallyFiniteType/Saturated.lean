@@ -19,6 +19,7 @@ import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Submodule
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
@@ -66,16 +67,12 @@ Proposition 1.1(c), Lemma 1.2, and Corollary 1.4; Fujiwara–Kato, Ch. 0, §8.5,
   (`TauCeti.Huber.finitePresentation_of_torsionBy_eq_bot_of_surjective`), and for an arbitrary
   finite `A`-module `E` the torsion-free quotient `E ⧸ E[ϖ^∞]` is finitely presented
   (`TauCeti.Huber.finitePresentation_quotient_primaryComponent_of_surjective`).
-* **Adic completeness and closedness**: over any `I`-adic nonarchimedean ring `O` with `I`
-  finitely generated, every quotient `A` of `O⟨ξ₁, …, ξₙ⟩` and every finite `A`-module is
-  `I·A`-adically precomplete (`TauCeti.Huber.isPrecomplete_of_surjective`,
-  `TauCeti.Huber.isPrecomplete_module_of_surjective`), and finitely generated submodules of
-  `I·A`-adically separated `A`-modules are `I·A`-adically complete
-  (`TauCeti.Huber.isAdicComplete_submodule_of_fg_of_surjective`). Over a complete rank-one
-  valuation base `(O, ϖ)`, inside a `ϖ`-adically separated finite `A`-module `E`, every finitely
-  generated submodule `M` is closed in `E` and `E ⧸ M` is `ϖ`-adically complete
+* **Adic completeness and closedness**: inside a `ϖ`-adically separated finite `A`-module `E`,
+  every finitely generated submodule `M` is closed in `E` and `E ⧸ M` is `ϖ`-adically complete
   (`TauCeti.Huber.isClosed_adicModuleTopology_of_fg_of_surjective`,
-  `TauCeti.Huber.isAdicComplete_quotient_of_fg_of_surjective`). In particular, every algebra `A`
+  `TauCeti.Huber.isAdicComplete_quotient_of_fg_of_surjective`), building on the general
+  `I`-adic precompleteness of quotients of `O⟨ξ₁, …, ξₙ⟩` in
+  `TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic`. In particular, every algebra `A`
   topologically of finite presentation over `O` is automatically `ϖ`-adically separated and
   complete (`TauCeti.Huber.IsTopologicallyFinitePresentation.isAdicComplete`), as is every finitely
   presented `A`-module
@@ -250,14 +247,10 @@ private theorem exists_tate_bridge (n : ℕ) :
 
 end TateBridge
 
-/-- Extract a surjective `O`-algebra presentation `O⟨ξ₁, …, ξₙ⟩ →ₐ[O] A` from
-`IsStrictlyTopologicallyFiniteType (algebraMap O A)`. -/
-private theorem IsStrictlyTopologicallyFiniteType.exists_surjective_algHom {O A : Type*}
-    [CommRing O] [TopologicalSpace O] [NonarchimedeanRing O] [CommRing A] [TopologicalSpace A]
-    [Algebra O A] (h : IsStrictlyTopologicallyFiniteType (algebraMap O A)) :
-    ∃ (n : ℕ) (π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A), Function.Surjective π := by
-  obtain ⟨n, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
-  exact ⟨n, { π with commutes' := RingHom.congr_fun hcomm }, hπ.surjective⟩
+private theorem ideal_span_algebraMap_eq_map {O B : Type*} [CommRing O] [CommRing B]
+    [Algebra O B] (ϖ : O) :
+    Ideal.span {algebraMap O B ϖ} = (Ideal.span {ϖ}).map (algebraMap O B) := by
+  rw [Ideal.map_span, Set.image_singleton]
 
 /-! ### Generic-fibre noetherianity -/
 
@@ -273,6 +266,7 @@ include ϖ
 theorem isNoetherianRing_localization_away_restrictedMvPowerSeriesCompletion (n : ℕ) :
     IsNoetherianRing (Localization.Away
       (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ)) := by
+  -- Fix the universe parameter `v` of the discarded `ι`-indexed strict-generation field to `0`.
   obtain ⟨T, _, _, _, _, _, _, hloc, _⟩ := exists_tate_bridge.{_, 0} ϖ n
   have : IsLocalization.Away (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ) T := hloc
   exact isNoetherianRing_of_ringEquiv T
@@ -718,57 +712,16 @@ theorem IsTopologicallyFinitePresentation.finitePresentation_quotient_primaryCom
   obtain ⟨n, π, hπ, -⟩ := (isTopologicallyFinitePresentation_iff O A).mp h
   exact finitePresentation_quotient_primaryComponent_of_surjective ϖ hπ
 
-end CompleteRankOneBase
-
 /-! ### Adic completeness and closedness -/
 
-section Precompleteness
-
-variable {O : Type*} [CommRing O] [TopologicalSpace O] [NonarchimedeanRing O]
-
-/-- Every quotient `A` of `O⟨ξ₁, …, ξₙ⟩` over an `I`-adic ring `O` (with `I` finitely generated)
-is `I·A`-adically precomplete. -/
-theorem isPrecomplete_of_surjective {I : Ideal O} (hI : IsAdic I) (hfg : I.FG)
-    {A : Type*} [CommRing A] [Algebra O A] {n : ℕ}
+omit [IsDomain O] [ValuationRing O] in
+private theorem isPrecomplete_span_module_of_surjective {A E : Type*} [CommRing A] [Algebra O A]
+    [AddCommGroup E] [Module A E] [Module.Finite A E] {n : ℕ}
     {π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A} (hπ : Function.Surjective π) :
-    IsPrecomplete (I.map (algebraMap O A)) A := by
-  have hc := isAdicComplete_restrictedMvPowerSeriesCompletion n hI hfg
-  have : IsPrecomplete I (restrictedMvPowerSeriesCompletion n O) :=
-    IsPrecomplete.map_algebraMap_iff.mp hc.toIsPrecomplete
-  have : IsPrecomplete I A := IsPrecomplete.of_surjective I π.toLinearMap hπ
-  exact IsPrecomplete.map_algebraMap_iff.mpr inferInstance
-
-/-- Every finite module `E` over a quotient `A` of `O⟨ξ₁, …, ξₙ⟩` over an `I`-adic ring `O`
-(with `I` finitely generated) is `I·A`-adically precomplete. -/
-theorem isPrecomplete_module_of_surjective {I : Ideal O} (hI : IsAdic I) (hfg : I.FG)
-    {A E : Type*} [CommRing A] [Algebra O A] [AddCommGroup E] [Module A E] [Module.Finite A E]
-    {n : ℕ} {π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A} (hπ : Function.Surjective π) :
-    IsPrecomplete (I.map (algebraMap O A)) E := by
-  have := isPrecomplete_of_surjective hI hfg hπ
-  exact IsPrecomplete.of_finite (I.map (algebraMap O A)) E
-
-/-- In an `I·A`-adically separated module `E` over a quotient `A` of `O⟨ξ₁, …, ξₙ⟩` over an
-`I`-adic ring `O` (with `I` finitely generated) — for instance a finite free module over a
-separated `A`, via `IsHausdorff.of_free` — every finitely generated submodule `M` is
-`I·A`-adically separated and complete. -/
-theorem isAdicComplete_submodule_of_fg_of_surjective {I : Ideal O} (hI : IsAdic I) (hfg : I.FG)
-    {A E : Type*} [CommRing A] [Algebra O A] [AddCommGroup E] [Module A E]
-    [IsHausdorff (I.map (algebraMap O A)) E] {n : ℕ}
-    {π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A} (hπ : Function.Surjective π)
-    {M : Submodule A E} (hM : M.FG) :
-    IsAdicComplete (I.map (algebraMap O A)) M := by
-  have : Module.Finite A M := Module.Finite.iff_fg.mpr hM
-  exact { toIsHausdorff := inferInstance
-          toIsPrecomplete := isPrecomplete_module_of_surjective hI hfg hπ }
-
-end Precompleteness
-
-section Completeness
-
-variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O] [TopologicalSpace O]
-  [NonarchimedeanRing O] (ϖ : O) [IsCompleteRankOneBase O ϖ]
-
-include ϖ
+    IsPrecomplete (Ideal.span {algebraMap O A ϖ}) E := by
+  rw [ideal_span_algebraMap_eq_map]
+  exact isPrecomplete_module_of_surjective (IsCompleteRankOneBase.isAdic (O := O) (ϖ := ϖ))
+    (Submodule.fg_span_singleton ϖ) hπ
 
 /-- **Finitely generated submodules of separated finite modules are closed** (Bosch–Lütkebohmert I,
 Lemma 1.2(b)). In a `ϖ`-adically separated finite module `E` over a quotient `A` of
@@ -781,10 +734,8 @@ theorem isClosed_adicModuleTopology_of_fg_of_surjective {A E : Type*} [CommRing 
     {M : Submodule A E} (hM : M.FG) :
     @IsClosed E ((Ideal.span {algebraMap O A ϖ}).adicModuleTopology E) (M : Set E) := by
   have : Module.Finite A M := Module.Finite.iff_fg.mpr hM
-  have : IsPrecomplete (Ideal.span {algebraMap O A ϖ}) M := by
-    rw [← Set.image_singleton, ← Ideal.map_span]
-    exact isPrecomplete_module_of_surjective (IsCompleteRankOneBase.isAdic (O := O) (ϖ := ϖ))
-      (Submodule.fg_span_singleton ϖ) hπ
+  have : IsPrecomplete (Ideal.span {algebraMap O A ϖ}) M :=
+    isPrecomplete_span_module_of_surjective ϖ hπ
   exact M.isClosed_adicModuleTopology_of_exists_inf_pow_smul_le _
     (exists_inf_pow_smul_le_of_surjective ϖ hπ M)
 
@@ -798,10 +749,7 @@ theorem isAdicComplete_quotient_of_fg_of_surjective {A E : Type*} [CommRing A] [
     IsAdicComplete (Ideal.span {algebraMap O A ϖ}) (E ⧸ M) where
   toIsHausdorff := M.isHausdorff_quotient_of_isClosed_adicModuleTopology _
     (isClosed_adicModuleTopology_of_fg_of_surjective ϖ hπ hM)
-  toIsPrecomplete := by
-    rw [← Set.image_singleton, ← Ideal.map_span]
-    exact isPrecomplete_module_of_surjective (IsCompleteRankOneBase.isAdic (O := O) (ϖ := ϖ))
-      (Submodule.fg_span_singleton ϖ) hπ
+  toIsPrecomplete := isPrecomplete_span_module_of_surjective ϖ hπ
 
 /-- **Algebras topologically of finite presentation are `ϖ`-adically separated and complete**
 (Bosch–Lütkebohmert I, Proposition 1.1(c)). Because the presentation ideal in `O⟨ξ₁, …, ξₙ⟩` is
@@ -812,10 +760,9 @@ theorem IsTopologicallyFinitePresentation.isAdicComplete {A : Type*} [CommRing A
     IsAdicComplete (Ideal.span {algebraMap O A ϖ}) A := by
   obtain ⟨n, π, hπ, hker⟩ := (isTopologicallyFinitePresentation_iff O A).mp h
   set P := restrictedMvPowerSeriesCompletion n O
-  have hspan : (Ideal.span {ϖ}).map (algebraMap O P) = Ideal.span {algebraMap O P ϖ} := by
-    rw [Ideal.map_span, Set.image_singleton]
-  have : IsAdicComplete (Ideal.span {algebraMap O P ϖ}) P :=
-    hspan ▸ isAdicComplete_restrictedMvPowerSeriesCompletion n
+  have : IsAdicComplete (Ideal.span {algebraMap O P ϖ}) P := by
+    rw [ideal_span_algebraMap_eq_map]
+    exact isAdicComplete_restrictedMvPowerSeriesCompletion n
       (IsCompleteRankOneBase.isAdic (O := O) (ϖ := ϖ)) (Submodule.fg_span_singleton ϖ)
   have hQ : IsAdicComplete (Ideal.span {algebraMap O P ϖ}) (P ⧸ RingHom.ker π.toRingHom) :=
     isAdicComplete_quotient_of_fg_of_surjective ϖ (π := AlgHom.id O P) Function.surjective_id hker
@@ -860,7 +807,7 @@ theorem IsTopologicallyFinitePresentation.isAdicComplete_submodule_of_fg {A E : 
     IsAdicComplete (Ideal.span {algebraMap O A ϖ}) M := by
   have := h.isAdicComplete_of_finitePresentation (E := E) ϖ
   obtain ⟨n, π, hπ, -⟩ := (isTopologicallyFinitePresentation_iff O A).mp h
-  rw [← Set.image_singleton, ← Ideal.map_span] at this ⊢
+  rw [ideal_span_algebraMap_eq_map] at this ⊢
   exact isAdicComplete_submodule_of_fg_of_surjective
     (IsCompleteRankOneBase.isAdic (O := O) (ϖ := ϖ)) (Submodule.fg_span_singleton ϖ) hπ hM
 
@@ -874,7 +821,7 @@ theorem IsTopologicallyFinitePresentation.isClosed_adicModuleTopology_of_fg {A E
   obtain ⟨n, π, hπ, -⟩ := (isTopologicallyFinitePresentation_iff O A).mp h
   exact isClosed_adicModuleTopology_of_fg_of_surjective ϖ hπ hM
 
-end Completeness
+end CompleteRankOneBase
 
 end TauCeti.Huber
 
