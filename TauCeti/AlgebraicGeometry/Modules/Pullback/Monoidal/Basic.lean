@@ -82,6 +82,26 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_η :
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
 
+/-- The tensor comparison on quasicoherent inputs is the module-pullback comparison. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_μ
+    (E F : QuasicoherentSheaf Y) :
+    μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) E F =
+      μ (pullback f) E.obj F.obj := by
+  simp only [← Functor.Monoidal.inv_δ
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f),
+    pullbackToModules_δ]
+  exact Functor.Monoidal.inv_δ (pullback f) E.obj F.obj
+
+/-- The unit comparison is the inverse structure-sheaf identification. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_ε :
+    ε ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) =
+      (pullbackObjUnitIso f).inv := by
+  simp only [← Functor.Monoidal.inv_η
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f),
+    pullbackToModules_η, IsIso.Iso.inv_hom]
+
 namespace QuasicoherentSheaf
 
 /-- Pullback of quasicoherent sheaves is strong symmetric monoidal for every scheme morphism. -/

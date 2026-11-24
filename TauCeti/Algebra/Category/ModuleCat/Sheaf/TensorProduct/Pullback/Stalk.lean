@@ -234,6 +234,12 @@ instance _root_.SheafOfModules.pullbackBraided :
     Functor.Monoidal.ofOplaxMonoidal _
   exact (_root_.SheafOfModules.pullbackPushforwardAdjunction φ).leftAdjointBraided
 
+/-- The oplax structure of strong monoidal pullback is its canonical adjunction structure. -/
+theorem _root_.SheafOfModules.pullbackBraided_toOplaxMonoidal :
+    (_root_.SheafOfModules.pullbackBraided φ).toMonoidal.toOplaxMonoidal =
+      _root_.SheafOfModules.pullbackOplaxMonoidal φ :=
+  rfl
+
 /-- The unit comparison for strong monoidal pullback is the inverse of the canonical map
 from the pullback of the structure sheaf to the structure sheaf. -/
 @[simp]

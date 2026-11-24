@@ -122,11 +122,7 @@ private def pullbackMul (i j : ℕ) :
 private lemma pullbackOne_def :
     pullbackOne f A = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       (Scheme.Modules.pullback f).map A.obj.toMon.one := by
-  have hε : ε (pullbackQ f) = ε (Scheme.Modules.pullback f) := by
-    rw [Scheme.Modules.pullback_ε]
-    simp only [← Functor.Monoidal.inv_η (pullbackQ f), Scheme.Modules.pullbackToModules_η,
-      IsIso.Iso.inv_hom]
-  simp only [pullbackOne, hε, Scheme.Modules.pullback_ε]
+  simp only [pullbackOne, Scheme.Modules.pullbackToModules_ε]
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
   exact congrArg (_ ≫ ·) (eq_of_heq ((comp_eqToHom_heq _
     (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj A 0).symm).symm).trans
@@ -137,9 +133,9 @@ private lemma pullbackMul_def (i j : ℕ) :
     pullbackMul f A i j =
       inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
         (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j) := by
-  simp only [pullbackMul, ← Functor.Monoidal.inv_δ, Scheme.Modules.pullbackToModules_δ]
-  -- The transport lemma needs invertibility on the underlying degree objects; instance search
-  -- does not retain their scheme module carrier when elaborating its implicit arguments.
+  simp only [pullbackMul, Scheme.Modules.pullbackToModules_μ,
+    Scheme.Modules.pullback_μ f ((degree i).obj A).obj ((degree j).obj A).obj]
+  -- The transport lemma needs invertibility at the degree objects with their scheme-module carrier.
   have := Scheme.Modules.isIso_pullback_δ f ((degree i).obj A).obj ((degree j).obj A).obj
   exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) (D := Y.Modules)
     (Scheme.Modules.pullback f) (degree_obj_obj A i).symm
