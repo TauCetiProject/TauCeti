@@ -50,8 +50,12 @@ variable {R : Type*} [CommRing R]
 theorem map_aeval_coeff_freeMonic {S : Type*} [CommRing S] [Algebra R S] {n : ℕ} {p : S[X]}
     (hp : p.Monic) (hdeg : p.natDegree = n) :
     (freeMonic R n).map (MvPolynomial.aeval fun i : Fin n ↦ p.coeff i).toRingHom = p := by
-  simpa [mapEquivMonic, MonicDegreeEq.mk] using
-    congr(Subtype.val $((mapEquivMonic R S n).apply_symm_apply (MonicDegreeEq.mk p hp hdeg)))
+  ext i
+  rw [coeff_map, coeff_freeMonic]
+  split_ifs with hi hin
+  · simp
+  · rw [map_one, hin, ← hdeg, hp.coeff_natDegree]
+  · rw [map_zero, coeff_eq_zero_of_natDegree_lt (by lia)]
 
 /-- **Vieta's formulas for the free monic polynomial.** Substituting the elementary symmetric
 polynomial `eₙ₋ᵢ` of `n` variables for the coefficient `cᵢ` of `Xⁱ` in the free monic polynomial
