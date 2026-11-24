@@ -15,7 +15,7 @@ public import Mathlib.NumberTheory.Real.Irrational
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Module.ZLattice.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Holomorphic sections of flat unitary line bundles on complex tori

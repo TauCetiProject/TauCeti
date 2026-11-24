@@ -54,7 +54,7 @@ variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
   [AddCommGroup Y] [Module K Y] [FiniteDimensional K Y]
 
-omit [FiniteDimensional K X] in
+omit [FiniteDimensional K X] [FiniteDimensional K Y] in
 /-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
 anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
 the negative of a local value of `W_v`. -/
@@ -71,7 +71,7 @@ private theorem represents_atFinitePlace_neg_apply
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
       exact ⟨_, y, hx₀, hxy, hsq⟩
 
-omit [FiniteDimensional K X] in
+omit [FiniteDimensional K X] [FiniteDimensional K Y] in
 /-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
 anisotropic, the value `U_w (1 ⊗ x)` lies in the square class of a local value of `U_w` that is
 the negative of a local value of `W_w`. -/
@@ -90,6 +90,7 @@ private theorem represents_atRealPlace_neg_apply
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
       exact ⟨_, y, hx₀, hxy, hsq⟩
 
+omit [FiniteDimensional K Y] in
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places. If at every finite or real place where `W` is anisotropic some nonzero local
 value of `U` is the negative of a local value of `W`, then there is a global vector `x` with
@@ -155,6 +156,7 @@ theorem exists_apply_ne_zero_locallyRepresentsScalar_neg
     exact ⟨x, hx, hgood x (fun v => absurd v.property (by simp [hST.1]))
       (fun w => absurd w.property (by simp [hST.2]))⟩
 
+omit [FiniteDimensional K Y] in
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places, and suppose that at every finite or real place where `W` is anisotropic some
 nonzero local value of `U` is the negative of a local value of `W`. If `W` represents over `K`
