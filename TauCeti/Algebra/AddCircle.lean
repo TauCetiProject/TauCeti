@@ -707,6 +707,14 @@ theorem toRatAddCircle_injective [NeZero n] : Function.Injective (toRatAddCircle
   (injective_iff_map_eq_zero (toRatAddCircle n)).mpr fun _ h ↦
     (toRatAddCircle_eq_zero n).mp h
 
+/-- The rational-circle character is compatible with the identification `ℤ/m ≃ ℤ/n` along an
+equality `m = n`. -/
+@[simp]
+theorem toRatAddCircle_ringEquivCongr {m : ℕ} (h : m = n) (x : ZMod m) :
+    toRatAddCircle n (ringEquivCongr h x) = toRatAddCircle m x := by
+  subst h
+  rw [ringEquivCongr_refl_apply]
+
 /-- For a nonzero modulus, the image of the rational-circle character of `ℤ/n` is exactly the
 `n`-torsion of `ℚ/ℤ`. -/
 theorem toRatAddCircle_range [NeZero n] :
