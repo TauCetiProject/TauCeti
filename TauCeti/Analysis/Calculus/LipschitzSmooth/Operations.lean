@@ -13,13 +13,17 @@ import Mathlib.Analysis.Calculus.FDeriv.Linear
 # Operations preserving Lipschitz smoothness
 
 `LipschitzSmoothWith 𝕜 K f` says that `f` is differentiable with first-order Taylor remainder at
-most `K / 2 * dist x y ^ 2`. This file records how the constant behaves under the basic
-operations: it may be enlarged, constants and continuous linear maps are `0`-smooth, adding a
-constant does not change it, a sum is smooth with the sum of the constants, and a scalar multiple
-`c • f` is smooth with the constant multiplied by `‖c‖₊`.
+most `K / 2 * dist x y ^ 2`. The remainder bound with respect to any field of continuous linear
+maps already implies differentiability, which gives a constructor with no derivative hypothesis.
+
+This file also records how the constant behaves under the basic operations: it may be enlarged,
+constants and continuous linear maps are `0`-smooth, adding a constant does not change it, a sum
+is smooth with the sum of the constants, and a scalar multiple `c • f` is smooth with the constant
+multiplied by `‖c‖₊`.
 
 ## Main results
 
+* `LipschitzSmoothWith.of_norm_sub_sub_le`: smoothness from the remainder bound alone.
 * `LipschitzSmoothWith.weaken`: monotonicity in the constant.
 * `LipschitzSmoothWith.const`, `ContinuousLinearMap.lipschitzSmoothWith`: constants and continuous
   linear maps are `0`-smooth.
@@ -35,6 +39,17 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {K K' : ℝ≥0} {f g : E → F}
 
 namespace LipschitzSmoothWith
+
+/-- A function whose first-order remainder with respect to a field `f'` of continuous linear maps
+is at most `K / 2 * dist x y ^ 2` is `K`-smooth. The bound alone makes `f' x` the derivative of
+`f` at `x`, so no differentiability has to be supplied. -/
+theorem of_norm_sub_sub_le {f' : E → E →L[𝕜] F}
+    (hbound : ∀ x y, ‖f y - f x - f' x (y - x)‖ ≤ K / 2 * dist x y ^ 2) :
+    LipschitzSmoothWith 𝕜 K f := by
+  refine .of_hasFDerivAt (fun x ↦ .of_isLittleO ?_) hbound
+  refine (Asymptotics.IsBigO.of_bound (K / 2) (.of_forall fun y ↦ ?_)).trans_isLittleO
+    (Asymptotics.isLittleO_pow_sub_sub x one_lt_two)
+  simpa [dist_eq_norm'] using hbound x y
 
 /-- A `K`-smooth function is `K'`-smooth for every `K' ≥ K`. -/
 theorem weaken (hf : LipschitzSmoothWith 𝕜 K f) (hK : K ≤ K') : LipschitzSmoothWith 𝕜 K' f :=

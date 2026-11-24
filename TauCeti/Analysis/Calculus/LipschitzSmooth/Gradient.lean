@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.LipschitzSmooth.Operations
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Smooth functions on a Hilbert space: gradient inequalities
@@ -103,17 +101,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 symmetry is needed: the first-order Taylor remainder at `x` is `⟪A (y - x), y - x⟫ / 2`. -/
 theorem ContinuousLinearMap.lipschitzSmoothWith_inner_div_two (A : E →L[ℝ] E) :
     LipschitzSmoothWith ℝ ‖A‖₊ fun x ↦ ⟪A x, x⟫ / 2 := by
-  have hd (x : E) : HasFDerivAt (fun x ↦ ⟪A x, x⟫ / 2)
-      ((2⁻¹ : ℝ) • fderivInnerCLM ℝ (A x, x) ∘L A.prod (ContinuousLinearMap.id ℝ E)) x := by
-    simpa [div_eq_mul_inv] using
-      ((A.hasFDerivAt (x := x)).inner ℝ (hasFDerivAt_id x)).mul_const (2⁻¹ : ℝ)
-  refine .of_hasFDerivAt hd fun x y ↦ ?_
+  refine .of_norm_sub_sub_le
+    (f' := fun x ↦ (2⁻¹ : ℝ) • (innerSL ℝ (A x) + innerSL ℝ x ∘L A)) fun x y ↦ ?_
   have key : ⟪A y, y⟫ / 2 - ⟪A x, x⟫ / 2 -
-      ((2⁻¹ : ℝ) • fderivInnerCLM ℝ (A x, x) ∘L A.prod (ContinuousLinearMap.id ℝ E)) (y - x) =
+      ((2⁻¹ : ℝ) • (innerSL ℝ (A x) + innerSL ℝ x ∘L A)) (y - x) =
       ⟪A (y - x), y - x⟫ / 2 := by
-    simp only [smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-      ContinuousLinearMap.id_apply, fderivInnerCLM_apply, map_sub, inner_sub_left,
-      inner_sub_right, smul_eq_mul]
+    simp only [smul_apply, add_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+      map_sub, inner_sub_left, inner_sub_right, smul_eq_mul, real_inner_comm x (A y),
+      real_inner_comm x (A x)]
     ring
   rw [key]
   simp only [norm_div, Real.norm_eq_abs, Nat.abs_ofNat, coe_nnNorm, dist_eq_norm']
