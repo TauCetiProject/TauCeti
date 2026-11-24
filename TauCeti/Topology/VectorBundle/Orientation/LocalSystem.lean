@@ -234,16 +234,6 @@ theorem liftFiberEquiv_deck {x : B} (e : VectorBundleOrientationCover F E ι) (h
     ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h), signFiberEquiv_fiberMap,
     signFiberEquiv_apply]
 
-/-- Evaluation at a point `e` of the orientation cover commutes with the identification of the
-fibres of the orientation local system over equal points. -/
-theorem liftFiberEquiv_eqToHom_apply {x y : B} (h : x = y) (e : VectorBundleOrientationCover F E ι)
-    (hx : e.proj = x) (hy : e.proj = y)
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
-    liftFiberEquiv hι e hy ((eqToHom (congrArg (fun b ↦ (signLocalSystem F E R hι).obj
-      (FundamentalGroupoid.mk b)) h) : _ ⟶ _).hom f) = liftFiberEquiv hι e hx f := by
-  subst h
-  rfl
-
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
 def signLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :
