@@ -39,7 +39,7 @@ This is the descent behind the image algebra of an absolutely irreducible repres
 
 ## Main results
 
-* `Subalgebra.baseChangeAlgEquiv`: a spanning subalgebra with traces in `F` is an
+* `Subalgebra.tensorMulEndAlgEquiv`: a spanning subalgebra with traces in `F` is an
   `F`-form of `End_K(V)`.
 * `Subalgebra.finrank_of_trace_mem`: it has dimension `(dim_K V)²` over `F`.
 * `Subalgebra.isCentral_of_trace_mem`, `Subalgebra.isSimpleRing_of_trace_mem`:
@@ -103,7 +103,7 @@ private theorem mem_span_of_trace_mem {ι : Type*} [Finite ι] (B : Subalgebra F
 
 omit [FiniteDimensional K V] in
 /-- The multiplication map `K ⊗_F B → End_K(V)` of an `F`-subalgebra `B`. -/
-noncomputable def baseChangeAlgHom (B : Subalgebra F (End K V)) :
+noncomputable def tensorMulEndAlgHom (B : Subalgebra F (End K V)) :
     K ⊗[F] B →ₐ[K] End K V :=
   Algebra.TensorProduct.lift (Algebra.ofId K (End K V)) B.val fun a _ => by
     rw [Algebra.ofId_apply]
@@ -111,9 +111,9 @@ noncomputable def baseChangeAlgHom (B : Subalgebra F (End K V)) :
 
 omit [FiniteDimensional K V] in
 @[simp]
-theorem baseChangeAlgHom_tmul (B : Subalgebra F (End K V)) (a : K) (x : B) :
-    baseChangeAlgHom B (a ⊗ₜ x) = a • (x : End K V) := by
-  simp [baseChangeAlgHom, Algebra.ofId_apply, Algebra.smul_def]
+theorem tensorMulEndAlgHom_tmul (B : Subalgebra F (End K V)) (a : K) (x : B) :
+    tensorMulEndAlgHom B (a ⊗ₜ x) = a • (x : End K V) := by
+  simp [tensorMulEndAlgHom, Algebra.ofId_apply, Algebra.smul_def]
 
 variable (B : Subalgebra F (End K V)) (hspan : Submodule.span K (B : Set (End K V)) = ⊤)
   (htr : ∀ x ∈ B, LinearMap.trace K V x ∈ F)
@@ -142,10 +142,10 @@ theorem finiteDimensional_of_trace_mem : FiniteDimensional F B := by
 include hspan htr in
 /-- **A spanning subalgebra with traces in `F` is an `F`-form of `End_K(V)`**: the multiplication
 map `K ⊗_F B → End_K(V)` is bijective. -/
-theorem bijective_baseChangeAlgHom :
-    Function.Bijective (baseChangeAlgHom B) := by
+theorem bijective_tensorMulEndAlgHom :
+    Function.Bijective (tensorMulEndAlgHom B) := by
   have := finiteDimensional_of_trace_mem B hspan htr
-  have hsurj : Function.Surjective (baseChangeAlgHom B) := by
+  have hsurj : Function.Surjective (tensorMulEndAlgHom B) := by
     rw [← AlgHom.range_eq_top, eq_top_iff]
     intro y _
     have hy : y ∈ Submodule.span K (B : Set (End K V)) := hspan ▸ Submodule.mem_top
@@ -161,44 +161,44 @@ theorem bijective_baseChangeAlgHom :
   have hge : finrank K (End K V) ≤ finrank F B := by
     rw [← Module.finrank_baseChange (R := K) (S := F) (M' := B)]
     exact LinearMap.finrank_le_finrank_of_surjective
-      (f := (baseChangeAlgHom B).toLinearMap) hsurj
+      (f := (tensorMulEndAlgHom B).toLinearMap) hsurj
   have heq : finrank K (K ⊗[F] B) = finrank K (End K V) := by
     rw [Module.finrank_baseChange]; omega
   refine ⟨?_, hsurj⟩
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank heq
-    (f := (baseChangeAlgHom B).toLinearMap)).mpr hsurj
+    (f := (tensorMulEndAlgHom B).toLinearMap)).mpr hsurj
 
 /-- **A spanning subalgebra with traces in `F` is an `F`-form of `End_K(V)`**: multiplication
 `K ⊗_F B ≃ End_K(V)`. -/
-noncomputable def baseChangeAlgEquiv : K ⊗[F] B ≃ₐ[K] End K V :=
-  AlgEquiv.ofBijective (baseChangeAlgHom B)
-    (bijective_baseChangeAlgHom B hspan htr)
+noncomputable def tensorMulEndAlgEquiv : K ⊗[F] B ≃ₐ[K] End K V :=
+  AlgEquiv.ofBijective (tensorMulEndAlgHom B)
+    (bijective_tensorMulEndAlgHom B hspan htr)
 
 @[simp]
-theorem baseChangeAlgEquiv_tmul (a : K) (x : B) :
-    baseChangeAlgEquiv B hspan htr (a ⊗ₜ x) = a • (x : End K V) :=
-  baseChangeAlgHom_tmul B a x
+theorem tensorMulEndAlgEquiv_tmul (a : K) (x : B) :
+    tensorMulEndAlgEquiv B hspan htr (a ⊗ₜ x) = a • (x : End K V) :=
+  tensorMulEndAlgHom_tmul B a x
 
 include hspan htr in
 /-- A spanning subalgebra with traces in `F` has dimension `(dim_K V)²` over `F`. -/
 theorem finrank_of_trace_mem : finrank F B = finrank K V ^ 2 := by
   have := finiteDimensional_of_trace_mem B hspan htr
   rw [← Module.finrank_baseChange (R := K),
-    (baseChangeAlgEquiv B hspan htr).toLinearEquiv.finrank_eq,
+    (tensorMulEndAlgEquiv B hspan htr).toLinearEquiv.finrank_eq,
     Module.finrank_linearMap, sq]
 
 include hspan htr in
 /-- A spanning subalgebra with traces in `F` is central over `F`. -/
 theorem isCentral_of_trace_mem : Algebra.IsCentral F B :=
   have : Algebra.IsCentral K (K ⊗[F] B) :=
-    Algebra.IsCentral.of_algEquiv' K (baseChangeAlgEquiv B hspan htr).symm
+    Algebra.IsCentral.of_algEquiv' K (tensorMulEndAlgEquiv B hspan htr).symm
   Algebra.IsCentral.of_baseChange (L := K)
 
 include hspan htr in
 /-- A spanning subalgebra with traces in `F` is a simple ring when `V ≠ 0`. -/
 theorem isSimpleRing_of_trace_mem [Nontrivial V] : IsSimpleRing B :=
   have : IsSimpleRing (K ⊗[F] B) :=
-    IsSimpleRing.of_ringEquiv (baseChangeAlgEquiv B hspan htr).symm.toRingEquiv
+    IsSimpleRing.of_ringEquiv (tensorMulEndAlgEquiv B hspan htr).symm.toRingEquiv
       inferInstance
   IsSimpleRing.of_baseChange (K := F) (L := K) (A := B)
 

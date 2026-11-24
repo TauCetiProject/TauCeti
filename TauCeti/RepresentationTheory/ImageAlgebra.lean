@@ -27,7 +27,7 @@ an isomorphism. Consequently `B(ρ)` is central simple over `k(ρ)` of dimension
 `n = dim_K V`, and it has a Schur index `s(ρ)` dividing `n` and a Brauer class `β(ρ)`, with
 `s(ρ) = 1` exactly when `β(ρ) = 1`, and both equal to one when `k(ρ)` is finite.
 
-The descent is `Subalgebra.baseChangeAlgEquiv` from
+The descent is `Subalgebra.tensorMulEndAlgEquiv` from
 `TauCeti/LinearAlgebra/Trace/Descent.lean`: a subalgebra of `End_K(V)` over a subfield `F ⊆ K`
 that spans `End_K(V)` and has all its traces in `F` is an `F`-form of `End_K(V)`. The image algebra
 qualifies because its traces are `k(ρ)`-linear combinations of character values.
@@ -139,13 +139,13 @@ variable {k K G V : Type*} [Field k] [Field K] [Algebra k K] [Monoid G]
 multiplication `K ⊗_{k(ρ)} B(ρ) → End_K(V)` is an isomorphism. -/
 noncomputable def imageAlgebraBaseChangeAlgEquiv :
     K ⊗[ρ.characterField k] ρ.imageAlgebra k ≃ₐ[K] Module.End K V :=
-  (ρ.imageAlgebra k).baseChangeAlgEquiv (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).tensorMulEndAlgEquiv (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 @[simp]
 theorem imageAlgebraBaseChangeAlgEquiv_tmul (a : K) (x : ρ.imageAlgebra k) :
     imageAlgebraBaseChangeAlgEquiv hρ (a ⊗ₜ x) = a • (x : Module.End K V) :=
-  Subalgebra.baseChangeAlgEquiv_tmul _ _ _ a x
+  Subalgebra.tensorMulEndAlgEquiv_tmul _ _ _ a x
 
 include hρ in
 /-- The image algebra is finite-dimensional over the character field. -/
