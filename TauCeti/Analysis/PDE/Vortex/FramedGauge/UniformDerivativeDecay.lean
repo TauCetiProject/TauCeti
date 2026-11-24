@@ -161,16 +161,9 @@ theorem
         fderiv ℝ (fun v ↦ Real.log (4 * (x v 2 ^ 2 + x v 3 ^ 2))) w 1 / 2,
         (Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) / 2) - 1) / 2, 0] := by
     filter_upwards [hpos, hphase.eventually_nhds] with w hw hph
-    rw [gaugeTransform_inv_apply_eq (hp.differentiable (by simp) w)
+    exact gaugeTransform_inv_apply_sub_vacuumField_eq (hp.differentiable (by simp) w)
       (hq.differentiable (by simp) w) (fun h0 ↦ by rw [h0, mul_zero] at hw; exact hw.false)
-      (by simp [hsol w]) (by simp [hsol w]) hph EventuallyEq.rfl, vacuumField_apply]
-    ext i
-    fin_cases i
-    · simp
-    · simp
-    · simp only [Fin.reduceFinMk, PiLp.sub_apply, Matrix.cons_val]
-      ring
-    · simp
+      (by simp [hsol w]) (by simp [hsol w]) hph EventuallyEq.rfl
   rw [(heq.iteratedFDeriv ℝ n).self_of_nhds]
   have hR₀ : 0 ≤ R := (Real.sqrt_nonneg _).trans hLR
   exact hend _ z _ (hs.contDiffAt.log (by linarith))

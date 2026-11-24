@@ -40,6 +40,8 @@ derivatives in the divisor parameters is not treated here.
 * `TauCeti.Vortex.gaugeTransform_inv_apply_eq`: where the section is `|α|` times a gauge `u`
   and solves the holomorphicity rows, its gauge transformation by `u⁻¹` is
   `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, exp (ℓ / 2) / 2, 0)` for `ℓ = log |α|²`.
+* `TauCeti.Vortex.gaugeTransform_inv_apply_sub_vacuumField_eq`: the same gauge transformation
+  minus the vacuum is the end field `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`.
 * `TauCeti.Vortex.exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField`: near
   infinity the end trivialization minus the vacuum agrees with a smooth field whose derivatives
   are all `O(exp (-c |z|))` for every rate `c < 1 / 2`.
@@ -124,6 +126,26 @@ theorem gaugeTransform_inv_apply_eq {u : ℂ → Circle} {w : ℂ}
   simp only [zero_apply, mul_zero, zero_mul, sub_zero, zero_div, zero_add, neg_zero] at h1 hI
   ext i
   fin_cases i <;> simp [hsec.self_of_nhds.1, hsec.self_of_nhds.2] <;> linarith
+
+/-- **The end trivialization minus the vacuum in terms of `ℓ = log |α|²`.** Under the hypotheses
+of `TauCeti.Vortex.gaugeTransform_inv_apply_eq`, the gauge transformation of `x` by `u⁻¹` minus
+the vacuum `(0, 1)` is the end field `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`
+at `w`. -/
+theorem gaugeTransform_inv_apply_sub_vacuumField_eq {u : ℂ → Circle} {w : ℂ}
+    (hp : DifferentiableAt ℝ (fun v ↦ x v 2) w) (hq : DifferentiableAt ℝ (fun v ↦ x v 3) w)
+    (hα : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) (h₁ : equation x w 1 = 0) (h₂ : equation x w 2 = 0)
+    {ℓ : ℂ → ℝ} (hphase : ∀ᶠ v in 𝓝 w, sectionValue x v = ‖sectionValue x v‖ * u v)
+    (hℓ : ℓ =ᶠ[𝓝 w] fun v ↦ Real.log (4 * (x v 2 ^ 2 + x v 3 ^ 2))) :
+    gaugeTransform u⁻¹ x w - vacuumField w =
+      !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2, (Real.exp (ℓ w / 2) - 1) / 2, 0] := by
+  rw [gaugeTransform_inv_apply_eq hp hq hα h₁ h₂ hphase hℓ, vacuumField_apply]
+  ext i
+  fin_cases i
+  · simp
+  · simp
+  · simp only [Fin.reduceFinMk, PiLp.sub_apply, Matrix.cons_val]
+    ring
+  · simp
 
 /-- **The end field is linear in `Dℓ` and `exp (ℓ / 2) - 1`.** There are continuous linear maps
 `L₁` and `L₂`, independent of `ℓ`, such that for every function `ℓ` on the plane the end field
@@ -215,18 +237,10 @@ theorem exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField {
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
   filter_upwards [hopen.mem_nhds hz] with w (hw : R < ‖w‖)
   have hRw := hR hw.le
-  rw [gaugeTransform_inv_apply_eq (hp.differentiable (by simp) w)
+  exact gaugeTransform_inv_apply_sub_vacuumField_eq (hp.differentiable (by simp) w)
     (hq.differentiable (by simp) w) (fun h ↦ by linarith [hRw.2.2]) (by simp [hsol w])
     (by simp [hsol w])
-    (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1,
-    vacuumField_apply]
-  ext i
-  fin_cases i
-  · simp
-  · simp
-  · simp only [Fin.reduceFinMk, PiLp.sub_apply, Matrix.cons_val]
-    ring
-  · simp
+    (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1
 
 /-- **Exponential decay of all derivatives in an end trivialization.** Let `x` be a plane vortex
 with smooth section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a
