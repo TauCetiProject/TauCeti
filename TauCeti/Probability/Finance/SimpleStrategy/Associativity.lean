@@ -20,10 +20,12 @@ When both holdings have heights chosen at the left endpoints of their intervals,
 product is again such a simple holding on one common grid, whose gains are the iterated
 gains (`exists_simpleHolding_simpleGains_eq_mul`).
 
-The identities are pathwise and need no regularity, measurability or integrability
+The identities `simpleHolding_mul_eq_sum`, `simpleGains_simpleGains_eq_sum` and
+`simpleGains_simpleGains` are pathwise and need no regularity, measurability or integrability
 of the price or holdings. Nondecreasing grids may have repeated dates, and either
-grid may be empty. These are the elementary substitution identities used when
-extending integration by approximation and localization.
+grid may be empty. The common-grid product `exists_simpleHolding_simpleGains_eq_mul`
+assumes heights measurable at the left endpoints of their intervals. These are the elementary
+substitution identities used when extending integration by approximation and localization.
 
 ## References
 
@@ -113,7 +115,7 @@ theorem simpleGains_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω :
 /-- The product of two simple holdings with heights chosen at the left endpoints of their
 intervals is one simple holding on a strictly increasing common grid starting at the bottom
 time, again with heights chosen at the left endpoints. Against every price path, its gains are
-the gains of the first holding against the gains of the second. -/
+the gains of the holding `(ρ, b)` against the gains of the holding `(τ, a)`. -/
 theorem exists_simpleHolding_simpleGains_eq_mul [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) (hτ : MonotoneOn τ (Set.Iic n))
     (hρ : MonotoneOn ρ (Set.Iic m))
