@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.C2AlphaBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
+import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -103,8 +104,8 @@ region above the graph of a `C^{2,α}` function, there are a radius `ρ > 0` and
 that the Hölder constant of `D²u` on `closedBall x ρ ∩ closure Ω` is at most `C ([L u]_{α; Ω} + N)`
 for all coefficients and functions as in the global estimate. -/
 private theorem exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) {x : E}
-    (hx : x ∈ frontier Ω) {r : ℝ} (hr : 0 < r) {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ} {G : ℝ≥0}
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} {x : E} (hx : x ∈ frontier Ω) {r : ℝ}
+    (hr : 0 < r) {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ} {G : ℝ≥0}
     (hγ : ContDiff ℝ 2 γ) (hγν : ∀ y (t : ℝ), γ (y + t • ν) = γ y)
     (hG1 : ∀ y, ‖fderiv ℝ γ y‖ ≤ G) (hG2 : ∀ y, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G)
     (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ)))
@@ -117,7 +118,7 @@ private theorem exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier
   have hle : closure Ω ∩ ball x r ⊆ {y | γ y ≤ ⟪y, ν⟫_ℝ} := fun y hy => (hcl.subset hy).1
   have hge : {y | γ y ≤ ⟪y, ν⟫_ℝ} ∩ ball x r ⊆ closure Ω := fun y hy => (hcl.superset hy).1
   have hfr : ∀ y ∈ ball x r, ⟪y, ν⟫_ℝ = γ y → y ∈ frontier Ω := fun y hy hyν =>
-    ((frontier_inter_eq_setOf_eq_real_inner_inter hΩo isOpen_ball hν hγ.continuous hγν
+    ((frontier_inter_eq_setOf_eq_real_inner_inter isOpen_ball hν hγ.continuous hγν
       hΩx).superset ⟨hyν.symm, hy⟩).1
   -- The estimate near the curved boundary, on a ball `B(x, R)` with `R ≤ r / 2`.
   obtain ⟨R₀, hR₀, hest⟩ :=
@@ -196,7 +197,7 @@ private theorem exists_schauderBoundOn_closedBall_inter_closure
       rw [hΩo.frontier_eq]
       exact ⟨hx, hxΩ⟩
     obtain ⟨r, hr, ν, hν, γ, G, hγ, hγν, hG1, hG2, hG3, hΩx⟩ := hbdry x hxf
-    exact exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier hα hα1 hΩo hxf hr hν hγ
+    exact exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier hα hα1 hxf hr hν hγ
       hγν hG1 hG2 hG3 hΩx Lam L M hlam
 
 /-- **The global Schauder estimate on a domain with `C^{2,α}` boundary.** Let `0 < α < 1` and let
