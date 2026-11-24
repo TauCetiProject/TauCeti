@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
+public import TauCeti.Analysis.Convex.Sequence.Asymptotic
+public import TauCeti.Analysis.Convex.Sequence.Face
 public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Radius
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 import TauCeti.NumberTheory.NewtonPolygon.Radius
-import TauCeti.RingTheory.PowerSeries.Perturbation.Basic
 
 /-!
-# Boundary zeros along an infinite horizontal Newton ray over `ℚ_[p]` and `ℂ_[p]`
+# Boundary zeros are not determined by the Newton polygon
 
 Inside the disc of convergence (`‖b ^ σ‖ₑ < f.radius`), the Newton polygon of a nonzero series has
 a finite face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_iff_lt_radius`), and its
@@ -23,445 +24,455 @@ endpoints determine the exact closed-disc, open-disc, and sphere zero counts
 `PowerSeries.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius`,
 `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_lt_radius`).
 
-At the boundary of convergence (`‖b ^ σ‖ₑ = f.radius`), a restricted series need not have a finite
-face of slope `σ`, and the Newton polygon alone no longer determines the boundary zero count. This
-file constructs two restricted series over `ℚ_[p]` at the unit boundary `r = 1` (`σ = 0`):
+At a radius on the boundary of convergence (`‖b ^ σ‖ₑ = f.radius`), the Newton polygon of a power
+series can end in an infinite ray, while the zeros of the series on that boundary are counted by
+its first and last active coefficients. This file compares two power series over `ℚ_[p]`, with
+respect to the real `p`-adic additive valuation `TauCeti.padicRealValuation p` normalised by
+`v(p) = 1`:
 
-* `unitRaySeries p = 1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ X ^ n`, and
-* `perturbedUnitRaySeries p = 1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ X ^ n`.
+```text
+ceilSqrtSeries p     = 1 +     ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ,
+boundaryZeroSeries p = 1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ.
+```
 
-Both series are restricted at `1` with exact radius of convergence `1`, and both have the same
-Newton polygon with respect to `TauCeti.padicRealValuation p`: the identically zero sequence `0`,
-an infinite horizontal ray of slope `0` with no finite face of slope `0` and
-`newtonSlopeMultiplicity = 0`.
+Both have exact radius of convergence `1`, and both have coefficient heights `≥ 0`, equal to `0` at
+`n = 0` and of sublinear growth, so both have the same Newton polygon: the identically zero height
+sequence, an infinite horizontal ray from `(0, 0)` with every unit edge of slope `0`. In particular
+neither polygon has a finite face of slope `0` and both have `newtonSlopeMultiplicity = 0` at `0`.
 
-However, their active indices at `r = 1` differ:
+Both series are nevertheless restricted at the unit radius, where their coefficient norms tend to
+`0`, and their Gauss norm there is `1`. At this radius the first and last active indices are
+`l = u = 0` for `ceilSqrtSeries p`, but `l = 0` and `u = 1` for `boundaryZeroSeries p`.
+Consequently, in every complete normed field extension `L` of `ℚ_[p]`, for instance `ℚ_[p]` itself
+or `ℂ_[p]`:
 
-* `‖unitRaySeries p - 1‖_1 = p⁻¹ < 1`, so `unitRaySeries p` has lowest dominant and distinguished
-  degrees `(0, 0)` at `1`, and hence `0` zeros in `‖x‖ ≤ 1` in `ℂ_[p]`;
-* `‖perturbedUnitRaySeries p - (1 + X)‖_1 = p⁻² < 1`, so `perturbedUnitRaySeries p` has lowest
-  dominant degree `0` and distinguished degree `1` at `1`. By the nonarchimedean Rouché theorem it
-  has `0` zeros in `‖x‖ < 1` and `1` zero on the unit sphere `‖x‖ = 1` of `ℂ_[p]`; moreover, its
-  normalised disc polynomial at `1` over `ℚ_[p]` has degree `1` and therefore splits over `ℚ_[p]`,
-  so it has a unique zero in `‖x‖ ≤ 1` of `ℚ_[p]` and that zero lies on `‖x‖ = 1`.
+* `ceilSqrtSeries p` has no zeros in the closed unit disc of `L`;
+* `boundaryZeroSeries p` has a unique zero in that closed unit disc (counted with or without
+  multiplicity), and it lies on the unit sphere `‖x‖ = 1`.
+
+So two series with the same Newton polygon can have different numbers of zeros on the boundary
+of their disc of convergence. Zero counts at a boundary radius must be read from the active
+indices, not from the shape of the polygon.
+
+## Main results
+
+* `TauCeti.NewtonPolygonBoundaryZeroExample.newtonPolygon_ceilSqrtSeries` and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.newtonPolygon_boundaryZeroSeries`: both Newton
+  polygons are the horizontal ray `0`.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.radius_ceilSqrtSeries` and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.radius_boundaryZeroSeries`: both series have exact
+  radius of convergence `1`.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.not_isFiniteFace_newtonPolygon_ceilSqrtSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.not_isFiniteFace_newtonPolygon_boundaryZeroSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.newtonSlopeMultiplicity_ceilSqrtSeries_zero`, and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.newtonSlopeMultiplicity_boundaryZeroSeries_zero`:
+  neither polygon has a finite face of slope `0`, and both have `newtonSlopeMultiplicity = 0` at
+  slope `0`.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.isDistinguished_ceilSqrtSeries` and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.isLowestDominant_ceilSqrtSeries`: `l = u = 0` at the
+  unit radius.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.isDistinguished_boundaryZeroSeries` and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.isLowestDominant_boundaryZeroSeries`: `u = 1` and
+  `l = 0` at the unit radius.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.zeroMultiset_ceilSqrtSeries` and
+  `setOf_norm_le_one_and_evalAt_ceilSqrtSeries_eq_zero_eq_empty`: no zeros in the closed unit disc.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.card_filter_zeroMultiset_norm_eq_boundaryZeroSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.exists_zeroMultiset_boundaryZeroSeries_eq`, and
+  `existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero`: a unique zero in the closed
+  unit disc, lying on the unit sphere.
 
 ## References
 
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
-  Publications Mathématiques de l'IHÉS 14 (1962), §1.
+  Publications Mathématiques de l'IHÉS 14 (1962), §1, on the difference between extremal
+  coefficient indices and vertices of the polygon at the boundary of convergence.
+* N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
+  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §4.
 * S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, Grundlehren 261, Springer,
   1984, §5.2.2.
 -/
 
 public section
 
-open Filter PowerSeries TauCeti
-open scoped NNReal ENNReal
+open Filter Topology LinearGrowth _root_.PowerSeries TauCeti TauCeti.PowerSeries
 
-namespace TauCeti.NewtonPolygonBoundaryZerosExample
+namespace TauCeti.NewtonPolygonBoundaryZeroExample
 
-variable {p : ℕ} [Fact p.Prime]
+variable (p : ℕ) [Fact p.Prime]
 
-/-! ### Definitions and coefficients -/
+/-! ### The series without boundary zeros -/
 
-/-- The restricted `p`-adic power series `1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ X ^ n` over `ℚ_[p]`. -/
-noncomputable def unitRaySeries (p : ℕ) [Fact p.Prime] : ℚ_[p]⟦X⟧ :=
-  PowerSeries.mk fun n => if n = 0 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊
+/-- The power series `1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ` over `ℚ_[p]`, whose `n`-th coefficient is
+`p ^ ⌈√n⌉`. -/
+noncomputable def ceilSqrtSeries : ℚ_[p]⟦X⟧ :=
+  PowerSeries.mk fun n ↦ (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊
 
-/-- The perturbed restricted `p`-adic power series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ X ^ n` over
-`ℚ_[p]`, obtained by replacing the linear coefficient `p` of `unitRaySeries p` with `1`. -/
-noncomputable def perturbedUnitRaySeries (p : ℕ) [Fact p.Prime] : ℚ_[p]⟦X⟧ :=
-  PowerSeries.mk fun n => if n = 0 then 1 else if n = 1 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊
-
-/-- Coefficient formula for `unitRaySeries p`. -/
+/-- The `n`-th coefficient of `ceilSqrtSeries p` is `p ^ ⌈√n⌉`. -/
 @[simp]
-theorem coeff_unitRaySeries (n : ℕ) :
-    coeff n (unitRaySeries p) = if n = 0 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ :=
+theorem coeff_ceilSqrtSeries (n : ℕ) :
+    coeff n (ceilSqrtSeries p) = (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ :=
   coeff_mk n _
 
-/-- The constant coefficient of `unitRaySeries p` is `1`. -/
-@[simp]
-theorem constantCoeff_unitRaySeries : constantCoeff (unitRaySeries p) = 1 := by
-  simp [← coeff_zero_eq_constantCoeff_apply]
+variable {p}
 
-/-- Coefficient formula for `perturbedUnitRaySeries p`. -/
-@[simp]
-theorem coeff_perturbedUnitRaySeries (n : ℕ) :
-    coeff n (perturbedUnitRaySeries p) =
-      if n = 0 then 1 else if n = 1 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ :=
-  coeff_mk n _
+/-- The constant coefficient of `ceilSqrtSeries p` has norm `1`. -/
+private theorem norm_coeff_zero_ceilSqrtSeries : ‖coeff 0 (ceilSqrtSeries p)‖ = 1 := by
+  simp
 
-/-- The constant coefficient of `perturbedUnitRaySeries p` is `1`. -/
-@[simp]
-theorem constantCoeff_perturbedUnitRaySeries : constantCoeff (perturbedUnitRaySeries p) = 1 := by
-  simp [← coeff_zero_eq_constantCoeff_apply]
+/-- Every coefficient of `ceilSqrtSeries p` has norm at most `1`. -/
+private theorem norm_coeff_ceilSqrtSeries_le_one (n : ℕ) : ‖coeff n (ceilSqrtSeries p)‖ ≤ 1 := by
+  rw [coeff_ceilSqrtSeries, norm_pow]
+  exact pow_le_one₀ (norm_nonneg _) Padic.norm_p_lt_one.le
 
-/-- `perturbedUnitRaySeries p` differs from `unitRaySeries p` by `(1 - p) X`. -/
-theorem perturbedUnitRaySeries_eq_add :
-    perturbedUnitRaySeries p = unitRaySeries p + (1 - (p : ℚ_[p])) • X := by
-  ext n
-  rcases n with _ | _ | n
-  · simp
-  · simp [Real.sqrt_one]
-  · simp [coeff_X]
+/-- Every nonconstant coefficient of `ceilSqrtSeries p` has norm strictly less than `1`, since
+`⌈√n⌉ ≥ 1` for `n ≥ 1`. -/
+private theorem norm_coeff_ceilSqrtSeries_lt_one {n : ℕ} (hn : n ≠ 0) :
+    ‖coeff n (ceilSqrtSeries p)‖ < 1 := by
+  rw [coeff_ceilSqrtSeries, norm_pow]
+  refine pow_lt_one₀ (norm_nonneg _) Padic.norm_p_lt_one (Nat.one_le_iff_ne_zero.mp ?_)
+  exact Nat.one_le_ceil_iff.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)))
 
-private theorem one_add_X_eq_X_sub_C_neg_one : (1 + X : ℚ_[p]⟦X⟧) = X - C (-1) := by
-  rw [map_neg, map_one, sub_neg_eq_add, add_comm]
+/-- `ceilSqrtSeries p` is restricted at the unit radius: its coefficient norms `p ^ (-⌈√n⌉)`
+tend to `0`. -/
+theorem isRestricted_one_ceilSqrtSeries : (ceilSqrtSeries p).IsRestricted 1 := by
+  rw [isRestricted_iff']
+  simp_rw [one_pow, mul_one, coeff_ceilSqrtSeries, norm_pow]
+  exact (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) Padic.norm_p_lt_one).comp
+    (tendsto_nat_ceil_atTop.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop))
 
-private theorem isRestricted_one_add_X : (1 + X : ℚ_[p]⟦X⟧).IsRestricted 1 := by
-  rw [one_add_X_eq_X_sub_C_neg_one]
-  exact TauCeti.PowerSeries.isRestricted_X_sub_C (-1 : ℚ_[p])
+/-- The Gauss norm of `ceilSqrtSeries p` at the unit radius is `1`. -/
+private theorem gaussNorm_one_ceilSqrtSeries : (ceilSqrtSeries p).gaussNorm norm 1 = 1 := by
+  rw [gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_, norm_coeff_zero_ceilSqrtSeries, one_pow,
+    mul_one]
+  rw [one_pow, one_pow, mul_one, mul_one, norm_coeff_zero_ceilSqrtSeries]
+  exact norm_coeff_ceilSqrtSeries_le_one m
 
-/-! ### Restrictedness at the boundary -/
+/-- `ceilSqrtSeries p` is distinguished of degree `0` at the unit radius: its constant
+coefficient is the only one of norm `1`. -/
+theorem isDistinguished_ceilSqrtSeries : IsDistinguished 1 0 (ceilSqrtSeries p) := by
+  refine ⟨?_, fun m hm ↦ ?_⟩
+  · rw [gaussNorm_one_ceilSqrtSeries, norm_coeff_zero_ceilSqrtSeries, one_pow, mul_one]
+  · rw [gaussNorm_one_ceilSqrtSeries, one_pow, mul_one]
+    exact norm_coeff_ceilSqrtSeries_lt_one hm.ne'
 
-/-- `unitRaySeries p` is restricted on the closed unit disc `r = 1`. -/
-theorem isRestricted_unitRaySeries : (unitRaySeries p).IsRestricted 1 := by
-  rw [isRestricted_iff, Nat.cofinite_eq_atTop]
-  have hp1 : (p : ℝ)⁻¹ < 1 :=
-    inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
-  have h0 : Tendsto (fun n : ℕ => ((p : ℝ)⁻¹) ^ ⌈Real.sqrt n⌉₊) atTop (nhds 0) :=
-    (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hp1).comp
-      (tendsto_nat_ceil_atTop.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop))
-  refine h0.congr' (eventually_atTop.mpr ⟨1, fun n hn => ?_⟩)
-  have hn0 : n ≠ 0 := by omega
-  simp [hn0]
+/-- The lowest dominant degree of `ceilSqrtSeries p` at the unit radius is `0`. -/
+theorem isLowestDominant_ceilSqrtSeries : IsLowestDominant 1 0 (ceilSqrtSeries p) :=
+  isDistinguished_ceilSqrtSeries.isLowestDominant_zero
 
-/-- `perturbedUnitRaySeries p` is restricted on the closed unit disc `r = 1`. -/
-theorem isRestricted_perturbedUnitRaySeries : (perturbedUnitRaySeries p).IsRestricted 1 := by
-  rw [perturbedUnitRaySeries_eq_add, smul_eq_C_mul]
-  exact (IsRestricted.subring (R := ℚ_[p]) 1).add_mem isRestricted_unitRaySeries
-    ((IsRestricted.subring (R := ℚ_[p]) 1).mul_mem (isRestricted_C 1 _)
-      (X_eq (R := ℚ_[p]) ▸ isRestricted_monomial 1 1 1))
+/-- The coefficient heights of `ceilSqrtSeries p` are `⌈√n⌉`. -/
+theorem padicRealValuation_coeff_ceilSqrtSeries (n : ℕ) :
+    padicRealValuation p (coeff n (ceilSqrtSeries p)) = ((⌈Real.sqrt n⌉₊ : ℝ) : WithTop ℝ) := by
+  rw [coeff_ceilSqrtSeries, (padicRealValuation p).map_pow, padicRealValuation_p, nsmul_one]
+  exact (WithTop.coe_natCast _).symm
 
-/-! ### Identical infinite-ray Newton polygons, exact radius `1`, and absence of finite faces -/
+/-- At a square index `M ^ 2` the coefficient height of `ceilSqrtSeries p` is `M`. -/
+private theorem padicRealValuation_coeff_sq_ceilSqrtSeries (M : ℕ) :
+    padicRealValuation p (coeff (M ^ 2) (ceilSqrtSeries p)) = ((M : ℝ) : WithTop ℝ) := by
+  rw [padicRealValuation_coeff_ceilSqrtSeries, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg M),
+    Nat.ceil_natCast]
 
-private theorem newtonPolygon_eq_zero_of_sq {f : ℚ_[p]⟦X⟧}
-    (hnonneg : ∀ n, 0 ≤ padicRealValuation p (coeff n f)) (hc0 : coeff 0 f = 1)
-    (hsq : ∀ k, 2 ≤ k → coeff (k ^ 2) f = (p : ℚ_[p]) ^ k) :
-    f.newtonPolygon (padicRealValuation p) = 0 := by
-  set v := padicRealValuation p
-  have hadm : IsAdmissible fun n => v (coeff n f) :=
-    isAdmissible_iff.mpr ⟨0, 0, fun n => by simpa using hnonneg n⟩
-  have hge0 : (0 : ℕ → WithTop ℝ) ≤ f.newtonPolygon v := fun n => by
-    simpa using le_newtonPolygon (isConvexSeq_affine 0 0) (fun k => by simpa using hnonneg k) n
-  have h0eq : f.newtonPolygon v 0 = 0 :=
-    le_antisymm (by simpa [hc0] using f.newtonPolygon_le hadm 0) (hge0 0)
-  ext n
-  refine le_antisymm ?_ (hge0 n)
-  have hsq_le (k : ℕ) (hk : 2 ≤ k) : f.newtonPolygon v (k ^ 2) ≤ ((k : ℝ) : WithTop ℝ) := by
-    refine (f.newtonPolygon_le hadm (k ^ 2)).trans ?_
-    rw [hsq k hk, v.map_pow, padicRealValuation_p, nsmul_one]
-    exact_mod_cast le_rfl
-  have hntop : f.newtonPolygon v n ≠ ⊤ := by
-    refine ne_top_of_le_ne_top (WithTop.coe_ne_top (a := ((max n 2 : ℕ) : ℝ))) ?_
-    have hk2 : 2 ≤ max n 2 := le_max_right n 2
-    have hnk : n ≤ (max n 2) ^ 2 :=
-      (le_max_left n 2).trans (Nat.le_self_pow two_ne_zero _)
-    exact ((f.isConvexSeq_newtonPolygon v).le_max (Nat.zero_le n) hnk).trans
-      (max_le (h0eq.trans_le (WithTop.coe_le_coe.mpr (Nat.cast_nonneg _))) (hsq_le _ hk2))
-  rw [← WithTop.coe_untop₀_of_ne_top hntop, Pi.zero_apply, ← WithTop.coe_zero, WithTop.coe_le_coe]
-  by_contra! hpos
-  obtain ⟨m, hm⟩ := exists_nat_gt ((n : ℝ) / (f.newtonPolygon v n).untop₀)
-  let k := max m (max n 2)
-  have hk2 : 2 ≤ k := (le_max_right n 2).trans (le_max_right m _)
-  have hnk : n ≤ k ^ 2 :=
-    ((le_max_left n 2).trans (le_max_right m _)).trans (Nat.le_self_pow two_ne_zero k)
-  have hk_top : f.newtonPolygon v (k ^ 2) ≠ ⊤ :=
-    ne_top_of_le_ne_top WithTop.coe_ne_top (hsq_le k hk2)
-  have hchord : ((k : ℝ) ^ 2) * (f.newtonPolygon v n).untop₀ ≤
-      (n : ℝ) * (f.newtonPolygon v (k ^ 2)).untop₀ := by
-    simpa [h0eq] using (f.isConvexSeq_newtonPolygon v).chord_inequality
-      (by simp [h0eq]) hk_top (Nat.zero_le n) hnk
-  have hkuntop : (f.newtonPolygon v (k ^ 2)).untop₀ ≤ k := by
-    have h := hsq_le k hk2
-    rwa [← WithTop.coe_untop₀_of_ne_top hk_top, WithTop.coe_le_coe] at h
-  have hle : ((k : ℝ) ^ 2) * (f.newtonPolygon v n).untop₀ ≤ (n : ℝ) * k :=
-    hchord.trans (mul_le_mul_of_nonneg_left hkuntop (Nat.cast_nonneg n))
-  have hk0 : (0 : ℝ) < k := by positivity
-  have hmul : (n : ℝ) < (k : ℝ) * (f.newtonPolygon v n).untop₀ := by
-    have hmk : (m : ℝ) ≤ k := Nat.cast_le.mpr (le_max_left m _)
-    exact ((div_lt_iff₀ hpos).mp hm).trans_le (mul_le_mul_of_nonneg_right hmk hpos.le)
-  nlinarith
+/-- The coefficient heights `⌈√n⌉` of `ceilSqrtSeries p` have lower linear growth at most `0`:
+at each square index `M ^ 2` the height is only `M`. -/
+private theorem linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos :
+    linearGrowthInf (fun n ↦ (padicRealValuation p (coeff n (ceilSqrtSeries p))).toEReal) ≤ 0 := by
+  refine linearGrowthInf_le_iff.mpr fun b hb ↦ frequently_atTop.mpr fun N ↦ ?_
+  obtain ⟨ε, hε, hεb⟩ := EReal.exists_between_coe_real hb
+  have hε : 0 < ε := EReal.coe_pos.mp hε
+  set M := N + ⌈ε⁻¹⌉₊ + 1
+  have hεM : 1 ≤ ε * M := by
+    have h := Nat.le_ceil ε⁻¹
+    rw [inv_le_iff_one_le_mul₀' hε] at h
+    exact h.trans (mul_le_mul_of_nonneg_left (by simp [M]; linarith) hε.le)
+  refine ⟨M ^ 2, (by omega : N ≤ M).trans (Nat.le_self_pow two_ne_zero M), ?_⟩
+  rw [padicRealValuation_coeff_sq_ceilSqrtSeries, WithTop.toEReal_coe]
+  calc ((M : ℝ) : EReal) ≤ ((ε * ((M ^ 2 : ℕ) : ℝ) : ℝ) : EReal) :=
+        EReal.coe_le_coe_iff.mpr (by push_cast; nlinarith [(Nat.cast_nonneg M : (0 : ℝ) ≤ M)])
+    _ = (ε : EReal) * ((M ^ 2 : ℕ) : EReal) := by rw [EReal.coe_mul, EReal.coe_natCast]
+    _ ≤ b * ((M ^ 2 : ℕ) : EReal) := by gcongr
 
-/-- The Newton polygon of `unitRaySeries p` is the infinite horizontal ray `0`. -/
-@[simp]
-theorem newtonPolygon_unitRaySeries :
-    (unitRaySeries p).newtonPolygon (padicRealValuation p) = 0 := by
-  refine newtonPolygon_eq_zero_of_sq (fun n => ?_) ?_ fun k hk => ?_
-  · by_cases hn : n = 0
-    · simp [hn]
-    · simp [hn, padicRealValuation_p]
-  · simp
-  · have hk0 : k ≠ 0 := by omega
-    simp [hk0]
-
-/-- The Newton polygon of `perturbedUnitRaySeries p` is also the infinite horizontal ray `0`. -/
-@[simp]
-theorem newtonPolygon_perturbedUnitRaySeries :
-    (perturbedUnitRaySeries p).newtonPolygon (padicRealValuation p) = 0 := by
-  refine newtonPolygon_eq_zero_of_sq (fun n => ?_) ?_ fun k hk => ?_
-  · rcases n with _ | _ | n <;> simp [padicRealValuation_p]
-  · simp
-  · have hk0 : k ≠ 0 := by omega
-    have hk1 : k ≠ 1 := by omega
-    simp [hk0, hk1]
+/-- **The Newton polygon of `1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ` is a horizontal ray.** Its heights are
+identically `0`, although no coefficient after the constant one lies on the ray. -/
+theorem newtonPolygon_ceilSqrtSeries :
+    (ceilSqrtSeries p).newtonPolygon (padicRealValuation p) = 0 := by
+  have h :
+      IsLowerConvexEnvelope (fun n ↦ padicRealValuation p (coeff n (ceilSqrtSeries p))) 0 := by
+    refine isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos ?_ (fun n ↦ ?_)
+      linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos
+    · simp
+    · rw [Pi.zero_apply, padicRealValuation_coeff_ceilSqrtSeries]
+      exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
+  rw [newtonPolygon_def, ← h.eq_lowerConvexEnvelope]
 
 private theorem radius_eq_one_of_newtonPolygon_eq_zero {f : ℚ_[p]⟦X⟧}
     (hres : f.IsRestricted 1) (hinf : {n | coeff n f ≠ 0}.Infinite)
     (hnp : f.newtonPolygon (padicRealValuation p) = 0) :
     f.radius = 1 := by
   have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-  have hadm : IsAdmissible fun n => padicRealValuation p (coeff n f) :=
+  have hadm : IsAdmissible fun n ↦ padicRealValuation p (coeff n f) :=
     (f.isAdmissible_addValuation_coeff_iff_exists_isRestricted (padicRealValuation p) hp1
-      fun _ hx => norm_eq_rpow_neg_padicRealValuation hx).mpr ⟨1, zero_lt_one, hres⟩
+      fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx).mpr ⟨1, zero_lt_one, hres⟩
   have : Nonempty (finiteEdges (0 : ℕ → WithTop ℝ)) := ⟨⟨0, by simp⟩⟩
   have hslope : (⨆ i : finiteEdges (0 : ℕ → WithTop ℝ),
       (unitSlope (0 : ℕ → WithTop ℝ) i : EReal)) = 0 := by
     simp [unitSlope_def]
   rw [f.radius_eq_exp_iSup_unitSlope_newtonPolygon (padicRealValuation p) hp1
-    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) hadm hinf, hnp, hslope, zero_mul,
+    (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) hadm hinf, hnp, hslope, zero_mul,
     EReal.exp_zero]
 
-/-- `unitRaySeries p` has exact radius of convergence `1`. -/
+/-- `ceilSqrtSeries p` has exact radius of convergence `1`. -/
 @[simp]
-theorem radius_unitRaySeries : (unitRaySeries p).radius = 1 := by
-  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_unitRaySeries
-    (Set.infinite_univ.mono fun n _ => ?_) newtonPolygon_unitRaySeries
+theorem radius_ceilSqrtSeries : (ceilSqrtSeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_one_ceilSqrtSeries
+    (Set.infinite_univ.mono fun n _ ↦ ?_) newtonPolygon_ceilSqrtSeries
   have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  by_cases hn : n = 0 <;> simp [hn, hp0]
+  simp [hp0]
 
-/-- `perturbedUnitRaySeries p` has exact radius of convergence `1`. -/
-@[simp]
-theorem radius_perturbedUnitRaySeries : (perturbedUnitRaySeries p).radius = 1 := by
-  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_perturbedUnitRaySeries
-    (Set.infinite_univ.mono fun n _ => ?_) newtonPolygon_perturbedUnitRaySeries
-  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  rcases n with _ | _ | n <;> simp [hp0]
-
-/-- `unitRaySeries p` has no finite face of slope `0`. -/
-theorem not_exists_isFiniteFace_unitRaySeries_zero :
-    ¬∃ l u : ℕ, IsFiniteFace ((unitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
-  rintro ⟨l, u, h⟩
-  have hlt := (unitRaySeries p).lt_radius_of_isFiniteFace_newtonPolygon (padicRealValuation p)
+/-- The horizontal Newton polygon of `ceilSqrtSeries p` has no finite face of slope `0`: every
+line of slope `0` supporting it touches it nowhere or everywhere. So the polygon does not record
+how many zeros the series has on the unit sphere. -/
+theorem not_isFiniteFace_newtonPolygon_ceilSqrtSeries (l u : ℕ) :
+    ¬IsFiniteFace ((ceilSqrtSeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
+  intro h
+  have hlt := (ceilSqrtSeries p).lt_radius_of_isFiniteFace_newtonPolygon (padicRealValuation p)
     (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
-    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) h
+    (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) h
   simp at hlt
 
-/-- `perturbedUnitRaySeries p` has no finite face of slope `0`. -/
-theorem not_exists_isFiniteFace_perturbedUnitRaySeries_zero :
-    ¬∃ l u : ℕ,
-      IsFiniteFace ((perturbedUnitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
-  rintro ⟨l, u, h⟩
-  have hlt := (perturbedUnitRaySeries p).lt_radius_of_isFiniteFace_newtonPolygon
-    (padicRealValuation p) (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
-    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) h
-  simp at hlt
-
-/-- The slope multiplicity at `0` of `unitRaySeries p` is the `Set.ncard` junk value `0`, because
+/-- The slope multiplicity at `0` of `ceilSqrtSeries p` is the `Set.ncard` junk value `0`, because
 infinitely many unit edges have slope `0`. -/
 @[simp]
-theorem newtonSlopeMultiplicity_unitRaySeries_zero :
-    (unitRaySeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
-  rw [newtonSlopeMultiplicity_def, newtonPolygon_unitRaySeries]
-  refine Set.Infinite.ncard (Set.infinite_univ.mono fun n _ => ?_)
+theorem newtonSlopeMultiplicity_ceilSqrtSeries_zero :
+    (ceilSqrtSeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
+  rw [newtonSlopeMultiplicity_def, newtonPolygon_ceilSqrtSeries]
+  refine Set.Infinite.ncard (Set.infinite_univ.mono fun n _ ↦ ?_)
   simp [unitSlope_def]
 
-/-- The slope multiplicity at `0` of `perturbedUnitRaySeries p` is likewise `0`. -/
-@[simp]
-theorem newtonSlopeMultiplicity_perturbedUnitRaySeries_zero :
-    (perturbedUnitRaySeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
-  rw [newtonSlopeMultiplicity_def, newtonPolygon_perturbedUnitRaySeries]
-  refine Set.Infinite.ncard (Set.infinite_univ.mono fun n _ => ?_)
-  simp [unitSlope_def]
+variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L] [CompleteSpace L]
 
-/-! ### Gauss-norm perturbations and active indices at `r = 1` -/
+/-- **No zeros in the closed unit disc.** In every complete normed field extension `L` of
+`ℚ_[p]`, such as `ℂ_[p]`, the series `1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ` has no zeros of norm at most
+`1`: its last active index at the unit radius is `0`. -/
+theorem zeroMultiset_ceilSqrtSeries : (ceilSqrtSeries p).zeroMultiset 1 L = 0 :=
+  Multiset.card_eq_zero.mp <| Nat.le_zero.mp <|
+    isDistinguished_ceilSqrtSeries.card_zeroMultiset_le one_pos isRestricted_one_ceilSqrtSeries
 
-/-- At radius `1`, `unitRaySeries p` is within `p⁻¹ < 1` of the constant series `1`. -/
-theorem gaussNorm_unitRaySeries_sub_one :
-    (unitRaySeries p - 1).gaussNorm norm 1 = (p : ℝ)⁻¹ := by
-  have hp1 : (p : ℝ)⁻¹ ≤ 1 :=
-    inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr (Fact.out : p.Prime).pos)
-  have hc1 : ‖coeff 1 (unitRaySeries p - 1)‖ * 1 ^ 1 = (p : ℝ)⁻¹ := by
-    simp [Real.sqrt_one]
-  refine (TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 1) fun n => ?_).trans hc1
-  rw [hc1]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · have hne : ⌈Real.sqrt n⌉₊ ≠ 0 :=
-      (Nat.ceil_pos.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)))).ne'
-    have hcoeff : coeff n (unitRaySeries p - 1) = (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ := by
-      simp [hn]
-    rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
-    exact pow_le_of_le_one (by positivity) hp1 hne
-
-/-- At radius `1`, `perturbedUnitRaySeries p` is within `p⁻² < 1` of `1 + X`. -/
-theorem gaussNorm_perturbedUnitRaySeries_sub_one_add_X :
-    (perturbedUnitRaySeries p - (1 + X)).gaussNorm norm 1 = ((p : ℝ)⁻¹) ^ 2 := by
-  have hp1 : (p : ℝ)⁻¹ ≤ 1 :=
-    inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr (Fact.out : p.Prime).pos)
-  have hceil2 : ⌈Real.sqrt 2⌉₊ = 2 := by
-    refine le_antisymm (Nat.ceil_le.mpr ?_) (Nat.lt_ceil.mpr ?_)
-    · rw [Real.sqrt_le_iff]
-      norm_num
-    · rw [Nat.cast_one, Real.lt_sqrt zero_le_one]
-      norm_num
-  have hc2 : ‖coeff 2 (perturbedUnitRaySeries p - (1 + X))‖ * 1 ^ 2 = ((p : ℝ)⁻¹) ^ 2 := by
-    simp [coeff_X, hceil2]
-  refine (TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 2) fun n => ?_).trans hc2
-  rw [hc2]
-  rcases n with _ | _ | n
-  · simp
-  · simp
-  · have h2 : 2 ≤ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
-      refine Nat.lt_ceil.mpr ?_
-      rw [Nat.cast_one, Real.lt_sqrt zero_le_one, one_pow]
-      exact_mod_cast (by omega : 1 < n + 2)
-    have hn1 : n + 2 ≠ 1 := by omega
-    have hcoeff : coeff (n + 2) (perturbedUnitRaySeries p - (1 + X)) =
-        (p : ℚ_[p]) ^ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
-      simp [hn1, coeff_X]
-    rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
-    exact pow_le_pow_of_le_one (by positivity) hp1 h2
-
-private theorem gaussNorm_one_add_X_eq_one : (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 = 1 := by
-  rw [one_add_X_eq_X_sub_C_neg_one, TauCeti.PowerSeries.gaussNorm_X_sub_C]
+/-- `ceilSqrtSeries p` has empty zero set in the closed unit disc `‖x‖ ≤ 1` of every complete
+normed field extension `L` of `ℚ_[p]`. -/
+theorem setOf_norm_le_one_and_evalAt_ceilSqrtSeries_eq_zero_eq_empty :
+    {x : L | ‖x‖ ≤ 1 ∧ (ceilSqrtSeries p).evalAt x = 0} = ∅ := by
+  classical
+  rw [isRestricted_one_ceilSqrtSeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+    one_pos isDistinguished_ceilSqrtSeries.ne_zero, zeroMultiset_ceilSqrtSeries]
   simp
 
-private theorem isDistinguished_one_add_X :
-    TauCeti.PowerSeries.IsDistinguished 1 1 (1 + X : ℚ_[p]⟦X⟧) := by
-  rw [one_add_X_eq_X_sub_C_neg_one]
-  exact TauCeti.PowerSeries.isDistinguished_X_sub_C zero_lt_one (by simp)
+/-! ### The series with one boundary zero -/
 
-private theorem isLowestDominant_one_add_X :
-    TauCeti.PowerSeries.IsLowestDominant 1 0 (1 + X : ℚ_[p]⟦X⟧) := by
-  rw [one_add_X_eq_X_sub_C_neg_one]
-  exact TauCeti.PowerSeries.isLowestDominant_zero_X_sub_C zero_lt_one (by simp)
+variable (p) in
+/-- The power series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` over `ℚ_[p]`: the series
+`ceilSqrtSeries p` with its linear coefficient `p` replaced by `1`. -/
+noncomputable def boundaryZeroSeries : ℚ_[p]⟦X⟧ :=
+  PowerSeries.mk fun n ↦ if n = 1 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊
 
-private theorem gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt :
-    ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 <
-      (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
-  rw [PowerSeries.gaussNorm_sub_comm, gaussNorm_perturbedUnitRaySeries_sub_one_add_X,
-    gaussNorm_one_add_X_eq_one]
-  exact pow_lt_one₀ (by positivity)
-    (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)
-
-/-- `unitRaySeries p` is distinguished of degree `0` at radius `1`. -/
-theorem isDistinguished_unitRaySeries :
-    TauCeti.PowerSeries.IsDistinguished 1 0 (unitRaySeries p) := by
-  refine (TauCeti.PowerSeries.gaussNorm_sub_one_lt_one_iff zero_lt_one
-    isRestricted_unitRaySeries constantCoeff_unitRaySeries).mp ?_
-  rw [gaussNorm_unitRaySeries_sub_one]
-  exact inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
-
-/-- `unitRaySeries p` has lowest dominant degree `0` at radius `1`. -/
-theorem isLowestDominant_unitRaySeries :
-    TauCeti.PowerSeries.IsLowestDominant 1 0 (unitRaySeries p) :=
-  isDistinguished_unitRaySeries.isLowestDominant_zero
-
-/-- `perturbedUnitRaySeries p` is distinguished of degree `1` at radius `1`. -/
-theorem isDistinguished_perturbedUnitRaySeries :
-    TauCeti.PowerSeries.IsDistinguished 1 1 (perturbedUnitRaySeries p) :=
-  (TauCeti.PowerSeries.isDistinguished_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
-    (isDistinguished_one_add_X (p := p)).hasGaussNorm
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
-      isRestricted_perturbedUnitRaySeries)
-    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).mp isDistinguished_one_add_X
-
-/-- `perturbedUnitRaySeries p` has lowest dominant degree `0` at radius `1`. -/
-theorem isLowestDominant_perturbedUnitRaySeries :
-    TauCeti.PowerSeries.IsLowestDominant 1 0 (perturbedUnitRaySeries p) :=
-  (TauCeti.PowerSeries.isLowestDominant_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
-    (isDistinguished_one_add_X (p := p)).hasGaussNorm
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
-      isRestricted_perturbedUnitRaySeries)
-    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).mp isLowestDominant_one_add_X
-
-/-! ### Exact zero counts over `ℂ_[p]` and `ℚ_[p]` -/
-
-/-- `unitRaySeries p` has empty zero multiset on the closed unit disc of `ℂ_[p]`. -/
+variable (p) in
+/-- The `n`-th coefficient of `boundaryZeroSeries p` is `1` for `n = 1` and `p ^ ⌈√n⌉`
+otherwise. -/
 @[simp]
-theorem zeroMultiset_unitRaySeries_padicComplex :
-    (unitRaySeries p).zeroMultiset 1 ℂ_[p] = 0 :=
-  Multiset.card_eq_zero.mp
-    (isDistinguished_unitRaySeries.card_zeroMultiset_eq zero_lt_one isRestricted_unitRaySeries)
+theorem coeff_boundaryZeroSeries (n : ℕ) :
+    coeff n (boundaryZeroSeries p) = if n = 1 then 1 else (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ :=
+  coeff_mk n _
 
-/-- `unitRaySeries p` has no zeros anywhere in the closed unit disc `‖x‖ ≤ 1` of `ℂ_[p]`. -/
-theorem setOf_norm_le_one_and_evalAt_unitRaySeries_eq_zero :
-    {x : ℂ_[p] | ‖x‖ ≤ 1 ∧ (unitRaySeries p).evalAt x = 0} = ∅ := by
-  classical
-  rw [isRestricted_unitRaySeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
-    zero_lt_one isDistinguished_unitRaySeries.ne_zero, zeroMultiset_unitRaySeries_padicComplex]
+/-- Away from the linear term, `boundaryZeroSeries p` has the coefficients of
+`ceilSqrtSeries p`. -/
+theorem coeff_boundaryZeroSeries_of_ne_one {n : ℕ} (hn : n ≠ 1) :
+    coeff n (boundaryZeroSeries p) = coeff n (ceilSqrtSeries p) := by
+  simp [hn]
+
+/-- The linear coefficient of `boundaryZeroSeries p` is `1`. -/
+theorem coeff_one_boundaryZeroSeries : coeff 1 (boundaryZeroSeries p) = 1 := by
   simp
 
-/-- `perturbedUnitRaySeries p` has `1` zero in the closed unit disc `‖x‖ ≤ 1` of `ℂ_[p]`, counted
-with multiplicity. -/
-theorem card_zeroMultiset_perturbedUnitRaySeries_padicComplex :
-    ((perturbedUnitRaySeries p).zeroMultiset 1 ℂ_[p]).card = 1 := by
-  rw [(TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt (L := ℂ_[p]) zero_lt_one
-    isRestricted_one_add_X isRestricted_perturbedUnitRaySeries
-    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).symm]
-  exact isDistinguished_one_add_X.card_zeroMultiset_eq zero_lt_one isRestricted_one_add_X
+/-- `boundaryZeroSeries p` is restricted at the unit radius. -/
+theorem isRestricted_one_boundaryZeroSeries : (boundaryZeroSeries p).IsRestricted 1 := by
+  rw [isRestricted_iff']
+  refine ((isRestricted_iff' 1 _).mp (isRestricted_one_ceilSqrtSeries (p := p))).congr' ?_
+  filter_upwards [eventually_ne_atTop 1] with n hn
+  rw [coeff_boundaryZeroSeries_of_ne_one hn]
 
-/-- `perturbedUnitRaySeries p` has `0` zeros in the open unit disc `‖x‖ < 1` of `ℂ_[p]`. -/
-theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_lt_one_padicComplex :
-    (((perturbedUnitRaySeries p).zeroMultiset 1 ℂ_[p]).filter (‖·‖ < 1)).card = 0 :=
-  isLowestDominant_perturbedUnitRaySeries.card_filter_zeroMultiset_norm_lt_eq zero_lt_one
-    isRestricted_perturbedUnitRaySeries
+/-- Every coefficient of `boundaryZeroSeries p` has norm at most `1`. -/
+private theorem norm_coeff_boundaryZeroSeries_le_one (n : ℕ) :
+    ‖coeff n (boundaryZeroSeries p)‖ ≤ 1 := by
+  rcases eq_or_ne n 1 with rfl | hn
+  · rw [coeff_one_boundaryZeroSeries, norm_one]
+  · rw [coeff_boundaryZeroSeries_of_ne_one hn]
+    exact norm_coeff_ceilSqrtSeries_le_one n
 
-/-- Although `(perturbedUnitRaySeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0`,
-`perturbedUnitRaySeries p` has `1` zero on the unit sphere `‖x‖ = 1` of `ℂ_[p]`, counted with
-multiplicity. -/
-theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padicComplex :
-    (((perturbedUnitRaySeries p).zeroMultiset 1 ℂ_[p]).filter (‖·‖ = 1)).card = 1 :=
-  TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq isDistinguished_perturbedUnitRaySeries
-    isLowestDominant_perturbedUnitRaySeries zero_lt_one isRestricted_perturbedUnitRaySeries
+/-- The Gauss norm of `boundaryZeroSeries p` at the unit radius is `1`. -/
+private theorem gaussNorm_one_boundaryZeroSeries :
+    (boundaryZeroSeries p).gaussNorm norm 1 = 1 := by
+  have h0 : ‖coeff 0 (boundaryZeroSeries p)‖ = 1 := by
+    rw [coeff_boundaryZeroSeries_of_ne_one zero_ne_one, norm_coeff_zero_ceilSqrtSeries]
+  rw [gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_, h0, one_pow, mul_one]
+  rw [one_pow, one_pow, mul_one, mul_one, h0]
+  exact norm_coeff_boundaryZeroSeries_le_one m
 
-private theorem exists_isDiscPreparation_perturbedUnitRaySeries_splits :
-    ∃ (P : Polynomial ℚ_[p]) (U : ℚ_[p]⟦X⟧),
-      TauCeti.PowerSeries.IsDiscPreparation 1 1 (perturbedUnitRaySeries p) P U ∧
-        (P.map (algebraMap ℚ_[p] ℚ_[p])).Splits := by
-  obtain ⟨P, U, hP⟩ := (isDistinguished_perturbedUnitRaySeries (p := p)).exists_isDiscPreparation
-    zero_lt_one isRestricted_perturbedUnitRaySeries constantCoeff_perturbedUnitRaySeries
-  exact ⟨P, U, hP, Polynomial.Splits.of_natDegree_le_one
-    (Polynomial.natDegree_map_le.trans hP.natDegree_eq.le)⟩
+/-- `boundaryZeroSeries p` is distinguished of degree `1` at the unit radius: its linear
+coefficient is the last one of norm `1`. -/
+theorem isDistinguished_boundaryZeroSeries : IsDistinguished 1 1 (boundaryZeroSeries p) := by
+  refine ⟨?_, fun m hm ↦ ?_⟩
+  · rw [gaussNorm_one_boundaryZeroSeries, coeff_one_boundaryZeroSeries, norm_one, one_pow,
+      mul_one]
+  · rw [gaussNorm_one_boundaryZeroSeries, one_pow, mul_one,
+      coeff_boundaryZeroSeries_of_ne_one hm.ne']
+    exact norm_coeff_ceilSqrtSeries_lt_one (by omega)
 
-/-- `perturbedUnitRaySeries p` has `1` zero on the unit sphere `‖x‖ = 1` of `ℚ_[p]`, counted with
-multiplicity. -/
-theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padic :
-    (((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ = 1)).card = 1 := by
-  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
-  exact hP.card_filter_zeroMultiset_norm_eq_eq_of_splits
-    isLowestDominant_perturbedUnitRaySeries zero_lt_one hs
+/-- The lowest dominant degree of `boundaryZeroSeries p` at the unit radius is `0`: its constant
+coefficient already has norm `1`. -/
+theorem isLowestDominant_boundaryZeroSeries : IsLowestDominant 1 0 (boundaryZeroSeries p) :=
+  ⟨by rw [gaussNorm_one_boundaryZeroSeries]; exact one_pos,
+    by rw [gaussNorm_one_boundaryZeroSeries, pow_zero, mul_one,
+      coeff_boundaryZeroSeries_of_ne_one zero_ne_one, norm_coeff_zero_ceilSqrtSeries],
+    fun _ hm ↦ absurd hm (Nat.not_lt_zero _)⟩
 
-/-- Every zero of `perturbedUnitRaySeries p` in the closed unit disc `‖x‖ ≤ 1` of `ℚ_[p]` lies on
-the unit sphere `‖x‖ = 1`. -/
-theorem norm_eq_one_of_norm_le_one_of_evalAt_perturbedUnitRaySeries_eq_zero {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ 1) (h0 : (perturbedUnitRaySeries p).evalAt x = 0) : ‖x‖ = 1 := by
+/-- **The Newton polygon of `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` is a horizontal ray.** Its heights are
+identically `0`, touching the coefficient points at `n = 0` and `n = 1` only. -/
+theorem newtonPolygon_boundaryZeroSeries :
+    (boundaryZeroSeries p).newtonPolygon (padicRealValuation p) = 0 := by
+  have h :
+      IsLowerConvexEnvelope (fun n ↦ padicRealValuation p (coeff n (boundaryZeroSeries p))) 0 := by
+    refine isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos ?_ (fun n ↦ ?_)
+      ((linearGrowthInf_monotone fun n ↦ WithTop.toEReal_le_toEReal_iff.mpr ?_).trans
+        (linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos (p := p)))
+    · simp
+    · rcases eq_or_ne n 1 with rfl | hn
+      · rw [Pi.zero_apply, coeff_one_boundaryZeroSeries, (padicRealValuation p).map_one]
+      · rw [Pi.zero_apply, coeff_boundaryZeroSeries_of_ne_one hn,
+          padicRealValuation_coeff_ceilSqrtSeries]
+        exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
+    · rcases eq_or_ne n 1 with rfl | hn
+      · rw [coeff_one_boundaryZeroSeries, (padicRealValuation p).map_one,
+          padicRealValuation_coeff_ceilSqrtSeries]
+        exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
+      · rw [coeff_boundaryZeroSeries_of_ne_one hn]
+  rw [newtonPolygon_def, ← h.eq_lowerConvexEnvelope]
+
+/-- **Equal Newton polygons.** The two series have the same Newton polygon. -/
+theorem newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries :
+    (boundaryZeroSeries p).newtonPolygon (padicRealValuation p) =
+      (ceilSqrtSeries p).newtonPolygon (padicRealValuation p) := by
+  rw [newtonPolygon_boundaryZeroSeries, newtonPolygon_ceilSqrtSeries]
+
+/-- `boundaryZeroSeries p` has exact radius of convergence `1`. -/
+@[simp]
+theorem radius_boundaryZeroSeries : (boundaryZeroSeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_one_boundaryZeroSeries
+    (Set.infinite_univ.mono fun n _ ↦ ?_) newtonPolygon_boundaryZeroSeries
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rcases eq_or_ne n 1 with rfl | hn
+  · simp
+  · simp [hn, hp0]
+
+/-- The horizontal Newton polygon of `boundaryZeroSeries p` likewise has no finite face of slope
+`0`. -/
+theorem not_isFiniteFace_newtonPolygon_boundaryZeroSeries (l u : ℕ) :
+    ¬IsFiniteFace ((boundaryZeroSeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
+  rw [newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries]
+  exact not_isFiniteFace_newtonPolygon_ceilSqrtSeries l u
+
+/-- The slope multiplicity at `0` of `boundaryZeroSeries p` is likewise `0`. -/
+@[simp]
+theorem newtonSlopeMultiplicity_boundaryZeroSeries_zero :
+    (boundaryZeroSeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
+  rw [newtonSlopeMultiplicity_def, newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries,
+    ← newtonSlopeMultiplicity_def, newtonSlopeMultiplicity_ceilSqrtSeries_zero]
+
+omit [CompleteSpace L] in
+/-- The preparation polynomial of `boundaryZeroSeries p` at the unit radius is linear, so it
+splits over every extension. -/
+private theorem exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries :
+    ∃ (e : _root_.PowerSeries.IsRestricted.subring (R := ℚ_[p]) 1) (P : Polynomial ℚ_[p]),
+      IsUnit e ∧ P.IsMonicOfDegree 1 ∧ (e : ℚ_[p]⟦X⟧) * P = boundaryZeroSeries p ∧
+        (P.map (algebraMap ℚ_[p] L)).Splits := by
+  have hd := isDistinguished_boundaryZeroSeries (p := p)
+  obtain ⟨e, P, he, hP, hf⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq
+    (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) one_pos isRestricted_one_boundaryZeroSeries
+  exact ⟨e, P, he, hP, hf,
+    Polynomial.Splits.of_natDegree_eq_one (hP.map (algebraMap ℚ_[p] L)).natDegree_eq⟩
+
+/-- **One zero in the closed unit disc.** In every complete normed field extension `L` of
+`ℚ_[p]`, such as `ℂ_[p]`, the series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` has exactly one zero of norm
+at most `1`, counted with multiplicity. -/
+theorem card_zeroMultiset_boundaryZeroSeries :
+    ((boundaryZeroSeries p).zeroMultiset 1 L).card = 1 := by
+  obtain ⟨e, P, he, -, hf, hs⟩ :=
+    exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries (p := p) (L := L)
+  exact isDistinguished_boundaryZeroSeries.card_zeroMultiset_eq_of_isUnit_mul one_pos he hf hs
+
+/-- **No zeros in the open unit disc.** In every complete normed field extension `L` of `ℚ_[p]`,
+the series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` has no zeros of norm less than `1`. -/
+theorem card_filter_zeroMultiset_norm_lt_boundaryZeroSeries :
+    (((boundaryZeroSeries p).zeroMultiset 1 L).filter (‖·‖ < 1)).card = 0 :=
+  Nat.le_zero.mp <| isLowestDominant_boundaryZeroSeries.card_filter_zeroMultiset_norm_lt_le
+    one_pos isRestricted_one_boundaryZeroSeries
+
+/-- **One zero on the unit sphere.** In every complete normed field extension `L` of `ℚ_[p]`,
+such as `ℂ_[p]`, the series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` has exactly one zero of norm `1`,
+counted with multiplicity, although its Newton polygon is the same horizontal ray as that of
+`ceilSqrtSeries p`, which has none. -/
+theorem card_filter_zeroMultiset_norm_eq_boundaryZeroSeries :
+    (((boundaryZeroSeries p).zeroMultiset 1 L).filter (‖·‖ = 1)).card = 1 := by
+  obtain ⟨e, P, he, -, hf, hs⟩ :=
+    exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries (p := p) (L := L)
+  exact card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul isDistinguished_boundaryZeroSeries
+    isLowestDominant_boundaryZeroSeries one_pos he hf hs
+
+/-- In every complete normed field extension `L` of `ℚ_[p]`, the zeros of
+`1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` in the closed unit disc consist of a single simple zero, of
+norm `1`. -/
+theorem exists_zeroMultiset_boundaryZeroSeries_eq :
+    ∃ α : L, ‖α‖ = 1 ∧ (boundaryZeroSeries p).zeroMultiset 1 L = {α} := by
+  obtain ⟨α, hα⟩ := Multiset.card_eq_one.mp (card_zeroMultiset_boundaryZeroSeries (p := p) (L := L))
+  refine ⟨α, le_antisymm (norm_le_of_mem_zeroMultiset (hα ▸ Multiset.mem_singleton_self α))
+    (not_lt.mp fun hlt ↦ ?_), hα⟩
+  have h := card_filter_zeroMultiset_norm_lt_boundaryZeroSeries (p := p) (L := L)
+  simp [hα, Multiset.filter_singleton, hlt] at h
+
+/-- Every zero of `boundaryZeroSeries p` in the closed unit disc `‖x‖ ≤ 1` of `L` lies on the unit
+sphere `‖x‖ = 1`. -/
+theorem norm_eq_one_of_norm_le_one_of_evalAt_boundaryZeroSeries_eq_zero {x : L}
+    (hx : ‖x‖ ≤ 1) (h0 : (boundaryZeroSeries p).evalAt x = 0) : ‖x‖ = 1 := by
+  obtain ⟨α, hα1, hZ⟩ := exists_zeroMultiset_boundaryZeroSeries_eq (p := p) (L := L)
+  have hmem : x ∈ (boundaryZeroSeries p).zeroMultiset 1 L :=
+    (isRestricted_one_boundaryZeroSeries.mem_zeroMultiset_iff one_pos
+      isDistinguished_boundaryZeroSeries.ne_zero).mpr ⟨hx, by simpa using h0⟩
+  rw [hZ, Multiset.mem_singleton] at hmem
+  exact hmem ▸ hα1
+
+/-- `boundaryZeroSeries p` has a unique zero in the closed unit disc `‖x‖ ≤ 1` of every complete
+normed field extension `L` of `ℚ_[p]`. -/
+theorem existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero :
+    ∃! x : L, ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0 := by
   classical
-  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
-  have hopen : ((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ < 1) = 0 :=
-    Multiset.card_eq_zero.mp (hP.card_filter_zeroMultiset_norm_lt_eq_of_splits
-      isLowestDominant_perturbedUnitRaySeries zero_lt_one hs)
-  refine hx.eq_of_not_lt fun hlt => ?_
-  have hmem : x ∈ ((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ < 1) :=
-    Multiset.mem_filter.mpr ⟨(isRestricted_perturbedUnitRaySeries.mem_zeroMultiset_iff
-      zero_lt_one isDistinguished_perturbedUnitRaySeries.ne_zero).mpr ⟨hx, by simpa using h0⟩, hlt⟩
-  simp [hopen] at hmem
-
-/-- `perturbedUnitRaySeries p` has a unique zero in the closed unit disc `‖x‖ ≤ 1` of `ℚ_[p]`. -/
-theorem existsUnique_norm_le_one_and_evalAt_perturbedUnitRaySeries_eq_zero :
-    ∃! x : ℚ_[p], ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0 := by
-  classical
-  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
-  obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp (hP.card_zeroMultiset_eq_of_splits zero_lt_one hs)
-  have hset : {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} = {a} := by
-    simpa [ha] using
-      isRestricted_perturbedUnitRaySeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
-        (L := ℚ_[p]) zero_lt_one (isDistinguished_perturbedUnitRaySeries (p := p)).ne_zero
-  refine ⟨a, ?_, fun y hy => ?_⟩
-  · have : a ∈ ({a} : Set ℚ_[p]) := Set.mem_singleton a
+  obtain ⟨α, -, hZ⟩ := exists_zeroMultiset_boundaryZeroSeries_eq (p := p) (L := L)
+  have hset : {x : L | ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0} = {α} := by
+    simpa [hZ] using
+      (isRestricted_one_boundaryZeroSeries (p := p)
+        ).setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+        (L := L) one_pos (isDistinguished_boundaryZeroSeries (p := p)).ne_zero
+  refine ⟨α, ?_, fun y hy ↦ ?_⟩
+  · have : α ∈ ({α} : Set L) := Set.mem_singleton α
     rwa [← hset] at this
-  · have : y ∈ {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} := hy
+  · have : y ∈ {x : L | ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0} := hy
     simpa [hset] using this
 
-end TauCeti.NewtonPolygonBoundaryZerosExample
+/-! ### Over `ℂ_[p]` and `ℚ_[p]` -/
+
+example : (ceilSqrtSeries p).zeroMultiset 1 ℂ_[p] = 0 :=
+  zeroMultiset_ceilSqrtSeries
+
+example : (((boundaryZeroSeries p).zeroMultiset 1 ℂ_[p]).filter (‖·‖ = 1)).card = 1 :=
+  card_filter_zeroMultiset_norm_eq_boundaryZeroSeries
+
+example : ∃! x : ℚ_[p], ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0 :=
+  existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero (p := p)
+
+end TauCeti.NewtonPolygonBoundaryZeroExample

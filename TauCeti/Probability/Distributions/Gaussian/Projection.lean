@@ -154,6 +154,18 @@ theorem HasLaw.iIndepFun_orthogonalProjectionOnto_stdGaussian (hX : HasLaw X (st
     (hX.pi_orthogonalProjectionOnto_stdGaussian (fun i : s ↦ K i)
       (fun _ _ hij ↦ hK (Subtype.val_injective.ne hij)))
 
+/-- Projections of a standard Gaussian onto two orthogonal subspaces are independent. -/
+theorem HasLaw.indepFun_orthogonalProjectionOnto_stdGaussian
+    (hX : HasLaw X (stdGaussian E) P) {K L : Submodule ℝ E} (hKL : K ⟂ L) :
+    IndepFun (fun ω ↦ K.orthogonalProjectionOnto (X ω))
+      (fun ω ↦ L.orthogonalProjectionOnto (X ω)) P := by
+  let V : Bool → Submodule ℝ E := fun b ↦ if b then L else K
+  have hV : Pairwise fun i j ↦ V i ⟂ V j := by
+    intro i j hij
+    cases i <;> cases j <;> simp_all [V, hKL.symm]
+  exact (hX.iIndepFun_orthogonalProjectionOnto_stdGaussian V hV).indepFun
+    (i := false) (j := true) (by decide)
+
 /-- Squared lengths of mutually orthogonal projections of a standard Gaussian random vector
 are jointly independent. -/
 theorem HasLaw.iIndepFun_norm_sq_orthogonalProjectionOnto_stdGaussian

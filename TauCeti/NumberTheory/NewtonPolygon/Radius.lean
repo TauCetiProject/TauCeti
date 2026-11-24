@@ -186,45 +186,17 @@ theorem isEntire_iff_iSup_unitSlope_newtonPolygon_eq_top
 theorem lt_radius_of_isFiniteFace_newtonPolygon {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) : ‖b ^ σ‖ₑ < f.radius := by
   have hb0 : 0 < b := zero_lt_one.trans hb
-  have hadm : IsAdmissible fun n => v (coeff n f) :=
-    isAdmissible_of_lowerConvexEnvelope_ne_top (newtonPolygon_def f v ▸ hface.left_ne_top)
-  rcases {n | coeff n f ≠ 0}.finite_or_infinite with hfin | hinf
-  · have hent : f.IsEntire := isEntire_iff.mpr fun r => by
-      rw [isRestricted_iff]
-      exact tendsto_nhds_of_eventually_eq
-        (Filter.mem_of_superset hfin.compl_mem_cofinite fun n hn => by
-          have hn0 : coeff n f = 0 := not_ne_iff.mp hn
-          simp [hn0])
-    exact radius_eq_top_iff.mpr hent ▸ eNorm_lt_top
-  · have hex : ∃ m, u < m ∧ coeff m f ≠ 0 := by
-      by_contra! hle
-      exact hinf ((Set.finite_Iic u).subset fun m hm => le_of_not_gt fun hum => hm (hle m hum))
-    obtain ⟨m, hum, hm0⟩ := hex
-    have hPm : f.newtonPolygon v m ≠ ⊤ :=
-      ne_top_of_le_ne_top (v.ne_top_iff.mpr hm0) (f.newtonPolygon_le hadm m)
-    have hu1 : f.newtonPolygon v (u + 1) ≠ ⊤ :=
-      (f.isConvexSeq_newtonPolygon v).ne_top_of_le_of_le hface.right_ne_top hPm
-        (Nat.le_succ u) hum
-    have huedge : u ∈ finiteEdges (f.newtonPolygon v) :=
-      mem_finiteEdges.mpr ⟨hface.right_ne_top, hu1⟩
-    have hστ : σ < unitSlope (f.newtonPolygon v) u :=
-      hface.lt_unitSlope (f.isConvexSeq_newtonPolygon v) huedge le_rfl
-    let μ := (σ + unitSlope (f.newtonPolygon v) u) / 2
-    have hσμ : σ < μ := left_lt_add_div_two.mpr hστ
-    have hμτ : (μ : EReal) < (unitSlope (f.newtonPolygon v) u : EReal) :=
-      EReal.coe_lt_coe_iff.mpr (add_div_two_lt_right.mpr hστ)
-    have hτle : (unitSlope (f.newtonPolygon v) u : EReal) ≤
-        linearGrowthInf fun n => (v (coeff n f)).toEReal := by
-      rw [linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope hadm (by simpa using hinf),
-        ← newtonPolygon_def]
-      exact le_iSup (fun i : finiteEdges (f.newtonPolygon v) =>
-        (unitSlope (f.newtonPolygon v) i : EReal)) ⟨u, huedge⟩
-    have hbσ : 0 < b ^ σ := Real.rpow_pos_of_pos hb0 σ
-    have hlt : ‖b ^ σ‖ₑ < ENNReal.ofReal (b ^ μ) := by
-      rw [Real.eNorm_eq_ofReal hbσ.le]
-      exact (ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 μ)).mpr
-        (Real.rpow_lt_rpow_of_exponent_lt hb hσμ)
-    exact hlt.trans_le (ofReal_rpow_le_radius f v hb hv (hμτ.trans_le hτle))
+  obtain ⟨τ, hστ, hG⟩ := exists_lt_hasGaussNorm_of_isFiniteFace_newtonPolygon f v hb hv hface
+  let μ := (σ + τ) / 2
+  have hμ : f.IsRestricted (b ^ μ) := hG.isRestricted_of_abs_lt
+    ((abs_of_pos (Real.rpow_pos_of_pos hb0 μ)).trans_lt
+      (Real.rpow_lt_rpow_of_exponent_lt hb (add_div_two_lt_right.mpr hστ)))
+  have hlt : ‖b ^ σ‖ₑ < ‖b ^ μ‖ₑ := by
+    rw [Real.eNorm_eq_ofReal (Real.rpow_pos_of_pos hb0 σ).le,
+      Real.eNorm_eq_ofReal (Real.rpow_pos_of_pos hb0 μ).le]
+    exact (ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 μ)).mpr
+      (Real.rpow_lt_rpow_of_exponent_lt hb (left_lt_add_div_two.mpr hστ))
+  exact hlt.trans_le (le_radius_of_isRestricted hμ)
 
 /-- **Finite faces and the disc of convergence.** For a nonzero series `f`, the Newton polygon of
 `f` has a finite face of slope `σ` if and only if the radius `b ^ σ` lies strictly below

@@ -52,6 +52,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
   `PowerSeries.left_eq_toNat_order_add_ncard_unitSlope_lt` and
   `PowerSeries.right_eq_toNat_order_add_ncard_unitSlope_le`: the width and endpoints of a finite
   face in terms of the order at zero and finite unit slopes.
+* `PowerSeries.newtonSlopeMultiplicity_eq_ncard_of_heights_eq`: for a polygon given by infinite
+  slope data, the multiplicity counts the indices of that slope.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
@@ -113,6 +115,25 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- If the Newton polygon of `f` is represented by infinite slope data `d`, the multiplicity of a
+slope `σ` is the number of indices `i` with `d.slope i = σ`. -/
+theorem newtonSlopeMultiplicity_eq_ncard_of_heights_eq {d : InfiniteSlopeData ℝ}
+    (hd : d.heights = f.newtonPolygon v) (σ : ℝ) :
+    f.newtonSlopeMultiplicity v σ = {i | d.slope i = σ}.ncard := by
+  -- The finite unit edges of slope `σ` are the translates by `d.start` of the indices of slope `σ`.
+  have himage : {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n = σ} =
+      (d.start + ·) '' {i | d.slope i = σ} := by
+    ext n
+    simp only [← hd, mem_finiteEdges, ne_eq, InfiniteSlopeData.heights_eq_top_iff, not_lt,
+      Set.mem_ofPred_eq, Set.mem_image]
+    constructor
+    · rintro ⟨⟨hn, -⟩, hσ⟩
+      obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hn
+      exact ⟨i, by rwa [InfiniteSlopeData.unitSlope_heights] at hσ, rfl⟩
+    · rintro ⟨i, hi, rfl⟩
+      exact ⟨⟨by omega, by omega⟩, by rwa [InfiniteSlopeData.unitSlope_heights]⟩
+  rw [newtonSlopeMultiplicity_def, himage, Set.ncard_image_of_injective _ (add_right_injective _)]
 
 /-- For a finite face of the Newton polygon, the series is nonzero with admissible coefficient
 heights, and `f.order.toNat` is the first index where the Newton polygon is finite. -/

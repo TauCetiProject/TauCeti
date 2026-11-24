@@ -23,12 +23,8 @@ namespace TauCeti.Complex.UnitDisc
 
 /-- The punctured unit disc is an open subset of the complex plane. -/
 theorem isOpenEmbedding_coe_punctured :
-    Topology.IsOpenEmbedding (fun q : {q : 𝔻 // q ≠ 0} ↦ ((q : 𝔻) : ℂ)) := by
-  let : T1Space 𝔻 := _root_.Complex.UnitDisc.isEmbedding_coe.t1Space
-  -- The unit-disc coercion is definitionally the inclusion of the open unit ball.
-  have h : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
-    Metric.isOpen_ball.isOpenEmbedding_subtypeVal
-  exact h.comp isOpen_compl_singleton.isOpenEmbedding_subtypeVal
+    Topology.IsOpenEmbedding (fun q : {q : 𝔻 // q ≠ 0} ↦ ((q : 𝔻) : ℂ)) :=
+  _root_.Complex.UnitDisc.isOpenEmbedding_coe.comp isOpen_compl_singleton.isOpenEmbedding_subtypeVal
 
 /-- Every nonzero point of the open unit disc is a point of the punctured unit disc. -/
 theorem exists_coe_punctured_eq {q : ℂ} (hq : q ≠ 0) (hq1 : ‖q‖ < 1) :
