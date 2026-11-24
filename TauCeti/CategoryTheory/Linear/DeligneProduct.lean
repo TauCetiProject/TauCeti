@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Linear.Mat
 public import TauCeti.CategoryTheory.Linear.SplitSimpleFamily
+public import TauCeti.CategoryTheory.Preadditive.Mat
 
 /-!
 # The Deligne tensor product of linear categories
