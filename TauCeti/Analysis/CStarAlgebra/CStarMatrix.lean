@@ -9,6 +9,9 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Analysis.CStarAlgebra.Unitization
+import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
@@ -55,7 +58,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
-  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
+  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
+  `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -438,6 +442,27 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+open scoped ComplexOrder in
+/-- The entrywise image of the scalar matrix `x` under `z ↦ z • a` has norm at most `‖x‖ ‖a‖`.
+In matrices over the unitization of `A` it is the product of `x` and `diag(a, …, a)`, and the
+inclusion of `A` in its unitization is isometric on matrices. -/
+theorem norm_map_toSpanSingleton_le (a : A) (x : CStarMatrix n n ℂ) :
+    ‖x.map (LinearMap.toSpanSingleton ℂ A a)‖ ≤ ‖x‖ * ‖a‖ := by
+  classical
+  let ι : A →⋆ₙₐ[ℂ] Unitization ℂ A := Unitization.inrNonUnitalStarAlgHom ℂ A
+  let ιₙ := mapₙₐ (n := n) ι
+  have hιₙ : Function.Injective ιₙ := map_injective Unitization.inr_injective
+  let α := mapₙₐ (n := n) ((StarAlgHom.ofId ℂ (Unitization ℂ A)).toNonUnitalStarAlgHom)
+  have hfac : ιₙ (x.map (LinearMap.toSpanSingleton ℂ A a)) =
+      α x * diagonalNonUnitalStarAlgHom ℂ n _ (ι a) := by
+    refine ext fun i j ↦ ?_
+    simp [ιₙ, α, ι, mul_apply, Unitization.algebraMap_eq_inl, Unitization.inl_mul_inr,
+      Unitization.inr_smul]
+  rw [← NonUnitalStarAlgHom.norm_map ιₙ hιₙ, hfac]
+  refine (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le α x) ?_
+    (norm_nonneg _) (norm_nonneg _))
+  exact (norm_diagonalNonUnitalStarAlgHom_le _).trans (Unitization.norm_inr a).le
 
 section Compression
 

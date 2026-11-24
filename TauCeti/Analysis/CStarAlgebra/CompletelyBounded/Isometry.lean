@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Maps
-import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.Analysis.CStarAlgebra.Unitization
 
 /-!
 # Complete contractions, complete isometries and `CB(ℂ, B) ≃ B`
@@ -25,7 +23,8 @@ injective star homomorphisms, hence isometric.
 For `E = ℂ`, the map `b ↦ (z ↦ z • b)` is an isometric isomorphism `B ≃ₗᵢ CB(ℂ, B)` for every
 C⋆-algebra `B`, with inverse evaluation at `1`. The amplification of `z ↦ z • b` sends a scalar
 matrix `x` to `[xᵢⱼ • b]`; in matrices over the unitization of `B` this is the product of the
-scalar matrix `x` and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b‖`.
+scalar matrix `x` and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b‖`
+(`CStarMatrix.norm_map_toSpanSingleton_le`).
 
 ## Main declarations
 
@@ -148,30 +147,6 @@ end NonUnitalStarAlgHom
 section toSpanSingleton
 
 variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
-namespace CStarMatrix
-
-/-- The amplification of `z ↦ z • b` has norm at most `‖x‖ ‖b‖` at the scalar matrix `x`. In
-matrices over the unitization of `B` it is the product of `x` and `diag(b, …, b)`, and the
-inclusion of `B` in its unitization is isometric on matrices. -/
-theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) ℂ) :
-    ‖x.map (LinearMap.toSpanSingleton ℂ B b)‖ ≤ ‖x‖ * ‖b‖ := by
-  let ι : B →⋆ₙₐ[ℂ] Unitization ℂ B := Unitization.inrNonUnitalStarAlgHom ℂ B
-  let ιₙ := CStarMatrix.mapₙₐ (n := Fin n) ι
-  have hιₙ : Function.Injective ιₙ := CStarMatrix.map_injective Unitization.inr_injective
-  let α := CStarMatrix.mapₙₐ (n := Fin n)
-    ((StarAlgHom.ofId ℂ (Unitization ℂ B)).toNonUnitalStarAlgHom)
-  have hfac : ιₙ (x.map (LinearMap.toSpanSingleton ℂ B b)) =
-      α x * CStarMatrix.diagonalNonUnitalStarAlgHom ℂ (Fin n) _ (ι b) := by
-    refine CStarMatrix.ext fun i j ↦ ?_
-    simp [ιₙ, α, ι, CStarMatrix.mul_apply, Unitization.algebraMap_eq_inl,
-      Unitization.inl_mul_inr, Unitization.inr_smul]
-  rw [← NonUnitalStarAlgHom.norm_map ιₙ hιₙ, hfac]
-  refine (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le α x) ?_
-    (norm_nonneg _) (norm_nonneg _))
-  exact (CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le _).trans (Unitization.norm_inr b).le
-
-end CStarMatrix
 
 namespace LinearMap
 
