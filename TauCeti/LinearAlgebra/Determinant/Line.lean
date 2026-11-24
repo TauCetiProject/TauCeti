@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.LinearAlgebra.Determinant.Basic
-import TauCeti.LinearAlgebra.Orientation.RankOne
 
 /-!
 # Determinant lines of modules and of linear maps
@@ -106,8 +105,6 @@ the linear algebra itself is standard.
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
   target acts on the determinant line by `c ^ ind f`.
-* `Module.Ray.eq_or_eq_neg_detLine`, `Module.Ray.ne_iff_eq_neg_detLine`: any two rays in the
-  determinant line of a linear map over a linearly ordered field are equal or opposite.
 * `LinearMap.detLineCongr_neg_apply`: negation of source and target acts on the determinant line
   by `(-1) ^ (dim (ker f) + dim (coker f))`.
 * `LinearMap.detLineCongrKerCoker_refl`, `LinearMap.detLineCongrKerCoker_trans` and
@@ -721,49 +718,6 @@ theorem map_detLineCongrOfEq_map_detLineCongrOfEq {f g k : M →ₗ[R] N} (h : f
 end Orientation
 
 end LinearMap
-
-namespace Module.Ray
-
-section OrderedRing
-
-variable {R M N M' N' : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
-
-/-- `Module.Ray.map` commutes with negation of rays between determinant lines of linear maps. -/
-@[simp]
-theorem map_detLine_neg {f : M →ₗ[R] N} {g : M' →ₗ[R] N'} (e : f.detLine ≃ₗ[R] g.detLine)
-    (r : Module.Ray R f.detLine) : Module.Ray.map e (-r) = -Module.Ray.map e r :=
-  @Module.Ray.map_neg R _ _ _ f.detLine g.detLine TensorProduct.addCommGroup
-    TensorProduct.addCommGroup _ _ e r
-
-/-- A ray in the determinant line of a linear map does not equal its own negation. -/
-theorem ne_neg_self_detLine {f : M →ₗ[R] N} [IsDomain R] [IsTorsionFree R f.detLine]
-    (r : Module.Ray R f.detLine) : r ≠ -r :=
-  @Module.Ray.ne_neg_self R _ _ _ f.detLine TensorProduct.addCommGroup _ _ _ r
-
-end OrderedRing
-
-section OrderedField
-
-variable {K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-
-/-- Any two rays in the determinant line of a linear map over a linearly ordered field are equal or
-negations of each other. -/
-theorem eq_or_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.detLine) :
-    r₁ = r₂ ∨ r₁ = -r₂ :=
-  @Module.Ray.eq_or_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
-    (LinearMap.finrank_detLine f) r₁ r₂
-
-theorem ne_iff_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.detLine) :
-    r₁ ≠ r₂ ↔ r₁ = -r₂ :=
-  @Module.Ray.ne_iff_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
-    (LinearMap.finrank_detLine f) r₁ r₂
-
-end OrderedField
-
-end Module.Ray
 
 end
 

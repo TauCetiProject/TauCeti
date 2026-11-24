@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Character
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
+import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
 
 /-!
 # The orientation character of a real vector bundle
@@ -162,30 +163,28 @@ theorem orientationCharacter_eq_neg_one_iff {b : B} (g : FundamentalGroup B b)
 /-- **The orientation character detects loops whose transport fixes a fibre orientation.** -/
 theorem orientationCharacter_eq_one_iff_quotientTransport_eq {b : B} (g : FundamentalGroup B b)
     (o : Orientation ℝ (E b) ι) :
-    orientationCharacter F E hι b g = 1 ↔
-      quotientTransport (F := F) (E := E) hι g.toPath o = o := by
+    orientationCharacter F E hι b g = 1 ↔ quotientTransport E hι g.toPath o = o := by
   rw [orientationCharacter_eq_one_iff_monodromy_eq hι g ⟨⟨b, o⟩, rfl⟩,
-    ← (fiberEquiv b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
-    fiberEquiv_apply_mk']
+    ← (fiberEquiv F E ι b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
+    fiberEquiv_mk]
 
 /-- **The orientation character detects loops whose transport reverses a fibre orientation.** -/
 theorem orientationCharacter_eq_neg_one_iff_quotientTransport_eq {b : B}
     (g : FundamentalGroup B b) (o : Orientation ℝ (E b) ι) :
-    orientationCharacter F E hι b g = -1 ↔
-      quotientTransport (F := F) (E := E) hι g.toPath o = -o := by
+    orientationCharacter F E hι b g = -1 ↔ quotientTransport E hι g.toPath o = -o := by
   have hsub : (((isCoveringMap_proj hι).monodromy g.toPath ⟨⟨b, o⟩, rfl⟩ :
       (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :
         VectorBundleOrientationCover F E ι) = ⟨b, -o⟩ ↔
       (isCoveringMap_proj hι).monodromy g.toPath ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b, -o⟩, rfl⟩ :=
     ⟨fun h ↦ Subtype.ext h, congrArg Subtype.val⟩
   rw [orientationCharacter_eq_neg_one_iff hι g ⟨⟨b, o⟩, rfl⟩, deck_apply, hsub,
-    ← (fiberEquiv b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
-    fiberEquiv_apply_mk']
+    ← (fiberEquiv F E ι b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
+    fiberEquiv_mk]
 
 /-- **Orientation transport around a loop acts by the orientation character.** -/
 theorem quotientTransport_toPath_eq_smul {b : B} (g : FundamentalGroup B b)
     (o : Orientation ℝ (E b) ι) :
-    quotientTransport (F := F) (E := E) hι g.toPath o =
+    quotientTransport E hι g.toPath o =
       Units.map (Int.castRingHom ℝ).toMonoidHom (orientationCharacter F E hι b g) • o := by
   rcases Int.units_eq_one_or (orientationCharacter F E hι b g) with h | h
   · rw [h, map_one, one_smul]

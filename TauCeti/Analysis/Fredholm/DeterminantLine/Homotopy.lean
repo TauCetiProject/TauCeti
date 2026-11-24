@@ -5,20 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.DeterminantLine.OrientationCover
+public import Mathlib.Analysis.Convex.Basic
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
-import Mathlib.Topology.Homotopy.Lifting
 
 /-!
-# Homotopy invariance and covering monodromy of Fredholm determinant orientations
+# Homotopy invariance of orientation transport of Fredholm determinant lines
 
 Along a path `T` of Fredholm operators between real Banach spaces, orientations of the
 determinant lines `det (ker T t) ⊗ (det (F ⧸ range T t))^*` are transported by
 `TauCeti.detLineOrientationTransport`. This file proves that the transport only depends on the
-path up to homotopy relative to its endpoints, establishes path independence in convex sets of
-Fredholm operators, and connects `detLineOrientationTransport` with covering monodromy and the
-orientation sign character on the fundamental group of `{T : E →L[ℝ] F // T.IsFredholm}`.
+path up to homotopy relative to its endpoints, and establishes path independence in convex sets of
+Fredholm operators.
 
 Let `H : ℝ × ℝ → E →L[ℝ] F` be continuous and Fredholm on a rectangle
 `[[s₀, s₁]] ×ˢ [[a, b]]`. Transporting an orientation of the determinant line at the corner
@@ -48,8 +45,6 @@ Small rectangles are combined by the concatenation and reversal laws of transpor
   fixes the reading in the chart.
 * `TauCeti.detLineOrientationTransport_eq_map_of_forall_eq`: transport along a path which is
   constant on the interval of transport is the identification of the determinant lines.
-* `TauCeti.detLineOrientationTransport_map_detLineCongrOfEq`: transport along pointwise equal paths
-  commutes with the identifications of the determinant lines of equal operators.
 * `TauCeti.detLineOrientationTransport_comm`: transport around a rectangle commutes.
 * `TauCeti.detLineOrientationTransport_eq_of_homotopy`: transport is invariant under homotopies
   relative to the endpoints.
@@ -57,12 +52,6 @@ Small rectangles are combined by the concatenation and reversal laws of transpor
   between two separate paths `T₀, T₁ : ℝ → E →L[ℝ] F`.
 * `TauCeti.detLineOrientationTransport_eq_of_convex`: path independence in a convex set of
   Fredholm operators.
-* `TauCeti.IsDetLineCoherentOn.monodromy_orientationCoverMk`,
-  `TauCeti.FredholmDetLine.quotientOrientationTransport`,
-  `TauCeti.FredholmDetLine.pathOrientationTransport`: covering monodromy transport along paths and
-  path homotopy classes, agreeing with `TauCeti.detLineOrientationTransport`.
-* `TauCeti.FredholmDetLine.orientationMonodromySign`: the loop orientation sign character
-  `FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀ →* ℤˣ`.
 
 ## References
 
@@ -146,20 +135,6 @@ theorem detLineOrientationTransport_eq_map_of_forall_eq {T : ℝ → E →L[ℝ]
     rw [hv a left_mem_uIcc, LinearMap.detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
   simp only [ha, hv b right_mem_uIcc] at key
   rw [Module.Ray.map_apply, key]
-
-/-- **Transport along pointwise equal paths.** Transport along two pointwise equal paths agrees,
-once the determinant lines of the equal operators at the endpoints are identified by
-`LinearMap.detLineCongrOfEq`. -/
-theorem detLineOrientationTransport_map_detLineCongrOfEq {T₁ T₂ : ℝ → E →L[ℝ] F}
-    (h : ∀ t, T₁ t = T₂ t) {a b : ℝ} (hT₁ : ContinuousOn T₁ (uIcc a b))
-    (hF₁ : ∀ t ∈ uIcc a b, IsFredholm (T₁ t)) (hT₂ : ContinuousOn T₂ (uIcc a b))
-    (hF₂ : ∀ t ∈ uIcc a b, IsFredholm (T₂ t)) (o : Module.Ray ℝ (T₁ a : E →ₗ[ℝ] F).detLine) :
-    detLineOrientationTransport a b hT₂ hF₂
-        (Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h a))) o) =
-      Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h b)))
-        (detLineOrientationTransport a b hT₁ hF₁ o) := by
-  obtain rfl : T₁ = T₂ := funext h
-  simp only [LinearMap.detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply]
 
 end Constant
 
@@ -443,7 +418,7 @@ theorem detLineOrientationTransport_eq_of_homotopyRel
     (congrArg ContinuousLinearMap.toLinearMap (hs₀ a left_mem_uIcc).symm)) o
   let o₁ := Module.Ray.map (LinearMap.detLineCongrOfEq
     (congrArg ContinuousLinearMap.toLinearMap (ha' s₁ right_mem_uIcc).symm)) o'
-  have hc₀ := detLineOrientationTransport_congr hHs₀ hT₀ hFs₀ hF₀ hs₀ o'
+  have hc₀ := detLineOrientationTransport_map_detLineCongrOfEq hs₀ hHs₀ hFs₀ hT₀ hF₀ o'
   simp only [o', LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq,
     LinearMap.detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply] at hc₀
   have hin₁ : Module.Ray.map (LinearMap.detLineCongrOfEq
@@ -456,8 +431,8 @@ theorem detLineOrientationTransport_eq_of_homotopyRel
           (congrArg ContinuousLinearMap.toLinearMap (hb' s₁ right_mem_uIcc).symm))
         (detLineOrientationTransport (T := fun t ↦ H (s₀, t)) a b hHs₀ hFs₀ o') := by
     simpa only [o₁] using detLineOrientationTransport_eq_of_homotopy hH hFH ha' hb' o'
-  rw [← hin₁, detLineOrientationTransport_congr hHs₁ hT₁ hFs₁ hF₁ hs₁ o₁, hslice, hc₀,
-    LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq,
+  rw [← hin₁, detLineOrientationTransport_map_detLineCongrOfEq hs₁ hHs₁ hFs₁ hT₁ hF₁ o₁,
+    hslice, hc₀, LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq,
     LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq]
 
 /-- **Path-independence in a convex set of Fredholm operators.** Any two continuous paths in a
@@ -488,289 +463,6 @@ theorem detLineOrientationTransport_eq_of_convex {U : Set (E →L[ℝ] F)} (hU :
 
 end UnbundledHomotopy
 
-noncomputable section
-
-/-- Along a continuous Fredholm family `T : ℝ → E →L[ℝ] F` on `[[0, 1]]`, covering monodromy of the
-orientation double cover carries the initial ray of a coherent family `v` to its final ray. -/
-theorem IsDetLineCoherentOn.monodromy_orientationCoverMk
-    {T : ℝ → E →L[ℝ] F} {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine}
-    (hv : IsDetLineCoherentOn T v (uIcc 0 1))
-    (hT : ContinuousOn T (uIcc 0 1)) (hF : ∀ t ∈ uIcc (0 : ℝ) 1, (T t).IsFredholm) :
-    (FredholmDetLine.isCoveringMap_orientationCover_proj (E := E) (F := F) (ι := Fin 1)).monodromy
-      (.mk ⟨⟨fun t : unitInterval ↦ ⟨T t.val, hF t.val (Icc_subset_uIcc t.property)⟩,
-        (hT.comp_continuous continuous_subtypeVal
-          fun t ↦ Icc_subset_uIcc t.property).subtype_mk _⟩, rfl, rfl⟩)
-      ((FredholmDetLine.orientationCoverFiberEquiv (Fin 1) ⟨T 0, hF 0 left_mem_uIcc⟩).symm
-        (rayOfNeZero ℝ (v 0) (hv.ne_zero left_mem_uIcc))) =
-    ⟨FredholmDetLine.orientationCoverMk (Fin 1) ⟨T 1, hF 1 right_mem_uIcc⟩
-      (rayOfNeZero ℝ (v 1) (hv.ne_zero right_mem_uIcc)),
-      FredholmDetLine.proj_orientationCoverMk _ _⟩ := by
-  obtain ⟨hv_ne, hg⟩ :=
-    (isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := Fin 1) hT hF).1 hv
-  let g_sub : uIcc (0 : ℝ) 1 → VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1) :=
-    fun x ↦ FredholmDetLine.orientationCoverMk (Fin 1) ⟨T x.val, hF x.val x.property⟩
-      (rayOfNeZero ℝ (v x.val) (hv_ne x.val x.property))
-  let Γ : C(unitInterval, VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1)) :=
-    ⟨fun t ↦ g_sub ⟨t.val, Icc_subset_uIcc t.property⟩,
-      hg.comp (continuous_subtypeVal.subtype_mk _)⟩
-  let γ : Path (⟨T 0, hF 0 left_mem_uIcc⟩ : {T : E →L[ℝ] F // T.IsFredholm})
-      ⟨T 1, hF 1 right_mem_uIcc⟩ :=
-    ⟨⟨fun t : unitInterval ↦ ⟨T t.val, hF t.val (Icc_subset_uIcc t.property)⟩,
-      (hT.comp_continuous continuous_subtypeVal fun t ↦ Icc_subset_uIcc t.property).subtype_mk _⟩,
-        rfl, rfl⟩
-  have hpΓ : (VectorBundleOrientationCover.proj :
-      VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1) → _) ∘ ⇑Γ = ⇑γ :=
-    funext fun _ ↦ FredholmDetLine.proj_orientationCoverMk _ _
-  have hΓ0 : Γ 0 = ((FredholmDetLine.orientationCoverFiberEquiv (Fin 1)
-      ⟨T 0, hF 0 left_mem_uIcc⟩).symm (rayOfNeZero ℝ (v 0) (hv.ne_zero left_mem_uIcc))).val := by
-    rw [FredholmDetLine.orientationCoverFiberEquiv_symm_apply]
-    exact congrArg g_sub (Subtype.ext rfl)
-  refine Subtype.ext ?_
-  rw [(FredholmDetLine.isCoveringMap_orientationCover_proj (E := E) (F := F)
-    (ι := Fin 1)).monodromy_eq_apply_one hpΓ hΓ0]
-  exact congrArg g_sub (Subtype.ext rfl)
-
-namespace FredholmDetLine
-
-variable {T₀ T₁ T₂ : {T : E →L[ℝ] F // T.IsFredholm}}
-
-/-- **Orientation transport along a path homotopy class.** Obtained by conjugating
-`VectorBundleOrientationCover.quotientTransport` of `FredholmDetLine ℝ E F` by
-`FredholmDetLine.orientationEquivRay`. -/
-def quotientOrientationTransport (γ : Path.Homotopic.Quotient T₀ T₁) :
-    Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine ≃ Module.Ray ℝ (T₁.val : E →ₗ[ℝ] F).detLine :=
-  ((orientationEquivRay (ι := Fin 1) T₀).symm.trans
-    (VectorBundleOrientationCover.quotientTransport (F := ℝ) (E := FredholmDetLine ℝ E F)
-      (ι := Fin 1) (Fintype.card_unique.trans (Module.finrank_self ℝ).symm) γ)).trans
-    (orientationEquivRay (ι := Fin 1) T₁)
-
-theorem quotientOrientationTransport_def (γ : Path.Homotopic.Quotient T₀ T₁) :
-    quotientOrientationTransport γ =
-      ((orientationEquivRay (ι := Fin 1) T₀).symm.trans
-        (VectorBundleOrientationCover.quotientTransport (F := ℝ) (E := FredholmDetLine ℝ E F)
-          (ι := Fin 1) (Fintype.card_unique.trans (Module.finrank_self ℝ).symm) γ)).trans
-        (orientationEquivRay (ι := Fin 1) T₁) := (rfl)
-
--- Kept non-`simp` so `quotientOrientationTransport_neg` / `_units_smul` satisfy `simpNF`.
-theorem quotientOrientationTransport_apply (γ : Path.Homotopic.Quotient T₀ T₁)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    quotientOrientationTransport γ r =
-      orientationCoverFiberEquiv (Fin 1) T₁
-        ((isCoveringMap_orientationCover_proj (E := E) (F := F) (ι := Fin 1)).monodromy γ
-          ((orientationCoverFiberEquiv (Fin 1) T₀).symm r)) := by
-  simp [quotientOrientationTransport_def, VectorBundleOrientationCover.quotientTransport_apply,
-    orientationCoverFiberEquiv_def]
-
-@[simp]
-theorem quotientOrientationTransport_refl (T₀ : {T : E →L[ℝ] F // T.IsFredholm}) :
-    quotientOrientationTransport (.refl T₀) = Equiv.refl _ := by
-  ext r
-  simp [quotientOrientationTransport_def]
-
-@[simp]
-theorem quotientOrientationTransport_symm (γ : Path.Homotopic.Quotient T₀ T₁) :
-    quotientOrientationTransport γ.symm = (quotientOrientationTransport γ).symm := by
-  ext r
-  simp [quotientOrientationTransport_def]
-
-/-- Concatenation law for orientation transport along path homotopy classes. -/
-theorem quotientOrientationTransport_trans
-    (γ₁ : Path.Homotopic.Quotient T₀ T₁) (γ₂ : Path.Homotopic.Quotient T₁ T₂) :
-    quotientOrientationTransport (γ₁.trans γ₂) =
-      (quotientOrientationTransport γ₁).trans (quotientOrientationTransport γ₂) := by
-  ext r
-  simp [quotientOrientationTransport_def, VectorBundleOrientationCover.quotientTransport_trans]
-
-@[simp]
-theorem quotientOrientationTransport_neg (γ : Path.Homotopic.Quotient T₀ T₁)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    quotientOrientationTransport γ (-r) = -quotientOrientationTransport γ r := by
-  simp [quotientOrientationTransport_def]
-
-@[simp]
-theorem quotientOrientationTransport_units_smul (γ : Path.Homotopic.Quotient T₀ T₁) (u : ℝˣ)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    quotientOrientationTransport γ (u • r) = u • quotientOrientationTransport γ r := by
-  simp [quotientOrientationTransport_def]
-
-/-- **Orientation transport along a continuous path of Fredholm operators.** -/
-def pathOrientationTransport (γ : Path T₀ T₁) :
-    Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine ≃ Module.Ray ℝ (T₁.val : E →ₗ[ℝ] F).detLine :=
-  quotientOrientationTransport (.mk γ)
-
-theorem pathOrientationTransport_def (γ : Path T₀ T₁) :
-    pathOrientationTransport γ = quotientOrientationTransport (.mk γ) := (rfl)
-
-@[simp]
-theorem pathOrientationTransport_refl (T₀ : {T : E →L[ℝ] F // T.IsFredholm}) :
-    pathOrientationTransport (Path.refl T₀) = Equiv.refl _ := by
-  rw [pathOrientationTransport_def, Path.Homotopic.Quotient.mk_refl,
-    quotientOrientationTransport_refl]
-
-@[simp]
-theorem pathOrientationTransport_symm (γ : Path T₀ T₁) :
-    pathOrientationTransport γ.symm = (pathOrientationTransport γ).symm := by
-  rw [pathOrientationTransport_def, Path.Homotopic.Quotient.mk_symm,
-    quotientOrientationTransport_symm, pathOrientationTransport_def]
-
-/-- Concatenation law for orientation transport along continuous paths of Fredholm operators. -/
-theorem pathOrientationTransport_trans (γ₁ : Path T₀ T₁) (γ₂ : Path T₁ T₂) :
-    pathOrientationTransport (γ₁.trans γ₂) =
-      (pathOrientationTransport γ₁).trans (pathOrientationTransport γ₂) := by
-  rw [pathOrientationTransport_def, Path.Homotopic.Quotient.mk_trans,
-    quotientOrientationTransport_trans, pathOrientationTransport_def, pathOrientationTransport_def]
-
-/-- **Endpoint-relative homotopy invariance** for `Path`s in `{T : E →L[ℝ] F // T.IsFredholm}`. -/
-theorem pathOrientationTransport_eq_of_homotopic {γ₀ γ₁ : Path T₀ T₁} (h : γ₀.Homotopic γ₁) :
-    pathOrientationTransport γ₀ = pathOrientationTransport γ₁ := by
-  rw [pathOrientationTransport_def, pathOrientationTransport_def, Path.Homotopic.Quotient.eq.2 h]
-
-/-- Compatibility of `pathOrientationTransport` with `Path.cast` along endpoint equalities. -/
-theorem pathOrientationTransport_cast {S₀ S₁ T₀ T₁ : {T : E →L[ℝ] F // T.IsFredholm}}
-    (γ : Path S₀ S₁) (h₀ : T₀ = S₀) (h₁ : T₁ = S₁)
-    (o : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    pathOrientationTransport (γ.cast h₀ h₁) o =
-      Module.Ray.map (LinearMap.detLineCongrOfEq
-          (congrArg (fun x : {T : E →L[ℝ] F // T.IsFredholm} ↦ (x.val : E →ₗ[ℝ] F)) h₁.symm))
-        (pathOrientationTransport γ
-          (Module.Ray.map (LinearMap.detLineCongrOfEq
-            (congrArg (fun x : {T : E →L[ℝ] F // T.IsFredholm} ↦ (x.val : E →ₗ[ℝ] F)) h₀)) o)) := by
-  subst h₀
-  subst h₁
-  simp
-
-@[simp]
-theorem pathOrientationTransport_neg (γ : Path T₀ T₁)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    pathOrientationTransport γ (-r) = -pathOrientationTransport γ r :=
-  quotientOrientationTransport_neg (.mk γ) r
-
-@[simp]
-theorem pathOrientationTransport_units_smul (γ : Path T₀ T₁) (u : ℝˣ)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    pathOrientationTransport γ (u • r) = u • pathOrientationTransport γ r :=
-  quotientOrientationTransport_units_smul (.mk γ) u r
-
-/-- **Agreement of covering monodromy and coherent-family transport** on `[[0, 1]]`. -/
-theorem pathOrientationTransport_mk_eq_detLineOrientationTransport
-    {T : ℝ → E →L[ℝ] F} (hT : ContinuousOn T (uIcc 0 1))
-    (hF : ∀ t ∈ uIcc (0 : ℝ) 1, (T t).IsFredholm)
-    (o : Module.Ray ℝ (T 0 : E →ₗ[ℝ] F).detLine) :
-    pathOrientationTransport
-        (⟨⟨fun t : unitInterval ↦ ⟨T t.val, hF t.val (Icc_subset_uIcc t.property)⟩,
-          (hT.comp_continuous continuous_subtypeVal
-            fun t ↦ Icc_subset_uIcc t.property).subtype_mk _⟩, rfl, rfl⟩ :
-          Path ⟨T 0, hF 0 left_mem_uIcc⟩ ⟨T 1, hF 1 right_mem_uIcc⟩) o =
-      detLineOrientationTransport 0 1 hT hF o := by
-  induction o using Module.Ray.ind with | h v₀ hv₀ =>
-  obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
-  rw [pathOrientationTransport_def, quotientOrientationTransport_apply,
-    hv.monodromy_orientationCoverMk hT hF,
-    orientationCoverFiberEquiv_mk' ⟨T 1, hF 1 right_mem_uIcc⟩,
-    detLineOrientationTransport_rayOfNeZero hT hF hv]
-
-/-- **Bridge between `pathOrientationTransport` and `detLineOrientationTransport`** along
-`γ.extend`. -/
-theorem pathOrientationTransport_apply_eq_map_detLineOrientationTransport
-    (γ : Path T₀ T₁) (o : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    pathOrientationTransport γ o =
-      Module.Ray.map (LinearMap.detLineCongrOfEq
-          (congrArg (fun x : {T : E →L[ℝ] F // T.IsFredholm} ↦ (x.val : E →ₗ[ℝ] F)) γ.extend_one))
-        (detLineOrientationTransport (T := fun t ↦ (γ.extend t).val) 0 1
-          (continuous_subtypeVal.comp γ.continuous_extend).continuousOn
-          (fun t _ ↦ (γ.extend t).property)
-          (Module.Ray.map (LinearMap.detLineCongrOfEq
-            (congrArg (fun x : {T : E →L[ℝ] F // T.IsFredholm} ↦ (x.val : E →ₗ[ℝ] F))
-              γ.extend_zero.symm)) o)) := by
-  have hT : ContinuousOn (fun t ↦ (γ.extend t).val) (uIcc 0 1) :=
-    (continuous_subtypeVal.comp γ.continuous_extend).continuousOn
-  have hF : ∀ t ∈ uIcc (0 : ℝ) 1, ((γ.extend t).val).IsFredholm := fun t _ ↦ (γ.extend t).property
-  let γ' : Path (γ.extend 0) (γ.extend 1) :=
-    ⟨⟨fun t : unitInterval ↦ ⟨(γ.extend t.val).val, hF t.val (Icc_subset_uIcc t.property)⟩,
-      (hT.comp_continuous continuous_subtypeVal fun t ↦ Icc_subset_uIcc t.property).subtype_mk _⟩,
-        rfl, rfl⟩
-  have hγ : pathOrientationTransport γ =
-      pathOrientationTransport (γ'.cast γ.extend_zero.symm γ.extend_one.symm) :=
-    congrArg pathOrientationTransport
-      (Path.ext (funext fun t ↦ Subtype.ext (congrArg Subtype.val (γ.extend_extends' t).symm)))
-  simp only [hγ, pathOrientationTransport_cast]
-  congr 1
-  exact pathOrientationTransport_mk_eq_detLineOrientationTransport hT hF _
-
-/-- Around any loop homotopy class based at `T₀`, orientation transport either fixes every ray or
-reverses every ray. -/
-theorem quotientOrientationTransport_eq_self_or_eq_neg (γ : Path.Homotopic.Quotient T₀ T₀) :
-    (∀ r, quotientOrientationTransport γ r = r) ∨
-      (∀ r, quotientOrientationTransport γ r = -r) := by
-  rcases VectorBundleOrientationCover.quotientTransport_eq_self_or_eq_neg
-    (F := ℝ) (E := FredholmDetLine ℝ E F) (ι := Fin 1)
-    (Fintype.card_unique.trans (Module.finrank_self ℝ).symm) γ with h | h
-  · exact .inl fun r ↦ by simp [quotientOrientationTransport_def, h]
-  · exact .inr fun r ↦ by simp [quotientOrientationTransport_def, h]
-
-/-- **Orientation monodromy sign character** `FundamentalGroup _ T₀ →* ℤˣ`, defined as
-`VectorBundleOrientationCover.orientationCharacter` of `FredholmDetLine ℝ E F`. -/
-def orientationMonodromySign (T₀ : {T : E →L[ℝ] F // T.IsFredholm}) :
-    FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀ →* ℤˣ :=
-  VectorBundleOrientationCover.orientationCharacter ℝ (FredholmDetLine ℝ E F)
-    (ι := Fin 1) (Fintype.card_unique.trans (Module.finrank_self ℝ).symm) T₀
-
-theorem orientationMonodromySign_def (T₀ : {T : E →L[ℝ] F // T.IsFredholm}) :
-    orientationMonodromySign T₀ =
-      VectorBundleOrientationCover.orientationCharacter ℝ (FredholmDetLine ℝ E F)
-        (ι := Fin 1) (Fintype.card_unique.trans (Module.finrank_self ℝ).symm) T₀ := (rfl)
-
-/-- Orientation transport along `γ : FundamentalGroup _ T₀` acts on every ray by
-`orientationMonodromySign T₀ γ`. -/
-theorem quotientOrientationTransport_toPath_eq_smul
-    (γ : FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    quotientOrientationTransport γ.toPath r =
-      (Units.map (Int.castRingHom ℝ).toMonoidHom (orientationMonodromySign T₀ γ)) • r := by
-  simp [quotientOrientationTransport_def,
-    VectorBundleOrientationCover.quotientTransport_toPath_eq_smul, orientationMonodromySign_def]
-
-/-- `orientationMonodromySign T₀ γ = 1` iff orientation transport along `γ` fixes `r`. -/
-theorem orientationMonodromySign_eq_one_iff_apply
-    (γ : FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    orientationMonodromySign T₀ γ = 1 ↔ quotientOrientationTransport γ.toPath r = r := by
-  simp [orientationMonodromySign_def,
-    VectorBundleOrientationCover.orientationCharacter_eq_one_iff_quotientTransport_eq _ γ
-      ((orientationEquivRay (ι := Fin 1) T₀).symm r),
-    quotientOrientationTransport_def, Equiv.eq_symm_apply]
-
-/-- `orientationMonodromySign T₀ γ = -1` iff orientation transport along `γ` reverses `r`. -/
-theorem orientationMonodromySign_eq_neg_one_iff_apply
-    (γ : FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀)
-    (r : Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine) :
-    orientationMonodromySign T₀ γ = -1 ↔ quotientOrientationTransport γ.toPath r = -r := by
-  simp only [orientationMonodromySign_def,
-    VectorBundleOrientationCover.orientationCharacter_eq_neg_one_iff_quotientTransport_eq _ γ
-      ((orientationEquivRay (ι := Fin 1) T₀).symm r),
-    quotientOrientationTransport_def, Equiv.trans_apply,
-    ← orientationEquivRay_symm_neg, Equiv.eq_symm_apply, iff_self]
-
-/-- `orientationMonodromySign T₀ γ = 1` iff orientation transport along `γ` is the identity. -/
-theorem orientationMonodromySign_eq_one_iff
-    (γ : FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀) :
-    orientationMonodromySign T₀ γ = 1 ↔ quotientOrientationTransport γ.toPath = Equiv.refl _ := by
-  obtain ⟨r₀⟩ := (inferInstance : Nonempty (Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine))
-  refine ⟨fun h ↦ Equiv.ext fun r ↦ (orientationMonodromySign_eq_one_iff_apply γ r).1 h,
-    fun h ↦ (orientationMonodromySign_eq_one_iff_apply γ r₀).2 ?_⟩
-  simp [h]
-
-/-- `orientationMonodromySign T₀ γ = -1` iff orientation transport along `γ` reverses every ray. -/
-theorem orientationMonodromySign_eq_neg_one_iff
-    (γ : FundamentalGroup {T : E →L[ℝ] F // T.IsFredholm} T₀) :
-    orientationMonodromySign T₀ γ = -1 ↔
-      ∀ r, quotientOrientationTransport γ.toPath r = -r := by
-  obtain ⟨r₀⟩ := (inferInstance : Nonempty (Module.Ray ℝ (T₀.val : E →ₗ[ℝ] F).detLine))
-  exact ⟨fun h r ↦ (orientationMonodromySign_eq_neg_one_iff_apply γ r).1 h,
-    fun h ↦ (orientationMonodromySign_eq_neg_one_iff_apply γ r₀).2 (h r₀)⟩
-
-end FredholmDetLine
+end TauCeti
 
 end
-
-end TauCeti

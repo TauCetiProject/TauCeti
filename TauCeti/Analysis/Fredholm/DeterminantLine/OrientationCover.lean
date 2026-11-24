@@ -70,10 +70,9 @@ theorem orientationEquivRay_def (T : {T : E →L[ℝ] F // T.IsFredholm}) :
 theorem orientationEquivRay_neg (T : {T : E →L[ℝ] F // T.IsFredholm})
     (o : Orientation ℝ (FredholmDetLine ℝ E F T) ι) :
     orientationEquivRay (ι := ι) T (-o) = -orientationEquivRay (ι := ι) T o := by
+  let : AddCommGroup (T.val : E →ₗ[ℝ] F).detLine := TensorProduct.addCommGroup
   rw [orientationEquivRay_def, Equiv.trans_apply, Equiv.trans_apply, Orientation.equivRay_neg]
-  -- Supply `TensorProduct.addCommGroup` directly so search does not traverse the nested `detLine`.
-  exact @Module.Ray.map_neg ℝ _ _ _ _ (T.val : E →ₗ[ℝ] F).detLine _ TensorProduct.addCommGroup _ _
-    (linearEquiv T) _
+  exact Module.Ray.map_neg (linearEquiv T) _
 
 @[simp]
 theorem orientationEquivRay_symm_neg (T : {T : E →L[ℝ] F // T.IsFredholm})
@@ -86,11 +85,8 @@ theorem orientationEquivRay_symm_neg (T : {T : E →L[ℝ] F // T.IsFredholm})
 theorem orientationEquivRay_units_smul (T : {T : E →L[ℝ] F // T.IsFredholm})
     (u : ℝˣ) (o : Orientation ℝ (FredholmDetLine ℝ E F T) ι) :
     orientationEquivRay (ι := ι) T (u • o) = u • orientationEquivRay (ι := ι) T o := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · rw [Module.Ray.units_smul_of_neg u hu, orientationEquivRay_neg]
-    exact (@Module.Ray.units_smul_of_neg ℝ _ _ _ (T.val : E →ₗ[ℝ] F).detLine
-      TensorProduct.addCommGroup _ u hu _).symm
-  · rw [Module.Ray.units_smul_of_pos u hu, Module.Ray.units_smul_of_pos u hu]
+  let : AddCommGroup (T.val : E →ₗ[ℝ] F).detLine := TensorProduct.addCommGroup
+  exact Module.Ray.units_smul_of_map_neg (orientationEquivRay_neg T) u o
 
 @[simp]
 theorem orientationEquivRay_symm_units_smul (T : {T : E →L[ℝ] F // T.IsFredholm})
@@ -157,11 +153,13 @@ def orientationCoverFiberEquiv (T : {T : E →L[ℝ] F // T.IsFredholm}) :
     ((VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) ≃
       Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine :=
-  (VectorBundleOrientationCover.fiberEquiv T).trans (orientationEquivRay (ι := ι) T)
+  (VectorBundleOrientationCover.fiberEquiv ℝ (FredholmDetLine ℝ E F) ι T).trans
+    (orientationEquivRay (ι := ι) T)
 
 theorem orientationCoverFiberEquiv_def (T : {T : E →L[ℝ] F // T.IsFredholm}) :
     orientationCoverFiberEquiv ι T =
-      (VectorBundleOrientationCover.fiberEquiv T).trans (orientationEquivRay (ι := ι) T) := (rfl)
+      (VectorBundleOrientationCover.fiberEquiv ℝ (FredholmDetLine ℝ E F) ι T).trans
+        (orientationEquivRay (ι := ι) T) := (rfl)
 
 @[simp]
 theorem orientationCoverFiberEquiv_apply_mk (T : {T : E →L[ℝ] F // T.IsFredholm})
@@ -169,6 +167,7 @@ theorem orientationCoverFiberEquiv_apply_mk (T : {T : E →L[ℝ] F // T.IsFredh
     {h : (⟨T, o⟩ : VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι) ∈
       VectorBundleOrientationCover.proj ⁻¹' {T}} :
     orientationCoverFiberEquiv ι T ⟨⟨T, o⟩, h⟩ = orientationEquivRay (ι := ι) T o := by
+  obtain rfl : h = rfl := Subsingleton.elim h rfl
   simp [orientationCoverFiberEquiv_def]
 
 -- Companion for equality-typed subtype proofs (`rfl : T = T` is not reducible to `∈ proj ⁻¹' {T}`).
@@ -179,8 +178,8 @@ theorem orientationCoverFiberEquiv_apply_mk' (T : {T : E →L[ℝ] F // T.IsFred
     orientationCoverFiberEquiv ι T
       (⟨⟨T, o⟩, h⟩ : (VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) =
-      orientationEquivRay (ι := ι) T o := by
-  simp [orientationCoverFiberEquiv_def]
+      orientationEquivRay (ι := ι) T o :=
+  orientationCoverFiberEquiv_apply_mk T o
 
 @[simp]
 theorem orientationCoverFiberEquiv_symm_apply (T : {T : E →L[ℝ] F // T.IsFredholm})
@@ -206,13 +205,8 @@ theorem orientationCoverFiberEquiv_mk' (T : {T : E →L[ℝ] F // T.IsFredholm})
     (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) {h : (orientationCoverMk ι T r).proj = T} :
     orientationCoverFiberEquiv ι T
       (⟨orientationCoverMk ι T r, h⟩ : (VectorBundleOrientationCover.proj :
-        VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) = r := by
-  have hsub : (⟨orientationCoverMk ι T r, h⟩ :
-      (VectorBundleOrientationCover.proj :
-        VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) =
-      (orientationCoverFiberEquiv ι T).symm r :=
-    Subtype.ext (by rw [orientationCoverFiberEquiv_symm_apply])
-  rw [hsub, Equiv.apply_symm_apply]
+        VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) = r :=
+  orientationCoverFiberEquiv_mk T r
 
 variable [CompleteSpace E] [CompleteSpace F]
 
@@ -479,14 +473,20 @@ theorem exists_isDetLineCoherentOn_of_simplyConnectedSpace [TopologicalSpace X] 
     (isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := Fin 1) hT hF).2
       ⟨hw_ne, L.continuous.congr fun x ↦ by
         have hL : (⟨L x, congrFun hLproj x⟩ : VectorBundleOrientationCover.proj ⁻¹' {f x}) =
-            (FredholmDetLine.orientationCoverFiberEquiv (Fin 1) (f x)).symm (r x) := by simp [r]
+            (FredholmDetLine.orientationCoverFiberEquiv (Fin 1) (f x)).symm (r x) :=
+          ((FredholmDetLine.orientationCoverFiberEquiv (Fin 1) (f x)).symm_apply_apply _).symm
         have hL_val : L x = FredholmDetLine.orientationCoverMk (Fin 1) (f x) (r x) := by
           simpa only [FredholmDetLine.orientationCoverFiberEquiv_symm_apply] using
             congrArg Subtype.val hL
         rw [hr x]
         exact hL_val⟩
+  have hr₀ : r ⟨x₀, hx₀⟩ = rayOfNeZero ℝ v₀ hv₀ := by
+    have hsub : (⟨L ⟨x₀, hx₀⟩, congrFun hLproj ⟨x₀, hx₀⟩⟩ :
+        VectorBundleOrientationCover.proj ⁻¹' {f ⟨x₀, hx₀⟩}) = ⟨p₀, rfl⟩ := Subtype.ext hL₀
+    exact (congrArg (FredholmDetLine.orientationCoverFiberEquiv (Fin 1) (f ⟨x₀, hx₀⟩)) hsub).trans
+      (FredholmDetLine.orientationCoverFiberEquiv_mk (f ⟨x₀, hx₀⟩) (rayOfNeZero ℝ v₀ hv₀))
   have hsr₀ : SameRay ℝ (w x₀) v₀ :=
-    (ray_eq_iff _ _).1 (by simpa [r, hL₀, p₀] using hr ⟨x₀, hx₀⟩)
+    (ray_eq_iff _ _).1 ((hr ⟨x₀, hx₀⟩).trans hr₀)
   obtain ⟨c₁, c₂, hc₁, hc₂, hc⟩ := hsr₀.exists_pos (hw_ne x₀ hx₀) hv₀
   have hscale : (c₁ / c₂) • w x₀ = v₀ := by
     rw [div_eq_inv_mul, mul_smul, hc, inv_smul_smul₀ hc₂.ne']
