@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Topology.FiberBundle.Countable
+public import TauCeti.Topology.FiberBundle.LocallyCompact
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -416,6 +418,25 @@ theorem continuousAt_snd_apply_mfderiv {S : Type*} [TopologicalSpace S]
         ((hf.continuousAt_tangentMap le_rfl).comp hv)))
 
 end Pullback
+
+section SigmaCompact
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- The cotangent bundle of a σ-compact manifold with a finite-dimensional real model is
+σ-compact: the base is second countable and locally compact, so the total space is too, as a fibre
+bundle with finite-dimensional fibre (`TauCeti.FiberBundle.secondCountableTopology_totalSpace`,
+`TauCeti.FiberBundle.locallyCompactSpace_totalSpace`). -/
+instance sigmaCompactSpace [SigmaCompactSpace M] : SigmaCompactSpace (CotangentBundle I M) := by
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  infer_instance
+
+end SigmaCompact
 
 end CotangentBundle
 

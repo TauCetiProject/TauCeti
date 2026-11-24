@@ -94,7 +94,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
-  over a noetherian local ring.
+  over a noetherian local ring, so it is an Artinian ring
+  (`TauCeti.isArtinianRing_quotient_maximalIdeal_pow`).
 * `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
   is equal to it.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
@@ -508,6 +509,14 @@ theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
   · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
       rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
       infer_instance
+
+/-- The quotient of a noetherian local ring by a power of its maximal ideal is an Artinian ring,
+being of finite length over the ring. -/
+instance _root_.TauCeti.isArtinianRing_quotient_maximalIdeal_pow (n : ℕ) :
+    IsArtinianRing (A ⧸ maximalIdeal A ^ n) :=
+  isArtinian_of_tower A
+    (isFiniteLength_iff_isNoetherian_isArtinian.mp
+      (TauCeti.isFiniteLength_quotient_maximalIdeal_pow n)).2
 
 end NoetherianLocalRing
 
