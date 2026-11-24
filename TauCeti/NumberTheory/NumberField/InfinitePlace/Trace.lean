@@ -20,6 +20,8 @@ With the multiplicity `mult w`, `1` at a real and `2` at a complex place, this r
 
 ## Main results
 
+* `TauCeti.NumberField.algebraMap_trace_eq_sum_ringHom`: `Tr_{K/ℚ} x = ∑_φ φ x` over the complex
+  embeddings `φ`.
 * `TauCeti.NumberField.InfinitePlace.sum_mult_mul_re_embedding_eq_trace`:
   `∑_w mult w * Re (w.embedding x) = Tr_{K/ℚ} x`.
 -/
@@ -28,19 +30,26 @@ public section
 
 open Finset NumberField NumberField.InfinitePlace
 
-namespace TauCeti.NumberField.InfinitePlace
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- The trace of a number field over `ℚ` is the sum of its images under the complex
+embeddings. -/
+theorem algebraMap_trace_eq_sum_ringHom (x : K) :
+    algebraMap ℚ ℂ (Algebra.trace ℚ K x) = ∑ φ : K →+* ℂ, φ x := by
+  rw [trace_eq_sum_embeddings (E := ℂ)]
+  exact (Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ ↦ rfl).symm
+
+namespace InfinitePlace
 
 open scoped Classical in
 /-- **The trace as a sum over the infinite places**: `∑_w mult w * Re (w.embedding x)` is the
 trace `Tr_{K/ℚ} x`, where a real place counts once and a complex place twice. -/
 theorem sum_mult_mul_re_embedding_eq_trace (x : K) :
     ∑ w : InfinitePlace K, (mult w : ℝ) * (w.embedding x).re = Algebra.trace ℚ K x := by
-  have h := congr(Complex.re $(_root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := x)))
-  rw [Complex.re_sum, ← Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun φ ↦ (φ x).re)
-    (fun σ ↦ (σ x).re) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply],
-    ← Finset.sum_fiberwise univ InfinitePlace.mk (fun φ ↦ (φ x).re)] at h
+  have h := congr(Complex.re $(algebraMap_trace_eq_sum_ringHom x))
+  rw [Complex.re_sum, ← Finset.sum_fiberwise univ InfinitePlace.mk (fun φ ↦ (φ x).re)] at h
   rw [eq_ratCast, Complex.ratCast_re] at h
   rw [h]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
@@ -51,4 +60,6 @@ theorem sum_mult_mul_re_embedding_eq_trace (x : K) :
     rcases embedding_mk_eq φ with h | h <;> simp [h]
   rw [Finset.sum_congr rfl hφ, Finset.sum_const, card_filter_mk_eq, nsmul_eq_mul]
 
-end TauCeti.NumberField.InfinitePlace
+end InfinitePlace
+
+end TauCeti.NumberField
