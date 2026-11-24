@@ -49,12 +49,17 @@ def profileFlux (f g : ℝ → ℝ) (v : ℝ) : ℝ :=
 theorem profileFlux_def (f g : ℝ → ℝ) (v : ℝ) :
     profileFlux f g v = f v * deriv g v / Real.sqrt (profileSpeedSq f g v) := (rfl)
 
-/-- At a regular point of nonzero radius, zero vertical flux is equivalent to zero
+/-- At a point of nonzero radius, zero vertical flux is equivalent to zero
 vertical velocity. -/
 @[simp] theorem profileFlux_eq_zero_iff {f g : ℝ → ℝ} {v : ℝ}
-    (hr : f v ≠ 0) (hs : 0 < profileSpeedSq f g v) :
+    (hr : f v ≠ 0) :
     profileFlux f g v = 0 ↔ deriv g v = 0 := by
-  simp [profileFlux_def, hr, ne_of_gt (Real.sqrt_pos.mpr hs)]
+  have hs : 0 ≤ profileSpeedSq f g v := by
+    rw [profileSpeedSq_def]
+    positivity
+  rw [profileFlux_def, div_eq_zero_iff, Real.sqrt_eq_zero hs, profileSpeedSq_def,
+    sq_add_sq_eq_zero]
+  simp [hr]
 
 /-- The absolute vertical flux at a point of nonnegative radius. -/
 theorem abs_profileFlux {f g : ℝ → ℝ} {v : ℝ} (hr : 0 ≤ f v) :
@@ -157,7 +162,7 @@ theorem profile_plane_or_catenoid {f g : ℝ → ℝ} {s : Set ℝ}
     apply hc.eq_of_hasDerivWithinAt_zero ?_ hw hv
     intro t ht
     have hderiv : deriv g t = 0 :=
-      (profileFlux_eq_zero_iff (ne_of_gt (hr t ht)) (hreg t ht)).mp ((hflux t ht).trans hz)
+      (profileFlux_eq_zero_iff (ne_of_gt (hr t ht))).mp ((hflux t ht).trans hz)
     rw [← hderiv]
     exact ((hg t ht).differentiableAt (by norm_num)).hasDerivAt.hasDerivWithinAt
   · right
@@ -167,7 +172,7 @@ theorem profile_plane_or_catenoid {f g : ℝ → ℝ} {s : Set ℝ}
       intro hzero
       apply hz
       rw [← hflux w hw]
-      exact (profileFlux_eq_zero_iff (ne_of_gt (hr w hw)) (hreg w hw)).mpr hzero
+      exact (profileFlux_eq_zero_iff (ne_of_gt (hr w hw))).mpr hzero
     have hcenter (w : ℝ) (hw : w ∈ s) :
         HasDerivAt (fun t ↦ g t - a * Real.arsinh (deriv f t / deriv g t)) 0 w :=
       hasDerivAt_profileCenter_eq_zero (hf w hw) (hg w hw) (hr w hw) (hgne w hw)
