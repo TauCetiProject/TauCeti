@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
@@ -60,6 +61,8 @@ shrinking part.
   morphisms.
 * `TauCeti.CommHopfAlgCat.isIso_of_isIso_mapPointsFunctor`: a coordinate morphism is an
   isomorphism when its induced natural map on points is an isomorphism.
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_app_bijective_of_isIso`: conversely, an isomorphism
+  of coordinate Hopf algebras is bijective on points.
 * `TauCeti.CommHopfAlgCat.homOfPointsMap`: the coordinate morphism a natural map of points
   functors comes from, with `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` its
   defining property, `TauCeti.CommHopfAlgCat.homOfPointsMap_mapPointsFunctor` the converse
@@ -538,6 +541,14 @@ theorem isIso_of_isIso_mapPointsFunctor {H K : _root_.CommHopfAlgCat.{u} R} (f :
     (Functor.FullyFaithful.ofFullyFaithful
       (pointsFunctor.{u, u, u} (R := R))).isIso_of_isIso_map f.op
   exact isIso_of_op f
+
+/-- An isomorphism of coordinate commutative Hopf algebras is bijective on points; this is the
+converse of `isIso_of_isIso_mapPointsFunctor`. -/
+theorem mapPointsFunctor_app_bijective_of_isIso {H K : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K)
+    [IsIso f] (A : CommAlgCat.{w} R) :
+    Function.Bijective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A) := by
+  have h := ConcreteCategory.bijective_of_isIso (((pointsFunctor (R := R)).map f.op).app A)
+  rwa [pointsFunctor_map, Quiver.Hom.unop_op] at h
 
 /-- The coordinate Hopf-algebra morphism that a natural transformation of group-valued points
 functors comes from, recovered by fullness of the functor of points.
