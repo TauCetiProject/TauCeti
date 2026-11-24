@@ -191,7 +191,7 @@ lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) 
 
 /-- The mapping simplicial set `sHom A B` of `SSet` is the internal hom `(ihom A).obj B`. -/
 lemma sHom_eq_ihom (A B : SSet.{u}) : sHom A B = (ihom A).obj B :=
-  rfl
+  (rfl)
 
 /-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`, obtained by
 transporting `Δ[0] ≅ 𝟙_ SSet` along `MonoidalClosed.internalHom` into `MonoidalClosed.unitIsoSelf`.

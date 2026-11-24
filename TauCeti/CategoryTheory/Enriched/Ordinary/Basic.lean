@@ -29,6 +29,8 @@ Let `C` be an ordinary category enriched over a monoidal category `V`.
   `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`,
   `CategoryTheory.ObjectProperty.FullSubcategory.eHomEquiv_eq`: enriched hom objects, identities,
   composition, and `eHomEquiv` in a full subcategory are those of the underlying objects.
+* `CategoryTheory.eHomEquiv_comp_eqToHom`: compatibility of `eHomEquiv` with conjugation and
+  `eqToHom` transports on hom objects.
 * `CategoryTheory.toUnit_eHomEquiv_tensorHom_comp_eComp`: enriched composition of the constant
   maps at `f` and `g` is the constant map at `f ≫ g`.
 -/
@@ -52,14 +54,15 @@ variable (V : Type u') [Category.{v'} V] [MonoidalCategory V]
 objects. -/
 lemma eHom_eq (X Y : P.FullSubcategory) :
     (X ⟶[V] Y) = (X.obj ⟶[V] Y.obj) :=
-  rfl
+  (rfl)
 
 /-- Enriched identities in a full subcategory are the enriched identities of the underlying
 objects, transported along `eHom_eq`. -/
 @[reassoc]
 lemma eId_eq (X : P.FullSubcategory) :
     eId V X = eId V X.obj ≫ eqToHom (eHom_eq V X X).symm := by
-  simp
+  rw [eqToHom_refl, Category.comp_id]
+  -- `FullSubcategory`'s enrichment is defined by restriction, so `eId V X` is `eId V X.obj`.
   rfl
 
 /-- Enriched composition in a full subcategory is the enriched composition of the underlying
@@ -70,6 +73,8 @@ lemma eComp_eq (X Y Z : P.FullSubcategory) :
       (eqToHom (eHom_eq V X Y) ⊗ₘ eqToHom (eHom_eq V Y Z)) ≫
         eComp V X.obj Y.obj Z.obj ≫ eqToHom (eHom_eq V X Z).symm := by
   simp only [eqToHom_refl, id_tensorHom_id, Category.id_comp, Category.comp_id]
+  -- `FullSubcategory`'s enrichment is defined by restriction, so `eComp V X Y Z` is
+  -- `eComp V X.obj Y.obj Z.obj`.
   rfl
 
 /-- Enriched `homEquiv` in a full subcategory is `eHomEquiv` of the underlying morphism,
@@ -77,12 +82,30 @@ transported along `eHom_eq`. -/
 @[reassoc]
 lemma eHomEquiv_eq {X Y : P.FullSubcategory} (f : X ⟶ Y) :
     eHomEquiv V f = eHomEquiv V f.hom ≫ eqToHom (eHom_eq V X Y).symm := by
-  simp
+  rw [eqToHom_refl, Category.comp_id]
+  -- `FullSubcategory`'s enrichment is defined by restriction, so `eHomEquiv V f` is
+  -- `eHomEquiv V f.hom`.
   rfl
 
 end
 
 end ObjectProperty.FullSubcategory
+
+section Transport
+
+variable {V : Type u'} [Category.{v'} V] [MonoidalCategory V] {C : Type u}
+  [Category.{v} C] [EnrichedOrdinaryCategory V C]
+
+/-- `eHomEquiv` is compatible with conjugating a morphism and transporting hom objects along
+equalities of objects. -/
+@[reassoc]
+lemma eHomEquiv_comp_eqToHom {X₀ X₁ Y₀ Y₁ : C} (h₀ : X₀ = Y₀) (h₁ : X₁ = Y₁) (f : Y₀ ⟶ Y₁) :
+    eHomEquiv V (eqToHom h₀ ≫ f ≫ eqToHom h₁.symm) ≫ eqToHom (by rw [h₀, h₁]) =
+      eHomEquiv V f := by
+  subst h₀ h₁
+  simp
+
+end Transport
 
 variable {V : Type u'} [Category.{v'} V] [CartesianMonoidalCategory V] {C : Type u}
   [Category.{v} C] [EnrichedOrdinaryCategory V C]

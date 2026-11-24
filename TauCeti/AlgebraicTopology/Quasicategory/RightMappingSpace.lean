@@ -884,6 +884,10 @@ theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
       (uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f) := by
   refine SSet.hom_ext fun m ↦ ConcreteCategory.hom_ext _ _ fun s ↦ ?_
   refine ULift.ext (Subtype.ext ?_)
+  -- Unfold `(map ... ≫ (uliftIso ...).hom).app m` and `((uliftIso ...).hom.app m _).down.val`
+  -- by defeq: `NatTrans.comp_app` does not match the LHS directly because the target vertex
+  -- `(uliftFunctor.map f).app _ (ULift.up x)` only reduces to `ULift.up (f.app _ x)` at default
+  -- transparency.
   change (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val).down =
     (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val
   rw [map_uliftFunctor_map_app_down_coe]

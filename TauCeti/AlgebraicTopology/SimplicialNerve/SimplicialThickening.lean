@@ -196,6 +196,9 @@ lemma ofFunctor_comp {D : Type*} [Category.{u} D] [SimplicialCategory D]
   refine EnrichedFunctor.ext SSet (fun _ ↦ by simp) fun i j ↦ ?_
   by_cases hij : i.as ≤ j.as
   · rw [EnrichedFunctor.comp_map, ofFunctor_map_eq _ hij, ofFunctor_map_eq _ hij]
+    -- `EnrichedFunctor.comp` is semireducible, so `((ofFunctor G).comp SSet F).obj` in the
+    -- `eqToHom` domain from `EnrichedFunctor.ext` does not unify with `F.obj (G.obj _)` at
+    -- `reducible` transparency for `eqToHom_refl`.
     change ((toUnit (i ⟶[SSet] j) ≫ eHomEquiv SSet (G.map (homOfLE hij))) ≫
         F.map (G.obj i.as) (G.obj j.as)) ≫ 𝟙 _ = _
     rw [Category.comp_id, Category.assoc]
