@@ -545,13 +545,6 @@ theorem isOrtho_complexifyL2_iff {S T : Submodule ℝ E} :
     S.complexifyL2 ⟂ T.complexifyL2 ↔ S ⟂ T := by
   rw [isOrtho_iff_le, isOrtho_iff_le, complexifyL2_le_orthogonal_iff]
 
-/-- Two real subspaces of a real inner product space are orthogonal if and only if their `L²`
-complexifications are orthogonal. -/
-theorem forall_inner_eq_zero_complexifyL2_iff {S T : Submodule ℝ E} :
-    (∀ z ∈ S.complexifyL2, ∀ w ∈ T.complexifyL2, ⟪z, w⟫_ℂ = 0) ↔
-      ∀ x ∈ S, ∀ y ∈ T, ⟪x, y⟫_ℝ = 0 := by
-  rw [← isOrtho_iff_inner_eq, ← isOrtho_iff_inner_eq, isOrtho_complexifyL2_iff]
-
 variable (U : Submodule ℝ E) [U.HasOrthogonalProjection]
 
 /-- The complexified projection takes values in the complexified subspace. -/
