@@ -84,15 +84,19 @@ theorem isEmbedding_coe : Topology.IsEmbedding ((↑) : UpperLowerHalfPlane → 
 @[fun_prop]
 theorem continuous_coe : Continuous ((↑) : UpperLowerHalfPlane → ℂ) := continuous_subtypeVal
 
-/-- The raw Möbius action `z ↦ (a z + b) / (c z + d)` of `GL(2, ℝ)` on `ℍ^±`. Unlike
-`UpperHalfPlane.glAction`, a matrix of negative determinant exchanges the two half-planes. -/
-instance instMulAction : MulAction (GL (Fin 2) ℝ) UpperLowerHalfPlane where
+/-- The raw Möbius transformation `z ↦ (a z + b) / (c z + d)` of `ℍ^±` by `g ∈ GL(2, ℝ)`.
+Unlike `UpperHalfPlane.glAction`, a matrix of negative determinant exchanges the two
+half-planes. -/
+instance instSMul : SMul (GL (Fin 2) ℝ) UpperLowerHalfPlane where
   smul g z := mk (num g z / denom g z) (moebius_im_ne_zero g z.im_ne_zero)
-  one_smul z := ext (show num 1 (z : ℂ) / denom 1 z = z by simp [num, denom])
-  mul_smul g h z := ext (moebius_mul g h z.im_ne_zero)
 
 theorem coe_smul (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) :
     ((g • z : UpperLowerHalfPlane) : ℂ) = num g z / denom g z := rfl
+
+/-- The raw Möbius action `z ↦ (a z + b) / (c z + d)` of `GL(2, ℝ)` on `ℍ^±`. -/
+instance instMulAction : MulAction (GL (Fin 2) ℝ) UpperLowerHalfPlane where
+  one_smul z := ext (by simp [coe_smul, num, denom])
+  mul_smul g h z := ext (by rw [coe_smul, coe_smul, coe_smul, moebius_mul g h z.im_ne_zero])
 
 theorem im_smul (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) :
     ((g • z : UpperLowerHalfPlane) : ℂ).im =
@@ -165,19 +169,15 @@ theorem fold_smul (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) : fold (g • z
     intro w
     simp [num, denom]
   rcases g.det.ne_zero.lt_or_gt with hdet | hdet <;>
-    rcases z.im_ne_zero.lt_or_gt with hz | hz <;>
-    have h' := hdet <;> rw [GeneralLinearGroup.val_det_apply] at h'
+    rcases z.im_ne_zero.lt_or_gt with hz | hz
   · rw [coe_fold_of_im_pos ((im_smul_pos_iff g z).2 (mul_pos_of_neg_of_neg hdet hz)),
-      coe_fold_of_im_neg hz, σ, hconj]
-    simp [coe_smul, h'.not_gt]
+      coe_fold_of_im_neg hz, σ_apply_of_det_neg hdet, hconj, Complex.conj_conj, coe_smul]
   · rw [coe_fold_of_im_neg ((im_smul_neg_iff g z).2 (mul_neg_of_neg_of_pos hdet hz)),
-      coe_fold_of_im_pos hz, σ]
-    simp [coe_smul, h'.not_gt]
+      coe_fold_of_im_pos hz, σ_apply_of_det_neg hdet, coe_smul]
   · rw [coe_fold_of_im_neg ((im_smul_neg_iff g z).2 (mul_neg_of_pos_of_neg hdet hz)),
-      coe_fold_of_im_neg hz, σ, hconj]
-    simp [coe_smul, h']
-  · rw [coe_fold_of_im_pos ((im_smul_pos_iff g z).2 (mul_pos hdet hz)), coe_fold_of_im_pos hz, σ]
-    simp [coe_smul, h']
+      coe_fold_of_im_neg hz, σ_apply_of_det_pos hdet, hconj, coe_smul]
+  · rw [coe_fold_of_im_pos ((im_smul_pos_iff g z).2 (mul_pos hdet hz)), coe_fold_of_im_pos hz,
+      σ_apply_of_det_pos hdet, coe_smul]
 
 /-- The point `i` of `ℍ^±`. -/
 def I : UpperLowerHalfPlane := ofUpperHalfPlane UpperHalfPlane.I
@@ -214,9 +214,9 @@ theorem smul_I_eq_I_iff_exists_rotation (g : GL (Fin 2) ℝ) :
     refine ⟨‖w‖, norm_ne_zero_iff.2 hw, Complex.arg w, ?_⟩
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [SpecialLinearGroup.coe_rotation, Complex.norm_mul_cos_arg, Complex.norm_mul_sin_arg, w]
-    · linarith
-    · linarith
+      simp [SpecialLinearGroup.coe_rotation, Complex.norm_mul_cos_arg, Complex.norm_mul_sin_arg,
+        w] <;>
+      linarith
   · rintro ⟨r, -, θ, h⟩
     simp [h, SpecialLinearGroup.coe_rotation]
 

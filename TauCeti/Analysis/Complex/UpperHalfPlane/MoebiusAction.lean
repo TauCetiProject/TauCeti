@@ -50,6 +50,8 @@ unfolded by hand.
   raw Möbius transformation is a cocycle like `UpperHalfPlane.denom_cocycle`, so raw Möbius
   transformations compose like their matrices; `UpperHalfPlane.moebius_im_ne_zero`: they keep
   the imaginary part nonzero.
+* `UpperHalfPlane.σ_apply_of_det_pos`, `UpperHalfPlane.σ_apply_of_det_neg`: the automorphism
+  `UpperHalfPlane.σ g` is the identity or complex conjugation according to the sign of `det g`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, R)`-action.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
@@ -256,6 +258,16 @@ theorem moebius_mul (g h : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
       num g (num h z / denom h z) / denom g (num h z / denom h z) := by
   rw [num_mul g h hz, denom_cocycle g h hz,
     mul_div_mul_right _ _ (denom_ne_zero_of_im h hz)]
+
+/-- For positive determinant, the automorphism `UpperHalfPlane.σ g` of `ℂ` is the identity. -/
+theorem σ_apply_of_det_pos {g : GL (Fin 2) ℝ} (hg : 0 < g.det.val) (z : ℂ) : σ g z = z := by
+  rw [σ, ite_eq_left hg, ContinuousAlgEquiv.refl_apply]
+
+/-- For negative determinant, the automorphism `UpperHalfPlane.σ g` of `ℂ` is complex
+conjugation. -/
+theorem σ_apply_of_det_neg {g : GL (Fin 2) ℝ} (hg : g.det.val < 0) (z : ℂ) :
+    σ g z = conj z := by
+  rw [σ, ite_eq_right hg.not_gt, Complex.conjCAE_apply]
 
 end UpperHalfPlane
 
