@@ -354,7 +354,8 @@ private theorem hasDerivAt_rotate_comp_inclusion (h : s + 2 ≤ t) (θ : ℝ) :
   refine Asymptotics.IsBigO.of_bound ((2 * π / T) ^ 2) (Eventually.of_forall fun φ ↦ ?_)
   rw [norm_pow, norm_norm, Real.norm_eq_abs]
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun a ↦ ?_
-  simpa [mul_comm, mul_left_comm, mul_assoc] using norm_rotate_sub_rotate_sub_smul_le h a φ θ
+  simp only [sub_apply, smul_apply, ContinuousLinearMap.comp_apply]
+  exact (norm_rotate_sub_rotate_sub_smul_le h a φ θ).trans_eq (by ring)
 
 /-- For `s + k + 1 ≤ t`, rotation followed by the inclusion `H^t → H^s` is a `Cᵏ` function of the
 angle for the operator norm. This is the partial derivative in `a` of the rotation action, and

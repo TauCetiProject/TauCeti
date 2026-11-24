@@ -38,8 +38,8 @@ order is what governs the differentiability of reparametrizations of boundary ma
   controlled by the `H^s` norms of a function and of its derivative.
 * `TauCeti.CircleSobolev.derivative_eq_zero_iff`: the kernel of the derivative consists of the
   constant functions.
-* `TauCeti.CircleSobolev.exists_inclusion_eq_and_derivative_eq_of_le`: an element of any `H^s`
-  whose formal derivative lies in `H^t` lies in `H^(t + 1)`.
+* `TauCeti.CircleSobolev.exists_inclusion_eq_and_derivative_eq_of_le`: for `s ≤ t + 1`, an
+  element of `H^s` whose formal derivative lies in `H^t` lies in `H^(t + 1)`.
 * `TauCeti.CircleSobolev.bijective_derivative_add_inclusion`: `ζ ↦ ζ' + ζ` is a bijection
   `H^(s + 1) → H^s`, since it multiplies the `n`-th Fourier coefficient by the nonvanishing factor
   `1 + 2πin/T`; `TauCeti.CircleSobolev.derivativeAddInclusionEquiv` is the resulting continuous
@@ -161,10 +161,9 @@ theorem derivative_eq_zero_iff (h : s + 1 ≤ t) (a : CircleSobolev t E) :
   · rw [ha, derivative_single]
     simp
 
-/-- **Regularity from the derivative.** An element of any `H^s` whose formal derivative lies in
-`H^t` lies in `H^(t + 1)`: if `2πin/T • a.coeff n` is the coefficient sequence of some `b ∈ H^t`,
-then `a` comes from an element of `H^(t + 1)` whose derivative is `b`. The constant mode, which
-the derivative does not see, is controlled by itself. -/
+/-- **Regularity from the derivative.** For `s ≤ t + 1`, an element of `H^s` whose formal
+derivative lies in `H^t` lies in `H^(t + 1)`: if `2πin/T • a.coeff n` is the coefficient sequence
+of some `b ∈ H^t`, then `a` comes from an element of `H^(t + 1)` whose derivative is `b`. -/
 theorem exists_inclusion_eq_and_derivative_eq_of_le (hst : s ≤ t + 1) (a : CircleSobolev s E)
     (b : CircleSobolev t E) (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
     ∃ c : CircleSobolev (t + 1) E, inclusion hst c = a ∧ derivative T le_rfl c = b := by
@@ -201,9 +200,10 @@ theorem exists_inclusion_eq_and_derivative_eq_of_le (hst : s ≤ t + 1) (a : Cir
     CircleSobolev.ext (funext fun n ↦ ?_)⟩
   rw [coeff_derivative, hb]
 
-/-- Conversely, an element of `H^s` whose formal derivative lies in `H^s` lies in `H^(s + 1)`: if
-the sequence `2πin/T • a.coeff n` is the coefficient sequence of some `b ∈ H^s`, then `a` comes from
-an element of `H^(s + 1)` whose derivative is `b`. -/
+/-- The case `t = s` of `exists_inclusion_eq_and_derivative_eq_of_le`: an element of `H^s` whose
+formal derivative lies in `H^s` lies in `H^(s + 1)`. If the sequence `2πin/T • a.coeff n` is the
+coefficient sequence of some `b ∈ H^s`, then `a` comes from an element of `H^(s + 1)` whose
+derivative is `b`. -/
 theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
     (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
     ∃ c : CircleSobolev (s + 1) E, inclusion (by linarith) c = a ∧ derivative T le_rfl c = b :=
