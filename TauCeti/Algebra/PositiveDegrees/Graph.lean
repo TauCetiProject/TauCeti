@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.GroupTheory.Subgroup.Saturated
+public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import TauCeti.Algebra.PositiveDegrees.Map
+import TauCeti.Data.Set.Prod
 
 /-!
 # Positive degrees on swapped graphs
@@ -22,37 +23,6 @@ Adapted from `Mei/Algebra/PositiveDegrees/Graph.lean` in
 -/
 
 public section
-
-private theorem mem_image_swapped_graph {N M : Type*} (f : N → M) (s : Set N)
-    (x : M × N) :
-    x ∈ (fun n => (f n, n)) '' s ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
-  have himage : (fun n => (f n, n)) '' s = Prod.swap '' s.graphOn f :=
-    (Set.image_image Prod.swap (fun n => (n, f n)) s).symm
-  rw [himage, Set.image_swap_eq_preimage_swap, Set.mem_preimage, Set.mem_graphOn]
-  exact and_congr_right fun _ => eq_comm
-
-namespace AddSubmonoid
-
-/-- The graph of an additive map, with the source coordinate second, is saturated exactly
-when the source monoid is saturated, provided nonzero natural multiples are injective in
-the first coordinate. -/
-theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
-    [HasUniqueDiv M] (s : AddSubmonoid N) (f : N →+ M) :
-    (s.map (f.prod (AddMonoidHom.id N))).NSMulSaturated ↔ s.NSMulSaturated := by
-  constructor
-  · intro h a n hn
-    have hmem : a • (f n, n) ∈ s.map (f.prod (AddMonoidHom.id N)) :=
-      ⟨a • n, hn, Prod.ext (map_nsmul f a n) rfl⟩
-    exact (h hmem).imp_right fun hgraph => (mem_image_swapped_graph f s (f n, n)).mp hgraph |>.1
-  · rintro h a ⟨m, n⟩ hmem
-    by_cases ha : a = 0
-    · exact Or.inl ha
-    · have hgraph := (mem_image_swapped_graph f s (a • m, a • n)).mp hmem
-      exact Or.inr ((mem_image_swapped_graph f s (m, n)).mpr
-        ⟨(h hgraph.1).resolve_left ha,
-          nsmul_right_injective ha (hgraph.2.trans (map_nsmul f a n))⟩)
-
-end AddSubmonoid
 
 namespace TauCeti.PositiveDegrees
 
@@ -70,14 +40,14 @@ def swappedGraph : PositiveDegrees (M × N) where
   finite_le k := by
     apply ((d.finite_cutoff k).image (fun n => (f n, n))).subset
     rintro x ⟨hx, hk⟩
-    have h := (mem_image_swapped_graph f d.monoid x).mp hx
-    exact (mem_image_swapped_graph f (d.cutoff k) x).mpr ⟨d.mem_cutoff.mpr ⟨h.1, hk⟩, h.2⟩
+    have h := (Set.mem_image_prodMk_self_snd_iff f d.monoid x).mp hx
+    exact (Set.mem_image_prodMk_self_snd_iff f (d.cutoff k) x).mpr ⟨d.mem_cutoff.mpr ⟨h.1, hk⟩, h.2⟩
 
 /-- An allowed graph exponent has its first coordinate determined by its second. -/
 @[simp]
 theorem mem_swappedGraph_monoid (x : M × N) :
     x ∈ (d.swappedGraph f).monoid ↔ x.2 ∈ d.monoid ∧ x.1 = f x.2 :=
-  mem_image_swapped_graph f d.monoid x
+  Set.mem_image_prodMk_self_snd_iff f d.monoid x
 
 /-- The graph monoid is saturated exactly when the source monoid is saturated, provided
 nonzero natural multiples are injective in the first coordinate. -/
@@ -117,7 +87,7 @@ theorem mem_image_swappedGraphMap (s : Set N) (x : M × N) :
   have hmap : (d.swappedGraphMap f : N → M × N) = fun n => (f n, n) :=
     funext (d.swappedGraphMap_apply f)
   rw [hmap]
-  exact mem_image_swapped_graph f s x
+  exact Set.mem_image_prodMk_self_snd_iff f s x
 
 /-- Graph cutoffs are exactly images of the original cutoffs under graph inclusion. -/
 theorem swappedGraph_cutoff (k : ℕ) :

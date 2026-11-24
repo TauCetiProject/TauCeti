@@ -16,6 +16,7 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 ## Main results
 
 * `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
+* `Set.mem_image_prodMk_self_snd_iff`: membership in the swapped graph over a set.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
   fibre of `g` over `f x`.
@@ -31,6 +32,16 @@ theorem Set.graphOn_const {α β : Type*} (s : Set α) (b : β) :
     s.graphOn (Function.const α b) = s ×ˢ {b} := by
   ext ⟨x, y⟩
   simp [eq_comm]
+
+/-- Membership in the swapped graph of `f` over `s` is determined by the second coordinate
+and the graph equation. -/
+theorem Set.mem_image_prodMk_self_snd_iff {N M : Type*} (f : N → M) (s : Set N)
+    (x : M × N) :
+    x ∈ (fun n => (f n, n)) '' s ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
+  have himage : (fun n => (f n, n)) '' s = Prod.swap '' s.graphOn f :=
+    (Set.image_image Prod.swap (fun n => (n, f n)) s).symm
+  rw [himage, Set.image_swap_eq_preimage_swap, Set.mem_preimage, Set.mem_graphOn]
+  exact and_congr_right fun _ => eq_comm
 
 variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
 

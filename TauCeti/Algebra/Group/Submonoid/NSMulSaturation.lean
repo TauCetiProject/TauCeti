@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.GroupTheory.Subgroup.Saturated
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
+import TauCeti.Data.Set.Prod
 
 /-!
 # Saturation of a submonoid by positive powers
@@ -33,6 +34,7 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 ## Main results
 
+* `AddSubmonoid.nsmulSaturated_map_prod_id`: a swapped graph preserves and reflects saturation.
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
@@ -315,6 +317,26 @@ end Group
 end Submonoid
 
 namespace AddSubmonoid
+
+/-- The graph of an additive map, with the source coordinate second, is saturated exactly
+when the source monoid is saturated, provided nonzero natural multiples are injective in
+the first coordinate. -/
+theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
+    [HasUniqueDiv M] (s : AddSubmonoid N) (f : N →+ M) :
+    (s.map (f.prod (AddMonoidHom.id N))).NSMulSaturated ↔ s.NSMulSaturated := by
+  constructor
+  · intro h a n hn
+    have hmem : a • (f n, n) ∈ s.map (f.prod (AddMonoidHom.id N)) :=
+      ⟨a • n, hn, Prod.ext (map_nsmul f a n) rfl⟩
+    exact (h hmem).imp_right fun hgraph =>
+      ((Set.mem_image_prodMk_self_snd_iff f s (f n, n)).mp hgraph).1
+  · rintro h a ⟨m, n⟩ hmem
+    by_cases ha : a = 0
+    · exact Or.inl ha
+    · have hgraph := (Set.mem_image_prodMk_self_snd_iff f s (a • m, a • n)).mp hmem
+      exact Or.inr ((Set.mem_image_prodMk_self_snd_iff f s (m, n)).mpr
+        ⟨(h hgraph.1).resolve_left ha,
+          nsmul_right_injective ha (hgraph.2.trans (map_nsmul f a n))⟩)
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
 
