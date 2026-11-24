@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.FieldExtension
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
+public import TauCeti.AlgebraicGeometry.Sites.FppfAlgClosed
+public import TauCeti.CategoryTheory.Sites.LocallyBijective
 
 /-!
 # The points of the relative Picard sheaf over the base
@@ -43,7 +45,12 @@ needed.
   for an integral scheme universally closed and quasi-separated over a field;
 * `TauCeti.AlgebraicGeometry.relativePicardToFppfSheaf_app_injective`: more generally, at a
   field-valued point `Spec k ⟶ S` whose fibre is integral, universally closed and
-  quasi-separated over `k`, the map `Pic(X_k) / Pic(Spec k) → Pic_{X/S}(Spec k)` is injective.
+  quasi-separated over `k`, the map `Pic(X_k) / Pic(Spec k) → Pic_{X/S}(Spec k)` is injective;
+* `TauCeti.AlgebraicGeometry.relativePicardToFppfSheaf_app_bijective_of_isAlgClosed`: at a
+  geometric point `Spec K ⟶ S`, with `K` algebraically closed, this map is bijective for every
+  `f`, since every fppf cover of `Spec K` splits; so every section of `Pic_{X/S}` over `Spec K` is
+  the class of a line bundle on the fibre
+  (`TauCeti.AlgebraicGeometry.exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed`).
 
 ## References
 
@@ -138,6 +145,37 @@ theorem relativePicardToFppfSheaf_app_injective {k : Type u} [Field k] (g : Spec
   have ha : a = 1 := LineBundleClass.pullback_injective (X := pullback g f)
     (fX := pullback.fst g f) (T := Spec (.of K)) H (by rw [hψ, LineBundleClass.pullback_one])
   rw [ha, relativePicardAddPresheafMk_one]
+
+section GeometricPoint
+
+variable {K : Type u} [Field K] [IsAlgClosed K]
+
+/-- **The relative Picard sheaf at a geometric point.** For a morphism `g : Spec K ⟶ S` from the
+spectrum of an algebraically closed field, the map
+`Pic(X_K) / Pic(Spec K) → Pic_{X/S}(Spec K)` to the relative Picard fppf sheaf is bijective, since
+every fppf cover of `Spec K` splits. -/
+theorem relativePicardToFppfSheaf_app_bijective_of_isAlgClosed (g : Spec (.of K) ⟶ S) :
+    Function.Bijective ((relativePicardToFppfSheaf f).app (op (Over.mk g))) := by
+  have hg := Scheme.eq_top_of_mem_fppfTopology_over_of_isAlgClosed K g
+  have := (Presheaf.isLocallySurjective_iff_whisker_forget (Scheme.fppfTopology.over S)
+    (relativePicardToFppfSheaf f)).1 inferInstance
+  exact ⟨Presheaf.injective_app_of_isLocallyInjective (Scheme.fppfTopology.over S)
+      (Functor.whiskerRight (relativePicardToFppfSheaf f) (forget _)) hg,
+    Presheaf.surjective_app_of_isLocallySurjective (Scheme.fppfTopology.over S)
+      (Functor.whiskerRight (relativePicardToFppfSheaf f) (forget _)) hg⟩
+
+/-- Over a geometric point `g : Spec K ⟶ S`, every section of the relative Picard fppf sheaf is
+the class of a line bundle on the fibre `Spec K ×_S X`. -/
+theorem exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed (g : Spec (.of K) ⟶ S)
+    (σ : (relativePicardFppfSheaf f).obj.obj (op (Over.mk g))) :
+    ∃ a : LineBundleClass (pullback g f),
+      (relativePicardToFppfSheaf f).app (op (Over.mk g))
+        (relativePicardAddPresheafMk f (op (Over.mk g)) a) = σ := by
+  obtain ⟨c, rfl⟩ := (relativePicardToFppfSheaf_app_bijective_of_isAlgClosed f g).2 σ
+  obtain ⟨a, rfl⟩ := relativePicardAddPresheafMk_surjective f _ c
+  exact ⟨a, rfl⟩
+
+end GeometricPoint
 
 namespace picardSheafPoints
 

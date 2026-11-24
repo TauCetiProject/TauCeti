@@ -177,6 +177,11 @@ theorem isClosed_orderedSimplex (d : ℕ) : IsClosed (orderedSimplex d) := by
 theorem isCompact_orderedSimplex (d : ℕ) : IsCompact (orderedSimplex d) :=
   isCompact_Icc.of_isClosed_subset (isClosed_orderedSimplex d) orderedSimplex_subset_Icc
 
+/-- The ordered simplex, as a subspace, is compact; this gives the sup norm on continuous functions
+on it. -/
+instance (d : ℕ) : CompactSpace (orderedSimplex d) :=
+  isCompact_iff_compactSpace.1 (isCompact_orderedSimplex d)
+
 /-- A chart point with positive, strictly increasing coordinates, all below the last coordinate
 `1 - ∑ xᵢ`, is an interior point of the ordered simplex. -/
 theorem mem_interior_orderedSimplex {x : Fin d → ℝ} (h0 : ∀ i, 0 < x i) (hmono : StrictMono x)

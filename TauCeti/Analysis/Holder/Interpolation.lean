@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 
 /-!
 # Interpolation inequalities for derivatives

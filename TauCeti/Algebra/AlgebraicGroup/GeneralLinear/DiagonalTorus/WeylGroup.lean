@@ -44,6 +44,8 @@ under every permutation of the coordinates.
   group of the diagonal torus consists exactly of the coordinate relabellings.
 * `TauCeti.GeneralLinear.permMulEquivDiagonalTorusWeylGroup`: over a domain, the Weyl group of the
   diagonal torus is isomorphic to the symmetric group on the coordinates.
+* `TauCeti.GeneralLinear.mem_weylInvariants_diagonalTorusCoordinateMap_iff`: over a domain, the
+  Weyl-invariant functions on the diagonal torus are the symmetric Laurent polynomials.
 * `TauCeti.GeneralLinear.mapDomain_characterRelabel_formalCharacter`: the formal character of a
   finite-dimensional rational representation of `GL_N` is invariant under permutations of the
   coordinates.
@@ -332,6 +334,21 @@ noncomputable def permMulEquivDiagonalTorusWeylGroup :
 theorem permMulEquivDiagonalTorusWeylGroup_apply (σ : Equiv.Perm (Fin N)) :
     permMulEquivDiagonalTorusWeylGroup (R := R) σ = permToDiagonalTorusWeylGroup σ :=
   MulEquiv.ofBijective_apply _ _ σ
+
+/-- Over a domain, **the Weyl-invariant functions on the diagonal torus of `GL_N` are the
+symmetric Laurent polynomials**: those fixed by the relabelling of the characters along every
+permutation of the coordinates. -/
+theorem mem_weylInvariants_diagonalTorusCoordinateMap_iff
+    {p : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))} :
+    p ∈ BialgHom.weylInvariants (diagonalTorusCoordinateMap (R := R) (N := N)).hom
+        (diagonalTorusCoordinateMap_surjective R N) ↔
+      ∀ σ : Equiv.Perm (Fin N), MonoidAlgebra.domCongr R R
+        (SplitTorus.characterRelabel (Equiv.ulift.{u}.symm.permCongr σ)) p = p := by
+  rw [BialgHom.mem_weylInvariants_iff]
+  refine ⟨fun h σ ↦ h _ (characterRelabel_mem_weylGroup_diagonalTorusCoordinateMap σ),
+    fun h w hw ↦ ?_⟩
+  obtain ⟨σ, rfl⟩ := mem_weylGroup_diagonalTorusCoordinateMap_iff.mp hw
+  exact h σ
 
 end Domain
 

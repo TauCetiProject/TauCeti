@@ -21,8 +21,9 @@ category fibred in sets, or in setoids, associated with `P`. Its fibres are disc
 groupoids.
 
 The main results compare Mathlib's descent conditions for this pseudofunctor with the sheaf
-conditions for `P`. Since all hom-sets in the fibres are subsingletons, descent data for a
-presieve `R` are exactly compatible families of elements of `P` along `R`, and morphisms of
+conditions for `P`. Since all hom-sets in the fibres are subsingletons, descent data along a
+family of morphisms are exactly families of elements of `P` which agree on overlaps, descent data
+for a presieve `R` are exactly compatible families of elements of `P` along `R`, and morphisms of
 descent data are equalities of the restrictions. Hence the pseudofunctor is a prestack exactly
 when `P` is separated, and a stack exactly when `P` is a sheaf (Stacks, Lemma 0432). This is how
 sheaves of sets, in particular algebraic spaces and representable functors, are viewed as stacks
@@ -36,6 +37,13 @@ in setoids.
 * `CategoryTheory.Pseudofunctor.ofPresheafMap`: the strong transformation induced by a morphism
   of presheaves, with `ofPresheafMapId` and `ofPresheafMapComp` comparing it with identities and
   composites.
+* `CategoryTheory.Pseudofunctor.ofPresheafMapCompIsoOfEq`,
+  `CategoryTheory.Pseudofunctor.eq_of_ofPresheafMap_modification`: a commutative square of
+  presheaves gives an invertible modification between the composites of the induced strong
+  transformations, and a modification `ofPresheafMap φ ⟶ ofPresheafMap ψ` forces `φ = ψ`.
+* `CategoryTheory.Pseudofunctor.ofPresheaf.descentDataEquiv`: descent data for the discrete
+  pseudofunctor along a family `f` are equivalent to families of elements of `P` over the members
+  of `f` which agree on overlaps (`Presieve.Arrows.Compatible`).
 * `CategoryTheory.Pseudofunctor.ofPresheaf.descentDataEquivCompatible`: descent data for the
   discrete pseudofunctor along a presieve `R` are equivalent to compatible families of `P` along
   `R`.
@@ -121,9 +129,10 @@ def objEquiv (X : Cᵒᵖ) : (ofPresheaf.{w'} P).obj (.mk X) ≃ P.obj X where
   right_inv _ := rfl
 
 /-- Pulling back an object of the discrete pseudofunctor of `P` applies `P.map`. -/
-lemma objEquiv_map_toFunctor_obj {X Y : Cᵒᵖ} (f : X ⟶ Y) (M : (ofPresheaf.{w'} P).obj (.mk X)) :
-    objEquiv Y (((ofPresheaf.{w'} P).map f.toLoc).toFunctor.obj M) = P.map f (objEquiv X M) :=
-  (rfl)
+lemma objEquiv_map_toFunctor_obj {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y)
+    (M : (ofPresheaf.{w'} P).obj X) :
+    objEquiv Y.as (((ofPresheaf.{w'} P).map f).toFunctor.obj M) = P.map f.as (objEquiv X.as M) :=
+  rfl
 
 variable {X : Cᵒᵖ}
 
@@ -195,6 +204,22 @@ def ofPresheafMapComp {Q R : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) (β : Q ⟶ R) :
       (fun _ ↦ Subsingleton.elim _ _)))
     (fun _ ↦ by ext; exact Subsingleton.elim _ _)
 
+open scoped StrongTrans in
+/-- A commutative square `f ≫ α = g ≫ β` of presheaves of types gives an invertible
+modification between the composites of the induced strong transformations. -/
+def ofPresheafMapCompIsoOfEq {Q₁ Q₂ R : Cᵒᵖ ⥤ Type w} {f : P ⟶ Q₁} {g : P ⟶ Q₂} {α : Q₁ ⟶ R}
+    {β : Q₂ ⟶ R} (w : f ≫ α = g ≫ β) :
+    Iso (C := ofPresheaf.{w'} P ⟶ ofPresheaf.{w'} R)
+      ((ofPresheafMap f).vcomp (ofPresheafMap α)) ((ofPresheafMap g).vcomp (ofPresheafMap β)) :=
+  (ofPresheafMapComp f α).symm ≪≫ eqToIso (by rw [w]) ≪≫ ofPresheafMapComp g β
+
+/-- A modification `ofPresheafMap φ ⟶ ofPresheafMap ψ` exists only if `φ = ψ`: its components
+are morphisms in discrete fibres. -/
+lemma eq_of_ofPresheafMap_modification {Q : Cᵒᵖ ⥤ Type w} {φ ψ : P ⟶ Q}
+    (m : StrongTrans.Modification (ofPresheafMap.{w'} φ) (ofPresheafMap.{w'} ψ)) : φ = ψ := by
+  ext X x
+  exact eq_of_hom (X := X) ((m.app (.mk X)).toNatTrans.app ⟨⟨x⟩⟩)
+
 variable {S : C}
 
 instance {ι : Type t} {X : ι → C} (f : ∀ i, X i ⟶ S)
@@ -205,18 +230,18 @@ instance (R : Presieve S) :
     ((ofPresheaf.{w'} P).toDescentData (fun (g : R.category) ↦ g.obj.hom)).Faithful :=
   ⟨fun _ ↦ Subsingleton.elim _ _⟩
 
-/-- Descent data for the discrete pseudofunctor of `P` along a presieve `R` are the same as
-compatible families of elements of `P` along `R`: the descent datum is determined by its objects,
-and the morphisms of the descent datum exist exactly when the family is compatible. -/
-def ofPresheaf.descentDataEquivCompatible (R : Presieve S) :
-    (ofPresheaf.{w'} P).DescentData (fun (g : R.category) ↦ g.obj.hom) ≃
-      {x : Presieve.FamilyOfElements P R // x.Compatible} where
-  toFun D := ⟨fun _ f hf ↦ objEquiv _ (D.obj (R.categoryMk f hf)),
-    fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦ eq_of_hom
-      (D.hom (g₁ ≫ f₁) (i₁ := R.categoryMk f₁ h₁) (i₂ := R.categoryMk f₂ h₂) g₁ g₂ rfl w.symm)⟩
+/-- Descent data for the discrete pseudofunctor of `P` along a family `f` are the same as families
+of elements of `P` over the members of `f` which agree on overlaps: the descent datum is determined
+by its objects, and the morphisms of the descent datum exist exactly when the elements agree on
+overlaps. -/
+def ofPresheaf.descentDataEquiv {ι : Type t} {X : ι → C} (f : ∀ i, X i ⟶ S) :
+    (ofPresheaf.{w'} P).DescentData f ≃
+      {x : ∀ i, P.obj (op (X i)) // Presieve.Arrows.Compatible P f x} where
+  toFun D := ⟨fun i ↦ objEquiv _ (D.obj i),
+    fun _ _ _ a a' h ↦ eq_of_hom (D.hom (a ≫ f _) a a' rfl h.symm)⟩
   invFun x :=
-    { obj g := (objEquiv _).symm (x.val g.obj.hom g.property)
-      hom _ _ _ _ f₁ f₂ hf₁ hf₂ := homMk (x.property f₁ f₂ _ _ (hf₁.trans hf₂.symm))
+    { obj i := (objEquiv _).symm (x.val i)
+      hom _ _ _ _ a a' ha ha' := homMk (x.property _ _ _ a a' (ha.trans ha'.symm))
       pullHom_hom := by intros; exact Subsingleton.elim _ _
       hom_self := by intros; exact Subsingleton.elim _ _
       hom_comp := by intros; exact Subsingleton.elim _ _ }
@@ -227,6 +252,35 @@ def ofPresheaf.descentDataEquivCompatible (R : Presieve S) :
     funext _ _ _ _ _ _ _ _
     exact Subsingleton.elim _ _
   right_inv _ := rfl
+
+/-- The family attached to a descent datum consists of its underlying elements. -/
+@[simp]
+lemma ofPresheaf.descentDataEquiv_apply_coe {ι : Type t} {X : ι → C} {f : ∀ i, X i ⟶ S}
+    (D : (ofPresheaf.{w'} P).DescentData f) (i : ι) :
+    (descentDataEquiv f D).val i = objEquiv _ (D.obj i) :=
+  (rfl)
+
+/-- The descent datum attached to a family has the elements of the family as its objects. -/
+@[simp]
+lemma ofPresheaf.descentDataEquiv_symm_apply_obj {ι : Type t} {X : ι → C} {f : ∀ i, X i ⟶ S}
+    (x : {x : ∀ i, P.obj (op (X i)) // Presieve.Arrows.Compatible P f x}) (i : ι) :
+    ((descentDataEquiv.{w'} f).symm x).obj i = (objEquiv _).symm (x.val i) :=
+  (rfl)
+
+/-- Descent data for the discrete pseudofunctor of `P` along a presieve `R` are the same as
+compatible families of elements of `P` along `R`: this is `ofPresheaf.descentDataEquiv` for the
+family of all arrows of `R`. -/
+def ofPresheaf.descentDataEquivCompatible (R : Presieve S) :
+    (ofPresheaf.{w'} P).DescentData (fun (g : R.category) ↦ g.obj.hom) ≃
+      {x : Presieve.FamilyOfElements P R // x.Compatible} :=
+  (descentDataEquiv _).trans
+    { toFun x := ⟨fun _ f hf ↦ x.val (R.categoryMk f hf),
+        fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦
+          x.property (R.categoryMk f₁ h₁) (R.categoryMk f₂ h₂) _ g₁ g₂ w⟩
+      invFun x := ⟨fun g ↦ x.val g.obj.hom g.property,
+        fun g g' _ a a' w ↦ x.property a a' g.property g'.property w⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
 
 /-- The compatible family attached to a descent datum consists of its underlying elements. -/
 @[simp]

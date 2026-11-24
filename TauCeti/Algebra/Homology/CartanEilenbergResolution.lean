@@ -49,6 +49,20 @@ on the kernels gives `Q`, whose differentials are the composites
 short exact sequences, which makes them resolutions
 (`CategoryTheory.ProjectiveResolution.splice`).
 
+## Lifting chain maps
+
+A chain map `g : K ⟶ K'` lifts to a morphism of Cartan–Eilenberg resolutions
+`ChainComplex.cartanEilenbergResolutionMap g` lying over `g`
+(`ChainComplex.cartanEilenbergResolutionMap_π`). On the covers it is built from lifts through the
+projective covers: of the terms, for the disk parts
+(`ChainComplex.cartanEilenbergResolution.diskMap`, a map of mapping cones), and of the cycles, for
+the sphere parts
+(`ChainComplex.cartanEilenbergResolution.sphereMap`). These give the lift
+`ChainComplex.cartanEilenbergResolution.coverMap` to the covers and, by induction, the maps
+`ChainComplex.cartanEilenbergResolution.kernelsMap` of the successive kernels. The lift depends on
+these choices, so it is not functorial on the nose, and no identity or composition lemmas are
+stated for it.
+
 ## References
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press, 1994,
@@ -335,6 +349,158 @@ lemma homologyResolution_π_f_zero (q : ℕ) :
     (homologyResolution K q).π.f 0 = homologyMap (cartanEilenbergResolutionπ K) q :=
   ProjectiveResolution.splice_π_f_zero _ _ _ _ _
 
+/-! ### Lifting chain maps to Cartan–Eilenberg resolutions -/
+
+section Map
+
+variable {M M' : ChainComplex C ℕ} (h : M ⟶ M')
+
+/-- A lift of a chain map `h : M ⟶ M'` to the complexes `diskBase M ⟶ diskBase M'`, through the
+projective covers of the terms of `M` and `M'`. -/
+def diskBaseMap : diskBase M ⟶ diskBase M' :=
+  HomologicalComplex.gradedMap _ fun q =>
+    Projective.factorThru (Projective.π (M.X (q + 1)) ≫ h.f (q + 1)) (Projective.π (M'.X (q + 1)))
+
+@[reassoc (attr := simp)]
+lemma diskBaseMap_f_π (q : ℕ) :
+    (diskBaseMap h).f q ≫ Projective.π (M'.X (q + 1)) =
+      Projective.π (M.X (q + 1)) ≫ h.f (q + 1) := by
+  rw [diskBaseMap, HomologicalComplex.gradedMap_f]
+  exact Projective.factorThru_comp _ _
+
+/-- The chain map `diskBaseHom M` is `Projective.π (M.X (q + 1)) ≫ M.d (q + 1) q` in degree `q`. -/
+lemma diskBaseHom_f (q : ℕ) : (diskBaseHom M).f q = Projective.π _ ≫ M.d (q + 1) q := (rfl)
+
+/-- The lift of `h` to the complexes `diskBase` is compatible with the maps `diskBaseHom` to `M`
+and `M'`. -/
+@[reassoc]
+lemma diskBaseMap_diskBaseHom : diskBaseMap h ≫ diskBaseHom M' = diskBaseHom M ≫ h := by
+  ext q
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, diskBaseHom_f, diskBaseHom_f,
+    diskBaseMap_f_π_assoc, Category.assoc, h.comm]
+
+/-- A lift of a chain map `h : M ⟶ M'` to the disk parts of the covers. -/
+def diskMap : disk M ⟶ disk M' :=
+  homotopyCofiber.mapArrowHom _ _ (fun j => ⟨j + 1, rfl⟩)
+    (Arrow.homMk (diskBaseMap h) (diskBaseMap h)
+      ((Category.comp_id _).trans (Category.id_comp _).symm))
+
+/-- The lift of `h` to the disk parts of the covers lies over `h`. -/
+@[reassoc (attr := simp)]
+lemma diskMap_diskπ : diskMap h ≫ diskπ M' = diskπ M ≫ h := by
+  ext i
+  rcases i with _ | i
+  · refine homotopyCofiber.ext_from_X' (𝟙 (diskBase M)) 0 (by simp) ?_
+    simpa [diskMap, diskπ] using HomologicalComplex.congr_hom (diskBaseMap_diskBaseHom h) 0
+  · refine homotopyCofiber.ext_from_X (𝟙 (diskBase M)) i (i + 1) rfl ?_ ?_
+    · simp [diskMap, diskπ, diskBaseHomotopy]
+    · simpa [diskMap, diskπ] using
+        HomologicalComplex.congr_hom (diskBaseMap_diskBaseHom h) (i + 1)
+
+/-- A lift of a chain map `h : M ⟶ M'` to the sphere parts of the covers, through the projective
+covers of the cycles. -/
+def sphereMap : sphere M ⟶ sphere M' :=
+  HomologicalComplex.gradedMap _ fun q =>
+    Projective.factorThru (Projective.π (M.cycles q) ≫ HomologicalComplex.cyclesMap h q)
+      (Projective.π (M'.cycles q))
+
+/-- The lift of `h` to the sphere parts of the covers lifts the map induced on cycles. -/
+@[reassoc (attr := simp)]
+lemma sphereMap_f_π (q : ℕ) :
+    (sphereMap h).f q ≫ Projective.π (M'.cycles q) =
+      Projective.π (M.cycles q) ≫ HomologicalComplex.cyclesMap h q := by
+  rw [sphereMap, HomologicalComplex.gradedMap_f]
+  exact Projective.factorThru_comp _ _
+
+/-- The lift of `h` to the sphere parts of the covers lies over `h`. -/
+@[reassoc (attr := simp)]
+lemma sphereMap_sphereπ : sphereMap h ≫ sphereπ M' = sphereπ M ≫ h := by
+  rw [sphereMap]
+  exact HomologicalComplex.gradedMap_fromGraded _ _ _ h fun q => Projective.factorThru_comp _ _
+
+/-- A lift of a chain map `h : M ⟶ M'` to the covers. It depends on the choice of the lifts
+through the projective covers. -/
+def coverMap : cover M ⟶ cover M' := biprod.map (diskMap h) (sphereMap h)
+
+/-- The lift of `h` to the covers lies over `h`. -/
+@[reassoc (attr := simp)]
+lemma coverMap_coverπ : coverMap h ≫ coverπ M' = coverπ M ≫ h := by
+  refine biprod.hom_ext' _ _ ?_ ?_ <;> simp [coverMap, coverπ]
+
+variable {K K' : ChainComplex C ℕ} (g : K ⟶ K')
+
+/-- The lifts of a chain map `g : K ⟶ K'` to the successive kernels: `g` on `kernels K 0 = K`,
+and on `kernels K (p + 1)` the map of kernels induced by the lift of the map on `kernels K p` to
+the covers. -/
+def kernelsMap : (p : ℕ) → kernels K p ⟶ kernels K' p
+  | 0 => g
+  | p + 1 => kernel.map _ _ (coverMap (kernelsMap p)) (kernelsMap p) (coverMap_coverπ _).symm
+
+@[simp]
+lemma kernelsMap_zero : kernelsMap g 0 = g := (rfl)
+
+/-- The lifts to the successive kernels commute with their inclusions into the covers. -/
+@[reassoc (attr := simp)]
+lemma kernelsMap_succ_kernelsι (p : ℕ) :
+    kernelsMap g (p + 1) ≫ kernelsι K' p = kernelsι K p ≫ coverMap (kernelsMap g p) :=
+  kernel.lift_ι _ _ _
+
+end Map
+
 end cartanEilenbergResolution
+
+open cartanEilenbergResolution in
+/-- **A lift of a chain map to the Cartan–Eilenberg resolutions.** A chain map `g : K ⟶ K'` lifts
+to a morphism of the Cartan–Eilenberg resolutions, which on the row `p` is the lift
+`cartanEilenbergResolution.coverMap` to the covers of the map of the successive kernels. It lies
+over `g` (`ChainComplex.cartanEilenbergResolutionMap_π`). The lift depends on the choice of lifts
+through projective covers, so it is not functorial on the nose. -/
+def cartanEilenbergResolutionMap {K K' : ChainComplex C ℕ} (g : K ⟶ K') :
+    cartanEilenbergResolution K ⟶ cartanEilenbergResolution K' :=
+  ChainComplex.ofHom (fun p => coverMap (kernelsMap g p)) fun p => by
+    -- the differential is the projection of the row `p + 1` onto the `(p + 1)`-st kernel followed
+    -- by its inclusion into the row `p`
+    rw [d_succ, d_succ]
+    -- `rowπ` and `rowι` are `coverπ` and `kernelsι` by definition, and the rows of the
+    -- resolutions are the covers of the kernels; the lemmas relating them to the lift are stated
+    -- below in terms of `cartanEilenbergResolutionMap` itself, so they are not available here
+    change coverMap _ ≫ coverπ _ ≫ kernelsι K' p = (coverπ _ ≫ kernelsι K p) ≫ coverMap _
+    rw [coverMap_coverπ_assoc, kernelsMap_succ_kernelsι, Category.assoc]
+
+namespace cartanEilenbergResolution
+
+variable {K K' : ChainComplex C ℕ} (g : K ⟶ K')
+
+/-- The lift of `g` to the Cartan–Eilenberg resolutions is, on the row `p`, the lift to the covers
+of the map of the successive kernels. -/
+lemma cartanEilenbergResolutionMap_f (p : ℕ) :
+    (cartanEilenbergResolutionMap g).f p = coverMap (kernelsMap g p) := (rfl)
+
+/-- The lift of `g` to the Cartan–Eilenberg resolutions commutes with the projections of the rows
+onto the successive kernels. -/
+@[reassoc (attr := simp)]
+lemma cartanEilenbergResolutionMap_f_rowπ (p : ℕ) :
+    (cartanEilenbergResolutionMap g).f p ≫ rowπ K' p = rowπ K p ≫ kernelsMap g p :=
+  -- the row `p` is the cover of the `p`-th kernel by definition
+  coverMap_coverπ (kernelsMap g p)
+
+/-- The lift of `g` to the Cartan–Eilenberg resolutions commutes with the inclusions of the
+successive kernels into the rows. -/
+@[reassoc (attr := simp)]
+lemma kernelsMap_succ_rowι (p : ℕ) :
+    kernelsMap g (p + 1) ≫ rowι K' p = rowι K p ≫ (cartanEilenbergResolutionMap g).f p :=
+  -- `rowι` is `kernelsι` and the row `p` is the cover of the `p`-th kernel by definition
+  kernelsMap_succ_kernelsι g p
+
+end cartanEilenbergResolution
+
+open cartanEilenbergResolution in
+/-- The lift of `g` to the Cartan–Eilenberg resolutions lies over `g`. -/
+@[reassoc (attr := simp)]
+lemma cartanEilenbergResolutionMap_π {K K' : ChainComplex C ℕ} (g : K ⟶ K') :
+    (cartanEilenbergResolutionMap g).f 0 ≫ cartanEilenbergResolutionπ K' =
+      cartanEilenbergResolutionπ K ≫ g :=
+  -- the augmentation is the projection onto `kernels K 0 = K`
+  cartanEilenbergResolutionMap_f_rowπ g 0
 
 end ChainComplex

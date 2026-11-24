@@ -29,7 +29,8 @@ they are proved with those powers in `TauCeti.Analysis.Sobolev.BesselPotential.L
   `((2π)² ‖ξ‖² + c)⁻¹` (`TemperedDistribution.laplacianResolvent_eq_fourierMultiplierCLM`),
   characterized for `c > 0` as the two-sided inverse of `-Δ + c` by
   `TemperedDistribution.laplacianResolvent_neg_laplacian_add_smul` and
-  `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`.
+  `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`; for `c = 1`,
+  `TemperedDistribution.laplacianResolvent_one_sub_laplacian` says `(1 - Δ)⁻¹ (f - Δ f) = f`.
 * `TemperedDistribution.eq_zero_of_neg_laplacian_add_smul_eq_zero`: for `c > 0`, `-Δ + c` has
   trivial kernel on tempered distributions.
 * `TemperedDistribution.laplacianResolvent_toTemperedDistributionCLM_eq`: on Schwartz functions it
@@ -106,6 +107,12 @@ theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : �
     fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop)
       (hasTemperateGrowth_resolventSymbol hc), resolventSymbol_mul hc]
   simp
+
+/-- The resolvent `(1 - Δ)⁻¹` is a left inverse of `1 - Δ`. -/
+@[simp]
+theorem laplacianResolvent_one_sub_laplacian (f : 𝓢'(E, F)) :
+    laplacianResolvent F 1 (f - Δ f) = f := by
+  simpa [sub_eq_neg_add] using laplacianResolvent_neg_laplacian_add_smul one_pos f
 
 /-- The resolvent of the Laplacian is a right inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]

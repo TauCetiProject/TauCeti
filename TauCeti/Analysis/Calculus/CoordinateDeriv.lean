@@ -124,6 +124,11 @@ theorem coordinateDeriv_cons (j : Fin n) (js : List (Fin n)) (f : CoordinateSpac
     coordinateDeriv (j :: js) f x =
       fderiv ℝ (coordinateDeriv js f) x (EuclideanSpace.single j 1) := (rfl)
 
+/-- The coordinate derivative along a single index is the derivative in that coordinate direction:
+`∂ⱼ f x = Df(x) eⱼ`. -/
+theorem coordinateDeriv_singleton (j : Fin n) (f : CoordinateSpace n → A) (x : CoordinateSpace n) :
+    coordinateDeriv [j] f x = fderiv ℝ f x (EuclideanSpace.single j 1) := (rfl)
+
 /-- Differentiating along a concatenated word differentiates along the second word first. -/
 theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv (α ++ β) f = coordinateDeriv α (coordinateDeriv β f) := by
@@ -362,6 +367,13 @@ theorem _root_.Filter.EventuallyEq.coordinateDeriv {f g : CoordinateSpace n → 
   | cons j js ih =>
     filter_upwards [ih.eventuallyEq_nhds] with y hy
     rw [coordinateDeriv_cons, coordinateDeriv_cons, hy.fderiv_eq]
+
+/-- Coordinate derivatives do not enlarge the topological support. -/
+theorem tsupport_coordinateDeriv_subset (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    tsupport (coordinateDeriv α f) ⊆ tsupport f := by
+  induction α with
+  | nil => exact subset_rfl
+  | cons j js ih => exact (tsupport_fderiv_apply_subset ℝ _).trans ih
 
 /-- Every nonempty coordinate derivative of a constant function vanishes. -/
 theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
@@ -1022,6 +1034,15 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
     mixedDeriv α β a x ξ = 0 :=
   (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
+
+/-- Away from the support of a position cutoff `ψ`, every mixed derivative of `ψ(x) a(x, ξ)`
+vanishes. -/
+theorem mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport {ψ : CoordinateSpace n → ℝ}
+    {x : CoordinateSpace n} (hx : x ∉ tsupport ψ) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ψ p.1 • a p) x ξ = 0 := by
+  refine mixedDeriv_eq_zero_of_eventually ?_ α β ξ
+  filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy η
+  simp [hy]
 
 /-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
 at positions of `U`. -/

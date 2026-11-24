@@ -43,6 +43,9 @@ since locally analytic functions are dense in `C(ℤ_p, K)`.
   continuous linear functionals on the stages compatible with re-expansion.
 * `TauCeti.LocallyAnalyticDistribution.stagesEquiv`: distributions are compatible families.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm h`: the operator norm on `LA_h(K)`.
+* `TauCeti.LocallyAnalyticDistribution.dualMap T T' hT`: the transpose `μ ↦ μ ∘ T` of an
+  endomorphism `T` of `LA(ℤ_p, K)` computed on every stage `LA_h(K)` by a continuous linear map
+  `T_h` into a stage `LA_{k h}(K)`.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure`: measures as distributions.
 
 ## Main results
@@ -230,6 +233,49 @@ theorem eq_zero_of_forall_stageSeminorm_eq_zero {μ : LocallyAnalyticDistributio
   ext fun h ↦ by
     rw [map_zero]
     exact (ContinuousLinearMap.opNorm_zero_iff _).mp (hμ h)
+
+/-- The transpose `μ ↦ μ ∘ T` of a linear endomorphism `T` of `LA(ℤ_p, K)` that sends every stage
+continuously into a stage: for a level map `k`, `T (ofStage h c) = ofStage (k h) (T_h c)` with
+`T_h : LA_h(K) →L LA_{k h}(K)` continuous. The restriction of `μ ∘ T` to the stage of level `h` is
+`μ_{k h} ∘ T_h`, so it is again a distribution. -/
+noncomputable def dualMap (T : LocallyAnalytic p K K →ₗ[K] LocallyAnalytic p K K) {k : ℕ → ℕ}
+    (T' : ∀ h, AnalyticStage p h K →L[K] AnalyticStage p (k h) K)
+    (hT : ∀ h c, T (ofStage K h c) = ofStage K (k h) (T' h c)) :
+    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K :=
+  T.dualMap.restrict fun μ hμ ↦ mem_iff.mpr fun h ↦ by
+    convert (stage (k h) ⟨μ, hμ⟩ ∘L T' h).continuous using 1
+    ext c
+    simp [hT]
+
+section DualMap
+
+variable {T : LocallyAnalytic p K K →ₗ[K] LocallyAnalytic p K K} {k : ℕ → ℕ}
+  {T' : ∀ h, AnalyticStage p h K →L[K] AnalyticStage p (k h) K}
+  {hT : ∀ h c, T (ofStage K h c) = ofStage K (k h) (T' h c)}
+
+/-- The transpose of `T` takes the value `μ(T f)` on `f`. -/
+@[simp]
+theorem coe_dualMap_apply (μ : LocallyAnalyticDistribution p K) (f : LocallyAnalytic p K K) :
+    (dualMap T T' hT μ : Module.Dual K (LocallyAnalytic p K K)) f =
+      (μ : Module.Dual K (LocallyAnalytic p K K)) (T f) := by
+  rw [dualMap, LinearMap.coe_restrict_apply, LinearMap.dualMap_apply]
+
+/-- The restriction of the transpose of `T` to the stage of level `h` is the restriction of `μ` to
+the stage of level `k h` composed with `T_h`. -/
+@[simp]
+theorem stage_dualMap (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
+    stage h (dualMap T T' hT μ) = stage (k h) μ ∘L T' h := by
+  ext c
+  simp [hT]
+
+/-- The transpose of `T` bounds the stage seminorm of level `h` by `‖T_h‖` times the stage
+seminorm of level `k h`. -/
+theorem stageSeminorm_dualMap_le (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
+    stageSeminorm h (dualMap T T' hT μ) ≤ ‖T' h‖ * stageSeminorm (k h) μ := by
+  rw [stageSeminorm_apply, stageSeminorm_apply, stage_dualMap, mul_comm]
+  exact ContinuousLinearMap.opNorm_comp_le _ _
+
+end DualMap
 
 /-- A measure on `ℤ_p` with values in `K` defines a locally analytic distribution, integrating the
 continuous function obtained by evaluating a locally analytic coefficient vector. -/
