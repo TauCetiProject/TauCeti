@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Sobolev.Morrey.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -38,9 +39,10 @@ values in a proper space, has a subsequence converging locally uniformly on `U`;
 continuous on `U` and Hölder of the same exponent on each compact subset
 (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`).
 
-The bounds here are only required on compact subsets of `U`. The file
-`TauCeti.Analysis.Complex.Wirtinger.Precompact` proves the same conclusions for families bounded
-on all of `U`, with `\bar∂u` bounded in `Lᵖ(U)` up to a bounded error.
+The bounds here are only required on compact subsets of `U`. Families bounded on all of `U`, with
+`\bar∂u` bounded in `Lᵖ(U)` up to a bounded error, as in
+`TauCeti.Analysis.Complex.Wirtinger.Precompact`, are a special case
+(`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`).
 
 This is the compactness step for functions solving a scalar Cauchy–Riemann equation with an `Lᵖ`
 forcing, such as `\bar∂b = -ν b + f` with `ν` bounded and `f` bounded in `Lᵖ`. For `p = 2 + 2 / m`
@@ -56,6 +58,9 @@ no such equation is proved here.
   compact subset for a family with locally bounded values and locally `Lᵖ`-bounded `\bar∂`.
 * `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`: a sequence
   of such maps has a locally uniformly convergent subsequence with a locally Hölder limit.
+* `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`: the
+  same conclusion for families bounded on `U` with `\bar∂` bounded in `Lᵖ(U)` up to a bounded
+  error.
 
 ## References
 
@@ -163,5 +168,30 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le
   refine ⟨φ, hφ, v, hv, hconv, fun K hKU hK ↦ ?_⟩
   obtain ⟨C, hC⟩ := hholder K hKU hK
   exact ⟨C, hlim K hKU C hC⟩
+
+/-- **Locally uniformly convergent subsequences under global bounds.** Let `2 < p < ∞`, let
+`U ⊆ ℂ` be open and let `u n` be maps smooth on `U` into a proper complex Hilbert space, with
+`‖u n‖ ≤ A` on `U` and `‖\bar∂(u n) - g n‖ ≤ M` on `U` for some `g n` with `‖g n‖_{Lᵖ(U)} ≤ B`.
+Then a subsequence of `u n` converges locally uniformly on `U` to a map `v` that is continuous on
+`U` and Hölder continuous of exponent `1 - 2 / p` on each compact subset of `U`. -/
+theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le
+    [ProperSpace F] {p : ℝ≥0} (hp : 2 < p) {U : Set ℂ} (hU : IsOpen U) {A M B : ℝ≥0}
+    {u g : ℕ → ℂ → F} (hu : ∀ n, ContDiffOn ℝ ∞ (u n) U) (hA : ∀ n, ∀ z ∈ U, ‖u n z‖ ≤ A)
+    (hM : ∀ n, ∀ z ∈ U, ‖conjWirtingerDeriv (u n) z 1 - g n z‖ ≤ M)
+    (hB : ∀ n, eLpNorm (g n) p (volume.restrict U) ≤ B) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → F, ContinuousOn v U ∧
+      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U ∧
+      ∀ K ⊆ U, IsCompact K → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := by
+  refine exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le hp hU hu
+    (fun _ hKU _ ↦ ⟨A, fun n z hz ↦ hA n z (hKU hz)⟩) fun K hKU hK ↦
+      ⟨volume K ^ (p : ℝ≥0∞).toReal⁻¹ * ENNReal.ofReal M + B, ?_, fun n ↦ ?_⟩
+  · exact ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+      hK.measure_lt_top.ne) ENNReal.ofReal_ne_top, ENNReal.coe_ne_top⟩
+  -- Split `\bar∂(u n)` on `K` as the bounded `\bar∂(u n) - g n` plus `g n`.
+  exact eLpNorm_restrict_le_of_norm_sub_le (by exact_mod_cast (one_lt_two.trans hp).le)
+    hK.measurableSet (((hu n).conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp)
+      1).continuousOn.mono hKU |>.aestronglyMeasurable hK.measurableSet)
+    (fun z hz ↦ hM n z (hKU hz))
+    ((eLpNorm_mono_measure _ (Measure.restrict_mono hKU le_rfl)).trans (hB n))
 
 end TauCeti

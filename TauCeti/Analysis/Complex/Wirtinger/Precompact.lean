@@ -7,11 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 public import Mathlib.Topology.MetricSpace.Holder
-public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
-import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -23,10 +20,10 @@ conjugate Wirtinger derivatives `\bar∂u` are, up to a uniformly bounded error,
 bounded in `Lᵖ(U)`, is bounded in `W^{1,p}` on every compact subset of `U`
 (`TauCeti.exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le`, which only needs
 `1 < p < ∞`) and uniformly Hölder continuous of exponent `1 - 2 / p` there
-(`TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`). For a finite-dimensional
-target every sequence in such a family therefore has a subsequence converging locally uniformly
-on `U`, and the limit inherits the Hölder bounds
-(`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`).
+(`TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`). The resulting locally uniformly
+convergent subsequences for a proper target are
+`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le` in
+`TauCeti.Analysis.Complex.Wirtinger.Compactness`.
 
 The bounded error term allows `\bar∂u` to differ from an `Lᵖ`-small or `Lᵖ`-bounded function by
 bounded zeroth-order terms, as for the equation `\bar∂u + ν u = g` with bounded `ν` and bounded
@@ -43,9 +40,7 @@ derivative `Du` in `Lᵖ(K)` uniformly over the family. Applied to a closed thic
 inside `U`, Morrey's inequality on `L`, in the plane form
 `TauCeti.exists_edist_le_of_contDiffOn_cthickening_of_two_lt`, bounds `‖u x - u y‖` by a
 multiple of `|x - y|^(1 - 2 / p)` for nearby points `x, y ∈ K`, and the sup bound handles
-distant points (`HolderOnWith.of_dist_lt_of_dist_le`). The subsequence comes from the
-Arzelà–Ascoli theorem for locally Hölder families on the open set `U`
-(`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith`).
+distant points (`HolderOnWith.of_dist_lt_of_dist_le`).
 
 ## Main results
 
@@ -53,8 +48,6 @@ Arzelà–Ascoli theorem for locally Hölder families on the open set `U`
   `W^{1,p}` bound.
 * `TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`: the uniform Hölder bound on
   compact subsets.
-* `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`: a
-  locally uniformly convergent subsequence, with Hölder continuous limit.
 
 ## References
 
@@ -144,29 +137,5 @@ theorem exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0} (hp 
     calc dist (u x) (u y) ≤ ‖u x‖ + ‖u y‖ := dist_le_norm_add_norm _ _
       _ ≤ A + A := add_le_add (hA x (hKU hx)) (hA y (hKU hy))
       _ = ((2 * A : ℝ≥0) : ℝ) := by push_cast; ring
-
-/-- **Locally uniformly convergent subsequences.** Let `2 < p < ∞`, let `U ⊆ ℂ` be open and let
-`u n` be maps smooth on `U` into a finite-dimensional complex Hilbert space, with `‖u n‖ ≤ A` on
-`U` and `‖\bar∂(u n) - g n‖ ≤ M` on `U` for some `g n` with `‖g n‖_{Lᵖ(U)} ≤ B`. Then a subsequence
-of `u n` converges locally uniformly on `U`, and the limit is Hölder continuous with exponent
-`1 - 2 / p` on every compact subset of `U`. -/
-theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le
-    [FiniteDimensional ℂ F] {p : ℝ≥0} (hp : 2 < p) {U : Set ℂ} (hU : IsOpen U) {A M B : ℝ≥0}
-    {u g : ℕ → ℂ → F} (hu : ∀ n, ContDiffOn ℝ ∞ (u n) U) (hA : ∀ n, ∀ z ∈ U, ‖u n z‖ ≤ A)
-    (hM : ∀ n, ∀ z ∈ U, ‖conjWirtingerDeriv (u n) z 1 - g n z‖ ≤ M)
-    (hB : ∀ n, eLpNorm (g n) p (volume.restrict U) ≤ B) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → F,
-      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U ∧
-      ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := by
-  have hH : ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, ∀ n, HolderOnWith C (1 - 2 / p) (u n) K :=
-    fun K hK hKU ↦ (exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le hp hU hK hKU A M B).imp
-      fun C hC n ↦ hC (u n) (g n) (hu n) (hA n) (hM n) (hB n)
-  obtain ⟨φ, hφ, v, -, hconvOn, hlim⟩ := exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith hU
-    (tsub_pos_of_lt ((div_lt_one₀ (zero_lt_two.trans hp)).2 hp)) (fun K hKU hK ↦ hH K hK hKU)
-    fun z hz ↦
-      ⟨closedBall 0 A, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hA n z hz)⟩
-  refine ⟨φ, hφ, v, hconvOn, fun K hK hKU ↦ ?_⟩
-  obtain ⟨C, hC⟩ := hH K hK hKU
-  exact ⟨C, hlim K hKU C hC⟩
 
 end TauCeti
