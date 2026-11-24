@@ -87,6 +87,9 @@ an algebra are those of the whole algebra.
   finite-dimensional representation contains an irreducible subrepresentation.
 * `Representation.IsIrreducible.exists_forall_apply_eq_smul`: Schur's lemma over an
   algebraically closed field, for an unbundled equivariant endomorphism.
+* `Representation.map_mul_of_forall_apply_eq_smul` and
+  `Representation.map_one_of_forall_apply_eq_smul`: the scalars by which a representation acts on
+  a nonzero space are multiplicative.
 * `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
   out of an irreducible representation differ by a unit scalar.
 -/
@@ -419,6 +422,23 @@ theorem IsIrreducible.exists_forall_apply_eq_smul [IsAlgClosed k] [FiniteDimensi
     (ρ := ρ)).surjective (f.intertwiningMap_of_isIntertwiningMap ρ ρ hf)
   refine ⟨c, fun v ↦ ?_⟩
   simpa [IntertwiningMap.algebraMap_apply] using (DFunLike.congr_fun hc v).symm
+
+/-- **Scalar operators multiply like the group.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c (g * h) = c g * c h`: both act on a nonzero vector as `ρ (g * h)`.
+This is how the scalars produced by Schur's lemma assemble into a character. -/
+theorem map_mul_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) (g h : G) : c (g * h) = c g * c h := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  refine smul_left_injective k hv ?_
+  dsimp only
+  rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
+
+/-- **The scalar of the identity is one.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c 1 = 1`, since `ρ 1` is the identity. -/
+theorem map_one_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) : c 1 = 1 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact smul_left_injective k hv (by simp [← hc])
 
 /-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
 scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an
