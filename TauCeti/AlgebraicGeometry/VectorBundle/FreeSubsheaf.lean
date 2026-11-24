@@ -139,6 +139,19 @@ theorem
 
 end Scheme.Modules
 
+/-- Reindexing a family along an equivalence preserves the bijectivity of its linear combination
+map. -/
+private lemma bijective_linearCombination_comp_equiv {R M ι κ : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [Fintype ι] [Fintype κ] (e : κ ≃ ι) {v : ι → M}
+    (hv : Function.Bijective (Fintype.linearCombination R v)) :
+    Function.Bijective (Fintype.linearCombination R (v ∘ e)) := by
+  have heq : ⇑(Fintype.linearCombination R (v ∘ e)) =
+      ⇑(Fintype.linearCombination R v) ∘ fun c ↦ c ∘ e.symm := by
+    funext c
+    exact Fintype.sum_equiv e _ _ fun k ↦ by simp
+  rw [heq]
+  exact hv.comp (Equiv.arrowCongr e (Equiv.refl R)).bijective
+
 /-- A composite of morphisms of `𝒪_X`-modules that are bijective on sections over `W` is bijective
 on sections over `W`. -/
 private lemma bijective_app_comp {A B C : X.Modules} (f : A ⟶ B) (g : B ⟶ C) (W : X.Opens)
@@ -228,15 +241,8 @@ theorem exists_mono_free_twist_finite_support (hX : ∀ x : X, Order.coheight x 
   rw [rank_apply] at hι
   let e : ULift.{u} (Fin r) ≃ ι := Fintype.equivOfCardEq (by simp [hι])
   have ht₀ (W : X.Opens) (i : W ⟶ V) : Function.Bijective (Fintype.linearCombination Γ(X, W)
-      fun k ↦ E.obj.obj.presheaf.map i.op (t (e k))) := by
-    have heq : ⇑(Fintype.linearCombination Γ(X, W)
-        fun k ↦ E.obj.obj.presheaf.map i.op (t (e k))) =
-        ⇑(Fintype.linearCombination Γ(X, W) fun k ↦ E.obj.obj.presheaf.map i.op (t k)) ∘
-          fun c ↦ c ∘ e.symm := by
-      funext c
-      exact Fintype.sum_equiv e _ _ fun k ↦ by simp
-    rw [heq]
-    exact (ht W i).comp (Equiv.arrowCongr e (Equiv.refl _)).bijective
+      fun k ↦ E.obj.obj.presheaf.map i.op (t (e k))) :=
+    bijective_linearCombination_comp_equiv e (ht W i)
   have : Nonempty V := ⟨⟨_, hηV⟩⟩
   -- An effective divisor `D` whose canonical section `s` vanishes nowhere on `X_s ⊆ V`, and an `n`
   -- such that every `t k ⊗ sⁿ` over `X_s` extends to a global section `t' k` of `E ⊗ 𝒪_X(D)ⁿ`.
