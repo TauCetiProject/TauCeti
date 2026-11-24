@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
+import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 
 /-!
 # Strong continuity of continuous representations
@@ -23,6 +25,8 @@ continuous representations.
 * `ContRepresentation.continuous_subrepresentation_apply` and
   `ContRepresentation.continuous_quotient_apply`: restriction to an invariant submodule and descent
   to the quotient by it preserve strong continuity.
+* `ContRepresentation.exists_norm_le_of_isCompact`: the operators of a strongly continuous
+  representation on a Banach space are uniformly bounded on compact sets.
 -/
 
 public section
@@ -51,5 +55,21 @@ theorem continuous_quotient_apply (hπ : ∀ v, Continuous fun g ↦ π g v) (x 
   exact W.mkQL.continuous.comp (hπ v)
 
 end StrongContinuity
+
+section LocalBound
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Monoid G] [TopologicalSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [CompleteSpace V] {π : ContRepresentation 𝕜 G V}
+
+/-- **Local uniform boundedness.** The operators of a strongly continuous representation on a
+Banach space are uniformly bounded on every compact set, by the Banach–Steinhaus theorem. -/
+theorem exists_norm_le_of_isCompact (hπ : ∀ v, Continuous fun g ↦ π g v) {K : Set G}
+    (hK : IsCompact K) : ∃ C, ∀ y ∈ K, ‖(π y : V →L[𝕜] V)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := banach_steinhaus (g := fun y : K ↦ (π y : V →L[𝕜] V)) fun v ↦ by
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hπ v).continuousOn
+    exact ⟨C, fun y ↦ hC y y.property⟩
+  exact ⟨C, fun y hy ↦ hC ⟨y, hy⟩⟩
+
+end LocalBound
 
 end ContRepresentation
