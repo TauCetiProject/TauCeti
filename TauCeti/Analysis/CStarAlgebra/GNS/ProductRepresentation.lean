@@ -104,12 +104,8 @@ theorem gnsTensorFunctional_star_mul (hf : ∀ a b, f (a * b) = f (b * a))
   | add s s' hs hs' => simp [star_add, add_mul, hs, hs']
   | tmul a b =>
     induction t using TensorProduct.inductionOn with
-    | add t t' ht ht' => rw [mul_add, map_add, ht, ht', map_add, mul_add, map_add]
-    | tmul a' b' =>
-      rw [TensorProduct.star_tmul, Algebra.TensorProduct.tmul_mul_tmul, gnsTensorFunctional_tmul,
-        LinearMap.mulUnop'_tmul, LinearMap.mulUnop'_tmul, unop_mul, unop_star, ← mul_assoc, hf,
-        star_mul]
-      simp only [mul_assoc]
+    | add t t' ht ht' => simp only [mul_add, map_add, ht, ht']
+    | tmul a' b' => simpa [mul_assoc] using hf (star a * a' * b'.unop) (star b.unop)
 
 /-- For tracial `f`, the tensor functional is positive: `0 ≤ μ_f(t⋆ t)`. -/
 theorem gnsTensorFunctional_star_mul_self_nonneg (hf : ∀ a b, f (a * b) = f (b * a))

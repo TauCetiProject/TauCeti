@@ -63,12 +63,13 @@ noncomputable def rightMulMapPreGNS (hf : ∀ a b, f (a * b) = f (b * a)) (b : A
           = f (star (c * b) * (c * b)) := by
             rw [Complex.ofReal_pow, preGNS_norm_sq, ofPreGNS_toPreGNS]
         _ = f (c * (b * star b) * star c) := by
-          rw [star_mul, hf]
+          rw [star_mul, hf (star b * star c) (c * b)]
           simp only [mul_assoc]
         _ ≤ f (‖b * star b‖ • (c * star c)) :=
           OrderHomClass.mono f (CStarAlgebra.star_right_conjugate_le_norm_smul c (b * star b))
         _ = ((‖b‖ ^ 2 : ℝ) : ℂ) * f (star c * c) := by
-          rw [CStarRing.norm_self_mul_star, ← sq, ← Complex.coe_smul, map_smul, smul_eq_mul, hf]
+          rw [CStarRing.norm_self_mul_star, ← sq, ← Complex.coe_smul, map_smul, smul_eq_mul,
+            hf c (star c)]
         _ = (((‖b‖ * ‖x‖) ^ 2 : ℝ) : ℂ) := by
           rw [mul_pow, Complex.ofReal_mul, Complex.ofReal_pow ‖x‖, preGNS_norm_sq]
     exact (sq_le_sq₀ (by positivity) (by positivity)).mp (Complex.real_le_real.mp key)
@@ -97,7 +98,7 @@ noncomputable def gnsRightNonUnitalStarAlgHom (hf : ∀ a b, f (a * b) = f (b * 
     | ih x y =>
       simp only [ContinuousLinearMap.completion_apply_coe, Completion.inner_coe, unop_star,
         rightMulMapPreGNS_apply, preGNS_inner_def, ofPreGNS_toPreGNS, star_mul, star_star]
-      rw [mul_assoc, hf, mul_assoc]
+      rw [mul_assoc, hf b.unop (star (f.ofPreGNS x) * f.ofPreGNS y), mul_assoc]
 
 theorem gnsRightNonUnitalStarAlgHom_apply (hf : ∀ a b, f (a * b) = f (b * a)) (b : Aᵐᵒᵖ) :
     f.gnsRightNonUnitalStarAlgHom hf b = (f.rightMulMapPreGNS hf b.unop).completion :=
