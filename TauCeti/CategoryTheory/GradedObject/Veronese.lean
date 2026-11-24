@@ -94,11 +94,8 @@ theorem veroneseMul_assoc (i j k : ℕ) :
   simp
 
 /-- The `d`-th Veronese subalgebra `A^{(d)} = ⨁ₖ A_{dk}` of a graded monoid object `A`, with the
-unit and homogeneous multiplications of `A`.
-
-The body is exposed so that each component `(A.veronese d).X k` is definitionally `A.X (d * k)`
-(`veronese_X`) in other modules, where sections and morphisms of the two are identified. -/
-@[expose] def veronese : Mon (GradedObject ℕ C) :=
+unit and homogeneous multiplications of `A`. -/
+def veronese : Mon (GradedObject ℕ C) :=
   letI := GradedObject.monObjOfHomogeneous (fun k ↦ A.X (d * k)) (A.veroneseOne d)
     (A.veroneseMul d) (A.veroneseOne_whiskerRight_veroneseMul d)
     (A.whiskerLeft_veroneseOne_veroneseMul d) (A.veroneseMul_assoc d)
@@ -107,17 +104,28 @@ The body is exposed so that each component `(A.veronese d).X k` is definitionall
 /-- The degree-`k` component of the `d`-th Veronese subalgebra is the degree-`d k` component. -/
 @[simp]
 theorem veronese_X (k : ℕ) : (A.veronese d).X k = A.X (d * k) :=
-  rfl
+  (rfl)
 
-/-- The homogeneous multiplications of the `d`-th Veronese subalgebra are those of `A`. -/
+/-- The homogeneous multiplications of the `d`-th Veronese subalgebra are those of `A`, up to
+the identifications `veronese_X` of components. -/
 @[simp]
-theorem veronese_mul (i j : ℕ) : (A.veronese d).mul i j = A.veroneseMul d i j :=
-  mul_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d) i j
+theorem veronese_mul (i j : ℕ) :
+    (A.veronese d).mul i j =
+      (eqToHom (A.veronese_X d i) ⊗ₘ eqToHom (A.veronese_X d j)) ≫ A.veroneseMul d i j ≫
+        eqToHom (A.veronese_X d (i + j)).symm := by
+  have h : (A.veronese d).mul i j = A.veroneseMul d i j :=
+    mul_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d) i j
+  exact h.trans (by simp : A.veroneseMul d i j =
+    (eqToHom rfl ⊗ₘ eqToHom rfl) ≫ A.veroneseMul d i j ≫ eqToHom rfl)
 
-/-- The unit of the `d`-th Veronese subalgebra is that of `A`. -/
+/-- The unit of the `d`-th Veronese subalgebra is that of `A`, up to the identification
+`veronese_X` of degree-zero components. -/
 @[simp]
-theorem veronese_one : (A.veronese d).one = A.veroneseOne d :=
-  one_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d)
+theorem veronese_one :
+    (A.veronese d).one = A.veroneseOne d ≫ eqToHom (A.veronese_X d 0).symm := by
+  have h : (A.veronese d).one = A.veroneseOne d :=
+    one_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d)
+  exact h.trans (Category.comp_id _).symm
 
 end CategoryTheory.Mon
 
@@ -144,9 +152,8 @@ theorem veroneseMul_comm (i j : ℕ) :
   simp
 
 /-- The `d`-th Veronese subalgebra `A^{(d)} = ⨁ₖ A_{dk}` of a commutative graded monoid object
-`A`. As for `CategoryTheory.Mon.veronese`, the body is exposed so that its components are
-definitionally those of `A` in other modules. -/
-@[expose] def veronese : CommMon (GradedObject ℕ C) :=
+`A`. -/
+def veronese : CommMon (GradedObject ℕ C) :=
   letI := GradedObject.monObjOfHomogeneous (fun k ↦ A.toMon.X (d * k)) (A.toMon.veroneseOne d)
     (A.toMon.veroneseMul d) (A.toMon.veroneseOne_whiskerRight_veroneseMul d)
     (A.toMon.whiskerLeft_veroneseOne_veroneseMul d) (A.toMon.veroneseMul_assoc d)
@@ -161,11 +168,11 @@ definitionally those of `A` in other modules. -/
 monoid object is the `d`-th Veronese subalgebra of its underlying graded monoid object. -/
 @[simp]
 theorem veronese_toMon : (A.veronese d).toMon = A.toMon.veronese d :=
-  rfl
+  (rfl)
 
 /-- The degree-`k` component of the `d`-th Veronese subalgebra is the degree-`d k` component. -/
 @[simp]
 theorem veronese_X (k : ℕ) : (A.veronese d).X k = A.X (d * k) :=
-  rfl
+  (rfl)
 
 end CategoryTheory.CommMon
