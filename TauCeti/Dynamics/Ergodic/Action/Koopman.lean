@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.EMetricSpace.Lipschitz
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
-import TauCeti.MeasureTheory.Group.ActionIntegral
+import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # The Koopman group of a measurable action of `ℝ`
@@ -43,7 +43,8 @@ and is dominated by `2 ∫₀² g (u +ᵥ x) du`.
 * `MeasureTheory.Lp.continuous_compMeasurePreserving_vadd`: the Koopman orbits are continuous
   from `ℝ` to `Lᵖ(μ)` for `p ≠ ∞`;
 * `TauCeti.koopmanGroup`: the Koopman operators as a strongly continuous group on `Lᵖ(μ)`;
-  `TauCeti.koopmanGroup_isUnitary`: on complex `L²(μ)` it is unitary.
+  `TauCeti.koopmanGroup_isUnitary`: on `L²(μ)` with values in a complex inner product space,
+  such as complex `L²(μ)`, it is unitary.
 
 The s-finiteness of `μ` cannot be dropped: for the action of `ℝ` on itself by translation with
 counting measure, which is not s-finite, `‖1_{{-t}} - 1_{{0}}‖₂ = √2` for every `t ≠ 0`. Joint
@@ -146,9 +147,9 @@ private theorem abs_orbitAverage_vadd_sub_le (hg : Measurable g) (hg1 : ∀ x, �
 
 /-- The orbit averages of an integrable function are integrable. -/
 private theorem integrable_orbitAverage [SFinite μ] [VAddInvariantMeasure ℝ X μ]
-    (hg : Measurable g) (hgi : Integrable g μ) {h : ℝ} (hh : 0 < h) :
+    (hgi : Integrable g μ) {h : ℝ} (hh : 0 < h) :
     Integrable (orbitAverage g h) μ := by
-  refine (((integrable_vadd_prod (ν := volume.restrict (Ioc 0 h)) hg hgi).integral_prod_left
+  refine (((TauCeti.integrable_vadd_prod (ν := volume.restrict (Ioc 0 h)) hgi).integral_prod_left
     ).const_mul h⁻¹).congr (ae_of_all _ fun x => ?_)
   simp [orbitAverage, intervalIntegral.integral_of_le hh.le]
 
@@ -221,7 +222,8 @@ private theorem tendsto_integral_abs_orbitAverage_sub [SFinite μ] [VAddInvarian
   have key : ∀ᶠ h in 𝓝[>] (0 : ℝ), ∫ x, |orbitAverage g h x - g x| ∂μ =
       ∫ x, (∫ s in Ioc (0 : ℝ) 1, |orbitAverage g h (s +ᵥ x) - g (s +ᵥ x)|) ∂μ := by
     filter_upwards [self_mem_nhdsWithin] with h hh
-    rw [integral_integral_vadd_eq (hmeas h) ((integrable_orbitAverage hg hgi hh).sub hgi).abs]
+    rw [TauCeti.integral_integral_vadd_eq (F := fun y => |orbitAverage g h y - g y|)
+      ((integrable_orbitAverage hgi hh).sub hgi).abs]
     simp
   rw [tendsto_congr' key, show (𝓝 (0 : ℝ)) = 𝓝 (∫ _x : X, (0 : ℝ) ∂μ) by simp]
   have hmeas' (h : ℝ) : StronglyMeasurable fun p : X × ℝ =>
@@ -231,7 +233,7 @@ private theorem tendsto_integral_abs_orbitAverage_sub [SFinite μ] [VAddInvarian
   refine tendsto_integral_filter_of_dominated_convergence
     (fun x => 2 * ∫ u in Ioc (0 : ℝ) 2, g (u +ᵥ x))
     (.of_forall fun h => ((hmeas' h).integral_prod_right' (ν := _)).aestronglyMeasurable) ?_
-    (((integrable_vadd_prod hg hgi).integral_prod_left).const_mul 2)
+    (((TauCeti.integrable_vadd_prod hgi).integral_prod_left).const_mul 2)
     (ae_of_all _ fun x => tendsto_integral_abs_orbitAverage_vadd_sub hg hg1 x)
   filter_upwards [Ioo_mem_nhdsGT one_pos] with h hh
   refine ae_of_all _ fun x => ?_
@@ -260,19 +262,19 @@ private theorem integral_abs_orbitAverage_vadd_sub_le [SFinite μ] [VAddInvarian
     ∫ x, |orbitAverage g h (t +ᵥ x) - orbitAverage g h x| ∂μ ≤ 2 * |t| / h * ∫ x, ‖g x‖ ∂μ := by
   have (c d : ℝ) : IsFiniteMeasure (volume.restrict (Ι c d)) :=
     Real.isFiniteMeasure_restrict_Ioc _ _
-  have iA := integrable_orbitAverage hg hgi hh
-  have i₁ := (integrable_vadd_prod (ν := volume.restrict (Ι h (t + h))) hg.norm
+  have iA := integrable_orbitAverage hgi hh
+  have i₁ := (TauCeti.integrable_vadd_prod (ν := volume.restrict (Ι h (t + h)))
     hgi.norm).integral_prod_left
-  have i₂ := (integrable_vadd_prod (ν := volume.restrict (Ι 0 t)) hg.norm
+  have i₂ := (TauCeti.integrable_vadd_prod (ν := volume.restrict (Ι 0 t))
     hgi.norm).integral_prod_left
   calc ∫ x, |orbitAverage g h (t +ᵥ x) - orbitAverage g h x| ∂μ
       ≤ ∫ x, h⁻¹ * ((∫ r in Ι h (t + h), ‖g (r +ᵥ x)‖) + ∫ r in Ι 0 t, ‖g (r +ᵥ x)‖) ∂μ :=
         integral_mono (((measurePreserving_vadd t μ).integrable_comp_of_integrable iA).sub iA).abs
           ((i₁.add i₂).const_mul _) fun x => abs_orbitAverage_vadd_sub_le hg hg1 hh t x
     _ = 2 * |t| / h * ∫ x, ‖g x‖ ∂μ := by
-        rw [integral_const_mul, integral_add i₁ i₂, integral_integral_vadd_eq hg.norm hgi.norm,
-          integral_integral_vadd_eq hg.norm hgi.norm]
-        simp only [Measure.real, Real.volume_uIoc, Measure.restrict_apply_univ,
+        rw [integral_const_mul, integral_add i₁ i₂, TauCeti.integral_integral_vadd_eq hgi.norm,
+          TauCeti.integral_integral_vadd_eq hgi.norm]
+        simp only [smul_eq_mul, Measure.real, Real.volume_uIoc, Measure.restrict_apply_univ,
           ENNReal.toReal_ofReal (abs_nonneg _), sub_zero, add_sub_cancel_right]
         ring
 
@@ -286,7 +288,7 @@ private theorem integral_abs_vadd_sub_le [SFinite μ] [VAddInvariantMeasure ℝ 
   have hT := measurePreserving_vadd t μ
   have hshift : ∫ x, |a (t +ᵥ x) - g (t +ᵥ x)| ∂μ = ∫ x, |a x - g x| ∂μ :=
     integral_vadd_eq_self (fun y => |a y - g y|)
-  have iA := integrable_orbitAverage hg hgi hh
+  have iA := integrable_orbitAverage hgi hh
   have iM : Integrable (fun x => |a x - g x|) μ := (iA.sub hgi).abs
   have iT : Integrable (fun x => |a (t +ᵥ x) - g (t +ᵥ x)|) μ :=
     hT.integrable_comp_of_integrable iM
@@ -422,10 +424,11 @@ theorem koopmanGroup_apply (hp : p ≠ ∞) (t : ℝ) (f : Lp E p μ) :
     koopmanGroup μ E p hp t f = Lp.compMeasurePreserving (t +ᵥ ·) (measurePreserving_vadd t μ) f :=
   (rfl)
 
-/-- On complex `L²(μ)` the Koopman group is unitary. -/
-theorem koopmanGroup_isUnitary :
-    Semigroups.StronglyContinuousGroup.IsUnitary (H := Lp ℂ 2 μ)
-      (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) :=
+/-- On `L²(μ)` with values in a complex inner product space, such as complex `L²(μ)`, the Koopman
+group is unitary. -/
+theorem koopmanGroup_isUnitary (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℂ F] :
+    Semigroups.StronglyContinuousGroup.IsUnitary (H := Lp F 2 μ)
+      (koopmanGroup μ F 2 ENNReal.ofNat_ne_top) :=
   .intro fun t f g =>
     (Lp.compMeasurePreservingₗᵢ ℂ (t +ᵥ ·) (measurePreserving_vadd t μ)).inner_map_map f g
 
