@@ -43,9 +43,9 @@ F(M) = ∑ v, ε v · a(M v v),
 where `a` is extended linearly to the monoid algebra, with value zero on the words whose length
 is not `n + 2`. Anticyclicity of `a` and the sign change of `ε` along every edge make `F` a trace
 against the image of the path algebra, and the signless relation makes it kill the signless
-relators. So `F` descends to a linear functional on `Π⁺(G)` vanishing on commutators. On the
-class of a closed walk `w` it takes the value `± a w`, which therefore vanishes as soon as that
-class is a sum of commutators.
+relators. So `F` descends to a linear functional on `Π⁺(G)` vanishing on commutators
+(`TauCeti.signlessPreprojectiveTraceLift`). On the class of a closed walk `w` it takes the value
+`± a w`, which therefore vanishes as soon as that class is a sum of commutators.
 
 ## Main results
 
@@ -355,32 +355,17 @@ private theorem twistedTrace_dartWordHom_mul_comm
   rw [map_mul (dartWordHom k G), map_mul (dartWordHom k G)]
   exact twistedTrace_mul_dartWordHom_comm hrot hε y _
 
-/-- The twisted trace composed with the representation kills the signless ideal. -/
-private theorem twistedTrace_dartWordHom_eq_zero_of_mem [Fintype G.Dart]
+/-- The twisted trace composed with the representation kills the products of the signless
+relators with elements of the path algebra. -/
+private theorem twistedTrace_dartWordHom_signlessPreprojectiveRelator_mul [Fintype G.Dart]
     [∀ v, Fintype (G.neighborSet v)]
-    (hrot : ∀ (u : Fin (n + 1) → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u))
     (hrel : ∀ (u : Fin n → G.Dart) (v : V),
       ∑ d : G.Dart with d.snd = v, a (Fin.cons d (Fin.cons d.symm u)) = 0)
-    (hε : ∀ d : G.Dart, ε d.fst = -ε d.snd) {x : pathAlgebra k (DoubledQuiver G)}
-    (hx : x ∈ signlessPreprojectiveIdeal k (DoubledQuiver G)) :
-    twistedTrace a ε (dartWordHom k G x) = 0 := by
-  rw [signlessPreprojectiveIdeal_eq_span] at hx
-  suffices h : ∀ y z, twistedTrace a ε (dartWordHom k G (y * x * z)) = 0 by simpa using h 1 1
-  induction hx using TwoSidedIdeal.span_induction with
-  | mem x hx =>
-    obtain ⟨u, rfl⟩ := hx
-    obtain ⟨v, rfl⟩ := exists_eq_vertex G u
-    intro y z
-    -- Rotate the relator to the front.
-    beta_reduce
-    rw [mul_assoc, twistedTrace_dartWordHom_mul_comm hrot hε, mul_assoc,
-      signlessPreprojectiveRelator_congr k _ _ (instFintypeStarVertex G v), map_mul]
-    exact twistedTrace_dartWordHom_relator_mul hrel v _
-  | zero => simp
-  | add x y _ _ hx hy => intro y' z; rw [mul_add, add_mul, map_add, map_add, hx, hy, add_zero]
-  | neg x _ hx => intro y z; rw [mul_neg, neg_mul, map_neg, map_neg, hx, neg_zero]
-  | left_absorb c x _ hx => intro y z; simpa only [mul_assoc] using hx (y * c) z
-  | right_absorb c x _ hx => intro y z; simpa only [mul_assoc] using hx y (c * z)
+    (u : DoubledQuiver G) (x : pathAlgebra k (DoubledQuiver G)) :
+    twistedTrace a ε (dartWordHom k G (signlessPreprojectiveRelator k u * x)) = 0 := by
+  obtain ⟨v, rfl⟩ := exists_eq_vertex G u
+  rw [signlessPreprojectiveRelator_congr k _ _ (instFintypeStarVertex G v), map_mul]
+  exact twistedTrace_dartWordHom_relator_mul hrel v _
 
 end TwistedTrace
 
@@ -416,18 +401,11 @@ theorem eq_zero_of_le_commutatorSubmodule_of_anticyclic (hG : G.IsBipartite) {n 
   replace hε (d : G.Dart) : ε d.fst = -ε d.snd := hε d.adj
   -- The twisted trace descends to the signless preprojective algebra and kills commutators.
   let Φ := twistedTrace a ε ∘ₗ (dartWordHom k G).toLinearMap
-  let Ψ := (signlessPreprojectiveMk k (DoubledQuiver G)).toLinearMap.liftOfSurjective
-    (signlessPreprojectiveMk_surjective k _) ⟨Φ, fun x hx ↦ LinearMap.mem_ker.2
-      (twistedTrace_dartWordHom_eq_zero_of_mem hrot hrel hε
-        ((signlessPreprojectiveMk_eq_zero_iff k _).1 (LinearMap.mem_ker.1 hx)))⟩
-  have hΨ (x : pathAlgebra k (DoubledQuiver G)) : Ψ (signlessPreprojectiveMk k _ x) = Φ x :=
-    LinearMap.equivOfSurjective_apply _ _
-  have hker : commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) ≤
-      LinearMap.ker Ψ := (commutatorSubmodule_le_ker_iff _).2 fun x y ↦ by
-    obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k _ x
-    obtain ⟨y, rfl⟩ := signlessPreprojectiveMk_surjective k _ y
-    simp only [← map_mul, hΨ, Φ, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      twistedTrace_dartWordHom_mul_comm hrot hε x y]
+  have hΦ (x y : pathAlgebra k (DoubledQuiver G)) : Φ (x * y) = Φ (y * x) :=
+    twistedTrace_dartWordHom_mul_comm hrot hε x y
+  have hrelΦ (u : DoubledQuiver G) (x : pathAlgebra k (DoubledQuiver G)) :
+      Φ (signlessPreprojectiveRelator k u * x) = 0 :=
+    twistedTrace_dartWordHom_signlessPreprojectiveRelator_mul hrel u x
   -- The class of the walk has degree `n + 2`, and the functional takes the value `± a w` on it.
   have hdeg : signlessPreprojectiveMk k _ (List.ofFn fun t ↦ ofArrow (arrow G (w t).adj)).prod ∈
       signlessPreprojectiveGrade k (DoubledQuiver G) (n + 2) := by
@@ -436,8 +414,9 @@ theorem eq_zero_of_le_commutatorSubmodule_of_anticyclic (hG : G.IsBipartite) {n 
       (fun _ ↦ 1) _ fun t ↦ ofArrow_mem_grade_one (arrow G (w t).adj)
     rwa [List.sum_ofFn, Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
       mul_one] at h
-  have h₀ := LinearMap.mem_ker.1 (hker (hcomm hdeg))
-  rw [hΨ] at h₀
+  have h₀ := LinearMap.mem_ker.1
+    (commutatorSubmodule_le_ker_signlessPreprojectiveTraceLift Φ hΦ hrelΦ (hcomm hdeg))
+  rw [signlessPreprojectiveTraceLift_signlessPreprojectiveMk] at h₀
   simp only [Φ, LinearMap.comp_apply, AlgHom.toLinearMap_apply, dartWordHom_prod_ofFn w hw,
     twistedTrace_single, wordFunctional_single, one_mul, freeWeight_ofList_ofFn] at h₀
   rcases hε₂ (w 0).snd with h | h <;> simpa [h] using h₀
