@@ -39,7 +39,9 @@ of `l` vanishes unless `l = m`, when the sum is `μ l` (`ArithmeticFunction.sum_
 
 Summing `μ²` over the divisors of `n ≠ 0` counts its squarefree divisors, giving `2 ^ ω(n)`
 (`ArithmeticFunction.sum_divisors_moebius_sq`); this is the convolution identity `μ² * ζ = 2 ^ ω`
-behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`.
+behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L < m ≤ M` the same
+squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
+energy of bilinear estimates.
 
 ## Main results
 
@@ -60,6 +62,7 @@ behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`.
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
+* `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
 
 ## References
 
@@ -280,5 +283,14 @@ theorem sum_divisors_moebius_sq [Ring R] {n : ℕ} (hn : n ≠ 0) :
   simp_rw [hsq, ← sum_filter, sum_divisors_filter_squarefree hn, sum_const, card_powerset,
     factors_eq]
   simp [cardDistinctFactors_eq_card_primeFactors]
+
+/-- The squares of the Möbius function over an interval `L < m ≤ M` sum to at most its length
+`M - L`: each `μ(m)²` is `0` or `1`. -/
+theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M : ℕ) :
+    ∑ m ∈ Ioc L M, (μ m : R) ^ 2 ≤ ((M - L : ℕ) : R) := by
+  rw [← Nat.card_Ioc, ← nsmul_one]
+  refine sum_le_card_nsmul _ _ _ fun m _ ↦ ?_
+  rw [← Int.cast_pow, moebius_sq]
+  split_ifs <;> simp
 
 end ArithmeticFunction
