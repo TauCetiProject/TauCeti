@@ -8,8 +8,9 @@ module
 public import TauCeti.Dynamics.Billiard.SideReflection
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Data.Set.Card
-import Mathlib.Data.Int.Interval
 import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Unfolding billiard trajectories in a wedge
@@ -21,10 +22,12 @@ continuous choice of polar angle `θ ∈ ℝ`, into the sectors `S_k = {kα ≤ 
 fold `S_k` onto `W_α` by the isometry `sectorFold α k`, the rotation by `-kα` for even `k` and the
 reflection `σ` in the line at angle `(k+1)α/2` for odd `k`. Consecutive folds agree on the common
 ray of their sectors, and `sectorFold α (k + 1)` is `sectorFold α k` followed by the reflection in a
-side of the wedge (`sectorFold_succ`). So a straight line `t ↦ p + t·u`, folded sector by sector,
-moves in a straight line inside the wedge, and its direction changes by the side reflection exactly
-when the line crosses one of the rays `θ = kα`: it is the billiard trajectory with initial state
-`(p, u)`.
+side of the wedge (`sectorFold_succ`). So a straight line `t ↦ p + t·u` with `p = |p| exp(iψ)`,
+folded sector by sector, moves continuously and in a straight line inside the wedge, and its
+direction changes by the side reflection exactly when the line crosses one of the rays `θ = kα`: it
+is the billiard trajectory with initial state `(p, u)`. The real angle `ψ`, rather than `p` alone,
+fixes the lift of the polar angle and hence the indexing of the sectors; the trajectory starts at
+`p` when `ψ ∈ [0, α)`.
 
 A line avoiding the vertex sees it under a total angle `π`: along the line, the polar angle stays in
 an open interval of length `π` and takes each value at most once. Hence the line crosses at most
@@ -36,8 +39,8 @@ and for the reflex angle `α = 3π/2` it is `1`.
 
 * `TauCeti.Billiard.wedge α`: the closed wedge of angle `α`.
 * `TauCeti.Billiard.sectorFold α k`: the isometry folding the `k`-th sector onto the wedge.
-* `TauCeti.Billiard.unfoldedAngle ψ p u t`: the continuous polar angle of `p + t·u`, equal to `ψ`
-  at `t = 0`.
+* `TauCeti.Billiard.unfoldedAngle ψ p u t`: the polar angle of `p + t·u` equal to `ψ` at `t = 0`,
+  continuous when `ψ` is a polar angle of `p` and the line avoids the vertex.
 * `TauCeti.Billiard.wedgeTrajectory α ψ p u t` and `TauCeti.Billiard.wedgeDirection α ψ p u t`:
   the position and direction at time `t` of the billiard trajectory in the wedge, by unfolding.
 * `TauCeti.Billiard.wedgeReflectionTimes α ψ p u`: the times at which the trajectory reflects.
@@ -46,9 +49,12 @@ and for the reflex angle `α = 3π/2` it is `1`.
 
 * `TauCeti.Billiard.sectorFold_succ`: consecutive folds differ by a side reflection.
 * `TauCeti.Billiard.wedgeTrajectory_mem_wedge`: the folded trajectory stays in the wedge.
+* `TauCeti.Billiard.continuous_wedgeTrajectory`: the folded trajectory is continuous.
 * `TauCeti.Billiard.wedgeSector_eq_of_disjoint` and `TauCeti.Billiard.wedgeTrajectory_eq_add_smul`:
   between reflections it moves in a straight line at unit speed with constant direction.
-* `TauCeti.Billiard.sectorFold_succ_apply`: at a reflection the direction is reflected in a side.
+* `TauCeti.Billiard.wedgeSector_eq_add_one_or_eq_sub_one` and
+  `TauCeti.Billiard.wedgeDirection_eq_directionReflection`: across a reflection time the sector
+  changes by one and the direction is reflected in a side (the reflection law).
 * `TauCeti.Billiard.encard_wedgeReflectionTimes_le`: the corner bound, at most `⌈π/α⌉`
   reflections.
 
@@ -72,6 +78,10 @@ namespace TauCeti.Billiard
 def wedge (α : ℝ) : Set ℂ :=
   {z | ∃ r : ℝ, 0 ≤ r ∧ ∃ ψ ∈ Icc 0 α, z = r * exp (ψ * I)}
 
+theorem mem_wedge_iff {α : ℝ} {z : ℂ} :
+    z ∈ wedge α ↔ ∃ r : ℝ, 0 ≤ r ∧ ∃ ψ ∈ Icc 0 α, z = r * exp (ψ * I) :=
+  Iff.rfl
+
 /-- **The fold of the `k`-th sector.** The linear isometry carrying the sector
 `{kα ≤ θ ≤ (k+1)α}` onto the wedge: the rotation by `-kα` for even `k`, and the reflection in the
 line at angle `(k+1)α/2` for odd `k`. -/
@@ -88,15 +98,37 @@ def foldAngle (α : ℝ) (k : ℤ) (θ : ℝ) : ℝ :=
 def wedgeSide (α : ℝ) (k : ℤ) : Circle :=
   if Even k then Circle.exp α else 1
 
+theorem sectorFold_of_even (α : ℝ) {k : ℤ} (hk : Even k) :
+    sectorFold α k = rotation (Circle.exp (-(k * α))) :=
+  ite_eq_left hk
+
+theorem sectorFold_of_odd (α : ℝ) {k : ℤ} (hk : Odd k) :
+    sectorFold α k = sideReflection (Circle.exp ((k + 1) * α / 2)) :=
+  ite_eq_right (Int.not_even_iff_odd.2 hk)
+
+theorem foldAngle_of_even (α : ℝ) {k : ℤ} (hk : Even k) (θ : ℝ) : foldAngle α k θ = θ - k * α :=
+  ite_eq_left hk
+
+theorem foldAngle_of_odd (α : ℝ) {k : ℤ} (hk : Odd k) (θ : ℝ) :
+    foldAngle α k θ = (k + 1) * α - θ :=
+  ite_eq_right (Int.not_even_iff_odd.2 hk)
+
+theorem wedgeSide_of_even (α : ℝ) {k : ℤ} (hk : Even k) : wedgeSide α k = Circle.exp α :=
+  ite_eq_left hk
+
+theorem wedgeSide_of_odd (α : ℝ) {k : ℤ} (hk : Odd k) : wedgeSide α k = 1 :=
+  ite_eq_right (Int.not_even_iff_odd.2 hk)
+
 theorem sectorFold_ofReal_mul_exp (α : ℝ) (k : ℤ) (r θ : ℝ) :
     sectorFold α k (r * exp (θ * I)) = r * exp (foldAngle α k θ * I) := by
-  unfold sectorFold foldAngle
-  split_ifs with hk
-  · rw [rotation_apply, Circle.coe_exp, mul_left_comm, ← Complex.exp_add]
+  rcases Int.even_or_odd k with hk | hk
+  · simp only [sectorFold_of_even α hk, foldAngle_of_even α hk, rotation_apply, Circle.coe_exp,
+      mul_left_comm _ (r : ℂ), ← Complex.exp_add]
     push_cast
     ring_nf
-  · rw [sideReflection_apply, Circle.coe_exp, map_mul, conj_ofReal, ← Complex.exp_conj,
-      map_mul, conj_ofReal, conj_I, mul_left_comm, ← Complex.exp_natCast_mul, ← Complex.exp_add]
+  · simp only [sectorFold_of_odd α hk, foldAngle_of_odd α hk, sideReflection_apply,
+      Circle.coe_exp, map_mul, conj_ofReal, ← Complex.exp_conj, conj_I, ← Complex.exp_natCast_mul,
+      mul_left_comm _ (r : ℂ), ← Complex.exp_add]
     push_cast
     ring_nf
 
@@ -115,23 +147,23 @@ theorem sectorFold_zero (α : ℝ) : sectorFold α 0 = LinearIsometryEquiv.refl 
   ext z
   simp [sectorFold]
 
+/-- The fold angles of consecutive sectors agree on their common ray `θ = (k+1)α`. -/
+theorem foldAngle_succ_add_one_mul (α : ℝ) (k : ℤ) :
+    foldAngle α (k + 1) ((k + 1) * α) = foldAngle α k ((k + 1) * α) := by
+  rcases Int.even_or_odd k with hk | hk
+  · rw [foldAngle_of_odd α hk.add_one, foldAngle_of_even α hk]
+    push_cast
+    ring
+  · rw [foldAngle_of_even α hk.add_one, foldAngle_of_odd α hk]
+    push_cast
+    ring
+
 /-- Consecutive folds agree on the common ray `θ = (k+1)α` of their sectors. -/
 theorem sectorFold_succ_ofReal_mul_exp (α : ℝ) (k : ℤ) (r : ℝ) :
     sectorFold α (k + 1) (r * exp (((k + 1 : ℤ) * α : ℝ) * I)) =
       sectorFold α k (r * exp (((k + 1 : ℤ) * α : ℝ) * I)) := by
-  rw [sectorFold_ofReal_mul_exp, sectorFold_ofReal_mul_exp]
-  congr 3
-  unfold foldAngle
-  rcases Int.even_or_odd k with hk | hk
-  · have : ¬ Even (k + 1) := by simpa [Int.even_add_one] using hk
-    simp only [this, hk, ↓reduceIte]
-    push_cast
-    ring
-  · have : Even (k + 1) := hk.add_one
-    have hk' : ¬ Even k := Int.not_even_iff_odd.2 hk
-    simp only [this, hk', ↓reduceIte]
-    push_cast
-    ring
+  rw [sectorFold_ofReal_mul_exp, sectorFold_ofReal_mul_exp, Int.cast_add, Int.cast_one,
+    foldAngle_succ_add_one_mul]
 
 /-- The fold of the `k`-th sector maps the direction of its ray `θ = (k+1)α` to the side
 `wedgeSide α k` of the wedge. -/
@@ -153,45 +185,105 @@ theorem sectorFold_succ (α : ℝ) (k : ℤ) :
     sectorFold α (k + 1) = (sectorFold α k).trans (sideReflection (wedgeSide α k)) := by
   ext z
   rw [LinearIsometryEquiv.trans_apply, sideReflection_apply]
-  unfold sectorFold wedgeSide
   rcases Int.even_or_odd k with hk | hk
-  · have : ¬ Even (k + 1) := by simpa [Int.even_add_one] using hk
-    simp only [this, hk, ↓reduceIte]
-    rw [sideReflection_apply, rotation_apply, map_mul,
-      ← Circle.coe_inv_eq_conj, ← Circle.exp_neg, Circle.coe_exp, Circle.coe_exp, Circle.coe_exp,
-      ← mul_assoc, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, ← Complex.exp_add]
+  · rw [sectorFold_of_odd α hk.add_one, sectorFold_of_even α hk, wedgeSide_of_even α hk,
+      sideReflection_apply, rotation_apply, map_mul, ← Circle.coe_inv_eq_conj, ← Circle.exp_neg,
+      Circle.coe_exp, Circle.coe_exp, Circle.coe_exp, ← mul_assoc, ← Complex.exp_natCast_mul,
+      ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 2
     push_cast
     ring
-  · have : Even (k + 1) := hk.add_one
-    have hk' : ¬ Even k := Int.not_even_iff_odd.2 hk
-    simp only [this, hk', ↓reduceIte]
-    rw [rotation_apply, sideReflection_apply, map_mul, Complex.conj_conj, Circle.coe_one, one_pow,
+  · rw [sectorFold_of_even α hk.add_one, sectorFold_of_odd α hk, wedgeSide_of_odd α hk,
+      rotation_apply, sideReflection_apply, map_mul, Complex.conj_conj, Circle.coe_one, one_pow,
       one_mul, map_pow, ← Circle.coe_inv_eq_conj, ← Circle.exp_neg, Circle.coe_exp,
       Circle.coe_exp, ← Complex.exp_natCast_mul]
     congr 2
     push_cast
     ring
 
+/-- The pointwise form of `sectorFold_succ`. -/
+theorem sectorFold_succ_apply (α : ℝ) (k : ℤ) (z : ℂ) :
+    sectorFold α (k + 1) z = sideReflection (wedgeSide α k) (sectorFold α k z) := by
+  rw [sectorFold_succ, LinearIsometryEquiv.trans_apply]
+
+/-- On the closed sector `kα ≤ θ ≤ (k+1)α`, the fold angle of the sector `⌊θ/α⌋` of `θ` is that of
+the `k`-th sector: at `θ = (k+1)α` the two folds agree. -/
+theorem foldAngle_floor_div_eq_of_mem_Icc {α : ℝ} (hα : 0 < α) {k : ℤ} {θ : ℝ}
+    (hθ : θ ∈ Icc (k * α) ((k + 1) * α)) : foldAngle α ⌊θ / α⌋ θ = foldAngle α k θ := by
+  rcases hθ.2.lt_or_eq with hlt | rfl
+  · rw [Int.floor_eq_iff.2 ⟨(le_div_iff₀ hα).2 hθ.1, (div_lt_iff₀ hα).2 hlt⟩]
+  · rw [mul_div_cancel_right₀ _ hα.ne', ← Int.cast_one, ← Int.cast_add, Int.floor_intCast,
+      Int.cast_add, Int.cast_one, foldAngle_succ_add_one_mul]
+
+theorem continuous_foldAngle (α : ℝ) (k : ℤ) : Continuous (foldAngle α k) := by
+  rcases Int.even_or_odd k with hk | hk
+  · simp only [funext (foldAngle_of_even α hk)]
+    fun_prop
+  · simp only [funext (foldAngle_of_odd α hk)]
+    fun_prop
+
+private theorem continuous_foldAngle_floor_div_of_pos {α : ℝ} (hα : 0 < α) :
+    Continuous fun θ ↦ foldAngle α ⌊θ / α⌋ θ := by
+  refine continuous_iff_continuousAt.2 fun x ↦ continuousAt_iff_continuous_left_right.2 ⟨?_, ?_⟩
+  · -- on the left of `x`, the sector `⌈x/α⌉ - 1`, closed at its upper end
+    set k := ⌈x / α⌉ - 1
+    have h₁ : (k : ℝ) * α < x := by
+      rw [← lt_div_iff₀ hα]
+      push_cast [k]
+      linarith [Int.ceil_lt_add_one (x / α)]
+    have h₂ : x ≤ (k + 1) * α := by
+      rw [← div_le_iff₀ hα]
+      push_cast [k]
+      linarith [Int.le_ceil (x / α)]
+    refine (continuous_foldAngle α k).continuousWithinAt.congr_of_eventuallyEq ?_
+      (foldAngle_floor_div_eq_of_mem_Icc hα ⟨h₁.le, h₂⟩)
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Ioi_mem_nhds h₁)] with y hy hy'
+    exact foldAngle_floor_div_eq_of_mem_Icc hα ⟨le_of_lt hy', le_trans hy h₂⟩
+  · -- on the right of `x`, the sector `⌊x/α⌋`
+    set k := ⌊x / α⌋
+    have h₁ : (k : ℝ) * α ≤ x := (le_div_iff₀ hα).1 (Int.floor_le _)
+    have h₂ : x < (k + 1) * α := (div_lt_iff₀ hα).1 (Int.lt_floor_add_one _)
+    refine (continuous_foldAngle α k).continuousWithinAt.congr_of_eventuallyEq ?_
+      (foldAngle_floor_div_eq_of_mem_Icc hα ⟨h₁, h₂.le⟩)
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds h₂)] with y hy hy'
+    exact foldAngle_floor_div_eq_of_mem_Icc hα ⟨h₁.trans hy, le_of_lt hy'⟩
+
+/-- **The folded angle is continuous.** The angle `θ` folded by the fold of its sector `⌊θ/α⌋` is a
+continuous (triangle wave) function of `θ`, because consecutive folds agree on their common ray. -/
+theorem continuous_foldAngle_floor_div (α : ℝ) : Continuous fun θ ↦ foldAngle α ⌊θ / α⌋ θ := by
+  rcases lt_trichotomy α 0 with hα | rfl | hα
+  · -- reflect `θ ↦ -θ` to reduce to the step `-α > 0`
+    refine ((continuous_foldAngle_floor_div_of_pos (neg_pos.2 hα)).comp continuous_neg).neg.congr
+      fun θ ↦ ?_
+    change -foldAngle (-α) ⌊-θ / -α⌋ (-θ) = foldAngle α ⌊θ / α⌋ θ
+    rw [neg_div_neg_eq]
+    rcases Int.even_or_odd ⌊θ / α⌋ with hk | hk
+    · rw [foldAngle_of_even _ hk, foldAngle_of_even _ hk]
+      ring
+    · rw [foldAngle_of_odd _ hk, foldAngle_of_odd _ hk]
+      ring
+  · simpa [foldAngle] using continuous_id'
+  · exact continuous_foldAngle_floor_div_of_pos hα
+
 /-! ### The unfolded line -/
 
-/-- **The unfolded polar angle.** Along the line `t ↦ p + t · u`, the continuous choice of polar
-angle that equals `ψ` at `t = 0`. Writing `p + t · u = u · (conj u · p + t)`, it is
-`ψ + arg (conj u · p + t) - arg (conj u · p)`. -/
+/-- **The unfolded polar angle.** Writing `p + t · u = u · (conj u · p + t)`, the angle
+`ψ + arg (conj u · p + t) - arg (conj u · p)`, equal to `ψ` at `t = 0`. When `ψ` is a polar angle
+of `p` and the line `t ↦ p + t · u` avoids the vertex `0`, it is the continuous choice of polar
+angle of `p + t · u` along the line (`add_mul_eq_norm_mul_exp`, `continuous_unfoldedAngle`);
+otherwise it is just this formula. -/
 def unfoldedAngle (ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : ℝ :=
   ψ + arg (conj (u : ℂ) * p + t) - arg (conj (u : ℂ) * p)
 
-private theorem conj_mul_self (u : Circle) : conj (u : ℂ) * u = 1 := by
-  rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-
-private theorem add_mul_eq (p : ℂ) (u : Circle) (t : ℝ) :
-    p + t * u = u * (conj (u : ℂ) * p + t) := by
-  linear_combination (-p) * conj_mul_self u
+theorem unfoldedAngle_def (ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
+    unfoldedAngle ψ p u t = ψ + arg (conj (u : ℂ) * p + t) - arg (conj (u : ℂ) * p) :=
+  (rfl)
 
 /-- The line `t ↦ p + t · u` avoids the vertex `0` exactly when `conj u · p` is not real. -/
 theorem im_conj_mul_ne_zero_iff (p : ℂ) (u : Circle) :
     (conj (u : ℂ) * p).im ≠ 0 ↔ ∀ t : ℝ, p + t * u ≠ 0 := by
-  simp only [add_mul_eq, ne_eq, mul_eq_zero, Circle.coe_ne_zero, false_or]
+  simp only [Circle.add_mul_coe_eq_coe_mul_conj_mul_add, ne_eq, mul_eq_zero, Circle.coe_ne_zero,
+    false_or]
   constructor
   · intro h t ht
     apply h
@@ -207,7 +299,7 @@ theorem add_mul_eq_norm_mul_exp {ψ : ℝ} {p : ℂ} (u : Circle) (hp0 : p ≠ 0
     p + t * u = ‖p + t * u‖ * exp (unfoldedAngle ψ p u t * I) := by
   set w := conj (u : ℂ) * p with hw
   have hpw : p = u * w := by
-    rw [hw, ← mul_assoc, mul_comm (u : ℂ), conj_mul_self, one_mul]
+    rw [hw, ← mul_assoc, u.coe_mul_conj_coe, one_mul]
   have hnorm : ‖w‖ = ‖p‖ := by simp [hw]
   have hr : (‖p‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hp0
   have hu : (u : ℂ) = exp ((ψ - arg w : ℝ) * I) := by
@@ -218,8 +310,8 @@ theorem add_mul_eq_norm_mul_exp {ψ : ℝ} {p : ℂ} (u : Circle) (hp0 : p ≠ 0
       linear_combination h1
     rw [ofReal_sub, sub_mul, Complex.exp_sub, ← h2, mul_div_cancel_right₀ _ (Complex.exp_ne_zero _)]
   have hn : ‖p + t * u‖ = ‖w + t‖ := by
-    rw [add_mul_eq, norm_mul, Circle.norm_coe, one_mul]
-  rw [hn, add_mul_eq, ← hw, hu, unfoldedAngle, ← hw]
+    rw [Circle.add_mul_coe_eq_coe_mul_conj_mul_add, norm_mul, Circle.norm_coe, one_mul]
+  rw [hn, Circle.add_mul_coe_eq_coe_mul_conj_mul_add, ← hw, hu, unfoldedAngle, ← hw]
   conv_lhs => rw [← norm_mul_exp_arg_mul_I (w + t)]
   rw [mul_left_comm, ← Complex.exp_add]
   congr 2
@@ -292,20 +384,46 @@ theorem continuous_unfoldedAngle {ψ : ℝ} {p : ℂ} {u : Circle}
 def wedgeSector (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : ℤ :=
   ⌊unfoldedAngle ψ p u t / α⌋
 
+theorem wedgeSector_def (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
+    wedgeSector α ψ p u t = ⌊unfoldedAngle ψ p u t / α⌋ :=
+  (rfl)
+
+/-- For `α > 0`, the trajectory is in the `k`-th sector at time `t` exactly when its unfolded
+angle lies in `[kα, (k+1)α)`. -/
+theorem wedgeSector_eq_iff {α ψ : ℝ} {p : ℂ} {u : Circle} {t : ℝ} {k : ℤ} (hα : 0 < α) :
+    wedgeSector α ψ p u t = k ↔ unfoldedAngle ψ p u t ∈ Ico (k * α) ((k + 1) * α) := by
+  rw [wedgeSector, Int.floor_eq_iff, le_div_iff₀ hα, div_lt_iff₀ hα, mem_Ico]
+
 /-- **The billiard trajectory in the wedge**, by unfolding: the point `p + t · u` of the unfolded
-line, folded onto the wedge by the fold of its sector. -/
+line, folded onto the wedge by the fold of its sector. It is the billiard trajectory when `ψ` is a
+polar angle of `p` and the line avoids the vertex (`continuous_wedgeTrajectory`,
+`wedgeTrajectory_eq_add_smul`, `wedgeDirection_eq_directionReflection`); otherwise it is just this
+formula. -/
 def wedgeTrajectory (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : ℂ :=
   sectorFold α (wedgeSector α ψ p u t) (p + t * u)
 
+theorem wedgeTrajectory_def (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
+    wedgeTrajectory α ψ p u t = sectorFold α (wedgeSector α ψ p u t) (p + t * u) :=
+  (rfl)
+
 /-- **The direction of the billiard trajectory in the wedge** at time `t`: the direction `u` of
 the unfolded line, folded by the fold of the current sector. -/
-def wedgeDirection (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : ℂ :=
-  sectorFold α (wedgeSector α ψ p u t) u
+def wedgeDirection (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : Circle :=
+  ⟨sectorFold α (wedgeSector α ψ p u t) u, mem_sphere_zero_iff_norm.2 (by simp)⟩
+
+@[simp]
+theorem coe_wedgeDirection (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
+    (wedgeDirection α ψ p u t : ℂ) = sectorFold α (wedgeSector α ψ p u t) u :=
+  (rfl)
 
 /-- **The reflection times** of the billiard trajectory in the wedge: the times at which the
 unfolded line crosses one of the rays `θ = kα`, where the folded trajectory meets a side. -/
 def wedgeReflectionTimes (α ψ : ℝ) (p : ℂ) (u : Circle) : Set ℝ :=
   {t | ∃ k : ℤ, unfoldedAngle ψ p u t = k * α}
+
+theorem mem_wedgeReflectionTimes_iff {α ψ : ℝ} {p : ℂ} {u : Circle} {t : ℝ} :
+    t ∈ wedgeReflectionTimes α ψ p u ↔ ∃ k : ℤ, unfoldedAngle ψ p u t = k * α :=
+  Iff.rfl
 
 theorem wedgeSector_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 0 α) :
     wedgeSector α ψ p u 0 = 0 := by
@@ -316,15 +434,41 @@ theorem wedgeSector_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 
   · simpa using (div_lt_one hα).2 hψ.2
 
 /-- The trajectory of a state `(p, u)` with `p` in the wedge, off the side through `exp(iα)`,
-starts at `p` with direction `u`. -/
+starts at `p`. -/
 theorem wedgeTrajectory_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 0 α) :
-    wedgeTrajectory α ψ p u 0 = p ∧ wedgeDirection α ψ p u 0 = u := by
-  simp [wedgeTrajectory, wedgeDirection, wedgeSector_zero p u hψ]
+    wedgeTrajectory α ψ p u 0 = p := by
+  simp [wedgeTrajectory, wedgeSector_zero p u hψ]
 
-/-- The direction of the trajectory is a unit vector. -/
-theorem norm_wedgeDirection (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
-    ‖wedgeDirection α ψ p u t‖ = 1 := by
-  simp [wedgeDirection]
+/-- The trajectory of a state `(p, u)` with `p` in the wedge, off the side through `exp(iα)`,
+starts with direction `u`. -/
+theorem wedgeDirection_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 0 α) :
+    wedgeDirection α ψ p u 0 = u := by
+  ext
+  simp [wedgeSector_zero p u hψ]
+
+/-- **Polar form of the trajectory.** If `p ≠ 0` has polar angle `ψ`, the trajectory at time `t`
+is `‖p + t · u‖ · exp(i φ)`, where `φ` is the unfolded angle folded by the fold of its sector. -/
+theorem wedgeTrajectory_eq_norm_mul_exp {α ψ : ℝ} {p : ℂ} (u : Circle) (hp0 : p ≠ 0)
+    (hp : p = ‖p‖ * exp (ψ * I)) (t : ℝ) :
+    wedgeTrajectory α ψ p u t = ‖p + t * u‖ *
+      exp (foldAngle α (wedgeSector α ψ p u t) (unfoldedAngle ψ p u t) * I) := by
+  rw [wedgeTrajectory]
+  nth_rewrite 1 [add_mul_eq_norm_mul_exp u hp0 hp t]
+  rw [sectorFold_ofReal_mul_exp]
+
+/-- **The trajectory is continuous.** If `ψ` is a polar angle of `p` and the line avoids the
+vertex, the folded trajectory does not jump at the reflection times, because consecutive folds
+agree on the common ray of their sectors. -/
+theorem continuous_wedgeTrajectory {α ψ : ℝ} {p : ℂ} {u : Circle}
+    (hs : (conj (u : ℂ) * p).im ≠ 0) (hp : p = ‖p‖ * exp (ψ * I)) :
+    Continuous (wedgeTrajectory α ψ p u) := by
+  have hp0 : p ≠ 0 := by
+    rintro rfl
+    simp at hs
+  have hθ := (continuous_foldAngle_floor_div α).comp (continuous_unfoldedAngle (ψ := ψ) hs)
+  simp only [funext (wedgeTrajectory_eq_norm_mul_exp (α := α) u hp0 hp), wedgeSector]
+  exact (continuous_ofReal.comp (by fun_prop)).mul
+    (Complex.continuous_exp.comp ((continuous_ofReal.comp hθ).mul continuous_const))
 
 /-- **The trajectory stays in the wedge.** -/
 theorem wedgeTrajectory_mem_wedge {α ψ : ℝ} {p : ℂ} (u : Circle) (hα : 0 < α) (hp0 : p ≠ 0)
@@ -341,24 +485,23 @@ theorem wedgeTrajectory_mem_wedge {α ψ : ℝ} {p : ℂ} (u : Circle) (hα : 0 
     linarith
 
 /-- **Straight motion between reflections.** While the trajectory stays in one sector of the
-unfolding, it moves in a straight line at unit speed with constant direction. -/
+unfolding, it moves in a straight line at unit speed. -/
 theorem wedgeTrajectory_eq_add_smul {α ψ : ℝ} {p : ℂ} {u : Circle} {t₁ t₂ : ℝ}
     (h : wedgeSector α ψ p u t₁ = wedgeSector α ψ p u t₂) :
     wedgeTrajectory α ψ p u t₂ =
-        wedgeTrajectory α ψ p u t₁ + (t₂ - t₁) • wedgeDirection α ψ p u t₁ ∧
-      wedgeDirection α ψ p u t₂ = wedgeDirection α ψ p u t₁ := by
-  refine ⟨?_, by simp only [wedgeDirection, h]⟩
-  simp only [wedgeTrajectory, wedgeDirection, h]
+      wedgeTrajectory α ψ p u t₁ + (t₂ - t₁) • (wedgeDirection α ψ p u t₁ : ℂ) := by
+  simp only [wedgeTrajectory, coe_wedgeDirection, h]
   rw [← map_smul, ← map_add]
   congr 1
   rw [real_smul, ofReal_sub]
   ring
 
-/-- **The reflection law.** When the unfolded line passes from the `k`-th sector to the next, the
-direction of the folded trajectory is reflected in the side `wedgeSide α k` of the wedge. -/
-theorem sectorFold_succ_apply (α : ℝ) (k : ℤ) (z : ℂ) :
-    sectorFold α (k + 1) z = sideReflection (wedgeSide α k) (sectorFold α k z) := by
-  rw [sectorFold_succ, LinearIsometryEquiv.trans_apply]
+/-- While the trajectory stays in one sector of the unfolding, its direction is constant. -/
+theorem wedgeDirection_eq_of_wedgeSector_eq {α ψ : ℝ} {p : ℂ} {u : Circle} {t₁ t₂ : ℝ}
+    (h : wedgeSector α ψ p u t₁ = wedgeSector α ψ p u t₂) :
+    wedgeDirection α ψ p u t₂ = wedgeDirection α ψ p u t₁ := by
+  ext
+  simp only [coe_wedgeDirection, h]
 
 /-- **The sector changes only at reflection times.** If no reflection happens in `[t₁, t₂]`, the
 trajectory stays in one sector of the unfolding, so it moves in a straight line by
@@ -367,68 +510,102 @@ theorem wedgeSector_eq_of_disjoint {α ψ : ℝ} {p : ℂ} {u : Circle} (hα : 0
     (hs : (conj (u : ℂ) * p).im ≠ 0) {t₁ t₂ : ℝ} (ht : t₁ ≤ t₂)
     (hdisj : Disjoint (Icc t₁ t₂) (wedgeReflectionTimes α ψ p u)) :
     wedgeSector α ψ p u t₁ = wedgeSector α ψ p u t₂ := by
-  set θ := unfoldedAngle ψ p u
-  have hθ : ContinuousOn θ (Icc t₁ t₂) := (continuous_unfoldedAngle hs).continuousOn
-  have hnot : ∀ m : ℤ, (m : ℝ) * α ∉ θ '' Icc t₁ t₂ := by
-    rintro m ⟨t, ht, hm⟩
-    exact Set.disjoint_left.1 hdisj ht ⟨m, hm⟩
-  have key : ∀ a b : ℝ, ∀ m : ℤ, a ≤ m * α → m * α ≤ b →
-      (θ t₁ = a ∧ θ t₂ = b ∨ θ t₁ = b ∧ θ t₂ = a) → False := by
-    rintro a b m ha hb (⟨h1, h2⟩ | ⟨h1, h2⟩)
-    · exact hnot m (intermediate_value_Icc ht hθ ⟨h1 ▸ ha, h2 ▸ hb⟩)
-    · exact hnot m (intermediate_value_Icc' ht hθ ⟨h2 ▸ ha, h1 ▸ hb⟩)
-  simp only [wedgeSector]
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with hlt | hlt
-  · set m := ⌊θ t₁ / α⌋ + 1
-    have h1 : θ t₁ < m * α := by
-      have := Int.lt_floor_add_one (θ t₁ / α)
-      rw [div_lt_iff₀ hα] at this
-      push_cast [m]
-      linarith
-    have h2 : (m : ℝ) * α ≤ θ t₂ := by
-      have := Int.floor_le (θ t₂ / α)
-      rw [le_div_iff₀ hα] at this
-      have hm : (m : ℝ) ≤ ⌊θ t₂ / α⌋ := by exact_mod_cast hlt
-      nlinarith
-    exact key _ _ m h1.le h2 (Or.inl ⟨rfl, rfl⟩)
-  · set m := ⌊θ t₂ / α⌋ + 1
-    have h1 : θ t₂ < m * α := by
-      have := Int.lt_floor_add_one (θ t₂ / α)
-      rw [div_lt_iff₀ hα] at this
-      push_cast [m]
-      linarith
-    have h2 : (m : ℝ) * α ≤ θ t₁ := by
-      have := Int.floor_le (θ t₁ / α)
-      rw [le_div_iff₀ hα] at this
-      have hm : (m : ℝ) ≤ ⌊θ t₁ / α⌋ := by exact_mod_cast hlt
-      nlinarith
-    exact key _ _ m h1.le h2 (Or.inr ⟨rfl, rfl⟩)
+  refine floor_div_eq_of_forall_intCast_mul_notMem_uIcc hα fun m hm ↦ ?_
+  obtain ⟨t, ht', hθt⟩ := intermediate_value_uIcc (continuous_unfoldedAngle hs).continuousOn hm
+  rw [uIcc_of_le ht] at ht'
+  exact disjoint_left.1 hdisj ht' ⟨m, hθt⟩
+
+/-- If `t₀` is the only reflection time between `t` and `t₀`, every multiple of `α` between the
+unfolded angles at `t` and at `t₀` is the angle at `t₀`. -/
+private theorem intCast_mul_eq_of_mem_uIcc {α ψ : ℝ} {p : ℂ} {u : Circle}
+    (hs : (conj (u : ℂ) * p).im ≠ 0) {t t₀ : ℝ}
+    (huniq : ∀ s ∈ uIcc t t₀, s ∈ wedgeReflectionTimes α ψ p u → s = t₀) {m : ℤ}
+    (hm : (m : ℝ) * α ∈ uIcc (unfoldedAngle ψ p u t) (unfoldedAngle ψ p u t₀)) :
+    (m : ℝ) * α = unfoldedAngle ψ p u t₀ := by
+  obtain ⟨s, hs', hθs⟩ := intermediate_value_uIcc (continuous_unfoldedAngle hs).continuousOn hm
+  rw [← hθs, huniq s hs' ⟨m, hθs⟩]
+
+/-- Before the only reflection time `t₀` between `t` and `t₀`, at which the unfolded angle is
+`kα`, an angle below `kα` is in the sector `k - 1`. -/
+private theorem wedgeSector_eq_sub_one_of_lt {α ψ : ℝ} {p : ℂ} {u : Circle} (hα : 0 < α)
+    (hs : (conj (u : ℂ) * p).im ≠ 0) {t t₀ : ℝ} {k : ℤ} (hk : unfoldedAngle ψ p u t₀ = k * α)
+    (huniq : ∀ s ∈ uIcc t t₀, s ∈ wedgeReflectionTimes α ψ p u → s = t₀)
+    (hlt : unfoldedAngle ψ p u t < k * α) : wedgeSector α ψ p u t = k - 1 := by
+  rw [wedgeSector_eq_iff hα, mem_Ico]
+  push_cast
+  refine ⟨not_lt.1 fun h ↦ ?_, by linarith⟩
+  have := intCast_mul_eq_of_mem_uIcc hs huniq (m := k - 1)
+    (by rw [hk]; push_cast; exact mem_uIcc_of_le h.le (by linarith))
+  push_cast at this
+  linarith
+
+/-- After the only reflection time `t₀` between `t` and `t₀`, at which the unfolded angle is
+`kα`, an angle above `kα` is in the sector `k`. -/
+private theorem wedgeSector_eq_of_gt {α ψ : ℝ} {p : ℂ} {u : Circle} (hα : 0 < α)
+    (hs : (conj (u : ℂ) * p).im ≠ 0) {t t₀ : ℝ} {k : ℤ} (hk : unfoldedAngle ψ p u t₀ = k * α)
+    (huniq : ∀ s ∈ uIcc t t₀, s ∈ wedgeReflectionTimes α ψ p u → s = t₀)
+    (hgt : k * α < unfoldedAngle ψ p u t) : wedgeSector α ψ p u t = k := by
+  rw [wedgeSector_eq_iff hα, mem_Ico]
+  refine ⟨hgt.le, not_le.1 fun h ↦ ?_⟩
+  have := intCast_mul_eq_of_mem_uIcc hs huniq (m := k + 1)
+    (by rw [hk]; push_cast; exact mem_uIcc_of_ge (by linarith) h)
+  push_cast at this
+  linarith
+
+/-- Across a reflection time `t₀` at which the unfolded angle is `kα`, the only one in
+`[t₁, t₂]`, the trajectory passes between the sectors `k - 1` and `k`. -/
+private theorem wedgeSector_of_mem_wedgeReflectionTimes {α ψ : ℝ} {p : ℂ} {u : Circle}
+    (hα : 0 < α) (hs : (conj (u : ℂ) * p).im ≠ 0) {t₁ t₀ t₂ : ℝ} (h₁ : t₁ < t₀) (h₂ : t₀ < t₂)
+    {k : ℤ} (hk : unfoldedAngle ψ p u t₀ = k * α)
+    (huniq : ∀ s ∈ Icc t₁ t₂, s ∈ wedgeReflectionTimes α ψ p u → s = t₀) :
+    wedgeSector α ψ p u t₁ = k - 1 ∧ wedgeSector α ψ p u t₂ = k ∨
+      wedgeSector α ψ p u t₁ = k ∧ wedgeSector α ψ p u t₂ = k - 1 := by
+  have hu₁ : ∀ s ∈ uIcc t₁ t₀, s ∈ wedgeReflectionTimes α ψ p u → s = t₀ := fun s hs' ↦
+    huniq s (Icc_subset_Icc le_rfl h₂.le (uIcc_of_le h₁.le ▸ hs'))
+  have hu₂ : ∀ s ∈ uIcc t₂ t₀, s ∈ wedgeReflectionTimes α ψ p u → s = t₀ := fun s hs' ↦
+    huniq s (Icc_subset_Icc h₁.le le_rfl (uIcc_of_ge h₂.le ▸ hs'))
+  rcases (continuous_unfoldedAngle hs).strictMono_of_inj (unfoldedAngle_injective (ψ := ψ) hs) with
+    hθ | hθ
+  · exact Or.inl ⟨wedgeSector_eq_sub_one_of_lt hα hs hk hu₁ (hk ▸ hθ h₁),
+      wedgeSector_eq_of_gt hα hs hk hu₂ (hk ▸ hθ h₂)⟩
+  · exact Or.inr ⟨wedgeSector_eq_of_gt hα hs hk hu₁ (hk ▸ hθ h₁),
+      wedgeSector_eq_sub_one_of_lt hα hs hk hu₂ (hk ▸ hθ h₂)⟩
+
+/-- **The sector changes by one at a reflection.** If `t₀` is the only reflection time in
+`[t₁, t₂]` and `t₁ < t₀ < t₂`, the trajectory passes into a neighbouring sector of the
+unfolding. -/
+theorem wedgeSector_eq_add_one_or_eq_sub_one {α ψ : ℝ} {p : ℂ} {u : Circle} (hα : 0 < α)
+    (hs : (conj (u : ℂ) * p).im ≠ 0) {t₁ t₀ t₂ : ℝ} (h₁ : t₁ < t₀) (h₂ : t₀ < t₂)
+    (h₀ : t₀ ∈ wedgeReflectionTimes α ψ p u)
+    (huniq : ∀ s ∈ Icc t₁ t₂, s ∈ wedgeReflectionTimes α ψ p u → s = t₀) :
+    wedgeSector α ψ p u t₂ = wedgeSector α ψ p u t₁ + 1 ∨
+      wedgeSector α ψ p u t₂ = wedgeSector α ψ p u t₁ - 1 := by
+  obtain ⟨k, hk⟩ := h₀
+  rcases wedgeSector_of_mem_wedgeReflectionTimes hα hs h₁ h₂ hk huniq with
+    ⟨e₁, e₂⟩ | ⟨e₁, e₂⟩
+  · exact Or.inl (by omega)
+  · exact Or.inr (by omega)
+
+/-- **The reflection law.** If `t₀` is the only reflection time in `[t₁, t₂]`, with
+`t₁ < t₀ < t₂`, and the unfolded angle at `t₀` is `kα`, then the direction of the trajectory after
+the reflection is the direction before it, reflected in the side `wedgeSide α (k - 1)` of the
+wedge: the side through `exp(iα)` for odd `k` and the side through `1` for even `k`. -/
+theorem wedgeDirection_eq_directionReflection {α ψ : ℝ} {p : ℂ} {u : Circle} (hα : 0 < α)
+    (hs : (conj (u : ℂ) * p).im ≠ 0) {t₁ t₀ t₂ : ℝ} (h₁ : t₁ < t₀) (h₂ : t₀ < t₂) {k : ℤ}
+    (hk : unfoldedAngle ψ p u t₀ = k * α)
+    (huniq : ∀ s ∈ Icc t₁ t₂, s ∈ wedgeReflectionTimes α ψ p u → s = t₀) :
+    wedgeDirection α ψ p u t₂ =
+      directionReflection (wedgeSide α (k - 1)) (wedgeDirection α ψ p u t₁) := by
+  have hfold := sectorFold_succ_apply α (k - 1) u
+  rw [sub_add_cancel] at hfold
+  ext
+  rw [coe_directionReflection, coe_wedgeDirection, coe_wedgeDirection]
+  rcases wedgeSector_of_mem_wedgeReflectionTimes hα hs h₁ h₂ hk huniq with
+    ⟨e₁, e₂⟩ | ⟨e₁, e₂⟩
+  · rw [e₁, e₂, hfold]
+  · rw [e₁, e₂, hfold, sideReflection_sideReflection]
 
 /-! ### The corner bound -/
-
-/-- An open interval of length `π` contains at most `⌈π/α⌉` multiples of `α > 0`. -/
-theorem encard_setOf_mul_mem_Ioo_le {α : ℝ} (hα : 0 < α) (c : ℝ) :
-    {k : ℤ | (k : ℝ) * α ∈ Ioo c (c + Real.pi)}.encard ≤ ⌈Real.pi / α⌉₊ := by
-  have hsub : {k : ℤ | (k : ℝ) * α ∈ Ioo c (c + Real.pi)} ⊆
-      (Finset.Ioo ⌊c / α⌋ ⌈(c + Real.pi) / α⌉ : Set ℤ) := by
-    rintro k ⟨h1, h2⟩
-    simp only [Finset.coe_Ioo, mem_Ioo]
-    constructor
-    · rw [Int.floor_lt, div_lt_iff₀ hα]
-      exact h1
-    · rw [Int.lt_ceil, lt_div_iff₀ hα]
-      exact h2
-  refine (encard_le_encard hsub).trans ?_
-  rw [encard_coe_eq_coe_finsetCard, Int.card_Ioo]
-  have hceil : ⌈(c + Real.pi) / α⌉ ≤ ⌈c / α⌉ + ⌈Real.pi / α⌉ := by
-    rw [add_div]
-    exact Int.ceil_add_le _ _
-  have hfl : ⌈c / α⌉ ≤ ⌊c / α⌋ + 1 := Int.ceil_le_floor_add_one _
-  have : (⌈(c + Real.pi) / α⌉ - ⌊c / α⌋ - 1).toNat ≤ ⌈Real.pi / α⌉₊ := by
-    rw [← Int.ceil_toNat]
-    exact Int.toNat_le_toNat (by omega)
-  exact_mod_cast this
 
 /-- **The corner bound.** In a wedge of angle `α > 0`, a billiard trajectory whose unfolded line
 avoids the vertex makes at most `⌈π/α⌉` reflections. -/
@@ -438,7 +615,7 @@ theorem encard_wedgeReflectionTimes_le {α ψ : ℝ} {p : ℂ} {u : Circle} (hα
   obtain ⟨c, hc⟩ := exists_unfoldedAngle_mem_Ioo (ψ := ψ) hs
   have hinj := unfoldedAngle_injective (ψ := ψ) hs
   refine (encard_le_encard_of_injOn (f := fun t ↦ ⌊unfoldedAngle ψ p u t / α⌋) ?_ ?_).trans
-    (encard_setOf_mul_mem_Ioo_le hα c)
+    (encard_setOf_intCast_mul_mem_Ioo_le hα c Real.pi)
   · rintro t ⟨k, hk⟩
     simp only [mem_ofPred_eq, hk, mul_div_cancel_right₀ _ hα.ne', Int.floor_intCast]
     exact hk ▸ hc t
@@ -448,17 +625,20 @@ theorem encard_wedgeReflectionTimes_le {α ψ : ℝ} {p : ℂ} {u : Circle} (hα
 
 /-! #### Checks -/
 
-/-- In a right-angled corner, at most `2` reflections. -/
+/-- `⌈π/α⌉₊ = 2` for `α = π/2`, so `encard_wedgeReflectionTimes_le` gives at most `2` reflections
+in a right-angled corner. -/
 theorem natCeil_pi_div_pi_div_two : ⌈Real.pi / (Real.pi / 2)⌉₊ = 2 := by
   rw [show Real.pi / (Real.pi / 2) = 2 by field_simp]
   exact Nat.ceil_ofNat 2
 
-/-- In a corner of angle `2π/3`, at most `⌈3/2⌉ = 2` reflections. -/
+/-- `⌈π/α⌉₊ = ⌈3/2⌉₊ = 2` for `α = 2π/3`, so `encard_wedgeReflectionTimes_le` gives at most `2`
+reflections in a corner of angle `2π/3`. -/
 theorem natCeil_pi_div_two_pi_div_three : ⌈Real.pi / (2 * Real.pi / 3)⌉₊ = 2 := by
   rw [show Real.pi / (2 * Real.pi / 3) = 3 / 2 by field_simp, Nat.ceil_eq_iff (by norm_num)]
   norm_num
 
-/-- In a reflex corner of angle `3π/2`, at most `1` reflection. -/
+/-- `⌈π/α⌉₊ = ⌈2/3⌉₊ = 1` for `α = 3π/2`, so `encard_wedgeReflectionTimes_le` gives at most `1`
+reflection in a reflex corner of angle `3π/2`. -/
 theorem natCeil_pi_div_three_pi_div_two : ⌈Real.pi / (3 * Real.pi / 2)⌉₊ = 1 := by
   rw [show Real.pi / (3 * Real.pi / 2) = 2 / 3 by field_simp, Nat.ceil_eq_iff (by norm_num)]
   norm_num

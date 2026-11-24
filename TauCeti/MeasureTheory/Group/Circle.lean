@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Circle
 public import Mathlib.MeasureTheory.Integral.CircleAverage
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
@@ -28,6 +28,7 @@ measurable nonnegative density its integral is identified with Mathlib's `Real.c
   `Circle.exp` of a measure concentrated on `(a, a + 2π]`, for an arbitrary integrand.
 * `TauCeti.integral_circleDensityMeasure`: for a nonnegative measurable density, integration
   against the weighted measure is a circle average.
+* `TauCeti.circleArcLength`: the arclength measure `dθ` on `Circle`, of total mass `2π`.
 * `TauCeti.circleAverage_sub_zpow`: the circle average of `(z - c) ^ n` is `1` for `n = 0` and
   `0` otherwise, the orthogonality relation of the characters of the circle.
 -/
@@ -110,6 +111,19 @@ theorem integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [Normed
     mul_nonneg (by positivity) (hφ₀ _ (circleMap_mem_sphere 0 zero_le_one θ))
   simp only [ENNReal.toReal_ofReal h₀, smul_smul]
   simp [Circle.coe_exp, circleMap]
+
+/-- `2π` is positive, so that `AddCircle (2π)` carries its Haar measure. -/
+local instance instFactZeroLtTwoPi : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+
+/-- **The arclength measure on `Circle`.** The image of the Haar measure `volume` of
+`AddCircle (2π)`, of total mass `2π`, under the homeomorphism `θ ↦ exp(iθ)`. -/
+def circleArcLength : Measure Circle :=
+  Measure.map AddCircle.homeomorphCircle' volume
+
+theorem circleArcLength_def :
+    circleArcLength =
+      Measure.map AddCircle.homeomorphCircle' (volume : Measure (AddCircle (2 * π))) :=
+  (rfl)
 
 /-- **Orthogonality of the characters of the circle.** The normalized circle average of an
 integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/

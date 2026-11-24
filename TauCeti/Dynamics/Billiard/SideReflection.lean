@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.MeasureTheory.Group.Circle
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+public import TauCeti.MeasureTheory.Group.Circle
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The linear reflection in a side direction
@@ -20,16 +22,15 @@ a polygonal billiard table with unit direction `d`, the linear reflection in the
 involution, and commutes with `v ↦ -v`. The composite of two such reflections is the rotation
 through twice the angle between their lines: `σ_d ∘ σ_e` is multiplication by `(d · e⁻¹)²`.
 
-On directions, the reflection is the involution `v ↦ d² · v⁻¹` of `Circle`. It preserves the
-arclength measure `dθ` of `Circle`, the image of the Haar measure `volume` of `AddCircle (2π)`
-under `AddCircle.homeomorphCircle'`.
+On directions, the reflection is the involution `v ↦ d² / v` of `Circle`, Mathlib's
+`Equiv.divLeft (d ^ 2)`. It preserves the arclength measure `TauCeti.circleArcLength` of `Circle`,
+the image of the Haar measure `volume` of `AddCircle (2π)` under `AddCircle.homeomorphCircle'`.
 
 ## Main definitions
 
 * `TauCeti.Billiard.sideReflection d`: the linear isometry `z ↦ d² · conj z` of `ℂ`.
 * `TauCeti.Billiard.directionReflection d`: the same reflection on directions, as an involutive
   permutation of `Circle`.
-* `TauCeti.Billiard.arcLength`: the arclength measure `dθ` on `Circle`.
 
 ## Main results
 
@@ -37,7 +38,8 @@ under `AddCircle.homeomorphCircle'`.
 * `TauCeti.Billiard.sideReflection_neg`: `σ_{-d} = σ_d`.
 * `TauCeti.Billiard.sideReflection_sideReflection`: `σ_d` is an involution.
 * `TauCeti.Billiard.sideReflection_trans_sideReflection`: `σ_d ∘ σ_e = rotation ((d · e⁻¹)²)`.
-* `TauCeti.Billiard.measurePreserving_directionReflection`: `σ_d` preserves `dθ`.
+* `TauCeti.Billiard.measurePreserving_directionReflection`: `σ_d` preserves the arclength
+  measure `TauCeti.circleArcLength`.
 
 ## References
 
@@ -67,26 +69,23 @@ theorem sideReflection_apply (d : Circle) (z : ℂ) :
 /-- `σ_d` is Mathlib's reflection `reflection (ℝ ∙ d)` of `ℂ` in the real line spanned by `d`. -/
 theorem sideReflection_eq_reflection (d : Circle) :
     sideReflection d = (ℝ ∙ (d : ℂ)).reflection := by
-  have h : (d : ℂ) * conj (d : ℂ) = 1 := by
-    rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
   ext z
   rw [Submodule.reflection_singleton_apply, Complex.inner, sideReflection_apply, Circle.norm_coe]
   rw [real_smul, two_smul]
   push_cast
   rw [re_eq_add_conj]
   simp only [map_mul, Complex.conj_conj]
-  linear_combination (-z) * h
+  linear_combination (-z) * d.coe_mul_conj_coe
 
 /-- The reflection fixes its own direction. -/
 theorem sideReflection_self (d : Circle) : sideReflection d d = d := by
-  rw [sideReflection_apply, ← Circle.coe_inv_eq_conj, pow_two, mul_assoc, ← Circle.coe_mul,
-    mul_inv_cancel, Circle.coe_one, mul_one]
+  rw [sideReflection_eq_reflection]
+  exact Submodule.reflection_mem_subspace_eq_self (Submodule.mem_span_singleton_self _)
 
 /-- The reflection negates the normal direction `i · d`. -/
 theorem sideReflection_I_mul (d : Circle) : sideReflection d (I * d) = -(I * d) := by
-  rw [sideReflection_apply, map_mul, conj_I, ← Circle.coe_inv_eq_conj, pow_two]
-  have : (d : ℂ) * (d⁻¹ : Circle) = 1 := by rw [← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
-  linear_combination (-I * d) * this
+  rw [sideReflection_apply, map_mul, conj_I]
+  linear_combination (-I * d) * d.coe_mul_conj_coe
 
 /-- The reflection depends on the direction only up to sign. -/
 @[simp]
@@ -97,41 +96,37 @@ theorem sideReflection_neg (d : Circle) : sideReflection (-d) = sideReflection d
 /-- The reflection is an involution. -/
 theorem sideReflection_sideReflection (d : Circle) (z : ℂ) :
     sideReflection d (sideReflection d z) = z := by
-  have h : (d : ℂ) * conj (d : ℂ) = 1 := by
-    rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
-  simp only [sideReflection_apply, map_mul, map_pow, Complex.conj_conj]
-  linear_combination ((d : ℂ) * conj (d : ℂ) + 1) * z * h
+  rw [sideReflection_eq_reflection]
+  exact Submodule.reflection_reflection _ z
 
 theorem sideReflection_involutive (d : Circle) : Function.Involutive (sideReflection d) :=
   sideReflection_sideReflection d
 
 @[simp]
 theorem sideReflection_symm (d : Circle) : (sideReflection d).symm = sideReflection d := by
-  ext z
-  rw [LinearIsometryEquiv.symm_apply_eq, sideReflection_sideReflection]
+  rw [sideReflection_eq_reflection]
+  exact Submodule.reflection_symm
 
 /-- **Composite of two reflections.** Reflecting in `ℝ · e` and then in `ℝ · d` is the rotation
 by `(d · e⁻¹)²`, through twice the angle from `e` to `d`. -/
 theorem sideReflection_trans_sideReflection (d e : Circle) :
     (sideReflection e).trans (sideReflection d) = rotation ((d * e⁻¹) ^ 2) := by
   ext z
-  rw [LinearIsometryEquiv.trans_apply, sideReflection_apply, sideReflection_apply, rotation_apply,
-    Circle.coe_pow, Circle.coe_mul, Circle.coe_inv_eq_conj]
-  simp only [map_mul, map_pow, Complex.conj_conj]
+  simp only [LinearIsometryEquiv.trans_apply, sideReflection_apply, rotation_apply]
+  simp only [Circle.coe_pow, Circle.coe_mul, Circle.coe_inv_eq_conj, map_mul, map_pow,
+    Complex.conj_conj]
   ring
 
 /-- Conjugating a reflection by a rotation reflects in the rotated direction. -/
 theorem rotation_trans_sideReflection_trans_rotation (a d : Circle) :
     ((rotation a⁻¹).trans (sideReflection d)).trans (rotation a) = sideReflection (a * d) := by
   ext z
-  rw [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.trans_apply, rotation_apply,
-    sideReflection_apply, sideReflection_apply, rotation_apply, Circle.coe_inv_eq_conj,
-    Circle.coe_mul]
-  simp only [map_mul, Complex.conj_conj]
+  simp only [LinearIsometryEquiv.trans_apply, sideReflection_apply, rotation_apply,
+    Circle.coe_inv_eq_conj, Circle.coe_mul, map_mul, Complex.conj_conj]
   ring
 
 /-- Reflections commute with time reversal `v ↦ -v`. -/
-theorem sideReflection_neg_apply (d : Circle) (z : ℂ) :
+theorem sideReflection_apply_neg (d : Circle) (z : ℂ) :
     sideReflection d (-z) = -sideReflection d z :=
   map_neg _ z
 
@@ -166,31 +161,36 @@ theorem sideReflection_exp_pi_div_four_one : sideReflection (Circle.exp (Real.pi
   push_cast
   ring
 
-/-- **The reflection on directions.** The involution `v ↦ d² · v⁻¹` of `Circle`, which is
+/-- **The reflection on directions.** The involution `v ↦ d² / v` of `Circle`, which is
 `v ↦ d² · conj v` on unit complex numbers. -/
-def directionReflection (d : Circle) : Equiv.Perm Circle where
-  toFun v := d ^ 2 * v⁻¹
-  invFun v := d ^ 2 * v⁻¹
-  left_inv v := by dsimp only; rw [mul_inv, inv_inv, mul_inv_cancel_left]
-  right_inv v := by dsimp only; rw [mul_inv, inv_inv, mul_inv_cancel_left]
+def directionReflection (d : Circle) : Equiv.Perm Circle :=
+  Equiv.divLeft (d ^ 2)
 
 @[simp]
 theorem directionReflection_apply (d : Circle) (v : Circle) :
-    directionReflection d v = d ^ 2 * v⁻¹ :=
+    directionReflection d v = d ^ 2 / v :=
   (rfl)
 
 theorem coe_directionReflection (d v : Circle) :
     (directionReflection d v : ℂ) = sideReflection d v := by
-  rw [directionReflection_apply, Circle.coe_mul, Circle.coe_inv_eq_conj, Circle.coe_pow,
-    sideReflection_apply]
+  rw [directionReflection_apply, div_eq_mul_inv, Circle.coe_mul, Circle.coe_inv_eq_conj,
+    Circle.coe_pow, sideReflection_apply]
 
 theorem directionReflection_involutive (d : Circle) :
-    Function.Involutive (directionReflection d) := fun v ↦ by
-  rw [directionReflection_apply, directionReflection_apply, mul_inv, inv_inv, mul_inv_cancel_left]
+    Function.Involutive (directionReflection d) :=
+  Equiv.divLeft_involutive _
 
-theorem continuous_directionReflection (d : Circle) : Continuous (directionReflection d) := by
-  rw [show ⇑(directionReflection d) = fun v ↦ d ^ 2 * v⁻¹ from funext (directionReflection_apply d)]
-  fun_prop
+theorem directionReflection_directionReflection (d v : Circle) :
+    directionReflection d (directionReflection d v) = v :=
+  directionReflection_involutive d v
+
+@[simp]
+theorem directionReflection_symm (d : Circle) :
+    (directionReflection d).symm = directionReflection d :=
+  Equiv.symm_divLeft _
+
+theorem continuous_directionReflection (d : Circle) : Continuous (directionReflection d) :=
+  continuous_const.div' continuous_id
 
 @[simp]
 theorem directionReflection_neg (d : Circle) :
@@ -199,18 +199,10 @@ theorem directionReflection_neg (d : Circle) :
   simp
 
 /-- Reflections of directions commute with `v ↦ -v`. -/
-theorem directionReflection_neg_apply (d v : Circle) :
+theorem directionReflection_apply_neg (d v : Circle) :
     directionReflection d (-v) = -directionReflection d v := by
   ext
-  simp
-
-/-- `2π` is positive, so that `AddCircle (2π)` carries its Haar measure. -/
-local instance instFactZeroLtTwoPi : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
-
-/-- **The arclength measure on `Circle`.** The image of the Haar measure `volume` of
-`AddCircle (2π)`, of total mass `2π`, under the homeomorphism `θ ↦ exp(iθ)`. -/
-def arcLength : Measure Circle :=
-  Measure.map AddCircle.homeomorphCircle' volume
+  simp [div_neg]
 
 /-- On angles, the reflection in the direction `exp(iβ)` is `θ ↦ 2β - θ`. -/
 theorem directionReflection_homeomorphCircle' (β : ℝ) (θ : AddCircle (2 * Real.pi)) :
@@ -220,12 +212,14 @@ theorem directionReflection_homeomorphCircle' (β : ℝ) (θ : AddCircle (2 * Re
   | H x =>
     rw [← AddCircle.coe_sub, AddCircle.homeomorphCircle'_apply_mk,
       AddCircle.homeomorphCircle'_apply_mk, directionReflection_apply, Circle.exp_sub,
-      div_eq_mul_inv, ← Circle.exp_natCast_mul]
+      ← Circle.exp_natCast_mul]
     norm_num
 
-/-- **The reflection preserves arclength.** Each `σ_d` preserves the measure `dθ` on `Circle`. -/
+/-- **The reflection preserves arclength.** Each `σ_d` preserves the arclength measure
+`TauCeti.circleArcLength` on `Circle`. -/
 theorem measurePreserving_directionReflection (d : Circle) :
-    MeasurePreserving (directionReflection d) arcLength arcLength := by
+    MeasurePreserving (directionReflection d) circleArcLength circleArcLength := by
+  have : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
   obtain ⟨β, rfl⟩ : ∃ β : ℝ, Circle.exp β = d := ⟨_, Circle.exp_arg d⟩
   have hh : Measurable AddCircle.homeomorphCircle' :=
     AddCircle.homeomorphCircle'.continuous.measurable
@@ -237,6 +231,7 @@ theorem measurePreserving_directionReflection (d : Circle) :
     exact directionReflection_homeomorphCircle' β θ
   have hσ := (continuous_directionReflection (Circle.exp β)).measurable
   refine ⟨hσ, ?_⟩
-  rw [arcLength, Measure.map_map hσ hh, hcomp, ← Measure.map_map hh hsub.measurable, hsub.map_eq]
+  rw [circleArcLength_def, Measure.map_map hσ hh, hcomp, ← Measure.map_map hh hsub.measurable,
+    hsub.map_eq]
 
 end TauCeti.Billiard
