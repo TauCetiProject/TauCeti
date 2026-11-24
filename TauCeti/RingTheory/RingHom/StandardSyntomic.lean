@@ -26,7 +26,12 @@ Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predica
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
 Locally standard syntomic ring maps are also flat and finitely presented
 (`TauCeti.flat_of_locally_isStandardSyntomicOfRelativeDimension`,
-`TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`).
+`TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`), and to be locally
+standard syntomic it suffices to have a standard syntomic basic open neighbourhood of every closed
+point (`TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal`). Conversely, a
+locally standard syntomic algebra has a standard syntomic basic open meeting `V(I)` for every
+proper ideal `I`, and this is a neighbourhood of the point `I` when `I` is prime
+(`TauCeti.exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally`).
 The theorem `TauCeti.isStandardSyntomicOfRelativeDimension_iff n f` relates an arbitrary
 ring map to its induced algebra structure. With `hf` as above, both conversions use the
 public bridge:
@@ -184,6 +189,37 @@ theorem finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension
   (RingHom.locally_iff_of_localizationSpanTarget RingHom.finitePresentation_respectsIso
     RingHom.finitePresentation_ofLocalizationSpanTarget f).mp <|
       RingHom.locally_of_locally (·.finitePresentation) hf
+
+/-- If every maximal ideal of `S` avoids some `g` such that `S[1/g]` is standard syntomic of
+relative dimension `n` over `R`, then `S` is locally standard syntomic of relative dimension `n`
+over `R`. -/
+theorem locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal [Algebra R S]
+    (h : ∀ m : Ideal S, m.IsMaximal →
+      ∃ g ∉ m, Algebra.IsStandardSyntomicOfRelativeDimension n R (Localization.Away g)) :
+    RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R S) := by
+  rw [RingHom.locally_iff_span_eq_top]
+  by_contra hne
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+  obtain ⟨g, hg, hstd⟩ := h m hm
+  refine hg (hle (Ideal.subset_span ?_))
+  rw [Set.mem_ofPred_eq, ← IsScalarTower.algebraMap_eq,
+    isStandardSyntomicOfRelativeDimension_algebraMap]
+  exact hstd
+
+/-- A locally standard syntomic algebra has a standard syntomic basic open meeting `V(I)` for
+every proper ideal `I`: for some `g` whose powers avoid `I`, the localization `S[1/g]` is standard
+syntomic of relative dimension `n` over `R`. When `I` is prime, this is a neighbourhood of the
+point `I`. -/
+theorem exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally [Algebra R S]
+    (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R S))
+    (I : Ideal S) (hI : I ≠ ⊤) :
+    ∃ g : S, Disjoint (I : Set S) (Submonoid.powers g) ∧
+      Algebra.IsStandardSyntomicOfRelativeDimension n R (Localization.Away g) := by
+  obtain ⟨s, hs, hst⟩ := h
+  obtain ⟨g, hgs, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs I hI
+  refine ⟨g, hdisj, ?_⟩
+  rw [← isStandardSyntomicOfRelativeDimension_algebraMap, IsScalarTower.algebraMap_eq R S]
+  exact hst g hgs
 
 end Locally
 

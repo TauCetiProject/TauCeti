@@ -130,11 +130,12 @@ theorem finite_quotSMulTop_iff [IsDomain A] [IsPrincipalIdealRing A] [Infinite A
 
 end PowerSeries.IsWeierstrassFactorizationAt
 
-/-! ### Example over `ℤ_[p]`
+/-! ### Examples over `ℤ_[p]`
 
 On `Λ ⧸ (X - p)`, with `Λ = ℤ_[p]⟦X⟧` and `p` odd, `X` acts by `p`, so `ω_n = (1 + X) ^ p ^ n - 1`
 acts injectively with cokernel of order `p ^ (n + 1)`: the resultant `Res(X - p, ω_n)` is
-`(1 + p) ^ p ^ n - 1`, of `p`-adic valuation `n + 1`. -/
+`(1 + p) ^ p ^ n - 1`, of `p`-adic valuation `n + 1`. On `Λ ⧸ (X)` the resultant `Res(X, ω_n)` is
+`ω_n(0) = 0`, and the cokernel of `ω_n` is infinite. -/
 
 section Examples
 
@@ -174,5 +175,19 @@ example (p : ℕ) [Fact p.Prime] (hp : Odd p) (n : ℕ) :
   refine ⟨(H.torsionBy_eq_bot_iff _).mpr (hnorm ▸ hne), ?_⟩
   rw [H.natCard_quotSMulTop (hnorm ▸ hne), hnorm, PadicInt.natCard_quotient_span hne,
     PadicInt.valuation_natCast, hval]
+
+example (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    Infinite (QuotSMulTop (((X + 1) ^ p ^ n - 1 : ℤ_[p][X]) : ℤ_[p]⟦X⟧)
+      (ℤ_[p]⟦X⟧ ⧸ Ideal.span {((X : ℤ_[p][X]) : ℤ_[p]⟦X⟧)})) := by
+  have hG : (X : ℤ_[p][X]).IsDistinguishedAt (maximalIdeal ℤ_[p]) := by
+    refine ⟨⟨fun {k} hk ↦ ?_⟩, monic_X⟩
+    rw [natDegree_X, Nat.lt_one_iff] at hk
+    simp [hk]
+  have H := hG.isWeierstrassFactorizationAt
+  refine TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero (A := ℤ_[p]) ?_
+  have hres := resultant_X_pow_left (((X + 1) ^ p ^ n - 1 : ℤ_[p][X])) 1 _ le_rfl
+  rw [pow_one] at hres
+  rw [Ideal.Quotient.algebraMap_eq, H.norm_mk_coe_eq_resultant, natDegree_X, hres]
+  simp [coeff_zero_eq_eval_zero]
 
 end Examples
