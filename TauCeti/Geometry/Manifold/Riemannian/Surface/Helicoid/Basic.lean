@@ -14,7 +14,8 @@ The parametrization `(u,v) ↦ (v cos u, v sin u, a u)` has first fundamental fo
 `(a²+v²)du²+dv²`. The differential is injective exactly when the pitch or the signed radial
 parameter is nonzero. At zero pitch on the axis, the angular coordinate vector lies in its kernel.
 
-Based on Yangyang Li's formalization of the arbitrary-pitch helicoid.
+Based on Yangyang Li's formalization of the arbitrary-pitch helicoid in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Helicoid/Basic.lean).
 
 ## References
 
