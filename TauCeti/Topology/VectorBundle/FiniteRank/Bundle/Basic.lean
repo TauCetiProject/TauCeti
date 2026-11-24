@@ -491,26 +491,47 @@ private theorem isInducing_constStratum_pullback :
         (fun x : {x : X // (LocallyConstant.const X n) x = n} ↦ V x.val) ↦
       (⟨p.proj, p.snd⟩ : TotalSpace (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V)))).mp ⟨rfl⟩
 
-/-- Combined `FiberBundle` and `VectorBundle` structures on the `m`th rank stratum of `V`. -/
-noncomputable def constStratumBundle (m : ℕ) :
+/-- `FiberBundle` structure on the `m`th rank stratum of a constant-rank bundle `V` of rank `n`. -/
+@[instance_reducible]
+noncomputable def constStratumFiberBundle (m : ℕ) :
     letI := constStratumTopology 𝕜 n V m
-    Σ' (_ : FiberBundle (Fin m → 𝕜)
-        fun x : {x : X // (LocallyConstant.const X n) x = m} ↦ V x.val),
-      VectorBundle 𝕜 (Fin m → 𝕜)
-        fun x : {x : X // (LocallyConstant.const X n) x = m} ↦ V x.val := by
-  letI := constStratumTopology 𝕜 n V m
-  by_cases hnm : n = m
-  · subst hnm
-    exact ⟨FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
+    FiberBundle (Fin m → 𝕜) fun x : {x : X // (LocallyConstant.const X n) x = m} ↦ V x.val :=
+  if h : n = m then
+    h ▸ (letI := constStratumTopology 𝕜 n V n
+      FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
         (E := (constStratumInclusion n : _ → X) *ᵖ V)
-        (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val)) (isInducing_constStratum_pullback 𝕜 n V),
-      VectorBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
-        (E := (constStratumInclusion n : _ → X) *ᵖ V)
-        (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val)) (isInducing_constStratum_pullback 𝕜 n V)⟩
-  · have : IsEmpty {x : X // (LocallyConstant.const X n) x = m} := ⟨fun x ↦ hnm x.property⟩
-    letI := FiberBundle.ofIsEmpty (Fin m → 𝕜)
+        (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val)) (isInducing_constStratum_pullback 𝕜 n V))
+  else
+    letI := constStratumTopology 𝕜 n V m
+    letI : IsEmpty {x : X // (LocallyConstant.const X n) x = m} := ⟨fun x ↦ h x.property⟩
+    FiberBundle.ofIsEmpty (Fin m → 𝕜)
       fun x : {x : X // (LocallyConstant.const X n) x = m} ↦ V x.val
-    exact ⟨inferInstance, VectorBundle.ofIsEmpty 𝕜 (Fin m → 𝕜) _⟩
+
+omit [VectorBundle 𝕜 (Fin n → 𝕜) V] in
+private theorem constStratumFiberBundle_self :
+    constStratumFiberBundle 𝕜 n V n =
+      (letI := constStratumTopology 𝕜 n V n
+       FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
+         (E := (constStratumInclusion n : _ → X) *ᵖ V)
+         (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+         (isInducing_constStratum_pullback 𝕜 n V)) :=
+  dite_eq_left rfl
+
+/-- `VectorBundle` structure on the `m`th rank stratum of a constant-rank bundle `V` of rank `n`. -/
+theorem constStratumVectorBundle (m : ℕ) :
+    letI := constStratumTopology 𝕜 n V m
+    letI := constStratumFiberBundle 𝕜 n V m
+    VectorBundle 𝕜 (Fin m → 𝕜) fun x : {x : X // (LocallyConstant.const X n) x = m} ↦ V x.val := by
+  let := constStratumTopology 𝕜 n V m
+  by_cases h : n = m
+  · subst h
+    rw [constStratumFiberBundle_self]
+    exact VectorBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
+      (E := (constStratumInclusion n : _ → X) *ᵖ V)
+      (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val)) (isInducing_constStratum_pullback 𝕜 n V)
+  · have : IsEmpty {x : X // (LocallyConstant.const X n) x = m} := ⟨fun x ↦ h x.property⟩
+    let := constStratumFiberBundle 𝕜 n V m
+    exact VectorBundle.ofIsEmpty 𝕜 (Fin m → 𝕜) _
 
 /-- Package a constant-rank `VectorBundle 𝕜 (Fin n → 𝕜) V` as an object of
 `FiniteRankBundle.{w} 𝕜 X`. -/
@@ -519,12 +540,21 @@ noncomputable def ofBundle : FiniteRankBundle.{w} 𝕜 X where
   rank := LocallyConstant.const X n
   Fiber := V
   topologicalSpaceStratum := constStratumTopology 𝕜 n V
-  fiberBundleStratum m := (constStratumBundle 𝕜 n V m).1
-  vectorBundleStratum m := (constStratumBundle 𝕜 n V m).2
+  fiberBundleStratum := constStratumFiberBundle 𝕜 n V
+  vectorBundleStratum := constStratumVectorBundle 𝕜 n V
 
 @[simp] theorem rank_ofBundle : (ofBundle 𝕜 n V).rank = LocallyConstant.const X n := (rfl)
 
 @[simp] theorem fiber_ofBundle (x : X) : (ofBundle 𝕜 n V).Fiber x = V x := (rfl)
+
+private theorem fiberBundleStratum_ofBundle_self :
+    (ofBundle 𝕜 n V).fiberBundleStratum n =
+      (letI := constStratumTopology 𝕜 n V n
+       FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
+         (E := (constStratumInclusion n : _ → X) *ᵖ V)
+         (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+         (isInducing_constStratum_pullback 𝕜 n V)) :=
+  constStratumFiberBundle_self 𝕜 n V
 
 /-- On the `n`th rank stratum of `ofBundle 𝕜 n V`, the preferred trivialization's fibrewise inverse
 at `b` agrees with that of `V` at `b.1`. -/
@@ -533,26 +563,18 @@ at `b` agrees with that of `V` at `b.1`. -/
     (trivializationAt (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n) b).symm b v =
       (trivializationAt (Fin n → 𝕜) V b.val).symm b.val v := by
   let b' : {x : X // (LocallyConstant.const X n) x = n} := b
-  have hfb : (ofBundle 𝕜 n V).fiberBundleStratum n =
-      (letI := constStratumTopology 𝕜 n V n
-       FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜)
-         (E := (constStratumInclusion n : _ → X) *ᵖ V)
-         (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-         (isInducing_constStratum_pullback 𝕜 n V)) := by
-    unfold ofBundle constStratumBundle
-    dsimp only
-    rw [dite_eq_left rfl]
   have ht : trivializationAt (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n) b =
       (letI := constStratumTopology 𝕜 n V n
        (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) b')
          |>.compContinuousLinearEquiv (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-           (isInducing_constStratum_pullback 𝕜 n V)) :=
-    (congrArg (fun fb ↦ FiberBundle.trivializationAt' (self := fb) b) hfb).trans
-      (letI := constStratumTopology 𝕜 n V n
-       FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
-         (E := (constStratumInclusion n : _ → X) *ᵖ V)
-         (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-         (isInducing_constStratum_pullback 𝕜 n V) b')
+           (isInducing_constStratum_pullback 𝕜 n V)) := by
+    let := constStratumTopology 𝕜 n V n
+    change FiberBundle.trivializationAt' (self := (ofBundle 𝕜 n V).fiberBundleStratum n) b' = _
+    rw [fiberBundleStratum_ofBundle_self]
+    exact FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
+      (E := (constStratumInclusion n : _ → X) *ᵖ V)
+      (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+      (isInducing_constStratum_pullback 𝕜 n V) b'
   rw [ht]
   refine (letI := constStratumTopology 𝕜 n V n
     Trivialization.compContinuousLinearEquiv_symm

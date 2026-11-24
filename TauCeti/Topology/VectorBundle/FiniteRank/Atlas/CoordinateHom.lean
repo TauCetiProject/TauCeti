@@ -68,54 +68,107 @@ abbrev StratumCoordinateHom (A D : FiniteRankAtlas 𝕜 X) (m n : ℕ) :=
   (A.stratumCore m).pullback (stratumPairFst A D m n) ⟶
     (D.stratumCore n).pullback (stratumPairSnd A D m n)
 
+/-- Canonical continuous linear equivalence reindexing the fibre `A.Fiber x` to `Fin n → 𝕜` along
+`hx : A.rank x = n`. -/
+def stratumFiberEquiv (A : FiniteRankAtlas 𝕜 X) {n : ℕ} {x : X} (hx : A.rank x = n) :
+    A.Fiber x ≃L[𝕜] (Fin n → 𝕜) :=
+  ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) (finCongr hx)
+
+@[simp] theorem stratumFiberEquiv_apply (A : FiniteRankAtlas 𝕜 X) {n : ℕ} {x : X}
+    (hx : A.rank x = n) (v : A.Fiber x) (i : Fin n) :
+    A.stratumFiberEquiv hx v i = v (Fin.cast hx.symm i) :=
+  ContinuousLinearEquiv.piCongrLeft_const_apply 𝕜 𝕜 (finCongr hx) v i
+
+@[simp] theorem stratumFiberEquiv_symm_apply (A : FiniteRankAtlas 𝕜 X) {n : ℕ} {x : X}
+    (hx : A.rank x = n) (v : Fin n → 𝕜) (i : Fin (A.rank x)) :
+    (A.stratumFiberEquiv hx).symm v i = v (Fin.cast hx i) := (rfl)
+
+@[simp] theorem stratumFiberEquiv_refl (A : FiniteRankAtlas 𝕜 X) (x : X) :
+    A.stratumFiberEquiv (rfl : A.rank x = A.rank x) =
+      ContinuousLinearEquiv.refl 𝕜 (A.Fiber x) := by
+  simp [stratumFiberEquiv]
+
+/-- The continuous linear map `(Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)` induced by an atlas morphism
+`f : A ⟶ D` at a point `x` of the `(m, n)` joint rank stratum. -/
+def stratumFiberCLM {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
+    (x : StratumPair A D m n) : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜) :=
+  (D.stratumFiberEquiv x.property.2).toContinuousLinearMap.comp
+    ((f.fiberCLM x.val).comp (A.stratumFiberEquiv x.property.1).symm.toContinuousLinearMap)
+
+@[simp] theorem stratumFiberCLM_apply {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
+    (x : StratumPair A D m n) (v : Fin m → 𝕜) :
+    stratumFiberCLM f x v =
+      D.stratumFiberEquiv x.property.2
+        (f.fiberCLM x.val ((A.stratumFiberEquiv x.property.1).symm v)) :=
+  (rfl)
+
+/-- Coordinate evaluation of `stratumFiberCLM f x` applies `f.fiberMap x.1` and reindexes by
+`Fin.cast`. -/
+theorem stratumFiberCLM_apply_apply {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
+    (x : StratumPair A D m n) (v : Fin m → 𝕜) (i : Fin n) :
+    stratumFiberCLM f x v i =
+      f.fiberMap x.val ((A.stratumFiberEquiv x.property.1).symm v)
+        (Fin.cast x.property.2.symm i) := by
+  simp
+
+/-- On the diagonal stratum point `⟨x, rfl, rfl⟩`, `stratumFiberCLM f` equals `f.fiberCLM x`. -/
+@[simp] theorem stratumFiberCLM_self {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) (x : X) :
+    stratumFiberCLM f (⟨x, rfl, rfl⟩ : StratumPair A D (A.rank x) (D.rank x)) =
+      f.fiberCLM x := by
+  ext v
+  simp [stratumFiberCLM]
+
+@[simp] theorem stratumFiberCLM_add {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f g : A ⟶ D)
+    (x : StratumPair A D m n) :
+    stratumFiberCLM (f + g) x = stratumFiberCLM f x + stratumFiberCLM g x := by
+  ext v
+  simp
+
+/-- `stratumFiberCLM f x` is bijective iff `f.fiberMap x.val` is bijective. -/
+theorem bijective_stratumFiberCLM_iff {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
+    (x : StratumPair A D m n) :
+    Function.Bijective (stratumFiberCLM f x) ↔ Function.Bijective (f.fiberMap x.val) := by
+  have h : (stratumFiberCLM f x : (Fin m → 𝕜) → (Fin n → 𝕜)) =
+      (D.stratumFiberEquiv x.property.2 : _ → _) ∘ f.fiberMap x.val ∘
+        ((A.stratumFiberEquiv x.property.1).symm : _ → _) :=
+    funext fun v ↦ by simp
+  rw [h, (D.stratumFiberEquiv x.property.2).bijective.of_comp_iff',
+    Function.Bijective.of_comp_iff _ (A.stratumFiberEquiv x.property.1).symm.bijective]
+
 private theorem continuous_stratum_totalSpaceMap {A D : FiniteRankAtlas 𝕜 X}
     (f : A ⟶ D) (m n : ℕ) :
     Continuous fun p : ((A.stratumCore m).pullback (stratumPairFst A D m n)).core.TotalSpace ↦
-      (⟨p.proj, ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜)
-          (finCongr p.proj.property.2)).toContinuousLinearMap.comp
-        ((f.fiberCLM p.proj.val).comp (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-          (finCongr p.proj.property.1)).symm.toContinuousLinearMap)) p.snd⟩ :
+      (⟨p.proj, stratumFiberCLM f p.proj p.snd⟩ :
         ((D.stratumCore n).pullback (stratumPairSnd A D m n)).core.TotalSpace) := by
   let Z := ((A.stratumCore m).pullback (stratumPairFst A D m n)).core
   have hlift := (A.stratumCore m).continuous_pullbackLift (stratumPairFst A D m n)
   have hZin : Continuous fun p : Z.TotalSpace ↦
-      (⟨p.proj.val, (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-        (finCongr p.proj.property.1)).symm p.snd⟩ : TotalSpace Unit A.Fiber) :=
+      (⟨p.proj.val, (A.stratumFiberEquiv p.proj.property.1).symm p.snd⟩ :
+        TotalSpace Unit A.Fiber) :=
     (A.totalSpaceHomeomorph.continuous.comp
       (continuous_sigmaMk (σ := fun k ↦ (A.charts k).TotalSpace).comp hlift)).congr fun ⟨_, _⟩ ↦ by
       simp only [Function.comp_apply, FiniteRankBundleCore.pullbackLift_mk,
         totalSpaceHomeomorph_apply]
       congr 1
   have hD := (D.continuous_mk_iff_rankStrata (continuous_subtypeVal.comp Z.continuous_proj)
-    fun p ↦ f.fiberMap p.proj.val ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-      (finCongr p.proj.property.1)).symm p.snd)).1 (f.continuous_totalSpaceMap.comp hZin) n
+    fun p ↦ f.fiberMap p.proj.val ((A.stratumFiberEquiv p.proj.property.1).symm p.snd)).1
+    (f.continuous_totalSpaceMap.comp hZin) n
   refine ((D.stratumCore n).continuous_core_pullback_iff (stratumPairSnd A D m n)).2
     ⟨Z.continuous_proj,
       (hD.comp (continuous_id.subtype_mk fun p : Z.TotalSpace ↦ p.proj.property.2)).congr
-        fun p ↦ (congrArg (TotalSpace.mk (stratumPairSnd A D m n p.proj)) (funext fun i ↦
-          (congrFun (f.fiberCLM_apply p.proj.val
-            ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-              (finCongr p.proj.property.1)).symm p.snd))
-            (Fin.cast p.proj.property.2.symm i)).symm)).trans
-          ((D.stratumCore n).pullbackLift_mk (stratumPairSnd A D m n) p.proj _).symm⟩
+        fun p ↦ ((D.stratumCore n).pullbackLift_eq_mk (stratumPairSnd A D m n)
+          ⟨p.proj, stratumFiberCLM f p.proj p.snd⟩ rfl
+          (funext fun i ↦ stratumFiberCLM_apply_apply f p.proj p.snd i)).symm⟩
 
 /-- Extract the compatible chart operators of an atlas morphism on the `(m, n)` stratum. -/
 def toStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) (m n : ℕ) :
     StratumCoordinateHom A D m n :=
-  CoordinateHom.ofContinuousTotalSpacePi _ _
-    (fun x ↦ (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜)
-        (finCongr x.property.2)).toContinuousLinearMap.comp
-      ((f.fiberCLM x.val).comp (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-        (finCongr x.property.1)).symm.toContinuousLinearMap))
+  CoordinateHom.ofContinuousTotalSpacePi _ _ (stratumFiberCLM f)
     (continuous_stratum_totalSpaceMap f m n)
 
 @[simp] theorem fiberMap_toStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
     (f : A ⟶ D) (m n : ℕ) (x : StratumPair A D m n) :
-    (toStratumCoordinateHom f m n).fiberMap x =
-      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜)
-        (finCongr x.property.2)).toContinuousLinearMap.comp
-        ((f.fiberCLM x.val).comp (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-          (finCongr x.property.1)).symm.toContinuousLinearMap) :=
+    (toStratumCoordinateHom f m n).fiberMap x = stratumFiberCLM f x :=
   CoordinateHom.fiberMap_ofContinuousTotalSpacePi _ _ _ _ x
 
 private theorem continuous_ofStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
@@ -158,24 +211,25 @@ def ofStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
     (ofStratumCoordinateHom c).fiberMap x =
       ((c (A.rank x) (D.rank x)).fiberMap ⟨x, rfl, rfl⟩).toLinearMap := (rfl)
 
+@[simp] theorem fiberCLM_ofStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
+    (c : ∀ m n : ℕ, StratumCoordinateHom A D m n) (x : X) :
+    (ofStratumCoordinateHom c).fiberCLM x = (c (A.rank x) (D.rank x)).fiberMap ⟨x, rfl, rfl⟩ := by
+  ext v
+  simp
+
 /-- Morphisms of variable-rank bundle atlases correspond additively to families of compatible
 finite-matrix coordinate morphisms across the clopen `(m, n)` joint rank strata. -/
 def coordinateHomAddEquiv (A D : FiniteRankAtlas 𝕜 X) :
     (A ⟶ D) ≃+ ∀ m n : ℕ, StratumCoordinateHom A D m n where
   toFun := toStratumCoordinateHom
   invFun := ofStratumCoordinateHom
-  left_inv f := hom_ext fun x ↦ LinearMap.ext fun v ↦ funext fun i ↦ by simp
+  left_inv f := hom_ext fun x ↦ LinearMap.ext fun v ↦ by simp
   right_inv c := funext fun m ↦ funext fun n ↦ FiniteRankBundleCore.hom_ext
-    fun ⟨x, hx₁, hx₂⟩ ↦ ContinuousLinearMap.ext fun v ↦ by
+    fun ⟨x, hx₁, hx₂⟩ ↦ by
       subst hx₁; subst hx₂
-      ext i
-      simp only [fiberMap_toStratumCoordinateHom, ContinuousLinearMap.comp_apply,
-        ContinuousLinearEquiv.coe_coe, finCongr_refl, ContinuousLinearEquiv.piCongrLeft_refl,
-        ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply]
-      exact congrFun ((Hom.fiberCLM_apply (ofStratumCoordinateHom c) x v).trans
-        (congrFun (congrArg DFunLike.coe (fiberMap_ofStratumCoordinateHom c x)) v)) i
+      simp
   map_add' f g := funext fun m ↦ funext fun n ↦
-    FiniteRankBundleCore.hom_ext fun x ↦ ContinuousLinearMap.ext fun v ↦ by simp
+    FiniteRankBundleCore.hom_ext fun x ↦ by simp
 
 @[simp] theorem coordinateHomAddEquiv_apply {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) (m n : ℕ) :
     coordinateHomAddEquiv A D f m n = toStratumCoordinateHom f m n := (rfl)
@@ -199,28 +253,20 @@ private theorem continuous_inv_of_bijective {A D : FiniteRankAtlas 𝕜 X}
   let fwd (m n : ℕ) : (A.stratumCore n).pullback (stratumPairSnd D A m n) ⟶
       (D.stratumCore m).pullback (stratumPairFst D A m n) :=
     FiniteRankBundleCore.pullbackMap (toStratumCoordinateHom f n m) (swap m n)
-  have hfwd (m n : ℕ) (y : StratumPair D A m n) : (fwd m n).fiberMap y =
-      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
-        (finCongr y.property.1)).toContinuousLinearMap.comp
-        ((f.fiberCLM y.val).comp (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜)
-          (finCongr y.property.2)).symm.toContinuousLinearMap) :=
+  have hfwd (m n : ℕ) (y : StratumPair D A m n) :
+      (fwd m n).fiberMap y = stratumFiberCLM f ⟨y.val, y.property.2, y.property.1⟩ :=
     (FiniteRankBundleCore.fiberMap_pullbackMap _ (swap m n) y).trans
       (fiberMap_toStratumCoordinateHom f n m ⟨y.val, y.property.2, y.property.1⟩)
   have hbij (m n : ℕ) (y : StratumPair D A m n) : Function.Bijective ((fwd m n).fiberMap y) := by
     rw [hfwd]
-    exact (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr y.property.1)).bijective.comp
-      ((hf' y.val).comp
-        (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr y.property.2)).symm.bijective)
+    exact (bijective_stratumFiberCLM_iff f ⟨y.val, y.property.2, y.property.1⟩).2 (hf y.val)
   refine (ofStratumCoordinateHom fun m n ↦
       CoordinateHom.invOfBijectivePi _ _ (fwd m n) (hbij m n)).continuous_totalSpaceMap.congr
     fun p ↦ congrArg (TotalSpace.mk p.proj) ?_
   apply (LinearEquiv.ofBijective (f.fiberMap p.proj) (hf p.proj)).injective
   rw [LinearEquiv.apply_symm_apply, LinearEquiv.ofBijective_apply, fiberMap_ofStratumCoordinateHom,
-    ContinuousLinearMap.coe_coe, CoordinateHom.fiberMap_invOfBijectivePi]
-  have hdiag : (fwd (D.rank p.proj) (A.rank p.proj)).fiberMap ⟨p.proj, rfl, rfl⟩ =
-      f.fiberCLM p.proj := by
-    rw [hfwd]; ext v i; simp
-  rw [hdiag]
+    ContinuousLinearMap.coe_coe, CoordinateHom.fiberMap_invOfBijectivePi, hfwd,
+    stratumFiberCLM_self]
   exact (f.fiberCLM_apply p.proj _).symm.trans
     (((f.fiberCLM p.proj).isInvertible_of_bijective_pi (hf' p.proj)).self_apply_inverse p.snd)
 
@@ -379,49 +425,63 @@ instance : (ofCoreFunctor 𝕜 X).Full where
     rw [ofCoreFunctor_map, hg]
     simp [g']
 
+private theorem continuous_ofCoreStratumIso_hom (A : FiniteRankAtlas 𝕜 X) (n : ℕ)
+    (hn : ∀ x, A.rank x = n) :
+    Continuous fun p : TotalSpace Unit
+        (ofCore ((A.stratumCore n).pullback
+          ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩)).Fiber ↦
+      (⟨p.proj, (A.stratumFiberEquiv (hn p.proj)).symm p.snd⟩ : TotalSpace Unit A.Fiber) := by
+  let s : C(X, {x : X // A.rank x = n}) := ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩
+  let C := (A.stratumCore n).pullback s
+  refine (A.continuous_mk_iff_rankStrata (ofCore C).continuous_proj _).2 fun m ↦ ?_
+  by_cases hmn : m = n
+  · subst hmn
+    have hZ := (A.stratumCore m).continuous_pullbackLift s
+    refine (hZ.comp ((ofCoreHomeomorph C).continuous.comp continuous_subtypeVal)).congr
+      fun ⟨⟨x, v⟩, hxm⟩ ↦ ?_
+    cases Subsingleton.elim (hn x) hxm
+    exact (A.stratumCore m).pullbackLift_eq_mk s _ rfl rfl
+  · have : IsEmpty {p : TotalSpace Unit (ofCore C).Fiber // A.rank p.proj = m} :=
+      ⟨fun q ↦ hmn (q.property.symm.trans (hn q.val.proj))⟩
+    exact continuous_iff_continuousAt.2 isEmptyElim
+
+private theorem continuous_ofCoreStratumIso_inv (A : FiniteRankAtlas 𝕜 X) (n : ℕ)
+    (hn : ∀ x, A.rank x = n) :
+    Continuous fun p : TotalSpace Unit A.Fiber ↦
+      (⟨p.proj, A.stratumFiberEquiv (hn p.proj) p.snd⟩ :
+        TotalSpace Unit (ofCore ((A.stratumCore n).pullback
+          ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩)).Fiber) := by
+  let s : C(X, {x : X // A.rank x = n}) := ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩
+  let C := (A.stratumCore n).pullback s
+  have hA := (A.continuous_mk_iff_rankStrata A.continuous_proj (fun p ↦ p.snd)).1 continuous_id n
+  have hC : Continuous fun p : TotalSpace Unit A.Fiber ↦
+      (⟨p.proj, fun i ↦ p.snd (Fin.cast (hn p.proj).symm i)⟩ : C.core.TotalSpace) :=
+    ((A.stratumCore n).continuous_core_pullback_iff s).2
+      ⟨A.continuous_proj, (hA.comp (continuous_id.subtype_mk fun p ↦ hn p.proj)).congr
+        fun p ↦ ((A.stratumCore n).pullbackLift_mk s p.proj _).symm⟩
+  exact ((ofCoreHomeomorph C).symm.continuous.comp hC).congr fun _ ↦ by
+    simp only [Function.comp_apply, ofCoreHomeomorph_symm_apply]
+    congr 1
+
 /-- An atlas of constant rank `n` is canonically isomorphic to `ofCore` of its pulled-back `n`th
 stratum core. -/
 def ofCoreStratumIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank x = n) :
     ofCore ((A.stratumCore n).pullback ⟨fun x ↦ ⟨x, hn x⟩,
-      continuous_id.subtype_mk hn⟩) ≅ A := by
-  let s : C(X, {x : X // A.rank x = n}) := ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩
-  let C := (A.stratumCore n).pullback s
-  refine isoMk (fun x ↦ (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
-      (finCongr (hn x))).symm.toLinearEquiv) ?_ ?_
-  · refine (A.continuous_mk_iff_rankStrata (ofCore C).continuous_proj _).2 fun m ↦ ?_
-    by_cases hmn : m = n
-    · subst hmn
-      have hZ := (A.stratumCore m).continuous_pullbackLift s
-      refine (hZ.comp ((ofCoreHomeomorph C).continuous.comp continuous_subtypeVal)).congr
-        fun ⟨⟨x, v⟩, hxm⟩ ↦ ?_
-      cases Subsingleton.elim (hn x) hxm
-      exact (A.stratumCore m).pullbackLift_eq_mk s _ rfl rfl
-    · have : IsEmpty {p : TotalSpace Unit (ofCore C).Fiber // A.rank p.proj = m} :=
-        ⟨fun q ↦ hmn (q.property.symm.trans (hn q.val.proj))⟩
-      exact continuous_iff_continuousAt.2 isEmptyElim
-  · have hA := (A.continuous_mk_iff_rankStrata A.continuous_proj (fun p ↦ p.snd)).1 continuous_id n
-    have hC : Continuous fun p : TotalSpace Unit A.Fiber ↦
-        (⟨p.proj, fun i ↦ p.snd (Fin.cast (hn p.proj).symm i)⟩ : C.core.TotalSpace) :=
-      ((A.stratumCore n).continuous_core_pullback_iff s).2
-        ⟨A.continuous_proj, (hA.comp (continuous_id.subtype_mk fun p ↦ hn p.proj)).congr
-          fun p ↦ ((A.stratumCore n).pullbackLift_mk s p.proj _).symm⟩
-    exact ((ofCoreHomeomorph C).symm.continuous.comp hC).congr fun _ ↦ by
-      simp only [Function.comp_apply, ofCoreHomeomorph_symm_apply]
-      congr 1
+      continuous_id.subtype_mk hn⟩) ≅ A :=
+  isoMk (fun x ↦ (A.stratumFiberEquiv (hn x)).symm.toLinearEquiv)
+    (continuous_ofCoreStratumIso_hom A n hn) (continuous_ofCoreStratumIso_inv A n hn)
 
 @[simp] theorem fiberMap_ofCoreStratumIso_hom (A : FiniteRankAtlas 𝕜 X) (n : ℕ)
     (hn : ∀ x, A.rank x = n) (x : X) :
     (ofCoreStratumIso A n hn).hom.fiberMap x =
-      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (hn x))).symm.toLinearMap := by
-  unfold ofCoreStratumIso
-  exact fiberMap_isoMk_hom _ _ _ x
+      (A.stratumFiberEquiv (hn x)).symm.toLinearMap :=
+  fiberMap_isoMk_hom _ _ _ x
 
 @[simp] theorem fiberMap_ofCoreStratumIso_inv (A : FiniteRankAtlas 𝕜 X) (n : ℕ)
     (hn : ∀ x, A.rank x = n) (x : X) :
     (ofCoreStratumIso A n hn).inv.fiberMap x =
-      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (hn x))).toLinearMap := by
-  unfold ofCoreStratumIso
-  exact fiberMap_isoMk_inv _ _ _ x
+      (A.stratumFiberEquiv (hn x)).toLinearMap :=
+  fiberMap_isoMk_inv _ _ _ x
 
 /-- `A` lies in `(ofCoreFunctor 𝕜 X).essImage` iff `A.rank` is globally constant. -/
 theorem essImage_ofCoreFunctor_iff (A : FiniteRankAtlas 𝕜 X) :
