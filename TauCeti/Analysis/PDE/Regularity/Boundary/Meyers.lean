@@ -557,13 +557,9 @@ theorem exists_eLpNorm_gradient_conjExponent_le_divergence [Nonempty ι] (K : �
     continuous_id.matrix_transpose.comp_aestronglyMeasurable ha
   set D := (C : ℝ≥0∞) * (1 + (mu Omega / mu (ball 0 r₀)) ^ (ε / 2))
   have hD : D ≠ ∞ := coe_mul_one_add_div_rpow_ne_top C hfin hr₀ hε.le
-  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 + ε) := by
-    rw [← ENNReal.ofReal_ofNat 2]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
   -- Norm `∇u` in `Lᵖ` against bounded test fields `g`, which lie in `L²(Ω)` and `L^{2+ε}(Ω)`.
   refine (Lp.aestronglyMeasurable _).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℝ)
-    (q' := ENNReal.ofReal (2 + ε)) ((ENNReal.HolderConjugate.ne_top_iff_ne_one p _).2
-      (ENNReal.one_lt_two.trans_le h2).ne') fun g s _ _ hg => ?_
+    (q' := ENNReal.ofReal (2 + ε)) fun g s _ _ hg => ?_
   have hg2 : MemLp g 2 (mu.restrict Omega) := hg.mono_exponent le_top
   have hgq : MemLp g (ENNReal.ofReal (2 + ε)) (mu.restrict Omega) := hg.mono_exponent le_top
   -- Test the equation of `u` with the solution `v` of the adjoint problem with datum `g`, whose
