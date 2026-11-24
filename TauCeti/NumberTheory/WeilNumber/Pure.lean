@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.Charpoly.Roots
 
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Semisimple
 
 /-!
@@ -49,9 +48,9 @@ reflected by field homomorphisms, purity can be tested in any algebraically clos
 * `TauCeti.IsPure.unique`: a pure endomorphism of a nonzero space has a unique weight.
 * `TauCeti.isPure_of_subsingleton`: every endomorphism of the zero space is pure of every weight.
 
-The file closes with Deligne's examples: a Jordan block `[[q, 1], [0, q]]` is pure of weight `2`
-without being semisimple, the rotation `[[0, -q], [1, 0]]` is pure of weight `1` although it has
-no eigenvalue in `ℚ`, and `diag(1, q)` is pure of no weight.
+The file closes with examples: a Jordan block `[[q, 1], [0, q]]` is pure of weight `2` without
+being semisimple, the matrix `[[0, -q], [1, 0]]` is pure of weight `1` although it has no
+eigenvalue in `ℚ`, and `diag(1, q)` is pure of no weight.
 
 ## References
 
@@ -110,26 +109,23 @@ theorem isWeilNumber_of_mem_aroots {L : Type*} [Field L] [Algebra K L] [Algebra 
     (h : IsPure q n F) {α : L} (hα : α ∈ F.charpoly.aroots L) : IsWeilNumber q n α := by
   rw [← isWeilNumber_map_iff (algebraMap L (AlgebraicClosure L))]
   refine (isPure_iff_forall_mem_aroots (AlgebraicClosure L)).mp h _ ?_
-  rw [mem_aroots'] at hα ⊢
-  refine ⟨(F.charpoly_monic.map _).ne_zero, ?_⟩
-  rw [aeval_algebraMap_apply, hα.2, map_zero]
+  rw [LinearMap.mem_aroots_charpoly_iff] at hα ⊢
+  rw [aeval_algebraMap_apply, hα, map_zero]
 
 /-- Every eigenvalue in `K` of a pure endomorphism is a Weil number of its weight. -/
 theorem isWeilNumber_of_hasEigenvalue (h : IsPure q n F) {α : K} (hα : F.HasEigenvalue α) :
     IsWeilNumber q n α :=
   h.isWeilNumber_of_mem_aroots <| by
-    rw [mem_aroots']
-    exact ⟨(F.charpoly_monic.map _).ne_zero,
-      by simpa using (Module.End.hasEigenvalue_iff_isRoot_charpoly F α).mp hα⟩
+    rw [LinearMap.mem_aroots_charpoly_iff, ← eval_map_algebraMap, Algebra.algebraMap_self,
+      map_id]
+    exact (Module.End.hasEigenvalue_iff_isRoot_charpoly F α).mp hα
 
 /-- A pure endomorphism is invertible: its characteristic roots are Weil numbers, hence
 nonzero. -/
 theorem isUnit (h : IsPure q n F) : IsUnit F := by
-  rw [LinearMap.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, LinearMap.det_eq_sign_charpoly_coeff]
-  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) fun h0 ↦ ?_
-  refine not_isWeilNumber_zero (h.isWeilNumber_of_mem_aroots (L := K) (mem_aroots'.mpr
-    ⟨(F.charpoly_monic.map _).ne_zero, ?_⟩))
-  rwa [← coeff_zero_eq_aeval_zero]
+  rw [LinearMap.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
+  exact ((LinearMap.not_hasEigenvalue_zero_tfae F).out 1 4).mp fun h0 ↦
+    not_isWeilNumber_zero (h.isWeilNumber_of_hasEigenvalue h0)
 
 /-- The weight of a pure endomorphism of a nonzero space is unique. -/
 theorem unique [Nontrivial V] (h : IsPure q n F) (h' : IsPure q m F) : n = m := by
@@ -149,7 +145,8 @@ example {q : ℚ} (hq : 1 < q) :
   refine ⟨fun α hα ↦ ?_, fun hs ↦ ?_⟩
   · have hpoly : (Matrix.toLin' !![(q : K), 1; 0, q]).charpoly = (X - C (q : K)) ^ 2 := by
       rw [Matrix.charpoly_toLin', Matrix.charpoly_fin_two]
-      simp [Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
+      simp only [Matrix.trace_fin_two_of, map_add, Matrix.det_fin_two_of, mul_zero, sub_zero,
+        map_mul]
       ring
     rw [hpoly, aroots_pow, aroots_X_sub_C, Multiset.mem_nsmul_of_ne_zero two_ne_zero,
       Multiset.mem_singleton] at hα
@@ -168,7 +165,7 @@ example {q : ℚ} (hq : 1 < q) :
     have := congrArg (fun f ↦ f (Pi.single 1 1) 0) h0
     simp at this
 
-/- The rotation `[[0, -q], [1, 0]]` on `ℚ²`, for rational `q > 1`, has characteristic polynomial
+/- The matrix `[[0, -q], [1, 0]]` on `ℚ²`, for rational `q > 1`, has characteristic polynomial
 `X² + q`. Its characteristic roots `± i √q` lie in an algebraic closure of `ℚ`, not in `ℚ`, and
 are Weil `q`-numbers of weight `1`, so it is pure of weight `1`. -/
 example {q : ℚ} (hq : 1 < q) : IsPure (q : ℝ) 1 (Matrix.toLin' !![0, -q; 1, 0]) := by
@@ -197,12 +194,12 @@ example {q : ℚ} (hq : 1 < q) (n : ℤ) : ¬IsPure (q : ℝ) n (Matrix.toLin' !
   intro h
   have hroot (a : K) (ha : a = 1 ∨ a = q) :
       a ∈ (Matrix.toLin' !![(1 : K), 0; 0, q]).charpoly.aroots K := by
-    rw [mem_aroots']
-    refine ⟨((LinearMap.charpoly_monic _).map _).ne_zero, ?_⟩
-    rw [Matrix.charpoly_toLin', Matrix.charpoly_fin_two]
+    rw [LinearMap.mem_aroots_charpoly_iff, Matrix.charpoly_toLin', Matrix.charpoly_fin_two]
     rcases ha with rfl | rfl
     · simp
-    · simp
+    · simp only [Matrix.trace_fin_two_of, map_add, map_one, Matrix.det_fin_two_of, one_mul,
+        mul_zero, sub_zero, coe_aeval_eq_eval, eval_add, eval_sub, eval_pow, eval_X, eval_mul,
+        eval_one, eval_C]
       ring
   have h1 := (h.isWeilNumber_of_mem_aroots (hroot 1 (.inl rfl))).unique
     (isWeilNumber_one (by exact_mod_cast hq))

@@ -26,6 +26,8 @@ the weights of a Frobenius module are defined.
 
 ## Main results
 
+* `LinearMap.mem_aroots_charpoly_iff`: the characteristic roots of `f` in `S` are the elements
+  of `S` annihilating its characteristic polynomial.
 * `LinearMap.card_aroots_charpoly`: over an algebraically closed field, the number of
   characteristic roots, counted with multiplicity, is the rank of the module.
 * `LinearMap.finrank_maxGenEigenspace_baseChange_eq`: the multiplicity of a characteristic root
@@ -46,6 +48,12 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R
   [Module.Finite R M] (f : Module.End R M) {L : Type*} [Field L] [Algebra R L]
 
 namespace LinearMap
+
+/-- An element `μ` of a domain `S` over `R` is a characteristic root of `f` in `S` exactly when it
+annihilates the characteristic polynomial of `f`. -/
+theorem mem_aroots_charpoly_iff {S : Type*} [CommRing S] [IsDomain S] [Algebra R S] {μ : S} :
+    μ ∈ f.charpoly.aroots S ↔ aeval μ f.charpoly = 0 := by
+  rw [mem_aroots', and_iff_right (f.charpoly_monic.map _).ne_zero]
 
 /-- Over an algebraically closed field `Ω`, the characteristic polynomial of an endomorphism of a
 free module of rank `d` has exactly `d` roots, counted with multiplicity. -/
@@ -70,7 +78,7 @@ namespace Module.End
 characteristic polynomial of `f`. -/
 theorem hasEigenvalue_baseChange_iff {μ : L} :
     HasEigenvalue (f.baseChange L) μ ↔ μ ∈ f.charpoly.aroots L := by
-  rw [hasEigenvalue_iff_isRoot_charpoly, LinearMap.charpoly_baseChange, aroots_def,
-    mem_roots ((f.charpoly_monic.map _).ne_zero)]
+  rw [hasEigenvalue_iff_isRoot_charpoly, LinearMap.charpoly_baseChange,
+    LinearMap.mem_aroots_charpoly_iff, IsRoot.def, eval_map_algebraMap]
 
 end Module.End
