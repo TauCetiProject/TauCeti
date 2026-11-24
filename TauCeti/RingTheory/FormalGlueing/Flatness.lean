@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGlueing.Finiteness
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Flat.Stability
+import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
 # Flatness and projectivity on the pieces of formal glueing
@@ -72,21 +73,15 @@ theorem flat_iff_baseChange_and_localized
         TensorProduct.mk R S (M ⊗[R] J) 1 := by
       ext m j
       simp
-    have h0 : (TensorProduct.mk R S M 1).rTensor J x = 0 := by
-      apply Module.Flat.lTensor_preserves_injective_linearMap (M := S ⊗[R] M) J.subtype
-        J.injective_subtype
-      rw [map_zero, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-        ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply, hx, map_zero]
+    have h0 : (TensorProduct.mk R S M 1).rTensor J x = 0 :=
+      Module.Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero _ J.injective_subtype hx
     simpa [h0] using (LinearMap.congr_fun h x).symm
   · have := hloc g hg
     have : Module.Flat R (Localization.Away g ⊗[R] M) := .trans R (Localization.Away g) _
     have : Module.Flat R (LocalizedModule (.powers g) M) := .of_linearEquiv
       ((LocalizedModule.equivTensorProduct (.powers g) M).restrictScalars R)
-    have h0 : (LocalizedModule.mkLinearMap (.powers g) M).rTensor J x = 0 := by
-      apply Module.Flat.lTensor_preserves_injective_linearMap
-        (M := LocalizedModule (.powers g) M) J.subtype J.injective_subtype
-      rw [map_zero, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-        ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply, hx, map_zero]
+    have h0 : (LocalizedModule.mkLinearMap (.powers g) M).rTensor J x = 0 :=
+      Module.Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero _ J.injective_subtype hx
     -- Localizing `M ⊗[R] J` at `g` is localizing the factor `M`.
     have : IsLocalizedModule (.powers g)
         ((LocalizedModule.mkLinearMap (.powers g) M).rTensor J) :=
