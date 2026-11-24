@@ -87,7 +87,7 @@ on a tree is free.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, and §5.4, Theorem 13.
+* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, §5.4, Theorem 13, and §5.5, Theorem 14.
 * I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
   problem*, Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.6 and Remark 2.7.
 -/
@@ -1002,7 +1002,7 @@ without inversions on a tree in which every dart has trivial stabilizer. Then th
 `x j`, one from each orbit of vertices with nontrivial stabilizer, and a homomorphism
 `f : FreeGroup X →* G`, such that `G` is the internal free product of the stabilizers of the `x j`
 and of the free group `F(X)` along `f`: the homomorphism `(∗ⱼ G_{x j}) ∗ F(X) →* G` induced by the
-inclusions and by `f` is bijective. -/
+inclusions and by `f` is bijective. This is Serre, *Trees*, Chapter I, §5.5, Theorem 14. -/
 theorem exists_bijective_coprod_lift_stabilizer (T : GTree.{u, v} G)
     (hE : ∀ e : T.E, stabilizer G e = ⊥) :
     ∃ (J : Type u) (x : J → T.V) (X : Type v) (f : FreeGroup X →* G),
@@ -1027,10 +1027,9 @@ theorem exists_bijective_coprod_lift_stabilizer (T : GTree.{u, v} G)
       · simp [F]
     have h := (Monoid.Coprod.lift_coprodI_lift_subtype_bijective_iff hp D.vertexGroupSubtype F).2
       (hsymm ▸ (D.equivCoprodFreeGroup hE hO).symm.bijective)
-    have hf : (fun j : {b // p b} => D.vertexGroupSubtype j.val) =
-        fun j : {b // p b} => (stabilizer G (D.vertex j.val)).subtype :=
-      funext fun j => MonoidHom.ext fun g => D.vertexGroupSubtype_apply j.val g
-    rwa [hf] at h
+    -- `D.graphOfGroups.vertexGroup b` is `stabilizer G (D.vertex b)` by definition
+    -- (`graphOfGroups_vertexGroup`), and `D.vertexGroupSubtype b` is its subgroup inclusion.
+    exact h
   · intro j j' g h
     exact Subtype.ext (by simpa using congrArg T.quotientMap.mapV h)
   · intro y hy

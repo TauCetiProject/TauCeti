@@ -273,17 +273,13 @@ theorem lift_coprodI_lift_subtype_bijective_iff (h : ∀ i, ¬p i → Subsinglet
       Function.Bijective (lift (CoprodI.lift f) F) := by
   let ψ := CoprodI.subtypeEquivOfSubsingleton M p h
   have key : lift (CoprodI.lift f) F = (lift (CoprodI.lift fun i : {i // p i} => f i) F).comp
-      (map ψ.toMonoidHom (MonoidHom.id H)) := by
+      (MulEquiv.coprodCongr ψ (MulEquiv.refl H)).toMonoidHom := by
     ext i m
-    · by_cases hi : p i
-      · simp [ψ, hi]
-      · have := h i hi
-        simp [ψ, Subsingleton.elim m 1]
+    · simp only [MonoidHom.comp_apply, lift_apply_inl, MulEquiv.coe_toMonoidHom,
+        MulEquiv.coprodCongr_apply, map_apply_inl]
+      exact (DFunLike.congr_fun (CoprodI.lift_comp_subtypeEquivOfSubsingleton h f) _).symm
     · simp
-  have hmap : Function.Bijective (map ψ.toMonoidHom (MonoidHom.id H)) :=
-    Function.bijective_iff_has_inverse.2 ⟨map ψ.symm.toMonoidHom (MonoidHom.id H),
-      fun x => by induction x using induction_on <;> simp_all,
-      fun x => by induction x using induction_on <;> simp_all⟩
-  rw [key, MonoidHom.coe_comp, Function.Bijective.of_comp_iff _ hmap]
+  rw [key, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
+    Function.Bijective.of_comp_iff _ (MulEquiv.bijective _)]
 
 end Monoid.Coprod

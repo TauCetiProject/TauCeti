@@ -48,15 +48,6 @@ namespace Subgroup
 
 variable {ι : Type u} {M : ι → Type w} [∀ i, Group (M i)]
 
-/-- Two families of subgroups that agree pointwise give the same homomorphism out of the free
-product of their members. -/
-private theorem bijective_lift_subtype_of_eq {H : Type*} [Group H] {J : Type*}
-    {S S' : J → Subgroup H} (h : ∀ j, S j = S' j) {X : Type*} {f : FreeGroup X →* H}
-    (hb : Function.Bijective (Coprod.lift (CoprodI.lift fun j => (S j).subtype) f)) :
-    Function.Bijective (Coprod.lift (CoprodI.lift fun j => (S' j).subtype) f) := by
-  obtain rfl := funext h
-  exact hb
-
 /-- **The Kurosh subgroup theorem.** Every subgroup `U` of a free product `∗ᵢ Mᵢ` is the internal
 free product of a free subgroup, the image of an injective `f : FreeGroup X →* U`, and of the
 subgroups `U ∩ gⱼ M_{iⱼ} gⱼ⁻¹`, where `M_{iⱼ}` is the range of `Monoid.CoprodI.of`. These
@@ -94,7 +85,12 @@ theorem exists_bijective_coprod_lift_subgroupOf_conj (U : Subgroup (CoprodI M)) 
   have hK (j : J) : stabilizer U (x j) = ((CoprodI.of (M := M) (i := i j)).range.map
       (MulAut.conj (g j)).toMonoidHom).subgroupOf U :=
     (hstab (x j)).trans (by rw [← hg j, hconj])
-  refine ⟨J, i, g, X, f, bijective_lift_subtype_of_eq hK hbij,
+  -- Transport `hbij` along `hK`, generalizing the family of subgroups so that the factor types of
+  -- the free product can be rewritten.
+  refine ⟨J, i, g, X, f,
+    (congrArg (fun S : J → Subgroup U =>
+      Function.Bijective (Coprod.lift (CoprodI.lift fun j => (S j).subtype) f))
+        (funext hK)).mp hbij,
     fun j => ne_of_eq_of_ne (hK j).symm (hne j), ?_, ?_⟩
   · -- Translates of `t i` by elements of one double coset `U g Mᵢ` lie in one `U`-orbit.
     intro j j' hii hmem

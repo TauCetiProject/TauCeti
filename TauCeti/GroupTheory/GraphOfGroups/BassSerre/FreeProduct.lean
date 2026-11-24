@@ -55,28 +55,6 @@ open SerreGraph
 
 variable {ι : Type u} (M : ι → Type w) [∀ i, Group (M i)]
 
-/-- The free product `∗ᵢ Mᵢ` is the fundamental group at the center of its graph of groups over the
-star, with `m ∈ Mᵢ` sent to the class of the loop that runs along the spoke `i`, reads `m` at its
-tip and comes back. -/
-private theorem exists_mulEquiv_π₁_freeProduct :
-    ∃ e : CoprodI M ≃* π₁ (freeProduct M PEmpty.{1}) (starRose.center ι PEmpty),
-      ∀ (i : ι) (m : M i), e (CoprodI.of m) = π₁.vertexHom
-        ((dartPrefunctor (freeProduct M PEmpty.{1})).mapPath
-          ((starRoseTree ι PEmpty).path (starRose.center ι PEmpty) (starRose.tip _ i))) m := by
-  have hinl : Function.Bijective
-      (Coprod.inl : CoprodI M →* Coprod (CoprodI M) (FreeGroup PEmpty.{1})) :=
-    ⟨Coprod.inl_injective, fun x => ⟨Coprod.fst x, by
-      induction x using Coprod.induction_on with
-      | inl m => simp
-      | inr n => simp [Subsingleton.elim n 1]
-      | mul x y hx hy => simp [hx, hy]⟩⟩
-  refine ⟨(MulEquiv.ofBijective ((freeProductHom M PEmpty).comp Coprod.inl)
-    ((freeProductHom_bijective M PEmpty).comp hinl)).trans (π₁Equiv _ _ (starRoseTree ι _)).symm,
-    fun i m => ?_⟩
-  simp only [MulEquiv.trans_apply, MulEquiv.ofBijective_apply, MonoidHom.comp_apply,
-    freeProductHom_inl_of]
-  exact π₁Equiv_symm_of ..
-
 /-- **The tree of a free product.** The free product `∗ᵢ Mᵢ` acts without inversions on a tree
 with trivial dart stabilizers, with a vertex `t i` for each `i` whose stabilizer is the factor
 `Mᵢ`, such that every vertex with nontrivial stabilizer is a translate of some `t i`, and no
@@ -92,7 +70,8 @@ theorem exists_gTree_coprodI :
   -- The path from the center to the tip `i` along the spoke.
   let s (i : ι) := (dartPrefunctor 𝔸).mapPath
     ((starRoseTree ι PEmpty).path (starRose.center ι PEmpty) (starRose.tip _ i))
-  obtain ⟨e, he⟩ := exists_mulEquiv_π₁_freeProduct M
+  let e := coprodIEquivπ₁ M
+  have he (i : ι) (m : M i) : e (CoprodI.of m) = π₁.vertexHom (s i) m := coprodIEquivπ₁_of M m
   have hbot (K : Subgroup (π₁ 𝔸 (starRose.center ι PEmpty))) (hK : K = ⊥) :
       K.comap e.toMonoidHom = ⊥ := by
     rw [hK, MonoidHom.comap_bot]
@@ -110,8 +89,6 @@ theorem exists_gTree_coprodI :
   · obtain ⟨b, p, hp⟩ := bassSerreVertex_surjective (y : X.V)
     rcases starRose.eq_center_or_eq_tip b with rfl | ⟨i, rfl⟩
     · -- A vertex over the center has trivial stabilizer.
-      have : Subsingleton (𝔸.vertexGroup (starRose.center ι PEmpty)) :=
-        inferInstanceAs (Subsingleton PUnit)
       exact .inl ((GTree.stabilizer_comap_vertex X e.toMonoidHom _).trans
         (hbot _ (hp ▸ stabilizer_bassSerreVertex_eq_bot p)))
     · -- A vertex over the tip `i` is a translate of the vertex of the spoke path.
