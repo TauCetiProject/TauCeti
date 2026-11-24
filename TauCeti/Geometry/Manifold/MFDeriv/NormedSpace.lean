@@ -412,12 +412,9 @@ theorem mvfderiv_const_smul_field {R : Type*} [DivisionSemiring R] [Module R F]
 theorem mfderiv_const_smul_apply (a : 𝕜) (x v : F) :
     mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y : F ↦ a • y) x ((NormedSpace.fromTangentSpace x).symm v) =
       a • (NormedSpace.fromTangentSpace (a • x)).symm v := by
-  apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (a • x)).injective
-  rw [map_smul, ContinuousLinearEquiv.apply_symm_apply, NormedSpace.fromTangentSpace_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, show (fun y : F ↦ a • y) = a • id from rfl,
-    mvfderiv_const_smul_field, smul_apply, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, fderiv_id,
-    ContinuousLinearMap.coe_id', id_eq]
+  have hd : HasFDerivAt (fun y : F ↦ a • y) (a • ContinuousLinearMap.id 𝕜 F) x :=
+    (hasFDerivAt_id x).const_smul a
+  simp [mfderiv_eq_fderiv, hd.fderiv]
 
 /-- The Leibniz rule for the derivative of a vector-valued function, read in the target space,
 multiplied by a function with values in a normed algebra acting on the target, such as a complex

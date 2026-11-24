@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariabl
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Instances.Matrix
 
@@ -32,15 +33,14 @@ continuous Riemannian metric admits an asymptotically Euclidean end of positive 
 
 ## Main results
 
+* `TauCeti.abs_pullbackMetricCoeff_sub_one_le`: extracts the entrywise metric error bound
+  `|(g(x) - 1) i j| ≤ B` from an order-`0` `iteratedFDeriv` norm bound.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_pullbackMetricCoeff_one`,
   `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_det_pullbackMetricCoeff_one`,
   `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_inv_pullbackMetricCoeff_one`: asymptotic convergence
   of the pulled-back metric matrix, its determinant, and its inverse along `Bornology.cobounded`.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.exists_asymptotic_bounds`: uniform exterior determinant,
   metric and inverse-metric decay, and derivative bounds of order `k ≤ 2`.
-* `TauCeti.riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff`,
-  `TauCeti.IsAsymptoticallyEuclideanEnd.riemannianJacobian_toPartialDiffeomorph`: Riemannian
-  Jacobian formula in terms of `pullbackMetricCoeff`.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.riemannianVolume_image_eq_top`: every asymptotically
   Euclidean end of positive order has infinite Riemannian volume.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.not_compactSpace`: no compact `C¹` manifold with a
@@ -69,27 +69,13 @@ variable {n : ℕ}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- In the standard orthonormal basis of `ℝⁿ`, the Riemannian Jacobian of any map `φ : ℝⁿ → M` is
-`√(det (pullbackMetricCoeff I φ x))`. -/
-theorem riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff
-    (φ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n)) :
-    riemannianJacobian (I := I) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis φ x =
-      Real.sqrt (pullbackMetricCoeff I φ x).det := by
-  rw [riemannianJacobian_eq_sqrt_det_gram]
-  congr 2
-  ext i j
-  rw [Matrix.gram_apply, OrthonormalBasis.coe_toBasis, pullbackMetricCoeff_apply]
-
-/-- Order-0 specialization of an asymptotic derivative bound: `|(g(x) - 1) i j| ≤ C ‖x‖ ^ (-t)`
-outside `closedBall 0 R`. -/
-theorem abs_pullbackMetricCoeff_sub_one_le {t R C : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
-    (hC : ∀ k ≤ 2, ∀ (i j : Fin n), ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ,
-      ‖iteratedFDeriv ℝ k (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x‖ ≤ C * ‖x‖ ^ (-t - k))
+/-- Order-0 specialization of an asymptotic derivative bound: `|(g(x) - 1) i j| ≤ B` from an
+order-0 `iteratedFDeriv` norm bound. -/
+theorem abs_pullbackMetricCoeff_sub_one_le {B : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
     {i j : Fin n} {x : EuclideanSpace ℝ (Fin n)}
-    (hx : x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) :
-    |(pullbackMetricCoeff I φ x - 1) i j| ≤ C * ‖x‖ ^ (-t) := by
-  simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs, Nat.cast_zero, sub_zero] using
-    hC 0 (Nat.zero_le 2) i j x hx
+    (hB : ‖iteratedFDeriv ℝ 0 (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x‖ ≤ B) :
+    |(pullbackMetricCoeff I φ x - 1) i j| ≤ B := by
+  simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hB
 
 namespace IsAsymptoticallyEuclideanEnd
 
@@ -110,14 +96,14 @@ theorem tendsto_pullbackMetricCoeff_one (h : IsAsymptoticallyEuclideanEnd I t R 
       simpa only [mul_zero, Function.comp_def] using
         ((tendsto_rpow_neg_atTop ht).const_mul C).comp
           (tendsto_norm_cobounded_atTop (E := EuclideanSpace ℝ (Fin n)))
-    rw [Metric.tendsto_nhds] at hzero ⊢
-    intro ε hε
-    filter_upwards [hzero ε hε,
-      tendsto_norm_cobounded_atTop.eventually (Ioi_mem_atTop R)] with x hx hrx
-    have h1 := abs_pullbackMetricCoeff_sub_one_le hC (by simpa using hrx) (i := i) (j := j)
-    rw [Matrix.sub_apply] at h1
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg ((abs_nonneg _).trans h1)] at hx
-    exact (Real.dist_eq _ _).trans_lt (h1.trans_lt hx)
+    rw [tendsto_iff_dist_tendsto_zero]
+    refine squeeze_zero' (Eventually.of_forall fun _ ↦ dist_nonneg) ?_ hzero
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually (Ioi_mem_atTop R)] with x hrx
+    have h1 : |(pullbackMetricCoeff I φ x - 1) i j| ≤ C * ‖x‖ ^ (-t) :=
+      abs_pullbackMetricCoeff_sub_one_le <| by
+        simpa only [Nat.cast_zero, sub_zero] using
+          hC 0 (Nat.zero_le 2) i j x (by simpa using hrx)
+    simpa only [Real.dist_eq, Matrix.sub_apply] using h1
   exact tendsto_pi_nhds.2 fun i ↦ tendsto_pi_nhds.2 fun j ↦ hentry i j
 
 /-- For positive decay order `t > 0`, the determinant of the pulled-back metric matrix converges to
@@ -159,33 +145,6 @@ private theorem eventually_abs_inv_pullbackMetricCoeff_le
   split_ifs at hx <;> linarith [abs_sub_abs_le_abs_sub ((pullbackMetricCoeff I φ x)⁻¹ i j) 1,
     abs_sub_abs_le_abs_sub ((pullbackMetricCoeff I φ x)⁻¹ i j) 0]
 
-/-- Entrywise bound on `(pullbackMetricCoeff I φ x)⁻¹ - 1` via `g⁻¹ - 1 = g⁻¹ * (1 - g)`. -/
-private theorem abs_inv_pullbackMetricCoeff_sub_le (φ : EuclideanSpace ℝ (Fin n) → M)
-    {x : EuclideanSpace ℝ (Fin n)} (hdet : (pullbackMetricCoeff I φ x).det ≠ 0)
-    {B δ : ℝ} (hB : 0 ≤ B)
-    (hinv : ∀ i k : Fin n, |(pullbackMetricCoeff I φ x)⁻¹ i k| ≤ B)
-    (hdiff : ∀ k j : Fin n, |(pullbackMetricCoeff I φ x - 1) k j| ≤ δ) (i j : Fin n) :
-    |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ (n : ℝ) * B * δ := by
-  have hsub_inv :
-      (pullbackMetricCoeff I φ x)⁻¹ - 1 =
-        (pullbackMetricCoeff I φ x)⁻¹ * (1 - pullbackMetricCoeff I φ x) := by
-    rw [mul_sub, mul_one, Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hdet)]
-  have hentry :
-      ((pullbackMetricCoeff I φ x)⁻¹ - 1) i j =
-        ∑ k : Fin n, (pullbackMetricCoeff I φ x)⁻¹ i k * (1 - pullbackMetricCoeff I φ x) k j := by
-    exact congrFun (congrFun hsub_inv i) j
-  rw [hentry]
-  calc |∑ k : Fin n, (pullbackMetricCoeff I φ x)⁻¹ i k * (1 - pullbackMetricCoeff I φ x) k j|
-      ≤ ∑ k : Fin n,
-          |(pullbackMetricCoeff I φ x)⁻¹ i k * (1 - pullbackMetricCoeff I φ x) k j| :=
-        Finset.abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _k : Fin n, B * δ := Finset.sum_le_sum fun k _ ↦ by
-        rw [abs_mul, show (1 - pullbackMetricCoeff I φ x) k j =
-            -(pullbackMetricCoeff I φ x - 1) k j by simp, abs_neg]
-        exact mul_le_mul (hinv i k) (hdiff k j) (abs_nonneg _) hB
-    _ = (n : ℝ) * B * δ := by
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
-
 /-- For `0 < t`, outside a sufficiently large ball of radius `R₁ ≥ max R 1`:
 * the metric determinant satisfies `1 / 4 ≤ det (g(x))` (hence `1 / 2 ≤ √(det (g(x)))`);
 * the metric entries satisfy `|g_ij(x) - δ_ij| ≤ C₁ ‖x‖ ^ (-t)`;
@@ -213,7 +172,7 @@ theorem exists_asymptotic_bounds (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht
   obtain ⟨R₀, -, hR₀⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.1 hev
   -- Choose a common exterior radius `R₁` and uniform constant `C₁`.
   set R₁ : ℝ := max (max R 1) R₀
-  set C₁ : ℝ := max (max C 0) ((n : ℝ) * 2 * max C 0)
+  set C₁ : ℝ := max (max C 0) ((n : ℝ) ^ 2 * 4 * max C 0)
   refine ⟨R₁, C₁, le_max_left _ _, le_trans (le_max_right C 0) (le_max_left _ _), fun x hx ↦ ?_⟩
   have hrx₁ : R₁ < ‖x‖ := by simpa using hx
   have ⟨⟨hdet_gt, hinv_le⟩, hrx_max⟩ := hR₀ ((le_max_right _ _).trans hrx₁.le)
@@ -225,28 +184,28 @@ theorem exists_asymptotic_bounds (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht
   -- Deduce uniform metric, inverse-metric, and derivative bounds at `x`.
   have hC0 : C ≤ max C 0 := le_max_left C 0
   have hC1 : max C 0 ≤ C₁ := le_max_left _ _
-  have h2nC : (n : ℝ) * 2 * max C 0 ≤ C₁ := le_max_right _ _
+  have hn4C : (n : ℝ) ^ 2 * 4 * max C 0 ≤ C₁ := le_max_right _ _
   have hcoeff0 (k l : Fin n) :
       |(pullbackMetricCoeff I φ x - 1) k l| ≤ max C 0 * ‖x‖ ^ (-t) :=
-    (abs_pullbackMetricCoeff_sub_one_le hC hrx).trans
+    (abs_pullbackMetricCoeff_sub_one_le (by
+        simpa only [Nat.cast_zero, sub_zero] using hC 0 (Nat.zero_le 2) k l x hrx)).trans
       (mul_le_mul_of_nonneg_right hC0 (Real.rpow_nonneg (norm_nonneg x) _))
-  have hinv_diff : |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ C₁ * ‖x‖ ^ (-t) :=
-    (abs_inv_pullbackMetricCoeff_sub_le φ hdet_ne (by norm_num) hinv_le hcoeff0 i j).trans <| by
-      rw [← mul_assoc]; exact mul_le_mul_of_nonneg_right h2nC (Real.rpow_nonneg (norm_nonneg x) _)
+  have hinv_diff : |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ C₁ * ‖x‖ ^ (-t) := by
+    have hpert := Matrix.abs_inv_sub_inv_apply_le (L := 2) (d := max C 0 * ‖x‖ ^ (-t))
+      ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet_ne)) isUnit_one
+      hinv_le
+      (fun k l ↦ by rw [inv_one, Matrix.one_apply]; split_ifs <;> norm_num)
+      (fun k l ↦ by simpa only [← Matrix.sub_apply] using hcoeff0 k l)
+      i j
+    rw [inv_one, ← Matrix.sub_apply, Fintype.card_fin] at hpert
+    refine hpert.trans ?_
+    calc (n : ℝ) ^ 2 * 2 ^ 2 * (max C 0 * ‖x‖ ^ (-t))
+        = ((n : ℝ) ^ 2 * 4 * max C 0) * ‖x‖ ^ (-t) := by ring
+      _ ≤ C₁ * ‖x‖ ^ (-t) := mul_le_mul_of_nonneg_right hn4C (Real.rpow_nonneg (norm_nonneg x) _)
   refine ⟨(hcoeff0 i j).trans (mul_le_mul_of_nonneg_right hC1 (Real.rpow_nonneg (norm_nonneg x) _)),
     hinv_le i j, hinv_diff, fun k hk ↦ ?_⟩
   exact (hC k hk i j x hrx).trans
     (mul_le_mul_of_nonneg_right (hC0.trans hC1) (Real.rpow_nonneg (norm_nonneg x) _))
-
-/-- At every point, the Riemannian Jacobian of `h.toPartialDiffeomorph k hk1 hk` in the standard
-basis of `ℝⁿ` is `√(det (pullbackMetricCoeff I φ x))`. -/
-theorem riemannianJacobian_toPartialDiffeomorph (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k)
-    (hk : k ≤ (∞ : ℕ∞ω)) (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    (x : EuclideanSpace ℝ (Fin n)) :
-    riemannianJacobian (I := I) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-      (h.toPartialDiffeomorph k hk1 hk) x = Real.sqrt (pullbackMetricCoeff I φ x).det := by
-  rw [h.coe_toPartialDiffeomorph k hk1 hk]
-  exact riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff φ x
 
 /-- Every asymptotically Euclidean end of positive order `t > 0` has infinite Riemannian volume. -/
 theorem riemannianVolume_image_eq_top [IsManifold I 1 M]
@@ -264,6 +223,13 @@ theorem riemannianVolume_image_eq_top [IsManifold I 1 M]
     (EuclideanSpace.basisFun (Fin n) ℝ).toBasis (fun _ ↦ (1 : ℝ≥0∞))
   simp only [lintegral_one, Measure.restrict_apply_univ, mul_one,
     (EuclideanSpace.basisFun (Fin n) ℝ).addHaar_eq_volume] at hcov
+  have hjac (x : EuclideanSpace ℝ (Fin n)) :
+      riemannianJacobian (I := I) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis φ x =
+        Real.sqrt (pullbackMetricCoeff I φ x).det := by
+    rw [riemannianJacobian_eq_sqrt_det_gram]
+    congr 2
+    ext i j
+    rw [Matrix.gram_apply, OrthonormalBasis.coe_toBasis, pullbackMetricCoeff_apply]
   obtain ⟨R₁, _, hR₁, _, hbounds⟩ := h.exists_asymptotic_bounds ht
   let U₁ : Set (EuclideanSpace ℝ (Fin n)) := (closedBall 0 R₁)ᶜ
   have hsub : U₁ ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
@@ -276,7 +242,7 @@ theorem riemannianVolume_image_eq_top [IsManifold I 1 M]
       _ ≤ ∫⁻ x in U₁, ENNReal.ofReal (riemannianJacobian (I := I)
             (EuclideanSpace.basisFun (Fin n) ℝ).toBasis φ x) ∂volume := by
           refine setLIntegral_mono' isClosed_closedBall.isOpen_compl.measurableSet fun x hx ↦ ?_
-          rw [riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff]
+          rw [hjac x]
           exact ENNReal.ofReal_le_ofReal (hbounds x hx).1.2.2
       _ ≤ ∫⁻ x in (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ, ENNReal.ofReal
             (riemannianJacobian (I := I) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis φ x)

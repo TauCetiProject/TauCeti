@@ -734,9 +734,8 @@ theorem addHaar_compl_closedBall
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] [Nontrivial E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
     (x : E) (r : ℝ) :
-    mu (closedBall x r)ᶜ = ⊤ := by
-  rw [measure_compl isClosed_closedBall.measurableSet measure_closedBall_lt_top.ne,
-    measure_univ_of_isAddLeftInvariant, ENNReal.top_sub measure_closedBall_lt_top.ne]
+    mu (closedBall x r)ᶜ = ⊤ :=
+  mu.measure_compl_closedBall (measure_univ_of_isAddLeftInvariant mu) x r
 
 end MeasureTheory.Measure
 
