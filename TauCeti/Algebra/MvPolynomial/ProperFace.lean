@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Degrees
-public import TauCeti.Algebra.Order.BigOperators.ProperFace
+public import TauCeti.Algebra.BigOperators.ProperFace
 
 /-!
 # Proper-face polynomials

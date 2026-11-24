@@ -5,22 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Data.Finset.Lattice.Fold
+public import TauCeti.Algebra.BigOperators.ProperFace
 
 /-!
-# Proper-face polynomials and the saving at the smallest coordinate
+# Bounds on proper-face sums and the saving at the smallest coordinate
 
 For a finite index type `ι` and coefficients `c : Finset ι → R`, the *proper-face sum*
-
-```text
-B_c(x) = ∑_{s ⊊ ι} c_s ∏_{i ∈ s} x_i
-```
-
-runs over the proper subsets of `ι`: it is a multiaffine polynomial in `x` whose top monomial
-`D(x) = ∏_i x_i` is missing (the coefficient `c univ` is never used). With nonnegative
+`B_c(x) = ∑_{s ⊊ ι} c_s ∏_{i ∈ s} x_i` (`TauCeti.properFaceSum`) is a multiaffine polynomial
+in `x` whose top monomial `D(x) = ∏_i x_i` is missing. With nonnegative
 coefficients such sums are the error terms in Weibo Fu's weight-aspect multiplicity estimates,
 where weights `k : ι → ℕ` enter through `x = k + 1`, the dimension of
 `⊠_i Sym^{k_i}` being `D(k + 1)`. Because one coordinate is missing from every monomial, these
@@ -30,18 +25,13 @@ coordinate, and on the diagonal `B_c(t, …, t) ≤ (∑_s c_s) t^(|ι| - 1)`.
 
 ## Main definitions
 
-* `TauCeti.properFaceSum c x`: the proper-face sum `B_c(x)`.
 * `TauCeti.IsProperFaceBound c e`: the function `e` on weights `k : ι → ℕ` is controlled by
   `c`, i.e. `|e k| ≤ B_c(k + 1)` for every `k`.
 
 ## Main results
 
-* `TauCeti.properFaceSum_add`, `TauCeti.properFaceSum_smul`, `TauCeti.properFaceSum_equiv`:
-  linearity in the coefficients and invariance under reindexing.
 * `TauCeti.properFaceSum_nonneg`, `TauCeti.abs_properFaceSum_le`: nonnegativity and the
   absolute-value majorant.
-* `TauCeti.properFaceSum_add_vec`: translating `x` by a vector `a` gives a proper-face sum
-  with explicit new coefficients.
 * `TauCeti.mul_properFaceSum_le`, `TauCeti.properFaceSum_le_div_inf'`,
   `TauCeti.properFaceSum_const_le`: the saving at the smallest coordinate and on the diagonal.
 * `TauCeti.IsProperFaceBound.add`, `TauCeti.IsProperFaceBound.sum`,
@@ -50,7 +40,8 @@ coordinate, and on the diagonal `B_c(t, …, t) ≤ (∑_s c_s) t^(|ι| - 1)`.
   closure of the controlled class under sums, common bounds for finite families, and control
   of proper-face sums in the unshifted weights.
 
-The corresponding `MvPolynomial`, `TauCeti.properFacePolynomial`, is in
+The definition and its order-free API are in `TauCeti.Algebra.BigOperators.ProperFace`, and the
+corresponding `MvPolynomial`, `TauCeti.properFacePolynomial`, is in
 `TauCeti.Algebra.MvPolynomial.ProperFace`.
 
 ## References
@@ -65,89 +56,16 @@ namespace TauCeti
 
 open Finset
 
-variable {ι κ R : Type*} [Fintype ι] [DecidableEq ι]
-
-section CommSemiring
-
-variable [CommSemiring R]
-
-/-- The proper-face sum `B_c(x) = ∑_{s ⊊ ι} c_s ∏_{i ∈ s} x_i`: the multiaffine polynomial with
-coefficients `c` in which the top monomial `∏_i x_i` is omitted. The value `c univ` is never
-used. -/
-def properFaceSum (c : Finset ι → R) (x : ι → R) : R :=
-  ∑ s ∈ (univ : Finset ι).ssubsets, c s * ∏ i ∈ s, x i
-
-theorem properFaceSum_def (c : Finset ι → R) (x : ι → R) :
-    properFaceSum c x = ∑ s ∈ (univ : Finset ι).ssubsets, c s * ∏ i ∈ s, x i := by
-  rw [properFaceSum]
-
-@[simp]
-theorem properFaceSum_zero (x : ι → R) : properFaceSum (0 : Finset ι → R) x = 0 := by
-  simp [properFaceSum]
-
-@[simp]
-theorem properFaceSum_add (c d : Finset ι → R) (x : ι → R) :
-    properFaceSum (c + d) x = properFaceSum c x + properFaceSum d x := by
-  simp [properFaceSum, add_mul, sum_add_distrib]
-
-@[simp]
-theorem properFaceSum_smul (a : R) (c : Finset ι → R) (x : ι → R) :
-    properFaceSum (a • c) x = a * properFaceSum c x := by
-  simp [properFaceSum, mul_sum, mul_assoc]
-
-@[simp]
-theorem properFaceSum_sum {α : Type*} (t : Finset α) (c : α → Finset ι → R) (x : ι → R) :
-    properFaceSum (∑ j ∈ t, c j) x = ∑ j ∈ t, properFaceSum (c j) x := by
-  simp only [properFaceSum, Finset.sum_apply, sum_mul]
-  exact sum_comm
-
-/-- A single coefficient at a proper subset `s` contributes exactly `a ∏_{i ∈ s} x_i`; at the
-full subset it contributes nothing. -/
-theorem properFaceSum_single (s : Finset ι) (a : R) (x : ι → R) :
-    properFaceSum (Pi.single s a) x = if s = univ then 0 else a * ∏ i ∈ s, x i := by
-  rw [properFaceSum]
-  split_ifs with hs
-  · exact sum_eq_zero fun t ht ↦ by
-      rw [Pi.single_eq_of_ne (hs ▸ (mem_ssubsets.1 ht).ne), zero_mul]
-  · rw [sum_eq_single_of_mem s (mem_ssubsets.2 (ssubset_univ_iff.2 hs)) fun t _ hts ↦ by
-      rw [Pi.single_eq_of_ne hts, zero_mul], Pi.single_eq_same]
-
-/-- The coefficient at the full subset does not affect the proper-face sum. -/
-@[simp]
-theorem properFaceSum_update_univ (c : Finset ι → R) (a : R) (x : ι → R) :
-    properFaceSum (Function.update c univ a) x = properFaceSum c x :=
-  sum_congr rfl fun s hs ↦ by rw [Function.update_of_ne (mem_ssubsets.1 hs).ne]
-
-/-- Transporting the coefficients and the variables along a bijection of index types does not
-change the proper-face sum. -/
-theorem properFaceSum_equiv [Fintype κ] [DecidableEq κ] (e : ι ≃ κ) (c : Finset κ → R)
-    (x : κ → R) : properFaceSum (c ∘ e.finsetCongr) (x ∘ e) = properFaceSum c x := by
-  refine sum_equiv e.finsetCongr (fun s ↦ ?_) fun s _ ↦ ?_
-  · simp only [mem_ssubsets, Equiv.finsetCongr_apply]
-    rw [← map_univ_equiv e, map_ssubset_map]
-  · simp [Equiv.finsetCongr_apply, prod_map]
-
-/-- Translating the variables by a vector `a` gives a proper-face sum again: the coefficient at
-`t` is `∑_{t ⊆ s ⊊ ι} c_s ∏_{i ∈ s \ t} a_i`. -/
-theorem properFaceSum_add_vec (c : Finset ι → R) (x a : ι → R) :
-    properFaceSum c (x + a) =
-      properFaceSum
-        (fun t ↦ ∑ s ∈ (univ : Finset ι).ssubsets with t ⊆ s, c s * ∏ i ∈ s \ t, a i) x := by
-  simp only [properFaceSum, Pi.add_apply, prod_add, mul_sum, sum_mul]
-  refine sum_comm' (fun s t ↦ ?_) |>.trans (sum_congr rfl fun t _ ↦ sum_congr rfl fun s _ ↦ ?_)
-  · simp only [mem_ssubsets, mem_powerset, mem_filter]
-    exact ⟨fun h ↦ ⟨⟨h.1, h.2⟩, h.2.trans_ssubset h.1⟩, fun h ↦ ⟨h.1.1, h.1.2⟩⟩
-  · ring
-
-end CommSemiring
+variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
 
 section OrderedSemiring
 
 variable [CommSemiring R] [PartialOrder R] [IsOrderedRing R] {c d : Finset ι → R} {x : ι → R}
 
 theorem properFaceSum_mono (hcd : ∀ s ⊂ univ, c s ≤ d s) (hx : ∀ i, 0 ≤ x i) :
-    properFaceSum c x ≤ properFaceSum d x :=
-  sum_le_sum fun s hs ↦
+    properFaceSum c x ≤ properFaceSum d x := by
+  rw [properFaceSum_def, properFaceSum_def]
+  exact sum_le_sum fun s hs ↦
     mul_le_mul_of_nonneg_right (hcd s (mem_ssubsets.1 hs)) (prod_nonneg fun i _ ↦ hx i)
 
 theorem properFaceSum_nonneg (hc : ∀ s ⊂ univ, 0 ≤ c s) (hx : ∀ i, 0 ≤ x i) :
@@ -160,7 +78,7 @@ theorem mul_properFaceSum_le (hc : ∀ s ⊂ univ, 0 ≤ c s) (hx : ∀ i, 1 ≤
     (ha : ∀ i, a ≤ x i) :
     a * properFaceSum c x ≤ (∑ s ∈ (univ : Finset ι).ssubsets, c s) * ∏ i, x i := by
   have hx₀ : ∀ i, 0 ≤ x i := fun i ↦ zero_le_one.trans (hx i)
-  rw [properFaceSum, mul_sum, sum_mul]
+  rw [properFaceSum_def, mul_sum, sum_mul]
   refine sum_le_sum fun s hs ↦ ?_
   obtain ⟨j, -, hj⟩ := exists_of_ssubset (mem_ssubsets.1 hs)
   rw [mul_left_comm]
@@ -176,7 +94,7 @@ coefficients `c` is at most `(∑_{s ⊊ ι} c_s) t^(|ι| - 1)`. -/
 theorem properFaceSum_const_le (hc : ∀ s ⊂ univ, 0 ≤ c s) {t : R} (ht : 1 ≤ t) :
     properFaceSum c (fun _ ↦ t) ≤
       (∑ s ∈ (univ : Finset ι).ssubsets, c s) * t ^ (Fintype.card ι - 1) := by
-  rw [properFaceSum, sum_mul]
+  rw [properFaceSum_def, sum_mul]
   refine sum_le_sum fun s hs ↦ ?_
   have hcard : #s < Fintype.card ι := card_univ (α := ι) ▸ card_lt_card (mem_ssubsets.1 hs)
   rw [prod_const]
@@ -215,6 +133,7 @@ variable [CommRing R] [LinearOrder R] [IsOrderedRing R]
 absolute value of a proper-face sum. -/
 theorem abs_properFaceSum_le (c : Finset ι → R) {x : ι → R} (hx : ∀ i, 0 ≤ x i) :
     |properFaceSum c x| ≤ properFaceSum (fun s ↦ |c s|) x := by
+  rw [properFaceSum_def, properFaceSum_def]
   refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun s _ ↦ ?_)
   rw [abs_mul, abs_of_nonneg (prod_nonneg fun i _ ↦ hx i)]
 
@@ -284,7 +203,7 @@ theorem mul_abs_le (h : IsProperFaceBound c e) (hc : ∀ s ⊂ univ, 0 ≤ c s) 
 /-- At parallel weights `k = (n, …, n)` a function controlled by nonnegative coefficients `c`
 is at most
 `(∑_{s ⊊ ι} c_s) (n + 1)^(|ι| - 1)`. -/
-theorem abs_le_const (h : IsProperFaceBound c e) (hc : ∀ s ⊂ univ, 0 ≤ c s) (n : ℕ) :
+theorem abs_const_le (h : IsProperFaceBound c e) (hc : ∀ s ⊂ univ, 0 ≤ c s) (n : ℕ) :
     |e fun _ ↦ n| ≤
       (∑ s ∈ (univ : Finset ι).ssubsets, c s) * ((n : R) + 1) ^ (Fintype.card ι - 1) :=
   (h _).trans (properFaceSum_const_le hc (by simp))
