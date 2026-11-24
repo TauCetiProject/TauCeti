@@ -244,9 +244,9 @@ theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat
   algebraize [W.specialize]
   have h :=
     (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat (S := R)
-  rw [← W.map_specialize]
+  rw [← map_specialize_formalGroup]
   simpa only [List.map_cons, List.map_nil, map_natCast, RingHom.algebraMap_toAlgebra,
-    map_formalGroup, FormalGroup.coeff_invariantDifferential_map] using h
+    FormalGroup.coeff_invariantDifferential_map] using h
 
 namespace Universal
 
