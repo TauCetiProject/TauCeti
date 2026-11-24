@@ -113,7 +113,7 @@ theorem setOf_laplacianSymbol_eq_zero (hT : T ≠ 0) : {n | laplacianSymbol T n 
 
 private theorem norm_laplacianSymbol (T : ℝ) (n : ℤ) :
     ‖laplacianSymbol T n‖ = (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
-  rw [laplacianSymbol_def, norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), sq_abs]
+  rw [laplacianSymbol_def, norm_real, Real.norm_of_nonneg (sq_nonneg _), sq_abs]
   ring
 
 private theorem norm_laplacianSymbol_le (T : ℝ) (n : ℤ) :
@@ -253,7 +253,7 @@ private theorem weight_mul_norm_greenSymbol_le (T : ℝ) (n : ℤ) :
   · simpa using sq_nonneg (T / π)
   have hn1 : 1 ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn
   have hsq : (1 + |(n : ℝ)|) ^ 2 ≤ 4 * (n : ℝ) ^ 2 := by nlinarith [sq_abs (n : ℝ)]
-  rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), weight_add_two]
+  rw [norm_real, Real.norm_of_nonneg (sq_nonneg _), weight_add_two]
   calc weight s n * (1 + |(n : ℝ)|) ^ 2 * (T / (2 * π * n)) ^ 2
       = (T / π) ^ 2 * ((1 + |(n : ℝ)|) ^ 2 / (4 * (n : ℝ) ^ 2)) * weight s n := by
         field_simp
@@ -344,18 +344,21 @@ theorem laplacian_ne_single_zero (T : ℝ) (h : s + 2 ≤ t) (a : CircleSobolev 
 
 /-! ### The isomorphism `1 + Δ` -/
 
+private theorem one_add_laplacianSymbol (T : ℝ) (n : ℤ) :
+    1 + laplacianSymbol T n = ((1 + (2 * π * n / T) ^ 2 : ℝ) : ℂ) := by
+  push_cast [laplacianSymbol_def]
+  rfl
+
 /-- For `T ≠ 0`, the symbol `1 + (2πn/T)²` of `1 + Δ` is elliptic of order `2`. -/
 private theorem isTheta_one_add_laplacianSymbol (hT : T ≠ 0) :
     (fun n ↦ 1 + laplacianSymbol T n) =Θ[cofinite] weight 2 := by
   have h1 : (fun _ : ℤ ↦ (1 : ℂ)) =O[cofinite] weight 2 :=
     IsBigO.of_bound 1 (Eventually.of_forall fun n ↦ by
-      rw [norm_one, norm_weight, weight_ofNat, one_mul]
-      have : (1 : ℝ) ≤ 1 + |(n : ℝ)| := le_add_of_nonneg_right (abs_nonneg _)
-      nlinarith)
+      rw [norm_one, norm_weight, one_mul]
+      exact one_le_weight (by norm_num) n)
   have hle (n : ℤ) : ‖laplacianSymbol T n‖ ≤ ‖1 + laplacianSymbol T n‖ := by
-    rw [laplacianSymbol_def, ← ofReal_one, ← ofReal_add, norm_real, norm_real,
-      Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
-      abs_of_nonneg (by positivity)]
+    rw [one_add_laplacianSymbol, laplacianSymbol_def, norm_real, norm_real,
+      Real.norm_of_nonneg (sq_nonneg _), Real.norm_of_nonneg (by positivity)]
     linarith
   exact ⟨h1.add (isTheta_laplacianSymbol hT).1,
     (isTheta_laplacianSymbol hT).2.trans
@@ -364,7 +367,7 @@ private theorem isTheta_one_add_laplacianSymbol (hT : T ≠ 0) :
 /-- The symbol `1 + (2πn/T)²` of `1 + Δ` never vanishes. -/
 private theorem one_add_laplacianSymbol_ne_zero (T : ℝ) (n : ℤ) :
     1 + laplacianSymbol T n ≠ 0 := by
-  rw [laplacianSymbol_def, ← ofReal_one, ← ofReal_add]
+  rw [one_add_laplacianSymbol]
   exact_mod_cast (by positivity : (0 : ℝ) < 1 + (2 * π * n / T) ^ 2).ne'
 
 /-- **`1 + Δ = 1 - ∂²` is an isomorphism `H^(s + 2) ≃ H^s`** for every real `s` and `T ≠ 0`,
