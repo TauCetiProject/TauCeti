@@ -40,8 +40,9 @@ These two properties need no Noetherian, reducedness or irreducibility hypothesi
 scheme-theoretic density replaces topological density, and the quasi-compactness of `U ⟶ X`
 (with `q` quasi-separated) keeps it under restriction to opens.
 
-Two further results use such hypotheses. For `X` reduced, restricting the graph to a dense open
-`V ⊆ U` does not change the graph closure. For `q` separated and `U ⟶ X` quasi-compact, the
+Further results use such hypotheses. For `X` reduced, the graph restricted to a dense open
+`V ⊆ U` has the same kernel, hence the same scheme-theoretic image
+(`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`). For `q` separated and `U ⟶ X` quasi-compact, the
 inclusion of `U` into the graph closure is an open immersion; hence over a field, for `X`
 irreducible, `U` nonempty and `f`, `q` locally of finite type, the graph closure has the
 dimension of `X`.
@@ -57,8 +58,6 @@ dimension of `X`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.ker_homOfLE_comp_opensGraph`: for `X` reduced, the graph restricted
-  to a dense open `V ⊆ U` has the same scheme-theoretic image.
 * `TauCeti.AlgebraicGeometry.isIso_graphClosureFst_restrict`: for `q` separated and `U ⟶ X`
   quasi-compact, the projection to `X` is an isomorphism over `U`.
 * `TauCeti.AlgebraicGeometry.isOpenImmersion_toGraphClosure`: for `q` separated and `U ⟶ X`
@@ -204,16 +203,6 @@ instance [LocallyOfFiniteType f] : LocallyOfFiniteType (graphClosureSnd f q U g 
 variable [QuasiCompact U.ι] [QuasiSeparated q]
 
 variable {f q U g hg}
-
-omit [QuasiCompact U.ι] [QuasiSeparated q] in
-/-- For `X` reduced, restricting the graph of `g` to a dense open `V ⊆ U` does not change its
-scheme-theoretic image: the two morphisms have the same kernel. -/
-theorem ker_homOfLE_comp_opensGraph [IsReduced X] {V : X.Opens} (hV : Dense (V : Set X))
-    (hVU : V ≤ U) :
-    (X.homOfLE hVU ≫ opensGraph f q U g hg).ker = (opensGraph f q U g hg).ker := by
-  have := Opens.isDominant_homOfLE hV hVU
-  have := IsSchemeTheoreticallyDominant.of_isDominant (X.homOfLE hVU)
-  exact Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant _ _
 
 /-- For `U ⟶ X` quasi-compact and `q` quasi-separated, two morphisms `a` and `b` from an open of
 the graph closure containing `U` to a scheme `T` separated over a base `B` by `s : T ⟶ B` are
@@ -417,9 +406,7 @@ theorem topologicalKrullDim_graphClosure {K : Type u} [Field K] {X P : Scheme.{u
     (hg : g ≫ q = U.ι ≫ f) [QuasiCompact U.ι] [IsSeparated q] [LocallyOfFiniteType f]
     [LocallyOfFiniteType q] [IrreducibleSpace X] [Nonempty U] :
     topologicalKrullDim (graphClosure f q U g hg) = topologicalKrullDim X := by
-  have : IrreducibleSpace U := Subtype.irreducibleSpace ⟨Set.nonempty_coe_sort.mp ‹_›,
-    (IrreducibleSpace.isIrreducible_univ X).isPreirreducible.open_subset U.isOpen
-      (Set.subset_univ _)⟩
+  have : IrreducibleSpace U := U.ι.isOpenEmbedding.irreducibleSpace
   rw [← topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
       (graphClosureFst f q U g hg ≫ f) (toGraphClosure f q U g hg).isOpenEmbedding,
     topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f U.ι.isOpenEmbedding]

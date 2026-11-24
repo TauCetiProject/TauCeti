@@ -23,9 +23,9 @@ with `X ×_S Y ×_S Z` written as `X ×_S (Y ×_S Z)`. It is Tau Ceti's graph cl
 closure API applies to it.
 
 For `X` Noetherian and integral, `W_{f,g}` is integral: instance search finds this through the
-graph closure, from `TauCeti.AlgebraicGeometry.Scheme.Hom.isIntegral_image`. Replacing `U` by a
-smaller dense open does not change `W_{f,g}`: this is
-`TauCeti.AlgebraicGeometry.ker_homOfLE_comp_opensGraph`, which applies to `W_{f,g}` directly.
+graph closure, from `AlgebraicGeometry.Scheme.Hom.isIntegral_image`. For `X` reduced, restricting
+`(ι_U, f_U, (g ∘ f)_U)` to a dense open `V ⊆ U` gives a morphism with the same kernel, hence the
+same scheme-theoretic image `W_{f,g}` (`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`).
 Over a field `K`, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type,
 `W_{f,g}` has the dimension of `X`.
 
@@ -90,6 +90,11 @@ omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
 /-- The open `U` is dense in `X`. -/
 theorem dense_compositeDomain : Dense (compositeDomain f g : Set X) :=
   f.dense_domain.inter_of_isOpen_left (f.comp g).dense_domain f.domain.isOpen
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
+/-- The open `U` is nonempty when `X` is: it is dense. -/
+instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) :=
+  (dense_compositeDomain f g).nonempty.to_subtype
 
 /-- The restriction `f_U` of the representative of `f` on its domain to `U`. -/
 def compositeToY : (compositeDomain f g).toScheme ⟶ Y :=
@@ -195,16 +200,6 @@ theorem toCompositeCorrespondence_sndZ :
     toCompositeCorrespondence sX sY sZ f g ≫ compositeCorrespondenceSndZ sX sY sZ f g =
       compositeToZ f g := by
   simp
-
-section Noetherian
-
-variable [NoetherianSpace X]
-
-/-- The open `U` is nonempty when `X` is: it is dense. -/
-instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) :=
-  (dense_compositeDomain f g).nonempty.to_subtype
-
-end Noetherian
 
 end Over
 
